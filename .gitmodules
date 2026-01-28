@@ -1,0 +1,3 @@
+[submodule "external/CppHDL"]
+	path = external/CppHDL
+	url = https://github.com/chisuhua/CppHDL.git
