@@ -10,8 +10,6 @@
 #include "utils/regex_matcher.hh"
 #include "utils/module_group.hh"
 #include "utils/dynamic_loader.hh"
-#include "core/plugin_loader.hh"
-#include "core/connection_resolver.hh"
 
 #include <unordered_map>
 #include <nlohmann/json.hpp>
