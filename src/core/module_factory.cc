@@ -6,7 +6,9 @@
 #include "utils/wildcard.hh"
 #include "utils/regex_matcher.hh"
 #include "utils/module_group.hh"
-#include "utils/dynamic_loader.hh"
+#include "core/plugin_load_exception.hh"
+#include "core/plugin_loader.hh"
+#include "core/load_policy.hh"
 
 using json = nlohmann::json;
 
@@ -27,7 +29,7 @@ void ModuleFactory::instantiateAll(const json& config) {
     // ========================
     if (final_config.contains("plugin")) {
         for (auto& plugin_path : final_config["plugin"]) {
-            if (!DynamicLoader::loadPlugin(plugin_path.get<std::string>())) {
+            if (!PluginLoader{}.loadPlugin(plugin_path.get<std::string>(), LoadPolicy::CRITICAL_ONLY, true)) {
                 printf("[ERROR] Failed to load plugin: %s\n", plugin_path.get<std::string>().c_str());
             }
         }
