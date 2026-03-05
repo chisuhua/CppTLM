@@ -4,8 +4,11 @@
 #include <vector>
 #include <utility>
 #include <functional>
-#include "core/module_factory.hh"
+#include <unordered_map>
+#include <nlohmann/json.hpp>
 
+class SimModule;
+struct PortCreationInfo;
 /**
  * @brief Connection resolver for parsing and creating connections between modules
  * 
