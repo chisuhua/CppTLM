@@ -4,6 +4,7 @@ build/build/
 *.o
 *.so
 *.a
+a.out
 
 # Worktrees
 .worktrees/
