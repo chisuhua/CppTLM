@@ -10,6 +10,8 @@
 #include "utils/regex_matcher.hh"
 #include "utils/module_group.hh"
 #include "utils/dynamic_loader.hh"
+#include "core/plugin_loader.hh"
+#include "core/connection_resolver.hh"
 
 #include <unordered_map>
 #include <nlohmann/json.hpp>
@@ -69,7 +71,7 @@ public:
         };
     }
 
-    // 保留 unregister/clear/getRegisteredTypes，但需要适配
+    // 保留 unregister/clear/getRegisteredTypes
     static bool unregisterObject(const std::string& name) {
         auto& registry = getObjectRegistry();
         auto it = registry.find(name);
@@ -155,5 +157,8 @@ public:
         }
     }
 };
+
+// 旧的 parsePortSpec 函数，保留向后兼容性
+std::pair<std::string, std::string> parsePortSpec(const std::string& full_name);
 
 #endif // MODULE_FACTORY_HH
