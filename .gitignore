@@ -1,0 +1,18 @@
+# Build artifacts
+build/
+build/build/
+*.o
+*.so
+*.a
+
+# Worktrees
+.worktrees/
+worktrees/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
