@@ -1,5 +1,6 @@
 #pragma once
 
+#include "plugin_load_exception.hh"
 #include <string>
 #include <vector>
 
