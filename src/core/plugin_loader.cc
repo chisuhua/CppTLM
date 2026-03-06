@@ -1,46 +1,45 @@
 #include "core/plugin_loader.hh"
+#include "core/plugin_load_exception.hh"
+#include "core/load_policy.hh"
 
 #include <dlfcn.h>
 #include <iostream>
-#include <vector>
 
-bool PluginLoader::loadPlugin(const std::string& path) {
-    // Use RTLD_GLOBAL to match previous behavior and allow symbols to be
-    // visible for plugins that rely on static registration.
-    void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+bool PluginLoader::loadPlugin(const std::string& path, LoadPolicy policy, bool is_critical) {
+    void* handle = dlopen(path.c_str(), RTLD_NOW);
     if (!handle) {
         std::cerr << "plugin load failed: " << path << " : " << dlerror() << std::endl;
+        
+        PluginLoadException::Severity severity = 
+            is_critical ? PluginLoadException::Severity::FATAL : 
+            policy == LoadPolicy::BEST_EFFORT ? PluginLoadException::Severity::WARNING :
+            PluginLoadException::Severity::ERROR;
+        
+        if (!shouldContinue(policy, severity)) {
+            throw PluginLoadException(severity, path, dlerror());
+        }
         return false;
     }
 
-    // Prefer the existing plugin entry point used in this repository:
-    //   void register_plugin_types();
-    typedef void (*RegisterPluginTypesFunc)();
-    RegisterPluginTypesFunc register_plugin_types =
-        (RegisterPluginTypesFunc)dlsym(handle, "register_plugin_types");
-
-    if (register_plugin_types) {
-        // Explicitly register plugin types via the standard entry point.
-        register_plugin_types();
-    } else {
-        // Fall back to the older/alternate entry point:
-        //   std::string registerType();
-        typedef std::string (*RegisterTypeFunc)();
-        RegisterTypeFunc registerType = (RegisterTypeFunc)dlsym(handle, "registerType");
-        if (registerType) {
-            // Call the function to allow any side effects/registration to occur.
-            // Ignore the returned string here, as the loader only tracks the path.
-            registerType();
-        } else {
-            // Neither registration symbol is present; assume the plugin uses
-            // static registration. Do not treat this as a hard failure.
-            std::cerr << "plugin load warning: " << path
-                      << " : no registration function found (assuming static registration)"
-                      << std::endl;
+    // Check for registerType function
+    typedef std::string (*RegisterTypeFunc)();
+    RegisterTypeFunc registerType = (RegisterTypeFunc)dlsym(handle, "registerType");
+    if (!registerType) {
+        std::cerr << "plugin load failed: " << path << " : missing registerType function" << std::endl;
+        
+        PluginLoadException::Severity severity = 
+            is_critical ? PluginLoadException::Severity::FATAL : 
+            policy == LoadPolicy::BEST_EFFORT ? PluginLoadException::Severity::WARNING :
+            PluginLoadException::Severity::ERROR;
+        
+        dlclose(handle);
+        if (!shouldContinue(policy, severity)) {
+            throw PluginLoadException(severity, path, "missing registerType function");
         }
+        return false;
     }
 
-    // Register the plugin as successfully loaded.
+    // Register the plugin
     loadedPlugins_.push_back(path);
     return true;
 }
@@ -60,4 +59,22 @@ bool PluginLoader::hasPlugin(const std::string& path) const {
 
 void PluginLoader::clear() {
     loadedPlugins_.clear();
+}
+
+int PluginLoader::loadPlugins(const std::vector<std::string>& paths, LoadPolicy policy, 
+                              const std::vector<std::string>& critical_paths) {
+    int loaded = 0;
+    for (const auto& path : paths) {
+        bool is_critical = false;
+        for (const auto& crit : critical_paths) {
+            if (crit == path) {
+                is_critical = true;
+                break;
+            }
+        }
+        if (loadPlugin(path, policy, is_critical)) {
+            loaded++;
+        }
+    }
+    return loaded;
 }
