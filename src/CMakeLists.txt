@@ -3,13 +3,13 @@
 # ==============================================================================
 # 核心静态库（显式列出源文件，不用 GLOB）
 # ==============================================================================
+# 注意：packet/packet.cc 和 noc/*.cc 为历史遗留文件，与当前头文件不兼容
+#       暂不编译，待后续重构
 set(CORE_SOURCES
     # core
     core/connection_resolver.cc
     core/module_factory.cc
     core/plugin_loader.cc
-    # packet
-    packet/packet.cc
     # utils
     utils/dynamic_loader.cc
 )
@@ -18,11 +18,11 @@ add_library(cpptlm_core STATIC ${CORE_SOURCES})
 
 # 包含目录：
 #   - include/       → 公共头文件（core/*.hh, utils/*.hh 等）
-#   - src/core/      → 源文件同级头文件（module_factory.hh, sim_module.hh）
+#   - include/core/  → 兼容旧式 #include "xxx.hh"（无 core/ 前缀）
 #   - external/json  → nlohmann/json
 target_include_directories(cpptlm_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
-    ${CMAKE_CURRENT_SOURCE_DIR}/core
+    ${CMAKE_CURRENT_SOURCE_DIR}/../include/core
     ${CMAKE_CURRENT_SOURCE_DIR}/../external/json
 )
 
@@ -60,8 +60,8 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/traffic_main.cpp")
     target_link_libraries(cpptlm_traffic PRIVATE cpptlm_core)
 endif()
 
-# SystemC sc_main 入口
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sc_main.cpp")
+# SystemC sc_main 入口（需 USE_SYSTEMC=ON）
+if(USE_SYSTEMC AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sc_main.cpp")
     add_executable(cpptlm_sc_main sc_main.cpp)
     target_link_libraries(cpptlm_sc_main PRIVATE cpptlm_core)
 endif()
