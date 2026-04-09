@@ -1,19 +1,22 @@
-# Build artifacts
+# CMake build
 build/
-build/build/
+cmake-build-*/
 *.o
-*.so
 *.a
-a.out
-
-# Worktrees
-.worktrees/
-worktrees/
+*.so
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
-# OS
-.DS_Store
-Thumbs.db
+# Checkpoint files
+*.checkpoint.*.jsonl
+*.jsonl.reset.*
+*,
+
+# Test
+ctest_results/
+
