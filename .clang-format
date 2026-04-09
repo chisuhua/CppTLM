@@ -1,52 +1,40 @@
+# CppTLM 代码格式配置
 ---
-# .clang-format配置文件
-# 遵循GemSc项目开发规范
-
-# 基于LLVM风格进行调整
+Language: Cpp
 BasedOnStyle: LLVM
 
-# 缩进设置
+# 缩进
 IndentWidth: 4
 TabWidth: 4
 UseTab: Never
+ContinuationIndentWidth: 4
 
-# 大括号设置
+# 列宽
+ColumnLimit: 100
+
+# 指针和引用对齐
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# 大括号
 BreakBeforeBraces: Attach
-Cpp11BracedListStyle: true
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
 
-# 行长度
-ColumnLimit: 120
+# 命名空间
+IndentNamespaces: true
 
-# 空格设置
-SpaceAfterCStyleCast: false
-SpaceBeforeAssignmentOperators: true
-SpaceAfterControlStatementKeyword: true
+# 访问修饰符缩进
+AccessModifierOffset: -4
 
-# 函数设置
-SpaceBeforeParens: ControlStatements
-AlignAfterOpenBracket: Align
-ConstructorInitializerIndentWidth: 4
+# 其他
+SortIncludes: true
+CompactNamespaces: false
+NamespaceIndentation: All
 
-# 数组和列表设置
-AlignTrailingComments: true
-AllowAllParametersOfDeclarationOnNextLine: false
-BinPackArguments: false
-BinPackParameters: false
+# 宏和注释
+CommentPragmas: '^ IWYU pragma:'
+KeepEmptyLinesAtTheStartOfBlocks: false
 
-# 命名空间设置
-IndentWrappedFunctionNames: false
-AlignFunctionDeclarationParameters: true
-
-# 注释设置
-ReflowComments: true
-SpacesBeforeTrailingComments: 2
-
-# 括号设置
-BreakConstructorInitializersBeforeComma: false
-SpaceBeforeCpp11BracedList: true
-
-# 操作符对齐
-AlignOperands: true
-
-# 逗号和分号设置
-SpaceBeforePunctuation: false
+...
