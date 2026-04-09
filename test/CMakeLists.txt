@@ -1,72 +1,56 @@
-enable_testing()
+# test/CMakeLists.txt — CppTLM 测试配置
 
-set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+# ==============================================================================
+# Catch2 测试框架（FetchContent 自动下载）
+# ==============================================================================
+include(FetchContent)
 
-# 定义创建单个 Catch2 测试的函数
-function(add_catch_test TEST_NAME)
-    # 参数：测试名称，其余为该测试的源文件（不含 catch_amalgamated.cpp）
-    set(SOURCES ${ARGN})
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.5.0
+)
+FetchContent_MakeAvailable(Catch2)
 
-    # 自动包含 catch_amalgamated.cpp
-    list(APPEND SOURCES ${CATCH_INCLUDE_DIR}/catch_amalgamated.cpp)
+# ==============================================================================
+# 测试可执行文件
+# ==============================================================================
+file(GLOB TEST_SOURCES "test_*.cc")
 
-    # 创建可执行文件
-    add_executable(${TEST_NAME} ${SOURCES})
+add_executable(cpptlm_tests
+    ${TEST_SOURCES}
+    catch_amalgamated.cpp
+)
 
-    # 包含目录
-    target_include_directories(${TEST_NAME} PRIVATE
-        ${CATCH_INCLUDE_DIR}
-        ${PROJECT_SOURCE_DIR}/include
-        ${PROJECT_SOURCE_DIR}/include/core
-        ${PROJECT_SOURCE_DIR}/include/core/ext
-        ${PROJECT_SOURCE_DIR}/external/json
-    )
+target_link_libraries(cpptlm_tests PRIVATE
+    cpptlm_core
+    Catch2::Catch2WithMain
+)
 
-    # 链接库（如果存在）
-    if(TARGET systemc)
-        target_link_libraries(${TEST_NAME} systemc)
-    endif()
+# 测试额外包含目录（mock 头文件等）
+target_include_directories(cpptlm_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
-    # 链接核心库
-    target_link_libraries(${TEST_NAME} gemsc_core)
+# SystemC 定义（与主库一致）
+if(USE_SYSTEMC)
+    target_compile_definitions(cpptlm_tests PRIVATE USE_SYSTEMC)
+endif()
 
-    # 如果sc_main_obj库存在，也链接它
-    if(TARGET sc_main_obj)
-        target_link_libraries(${TEST_NAME} sc_main_obj)
-    endif()
+# ==============================================================================
+# 测试发现
+# ==============================================================================
+include(CTest)
+include(Catch)
+catch_discover_tests(cpptlm_tests)
 
-    # 注册为 CTest 测试
-    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
-endfunction()
+# ==============================================================================
+# 覆盖率选项
+# ==============================================================================
+if(ENABLE_COVERAGE)
+    target_compile_options(cpptlm_tests PRIVATE --coverage)
+    target_link_options(cpptlm_tests PRIVATE --coverage)
+endif()
 
-# 收集所有测试源文件
-file(GLOB TEST_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/test_*.cc")
-
-# 为每个测试源文件创建一个独立的测试
-foreach(TEST_SRC ${TEST_SOURCES})
-    # 提取测试名，如 test_xxx.cc -> test_xxx
-    get_filename_component(TEST_NAME ${TEST_SRC} NAME_WE)
-    
-    # 跳过不需要单独构建的文件
-    if(NOT ${TEST_NAME} STREQUAL "catch_amalgamated")
-        add_catch_test(${TEST_NAME} ${TEST_SRC})
-    endif()
-endforeach()
-
-
-# # 添加可执行文件
-# add_executable(packet_pool_tests 
-#     src/test_packet_pool.cc
-#     # 添加您的所有源文件...
-#     src/module_factory.cc
-# )
-
-# # 包含路径
-# target_include_directories(packet_pool_tests PRIVATE include ext)
-
-# # 链接 gtest
-# target_link_libraries(packet_pool_tests GTest::GTest GTest::Main)
-
-
-# add_executable(tlm_exts_test test_tlm_exts.cpp)
-# target_link_libraries(tlm_exts_test GTest::gtest GTest::gtest_main pthread systemc)
+# 输出目录
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
