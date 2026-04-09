@@ -62,6 +62,7 @@ enum class ErrorCode : uint16_t {
     PROTOCOL_INVALID_COMMAND = 0x0402,
     PROTOCOL_CHECKSUM_ERROR = 0x0403,
     PROTOCOL_FORMAT_ERROR = 0x0404,
+    PROTOCOL_TIMEOUT = 0x0405,
     
     // ========== 安全层错误 (0x05xx) ==========
     SECURITY_AUTHENTICATION_FAILED = 0x0500,
