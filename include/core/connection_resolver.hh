@@ -8,7 +8,19 @@
 #include <nlohmann/json.hpp>
 
 class SimModule;
-struct PortCreationInfo;
+
+struct PortCreationInfo {
+    std::string owner_name;
+    std::string port_name;
+    std::vector<size_t> buffer_sizes;
+    std::vector<size_t> priorities;
+    bool is_upstream;
+    
+    PortCreationInfo() = default;
+    PortCreationInfo(const std::string& o, const std::string& p, 
+                     const std::vector<size_t>& bs, const std::vector<size_t>& pri, bool upstream)
+        : owner_name(o), port_name(p), buffer_sizes(bs), priorities(pri), is_upstream(upstream) {}
+};
 /**
  * @brief Connection resolver for parsing and creating connections between modules
  * 
