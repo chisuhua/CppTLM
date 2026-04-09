@@ -42,45 +42,45 @@ endif()
 # 可执行文件
 # ==============================================================================
 
-# 主仿真程序
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
-    add_executable(cpptlm_sim main.cpp)
-    target_link_libraries(cpptlm_sim PRIVATE cpptlm_core)
+# 注意：以下可执行文件依赖 SystemC/TLM 库链接
+#       仅在 USE_SYSTEMC=ON 时构建
+
+if(USE_SYSTEMC)
+    # 主仿真程序
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+        add_executable(cpptlm_sim main.cpp)
+        target_link_libraries(cpptlm_sim PRIVATE cpptlm_core)
+    endif()
+
+    # CPU 模式主程序
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cpu_main.cpp")
+        add_executable(cpptlm_cpu cpu_main.cpp)
+        target_link_libraries(cpptlm_cpu PRIVATE cpptlm_core)
+    endif()
+
+    # 流量仿真主程序
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/traffic_main.cpp")
+        add_executable(cpptlm_traffic traffic_main.cpp)
+        target_link_libraries(cpptlm_traffic PRIVATE cpptlm_core)
+    endif()
+
+    # SystemC sc_main 入口
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sc_main.cpp")
+        add_executable(cpptlm_sc_main sc_main.cpp)
+        target_link_libraries(cpptlm_sc_main PRIVATE cpptlm_core)
+    endif()
+
+    # 布局示例
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_layout.cpp")
+        add_executable(cpptlm_layout main_layout.cpp)
+        target_link_libraries(cpptlm_layout PRIVATE cpptlm_core)
+    endif()
+
+    # 层次示例
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_hierarchy.cpp")
+        add_executable(cpptlm_hierarchy main_hierarchy.cpp)
+        target_link_libraries(cpptlm_hierarchy PRIVATE cpptlm_core)
+    endif()
 endif()
 
-# CPU 模式主程序
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cpu_main.cpp")
-    add_executable(cpptlm_cpu cpu_main.cpp)
-    target_link_libraries(cpptlm_cpu PRIVATE cpptlm_core)
-endif()
-
-# 流量仿真主程序
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/traffic_main.cpp")
-    add_executable(cpptlm_traffic traffic_main.cpp)
-    target_link_libraries(cpptlm_traffic PRIVATE cpptlm_core)
-endif()
-
-# SystemC sc_main 入口（需 USE_SYSTEMC=ON）
-if(USE_SYSTEMC AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sc_main.cpp")
-    add_executable(cpptlm_sc_main sc_main.cpp)
-    target_link_libraries(cpptlm_sc_main PRIVATE cpptlm_core)
-endif()
-
-# 布局示例
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_layout.cpp")
-    add_executable(cpptlm_layout main_layout.cpp)
-    target_link_libraries(cpptlm_layout PRIVATE cpptlm_core)
-endif()
-
-# 层次示例
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_hierarchy.cpp")
-    add_executable(cpptlm_hierarchy main_hierarchy.cpp)
-    target_link_libraries(cpptlm_hierarchy PRIVATE cpptlm_core)
-endif()
-
-# ==============================================================================
-# 输出目录
-# ==============================================================================
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# 注：输出目录已在根 CMakeLists.txt 中设置
