@@ -1,6 +1,7 @@
 // src/module_factory.cc
 #include "module_factory.hh"
 #include "sim_module.hh"
+#include "core/connection_resolver.hh"
 #include "utils/config_utils.hh"
 #include "utils/json_includer.hh"
 #include "utils/wildcard.hh"
