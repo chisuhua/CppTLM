@@ -2,7 +2,11 @@
 #define MEM_EXTS_HH
 
 #include "core/cmd.hh"
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include <tlm>
+#endif
 
 // ReadCmd 的 TLM 扩展
 class ReadCmdExt : public tlm::tlm_extension<ReadCmdExt>

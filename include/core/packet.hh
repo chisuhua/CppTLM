@@ -3,7 +3,11 @@
 #ifndef PACKET_HH
 #define PACKET_HH
 
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 #include "core/error_category.hh"
 #include "ext/transaction_context_ext.hh"
 #include <cstdint>

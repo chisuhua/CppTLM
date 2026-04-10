@@ -5,6 +5,7 @@
 #include "packet.hh"
 #include <queue>
 #include <mutex>
+#include <iostream>
 
 /**
  * @brief 对象池模式：高效复用 Packet 和 tlm_generic_payload

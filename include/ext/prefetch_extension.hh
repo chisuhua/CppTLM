@@ -2,7 +2,11 @@
 #ifndef PREFETCH_EXTENSION_HH
 #define PREFETCH_EXTENSION_HH
 
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 
 struct PrefetchExtension : public tlm::tlm_extension<PrefetchExtension> {
     bool is_prefetch = false;
@@ -23,7 +27,7 @@ struct PrefetchExtension : public tlm::tlm_extension<PrefetchExtension> {
     }
 };
 
-inline PrefetchExtension* get_prefetch(tlm_generic_payload* p) {
+inline PrefetchExtension* get_prefetch(tlm::tlm_generic_payload* p) {
     PrefetchExtension* ext = nullptr;
     p->get_extension(ext);
     return ext;

@@ -6,6 +6,7 @@
 #define DEBUG_TRACKER_HH
 
 #include "ext/error_context_ext.hh"
+#include "ext/transaction_context_ext.hh"
 #include "core/error_category.hh"
 #include <map>
 #include <vector>
