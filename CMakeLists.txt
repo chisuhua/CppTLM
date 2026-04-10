@@ -15,6 +15,10 @@ project(CppTLM
 # ccache 支持（自动检测，加速编译）
 # ==============================================================================
 find_program(CCACHE_PROGRAM ccache)
+option(USE_SYSTEMC_STUB "Use TLM stub implementation" ON)
+if(USE_SYSTEMC_STUB)
+    add_compile_definitions(USE_SYSTEMC_STUB)
+endif()
 if(CCACHE_PROGRAM)
     set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
     message(STATUS "ccache enabled: ${CCACHE_PROGRAM}")

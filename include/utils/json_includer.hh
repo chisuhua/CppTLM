@@ -22,6 +22,13 @@ public:
         processIncludes(root, filename);
         return root;
     }
+    
+    // 重载：直接处理 json 对象
+    static json loadAndInclude(const json& config) {
+        json result = config;
+        processIncludesJson(result);
+        return result;
+    }
 
 private:
     static void processIncludes(json& node, const std::string& base_path) {
@@ -31,7 +38,6 @@ private:
                 std::string dir = base_path.substr(0, base_path.find_last_of("/\\") + 1);
                 json included = loadAndInclude(dir + include_file);
 
-                // Merge included content into current node
                 for (auto& [key, value] : included.items()) {
                     if (!node.contains(key)) {
                         node[key] = value;
@@ -40,7 +46,6 @@ private:
                 node.erase("include");
             }
 
-            // Recursively process all children
             for (auto& [key, value] : node.items()) {
                 processIncludes(value, base_path);
             }
@@ -50,6 +55,31 @@ private:
             }
         }
     }
+    
+    // 处理 json 对象中的 include
+    static void processIncludesJson(json& node) {
+        if (node.is_object()) {
+            if (node.contains("include")) {
+                std::string include_file = node["include"].get<std::string>();
+                json included = loadAndInclude(include_file);
+                for (auto& [key, value] : included.items()) {
+                    if (!node.contains(key)) node[key] = value;
+                }
+                node.erase("include");
+            }
+            for (auto& [key, value] : node.items()) {
+                if (value.is_object() || value.is_array()) {
+                    processIncludesJson(value);
+                }
+            }
+        } else if (node.is_array()) {
+            for (auto& item : node) {
+                if (item.is_object() || item.is_array()) {
+                    processIncludesJson(item);
+                }
+            }
+        }
+    }
 };
 
-#endif
+#endif // JSON_INCLUDER_HH
