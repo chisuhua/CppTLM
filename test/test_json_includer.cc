@@ -26,7 +26,7 @@ TEST_CASE("JsonIncluderTest IncludeMergesContent", "[json][includer]") {
     })";
     common.close();
 
-    json config = JsonIncluder::loadAndInclude("tmp/configs/base.json");
+    json config = JsonIncluder::loadAndInclude(std::string("tmp/configs/base.json"));
 
     REQUIRE(config.contains("modules"));
     REQUIRE(config.contains("connections"));
@@ -57,7 +57,7 @@ TEST_CASE("JsonIncluderTest RelativePathResolution", "[json][includer]") {
     })";
     common.close();
 
-    json config = JsonIncluder::loadAndInclude("tmp/configs/base.json");
+    json config = JsonIncluder::loadAndInclude(std::string("tmp/configs/base.json"));
     REQUIRE(config["modules"][0]["name"] == "cpu0");
 
     // 清理临时文件

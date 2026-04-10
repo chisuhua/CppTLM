@@ -2,7 +2,11 @@
 #ifndef COHERENCE_EXTENSION_HH
 #define COHERENCE_EXTENSION_HH
 
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 
 enum CacheState { INVALID, SHARED, EXCLUSIVE, MODIFIED };
 
@@ -27,13 +31,13 @@ struct CoherenceExtension : public tlm::tlm_extension<CoherenceExtension> {
     }
 };
 
-inline CoherenceExtension* get_coherence(tlm_generic_payload* p) {
+inline CoherenceExtension* get_coherence(tlm::tlm_generic_payload* p) {
     CoherenceExtension* ext = nullptr;
     p->get_extension(ext);
     return ext;
 }
 
-inline void set_coherence(tlm_generic_payload* p, const CoherenceExtension& src) {
+inline void set_coherence(tlm::tlm_generic_payload* p, const CoherenceExtension& src) {
     CoherenceExtension* ext = new CoherenceExtension(src);
     p->set_extension(ext);
 }

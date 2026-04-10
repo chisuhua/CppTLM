@@ -2,7 +2,11 @@
 #ifndef FLIT_EXTENSION_HH
 #define FLIT_EXTENSION_HH
 
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 
 enum class FlitType {
     HEAD, BODY, TAIL, HEAD_TAIL

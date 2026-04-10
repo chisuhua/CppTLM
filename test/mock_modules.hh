@@ -5,7 +5,15 @@
 #include "core/sim_object.hh"
 #include "core/packet.hh"
 #include "core/packet_pool.hh"  // 添加PacketPool的头文件
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
+#endif
 
 // 添加缺失的枚举定义
 enum PacketTypeExt {

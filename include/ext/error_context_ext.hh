@@ -5,7 +5,11 @@
 #ifndef ERROR_CONTEXT_EXT_HH
 #define ERROR_CONTEXT_EXT_HH
 
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 #include "core/error_category.hh"
 #include <vector>
 #include <string>
@@ -65,7 +69,7 @@ struct ErrorContextExt : public tlm::tlm_extension<ErrorContextExt> {
     
     // ========== TLM Extension 必需方法 ==========
     
-    tlm_extension* clone() const override {
+    tlm::tlm_extension<ErrorContextExt>* clone() const override {
         return new ErrorContextExt(*this);
     }
     

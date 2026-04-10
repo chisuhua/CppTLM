@@ -2,7 +2,11 @@
 #ifndef QOS_EXTENSION_HH
 #define QOS_EXTENSION_HH
 
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 
 struct QoSExtension : public tlm::tlm_extension<QoSExtension> {
     uint8_t qos_class = 0;        // 0-7
@@ -21,7 +25,7 @@ struct QoSExtension : public tlm::tlm_extension<QoSExtension> {
     }
 };
 
-inline QoSExtension* get_qos(tlm_generic_payload* p) {
+inline QoSExtension* get_qos(tlm::tlm_generic_payload* p) {
     QoSExtension* ext = nullptr;
     p->get_extension(ext);
     return ext;

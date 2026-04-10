@@ -2,7 +2,11 @@
 #ifndef PERFORMANCE_EXTENSION_HH
 #define PERFORMANCE_EXTENSION_HH
 
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 
 struct PerformanceExtension : public tlm::tlm_extension<PerformanceExtension> {
     uint64_t issue_cycle = 0;
@@ -23,7 +27,7 @@ struct PerformanceExtension : public tlm::tlm_extension<PerformanceExtension> {
     }
 };
 
-inline PerformanceExtension* get_performance(tlm_generic_payload* p) {
+inline PerformanceExtension* get_performance(tlm::tlm_generic_payload* p) {
     PerformanceExtension* ext = nullptr;
     p->get_extension(ext);
     return ext;

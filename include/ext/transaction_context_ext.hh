@@ -3,7 +3,11 @@
 #ifndef TRANSACTION_CONTEXT_EXT_HH
 #define TRANSACTION_CONTEXT_EXT_HH
 
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 #include <vector>
 #include <string>
 #include <cstdint>
