@@ -10,6 +10,7 @@
 #endif
 #include "core/error_category.hh"
 #include "ext/transaction_context_ext.hh"
+#include "ext/error_context_ext.hh"
 #include <cstdint>
 #include <unordered_map>
 
@@ -185,7 +186,11 @@ public:
      * @return 错误码
      */
     ErrorCode get_error_code() const {
-        // 暂未实现 ErrorContextExt，返回 SUCCESS
+        if (payload) {
+            ErrorContextExt* ext = nullptr;
+            payload->get_extension(ext);
+            if (ext) return ext->error_code;
+        }
         return ErrorCode::SUCCESS;
     }
     
@@ -194,9 +199,18 @@ public:
      * @param code 错误码
      */
     void set_error_code(ErrorCode code) {
-        // 暂未实现 ErrorContextExt，仅记录到 stream_id 高位
-        // 后续在 Phase 4 实现完整的 ErrorContextExt
-        (void)code;
+        if (!payload) return;
+        
+        ErrorContextExt* ext = nullptr;
+        payload->get_extension(ext);
+        
+        if (!ext) {
+            // 自动创建 ErrorContextExt
+            ext = create_error_context(payload, code, "", "");
+        } else {
+            ext->error_code = code;
+            ext->error_category = get_error_category(code);
+        }
     }
     
     /**
@@ -211,12 +225,13 @@ private:
     // 引用计数
     int ref_count = 0;
 
-    // reset 方法
+    // reset 方法 - 重置Packet状态以复用
     void reset() {
         if (payload && !isCredit()) {
-            delete payload;
+            // 清除 Extensions 并重置 payload 状态，但不删除对象
+            payload->clear_extensions();
+            payload->reset();
         }
-        payload = nullptr;
         stream_id = 0;
         seq_num = 0;
         cmd = CMD_INVALID;
@@ -233,13 +248,12 @@ private:
         ref_count = 0;
     }
 
+    // Payload 销毁 - 仅在 Packet 真正销毁时调用
+
     // 私有构造函数
     Packet(tlm::tlm_generic_payload* p, uint64_t cycle, PacketType t)
         : payload(p), src_cycle(cycle), type(t), ref_count(0) {}
 
-    ~Packet() {
-        // 析构函数不负责删除 payload
-    }
 
     friend class PacketPool;
 };
