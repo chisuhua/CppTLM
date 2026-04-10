@@ -6,7 +6,11 @@
 #include "core/error_category.hh"
 #include "ext/error_context_ext.hh"
 #include "framework/debug_tracker.hh"
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 
 using tlm::tlm_generic_payload;
 
@@ -30,17 +34,17 @@ TEST_CASE("ErrorCode 枚举格式", "[error][category]") {
     REQUIRE(static_cast<uint16_t>(ErrorCode::PROTOCOL_ID_CONFLICT) >> 8 == 0x04);
 }
 
-TEST_CASE("错误码转字符串", "[error][category]") {
+TEST_CASE("Phase4 错误码转字符串", "[error][category]") {
     REQUIRE(error_code_to_string(ErrorCode::SUCCESS) == "SUCCESS");
     REQUIRE(error_code_to_string(ErrorCode::COHERENCE_DEADLOCK) == "COHERENCE_DEADLOCK");
 }
 
-TEST_CASE("严重错误检测", "[error][category]") {
+TEST_CASE("Phase4 严重错误检测", "[error][category]") {
     REQUIRE(is_fatal_error(ErrorCode::COHERENCE_DEADLOCK) == true);
     REQUIRE(is_fatal_error(ErrorCode::RESOURCE_BUFFER_FULL) == false);
 }
 
-TEST_CASE("可恢复错误检测", "[error][category]") {
+TEST_CASE("Phase4 可恢复错误检测", "[error][category]") {
     REQUIRE(is_recoverable_error(ErrorCode::RESOURCE_BUFFER_FULL) == true);
     REQUIRE(is_recoverable_error(ErrorCode::COHERENCE_DEADLOCK) == false);
 }
@@ -76,7 +80,7 @@ TEST_CASE("ErrorContextExt clone 方法", "[error][ext]") {
     original.error_message = "Queue full";
     original.source_module = "router";
     
-    tlm::tlm_extension* cloned_ptr = original.clone();
+    auto* cloned_ptr = original.clone();
     REQUIRE(cloned_ptr != nullptr);
     
     auto* cloned = dynamic_cast<ErrorContextExt*>(cloned_ptr);
@@ -88,7 +92,6 @@ TEST_CASE("ErrorContextExt clone 方法", "[error][ext]") {
     cloned->error_message = "modified";
     REQUIRE(original.error_message == "Queue full");
     
-    delete cloned_ptr;
 }
 
 TEST_CASE("ErrorContextExt copy_from 方法", "[error][ext]") {
