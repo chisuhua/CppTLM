@@ -44,7 +44,7 @@ public:
     }
     
     void save_snapshot(json& j) const override {
-        j = json{{"name", name}, {"initialized", initialized_}, {"custom", "data"}};
+        j = json{{"name", name}, {"initialized", initialized_}, {"type", get_module_type()}, {"custom", "data"}};
     }
     
     void load_snapshot(const json& j) override {
@@ -173,7 +173,7 @@ TEST_CASE("错误类别提取", "[error][category]") {
     REQUIRE(get_error_category(ErrorCode::RESOURCE_BUFFER_FULL) == ErrorCategory::RESOURCE);
 }
 
-TEST_CASE("错误码转字符串", "[error][category]") {
+TEST_CASE("Phase2 错误码转字符串", "[error][category]") {
     REQUIRE(error_code_to_string(ErrorCode::SUCCESS) == "SUCCESS");
     REQUIRE(error_code_to_string(ErrorCode::COHERENCE_DEADLOCK) == "COHERENCE_DEADLOCK");
     REQUIRE(error_code_to_string(ErrorCode::TRANSPORT_TIMEOUT) == "TRANSPORT_TIMEOUT");
@@ -186,14 +186,14 @@ TEST_CASE("错误类别转字符串", "[error][category]") {
     REQUIRE(error_category_to_string(ErrorCategory::SECURITY) == "SECURITY");
 }
 
-TEST_CASE("严重错误检测", "[error][category]") {
+TEST_CASE("Phase2 严重错误检测", "[error][category]") {
     REQUIRE(is_fatal_error(ErrorCode::COHERENCE_DEADLOCK) == true);
     REQUIRE(is_fatal_error(ErrorCode::COHERENCE_DATA_INCONSISTENCY) == true);
     REQUIRE(is_fatal_error(ErrorCode::SECURITY_TAMPER_DETECTED) == true);
     REQUIRE(is_fatal_error(ErrorCode::RESOURCE_BUFFER_FULL) == false);
 }
 
-TEST_CASE("可恢复错误检测", "[error][category]") {
+TEST_CASE("Phase2 可恢复错误检测", "[error][category]") {
     REQUIRE(is_recoverable_error(ErrorCode::RESOURCE_BUFFER_FULL) == true);
     REQUIRE(is_recoverable_error(ErrorCode::TRANSPORT_TIMEOUT) == true);
     REQUIRE(is_recoverable_error(ErrorCode::RESOURCE_STARVATION) == true);
