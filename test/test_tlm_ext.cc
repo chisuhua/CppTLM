@@ -1,6 +1,10 @@
 // test_tlm_exts.cpp
 #include "catch_amalgamated.hpp"
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include <tlm>
+#endif
 #include <sstream>
 #include "ext/mem_exts.hh"
 
