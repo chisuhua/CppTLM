@@ -145,7 +145,7 @@ struct ErrorContextExt : public tlm::tlm_extension<ErrorContextExt> {
 /**
  * @brief 从 payload 获取 ErrorContextExt
  */
-inline ErrorContextExt* get_error_context(tlm_generic_payload* p) {
+inline ErrorContextExt* get_error_context(tlm::tlm_generic_payload* p) {
     if (!p) return nullptr;
     ErrorContextExt* ext = nullptr;
     p->get_extension(ext);
@@ -155,7 +155,7 @@ inline ErrorContextExt* get_error_context(tlm_generic_payload* p) {
 /**
  * @brief 设置错误上下文
  */
-inline void set_error_context(tlm_generic_payload* p, const ErrorContextExt& src) {
+inline void set_error_context(tlm::tlm_generic_payload* p, const ErrorContextExt& src) {
     if (!p) return;
     ErrorContextExt* ext = new ErrorContextExt(src);
     p->set_extension(ext);
@@ -165,7 +165,7 @@ inline void set_error_context(tlm_generic_payload* p, const ErrorContextExt& src
  * @brief 创建并设置错误上下文
  */
 inline ErrorContextExt* create_error_context(
-    tlm_generic_payload* p,
+    tlm::tlm_generic_payload* p,
     ErrorCode code,
     const std::string& message,
     const std::string& source

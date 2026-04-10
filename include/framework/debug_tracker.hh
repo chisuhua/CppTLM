@@ -109,13 +109,13 @@ public:
     
     /**
      * @brief 记录错误
-     * @param payload tlm_generic_payload pointer
+     * @param payload tlm::tlm_generic_payload pointer
      * @param code 错误码
      * @param message 错误消息
      * @param module 源模块
      * @return 错误 ID
      */
-    uint64_t record_error(tlm_generic_payload* payload,
+    uint64_t record_error(tlm::tlm_generic_payload* payload,
                          ErrorCode code,
                          const std::string& message,
                          const std::string& module) {
