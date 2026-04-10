@@ -5,7 +5,11 @@
 #include "core/packet.hh"
 #include "core/packet_pool.hh"
 #include "core/event_queue.hh"
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 #include <iostream>
 #include <sstream>
 
