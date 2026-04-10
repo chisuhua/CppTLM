@@ -3,7 +3,11 @@
 
 #include <catch2/catch_all.hpp>
 #include "ext/transaction_context_ext.hh"
+#ifdef USE_SYSTEMC_STUB
+#include "tlm/tlm_stub.hh"
+#else
 #include "tlm.h"
+#endif
 #include <cstring>
 
 /**
@@ -59,7 +63,7 @@ TEST_CASE("TransactionContextExt clone 方法", "[extension][prototype]") {
         original.add_trace("module2", 20, 3, "blocked");
         
         WHEN("调用 clone()") {
-            tlm::tlm_extension* cloned_ptr = original.clone();
+            auto* cloned_ptr = original.clone();
             
             THEN("返回非空指针") {
                 REQUIRE(cloned_ptr != nullptr);
@@ -89,7 +93,6 @@ TEST_CASE("TransactionContextExt clone 方法", "[extension][prototype]") {
             }
             
             // 清理
-            delete cloned_ptr;
         }
     }
 }
@@ -225,7 +228,6 @@ TEST_CASE("便捷函数测试", "[extension][prototype]") {
             REQUIRE(retrieved->transaction_id == 300);
             REQUIRE(retrieved->source_module == "memory");
             
-            delete retrieved;  // 清理
         }
         
         SECTION("create_transaction_context") {
@@ -243,7 +245,6 @@ TEST_CASE("便捷函数测试", "[extension][prototype]") {
             REQUIRE(ext->fragment_id == 0);
             REQUIRE(ext->fragment_total == 1);
             
-            delete ext;  // 清理
         }
         
         SECTION("create_transaction_context - 分片交易") {
@@ -263,7 +264,6 @@ TEST_CASE("便捷函数测试", "[extension][prototype]") {
             REQUIRE(ext->is_fragmented() == true);
             REQUIRE(ext->is_first_fragment() == false);
             
-            delete ext;  // 清理
         }
     }
 }
@@ -295,8 +295,6 @@ TEST_CASE("TLM Extension 机制集成", "[extension][tlm]") {
             }
             
             // 清理
-            delete ext1;
-            delete ext2;
         }
     }
 }
