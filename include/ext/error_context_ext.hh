@@ -19,14 +19,33 @@
 /**
  * @brief 一致性状态枚举
  * 
- * 用于追踪缓存一致性状态转换
+ * 用于追踪缓存一致性状态转换 (MOESI + TRANSIENT)
  */
 enum class CoherenceState : uint8_t {
     INVALID = 0,
     SHARED = 1,
     EXCLUSIVE = 2,
-    MODIFIED = 3
+    MODIFIED = 3,
+    OWNED = 4,
+    TRANSIENT = 0x10
 };
+
+/**
+ * @brief 一致性状态转字符串
+ * @param state 一致性状态
+ * @return 字符串表示
+ */
+inline std::string coherence_state_to_string(CoherenceState state) {
+    switch (state) {
+        case CoherenceState::INVALID: return "INVALID";
+        case CoherenceState::SHARED: return "SHARED";
+        case CoherenceState::EXCLUSIVE: return "EXCLUSIVE";
+        case CoherenceState::MODIFIED: return "MODIFIED";
+        case CoherenceState::OWNED: return "OWNED";
+        case CoherenceState::TRANSIENT: return "TRANSIENT";
+        default: return "UNKNOWN";
+    }
+}
 
 /**
  * @brief 错误上下文扩展

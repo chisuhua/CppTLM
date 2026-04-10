@@ -86,6 +86,7 @@ public:
     template<typename T> bool get_extension(T*& e) const { e = dynamic_cast<T*>(ext); return (e != nullptr); }
     template<typename T> void set_extension(T* e) { delete ext; ext = e; }
     template<typename T> void clear_extension() { delete ext; ext = nullptr; }
+    void clear_extensions() { delete ext; ext = nullptr; }
     bool is_dmi_allowed() const { return false; }
 };
 

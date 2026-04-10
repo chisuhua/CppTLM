@@ -34,10 +34,10 @@ public:
         if (!pkt) return;
         
         std::lock_guard<std::mutex> lock(pool_mutex_);
-        // 清理payload，如果是响应包的话
+        // 清理 Extensions 并重置 payload (保留 payload 对象以复用)
         if (pkt->payload && !pkt->isCredit()) {
-            delete pkt->payload;
-            pkt->payload = nullptr;
+            pkt->payload->clear_extensions();
+            pkt->payload->reset(); // 重置 payload 状态，但不删除对象
         }
         
         // 如果有原始请求，减少引用计数
