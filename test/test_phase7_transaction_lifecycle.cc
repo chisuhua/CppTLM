@@ -352,3 +352,224 @@ TEST_CASE("T9.4: 错误场景端到端流程", "[integration][error][P0]") {
         }
     }
 }
+
+// ========== T7.5: 粗/细粒度切换 ==========
+
+TEST_CASE("T7.5: 粗/细粒度切换", "[transaction][granularity][P1]") {
+    auto& tracker = TransactionTracker::instance();
+    tracker.initialize();
+    
+    SECTION("启用粗粒度追踪") {
+        tracker.enable_coarse_grained(true);
+        
+        tlm_generic_payload payload;
+        uint64_t tid = tracker.create_transaction(&payload, "cpu_0", "READ");
+        
+        THEN("粗粒度追踪记录父交易") {
+            const auto* record = tracker.get_transaction(tid);
+            REQUIRE(record != nullptr);
+        }
+    }
+    
+    SECTION("启用细粒度追踪") {
+        tracker.enable_fine_grained(true);
+        
+        tlm_generic_payload payload;
+        uint64_t parent_tid = tracker.create_transaction(&payload, "parent", "READ");
+        
+        // 创建子交易
+        for (uint8_t i = 0; i < 3; i++) {
+            tlm_generic_payload child_payload;
+            uint64_t child_tid = tracker.create_transaction(&child_payload, "child", "READ");
+            tracker.link_transactions(parent_tid, child_tid);
+        }
+        
+        THEN("细粒度追踪记录所有分片") {
+            const auto* parent_record = tracker.get_transaction(parent_tid);
+            REQUIRE(parent_record != nullptr);
+            
+            auto children = tracker.get_children(parent_tid);
+            REQUIRE(children.size() == 3);
+        }
+    }
+}
+
+// ========== T8.2: 错误跨模块传播 ==========
+
+TEST_CASE("T8.2: 错误跨模块传播", "[error][propagation][P1]") {
+    auto& err_tracker = DebugTracker::instance();
+    err_tracker.reset_for_testing();
+    err_tracker.initialize(true, true, false);
+    
+    tlm_generic_payload payload;
+    
+    SECTION("错误从 Cache 传播到 Crossbar") {
+        // 1. Cache 检测一致性错误
+        uint64_t error_id = err_tracker.record_error(
+            &payload,
+            ErrorCode::COHERENCE_STATE_VIOLATION,
+            "State mismatch in cache",
+            "cache_l1"
+        );
+        
+        THEN("错误被记录到 DebugTracker") {
+            REQUIRE(error_id > 0);
+            const auto* record = err_tracker.get_error(error_id);
+            REQUIRE(record->error_code == ErrorCode::COHERENCE_STATE_VIOLATION);
+            REQUIRE(record->error_category == ErrorCategory::COHERENCE);
+            REQUIRE(record->source_module == "cache_l1");
+        }
+    }
+    
+    SECTION("多个模块的错误记录") {
+        // 记录不同模块的错误
+        uint64_t err1 = err_tracker.record_error(&payload, ErrorCode::RESOURCE_BUFFER_FULL, "Full", "crossbar");
+        uint64_t err2 = err_tracker.record_error(&payload, ErrorCode::TRANSPORT_TIMEOUT, "Timeout", "noc_router");
+        
+        THEN("错误可查询") {
+            REQUIRE(err_tracker.error_count() >= 2);
+            
+            auto transport_errors = err_tracker.get_errors_by_category(ErrorCategory::TRANSPORT);
+            REQUIRE(transport_errors.size() >= 1);
+        }
+    }
+}
+
+// ========== T8.4: 可恢复错误处理 ==========
+
+TEST_CASE("T8.4: 可恢复错误处理", "[error][recoverable][P1]") {
+    tlm_generic_payload payload;
+    
+    SECTION("RESOURCE_BUFFER_FULL 可恢复") {
+        ErrorCode err = ErrorCode::RESOURCE_BUFFER_FULL;
+        auto* ext = create_error_context(&payload, err, "Buffer full", "crossbar");
+        
+        THEN("错误被标记为 recoverable") {
+            REQUIRE(ext->is_recoverable() == true);
+            REQUIRE(is_recoverable_error(ErrorCode::RESOURCE_BUFFER_FULL) == true);
+            REQUIRE(is_fatal_error(ErrorCode::RESOURCE_BUFFER_FULL) == false);
+        }
+    }
+    
+    SECTION("TRANSPORT_TIMEOUT 可恢复") {
+        ErrorCode err = ErrorCode::TRANSPORT_TIMEOUT;
+        create_error_context(&payload, err, "Timeout", "router");
+        
+        THEN("超时错误可恢复") {
+            REQUIRE(is_recoverable_error(ErrorCode::TRANSPORT_TIMEOUT) == true);
+        }
+    }
+    
+    SECTION("RESOURCE_STARVATION 可恢复") {
+        ErrorCode err = ErrorCode::RESOURCE_STARVATION;
+        create_error_context(&payload, err, "Starvation", "cache");
+        
+        THEN("饥饿错误可恢复") {
+            REQUIRE(is_recoverable_error(ErrorCode::RESOURCE_STARVATION) == true);
+        }
+    }
+}
+
+// ========== T8.5: 错误与交易关联 ==========
+
+TEST_CASE("T8.5: 错误与交易关联", "[error][transaction][P1]") {
+    auto& err_tracker = DebugTracker::instance();
+    err_tracker.reset_for_testing();
+    err_tracker.initialize(true, true, false);
+    
+    auto& txn_tracker = TransactionTracker::instance();
+    txn_tracker.initialize();
+    
+    tlm_generic_payload payload;
+    
+    SECTION("错误与交易 ID 关联") {
+        // 1. 创建交易
+        uint64_t tid = txn_tracker.create_transaction(&payload, "cpu_0", "READ");
+        
+        // 2. 在交易上下文中记录错误
+        uint64_t error_id = err_tracker.record_error(
+            &payload,
+            ErrorCode::COHERENCE_DEADLOCK,
+            "Deadlock in transaction",
+            "cache_l1"
+        );
+        
+        THEN("错误与交易可通过 DebugTracker 查询") {
+            REQUIRE(error_id > 0);
+            const auto* err_record = err_tracker.get_error(error_id);
+            REQUIRE(err_record != nullptr);
+            REQUIRE(err_record->error_code == ErrorCode::COHERENCE_DEADLOCK);
+        }
+    }
+}
+
+// ========== T9.2: 多模块级联 ==========
+
+TEST_CASE("T9.2: 多模块级联", "[integration][cascade][P1]") {
+    auto& txn_tracker = TransactionTracker::instance();
+    txn_tracker.initialize();
+    
+    SECTION("CPU → L1 Cache → L2 Cache → Memory") {
+        tlm_generic_payload payload;
+        uint64_t tid = txn_tracker.create_transaction(&payload, "cpu_0", "READ");
+        
+        uint64_t l1_id = tid;
+        txn_tracker.record_hop(l1_id, "l1_cache", 2, "hop");
+        
+        uint64_t l2_id = tid;
+        txn_tracker.record_hop(l2_id, "l2_cache", 5, "hop");
+        
+        txn_tracker.record_hop(tid, "memory", 20, "completed");
+        txn_tracker.complete_transaction(tid);
+        
+        THEN("级联交易追踪") {
+            const auto* record = txn_tracker.get_transaction(tid);
+            REQUIRE(record->hop_log.size() == 3);
+            REQUIRE(record->hop_log[0].first == "l1_cache");
+            REQUIRE(record->hop_log[1].first == "l2_cache");
+            REQUIRE(record->hop_log[2].first == "memory");
+        }
+    }
+}
+
+// ========== T9.3: Cache Miss 子交易流程 ==========
+
+TEST_CASE("T9.3: Cache Miss 子交易流程", "[integration][miss][P1]") {
+    auto& txn_tracker = TransactionTracker::instance();
+    txn_tracker.initialize();
+    
+    SECTION("CPU → L1 Miss → L2 → Memory") {
+        tlm_generic_payload parent_payload;
+        uint64_t parent_tid = txn_tracker.create_transaction(&parent_payload, "cpu_0", "READ");
+        
+        // L1 Miss，创建子交易
+        tlm_generic_payload child_payload1;
+        uint64_t child_tid1 = txn_tracker.create_transaction(&child_payload1, "l1_cache", "READ");
+        txn_tracker.link_transactions(parent_tid, child_tid1);
+        txn_tracker.record_hop(child_tid1, "l1_cache", 3, "miss");
+        
+        // L2 Miss，创建孙子交易
+        tlm_generic_payload child_payload2;
+        uint64_t child_tid2 = txn_tracker.create_transaction(&child_payload2, "l2_cache", "READ");
+        txn_tracker.link_transactions(child_tid1, child_tid2);
+        txn_tracker.record_hop(child_tid2, "l2_cache", 10, "miss");
+        
+        // Memory 响应
+        txn_tracker.record_hop(child_tid2, "memory", 20, "completed");
+        txn_tracker.complete_transaction(child_tid2);
+        txn_tracker.complete_transaction(child_tid1);
+        txn_tracker.complete_transaction(parent_tid);
+        
+        THEN("多层子交易完整追踪") {
+            const auto* parent = txn_tracker.get_transaction(parent_tid);
+            REQUIRE(parent->is_complete == true);
+            
+            const auto* child1 = txn_tracker.get_transaction(child_tid1);
+            REQUIRE(child1->is_complete == true);
+            
+            const auto* child2 = txn_tracker.get_transaction(child_tid2);
+            REQUIRE(child2->is_complete == true);
+        }
+    }
+}
+
