@@ -8,9 +8,8 @@
 #include "core/packet_pool.hh"
 #include "ext/transaction_context_ext.hh"
 #include "framework/transaction_tracker.hh"
-#include <queue>
 #include <map>
-#include <atomic>
+#include "core/tlm_module.hh" // P3.2 Wave 3: Use new TLMModule base class
 
 class CrossbarV2 : public SimObject {
 public:

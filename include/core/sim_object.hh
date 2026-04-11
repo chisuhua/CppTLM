@@ -10,12 +10,46 @@
 #include <vector>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <cstdlib>
+#include <cstdint>
+#include <map>
 
 using json = nlohmann::json;
+
+class Packet; // Forward declaration
 
 struct LayoutInfo {
     double x = -1, y = -1;
     bool valid() const { return x >= 0 && y >= 0; }
+};
+
+// P3.2 Wave 1: Core Transaction Types
+enum class TransactionAction {
+    PASSTHROUGH = 0,  // Crossbar routing
+    TRANSFORM = 1,    // Cache creating sub-transactions
+    TERMINATE = 2,    // Memory ending transaction
+    BLOCK = 3         // Stall for resources
+};
+
+struct TransactionInfo {
+    uint64_t transaction_id = 0;
+    uint64_t parent_id = 0;
+    uint8_t  fragment_id = 0;
+    uint8_t  fragment_total = 1;
+    TransactionAction action = TransactionAction::PASSTHROUGH;
+    
+    bool is_root() const { return parent_id == 0 && fragment_total == 1; }
+    bool is_fragmented() const { return fragment_total > 1; }
+};
+
+struct FragmentBuffer {
+    uint64_t parent_id = 0;
+    uint8_t fragment_total = 0;
+    std::map<uint8_t, Packet*> fragments;
+    uint64_t first_arrival_time = 0;
+    
+    bool is_complete() const { return fragment_total > 0 && fragments.size() == fragment_total; }
+    bool has_fragment(uint8_t id) const { return fragments.count(id) > 0; }
 };
 
 /**
