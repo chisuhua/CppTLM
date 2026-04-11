@@ -183,12 +183,13 @@ public:
         TLMModule::do_reset(config);
     }
 
-private:
-    std::queue<Packet*> request_queue;
+    // TLMModule provides fragment_buffers_, but CacheV2 has its own working queue
+    std::queue<Packet*> request_queue; 
     std::map<uint64_t, uint64_t> cache;
     size_t capacity;
-    uint64_t hits, misses, child_transactions;
-    // next_child_id_ removed in favor of TLMModule's createSubTransaction
+    uint64_t hits = 0;
+    uint64_t misses = 0;
+    uint64_t child_transactions = 0;
 };
 
 #endif
