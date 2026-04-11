@@ -14,7 +14,9 @@ enum class GenMode {
     TRACE
 };
 
-struct TraceEntry {
+// traffic_gen.hh 内部使用的 Trace 记录（与 ext/ 中的 TraceEntry 区分）
+
+struct TraceRecord {
     uint64_t addr;
     bool is_write;
 };
@@ -27,7 +29,7 @@ private:
     int num_requests;
     int completed;
 
-    std::vector<TraceEntry> trace;
+    std::vector<TraceRecord> trace;
     size_t trace_pos;
 
     std::mt19937 rng;
@@ -38,11 +40,14 @@ public:
         : SimObject(n, eq), mode(GenMode::SEQUENTIAL),
           start_addr(0x1000), end_addr(0x2000), num_requests(20),
           completed(0), cur_addr(start_addr),
-          rng(std::random_device{}()),
+          rng(42),  // 固定种子用于可重复测试
           addr_dist(start_addr, end_addr) {
         // 示例 trace
         trace = {
-            {0x1000, false}, {0x1004, true}, {0x1008, false}, {0x100c, true}
+            TraceRecord{0x1000, false},
+            TraceRecord{0x1004, true},
+            TraceRecord{0x1008, false},
+            TraceRecord{0x100c, true}
         };
     }
 
