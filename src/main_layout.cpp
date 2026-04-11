@@ -1,26 +1,8 @@
+// src/main_layout.cpp（历史遗留 demo，等待 v2.1 架构升级后重写）
+// 功能描述：预留入口，当前为空实现
+// 作者 CppTLM Team / 日期 2026-04-12
+#include <iostream>
 int main() {
-    EventQueue eq;
-    ModuleFactory::registerType<CPUSim>("CPUSim");
-    ModuleFactory::registerType<CacheSim>("CacheSim");
-
-    json config = R"({
-        "include": "base.json",
-        "modules": [
-            { "name": "cpu0", "type": "CPUSim", "layout": { "x": 100, "y": 200 } }
-        ],
-        "groups": { "cpus": ["cpu0"] },
-        "connections": [
-            { "src": "group:cpus", "dst": "l1", "latency": 2 }
-        ]
-    })"_json;
-
-    ModuleFactory factory(&eq);
-    factory.instantiateAll(config);
-    factory.startAllTicks();
-
-    TopologyDumper::dumpToDot(factory, "topo.dot");
-    system("dot -Tpng -o chip_layout.png chip_layout.dot");
-    system("xdg-open chip_layout.png");
-
-    eq.run(1000);
+    std::cout << "[INFO] main_layout is a placeholder.\n";
+    return 0;
 }
