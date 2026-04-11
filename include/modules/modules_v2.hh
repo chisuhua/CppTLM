@@ -10,6 +10,7 @@
 #include "framework/transaction_tracker.hh"
 #include <queue>
 #include <map>
+#include <atomic>
 
 class CrossbarV2 : public SimObject {
 public:
@@ -116,17 +117,29 @@ public:
                 Packet* resp = PacketPool::get().acquire();
                 resp->type = PKT_RESP;
                 resp->set_transaction_id(pkt->get_transaction_id());
+                // Fix 1 (Lifecycle): Release parent packet after response creation
                 PacketPool::get().release(pkt);
             } else {
                 misses++;
                 pkt->add_trace(name, getCurrentCycle(), 10, "miss");
+                
+                // Create child request
                 Packet* child_req = PacketPool::get().acquire();
                 child_req->cmd = CMD_READ;
                 child_req->type = PKT_REQ;
+                
+                // Fix 2 (ID Collision) & Lifecycle: Create child linking BEFORE releasing parent
                 uint64_t child_tid = createSubTransaction(pkt, child_req);
                 auto& tracker = TransactionTracker::instance();
                 tracker.link_transactions(pkt->get_transaction_id(), child_tid);
                 child_transactions++;
+
+                // Fix 1 (Lifecycle): Safely release parent packet NOW that linking is complete
+                PacketPool::get().release(pkt);
+                
+                // Stub Logic: In a real implementation, we would send child_req to downstream.
+                // To prevent memory leaks in this test stub, we release the child packet here.
+                PacketPool::get().release(child_req);
             }
         }
     }
@@ -140,9 +153,19 @@ public:
     
     uint64_t createSubTransaction(Packet* parent, Packet* child) {
         uint64_t parent_tid = parent->get_transaction_id();
-        uint64_t child_tid = next_child_id_++;
+        
+        // Fix 2 (ID Collision): Use global ID or tracker logic instead of local counter
+        static std::atomic<uint64_t> global_tid{2000};
+        uint64_t child_tid = global_tid.fetch_add(1);
+
         if (child->payload) {
-            auto* ext = create_transaction_context(child->payload, child_tid, parent_tid, 0, 1);
+            auto* ext = get_transaction_context(child->payload);
+            if (!ext) {
+                ext = create_transaction_context(child->payload, child_tid, parent_tid, 0, 1);
+            } else {
+                ext->transaction_id = child_tid;
+                ext->parent_id = parent_tid;
+            }
             ext->source_module = name;
             ext->type = "READ";
         }
@@ -150,14 +173,15 @@ public:
     }
     
     void do_reset(const ResetConfig&) override {
+        // Fix 3 (Reset Order): Clear cache BEFORE releasing packets
+        cache.clear();
+        
         while (!request_queue.empty()) {
             Packet* pkt = request_queue.front();
             request_queue.pop();
             PacketPool::get().release(pkt);
         }
-        cache.clear();
         hits = 0; misses = 0; child_transactions = 0;
-        next_child_id_ = 1000;
     }
 
 private:
