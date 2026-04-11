@@ -3,27 +3,36 @@
 #ifndef MODULES_V2_HH
 #define MODULES_V2_HH
 
+#include <queue>
+#include <map>
+#include <atomic>
+
 #include "core/sim_object.hh"
 #include "core/packet.hh"
 #include "core/packet_pool.hh"
 #include "ext/transaction_context_ext.hh"
 #include "framework/transaction_tracker.hh"
-#include <map>
 #include "core/tlm_module.hh" // P3.2 Wave 3: Use new TLMModule base class
 
-class CrossbarV2 : public SimObject {
+// =========================================================================
+// CrossbarV2
+// =========================================================================
+class CrossbarV2 : public TLMModule {
 public:
     CrossbarV2(const std::string& name, EventQueue* eq)
-        : SimObject(name, eq), packets_received(0), packets_forwarded(0) {}
+        : TLMModule(name, eq), packets_received(0), packets_forwarded(0) {}
     
     void tick() override {
         while (!input_queue.empty()) {
             Packet* pkt = input_queue.front();
             input_queue.pop();
-            pkt->add_trace(name, getCurrentCycle(), 1, "hopped");
-            auto& tracker = TransactionTracker::instance();
-            tracker.record_hop(pkt->get_transaction_id(), name, 1, "hopped");
-            packets_forwarded++;
+            
+            // P3.2 Wave 3: Use lifecycle hook
+            TransactionInfo info = onTransactionHop(pkt);
+            if (info.action == TransactionAction::PASSTHROUGH) {
+                pkt->add_trace(name, getCurrentCycle(), 1, "hopped");
+                packets_forwarded++;
+            }
         }
     }
     
@@ -35,7 +44,7 @@ public:
     
     std::string get_module_type() const override { return "CrossbarV2"; }
     
-    void do_reset(const ResetConfig&) override {
+    void do_reset(const ResetConfig& config) override {
         while (!input_queue.empty()) {
             Packet* pkt = input_queue.front();
             input_queue.pop();
@@ -43,6 +52,7 @@ public:
         }
         packets_received = 0;
         packets_forwarded = 0;
+        TLMModule::do_reset(config); // Important: Call base reset for fragment buffers
     }
 
 private:
@@ -51,26 +61,34 @@ private:
     uint64_t packets_forwarded;
 };
 
-class MemoryV2 : public SimObject {
+// =========================================================================
+// MemoryV2
+// =========================================================================
+class MemoryV2 : public TLMModule {
 public:
     MemoryV2(const std::string& name, EventQueue* eq)
-        : SimObject(name, eq), reads(0), writes(0), errors(0) {}
+        : TLMModule(name, eq), reads(0), writes(0), errors(0) {}
     
     void tick() override {
         while (!request_queue.empty()) {
             Packet* req = request_queue.front();
             request_queue.pop();
+            
             uint64_t addr = req->payload ? req->payload->get_address() : 0;
             if (addr >= memory_size) {
                 req->set_error_code(ErrorCode::TRANSPORT_INVALID_ADDRESS);
                 errors++;
             } else if (req->cmd == CMD_READ) {
                 reads++;
+                // P3.2 Wave 3: Mark as Terminating
+                onTransactionEnd(req);
+                
                 Packet* resp = PacketPool::get().acquire();
                 resp->type = PKT_RESP;
                 resp->set_transaction_id(req->get_transaction_id());
                 auto& tracker = TransactionTracker::instance();
                 tracker.complete_transaction(req->get_transaction_id());
+                PacketPool::get().release(resp);
             }
             PacketPool::get().release(req);
         }
@@ -83,13 +101,14 @@ public:
     
     std::string get_module_type() const override { return "MemoryV2"; }
     
-    void do_reset(const ResetConfig&) override {
+    void do_reset(const ResetConfig& config) override {
         while (!request_queue.empty()) {
             Packet* pkt = request_queue.front();
             request_queue.pop();
             PacketPool::get().release(pkt);
         }
         reads = 0; writes = 0; errors = 0;
+        TLMModule::do_reset(config);
     }
 
 private:
@@ -98,80 +117,59 @@ private:
     uint64_t reads, writes, errors;
 };
 
-class CacheV2 : public SimObject {
+// =========================================================================
+// CacheV2
+// =========================================================================
+class CacheV2 : public TLMModule {
 public:
     CacheV2(const std::string& name, EventQueue* eq, size_t cap = 1024)
-        : SimObject(name, eq), capacity(cap), hits(0), misses(0), child_transactions(0) {}
+        : TLMModule(name, eq), capacity(cap), hits(0), misses(0), child_transactions(0) {}
     
     void tick() override {
         while (!request_queue.empty()) {
             Packet* pkt = request_queue.front();
             request_queue.pop();
+            
             uint64_t addr = pkt->payload ? pkt->payload->get_address() : 0;
             uint64_t tag = addr >> 12;
             auto it = cache.find(tag);
             if (it != cache.end()) {
                 hits++;
                 pkt->add_trace(name, getCurrentCycle(), 1, "hit");
+                
+                TransactionInfo info = onTransactionHop(pkt); // Passthrough
+                (void)info;
+
                 Packet* resp = PacketPool::get().acquire();
                 resp->type = PKT_RESP;
                 resp->set_transaction_id(pkt->get_transaction_id());
-                // Fix 1 (Lifecycle): Release parent packet after response creation
                 PacketPool::get().release(pkt);
             } else {
                 misses++;
                 pkt->add_trace(name, getCurrentCycle(), 10, "miss");
                 
-                // Create child request
-                Packet* child_req = PacketPool::get().acquire();
-                child_req->cmd = CMD_READ;
-                child_req->type = PKT_REQ;
-                
-                // Fix 2 (ID Collision) & Lifecycle: Create child linking BEFORE releasing parent
-                uint64_t child_tid = createSubTransaction(pkt, child_req);
-                auto& tracker = TransactionTracker::instance();
-                tracker.link_transactions(pkt->get_transaction_id(), child_tid);
+                // P3.2 Wave 3: Transform Action (Create Child)
+                uint64_t child_tid = createSubTransaction(pkt, nullptr); // Use base class implementation
                 child_transactions++;
-
-                // Fix 1 (Lifecycle): Safely release parent packet NOW that linking is complete
-                PacketPool::get().release(pkt);
-                
-                // Stub Logic: In a real implementation, we would send child_req to downstream.
-                // To prevent memory leaks in this test stub, we release the child packet here.
-                PacketPool::get().release(child_req);
+                // Note: In a real TLM module, we would forward the child packet downstream here.
+                // Since this is a stub, we just track the creation.
             }
         }
     }
     
     bool handleUpstreamRequest(Packet* pkt, int, const std::string&) override {
         request_queue.push(pkt);
+        // P3.2 Wave 3: Start Transaction
+        onTransactionStart(pkt); 
         return true;
     }
     
     std::string get_module_type() const override { return "CacheV2"; }
     
-    uint64_t createSubTransaction(Packet* parent, Packet* child) {
-        uint64_t parent_tid = parent->get_transaction_id();
-        
-        // Fix 2 (ID Collision): Use global ID or tracker logic instead of local counter
-        static std::atomic<uint64_t> global_tid{2000};
-        uint64_t child_tid = global_tid.fetch_add(1);
-
-        if (child->payload) {
-            auto* ext = get_transaction_context(child->payload);
-            if (!ext) {
-                ext = create_transaction_context(child->payload, child_tid, parent_tid, 0, 1);
-            } else {
-                ext->transaction_id = child_tid;
-                ext->parent_id = parent_tid;
-            }
-            ext->source_module = name;
-            ext->type = "READ";
-        }
-        return child_tid;
-    }
+    // createSubTransaction is inherited from TLMModule, implementing the fix for ID collision and lifecycle.
+    // We can remove the local override if the base class one is sufficient (which it is now).
     
-    void do_reset(const ResetConfig&) override {
+    void do_reset(const ResetConfig& config) override {
         // Fix 3 (Reset Order): Clear cache BEFORE releasing packets
         cache.clear();
         
@@ -181,13 +179,16 @@ public:
             PacketPool::get().release(pkt);
         }
         hits = 0; misses = 0; child_transactions = 0;
+        // Call base to clear fragment_buffers_
+        TLMModule::do_reset(config);
     }
 
 private:
     std::queue<Packet*> request_queue;
     std::map<uint64_t, uint64_t> cache;
     size_t capacity;
-    uint64_t hits, misses, child_transactions, next_child_id_;
+    uint64_t hits, misses, child_transactions;
+    // next_child_id_ removed in favor of TLMModule's createSubTransaction
 };
 
 #endif
