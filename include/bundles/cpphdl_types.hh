@@ -32,9 +32,9 @@ struct ch_bool {
     operator bool() const { return value_; }
 };
 
-/** @brief 轻量级 Bundle 基类（无 AST 依赖，仅用于 memcpy 序列化） */
+/** @brief 轻量级 Bundle 基类（空基类，标准布局，memcpy 安全） */
 struct bundle_base {
-    virtual ~bundle_base() = default;
+    // 无虚函数，无 vtable —— 确保标准布局以支持 memcpy 序列化
 };
 
 } // namespace bundles
