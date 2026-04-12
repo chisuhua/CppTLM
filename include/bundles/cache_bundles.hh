@@ -6,18 +6,21 @@
 #include "core/bundle/bundle_meta.h"
 #include "core/uint.h"
 
-using namespace ch::core;
-
 namespace cpptlm {
 namespace bundles {
 
-struct CacheReqBundle : public bundle_base<CacheReqBundle> {
+// 显式别名避免 using namespace 污染全局
+using ch_uint8 = ch::core::ch_uint<8>;
+using ch_uint64 = ch::core::ch_uint<64>;
+using ch_bool = ch::core::ch_bool;
+
+struct CacheReqBundle : public ch::core::bundle_base<CacheReqBundle> {
   using Self = CacheReqBundle;
-  ch_uint<64> transaction_id;
-  ch_uint<64> address;
-  ch_uint<8> size;
-  ch_bool is_write;
-  ch_uint<64> data;
+  ch_uint64 transaction_id;
+  ch_uint64 address;
+  ch_uint8  size;
+  ch_bool   is_write;
+  ch_uint64 data;
 
   CacheReqBundle() = default;
   explicit CacheReqBundle(const std::string &prefix) {
@@ -35,12 +38,12 @@ struct CacheReqBundle : public bundle_base<CacheReqBundle> {
   }
 };
 
-struct CacheRespBundle : public bundle_base<CacheRespBundle> {
+struct CacheRespBundle : public ch::core::bundle_base<CacheRespBundle> {
   using Self = CacheRespBundle;
-  ch_uint<64> transaction_id;
-  ch_uint<64> data;
-  ch_bool is_hit;
-  ch_uint<8> error_code;
+  ch_uint64 transaction_id;
+  ch_uint64 data;
+  ch_bool   is_hit;
+  ch_uint8  error_code;
 
   CacheRespBundle() = default;
   explicit CacheRespBundle(const std::string &prefix) {
