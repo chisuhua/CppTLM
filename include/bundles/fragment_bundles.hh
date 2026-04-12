@@ -7,19 +7,22 @@
 #include "core/uint.h"
 #include <cstddef>
 #include <cstring>
-
-using namespace ch::core;
+#include <string>
 
 namespace cpptlm {
 namespace bundles {
 
-struct FragmentBundle : public bundle_base<FragmentBundle> {
+using ch_uint8  = ch::core::ch_uint<8>;
+using ch_uint64 = ch::core::ch_uint<64>;
+using ch_bool   = ch::core::ch_bool;
+
+struct FragmentBundle : public ch::core::bundle_base<FragmentBundle> {
   using Self = FragmentBundle;
-  ch_uint<64> transaction_id;
-  ch_uint<8> fragment_id;
-  ch_uint<8> fragment_total;
-  ch_uint<64> data;
-  ch_bool is_last;
+  ch_uint64 transaction_id;
+  ch_uint8  fragment_id;
+  ch_uint8  fragment_total;
+  ch_uint64 data;
+  ch_bool   is_last;
 
   FragmentBundle() = default;
   explicit FragmentBundle(const std::string &prefix) {

@@ -6,20 +6,23 @@
 #include "core/bundle/bundle_meta.h"
 #include "core/uint.h"
 
-using namespace ch::core;
-
 namespace cpptlm {
 namespace bundles {
 
-struct NoCReqBundle : public bundle_base<NoCReqBundle> {
+using ch_uint8  = ch::core::ch_uint<8>;
+using ch_uint32 = ch::core::ch_uint<32>;
+using ch_uint64 = ch::core::ch_uint<64>;
+using ch_bool   = ch::core::ch_bool;
+
+struct NoCReqBundle : public ch::core::bundle_base<NoCReqBundle> {
   using Self = NoCReqBundle;
-  ch_uint<64> transaction_id;
-  ch_uint<32> src_id;
-  ch_uint<32> dst_id;
-  ch_uint<64> address;
-  ch_uint<64> data;
-  ch_uint<8> size;
-  ch_bool is_write;
+  ch_uint64 transaction_id;
+  ch_uint32 src_id;
+  ch_uint32 dst_id;
+  ch_uint64 address;
+  ch_uint64 data;
+  ch_uint8  size;
+  ch_bool   is_write;
 
   NoCReqBundle() = default;
   explicit NoCReqBundle(const std::string &prefix) {
@@ -37,12 +40,12 @@ struct NoCReqBundle : public bundle_base<NoCReqBundle> {
   }
 };
 
-struct NoCRespBundle : public bundle_base<NoCRespBundle> {
+struct NoCRespBundle : public ch::core::bundle_base<NoCRespBundle> {
   using Self = NoCRespBundle;
-  ch_uint<64> transaction_id;
-  ch_uint<64> data;
-  ch_bool is_ok;
-  ch_uint<8> error_code;
+  ch_uint64 transaction_id;
+  ch_uint64 data;
+  ch_bool   is_ok;
+  ch_uint8  error_code;
 
   NoCRespBundle() = default;
   explicit NoCRespBundle(const std::string &prefix) {
