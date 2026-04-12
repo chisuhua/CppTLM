@@ -1,0 +1,19 @@
+{
+  "modules": [
+    {
+      "name": "cache",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "mem",
+      "type": "MemoryTLM"
+    }
+  ],
+  "connections": [
+    {
+      "src": "cache",
+      "dst": "mem",
+      "latency": 10
+    }
+  ]
+}

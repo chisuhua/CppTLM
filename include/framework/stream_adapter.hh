@@ -241,20 +241,11 @@ public:
     }
 
     void tick() override {
-        // 方向1: 框架 → 模块（请求入口）
-        // 由 SlavePort 回调触发，通过 process_request_input 处理
-        if (req_out_port_ && req_out_port_->valid()) {
-            Packet* pkt = req_out_port_->peek();
-            if (pkt) {
-                process_request_input(pkt);
-            }
-        }
-
-        // 方向2: 模块 → 框架（响应出口）
-        if (resp_out_port_ || req_out_port_) {
+        // 输出方向：模块有响应数据 → 序列化 → 通过 MasterPort 发送
+        if (module_->resp_out().valid()) {
             MasterPort* out_port = resp_out_port_ ? resp_out_port_ : req_out_port_;
-            if (module_->resp_out().valid() && out_port->ready()) {
-                module_->resp_out().send(out_port);
+            if (out_port) {
+                module_->resp_out().send(out_port, PKT_RESP);
             }
         }
     }

@@ -5,7 +5,7 @@
 #include "module_factory.hh"
 #include "utils/json_includer.hh"  // 包含 loadConfig
 #include "utils/topology_dumper.hh"  // 包含 loadConfig
-#include "modules.hh"
+#include "chstream_register.hh"
 
 extern "C" int sc_main(int argc, char* argv[]) {
     // 空函数，只是为了满足链接器需求
@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
     EventQueue eq;
 
-    REGISTER_OBJECT
+    REGISTER_ALL
     REGISTER_MODULE
     ModuleFactory::listRegisteredTypes();
 

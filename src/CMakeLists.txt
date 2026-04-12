@@ -24,7 +24,6 @@ target_include_directories(cpptlm_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
     ${CMAKE_CURRENT_SOURCE_DIR}/../include/core
     ${CMAKE_CURRENT_SOURCE_DIR}/../external/json
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external/CppHDL/include
 )
 
 # SystemC 头文件路径 & 编译定义（可选，仅头文件无需链接库）

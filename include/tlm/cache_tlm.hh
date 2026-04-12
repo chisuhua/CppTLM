@@ -8,7 +8,8 @@
 #define TLM_CACHE_TLM_HH
 
 #include "core/chstream_module.hh"
-#include "bundles/cache_bundles.hh"
+#include "bundles/cache_bundles_tlm.hh"
+#include "framework/stream_adapter.hh"
 #include <map>
 #include <cstdint>
 
@@ -21,7 +22,7 @@
  *       └── CacheTLM
  * 
  * 设计原则：
- * - 模块内部使用 InputStreamAdapter/OutputStreamAdapter（ch_stream 语义）
+ * - 模块内部使用 cpptlm::InputStreamAdapter/OutputStreamAdapter（ch_stream 语义）
  * - 框架层通过 StreamAdapter 自动转换为 MasterPort/SlavePort
  * - 业务逻辑不感知外部 Port 的存在
  * 
@@ -30,8 +31,8 @@
 class CacheTLM : public ChStreamModuleBase {
 private:
     // 输入/输出适配器（提供 ch_stream valid/ready 语义）
-    bundles::InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
-    bundles::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
+    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
+    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
 
     // 业务状态
     std::map<uint64_t, uint64_t> cache_lines_;
@@ -84,10 +85,10 @@ public:
     }
 
     // 访问器（供 StreamAdapter 使用）
-    bundles::InputStreamAdapter<bundles::CacheReqBundle>& req_in() {
+    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& req_in() {
         return req_in_;
     }
-    bundles::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() {
+    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() {
         return resp_out_;
     }
 };
