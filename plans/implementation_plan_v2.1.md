@@ -1,7 +1,8 @@
 # CppTLM v2.1 分层融合架构 — 实施计划
 
-> **版本**: 1.0  
+> **版本**: 1.1  
 > **日期**: 2026-04-12  
+> **最后更新**: 2026-04-12 Phase 0 完成 + Phase 1 详细化  
 > **前置文档**: `docs/architecture/01-hybrid-architecture-v2.1.md`  
 > **目标**: 将 v2.1 分层融合架构从文档转化为可编译、可运行的代码
 
@@ -9,11 +10,11 @@
 
 ## 一、实施概述
 
-**核心思路**: 模块内部 ch_stream 握手 ⇄ StreamAdapter 桥梁 ⇄ 外层 PortPair 通信
+**核心思路**: 模块内部 `InputStreamAdapter/OutputStreamAdapter`（ch_stream 语义）⇄ StreamAdapter 桥梁 ⇄ 外层 PortPair 通信
 
 **实施策略**: 增量式推进，每 Phase 可独立编译验证，不破坏现有功能。
 
-**总工作量估算**: ~40-50 人时，分 6 个 Phase 完成
+**总工作量估算**: ~30-40 人时（Phase 0 已完成，剩余 5 Phase），分 5 个 Phase 完成
 
 **质量承诺**: 零债务原则 — 每个 Phase 完成即编译通过、测试覆盖。
 
@@ -113,79 +114,232 @@ class ChStreamModuleBase : public SimObject {
 **验收标准**:
 
 ```
-□ include/bundles/ 下 4 个文件编译通过
-□ include/framework/stream_adapter.hh 编译通过
-□ include/core/chstream_module.hh 编译通过
-□ CMakeLists.txt 更新后 cmake --build 无错误
-□ 不改变现有模块的编译行为
+✅ include/bundles/ 下 4 个文件编译通过
+✅ include/framework/stream_adapter.hh 编译通过
+✅ include/core/chstream_module.hh 编译通过
+✅ CMakeLists.txt 更新后 cmake --build 无错误
+✅ 不改变现有模块的编译行为
+✅ 10 个 build target 全部通过 (cpptlm_core, cpptlm_sim, cpptlm_test 等)
+✅ CQ-001 修复：bundle 头文件无 using namespace 污染
+
+**完成日期**: 2026-04-12
 ```
 
 ---
 
-### Phase 1: CacheTLM 单模块试点
+### Phase 1: CacheTLM 单模块试点（🔴 下一步）
 
-**目标**: 创建第一个 ch_stream 模块，验证 StreamAdapter 桥梁
+**目标**: 实现第一个 ChStream 模块（CacheTLM），验证 StreamAdapter 桥梁完整生命周期
 
-**预估工时**: ~6-8 小时
+**预估工时**: ~4-6 小时
 
-**前置条件**: Phase 0 完成
+**前置条件**: Phase 0 完成（✅ 已就绪）
 
-**具体任务**:
+**实施策略**: 先模块 → 后配置 → 后测试。每步可独立编译。
+
+---
 
 #### 1.1 创建 CacheTLM 模块
 
-| 文件 | 行数 | 说明 |
-|------|------|------|
-| `include/tlm/cache_tlm.hh` | ~150 | CacheTLM 新模块（纯 ch_stream 业务逻辑） |
-| `include/tlm/memory_tlm.hh` | ~100 | MemoryTLM 下游模块（简化端） |
+**文件**: `include/tlm/cache_tlm.hh`
+**行数**: ~120
+**核心设计**:
+- 继承 `ChStreamModuleBase`
+- 使用 `InputStreamAdapter<bundles::CacheReqBundle>` 接收请求
+- 使用 `OutputStreamAdapter<bundles::CacheRespBundle>` 发送响应
+- ModuleFactory 通过 `set_stream_adapter()` 注入适配器
 
-**CacheTLM 设计**:
 ```cpp
+// include/tlm/cache_tlm.hh (详细设计)
+#include "core/chstream_module.hh"
+#include "framework/stream_adapter.hh"
+#include "bundles/cache_bundles.hh"
+#include <map>
+
 class CacheTLM : public ChStreamModuleBase {
 private:
-    ch_stream<CacheReqBundle>  req_in;    // ← StreamAdapter 注入数据
-    ch_stream<CacheRespBundle> resp_out;  // → StreamAdapter 消费数据
+    // ch_stream 语义端口
+    bundles::InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
+    bundles::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
+    
     // 业务状态
     std::map<uint64_t, uint64_t> cache_lines_;
     StreamAdapterBase* adapter_ = nullptr;
+
 public:
-    void tick() override;  // ✓ valid/ready 握手业务逻辑
-    // ...
+    CacheTLM(const std::string& name, EventQueue* eq)
+        : ChStreamModuleBase(name, eq) {}
+    
+    void set_stream_adapter(StreamAdapterBase* adapter) override { adapter_ = adapter; }
+
+    void tick() override {
+        if (req_in_.valid() && req_in_.ready()) {
+            auto& req = req_in_.data();
+            // 1. 解析命令
+            uint64_t addr = req.address.read();
+            bool is_write = req.is_write.read();
+            // 2. Cache 查找
+            bool hit = cache_lines_.count(addr) > 0;
+            if (is_write) cache_lines_[addr] = req.data.read();
+            // 3. 构建响应
+            bundles::CacheRespBundle resp;
+            resp.transaction_id = req.transaction_id;
+            resp.data = cache_lines_[addr];
+            resp.is_hit = hit ? ch::core::ch_bool(true) : ch::core::ch_bool(false);
+            resp_out_.write(resp);
+            req_in_.consume(); // 握手完成
+        }
+    }
+
+    void do_reset(const ResetConfig& config) override {
+        cache_lines_.clear();
+        req_in_.reset();
+        resp_out_.reset();
+    }
 };
 ```
 
-#### 1.2 创建 JSON 配置示例
+**关键约束**:
+- 模块代码不知道 Packet/MasterPort/SlavePort 的存在
+- 所有 Bundle 操作通过 `read()` 获取 `uint64_t`
+- 响应通过 `write()` 写入，由框架侧 StreamAdapter 处理序列化
 
-| 文件 | 说明 |
-|------|------|
-| `configs/cache_chstream_test.json` | CacheTLM + MemoryTLM 连接配置 |
+---
 
+#### 1.2 创建 MemoryTLM（简化下游模块）
+
+**文件**: `include/tlm/memory_tlm.hh`
+**行数**: ~80
+**核心设计**:
+- 简化版 Memory，接收请求后直接返回模拟数据
+- 用于充当 CacheTLM 的下游（miss path）
+- 不实现真实延迟模型（Phase 4 完善）
+
+```cpp
+class MemoryTLM : public ChStreamModuleBase {
+private:
+    bundles::InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
+    bundles::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
+
+public:
+    MemoryTLM(const std::string& name, EventQueue* eq)
+        : ChStreamModuleBase(name, eq) {}
+    void set_stream_adapter(StreamAdapterBase* a) override {}
+    
+    void tick() override {
+        if (req_in_.valid() && req_in_.ready()) {
+            auto& req = req_in_.data();
+            bundles::CacheRespBundle resp;
+            resp.transaction_id = req.transaction_id;
+            resp.data = 0xDEADBEEF; // 模拟数据
+            resp.is_hit = ch::core::ch_bool(false);
+            resp_out_.write(resp);
+            req_in_.consume();
+        }
+    }
+    void do_reset(const ResetConfig& config) override {}
+};
+```
+
+---
+
+#### 1.3 实现 CacheTLMStreamAdapter 模板
+
+**文件**: `include/tlm/cache_tlm_adapter.hh`
+**行数**: ~100
+**核心设计**:
+- 实现 `StreamAdapterBase` 抽象接口
+- 连接框架侧 MasterPort/SlavePort 到模块侧 InputStreamAdapter/OutputStreamAdapter
+
+```cpp
+template<typename ReqB, typename RespB>
+class StreamAdapterImpl { ... };  // 在 stream_adapter.hh 扩展
+```
+
+**职责**:
+1. `tick()`: 执行双向数据搬运
+2. `bind_ports()`: 框架侧端口绑定（ModuleFactory 调用）
+3. `process_request_input(Packet*)`: Packet → Bundle 反序列化
+4. `process_response_output()`: Bundle → Packet 序列化
+
+---
+
+#### 1.4 修改 `include/tlm/tlm_stub.hh`
+
+**目的**: 为 ChStream 模块类型注册提供占位实现，确保编译通过
+
+---
+
+#### 1.5 扩展 `include/modules.hh` 注册 ChStream 模块
+
+**变更内容**: 添加 `CacheTLM` 和 `MemoryTLM` 的 `REGISTER_OBJECT` 调用
+
+---
+
+#### 1.6 扩展 `module_factory.cc` 支持 ChStream 注入
+
+**文件**: `src/core/module_factory.cc`
+**变更逻辑**:
+```cpp
+// Step 6 (新增): 为 ChStream 模块注入 StreamAdapter
+for (auto& [name, obj] : object_instances) {
+    if (auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj)) {
+        // 查找模块对应的 JSON 配置获取 bundle 类型
+        auto adapter = create_adapter_for(ch_mod, config);
+        ch_mod->set_stream_adapter(adapter);
+        stream_adapters_.push_back(std::move(adapter));
+    }
+}
+
+// Step 7 (新增): 为每个 StreamAdapter 创建虚拟端口
+// ...
+```
+
+---
+
+#### 1.7 创建 JSON 测试配置
+
+**文件**: `configs/cache_chstream_test.json`
 ```json
 {
   "modules": [
-    { "name": "cache", "type": "CacheTLM", "mode": "chstream",
-      "req_bundle": "CacheReqBundle", "resp_bundle": "CacheRespBundle" }
+    { "name": "cache", "type": "CacheTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
   ],
-  "connections": []
+  "connections": [
+    { "src": "cpu_gen", "dst": "cache", "latency": 2 },
+    { "src": "cache", "dst": "mem", "latency": 10 }
+  ]
 }
 ```
 
-#### 1.3 创建单元测试
+---
 
-| 文件 | 行数 | 说明 |
-|------|------|------|
-| `test/test_chstream_basic.cc` | ~150 | StreamAdapter + ch_stream 握手测试 |
-| `test/test_cache_tlm.cc` | ~200 | CacheTLM 模块逻辑测试 |
+#### 1.8 创建单元测试
+
+| 文件 | 预估行数 | 覆盖范围 |
+|------|---------|---------|
+| `test/test_cache_tlm_unit.cc` | ~150 | CacheTLM 命中/未命中逻辑 |
+| `test/test_stream_adapter.cc` | ~150 | StreamAdapter 序列化/反序列化往返 |
+| `test/test_cache_integration.cc` | ~200 | JSON 配置加载 + Cache↔Memory 端到端 |
+
+**单元测试重点**:
+1. Bundle 序列化/反序列化往返正确性
+2. `InputStreamAdapter` valid/ready 信号流
+3. `OutputStreamAdapter` send() 后自动清除 valid
+4. Cache 命中/未命中响应正确性
+5. 复位后状态清空
 
 **验收标准**:
 
 ```
-□ CacheTLM 模块编译通过
+□ CacheTLM 模块编译通过（0 编译错误，0 新增 warning）
+□ MemoryTLM 模块编译通过
 □ CacheTLM JSON 配置能被 ModuleFactory 解析
-□ StreamAdapter tick 逻辑正确（手动验证）
-□ 单元测试 test_chstream_basic 通过
-□ 单元测试 test_cache_tlm 通过
+□ StreamAdapter tick 逻辑正确
+□ 3 个单元测试文件全部通过
 □ LSP diagnostics 无 ERROR
+□ 原有 109 个测试用例不回归
 ```
 
 ---
@@ -589,19 +743,17 @@ class MultiPortStreamAdapter : public StreamAdapterBase {
 ## 三、Phase 实施顺序与依赖
 
 ```
-Phase 0: 基础设施 (Bundle + Adapter + ChStreamModule)
+✅ Phase 0: 基础设施 (Bundle + Adapter + ChStreamModule)
   │
-  ├─→ Phase 1: CacheTLM 单模块试点
+  ├─→ Phase 1: CacheTLM 单模块试点  ← 下一步
   │      │
   │      └─→ Phase 2: ModuleFactory 扩展 (JSON 驱动) ──→ Phase 3: Legacy 迁移
   │                                                 │
   │                                                 └─→ Phase 4: CrossbarTLM + 完整系统
   │                                                      │
-  │                                                      └─→ Phase 5: NICTLM + Mapper
-  │                                                           │
-  │                                                           └─→ Phase 6: 测试 + 文档 + RTL 准备
+  │                                                      └─→ Phase 5: NICTLM + Mapper + 全面测试
   │
-  └─→ (Phase 3 可独立于 1/2 进行，但建议在 2 完成后执行)
+  └─→ (Phase 3 可独立于 1/2 并行进行，但建议在 2 完成后执行)
 ```
 
 **独立并行机会**:
