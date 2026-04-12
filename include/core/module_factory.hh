@@ -10,6 +10,7 @@
 #include "utils/regex_matcher.hh"
 #include "utils/module_group.hh"
 #include "utils/dynamic_loader.hh"
+#include "core/chstream_port.hh"
 
 #include <unordered_map>
 #include <nlohmann/json.hpp>
@@ -32,6 +33,8 @@ private:
     EventQueue* event_queue;
     std::unordered_map<std::string, SimObject*> instances;
     std::vector<cpptlm::StreamAdapterBase*> stream_adapters_;
+    std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> ch_initiator_ports_;
+    std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> ch_target_ports_;
 
     // 分离两个注册表
     static std::unordered_map<std::string, CreateSimObjectFunc>& getObjectRegistry() {

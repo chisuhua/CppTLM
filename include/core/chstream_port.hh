@@ -15,6 +15,8 @@
 
 namespace cpptlm { class StreamAdapterBase; }
 
+#include "framework/stream_adapter.hh"
+
 namespace cpptlm {
 
 class ChStreamInitiatorPort : public MasterPort {
@@ -38,7 +40,7 @@ public:
         return eq_->getCurrentCycle();
     }
 
-    SimObject* getOwner() const override {
+    SimObject* getOwner() override {
         return nullptr;
     }
 
@@ -80,7 +82,7 @@ public:
         return eq_->getCurrentCycle();
     }
 
-    SimObject* getOwner() const override {
+    SimObject* getOwner() override {
         return nullptr;
     }
 };
