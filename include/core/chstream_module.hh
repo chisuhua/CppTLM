@@ -8,6 +8,7 @@
 #include "sim_object.hh"
 
 class StreamAdapterBase;
+namespace cpptlm { class StreamAdapterBase; }
 
 /**
  * @brief ChStream 模块基类
@@ -32,7 +33,7 @@ public:
      * 由 ModuleFactory 在 instantiateAll 阶段调用
      * @param adapter 类型擦除的 StreamAdapter 指针
      */
-    virtual void set_stream_adapter(StreamAdapterBase* adapter) = 0;
+    virtual void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) = 0;
 };
 
 #endif // CORE_CHSTREAM_MODULE_HH

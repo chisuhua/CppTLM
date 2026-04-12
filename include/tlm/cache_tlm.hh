@@ -36,6 +36,7 @@ private:
 
     // 业务状态
     std::map<uint64_t, uint64_t> cache_lines_;
+    cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
 public:
     CacheTLM(const std::string& name, EventQueue* eq)
@@ -46,8 +47,8 @@ public:
     std::string get_module_type() const override { return "CacheTLM"; }
 
     // ChStreamModuleBase 接口
-    void set_stream_adapter(StreamAdapterBase* /*adapter*/) override {
-        // StreamAdapter 引用，当前由框架管理生命周期
+    void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
+        adapter_ = adapter;
     }
 
     // 模块业务逻辑
@@ -76,6 +77,9 @@ public:
             resp_out_.write(resp);
             req_in_.consume(); // 握手完成，清除 valid
         }
+
+        // 委托适配器 tick（输出方向数据搬运）
+        if (adapter_) adapter_->tick();
     }
 
     void do_reset(const ResetConfig& /*config*/) override {
@@ -91,6 +95,7 @@ public:
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() {
         return resp_out_;
     }
+    cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
 };
 
 #endif // TLM_CACHE_TLM_HH

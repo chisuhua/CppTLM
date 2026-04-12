@@ -16,6 +16,7 @@ class MemoryTLM : public ChStreamModuleBase {
 private:
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
+    cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
 public:
     MemoryTLM(const std::string& name, EventQueue* eq)
@@ -25,7 +26,9 @@ public:
 
     std::string get_module_type() const override { return "MemoryTLM"; }
 
-    void set_stream_adapter(StreamAdapterBase* /*adapter*/) override {}
+    void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
+        adapter_ = adapter;
+    }
 
     void tick() override {
         if (req_in_.valid() && req_in_.ready()) {
@@ -38,6 +41,7 @@ public:
             resp_out_.write(resp);
             req_in_.consume();
         }
+        if (adapter_) adapter_->tick();
     }
 
     void do_reset(const ResetConfig& /*config*/) override {
@@ -47,6 +51,7 @@ public:
 
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& req_in() { return req_in_; }
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() { return resp_out_; }
+    cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
 };
 
 #endif // TLM_MEMORY_TLM_HH
