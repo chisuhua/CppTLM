@@ -203,6 +203,80 @@ public:
     }
 };
 
+/**
+ * @brief StreamAdapter 模板实现（绑定模块侧和框架侧）
+ * 
+ * 模板参数:
+ *   ModuleT     - 模块类型（如 CacheTLM），必须提供 req_in() 和 resp_out() 访问器
+ *   ReqBundleT  - 请求 Bundle 类型（如 bundles::CacheReqBundle）
+ *   RespBundleT - 响应 Bundle 类型（如 bundles::CacheRespBundle）
+ * 
+ * 职责：
+ * - tick() 周期中执行双向数据搬运
+ * - 将框架侧 Port 数据桥接到模块侧 InputStreamAdapter/OutputStreamAdapter
+ */
+template<typename ModuleT, typename ReqBundleT, typename RespBundleT>
+class StreamAdapter : public StreamAdapterBase {
+private:
+    ModuleT* module_;                  // 指向所属模块
+    MasterPort* req_out_port_;         // 框架侧：请求输出
+    SlavePort*  resp_in_port_;         // 框架侧：响应输入
+    MasterPort* resp_out_port_ = nullptr; // 可选：响应输出
+    SlavePort*  req_in_port_ = nullptr;   // 可选：请求输入
+
+public:
+    explicit StreamAdapter(ModuleT* mod)
+        : module_(mod), req_out_port_(nullptr), resp_in_port_(nullptr) {}
+
+    void bind_ports(
+        MasterPort* req_out,
+        SlavePort*  resp_in,
+        MasterPort* resp_out = nullptr,
+        SlavePort*  req_in = nullptr
+    ) override {
+        req_out_port_ = req_out;
+        resp_in_port_ = resp_in;
+        resp_out_port_ = resp_out;
+        req_in_port_ = req_in;
+    }
+
+    void tick() override {
+        // 方向1: 框架 → 模块（请求入口）
+        // 由 SlavePort 回调触发，通过 process_request_input 处理
+        if (req_out_port_ && req_out_port_->valid()) {
+            Packet* pkt = req_out_port_->peek();
+            if (pkt) {
+                process_request_input(pkt);
+            }
+        }
+
+        // 方向2: 模块 → 框架（响应出口）
+        if (resp_out_port_ || req_out_port_) {
+            MasterPort* out_port = resp_out_port_ ? resp_out_port_ : req_out_port_;
+            if (module_->resp_out().valid() && out_port->ready()) {
+                module_->resp_out().send(out_port);
+            }
+        }
+    }
+
+    void process_request_input(Packet* pkt) override {
+        if (!pkt || !pkt->payload) return;
+
+        // Packet → Bundle 反序列化
+        auto& req_in = module_->req_in();
+        if (!req_in.valid()) {
+            req_in.process(pkt);
+        }
+    }
+
+    Packet* process_response_output() override {
+        // 响应输出由 tick() 中的 send() 直接处理
+        return nullptr;
+    }
+
+    ModuleT* module() const { return module_; }
+};
+
 } // namespace cpptlm
 
 #endif // FRAMEWORK_STREAM_ADAPTER_HH
