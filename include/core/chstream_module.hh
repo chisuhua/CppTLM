@@ -29,11 +29,23 @@ public:
     virtual ~ChStreamModuleBase() = default;
 
     /**
-     * @brief 注入 StreamAdapter 实例
+     * @brief 注入 StreamAdapter 实例（单端口模块用）
      * 由 ModuleFactory 在 instantiateAll 阶段调用
      * @param adapter 类型擦除的 StreamAdapter 指针
      */
     virtual void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) = 0;
+
+    /**
+     * @brief 注入 StreamAdapter 实例（多端口模块用）
+     * 由 ModuleFactory 在 instantiateAll 阶段调用
+     * @param adapters StreamAdapter 指针数组（CrossbarTLM 等使用）
+     */
+    virtual void set_stream_adapter(cpptlm::StreamAdapterBase* adapters[]) {
+        // 默认实现：仅处理第 0 个端口（向后兼容单端口模块）
+        if (adapters) {
+            set_stream_adapter(adapters[0]);
+        }
+    }
 };
 
 #endif // CORE_CHSTREAM_MODULE_HH
