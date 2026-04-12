@@ -5,7 +5,7 @@
 #include "core/packet_pool.hh"
 #include "framework/transaction_tracker.hh"
 #include "framework/debug_tracker.hh"
-#include "modules/modules_v2.hh" // 导入模块以测试其性能
+#include "modules/legacy/modules_v2.hh" // 导入模块以测试其性能
 #include <vector>
 
 #ifdef USE_SYSTEMC_STUB

@@ -4,7 +4,7 @@
 
 #include "../sim_object.hh"
 #include "../packet.hh"
-#include "../modules/stream_producer.hh"
+#include "stream_producer.hh"
 
 enum class TrafficMode {
     SEQUENTIAL,

@@ -1,11 +1,11 @@
-#include "modules/cpu_sim.hh"
-#include "modules/cache_sim.hh"
-#include "modules/memory_sim.hh"
-#include "modules/crossbar.hh"
-#include "modules/router.hh"
-#include "modules/arbiter.hh"
-#include "modules/traffic_gen.hh"
-#include "modules/cpu_cluster.hh"
+#include "modules/legacy/cpu_sim.hh"
+#include "modules/legacy/cache_sim.hh"
+#include "modules/legacy/memory_sim.hh"
+#include "modules/legacy/crossbar.hh"
+#include "modules/legacy/router.hh"
+#include "modules/legacy/arbiter.hh"
+#include "modules/legacy/traffic_gen.hh"
+#include "modules/legacy/cpu_cluster.hh"
 
 #define REGISTER_OBJECT \
     ModuleFactory::registerObject<CPUSim>("CPUSim"); \

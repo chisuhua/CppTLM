@@ -13,7 +13,7 @@
 #include "ext/error_context_ext.hh"
 #include "framework/transaction_tracker.hh"
 #include "framework/debug_tracker.hh"
-#include "modules/modules_v2.hh"
+#include "modules/legacy/modules_v2.hh"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;

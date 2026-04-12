@@ -7,7 +7,7 @@
 #include "core/packet_pool.hh"
 #include "ext/transaction_context_ext.hh"
 #include "framework/transaction_tracker.hh"
-#include "modules/modules_v2.hh"
+#include "modules/legacy/modules_v2.hh"
 #include "ext/error_context_ext.hh"
 #include "framework/debug_tracker.hh"
 #ifdef USE_SYSTEMC_STUB
