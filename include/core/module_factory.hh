@@ -32,7 +32,7 @@ class ModuleFactory {
 private:
     EventQueue* event_queue;
     std::unordered_map<std::string, SimObject*> instances;
-    std::vector<cpptlm::StreamAdapterBase*> stream_adapters_;
+    std::vector<std::unique_ptr<cpptlm::StreamAdapterBase>> stream_adapters_;
     std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> ch_initiator_ports_;
     std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> ch_target_ports_;
 

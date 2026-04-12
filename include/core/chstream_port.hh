@@ -6,16 +6,11 @@
 #ifndef CHSTREAM_PORT_HH
 #define CHSTREAM_PORT_HH
 
-#pragma once
-#include "simple_port.hh"
+#include "framework/stream_adapter.hh"
 #include "packet.hh"
 #include "packet_pool.hh"
 #include "event_queue.hh"
 #include <queue>
-
-namespace cpptlm { class StreamAdapterBase; }
-
-#include "framework/stream_adapter.hh"
 
 namespace cpptlm {
 
