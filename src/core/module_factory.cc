@@ -296,6 +296,8 @@ void ModuleFactory::instantiateAll(const json& config) {
         adapter->bind_ports(req_out, resp_in, resp_out, req_in);
         ch_mod->set_stream_adapter(adapter);
 
+        stream_adapters_.emplace_back(adapter);
+
         ch_adapters[name] = adapter;
         ch_req_out[name]  = req_out;
         ch_resp_in[name]  = resp_in;
