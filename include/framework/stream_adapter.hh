@@ -111,17 +111,9 @@ public:
      */
     bool ready() const { return stream_ready_; }
     void set_ready(bool r) { stream_ready_ = r; }
-    
-    /**
-     * @brief 模块消费数据后调用，清除 valid
-     */
-    void consume() {
-        stream_valid_ = false;
-    }
-    
-    /**
-     * @brief 重置状态
-     */
+    void set_valid(bool v) { stream_valid_ = v; }
+    void consume() { stream_valid_ = false; }
+
     void reset() {
         stream_valid_ = false;
         stream_ready_ = true;
