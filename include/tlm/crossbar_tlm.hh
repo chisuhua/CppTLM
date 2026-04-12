@@ -84,7 +84,7 @@ public:
     }
 
     cpptlm::StreamAdapterBase* get_adapter(unsigned idx) const { return adapter[idx]; }
-    constexpr unsigned num_ports() const { return NUM_PORTS; }
+    unsigned num_ports() const override { return NUM_PORTS; }
 };
 
 #endif // TLM_CROSSBAR_TLM_HH
