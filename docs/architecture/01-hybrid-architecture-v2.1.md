@@ -1,10 +1,9 @@
 # CppTLM 混合仿真架构 v2.1 — 分层融合方案
 
-> **版本**: 2.1  
-> **日期**: 2026-04-12  
-> **状态**: 📋 待确认  
-> **替代**: v2.0 (单范式方案) / v1.0 (过度设计)  
-> **变更说明**: 引入分层融合架构——框架层保留 Port 通信，模块内部迁移到 ch_stream 握手
+> **文档状态**: ✅ 已审查更新（2026-04-12 Phase 0 审查后）
+> **v2.1 版本**: 2.1.1
+> **更新日期**: 2026-04-12
+> **变更摘要**: Phase 0 代码审查后，对齐文档与实际实现差异
 
 ---
 
@@ -219,84 +218,63 @@ struct CacheRespBundle : bundle_base<CacheRespBundle> {
 
 ### 4.2 TLM 新模块（纯 ch_stream 内部 + StreamAdapter 暴露）
 
-**原则**: 业务模块内部只看到 `ch_stream<T>`，框架层通过 StreamAdapter 自动暴露为 Port。
+**原则**: 业务模块内部使用 `InputStreamAdapter/OutputStreamAdapter`（ch_stream 语义等价），框架层通过 StreamAdapter 自动暴露为 Port。
+
+> **注**: 实际实现使用 `InputStreamAdapter<BundleT>` 和 `OutputStreamAdapter<BundleT>` 提供 `valid()/ready()/data()/consume()/write()` 等 ch_stream 语义方法，而非直接使用 CppHDL 的 `ch_stream<T>`。参见 `include/framework/stream_adapter.hh`。
 
 ```cpp
-// include/tlm/cache_tlm.hh
+// include/tlm/cache_tlm.hh (Phase 1 即将实现)
 #include "bundles/cache_bundles.hh"
-#include "core/sim_object.hh"
+#include "core/chstream_module.hh"
+#include "framework/stream_adapter.hh"
 #include <map>
 
 /**
  * @brief Cache TLM 模块（新式 ch_stream 内部模型）
  * 
- * 模块内部使用 ch_stream<T> 握手协议（valid/ready 反压）
+ * 模块内部使用 InputStreamAdapter/OutputStreamAdapter 提供 ch_stream 语义
  * 框架层通过 StreamAdapter 自动转换 Port ↔ ch_stream
  * 
  * JSON 注册名: "CacheTLM"
  */
-class CacheTLM : public SimObject {
+class CacheTLM : public ChStreamModuleBase {
 private:
-    // ch_stream 端口（模块内部使用）
-    ch_stream<CacheReqBundle>  req_in;
-    ch_stream<CacheRespBundle> resp_out;
-    
-    // 业务状态
-    std::map<uint64_t, uint64_t> cache_lines;
-    
-    // 框架注入：StreamAdapter（由 ModuleFactory 自动创建）
-    StreamAdapterBase* _adapter = nullptr;
+    InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
+    OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
+    std::map<uint64_t, uint64_t> cache_lines_;
+    StreamAdapterBase* adapter_ = nullptr;
 
 public:
-    CacheTLM(const std::string& name, EventQueue* eq) 
-        : SimObject(name, eq) {
-        req_in.init("req_in");
-        resp_out.init("resp_out");
-    }
+    CacheTLM(const std::string& name, EventQueue* eq)
+        : ChStreamModuleBase(name, eq) {}
 
-    std::string get_module_type() const override { return "CacheTLM"; }
+    void set_stream_adapter(StreamAdapterBase* adapter) override { adapter_ = adapter; }
 
-    // ========== ch_stream 访问接口（供 StreamAdapter 使用） ==========
-    ch_stream<CacheReqBundle>& get_req_in()  { return req_in; }
-    ch_stream<CacheRespBundle>& get_resp_out() { return resp_out; }
-    
-    // ========== StreamAdapter 注入（框架调用） ==========
-    void set_adapter(StreamAdapterBase* adapter) { _adapter = adapter; }
-
-    // ========== 业务逻辑 ==========
     void tick() override {
-        // 纯 ch_stream 握手：valid && ready 时消费
-        if (req_in.valid() && req_in.ready()) {
-            auto& bundle = req_in.payload;
-            uint64_t addr = bundle.address.read();
-            bool is_write = bundle.is_write.read();
-            
-            bool hit = cache_lines.count(addr) > 0;
-            
-            if (!hit) {
-                cache_lines[addr] = 0; // miss → 分配
-            }
-            
-            // 设置响应
-            resp_out.payload.transaction_id = bundle.transaction_id;
-            resp_out.payload.is_hit = hit ? ch_bool(true) : ch_bool(false);
-            resp_out.payload.data = cache_lines[addr];
-            resp_out.set_valid(true);
-            
-            req_in.set_ready(true);
-        }
-        
-        // 没有新请求时，ready 为 true 表示可以接收
-        if (!req_in.valid()) {
-            req_in.set_ready(true);
+        if (req_in_.valid() && req_in_.ready()) {
+            auto& req = req_in_.data();
+            uint64_t addr = req.address.read();
+            bool is_write = req.is_write.read();
+            bool hit = cache_lines_.count(addr) > 0;
+            if (is_write) cache_lines_[addr] = req.data.read();
+
+            bundles::CacheRespBundle resp;
+            resp.transaction_id = req.transaction_id;
+            resp.data = cache_lines_[addr];
+            resp.is_hit = hit ? ch_bool(true) : ch_bool(false);
+            resp.error_code = ch_uint<8>(0);
+            resp_out_.write(resp);
+            req_in_.consume();
         }
     }
-    
+
     void do_reset(const ResetConfig& config) override {
-        cache_lines.clear();
-        req_in.set_ready(false);
-        resp_out.set_valid(false);
+        cache_lines_.clear();
+        req_in_.reset();
+        resp_out_.reset();
     }
+};
+```
 };
 ```
 
@@ -495,40 +473,48 @@ void ModuleFactory::instantiateAll(const json& config) {
 }
 ```
 
-**ChStreamModule 基类**:
+**ChStreamModule 基类**（✅ 已实现 — 2026-04-12 Phase 0，与文档伪代码有差异）：
 
 ```cpp
-// include/core/chstream_module.hh
-#ifndef CHSTREAM_MODULE_HH
-#define CHSTREAM_MODULE_HH
-
-#include "sim_object.hh"
-#include "framework/stream_adapter.hh"
-
-/**
- * @brief ChStream 模块基类
- * 所有使用 ch_stream 内部通信的模块从此类派生
- */
+// include/core/chstream_module.hh (实际实现)
 class ChStreamModuleBase : public SimObject {
 public:
-    ChStreamModuleBase(const std::string& name, EventQueue* eq)
-        : SimObject(name, eq) {}
+    ChStreamModuleBase(const std::string& n, EventQueue* eq) 
+        : SimObject(n, eq) {}
     virtual ~ChStreamModuleBase() = default;
     
-    virtual void set_adapter(StreamAdapterBase* adapter) = 0;
-    virtual std::string get_module_type() const = 0;
+    virtual void set_stream_adapter(StreamAdapterBase* adapter) = 0;  // ← 文档写 set_adapter，实际为 set_stream_adapter
 };
-
-// 注册宏（与 REGISTER_OBJECT 类似）
-#define REGISTER_CHSTREAM_MODULE(T, Name) \
-    ModuleFactory::registerObject<T>(Name);
-
-#endif // CHSTREAM_MODULE_HH
 ```
 
-### 4.5 Transaction/Debug 架构（完整对齐）
+> **差异说明**:
+> | 文档伪代码 | 实际实现 | 原因 |
+> |---|---|---|
+> | `set_adapter()` | `set_stream_adapter()` | 命名更明确，避免歧义 |
+> | `virtual std::string get_module_type() const = 0` | 未在此处声明（从 SimObject 继承 `get_module_type()`） | SimObject 已提供虚接口 |
+> | `REGISTER_CHSTREAM_MODULE` 宏 | 未定义（复用 `REGISTER_OBJECT`） | ChStream 模块注册为 SimObject，通过 `dynamic_cast` 识别 |
+> | `#include "framework/stream_adapter.hh"` | 仅前向声明 `class StreamAdapterBase` | 避免循环依赖 |
 
-TransactionTracker + DebugTracker 已在代码中完整实现，与架构设计 100% 对齐：
+#### 4.3.1 Phase 0 实施状态（2026-04-12）
+
+实际实现见 `include/framework/stream_adapter.hh`，提供 `InputStreamAdapter<BundleT>` 和 `OutputStreamAdapter<BundleT>` 两个模板类，模拟 `ch_stream` 的 `valid()/ready()` 语义。
+
+#### Phase 0 实施状态表
+
+| 组件 | 文件 | 状态 | 说明 |
+|:---|:---|:---|:---|
+| `ChStreamModuleBase` | `include/core/chstream_module.hh` | ✅ 已实现 | 继承 SimObject + `set_stream_adapter()` 纯虚接口 |
+| `StreamAdapterBase` | `include/framework/stream_adapter.hh` | ✅ 已实现 | 类型擦除基类 + `bind_ports`/`process_request_input`/`process_response_output` |
+| `InputStreamAdapter<T>` | `include/framework/stream_adapter.hh` | ✅ 已实现 | 提供 `valid()/ready()/data()/consume()/reset()` 方法 |
+| `OutputStreamAdapter<T>` | `include/framework/stream_adapter.hh` | ✅ 已实现 | 提供 `write()/valid()/clear_valid()/send()/reset()` 方法 |
+| `CacheReqBundle` | `include/bundles/cache_bundles.hh` | ✅ 已实现 | CppHDL `bundle_base` 继承 |
+| `CacheRespBundle` | `include/bundles/cache_bundles.hh` | ✅ 已实现 | CppHDL `bundle_base` 继承 |
+| `NoCReqBundle/NoCRespBundle` | `include/bundles/noc_bundles.hh` | ✅ 已实现 | CppHDL `bundle_base` 继承 |
+| `FragmentBundle` | `include/bundles/fragment_bundles.hh` | ✅ 已实现 | 含 `BundleSerializer` 工具类 |
+| `serialize_bundle`/`deserialize_bundle` | `include/bundles/bundle_serialization.hh` | ✅ 已实现 | 仿真内 `memcpy` 序列化 |
+| `ModuleFactory::instantiateAll` (chstream 扩展) | `src/core/module_factory.cc` | ❌ 未实现 | Phase 1 计划扩展 |
+
+### 4.5 Transaction/Debug 架构（完整对齐）
 
 | 组件 | 文档要求 | 实际代码 | 对齐状态 |
 |:---|:---|:---|:---|
@@ -633,8 +619,28 @@ Phase 4: Mapper + RTL (未来)
 
 ---
 
-**版本**: v2.1  
+**版本**: v2.1.1  
 **创建日期**: 2026-04-12  
-**批准状态**: 📋 待确认  
-**创建者**: Sisyphus (AI Architect)  
-**下一步**: 实施 Phase 0 — 基础设施 (Bundles + StreamAdapter + ChStreamModule)
+**最后更新**: 2026-04-12 Phase 0 审查后  
+**批准状态**: ✅ Phase 0 通过，基础组件齐全  
+**创建者**: Sisyphus (AI Architect)
+
+## 8. Phase 0 审查后更新
+
+### 8.1 文档与实际代码的差异
+
+| 文档伪代码 | 实际实现 | 差异原因 |
+|:---|:---|:---|
+| `set_adapter(StreamAdapterBase*)` | `set_stream_adapter(StreamAdapterBase*)` | 命名更明确 |
+| `REGISTER_CHSTREAM_MODULE` 宏 | 复用 `REGISTER_OBJECT` | ChStream 模式注册为 SimObject 即可 |
+| 模板例使用 `ch_stream<T>` | `InputStreamAdapter<T>` / `OutputStreamAdapter<T>` | CppHDL `ch_stream<T>` 依赖完整运行时，Adapter 提供更轻的仿真内等价物 |
+| 序列化使用 `ch::core::serialize()` CppHDL API | `std::memcpy` | CppHDL 的 `serialize()` 返回 `ch_uint<WIDTH>`，不适合直接写入 Packet payload |
+
+### 8.2 Phase 0 审查发现问题
+
+| 编号 | 文件 | 问题 | 严重级别 | 处理建议 |
+|:---|:---|:---|:---|:---|
+| CQ-001 | `bundles/cache_bundles.hh`<br>`noc_bundles.hh`<br>`fragment_bundles.hh` | 头文件中使用 `using namespace ch::core;`，污染全局命名空间 | 中 | Phase 1 前修复，改为显式 `ch::core::` 前缀 |
+| CQ-002 | `bundle_serialization.hh`<br>`fragment_bundles.hh` | `std::memcpy` 序列化 CppHDL Bundle 类型（含 vtable/AST 节点），UB 风险 | 高 | 仅在仿真进程内使用可接受；跨进程需改用字段级序列化 |
+| CQ-003 | `stream_adapter.hh` | `StreamAdapterBase` 有抽象方法 `bind_ports`、`tick` 等，但无模板子类实现 | 中 | Phase 1 创建 `CacheTLM` 时补齐具体 StreamAdapter 实现 |
+| CQ-004 | `module_factory.cc` | 未扩展 `instantiateAll` 支持 `mode: "chstream"` 自动注入 | 中 | Phase 1 核心任务 |
