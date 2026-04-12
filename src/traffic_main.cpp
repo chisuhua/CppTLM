@@ -5,8 +5,8 @@
 // 日期 2026-04-12
 #include <iostream>
 #include "event_queue.hh"
-#include "modules/traffic_gen.hh"
-#include "modules/memory_sim.hh"
+#include "modules/legacy/traffic_gen.hh"
+#include "modules/legacy/memory_sim.hh"
 
 int main() {
     EventQueue eq;

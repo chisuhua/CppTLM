@@ -2,7 +2,7 @@
 // P3.2 Wave 4: TLM Module Integration Tests
 
 #include <catch2/catch_all.hpp>
-#include "modules/modules_v2.hh"
+#include "modules/legacy/modules_v2.hh"
 #include "core/packet_pool.hh"
 #include "framework/transaction_tracker.hh"
 
