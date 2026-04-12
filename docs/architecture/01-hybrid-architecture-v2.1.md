@@ -619,10 +619,10 @@ Phase 4: Mapper + RTL (未来)
 
 ---
 
-**版本**: v2.1.1  
+**版本**: v2.1.2  
 **创建日期**: 2026-04-12  
-**最后更新**: 2026-04-12 Phase 0 审查后  
-**批准状态**: ✅ Phase 0 通过，基础组件齐全  
+**最后更新**: 2026-04-12 Phase 1 实施后  
+**批准状态**: ✅ Phase 0 + Phase 1 架构就绪（8.3 新增关键调整记录）  
 **创建者**: Sisyphus (AI Architect)
 
 ## 8. Phase 0 审查后更新
@@ -644,3 +644,100 @@ Phase 4: Mapper + RTL (未来)
 | CQ-002 | `bundle_serialization.hh`<br>`fragment_bundles.hh` | `std::memcpy` 序列化 CppHDL Bundle 类型（含 vtable/AST 节点），UB 风险 | 高 | 仅在仿真进程内使用可接受；跨进程需改用字段级序列化 |
 | CQ-003 | `stream_adapter.hh` | `StreamAdapterBase` 有抽象方法 `bind_ports`、`tick` 等，但无模板子类实现 | 中 | Phase 1 创建 `CacheTLM` 时补齐具体 StreamAdapter 实现 |
 | CQ-004 | `module_factory.cc` | 未扩展 `instantiateAll` 支持 `mode: "chstream"` 自动注入 | 中 | Phase 1 核心任务 |
+
+---
+
+### 8.3 Phase 1 关键架构调整（2026-04-12 更新）
+
+#### 8.3.1 轻量级 Bundle 类型系统
+
+**背景**: CppHDL 内部 include 路径不一致（`ast_nodes.h`/`lnodeimpl.h`/`logger.h` 相对路径断裂），直接 `#include "ch.hpp"` 触发编译阻塞链。
+
+**解决方案**: 双轨 Bundle 类型系统
+
+| 类型系统 | 依赖 | 用途 | 文件 |
+|---------|------|------|------|
+| **轻量级** | 仅 `<cstdint>` | TLM 仿真（当前 Phase 1-5） | `bundles/cpphdl_types.hh`<br>`bundles/cache_bundles_tlm.hh` |
+| **完整版** | CppHDL `ch.hpp` | RTL 阶段（Phase 6 起） | `bundles/cache_bundles.hh`<br>`bundles/noc_bundles.hh`<br>`bundles/fragment_bundles.hh` |
+
+**轻量级类型设计** (`bundles/cpphdl_types.hh`):
+
+```cpp
+// ch_uint — 字段读写包装
+template<unsigned W = 64>
+struct ch_uint {
+    uint64_t value_;
+    uint64_t read() const { return value_; }
+    void write(uint64_t v) { value_ = v; }
+};
+
+// ch_bool — 布尔包装
+struct ch_bool {
+    bool value_;
+    bool read() const { return value_; }
+    void write(uint64_t v) { value_ = (v != 0); }
+};
+
+// bundle_base — 无虚函数的空基类（标准布局，memcpy 安全）
+struct bundle_base {};
+```
+
+**设计原则**:
+- **TLM 阶段**: 使用轻量级 Bundle（POD 字段，无 AST 节点，无 vtable） → `memcpy` 序列化安全
+- **RTL 阶段**: 切换到 CppHDL Bundle（含 AST 节点，支持 Verilog 生成）
+- **兼容性**: 两套 Bundle 共享相同字段名称和语义，后续可通过 trait/template 统一
+
+#### 8.3.2 模块注册分离
+
+**目的**: 避免每次编译都拉入 ChStream 模块依赖（包括轻量级 Bundle + StreamAdapter）
+
+| 文件 | 职责 | 包含 |
+|------|------|------|
+| `modules.hh` | Legacy 模块注册 + `REGISTER_CHSTREAM` 宏定义 | 所有 `modules/` 头文件 |
+| `chstream_register.hh` | ChStream 模块注册入口 | `modules.hh` + `tlm/cache_tlm.hh` + `tlm/memory_tlm.hh` |
+| `main.cpp` | 主入口 | `chstream_register.hh` + `REGISTER_ALL` 宏 |
+
+#### 8.3.3 StreamAdapter 模板与命名空间
+
+`InputStreamAdapter` / `OutputStreamAdapter` / `StreamAdapter` 使用 `cpptlm` 命名空间，与 Bundle 的 `bundles` 命名空间分离：
+
+```cpp
+namespace cpptlm {
+    class StreamAdapterBase;
+    template<typename BundleT> class InputStreamAdapter;
+    template<typename BundleT> class OutputStreamAdapter;
+    template<typename M, typename Rq, typename Rp> class StreamAdapter;
+}
+
+namespace bundles {
+    struct bundle_base;  // 轻量级
+    struct CacheReqBundle;
+    struct CacheRespBundle;
+}
+```
+
+#### 8.3.4 ModuleFactory ChStream 注入逻辑
+
+`src/core/module_factory.cc` 新增 **Step 7**：在连接建立后，通过 `dynamic_cast<ChStreamModuleBase*>` 识别 ChStream 模块并注入 StreamAdapter。
+
+```cpp
+// Step 7: 为 ChStream 模块注入 StreamAdapter
+for (auto& [name, obj] : object_instances) {
+    if (auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj)) {
+        ch_mod->set_stream_adapter(nullptr); // Phase 1 占位
+    }
+}
+```
+
+| 组件 | 文件 | 状态 |
+|:---|:---|:---|
+| `InputStreamAdapter<BundleT>` | `framework/stream_adapter.hh` | ✅ 完整实现 |
+| `OutputStreamAdapter<BundleT>` | `framework/stream_adapter.hh` | ✅ 完整实现 |
+| `StreamAdapter<ModuleT,ReqB,RespB>` | `framework/stream_adapter.hh` | ✅ 模板实现（tick + bind_ports） |
+| `stream_adapters_` 成员 | `module_factory.hh` | ✅ `vector<StreamAdapterBase*>` |
+| Step 7 注入逻辑 | `module_factory.cc` | ✅ dynamic_cast 检测 + set_stream_adapter() |
+
+---
+
+| # | Hash | 提交信息 |
+|---|------|---------|

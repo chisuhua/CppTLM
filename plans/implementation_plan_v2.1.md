@@ -1,8 +1,8 @@
 # CppTLM v2.1 分层融合架构 — 实施计划
 
-> **版本**: 1.1  
+> **版本**: 1.2  
 > **日期**: 2026-04-12  
-> **最后更新**: 2026-04-12 Phase 0 完成 + Phase 1 详细化  
+> **最后更新**: 2026-04-12 Phase 1 (6/8) 完成 + 架构调整记录  
 > **前置文档**: `docs/architecture/01-hybrid-architecture-v2.1.md`  
 > **目标**: 将 v2.1 分层融合架构从文档转化为可编译、可运行的代码
 
@@ -14,7 +14,7 @@
 
 **实施策略**: 增量式推进，每 Phase 可独立编译验证，不破坏现有功能。
 
-**总工作量估算**: ~30-40 人时（Phase 0 已完成，剩余 5 Phase），分 5 个 Phase 完成
+**总工作量估算**: ~30-40 人时（Phase 0 已完成，Phase 1 完成 6/8），分 5 个 Phase 完成
 
 **质量承诺**: 零债务原则 — 每个 Phase 完成即编译通过、测试覆盖。
 
@@ -36,22 +36,30 @@
 
 | 文件 | 行数 | 说明 |
 |------|------|------|
-| `include/bundles/cache_bundles.hh` | ~40 | CacheReqBundle, CacheRespBundle |
-| `include/bundles/noc_bundles.hh` | ~40 | NoCReqBundle, NoCRespBundle |
-| `include/bundles/fragment_bundles.hh` | ~30 | FragmentBundle (分片传输) |
-| `include/bundles/bundle_serialization.hh` | ~80 | Bundle ↔ Packet payload 序列化/反序列化 |
+| `bundles/cache_bundles.hh` | ~60 | CacheReq/RespBundle（CppHDL ch.hpp，用于 RTL 阶段） |
+| `bundles/cache_bundles_tlm.hh` | ~35 | CacheReq/RespBundle（轻量级，TLM 仿真用） |
+| `bundles/cpphdl_types.hh` | ~40 | 轻量级 ch_uint/ch_bool/bundle_base（无 AST 依赖） |
+| `bundles/bundle_serialization.hh` | ~34 | Bundle ↔ Packet payload 序列化/反序列化 |
 
-**关键设计决策**:
-- Bundle 集成 CppHDL 的 `ch::core::bundle_base<T>` 和 `CH_BUNDLE_FIELDS` 宏
-- 添加 `bundle_serialization.hh`，提供 `bundle_to_packet()` 和 `packet_to_bundle()` 模板函数
-- 通过 `tlm_generic_payload->get_data_ptr()` 存储序列化后的 Bundle 数据
-- **不**直接使用 CppHDL 的仿真运行时，仅借用其 Bundle 类型系统
+**关键设计决策**（Phase 1 后更新）:
+
+> **轻量级 Bundle 类型系统** — 避免 CppHDL AST 编译链依赖
+> 
+> Phase 1 实施过程中发现 CppHDL 内部 include 路径不一致（`ast_nodes.h`/`lnodeimpl.h`/`logger.h` 相对路径断裂），导致直接 `#include "ch.hpp"` 触发编译阻塞链。
+> 
+> **解决方案**: 创建无 AST 依赖的轻量级类型层：
+> - `bundles/cpphdl_types.hh` — 仅提供 `ch_uint<W>`、`ch_bool`、`bundle_base` 的 POD 包装，带 `read()/write()` 接口
+> - `bundles/cache_bundles_tlm.hh` — 基于 cpphdl_types 的 Bundle 定义（标准布局，memcpy 安全）
+> - 原 `bundles/*.hh`（依赖 ch.hpp）保留用于未来 RTL 阶段
+> 
+> **设计原则**:
+> - TLM 仿真阶段：使用轻量级 Bundle（无 AST 节点，无 vtable，纯 POD 字段）
+> - RTL 阶段（未来）：切换到 CppHDL Bundle（含 AST 节点、Verilog 生成能力）
+> - 两套 Bundle 共享相同字段名称和语义，后续可用 trait/template 兼容
 
 **CMake 变更**:
 ```cmake
-# CMakeLists.txt — 添加 CppHDL 头路径
-target_include_directories(cpptlm_core PUBLIC ${CMAKE_SOURCE_DIR}/external/CppHDL/include)
-# 注意：不链接 CppHDL 库，仅使用头文件中的类型定义
+# src/CMakeLists.txt — 无需额外 CppHDL 头路径（轻量级 Bundle 不用 ch.hpp）
 ```
 
 #### 0.2 创建 StreamAdapter 桥梁 (include/framework/)
@@ -744,17 +752,29 @@ class MultiPortStreamAdapter : public StreamAdapterBase {
 
 ```
 ✅ Phase 0: 基础设施 (Bundle + Adapter + ChStreamModule)
-  │
-  ├─→ Phase 1: CacheTLM 单模块试点  ← 下一步
-  │      │
-  │      └─→ Phase 2: ModuleFactory 扩展 (JSON 驱动) ──→ Phase 3: Legacy 迁移
-  │                                                 │
-  │                                                 └─→ Phase 4: CrossbarTLM + 完整系统
-  │                                                      │
-  │                                                      └─→ Phase 5: NICTLM + Mapper + 全面测试
-  │
-  └─→ (Phase 3 可独立于 1/2 并行进行，但建议在 2 完成后执行)
+✅ Phase 1: CacheTLM 单模块试点 (6/8 步完成，P1.8 待写)
+   │
+   ├─→ Phase 2: ModuleFactory 扩展 (JSON 驱动) ──→ Phase 3: Legacy 迁移
+   │                                                 │
+   │                                                 └─→ Phase 4: CrossbarTLM + 完整系统
+   │                                                      │
+   │                                                      └─→ Phase 5: NICTLM + Mapper + 全面测试
+   │
+   └─→ (Phase 3 可独立于 2 并行进行)
 ```
+
+### Phase 1 实施状态 (2026-04-12)
+
+| 步骤 | 任务 | 状态 | 产出 |
+|------|------|:---:|------|
+| 1.1 | CacheTLM 模块 | ✅ | `include/tlm/cache_tlm.hh` (96 行) |
+| 1.2 | MemoryTLM 模块 | ✅ | `include/tlm/memory_tlm.hh` (39 行) |
+| 1.3 | StreamAdapter 模板 | ✅ | `framework/stream_adapter.hh` + `StreamAdapter<ModuleT,ReqB,RespB>` |
+| 1.4 | 轻量级 Bundle 类型 | ✅ | `bundles/cpphdl_types.hh` + `cache_bundles_tlm.hh` |
+| 1.5 | 模块注册分离 | ✅ | `modules.hh` (Legacy) + `chstream_register.hh` (ChStream) |
+| 1.6 | ModuleFactory 注入 | ✅ | `module_factory.cc` Step 7: dynamic_cast + set_stream_adapter() |
+| 1.7 | 测试配置 | ✅ | `configs/cache_chstream_test.json` |
+| 1.8 | 单元测试 | ⬜ | 待完成 |
 
 **独立并行机会**:
 
