@@ -1,9 +1,9 @@
 # CppTLM 混合仿真架构 v2.1 — 分层融合方案
 
-> **文档状态**: ✅ 已审查更新（2026-04-12 Phase 0 审查后）
-> **v2.1 版本**: 2.1.1
-> **更新日期**: 2026-04-12
-> **变更摘要**: Phase 0 代码审查后，对齐文档与实际实现差异
+> **文档状态**: ✅ Phase 5 完成，架构基础设施就绪
+> **v2.1 版本**: 2.1.5
+> **更新日期**: 2026-04-13
+> **变更摘要**: Phase 0-5 全部完成，新增 CrossbarTLM 多端口支持
 
 ---
 
@@ -718,24 +718,67 @@ namespace bundles {
 
 #### 8.3.4 ModuleFactory ChStream 注入逻辑
 
-`src/core/module_factory.cc` 新增 **Step 7**：在连接建立后，通过 `dynamic_cast<ChStreamModuleBase*>` 识别 ChStream 模块并注入 StreamAdapter。
-
-```cpp
-// Step 7: 为 ChStream 模块注入 StreamAdapter
-for (auto& [name, obj] : object_instances) {
-    if (auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj)) {
-        ch_mod->set_stream_adapter(nullptr); // Phase 1 占位
-    }
-}
-```
+`src/core/module_factory.cc` 新增 **Step 7/7b**：在连接建立后，通过 `dynamic_cast<ChStreamModuleBase*>` 识别 ChStream 模块，根据 `ChStreamAdapterFactory::isMultiPort(type)` 区分单端口/多端口，为多端口模块（CrossbarTLM）创建 N=4 组端口 + 端口索引连接。
 
 | 组件 | 文件 | 状态 |
 |:---|:---|:---|
-| `InputStreamAdapter<BundleT>` | `framework/stream_adapter.hh` | ✅ 完整实现 |
-| `OutputStreamAdapter<BundleT>` | `framework/stream_adapter.hh` | ✅ 完整实现 |
-| `StreamAdapter<ModuleT,ReqB,RespB>` | `framework/stream_adapter.hh` | ✅ 模板实现（tick + bind_ports） |
-| `stream_adapters_` 成员 | `module_factory.hh` | ✅ `vector<StreamAdapterBase*>` |
-| Step 7 注入逻辑 | `module_factory.cc` | ✅ dynamic_cast 检测 + set_stream_adapter() |
+| `InputStreamAdapter<BundleT>` | `framework/stream_adapter.hh` | ✅ Phase 0 |
+| `OutputStreamAdapter<BundleT>` | `framework/stream_adapter.hh` | ✅ Phase 0 |
+| `StreamAdapter<ModuleT,ReqB,RespB>` | `framework/stream_adapter.hh` | ✅ Phase 0（单端口） |
+| `MultiPortStreamAdapter<M,Rq,Rp,N>` | `framework/multi_port_stream_adapter.hh` | ✅ Phase 5（多端口） |
+| `ChStreamAdapterFactory`（多端口注册） | `core/chstream_adapter_factory.hh` | ✅ Phase 5 |
+| ModuleFactory Step 7（多端口感知） | `module_factory.cc` | ✅ Phase 5 |
+| CacheTLM | `tlm/cache_tlm.hh` | ✅ Phase 1 |
+| MemoryTLM | `tlm/memory_tlm.hh` | ✅ Phase 1 |
+| CrossbarTLM | `tlm/crossbar_tlm.hh` | ✅ Phase 4 |
+| JSON 端口索引语法（xbar.0） | `configs/crossbar_test.json` | ✅ Phase 5 |
+| 单元测试（chstream） | `test/test_*.cc` | ✅ 75 用例全通过 |
+
+---
+
+### 8.4 Phase 4-5 关键架构扩展（2026-04-13 更新）
+
+#### 8.4.1 CrossbarTLM 多端口设计
+
+```
+CrossbarTLM (4 端口):
+┌──────────────────────────┐
+│  req_in[0] ──┐           │
+│  req_in[1] ──┼─► 路由矩阵 ┤──► resp_out[0..3]
+│  req_in[2] ──┤           │
+│  req_in[3] ──┘           │
+└──────────────────────────┘
+```
+
+**路由策略**：`dst_port = (addr >> 12) & 0x3`
+- Port 0: `0x0000-0x0FFF`
+- Port 1: `0x1000-0x1FFF`
+- Port 2: `0x2000-0x2FFF`
+- Port 3: `0x3000-0x3FFF`
+
+#### 8.4.2 MultiPortStreamAdapter 模板
+
+```cpp
+template<typename ModuleT, typename ReqBundleT, typename RespBundleT, std::size_t N>
+class MultiPortStreamAdapter : public StreamAdapterBase {
+    // bind_ports_array() — 绑定 N 组 MasterPort/SlavePort
+    // tick() — 遍历 N 个端口，转发 resp_out
+    // process_request_input(pkt, port_idx) — 按端口反序列化
+};
+```
+
+#### 8.4.3 JSON 端口索引语法
+
+**格式**: `"module_name.port_index"`
+
+```json
+{ "connections": [
+    { "src": "cache", "dst": "xbar.0", "latency": 1 },
+    { "src": "xbar.1", "dst": "mem1", "latency": 2 }
+]}
+```
+- `xbar.0` → xbar 的第 0 个 req_in 端口
+- 单端口模块可省略索引（默认 0）
 
 ---
 
