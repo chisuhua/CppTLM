@@ -11,9 +11,9 @@
     ModuleFactory::registerObject<CPUSim>("CPUSim"); \
     ModuleFactory::registerObject<CacheSim>("CacheSim"); \
     ModuleFactory::registerObject<MemorySim>("MemorySim"); \
-    ModuleFactory::registerObject<MemorySim>("Crossbar"); \
-    ModuleFactory::registerObject<MemorySim>("Router"); \
-    ModuleFactory::registerObject<MemorySim>("Arbiter"); \
+    ModuleFactory::registerObject<Crossbar>("Crossbar"); \
+    ModuleFactory::registerObject<Router>("Router"); \
+    ModuleFactory::registerObject<Arbiter>("Arbiter"); \
     ModuleFactory::registerObject<TrafficGenerator>("TrafficGenerator");
 
 #define REGISTER_CHSTREAM \

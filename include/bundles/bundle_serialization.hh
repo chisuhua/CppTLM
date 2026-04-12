@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <cstring>
 
-namespace cpptlm {
 namespace bundles {
 
 /**
@@ -18,15 +17,11 @@ namespace bundles {
  * 
  * 设计约束：
  * - 仅在单一仿真进程内使用（生产者和消费者在同一内存空间）
- * - CppHDL bundle_base 包含 vtable、AST 节点指针、direction 变体等
- *   这些在同进程中拷贝是安全的
  * - 跨进程/跨平台场景需改用位域序列化（future work）
  */
 template <typename BundleT>
 bool serialize_bundle(const BundleT &bundle, void *buf, size_t len) {
-  if (len < sizeof(BundleT)) {
-    return false;
-  }
+  if (len < sizeof(BundleT)) return false;
   std::memcpy(buf, &bundle, sizeof(BundleT));
   return true;
 }
@@ -36,12 +31,9 @@ bool serialize_bundle(const BundleT &bundle, void *buf, size_t len) {
  */
 template <typename BundleT>
 bool deserialize_bundle(const void *data, size_t len, BundleT &out) {
-  if (len < sizeof(BundleT)) {
-    return false;
-  }
+  if (len < sizeof(BundleT)) return false;
   std::memcpy(&out, data, sizeof(BundleT));
   return true;
 }
 
 } // namespace bundles
-} // namespace cpptlm
