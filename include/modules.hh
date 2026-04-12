@@ -16,5 +16,9 @@
     ModuleFactory::registerObject<MemorySim>("Arbiter"); \
     ModuleFactory::registerObject<TrafficGenerator>("TrafficGenerator");
 
+#define REGISTER_CHSTREAM \
+    ModuleFactory::registerObject<CacheTLM>("CacheTLM"); \
+    ModuleFactory::registerObject<MemoryTLM>("MemoryTLM");
+
 #define REGISTER_MODULE \
     ModuleFactory::registerModule<CpuCluster>("CpuCluster");

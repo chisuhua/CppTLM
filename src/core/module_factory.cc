@@ -2,6 +2,8 @@
 #include "module_factory.hh"
 #include "sim_module.hh"
 #include "core/connection_resolver.hh"
+#include "core/chstream_module.hh"
+#include "framework/stream_adapter.hh"
 #include "utils/config_utils.hh"
 #include "utils/json_includer.hh"
 #include "utils/wildcard.hh"
@@ -10,6 +12,7 @@
 #include "core/plugin_load_exception.hh"
 #include "core/plugin_loader.hh"
 #include "core/load_policy.hh"
+#include <fstream>
 
 using json = nlohmann::json;
 
@@ -253,6 +256,31 @@ void ModuleFactory::instantiateAll(const json& config) {
                 }
             }
         }
+    }
+    
+    // ========================
+    // 7. 为 ChStream 模块注入 StreamAdapter
+    // ========================
+    // 建立模块名 → JSON 配置的映射，用于查找 bundle 类型信息
+    std::unordered_map<std::string, json> mod_configs;
+    for (auto& mod : final_config["modules"]) {
+        if (mod.contains("name")) {
+            mod_configs[mod["name"]] = mod;
+        }
+    }
+
+    for (auto& [name, obj] : object_instances) {
+        if (!obj) continue;
+        auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj);
+        if (!ch_mod) continue; // 不是 ChStream 模块，跳过
+
+        DPRINTF(MODULE, "[ChStream] Detected ChStream module: %s\n", name.c_str());
+
+        // 创建 StreamAdapter 并注入
+        // 当前阶段：仅调用 set_stream_adapter(nullptr) 占位，等待后续完善
+        // 完整实现需要根据 JSON 配置中的 bundle 类型创建对应模板实例
+        ch_mod->set_stream_adapter(nullptr);
+        DPRINTF(MODULE, "[ChStream] Injected StreamAdapter for %s (placeholder)\n", name.c_str());
     }
     
     // 保存所有实例

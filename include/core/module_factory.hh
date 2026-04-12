@@ -15,11 +15,13 @@
 #include <nlohmann/json.hpp>
 #include <functional>
 #include <vector>
+#include <memory>
 
 using json = nlohmann::json;
 
 class EventQueue;
 class SimModule;
+namespace cpptlm { class StreamAdapterBase; }
 
 // 分离创建函数类型
 using CreateSimObjectFunc = std::function<SimObject*(const std::string&, EventQueue*)>;
@@ -29,6 +31,7 @@ class ModuleFactory {
 private:
     EventQueue* event_queue;
     std::unordered_map<std::string, SimObject*> instances;
+    std::vector<cpptlm::StreamAdapterBase*> stream_adapters_;
 
     // 分离两个注册表
     static std::unordered_map<std::string, CreateSimObjectFunc>& getObjectRegistry() {
