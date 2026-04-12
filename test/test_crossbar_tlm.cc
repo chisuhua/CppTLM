@@ -27,7 +27,7 @@ TEST_CASE("CrossbarTLM routes port 0 correctly", "[tlm][crossbar]") {
 
     REQUIRE(xbar.resp_out[0].valid());
     REQUIRE(xbar.resp_out[0].data().transaction_id.read() == 1);
-    REQUIRE_EQ(xbar.route_address(0x0000), 0);
+    REQUIRE(xbar.route_address(0x0000) == 0);
 }
 
 TEST_CASE("CrossbarTLM routes port 1 correctly", "[tlm][crossbar]") {
@@ -39,7 +39,7 @@ TEST_CASE("CrossbarTLM routes port 1 correctly", "[tlm][crossbar]") {
     xbar.tick();
 
     REQUIRE(xbar.resp_out[1].valid());
-    REQUIRE_EQ(xbar.route_address(0x1000), 1);
+    REQUIRE(xbar.route_address(0x1000) == 1);
 }
 
 TEST_CASE("CrossbarTLM routes port 2 correctly", "[tlm][crossbar]") {
@@ -50,7 +50,7 @@ TEST_CASE("CrossbarTLM routes port 2 correctly", "[tlm][crossbar]") {
     xbar.tick();
 
     REQUIRE(xbar.resp_out[2].valid());
-    REQUIRE_EQ(xbar.route_address(0x2000), 2);
+    REQUIRE(xbar.route_address(0x2000) == 2);
 }
 
 TEST_CASE("CrossbarTLM routes port 3 correctly", "[tlm][crossbar]") {
@@ -61,7 +61,7 @@ TEST_CASE("CrossbarTLM routes port 3 correctly", "[tlm][crossbar]") {
     xbar.tick();
 
     REQUIRE(xbar.resp_out[3].valid());
-    REQUIRE_EQ(xbar.route_address(0x3000), 3);
+    REQUIRE(xbar.route_address(0x3000) == 3);
 }
 
 TEST_CASE("CrossbarTLM routes to boundary ports", "[tlm][crossbar]") {
@@ -155,13 +155,13 @@ TEST_CASE("CrossbarTLM route function edge cases", "[tlm][crossbar]") {
     CrossbarTLM xbar("xbar", &eq);
 
     // Max address per port
-    REQUIRE_EQ(xbar.route_address(0x0FFF), 0);
-    REQUIRE_EQ(xbar.route_address(0x1FFF), 1);
-    REQUIRE_EQ(xbar.route_address(0x2FFF), 2);
-    REQUIRE_EQ(xbar.route_address(0x3FFF), 3);
+    REQUIRE(xbar.route_address(0x0FFF) == 0);
+    REQUIRE(xbar.route_address(0x1FFF) == 1);
+    REQUIRE(xbar.route_address(0x2FFF) == 2);
+    REQUIRE(xbar.route_address(0x3FFF) == 3);
 
     // Wrap around (uint64 overflow behavior)
-    REQUIRE_EQ(xbar.route_address(UINT64_MAX), 3);  // 0xFFFFFFFFFFFFFFFF >> 12 & 3 = 3
+    REQUIRE(xbar.route_address(UINT64_MAX) == 3);  // 0xFFFFFFFFFFFFFFFF >> 12 & 3 = 3
 }
 
 TEST_CASE("CrossbarTLM data passthrough", "[tlm][crossbar]") {

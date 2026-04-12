@@ -12,13 +12,13 @@
 #define REGISTER_CHSTREAM \
     ModuleFactory::registerObject<CacheTLM>("CacheTLM"); \
     ModuleFactory::registerObject<MemoryTLM>("MemoryTLM"); \
-/*  ModuleFactory::registerObject<CrossbarTLM>("CrossbarTLM"); */  /* Phase 4 TODO */ \
+    ModuleFactory::registerObject<CrossbarTLM>("CrossbarTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
-        bundles::CacheReqBundle, bundles::CacheRespBundle>("MemoryTLM");
-/*  ChStreamAdapterFactory::get().registerAdapter<CrossbarTLM, */ \
-/*      bundles::CacheReqBundle, bundles::CacheRespBundle>("CrossbarTLM"); */
+        bundles::CacheReqBundle, bundles::CacheRespBundle>("MemoryTLM"); \
+    ChStreamAdapterFactory::get().registerMultiPortAdapter<CrossbarTLM, \
+        bundles::CacheReqBundle, bundles::CacheRespBundle, 4>("CrossbarTLM");
 
 #define REGISTER_ALL \
     REGISTER_OBJECT \

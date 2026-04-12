@@ -6,6 +6,7 @@
 #include "framework/stream_adapter.hh"
 #include "core/chstream_port.hh"
 #include "core/chstream_adapter_factory.hh"
+#include "bundles/cache_bundles_tlm.hh"
 #include "utils/config_utils.hh"
 #include "utils/json_includer.hh"
 #include "utils/wildcard.hh"
@@ -261,15 +262,18 @@ void ModuleFactory::instantiateAll(const json& config) {
     }
     
     // ========================
-    // 7. 为 ChStream 模块注入 StreamAdapter
+    // 7. 为 ChStream 模块注入 StreamAdapter（多端口感知）
     // ========================
-    // 7a. Create adapter + 4 ports per ChStream module
+    // 7a. 为每个 ChStream 模块创建适配器和端口
+    using ChStreamInitiatorPtr = cpptlm::ChStreamInitiatorPort*;
+    using ChStreamTargetPtr = cpptlm::ChStreamTargetPort*;
     std::unordered_map<std::string, cpptlm::StreamAdapterBase*> ch_adapters;
-    std::unordered_map<std::string, cpptlm::ChStreamInitiatorPort*> ch_req_out;
-    std::unordered_map<std::string, cpptlm::ChStreamTargetPort*>    ch_resp_in;
-    std::unordered_map<std::string, cpptlm::ChStreamTargetPort*>    ch_req_in;
-    std::unordered_map<std::string, cpptlm::ChStreamInitiatorPort*> ch_resp_out;
+    std::unordered_map<std::string, std::vector<ChStreamInitiatorPtr>> ch_req_out;
+    std::unordered_map<std::string, std::vector<ChStreamTargetPtr>>    ch_resp_in;
+    std::unordered_map<std::string, std::vector<ChStreamTargetPtr>>    ch_req_in;
+    std::unordered_map<std::string, std::vector<ChStreamInitiatorPtr>> ch_resp_out;
 
+    auto& factory = ChStreamAdapterFactory::get();
     std::unordered_map<std::string, std::string> module_types;
     for (auto& mod : final_config["modules"]) {
         if (mod.contains("name") && mod.contains("type"))
@@ -282,62 +286,99 @@ void ModuleFactory::instantiateAll(const json& config) {
         if (!ch_mod) continue;
 
         const std::string& type = module_types[name];
-        auto adapter = ChStreamAdapterFactory::get().create(type, obj);
-        if (!adapter) {
+        bool is_multi = factory.isMultiPort(type);
+        unsigned n_ports = is_multi ? factory.getPortCount(type) : 1;
+
+        if (!factory.knows(type)) {
             DPRINTF(MODULE, "[ERROR] No adapter factory for ChStream type: %s (%s)\n", type.c_str(), name.c_str());
             continue;
         }
 
-        auto* req_out  = new cpptlm::ChStreamInitiatorPort(name + ".req_out", event_queue);
-        auto* resp_in  = new cpptlm::ChStreamTargetPort(name + ".resp_in", adapter, event_queue);
-        auto* req_in   = new cpptlm::ChStreamTargetPort(name + ".req_in", adapter, event_queue);
-        auto* resp_out = new cpptlm::ChStreamInitiatorPort(name + ".resp_out", event_queue);
-
-        adapter->bind_ports(req_out, resp_in, resp_out, req_in);
-        ch_mod->set_stream_adapter(adapter);
-
-        stream_adapters_.emplace_back(adapter);
-
-        ch_adapters[name] = adapter;
-        ch_req_out[name]  = req_out;
-        ch_resp_in[name]  = resp_in;
-        ch_req_in[name]   = req_in;
-        ch_resp_out[name] = resp_out;
-
-        ch_initiator_ports_.emplace_back(req_out);
-        ch_target_ports_.emplace_back(resp_in);
-        ch_target_ports_.emplace_back(req_in);
-        ch_initiator_ports_.emplace_back(resp_out);
-
-        DPRINTF(MODULE, "[ChStream] Created adapter + 4 ports for %s (%s)\n", name.c_str(), type.c_str());
-    }
-
-    // 7b. Create PortPairs for ChStream-to-ChStream connections
-    for (auto& conn : final_config["connections"]) {
-        if (!conn.contains("src") || !conn.contains("dst")) continue;
-        std::string src = conn["src"];
-        std::string dst = conn["dst"];
-        int latency = conn.value("latency", 0);
-
-        if (src.find('.') != std::string::npos) continue;
-        if (dst.find('.') != std::string::npos) continue;
-
-        bool src_ch = (ch_adapters.count(src) > 0);
-        bool dst_ch = (ch_adapters.count(dst) > 0);
-
-        if (!src_ch || !dst_ch) {
-            if (src_ch || dst_ch)
-                DPRINTF(CONN, "[WARN] Mixed ChStream/legacy connection: %s -> %s (skipped)\n", src.c_str(), dst.c_str());
+        auto adapter = factory.create(type, obj);
+        if (!adapter) {
+            DPRINTF(MODULE, "[ERROR] Failed to create adapter for %s (type: %s)\n", name.c_str(), type.c_str());
             continue;
         }
 
-        auto* pp_req = new PortPair(ch_req_out[src], ch_req_in[dst]);
-        ch_req_out[src]->setDelay(latency);
-        DPRINTF(CONN, "[ChStream] Connected %s.req_out -> %s.req_in (latency=%d)\n", src.c_str(), dst.c_str(), latency);
+        // 创建 N 组端口
+        auto& req_out_vec  = ch_req_out[name];
+        auto& resp_in_vec  = ch_resp_in[name];
+        auto& req_in_vec   = ch_req_in[name];
+        auto& resp_out_vec = ch_resp_out[name];
+        req_out_vec.resize(n_ports);
+        resp_in_vec.resize(n_ports);
+        req_in_vec.resize(n_ports);
+        resp_out_vec.resize(n_ports);
 
-        auto* pp_resp = new PortPair(ch_resp_out[dst], ch_resp_in[src]);
-        ch_resp_out[dst]->setDelay(latency);
-        DPRINTF(CONN, "[ChStream] Connected %s.resp_out -> %s.resp_in (latency=%d)\n", dst.c_str(), src.c_str(), latency);
+        for (unsigned i = 0; i < n_ports; i++) {
+            char suffix[16];
+            snprintf(suffix, sizeof(suffix), "[%u]", i);
+            
+            req_out_vec[i]  = new cpptlm::ChStreamInitiatorPort(name + ".req_out"  + (n_ports > 1 ? suffix : ""), event_queue);
+            resp_in_vec[i]  = new cpptlm::ChStreamTargetPort(name + ".resp_in"  + (n_ports > 1 ? suffix : ""), adapter, event_queue);
+            req_in_vec[i]   = new cpptlm::ChStreamTargetPort(name + ".req_in"   + (n_ports > 1 ? suffix : ""), adapter, event_queue);
+            resp_out_vec[i] = new cpptlm::ChStreamInitiatorPort(name + ".resp_out" + (n_ports > 1 ? suffix : ""), event_queue);
+
+            ch_initiator_ports_.emplace_back(req_out_vec[i]);
+            ch_target_ports_.emplace_back(resp_in_vec[i]);
+            ch_target_ports_.emplace_back(req_in_vec[i]);
+            ch_initiator_ports_.emplace_back(resp_out_vec[i]);
+        }
+
+        // 注入 StreamAdapter
+        if (is_multi) {
+            std::vector<cpptlm::StreamAdapterBase*> adapter_vec(n_ports, adapter);
+            ch_mod->set_stream_adapter(adapter_vec.data());
+            for (unsigned i = 0; i < n_ports; i++) {
+                auto* mp = static_cast<cpptlm::MultiPortStreamAdapter<void, bundles::CacheReqBundle, bundles::CacheRespBundle, 4>*>(adapter);
+                if (mp) {
+                    // TODO: bind_ports_array when full multi-port support is ready
+                }
+            }
+            DPRINTF(MODULE, "[ChStream] Created MultiPort adapter for %s (%u ports, type: %s)\n", name.c_str(), n_ports, type.c_str());
+        } else {
+            adapter->bind_ports(req_out_vec[0], resp_in_vec[0], resp_out_vec[0], req_in_vec[0]);
+            ch_mod->set_stream_adapter(adapter);
+            DPRINTF(MODULE, "[ChStream] Created SinglePort adapter for %s (type: %s)\n", name.c_str(), type.c_str());
+        }
+
+        ch_adapters[name] = adapter;
+        stream_adapters_.emplace_back(adapter);
+    }
+
+    // 7b. 创建 PortPairs（支持端口索引语法：xbar.0 → xbar.req_in[0]）
+    for (auto& conn : final_config["connections"]) {
+        if (!conn.contains("src") || !conn.contains("dst")) continue;
+        std::string src_full = conn["src"];
+        std::string dst_full = conn["dst"];
+        int latency = conn.value("latency", 0);
+        auto [src_name, src_spec] = parsePortSpec(src_full);
+        auto [dst_name, dst_spec] = parsePortSpec(dst_full);
+
+        unsigned src_idx = 0, dst_idx = 0;
+        if (!src_spec.empty() && std::isdigit(src_spec[0])) src_idx = std::stoul(src_spec);
+        if (!dst_spec.empty() && std::isdigit(dst_spec[0])) dst_idx = std::stoul(dst_spec);
+
+        // 单端口模块忽略端口索引
+        if (ch_adapters.count(src_name) && !factory.isMultiPort(module_types[src_name])) src_idx = 0;
+        if (ch_adapters.count(dst_name) && !factory.isMultiPort(module_types[dst_name])) dst_idx = 0;
+
+        bool src_ch = (ch_adapters.count(src_name) > 0 && ch_req_out.count(src_name) && ch_req_out[src_name].size() > src_idx);
+        bool dst_ch = (ch_adapters.count(dst_name) > 0 && ch_req_in.count(dst_name) && ch_req_in[dst_name].size() > dst_idx);
+
+        if (!src_ch || !dst_ch) continue;
+
+        // 请求路径: src → dst
+        auto* pp_req = new PortPair(ch_req_out[src_name][src_idx], ch_req_in[dst_name][dst_idx]);
+        ch_req_out[src_name][src_idx]->setDelay(latency);
+        DPRINTF(CONN, "[ChStream] Connected %s.req_out[%u] -> %s.req_in[%u] (latency=%d)\n", src_name.c_str(), src_idx, dst_name.c_str(), dst_idx, latency);
+
+        // 响应路径: dst → src
+        if (ch_resp_out.count(dst_name) > dst_idx && ch_resp_in.count(src_name) > src_idx) {
+            auto* pp_resp = new PortPair(ch_resp_out[dst_name][dst_idx], ch_resp_in[src_name][src_idx]);
+            ch_resp_out[dst_name][dst_idx]->setDelay(latency);
+            DPRINTF(CONN, "[ChStream] Connected %s.resp_out[%u] -> %s.resp_in[%u] (latency=%d)\n", dst_name.c_str(), dst_idx, src_name.c_str(), src_idx, latency);
+        }
     }
     
     // 保存所有实例

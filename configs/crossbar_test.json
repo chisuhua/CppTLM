@@ -7,7 +7,7 @@
     { "name": "mem", "type": "MemoryTLM" }
   ],
   "connections": [
-    { "src": "cache", "dst": "xbar", "latency": 1 },
-    { "src": "xbar", "dst": "mem", "latency": 2 }
+    { "src": "cache", "dst": "xbar.0", "latency": 1 },
+    { "src": "xbar.0", "dst": "mem", "latency": 2 }
   ]
 }

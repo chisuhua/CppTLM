@@ -46,6 +46,11 @@ public:
             set_stream_adapter(adapters[0]);
         }
     }
+
+    /**
+     * @brief 返回模块端口数量（默认 1，多端口模块重写）
+     */
+    virtual unsigned num_ports() const { return 1; }
 };
 
 #endif // CORE_CHSTREAM_MODULE_HH
