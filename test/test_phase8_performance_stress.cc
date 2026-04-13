@@ -20,6 +20,7 @@ using tlm::tlm_generic_payload;
 
 TEST_CASE("T10.1: 大量并发交易", "[performance][stress][P2]") {
     auto& txn_tracker = TransactionTracker::instance();
+    txn_tracker.reset_for_testing();
     txn_tracker.initialize();
     
     const int NUM_TRANSACTIONS = 5000;

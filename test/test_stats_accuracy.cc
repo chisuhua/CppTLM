@@ -31,10 +31,14 @@ TEST_CASE("StatsAccuracyTest CountAndBytes", "[stats][accuracy]") {
         producer.sendPacket();
     }
 
-    eq.run(5);
-
-    for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
-        port->tick();
+    // Flush producer's output VC → deliver to consumer's input VC
+    for (int tick = 0; tick < 5; tick++) {
+        for (auto* port : producer.getPortManager().getDownstreamPorts()) {
+            port->tick();
+        }
+        for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
+            port->tick();
+        }
     }
 
     // 由于端口统计功能可能未实现，我们只测试基本功能

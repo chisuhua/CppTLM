@@ -283,6 +283,17 @@ public:
         return count;
     }
 
+    /**
+     * @brief 测试重置：清空所有状态
+     */
+    void reset_for_testing() {
+        transactions_.clear();
+        parent_child_map_.clear();
+        global_timestamp_ = 0;
+        next_transaction_id_ = 1;
+        initialized_ = false;
+    }
+
 private:
     uint64_t next_transaction_id_ = 1;
     

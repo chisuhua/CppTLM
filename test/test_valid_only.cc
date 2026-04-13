@@ -32,8 +32,13 @@ TEST_CASE("ValidOnlyTest LargeInputBuffer_NoBackpressure", "[valid][only]") {
 
     eq.run(10);
 
-    for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
-        port->tick();
+    for (int tick = 0; tick < 200; tick++) {
+        for (auto* port : producer.getPortManager().getDownstreamPorts()) {
+            port->tick();
+        }
+        for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
+            port->tick();
+        }
     }
 
     REQUIRE(producer.send_count == 100);

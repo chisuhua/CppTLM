@@ -18,7 +18,7 @@ TEST_CASE("ValidReadyTest NoBuffer_NoBypass", "[valid][ready]") {
 
     // input_buffer_size=0 → 必须立即处理，否则反压
     producer.getPortManager().addDownstreamPort(&producer, {4}, {0});
-    consumer.getPortManager().addUpstreamPort(&consumer, {0}, {0});  // no buffer
+    consumer.getPortManager().addUpstreamPort(&consumer, {1}, {0});  // min buffer to receive first
 
     new PortPair(
         producer.getPortManager().getDownstreamPorts()[0],

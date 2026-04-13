@@ -1,6 +1,6 @@
-// packet_pool.hh
-#ifndef PACKET_POOL_HH
-#define PACKET_POOL_HH
+// packet_pool.hh — 完整版本（双 freelist: Packet + payload）
+#ifndef EXT_PACKET_POOL_HH
+#define EXT_PACKET_POOL_HH
 
 #include "packet.hh"
 #include <queue>
@@ -176,4 +176,4 @@ public:
     PacketPool& operator=(const PacketPool&) = delete;
 };
 
-#endif // PACKET_POOL_HH
+#endif // EXT_PACKET_POOL_HH
