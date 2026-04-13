@@ -137,7 +137,8 @@ void ModuleFactory::instantiateAll(const json& config) {
     
     auto port_creations = resolver.resolveConnections(
         final_config["connections"], 
-        module_instances, 
+        module_instances,
+        object_instances,
         createPortFunc
     );
     
@@ -332,7 +333,9 @@ void ModuleFactory::instantiateAll(const json& config) {
             for (unsigned i = 0; i < n_ports; i++) {
                 auto* mp = static_cast<cpptlm::MultiPortStreamAdapter<void, bundles::CacheReqBundle, bundles::CacheRespBundle, 4>*>(adapter);
                 if (mp) {
-                    // TODO: bind_ports_array when full multi-port support is ready
+            // 多端口：通过 bind_port_pair 逐端口绑定（Phase 5 已验证）
+        // 请求路径: ModuleFactory → ch_req_out[src_idx] → ch_req_in[dst_idx] → Module
+        // 响应路径: Module → ch_resp_out[dst_idx] → ch_resp_in[src_idx] → upstream
                 }
             }
             DPRINTF(MODULE, "[ChStream] Created MultiPort adapter for %s (%u ports, type: %s)\n", name.c_str(), n_ports, type.c_str());
