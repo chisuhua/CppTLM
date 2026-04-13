@@ -8,13 +8,16 @@
 class Wildcard {
 public:
     static bool match(const std::string& pattern, const std::string& str) {
-        std::string regex_str = "^" + pattern;
-        for (size_t i = 0; i < regex_str.size(); ++i) {
-            if (regex_str[i] == '*') {
-                regex_str.replace(i, 1, ".*");
-                i += 2;
-            } else if (regex_str[i] == '?') {
-                regex_str.replace(i, 1, ".");
+        std::string regex_str = "^";
+        for (size_t i = 0; i < pattern.size(); ++i) {
+            if (pattern[i] == '*') {
+                regex_str += ".*";
+            } else if (pattern[i] == '?') {
+                regex_str += ".";
+            } else if (pattern[i] == '.') {
+                regex_str += "\\.";  // Escape literal dot
+            } else {
+                regex_str += pattern[i];
             }
         }
         regex_str += "$";
