@@ -19,6 +19,16 @@ TEST_CASE("ResponsePathTest RequestReceivedByConsumer", "[response][path]") {
     producer.sendPacket();
     eq.run(1);
 
+    // UpstreamPort::tick() 从 VC 队列取出包并交付给 handleUpstreamRequest
+    for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
+        port->tick();
+    }
+
     REQUIRE(consumer.received_packets.size() == 1);
     REQUIRE(consumer.received_packets[0]->seq_num == 0);
+
+    // 清理
+    for (auto* pkt : consumer.received_packets) {
+        PacketPool::get().release(pkt);
+    }
 }

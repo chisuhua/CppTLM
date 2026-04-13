@@ -30,7 +30,18 @@ TEST_CASE("ValidOnlyTest LargeInputBuffer_NoBackpressure", "[valid][only]") {
         producer.sendPacket();
     }
 
+    eq.run(10);
+
+    for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
+        port->tick();
+    }
+
     REQUIRE(producer.send_count == 100);
     REQUIRE(producer.fail_count == 0);
     REQUIRE(consumer.received_packets.size() == 100);
+
+    // 清理
+    for (auto* pkt : consumer.received_packets) {
+        PacketPool::get().release(pkt);
+    }
 }

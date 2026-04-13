@@ -140,6 +140,28 @@ public:
         return m_current_usage;
     }
 
+    // --- 测试重置：清空 freelist 并重置计数器 ---
+    void reset_for_testing() {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        
+        // 清空 packet freelist
+        while (!m_packet_freelist.empty()) {
+            Packet* pkt = m_packet_freelist.front();
+            m_packet_freelist.pop();
+            delete pkt;
+        }
+        
+        // 清空 payload freelist
+        while (!m_payload_freelist.empty()) {
+            tlm::tlm_generic_payload* p = m_payload_freelist.front();
+            m_payload_freelist.pop();
+            delete p;
+        }
+        
+        m_current_usage = 0;
+        m_peak_usage = 0;
+    }
+
     void print_stats() const {
         std::lock_guard<std::mutex> lock(m_mutex);
         std::cout << "[PacketPool] Current: " << m_current_usage

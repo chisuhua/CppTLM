@@ -33,9 +33,18 @@ TEST_CASE("StatsAccuracyTest CountAndBytes", "[stats][accuracy]") {
 
     eq.run(5);
 
+    for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
+        port->tick();
+    }
+
     // 由于端口统计功能可能未实现，我们只测试基本功能
     REQUIRE(producer.send_count == 3);
     REQUIRE(consumer.received_packets.size() == 3);
+
+    // 清理
+    for (auto* pkt : consumer.received_packets) {
+        PacketPool::get().release(pkt);
+    }
 }
 
 TEST_CASE("StatsTest EndToEndDelayAndBytes", "[stats][accuracy]") {
@@ -55,6 +64,15 @@ TEST_CASE("StatsTest EndToEndDelayAndBytes", "[stats][accuracy]") {
     producer.sendPacket();
     eq.run(5);
 
+    for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
+        port->tick();
+    }
+
     REQUIRE(consumer.received_packets.size() == 1);
     REQUIRE(producer.send_count == 1);
+
+    // 清理
+    for (auto* pkt : consumer.received_packets) {
+        PacketPool::get().release(pkt);
+    }
 }
