@@ -216,11 +216,16 @@ void ModuleFactory::instantiateAll(const json& config) {
                     }
                 }
             } else if (!src_port_name.empty()) {
-                auto obj_it = object_instances.find(src_module_name);
-                if (obj_it != object_instances.end() && obj_it->second->hasPortManager()) {
+                if (auto obj_it = object_instances.find(src_module_name);
+                    obj_it != object_instances.end()) {
                     src_port = dynamic_cast<MasterPort*>(
                         obj_it->second->getPortManager().getDownstreamPort(src_port_name));
                 }
+            } else if (auto obj_it = object_instances.find(src_module_name);
+                       obj_it != object_instances.end()) {
+                // Wildcard/group expansion: create default downstream port
+                src_port = obj_it->second->getPortManager().addDownstreamPort(
+                    obj_it->second, {4}, {}, src_module_name);
             }
 
             for (const std::string& dst_full : dst_names) {
@@ -240,11 +245,16 @@ void ModuleFactory::instantiateAll(const json& config) {
                         }
                     }
                 } else if (!dst_port_name.empty()) {
-                    auto obj_it = object_instances.find(dst_module_name);
-                    if (obj_it != object_instances.end() && obj_it->second->hasPortManager()) {
+                    if (auto obj_it = object_instances.find(dst_module_name);
+                        obj_it != object_instances.end()) {
                         dst_port = dynamic_cast<SlavePort*>(
                             obj_it->second->getPortManager().getUpstreamPort(dst_port_name));
                     }
+                } else if (auto obj_it = object_instances.find(dst_module_name);
+                           obj_it != object_instances.end()) {
+                    // Wildcard/group expansion: create default upstream port
+                    dst_port = obj_it->second->getPortManager().addUpstreamPort(
+                        obj_it->second, {4}, {}, dst_module_name);
                 }
 
                 if (src_port && dst_port) {

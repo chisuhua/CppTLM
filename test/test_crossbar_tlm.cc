@@ -96,8 +96,9 @@ TEST_CASE("CrossbarTLM handles multiple sequential requests", "[tlm][crossbar]")
     for (int i = 0; i < 4; i++) {
         inject_req(&xbar, 0, i + 1, 0x1000 * (i + 1));
         xbar.tick();
-        REQUIRE(xbar.resp_out[i + 1].valid());
-        xbar.resp_out[i + 1].clear_valid();
+        unsigned dst = xbar.route_address(0x1000 * (i + 1));
+        REQUIRE(xbar.resp_out[dst].valid());
+        xbar.resp_out[dst].clear_valid();
     }
 }
 
@@ -181,8 +182,9 @@ TEST_CASE("CrossbarTLM error code always zero", "[tlm][crossbar]") {
     for (int i = 0; i < 4; i++) {
         inject_req(&xbar, 0, i, 0x1000 * (i + 1));
         xbar.tick();
-        REQUIRE(xbar.resp_out[i + 1].data().error_code.read() == 0);
-        xbar.resp_out[i + 1].clear_valid();
+        unsigned dst = xbar.route_address(0x1000 * (i + 1));
+        REQUIRE(xbar.resp_out[dst].data().error_code.read() == 0);
+        xbar.resp_out[dst].clear_valid();
     }
 }
 
