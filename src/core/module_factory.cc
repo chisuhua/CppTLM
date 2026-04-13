@@ -137,8 +137,7 @@ void ModuleFactory::instantiateAll(const json& config) {
     
     auto port_creations = resolver.resolveConnections(
         final_config["connections"], 
-        module_instances,
-        object_instances,
+        module_instances, 
         createPortFunc
     );
     
