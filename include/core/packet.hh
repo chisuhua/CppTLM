@@ -228,8 +228,7 @@ private:
     // reset 方法 - 重置Packet状态以复用
     void reset() {
         if (payload && !isCredit()) {
-            delete payload;
-            payload = new tlm::tlm_generic_payload();
+            payload->reset();
         }
         stream_id = 0;
         seq_num = 0;
