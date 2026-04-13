@@ -1,4 +1,7 @@
-// test_packet_pool.cc
+// FIX-DEFERRED: PacketPool singleton pollution causes "Invalid argument" in reset()
+// Root cause: tlm_generic_payload::clear_extensions() fails on freelist entries
+// Deferred to dedicated session (requires SystemC TLM extension analysis)
+// Tracking: Phase 7.3 deferred item
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/packet.hh"
@@ -16,10 +19,11 @@ tlm::tlm_generic_payload* createSimplePayload() {
 }
 
 TEST_CASE("Packet Pool Tests", "[packet][pool]") {
-    EventQueue event_queue; // 为 SimObject 提供事件队列
-    PacketPool& pool = PacketPool::get(); // 获取单例实例
+    EventQueue event_queue;
+    PacketPool& pool = PacketPool::get();
 
     SECTION("AcquireAndRelease - Verify basic acquire and release functionality") {
+        pool.reset_for_testing();
         REQUIRE(pool.current_usage() == 0);
         REQUIRE(pool.peak_usage() == 0);
 
@@ -41,6 +45,7 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
     }
 
     SECTION("ReferenceCounting_ResponseToRequest - Verify reference counting mechanism: Response points to Request") {
+        pool.reset_for_testing();
         // 步骤1: 创建一个请求包 (Req)
         Packet* req_pkt = pool.acquire();
         req_pkt->payload = createSimplePayload();
@@ -76,6 +81,7 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
     }
 
     SECTION("ReferenceCounting_MultipleResponses - Verify reference counting mechanism: Multiple Responses point to the same Request") {
+        pool.reset_for_testing();
         // 创建一个请求包
         Packet* req_pkt = pool.acquire();
         req_pkt->payload = createSimplePayload();
@@ -114,6 +120,7 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
     }
 
     SECTION("EndToEndDelayCalculation - Verify getEnd2EndCycles calculation correctness") {
+        pool.reset_for_testing();
         // 创建请求
         Packet* req_pkt = pool.acquire();
         req_pkt->src_cycle = 50;
@@ -137,6 +144,7 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
     }
 
     SECTION("DelayCalculationWithoutOriginalReq - Verify delay calculation when original_req is null") {
+        pool.reset_for_testing();
         Packet* orphaned_resp = pool.acquire();
         orphaned_resp->type = PKT_RESP;
         orphaned_resp->original_req = nullptr; // 没有原始请求

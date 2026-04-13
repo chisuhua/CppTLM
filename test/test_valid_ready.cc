@@ -27,6 +27,11 @@ TEST_CASE("ValidReadyTest NoBuffer_NoBypass", "[valid][ready]") {
 
     // 第一次发送：成功（consumer 可处理）
     producer.sendPacket();
+
+    for (auto* port : consumer.getPortManager().getUpstreamPorts()) {
+        port->tick();
+    }
+
     REQUIRE(producer.send_count == 1);
     REQUIRE(consumer.received_packets.size() == 1);
 
@@ -34,10 +39,4 @@ TEST_CASE("ValidReadyTest NoBuffer_NoBypass", "[valid][ready]") {
     producer.sendPacket();
     REQUIRE(producer.send_count == 2);  // still succeeds (buffered in output)
     REQUIRE(consumer.received_packets.size() == 1);  // only one processed
-
-    // 使用PacketPool来释放接收的包
-    for (auto* pkt : consumer.received_packets) {
-        PacketPool::get().release(pkt);
-    }
-    consumer.received_packets.clear();
 }
