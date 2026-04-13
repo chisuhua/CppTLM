@@ -228,9 +228,8 @@ private:
     // reset 方法 - 重置Packet状态以复用
     void reset() {
         if (payload && !isCredit()) {
-            // 清除 Extensions 并重置 payload 状态，但不删除对象
-            payload->clear_extensions();
-            payload->reset();
+            delete payload;
+            payload = new tlm::tlm_generic_payload();
         }
         stream_id = 0;
         seq_num = 0;

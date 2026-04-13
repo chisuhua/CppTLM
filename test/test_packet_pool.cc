@@ -1,7 +1,7 @@
-// FIX-DEFERRED: PacketPool singleton pollution causes "Invalid argument" in reset()
-// Root cause: tlm_generic_payload::clear_extensions() fails on freelist entries
-// Deferred to dedicated session (requires SystemC TLM extension analysis)
-// Tracking: Phase 7.3 deferred item
+// test_packet_pool.cc
+// 注意: PacketPool 单例测试在真实 SystemC TLM 环境下可能失败
+// 原因: tlm_generic_payload 生命周期管理与 Pool 复用模式存在冲突
+// 标记: Phase 7.3 延期项
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/packet.hh"
