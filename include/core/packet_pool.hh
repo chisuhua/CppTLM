@@ -32,12 +32,11 @@ public:
     // 释放一个Packet，使其可以被重用
     void release(Packet* pkt) {
         if (!pkt) return;
-        
+
         std::lock_guard<std::mutex> lock(pool_mutex_);
-        // 清理 Extensions 并重置 payload (保留 payload 对象以复用)
         if (pkt->payload && !pkt->isCredit()) {
-            pkt->payload->clear_extensions();
-            pkt->payload->reset(); // 重置 payload 状态，但不删除对象
+            delete pkt->payload;
+            pkt->payload = new tlm::tlm_generic_payload();
         }
         
         // 如果有原始请求，减少引用计数
