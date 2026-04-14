@@ -297,7 +297,8 @@ void ModuleFactory::instantiateAll(const json& config) {
 
         const std::string& type = module_types[name];
         bool is_multi = factory.isMultiPort(type);
-        unsigned n_ports = is_multi ? factory.getPortCount(type) : 1;
+        bool is_dual = factory.isDualPort(type);
+        unsigned n_ports = is_multi || is_dual ? factory.getPortCount(type) : 1;
 
         if (!factory.knows(type)) {
             DPRINTF(MODULE, "[ERROR] No adapter factory for ChStream type: %s (%s)\n", type.c_str(), name.c_str());
@@ -335,18 +336,21 @@ void ModuleFactory::instantiateAll(const json& config) {
             ch_initiator_ports_.emplace_back(resp_out_vec[i]);
         }
 
-        // 注入 StreamAdapter
-        if (is_multi) {
+        // 注入 StreamAdapter（区分单端口 / 多端口 / 双端口）
+        if (is_dual) {
+            // 双端口非对称：组 0 = PE 侧，组 1 = Network 侧
+            auto* dual = static_cast<cpptlm::DualPortStreamAdapter<ChStreamModuleBase,
+                bundles::CacheReqBundle, bundles::CacheRespBundle,
+                bundles::CacheReqBundle, bundles::CacheRespBundle>*>(adapter);
+            if (dual) {
+                dual->bind_pe_ports(req_out_vec[0], resp_in_vec[0], resp_out_vec[0], req_in_vec[0]);
+                dual->bind_net_ports(req_out_vec[1], resp_in_vec[1], resp_out_vec[1], req_in_vec[1]);
+            }
+            ch_mod->set_stream_adapter(adapter);
+            DPRINTF(MODULE, "[ChStream] Created DualPort adapter for %s (type: %s, PE+Net)\n", name.c_str(), type.c_str());
+        } else if (is_multi) {
             std::vector<cpptlm::StreamAdapterBase*> adapter_vec(n_ports, adapter);
             ch_mod->set_stream_adapter(adapter_vec.data());
-            for (unsigned i = 0; i < n_ports; i++) {
-                auto* mp = static_cast<cpptlm::MultiPortStreamAdapter<void, bundles::CacheReqBundle, bundles::CacheRespBundle, 4>*>(adapter);
-                if (mp) {
-            // 多端口：通过 bind_port_pair 逐端口绑定（Phase 5 已验证）
-        // 请求路径: ModuleFactory → ch_req_out[src_idx] → ch_req_in[dst_idx] → Module
-        // 响应路径: Module → ch_resp_out[dst_idx] → ch_resp_in[src_idx] → upstream
-                }
-            }
             DPRINTF(MODULE, "[ChStream] Created MultiPort adapter for %s (%u ports, type: %s)\n", name.c_str(), n_ports, type.c_str());
         } else {
             adapter->bind_ports(req_out_vec[0], resp_in_vec[0], resp_out_vec[0], req_in_vec[0]);
