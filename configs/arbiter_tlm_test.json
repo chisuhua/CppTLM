@@ -1,0 +1,25 @@
+{
+  "modules": [
+    { "name": "cpu0", "type": "CPUTLM" },
+    { "name": "cpu1", "type": "CPUTLM" },
+    { "name": "arb", "type": "ArbiterTLM2" },
+    { "name": "mem", "type": "MemoryTLM" }
+  ],
+  "connections": [
+    {
+      "src": "cpu0",
+      "dst": "arb.0",
+      "latency": 1
+    },
+    {
+      "src": "cpu1",
+      "dst": "arb.1",
+      "latency": 1
+    },
+    {
+      "src": "arb",
+      "dst": "mem",
+      "latency": 100
+    }
+  ]
+}
