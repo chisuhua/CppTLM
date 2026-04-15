@@ -16,9 +16,7 @@
     ModuleFactory::registerObject<Arbiter>("Arbiter"); \
     ModuleFactory::registerObject<TrafficGenerator>("TrafficGenerator");
 
-#define REGISTER_CHSTREAM \
-    ModuleFactory::registerObject<CacheTLM>("CacheTLM"); \
-    ModuleFactory::registerObject<MemoryTLM>("MemoryTLM");
+// REGISTER_CHSTREAM moved to chstream_register.hh
 
 #define REGISTER_MODULE \
     ModuleFactory::registerModule<CpuCluster>("CpuCluster");
