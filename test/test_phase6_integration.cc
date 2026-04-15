@@ -3,6 +3,7 @@
 // 功能描述：验证 ChStream 模块端到端数据通路 + ModuleFactory 完整集成
 // 作者 CppTLM Team / 日期 2026-04-13
 #include <catch2/catch_all.hpp>
+#include "modules.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
@@ -64,6 +65,7 @@ TEST_CASE("Phase 6: Full integration — Cache→Crossbar→Memory", "[phase6][i
 
     // Run simulation for 50 cycles
     eq.run(50);
+    REQUIRE(eq.getCurrentCycle() == 50);
 }
 
 TEST_CASE("Phase 6: Multi-port Crossbar with 4 Memory modules", "[phase6][integration]") {
@@ -104,6 +106,7 @@ TEST_CASE("Phase 6: Multi-port Crossbar with 4 Memory modules", "[phase6][integr
     REQUIRE(xbar->num_ports() == 4);
 
     eq.run(20);
+    REQUIRE(eq.getCurrentCycle() == 20);
 }
 
 TEST_CASE("Phase 6: ChStreamAdapterFactory multi-port detection", "[phase6][factory]") {
@@ -234,7 +237,4 @@ TEST_CASE("ChStream ModuleFactory: CrossbarTLM multi-port instantiation", "[phas
     REQUIRE(xbar->route_address(0x1000) == 1);
     REQUIRE(xbar->route_address(0x2000) == 2);
     REQUIRE(xbar->route_address(0x3000) == 3);
-}
-
-TEST_CASE("ChStream: CrossbarTLM routing verification", "[phase6][crossbar]") {
 }
