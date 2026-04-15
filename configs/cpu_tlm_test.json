@@ -1,0 +1,19 @@
+{
+  "modules": [
+    { "name": "cpu0", "type": "CPUTLM" },
+    { "name": "l1", "type": "CacheTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
+  ],
+  "connections": [
+    {
+      "src": "cpu0",
+      "dst": "l1",
+      "latency": 1
+    },
+    {
+      "src": "l1",
+      "dst": "mem",
+      "latency": 100
+    }
+  ]
+}

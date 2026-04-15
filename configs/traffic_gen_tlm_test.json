@@ -1,0 +1,28 @@
+{
+  "modules": [
+    { "name": "tg0", "type": "TrafficGenTLM" },
+    { "name": "tg1", "type": "TrafficGenTLM" },
+    { "name": "l1", "type": "CacheTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
+  ],
+  "groups": {
+    "traffic_gens": ["tg0", "tg1"]
+  },
+  "connections": [
+    {
+      "src": "tg0",
+      "dst": "l1",
+      "latency": 1
+    },
+    {
+      "src": "tg1",
+      "dst": "l1",
+      "latency": 1
+    },
+    {
+      "src": "l1",
+      "dst": "mem",
+      "latency": 100
+    }
+  ]
+}
