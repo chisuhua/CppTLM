@@ -1,5 +1,8 @@
 // include/tlm/traffic_gen_tlm.hh
 // TrafficGenTLM：流量生成模块（v2.1 TLM）
+// 功能描述：支持 SEQUENTIAL/RANDOM/TRACE/HOTSPOT/STRIDED/NEIGHBOR/TORNADO 7种流量模式
+// 作者 CppTLM Development Team
+// 日期 2026-04-16
 #ifndef TLM_TRAFFIC_GEN_TLM_HH
 #define TLM_TRAFFIC_GEN_TLM_HH
 
@@ -7,6 +10,7 @@
 #include "bundles/cache_bundles_tlm.hh"
 #include "framework/stream_adapter.hh"
 #include "metrics/stats.hh"
+#include "tlm/stress_patterns.hh"
 #include <cstdint>
 #include <vector>
 #include <random>
@@ -38,6 +42,10 @@ private:
     std::vector<TraceRecord_TLM> trace_;
     size_t trace_pos_ = 0;
 
+    // 压力模式支持
+    StressPattern stress_pattern_ = StressPattern::SEQUENTIAL;
+    std::unique_ptr<StressPatternStrategy> strategy_;
+
     tlm_stats::StatGroup stats_;
     tlm_stats::Scalar& stats_requests_issued_;
     tlm_stats::Scalar& stats_requests_completed_;
@@ -56,6 +64,7 @@ public:
           issued_(0),
           rng_(42),
           addr_dist_(start_addr_, end_addr_),
+          strategy_(create_strategy(StressPattern::SEQUENTIAL)),
           stats_("traffic_gen", nullptr),
           stats_requests_issued_(stats_.addScalar("requests_issued", "Total requests issued", "count")),
           stats_requests_completed_(stats_.addScalar("requests_completed", "Total requests completed", "count")),
@@ -79,6 +88,28 @@ public:
 
     void set_mode(GenMode_TLM m) { mode_ = m; }
     void set_num_requests(int n) { num_requests_ = n; }
+
+    // 压力模式配置方法
+    void set_stress_pattern(StressPattern p) {
+        stress_pattern_ = p;
+        strategy_ = create_strategy(p);
+    }
+    void set_hotspot_config(const std::vector<uint64_t>& addrs,
+                             const std::vector<double>& weights) {
+        if (auto* h = dynamic_cast<HotspotStrategy*>(strategy_.get())) {
+            h->set_hotspot_config(addrs, weights);
+        }
+    }
+    void set_stride(uint64_t s) {
+        if (auto* st = dynamic_cast<StridedStrategy*>(strategy_.get())) {
+            st->set_stride(s);
+        }
+    }
+    void set_mesh_config(uint64_t w, uint64_t h) {
+        if (auto* t = dynamic_cast<TornadoStrategy*>(strategy_.get())) {
+            t->set_mesh_config(w, h);
+        }
+    }
 
     void tick() override {
         current_cycle_++;
@@ -130,6 +161,11 @@ public:
                 break;
         }
 
+        // 如果使用了 stress pattern 策略（非默认 SEQUENTIAL），覆盖地址生成
+        if (stress_pattern_ != StressPattern::SEQUENTIAL && strategy_) {
+            addr = strategy_->next_address(start_addr_, end_addr_ - start_addr_);
+        }
+
         req.transaction_id.write(issued_++);
         req.address.write(addr);
         req.is_write.write(is_write ? 1 : 0);
@@ -157,6 +193,7 @@ public:
         txn_issue_time_.clear();
         stats_.reset();
         current_cycle_ = 0;
+        if (strategy_) strategy_->reset();
     }
 
     cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& resp_in() { return resp_in_; }

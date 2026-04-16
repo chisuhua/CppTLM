@@ -316,6 +316,7 @@ private:
 
 // 前向声明
 class Formula;
+class PercentileHistogram;
 
 class StatGroup : public StatBase {
 public:
@@ -353,6 +354,11 @@ public:
     // 添加 Formula（计算型指标）— 实现定义在后
     Formula& addFormula(const std::string& name, const std::string& desc,
                         const std::string& unit, std::function<Result()> calc);
+    
+    // 添加 PercentileHistogram — 实现定义在 histogram.hh 中
+    PercentileHistogram& addPercentileHistogram(const std::string& name,
+                                                 const std::string& desc,
+                                                 const std::string& unit);
     
     // 添加子组
     StatGroup& addSubgroup(const std::string& sub_name) {
