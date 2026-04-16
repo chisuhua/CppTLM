@@ -6,9 +6,11 @@
 #include "core/chstream_module.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "framework/stream_adapter.hh"
+#include "metrics/stats.hh"
 #include <cstdint>
 #include <vector>
 #include <random>
+#include <unordered_map>
 
 // TrafficGenTLM uses GenMode_TLM to avoid ODR conflict with legacy GenMode
 enum class GenMode_TLM { SEQUENTIAL, RANDOM, TRACE };
@@ -36,6 +38,16 @@ private:
     std::vector<TraceRecord_TLM> trace_;
     size_t trace_pos_ = 0;
 
+    tlm_stats::StatGroup stats_;
+    tlm_stats::Scalar& stats_requests_issued_;
+    tlm_stats::Scalar& stats_requests_completed_;
+    tlm_stats::Scalar& stats_reads_;
+    tlm_stats::Scalar& stats_writes_;
+    tlm_stats::Distribution& stats_latency_;
+    tlm_stats::Distribution& stats_addr_distribution_;
+    std::unordered_map<uint64_t, uint64_t> txn_issue_time_;
+    uint64_t current_cycle_ = 0;
+
 public:
     explicit TrafficGenTLM(const std::string& name, EventQueue* eq)
         : ChStreamModuleBase(name, eq),
@@ -43,7 +55,14 @@ public:
           completed_(0),
           issued_(0),
           rng_(42),
-          addr_dist_(start_addr_, end_addr_) {
+          addr_dist_(start_addr_, end_addr_),
+          stats_("traffic_gen", nullptr),
+          stats_requests_issued_(stats_.addScalar("requests_issued", "Total requests issued", "count")),
+          stats_requests_completed_(stats_.addScalar("requests_completed", "Total requests completed", "count")),
+          stats_reads_(stats_.addScalar("reads", "Read requests", "count")),
+          stats_writes_(stats_.addScalar("writes", "Write requests", "count")),
+          stats_latency_(stats_.addDistribution("latency", "Request-response latency", "cycle")),
+          stats_addr_distribution_(stats_.addDistribution("addr_dist", "Address distribution", "addr")) {
         trace_ = {
             {0x1000, false},
             {0x1004, true},
@@ -62,8 +81,19 @@ public:
     void set_num_requests(int n) { num_requests_ = n; }
 
     void tick() override {
+        current_cycle_++;
+
         if (resp_in_.valid() && resp_in_.ready()) {
+            auto& resp = resp_in_.data();
+            uint64_t txn_id = resp.transaction_id.read();
+            auto it = txn_issue_time_.find(txn_id);
+            if (it != txn_issue_time_.end()) {
+                uint64_t latency = current_cycle_ - it->second;
+                stats_latency_.sample(latency);
+                txn_issue_time_.erase(it);
+            }
             completed_++;
+            stats_requests_completed_++;
             resp_in_.consume();
         }
 
@@ -106,6 +136,15 @@ public:
         req.data.write(0);
         req.size.write(4);
         req_out_.write(req);
+
+        txn_issue_time_[req.transaction_id.read()] = current_cycle_;
+        stats_requests_issued_++;
+        if (is_write) {
+            stats_writes_++;
+        } else {
+            stats_reads_++;
+        }
+        stats_addr_distribution_.sample(addr);
     }
 
     void do_reset(const ResetConfig& config) override {
@@ -115,6 +154,9 @@ public:
         completed_ = 0;
         issued_ = 0;
         trace_pos_ = 0;
+        txn_issue_time_.clear();
+        stats_.reset();
+        current_cycle_ = 0;
     }
 
     cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& resp_in() { return resp_in_; }
@@ -129,6 +171,12 @@ public:
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& req_in() {
         static cpptlm::InputStreamAdapter<bundles::CacheReqBundle> dummy;
         return dummy;
+    }
+
+    tlm_stats::StatGroup& stats() { return stats_; }
+
+    void dumpStats(std::ostream& os) {
+        stats_.dump(os, getName(), 50);
     }
 };
 
