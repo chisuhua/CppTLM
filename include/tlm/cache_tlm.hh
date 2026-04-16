@@ -10,6 +10,7 @@
 #include "core/chstream_module.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "framework/stream_adapter.hh"
+#include "metrics/stats.hh"
 #include <map>
 #include <cstdint>
 
@@ -38,9 +39,21 @@ private:
     std::map<uint64_t, uint64_t> cache_lines_;
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
+    // 性能统计
+    tlm_stats::StatGroup stats_;
+    tlm_stats::Scalar& stats_requests_;
+    tlm_stats::Scalar& stats_hits_;
+    tlm_stats::Scalar& stats_misses_;
+    tlm_stats::Distribution& stats_latency_;
+
 public:
     CacheTLM(const std::string& name, EventQueue* eq)
-        : ChStreamModuleBase(name, eq) {}
+        : ChStreamModuleBase(name, eq),
+          stats_("cache"),
+          stats_requests_(stats_.addScalar("requests", "Total cache requests", "count")),
+          stats_hits_(stats_.addScalar("hits", "Cache hits", "count")),
+          stats_misses_(stats_.addScalar("misses", "Cache misses", "count")),
+          stats_latency_(stats_.addDistribution("latency", "Cache access latency", "cycle")) {}
 
     ~CacheTLM() override = default;
 
@@ -60,12 +73,24 @@ public:
             uint64_t addr = req.address.read();
             bool is_write = req.is_write.read();
 
+            // 统计：请求数++
+            ++stats_requests_;
+
             // 缓存查找
             bool hit = cache_lines_.count(addr) > 0;
+            uint64_t access_latency = hit ? 5 : 50;  // 模拟延迟
 
             if (is_write) {
                 cache_lines_[addr] = req.data.read();
             }
+
+            // 统计：命中/未命中
+            if (hit) {
+                ++stats_hits_;
+            } else {
+                ++stats_misses_;
+            }
+            stats_latency_.sample(access_latency);
 
             // 构建响应
             bundles::CacheRespBundle resp;
@@ -86,6 +111,7 @@ public:
         cache_lines_.clear();
         req_in_.reset();
         resp_out_.reset();
+        stats_.reset();
     }
 
     // 访问器（供 StreamAdapter 使用）
@@ -96,6 +122,14 @@ public:
         return resp_out_;
     }
     cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
+
+    // 统计访问器
+    tlm_stats::StatGroup& stats() { return stats_; }
+    const tlm_stats::StatGroup& stats() const { return stats_; }
+
+    void dumpStats(std::ostream& os) const {
+        stats_.dump(os);
+    }
 };
 
 #endif // TLM_CACHE_TLM_HH
