@@ -57,8 +57,8 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
                 std::vector<size_t> out_sizes = {4};
                 std::vector<size_t> priorities = {};
                 
-                if (conn.contains("output_buffer_sizes")) {
-                    for (const auto& size : conn["output_buffer_sizes"]) {
+                if (conn.contains("buffer_sizes")) {
+                    for (const auto& size : conn["buffer_sizes"]) {
                         out_sizes.push_back(size.get<size_t>());
                     }
                 }
@@ -75,8 +75,8 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
             std::vector<size_t> out_sizes = {4};
             std::vector<size_t> priorities = {};
             
-            if (conn.contains("output_buffer_sizes")) {
-                for (const auto& size : conn["output_buffer_sizes"]) {
+            if (conn.contains("buffer_sizes")) {
+                for (const auto& size : conn["buffer_sizes"]) {
                     out_sizes.push_back(size.get<size_t>());
                 }
             }
@@ -104,8 +104,8 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
                 std::vector<size_t> in_sizes = {4};
                 std::vector<size_t> priorities = {};
                 
-                if (conn.contains("input_buffer_sizes")) {
-                    for (const auto& size : conn["input_buffer_sizes"]) {
+                if (conn.contains("buffer_sizes")) {
+                    for (const auto& size : conn["buffer_sizes"]) {
                         in_sizes.push_back(size.get<size_t>());
                     }
                 }
@@ -122,8 +122,8 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
             std::vector<size_t> in_sizes = {4};
             std::vector<size_t> priorities = {};
             
-            if (conn.contains("input_buffer_sizes")) {
-                for (const auto& size : conn["input_buffer_sizes"]) {
+            if (conn.contains("buffer_sizes")) {
+                for (const auto& size : conn["buffer_sizes"]) {
                     in_sizes.push_back(size.get<size_t>());
                 }
             }
