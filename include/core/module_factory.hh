@@ -11,12 +11,14 @@
 #include "utils/module_group.hh"
 #include "utils/dynamic_loader.hh"
 #include "core/chstream_port.hh"
+#include "metrics/stats.hh"
 
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 #include <functional>
 #include <vector>
 #include <memory>
+#include <fstream>
 
 using json = nlohmann::json;
 
@@ -35,6 +37,10 @@ private:
     std::vector<std::unique_ptr<cpptlm::StreamAdapterBase>> stream_adapters_;
     std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> ch_initiator_ports_;
     std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> ch_target_ports_;
+
+    // 性能指标管理
+    bool _metrics_enabled = false;
+    std::unique_ptr<tlm_stats::StatGroup> _stats_root;
 
     // 分离两个注册表
     static std::unordered_map<std::string, CreateSimObjectFunc>& getObjectRegistry() {
@@ -160,6 +166,62 @@ public:
             printf("  - %s\n", name.c_str());
         }
     }
+
+    // ========================================================================
+    // 性能指标管理
+    // ========================================================================
+
+    /**
+     * @brief 启用性能指标收集
+     * @param enabled true 启用，false 禁用
+     * 
+     * 必须在 instantiateAll() 之前调用，以便在模块实例化时传递 stats parent
+     */
+    void enable_metrics(bool enabled = true) {
+        _metrics_enabled = enabled;
+        if (enabled && !_stats_root) {
+            _stats_root = std::make_unique<tlm_stats::StatGroup>("system");
+        }
+    }
+
+    /**
+     * @brief 获取统计根组
+     * @return StatGroup* 根组指针，如果 metrics 未启用返回 nullptr
+     */
+    tlm_stats::StatGroup* stats_root() {
+        return _stats_root.get();
+    }
+
+    /**
+     * @brief 导出所有指标到文件（gem5 风格）
+     * @param path 输出文件路径
+     */
+    void dump_metrics(const std::string& path) {
+        if (!_stats_root) return;
+        std::ofstream ofs(path);
+        if (!ofs.is_open()) {
+            DPRINTF(MODULE, "[ModuleFactory] Failed to open metrics file: %s\n", path.c_str());
+            return;
+        }
+        ofs << "---------- Begin Simulation Statistics ----------\n";
+        _stats_root->dump(ofs);
+        ofs << "---------- End Simulation Statistics ----------\n";
+        ofs.close();
+    }
+
+    /**
+     * @brief 重置所有指标
+     */
+    void reset_metrics() {
+        if (_stats_root) {
+            _stats_root->reset();
+        }
+    }
+
+    /**
+     * @brief 是否启用指标收集
+     */
+    bool metrics_enabled() const { return _metrics_enabled; }
 };
 
 // 旧的 parsePortSpec 函数，保留向后兼容性
