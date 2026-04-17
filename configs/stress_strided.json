@@ -1,0 +1,35 @@
+{
+  "modules": [
+    {
+      "name": "traffic_gen_stride",
+      "type": "TrafficGenTLM",
+      "config": {
+        "pattern": "STRIDED",
+        "stride": 64,
+        "num_requests": 10000,
+        "start_addr": "0x1000",
+        "end_addr": "0x10000"
+      }
+    },
+    {
+      "name": "l1",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "mem",
+      "type": "MemoryTLM"
+    }
+  ],
+  "connections": [
+    {
+      "src": "traffic_gen_stride",
+      "dst": "l1",
+      "latency": 1
+    },
+    {
+      "src": "l1",
+      "dst": "mem",
+      "latency": 100
+    }
+  ]
+}
