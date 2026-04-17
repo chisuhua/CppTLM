@@ -136,7 +136,20 @@ private:
 
     int value_to_bucket(int64_t value) const {
         if (value <= 0) return 0;
-        int bit = 63 - __builtin_clzll(static_cast<uint64_t>(value));
+        uint64_t v = static_cast<uint64_t>(value);
+#if defined(__GNUC__) || defined(__clang__)
+        int bit = 63 - __builtin_clzll(v);
+#else
+        // MSVC / 其他编译器：逐位查找最高有效位
+        int bit = 0;
+        uint64_t x = v;
+        if (x > 0xFFFFFFFFULL) { bit += 32; x >>= 32; }
+        if (x > 0xFFFFULL)     { bit += 16; x >>= 16; }
+        if (x > 0xFFULL)       { bit += 8;  x >>= 8;  }
+        if (x > 0xFULL)         { bit += 4;  x >>= 4;  }
+        if (x > 0x3ULL)        { bit += 2;  x >>= 2;  }
+        if (x > 0x1ULL)        { bit += 1; }
+#endif
         if (bit < 0) bit = 0;
         if (bit >= NUM_BUCKETS) bit = NUM_BUCKETS - 1;
         return bit;

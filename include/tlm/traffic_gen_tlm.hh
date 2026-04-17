@@ -1,8 +1,15 @@
-// include/tlm/traffic_gen_tlm.hh
-// TrafficGenTLM：流量生成模块（v2.1 TLM）
-// 功能描述：支持 SEQUENTIAL/RANDOM/TRACE/HOTSPOT/STRIDED/NEIGHBOR/TORNADO 7种流量模式
-// 作者 CppTLM Development Team
-// 日期 2026-04-16
+/**
+ * @file traffic_gen_tlm.hh
+ * @brief TrafficGenTLM：流量生成模块（v2.1 TLM）
+ * 
+ * 支持 SEQUENTIAL / RANDOM / TRACE 3种基础模式，
+ * 以及 HOTSPOT / STRIDED / NEIGHBOR / TORNADO 4种压力模式。
+ * 通过 set_stress_pattern() 配置，压力模式地址生成覆盖基础模式。
+ * 
+ * @author CppTLM Development Team
+ * @date 2026-04-16
+ */
+
 #ifndef TLM_TRAFFIC_GEN_TLM_HH
 #define TLM_TRAFFIC_GEN_TLM_HH
 
@@ -12,9 +19,10 @@
 #include "metrics/stats.hh"
 #include "tlm/stress_patterns.hh"
 #include <cstdint>
-#include <vector>
+#include <memory>
 #include <random>
 #include <unordered_map>
+#include <vector>
 
 // TrafficGenTLM uses GenMode_TLM to avoid ODR conflict with legacy GenMode
 enum class GenMode_TLM { SEQUENTIAL, RANDOM, TRACE };
@@ -129,7 +137,7 @@ public:
         }
 
         if (completed_ < num_requests_ && issued_ < num_requests_) {
-            if (rand() % 10 == 0) {
+            if (std::uniform_int_distribution<int>{0, 9}(rng_) == 0) {
                 issueRequest();
             }
         }
