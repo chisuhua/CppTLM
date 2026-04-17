@@ -1,0 +1,36 @@
+{
+  "modules": [
+    {
+      "name": "traffic_gen_hot",
+      "type": "TrafficGenTLM",
+      "config": {
+        "pattern": "HOTSPOT",
+        "hotspot_addrs": ["0x1000", "0x2000", "0x3000"],
+        "hotspot_weights": [50, 30, 20],
+        "num_requests": 10000,
+        "start_addr": "0x1000",
+        "end_addr": "0x4000"
+      }
+    },
+    {
+      "name": "l1",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "mem",
+      "type": "MemoryTLM"
+    }
+  ],
+  "connections": [
+    {
+      "src": "traffic_gen_hot",
+      "dst": "l1",
+      "latency": 1
+    },
+    {
+      "src": "l1",
+      "dst": "mem",
+      "latency": 100
+    }
+  ]
+}
