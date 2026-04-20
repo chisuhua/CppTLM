@@ -3,9 +3,9 @@
  * @brief MetricsReporter — 多格式统计报告生成器
  * 
  * 提供 Text / JSON / Markdown 三种格式的统计报告输出：
- * - TextReporter: gem5 风格带分隔线文本格式
+ * - TextReporter: gem5 风格对齐列格式
  * - JSONReporter: 嵌套 JSON 层次结构（使用 nlohmann/json）
- * - MarkdownReporter: Markdown 表格 + JSON 摘要
+ * - MarkdownReporter: Markdown 表格 + ASCII 直方图
  * 
  * 设计原则：
  * - 零外部依赖（JSON 除外，使用 header-only nlohmann/json）
