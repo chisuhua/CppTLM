@@ -1,0 +1,101 @@
+{
+  "modules": [
+    {
+      "name": "cpu0",
+      "type": "TrafficGenTLM",
+      "config": {
+        "pattern": "SEQUENTIAL",
+        "num_requests": 10000,
+        "start_addr": "0x1000",
+        "end_addr": "0x2000"
+      }
+    },
+    {
+      "name": "cpu1",
+      "type": "TrafficGenTLM",
+      "config": {
+        "pattern": "RANDOM",
+        "num_requests": 10000,
+        "start_addr": "0x2000",
+        "end_addr": "0x4000"
+      }
+    },
+    {
+      "name": "cpu2",
+      "type": "TrafficGenTLM",
+      "config": {
+        "pattern": "HOTSPOT",
+        "hotspot_addrs": ["0x1000", "0x2000", "0x3000"],
+        "hotspot_weights": [50, 30, 20],
+        "num_requests": 10000,
+        "start_addr": "0x1000",
+        "end_addr": "0x4000"
+      }
+    },
+    {
+      "name": "cpu3",
+      "type": "TrafficGenTLM",
+      "config": {
+        "pattern": "STRIDED",
+        "stride": 64,
+        "num_requests": 10000,
+        "start_addr": "0x1000",
+        "end_addr": "0x8000"
+      }
+    },
+    {
+      "name": "l1_0",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "l1_1",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "l1_2",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "l1_3",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "xbar",
+      "type": "CrossbarTLM"
+    },
+    {
+      "name": "mem0",
+      "type": "MemoryTLM"
+    },
+    {
+      "name": "mem1",
+      "type": "MemoryTLM"
+    },
+    {
+      "name": "mem2",
+      "type": "MemoryTLM"
+    },
+    {
+      "name": "mem3",
+      "type": "MemoryTLM"
+    }
+  ],
+  "connections": [
+    {"src": "cpu0", "dst": "l1_0", "latency": 1},
+    {"src": "cpu1", "dst": "l1_1", "latency": 1},
+    {"src": "cpu2", "dst": "l1_2", "latency": 1},
+    {"src": "cpu3", "dst": "l1_3", "latency": 1},
+    {"src": "l1_0", "dst": "xbar.0", "latency": 1},
+    {"src": "l1_1", "dst": "xbar.1", "latency": 1},
+    {"src": "l1_2", "dst": "xbar.2", "latency": 1},
+    {"src": "l1_3", "dst": "xbar.3", "latency": 1},
+    {"src": "xbar.0", "dst": "mem0", "latency": 2},
+    {"src": "xbar.1", "dst": "mem1", "latency": 2},
+    {"src": "xbar.2", "dst": "mem2", "latency": 2},
+    {"src": "xbar.3", "dst": "mem3", "latency": 2}
+  ],
+  "metrics": {
+    "enabled": true,
+    "output_dir": "./test/stress_results/full_system"
+  }
+}
