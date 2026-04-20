@@ -9,7 +9,7 @@
  *
  * 设计原则：
  * - 单例模式（C++11 magic static 保证线程安全）
- * - 零外部依赖（仅使用 C++11 标准库 + mutex）
+ * - 零外部依赖（仅使用 C++17 标准库）
  *
  * @author CppTLM Development Team
  * @date 2026-04-17
