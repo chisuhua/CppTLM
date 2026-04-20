@@ -5,6 +5,7 @@
 #include "module_factory.hh"
 #include "utils/json_includer.hh"  // 包含 loadConfig
 #include "utils/topology_dumper.hh"  // 包含 loadConfig
+#include "modules.hh"
 #include "chstream_register.hh"
 
 extern "C" int sc_main(int argc, char* argv[]) {
