@@ -76,6 +76,7 @@ public:
      * @brief 实例化所有模块
      */
     void instantiate() {
+        register_modules();  // 先注册模块类型
         factory_.instantiateAll(config_);
     }
 
@@ -114,8 +115,8 @@ public:
      * @param name 模块名称
      * @return 模块指针（未找到返回 nullptr）
      */
-    SimModule* getModule(const std::string& name) {
-        return dynamic_cast<SimModule*>(factory_.getInstance(name));
+    SimObject* getModule(const std::string& name) {
+        return factory_.getInstance(name);
     }
 
     /**
