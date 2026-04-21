@@ -70,7 +70,7 @@ public:
         os << "---------- Begin Simulation Statistics (Mock) ----------\n";
         for (const auto& kv : groups_) {
             if (kv.second) {
-                kv.second->dump(os, kv.first, width);
+                kv.second->dump(os, kv.first, -1);  // -1 means path is already complete
             }
         }
         os << "---------- End Simulation Statistics (Mock) ----------\n";

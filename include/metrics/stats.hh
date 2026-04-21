@@ -431,19 +431,23 @@ public:
     }
     
     void dump(std::ostream& os, const std::string& path = "", int width = 50) const {
+        // width < 0 表示 path 已是完整路径（从 register_group 传入），不追加 name_
+        // width >= 0 表示 path 是父路径，需要追加 name_ 构建完整路径
         std::string full;
-        if (path.empty()) {
+        if (width < 0) {
+            full = path;  // path 已是完整路径
+        } else if (path.empty()) {
             full = name_;
         } else {
-            full = path;
+            full = path + "." + name_;
         }
-        
+
         // 输出自己的统计
         for (const auto& [stat_name, stat] : stats_) {
             stat->dump(os, full + "." + stat_name, width);
         }
-        
-        // 递归输出子组
+
+        // 递归输出子组：传递当前 full 作为父路径，保持当前 width
         for (const auto& [subgroup_name, subgroup] : subgroups_) {
             subgroup->dump(os, full, width);
         }
