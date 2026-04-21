@@ -1,9 +1,9 @@
 # CppTLM — C++ TLM Hybrid Simulation Framework
 
-**Generated:** 2026-04-13
-**Commit:** 5f168db — feat(P6): 端到端集成验证 — Cache→Crossbar→Memory 全链路
+**Generated:** 2026-04-22
+**Commit:** a1cd67b — fix(stats): 修复 StatGroup.dump() 路径重复拼接问题
 **Branch:** main
-**Version:** 2.0.0
+**Version:** 2.0.1
 
 ## OVERVIEW
 

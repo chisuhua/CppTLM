@@ -108,12 +108,12 @@ public:
 
     static void clearAllObjects() {
         getObjectRegistry().clear();
-        DPRINTF(MODULE, "[ModuleFactory] Cleared all registered object types.\n");
+        DPRINTF(MODULE, "[ModuleFactory] Cleared all registered object types.\n", 0);
     }
 
     static void clearAllModules() {
         getModuleRegistry().clear();
-        DPRINTF(MODULE, "[ModuleFactory] Cleared all registered module types.\n");
+        DPRINTF(MODULE, "[ModuleFactory] Cleared all registered module types.\n", 0);
     }
 
     static void clearAllTypes() {

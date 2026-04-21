@@ -88,7 +88,8 @@ public:
      * @param os 输出流
      * @param width 字段宽度（默认 50）
      */
-    void dump_all(std::ostream& os, int width = 50) const {
+    void dump_all(std::ostream& os, int /*width*/) const {
+        (void)os;  // suppress unused warning
         std::lock_guard<std::mutex> lock(mutex_);
         os << "---------- Begin Simulation Statistics ----------\n";
         for (const auto& kv : groups_) {
