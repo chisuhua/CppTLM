@@ -33,3 +33,6 @@ if(ENABLE_COVERAGE)
 endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+# 传入项目根目录路径，使测试可执行文件能找到 configs/
+target_compile_definitions(cpptlm_tests PRIVATE CPPTLM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

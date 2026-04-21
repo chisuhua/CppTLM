@@ -11,12 +11,19 @@
 #include "core/module_factory.hh"
 #include <nlohmann/json.hpp>
 #include <fstream>
+#include <filesystem>
 
 using json = nlohmann::json;
 
 // 从配置文件加载 JSON
 static json loadConfig(const std::string& path) {
-    std::ifstream f(path);
+    std::string full_path;
+    if (std::filesystem::path(path).is_absolute()) {
+        full_path = path;
+    } else {
+        full_path = std::string(CPPTLM_SOURCE_DIR) + "/" + path;
+    }
+    std::ifstream f(full_path);
     REQUIRE(f.is_open());
     return json::parse(f);
 }
