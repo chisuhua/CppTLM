@@ -435,7 +435,7 @@ public:
         if (path.empty()) {
             full = name_;
         } else {
-            full = path + "." + name_;
+            full = path;
         }
         
         // 输出自己的统计
