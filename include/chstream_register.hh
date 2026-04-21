@@ -55,6 +55,4 @@
     ChStreamAdapterFactory::get().registerDualPortAdapter<mod_type, \
         pe_req_t, pe_resp_t, net_req_t, net_resp_t>(#mod_type);
 
-#define REGISTER_ALL \
-    REGISTER_OBJECT \
-    REGISTER_CHSTREAM
+#define REGISTER_ALL REGISTER_OBJECT; REGISTER_CHSTREAM

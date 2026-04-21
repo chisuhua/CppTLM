@@ -29,6 +29,7 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
     const std::unordered_map<std::string, SimModule*>& module_instances,
     std::function<bool(const std::string&, const std::string&, size_t, bool)> createPortFunc
 ) const {
+    (void)createPortFunc;  // suppress unused warning
     std::vector<PortCreationInfo> port_creations;
     
     for (const auto& conn : connections) {
