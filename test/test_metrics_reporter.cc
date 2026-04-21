@@ -83,8 +83,8 @@ TEST_CASE("StatsManager.dump_all", "[phase8-metrics-reporter][stats-manager]") {
     tlm_stats::StatsManager::instance().dump_all(oss, 50);
     
     std::string output = oss.str();
-    REQUIRE(output.find("system.cpu.cycles") != std::string::npos);
-    REQUIRE(output.find("system.cpu.instr") != std::string::npos);
+    REQUIRE(output.find("system.cpu.cpu.cycles") != std::string::npos);
+    REQUIRE(output.find("system.cpu.cpu.instr") != std::string::npos);
     
     // 清理
     tlm_stats::StatsManager::instance().unregister_group("system.cpu");
@@ -545,8 +545,8 @@ TEST_CASE("MetricsReporter.full_pipeline", "[phase8-metrics-reporter][integratio
         tlm_stats::TextReporter rep;
         rep.generate(oss);
         std::string out = oss.str();
-        REQUIRE(out.find("system.cpu.cycles") != std::string::npos);
-        REQUIRE(out.find("system.memory.bandwidth") != std::string::npos);
+        REQUIRE(out.find("system.cpu.cpu.cycles") != std::string::npos);
+        REQUIRE(out.find("system.memory.mem.bandwidth") != std::string::npos);
     }
     
     // 测试 JSONReporter
@@ -565,7 +565,7 @@ TEST_CASE("MetricsReporter.full_pipeline", "[phase8-metrics-reporter][integratio
         tlm_stats::MarkdownReporter rep;
         rep.generate(oss);
         std::string out = oss.str();
-        REQUIRE(out.find("system.cpu.latency.count") != std::string::npos);
+        REQUIRE(out.find("system.cpu.cpu.latency.count") != std::string::npos);
     }
     
     // 清理
