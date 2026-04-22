@@ -27,13 +27,13 @@ public:
     explicit MockSim(const std::string& n, EventQueue* eq) : SimObject(n, eq) {}
 
     bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) override {
-        // 使用PacketPool来释放Packet
+        (void)src_id; (void)src_label;
         PacketPool::get().release(pkt);
         return true;
     }
 
     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
-        // 使用PacketPool来释放Packet
+        (void)src_id; (void)src_label;
         PacketPool::get().release(pkt);
         return true;
     }
@@ -53,6 +53,7 @@ public:
     explicit MockProducer(const std::string& n, EventQueue* eq) : SimObject(n, eq) {}
 
     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+        (void)src_id; (void)src_label;
         PacketPool::get().release(pkt);
         return true;
     }
@@ -97,6 +98,7 @@ public:
     explicit MockConsumer(const std::string& n, EventQueue* eq) : SimObject(n, eq) {}
 
     bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) override {
+        (void)src_id; (void)src_label;
         received_packets.push_back(pkt);
         received_vcs.push_back(pkt->vc_id);
         return true;
