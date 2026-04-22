@@ -1,0 +1,23 @@
+# CppTLM Visualization Pipeline - Python Dependencies
+#
+# 安装方法:
+#   pip install -r requirements-visualization.txt
+#
+# 可选依赖 (用于完整功能):
+#   - networkx, pydot: 拓扑生成和 DOT 导出
+#   - watchdog: 实时文件监控
+#   - dash, plotly: Web 仪表板
+#
+# 最小安装 (仅生成配置):
+#   pip install networkx
+
+# Core dependencies
+networkx>=3.0
+pydot>=1.4.2
+
+# Optional: Real-time monitoring
+# watchdog>=3.0
+
+# Optional: Web dashboard
+# dash>=2.14.0
+# plotly>=5.18.0
