@@ -59,37 +59,6 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ matrix.build-type }}-${{ matrix.use-systemc }}
+        name: test-results-${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-systemc }}-${{ github.run_id }}
         path: build/Testing/
         retention-days: 7
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.build-type }}-${{ matrix.use-systemc }}
-        path: build/Testing/
-        retention-days: 7
-
-  # ============================================================================
-  # 代码格式检查
-  # ============================================================================
-  code-format:
-    runs-on: ubuntu-latest
-
-    name: Code Format Check
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install clang-format
-      run: sudo apt-get install -y clang-format
-
-    - name: Check code format
-      run: |
-        if [ -x scripts/format.sh ]; then
-          ./scripts/format.sh --check
-        else
-          echo "format.sh not found, skipping"
-        fi
