@@ -38,10 +38,11 @@ private:
 public:
     TrafficGenerator(const std::string& n, EventQueue* eq)
         : SimObject(n, eq), mode(GenMode::SEQUENTIAL),
-          start_addr(0x1000), end_addr(0x2000), num_requests(20),
-          completed(0), cur_addr(start_addr),
-          rng(42),  // 固定种子用于可重复测试
+          cur_addr(0), start_addr(0x1000), end_addr(0x2000), num_requests(20),
+          completed(0),
+          rng(42),
           addr_dist(start_addr, end_addr) {
+        cur_addr = start_addr;
         // 示例 trace
         trace = {
             TraceRecord{0x1000, false},

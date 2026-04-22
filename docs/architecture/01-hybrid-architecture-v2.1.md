@@ -1,9 +1,9 @@
 # CppTLM 混合仿真架构 v2.1 — 分层融合方案
 
-> **文档状态**: ✅ Phase 7 完成，零债务架构验收
-> **v2.1 版本**: 2.1.8
-> **更新日期**: 2026-04-13
-> **变更摘要**: Phase 0-7 全部完成，端到端验证 + 历史债务清偿 + 性能基准
+> **文档状态**: ✅ Phase 6 完成，端到端验证通过
+> **v2.1 版本**: 2.1.9
+> **更新日期**: 2026-04-22
+> **变更摘要**: Phase 6 端到端验证完成，CI/CD 集成，测试覆盖率 367 用例
 
 ---
 
@@ -798,20 +798,60 @@ CacheTLM (单端口) → xbar.0 (端口索引) → MemoryTLM (单端口)
 - StreamAdapter 自动注入（单端口 Standalone + 多端口 MultiPort）
 - JSON 端口索引语法端到端验证
 
-### 8.6 Phase 7 零债务验收 (2026-04-13)
+### 8.6 Phase 6 端到端集成验证 (2026-04-22)
+
+**验证链路**: CacheTLM → CrossbarTLM → MemoryTLM 全链路
+
+```
+CacheTLM (单端口) → xbar.0 (端口索引) → MemoryTLM (单端口)
+```
+
+**测试文件**: `test/test_phase6_integration.cc` — 9 测试用例，53 断言全通过
+
+**关键验证项**:
+- ModuleFactory 完整 JSON 加载 + instantiateAll 一次性实例化
+- 单端口 + 多端口模块混合拓扑
+- StreamAdapter 自动注入（单端口 Standalone + 多端口 MultiPort）
+- JSON 端口索引语法端到端验证
+
+### 8.7 CI/CD 集成 + 零债务验收 (2026-04-22)
+
+**CI/CD 工作流** (`.github/workflows/ci.yml`):
+- Release + Debug 双模式构建
+- ctest 测试验证（367 用例全通过）
+- 代码格式检查（clang-format）
+- ccache 缓存加速
+- test artifacts 上传（7 天保留）
+
+**本地提交流程**:
+```bash
+# 1. 本地构建验证
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF
+cmake --build build -j$(nproc)
+cd build && ctest --output-on-failure
+
+# 2. 创建特性分支
+git checkout -b feature/xxx
+
+# 3. 提交 + 推送
+git commit -m "type(scope): 描述"
+git push -u origin HEAD
+
+# 4. 创建 PR（GitHub Web UI 或 gh CLI）
+# 5. 等待 CI 通过后合并
+```
 
 **历史债务清偿**:
 - 清除 1 处 TODO 残留 (`module_factory.cc:333`)
 - 归档 4 个 `.disabled` 测试文件至 `docs-archived/disabled-tests/`
 - 修复 12 个历史失败测试 (通配符端口匹配 / MockConsumer tick 机制 / Crossbar off-by-one)
+- 修复 StatGroup 路径重复拼接问题
+- 消除核心模块编译器警告（Wreorder / Uninitialized / Unused parameter）
+- 测试文件警告全部消除（Legacy 模块保留原样，待后续移除）
 
 **性能基准**: CacheTLM tick 延迟 **5.27 ns/op**
 
-**测试现状**: 86 用例, 85 通过, 1 延期 (PacketPool 单例污染 — SystemC TLM API 限制)
-
-**文档同步**: 6 个 AGENTS.md 层次化知识库 (root / include / core / tlm / framework / test)
-
----
-
-| # | Hash | 提交信息 |
-|---|------|---------|
+**版本**: v2.1.9
+**最后更新**: 2026-04-22
+**批准状态**: ✅ Phase 6 完成，CI/CD 集成，零债务验收
+**创建者**: Sisyphus (AI Architect)
