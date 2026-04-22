@@ -250,7 +250,7 @@ private:
 
     // 私有构造函数
     Packet(tlm::tlm_generic_payload* p, uint64_t cycle, PacketType t)
-        : payload(p), src_cycle(cycle), type(t), ref_count(0) {}
+        : payload(p), type(t), src_cycle(cycle), ref_count(0) {}
 
 
     friend class PacketPool;

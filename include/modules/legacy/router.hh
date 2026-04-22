@@ -18,6 +18,7 @@ public:
     Router(const std::string& n, EventQueue* eq) : SimObject(n, eq) {}
 
     bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) override {
+        (void)src_id; (void)src_label;
         int dst = routeByAddress(pkt->payload->get_address());
         auto& pm = getPortManager();
         if (dst < (int)pm.getDownstreamPorts().size()) {

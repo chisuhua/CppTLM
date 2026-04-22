@@ -11,6 +11,7 @@ public:
     MemorySim(const std::string& n, EventQueue* eq) : SimObject(n, eq) {}
 
     bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) override {
+        (void)src_label;
         pkt->payload->set_response_status(tlm::TLM_OK_RESPONSE);
         Packet* resp = PacketPool::get().acquire();
         resp->payload = pkt->payload;
@@ -23,7 +24,7 @@ public:
             getPortManager().getUpstreamPorts()[src_id]->sendResp(resp);
         }), 100);
 
-        DPRINTF(MEM, "Received request, responding in 100 cycles\n");
+        DPRINTF(MEM, "Received request, responding in 100 cycles\n", 0);
         return true;
     }
 
