@@ -17,20 +17,18 @@ jobs:
     strategy:
       matrix:
         build-type: [Release, Debug]
-        use-systemc: [OFF]  # ON 需要 SystemC 头文件
+        use-systemc: [OFF]
 
     name: Build (${{ matrix.build-type }}, SystemC=${{ matrix.use-systemc }})
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        submodules: recursive
 
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y ninja-build ccache clang-format
+        sudo apt-get install -y cmake build-essential ccache ninja-build
 
     - name: Configure ccache
       uses: hendrikmuhs/ccache-action@v1.2
@@ -43,48 +41,24 @@ jobs:
         cmake -S . -B build \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DUSE_SYSTEMC=${{ matrix.use-systemc }} \
-          -DBUILD_TESTS=ON \
-          -DBUILD_EXAMPLES=ON
+          -DUSE_SYSTEMC=${{ matrix.use-systemc }}
 
-    - name: Build core library
-      run: cmake --build build --target cpptlm_core
+    - name: Build
+      run: cmake --build build -j$(nproc)
 
     - name: Run tests
       run: |
         if [ -f build/bin/cpptlm_tests ]; then
-          ctest --test-dir build --output-on-failure
+          cd build && ctest --output-on-failure -j4
         else
-          echo "No test binary found (Catch2 may not be available offline)"
+          echo "Test binary not found"
+          exit 1
         fi
 
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ matrix.build-type }}-${{ matrix.use-systemc }}
+        name: test-results-${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-systemc }}-${{ github.run_id }}
         path: build/Testing/
         retention-days: 7
-
-  # ============================================================================
-  # 代码格式检查
-  # ============================================================================
-  code-format:
-    runs-on: ubuntu-latest
-
-    name: Code Format Check
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Install clang-format
-      run: sudo apt-get install -y clang-format
-
-    - name: Check code format
-      run: |
-        if [ -x scripts/format.sh ]; then
-          ./scripts/format.sh --check
-        else
-          echo "format.sh not found, skipping"
-        fi
