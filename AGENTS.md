@@ -1,9 +1,9 @@
 # CppTLM — C++ TLM Hybrid Simulation Framework
 
 **Generated:** 2026-04-22
-**Commit:** a1cd67b — fix(stats): 修复 StatGroup.dump() 路径重复拼接问题
+**Commit:** 99f0174 — ci: 添加 GitHub Actions CI/CD 工作流 (#4)
 **Branch:** main
-**Version:** 2.0.1
+**Version:** 2.0.2
 
 ## OVERVIEW
 
@@ -39,6 +39,10 @@ CppTLM/
 ├── docs-pending/    # 待整理文档
 ├── plans/           # 实施计划 JSON/Markdown
 ├── samples/         # 示例拓扑
+├── scripts/         # 工具脚本（format.sh 等）
+├── .github/
+│   └── workflows/
+│       └── ci.yml   # GitHub Actions CI/CD 工作流
 └── CMakeLists.txt   # 根构建配置
 ```
 
@@ -53,6 +57,7 @@ CppTLM/
 | 添加 StreamAdapter | `include/framework/stream_adapter.hh` 或 `multi_port_stream_adapter.hh` | 单端口 vs 多端口 |
 | 添加新 Bundle 类型 | `include/bundles/` | Bundle 定义 ChStream 内部消息格式 |
 | 查看 ChStream 集成验证 | `test/test_phase6_integration.cc` | Cache→Crossbar→Memory 端到端 |
+| 修改 CI/CD 工作流 | `.github/workflows/ci.yml` | GitHub Actions 配置 |
 | 运行测试 | `./build/bin/cpptlm_tests` | Catch2，支持 `[tag]` 过滤 |
 
 ## CONVENTIONS
@@ -67,6 +72,91 @@ CppTLM/
 - **CMake**: 显式列出源文件（禁用 GLOB），核心库 `cpptlm_core`（静态）
 - **零债务原则**: 每个 Phase 完成即编译通过、测试覆盖、文档同步。禁止遗留 TODO、跳过测试、未归档的技术债
 
+## CI/CD WORKFLOW
+
+### 工作流配置
+
+`.github/workflows/ci.yml` 定义了 CI/CD 流程：
+
+```yaml
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        build-type: [Release, Debug]
+        use-systemc: [OFF]
+    # 步骤: checkout → apt → ccache → cmake → build → test → upload-artifact
+
+  code-format:
+    # 步骤: checkout → clang-format → format.sh --check
+```
+
+### 本地提交流程（必须遵循）
+
+```
+1. 本地构建验证
+   cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF
+   cmake --build build -j$(nproc)
+   cd build && ctest --output-on-failure
+
+2. 创建特性分支
+   git checkout -b feature/xxx 或 git checkout -b fix/xxx
+
+3. 提交更改（使用 atomic commit）
+   git add <files>
+   git commit -m "type(scope): 简短描述"
+
+4. 推送分支
+   git push -u origin HEAD
+
+5. 创建 PR（使用 GitHub CLI 或 Web UI）
+   gh pr create --title "type: 描述" --body "## Summary\n\n..."
+   # 或通过 GitHub Web UI 创建
+
+6. 等待 CI 通过
+   gh run watch 或在 GitHub Actions 页面查看
+
+7. 合并 PR
+   gh pr merge #<number> --squash 或通过 Web UI 合并
+```
+
+### GitHub Token 配置
+
+使用 GitHub CLI 需要设置 Token：
+```bash
+export GITHUB_TOKEN="github_pat_xxx"
+echo $GITHUB_TOKEN | gh auth login --with-token
+gh auth status
+```
+
+### PR 合并策略
+
+- **推荐**: Squash merge（保留干净的历史）
+- **CI 必须通过**才能合并
+- Artifact 名称使用 `run_id` 避免冲突：`test-results-${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-systemc }}-${{ github.run_id }}`
+
+### 快速验证命令
+
+```bash
+# 本地完整构建 + 测试
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF && cmake --build build -j$(nproc) && cd build && ctest --output-on-failure
+
+# 格式检查
+./scripts/format.sh --check
+
+# 查看 CI 状态
+gh run list --limit 5
+
+# 监控 CI
+gh run watch
+```
+
 ## ANTI-PATTERNS (THIS PROJECT)
 
 - **禁止 GLOB 源文件**: CMakeLists.txt 使用 `set(CORE_SOURCES ...)` 显式列举（test/ 除外，使用 GLOB 自动发现测试）
@@ -76,6 +166,7 @@ CppTLM/
 - **Legacy 模块不可修改**: `include/modules/legacy/` 下的模块已归档，新功能使用 `include/tlm/`
 - **测试禁止 `.disabled`**: `test_config_loader.cc.disabled` 等是已知跳过状态，非错误。新代码禁止创建 .disabled 测试
 - **禁止 TODO 残留**: Step 7 中的 `// TODO: bind_ports_array` 等未完成逻辑必须在 Phase 完成前清除或归档
+- **禁止跳过本地 CI 验证**: 推送到 remote 前必须本地通过构建和测试
 
 ## UNIQUE STYLES
 
@@ -106,6 +197,12 @@ ctest --test-dir build --output-on-failure
 
 # 快速验证编译
 cmake --build build -- -j$(nproc)
+
+# GitHub CLI（需要 GITHUB_TOKEN）
+gh run list --limit 5                        # 查看 CI 状态
+gh run watch                                 # 监控当前 CI
+gh pr create --title "type: 描述" --body "..."  # 创建 PR
+gh pr merge #<number> --squash               # Squash 合并 PR
 ```
 
 ## NOTES
@@ -115,3 +212,4 @@ cmake --build build -- -j$(nproc)
 - **已知失败**: Pool/Wildcard/Connection 相关测试 12 个失败，为历史遗留问题，零回归
 - **构建产物**: `build/bin/` 下所有可执行文件，`build/lib/` 下 `cpptlm_core.a`
 - **文档不同步**: `docs/architecture/01-hybrid-architecture-v2.1.md` 停留在 v2.1.5，Phase 6 未同步
+- **CI 配置**: `.github/workflows/ci.yml` 定义了 Release/Debug 双模式构建和测试
