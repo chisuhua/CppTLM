@@ -32,13 +32,13 @@ TEST_CASE("VirtualChannelTest InOrderPerVC_OutOfOrderAcrossVC", "[virtual][chann
     producer.sendPacket(0);  // VC0
     producer.sendPacket(1);  // VC1
 
-    // 模拟消费：按顺序取包
-    while (!consumer.received_packets.empty()) {
-        consumer.received_packets.pop_back();
-    }
+    // 启动 tick 循环并运行事件队列
+    producer.initiate_tick();
+    consumer.initiate_tick();
+    eq.run(10);
 
     // 验证同 VC 内保序
-    REQUIRE(consumer.received_vcs.size() > 0);  // 至少有一些包被接收
+    REQUIRE(consumer.received_vcs.size() > 0);
     // 不能保证跨 VC 顺序，但同 VC 必须有序
     int seq0 = -1, seq1 = -1;
     for (size_t i = 0; i < consumer.received_packets.size(); ++i) {
@@ -52,8 +52,8 @@ TEST_CASE("VirtualChannelTest InOrderPerVC_OutOfOrderAcrossVC", "[virtual][chann
         }
     }
 
-    // 清理 - 使用PacketPool释放包而不是直接delete
+    // 清理
     for (auto* pkt : consumer.received_packets) {
-        PacketPool::get().release(pkt);  // 使用PacketPool释放包
+        PacketPool::get().release(pkt);
     }
 }
