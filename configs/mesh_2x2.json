@@ -1,0 +1,32 @@
+// configs/mesh_2x2.json
+// 2×2 Mesh 测试拓扑：4 个 NICTLM + 4 个 Router
+{
+  "modules": [
+    { "name": "nic_0_0", "type": "NICTLM", "node_id": 0 },
+    { "name": "nic_0_1", "type": "NICTLM", "node_id": 1 },
+    { "name": "nic_1_0", "type": "NICTLM", "node_id": 2 },
+    { "name": "nic_1_1", "type": "NICTLM", "node_id": 3 },
+    { "name": "router_0_0", "type": "RouterTLM" },
+    { "name": "router_0_1", "type": "RouterTLM" },
+    { "name": "router_1_0", "type": "RouterTLM" },
+    { "name": "router_1_1", "type": "RouterTLM" },
+    { "name": "mem_0_0", "type": "MemoryTLM" },
+    { "name": "mem_1_1", "type": "MemoryTLM" }
+  ],
+  "groups": {
+    "nics": ["nic_*"],
+    "routers": ["router_*"]
+  },
+  "connections": [
+    { "src": "nic_0_0", "dst": "router_0_0" },
+    { "src": "nic_0_1", "dst": "router_0_1" },
+    { "src": "nic_1_0", "dst": "router_1_0" },
+    { "src": "nic_1_1", "dst": "router_1_1" },
+    { "src": "router_0_0", "dst": "router_0_1", "latency": 1 },
+    { "src": "router_0_1", "dst": "router_1_1", "latency": 1 },
+    { "src": "router_1_1", "dst": "router_1_0", "latency": 1 },
+    { "src": "router_1_0", "dst": "router_0_0", "latency": 1 },
+    { "src": "router_0_0", "dst": "mem_0_0" },
+    { "src": "router_1_1", "dst": "mem_1_1" }
+  ]
+}
