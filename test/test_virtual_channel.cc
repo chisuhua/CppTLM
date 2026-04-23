@@ -38,7 +38,7 @@ TEST_CASE("VirtualChannelTest InOrderPerVC_OutOfOrderAcrossVC", "[virtual][chann
     eq.run(10);
 
     // 验证同 VC 内保序
-    REQUIRE(consumer.received_vcs.size() > 0);
+    REQUIRE(consumer.received_vcs.size() > 0);  // 至少有一些包被接收
     // 不能保证跨 VC 顺序，但同 VC 必须有序
     int seq0 = -1, seq1 = -1;
     for (size_t i = 0; i < consumer.received_packets.size(); ++i) {
