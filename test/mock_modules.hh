@@ -86,7 +86,12 @@ public:
         }
     }
 
-    void tick() override {}
+    void tick() override {
+        // 驱动下游端口的 tick，将 VC 中的包发送到对端
+        for (auto* port : getPortManager().getDownstreamPorts()) {
+            port->tick();
+        }
+    }
 };
 
 // 简化版 Consumer，用于接收请求
@@ -104,7 +109,12 @@ public:
         return true;
     }
 
-    void tick() override {}
+    void tick() override {
+        // 驱动上游端口的 tick，将 VC 中的包传递到 Consumer
+        for (auto* port : getPortManager().getUpstreamPorts()) {
+            port->tick();
+        }
+    }
 };
 
 #endif // MOCK_MODULES_HH
