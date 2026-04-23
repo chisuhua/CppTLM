@@ -9,6 +9,7 @@
 #include "framework/stream_adapter.hh"
 #include "framework/multi_port_stream_adapter.hh"
 #include "framework/dual_port_stream_adapter.hh"
+#include "framework/bidirectional_port_adapter.hh"
 #include "core/sim_object.hh"
 #include <functional>
 #include <unordered_map>
@@ -86,9 +87,25 @@ public:
             return new cpptlm::DualPortStreamAdapter<ModuleT, PE_ReqBundleT, PE_RespBundleT,
                                                    Net_ReqBundleT, Net_RespBundleT>(mod);
         };
-        // 标记为双端口类型（2 个逻辑端口组）
         dual_port_types_.insert(type);
         port_count_[type] = 2;
+    }
+
+    /**
+     * @brief 注册双向端口适配器（RouterTLM 等使用）
+     *
+     * @param type 模块类型字符串（如 "RouterTLM"）
+     * @param N 端口数量
+     *
+     * 双向端口模块有 N 个端口，每端口同时支持 req_in 和 resp_out。
+     */
+    template<typename ModuleT, typename BundleT, std::size_t N>
+    void registerBidirectionalPortAdapter(const std::string& type) {
+        table_[type] = [](SimObject* obj, const nlohmann::json*) {
+            auto* mod = static_cast<ModuleT*>(obj);
+            return new cpptlm::BidirectionalPortAdapter<ModuleT, BundleT, N>(mod);
+        };
+        port_count_[type] = N;
     }
 
 private:

@@ -8,6 +8,8 @@
 #include "tlm/cpu_tlm.hh"
 #include "tlm/traffic_gen_tlm.hh"
 #include "tlm/arbiter_tlm.hh"
+#include "tlm/router_tlm.hh"
+#include "tlm/nic_tlm.hh"
 #include "core/module_factory.hh"
 #include "core/chstream_adapter_factory.hh"
 #include "bundles/cache_bundles_tlm.hh"
@@ -20,6 +22,7 @@
 // 多端口模块注册（CrossbarTLM 4 端口）
 // Initiator 模块注册（CPUTLM / TrafficGenTLM）
 // 仲裁器（ArbiterTLM 模板特化）
+// 路由器（RouterTLM 5 端口 Bidirectional）
 // ============================================================
 #define REGISTER_CHSTREAM \
     ModuleFactory::registerObject<CacheTLM>("CacheTLM"); \
@@ -29,6 +32,8 @@
     ModuleFactory::registerObject<TrafficGenTLM>("TrafficGenTLM"); \
     ModuleFactory::registerObject<ArbiterTLM<2>>("ArbiterTLM2"); \
     ModuleFactory::registerObject<ArbiterTLM<4>>("ArbiterTLM4"); \
+    ModuleFactory::registerObject<tlm::RouterTLM>("RouterTLM"); \
+    ModuleFactory::registerObject<tlm::NICTLM>("NICTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
@@ -42,7 +47,12 @@
     ChStreamAdapterFactory::get().registerMultiPortAdapter<ArbiterTLM<2>, \
         bundles::CacheReqBundle, bundles::CacheRespBundle, 2>("ArbiterTLM2"); \
     ChStreamAdapterFactory::get().registerMultiPortAdapter<ArbiterTLM<4>, \
-        bundles::CacheReqBundle, bundles::CacheRespBundle, 4>("ArbiterTLM4");
+        bundles::CacheReqBundle, bundles::CacheRespBundle, 4>("ArbiterTLM4"); \
+    ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<tlm::RouterTLM, \
+        bundles::NoCFlitBundle, 5>("RouterTLM"); \
+    ChStreamAdapterFactory::get().registerDualPortAdapter<tlm::NICTLM, \
+        bundles::CacheReqBundle, bundles::CacheRespBundle, \
+        bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM");
 
 // ============================================================
 // 双端口非对称模块注册宏（NICTLM 等）
