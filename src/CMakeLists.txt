@@ -12,6 +12,9 @@ set(CORE_SOURCES
     core/plugin_loader.cc
     # utils
     utils/dynamic_loader.cc
+    # tlm (Phase 7: RouterTLM + NICTLM)
+    tlm/router_tlm.cc
+    tlm/nic_tlm.cc
 )
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
