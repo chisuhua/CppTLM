@@ -17,8 +17,7 @@ static void inject_req(NICTLM* nic, uint64_t tid, uint64_t addr, bool wr, uint64
     req.is_write.write(wr ? 1 : 0);
     req.data.write(data);
     req.size.write(8);
-    nic->pe_req_in().consume();
-    std::memcpy(&nic->pe_req_in().data(), &req, sizeof(req));
+    nic->pe_req_in().data() = req;
     nic->pe_req_in().set_valid(true);
 }
 
