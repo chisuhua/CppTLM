@@ -221,29 +221,33 @@ void RouterTLM::stage_switch_allocation() {
 
     // 遍历所有输出端口，每个端口最多选中一个 flit
     for (unsigned out_port = 0; out_port < NUM_PORTS; ++out_port) {
-        // 检查下游 credit
-        for (unsigned vc = 0; vc < NUM_VCS; ++vc) {
-            if (!has_credit(out_port, vc)) continue;
+        // 遍历所有输入端口，寻找目标为 out_port 且 VA 已完成的 flit
+        for (unsigned in_port = 0; in_port < NUM_PORTS; ++in_port) {
+            for (unsigned in_vc = 0; in_vc < NUM_VCS; ++in_vc) {
+                auto& buf = input_buffer_[in_port][in_vc];
+                if (buf.empty()) continue;
 
-            // 找到第一个等待此输出端口的 flit
-            for (unsigned in_port = 0; in_port < NUM_PORTS; ++in_port) {
-                for (unsigned in_vc = 0; in_vc < NUM_VCS; ++in_vc) {
-                    auto& buf = input_buffer_[in_port][in_vc];
-                    if (buf.empty()) continue;
+                RouterFlit& flit = buf.front();
+                if (!flit.stage.active) continue;
+                if (!flit.stage.vc_allocated) continue;  // VA 还未分配 VC，跳过
+                if (flit.stage.out_port != out_port) continue;
 
-                    RouterFlit& flit = buf.front();
-                    if (!flit.stage.active) continue;
-                    if (flit.stage.out_port != out_port) continue;
+                // 使用 VA 阶段已分配的 out_vc
+                unsigned out_vc = flit.stage.out_vc;
 
-                    // 选中此 flit，加入 winners 列表
-                    sa_winners_.push_back({in_port, in_vc, out_port, vc});
-                    break;  // 此 out_port 已选中 flit，跳到下一个 out_port
-                }
-                if (!sa_winners_.empty() &&
-                    sa_winners_.back().out_port == out_port) {
-                    break;  // 已经为这个 out_port 选中了 flit
-                }
+                // 检查下游是否有 credit
+                if (!has_credit(out_port, out_vc)) continue;
+
+                // 选中此 flit，加入 winners 列表
+                sa_winners_.push_back({in_port, in_vc, out_port, out_vc});
+                break;  // 此 out_port 已选中 flit，跳到下一个 out_port
             }
+            // 检查是否已为这个 out_port 选中了 winner
+            bool found = false;
+            for (const auto& w : sa_winners_) {
+                if (w.out_port == out_port) { found = true; break; }
+            }
+            if (found) break;  // 已经为这个 out_port 选中了 flit，跳到下一个 out_port
         }
     }
 }
