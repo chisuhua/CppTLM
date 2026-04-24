@@ -61,6 +61,10 @@ RouterTLM::RouterTLM(const std::string& name, EventQueue* eq,
     stats_ = RouterStats{};
 }
 
+RouterTLM::~RouterTLM() {
+    delete routing_algo_;
+}
+
 // ============================================================================
 // ChStreamModuleBase 接口
 // ============================================================================
@@ -105,8 +109,8 @@ void RouterTLM::tick() {
     // 阶段 6: Link Traversal (LT)
     stage_link_traversal();
 
-    // Credit 恢复 (隐式 return，防止永久阻塞)
-    restore_credits();
+    // Credit 安全网：防止永久阻塞（非精确流控）
+    credit_safety_reset();
 }
 
 // ============================================================================
@@ -295,8 +299,8 @@ void RouterTLM::stage_switch_traversal() {
 
 void RouterTLM::stage_link_traversal() {
     // 从 pending_link_ 队列取出 flit，发送到 resp_out_
-    // 这实现了 1 周期链路传输延迟建模
-    while (!pending_link_.empty()) {
+    // 每周期只处理一个 flit（模拟单链路带宽限制）
+    if (!pending_link_.empty()) {
         auto pf = pending_link_.front();
         resp_out_[pf.out_port].write(pf.bundle);
         pending_link_.pop();
@@ -346,14 +350,17 @@ void RouterTLM::receive_credit(unsigned in_port, unsigned vc) {
     }
 }
 
-void RouterTLM::restore_credits() {
-    if (current_cycle_ - last_credit_restore_cycle_ >= BUFFER_DEPTH) {
+// Credit 安全网：每 BUFFER_DEPTH 周期重置所有 credit，防止永久阻塞
+// 注意：这是安全网而非精确的 credit-based flow control
+// 精确实现需要在下游消费 flit 后显式调用 receive_credit()
+void RouterTLM::credit_safety_reset() {
+    if (current_cycle_ - last_credit_safety_reset_cycle_ >= BUFFER_DEPTH) {
         for (unsigned p = 0; p < NUM_PORTS; ++p) {
             for (unsigned v = 0; v < NUM_VCS; ++v) {
                 downstream_credits_[p][v] = BUFFER_DEPTH;
             }
         }
-        last_credit_restore_cycle_ = current_cycle_;
+        last_credit_safety_reset_cycle_ = current_cycle_;
     }
 }
 

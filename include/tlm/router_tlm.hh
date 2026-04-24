@@ -150,6 +150,7 @@ public:
     RouterTLM(const std::string& name, EventQueue* eq,
               unsigned node_x = 0, unsigned node_y = 0,
               unsigned mesh_x = DEFAULT_MESH_X, unsigned mesh_y = DEFAULT_MESH_Y);
+    ~RouterTLM() override;
 
     // ========== 端口访问器 (BidirectionalPortAdapter 需要) ==========
     std::array<ReqAdapter, NUM_PORTS>& req_in() { return req_in_; }
@@ -260,9 +261,9 @@ private:
     // ========== 流水线寄存器 (每周期保存中间状态) ==========
     RouterStageState pipe_reg_[NUM_PORTS][NUM_VCS];
 
-    // ========== Credit 恢复 (隐式 return，防止永久阻塞) ==========
-    uint64_t last_credit_restore_cycle_ = 0;
-    void restore_credits();
+    // ========== Credit 安全网 (防止永久阻塞) ==========
+    uint64_t last_credit_safety_reset_cycle_ = 0;
+    void credit_safety_reset();
 
     // ========== LT 阶段 pending queue (链路延迟建模) ==========
     struct PendingFlit {
