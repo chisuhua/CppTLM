@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <vector>
 #include <array>
+#include <queue>
 
 namespace tlm {
 
@@ -150,6 +151,8 @@ private:
     tlm_stats::Distribution& stats_latency_;
 
     std::vector<PendingPacket> pending_packets_;
+
+    std::queue<bundles::NoCFlitBundle> pending_flit_queue_;
 };
 
 } // namespace tlm
