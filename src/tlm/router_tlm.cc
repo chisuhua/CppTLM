@@ -217,11 +217,9 @@ void RouterTLM::stage_vc_allocation() {
 
 void RouterTLM::stage_switch_allocation() {
     // 清零仲裁结果
-    sa_grant_ = false;
-    sa_winner_port_ = NUM_PORTS;
-    sa_winner_vc_ = NUM_VCS;
+    sa_winners_.clear();
 
-    // 遍历所有输入端口，寻找请求同一输出端口的 flits
+    // 遍历所有输出端口，每个端口最多选中一个 flit
     for (unsigned out_port = 0; out_port < NUM_PORTS; ++out_port) {
         // 检查下游 credit
         for (unsigned vc = 0; vc < NUM_VCS; ++vc) {
@@ -237,11 +235,13 @@ void RouterTLM::stage_switch_allocation() {
                     if (!flit.stage.active) continue;
                     if (flit.stage.out_port != out_port) continue;
 
-                    // 选中此 flit
-                    sa_grant_ = true;
-                    sa_winner_port_ = in_port;
-                    sa_winner_vc_ = in_vc;
-                    return;  // 每个周期只仲裁一次
+                    // 选中此 flit，加入 winners 列表
+                    sa_winners_.push_back({in_port, in_vc, out_port, vc});
+                    break;  // 此 out_port 已选中 flit，跳到下一个 out_port
+                }
+                if (!sa_winners_.empty() &&
+                    sa_winners_.back().out_port == out_port) {
+                    break;  // 已经为这个 out_port 选中了 flit
                 }
             }
         }
@@ -253,44 +253,43 @@ void RouterTLM::stage_switch_allocation() {
 // ============================================================================
 
 void RouterTLM::stage_switch_traversal() {
-    if (!sa_grant_) return;
-    if (sa_winner_port_ >= NUM_PORTS || sa_winner_vc_ >= NUM_VCS) return;
+    if (sa_winners_.empty()) return;
 
-    auto& buf = input_buffer_[sa_winner_port_][sa_winner_vc_];
-    if (buf.empty()) return;
+    // 处理所有选中的 winners
+    for (const auto& winner : sa_winners_) {
+        auto& buf = input_buffer_[winner.in_port][winner.in_vc];
+        if (buf.empty()) continue;
 
-    RouterFlit flit = buf.front();
-    buf.pop();
+        RouterFlit flit = buf.front();
+        buf.pop();
 
-    unsigned out_port = flit.stage.out_port;
-    unsigned out_vc = flit.stage.out_vc;
+        unsigned out_port = winner.out_port;
+        unsigned out_vc = winner.out_vc;
 
-    // 消耗下游 credit
-    consume_credit(out_port, out_vc);
+        // 消耗下游 credit
+        consume_credit(out_port, out_vc);
 
-    // 更新 hop 计数
-    flit.bundle.hops.write(flit.bundle.hops.read() + 1);
+        // 更新 hop 计数
+        flit.bundle.hops.write(flit.bundle.hops.read() + 1);
 
-    // 写入 pending link 队列 (LT 阶段才会真正发送到 resp_out_)
-    pending_link_.push({flit.bundle, out_port});
+        // 写入 pending link 队列 (LT 阶段才会真正发送到 resp_out_)
+        pending_link_.push({flit.bundle, out_port});
 
-    // 更新统计
-    stats_.flits_forwarded++;
-    stats_.total_hops += flit.bundle.hops.read();
-    stats_.total_latency_cycles += (current_cycle_ - flit.cycle_received);
+        // 更新统计
+        stats_.flits_forwarded++;
+        stats_.total_hops += flit.bundle.hops.read();
+        stats_.total_latency_cycles += (current_cycle_ - flit.cycle_received);
 
-    // TAIL flit: 释放 VC，更新 packet 统计
-    if (flit.bundle.is_tail()) {
-        release_vc(out_port, out_vc);
-        stats_.packets_forwarded++;
+        // TAIL flit: 释放 VC，更新 packet 统计
+        if (flit.bundle.is_tail()) {
+            release_vc(out_port, out_vc);
+            stats_.packets_forwarded++;
 
-        // 清理路由表
-        uint64_t pkt_id = flit.bundle.transaction_id.read();
-        routing_table_.erase(pkt_id);
+            // 清理路由表
+            uint64_t pkt_id = flit.bundle.transaction_id.read();
+            routing_table_.erase(pkt_id);
+        }
     }
-
-    // 清理流水线状态
-    flit.stage.active = false;
 }
 
 // ============================================================================

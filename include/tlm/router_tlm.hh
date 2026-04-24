@@ -11,6 +11,7 @@
 #include "metrics/stats_manager.hh"
 #include <array>
 #include <queue>
+#include <vector>
 #include <unordered_map>
 #include <cstdint>
 
@@ -272,10 +273,14 @@ private:
     };
     std::queue<PendingFlit> pending_link_;  // ST → LT 之间的 1 周期延迟队列
 
-    // ========== 仲裁器状态 ==========
-    unsigned sa_winner_port_ = NUM_PORTS;
-    unsigned sa_winner_vc_ = NUM_VCS;
-    bool sa_grant_ = false;
+    // ========== SA 多 winner 支持 (每周期可转发多个 flit) ==========
+    struct SAWinner {
+        unsigned in_port;
+        unsigned in_vc;
+        unsigned out_port;
+        unsigned out_vc;
+    };
+    std::vector<SAWinner> sa_winners_;  // 每周期可选中多个 winner（不同输出端口）
 };
 
 } // namespace tlm
