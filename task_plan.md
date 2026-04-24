@@ -1,177 +1,160 @@
-# Task Plan: 配置生成与性能可视化流水线
+# Task Plan: Phase 7 NoC/NIC 代码修复
 
-**项目**: CppTLM 配置生成 + 流式统计 + Python 可视化
+**项目**: CppTLM Phase 7 NoC/NIC
 **版本**: 1.0
-**创建日期**: 2026-04-22
-**最后更新**: 2026-04-22
+**创建日期**: 2026-04-24
+**最后更新**: 2026-04-24
 
 ---
 
 ## 目标
 
-建立完整的**配置生成 → 仿真 → 性能可视化**流水线。
+修复 Phase 7 评审报告中发现的代码缺陷，确保代码可编译、可运行。
 
 ---
 
-## Phase 状态总览
+## 优先级总览
 
-| Phase | 任务 | 状态 | 产出 |
-|-------|------|:----:|------|
-| A | Python 拓扑生成器 | 🔴 pending | `scripts/topology_generator.py` |
-| B | C++ 流式统计导出 | 🔴 pending | `include/metrics/streaming_reporter.hh` |
-| C | Python 实时监控 + Dashboard | 🔴 pending | `scripts/stats_watcher.py` |
-| D | Python 性能标注工具 | 🔴 pending | `scripts/stats_annotator.py` |
-| E | 集成测试 + 文档更新 | 🔴 pending | 完整流水线验证 |
-
----
-
-## Phase A: Python 拓扑生成器
-
-### 任务清单
-
-- [ ] A.1 创建 `scripts/topology_generator.py`
-  - [ ] A.1.1 TopologyGenerator 类框架
-  - [ ] A.1.2 generate_mesh() 方法
-  - [ ] A.1.3 generate_ring() 方法
-  - [ ] A.1.4 generate_bus() 方法
-  - [ ] A.1.5 generate_hierarchical() 方法
-  - [ ] A.1.6 export_json_config() 方法
-  - [ ] A.1.7 export_layout() 方法
-  - [ ] A.1.8 export_dot() 方法
-  - [ ] A.1.9 apply_networkx_layout() 方法
-  - [ ] A.1.10 命令行参数解析
-
-- [ ] A.2 创建 `scripts/layout_manager.py`
-  - [ ] A.2.1 LayoutManager 类
-  - [ ] A.2.2 布局导入/导出 JSON
-  - [ ] A.2.3 DOT 位置注入
-
-- [ ] A.3 创建 `scripts/layout_to_dot.py`
-  - [ ] A.3.1 布局转 DOT 转换器
-
-- [ ] A.4 验收测试
-  - [ ] A.4.1 mesh 4x4 生成验证
-  - [ ] A.4.2 ring 8 生成验证
-  - [ ] A.4.3 layout JSON 导入导出验证
-
-### 产出文件
-
-```
-scripts/
-├── topology_generator.py   # 拓扑生成器
-├── layout_manager.py       # 布局管理器
-└── layout_to_dot.py       # 布局转 DOT
-```
+| 优先级 | 类型 | 问题数 | 状态 |
+|--------|------|--------|------|
+| P0 | 编译错误 | 1 | 🔴 pending |
+| P1 | 正确性严重 | 4 | 🔴 pending |
+| P2 | 精度/设计一致性 | 3 | 🔴 pending |
+| P3 | 代码质量 | 3 | 🟡 pending |
 
 ---
 
-## Phase B: C++ 流式统计导出
+## P0: 编译错误（阻塞性）
 
-### 任务清单
+### P0-1: BidirectionalPortAdapter tick() 调用不存在的 req_out()
 
-- [ ] B.1 创建 `include/metrics/streaming_reporter.hh`
-  - [ ] B.1.1 StreamingReporter 类定义
-  - [ ] B.1.2 后台输出线程
-  - [ ] B.1.3 JSON Lines 序列化
-  - [ ] B.1.4 非阻塞入队机制
+**文件**: `include/framework/bidirectional_port_adapter.hh`
+**行**: 108
+**问题**: `module_->req_out()[i].clear_valid()` — RouterTLM 没有 `req_out()` 方法
 
-- [ ] B.2 修改 `src/main.cpp`
-  - [ ] B.2.1 添加命令行参数解析
-  - [ ] B.2.2 集成 StreamingReporter
+**修复方案**: 删除 `clear_valid()` 调用，`send()` 内部已处理
 
-- [ ] B.3 验收测试
-  - [ ] B.3.1 --stream-stats 参数工作
-  - [ ] B.3.2 JSON Lines 文件正确生成
-  - [ ] B.3.3 仿真性能开销 <5%
-
-### 产出文件
-
-```
-include/metrics/
-└── streaming_reporter.hh   # 流式导出器
-
-src/
-└── main.cpp                # 修改: 添加流式统计参数
-```
+**状态**: 🔴 pending
 
 ---
 
-## Phase C: Python 实时监控 + Dashboard
+## P1: 正确性严重问题
 
-### 任务清单
+### P1-1: VC ID 硬编码为 0
 
-- [ ] C.1 创建 `scripts/stats_watcher.py`
-  - [ ] C.1.1 StatsStreamHandler (watchdog)
-  - [ ] C.1.2 StatsAggregator 聚合器
-  - [ ] C.1.3 命令行参数
+**文件**: `src/tlm/router_tlm.cc`
+**行**: 122
+**问题**: `unsigned vc = 0;` 忽略 bundle 中的 vc_id
 
-- [ ] C.2 创建 `scripts/dashboard_server.py`
-  - [ ] C.2.1 DashboardServer 类
-  - [ ] C.2.2 指标卡片组件
-  - [ ] C.2.3 Plotly 图表
-
-- [ ] C.3 验收测试
-  - [ ] C.3.1 Dashboard 启动验证
-  - [ ] C.3.2 实时更新验证
-  - [ ] C.3.3 --no-gui 控制台模式
-
-### 产出文件
-
+**修复方案**: 从 bundle 读取 VC ID
+```cpp
+unsigned vc = req_adapter.data().vc_id.read();
+if (vc >= NUM_VCS) vc = 0;
 ```
-scripts/
-├── stats_watcher.py        # 统计监控器
-└── dashboard_server.py     # Web 仪表板 (可选模块)
-```
+
+**状态**: 🔴 pending
+
+### P1-2: Credit Return 永不通路
+
+**文件**: `src/tlm/router_tlm.cc`
+**问题**: `receive_credit()` 从未被调用，credit 永久耗尽导致阻塞
+
+**修复方案**: 添加 `implicit_credit_return()` 机制，每 BUFFER_DEPTH 周期自动恢复 credit
+
+**状态**: 🔴 pending
+
+### P1-3: NICTLM reassemble flits 数组未初始化
+
+**文件**: `src/tlm/nic_tlm.cc`
+**行**: 122
+**问题**: `std::array<NoCFlitBundle, FLITS_PER_PACKET>` 使用默认构造，可能包含垃圾值
+
+**修复方案**: 使用 `{}` 显式初始化
+
+**状态**: 🔴 pending
+
+### P1-4: NICTLM reassemble 非 HEAD flit 处理缺失
+
+**文件**: `src/tlm/nic_tlm.cc`
+**行**: 108-119
+**问题**: 当 `it == pending_packets_.end()` 且 flit 不是 HEAD 时，应该忽略但当前会丢失
+
+**修复方案**: 添加 else 分支处理非 HEAD 情况
+
+**状态**: 🔴 pending
 
 ---
 
-## Phase D: Python 性能标注工具
+## P2: 精度/设计一致性
 
-### 任务清单
+### P2-1: LT 阶段空实现
 
-- [ ] D.1 创建 `scripts/stats_annotator.py`
-  - [ ] D.1.1 StatsAnnotator 类
-  - [ ] D.1.2 HTML 报告生成
-  - [ ] D.1.3 DOT 性能标注
+**文件**: `src/tlm/router_tlm.cc`
+**行**: 290-294
+**问题**: 六阶段流水线 LT 阶段为空，每跳 1 周期链路延迟未建模
 
-- [ ] D.2 创建 `scripts/run_full_pipeline.sh`
-  - [ ] D.2.1 完整流水线脚本
+**修复方案**: 添加 pending_output 队列，LT 阶段才真正发送 flit
 
-- [ ] D.3 验收测试
-  - [ ] D.3.1 HTML 报告生成
-  - [ ] D.3.2 DOT 标注验证
+**状态**: 🔴 pending
 
-### 产出文件
+### P2-2: VC Allocation 重复分配
 
-```
-scripts/
-├── stats_annotator.py      # 性能标注工具
-└── run_full_pipeline.sh    # 集成脚本
-```
+**文件**: `src/tlm/router_tlm.cc`
+**行**: 184-202
+**问题**: 每个周期为所有 active flit 重新分配 VC，应该只在 RC 阶段后分配一次
+
+**修复方案**: 添加 `vc_allocated` 标记，只对 HEAD flit 首次进入 VA 时分配
+
+**状态**: 🔴 pending
+
+### P2-3: Switch Allocation 只仲裁一个 flit
+
+**文件**: `src/tlm/router_tlm.cc`
+**行**: 234
+**问题**: `return` 语句导致每周期只转发一个 flit
+
+**修复方案**: 移除 return，收集所有仲裁结果，批量处理多个 flit
+
+**状态**: 🔴 pending
 
 ---
 
-## Phase E: 集成测试 + 文档
+## P3: 代码质量
 
-### 任务清单
+### P3-1: NICTLM packetize 无 backpressure 检查
 
-- [ ] E.1 创建 `requirements-visualization.txt`
-- [ ] E.2 更新 `docs/README.md`
-- [ ] E.3 完整流水线端到端测试
+**文件**: `src/tlm/nic_tlm.cc`
+**行**: 95
+**问题**: 无条件 `net_req_out_.write()`，不检查下游 ready 信号
 
-### 产出文件
+**修复方案**: 添加 `ready()` 检查，仅在下游可接收时写入
 
-```
-requirements-visualization.txt   # Python 依赖
-docs/                            # 文档更新
-```
+**状态**: 🟡 pending
+
+### P3-2: test_nic_tlm.cc inject_req 实现可疑
+
+**文件**: `test/test_nic_tlm.cc`
+**问题**: consume/set_valid 顺序错误，memcpy 用法不安全
+
+**修复方案**: 修正为正确顺序，直接赋值替代 memcpy
+
+**状态**: 🟡 pending
+
+### P3-3: 缺少真正的 NoC/NIC 集成测试
+
+**文件**: `test/test_phase7_integration.cc`
+**问题**: 该文件测试 CPUTLM/ArbiterTLM，与 RouterTLM/NICTLM 无关
+
+**修复方案**: 新增 `test_noc_integration.cc`，测试 Router 多跳转发
+
+**状态**: 🟡 pending
 
 ---
 
 ## 错误记录
 
-| 错误 | Phase | 尝试 | 解决 |
-|------|-------|:----:|------|
+| 错误 | P# | 尝试 | 解决 |
+|------|----|:----:|------|
 | (无) | - | - | - |
 
 ---
@@ -180,12 +163,11 @@ docs/                            # 文档更新
 
 | 决策 | 日期 | 理由 |
 |------|------|------|
-| Phase A 先于 B 实现 | 2026-04-22 | Python 独立于 C++，可并行开发 |
-| StreamingReporter header-only | 2026-04-22 | 无需编译，易于集成 |
-| JSON Lines 格式 | 2026-04-22 | 流式解析优于完整 JSON |
+| Credit Return 采用隐式方案 | 2026-04-24 | 简化实现，避免大规模架构修改 |
+| LT 延迟用 pending queue 方案 | 2026-04-24 | 不改变 tick() 调用顺序，最小侵入 |
 
 ---
 
 ## 下一步行动
 
-**Phase A.1**: 创建 `scripts/topology_generator.py`
+**P0-1**: 修复 BidirectionalPortAdapter tick() 编译错误
