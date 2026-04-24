@@ -104,8 +104,8 @@ public:
         for (std::size_t i = 0; i < N; i++) {
             if (module_->resp_out()[i].valid()) {
                 if (req_out_port_[i]) {
+                    // send() 内部会清除 valid 标志，不需要手动 clear_valid()
                     module_->resp_out()[i].send(req_out_port_[i], PKT_REQ);
-                    module_->resp_out()[i].clear_valid();
                 }
             }
         }
