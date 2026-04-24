@@ -27,6 +27,10 @@ void NICTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {
 }
 
 void NICTLM::tick() {
+    if (!net_req_out_.valid() && !pending_flit_queue_.empty()) {
+        net_req_out_.write(pending_flit_queue_.front());
+        pending_flit_queue_.pop();
+    }
     handle_pe_req();
     handle_net_resp();
 }
@@ -92,7 +96,7 @@ void NICTLM::packetize(const bundles::CacheReqBundle& req) {
             flit.flit_type.write(bundles::NoCFlitBundle::FLIT_BODY);
         }
 
-        net_req_out_.write(flit);
+        pending_flit_queue_.push(flit);
         ++stats_flits_sent_;
     }
 
