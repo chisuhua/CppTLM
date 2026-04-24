@@ -203,7 +203,10 @@ void RouterTLM::stage_vc_allocation() {
             unsigned out_vc = allocate_vc(out_port);
 
             if (out_vc < NUM_VCS) {
-                // VA 成功，更新 out_vc 并标记
+                if (!has_credit(out_port, out_vc)) {
+                    release_vc(out_port, out_vc);
+                    continue;
+                }
                 flit.stage.out_vc = out_vc;
                 flit.stage.vc_allocated = true;
             }
