@@ -30,6 +30,7 @@ void NICTLM::tick() {
     if (!net_req_out_.valid() && !pending_flit_queue_.empty()) {
         net_req_out_.write(pending_flit_queue_.front());
         pending_flit_queue_.pop();
+        ++stats_flits_sent_;
     }
     handle_pe_req();
     handle_net_resp();
@@ -97,7 +98,6 @@ void NICTLM::packetize(const bundles::CacheReqBundle& req) {
         }
 
         pending_flit_queue_.push(flit);
-        ++stats_flits_sent_;
     }
 
     ++stats_packets_sent_;
