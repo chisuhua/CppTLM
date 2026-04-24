@@ -113,13 +113,20 @@ bool NICTLM::reassemble(const bundles::NoCFlitBundle& flit) {
             p.flits_received = 0;
             p.is_write = flit.is_write.read();
             p.address = flit.address.read();
-            p.flits[flit.flit_index.read()] = flit;
+            p.flits = {};  // 显式初始化，防止垃圾值
+            uint8_t idx = flit.flit_index.read();
+            if (idx < FLITS_PER_PACKET) {
+                p.flits[idx] = flit;
+            }
             pending_packets_.push_back(p);
         }
         return false;
     }
 
-    it->flits[flit.flit_index.read()] = flit;
+    uint8_t idx = flit.flit_index.read();
+    if (idx < FLITS_PER_PACKET) {
+        it->flits[idx] = flit;
+    }
     ++it->flits_received;
 
     if (flit.is_tail()) {
