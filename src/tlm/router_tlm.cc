@@ -104,6 +104,9 @@ void RouterTLM::tick() {
 
     // 阶段 6: Link Traversal (LT)
     stage_link_traversal();
+
+    // Credit 恢复 (隐式 return，防止永久阻塞)
+    restore_credits();
 }
 
 // ============================================================================
@@ -114,12 +117,13 @@ void RouterTLM::stage_buffer_write() {
     for (unsigned port = 0; port < NUM_PORTS; ++port) {
         auto& req_adapter = req_in_[port];
         if (req_adapter.valid()) {
-            // 读取 flit
-            RouterFlit flit(req_adapter.data(), port, 0, current_cycle_);
-            req_adapter.consume();
+            // 从 bundle 读取 VC ID
+            unsigned vc = req_adapter.data().vc_id.read();
+            if (vc >= NUM_VCS) vc = 0;  // 边界保护
 
-            // 分配 VC (默认 VC 0)
-            unsigned vc = 0;
+            // 读取 flit
+            RouterFlit flit(req_adapter.data(), port, vc, current_cycle_);
+            req_adapter.consume();
 
             // 检查缓冲区空间
             if (input_buffer_[port][vc].size() < BUFFER_DEPTH) {
@@ -189,13 +193,15 @@ void RouterTLM::stage_vc_allocation() {
 
             RouterFlit& flit = buf.front();
             if (!flit.stage.active) continue;
+            if (flit.stage.vc_allocated) continue;  // 跳过已分配 VC 的 flit
 
             unsigned out_port = flit.stage.out_port;
             unsigned out_vc = allocate_vc(out_port);
 
             if (out_vc < NUM_VCS) {
-                // VA 成功，更新 out_vc
+                // VA 成功，更新 out_vc 并标记
                 flit.stage.out_vc = out_vc;
+                flit.stage.vc_allocated = true;
             }
         }
     }
@@ -261,8 +267,8 @@ void RouterTLM::stage_switch_traversal() {
     // 更新 hop 计数
     flit.bundle.hops.write(flit.bundle.hops.read() + 1);
 
-    // 写入输出端口
-    resp_out_[out_port].write(flit.bundle);
+    // 写入 pending link 队列 (LT 阶段才会真正发送到 resp_out_)
+    pending_link_.push({flit.bundle, out_port});
 
     // 更新统计
     stats_.flits_forwarded++;
@@ -288,9 +294,13 @@ void RouterTLM::stage_switch_traversal() {
 // ============================================================================
 
 void RouterTLM::stage_link_traversal() {
-    // Link Traversal 阶段用于建模链路传输延迟
-    // 当前实现：每跳固定 1 周期延迟（在 hop 计数中体现）
-    // 可选扩展：使用 link_delay_ 参数建模更精确的链路延迟
+    // 从 pending_link_ 队列取出 flit，发送到 resp_out_
+    // 这实现了 1 周期链路传输延迟建模
+    while (!pending_link_.empty()) {
+        auto pf = pending_link_.front();
+        resp_out_[pf.out_port].write(pf.bundle);
+        pending_link_.pop();
+    }
 }
 
 // ============================================================================
@@ -333,6 +343,17 @@ void RouterTLM::receive_credit(unsigned in_port, unsigned vc) {
     if (in_port >= NUM_PORTS || vc >= NUM_VCS) return;
     if (downstream_credits_[in_port][vc] < BUFFER_DEPTH) {
         downstream_credits_[in_port][vc]++;
+    }
+}
+
+void RouterTLM::restore_credits() {
+    if (current_cycle_ - last_credit_restore_cycle_ >= BUFFER_DEPTH) {
+        for (unsigned p = 0; p < NUM_PORTS; ++p) {
+            for (unsigned v = 0; v < NUM_VCS; ++v) {
+                downstream_credits_[p][v] = BUFFER_DEPTH;
+            }
+        }
+        last_credit_restore_cycle_ = current_cycle_;
     }
 }
 

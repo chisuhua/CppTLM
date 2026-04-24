@@ -33,6 +33,7 @@ enum class RouterPort : unsigned {
  */
 struct RouterStageState {
     bool active = false;          // 本周期是否有 flit 处理
+    bool vc_allocated = false;   // VA 阶段是否已分配 VC (避免重复分配)
     unsigned out_port = 0;        // 分配的输出端口
     unsigned out_vc = 0;          // 分配的输出 VC
     uint64_t packet_id = 0;      // 分组 ID (用于路由表查找)
@@ -258,6 +259,17 @@ private:
 
     // ========== 流水线寄存器 (每周期保存中间状态) ==========
     RouterStageState pipe_reg_[NUM_PORTS][NUM_VCS];
+
+    // ========== Credit 恢复 (隐式 return，防止永久阻塞) ==========
+    uint64_t last_credit_restore_cycle_ = 0;
+    void restore_credits();
+
+    // ========== LT 阶段 pending queue (链路延迟建模) ==========
+    struct PendingFlit {
+        bundles::NoCFlitBundle bundle;
+        unsigned out_port;
+    };
+    std::queue<PendingFlit> pending_link_;  // ST → LT 之间的 1 周期延迟队列
 
     // ========== 仲裁器状态 ==========
     unsigned sa_winner_port_ = NUM_PORTS;
