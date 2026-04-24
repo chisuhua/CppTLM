@@ -1,6 +1,6 @@
 # CppTLM 复杂拓扑实现架构文档
 
-**版本**: v2.2 (规划中)
+**版本**: v2.2 (Phase 7 完成)
 **作者**: CppTLM Team
 **日期**: 2026-04-23
 **状态**: 架构设计文档
@@ -71,6 +71,71 @@ Step 7: StreamAdapter 注入         - ChStream 模块特殊处理
 | **无路由器抽象** | 只有简单 Router 类，无网络拓扑构建能力 | 无法构建 Mesh/Ring/Crossbar 等 NoC |
 | **无路由算法** | 连接是静态的，无 XY/West-First 等路由策略 | 无法模拟真实 NoC 行为 |
 | **无 NetworkInterface** | 没有 NI 概念，CPU 直接连路由器 | 与 gem5/SystemC 建模方式不一致 |
+
+---
+
+## 1.3 当前实现 vs 规划架构 (Phase 7 完成)
+
+> **状态**: Phase 7 (NoC/NIC TLM 模块开发) 已完成，以下是实现与规划的对比。
+
+### 1.3.1 类型映射表 (已实现)
+
+```python
+# scripts/topology_generator.py - CPPTLM_TYPE_MAP
+CPPTLM_TYPE_MAP = {
+    # 终端类型 ✅ 已实现
+    'Processor': 'CPUSim',           # ✅ → CPUSim (legacy)
+    'Cache': 'CacheTLM',             # ✅ → CacheTLM
+    'Memory': 'MemoryTLM',           # ✅ → MemoryTLM
+    'NetworkInterface': 'NICTLM',    # ✅ → NICTLM (Phase 7 新增)
+
+    # 网络类型 ✅ 已实现
+    'Router': 'RouterTLM',          # ✅ → RouterTLM (Phase 7 新增)
+    'MeshRouter': 'RouterTLM',      # ✅ → RouterTLM (XY 路由)
+    'Bus': 'BusSim',               # ⚠️ → BusSim (legacy)
+    'Crossbar': 'CrossbarTLM',     # ✅ → CrossbarTLM
+}
+```
+
+### 1.3.2 模块实现状态
+
+| 架构文档类型 | 实现类 | 状态 | 说明 |
+|-------------|--------|------|------|
+| `NetworkInterface` | `NICTLM` | ✅ 已实现 | Phase 7: packetize/reassemble, AddressMap |
+| `MeshRouter` | `RouterTLM` | ✅ 已实现 | Phase 7: 六阶段流水线, XY 路由算法 |
+| `Router` | `RouterTLM` | ✅ 已实现 | 通用路由器基类 |
+| `Processor` | `CPUSim` | ✅ 已有 | legacy 模块 |
+| `Cache` | `CacheTLM` | ✅ 已有 | TLM 模块 |
+| `Memory` | `MemoryTLM` | ✅ 已有 | TLM 模块 |
+| `Crossbar` | `CrossbarTLM` | ✅ 已有 | TLM 模块 |
+| `Bus` | `BusSim` | ⚠️ legacy | 需迁移到 TLM |
+
+### 1.3.3 CpuCluster 定位决策
+
+**结论**: `CpuCluster` 保持现状，作为语义占位符。
+
+| 分析项 | 结论 |
+|--------|------|
+| **本质** | `CpuCluster` 是命名约定，表示"这个 SimModule 代表一个 CPU 集群" |
+| **技术实现** | `SimModule` 已提供完整的分层机制 (`internal_factory`, `outputs`/`inputs`) |
+| **架构文档对应** | Cluster 是概念性分组，非独立模块类 |
+| **建议** | 保持 `CpuCluster` 命名，无需重构为通用 `HierarchicalModule` |
+
+```cpp
+// include/modules/legacy/cpu_cluster.hh
+class CpuCluster : public SimModule {
+    // 无自定义逻辑，仅作为层次化容器的语义标签
+};
+```
+
+### 1.3.4 仍需完成的工作
+
+| 任务 | 优先级 | 说明 |
+|------|--------|------|
+| `BusSim` 迁移 | P2 | 已有 BusSim (legacy)，评估是否需要 TLM 版本 |
+| 层次化配置格式 | P1 | SOC JSON Schema，支持 `subnetworks` 嵌套 |
+| GPU Cluster 支持 | P2 | 异构拓扑扩展 |
+| VC (虚拟通道) | P3 | 后续 Phase |
 
 ---
 
@@ -514,23 +579,23 @@ public:
 
 ## 5. topology_generator.py 重构
 
-### 5.1 类型映射表
+### 5.1 类型映射表 (已实现)
 
 ```python
 # scripts/topology_generator.py
 
-# CppTLM 注册表类型映射
+# CppTLM 注册表类型映射 (Phase 7 已实现)
 CPPTLM_TYPE_MAP = {
     # 终端类型
-    'Processor': 'CPUSim',       # 处理器
-    'Cache': 'CacheTLM',         # 缓存
-    'Memory': 'MemoryTLM',       # 内存
+    'Processor': 'CPUSim',         # 处理器
+    'Cache': 'CacheTLM',           # 缓存
+    'Memory': 'MemoryTLM',         # 内存
     'Directory': 'DirectoryCtrl', # 目录控制器
-    'NetworkInterface': 'NITLM',  # 网络接口
+    'NetworkInterface': 'NICTLM', # 网络接口 (Phase 7 NICTLM)
 
     # 网络类型
-    'Router': 'Router',          # 通用路由器
-    'MeshRouter': 'Router',       # Mesh 路由器 (使用通用 Router)
+    'Router': 'RouterTLM',        # 通用路由器 (Phase 7 RouterTLM)
+    'MeshRouter': 'RouterTLM',    # Mesh 路由器 (Phase 7 RouterTLM, XY 路由)
     'Bus': 'BusSim',             # 总线
     'Crossbar': 'CrossbarTLM',   # 交叉开关
 }
@@ -539,6 +604,18 @@ def generate_mesh(self, rows, cols, node_type='Processor'):
     # 生成节点时使用映射后的类型
     cpp_type = CPPTLM_TYPE_MAP.get(node_type, node_type)
     self.graph.add_node(node_id, type=cpp_type)
+```
+
+**使用方式**:
+```bash
+# 生成 Mesh 拓扑 (自动映射类型)
+python3 topology_generator.py --type mesh --size 4x4 -o configs/mesh.json
+
+# 禁用映射，保留抽象类型名
+python3 topology_generator.py --type mesh --size 4x4 --no-mapping -o configs/mesh_abstract.json
+
+# 指定目标平台
+python3 topology_generator.py --type mesh --size 4x4 --target gem5 -o configs/mesh_gem5.json
 ```
 
 ### 5.2 生成器接口
@@ -661,25 +738,25 @@ public:
 
 ## 7. 实现计划
 
-### 7.1 Phase 1: 基础类型扩展 (1-2 周)
+### 7.1 Phase 1: 基础类型扩展 ✅ 已完成
 
-| 任务 | 描述 | 优先级 |
-|------|------|--------|
-| 添加 `NITLM` | NetworkInterface 模块 | P0 |
-| 扩展 `topology_generator.py` | 添加类型映射表 | P0 |
-| 修复现有配置 | 使 `noc_mesh.json` 可运行 | P1 |
-| 添加 `Router` 多端口支持 | 支持 5 端口路由器 | P1 |
+| 任务 | 描述 | 优先级 | 状态 |
+|------|------|--------|------|
+| 添加 `NITLM` | NetworkInterface 模块 | P0 | ✅ 已完成 (NICTLM) |
+| 扩展 `topology_generator.py` | 添加类型映射表 | P0 | ✅ 已完成 |
+| 修复现有配置 | 使 `noc_mesh.json` 可运行 | P1 | ✅ 已完成 |
+| 添加 `Router` 多端口支持 | 支持 5 端口路由器 | P1 | ✅ 已完成 |
 
-### 7.2 Phase 2: Mesh NoC (2-3 周)
+### 7.2 Phase 2: Mesh NoC ✅ 已完成
 
-| 任务 | 描述 | 优先级 |
-|------|------|--------|
-| 实现 `MeshRouter` | 5 端口 Mesh 路由器 | P0 |
-| 实现 XY 路由算法 | 表驱动 + XY 路由 | P0 |
-| 实现 `MeshTopologyGenerator` | Mesh 拓扑生成器 | P1 |
-| 性能统计 | 链路利用率、路由器负载 | P2 |
+| 任务 | 描述 | 优先级 | 状态 |
+|------|------|--------|------|
+| 实现 `MeshRouter` | 5 端口 Mesh 路由器 | P0 | ✅ 已完成 (RouterTLM) |
+| 实现 XY 路由算法 | 表驱动 + XY 路由 | P0 | ✅ 已完成 |
+| 实现 `MeshTopologyGenerator` | Mesh 拓扑生成器 | P1 | ✅ 已完成 |
+| 性能统计 | 链路利用率、路由器负载 | P2 | ⚠️ 后续 Phase |
 
-### 7.3 Phase 3: 层次化拓扑 (2-3 周)
+### 7.3 Phase 3: 层次化拓扑 📋 待规划
 
 | 任务 | 描述 | 优先级 |
 |------|------|--------|
@@ -688,7 +765,7 @@ public:
 | 多级连接 | 集群内 + 集群间连接 | P1 |
 | GPU 集群支持 | 异构拓扑 | P2 |
 
-### 7.4 Phase 4: 高级特性 (3-4 周)
+### 7.4 Phase 4: 高级特性 📋 待规划
 
 | 任务 | 描述 | 优先级 |
 |------|------|--------|
@@ -808,4 +885,5 @@ class Mesh_XY(SimpleTopology):
 
 | 版本 | 日期 | 作者 | 描述 |
 |------|------|------|------|
+| 1.1 | 2026-04-24 | CppTLM Team | Phase 7 完成: 添加当前实现 vs 规划架构对比 (Section 1.3)，更新类型映射表 (Section 5.1)，更新实现计划 (Section 7) |
 | 1.0 | 2026-04-23 | CppTLM Team | 初始文档 |

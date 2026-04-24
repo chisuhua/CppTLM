@@ -41,10 +41,61 @@ except ImportError:
 class TopologyGenerator:
     """拓扑生成器 - 根据类型生成模块连接图"""
 
-    def __init__(self, name: str = "topology"):
+    # =========================================================================
+    # CppTLM 类型映射表
+    # =========================================================================
+    # 架构文档 (v2.2) 中的抽象类型 → CppTLM 注册表中的实际类型
+    # 用于解决 "topology_generator 生成 MeshRouter/Processor，
+    # 但注册表只有 Router/CPUSim" 的不匹配问题
+    # 参考: docs/architecture/02-complex-topology-architecture.md Section 5.1
+
+    CPPTLM_TYPE_MAP: Dict[str, str] = {
+        # 终端类型 (Terminal Types)
+        'Processor': 'CPUSim',           # 处理器核
+        'Cache': 'CacheTLM',            # 缓存控制器
+        'Memory': 'MemoryTLM',          # 内存控制器
+        'Directory': 'DirectoryCtrl',  # 目录控制器 (如使用)
+        'NetworkInterface': 'NICTLM',   # 网络接口 (Phase 7 NICTLM)
+
+        # 网络类型 (Network Types)
+        'Router': 'RouterTLM',          # 通用路由器 (Phase 7 RouterTLM)
+        'MeshRouter': 'RouterTLM',      # Mesh 路由器 (Phase 7 RouterTLM 实现 XY 路由)
+        'Bus': 'BusSim',               # 共享总线
+        'Crossbar': 'CrossbarTLM',     # 交叉开关
+
+        # 遗留类型 (Legacy - 保持兼容)
+        'TrafficGen': 'TrafficGenTLM', # 流量生成器
+        'Port': 'Port',                # 通用端口
+    }
+
+    def __init__(self, name: str = "topology", target: str = "cpptlm"):
+        """
+        初始化拓扑生成器
+
+        Args:
+            name: 拓扑名称
+            target: 目标平台 ('cpptlm' | 'gem5')，默认 'cpptlm'
+        """
         self.graph = nx.DiGraph()
         self.graph.name = name
         self.layout_coords: Dict[str, Tuple[float, float]] = {}
+        self.target = target  # 'cpptlm' 或 'gem5'
+
+    def _map_type(self, abstract_type: str) -> str:
+        """
+        将抽象类型映射到目标平台的实际类型
+
+        Args:
+            abstract_type: 架构文档中的抽象类型 (如 'MeshRouter')
+
+        Returns:
+            目标平台的具体类型 (如 'RouterTLM')
+        """
+        if self.target == "cpptlm":
+            return self.CPPTLM_TYPE_MAP.get(abstract_type, abstract_type)
+        else:
+            # gem5 目标直接返回抽象类型
+            return abstract_type
 
     # =========================================================================
     # 拓扑生成方法
@@ -308,18 +359,27 @@ class TopologyGenerator:
     # 导入/导出方法
     # =========================================================================
 
-    def export_json_config(self) -> Dict:
+    def export_json_config(self, use_mapping: bool = True) -> Dict:
         """
         导出为 CppTLM JSON 配置格式
+
+        Args:
+            use_mapping: 是否使用类型映射 (默认 True)
+                         True:  'MeshRouter' → 'RouterTLM'
+                         False: 保留原始类型名
 
         Returns:
             Dict: JSON 配置字典
         """
         modules = []
         for node, attrs in self.graph.nodes(data=True):
+            node_type = attrs.get("type", "Unknown")
+            if use_mapping and self.target == "cpptlm":
+                node_type = self._map_type(node_type)
+
             modules.append({
                 "name": node,
-                "type": attrs.get("type", "Unknown")
+                "type": node_type
             })
 
         connections = []
@@ -573,11 +633,26 @@ def main():
         help="拓扑名称 (默认: {type}_topology)"
     )
 
+    # 目标平台
+    parser.add_argument(
+        "--target",
+        default="cpptlm",
+        choices=["cpptlm", "gem5"],
+        help="目标平台类型 (默认: cpptlm)"
+    )
+
+    # 禁用类型映射
+    parser.add_argument(
+        "--no-mapping",
+        action="store_true",
+        help="禁用类型映射，保留抽象类型名 (MeshRouter/Processor 等)"
+    )
+
     args = parser.parse_args()
 
     # 创建生成器
     name = args.name or f"{args.type}_topology"
-    gen = TopologyGenerator(name=name)
+    gen = TopologyGenerator(name=name, target=args.target)
 
     # 根据类型生成拓扑
     if args.type == "mesh":
@@ -614,7 +689,7 @@ def main():
         print(f"[OK] Applied '{args.layout_algo}' layout algorithm")
 
     # 导出配置
-    config = gen.export_json_config()
+    config = gen.export_json_config(use_mapping=not args.no_mapping)
     output_path = args.output
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
