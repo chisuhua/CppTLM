@@ -543,10 +543,42 @@ If Phase 1 acceptance criteria fail after deployment:
 
 **Note**: This section will be expanded after Phase 1 deployment validation.
 
-## 8. Version History
+## 8. 补充任务（ARCH-012 识别）
+
+以下任务来自 ARCH-012 差距分析审查，在原 IMPL-010 中未覆盖：
+
+### 8.1 Phase 1 补充任务
+
+| 任务 | 对应差距 | 工作量 | 说明 |
+|------|---------|--------|------|
+| JSON Schema 验证器 | CFG-08 | 2 days | 使用 `nlohmann/json-schema` 库验证配置格式 |
+| set_config() 类型检查 | PARAM-01, PARAM-05 | 1 day | 添加 `is_number()`/`contains()` 检查，必填参数校验 |
+| 端口索引解析严格性 | DEF-04 | 0.5 day | `std::stoul` + 位置参数检查完整字符串 |
+| ModuleGroup 通配符优化 | DEF-01 | 1 day | 添加组存在性检查，优化 O(n²) 匹配 |
+| BidirectionalPortAdapter 绑定配置 | DEF-03 | 1 day | 允许 JSON 定义 PE/Net 端口顺序 |
+| type_registry.json 自动生成 | DEF-05 | 1 day | 从 C++ `REGISTER_CHSTREAM` 宏自动生成 |
+
+### 8.2 Phase 2 补充任务
+
+| 任务 | 对应差距 | 工作量 | 说明 |
+|------|---------|--------|------|
+| 端口方向检查 | PORT-01 | 1 day | 防止 req_out → req_out 等方向错误 |
+| 端口类型兼容性检查 | PORT-02 | 1 day | 验证 MasterPort/SlavePort Bundle 类型匹配 |
+| Bundle 类型验证 | PORT-03 | 1 day | 扩展 ChStreamAdapterFactory 维护 Bundle 注册表 |
+
+### 8.3 Phase 3 补充任务
+
+| 任务 | 对应差距 | 工作量 | 说明 |
+|------|---------|--------|------|
+| Python TopologyValidator | VALID-01, VALID-02 | 3 days | 连接完整性检查 + BFS 可达性验证 |
+| 路由表自动生成器 | SIM-03 | 3 days | 从拓扑图自动计算 XY/自定义路由表 |
+| C++ 验证器集成 | VALID-01, VALID-02 | 2 days | C++ 端验证接口，与 Python 验证器结果交叉确认 |
+
+## 9. Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v2.1 | 2026-04-27 | Added ARCH-012 supplementary tasks: JSON Schema validation, parameter type checking, port validation, topology validation, routing table generation, and ModuleFactory defect fixes (DEF-01/03/04/05). |
 | v2.0 | 2026-04-26 | Added v4.0 implementation phases (4-6): hierarchy core, protocol bridge, multi-cluster validation. Added G8-G10 gap implementations. Added CoherenceDomain and ProtocolBridge C++ designs. Added 15 new test cases (TC-16 to TC-30). |
 | v1.0 | 2026-04-26 | Initial implementation plan |
 
