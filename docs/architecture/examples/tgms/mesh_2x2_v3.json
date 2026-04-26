@@ -1,0 +1,39 @@
+{
+  "$schema": "../../10-tgms-specifications.md",
+  "description": "2x2 Mesh NoC configuration - TGMS v3.0 format (minimal test config)",
+  "version": "3.0",
+  "plugin": ["libcpptlm_core.so"],
+  "modules": [
+    {"name": "ni_0_0", "type": "NICTLM", "params": {"node_id": 0, "mesh_x": 2, "mesh_y": 2}},
+    {"name": "ni_0_1", "type": "NICTLM", "params": {"node_id": 1, "mesh_x": 2, "mesh_y": 2}},
+    {"name": "ni_1_0", "type": "NICTLM", "params": {"node_id": 2, "mesh_x": 2, "mesh_y": 2}},
+    {"name": "ni_1_1", "type": "NICTLM", "params": {"node_id": 3, "mesh_x": 2, "mesh_y": 2}},
+    {"name": "router_0_0", "type": "RouterTLM", "params": {"node_x": 0, "node_y": 0, "mesh_x": 2, "mesh_y": 2}},
+    {"name": "router_0_1", "type": "RouterTLM", "params": {"node_x": 1, "node_y": 0, "mesh_x": 2, "mesh_y": 2}},
+    {"name": "router_1_0", "type": "RouterTLM", "params": {"node_x": 0, "node_y": 1, "mesh_x": 2, "mesh_y": 2}},
+    {"name": "router_1_1", "type": "RouterTLM", "params": {"node_x": 1, "node_y": 1, "mesh_x": 2, "mesh_y": 2}},
+    {"name": "proc_0_0", "type": "CPUSim"},
+    {"name": "proc_0_1", "type": "CPUSim"},
+    {"name": "proc_1_0", "type": "CPUSim"},
+    {"name": "proc_1_1", "type": "CPUSim"}
+  ],
+  "connections": [
+    {"src": "ni_0_0.1", "dst": "router_0_0.4"},
+    {"src": "ni_0_1.1", "dst": "router_0_1.4"},
+    {"src": "ni_1_0.1", "dst": "router_1_0.4"},
+    {"src": "ni_1_1.1", "dst": "router_1_1.4"},
+    {"src": "proc_0_0", "dst": "ni_0_0.0"},
+    {"src": "proc_0_1", "dst": "ni_0_1.0"},
+    {"src": "proc_1_0", "dst": "ni_1_0.0"},
+    {"src": "proc_1_1", "dst": "ni_1_1.0"},
+    {"src": "router_0_0.1", "dst": "router_0_1.3"},
+    {"src": "router_0_1.3", "dst": "router_0_0.1"},
+    {"src": "router_1_0.1", "dst": "router_1_1.3"},
+    {"src": "router_1_1.3", "dst": "router_1_0.1"},
+    {"src": "router_0_0.2", "dst": "router_1_0.0"},
+    {"src": "router_1_0.0", "dst": "router_0_0.2"},
+    {"src": "router_0_1.2", "dst": "router_1_1.0"},
+    {"src": "router_1_1.0", "dst": "router_0_1.2"}
+  ]
+}
+

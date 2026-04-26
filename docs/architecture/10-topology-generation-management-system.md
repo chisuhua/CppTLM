@@ -1126,10 +1126,11 @@ class TopologyDiffEngine:
 | | | 2 | SOUTH |
 | | | 3 | WEST |
 | | | 4 | LOCAL |
-| NICTLM | 4 | 0 | PE req_in |
-| | | 1 | PE resp_out |
-| | | 2 | Net req_out |
-| | | 3 | Net resp_in |
+| NICTLM | 2 (port groups) | 0 | **PE 侧**（连接 Cache/CPU），组 0：pe_req_in, pe_resp_out, resp_in, req_out |
+| | | 1 | **Network 侧**（连接 Router），组 1：net_req_out, net_resp_in, resp_in, req_out |
+
+> **连接说明**: NICTLM 使用 DualPortStreamAdapter，`port_count_ = 2` 表示**2 个端口组**（而非 4 个独立端口）。NI → Router 连接使用端口索引 `1`（Network side → Router.LOCAL）。Processor → NI 连接使用端口索引 `0`（PE side，默认）。每组内部有 4 个 ChStreamPort，但连接索引只区分组。
+
 | CrossbarTLM | 4 | 0-3 | 输入端口 0-3 |
 | CacheTLM | 1 | 0 | 唯一端口 |
 | MemoryTLM | 1 | 0 | 唯一端口 |
