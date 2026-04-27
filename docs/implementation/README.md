@@ -1,7 +1,7 @@
 # 实施计划文档
 
-> **版本**: 1.0  
-> **最后更新**: 2026-04-10
+> **版本**: 1.1
+> **最后更新**: 2026-04-27
 
 ---
 
@@ -9,15 +9,7 @@
 
 | 文档 | 说明 | 状态 |
 |------|------|------|
-| [01-implementation-plan.md](./01-implementation-plan.md) | 初步实施计划 | ✅ 完成 |
-| [02-implementation-plan-detailed.md](./02-implementation-plan-detailed.md) | 详细实施计划 | ✅ 完成 |
 | [phase2-detailed-plan.md](./phase2-detailed-plan.md) | Phase 2 详细计划 | ✅ 完成 |
-
----
-
-## 最新版本
-
-最新实施计划见 [plans/implementation_plan_v2.md](../../plans/implementation_plan_v2.md)
 
 ---
 
@@ -31,8 +23,10 @@
 | Phase 3 | ✅ 完成 | 100% |
 | Phase 4 | ✅ 完成 | 100% |
 | Phase 5 | ✅ 完成 | 100% |
-| Phase 6 | ⏳ 进行中 | 0% |
+| Phase 6 | ✅ 完成 | 100% |
 
 ---
+
+**历史文档**: v2.0 实施计划已移至 [docs-archived/implementation-plans](./docs-archived/implementation-plans/)
 
 **维护**: CppTLM 开发团队

@@ -211,5 +211,4 @@ gh pr merge #<number> --squash               # Squash 合并 PR
 - **ccache 自动检测**: 编译加速，未安装时降级（非 fatal）
 - **已知失败**: Pool/Wildcard/Connection 相关测试 12 个失败，为历史遗留问题，零回归
 - **构建产物**: `build/bin/` 下所有可执行文件，`build/lib/` 下 `cpptlm_core.a`
-- **文档不同步**: `docs/architecture/01-hybrid-architecture-v2.1.md` 停留在 v2.1.5，Phase 6 未同步
 - **CI 配置**: `.github/workflows/ci.yml` 定义了 Release/Debug 双模式构建和测试
