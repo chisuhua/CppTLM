@@ -177,6 +177,9 @@ public:
     unsigned mesh_y() const { return mesh_y_; }
     uint32_t node_id() const { return node_x_ + node_y_ * mesh_x_; }
 
+    // ========== 配置管理（Phase 1）==========
+    void on_config_loaded() override;
+
     // ========== 统计接口 ==========
     struct RouterStats {
         uint64_t flits_forwarded = 0;     // 转发的 flit 总数

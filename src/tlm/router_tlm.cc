@@ -65,6 +65,24 @@ RouterTLM::~RouterTLM() {
     delete routing_algo_;
 }
 
+void RouterTLM::on_config_loaded() {
+    const auto& cfg = get_config();
+    if (cfg.contains("node_x")) {
+        node_x_ = cfg["node_x"].get<unsigned>();
+    }
+    if (cfg.contains("node_y")) {
+        node_y_ = cfg["node_y"].get<unsigned>();
+    }
+    if (cfg.contains("mesh_x")) {
+        mesh_x_ = cfg["mesh_x"].get<unsigned>();
+    }
+    if (cfg.contains("mesh_y")) {
+        mesh_y_ = cfg["mesh_y"].get<unsigned>();
+    }
+    DPRINTF(MODULE, "[CONFIG] RouterTLM %s: node=(%u,%u) mesh=(%u,%u)\n",
+            name.c_str(), node_x_, node_y_, mesh_x_, mesh_y_);
+}
+
 // ============================================================================
 // ChStreamModuleBase 接口
 // ============================================================================

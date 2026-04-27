@@ -79,6 +79,14 @@ void ModuleFactory::instantiateAll(const json& config) {
                 object_instances[name]->setLayout(x, y);
             }
         }
+
+        if (mod.contains("params")) {
+            auto* obj = object_instances[name];
+            if (obj) {
+                obj->set_config(mod["params"]);
+                DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
+            }
+        }
     }
 
     // ========================

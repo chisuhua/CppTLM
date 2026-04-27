@@ -21,6 +21,31 @@ NICTLM::NICTLM(const std::string& name, EventQueue* eq,
       stats_latency_(stat_group_.addDistribution("latency", "Packet end-to-end latency", "cycle")) {
 }
 
+void NICTLM::on_config_loaded() {
+    const auto& cfg = get_config();
+    if (cfg.contains("node_id")) {
+        node_id_ = cfg["node_id"].get<uint32_t>();
+    }
+    if (cfg.contains("mesh_x")) {
+        mesh_x_ = cfg["mesh_x"].get<uint32_t>();
+    }
+    if (cfg.contains("mesh_y")) {
+        mesh_y_ = cfg["mesh_y"].get<uint32_t>();
+    }
+    if (cfg.contains("address_regions")) {
+        for (const auto& reg : cfg["address_regions"]) {
+            add_address_region(
+                reg["base"].get<uint64_t>(),
+                reg["size"].get<uint64_t>(),
+                reg["target_node"].get<uint32_t>(),
+                reg.value("target_type", "MEMORY_CTRL")
+            );
+        }
+    }
+    DPRINTF(MODULE, "[CONFIG] NICTLM %s: node_id=%u mesh=(%u,%u) addr_regions=%zu\n",
+            name.c_str(), node_id_, mesh_x_, mesh_y_, addr_map_.regions_.size());
+}
+
 void NICTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {
     // DualPortStreamAdapter 通过内部指针存储，不需要额外处理
     (void)adapter;

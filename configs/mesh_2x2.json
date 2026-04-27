@@ -2,14 +2,14 @@
 // 2×2 Mesh 测试拓扑：4 个 NICTLM + 4 个 Router
 {
   "modules": [
-    { "name": "nic_0_0", "type": "NICTLM", "node_id": 0 },
-    { "name": "nic_0_1", "type": "NICTLM", "node_id": 1 },
-    { "name": "nic_1_0", "type": "NICTLM", "node_id": 2 },
-    { "name": "nic_1_1", "type": "NICTLM", "node_id": 3 },
-    { "name": "router_0_0", "type": "RouterTLM" },
-    { "name": "router_0_1", "type": "RouterTLM" },
-    { "name": "router_1_0", "type": "RouterTLM" },
-    { "name": "router_1_1", "type": "RouterTLM" },
+    { "name": "nic_0_0", "type": "NICTLM", "params": { "node_id": 0, "mesh_x": 2, "mesh_y": 2 } },
+    { "name": "nic_0_1", "type": "NICTLM", "params": { "node_id": 1, "mesh_x": 2, "mesh_y": 2 } },
+    { "name": "nic_1_0", "type": "NICTLM", "params": { "node_id": 2, "mesh_x": 2, "mesh_y": 2 } },
+    { "name": "nic_1_1", "type": "NICTLM", "params": { "node_id": 3, "mesh_x": 2, "mesh_y": 2 } },
+    { "name": "router_0_0", "type": "RouterTLM", "params": { "node_x": 0, "node_y": 0, "mesh_x": 2, "mesh_y": 2 } },
+    { "name": "router_0_1", "type": "RouterTLM", "params": { "node_x": 1, "node_y": 0, "mesh_x": 2, "mesh_y": 2 } },
+    { "name": "router_1_0", "type": "RouterTLM", "params": { "node_x": 0, "node_y": 1, "mesh_x": 2, "mesh_y": 2 } },
+    { "name": "router_1_1", "type": "RouterTLM", "params": { "node_x": 1, "node_y": 1, "mesh_x": 2, "mesh_y": 2 } },
     { "name": "mem_0_0", "type": "MemoryTLM" },
     { "name": "mem_1_1", "type": "MemoryTLM" }
   ],
