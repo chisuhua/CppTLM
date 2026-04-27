@@ -279,7 +279,89 @@ public:
         return "SimObject";
     }
 
-    // ========== 消息处理（保持向后兼容） ==========
+    // ========== 配置管理（Phase 1: 选项A + 预留选项B扩展点）==========
+
+    /**
+     * @brief 配置参数描述符（选项B扩展点）
+     * 
+     * 派生类可重写以声明参数 Schema，用于验证和自动生成文档。
+     * 默认返回空 vector，表示使用选项A的简单存储模式（无验证）。
+     */
+    struct ParamDesc {
+        std::string name;       ///< 参数名称
+        enum Type { INT, UINT, STRING, BOOL, ARRAY } type;  ///< 参数类型
+        bool required = false;  ///< 是否必填
+        json default_value;     ///< 默认值
+
+        ParamDesc() = default;
+        ParamDesc(const std::string& n, Type t, bool req, const json& def)
+            : name(n), type(t), required(req), default_value(def) {}
+    };
+
+    /**
+     * @brief 获取参数 Schema 描述
+     * @return 参数描述向量（空=选项A兼容模式）
+     */
+    virtual std::vector<ParamDesc> get_param_schema() const {
+        return {};
+    }
+
+    /**
+     * @brief 设置配置参数（选项A基础实现）
+     * 
+     * 基类存储原始 JSON，子类可重写 on_config_loaded() 做解析和验证。
+     * 
+     * @param params JSON 配置对象
+     */
+    virtual void set_config(const json& params) {
+        config_ = params;
+        on_config_loaded();
+    }
+
+    /**
+     * @brief 获取已存储的配置参数
+     * @return JSON 配置对象的引用
+     */
+    const json& get_config() const { return config_; }
+
+    /**
+     * @brief 配置加载后回调（子类可重写）
+     * 
+     * 选项A：子类在此解析 config_ 中的字段
+     * 选项B：基类在此自动验证 schema（如果已实现）
+     * 
+     * 默认空实现，保持向后兼容。
+     */
+    virtual void on_config_loaded() {}
+
+    /**
+     * @brief 验证配置是否合法
+     * 
+     * 当 get_param_schema() 返回非空时，基类可自动验证。
+     * 默认实现：schema 为空时返回 true，否则使用验证器检查。
+     * 
+     * @return true 如果配置合法或无 schema
+     */
+    virtual bool validate_config() const {
+        auto schema = get_param_schema();
+        if (schema.empty()) {
+            return true;  // 选项A兼容模式
+        }
+        // 选项B：使用 schema 验证（未来实现）
+        for (const auto& desc : schema) {
+            if (desc.required && !config_.contains(desc.name)) {
+                DPRINTF(MODULE, "[CONFIG] %s missing required param: %s\n", name.c_str(), desc.name.c_str());
+                return false;
+            }
+        }
+        return true;
+    }
+
+protected:
+    /// 存储原始 JSON 配置（选项A基础实现）
+    json config_;
+
+public:
     
     virtual bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) {
         DPRINTF(MODULE, "[WARNING] Unhandled downstream response in %s\n", name.c_str());

@@ -99,6 +99,9 @@ public:
     uint32_t mesh_x() const { return mesh_x_; }
     uint32_t mesh_y() const { return mesh_y_; }
 
+    // 配置管理（Phase 1）
+    void on_config_loaded() override;
+
     // PE 侧访问器
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle>&   pe_req_in()   { return pe_req_in_; }
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>&  pe_resp_out() { return pe_resp_out_; }
