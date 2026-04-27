@@ -115,7 +115,7 @@ include/
 │   ├── nic_tlm.hh                # NIC TLM 模块 (Fragment 分片)
 │   └── memory_tlm.hh             # Memory TLM 模块
 │
-├── tlm/legacy/                   # [迁移] 旧式 Port 回调模块
+├── modules/legacy/               # [迁移] 旧式 Port 回调模块
 │   ├── cache_sim.hh              # CacheSim (Legacy Port 回调模式)
 │   ├── cpu_sim.hh                # CPUSim
 │   ├── memory_sim.hh             # MemorySim
@@ -125,18 +125,6 @@ include/
 │   ├── cpu_cluster.hh            # CpuCluster
 │   ├── traffic_gen.hh            # TrafficGenerator
 │   └── stream_consumer.hh        # StreamConsumer
-│
-├── rtl/                          # [未来] RTL 模块实现 (CppHDL)
-│   ├── cache_component.hh        # Cache RTL Component
-│   ├── crossbar_component.hh     # Crossbar RTL Component
-│   ├── nic_component.hh          # NIC RTL Component
-│   └── wrapper/
-│       └── rtl_module_wrapper.hh # 通用 RTL Wrapper
-│
-├── mapper/                       # [未来] Mapper 层：协议/格式转换
-│   ├── fragment_mapper.hh        # Fragment 分片/重组
-│   ├── axi4_mapper.hh            # AXI4 协议映射
-│   └── chi_mapper.hh             # CHI 协议映射
 │
 ├── framework/                    # 框架层
 │   ├── stream_adapter.hh         # [新增] StreamAdapter (Port ↔ ch_stream 桥梁)
@@ -280,198 +268,96 @@ public:
 
 > **设计说明**: 模块代码完全不知道 Port 的存在。`StreamAdapter` 由 `ModuleFactory` 在创建模块时自动附加，负责把模块的 `ch_stream` 端映射到 `MasterPort/SlavePort`。
 
-### 4.3 StreamAdapter 桥梁（核心创新）
+### 4.3 TLM 模块清单
 
-StreamAdapter 负责在模块边界做双向翻译：`Packet ↔ Bundle` + `Port 回调 ↔ ch_stream 握手`。
+已实现的所有 TLM 模块（位于 `include/tlm/`）：
 
-```cpp
-// include/framework/stream_adapter.hh
-#ifndef STREAM_ADAPTER_HH
-#define STREAM_ADAPTER_HH
+| 模块 | 类型 | 说明 |
+|------|------|------|
+| `CacheTLM` | 单端口 | L1 缓存，ch_stream 内部通信 |
+| `CrossbarTLM` | 多端口 | 交叉开关，支持 N 端口并发 |
+| `MemoryTLM` | 单端口 | 内存端点，TLM 仿真目标 |
+| `CPUTLM` | 单端口 | CPU 代理，产生流量 |
+| `TrafficGenTLM` | 单端口 | 流量生成器 |
+| `ArbiterTLM` | 单端口 | 仲裁器 |
+| `RouterTLM` | 多端口 | 路由节点 |
+| `NICTLM` | 单端口 | 网络接口控制器 |
 
-#include "core/simple_port.hh"
-#include "core/packet.hh"
-#include "core/pool.hh"
-#include "ch.hpp"
-#include <cstdint>
-#include <functional>
-#include <memory>
+**已注册适配器**（通过 `chstream_register.hh` 中的 `REGISTER_CHSTREAM` 宏）：
 
-/**
- * @brief StreamAdapter 基类
- * 
- * 职责：在模块的 ch_stream 端口和框架的 SimplePort 之间做双向适配
- * - 接收 Packet → 反序列化为 Bundle → 设置 ch_stream payload + valid
- * - 读取 ch_stream ready → 消费 Packet 资源
- * - 读取 ch_stream payload + valid → 序列化到 Packet → 通过 SimplePort.send
- */
-class StreamAdapterBase {
-public:
-    virtual ~StreamAdapterBase() = default;
-    virtual void tick() = 0;
-    virtual void bind_ports(MasterPort* out_port, SlavePort* in_port) = 0;
-};
+| 模块类型 | 适配器类型 | 端口模式 |
+|---------|-----------|---------|
+| `CacheTLM` | `StreamAdapter` | 单端口 |
+| `MemoryTLM` | `StreamAdapter` | 单端口 |
+| `CPUTLM` | `StreamAdapter` | 单端口 |
+| `TrafficGenTLM` | `StreamAdapter` | 单端口 |
+| `ArbiterTLM` | `StreamAdapter` | 单端口 |
+| `RouterTLM` | `MultiPortStreamAdapter` | 多端口 |
+| `NICTLM` | `StreamAdapter` | 单端口 |
+| `CrossbarTLM` | `MultiPortStreamAdapter` | 多端口 |
 
-template<typename ReqBundle, typename RespBundle>
-class StreamAdapter : public StreamAdapterBase {
-private:
-    // 框架侧端口（由 ModuleFactory/ConnectionResolver 绑定）
-    MasterPort* req_out_port_ = nullptr;   // 模块的 req_in → 转发出去的 MasterPort
-    SlavePort*  resp_in_port_ = nullptr;    // 外部响应 → 模块的 resp_in
-    
-    // 模块侧 ch_stream（由模块提供 getter）
-    std::function<ch_stream<ReqBundle>&()>  get_req_in_;
-    std::function<ch_stream<RespBundle>&()> get_resp_out_;
-    
-    // 内部缓冲：收到的响应 Packet 等待模块 ready
-    Packet* pending_resp_ = nullptr;
-
-public:
-    StreamAdapter(
-        std::function<ch_stream<ReqBundle>&()> get_req_in,
-        std::function<ch_stream<RespBundle>&()> get_resp_out
-    ) : get_req_in_(std::move(get_req_in)), get_resp_out_(std::move(get_resp_out)) {}
-
-    void bind_ports(MasterPort* out_port, SlavePort* in_port) override {
-        req_out_port_ = out_port;
-        resp_in_port_ = in_port;
-    }
-
-    void tick() override {
-        // === 方向1: 外部 → 模块（请求入口）===
-        // 模块的 ch_stream 的 ready 决定了框架侧是否接收
-        auto& req_stream = get_req_in_();
-        req_stream.set_ready(!req_out_port_->valid() || req_stream.valid());
-        
-        // === 方向2: 模块 → 外部（响应出口）===
-        auto& resp_stream = get_resp_out_();
-        if (resp_stream.valid()) {
-            if (req_out_port_->ready()) {  // 假设下游 ready
-                // 序列化 Bundle → Packet
-                Packet* pkt = PacketPool::get().acquire();
-                serialize_bundle_to_packet(resp_stream.payload, pkt);
-                req_out_port_->send(pkt);
-                resp_stream.set_valid(false);
-            }
-        }
-    }
-
-private:
-    void serialize_bundle_to_packet(const RespBundle& bundle, Packet* pkt) {
-        // 通过 CppHDL bundle_serialization 将 Bundle 写入 payload->get_data_ptr()
-        // ...
-        (void)bundle; (void)pkt;  // 实现细节
-    }
-};
-
-// 输入方向适配器：Packet → ch_stream
-template<typename BundleT>
-class InputStreamAdapter {
-private:
-    SlavePort* port_;
-    ch_stream<BundleT>* stream_;
-    
-public:
-    InputStreamAdapter(SlavePort* port, ch_stream<BundleT>* stream)
-        : port_(port), stream_(stream) {}
-    
-    void tick() {
-        // 当框架收到 Packet 时，解序列化到 ch_stream
-        // ...
-    }
-};
-
-// 输出方向适配器：ch_stream → Packet
-template<typename BundleT>
-class OutputStreamAdapter {
-private:
-    MasterPort* port_;
-    ch_stream<BundleT>* stream_;
-    
-public:
-    OutputStreamAdapter(MasterPort* port, ch_stream<BundleT>* stream)
-        : port_(port), stream_(stream) {}
-    
-    void tick() {
-        // 当 ch_stream.valid 时，序列化到 Packet 并发送
-        // ...
-    }
-};
-
-#endif // STREAM_ADAPTER_HH
-```
+> **实现说明**: 实际 `StreamAdapter` 使用直接模块指针（`ModuleT* module_`）而非 `std::function` 间接层，参见 `include/framework/stream_adapter.hh:210-261`。
 
 ### 4.4 ModuleFactory 扩展：支持 ChStream 模块
 
-**核心思路**: 扩展现有的 JSON 配置 schema，新增 `chstream` 配置段，在 `instantiateAll` 中自动创建 StreamAdapter。
+**核心思路**: ModuleFactory 通过 `ChStreamAdapterFactory` 自动识别 ChStreamModuleBase 派生类，无需 JSON 配置额外字段。
 
-**JSON 配置格式扩展**:
+**JSON 配置格式（实际使用）**:
 
 ```json
 {
   "modules": [
-    { "name": "cpu0", "type": "CPUSim", "mode": "legacy" },
-    { "name": "l1", "type": "CacheTLM", "mode": "chstream",
-      "req_bundle": "CacheReqBundle",
-      "resp_bundle": "CacheRespBundle"
-    },
-    { "name": "mem", "type": "MemoryTLM", "mode": "chstream",
-      "req_bundle": "CacheReqBundle",
-      "resp_bundle": "CacheRespBundle"
-    }
+    { "name": "cpu0", "type": "CPUSim" },
+    { "name": "l1", "type": "CacheTLM" },
+    { "name": "xbar", "type": "CrossbarTLM", "n_ports": 4 },
+    { "name": "mem", "type": "MemoryTLM" }
   ],
 
   "connections": [
-    {
-      "src": "cpu0",
-      "dst": "l1",
-      "latency": 2
-    },
-    {
-      "src": "l1",
-      "dst": "mem",
-      "latency": 10
-    }
+    { "src": "cpu0", "dst": "l1", "latency": 2 },
+    { "src": "l1", "dst": "xbar.0", "latency": 1 },
+    { "src": "xbar.1", "dst": "mem", "latency": 10 }
   ]
 }
 ```
 
-**`instantiateAll` 修改逻辑**:
+> **说明**: 无需 `"mode": "chstream"` 或 `"req_bundle"/"resp_bundle"` 字段。ModuleFactory 在 Step 6 遍历所有 `object_instances`，通过 `dynamic_cast<ChStreamModuleBase*>` 自动识别 ChStream 模块，然后通过 `ChStreamAdapterFactory` 创建对应类型的 StreamAdapter。
+
+**`instantiateAll` 实际逻辑（Step 6 - StreamAdapter 注入）**:
 
 ```cpp
-// src/core/module_factory.cc (伪代码)
+// src/core/module_factory.cc (2026-04-22 Phase 6 实现)
 void ModuleFactory::instantiateAll(const json& config) {
     json final_config = JsonIncluder::loadAndInclude(config);
-    
-    // ... 原有模块创建逻辑（第1-5步不变）...
-    
-    // === [新增] 6. 为 chstream 模块创建 StreamAdapter ===
-    for (auto& mod : final_config["modules"]) {
-        std::string mode = mod.value("mode", "legacy");
-        if (mode != "chstream") continue;
-        
-        std::string name = mod["name"];
-        SimObject* obj = object_instances[name];
-        
-        // 检查是否为 ChStreamModule 类型
-        if (auto* chstream_mod = dynamic_cast<ChStreamModuleBase*>(obj)) {
-            // 根据 req_bundle/resp_bundle 类型创建对应 Adapter
-            auto* adapter = create_stream_adapter(
-                chstream_mod,
-                mod.value("req_bundle", ""),
-                mod.value("resp_bundle", "")
-            );
-            chstream_mod->set_adapter(adapter);
-            stream_adapters_.push_back(std::unique_ptr<StreamAdapterBase>(adapter));
-        }
+
+    // ... Step 1-5: 创建模块 ...
+
+    // === Step 6: ChStream 模块自动识别 + StreamAdapter 创建 ===
+    ChStreamAdapterFactory& factory = ChStreamAdapterFactory::get();
+    for (auto& [name, obj] : object_instances) {
+        auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj);
+        if (!ch_mod) continue;
+
+        const std::string& type = module_types[name];
+        if (!factory.knows(type)) continue;  // 无注册适配器则跳过
+
+        auto adapter = factory.create(type, obj);
+        // 创建 N 组端口（单端口/多端口/双端口自动区分）
+        // ...
+        ch_mod->set_stream_adapter(adapter);
     }
-    
-    // === [修改] 7. 建立连接（现有逻辑保持不变）===
-    // PortPair 仍然连接 MasterPort ↔ SlavePort
-    // 区别: chstream 模块的 Port 由 StreamAdapter 创建并管理
+
+    // === Step 7: 建立连接（端口索引语法支持） ===
     // ...
 }
 ```
+
+**自动识别机制**:
+- 通过 `dynamic_cast<ChStreamModuleBase*>(obj)` 判断是否为 ChStream 模块
+- 通过 `ChStreamAdapterFactory::knows(type)` 判断是否有注册的适配器工厂
+- 适配器类型由模块的 `REGISTER_CHSTREAM` 宏注册时确定
+
+**端口索引语法**: `"module.port_index"` 支持多端口模块（如 `xbar.0` 表示 xbar 的第 0 个 req_in 端口）
 
 **ChStreamModule 基类**（✅ 已实现 — 2026-04-12 Phase 0，与文档伪代码有差异）：
 
@@ -782,23 +668,7 @@ class MultiPortStreamAdapter : public StreamAdapterBase {
 
 ---
 
-### 8.5 Phase 6 端到端集成验证 (2026-04-13)
 
-**验证链路**: CacheTLM → CrossbarTLM → MemoryTLM 全链路
-
-```
-CacheTLM (单端口) → xbar.0 (端口索引) → MemoryTLM (单端口)
-```
-
-**测试文件**: `test/test_phase6_integration.cc` — 9 测试用例，53 断言全通过
-
-**关键验证项**:
-- ModuleFactory 完整 JSON 加载 + instantiateAll 一次性实例化
-- 单端口 + 多端口模块混合拓扑
-- StreamAdapter 自动注入（单端口 Standalone + 多端口 MultiPort）
-- JSON 端口索引语法端到端验证
-
-### 8.6 Phase 6 端到端集成验证 (2026-04-22)
 
 **验证链路**: CacheTLM → CrossbarTLM → MemoryTLM 全链路
 
