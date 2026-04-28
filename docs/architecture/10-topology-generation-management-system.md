@@ -344,6 +344,12 @@ def _register_builtin_types(registry: TopologyRegistry):
         port_names=["pe_req_in", "pe_resp_out", "net_req_out", "net_resp_in"]
     )
     
+    # 链路模块: 单端口（用于建模独立链路延迟和 Credit 返回）
+    registry.register_type_info(
+        "Link", "LinkTLM", port_count=1,
+        port_names=["link"]
+    )
+    
     # 单端口模块
     registry.register_type_info("Processor", "CPUSim", port_count=1)
     registry.register_type_info("Cache", "CacheTLM", port_count=1)
@@ -508,7 +514,7 @@ class MeshTopologyGenerator(TopologyGeneratorBase):
                 })
                 self.layout[proc_name] = (c * 100.0 + 60.0, -r * 100.0 - 60.0)
         
-        # 4. 创建 Router↔Router 连接（带端口索引）
+        # 4. 创建 Router↔Router 连接（带端口索引和 Credit Flow 配置）
         for r in range(rows):
             for c in range(cols):
                 src = f"router_{r}_{c}"
@@ -519,7 +525,14 @@ class MeshTopologyGenerator(TopologyGeneratorBase):
                     self.connections.append({
                         "src": f"{src}.{self.PORT_MAP['EAST']}",
                         "dst": f"{dst}.{self.PORT_MAP['WEST']}",
-                        "latency": link_latency
+                        "latency": link_latency,
+                        "credit_flow": {
+                            "enabled": True,
+                            "buffer_depth": 8,
+                            "vc_count": 4,
+                            "credit_return_latency": link_latency,
+                            "credit_timeout": 0
+                        }
                     })
                 
                 # 南向: src.SOUTH(2) → dst.NORTH(0)
@@ -528,7 +541,14 @@ class MeshTopologyGenerator(TopologyGeneratorBase):
                     self.connections.append({
                         "src": f"{src}.{self.PORT_MAP['SOUTH']}",
                         "dst": f"{dst}.{self.PORT_MAP['NORTH']}",
-                        "latency": link_latency
+                        "latency": link_latency,
+                        "credit_flow": {
+                            "enabled": True,
+                            "buffer_depth": 8,
+                            "vc_count": 4,
+                            "credit_return_latency": link_latency,
+                            "credit_timeout": 0
+                        }
                     })
         
         # 5. 创建 NI↔Router 连接（NI 单端口 ↔ Router LOCAL 端口）
@@ -568,7 +588,40 @@ class MeshTopologyGenerator(TopologyGeneratorBase):
         return self
 ```
 
-### 5.4 TopologyValidator（拓扑验证器）
+### 5.4 CreditFlowConfig（Credit Flow 配置类）
+
+```python
+@dataclass
+class CreditFlowConfig:
+    """Credit-based Flow Control 配置"""
+    enabled: bool = True
+    buffer_depth: int = 8          # 输入缓冲区深度 = 初始 credit 数
+    vc_count: int = 4              # 每端口虚拟通道数
+    credit_return_latency: int = 1 # Credit 返回延迟（与链路延迟相同）
+    credit_timeout: int = 0        # 死锁检测超时，0 表示禁用
+    
+    @classmethod
+    def from_dict(cls, d: Dict) -> 'CreditFlowConfig':
+        if d is None:
+            return cls()
+        return cls(
+            enabled=d.get("enabled", True),
+            buffer_depth=d.get("buffer_depth", 8),
+            vc_count=d.get("vc_count", 4),
+            credit_return_latency=d.get("credit_return_latency", 1),
+            credit_timeout=d.get("credit_timeout", 0)
+        )
+    
+    def to_router_params(self) -> Dict:
+        """转换为 RouterTLM 构造函数参数"""
+        return {
+            "buffer_depth": self.buffer_depth,
+            "vc_count": self.vc_count,
+            "credit_timeout": self.credit_timeout
+        }
+```
+
+### 5.5 TopologyValidator（拓扑验证器）
 
 ```python
 import networkx as nx
@@ -876,6 +929,47 @@ class TopologyDiffEngine:
           "exclude": {
             "type": "array",
             "items": { "type": "string" }
+          },
+          "credit_flow": {
+            "type": "object",
+            "description": "Credit-based Flow Control 配置（用于 Router 间链路）",
+            "properties": {
+              "enabled": {
+                "type": "boolean",
+                "default": true,
+                "description": "是否启用 credit flow control（默认启用）"
+              },
+              "buffer_depth": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 8,
+                "description": "下游路由器输入缓冲区深度（也是初始 credit 值）"
+              },
+              "vc_count": {
+                "type": "integer",
+                "minimum": 1,
+                "default": 4,
+                "description": "每端口虚拟通道数"
+              },
+              "credit_return_latency": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 1,
+                "description": "Credit 返回延迟（周期数），与链路延迟相关"
+              },
+              "credit_timeout": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0,
+                "description": "Credit 超时阈值（周期），0 表示禁用死锁检测安全网"
+              }
+            }
+          },
+          "link_type": {
+            "type": "string",
+            "enum": ["normal", "credit_link", "bidirectional"],
+            "default": "normal",
+            "description": "链路类型：normal（普通数据链路）、credit_link（独立 credit 返回通道）、bidirectional（双向数据流）"
           }
         }
       }
@@ -1271,6 +1365,16 @@ void RouterTLM::init() {
         if (cfg.contains("mesh_x")) mesh_x_ = cfg["mesh_x"].get<unsigned>();
         if (cfg.contains("mesh_y")) mesh_y_ = cfg["mesh_y"].get<unsigned>();
         
+        // Credit Flow 配置（可选）
+        if (cfg.contains("buffer_depth")) {
+            // BUFFER_DEPTH 已在类定义中设为常量，此处仅用于日志
+            DPRINTF(MODULE, "[RouterTLM] %s: buffer_depth=%u (from config)\n",
+                    getName().c_str(), cfg["buffer_depth"].get<unsigned>());
+        }
+        if (cfg.contains("credit_timeout")) {
+            credit_timeout_ = cfg["credit_timeout"].get<uint64_t>();
+        }
+        
         DPRINTF(MODULE, "[RouterTLM] %s configured at (%u,%u) in %ux%u mesh\n",
                 getName().c_str(), node_x_, node_y_, mesh_x_, mesh_y_);
     }
@@ -1285,6 +1389,29 @@ void RouterTLM::init() {
     initialized_ = true;
 }
 ```
+
+### 8.3.1 LinkTLM 读取配置
+
+`LinkTLM` 用于建模独立链路延迟和 Credit 返回传递：
+
+```cpp
+void LinkTLM::init() {
+    if (has_config()) {
+        const auto& cfg = get_config();
+        if (cfg.contains("latency")) {
+            latency_ = cfg["latency"].get<unsigned>();
+        }
+        DPRINTF(MODULE, "[LinkTLM] %s configured with latency=%u\n",
+                getName().c_str(), latency_);
+    }
+    initialized_ = true;
+}
+```
+
+**LinkTLM 在拓扑中的作用**：
+- 可选插入在 Router ↔ Router 之间，建模独立链路延迟
+- 延迟 `credit_return_latency` 周期后，将 credit 返回给上游 Router
+- 如果不使用 LinkTLM，credit 返回延迟由 RouterTLM 内部的 `pending_link_` 队列处理（1 周期延迟）
 
 ### 8.4 NICTLM 读取配置
 

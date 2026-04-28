@@ -206,15 +206,110 @@ struct CrossbarTLM::Stats : public tlm_stats::StatGroup {
     // 流量指标
     tlm_stats::Scalar& flits_received;  // 接收 flit 数
     tlm_stats::Scalar& flits_sent;      // 发送 flit 数
-    
+
     // 延迟
     tlm_stats::Distribution& flit_latency;  // flit 穿越延迟
-    
+
     // 拥塞
     tlm_stats::Scalar& backpressure_cycles; // 反压周期数
     tlm_stats::Average& buffer_occupancy;   // 平均缓冲区占用 (flits)
     tlm_stats::Average& utilization;        // 利用率 (active/total cycles)
 };
+```
+
+### 4.2.1 RouterTLM 指标
+
+```cpp
+struct RouterTLM::Stats : public tlm_stats::StatGroup {
+    // 流量指标
+    tlm_stats::Scalar& flits_forwarded;    // 转发 flit 数
+    tlm_stats::Scalar& packets_forwarded;  // 转发 packet 数
+
+    // 延迟
+    tlm_stats::Distribution& latency;       // Packet 延迟分布
+
+    // 跳数
+    tlm_stats::Scalar& total_hops;        // 总跳数
+
+    // ========== Credit Flow 指标 ==========
+    // 每端口每 VC 的 credit 统计
+    struct PortVCStats {
+        tlm_stats::Scalar& credits_consumed;   // 累计消耗 credit 数
+        tlm_stats::Scalar& credits_returned;    // 累计返回 credit 数
+        tlm_stats::Scalar& credit_blocked_cycles; // 因无 credit 阻塞的周期数
+        tlm_stats::Distribution& credit_return_latency; // Credit 返回延迟分布
+    };
+
+    // downstream_credits_[port][vc] 的快照（用于分析）
+    tlm_stats::Average& avg_credits_available; // 平均可用 credit 数
+
+    // 拥塞指标
+    tlm_stats::Scalar& va_blocked;        // VA 阶段因无 credit 阻塞次数
+    tlm_stats::Scalar& sa_blocked;        // SA 阶段因无 credit 阻塞次数
+    tlm_stats::Scalar& buffer_full_count; // 输入缓冲区满的次数
+
+    // 利用率
+    tlm_stats::Average& input_buffer_occupancy; // 输入缓冲区平均占用率
+    tlm_stats::Average& vc_utilization;        // VC 利用率
+};
+```
+
+| 指标路径 | 类型 | 单位 | 说明 |
+|---------|------|------|------|
+| `system.router.flits_forwarded` | Scalar | Count | 累计转发 flit 数 |
+| `system.router.packets_forwarded` | Scalar | Count | 累计转发 packet 数 |
+| `system.router.latency.avg` | Distribution | Cycle | 平均 packet 延迟 |
+| `system.router.total_hops` | Scalar | Count | 总跳数 |
+| `system.router.credits.consumed` | Scalar | Count | 累计消耗 credit 数 |
+| `system.router.credits.returned` | Scalar | Count | 累计返回 credit 数 |
+| `system.router.credits.blocked_cycles` | Scalar | Cycle | 因无 credit 阻塞周期数 |
+| `system.router.credits.return_latency.avg` | Distribution | Cycle | Credit 返回延迟分布 |
+| `system.router.credits.available.avg` | Average | Count | 平均可用 credit 数 |
+| `system.router.va_blocked` | Scalar | Count | VA 阶段阻塞次数 |
+| `system.router.sa_blocked` | Scalar | Count | SA 阶段阻塞次数 |
+| `system.router.buffer_full` | Scalar | Count | 缓冲区满次数 |
+| `system.router.buffer_occupancy.avg` | Average | Ratio | 输入缓冲区平均占用率 |
+| `system.router.vc_utilization.avg` | Average | Ratio | VC 利用率 |
+
+**实现说明**：
+
+1. **Credit 消耗统计** — 在 `stage_switch_traversal()` 调用 `consume_credit()` 时更新
+2. **Credit 返回统计** — 在 `receive_credit()` 时更新
+3. **阻塞周期统计** — 当 `has_credit()` 返回 false 时，在 VA/SA 阶段计数
+4. **Credit 返回延迟** — 从 flit 发送（consume_credit）到 credit 返回的时间差
+
+```cpp
+// Credit 统计更新示例
+void RouterTLM::stage_switch_traversal() {
+    for (const auto& winner : sa_winners_) {
+        // ... 选中 flit ...
+
+        // 消耗下游 credit
+        consume_credit(out_port, out_vc);
+        stats_.port_vc_stats[out_port][out_vc].credits_consumed++;
+
+        // 记录发送时间（用于计算 credit 返回延迟）
+        flit_send_time_[{out_port, out_vc}] = current_cycle_;
+    }
+}
+
+void RouterTLM::receive_credit(unsigned in_port, unsigned vc) {
+    // 恢复 credit
+    if (downstream_credits_[in_port][vc] < BUFFER_DEPTH) {
+        downstream_credits_[in_port][vc]++;
+
+        // 更新 credit 返回统计
+        stats_.port_vc_stats[in_port][vc].credits_returned++;
+
+        // 计算并记录 credit 返回延迟
+        auto it = flit_send_time_.find({in_port, vc});
+        if (it != flit_send_time_.end()) {
+            uint64_t latency = current_cycle_ - it->second;
+            stats_.port_vc_stats[in_port][vc].credit_return_latency.sample(latency);
+            flit_send_time_.erase(it);
+        }
+    }
+}
 ```
 
 ### 4.3 MemoryTLM 指标
@@ -240,7 +335,32 @@ struct MemoryTLM::Stats : public tlm_stats::StatGroup {
 };
 ```
 
-### 4.4 TrafficGenTLM 指标
+### 4.4.1 LinkTLM 指标
+
+```cpp
+struct LinkTLM::Stats : public tlm_stats::StatGroup {
+    // 流量指标
+    tlm_stats::Scalar& flits_forwarded;    // 转发 flit 数
+    tlm_stats::Scalar& credits_returned;   // 返回 credit 数
+
+    // 活跃周期
+    tlm_stats::Scalar& cycles_active;       // 活跃周期数
+
+    // 拥塞指标
+    tlm_stats::Average& delay_queue_occupancy;  // 延迟队列平均深度
+    tlm_stats::Average& credit_queue_occupancy;  // Credit 队列平均深度
+};
+```
+
+| 指标路径 | 类型 | 单位 | 说明 |
+|---------|------|------|------|
+| `system.link.flits_forwarded` | Scalar | Count | 累计转发 flit 数 |
+| `system.link.credits_returned` | Scalar | Count | 累计返回 credit 数 |
+| `system.link.cycles_active` | Scalar | Count | 活跃周期数 |
+| `system.link.delay_queue_occupancy.avg` | Average | Flits | 延迟队列平均深度 |
+| `system.link.credit_queue_occupancy.avg` | Average | Credits | Credit 队列平均深度 |
+
+### 4.5 TrafficGenTLM 指标
 
 ```cpp
 struct TrafficGenTLM::Stats : public tlm_stats::StatGroup {
@@ -248,13 +368,13 @@ struct TrafficGenTLM::Stats : public tlm_stats::StatGroup {
     tlm_stats::Scalar& requests_generated;  // 生成请求数
     tlm_stats::Scalar& responses_received;  // 收到响应数
     tlm_stats::Average& injection_rate;     // 注入率 (requests/cycle)
-    
+
     // 地址分布 (用于验证压力模式)
     tlm_stats::PercentileHistogram& address_hist; // 地址访问分布
 };
 ```
 
-### 4.5 ArbiterTLM 指标
+### 4.6 ArbiterTLM 指标
 
 ```cpp
 struct ArbiterTLM::Stats : public tlm_stats::StatGroup {
@@ -266,7 +386,7 @@ struct ArbiterTLM::Stats : public tlm_stats::StatGroup {
 };
 ```
 
-### 4.6 CPUTLM 指标
+### 4.7 CPUTLM 指标
 
 ```cpp
 struct CPUTLM::Stats : public tlm_stats::StatGroup {
@@ -301,6 +421,19 @@ system.xbar.flits_received                        20000                       # 
 system.xbar.flits_sent                            19800                       # Total flits sent by crossbar (Count)
 system.xbar.flit_latency.avg                       3.200                       # Flit traversal latency average (Cycle)
 system.xbar.buffer_occupancy                       2.450                       # Average buffer occupancy (Flits)
+system.router.flits_forwarded                      45000                       # Total flits forwarded (Count)
+system.router.packets_forwarded                   15000                       # Total packets forwarded (Count)
+system.router.latency.avg                          15.500                       # Average packet latency (Cycle)
+system.router.total_hops                           60000                       # Total hop count (Hops)
+system.router.credits.consumed                     45000                       # Total credits consumed (Count)
+system.router.credits.returned                    45000                       # Total credits returned (Count)
+system.router.credits.blocked_cycles               12000                       # Cycles blocked due to no credit (Cycle)
+system.router.credits.available.avg                6.800                       # Average available credits (Count)
+system.router.va_blocked                            8000                       # VA stage blocked count (Count)
+system.router.sa_blocked                            4000                       # SA stage blocked count (Count)
+system.router.buffer_full                           2000                       # Buffer full events (Count)
+system.router.buffer_occupancy.avg                  0.450                       # Average buffer occupancy (Ratio)
+system.router.vc_utilization.avg                    0.620                       # Average VC utilization (Ratio)
 system.memory.requests_read                       10000                       # Memory read requests (Count)
 system.memory.latency_read.avg                    120.500                       # Memory read latency average (Cycle)
 ---------- End Simulation Statistics ----------
@@ -334,6 +467,28 @@ system.memory.latency_read.avg                    120.500                       
     "flits_sent": 19800,
     "flit_latency": { "avg": 3.2 },
     "buffer_occupancy": 2.45
+  },
+  "router": {
+    "flits_forwarded": 45000,
+    "packets_forwarded": 15000,
+    "latency": { "avg": 15.5 },
+    "total_hops": 60000,
+    "credits": {
+      "consumed": 45000,
+      "returned": 45000,
+      "blocked_cycles": 12000,
+      "available_avg": 6.8,
+      "return_latency": { "avg": 1.2 }
+    },
+    "blocked": {
+      "va_blocked": 8000,
+      "sa_blocked": 4000,
+      "buffer_full": 2000
+    },
+    "utilization": {
+      "buffer_occupancy": 0.45,
+      "vc_utilization": 0.62
+    }
   }
 }
 ```
@@ -355,6 +510,24 @@ system.memory.latency_read.avg                    120.500                       
 | Miss Rate | 15.00% |
 | Avg Latency | 45.3 cycles |
 | P99 Latency | 380 cycles |
+
+## Router Performance
+
+| Metric | Value |
+|--------|-------|
+| Flits Forwarded | 45,000 |
+| Packets Forwarded | 15,000 |
+| Avg Latency | 15.5 cycles |
+| Total Hops | 60,000 |
+| Credits Consumed | 45,000 |
+| Credits Returned | 45,000 |
+| Blocked Cycles (no credit) | 12,000 |
+| Avg Available Credits | 6.8 |
+| VA Blocked | 8,000 |
+| SA Blocked | 4,000 |
+| Buffer Full Events | 2,000 |
+| Buffer Occupancy | 45.00% |
+| VC Utilization | 62.00% |
 
 ## Latency Distribution
 
