@@ -46,19 +46,20 @@ RouterTLM::RouterTLM(const std::string& name, EventQueue* eq,
       node_x_(node_x),
       node_y_(node_y),
       mesh_x_(mesh_x),
-      mesh_y_(mesh_y) {
-    // 初始化默认路由算法
+      mesh_y_(mesh_y),
+      stat_group_("router"),
+      stats_flits_forwarded_(stat_group_.addScalar("flits_forwarded", "Total flits forwarded", "flits")),
+      stats_packets_forwarded_(stat_group_.addScalar("packets_forwarded", "Total packets forwarded", "packets")),
+      stats_total_hops_(stat_group_.addScalar("total_hops", "Total hop count", "hops")),
+      stats_latency_(stat_group_.addDistribution("latency", "Packet latency distribution", "cycle")) {
     routing_algo_ = new XYRouting();
 
-    // 初始化 downstream credits (默认每 VC 8 credits = BUFFER_DEPTH)
     for (unsigned p = 0; p < NUM_PORTS; ++p) {
         for (unsigned v = 0; v < NUM_VCS; ++v) {
             downstream_credits_[p][v] = BUFFER_DEPTH;
+            last_credit_return_cycle_[p][v] = 0;
         }
     }
-
-    // 初始化统计
-    stats_ = RouterStats{};
 }
 
 RouterTLM::~RouterTLM() {
@@ -79,8 +80,11 @@ void RouterTLM::on_config_loaded() {
     if (cfg.contains("mesh_y")) {
         mesh_y_ = cfg["mesh_y"].get<unsigned>();
     }
-    DPRINTF(MODULE, "[CONFIG] RouterTLM %s: node=(%u,%u) mesh=(%u,%u)\n",
-            name.c_str(), node_x_, node_y_, mesh_x_, mesh_y_);
+    if (cfg.contains("credit_timeout")) {
+        credit_timeout_ = cfg["credit_timeout"].get<uint64_t>();
+    }
+    DPRINTF(MODULE, "[CONFIG] RouterTLM %s: node=(%u,%u) mesh=(%u,%u) credit_timeout=%u\n",
+            name.c_str(), node_x_, node_y_, mesh_x_, mesh_y_, credit_timeout_);
 }
 
 // ============================================================================
@@ -124,11 +128,13 @@ void RouterTLM::tick() {
     // 阶段 5: Switch Traversal (ST)
     stage_switch_traversal();
 
-    // 阶段 6: Link Traversal (LT)
+    // 阶段 6: Link Traversal (LT) - 精确 credit 消耗在这里
     stage_link_traversal();
 
-    // Credit 安全网：防止永久阻塞（非精确流控）
-    credit_safety_reset();
+    // Credit 安全网：仅在启用超时检测且检测到死锁超时时触发
+    if (credit_timeout_ > 0) {
+        credit_safety_reset();
+    }
 }
 
 // ============================================================================
@@ -301,14 +307,14 @@ void RouterTLM::stage_switch_traversal() {
         pending_link_.push({flit.bundle, out_port});
 
         // 更新统计
-        stats_.flits_forwarded++;
-        stats_.total_hops += flit.bundle.hops.read();
-        stats_.total_latency_cycles += (current_cycle_ - flit.cycle_received);
+        ++stats_flits_forwarded_;
+        stats_total_hops_ += flit.bundle.hops.read();
+        stats_latency_.sample(current_cycle_ - flit.cycle_received);
 
         // TAIL flit: 释放 VC，更新 packet 统计
         if (flit.bundle.is_tail()) {
             release_vc(out_port, out_vc);
-            stats_.packets_forwarded++;
+            ++stats_packets_forwarded_;
 
             // 清理路由表
             uint64_t pkt_id = flit.bundle.transaction_id.read();
@@ -322,8 +328,6 @@ void RouterTLM::stage_switch_traversal() {
 // ============================================================================
 
 void RouterTLM::stage_link_traversal() {
-    // 从 pending_link_ 队列取出 flit，发送到 resp_out_
-    // 每周期只处理一个 flit（模拟单链路带宽限制）
     if (!pending_link_.empty()) {
         auto pf = pending_link_.front();
         resp_out_[pf.out_port].write(pf.bundle);
@@ -374,17 +378,24 @@ void RouterTLM::receive_credit(unsigned in_port, unsigned vc) {
     }
 }
 
-// Credit 安全网：每 BUFFER_DEPTH 周期重置所有 credit，防止永久阻塞
-// 注意：这是安全网而非精确的 credit-based flow control
-// 精确实现需要在下游消费 flit 后显式调用 receive_credit()
+// Credit 超时检测：仅当 credit_timeout_ > 0 时启用，用于死锁恢复
 void RouterTLM::credit_safety_reset() {
-    if (current_cycle_ - last_credit_safety_reset_cycle_ >= BUFFER_DEPTH) {
-        for (unsigned p = 0; p < NUM_PORTS; ++p) {
-            for (unsigned v = 0; v < NUM_VCS; ++v) {
-                downstream_credits_[p][v] = BUFFER_DEPTH;
+    if (credit_timeout_ == 0) return;
+
+    for (unsigned p = 0; p < NUM_PORTS; ++p) {
+        for (unsigned v = 0; v < NUM_VCS; ++v) {
+            if (downstream_credits_[p][v] < BUFFER_DEPTH) {
+                uint64_t elapsed = current_cycle_ - last_credit_return_cycle_[p][v];
+                if (elapsed >= credit_timeout_) {
+                    DPRINTF(MODULE, "[CREDIT Timeout] port=%u vc=%u elapsed=%u, reset\n",
+                            p, v, elapsed);
+                    downstream_credits_[p][v] = BUFFER_DEPTH;
+                    last_credit_return_cycle_[p][v] = current_cycle_;
+                }
+            } else {
+                last_credit_return_cycle_[p][v] = current_cycle_;
             }
         }
-        last_credit_safety_reset_cycle_ = current_cycle_;
     }
 }
 

@@ -10,6 +10,7 @@
 #include "tlm/arbiter_tlm.hh"
 #include "tlm/router_tlm.hh"
 #include "tlm/nic_tlm.hh"
+#include "tlm/link_tlm.hh"
 #include "core/module_factory.hh"
 #include "core/chstream_adapter_factory.hh"
 #include "bundles/cache_bundles_tlm.hh"
@@ -34,6 +35,7 @@
     ModuleFactory::registerObject<ArbiterTLM<4>>("ArbiterTLM4"); \
     ModuleFactory::registerObject<tlm::RouterTLM>("RouterTLM"); \
     ModuleFactory::registerObject<tlm::NICTLM>("NICTLM"); \
+    ModuleFactory::registerObject<tlm::LinkTLM>("LinkTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
@@ -52,7 +54,9 @@
         bundles::NoCFlitBundle, 5>("RouterTLM"); \
     ChStreamAdapterFactory::get().registerDualPortAdapter<tlm::NICTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle, \
-        bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM");
+        bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM"); \
+    ChStreamAdapterFactory::get().registerAdapter<tlm::LinkTLM, \
+        bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM");
 
 // ============================================================
 // 双端口非对称模块注册宏（NICTLM 等）

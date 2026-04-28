@@ -153,6 +153,9 @@ private:
     tlm_stats::Scalar& stats_packets_received_;
     tlm_stats::Distribution& stats_latency_;
 
+    // StreamAdapter 指针（用于 tick 时调用 adapter->tick()）
+    cpptlm::StreamAdapterBase* adapter_ = nullptr;
+
     std::vector<PendingPacket> pending_packets_;
 
     std::queue<bundles::NoCFlitBundle> pending_flit_queue_;

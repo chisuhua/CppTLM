@@ -47,8 +47,7 @@ void NICTLM::on_config_loaded() {
 }
 
 void NICTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {
-    // DualPortStreamAdapter 通过内部指针存储，不需要额外处理
-    (void)adapter;
+    adapter_ = adapter;
 }
 
 void NICTLM::tick() {
@@ -59,6 +58,9 @@ void NICTLM::tick() {
     }
     handle_pe_req();
     handle_net_resp();
+
+    // 委托适配器 tick（输出方向数据搬运）
+    if (adapter_) adapter_->tick();
 }
 
 bool NICTLM::handle_pe_req() {

@@ -1,0 +1,13 @@
+{
+  "name": "NIC Router NIC Test Configuration",
+  "description": "2 NIC + 1 Router minimal topology for single-hop connectivity test",
+  "modules": [
+    { "name": "nic0", "type": "NICTLM", "node_id": 0, "mesh_x": 2, "mesh_y": 1 },
+    { "name": "nic1", "type": "NICTLM", "node_id": 1, "mesh_x": 2, "mesh_y": 1 },
+    { "name": "router0", "type": "RouterTLM", "node_x": 0, "node_y": 0, "mesh_x": 2, "mesh_y": 1 }
+  ],
+  "connections": [
+    { "src": "nic0", "dst": "router0.4", "latency": 1 },
+    { "src": "router0.4", "dst": "nic1", "latency": 1 }
+  ]
+}
