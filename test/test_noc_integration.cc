@@ -103,7 +103,7 @@ TEST_CASE("RouterTLM: SA can grant multiple flits in same cycle", "[noc][integra
     bool north_valid = router.resp_out()[static_cast<unsigned>(RouterPort::NORTH)].valid();
 
     // 至少一个应该有效（取决于仲裁顺序）
-    REQUIRE(east_valid || north_valid);
+    REQUIRE((east_valid || north_valid));
 }
 
 TEST_CASE("NICTLM: packetize then reassemble cycle", "[noc][integration]") {
@@ -197,10 +197,10 @@ TEST_CASE("NICTLM: multi-flit packetize", "[noc][integration]") {
         f.flit_category.write(bundles::NoCFlitBundle::CATEGORY_REQUEST);
         f.data.write(0x1000 + i);
 
-        nic.net_req_in().data() = f;
-        nic.net_req_in().set_valid(true);
+        nic.pe_req_in().data() = f;
+        nic.pe_req_in().set_valid(true);
         nic.tick();
-        nic.net_req_in().clear_valid();
+        nic.pe_req_in().clear_valid();
     }
 
     // 验证 stats
