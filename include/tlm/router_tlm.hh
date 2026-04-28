@@ -8,7 +8,7 @@
 #include "core/chstream_module.hh"
 #include "bundles/noc_bundles_tlm.hh"
 #include "framework/bidirectional_port_adapter.hh"
-#include "metrics/stats_manager.hh"
+#include "metrics/stats.hh"
 #include <array>
 #include <queue>
 #include <vector>
@@ -180,26 +180,12 @@ public:
     // ========== 配置管理（Phase 1）==========
     void on_config_loaded() override;
 
+    // ========== Credit 超时配置 ==========
+    void set_credit_timeout(uint64_t cycles) { credit_timeout_ = cycles; }
+    uint64_t credit_timeout() const { return credit_timeout_; }
+
     // ========== 统计接口 ==========
-    struct RouterStats {
-        uint64_t flits_forwarded = 0;     // 转发的 flit 总数
-        uint64_t packets_forwarded = 0;   // 转发的 packet 总数
-        uint64_t total_hops = 0;          // 总跳数
-        uint64_t total_latency_cycles = 0;  // 总延迟周期
-        uint64_t congestion_events = 0;     // 拥塞事件数
-        uint64_t buffer_occupancy[NUM_VCS] = {}; // 每 VC 缓冲占用
-
-        double avg_hops() const {
-            return packets_forwarded > 0 ?
-                   static_cast<double>(total_hops) / packets_forwarded : 0.0;
-        }
-        double avg_latency() const {
-            return packets_forwarded > 0 ?
-                   static_cast<double>(total_latency_cycles) / packets_forwarded : 0.0;
-        }
-    };
-
-    const RouterStats& stats() const { return stats_; }
+    tlm_stats::StatGroup& stats() { return stat_group_; }
 
 private:
     // ========== 流水线阶段 ==========
@@ -256,8 +242,12 @@ private:
     };
     std::unordered_map<uint64_t, RoutingEntry> routing_table_;
 
-    // ========== 统计 ==========
-    RouterStats stats_;
+    // ========== 统计 (StatGroup) ==========
+    tlm_stats::StatGroup stat_group_;
+    tlm_stats::Scalar& stats_flits_forwarded_;
+    tlm_stats::Scalar& stats_packets_forwarded_;
+    tlm_stats::Scalar& stats_total_hops_;
+    tlm_stats::Distribution& stats_latency_;
 
     // ========== 当前周期 (由 SimCore 驱动) ==========
     uint64_t current_cycle_ = 0;
@@ -265,8 +255,9 @@ private:
     // ========== 流水线寄存器 (每周期保存中间状态) ==========
     RouterStageState pipe_reg_[NUM_PORTS][NUM_VCS];
 
-    // ========== Credit 安全网 (防止永久阻塞) ==========
-    uint64_t last_credit_safety_reset_cycle_ = 0;
+    // ========== Credit 超时检测 (防止死锁) ==========
+    uint64_t credit_timeout_ = 0;  // 默认关闭 (>0 时启用)
+    std::array<std::array<uint64_t, NUM_VCS>, NUM_PORTS> last_credit_return_cycle_{};
     void credit_safety_reset();
 
     // ========== LT 阶段 pending queue (链路延迟建模) ==========

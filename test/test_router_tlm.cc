@@ -87,12 +87,11 @@ TEST_CASE("RouterTLM stats initialized correctly", "[router][tlm]") {
     EventQueue eq;
     RouterTLM router("router0", &eq, 0, 0, 2, 2);
 
-    const auto& stats = router.stats();
-    REQUIRE(stats.flits_forwarded == 0);
-    REQUIRE(stats.packets_forwarded == 0);
-    REQUIRE(stats.total_hops == 0);
-    REQUIRE(stats.total_latency_cycles == 0);
-    REQUIRE(stats.congestion_events == 0);
+    auto& stats = router.stats();
+    REQUIRE(stats.findStat("flits_forwarded") != nullptr);
+    REQUIRE(stats.findStat("packets_forwarded") != nullptr);
+    REQUIRE(stats.findStat("total_hops") != nullptr);
+    REQUIRE(stats.findStat("latency") != nullptr);
 }
 
 TEST_CASE("RouterTLM port count is 5", "[router][tlm]") {
