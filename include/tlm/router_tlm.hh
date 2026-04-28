@@ -184,6 +184,9 @@ public:
     void set_credit_timeout(uint64_t cycles) { credit_timeout_ = cycles; }
     uint64_t credit_timeout() const { return credit_timeout_; }
 
+    // ========== Credit Flow Control 接口 (供 BidirectionalPortAdapter 调用) ==========
+    void receive_credit(unsigned in_port, unsigned vc);
+
     // ========== 统计接口 ==========
     tlm_stats::StatGroup& stats() { return stat_group_; }
 
@@ -202,7 +205,34 @@ private:
     void release_vc(unsigned out_port, unsigned vc);
     bool has_credit(unsigned out_port, unsigned vc) const;
     void consume_credit(unsigned out_port, unsigned vc);
-    void receive_credit(unsigned in_port, unsigned vc);
+
+    // ========== Credit 返回机制 ==========
+    // 获取反向端口索引 (NORTH→SOUTH, EAST→WEST, etc.)
+    static constexpr unsigned reverse_port(unsigned port) {
+        switch (port) {
+            case 0: return 2;  // NORTH → SOUTH
+            case 1: return 3;  // EAST → WEST
+            case 2: return 0;  // SOUTH → NORTH
+            case 3: return 1;  // WEST → EAST
+            case 4: return 4;  // LOCAL → LOCAL
+            default: return 0;
+        }
+    }
+
+    // 待返回的 Credit 信息
+    struct PendingCreditReturn {
+        unsigned port;      // 反向端口索引
+        unsigned vc;        // VC ID
+        unsigned remaining_cycles;  // 剩余延迟周期
+    };
+    std::queue<PendingCreditReturn> pending_credit_returns_;
+
+    // 触发 Credit 返回到上游
+    void return_credit_to_upstream(unsigned in_port, unsigned vc);
+    // 发送 Credit 到上游（链路延迟后）
+    void send_credit_to_upstream(unsigned reverse_port, unsigned vc);
+    // 通过 BidirectionalPortAdapter 发送 Credit 信号（公共方法供 adapter 调用）
+    void send_credit_signal(unsigned port, unsigned vc);
 
     // ========== 端口数组 ==========
     std::array<ReqAdapter, NUM_PORTS> req_in_;
