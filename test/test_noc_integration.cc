@@ -180,29 +180,14 @@ TEST_CASE("NICTLM: multi-flit packetize", "[noc][integration]") {
     REQUIRE(nic.net_req_out().data().flit_index.read() == 0);
     REQUIRE(nic.net_req_out().data().flit_count.read() == 4);
 
-    // 清除并继续
     nic.net_req_out().clear_valid();
 
-    // 后续 flits (模拟已发送)
     for (uint8_t i = 1; i < 4; ++i) {
-        bundles::NoCFlitBundle f;
-        f.transaction_id.write(500);
-        f.src_node.write(0);
-        f.dst_node.write(5);
-        f.vc_id.write(i % 4);
-        f.flit_index.write(i);
-        f.flit_count.write(4);
-        f.flit_type.write(i == 3 ? bundles::NoCFlitBundle::FLIT_TAIL
-                                  : bundles::NoCFlitBundle::FLIT_BODY);
-        f.flit_category.write(bundles::NoCFlitBundle::CATEGORY_REQUEST);
-        f.data.write(0x1000 + i);
-
-        nic.pe_req_in().data() = f;
-        nic.pe_req_in().set_valid(true);
         nic.tick();
-        nic.pe_req_in().clear_valid();
+        REQUIRE(nic.net_req_out().valid());
+        REQUIRE(nic.net_req_out().data().flit_index.read() == i);
+        nic.net_req_out().clear_valid();
     }
 
-    // 验证 stats
-    REQUIRE(nic.net_req_out().valid() == false);  // 所有 flits 已发送
+    REQUIRE(!nic.net_req_out().valid());
 }
