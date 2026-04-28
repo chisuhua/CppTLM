@@ -51,13 +51,16 @@ void NICTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {
 }
 
 void NICTLM::tick() {
+    // 处理输入请求（可能向队列添加 flits）
+    handle_pe_req();
+    handle_net_resp();
+
+    // 发送队列中的 flit（如果有且输出空闲）
     if (!net_req_out_.valid() && !pending_flit_queue_.empty()) {
         net_req_out_.write(pending_flit_queue_.front());
         pending_flit_queue_.pop();
         ++stats_flits_sent_;
     }
-    handle_pe_req();
-    handle_net_resp();
 
     // 委托适配器 tick（输出方向数据搬运）
     if (adapter_) adapter_->tick();
@@ -136,6 +139,7 @@ bool NICTLM::reassemble(const bundles::NoCFlitBundle& flit) {
     auto it = std::find_if(pending_packets_.begin(), pending_packets_.end(),
         [tid](const PendingPacket& p) { return p.transaction_id == tid; });
 
+    bool is_new_packet = false;
     if (it == pending_packets_.end()) {
         if (flit.is_head()) {
             PendingPacket p;
@@ -144,14 +148,17 @@ bool NICTLM::reassemble(const bundles::NoCFlitBundle& flit) {
             p.flits_received = 0;
             p.is_write = flit.is_write.read();
             p.address = flit.address.read();
-            p.flits = {};  // 显式初始化，防止垃圾值
+            p.flits = {};
             uint8_t idx = flit.flit_index.read();
             if (idx < FLITS_PER_PACKET) {
                 p.flits[idx] = flit;
             }
             pending_packets_.push_back(p);
+            it = std::prev(pending_packets_.end());
+            is_new_packet = true;
+        } else {
+            return false;
         }
-        return false;
     }
 
     uint8_t idx = flit.flit_index.read();
@@ -160,7 +167,7 @@ bool NICTLM::reassemble(const bundles::NoCFlitBundle& flit) {
     }
     ++it->flits_received;
 
-    if (flit.is_tail()) {
+    if (flit.is_tail() || is_new_packet) {
         bundles::CacheRespBundle resp;
         resp.transaction_id.write(tid);
         resp.is_hit.write(1);
