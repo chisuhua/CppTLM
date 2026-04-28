@@ -9,8 +9,12 @@
 #include "stream_adapter.hh"
 #include "core/master_port.hh"
 #include "core/slave_port.hh"
+#include "core/chstream_port.hh"
+#include "core/packet_pool.hh"
+#include "bundles/noc_bundles_tlm.hh"
 #include <cstddef>
 #include <array>
+#include <queue>
 
 namespace cpptlm {
 
@@ -40,6 +44,14 @@ private:
     SlavePort*  resp_in_port_[N] = {nullptr};     // ← 下游 resp
     MasterPort* resp_out_port_[N] = {nullptr};    // → 上游 resp
     SlavePort*  req_in_port_[N] = {nullptr};     // ← 上游 req
+
+    // 待发送的 Credit 队列（支持链路延迟建模）
+    struct PendingCredit {
+        unsigned port;
+        unsigned vc;
+        unsigned remaining_cycles;
+    };
+    std::queue<PendingCredit> pending_credits_;
 
 public:
     explicit BidirectionalPortAdapter(ModuleT* mod) : module_(mod) {}
@@ -102,15 +114,91 @@ public:
      */
     void tick() override {
         for (std::size_t i = 0; i < N; i++) {
+            // ========== 处理 flit 发送 (forward direction) ==========
             if (module_->resp_out()[i].valid()) {
                 if (req_out_port_[i]) {
                     auto& flit = module_->resp_out()[i].data();
-                    PacketType pkt_type = (flit.flit_category.read() == 0)
+                    PacketType pkt_type = (flit.flit_category.read() == bundles::NoCFlitBundle::CATEGORY_REQUEST)
                         ? PKT_REQ : PKT_RESP;
                     module_->resp_out()[i].send(req_out_port_[i], pkt_type);
                 }
             }
+
+            // ========== 处理 Credit 接收 (reverse direction) ==========
+            // 检查 resp_in_port_[i] 是否有 Credit 信号
+            if (resp_in_port_[i]) {
+                // 使用 ChStreamInitiatorPort 的 drainResponse() 获取 Packet
+                auto* initiator = dynamic_cast<cpptlm::ChStreamInitiatorPort*>(resp_in_port_[i]);
+                if (initiator) {
+                    while (initiator->hasResponse()) {
+                        Packet* pkt = initiator->drainResponse();
+                        if (pkt && pkt->isCredit()) {
+                            // 解析 Credit 信号
+                            unsigned vc = pkt->vc_id;
+                            module_->receive_credit(i, vc);
+                            DPRINTF(MODULE, "[BidirectionalPortAdapter] tick() port=%zu credit vc=%u\n", i, vc);
+                        }
+                        PacketPool::get().release(pkt);
+                    }
+                }
+            }
         }
+
+        // ========== 处理 Credit 发送延迟队列 ==========
+        std::queue<PendingCredit> next_queue;
+        while (!pending_credits_.empty()) {
+            auto cr = pending_credits_.front();
+            pending_credits_.pop();
+            cr.remaining_cycles--;
+            if (cr.remaining_cycles == 0) {
+                // 链路延迟结束，实际发送 Credit
+                send_credit_impl(cr.port, cr.vc);
+            } else {
+                next_queue.push(cr);
+            }
+        }
+        pending_credits_ = std::move(next_queue);
+    }
+
+    /**
+     * @brief 发送 Credit 信号到指定端口（带 1 周期链路延迟）
+     * @param port 目标端口索引
+     * @param vc 虚拟通道 ID
+     */
+    void send_credit(unsigned port, unsigned vc) {
+        PendingCredit cr;
+        cr.port = port;
+        cr.vc = vc;
+        cr.remaining_cycles = 1;  // 1 周期链路延迟
+        pending_credits_.push(cr);
+    }
+
+private:
+    /**
+     * @brief 实际发送 Credit 信号（延迟到期后调用）
+     */
+    void send_credit_impl(unsigned port, unsigned vc) {
+        if (port >= N || !resp_out_port_[port]) return;
+
+        // 创建 Credit 信号 Bundle
+        bundles::NoCFlitBundle credit_bundle;
+        credit_bundle.vc_id.write(vc);
+        credit_bundle.flit_category.write(bundles::NoCFlitBundle::CATEGORY_CREDIT);
+        credit_bundle.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);  // 单 flit
+
+        // 通过 resp_out_port_ 发送（连接到上游路由器的 resp_in）
+        Packet* pkt = PacketPool::get().acquire();
+        pkt->type = PKT_CREDIT_RETURN;
+        pkt->vc_id = vc;
+
+        bundles::serialize_bundle(
+            credit_bundle,
+            pkt->payload->get_data_ptr(),
+            pkt->payload->get_data_length()
+        );
+
+        resp_out_port_[port]->send(pkt);
+        DPRINTF(MODULE, "[BidirectionalPortAdapter] send_credit_impl port=%u vc=%u\n", port, vc);
     }
 
     /**

@@ -58,6 +58,7 @@ struct NoCFlitBundle : public bundle_base {
     // ========== Flit 类别常量 (v2.1) ==========
     static constexpr uint8_t CATEGORY_REQUEST  = 0;
     static constexpr uint8_t CATEGORY_RESPONSE = 1;
+    static constexpr uint8_t CATEGORY_CREDIT    = 2;  // Credit 信号专用类别
 
     // ========== 辅助方法 ==========
 
