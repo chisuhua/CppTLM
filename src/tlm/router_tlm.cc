@@ -297,6 +297,9 @@ void RouterTLM::stage_switch_traversal() {
         unsigned out_port = winner.out_port;
         unsigned out_vc = winner.out_vc;
 
+        // ST 阶段：flit 从 input_buffer 移出，触发 credit 返回到上游
+        return_credit_to_upstream(winner.in_port, winner.out_vc);
+
         // 消耗下游 credit
         consume_credit(out_port, out_vc);
 
@@ -328,11 +331,28 @@ void RouterTLM::stage_switch_traversal() {
 // ============================================================================
 
 void RouterTLM::stage_link_traversal() {
+    // 处理 flit 发送
     if (!pending_link_.empty()) {
         auto pf = pending_link_.front();
         resp_out_[pf.out_port].write(pf.bundle);
         pending_link_.pop();
     }
+
+    // 处理 credit 返回延迟队列
+    std::queue<PendingCreditReturn> next_queue;
+    while (!pending_credit_returns_.empty()) {
+        auto cr = pending_credit_returns_.front();
+        pending_credit_returns_.pop();
+
+        cr.remaining_cycles--;
+        if (cr.remaining_cycles == 0) {
+            // 链路延迟结束，发送 credit 到上游
+            send_credit_to_upstream(cr.port, cr.vc);
+        } else {
+            next_queue.push(cr);
+        }
+    }
+    pending_credit_returns_ = std::move(next_queue);
 }
 
 // ============================================================================
@@ -376,6 +396,40 @@ void RouterTLM::receive_credit(unsigned in_port, unsigned vc) {
     if (downstream_credits_[in_port][vc] < BUFFER_DEPTH) {
         downstream_credits_[in_port][vc]++;
     }
+}
+
+// ============================================================================
+// Credit 返回机制
+// ============================================================================
+
+void RouterTLM::return_credit_to_upstream(unsigned in_port, unsigned vc) {
+    unsigned reverse_p = reverse_port(in_port);
+
+    // 创建 Credit 返回延迟事件（1 周期链路延迟）
+    PendingCreditReturn cr;
+    cr.port = reverse_p;
+    cr.vc = vc;
+    cr.remaining_cycles = 1;
+    pending_credit_returns_.push(cr);
+}
+
+void RouterTLM::send_credit_to_upstream(unsigned reverse_port, unsigned vc) {
+    // 通过 resp_out_[reverse_port] 发送 Credit 信号
+    // 上游路由器会通过其 resp_in 收到此信号并调用 receive_credit()
+    DPRINTF(MODULE, "[CREDIT RETURN] send credit to reverse_port=%u vc=%u\n",
+            reverse_port, vc);
+    // 通过 BidirectionalPortAdapter 发送 Credit 信号（带链路延迟）
+    send_credit_signal(reverse_port, vc);
+}
+
+void RouterTLM::send_credit_signal(unsigned port, unsigned vc) {
+    if (!adapter_) {
+        DPRINTF(MODULE, "[CREDIT ERROR] send_credit_signal called but adapter_ is null\n");
+        return;
+    }
+    // 通过 adapter 发送 Credit（adapter 内部会处理 1 周期延迟）
+    adapter_->send_credit(port, vc);
+    DPRINTF(MODULE, "[CREDIT SIGNAL] sent credit to port=%u vc=%u via adapter\n", port, vc);
 }
 
 // Credit 超时检测：仅当 credit_timeout_ > 0 时启用，用于死锁恢复
