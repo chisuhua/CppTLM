@@ -82,7 +82,10 @@ int main(int argc, char* argv[]) {
 
     // 构建系统
     ModuleFactory factory(&eq);
-    factory.instantiateAll(config);
+    if (!factory.instantiateAll(config)) {
+        std::cerr << "[ERROR] Configuration validation failed\n";
+        return 1;
+    }
     factory.startAllTicks();
 
     TopologyDumper::dumpToDot(factory, config, "topology.dot");

@@ -36,7 +36,9 @@ public:
 
     void instantiate(const json& cfg) {
         config = cfg;
-        internal_factory->instantiateAll(config);
+        if (!internal_factory->instantiateAll(config)) {
+            DPRINTF(MODULE, "[ERROR] SimModule '%s' instantiation failed: schema validation error\n", name.c_str());
+        }
         parsePortConfigs(cfg); 
     }
 

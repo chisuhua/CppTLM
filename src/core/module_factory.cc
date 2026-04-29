@@ -27,8 +27,115 @@ std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) 
     return {full_name.substr(0, dot_pos), full_name.substr(dot_pos + 1)};
 }
 
-void ModuleFactory::instantiateAll(const json& config) {
+// ============================================================================
+// JSON Schema 验证器（CFG-08）
+// ============================================================================
+bool ModuleFactory::validateConfig(const json& config) {
+    // 1. 检查顶层必需字段
+    if (!config.contains("modules")) {
+        printf("[CONFIG ERROR] Missing required field 'modules'\n");
+        return false;
+    }
+    if (!config["modules"].is_array()) {
+        printf("[CONFIG ERROR] Field 'modules' must be an array\n");
+        return false;
+    }
+
+    if (!config.contains("connections")) {
+        printf("[CONFIG ERROR] Missing required field 'connections'\n");
+        return false;
+    }
+    if (!config["connections"].is_array()) {
+        printf("[CONFIG ERROR] Field 'connections' must be an array\n");
+        return false;
+    }
+
+    // version 字段可选，缺失时警告
+    if (!config.contains("version")) {
+        DPRINTF(MODULE, "[CONFIG WARN] Missing optional field 'version'\n");
+    }
+
+    // 2. 检查每个模块的必需字段
+    for (const auto& mod : config["modules"]) {
+        // name 字段检查
+        if (!mod.contains("name")) {
+            printf("[CONFIG ERROR] Module missing required field 'name'\n");
+            return false;
+        }
+        if (!mod["name"].is_string()) {
+            printf("[CONFIG ERROR] Module field 'name' must be a string\n");
+            return false;
+        }
+        std::string name = mod["name"].get<std::string>();
+
+        // type 字段检查
+        if (!mod.contains("type")) {
+            printf("[CONFIG ERROR] Module '%s' missing required field 'type'\n", name.c_str());
+            return false;
+        }
+        if (!mod["type"].is_string()) {
+            printf("[CONFIG ERROR] Module '%s' field 'type' must be a string\n", name.c_str());
+            return false;
+        }
+        std::string type = mod["type"].get<std::string>();
+
+        // 3. 针对特定模块类型的参数检查
+        if (mod.contains("params")) {
+            const auto& params = mod["params"];
+
+            // RouterTLM 参数检查
+            if (type == "RouterTLM") {
+                const std::vector<std::string> required_params = {"node_x", "node_y", "mesh_x", "mesh_y"};
+                for (const auto& param : required_params) {
+                    if (!params.contains(param)) {
+                        printf("[CONFIG ERROR] Module '%s' missing required param '%s'\n", name.c_str(), param.c_str());
+                        return false;
+                    }
+                    if (!params[param].is_number_integer()) {
+                        printf("[CONFIG ERROR] Module '%s' param '%s' must be an integer\n", name.c_str(), param.c_str());
+                        return false;
+                    }
+                }
+            }
+
+            // NICTLM 参数检查
+            if (type == "NICTLM") {
+                if (!params.contains("node_id")) {
+                    printf("[CONFIG ERROR] Module '%s' missing required param 'node_id'\n", name.c_str());
+                    return false;
+                }
+                if (!params["node_id"].is_number_integer()) {
+                    printf("[CONFIG ERROR] Module '%s' param 'node_id' must be an integer\n", name.c_str());
+                    return false;
+                }
+            }
+        } else {
+            // params 缺失时，对 RouterTLM 和 NICTLM 报错
+            if (type == "RouterTLM") {
+                printf("[CONFIG ERROR] Module '%s' missing required 'params' section\n", name.c_str());
+                return false;
+            }
+            if (type == "NICTLM") {
+                printf("[CONFIG ERROR] Module '%s' missing required 'params' section\n", name.c_str());
+                return false;
+            }
+        }
+    }
+
+    DPRINTF(MODULE, "[CONFIG] Schema validation passed\n");
+    return true;
+}
+
+bool ModuleFactory::instantiateAll(const json& config) {
     json final_config = JsonIncluder::loadAndInclude(config);
+
+    // ========================
+    // 0. JSON Schema 验证（CFG-08）
+    // ========================
+    if (!validateConfig(final_config)) {
+        DPRINTF(MODULE, "[CONFIG ERROR] Schema validation failed, aborting instantiation\n");
+        return false;
+    }
 
     // 使用 PluginLoader 加载所有插件
     PluginLoader loader;
@@ -84,6 +191,7 @@ void ModuleFactory::instantiateAll(const json& config) {
             auto* obj = object_instances[name];
             if (obj) {
                 obj->set_config(mod["params"]);
+                obj->on_config_loaded();  // 调用派生类的配置解析回调
                 DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
             }
         }
@@ -409,6 +517,7 @@ void ModuleFactory::instantiateAll(const json& config) {
     
     // 保存所有实例
     instances = object_instances;
+    return true;
 }
 
 void ModuleFactory::startAllTicks() {
