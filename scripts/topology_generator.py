@@ -18,6 +18,7 @@ topology_generator.py — CppTLM 拓扑配置生成器
 
 @author CppTLM Development Team
 @date 2026-04-22
+@editor Claude Code (Task 2.1: 端口索引生成)
 """
 
 import argparse
@@ -68,6 +69,14 @@ class TopologyGenerator:
         'Port': 'Port',                # 通用端口
     }
 
+    # 端口索引映射 (RouterTLM 5 端口: NORTH=0, EAST=1, SOUTH=2, WEST=3, LOCAL=4)
+    # 参考: SPEC-010 §2.2 RouterTLM Port Assignment
+    ROUTER_PORT_MAP = {'NORTH': 0, 'EAST': 1, 'SOUTH': 2, 'WEST': 3, 'LOCAL': 4}
+
+    # NICTLM 端口组索引 (DualPortStreamAdapter: PE side=0, Network side=1)
+    # 参考: SPEC-010 §2.3 NICTLM Port Assignment
+    NIC_PORT_GROUPS = {'PE': 0, 'NETWORK': 1}
+
     def __init__(self, name: str = "topology", target: str = "cpptlm"):
         """
         初始化拓扑生成器
@@ -94,8 +103,78 @@ class TopologyGenerator:
         if self.target == "cpptlm":
             return self.CPPTLM_TYPE_MAP.get(abstract_type, abstract_type)
         else:
-            # gem5 目标直接返回抽象类型
             return abstract_type
+
+    def _determine_port_indices(self, src: str, dst: str, attrs: Dict) -> Tuple[Optional[int], Optional[int]]:
+        """
+        根据连接的两端节点类型确定端口索引
+
+        Args:
+            src: 源节点名称
+            dst: 目标节点名称
+            attrs: 边的属性 (包含 type, latency 等)
+
+        Returns:
+            (src_port, dst_port): 源和目标的端口索引，None 表示使用默认端口 0
+        """
+        src_type = self.graph.nodes[src].get("type", "")
+        dst_type = self.graph.nodes[dst].get("type", "")
+
+        src_port, dst_port = None, None
+
+        # Router-to-Router 连接
+        if "Router" in src_type and "Router" in dst_type:
+            # 从节点名解析坐标
+            src_coords = self._parse_router_coords(src)
+            dst_coords = self._parse_router_coords(dst)
+
+            if src_coords and dst_coords:
+                sx, sy = src_coords
+                dx, dy = dst_coords
+
+                # EAST 连接: src.EAST(1) -> dst.WEST(3)
+                if dx == sx + 1 and dy == sy:
+                    return (1, 3)
+                # WEST 连接: src.WEST(3) -> dst.EAST(1)
+                if dx == sx - 1 and dy == sy:
+                    return (3, 1)
+                # SOUTH 连接: src.SOUTH(2) -> dst.NORTH(0)
+                if dx == sx and dy == sy + 1:
+                    return (2, 0)
+                # NORTH 连接: src.NORTH(0) -> dst.SOUTH(2)
+                if dx == sx and dy == sy - 1:
+                    return (0, 2)
+
+        # NICTLM-to-Router 连接
+        # NI Network side (port 1) -> Router LOCAL (port 4)
+        if "NetworkInterface" in src_type and "Router" in dst_type:
+            return (1, 4)  # NI 网络侧 -> Router LOCAL
+        if "Router" in src_type and "NetworkInterface" in dst_type:
+            return (4, 1)  # Router LOCAL -> NI 网络侧
+
+        # NI PE side (port 0) -> Processor (无端口索引)
+        if "NetworkInterface" in src_type and "Processor" in dst_type:
+            return (0, None)  # NI PE 侧 -> Processor
+        if "Processor" in src_type and "NetworkInterface" in dst_type:
+            return (None, 0)  # Processor -> NI PE 侧
+
+        # Memory 连接 (单端口，无索引)
+        if "Memory" in src_type or "Memory" in dst_type:
+            return (None, None)
+
+        # Processor 连接 (单端口，无索引)
+        if "Processor" in src_type or "Processor" in dst_type:
+            return (None, None)
+
+        return (None, None)
+
+    def _parse_router_coords(self, node_name: str) -> Optional[Tuple[int, int]]:
+        """从路由器名称解析坐标 (如 'router_2_3' -> (2, 3))"""
+        import re
+        match = re.match(r"router_(\d+)_(\d+)", node_name)
+        if match:
+            return (int(match.group(1)), int(match.group(2)))
+        return None
 
     # =========================================================================
     # 拓扑生成方法
@@ -384,9 +463,12 @@ class TopologyGenerator:
 
         connections = []
         for src, dst, attrs in self.graph.edges(data=True):
+            src_port, dst_port = self._determine_port_indices(src, dst, attrs)
+            src_str = f"{src}.{src_port}" if src_port is not None else src
+            dst_str = f"{dst}.{dst_port}" if dst_port is not None else dst
             connections.append({
-                "src": src,
-                "dst": dst,
+                "src": src_str,
+                "dst": dst_str,
                 "latency": attrs.get("latency", 1),
                 "bandwidth": attrs.get("bandwidth", 100)
             })
