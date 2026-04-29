@@ -117,3 +117,5 @@ message(STATUS "  Examples:    ${BUILD_EXAMPLES}")
 message(STATUS "  Coverage:    ${ENABLE_COVERAGE}")
 message(STATUS "  ccache:      ${CCACHE_PROGRAM}")
 message(STATUS "")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
