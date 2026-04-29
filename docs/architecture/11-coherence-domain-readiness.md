@@ -4,7 +4,7 @@
 **版本**: v1.0  
 **日期**: 2026-04-26  
 **状态**: 草案  
-**依赖**: ARCH-001 (混合架构 v2.1), ARCH-003 (错误与调试架构), ARCH-010 (拓扑生成管理系统)  
+**依赖**: ARCH-001 (混合架构 v2.1), ARCH-003 (错误与调试架构), ARCH-010 v2.0 (拓扑生成管理系统), ARCH-012 (拓扑差距分析)  
 **作者**: CppTLM Architecture Team
 
 ---
@@ -167,6 +167,8 @@ struct CoherenceViolation {
 | **G3: BidirectionalPortAdapter** | 路由器端口正确性影响一致性消息传递 | 中等依赖 |
 | **G7: JSON 配置一致性** | 配置文件规范化便于一致性域配置扩展 | 弱依赖 |
 | **G8: 层次化拓扑抽象** | 一致性域需要层次化拓扑作为容器 | 强依赖 |
+
+| **G8-G10** | v4.0 差距项（层次化拓扑、CoherenceDomain、ProtocolBridge） | ARCH-010 v2.0 §3.3 新增 | IMPL-010 Phase 4-5 |
 
 ### 5.2 依赖分析
 

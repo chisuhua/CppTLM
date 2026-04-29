@@ -1,10 +1,10 @@
 # CppTLM 拓扑生成、维护与管理系统架构设计
 
 **文档编号**: ARCH-010  
-**版本**: v1.0  
-**日期**: 2026-04-25  
-**状态**: 草案  
-**依赖**: ARCH-001 (混合架构 v2.1), ARCH-002 (复杂拓扑架构), ARCH-009 (拓扑可视化管线)  
+**版本**: v2.0  
+**日期**: 2026-04-28  
+**状态**: 已批准  
+**依赖**: ARCH-001 (混合架构 v2.1), ARCH-002 (复杂拓扑架构), ARCH-009 (拓扑可视化管线), ARCH-012 (差距分析审查)  
 **作者**: CppTLM Architecture Team  
 
 ---
@@ -182,7 +182,17 @@ RouterTLM 以 `N=5` 注册，因此 `isMultiPort("RouterTLM")` 返回 **true**�
 
 ---
 
-### 3.3 差距汇总
+### 3.3 v4.0 Gap Analysis (G8-G10)
+
+The following gaps were identified during v4.0 architecture development and are documented in ARCH-012:
+
+| 编号 | 差距 | 优先级 | 状态 | 实施计划覆盖 |
+|------|------|--------|------|-------------|
+| G8 | 层次化拓扑树解析器 | P1 | 未实现 | IMPL-010 Phase 4.1, 4.6 |
+| G9 | CoherenceDomain C++ 模块 | P1 | 未实现（准备度 15%） | IMPL-010 Phase 4.2-4.5 |
+| G10 | ProtocolBridge C++ 模块 | P2 | 未实现 | IMPL-010 Phase 5.1-5.5 |
+
+### 3.4 差距汇总
 
 | 编号 | 差距 | 优先级 | 文档原判定 | 审查修正 |
 |------|------|--------|-----------|----------|
@@ -191,6 +201,8 @@ RouterTLM 以 `N=5` 注册，因此 `isMultiPort("RouterTLM")` 返回 **true**�
 | G3 | BidirectionalPortAdapter 索引 | P0 | **错误** | **修正为：非阻塞，但需测试验证** |
 | G4 | noc_builder.py 端口格式 | — | 正确 | **已消除（脚本不存在）** |
 | G5 | noc_mesh.py 不可运行 | — | 正确 | **已消除（脚本不存在）** |
+| G6 | ModuleFactory 参数传递步骤缺失 | P0 | 正确 | 已在 IMPL-010 Phase 1.4 实现 |
+| G7 | Python 工具链整合 | P1 | 正确 | 已在 IMPL-010 Phase 2.2 规划 |
 
 ---
 
@@ -1320,7 +1332,21 @@ public:
 };
 ```
 
-### 8.2 ModuleFactory Step 2.5 实现
+### 8.2 Step 2.5 Parameter Passing
+
+Phase 1 实现的 Step 2.5 在 ModuleFactory 中的位置：
+
+| Step | 操作 | 说明 |
+|------|------|------|
+| Step 1 | 解析 JSON | 读取 modules[] 和 connections[] |
+| Step 2 | 创建实例 | new_module = factory.createModule(name, type) |
+| Step 2.5 | 传递配置 | instance->set_config(mod["params"]) ← **新增** |
+| Step 3 | 创建端口 | factory.createPorts(instance, type) |
+| ... | ... | ... |
+
+详见 SPEC-010 §6.1 "ModuleFactory Instantiation Flow"。
+
+### 8.3 ModuleFactory Step 2.5 实现
 
 在 `src/core/module_factory.cc` Step 2 和 Step 3 之间插入 Step 2.5：
 
@@ -1351,7 +1377,7 @@ public:
     // ... 现有代码不变 ...
 ```
 
-### 8.3 RouterTLM 读取配置
+### 8.4 RouterTLM 读取配置
 
 在 `src/tlm/router_tlm.cc` 的 `init()` 或构造函数中读取参数：
 
@@ -1390,7 +1416,7 @@ void RouterTLM::init() {
 }
 ```
 
-### 8.3.1 LinkTLM 读取配置
+### 8.4.1 LinkTLM 读取配置
 
 `LinkTLM` 用于建模独立链路延迟和 Credit 返回传递：
 
@@ -1413,7 +1439,7 @@ void LinkTLM::init() {
 - 延迟 `credit_return_latency` 周期后，将 credit 返回给上游 Router
 - 如果不使用 LinkTLM，credit 返回延迟由 RouterTLM 内部的 `pending_link_` 队列处理（1 周期延迟）
 
-### 8.4 NICTLM 读取配置
+### 8.5 NICTLM 读取配置
 
 ```cpp
 void NICTLM::init() {
@@ -1430,7 +1456,7 @@ void NICTLM::init() {
 }
 ```
 
-### 8.5 向后兼容性说明
+### 8.6 向后兼容性说明
 
 - `set_config()` 默认实现为空操作，不影响现有模块
 - `has_config()` 返回 false 时，模块使用构造函数默认值
@@ -1731,6 +1757,7 @@ def test_mesh_port_completeness():
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v2.0 | 2026-04-28 | 添加 §3.3 v4.0 Gap Analysis (G8-G10)，添加 §8.2 Step 2.5 Parameter Passing，更新依赖列表包含 ARCH-012，更新差距汇总包含 G6/G7 |
 | v1.0 | 2026-04-25 | 初始版本，基于 v3.0 差距分析修正 G3 论断 |
 
 ### 12.3 参考实现

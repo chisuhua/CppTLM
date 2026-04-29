@@ -32,17 +32,20 @@ This document provides the detailed implementation plan for TGMS (Topology Gener
 | 1.4 ModuleFactory Step 2.5 | G6 | 1 day | 1.1 |
 | 1.5 Update config format to v3.0 | G7 | 2 days | 1.4 |
 | 1.6 Unit tests | G1, G6 | 3 days | 1.2-1.5 |
+| JSON Schema 验证器 | CFG-08 | 2 days | after 1.5 — **已并入主计划** |
+| set_config() 类型检查 | PARAM-01, PARAM-05 | 1 day | after 1.4 — **已并入主计划** |
 
 ### Phase 2: Python Toolchain (2-3 weeks)
 
-**Goal**: Generate correct TGMS v3.0 configs with port indices
+**Goal**: Generate correct TGMS v3.0 configs with port indices and consolidate toolchain
 
 | Task | Gap | Effort | Dependencies |
 |------|-----|--------|-------------|
 | 2.1 Port index generation | G2 | 3 days | Phase 1 |
-| 2.2 NoCBuilder migration | G4 | 3 days | 2.1 |
-| 2.3 NoCMesh cleanup | G5 | 2 days | 2.1 |
-| 2.4 Integration tests | G2, G4 | 3 days | 2.1-2.3 |
+| 2.2 Python toolchain consolidation | G7 | 3 days | 2.1 |
+| 2.3 Integration tests | G2 | 3 days | 2.1-2.2 |
+| 端口方向检查 | PORT-01 | 1 day | after 2.2 — **已并入主计划** |
+| Bundle 类型验证 | PORT-03 | 1 day | after 2.2 — **已并入主计划** |
 
 ### Phase 3: Validation & Examples (1-2 weeks)
 
@@ -53,6 +56,7 @@ This document provides the detailed implementation plan for TGMS (Topology Gener
 | 3.1 2x2 Mesh validation | All | 2 days | Phase 2 |
 | 3.2 4x4 Mesh validation | All | 3 days | 3.1 |
 | 3.3 Example configs | G7 | 1 day | 3.1-3.2 |
+| Python TopologyValidator | VALID-01, VALID-02 | 3 days | after 3.1 — **已并入主计划** |
 
 ### Phase 4: Hierarchy Core (v4.0, 3-4 weeks)
 
@@ -232,19 +236,16 @@ def generate_mesh(mesh_x, mesh_y):
     return connections
 ```
 
-### 3.7 Phase 2.2: NoCBuilder Migration
+### 3.7 Phase 2.2: Python Toolchain Consolidation
 
-**File**: `scripts/noc_builder.py`
+**Goal**: Consolidate Python topology generation scripts under unified TopologyGeneratorBase framework.
 
-Replace named port references (`.E_out`, `.W_in`) with numeric indices:
+The legacy scripts `noc_builder.py` and `noc_mesh.py` have been removed from the codebase. All topology generation now uses `topology_generator.py` with the TopologyRegistry pattern.
 
-```python
-# Before (v2.x)
-port_map = {"NORTH": ".N_out", "EAST": ".E_out", ...}
-
-# After (v3.0)
-port_map = {"NORTH": ".0", "EAST": ".1", "SOUTH": ".2", "WEST": ".3", "LOCAL": ".4"}
-```
+**Key changes**:
+- All topology types inherit from `TopologyGeneratorBase`
+- Port indices use numeric format (`.0`, `.1`, etc.) compatible with C++ parser
+- Module params are structured in `params` object for set_config() integration
 
 ### 3.8 Phase 4.1: Hierarchy Tree Parser
 
@@ -545,34 +546,34 @@ If Phase 1 acceptance criteria fail after deployment:
 
 ## 8. 补充任务（ARCH-012 识别）
 
-以下任务来自 ARCH-012 差距分析审查，在原 IMPL-010 中未覆盖：
+以下任务来自 ARCH-012 差距分析审查，现已并入主计划：
 
-### 8.1 Phase 1 补充任务
-
-| 任务 | 对应差距 | 工作量 | 说明 |
-|------|---------|--------|------|
-| JSON Schema 验证器 | CFG-08 | 2 days | 使用 `nlohmann/json-schema` 库验证配置格式 |
-| set_config() 类型检查 | PARAM-01, PARAM-05 | 1 day | 添加 `is_number()`/`contains()` 检查，必填参数校验 |
-| 端口索引解析严格性 | DEF-04 | 0.5 day | `std::stoul` + 位置参数检查完整字符串 |
-| ModuleGroup 通配符优化 | DEF-01 | 1 day | 添加组存在性检查，优化 O(n²) 匹配 |
-| BidirectionalPortAdapter 绑定配置 | DEF-03 | 1 day | 允许 JSON 定义 PE/Net 端口顺序 |
-| type_registry.json 自动生成 | DEF-05 | 1 day | 从 C++ `REGISTER_CHSTREAM` 宏自动生成 |
-
-### 8.2 Phase 2 补充任务
+### 8.1 Phase 1 补充任务（已并入主计划）
 
 | 任务 | 对应差距 | 工作量 | 说明 |
 |------|---------|--------|------|
-| 端口方向检查 | PORT-01 | 1 day | 防止 req_out → req_out 等方向错误 |
-| 端口类型兼容性检查 | PORT-02 | 1 day | 验证 MasterPort/SlavePort Bundle 类型匹配 |
-| Bundle 类型验证 | PORT-03 | 1 day | 扩展 ChStreamAdapterFactory 维护 Bundle 注册表 |
+| JSON Schema 验证器 | CFG-08 | 2 days | **已并入 Phase 1 主计划（见 Phase 1 表）** |
+| set_config() 类型检查 | PARAM-01, PARAM-05 | 1 day | **已并入 Phase 1 主计划（见 Phase 1 表）** |
+| 端口索引解析严格性 | DEF-04 | 0.5 day | 保持作为独立优化任务 |
+| ModuleGroup 通配符优化 | DEF-01 | 1 day | 保持作为独立优化任务 |
+| BidirectionalPortAdapter 绑定配置 | DEF-03 | 1 day | 保持作为独立优化任务 |
+| type_registry.json 自动生成 | DEF-05 | 1 day | 保持作为独立优化任务 |
 
-### 8.3 Phase 3 补充任务
+### 8.2 Phase 2 补充任务（已并入主计划）
 
 | 任务 | 对应差距 | 工作量 | 说明 |
 |------|---------|--------|------|
-| Python TopologyValidator | VALID-01, VALID-02 | 3 days | 连接完整性检查 + BFS 可达性验证 |
-| 路由表自动生成器 | SIM-03 | 3 days | 从拓扑图自动计算 XY/自定义路由表 |
-| C++ 验证器集成 | VALID-01, VALID-02 | 2 days | C++ 端验证接口，与 Python 验证器结果交叉确认 |
+| 端口方向检查 | PORT-01 | 1 day | **已并入 Phase 2 主计划（见 Phase 2 表）** |
+| 端口类型兼容性检查 | PORT-02 | 1 day | 保持作为独立优化任务 |
+| Bundle 类型验证 | PORT-03 | 1 day | **已并入 Phase 2 主计划（见 Phase 2 表）** |
+
+### 8.3 Phase 3 补充任务（已并入主计划）
+
+| 任务 | 对应差距 | 工作量 | 说明 |
+|------|---------|--------|------|
+| Python TopologyValidator | VALID-01, VALID-02 | 3 days | **已并入 Phase 3 主计划（见 Phase 3 表）** |
+| 路由表自动生成器 | SIM-03 | 3 days | 保持作为独立优化任务 |
+| C++ 验证器集成 | VALID-01, VALID-02 | 2 days | 保持作为独立优化任务 |
 
 ## 9. Version History
 
