@@ -42,6 +42,9 @@ private:
     bool _metrics_enabled = false;
     std::unique_ptr<tlm_stats::StatGroup> _stats_root;
 
+    // JSON Schema 验证器（CFG-08）
+    static bool validateConfig(const json& config);
+
     // 分离两个注册表
     static std::unordered_map<std::string, CreateSimObjectFunc>& getObjectRegistry() {
         static std::unordered_map<std::string, CreateSimObjectFunc> registry;
@@ -144,7 +147,7 @@ public:
         return obj_names;
     }
 
-    void instantiateAll(const json& config);
+    bool instantiateAll(const json& config);
     void startAllTicks();
 
     SimObject* getInstance(const std::string& name) const {
