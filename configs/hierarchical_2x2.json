@@ -1,0 +1,108 @@
+{
+  "name": "hierarchical_topology",
+  "description": "Auto-generated hierarchical_topology topology",
+  "modules": [
+    {
+      "name": "root",
+      "type": "RouterTLM"
+    },
+    {
+      "name": "l1_n0",
+      "type": "RouterTLM"
+    },
+    {
+      "name": "l1_n1",
+      "type": "RouterTLM"
+    },
+    {
+      "name": "l2_n0",
+      "type": "CPUSim"
+    },
+    {
+      "name": "l2_n1",
+      "type": "CPUSim"
+    },
+    {
+      "name": "l2_n2",
+      "type": "CPUSim"
+    },
+    {
+      "name": "l2_n3",
+      "type": "CPUSim"
+    }
+  ],
+  "connections": [
+    {
+      "src": "root",
+      "dst": "l1_n0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "root",
+      "dst": "l1_n1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l1_n0",
+      "dst": "root",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l1_n0",
+      "dst": "l2_n0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l1_n0",
+      "dst": "l2_n1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l1_n1",
+      "dst": "root",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l1_n1",
+      "dst": "l2_n2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l1_n1",
+      "dst": "l2_n3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l2_n0",
+      "dst": "l1_n0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l2_n1",
+      "dst": "l1_n0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l2_n2",
+      "dst": "l1_n1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l2_n3",
+      "dst": "l1_n1",
+      "latency": 1,
+      "bandwidth": 100
+    }
+  ]
+}
