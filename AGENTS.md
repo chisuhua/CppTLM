@@ -1,9 +1,9 @@
 # CppTLM — C++ TLM Hybrid Simulation Framework
 
-**Generated:** 2026-04-22
-**Commit:** 99f0174 — ci: 添加 GitHub Actions CI/CD 工作流 (#4)
+**Generated:** 2026-04-30
+**Commit:** fc13083 — docs: update TGMS implementation plans for Phase 1-3 completion
 **Branch:** main
-**Version:** 2.0.2
+**Version:** 2.0.3
 
 ## OVERVIEW
 
