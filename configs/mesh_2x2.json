@@ -1,49 +1,176 @@
-// configs/mesh_2x2.json
-// 2×2 Mesh 测试拓扑：4 个 NICTLM + 4 个 Router
-// TGMS v3.0 格式 - 含端口索引
 {
-  "$schema": "./tgms_v3.0_schema.json",
-  "version": "3.0",
+  "name": "mesh_topology",
+  "description": "Auto-generated mesh_topology topology",
   "modules": [
-    { "name": "nic_0_0", "type": "NICTLM", "params": { "node_id": 0, "mesh_x": 2, "mesh_y": 2 } },
-    { "name": "nic_0_1", "type": "NICTLM", "params": { "node_id": 1, "mesh_x": 2, "mesh_y": 2 } },
-    { "name": "nic_1_0", "type": "NICTLM", "params": { "node_id": 2, "mesh_x": 2, "mesh_y": 2 } },
-    { "name": "nic_1_1", "type": "NICTLM", "params": { "node_id": 3, "mesh_x": 2, "mesh_y": 2 } },
-    { "name": "router_0_0", "type": "RouterTLM", "params": { "node_x": 0, "node_y": 0, "mesh_x": 2, "mesh_y": 2 } },
-    { "name": "router_0_1", "type": "RouterTLM", "params": { "node_x": 1, "node_y": 0, "mesh_x": 2, "mesh_y": 2 } },
-    { "name": "router_1_0", "type": "RouterTLM", "params": { "node_x": 0, "node_y": 1, "mesh_x": 2, "mesh_y": 2 } },
-    { "name": "router_1_1", "type": "RouterTLM", "params": { "node_x": 1, "node_y": 1, "mesh_x": 2, "mesh_y": 2 } },
-    { "name": "mem_0_0", "type": "MemoryTLM" },
-    { "name": "mem_1_1", "type": "MemoryTLM" }
+    {
+      "name": "router_0_0",
+      "type": "RouterTLM"
+    },
+    {
+      "name": "router_0_1",
+      "type": "RouterTLM"
+    },
+    {
+      "name": "router_1_0",
+      "type": "RouterTLM"
+    },
+    {
+      "name": "router_1_1",
+      "type": "RouterTLM"
+    },
+    {
+      "name": "ni_0_0",
+      "type": "NICTLM"
+    },
+    {
+      "name": "ni_0_1",
+      "type": "NICTLM"
+    },
+    {
+      "name": "ni_1_0",
+      "type": "NICTLM"
+    },
+    {
+      "name": "ni_1_1",
+      "type": "NICTLM"
+    },
+    {
+      "name": "proc_0_0",
+      "type": "CPUSim"
+    },
+    {
+      "name": "proc_0_1",
+      "type": "CPUSim"
+    },
+    {
+      "name": "proc_1_0",
+      "type": "CPUSim"
+    },
+    {
+      "name": "proc_1_1",
+      "type": "CPUSim"
+    }
   ],
-  "groups": {
-    "nics": ["nic_*"],
-    "routers": ["router_*"]
-  },
   "connections": [
-    // NICTLM Network side (port 1) → Router LOCAL (port 4)
-    { "src": "nic_0_0.1", "dst": "router_0_0.4" },
-    { "src": "nic_0_1.1", "dst": "router_0_1.4" },
-    { "src": "nic_1_0.1", "dst": "router_1_0.4" },
-    { "src": "nic_1_1.1", "dst": "router_1_1.4" },
-    // Router LOCAL (port 4) → NICTLM Network side (port 1)
-    { "src": "router_0_0.4", "dst": "nic_0_0.1" },
-    { "src": "router_0_1.4", "dst": "nic_0_1.1" },
-    { "src": "router_1_0.4", "dst": "nic_1_0.1" },
-    { "src": "router_1_1.4", "dst": "nic_1_1.1" },
-    // Router-to-Router connections (with port indices)
-    // EAST(1) <-> WEST(3)
-    { "src": "router_0_0.1", "dst": "router_0_1.3" },
-    { "src": "router_0_1.3", "dst": "router_0_0.1" },
-    { "src": "router_1_0.1", "dst": "router_1_1.3" },
-    { "src": "router_1_1.3", "dst": "router_1_0.1" },
-    // SOUTH(2) <-> NORTH(0)
-    { "src": "router_0_0.2", "dst": "router_1_0.0" },
-    { "src": "router_1_0.0", "dst": "router_0_0.2" },
-    { "src": "router_0_1.2", "dst": "router_1_1.0" },
-    { "src": "router_1_1.0", "dst": "router_0_1.2" },
-    // Memory connections (single port, no index needed)
-    { "src": "router_0_0", "dst": "mem_0_0" },
-    { "src": "router_1_1", "dst": "mem_1_1" }
+    {
+      "src": "router_0_0.2",
+      "dst": "router_0_1.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_0.1",
+      "dst": "router_1_0.3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_0.4",
+      "dst": "ni_0_0.1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_1.1",
+      "dst": "router_1_1.3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_1.4",
+      "dst": "ni_0_1.1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_0.2",
+      "dst": "router_1_1.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_0.4",
+      "dst": "ni_1_0.1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_1.4",
+      "dst": "ni_1_1.1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_0.1",
+      "dst": "router_0_0.4",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_0.0",
+      "dst": "proc_0_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_1.1",
+      "dst": "router_0_1.4",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_1.0",
+      "dst": "proc_0_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_0.1",
+      "dst": "router_1_0.4",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_0.0",
+      "dst": "proc_1_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_1.1",
+      "dst": "router_1_1.4",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_1.0",
+      "dst": "proc_1_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_0_0",
+      "dst": "ni_0_0.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_0_1",
+      "dst": "ni_0_1.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_1_0",
+      "dst": "ni_1_0.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_1_1",
+      "dst": "ni_1_1.0",
+      "latency": 1,
+      "bandwidth": 100
+    }
   ]
 }
