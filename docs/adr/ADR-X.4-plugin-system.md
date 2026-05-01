@@ -1,790 +1,266 @@
 # ADR-X.4: 插件系统
 
-> **版本**: 2.0  
-> **日期**: 2026-04-09  
-> **状态**: 📋 待确认  
-> **影响**: v2.0/v2.1 - 模块扩展机制
+> **版本**: 3.0
+> **日期**: 2026-04-09
+> **状态**: ✅ 已实施
+> **影响**: v2.0 - 模块注册与动态加载机制
 
 ---
 
-## 1. 核心问题
+## 1. 核心决策
 
-在混合仿真系统中，是否需要支持动态加载模块（插件系统）？
+**v2.0 采用编译时静态注册方案**，通过 `ModuleFactory` 的模板方法实现模块类型注册。
 
-**需要考虑的场景**:
-1. 用户自定义模块（无需重新编译核心框架）
-2. 第三方模块集成（商业 IP、开源模块）
-3. 实验性模块（快速迭代，不稳定）
-4. 多版本共存（同一模块的多个版本）
+**结论**: 增量编译（~30 秒）已满足快速迭代需求，完整的动态插件系统（v2.1）按需实现。
 
 ---
 
-## 2. 行业调研
+## 2. 行业调研（参考）
 
-### 2.1 Gem5 的模块扩展机制
+### 2.1 方案对比
 
-**Gem5 方式**: 编译时配置（Python 配置脚本）
+| 方案 | 类型安全 | 性能 | 灵活性 | 复杂度 |
+|------|---------|------|--------|--------|
+| **A) 静态链接** | ✅ 编译期检查 | 高 | 低（需重编译） | 低 |
+| **B) 动态库** | ⚠️ 运行时检查 | 高 | 高（运行时加载） | 中 |
+| **C) 脚本扩展** | ❌ 无类型检查 | 低 | 最高 | 中 |
+| **D) 混合方案** | ✅ 部分保证 | 中 | 高 | 高 |
 
-```python
-# Gem5 配置脚本（Python）
-from m5.objects import *
-
-system = System()
-system.cpu = [O3CPU()]
-system.cache = L1Cache()
-system.memory = DRAM()
-
-# 所有模块在编译时链接
-# 不支持运行时动态加载
-```
-
-**特点**:
-- ✅ 类型安全（编译时检查）
-- ✅ 性能高（无运行时开销）
-- ❌ 需要重新编译
-- ❌ 不支持动态加载
-
----
-
-### 2.2 SystemC 的模块机制
-
-**SystemC 方式**: 静态链接 + 动态库（可选）
-
-```cpp
-// SystemC 模块
-SC_MODULE(MyModule) {
-    SC_CTOR(MyModule) {
-        SC_METHOD(process);
-        sensitive << clk;
-    }
-    
-    void process() {
-        // ...
-    }
-};
-
-// 动态库加载（用户自行实现）
-void* handle = dlopen("libmymodule.so", RTLD_NOW);
-MyModule* module = (MyModule*)dlsym(handle, "create_module");
-```
-
-**特点**:
-- ✅ 支持动态库
-- ⚠️ 无标准插件接口
-- ⚠️ 用户自行实现加载机制
-
----
-
-### 2.3 LLVM 的插件系统
-
-**LLVM 方式**: Pass 管理器 + 动态加载
-
-```cpp
-// LLVM Pass 插件
-struct MyPass : public Pass {
-    static char ID;
-    MyPass() : Pass(ID) {}
-    
-    bool runOnFunction(Function &F) override {
-        // ...
-    }
-};
-
-// 注册 Pass
-static RegisterPass<MyPass> X("mypass", "My Pass");
-
-// 动态加载
-opt -load libMyPass.so -mypass input.bc
-```
-
-**特点**:
-- ✅ 标准插件接口
-- ✅ 支持动态加载
-- ✅ 版本兼容检查
-- ⚠️ 复杂度较高
-
----
-
-### 2.4 VSCode 的插件系统
-
-**VSCode 方式**: 扩展 API + 市场
-
-```typescript
-// VSCode 扩展
-export function activate(context: ExtensionContext) {
-    let disposable = vscode.commands.registerCommand(
-        'extension.hello',
-        () => {
-            vscode.window.showInformationMessage('Hello World!');
-        }
-    );
-    context.subscriptions.push(disposable);
-}
-```
-
-**特点**:
-- ✅ 完整插件 API
-- ✅ 依赖管理
-- ✅ 版本控制
-- ❌ 运行时开销大
-- ❌ 实现复杂
+**推荐**: v2.0 采用 A) + B) 可选（按需）
 
 ---
 
 ## 3. 需求场景分析
 
-### 场景 1: 用户自定义模块（高频）
-
-```
-需求：用户希望添加自定义 Cache 替换策略，无需修改核心框架
-
-当前方案:
-- 继承 CacheV2 基类
-- 重写 replace_policy() 方法
-- 重新编译
-
-插件方案:
-- 实现 ICachePolicy 接口
-- 编译为动态库
-- 配置文件加载
-
-收益分析:
-- 开发频率：每周 1-2 次
-- 重新编译时间：~30 秒（增量编译）
-- 插件收益：避免重新编译核心框架
-- 复杂度增加：中等
-```
-
-**评估**: 增量编译已足够快，插件系统收益有限
+| 场景 | 频率 | 当前满足度 | 推荐 |
+|------|------|-----------|------|
+| 用户自定义模块 | 每周 1-2 次 | 90%（继承 + 增量编译） | ✅ 不需要插件 |
+| 第三方 IP 集成 | 每月 1-2 次 | 80%（静态链接黑盒） | ⏳ v2.1 可选 |
+| 实验性模块 | 每周数次 | 85%（独立可执行文件 + IPC） | ⏳ v2.1 可选 |
+| 多版本共存 | 偶尔 | 95%（命名空间隔离） | ✅ 不需要插件 |
 
 ---
 
-### 场景 2: 第三方模块集成（中频）
+## 4. 实际实现：模块注册机制（v2.0）
 
-```
-需求：集成商业 IP 模型（如 ARM NIC-400），保护知识产权
+### 4.1 核心架构
 
-当前方案:
-- 提供黑盒模块接口
-- 静态链接二进制
-
-插件方案:
-- 动态库加载
-- 接口标准化
-
-收益分析:
-- 开发频率：每月 1-2 次
-- IP 保护需求：中等
-- 插件收益：便于分发
-- 复杂度增加：中等
-```
-
-**评估**: 静态链接黑盒模块已可满足需求
-
----
-
-### 场景 3: 实验性模块（中频）
-
-```
-需求：快速迭代实验性模块（如新的 coherence 协议）
-
-当前方案:
-- 继承基类，快速原型
-- 编译为独立可执行文件
-- 与主框架通过 socket/共享内存通信
-
-插件方案:
-- 动态加载
-- 热切换（无需重启仿真）
-
-收益分析:
-- 开发频率：每周数次
-- 热切换需求：低（通常重启仿真）
-- 插件收益：中等
-- 复杂度增加：高
-```
-
-**评估**: 独立可执行文件 + IPC 已可满足需求
-
----
-
-### 场景 4: 多版本共存（低频）
-
-```
-需求：同一模块的多个版本共存（如 CacheV1 和 CacheV2 对比）
-
-当前方案:
-- 命名空间隔离
-- 配置文件选择版本
-
-插件方案:
-- 动态库版本管理
-- 运行时加载指定版本
-
-收益分析:
-- 开发频率：偶尔
-- 多版本需求：低
-- 插件收益：低
-- 复杂度增加：高
-```
-
-**评估**: 命名空间隔离已可满足需求
-
----
-
-## 4. 方案对比
-
-| 方案 | 设计 | 优点 | 缺点 | 适用场景 |
-|------|------|------|------|---------|
-| **A) 无插件** ✅ | 编译时静态链接 | 简单、性能高、类型安全 | 需要重新编译 | ✅ 推荐（v2.0） |
-| **B) 动态库** | .so/.dll 加载 | 支持运行时加载 | 跨平台兼容性、版本管理 | 第三方 IP |
-| **C) 脚本扩展** | Python/Lua 脚本 | 极灵活、快速迭代 | 性能开销大、类型不安全 | 配置/测试 |
-| **D) 混合方案** | 核心静态 + 可选动态 | 平衡灵活性与性能 | 实现复杂 | v2.1+ |
-
----
-
-## 5. 推荐方案：无插件（v2.0）+ 可选动态库（v2.1）
-
-### 5.1 核心设计
+代码中存在**三套注册机制**，分别承担不同职责：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  v2.0: 编译时静态链接                                        │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  所有模块编译为静态库                                 │   │
-│  │  - 类型安全                                          │   │
-│  │  - 性能高                                            │   │
-│  │  - 增量编译快（~30 秒）                               │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  1. ModuleFactory (核心)                                     │
+│     ├── registerObject<T>(name)    → SimObject 派生类         │
+│     └── registerModule<T>(name)    → SimModule 派生类         │
+│     位置: include/core/module_factory.hh                     │
 ├─────────────────────────────────────────────────────────────┤
-│  v2.1: 可选动态库支持                                       │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  ModuleFactory + 动态加载                            │   │
-│  │  - 第三方 IP 分发                                     │   │
-│  │  - 实验性模块                                         │   │
-│  │  - 需要时启用                                         │   │
-│  └─────────────────────────────────────────────────────┘   │
+│  2. modules.hh (Legacy 宏)                                   │
+│     ├── REGISTER_OBJECT            → 注册 CPUSim               │
+│     └── REGISTER_MODULE           → 注册 CpuCluster            │
+│     位置: include/modules.hh                                  │
+├─────────────────────────────────────────────────────────────┤
+│  3. chstream_register.hh (ChStream 宏)                      │
+│     ├── REGISTER_CHSTREAM        → 注册 10 个 TLM 模块        │
+│     └── REGISTER_ALL             → REGISTER_OBJECT + REGISTER_CHSTREAM │
+│     位置: include/chstream_register.hh                       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
----
+### 4.2 API 参考
 
-### 5.2 v2.0: 静态链接实现
-
-#### 模块注册机制
+#### 4.2.1 ModuleFactory 模板方法
 
 ```cpp
-// include/core/module_registry.hh
-#ifndef MODULE_REGISTRY_HH
-#define MODULE_REGISTRY_HH
+// include/core/module_factory.hh
 
-#include "sim_object.hh"
-#include <map>
-#include <functional>
+// 注册 SimObject 派生类
+template<typename T>
+static void registerObject(const std::string& name) {
+    auto& registry = getObjectRegistry();
+    registry[name] = [](const std::string& n, EventQueue* eq) -> SimObject* {
+        return new T(n, eq);
+    };
+}
 
-// 模块工厂函数
-using ModuleFactoryFunc = std::function<SimObject*(const std::string&)>;
-
-// 模块注册器（编译时注册）
-class ModuleRegistry {
-private:
-    std::map<std::string, ModuleFactoryFunc> factories_;
-    
-    ModuleRegistry() = default;
-    
-public:
-    static ModuleRegistry& instance() {
-        static ModuleRegistry registry;
-        return registry;
-    }
-    
-    // 注册模块（宏调用）
-    void register_module(const std::string& name, ModuleFactoryFunc factory) {
-        factories_[name] = factory;
-    }
-    
-    // 创建模块
-    SimObject* create_module(const std::string& name, const std::string& instance_name) {
-        if (factories_.count(name)) {
-            return factories_[name](instance_name);
-        }
-        return nullptr;
-    }
-    
-    // 列出所有可用模块
-    std::vector<std::string> list_modules() const {
-        std::vector<std::string> names;
-        for (const auto& [name, _] : factories_) {
-            names.push_back(name);
-        }
-        return names;
-    }
-};
-
-// 模块注册宏
-#define REGISTER_MODULE(type_name, class_name) \
-    static struct type_name##_registrar { \
-        type_name##_registrar() { \
-            ModuleRegistry::instance().register_module( \
-                type_name, \
-                [](const std::string& name) { return new class_name(name); } \
-            ); \
-        } \
-    } type_name##_instance;
-
-#endif // MODULE_REGISTRY_HH
+// 注册 SimModule 派生类
+template<typename T>
+static void registerModule(const std::string& name) {
+    static_assert(std::is_base_of_v<SimModule, T>, "T must derive from SimModule");
+    auto& registry = getModuleRegistry();
+    registry[name] = [](const std::string& n, EventQueue* eq) -> SimModule* {
+        return new T(n, eq);
+    };
+}
 ```
 
-#### 模块使用示例
+#### 4.2.2 便捷宏
 
 ```cpp
-// include/modules/cache_v2.hh
-class CacheV2 : public TLMModule {
-public:
-    CacheV2(const std::string& n) : TLMModule(n) {}
-    // ...
-};
+// include/modules.hh - Legacy 模块
+REGISTER_OBJECT;    // 注册 CPUSim
+REGISTER_MODULE;     // 注册 CpuCluster
 
-// src/modules/cache_v2.cc
-#include "cache_v2.hh"
-#include "../core/module_registry.hh"
-
-REGISTER_MODULE(cache_v2, CacheV2)
+// include/chstream_register.hh - ChStream 模块
+REGISTER_CHSTREAM;   // 注册 10 个 TLM 模块 + StreamAdapter
+REGISTER_ALL;       // REGISTER_OBJECT + REGISTER_CHSTREAM
 ```
 
-#### 配置文件创建模块
+#### 4.2.3 使用示例
 
 ```cpp
 // main.cpp
-int sc_main() {
-    // 从配置创建模块
-    json config = load_config("system.json");
-    
-    for (const auto& module_cfg : config["modules"]) {
-        std::string type = module_cfg["type"];
-        std::string name = module_cfg["name"];
-        
-        SimObject* module = ModuleRegistry::instance().create_module(type, name);
-        if (module) {
-            root_modules.push_back(module);
-        }
-    }
-    
-    // ...
-}
+#include "modules.hh"
+#include "chstream_register.hh"
+
+REGISTER_ALL;  // 注册全部模块类型
+
+// JSON 配置创建
+json config = load_config("system.json");
+ModuleFactory factory(event_queue);
+factory.instantiateAll(config);  // 批量实例化
 ```
 
+#### 4.2.4 配置格式
+
 ```json
-// system.json
 {
   "modules": [
-    {"type": "cache_v2", "name": "l1_cache"},
-    {"type": "crossbar_v2", "name": "noc"},
-    {"type": "memory_v2", "name": "dram"}
+    {"type": "CacheTLM", "name": "l1_cache", "params": {...}},
+    {"type": "CrossbarTLM", "name": "noc", "params": {...}},
+    {"type": "MemoryTLM", "name": "dram", "params": {...}}
   ]
 }
 ```
 
+### 4.3 双注册表机制
+
+`ModuleFactory` 内部维护两个独立的注册表：
+
+```cpp
+// SimObject 注册表 → Legacy 模块（CacheSim, CPUSim, MemorySim 等）
+static std::unordered_map<std::string, CreateSimObjectFunc>& getObjectRegistry();
+
+// SimModule 注册表 → 带 Layout 特性的模块（CpuCluster 等）
+static std::unordered_map<std::string, CreateSimModuleFunc>& getModuleRegistry();
+```
+
+两者的**区别**在于 create 函数的返回类型：
+- `CreateSimObjectFunc` → `SimObject*`
+- `CreateSimModuleFunc` → `SimModule*`
+
 ---
 
-### 5.3 v2.1: 可选动态库支持
+## 5. 实际实现：动态加载（部分）
 
-#### 插件接口定义
+### 5.1 当前状态
 
-```cpp
-// include/plugin/plugin_interface.hh
-#ifndef PLUGIN_INTERFACE_HH
-#define PLUGIN_INTERFACE_HH
+`PluginLoader` 支持基本的 dlopen 加载，但**缺少标准化的 IPlugin 接口**：
 
-#include "../core/sim_object.hh"
+| 特性 | ADR 设计 | 实际实现 |
+|------|---------|---------|
+| 插件接口 | `IPlugin` 抽象基类 | ❌ 不存在 |
+| 插件元数据 | `PluginMeta` 结构体 | ❌ 不存在 |
+| 导出宏 | `PLUGIN_EXPORT` + `DEFINE_PLUGIN` | ❌ 不存在 |
+| 加载能力 | dlopen + dlsym | ✅ dlopen（仅检查 `registerType`） |
+| 卸载能力 | `unload()` + cleanup | ❌ 不支持 |
+| 策略控制 | 无 | ✅ `LoadPolicy` (BEST_EFFORT/STRICT/CRITICAL_ONLY) |
 
-// 插件元数据
-struct PluginMeta {
-    std::string name;
-    std::string version;
-    std::string author;
-    std::string description;
-    std::vector<std::string> dependencies;
-};
+### 5.2 v2.1 可选扩展方案
 
-// 插件接口
-class IPlugin {
-public:
-    virtual ~IPlugin() = default;
-    
-    // 获取元数据
-    virtual PluginMeta get_meta() const = 0;
-    
-    // 初始化插件
-    virtual void init() = 0;
-    
-    // 创建模块
-    virtual SimObject* create_module(const std::string& name) = 0;
-    
-    // 清理插件
-    virtual void cleanup() = 0;
-};
-
-// 插件导出宏
-#define PLUGIN_EXPORT extern "C" __attribute__((visibility("default")))
-
-// 插件入口函数
-#define DEFINE_PLUGIN(meta_struct) \
-    PLUGIN_EXPORT IPlugin* create_plugin() { \
-        return new meta_struct(); \
-    } \
-    PLUGIN_EXPORT void destroy_plugin(IPlugin* plugin) { \
-        delete plugin; \
-    }
-
-#endif // PLUGIN_INTERFACE_HH
-```
-
-#### 插件加载器
+如果未来需要完整的动态插件支持，建议采用**最小化 C 函数入口方案**：
 
 ```cpp
-// include/plugin/plugin_loader.hh
-#ifndef PLUGIN_LOADER_HH
-#define PLUGIN_LOADER_HH
+// include/plugin/plugin_interface.hh (候选 v2.1)
+extern "C" {
+    // 插件唯一入口：插件 .so 的初始化函数
+    // 调用方：ModuleFactory::loadPlugin()
+    // 返回值：0 成功，非 0 失败
+    using PluginInitFunc = int(*)(ModuleFactory*);
+}
 
-#include "plugin_interface.hh"
-#include <vector>
-#include <dlfcn.h>
-
-class PluginLoader {
-private:
-    struct LoadedPlugin {
-        void* handle;
-        IPlugin* plugin;
-        PluginMeta meta;
-    };
-    
-    std::vector<LoadedPlugin> plugins_;
-    
-public:
-    // 加载插件
-    bool load(const std::string& path) {
-        // 打开动态库
-        void* handle = dlopen(path.c_str(), RTLD_NOW);
-        if (!handle) {
-            DPRINTF(PLUGIN, "Failed to load %s: %s\n", path.c_str(), dlerror());
-            return false;
-        }
-        
-        // 获取创建函数
-        using CreateFunc = IPlugin*(*)();
-        CreateFunc create = (CreateFunc)dlsym(handle, "create_plugin");
-        if (!create) {
-            DPRINTF(PLUGIN, "No create_plugin symbol in %s\n", path.c_str());
-            dlclose(handle);
-            return false;
-        }
-        
-        // 创建插件实例
-        IPlugin* plugin = create();
-        PluginMeta meta = plugin->get_meta();
-        
-        // 初始化插件
-        plugin->init();
-        
-        // 记录已加载插件
-        plugins_.push_back({handle, plugin, meta});
-        
-        DPRINTF(PLUGIN, "Loaded plugin: %s v%s\n", meta.name.c_str(), meta.version.c_str());
-        return true;
-    }
-    
-    // 卸载插件
-    void unload(const std::string& plugin_name) {
-        for (auto it = plugins_.begin(); it != plugins_.end(); ++it) {
-            if (it->meta.name == plugin_name) {
-                it->plugin->cleanup();
-                
-                using DestroyFunc = void(*)(IPlugin*);
-                DestroyFunc destroy = (DestroyFunc)dlsym(it->handle, "destroy_plugin");
-                if (destroy) {
-                    destroy(it->plugin);
-                }
-                
-                dlclose(it->handle);
-                plugins_.erase(it);
-                return;
-            }
-        }
-    }
-    
-    // 创建模块
-    SimObject* create_module(const std::string& plugin_name, const std::string& module_name) {
-        for (const auto& loaded : plugins_) {
-            if (loaded.meta.name == plugin_name) {
-                return loaded.plugin->create_module(module_name);
-            }
-        }
-        return nullptr;
-    }
-    
-    // 列出已加载插件
-    std::vector<PluginMeta> list_plugins() const {
-        std::vector<PluginMeta> metas;
-        for (const auto& loaded : plugins_) {
-            metas.push_back(loaded.meta);
-        }
-        return metas;
-    }
-    
-    ~PluginLoader() {
-        // 清理所有插件
-        for (auto& loaded : plugins_) {
-            loaded.plugin->cleanup();
-            dlclose(loaded.handle);
-        }
-    }
-};
-
-#endif // PLUGIN_LOADER_HH
-```
-
-#### 插件示例
-
-```cpp
-// plugins/custom_cache/custom_cache_plugin.hh
-#ifndef CUSTOM_CACHE_PLUGIN_HH
-#define CUSTOM_CACHE_PLUGIN_HH
-
-#include "../../include/plugin/plugin_interface.hh"
-#include "custom_cache.hh"
-
-struct CustomCachePlugin : public IPlugin {
-    PluginMeta get_meta() const override {
-        PluginMeta meta;
-        meta.name = "custom_cache";
-        meta.version = "1.0.0";
-        meta.author = "Your Name";
-        meta.description = "Custom Cache Replacement Policy";
-        return meta;
-    }
-    
-    void init() override {
-        // 初始化插件
-    }
-    
-    SimObject* create_module(const std::string& name) override {
-        return new CustomCache(name);
-    }
-    
-    void cleanup() override {
-        // 清理插件
-    }
-};
-
-// 导出插件
-DEFINE_PLUGIN(CustomCachePlugin)
-```
-
-```cpp
-// plugins/custom_cache/custom_cache.hh
-#ifndef CUSTOM_CACHE_HH
-#define CUSTOM_CACHE_HH
-
-#include "../../include/modules/cache_v2.hh"
-
-// 自定义 Cache（LRU 替换策略）
-class CustomCache : public CacheV2 {
-public:
-    CustomCache(const std::string& n) : CacheV2(n) {}
-    
-    // 重写替换策略
-    uint64_t choose_victim() override {
-        // LRU 实现
-        // ...
-    }
-};
-
-#endif // CUSTOM_CACHE_HH
-```
-
-#### 插件配置
-
-```json
-// plugins.json
-{
-  "plugins": [
-    {
-      "path": "libcustom_cache.so",
-      "enabled": true,
-      "config": {
-        "replacement_policy": "lru"
-      }
-    }
-  ],
-  "modules": [
-    {
-      "type": "plugin:custom_cache/custom_cache_v2",
-      "name": "l1_cache",
-      "plugin_config": {
-        "replacement_policy": "lru"
-      }
-    }
-  ]
+// 插件侧实现示例
+extern "C" int plugin_init(ModuleFactory* factory) {
+    factory->registerObject<CustomCache>("CustomCache");
+    return 0;
 }
 ```
 
----
-
-## 6. 实施建议
-
-### 6.1 v2.0: 静态链接（推荐）
-
-**实现内容**:
-```cpp
-// ModuleRegistry（编译时注册）
-REGISTER_MODULE(cache_v2, CacheV2)
-REGISTER_MODULE(crossbar_v2, CrossbarV2)
-REGISTER_MODULE(memory_v2, MemoryV2)
-
-// 配置文件创建
-SimObject* module = ModuleRegistry::instance().create_module(type, name);
-```
-
-**优点**:
-- ✅ 类型安全（编译时检查）
-- ✅ 性能高（无运行时开销）
-- ✅ 增量编译快（~30 秒）
-- ✅ 跨平台兼容
-
-**缺点**:
-- ❌ 需要重新编译（但增量编译快）
-
-**验收标准**:
-- [ ] 模块注册机制正常工作
-- [ ] 配置文件创建模块
-- [ ] 增量编译时间 <30 秒
-
-**预计工期**: 2 天
+**优点**：
+- 插件不需要定义 C++ 类，只需导出一个 C 函数
+- 直接复用 `ModuleFactory` 的注册 API，无新接口
+- ABI 稳定（C 函数签名不随 C++ 编译器变化）
 
 ---
 
-### 6.2 v2.1: 可选动态库（按需实现）
+## 6. 实际实现 vs 文档设计差异
 
-**触发条件**:
-- 有第三方 IP 集成需求
-- 需要保护知识产权
-- 用户强烈要求热加载
-
-**实现内容**:
-```cpp
-// PluginLoader（运行时加载）
-PluginLoader::instance().load("libcustom_cache.so");
-SimObject* module = PluginLoader::instance().create_module("custom_cache", "l1_cache");
-```
-
-**优点**:
-- ✅ 支持运行时加载
-- ✅ 第三方 IP 分发方便
-- ✅ 热切换（可选）
-
-**缺点**:
-- ❌ 跨平台兼容性复杂
-- ❌ 版本管理困难
-- ❌ 实现复杂度高
-
-**预计工期**: 7 天
+| 组件 | 文档旧设计 | 实际实现 | 状态 |
+|------|-----------|---------|------|
+| **模块注册器** | `ModuleRegistry` 单例 | `ModuleFactory` 内部 static 注册表 | ✅ 已实现 |
+| **注册 API** | 函数指针 `register_module()` | 模板 `registerObject<T>()` / `registerModule<T>()` | ✅ 已实现 |
+| **双注册表** | 未设计 | SimObject + SimModule 分离 | ✅ 已实现 |
+| **注册宏** | `REGISTER_MODULE(type, class)` | `REGISTER_ALL` / `REGISTER_CHSTREAM` | ✅ 已实现 |
+| **批量创建** | 逐个 `create_module()` | JSON 批量 `instantiateAll()` | ✅ 已实现 |
+| **IPlugin 接口** | C++ 抽象基类 | 不存在 | ⏳ v2.1 可选 |
+| **版本兼容检查** | `PluginMeta` 版本字段 | 不存在 | ⏳ v2.2 候选 |
 
 ---
 
-## 7. 需求优先级评估
-
-| 需求 | 频率 | 当前方案满足度 | 插件系统收益 | 推荐 |
-|------|------|---------------|-------------|------|
-| 用户自定义模块 | 每周 1-2 次 | 90%（继承 + 增量编译） | 低 | ❌ 不需要 |
-| 第三方 IP 集成 | 每月 1-2 次 | 80%（静态链接黑盒） | 中 | ⏳ v2.1 可选 |
-| 实验性模块 | 每周数次 | 85%（独立可执行文件） | 中 | ⏳ v2.1 可选 |
-| 多版本共存 | 偶尔 | 95%（命名空间隔离） | 低 | ❌ 不需要 |
-
----
-
-## 8. 需要确认的问题
-
-| 问题 | 选项 | 推荐 |
-|------|------|------|
-| **Q1**: v2.0 是否需要插件？ | A) 需要 / B) 不需要 | **B) 不需要** |
-| **Q2**: v2.1 是否添加动态库支持？ | A) 需要 / B) 不需要 / C) 可选 | **C) 可选** |
-| **Q3**: 插件接口复杂度？ | A) 简单 / B) 中等 / C) 完整 | **B) 中等** |
-| **Q4**: 第三方 IP 需求？ | A) 迫切 / B) 未来 / C) 不需要 | **B) 未来** |
-| **Q5**: 实施时机？ | A) v2.0 / B) v2.1 / C) v2.2 | **B) v2.1** |
-
----
-
-## 9. 与现有架构整合
-
-| 架构 | 整合方式 |
-|------|---------|
-| **模块系统** | ModuleRegistry 统一管理（静态 + 动态） |
-| **配置系统** | JSON 配置支持插件加载 |
-| **复位系统** | 插件模块支持 reset()/save_snapshot()/load_snapshot() |
-
----
-
-## 10. 相关文档
-
-| 文档 | 位置 | 状态 |
-|------|------|------|
-| 模块注册机制 | `include/core/module_factory.hh` | ✅ 已实现 |
-| 插件接口（v2.1） | `include/plugin/plugin_interface.hh` | ⏳ 待实现 |
-| 插件加载器（v2.1） | `include/plugin/plugin_loader.hh` | ⏳ 待实现 |
-
----
-
-## 11. 实际实现 vs 文档设计
-
-> ⚠️ **注意**: 以下为实际实现与原始设计的差异说明。
-
-### 实际实现（v2.0）
-
-| 组件 | 文档设计 | 实际实现 | 状态 |
-|------|---------|---------|------|
-| **模块注册器** | `ModuleRegistry` 单例类 | `ModuleFactory` 内部 static 注册表 | ✅ 已实现 |
-| **注册方法** | `ModuleRegistry::register_module()` | `ModuleFactory::registerObject<T>()` / `registerModule<T>()` 模板方法 | ✅ 已实现 |
-| **双注册表** | 未设计 | `getObjectRegistry()` (SimObject) + `getModuleRegistry()` (SimModule) | ✅ 已实现 |
-| **动态加载** | `PluginLoader` 类 | `DynamicLoader` + `PluginLoader` (在 `include/core/` 和 `src/utils/`) | ⏳ 部分实现 |
-| **REGISTER_MODULE 宏** | 独立宏 | `ModuleFactory::registerModule<T>()` 模板方法 | ✅ 已实现 |
-
-### 关键差异
-
-1. **ModuleRegistry vs ModuleFactory**: 文档设计的 `ModuleRegistry` 单例类在实际代码中不存在。功能由 `ModuleFactory` 类的内部 static 局部注册表实现。
-
-2. **双注册表**: 实际实现了两个独立的注册表（SimObject 和 SimModule），文档未设计此特性。
-
-3. **模板方法 vs 宏**: 实际使用模板方法 `registerObject<T>()` / `registerModule<T>()` 而非文档中的 `REGISTER_MODULE` 宏。
-
-4. **REGISTER_OBJECT / REGISTER_MODULE**: 代码中使用 `REGISTER_OBJECT` (modules.hh) 注册 Legacy 模块，`ModuleFactory::registerModule<T>()` 注册 SimModule。
-
----
-
-## 12. 决策汇总
+## 7. 决策汇总
 
 **v2.0 决策**:
 - ✅ 采用静态链接
 - ✅ `ModuleFactory` 双注册表（SimObject + SimModule）
 - ✅ `registerObject<T>()` / `registerModule<T>()` 模板方法
-- ✅ 配置文件创建模块
-- ❌ 不实现动态加载（基础插件系统部分实现）
-
----
-
-## 11. 决策汇总
-
-**v2.0 决策**:
-- ✅ 采用静态链接
-- ✅ ModuleRegistry 编译时注册
-- ✅ 配置文件创建模块
-- ❌ 不实现动态加载
+- ✅ `REGISTER_ALL` / `REGISTER_CHSTREAM` 便捷宏
+- ✅ JSON 配置批量实例化
 
 **v2.1 决策**（按需）:
-- ⏳ 可选动态库支持
-- ⏳ 标准插件接口
-- ⏳ PluginLoader 运行时加载
+- ⏳ 可选动态库支持（基于 C 函数入口方案）
+- ⏳ 完整插件系统暂缓
+
+**不需要插件的理由**:
+- 增量编译 ~30 秒已足够快
+- 当前无明确的第三方 IP 集成需求
+- v2.1 动态加载可以基于 C 函数入口实现，无需 IPlugin C++ 接口
 
 ---
 
-**下一步**: 请老板确认插件系统方案
+## 8. 相关文档
+
+| 文档 | 位置 | 说明 |
+|------|------|------|
+| 模块工厂 | `include/core/module_factory.hh` | 核心注册 API |
+| Legacy 宏 | `include/modules.hh` | REGISTER_OBJECT/REGISTER_MODULE |
+| ChStream 宏 | `include/chstream_register.hh` | REGISTER_CHSTREAM/REGISTER_ALL |
+| 动态加载器 | `include/core/plugin_loader.hh` | dlopen 基础支持 |
+| 动态加载实现 | `src/utils/dynamic_loader.cc` | 实际加载逻辑 |
+
+---
+
+## 9. 架构优势
+
+| 特性 | 说明 |
+|------|------|
+| **类型安全** | 模板 `registerObject<T>()` 在编译期检查 T 是否派生自 SimObject |
+| **注册与适配器一体化** | `REGISTER_CHSTREAM` 同时注册模块类型和 StreamAdapter |
+| **分阶段实例化** | `instantiateAll()` 的 7 阶段流程（验证→加载→创建→分组→内部配置→连接→适配器注入） |
+| **策略化动态加载** | `LoadPolicy` (BEST_EFFORT/STRICT/CRITICAL_ONLY) 支持不同加载策略 |
+
+---
+
+## 10. 长期演进方向（v3.0+ 候选）
+
+| 方向 | 触发条件 | 复杂度 |
+|------|---------|--------|
+| 热加载/热切换 | 仿真运行时替换模块 | 高 |
+| 插件版本管理 | 多团队开发，ABI 兼容需求 | 中 |
+| 插件依赖图 | 插件之间有依赖关系 | 中 |
+| Python 脚本扩展 | 配置/测试层脚本化 | 低 |
+| 插件市场/分发 | 第三方生态 | 高 |
+
+---
+
+**状态**: ✅ 已实施（v2.0）<br>
+**最后更新**: 2026-05-01<br>
+**下次评审**: v2.1 需求明确时
