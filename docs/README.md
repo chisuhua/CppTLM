@@ -1,6 +1,6 @@
 # CppTLM 文档中心
 
-> **版本**: 1.0  
+> **版本**: 2.0.3  
 > **最后更新**: 2026-04-10  
 > **状态**: ✅ 整理完成
 
@@ -42,8 +42,8 @@
 
 ### 实施计划
 
-1. [实施计划 v2.0](../plans/implementation_plan_v2.md) - 详细实施计划
-2. [Phase 2 计划](./implementation/phase2-detailed-plan.md) - Phase 2 详细计划
+1. [实施计划 v2.1](../plans/implementation_plan_v2.1.md) - 详细实施计划
+2. [TGMS 实施计划](./implementation/10-tgms-implementation-plan.md) - TGMS Phase 1-3 实现
 
 ---
 
@@ -74,9 +74,8 @@ docs/
 │   ├── ADR-X.1 ~ ADR-X.8
 │   └── ADR-X-SUMMARY.md
 ├── implementation/              # 实施计划
-│   ├── 01-implementation-plan.md
-│   ├── 02-implementation-plan-detailed.md
-│   └── phase2-detailed-plan.md
+│   ├── README.md
+│   └── 10-tgms-implementation-plan.md
 └── archived/                    # 归档文档
 ```
 
@@ -119,5 +118,5 @@ docs/
 ---
 
 **维护**: CppTLM 开发团队  
-**版本**: 1.0  
-**最后更新**: 2026-04-10
+**版本**: 2.0.3  
+**最后更新**: 2026-05-01

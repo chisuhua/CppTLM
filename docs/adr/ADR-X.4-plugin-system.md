@@ -727,11 +727,48 @@ SimObject* module = PluginLoader::instance().create_module("custom_cache", "l1_c
 
 ## 10. 相关文档
 
-| 文档 | 位置 |
-|------|------|
-| 模块注册机制 | `include/core/module_registry.hh` |
-| 插件接口（v2.1） | `include/plugin/plugin_interface.hh` |
-| 插件加载器（v2.1） | `include/plugin/plugin_loader.hh` |
+| 文档 | 位置 | 状态 |
+|------|------|------|
+| 模块注册机制 | `include/core/module_factory.hh` | ✅ 已实现 |
+| 插件接口（v2.1） | `include/plugin/plugin_interface.hh` | ⏳ 待实现 |
+| 插件加载器（v2.1） | `include/plugin/plugin_loader.hh` | ⏳ 待实现 |
+
+---
+
+## 11. 实际实现 vs 文档设计
+
+> ⚠️ **注意**: 以下为实际实现与原始设计的差异说明。
+
+### 实际实现（v2.0）
+
+| 组件 | 文档设计 | 实际实现 | 状态 |
+|------|---------|---------|------|
+| **模块注册器** | `ModuleRegistry` 单例类 | `ModuleFactory` 内部 static 注册表 | ✅ 已实现 |
+| **注册方法** | `ModuleRegistry::register_module()` | `ModuleFactory::registerObject<T>()` / `registerModule<T>()` 模板方法 | ✅ 已实现 |
+| **双注册表** | 未设计 | `getObjectRegistry()` (SimObject) + `getModuleRegistry()` (SimModule) | ✅ 已实现 |
+| **动态加载** | `PluginLoader` 类 | `DynamicLoader` + `PluginLoader` (在 `include/core/` 和 `src/utils/`) | ⏳ 部分实现 |
+| **REGISTER_MODULE 宏** | 独立宏 | `ModuleFactory::registerModule<T>()` 模板方法 | ✅ 已实现 |
+
+### 关键差异
+
+1. **ModuleRegistry vs ModuleFactory**: 文档设计的 `ModuleRegistry` 单例类在实际代码中不存在。功能由 `ModuleFactory` 类的内部 static 局部注册表实现。
+
+2. **双注册表**: 实际实现了两个独立的注册表（SimObject 和 SimModule），文档未设计此特性。
+
+3. **模板方法 vs 宏**: 实际使用模板方法 `registerObject<T>()` / `registerModule<T>()` 而非文档中的 `REGISTER_MODULE` 宏。
+
+4. **REGISTER_OBJECT / REGISTER_MODULE**: 代码中使用 `REGISTER_OBJECT` (modules.hh) 注册 Legacy 模块，`ModuleFactory::registerModule<T>()` 注册 SimModule。
+
+---
+
+## 12. 决策汇总
+
+**v2.0 决策**:
+- ✅ 采用静态链接
+- ✅ `ModuleFactory` 双注册表（SimObject + SimModule）
+- ✅ `registerObject<T>()` / `registerModule<T>()` 模板方法
+- ✅ 配置文件创建模块
+- ❌ 不实现动态加载（基础插件系统部分实现）
 
 ---
 
