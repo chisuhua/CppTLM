@@ -66,12 +66,12 @@ include/
 │   ├── nic_tlm.hh                # NIC TLM 模块 (Fragment)
 │   └── memory_tlm.hh             # Memory TLM 模块
 │
-├── rtl/                          # RTL 模块实现 (CppHDL)
-│   ├── cache_component.hh        # Cache RTL Component
-│   ├── crossbar_component.hh     # Crossbar RTL Component
-│   ├── nic_component.hh          # NIC RTL Component
+├── rtl/                          # RTL 模块实现 (待实现, CppHDL)
+│   ├── cache_component.hh        # Cache RTL Component (待实现)
+│   ├── crossbar_component.hh     # Crossbar RTL Component (待实现)
+│   ├── nic_component.hh          # NIC RTL Component (待实现)
 │   └── wrapper/
-│       └── rtl_module_wrapper.hh # 通用 RTL Wrapper
+│       └── rtl_module_wrapper.hh # 通用 RTL Wrapper (待实现)
 │
 ├── mapper/                       # Mapper 层
 │   ├── fragment_mapper.hh        # Fragment 分片/重组
@@ -80,9 +80,9 @@ include/
 │
 ├── framework/                    # 框架层
 │   ├── generic_stream_adapter.hh # 泛型 Stream Adapter
-│   ├── module_registry.hh        # 模块注册器
+│   ├── module_registry.hh        # 模块注册器 (待实现)
 │   ├── port_pair.hh              # PortPair 连接
-│   └── impl_mode.hh              # 实现模式 (TLM/RTL/COMPARE/SHADOW)
+│   └── impl_mode.hh              # 实现模式 (待实现: TLM/RTL/COMPARE/SHADOW)
 │
 └── core/                         # 核心依赖
     ├── sim_object.hh             # SimObject 基类
@@ -325,10 +325,12 @@ public:
 
 ---
 
-### 5.2 双并行模式（未来扩展）
+### 5.2 双并行模式（待实现）
+
+> ⚠️ **注意**: 此功能尚未实现。以下为设计规范。
 
 ```cpp
-// include/framework/impl_mode.hh
+// include/framework/impl_mode.hh (待实现)
 enum class ImplType {
     TLM,        // 纯 TLM 实现（快速仿真）
     RTL,        // 纯 RTL 实现（CppHDL，周期精确）
@@ -357,8 +359,8 @@ enum class ImplType {
 
 | 文档 | 位置 |
 |------|------|
-| PRD-002 (产品需求) | `../01-product-requirements/PRD-002-final.md` |
-| ADR 索引 | `../03-adr/README.md` |
+| PRD-002 (产品需求) | `../requirements/PRD-002-final.md` |
+| ADR 索引 | `../adr/README.md` |
 | FragmentMapper 决议 | `FRAGMENT_MAPPER_DECISIONS.md` |
 | P0/P1/P2 决策汇总 | `P0_P1_P2_DECISIONS.md` |
 

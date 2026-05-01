@@ -1,12 +1,12 @@
 # CppTLM - C++ TLM Hybrid Simulation Framework
-# Version: 2.0.0
+# Version: 2.0.3
 #
 # Build system: CMake 3.16+ with optional Ninja + ccache
 # SystemC: optional via -DUSE_SYSTEMC=ON (local headers in external/systemc/include)
 
 cmake_minimum_required(VERSION 3.16)
 project(CppTLM
-    VERSION 2.0.0
+    VERSION 2.0.3
     DESCRIPTION "C++ TLM Hybrid Simulation Framework"
     LANGUAGES CXX
 )
