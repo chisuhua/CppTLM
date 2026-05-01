@@ -1,271 +1,166 @@
 # ADR-X.6: TransactionContext 与现有 Packet/Extension 整合方案
 
-> **版本**: 1.0  
-> **日期**: 2026-04-09  
-> **状态**: 📋 待确认  
+> **版本**: 2.0
+> **日期**: 2026-04-09
+> **状态**: ✅ 已实施
 > **影响**: v2.0 - 事务追踪架构设计
 
 ---
 
-## 1. 现有架构分析
+## 1. 核心决策
 
-### 1.1 Packet 类（现有）
+**保留现有机制 + 增强 TransactionContext**，采用 Extension 双层同步方案。
 
-```cpp
-// include/core/packet.hh
-class Packet {
-public:
-    tlm::tlm_generic_payload* payload;
-    
-    // 流控/事务标识
-    uint64_t stream_id = 0;      // ← 相当于 transaction_id
-    uint64_t seq_num = 0;
-    CmdType cmd;
-    PacketType type;
-    
-    // 时间统计
-    uint64_t src_cycle;
-    uint64_t dst_cycle;
-    
-    // 请求 - 响应关联
-    Packet* original_req = nullptr;  // ← 响应包指向原始请求
-    std::vector<Packet*> dependents;
-    
-    // 路由信息
-    std::vector<std::string> route_path;
-    int hop_count = 0;
-    uint8_t priority = 0;
-    uint64_t flow_id = 0;
-    int vc_id = 0;
-    
-    // 方法
-    uint64_t getDelayCycles() const;
-    uint64_t getEnd2EndCycles() const;
-};
-```
-
-**现有设计特点**:
-- `stream_id` 作为事务标识
-- `original_req` 用于响应匹配
-- `route_path` / `hop_count` 用于追踪
-- `src_cycle` / `dst_cycle` 用于延迟统计
+| 决策 | 说明 |
+|------|------|
+| **保留 `Packet::stream_id`** | 作为 fallback transaction_id |
+| **保留 `Packet::original_req`** | 响应匹配机制不变 |
+| **保留 `Packet::route_path`** | 用于调试追踪 |
+| **添加 `TransactionContextExt`** | TLM Extension 存储完整上下文 |
+| **同步机制** | `get_transaction_id()` 优先 Extension，回退 stream_id |
 
 ---
 
-### 1.2 Extension 机制（现有）
+## 2. 实际实现：TransactionContextExt
 
-```cpp
-// include/core/ext/cmd_exts.hh
-GEMSC_TLM_EXTENSION_DEF(ReadCmdExt,   ReadCmd)
-GEMSC_TLM_EXTENSION_DEF(WriteCmdExt,  WriteCmd)
-GEMSC_TLM_EXTENSION_DEF(WriteDataExt, WriteData)
-GEMSC_TLM_EXTENSION_DEF(ReadRespExt,  ReadResp)
-GEMSC_TLM_EXTENSION_DEF(WriteRespExt, WriteResp)
-GEMSC_TLM_EXTENSION_DEF(StreamIDExt,  StreamUniqID)
-GEMSC_TLM_EXTENSION_DEF_SIMPLE(ReqIDExt, int32_t, req_id)
-
-// include/ext/coherence_extension.hh
-struct CoherenceExtension : public tlm::tlm_extension<CoherenceExtension> {
-    CacheState prev_state = INVALID;
-    CacheState next_state = INVALID;
-    bool is_exclusive = false;
-    uint64_t sharers_mask = 0;
-    bool needs_snoop = true;
-};
-```
-
-**现有设计特点**:
-- 基于 SystemC TLM extension 机制
-- 每个 Extension 有 `clone()` / `copy_from()` 方法
-- 可附加到 `tlm_generic_payload` 上
-
----
-
-### 1.3 模块使用方式（现有）
-
-```cpp
-// include/modules/cache_sim.hh
-class CacheSim : public SimObject {
-public:
-    bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) {
-        uint64_t addr = pkt->payload->get_address();
-        bool hit = (addr & 0x7) == 0;
-        
-        if (hit) {
-            // 创建响应包
-            Packet* resp = PacketPool::get().acquire();
-            resp->payload = pkt->payload;
-            resp->type = PKT_RESP;
-            resp->original_req = pkt;  // ← 关联原始请求
-            resp->stream_id = pkt->stream_id;  // ← 透传 stream_id
-            
-            // 发送响应
-            getPortManager().getUpstreamPorts()[src_id]->sendResp(resp);
-        }
-    }
-};
-```
-
----
-
-## 2. 整合方案设计
-
-### 2.1 核心原则
-
-**保留现有机制** + **增强 TransactionContext**：
-
-| 现有机制 | 保留 | 增强 |
-|---------|------|------|
-| `Packet::stream_id` | ✅ 保留 | 作为 `transaction_id` 使用 |
-| `Packet::original_req` | ✅ 保留 | 响应匹配机制不变 |
-| `Packet::route_path` | ✅ 保留 | 用于调试追踪 |
-| `tlm_extension` | ✅ 保留 | 添加 `TransactionContextExt` |
-| `PacketPool` | ✅ 保留 | 管理 Extension 生命周期 |
-
----
-
-### 2.2 TransactionContextExt 设计
+### 2.1 字段定义
 
 ```cpp
 // include/ext/transaction_context_ext.hh
-#ifndef TRANSACTION_CONTEXT_EXT_HH
-#define TRANSACTION_CONTEXT_EXT_HH
-
-#include "tlm.h"
-#include <vector>
-#include <string>
-
-// 事务上下文扩展（可选启用）
 struct TransactionContextExt : public tlm::tlm_extension<TransactionContextExt> {
-    // ========== 核心字段（简化版，v2.0） ==========
+    // 核心字段
     uint64_t transaction_id;      // 事务 ID（与 Packet::stream_id 同步）
     uint64_t parent_id;           // 父事务 ID（0 表示无父事务）
     uint8_t  fragment_id;         // 分片 ID（0 表示不分片）
     uint8_t  fragment_total;      // 总分片数（1 表示不分片）
-    
-    // ========== 调试字段（可选，v2.1） ==========
+
+    // 调试字段
     uint64_t create_timestamp;    // 创建时间戳
-    std::string source_module;    // 源模块名称
+    std::string source_module;   // 源模块名称
     std::string type;             // 事务类型：READ/WRITE/ATOMIC
     uint8_t  priority;            // QoS 优先级
-    
-    // ========== 追踪日志（框架层专用） ==========
+
+    // 追踪日志
     struct TraceEntry {
         std::string module;
         uint64_t timestamp;
         uint64_t latency;
-        std::string event;  // "hopped", "blocked", "completed"
+        std::string event;
     };
     std::vector<TraceEntry> trace_log;
-    
-    // ========== TLM Extension 必需方法 ==========
+
+    // TLM Extension 必需方法
     tlm_extension* clone() const override {
         return new TransactionContextExt(*this);
     }
-    
+
     void copy_from(tlm_extension const& e) override {
         auto& ext = static_cast<const TransactionContextExt&>(e);
         transaction_id = ext.transaction_id;
-        parent_id = ext.parent_id;
-        fragment_id = ext.fragment_id;
-        fragment_total = ext.fragment_total;
-        create_timestamp = ext.create_timestamp;
-        source_module = ext.source_module;
-        type = ext.type;
-        priority = ext.priority;
-        trace_log = ext.trace_log;
+        // ... 其他字段复制
     }
-    
-    // ========== 辅助方法 ==========
-    void add_trace(const std::string& module, uint64_t timestamp, uint64_t latency, const std::string& event) {
-        trace_log.push_back({module, timestamp, latency, event});
-    }
-    
-    bool is_root() const { return parent_id == 0; }
-    bool is_fragmented() const { return fragment_total > 1; }
-};
 
-// ========== 便捷函数 ==========
+    // 辅助方法
+    bool is_root() const { return parent_id == 0 && fragment_total == 1; }
+    bool is_fragmented() const { return fragment_total > 1; }
+    bool is_first_fragment() const { return fragment_id == 0; }
+    bool is_last_fragment() const { return fragment_id == fragment_total - 1; }
+    std::string get_group_key() const {
+        return source_module + ":" + std::to_string(parent_id ?: transaction_id);
+    }
+};
+```
+
+### 2.2 便捷函数
+
+```cpp
+// 获取 TransactionContextExt
 inline TransactionContextExt* get_transaction_context(tlm_generic_payload* p) {
     TransactionContextExt* ext = nullptr;
     p->get_extension(ext);
     return ext;
 }
 
+// 设置 TransactionContext
 inline void set_transaction_context(tlm_generic_payload* p, const TransactionContextExt& src) {
     TransactionContextExt* ext = new TransactionContextExt(src);
     p->set_extension(ext);
 }
 
-inline uint64_t get_or_create_transaction_id(tlm_generic_payload* p) {
-    TransactionContextExt* ext = get_transaction_context(p);
-    if (ext) {
-        return ext->transaction_id;
-    }
-    // 无 Extension 时，返回 0（由调用者分配）
-    return 0;
+// 创建完整 TransactionContext（同时设置 transaction_id）
+inline TransactionContextExt* create_transaction_context(tlm_generic_payload* p, uint64_t tid) {
+    TransactionContextExt* ext = new TransactionContextExt();
+    ext->transaction_id = tid;
+    ext->parent_id = 0;
+    ext->fragment_id = 0;
+    ext->fragment_total = 1;
+    p->set_extension(ext);
+    return ext;
 }
-
-#endif // TRANSACTION_CONTEXT_EXT_HH
 ```
 
 ---
 
-### 2.3 Packet 类整合
+## 3. 实际实现：Packet 扩展
+
+### 3.1 Packet 类整合
 
 ```cpp
-// include/core/packet.hh (修订版)
+// include/core/packet.hh
 class Packet {
-    friend class PacketPool;
 public:
     tlm::tlm_generic_payload* payload;
-    
-    // ========== 事务标识（与 Extension 同步） ==========
-    uint64_t stream_id = 0;           // ← 与 TransactionContextExt::transaction_id 同步
+
+    // 流控/事务标识
+    uint64_t stream_id = 0;
     uint64_t seq_num = 0;
-    
-    // ========== 时间统计 ==========
+    CmdType cmd;
+    PacketType type;
+
+    // 时间统计
     uint64_t src_cycle;
     uint64_t dst_cycle;
-    
-    // ========== 请求 - 响应关联 ==========
+
+    // 请求 - 响应关联
     Packet* original_req = nullptr;
     std::vector<Packet*> dependents;
-    
-    // ========== 路由追踪 ==========
+
+    // 路由信息
     std::vector<std::string> route_path;
     int hop_count = 0;
     uint8_t priority = 0;
     uint64_t flow_id = 0;
     int vc_id = 0;
-    
-    // ========== 便捷方法（整合 Extension） ==========
+
+    // ========== 事务 ID 方法 ==========
     uint64_t get_transaction_id() const {
-        // 优先从 Extension 获取
         if (payload) {
-            TransactionContextExt* ext = get_transaction_context(payload);
+            TransactionContextExt* ext = nullptr;
+            payload->get_extension(ext);
             if (ext) return ext->transaction_id;
         }
-        // 回退到 stream_id
         return stream_id;
     }
-    
+
     void set_transaction_id(uint64_t tid) {
-        stream_id = tid;  // 同步更新
+        stream_id = tid;
         if (payload) {
-            TransactionContextExt* ext = get_transaction_context(payload);
-            if (ext) {
-                ext->transaction_id = tid;
+            TransactionContextExt* ext = nullptr;
+            payload->get_extension(ext);
+            if (!ext) {
+                ext = new TransactionContextExt();
+                payload->set_extension(ext);
             }
+            ext->transaction_id = tid;
         }
     }
-    
-    // 添加追踪日志
+
     void add_trace(const std::string& module, uint64_t timestamp, uint64_t latency, const std::string& event) {
         if (payload) {
-            TransactionContextExt* ext = get_transaction_context(payload);
+            TransactionContextExt* ext = nullptr;
+            payload->get_extension(ext);
             if (ext) {
-                ext->add_trace(module, timestamp, latency, event);
+                ext->trace_log.push_back({module, timestamp, latency, event});
             }
         }
     }
@@ -274,233 +169,121 @@ public:
 
 ---
 
-### 2.4 模块层整合（简化）
+## 4. 实际实现 vs 文档设计
 
-```cpp
-// include/modules/cache_sim_v2.hh (新设计)
-class CacheSimV2 : public SimObject {
-public:
-    bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) {
-        // ========== 模块层只传播 transaction_id ==========
-        uint64_t tid = pkt->get_transaction_id();
-        
-        uint64_t addr = pkt->payload->get_address();
-        bool hit = (addr & 0x7) == 0;
-        
-        if (hit) {
-            // 创建响应包
-            Packet* resp = PacketPool::get().acquire();
-            resp->payload = pkt->payload;
-            resp->type = PKT_RESP;
-            resp->original_req = pkt;
-            
-            // ✅ 透传 transaction_id
-            resp->set_transaction_id(tid);
-            
-            // ✅ 设置错误码（可选）
-            if (TransactionContextExt* ext = get_transaction_context(resp->payload)) {
-                // 框架层可在此添加追踪日志
-                // ext->add_trace(name(), event_queue->getCurrentCycle(), 1, "hit");
-            }
-            
-            event_queue->schedule([this, resp, src_id]() {
-                getPortManager().getUpstreamPorts()[src_id]->sendResp(resp);
-            }, 1);
-            
-            PacketPool::get().release(pkt);
-        } else {
-            // Miss: 转发到下游
-            req_buffer.push(pkt);
-            scheduleForward(1);
-        }
-        return true;
-    }
-};
-```
+### 4.1 Packet 类字段对比
 
-**模块设计者视角**:
-- 只调用 `get_transaction_id()` / `set_transaction_id()`
-- 不感知完整 Context 结构
-- 业务逻辑清晰
+| 字段 | ADR-X.6 设计 | 代码实际 | 一致？ |
+|------|-------------|---------|--------|
+| `Packet::stream_id` | ✅ 保留 | ✅ `uint64_t stream_id = 0` | ✅ |
+| `Packet::original_req` | ✅ 保留 | ✅ `Packet* original_req = nullptr` | ✅ |
+| `Packet::route_path` | ✅ 保留 | ✅ `std::vector<std::string> route_path` | ✅ |
+| `get_transaction_id()` | 优先 Extension，回退 stream_id | 完全一致 | ✅ |
+| `set_transaction_id()` | 同步更新 stream_id + Extension | 一致 + 自动创建 Extension | ✅ 代码更好 |
+| `add_trace()` | ✅ | ✅ | ✅ |
+| `PacketPool` 清理 Extension | ✅ acquire/release 时清理 | ⚠️ `reset()` 不清理 Extension | ⚠️ 部分不一致 |
+
+### 4.2 TransactionContextExt 字段对比
+
+| 字段 | 设计 | 实现 | 一致？ |
+|------|------|------|--------|
+| `transaction_id` | ✅ | ✅ `uint64_t` | ✅ |
+| `parent_id` | ✅ | ✅ `uint64_t` | ✅ |
+| `fragment_id` | ✅ | ✅ `uint8_t` | ✅ |
+| `fragment_total` | ✅ | ✅ `uint8_t` | ✅ |
+| `create_timestamp` | ✅ | ✅ `uint64_t` | ✅ |
+| `source_module` | ✅ | ✅ `std::string` | ✅ |
+| `type` | ✅ | ✅ `std::string` | ✅ |
+| `priority` | ✅ | ✅ `uint8_t` | ✅ |
+| `trace_log` | ✅ | ✅ `std::vector<TraceEntry>` | ✅ |
+| `clone()` / `copy_from()` | ✅ | ✅ | ✅ |
+| `is_root()` | ✅ | ✅ | ✅ |
+| `is_fragmented()` | ✅ | ✅ | ✅ |
+| `is_first_fragment()` | 未提及 | ✅ 新增 | ✅ |
+| `is_last_fragment()` | 未提及 | ✅ 新增 | ✅ |
+| `get_group_key()` | 未提及 | ✅ 新增（分片重组键） | ✅ |
+| `reset()` | 未提及 | ✅ 新增 | ✅ |
+
+### 4.3 便捷函数对比
+
+| 函数 | 设计 | 实现 | 一致？ |
+|------|------|------|--------|
+| `get_transaction_context()` | ✅ | ✅ 含 const 重载 | ✅ |
+| `set_transaction_context()` | ✅ | ✅ | ✅ |
+| `create_transaction_context()` | 未提及 | ✅ 新增 | ✅ |
+
+### 4.4 代码超越文档的部分
+
+| 特性 | 说明 |
+|------|------|
+| **const 重载** | `get_transaction_context()` 同时提供 const 和非 const 版本 |
+| **自动创建 Extension** | `set_transaction_id()` 在 Extension 不存在时自动创建 |
+| **分片辅助方法** | `is_first_fragment()` / `is_last_fragment()` / `get_group_key()` |
+| **TLMModule 子交易** | `std::atomic<uint64_t>` 线程安全计数器 |
 
 ---
 
-### 2.5 框架层整合（增强）
+## 5. 已知差异
+
+### 5.1 PacketPool Extension 清理
+
+| 方面 | ADR-X.6 设计 | 代码实际 |
+|------|-------------|---------|
+| `acquire()` | 清理所有 Extension | ⚠️ 仅 `reset()` payload，不清理 Extension |
+| `release()` | 清理所有 Extension | ⚠️ 同上 |
+
+**影响**：当前实现由 `create_transaction_context()` 在需要时自动创建，覆盖旧 Extension。长期可能需要改进。
+
+### 5.2 record_hop / link_transactions 同步
+
+文档设计的 `record_hop()` 和 `link_transactions()` 应同步更新 Extension 的 trace_log，但当前代码中这些方法标记为"暂不实现"（`(void)event;`）。这是 v2.1 的待实现功能。
+
+---
+
+## 6. TransactionTracker（框架层单例）
 
 ```cpp
 // include/framework/transaction_tracker.hh
-#ifndef TRANSACTION_TRACKER_HH
-#define TRANSACTION_TRACKER_HH
-
-#include "../core/packet.hh"
-#include "../ext/transaction_context_ext.hh"
-#include <map>
-#include <memory>
-
-// 事务追踪器（框架层单例）
 class TransactionTracker {
 private:
-    std::map<uint64_t, TransactionContextExt*> active_transactions_;
+    std::map<uint64_t, TransactionRecord> transactions_;
+    std::map<uint64_t, std::vector<uint64_t>> parent_child_map_;
     uint64_t global_timestamp_ = 0;
-    uint64_t next_transaction_id_ = 1;
-    
-    TransactionTracker() = default;
-    
+
 public:
-    static TransactionTracker& instance() {
-        static TransactionTracker tracker;
-        return tracker;
-    }
-    
-    // 创建事务（框架层调用）
-    uint64_t create_transaction(tlm_generic_payload* payload, 
-                                 const std::string& source, 
-                                 const std::string& type) {
-        uint64_t tid = next_transaction_id_++;
-        
-        TransactionContextExt* ext = new TransactionContextExt();
-        ext->transaction_id = tid;
-        ext->parent_id = 0;
-        ext->fragment_id = 0;
-        ext->fragment_total = 1;
-        ext->create_timestamp = global_timestamp_;
-        ext->source_module = source;
-        ext->type = type;
-        
-        payload->set_extension(ext);
-        active_transactions_[tid] = ext;
-        
-        return tid;
-    }
-    
-    // 记录模块经过（框架层调用）
-    void record_hop(uint64_t tid, const std::string& module, uint64_t latency) {
-        if (active_transactions_.count(tid)) {
-            auto* ext = active_transactions_[tid];
-            ext->add_trace(module, global_timestamp_, latency, "hopped");
-        }
-    }
-    
-    // 完成事务（框架层调用）
-    void complete_transaction(uint64_t tid) {
-        if (active_transactions_.count(tid)) {
-            // 可在此导出 trace_log 到文件
-            auto* ext = active_transactions_[tid];
-            export_trace(tid, ext);
-            
-            active_transactions_.erase(tid);
-            delete ext;
-        }
-    }
-    
-    // 推进全局时间
-    void advance_time(uint64_t delta) {
-        global_timestamp_ += delta;
-    }
-    
-    // 获取活跃事务数
-    size_t active_count() const {
-        return active_transactions_.size();
-    }
-    
-private:
-    void export_trace(uint64_t tid, const TransactionContextExt* ext) {
-        // 导出 trace_log 到文件（v2.1 实现）
-        // 格式：tid, timestamp, module, latency, event
-    }
-};
+    static TransactionTracker& instance();
 
-#endif // TRANSACTION_TRACKER_HH
-```
-
----
-
-### 2.6 PacketPool 整合
-
-```cpp
-// include/core/ext/packet_pool.hh (修订版)
-class PacketPool {
-private:
-    std::vector<Packet*> pool_;
-    size_t next_index_ = 0;
-    
-    PacketPool() {
-        for (int i = 0; i < POOL_SIZE; ++i) {
-            pool_.push_back(new Packet(new tlm::tlm_generic_payload(), 0, PKT_REQ));
-        }
-    }
-    
-public:
-    static PacketPool& get() {
-        static PacketPool pool;
-        return pool;
-    }
-    
-    Packet* acquire() {
-        Packet* pkt = pool_[next_index_];
-        next_index_ = (next_index_ + 1) % POOL_SIZE;
-        
-        // ✅ 清理 Extension
-        if (pkt->payload) {
-            // 清理所有 Extension（包括 TransactionContextExt）
-            pkt->payload->clear_extensions();
-        }
-        
-        pkt->reset();
-        return pkt;
-    }
-    
-    void release(Packet* pkt) {
-        // ✅ 清理 Extension
-        if (pkt->payload && !pkt->isCredit()) {
-            pkt->payload->clear_extensions();
-        }
-        
-        pkt->reset();
-    }
+    uint64_t create_transaction(tlm_generic_payload* payload,
+                                 const std::string& source,
+                                 const std::string& type);
+    void record_hop(uint64_t tid, const std::string& module, uint64_t latency, const std::string& event);
+    void complete_transaction(uint64_t tid);
+    void link_transactions(uint64_t parent_id, uint64_t child_id);
+    void set_fragment_info(uint64_t tid, uint8_t fragment_id, uint8_t fragment_total);
+    const TransactionRecord* get_transaction(uint64_t tid) const;
+    std::vector<uint64_t> get_children(uint64_t parent_id) const;
+    std::vector<uint64_t> get_active_transactions() const;
+    void advance_time(uint64_t delta);
+    void enable_coarse_grained(bool enable);
+    void enable_fine_grained(bool enable);
+    void reset_for_testing();
 };
 ```
 
 ---
 
-## 3. 整合方案对比
+## 7. 相关文档
 
-| 方面 | 方案 A（完全替换） | 方案 B（整合现有）✅ |
-|------|------------------|---------------------|
-| **代码改动** | 大（重写 Packet） | 小（扩展 Extension） |
-| **向后兼容** | ❌ 不兼容 | ✅ 兼容 |
-| **学习成本** | 高 | 低 |
-| **实施风险** | 高 | 低 |
-| **功能完整** | ✅ | ✅ |
-
----
-
-## 4. 实施建议
-
-### v2.0 实施（现在）
-
-1. **添加 `TransactionContextExt`**：`include/ext/transaction_context_ext.hh`
-2. **修订 `Packet` 类**：添加 `get_transaction_id()` / `set_transaction_id()` 方法
-3. **修订 `PacketPool`**：清理 Extension 生命周期
-4. **模块迁移**：逐步迁移现有模块使用新方法
-
-### v2.1 实施（未来）
-
-1. **添加 `TransactionTracker`**：框架层单例
-2. **添加 trace_log 导出**：CSV/JSON 格式
-3. **添加子交易支持**：`parent_id` / `fragment_id` 完整实现
+| 文档 | 位置 |
+|------|------|
+| TransactionContextExt | `include/ext/transaction_context_ext.hh` |
+| Packet 定义 | `include/core/packet.hh` |
+| TransactionTracker | `include/framework/transaction_tracker.hh` |
+| TLMModule | `include/core/tlm_module.hh` |
+| Bundle 定义 | `include/bundles/cache_bundles_tlm.hh` |
 
 ---
 
-## 5. 需要确认的问题
-
-| 问题 | 选项 | 推荐 |
-|------|------|------|
-| **Q1**: TransactionContext 位置？ | A) Bundle / B) Extension | **B) Extension** |
-| **Q2**: 与 Packet 整合方式？ | A) 替换 / B) 共存 | **B) 共存** |
-| **Q3**: 模块层传播字段？ | A) 完整 Context / B) 仅 ID | **B) 仅 ID** |
-| **Q4**: 框架层追踪？ | A) 无 / B) TransactionTracker | **B) TransactionTracker** |
-
----
-
-**下一步**: 请老板确认整合方案细节
+**状态**: ✅ 已实施<br>
+**最后更新**: 2026-05-01<br>
+**超越设计**: const 重载、自动创建 Extension、分片辅助方法
