@@ -130,7 +130,8 @@ bool is_root() const { return parent_id == 0 && fragment_total == 1; }
 bool is_fragmented() const { return fragment_total > 1; }
 bool is_first_fragment() const { return fragment_id == 0; }
 bool is_last_fragment() const { return fragment_id == fragment_total - 1; }
-std::string get_group_key() const { return source_module + ":" + std::to_string(parent_id ?: transaction_id); }
+// 分片重组键：parent_id 存在时使用父 ID，否则使用 transaction_id
+uint64_t get_group_key() const { return parent_id != 0 ? parent_id : transaction_id; }
 ```
 
 ---
@@ -184,6 +185,7 @@ std::string get_group_key() const { return source_module + ":" + std::to_string(
 | TransactionContextExt | `include/ext/transaction_context_ext.hh` |
 | Packet 扩展方法 | `include/core/packet.hh` |
 | TLMModule 基类 | `include/core/tlm_module.hh` |
+| TransactionTracker 单例 | `include/framework/transaction_tracker.hh` |
 | CPU 模块示例 | `include/tlm/cpu_tlm.hh` |
 | Cache 模块示例 | `include/tlm/cache_tlm.hh` |
 

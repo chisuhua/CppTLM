@@ -52,37 +52,43 @@ public:
 // include/core/tlm_module.hh
 class TLMModule : public SimObject {
 protected:
-    // 子交易计数器（线程安全）
-    std::atomic<uint64_t> sub_transaction_counter_{100000};
+    bool fragment_reassembly_enabled_ = false;
+    std::map<uint64_t, FragmentBuffer> fragment_buffers_;
 
 public:
     using SimObject::SimObject;
 
     // ========== 交易生命周期钩子 ==========
-    virtual void onTransactionStart(Packet* pkt, TransactionContextExt* ext) {}
-    virtual void onTransactionHop(Packet* pkt, TransactionContextExt* ext) {}
-    virtual void onTransactionEnd(Packet* pkt, TransactionContextExt* ext) {}
+    virtual TransactionInfo onTransactionStart(Packet* pkt) {
+        return TransactionInfo{pkt->get_transaction_id(), 0, 0, 1, TransactionAction::PASSTHROUGH};
+    }
+    virtual TransactionInfo onTransactionHop(Packet* pkt) {
+        return TransactionInfo{pkt->get_transaction_id(), 0, 0, 1, TransactionAction::PASSTHROUGH};
+    }
+    virtual TransactionInfo onTransactionEnd(Packet* pkt) {
+        return TransactionInfo{pkt->get_transaction_id(), 0, 0, 1, TransactionAction::TERMINATE};
+    }
 
-    // ========== 子交易创建 ==========
+    // ========== 子交易创建（线程安全） ==========
     virtual uint64_t createSubTransaction(Packet* parent_pkt, Packet* child_pkt) {
-        uint64_t sub_id = sub_transaction_counter_++;
-        if (child_pkt->payload) {
-            TransactionContextExt* ext = get_transaction_context(child_pkt->payload);
-            if (!ext) {
-                ext = create_transaction_context(child_pkt->payload, sub_id);
+        static std::atomic<uint64_t> g_sub_tid{20000};
+        uint64_t tid = g_sub_tid.fetch_add(1);
+        if (child_pkt && parent_pkt) {
+            child_pkt->set_transaction_id(tid);
+            if (auto* ext = get_transaction_context(child_pkt->payload)) {
+                ext->parent_id = parent_pkt->get_transaction_id();
+            } else {
+                create_transaction_context(child_pkt->payload, tid, parent_pkt->get_transaction_id());
             }
-            ext->parent_id = parent_pkt->get_transaction_id();
-            ext->transaction_id = sub_id;
-            ext->fragment_id = 0;
-            ext->fragment_total = 1;
         }
-        child_pkt->set_transaction_id(sub_id);
-        return sub_id;
+        return tid;
     }
 
     // ========== 分片重组 ==========
-    void processWithFragmentation(Packet* pkt) {
-        // 分片缓冲处理逻辑
+    void enableFragmentReassembly(bool e) { fragment_reassembly_enabled_ = e; }
+    virtual bool processWithFragmentation(Packet* pkt) {
+        // 分片缓冲处理逻辑，返回 true=可处理，false=等待更多分片
+        return true;
     }
 };
 ```
@@ -186,39 +192,44 @@ struct TransactionRecord {
 
 ```cpp
 // include/tlm/crossbar_tlm.hh
-class CrossbarTLM : public TLMModule {
+class CrossbarTLM : public ChStreamModuleBase {
 private:
-    ch_in<NoCReqBundle> req_in;
-    std::vector<ch_out<NoCReqBundle>> req_outs;
+    InputStreamAdapter<NoCReqBundle> req_in;
+    std::vector<OutputStreamAdapter<NoCReqBundle>> req_outs;
+    std::vector<OutputStreamAdapter<NoCRespBundle>> resp_outs;
 
 public:
-    void processRequest() {
-        auto req = req_in.payload;
+    void tick() override {
+        if (!req_in.available()) return;
 
-        // 透传 transaction_id
-        int dst_port = route(req.address);
-        req_outs[dst_port].payload = req;
-        req_outs[dst_port].valid = true;
+        auto req = req_in.read();
+        // 透传 transaction_id（通过 Bundle 直接传递）
+        int dst_port = route_address(req.address);
+        req_outs[dst_port].write(req);
     }
 
-    int route(uint64_t addr) { return (addr >> 24) & 0x3; }
+    int route_address(uint64_t addr) { return (addr >> 24) & 0x3; }
 };
 ```
+
+> **注意**：TLM 模块通过 StreamAdapter 与框架交互，不直接调用 `onTransactionHop()`。`TLMModule` 基类定义了这些钩子，但当前实现中这些钩子由 Legacy V2 模块（`CacheV2/CrossbarV2/MemoryV2`）使用。
 
 ### 4.2 CacheTLM（转换型）
 
 ```cpp
 // include/tlm/cache_tlm.hh
-class CacheTLM : public TLMModule {
+class CacheTLM : public ChStreamModuleBase {
 private:
-    ch_in<CacheReqBundle> req_in;
-    ch_out<CacheReqBundle> req_out;
-    ch_out<CacheRespBundle> resp_out;
+    InputStreamAdapter<CacheReqBundle> req_in;
+    OutputStreamAdapter<CacheReqBundle> req_out;
+    OutputStreamAdapter<CacheRespBundle> resp_out;
     std::map<uint64_t, uint64_t> cache_lines_;
 
 public:
-    void processRequest() {
-        auto req = req_in.payload;
+    void tick() override {
+        if (!req_in.available()) return;
+
+        auto req = req_in.read();
         uint64_t addr = req.address;
 
         if (cacheHit(addr)) {
@@ -226,32 +237,34 @@ public:
             CacheRespBundle resp;
             resp.transaction_id = req.transaction_id;
             resp.data = cache_lines_[addr];
-            resp_out.payload = resp;
-            resp_out.valid = true;
+            resp_out.write(resp);
         } else {
-            // Cache Miss：透传到下游
-            req_out.payload = req;
-            req_out.valid = true;
+            // Cache Miss：透传到下游（无 createSubTransaction）
+            req_out.write(req);
         }
     }
 
-    bool cacheHit(uint64_t addr) { return cache_lines_.count(addr); }
+    bool cacheHit(uint64_t addr) const { return cache_lines_.count(addr) > 0; }
 };
 ```
+
+> **注意**：新 ChStream 架构的 CacheTLM 不调用 `createSubTransaction()`。子交易机制由 Legacy V2 模块的 `TLMModule` 基类提供。
 
 ### 4.3 MemoryTLM（终止型）
 
 ```cpp
 // include/tlm/memory_tlm.hh
-class MemoryTLM : public TLMModule {
+class MemoryTLM : public ChStreamModuleBase {
 private:
-    ch_in<CacheReqBundle> req_in;
-    ch_out<CacheRespBundle> resp_out;
+    InputStreamAdapter<CacheReqBundle> req_in;
+    OutputStreamAdapter<CacheRespBundle> resp_out;
     std::map<uint64_t, uint64_t> memory_;
 
 public:
-    void processRequest() {
-        auto req = req_in.payload;
+    void tick() override {
+        if (!req_in.available()) return;
+
+        auto req = req_in.read();
         uint64_t addr = req.address;
 
         // 内存访问
@@ -263,11 +276,12 @@ public:
         CacheRespBundle resp;
         resp.transaction_id = req.transaction_id;
         resp.data = memory_[addr];
-        resp_out.payload = resp;
-        resp_out.valid = true;
+        resp_out.write(resp);
     }
 };
 ```
+
+> **注意**：新 TLM 模块不调用 `TransactionTracker::complete_transaction()`。Legacy V2 模块（`modules_v2.hh` 中的 `MemoryV2`）通过 `TLMModule` 钩子调用 Tracker。
 
 ---
 
@@ -292,21 +306,19 @@ StreamAdapter 在转换时保持 `transaction_id` 不变。
 ### FragmentBuffer（分片重组缓冲）
 
 ```cpp
-// include/core/sim_object.hh
-template<typename K, typename V>
-class FragmentBuffer {
-private:
-    std::map<K, std::vector<V>> buffer_;
-    std::map<K, uint8_t> expected_;
-    std::map<K, std::vector<V>> complete_;
+// include/core/sim_object.hh（第 45-53 行）
+struct FragmentBuffer {
+    uint64_t parent_id = 0;          // 父交易 ID（分片重组键）
+    uint8_t fragment_total = 0;      // 总分片数
+    std::map<uint8_t, Packet*> fragments;  // 分片包（按 fragment_id 索引）
+    uint64_t first_arrival_time = 0;      // 首个分片到达时间
 
-public:
-    void add_fragment(K key, V fragment, uint8_t total);
-    bool is_complete(K key) const;
-    std::vector<V> get_complete(K key) const;
-    void onFragmentGroupComplete(K key);
+    bool is_complete() const { return fragment_total > 0 && fragments.size() == fragment_total; }
+    bool has_fragment(uint8_t id) const { return fragments.count(id) > 0; }
 };
 ```
+
+> **注意**：`FragmentBuffer` 是结构体（非模板类），位于 `sim_object.hh`。`TLMModule` 通过 `fragment_buffers_`（`std::map<uint64_t, FragmentBuffer>`）管理重组。
 
 ---
 
@@ -314,30 +326,42 @@ public:
 
 | 维度 | ADR-X.7 设计 | 代码实际 | 一致？ |
 |------|-------------|---------|--------|
-| `TransactionAction` 枚举 | ✅ SimObject | ✅ sim_object.hh | ✅ |
+| `TransactionAction` 枚举 | ✅ sim_object.hh | ✅ 文件作用域 | ✅ |
 | `TransactionInfo` 结构体 | ✅ | ✅ + `is_root()`/`is_fragmented()` | ✅ |
-| `onTransactionStart/Hop/End()` | SimObject 基类 | ⚠️ `TLMModule` 派生类 | ⚠️ 更合理 |
-| `createSubTransaction()` | SimObject 基类 | ⚠️ `TLMModule`，含 `std::atomic` | ✅ 线程安全 |
-| `FragmentBuffer` | 未提及 | ✅ 新增 | ✅ |
-| `processWithFragmentation()` | 未提及 | ✅ 新增 | ✅ |
+| `onTransactionStart/Hop/End()` | `TLMModule` 派生类 | ✅ `TLMModule`，返回 `TransactionInfo` | ✅ |
+| `createSubTransaction()` | `TLMModule`，局部静态 `atomic` | ✅ `g_sub_tid{20000}` 局部静态 | ✅ |
+| `FragmentBuffer` | ✅ sim_object.hh 结构体 | ✅ `struct FragmentBuffer`（非模板类） | ✅ |
+| `processWithFragmentation()` | ✅ §2.2 TLMModule 代码块中 | ✅ `bool` 返回值 | ✅ |
 | `TransactionTracker::create_transaction()` | ✅ | ✅ | ✅ |
 | `TransactionTracker::record_hop()` | ✅ | ✅ | ✅ |
 | `TransactionTracker::complete_transaction()` | ✅ | ✅ + 父交易完成检查 | ✅ |
 | `TransactionTracker::link_transactions()` | ✅ | ✅ | ✅ |
 | `TransactionTracker::set_fragment_info()` | ✅ | ✅ | ✅ |
-| `TransactionTracker::check_parent_completion()` | 未提及 | ✅ 新增（自动传播完成） | ✅ |
-| `TransactionRecord::child_transactions` | 未提及 | ✅ 新增 | ✅ |
+| `TransactionTracker::check_parent_completion()` | ✅ 在 complete_transaction 中调用 | ✅ 私有方法 | ✅ |
+| `TransactionRecord::child_transactions` | ✅ | ✅ | ✅ |
 
 ---
 
 ## 8. 模块基类差异说明
 
+> ⚠️ **重要说明**：实际 TLM 模块（CacheTLM/CrossbarTLM/MemoryTLM）继承自 `ChStreamModuleBase`，而非 `TLMModule`。`TLMModule` 定义了交易生命周期钩子，但当前这些钩子由 Legacy V2 模块（`modules_v2.hh` 中的 `CacheV2/CrossbarV2/MemoryV2`）使用。
+
 | 模块类型 | 基类 | 交易钩子 | 使用场景 |
 |---------|------|---------|---------|
-| **Legacy 模块** | `SimObject` | 无 | 传统模块，手动管理 Packet |
-| **TLM 模块** | `TLMModule` | 有 | ChStream 模块，自动 `tick()` |
+| **Legacy V2 模块** | `SimObject` → `TLMModule` | 有（`onTransactionStart/Hop/End`） | `modules_v2.hh` 中的 V2 模块 |
+| **ChStream TLM 模块** | `SimObject` → `ChStreamModuleBase` | 无（通过 StreamAdapter 自动 tick） | `include/tlm/` 中的新 TLM 模块 |
+| **Legacy SimObject 模块** | `SimObject` | 无 | 其他传统模块 |
 
-**设计理由**：不是所有 SimObject 都需要交易生命周期钩子，将这些方法放在 `TLMModule` 上更合理。
+**实际类层次结构**：
+```
+SimObject
+├── ChStreamModuleBase         ← 新 TLM 模块（CacheTLM/CrossbarTLM/MemoryTLM）
+│   └── 所有 TLM 模块（通过 StreamAdapter 自动 tick）
+└── TLMModule                 ← 存在但未被任何模块使用（Legacy V2 备用）
+    └── CacheV2 / CrossbarV2 / MemoryV2（Legacy，modules_v2.hh）
+```
+
+**设计原则**：不是所有 SimObject 都需要交易生命周期钩子，将这些方法放在 `TLMModule` 上更合理。但当前实现中 `TLMModule` 是"预留"基类，新 ChStream 架构模块不继承它。
 
 ---
 

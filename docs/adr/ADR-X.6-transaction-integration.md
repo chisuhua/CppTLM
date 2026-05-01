@@ -65,9 +65,8 @@ struct TransactionContextExt : public tlm::tlm_extension<TransactionContextExt> 
     bool is_fragmented() const { return fragment_total > 1; }
     bool is_first_fragment() const { return fragment_id == 0; }
     bool is_last_fragment() const { return fragment_id == fragment_total - 1; }
-    std::string get_group_key() const {
-        return source_module + ":" + std::to_string(parent_id ?: transaction_id);
-    }
+    // 分片重组键：parent_id 存在时使用父 ID，否则使用 transaction_id
+    uint64_t get_group_key() const { return parent_id != 0 ? parent_id : transaction_id; }
 };
 ```
 
@@ -201,7 +200,7 @@ public:
 | `is_fragmented()` | ✅ | ✅ | ✅ |
 | `is_first_fragment()` | 未提及 | ✅ 新增 | ✅ |
 | `is_last_fragment()` | 未提及 | ✅ 新增 | ✅ |
-| `get_group_key()` | 未提及 | ✅ 新增（分片重组键） | ✅ |
+| `get_group_key()` | ✅ 与 ADR-X.1 一致 | ✅ `uint64_t`（分片重组键） | ✅ |
 | `reset()` | 未提及 | ✅ 新增 | ✅ |
 
 ### 4.3 便捷函数对比
@@ -218,7 +217,7 @@ public:
 |------|------|
 | **const 重载** | `get_transaction_context()` 同时提供 const 和非 const 版本 |
 | **自动创建 Extension** | `set_transaction_id()` 在 Extension 不存在时自动创建 |
-| **分片辅助方法** | `is_first_fragment()` / `is_last_fragment()` / `get_group_key()` |
+| **分片辅助方法** | `is_first_fragment()` / `is_last_fragment()`（新增），`get_group_key()` 已同步至 ADR-X.1 |
 | **TLMModule 子交易** | `std::atomic<uint64_t>` 线程安全计数器 |
 
 ---
@@ -237,6 +236,15 @@ public:
 ### 5.2 record_hop / link_transactions 同步
 
 文档设计的 `record_hop()` 和 `link_transactions()` 应同步更新 Extension 的 trace_log，但当前代码中这些方法标记为"暂不实现"（`(void)event;`）。这是 v2.1 的待实现功能。
+
+### 5.3 粒度控制标志未生效
+
+| 方面 | ADR-X.6 设计 | 代码实际 |
+|------|-------------|---------|
+| `enable_coarse_grained()` | 启用粗粒度追踪 | ⚠️ 标志已存储但逻辑中从不检查 |
+| `enable_fine_grained()` | 启用细粒度追踪 | ⚠️ 同上 |
+
+**影响**：`create_transaction()` / `complete_transaction()` 等方法始终执行完整追踪，粒度设置不生效。这是设计预留，v2.1 可能实现或移除。
 
 ---
 
