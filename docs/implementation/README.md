@@ -9,7 +9,7 @@
 
 | 文档 | 说明 | 状态 |
 |------|------|------|
-| [phase2-detailed-plan.md](./phase2-detailed-plan.md) | Phase 2 详细计划 | ✅ 完成 |
+| [10-tgms-implementation-plan.md](./10-tgms-implementation-plan.md) | TGMS Phase 1-3 实施计划 | ✅ 完成 |
 
 ---
 
