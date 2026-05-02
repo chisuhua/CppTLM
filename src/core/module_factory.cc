@@ -79,46 +79,30 @@ bool ModuleFactory::validateConfig(const json& config) {
         }
         std::string type = mod["type"].get<std::string>();
 
-        // 3. 针对特定模块类型的参数检查
-        if (mod.contains("params")) {
-            const auto& params = mod["params"];
+const json* params_src = nullptr;
+        if (mod.contains("params")) params_src = &mod["params"];
+        else if (type == "RouterTLM" && mod.contains("node_x")) params_src = &mod;
+        else if (type == "NICTLM" && mod.contains("node_id")) params_src = &mod;
 
-            // RouterTLM 参数检查
+        if (params_src) {
+            const auto& params = *params_src;
             if (type == "RouterTLM") {
-                const std::vector<std::string> required_params = {"node_x", "node_y", "mesh_x", "mesh_y"};
-                for (const auto& param : required_params) {
-                    if (!params.contains(param)) {
-                        printf("[CONFIG ERROR] Module '%s' missing required param '%s'\n", name.c_str(), param.c_str());
-                        return false;
-                    }
-                    if (!params[param].is_number_integer()) {
-                        printf("[CONFIG ERROR] Module '%s' param '%s' must be an integer\n", name.c_str(), param.c_str());
+                for (auto p : {"node_x", "node_y", "mesh_x", "mesh_y"}) {
+                    if (!params.contains(p) || !params[p].is_number_integer()) {
+                        printf("[CONFIG ERROR] Module '%s' missing/invalid '%s'\n", name.c_str(), p);
                         return false;
                     }
                 }
             }
-
-            // NICTLM 参数检查
             if (type == "NICTLM") {
-                if (!params.contains("node_id")) {
-                    printf("[CONFIG ERROR] Module '%s' missing required param 'node_id'\n", name.c_str());
-                    return false;
-                }
-                if (!params["node_id"].is_number_integer()) {
-                    printf("[CONFIG ERROR] Module '%s' param 'node_id' must be an integer\n", name.c_str());
+                if (!params.contains("node_id") || !params["node_id"].is_number_integer()) {
+                    printf("[CONFIG ERROR] Module '%s' missing/invalid 'node_id'\n", name.c_str());
                     return false;
                 }
             }
-        } else {
-            // params 缺失时，对 RouterTLM 和 NICTLM 报错
-            if (type == "RouterTLM") {
-                printf("[CONFIG ERROR] Module '%s' missing required 'params' section\n", name.c_str());
-                return false;
-            }
-            if (type == "NICTLM") {
-                printf("[CONFIG ERROR] Module '%s' missing required 'params' section\n", name.c_str());
-                return false;
-            }
+        } else if (type == "RouterTLM" || type == "NICTLM") {
+            printf("[CONFIG ERROR] Module '%s' missing required params\n", name.c_str());
+            return false;
         }
     }
 
@@ -187,11 +171,14 @@ bool ModuleFactory::instantiateAll(const json& config) {
             }
         }
 
-        if (mod.contains("params")) {
+        const json* cfg_src = mod.contains("params") ? &mod["params"] : nullptr;
+        if (!cfg_src && type == "RouterTLM" && mod.contains("node_x")) cfg_src = &mod;
+        if (!cfg_src && type == "NICTLM" && mod.contains("node_id")) cfg_src = &mod;
+        if (cfg_src) {
             auto* obj = object_instances[name];
             if (obj) {
-                obj->set_config(mod["params"]);
-                obj->on_config_loaded();  // 调用派生类的配置解析回调
+                obj->set_config(*cfg_src);
+                obj->on_config_loaded();
                 DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
             }
         }
