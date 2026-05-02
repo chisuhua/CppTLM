@@ -42,6 +42,9 @@ private:
     bool _metrics_enabled = false;
     std::unique_ptr<tlm_stats::StatGroup> _stats_root;
 
+    // debug-config flag
+    static bool _debug_config;
+
     // JSON Schema 验证器（CFG-08）
     static bool validateConfig(const json& config);
 
@@ -122,6 +125,14 @@ public:
     static void clearAllTypes() {
         clearAllObjects();
         clearAllModules();
+    }
+
+    static void set_debug_config(bool enable) {
+        _debug_config = enable;
+    }
+
+    static bool debug_config() {
+        return _debug_config;
     }
 
     static std::vector<std::string> getRegisteredObjectTypes() {

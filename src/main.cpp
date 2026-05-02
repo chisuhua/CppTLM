@@ -29,6 +29,7 @@ void print_usage(const char* prog) {
               << "  --stream-interval <N>    Report interval in cycles (default: 10000)\n"
               << "  --stream-path <path>     Output path for stats stream (default: output/stats_stream.jsonl)\n"
               << "  --cycles <N>             Number of simulation cycles (default: 10000)\n"
+              << "  --debug-config           Enable verbose config parsing output\n"
               << "  --help, -h               Show this help message\n";
 }
 
@@ -41,6 +42,7 @@ int main(int argc, char* argv[]) {
     // 解析命令行参数
     std::string config_path;
     bool stream_stats = false;
+    bool debug_config = false;
     uint64_t stream_interval = 10000;
     std::string stream_path = "output/stats_stream.jsonl";
     uint64_t sim_cycles = 10000;
@@ -49,6 +51,8 @@ int main(int argc, char* argv[]) {
         if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
             print_usage(argv[0]);
             return 0;
+        } else if (strcmp(argv[i], "--debug-config") == 0) {
+            debug_config = true;
         } else if (strcmp(argv[i], "--stream-stats") == 0) {
             stream_stats = true;
         } else if (strcmp(argv[i], "--stream-interval") == 0 && i + 1 < argc) {
@@ -82,6 +86,10 @@ int main(int argc, char* argv[]) {
 
     // 构建系统
     ModuleFactory factory(&eq);
+    if (debug_config) {
+        ModuleFactory::set_debug_config(true);
+        std::cout << "[DEBUG] Config debug mode enabled\n";
+    }
     if (!factory.instantiateAll(config)) {
         std::cerr << "[ERROR] Configuration validation failed\n";
         return 1;
