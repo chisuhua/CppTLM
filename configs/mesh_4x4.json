@@ -4,131 +4,307 @@
   "modules": [
     {
       "name": "router_0_0",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 0,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_0_1",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 1,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_0_2",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 2,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_0_3",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 3,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_1_0",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 0,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_1_1",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 1,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_1_2",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 2,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_1_3",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 3,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_2_0",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 2,
+        "node_y": 0,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_2_1",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 2,
+        "node_y": 1,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_2_2",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 2,
+        "node_y": 2,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_2_3",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 2,
+        "node_y": 3,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_3_0",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 3,
+        "node_y": 0,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_3_1",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 3,
+        "node_y": 1,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_3_2",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 3,
+        "node_y": 2,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "router_3_3",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 3,
+        "node_y": 3,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_0_0",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 0,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_0_1",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 4,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_0_2",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 8,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_0_3",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 12,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_1_0",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 1,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_1_1",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 5,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_1_2",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 9,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_1_3",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 13,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_2_0",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 2,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_2_1",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 6,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_2_2",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 10,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_2_3",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 14,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_3_0",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 3,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_3_1",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 7,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_3_2",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 11,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "ni_3_3",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 15,
+        "mesh_x": 4,
+        "mesh_y": 4
+      }
     },
     {
       "name": "proc_0_0",

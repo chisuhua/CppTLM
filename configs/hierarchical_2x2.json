@@ -4,15 +4,33 @@
   "modules": [
     {
       "name": "root",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "l1_n0",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "l1_n1",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "l2_n0",
