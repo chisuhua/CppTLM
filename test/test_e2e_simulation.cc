@@ -404,6 +404,23 @@ TEST_CASE("E2E: mesh_4x4大规模拓扑加载与仿真", "[e2e][topology][mesh][
     SUCCEED("mesh_4x4.json large topology loaded and simulated");
 }
 
+TEST_CASE("E2E: ring_8环形拓扑加载与仿真", "[e2e][topology][ring][external-config]") {
+    registerAllModules();
+    auto config = loadConfig("configs/ring_8.json");
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(config));
+    factory.startAllTicks();
+    // 验证 8 个节点均已实例化
+    for (int i = 0; i < 8; ++i) {
+        std::string name = "node_" + std::to_string(i);
+        REQUIRE(factory.getInstance(name) != nullptr);
+    }
+    eq.run(100);
+    REQUIRE(eq.getCurrentCycle() == 100);
+    SUCCEED("ring_8.json ring topology loaded and simulated");
+}
+
 TEST_CASE("E2E: hierarchical_2x2分层拓扑加载与仿真", "[e2e][topology][hierarchical][external-config]") {
     registerAllModules();
     auto config = loadConfig("configs/hierarchical_2x2.json");
