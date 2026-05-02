@@ -2,10 +2,14 @@
 mkdir -p build && cd build
 
 # 2. 生成 Makefile
-cmake ..
+cmake .. -DBUILD_TESTS=ON
 
 # 3. 编译
-make -j
+make 
+
+ctest --output-on-failure
+
+make validate_topology
 
 # 4. 运行
-./sim
+#./sim

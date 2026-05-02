@@ -338,7 +338,7 @@ CppTLM/
 # CMakeLists.txt
 cmake_minimum_required(VERSION 3.16)
 project(CppTLM 
-    VERSION 2.0.0
+    VERSION 2.0.3
     DESCRIPTION "C++ TLM Hybrid Simulation Framework"
     LANGUAGES CXX
 )
