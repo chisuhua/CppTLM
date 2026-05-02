@@ -4,35 +4,79 @@
   "modules": [
     {
       "name": "router_0_0",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "router_0_1",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "router_1_0",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "router_1_1",
-      "type": "RouterTLM"
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "ni_0_0",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "ni_0_1",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 2,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "ni_1_0",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "ni_1_1",
-      "type": "NICTLM"
+      "type": "NICTLM",
+      "params": {
+        "node_id": 3,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
     },
     {
       "name": "proc_0_0",

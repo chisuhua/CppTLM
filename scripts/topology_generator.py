@@ -23,6 +23,8 @@ topology_generator.py — CppTLM 拓扑配置生成器
 
 import argparse
 import json
+import os
+import re
 import sys
 from typing import Dict, List, Tuple, Optional, Any
 
@@ -451,15 +453,38 @@ class TopologyGenerator:
             Dict: JSON 配置字典
         """
         modules = []
+        routers = [node for node, attrs in self.graph.nodes(data=True) if "Router" in attrs.get("type", "")]
+        nics = [node for node, attrs in self.graph.nodes(data=True) if "NetworkInterface" in attrs.get("type", "")]
+
+        mesh_x, mesh_y = 2, 2
+        if routers:
+            coords = [self._parse_router_coords(r) for r in routers]
+            coords = [c for c in coords if c]
+            if coords:
+                mesh_x = max(c[0] for c in coords) + 1
+                mesh_y = max(c[1] for c in coords) + 1
+
+        router_names = {r for r in routers}
+
         for node, attrs in self.graph.nodes(data=True):
             node_type = attrs.get("type", "Unknown")
             if use_mapping and self.target == "cpptlm":
                 node_type = self._map_type(node_type)
 
-            modules.append({
-                "name": node,
-                "type": node_type
-            })
+            mod = {"name": node, "type": node_type}
+
+            if node_type == "RouterTLM" or (node in router_names and node_type == "Router"):
+                coords = self._parse_router_coords(node)
+                if coords:
+                    mod["params"] = {"node_x": coords[0], "node_y": coords[1], "mesh_x": mesh_x, "mesh_y": mesh_y}
+
+            if node_type == "NICTLM" or (node in nics and node_type == "NetworkInterface"):
+                m = re.match(r"ni_(\d+)_(\d+)", node)
+                if m:
+                    x, y = int(m.group(1)), int(m.group(2))
+                    mod["params"] = {"node_id": y * mesh_x + x, "mesh_x": mesh_x, "mesh_y": mesh_y}
+
+            modules.append(mod)
 
         connections = []
         for src, dst, attrs in self.graph.edges(data=True):
