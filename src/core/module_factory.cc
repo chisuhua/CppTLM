@@ -7,6 +7,8 @@
 #include "core/chstream_port.hh"
 #include "core/chstream_adapter_factory.hh"
 #include "bundles/cache_bundles_tlm.hh"
+#include "bundles/noc_bundles_tlm.hh"
+#include "tlm/router_tlm.hh"
 #include "utils/config_utils.hh"
 #include "utils/json_includer.hh"
 #include "utils/wildcard.hh"
@@ -16,8 +18,12 @@
 #include "core/plugin_loader.hh"
 #include "core/load_policy.hh"
 #include <fstream>
+#include <set>
+#include <algorithm>
 
 using json = nlohmann::json;
+
+bool ModuleFactory::_debug_config = false;
 
 std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) {
     size_t dot_pos = full_name.find('.');
@@ -25,6 +31,127 @@ std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) 
         return {full_name, ""};
     }
     return {full_name.substr(0, dot_pos), full_name.substr(dot_pos + 1)};
+}
+
+// ============================================================================
+// Config Extends Processing (Task 2.1-2.5)
+// ============================================================================
+
+static json mergeConfigs(const json& base, const json& child, int depth = 0) {
+    if (depth > 10) {
+        printf("[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
+        return child;
+    }
+
+    json result = base;
+
+    // Deep merge modules by name
+    if (child.contains("modules")) {
+        std::unordered_map<std::string, json> module_map;
+        if (result.contains("modules")) {
+            for (const auto& mod : result["modules"]) {
+                module_map[mod["name"].get<std::string>()] = mod;
+            }
+        }
+        for (const auto& mod : child["modules"]) {
+            std::string name = mod["name"].get<std::string>();
+            if (module_map.count(name)) {
+                // Merge params
+                json merged = module_map[name];
+                if (mod.contains("params") && merged.contains("params")) {
+                    for (const auto& [key, val] : mod["params"].items()) {
+                        merged["params"][key] = val;
+                    }
+                } else if (mod.contains("params")) {
+                    merged["params"] = mod["params"];
+                }
+                module_map[name] = merged;
+            } else {
+                module_map[name] = mod;
+            }
+        }
+        result["modules"] = json::array();
+        for (const auto& [name, mod] : module_map) {
+            result["modules"].push_back(mod);
+        }
+    }
+
+    // Append connections (not merge)
+    if (child.contains("connections") && result.contains("connections")) {
+        for (const auto& conn : child["connections"]) {
+            result["connections"].push_back(conn);
+        }
+    } else if (child.contains("connections")) {
+        result["connections"] = child["connections"];
+    }
+
+    if (child.contains("groups")) {
+        if (!result.contains("groups")) {
+            result["groups"] = json::object();
+        }
+        for (const auto& [group_name, members] : child["groups"].items()) {
+            if (result["groups"].contains(group_name)) {
+                for (const auto& m : members) {
+                    result["groups"][group_name].push_back(m);
+                }
+            } else {
+                result["groups"][group_name] = members;
+            }
+        }
+    }
+
+    for (const auto& [key, val] : child.items()) {
+        if (key == "modules" || key == "connections" || key == "groups" || key == "extends") {
+            continue;
+        }
+        if (!val.is_object() && !val.is_array()) {
+            result[key] = val;
+        }
+    }
+
+    return result;
+}
+
+static json processExtends(const json& config, int depth = 0) {
+    if (!config.contains("extends")) {
+        return config;
+    }
+
+    std::string extends_path = config["extends"].get<std::string>();
+    if (ModuleFactory::debug_config()) {
+        for (int i = 0; i < depth; ++i) printf("  ");
+        printf("[DEBUG] Processing extends: %s (depth: %d)\n", extends_path.c_str(), depth);
+    }
+
+    std::ifstream f(extends_path);
+    if (!f.is_open()) {
+        printf("[CONFIG ERROR] Cannot open extends file: %s\n", extends_path.c_str());
+        return json::object();
+    }
+
+    json base_config;
+    try {
+        base_config = json::parse(f);
+    } catch (const json::parse_error& e) {
+        printf("[CONFIG ERROR] Failed to parse extends file '%s': %s\n", extends_path.c_str(), e.what());
+        return json::object();
+    }
+    f.close();
+
+    // Recursively process extends in base config
+    json processed_base = processExtends(base_config, depth + 1);
+    if (processed_base.is_object() && processed_base.empty()) {
+        return json::object();
+    }
+
+    // Merge child over base
+    json result = mergeConfigs(processed_base, config, depth);
+
+    if (result.contains("extends")) {
+        result.erase("extends");
+    }
+
+    return result;
 }
 
 // ============================================================================
@@ -111,7 +238,12 @@ const json* params_src = nullptr;
 }
 
 bool ModuleFactory::instantiateAll(const json& config) {
-    json final_config = JsonIncluder::loadAndInclude(config);
+    json extended_config = processExtends(config);
+    if (extended_config.is_object() && extended_config.empty()) {
+        DPRINTF(MODULE, "[CONFIG ERROR] extends processing failed\n");
+        return false;
+    }
+    json final_config = JsonIncluder::loadAndInclude(extended_config);
 
     // ========================
     // 0. JSON Schema 验证（CFG-08）
@@ -181,6 +313,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 obj->on_config_loaded();
                 DPRINTF(MODULE, "[CONFIG] Set params for module: %s\n", name.c_str());
             }
+        }
+
+        // 注册实例到 ModuleGroup（供通配符展开使用）
+        if (object_instances[name]) {
+            ModuleGroup::registerInstance(name, object_instances[name]);
         }
     }
 
@@ -263,6 +400,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
     // ========================
     std::unordered_map<std::string, size_t> src_indices;
     std::unordered_map<std::string, size_t> dst_indices;
+    std::set<std::pair<std::string, std::string>> processed_connections;
 
     for (auto& conn : final_config["connections"]) {
         if (!conn.contains("src") || !conn.contains("dst")) continue;
@@ -361,10 +499,17 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 }
 
                 if (src_port && dst_port) {
-                    new PortPair(src_port, dst_port);
-                    src_port->setDelay(latency);
-                    DPRINTF(CONN, "[CONN] Connected %s -> %s (latency=%d)\n",
-                            src_full.c_str(), dst_full.c_str(), latency);
+                    auto conn_key = std::make_pair(src_full, dst_full);
+                    if (processed_connections.count(conn_key)) {
+                        DPRINTF(CONN, "[CONN] Skipped duplicate connection %s -> %s\n",
+                                src_full.c_str(), dst_full.c_str());
+                    } else {
+                        processed_connections.insert(conn_key);
+                        new PortPair(src_port, dst_port);
+                        src_port->setDelay(latency);
+                        DPRINTF(CONN, "[CONN] Connected %s -> %s (latency=%d)\n",
+                                src_full.c_str(), dst_full.c_str(), latency);
+                    }
                 } else if (!src_port) {
                     DPRINTF(CONN, "[WARN] Source port not found: %s\n", src_full.c_str());
                 } else if (!dst_port) {
@@ -452,9 +597,15 @@ bool ModuleFactory::instantiateAll(const json& config) {
             ch_mod->set_stream_adapter(adapter);
             DPRINTF(MODULE, "[ChStream] Created DualPort adapter for %s (type: %s, PE+Net)\n", name.c_str(), type.c_str());
         } else if (is_multi) {
-            std::vector<cpptlm::StreamAdapterBase*> adapter_vec(n_ports, adapter);
-            ch_mod->set_stream_adapter(adapter_vec.data());
-            DPRINTF(MODULE, "[ChStream] Created MultiPort adapter for %s (%u ports, type: %s)\n", name.c_str(), n_ports, type.c_str());
+            if (type == "RouterTLM") {
+                auto* bi_adapter = static_cast<cpptlm::BidirectionalPortAdapter<tlm::RouterTLM,
+                    bundles::NoCFlitBundle, tlm::RouterTLM::NUM_PORTS>*>(adapter);
+                for (unsigned i = 0; i < n_ports; i++) {
+                    bi_adapter->bind_port_pair(i, req_out_vec[i], resp_in_vec[i], resp_out_vec[i], req_in_vec[i]);
+                }
+            }
+            ch_mod->set_stream_adapter(adapter);
+            DPRINTF(MODULE, "[ChStream] Created BidirectionalPortAdapter for %s (%u ports, type: %s)\n", name.c_str(), n_ports, type.c_str());
         } else {
             adapter->bind_ports(req_out_vec[0], resp_in_vec[0], resp_out_vec[0], req_in_vec[0]);
             ch_mod->set_stream_adapter(adapter);
@@ -466,17 +617,32 @@ bool ModuleFactory::instantiateAll(const json& config) {
     }
 
     // 7b. 创建 PortPairs（支持端口索引语法：xbar.0 → xbar.req_in[0]）
+    // DEF-02: 使用同一个 processed_connections 集合去重（Step 6 已填充）
     for (auto& conn : final_config["connections"]) {
         if (!conn.contains("src") || !conn.contains("dst")) continue;
         std::string src_full = conn["src"];
         std::string dst_full = conn["dst"];
+
+        auto conn_key = std::make_pair(src_full, dst_full);
+        if (processed_connections.count(conn_key)) {
+            DPRINTF(CONN, "[ChStream] Skipped duplicate connection %s -> %s\n",
+                    src_full.c_str(), dst_full.c_str());
+            continue;
+        }
+
         int latency = conn.value("latency", 0);
         auto [src_name, src_spec] = parsePortSpec(src_full);
         auto [dst_name, dst_spec] = parsePortSpec(dst_full);
 
         unsigned src_idx = 0, dst_idx = 0;
-        if (!src_spec.empty() && std::isdigit(src_spec[0])) src_idx = std::stoul(src_spec);
-        if (!dst_spec.empty() && std::isdigit(dst_spec[0])) dst_idx = std::stoul(dst_spec);
+        if (!src_spec.empty() && std::isdigit(src_spec[0])) {
+            bool all_digits = std::all_of(src_spec.begin(), src_spec.end(), ::isdigit);
+            if (all_digits) src_idx = std::stoul(src_spec);
+        }
+        if (!dst_spec.empty() && std::isdigit(dst_spec[0])) {
+            bool all_digits = std::all_of(dst_spec.begin(), dst_spec.end(), ::isdigit);
+            if (all_digits) dst_idx = std::stoul(dst_spec);
+        }
 
         // 单端口模块忽略端口索引
         if (ch_adapters.count(src_name) && !factory.isMultiPort(module_types[src_name])) src_idx = 0;
@@ -486,6 +652,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
         bool dst_ch = (ch_adapters.count(dst_name) > 0 && ch_req_in.count(dst_name) && ch_req_in[dst_name].size() > dst_idx);
 
         if (!src_ch || !dst_ch) continue;
+
+        processed_connections.insert(conn_key);
 
         // 请求路径: src → dst
         auto* pp_req = new PortPair(ch_req_out[src_name][src_idx], ch_req_in[dst_name][dst_idx]);
