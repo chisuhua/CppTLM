@@ -6,6 +6,9 @@
 #include <vector>
 #include <string>
 #include "core/sim_core.hh"
+#include "utils/wildcard.hh"
+
+class SimObject;
 
 class ModuleGroup {
 private:
@@ -14,7 +17,35 @@ private:
         return groups;
     }
 
+    static std::unordered_map<std::string, SimObject*>& getInstanceRegistry() {
+        static std::unordered_map<std::string, SimObject*> instances;
+        return instances;
+    }
+
 public:
+    // 注册模块实例（供通配符展开使用）
+    static void registerInstance(const std::string& name, SimObject* obj) {
+        getInstanceRegistry()[name] = obj;
+        DPRINTF(GROUP, "[Group] Registered instance '%s'\n", name.c_str());
+    }
+
+    static void unregisterInstance(const std::string& name) {
+        getInstanceRegistry().erase(name);
+        DPRINTF(GROUP, "[Group] Unregistered instance '%s'\n", name.c_str());
+    }
+
+    static bool isInstanceRegistered(const std::string& name) {
+        return getInstanceRegistry().count(name) > 0;
+    }
+
+    static std::vector<std::string> getRegisteredInstanceNames() {
+        std::vector<std::string> names;
+        for (const auto& kv : getInstanceRegistry()) {
+            names.push_back(kv.first);
+        }
+        return names;
+    }
+
     // 定义组
     static void define(const std::string& name, const std::vector<std::string>& members) {
         getGroups()[name] = members;
@@ -45,15 +76,37 @@ public:
         return "";
     }
 
-    // 根据组名获取模块名列表
+    // 根据组名获取模块名列表（带通配符展开）
     static std::vector<std::string> resolve(const std::string& group_ref) {
         if (!isGroupReference(group_ref)) return {};
         std::string name = extractGroupName(group_ref);
-        return getMembers(name);
+        auto members = getMembers(name);
+        if (members.empty()) return {};
+
+        std::vector<std::string> resolved;
+        const auto& instance_map = getInstanceRegistry();
+
+        for (const auto& pattern : members) {
+            // 检查是否包含通配符
+            if (pattern.find('*') != std::string::npos ||
+                pattern.find('?') != std::string::npos) {
+                // 通配符展开：遍历所有已注册实例
+                for (const auto& [inst_name, obj] : instance_map) {
+                    if (Wildcard::match(pattern, inst_name)) {
+                        resolved.push_back(inst_name);
+                    }
+                }
+            } else {
+                // 无通配符：直接添加
+                resolved.push_back(pattern);
+            }
+        }
+        return resolved;
     }
 
     static void clearAll() {
         getGroups().clear();
+        getInstanceRegistry().clear();
     }
 
     static std::vector<std::string> getAllGroupNames() {
