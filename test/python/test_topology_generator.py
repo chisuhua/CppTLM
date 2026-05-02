@@ -133,6 +133,17 @@ class TestTopologyGenerator(unittest.TestCase):
         self.assertIn("modules", config)
         self.assertIn("connections", config)
 
+    def test_mesh_router_type_is_router_tlm(self):
+        """DEF-05: Verify generate_mesh() outputs 'RouterTLM' not abstract 'Router'/'MeshRouter'"""
+        gen = self.generator("test")
+        gen.generate_mesh(2, 2)
+        config = gen.export_json_config()
+        router_types = [m["type"] for m in config["modules"] if "Router" in m.get("type", "")]
+        self.assertTrue(
+            all(t == "RouterTLM" for t in router_types),
+            f"Expected all router types to be 'RouterTLM', got: {set(router_types)}"
+        )
+
     def test_export_layout_mesh(self):
         gen = self.generator("test")
         gen.generate_mesh(2, 2)
