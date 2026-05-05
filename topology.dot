@@ -1,0 +1,23 @@
+digraph System {
+  rankdir=TB;
+  node [shape=box];
+  overlap=false;
+  splines=true;
+  graph [bb="0,0,800,600"];
+
+  "mem" [label="mem\n(Module)", pos="348.285,201.315"];
+  "l1" [label="l1\n(Module)", pos="479.886,204.131"];
+  "tg1" [label="tg1\n(Module)", pos="280.645,208.428"];
+  "tg0" [label="tg0\n(Module)", pos="491.184,205.42"];
+
+  subgraph cluster_traffic_gens {
+    label = "traffic_gens";
+    style = dashed;
+    "tg0";
+    "tg1";
+  }
+
+  "l1" -> "mem" [label="delay:100"];
+  "tg1" -> "l1" [label="delay:1"];
+  "tg0" -> "l1" [label="delay:1"];
+}

@@ -265,6 +265,25 @@ bool ModuleFactory::instantiateAll(const json& config) {
         return false;
     }
 
+    for (auto& mod : final_config["modules"]) {
+        std::string type = mod["type"];
+        if (mod.contains("params")) {
+            auto rules = tlm::RouterTLM::get_param_rules();
+            for (const auto& [name, rule] : rules) {
+                if (!mod["params"].contains(name.c_str())) {
+                    if (rule.required) {
+                        DPRINTF(MODULE, "[PARAM ERROR] Required parameter '%s' missing for module '%s'\n",
+                                name.c_str(), type.c_str());
+                        return false;
+                    }
+                    if (rule.default_int.has_value()) {
+                        mod["params"][name] = rule.default_int.value();
+                    }
+                }
+            }
+        }
+    }
+
     // 使用 PluginLoader 加载所有插件
     PluginLoader loader;
     if (final_config.contains("plugin")) {

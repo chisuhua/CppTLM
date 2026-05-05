@@ -1,0 +1,728 @@
+{
+  "name": "mesh_topology",
+  "description": "Auto-generated mesh_topology topology",
+  "modules": [
+    {
+      "name": "router_0_0",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_0_1",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_0_2",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_0_3",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_1_0",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_1_1",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_1_2",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_1_3",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_2_0",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_2_1",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_2_2",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_2_3",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_3_0",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_3_1",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_3_2",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "router_3_3",
+      "type": "MeshRouter"
+    },
+    {
+      "name": "ni_0_0",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_0_1",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_0_2",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_0_3",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_1_0",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_1_1",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_1_2",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_1_3",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_2_0",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_2_1",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_2_2",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_2_3",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_3_0",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_3_1",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_3_2",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "ni_3_3",
+      "type": "NetworkInterface"
+    },
+    {
+      "name": "proc_0_0",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_0_1",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_0_2",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_0_3",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_1_0",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_1_1",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_1_2",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_1_3",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_2_0",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_2_1",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_2_2",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_2_3",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_3_0",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_3_1",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_3_2",
+      "type": "Processor"
+    },
+    {
+      "name": "proc_3_3",
+      "type": "Processor"
+    }
+  ],
+  "connections": [
+    {
+      "src": "router_0_0",
+      "dst": "router_0_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_0",
+      "dst": "router_1_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_0",
+      "dst": "ni_0_0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_1",
+      "dst": "router_0_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_1",
+      "dst": "router_1_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_1",
+      "dst": "ni_0_1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_2",
+      "dst": "router_0_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_2",
+      "dst": "router_1_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_2",
+      "dst": "ni_0_2",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_3",
+      "dst": "router_1_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_0_3",
+      "dst": "ni_0_3",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_0",
+      "dst": "router_1_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_0",
+      "dst": "router_2_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_0",
+      "dst": "ni_1_0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_1",
+      "dst": "router_1_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_1",
+      "dst": "router_2_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_1",
+      "dst": "ni_1_1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_2",
+      "dst": "router_1_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_2",
+      "dst": "router_2_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_2",
+      "dst": "ni_1_2",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_3",
+      "dst": "router_2_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_1_3",
+      "dst": "ni_1_3",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_0",
+      "dst": "router_2_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_0",
+      "dst": "router_3_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_0",
+      "dst": "ni_2_0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_1",
+      "dst": "router_2_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_1",
+      "dst": "router_3_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_1",
+      "dst": "ni_2_1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_2",
+      "dst": "router_2_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_2",
+      "dst": "router_3_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_2",
+      "dst": "ni_2_2",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_3",
+      "dst": "router_3_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_2_3",
+      "dst": "ni_2_3",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_3_0",
+      "dst": "router_3_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_3_0",
+      "dst": "ni_3_0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_3_1",
+      "dst": "router_3_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_3_1",
+      "dst": "ni_3_1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_3_2",
+      "dst": "router_3_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_3_2",
+      "dst": "ni_3_2",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "router_3_3",
+      "dst": "ni_3_3",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_0",
+      "dst": "router_0_0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_0",
+      "dst": "proc_0_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_1",
+      "dst": "router_0_1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_1",
+      "dst": "proc_0_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_2",
+      "dst": "router_0_2",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_2",
+      "dst": "proc_0_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_3",
+      "dst": "router_0_3",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_0_3",
+      "dst": "proc_0_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_0",
+      "dst": "router_1_0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_0",
+      "dst": "proc_1_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_1",
+      "dst": "router_1_1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_1",
+      "dst": "proc_1_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_2",
+      "dst": "router_1_2",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_2",
+      "dst": "proc_1_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_3",
+      "dst": "router_1_3",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_1_3",
+      "dst": "proc_1_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_2_0",
+      "dst": "router_2_0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_2_0",
+      "dst": "proc_2_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_2_1",
+      "dst": "router_2_1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_2_1",
+      "dst": "proc_2_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_2_2",
+      "dst": "router_2_2",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_2_2",
+      "dst": "proc_2_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_2_3",
+      "dst": "router_2_3",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_2_3",
+      "dst": "proc_2_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_3_0",
+      "dst": "router_3_0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_3_0",
+      "dst": "proc_3_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_3_1",
+      "dst": "router_3_1",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_3_1",
+      "dst": "proc_3_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_3_2",
+      "dst": "router_3_2",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_3_2",
+      "dst": "proc_3_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_3_3",
+      "dst": "router_3_3",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "ni_3_3",
+      "dst": "proc_3_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_0_0",
+      "dst": "ni_0_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_0_1",
+      "dst": "ni_0_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_0_2",
+      "dst": "ni_0_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_0_3",
+      "dst": "ni_0_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_1_0",
+      "dst": "ni_1_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_1_1",
+      "dst": "ni_1_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_1_2",
+      "dst": "ni_1_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_1_3",
+      "dst": "ni_1_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_2_0",
+      "dst": "ni_2_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_2_1",
+      "dst": "ni_2_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_2_2",
+      "dst": "ni_2_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_2_3",
+      "dst": "ni_2_3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_3_0",
+      "dst": "ni_3_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_3_1",
+      "dst": "ni_3_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_3_2",
+      "dst": "ni_3_2",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "proc_3_3",
+      "dst": "ni_3_3",
+      "latency": 1,
+      "bandwidth": 100
+    }
+  ]
+}

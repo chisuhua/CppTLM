@@ -6,6 +6,7 @@
 #define TLM_ROUTER_TLM_HH
 
 #include "core/chstream_module.hh"
+#include "core/param_rules.hh"
 #include "bundles/noc_bundles_tlm.hh"
 #include "framework/bidirectional_port_adapter.hh"
 #include "metrics/stats.hh"
@@ -179,6 +180,9 @@ public:
 
     // ========== 配置管理（Phase 1）==========
     void on_config_loaded() override;
+
+    // ========== 参数规则（Phase 3.1）==========
+    static cpptlm::ParamRules get_param_rules();
 
     // ========== Credit 超时配置 ==========
     void set_credit_timeout(uint64_t cycles) { credit_timeout_ = cycles; }

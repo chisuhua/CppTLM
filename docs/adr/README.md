@@ -1,6 +1,6 @@
 # ADR - 架构决策记录
 
-> **版本**: 1.1  
+> **版本**: 1.2  
 > **最后更新**: 2026-05-05
 
 ---
@@ -28,6 +28,7 @@
 | [ADR-X.9-port-type-system.md](./ADR-X.9-port-type-system.md) | Phase 3+ 端口类型系统 | 📋 待实施 | Phase 3.2 |
 | [ADR-X.10-parameter-framework.md](./ADR-X.10-parameter-framework.md) | Phase 3+ 参数框架 | 📋 待实施 | Phase 3.3 |
 | [ADR-X.11-config-inheritance-and-fixes.md](./ADR-X.11-config-inheritance-and-fixes.md) | 配置继承与缺陷修复策略 | ✅ 已实施 | Phase 3.1 |
+| [ADR-X.12-python-config-generator.md](./ADR-X.12-python-config-generator.md) | Python 配置生成器 | 📋 提案 | Phase 3.2 |↵
 
 ### 汇总文档
 

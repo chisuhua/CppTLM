@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CppTLM Performance Report</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .summary {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th {
+            background-color: #2196F3;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .metric-card {
+            display: inline-block;
+            background: white;
+            padding: 15px;
+            margin: 5px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-width: 120px;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: #666;
+        }
+        .module-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .module-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <h1>CppTLM Performance Report</h1>
+
+    <div class="summary">
+        <h2>Simulation Summary</h2>
+        <p><strong>Topology:</strong> mesh_topology</p>
+        <p><strong>Modules:</strong> 48</p>
+        <p><strong>Connections:</strong> 88</p>
+    </div>
+
+    <h2>Module Performance</h2>
+
+    <h2>Connection Latency</h2>
+    <table>
+        <tr><th>Source</th><th>Destination</th><th>Latency</th><th>Bandwidth</th></tr>
+
+        <tr><td>router_0_0.2</td><td>router_0_1.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_0_0.1</td><td>router_1_0.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_0_0.4</td><td>ni_0_0.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_0_1.2</td><td>router_0_2.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_0_1.1</td><td>router_1_1.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_0_1.4</td><td>ni_0_1.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_0_2.2</td><td>router_0_3.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_0_2.1</td><td>router_1_2.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_0_2.4</td><td>ni_0_2.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_0_3.1</td><td>router_1_3.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_0_3.4</td><td>ni_0_3.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_1_0.2</td><td>router_1_1.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_1_0.1</td><td>router_2_0.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_1_0.4</td><td>ni_1_0.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_1_1.2</td><td>router_1_2.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_1_1.1</td><td>router_2_1.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_1_1.4</td><td>ni_1_1.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_1_2.2</td><td>router_1_3.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_1_2.1</td><td>router_2_2.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_1_2.4</td><td>ni_1_2.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_1_3.1</td><td>router_2_3.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_1_3.4</td><td>ni_1_3.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_2_0.2</td><td>router_2_1.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_2_0.1</td><td>router_3_0.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_2_0.4</td><td>ni_2_0.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_2_1.2</td><td>router_2_2.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_2_1.1</td><td>router_3_1.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_2_1.4</td><td>ni_2_1.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_2_2.2</td><td>router_2_3.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_2_2.1</td><td>router_3_2.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_2_2.4</td><td>ni_2_2.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_2_3.1</td><td>router_3_3.3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_2_3.4</td><td>ni_2_3.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_3_0.2</td><td>router_3_1.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_3_0.4</td><td>ni_3_0.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_3_1.2</td><td>router_3_2.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_3_1.4</td><td>ni_3_1.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_3_2.2</td><td>router_3_3.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>router_3_2.4</td><td>ni_3_2.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>router_3_3.4</td><td>ni_3_3.1</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_0_0.1</td><td>router_0_0.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_0_0.0</td><td>proc_0_0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_0_1.1</td><td>router_0_1.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_0_1.0</td><td>proc_0_1</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_0_2.1</td><td>router_0_2.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_0_2.0</td><td>proc_0_2</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_0_3.1</td><td>router_0_3.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_0_3.0</td><td>proc_0_3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_1_0.1</td><td>router_1_0.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_1_0.0</td><td>proc_1_0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_1_1.1</td><td>router_1_1.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_1_1.0</td><td>proc_1_1</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_1_2.1</td><td>router_1_2.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_1_2.0</td><td>proc_1_2</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_1_3.1</td><td>router_1_3.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_1_3.0</td><td>proc_1_3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_2_0.1</td><td>router_2_0.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_2_0.0</td><td>proc_2_0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_2_1.1</td><td>router_2_1.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_2_1.0</td><td>proc_2_1</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_2_2.1</td><td>router_2_2.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_2_2.0</td><td>proc_2_2</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_2_3.1</td><td>router_2_3.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_2_3.0</td><td>proc_2_3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_3_0.1</td><td>router_3_0.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_3_0.0</td><td>proc_3_0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_3_1.1</td><td>router_3_1.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_3_1.0</td><td>proc_3_1</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_3_2.1</td><td>router_3_2.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_3_2.0</td><td>proc_3_2</td><td>1</td><td>100</td></tr>
+
+        <tr><td>ni_3_3.1</td><td>router_3_3.4</td><td>0</td><td>100</td></tr>
+
+        <tr><td>ni_3_3.0</td><td>proc_3_3</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_0_0</td><td>ni_0_0.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_0_1</td><td>ni_0_1.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_0_2</td><td>ni_0_2.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_0_3</td><td>ni_0_3.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_1_0</td><td>ni_1_0.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_1_1</td><td>ni_1_1.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_1_2</td><td>ni_1_2.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_1_3</td><td>ni_1_3.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_2_0</td><td>ni_2_0.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_2_1</td><td>ni_2_1.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_2_2</td><td>ni_2_2.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_2_3</td><td>ni_2_3.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_3_0</td><td>ni_3_0.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_3_1</td><td>ni_3_1.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_3_2</td><td>ni_3_2.0</td><td>1</td><td>100</td></tr>
+
+        <tr><td>proc_3_3</td><td>ni_3_3.0</td><td>1</td><td>100</td></tr>
+
+    </table>
+
+</body>
+</html>

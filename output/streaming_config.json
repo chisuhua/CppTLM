@@ -1,0 +1,14 @@
+{
+  "name": "streaming_demo_config",
+  "modules": [
+    {"name": "cpu", "type": "Processor"},
+    {"name": "l1_cache", "type": "Cache"},
+    {"name": "l2_cache", "type": "Cache"},
+    {"name": "memory", "type": "Memory"}
+  ],
+  "connections": [
+    {"src": "cpu", "dst": "l1_cache"},
+    {"src": "l1_cache", "dst": "l2_cache"},
+    {"src": "l2_cache", "dst": "memory"}
+  ]
+}
