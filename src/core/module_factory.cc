@@ -666,11 +666,21 @@ bool ModuleFactory::instantiateAll(const json& config) {
         unsigned src_idx = 0, dst_idx = 0;
         if (!src_spec.empty() && std::isdigit(src_spec[0])) {
             bool all_digits = std::all_of(src_spec.begin(), src_spec.end(), ::isdigit);
-            if (all_digits) src_idx = std::stoul(src_spec);
+            if (all_digits) {
+                src_idx = std::stoul(src_spec);
+            } else {
+                DPRINTF(CONN, "[WARN] Invalid port index '%s' (expected digits only), defaulting to 0\n",
+                        src_spec.c_str());
+            }
         }
         if (!dst_spec.empty() && std::isdigit(dst_spec[0])) {
             bool all_digits = std::all_of(dst_spec.begin(), dst_spec.end(), ::isdigit);
-            if (all_digits) dst_idx = std::stoul(dst_spec);
+            if (all_digits) {
+                dst_idx = std::stoul(dst_spec);
+            } else {
+                DPRINTF(CONN, "[WARN] Invalid port index '%s' (expected digits only), defaulting to 0\n",
+                        dst_spec.c_str());
+            }
         }
 
         // 单端口模块忽略端口索引
