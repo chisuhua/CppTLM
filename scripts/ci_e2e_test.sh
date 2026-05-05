@@ -23,18 +23,32 @@ PASS=0
 FAIL=0
 FAILED_TESTS=()
 
+# Cross-platform timeout function
+# macOS doesn't have 'timeout' command by default
+run_with_timeout() {
+    local secs="$1"
+    shift
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$secs" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        gtimeout "$secs" "$@"
+    else
+        "$@"
+    fi
+}
+
 run_sim_test() {
     local name="$1"
     local config="$2"
     local cycles="${3:-100}"
 
     echo -n "[TEST] $name ... "
-    if timeout 60 "$SIM_BIN" "$config" --cycles "$cycles" > /dev/null 2>&1; then
+    if run_with_timeout 60 "$SIM_BIN" "$config" --cycles "$cycles" > /dev/null 2>&1; then
         echo "PASS"
-        ((PASS++))
+        PASS=$((PASS + 1))
     else
         echo "FAIL"
-        ((FAIL++))
+        FAIL=$((FAIL + 1))
         FAILED_TESTS+=("$name ($config)")
     fi
 }
@@ -43,10 +57,10 @@ run_sim_test() {
 echo -n "[TEST] --help 输出验证 ... "
 if "$SIM_BIN" --help 2>&1 | grep -q "Usage:"; then
     echo "PASS"
-    ((PASS++))
+    PASS=$((PASS + 1))
 else
     echo "FAIL"
-    ((FAIL++))
+    FAIL=$((FAIL + 1))
     FAILED_TESTS+=("--help output verification")
 fi
 
