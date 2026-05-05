@@ -62,7 +62,8 @@ CppTLM/
 
 ## CONVENTIONS
 
-- **缩进**: 4 空格（.clang-format: IndentWidth: 4），非 AGENTS.md 全局配置 2 空格
+- **缩进**: 4 空格（.clang-format: IndentWidth: 4）
+- **例外**: 本文档（AGENTS.md）使用 2 空格缩进
 - **命名**: CamelCase 类, camelCase 函数, snake_case 变量, SCREAMING_SNAKE_CASE 宏
 - **注释**: 中文，文件头必须含功能描述/作者/日期
 - **模块注册**: 双注册表 — SimObject(对象) vs SimModule(模块)，分离 create 函数类型
@@ -90,7 +91,7 @@ jobs:
     strategy:
       matrix:
         build-type: [Release, Debug]
-        use-systemc: [OFF]
+        use-systemc: [OFF]  # SystemC 可选，OFF 时使用 TLM stub
     # 步骤: checkout → apt → ccache → cmake → build → test → upload-artifact
 
   code-format:
@@ -162,8 +163,7 @@ gh run watch
 - **禁止 GLOB 源文件**: CMakeLists.txt 使用 `set(CORE_SOURCES ...)` 显式列举（test/ 除外，使用 GLOB 自动发现测试）
 - **禁止直接创建对象**: 必须通过 ModuleFactory::registerObject/registerModule 注册后由 instantiateAll 创建
 - **禁止跳过 StreamAdapter**: ChStreamModuleBase 派生类必须通过 set_stream_adapter() 注入，不可直接操作 ChStreamPort
-- **禁止修改 src/core/ 外部的 .cc 文件**: 头文件在 include/，所有实现在 src/（除测试用 mock）
-- **Legacy 模块不可修改**: `include/modules/legacy/` 下的模块已归档，新功能使用 `include/tlm/`
+- **Legacy 模块**: `include/modules/legacy/` 下的模块已归档，仅修复严重 bug，新功能开发使用 `include/tlm/`
 - **测试禁止 `.disabled`**: `test_config_loader.cc.disabled` 等是已知跳过状态，非错误。新代码禁止创建 .disabled 测试
 - **禁止 TODO 残留**: Step 7 中的 `// TODO: bind_ports_array` 等未完成逻辑必须在 Phase 完成前清除或归档
 - **禁止跳过本地 CI 验证**: 推送到 remote 前必须本地通过构建和测试
@@ -209,6 +209,6 @@ gh pr merge #<number> --squash               # Squash 合并 PR
 
 - **SystemC 可选**: `-DUSE_SYSTEMC=OFF` 时使用 TLM stub（`USE_SYSTEMC_STUB=ON` 默认开启）
 - **ccache 自动检测**: 编译加速，未安装时降级（非 fatal）
-- **已知失败**: Pool/Wildcard/Connection 相关测试 12 个失败，为历史遗留问题，零回归
+- **历史遗留问题**: Pool/Wildcard/Connection 相关 12 个测试失败（已知，不影响新功能）
 - **构建产物**: `build/bin/` 下所有可执行文件，`build/lib/` 下 `cpptlm_core.a`
 - **CI 配置**: `.github/workflows/ci.yml` 定义了 Release/Debug 双模式构建和测试
