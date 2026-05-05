@@ -1,9 +1,9 @@
 {
   "layout": { "style": "manual" },
   "modules": [
-    { "name": "cpu0", "type": "CPUSim", "layout": { "x": 100, "y": 200 } },
-    { "name": "l1", "type": "CacheSim", "layout": { "x": 300, "y": 200 } },
-    { "name": "mem", "type": "MemorySim", "layout": { "x": 500, "y": 200 } }
+    { "name": "cpu0", "type": "CPUTLM", "layout": { "x": 100, "y": 200 } },
+    { "name": "l1", "type": "CacheTLM", "layout": { "x": 300, "y": 200 } },
+    { "name": "mem", "type": "MemoryTLM", "layout": { "x": 500, "y": 200 } }
   ],
   "connections": [
     { "src": "cpu0", "dst": "l1" },

@@ -1,8 +1,8 @@
 {
   "modules": [
-    { "name": "cpu0", "type": "CPUSim" },
-    { "name": "l1", "type": "CacheSim" },
-    { "name": "mem", "type": "MemorySim" }
+    { "name": "cpu0", "type": "CPUTLM" },
+    { "name": "l1", "type": "CacheTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
   ],
   "connections": [
     {

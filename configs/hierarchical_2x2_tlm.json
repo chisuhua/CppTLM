@@ -1,0 +1,66 @@
+{
+  "name": "hierarchical_topology_tlm",
+  "description": "Hierarchical 2x2 topology with TLM modules",
+  "modules": [
+    {
+      "name": "root",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "l1_n0",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "l1_n1",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "cpu_0",
+      "type": "CPUTLM"
+    },
+    {
+      "name": "cpu_1",
+      "type": "CPUTLM"
+    },
+    {
+      "name": "cpu_2",
+      "type": "CPUTLM"
+    },
+    {
+      "name": "cpu_3",
+      "type": "CPUTLM"
+    }
+  ],
+  "connections": [
+    { "src": "root", "dst": "l1_n0", "latency": 1, "bandwidth": 100 },
+    { "src": "root", "dst": "l1_n1", "latency": 1, "bandwidth": 100 },
+    { "src": "l1_n0", "dst": "root", "latency": 1, "bandwidth": 100 },
+    { "src": "l1_n0.0", "dst": "cpu_0", "latency": 1, "bandwidth": 100 },
+    { "src": "l1_n0.1", "dst": "cpu_1", "latency": 1, "bandwidth": 100 },
+    { "src": "l1_n1", "dst": "root", "latency": 1, "bandwidth": 100 },
+    { "src": "l1_n1.0", "dst": "cpu_2", "latency": 1, "bandwidth": 100 },
+    { "src": "l1_n1.1", "dst": "cpu_3", "latency": 1, "bandwidth": 100 },
+    { "src": "cpu_0", "dst": "l1_n0.0", "latency": 1, "bandwidth": 100 },
+    { "src": "cpu_1", "dst": "l1_n0.1", "latency": 1, "bandwidth": 100 },
+    { "src": "cpu_2", "dst": "l1_n1.0", "latency": 1, "bandwidth": 100 },
+    { "src": "cpu_3", "dst": "l1_n1.1", "latency": 1, "bandwidth": 100 }
+  ]
+}
