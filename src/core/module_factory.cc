@@ -243,6 +243,25 @@ const json* params_src = nullptr;
     return true;
 }
 
+static bool validate_nic_pe_connection(const std::string& src_type, unsigned src_port,
+                                       const std::string& dst_type, unsigned dst_port) {
+    if (src_type == "NICTLM" && src_port == 0) {
+        if (dst_type == "RouterTLM") {
+            DPRINTF(CONN, "[CONN ERROR] NICTLM PE-side port (port 0) cannot connect directly "
+                    "to RouterTLM. Use NETWORK side (port 1) for router connections.\n");
+            return false;
+        }
+    }
+    if (dst_type == "NICTLM" && dst_port == 0) {
+        if (src_type == "RouterTLM") {
+            DPRINTF(CONN, "[CONN ERROR] NICTLM PE-side port (port 0) cannot connect directly "
+                    "to RouterTLM. Use NETWORK side (port 1) for router connections.\n");
+            return false;
+        }
+    }
+    return true;
+}
+
 bool ModuleFactory::instantiateAll(const json& config) {
     json extended_config = processExtends(config);
     if (extended_config.is_object() && extended_config.empty()) {
@@ -712,6 +731,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 DPRINTF(CONN, "[WARN] Invalid port index '%s' (expected digits only), defaulting to 0\n",
                         dst_spec.c_str());
             }
+        }
+
+        if (!validate_nic_pe_connection(module_types[src_name], src_idx,
+                                        module_types[dst_name], dst_idx)) {
+            continue;
         }
 
         // 单端口模块忽略端口索引
