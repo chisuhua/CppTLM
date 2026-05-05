@@ -5,6 +5,7 @@
 #include "tlm/router_tlm.hh"
 #include "core/module_factory.hh"
 #include "core/sim_core.hh"
+#include "core/param_rules.hh"
 #include <algorithm>
 #include <cassert>
 
@@ -477,6 +478,18 @@ struct RouterTLMRegistrar {
     }
 };
 static RouterTLMRegistrar g_registrar;
+}
+
+cpptlm::ParamRules RouterTLM::get_param_rules() {
+    return {
+        {"node_x",     {"node_x", ParamType::INTEGER, true,  std::nullopt}},
+        {"node_y",     {"node_y", ParamType::INTEGER, true,  std::nullopt}},
+        {"mesh_x",     {"mesh_x", ParamType::INTEGER, true,  std::nullopt}},
+        {"mesh_y",     {"mesh_y", ParamType::INTEGER, true,  std::nullopt}},
+        {"flit_width", {"flit_width", ParamType::INTEGER, false, 64, 64, 128}},
+        {"vc_count",   {"vc_count", ParamType::INTEGER, false, 2, 1, 8}},
+        {"buffer_size", {"buffer_size", ParamType::INTEGER, false, 16, 1, 64}},
+    };
 }
 
 } // namespace tlm

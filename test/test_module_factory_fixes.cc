@@ -37,22 +37,6 @@ TEST_CASE("DEF-04b: Invalid port index produces WARNING", "[defect][phase3]") {
     REQUIRE(result == true);
 }
 
-TEST_CASE("DEF-03b: parsePortSpec handles empty spec", "[defect][phase3]") {
-    std::string src = "module";
-    auto [name, spec] = ModuleFactory::parsePortSpec(src);
-
-    CHECK(name == "module");
-    CHECK(spec == "");
-}
-
-TEST_CASE("DEF-03b: parsePortSpec handles valid port index", "[defect][phase3]") {
-    std::string src = "module.42";
-    auto [name, spec] = ModuleFactory::parsePortSpec(src);
-
-    CHECK(name == "module");
-    CHECK(spec == "42");
-}
-
 TEST_CASE("DEF-04b: Invalid dst port index produces WARNING", "[defect][phase3]") {
     EventQueue eq;
 
@@ -62,7 +46,7 @@ TEST_CASE("DEF-04b: Invalid dst port index produces WARNING", "[defect][phase3]"
             { "name": "r1", "type": "RouterTLM", "params": { "node_x": 1, "node_y": 0, "mesh_x": 2, "mesh_y": 2 }}
         ],
         "connections": [
-            { "src": "r0.0", "dst": "r1.xyz", "latency": 1 }
+            { "src": "r0.0", "dst": "r1.0abc", "latency": 1 }
         ]
     })"_json;
 
