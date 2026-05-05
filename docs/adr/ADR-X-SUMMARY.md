@@ -1,9 +1,9 @@
 # ADR-X 系列议题决策汇总
 
-> **版本**: 3.0 ✅  
-> **日期**: 2026-04-09  
-> **状态**: ✅ 全部完成  
-> **关联**: 架构 v2.0, 交易处理架构 v1.0, 错误调试架构 v1.0, 复位检查点架构 v1.0
+> **版本**: 6.0  
+> **日期**: 2026-05-05  
+> **状态**: Phase 3.1 已完成，Phase 3.2/3.3 待实施  
+> **关联**: 架构 v2.0, 交易处理架构 v1.0, 错误调试架构 v1.0, 复位检查点架构 v1.0, TGMS Phase 3+, ADR-X.9/X.10/X.11/X.12 v3.0/v2.0
 
 ---
 
@@ -19,6 +19,10 @@
 | **ADR-X.6** | TransactionContext 整合 | ✅ 已确认 | Extension 机制 + Packet 共存 |
 | **ADR-X.7** | 模块/框架职责划分 | ✅ 已确认 | 声明式虚方法 + 框架自动追踪 |
 | **ADR-X.8** | 细粒度分片处理 | ✅ 已确认 | TLM 智能处理 + RTL 简单透传 |
+| **ADR-X.9** | Phase 3+ 端口类型系统 | 📋 待实施 | nlohmann/json 序列化 + 端口索引定义 + 端口组 |
+| **ADR-X.10** | Phase 3+ 参数框架 | 📋 待实施 | nlohmann/json 序列化 + 双重验证 + ParamRule 统一验证 |
+| **ADR-X.11** | 配置继承与缺陷修复策略 | ✅ 已实施 | 深合并 + 层级拓扑 + Credit Flow 扩展 |
+| **ADR-X.12** | Python 配置生成器 | 📋 提案 | Pydantic v2 + 可视化集成 + 版本管理 + 验证器 |
 
 ---
 
@@ -357,7 +361,94 @@ docs-pending/03-adr/
 
 ---
 
+---
+
+### ADR-X.9: Phase 3+ 端口类型系统
+
+**决策**: nlohmann/json 结构体序列化 + 端口索引定义 + 端口组支持
+
+| 问题 | 决策 |
+|------|------|
+| 端口规格声明方式 | nlohmann/json 结构体序列化（PortSpec struct + JSON 宏） |
+| 端口索引定义 | 端口索引是端口类型的物理实现，提供 Python API 枚举（RouterPort/NICPort） |
+| 兼容性检查 | 三层矩阵：方向 → Bundle 匹配 → 宽度 |
+| 别名解析位置 | parsePortSpec() 中集中解析 |
+| 连接规则 | INITIATOR→TARGET, BI_DIRECTIONAL↔任意, PE→NETWORK(仅 NICTLM) |
+| 弃用命名格式 | .E_out, .NORTH 等标记为 DEPRECATED，Phase 4 移除 |
+| 端口组支持 | 端口组是逻辑端口容器，组内端口共享 BundleType 和连接策略 |
+
+**文档**: `ADR-X.9-port-type-system.md` (v3.0)
+
+---
+
+### ADR-X.10: Phase 3+ 参数框架
+
+**决策**: nlohmann/json 结构体序列化 + 双重验证 + ParamRule 统一验证
+
+| 问题 | 决策 |
+|------|------|
+| 参数规则声明 | nlohmann/json 结构体序列化（ParamRule struct + JSON 宏） |
+| 推导表达式格式 | 字符串三元表达式: "(cond) ? v1 : v2" |
+| 验证机制 | 双重验证：Pydantic（生成时验证）+ ModuleFactory（运行时验证） |
+| ParamRule 验证 | 统一验证逻辑，避免重复实现 |
+| 异常处理 | set_config() 验证失败时抛出 ParamValidationError 异常 |
+| 类型转换 | latency/latency 单位解析, address 支持 0x/MB/GB |
+
+**文档**: `ADR-X.10-parameter-framework.md` (v3.0)
+
+---
+
+### ADR-X.11: 配置继承与缺陷修复策略
+
+**决策**: 深合并语义 + 延迟绑定 + 两阶段去重 + 层级拓扑 + Credit Flow 扩展
+
+| 问题 | 决策 |
+|------|------|
+| extends 合并策略 | modules 按名深合并, connections 追加, groups 按名合并 |
+| 循环引用保护 | depth > 10 检查（简单有效） |
+| ModuleGroup 绑定 | resolve() 时延迟绑定（支持任意注册顺序） |
+| DEF-03 修复范围 | 仅限定 RouterTLM（未来新类型需更新） |
+| DEF-04 处理策略 | all_digits 检查 + WARNING 日志（Phase 3.2 改进） |
+| DEF-02 去重 | 两阶段：Step 5 ConnectionResolver + Step 6 PortPair 创建前 |
+| CFG-08 验证器 | validateConfig() 函数，快速失败模式 |
+| **决策 8: 层级拓扑** | 子网络独立编号，ConfigBuilder 支持 add_subnetwork() |
+| **决策 9: Credit Flow** | credit_capacity 自动计算，credit_return_latency = latency × 2 |
+
+**文档**: `ADR-X.11-config-inheritance-and-fixes.md` (v3.0)
+
+---
+
+### ADR-X.12: Python 配置生成器
+
+**决策**: Pydantic v2 + 类型安全 API + 可视化集成 + 版本管理 + 验证器集成
+
+| 问题 | 决策 |
+|------|------|
+| Python 框架选择 | Pydantic v2 (验证 + JSON Schema 生成) |
+| API 层次 | 3 层：枚举类型 → Pydantic Models → ConfigBuilder |
+| 与 topology_generator 集成 | TopologyAdapter 封装复用 |
+| 最低 Python 版本 | Python 3.10+ (Pydantic v2 要求) |
+| 用户工作流 | ConfigBuilder → ModuleSpec/ConnectionSpec → JSON |
+| **决策 4.5: 可视化集成** | ConfigSchema 包含可视化元数据，PortSpec 增加 layout_hint |
+| **决策 5: 版本管理** | SemVer 规范，ConfigMetadata 包含版本和变更日志 |
+| **决策 6: 技术栈** | pyproject.toml 声明依赖，Pydantic v2 约束 |
+| **决策 7: 验证器集成** | topology_validator.py 整合为 cpptlm_config.validator，两阶段验证 |
+| **决策 8: 端口组** | ConfigBuilder 提供 add_port_group() 方法 |
+
+**核心 API**:
+```python
+builder = ConfigBuilder(name="mesh_2x2")
+builder.add_module(ModuleSpec(name="cpu0", type=ModuleType.CPU_TLM))
+builder.add_connection(ConnectionSpec(src="cpu0", dst="ni0.0"))
+config = builder.build()
+config.save("configs/mesh_2x2.json")
+```
+
+**文档**: `ADR-X.12-python-config-generator.md` (v2.0)
+
+---
+
 **维护**: DevMate  
-**版本**: v3.0 ✅  
-**最后更新**: 2026-04-09  
-**状态**: **ADR-X 系列全部完成，准备进入实施阶段**
+**版本**: v6.0  
+**最后更新**: 2026-05-05  
+**状态**: **Phase 3.1 已完成，Phase 3.2/3.3 待实施，ADR-X.9/X.10/X.11/X.12 已与架构对齐**

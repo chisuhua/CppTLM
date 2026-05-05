@@ -1,9 +1,19 @@
 # 配置生成与性能可视化架构
 
-**文档类型**: 架构设计
-**状态**: 草案
-**创建日期**: 2026-04-22
-**更新日期**: 2026-04-22
+**文档类型**: 架构设计  
+**状态**: 草案  
+**创建日期**: 2026-04-22  
+**更新日期**: 2026-05-05  
+**版本**: v2.0  
+**关联 ADR**: ADR-X.12 (Python 配置生成器 v2.0), ADR-X.9 (端口类型系统 v3.0)
+
+## 变更日志 (v2.0)
+
+| 日期 | 变更 |
+|------|------|
+| 2026-05-05 | 与 ADR-X.12 对齐<br>补充 Python 配置生成器集成说明<br>补充可视化元数据传递机制 |
+
+---
 
 ## 1. 概述
 
@@ -65,6 +75,45 @@
                             Browser
                      (交互式仪表板: http://localhost:8050)
 ```
+
+---
+
+## 1.3 与 Python 配置生成器集成（ADR-X.12 对齐）
+
+Python 配置生成器（`cpptlm_config`）生成的 ConfigSchema 包含可视化元数据，可直接传递给可视化流水线：
+
+```python
+from cpptlm_config import ConfigBuilder, ModuleSpec, PortSpec
+
+builder = ConfigBuilder(name="mesh_4x4")
+builder.add_module(ModuleSpec(
+    name="router_0_0",
+    type="RouterTLM",
+    ports=[
+        PortSpec(name="NORTH", role="bi_directional", layout_hint="north"),
+        PortSpec(name="EAST", role="bi_directional", layout_hint="east"),
+    ]
+))
+
+config = builder.build()
+config.metadata.visualization = {
+    "layout": "hierarchical",
+    "auto_route": True
+}
+
+# 生成的 JSON 包含 visualization_metadata 字段
+config.save("configs/mesh_4x4.json")
+```
+
+**可视化流水线消费 ConfigSchema**：
+- `topology_generator`：读取 ConfigSchema 的 modules 和 connections
+- `layout_manager`：使用 PortSpec.layout_hint 自动排列模块
+- `stats_annotator`：使用模块类型、连接延迟信息标注统计
+
+**与现有 topology_generator.py 的关系**：
+- 现有 `topology_generator.py` 仍可独立使用
+- 新配置可使用 `cpptlm_config.TopologyAdapter.from_mesh()` 生成
+- 两者输出的 JSON 格式完全兼容
 
 ---
 
