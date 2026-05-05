@@ -113,6 +113,11 @@ static json mergeConfigs(const json& base, const json& child, int depth = 0) {
 }
 
 static json processExtends(const json& config, int depth = 0) {
+    if (depth > 10) {
+        printf("[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
+        return json::object();
+    }
+
     if (!config.contains("extends")) {
         return config;
     }
