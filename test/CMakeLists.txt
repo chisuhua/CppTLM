@@ -1,17 +1,12 @@
 # test/CMakeLists.txt
-include(FetchContent)
-
-FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG        v3.5.0
-)
-FetchContent_MakeAvailable(Catch2)
+# 使用本地预编译的 Catch2（catch_amalgamated.cpp/.hpp）
+# 避免 GitHub 网络下载问题
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB TEST_SOURCES "test_*.cc")
 
-# 只使用 Catch2 库，不使用 amalgamated（避免重复定义）
-add_executable(cpptlm_tests ${TEST_SOURCES})
+# 将 Catch2 amalgamated 源直接加入编译（避免外部依赖）
+add_executable(cpptlm_tests ${TEST_SOURCES} catch_amalgamated.cpp)
 
 target_include_directories(cpptlm_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -22,10 +17,10 @@ else()
     target_link_libraries(cpptlm_tests PRIVATE ${SYSTEMC_LIB})
 endif()
 
-target_link_libraries(cpptlm_tests PRIVATE cpptlm_core Catch2::Catch2WithMain)
+target_link_libraries(cpptlm_tests PRIVATE cpptlm_core)
 
 include(CTest)
-include(Catch)
+# 注意：不需要 include(Catch)，因为使用的是 catch_amalgamated.cpp
 
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)

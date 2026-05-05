@@ -1,10 +1,10 @@
 {
   "modules": [
-    { "name": "hub", "type": "Crossbar" },
-    { "name": "cpu0", "type": "CPUSim" },
-    { "name": "cpu1", "type": "CPUSim" },
-    { "name": "l2", "type": "CacheSim" },
-    { "name": "mem", "type": "MemorySim" }
+    { "name": "hub", "type": "CrossbarTLM" },
+    { "name": "cpu0", "type": "CPUTLM" },
+    { "name": "cpu1", "type": "CPUTLM" },
+    { "name": "l2", "type": "CacheTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
   ],
   "groups": {
     "ring_nodes": ["cpu0", "cpu1", "l2", "mem"]
@@ -14,9 +14,9 @@
     { "src": "cpu1", "dst": "hub" },
     { "src": "l2", "dst": "hub" },
     { "src": "mem", "dst": "hub" },
-    { "src": "hub", "dst": "cpu0" },
-    { "src": "hub", "dst": "cpu1" },
-    { "src": "hub", "dst": "l2" },
-    { "src": "hub", "dst": "mem" }
+    { "src": "hub.0", "dst": "cpu0" },
+    { "src": "hub.1", "dst": "cpu1" },
+    { "src": "hub.2", "dst": "l2" },
+    { "src": "hub.3", "dst": "mem" }
   ]
 }

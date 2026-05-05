@@ -360,7 +360,7 @@ TEST_CASE("E2E: NICTLM 地址映射与Flit", "[e2e][nic][packetize]") {
 
 TEST_CASE("E2E: mesh_2x2完整加载与仿真", "[e2e][topology][mesh][external-config]") {
     registerAllModules();
-    auto config = loadConfig("configs/mesh_2x2.json");
+    auto config = loadConfig("configs/mesh_2x2_tlm.json");
     EventQueue eq;
     ModuleFactory factory(&eq);
     REQUIRE(factory.instantiateAll(config));
@@ -377,12 +377,12 @@ TEST_CASE("E2E: mesh_2x2完整加载与仿真", "[e2e][topology][mesh][external-
     REQUIRE(ni00->node_id() == 0);
     eq.run(100);
     REQUIRE(eq.getCurrentCycle() == 100);
-    SUCCEED("mesh_2x2.json fully loaded and simulated");
+    SUCCEED("mesh_2x2_tlm.json fully loaded and simulated");
 }
 
 TEST_CASE("E2E: mesh_4x4大规模拓扑加载与仿真", "[e2e][topology][mesh][large][external-config]") {
     registerAllModules();
-    auto config = loadConfig("configs/mesh_4x4.json");
+    auto config = loadConfig("configs/mesh_4x4_tlm.json");
     EventQueue eq;
     ModuleFactory factory(&eq);
     REQUIRE(factory.instantiateAll(config));
@@ -401,29 +401,28 @@ TEST_CASE("E2E: mesh_4x4大规模拓扑加载与仿真", "[e2e][topology][mesh][
     }
     eq.run(100);
     REQUIRE(eq.getCurrentCycle() == 100);
-    SUCCEED("mesh_4x4.json large topology loaded and simulated");
+    SUCCEED("mesh_4x4_tlm.json large topology loaded and simulated");
 }
 
 TEST_CASE("E2E: ring_8环形拓扑加载与仿真", "[e2e][topology][ring][external-config]") {
     registerAllModules();
-    auto config = loadConfig("configs/ring_8.json");
+    auto config = loadConfig("configs/ring_8_tlm.json");
     EventQueue eq;
     ModuleFactory factory(&eq);
     REQUIRE(factory.instantiateAll(config));
     factory.startAllTicks();
-    // 验证 8 个节点均已实例化
     for (int i = 0; i < 8; ++i) {
         std::string name = "node_" + std::to_string(i);
         REQUIRE(factory.getInstance(name) != nullptr);
     }
     eq.run(100);
     REQUIRE(eq.getCurrentCycle() == 100);
-    SUCCEED("ring_8.json ring topology loaded and simulated");
+    SUCCEED("ring_8_tlm.json ring topology loaded and simulated");
 }
 
 TEST_CASE("E2E: hierarchical_2x2分层拓扑加载与仿真", "[e2e][topology][hierarchical][external-config]") {
     registerAllModules();
-    auto config = loadConfig("configs/hierarchical_2x2.json");
+    auto config = loadConfig("configs/hierarchical_2x2_tlm.json");
     EventQueue eq;
     ModuleFactory factory(&eq);
     REQUIRE(factory.instantiateAll(config));
@@ -437,7 +436,7 @@ TEST_CASE("E2E: hierarchical_2x2分层拓扑加载与仿真", "[e2e][topology][h
     REQUIRE(root->node_y() == 0);
     eq.run(100);
     REQUIRE(eq.getCurrentCycle() == 100);
-    SUCCEED("hierarchical_2x2.json topology loaded and simulated");
+    SUCCEED("hierarchical_2x2_tlm.json topology loaded and simulated");
 }
 
 TEST_CASE("E2E: 批量加载所有TLM配置文件", "[e2e][config][batch][external-config]") {
@@ -515,7 +514,7 @@ TEST_CASE("E2E: 缺少modules字段被拒绝", "[e2e][negative][validation][sche
 
 TEST_CASE("E2E: 缺少connections字段被拒绝", "[e2e][negative][validation][schema]") {
     registerAllModules();
-    json config = R"({"modules": [{"name": "cpu", "type": "CPUSim"}]})"_json;
+    json config = R"({"modules": [{"name": "cpu", "type": "CPUTLM"}]})"_json;
     EventQueue eq;
     ModuleFactory factory(&eq);
     REQUIRE_FALSE(factory.instantiateAll(config));
@@ -523,27 +522,5 @@ TEST_CASE("E2E: 缺少connections字段被拒绝", "[e2e][negative][validation][
 }
 
 // ============================================================================
-// Task 8: 遗留模块测试
+// Legacy module tests moved to test_legacy_e2e_simulation.cc
 // ============================================================================
-
-TEST_CASE("E2E: CPUSim 遗留模块实例化与运行", "[e2e][legacy][cpu-sim]") {
-    registerAllModules();
-    json config = R"({
-        "modules": [
-            {"name": "proc0", "type": "CPUSim"},
-            {"name": "proc1", "type": "CPUSim"}
-        ],
-        "connections": [
-            {"src": "proc0", "dst": "proc1", "latency": 1}
-        ]
-    })"_json;
-    EventQueue eq;
-    ModuleFactory factory(&eq);
-    REQUIRE(factory.instantiateAll(config));
-    factory.startAllTicks();
-    REQUIRE(factory.getInstance("proc0") != nullptr);
-    REQUIRE(factory.getInstance("proc0") != nullptr);
-    eq.run(50);
-    REQUIRE(eq.getCurrentCycle() == 50);
-    SUCCEED("CPUSim legacy module instantiated and ran");
-}

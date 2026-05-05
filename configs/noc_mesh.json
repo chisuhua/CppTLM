@@ -1,13 +1,13 @@
 {
   "modules": [
-    { "name": "router_0_0", "type": "Router" },
-    { "name": "router_0_1", "type": "Router" },
-    { "name": "router_1_0", "type": "Router" },
-    { "name": "router_1_1", "type": "Router" },
-    { "name": "cpu_0_0", "type": "CPUSim" },
-    { "name": "cpu_0_1", "type": "CPUSim" },
-    { "name": "cpu_1_0", "type": "CPUSim" },
-    { "name": "cpu_1_1", "type": "CPUSim" }
+    { "name": "router_0_0", "type": "RouterTLM" },
+    { "name": "router_0_1", "type": "RouterTLM" },
+    { "name": "router_1_0", "type": "RouterTLM" },
+    { "name": "router_1_1", "type": "RouterTLM" },
+    { "name": "cpu_0_0", "type": "CPUTLM" },
+    { "name": "cpu_0_1", "type": "CPUTLM" },
+    { "name": "cpu_1_0", "type": "CPUTLM" },
+    { "name": "cpu_1_1", "type": "CPUTLM" }
   ],
   "groups": {
     "routers": ["router_*"],

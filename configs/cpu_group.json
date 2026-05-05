@@ -1,11 +1,11 @@
 {
   "modules": [
-    { "name": "cpu0", "type": "CPUSim" },
-    { "name": "cpu1", "type": "CPUSim" },
-    { "name": "cpu2", "type": "CPUSim" },
-    { "name": "gpu0", "type": "TrafficGenerator" },
-    { "name": "l1_shared", "type": "CacheSim" },
-    { "name": "mem", "type": "MemorySim" }
+    { "name": "cpu0", "type": "CPUTLM" },
+    { "name": "cpu1", "type": "CPUTLM" },
+    { "name": "cpu2", "type": "CPUTLM" },
+    { "name": "gpu0", "type": "TrafficGenTLM" },
+    { "name": "l1_shared", "type": "CacheTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
   ],
 
   "groups": {

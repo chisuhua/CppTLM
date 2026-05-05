@@ -5,18 +5,18 @@
 // 日期 2026-04-12
 #include <iostream>
 #include "event_queue.hh"
-#include "modules/legacy/traffic_gen.hh"
-#include "modules/legacy/memory_sim.hh"
+// TODO: v2.1 架构升级后实现流量生成模块
+// #include "modules/legacy/traffic_gen.hh"
+// #include "modules/legacy/memory_sim.hh"
 
 int main() {
     EventQueue eq;
 
-    MemorySim mem("mem", &eq);
-    TrafficGenerator tg("tg", &eq);
-
-    tg.initiate_tick();
-    mem.initiate_tick();
-
-    eq.run(1000);
+    // TODO: v2.1 架构升级后启用
+    // MemorySim mem("mem", &eq);
+    // TrafficGenerator tg("tg", &eq);
+    // tg.initiate_tick();
+    // mem.initiate_tick();
+    // eq.run(1000);
     return 0;
 }

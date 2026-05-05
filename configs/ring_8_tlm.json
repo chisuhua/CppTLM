@@ -1,0 +1,29 @@
+{
+  "name": "ring_topology_tlm",
+  "description": "8-node ring topology with TLM modules (CPUTLM + CacheTLM + MemoryTLM)",
+  "modules": [
+    { "name": "node_0", "type": "CPUTLM" },
+    { "name": "node_1", "type": "CPUTLM" },
+    { "name": "node_2", "type": "CPUTLM" },
+    { "name": "node_3", "type": "CPUTLM" },
+    { "name": "node_4", "type": "CPUTLM" },
+    { "name": "node_5", "type": "CPUTLM" },
+    { "name": "node_6", "type": "CPUTLM" },
+    { "name": "node_7", "type": "CPUTLM" },
+    { "name": "cache_0", "type": "CacheTLM" },
+    { "name": "cache_1", "type": "CacheTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
+  ],
+  "connections": [
+    { "src": "node_0", "dst": "cache_0", "latency": 1, "bandwidth": 100 },
+    { "src": "node_1", "dst": "cache_0", "latency": 1, "bandwidth": 100 },
+    { "src": "node_2", "dst": "cache_0", "latency": 1, "bandwidth": 100 },
+    { "src": "node_3", "dst": "cache_0", "latency": 1, "bandwidth": 100 },
+    { "src": "node_4", "dst": "cache_1", "latency": 1, "bandwidth": 100 },
+    { "src": "node_5", "dst": "cache_1", "latency": 1, "bandwidth": 100 },
+    { "src": "node_6", "dst": "cache_1", "latency": 1, "bandwidth": 100 },
+    { "src": "node_7", "dst": "cache_1", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_0", "dst": "mem", "latency": 10, "bandwidth": 100 },
+    { "src": "cache_1", "dst": "mem", "latency": 10, "bandwidth": 100 }
+  ]
+}

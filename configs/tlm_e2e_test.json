@@ -1,0 +1,32 @@
+{
+  "modules": [
+    {
+      "name": "cpu",
+      "type": "CPUTLM",
+      "params": {
+        "start_addr": "0x1000",
+        "request_interval": "10"
+      }
+    },
+    {
+      "name": "cache",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "mem",
+      "type": "MemoryTLM"
+    }
+  ],
+  "connections": [
+    {
+      "src": "cpu",
+      "dst": "cache",
+      "latency": 1
+    },
+    {
+      "src": "cache",
+      "dst": "mem",
+      "latency": 10
+    }
+  ]
+}
