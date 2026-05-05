@@ -354,9 +354,33 @@ bool ModuleFactory::instantiateAll(const json& config) {
         }
     }
 
-    // ========================
+// ========================
     // 5. 使用 ConnectionResolver 处理 connections
     // ========================
+
+    // DEF-02: 在 ConnectionResolver 之前去重 connections
+    json deduplicated_connections = json::array();
+    std::set<std::string> seen_connections;
+    std::map<std::string, int> connection_latencies;
+    for (const auto& conn : final_config["connections"]) {
+        if (!conn.contains("src") || !conn.contains("dst")) continue;
+        std::string conn_key = conn["src"].get<std::string>() + "->" + conn["dst"].get<std::string>();
+        if (seen_connections.count(conn_key)) {
+            int existing_latency = connection_latencies[conn_key];
+            int this_latency = conn.value("latency", 0);
+            if (this_latency != existing_latency) {
+                DPRINTF(CONN, "[WARN] Duplicate connection %s has conflicting latency (first=%d, this=%d) - using first\n",
+                        conn_key.c_str(), existing_latency, this_latency);
+            } else {
+                DPRINTF(CONN, "[CONN] Skipped duplicate connection at resolver stage: %s\n", conn_key.c_str());
+            }
+            continue;
+        }
+        seen_connections.insert(conn_key);
+        connection_latencies[conn_key] = conn.value("latency", 0);
+        deduplicated_connections.push_back(conn);
+    }
+
     ConnectionResolver resolver;
     
     // 简化的端口创建函数
@@ -376,8 +400,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
     };
     
     auto port_creations = resolver.resolveConnections(
-        final_config["connections"], 
-        module_instances, 
+        deduplicated_connections,
+        module_instances,
         createPortFunc
     );
     
