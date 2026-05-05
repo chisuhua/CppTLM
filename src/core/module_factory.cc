@@ -13,6 +13,7 @@
 #include "utils/json_includer.hh"
 #include "utils/wildcard.hh"
 #include "utils/regex_matcher.hh"
+#include "utils/var_resolver.hh"
 #include "utils/module_group.hh"
 #include "core/plugin_load_exception.hh"
 #include "core/plugin_loader.hh"
@@ -249,6 +250,12 @@ bool ModuleFactory::instantiateAll(const json& config) {
         return false;
     }
     json final_config = JsonIncluder::loadAndInclude(extended_config);
+
+    // ========================
+    // 1. 解析变量引用 ${path}
+    // ========================
+    cpptlm::VarResolver var_resolver(final_config);
+    final_config = var_resolver.resolveAll(final_config);
 
     // ========================
     // 0. JSON Schema 验证（CFG-08）
