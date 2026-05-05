@@ -127,9 +127,7 @@ TEST_CASE("ConnectionResolutionTest DuplicateConnectionDeduplication", "[connect
             { "name": "l1", "type": "MockSim" }
         ],
         "connections": [
-            // First explicit connection
             { "src": "cpu0", "dst": "l1", "latency": 2 },
-            // DEFECT: Same connection specified again (should be deduplicated)
             { "src": "cpu0", "dst": "l1", "latency": 2 }
         ]
     })"_json;

@@ -431,7 +431,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
     std::unordered_map<std::string, size_t> dst_indices;
     std::set<std::pair<std::string, std::string>> processed_connections;
 
-    for (auto& conn : final_config["connections"]) {
+    for (auto& conn : deduplicated_connections) {
         if (!conn.contains("src") || !conn.contains("dst")) continue;
 
         std::string src_spec = conn["src"];
