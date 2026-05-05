@@ -34,21 +34,25 @@ else
     grep -E "(test cases:|assertions:)" "${BUILD_DIR}/test_output.txt" | tail -2
 
     echo ""
-    echo "E2E Test: cpptlm_sim with TLM modules"
     echo "=========================================="
-    E2E_CONFIG="${BUILD_DIR}/../configs/tlm_e2e_test.json"
-    if [[ -f "$E2E_CONFIG" ]]; then
-        echo "Running: cpptlm_sim $E2E_CONFIG --cycles 100"
-        timeout 30 "${BUILD_DIR}/bin/cpptlm_sim" "$E2E_CONFIG" --cycles 100 2>&1 | tee "${BUILD_DIR}/e2e_output.txt"
-        if grep -q "Simulation finished" "${BUILD_DIR}/e2e_output.txt"; then
-            echo "[PASS] cpptlm_sim E2E test"
-        else
-            echo "[FAIL] cpptlm_sim E2E test"
-            cat "${BUILD_DIR}/e2e_output.txt"
-            exit 1
+    echo "E2E Test: cpptlm_sim with all TLM configs"
+    echo "=========================================="
+    FAILED_E2E=0
+    for cfg in "${BUILD_DIR}/../configs/"*_tlm.json "${BUILD_DIR}/../configs/tlm_e2e_test.json" "${BUILD_DIR}/../configs/cpu_tlm_test.json" "${BUILD_DIR}/../configs/crossbar_test.json" "${BUILD_DIR}/../configs/cache_chstream_test.json" "${BUILD_DIR}/../configs/arbiter_tlm_test.json" "${BUILD_DIR}/../configs/traffic_gen_tlm_test.json"; do
+        if [[ ! -f "$cfg" ]]; then
+            continue
         fi
-    else
-        echo "[SKIP] E2E config not found: $E2E_CONFIG"
+        cfg_name=$(basename "$cfg")
+        echo "--- $cfg_name ---"
+        timeout 30 "${BUILD_DIR}/bin/cpptlm_sim" "$cfg" --cycles 100 > /dev/null 2>&1 && echo "[PASS] $cfg_name" || {
+            echo "[FAIL] $cfg_name"
+            ((FAILED_E2E++))
+        }
+    done
+    if [[ $FAILED_E2E -gt 0 ]]; then
+        echo ""
+        echo "[FAIL] $FAILED_E2E configs failed E2E test"
+        exit 1
     fi
 
     # Run other executables with smoke test
