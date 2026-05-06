@@ -10,6 +10,7 @@ set(CORE_SOURCES
     core/connection_resolver.cc
     core/module_factory.cc
     core/plugin_loader.cc
+    core/port_compatibility.cc
     # utils
     utils/dynamic_loader.cc
     # tlm (Phase 7: RouterTLM + NICTLM + LinkTLM)
