@@ -49,7 +49,7 @@ void LinkTLM::tick() {
             // credit 返回到上游（通过 req_in 反向传递）
             // 注意：这里只是占位调用，实际 credit 返回机制需要上层连接解析
             DPRINTF(MODULE, "[LinkTLM] %s: Credit return port=%u vc=%u\n",
-                    name().c_str(), cr.port, cr.vc);
+                    getName().c_str(), cr.port, cr.vc);
             stats_.credits_returned++;
         } else {
             next_credit_queue.push(cr);
@@ -78,7 +78,7 @@ void LinkTLM::tick() {
         credit_queue_.push(cr);
 
         DPRINTF(MODULE, "[LinkTLM] %s: Received flit tid=%lu vc=%u, delay=%u cycles\n",
-                name().c_str(), flit.transaction_id.read(), flit.vc_id.read(), latency_);
+                getName().c_str(), flit.transaction_id.read(), flit.vc_id.read(), latency_);
     }
 
     // 委托适配器 tick（处理输出方向的数据搬运）
@@ -106,7 +106,7 @@ void LinkTLM::receive_credit(unsigned port, unsigned vc) {
     credit_queue_.push(cr);
 
     DPRINTF(MODULE, "[LinkTLM] %s: Received external credit port=%u vc=%u\n",
-            name().c_str(), port, vc);
+            getName().c_str(), port, vc);
 }
 
 // ============================================================================

@@ -43,7 +43,7 @@ void NICTLM::on_config_loaded() {
         }
     }
     DPRINTF(MODULE, "[CONFIG] NICTLM %s: node_id=%u mesh=(%u,%u) addr_regions=%zu\n",
-            name.c_str(), node_id_, mesh_x_, mesh_y_, addr_map_.regions_.size());
+            name.c_str(), node_id_, mesh_x_, mesh_y_, addr_map_.num_regions());
 }
 
 void NICTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {

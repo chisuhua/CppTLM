@@ -25,7 +25,7 @@ public:
             }
             return result;
         } else if (j.is_array()) {
-            nlohmann::json result;
+            nlohmann::json result = nlohmann::json::array();
             for (auto& val : j) {
                 result.push_back(resolveAll(val));
             }
