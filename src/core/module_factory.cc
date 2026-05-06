@@ -18,6 +18,8 @@
 #include "core/plugin_load_exception.hh"
 #include "core/plugin_loader.hh"
 #include "core/load_policy.hh"
+#include "core/port_types.hh"
+#include "core/port_compatibility.hh"
 #include <fstream>
 #include <set>
 #include <algorithm>
@@ -32,6 +34,18 @@ std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) 
         return {full_name, ""};
     }
     return {full_name.substr(0, dot_pos), full_name.substr(dot_pos + 1)};
+}
+
+// Phase 3.2: Resolve port alias (T3.2-07)
+// Handles deprecated port names like NORTH/EAST/SOUTH/WEST/LOCAL
+static std::string resolve_port_alias(const std::string& port_spec) {
+    auto it = cpptlm::PortSpec::deprecated_names().find(port_spec);
+    if (it != cpptlm::PortSpec::deprecated_names().end()) {
+        DPRINTF(CONN, "[PORT INFO] Deprecated port name '%s' resolved to index %u\n",
+                port_spec.c_str(), it->second);
+        return std::to_string(it->second);
+    }
+    return port_spec;
 }
 
 // ============================================================================
@@ -259,6 +273,52 @@ static bool validate_nic_pe_connection(const std::string& src_type, unsigned src
             return false;
         }
     }
+    return true;
+}
+
+// Phase 3.2: Port compatibility checking (T3.2-04~06)
+static bool check_port_compatibility(const std::string& src_name, const std::string& dst_name,
+                                     unsigned src_idx, unsigned dst_idx,
+                                     const std::map<std::string, cpptlm::ModulePortSpec>& port_specs) {
+    auto src_it = port_specs.find(src_name);
+    auto dst_it = port_specs.find(dst_name);
+
+    if (src_it == port_specs.end() || dst_it == port_specs.end()) {
+        return true;
+    }
+
+    const auto& src_ports = src_it->second.ports;
+    const auto& dst_ports = dst_it->second.ports;
+
+    if (src_idx >= src_ports.size() || dst_idx >= dst_ports.size()) {
+        DPRINTF(CONN, "[WARN] Port index out of range: %s[%u] or %s[%u]\n",
+                src_name.c_str(), src_idx, dst_name.c_str(), dst_idx);
+        return true;
+    }
+
+    const auto& src_spec = src_ports[src_idx];
+    const auto& dst_spec = dst_ports[dst_idx];
+
+    if (!cpptlm::PortCompatibility::is_role_compatible(src_spec.role, dst_spec.role)) {
+        DPRINTF(CONN, "[PORT ERROR] Incompatible port roles: %s.%u (%s) -> %s.%u (%s)\n",
+                src_name.c_str(), src_idx, cpptlm::PortCompatibility::role_name(src_spec.role),
+                dst_name.c_str(), dst_idx, cpptlm::PortCompatibility::role_name(dst_spec.role));
+        return false;
+    }
+
+    if (!cpptlm::PortCompatibility::is_bundle_compatible(src_spec.bundle, dst_spec.bundle)) {
+        DPRINTF(CONN, "[PORT ERROR] Incompatible bundle types: %s.%u (%s) -> %s.%u (%s)\n",
+                src_name.c_str(), src_idx, cpptlm::PortCompatibility::bundle_name(src_spec.bundle),
+                dst_name.c_str(), dst_idx, cpptlm::PortCompatibility::bundle_name(dst_spec.bundle));
+        return false;
+    }
+
+    if (!cpptlm::PortCompatibility::is_width_compatible(src_spec.width, dst_spec.width)) {
+        DPRINTF(CONN, "[PORT WARN] Width mismatch: %s.%u (%u bits) -> %s.%u (%u bits)\n",
+                src_name.c_str(), src_idx, src_spec.width,
+                dst_name.c_str(), dst_idx, dst_spec.width);
+    }
+
     return true;
 }
 
@@ -711,8 +771,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
         }
 
         int latency = conn.value("latency", 0);
-        auto [src_name, src_spec] = parsePortSpec(src_full);
-        auto [dst_name, dst_spec] = parsePortSpec(dst_full);
+        auto [src_name, src_spec_raw] = parsePortSpec(src_full);
+        auto [dst_name, dst_spec_raw] = parsePortSpec(dst_full);
+
+        std::string src_spec = resolve_port_alias(src_spec_raw);
+        std::string dst_spec = resolve_port_alias(dst_spec_raw);
 
         unsigned src_idx = 0, dst_idx = 0;
         if (!src_spec.empty() && std::isdigit(src_spec[0])) {
@@ -748,6 +811,13 @@ bool ModuleFactory::instantiateAll(const json& config) {
         bool dst_ch = (ch_adapters.count(dst_name) > 0 && ch_req_in.count(dst_name) && ch_req_in[dst_name].size() > dst_idx);
 
         if (!src_ch || !dst_ch) continue;
+
+        // Phase 3.2: L1/L2/L3 port compatibility check
+        std::map<std::string, cpptlm::ModulePortSpec> empty_port_specs;
+        if (!check_port_compatibility(src_name, dst_name, src_idx, dst_idx, empty_port_specs)) {
+            connection_failed = true;
+            continue;
+        }
 
         processed_connections.insert(conn_key);
 
