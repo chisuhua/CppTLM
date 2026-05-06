@@ -19,7 +19,7 @@ TEST_CASE("T3.1-08a: Default values applied", "[param][phase3]") {
             }}
         ],
         "connections": []
-    })"_json);
+    })");
 
     bool result = factory.instantiateAll(config);
     REQUIRE(result == true);
@@ -37,7 +37,7 @@ TEST_CASE("T3.1-08c: Missing required parameter fails", "[param][phase3]") {
             }}
         ],
         "connections": []
-    })"_json);
+    })");
 
     bool result = factory.instantiateAll(config);
     CHECK(result == false);

@@ -482,13 +482,13 @@ static RouterTLMRegistrar g_registrar;
 
 cpptlm::ParamRules RouterTLM::get_param_rules() {
     return {
-        {"node_x",     {"node_x", ParamType::INTEGER, true,  std::nullopt}},
-        {"node_y",     {"node_y", ParamType::INTEGER, true,  std::nullopt}},
-        {"mesh_x",     {"mesh_x", ParamType::INTEGER, true,  std::nullopt}},
-        {"mesh_y",     {"mesh_y", ParamType::INTEGER, true,  std::nullopt}},
-        {"flit_width", {"flit_width", ParamType::INTEGER, false, 64, 64, 128}},
-        {"vc_count",   {"vc_count", ParamType::INTEGER, false, 2, 1, 8}},
-        {"buffer_size", {"buffer_size", ParamType::INTEGER, false, 16, 1, 64}},
+        {"node_x",     cpptlm::ParamRule{"node_x",     cpptlm::ParamType::INTEGER, true,  std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt}},
+        {"node_y",     cpptlm::ParamRule{"node_y",     cpptlm::ParamType::INTEGER, true,  std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt}},
+        {"mesh_x",     cpptlm::ParamRule{"mesh_x",     cpptlm::ParamType::INTEGER, true,  std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt}},
+        {"mesh_y",     cpptlm::ParamRule{"mesh_y",     cpptlm::ParamType::INTEGER, true,  std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt}},
+        {"flit_width", cpptlm::ParamRule{"flit_width", cpptlm::ParamType::INTEGER, false, 64,          std::nullopt, std::nullopt, std::nullopt, 64,          128,         std::nullopt}},
+        {"vc_count",   cpptlm::ParamRule{"vc_count",   cpptlm::ParamType::INTEGER, false, 2,          std::nullopt, std::nullopt, std::nullopt, 1,          8,           std::nullopt}},
+        {"buffer_size",cpptlm::ParamRule{"buffer_size",cpptlm::ParamType::INTEGER, false, 16,         std::nullopt, std::nullopt, std::nullopt, 1,          64,          std::nullopt}},
     };
 }
 
