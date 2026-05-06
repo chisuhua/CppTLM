@@ -286,7 +286,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
 
     for (auto& mod : final_config["modules"]) {
         std::string type = mod["type"];
-        if (mod.contains("params")) {
+        if (mod.contains("params") && type == "RouterTLM") {
             auto rules = tlm::RouterTLM::get_param_rules();
             for (const auto& [name, rule] : rules) {
                 if (!mod["params"].contains(name.c_str())) {
@@ -697,6 +697,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
 
     // 7b. 创建 PortPairs（支持端口索引语法：xbar.0 → xbar.req_in[0]）
     // DEF-02: 使用同一个 processed_connections 集合去重（Step 6 已填充）
+    bool connection_failed = false;
     for (auto& conn : final_config["connections"]) {
         if (!conn.contains("src") || !conn.contains("dst")) continue;
         std::string src_full = conn["src"];
@@ -735,6 +736,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
 
         if (!validate_nic_pe_connection(module_types[src_name], src_idx,
                                         module_types[dst_name], dst_idx)) {
+            connection_failed = true;
             continue;
         }
 
@@ -763,10 +765,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
             DPRINTF(CONN, "[ChStream] Connected %s.resp_out[%u] -> %s.resp_in[%u] (latency=%d)\n", dst_name.c_str(), dst_idx, src_name.c_str(), src_idx, latency);
         }
     }
-    
+
     // 保存所有实例
     instances = object_instances;
-    return true;
+    return !connection_failed;
 }
 
 void ModuleFactory::startAllTicks() {

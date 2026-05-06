@@ -58,6 +58,8 @@ public:
         return y * mesh_x + x;
     }
 
+    size_t num_regions() const { return regions_.size(); }
+
 private:
     std::vector<AddressRegion> regions_;
 };

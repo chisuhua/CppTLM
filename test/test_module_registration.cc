@@ -18,12 +18,16 @@ public:
 
 TEST_CASE("Module Registration and Instantiation Tests", "[module][factory]") {
     EventQueue eq;
-    ModuleFactory::clearAllTypes(); // 确保测试开始前是干净的
 
     SECTION("Register and unregister single module type") {
+        // 获取初始注册类型数量
+        size_t initial_count = ModuleFactory::getRegisteredObjectTypes().size();
+
         // 注册
         ModuleFactory::registerObject<TestModuleA>("TestModuleA");
-        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == 1);
+
+        // 验证注册的类型数量增加
+        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == initial_count + 1);
 
         // 验证注册的类型存在
         auto types = ModuleFactory::getRegisteredObjectTypes();
@@ -32,7 +36,9 @@ TEST_CASE("Module Registration and Instantiation Tests", "[module][factory]") {
         // 注销
         bool success = ModuleFactory::unregisterObject("TestModuleA");
         REQUIRE(success == true);
-        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == 0);
+
+        // 验证注册的类型数量恢复
+        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == initial_count);
 
         // 再次注销应返回 false
         success = ModuleFactory::unregisterObject("TestModuleA");
@@ -40,17 +46,23 @@ TEST_CASE("Module Registration and Instantiation Tests", "[module][factory]") {
     }
 
     SECTION("Register multiple types and clear all") {
+        // 获取初始注册类型数量
+        size_t initial_count = ModuleFactory::getRegisteredObjectTypes().size();
+
         ModuleFactory::registerObject<TestModuleA>("TestModuleA");
         ModuleFactory::registerObject<TestModuleB>("TestModuleB");
 
-        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == 2);
+        // 验证注册的类型数量增加
+        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == initial_count + 2);
 
-        ModuleFactory::clearAllTypes();
+        ModuleFactory::clearAllObjects();
 
+        // 验证对象注册表已清空（但不清除模块注册表）
         REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == 0);
     }
 
     SECTION("Instantiate module after registration") {
+        // 注册
         ModuleFactory::registerObject<TestModuleA>("TestModuleA");
 
         json config = R"({
@@ -68,16 +80,17 @@ TEST_CASE("Module Registration and Instantiation Tests", "[module][factory]") {
         REQUIRE(obj->getName() == "inst0");
     }
 
-    SECTION("Test isolation - initial state should be clean") {
-        // 测试开始时应该是干净的
-        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == 0);
+    SECTION("Test isolation - each section starts with current state") {
+        // 获取当前注册类型数量（不假设为0）
+        size_t current_count = ModuleFactory::getRegisteredObjectTypes().size();
 
         ModuleFactory::registerObject<TestModuleA>("TestModuleA");
-        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == 1);
+        REQUIRE(ModuleFactory::getRegisteredObjectTypes().size() == current_count + 1);
 
-        // 测试结束时会被自动清理（SECTION 结束作用域）
+        // 注销我们自己注册的
+        ModuleFactory::unregisterObject("TestModuleA");
     }
 
-    // 确保清理
-    ModuleFactory::clearAllTypes();
+    // 确保清理 - 只清理对象注册，不清理模块注册（模块类型如NICTLM/RouterTLM不能清除）
+    ModuleFactory::clearAllObjects();
 }
