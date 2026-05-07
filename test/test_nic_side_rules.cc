@@ -1,9 +1,21 @@
 // test/test_nic_side_rules.cc
 #include <catch2/catch_all.hpp>
-#include "core/module_factory.hh"
+#include "modules.hh"
+#include "chstream_register.hh"
 #include "core/event_queue.hh"
+#include "core/module_factory.hh"
+
+static void registerAllModules() {
+    static bool registered = false;
+    if (!registered) {
+        REGISTER_OBJECT;
+        REGISTER_CHSTREAM;
+        registered = true;
+    }
+}
 
 TEST_CASE("T3.1-09: NICTLM PE-side to Router rejected", "[nic][phase3]") {
+    registerAllModules();
     EventQueue eq;
     json config = R"({
         "modules": [
@@ -21,6 +33,7 @@ TEST_CASE("T3.1-09: NICTLM PE-side to Router rejected", "[nic][phase3]") {
 }
 
 TEST_CASE("T3.1-09b: NICTLM NETWORK-side to Router allowed", "[nic][phase3]") {
+    registerAllModules();
     EventQueue eq;
     json config = R"({
         "modules": [

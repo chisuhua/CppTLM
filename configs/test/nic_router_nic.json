@@ -7,7 +7,7 @@
     { "name": "router0", "type": "RouterTLM", "node_x": 0, "node_y": 0, "mesh_x": 2, "mesh_y": 1 }
   ],
   "connections": [
-    { "src": "nic0", "dst": "router0.4", "latency": 1 },
-    { "src": "router0.4", "dst": "nic1", "latency": 1 }
+    { "src": "nic0.1", "dst": "router0.4", "latency": 1 },
+    { "src": "router0.4", "dst": "nic1.1", "latency": 1 }
   ]
 }
