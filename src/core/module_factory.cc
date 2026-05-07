@@ -324,6 +324,82 @@ static bool check_port_compatibility(const std::string& src_name, const std::str
     return true;
 }
 
+// Phase 3.2: T3.2-10 - Default port specs for known module types
+static std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
+    std::map<std::string, cpptlm::ModulePortSpec> defaults;
+
+    // RouterTLM: 5 ports (NORTH=0, EAST=1, SOUTH=2, WEST=3, LOCAL=4)
+    {
+        cpptlm::ModulePortSpec spec;
+        spec.module_name = "RouterTLM";
+        std::vector<cpptlm::PortSpec> ports = {
+            {"NORTH", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+            {"EAST", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+            {"SOUTH", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+            {"WEST", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+            {"LOCAL", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
+        };
+        spec.ports = ports;
+        defaults["RouterTLM"] = spec;
+        defaults["MeshRouter"] = spec;
+    }
+
+    // NICTLM: 2 ports (NETWORK=0, PE=1)
+    {
+        cpptlm::ModulePortSpec spec;
+        spec.module_name = "NICTLM";
+        std::vector<cpptlm::PortSpec> ports = {
+            {"NETWORK", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+            {"PE", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64}
+        };
+        spec.ports = ports;
+        defaults["NICTLM"] = spec;
+        defaults["NetworkInterface"] = spec;
+    }
+
+    // CacheTLM: 2 ports (req_out=INITIATOR, req_in=TARGET)
+    {
+        cpptlm::ModulePortSpec spec;
+        spec.module_name = "CacheTLM";
+        std::vector<cpptlm::PortSpec> ports = {
+            {"req_out", cpptlm::PortRole::INITIATOR, cpptlm::BundleType::CACHE_REQ, 64},
+            {"req_in", cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ, 64}
+        };
+        spec.ports = ports;
+        defaults["CacheTLM"] = spec;
+        defaults["Cache"] = spec;
+    }
+
+    // CrossbarTLM: 4 bidirectional ports
+    {
+        cpptlm::ModulePortSpec spec;
+        spec.module_name = "CrossbarTLM";
+        std::vector<cpptlm::PortSpec> ports = {
+            {"port_0", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+            {"port_1", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+            {"port_2", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+            {"port_3", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
+        };
+        spec.ports = ports;
+        defaults["CrossbarTLM"] = spec;
+        defaults["Crossbar"] = spec;
+    }
+
+    // MemoryTLM: 1 port (target)
+    {
+        cpptlm::ModulePortSpec spec;
+        spec.module_name = "MemoryTLM";
+        std::vector<cpptlm::PortSpec> ports = {
+            {"mem", cpptlm::PortRole::TARGET, cpptlm::BundleType::GENERIC, 64}
+        };
+        spec.ports = ports;
+        defaults["MemoryTLM"] = spec;
+        defaults["Memory"] = spec;
+    }
+
+    return defaults;
+}
+
 bool ModuleFactory::instantiateAll(const json& config) {
     json extended_config = processExtends(config);
     if (extended_config.is_object() && extended_config.empty()) {
@@ -379,6 +455,20 @@ bool ModuleFactory::instantiateAll(const json& config) {
             } catch (const std::exception& e) {
                 DPRINTF(MODULE, "[WARN] Failed to parse port_spec for module '%s': %s\n",
                         name.c_str(), e.what());
+            }
+        }
+    }
+
+    auto default_specs = get_default_port_specs();
+    for (const auto& mod : final_config["modules"]) {
+        if (!mod.contains("name") || !mod.contains("type")) continue;
+        std::string name = mod["name"];
+        std::string type = mod["type"];
+        if (port_specs.find(name) == port_specs.end()) {
+            if (default_specs.find(type) != default_specs.end()) {
+                port_specs[name] = default_specs[type];
+                DPRINTF(MODULE, "[PORT INFO] Using default port spec for module '%s' (type: %s)\n",
+                        name.c_str(), type.c_str());
             }
         }
     }

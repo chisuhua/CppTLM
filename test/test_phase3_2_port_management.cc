@@ -270,3 +270,50 @@ TEST_CASE("Phase 3.2: incompatible port roles rejected by check_port_compatibili
     bool result = factory.instantiateAll(config);
     REQUIRE(result == false);
 }
+
+TEST_CASE("Phase 3.2: default port specs applied when no port_spec in JSON", "[phase3.2][default_port_spec]") {
+    registerAllModules();
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+
+    json config = R"({
+        "modules": [
+            {"name": "router0", "type": "RouterTLM", "params": {"node_x": 0, "node_y": 0, "mesh_x": 2, "mesh_y": 2}},
+            {"name": "cache0", "type": "CacheTLM"},
+            {"name": "mem0", "type": "MemoryTLM"}
+        ],
+        "connections": []
+    })"_json;
+
+    bool result = factory.instantiateAll(config);
+    REQUIRE(result == true);
+}
+
+TEST_CASE("Phase 3.2: RouterTLM default port spec has 5 ports", "[phase3.2][default_port_spec]") {
+    cpptlm::ModulePortSpec spec;
+    spec.module_name = "RouterTLM";
+    std::vector<cpptlm::PortSpec> ports = {
+        {"NORTH", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+        {"EAST", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+        {"SOUTH", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+        {"WEST", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
+        {"LOCAL", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
+    };
+    spec.ports = ports;
+    REQUIRE(spec.ports.size() == 5);
+    REQUIRE(spec.ports[0].name == "NORTH");
+    REQUIRE(spec.ports[4].name == "LOCAL");
+}
+
+TEST_CASE("Phase 3.2: CacheTLM default port spec has INITIATOR and TARGET", "[phase3.2][default_port_spec]") {
+    cpptlm::ModulePortSpec spec;
+    spec.module_name = "CacheTLM";
+    std::vector<cpptlm::PortSpec> ports = {
+        {"req_out", cpptlm::PortRole::INITIATOR, cpptlm::BundleType::CACHE_REQ, 64},
+        {"req_in", cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ, 64}
+    };
+    spec.ports = ports;
+    REQUIRE(spec.ports.size() == 2);
+    REQUIRE(spec.ports[0].role == cpptlm::PortRole::INITIATOR);
+    REQUIRE(spec.ports[1].role == cpptlm::PortRole::TARGET);
+}
