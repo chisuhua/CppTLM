@@ -1,0 +1,52 @@
+{
+  "name": "NICTLM Port Groups Test Configuration",
+  "description": "Tests port_groups field in NICTLM module specification for DualPortStreamAdapter binding",
+  "modules": [
+    {
+      "name": "nic0",
+      "type": "NICTLM",
+      "node_id": 0,
+      "mesh_x": 2,
+      "mesh_y": 2,
+      "port_spec": {
+        "port_groups": [
+          {
+            "name": "PE",
+            "bundle_type": "SINGLE",
+            "ports": [
+              { "index": 0, "role": "TARGET", "bundle": "CACHE_REQ" },
+              { "index": 1, "role": "INITIATOR", "bundle": "CACHE_RESP" }
+            ]
+          },
+          {
+            "name": "Net",
+            "bundle_type": "SINGLE",
+            "ports": [
+              { "index": 2, "role": "INITIATOR", "bundle": "NOC_FLIT" },
+              { "index": 3, "role": "TARGET", "bundle": "NOC_FLIT" }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "nic1",
+      "type": "NICTLM",
+      "node_id": 1,
+      "mesh_x": 2,
+      "mesh_y": 2
+    },
+    {
+      "name": "router0",
+      "type": "RouterTLM",
+      "node_x": 0,
+      "node_y": 0,
+      "mesh_x": 2,
+      "mesh_y": 2
+    }
+  ],
+  "connections": [
+    { "src": "nic0.2", "dst": "router0.0", "latency": 1 },
+    { "src": "router0.0", "dst": "nic1.3", "latency": 1 }
+  ]
+}
