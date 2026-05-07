@@ -20,6 +20,8 @@
 #include "core/load_policy.hh"
 #include "core/port_types.hh"
 #include "core/port_compatibility.hh"
+#include "core/param_parser.hh"
+#include "core/param_errors.hh"
 #include <fstream>
 #include <set>
 #include <algorithm>
@@ -839,6 +841,36 @@ bool ModuleFactory::instantiateAll(const json& config) {
     // 保存所有实例
     instances = object_instances;
     return !connection_failed;
+}
+
+// Phase 3.3: Parameter validation helpers
+static bool validate_module_params(const std::string& module_type,
+                                   const json& params,
+                                   const cpptlm::ParamRules& rules) {
+    for (const auto& [param_name, rule] : rules) {
+        if (rule.required && !params.contains(param_name)) {
+            DPRINTF(MODULE, "[PARAM ERROR] Module '%s' missing required param '%s'\n",
+                    module_type.c_str(), param_name.c_str());
+            return false;
+        }
+        if (params.contains(param_name)) {
+            auto result = cpptlm::ParamParser::parse(
+                params[param_name].is_string() ? params[param_name].get<std::string>() : std::to_string(params[param_name].get<int64_t>()),
+                rule.type
+            );
+            if (!result.success) {
+                DPRINTF(MODULE, "[PARAM ERROR] Module '%s' param '%s' parse failed: %s\n",
+                        module_type.c_str(), param_name.c_str(), result.error_message.c_str());
+                return false;
+            }
+            if (!cpptlm::ParamParser::validate(result, rule)) {
+                DPRINTF(MODULE, "[PARAM ERROR] Module '%s' param '%s' validation failed\n",
+                        module_type.c_str(), param_name.c_str());
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 void ModuleFactory::startAllTicks() {
