@@ -365,6 +365,24 @@ bool ModuleFactory::instantiateAll(const json& config) {
         }
     }
 
+    // ========================
+    // 1.5 解析 port_specs (Phase 3.2: T3.2-04)
+    // ========================
+    std::map<std::string, cpptlm::ModulePortSpec> port_specs;
+    for (const auto& mod : final_config["modules"]) {
+        if (!mod.contains("name") || !mod.contains("type")) continue;
+        std::string name = mod["name"];
+        if (mod.contains("port_spec")) {
+            try {
+                auto spec = mod["port_spec"].get<cpptlm::ModulePortSpec>();
+                port_specs[name] = spec;
+            } catch (const std::exception& e) {
+                DPRINTF(MODULE, "[WARN] Failed to parse port_spec for module '%s': %s\n",
+                        name.c_str(), e.what());
+            }
+        }
+    }
+
     // 使用 PluginLoader 加载所有插件
     PluginLoader loader;
     if (final_config.contains("plugin")) {
@@ -815,8 +833,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
         if (!src_ch || !dst_ch) continue;
 
         // Phase 3.2: L1/L2/L3 port compatibility check
-        std::map<std::string, cpptlm::ModulePortSpec> empty_port_specs;
-        if (!check_port_compatibility(src_name, dst_name, src_idx, dst_idx, empty_port_specs)) {
+        if (!check_port_compatibility(src_name, dst_name, src_idx, dst_idx, port_specs)) {
             connection_failed = true;
             continue;
         }

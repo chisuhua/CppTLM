@@ -192,3 +192,81 @@ TEST_CASE("Phase 3.2: Deprecated port names map", "[phase3.2][port_alias]") {
     REQUIRE(deprecated.at("WEST") == 3);
     REQUIRE(deprecated.at("LOCAL") == 4);
 }
+
+TEST_CASE("Phase 3.2: port_specs loaded and passed to check_port_compatibility", "[phase3.2][port_compat]") {
+    registerAllModules();
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+
+    json config = R"({
+        "modules": [
+            {
+                "name": "cache0",
+                "type": "CacheTLM",
+                "port_spec": {
+                    "module_name": "cache0",
+                    "ports": [
+                        { "name": "req_out", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 },
+                        { "name": "req_in", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 }
+                    ]
+                }
+            },
+            {
+                "name": "xbar",
+                "type": "CrossbarTLM",
+                "port_spec": {
+                    "module_name": "xbar",
+                    "ports": [
+                        { "name": "req_in", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 },
+                        { "name": "req_out", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 }
+                    ]
+                }
+            }
+        ],
+        "connections": [
+            { "src": "cache0.0", "dst": "xbar.0", "latency": 1 }
+        ]
+    })"_json;
+
+    bool result = factory.instantiateAll(config);
+    REQUIRE(result == true);
+}
+
+TEST_CASE("Phase 3.2: incompatible port roles rejected by check_port_compatibility", "[phase3.2][port_compat]") {
+    registerAllModules();
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+
+    json config = R"({
+        "modules": [
+            {
+                "name": "src_mod",
+                "type": "CrossbarTLM",
+                "port_spec": {
+                    "module_name": "src_mod",
+                    "ports": [
+                        { "name": "req_out", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 },
+                        { "name": "req_in", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 }
+                    ]
+                }
+            },
+            {
+                "name": "dst_mod",
+                "type": "CrossbarTLM",
+                "port_spec": {
+                    "module_name": "dst_mod",
+                    "ports": [
+                        { "name": "req_in", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 },
+                        { "name": "req_out", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 }
+                    ]
+                }
+            }
+        ],
+        "connections": [
+            { "src": "src_mod.0", "dst": "dst_mod.0", "latency": 1 }
+        ]
+    })"_json;
+
+    bool result = factory.instantiateAll(config);
+    REQUIRE(result == false);
+}
