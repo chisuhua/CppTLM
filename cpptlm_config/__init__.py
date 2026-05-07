@@ -11,6 +11,8 @@ try:
         ConfigMetadata,
         ConfigSchema,
     )
+    from .validator import TopologyValidator, ValidationResult, ValidationIssue
+    from .topology_adapter import TopologyAdapter
     __all__ = [
         "RouterPort",
         "NICPort",
@@ -23,6 +25,10 @@ try:
         "ModulePortSpec",
         "ConfigMetadata",
         "ConfigSchema",
+        "TopologyValidator",
+        "ValidationResult",
+        "ValidationIssue",
+        "TopologyAdapter",
     ]
     _HAS_DEPS = True
 except ImportError:
