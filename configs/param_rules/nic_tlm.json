@@ -1,0 +1,20 @@
+{
+  "module_type": "NICTLM",
+  "rules": {
+    "node_id": {
+      "name": "node_id",
+      "type": "INTEGER",
+      "required": true
+    },
+    "mesh_x": {
+      "name": "mesh_x",
+      "type": "INTEGER",
+      "required": true
+    },
+    "mesh_y": {
+      "name": "mesh_y",
+      "type": "INTEGER",
+      "required": true
+    }
+  }
+}
