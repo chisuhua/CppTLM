@@ -1,0 +1,33 @@
+{
+  "module_type": "RouterTLM",
+  "rules": {
+    "node_x": {
+      "name": "node_x",
+      "type": "INTEGER",
+      "required": true
+    },
+    "node_y": {
+      "name": "node_y",
+      "type": "INTEGER",
+      "required": true
+    },
+    "mesh_x": {
+      "name": "mesh_x",
+      "type": "INTEGER",
+      "required": true
+    },
+    "mesh_y": {
+      "name": "mesh_y",
+      "type": "INTEGER",
+      "required": true
+    },
+    "vc_count": {
+      "name": "vc_count",
+      "type": "INTEGER",
+      "required": false,
+      "default_int": 2,
+      "min_value": 1,
+      "max_value": 8
+    }
+  }
+}
