@@ -74,6 +74,22 @@ class ConfigMetadata(BaseModel):
         return self.version
 
 
+class ModuleSpec(BaseModel):
+    name: str
+    type: "ModuleType"  # forward ref, resolved at runtime
+    params: dict = {}
+    port_spec: Optional[ModulePortSpec] = None
+    ports: list = []
+    port_groups: list = []
+
+
+class ConnectionSpec(BaseModel):
+    src: str
+    dst: str
+    latency: int = 0
+    bandwidth: Optional[int] = None
+
+
 class ConfigSchema(BaseModel):
     name: str
     description: str = ""
@@ -81,3 +97,39 @@ class ConfigSchema(BaseModel):
     modules: list = []
     connections: list = []
     module_groups: list = []
+
+    def save(self, path: str):
+        """Serialize to JSON file (supports // comment-free JSON)"""
+        data = self.to_json_dict()
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+    def to_json_dict(self) -> dict:
+        def _serialize(obj):
+            if hasattr(obj, 'model_dump'):
+                d = obj.model_dump()
+                for k, v in d.items():
+                    d[k] = _serialize(v)
+                return d
+            elif isinstance(obj, dict):
+                return {k: _serialize(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [_serialize(item) for item in obj]
+            elif isinstance(obj, Enum):
+                return obj.value
+            return obj
+
+        return {
+            "name": self.name,
+            "description": self.description,
+            "metadata": {
+                "version": self.metadata.version,
+                "schema_version": self.metadata.schema_version,
+            },
+            "modules": _serialize(self.modules),
+            "connections": _serialize(self.connections),
+            "module_groups": _serialize(self.module_groups),
+        }
+
+
+import json
