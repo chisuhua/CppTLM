@@ -1,10 +1,10 @@
 # Phase 3.x Final Implementation Plan
 
-> **版本**: 3.0 (整合版)
+> **版本**: 3.1 (整合版，含 docs/plan/ 文档同步)
 > **日期**: 2026-05-08
 > **状态**: 📋 待执行
-> **前置条件**: 基于 Metis 六文档交叉分析 + 代码现场验证
-> **关联**: ADR-X.9, ADR-X.10, ADR-X.11, ADR-X.12
+> **前置条件**: 基于 Metis 六文档交叉分析 + 代码现场验证 + docs/plan/ 三阶段计划文档对齐
+> **关联**: ADR-X.9, ADR-X.10, ADR-X.11, ADR-X.12, docs/plan/ROADMAP.md
 
 ---
 
@@ -35,31 +35,50 @@
 | C3 — __init__.py 导出 | `cpptlm_config/__init__.py` | 4a64af1 | TopologyValidator, TopologyAdapter |
 | C4 — 示例脚本 | `cpptlm_config/examples/*.py` | 4a64af1 | mesh_2x2, mesh_4x4_validated, hierarchical |
 | C5 — topology_validator.py wrapper | `scripts/topology_validator.py` | 4a64af1 | 轻量包装 |
-| T3.3-01/02/04-06 | `include/core/param_rules.hh`, `param_errors.hh`, `src/core/param_parser.cc` | 5707d31 | ParamRule JSON 序列化、ParamParser、异常类 |
-| T3.1-07 | `include/utils/var_resolver.hh` | — | `${path}` 变量解析器 |
+| T3.2-01~07 | `include/core/port_types.hh`, `port_compatibility.hh`, module_factory.cc | — | port_types.hh, 三层兼容性检查, 端口别名系统 |
+| T3.2-09 | `src/core/module_factory.cc` | — | DEF-04 WARNING 日志 |
+| T3.2-10~13 | `cpptlm_config/types.py`, `models.py`, `pyproject.toml` | 3603c5d | RouterPort/NICPort 枚举, SemVer, layout_hint |
+| T3.2-14 | `test/` | — | C++ 端端口类型单元测试 (25+ cases) |
+| T3.2-16 | `test/` | — | E2E 集成测试 |
+| T3.3-01/02/03/06 | `include/core/param_rules.hh`, `param_parser.hh/cc`, `param_errors.hh`, `configs/param_rules/*.json` | 5707d31 | ParamRule JSON 序列化, ParamParser, 异常类, 全局规则文件 |
+| T3.3-10 | `src/core/param_parser.cc` | 5707d31 | 参数推导表达式解析器 (evaluate_derive_expr) |
+| T3.2-15 | `test/python/test_port_types.py` | 8559104 | 17 Python 端口类型测试 |
+| T3.1-07 | `include/utils/var_resolver.hh` | — | `${path}` 变量解析器, 已集成到 instantiateAll |
+| T3.1-09 | `test/test_nic_side_rules.cc` | — | NI PE-side 连接验证 |
 | T3.1-11 | `test/test_validate_config.cc` | — | validateConfig() 覆盖测试 (4 用例) |
 | T3.1-04b/03b | `test/test_module_factory_fixes.cc` | — | DEF-04/03 WARNING 日志测试 |
+| T3.4-01~05 | `cpptlm_config/validator.py` | 4a64af1 | TopologyValidator + VALID-01/02 + PORT-01/03 |
 
 ### In Progress (⚠️)
 
 | 任务 | 文件 | 状态 | 阻塞原因 |
 |------|------|------|---------|
+| T3.2-08 — NICTLM port_groups | `include/core/port_types.hh`, module_factory.cc | 🔲 有待确认 | 需检查是否在 Phase 3.2 C++ 端完成，原 plan v1.2 标记为未完成 |
 | B1 — loadParamRulesForType() | `src/core/module_factory.cc` | 未实现 | C++ 构建系统降级 |
 | B2 — Wire validate_module_params | `src/core/module_factory.cc:954` | 函数存在但**从未被调用** | C++ 构建系统降级 |
-| T3.3-05 — ModuleFactory 集成 | `src/core/module_factory.cc` | 仅硬编码 RouterTLM 检查 | C++ 构建系统降级 |
+| T3.3-04/05 — ModuleFactory 集成 | `src/core/module_factory.cc` | 仅 hardcoded RouterTLM 检查 | C++ 构建系统降级 |
+| T3.2-17/18 — 文档更新 | `docs/architecture/`, `docs/guide/` | ⚠️ Partial | C++ 端文档完成, Python 端待实施 |
 
 ### Remaining (❌)
 
-| 优先级 | 缺口 | 说明 |
-|--------|------|------|
-| 🔴 P1 | **ConfigBuilder 缺失** | `cpptlm_config/builder.py` 不存在，examples 全部无法运行 |
-| 🔴 P1 | **validate_module_params 死代码** | module_factory.cc:954 存在但 instantiateAll 中从未调用 |
-| 🔴 P1 | **ParamType 枚举与 ADR-X.10 不匹配** | 代码: INTEGER/FLOAT/BOOLEAN/ENUM → ADR: INT/UNSIGNED/ADDRESS/LATENCY/BOOL |
-| 🟡 P2 | **B1-B5: param_rules JSON 未加载** | `configs/param_rules/*.json` 存在但 instantiateAll 不加载 |
-| 🟡 P2 | **C6: Python PARAM-01/02 缺失** | validator.py 无 required_param/range 验证 |
-| 🟡 P2 | **test_param_parser.cc 缺失** | ParamParser 无单元测试 |
-| 🟢 P3 | **T3.1-08 默认值未完全集成** | RouterTLM::get_param_rules() 存在但仅硬编码使用 |
-| 🟢 P3 | **derive_expr 未调用** | evaluate_derive_expr() 实现但从未执行 |
+| 优先级 | 缺口 | 来源 | 说明 |
+|--------|------|------|------|
+| 🔴 P1 | **ConfigBuilder 缺失 / T3.4-06** | `docs/plan/phase3.4, phase3.2` | `cpptlm_config/builder.py` 不存在，examples 全部无法运行；同时 T3.4-06 (build() 自动验证) 依赖于此 |
+| 🔴 P1 | **validate_module_params 死代码 / T3.3-04** | `docs/plan/phase3.3, superpowers` | module_factory.cc:954 存在但 instantiateAll 中从未调用 |
+| 🔴 P1 | **ParamType 枚举与 ADR-X.10 不匹配** | `docs/plan/phase3.3 §3.1` | 代码: INTEGER/FLOAT/BOOLEAN/ENUM → ADR: INT/UNSIGNED/ADDRESS/LATENCY/BOOL |
+| 🟡 P2 | **B1-B5: param_rules JSON 未加载** | `docs/plan/phase3.3` | `configs/param_rules/*.json` 存在但 instantiateAll 不加载 |
+| 🟡 P2 | **C6: Python PARAM-01/02 缺失** | `docs/superpowers/plans` | validator.py 无 required_param/range 验证 |
+| 🟡 P2 | **test_param_parser.cc 缺失 / T3.3-11** | `docs/plan/phase3.3 §2.1` | ParamParser 无单元测试 (25+ cases 需覆盖) |
+| 🟡 P2 | **T3.4-07~10: 高级验证工具** | `docs/plan/phase3.4 §2.1` | StaticLoadAnalyzer, PathTracer, ConfigLinter + 测试 (25+ cases) |
+| 🟡 P2 | **T3.4-14~17: 验证性测试** | `docs/plan/phase3.4 §2.1` | pyproject.toml 验证, 端口组/可视化/ SemVer 验证 |
+| 🟡 P2 | **T3.3-07~09: Credit Flow 自动计算** | `docs/plan/phase3.3 §2.2` | Credit Flow 公式 + JSON Schema + Python 端两阶段验证 |
+| 🟡 P2 | **T3.3-12: Python credit flow 测试** | `docs/plan/phase3.3 §2.2` | 15+ Python 测试用例 |
+| 🟢 P3 | **T3.1-08 默认值未完全集成** | `docs/plan/phase3.1` | RouterTLM::get_param_rules() 存在但仅硬编码使用 |
+| 🟢 P3 | **derive_expr 未调用** | `docs/superpowers/plans` | evaluate_derive_expr() 实现但从未执行 |
+| 🟢 P3 | **T3.2-08 NICTLM port_groups** | `docs/plan/phase3.2 §2.1` | 需验证当前是否已实现 (原 plan v1.2 标记 🔲) |
+| 🟢 P3 | **T3.3-13~15: E2E + 文档** | `docs/plan/phase3.3 §2.3` | E2E 集成测试, 参数系统架构文档, 用户指南 |
+| 🟢 P3 | **T3.4-11~13: E2E + 文档** | `docs/plan/phase3.4 §2.2` | E2E 验证测试, 验证工具链架构文档, 用户指南 |
+| 🟢 P3 | **T3.2-17/18: 端口管理文档** | `docs/plan/phase3.2 §2.3` | Python 端端口配置指南和架构文档待完成 |
 
 ---
 
@@ -89,8 +108,12 @@ P1.4 (validate_module_params 接线) → P1.5 (ParamType 对齐)
 | **B1: loadParamRulesForType() 未实现** | configs/param_rules/*.json 存在但 instantiateAll 不加载 | 添加静态函数：根据 module_type 加载对应 JSON 文件 → 反序列化为 ParamRules | `src/core/module_factory.cc` | **P2.1** |
 | **B2: derive_expr 未评估** | evaluate_derive_expr() 实现但 instantiateAll 不调用 | 在参数验证循环后添加 derive_expr 评估逻辑 | `src/core/module_factory.cc` | **P2.2** |
 | **B3: set_config() 无异常处理** | instantiateAll 中直接调用 obj->set_config()，无 try-catch | 添加 try-catch ParamValidationError/std::exception | `src/core/module_factory.cc` | **P2.3** |
-| **C6: Python PARAM-01/02** | validator.py 只有 VALID/PORT 检查，无参数验证 | 添加 validate_required_params() 和 validate_param_ranges()，从 configs/param_rules/*.json 加载规则 | `cpptlm_config/validator.py` | **P2.4** |
-| **test_param_parser.cc 缺失** | ParamParser 类已实现但无单元测试覆盖 | 创建测试文件覆盖 parse() 各类型、validate()、evaluate_derive_expr() | `test/test_param_parser.cc` | **P2.5** |
+| **C6: Python PARAM-01/02 / T3.4-06** | validator.py 只有 VALID/PORT 检查，无参数验证；build() 不自动调用 validator | 添加 validate_required_params() 和 validate_param_ranges()，从 configs/param_rules/*.json 加载规则；ConfigBuilder.build() 自动调用 validator | `cpptlm_config/validator.py`, `cpptlm_config/builder.py` | **P2.4** |
+| **T3.3-11: test_param_parser.cc 缺失** | ParamParser 类已实现但无单元测试覆盖 | 创建测试文件覆盖 parse() 各类型、validate()、evaluate_derive_expr() | `test/test_param_parser.cc` | **P2.5** |
+| **T3.4-07~10: 高级验证工具** | Phase 3.4 plan 定义但未实现 StaticLoadAnalyzer, PathTracer, ConfigLinter | 创建 `analyzer.py`, `path_tracer.py`, `linter.py`，每个包含相应验证逻辑和测试 | `cpptlm_config/analyzer.py`, `path_tracer.py`, `linter.py`, `tests/` | **P2.6** |
+| **T3.4-14~17: 验证性测试** | pyproject.toml 验证, 端口组/可视化/SemVer 验证未实施 | 为现有 cpptlm_config 功能编写验证测试 | `cpptlm_config/tests/` | **P2.7** |
+| **T3.3-07~09: Credit Flow 自动计算** | Phase 3.3 plan 要求 credit_capacity 公式 + 手动覆盖支持 | 在 builder.py 实现自动计算 `max(4, node_count * 2)`，支持手动覆盖；扩展 ConnectionSpec | `cpptlm_config/builder.py`, `models.py` | **P2.8** |
+| **T3.3-12: Python credit flow 测试** | Credit Flow 逻辑无测试覆盖 | 编写 15+ Python 测试覆盖自动计算/手动覆盖/边界值 | `cpptlm_config/tests/test_credit_flow.py` | **P2.9** |
 
 ### Priority 3 (Medium)
 
@@ -100,6 +123,10 @@ P1.4 (validate_module_params 接线) → P1.5 (ParamType 对齐)
 | **test_validate_config.cc 已存在** | Metis 误报为"缺失"，实际已有 4 个用例 | 验证现有覆盖度，确认无需新增 | `test/test_validate_config.cc` | **P3.2** |
 | **T3.1-08 默认值逻辑仅硬编码** | RouterTLM::get_param_rules() 存在但 instantiateAll 中仅对 RouterTLM 使用 | 改为通过 loadParamRulesForType 通用加载（依赖 P2.1） | `src/core/module_factory.cc` | **P3.3** |
 | **param_rules JSON derive_expr 字段缺失** | router_tlm.json 无 derive_expr 字段，导致 P2.2 即使实现也无数据 | 在 router_tlm.json 中添加 vc_count 的 derive_expr | `configs/param_rules/router_tlm.json` | **P3.4** |
+| **T3.2-08 NICTLM port_groups 状态待确认** | 原 plan v1.2 标记为 🔲，需确认当前是否已实现 | 检查 `include/core/port_types.hh` 和 module_factory.cc 中 port_groups 处理逻辑 | `include/core/port_types.hh`, `src/core/module_factory.cc` | **P3.5** |
+| **T3.3-13~15: E2E + 文档** | Phase 3.3 plan 要求的集成测试和文档未完成 | 创建 E2E test, 参数系统架构文档, 用户配置指南 | `test/test_credit_flow_e2e.cc`, `docs/architecture/14-parameter-system.md`, `docs/guide/PARAMETER_CONFIGURATION_GUIDE.md` | **P3.6** |
+| **T3.4-11~13: E2E + 文档** | Phase 3.4 plan 要求的集成测试和文档未完成 | 创建 E2E 验证测试, 验证工具链架构文档, 验证工具使用指南 | `cpptlm_config/tests/test_integration.py`, `docs/architecture/15-validation-toolchain.md`, `docs/guide/VALIDATION_GUIDE.md` | **P3.7** |
+| **T3.2-17/18: 端口管理文档** | Phase 3.2 C++ 端文档完成, Python 端待实施 | 补全 Python 端口枚举和配置 API 文档 | `docs/architecture/`, `docs/guide/` | **P3.8** |
 
 ---
 
@@ -108,19 +135,24 @@ P1.4 (validate_module_params 接线) → P1.5 (ParamType 对齐)
 ### Phase 3.5a (Immediate — Python-Only, No Build)
 
 > **目标**: 修复 Python 侧关键阻塞，使 Phase 3.4 examples 可运行  
-> **时间预估**: 2-3 小时  
+> **时间预估**: 3-5 小时  
 > **构建依赖**: 无  
 
 ```
 依赖图:
-P1.1 (ConfigBuilder) ──→ P1.2 (ModuleSpec) ──→ P1.3 (build/save)
-       ↓
-    P2.4 (Python PARAM-01/02)
+P1.1 (ConfigBuilder) ──→ P1.2 (ModuleSpec/ConnectionSpec) ──→ P1.3 (build/save)
+       │                        │
+       ↓                        ↓
+P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
+                                    ↓
+                              P2.8 (Credit Flow)
+                                    ↓
+                              P2.9 (Credit Flow tests)
 ```
 
 - [ ] **Task P1.1**: 创建 `cpptlm_config/builder.py` — ConfigBuilder 类
   - 方法: `__init__(name, description, metadata)`, `add_module(ModuleSpec)`, `add_connection(ConnectionSpec)`, `set_extends(path)`, `build() → ConfigSchema`, `save(path) → None`
-  - `build()` 时自动调用 `TopologyValidator` 进行 Python 侧验证 (ADR-X.12 决策 7)
+  - `build()` 时自动调用 `TopologyValidator` 进行 Python 侧验证 (ADR-X.12 决策 7, T3.4-06)
   - **文件**: `cpptlm_config/builder.py`
 
 - [ ] **Task P1.2**: 在 `cpptlm_config/models.py` 添加 ModuleSpec / ConnectionSpec
@@ -133,22 +165,50 @@ P1.1 (ConfigBuilder) ──→ P1.2 (ModuleSpec) ──→ P1.3 (build/save)
   - `save(path)`: 调用 to_json_dict() 并写入文件
   - **文件**: `cpptlm_config/models.py`
 
-- [ ] **Task P2.4**: 在 `validator.py` 添加 PARAM-01/02 验证
+- [ ] **Task P2.4**: 在 `validator.py` 添加 PARAM-01/02 验证 + build() 自动验证
   - `validate_required_params()`: 从 `configs/param_rules/*.json` 加载规则，检查 required=true 的参数是否存在
   - `validate_param_ranges()`: 检查 min_value/max_value 约束
   - 在 `validate()` 方法中调用这两项
-  - **文件**: `cpptlm_config/validator.py`
+  - ConfigBuilder.build() 自动调用 TopologyValidator (T3.4-06)
+  - **文件**: `cpptlm_config/validator.py`, `cpptlm_config/builder.py`
+
+- [ ] **Task P2.6**: 高级验证工具
+  - `analyzer.py`: StaticLoadAnalyzer (VALID-05 热点链路识别)
+  - `path_tracer.py`: PathTracer (TOOL-07 BFS 路径追踪)
+  - `linter.py`: ConfigLinter (TOOL-08 最佳实践检查)
+  - **文件**: `cpptlm_config/analyzer.py`, `path_tracer.py`, `linter.py`
+
+- [ ] **Task P2.7**: 验证性测试
+  - `pyproject.toml` 验证: `pip install -e .` 成功
+  - 端口组/可视化/SemVer 验证测试
+  - **文件**: `cpptlm_config/tests/test_validator.py`, `test_verification.py`
+
+- [ ] **Task P2.8**: Credit Flow 自动计算 (T3.3-07~08)
+  - 在 builder.py 实现 `credit_capacity = max(4, node_count * 2)` 公式
+  - 支持手动覆盖 (`ConnectionSpec.credit_flow`)
+  - 扩展 ConnectionSpec 支持 credit_flow 字段
+  - **文件**: `cpptlm_config/builder.py`, `models.py`
+
+- [ ] **Task P2.9**: Python credit flow 测试 (T3.3-12)
+  - 15+ 测试覆盖自动计算/手动覆盖/边界值
+  - **文件**: `cpptlm_config/tests/test_credit_flow.py`
 
 - [ ] **Task P3.4**: 更新 `configs/param_rules/router_tlm.json` 添加 derive_expr
   - 为 `vc_count` 添加 `"derive_expr": "(mesh_x >= 4) ? 8 : 4"`
   - **文件**: `configs/param_rules/router_tlm.json`
 
-- [ ] **验证**: 运行所有 Python 示例
+- [ ] **Task P3.5**: 验证 T3.2-08 NICTLM port_groups 状态
+  - 检查 `port_types.hh` 中 PortGroupMember/PortGroupBundleType 定义
+  - 检查 module_factory.cc 中 port_groups 解析逻辑
+  - 如未实现，创建测试并实现
+
+- [ ] **验证**: 运行所有 Python 示例和测试
   ```bash
   python3 cpptlm_config/examples/mesh_2x2.py
   python3 cpptlm_config/examples/mesh_4x4_validated.py
   python3 cpptlm_config/examples/hierarchical.py
-  python3 -m pytest test/python/test_port_types.py -v
+  python3 -m pytest test/python/ -v
+  python3 -m pytest cpptlm_config/tests/ -v
   ```
 
 ### Phase 3.5b (C++ Build-Dependent)
@@ -233,10 +293,29 @@ P2.5 (test_param_parser)                                  P2.2 (derive_expr)
   - 统一使用 `loadParamRulesForType()` → 支持所有模块类型
   - **文件**: `src/core/module_factory.cc`
 
+- [ ] **Task P3.6**: Phase 3.3 文档 (T3.3-13~15)
+  - 创建 E2E credit flow 集成测试: `test/test_credit_flow_e2e.cc`
+  - 参数系统架构文档: `docs/architecture/14-parameter-system.md`
+  - 参数配置用户指南: `docs/guide/PARAMETER_CONFIGURATION_GUIDE.md`
+  - **文件**: `test/test_credit_flow_e2e.cc`, `docs/architecture/14-parameter-system.md`, `docs/guide/PARAMETER_CONFIGURATION_GUIDE.md`
+
+- [ ] **Task P3.7**: Phase 3.4 文档 (T3.4-11~13)
+  - E2E 验证集成测试: `cpptlm_config/tests/test_integration.py`
+  - 验证工具链架构文档: `docs/architecture/15-validation-toolchain.md`
+  - 验证工具用户指南: `docs/guide/VALIDATION_GUIDE.md`
+  - **文件**: `cpptlm_config/tests/test_integration.py`, `docs/architecture/15-validation-toolchain.md`, `docs/guide/VALIDATION_GUIDE.md`
+
+- [ ] **Task P3.8**: Phase 3.2 文档补全 (T3.2-17/18)
+  - Python 端口枚举和配置 API 文档
+  - **文件**: `docs/architecture/`, `docs/guide/`
+
 - [ ] **文档同步**: 更新所有 plan 文档状态
+  - `docs/plan/phase3.2-port-management-plan.md` → 标记已完成项
+  - `docs/plan/phase3.3-config-enhancement-plan.md` → 更新 T3.3-04/05/10 状态
+  - `docs/plan/phase3.4-validation-toolchain-plan.md` → 更新 T3.4-01~06 状态
   - `docs/superpowers/plans/2026-05-07-phase-3-remaining-tasks.md` → 标记已完成项
-  - `docs/superpowers/plans/2026-05-07-phase-3-3-config-enhancement.md` → 更新 T3.3-05 状态
-  - `docs/superpowers/plans/2026-05-08-phase-3-4-validation-toolchain.md` → 标记 Phase 3.4 完成
+  - `docs/superpowers/plans/2026-05-07-phase-3-3-config-enhancement.md` → 更新状态
+  - `docs/superpowers/plans/2026-05-08-phase-3-4-validation-toolchain.md` → 标记完成
 
 ---
 
@@ -341,7 +420,9 @@ Fixes P2.5 from Phase 3.x final plan."
 
 ---
 
-## Appendix: Metis Finding Corrections
+## Appendix
+
+### Metis Finding Corrections
 
 本计划对 Metis 原始报告的两处误报进行修正：
 
@@ -349,6 +430,17 @@ Fixes P2.5 from Phase 3.x final plan."
 |-----------|---------|------|
 | "var_resolver.hh missing" | ✅ 已存在 | `include/utils/var_resolver.hh` 已创建，且在 `module_factory.cc:414` 已集成到 instantiateAll |
 | "test_validate_config.cc missing" | ✅ 已存在 | `test/test_validate_config.cc` 已有 4 个用例 (T3.1-11a~d) |
+
+### docs/plan/ 文档引用与状态
+
+本计划整合了以下 `docs/plan/` 文档中的任务：
+
+| 文档 | 版本 | 状态(in plan) | 已整合任务 |
+|------|------|-------------|-----------|
+| `docs/plan/ROADMAP.md` | v1.0 | 📋 路线图 | Phase 3.1-3.4 总体框架 |
+| `docs/plan/phase3.2-port-management-plan.md` | v1.2 | 🚧 实施中 | T3.2-01~18, C++ 端✅, T3.2-08/T3.2-17/18 🔲 |
+| `docs/plan/phase3.3-config-enhancement-plan.md` | v1.1 | 📋 路线图 | T3.3-01~06 C++, T3.3-07~09 Python, T3.3-10~15 测试/文档 |
+| `docs/plan/phase3.4-validation-toolchain-plan.md` | v1.1 | 📋 路线图 | T3.4-01~05 ✅, T3.4-06~10 🔲, T3.4-11~17 🔲 |
 
 ---
 
