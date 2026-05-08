@@ -6,6 +6,35 @@ from typing import List, Optional, Set, Dict
 from collections import defaultdict, deque
 import json
 import re
+import os
+import glob as _glob
+
+
+_PARAM_RULES_CACHE: Dict[str, Dict] = {}
+
+
+def load_param_rules() -> Dict[str, Dict]:
+    """Load all param_rules from configs/param_rules/*.json
+
+    Returns:
+        Dict mapping module_type string (e.g. "RouterTLM") -> rules dict.
+        Handles both "INTEGER" and "INT" type strings (cross-phase compatibility).
+    """
+    if _PARAM_RULES_CACHE:
+        return _PARAM_RULES_CACHE
+
+    rules_dir = os.path.join(os.path.dirname(__file__), '..', 'configs', 'param_rules')
+    for json_path in _glob.glob(os.path.join(rules_dir, '*.json')):
+        try:
+            with open(json_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            module_type = data.get('module_type', '')
+            if module_type:
+                _PARAM_RULES_CACHE[module_type.upper()] = data
+        except (json.JSONDecodeError, OSError):
+            pass
+    return _PARAM_RULES_CACHE
+
 
 class ValidationIssue(BaseModel):
     severity: str  # "error", "warning", "info"
@@ -190,12 +219,60 @@ class TopologyValidator:
                         pass
         return self
 
+    def validate_required_params(self) -> "TopologyValidator":
+        """PARAM-01: All required parameters must be present for each module"""
+        rules = load_param_rules()
+        for mod in self.config.get('modules', []):
+            mod_type = mod.get('type', '')
+            mod_name = mod.get('name', '')
+            mod_rules = rules.get(mod_type.upper(), {})
+            for param_name, rule in mod_rules.get('rules', {}).items():
+                if rule.get('required', False):
+                    params = mod.get('params', {})
+                    if param_name not in params or params[param_name] is None:
+                        self.result.add_error(
+                            code="PARAM-01",
+                            message=f"Module '{mod_name}' ({mod_type}) missing required parameter: {param_name}",
+                            suggestion=f"Add '{param_name}' to params dict"
+                        )
+        return self
+
+    def validate_param_ranges(self) -> "TopologyValidator":
+        """PARAM-02: Numeric parameters must be within defined min/max ranges"""
+        rules = load_param_rules()
+        for mod in self.config.get('modules', []):
+            mod_type = mod.get('type', '')
+            mod_name = mod.get('name', '')
+            mod_rules = rules.get(mod_type.upper(), {})
+            params = mod.get('params', {})
+            for param_name, rule in mod_rules.get('rules', {}).items():
+                if param_name not in params:
+                    continue
+                value = params[param_name]
+                ptype = rule.get('type', '').upper()
+                if ptype in ('INTEGER', 'INT'):
+                    if 'min_value' in rule and value < rule['min_value']:
+                        self.result.add_error(
+                            code="PARAM-02",
+                            message=f"Module '{mod_name}': {param_name}={value} is below minimum {rule['min_value']}",
+                            suggestion=f"Set {param_name} to at least {rule['min_value']}"
+                        )
+                    if 'max_value' in rule and value > rule['max_value']:
+                        self.result.add_error(
+                            code="PARAM-02",
+                            message=f"Module '{mod_name}': {param_name}={value} exceeds maximum {rule['max_value']}",
+                            suggestion=f"Set {param_name} to at most {rule['max_value']}"
+                        )
+        return self
+
     def validate(self) -> ValidationResult:
         """Run all validation checks"""
         self.validate_connectivity()
         self.validate_reachability()
         self.validate_port_directions()
         self.validate_bundle_types()
+        self.validate_required_params()
+        self.validate_param_ranges()
         return self.result
 
     @staticmethod

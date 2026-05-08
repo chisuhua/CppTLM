@@ -27,7 +27,8 @@
       "required": false,
       "default_int": 2,
       "min_value": 1,
-      "max_value": 8
+      "max_value": 8,
+      "derive_expr": "(mesh_x >= 4) ? 8 : 4"
     }
   }
 }
