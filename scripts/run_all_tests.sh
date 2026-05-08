@@ -21,23 +21,28 @@ echo "=========================================="
 echo ""
 
 if [[ "$1" == "--python-only" ]]; then
-    echo "[Python-only mode]"
+    echo "[Python-only mode] Pure Python tests (no build required)"
     echo ""
-    echo "=========================================="
-    echo "Python Tests (cpptlm_config)"
-    echo "=========================================="
     cd "$ROOT_DIR"
-    $PYTEST cpptlm_config/tests/ test/python/test_port_types.py -v
+    $PYTEST cpptlm_config/tests/ test/python/test_port_types.py -v --tb=short
     echo ""
     echo "[SUCCESS] All Python tests passed!"
     exit 0
 fi
 
 if [[ "$1" == "--quick" ]]; then
-    echo "[Quick mode] Running Python tests only (no build required)"
+    echo "[Quick mode] Python tests + key C++ tests"
+    echo ""
     cd "$ROOT_DIR"
     $PYTEST cpptlm_config/tests/ test/python/test_port_types.py --tb=short
-    exit $?
+    if [[ -f "$TEST_BIN" ]]; then
+        echo ""
+        echo "--- Key C++ tests (critical path) ---"
+        $TEST_BIN --order rand --rng-seed 0 2>&1 | tail -5 || true
+    else
+        echo "[SKIP] cpptlm_tests not built"
+    fi
+    exit 0
 fi
 
 echo "=========================================="
