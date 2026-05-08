@@ -1,6 +1,6 @@
 # Phase 3.x Final Implementation Plan
 
-> **版本**: 3.1 (整合版，含 docs/plan/ 文档同步)
+> **版本**: 3.2 (ADR/Architecture 交叉引用对齐版)
 > **日期**: 2026-05-08
 > **状态**: 📋 待执行
 > **前置条件**: 基于 Metis 六文档交叉分析 + 代码现场验证 + docs/plan/ 三阶段计划文档对齐
@@ -91,8 +91,9 @@
 | **ConfigBuilder 缺失** | `cpptlm_config/builder.py` 未创建，但 examples/ 和 topology_adapter.py 均引用它 | 创建 ConfigBuilder 类，含 build()/save()/add_module()/add_connection()/set_extends() | `cpptlm_config/builder.py` | **P1.1** |
 | **ModuleSpec/ConnectionSpec 缺失** | topology_adapter.py 引用这两个类但 models.py 中不存在 | 在 models.py 或 builder.py 中定义 | `cpptlm_config/models.py` | **P1.2** |
 | **ConfigSchema 无 build/save** | 现有 ConfigSchema Pydantic 模型缺少 builder 语义方法 | 添加 build() → 返回 dict, save(path) → 写 JSON | `cpptlm_config/models.py` | **P1.3** |
-| **validate_module_params 死代码** | module_factory.cc:954 函数完整实现但 instantiateAll 中**零处调用** | 在 instantiateAll 的模块循环中替换硬编码 RouterTLM 检查为通用 dispatch | `src/core/module_factory.cc:425-439` | **P1.4** |
-| **ParamType 枚举不匹配 ADR-X.10** | ADR 要求 INT/UNSIGNED/STRING/ADDRESS/LATENCY/BOOL，代码是 INTEGER/FLOAT/BOOLEAN/ENUM | 重命名枚举值 + 更新 NLOHMANN_JSON_SERIALIZE_ENUM + 更新 parse() switch + 更新 param_rules JSON | `include/core/param_rules.hh`, `src/core/param_parser.cc`, `configs/param_rules/*.json` | **P1.5** |
+| **validate_module_params Stage 1 (Schema)** | module_factory.cc:954 函数完整实现但 instantiateAll 中**零处调用** | Stage 1: required params check → type match → optional defaults filling (apply_defaults()) | `src/core/module_factory.cc:425-439` | **P1.4a** |
+| **validate_module_params Stage 2 (Semantic)** | ADR-X.10 Decision 7 要求两阶段验证 | Stage 2: range check → derive_expr evaluation → dependency check | `src/core/module_factory.cc:425-439` | **P1.4b** |
+| **ParamType 枚举不匹配 ADR-X.10** | ADR 要求 INT/UNSIGNED/STRING/ADDRESS/LATENCY/BOOL，代码是 INTEGER/FLOAT/BOOLEAN/ENUM；ParamParseResult variant 需包含 uint64_t | 重命名枚举值 + 更新 NLOHMANN_JSON_SERIALIZE_ENUM + 更新 parse() switch + 更新 param_rules JSON；**验证 ParamParseResult variant 包含 uint64_t** | `include/core/param_rules.hh`, `src/core/param_parser.cc`, `configs/param_rules/*.json` | **P1.5** |
 
 **P1 关键依赖链**:
 ```
@@ -109,11 +110,12 @@ P1.4 (validate_module_params 接线) → P1.5 (ParamType 对齐)
 | **B2: derive_expr 未评估** | evaluate_derive_expr() 实现但 instantiateAll 不调用 | 在参数验证循环后添加 derive_expr 评估逻辑 | `src/core/module_factory.cc` | **P2.2** |
 | **B3: set_config() 无异常处理** | instantiateAll 中直接调用 obj->set_config()，无 try-catch | 添加 try-catch ParamValidationError/std::exception | `src/core/module_factory.cc` | **P2.3** |
 | **C6: Python PARAM-01/02 / T3.4-06** | validator.py 只有 VALID/PORT 检查，无参数验证；build() 不自动调用 validator | 添加 validate_required_params() 和 validate_param_ranges()，从 configs/param_rules/*.json 加载规则；ConfigBuilder.build() 自动调用 validator | `cpptlm_config/validator.py`, `cpptlm_config/builder.py` | **P2.4** |
-| **T3.3-11: test_param_parser.cc 缺失** | ParamParser 类已实现但无单元测试覆盖 | 创建测试文件覆盖 parse() 各类型、validate()、evaluate_derive_expr() | `test/test_param_parser.cc` | **P2.5** |
+| **T3.3-11: test_param_parser.cc 缺失** | ParamParser 类已实现但无单元测试覆盖 | 创建测试文件覆盖 parse() 各类型、validate()、evaluate_derive_expr()；**添加 verify_param_parser_variant 测试：验证 ParamParseResult variant 覆盖 int64_t, uint64_t, double, string, bool** | `test/test_param_parser.cc` | **P2.5** |
 | **T3.4-07~10: 高级验证工具** | Phase 3.4 plan 定义但未实现 StaticLoadAnalyzer, PathTracer, ConfigLinter | 创建 `analyzer.py`, `path_tracer.py`, `linter.py`，每个包含相应验证逻辑和测试 | `cpptlm_config/analyzer.py`, `path_tracer.py`, `linter.py`, `tests/` | **P2.6** |
-| **T3.4-14~17: 验证性测试** | pyproject.toml 验证, 端口组/可视化/SemVer 验证未实施 | 为现有 cpptlm_config 功能编写验证测试 | `cpptlm_config/tests/` | **P2.7** |
-| **T3.3-07~09: Credit Flow 自动计算** | Phase 3.3 plan 要求 credit_capacity 公式 + 手动覆盖支持 | 在 builder.py 实现自动计算 `max(4, node_count * 2)`，支持手动覆盖；扩展 ConnectionSpec | `cpptlm_config/builder.py`, `models.py` | **P2.8** |
-| **T3.3-12: Python credit flow 测试** | Credit Flow 逻辑无测试覆盖 | 编写 15+ Python 测试覆盖自动计算/手动覆盖/边界值 | `cpptlm_config/tests/test_credit_flow.py` | **P2.9** |
+| **T3.2-08 NICTLM port_groups 测试** | PortGroupBundleType/PortGroupMember 已存在于 port_types.hh (10 matches)，需验证测试覆盖 | 检查现有测试是否覆盖 port_groups 解析逻辑，如未覆盖则添加测试 | `include/core/port_types.hh`, `test/` | **P2.7** |
+| **T3.4-14~17: 验证性测试** | pyproject.toml 验证, 端口组/可视化/SemVer 验证未实施 | 为现有 cpptlm_config 功能编写验证测试 | `cpptlm_config/tests/` | **P2.8** |
+| **T3.3-07~09: Credit Flow 自动计算** | Phase 3.3 plan 要求 credit_capacity 公式 + 手动覆盖支持 | 在 builder.py 实现自动计算 `max(4, node_count * 2)`，支持手动覆盖；扩展 ConnectionSpec | `cpptlm_config/builder.py`, `models.py` | **P2.9** |
+| **T3.3-12: Python credit flow 测试** | Credit Flow 逻辑无测试覆盖 | 编写 15+ Python 测试覆盖自动计算/手动覆盖/边界值 | `cpptlm_config/tests/test_credit_flow.py` | **P2.10** |
 
 ### Priority 3 (Medium)
 
@@ -123,7 +125,6 @@ P1.4 (validate_module_params 接线) → P1.5 (ParamType 对齐)
 | **test_validate_config.cc 已存在** | Metis 误报为"缺失"，实际已有 4 个用例 | 验证现有覆盖度，确认无需新增 | `test/test_validate_config.cc` | **P3.2** |
 | **T3.1-08 默认值逻辑仅硬编码** | RouterTLM::get_param_rules() 存在但 instantiateAll 中仅对 RouterTLM 使用 | 改为通过 loadParamRulesForType 通用加载（依赖 P2.1） | `src/core/module_factory.cc` | **P3.3** |
 | **param_rules JSON derive_expr 字段缺失** | router_tlm.json 无 derive_expr 字段，导致 P2.2 即使实现也无数据 | 在 router_tlm.json 中添加 vc_count 的 derive_expr | `configs/param_rules/router_tlm.json` | **P3.4** |
-| **T3.2-08 NICTLM port_groups 状态待确认** | 原 plan v1.2 标记为 🔲，需确认当前是否已实现 | 检查 `include/core/port_types.hh` 和 module_factory.cc 中 port_groups 处理逻辑 | `include/core/port_types.hh`, `src/core/module_factory.cc` | **P3.5** |
 | **T3.3-13~15: E2E + 文档** | Phase 3.3 plan 要求的集成测试和文档未完成 | 创建 E2E test, 参数系统架构文档, 用户配置指南 | `test/test_credit_flow_e2e.cc`, `docs/architecture/14-parameter-system.md`, `docs/guide/PARAMETER_CONFIGURATION_GUIDE.md` | **P3.6** |
 | **T3.4-11~13: E2E + 文档** | Phase 3.4 plan 要求的集成测试和文档未完成 | 创建 E2E 验证测试, 验证工具链架构文档, 验证工具使用指南 | `cpptlm_config/tests/test_integration.py`, `docs/architecture/15-validation-toolchain.md`, `docs/guide/VALIDATION_GUIDE.md` | **P3.7** |
 | **T3.2-17/18: 端口管理文档** | Phase 3.2 C++ 端文档完成, Python 端待实施 | 补全 Python 端口枚举和配置 API 文档 | `docs/architecture/`, `docs/guide/` | **P3.8** |
@@ -178,29 +179,30 @@ P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
   - `linter.py`: ConfigLinter (TOOL-08 最佳实践检查)
   - **文件**: `cpptlm_config/analyzer.py`, `path_tracer.py`, `linter.py`
 
-- [ ] **Task P2.7**: 验证性测试
+- [ ] **Task P2.7**: T3.2-08 NICTLM port_groups 测试验证
+  - 检查现有测试是否覆盖 port_groups 解析逻辑
+  - PortGroupBundleType/PortGroupMember 已在 port_types.hh 实现 (10 matches)
+  - 如未覆盖，添加 port_groups 测试
+  - **文件**: `test/`
+
+- [ ] **Task P2.8**: 验证性测试
   - `pyproject.toml` 验证: `pip install -e .` 成功
   - 端口组/可视化/SemVer 验证测试
   - **文件**: `cpptlm_config/tests/test_validator.py`, `test_verification.py`
 
-- [ ] **Task P2.8**: Credit Flow 自动计算 (T3.3-07~08)
+- [ ] **Task P2.9**: Credit Flow 自动计算 (T3.3-07~08)
   - 在 builder.py 实现 `credit_capacity = max(4, node_count * 2)` 公式
   - 支持手动覆盖 (`ConnectionSpec.credit_flow`)
   - 扩展 ConnectionSpec 支持 credit_flow 字段
   - **文件**: `cpptlm_config/builder.py`, `models.py`
 
-- [ ] **Task P2.9**: Python credit flow 测试 (T3.3-12)
+- [ ] **Task P2.10**: Python credit flow 测试 (T3.3-12)
   - 15+ 测试覆盖自动计算/手动覆盖/边界值
   - **文件**: `cpptlm_config/tests/test_credit_flow.py`
 
 - [ ] **Task P3.4**: 更新 `configs/param_rules/router_tlm.json` 添加 derive_expr
   - 为 `vc_count` 添加 `"derive_expr": "(mesh_x >= 4) ? 8 : 4"`
   - **文件**: `configs/param_rules/router_tlm.json`
-
-- [ ] **Task P3.5**: 验证 T3.2-08 NICTLM port_groups 状态
-  - 检查 `port_types.hh` 中 PortGroupMember/PortGroupBundleType 定义
-  - 检查 module_factory.cc 中 port_groups 解析逻辑
-  - 如未实现，创建测试并实现
 
 - [ ] **验证**: 运行所有 Python 示例和测试
   ```bash
@@ -220,9 +222,11 @@ P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
 
 ```
 依赖图:
-P1.5 (ParamType 对齐) ──→ P2.1 (loadParamRulesForType) ──→ P1.4 (wire validate_module_params)
+P1.5 (ParamType 对齐) ──→ P2.1 (loadParamRulesForType) ──→ P1.4a (Stage 1 Schema)
        ↓                                                    ↓
-P2.5 (test_param_parser)                                  P2.2 (derive_expr)
+P2.5 (test_param_parser)                                  P1.4b (Stage 2 Semantic)
+                                                              ↓
+                                                            P2.2 (derive_expr)
                                                               ↓
                                                             P2.3 (set_config try-catch)
 ```
@@ -240,10 +244,19 @@ P2.5 (test_param_parser)                                  P2.2 (derive_expr)
   - 返回: ParamRules (空 map 表示无规则)
   - **文件**: `src/core/module_factory.cc` (模块工厂内静态函数)
 
-- [ ] **Task P1.4**: 将 `validate_module_params` 接入 instantiateAll
+- [ ] **Task P1.4a**: Stage 1 Schema Validation — 接入 instantiateAll
   - 替换 module_factory.cc:425-439 的硬编码 RouterTLM 检查
-  - 新逻辑: `for each module → loadParamRulesForType(type) → validate_module_params(type, params, rules)`
+  - 新逻辑: `for each module → loadParamRulesForType(type) → validate_module_params_stage1(type, params, rules)`
+  - Stage 1 步骤: (1) required params check → (2) type match → (3) apply_defaults() 填充缺失可选参数
+  - 实现 `apply_defaults()`: 从 ParamRule::default_val 填充缺失的可选参数
   - 失败时返回 false，打印 PARAM ERROR
+  - **文件**: `src/core/module_factory.cc:425-439`
+
+- [ ] **Task P1.4b**: Stage 2 Semantic Validation — range + derive_expr + dependency
+  - 在 Stage 1 通过后执行
+  - 步骤: (1) range check (min/max) → (2) derive_expr evaluation → (3) dependency check
+  - 调用 `evaluate_derive_expr()` 对含 derive_expr 的规则进行评估
+  - 结果写回 JSON config
   - **文件**: `src/core/module_factory.cc:425-439`
 
 - [ ] **Task P2.2**: 添加 derive_expr 评估
@@ -343,6 +356,7 @@ P2.5 (test_param_parser)                                  P2.2 (derive_expr)
 | var_resolver 回归 | `./build/bin/cpptlm_tests "[var_ref]"` | 4/4 通过 |
 | 全量回归 | `cd build && ctest --output-on-failure` | 445+ 通过，零新增失败 |
 | param_rules JSON 加载 | 构造含 RouterTLM 的 config，instantiateAll 返回 true | 模块成功实例化 |
+| Step 2.5 参数传递 | 构造含多种模块类型的 config，验证 set_config() 对所有模块类型生效 | 所有模块类型成功接收参数 (ARCH-010 §8) |
 | derive_expr 评估 | mesh_x=4 时 vc_count 自动设为 8 | 验证 JSON 中 vc_count=8 |
 
 ---
@@ -378,19 +392,32 @@ Update param_rules JSON files to use new type strings.
 Fixes P1.5 from Phase 3.x final plan."
 ```
 
-### Phase 3.5b Commit 2 (ModuleFactory 集成)
+### Phase 3.5b Commit 2a (ModuleFactory Stage 1)
 
 ```bash
 git add src/core/module_factory.cc
-git commit -m "feat(phase3.3): wire validate_module_params and derive_expr into instantiateAll
+git commit -m "feat(phase3.3): wire validate_module_params Stage 1 into instantiateAll
 
 - Add loadParamRulesForType() to load rules from configs/param_rules/*.json
 - Replace hardcoded RouterTLM-only param check with generic dispatch
+- Implement apply_defaults() to fill missing optional params from ParamRule::default_val
+- Stage 1: required params check → type match → optional defaults filling
+
+Fixes P1.4a, P2.1 from Phase 3.x final plan."
+```
+
+### Phase 3.5b Commit 2b (ModuleFactory Stage 2)
+
+```bash
+git add src/core/module_factory.cc
+git commit -m "feat(phase3.3): wire validate_module_params Stage 2 into instantiateAll
+
+- Stage 2: range check → derive_expr evaluation → dependency check
 - Add derive_expr evaluation in pre-creation loop
 - Add validate_module_params call after set_config()
 - Add try-catch for ParamValidationError around set_config()
 
-Fixes P1.4, P2.1, P2.2, P2.3 from Phase 3.x final plan."
+Fixes P1.4b, P2.2, P2.3 from Phase 3.x final plan."
 ```
 
 ### Phase 3.5b Commit 3 (测试)
