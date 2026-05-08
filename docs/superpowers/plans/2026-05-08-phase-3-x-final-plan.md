@@ -1,6 +1,6 @@
 # Phase 3.x Final Implementation Plan
 
-> **版本**: 3.2 (ADR/Architecture 交叉引用对齐版)
+> **版本**: 3.3 (Momus 审查修复版 — 修复依赖图/P1.5 范围/Step 2.5 验证)
 > **日期**: 2026-05-08
 > **状态**: 📋 待执行
 > **前置条件**: 基于 Metis 六文档交叉分析 + 代码现场验证 + docs/plan/ 三阶段计划文档对齐
@@ -145,11 +145,19 @@ P1.1 (ConfigBuilder) ──→ P1.2 (ModuleSpec/ConnectionSpec) ──→ P1.3 (
        │                        │
        ↓                        ↓
 P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
-                                    ↓
-                              P2.8 (Credit Flow)
-                                    ↓
-                              P2.9 (Credit Flow tests)
+                               ↓
+                          P2.7 (port_groups tests)
+                               ↓
+                          P2.8 (Verification tests)
+                               ↓
+                          P2.9 (Credit Flow)
+                               ↓
+                         P2.10 (Credit Flow tests)
 ```
+
+**执行顺序**: P1.1 → P1.2 → P1.3 → **P2.4 → P2.6** → P2.7 → P2.8 → P2.9 → P2.10 → P3.4
+- P2.4 (PARAM-01/02) 必须在 P2.6 (高级验证工具) 之前，因为 P2.6 依赖 validator.py 的基础验证能力
+- P2.7~P2.10 可并行执行
 
 - [ ] **Task P1.1**: 创建 `cpptlm_config/builder.py` — ConfigBuilder 类
   - 方法: `__init__(name, description, metadata)`, `add_module(ModuleSpec)`, `add_connection(ConnectionSpec)`, `set_extends(path)`, `build() → ConfigSchema`, `save(path) → None`
@@ -235,7 +243,11 @@ P2.5 (test_param_parser)                                  P1.4b (Stage 2 Semanti
   - `include/core/param_rules.hh`: INTEGER→INT, FLOAT→删除, BOOLEAN→BOOL, ENUM→删除; 新增 UNSIGNED, ADDRESS, LATENCY
   - `src/core/param_parser.cc`: 更新 parse() switch，添加 parse_address()，更新 parse_latency()
   - `configs/param_rules/*.json`: "INTEGER" → "INT"
-  - **风险**: 破坏性变更，需同步更新所有引用点
+  - **前置 grep** (枚举所有受影响位置，确保更新完整):
+    ```bash
+    grep -rn "INTEGER\|FLOAT\|BOOLEAN\|ENUM" configs/param_rules/ test/ include/ src/ --include="*.json" --include="*.cc" --include="*.hh"
+    ```
+  - **风险**: 破坏性变更，需同步更新所有引用点（`configs/param_rules/router_tlm.json`, `nic_tlm.json` 当前使用 "INTEGER"）
   - **文件**: `include/core/param_rules.hh`, `src/core/param_parser.cc`, `configs/param_rules/router_tlm.json`, `configs/param_rules/nic_tlm.json`
 
 - [ ] **Task P2.1**: 实现 `loadParamRulesForType()`
@@ -356,7 +368,7 @@ P2.5 (test_param_parser)                                  P1.4b (Stage 2 Semanti
 | var_resolver 回归 | `./build/bin/cpptlm_tests "[var_ref]"` | 4/4 通过 |
 | 全量回归 | `cd build && ctest --output-on-failure` | 445+ 通过，零新增失败 |
 | param_rules JSON 加载 | 构造含 RouterTLM 的 config，instantiateAll 返回 true | 模块成功实例化 |
-| Step 2.5 参数传递 | 构造含多种模块类型的 config，验证 set_config() 对所有模块类型生效 | 所有模块类型成功接收参数 (ARCH-010 §8) |
+| Step 2.5 参数传递 | 用含至少 2 种模块类型 (RouterTLM + NICTLM) 的 JSON config 验证 set_config() 生效<br>`python3 -c "from cpptlm_config.builder import ConfigBuilder, ModuleSpec; from cpptlm_config.types import ModuleType; b = ConfigBuilder('test'); b.add_module(ModuleSpec(name='r0', type=ModuleType.ROUTER_TLM, params={'node_x':0,'node_y':0,'mesh_x':2,'mesh_y':2})); b.add_module(ModuleSpec(name='n0', type=ModuleType.NIC_TLM, params={'node_id':0,'mesh_x':2,'mesh_y':2})); b.build().save('/tmp/test_multi_type.json'); print('OK')"`<br>再将生成的 JSON 传入 C++ 仿真验证</td> | Python 生成 OK + C++ 实例化成功 (ARCH-010 §8) |
 | derive_expr 评估 | mesh_x=4 时 vc_count 自动设为 8 | 验证 JSON 中 vc_count=8 |
 
 ---
