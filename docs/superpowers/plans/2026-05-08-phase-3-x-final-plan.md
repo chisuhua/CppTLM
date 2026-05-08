@@ -1,6 +1,6 @@
 # Phase 3.x Final Implementation Plan
 
-> **版本**: 3.3 (Momus 审查修复版 — 修复依赖图/P1.5 范围/Step 2.5 验证)
+> **版本**: 3.4 (Metis 最终审计修复版 — 修复 7 个 🔴 阻塞 + 5 个 🟡 改进)
 > **日期**: 2026-05-08
 > **状态**: 📋 待执行
 > **前置条件**: 基于 Metis 六文档交叉分析 + 代码现场验证 + docs/plan/ 三阶段计划文档对齐
@@ -66,7 +66,7 @@
 | 🔴 P1 | **ConfigBuilder 缺失 / T3.4-06** | `docs/plan/phase3.4, phase3.2` | `cpptlm_config/builder.py` 不存在，examples 全部无法运行；同时 T3.4-06 (build() 自动验证) 依赖于此 |
 | 🔴 P1 | **validate_module_params 死代码 / T3.3-04** | `docs/plan/phase3.3, superpowers` | module_factory.cc:954 存在但 instantiateAll 中从未调用 |
 | 🔴 P1 | **ParamType 枚举与 ADR-X.10 不匹配** | `docs/plan/phase3.3 §3.1` | 代码: INTEGER/FLOAT/BOOLEAN/ENUM → ADR: INT/UNSIGNED/ADDRESS/LATENCY/BOOL |
-| 🟡 P2 | **B1-B5: param_rules JSON 未加载** | `docs/plan/phase3.3` | `configs/param_rules/*.json` 存在但 instantiateAll 不加载 |
+| 🟡 P2 | **B1: loadParamRulesForType() 未实现** | `docs/plan/phase3.3` | `configs/param_rules/*.json` 存在但 instantiateAll 不加载；所依赖的 B2-B5 (derive_expr/set_config 异常/test_param_parser/test_param_integration) 也均未实现 |
 | 🟡 P2 | **C6: Python PARAM-01/02 缺失** | `docs/superpowers/plans` | validator.py 无 required_param/range 验证 |
 | 🟡 P2 | **test_param_parser.cc 缺失 / T3.3-11** | `docs/plan/phase3.3 §2.1` | ParamParser 无单元测试 (25+ cases 需覆盖) |
 | 🟡 P2 | **T3.4-07~10: 高级验证工具** | `docs/plan/phase3.4 §2.1` | StaticLoadAnalyzer, PathTracer, ConfigLinter + 测试 (25+ cases) |
@@ -98,9 +98,13 @@
 **P1 关键依赖链**:
 ```
 P1.1 (ConfigBuilder) → P1.2 (ModuleSpec) → P1.3 (build/save)
-     ↓
-P1.4 (validate_module_params 接线) → P1.5 (ParamType 对齐)
+
+P1.5 (ParamType 对齐) ──→ [P2.1 升级] (loadParamRulesForType) ──→ P1.4a (Stage 1 Schema)
+                                                                ↓
+                                                            P1.4b (Stage 2 Semantic)
 ```
+
+**注意**: P1.4a 实际依赖 P2.1 (loadParamRulesForType)。因 P2.1 是 P1.4a 的关键前置条件，**P2.1 视同 P1 优先级**。若 P2.1 遇到阻塞，整个 P1.4a/P1.4b 链条将停滞。
 
 ### Priority 2 (High)
 
@@ -109,7 +113,7 @@ P1.4 (validate_module_params 接线) → P1.5 (ParamType 对齐)
 | **B1: loadParamRulesForType() 未实现** | configs/param_rules/*.json 存在但 instantiateAll 不加载 | 添加静态函数：根据 module_type 加载对应 JSON 文件 → 反序列化为 ParamRules | `src/core/module_factory.cc` | **P2.1** |
 | **B2: derive_expr 未评估** | evaluate_derive_expr() 实现但 instantiateAll 不调用 | 在参数验证循环后添加 derive_expr 评估逻辑 | `src/core/module_factory.cc` | **P2.2** |
 | **B3: set_config() 无异常处理** | instantiateAll 中直接调用 obj->set_config()，无 try-catch | 添加 try-catch ParamValidationError/std::exception | `src/core/module_factory.cc` | **P2.3** |
-| **C6: Python PARAM-01/02 / T3.4-06** | validator.py 只有 VALID/PORT 检查，无参数验证；build() 不自动调用 validator | 添加 validate_required_params() 和 validate_param_ranges()，从 configs/param_rules/*.json 加载规则；ConfigBuilder.build() 自动调用 validator | `cpptlm_config/validator.py`, `cpptlm_config/builder.py` | **P2.4** |
+| **C6: Python PARAM-01/02 / T3.4-06** | validator.py 只有 VALID/PORT 检查，无参数验证；build() 不自动调用 validator | 添加 validate_required_params() 和 validate_param_ranges()，从 configs/param_rules/*.json 加载规则；ConfigBuilder.build() 自动调用 validator<br>⚠️ **跨阶段兼容**: Python 验证器须同时处理 `"INTEGER"` 和 `"INT"` 两种类型字符串。3.5a 阶段 JSON 使用 `"INTEGER"`，3.5b P1.5 将改为 `"INT"`。Python 侧应统一转换为大写后匹配 | `cpptlm_config/validator.py`, `cpptlm_config/builder.py` | **P2.4** |
 | **T3.3-11: test_param_parser.cc 缺失** | ParamParser 类已实现但无单元测试覆盖 | 创建测试文件覆盖 parse() 各类型、validate()、evaluate_derive_expr()；**添加 verify_param_parser_variant 测试：验证 ParamParseResult variant 覆盖 int64_t, uint64_t, double, string, bool** | `test/test_param_parser.cc` | **P2.5** |
 | **T3.4-07~10: 高级验证工具** | Phase 3.4 plan 定义但未实现 StaticLoadAnalyzer, PathTracer, ConfigLinter | 创建 `analyzer.py`, `path_tracer.py`, `linter.py`，每个包含相应验证逻辑和测试 | `cpptlm_config/analyzer.py`, `path_tracer.py`, `linter.py`, `tests/` | **P2.6** |
 | **T3.2-08 NICTLM port_groups 测试** | PortGroupBundleType/PortGroupMember 已存在于 port_types.hh (10 matches)，需验证测试覆盖 | 检查现有测试是否覆盖 port_groups 解析逻辑，如未覆盖则添加测试 | `include/core/port_types.hh`, `test/` | **P2.7** |
@@ -145,19 +149,20 @@ P1.1 (ConfigBuilder) ──→ P1.2 (ModuleSpec/ConnectionSpec) ──→ P1.3 (
        │                        │
        ↓                        ↓
 P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
-                               ↓
-                          P2.7 (port_groups tests)
-                               ↓
-                          P2.8 (Verification tests)
-                               ↓
-                          P2.9 (Credit Flow)
-                               ↓
-                         P2.10 (Credit Flow tests)
+                                ↓
+                           P2.7 (port_groups tests)
+                                ↓
+                           P2.8 (Verification tests)
+                                ↓
+                           P2.9 (Credit Flow)
+                                ↓
+                          P2.10 (Credit Flow tests)
 ```
 
-**执行顺序**: P1.1 → P1.2 → P1.3 → **P2.4 → P2.6** → P2.7 → P2.8 → P2.9 → P2.10 → P3.4
+**执行顺序**: P1.1 → P1.2 → P1.2b → P1.3 → **P2.4 → P2.6** → P2.7 → P2.8 → **P2.9 → P2.10** → P3.4
 - P2.4 (PARAM-01/02) 必须在 P2.6 (高级验证工具) 之前，因为 P2.6 依赖 validator.py 的基础验证能力
-- P2.7~P2.10 可并行执行
+- P2.9 (Credit Flow) 必须在 P2.10 (Credit Flow 测试) 之前
+- P2.7~P2.8 可并行执行
 
 - [ ] **Task P1.1**: 创建 `cpptlm_config/builder.py` — ConfigBuilder 类
   - 方法: `__init__(name, description, metadata)`, `add_module(ModuleSpec)`, `add_connection(ConnectionSpec)`, `set_extends(path)`, `build() → ConfigSchema`, `save(path) → None`
@@ -165,9 +170,15 @@ P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
   - **文件**: `cpptlm_config/builder.py`
 
 - [ ] **Task P1.2**: 在 `cpptlm_config/models.py` 添加 ModuleSpec / ConnectionSpec
-  - `ModuleSpec`: name, type(ModuleType), params(dict), port_spec(Optional[ModulePortSpec])
+  - `ModuleSpec`: name, type(ModuleType), params(dict), port_spec(Optional[ModulePortSpec]), ports(list[PortSpec]=[]), port_groups(list[PortGroupSpec]=[])
   - `ConnectionSpec`: src, dst, latency, bandwidth(Optional[int])
   - **文件**: `cpptlm_config/models.py`
+
+- [ ] **Task P1.2b**: 更新 `cpptlm_config/__init__.py` 导出新类
+  - 添加导出: ConfigBuilder, ModuleSpec, ConnectionSpec
+  - 确保 `from cpptlm_config import ConfigBuilder, ModuleSpec, ModuleType` 可工作
+  - examples/ 和 topology_adapter.py 均依赖此导出
+  - **文件**: `cpptlm_config/__init__.py`
 
 - [ ] **Task P1.3**: 为 ConfigSchema 添加 `save()` 和 `to_json_dict()`
   - `to_json_dict() → dict`: 序列化为 C++ ModuleFactory 可解析的 JSON 格式
@@ -198,11 +209,22 @@ P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
   - 端口组/可视化/SemVer 验证测试
   - **文件**: `cpptlm_config/tests/test_validator.py`, `test_verification.py`
 
+- [ ] **Task CI-C1**: 更新 `.github/workflows/ci.yml` 运行 Python 测试
+  - 在 CI 中添加 Python 测试步骤:
+    ```yaml
+    - name: Python tests
+      run: |
+        pip install -e cpptlm_config/
+        python3 -m pytest test/python/ cpptlm_config/tests/ -v
+    ```
+  - **文件**: `.github/workflows/ci.yml`
+
 - [ ] **Task P2.9**: Credit Flow 自动计算 (T3.3-07~08)
   - 在 builder.py 实现 `credit_capacity = max(4, node_count * 2)` 公式
   - 支持手动覆盖 (`ConnectionSpec.credit_flow`)
   - 扩展 ConnectionSpec 支持 credit_flow 字段
   - **文件**: `cpptlm_config/builder.py`, `models.py`
+  - ⚠️ **公式确认**: 当前计划使用 `max(4, node_count * 2)`。docs/plan/phase3.3-config-enhancement-plan.md §3.5 曾建议 `buffer_size × port_count / avg_latency`。**正式实施前需确认最终公式**。
 
 - [ ] **Task P2.10**: Python credit flow 测试 (T3.3-12)
   - 15+ 测试覆盖自动计算/手动覆盖/边界值
@@ -210,6 +232,20 @@ P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
 
 - [ ] **Task P3.4**: 更新 `configs/param_rules/router_tlm.json` 添加 derive_expr
   - 为 `vc_count` 添加 `"derive_expr": "(mesh_x >= 4) ? 8 : 4"`
+  - ⚠️ **语法验证**: 确保表达式与 `evaluate_derive_expr()` 实现一致 (条件: `>= <= == != > <`; 不支持 `&& || *` 等运算)
+  - 运行以下命令验证:
+    ```bash
+    python3 -c "
+    from cpptlm_config.validator import TopologyValidator
+    # 验证 derive_expr 语法不与 C++ 解析器冲突
+    # C++ 实现仅支持: (cond) ? v1 : v2
+    # cond 支持: identifier [>=|<=|==|!=|>|<] literal
+    import re
+    expr = '(mesh_x >= 4) ? 8 : 4'
+    assert re.match(r'^\\(\s*\w+\s*[><=!]+\s*\w+\s*\\)\\s*\\?\\s*\\w+\\s*:\\s*\\w+$', expr) is not None
+    print(f'derive_expr syntax valid: {expr}')
+    "
+    ```
   - **文件**: `configs/param_rules/router_tlm.json`
 
 - [ ] **验证**: 运行所有 Python 示例和测试
@@ -227,6 +263,10 @@ P2.4 (Python PARAM-01/02)   P2.6 (Advanced validator tools)
 > **前置条件**: 构建系统修复 (NAS I/O 问题解决或本地编译环境可用)  
 > **时间预估**: 1-2 天  
 > **构建依赖**: 是 (所有任务需编译验证)  
+> **退出策略**: 若构建系统在 2 周内无法恢复，则:
+>   1. 宣布 Phase 3.x **Python Complete** (3.5a + 3.5c 独立交付)
+>   2. 将 3.5b 任务移入 "Phase 3.5b (Deferred: Awaiting Build Fix)" 跟踪
+>   3. 无需回滚 — 当前 C++ 代码已在 `main` 分支稳定工作，3.5b 是纯增量增强 
 
 ```
 依赖图:
@@ -242,12 +282,14 @@ P2.5 (test_param_parser)                                  P1.4b (Stage 2 Semanti
 - [ ] **Task P1.5**: 对齐 ParamType 枚举与 ADR-X.10
   - `include/core/param_rules.hh`: INTEGER→INT, FLOAT→删除, BOOLEAN→BOOL, ENUM→删除; 新增 UNSIGNED, ADDRESS, LATENCY
   - `src/core/param_parser.cc`: 更新 parse() switch，添加 parse_address()，更新 parse_latency()
+  - 验证 `ParamParseResult` variant 包含 `uint64_t` 类型 (ADR-X.10 决策 6)
   - `configs/param_rules/*.json`: "INTEGER" → "INT"
+  - `test/test_param_rules.cc`: 更新所有使用旧枚举值的测试用例 (否则编译失败)
   - **前置 grep** (枚举所有受影响位置，确保更新完整):
     ```bash
-    grep -rn "INTEGER\|FLOAT\|BOOLEAN\|ENUM" configs/param_rules/ test/ include/ src/ --include="*.json" --include="*.cc" --include="*.hh"
+    grep -rn "INTEGER\|FLOAT\|BOOLEAN\|ENUM" configs/param_rules/ test/ include/ src/ cpptlm_config/ --include="*.json" --include="*.cc" --include="*.hh" --include="*.py"
     ```
-  - **风险**: 破坏性变更，需同步更新所有引用点（`configs/param_rules/router_tlm.json`, `nic_tlm.json` 当前使用 "INTEGER"）
+  - **风险**: 破坏性变更，需同步更新所有引用点（`configs/param_rules/router_tlm.json`, `nic_tlm.json` 当前使用 "INTEGER"；`test/test_param_rules.cc` 使用旧枚举值）
   - **文件**: `include/core/param_rules.hh`, `src/core/param_parser.cc`, `configs/param_rules/router_tlm.json`, `configs/param_rules/nic_tlm.json`
 
 - [ ] **Task P2.1**: 实现 `loadParamRulesForType()`
@@ -370,6 +412,29 @@ P2.5 (test_param_parser)                                  P1.4b (Stage 2 Semanti
 | param_rules JSON 加载 | 构造含 RouterTLM 的 config，instantiateAll 返回 true | 模块成功实例化 |
 | Step 2.5 参数传递 | 用含至少 2 种模块类型 (RouterTLM + NICTLM) 的 JSON config 验证 set_config() 生效<br>`python3 -c "from cpptlm_config.builder import ConfigBuilder, ModuleSpec; from cpptlm_config.types import ModuleType; b = ConfigBuilder('test'); b.add_module(ModuleSpec(name='r0', type=ModuleType.ROUTER_TLM, params={'node_x':0,'node_y':0,'mesh_x':2,'mesh_y':2})); b.add_module(ModuleSpec(name='n0', type=ModuleType.NIC_TLM, params={'node_id':0,'mesh_x':2,'mesh_y':2})); b.build().save('/tmp/test_multi_type.json'); print('OK')"`<br>再将生成的 JSON 传入 C++ 仿真验证</td> | Python 生成 OK + C++ 实例化成功 (ARCH-010 §8) |
 | derive_expr 评估 | mesh_x=4 时 vc_count 自动设为 8 | 验证 JSON 中 vc_count=8 |
+
+---
+
+## Phase 3.x Completion Definition
+
+### Minimum Viable (3.5a + 3.5c — Python Complete)
+当构建系统不可用或 3.5b 被推迟时，以下标准定义 "Phase 3.x Python Complete":
+
+- [ ] 所有 Python examples 可运行 (`mesh_2x2.py`, `mesh_4x4_validated.py`, `hierarchical.py`)
+- [ ] ConfigBuilder 生成有效 JSON 配置 (可被 C++ ModuleFactory 加载)
+- [ ] TopologyValidator 能捕获 PARAM-01/02 (required params/range) 错误
+- [ ] cpptlm_config Python 单元测试全部通过 (`pytest test/python/ cpptlm_config/tests/`)
+- [ ] 所有计划文档更新完成 (docs/plan/ 状态同步)
+
+### Full Completion (3.5a + 3.5b + 3.5c)
+- [ ] 所有 Minimum Viable 标准
+- [ ] ParamType 枚举与 ADR-X.10 完全对齐
+- [ ] validate_module_params() 在 instantiateAll 中被调用 (非死代码)
+- [ ] set_config() 有 try-catch 处理 ParamValidationError
+- [ ] C++ 编译零错误
+- [ ] C++ param 测试全部通过 (`ctest --output-on-failure`)
+- [ ] GitHub Actions CI 绿色通过 (C++ 测试 + Python 测试)
+- [ ] 所有 6 份计划文档状态同步完成
 
 ---
 
