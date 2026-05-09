@@ -11,6 +11,7 @@
 #include "framework/bidirectional_port_adapter.hh"
 #include "metrics/stats.hh"
 #include <array>
+#include <memory>
 #include <queue>
 #include <vector>
 #include <unordered_map>
@@ -168,8 +169,8 @@ public:
     void tick() override;
 
     // ========== 路由算法 ==========
-    void set_routing_algorithm(RoutingAlgorithm* algo);
-    RoutingAlgorithm* routing_algorithm() const { return routing_algo_; }
+    void set_routing_algorithm(std::unique_ptr<RoutingAlgorithm> algo);
+    RoutingAlgorithm* routing_algorithm() const { return routing_algo_.get(); }
 
     // ========== 拓扑配置 ==========
     unsigned node_x() const { return node_x_; }
@@ -250,7 +251,7 @@ private:
     unsigned mesh_y_ = DEFAULT_MESH_Y;
 
     // ========== 路由算法 ==========
-    RoutingAlgorithm* routing_algo_ = nullptr;
+    std::unique_ptr<RoutingAlgorithm> routing_algo_;
 
     // ========== 输入缓冲区 [port][vc] ==========
     std::array<std::array<std::queue<RouterFlit>, NUM_VCS>, NUM_PORTS> input_buffer_;

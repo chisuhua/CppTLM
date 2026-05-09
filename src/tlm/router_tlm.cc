@@ -53,7 +53,7 @@ RouterTLM::RouterTLM(const std::string& name, EventQueue* eq,
       stats_packets_forwarded_(stat_group_.addScalar("packets_forwarded", "Total packets forwarded", "packets")),
       stats_total_hops_(stat_group_.addScalar("total_hops", "Total hop count", "hops")),
       stats_latency_(stat_group_.addDistribution("latency", "Packet latency distribution", "cycle")) {
-    routing_algo_ = new XYRouting();
+    routing_algo_ = std::make_unique<XYRouting>();
 
     for (unsigned p = 0; p < NUM_PORTS; ++p) {
         for (unsigned v = 0; v < NUM_VCS; ++v) {
@@ -64,7 +64,7 @@ RouterTLM::RouterTLM(const std::string& name, EventQueue* eq,
 }
 
 RouterTLM::~RouterTLM() {
-    delete routing_algo_;
+    // routing_algo_ uses unique_ptr, automatic cleanup
 }
 
 void RouterTLM::on_config_loaded() {
@@ -100,11 +100,8 @@ void RouterTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {
 // 路由算法设置
 // ============================================================================
 
-void RouterTLM::set_routing_algorithm(RoutingAlgorithm* algo) {
-    if (routing_algo_) {
-        delete routing_algo_;
-    }
-    routing_algo_ = algo;
+void RouterTLM::set_routing_algorithm(std::unique_ptr<RoutingAlgorithm> algo) {
+    routing_algo_ = std::move(algo);
 }
 
 // ============================================================================
