@@ -1,14 +1,8 @@
 # test/ — 测试套件
 
-**域**: 单元测试 + 集成测试（43 文件，Catch2 v3.5.0）
-**框架**: Catch2（FetchContent v3.5.0，非 GTest）
-**可执行文件**: `./build/bin/cpptlm_tests`
-
-## 测试命名约定
-
-- **文件**: `test_<feature>.cc` (下划线分隔)
-- **标签**: `[phaseX]` 按阶段分组, `[chstream]` 标记 Stream 集成, `[crossbar]` 标记 Crossbar
-- **宏**: `TEST_CASE("描述", "[tag]")`, `SECTION("子测试")`, `CHECK`/`REQUIRE` 断言
+**域**: 单元测试 + 集成测试（C++ Catch2 v3.7.0 + Python pytest）
+**框架**: Catch2（预编译 2 文件版本）
+**可执行文件**: `./build/bin/cpptlm_tests` (C++) + `python3 -m pytest test/python/` (Python)
 
 ## 测试分类
 
@@ -18,6 +12,7 @@
 | ChStream 集成 | 2 | `[chstream]` | StreamAdapter/端口握手 |
 | TLM 模块测试 | 3 | `[phase6]` | CacheTLM/CrossbarTLM/MemoryTLM |
 | 基础功能 | ~25 | 无/通用 | Packet, Pool, Config, Regex, Port |
+| Python 工具测试 | 5 | `pytest` | validator, analyzer, linter, path_tracer |
 | 跳过/禁用 | 4 | `.disabled` | 文件名尾缀 `.cc.disabled` (非编译) |
 
 ## 已知跳过测试
@@ -46,16 +41,26 @@ Pool/Wildcard/Connection 相关测试失败 — Phase 0-6 未修改这些代码
 ## 运行测试
 
 ```bash
-./build/bin/cpptlm_tests                    # 全部
+# C++ 测试
+./build/bin/cpptlm_tests                    # 全部 (528 用例, 14493 断言)
 ./build/bin/cpptlm_tests "[chstream]"       # ChStream 相关 (84 用例)
-./build/bin/cpptlm_tests "[phase6]"         # Phase 6 端到端 (9 用例, 53 断言)
+./build/bin/cpptlm_tests "[phase6]"         # Phase 6 端到端 (9 用例)
 ./build/bin/cpptlm_tests "[crossbar]"       # Crossbar 相关 (16 用例)
 ./build/bin/cpptlm_tests ~"[crossbar]"      # 排除 Crossbar
+
+# Python 测试
+python3 -m pytest test/python/ -v           # 87 用例
+
 ctest --test-dir build --output-on-failure  # CTest 方式
 ```
 
 ## 约定
 
-- 添加新测试文件时：文件放 `test/test_<feature>.cc`，CMake 自动通过 `file(GLOB test_*.cc)` 包含
-- 测试使用 Catch2 v3.5.0，`TEST_CASE`/`SECTION`/`CHECK`/`REQUIRE`/`WARN`
+- 添加新 C++ 测试文件时：文件放 `test/test_<feature>.cc`，CMake 自动通过 `file(GLOB test_*.cc)` 包含
+- 添加新 Python 测试文件时：文件放 `test/python/test_<feature>.py`
+- 测试使用 Catch2 v3.7.0，`TEST_CASE`/`SECTION`/`CHECK`/`REQUIRE`/`WARN`
 - Phase 集成测试按顺序编号（Phase 2-8），每个 Phase 对应独立 .cc 文件
+
+## 更新记录
+
+- **2026-05-09**: v1.1 — 更新 Catch2 版本至 v3.7.0，添加 Python 测试分类
