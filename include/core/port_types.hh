@@ -21,11 +21,11 @@ enum class PortRole {
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PortRole, {
-    {PortRole::INITIATOR, "initiator"},
-    {PortRole::TARGET, "target"},
-    {PortRole::BI_DIRECTIONAL, "bi_directional"},
-    {PortRole::NETWORK, "network"},
-    {PortRole::PE, "pe"},
+    {PortRole::INITIATOR, "INITIATOR"},
+    {PortRole::TARGET, "TARGET"},
+    {PortRole::BI_DIRECTIONAL, "BI_DIRECTIONAL"},
+    {PortRole::NETWORK, "NETWORK"},
+    {PortRole::PE, "PE"},
 })
 
 // Bundle 类型枚举 (L2 匹配检查)
@@ -37,10 +37,10 @@ enum class BundleType {
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(BundleType, {
-    {BundleType::CACHE_REQ, "cache_req"},
-    {BundleType::CACHE_RESP, "cache_resp"},
-    {BundleType::NOC_FLIT, "noc_flit"},
-    {BundleType::GENERIC, "generic"},
+    {BundleType::CACHE_REQ, "CACHE_REQ"},
+    {BundleType::CACHE_RESP, "CACHE_RESP"},
+    {BundleType::NOC_FLIT, "NOC_FLIT"},
+    {BundleType::GENERIC, "GENERIC"},
 })
 
 // 端口组 bundle 类型 (m2 共识)
@@ -51,9 +51,9 @@ enum class PortGroupBundleType {
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PortGroupBundleType, {
-    {PortGroupBundleType::SINGLE, "single"},
-    {PortGroupBundleType::BUNDLE_MASTER, "bundle_master"},
-    {PortGroupBundleType::BUNDLE_SLAVE, "bundle_slave"}
+    {PortGroupBundleType::SINGLE, "SINGLE"},
+    {PortGroupBundleType::BUNDLE_MASTER, "BUNDLE_MASTER"},
+    {PortGroupBundleType::BUNDLE_SLAVE, "BUNDLE_SLAVE"}
 })
 
 // 端口规格结构体
@@ -140,7 +140,8 @@ inline void to_json(nlohmann::json& j, const ModulePortSpec& m) {
 }
 
 inline void from_json(const nlohmann::json& j, ModulePortSpec& m) {
-    j.at("module_name").get_to(m.module_name);
+    // module_name is optional - may not exist if port_spec is defined inline
+    m.module_name = j.value("module_name", "");
     if (j.contains("ports")) j.at("ports").get_to(m.ports);
     if (j.contains("port_groups")) j.at("port_groups").get_to(m.port_groups);
     if (j.contains("aliases")) j.at("aliases").get_to(m.aliases);
