@@ -303,6 +303,7 @@ void RouterTLM::stage_switch_traversal() {
 
         // 更新 hop 计数
         flit.bundle.hops.write(flit.bundle.hops.read() + 1);
+        flit.bundle.src_port.write(out_port);
 
         // 写入 pending link 队列 (LT 阶段才会真正发送到 resp_out_)
         pending_link_.push({flit.bundle, out_port});

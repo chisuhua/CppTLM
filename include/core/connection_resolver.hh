@@ -49,7 +49,7 @@ public:
     std::vector<PortCreationInfo> resolveConnections(
         const nlohmann::json& connections,
         const std::unordered_map<std::string, SimModule*>& module_instances,
-        std::function<bool(const std::string&, const std::string&, size_t, bool)> createPortFunc
+        std::function<bool(const std::string&, const std::string&, size_t, bool)>
     ) const;
 
 private:
