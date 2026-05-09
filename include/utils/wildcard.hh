@@ -25,8 +25,9 @@ public:
         try {
             std::regex re(regex_str);
             return std::regex_match(str, re);
-        } catch (...) {
-            return pattern == str;
+        } catch (const std::regex_error& e) {
+            // Invalid regex pattern (e.g., unbalanced brackets) - return false instead of silently wrong match
+            return false;
         }
     }
 };
