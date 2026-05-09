@@ -63,10 +63,6 @@ RouterTLM::RouterTLM(const std::string& name, EventQueue* eq,
     }
 }
 
-RouterTLM::~RouterTLM() {
-    // routing_algo_ uses unique_ptr, automatic cleanup
-}
-
 void RouterTLM::on_config_loaded() {
     const auto& cfg = get_config();
     if (cfg.contains("node_x")) {

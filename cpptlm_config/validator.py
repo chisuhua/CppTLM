@@ -192,7 +192,7 @@ class TopologyValidator:
             src_type = module_types.get(src_mod, '')
             dst_type = module_types.get(dst_mod, '')
 
-            if 'Router' in src_type and 'NetworkInterface' in dst_type:
+            if 'Router' in src_type and 'NICTLM' in dst_type:
                 if src_port and dst_port:
                     try:
                         if not (int(src_port) == 4 and int(dst_port) == 1):
@@ -205,7 +205,7 @@ class TopologyValidator:
                     except ValueError:
                         pass
 
-            if 'NetworkInterface' in src_type and 'Router' in dst_type:
+            if 'NICTLM' in src_type and 'Router' in dst_type:
                 if src_port and dst_port:
                     try:
                         if not (int(src_port) == 1 and int(dst_port) == 4):
