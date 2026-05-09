@@ -24,6 +24,7 @@ using json = nlohmann::json;
 
 class EventQueue;
 class SimModule;
+class PortPair;
 namespace cpptlm { class StreamAdapterBase; }
 
 // 分离创建函数类型
@@ -37,6 +38,7 @@ private:
     std::vector<std::unique_ptr<cpptlm::StreamAdapterBase>> stream_adapters_;
     std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> ch_initiator_ports_;
     std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> ch_target_ports_;
+    std::vector<std::unique_ptr<PortPair>> port_pairs_;
 
     // 性能指标管理
     bool _metrics_enabled = false;
