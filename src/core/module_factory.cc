@@ -749,7 +749,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
                                 src_full.c_str(), dst_full.c_str());
                     } else {
                         processed_connections.insert(conn_key);
-                        new PortPair(src_port, dst_port);
+                        port_pairs_.push_back(std::make_unique<PortPair>(src_port, dst_port));
                         src_port->setDelay(latency);
                         DPRINTF(CONN, "[CONN] Connected %s -> %s (latency=%d)\n",
                                 src_full.c_str(), dst_full.c_str(), latency);
@@ -931,15 +931,13 @@ bool ModuleFactory::instantiateAll(const json& config) {
         processed_connections.insert(conn_key);
 
         // 请求路径: src → dst
-        auto* pp_req = new PortPair(ch_req_out[src_name][src_idx], ch_req_in[dst_name][dst_idx]);
-        (void)pp_req;  // suppress unused warning
+        port_pairs_.push_back(std::make_unique<PortPair>(ch_req_out[src_name][src_idx], ch_req_in[dst_name][dst_idx]));
         ch_req_out[src_name][src_idx]->setDelay(latency);
         DPRINTF(CONN, "[ChStream] Connected %s.req_out[%u] -> %s.req_in[%u] (latency=%d)\n", src_name.c_str(), src_idx, dst_name.c_str(), dst_idx, latency);
 
         // 响应路径: dst → src
         if (ch_resp_out.count(dst_name) > dst_idx && ch_resp_in.count(src_name) > src_idx) {
-            auto* pp_resp = new PortPair(ch_resp_out[dst_name][dst_idx], ch_resp_in[src_name][src_idx]);
-            (void)pp_resp;  // suppress unused warning
+            port_pairs_.push_back(std::make_unique<PortPair>(ch_resp_out[dst_name][dst_idx], ch_resp_in[src_name][src_idx]));
             ch_resp_out[dst_name][dst_idx]->setDelay(latency);
             DPRINTF(CONN, "[ChStream] Connected %s.resp_out[%u] -> %s.resp_in[%u] (latency=%d)\n", dst_name.c_str(), dst_idx, src_name.c_str(), src_idx, latency);
         }
