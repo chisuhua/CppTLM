@@ -27,9 +27,8 @@ std::string ConnectionResolver::findInternalPath(SimModule* module, const std::s
 std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
     const nlohmann::json& connections,
     const std::unordered_map<std::string, SimModule*>& module_instances,
-    std::function<bool(const std::string&, const std::string&, size_t, bool)> createPortFunc
+    std::function<bool(const std::string&, const std::string&, size_t, bool)>
 ) const {
-    (void)createPortFunc;  // suppress unused warning
     std::vector<PortCreationInfo> port_creations;
     
     for (const auto& conn : connections) {
@@ -39,9 +38,6 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
         
         std::string src_spec = conn["src"];
         std::string dst_spec = conn["dst"];
-        int latency = conn.value("latency", 0);
-        
-        (void)latency; // TODO: use latency for scheduling
         
         // Resolve source port
         auto [src_module_name, src_port_name] = parsePortSpec(src_spec);

@@ -66,7 +66,7 @@ void LinkTLM::tick() {
         DelayedFlit df;
         df.flit = flit;
         df.remaining_cycles = latency_;
-        df.src_port = 0;  // TODO: 从 flit 中获取源端口信息（需要拓扑解析支持）
+        df.src_port = flit.src_port.read();
         delay_queue_.push(df);
 
         // 启动 credit 返回延迟（与 flit 延迟相同方向，但反向传递）

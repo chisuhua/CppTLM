@@ -43,6 +43,7 @@ struct NoCFlitBundle : public bundle_base {
 
     // ========== 请求/响应区分 (v2.1 统一类型) ==========
     ch_uint<8>  flit_category;   // 0=REQUEST, 1=RESPONSE
+    ch_uint<8>  src_port;        // 上游路由器输出端口 (用于 credit 返回路由)
     ch_bool     is_write;         // 读/写标记 (仅 REQUEST 使用)
     ch_bool     is_ok;            // 成功/失败 (仅 RESPONSE 使用)
     ch_uint<8>  error_code;      // 错误码 (0=OK)
@@ -95,6 +96,7 @@ struct NoCFlitBundle : public bundle_base {
         flit.flit_index.write(0);
         flit.flit_count.write(total_flits);
         flit.hops.write(0);
+        flit.src_port.write(0);
         flit.flit_category.write(CATEGORY_REQUEST);
         flit.is_write.write(write);
         flit.data.write(data_word);
@@ -119,6 +121,7 @@ struct NoCFlitBundle : public bundle_base {
         flit.flit_index.write(0);
         flit.flit_count.write(total_flits);
         flit.hops.write(0);
+        flit.src_port.write(0);
         flit.flit_category.write(CATEGORY_RESPONSE);
         flit.is_ok.write(ok);
         flit.error_code.write(err);
