@@ -21,22 +21,6 @@ using tlm_generic_payload = tlm::tlm_generic_payload;
 
 // ========== SimObject 回归测试 ==========
 
-// TEST_CASE("REGRESSION: SimObject 基础功能", "[regression][phase2]") {
-//     EventQueue eq;
-//     SimObject* obj = new SimObject("test", &eq) {
-//         void tick() override {}
-//     };
-//     
-//     REQUIRE(obj->getName() == "test");
-//     REQUIRE(obj->getEventQueue() == &eq);
-//     REQUIRE(obj->is_initialized() == false);
-//     
-//     obj->init();
-//     REQUIRE(obj->is_initialized() == true);
-//     
-//     delete obj;
-// }
-
 TEST_CASE("REGRESSION: SimObject 层次化复位", "[regression][phase2]") {
     class TestModule : public SimObject {
     public:
