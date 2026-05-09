@@ -218,7 +218,9 @@ TEST_CASE("Phase 3.2: port_specs loaded and passed to check_port_compatibility",
                     "module_name": "xbar",
                     "ports": [
                         { "name": "req_in", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 },
-                        { "name": "req_out", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 }
+                        { "name": "req_out", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 },
+                        { "name": "req_in2", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 },
+                        { "name": "req_out2", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 }
                     ]
                 }
             }
