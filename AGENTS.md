@@ -1,9 +1,9 @@
 # CppTLM — C++ TLM Hybrid Simulation Framework
 
-**Generated:** 2026-04-30
-**Commit:** fc13083 — docs: update TGMS implementation plans for Phase 1-3 completion
+**Generated:** 2026-05-09
+**Commit:** 4819184 — fix(router): use = default for destructor
 **Branch:** main
-**Version:** 2.0.3
+**Version:** 2.0.4
 
 ## OVERVIEW
 
@@ -32,14 +32,16 @@ CppTLM/
 │   ├── cpu_main.cpp      # CPU 模式入口
 │   ├── traffic_main.cpp  # 流量仿真入口
 │   └── sc_main.cpp       # SystemC sc_main 入口
-├── test/            # 测试（Catch2 v3.5.0，43 文件）
+├── test/            # 测试（Catch2 v3.7.0，43 文件）
+├── test/python/     # Python 单元测试（analyzer, linter, path_tracer 等）
 ├── configs/         # JSON 拓扑配置（支持端口索引语法 "xbar.0"）
 ├── docs/            # 架构文档、ADR、实现计划
 ├── docs-archived/   # 已归档文档
 ├── docs-pending/    # 待整理文档
 ├── plans/           # 实施计划 JSON/Markdown
 ├── samples/         # 示例拓扑
-├── scripts/         # 工具脚本（format.sh 等）
+├── scripts/         # 工具脚本（format.sh, linter.py, topology_validator.py 等）
+├── cpptlm_config/   # Python 配置包（validator.py, topology_adapter.py, builder.py）
 ├── .github/
 │   └── workflows/
 │       └── ci.yml   # GitHub Actions CI/CD 工作流
@@ -173,7 +175,8 @@ gh run watch
 - **DPRINTF 调试宏**: 全局日志 `DPRINTF(MODULE, "fmt", args...)`，编译期 `-DDEBUG_PRINT` 启用
 - **端口索引语法**: `parsePortSpec(name)` 从 `"module.port_index"` 解析模块名 + 端口号
 - **ChStreamArchitecture**: 分层通信协议 Bundle→StreamAdapter→ChStreamModuleBase→ChStreamPort
-- **Phase 驱动开发**: Phase 0-6 已完成，每个 Phase 对应独立测试文件
+- **Phase 驱动开发**: Phase 0-6 + Phase 3.x (Port管理/Python验证) 已完成，Phase 3.2 端口类型系统已实施
+- **债务修复状态**: P0 (PortPair泄漏/wildcard/死代码) 和 P1 (routing_algo/src_port) 已完成
 - **预编译头**: test/ 使用 catch_amalgamated.cpp（2 文件版本）而非 FetchContent 实时下载
 
 ## COMMANDS
