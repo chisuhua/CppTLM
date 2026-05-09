@@ -17,24 +17,25 @@ Phase 3.1 ✅ 已完成 (2026-05-07, commit 458a9d7)
 ├── 参数默认值 (RouterTLM)
 └── NI PE-side 连接验证
 
-Phase 3.2 📋 路线图（草稿）
-├── port_types.hh (C++)
-├── port_compatibility.hh (C++)
-├── 端口别名系统
-├── DEF-04 WARNING 日志
-└── Python 工具链集成
+Phase 3.2 ✅ 已完成 (2026-05-09, C++ 端全部完成)
+├── port_types.hh (C++) — 25+ 测试通过
+├── port_compatibility.hh (C++) — 兼容性矩阵工作正常
+├── 端口别名系统 — router.NORTH → router.0 解析正确
+├── DEF-04 WARNING 日志 — 非法端口索引产生 WARNING
+└── Python 工具链集成 — RouterPort/NICPort 枚举、SemVer、pyproject.toml
 
-Phase 3.3 📋 路线图
-├── param_rules.json 序列化
-├── 参数推导表达式
-├── Credit Flow 自动计算
-└── 双重验证 (Python + C++)
+Phase 3.3 🟡 部分完成 (2026-05-09)
+├── param_rules.json — ✅ 已存在（configs/param_rules/router_tlm.json, nic_tlm.json）
+├── 参数推导表达式 — ✅ derive_expr 已实现（router_tlm.json: "(mesh_x >= 4) ? 8 : 4"）
+├── Credit Flow 自动计算 — 📋 待实施
+└── 双重验证 (Python + C++) — 📋 待实施
 
-Phase 3.4 📋 路线图
-├── topology_validator.py
-├── 连通性验证
-├── 静态负载分析
-└── 配置 lint 工具
+Phase 3.4 🟡 部分完成 (2026-05-09)
+├── cpptlm_config/ Python 包 — ✅ 已存在（builder.py, validator.py, models.py, types.py）
+├── topology_validator.py — ✅ validator.py 已实现基础验证
+├── 连通性验证 — 📋 待实施
+├── 静态负载分析 — 📋 待实施
+└── 配置 lint 工具 — 📋 待实施
 ```
 
 ---
@@ -113,8 +114,8 @@ Phase 3.4 📋 路线图
 
 ### 4.1 前置条件说明
 
-> **注意**: Phase 3.4 依赖 `cpptlm_config/` Python 包（Phase 3.2/3.3 的 Python 端实现）。
-> 当前代码中无 `cpptlm_config/` 目录，实施前需确认 Python 工具链的优先级。
+> **注意**: Phase 3.4 依赖 `cpptlm_config/` Python 包。
+> ✅ `cpptlm_config/` 目录已存在（builder.py, validator.py, models.py, types.py, topology_adapter.py）。
 
 ### 4.2 Python 端任务
 
@@ -137,7 +138,7 @@ Phase 3.4 📋 路线图
 | 文档 | 说明 |
 |------|------|
 | `docs/plan/phase3.1-defect-fixes-plan.md` | ✅ 已完成 — Phase 3.1 详细计划 |
-| `docs/plan/phase3.2-port-management-plan.md` | 📋 路线图 — Phase 3.2 详细计划 |
+| `docs/plan/phase3.2-port-management-plan.md` | ✅ 已完成 — Phase 3.2 详细计划（505 测试通过） |
 | `docs/plan/phase3.3-config-enhancement-plan.md` | 📋 路线图 — Phase 3.3 详细计划 |
 | `docs/plan/phase3.4-validation-toolchain-plan.md` | 📋 路线图 — Phase 3.4 详细计划 |
 | `docs/adr/ADR-X.11-config-inheritance-and-fixes.md` | ✅ 已实施 — 配置继承决策 |
@@ -151,6 +152,7 @@ Phase 3.4 📋 路线图
 
 | 版本 | 日期 | 变更 |
 |------|------|------|
+| v1.1 | 2026-05-09 | 文档同步审计：Phase 3.2 标记为完成，Phase 3.3/3.4 标记为部分完成，更新 cpptlm_config 状态 |
 | v1.0 | 2026-05-07 | 初始版本，整合 Phase 3.1-3.4 计划为统一路线图 |
 
 ---

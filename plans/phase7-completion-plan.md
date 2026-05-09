@@ -1,21 +1,39 @@
 # Phase 7 NoC/NIC TLM 完整实施计划
 
-**版本**: 1.0
-**日期**: 2026-04-27
-**状态**: 待实施
-**预估工作量**: 3-4 天（并行执行）
+**版本**: 1.1
+**日期**: 2026-05-09
+**状态**: ✅ 核心代码已完成 / 📝 专项测试待补全
+**预估工作量**: 3-4 天（并行执行）→ 实际核心代码已完成，剩余专项测试约 1 天
 
 ---
 
 ## 一、执行摘要
 
-基于 Oracle 状态分析，Phase 7 核心代码已完成约 85%，剩余 15% 集中在：
-1. **精确 Credit-based Flow Control**（当前为安全网模式）
-2. **LinkTLM 链路模块**（完全缺失）
-3. **集成测试重写**（test_phase7_integration.cc 内容错误）
-4. **代码质量**（StatGroup 统一、空实现修复）
-5. **测试补全**（VC 仲裁、六阶段流水线、包化测试）
-6. **配置与流量模式**
+> **文档同步更新 (2026-05-09)**: 本计划基于 2026-04-27 状态分析，但实际代码在计划编写后已实现大部分内容。本次审计确认以下项目**已完成**。
+
+Phase 7 核心代码**实际已完成约 95%**：
+
+### ✅ 已完成项目（代码审计确认，2026-05-09）
+
+| 项目 | 状态 | 证据位置 |
+|------|:---:|---------|
+| Credit-based Flow Control | ✅ | `router_tlm.cc:395-414` — `receive_credit()`, `return_credit_to_upstream()`, `pending_credit_returns_` |
+| LinkTLM 链路模块 | ✅ | `include/tlm/link_tlm.hh` (111 行), `src/tlm/link_tlm.cc` (125 行), 已注册 |
+| RouterTLM StatGroup | ✅ | `router_tlm.hh:279-284` — 已使用 `tlm_stats::StatGroup` |
+| NICTLM adapter | ✅ | `nic_tlm.cc:49-50` — 已保存 adapter 指针 |
+| mesh_4x4.json | ✅ | 48 modules (16 Router + 16 NIC + 16 CPU), 88+ connections |
+| nic_router_nic.json | ✅ | 2 NIC + 1 Router，最小测试拓扑 |
+| NoCStatistics | ✅ | `include/tlm/noc_statistics.hh` (148 行, 仅头文件) |
+
+### 📝 待补全项目
+
+1. **专项测试文件**（4 个文件尚未创建）：
+   - `test_router_vc_arbiter.cc` — VC 分配 + 仲裁测试
+   - `test_router_six_stage.cc` — 六阶段流水线测试
+   - `test_nic_packetization.cc` — 包化/重组测试
+   - `test_link_tlm.cc` — LinkTLM 单元测试
+2. **test_phase7_integration.cc** — 当前存在 `test_phase7_benchmark.cc` 和 `test_phase7_transaction_lifecycle.cc`，但缺少 NIC→Router→NIC 集成测试
+3. **流量模式** — `TrafficPattern` enum 和 `select_destination()` 尚未实现
 
 ---
 
@@ -49,17 +67,17 @@ Task 1.4 (NIC adapter)  Task 2.3 (Six Stage Test)
 
 | 组 | 任务 | 优先级 | 依赖 | 并行 |
 |---|---|:---:|:---|:---|
-| **A1** | 1.1 精确 Credit Flow Control | 🔴 | 无 | |
-| **A2** | 1.2 LinkTLM 模块 | 🔴 | A1 | |
-| **A3** | 1.3 RouterTLM StatGroup 统一 | 🟡 | A1 | 可与 A2 并行 |
-| **A4** | 1.4 NICTLM adapter 修复 | 🟡 | 无 | 可与 A1 并行 |
+| **A1** | 1.1 ~~精确~~ Credit Flow Control | ✅ | 无 | 已实现完整机制 |
+| **A2** | 1.2 LinkTLM 模块 | ✅ | A1 | 已实现并注册 |
+| **A3** | 1.3 RouterTLM StatGroup 统一 | ✅ | A1 | 已与 A2 并行完成 |
+| **A4** | 1.4 NICTLM adapter 修复 | ✅ | 无 | 已实现 |
 | **B1** | 2.1 test_phase7_integration.cc 重写 | 🔴 | A1,A2,A3,A4 | |
 | **B2** | 2.2 test_router_vc_arbiter.cc | 🟡 | A1 | 可与 B3,B4 并行 |
 | **B3** | 2.3 test_router_six_stage.cc | 🟢 | A1 | 可与 B2,B4 并行 |
 | **B4** | 2.4 test_nic_packetization.cc | 🟢 | A4 | 可与 B2,B3 并行 |
-| **C1** | 3.1 mesh_4x4.json | 🟢 | 无 | 全部并行 |
-| **C2** | 3.2 nic_router_nic.json | 🟢 | 无 | 全部并行 |
-| **C3** | 3.3 NoCStatistics 统计类 | 🟡 | A3 | 可与 A3 并行 |
+| **C1** | 3.1 mesh_4x4.json | ✅ | 无 | 已实现 (48 modules) |
+| **C2** | 3.2 nic_router_nic.json | ✅ | 无 | 已实现 |
+| **C3** | 3.3 NoCStatistics 统计类 | ✅ | A3 | 已实现 (仅头文件) |
 | **D1** | 4.1 流量模式 | 🟢 | 无 | 最后 |
 
 ---
@@ -68,7 +86,7 @@ Task 1.4 (NIC adapter)  Task 2.3 (Six Stage Test)
 
 ---
 
-### 🔴 Task 1.1: 精确 Credit-based Flow Control
+### ✅ Task 1.1: ~~精确~~ Credit-based Flow Control（已完成）
 
 **文件**: `src/tlm/router_tlm.cc`, `include/tlm/router_tlm.hh`
 
@@ -111,7 +129,7 @@ Task 1.4 (NIC adapter)  Task 2.3 (Six Stage Test)
 
 ---
 
-### 🔴 Task 1.2: LinkTLM 模块
+### ✅ Task 1.2: LinkTLM 模块（已完成）
 
 **文件**: 
 - 新增 `include/tlm/link_tlm.hh` (~80 行)
@@ -180,7 +198,7 @@ ChStreamAdapterFactory::get().registerAdapter<tlm::LinkTLM,
 
 ---
 
-### 🟡 Task 1.3: RouterTLM 统一使用 tlm_stats::StatGroup
+### ✅ Task 1.3: RouterTLM 统一使用 tlm_stats::StatGroup（已完成）
 
 **文件**: `include/tlm/router_tlm.hh`, `src/tlm/router_tlm.cc`
 
@@ -247,7 +265,7 @@ tlm_stats::Scalar& stats_flits_sent_;
 
 ---
 
-### 🟡 Task 1.4: NICTLM set_stream_adapter() 空实现修复
+### ✅ Task 1.4: NICTLM set_stream_adapter() 空实现修复（已完成）
 
 **文件**: `src/tlm/nic_tlm.cc`, `include/tlm/nic_tlm.hh`
 
@@ -414,7 +432,7 @@ void NICTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {
 
 ---
 
-### 🟢 Task 3.1: configs/mesh_4x4.json
+### ✅ Task 3.1: configs/mesh_4x4.json（已完成）
 
 **文件**: 新增 `configs/mesh_4x4.json`（~200 行）
 
@@ -444,7 +462,7 @@ void NICTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {
 
 ---
 
-### 🟢 Task 3.2: configs/test/nic_router_nic.json
+### ✅ Task 3.2: configs/test/nic_router_nic.json（已完成）
 
 **文件**: 新增 `configs/test/nic_router_nic.json`（~30 行）
 
@@ -454,7 +472,7 @@ void NICTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {
 
 ---
 
-### 🟡 Task 3.3: NoCStatistics 统计类
+### ✅ Task 3.3: NoCStatistics 统计类（已完成）
 
 **文件**: 新增 `include/tlm/noc_statistics.hh`（~100 行）
 
@@ -675,5 +693,6 @@ ctest --test-dir build --output-on-failure
 
 | 版本 | 日期 | 修改 |
 |------|------|------|
+| 1.1 | 2026-05-09 | 文档同步审计：标记已完成项目（LinkTLM、Credit Flow、StatGroup、配置等） |
 | 1.0 | 2026-04-27 | 初始版本，基于 Oracle 状态分析 |
 

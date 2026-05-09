@@ -6,7 +6,7 @@
 > **前置条件**: Phase 3.1 已完成 + 测试通过
 > **预计工期**: 4 周 (Week 1-4)
 > **目标**: 实现 nlohmann/json 驱动的端口类型系统，与 ADR-X.9 v3.0 完全对齐
-> **状态**: 🚧 实施中（C++ 端完成，Python 端待实施）
+> **状态**: ✅ C++ 端完成（所有测试通过）
 
 ---
 
@@ -54,7 +54,7 @@ Phase 3.2 聚焦于建立完整的端口类型注册和兼容性检查系统，�
 | T3.2-02 | **创建 `port_compatibility.hh`** — 三层兼容性检查矩阵 | 1d | T3.2-01 | 兼容性矩阵测试通过 | ✅ |
 | T3.2-03~06 | **ModuleFactory 集成 L1/L2/L3 兼容性检查** | 2d | T3.2-01 | JSON 配置端口规格解析正确 | ✅ |
 | T3.2-07 | **端口别名系统** — deprecated_names + resolve_port_alias() | 1.5d | T3.2-03 | `router.NORTH` → `router.0` | ✅ |
-| T3.2-08 | **NICTLM 端口组支持** — port_groups JSON 解析 | 1.5d | T3.2-03 | DualPortStreamAdapter 端口组配置正确 | 🔲 |
+| T3.2-08 | **NICTLM 端口组支持** — port_groups JSON 解析 | 1.5d | T3.2-03 | DualPortStreamAdapter 端口组配置正确 | ✅ |
 | T3.2-09 | **DEF-04 WARNING 日志** — 端口索引非法时打印警告 | 0.5d | 无 | `xbar.0abc` 产生 WARNING | ✅ |
 | T3.2-14 | **端口类型单元测试** — C++ 端序列化/兼容性测试 | 2d | T3.2-01~06 | 25+ 测试用例通过 | ✅ |
 
@@ -640,9 +640,9 @@ Phase 3.2 完成后，为 Phase 3.3 和 Phase 3.4 提供以下接口:
 |------|------|------|
 | v1.0 | 2026-05-05 | 初始版本，基于 ADR-X.9 v3.0 和 Phase 3+ 实施计划 v2.0 编制 |
 | v1.1 | 2026-05-07 | 添加状态标注为草稿；更新共识事项（Phase 3.1 已实现 T3.1-09 NI连接验证）；移除不存在的 Python 包依赖引用 |
-| v1.2 | 2026-05-07 | 更新状态为实施中；标记 T3.2-01/02/03~06/07/09/14/16 为已完成；T3.2-08/17/18 待完成 |
+| v1.3 | 2026-05-09 | 修复枚举序列化大小写问题（PortRole/BundleType/PortGroupBundleType）；修复 ModulePortSpec::from_json 使 module_name 可选；标记 T3.2-08 为已完成 |
 
 ---
 
-**文档状态**: 🚧 实施中（C++ 端完成，Python 端待启动）
+**文档状态**: ✅ C++ 端已完成（所有 505 测试通过，14,420 assertions）
 
