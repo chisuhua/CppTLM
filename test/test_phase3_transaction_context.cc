@@ -13,7 +13,7 @@
 
 using tlm::tlm_generic_payload;
 
-TEST_CASE("TransactionContextExt 基础构造", "[transaction][ext]") {
+TEST_CASE("P3: TransactionContextExt 基础构造", "[transaction][ext]") {
     TransactionContextExt ext;
     
     SECTION("默认值") {
@@ -37,7 +37,7 @@ TEST_CASE("TransactionContextExt 基础构造", "[transaction][ext]") {
     }
 }
 
-TEST_CASE("TransactionContextExt clone 方法", "[transaction][ext]") {
+TEST_CASE("P3: TransactionContextExt clone 方法", "[transaction][ext]") {
     TransactionContextExt original;
     original.transaction_id = 100;
     original.parent_id = 0;
@@ -65,7 +65,7 @@ TEST_CASE("TransactionContextExt clone 方法", "[transaction][ext]") {
     
 }
 
-TEST_CASE("TransactionContextExt copy_from 方法", "[transaction][ext]") {
+TEST_CASE("P3: TransactionContextExt copy_from 方法", "[transaction][ext]") {
     TransactionContextExt source;
     source.transaction_id = 200;
     source.parent_id = 100;
@@ -114,7 +114,7 @@ TEST_CASE("TransactionContextExt 分片判断", "[transaction][ext]") {
     }
 }
 
-TEST_CASE("便捷函数测试", "[transaction][ext]") {
+TEST_CASE("P3: 便捷函数测试", "[transaction][ext]") {
     tlm_generic_payload payload;
     
     SECTION("get_transaction_context - 未设置") {

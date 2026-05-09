@@ -22,6 +22,9 @@
 
 ## 已知跳过测试
 
+> 历史遗留：以下 `.cc.disabled` 文件已从磁盘删除，文档待清理。
+
+历史记录（已移除）：
 - `test_config_loader.cc.disabled` — JSON 配置加载（待修复）
 - `test_end_to_end_delay.cc.disabled` — 端对端延迟验证（待修复）
 - `test_latency_injection.cc.disabled` — 延迟注入（待修复）

@@ -65,7 +65,7 @@ TEST_CASE("SimObject 层次化复位", "[module][reset]") {
     delete child2;
 }
 
-TEST_CASE("SimObject 非层次化复位", "[module][reset]") {
+TEST_CASE("Phase5: SimObject 非层次化复位", "[module][reset]") {
     EventQueue eq;
     auto* parent = new MockResettableModule("parent", &eq);
     auto* child = new MockResettableModule("child", &eq);
@@ -83,7 +83,7 @@ TEST_CASE("SimObject 非层次化复位", "[module][reset]") {
     delete child;
 }
 
-TEST_CASE("SimObject 快照功能", "[module][snapshot]") {
+TEST_CASE("Phase5: SimObject 快照功能", "[module][snapshot]") {
     EventQueue eq;
     MockResettableModule module("test", &eq);
     module.reset_count = 5;
