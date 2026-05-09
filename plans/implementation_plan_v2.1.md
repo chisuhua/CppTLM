@@ -749,11 +749,20 @@ class MultiPortStreamAdapter : public StreamAdapterBase {
 
 ---
 
-### Phase 7: 零债务清偿（完成）
+### Phase 7: NoC/NIC TLM 模块（核心代码已完成）
 
-**目标**: 清除所有技术债，修复历史失败测试
+**目标**: 实现 RouterTLM、NICTLM、LinkTLM 及配套基础设施
 
-**状态**: ✅ 已完成（除 PacketPool 单例污染已延期）
+**状态**: ✅ 核心代码已完成（2026-05-09 审计确认）
+- RouterTLM: 六阶段流水线、VC 仲裁、XY 路由、Credit Flow Control
+- NICTLM: 包组装/拆解、adapter 注入
+- LinkTLM: 链路延迟建模、Credit 返回传递
+- 配置: mesh_4x4.json、nic_router_nic.json、param_rules/*.json
+- Python 工具链: cpptlm_config/ 包（builder.py、validator.py、models.py）
+
+**待补全**: 专项测试（test_router_vc_arbiter.cc、test_router_six_stage.cc、test_nic_packetization.cc、test_link_tlm.cc）
+
+**历史**: Phase 7 原为零债务清偿，后扩展为 NoC/NIC 模块实现。零债务清偿内容已并入各 Phase。
 
 | 任务 | 状态 | 说明 |
 |------|------|------|
@@ -798,7 +807,7 @@ class MultiPortStreamAdapter : public StreamAdapterBase {
 | 1.5 | 模块注册分离 | ✅ | `modules.hh` (Legacy) + `chstream_register.hh` (ChStream) |
 | 1.6 | ModuleFactory 注入 | ✅ | `module_factory.cc` Step 7: dynamic_cast + set_stream_adapter() |
 | 1.7 | 测试配置 | ✅ | `configs/cache_chstream_test.json` |
-| 1.8 | 单元测试 | ⬜ | 待完成 |
+| 1.8 | 单元测试 | ✅ | 已完成（test_cache_tlm_unit.cc 等） |
 
 **独立并行机会**:
 
