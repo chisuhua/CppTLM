@@ -153,7 +153,7 @@ public:
     RouterTLM(const std::string& name, EventQueue* eq,
               unsigned node_x = 0, unsigned node_y = 0,
               unsigned mesh_x = DEFAULT_MESH_X, unsigned mesh_y = DEFAULT_MESH_Y);
-    ~RouterTLM() override;
+    ~RouterTLM() override = default;
 
     // ========== 端口访问器 (BidirectionalPortAdapter 需要) ==========
     std::array<ReqAdapter, NUM_PORTS>& req_in() { return req_in_; }
