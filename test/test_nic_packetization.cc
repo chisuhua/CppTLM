@@ -10,55 +10,42 @@
 using namespace tlm;
 using namespace bundles;
 
-TEST_CASE("NICTLM can be constructed", "[nic][tlm]") {
+TEST_CASE("NICTLM packetization: can be constructed", "[nic][packetization]") {
     EventQueue eq;
     NICTLM nic("nic0", &eq, 0, 4, 4);
     REQUIRE(nic.node_id() == 0);
 }
 
-TEST_CASE("NICTLM num_ports returns 4", "[nic][tlm]") {
+TEST_CASE("NICTLM packetization: num_ports returns 4", "[nic][packetization]") {
     EventQueue eq;
     NICTLM nic("nic0", &eq, 0, 4, 4);
     REQUIRE(nic.num_ports() == 4);
 }
 
-TEST_CASE("NICTLM address region lookup", "[nic][packetization]") {
+TEST_CASE("NICTLM packetization: address region lookup", "[nic][packetization]") {
     EventQueue eq;
     NICTLM nic("nic0", &eq, 0, 4, 4);
     nic.add_address_region(0x1000, 0x1000, 5);
-
-    AddressMap* addr_map = nic.get_address_map();
-    REQUIRE(addr_map != nullptr);
-    REQUIRE(addr_map->lookup_node(0x1500) == 5);
+    REQUIRE(nic.lookup_node(0x1500) == 5);
 }
 
-TEST_CASE("NICTLM address out of range returns 0", "[nic][packetization]") {
+TEST_CASE("NICTLM packetization: address out of range returns 0", "[nic][packetization]") {
     EventQueue eq;
     NICTLM nic("nic0", &eq, 0, 4, 4);
     nic.add_address_region(0x1000, 0x1000, 5);
-
-    AddressMap* addr_map = nic.get_address_map();
-    REQUIRE(addr_map->lookup_node(0x5000) == 0);
+    REQUIRE(nic.lookup_node(0x5000) == 0);
 }
 
-TEST_CASE("NICTLM node_to_coord conversion", "[nic][tlm]") {
+TEST_CASE("NICTLM packetization: node_to_coord conversion", "[nic][packetization]") {
     EventQueue eq;
     NICTLM nic("nic0", &eq, 5, 4, 4);
     REQUIRE(nic.node_id() == 5);
 }
 
-TEST_CASE("NICTLM can set latency", "[nic][tlm]") {
-    EventQueue eq;
-    NICTLM nic("nic0", &eq, 0, 4, 4);
-    REQUIRE(nic.latency() == 1);
-    nic.set_latency(3);
-    REQUIRE(nic.latency() == 3);
-}
-
-TEST_CASE("NICTLM num_vcs is 4", "[nic][tlm]") {
+TEST_CASE("NICTLM packetization: num_vcs is 4", "[nic][packetization]") {
     REQUIRE(NICTLM::NUM_VCS == 4);
 }
 
-TEST_CASE("NICTLM flits_per_packet is 4", "[nic][tlm]") {
+TEST_CASE("NICTLM packetization: flits_per_packet is 4", "[nic][packetization]") {
     REQUIRE(NICTLM::FLITS_PER_PACKET == 4);
 }

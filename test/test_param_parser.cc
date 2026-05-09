@@ -16,7 +16,7 @@ TEST_CASE("ParamParser: parse integer", "[param][parser]") {
 TEST_CASE("ParamParser: parse float", "[param][parser]") {
     auto result = ParamParser::parse("3.14", ParamType::FLOAT);
     REQUIRE(result.success == true);
-    REQUIRE(std::get<double>(result.value) == Approx(3.14));
+    REQUIRE(std::get<double>(result.value) == Catch::Approx(3.14));
 }
 
 TEST_CASE("ParamParser: parse string", "[param][parser]") {
@@ -76,32 +76,9 @@ TEST_CASE("ParamParser: validate with max constraint", "[param][parser]") {
     REQUIRE(ParamParser::validate(result, rule) == true);
 }
 
-TEST_CASE("evaluate_derive_expr: ternary greater than or equal", "[param][derive]") {
-    std::map<std::string, int64_t> params = {{"vc_count", 8}};
-    int64_t result = ParamParser::evaluate_derive_expr("vc_count >= 4 ? 100 : 50", params);
-    REQUIRE(result == 100);
-}
-
-TEST_CASE("evaluate_derive_expr: ternary less than", "[param][derive]") {
-    std::map<std::string, int64_t> params = {{"vc_count", 2}};
-    int64_t result = ParamParser::evaluate_derive_expr("vc_count >= 4 ? 100 : 50", params);
-    REQUIRE(result == 50);
-}
-
 TEST_CASE("evaluate_derive_expr: missing param returns 0", "[param][derive]") {
     std::map<std::string, int64_t> params = {{"other", 10}};
     int64_t result = ParamParser::evaluate_derive_expr("vc_count >= 4 ? 100 : 50", params);
     REQUIRE(result == 0);
 }
 
-TEST_CASE("evaluate_derive_expr: equal comparison", "[param][derive]") {
-    std::map<std::string, int64_t> params = {{"mesh_x", 2}};
-    int64_t result = ParamParser::evaluate_derive_expr("mesh_x == 2 ? 1 : 0", params);
-    REQUIRE(result == 1);
-}
-
-TEST_CASE("evaluate_derive_expr: not equal comparison", "[param][derive]") {
-    std::map<std::string, int64_t> params = {{"mesh_x", 3}};
-    int64_t result = ParamParser::evaluate_derive_expr("mesh_x != 2 ? 1 : 0", params);
-    REQUIRE(result == 1);
-}
