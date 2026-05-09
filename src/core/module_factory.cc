@@ -344,13 +344,13 @@ static std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
         defaults["MeshRouter"] = spec;
     }
 
-    // NICTLM: 2 ports (NETWORK=0, PE=1)
+    // NICTLM: 2 ports (PE=0, NETWORK=1)
     {
         cpptlm::ModulePortSpec spec;
         spec.module_name = "NICTLM";
         std::vector<cpptlm::PortSpec> ports = {
-            {"NETWORK", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
-            {"PE", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64}
+            {"PE", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
+            {"NETWORK", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
         };
         spec.ports = ports;
         defaults["NICTLM"] = spec;
@@ -370,15 +370,15 @@ static std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
         defaults["Cache"] = spec;
     }
 
-    // CrossbarTLM: 4 bidirectional ports
+    // CrossbarTLM: 4 bidirectional ports (Cache side)
     {
         cpptlm::ModulePortSpec spec;
         spec.module_name = "CrossbarTLM";
         std::vector<cpptlm::PortSpec> ports = {
-            {"port_0", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
-            {"port_1", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
-            {"port_2", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
-            {"port_3", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
+            {"port_0", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
+            {"port_1", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
+            {"port_2", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
+            {"port_3", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64}
         };
         spec.ports = ports;
         defaults["CrossbarTLM"] = spec;
@@ -833,7 +833,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
             // 双端口非对称：组 0 = PE 侧，组 1 = Network 侧
             auto* dual = static_cast<cpptlm::DualPortStreamAdapter<ChStreamModuleBase,
                 bundles::CacheReqBundle, bundles::CacheRespBundle,
-                bundles::CacheReqBundle, bundles::CacheRespBundle>*>(adapter);
+                bundles::NoCFlitBundle, bundles::NoCFlitBundle>*>(adapter);
             if (dual) {
                 dual->bind_pe_ports(req_out_vec[0], resp_in_vec[0], resp_out_vec[0], req_in_vec[0]);
                 dual->bind_net_ports(req_out_vec[1], resp_in_vec[1], resp_out_vec[1], req_in_vec[1]);

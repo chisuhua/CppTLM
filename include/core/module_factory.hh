@@ -166,6 +166,16 @@ public:
         return it != instances.end() ? it->second : nullptr;
     }
 
+    // 模板化版本：支持类型安全的 downcast
+    template<typename T>
+    T* getInstance(const std::string& name) const {
+        auto it = instances.find(name);
+        if (it != instances.end()) {
+            return dynamic_cast<T*>(it->second);
+        }
+        return nullptr;
+    }
+
     const std::unordered_map<std::string, SimObject*>& getAllInstances() const {
         return instances;
     }
