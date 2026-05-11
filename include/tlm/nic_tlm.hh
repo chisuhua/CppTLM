@@ -93,6 +93,12 @@ public:
 
     unsigned num_ports() const override { return 4; }
 
+    // ChStreamModuleBase 统计接口
+    tlm_stats::StatGroup* get_stats_group() override { return &stat_group_; }
+    std::string get_stats_path() const override {
+        return "system.nic_" + std::to_string(node_id_);
+    }
+
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
 
     void tick() override;

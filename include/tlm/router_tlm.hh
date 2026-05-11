@@ -165,6 +165,12 @@ public:
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
     unsigned num_ports() const override { return NUM_PORTS; }
 
+    // ChStreamModuleBase 统计接口
+    tlm_stats::StatGroup* get_stats_group() override { return &stat_group_; }
+    std::string get_stats_path() const override {
+        return "system.router_" + std::to_string(node_x() + node_y() * mesh_x());
+    }
+
     // ========== 周期精确仿真 ==========
     void tick() override;
 

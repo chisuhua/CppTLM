@@ -65,6 +65,10 @@ public:
         }
     }
 
+    // ChStreamModuleBase 统计接口
+    tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
+    std::string get_stats_path() const override { return "system.crossbar"; }
+
     void tick() override {
         for (unsigned i = 0; i < NUM_PORTS; i++) {
             if (req_in[i].valid() && req_in[i].ready()) {
