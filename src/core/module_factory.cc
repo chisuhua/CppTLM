@@ -22,6 +22,7 @@
 #include "core/port_compatibility.hh"
 #include "core/param_parser.hh"
 #include "core/param_errors.hh"
+#include "metrics/stats_manager.hh"
 #include <fstream>
 #include <set>
 #include <algorithm>
@@ -863,6 +864,22 @@ bool ModuleFactory::instantiateAll(const json& config) {
 
         ch_adapters[name] = adapter;
         stream_adapters_.emplace_back(adapter);
+    }
+
+    // ========================
+    // 8. 自动注册 StatGroup 到 StatsManager（Phase 0 修复）
+    // ========================
+    for (auto& [name, obj] : object_instances) {
+        if (!obj) continue;
+        auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj);
+        if (!ch_mod) continue;
+
+        auto* stat_group = ch_mod->get_stats_group();
+        if (stat_group) {
+            std::string stats_path = ch_mod->get_stats_path();
+            tlm_stats::StatsManager::instance().register_group(stat_group, stats_path);
+            DPRINTF(MODULE, "[Stats] Registered %s -> %s\n", name.c_str(), stats_path.c_str());
+        }
     }
 
     // 7b. 创建 PortPairs（支持端口索引语法：xbar.0 → xbar.req_in[0]）
