@@ -6,6 +6,7 @@
 #define CORE_CHSTREAM_MODULE_HH
 
 #include "sim_object.hh"
+#include "metrics/stats.hh"
 
 class StreamAdapterBase;
 namespace cpptlm { class StreamAdapterBase; }
@@ -51,6 +52,18 @@ public:
      * @brief 返回模块端口数量（默认 1，多端口模块重写）
      */
     virtual unsigned num_ports() const { return 1; }
+
+    /**
+     * @brief 返回模块的 StatGroup 指针（供 ModuleFactory 自动注册用）
+     * @return StatGroup 指针，无统计则返回 nullptr（默认实现）
+     */
+    virtual tlm_stats::StatGroup* get_stats_group() { return nullptr; }
+
+    /**
+     * @brief 返回模块的层次路径（用于 StatsManager 注册）
+     * @return 路径字符串，默认返回模块名
+     */
+    virtual std::string get_stats_path() const { return getName(); }
 };
 
 #endif // CORE_CHSTREAM_MODULE_HH
