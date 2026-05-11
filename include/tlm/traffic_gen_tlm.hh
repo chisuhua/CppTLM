@@ -94,6 +94,10 @@ public:
         adapter_ = adapter;
     }
 
+    // ChStreamModuleBase 统计接口
+    tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
+    std::string get_stats_path() const override { return "system.traffic_gen"; }
+
     void set_mode(GenMode_TLM m) { mode_ = m; }
     void set_num_requests(int n) { num_requests_ = n; }
 

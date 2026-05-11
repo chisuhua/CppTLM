@@ -54,6 +54,10 @@ public:
         adapter_ = adapter;
     }
 
+    // ChStreamModuleBase 统计接口
+    tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
+    std::string get_stats_path() const override { return "system.memory"; }
+
     void tick() override {
         if (req_in_.valid() && req_in_.ready()) {
             const auto& req = req_in_.data();

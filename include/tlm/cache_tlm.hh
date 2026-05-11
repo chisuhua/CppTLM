@@ -123,12 +123,16 @@ public:
     }
     cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
 
-    // 统计访问器
+// 统计访问器
     tlm_stats::StatGroup& stats() { return stats_; }
     const tlm_stats::StatGroup& stats() const { return stats_; }
 
+    // ChStreamModuleBase 统计接口
+    tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
+    std::string get_stats_path() const override { return "system.cache"; }
+
     void dumpStats(std::ostream& os) const {
-        stats_.dump(os);
+        stats().dump(os);
     }
 };
 
