@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cpptlm"
+version = "0.1.0"
+description = "CppTLM Python Library for chip design generation and simulation"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "CppTLM Team"}
+]
+dependencies = [
+    "pydantic>=1.10.0",
+    "networkx>=2.6.0",
+    "pydot>=1.4.0",
+]
+
+[project.optional-dependencies]
+visualization = [
+    "dash>=2.0.0",
+    "plotly>=5.0.0",
+    "watchdog>=2.0.0",
+]
+dev = [
+    "pytest>=7.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/your-org/CppTLM"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cpptlm*"]

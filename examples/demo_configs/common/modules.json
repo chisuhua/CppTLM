@@ -1,0 +1,11 @@
+{
+  "name": "common_modules",
+  "description": "Common SoC module definitions (base for hierarchical configs)",
+  "modules": [
+    { "name": "l1_0", "type": "CacheTLM" },
+    { "name": "l1_1", "type": "CacheTLM" }
+  ],
+  "module_groups": [
+    { "name": "l1_caches", "members": ["l1_0", "l1_1"] }
+  ]
+}

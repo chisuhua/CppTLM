@@ -1,0 +1,73 @@
+{
+  "name": "dual_cluster_soc",
+  "description": "Dual-cluster extending soc_cluster",
+  "modules": [
+    {
+      "name": "xbar",
+      "type": "CrossbarTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "mem0",
+      "type": "MemoryTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "mem1",
+      "type": "MemoryTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    }
+  ],
+  "connections": [
+    {
+      "src": "l1_0",
+      "dst": "xbar.0",
+      "latency": 5,
+      "bandwidth": null
+    },
+    {
+      "src": "l1_1",
+      "dst": "xbar.1",
+      "latency": 5,
+      "bandwidth": null
+    },
+    {
+      "src": "xbar.0",
+      "dst": "mem0",
+      "latency": 20,
+      "bandwidth": null
+    },
+    {
+      "src": "xbar.1",
+      "dst": "mem1",
+      "latency": 20,
+      "bandwidth": null
+    },
+    {
+      "src": "group:memories",
+      "dst": "xbar.2",
+      "latency": 2,
+      "bandwidth": null
+    }
+  ],
+  "module_groups": [
+    {
+      "name": "memories",
+      "members": [
+        "mem0",
+        "mem1"
+      ],
+      "exclude": []
+    }
+  ],
+  "extends": "examples/demo_configs/soc_cluster.json"
+}

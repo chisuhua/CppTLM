@@ -1,0 +1,72 @@
+{
+  "name": "soc_cluster",
+  "description": "CPU cluster with groups and regex connections",
+  "modules": [
+    {
+      "name": "cpu0",
+      "type": "TrafficGenTLM",
+      "params": {
+        "pattern": "SEQUENTIAL",
+        "num_requests": 5000,
+        "start_addr": "0x1000",
+        "end_addr": "0x2000"
+      },
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "cpu1",
+      "type": "TrafficGenTLM",
+      "params": {
+        "pattern": "RANDOM",
+        "num_requests": 5000,
+        "start_addr": "0x2000",
+        "end_addr": "0x4000"
+      },
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "l1_0",
+      "type": "CacheTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "l1_1",
+      "type": "CacheTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    }
+  ],
+  "connections": [
+    {
+      "src": "group:cluster_cpus",
+      "dst": "l1_0",
+      "latency": 1,
+      "bandwidth": null
+    },
+    {
+      "src": "regex:cpu[1]",
+      "dst": "l1_1",
+      "latency": 1,
+      "bandwidth": null
+    }
+  ],
+  "module_groups": [
+    {
+      "name": "cluster_cpus",
+      "members": [
+        "cpu0",
+        "cpu1"
+      ],
+      "exclude": []
+    }
+  ]
+}
