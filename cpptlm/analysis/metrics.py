@@ -10,9 +10,24 @@ class MetricSummary:
     def __init__(self, result: Result):
         self.result = result
 
+    @staticmethod
+    def _extract_scalar(value: Any) -> float:
+        """从 C++ 统计值中提取标量。
+
+        C++ 的 Distribution 输出为嵌套 dict:
+          {"avg": 2.5, "min": 1, ...}
+        本方法提取 .avg；Scalar/Average 直接返回数值。
+        """
+        if isinstance(value, dict):
+            return float(value.get("avg", value.get("p50", 0.0)))
+        return float(value)
+
     def latency_statistics(self, group: Optional[str] = None) -> Dict[str, float]:
         records = self.result.records(group=group)
-        latencies = [r["data"]["latency"] for r in records if "latency" in r.get("data", {})]
+        latencies = []
+        for r in records:
+            if "latency" in r.get("data", {}):
+                latencies.append(self._extract_scalar(r["data"]["latency"]))
 
         if not latencies:
             return {"mean": 0.0, "median": 0.0, "p95": 0.0, "p99": 0.0, "max": 0.0, "min": 0.0, "count": 0, "std": 0.0}
