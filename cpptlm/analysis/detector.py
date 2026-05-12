@@ -11,9 +11,19 @@ class AnomalyDetector:
     def __init__(self, result: Result):
         self.result = result
 
+    @staticmethod
+    def _extract_scalar(value: Any) -> float:
+        """从 C++ Distribution dict 或原始数值中提取标量。"""
+        if isinstance(value, dict):
+            return float(value.get("avg", value.get("p50", 0.0)))
+        return float(value)
+
     def detect_outliers_zscore(self, group: str, threshold: float = 3.0) -> List[Dict]:
         records = self.result.records(group=group)
-        latencies = [r["data"]["latency"] for r in records if "latency" in r.get("data", {})]
+        latencies = []
+        for r in records:
+            if "latency" in r.get("data", {}):
+                latencies.append(self._extract_scalar(r["data"]["latency"]))
 
         if len(latencies) < 3:
             return []
@@ -69,7 +79,10 @@ class AnomalyDetector:
 
     def detect_anomalous_run(self, group: Optional[str] = None) -> Dict:
         records = self.result.records(group=group)
-        latencies = [r["data"]["latency"] for r in records if "latency" in r.get("data", {})]
+        latencies = []
+        for r in records:
+            if "latency" in r.get("data", {}):
+                latencies.append(self._extract_scalar(r["data"]["latency"]))
 
         if len(latencies) < 3:
             return {"anomalous": False, "reason": "insufficient_data"}

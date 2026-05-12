@@ -6,6 +6,7 @@
 2. [E2E 性能分析 Demo](#2-e2e-性能分析-demo)
 3. [层次化 SoC 配置](#3-层次化-soc-配置)
 4. [ConfigBuilder API 参考](#4-configbuilder-api-参考)
+5. [统一可视化 Dashboard](#5-统一可视化-dashboard)
 
 ---
 
@@ -404,3 +405,112 @@ dual = (
 )
 dual.save("dual_cluster.json")
 ```
+
+---
+
+## 5. 统一可视化 Dashboard
+
+CppTLM 提供统一的 Web Dashboard，支持实时监控仿真运行、查看历史结果、编辑配置和重新运行。
+
+### 5.1 runs/ 目录结构
+
+每次仿真运行在 `runs/` 目录下创建独立子目录：
+
+```
+runs/
+  run_2026-05-12_143052/
+    config.json           # 原始配置
+    topology.dot          # DOT 文件
+    topology.png          # 渲染后的拓扑图
+    stats.jsonl           # 仿真原始数据流
+    report.html           # 静态 HTML 报告
+    metrics.json          # 解析后的指标摘要
+    meta.json             # 运行元信息（时间、参数、版本等）
+    pid                   # 仿真进程 PID（运行时存在）
+```
+
+### 5.2 启动 Dashboard
+
+**独立启动 Dashboard**（不运行仿真，仅浏览已有结果）：
+
+```bash
+python -m cpptlm dashboard
+# Starting Dashboard on http://localhost:8050
+```
+
+指定端口和 runs 目录：
+
+```bash
+python -m cpptlm dashboard --port 9000 --runs-dir /path/to/runs
+```
+
+### 5.3 运行仿真并打开 Dashboard
+
+使用 `--dashboard` 选项，仿真结束后 Dashboard 自动切换为静态浏览模式：
+
+```bash
+python -m cpptlm run --config my_config.json --dashboard
+```
+
+也可在运行过程中实时查看。默认端口 8050。
+
+### 5.4 主页导航
+
+Dashboard 主页列出所有历史运行记录：
+
+```
+┌─────────────────────────────────────────────────────┐
+│ CppTLM Unified Dashboard            [8050] [? 帮助] │
+├─────────────────────────────────────────────────────┤
+│  Runs                                               │
+│  ┌───────────────────────────────────────────────┐ │
+│  │ run_2026-05-12_143052   2026-05-12 14:30:52  │ │
+│  │ Cycles: 50000   Status: ● Completed          │ │
+│  │ [View] [Re-run] [Delete]                       │ │
+│  └───────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────┘
+```
+
+点击 **[View]** 进入单一运行视图，点击 **[Re-run]** 重新运行。
+
+### 5.5 单一运行视图
+
+单一运行视图包含四个 Tab：
+
+| Tab | 内容 |
+|-----|------|
+| **Topology** | 渲染后的拓扑图（topology.png） |
+| **Metrics** | 实时/历史性能指标图表 |
+| **Config** | Monaco Editor 编辑配置 JSON |
+| **Report** | 静态 HTML 性能报告 |
+
+**实时模式**：仿真仍在运行时，Dashboard 自动轮询（2s 间隔）获取最新统计数据，图表实时更新。
+
+**历史模式**：仿真结束后，显示静态聚合指标和历史图表。
+
+### 5.6 配置编辑与降级
+
+在 **Config** Tab 中：
+- 使用 Monaco Editor 直接编辑 JSON 配置
+- 修改参数（cycles、interval 等）
+- 点击 **Save** 保存配置
+- 点击 **Re-run** 重新运行仿真
+
+配置保存后自动覆盖 `runs/<run_id>/config.json`。
+
+### 5.7 重新运行功能
+
+在运行视图点击 **Re-run** 或主页点击 **[Re-run]**：
+- 读取当前运行的 `config.json`
+- 结合表单参数（cycles、seed 等）重新执行仿真
+- 覆盖当前目录，Dashboard 自动切换为实时模式
+
+---
+
+### 5.8 命令行参考
+
+| 命令 | 说明 |
+|------|------|
+| `python -m cpptlm dashboard` | 启动 Dashboard（浏览已有结果） |
+| `python -m cpptlm run --config X --dashboard` | 运行仿真并打开 Dashboard |
+| `python -m cpptlm run --config X --generate-only` | 仅生成配置，不运行仿真 |
