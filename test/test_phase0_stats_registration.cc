@@ -72,15 +72,14 @@ TEST_CASE("Phase 0: RouterTLM stats registration", "[phase0][stats][router]") {
 
     ModuleFactory factory(&eq);
 
-    // RouterTLM 需要 mesh_x/mesh_y 参数
+    // RouterTLM 使用 BidirectionalPortAdapter，不是 SimObject 端口
+    // 所以 connections 为空（不需要 SimObject 风格的端口连接）
     json config = R"({
         "modules": [
             {"name": "router0", "type": "RouterTLM", "params": {"node_x": 0, "node_y": 0, "mesh_x": 2, "mesh_y": 2}},
             {"name": "router1", "type": "RouterTLM", "params": {"node_x": 1, "node_y": 0, "mesh_x": 2, "mesh_y": 2}}
         ],
-        "connections": [
-            {"src": "router0", "dst": "router1", "latency": 1}
-        ]
+        "connections": []
     })"_json;
 
     REQUIRE(factory.instantiateAll(config));
