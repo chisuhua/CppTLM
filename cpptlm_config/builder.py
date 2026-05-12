@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 from typing import Optional
-from cpptlm_config.models import ConfigSchema, ConfigMetadata, ModuleSpec, ConnectionSpec
+from cpptlm_config.models import (
+    ConfigSchema, ConfigMetadata, ModuleSpec, ConnectionSpec, ModuleGroupSpec,
+)
 
 
 class ConfigBuilder:
@@ -25,7 +27,10 @@ class ConfigBuilder:
         self.description = description
         self._modules: list[ModuleSpec] = []
         self._connections: list[ConnectionSpec] = []
+        self._groups: list[ModuleGroupSpec] = []
         self._metadata = ConfigMetadata(version="1.0.0", schema_version="1.0")
+        self._extends: Optional[str] = None
+        self._include: Optional[str] = None
 
     def add_module(self, module: ModuleSpec) -> ConfigBuilder:
         self._modules.append(module)
@@ -35,12 +40,32 @@ class ConfigBuilder:
         self._connections.append(connection)
         return self
 
+    def set_extends(self, base_config_path: str) -> "ConfigBuilder":
+        self._extends = base_config_path
+        return self
+
+    def set_include(self, path: str) -> "ConfigBuilder":
+        self._include = path
+        return self
+
+    def add_group(self, name: str, members: list[str],
+                  exclude: Optional[list[str]] = None) -> "ConfigBuilder":
+        self._groups.append(ModuleGroupSpec(
+            name=name, members=members, exclude=exclude or [],
+        ))
+        return self
+
     def build(self) -> ConfigSchema:
-        return ConfigSchema(
+        schema = ConfigSchema(
             name=self.name,
             description=self.description,
             metadata=self._metadata,
             modules=self._modules,
             connections=self._connections,
-            module_groups=[]
+            module_groups=self._groups,
         )
+        if self._extends:
+            schema.extends = self._extends
+        if self._include:
+            schema.include = self._include
+        return schema

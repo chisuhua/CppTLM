@@ -2,6 +2,11 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from enum import Enum
 
+try:
+    from cpptlm_config.types import ModuleType
+except ImportError:
+    ModuleType = None  # Will be resolved later
+
 
 class PortRole(str, Enum):
     INITIATOR = "initiator"
@@ -76,7 +81,7 @@ class ConfigMetadata(BaseModel):
 
 class ModuleSpec(BaseModel):
     name: str
-    type: "ModuleType"  # forward ref, resolved at runtime
+    type: ModuleType | str = "RouterTLM"  # Accept both enum and string
     params: dict = {}
     port_spec: Optional[ModulePortSpec] = None
     ports: list = []
@@ -90,13 +95,21 @@ class ConnectionSpec(BaseModel):
     bandwidth: Optional[int] = None
 
 
+class ModuleGroupSpec(BaseModel):
+    name: str
+    members: list[str]
+    exclude: list[str] = []
+
+
 class ConfigSchema(BaseModel):
     name: str
     description: str = ""
     metadata: ConfigMetadata = ConfigMetadata()
     modules: list = []
     connections: list = []
-    module_groups: list = []
+    module_groups: list[ModuleGroupSpec] = []
+    include: Optional[str] = None
+    extends: Optional[str] = None
 
     def save(self, path: str):
         """Serialize to JSON file (supports // comment-free JSON)"""
@@ -119,17 +132,24 @@ class ConfigSchema(BaseModel):
                 return obj.value
             return obj
 
-        return {
+        result = {
             "name": self.name,
             "description": self.description,
-            "metadata": {
-                "version": self.metadata.version,
-                "schema_version": self.metadata.schema_version,
-            },
             "modules": _serialize(self.modules),
             "connections": _serialize(self.connections),
-            "module_groups": _serialize(self.module_groups),
         }
+        if self.metadata.version != "1.0.0" or self.metadata.schema_version != "1.0":
+            result["metadata"] = {
+                "version": self.metadata.version,
+                "schema_version": self.metadata.schema_version,
+            }
+        if self.module_groups:
+            result["module_groups"] = _serialize(self.module_groups)
+        if self.include:
+            result["include"] = self.include
+        if self.extends:
+            result["extends"] = self.extends
+        return result
 
 
 import json
