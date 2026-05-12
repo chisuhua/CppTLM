@@ -26,7 +26,7 @@ class TopologyAdapter:
             )
 
         gen = TopologyGenerator(name=f"mesh_{rows}x{cols}")
-        gen.add_mesh(rows, cols)
+        gen.generate_mesh(rows, cols)
 
         from cpptlm_config.models import ModuleSpec, ConnectionSpec
         from cpptlm_config.types import ModuleType
@@ -64,7 +64,7 @@ class TopologyAdapter:
             raise ImportError("topology_generator.py not found")
 
         gen = TopologyGenerator(name=f"ring_{nodes}")
-        gen.add_ring(nodes)
+        gen.generate_ring(nodes)
 
         from cpptlm_config.models import ModuleSpec, ConnectionSpec
         from cpptlm_config.types import ModuleType
