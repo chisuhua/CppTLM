@@ -29,6 +29,8 @@ def run_simulation(config_path: str, cycles: int, interval: int,
 
     返回 True 成功，False 失败。
     """
+    import subprocess
+
     binary = find_cpptlm_sim_binary()
     if not binary:
         print("[ERROR] cpptlm_sim binary not found")
@@ -40,7 +42,13 @@ def run_simulation(config_path: str, cycles: int, interval: int,
     with open(config_path) as f:
         config_json = f.read()
 
-    params = {"cycles": cycles, "interval": interval, "seed": seed, "binary_path": binary}
+    params = {
+        "cycles": cycles,
+        "interval": interval,
+        "seed": seed,
+        "binary_path": binary,
+        "config_path": config_path,
+    }
     run_ctx = index.create_run(config_json, params)
 
     print(f"[Simulation] cycles={cycles}, interval={interval}")
@@ -56,7 +64,6 @@ def run_simulation(config_path: str, cycles: int, interval: int,
     if seed != 0:
         cmd.extend(["--seed", str(seed)])
 
-    import subprocess
     proc = subprocess.Popen(cmd)
     (run_ctx.root / "pid").write_text(str(proc.pid))
 
@@ -117,7 +124,34 @@ def main():
     elif args.command == "run":
         if not args.config:
             print("[ERROR] --config is required for 'run' command")
-            return 1
+            sys.exit(1)
+
+        binary = find_cpptlm_sim_binary()
+        if not binary:
+            print("[ERROR] cpptlm_sim binary not found")
+            sys.exit(1)
+
+        from cpptlm.visualization.run_context import RunsIndex
+        index = RunsIndex(args.output_dir)
+
+        with open(args.config) as f:
+            config_json = f.read()
+
+        params = {
+            "cycles": args.cycles,
+            "interval": args.interval,
+            "seed": args.seed,
+            "binary_path": binary,
+            "config_path": args.config,
+        }
+        run_ctx = index.create_run(config_json, params)
+
+        if args.generate_only:
+            print(f"[Generate] Output: {run_ctx.root}")
+            print(f"[Generate] Config: {run_ctx.root / 'config.json'}")
+            print(f"[Generate] Meta:   {run_ctx.root / 'meta.json'}")
+            sys.exit(0)
+
         success = run_simulation(
             config_path=args.config,
             cycles=args.cycles,
@@ -126,7 +160,7 @@ def main():
             output_dir=args.output_dir,
             dashboard=args.dashboard,
         )
-        return 0 if success else 1
+        sys.exit(0 if success else 1)
 
 
 if __name__ == "__main__":
