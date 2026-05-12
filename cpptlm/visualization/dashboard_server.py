@@ -46,6 +46,7 @@ class DashboardServer:
         self._open_run = run_id
 
     def start(self) -> None:
+        """启动 dashboard server（非阻塞，daemon 线程）."""
         if self._server:
             return
         handler = lambda *args, **kwargs: _DashboardRequestHandler(
@@ -57,14 +58,11 @@ class DashboardServer:
         self._thread.start()
 
     def serve_forever(self) -> None:
-        handler = lambda *args, **kwargs: _DashboardRequestHandler(
-            *args, runs_index=self._index, open_run=self._open_run, **kwargs
-        )
-        self._server = http.server.HTTPServer(("0.0.0.0", self.port), handler)
-        self._server._server_ref = self
+        """启动 dashboard server（阻塞模式，供 CLI 使用）."""
+        self.start()
         print(f"  [Dashboard] http://localhost:{self.port}")
         try:
-            self._server.serve_forever()
+            self._thread.join()
         except KeyboardInterrupt:
             self.stop()
 
