@@ -1,8 +1,16 @@
 """
-cpptlm/visualization/dashboard_server.py — 实时 Web Dashboard 服务器。
+cpptlm/visualization/dashboard_server.py — Unified Dashboard HTTP server.
 
-零外部依赖（仅 Python 标准库 + Plotly.js CDN）。
-Serve 模式：启动轻量级 HTTP 服务器，浏览器访问 http://localhost:<port> 查看。
+URL routes:
+  GET /                              → home (runs list)
+  GET /?run=<id>                     → per-run view
+  GET /api/runs                      → list all runs (JSON)
+  GET /api/runs/<id>                 → run metadata (JSON)
+  GET /api/runs/<id>/stats?offset=N  → incremental stats JSONL
+  GET /api/runs/<id>/config          → config.json content
+  POST /api/runs/<id>/config         → save config.json
+  POST /api/runs/<id>/rerun          → rerun simulation
+  GET /runs/<id>/<filename>          → static files
 """
 
 from __future__ import annotations
@@ -10,338 +18,57 @@ from __future__ import annotations
 import http.server
 import json
 import os
+import subprocess
 import threading
-import time
+import urllib.parse
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
-
-# ── HTML 模板（嵌入 Plotly.js CDN）─────────────────────────────────────────
-
-_DASHBOARD_HTML = r"""<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CppTLM 实时 Dashboard</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<style>
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 20px; background: #f8f9fa; color: #333; }
-  h1 { font-size: 1.5em; border-bottom: 2px solid #333; padding-bottom: 8px; }
-  .status-bar { display: flex; gap: 20px; margin: 10px 0; padding: 10px; background: #e9ecef; border-radius: 6px; font-size: 0.9em; }
-  .status-bar .label { color: #666; }
-  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .chart-box { background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 12px; }
-  .chart-box h3 { margin: 0 0 8px 0; font-size: 1em; color: #555; }
-  .chart-box .plotly-graph-div { width: 100%; height: 300px; }
-  .error { color: #dc3545; padding: 10px; }
-  .table-wrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font-size: 0.85em; }
-  th, td { border: 1px solid #dee2e6; padding: 6px 10px; text-align: left; }
-  th { background: #f1f3f5; }
-  td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  @media (max-width: 900px) { .chart-grid { grid-template-columns: 1fr; } }
-</style>
-</head>
-<body>
-<h1>CppTLM 仿真实时 Dashboard</h1>
-<div class="status-bar" id="status">
-  <span><span class="label">Cycle:</span> <span id="cycle">—</span></span>
-  <span><span class="label">Records:</span> <span id="records">0</span></span>
-  <span><span class="label">Groups:</span> <span id="groups">—</span></span>
-  <span><span class="label">Last update:</span> <span id="update">—</span></span>
-</div>
-<div class="chart-grid" id="charts"></div>
-
-<script>
-const POLL_MS = 2000;
-let lastData = null;
-
-async function poll() {
-  try {
-    const resp = await fetch('/data');
-    const data = await resp.json();
-    lastData = data;
-    render(data);
-    document.getElementById('update').textContent = new Date().toLocaleTimeString();
-  } catch(e) {
-    console.warn('poll error:', e);
-  }
-  setTimeout(poll, POLL_MS);
-}
-
-function render(data) {
-  // Status bar
-  document.getElementById('cycle').textContent = data.simulation_cycle || '—';
-  document.getElementById('records').textContent = data.record_count || 0;
-  document.getElementById('groups').textContent = (data.groups || []).join(', ') || '—';
-
-  const container = document.getElementById('charts');
-  container.innerHTML = '';
-
-  // Latency charts per group
-  for (const group of (data.groups || [])) {
-    const groupData = data.by_group[group];
-    if (!groupData) continue;
-
-    // Latency over time
-    if (groupData.latency_cycle && groupData.latency_cycle.length > 0) {
-      const box = createChartBox(group + ' 延迟 (周期)');
-      const trace = {
-        x: groupData.latency_cycle, y: groupData.latency_avg,
-        type: 'scatter', mode: 'lines+markers',
-        name: 'avg', line: { color: '#2196F3' },
-      };
-      Plotly.newPlot(box.querySelector('.plot'), [trace], {
-        margin: { t: 10, r: 10, b: 30, l: 50 },
-        xaxis: { title: 'Cycle' },
-        yaxis: { title: 'Latency (cycle)' },
-      });
-      container.appendChild(box);
-    }
-
-    // Requests timeline
-    if (groupData.req_cycle && groupData.req_cycle.length > 0) {
-      const box = createChartBox(group + ' 请求统计');
-      const traces = [];
-      if (groupData.hits) traces.push({ x: groupData.req_cycle, y: groupData.hits, type: 'scatter', mode: 'lines+markers', name: 'hits', line: { color: '#4CAF50' } });
-      if (groupData.misses) traces.push({ x: groupData.req_cycle, y: groupData.misses, type: 'scatter', mode: 'lines+markers', name: 'misses', line: { color: '#f44336' } });
-      Plotly.newPlot(box.querySelector('.plot'), traces, {
-        margin: { t: 10, r: 10, b: 30, l: 50 },
-        xaxis: { title: 'Cycle' },
-        yaxis: { title: 'Count' },
-      });
-      container.appendChild(box);
-    }
-  }
-
-  // Metrics summary table
-  if (data.metrics && data.metrics.length > 0) {
-    const box = document.createElement('div');
-    box.className = 'chart-box';
-    box.innerHTML = '<h3>性能摘要</h3><div class="table-wrap"><table><tr><th>Group</th><th>Mean</th><th>P95</th><th>P99</th><th>Max</th><th>Count</th></tr>' +
-      data.metrics.map(m => `<tr><td>${m.group}</td><td class="num">${m.mean.toFixed(2)}</td><td class="num">${m.p95.toFixed(2)}</td><td class="num">${m.p99.toFixed(2)}</td><td class="num">${m.max.toFixed(2)}</td><td class="num">${m.count}</td></tr>`).join('') +
-      '</table></div>';
-    container.appendChild(box);
-  }
-
-  // Bottlenecks
-  if (data.bottlenecks && data.bottlenecks.length > 0) {
-    const box = document.createElement('div');
-    box.className = 'chart-box';
-    box.innerHTML = '<h3>瓶颈检测</h3><div class="table-wrap"><table><tr><th>Group</th><th>Latency</th><th>Severity</th></tr>' +
-      data.bottlenecks.map(b => `<tr><td>${b.group}</td><td class="num">${b.latency.toFixed(2)}</td><td style="color:${b.severity === 'high' ? '#dc3545' : '#ffc107'}">${b.severity}</td></tr>`).join('') +
-      '</table></div>';
-    container.appendChild(box);
-  }
-}
-
-function createChartBox(title) {
-  const box = document.createElement('div');
-  box.className = 'chart-box';
-  box.innerHTML = `<h3>${title}</h3><div class="plot"></div>`;
-  return box;
-}
-
-poll();
-</script>
-</body>
-</html>
-"""
+from cpptlm.visualization.dashboard_ui import (
+    _DASHBOARD_HTML,
+    _HOME_HTML,
+    make_run_view_html,
+)
+from cpptlm.visualization.run_context import RunContext, RunsIndex
 
 
 class DashboardServer:
-    """零依赖实时 Web Dashboard 服务器。
 
-    在后台线程中运行 HTTP 服务器，提供：
-      /       →  Plotly.js 实时 Dashboard（自动轮询）
-      /data   →  当前 JSONL 统计数据的 JSON 快照
-      /metrics → MetricSummary + AnomalyDetector 计算结果
-
-    用法::
-
-        server = DashboardServer("output/stats_soc.jsonl", port=8080)
-        server.start()       # 后台线程启动
-        server.serve_forever()  # 主线程阻塞
-        server.stop()
-    """
-
-    def __init__(
-        self,
-        jsonl_path: str,
-        port: int = 8080,
-    ):
-        self.jsonl_path = Path(jsonl_path)
+    def __init__(self, runs_dir: str = "runs", port: int = 8050):
+        self.runs_dir = Path(runs_dir)
         self.port = port
-        self._server: Optional[http.server.HTTPServer] = None
+        self._index = RunsIndex(self.runs_dir)
+        self._open_run: Optional[str] = None
+        self._server = None
         self._thread: Optional[threading.Thread] = None
-        self._prev_size: int = 0
-        self._cached_data: Dict[str, Any] = {
-            "simulation_cycle": 0,
-            "record_count": 0,
-            "groups": [],
-            "by_group": {},
-            "metrics": [],
-            "bottlenecks": [],
-        }
 
-    def _collect_data(self) -> Dict[str, Any]:
-        """读取 JSONL 并聚合为 Dashboard 数据。"""
-        if not self.jsonl_path.exists():
-            return self._cached_data
+    def set_open_run(self, run_id: str) -> None:
+        self._open_run = run_id
 
-        # 增量读取
-        records: List[Dict] = []
-        try:
-            with open(self.jsonl_path) as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        try:
-                            records.append(json.loads(line))
-                        except json.JSONDecodeError:
-                            pass
-        except (OSError, json.JSONDecodeError):
-            return self._cached_data
-
-        if not records:
-            return self._cached_data
-
-        # 按 group 聚合
-        by_group: Dict[str, Dict[str, List]] = {}
-        max_cycle = 0
-        for r in records:
-            g = r.get("group", "?")
-            if g not in by_group:
-                by_group[g] = {"latency_cycle": [], "latency_avg": [],
-                               "req_cycle": [], "hits": [], "misses": []}
-            cycle = r.get("simulation_cycle", 0)
-            max_cycle = max(max_cycle, cycle)
-            data = r.get("data", {})
-
-            # 延迟（Distribution 取 avg）
-            lat = data.get("latency", None)
-            if isinstance(lat, dict) and "avg" in lat:
-                by_group[g]["latency_cycle"].append(cycle)
-                by_group[g]["latency_avg"].append(lat["avg"])
-
-            # 请求统计
-            for key in ("requests", "hits", "misses",
-                        "flits_received", "flits_sent"):
-                val = data.get(key, None)
-                if isinstance(val, (int, float)):
-                    if key == "requests" or key == "flits_received":
-                        by_group[g]["req_cycle"].append(cycle)
-                    target = key
-                    if "req" in target or "flit" in target:
-                        target = "hits"
-                    by_group[g].setdefault(target, []).append(val)
-
-        # 计算 MetricSummary
-        from cpptlm.simulation.result import Result
-        from cpptlm.analysis import MetricSummary, AnomalyDetector
-        from cpptlm.analysis.adapters import adapt_result
-
-        res = Result.from_jsonl(str(self.jsonl_path))
-        adapted = adapt_result(res)
-        metrics_list: List[Dict] = []
-        for g in sorted(adapted.groups()):
-            stats = MetricSummary(adapted).latency_statistics(group=g)
-            if stats["count"] > 0:
-                metrics_list.append({
-                    "group": g,
-                    "mean": stats["mean"],
-                    "p95": stats["p95"],
-                    "p99": stats["p99"],
-                    "max": stats["max"],
-                    "count": stats["count"],
-                })
-
-        bottlenecks = AnomalyDetector(adapted).identify_bottlenecks(
-            threshold_percentile=80.0)
-        bn_list: List[Dict] = [{
-            "group": b["group"],
-            "latency": b["mean_latency"],
-            "severity": b["severity"],
-        } for b in bottlenecks]
-
-        self._cached_data = {
-            "simulation_cycle": max_cycle,
-            "record_count": len(records),
-            "groups": sorted(adapted.groups()),
-            "by_group": by_group,
-            "metrics": metrics_list,
-            "bottlenecks": bn_list,
-        }
-        return self._cached_data
-
-    # ── HTTP 请求处理 ──
-
-    class _Handler(http.server.BaseHTTPRequestHandler):
-
-        def log_message(self, fmt, *args):
-            pass  # 静默日志
-
-        @property
-        def _dashboard(self) -> "DashboardServer":
-            """通过 HTTPServer 实例获取 DashboardServer 引用。"""
-            return self.server._server_ref  # type: ignore
-
-        def _send_json(self, data):
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(json.dumps(data).encode())
-
-        def _send_html(self, html):
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.end_headers()
-            self.wfile.write(html.encode())
-
-        def do_GET(self):
-            svr = self._dashboard
-            if self.path == "/data":
-                self._send_json(svr._collect_data())
-            elif self.path == "/" or self.path == "":
-                self._send_html(_DASHBOARD_HTML)
-            else:
-                self.send_response(404)
-                self.end_headers()
-
-        # 抑制 ConnectionError 日志
-        def handle_one_request(self):
-            try:
-                super().handle_one_request()
-            except (ConnectionError, BrokenPipeError, OSError):
-                pass
-
-    def start(self):
-        """在后台线程中启动 HTTP 服务器。"""
+    def start(self) -> None:
         if self._server:
             return
-
-        self._server = http.server.HTTPServer(
-            ("0.0.0.0", self.port), self._Handler)
-        self._server._server_ref = self  # type: ignore
-
-        self._thread = threading.Thread(
-            target=self._server.serve_forever, daemon=True)
+        handler = lambda *args, **kwargs: _DashboardRequestHandler(
+            *args, runs_index=self._index, open_run=self._open_run, **kwargs
+        )
+        self._server = http.server.HTTPServer(("0.0.0.0", self.port), handler)
+        self._server._server_ref = self
+        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
 
-    def serve_forever(self):
-        """主线程阻塞（直接在当前线程启动服务器）。"""
-        self._server = http.server.HTTPServer(
-            ("0.0.0.0", self.port), self._Handler)
-        self._server._server_ref = self  # type: ignore
+    def serve_forever(self) -> None:
+        handler = lambda *args, **kwargs: _DashboardRequestHandler(
+            *args, runs_index=self._index, open_run=self._open_run, **kwargs
+        )
+        self._server = http.server.HTTPServer(("0.0.0.0", self.port), handler)
+        self._server._server_ref = self
         print(f"  [Dashboard] http://localhost:{self.port}")
         try:
             self._server.serve_forever()
         except KeyboardInterrupt:
             self.stop()
 
-    def stop(self):
+    def stop(self) -> None:
         if self._server:
             self._server.shutdown()
             self._server = None
@@ -349,3 +76,235 @@ class DashboardServer:
     @property
     def url(self) -> str:
         return f"http://localhost:{self.port}"
+
+
+class _DashboardRequestHandler(http.server.BaseHTTPRequestHandler):
+
+    def __init__(self, *args, runs_index: RunsIndex, open_run: Optional[str] = None, **kwargs):
+        self._index = runs_index
+        self._open_run = open_run
+        super().__init__(*args, **kwargs)
+
+    def log_message(self, fmt, *args):
+        pass
+
+    def _send_json(self, data: dict, status: int = 200) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
+
+    def _send_html(self, html: str, status: int = 200) -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(html.encode())
+
+    def _send_file(self, file_path: Path) -> None:
+        if not file_path.exists():
+            self.send_response(404)
+            self.end_headers()
+            self.wfile.write(b"File not found")
+            return
+        mime_types = {
+            ".png": "image/png",
+            ".html": "text/html",
+            ".json": "application/json",
+            ".txt": "text/plain",
+        }
+        ext = file_path.suffix.lower()
+        mime = mime_types.get(ext, "application/octet-stream")
+        self.send_response(200)
+        self.send_header("Content-Type", mime)
+        self.end_headers()
+        self.wfile.write(file_path.read_bytes())
+
+    def do_GET(self):
+        path = urllib.parse.unquote(self.path)
+        parsed = urllib.parse.urlparse(path)
+        qs = urllib.parse.parse_qs(parsed.query)
+
+        if path == "/" or path.startswith("/?"):
+            run_id = qs.get("run", [None])[0]
+            if run_id:
+                run = self._index.get_run(run_id)
+                if run is None:
+                    self._send_json({"error": f"Run not found: {run_id}"}, 404)
+                    return
+                is_active = run.is_active()
+                self._send_html(make_run_view_html(run_id, is_active))
+            else:
+                self._send_html(_HOME_HTML)
+
+        elif path.startswith("/api/runs"):
+            self._handle_api_runs(path)
+
+        elif path == "/api/schema":
+            schema_path = Path(__file__).parent.parent.parent / "cpptlm_config/schema.json"
+            if schema_path.exists():
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(schema_path.read_bytes())
+            else:
+                self.send_response(404)
+                self.end_headers()
+
+        elif path.startswith("/runs/"):
+            self._handle_static_file(path)
+
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def do_POST(self):
+        path = urllib.parse.unquote(self.path)
+        if path.startswith("/api/runs/"):
+            self._handle_post_runs(path)
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def _handle_api_runs(self, path: str) -> None:
+        parts = path.split("/")
+        if len(parts) == 3 and parts[1] == "api" and parts[2] == "runs":
+            runs = self._index.list_runs()
+            self._send_json([
+                {
+                    "run_id": r.run_id,
+                    "is_active": r.is_active(),
+                    "created_at": r.meta().get("created_at", ""),
+                    "params": r.meta().get("params", {}),
+                    "has_topology": r.topology_png() is not None,
+                    "has_report": r.report() is not None,
+                }
+                for r in runs
+            ])
+            return
+
+        if len(parts) >= 4 and parts[1] == "api" and parts[2] == "runs":
+            run_id = parts[3]
+            run = self._index.get_run(run_id)
+            if run is None:
+                self._send_json({"error": f"Run not found: {run_id}"}, 404)
+                return
+
+            if len(parts) == 4:
+                self._send_json({
+                    "run_id": run.run_id,
+                    "is_active": run.is_active(),
+                    "created_at": run.meta().get("created_at", ""),
+                    "params": run.meta().get("params", {}),
+                    "has_topology": run.topology_png() is not None,
+                    "has_report": run.report() is not None,
+                })
+
+            elif len(parts) == 5:
+                sub = parts[4]
+                if sub == "stats":
+                    offset = int(urllib.parse.parse_qs(urllib.parse.urlparse(path).query).get("offset", ["0"])[0])
+                    records, new_offset = run.stats(offset)
+                    self._send_json({"records": records, "offset": new_offset})
+                elif sub == "config":
+                    config_content = run.config()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/plain; charset=utf-8")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(config_content, indent=2).encode())
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+            else:
+                self.send_response(404)
+                self.end_headers()
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def _handle_post_runs(self, path: str) -> None:
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length) if content_length > 0 else b""
+        try:
+            payload = json.loads(body.decode()) if body else {}
+        except json.JSONDecodeError:
+            payload = {}
+
+        parts = path.split("/")
+        if len(parts) < 5:
+            self._send_json({"error": "Invalid path"}, 400)
+            return
+
+        run_id = parts[3]
+        action = parts[4] if len(parts) > 4 else ""
+        run = self._index.get_run(run_id)
+        if run is None:
+            self._send_json({"error": f"Run not found: {run_id}"}, 404)
+            return
+
+        if action == "config":
+            new_config = payload.get("config", "")
+            try:
+                json.loads(new_config)
+            except json.JSONDecodeError:
+                self._send_json({"error": "Invalid JSON in config"}, 400)
+                return
+            config_file = run.root / "config.json"
+            config_file.write_text(new_config, encoding="utf-8")
+            self._send_json({"status": "saved"})
+            return
+
+        if action == "rerun":
+            if run.is_active():
+                self._send_json({"error": "Simulation already running"}, 409)
+                return
+
+            meta = run.meta()
+            params = meta.get("params", {})
+            cycles = payload.get("cycles", params.get("cycles", 50000))
+            binary_path = params.get("binary_path", "")
+
+            stats_file = run.root / "stats.jsonl"
+            if stats_file.exists():
+                stats_file.write_bytes(b"")
+
+            pid_file = run.root / "pid"
+            cmd = [binary_path, "--cycles", str(cycles)] if binary_path else []
+            if cmd:
+                proc = subprocess.Popen(cmd, cwd=str(run.root))
+                pid_file.write_text(str(proc.pid), encoding="utf-8")
+
+            meta["rerun_count"] = meta.get("rerun_count", 0) + 1
+            meta["last_run"] = __import__("datetime").datetime.now().isoformat()
+            (run.root / "meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
+
+            self._send_json({
+                "status": "started",
+                "run_id": run_id,
+                "pid": proc.pid if cmd else None,
+            })
+            return
+
+        self._send_json({"error": "Unknown action"}, 404)
+
+    def _handle_static_file(self, path: str) -> None:
+        parts = path.split("/")
+        if len(parts) < 4:
+            self.send_response(404)
+            self.end_headers()
+            return
+        run_id = parts[2]
+        filename = "/".join(parts[3:])
+        run = self._index.get_run(run_id)
+        if run is None:
+            self.send_response(404)
+            self.end_headers()
+            return
+        file_path = run.root / filename
+        self._send_file(file_path)
+
+    def handle_one_request(self):
+        try:
+            super().handle_one_request()
+        except (ConnectionError, BrokenPipeError, OSError):
+            pass
