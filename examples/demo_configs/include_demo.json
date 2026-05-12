@@ -1,0 +1,28 @@
+{
+  "name": "include_demo",
+  "description": "Demonstrates JSON include directive",
+  "modules": [
+    {
+      "name": "cpu0",
+      "type": "TrafficGenTLM",
+      "params": {
+        "pattern": "SEQUENTIAL",
+        "num_requests": 5000,
+        "start_addr": "0x1000",
+        "end_addr": "0x2000"
+      },
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    }
+  ],
+  "connections": [
+    {
+      "src": "cpu0",
+      "dst": "l1_0",
+      "latency": 1,
+      "bandwidth": null
+    }
+  ],
+  "include": "common/modules.json"
+}
