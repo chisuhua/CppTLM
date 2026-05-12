@@ -199,8 +199,9 @@ class _DashboardRequestHandler(http.server.BaseHTTPRequestHandler):
                     "has_topology": run.topology_png() is not None,
                     "has_report": run.report() is not None,
                 })
+                return
 
-            elif len(parts) == 5:
+            if len(parts) == 5:
                 sub = parts[4]
                 if sub == "stats":
                     offset = int(urllib.parse.parse_qs(urllib.parse.urlparse(path).query).get("offset", ["0"])[0])
@@ -264,15 +265,23 @@ class _DashboardRequestHandler(http.server.BaseHTTPRequestHandler):
             cycles = payload.get("cycles", params.get("cycles", 50000))
             binary_path = params.get("binary_path", "")
 
+            if not binary_path:
+                self._send_json({"error": "No binary_path in run metadata"}, 400)
+                return
+
+            binary = Path(binary_path)
+            if not binary.exists() or not os.access(binary, os.X_OK):
+                self._send_json({"error": f"binary_path is not a valid executable: {binary_path}"}, 400)
+                return
+
             stats_file = run.root / "stats.jsonl"
             if stats_file.exists():
                 stats_file.write_bytes(b"")
 
             pid_file = run.root / "pid"
-            cmd = [binary_path, "--cycles", str(cycles)] if binary_path else []
-            if cmd:
-                proc = subprocess.Popen(cmd, cwd=str(run.root))
-                pid_file.write_text(str(proc.pid), encoding="utf-8")
+            cmd = [str(binary), "--cycles", str(cycles)]
+            proc = subprocess.Popen(cmd, cwd=str(run.root))
+            pid_file.write_text(str(proc.pid), encoding="utf-8")
 
             meta["rerun_count"] = meta.get("rerun_count", 0) + 1
             meta["last_run"] = __import__("datetime").datetime.now().isoformat()
@@ -281,7 +290,7 @@ class _DashboardRequestHandler(http.server.BaseHTTPRequestHandler):
             self._send_json({
                 "status": "started",
                 "run_id": run_id,
-                "pid": proc.pid if cmd else None,
+                "pid": proc.pid,
             })
             return
 
@@ -295,12 +304,28 @@ class _DashboardRequestHandler(http.server.BaseHTTPRequestHandler):
             return
         run_id = parts[2]
         filename = "/".join(parts[3:])
+        # 安全检查：禁止路径遍历
+        if ".." in filename:
+            self.send_response(403)
+            self.end_headers()
+            return
         run = self._index.get_run(run_id)
         if run is None:
             self.send_response(404)
             self.end_headers()
             return
         file_path = run.root / filename
+        # resolve() 后必须在 run.root 下，防止 .. 逃逸
+        try:
+            resolved = file_path.resolve()
+            if not str(resolved).startswith(str(run.root.resolve())):
+                self.send_response(403)
+                self.end_headers()
+                return
+        except (OSError, RuntimeError):
+            self.send_response(400)
+            self.end_headers()
+            return
         self._send_file(file_path)
 
     def handle_one_request(self):
