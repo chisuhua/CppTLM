@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -12,8 +13,9 @@ class ReportGenerator:
     def generate(self, output_path: str = "cpptlm_report.html"):
         from cpptlm.simulation.result import Result
         from cpptlm.analysis import MetricSummary, AnomalyDetector
+        from cpptlm.analysis.adapters import adapt_result
 
-        data = Result.from_jsonl(self.result_path)
+        data = adapt_result(Result.from_jsonl(self.result_path))
         metrics = MetricSummary(data)
         detector = AnomalyDetector(data)
         bottlenecks = detector.identify_bottlenecks()

@@ -15,6 +15,7 @@
 | [02-transaction-architecture.md](./02-transaction-architecture.md) | ✅ 已批准 | 交易处理架构 |
 | [03-error-debug-architecture.md](./03-error-debug-architecture.md) | ✅ 已批准 | 错误与调试架构 |
 | [04-reset-checkpoint-architecture.md](./04-reset-checkpoint-architecture.md) | 📋 待确认 | 复位与快照架构 |
+| [2026-05-12-unified-visualization-platform.md](./2026-05-12-unified-visualization-platform.md) | ✅ 已批准 | 统一可视化平台 |
 
 ### 决策汇总
 
