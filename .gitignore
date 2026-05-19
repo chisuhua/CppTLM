@@ -29,3 +29,18 @@ output/
 reports/
 topology.dot
 build_asan/
+
+# Example configurations
+configs/single_cluster_soc.*
+configs/soc_cluster_*.json
+configs/soc_cluster_a_annotated.*
+configs/soc_cluster_b_annotated.*
+
+# Editor dependencies
+cpptlm/visualization/editor/node_modules/
+
+# Sisyphus planning files
+.sisyphus/
+
+# Python test cache
+.pytest_cache/
