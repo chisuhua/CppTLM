@@ -54,30 +54,28 @@ def run_simulation(config_path: str, cycles: int, interval: int,
     print(f"[Simulation] cycles={cycles}, interval={interval}")
     print(f"[Simulation] Output: {run_ctx.root / 'stats.jsonl'}")
 
-    cmd = [
-        binary, config_path,
-        "--stream-stats",
-        "--stream-interval", str(interval),
-        "--stream-path", str(run_ctx.root / "stats.jsonl"),
-        "--cycles", str(cycles),
-    ]
-    if seed != 0:
-        cmd.extend(["--seed", str(seed)])
-
-    proc = subprocess.Popen(cmd)
+    from cpptlm.visualization.simulation_runner import SimulationRunner
+    runner = SimulationRunner(Path(binary), run_ctx.root)
+    stream_path = run_ctx.root / "stats.jsonl"
+    proc = runner.launch(
+        config_path=Path(config_path),
+        cycles=cycles,
+        seed=seed,
+        interval=interval,
+        stream_path=stream_path,
+    )
     (run_ctx.root / "pid").write_text(str(proc.pid))
 
     pid_file = run_ctx.root / "pid"
     try:
         if dashboard:
-            from cpptlm.visualization.dashboard_server import DashboardServer
-            import webbrowser
+            import uvicorn
+            from cpptlm.visualization.app import app
             import threading
-            server = DashboardServer(runs_dir=output_dir)
-            server.set_open_run(run_ctx.run_id)
-            t = threading.Thread(target=lambda: server.serve_forever(), daemon=True)
-            t.start()
-            webbrowser.open(f"http://localhost:{server.port}/?run={run_ctx.run_id}")
+            server_port = 8001
+            threading.Thread(target=lambda: uvicorn.run(app, host="0.0.0.0", port=server_port), daemon=True).start()
+            import webbrowser
+            webbrowser.open(f"http://localhost:{server_port}/?run={run_ctx.run_id}")
 
         proc.wait()
     finally:
@@ -94,9 +92,11 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
 
     dash_parser = subparsers.add_parser("dashboard", help="启动统一可视化 Dashboard")
-    dash_parser.add_argument("--port", type=int, default=8050, help="Dashboard 端口 (默认 8050)")
+    dash_parser.add_argument("--port", type=int, default=8001, help="Dashboard 端口 (默认 8001)")
     dash_parser.add_argument("--runs-dir", default="runs", help="runs 目录路径")
     dash_parser.add_argument("--open", metavar="RUN_ID", help="直接打开指定运行目录")
+    dash_parser.add_argument("--engine", choices=["fastapi", "stdlib"], default="fastapi",
+                            help="HTTP 引擎: fastapi (默认，支持 SSE) 或 stdlib")
 
     run_parser = subparsers.add_parser("run", help="运行仿真")
     run_parser.add_argument("--config", help="JSON 配置文件路径")
@@ -114,13 +114,21 @@ def main():
         return
 
     if args.command == "dashboard":
-        from cpptlm.visualization.dashboard_server import DashboardServer
-        server = DashboardServer(port=args.port, runs_dir=args.runs_dir)
-        if args.open:
-            print(f"Opening run: {args.open}")
-            server.set_open_run(args.open)
-        print(f"Starting Dashboard on http://localhost:{args.port}")
-        server.serve_forever()
+        if args.engine == "fastapi":
+            import uvicorn
+            from cpptlm.visualization.app import app
+            print(f"Starting FastAPI Dashboard on http://localhost:{args.port}")
+            print(f"  API docs: http://localhost:{args.port}/docs")
+            print(f"  SSE endpoint: /api/runs/{{id}}/stream")
+            uvicorn.run(app, host="0.0.0.0", port=args.port)
+        else:
+            from cpptlm.visualization.dashboard_server import DashboardServer
+            server = DashboardServer(port=args.port, runs_dir=args.runs_dir)
+            if args.open:
+                print(f"Opening run: {args.open}")
+                server.set_open_run(args.open)
+            print(f"Starting stdlib Dashboard on http://localhost:{args.port}")
+            server.serve_forever()
     elif args.command == "run":
         if not args.config:
             print("[ERROR] --config is required for 'run' command")
