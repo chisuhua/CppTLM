@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>新建运行 - CppTLM</title>
+<style>
+  body { font-family: -apple-system, sans-serif; margin: 20px; background: #f8f9fa; }
+  h1 { border-bottom: 2px solid #333; }
+  .step { display: none; }
+  .step.active { display: block; }
+  .steps-indicator { margin: 20px 0; }
+  .steps-indicator span { margin-right: 10px; }
+  .steps-indicator span.active { font-weight: bold; }
+  .form-group { margin: 15px 0; }
+  label { display: block; margin-bottom: 5px; }
+  input[type="number"], input[type="text"] { padding: 8px; width: 200px; }
+  pre { background: #eee; padding: 10px; overflow-x: auto; }
+  button { padding: 10px 20px; margin-right: 10px; cursor: pointer; }
+  .btn-primary { background: #007bff; color: white; border: none; }
+  .btn-secondary { background: #6c757d; color: white; border: none; }
+  .error { color: #dc3545; margin: 10px 0; }
+</style>
+</head>
+<body>
+<h1>新建仿真运行</h1>
+
+<div class="steps-indicator">
+  <span :class="{'active': step >= 1}">1. 配置</span> →
+  <span :class="{'active': step >= 2}">2. 参数</span> →
+  <span :class="{'active': step >= 3}">3. 预览</span> →
+  <span :class="{'active': step >= 4}">4. 启动</span>
+</div>
+
+<!-- Step 1: Select files -->
+<div class="step" :class="{'active': step === 1}">
+  <div class="form-group">
+    <label>仿真二进制文件</label>
+    <input type="file" x-model="config.binary_path" accept="application/octet-stream">
+  </div>
+  <div class="form-group">
+    <label>拓扑配置文件 (JSON)</label>
+    <input type="file" x-model="config.config_path" accept="application/json">
+  </div>
+  <button class="btn-primary" @click="nextStep()" :disabled="!step1Valid()">下一步</button>
+</div>
+
+<!-- Step 2: Parameters -->
+<div class="step" :class="{'active': step === 2}">
+  <div class="form-group">
+    <label>仿真周期数</label>
+    <input type="number" x-model="config.cycles" min="1000" step="1000" value="50000">
+  </div>
+  <div class="form-group">
+    <label>随机种子 (0 = 随机)</label>
+    <input type="number" x-model="config.seed" min="0" value="0">
+  </div>
+  <div class="form-group">
+    <label>统计间隔</label>
+    <input type="number" x-model="config.interval" min="100" step="100" value="1000">
+  </div>
+  <button class="btn-secondary" @click="prevStep()">上一步</button>
+  <button class="btn-primary" @click="nextStep()">下一步</button>
+</div>
+
+<!-- Step 3: Preview -->
+<div class="step" :class="{'active': step === 3}">
+  <h3>配置预览</h3>
+  <pre x-text="JSON.stringify(config, null, 2)"></pre>
+  <button class="btn-secondary" @click="prevStep()">上一步</button>
+  <button class="btn-primary" @click="submit()">启动仿真</button>
+</div>
+
+<!-- Step 4: Launching -->
+<div class="step" :class="{'active': step === 4}">
+  <p>仿真运行已启动，正在跳转...</p>
+</div>
+
+<p x-show="error" class="error" x-text="error"></p>
+
+<script>
+function wizard() {
+  return {
+    step: 1,
+    error: '',
+    config: {
+      binary_path: '',
+      config_path: '',
+      cycles: 50000,
+      seed: 0,
+      interval: 1000,
+    },
+    step1Valid() {
+      return this.config.binary_path && this.config.config_path;
+    },
+    nextStep() {
+      if (this.step < 4) this.step++;
+    },
+    prevStep() {
+      if (this.step > 1) this.step--;
+    },
+    async submit() {
+      this.error = '';
+      try {
+        const resp = await fetch('/api/runs', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(this.config)
+        });
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.detail || '启动失败');
+        }
+        const data = await resp.json();
+        this.step = 4;
+        setTimeout(() => {
+          window.location.href = '/?run=' + data.run_id;
+        }, 1500);
+      } catch (e) {
+        this.error = e.message;
+        this.step = 3;
+      }
+    }
+  };
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/alpine.min.js" defer></script>
+</body>
+</html>

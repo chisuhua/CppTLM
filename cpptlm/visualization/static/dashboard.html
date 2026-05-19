@@ -1,13 +1,4 @@
-"""
-cpptlm/visualization/dashboard_ui.py — HTML templates for DashboardServer.
-Provides _DASHBOARD_HTML (legacy), _HOME_HTML (runs list), make_run_view_html() (per-run view).
-"""
-
-from __future__ import annotations
-
-from .template_loader import load_template
-
-_DASHBOARD_HTML = r"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
@@ -129,68 +120,4 @@ function render(data) {
 poll();
 </script>
 </body>
-</html>"""
-
-_HOME_HTML = r"""<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<title>CppTLM Unified Dashboard</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<style>
-body { font-family: -apple-system, sans-serif; margin: 20px; background: #f8f9fa; }
-h1 { border-bottom: 2px solid #333; }
-.run-card { background: white; border-radius: 8px; padding: 16px; margin: 12px 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-.run-card.active { border-left: 4px solid #28a745; }
-.run-card.done { border-left: 4px solid #6c757d; }
-.status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #28a745; }
-.status-dot.done { background: #6c757d; }
-.btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
-.btn-primary { background: #007bff; color: white; }
-.btn-secondary { background: #6c757d; color: white; }
-</style>
-</head>
-<body>
-<h1>CppTLM 统一 Dashboard</h1>
-<p>端口: <span id="port"></span> | <a href="/">刷新</a></p>
-<div id="runs-list">加载中...</div>
-<script>
-async function loadRuns() {
-    try {
-        const resp = await fetch('/api/runs');
-        const runs = await resp.json();
-        const container = document.getElementById('runs-list');
-        document.getElementById('port').textContent = window.location.port;
-        if (runs.length === 0) {
-            container.innerHTML = '<p>暂无运行记录。请使用 <code>cpptlm run --config &lt;file.json&gt;</code> 开始仿真。</p>';
-            return;
-        }
-        container.innerHTML = runs.map(function(run) {
-            return '<div class="run-card ' + (run.is_active ? 'active' : 'done') + '">' +
-                '<h3><span class="status-dot' + (run.is_active ? '' : ' done') + '"></span> ' + run.run_id + '</h3>' +
-                '<p>创建时间: ' + run.created_at + '</p>' +
-                '<p>Cycles: ' + (run.params && run.params.cycles ? run.params.cycles : '—') +
-                ' | Status: ' + (run.is_active ? '● Running' : '✓ Completed') + '</p>' +
-                '<a href="/?run=' + encodeURIComponent(run.run_id) + '" class="btn btn-primary">View</a>' +
-                (run.is_active ? '' : ' <button class="btn btn-secondary" onclick="rerun(\'' + run.run_id + '\')">Re-run</button>') +
-                '</div>';
-        }).join('');
-    } catch(e) {
-        document.getElementById('runs-list').innerHTML = '<p class="error">加载失败: ' + e + '</p>';
-    }
-}
-function rerun(runId) {
-    window.location.href = '/?run=' + encodeURIComponent(runId) + '&rerun=1';
-}
-loadRuns();
-</script>
-</body>
-</html>"""
-
-
-def make_run_view_html(run_id: str, is_active: bool) -> str:
-    return load_template("run_view", {"RUN_ID": run_id, "IS_ACTIVE": "true" if is_active else "false"})
-
-
-__all__ = ["_DASHBOARD_HTML", "_HOME_HTML", "make_run_view_html"]
+</html>
