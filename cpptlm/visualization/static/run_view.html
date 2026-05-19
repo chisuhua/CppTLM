@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Run: $RUN_ID$</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+body { font-family: -apple-system, sans-serif; margin: 20px; background: #f8f9fa; }
+.nav { margin: 16px 0; }
+.nav button { padding: 8px 16px; margin-right: 4px; border: none; border-radius: 4px; cursor: pointer; background: #e9ecef; }
+.nav button.active { background: #007bff; color: white; }
+.tab { display: none; background: white; padding: 16px; border-radius: 8px; }
+.tab.active { display: block; }
+.status { padding: 8px 12px; background: #e9ecef; border-radius: 4px; margin-bottom: 16px; }
+.status.running { color: #28a745; }
+.status.done { color: #6c757d; }
+.btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; }
+.btn-primary { background: #007bff; color: white; }
+.btn-secondary { background: #6c757d; color: white; }
+.error { color: #dc3545; }
+textarea { font-family: monospace; }
+</style>
+</head>
+<body>
+<h1>Run: <span id="run-id"></span> <span id="status-badge" class="status done"></span></h1>
+<div class="nav">
+    <button class="active" onclick="showTab('topology')">Topology</button>
+    <button onclick="showTab('metrics')">Metrics</button>
+    <button onclick="showTab('config')">Config</button>
+    <button onclick="showTab('report')">Report</button>
+</div>
+
+<div id="tab-topology" class="tab active">
+    <div id="topology-content">加载中...</div>
+</div>
+
+<div id="tab-metrics" class="tab">
+    <div id="metrics-stats"></div>
+    <div id="latency-chart"></div>
+</div>
+
+<div id="tab-config" class="tab">
+    <div id="editor-toolbar">
+        <button class="btn btn-primary" onclick="saveConfig()">Save</button>
+        <span id="editor-status" style="margin-left:12px;color:#666;"></span>
+        <span id="editor-fallback-warn" style="display:none;margin-left:12px;color:#dc3545;">
+            (Monaco CDN 不可用，使用纯文本模式)
+        </span>
+    </div>
+    <div id="monaco-container" style="width:100%;height:500px;border:1px solid #ccc;"></div>
+    <textarea id="config-editor" style="width:100%;height:500px;font-family:monospace;display:none;"></textarea>
+    <div style="margin-top:8px;">
+        <button class="btn btn-secondary" onclick="showRerunForm()">Re-run</button>
+    </div>
+    <div id="rerun-form" style="display:none;margin-top:12px;">
+        <label>Cycles: <input type="number" id="rerun-cycles" value="50000"/></label>
+        <button class="btn btn-primary" onclick="doRerun()">Run</button>
+    </div>
+    <div id="config-message" style="margin-top:8px;"></div>
+</div>
+
+<div id="tab-report" class="tab">
+    <div id="report-content">加载中...</div>
+</div>
+
+<script>
+var RUN_ID = '$RUN_ID$';
+var isActive = $IS_ACTIVE$;
+var statsOffset = 0;
+
+function showTab(name) {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.nav button').forEach(function(b) { b.classList.remove('active'); });
+    document.getElementById('tab-' + name).classList.add('active');
+    var idx = ['topology','metrics','config','report'].indexOf(name) + 1;
+    document.querySelector('.nav button:nth-child(' + idx + ')').classList.add('active');
+}
+
+async function init() {
+    try {
+        var resp = await fetch('/api/runs/' + encodeURIComponent(RUN_ID));
+        var data = await resp.json();
+        document.getElementById('run-id').textContent = RUN_ID;
+
+        var badge = document.getElementById('status-badge');
+        if (data.is_active) {
+            badge.textContent = '● Running';
+            badge.className = 'status running';
+        } else {
+            badge.textContent = '✓ Completed';
+            badge.className = 'status done';
+        }
+
+        if (data.has_topology) {
+            document.getElementById('topology-content').innerHTML =
+                '<img src="/runs/' + encodeURIComponent(RUN_ID) + '/topology.png" style="max-width:100%"/>';
+        } else {
+            document.getElementById('topology-content').innerHTML = '<p>无 topology 图片</p>';
+        }
+
+        try {
+            var cfgResp = await fetch('/api/runs/' + encodeURIComponent(RUN_ID) + '/config');
+            var cfgText = await cfgResp.text();
+            if (useTextarea) {
+                document.getElementById('config-editor').value = cfgText;
+            } else {
+                monacoEditor.setValue(cfgText);
+            }
+        } catch(e) {
+            if (useTextarea) {
+                document.getElementById('config-editor').value = '// 无法加载 config.json: ' + e;
+            }
+        }
+
+        initMonaco();
+
+        if (data.has_report) {
+            document.getElementById('report-content').innerHTML =
+                '<iframe src="/runs/' + encodeURIComponent(RUN_ID) + '/report.html" style="width:100%;height:600px;border:none;"></iframe>';
+        } else {
+            document.getElementById('report-content').innerHTML = '<p>无 report.html</p>';
+        }
+
+        if (data.is_active) {
+            pollStats();
+        } else {
+            loadStaticMetrics();
+        }
+    } catch(e) {
+        document.getElementById('run-id').textContent = RUN_ID + ' (加载失败)';
+        console.error(e);
+    }
+}
+
+async function pollStats() {
+    if (!isActive) return;
+    try {
+        var resp = await fetch('/api/runs/' + encodeURIComponent(RUN_ID) + '/stats?offset=' + statsOffset);
+        var result = await resp.json();
+        statsOffset = result.offset;
+        renderLiveStats(result.records);
+    } catch(e) { console.warn('poll stats error:', e); }
+    setTimeout(pollStats, 2000);
+}
+
+function renderLiveStats(records) {
+    if (!records || records.length === 0) return;
+    var last = records[records.length - 1];
+    var lat = (last.data && last.data.latency) || {};
+    document.getElementById('metrics-stats').innerHTML =
+        '<p>最新 Cycle: <strong>' + (last.simulation_cycle || 0) + '</strong>' +
+        (lat.avg !== undefined ? ' | 延迟 avg: <strong>' + lat.avg.toFixed(2) + '</strong>' : '') + '</p>';
+}
+
+async function loadStaticMetrics() {
+    try {
+        var resp = await fetch('/api/runs/' + encodeURIComponent(RUN_ID) + '/stats?offset=0');
+        var result = await resp.json();
+        var statsDiv = document.getElementById('metrics-stats');
+        var chartDiv = document.getElementById('latency-chart');
+        if (result.records && result.records.length > 0) {
+            statsDiv.innerHTML = '<p>共 ' + result.records.length + ' 条统计记录（离线模式）</p>';
+            var byGroup = {};
+            result.records.forEach(function(r) {
+                var g = r.group || '?';
+                if (!byGroup[g]) byGroup[g] = {cycles: [], avgs: []};
+                byGroup[g].cycles.push(r.simulation_cycle || 0);
+                byGroup[g].avgs.push((r.data && r.data.latency && r.data.latency.avg) || 0);
+            });
+            var traces = Object.keys(byGroup).map(function(g) {
+                return {x: byGroup[g].cycles, y: byGroup[g].avgs, type: 'scatter', mode: 'lines+markers', name: g, line: {color: '#2196F3'}};
+            });
+            Plotly.newPlot(chartDiv, traces, {margin: {t:10,r:10,b:30,l:50}, xaxis: {title:'Cycle'}, yaxis: {title:'Latency (cycle)'}});
+        } else {
+            statsDiv.innerHTML = '<p>暂无 metrics 数据</p>';
+        }
+    } catch(e) {
+        document.getElementById('metrics-stats').innerHTML = '<p class="error">加载失败: ' + e + '</p>';
+    }
+}
+
+async function saveConfig() {
+    let configText;
+    if (useTextarea) {
+        configText = document.getElementById('config-editor').value;
+    } else {
+        configText = monacoEditor.getValue();
+    }
+    const status = document.getElementById('editor-status');
+    status.textContent = '保存中...';
+    status.style.color = '#666';
+    try {
+        var resp = await fetch('/api/runs/' + encodeURIComponent(RUN_ID) + '/config', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({config: configText})
+        });
+        var result = await resp.json();
+        if (resp.ok) {
+            status.textContent = '✓ 已保存';
+            status.style.color = '#28a745';
+            setTimeout(function() { status.textContent = ''; }, 3000);
+        } else {
+            throw new Error('Server error: ' + (result.error || resp.status));
+        }
+    } catch(e) {
+        status.textContent = '✗ 保存失败: ' + e;
+        status.style.color = '#dc3545';
+    }
+}
+
+let monacoEditor = null;
+let useTextarea = false;
+
+async function initMonaco() {
+    const container = document.getElementById('monaco-container');
+    const textarea = document.getElementById('config-editor');
+    const warn = document.getElementById('editor-fallback-warn');
+
+    try {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs/loader.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+
+        require.config({
+            paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs' }
+        });
+
+        await new Promise((resolve, reject) => {
+            require(['vs/editor/editor.main'], function () {
+                monacoEditor = monaco.editor.create(container, {
+                    value: '',
+                    language: 'json',
+                    theme: 'vs',
+                    automaticLayout: true,
+                    scrollBeyondLastLine: false,
+                    minimap: { enabled: false },
+                    folding: true,
+                    lineNumbers: 'on',
+                    renderWhitespace: 'selection',
+                });
+                resolve();
+            }, reject);
+        });
+
+        try {
+            const schemaResp = await fetch('/api/schema');
+            if (schemaResp.ok) {
+                const schema = await schemaResp.json();
+                monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+                    validate: true,
+                    schemas: [{
+                        uri: 'https://cpptlm/schema/config.json',
+                        fileMatch: ['*'],
+                        schema: schema
+                    }]
+                });
+            }
+        } catch (e) {
+        }
+
+    } catch (e) {
+        useTextarea = true;
+        container.style.display = 'none';
+        textarea.style.display = 'block';
+        warn.style.display = 'inline';
+    }
+}
+
+function showRerunForm() {
+    var form = document.getElementById('rerun-form');
+    form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+async function doRerun() {
+    var cycles = parseInt(document.getElementById('rerun-cycles').value) || 50000;
+    var msgDiv = document.getElementById('config-message');
+    try {
+        var resp = await fetch('/api/runs/' + encodeURIComponent(RUN_ID) + '/rerun', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({cycles: cycles})
+        });
+        var result = await resp.json();
+        if (resp.ok) {
+            msgDiv.textContent = '重新运行已启动 (PID: ' + result.pid + ')';
+            setTimeout(function() { window.location.reload(); }, 3000);
+        } else {
+            msgDiv.textContent = '错误: ' + (result.error || resp.status);
+            msgDiv.className = 'error';
+        }
+    } catch(e) {
+        msgDiv.textContent = '错误: ' + e;
+        msgDiv.className = 'error';
+    }
+}
+
+init();
+</script>
+</body>
+</html>
