@@ -38,6 +38,7 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
         
         std::string src_spec = conn["src"];
         std::string dst_spec = conn["dst"];
+        int latency = conn.value("latency", 0);  // P1.2: 提取 latency
         
         // Resolve source port
         auto [src_module_name, src_port_name] = parsePortSpec(src_spec);
@@ -65,7 +66,7 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
                     }
                 }
                 
-                port_creations.emplace_back(internal_owner, internal_port, out_sizes, priorities, false);
+                port_creations.emplace_back(internal_owner, internal_port, out_sizes, priorities, false, latency);
             }
         } else if (!src_port_name.empty()) {
             // Regular module downstream port
@@ -83,7 +84,7 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
                 }
             }
             
-            port_creations.emplace_back(src_module_name, src_port_name, out_sizes, priorities, false);
+            port_creations.emplace_back(src_module_name, src_port_name, out_sizes, priorities, false, latency);
         }
         
         // Resolve destination port
@@ -112,7 +113,7 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
                     }
                 }
                 
-                port_creations.emplace_back(internal_owner, internal_port, in_sizes, priorities, true);
+                port_creations.emplace_back(internal_owner, internal_port, in_sizes, priorities, true, latency);
             }
         } else if (!dst_port_name.empty()) {
             // Regular module upstream port
@@ -125,7 +126,7 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
                 }
             }
             
-            port_creations.emplace_back(dst_module_name, dst_port_name, in_sizes, priorities, true);
+            port_creations.emplace_back(dst_module_name, dst_port_name, in_sizes, priorities, true, latency);
         }
     }
     
