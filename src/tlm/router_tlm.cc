@@ -278,21 +278,81 @@ void RouterTLM::stage_switch_allocation() {
 // ============================================================================
 
 void RouterTLM::stage_switch_traversal() {
+    // P0.1: 首先处理等待 credit 的 flit (从上一周期遗留)
+    for (unsigned out_port = 0; out_port < NUM_PORTS; ++out_port) {
+        for (unsigned out_vc = 0; out_vc < NUM_VCS; ++out_vc) {
+            RouterFlit& waiting_flit = pipe_reg_[out_port][out_vc];
+            if (!waiting_flit.stage.waiting_for_credit) continue;
+
+            // 检查下游是否有 credit
+            if (!has_credit(out_port, out_vc)) continue;  // 仍然没有 credit，继续等待
+
+            // 下游有 credit，推进 flit 到 pending_link_
+            waiting_flit.stage.waiting_for_credit = false;
+
+            // 消耗下游 credit
+            consume_credit(out_port, out_vc);
+
+            // 更新 hop 计数
+            waiting_flit.bundle.hops.write(waiting_flit.bundle.hops.read() + 1);
+            waiting_flit.bundle.src_port.write(out_port);
+
+            // 写入 pending_link_ 队列
+            pending_link_.push({
+                waiting_flit.bundle,
+                out_port,
+                out_vc,
+                waiting_flit.in_port,
+                waiting_flit.in_vc,
+                waiting_flit.cycle_received
+            });
+
+            // 更新统计
+            ++stats_flits_forwarded_;
+            stats_total_hops_ += waiting_flit.bundle.hops.read();
+            stats_latency_.sample(current_cycle_ - waiting_flit.cycle_received);
+
+            // 触发 credit 返回到上游
+            return_credit_to_upstream(waiting_flit.in_port, waiting_flit.in_vc);
+
+            // TAIL flit: 释放 VC，更新 packet 统计
+            if (waiting_flit.bundle.is_tail()) {
+                release_vc(out_port, out_vc);
+                ++stats_packets_forwarded_;
+                routing_table_.erase(waiting_flit.bundle.transaction_id.read());
+            }
+
+            // 清理 waiting flit
+            waiting_flit = RouterFlit();
+        }
+    }
+
+    // 处理新的 SA winners
     if (sa_winners_.empty()) return;
 
-    // 处理所有选中的 winners
     for (const auto& winner : sa_winners_) {
         auto& buf = input_buffer_[winner.in_port][winner.in_vc];
         if (buf.empty()) continue;
 
         RouterFlit flit = buf.front();
-        buf.pop();
 
         unsigned out_port = winner.out_port;
         unsigned out_vc = winner.out_vc;
 
-        // ST 阶段：flit 从 input_buffer 移出，触发 credit 返回到上游
-        return_credit_to_upstream(winner.in_port, winner.out_vc);
+        // P0.1: 检查下游是否有 credit
+        if (!has_credit(out_port, out_vc)) {
+            // 下游没有 credit，flit 保持在 pipe_reg_ 中等待
+            flit.stage.waiting_for_credit = true;
+            pipe_reg_[out_port][out_vc] = flit;
+            buf.pop();
+
+            // 仍然需要释放输入 VC 的占用（让上游可以继续发）
+            return_credit_to_upstream(winner.in_port, winner.in_vc);
+            continue;
+        }
+
+        // 下游有 credit，正常处理
+        buf.pop();
 
         // 消耗下游 credit
         consume_credit(out_port, out_vc);
@@ -301,22 +361,29 @@ void RouterTLM::stage_switch_traversal() {
         flit.bundle.hops.write(flit.bundle.hops.read() + 1);
         flit.bundle.src_port.write(out_port);
 
-        // 写入 pending link 队列 (LT 阶段才会真正发送到 resp_out_)
-        pending_link_.push({flit.bundle, out_port});
+        // 写入 pending_link_ 队列
+        pending_link_.push({
+            flit.bundle,
+            out_port,
+            out_vc,
+            flit.in_port,
+            flit.in_vc,
+            flit.cycle_received
+        });
 
         // 更新统计
         ++stats_flits_forwarded_;
         stats_total_hops_ += flit.bundle.hops.read();
         stats_latency_.sample(current_cycle_ - flit.cycle_received);
 
+        // 触发 credit 返回到上游
+        return_credit_to_upstream(winner.in_port, winner.in_vc);
+
         // TAIL flit: 释放 VC，更新 packet 统计
         if (flit.bundle.is_tail()) {
             release_vc(out_port, out_vc);
             ++stats_packets_forwarded_;
-
-            // 清理路由表
-            uint64_t pkt_id = flit.bundle.transaction_id.read();
-            routing_table_.erase(pkt_id);
+            routing_table_.erase(flit.bundle.transaction_id.read());
         }
     }
 }

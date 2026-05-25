@@ -2,15 +2,17 @@
 
 ## 1. Analysis
 
-- [ ] 1.1 定位 `router_tlm.hh` 中的 `pipe_reg_` 定义
-- [ ] 1.2 分析流水线处理方法的调用时序
-- [ ] 1.3 识别需要跨周期保持的状态字段
+- [x] 1.1 定位 `router_tlm.hh` 中的 `pipe_reg_` 定义
+- [x] 1.2 分析流水线处理方法的调用时序
+- [x] 1.3 识别需要跨周期保持的状态字段
 
 ## 2. Implementation
 
-- [ ] 2.1 在流水线处理方法开始时保存上周期状态
-- [ ] 2.2 修改状态更新逻辑，使用合并而非直接覆盖
-- [ ] 2.3 确保等待状态（VC 仲裁结果）正确保持
+- [x] 2.1 添加 `waiting_for_credit` 标志到 `RouterStageState`
+- [x] 2.2 扩展 `PendingFlit` 结构包含完整状态
+- [x] 2.3 实现 `pipe_reg_` 保存等待 credit 的 flit
+- [x] 2.4 修改 `stage_switch_traversal()` 检查下游 credit
+- [x] 2.5 实现等待 flit 跨周期恢复逻辑
 
 ## 3. Testing
 

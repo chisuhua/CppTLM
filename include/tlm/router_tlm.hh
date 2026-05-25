@@ -37,6 +37,7 @@ enum class RouterPort : unsigned {
 struct RouterStageState {
     bool active = false;          // 本周期是否有 flit 处理
     bool vc_allocated = false;   // VA 阶段是否已分配 VC (避免重复分配)
+    bool waiting_for_credit = false;  // P0.1: 是否在等待下游 credit
     unsigned out_port = 0;        // 分配的输出端口
     unsigned out_vc = 0;          // 分配的输出 VC
     uint64_t packet_id = 0;      // 分组 ID (用于路由表查找)
@@ -305,8 +306,16 @@ private:
     struct PendingFlit {
         bundles::NoCFlitBundle bundle;
         unsigned out_port;
+        unsigned out_vc;           // P0.1: 输出的 VC
+        unsigned in_port;           // P0.1: 输入端口 (用于 credit 返回)
+        unsigned in_vc;            // P0.1: 输入 VC
+        uint64_t cycle_received;   // P0.1: 接收周期 (用于延迟统计)
     };
     std::queue<PendingFlit> pending_link_;  // ST → LT 之间的 1 周期延迟队列
+
+    // ========== P0.1: 等待 credit 的 flit 寄存器 ==========
+    // 当 SA 选中了 flit 但下游没有 credit 时，flit 保存在这里
+    std::array<std::array<RouterFlit, NUM_VCS>, NUM_PORTS> pipe_reg_;
 
     // ========== SA 多 winner 支持 (每周期可转发多个 flit) ==========
     struct SAWinner {
