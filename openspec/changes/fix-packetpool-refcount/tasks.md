@@ -8,9 +8,9 @@
 
 ## 2. Implementation
 
-- [ ] 2.1 将 `Packet::ref_count` 改为 `std::atomic<uint32_t>`
-- [ ] 2.2 删除 `add_ref()` 私有方法（死代码）
-- [ ] 2.3 确保 `remove_ref()` 逻辑正确
+- [x] 2.1 将 `Packet::ref_count` 改为 `std::atomic<uint32_t>`
+- [x] 2.2 删除 `add_ref()` 私有方法（死代码）
+- [x] 2.3 确保 `remove_ref()` 逻辑正确
 
 ## 3. Testing
 
