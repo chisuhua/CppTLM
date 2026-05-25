@@ -32,6 +32,7 @@ private:
     static constexpr unsigned PORT_MASK = 0x3;
 
     cpptlm::StreamAdapterBase* adapter[NUM_PORTS] = {nullptr};
+    bool port_busy_[NUM_PORTS] = {false};
 
     // 性能统计
     tlm_stats::StatGroup stats_;
@@ -70,25 +71,37 @@ public:
     std::string get_stats_path() const override { return "system.crossbar"; }
 
     void tick() override {
+        bool conflicted = false;
+        unsigned conflict_dst = NUM_PORTS;
+
+        for (unsigned i = 0; i < NUM_PORTS; i++) {
+            port_busy_[i] = false;
+        }
+
         for (unsigned i = 0; i < NUM_PORTS; i++) {
             if (req_in[i].valid() && req_in[i].ready()) {
                 const bundles::CacheReqBundle& req = req_in[i].data();
                 unsigned dst = route_address(req.address.read());
-                
-                // 统计：接收 flit
-                ++stats_flits_received_;
-                
+
+                // 检测总线冲突：同一周期多个请求路由到同一端口
+                if (port_busy_[dst]) {
+                    conflicted = true;
+                    conflict_dst = dst;
+                } else {
+                    port_busy_[dst] = true;
+                }
+
                 bundles::CacheRespBundle resp;
                 resp.transaction_id.write(req.transaction_id.read());
                 resp.data.write(req.data.read());
                 resp.is_hit.write(1);
                 resp.error_code.write(0);
                 resp_out[dst].write(resp);
-                
+
                 // 统计：发送 flit + 延迟采样
                 ++stats_flits_sent_;
-                stats_flit_latency_.sample(3);  // 模拟 3 cycle 穿越延迟
-                
+                stats_flit_latency_.sample(3);
+
                 req_in[i].consume();
             }
         }
@@ -101,6 +114,7 @@ public:
         for (unsigned i = 0; i < NUM_PORTS; i++) {
             req_in[i].reset();
             resp_out[i].reset();
+            port_busy_[i] = false;
         }
         stats_.reset();
     }
