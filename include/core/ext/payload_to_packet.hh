@@ -1,4 +1,4 @@
-// adapters/payload_to_packet.hh
+// include/core/ext/payload_to_packet.hh
 #ifndef PAYLOAD_TO_PACKET_HH
 #define PAYLOAD_TO_PACKET_HH
 
@@ -6,6 +6,12 @@
 #include <unordered_map>
 #include "packet.hh"
 #include "mem_exts.hh"
+
+struct PairHash {
+    std::size_t operator()(const std::pair<uint64_t, uint64_t>& p) const {
+        return std::hash<uint64_t>{}(p.first) ^ (std::hash<uint64_t>{}(p.second) << 1);
+    }
+};
 
 /**
  * @brief 通用适配器：将 (POD, sid, sqn) 封装回新的 Packet*
@@ -28,8 +34,8 @@ struct PayloadToPacket : sc_core::sc_module {
     sc_core::sc_out<bool> valid_out;
 
     // 请求缓存表：sid+sqn → 请求包（用于恢复 src/dest 等）
-    std::unordered_map<std::pair<uint64_t, uint64_t>, Packet*, 
-                       std::hash<uint64_t>> pending_reqs;
+    std::unordered_map<std::pair<uint64_t, uint64_t>, Packet*,
+                       PairHash> pending_reqs;
 
     void cache_request(Packet* req_pkt) {
         if (req_pkt) {
