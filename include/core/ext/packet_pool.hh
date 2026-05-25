@@ -40,14 +40,7 @@ private:
         return new tlm::tlm_generic_payload();
     }
 
-    // 增加引用计数
-    void add_ref(Packet* pkt) {
-        if (pkt) {
-            pkt->ref_count++;
-        }
-    }
-
-    // 减少引用计数，如果为0则回收
+    // 减少引用计数，如果为0则回收 (P0.2: add_ref() 死代码已删除)
     void remove_ref(Packet* pkt) {
         if (!pkt || pkt->ref_count <= 0) return;
 

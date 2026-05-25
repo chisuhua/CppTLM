@@ -12,6 +12,7 @@
 #include "ext/transaction_context_ext.hh"
 #include "ext/error_context_ext.hh"
 #include <cstdint>
+#include <atomic>
 #include <unordered_map>
 
 class PacketPool;
@@ -222,8 +223,8 @@ public:
     }
 
 private:
-    // 引用计数
-    int ref_count = 0;
+    // 引用计数 (P0.2: 改为原子类型以支持多线程)
+    std::atomic<uint32_t> ref_count{0};
 
     // reset 方法 - 重置Packet状态以复用
     void reset() {
