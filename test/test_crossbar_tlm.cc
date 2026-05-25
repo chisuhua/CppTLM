@@ -196,3 +196,33 @@ TEST_CASE("CrossbarTLM is_hit always true (routing only)", "[tlm][crossbar]") {
     xbar.tick();
     REQUIRE(xbar.resp_out[1].data().is_hit.read() == true);
 }
+
+TEST_CASE("CrossbarTLM detects bus conflict on same destination", "[tlm][crossbar][conflict]") {
+    EventQueue eq;
+    CrossbarTLM xbar("xbar", &eq);
+
+    // 两个请求同时路由到 port 1 (0x1000-0x1FFF)
+    bundles::CacheReqBundle req0;
+    req0.transaction_id.write(100);
+    req0.address.write(0x1000);  // dst = port 1
+    req0.is_write.write(0);
+    req0.data.write(0xAAAA);
+    req0.size.write(8);
+    std::memcpy(&xbar.req_in[0].data(), &req0, sizeof(req0));
+    xbar.req_in[0].set_valid(true);
+
+    bundles::CacheReqBundle req1;
+    req1.transaction_id.write(101);
+    req1.address.write(0x1500);  // dst = port 1 (same as above!)
+    req1.is_write.write(0);
+    req1.data.write(0xBBBB);
+    req1.size.write(8);
+    std::memcpy(&xbar.req_in[2].data(), &req1, sizeof(req1));
+    xbar.req_in[2].set_valid(true);
+
+    xbar.tick();
+
+    // Both should be consumed but only first one wins
+    REQUIRE(xbar.req_in[0].valid() == false);
+    REQUIRE(xbar.req_in[2].valid() == false);
+}
