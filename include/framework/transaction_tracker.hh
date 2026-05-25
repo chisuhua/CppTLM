@@ -25,9 +25,12 @@ struct TransactionRecord {
     uint64_t complete_timestamp = 0;
     std::vector<std::pair<std::string, uint64_t>> hop_log;  // (module, latency)
     bool is_complete = false;
-    
+
     // 父子关系
     std::vector<uint64_t> child_transactions;
+
+    // Payload 指针（用于 extension 同步）
+    tlm::tlm_generic_payload* payload_ = nullptr;
 };
 
 /**
@@ -93,18 +96,19 @@ public:
      * @param type 交易类型（READ/WRITE）
      * @return 交易 ID
      */
-    uint64_t create_transaction(tlm::tlm_generic_payload* payload, 
-                                const std::string& source, 
+    uint64_t create_transaction(tlm::tlm_generic_payload* payload,
+                                const std::string& source,
                                 const std::string& type) {
         // 分配新交易 ID
         uint64_t tid = next_transaction_id_++;
-        
+
         TransactionRecord record;
         record.transaction_id = tid;
         record.source_module = source;
         record.type = type;
         record.create_timestamp = global_timestamp_;
-        
+        record.payload_ = payload;
+
         // 同步到 Extension
         if (payload) {
             auto* ext = create_transaction_context(payload, tid, 0, 0, 1);
@@ -112,7 +116,7 @@ public:
             ext->type = type;
             ext->create_timestamp = global_timestamp_;
         }
-        
+
         transactions_[tid] = record;
         return tid;
     }
@@ -126,13 +130,16 @@ public:
      */
     void record_hop(uint64_t tid, const std::string& module, uint64_t latency, const std::string& event) {
         if (transactions_.count(tid) == 0) return;
-        
+
         auto& record = transactions_[tid];
         record.hop_log.emplace_back(module, latency);
-        
-        // 同时记录到 Extension
-        // （需要 payload 指针，暂不实现）
-        (void)event;
+
+        // 同步到 Extension
+        if (record.payload_) {
+            if (auto* ext = get_transaction_context(record.payload_)) {
+                ext->add_trace(module, global_timestamp_, latency, event);
+            }
+        }
     }
     
     /**
