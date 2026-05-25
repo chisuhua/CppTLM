@@ -143,3 +143,62 @@ TEST_CASE("ConnectionResolutionTest DuplicateConnectionDeduplication", "[connect
     const auto& upstream_ports = l1->getPortManager().getUpstreamPorts();
     REQUIRE(upstream_ports.size() == 1);  // Must be 1, not 2
 }
+
+// P1.2: Test that latency config propagates to port delay
+// RED: This test should FAIL until latency is properly propagated
+TEST_CASE("ConnectionResolutionTest LatencyPropagation", "[connection][resolution][p1.2]") {
+    EventQueue eq;
+
+    json config = R"({
+        "modules": [
+            { "name": "cpu0", "type": "MockSim" },
+            { "name": "l1", "type": "MockSim" }
+        ],
+        "connections": [
+            { "src": "cpu0", "dst": "l1", "latency": 5 }
+        ]
+    })"_json;
+
+    ModuleFactory factory(&eq);
+    factory.instantiateAll(config);
+
+    auto* cpu0 = factory.getInstance("cpu0");
+    REQUIRE(cpu0 != nullptr);
+
+    auto* l1 = factory.getInstance("l1");
+    REQUIRE(l1 != nullptr);
+
+    const auto& downstream_ports = cpu0->getPortManager().getDownstreamPorts();
+    REQUIRE(downstream_ports.size() >= 1);
+
+    // Verify latency propagates to the downstream port delay
+    auto* port = downstream_ports[0];
+    REQUIRE(port->getDelay() == 5);
+}
+
+// P1.2: Test that default latency=0 works (REFACTOR verification)
+TEST_CASE("ConnectionResolutionTest DefaultLatencyIsZero", "[connection][resolution][p1.2]") {
+    EventQueue eq;
+
+    json config = R"({
+        "modules": [
+            { "name": "cpu0", "type": "MockSim" },
+            { "name": "l1", "type": "MockSim" }
+        ],
+        "connections": [
+            { "src": "cpu0", "dst": "l1" }
+        ]
+    })"_json;
+
+    ModuleFactory factory(&eq);
+    factory.instantiateAll(config);
+
+    auto* cpu0 = factory.getInstance("cpu0");
+    REQUIRE(cpu0 != nullptr);
+
+    const auto& downstream_ports = cpu0->getPortManager().getDownstreamPorts();
+    REQUIRE(downstream_ports.size() >= 1);
+
+    auto* port = downstream_ports[0];
+    REQUIRE(port->getDelay() == 0);
+}

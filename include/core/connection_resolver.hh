@@ -15,11 +15,12 @@ struct PortCreationInfo {
     std::vector<size_t> buffer_sizes;
     std::vector<size_t> priorities;
     bool is_upstream;
+    int latency;  // P1.2: latency 注入 bug 修复 - 需要传递到端口创建
     
     PortCreationInfo() = default;
     PortCreationInfo(const std::string& o, const std::string& p, 
-                     const std::vector<size_t>& bs, const std::vector<size_t>& pri, bool upstream)
-        : owner_name(o), port_name(p), buffer_sizes(bs), priorities(pri), is_upstream(upstream) {}
+                     const std::vector<size_t>& bs, const std::vector<size_t>& pri, bool upstream, int lat = 0)
+        : owner_name(o), port_name(p), buffer_sizes(bs), priorities(pri), is_upstream(upstream), latency(lat) {}
 };
 /**
  * @brief Connection resolver for parsing and creating connections between modules
