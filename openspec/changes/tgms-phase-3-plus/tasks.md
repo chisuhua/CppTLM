@@ -16,11 +16,11 @@
 
 ## 3. Phase 3.1 - Variable Reference
 
-- [ ] 3.1 Implement `${path}` syntax parsing
-- [ ] 3.2 Implement module name reference resolution
-- [ ] 3.3 Implement array element reference (${modules[0].name})
-- [ ] 3.4 Implement nested path reference (${settings.delay})
-- [ ] 3.5 Add unresolved reference warning
+- [x] 3.1 Implement `${path}` syntax parsing
+- [x] 3.2 Implement module name reference resolution
+- [x] 3.3 Implement array element reference (${modules[0].name})
+- [x] 3.4 Implement nested path reference (${settings.delay})
+- [x] 3.5 Add unresolved reference warning
 
 ## 4. Phase 3.1 - Parameter Defaults
 

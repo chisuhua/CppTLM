@@ -631,11 +631,13 @@ bool ModuleFactory::instantiateAll(const json& config) {
         auto it = object_instances.find(info.owner_name);
         if (it != object_instances.end() && it->second->hasPortManager()) {
             auto& pm = it->second->getPortManager();
-            
+
             if (info.is_upstream) {
-                pm.addUpstreamPort(it->second, info.buffer_sizes, info.priorities, info.port_name);
+                auto* port = pm.addUpstreamPort(it->second, info.buffer_sizes, info.priorities, info.port_name);
+                if (port) port->setDelay(info.latency);
             } else {
-                pm.addDownstreamPort(it->second, info.buffer_sizes, info.priorities, info.port_name);
+                auto* port = pm.addDownstreamPort(it->second, info.buffer_sizes, info.priorities, info.port_name);
+                if (port) port->setDelay(info.latency);
             }
         }
     }
