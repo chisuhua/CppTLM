@@ -86,6 +86,46 @@ class TopologyValidator:
                 message=f"Undefined modules in connections: {sorted(undefined)}",
                 suggestion="Add these modules to the modules list or fix connection src/dst"
             )
+
+        seen = set()
+        for i, conn in enumerate(self.config.get('connections', [])):
+            src = conn.get('src', '')
+            dst = conn.get('dst', '')
+            src_mod = src.split('.')[0] if '.' in src else src
+            dst_mod = dst.split('.')[0] if '.' in dst else dst
+
+            if src_mod == dst_mod:
+                self.result.add_warning(
+                    code="W001",
+                    message=f"Self-loop: {src} -> {dst}",
+                    suggestion="Remove self-connection or use different ports"
+                )
+
+            pair = (src_mod, dst_mod)
+            if pair in seen:
+                self.result.add_warning(
+                    code="W002",
+                    message=f"Duplicate connection: {src} -> {dst}",
+                    suggestion="Remove duplicate connection"
+                )
+            seen.add(pair)
+
+        connected = set()
+        for conn in self.config.get('connections', []):
+            src = conn.get('src', '').split('.')[0]
+            dst = conn.get('dst', '').split('.')[0]
+            connected.add(src)
+            connected.add(dst)
+
+        for mod in self.config.get('modules', []):
+            name = mod.get('name', '')
+            if name and name not in connected:
+                self.result.add_warning(
+                    code="W003",
+                    message=f"Isolated module: {name}",
+                    suggestion="Connect module to network or remove if unnecessary"
+                )
+
         return self
 
     def validate_reachability(self) -> "TopologyValidator":
