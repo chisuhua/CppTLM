@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "code-review-graph": {
+      "command": "/home/ubuntu/venv/bin/python3",
+      "args": [
+        "-m",
+        "code_review_graph",
+        "serve"
+      ],
+      "cwd": "/workspace/project/CppTLM",
+      "type": "stdio",
+      "env": []
+    }
+  }
+}
