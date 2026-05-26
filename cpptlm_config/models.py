@@ -135,14 +135,13 @@ class ConfigSchema(BaseModel):
         result = {
             "name": self.name,
             "description": self.description,
+            "metadata": {
+                "version": self.metadata.version,
+                "schema_version": self.metadata.schema_version,
+            },
             "modules": _serialize(self.modules),
             "connections": _serialize(self.connections),
         }
-        if self.metadata.version != "1.0.0" or self.metadata.schema_version != "1.0":
-            result["metadata"] = {
-                "version": self.metadata.version,
-                "schema_version": self.metadata.schema_version,
-            }
         if self.module_groups:
             result["module_groups"] = _serialize(self.module_groups)
         if self.include:
