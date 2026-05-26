@@ -26,7 +26,6 @@ __pycache__/
 configs.bak1/
 configs/common/
 output/
-reports/
 topology.dot
 build_asan/
 

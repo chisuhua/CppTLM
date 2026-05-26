@@ -1,0 +1,16 @@
+{
+  "candidates": [
+    "audit-legacy-modules",
+    "cleanup-redundant-configs",
+    "fix-crossbar-bus-conflict",
+    "fix-debug-tracker-singleton",
+    "fix-dprintf-consistency",
+    "fix-payload-hash",
+    "fix-router-vc-allocation",
+    "fix-transaction-tracker-ext",
+    "merge-linter-to-validator",
+    "modernize-typedef-to-using",
+    "relax-portmanager-constraint"
+  ],
+  "note": "all 11 proposed changes"
+}
