@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <mutex>
 
 /**
  * @brief 错误记录
@@ -72,6 +73,7 @@ private:
     bool enable_state_history_ = true;
     bool stop_on_fatal_ = false;
     bool initialized_ = false;
+    std::mutex init_mutex_;
     
     uint64_t next_error_id_ = 1;
 
@@ -93,15 +95,16 @@ public:
     /**
      * @brief 初始化追踪器
      */
-    void initialize(bool enable_errors = true, 
+    void initialize(bool enable_errors = true,
                    bool enable_state = true,
                    bool stop_on_fatal = false) {
+        std::lock_guard<std::mutex> lock(init_mutex_);
         if (initialized_) return;
-        
+
         enable_error_tracking_ = enable_errors;
         enable_state_history_ = enable_state;
         stop_on_fatal_ = stop_on_fatal;
-        
+
         errors_.clear();
         state_history_.clear();
         next_error_id_ = 1;
