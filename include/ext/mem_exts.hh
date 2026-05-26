@@ -12,7 +12,7 @@
 class ReadCmdExt : public tlm::tlm_extension<ReadCmdExt>
 {
 public:
-    typedef ReadCmd data_t;
+    using data_t = ReadCmd;
     ReadCmd data;
 
     ReadCmdExt() {}
@@ -35,7 +35,7 @@ public:
 class WriteCmdExt : public tlm::tlm_extension<WriteCmdExt>
 {
 public:
-    typedef WriteCmd data_t;
+    using data_t = WriteCmd;
     WriteCmd data;
 
     WriteCmdExt() {}
@@ -58,7 +58,7 @@ public:
 class WriteDataExt : public tlm::tlm_extension<WriteDataExt>
 {
 public:
-    typedef WriteData data_t;
+    using data_t = WriteData;
     WriteData data;
 
     WriteDataExt() {}
@@ -81,7 +81,7 @@ public:
 class ReadRespExt : public tlm::tlm_extension<ReadRespExt>
 {
 public:
-    typedef ReadResp data_t;
+    using data_t = ReadResp;
     ReadResp data;
 
     ReadRespExt() {}
@@ -104,7 +104,7 @@ public:
 class WriteRespExt : public tlm::tlm_extension<WriteRespExt>
 {
 public:
-    typedef WriteResp data_t;
+    using data_t = WriteResp;
     WriteResp data;
 
     WriteRespExt() {}
@@ -127,7 +127,7 @@ public:
 class StreamIDExt : public tlm::tlm_extension<StreamIDExt>
 {
 public:
-    typedef StreamUniqID data_t;
+    using data_t = StreamUniqID;
     StreamUniqID data;
 
     StreamIDExt() {}
