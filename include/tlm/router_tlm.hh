@@ -294,9 +294,6 @@ private:
     // ========== 当前周期 (由 SimCore 驱动) ==========
     uint64_t current_cycle_ = 0;
 
-    // ========== 流水线寄存器 (每周期保存中间状态) ==========
-    RouterStageState pipe_reg_[NUM_PORTS][NUM_VCS];
-
     // ========== Credit 超时检测 (防止死锁) ==========
     uint64_t credit_timeout_ = 0;  // 默认关闭 (>0 时启用)
     std::array<std::array<uint64_t, NUM_VCS>, NUM_PORTS> last_credit_return_cycle_{};
