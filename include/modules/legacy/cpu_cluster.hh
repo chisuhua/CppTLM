@@ -16,3 +16,14 @@ private:
 };
 
 #endif // CPU_CLUSTER_HH
+// ========================================================================
+// DEPRECATION NOTICE
+// ========================================================================
+// This module is DEPRECATED as of CppTLM v2.1
+//
+// Migration path:
+//   - Use JSON topology + ModuleFactory for cluster configuration
+//   - See configs/example_hierarchy/ for modern cluster patterns
+//
+// This file will be removed in a future version.
+// ========================================================================

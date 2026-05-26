@@ -60,3 +60,15 @@ public:
 };
 
 #endif // CPU_SIM_HH
+// ========================================================================
+// DEPRECATION NOTICE
+// ========================================================================
+// This module is DEPRECATED as of CppTLM v2.1
+//
+// Migration path:
+//   - Use include/tlm/cache_tlm.hh for cache simulation
+//   - Use include/tlm/memory_tlm.hh for memory simulation
+//   - Or implement new modules based on ChStream/StreamAdapter pattern
+//
+// This file will be removed in a future version.
+// ========================================================================
