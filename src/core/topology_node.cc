@@ -16,6 +16,7 @@ TopologyNode::TopologyNode(const std::string& node_name)
 
 void TopologyNode::add_child(ChildPtr child) {
     if (child) {
+        child->set_parent(name_);
         children_.push_back(child);
     }
 }
