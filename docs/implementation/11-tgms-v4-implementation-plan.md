@@ -3,7 +3,7 @@
 > **Document ID**: IMPL-010-v4.0
 > **Version**: 4.0
 > **Date**: 2026-05-27
-> **Status**: 🟡 Planning
+> **Status**: 🔄 In Progress (Phase 4.1 Complete)
 
 ## Overview
 
@@ -11,6 +11,40 @@ TGMS v3.0 (Phase 1-3) has been completed. This document defines the implementati
 
 **Architecture reference**: [10-topology-generation-management-system.md](../architecture/10-topology-generation-management-system.md)
 **Specifications**: [10-tgms-specifications.md](../architecture/10-tgms-specifications.md)
+
+---
+
+## Task Tracking
+
+### Phase 4 Task Status
+
+| Task | Status | Completion Date | Notes |
+|------|--------|-----------------|-------|
+| **4.1 Hierarchy tree parser** | ✅ Complete | 2026-05-27 | TopologyNode + parse_hierarchy_tree() implemented |
+| **4.2 CoherenceDomain C++ module** | ⏳ Pending | — | Pending Task 4.1 |
+| **4.3 Domain boundary validation** | ⏳ Pending | — | Pending Task 4.2 |
+| **4.4 Snoop routing logic** | ⏳ Pending | — | Pending Task 4.2 |
+| **4.5 Directory protocol stub** | ⏳ Pending | — | Pending Task 4.2 |
+| **4.6 Python hierarchy generator** | ⏳ Pending | — | Pending Task 4.1-4.3 |
+
+### Phase 5 Task Status
+
+| Task | Status | Dependencies |
+|------|--------|--------------|
+| 5.1 ProtocolBridge C++ module | ⏳ Pending | Phase 4 |
+| 5.2 Address translation engine | ⏳ Pending | 5.1 |
+| 5.3 Protocol conversion logic | ⏳ Pending | 5.1 |
+| 5.4 Cross-protocol validation | ⏳ Pending | 5.1-5.3 |
+| 5.5 Python bridge config generator | ⏳ Pending | 5.1-5.4 |
+
+### Phase 6 Task Status
+
+| Task | Status | Dependencies |
+|------|--------|--------------|
+| 6.1 2x CPU Cluster + GPU Cluster config | ⏳ Pending | Phase 4, 5 |
+| 6.2 Cross-cluster coherence validation | ⏳ Pending | 6.1 |
+| 6.3 Protocol bridge integration test | ⏳ Pending | 6.1 |
+| 6.4 Full SoC example (4 CPU + 1 GPU) | ⏳ Pending | 6.2-6.3 |
 
 ---
 
@@ -22,29 +56,36 @@ TGMS v3.0 (Phase 1-3) has been completed. This document defines the implementati
 
 | Task | Gap | Effort | Dependencies | Status |
 |------|-----|--------|-------------|--------|
-| 4.1 Hierarchy tree parser | G8 | 3 days | Phase 1 | 🟡 Planning |
-| 4.2 CoherenceDomain C++ module | G9 | 5 days | 4.1 | 🟡 Planning |
-| 4.3 Domain boundary validation | G9 | 2 days | 4.2 | 🟡 Planning |
-| 4.4 Snoop routing logic | G9 | 3 days | 4.2 | 🟡 Planning |
-| 4.5 Directory protocol stub | G9 | 5 days | 4.2 | 🟡 Planning |
-| 4.6 Python hierarchy generator | G8 | 5 days | 4.1-4.3 | 🟡 Planning |
+| 4.1 Hierarchy tree parser | G8 | 3 days | Phase 1 | ✅ Complete |
+| 4.2 CoherenceDomain C++ module | G9 | 5 days | 4.1 | ⏳ Pending |
+| 4.3 Domain boundary validation | G9 | 2 days | 4.2 | ⏳ Pending |
+| 4.4 Snoop routing logic | G9 | 3 days | 4.2 | ⏳ Pending |
+| 4.5 Directory protocol stub | G9 | 5 days | 4.2 | ⏳ Pending |
+| 4.6 Python hierarchy generator | G8 | 5 days | 4.1-4.3 | ⏳ Pending |
 
 ### 1.2 Detailed Tasks
 
-#### Task 4.1: Hierarchy Tree Parser
+#### Task 4.1: Hierarchy Tree Parser ✅ COMPLETE
 
-**Files**: `src/core/module_factory.cc`
+**Files**: `src/core/module_factory.cc`, `include/core/topology_node.hh`, `include/core/topology_parser.hh`
 
 **Steps**:
-1. Add Step 0 to parse `hierarchy` object in JSON config
-2. Create `TopologyNode` class for tree structure
-3. Implement `parse_hierarchy_tree()` function
-4. Add unit tests for hierarchy parsing
+1. [x] Add Step 0 to parse `hierarchy` object in JSON config
+2. [x] Create `TopologyNode` class for tree structure
+3. [x] Implement `parse_hierarchy_tree()` function
+4. [x] Add unit tests for hierarchy parsing
 
 **Acceptance Criteria**:
-- [ ] `hierarchy` JSON object correctly parsed into tree structure
-- [ ] Parent-child relationships correctly established
-- [ ] Unit tests pass
+- [x] `hierarchy` JSON object correctly parsed into tree structure
+- [x] Parent-child relationships correctly established
+- [x] Unit tests pass
+
+**Implementation Notes**:
+- `TopologyNode` class: `include/core/topology_node.hh`
+- `parse_hierarchy_tree()`: `include/core/topology_parser.hh` + `src/core/topology_parser.cc`
+- ModuleFactory integration: Step 0.5 in `src/core/module_factory.cc`
+- Tests: `test/test_tgms_v4_hierarchy_integration.cc` (10 test cases)
+- Example: `examples/demo_configs/hierarchy_tgms_v4.json`
 
 #### Task 4.2: CoherenceDomain C++ Module
 
@@ -342,22 +383,40 @@ Phase 6 ────────────────────────
 ## 6. Acceptance Criteria
 
 ### Phase 4 Acceptance
-- [ ] Hierarchy tree correctly parsed
-- [ ] CoherenceDomain class functional with MESI/MOESI support
-- [ ] Domain boundary validation working
-- [ ] Snoop routing within domain working
-- [ ] Directory-based home node lookup working
-- [ ] Python hierarchy generator producing correct v4.0 JSON
+
+| Criteria | Status | Task | Evidence |
+|----------|--------|------|----------|
+| Hierarchy tree correctly parsed | ✅ Complete | 4.1 | `parse_hierarchy_tree()` in `topology_parser.cc` |
+| CoherenceDomain class functional with MESI/MOESI support | ⏳ Pending | 4.2 | — |
+| Domain boundary validation working | ⏳ Pending | 4.3 | — |
+| Snoop routing within domain working | ⏳ Pending | 4.4 | — |
+| Directory-based home node lookup working | ⏳ Pending | 4.5 | — |
+| Python hierarchy generator producing correct v4.0 JSON | ⏳ Pending | 4.6 | — |
 
 ### Phase 5 Acceptance
-- [ ] ProtocolBridge class functional
-- [ ] Address translation engine working
-- [ ] Protocol conversion logic working
-- [ ] Cross-protocol validation working
-- [ ] Python bridge config generator working
+
+| Criteria | Status | Task | Evidence |
+|----------|--------|------|----------|
+| ProtocolBridge class functional | ⏳ Pending | 5.1 | — |
+| Address translation engine working | ⏳ Pending | 5.2 | — |
+| Protocol conversion logic working | ⏳ Pending | 5.3 | — |
+| Cross-protocol validation working | ⏳ Pending | 5.4 | — |
+| Python bridge config generator working | ⏳ Pending | 5.5 | — |
 
 ### Phase 6 Acceptance
-- [ ] 2x CPU + GPU cluster config created
-- [ ] Cross-cluster coherence validated
-- [ ] Protocol bridge integration tested
-- [ ] Full SoC example (4 CPU + 1 GPU) working
+
+| Criteria | Status | Task | Evidence |
+|----------|--------|------|----------|
+| 2x CPU + GPU cluster config created | ⏳ Pending | 6.1 | — |
+| Cross-cluster coherence validated | ⏳ Pending | 6.2 | — |
+| Protocol bridge integration tested | ⏳ Pending | 6.3 | — |
+| Full SoC example (4 CPU + 1 GPU) working | ⏳ Pending | 6.4 | — |
+
+---
+
+## Changelog
+
+| Date | Version | Changes |
+|------|---------|---------|
+| 2026-05-27 | 4.0 | Initial document created |
+| 2026-05-28 | 4.1 | Task 4.1 completed - Hierarchy tree parser implemented |
