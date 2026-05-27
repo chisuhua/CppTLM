@@ -12,6 +12,8 @@ set(CORE_SOURCES
     core/plugin_loader.cc
     core/port_compatibility.cc
     core/param_parser.cc
+    core/topology_node.cc
+    core/topology_parser.cc
     # utils
     utils/dynamic_loader.cc
     # tlm (Phase 7: RouterTLM + NICTLM + LinkTLM)
