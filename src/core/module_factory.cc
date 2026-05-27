@@ -23,6 +23,7 @@
 #include "core/param_parser.hh"
 #include "core/param_errors.hh"
 #include "metrics/stats_manager.hh"
+#include "core/topology_parser.hh"
 #include <fstream>
 #include <set>
 #include <algorithm>
@@ -421,6 +422,26 @@ bool ModuleFactory::instantiateAll(const json& config) {
     if (!validateConfig(final_config)) {
         DPRINTF(MODULE, "[CONFIG ERROR] Schema validation failed, aborting instantiation\n");
         return false;
+    }
+
+    // ========================
+    // 0.5 Hierarchy 树解析 (TGMS v4.0 Phase 4.1)
+    // ========================
+    if (final_config.contains("hierarchy")) {
+        DPRINTF(MODULE, "[HIERARCHY] Parsing hierarchy tree...\n");
+        try {
+            auto hierarchy_root = cpptlm::parse_hierarchy_tree_with_validation(
+                final_config["hierarchy"],
+                final_config.contains("coherence_domains") ? final_config["coherence_domains"] : json::array()
+            );
+            DPRINTF(MODULE, "[HIERARCHY] Hierarchy tree parsed successfully\n");
+            // TODO: 将 hierarchy_root 存储到 ModuleFactory 成员变量，供后续模块关联使用
+        } catch (const cpptlm::TopologyParseException& e) {
+            DPRINTF(MODULE, "[HIERARCHY ERROR] %s\n", e.what());
+            return false;
+        }
+    } else {
+        DPRINTF(MODULE, "[HIERARCHY] No hierarchy section found in config\n");
     }
 
     for (auto& mod : final_config["modules"]) {
