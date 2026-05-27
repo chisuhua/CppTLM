@@ -37,6 +37,7 @@ configs/soc_cluster_b_annotated.*
 
 # Editor dependencies
 cpptlm/visualization/editor/node_modules/
+openspec/changes/archive/
 
 # Sisyphus planning files
 .sisyphus/
