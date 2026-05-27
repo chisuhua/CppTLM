@@ -1,0 +1,67 @@
+{
+  "name": "hierarchy_tgms_v4",
+  "description": "TGMS v4.0 Phase 4.1 - Hierarchy Tree Parser Demo",
+  "modules": [
+    {"name": "cpu0", "type": "CacheTLM"},
+    {"name": "cpu1", "type": "CacheTLM"},
+    {"name": "cpu2", "type": "CacheTLM"},
+    {"name": "cpu3", "type": "CacheTLM"},
+    {"name": "l2_0", "type": "CacheTLM"},
+    {"name": "l2_1", "type": "CacheTLM"},
+    {"name": "xbar", "type": "CrossbarTLM"},
+    {"name": "mem0", "type": "MemoryTLM"},
+    {"name": "mem1", "type": "MemoryTLM"}
+  ],
+  "connections": [
+    {"src": "cpu0", "dst": "l2_0", "latency": 1},
+    {"src": "cpu1", "dst": "l2_0", "latency": 1},
+    {"src": "cpu2", "dst": "l2_1", "latency": 1},
+    {"src": "cpu3", "dst": "l2_1", "latency": 1},
+    {"src": "l2_0", "dst": "xbar.0", "latency": 2},
+    {"src": "l2_1", "dst": "xbar.1", "latency": 2},
+    {"src": "xbar.0", "dst": "mem0", "latency": 10},
+    {"src": "xbar.1", "dst": "mem1", "latency": 10}
+  ],
+  "module_groups": [
+    {"name": "cluster0", "members": ["cpu0", "cpu1", "l2_0"]},
+    {"name": "cluster1", "members": ["cpu2", "cpu3", "l2_1"]},
+    {"name": "memories", "members": ["mem0", "mem1"]}
+  ],
+  "hierarchy": {
+    "name": "soc",
+    "children": [
+      {
+        "name": "cluster0",
+        "description": "CPU Cluster 0 with shared L2",
+        "children": [
+          {"name": "cpu0", "coherence_domain": "cluster0_l2"},
+          {"name": "cpu1", "coherence_domain": "cluster0_l2"},
+          {"name": "l2_0", "coherence_domain": "cluster0_l2"}
+        ]
+      },
+      {
+        "name": "cluster1",
+        "description": "CPU Cluster 1 with shared L2",
+        "children": [
+          {"name": "cpu2", "coherence_domain": "cluster1_l2"},
+          {"name": "cpu3", "coherence_domain": "cluster1_l2"},
+          {"name": "l2_1", "coherence_domain": "cluster1_l2"}
+        ]
+      },
+      {
+        "name": "fabric",
+        "children": [
+          {"name": "xbar"}
+        ]
+      },
+      {
+        "name": "memory_subsystem",
+        "children": [
+          {"name": "mem0"},
+          {"name": "mem1"}
+        ]
+      }
+    ]
+  },
+  "coherence_domains": ["cluster0_l2", "cluster1_l2", "memory"]
+}
