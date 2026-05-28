@@ -24,6 +24,7 @@
 #include "core/param_errors.hh"
 #include "metrics/stats_manager.hh"
 #include "core/topology_parser.hh"
+#include "core/coherence_domain.hh"
 #include <fstream>
 #include <set>
 #include <algorithm>
@@ -1016,6 +1017,41 @@ static bool validate_module_params(const std::string& module_type,
         }
     }
     return true;
+}
+
+bool ModuleFactory::validate_domain_boundary(
+    const std::string& src_module,
+    const std::string& dst_module,
+    const std::string& src_domain,
+    const std::string& bridge_name) {
+
+    if (src_module.empty() || dst_module.empty() || src_domain.empty()) {
+        DPRINTF(MODULE, "[DOMAIN ERROR] Invalid domain boundary check: empty module or domain name\n");
+        return false;
+    }
+
+    auto* domain = cpptlm::DomainRegistry::get_domain(src_domain);
+    if (!domain) {
+        DPRINTF(MODULE, "[DOMAIN ERROR] Domain '%s' not found in registry\n", src_domain.c_str());
+        return false;
+    }
+
+    if (domain->has_member(dst_module)) {
+        return true;
+    }
+
+    if (!bridge_name.empty() && domain->has_bridge_to(dst_module)) {
+        return true;
+    }
+
+    if (!bridge_name.empty()) {
+        domain->register_bridge(dst_module, bridge_name);
+        return true;
+    }
+
+    DPRINTF(MODULE, "[DOMAIN WARNING] Cross-domain connection detected: %s -> %s without bridge\n",
+            src_module.c_str(), dst_module.c_str());
+    return false;
 }
 
 void ModuleFactory::startAllTicks() {

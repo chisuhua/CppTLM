@@ -248,6 +248,22 @@ public:
      * @brief 是否启用指标收集
      */
     bool metrics_enabled() const { return _metrics_enabled; }
+
+    static bool validate_domain_boundary(
+        const std::string& src_module,
+        const std::string& dst_module,
+        const std::string& src_domain,
+        const std::string& bridge_name = "");
+
+    static void register_protocol_bridge(const std::string& bridge_name) {
+        get_bridges().insert(bridge_name);
+    }
+
+private:
+    static std::unordered_set<std::string>& get_bridges() {
+        static std::unordered_set<std::string> bridges;
+        return bridges;
+    }
 };
 
 // 旧的 parsePortSpec 函数，保留向后兼容性
