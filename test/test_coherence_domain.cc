@@ -90,8 +90,8 @@ TEST_CASE("CoherenceDomain lookup_home_node returns valid node", "[coherence][di
     MockEventQueue eq;
     auto domain = std::make_unique<CoherenceDomain>("test_domain", &eq);
 
-    // Set up directory mapping for address range
     domain->set_protocol(Protocol::MESI);
+    domain->set_members({"cpu0", "cpu1", "l2_cache"});
 
     std::string home_node = domain->lookup_home_node(0x1000);
     REQUIRE(!home_node.empty());
