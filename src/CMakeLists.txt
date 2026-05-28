@@ -8,6 +8,7 @@
 set(CORE_SOURCES
     # core
     core/connection_resolver.cc
+    core/coherence_domain.cc
     core/module_factory.cc
     core/plugin_loader.cc
     core/port_compatibility.cc
