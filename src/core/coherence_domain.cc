@@ -36,3 +36,17 @@ std::string CoherenceDomain::lookup_home_node(uint64_t addr) const {
     size_t index = (addr / 64) % members_.size();
     return members_[index];
 }
+
+void CoherenceDomain::register_bridge(const std::string& target_domain, const std::string& bridge_name) {
+    bridge_map_[target_domain] = bridge_name;
+}
+
+bool CoherenceDomain::has_bridge_to(const std::string& target_domain) const {
+    return bridge_map_.find(target_domain) != bridge_map_.end();
+}
+
+const std::string& CoherenceDomain::get_bridge(const std::string& target_domain) const {
+    static const std::string empty;
+    auto it = bridge_map_.find(target_domain);
+    return it != bridge_map_.end() ? it->second : empty;
+}

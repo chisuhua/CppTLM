@@ -1,9 +1,9 @@
 # OpenSpec 工作流状态
 
 ## 元信息
-- **版本**: 2
+- **版本**: 5
 - **创建时间**: 2026-05-27T04:15:00+08:00
-- **最后更新**: 2026-05-27T19:55:00+08:00
+- **最后更新**: 2026-05-28T18:30:00+08:00
 
 ## 工作流进度
 
@@ -12,54 +12,64 @@
 | 阶段 | 状态 | 完成时间 |
 |------|------|---------|
 | setup | ✅ 完成 | 2026-05-27T04:15:00+08:00 |
-| propose | ✅ 完成 | 2026-05-27T04:18:00+08:00 |
-| deps | ✅ 完成 | 2026-05-27T04:35:00+08:00 |
-| plan | ✅ 完成 | 2026-05-27T04:40:00+08:00 |
-| execute | ✅ 完成 | 2026-05-27T19:45:00+08:00 |
-| status_archive | ✅ 完成 | 2026-05-27T19:55:00+08:00 |
-| cleanup | ✅ 完成 | 2026-05-27T19:55:00+08:00 |
+| propose | ✅ 完成 | 2026-05-28T11:00:00+08:00 |
+| deps | ✅ 完成 | 2026-05-28T11:15:00+08:00 |
+| plan | ✅ 完成 | 2026-05-28T11:30:00+08:00 |
+| execute | ✅ 完成 | 2026-05-28T18:20:00+08:00 |
+| status_archive | ✅ 完成 | 2026-05-28T18:30:00+08:00 |
+| cleanup | ✅ 完成 | 2026-05-28T18:30:00+08:00 |
 
 ## 当前状态
 
-- **当前阶段**: cleanup
-- **当前恢复点**: cleanup.complete
-- **最后操作**: tgms-phase-4-1-hierarchy-parser 已归档并合并到 main
+- **当前阶段**: 已完成
+- **当前恢复点**: archive.complete
+- **最后操作**: add-coherence-domain 已归档并合并到 main
 
-### Changes（支持多 change 并行）
+### Changes（归档完成）
 
 | 变更名称 | Worktree | Artifacts | 执行状态 | 当前操作 |
 |----------|----------|-----------|---------|---------|
-| tgms-phase-4-1-hierarchy-parser | ✅ 已清理 | ✅ 已归档 | ✅ 完成 | 已合并到 main |
+| add-coherence-domain | ✅ 已清理 | ✅ 已归档 | ✅ 完成 | 已合并到 main |
 
-### 恢复上下文
+### 剩余 Changes（未开始）
 
-- **恢复点**: cleanup.complete
-- **最后操作**: tgms-phase-4-1-hierarchy-parser 已归档并合并到 main
-- **验证建议**:
-  - [x] setup 完成
-  - [x] propose 完成
-  - [x] deps 完成
-  - [x] plan 完成
-  - [x] execute 完成
-  - [x] status_archive 完成
-  - [x] cleanup 完成
+| 变更名称 | Worktree | Artifacts | 执行状态 | Wave |
+|----------|----------|-----------|---------|------|
+| add-directory-stub | .zcf/add-directory-stub-wt | ✅ 已提交 | ⏳ 等待 | Wave 1 |
+| add-domain-validation | .zcf/add-domain-validation-wt | ✅ 已提交 | ⏳ 等待 | Wave 2 |
+| add-snoop-routing | .zcf/add-snoop-routing-wt | ✅ 已提交 | ⏳ 等待 | Wave 2 |
+| add-hierarchy-generator | .zcf/add-hierarchy-generator-wt | ✅ 已提交 | ⏳ 等待 | Wave 3 |
+
+## 执行依赖图
+
+```mermaid
+flowchart TB
+    A["add-coherence-domain (4.2) ✅"]
+    B["add-domain-validation (4.3)"]
+    C["add-snoop-routing (4.4)"]
+    D["add-directory-stub (4.5)"]
+    E["add-hierarchy-generator (4.6)"]
+    A --> B
+    A --> C
+    D -.-> A
+    E -.-> A
+```
 
 ## 操作历史
 
 | 时间 | 阶段 | 操作 | 结果 |
 |------|------|------|------|
 | 2026-05-27T04:15:00+08:00 | setup | env_check | ok |
-| 2026-05-27T04:17:00+08:00 | propose | archive_completed | 归档 11 个 changes |
-| 2026-05-27T04:18:00+08:00 | propose | create_change | tgms-phase-4-1-hierarchy-parser |
-| 2026-05-27T04:35:00+08:00 | propose | commit_artifacts | artifacts 已提交 |
-| 2026-05-27T04:35:00+08:00 | deps | auto_analysis | deps 分析完成 |
-| 2026-05-27T04:40:00+08:00 | plan | worktree_created | worktree + 计划文件已创建 |
-| 2026-05-27T09:45:00+08:00 | execute | tasks_completed | 14/14 任务完成 |
-| 2026-05-27T09:45:00+08:00 | execute | build_verified | 语法检查通过 |
-| 2026-05-27T19:45:00+08:00 | execute | reset_retry | 重新实现 hierarchy parser |
-| 2026-05-27T19:50:00+08:00 | execute | module_factory_step0 | 添加 Step 0.5 hierarchy 解析 |
-| 2026-05-27T19:52:00+08:00 | execute | test_added | 添加 test_topology_parser.cc |
-| 2026-05-27T19:54:00+08:00 | execute | commit | worktree commit 完成 |
-| 2026-05-27T19:55:00+08:00 | status_archive | merged | 合并到 main |
-| 2026-05-27T19:55:00+08:00 | status_archive | archived | 已归档为 2026-05-27-tgms-phase-4-1-hierarchy-parser |
-| 2026-05-27T19:55:00+08:00 | cleanup | worktree_removed | worktree 和 branch 已清理 |
+| 2026-05-28T11:00:00+08:00 | propose | create_change | 5 个 change 已创建 |
+| 2026-05-28T11:10:00+08:00 | propose | commit_artifacts | 全部提交到 git |
+| 2026-05-28T11:15:00+08:00 | deps | auto_analysis | 依赖图生成完成 |
+| 2026-05-28T11:25:00+08:00 | plan | worktree_created | 5 个 worktree 已创建 |
+| 2026-05-28T11:30:00+08:00 | plan | plan_generated | TDD 计划已生成 |
+| 2026-05-28T18:20:00+08:00 | execute | TDD_complete | 12 tests passed |
+| 2026-05-28T18:25:00+08:00 | execute | merge | Fast-forward to e627b55 |
+| 2026-05-28T18:30:00+08:00 | status_archive | archived | 归档为 2026-05-28-add-coherence-domain |
+| 2026-05-28T18:30:00+08:00 | cleanup | worktree_removed | worktree + branch 已清理 |
+
+## 归档 Change
+
+- **2026-05-28-add-coherence-domain**: CoherenceDomain C++ module with TDD tests (Phase 4.2)
