@@ -1,9 +1,9 @@
 # OpenSpec 工作流状态
 
 ## 元信息
-- **版本**: 5
+- **版本**: 7
 - **创建时间**: 2026-05-27T04:15:00+08:00
-- **最后更新**: 2026-05-28T18:30:00+08:00
+- **最后更新**: 2026-05-29T00:00:00+08:00
 
 ## 工作流进度
 
@@ -15,44 +15,34 @@
 | propose | ✅ 完成 | 2026-05-28T11:00:00+08:00 |
 | deps | ✅ 完成 | 2026-05-28T11:15:00+08:00 |
 | plan | ✅ 完成 | 2026-05-28T11:30:00+08:00 |
-| execute | ✅ 完成 | 2026-05-28T18:20:00+08:00 |
-| status_archive | ✅ 完成 | 2026-05-28T18:30:00+08:00 |
-| cleanup | ✅ 完成 | 2026-05-28T18:30:00+08:00 |
+| execute | ✅ 完成 | 2026-05-29T00:00:00+08:00 |
+| status_archive | ✅ 完成 | 2026-05-29T00:00:00+08:00 |
+| cleanup | ✅ 完成 | 2026-05-29T00:00:00+08:00 |
 
 ## 当前状态
 
-- **当前阶段**: 已完成
+- **当前阶段**: 全部完成
 - **当前恢复点**: archive.complete
-- **最后操作**: add-coherence-domain 已归档并合并到 main
+- **最后操作**: 所有 changes 已审查并处理
 
-### Changes（归档完成）
+### Changes 处理结果
 
-| 变更名称 | Worktree | Artifacts | 执行状态 | 当前操作 |
-|----------|----------|-----------|---------|---------|
-| add-coherence-domain | ✅ 已清理 | ✅ 已归档 | ✅ 完成 | 已合并到 main |
+| 变更名称 | 结果 | 说明 |
+|----------|------|------|
+| add-coherence-domain | ✅ 已归档 | 实现 CoherenceDomain C++ 模块 |
+| add-domain-validation | ✅ 已归档 | 实现 domain boundary validation |
+| add-snoop-routing | ✅ 已归档 (no-op) | Task 1,2 已由 Phase 4.2 实现 |
+| add-directory-stub | ✅ 已归档 | 实现 Directory 类，复用 CoherenceDomain |
+| add-hierarchy-generator | ✅ 已归档 (deferred) | 需要完整 builder API 设计 |
 
-### 剩余 Changes（未开始）
+### 归档 Change
 
-| 变更名称 | Worktree | Artifacts | 执行状态 | Wave |
-|----------|----------|-----------|---------|------|
-| add-directory-stub | .zcf/add-directory-stub-wt | ✅ 已提交 | ⏳ 等待 | Wave 1 |
-| add-domain-validation | .zcf/add-domain-validation-wt | ✅ 已提交 | ⏳ 等待 | Wave 2 |
-| add-snoop-routing | .zcf/add-snoop-routing-wt | ✅ 已提交 | ⏳ 等待 | Wave 2 |
-| add-hierarchy-generator | .zcf/add-hierarchy-generator-wt | ✅ 已提交 | ⏳ 等待 | Wave 3 |
-
-## 执行依赖图
-
-```mermaid
-flowchart TB
-    A["add-coherence-domain (4.2) ✅"]
-    B["add-domain-validation (4.3)"]
-    C["add-snoop-routing (4.4)"]
-    D["add-directory-stub (4.5)"]
-    E["add-hierarchy-generator (4.6)"]
-    A --> B
-    A --> C
-    D -.-> A
-    E -.-> A
+```
+openspec/changes/archive/2026-05-28-add-coherence-domain/
+openspec/changes/archive/2026-05-28-add-domain-validation/
+openspec/changes/archive/2026-05-29-add-snoop-routing/
+openspec/changes/archive/2026-05-29-add-directory-stub/
+openspec/changes/archive/2026-05-29-add-hierarchy-generator/
 ```
 
 ## 操作历史
@@ -65,11 +55,20 @@ flowchart TB
 | 2026-05-28T11:15:00+08:00 | deps | auto_analysis | 依赖图生成完成 |
 | 2026-05-28T11:25:00+08:00 | plan | worktree_created | 5 个 worktree 已创建 |
 | 2026-05-28T11:30:00+08:00 | plan | plan_generated | TDD 计划已生成 |
-| 2026-05-28T18:20:00+08:00 | execute | TDD_complete | 12 tests passed |
-| 2026-05-28T18:25:00+08:00 | execute | merge | Fast-forward to e627b55 |
-| 2026-05-28T18:30:00+08:00 | status_archive | archived | 归档为 2026-05-28-add-coherence-domain |
-| 2026-05-28T18:30:00+08:00 | cleanup | worktree_removed | worktree + branch 已清理 |
+| 2026-05-28T18:20:00+08:00 | execute | TDD_complete | add-coherence-domain 完成 |
+| 2026-05-28T18:25:00+08:00 | execute | merge | add-coherence-domain 合并到 main |
+| 2026-05-28T18:30:00+08:00 | status_archive | archived | add-coherence-domain 归档 |
+| 2026-05-28T19:00:00+08:00 | execute | domain-validation | add-domain-validation 完成并合并 |
+| 2026-05-28T19:00:00+08:00 | status_archive | archived | add-domain-validation 归档 |
+| 2026-05-29T00:00:00+08:00 | execute | rebase | 所有 worktrees rebase 到 main |
+| 2026-05-29T00:00:00+08:00 | execute | snoop-routing | add-snoop-routing 审查完成 (no-op) |
+| 2026-05-29T00:00:00+08:00 | execute | directory-stub | add-directory-stub 实现并归档 |
+| 2026-05-29T00:00:00+08:00 | execute | hierarchy-generator | add-hierarchy-generator 审查完成 (deferred) |
+| 2026-05-29T00:00:00+08:00 | cleanup | worktree_removed | 所有 worktree + branch 已清理 |
 
-## 归档 Change
+## 总结
 
-- **2026-05-28-add-coherence-domain**: CoherenceDomain C++ module with TDD tests (Phase 4.2)
+- **已完成**: 4/5 changes
+- **延期**: 1/5 changes (add-hierarchy-generator - 需要 Phase 5)
+- **Worktrees**: 全部清理
+- **Branches**: 全部清理
