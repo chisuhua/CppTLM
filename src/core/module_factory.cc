@@ -1030,7 +1030,7 @@ bool ModuleFactory::validate_domain_boundary(
         return false;
     }
 
-    auto* domain = cpptlm::DomainRegistry::get_domain(src_domain);
+    auto domain = DomainRegistry::get_domain(src_domain);
     if (!domain) {
         DPRINTF(MODULE, "[DOMAIN ERROR] Domain '%s' not found in registry\n", src_domain.c_str());
         return false;
