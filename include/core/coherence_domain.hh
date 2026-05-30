@@ -43,23 +43,23 @@ public:
 
 class DomainRegistry {
 private:
-    static std::unordered_map<std::string, CoherenceDomain>& get_domains() {
-        static std::unordered_map<std::string, CoherenceDomain> domains;
+    static std::unordered_map<std::string, std::shared_ptr<CoherenceDomain>>& get_domains() {
+        static std::unordered_map<std::string, std::shared_ptr<CoherenceDomain>> domains;
         return domains;
     }
 
 public:
-    static void register_domain(const std::string& name, CoherenceDomain* domain) {
-        get_domains()[name] = *domain;
+    static void register_domain(const std::string& name, std::shared_ptr<CoherenceDomain> domain) {
+        get_domains()[name] = std::move(domain);
     }
 
     static bool domain_exists(const std::string& name) {
         return get_domains().find(name) != get_domains().end();
     }
 
-    static CoherenceDomain* get_domain(const std::string& name) {
+    static std::shared_ptr<CoherenceDomain> get_domain(const std::string& name) {
         auto it = get_domains().find(name);
-        return it != get_domains().end() ? &it->second : nullptr;
+        return it != get_domains().end() ? it->second : nullptr;
     }
 
     static void clear() {
