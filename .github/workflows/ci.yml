@@ -15,11 +15,17 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         build-type: [Release, Debug]
         use-systemc: [OFF]
+        use-asan: [OFF, ON]
+        exclude:
+          # ASan 仅对 Debug 构建生效（Release 下效果差且无意义）
+          - build-type: Release
+            use-asan: ON
 
-    name: Build (${{ matrix.build-type }}, SystemC=${{ matrix.use-systemc }})
+    name: Build (${{ matrix.build-type }}, SystemC=${{ matrix.use-systemc }}, ASan=${{ matrix.use-asan }})
 
     steps:
     - name: Checkout code
@@ -33,7 +39,7 @@ jobs:
     - name: Configure ccache
       uses: hendrikmuhs/ccache-action@v1.2
       with:
-        key: ${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-systemc }}
+        key: ${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-systemc }}-${{ matrix.use-asan }}
         max-size: 200M
 
     - name: Configure CMake
@@ -41,7 +47,8 @@ jobs:
         cmake -S . -B build \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DUSE_SYSTEMC=${{ matrix.use-systemc }}
+          -DUSE_SYSTEMC=${{ matrix.use-systemc }} \
+          -DUSE_ASAN=${{ matrix.use-asan }}
 
     - name: Build
       run: cmake --build build -j$(nproc)
@@ -59,6 +66,6 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-systemc }}-${{ github.run_id }}
+        name: test-results-${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-systemc }}-${{ matrix.use-asan }}-${{ github.run_id }}
         path: build/Testing/
         retention-days: 7
