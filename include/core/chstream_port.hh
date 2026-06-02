@@ -6,7 +6,7 @@
 #ifndef CHSTREAM_PORT_HH
 #define CHSTREAM_PORT_HH
 
-#include "framework/stream_adapter.hh"
+#include "core/stream_adapter_base.hh"
 #include "packet.hh"
 #include "packet_pool.hh"
 #include "event_queue.hh"
