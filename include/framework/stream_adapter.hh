@@ -11,6 +11,7 @@
 #include "core/slave_port.hh"
 #include "core/packet.hh"
 #include "core/packet_pool.hh"
+#include "core/stream_adapter_base.hh"
 #include "bundles/bundle_serialization.hh"
 #include <cstdint>
 #include <functional>
@@ -18,46 +19,7 @@
 
 namespace cpptlm {
 
-/**
- * @brief StreamAdapter 基类（类型擦除）
- * 
- * 用于在 ModuleFactory 中统一管理不同类型的 StreamAdapter
- */
-class StreamAdapterBase {
-public:
-    virtual ~StreamAdapterBase() = default;
-    
-    /**
-     * @brief 每 tick 调用，处理双向数据流
-     */
-    virtual void tick() = 0;
-    
-    /**
-     * @brief 绑定框架侧端口（由 ModuleFactory 调用）
-     * @param req_out_port 请求输出 MasterPort（连接到下游模块的 req_in）
-     * @param resp_in_port  响应输入 SlavePort（从上游模块接收 resp）
-     * @param req_in_port   请求输入 SlavePort（从上游模块接收 req，可选）
-     * @param resp_out_port 响应输出 MasterPort（连接到下游模块的 resp_in，可选）
-     */
-    virtual void bind_ports(
-        MasterPort* req_out_port,
-        SlavePort*  resp_in_port,
-        MasterPort* resp_out_port = nullptr,
-        SlavePort*  req_in_port = nullptr
-    ) = 0;
-    
-    /**
-     * @brief 获取请求方向适配器 tick
-     * @param recv_fn 接收回调函数，接收 Packet 并填充 ch_stream
-     */
-    virtual void process_request_input(Packet* pkt) = 0;
-    
-    /**
-     * @brief 处理响应方向输出
-     * @return 待发送的 Packet（若无返回 nullptr）
-     */
-    virtual Packet* process_response_output() = 0;
-};
+// StreamAdapterBase 已移至 core/stream_adapter_base.hh（打破 core/framework 循环依赖）
 
 /**
  * @brief 请求方向适配器：SlavePort 收到 Packet → 反序列化为 Bundle → 设置 ch_stream
