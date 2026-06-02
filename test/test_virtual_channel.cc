@@ -21,7 +21,7 @@ TEST_CASE("VirtualChannelTest InOrderPerVC_OutOfOrderAcrossVC", "[virtual][chann
     producer.getPortManager().addDownstreamPort(&producer, {4, 4}, {0, 1});
     consumer.getPortManager().addUpstreamPort(&consumer, {4, 4}, {0, 1});
 
-    new PortPair(
+    auto pp = std::make_unique<PortPair>(
         producer.getPortManager().getDownstreamPorts()[0],
         consumer.getPortManager().getUpstreamPorts()[0]
     );

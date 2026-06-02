@@ -20,7 +20,7 @@ TEST_CASE("ValidOnlyTest LargeInputBuffer_NoBackpressure", "[valid][only]") {
     producer.getPortManager().addDownstreamPort(&producer, {4}, {0});
     consumer.getPortManager().addUpstreamPort(&consumer, {1024}, {0});
 
-    new PortPair(
+    auto pp = std::make_unique<PortPair>(
         producer.getPortManager().getDownstreamPorts()[0],
         consumer.getPortManager().getUpstreamPorts()[0]
     );
