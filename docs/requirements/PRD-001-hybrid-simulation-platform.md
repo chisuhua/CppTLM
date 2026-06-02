@@ -146,9 +146,9 @@
 
 | 文档 | 位置 |
 |------|------|
-| 架构讨论记录 | `docs-pending/02-architecture/ALL_DISCUSSIONS_COMBINED.md` |
-| 历史设计文档 | `docs-pending/05-legacy/` |
-| ADR 索引 | `docs-pending/03-adr/README.md`（待创建） |
+| 架构讨论记录 | `docs-archived/01-ARCHITECTURE/ALL_DISCUSSIONS_COMBINED.md` |
+| 历史设计文档 | `docs-archived/` |
+| ADR 索引 | `../adr/README.md` |
 
 ---
 

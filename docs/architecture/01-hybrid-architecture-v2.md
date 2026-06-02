@@ -1,9 +1,10 @@
 # CppTLM 混合仿真架构 v2.0
 
-> **版本**: 2.0  
-> **日期**: 2026-04-09  
-> **状态**: ✅ 已批准  
-> **替代**: v1.0 (过度设计方案)
+> **版本**: 2.0
+> **日期**: 2026-04-09
+> **状态**: ⚠️ 已归档（v2.1 的前身）
+> **替代**: v2.1 (`01-hybrid-architecture-v2.1.md`)
+> **说明**: v2.0 描述的 `cache_bundles.hh` 等文件名已被 v2.1 中的轻量级 `_tlm.hh` 后缀版本替代
 
 ---
 
@@ -55,10 +56,10 @@
 ```
 include/
 ├── bundles/                      # 统一 Bundle 定义
-│   ├── cache_bundles.hh          # Cache 请求/响应 Bundle
-│   ├── noc_bundles.hh            # NoC 数据包 Bundle
-│   ├── axi4_bundles.hh           # AXI4 协议 Bundle
-│   └── fragment_bundles.hh       # Fragment 分片 Bundle
+│   ├── cache_bundles_tlm.hh      # Cache 请求/响应 Bundle（轻量级）
+│   ├── noc_bundles_tlm.hh        # NoC 数据包 Bundle
+│   ├── axi4_bundles.hh           # AXI4 协议 Bundle（未来扩展）
+│   └── fragment_bundles.hh       # Fragment 分片 Bundle（未来扩展）
 │
 ├── tlm/                          # TLM 模块实现
 │   ├── cache_tlm.hh              # Cache TLM 模块
@@ -66,7 +67,7 @@ include/
 │   ├── nic_tlm.hh                # NIC TLM 模块 (Fragment)
 │   └── memory_tlm.hh             # Memory TLM 模块
 │
-├── rtl/                          # RTL 模块实现 (待实现, CppHDL)
+├── rtl/                          # RTL 模块实现 (未来扩展, CppHDL)
 │   ├── cache_component.hh        # Cache RTL Component (待实现)
 │   ├── crossbar_component.hh     # Crossbar RTL Component (待实现)
 │   ├── nic_component.hh          # NIC RTL Component (待实现)

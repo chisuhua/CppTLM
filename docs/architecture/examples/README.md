@@ -1,6 +1,6 @@
 # 架构示例索引
 
-> **目录**: `docs-pending/02-architecture/examples/`
+> **目录**: `docs/architecture/examples/`
 
 ---
 

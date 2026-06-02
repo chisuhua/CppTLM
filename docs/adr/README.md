@@ -19,9 +19,9 @@
 |-----|------|------|------|
 | [ADR-X.1-transaction-id.md](./ADR-X.1-transaction-id.md) | 事务追踪 ID 分配 | ✅ 已确认 | Phase 0-2 |
 | [ADR-X.2-error-handling.md](./ADR-X.2-error-handling.md) | 错误处理策略 | ✅ 已确认 | Phase 0-2 |
-| [ADR-X.3-reset-strategy.md](./ADR-X.3-reset-strategy.md) | 复位策略 | ⏳ 待讨论 | Phase 0-2 |
-| [ADR-X.4-plugin-system.md](./ADR-X.4-plugin-system.md) | 插件系统 | ⏳ 待讨论 | Phase 0-2 |
-| [ADR-X.5-build-system.md](./ADR-X.5-build-system.md) | 构建系统 | ⏳ 待讨论 | Phase 0-2 |
+| [ADR-X.3-reset-strategy.md](./ADR-X.3-reset-strategy.md) | 复位策略 | ✅ 已确认 | Phase 0-2 |
+| [ADR-X.4-plugin-system.md](./ADR-X.4-plugin-system.md) | 插件系统 | ✅ 已确认 | Phase 0-2 |
+| [ADR-X.5-build-system.md](./ADR-X.5-build-system.md) | 构建系统 | ✅ 已确认 | Phase 0-2 |
 | [ADR-X.6-transaction-integration.md](./ADR-X.6-transaction-integration.md) | TransactionContext 整合 | ✅ 已确认 | Phase 0-2 |
 | [ADR-X.7-transaction-handling.md](./ADR-X.7-transaction-handling.md) | 模块/框架职责划分 | ✅ 已确认 | Phase 0-2 |
 | [ADR-X.8-fragment-handling.md](./ADR-X.8-fragment-handling.md) | 细粒度分片处理 | ✅ 已确认 | Phase 0-2 |

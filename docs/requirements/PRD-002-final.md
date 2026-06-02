@@ -257,9 +257,8 @@
 | 文档 | 位置 |
 |------|------|
 | PRD 议题草稿 | `PRD-DRAFT-issues.md` |
-| 架构慢循环讨论 | `../02-architecture/2026-04-08-architecture-slow-cycle.md` |
-| 多层次混合仿真提案 | `../02-architecture/多层次混合仿真.md` |
-| ADR 索引（待创建） | `../03-adr/README.md` |
+| 多层次混合仿真提案 | `../architecture/多层次混合仿真.md` |
+| ADR 索引 | `../adr/README.md` |
 
 ---
 

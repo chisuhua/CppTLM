@@ -42,6 +42,9 @@ openspec/changes/archive/
 # Sisyphus planning files
 .sisyphus/
 
+# OpenCode metadata
+.omo/
+
 # Python test cache
 .pytest_cache/
 # Added by code-review-graph
