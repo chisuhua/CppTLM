@@ -155,8 +155,8 @@ txn.complete_transaction(tid);
 
 | 资源 | 位置 |
 |------|------|
-| 架构文档 | `docs-pending/02-architecture/` |
-| ADR 决策 | `docs-pending/03-adr/` |
+| 架构文档 | `docs/architecture/` |
+| ADR 决策 | `../adr/` |
 | 实施计划 | `plans/implementation_plan_v2.md` |
 
 ---

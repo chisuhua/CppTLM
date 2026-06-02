@@ -228,7 +228,7 @@ struct TransactionContextExt {
 ## 📊 架构文档结构
 
 ```
-docs-pending/02-architecture/
+docs/architecture/
 ├── 01-hybrid-architecture-v2.md         # 架构 v2.0 ✅
 ├── 02-transaction-architecture.md       # 交易处理架构 ✅
 ├── 03-error-debug-architecture.md       # 错误调试架构 ✅
@@ -239,7 +239,7 @@ docs-pending/02-architecture/
     ├── rtl/
     └── framework/
 
-docs-pending/03-adr/
+docs/adr/
 ├── README.md                            # ADR 索引 ✅
 ├── ADR-P1-TEMPLATE.md                   # P1 级议题 ✅
 ├── ADR-X-SUMMARY.md                     # X 系列汇总 ✅

@@ -103,11 +103,11 @@ BundleT packet_to_bundle(Packet* pkt) {
 
 ```
 include/
-├── bundles/                      # [新增] CppTLM 自定义 Bundle 定义（业务层）
-│   ├── cache_bundles.hh          # Cache 请求/响应 Bundle (继承 bundle_base)
-│   ├── noc_bundles.hh            # NoC 数据包 Bundle
-│   ├── axi4_bundles.hh           # AXI4 协议 Bundle
-│   └── fragment_bundles.hh       # Fragment 分片 Bundle
+├── bundles/                      # CppTLM Bundle 定义（业务层）
+│   ├── cache_bundles_tlm.hh      # Cache 请求/响应 Bundle（轻量级）
+│   ├── noc_bundles_tlm.hh        # NoC 数据包 Bundle
+│   ├── axi4_bundles.hh           # AXI4 协议 Bundle（未来扩展）
+│   └── fragment_bundles.hh       # Fragment 分片 Bundle（未来扩展）
 │
 ├── tlm/                          # [新增] 新式 TLM 模块实现（基于 ch_stream）
 │   ├── cache_tlm.hh              # Cache TLM 模块 (ch_stream 内部)
@@ -160,11 +160,11 @@ include/
 **原则**: 使用 CppHDL 的 `bundle_base<T>` 继承体系，TLM/RTL 共用同一 Bundle 定义。
 
 ```cpp
-// include/bundles/cache_bundles.hh
-#ifndef CACHE_BUNDLES_HH
-#define CACHE_BUNDLES_HH
+// include/bundles/cache_bundles_tlm.hh
+#ifndef CACHE_BUNDLES_TLM_HH
+#define CACHE_BUNDLES_TLM_HH
 
-#include <ch.hpp>
+#include <cstdint>
 #include <core/bundle/bundle_base.h>
 
 using namespace ch::core;
@@ -212,7 +212,7 @@ struct CacheRespBundle : bundle_base<CacheRespBundle> {
 
 ```cpp
 // include/tlm/cache_tlm.hh (Phase 1 即将实现)
-#include "bundles/cache_bundles.hh"
+#include "bundles/cache_bundles_tlm.hh"
 #include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include <map>
@@ -393,10 +393,10 @@ public:
 | `StreamAdapterBase` | `include/framework/stream_adapter.hh` | ✅ 已实现 | 类型擦除基类 + `bind_ports`/`process_request_input`/`process_response_output` |
 | `InputStreamAdapter<T>` | `include/framework/stream_adapter.hh` | ✅ 已实现 | 提供 `valid()/ready()/data()/consume()/reset()` 方法 |
 | `OutputStreamAdapter<T>` | `include/framework/stream_adapter.hh` | ✅ 已实现 | 提供 `write()/valid()/clear_valid()/send()/reset()` 方法 |
-| `CacheReqBundle` | `include/bundles/cache_bundles.hh` | ✅ 已实现 | CppHDL `bundle_base` 继承 |
-| `CacheRespBundle` | `include/bundles/cache_bundles.hh` | ✅ 已实现 | CppHDL `bundle_base` 继承 |
-| `NoCReqBundle/NoCRespBundle` | `include/bundles/noc_bundles.hh` | ✅ 已实现 | CppHDL `bundle_base` 继承 |
-| `FragmentBundle` | `include/bundles/fragment_bundles.hh` | ✅ 已实现 | 含 `BundleSerializer` 工具类 |
+| `CacheReqBundle` | `include/bundles/cache_bundles_tlm.hh` | ✅ 已实现 | 轻量级（TLM 用） |
+| `CacheRespBundle` | `include/bundles/cache_bundles_tlm.hh` | ✅ 已实现 | 轻量级（TLM 用） |
+| `NoCReqBundle/NoCRespBundle` | `include/bundles/noc_bundles_tlm.hh` | ✅ 已实现 | 轻量级（TLM 用） |
+| `FragmentBundle` | `N/A` | ❌ 未实现 | 规划中，暂无代码实现 |
 | `serialize_bundle`/`deserialize_bundle` | `include/bundles/bundle_serialization.hh` | ✅ 已实现 | 仿真内 `memcpy` 序列化 |
 | `ModuleFactory::instantiateAll` (chstream 扩展) | `src/core/module_factory.cc` | ❌ 未实现 | Phase 1 计划扩展 |
 
@@ -505,10 +505,10 @@ Phase 4: Mapper + RTL (未来)
 
 ---
 
-**版本**: v2.1.2  
-**创建日期**: 2026-04-12  
-**最后更新**: 2026-04-12 Phase 1 实施后  
-**批准状态**: ✅ Phase 0 + Phase 1 架构就绪（8.3 新增关键调整记录）  
+**版本**: v2.1.9
+**创建日期**: 2026-04-12
+**最后更新**: 2026-04-22 Phase 6 完成后
+**批准状态**: ✅ Phase 6 完成，CI/CD 集成，零债务验收
 **创建者**: Sisyphus (AI Architect)
 
 ## 8. Phase 0 审查后更新
@@ -526,8 +526,8 @@ Phase 4: Mapper + RTL (未来)
 
 | 编号 | 文件 | 问题 | 严重级别 | 处理建议 |
 |:---|:---|:---|:---|:---|
-| CQ-001 | `bundles/cache_bundles.hh`<br>`noc_bundles.hh`<br>`fragment_bundles.hh` | 头文件中使用 `using namespace ch::core;`，污染全局命名空间 | 中 | Phase 1 前修复，改为显式 `ch::core::` 前缀 |
-| CQ-002 | `bundle_serialization.hh`<br>`fragment_bundles.hh` | `std::memcpy` 序列化 CppHDL Bundle 类型（含 vtable/AST 节点），UB 风险 | 高 | 仅在仿真进程内使用可接受；跨进程需改用字段级序列化 |
+| CQ-001 | `bundles/cache_bundles_tlm.hh`<br>`noc_bundles_tlm.hh` | 头文件中使用 `using namespace ch::core;`，污染全局命名空间 | 中 | Phase 1 前修复，改为显式 `ch::core::` 前缀 |
+| CQ-002 | `bundle_serialization.hh` | `std::memcpy` 序列化 Bundle 类型（含 vtable/AST 节点），UB 风险 | 高 | 仅在仿真进程内使用可接受；跨进程需改用字段级序列化 |
 | CQ-003 | `stream_adapter.hh` | `StreamAdapterBase` 有抽象方法 `bind_ports`、`tick` 等，但无模板子类实现 | 中 | Phase 1 创建 `CacheTLM` 时补齐具体 StreamAdapter 实现 |
 | CQ-004 | `module_factory.cc` | 未扩展 `instantiateAll` 支持 `mode: "chstream"` 自动注入 | 中 | Phase 1 核心任务 |
 
@@ -544,7 +544,7 @@ Phase 4: Mapper + RTL (未来)
 | 类型系统 | 依赖 | 用途 | 文件 |
 |---------|------|------|------|
 | **轻量级** | 仅 `<cstdint>` | TLM 仿真（当前 Phase 1-5） | `bundles/cpphdl_types.hh`<br>`bundles/cache_bundles_tlm.hh` |
-| **完整版** | CppHDL `ch.hpp` | RTL 阶段（Phase 6 起） | `bundles/cache_bundles.hh`<br>`bundles/noc_bundles.hh`<br>`bundles/fragment_bundles.hh` |
+| **完整版** | CppHDL `ch.hpp` | RTL 阶段（未来扩展） | `bundles/cache_bundles.hh`<br>`bundles/noc_bundles.hh`<br>`bundles/fragment_bundles.hh` |
 
 **轻量级类型设计** (`bundles/cpphdl_types.hh`):
 

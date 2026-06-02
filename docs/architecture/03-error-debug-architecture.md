@@ -928,8 +928,8 @@ for (const auto& snap : history) {
 | 文档 | 位置 |
 |------|------|
 | 交易处理架构 | `02-architecture/02-transaction-architecture.md` |
-| 错误处理（旧版） | `03-adr/ADR-X.2-error-handling.md` |
-| ADR-X 汇总 | `03-adr/ADR-X-SUMMARY.md` |
+| 错误处理（旧版） | `../adr/ADR-X.2-error-handling.md` |
+| ADR-X 汇总 | `../adr/ADR-X-SUMMARY.md` |
 
 ---
 

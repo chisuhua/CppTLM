@@ -1110,7 +1110,7 @@ cpt_5000000/
 |------|------|
 | 交易处理架构 | `02-architecture/02-transaction-architecture.md` |
 | 错误调试架构 | `02-architecture/03-error-debug-architecture.md` |
-| 复位策略 ADR | `03-adr/ADR-X.3-reset-strategy.md` |
+| 复位策略 ADR | `../adr/ADR-X.3-reset-strategy.md` |
 
 ---
 
