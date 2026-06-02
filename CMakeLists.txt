@@ -41,6 +41,7 @@ option(BUILD_TESTS    "Build unit tests"                     ON)
 option(BUILD_EXAMPLES "Build example programs"               ON)
 option(BUILD_DOCS     "Build documentation (Doxygen)"        OFF)
 option(ENABLE_COVERAGE "Enable code coverage (gcov)"         OFF)
+option(USE_ASAN       "Enable AddressSanitizer (Debug only)" OFF)
 
 # ==============================================================================
 # 编译选项
@@ -51,6 +52,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(-g -O0 -DDEBUG_PRINT)
 else()
     add_compile_options(-O2 -g)
+endif()
+
+# AddressSanitizer (ASan) — 仅 Debug 构建生效
+if(USE_ASAN)
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message(WARNING "USE_ASAN is most effective with Debug build (current: ${CMAKE_BUILD_TYPE})")
+    endif()
+    add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address)
+    message(STATUS "ASan enabled (Debug build)")
 endif()
 
 # ==============================================================================
