@@ -1,7 +1,7 @@
 // src/utils/dynamic_loader.cc
 #include "utils/dynamic_loader.hh"
+#include "core/sim_core.hh"
 #include <dlfcn.h>
-#include <iostream>
 
 // 在这里定义静态成员变量
 std::vector<void*> DynamicLoader::loaded_handles;
@@ -9,20 +9,20 @@ std::unordered_set<std::string> DynamicLoader::registered_plugins;
 
 bool DynamicLoader::loadPlugin(const std::string& plugin_path) {
     if (isPluginRegistered(plugin_path)) {
-        std::cout << "[INFO] Plugin already loaded: " << plugin_path << std::endl;
+        DPRINTF(LOADER, "[INFO] Plugin already loaded: %s\n", plugin_path.c_str());
         return true;
     }
 
     void* handle = dlopen(plugin_path.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     if (!handle) {
-        std::cerr << "[ERROR] Cannot load plugin " << plugin_path 
-                  << ": " << dlerror() << std::endl;
+        DPRINTF(LOADER, "[ERROR] Cannot load plugin %s: %s\n",
+                plugin_path.c_str(), dlerror());
         return false;
     }
 
     loaded_handles.push_back(handle);
     registered_plugins.insert(plugin_path);
-    std::cout << "[INFO] Successfully loaded plugin: " << plugin_path << std::endl;
+    DPRINTF(LOADER, "[INFO] Successfully loaded plugin: %s\n", plugin_path.c_str());
     return true;
 }
 

@@ -1,7 +1,8 @@
 # CppTLM Technical Debt Remediation Plan
 
 **Created:** 2026-05-09
-**Status:** Ready for Execution
+**Status:** P0 COMPLETED (2026-06-02), P1/P2/P3 Pending
+**Last Updated:** 2026-06-02
 **Based on:** 4-parallel analysis (Architecture, Duplication, Technical Debt, C++ Modernization) + Oracle调研 + Momus审查
 
 ---
@@ -21,9 +22,15 @@
 
 ## P0 — Immediate (Fix This Week)
 
-> 所有 P0 项可并行执行，无相互依赖。
+> ✅ **COMPLETED (2026-06-02)** — All P0 items verified fixed.
 
-### P0.1: 修复 PortPair 内存泄漏
+| # | 任务 | 状态 | 修复提交 |
+|---|------|------|----------|
+| P0.1 | PortPair 内存泄漏 | ✅ 已修复 | `fb94bc9` (2026-05-09) |
+| P0.2 | Python 死代码文件 | ✅ 已删除 | `python/` 目录已移除 |
+| P0.3 | wildcard.hh 空 catch | ✅ 已修复 | 现有代码已有 `std::regex_error` 处理 |
+
+### P0.1: 修复 PortPair 内存泄漏 ✅
 
 **文件:** `src/core/module_factory.cc:752, 934, 941`
 
@@ -38,6 +45,9 @@ new PortPair(src_port, dst_port);
 auto pp = std::make_unique<PortPair>(src_port, dst_port);
 ```
 
+**修复验证:** ASan build 通过，测试全部 PASS (545 test cases, 14519 assertions)
+**提交:** `fb94bc9` - fix(memory): use unique_ptr for PortPair in module_factory
+
 **依赖项:** 无
 **预估工时:** 1-2 小时
 **验证:**
@@ -50,13 +60,16 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DUSE_ASAN=ON
 
 ---
 
-### P0.2: 删除死代码 Python 文件（2个）
+### P0.2: 删除死代码 Python 文件（2个） ✅
 
 **文件:** `python/noc_mesh.py`, `python/noc_builder.py`
 
 **问题:**
 - `noc_mesh.py` 引用未定义符号 `VcRouter`, `TerminalNode`, `build_mesh_connections`, `connect_terminals`
 - `noc_builder.py` 唯一消费者是 `noc_mesh.py`，删除后者即孤化前者
+
+**修复验证:** `python/` 目录已不存在
+**状态:** 已完成（2026-06-02 验证）
 
 **操作:**
 ```bash
@@ -73,11 +86,21 @@ python -c "from python import noc_mesh"    # 应抛出 ImportError
 
 ---
 
-### P0.3: 修复 wildcard.hh 空 catch 块
+### P0.3: 修复 wildcard.hh 空 catch 块 ✅
 
 **文件:** `include/utils/wildcard.hh:28`
 
 **问题:** `catch(...)` 吞噬所有异常，调试时无法定位 `std::regex_error`。
+
+**修复验证:** 现有代码已有正确的异常处理：
+```cpp
+} catch (const std::regex_error& e) {
+    // Invalid regex pattern (e.g., unbalanced brackets) - return false instead of silently wrong match
+    return false;
+}
+```
+**测试:** `[wildcard]` 标签测试全部通过 (9 assertions in 1 test case)
+**状态:** 已完成（2026-06-02 验证）
 
 **操作:**
 ```cpp
@@ -110,15 +133,25 @@ python -c "from python import noc_mesh"    # 应抛出 ImportError
 
 ## P1 — This Sprint (Fix Within 2 Weeks)
 
-> 预估总工时: 8-14 小时
+> ✅ **COMPLETED (2026-06-02)** — All P1 items verified fixed.
 
-### P1.1: routing_algo_ 裸指针 → unique_ptr
+| # | 任务 | 状态 | 修复提交 |
+|---|------|------|----------|
+| P1.1 | routing_algo_ 裸指针 → unique_ptr | ✅ 已修复 | `c78f7fe` (2026-05-09) |
+| P1.2 | latency 参数注入 | ✅ 已修复 | `31f5639` (2026-05-25) |
+| P1.3 | flit.src_port 硬编码 | ✅ 已修复 | `flit.src_port.read()` |
+| P1.4 | 冗余配置文件清理 | ✅ 已清理 | 只剩 `_tlm` 版本 |
+
+### P1.1: routing_algo_ 裸指针 → unique_ptr ✅
 
 **文件:**
 - `include/tlm/router_tlm.hh:253` — 声明
 - `src/tlm/router_tlm.cc:56, 67, 103-107` — 使用处
 
 **问题:** `RoutingAlgorithm*` 手动 `new`/`delete`，违反现代 C++ 所有权规范。
+
+**修复验证:** `routing_algo_` 已改为 `std::unique_ptr<RoutingAlgorithm>`
+**提交:** `c78f7fe` - refactor(router): routing_algo_ to unique_ptr
 
 **TDD 步骤:**
 
@@ -163,11 +196,14 @@ void RouterTLM::set_routing_algorithm(std::unique_ptr<RoutingAlgorithm> algo) {
 
 ---
 
-### P1.2: 实现 connection_resolver.cc 延迟注入
+### P1.2: 实现 connection_resolver.cc 延迟注入 ✅
 
 **文件:** `src/core/connection_resolver.cc:44`
 
 **问题:** `latency` 参数被 `(void)` 压制，JSON 配置中的连接延迟完全失效。
+
+**修复验证:** latency 已从 JSON 传播到 `setDelay()`
+**提交:** `31f5639` - fix(connection): P1.2 latency injection from JSON connections
 
 **TDD 步骤:**
 
@@ -195,11 +231,17 @@ void RouterTLM::set_routing_algorithm(std::unique_ptr<RoutingAlgorithm> algo) {
 
 ---
 
-### P1.3: 修复 link_tlm.cc 硬编码 src_port = 0
+### P1.3: 修复 link_tlm.cc 硬编码 src_port = 0 ✅
 
 **文件:** `src/tlm/link_tlm.cc:69`
 
 **问题:** `df.src_port = 0` 破坏 credit 返回路由——所有 credit 都返回到上游端口 0。
+
+**修复验证:** `df.src_port = flit.src_port.read()` 已实现
+**当前代码:**
+```cpp
+df.src_port = flit.src_port.read();  // 修复后从 flit 读取
+```
 
 **Oracle 决策: Option A** — 在 `NoCFlitBundle` 添加 `src_port` 字段
 

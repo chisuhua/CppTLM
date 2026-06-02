@@ -2,6 +2,7 @@
 #ifndef GEMSC_EXTENSIONS_COMMON_HH
 #define GEMSC_EXTENSIONS_COMMON_HH
 
+#include <array>
 #include <cstdint>
 #include <ostream>  // 👈 新增
 
@@ -43,13 +44,13 @@ inline std::ostream& operator<<(std::ostream& os, const WriteCmd& cmd) {
 // ----------------------------------------
 
 struct WriteData {
-    uint8_t data[64];
-    uint8_t strb[8];
+    std::array<uint8_t, 64> data{};
+    std::array<uint8_t, 8>  strb{};
     uint8_t valid_bytes;
 
     WriteData() : valid_bytes(0) {
-        for (int i = 0; i < 64; ++i) data[i] = 0;
-        for (int i = 0; i < 8;  ++i) strb[i] = 0;
+        data.fill(0);
+        strb.fill(0);
     }
 };
 
@@ -71,12 +72,12 @@ inline std::ostream& operator<<(std::ostream& os, const WriteData& wd) {
 // ----------------------------------------
 
 struct ReadResp {
-    uint8_t data[64];
+    std::array<uint8_t, 64> data{};
     uint8_t valid_bytes;
     bool    error;
 
     ReadResp() : valid_bytes(0), error(false) {
-        for (int i = 0; i < 64; ++i) data[i] = 0;
+        data.fill(0);
     }
 };
 

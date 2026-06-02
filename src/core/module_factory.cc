@@ -59,7 +59,7 @@ static std::string resolve_port_alias(const std::string& port_spec) {
 
 static json mergeConfigs(const json& base, const json& child, int depth = 0) {
     if (depth > 10) {
-        printf("[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
+        DPRINTF(MODULE, "[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
         return child;
     }
 
@@ -134,7 +134,7 @@ static json mergeConfigs(const json& base, const json& child, int depth = 0) {
 
 static json processExtends(const json& config, int depth = 0) {
     if (depth > 10) {
-        printf("[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
+        DPRINTF(MODULE, "[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
         return json::object();
     }
 
@@ -144,13 +144,13 @@ static json processExtends(const json& config, int depth = 0) {
 
     std::string extends_path = config["extends"].get<std::string>();
     if (ModuleFactory::debug_config()) {
-        for (int i = 0; i < depth; ++i) printf("  ");
-        printf("[DEBUG] Processing extends: %s (depth: %d)\n", extends_path.c_str(), depth);
+        for (int i = 0; i < depth; ++i) DPRINTF(MODULE, "  ");
+        DPRINTF(MODULE, "[DEBUG] Processing extends: %s (depth: %d)\n", extends_path.c_str(), depth);
     }
 
     std::ifstream f(extends_path);
     if (!f.is_open()) {
-        printf("[CONFIG ERROR] Cannot open extends file: %s\n", extends_path.c_str());
+        DPRINTF(MODULE, "[CONFIG ERROR] Cannot open extends file: %s\n", extends_path.c_str());
         return json::object();
     }
 
@@ -158,7 +158,7 @@ static json processExtends(const json& config, int depth = 0) {
     try {
         base_config = json::parse(f);
     } catch (const json::parse_error& e) {
-        printf("[CONFIG ERROR] Failed to parse extends file '%s': %s\n", extends_path.c_str(), e.what());
+        DPRINTF(MODULE, "[CONFIG ERROR] Failed to parse extends file '%s': %s\n", extends_path.c_str(), e.what());
         return json::object();
     }
     f.close();
@@ -185,20 +185,20 @@ static json processExtends(const json& config, int depth = 0) {
 bool ModuleFactory::validateConfig(const json& config) {
     // 1. 检查顶层必需字段
     if (!config.contains("modules")) {
-        printf("[CONFIG ERROR] Missing required field 'modules'\n");
+        DPRINTF(MODULE, "[CONFIG ERROR] Missing required field 'modules'\n");
         return false;
     }
     if (!config["modules"].is_array()) {
-        printf("[CONFIG ERROR] Field 'modules' must be an array\n");
+        DPRINTF(MODULE, "[CONFIG ERROR] Field 'modules' must be an array\n");
         return false;
     }
 
     if (!config.contains("connections")) {
-        printf("[CONFIG ERROR] Missing required field 'connections'\n");
+        DPRINTF(MODULE, "[CONFIG ERROR] Missing required field 'connections'\n");
         return false;
     }
     if (!config["connections"].is_array()) {
-        printf("[CONFIG ERROR] Field 'connections' must be an array\n");
+        DPRINTF(MODULE, "[CONFIG ERROR] Field 'connections' must be an array\n");
         return false;
     }
 
@@ -211,27 +211,27 @@ bool ModuleFactory::validateConfig(const json& config) {
     for (const auto& mod : config["modules"]) {
         // name 字段检查
         if (!mod.contains("name")) {
-            printf("[CONFIG ERROR] Module missing required field 'name'\n");
+            DPRINTF(MODULE, "[CONFIG ERROR] Module missing required field 'name'\n");
             return false;
         }
         if (!mod["name"].is_string()) {
-            printf("[CONFIG ERROR] Module field 'name' must be a string\n");
+            DPRINTF(MODULE, "[CONFIG ERROR] Module field 'name' must be a string\n");
             return false;
         }
         std::string name = mod["name"].get<std::string>();
 
         // type 字段检查
         if (!mod.contains("type")) {
-            printf("[CONFIG ERROR] Module '%s' missing required field 'type'\n", name.c_str());
+            DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing required field 'type'\n", name.c_str());
             return false;
         }
         if (!mod["type"].is_string()) {
-            printf("[CONFIG ERROR] Module '%s' field 'type' must be a string\n", name.c_str());
+            DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' field 'type' must be a string\n", name.c_str());
             return false;
         }
         std::string type = mod["type"].get<std::string>();
 
-const json* params_src = nullptr;
+        const json* params_src = nullptr;
         if (mod.contains("params")) params_src = &mod["params"];
         else if (type == "RouterTLM" && mod.contains("node_x")) params_src = &mod;
         else if (type == "NICTLM" && mod.contains("node_id")) params_src = &mod;
@@ -241,19 +241,19 @@ const json* params_src = nullptr;
             if (type == "RouterTLM") {
                 for (auto p : {"node_x", "node_y", "mesh_x", "mesh_y"}) {
                     if (!params.contains(p) || !params[p].is_number_integer()) {
-                        printf("[CONFIG ERROR] Module '%s' missing/invalid '%s'\n", name.c_str(), p);
+                        DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid '%s'\n", name.c_str(), p);
                         return false;
                     }
                 }
             }
             if (type == "NICTLM") {
                 if (!params.contains("node_id") || !params["node_id"].is_number_integer()) {
-                    printf("[CONFIG ERROR] Module '%s' missing/invalid 'node_id'\n", name.c_str());
+                    DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid 'node_id'\n", name.c_str());
                     return false;
                 }
             }
         } else if (type == "RouterTLM" || type == "NICTLM") {
-            printf("[CONFIG ERROR] Module '%s' missing required params\n", name.c_str());
+            DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing required params\n", name.c_str());
             return false;
         }
     }
@@ -501,7 +501,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
     if (final_config.contains("plugin")) {
         for (auto& plugin_path : final_config["plugin"]) {
             if (!PluginLoader{}.loadPlugin(plugin_path.get<std::string>(), LoadPolicy::CRITICAL_ONLY, true)) {
-                printf("[ERROR] Failed to load plugin: %s\n", plugin_path.get<std::string>().c_str());
+                DPRINTF(MODULE, "[ERROR] Failed to load plugin: %s\n", plugin_path.get<std::string>().c_str());
             }
         }
     }
@@ -532,7 +532,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
             if (object_it != object_registry.end()) {
                 object_instances[name] = object_it->second(name, event_queue);
             } else {
-                printf("[ERROR] Unknown or unregistered type: %s\n", type.c_str());
+                DPRINTF(MODULE, "[ERROR] Unknown or unregistered type: %s\n", type.c_str());
             }
         }
 
@@ -591,7 +591,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
                     json internal_cfg = json::parse(f);
                     sim_mod->instantiate(internal_cfg);
                 } else {
-                    printf("[ERROR] Cannot open config: %s\n", config_file.c_str());
+                    DPRINTF(MODULE, "[ERROR] Cannot open config: %s\n", config_file.c_str());
                 }
             }
         }
