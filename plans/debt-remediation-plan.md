@@ -1,7 +1,7 @@
 # CppTLM Technical Debt Remediation Plan
 
 **Created:** 2026-05-09
-**Status:** P0 COMPLETED (2026-06-02), P1/P2/P3 Pending
+**Status:** P0/P1/P2 COMPLETED (2026-06-02), P3 Pending
 **Last Updated:** 2026-06-02
 **Based on:** 4-parallel analysis (Architecture, Duplication, Technical Debt, C++ Modernization) + Oracle调研 + Momus审查
 
@@ -324,12 +324,21 @@ git grep -l "mesh_2x2.json" -- test/ configs/
 
 ## P2 — Next Sprint (Thematic Buckets)
 
-### Bucket A: Python 代码库清理
+> ✅ **COMPLETED (2026-06-02)** — All P2 buckets completed.
+
+| Bucket | 任务 | 状态 | 提交 |
+|--------|------|------|------|
+| **A** | linter 合并到 validator | ✅ 已完成 | `2b402b2` |
+| **B** | C++ 现代化 | ✅ 已完成 | `2b402b2` |
+| **C** | Legacy 标记废弃 | ✅ 已完成 (文档) | `2b402b2` |
+| **D** | 日志一致性 | ✅ 已完成 | `2b402b2` |
+
+### Bucket A: Python 代码库清理 ✅
 
 | # | 任务 | 文件 | 操作 |
 |---|------|------|------|
 | A.1 | 删除 noc_builder.py | `python/noc_builder.py` | 已于 P0.2 同步删除 |
-| A.2 | 合并 linter 独有检查 → validator | `scripts/linter.py` → `cpptlm_config/validator.py` | 迁移 W001(self-loop)、W002(duplicate-connection) 到 validator，再删除 linter.py |
+| A.2 | 合并 linter 独有检查 → validator | `scripts/linter.py` → `cpptlm_config/validator.py` | ✅ 测试已迁移到 `test_validator.py`，`linter.py` 已删除 |
 
 **A.2 详细步骤:**
 
@@ -346,13 +355,13 @@ git grep -l "mesh_2x2.json" -- test/ configs/
 
 ---
 
-### Bucket B: C++ 现代化
+### Bucket B: C++ 现代化 ✅
 
 | # | 任务 | 文件 | 操作 | 风险 |
 |---|------|------|------|------|
-| B.1 | `typedef` → `using` | `include/ext/mem_exts.hh` (6处) | 纯机械转换，无行为变更 | 低 |
-| B.2 | C 风格数组 → `std::array` | `include/core/cmd.hh:46,47,74` | `uint8_t data[64]` → `std::array<uint8_t, 64>` | 低 |
-| B.3 | 测试中 PortPair new → unique_ptr | `test/test_*.cc` (6处) | 参照 P1.1 模式 | 低 |
+| B.1 | `typedef` → `using` | `include/ext/mem_exts.hh` (6处) | ✅ 早期已无 typedef 匹配 | 低 |
+| B.2 | C 风格数组 → `std::array` | `include/core/cmd.hh:46,47,74` | ✅ 已转换为 `std::array<uint8_t, 64>` | 低 |
+| B.3 | 测试中 PortPair new → unique_ptr | `test/test_*.cc` (6处) | ✅ 5 个测试文件已改为 `make_unique` | 低 |
 
 **SKIP (受约束):**
 - `packet_pool.hh` 手动引用计数（已尝试 unique_ptr 并回退，AGENTS.md 约束）
@@ -360,26 +369,26 @@ git grep -l "mesh_2x2.json" -- test/ configs/
 
 ---
 
-### Bucket C: Legacy 模块正式废弃
+### Bucket C: Legacy 模块正式废弃 ✅
 
 | # | 任务 | 文件 | 操作 |
 |---|------|------|------|
-| C.1 | 审计 modules_v2.hh 使用者 | `include/modules/legacy/modules_v2.hh` | `git grep -l "CrossbarV2\|MemoryV2\|CacheV2"` 确认无消费者 |
-| C.2 | 添加 `[[deprecated]]` | `include/modules/legacy/modules_v2.hh` | 确认无消费者后标记 |
-| C.3 | 更新 README | `include/modules/legacy/README.md` | 添加映射表：CacheV2→CacheTLM, MemoryV2→MemoryTLM, CrossbarV2→CrossbarTLM |
+| C.1 | 审计 modules_v2.hh 使用者 | `include/modules/legacy/modules_v2.hh` | ✅ 28 处 test 引用，无法直接添加 `[[deprecated]]` |
+| C.2 | 添加 `[[deprecated]]` | `include/modules/legacy/modules_v2.hh` | ⚠️ 跳过：会破坏 28 个测试 |
+| C.3 | 更新 README | `include/modules/legacy/README.md` | ✅ 已添加迁移映射表 + 状态说明 |
 
 **依赖:** C.2 须在 C.1 确认无消费者后执行
 **预估工时:** 2 小时
 
 ---
 
-### Bucket D: 日志一致性
+### Bucket D: 日志一致性 ✅
 
 | # | 任务 | 文件 | 操作 | 风险 |
 |---|------|------|------|------|
-| D.1 | `printf` → `DPRINTF` | `src/core/module_factory.cc` (~20处) | 替换为 `DPRINTF(CONFIG, ...)` | 低 |
-| D.2 | 移除/实现占位符 main | `src/main_hierarchy.cpp`, `src/main_layout.cpp` | 删除或实现真实功能 | 低 |
-| D.3 | `std::cout` → `DPRINTF` | `src/utils/dynamic_loader.cc` | 替换为 `DPRINTF(LOADER, ...)` | 低 |
+| D.1 | `printf` → `DPRINTF` | `src/core/module_factory.cc` (~20处) | ✅ 20 处已替换为 `DPRINTF(MODULE, ...)` | 低 |
+| D.2 | 移除/实现占位符 main | `src/main_hierarchy.cpp`, `src/main_layout.cpp` | ✅ 两个文件已删除 | 低 |
+| D.3 | `std::cout` → `DPRINTF` | `src/utils/dynamic_loader.cc` | ✅ 3 处已替换为 `DPRINTF(LOADER, ...)` | 低 |
 
 **依赖:** 无
 **预估工时:** 3-4 小时
