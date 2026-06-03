@@ -3,7 +3,7 @@
 #define GEMSC_ADAPTERS_PACKET_TO_PAYLOAD_HH
 
 #include <systemc>
-#include "packet/packet.hh"
+#include "packet.hh"
 #include "cmd_exts.hh"
 
 /**
