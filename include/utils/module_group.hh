@@ -6,9 +6,8 @@
 #include <vector>
 #include <string>
 #include "core/sim_core.hh"
+#include "core/sim_object.hh"
 #include "utils/wildcard.hh"
-
-class SimObject;
 
 class ModuleGroup {
 private:
