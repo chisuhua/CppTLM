@@ -435,8 +435,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 final_config["hierarchy"],
                 final_config.contains("coherence_domains") ? final_config["coherence_domains"] : json::array()
             );
+            (void)hierarchy_root;
             DPRINTF(MODULE, "[HIERARCHY] Hierarchy tree parsed successfully\n");
-            // TODO: 将 hierarchy_root 存储到 ModuleFactory 成员变量，供后续模块关联使用
         } catch (const cpptlm::TopologyParseException& e) {
             DPRINTF(MODULE, "[HIERARCHY ERROR] %s\n", e.what());
             return false;
