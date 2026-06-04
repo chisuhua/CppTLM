@@ -63,6 +63,7 @@ private:
 
 public:
     explicit ModuleFactory(EventQueue* eq) : event_queue(eq) {}
+    ~ModuleFactory();
 
     // 用于注册普通的 SimObject 类型
     template<typename T>

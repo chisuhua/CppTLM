@@ -33,6 +33,27 @@ using json = nlohmann::json;
 
 bool ModuleFactory::_debug_config = false;
 
+// P3.x ASan: clear StatsManager paths (by pointer scan) before deleting instances,
+// then delegate to ModuleGroup::clearAll() to free the SimObjects.
+ModuleFactory::~ModuleFactory() {
+    for (auto& [name, obj] : instances) {
+        if (!obj) continue;
+        if (auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj)) {
+            if (auto* sg = ch_mod->get_stats_group()) {
+                std::vector<std::string> paths;
+                for (const auto& kv : tlm_stats::StatsManager::instance().groups()) {
+                    if (kv.second == sg) paths.push_back(kv.first);
+                }
+                for (const auto& p : paths) {
+                    tlm_stats::StatsManager::instance().unregister_group(p);
+                }
+            }
+        }
+    }
+    ModuleGroup::clearAll();
+    instances.clear();
+}
+
 std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) {
     size_t dot_pos = full_name.find('.');
     if (dot_pos == std::string::npos) {
