@@ -30,7 +30,11 @@ public:
     }
 
     static void unregisterInstance(const std::string& name) {
-        getInstanceRegistry().erase(name);
+        auto it = getInstanceRegistry().find(name);
+        if (it != getInstanceRegistry().end()) {
+            delete it->second;
+            getInstanceRegistry().erase(it);
+        }
         DPRINTF(GROUP, "[Group] Unregistered instance '%s'\n", name.c_str());
     }
 
@@ -105,8 +109,11 @@ public:
     }
 
     static void clearAll() {
-        getGroups().clear();
+        for (auto& [name, obj] : getInstanceRegistry()) {
+            delete obj;
+        }
         getInstanceRegistry().clear();
+        getGroups().clear();
     }
 
     static std::vector<std::string> getAllGroupNames() {
