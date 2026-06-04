@@ -10,6 +10,7 @@ set(CORE_SOURCES
     core/connection_resolver.cc
     core/coherence_domain.cc
     core/module_factory.cc
+    core/module_factory_validate.cc
     core/plugin_loader.cc
     core/port_compatibility.cc
     core/param_parser.cc
