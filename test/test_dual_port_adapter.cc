@@ -5,7 +5,7 @@
 // 日期 2026-04-14
 #include <catch2/catch_all.hpp>
 #include "framework/dual_port_stream_adapter.hh"
-#include "core/chstream_adapter_factory.hh"
+#include "framework/chstream_adapter_factory.hh"
 #include "core/chstream_module.hh"
 #include "core/chstream_port.hh"
 #include "bundles/cache_bundles_tlm.hh"

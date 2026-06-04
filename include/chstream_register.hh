@@ -12,7 +12,7 @@
 #include "tlm/nic_tlm.hh"
 #include "tlm/link_tlm.hh"
 #include "core/module_factory.hh"
-#include "core/chstream_adapter_factory.hh"
+#include "framework/chstream_adapter_factory.hh"
 #include "bundles/cache_bundles_tlm.hh"
 
 // NOTE: Legacy modules (REGISTER_OBJECT) are in modules.hh

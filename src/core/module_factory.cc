@@ -5,7 +5,7 @@
 #include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include "core/chstream_port.hh"
-#include "core/chstream_adapter_factory.hh"
+#include "framework/chstream_adapter_factory.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "bundles/noc_bundles_tlm.hh"
 #include "tlm/router_tlm.hh"
