@@ -612,7 +612,7 @@ namespace bundles {
 | `OutputStreamAdapter<BundleT>` | `framework/stream_adapter.hh` | ✅ Phase 0 |
 | `StreamAdapter<ModuleT,ReqB,RespB>` | `framework/stream_adapter.hh` | ✅ Phase 0（单端口） |
 | `MultiPortStreamAdapter<M,Rq,Rp,N>` | `framework/multi_port_stream_adapter.hh` | ✅ Phase 5（多端口） |
-| `ChStreamAdapterFactory`（多端口注册） | `core/chstream_adapter_factory.hh` | ✅ Phase 5 |
+| `ChStreamAdapterFactory`（多端口注册） | `framework/chstream_adapter_factory.hh` | ✅ Phase 5 |
 | ModuleFactory Step 7（多端口感知） | `module_factory.cc` | ✅ Phase 5 |
 | CacheTLM | `tlm/cache_tlm.hh` | ✅ Phase 1 |
 | MemoryTLM | `tlm/memory_tlm.hh` | ✅ Phase 1 |

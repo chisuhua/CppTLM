@@ -24,7 +24,6 @@ SimObject (基类 — 所有仿真模块)
 | `sim_object.hh` | 300+ | SimObject 基类: tick/init/reset/层次结构/PortManager/TxnInfo |
 | `module_factory.hh` | 168 | ModuleFactory: 双注册表, instantiateAll, StreamAdapter 注入 |
 | `chstream_module.hh` | 56 | ChStreamModuleBase: set_stream_adapter(), num_ports() |
-| `chstream_adapter_factory.hh` | — | StreamAdapter 工厂: registerAdapter/registerMultiPortAdapter |
 | `chstream_port.hh` | — | ChStream 端口: MasterPort/SlavePort/ChStream initiator/target |
 | `simple_port.hh` | — | 简单端口实现（Legacy Port 回调机制） |
 | `sim_module.hh` | — | SimModule 基类（带 Layout 特性的模块） |

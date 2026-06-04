@@ -5,7 +5,7 @@
 #include "catch_amalgamated.hpp"
 #include "core/module_factory.hh"
 #include "core/chstream_module.hh"
-#include "core/chstream_adapter_factory.hh"
+#include "framework/chstream_adapter_factory.hh"
 #include "core/chstream_port.hh"
 #include "tlm/cache_tlm.hh"
 #include "bundles/cache_bundles_tlm.hh"
