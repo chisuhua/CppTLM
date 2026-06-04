@@ -50,3 +50,31 @@ SimObject (基类 — 所有仿真模块)
 - `module_factory.hh` 中 `stream_adapters_`/`ch_initiator_ports_`/`ch_target_ports_` 成员由 Step 7 注入阶段使用
 - `parsePortSpec(full_name)` — 解析 `"xbar.0"` → `("xbar", "0")` 端口索引语法
 - PluginLoader 使用 `dlopen/dlsym` 动态加载共享库
+
+## 架构层次说明
+
+### core/ext/ 子目录（TLM 扩展桥接层）
+
+`include/core/ext/` 是 `core/` 层的特殊子目录，**允许直接依赖 `tlm/` 层**。这是有意设计：
+
+- **原因**：`core/ext/cmd_exts.hh` 定义了 TLM 扩展宏（`GEMSC_TLM_EXTENSION_DEF`），必须继承 `tlm::tlm_extension<T>`（C++ 模板继承需要完整类型定义）
+- **使用方**：`core/ext/packet_to_payload.hh`（Packet → Payload 转换器，直接 `#include "cmd_exts.hh"`）；`core/ext/payload_to_packet.hh`（Payload → Packet 转换器，使用 `ext/mem_exts.hh` 中的对应类型）
+- **替代方案**：将 `cmd_exts.hh` 移至 `ext/` 目录，但因其被 `core/ext/*` 使用，会增加循环依赖
+- **判断标准**：仅当文件直接包含 `tlm/tlm_stub.hh` 或 `tlm.h` 时，才允许放在 `core/ext/` 下
+
+### ext/ 层依赖
+
+`include/ext/` 层（`transaction_context_ext.hh`、`error_context_ext.hh`、`mem_exts.hh`、`credit_stream.hh`）也直接依赖 `tlm/` 层——这些是 TLM 扩展的实现，按设计需要继承 `tlm::tlm_extension<T>`。
+
+### core/packet.hh 的依赖链
+
+`include/core/packet.hh` 不再直接包含 `tlm/tlm_stub.hh` 或 `tlm.h`，依赖通过下列传递性 include 解决：
+
+```
+core/packet.hh
+  ├─ core/error_category.hh
+  ├─ ext/transaction_context_ext.hh  → tlm/tlm_stub.hh
+  └─ ext/error_context_ext.hh       → tlm/tlm_stub.hh
+```
+
+**结论**：`core/ext/` 和 `ext/` 是 TLM 扩展桥接层，是架构的有意例外，不是分层违规。任何新增文件若需直接依赖 `tlm/` 层，应优先放在 `ext/`，仅在 `core/ext/` 的适配器需要时才放入 `core/ext/`。
