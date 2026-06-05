@@ -76,6 +76,19 @@ public:
             
             uint64_t addr = req->payload ? req->payload->get_address() : 0;
             if (addr >= memory_size) {
+                // Phase 1.5: explicitly release TransactionContextExt on error path.
+                // With the multi-extension array (Phase 1c/1d), set_error_code would
+                // otherwise leave TransactionContextExt in its own slot — coexisting
+                // with ErrorContextExt. We release it explicitly here to:
+                //   (a) make error-path semantics explicit (no implicit slot retention),
+                //   (b) free memory early instead of waiting for PacketPool::release.
+                // The transaction_id is already mirrored to Packet::stream_id by
+                // set_transaction_id (see include/core/packet.hh:96), so downstream
+                // code that reads transaction_id via get_transaction_id() still works
+                // (falls back to stream_id at packet.hh:88).
+                if (req->payload) {
+                    req->payload->release_extension<TransactionContextExt>();
+                }
                 req->set_error_code(ErrorCode::TRANSPORT_INVALID_ADDRESS);
                 errors++;
             } else if (req->cmd == CMD_READ) {

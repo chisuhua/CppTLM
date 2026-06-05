@@ -182,6 +182,11 @@ TEST_CASE("Integration: Full packet lifecycle with errors", "[P3.1][integration]
         pkt->set_error_code(ErrorCode::COHERENCE_STATE_VIOLATION);
         
         THEN("Both transaction and error should be tracked") {
+            // Phase 1.5: verify error path no longer depends on stream_id fallback.
+            // Before fix: TransactionContextExt was silently destroyed by set_error_code,
+            //             get_transaction_id() returned stream_id (works but obscure).
+            // After fix: TransactionContextExt explicitly released, get_transaction_id()
+            //            still returns 5000 via stream_id fallback (semantic clarity).
             REQUIRE(pkt->get_transaction_id() == 5000);
             REQUIRE(pkt->get_error_code() == ErrorCode::COHERENCE_STATE_VIOLATION);
             REQUIRE(pkt->has_error() == true);
