@@ -691,7 +691,7 @@ jobs:
 | 问题 | 选项 | 推荐 | 决策 |
 |------|------|------|------|
 | **Q1**: 构建工具？ | A) CMake+Ninja / B) CMake+Make / C) Bazel | **A) CMake+Ninja** | ✅ 已确认 |
-| **Q2**: SystemC 支持？ | A) 可选 / B) 强制 | **A) 可选（USE_SYSTEMC_STUB stub 实现）** | ✅ 已确认 |
+| **Q2**: SystemC 支持？ | A) 可选 / B) 强制 | **A) 已删除 USE_SYSTEMC option；仅 stub 路径** | ✅ 已实施 |
 | **Q3**: SystemC 来源？ | A) 系统包 / B) 项目内头文件 / C) 自带 stub | **C) stub 桩实现（无外部 SystemC 依赖）** | ✅ 已确认 |
 | **Q4**: ccache 支持？ | A) 需要 / B) 不需要 | **A) 需要** | ✅ 已确认 |
 | **Q5**: 测试框架？ | A) Catch2 / B) GTest / C) 混合 | **A) Catch2** | ✅ 已确认 |

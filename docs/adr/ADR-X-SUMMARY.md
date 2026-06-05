@@ -119,14 +119,14 @@ SimObject* module = ModuleRegistry::instance().create_module(type, name);
 
 ### ADR-X.5: 构建系统
 
-**决策**: CMake+Ninja + ccache + 本地 SystemC
+**决策**: CMake+Ninja + ccache + TLM stub（USE_SYSTEMC option 已删除）
 
 | 问题 | 决策 |
 |------|------|
 | Q1: 构建工具？ | CMake + Ninja |
 | Q2: ccache 支持？ | 自动检测并启用 |
-| Q3: SystemC 支持？ | 可选启用（USE_SYSTEMC 选项） |
-| Q4: SystemC 来源？ | 项目内头文件（`external/systemc/`） |
+| Q3: SystemC 支持？ | (历史决策) Phase 3a/3b 已删除 USE_SYSTEMC option |
+| Q4: SystemC 来源？ | (历史决策) external/systemc/ 已删除 |
 | Q5: 测试框架？ | Catch2 |
 | Q6: 依赖管理？ | FetchContent |
 | Q7: CI/CD? | GitHub Actions |
@@ -135,9 +135,6 @@ SimObject* module = ModuleRegistry::instance().create_module(type, name);
 ```bash
 # 标准构建（自动使用 ccache）
 ./scripts/build.sh
-
-# 启用 SystemC
-./scripts/build.sh -DUSE_SYSTEMC=ON
 
 # 运行测试
 ./scripts/test.sh
