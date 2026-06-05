@@ -11,11 +11,7 @@
 #ifndef CMD_EXTS_HH
 #define CMD_EXTS_HH
 
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#else
-#include <tlm>
-#endif
 #include <iostream>  // 用于 print
 #include "cmd.hh"
 

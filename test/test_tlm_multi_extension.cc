@@ -10,11 +10,7 @@
 // Style: 12 TEST_CASEs, tag [multi_ext] (plus [regression]/[edge] subsets).
 // Catch2 v3.7.0 (precompiled catch_amalgamated.hpp).
 #include "catch_amalgamated.hpp"
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#else
-#include <tlm>
-#endif
 #include "core/error_category.hh"
 #include "ext/error_context_ext.hh"
 #include "ext/transaction_context_ext.hh"

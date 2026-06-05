@@ -3,11 +3,7 @@
 
 #include <catch2/catch_all.hpp>
 #include "ext/transaction_context_ext.hh"
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#else
-#include "tlm.h"
-#endif
 #include <cstring>
 
 /**

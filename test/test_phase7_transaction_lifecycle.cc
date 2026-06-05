@@ -10,11 +10,7 @@
 #include "modules/legacy/modules_v2.hh"
 #include "ext/error_context_ext.hh"
 #include "framework/debug_tracker.hh"
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#else
-#include "tlm.h"
-#endif
 
 using tlm::tlm_generic_payload;
 
