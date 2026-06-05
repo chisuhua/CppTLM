@@ -18,10 +18,6 @@
 #include "modules.hh"
 #include "chstream_register.hh"
 
-extern "C" int sc_main(int argc, char* argv[]) {
-    return 0;
-}
-
 void print_usage(const char* prog) {
     std::cerr << "Usage: " << prog << " <config.json> [options]\n"
               << "Options:\n"
