@@ -137,10 +137,8 @@ target_include_directories(cpptlm_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
 
-# 3. 条件编译
-if(USE_SYSTEMC)
-    target_compile_definitions(cpptlm_core PUBLIC USE_SYSTEMC)
-endif()
+# 3. TLM stub 由根 CMakeLists.txt 默认开启 (USE_SYSTEMC_STUB=ON)
+#    无需外部 SystemC 依赖
 ```
 
 ### 3.2 Catch2 测试模式

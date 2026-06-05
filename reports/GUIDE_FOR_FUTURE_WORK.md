@@ -347,7 +347,7 @@ python scripts/topology_validator.py configs/mesh_2x2_tlm.json
 ./scripts/format.sh --check
 
 # 编译 + 测试 (一键)
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF \
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
   && cmake --build build -j$(nproc) \
   && cd build && ctest --output-on-failure
 ```

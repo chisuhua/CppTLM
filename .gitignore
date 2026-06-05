@@ -49,3 +49,5 @@ openspec/changes/archive/
 .pytest_cache/
 # Added by code-review-graph
 .code-review-graph/
+# Added by understand-anything tool
+.understand-anything/

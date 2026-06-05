@@ -206,7 +206,7 @@ def run_simulation(config_path: str, cycles: int = 10000,
     if not binary:
         print("\n  [ERROR] cpptlm_sim binary not found.")
         print("  Build it with:")
-        print("    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF")
+        print("    cmake -S . -B build -DCMAKE_BUILD_TYPE=Release")
         print("    cmake --build build -j$(nproc)")
         return None
 

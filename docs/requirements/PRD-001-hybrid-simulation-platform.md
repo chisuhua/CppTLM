@@ -92,7 +92,7 @@
 | 约束 | 说明 |
 |------|------|
 | **C++ 标准** | C++17（兼容 SystemC 2.3.4） |
-| **SystemC** | 可选依赖，通过 USE_SYSTEMC 编译选项控制 |
+| **SystemC** | 已移除外部依赖；TLM 桩由内置 `USE_SYSTEMC_STUB` 提供（默认 ON） |
 | **CppHDL** | 外部依赖，位于 /workspace/CppHDL |
 | **构建系统** | CMake，支持 Ninja/Make 生成器 |
 

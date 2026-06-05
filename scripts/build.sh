@@ -6,7 +6,6 @@ set -e
 
 # 默认配置
 BUILD_TYPE=${BUILD_TYPE:-Release}
-USE_SYSTEMC=${USE_SYSTEMC:-OFF}
 BUILD_TESTS=${BUILD_TESTS:-ON}
 BUILD_EXAMPLES=${BUILD_EXAMPLES:-ON}
 
@@ -29,7 +28,6 @@ echo -e "${YELLOW}📦 配置构建...${NC}"
 cmake .. \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-    -DUSE_SYSTEMC=$USE_SYSTEMC \
     -DBUILD_TESTS=$BUILD_TESTS \
     -DBUILD_EXAMPLES=$BUILD_EXAMPLES \
     "$@"
@@ -43,7 +41,7 @@ echo -e "${GREEN}✅ 构建成功！${NC}"
 echo ""
 echo "📊 构建统计:"
 echo "  构建类型：$BUILD_TYPE"
-echo "  SystemC:  $USE_SYSTEMC"
+echo "  TLM stub: ON (内置)"
 echo "  测试：    $BUILD_TESTS"
 echo "  示例：    $BUILD_EXAMPLES"
 echo ""

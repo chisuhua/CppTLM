@@ -1,13 +1,22 @@
-// extensions/mem_exts.hh
-#ifndef MEM_EXTS_HH
-#define MEM_EXTS_HH
+// core/ext/cmd_exts.hh
+//
+// TLM 扩展宏定义（cmd_exts.hh）。
+// 实际的扩展类（ReadCmdExt / WriteCmdExt / ...）已迁移到 ext/mem_exts.hh，
+// 此处仅保留可复用的宏定义，便于后续添加新的扩展类型。
+// ReqIDExt 是 cmd_exts.hh 独有的扩展（尚未在 mem_exts.hh 中迁移）。
+//
+// 历史：旧版 core/ext/cmd_exts.hh 同时定义宏和具体扩展类（ReadCmdExt 等），
+// 但这些具体类与 ext/mem_exts.hh 中的定义重复。Phase 2 清理后，本文件
+// 仅作为宏库存在，具体扩展类以 ext/mem_exts.hh 为准。
+#ifndef CMD_EXTS_HH
+#define CMD_EXTS_HH
 
 #ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
 #else
 #include <tlm>
 #endif
-#include <iostream>  // 👈 用于 print
+#include <iostream>  // 用于 print
 #include "cmd.hh"
 
 #define GEMSC_TLM_EXTENSION_DEF(_name, _pod_type) \
@@ -44,14 +53,10 @@
         } \
     };
 
-// --- 定义所有扩展 ---
-GEMSC_TLM_EXTENSION_DEF(ReadCmdExt,   ReadCmd)
-GEMSC_TLM_EXTENSION_DEF(WriteCmdExt,  WriteCmd)
-GEMSC_TLM_EXTENSION_DEF(WriteDataExt, WriteData)
-GEMSC_TLM_EXTENSION_DEF(ReadRespExt,  ReadResp)
-GEMSC_TLM_EXTENSION_DEF(WriteRespExt, WriteResp)
-GEMSC_TLM_EXTENSION_DEF(StreamIDExt,  StreamUniqID)
+// ReqIDExt — cmd_exts.hh 独有的扩展（简单的 int32_t ID 字段）
+// 其他扩展类（ReadCmdExt / WriteCmdExt / WriteDataExt / ReadRespExt /
+// WriteRespExt / StreamIDExt）已统一在 ext/mem_exts.hh 中定义。
 GEMSC_TLM_EXTENSION_DEF_SIMPLE(ReqIDExt, int32_t, req_id)
 
 
-#endif // MEM_EXTS_HH
+#endif // CMD_EXTS_HH
