@@ -2,7 +2,7 @@
 
 > **版本**: 2.0  
 > **日期**: 2026-04-09  
-> **状态**: 📋 待确认  
+> **状态**: ✅ 已实施  
 > **影响**: v2.0 - 项目构建与开发体验
 
 ---
@@ -555,7 +555,6 @@ set -e
 
 # 默认配置
 BUILD_TYPE=${BUILD_TYPE:-Release}
-USE_SYSTEMC=${USE_SYSTEMC:-OFF}
 BUILD_TESTS=${BUILD_TESTS:-ON}
 
 # 创建构建目录
@@ -566,7 +565,6 @@ cd build
 cmake .. \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-    -DUSE_SYSTEMC=$USE_SYSTEMC \
     -DBUILD_TESTS=$BUILD_TESTS \
     -DBUILD_EXAMPLES=ON \
     "$@"
@@ -577,7 +575,6 @@ ninja
 echo ""
 echo "Build completed successfully!"
 echo "  Build type: $BUILD_TYPE"
-echo "  SystemC: $USE_SYSTEMC"
 echo ""
 ```
 
@@ -629,36 +626,35 @@ jobs:
     strategy:
       matrix:
         build-type: [Release, Debug]
-        use-systemc: [ON, OFF]
-    
+        # stub 路径唯一（USE_SYSTEMC option 已删除）
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Install dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y ninja-build ccache
-        # SystemC 不需要安装（使用项目内头文件）
-    
+        # 无 SystemC 外部依赖
+
     - name: Configure
       run: |
         cmake -S . -B build \
           -G Ninja \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
-          -DUSE_SYSTEMC=${{ matrix.use-systemc }} \
           -DBUILD_TESTS=ON
-    
+
     - name: Build
       run: cmake --build build
-    
+
     - name: Test
       run: ctest --test-dir build --output-on-failure
-    
+
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: test-results-${{ matrix.build-type }}-${{ matrix.use-systemc }}
+        name: test-results-${{ matrix.build-type }}
         path: build/Testing/
 
   code-format:
@@ -695,8 +691,8 @@ jobs:
 | 问题 | 选项 | 推荐 | 决策 |
 |------|------|------|------|
 | **Q1**: 构建工具？ | A) CMake+Ninja / B) CMake+Make / C) Bazel | **A) CMake+Ninja** | ✅ 已确认 |
-| **Q2**: SystemC 支持？ | A) 可选 / B) 强制 | **A) 可选** | ✅ 已确认 |
-| **Q3**: SystemC 来源？ | A) 系统包 / B) 项目内头文件 | **B) 项目内头文件** | ✅ 已确认 |
+| **Q2**: SystemC 支持？ | A) 可选 / B) 强制 | **A) 可选（USE_SYSTEMC_STUB stub 实现）** | ✅ 已确认 |
+| **Q3**: SystemC 来源？ | A) 系统包 / B) 项目内头文件 / C) 自带 stub | **C) stub 桩实现（无外部 SystemC 依赖）** | ✅ 已确认 |
 | **Q4**: ccache 支持？ | A) 需要 / B) 不需要 | **A) 需要** | ✅ 已确认 |
 | **Q5**: 测试框架？ | A) Catch2 / B) GTest / C) 混合 | **A) Catch2** | ✅ 已确认 |
 | **Q6**: 依赖管理？ | A) FetchContent / B) 手动 / C) vcpkg | **A) FetchContent** | ✅ 已确认 |
@@ -765,11 +761,10 @@ jobs:
 
 ## 11. 决策汇总
 
-**v2.0 决策**:
+**v2.1 决策**:
 - ✅ 构建工具：CMake 3.16+ + Ninja
 - ✅ ccache：自动检测并启用（加速编译）
-- ✅ SystemC：可选启用（USE_SYSTEMC 选项）
-- ✅ SystemC 来源：项目内头文件（`external/systemc/`）
+- ✅ SystemC：USE_SYSTEMC option 已删除，仅 stub 路径（USE_SYSTEMC_STUB 桩）
 - ✅ 测试框架：Catch2（单元测试）
 - ✅ 依赖管理：FetchContent（Catch2, nlohmann/json）
 - ✅ 示例组织：独立子目录
@@ -779,9 +774,6 @@ jobs:
 ```bash
 # 标准构建（自动使用 ccache）
 ./scripts/build.sh
-
-# 启用 SystemC
-./scripts/build.sh -DUSE_SYSTEMC=ON
 
 # 运行测试
 ./scripts/test.sh

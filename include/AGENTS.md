@@ -35,3 +35,4 @@ REGISTER_ALL       → REGISTER_OBJECT + REGISTER_CHSTREAM
 - `include/core/` 同时作为 include 目录添加到 CMake target，允许无 `core/` 前缀 `#include "packet.hh"` — 新旧代码共存
 - 添加新 TLM 模块时：`include/tlm/*.hh` + `REGISTER_CHSTREAM` 宏更新
 - 添加新 Legacy 模块时：`include/modules/legacy/*.hh` + `modules.hh` 更新
+- `include/ext/` 多 extension 并存：`tlm::tlm_generic_payload` 通过 `tlm_extension_registry` + `tlm_array<T>` 支持多个不同类型 extension 同时附加（Phase 1c 升级，详见 `docs/adr/ADR-X.13-stub-multi-extension.md`）

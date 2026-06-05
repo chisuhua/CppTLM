@@ -93,7 +93,7 @@ jobs:
     strategy:
       matrix:
         build-type: [Release, Debug]
-        use-systemc: [OFF]  # SystemC 可选，OFF 时使用 TLM stub
+        # 仅 stub 路径（USE_SYSTEMC option 已删除）
     # 步骤: checkout → apt → ccache → cmake → build → test → upload-artifact
 
   code-format:
