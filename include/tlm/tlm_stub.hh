@@ -61,29 +61,31 @@ inline unsigned int max_num_extensions() { return tlm_extension_registry::instan
         virtual tlm_extension_base* clone() const = 0;
         virtual void copy_from(const tlm_extension_base& ext) = 0;
         virtual unsigned int get_extension_id() const { return 0; }
-        // Legacy per-TU local-static registration (kept for Phase 1b migration).
-        static unsigned int register_extension(const std::type_info&) {
-            static unsigned int next_id = 0; return next_id++;
-        }
-        // Thread-safe singleton-based registration (new in Phase 1a).
+        // Thread-safe singleton-based registration. Single source of truth for
+        // extension type IDs across all translation units.
         static unsigned int register_extension_s(const std::type_info& type) {
             return tlm_extension_registry::instance().register_extension(type);
         }
     protected:
         tlm_extension_base() = default;
     };
-    
+
     template<typename T>
     class tlm_extension : public tlm_extension_base {
     public:
-        tlm_extension() { (void)register_extension(typeid(T)); }
+        /// Compile-time unique ID per extension type. C++11 guarantees thread-safe
+        /// initialization of class static members, so this is safe to access from
+        /// multiple TUs (unlike the previous function-local static).
+        static const unsigned int ID;
+        tlm_extension() = default;
         tlm_extension_base* clone() const override = 0;
         void copy_from(const tlm_extension_base& ext) override = 0;
-        static unsigned int get_extension_id_static() {
-            static unsigned int id = register_extension(typeid(T)); return id;
-        }
-        unsigned int get_extension_id() const override { return get_extension_id_static(); }
+        unsigned int get_extension_id() const override { return ID; }
     };
+    // Out-of-class definition: triggers singleton registration exactly once per
+    // extension type T (per program, not per TU).
+    template<typename T>
+    const unsigned int tlm_extension<T>::ID = tlm_extension_base::register_extension_s(typeid(T));
 #endif
 
 class tlm_generic_payload {
