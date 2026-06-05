@@ -15,7 +15,7 @@
 ### 1.1 编译 C++ 仿真器
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 ```
 
@@ -58,7 +58,7 @@ python3 -m pytest cpptlm/tests/ cpptlm/analysis/tests/ -v
 
 ```bash
 # 先编译 C++ 仿真器
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
 # 运行单集群 SoC（4 CPU + 4 L1 + Crossbar + 2 Memory）

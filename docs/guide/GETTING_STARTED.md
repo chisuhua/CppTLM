@@ -50,7 +50,7 @@ cd CppTLM
 
 # 2. 配置
 mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF
+cmake .. -DCMAKE_BUILD_TYPE=Release
 
 # 3. 构建（使用所有 CPU 核心）
 cmake --build . -j$(nproc)
@@ -74,8 +74,8 @@ cmake --build . --target cpptlm_tests -j$(nproc)
 | 选项 | 说明 | 默认值 |
 |------|------|--------|
 | `-DCMAKE_BUILD_TYPE` | `Debug` / `Release` | `Release` |
-| `-DUSE_SYSTEMC` | 启用 SystemC 支持 | `OFF` |
 | `-DBUILD_TESTS` | 构建测试 | `ON` |
+| `-DBUILD_EXAMPLES` | 构建示例 | `ON` |
 
 ---
 
@@ -201,7 +201,7 @@ CppTLM/
 
 ### Q: 构建失败，提示找不到 SystemC
 
-**A**: 使用 `-DUSE_SYSTEMC=OFF` 选项，CppTLM 内置 TLM stub。
+**A**: CppTLM 默认使用内置 TLM stub（无需任何 SystemC 编译选项）。
 
 ### Q: Python 测试失败，提示找不到 pydantic
 

@@ -696,7 +696,7 @@ CacheTLM (单端口) → xbar.0 (端口索引) → MemoryTLM (单端口)
 **本地提交流程**:
 ```bash
 # 1. 本地构建验证
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 cd build && ctest --output-on-failure
 

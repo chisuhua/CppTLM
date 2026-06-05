@@ -21,7 +21,7 @@
 **关键设计决策**:
 - JSON 驱动拓扑(`configs/*.json`)+ ModuleFactory 动态注入
 - 双注册表分离:`SimObject`(对象)与 `SimModule`(模块),由 `instantiateAll` 统一装配
-- ChStream 协议独立于 TLM,通过 `StreamAdapter` 桥接,允许 `USE_SYSTEMC=OFF` 时降级到 TLM stub
+- ChStream 协议独立于 TLM,通过 `StreamAdapter` 桥接,默认使用内置 TLM stub (`USE_SYSTEMC_STUB=ON`)
 - Phase 驱动开发(0-6 完成,3.x 子阶段覆盖端口/配置/验证)
 - 零技术债原则:每个 Phase 完成即编译通过、测试覆盖、文档同步
 
@@ -363,7 +363,7 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 ### 第 1 天:环境与概览
 1. 读 `AGENTS.md` — 了解项目结构、约定、命令
 2. 读 `docs/architecture/01-hybrid-architecture-v2.1.md` — v2.1 架构主文档
-3. 跑通构建:`cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF && cmake --build build -j$(nproc)`
+3. 跑通构建:`cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc)`
 4. 跑通测试:`cd build && ctest --output-on-failure`
 5. 浏览 `configs/mesh_2x2_tlm.json` — 看一个简单拓扑
 
@@ -394,7 +394,7 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 
 ```bash
 # 本地构建
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
 # 运行测试

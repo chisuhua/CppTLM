@@ -104,7 +104,7 @@ jobs:
 
 ```
 1. 本地构建验证
-   cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF
+   cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
    cmake --build build -j$(nproc)
    cd build && ctest --output-on-failure
 
@@ -142,13 +142,13 @@ gh auth status
 
 - **推荐**: Squash merge（保留干净的历史）
 - **CI 必须通过**才能合并
-- Artifact 名称使用 `run_id` 避免冲突：`test-results-${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-systemc }}-${{ github.run_id }}`
+- Artifact 名称使用 `run_id` 避免冲突：`test-results-${{ runner.os }}-${{ matrix.build-type }}-${{ github.run_id }}`
 
 ### 快速验证命令
 
 ```bash
 # 本地完整构建 + 测试
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DUSE_SYSTEMC=OFF && cmake --build build -j$(nproc) && cd build && ctest --output-on-failure
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc) && cd build && ctest --output-on-failure
 
 # 格式检查
 ./scripts/format.sh --check
@@ -183,7 +183,7 @@ gh run watch
 
 ```bash
 # 配置
-cmake -S . -B build -DUSE_SYSTEMC=ON
+cmake -S . -B build
 
 # 编译
 cmake --build build
@@ -210,7 +210,7 @@ gh pr merge #<number> --squash               # Squash 合并 PR
 
 ## NOTES
 
-- **SystemC 可选**: `-DUSE_SYSTEMC=OFF` 时使用 TLM stub（`USE_SYSTEMC_STUB=ON` 默认开启）
+- **TLM stub 默认启用**: `USE_SYSTEMC_STUB=ON` 是默认配置（根 CMakeLists.txt），不再需要外部 SystemC 依赖
 - **ccache 自动检测**: 编译加速，未安装时降级（非 fatal）
 - **历史遗留问题**: Pool/Wildcard/Connection 相关 12 个测试失败（已知，不影响新功能）
 - **构建产物**: `build/bin/` 下所有可执行文件，`build/lib/` 下 `cpptlm_core.a`

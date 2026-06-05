@@ -8,11 +8,7 @@
 #ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
 #else
-#ifdef USE_SYSTEMC_STUB
-#include "tlm/tlm_stub.hh"
-#else
 #include "tlm.h"
-#endif
 #endif
 
 // 添加缺失的枚举定义
