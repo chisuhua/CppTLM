@@ -88,6 +88,31 @@ inline unsigned int max_num_extensions() { return tlm_extension_registry::instan
     const unsigned int tlm_extension<T>::ID = tlm_extension_base::register_extension_s(typeid(T));
 #endif
 
+// ---- tlm_array<T> (Accellera tlm_array.h pattern: private inherit std::vector) ----
+// Must be defined BEFORE tlm_generic_payload because tlm_generic_payload
+// holds a tlm_array<> member by value.
+template <typename T>
+class tlm_array : private std::vector<T> {
+public:
+    using size_type = typename std::vector<T>::size_type;
+    using std::vector<T>::vector;  // inherit constructors
+    // Expose iterator / clear to support range-for and m_extensions.clear().
+    using std::vector<T>::begin;
+    using std::vector<T>::end;
+    using std::vector<T>::clear;
+
+    typename std::vector<T>::reference operator[](size_type i) {
+        return std::vector<T>::operator[](i);
+    }
+    typename std::vector<T>::const_reference operator[](size_type i) const {
+        return std::vector<T>::operator[](i);
+    }
+    size_type size() const { return std::vector<T>::size(); }
+    void expand(size_type new_size) {
+        if (new_size > size()) this->resize(new_size);
+    }
+};
+
 class tlm_generic_payload {
 private:
     tlm_command cmd;
@@ -95,18 +120,39 @@ private:
     uint8_t* data;
     unsigned int len;
     tlm_response_status response_status;
-    tlm_extension_base* ext;
+    // Phase 1c: multi-extension array indexed by tlm_extension<T>::ID.
+    // Replaces single-pointer `ext` member. Thread-safe via mutex.
+    tlm_array<tlm_extension_base*> m_extensions;
+    mutable std::mutex m_extensions_mutex;
+
+    // Internal helper: grow m_extensions so that index `id` is in range.
+    // Caller must hold m_extensions_mutex.
+    void resize_for(unsigned int id) {
+        if (id >= m_extensions.size()) m_extensions.expand(id + 1);
+    }
+
 public:
-    tlm_generic_payload() : cmd(TLM_IGNORE_COMMAND), addr(0), data(nullptr), len(0), response_status(TLM_OK_RESPONSE), ext(nullptr) {}
-    ~tlm_generic_payload() { delete[] data; delete ext; }
-    
+    tlm_generic_payload()
+        : cmd(TLM_IGNORE_COMMAND), addr(0), data(nullptr), len(0),
+          response_status(TLM_OK_RESPONSE), m_extensions() {}
+    ~tlm_generic_payload() {
+        delete[] data;
+        // Phase 1c minimal dtor: loop-delete all owned extensions.
+        // Phase 1d may refine the order/exception-safety here.
+        for (auto& e : m_extensions) delete e;
+    }
+
     void reset() {
         cmd = TLM_IGNORE_COMMAND; addr = 0;
         delete[] data; data = nullptr; len = 0;
         response_status = TLM_OK_RESPONSE;
-        delete ext; ext = nullptr;
+        // Phase 1c minimal reset: drop ownership without delete.
+        // Phase 1d will re-implement full multi-extension cleanup
+        // (loop-delete + nullify) — see plan section "Phase 1d".
+        std::lock_guard<std::mutex> lock(m_extensions_mutex);
+        m_extensions.clear();
     }
-    
+
     tlm_command get_command() const { return cmd; }
     void set_command(tlm_command c) { cmd = c; }
     uint64_t get_address() const { return addr; }
@@ -119,32 +165,59 @@ public:
     tlm_response_status get_response_status() const { return response_status; }
     void set_response_status(tlm_response_status s) { response_status = s; }
     std::string get_response_string() const { return "OK"; }
-    
-    template<typename T> T* get_extension() const { return dynamic_cast<T*>(ext); }
-    template<typename T> bool get_extension(T*& e) const { e = dynamic_cast<T*>(ext); return (e != nullptr); }
-    template<typename T> void set_extension(T* e) { delete ext; ext = e; }
-    template<typename T> void clear_extension() { delete ext; ext = nullptr; }
-    void clear_extensions() { delete ext; ext = nullptr; }
+
+    // ===================== Extension API (Phase 1c multi-ext) =====================
+    //
+    // Modeled on SystemC TLM 2.0 (Accellera tlm_gp.cpp). Extensions are
+    // stored in m_extensions[] indexed by T::ID (a per-type unique integer
+    // allocated by tlm_extension_registry at static-init time).
+
+    /// CALLER OWNS RETURNED POINTER:
+    /// set_extension<T> stores `e` at index T::ID and returns the previously
+    /// stored extension pointer (may be nullptr). Per SystemC TLM 2.0
+    /// semantics, the CALLER is responsible for deleting the returned old
+    /// pointer to avoid memory leaks. If you don't need the old extension,
+    /// use clear_extension<T>() (drops ownership) or release_extension<T>()
+    /// (deletes + drops ownership) instead.
+    template<typename T> T* set_extension(T* e) {
+        std::lock_guard<std::mutex> lock(m_extensions_mutex);
+        resize_for(T::ID);
+        T* old = static_cast<T*>(m_extensions[T::ID]);
+        m_extensions[T::ID] = e;
+        return old;
+    }
+    template<typename T> T* get_extension() const {
+        std::lock_guard<std::mutex> lock(m_extensions_mutex);
+        if (T::ID >= m_extensions.size()) return nullptr;
+        return static_cast<T*>(m_extensions[T::ID]);
+    }
+    template<typename T> void get_extension(T*& e) const {
+        std::lock_guard<std::mutex> lock(m_extensions_mutex);
+        e = (T::ID < m_extensions.size()) ? static_cast<T*>(m_extensions[T::ID]) : nullptr;
+    }
+    /// Drop ownership of the T-typed extension (sets slot to nullptr).
+    /// Does NOT delete the extension — caller is responsible.
+    template<typename T> void clear_extension() {
+        std::lock_guard<std::mutex> lock(m_extensions_mutex);
+        if (T::ID < m_extensions.size()) m_extensions[T::ID] = nullptr;
+    }
+    /// Delete the T-typed extension and clear the slot.
+    template<typename T> void release_extension() {
+        std::lock_guard<std::mutex> lock(m_extensions_mutex);
+        if (T::ID < m_extensions.size() && m_extensions[T::ID]) {
+            delete m_extensions[T::ID];
+            m_extensions[T::ID] = nullptr;
+        }
+    }
+    /// Legacy bulk-clear: drop ownership of ALL extension slots (no delete).
+    /// Retained for backward compatibility with old single-pointer API.
+    void clear_extensions() {
+        std::lock_guard<std::mutex> lock(m_extensions_mutex);
+        for (auto& e : m_extensions) e = nullptr;
+    }
+    // =================== End Extension API =======================================
+
     bool is_dmi_allowed() const { return false; }
-};
-
-// ---- tlm_array<T> (Accellera tlm_array.h pattern: private inherit std::vector) ----
-template <typename T = tlm_extension_base*>
-class tlm_array : private std::vector<T> {
-public:
-    using size_type = typename std::vector<T>::size_type;
-    using std::vector<T>::vector;  // inherit constructors
-
-    typename std::vector<T>::reference operator[](size_type i) {
-        return std::vector<T>::operator[](i);
-    }
-    typename std::vector<T>::const_reference operator[](size_type i) const {
-        return std::vector<T>::operator[](i);
-    }
-    size_type size() const { return std::vector<T>::size(); }
-    void expand(size_type new_size) {
-        if (new_size > size()) this->resize(new_size);
-    }
 };
 
 } // namespace tlm
