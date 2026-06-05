@@ -36,12 +36,6 @@ target_include_directories(cpptlm_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../external/json
 )
 
-# SystemC 头文件路径 & 编译定义（可选，仅头文件无需链接库）
-if(USE_SYSTEMC)
-    target_include_directories(cpptlm_core PUBLIC ${SystemC_INCLUDE_DIR})
-    target_compile_definitions(cpptlm_core PUBLIC USE_SYSTEMC)
-endif()
-
 # 覆盖率选项
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_core PRIVATE --coverage)
@@ -68,24 +62,6 @@ endif()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/traffic_main.cpp")
     add_executable(cpptlm_traffic traffic_main.cpp)
     target_link_libraries(cpptlm_traffic PRIVATE cpptlm_core)
-endif()
-
-# SystemC sc_main 入口（需要 USE_SYSTEMC）
-if(USE_SYSTEMC AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sc_main.cpp")
-    add_executable(cpptlm_sc_main sc_main.cpp)
-    target_link_libraries(cpptlm_sc_main PRIVATE cpptlm_core)
-endif()
-
-# 布局示例（需要 USE_SYSTEMC）
-if(USE_SYSTEMC AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_layout.cpp")
-    add_executable(cpptlm_layout main_layout.cpp)
-    target_link_libraries(cpptlm_layout PRIVATE cpptlm_core)
-endif()
-
-# 层次示例（需要 USE_SYSTEMC）
-if(USE_SYSTEMC AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main_hierarchy.cpp")
-    add_executable(cpptlm_hierarchy main_hierarchy.cpp)
-    target_link_libraries(cpptlm_hierarchy PRIVATE cpptlm_core)
 endif()
 
 # 注：输出目录已在根 CMakeLists.txt 中设置

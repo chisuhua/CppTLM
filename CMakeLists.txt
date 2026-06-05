@@ -2,7 +2,6 @@
 # Version: 2.0.3
 #
 # Build system: CMake 3.16+ with optional Ninja + ccache
-# SystemC: optional via -DUSE_SYSTEMC=ON (local headers in external/systemc/include)
 
 cmake_minimum_required(VERSION 3.16)
 project(CppTLM
@@ -36,7 +35,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # ==============================================================================
 # 构建选项
 # ==============================================================================
-option(USE_SYSTEMC    "Enable SystemC support (local headers)" OFF)
 option(BUILD_TESTS    "Build unit tests"                     ON)
 option(BUILD_EXAMPLES "Build example programs"               ON)
 option(BUILD_DOCS     "Build documentation (Doxygen)"        OFF)
@@ -68,21 +66,6 @@ endif()
 # 依赖查找
 # ==============================================================================
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
-
-# SystemC — 可选，使用项目内头文件
-if(USE_SYSTEMC)
-    find_package(SystemC QUIET)
-    if(SystemC_FOUND)
-        message(STATUS "SystemC found via find_package: ${SystemC_INCLUDE_DIR}")
-    elseif(EXISTS "${CMAKE_SOURCE_DIR}/external/systemc/include")
-        set(SystemC_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/external/systemc/include")
-        message(STATUS "SystemC enabled (local headers: ${SystemC_INCLUDE_DIR})")
-    else()
-        message(FATAL_ERROR "SystemC headers not found — place them in external/systemc/include/ or install system-wide")
-    endif()
-else()
-    message(STATUS "SystemC disabled (use -DUSE_SYSTEMC=ON to enable)")
-endif()
 
 # ==============================================================================
 # 输出目录
@@ -125,7 +108,6 @@ install(TARGETS cpptlm_core
 message(STATUS "")
 message(STATUS "CppTLM ${PROJECT_VERSION} Configuration")
 message(STATUS "  Build type:  ${CMAKE_BUILD_TYPE}")
-message(STATUS "  SystemC:     ${USE_SYSTEMC}")
 message(STATUS "  Tests:       ${BUILD_TESTS}")
 message(STATUS "  Examples:    ${BUILD_EXAMPLES}")
 message(STATUS "  Coverage:    ${ENABLE_COVERAGE}")
