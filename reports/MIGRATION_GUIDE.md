@@ -3,6 +3,8 @@
 > **版本**: 1.0  
 > **创建日期**: 2026-04-10  
 > **适用对象**: 从 v1.0 迁移到 v2.0 的开发者
+>
+> **⚠️ DEPRECATED (v2.1.0)**: `USE_SYSTEMC` option 已在 v2.1.0 移除（commit 39fb45f, fd780af）。USE_SYSTEMC 路径从未被 CI 实际构建过（矩阵总是 [OFF]），移除为纯死代码清理。本文保留为 v2.0 迁移历史参考。**当前唯一生效的 option 是 `USE_SYSTEMC_STUB`**（默认 ON，TLM 2.0 stub 模式），无需手动配置。
 
 ---
 
@@ -217,7 +219,9 @@ target_include_directories(cpptlm_core PUBLIC
 
 **v2.0 新增选项**:
 ```cmake
-option(USE_SYSTEMC "Enable SystemC" OFF)
+# ⚠️ USE_SYSTEMC 已在 v2.1.0 移除（commit 39fb45f）。保留为历史参考。
+# option(USE_SYSTEMC "Enable SystemC" OFF)   # DEPRECATED — 见文件顶部说明
+option(USE_SYSTEMC_STUB "Enable SystemC TLM 2.0 stub (default ON, no config needed)" ON)
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_EXAMPLES "Build examples" ON)
 option(ENABLE_COVERAGE "Enable code coverage" OFF)
