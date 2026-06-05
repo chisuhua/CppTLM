@@ -137,20 +137,79 @@ public:
           response_status(TLM_OK_RESPONSE), m_extensions() {}
     ~tlm_generic_payload() {
         delete[] data;
-        // Phase 1c minimal dtor: loop-delete all owned extensions.
-        // Phase 1d may refine the order/exception-safety here.
-        for (auto& e : m_extensions) delete e;
+        // Phase 1d: full multi-extension cleanup. Mirrors the body of reset()
+        // so payload reuse via pool and direct destruction behave identically.
+        // (Phase 1c dtor already loop-deleted; Phase 1d adds nullification of
+        //  the slot so a hypothetical second dtor pass would be a no-op.)
+        std::lock_guard<std::mutex> lock(m_extensions_mutex);
+        for (auto& e : m_extensions) {
+            delete e;
+            e = nullptr;
+        }
     }
 
+    /// Phase 1d: full multi-extension reset semantics.
+    /// Loop-deletes all owned extensions AND nullifies each slot, then resets
+    /// the core payload fields (cmd/addr/data/len/response_status). After
+    /// reset(), get_extension<T>() returns nullptr for every T.
     void reset() {
+        // Extension cleanup runs FIRST so an extension's destructor can still
+        // inspect payload state (cmd/addr/etc) if it needs to.
+        {
+            std::lock_guard<std::mutex> lock(m_extensions_mutex);
+            for (auto& e : m_extensions) {
+                delete e;
+                e = nullptr;
+            }
+        }
         cmd = TLM_IGNORE_COMMAND; addr = 0;
         delete[] data; data = nullptr; len = 0;
         response_status = TLM_OK_RESPONSE;
-        // Phase 1c minimal reset: drop ownership without delete.
-        // Phase 1d will re-implement full multi-extension cleanup
-        // (loop-delete + nullify) — see plan section "Phase 1d".
-        std::lock_guard<std::mutex> lock(m_extensions_mutex);
-        m_extensions.clear();
+    }
+
+    /// Phase 1d: deep-copy this payload from `other` (Accellera tlm_gp.cpp:158-187).
+    ///
+    /// Semantics (matches SystemC TLM 2.0 deep_copy_from):
+    /// - Core fields (cmd, addr, response_status) are copied by value.
+    /// - Data buffer is deep-copied (allocated, then memcpy'd).
+    /// - Extension array is grown to `other.m_extensions.size()`.
+    /// - For each slot i in [0, other.size()):
+    ///     * if other.m_extensions[i] != nullptr and this->m_extensions[i] == nullptr:
+    ///         clone the extension into this slot.
+    ///     * if other.m_extensions[i] != nullptr and this->m_extensions[i] != nullptr:
+    ///         reuse the existing extension and copy_from(other's ext).
+    ///     * if other.m_extensions[i] == nullptr:
+    ///         leave this slot unchanged (caller manages ownership).
+    ///
+    /// Locking: uses std::scoped_lock to acquire both `this` and `other` mutexes
+    /// in a deadlock-safe order (the std implementation guarantees avoidance of
+    /// deadlock when two threads take the same two locks in opposite order).
+    void deep_copy_from(const tlm_generic_payload& other) {
+        if (this == &other) return;
+        // Copy scalar/core fields first — independent of extension array state.
+        cmd = other.cmd;
+        addr = other.addr;
+        response_status = other.response_status;
+        // Deep-copy data buffer.
+        if (data) { delete[] data; data = nullptr; }
+        if (other.data && other.len > 0) {
+            data = new uint8_t[other.len];
+            std::memcpy(data, other.data, other.len);
+        }
+        len = other.len;
+        // Extensions: grow array, then for each slot either clone or copy_from.
+        std::scoped_lock lock_both(m_extensions_mutex, other.m_extensions_mutex);
+        m_extensions.expand(other.m_extensions.size());
+        for (size_t i = 0; i < other.m_extensions.size(); ++i) {
+            if (other.m_extensions[i]) {
+                if (!m_extensions[i]) {
+                    m_extensions[i] = other.m_extensions[i]->clone();
+                } else {
+                    m_extensions[i]->copy_from(*other.m_extensions[i]);
+                }
+            }
+            // else: this has ext at i, other doesn't — keep this (caller manages)
+        }
     }
 
     tlm_command get_command() const { return cmd; }
