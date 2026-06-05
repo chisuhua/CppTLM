@@ -8,11 +8,7 @@
 #include "modules/legacy/modules_v2.hh" // 导入模块以测试其性能
 #include <vector>
 
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#else
-#include "tlm.h"
-#endif
 
 using tlm::tlm_generic_payload;
 

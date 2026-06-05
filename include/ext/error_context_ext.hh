@@ -5,11 +5,7 @@
 #ifndef ERROR_CONTEXT_EXT_HH
 #define ERROR_CONTEXT_EXT_HH
 
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#else
-#include "tlm.h"
-#endif
 #include "core/error_category.hh"
 #include <vector>
 #include <string>

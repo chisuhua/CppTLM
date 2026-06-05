@@ -11,11 +11,7 @@
 #include "framework/transaction_tracker.hh"
 #include <nlohmann/json.hpp>
 
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#else
-#include "tlm.h"
-#endif
 
 using json = nlohmann::json;
 using tlm::tlm_generic_payload;

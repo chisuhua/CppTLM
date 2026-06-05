@@ -7,9 +7,7 @@
 #include "core/packet.hh"
 #include "core/error_category.hh"
 #include "ext/transaction_context_ext.hh"
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#endif
 #include "ext/error_context_ext.hh"
 #include "framework/transaction_tracker.hh"
 #include "framework/debug_tracker.hh"

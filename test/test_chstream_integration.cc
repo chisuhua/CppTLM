@@ -11,11 +11,7 @@
 #include "tlm/cache_tlm.hh"
 #include "tlm/memory_tlm.hh"
 
-#ifdef USE_SYSTEMC_STUB
 #include "tlm/tlm_stub.hh"
-#else
-#include "tlm.h"
-#endif
 
 using namespace tlm;
 
