@@ -36,6 +36,10 @@ class TransactionContextExt : public tlm::tlm_extension<TransactionContextExt> {
 - 扩展接口遵循 SystemC TLM 2.0 `tlm_extension` 模式
 - 通过 `tlm_generic_payload::set_extension()` 附加到事务
 - 扩展生命周期由 payload 管理（自动释放）
+- **多 extension 并存**（Phase 1c）：单个 payload 可同时附加多个不同类型的 extension，由 `tlm_extension_registry` 统一分配 ID，由 `tlm_array<tlm_extension_base*>` 索引存储
+- **`set_extension<T>()` 返回旧指针**（SystemC 2.0 语义）：调用方负责 `delete` 旧 extension，避免静默销毁
+- **`release_extension<T>()`**（Phase 1c 新增）：删除并清空槽位，匹配 `tlm::tlm_extension<T>` 标准 API
+- **`get_extension<T>()` 非空 + `set_extension<T>()` 返回非空**：先 delete 旧值，再写入新值（不依赖 RAII）
 
 ## 注意事项
 

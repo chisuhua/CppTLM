@@ -231,7 +231,7 @@ public:
 | `acquire()` | 清理所有 Extension | ⚠️ 仅 `reset()` payload，不清理 Extension |
 | `release()` | 清理所有 Extension | ⚠️ 同上 |
 
-**影响**：当前实现由 `create_transaction_context()` 在需要时自动创建，覆盖旧 Extension。长期可能需要改进。
+**影响**：当前实现由 `create_transaction_context()` 在需要时自动创建。Phase 1c（tlm_stub 多 Extension 升级，commit adfcc5b + 93f4a81）已解决：调用方显式 `release_extension<T>()` 释放旧 Extension，避免静默覆盖；modules_v2.hh:79 错误路径已切换到显式 release 语义。
 
 ### 5.2 record_hop / link_transactions 同步
 
