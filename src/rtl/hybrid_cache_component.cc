@@ -1,75 +1,73 @@
 // src/rtl/hybrid_cache_component.cc
-// HybridCacheComponent describe() FSM 实现（C++20）
-// 功能描述：实现 RTL 混合 Cache 组件的硬件行为（单拍 FSM stub）。
-//           2 状态机：IDLE → PROCESS → IDLE，所有请求视为 hit 并回写 data。
-//           端口全部为标量 ch_in/ch_out，避免 ch_stream 作为 Component 顶层 IO。
-// 作者 CppTLM Team
-// 日期 2026-06-06
-
-// =============================================================================
-// 公共头文件：HybridCacheComponent 类声明
-// 注：头文件已使用 using namespace ch::core; 简化 ch_uint/ch_bool 访问
-// =============================================================================
+// HybridCacheComponent::describe() 实现（C++20）
+// 功能描述：单拍 Cache FSM (IDLE → PROCESS → IDLE)。
+//           describe() 直接访问 io().req_in.payload.* 字段。
+//           端口为 ch_stream<CacheReqBundleRTL/RespBundleRTL>。
+// 作者 CppTLM Team / 日期 2026-06-07
 #include "rtl/hybrid_cache_component.hh"
 
 namespace cpptlm {
 namespace rtl {
 
-/**
- * @brief HybridCacheComponent describe() 实现
- *
- * 状态机：
- *   state=0 (IDLE)   : 等待 req_valid_，就绪时锁存请求字段并转 PROCESS
- *   state=1 (PROCESS): 输出 resp_valid_，等待 resp_ready_，完成后回 IDLE
- *
- * 端口协议（AXI4-like 简化）：
- *   请求握手：req_valid_ & req_ready_ → 锁存（单拍）
- *   响应握手：resp_valid_ & resp_ready_ → 完成
- *
- * Spike scope 行为：
- *   - 单拍处理（fragment_total=1，first=last=1）
- *   - 总是 hit（resp_hit_=1）
- *   - data 回写 = req_addr_（Spike：地址作为数据回显）
- *
- * 安全性：
- *   - 所有响应端口默认安全值（PROCESS 状态外为 0/false）
- *   - 非法状态默认回 IDLE（state->next = 0）
- */
+using namespace ch::core;
+using namespace ch::core::literals;
+
 void HybridCacheComponent::describe() {
-    // === 2 状态机寄存器 ===
-    // 编码：state=0 为 IDLE，state=1 为 PROCESS
-    // 使用 ch_uint<2> 而非 ch_bool 是为未来扩展预留（2 bit 最多支持 4 态）
-    ch_reg<ch_uint<2>> state(ch_uint<2>(0_d));
+    // === FSM 状态寄存器 ===
+    ch_reg<ch_uint<2>> state(0_d);  // 0=IDLE, 1=PROCESS
 
-    // === 当前状态判定（用于组合逻辑分支）===
-    auto is_idle    = (state == ch_uint<2>(0_d));
-    auto is_process = (state == ch_uint<2>(1_d));
+    // === 跨拍锁存变量（首拍 → 响应使用）===
+    ch_reg<ch_uint<64>> saved_tid(0_d);
+    ch_reg<ch_uint<64>> saved_parent(0_d);
+    ch_reg<ch_uint<8>>  saved_frag_id(0_d);
+    ch_reg<ch_uint<8>>  saved_frag_total(0_d);
+    ch_reg<ch_uint<64>> saved_addr(0_d);
+    ch_reg<ch_bool>     saved_is_write(ch_bool(false));
 
-    // === 握手信号：req_ready_（输出）===
-    // 组合逻辑驱动：仅 IDLE 状态 ready（不接受新请求时拉低）
-    // 注意：必须用组合逻辑赋值（state 当前值），不能用 next 状态
-    req_ready_ = is_idle;
+    // === 组合逻辑: ready 信号（仅 IDLE 接受新请求）===
+    io().req_in.ready = (state == 0_d);
 
-    // === 状态转移逻辑 ===
-    // 触发 1：accept（IDLE + req_valid_）→ 进入 PROCESS
-    // 触发 2：done （PROCESS + resp_ready_）→ 回到 IDLE
-    // 默认：保持当前状态
-    auto accept = is_idle & req_valid_;
-    auto done   = is_process & resp_ready_;
+    // === 主 FSM ===
+    switch (static_cast<uint64_t>(state)) {
+        case 0:  // IDLE: 等待 req
+            if (io().req_in.valid && io().req_in.ready) {
+                // 直接 Bundle 访问 - 无字段解包
+                saved_tid        = io().req_in.payload.transaction_id;
+                saved_parent     = io().req_in.payload.parent_id;
+                saved_frag_id    = io().req_in.payload.fragment_id;
+                saved_frag_total = io().req_in.payload.fragment_total;
+                saved_addr       = io().req_in.payload.address;
+                saved_is_write   = io().req_in.payload.is_write;
+                state = 1_d;
+            }
+            break;
 
-    // select 嵌套：accept 优先 → 1；否则若 done → 0；否则保持 state
-    // 注意：state 通过 ch_reg<ch_uint<2>> 隐式转换为 lnode<ch_uint<2>>
-    state->next = select(accept, ch_uint<2>(1_d),
-                    select(done,   ch_uint<2>(0_d),
-                                     ch_uint<2>(0_d)));
+        case 1:  // PROCESS: 模拟 Cache 查找（单周期完成）
+            // 生成响应
+            io().resp_out.payload.transaction_id = saved_tid;
+            io().resp_out.payload.parent_id      = saved_parent;
+            io().resp_out.payload.fragment_id    = saved_frag_id;
+            io().resp_out.payload.fragment_total = saved_frag_total;
+            io().resp_out.payload.data           = saved_addr;  // Spike: echo addr 作为 data
+            io().resp_out.payload.is_hit         = ch_bool(true);
+            io().resp_out.payload.error_code     = 0_d;
+            io().resp_out.payload.first          = ch_bool(true);  // 单拍
+            io().resp_out.payload.last           = ch_bool(true);
+            io().resp_out.valid = ch_bool(true);
 
-    // === 响应端口驱动（PROCESS 状态有效）===
-    // 安全默认值：IDLE 状态下所有响应端口拉零/无效
-    resp_valid_ = is_process;
-    resp_tid_   = select(is_process, req_tid_,   ch_uint<32>(0_d));
-    resp_data_  = select(is_process, req_addr_,  ch_uint<64>(0_d));  // Spike: 回显地址
-    resp_hit_   = is_process;                                          // Spike: 总是 hit
+            // 等待下游 ready，然后回到 IDLE
+            if (io().resp_out.ready) {
+                io().resp_out.valid = ch_bool(false);
+                state = 0_d;
+            }
+            break;
+
+        default:
+            // 非法状态：复位到 IDLE
+            state = 0_d;
+            break;
+    }
 }
 
-}  // namespace rtl
-}  // namespace cpptlm
+} // namespace rtl
+} // namespace cpptlm
