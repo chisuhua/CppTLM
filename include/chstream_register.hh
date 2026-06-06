@@ -11,6 +11,7 @@
 #include "tlm/router_tlm.hh"
 #include "tlm/nic_tlm.hh"
 #include "tlm/link_tlm.hh"
+#include "rtl/hybrid_cache_wrapper.hh"
 #include "core/module_factory.hh"
 #include "framework/chstream_adapter_factory.hh"
 #include "bundles/cache_bundles_tlm.hh"
@@ -56,7 +57,10 @@
         bundles::CacheReqBundle, bundles::CacheRespBundle, \
         bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<tlm::LinkTLM, \
-        bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM");
+        bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM"); \
+    ModuleFactory::registerObject<HybridCacheWrapper>("HybridCacheWrapper"); \
+    ChStreamAdapterFactory::get().registerAdapter<HybridCacheWrapper, \
+        bundles::CacheReqBundle, bundles::CacheRespBundle>("HybridCacheWrapper");
 
 // ============================================================
 // 双端口非对称模块注册宏（NICTLM 等）
