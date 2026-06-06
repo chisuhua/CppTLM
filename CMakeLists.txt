@@ -40,6 +40,7 @@ option(BUILD_EXAMPLES "Build example programs"               ON)
 option(BUILD_DOCS     "Build documentation (Doxygen)"        OFF)
 option(ENABLE_COVERAGE "Enable code coverage (gcov)"         OFF)
 option(USE_ASAN       "Enable AddressSanitizer (Debug only)" OFF)
+option(BUILD_RTL "Build CppHDL RTL bridge (Spike)" OFF)
 
 # ==============================================================================
 # 编译选项
@@ -82,6 +83,13 @@ add_subdirectory(src)
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
+    if(BUILD_RTL)
+        add_subdirectory(test/rtl)
+    endif()
+endif()
+
+if(BUILD_RTL)
+    add_subdirectory(src/rtl)
 endif()
 
 if(BUILD_EXAMPLES)
