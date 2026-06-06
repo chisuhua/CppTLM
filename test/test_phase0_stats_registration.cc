@@ -58,9 +58,8 @@ TEST_CASE("Phase 0: StatGroup registration via ModuleFactory", "[phase0][stats]"
     REQUIRE(cache_group->name() == "cache");
     REQUIRE(mem_group->name() == "memory");
 
-    // 清理
-    factory.clearAllTypes();
-    tlm_stats::StatsManager::instance().reset_all();
+    // 注意：不要调用 clearAllTypes() —— 它会清空全局类型注册表，
+    // 破坏后续测试的 registerChStreamModules()（static flag 防重入）
 }
 
 TEST_CASE("Phase 0: RouterTLM stats registration", "[phase0][stats][router]") {
@@ -99,9 +98,8 @@ TEST_CASE("Phase 0: RouterTLM stats registration", "[phase0][stats][router]") {
     INFO("Router0 group name: " << router0_group->name());
     REQUIRE(router0_group->name() == "router");
 
-    // 清理
-    factory.clearAllTypes();
-    tlm_stats::StatsManager::instance().reset_all();
+    // 注意：不要调用 clearAllTypes() —— 它会清空全局类型注册表，
+    // 破坏后续测试的 registerChStreamModules()（static flag 防重入）
 }
 
 TEST_CASE("Phase 0: NICTLM stats registration", "[phase0][stats][noc]") {
@@ -137,7 +135,6 @@ TEST_CASE("Phase 0: NICTLM stats registration", "[phase0][stats][noc]") {
     INFO("NIC0 group name: " << nic0_group->name());
     REQUIRE(nic0_group->name() == "nic");
 
-    // 清理
-    factory.clearAllTypes();
-    tlm_stats::StatsManager::instance().reset_all();
+    // 注意：不要调用 clearAllTypes() —— 它会清空全局类型注册表，
+    // 破坏后续测试的 registerChStreamModules()（static flag 防重入）
 }
