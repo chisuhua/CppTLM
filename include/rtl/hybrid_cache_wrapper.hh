@@ -14,7 +14,14 @@
 #include <string>
 
 // 前向声明：实现类包含 CppHDL 依赖，完整定义位于 .cc 文件
+namespace cpptlm {
+namespace rtl {
 class HybridCacheWrapperImpl;
+}
+}
+
+namespace cpptlm {
+namespace rtl {
 
 /**
  * @brief 混合仿真 Cache 桥接模块（PIMPL 接口）
@@ -33,23 +40,15 @@ class HybridCacheWrapperImpl;
  */
 class HybridCacheWrapper : public ChStreamModuleBase {
 private:
-    // 输入/输出适配器（ch_stream 语义，与 CacheTLM 保持一致）
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
-
-    // StreamAdapter 注入句柄（ModuleFactory 在 Step 7 注入）
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
-
-    // PIMPL：实现类包含 CppHDL/RTL 桥接逻辑，完整定义在 .cc 中
     std::unique_ptr<HybridCacheWrapperImpl> impl_;
 
 public:
     explicit HybridCacheWrapper(const std::string& name, EventQueue* eq);
-
-    // 析构函数：仅在头文件声明，由 .cc 提供定义以保证 unique_ptr<Impl> 完整类型可见
     ~HybridCacheWrapper() override;
 
-    // 禁用拷贝与移动（PIMPL 拥有独占资源）
     HybridCacheWrapper(const HybridCacheWrapper&) = delete;
     HybridCacheWrapper& operator=(const HybridCacheWrapper&) = delete;
     HybridCacheWrapper(HybridCacheWrapper&&) = delete;
@@ -57,21 +56,19 @@ public:
 
     std::string get_module_type() const override { return "HybridCacheWrapper"; }
 
-    // ChStreamModuleBase 接口
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
-
-    // 模块业务逻辑
     void tick() override;
     void do_reset(const ResetConfig& cfg) override;
 
-    // 访问器（供 StreamAdapter 与 PIMPL 实现使用）
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& req_in() { return req_in_; }
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() { return resp_out_; }
     cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
 
-    // PIMPL 实现访问器（仅 .cc 内部使用）
     HybridCacheWrapperImpl* impl() { return impl_.get(); }
     const HybridCacheWrapperImpl* impl() const { return impl_.get(); }
 };
+
+} // namespace rtl
+} // namespace cpptlm
 
 #endif // RTL_HYBRID_CACHE_WRAPPER_HH
