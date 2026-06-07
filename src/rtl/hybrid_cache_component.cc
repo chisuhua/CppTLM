@@ -22,10 +22,13 @@ void HybridCacheComponent::describe() {
     ch_reg<ch_uint<8>>  saved_frag_id(0_d);
     ch_reg<ch_uint<8>>  saved_frag_total(0_d);
     ch_reg<ch_uint<64>> saved_addr(0_d);
-    ch_reg<ch_bool>     saved_is_write(ch_bool(false));
+    ch_reg<ch_bool>     saved_is_write(0_d);
 
     // === 组合逻辑: ready 信号（仅 IDLE 接受新请求）===
     io().req_in.ready = (state == 0_d);
+
+    // === 组合逻辑: valid 信号（仅 PROCESS 状态产生响应）===
+    io().resp_out.valid = ch_bool(state == 1_d);
 
     // === 主 FSM ===
     switch (static_cast<uint64_t>(state)) {
@@ -49,15 +52,13 @@ void HybridCacheComponent::describe() {
             io().resp_out.payload.fragment_id    = saved_frag_id;
             io().resp_out.payload.fragment_total = saved_frag_total;
             io().resp_out.payload.data           = saved_addr;  // Spike: echo addr 作为 data
-            io().resp_out.payload.is_hit         = ch_bool(true);
+            io().resp_out.payload.is_hit         = ch_bool(state == 1_d);
             io().resp_out.payload.error_code     = 0_d;
-            io().resp_out.payload.first          = ch_bool(true);  // 单拍
-            io().resp_out.payload.last           = ch_bool(true);
-            io().resp_out.valid = ch_bool(true);
+            io().resp_out.payload.first          = ch_bool(state == 1_d);  // 单拍
+            io().resp_out.payload.last           = ch_bool(state == 1_d);
 
             // 等待下游 ready，然后回到 IDLE
             if (io().resp_out.ready) {
-                io().resp_out.valid = ch_bool(false);
                 state = 0_d;
             }
             break;
