@@ -21,11 +21,11 @@ enum class PortRole {
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PortRole, {
-    {PortRole::INITIATOR, "INITIATOR"},
-    {PortRole::TARGET, "TARGET"},
-    {PortRole::BI_DIRECTIONAL, "BI_DIRECTIONAL"},
-    {PortRole::NETWORK, "NETWORK"},
-    {PortRole::PE, "PE"},
+    {PortRole::INITIATOR, "initiator"},
+    {PortRole::TARGET, "target"},
+    {PortRole::BI_DIRECTIONAL, "bi_directional"},
+    {PortRole::NETWORK, "network"},
+    {PortRole::PE, "pe"},
 })
 
 // Bundle 类型枚举 (L2 匹配检查)
@@ -37,10 +37,10 @@ enum class BundleType {
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(BundleType, {
-    {BundleType::CACHE_REQ, "CACHE_REQ"},
-    {BundleType::CACHE_RESP, "CACHE_RESP"},
-    {BundleType::NOC_FLIT, "NOC_FLIT"},
-    {BundleType::GENERIC, "GENERIC"},
+    {BundleType::CACHE_REQ, "cache_req"},
+    {BundleType::CACHE_RESP, "cache_resp"},
+    {BundleType::NOC_FLIT, "noc_flit"},
+    {BundleType::GENERIC, "generic"},
 })
 
 // 端口组 bundle 类型 (m2 共识)
