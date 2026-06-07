@@ -58,9 +58,24 @@
         bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<tlm::LinkTLM, \
         bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM"); \
-    ModuleFactory::registerObject<HybridCacheWrapper>("HybridCacheWrapper"); \
-    ChStreamAdapterFactory::get().registerAdapter<HybridCacheWrapper, \
+    /* HybridCacheWrapper 的 .cc 实现位于 src/rtl/，仅在 BUILD_RTL=ON 时编译。
+       宏体内不能直接用 ifdef 因续行问题，改用空宏守卫
+       HYBRID_CACHE_WRAPPER_REGISTER_RTL：BUILD_RTL=OFF 时展开为空注释，
+       调用方无感。BUILD_RTL 通过 target_compile_definitions 传递。 */ \
+    HYBRID_CACHE_WRAPPER_REGISTER_RTL
+
+// ============================================================
+// RTL 模块注册宏：仅在 BUILD_RTL=ON 时展开为真实注册代码
+// 当 BUILD_RTL 未定义或为 0 时，宏展开为 /* no-op */ 注释，调用方无感
+// ============================================================
+#ifdef BUILD_RTL
+#define HYBRID_CACHE_WRAPPER_REGISTER_RTL \
+    ModuleFactory::registerObject<cpptlm::rtl::HybridCacheWrapper>("HybridCacheWrapper"); \
+    ChStreamAdapterFactory::get().registerAdapter<cpptlm::rtl::HybridCacheWrapper, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("HybridCacheWrapper");
+#else
+#define HYBRID_CACHE_WRAPPER_REGISTER_RTL /* no-op when BUILD_RTL=OFF */
+#endif
 
 // ============================================================
 // 双端口非对称模块注册宏（NICTLM 等）
