@@ -265,6 +265,20 @@ TEST_CASE("FragmentMapper: write_resp on null packet is safe", "[rtl][fragment]"
     SUCCEED("null packet safely ignored");
 }
 
+TEST_CASE("FragmentMapper: serialize_req on packet with null payload is safe", "[rtl][fragment]") {
+    Packet* pkt = PacketPool::get().acquire();
+    pkt->type = PKT_REQ;
+    pkt->stream_id = 555;
+    auto* saved_payload = pkt->payload;
+    pkt->payload = nullptr;
+    auto beat = FragmentMapper::serialize_req(pkt);
+    REQUIRE(beat.tid == 0);
+    REQUIRE(beat.first == true);
+    REQUIRE(beat.last == true);
+    pkt->payload = saved_payload;
+    PacketPool::get().release(pkt);
+}
+
 // =============================================================================
 // Round-trip 测试(Oracle 评审 v4 缺失项)
 // =============================================================================
