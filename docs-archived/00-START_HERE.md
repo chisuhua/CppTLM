@@ -61,7 +61,6 @@
 ## 代码结构
 
 ```
-/workspace/CppTLM/
 ├── include/core/           # 核心引擎
 │   ├── sim_object.hh       # SimObject 基类
 │   ├── simple_port.hh      # SimplePort 接口
@@ -115,8 +114,8 @@
 
 ## 联系与反馈
 
-- **项目位置**: `/workspace/CppTLM/`
-- **CppHDL 位置**: `/workspace/CppHDL/`
+- **项目位置**: `/workspace/project/CppTLM/`
+- **CppHDL 位置**: `external/CppHDL/`
 - **项目记忆**: `~/.openclaw/workspace-project/CppTLM/session-memory.md`
 - **审计报告**: `PROJECT_AUDIT_AND_NEXT_STEPS.md`
 
