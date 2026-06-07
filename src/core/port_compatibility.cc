@@ -66,22 +66,22 @@ std::string PortCompatibility::get_incompatibility_reason(const PortSpec& src, c
 
 const char* PortCompatibility::role_name(PortRole role) {
     switch (role) {
-        case PortRole::INITIATOR: return "INITIATOR";
-        case PortRole::TARGET: return "TARGET";
-        case PortRole::BI_DIRECTIONAL: return "BI_DIRECTIONAL";
-        case PortRole::NETWORK: return "NETWORK";
-        case PortRole::PE: return "PE";
-        default: return "UNKNOWN";
+        case PortRole::INITIATOR: return "initiator";
+        case PortRole::TARGET: return "target";
+        case PortRole::BI_DIRECTIONAL: return "bi_directional";
+        case PortRole::NETWORK: return "network";
+        case PortRole::PE: return "pe";
+        default: return "unknown";
     }
 }
 
 const char* PortCompatibility::bundle_name(BundleType bundle) {
     switch (bundle) {
-        case BundleType::CACHE_REQ: return "CACHE_REQ";
-        case BundleType::CACHE_RESP: return "CACHE_RESP";
-        case BundleType::NOC_FLIT: return "NOC_FLIT";
-        case BundleType::GENERIC: return "GENERIC";
-        default: return "UNKNOWN";
+        case BundleType::CACHE_REQ: return "cache_req";
+        case BundleType::CACHE_RESP: return "cache_resp";
+        case BundleType::NOC_FLIT: return "noc_flit";
+        case BundleType::GENERIC: return "generic";
+        default: return "unknown";
     }
 }
 

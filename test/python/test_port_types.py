@@ -103,14 +103,14 @@ if HAS_DEPS:
     class TestPortGroupSpec(unittest.TestCase):
         def test_port_group_spec(self):
             pg = PortGroupSpec(
-                name="PE",
+                name="pe",
                 bundle_type=PortGroupBundleType.SINGLE,
                 ports=[
                     PortGroupMember(index=0, role=PortRole.TARGET, bundle=BundleType.CACHE_REQ),
                     PortGroupMember(index=1, role=PortRole.INITIATOR, bundle=BundleType.CACHE_RESP),
                 ],
             )
-            self.assertEqual(pg.name, "PE")
+            self.assertEqual(pg.name, "pe")
             self.assertEqual(len(pg.ports), 2)
 
     class TestModulePortSpec(unittest.TestCase):
@@ -120,7 +120,7 @@ if HAS_DEPS:
                 ports=[PortSpec(name="test", role=PortRole.INITIATOR, bundle=BundleType.CACHE_REQ)],
                 port_groups=[
                     PortGroupSpec(
-                        name="PE",
+                        name="pe",
                         ports=[PortGroupMember(index=0, role=PortRole.TARGET, bundle=BundleType.CACHE_REQ)],
                     )
                 ],

@@ -34,19 +34,19 @@ TEST_CASE("T3.2-08: NICTLM with port_groups in module spec", "[phase3.2][port_gr
                 "port_spec": {
                     "port_groups": [
                         {
-                            "name": "PE",
+                            "name": "pe",
                             "bundle_type": "SINGLE",
                             "ports": [
-                                { "index": 0, "role": "TARGET", "bundle": "CACHE_REQ" },
-                                { "index": 1, "role": "INITIATOR", "bundle": "CACHE_RESP" }
+                                { "index": 0, "role": "target", "bundle": "cache_req" },
+                                { "index": 1, "role": "initiator", "bundle": "cache_resp" }
                             ]
                         },
                         {
                             "name": "Net",
                             "bundle_type": "SINGLE",
                             "ports": [
-                                { "index": 2, "role": "INITIATOR", "bundle": "NOC_FLIT" },
-                                { "index": 3, "role": "TARGET", "bundle": "NOC_FLIT" }
+                                { "index": 2, "role": "initiator", "bundle": "noc_flit" },
+                                { "index": 3, "role": "target", "bundle": "noc_flit" }
                             ]
                         }
                     ]
@@ -80,7 +80,7 @@ TEST_CASE("T3.2-08: ModulePortSpec with port_groups JSON roundtrip", "[phase3.2]
     spec.module_name = "nic0";
 
     cpptlm::PortGroupSpec pe_group;
-    pe_group.name = "PE";
+    pe_group.name = "pe";
     pe_group.bundle_type = cpptlm::PortGroupBundleType::SINGLE;
     pe_group.ports = {
         {0, cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ},
@@ -102,7 +102,7 @@ TEST_CASE("T3.2-08: ModulePortSpec with port_groups JSON roundtrip", "[phase3.2]
 
     REQUIRE(restored.module_name == "nic0");
     REQUIRE(restored.port_groups.size() == 2);
-    REQUIRE(restored.port_groups[0].name == "PE");
+    REQUIRE(restored.port_groups[0].name == "pe");
     REQUIRE(restored.port_groups[1].name == "Net");
     REQUIRE(restored.port_groups[0].ports.size() == 2);
     REQUIRE(restored.port_groups[1].ports.size() == 2);
