@@ -351,6 +351,38 @@ TEST_CASE("FragmentMapper: round-trip multi-beat preserves fragment metadata", "
     REQUIRE(FragmentMapper::group_key(beats[0]) == 50);
     REQUIRE(FragmentMapper::group_key(beats[3]) == 50);
 
+    std::vector<Packet*> resp_pkts(4, nullptr);
+    for (uint8_t i = 0; i < 4; i++) {
+        resp_pkts[i] = PacketPool::get().acquire();
+        resp_pkts[i]->type = PKT_RESP;
+        resp_pkts[i]->payload->set_data_length(sizeof(uint64_t));
+
+        CacheRespBeatRTL resp_beat;
+        resp_beat.tid            = beats[i].tid;
+        resp_beat.parent_id      = beats[i].parent_id;
+        resp_beat.fragment_id    = beats[i].fragment_id;
+        resp_beat.fragment_total = beats[i].fragment_total;
+        resp_beat.data           = 0xBEEF0000ULL + i;
+        resp_beat.hit            = true;
+        resp_beat.error_code     = 0;
+        resp_beat.first          = beats[i].first;
+        resp_beat.last           = beats[i].last;
+
+        FragmentMapper::write_resp(resp_pkts[i], resp_beat);
+
+        auto* ext = get_transaction_context(resp_pkts[i]->payload);
+        REQUIRE(ext != nullptr);
+        REQUIRE(ext->transaction_id == 100);
+        REQUIRE(ext->parent_id == 50);
+        REQUIRE(ext->fragment_id == i);
+        REQUIRE(ext->fragment_total == 4);
+        REQUIRE(ext->is_first_fragment() == (i == 0));
+        REQUIRE(ext->is_last_fragment() == (i == 3));
+        REQUIRE(resp_pkts[i]->get_transaction_id() == 100);
+        REQUIRE(ext->get_group_key() == 50);
+    }
+
+    for (auto* p : resp_pkts) PacketPool::get().release(p);
     PacketPool::get().release(req);
 }
 
@@ -379,7 +411,7 @@ TEST_CASE("FragmentMapper: serialize_req with partial data length (< 8 bytes)", 
     PacketPool::get().release(pkt);
 }
 
-TEST_CASE("FragmentMapper: serialize_beat_at with beat_index overflow", "[rtl][fragment][edge]") {
+TEST_CASE("FragmentMapper: serialize_beat_at marks last when beat_index >= fragment_total-1", "[rtl][fragment][edge]") {
     Packet* pkt = PacketPool::get().acquire();
     pkt->type = PKT_REQ;
     pkt->stream_id = 900;
@@ -387,13 +419,11 @@ TEST_CASE("FragmentMapper: serialize_beat_at with beat_index overflow", "[rtl][f
     pkt->payload->set_address(0x3000);
     create_transaction_context(pkt->payload, 900, 800, 0, 4);
 
-    // beat_index = 10, 但 fragment_total = 4
     auto beat = FragmentMapper::serialize_beat_at(pkt, 10);
-    REQUIRE(beat.fragment_id == 10);   // 按调用者传入的 idx
-    REQUIRE(beat.fragment_total == 4); // 总数未变
-    REQUIRE(beat.first == false);      // idx != 0
-    REQUIRE(beat.last == true);        // 10+1 >= 4, last=true(行为需明确)
-    // 注:这是预期行为,调用方负责不越界
+    REQUIRE(beat.fragment_id == 10);
+    REQUIRE(beat.fragment_total == 4);
+    REQUIRE(beat.first == false);
+    REQUIRE(beat.last == true);
 
     PacketPool::get().release(pkt);
 }
