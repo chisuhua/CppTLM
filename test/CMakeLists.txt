@@ -4,6 +4,14 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB TEST_SOURCES "test_*.cc")
+# test_cppHDL_smoke.cc 需要 CppHDL 头文件 (ch.hpp 等)，
+# 仅当 BUILD_RTL=ON 时可编译。它已在 test/rtl/CMakeLists.txt 中
+# 按 BUILD_RTL 条件注册（产生 cpptlm_rtl_tests），主测试 target
+# 不链接 CppHDL include 路径，因此无条件包含会导致 build 失败。
+if(NOT BUILD_RTL)
+    list(REMOVE_ITEM TEST_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_cppHDL_smoke.cc")
+endif()
 
 # 将 Catch2 amalgamated 源直接加入编译（避免外部依赖）
 add_executable(cpptlm_tests ${TEST_SOURCES} catch_amalgamated.cpp)
