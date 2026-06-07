@@ -32,7 +32,7 @@ CppTLM/
 │   ├── cpu_main.cpp      # CPU 模式入口
 │   ├── traffic_main.cpp  # 流量仿真入口
 │   └── sc_main.cpp       # SystemC sc_main 入口
-├── test/            # 测试（Catch2 v3.7.0，43 文件）
+├── test/            # 测试（Catch2 v3.7.0，75 文件）
 ├── test/python/     # Python 单元测试（analyzer, linter, path_tracer 等）
 ├── configs/         # JSON 拓扑配置（支持端口索引语法 "xbar.0"）
 ├── docs/            # 架构文档、ADR、实现计划
