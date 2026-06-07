@@ -1,9 +1,10 @@
 # ADR-X.8: 细粒度分片交易处理与 TLM/RTL 职责分离
 
-> **版本**: 1.0  
-> **日期**: 2026-04-09  
-> **状态**: 📋 待确认  
+> **版本**: 1.1
+> **日期**: 2026-04-09 (v1.0), 2026-06-06 (v1.1 状态修正)
+> **状态**: ✅ 已确认
 > **影响**: v2.0 - 分片交易架构设计
+> **关联**: `docs/architecture/examples/hybrid/hybrid_tlm_cppHDL_design_v4.md` §3(TransactionContextExt 为真值源)
 
 ---
 
