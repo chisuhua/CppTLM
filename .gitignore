@@ -28,6 +28,8 @@ configs/common/
 output/
 topology.dot
 build_asan/
+build_baseline/
+build_rtl/
 
 # Example configurations
 configs/single_cluster_soc.*
