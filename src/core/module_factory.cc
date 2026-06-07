@@ -76,7 +76,7 @@ std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) 
 static std::string resolve_port_alias(const std::string& port_spec) {
     auto it = cpptlm::PortSpec::deprecated_names().find(port_spec);
     if (it != cpptlm::PortSpec::deprecated_names().end()) {
-        DPRINTF(CONN, "[PORT INFO] Deprecated port name '%s' resolved to index %u\n",
+        DPRINTF(CONN, "[WARN] Deprecated port name '%s' resolved to index %u\n",
                 port_spec.c_str(), it->second);
         return std::to_string(it->second);
     }
