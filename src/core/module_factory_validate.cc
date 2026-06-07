@@ -331,8 +331,8 @@ std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
         cpptlm::ModulePortSpec spec;
         spec.module_name = "NICTLM";
         std::vector<cpptlm::PortSpec> ports = {
-            {"PE", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
-            {"NETWORK", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
+            {"pe", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
+            {"network", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
         };
         spec.ports = ports;
         defaults["NICTLM"] = spec;

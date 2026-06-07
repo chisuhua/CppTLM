@@ -206,8 +206,8 @@ TEST_CASE("Phase 3.2: port_specs loaded and passed to check_port_compatibility",
                 "port_spec": {
                     "module_name": "cache0",
                     "ports": [
-                        { "name": "req_out", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 },
-                        { "name": "req_in", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 }
+                        { "name": "req_out", "role": "initiator", "bundle": "cache_req", "width": 64 },
+                        { "name": "req_in", "role": "target", "bundle": "cache_req", "width": 64 }
                     ]
                 }
             },
@@ -217,10 +217,10 @@ TEST_CASE("Phase 3.2: port_specs loaded and passed to check_port_compatibility",
                 "port_spec": {
                     "module_name": "xbar",
                     "ports": [
-                        { "name": "req_in", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 },
-                        { "name": "req_out", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 },
-                        { "name": "req_in2", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 },
-                        { "name": "req_out2", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 }
+                        { "name": "req_in", "role": "target", "bundle": "cache_req", "width": 64 },
+                        { "name": "req_out", "role": "initiator", "bundle": "cache_req", "width": 64 },
+                        { "name": "req_in2", "role": "target", "bundle": "cache_req", "width": 64 },
+                        { "name": "req_out2", "role": "initiator", "bundle": "cache_req", "width": 64 }
                     ]
                 }
             }
@@ -247,8 +247,8 @@ TEST_CASE("Phase 3.2: incompatible port roles rejected by check_port_compatibili
                 "port_spec": {
                     "module_name": "src_mod",
                     "ports": [
-                        { "name": "req_out", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 },
-                        { "name": "req_in", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 }
+                        { "name": "req_out", "role": "initiator", "bundle": "cache_req", "width": 64 },
+                        { "name": "req_in", "role": "target", "bundle": "cache_req", "width": 64 }
                     ]
                 }
             },
@@ -258,8 +258,8 @@ TEST_CASE("Phase 3.2: incompatible port roles rejected by check_port_compatibili
                 "port_spec": {
                     "module_name": "dst_mod",
                     "ports": [
-                        { "name": "req_in", "role": "INITIATOR", "bundle": "CACHE_REQ", "width": 64 },
-                        { "name": "req_out", "role": "TARGET", "bundle": "CACHE_REQ", "width": 64 }
+                        { "name": "req_in", "role": "initiator", "bundle": "cache_req", "width": 64 },
+                        { "name": "req_out", "role": "target", "bundle": "cache_req", "width": 64 }
                     ]
                 }
             }

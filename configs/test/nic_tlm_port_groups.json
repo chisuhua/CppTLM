@@ -11,19 +11,19 @@
       "port_spec": {
         "port_groups": [
           {
-            "name": "PE",
+            "name": "pe",
             "bundle_type": "SINGLE",
             "ports": [
-              { "index": 0, "role": "TARGET", "bundle": "CACHE_REQ" },
-              { "index": 1, "role": "INITIATOR", "bundle": "CACHE_RESP" }
+              { "index": 0, "role": "target", "bundle": "cache_req" },
+              { "index": 1, "role": "initiator", "bundle": "cache_resp" }
             ]
           },
           {
             "name": "Net",
             "bundle_type": "SINGLE",
             "ports": [
-              { "index": 2, "role": "INITIATOR", "bundle": "NOC_FLIT" },
-              { "index": 3, "role": "TARGET", "bundle": "NOC_FLIT" }
+              { "index": 2, "role": "initiator", "bundle": "noc_flit" },
+              { "index": 3, "role": "target", "bundle": "noc_flit" }
             ]
           }
         ]

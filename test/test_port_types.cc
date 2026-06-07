@@ -219,16 +219,16 @@ TEST_CASE("PortCompatibility: is_compatible combines L1+L2", "[port_compat]") {
 }
 
 TEST_CASE("PortCompatibility: role_name returns correct string", "[port_compat]") {
-    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::INITIATOR), "INITIATOR") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::TARGET), "TARGET") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::BI_DIRECTIONAL), "BI_DIRECTIONAL") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::NETWORK), "NETWORK") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::PE), "PE") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::INITIATOR), "initiator") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::TARGET), "target") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::BI_DIRECTIONAL), "bi_directional") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::NETWORK), "network") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::PE), "pe") == 0);
 }
 
 TEST_CASE("PortCompatibility: bundle_name returns correct string", "[port_compat]") {
-    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::CACHE_REQ), "CACHE_REQ") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::CACHE_RESP), "CACHE_RESP") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::NOC_FLIT), "NOC_FLIT") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::GENERIC), "GENERIC") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::CACHE_REQ), "cache_req") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::CACHE_RESP), "cache_resp") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::NOC_FLIT), "noc_flit") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::GENERIC), "generic") == 0);
 }
