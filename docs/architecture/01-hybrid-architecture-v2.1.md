@@ -488,6 +488,10 @@ Phase 4: Mapper + RTL (未来)
 | 复位检查点架构 | `04-reset-checkpoint-architecture.md` | ✅ 对齐 |
 | FragmentMapper 决议 | `FRAGMENT_MAPPER_DECISIONS.md` | 📋 待实施 |
 | P0/P1/P2 决策汇总 | `P0_P1_P2_DECISIONS.md` | ✅ 对齐 |
+| Transaction ID 架构决策 | `docs/adr/ADR-X.1-transaction-id.md` | ✅ 对齐 |
+| Transaction 整合方案 | `docs/adr/ADR-X.6-transaction-integration.md` | ✅ 对齐 |
+| 端口类型系统决策 | `docs/adr/ADR-X.9-port-type-system.md` | ✅ 对齐 |
+| Hybrid TLM+CppHDL v4 设计 | `docs/architecture/examples/hybrid/hybrid_tlm_cppHDL_design_v4.md` | 📋 v4 替代 v3 |
 
 ---
 
