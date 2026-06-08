@@ -60,6 +60,16 @@ jobs:
           exit 1
         fi
 
+    - name: Run E2E simulation tests (Release only)
+      if: matrix.build-type == 'Release'
+      run: ./scripts/test/ci_e2e_test.sh
+
+    - name: Run quick test suite (Python + key C++)
+      if: matrix.build-type == 'Release'
+      run: |
+        python3 -m pip install --quiet networkx pydot pytest
+        ./scripts/test/run_all_tests.sh --quick
+
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
