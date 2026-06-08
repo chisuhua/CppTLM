@@ -57,11 +57,11 @@ def demo_stats_watcher():
         generate_sample_stats(stats_path, num_records=5)
 
         print(f"\n  Running stats_watcher in console mode...")
-        print(f"  Command: python3 scripts/stats_watcher.py --stream {stats_path} --no-gui --interval 0.5")
+        print(f"  Command: python3 scripts/stats/stats_watcher.py --stream {stats_path} --no-gui --interval 0.5")
         print()
 
         result = subprocess.run(
-            [sys.executable, 'scripts/stats_watcher.py', '--stream', stats_path, '--no-gui', '--interval', '0.5'],
+            [sys.executable, 'scripts/stats/stats_watcher.py', '--stream', stats_path, '--no-gui', '--interval', '0.5'],
             cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
             capture_output=True,
             text=True,
@@ -84,14 +84,14 @@ def main():
 
     print("Usage:")
     print("  # Console mode (no GUI):")
-    print("  python3 scripts/stats_watcher.py --stream output/stats.jsonl --no-gui")
+    print("  python3 scripts/stats/stats_watcher.py --stream output/stats.jsonl --no-gui")
     print()
     print("  # Web dashboard mode:")
-    print("  python3 scripts/stats_watcher.py --stream output/stats.jsonl --port 8050")
+    print("  python3 scripts/stats/stats_watcher.py --stream output/stats.jsonl --port 8050")
     print()
     print("  # Combined with streaming simulation:")
     print("  ./build/bin/streaming_demo --output output/stats.jsonl &")
-    print("  python3 scripts/stats_watcher.py --stream output/stats.jsonl --no-gui")
+    print("  python3 scripts/stats/stats_watcher.py --stream output/stats.jsonl --no-gui")
 
 
 if __name__ == '__main__':

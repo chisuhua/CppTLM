@@ -22,7 +22,7 @@ import tempfile
 import subprocess
 
 # 添加 scripts 目录到路径
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts', 'topology'))
 
 from topology_generator import TopologyGenerator
 

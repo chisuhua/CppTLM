@@ -13,7 +13,7 @@ import sys
 import tempfile
 import time
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'scripts', 'stats'))
 
 try:
     from stats_annotator import StatsAnnotator
