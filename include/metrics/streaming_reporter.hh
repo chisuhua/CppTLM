@@ -32,6 +32,7 @@
 #include "metrics/stats_manager.hh"
 #include "metrics/histogram.hh"
 #include <atomic>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iomanip>
