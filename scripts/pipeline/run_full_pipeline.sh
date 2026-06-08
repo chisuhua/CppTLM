@@ -37,7 +37,7 @@ echo "=============================================="
 
 # 1. Python 前置：生成配置和布局
 echo "[1/5] Generating topology..."
-python3 "$SCRIPT_DIR/topology_generator.py" \
+python3 "$SCRIPT_DIR/../topology/topology_generator.py" \
     --type "$TOPOLOGY_TYPE" \
     --size "$SIZE" \
     --output "$OUTPUT_DIR/topology.json" \
@@ -93,7 +93,7 @@ fi
 
 # 3. Python 后置：生成报告
 echo "[3/5] Generating reports..."
-python3 "$SCRIPT_DIR/stats_annotator.py" \
+python3 "$SCRIPT_DIR/../stats/stats_annotator.py" \
     --config "$OUTPUT_DIR/topology.json" \
     --stats "$OUTPUT_DIR/stats_stream.jsonl" \
     --layout "$OUTPUT_DIR/topology_layout.json" \
@@ -104,7 +104,7 @@ python3 "$SCRIPT_DIR/stats_annotator.py" \
 # 4. (可选) 启动 stats watcher
 if [ "${ENABLE_WATCHER:-0}" = "1" ]; then
     echo "[4/5] Starting stats watcher (ENABLE_WATCHER=1)..."
-    python3 "$SCRIPT_DIR/stats_watcher.py" \
+    python3 "$SCRIPT_DIR/../stats/stats_watcher.py" \
         --stream "$OUTPUT_DIR/stats_stream.jsonl" \
         --port 8050 &
     WATCHER_PID=$!
