@@ -28,6 +28,8 @@
 - external/systemc/ directory (was placeholder README only, not a submodule)
 - src/sc_main.cpp (10-line empty stub; only existed behind USE_SYSTEMC=ON guard)
 - extern "C" int sc_main placeholder at src/main.cpp:21
+- src/cpu_main.cpp and src/traffic_main.cpp (15 + 22 lines of placeholder
+  main() with 2 TODOs in v2.1 upgrade backlog). Use cpptlm_sim with configs/ instead.
 - include/core/ext/packet_to_payload.hh and payload_to_packet.hh
   (zero .cc users; archived to docs-archived/dead-code-headers-2026-q2/)
 - mock_modules.hh duplicate #ifdef USE_SYSTEMC_STUB nesting
