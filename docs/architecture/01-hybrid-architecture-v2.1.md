@@ -15,7 +15,7 @@
 
 **设计原则**:
 1. **模块内部统一**: 新业务模块内部使用 `ch_stream<T>` 握手协议（valid/ready 反压）
-2. **Bundle 共享**: 一份 Bundle 定义（CppHDL `bundle_base<T>`），TLM/RTL 共用，减少重复
+2. **Bundle 共享**: 一份轻量级 Bundle 定义（`bundles::CacheReqBundle` / `bundles::CacheRespBundle`），TLM/RTL 共用，减少重复（详见 §4.1）
 3. **框架通信保持**: 模块之间使用现有 `MasterPort/SlavePort + PortPair`，保留 JSON 配置驱动
 4. **StreamAdapter 桥梁**: Port ↔ ch_stream 转换由框架自动处理，模块设计者无感知
 5. **业务纯净**: 新业务模块只关心 ch_stream 业务逻辑，不感知外部 Port 适配复杂度
@@ -71,7 +71,7 @@
 
 | 层次 | 通信模型 | 理由 |
 |:---|:---|:---|
-| **模块内部** | `ch_stream<T>` 握手 (valid/ready) | CppHDL 已提供 `bundle_base<T>` + `ch_stream<T>` 基础设施，反压语义适合模块内部流水线 |
+| **模块内部** | `ch_stream<T>` 握手 (valid/ready) | 轻量级 POD Bundle（`bundles::*Bundle`） + `ch_stream<T>` 基础设施，反压语义适合模块内部流水线 |
 | **模块之间** | `MasterPort/SlavePort` + `PortPair` | 现有框架成熟，支持 JSON 配置、group/regex 连接、delay/buffer 管理 |
 | **桥梁** | `StreamAdapter` | 在模块边界做 Packet ↔ Bundle 转换，框架自动创建 |
 
@@ -157,52 +157,43 @@ include/
 
 ### 4.1 Bundle 层（统一共享定义）
 
-**原则**: 使用 CppHDL 的 `bundle_base<T>` 继承体系，TLM/RTL 共用同一 Bundle 定义。
+**原则**: 使用轻量级 POD 结构（继承空基类 `bundles::bundle_base`，无 CppHDL AST/vtable），TLM/RTL 共用同一字段语义。
+
+> **权威说明**: 详见 `include/tlm/AGENTS.md:39`（原文："Bundle 定义见 `include/bundles/cache_bundles_tlm.hh`（轻量级，非 Ch 原生 Bundle）"）
 
 ```cpp
-// include/bundles/cache_bundles_tlm.hh
-#ifndef CACHE_BUNDLES_TLM_HH
-#define CACHE_BUNDLES_TLM_HH
+// include/bundles/cache_bundles_tlm.hh（实际实现 — 轻量级 TLM 侧）
+namespace bundles {
 
-#include <cstdint>
-#include <core/bundle/bundle_base.h>
-
-using namespace ch::core;
-
-/**
- * @brief Cache 请求 Bundle
- * TLM 和 RTL 模块共用此定义
- */
-struct CacheReqBundle : bundle_base<CacheReqBundle> {
+struct CacheReqBundle : public bundle_base {
     ch_uint<64> transaction_id;
+    ch_uint<64> parent_id;        // 父事务 ID（0 = 根事务）
+    ch_uint<8>  fragment_id;      // 当前拍序号（0-based）
+    ch_uint<8>  fragment_total;   // 总拍数（1 = 不分片）
     ch_uint<64> address;
     ch_uint<8>  size;
     ch_bool     is_write;
     ch_uint<64> data;
-
-    CacheReqBundle() = default;
-
-    CH_BUNDLE_FIELDS(transaction_id, address, size, is_write, data)
+    // ... 构造器、谓词方法（is_first_fragment/is_last_fragment/is_root）
 };
 
-/**
- * @brief Cache 响应 Bundle
- */
-struct CacheRespBundle : bundle_base<CacheRespBundle> {
+struct CacheRespBundle : public bundle_base {
     ch_uint<64> transaction_id;
+    ch_uint<64> parent_id;
+    ch_uint<8>  fragment_id;
+    ch_uint<8>  fragment_total;
     ch_uint<64> data;
     ch_bool     is_hit;
     ch_uint<8>  error_code;
-
-    CacheRespBundle() = default;
-
-    CH_BUNDLE_FIELDS(transaction_id, data, is_hit, error_code)
+    ch_bool     first;
+    ch_bool     last;
+    // ... 构造器、谓词方法
 };
 
-#endif // CACHE_BUNDLES_HH
+} // namespace bundles
 ```
 
-> **设计说明**: `CH_BUNDLE_FIELDS` 是 CppHDL `bundle_base` 的宏，用于声明 Bundle 的字段列表并自动生成序列化/反序列化代码。Bundle 只定义数据形状，不绑定通信协议。
+> **设计说明**: Bundle 是**轻量级 POD 结构**（继承空基类 `bundle_base`，无 CppHDL AST/vtable），字段使用 `ch_uint<N>/ch_bool` 包装（仅 `read()/write()` 方法），`std::memcpy` 序列化安全。Bundle 只定义数据形状，不绑定通信协议。
 
 ### 4.2 TLM 新模块（纯 ch_stream 内部 + StreamAdapter 暴露）
 
