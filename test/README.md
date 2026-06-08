@@ -1,23 +1,73 @@
-太棒了！我们现在为你的仿真框架生成 **完整的单元测试代码**，覆盖：
+# CppTLM 测试套件
 
-- ✅ Valid/Ready 握手
-- ✅ Valid-Only（无反压）
-- ✅ Credit-Based Flow Control（通过 buffer 模拟）
-- ✅ 多虚拟通道（VC）调度
-- ✅ 同 VC 保序验证
+> 使用 **Catch2 v3.7.0**（单头文件集成，预编译为 `test/catch_amalgamated.cpp`）
 
-所有测试均使用 Google Test (gtest)。
+## 快速开始
 
----
+```bash
+# 配置并构建
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON
+cmake --build build -j$(nproc)
 
-## 📦 目录结构建议
+# 运行全部测试
+./build/bin/cpptlm_tests
 
+# 按 tag 过滤
+./build/bin/cpptlm_tests "[chstream]"
+./build/bin/cpptlm_tests "[phase6]"
+
+# 排除某 tag
+./build/bin/cpptlm_tests "~[crossbar]"
 ```
-test/
-├── CMakeLists.txt
-├── test_valid_ready.cc        # AXI 风格握手机制
-├── test_valid_only.cc         # 中断/Trace 场景
-├── test_credit_flow.cc        # Credit-Based 模拟
+
+## 测试结构
+
+- `test/test_*.cc` — 单元测试 / 集成测试（`file(GLOB ...)` 自动发现）
+- 75 个测试文件，约 14000+ 断言
+- 测试按 Phase 分组：`[phase0]` ~ `[phase8]`
+- Catch2 标签大小写不敏感（`[P3.2]` = `[p3.2]`）
+
+## Tag 分类
+
+| Tag | 范围 | 用例数 |
+|-----|------|--------|
+| `[chstream]` | ChStream 协议 | 84+ |
+| `[phase6]` | Phase 6 集成 | 9 |
+| `[crossbar]` | Crossbar 模块 | 16 |
+| `[legacy]` | 遗留模块 (BUILD_LEGACY_MODULES=ON) | 2 |
+| `[p3.2]` | P3.2 迁移验证 | 8 |
+| `[P0]` | 高优先级回归 | 10 |
+
+## 构建选项
+
+| CMake 选项 | 默认 | 说明 |
+|-----------|------|------|
+| `BUILD_TESTS` | ON | 构建测试套件 |
+| `USE_SYSTEMC_STUB` | ON | TLM 2.0 桩实现 |
+| `BUILD_LEGACY_MODULES` | OFF | 遗留模块 (v2.1 已弃用) |
+| `USE_ASAN` | OFF | 地址清除器 (Debug 构建) |
+
+## 地址清除器 (ASan)
+
+```bash
+cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DUSE_ASAN=ON
+cmake --build build-asan -j$(nproc)
+./build-asan/bin/cpptlm_tests
+```
+
+## 添加新测试
+
+1. 在 `test/` 下创建 `test_<name>.cc`
+2. `test/CMakeLists.txt` 使用 `file(GLOB TEST_SOURCES "test_*.cc")` 自动发现
+
+> 除非特殊需求，不需要手动修改 CMakeLists.txt。确保测试文件以 `test_` 开头。
+
+## 备注
+
+- Catch2 预编译头：`test/catch_amalgamated.cpp`
+- **无 Google Test 依赖**（已从 v2.0 迁移到 Catch2 v3.7.0）
+- `.disabled` 后缀的测试文件不会被 GLOB 捕获（已知跳过状态）
+- 测试标签大小写不敏感
 ├── test_virtual_channel.cc    # 多 VC 调度与保序
 └── mock_modules.hh            # 测试专用模块
 ```
