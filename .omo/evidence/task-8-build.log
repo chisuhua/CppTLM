@@ -1,0 +1,1361 @@
+[  0%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/connection_resolver.cc.o
+[  3%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/coherence_domain.cc.o
+[  3%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/module_factory.cc.o
+[  3%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/module_factory_validate.cc.o
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:71:102: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+   71 |         DPRINTF(MODULE, "[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
+      |                                                                                                      ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:146:102: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  146 |         DPRINTF(MODULE, "[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
+      |                                                                                                      ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:156:61: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  156 |         for (int i = 0; i < depth; ++i) DPRINTF(MODULE, "  ");
+      |                                                             ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:197:76: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  197 |         DPRINTF(MODULE, "[CONFIG ERROR] Missing required field 'modules'\n");
+      |                                                                            ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:201:76: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  201 |         DPRINTF(MODULE, "[CONFIG ERROR] Field 'modules' must be an array\n");
+      |                                                                            ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:206:80: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  206 |         DPRINTF(MODULE, "[CONFIG ERROR] Missing required field 'connections'\n");
+      |                                                                                ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:210:80: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  210 |         DPRINTF(MODULE, "[CONFIG ERROR] Field 'connections' must be an array\n");
+      |                                                                                ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:216:75: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  216 |         DPRINTF(MODULE, "[CONFIG WARN] Missing optional field 'version'\n");
+      |                                                                           ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:223:84: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  223 |             DPRINTF(MODULE, "[CONFIG ERROR] Module missing required field 'name'\n");
+      |                                                                                    ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:227:84: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  227 |             DPRINTF(MODULE, "[CONFIG ERROR] Module field 'name' must be a string\n");
+      |                                                                                    ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:270:58: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  270 |     DPRINTF(MODULE, "[CONFIG] Schema validation passed\n");
+      |                                                          ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:279:88: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  279 |                     "to RouterTLM. Use NETWORK side (port 1) for router connections.\n");
+      |                                                                                        ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:286:88: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  286 |                     "to RouterTLM. Use NETWORK side (port 1) for router connections.\n");
+      |                                                                                        ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:452:102: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  452 |         DPRINTF(MODULE, "[DOMAIN ERROR] Invalid domain boundary check: empty module or domain name\n");
+      |                                                                                                      ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc: In function ‘std::map<std::__cxx11::basic_string<char>, cpptlm::ModulePortSpec> get_default_port_specs()’:
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:353:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+  353 |         };
+      |         ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:353:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:353:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:353:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:353:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:366:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+  366 |         };
+      |         ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:366:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:379:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+  379 |         };
+      |         ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:379:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:394:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+  394 |         };
+      |         ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:394:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:394:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:394:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:406:9: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+  406 |         };
+      |         ^
+/workspace/project/CppTLM/src/core/module_factory_validate.cc: In function ‘bool validate_module_params(const std::string&, const json&, const cpptlm::ParamRules&)’:
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:416:55: warning: unused parameter ‘module_type’ [-Wunused-parameter]
+  416 | static bool validate_module_params(const std::string& module_type,
+      |                                    ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~
+/workspace/project/CppTLM/src/core/module_factory_validate.cc: At global scope:
+/workspace/project/CppTLM/src/core/module_factory_validate.cc:416:13: warning: ‘bool validate_module_params(const std::string&, const json&, const cpptlm::ParamRules&)’ defined but not used [-Wunused-function]
+  416 | static bool validate_module_params(const std::string& module_type,
+      |             ^~~~~~~~~~~~~~~~~~~~~~
+[  4%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/plugin_loader.cc.o
+/workspace/project/CppTLM/src/core/module_factory.cc:127:69: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  127 |         DPRINTF(MODULE, "[CONFIG ERROR] extends processing failed\n");
+      |                                                                     ^
+/workspace/project/CppTLM/src/core/module_factory.cc:142:92: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  142 |         DPRINTF(MODULE, "[CONFIG ERROR] Schema validation failed, aborting instantiation\n");
+      |                                                                                            ^
+/workspace/project/CppTLM/src/core/module_factory.cc:150:66: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  150 |         DPRINTF(MODULE, "[HIERARCHY] Parsing hierarchy tree...\n");
+      |                                                                  ^
+/workspace/project/CppTLM/src/core/module_factory.cc:157:79: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  157 |             DPRINTF(MODULE, "[HIERARCHY] Hierarchy tree parsed successfully\n");
+      |                                                                               ^
+/workspace/project/CppTLM/src/core/module_factory.cc:163:77: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  163 |         DPRINTF(MODULE, "[HIERARCHY] No hierarchy section found in config\n");
+      |                                                                             ^
+[  5%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/port_compatibility.cc.o
+[  6%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/param_parser.cc.o
+[  7%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/topology_node.cc.o
+/workspace/project/CppTLM/src/core/param_parser.cc: In static member function ‘static cpptlm::ParamParseResult cpptlm::ParamParser::parse(const std::string&, cpptlm::ParamType, double)’:
+/workspace/project/CppTLM/src/core/param_parser.cc:8:44: warning: unused parameter ‘clock_frequency_mhz’ [-Wunused-parameter]
+    8 |                                     double clock_frequency_mhz) {
+      |                                     ~~~~~~~^~~~~~~~~~~~~~~~~~~
+[  8%] Building CXX object src/CMakeFiles/cpptlm_core.dir/core/topology_parser.cc.o
+/workspace/project/CppTLM/src/core/topology_parser.cc: In function ‘std::shared_ptr<cpptlm::TopologyNode> cpptlm::parse_hierarchy_tree_with_validation(const nlohmann::json_abi_v3_11_2::json&, const nlohmann::json_abi_v3_11_2::json&)’:
+/workspace/project/CppTLM/src/core/topology_parser.cc:110:61: warning: unused parameter ‘coherence_json’ [-Wunused-parameter]
+  110 |                                       const nlohmann::json& coherence_json) {
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~
+[  9%] Building CXX object src/CMakeFiles/cpptlm_core.dir/utils/dynamic_loader.cc.o
+[ 10%] Building CXX object src/CMakeFiles/cpptlm_core.dir/tlm/router_tlm.cc.o
+[ 11%] Building CXX object src/CMakeFiles/cpptlm_core.dir/tlm/nic_tlm.cc.o
+[ 11%] Building CXX object src/CMakeFiles/cpptlm_core.dir/tlm/link_tlm.cc.o
+/workspace/project/CppTLM/src/tlm/router_tlm.cc:489:90: warning: ISO C++11 requires at least one argument for the "..." in a variadic macro
+  489 |         DPRINTF(MODULE, "[CREDIT ERROR] send_credit_signal called but adapter_ is null\n");
+      |                                                                                          ^
+/workspace/project/CppTLM/src/tlm/router_tlm.cc: In member function ‘virtual unsigned int tlm::XYRouting::computeRoute(unsigned int, uint32_t, unsigned int, unsigned int, unsigned int, unsigned int)’:
+/workspace/project/CppTLM/src/tlm/router_tlm.cc:18:43: warning: unused parameter ‘src_port’ [-Wunused-parameter]
+   18 | unsigned XYRouting::computeRoute(unsigned src_port, uint32_t dst_node,
+      |                                  ~~~~~~~~~^~~~~~~~
+/workspace/project/CppTLM/src/tlm/router_tlm.cc:20:59: warning: unused parameter ‘mesh_y’ [-Wunused-parameter]
+   20 |                                 unsigned mesh_x, unsigned mesh_y) {
+      |                                                  ~~~~~~~~~^~~~~~
+[ 13%] Linking CXX static library ../lib/libcpptlm_core.a
+[ 13%] Built target cpptlm_core
+[ 15%] Building CXX object src/CMakeFiles/cpptlm_sim.dir/main.cpp.o
+[ 15%] Building CXX object examples/CMakeFiles/example_error_handling.dir/example_error_handling.cc.o
+[ 15%] Building CXX object examples/CMakeFiles/example_basic_transaction.dir/example_basic_transaction.cc.o
+[ 16%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_cache_tlm_comprehensive.cc.o
+/workspace/project/CppTLM/test/test_cache_tlm_comprehensive.cc: In function ‘auto req_and_tick(CacheTLM*, const bundles::CacheReqBundle&)’:
+/workspace/project/CppTLM/test/test_cache_tlm_comprehensive.cc:34:10: warning: variable ‘resp’ set but not used [-Wunused-but-set-variable]
+   34 |     auto resp = cache->req_in().data(); // grab data that was consumed
+      |          ^~~~
+/workspace/project/CppTLM/test/test_cache_tlm_comprehensive.cc: At global scope:
+/workspace/project/CppTLM/test/test_cache_tlm_comprehensive.cc:29:13: warning: ‘auto req_and_tick(CacheTLM*, const bundles::CacheReqBundle&)’ defined but not used [-Wunused-function]
+   29 | static auto req_and_tick(CacheTLM* cache, const bundles::CacheReqBundle& req) {
+      |             ^~~~~~~~~~~~
+/workspace/project/CppTLM/test/test_cache_tlm_comprehensive.cc:19:13: warning: ‘auto make_resp(uint64_t, uint64_t, bool, uint8_t)’ defined but not used [-Wunused-function]
+   19 | static auto make_resp(uint64_t tid = 0, uint64_t data = 0, bool hit = false, uint8_t err = 0) {
+      |             ^~~~~~~~~
+[ 17%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_cache_tlm_unit.cc.o
+[ 18%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_chstream_integration.cc.o
+[ 19%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_chstream_port.cc.o
+In file included from /workspace/project/CppTLM/test/test_chstream_port.cc:1:
+/workspace/project/CppTLM/test/test_chstream_port.cc: In function ‘void CATCH2_INTERNAL_TEST_2()’:
+/workspace/project/CppTLM/test/test_chstream_port.cc:41:43: warning: comparison of integer expressions of different signedness: ‘uint64_t’ {aka ‘long unsigned int’} and ‘int’ [-Wsign-compare]
+   41 |         REQUIRE(pkt->get_transaction_id() == i);
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/project/CppTLM/test/catch2/catch_all.hpp:153:76: note: in definition of macro ‘CATCH_INTERNAL_IGNORE_BUT_WARN’
+  153 | #    define CATCH_INTERNAL_IGNORE_BUT_WARN(...) (void)__builtin_constant_p(__VA_ARGS__)
+      |                                                                            ^~~~~~~~~~~
+/workspace/project/CppTLM/test/catch2/catch_all.hpp:6274:26: note: in expansion of macro ‘INTERNAL_CATCH_TEST’
+ 6274 |   #define REQUIRE( ... ) INTERNAL_CATCH_TEST( "REQUIRE", Catch::ResultDisposition::Normal, __VA_ARGS__  )
+      |                          ^~~~~~~~~~~~~~~~~~~
+/workspace/project/CppTLM/test/test_chstream_port.cc:41:9: note: in expansion of macro ‘REQUIRE’
+   41 |         REQUIRE(pkt->get_transaction_id() == i);
+      |         ^~~~~~~
+[ 20%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_coherence_domain.cc.o
+[ 21%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_config_inheritance.cc.o
+In file included from /workspace/project/CppTLM/test/test_config_inheritance.cc:7:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+/workspace/project/CppTLM/test/test_config_inheritance.cc: In function ‘std::string createTempJson(const std::string&)’:
+/workspace/project/CppTLM/test/test_config_inheritance.cc:17:12: warning: ignoring return value of ‘ssize_t write(int, const void*, size_t)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   17 |     ::write(fd, content.c_str(), content.size());
+      |     ~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[ 22%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_config_schema_validation.cc.o
+In file included from /workspace/project/CppTLM/test/test_config_schema_validation.cc:10:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 23%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_connection_resolution.cc.o
+[ 23%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_credit_flow.cc.o
+In file included from /workspace/project/CppTLM/test/test_credit_flow.cc:2:
+/workspace/project/CppTLM/src/../include/ext/credit_stream.hh: In member function ‘bool CreditStream::send(void*)’:
+/workspace/project/CppTLM/src/../include/ext/credit_stream.hh:16:21: warning: unused parameter ‘pkt’ [-Wunused-parameter]
+   16 |     bool send(void* pkt) {
+      |               ~~~~~~^~~
+[ 25%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_crossbar_tlm.cc.o
+In file included from /workspace/project/CppTLM/test/test_crossbar_tlm.cc:2:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+[ 26%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_debug_log_system.cc.o
+/workspace/project/CppTLM/test/test_debug_log_system.cc: In member function ‘virtual bool DebugTestModule::handleUpstreamRequest(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/test/test_debug_log_system.cc:17:40: warning: unused parameter ‘pkt’ [-Wunused-parameter]
+   17 |     bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) {
+      |                                ~~~~~~~~^~~
+/workspace/project/CppTLM/test/test_debug_log_system.cc:17:49: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   17 |     bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) {
+      |                                             ~~~~^~~~~~
+/workspace/project/CppTLM/test/test_debug_log_system.cc:17:76: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   17 |     bool handleUpstreamRequest(Packet* pkt, int src_id, const std::string& src_label) {
+      |                                                         ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+/workspace/project/CppTLM/test/test_debug_log_system.cc: In member function ‘virtual bool DebugTestModule::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/test/test_debug_log_system.cc:25:43: warning: unused parameter ‘pkt’ [-Wunused-parameter]
+   25 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) {
+      |                                   ~~~~~~~~^~~
+/workspace/project/CppTLM/test/test_debug_log_system.cc:25:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   25 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/test/test_debug_log_system.cc:25:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   25 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+[ 27%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_domain_boundary.cc.o
+[ 28%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_dual_port_adapter.cc.o
+[ 29%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_e2e_simulation.cc.o
+In file included from /workspace/project/CppTLM/test/test_e2e_simulation.cc:7:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/modules.hh:26,
+                 from /workspace/project/CppTLM/test/test_e2e_simulation.cc:6:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh: In member function ‘virtual bool CPUSim::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 30%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_extension_prototype.cc.o
+/workspace/project/CppTLM/test/test_extension_prototype.cc: In function ‘void CATCH2_INTERNAL_TEST_36()’:
+/workspace/project/CppTLM/test/test_extension_prototype.cc:273:19: warning: unused variable ‘ext1’ [-Wunused-variable]
+  273 |             auto* ext1 = create_transaction_context(&payload1, 100, 0, 0, 1);
+      |                   ^~~~
+/workspace/project/CppTLM/test/test_extension_prototype.cc:274:19: warning: unused variable ‘ext2’ [-Wunused-variable]
+  274 |             auto* ext2 = create_transaction_context(&payload2, 200, 100, 0, 4);
+      |                   ^~~~
+[ 31%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_fragment_mapper.cc.o
+[ 32%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_json_config_e2e.cc.o
+/workspace/project/CppTLM/examples/example_basic_transaction.cc: In function ‘int main()’:
+/workspace/project/CppTLM/examples/example_basic_transaction.cc:38:50: error: ‘Packet::Packet(tlm::tlm_generic_payload*, uint64_t, PacketType)’ is private within this context
+   38 |     Packet* pkt = new Packet(&payload, 0, PKT_REQ);
+      |                                                  ^
+In file included from /workspace/project/CppTLM/include/core/simple_port.hh:5,
+                 from /workspace/project/CppTLM/include/core/slave_port.hh:5,
+                 from /workspace/project/CppTLM/include/core/port_manager.hh:5,
+                 from /workspace/project/CppTLM/include/core/sim_object.hh:8,
+                 from /workspace/project/CppTLM/examples/example_basic_transaction.cc:5:
+/workspace/project/CppTLM/include/core/packet.hh:249:5: note: declared private here
+  249 |     Packet(tlm::tlm_generic_payload* p, uint64_t cycle, PacketType t)
+      |     ^~~~~~
+gmake[2]: *** [examples/CMakeFiles/example_basic_transaction.dir/build.make:76: examples/CMakeFiles/example_basic_transaction.dir/example_basic_transaction.cc.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:1019: examples/CMakeFiles/example_basic_transaction.dir/all] Error 2
+gmake[1]: *** Waiting for unfinished jobs....
+[ 33%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_json_includer.cc.o
+In file included from /workspace/project/CppTLM/test/test_json_config_e2e.cc:9:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+/workspace/project/CppTLM/test/test_json_includer.cc: In function ‘void CATCH2_INTERNAL_TEST_2()’:
+/workspace/project/CppTLM/test/test_json_includer.cc:45:11: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   45 |     system("mkdir -p tmp/configs");
+      |     ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/project/CppTLM/test/test_json_includer.cc:64:11: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   64 |     system("rm -rf tmp");
+      |     ~~~~~~^~~~~~~~~~~~~~
+/workspace/project/CppTLM/test/test_json_includer.cc: In function ‘void CATCH2_INTERNAL_TEST_0()’:
+/workspace/project/CppTLM/test/test_json_includer.cc:9:11: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+    9 |     system("mkdir -p tmp/configs");
+      |     ~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/project/CppTLM/test/test_json_includer.cc:40:11: warning: ignoring return value of ‘int system(const char*)’ declared with attribute ‘warn_unused_result’ [-Wunused-result]
+   40 |     system("rm -rf tmp");
+      |     ~~~~~~^~~~~~~~~~~~~~
+[ 34%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_link_tlm.cc.o
+/workspace/project/CppTLM/examples/example_error_handling.cc: In function ‘int main()’:
+/workspace/project/CppTLM/examples/example_error_handling.cc:88:52: error: ‘Packet::Packet(tlm::tlm_generic_payload*, uint64_t, PacketType)’ is private within this context
+   88 |     Packet* pkt1 = new Packet(&payload1, 0, PKT_REQ);
+      |                                                    ^
+In file included from /workspace/project/CppTLM/include/core/simple_port.hh:5,
+                 from /workspace/project/CppTLM/include/core/slave_port.hh:5,
+                 from /workspace/project/CppTLM/include/core/port_manager.hh:5,
+                 from /workspace/project/CppTLM/include/core/sim_object.hh:8,
+                 from /workspace/project/CppTLM/examples/example_error_handling.cc:5:
+/workspace/project/CppTLM/include/core/packet.hh:249:5: note: declared private here
+  249 |     Packet(tlm::tlm_generic_payload* p, uint64_t cycle, PacketType t)
+      |     ^~~~~~
+/workspace/project/CppTLM/examples/example_error_handling.cc:96:52: error: ‘Packet::Packet(tlm::tlm_generic_payload*, uint64_t, PacketType)’ is private within this context
+   96 |     Packet* pkt2 = new Packet(&payload2, 0, PKT_REQ);
+      |                                                    ^
+/workspace/project/CppTLM/include/core/packet.hh:249:5: note: declared private here
+  249 |     Packet(tlm::tlm_generic_payload* p, uint64_t cycle, PacketType t)
+      |     ^~~~~~
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:29: error: no match for ‘operator<<’ (operand types are ‘std::basic_ostream<char>’ and ‘const CoherenceState’)
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |         ~~~~~~~~~~~~~~~~~~~ ^~ ~~~~~~~~~~~~~~~
+      |                   |                 |
+      |                   |                 const CoherenceState
+      |                   std::basic_ostream<char>
+In file included from /usr/include/c++/13/istream:41,
+                 from /usr/include/c++/13/sstream:40,
+                 from /usr/include/c++/13/bits/quoted_string.h:38,
+                 from /usr/include/c++/13/iomanip:47,
+                 from /usr/include/c++/13/bits/fs_path.h:38,
+                 from /usr/include/c++/13/filesystem:49,
+                 from /workspace/project/CppTLM/external/json/nlohmann/json.hpp:4572,
+                 from /workspace/project/CppTLM/include/core/sim_object.hh:12:
+/usr/include/c++/13/ostream:110:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(__ostream_type& (*)(__ostream_type&)) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  110 |       operator<<(__ostream_type& (*__pf)(__ostream_type&))
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:110:36: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘std::basic_ostream<char>::__ostream_type& (*)(std::basic_ostream<char>::__ostream_type&)’ {aka ‘std::basic_ostream<char>& (*)(std::basic_ostream<char>&)’}
+  110 |       operator<<(__ostream_type& (*__pf)(__ostream_type&))
+      |                  ~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/ostream:119:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(__ios_type& (*)(__ios_type&)) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>; __ios_type = std::basic_ios<char>]’
+  119 |       operator<<(__ios_type& (*__pf)(__ios_type&))
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:119:32: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘std::basic_ostream<char>::__ios_type& (*)(std::basic_ostream<char>::__ios_type&)’ {aka ‘std::basic_ios<char>& (*)(std::basic_ios<char>&)’}
+  119 |       operator<<(__ios_type& (*__pf)(__ios_type&))
+      |                  ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/ostream:129:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(std::ios_base& (*)(std::ios_base&)) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  129 |       operator<<(ios_base& (*__pf) (ios_base&))
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:129:30: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘std::ios_base& (*)(std::ios_base&)’
+  129 |       operator<<(ios_base& (*__pf) (ios_base&))
+      |                  ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+/usr/include/c++/13/ostream:168:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long int) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  168 |       operator<<(long __n)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:168:23: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘long int’
+  168 |       operator<<(long __n)
+      |                  ~~~~~^~~
+/usr/include/c++/13/ostream:172:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long unsigned int) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  172 |       operator<<(unsigned long __n)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:172:32: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘long unsigned int’
+  172 |       operator<<(unsigned long __n)
+      |                  ~~~~~~~~~~~~~~^~~
+/usr/include/c++/13/ostream:176:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(bool) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  176 |       operator<<(bool __n)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:176:23: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘bool’
+  176 |       operator<<(bool __n)
+      |                  ~~~~~^~~
+In file included from /usr/include/c++/13/ostream:880:
+/usr/include/c++/13/bits/ostream.tcc:96:5: note: candidate: ‘std::basic_ostream<_CharT, _Traits>& std::basic_ostream<_CharT, _Traits>::operator<<(short int) [with _CharT = char; _Traits = std::char_traits<char>]’
+   96 |     basic_ostream<_CharT, _Traits>::
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/bits/ostream.tcc:97:22: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘short int’
+   97 |     operator<<(short __n)
+      |                ~~~~~~^~~
+/usr/include/c++/13/ostream:183:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(short unsigned int) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  183 |       operator<<(unsigned short __n)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:183:33: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘short unsigned int’
+  183 |       operator<<(unsigned short __n)
+      |                  ~~~~~~~~~~~~~~~^~~
+/usr/include/c++/13/bits/ostream.tcc:110:5: note: candidate: ‘std::basic_ostream<_CharT, _Traits>& std::basic_ostream<_CharT, _Traits>::operator<<(int) [with _CharT = char; _Traits = std::char_traits<char>]’
+  110 |     basic_ostream<_CharT, _Traits>::
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/bits/ostream.tcc:111:20: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘int’
+  111 |     operator<<(int __n)
+      |                ~~~~^~~
+/usr/include/c++/13/ostream:194:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(unsigned int) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  194 |       operator<<(unsigned int __n)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:194:31: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘unsigned int’
+  194 |       operator<<(unsigned int __n)
+      |                  ~~~~~~~~~~~~~^~~
+/usr/include/c++/13/ostream:203:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long long int) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  203 |       operator<<(long long __n)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:203:28: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘long long int’
+  203 |       operator<<(long long __n)
+      |                  ~~~~~~~~~~^~~
+/usr/include/c++/13/ostream:207:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long long unsigned int) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  207 |       operator<<(unsigned long long __n)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:207:37: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘long long unsigned int’
+  207 |       operator<<(unsigned long long __n)
+      |                  ~~~~~~~~~~~~~~~~~~~^~~
+/usr/include/c++/13/ostream:222:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(double) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  222 |       operator<<(double __f)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:222:25: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘double’
+  222 |       operator<<(double __f)
+      |                  ~~~~~~~^~~
+/usr/include/c++/13/ostream:226:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(float) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  226 |       operator<<(float __f)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:226:24: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘float’
+  226 |       operator<<(float __f)
+      |                  ~~~~~~^~~
+/usr/include/c++/13/ostream:234:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(long double) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  234 |       operator<<(long double __f)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:234:30: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘long double’
+  234 |       operator<<(long double __f)
+      |                  ~~~~~~~~~~~~^~~
+/usr/include/c++/13/ostream:292:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(const void*) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>]’
+  292 |       operator<<(const void* __p)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:292:30: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘const void*’
+  292 |       operator<<(const void* __p)
+      |                  ~~~~~~~~~~~~^~~
+/usr/include/c++/13/ostream:297:7: note: candidate: ‘std::basic_ostream<_CharT, _Traits>::__ostream_type& std::basic_ostream<_CharT, _Traits>::operator<<(std::nullptr_t) [with _CharT = char; _Traits = std::char_traits<char>; __ostream_type = std::basic_ostream<char>; std::nullptr_t = std::nullptr_t]’
+  297 |       operator<<(nullptr_t)
+      |       ^~~~~~~~
+/usr/include/c++/13/ostream:297:18: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘std::nullptr_t’
+  297 |       operator<<(nullptr_t)
+      |                  ^~~~~~~~~
+/usr/include/c++/13/bits/ostream.tcc:124:5: note: candidate: ‘std::basic_ostream<_CharT, _Traits>& std::basic_ostream<_CharT, _Traits>::operator<<(__streambuf_type*) [with _CharT = char; _Traits = std::char_traits<char>; __streambuf_type = std::basic_streambuf<char>]’
+  124 |     basic_ostream<_CharT, _Traits>::
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/bits/ostream.tcc:125:34: note:   no known conversion for argument 1 from ‘const CoherenceState’ to ‘std::basic_ostream<char>::__streambuf_type*’ {aka ‘std::basic_streambuf<char>*’}
+  125 |     operator<<(__streambuf_type* __sbin)
+      |                ~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /usr/include/c++/13/bits/memory_resource.h:38,
+                 from /usr/include/c++/13/deque:76,
+                 from /usr/include/c++/13/queue:62,
+                 from /workspace/project/CppTLM/include/core/event_queue.hh:4,
+                 from /workspace/project/CppTLM/include/core/sim_object.hh:7:
+/usr/include/c++/13/cstddef:124:5: note: candidate: ‘template<class _IntegerType> constexpr std::__byte_op_t<_IntegerType> std::operator<<(byte, _IntegerType)’
+  124 |     operator<<(byte __b, _IntegerType __shift) noexcept
+      |     ^~~~~~~~
+/usr/include/c++/13/cstddef:124:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:19: note:   cannot convert ‘std::operator<< <char_traits<char> >(std::cout, ((const char*)"    "))’ (type ‘std::basic_ostream<char>’) to type ‘std::byte’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |         ~~~~~~~~~~^~~~~~~~~
+In file included from /usr/include/c++/13/bits/basic_string.h:47,
+                 from /usr/include/c++/13/string:54,
+                 from /workspace/project/CppTLM/include/core/error_category.hh:7,
+                 from /workspace/project/CppTLM/include/core/packet.hh:7:
+/usr/include/c++/13/string_view:761:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, basic_string_view<_CharT, _Traits>)’
+  761 |     operator<<(basic_ostream<_CharT, _Traits>& __os,
+      |     ^~~~~~~~
+/usr/include/c++/13/string_view:761:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘std::basic_string_view<_CharT, _Traits>’ and ‘CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/bits/basic_string.h:4032:5: note: candidate: ‘template<class _CharT, class _Traits, class _Alloc> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, const __cxx11::basic_string<_CharT, _Traits, _Allocator>&)’
+ 4032 |     operator<<(basic_ostream<_CharT, _Traits>& __os,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/basic_string.h:4032:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘const std::__cxx11::basic_string<_CharT, _Traits, _Allocator>’ and ‘const CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+In file included from /usr/include/c++/13/memory:80,
+                 from /workspace/project/CppTLM/include/core/sim_object.hh:9:
+/usr/include/c++/13/bits/shared_ptr.h:70:5: note: candidate: ‘template<class _Ch, class _Tr, class _Tp, __gnu_cxx::_Lock_policy _Lp> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, const __shared_ptr<_Tp, _Lp>&)’
+   70 |     operator<<(std::basic_ostream<_Ch, _Tr>& __os,
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/shared_ptr.h:70:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘const std::__shared_ptr<_Tp, _Lp>’ and ‘const CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+In file included from /usr/include/c++/13/bits/ios_base.h:46,
+                 from /usr/include/c++/13/streambuf:43,
+                 from /usr/include/c++/13/bits/streambuf_iterator.h:35,
+                 from /usr/include/c++/13/iterator:66,
+                 from /workspace/project/CppTLM/external/json/nlohmann/json.hpp:28:
+/usr/include/c++/13/system_error:339:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, const error_code&)’
+  339 |     operator<<(basic_ostream<_CharT, _Traits>& __os, const error_code& __e)
+      |     ^~~~~~~~
+/usr/include/c++/13/system_error:339:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘const std::error_code&’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+In file included from /usr/include/c++/13/valarray:605,
+                 from /workspace/project/CppTLM/external/json/nlohmann/json.hpp:171:
+/usr/include/c++/13/bits/valarray_after.h:413:5: note: candidate: ‘template<class _Dom1, class _Dom2> std::_Expr<std::__detail::_BinClos<std::__shift_left, std::_Expr, std::_Expr, _Dom1, _Dom2>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const _Expr<_Dom1, typename _Dom1::value_type>&, const _Expr<_Dom2, typename _Dom2::value_type>&)’
+  413 |     _DEFINE_EXPR_BINARY_OPERATOR(<<, struct std::__shift_left)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note: candidate: ‘template<class _Dom> std::_Expr<std::__detail::_BinClos<std::__shift_left, std::_Expr, std::_Constant, _Dom, typename _Dom::value_type>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const _Expr<_Dom1, typename _Dom1::value_type>&, const typename _Dom::value_type&)’
+  413 |     _DEFINE_EXPR_BINARY_OPERATOR(<<, struct std::__shift_left)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note: candidate: ‘template<class _Dom> std::_Expr<std::__detail::_BinClos<std::__shift_left, std::_Constant, std::_Expr, typename _Dom::value_type, _Dom>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const typename _Dom::value_type&, const _Expr<_Dom1, typename _Dom1::value_type>&)’
+  413 |     _DEFINE_EXPR_BINARY_OPERATOR(<<, struct std::__shift_left)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’ and ‘const CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note: candidate: ‘template<class _Dom> std::_Expr<std::__detail::_BinClos<std::__shift_left, std::_Expr, std::_ValArray, _Dom, typename _Dom::value_type>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const _Expr<_Dom1, typename _Dom1::value_type>&, const valarray<typename _Dom::value_type>&)’
+  413 |     _DEFINE_EXPR_BINARY_OPERATOR(<<, struct std::__shift_left)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note: candidate: ‘template<class _Dom> std::_Expr<std::__detail::_BinClos<std::__shift_left, std::_ValArray, std::_Expr, typename _Dom::value_type, _Dom>, typename std::__fun<std::__shift_left, typename _Dom1::value_type>::result_type> std::operator<<(const valarray<typename _Dom::value_type>&, const _Expr<_Dom1, typename _Dom1::value_type>&)’
+  413 |     _DEFINE_EXPR_BINARY_OPERATOR(<<, struct std::__shift_left)
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/bits/valarray_after.h:413:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘const std::_Expr<_Dom1, typename _Dom1::value_type>’ and ‘const CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/valarray:1204:1: note: candidate: ‘template<class _Tp> std::_Expr<std::__detail::_BinClos<std::__shift_left, std::_ValArray, std::_ValArray, _Tp, _Tp>, typename std::__fun<std::__shift_left, _Tp>::result_type> std::operator<<(const valarray<_Tp>&, const valarray<_Tp>&)’
+ 1204 | _DEFINE_BINARY_OPERATOR(<<, __shift_left)
+      | ^~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/valarray:1204:1: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::valarray<_Tp>’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/valarray:1204:1: note: candidate: ‘template<class _Tp> std::_Expr<std::__detail::_BinClos<std::__shift_left, std::_ValArray, std::_Constant, _Tp, _Tp>, typename std::__fun<std::__shift_left, _Tp>::result_type> std::operator<<(const valarray<_Tp>&, const typename valarray<_Tp>::value_type&)’
+ 1204 | _DEFINE_BINARY_OPERATOR(<<, __shift_left)
+      | ^~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/valarray:1204:1: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   ‘std::basic_ostream<char>’ is not derived from ‘const std::valarray<_Tp>’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/valarray:1204:1: note: candidate: ‘template<class _Tp> std::_Expr<std::__detail::_BinClos<std::__shift_left, std::_Constant, std::_ValArray, _Tp, _Tp>, typename std::__fun<std::__shift_left, _Tp>::result_type> std::operator<<(const typename valarray<_Tp>::value_type&, const valarray<_Tp>&)’
+ 1204 | _DEFINE_BINARY_OPERATOR(<<, __shift_left)
+      | ^~~~~~~~~~~~~~~~~~~~~~~
+/usr/include/c++/13/valarray:1204:1: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘const std::valarray<_Tp>’ and ‘const CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/ostream:554:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _CharT)’
+  554 |     operator<<(basic_ostream<_CharT, _Traits>& __out, _CharT __c)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:554:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   deduced conflicting types for parameter ‘_CharT’ (‘char’ and ‘CoherenceState’)
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/ostream:564:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, char)’
+  564 |     operator<<(basic_ostream<_CharT, _Traits>& __out, char __c)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:564:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘char’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/ostream:570:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(basic_ostream<char, _Traits>&, char)’
+  570 |     operator<<(basic_ostream<char, _Traits>& __out, char __c)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:570:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘char’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/ostream:581:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(basic_ostream<char, _Traits>&, signed char)’
+  581 |     operator<<(basic_ostream<char, _Traits>& __out, signed char __c)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:581:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘signed char’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/ostream:586:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(basic_ostream<char, _Traits>&, unsigned char)’
+  586 |     operator<<(basic_ostream<char, _Traits>& __out, unsigned char __c)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:586:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘unsigned char’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/ostream:645:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, const _CharT*)’
+  645 |     operator<<(basic_ostream<_CharT, _Traits>& __out, const _CharT* __s)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:645:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘const _CharT*’ and ‘CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/bits/ostream.tcc:307:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, const char*)’
+  307 |     operator<<(basic_ostream<_CharT, _Traits>& __out, const char* __s)
+      |     ^~~~~~~~
+/usr/include/c++/13/bits/ostream.tcc:307:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘const char*’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/ostream:662:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(basic_ostream<char, _Traits>&, const char*)’
+  662 |     operator<<(basic_ostream<char, _Traits>& __out, const char* __s)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:662:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘const char*’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/ostream:675:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(basic_ostream<char, _Traits>&, const signed char*)’
+  675 |     operator<<(basic_ostream<char, _Traits>& __out, const signed char* __s)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:675:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘const signed char*’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/ostream:680:5: note: candidate: ‘template<class _Traits> std::basic_ostream<char, _Traits>& std::operator<<(basic_ostream<char, _Traits>&, const unsigned char*)’
+  680 |     operator<<(basic_ostream<char, _Traits>& __out, const unsigned char* __s)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:680:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘const unsigned char*’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/ostream:801:5: note: candidate: ‘template<class _Ostream, class _Tp> _Ostream&& std::operator<<(_Ostream&&, const _Tp&)’
+  801 |     operator<<(_Ostream&& __os, const _Tp& __x)
+      |     ^~~~~~~~
+/usr/include/c++/13/ostream:801:5: note:   template argument deduction/substitution failed:
+/usr/include/c++/13/ostream: In substitution of ‘template<class _Ostream, class _Tp> _Ostream&& std::operator<<(_Ostream&&, const _Tp&) [with _Ostream = std::basic_ostream<char>&; _Tp = CoherenceState]’:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37:   required from here
+/usr/include/c++/13/ostream:801:5: error: no type named ‘type’ in ‘struct std::enable_if<false, void>’
+/usr/include/c++/13/iomanip:81:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _Resetiosflags)’
+   81 |     operator<<(basic_ostream<_CharT, _Traits>& __os, _Resetiosflags __f)
+      |     ^~~~~~~~
+/usr/include/c++/13/iomanip:81:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘std::_Resetiosflags’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/iomanip:111:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _Setiosflags)’
+  111 |     operator<<(basic_ostream<_CharT, _Traits>& __os, _Setiosflags __f)
+      |     ^~~~~~~~
+/usr/include/c++/13/iomanip:111:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘std::_Setiosflags’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/iomanip:145:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _Setbase)’
+  145 |     operator<<(basic_ostream<_CharT, _Traits>& __os, _Setbase __f)
+      |     ^~~~~~~~
+/usr/include/c++/13/iomanip:145:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘std::_Setbase’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/iomanip:180:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _Setfill<_CharT>)’
+  180 |     operator<<(basic_ostream<_CharT, _Traits>& __os, _Setfill<_CharT> __f)
+      |     ^~~~~~~~
+/usr/include/c++/13/iomanip:180:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘std::_Setfill<_CharT>’ and ‘CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/iomanip:210:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _Setprecision)’
+  210 |     operator<<(basic_ostream<_CharT, _Traits>& __os, _Setprecision __f)
+      |     ^~~~~~~~
+/usr/include/c++/13/iomanip:210:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘std::_Setprecision’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/iomanip:240:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _Setw)’
+  240 |     operator<<(basic_ostream<_CharT, _Traits>& __os, _Setw __f)
+      |     ^~~~~~~~
+/usr/include/c++/13/iomanip:240:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   cannot convert ‘snap.StateSnapshot::from_state’ (type ‘const CoherenceState’) to type ‘std::_Setw’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                ~~~~~^~~~~~~~~~
+/usr/include/c++/13/iomanip:313:5: note: candidate: ‘template<class _CharT, class _Traits, class _MoneyT> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _Put_money<_MoneyT>)’
+  313 |     operator<<(basic_ostream<_CharT, _Traits>& __os, _Put_money<_MoneyT> __f)
+      |     ^~~~~~~~
+/usr/include/c++/13/iomanip:313:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘std::_Put_money<_MoneyT>’ and ‘CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/usr/include/c++/13/iomanip:365:5: note: candidate: ‘template<class _CharT, class _Traits> std::basic_ostream<_CharT, _Traits>& std::operator<<(basic_ostream<_CharT, _Traits>&, _Put_time<_CharT>)’
+  365 |     operator<<(basic_ostream<_CharT, _Traits>& __os, _Put_time<_CharT> __f)
+      |     ^~~~~~~~
+/usr/include/c++/13/iomanip:365:5: note:   template argument deduction/substitution failed:
+/workspace/project/CppTLM/examples/example_error_handling.cc:127:37: note:   mismatched types ‘std::_Put_time<_CharT>’ and ‘CoherenceState’
+  127 |         std::cout << "    " << snap.from_state << " -> " << snap.to_state
+      |                                     ^~~~~~~~~~
+/workspace/project/CppTLM/examples/example_error_handling.cc:132:17: error: incomplete type ‘PacketPool’ used in nested name specifier
+  132 |     PacketPool::get().release(pkt1);
+      |                 ^~~
+/workspace/project/CppTLM/examples/example_error_handling.cc:133:17: error: incomplete type ‘PacketPool’ used in nested name specifier
+  133 |     PacketPool::get().release(pkt2);
+      |                 ^~~
+[ 35%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_memory_tlm_comprehensive.cc.o
+gmake[2]: *** [examples/CMakeFiles/example_error_handling.dir/build.make:76: examples/CMakeFiles/example_error_handling.dir/example_error_handling.cc.o] Error 1
+gmake[1]: *** [CMakeFiles/Makefile2:1045: examples/CMakeFiles/example_error_handling.dir/all] Error 2
+[ 35%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_metrics_reporter.cc.o
+[ 36%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_module_factory_fixes.cc.o
+[ 38%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_module_group.cc.o
+[ 39%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_module_registration.cc.o
+[ 40%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_module_stats.cc.o
+[ 41%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_nic_packetization.cc.o
+[ 42%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_nic_port_groups.cc.o
+In file included from /workspace/project/CppTLM/test/test_module_stats.cc:17:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+[ 43%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_nic_side_rules.cc.o
+In file included from /workspace/project/CppTLM/test/test_nic_port_groups.cc:7:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/modules.hh:26,
+                 from /workspace/project/CppTLM/test/test_nic_port_groups.cc:8:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh: In member function ‘virtual bool CPUSim::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 44%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_nic_tlm.cc.o
+In file included from /workspace/project/CppTLM/test/test_nic_side_rules.cc:4:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/modules.hh:26,
+                 from /workspace/project/CppTLM/test/test_nic_side_rules.cc:3:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh: In member function ‘virtual bool CPUSim::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 45%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_noc_bundles.cc.o
+[ 46%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_noc_integration.cc.o
+[ 47%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_p3_2_tlm_integration.cc.o
+[ 47%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_packet_pool.cc.o
+In file included from /workspace/project/CppTLM/test/test_p3_2_tlm_integration.cc:13:
+/workspace/project/CppTLM/src/../include/core/tlm_module.hh: In member function ‘virtual void TLMModule::onFragmentGroupComplete(FragmentBuffer&)’:
+/workspace/project/CppTLM/src/../include/core/tlm_module.hh:106:20: warning: unused structured binding declaration [-Wunused-variable]
+  106 |         for (auto& [id, p] : buf.fragments) {
+      |                    ^~~~~~~
+In file included from /workspace/project/CppTLM/test/test_p3_2_tlm_integration.cc:14:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+[ 48%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_param_defaults.cc.o
+[ 50%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_param_errors.cc.o
+[ 51%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_param_parser.cc.o
+In file included from /workspace/project/CppTLM/test/test_param_defaults.cc:3:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 52%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_param_rules.cc.o
+[ 53%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_percentile_histogram.cc.o
+[ 54%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase0_stats_registration.cc.o
+[ 55%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase2_core_extensions.cc.o
+In file included from /workspace/project/CppTLM/test/test_phase0_stats_registration.cc:7:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/modules.hh:26,
+                 from /workspace/project/CppTLM/test/test_phase0_stats_registration.cc:6:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh: In member function ‘virtual bool CPUSim::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 56%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase3_2_port_management.cc.o
+[ 57%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase3_critical_fixes.cc.o
+In file included from /workspace/project/CppTLM/test/test_phase3_2_port_management.cc:8:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/modules.hh:26,
+                 from /workspace/project/CppTLM/test/test_phase3_2_port_management.cc:9:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh: In member function ‘virtual bool CPUSim::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc: In function ‘void CATCH2_INTERNAL_TEST_34()’:
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc:303:5: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+  303 |     };
+      |     ^
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc:303:5: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc:303:5: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc:303:5: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc:303:5: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc: In function ‘void CATCH2_INTERNAL_TEST_36()’:
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc:316:5: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+  316 |     };
+      |     ^
+/workspace/project/CppTLM/test/test_phase3_2_port_management.cc:316:5: warning: missing initializer for member ‘cpptlm::PortSpec::layout_hint’ [-Wmissing-field-initializers]
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 58%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase3_transaction_context.cc.o
+[ 59%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase4_error_context.cc.o
+[ 59%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase5_modules.cc.o
+In file included from /workspace/project/CppTLM/test/test_phase4_error_context.cc:5:
+/workspace/project/CppTLM/test/test_phase4_error_context.cc: In function ‘void CATCH2_INTERNAL_TEST_28()’:
+/workspace/project/CppTLM/test/test_phase4_error_context.cc:177:77: warning: comparison of unsigned expression in ‘>= 0’ is always true [-Wtype-limits]
+  177 |     REQUIRE(tracker.get_errors_by_category(ErrorCategory::TRANSPORT).size() >= 0);
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/project/CppTLM/test/catch2/catch_all.hpp:153:76: note: in definition of macro ‘CATCH_INTERNAL_IGNORE_BUT_WARN’
+  153 | #    define CATCH_INTERNAL_IGNORE_BUT_WARN(...) (void)__builtin_constant_p(__VA_ARGS__)
+      |                                                                            ^~~~~~~~~~~
+/workspace/project/CppTLM/test/catch2/catch_all.hpp:6274:26: note: in expansion of macro ‘INTERNAL_CATCH_TEST’
+ 6274 |   #define REQUIRE( ... ) INTERNAL_CATCH_TEST( "REQUIRE", Catch::ResultDisposition::Normal, __VA_ARGS__  )
+      |                          ^~~~~~~~~~~~~~~~~~~
+/workspace/project/CppTLM/test/test_phase4_error_context.cc:177:5: note: in expansion of macro ‘REQUIRE’
+  177 |     REQUIRE(tracker.get_errors_by_category(ErrorCategory::TRANSPORT).size() >= 0);
+      |     ^~~~~~~
+/workspace/project/CppTLM/test/test_phase4_error_context.cc:177:77: warning: comparison of unsigned expression in ‘>= 0’ is always true [-Wtype-limits]
+  177 |     REQUIRE(tracker.get_errors_by_category(ErrorCategory::TRANSPORT).size() >= 0);
+      |             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~
+/workspace/project/CppTLM/test/catch2/catch_all.hpp:5681:63: note: in definition of macro ‘INTERNAL_CATCH_TEST’
+ 5681 |     } while( (void)0, (false) && static_cast<const bool&>( !!(__VA_ARGS__) ) ) // the expression here is never evaluated at runtime but it forces the compiler to give it a look
+      |                                                               ^~~~~~~~~~~
+/workspace/project/CppTLM/test/test_phase4_error_context.cc:177:5: note: in expansion of macro ‘REQUIRE’
+  177 |     REQUIRE(tracker.get_errors_by_category(ErrorCategory::TRANSPORT).size() >= 0);
+      |     ^~~~~~~
+[ 60%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase6_integration.cc.o
+[ 61%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase6_regression.cc.o
+[ 63%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase7_benchmark.cc.o
+In file included from /workspace/project/CppTLM/test/test_phase6_regression.cc:14:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/test/test_phase6_integration.cc:7:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/modules.hh:26,
+                 from /workspace/project/CppTLM/test/test_phase6_integration.cc:6:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh: In member function ‘virtual bool CPUSim::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 64%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase7_transaction_lifecycle.cc.o
+[ 65%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_phase8_performance_stress.cc.o
+[ 66%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_port_types.cc.o
+/workspace/project/CppTLM/test/test_phase7_transaction_lifecycle.cc: In function ‘void CATCH2_INTERNAL_TEST_48()’:
+/workspace/project/CppTLM/test/test_phase7_transaction_lifecycle.cc:421:18: warning: unused variable ‘err1’ [-Wunused-variable]
+  421 |         uint64_t err1 = err_tracker.record_error(&payload, ErrorCode::RESOURCE_BUFFER_FULL, "Full", "crossbar");
+      |                  ^~~~
+/workspace/project/CppTLM/test/test_phase7_transaction_lifecycle.cc:422:18: warning: unused variable ‘err2’ [-Wunused-variable]
+  422 |         uint64_t err2 = err_tracker.record_error(&payload, ErrorCode::TRANSPORT_TIMEOUT, "Timeout", "noc_router");
+      |                  ^~~~
+/workspace/project/CppTLM/test/test_phase7_transaction_lifecycle.cc: In function ‘void CATCH2_INTERNAL_TEST_62()’:
+/workspace/project/CppTLM/test/test_phase7_transaction_lifecycle.cc:482:18: warning: unused variable ‘tid’ [-Wunused-variable]
+  482 |         uint64_t tid = txn_tracker.create_transaction(&payload, "cpu_0", "READ");
+      |                  ^~~
+In file included from /workspace/project/CppTLM/test/test_phase8_performance_stress.cc:6:
+/workspace/project/CppTLM/src/../include/core/tlm_module.hh: In member function ‘virtual void TLMModule::onFragmentGroupComplete(FragmentBuffer&)’:
+/workspace/project/CppTLM/src/../include/core/tlm_module.hh:106:20: warning: unused structured binding declaration [-Wunused-variable]
+  106 |         for (auto& [id, p] : buf.fragments) {
+      |                    ^~~~~~~
+[ 68%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_response_path.cc.o
+[ 68%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_regex_matching.cc.o
+[ 69%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_router_tlm.cc.o
+[ 70%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_simulation_communication.cc.o
+[ 71%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_stats_accuracy.cc.o
+[ 71%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_stats_core.cc.o
+In file included from /workspace/project/CppTLM/test/test_stats_core.cc:20:
+/workspace/project/CppTLM/test/test_stats_core.cc: In function ‘void {anonymous}::CATCH2_INTERNAL_TEST_62()’:
+/workspace/project/CppTLM/test/test_stats_core.cc:566:26: warning: comparison of integer expressions of different signedness: ‘tlm_stats::Counter’ {aka ‘long unsigned int’} and ‘int’ [-Wsign-compare]
+  566 |     REQUIRE(dist.count() == expected_count);
+      |             ~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~
+/workspace/project/CppTLM/test/catch_amalgamated.hpp:153:76: note: in definition of macro ‘CATCH_INTERNAL_IGNORE_BUT_WARN’
+  153 | #    define CATCH_INTERNAL_IGNORE_BUT_WARN(...) (void)__builtin_constant_p(__VA_ARGS__)
+      |                                                                            ^~~~~~~~~~~
+/workspace/project/CppTLM/test/catch_amalgamated.hpp:6274:26: note: in expansion of macro ‘INTERNAL_CATCH_TEST’
+ 6274 |   #define REQUIRE( ... ) INTERNAL_CATCH_TEST( "REQUIRE", Catch::ResultDisposition::Normal, __VA_ARGS__  )
+      |                          ^~~~~~~~~~~~~~~~~~~
+/workspace/project/CppTLM/test/test_stats_core.cc:566:5: note: in expansion of macro ‘REQUIRE’
+  566 |     REQUIRE(dist.count() == expected_count);
+      |     ^~~~~~~
+In file included from /workspace/project/CppTLM/test/test_simulation_communication.cc:5:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 72%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_stream_adapter.cc.o
+[ 73%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_streaming_reporter.cc.o
+[ 75%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_stress_framework.cc.o
+[ 77%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_stress_patterns.cc.o
+[ 77%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_stress_scenarios.cc.o
+In file included from /workspace/project/CppTLM/test/test_stress_framework.cc:20:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/test/test_stress_framework.cc: In member function ‘uint64_t {anonymous}::StressTestRunner::runUntilComplete(uint64_t)’:
+/workspace/project/CppTLM/test/test_stress_framework.cc:105:18: warning: unused variable ‘end’ [-Wunused-variable]
+  105 |         uint64_t end = start + max_cycles;
+      |                  ^~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+In file included from /workspace/project/CppTLM/test/test_stress_patterns.cc:8:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+[ 78%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_tgms_v4_hierarchy_integration.cc.o
+In file included from /workspace/project/CppTLM/test/test_stress_scenarios.cc:17:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+/workspace/project/CppTLM/test/test_stress_scenarios.cc: At global scope:
+/workspace/project/CppTLM/test/test_stress_scenarios.cc:36:6: warning: ‘json {anonymous}::loadConfig(const std::string&)’ defined but not used [-Wunused-function]
+   36 | json loadConfig(const std::string& path) {
+      |      ^~~~~~~~~~
+[ 79%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_tlm_ext.cc.o
+[ 80%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_tlm_multi_extension.cc.o
+In file included from /workspace/project/CppTLM/test/test_tgms_v4_hierarchy_integration.cc:7:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/modules.hh:26,
+                 from /workspace/project/CppTLM/test/test_tgms_v4_hierarchy_integration.cc:6:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh: In member function ‘virtual bool CPUSim::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 81%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_topology_parser.cc.o
+[ 83%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_traffic_gen_tlm_stats.cc.o
+[ 83%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_valid_only.cc.o
+In file included from /workspace/project/CppTLM/test/test_traffic_gen_tlm_stats.cc:6:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+[ 83%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_valid_ready.cc.o
+[ 84%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_validate_config.cc.o
+[ 85%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_var_resolver.cc.o
+[ 86%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_virtual_channel.cc.o
+[ 88%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/test_wildcard_matching.cc.o
+[ 89%] Building CXX object test/CMakeFiles/cpptlm_tests.dir/catch_amalgamated.cpp.o
+[ 90%] Linking CXX executable ../bin/cpptlm_tests
+[ 90%] Built target cpptlm_tests
+In file included from /workspace/project/CppTLM/src/main.cpp:19:
+/workspace/project/CppTLM/src/../include/chstream_register.hh:83:1: warning: multi-line comment [-Wcomment]
+   83 | // 用法: REGISTER_CHSTREAM_DUAL(NICTLM, \
+      | ^
+In file included from /workspace/project/CppTLM/src/../include/utils/topology_dumper.hh:6,
+                 from /workspace/project/CppTLM/src/main.cpp:16:
+/workspace/project/CppTLM/src/../include/utils/force_directed_layout.hh: In member function ‘void ForceDirectedLayout::setGroupPlacement(const std::string&, const std::vector<std::__cxx11::basic_string<char> >&, const std::string&, double, double, double)’:
+/workspace/project/CppTLM/src/../include/utils/force_directed_layout.hh:49:28: warning: unused parameter ‘group_name’ [-Wunused-parameter]
+   49 |         const std::string& group_name,
+      |         ~~~~~~~~~~~~~~~~~~~^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/utils/force_directed_layout.hh: In member function ‘void ForceDirectedLayout::applyGroupConfinement(double, double)’:
+/workspace/project/CppTLM/src/../include/utils/force_directed_layout.hh:219:39: warning: unused parameter ‘width’ [-Wunused-parameter]
+  219 |     void applyGroupConfinement(double width, double height) {
+      |                                ~~~~~~~^~~~~
+/workspace/project/CppTLM/src/../include/utils/force_directed_layout.hh:219:53: warning: unused parameter ‘height’ [-Wunused-parameter]
+  219 |     void applyGroupConfinement(double width, double height) {
+      |                                              ~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/utils/topology_dumper.hh: In static member function ‘static std::string TopologyDumper::getModuleType(SimObject*)’:
+/workspace/project/CppTLM/src/../include/utils/topology_dumper.hh:198:49: warning: unused parameter ‘obj’ [-Wunused-parameter]
+  198 |     static std::string getModuleType(SimObject* obj) {
+      |                                      ~~~~~~~~~~~^~~
+In file included from /workspace/project/CppTLM/src/../include/modules.hh:26,
+                 from /workspace/project/CppTLM/src/main.cpp:18:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh: In member function ‘virtual bool CPUSim::handleDownstreamResponse(Packet*, int, const std::string&)’:
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:52: warning: unused parameter ‘src_id’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                ~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/modules/legacy/cpu_sim.hh:21:79: warning: unused parameter ‘src_label’ [-Wunused-parameter]
+   21 |     bool handleDownstreamResponse(Packet* pkt, int src_id, const std::string& src_label) override {
+      |                                                            ~~~~~~~~~~~~~~~~~~~^~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:7:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh: In member function ‘virtual void CrossbarTLM::tick()’:
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:74:14: warning: variable ‘conflicted’ set but not used [-Wunused-but-set-variable]
+   74 |         bool conflicted = false;
+      |              ^~~~~~~~~~
+/workspace/project/CppTLM/src/../include/tlm/crossbar_tlm.hh:75:18: warning: variable ‘conflict_dst’ set but not used [-Wunused-but-set-variable]
+   75 |         unsigned conflict_dst = NUM_PORTS;
+      |                  ^~~~~~~~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:8:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh: In member function ‘virtual void CPUTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/cpu_tlm.hh:65:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+   65 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:9:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh: In member function ‘virtual void TrafficGenTLM::do_reset(const ResetConfig&)’:
+/workspace/project/CppTLM/src/../include/tlm/traffic_gen_tlm.hh:198:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  198 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+In file included from /workspace/project/CppTLM/src/../include/chstream_register.hh:10:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 4]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+  137 |     void do_reset(const ResetConfig& config) override {
+      |                   ~~~~~~~~~~~~~~~~~~~^~~~~~
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh: In instantiation of ‘void ArbiterTLM<N_PORTS>::do_reset(const ResetConfig&) [with unsigned int N_PORTS = 2]’:
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:10:   required from here
+/workspace/project/CppTLM/src/../include/tlm/arbiter_tlm.hh:137:38: warning: unused parameter ‘config’ [-Wunused-parameter]
+[ 91%] Linking CXX executable ../bin/cpptlm_sim
+[ 91%] Built target cpptlm_sim
+gmake: *** [Makefile:146: all] Error 2
