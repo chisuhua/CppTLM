@@ -18,12 +18,12 @@
 
 ### 宏清单
 
-| 宏 | 入口文件 | 派生自 | 注册到 |
-|----|----------|--------|--------|
-| `REGISTER_OBJECT` | `include/modules.hh` | `SimObject`（含 Legacy `CPUSim` 与 `ChStreamModuleBase` 子树） | `getObjectRegistry()` |
-| `REGISTER_MODULE` | `include/modules.hh` | `SimModule`（如 `CpuCluster`） | `getModuleRegistry()` |
-| `REGISTER_CHSTREAM` | `include/chstream_register.hh` | `ChStreamModuleBase`（如 `CacheTLM`/`CrossbarTLM`/`MemoryTLM`） | `getObjectRegistry()` + `ChStreamAdapterFactory` |
-| `REGISTER_ALL` | `include/chstream_register.hh` | 复合宏 | `REGISTER_OBJECT; REGISTER_CHSTREAM` |
+| 宏 | 入口文件 | 派生自 | 注册到 | Build flag |
+|----|----------|--------|--------|------------|
+| `REGISTER_OBJECT` | `include/modules.hh` | `SimObject`（含 Legacy `CPUSim` 与 `ChStreamModuleBase` 子树） | `getObjectRegistry()` | `BUILD_LEGACY_MODULES=OFF` → **no-op**（默认） |
+| `REGISTER_MODULE` | `include/modules.hh` | `SimModule`（如 `CpuCluster`） | `getModuleRegistry()` | `BUILD_LEGACY_MODULES=OFF` → **no-op**（默认） |
+| `REGISTER_CHSTREAM` | `include/chstream_register.hh` | `ChStreamModuleBase`（如 `CacheTLM`/`CrossbarTLM`/`MemoryTLM`） | `getObjectRegistry()` + `ChStreamAdapterFactory` | **Always ON**（推荐） |
+| `REGISTER_ALL` | `include/chstream_register.hh` | 复合宏 | `REGISTER_OBJECT; REGISTER_CHSTREAM` | `BUILD_LEGACY_MODULES=OFF` → 退化为 `REGISTER_CHSTREAM` |
 
 ### 设计意图
 
@@ -54,6 +54,7 @@
 - **include 路径**: `include/` 直接作为 PUBLIC include dir，支持 `#include "core/xxx.hh"` 和 `#include "xxx.hh"`（无 core/ 前缀兼容旧代码）
 - **命名空间**: 大部分代码在全局命名空间（非 cpptlm），仅 StreamAdapter 在 `cpptlm::`
 - **DPRINTF 宏**: 编译期 `-DDEBUG_PRINT` 控制的日志，`DPRINTF(MODULE, "fmt", args...)`
+- **Legacy 模块迁移路径**：`BUILD_LEGACY_MODULES` CMake 选项（默认 `OFF`）控制 `REGISTER_OBJECT`/`REGISTER_MODULE` 是否展开为有效注册代码。`OFF` 时两宏退化为 no-op，Legacy 模块类仍可正常 `new` 实例化但不会被 `ModuleFactory::instantiateAll()` 发现；新代码统一走 `REGISTER_CHSTREAM`（Always ON）。迁移步骤：① `BUILD_LEGACY_MODULES=ON` 跑一次旧回归确认基线；② 将 Legacy 模块逐一重构为 `ChStreamModuleBase` 派生并改用 `REGISTER_CHSTREAM`；③ `BUILD_LEGACY_MODULES=OFF` 默认构建并删除 `include/modules/legacy/` 归档目录。
 
 ## 注意事项
 
