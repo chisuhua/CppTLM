@@ -35,14 +35,22 @@ CppTLM/
 ├── docs/            # 架构文档、ADR、实现计划
 ├── docs-archived/   # 已归档文档
 ├── docs-pending/    # 待整理文档
-├── plans/           # 实施计划 JSON/Markdown
-├── samples/         # 示例拓扑
-├── scripts/         # 工具脚本（format.sh, linter.py, topology_validator.py 等）
-├── cpptlm_config/   # Python 配置包（validator.py, topology_adapter.py, builder.py）
+├── plans/ # 实施计划 JSON/Markdown
+├── samples/ # 示例拓扑
+├── scripts/ # 工具脚本（format.sh, linter.py, topology_validator.py 等）
+├── cpptlm_config/ # Python 配置包（validator.py, topology_adapter.py, builder.py）
 ├── .github/
-│   └── workflows/
-│       └── ci.yml   # GitHub Actions CI/CD 工作流
-└── CMakeLists.txt   # 根构建配置
+│ └── workflows/
+│ └── ci.yml # GitHub Actions CI/CD 工作流
+└── CMakeLists.txt # 根构建配置
+```
+
+## 归档示例（docs-archived/samples-orphaned/）
+
+`samples/simple1/` 和 `samples/simple_hier/` 已于 2026-06-08 归档：
+- **simple1/**: `cpu_cluster.cc` 在 v2.1 标记 DEPRECATED，推荐使用 `include/tlm/cpu_tlm.hh`
+- **simple_hier/**: 无 CMakeLists.txt（孤儿），引用 v2.1 不再支持的 `CpuCluster` / `NOCTile`
+- 恢复方法：参见 [docs-archived/samples-orphaned/README.md](docs-archived/samples-orphaned/README.md)
 ```
 
 ## WHERE TO LOOK
