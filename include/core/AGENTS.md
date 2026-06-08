@@ -45,6 +45,18 @@ SimObject (基类 — 所有仿真模块)
 - **实例存储**: `std::unordered_map<std::string, SimObject*> instances` — 按名称索引
 - **StreamAdapter 存储**: `std::vector<std::unique_ptr<cpptlm::StreamAdapterBase>>` — 自动生命周期管理
 
+### 双注册表动机
+
+`ModuleFactory` 维护两个独立的 `static unordered_map`：`getObjectRegistry()`（`std::function<SimObject*>`）与 `getModuleRegistry()`（`std::function<SimModule*>`）。这一"不对称"设计是**类型系统强制约束**，而非冗余或历史遗留：
+
+1. **构造签名不兼容**：`SimModule` 派生类（如 `CpuCluster`）的构造函数签名可能与 `SimObject` 不同（`SimModule` 引入 Layout/拓扑属性）。合并注册表将迫使 `register<T>` 接受所有类型，丢失编译期类型检查。
+2. **`static_assert` 边界保护**：`registerModule<T>` 实现包含 `static_assert(std::is_base_of_v<SimModule, T>, "T must derive from SimModule")`。`ChStreamModuleBase` 继承 `SimObject` 而非 `SimModule`，因此**必须**用 `registerObject` 注册，无法混入 `registerModule`。
+3. **职责分离**：`SimObject` 通用调度（tick/init/reset）由仿真核心统一管理；`SimModule` 引入层次化 Layout 语义，需要独立构造路径。合并后 `unregister/clear/getRegisteredTypes/listRegisteredTypes` 都要做联合遍历，增加调用点判断开销。
+4. **StreamAdapter 解耦**：`ChStreamModuleBase` 派生类通过 `ChStreamAdapterFactory::get().registerAdapter/...` 单独注册 StreamAdapter（与对象注册解耦），通过 `REGISTER_CHSTREAM` 复合宏保证两者原子注册。`REGISTER_CHSTREAM` 内部仍调用 `ModuleFactory::registerObject<T>`，**复用**对象注册表而非另起炉灶。
+5. **REGISTER_OBJECT 与 REGISTER_MODULE 互斥**：当前 `include/modules.hh` 同时定义两者，调用方按需选择其一。若合并为单一 `REGISTER`，将丧失 `SimModule` 子树与 `SimObject` 子树的语义边界。
+
+**结论**：双注册表是有意设计，受 `static_assert` 与继承层次保护，任何"统一为单注册表"的提议都会破坏类型安全与 Layout 语义。详见 `include/AGENTS.md` "注册宏体系" 与 `include/modules.hh` 文件头注释。
+
 ## 注意事项
 
 - `module_factory.hh` 中 `stream_adapters_`/`ch_initiator_ports_`/`ch_target_ports_` 成员由 Step 7 注入阶段使用
