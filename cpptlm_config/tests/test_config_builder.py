@@ -50,6 +50,8 @@ class TestModuleType(unittest.TestCase):
         self.assertEqual(ModuleType.CACHE_TLM.value, "CacheTLM")
         self.assertEqual(ModuleType.CROSSBAR_TLM.value, "CrossbarTLM")
         self.assertEqual(ModuleType.MEMORY_TLM.value, "MemoryTLM")
+        # CPU_SIM retained for backward compatibility; only valid in C++ build
+        # when BUILD_LEGACY_MODULES=ON. See cpptlm_config/types.py for details.
         self.assertEqual(ModuleType.CPU_SIM.value, "CPUSim")
 
     def test_module_type_from_string(self):
