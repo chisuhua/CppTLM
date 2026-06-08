@@ -10,11 +10,6 @@
 #include "framework/transaction_tracker.hh"
 #include "framework/debug_tracker.hh"
 
-// 前置声明：模块将在后续实现
-class CacheV2;
-class CrossbarV2;
-class MemoryV2;
-
 // ========== 模拟模块用于测试框架集成 ==========
 
 class MockResettableModule : public SimObject {
