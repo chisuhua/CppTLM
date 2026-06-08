@@ -6,7 +6,7 @@ TEST_BIN="${BUILD_DIR}/bin/cpptlm_tests"
 PYTEST="python3 -m pytest"
 EXECUTABLES=(
     "cpptlm_sim"
- "stats_demo"
+"stats_demo"
     "traffic_gen_demo"
 )
 
