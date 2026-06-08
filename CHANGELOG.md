@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [v2.1.0] - 2026-06-08
 
 ### Added
 - tlm_stub multi-extension support (SystemC TLM 2.0 API compatible)
@@ -11,6 +11,8 @@
 - test_tlm_multi_extension.cc with 12 test cases (auto-globbed by test/CMakeLists.txt)
 - docs/adr/ADR-X.13-stub-multi-extension.md
 - .github/workflows/ci.yml code-format job (aligns with AGENTS.md)
+- BUILD_LEGACY_MODULES CMake option (default OFF, #ifdef guard for legacy CPUSim/CpuCluster)
+- include/AGENTS.md: BUILD_LEGACY_MODULES documentation in registration macro table
 
 ### Changed
 - **BREAKING**: tlm_extension<T>::ID migrated from per-TU function-local static
@@ -22,6 +24,16 @@
 - include/core/ext/cmd_exts.hh reduced to macros-only library
   (deleted duplicate ReadCmdExt/WriteCmdExt/etc. class definitions; only
   ReqIDExt is unique to cmd_exts.hh)
+- CMakeLists.txt version synced from 2.0.3 to 2.1.0
+- docs/architecture/README.md index updated to v2.1
+- docs/architecture/01-hybrid-architecture-v2.1.md: §4.4 pseudocode corrected
+- docs/architecture/01-hybrid-architecture-v2.1.md: Bundle description updated to lightweight
+- docs/architecture/02-complex-topology-architecture.md: class names updated
+  (MeshRouter→RouterTLM, Processor→CPUTLM, Bus→BusSim, Crossbar→CrossbarTLM)
+- docs/architecture/02-transaction-architecture.md: version label v1.0→v2.1
+- include/AGENTS.md: dual registry design intent documentation
+- include/core/AGENTS.md: dual registry motivation paragraph
+- include/modules.hh: design intent header comment added
 
 ### Removed
 - **BREAKING**: USE_SYSTEMC build option (always use TLM stub)
@@ -35,13 +47,13 @@
 - mock_modules.hh duplicate #ifdef USE_SYSTEMC_STUB nesting
 - test/*.cc, include/ext/*.hh, include/core/ext/*.hh:16 files'
   #ifdef USE_SYSTEMC_STUB blocks (USE_SYSTEMC option is gone; only stub path)
+- include/modules/legacy/modules_v2.hh (208-line v2 module definitions, archived)
+- 5 test files migrated from v2 to TLM modules
+  (test_phase5_modules.cc, test_phase6_regression.cc, test_phase7_transaction_lifecycle.cc,
+   test_phase8_performance_stress.cc, test_p3_2_tlm_integration.cc)
 
 ### Fixed
 - MemoryV2 error path no longer silently destroys upstream
   TransactionContextExt (modules_v2.hh:79 + Phase 1c multi-extension
   array implementation co-fix)
 - Type ID cross-TU consistency (no more per-TU local static counter)
-
-## [v2.1.0] - 2026-06-05
-
-Initial tagged snapshot (pre-refactor baseline).
