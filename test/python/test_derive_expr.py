@@ -5,7 +5,7 @@ import unittest
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "stats"))
 
 from derive_expr import evaluate, evaluate_ternary, DeriveExprError
 
