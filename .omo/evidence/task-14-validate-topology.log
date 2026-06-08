@@ -1,0 +1,23 @@
+[ 92%] Built target cpptlm_core
+[100%] Validating all topology configurations...
+
+[TopologyValidator] /workspace/project/CppTLM/configs/mesh_2x2_tlm.json
+==================================================
+  ALL VALIDATIONS PASSED
+==================================================
+
+[TopologyValidator] /workspace/project/CppTLM/configs/mesh_4x4_tlm.json
+==================================================
+  ALL VALIDATIONS PASSED
+==================================================
+
+[TopologyValidator] /workspace/project/CppTLM/configs/ring_8_tlm.json
+==================================================
+  FAIL: [VALID-02] Unreachable terminals from node_0: ['node_1', 'node_2', 'node_3', 'node_4', 'node_5', 'node_6', 'node_7']
+    Suggestion: Check connectivity graph
+  VALIDATION FAILED
+==================================================
+gmake[3]: *** [scripts/CMakeFiles/validate_topology.dir/build.make:73: scripts/CMakeFiles/validate_topology] Error 1
+gmake[2]: *** [CMakeFiles/Makefile2:1331: scripts/CMakeFiles/validate_topology.dir/all] Error 2
+gmake[1]: *** [CMakeFiles/Makefile2:1338: scripts/CMakeFiles/validate_topology.dir/rule] Error 2
+gmake: *** [Makefile:738: validate_topology] Error 2
