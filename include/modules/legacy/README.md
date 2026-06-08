@@ -8,14 +8,6 @@ They are kept for backward compatibility with v2.0 projects only.
 **New development should use ChStream/StreamAdapter pattern** and place
 new modules in `../include/tlm/` instead.
 
-## Migration Map (v2.0 → v2.1)
-
-| Legacy Module | Replacement |
-|---------------|-------------|
-| `CrossbarV2`  | `CrossbarTLM` (in `include/tlm/crossbar_tlm.hh`) |
-| `CacheV2`     | `CacheTLM` (in `include/tlm/cache_tlm.hh`) |
-| `MemoryV2`    | `MemoryTLM` (in `include/tlm/memory_tlm.hh`) |
-
 ## Why Deprecated?
 
 - **Architecture**: ChStream/StreamAdapter pattern is the v2.1 standard
