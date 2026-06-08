@@ -11,7 +11,7 @@
 
 | 文档 | 状态 | 说明 |
 |------|------|------|
-| [01-hybrid-architecture-v2.md](./01-hybrid-architecture-v2.md) | ✅ 已批准 | 混合仿真架构 v2.0 |
+| [01-hybrid-architecture-v2.1.md](./01-hybrid-architecture-v2.1.md) | ✅ 已批准 | 混合仿真架构 v2.1 |
 | [02-transaction-architecture.md](./02-transaction-architecture.md) | ✅ 已批准 | 交易处理架构 |
 | [03-error-debug-architecture.md](./03-error-debug-architecture.md) | ✅ 已批准 | 错误与调试架构 |
 | [04-reset-checkpoint-architecture.md](./04-reset-checkpoint-architecture.md) | 📋 待确认 | 复位与快照架构 |
@@ -37,7 +37,7 @@
 
 ## 推荐阅读顺序
 
-1. 01-hybrid-architecture-v2 - 整体架构
+1. 01-hybrid-architecture-v2.1 - 整体架构
 2. P0_P1_P2_DECISIONS - 核心决策
 3. 02-transaction-architecture - 交易处理
 4. 03-error-debug-architecture - 错误处理
