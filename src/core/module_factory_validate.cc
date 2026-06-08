@@ -1,4 +1,34 @@
-// src/module_factory_validate.cc
+/**
+ * @file module_factory_validate.cc
+ * @brief ModuleFactory 配置验证与 extends 处理实现
+ * 
+ * 本文件实现 ModuleFactory 的配置验证逻辑，负责：
+ * - **extends 处理**：mergeConfigs() 递归合并继承配置
+ * - **配置验证**：validateConfig() 检查 modules/connections 必需字段
+ * - **参数解析**：parseModuleParams() 处理模块参数注入
+ * - **拓扑验证**：validateTopology() 检查连接完整性
+ * 
+ * ## 核心功能
+ * - `mergeConfigs(base, child, depth)` — 深度合并 JSON 配置，支持 circular reference 检测
+ * - `validateConfig(config)` — 验证 JSON 拓扑配置合法性
+ * - `parseModuleParams(module_name, config)` — 解析模块参数并注入实例
+ * 
+ * ## extends 处理流程
+ * 1. 检测 circular reference（depth > MAX_DEPTH）
+ * 2. 深度合并 modules 数组（按 name 匹配）
+ * 3. 合并 connections 数组（追加）
+ * 4. 合并 module_groups（递归）
+ * 
+ * ## 使用注意事项
+ * - **深度限制**：MAX_DEPTH = 10，防止 circular reference
+ * - **模块合并**：同名模块配置深度合并，不同名追加
+ * - **验证时机**：instantiateAll() 调用前执行 validateConfig()
+ * 
+ * @author CppTLM Team
+ * @date 2024-05
+ * @see module_factory.hh
+ * @see utils/config_utils.hh
+ */
 
 #include "module_factory.hh"
 #include "sim_module.hh"
