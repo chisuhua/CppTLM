@@ -1,5 +1,55 @@
-// include/tlm/arbiter_tlm.hh
-// ArbiterTLM：多端口仲裁模块（v2.1 TLM）
+/**
+ * @file arbiter_tlm.hh
+ * @brief ArbiterTLM - 多端口仲裁模块（v2.1 TLM）
+ * 
+ * ArbiterTLM 是一个模板化的多端口仲裁器，用于在 N_PORTS 个输入端口间
+ * 进行请求仲裁并路由到单一输出端口。支持 Round-Robin 仲裁策略，
+ * 自动追踪事务 ID 以确保响应正确路由回源端口。
+ * 
+ * ## 功能特性
+ * - **多端口仲裁**：N_PORTS 个输入端口，单一输出端口
+ * - **Round-Robin 策略**：公平轮转，last_served_ 记录上次服务端口
+ * - **事务追踪**：txn_to_port_ 映射 transaction_id → src_port
+ * - **响应路由**：自动将响应路由回正确的源端口
+ * 
+ * ## 端口结构
+ * - **输入**：req_in[N_PORTS] (InputStreamAdapter<CacheReqBundle>)
+ * - **输出**：req_out (OutputStreamAdapter<CacheReqBundle>) — 仲裁后统一输出
+ * - **响应输入**：resp_in (InputStreamAdapter<CacheRespBundle>) — 从下游返回
+ * - **响应输出**：resp_out[N_PORTS] (OutputStreamAdapter<CacheRespBundle>) — 路由回源端口
+ * 
+ * ## 使用示例
+ * ```cpp
+ * // 4 端口仲裁器实例化
+ * ArbiterTLM<4> arbiter("arbiter", event_queue);
+ * 
+ * // JSON 配置连接
+ * // "connections": [
+ *   {"src": "cache0.req_out", "dst": "arbiter.req_in.0"},
+ *   {"src": "cache1.req_out", "dst": "arbiter.req_in.1"},
+ *   {"src": "arbiter.req_out", "dst": "memory.req_in"}
+ * ]
+ * ```
+ * 
+ * ## 注册方式
+ * 使用 REGISTER_CHSTREAM 宏注册：
+ * ```cpp
+ * REGISTER_CHSTREAM(ArbiterTLM<4>, "ArbiterTLM4")
+ * ```
+ * 
+ * ## 注意事项
+ * - 模板参数 N_PORTS 必须在编译期确定
+ * - tick() 每周期执行：接收请求 → 仲裁 → 发送 → 处理响应
+ * - txn_to_port_ 自动清理已完成事务
+ * - 通过 set_stream_adapter() 注入 MultiPortStreamAdapter
+ * 
+ * @tparam N_PORTS 输入端口数量
+ * @author CppTLM Team
+ * @date 2024-05
+ * @see ChStreamModuleBase
+ * @see bundles/cache_bundles_tlm.hh
+ */
+
 #ifndef TLM_ARBITER_TLM_HH
 #define TLM_ARBITER_TLM_HH
 

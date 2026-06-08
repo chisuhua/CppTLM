@@ -1,4 +1,42 @@
-// src/module_factory.cc
+/**
+ * @file module_factory.cc
+ * @brief ModuleFactory 核心实现 - 双注册表、实例化、拓扑连接、StreamAdapter 注入
+ * 
+ * 本文件实现 ModuleFactory 类的核心流程，负责：
+ * - **双注册表管理**：getObjectRegistry() / getModuleRegistry() 分离对象与模块注册
+ * - **JSON 拓扑实例化**：instantiateAll() 从配置创建所有模块实例
+ * - **端口连接解析**：resolveConnections() 处理 "module.port_index" 语法
+ * - **StreamAdapter 注入**：Step 7 为 ChStreamModuleBase 模块注入适配器
+ * 
+ * ## 核心流程（8 步）
+ * 1. registerAllObjects()    → 从 REGISTRY 注入所有 SimObject
+ * 2. registerAllModules()    → 从 REGISTRY 注入所有 SimModule
+ * 3. loadPlugins()           → dlopen 动态加载 .so 插件
+ * 4. instantiateAll()        → 从 JSON 配置实例化所有模块
+ * 5. resolveConnections()    → 根据 connections 数组连接端口
+ * 6. loadGroupTopology()     → 处理 module_groups 层级拓扑
+ * 7. injectStreamAdapters()  → 为 ChStreamModuleBase 创建并注入 StreamAdapter
+ * 8. startAllTicks()         → 启动所有模块 tick() 循环
+ * 
+ * ## 关键 API
+ * - `instantiateAll(config)` — 主入口，执行完整实例化流程
+ * - `parsePortSpec(name)` — 解析 "xbar.0" → ("xbar", 0)
+ * - `injectStreamAdapters()` — Step 7，创建 ChStreamAdapterFactory 适配器
+ * - `stream_adapters_` — vector<unique_ptr<StreamAdapterBase>> 适配器生命周期管理
+ * 
+ * ## 使用注意事项
+ * - **显式源文件**：CMakeLists.txt 使用 set(CORE_SOURCES ...) 显式列举，禁用 GLOB
+ * - **端口索引语法**：JSON 连接支持 "dst": "xbar.0" 表示模块 xbar 的第 0 端口
+ * - **StreamAdapter 生命周期**：由 ModuleFactory::stream_adapters_ 管理，模块析构前自动清理
+ * - **插件加载**：loadPlugins() 使用 dlopen/dlsym，需确保 .so 符合 REGISTER_OBJECT 约定
+ * 
+ * @author CppTLM Team
+ * @date 2024-05
+ * @see module_factory.hh
+ * @see core/connection_resolver.hh
+ * @see framework/stream_adapter.hh
+ */
+
 #include "module_factory.hh"
 #include "sim_module.hh"
 #include "core/connection_resolver.hh"

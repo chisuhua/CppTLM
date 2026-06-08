@@ -1,9 +1,64 @@
-// include/framework/dual_port_stream_adapter.hh
-// 双端口非对称 StreamAdapter：NIC 模块使用两组独立的端口对
-// 功能描述：NICTLM 等模块同时需要 PE 侧（CacheReqBundle/CacheRespBundle）
-//           和 Network 侧（NoCReqBundle/NoCRespBundle）的独立通信通道
-// 作者 CppTLM Team
-// 日期 2026-04-14
+/**
+ * @file dual_port_stream_adapter.hh
+ * @brief 双端口非对称 StreamAdapter - 用于 NIC 等需要两组独立端口的模块
+ * 
+ * DualPortStreamAdapter 为 NICTLM 等模块提供两组独立的通信通道：
+ * - **PE 侧**：连接 CPU/Cache，使用 CacheReqBundle/CacheRespBundle
+ * - **Network 侧**：连接 Router/NoC，使用 NoCReqBundle/NoCRespBundle
+ * 
+ * 两组端口各自独立，Bundle 类型可不同（非对称设计）。
+ * 
+ * ## 模板参数
+ * - `ModuleT` — 模块类型（如 NICTLM）
+ * - `PE_ReqBundleT` — PE 侧请求 Bundle（如 CacheReqBundle）
+ * - `PE_RespBundleT` — PE 侧响应 Bundle（如 CacheRespBundle）
+ * - `Net_ReqBundleT` — Network 侧请求 Bundle（如 NoCReqBundle）
+ * - `Net_RespBundleT` — Network 侧响应 Bundle（如 NoCRespBundle）
+ * 
+ * ## 端口访问器约定（ModuleT 必须提供）
+ * ```cpp
+ * // PE 侧端口
+ * InputStreamAdapter<PE_ReqBundleT>&   pe_req_in();
+ * OutputStreamAdapter<PE_RespBundleT>& pe_resp_out();
+ * 
+ * // Network 侧端口
+ * InputStreamAdapter<Net_ReqBundleT>&  net_req_in();
+ * OutputStreamAdapter<Net_RespBundleT>& net_resp_out();
+ * OutputStreamAdapter<PE_ReqBundleT>&  net_req_out();  // 往 NoC 发送
+ * InputStreamAdapter<PE_RespBundleT>&  pe_resp_in();   // 从 NoC 接收
+ * ```
+ * 
+ * ## 使用示例
+ * ```cpp
+ * // NICTLM 使用双端口适配器
+ * using NICAdapter = DualPortStreamAdapter<
+ *     NICTLM,
+ *     CacheReqBundle, CacheRespBundle,  // PE 侧
+ *     NoCReqBundle, NoCRespBundle       // Network 侧
+ * >;
+ * 
+ * NICAdapter adapter(&nic_module);
+ * adapter.bind_pe_ports(pe_req_out, pe_resp_in, ...);
+ * adapter.bind_net_ports(net_req_out, net_resp_in, ...);
+ * ```
+ * 
+ * ## 关键 API
+ * - `bind_pe_ports(...)` — 绑定 PE 侧端口对
+ * - `bind_net_ports(...)` — 绑定 Network 侧端口对
+ * - `tick()` — 每周期执行：PE ↔ Network 双向转发
+ * 
+ * ## 注意事项
+ * - **非对称设计**：PE 和 Network Bundle 类型可不同
+ * - **双向通信**：支持 PE→Network 和 Network→PE 双向流量
+ * - **生命周期**：由 ModuleFactory::stream_adapters_ 管理
+ * 
+ * @author CppTLM Team
+ * @date 2024-04-23
+ * @see framework/stream_adapter.hh
+ * @see bundles/cache_bundles_tlm.hh
+ * @see bundles/noc_bundles_tlm.hh
+ */
+
 #ifndef FRAMEWORK_DUAL_PORT_STREAM_ADAPTER_HH
 #define FRAMEWORK_DUAL_PORT_STREAM_ADAPTER_HH
 

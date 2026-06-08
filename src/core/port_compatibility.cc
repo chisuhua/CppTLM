@@ -1,8 +1,38 @@
-// src/core/port_compatibility.cc
-// SPDX-License-Identifier: Apache-2.0
-// Phase 3.2: 端口兼容性检查矩阵实现
-// 作者: CppTLM 开发团队
-// 创建日期: 2026-05-07
+/**
+ * @file port_compatibility.cc
+ * @brief 端口兼容性检查实现（Phase 3.2）
+ * @license Apache-2.0
+ * 
+ * 本文件实现 PortCompatibility 类，负责端口连接前的兼容性验证：
+ * - **角色兼容性**：check_role_matrix() 验证 Master/Slave 角色匹配
+ * - **Bundle 兼容性**：check_bundle_matrix() 验证 Bundle 类型匹配
+ * - **宽度兼容性**：is_width_compatible() 验证端口宽度（警告级）
+ * 
+ * ## 核心 API
+ * - `is_compatible(src, dst)` — 综合兼容性检查（role + bundle）
+ * - `get_incompatibility_reason(src, dst)` — 获取不兼容原因描述
+ * - `check_role_matrix(src_role, dst_role)` — 角色矩阵验证
+ * - `check_bundle_matrix(src_bundle, dst_bundle)` — Bundle 类型验证
+ * 
+ * ## 兼容性规则
+ * - **角色**：Master → Slave（单向），Master ↔ Master（双向需特殊处理）
+ * - **Bundle**：CacheReqBundle ↔ CacheRespBundle（匹配），NoCReqBundle ↔ NoCRespBundle
+ * - **宽度**：宽度不匹配仅 WARNING，不阻止连接（L3 规则）
+ * 
+ * ## 使用示例
+ * ```cpp
+ * PortCompatibility checker;
+ * if (!checker.is_compatible(src_port, dst_port)) {
+ *     std::string reason = checker.get_incompatibility_reason(src_port, dst_port);
+ *     DPRINTF(MODULE, "Port incompatibility: %s\n", reason.c_str());
+ * }
+ * ```
+ * 
+ * @author CppTLM Team
+ * @date 2024-05-07
+ * @see core/port_compatibility.hh
+ * @see core/port_types.hh
+ */
 
 #include "core/port_compatibility.hh"
 #include <algorithm>

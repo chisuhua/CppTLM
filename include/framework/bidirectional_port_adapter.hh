@@ -1,8 +1,59 @@
-// include/framework/bidirectional_port_adapter.hh
-// 双向端口 StreamAdapter：RouterTLM 等需要每端口双向通信的模块使用
-// 功能描述：RouterTLM 每个端口需要同时支持 req_in (接收) 和 resp_out (发送)，
-//           BidirectionalPortAdapter 管理 N 个双向端口对，每周期执行六阶段流水线
-// 作者 CppTLM Team / 日期 2026-04-23
+/**
+ * @file bidirectional_port_adapter.hh
+ * @brief 双向端口 StreamAdapter - 用于 Router 等每端口双向通信的模块
+ * 
+ * BidirectionalPortAdapter 为 RouterTLM 等模块提供 N 个双向端口：
+ * - **每个端口**：req_in（接收 flit）+ resp_out（发送 flit）
+ * - **典型应用**：RouterTLM 使用 5 端口（N/E/S/W/Local）
+ * 
+ * ## 模板参数
+ * - `ModuleT` — 模块类型（如 RouterTLM）
+ * - `BundleT` — 统一 Flit Bundle 类型（如 bundles::NoCFlitBundle）
+ * - `N` — 端口数量（RouterTLM 为 5）
+ * 
+ * ## 端口访问器约定（ModuleT 必须提供）
+ * ```cpp
+ * // 每个端口的双向访问器
+ * InputStreamAdapter<BundleT>&  req_in[port_idx]();   // 接收 flit
+ * OutputStreamAdapter<BundleT>& resp_out[port_idx](); // 发送 flit
+ * ```
+ * 
+ * ## 使用示例
+ * ```cpp
+ * // RouterTLM 使用 5 端口双向适配器
+ * using RouterAdapter = BidirectionalPortAdapter<
+ *     RouterTLM,
+ *     bundles::NoCFlitBundle,
+ *     5  // N/E/S/W/Local
+ * >;
+ * 
+ * RouterAdapter adapter(&router_module);
+ * adapter.bind_ports_array(req_out_ports, resp_in_ports, ...);
+ * ```
+ * 
+ * ## 关键 API
+ * - `bind_ports_array(...)` — 绑定所有端口数组
+ * - `bind_port_pair(port_idx, ...)` — 绑定单个端口对
+ * - `tick()` — 每周期执行：接收 → 处理 → 发送流水线
+ * 
+ * ## 流水线阶段（tick 内部）
+ * 1. **接收阶段**：从所有 req_in 端口接收 flit
+ * 2. **路由阶段**：模块内部路由决策
+ * 3. **发送阶段**：向目标 resp_out 端口发送 flit
+ * 4. **Credit 处理**：处理链路级 Credit 反馈
+ * 
+ * ## 注意事项
+ * - **双向通信**：每个端口同时支持接收和发送
+ * - **Credit 队列**：pending_credits_ 支持链路级流控建模
+ * - **端口索引**：0~N-1，RouterTLM 为 0(N)/1(E)/2(S)/3(W)/4(Local)
+ * - **生命周期**：由 ModuleFactory::stream_adapters_ 管理
+ * 
+ * @author CppTLM Team
+ * @date 2024-04-23
+ * @see framework/stream_adapter.hh
+ * @see bundles/noc_bundles_tlm.hh
+ */
+
 #ifndef FRAMEWORK_BIDIRECTIONAL_PORT_ADAPTER_HH
 #define FRAMEWORK_BIDIRECTIONAL_PORT_ADAPTER_HH
 
