@@ -1,10 +1,22 @@
 // test/test_p3_2_tlm_integration.cc
 // P3.2 Wave 4: TLM Module Integration Tests
+//
+// 迁移说明 (T4.4):
+//   - T12.3: CrossbarV2 → CrossbarTLM (Path A, 完全迁移)
+//   - T12.4: CacheV2    → CacheTLM    (Path A, 完全迁移, 通过 StatGroup 验证 misses)
+//   - T12.5/T12.6:     保留 TestTLM (TLMModule 派生类) 作为 P3.2 钩子测试模板 (Path B)
+//   - T12.7:           TransactionAction 枚举测试，与具体模块无关，保留
 
 #include <catch2/catch_all.hpp>
-#include "modules/legacy/modules_v2.hh"
+#include <cstring>
 #include "core/packet_pool.hh"
-#include "framework/transaction_tracker.hh"
+#include "core/tlm_module.hh"
+#include "tlm/crossbar_tlm.hh"
+#include "tlm/cache_tlm.hh"
+#include "bundles/cache_bundles_tlm.hh"
+#include "bundles/bundle_serialization.hh"
+#include "core/event_queue.hh"
+#include "metrics/stats.hh"
 
 using tlm::tlm_generic_payload;
 
@@ -13,7 +25,7 @@ class TestTLM : public TLMModule {
 public:
     TestTLM(const std::string& n, EventQueue* eq) : TLMModule(n, eq), hop_count(0) {}
     void tick() override {}
-    
+
     TransactionInfo onTransactionHop(Packet* p) override {
         hop_count++;
         TransactionInfo info;
@@ -21,7 +33,7 @@ public:
         if(p) info.transaction_id = p->get_transaction_id();
         return info;
     }
-    
+
     int hop_count;
 };
 
@@ -32,41 +44,44 @@ public:
 TEST_CASE("P3.2-T12.3: TLMModule Inheritance and Setup", "[P3.2][TLM][basic]") {
     GIVEN("A new TLM module") {
         EventQueue eq;
-        CrossbarV2 xbar("xbar", &eq);
-        
+        CrossbarTLM xbar("xbar", &eq);
+
         THEN("It should initialize correctly") {
-            REQUIRE(xbar.get_module_type() == "CrossbarV2");
+            REQUIRE(xbar.get_module_type() == "CrossbarTLM");
             REQUIRE(xbar.get_children().empty());
+            REQUIRE(xbar.num_ports() == 4);
         }
     }
 }
 
-TEST_CASE("P3.2-T12.4: CacheV2 Sub-Transaction Lifecycle", "[P3.2][TLM][sub]") {
-    EventQueue eq;
-    CacheV2 cache("l1", &eq);
-    
-    // Track the transaction
-    auto& tracker = TransactionTracker::instance();
-    tracker.initialize();
+TEST_CASE("P3.2-T12.4: CacheTLM Miss Lifecycle", "[P3.2][TLM][sub]") {
+    GIVEN("A CacheTLM with empty cache") {
+        EventQueue eq;
+        CacheTLM cache("l1", &eq);
 
-    WHEN("A cache miss occurs") {
-        Packet* req = PacketPool::get().acquire();
-        req->payload->set_address(0xDEAD); 
-        req->set_transaction_id(100);
-        
-        // Simulate request arriving
-        cache.handleUpstreamRequest(req, 0, "cpu");
-        
-        // Process
-        cache.tick();
-        
-        THEN("The transaction tracker should record a hop") {
-            // We can't easily verify the hop without exposing the tracker inside the module
-            // But we can check that the cache state changed or counters incremented
-            REQUIRE(cache.misses > 0);
+        WHEN("A read request for an uncached address arrives") {
+            // 注入 bundle 请求 (TLM 模式)
+            bundles::CacheReqBundle req(100, 0xDEAD, 8, /*is_write=*/false, /*data=*/0);
+            cache.req_in().consume();
+            std::memcpy(&cache.req_in().data(), &req, sizeof(req));
+            cache.req_in().set_valid(true);
+
+            // Process
+            cache.tick();
+
+            THEN("The cache should report a miss on the response and stat") {
+                REQUIRE(cache.resp_out().valid());
+                auto resp = cache.resp_out().data();
+                REQUIRE(resp.transaction_id.read() == 100);
+                REQUIRE(resp.is_hit.read() == false);
+                REQUIRE(resp.error_code.read() == 0);
+
+                // 验证 misses 统计递增 (替代 v2 的 cache.misses 公开字段)
+                auto* stat = static_cast<tlm_stats::Scalar*>(cache.stats().findStat("misses"));
+                REQUIRE(stat != nullptr);
+                REQUIRE(stat->value() > 0);
+            }
         }
-        
-        PacketPool::get().release(req);
     }
 }
 
