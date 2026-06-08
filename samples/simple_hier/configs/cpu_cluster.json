@@ -1,4 +1,5 @@
 {
+  "_deprecated": "DEPRECATED in v2.1: This config uses legacy CPUSim/CacheSim modules. Use configs referencing CPUTLM (include/tlm/cpu_tlm.hh) from the Phase 6 TLM module family for new projects. This file is kept for backward compatibility with v2.0 projects.",
   "modules": [
     { "name": "cpu0", "type": "CPUSim" },
     { "name": "cpu1", "type": "CPUSim" },
