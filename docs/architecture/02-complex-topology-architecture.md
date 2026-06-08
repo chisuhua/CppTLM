@@ -66,9 +66,9 @@ Step 7: StreamAdapter 注入         - ChStream 模块特殊处理
 
 | 问题 | 描述 | 影响 |
 |------|------|------|
-| **类型名不匹配** | `topology_generator.py` 生成 `MeshRouter`/`Processor`，但注册表只有 `Router`/`CPUSim` | 无法直接使用生成的配置 |
+| **类型名不匹配** | `topology_generator.py` 生成 `RouterTLM`/`CPUTLM`，但注册表只有 `Router`/`CPUSim` | 无法直接使用生成的配置 |
 | **无层次化拓扑** | 所有模块扁平化，无 SOC/子系统概念 | 难以描述多核、GPU 等复杂拓扑 |
-| **无路由器抽象** | 只有简单 Router 类，无网络拓扑构建能力 | 无法构建 Mesh/Ring/Crossbar 等 NoC |
+| **无路由器抽象** | 只有简单 Router 类，无网络拓扑构建能力 | 无法构建 Mesh/Ring/CrossbarTLM 等 NoC |
 | **无路由算法** | 连接是静态的，无 XY/West-First 等路由策略 | 无法模拟真实 NoC 行为 |
 | **无 NetworkInterface** | 没有 NI 概念，CPU 直接连路由器 | 与 gem5/SystemC 建模方式不一致 |
 
@@ -84,16 +84,16 @@ Step 7: StreamAdapter 注入         - ChStream 模块特殊处理
 # scripts/topology_generator.py - CPPTLM_TYPE_MAP
 CPPTLM_TYPE_MAP = {
     # 终端类型 ✅ 已实现
-    'Processor': 'CPUSim',           # ✅ → CPUSim (legacy)
+    'CPUTLM': 'CPUSim',           # ✅ → CPUSim (legacy)
     'Cache': 'CacheTLM',             # ✅ → CacheTLM
     'Memory': 'MemoryTLM',           # ✅ → MemoryTLM
     'NetworkInterface': 'NICTLM',    # ✅ → NICTLM (Phase 7 新增)
 
     # 网络类型 ✅ 已实现
     'Router': 'RouterTLM',          # ✅ → RouterTLM (Phase 7 新增)
-    'MeshRouter': 'RouterTLM',      # ✅ → RouterTLM (XY 路由)
-    'Bus': 'BusSim',               # ⚠️ → BusSim (legacy)
-    'Crossbar': 'CrossbarTLM',     # ✅ → CrossbarTLM
+    'RouterTLM': 'RouterTLM',      # ✅ → RouterTLM (XY 路由)
+    'BusSim': 'BusSim',               # ⚠️ → BusSim (legacy)
+    'CrossbarTLM': 'CrossbarTLM',     # ✅ → CrossbarTLM
 }
 ```
 
@@ -102,13 +102,13 @@ CPPTLM_TYPE_MAP = {
 | 架构文档类型 | 实现类 | 状态 | 说明 |
 |-------------|--------|------|------|
 | `NetworkInterface` | `NICTLM` | ✅ 已实现 | Phase 7: packetize/reassemble, AddressMap |
-| `MeshRouter` | `RouterTLM` | ✅ 已实现 | Phase 7: 六阶段流水线, XY 路由算法 |
+| `RouterTLM` | `RouterTLM` | ✅ 已实现 | Phase 7: 六阶段流水线, XY 路由算法 |
 | `Router` | `RouterTLM` | ✅ 已实现 | 通用路由器基类 |
-| `Processor` | `CPUSim` | ✅ 已有 | legacy 模块 |
+| `CPUTLM` | `CPUSim` | ✅ 已有 | legacy 模块 |
 | `Cache` | `CacheTLM` | ✅ 已有 | TLM 模块 |
 | `Memory` | `MemoryTLM` | ✅ 已有 | TLM 模块 |
-| `Crossbar` | `CrossbarTLM` | ✅ 已有 | TLM 模块 |
-| `Bus` | `BusSim` | ⚠️ legacy | 需迁移到 TLM |
+| `CrossbarTLM` | `CrossbarTLM` | ✅ 已有 | TLM 模块 |
+| `BusSim` | `BusSim` | ⚠️ legacy | 需迁移到 TLM |
 
 ### 1.3.3 CpuCluster 定位决策
 
@@ -283,7 +283,7 @@ Pipeline: 1-cycle default, 可配置多周期
 
 1. **层次化拓扑**: 支持 SOC、子系统、集群的多层描述
 2. **类型映射**: `topology_generator.py` 生成的类型与注册表匹配
-3. **NoC 抽象**: Mesh/Ring/Crossbar/Hierarchical 路由器网络
+3. **NoC 抽象**: Mesh/Ring/CrossbarTLM/Hierarchical 路由器网络
 4. **路由算法**: XY/West-First/自适应路由
 5. **NetworkInterface**: 终端节点与网络的桥接
 
@@ -323,15 +323,15 @@ Pipeline: 1-cycle default, 可配置多周期
 
 | 类型 | 类别 | 描述 | 对应 gem5 |
 |------|------|------|-----------|
-| `Processor` | 终端 | 处理器核 | CPU |
+| `CPUTLM` | 终端 | 处理器核 | CPU |
 | `Cache` | 终端 | 缓存控制器 | L1/L2/L3 Cache |
 | `Directory` | 终端 | 目录控制器 | Directory |
 | `Memory` | 终端 | 内存控制器 | Memory Controller |
 | `NetworkInterface` | 终端 | 网络接口 | NetworkInterface |
 | `Router` | 网络 | 路由器 | Switch/Router |
-| `MeshRouter` | 网络 | Mesh 专用路由器 | Mesh Router |
-| `Bus` | 网络 | 总线 | Bus |
-| `Crossbar` | 网络 | 交叉开关 | Crossbar |
+| `RouterTLM` | 网络 | Mesh 专用路由器 | Mesh Router |
+| `BusSim` | 网络 | 总线 | BusSim |
+| `CrossbarTLM` | 网络 | 交叉开关 | CrossbarTLM |
 
 ### 3.4 JSON 格式扩展
 
@@ -346,8 +346,8 @@ Pipeline: 1-cycle default, 可配置多周期
     "clusters": {
       "type": "mesh",
       "size": [2, 2],
-      "router_type": "MeshRouter",
-      "node_type": "Processor",
+      "router_type": "RouterTLM",
+      "node_type": "CPUTLM",
       "leaf_type": "Cache"
     },
     "interconnect": {
@@ -387,25 +387,25 @@ Pipeline: 1-cycle default, 可配置多周期
 
   "modules": [
     // Cluster 0
-    { "name": "cluster0_cpu0", "type": "Processor" },
-    { "name": "cluster0_cpu1", "type": "Processor" },
+    { "name": "cluster0_cpu0", "type": "CPUTLM" },
+    { "name": "cluster0_cpu1", "type": "CPUTLM" },
     { "name": "cluster0_l1_0", "type": "Cache" },
     { "name": "cluster0_l1_1", "type": "Cache" },
     { "name": "cluster0_ni_0", "type": "NetworkInterface" },
     { "name": "cluster0_ni_1", "type": "NetworkInterface" },
-    { "name": "cluster0_router", "type": "MeshRouter", "ports": 4 },
+    { "name": "cluster0_router", "type": "RouterTLM", "ports": 4 },
 
     // Cluster 1
-    { "name": "cluster1_cpu0", "type": "Processor" },
-    { "name": "cluster1_cpu1", "type": "Processor" },
+    { "name": "cluster1_cpu0", "type": "CPUTLM" },
+    { "name": "cluster1_cpu1", "type": "CPUTLM" },
     { "name": "cluster1_l1_0", "type": "Cache" },
     { "name": "cluster1_l1_1", "type": "Cache" },
     { "name": "cluster1_ni_0", "type": "NetworkInterface" },
     { "name": "cluster1_ni_1", "type": "NetworkInterface" },
-    { "name": "cluster1_router", "type": "MeshRouter", "ports": 4 },
+    { "name": "cluster1_router", "type": "RouterTLM", "ports": 4 },
 
     // Interconnect
-    { "name": "interconnect", "type": "Crossbar", "ports": 8 },
+    { "name": "interconnect", "type": "CrossbarTLM", "ports": 8 },
 
     // Memory Controllers
     { "name": "mem_ctrl_0", "type": "Directory" },
@@ -432,7 +432,7 @@ Pipeline: 1-cycle default, 可配置多周期
     { "src": "cluster1_ni_0", "dst": "cluster1_router.0" },
     { "src": "cluster1_ni_1", "dst": "cluster1_router.1" },
 
-    // Cluster 间连接 (通过 Crossbar)
+    // Cluster 间连接 (通过 CrossbarTLM)
     { "src": "cluster0_router", "dst": "interconnect.0" },
     { "src": "cluster1_router", "dst": "interconnect.1" },
 
@@ -506,7 +506,7 @@ public:
 
 ```cpp
 // include/tlm/mesh_router.hh
-class MeshRouter : public ChStreamModuleBase {
+class RouterTLM : public ChStreamModuleBase {
 public:
     static constexpr unsigned MAX_PORTS = 6;  // N/S/E/W + local + VC
 
@@ -529,11 +529,11 @@ private:
     int route_xy(int dst_x, int dst_y);
 
 public:
-    MeshRouter(const std::string& name, EventQueue* eq,
+    RouterTLM(const std::string& name, EventQueue* eq,
                unsigned rows, unsigned cols, unsigned radix = 5);
 
     void tick() override;
-    const char* get_module_type() const override { return "MeshRouter"; }
+    const char* get_module_type() const override { return "RouterTLM"; }
 };
 ```
 
@@ -587,7 +587,7 @@ public:
 # CppTLM 注册表类型映射 (Phase 7 已实现)
 CPPTLM_TYPE_MAP = {
     # 终端类型
-    'Processor': 'CPUSim',         # 处理器
+    'CPUTLM': 'CPUSim',         # 处理器
     'Cache': 'CacheTLM',           # 缓存
     'Memory': 'MemoryTLM',         # 内存
     'Directory': 'DirectoryCtrl', # 目录控制器
@@ -595,12 +595,12 @@ CPPTLM_TYPE_MAP = {
 
     # 网络类型
     'Router': 'RouterTLM',        # 通用路由器 (Phase 7 RouterTLM)
-    'MeshRouter': 'RouterTLM',    # Mesh 路由器 (Phase 7 RouterTLM, XY 路由)
-    'Bus': 'BusSim',             # 总线
-    'Crossbar': 'CrossbarTLM',   # 交叉开关
+    'RouterTLM': 'RouterTLM',    # Mesh 路由器 (Phase 7 RouterTLM, XY 路由)
+    'BusSim': 'BusSim',             # 总线
+    'CrossbarTLM': 'CrossbarTLM',   # 交叉开关
 }
 
-def generate_mesh(self, rows, cols, node_type='Processor'):
+def generate_mesh(self, rows, cols, node_type='CPUTLM'):
     # 生成节点时使用映射后的类型
     cpp_type = CPPTLM_TYPE_MAP.get(node_type, node_type)
     self.graph.add_node(node_id, type=cpp_type)
@@ -632,8 +632,8 @@ class TopologyGenerator:
         self.graph = nx.DiGraph()
 
     def generate_mesh(self, rows, cols,
-                      router_type='MeshRouter',
-                      node_type='Processor') -> 'TopologyGenerator':
+                      router_type='RouterTLM',
+                      node_type='CPUTLM') -> 'TopologyGenerator':
         """生成 2D Mesh 拓扑"""
         # 根据 target 生成对应类型名
         cpp_type = CPPTLM_TYPE_MAP.get(node_type, node_type)
@@ -642,18 +642,18 @@ class TopologyGenerator:
         # ... 创建路由器和节点
         return self
 
-    def generate_ring(self, num_nodes, node_type='Processor') -> 'TopologyGenerator':
+    def generate_ring(self, num_nodes, node_type='CPUTLM') -> 'TopologyGenerator':
         """生成 Ring 拓扑"""
         # ...
 
     def generate_hierarchical(self, levels, factor,
                               router_type='Router',
-                              leaf_type='Processor') -> 'TopologyGenerator':
+                              leaf_type='CPUTLM') -> 'TopologyGenerator':
         """生成层次化树状拓扑"""
         # ...
 
     def generate_crossbar(self, num_inputs, num_outputs) -> 'TopologyGenerator':
-        """生成 Crossbar 拓扑"""
+        """生成 CrossbarTLM 拓扑"""
         # ...
 
     def export_json_config(self, include_ni=True) -> dict:
@@ -751,7 +751,7 @@ public:
 
 | 任务 | 描述 | 优先级 | 状态 |
 |------|------|--------|------|
-| 实现 `MeshRouter` | 5 端口 Mesh 路由器 | P0 | ✅ 已完成 (RouterTLM) |
+| 实现 `RouterTLM` | 5 端口 Mesh 路由器 | P0 | ✅ 已完成 (RouterTLM) |
 | 实现 XY 路由算法 | 表驱动 + XY 路由 | P0 | ✅ 已完成 |
 | 实现 `MeshTopologyGenerator` | Mesh 拓扑生成器 | P1 | ✅ 已完成 |
 | 性能统计 | 链路利用率、路由器负载 | P2 | ⚠️ 后续 Phase |
