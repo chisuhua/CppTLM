@@ -1,3 +1,13 @@
+// =============================================================================
+// DEPRECATED in v2.1: This sample uses legacy CPUSim/CacheSim modules.
+// New projects should use CPUTLM (include/tlm/cpu_tlm.hh) from the Phase 6
+// TLM module family. This file is kept for backward compatibility with v2.0
+// projects and is NOT compiled by the default samples/CMakeLists.txt.
+//
+// To use this sample with the legacy modules enabled, build with:
+//     cmake -DBUILD_LEGACY_MODULES=ON
+// See docs-archived/ for migration guidance.
+// =============================================================================
 #ifndef CPU_CLUSTER_HH
 #define CPU_CLUSTER_HH
 
