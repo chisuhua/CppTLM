@@ -5,7 +5,7 @@ import unittest
 import sys
 import os
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "scripts", "topology"))
 
 from credit_flow import calculate_vc_credits, calculate_mesh_credits, generate_credit_config
 

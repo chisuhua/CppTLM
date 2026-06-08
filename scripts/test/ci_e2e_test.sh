@@ -77,9 +77,9 @@ run_sim_test "TrafficGenTLM 双生成器"      "configs/traffic_gen_tlm_test.jso
 
 # NoC 拓扑配置
 run_sim_test "NIC→Router→NIC 最小拓扑"     "configs/test/nic_router_nic.json" 200
-run_sim_test "mesh_2x2 拓扑"               "configs/mesh_2x2.json"            200
+run_sim_test "mesh_2x2 拓扑"               "configs/mesh_2x2_tlm.json"        200
 run_sim_test "mesh_4x4 大规模拓扑"         "configs/mesh_4x4.json"            100
-run_sim_test "hierarchical_2x2 分层拓扑"   "configs/hierarchical_2x2.json"    100
+run_sim_test "hierarchical_2x2 分层拓扑"   "configs/hierarchical_2x2_tlm.json" 100
 
 echo ""
 echo "=========================================="
