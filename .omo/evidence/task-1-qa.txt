@@ -1,0 +1,5 @@
+=== Task1 QA Results ===
+[OK] grep -n "cpptlm_cpu|cpptlm_traffic" scripts/run_all_tests.sh → no matches (CLEAN)
+[OK] bash -n scripts/run_all_tests.sh → exit0 (SYNTAX OK)
+[OK] EXECUTABLES array dry-run → contains: cpptlm_sim stats_demo traffic_gen_demo (3 items, no ghosts)
+[OK] elif branch removed (cpptlm_cpu/cpptlm_traffic no longer referenced)
