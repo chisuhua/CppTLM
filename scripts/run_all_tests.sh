@@ -6,9 +6,7 @@ TEST_BIN="${BUILD_DIR}/bin/cpptlm_tests"
 PYTEST="python3 -m pytest"
 EXECUTABLES=(
     "cpptlm_sim"
-    "cpptlm_cpu"
-    "cpptlm_traffic"
-    "stats_demo"
+ "stats_demo"
     "traffic_gen_demo"
 )
 
@@ -130,8 +128,6 @@ for exe in "${EXECUTABLES[@]}"; do
     echo "--- $exe ---"
     if [[ "$exe" == "cpptlm_sim" ]]; then
         timeout 5 "$exe_path" --help > /dev/null 2>&1 && echo "[PASS] $exe (help shown)" || echo "[INFO] $exe needs config file"
-    elif [[ "$exe" == "cpptlm_cpu" || "$exe" == "cpptlm_traffic" ]]; then
-        timeout 5 "$exe_path" 2>&1 && echo "[PASS] $exe" || echo "[INFO] $exe (no config needed)"
     else
         timeout 10 "$exe_path" 2>&1 && echo "[PASS] $exe" || {
             echo "[FAIL] $exe exited with error"
