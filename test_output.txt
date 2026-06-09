@@ -1,5 +1,0 @@
-Filters: [chstream]
-Randomness seeded to: 51755646
-===============================================================================
-All tests passed (131 assertions in 31 test cases)
-
