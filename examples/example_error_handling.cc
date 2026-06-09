@@ -4,6 +4,7 @@
 
 #include "core/sim_object.hh"
 #include "core/packet.hh"
+#include "core/ext/packet_pool.hh"
 #include "core/error_category.hh"
 #include "ext/error_context_ext.hh"
 #include "framework/debug_tracker.hh"
@@ -82,19 +83,18 @@ int main() {
     // ========== 2. 模拟正常请求 ==========
     EventQueue eq;
     MemoryWithError memory("memory", &eq, 0x10000);  // 64KB
-    
-    tlm::tlm_generic_payload payload1;
-    payload1.set_address(0x1000);  // 有效地址
-    Packet* pkt1 = new Packet(&payload1, 0, PKT_REQ);
-    
+
+    // 通过 PacketPool 获取 Packet(私有构造函数，仅 friend PacketPool 可访问)
+    Packet* pkt1 = PacketPool::get().acquire();
+    pkt1->payload->set_address(0x1000);  // 有效地址
+
     bool ok1 = memory.handleRequest(pkt1);
     std::cout << "[2] 正常请求 (addr=0x1000): " << (ok1 ? "成功" : "失败") << std::endl;
-    
+
     // ========== 3. 模拟错误请求 ==========
-    tlm::tlm_generic_payload payload2;
-    payload2.set_address(0x20000);  // 超出范围
-    Packet* pkt2 = new Packet(&payload2, 0, PKT_REQ);
-    
+    Packet* pkt2 = PacketPool::get().acquire();
+    pkt2->payload->set_address(0x20000);  // 超出范围
+
     bool ok2 = memory.handleRequest(pkt2);
     std::cout << "[3] 错误请求 (addr=0x20000): " << (ok2 ? "成功" : "失败") << std::endl;
     
@@ -124,7 +124,8 @@ int main() {
     auto history = tracker.get_state_history(0x1000);
     std::cout << "[6] 地址 0x1000 状态历史:" << std::endl;
     for (const auto& snap : history) {
-        std::cout << "    " << snap.from_state << " -> " << snap.to_state
+        std::cout << "    " << coherence_state_to_string(snap.from_state)
+                  << " -> " << coherence_state_to_string(snap.to_state)
                   << " (event: " << snap.event << ")" << std::endl;
     }
     

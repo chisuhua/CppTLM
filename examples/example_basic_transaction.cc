@@ -35,9 +35,13 @@ int main() {
     std::cout << "[2] 创建交易 ID: " << tid << std::endl;
     
     // ========== 3. 设置 Packet ==========
-    Packet* pkt = new Packet(&payload, 0, PKT_REQ);
+    // Packet 构造函数为 private，仅 PacketPool (friend) 可创建。
+    // 正确用法：acquire() 获取，release() 归还。
+    Packet* pkt = PacketPool::get().acquire();
+    // 将 tracker 创建的 payload 与 Packet 关联（payload 字段为 public）
+    pkt->payload = &payload;
     pkt->set_transaction_id(tid);
-    
+
     std::cout << "[3] Packet 设置 transaction_id: " << pkt->get_transaction_id() << std::endl;
     
     // ========== 4. 记录 hop 延迟 ==========
