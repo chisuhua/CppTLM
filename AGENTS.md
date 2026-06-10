@@ -16,6 +16,7 @@ CppTLM/
 ├── include/         # 头文件全部在此（10 子目录，无 src 头文件混用）
 │   ├── core/        # 核心：SimObject/ModuleFactory/Port/ChStream 基类
 │   ├── tlm/         # TLM 2.0 模块：CacheTLM, CrossbarTLM, MemoryTLM
+│   │   └── gpu/      # Phase7.A+ GPU 模块：GPUTLM v0 (黑盒发起器，2026-06-11)
 │   ├── framework/   # StreamAdapter 适配器（ChStream↔TLM 转换层）
 │   ├── bundles/     # Bundle 定义（CacheReqBundle, CacheRespBundle 等）
 │   ├── modules/     # 旧版 Legacy 模块（已迁移至 modules/legacy/ 子目录）
