@@ -11,6 +11,8 @@
 #include "tlm/router_tlm.hh"
 #include "tlm/nic_tlm.hh"
 #include "tlm/link_tlm.hh"
+#include "tlm/gpu/gpu_tlm.hh"
+#include "bundles/compute_bundles_tlm.hh"
 #include "rtl/hybrid_cache_wrapper.hh"
 #include "core/module_factory.hh"
 #include "framework/chstream_adapter_factory.hh"
@@ -37,6 +39,7 @@
     ModuleFactory::registerObject<tlm::RouterTLM>("RouterTLM"); \
     ModuleFactory::registerObject<tlm::NICTLM>("NICTLM"); \
     ModuleFactory::registerObject<tlm::LinkTLM>("LinkTLM"); \
+    ModuleFactory::registerObject<tlm::GPUTLM>("GPUTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
@@ -58,6 +61,8 @@
         bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<tlm::LinkTLM, \
         bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM"); \
+    ChStreamAdapterFactory::get().registerAdapter<tlm::GPUTLM, \
+        bundles::ComputeReqBundle, bundles::ComputeRespBundle>("GPUTLM"); \
     /* HybridCacheWrapper 的 .cc 实现位于 src/rtl/，仅在 BUILD_RTL=ON 时编译。
        宏体内不能直接用 ifdef 因续行问题，改用空宏守卫
        HYBRID_CACHE_WRAPPER_REGISTER_RTL：BUILD_RTL=OFF 时展开为空注释，
