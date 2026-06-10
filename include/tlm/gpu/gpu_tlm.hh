@@ -20,6 +20,8 @@
 #include <unordered_map>
 #include <random>
 
+namespace tlm {
+
 class GPUTLM : public ChStreamModuleBase {
 private:
     // === 适配器（与 CPUTLM 完全同型）===
@@ -199,5 +201,7 @@ private:
     tlm_stats::Scalar       reads_{"reads"};
     tlm_stats::Distribution latency_{"latency"};
 };
+
+} // namespace tlm
 
 #endif // TLM_GPU_GPU_TLM_HH
