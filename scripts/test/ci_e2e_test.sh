@@ -4,8 +4,10 @@
 
 set -euo pipefail
 
-SIM_BIN="${CPPTLM_SIM:-./build/bin/cpptlm_sim}"
-PROJECT_DIR="${CPPTLM_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
+# 解析脚本自身所在目录 (scripts/test/)，向上两级到项目根
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SIM_BIN="${CPPTLM_SIM:-$SCRIPT_DIR/../../build/bin/cpptlm_sim}"
+PROJECT_DIR="${CPPTLM_DIR:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 cd "$PROJECT_DIR"
 
 if [ ! -x "$SIM_BIN" ]; then
