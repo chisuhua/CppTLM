@@ -27,4 +27,15 @@ cmake --build build --target validate_topology
 # CI 集成测试
 ./scripts/test/ci_e2e_test.sh
 ./scripts/test/run_all_tests.sh --quick
+
+# 文档路径同步检查（pre-commit hook 也会自动运行）
+./scripts/test/docs_sync_check.sh --strict
 ```
+
+## 文档同步检查 (`scripts/test/docs_sync_check.sh`)
+
+- 扫描 `AGENTS.md` / `docs/ONBOARDING.md` / `roadmap.md` / `scripts/README.md` 中所有 `path/to/file.ext` 反引号引用
+- 通过 CMake `INCLUDE_PATH_PREFIXES` 智能补全（处理无 `core/` 前缀的简写形式如 `<file>.hh`）
+- 通过 `VIRTUAL_PATHS` 数组排除已删除/归档文件（仅在文档中说明删除原因时引用）
+- `--strict` 模式发现任何缺失返回非零退出码（用于 pre-commit hook）
+- 当前快照：[`docs/docs_audit_report.md`](../docs/docs_audit_report.md)

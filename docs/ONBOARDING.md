@@ -53,7 +53,7 @@
 - **端口系统**:`port_types.hh`(类型系统)、`master_port.hh` / `slave_port.hh` / `simple_port.hh`、`port_manager.hh` ⭐complex
 - **拓扑与连接**:`topology_node.hh`、`topology_parser.hh`、`connection_resolver.hh` + `src/core/connection_resolver.cc`
 - **工厂**:`module_factory.hh` ⭐complex + `src/core/module_factory.cc` ⭐complex(604 行)+ `src/core/module_factory_validate.cc` ⭐complex(396 行)
-- **数据包**:`packet.hh` ⭐complex、`packet_pool.hh`、`ext/packet_pool.hh`、`ext/packet_to_payload.hh`、`ext/payload_to_packet.hh`
+- **数据包**:`packet.hh` ⭐complex、`packet_pool.hh`、`ext/packet_pool.hh`（v2.1 已归档 `ext/packet_to_payload.hh` 和 `ext/payload_to_packet.hh` 到 `docs-archived/dead-code-headers-2026-q2/`）
 - **其他核心**:`sim_core.hh`、`event_queue.hh`、`cmd.hh`、`coherence_domain.hh`、`virtual_channel.hh`、`load_policy.hh`、`param_parser.hh`、`param_rules.hh`、`param_errors.hh`、`error_category.hh`、`plugin_loader.hh`、`plugin_load_exception.hh`、`port_compatibility.hh`、`port_stats.hh`、`stream_adapter_base.hh`
 - **注册宏**:`include/chstream_register.hh`(注册 ChStream 三件套)、`include/modules.hh`(注册 Object/Module)
 
@@ -78,10 +78,10 @@ ChStream ↔ TLM 2.0 适配器桥接:
 - **TLM 扩展**(`include/ext/`):`credit_stream.hh`(反压)、`error_context_ext.hh`(183 行)、`transaction_context_ext.hh`(100 行)、`mem_exts.hh`(117 行)
 - **工具**(`include/utils/`):`config_utils.hh`、`dynamic_loader.hh`(插件加载)、`regex_matcher.hh`、`wildcard.hh`(通配符)、`json_includer.hh`、`module_group.hh`、`var_resolver.hh`、`force_directed_layout.hh` ⭐complex
 - **指标**(`include/metrics/`):`stats_manager.hh`、`stats.hh` ⭐complex(421 行)、`histogram.hh`、`metrics_reporter.hh` ⭐complex(249 行)、`streaming_reporter.hh` ⭐complex(273 行)
-- **Legacy**(`include/modules/legacy/`):`cpu_cluster.hh`、`cpu_sim.hh`、`modules_v2.hh` — 已归档,仅修严重 bug
+- **Legacy**(`include/modules/legacy/`):`cpu_cluster.hh`、`cpu_sim.hh` — 已归档,仅修严重 bug（`modules_v2.hh` 已 v2.1 移除并归档至 `docs-archived/`）
 
 ### 2.7 C++ 入口与测试 (Entry Points & Tests)
-- **入口**(`src/`):`main.cpp`(122 行,默认仿真)、`cpu_main.cpp`(13 行)、`traffic_main.cpp`(20 行)、`sc_main.cpp`(10 行)
+- **入口**(`src/`):`main.cpp`(122 行,默认仿真,构建产物 `cpptlm_sim`)；v2.1 已移除 `cpu_main.cpp` / `traffic_main.cpp` / `sc_main.cpp`
 - **测试**(`test/`,共 77 个):`catch_amalgamated.cpp`(9820 行,326 函数)+ `catch_amalgamated.hpp` 单二进制;集成测试 `test_phase6_integration.cc` 验证 Cache→Crossbar→Memory 端到端;`test_e2e_simulation.cc`(491 行)、`test_stress_*` 压力测试、`test_tgms_v4_hierarchy_integration.cc` 层级拓扑
 
 ### 2.8 Python 工具链
@@ -136,7 +136,7 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 | 7 | StreamAdapter 适配层 | `include/framework/stream_adapter.hh`、`multi_port_stream_adapter.hh`、`dual_port_stream_adapter.hh`、`bidirectional_port_adapter.hh`、`debug_tracker.hh`、`transaction_tracker.hh` |
 | 8 | TLM 扩展插件 | `include/ext/credit_stream.hh`、`error_context_ext.hh`、`transaction_context_ext.hh`、`mem_exts.hh` |
 | 9 | 工具与配置 | `include/utils/config_utils.hh`、`dynamic_loader.hh`、`wildcard.hh`、`regex_matcher.hh`、`metrics/stats_manager.hh` |
-| 10 | 可执行入口 | `src/main.cpp`、`cpu_main.cpp`、`traffic_main.cpp`、`sc_main.cpp`、`src/core/module_factory.cc:startAllTicks` |
+| 10 | 可执行入口 | `src/main.cpp` → `build/bin/cpptlm_sim`、`src/core/module_factory.cc:startAllTicks`<br>v2.1 已移除 `cpu_main.cpp` / `traffic_main.cpp` / `sc_main.cpp`（USE_SYSTEMC 选项删除，统一通过 `cpptlm_sim` + JSON config 入口） |
 | 11 | Catch2 测试套件 | `test/test_phase6_integration.cc:registerChStreamModules`、`test/test_chstream_integration.cc:process_request_input` |
 | 12 | Python 拓扑配置库 | `cpptlm_config/__init__.py`、`models.py:ConfigMetadata`、`builder.py:ConfigBuilder`、`validator.py:load_param_rules`、`topology_adapter.py:TopologyAdapter` |
 | 13 | Python 仿真与分析 | `cpptlm/cli.py:main`、`simulation/runner.py:SimulationRunner`、`topo/orchestrator.py:TopoOrchestrator`、`analysis/metrics.py:MetricSummary` |
@@ -226,10 +226,9 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 #### C++ 入口
 | 文件 | 复杂度 | 职责 |
 |---|---|---|
-| `src/main.cpp` | moderate | 主入口(122 行) |
-| `src/cpu_main.cpp` | simple | CPU 模式入口(13 行) |
-| `src/traffic_main.cpp` | simple | 流量入口(20 行) |
-| `src/sc_main.cpp` | simple | SystemC 入口(10 行) |
+| `src/main.cpp` | moderate | 主入口(122 行,构建产物 `cpptlm_sim`) |
+
+> **v2.1 已移除** `src/cpu_main.cpp`、`src/traffic_main.cpp`、`src/sc_main.cpp`（USE_SYSTEMC 选项删除）。所有场景通过 `cpptlm_sim <config.json>` 统一入口。
 
 #### Python 工具链
 | 文件 | 复杂度 | 职责 |
@@ -310,11 +309,11 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 | 拓扑 | `scripts/topology/analyzer.py` / `path_tracer.py` / `credit_flow.py` | 分析与追踪 |
 | 统计 | `scripts/stats/stats_annotator.py` / `stats_watcher.py` | 性能统计 |
 | 统计 | `scripts/stats/layout_manager.py` / `derive_expr.py` | 布局与派生指标 |
-- `scripts/credit_flow.py` — 信用流分析
-- `scripts/path_tracer.py` — 路径追踪
-- `scripts/analyzer.py` — 通用分析
-- `scripts/stats_annotator.py` / `stats_watcher.py` — 统计注解/监听
-- `scripts/derive_expr.py` / `layout_manager.py` — 辅助工具
+- `scripts/topology/credit_flow.py` — 信用流分析
+- `scripts/topology/path_tracer.py` — 路径追踪
+- `scripts/topology/analyzer.py` — 通用分析
+- `scripts/stats/stats_annotator.py` / `scripts/stats/stats_watcher.py` — 统计注解/监听
+- `scripts/stats/derive_expr.py` / `scripts/stats/layout_manager.py` — 辅助工具
 
 ---
 
