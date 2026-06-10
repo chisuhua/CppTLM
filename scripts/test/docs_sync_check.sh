@@ -54,7 +54,7 @@ DOCS=(
 PATH_REGEX='`(([a-zA-Z0-9_./-]+/)?[a-zA-Z0-9_.-]+\.(hh|cc|hpp|cpp|h|sh|py|json|yaml|yml|toml))`'
 
 # 虚拟/设计示意路径（不应被检查）
-# 包括：设计示意 + 已删除/已归档文件（在文档中说明删除原因时引用）
+# 包括：设计示意 + 已删除/已归档文件（在文档中说明删除原因时引用）+ 规划中文件
 VIRTUAL_PATHS=(
     "src/noc/"        # 设计示意，实际在 src/tlm/ 或 src/rtl/
     "src/noc/routing"
@@ -74,6 +74,24 @@ VIRTUAL_PATHS=(
     "ext/packet_to_payload.hh"
     "ext/payload_to_packet.hh"
     "modules_v2.hh"
+    # Phase 7 (GPU APU Fused SoC) 规划中文件（roadmap.md 2026-06-11）
+    "compute_bundles_tlm.hh"
+    "compute_unit_tlm.hh"
+    "tcc_tlm.hh"
+    "kernel_launch_tlm.hh"
+    "pcie_bridge_tlm.hh"
+    "gpu_tlm.hh"
+    "gpu_standalone.json"
+    "apu_demo_v1.json"
+    "apu_demo_v2.json"
+    "apu_demo_v3.json"
+    "apu_demo_v4.json"
+    "apu_full_soc.json"
+    "test_apu_soc.py"
+    # gem5 参考路径（roadmap.md 中引用，但非本仓库文件）
+    "configs/example/apu_se.py"
+    "configs/example/gpufs/Disjoint_VIPER.py"
+    "src/dev/amdgpu/amdgpu_device.py"
 )
 
 # CMake 添加的 include dir（无前缀写法也能找到文件）
