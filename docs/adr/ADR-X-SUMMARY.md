@@ -446,6 +446,26 @@ config.save("configs/mesh_2x2.json")
 ---
 
 **维护**: DevMate  
-**版本**: v6.0  
+**版本**: v6.0
+
+---
+
+## Status Update (2026-06-10)
+
+**脚本路径重构**: `scripts/` 在 2026-06-08（commit `a8e5c43`）从扁平结构改为 5 子目录（build/、test/、pipeline/、topology/、stats/）。本 ADR 中提及的旧路径（`scripts/build.sh`、`scripts/test.sh`、`scripts/ci_e2e_test.sh`）已**不再适用**。当前路径：
+
+| 旧路径 | 新路径 |
+|--------|--------|
+| `scripts/build.sh` | `scripts/build/build.sh` |
+| `scripts/format.sh` | `scripts/build/format.sh` |
+| `scripts/test.sh` | `scripts/test/test.sh` |
+| `scripts/run_all_tests.sh` | `scripts/test/run_all_tests.sh` |
+| `scripts/ci_e2e_test.sh` | `scripts/test/ci_e2e_test.sh` |
+| `scripts/topology_validator.py` | `scripts/topology/topology_validator.py` |
+| `scripts/topology_generator.py` | `scripts/topology/topology_generator.py` |
+
+**未替代（已删除）**: `scripts/linter.py`、`scripts/test.sh` (旧版) — 重构后由 `scripts/topology/topology_validator.py` 与 `scripts/test/test.sh` 分别取代。
+
+详细脚本组织见 `scripts/README.md` 与 AGENTS.md "STRUCTURE" 节。  
 **最后更新**: 2026-05-05  
 **状态**: **Phase 3.1 已完成，Phase 3.2/3.3 待实施，ADR-X.9/X.10/X.11/X.12 已与架构对齐**

@@ -808,7 +808,7 @@ include/tlm/
     mesh_router.hh       - Mesh 路由器
     crossbar_router.hh   - Crossbar 路由器
 
-src/noc/
+src/noc/                  # 设计示意 — v2.1 实际使用 src/tlm/ (router_tlm.cc, nic_tlm.cc, link_tlm.cc)
     routing_table.cc     - 路由表
     routing_xy.cc        - XY 路由
     topology_builder.cc  - 拓扑构建器

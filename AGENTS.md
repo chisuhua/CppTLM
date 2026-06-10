@@ -26,19 +26,20 @@ CppTLM/
 │   └── modules.hh   # Object 注册宏入口（REGISTER_OBJECT/REGISTER_MODULE）
 ├── src/             # 源实现 + 可执行文件
 │   ├── core/        # ModuleFactory connection/instantiate 实现
-│   ├── noc/         # NoC 相关实现
+│   ├── rtl/         # RTL 桥接实现（HybridCacheComponent, HybridCacheWrapper，BUILD_RTL=ON）
+│   ├── tlm/         # TLM 2.0 模块实现（router_tlm, nic_tlm, link_tlm）
 │   ├── utils/       # DynamicLoader 实现
 │   ├── main.cpp          # 主仿真入口
 ├── test/            # 测试（Catch2 v3.7.0，75 文件）
 ├── test/python/     # Python 单元测试（analyzer, linter, path_tracer 等）
 ├── configs/         # JSON 拓扑配置（支持端口索引语法 "xbar.0"）
 ├── docs/            # 架构文档、ADR、实现计划
-├── docs-archived/   # 已归档文档
-├── docs-pending/    # 待整理文档
+├── docs-archived/   # 已归档文档（v1 架构、dead-code、disabled-tests 等 12 子目录）
 ├── plans/ # 实施计划 JSON/Markdown
 ├── samples/ # 示例拓扑
-├── scripts/ # 工具脚本（format.sh, linter.py, topology_validator.py 等）
-├── cpptlm_config/ # Python 配置包（validator.py, topology_adapter.py, builder.py）
+├── scripts/ # 工具脚本（按用途分 5 个子目录：build/, test/, pipeline/, topology/, stats/）
+├── cpptlm/ # Python 库（新，pyproject.toml 注册；含 cli.py, topo/, config/, simulation/）
+├── cpptlm_config/ # Python 配置包（旧，builder.py/models.py/validator.py，examples 与 scripts/topology 引用）
 ├── .github/
 │ └── workflows/
 │ └── ci.yml # GitHub Actions CI/CD 工作流
