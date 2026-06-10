@@ -1,137 +1,35 @@
 # CppTLM Roadmap
 
-> **Version**: 1.0
-> **Created**: 2026-05-28
-> **Status**: 🔄 Active
+> **Version**: 2.0
+> **Last Updated**: 2026-06-10
+> **Status**: ✅ v2.1 Released (2026-06-08)
 
-## Current Phase: Phase 4
+## 已完成里程碑 (v2.0 → v2.1)
 
----
-
-## Phase 4: Hierarchy Core
-
-**目标**: Support hierarchical topology tree and CoherenceDomain
-**工期**: 3-4 weeks
-**状态**: 🔄 进行中
-
-### Tasks
-
-#### 4.1 Hierarchy Tree Parser ✅ COMPLETE
-
-**Files**: `src/core/module_factory.cc`, `include/core/topology_node.hh`, `include/core/topology_parser.hh`
-
-**Steps**:
-1. [x] Add Step 0 to parse `hierarchy` object in JSON config
-2. [x] Create `TopologyNode` class for tree structure
-3. [x] Implement `parse_hierarchy_tree()` function
-4. [x] Add unit tests for hierarchy parsing
-
-**Acceptance Criteria**:
-- [x] `hierarchy` JSON object correctly parsed into tree structure
-- [x] Parent-child relationships correctly established
-- [x] Unit tests pass
+### v2.1.0 — 2026-06-08
+**架构**: 分层融合 v2.1 — CacheTLM / CrossbarTLM / MemoryTLM 端到端全链路验证  
+**Build**: TLM stub 默认启用，移除 USE_SYSTEMC 依赖  
+**Extension**: tlm_stub 多扩展支持（tlm_extension_registry + tlm_array + release_extension API）  
+**Codebase**: 21 项 cleanup（备份/孤儿头/openspec 残留/根目录过期 notes 已清理）
 
 ---
 
-#### 4.2 CoherenceDomain C++ Module ⏳ PENDING
+## Phase 4: Hierarchy Core（已完成 4/6）
 
-**Files**: `include/core/coherence_domain.hh` (NEW)
+| 子任务 | 状态 | 实现 |
+|--------|:----:|------|
+| 4.1 Hierarchy Tree Parser | ✅ | `include/core/topology_node.hh`, `src/core/topology_parser.cc` |
+| 4.2 CoherenceDomain C++ Module | ✅ | `include/core/coherence_domain.hh`, `src/core/coherence_domain.cc` |
+| 4.3 Domain Boundary Validation | ✅ | `src/core/module_factory_validate.cc:445 validate_domain_boundary()` |
+| 4.4 Snoop Routing Logic | ✅ | `CoherenceDomain::get_snoop_targets()` + snoop fanout |
+| 4.5 Directory Protocol Stub | ⏳ | `CoherenceDomain::lookup_home_node()` 已实现 address mapping；独立 `Directory` 类未拆分（暂不必要） |
+| 4.6 Python Hierarchy Generator | ✅ | `cpptlm/topo/layer.py` 含 `HierarchicalTopologyGenerator` |
 
-**Steps**:
-1. Create `CoherenceDomain` class inheriting from `SimObject`
-2. Implement `set_protocol()`, `set_members()`, `set_snoop_fanout()`
-3. Implement `is_member()`, `get_snoop_targets()`, `lookup_home_node()`
-4. Integrate with ModuleFactory (Step 0.5)
-
-**Acceptance Criteria**:
-- [ ] CoherenceDomain class created with all specified methods
-- [ ] Protocol support: MESI, MOESI
-- [ ] Directory-based home node lookup working
-- [ ] Unit tests pass
+**评估**: 4.5 的核心功能已被 `CoherenceDomain::lookup_home_node()` 覆盖，独立 `Directory` 类不是阻塞项。
 
 ---
 
-#### 4.3 Domain Boundary Validation ⏳ PENDING
-
-**Files**: `src/core/module_factory.cc`, `include/core/coherence_domain.hh`
-
-**Steps**:
-1. Add `validate_domain_boundary()` function
-2. Reject cross-domain connections without ProtocolBridge
-3. Add validation in ModuleFactory Step 3
-4. Add unit tests
-
-**Acceptance Criteria**:
-- [ ] Cross-domain connections without bridge are rejected
-- [ ] WARNING/ERROR logged for boundary violations
-- [ ] Unit tests pass
-
----
-
-#### 4.4 Snoop Routing Logic ⏳ PENDING
-
-**Files**: `include/core/coherence_domain.hh`, `src/core/coherence_domain.cc`
-
-**Steps**:
-1. Implement `get_snoop_targets()` for broadcast/multicast
-2. Support snoop fanout configuration
-3. Add unit tests for snoop routing
-
-**Acceptance Criteria**:
-- [ ] Snoop messages reach all domain members
-- [ ] Fanout configuration respected
-- [ ] Unit tests pass
-
----
-
-#### 4.5 Directory Protocol Stub ⏳ PENDING
-
-**Files**: `include/core/directory.hh` (NEW), `src/core/directory.cc`
-
-**Steps**:
-1. Create `Directory` class
-2. Implement `lookup_home_node()` with address mapping
-3. Support directory entry states (M, O, S)
-4. Add unit tests
-
-**Acceptance Criteria**:
-- [ ] Directory class created
-- [ ] Home node correctly determined for address
-- [ ] Unit tests pass
-
----
-
-#### 4.6 Python Hierarchy Generator ⏳ PENDING
-
-**Files**: `scripts/topology_generator.py`
-
-**Steps**:
-1. Add `HierarchicalTopologyGenerator` class
-2. Implement `add_cluster()`, `add_coherence_domain()` methods
-3. Output v4.0 JSON format with `hierarchy` and `coherence_domains`
-4. Add integration tests
-
-**Acceptance Criteria**:
-- [ ] HierarchicalTopologyGenerator class implemented
-- [ ] Correct v4.0 JSON output with hierarchy
-- [ ] Integration tests pass
-
----
-
-### Phase Gate (门控条件)
-
-- [x] 4.1 Hierarchy tree parser 完成
-- [ ] 4.2 CoherenceDomain C++ 模块完成
-- [ ] 4.3 Domain boundary validation 完成
-- [ ] 4.4 Snoop routing logic 完成
-- [ ] 4.5 Directory protocol stub 完成
-- [ ] 4.6 Python hierarchy generator 完成
-
----
-
-## Future Phases (预览)
-
-### Phase 5: Protocol Bridge (待开始)
+## Phase 5: Protocol Bridge (待启动)
 
 - 5.1 ProtocolBridge C++ module
 - 5.2 Address translation engine
@@ -139,7 +37,9 @@
 - 5.4 Cross-protocol validation
 - 5.5 Python bridge config generator
 
-### Phase 6: Multi-Cluster SoC Validation (待开始)
+---
+
+## Phase 6: Multi-Cluster SoC Validation (待启动)
 
 - 6.1 2x CPU Cluster + GPU Cluster config
 - 6.2 Cross-cluster coherence validation
@@ -148,8 +48,26 @@
 
 ---
 
+## 当前活跃工作（2026-06-10）
+
+### docs/cleanup boulder（已完成归档）
+
+详细归档清单见 [`docs-archived/omo-archived/INDEX.md`](docs-archived/omo-archived/INDEX.md)：
+- 18 个已完成的 boulder plans
+- 4 个 notepad 子目录（tlm-stub-multi-extension-and-cleanup、dashboard-implementation、p0-p1-architecture-debt-fix-v2、phase-0-tag）
+- 第一批 + 第二批共 28 个文件
+
+### 待办（P1）
+
+- [ ] `docs/architecture/02-complex-topology-architecture.md` 中 `src/noc/` 引用需更正为 `src/rtl/`（历史代码上下文，注释中提及）
+- [ ] Python 包双轨制决策：`cpptlm/`（新）vs `cpptlm_config/`（旧）— 14 个调用点使用 `cpptlm_config`，需统一
+- [ ] `roadmap.md` v3.0 — Phase 5/6 启动时同步
+
+---
+
 ## Metadata
 
-- **Architecture Reference**: `docs/architecture/10-topology-generation-management-system.md`
-- **Specifications**: `docs/architecture/10-tgms-specifications.md`
+- **Architecture Reference**: `docs/architecture/01-hybrid-architecture-v2.1.md`
 - **Implementation Plan**: `docs/implementation/11-tgms-v4-implementation-plan.md`
+- **Archived Roadmap (v1.0)**: `docs-archived/omo-archived/plans/` 下的 `cpptlm-cleanup.md` 与 `architecture-debt-cleanup.md`
+- **Project Overview**: [`AGENTS.md`](AGENTS.md)

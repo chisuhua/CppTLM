@@ -295,13 +295,21 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 - `configs/stress_*.json` — 压力测试场景
 - `configs/param_rules/{nic_tlm,router_tlm}.json` — 参数规则
 
-### 5.5 关键脚本
-- `scripts/format.sh` — 格式检查
-- `scripts/build.sh` — 构建脚本
-- `scripts/test.sh` / `run_all_tests.sh` — 测试脚本
-- `scripts/ci_e2e_test.sh` — CI 端到端
-- `scripts/topology_validator.py` — 拓扑校验
-- `scripts/topology_generator.py` — 拓扑生成
+### 5.5 关键脚本（v2.1 起按用途分 5 个子目录）
+
+| 类别 | 路径 | 说明 |
+|------|------|------|
+| 构建 | `scripts/build/build.sh` | 主构建脚本（ccache 自动检测） |
+| 构建 | `scripts/build/format.sh` | clang-format 格式检查 |
+| 测试 | `scripts/test/test.sh` | 单次测试入口 |
+| 测试 | `scripts/test/run_all_tests.sh` | 全量测试（支持 `--quick`） |
+| 测试 | `scripts/test/ci_e2e_test.sh` | CI 端到端验证 |
+| 流水线 | `scripts/pipeline/run_full_pipeline.sh` | 仿真 → 统计 → 可视化 |
+| 拓扑 | `scripts/topology/topology_validator.py` | 拓扑校验 |
+| 拓扑 | `scripts/topology/topology_generator.py` | 拓扑生成 |
+| 拓扑 | `scripts/topology/analyzer.py` / `path_tracer.py` / `credit_flow.py` | 分析与追踪 |
+| 统计 | `scripts/stats/stats_annotator.py` / `stats_watcher.py` | 性能统计 |
+| 统计 | `scripts/stats/layout_manager.py` / `derive_expr.py` | 布局与派生指标 |
 - `scripts/credit_flow.py` — 信用流分析
 - `scripts/path_tracer.py` — 路径追踪
 - `scripts/analyzer.py` — 通用分析

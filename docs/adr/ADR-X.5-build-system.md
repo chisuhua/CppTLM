@@ -788,3 +788,17 @@ ccache -s
 ---
 
 **下一步**: 请老板确认构建系统方案
+
+---
+
+## Status Update (2026-06-10)
+
+**脚本路径重构**: `scripts/` 在 2026-06-08（commit `a8e5c43`）从扁平结构改为 5 子目录。本 ADR 中所有 `scripts/build.sh`、`scripts/test.sh`、`scripts/format.sh` 等路径已迁移：
+
+| 旧路径 | 新路径 |
+|--------|--------|
+| `scripts/build.sh` | `scripts/build/build.sh` |
+| `scripts/test.sh` | `scripts/test/test.sh` |
+| `scripts/format.sh` | `scripts/build/format.sh` |
+
+设计决策本身（CCache + CMake + Ninja + 双构建模式 Release/Debug）保持不变，仅文件位置调整。
