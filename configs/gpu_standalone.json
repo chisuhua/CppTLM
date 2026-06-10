@@ -1,0 +1,13 @@
+{
+  "modules": [
+    { "name": "gpu0", "type": "GPUTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
+  ],
+  "connections": [
+    {
+      "src": "gpu0",
+      "dst": "mem",
+      "latency": 100
+    }
+  ]
+}
