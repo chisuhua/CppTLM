@@ -49,7 +49,7 @@ CppTLM/
 ## 归档示例（docs-archived/samples-orphaned/）
 
 `samples/simple1/` 和 `samples/simple_hier/` 已于 2026-06-08 归档：
-- **simple1/**: `cpu_cluster.cc` 在 v2.1 标记 DEPRECATED，推荐使用 `include/tlm/cpu_tlm.hh`
+- **simple1/**: `cpu_cluster` 在 v2.1 标记 DEPRECATED（v1 时代的 legacy 模块），推荐使用 `include/tlm/cpu_tlm.hh`（`cpu_cluster.cc` 源文件随 sample 一同归档至 docs-archived/samples-orphaned/simple1/）
 - **simple_hier/**: 无 CMakeLists.txt（孤儿），引用 v2.1 不再支持的 `CpuCluster` / `NOCTile`
 - 恢复方法：参见 [docs-archived/samples-orphaned/README.md](docs-archived/samples-orphaned/README.md)
 ```
@@ -175,6 +175,33 @@ gh run watch
 - **测试禁止 `.disabled`**: `test_config_loader.cc.disabled` 等是已知跳过状态，非错误。新代码禁止创建 .disabled 测试
 - **禁止 TODO 残留**: Step 7 中的 `// TODO: bind_ports_array` 等未完成逻辑必须在 Phase 完成前清除或归档
 - **禁止跳过本地 CI 验证**: 推送到 remote 前必须本地通过构建和测试
+
+## 文档维护原则
+
+**核心目标**: 防止 `AGENTS.md` / `ONBOARDING.md` / `roadmap.md` / `scripts/README.md` 中提及的路径随代码结构变更而漂移。
+
+### 自动化保障
+
+- **路径同步检查**: `scripts/test/docs_sync_check.sh` 扫描上述 4 个核心文档中所有 `path/to/file.ext` 反引号引用，验证文件/目录真实存在
+- **Pre-commit hook**: `.pre-commit-config.yaml` 已配置；开发者运行 `pre-commit install` 后，提交前自动执行 `--strict` 模式
+- **当前快照**: 见 [`docs/docs_audit_report.md`](docs/docs_audit_report.md)（2026-06-10：354/354 路径有效）
+
+### 手动规范
+
+- **结构调整 PR 必须包含**:
+  1. 同步更新 AGENTS.md 的 STRUCTURE 节
+  2. 同步更新 scripts/README.md 子目录表
+  3. 同步更新 docs/ONBOARDING.md §5.5 脚本表
+  4. 重命名/删除文件 → 检查 4 个核心文档中的引用
+- **PR 模板检查项** (建议未来加入 `.github/PULL_REQUEST_TEMPLATE.md`):
+  - [ ] 运行 `./scripts/test/docs_sync_check.sh --strict` 零误报
+  - [ ] 若新增/删除 `include/` `src/` `scripts/` `cpptlm*/` 下文件，更新 AGENTS.md / ONBOARDING.md / scripts/README.md
+  - [ ] 若重大阶段完成，更新 roadmap.md 状态表
+- **ADR 不可变原则**: ADR 文件（`docs/adr/ADR-X.*-*.md`）一旦签发不可修改；后续状态通过在文件末尾追加 `## Status Update` 段落记录
+
+### 添加新忽略路径
+
+`scripts/test/docs_sync_check.sh` 的 `VIRTUAL_PATHS` 数组维护文档中"说明删除原因"时引用的已删除文件。当新文档提及此类文件时，添加条目而非删除文档段落。
 
 ## UNIQUE STYLES
 

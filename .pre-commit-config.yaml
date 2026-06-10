@@ -1,0 +1,25 @@
+# .pre-commit-config.yaml — CppTLM pre-commit hooks
+# 安装: pip install pre-commit
+# 启用: pre-commit install
+# 手动运行: pre-commit run --all-files
+#
+# 当前 hook 列表：
+#   1. docs-sync-check: 验证核心文档 (AGENTS.md, ONBOARDING.md, roadmap.md, scripts/README.md)
+#      中提及的文件/目录路径在仓库中真实存在。防止文档漂移。
+#
+# 后续可扩展：
+#   - clang-format (scripts/build/format.sh)
+#   - 关键文件存在性检查（如 include/AGENTS.md 中声明的注册宏）
+#   - ADR frontmatter 校验
+
+repos:
+  - repo: local
+    hooks:
+      - id: docs-sync-check
+        name: 文档路径同步检查
+        description: 验证 AGENTS.md / ONBOARDING.md / roadmap.md / scripts/README.md 中提及的路径真实存在
+        entry: bash scripts/test/docs_sync_check.sh --strict
+        language: system
+        files: ^(AGENTS\.md|docs/ONBOARDING\.md|roadmap\.md|scripts/README\.md)$
+        pass_filenames: false
+        stages: [pre-commit]

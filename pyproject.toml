@@ -12,10 +12,14 @@ license = {text = "MIT"}
 authors = [
     {name = "CppTLM Team"}
 ]
+# Core dependency: cpptlm-config 提供 ConfigBuilder/TopologyValidator/TopologyAdapter
+# (cpptlm_config/ 目录，pyproject.toml 名 "cpptlm-config")
+# 在 monorepo 内通过 sys.path.insert(0, ...) 引用，发布时作为依赖项
 dependencies = [
     "pydantic>=1.10.0",
     "networkx>=2.6.0",
     "pydot>=1.4.0",
+    "cpptlm-config>=0.1.0",
 ]
 
 [project.optional-dependencies]
