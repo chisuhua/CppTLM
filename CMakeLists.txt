@@ -105,6 +105,9 @@ add_subdirectory(scripts)
 # 安装规则
 # ==============================================================================
 install(DIRECTORY include/ DESTINATION include/cpp-tlm)
+install(DIRECTORY external/json/ DESTINATION include/cpp-tlm/external/json
+    FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
+)
 install(TARGETS cpptlm_core
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
