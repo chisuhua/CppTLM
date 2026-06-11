@@ -18,11 +18,11 @@ CppTLM 模块按功能域分 **8 大类**：
 |---|------|--------|------------|------|
 | 1 | **CPU 端模块** (Initiator) | 3 | 0 | 调研 §2.3, §4 Phase 0 | [`cpu-cputlm.md`](./cpu-cputlm.md) [`cpu-traffic_gen.md`](./cpu-traffic_gen.md) [`cpu-cpusim_legacy.md`](./cpu-cpusim_legacy.md) | ✅ / ✅ / ⚠️ |
 | 2 | **内存子系统** | 2 | 2 | 调研 §2.2 | [`memory-memtlm.md`](./memory-memtlm.md) | ✅ |
-| 3 | **Cache 层级** | 0 (v0 归为 memory) | 3 | 调研 §2.3 | [`cache-l1.md`](./cache-l1.md) | ✅ (CacheTLM 在 §2.4) |
-| 4 | **Interconnect / NoC** | 5 | 1 | 调研 §2.4 | [`interconnect-crossbar.md`](./interconnect-crossbar.md) [`interconnect-arbiter.md`](./interconnect-arbiter.md) [`noc-router.md`](./noc-router.md) [`noc-nic.md`](./noc-nic.md) | ✅ / ✅ / ✅ / ✅ |
+| 3 | **Cache 层级** | 0 (v0 归为 memory) | 3 | 调研 §2.3 | [`cache-l1.md`](./cache-l1.md) [`cache.common.md`](./cache.common.md) [`cache-l2.md`](./cache-l2.md) [`cache-protocol.md`](./cache-protocol.md) [`cache-replacement.md`](./cache-replacement.md) [`cache-noncoherent.md`](./cache-noncoherent.md) | ✅ (v0) / 🟡 5 个 (B3.3.1) |
+| 4 | **Interconnect / NoC** | 5 | 1 | 调研 §2.4 | [`interconnect-crossbar.md`](./interconnect-crossbar.md) [`interconnect-arbiter.md`](./interconnect-arbiter.md) [`noc-router.md`](./noc-router.md) [`noc-nic.md`](./noc-nic.md) [`noc.common.md`](./noc.common.md) [`interconnect-bridge.md`](./interconnect-bridge.md) [`comm_monitor.md`](./comm_monitor.md) [`coherent_xbar.md`](./coherent_xbar.md) [`snoop_filter.md`](./snoop_filter.md) | ✅ 5 (v0) / 🟡 4 (B3.3.2) + 1 common (B3.3.3) |
 | 5 | **GPU / GPGPU** | 1 | 5 | 调研 §2, §4 Phase 7.A-F | [`gpu-gputlm.md`](./gpu-gputlm.md) [`gpu.common.md`](./gpu.common.md) [`gpu-compute_unit.md`](./gpu-compute_unit.md) [`gpu-kernellaunch.md`](./gpu-kernellaunch.md) [`gpu-tcc.md`](./gpu-tcc.md) [`gpu-pcie_bridge.md`](./gpu-pcie_bridge.md) | ✅ (v0 1/6) / 🟡 5 个 |
 | 6 | **IO / DMA / 设备** | 0 | 5 | 调研 §2.5 | (暂无) | 🟡 全部 |
-| 7 | **Coherence / 桥接** | 0 | 3 | 调研 §2.6, §4 Phase 7.C-D | [`coherence-domain.md`](./coherence-domain.md) | ✅ (CoherenceDomain 基础设施) |
+| 7 | **Coherence / 桥接** | 0 | 3 | 调研 §2.6, §4 Phase 7.C-D | [`coherence-domain.md`](./coherence-domain.md) [`coherence-protocol.md`](./coherence-protocol.md) [`coherence-bridge.md`](./coherence-bridge.md) | ✅ 1 (v0) / 🟡 2 (B3.3.4) |
 | 8 | **RTL 桥接** | 2 | 0 | 调研 §1.3 | [`rtl-hybrid_cache.md`](./rtl-hybrid_cache.md) [`rtl-fragment_mapper.md`](./rtl-fragment_mapper.md) | ✅ / ✅ |
 
 ---
