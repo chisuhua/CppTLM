@@ -20,7 +20,7 @@ CppTLM 模块按功能域分 **8 大类**：
 | 2 | **内存子系统** | 2 | 2 | 调研 §2.2 | [`memory-memtlm.md`](./memory-memtlm.md) | ✅ |
 | 3 | **Cache 层级** | 0 (v0 归为 memory) | 3 | 调研 §2.3 | [`cache-l1.md`](./cache-l1.md) | ✅ (CacheTLM 在 §2.4) |
 | 4 | **Interconnect / NoC** | 5 | 1 | 调研 §2.4 | [`interconnect-crossbar.md`](./interconnect-crossbar.md) [`interconnect-arbiter.md`](./interconnect-arbiter.md) [`noc-router.md`](./noc-router.md) [`noc-nic.md`](./noc-nic.md) | ✅ / ✅ / ✅ / ✅ |
-| 5 | **GPU / GPGPU** | 1 | 5 | 调研 §2, §4 Phase 7.A-F | (GPUTLM v0 暂无独立 doc；归入 Phase 7.A spec) | 🟡 |
+| 5 | **GPU / GPGPU** | 1 | 5 | 调研 §2, §4 Phase 7.A-F | [`gpu-gputlm.md`](./gpu-gputlm.md) | ✅ (v0 已有 doc)；其余 5 个 🟡 |
 | 6 | **IO / DMA / 设备** | 0 | 5 | 调研 §2.5 | (暂无) | 🟡 全部 |
 | 7 | **Coherence / 桥接** | 0 | 3 | 调研 §2.6, §4 Phase 7.C-D | [`coherence-domain.md`](./coherence-domain.md) | ✅ (CoherenceDomain 基础设施) |
 | 8 | **RTL 桥接** | 2 | 0 | 调研 §1.3 | [`rtl-hybrid_cache.md`](./rtl-hybrid_cache.md) [`rtl-fragment_mapper.md`](./rtl-fragment_mapper.md) | ✅ / ✅ |
