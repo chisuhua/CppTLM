@@ -207,7 +207,7 @@ ae78969f test(rtl): add FragmentMapper unit tests (v4 companion)               �
 - 项目 `AGENTS.md` 标注："禁止跳过本地 CI 验证：推送到 remote 前必须本地通过构建和测试"
 - 测试依赖 `USE_SYSTEMC_STUB=ON`（默认配置）
 - CppHDL 库 `external/CppHDL/build/libcpphdl.a` 必须存在以构建 `cpptlm_rtl`（`src/rtl/CMakeLists.txt:6-10` 警告）
-- 12 个历史测试失败（Pool/Wildcard/Connection 相关，"零回归"承诺）
+- 0 失败 (P0-remediation 验证, 2026-06-12)
 
 ---
 

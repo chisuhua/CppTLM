@@ -23,7 +23,7 @@ cmake --build build -j$(nproc)
 ## 测试结构
 
 - `test/test_*.cc` — 单元测试 / 集成测试（`file(GLOB ...)` 自动发现）
-- 75 个测试文件，约 14000+ 断言
+- 76 个测试文件，约 14840+ 断言 (含 test_e2e_crossbar_response.cc)
 - 测试按 Phase 分组：`[phase0]` ~ `[phase8]`
 - Catch2 标签大小写不敏感（`[P3.2]` = `[p3.2]`）
 
