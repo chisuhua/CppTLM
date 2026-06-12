@@ -23,7 +23,6 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortLoopsOnASingleLine: false
 
 # 命名空间
-IndentNamespaces: true
 
 # 访问修饰符缩进
 AccessModifierOffset: -4
