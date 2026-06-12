@@ -246,7 +246,7 @@ gh pr merge #<number> --squash               # Squash 合并 PR
 
 - **TLM stub 默认启用**: `USE_SYSTEMC_STUB=ON` 是默认配置（根 CMakeLists.txt），不再需要外部 SystemC 依赖
 - **ccache 自动检测**: 编译加速，未安装时降级（非 fatal）
-- **历史遗留问题**: Pool/Wildcard/Connection 相关 12 个测试失败（已知，不影响新功能）
+- **测试状态**: 无已知失败 (P0-remediation 后, 2026-06-12；当前实测 604 用例, ~14840 断言)
 - **构建产物**: `build/bin/` 下所有可执行文件，`build/lib/` 下 `cpptlm_core.a`
 - **CI 配置**: `.github/workflows/ci.yml` 定义了 Release/Debug 双模式构建和测试
 

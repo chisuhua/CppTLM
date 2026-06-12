@@ -25,9 +25,7 @@
 - `test_latency_injection.cc.disabled` — 延迟注入（待修复）
 - `test_layout_styles.cc.disabled` — 布局样式（已归档）
 
-## 已知失败（12 个，历史遗留，零回归）
-
-Pool/Wildcard/Connection 相关测试失败 — Phase 0-6 未修改这些代码
+> P0-remediation 后（2026-06-12）已无已知失败。原"12 个 Pool/Wildcard/Connection 失败"为历史残留描述，已实际验证为 0 失败。
 
 ## 基础设施
 
@@ -42,7 +40,7 @@ Pool/Wildcard/Connection 相关测试失败 — Phase 0-6 未修改这些代码
 
 ```bash
 # C++ 测试
-./build/bin/cpptlm_tests                    # 全部 (528 用例, 14493 断言)
+./build/bin/cpptlm_tests                    # 全部 (604 用例, ~14840 断言)
 ./build/bin/cpptlm_tests "[chstream]"       # ChStream 相关 (84 用例)
 ./build/bin/cpptlm_tests "[phase6]"         # Phase 6 端到端 (9 用例)
 ./build/bin/cpptlm_tests "[crossbar]"       # Crossbar 相关 (16 用例)
