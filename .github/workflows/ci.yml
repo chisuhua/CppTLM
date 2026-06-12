@@ -90,5 +90,5 @@ jobs:
       run: sudo apt-get install -y clang-format
     - name: Check format
       run: |
-        chmod +x ./scripts/format.sh
-        ./scripts/format.sh --check
+        chmod +x ./scripts/build/format.sh
+        ./scripts/build/format.sh --check
