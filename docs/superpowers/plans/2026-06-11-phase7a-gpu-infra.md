@@ -971,3 +971,8 @@ git commit --allow-empty -m "verify(phase7.a): all acceptance criteria pass
 **2. Inline Execution** — 在本会话内串行执行所有 Task，批量执行 + checkpoint review。
 
 **Which approach?**
+
+## Status Update 2026-06-12
+
+P0-remediation plan 已完成, Phase 7.A GPU 基础设施 ([gpu] tag, 5 用例) 仍 GREEN。
+下一步: Phase 7.B ComputeUnitTLM (预计 2-3 周, 见 roadmap.md)。

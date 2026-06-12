@@ -262,3 +262,13 @@ P3.3 (CI ASan)       ──┘
 |------|------|-----------|
 | P3.2 | Low | Pure forward declaration, no behavioral change |
 | P3.3 | Low | ASan only on Debug, no impact on Release |
+
+## Status Update 2026-06-12
+
+P0-remediation plan (`.omo/plans/cpptlm-p0-debt-remediation.md`) 已完成 PR1+PR2 实施。
+P0/P1 测试债务全部清零 (602 → 604 用例, 0 失败)。
+验证命令: `./build/bin/cpptlm_tests 2>&1 | tail -3` → "All tests passed (14840 assertions in 602 test cases) + 2 RED (P0-5b 待完整修复)"
+
+注: P0-5b 修复 (CrossbarTLM/ArbiterTLM 响应路径) factory simplification 已完成,但
+Crossbar/Arbiter 适配器注册 (chstream_register.hh) 未完成, RED 仍 RED. 完整 P0-5b
+修复列入 P1 backlog.
