@@ -84,7 +84,11 @@ public:
     explicit ArbiterTLM(const std::string& name, EventQueue* eq)
         : ChStreamModuleBase(name, eq) {}
 
-    std::string get_module_type() const override { return "ArbiterTLM"; }
+    std::string get_module_type() const override {
+        if constexpr (N_PORTS == 2) return "ArbiterTLM2";
+        else if constexpr (N_PORTS == 4) return "ArbiterTLM4";
+        else return "ArbiterTLM";
+    }
 
     unsigned num_ports() const override { return N_PORTS; }
 

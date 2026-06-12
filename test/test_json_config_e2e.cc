@@ -141,7 +141,7 @@ TEST_CASE("E2E: Load arbiter_tlm_test.json and run simulation", "[e2e][config][c
 
     auto* arb = dynamic_cast<ArbiterTLM<2>*>(factory.getInstance("arb"));
     REQUIRE(arb != nullptr);
-    REQUIRE(arb->get_module_type() == "ArbiterTLM");
+    REQUIRE(arb->get_module_type() == "ArbiterTLM2");
     REQUIRE(arb->num_ports() == 2);
 
     uint64_t before = eq.getCurrentCycle();

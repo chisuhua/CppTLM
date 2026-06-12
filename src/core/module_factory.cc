@@ -584,20 +584,13 @@ bool ModuleFactory::instantiateAll(const json& config) {
             ch_mod->set_stream_adapter(adapter);
             DPRINTF(MODULE, "[ChStream] Created DualPort adapter for %s (type: %s, PE+Net)\n", name.c_str(), type.c_str());
         } else if (is_multi) {
-            if (type == "RouterTLM") {
-                auto* bi_adapter = static_cast<cpptlm::BidirectionalPortAdapter<tlm::RouterTLM,
-                    bundles::NoCFlitBundle, tlm::RouterTLM::NUM_PORTS>*>(adapter);
-                for (unsigned i = 0; i < n_ports; i++) {
-                    bi_adapter->bind_port_pair(i, req_out_vec[i], resp_in_vec[i], resp_out_vec[i], req_in_vec[i]);
-                }
-            } else {
-                DPRINTF(MODULE, "[WARN] Multi-port module '%s' uses set_stream_adapter(array) "
-                        "instead of bind_port_pair(). If this module uses BidirectionalPortAdapter, "
-                        "the binding may be incorrect. Please report this issue.\n",
-                        type.c_str());
+            for (unsigned i = 0; i < n_ports; i++) {
+                adapter->bind_port_pair(i, req_out_vec[i], resp_in_vec[i],
+                                        resp_out_vec[i], req_in_vec[i]);
             }
             ch_mod->set_stream_adapter(adapter);
-            DPRINTF(MODULE, "[ChStream] Created BidirectionalPortAdapter for %s (%u ports, type: %s)\n", name.c_str(), n_ports, type.c_str());
+            DPRINTF(MODULE, "[ChStream] Created multi-port adapter for %s (%u ports, type: %s)\n",
+                    name.c_str(), n_ports, type.c_str());
         } else {
             adapter->bind_ports(req_out_vec[0], resp_in_vec[0], resp_out_vec[0], req_in_vec[0]);
             ch_mod->set_stream_adapter(adapter);
