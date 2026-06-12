@@ -528,18 +528,7 @@ unsigned RouterTLM::compute_xy_route(uint32_t dst_node) {
     );
 }
 
-// ============================================================================
-// 注册到 ModuleFactory
-// ============================================================================
-
-namespace {
-struct RouterTLMRegistrar {
-    RouterTLMRegistrar() {
-        ModuleFactory::registerObject<RouterTLM>("RouterTLM");
-    }
-};
-static RouterTLMRegistrar g_registrar;
-}
+// RouterTLM registration is handled by REGISTER_CHSTREAM macro in chstream_register.hh
 
 cpptlm::ParamRules RouterTLM::get_param_rules() {
     return {
