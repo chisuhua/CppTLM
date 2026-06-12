@@ -53,7 +53,7 @@ public:
         SlavePort*  resp_in,
         MasterPort* resp_out = nullptr,
         SlavePort*  req_in = nullptr
-    ) {
+    ) override {
         if (port_idx < N) {
             req_out_port_[port_idx] = req_out;
             resp_in_port_[port_idx] = resp_in;

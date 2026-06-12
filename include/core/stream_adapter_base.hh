@@ -45,6 +45,26 @@ public:
     ) = 0;
 
     /**
+     * @brief 绑定单个端口对（多端口模块使用，ModuleFactory 按 port_idx 调用）
+     *
+     * 默认空实现：单端口 StreamAdapter 与 DualPortStreamAdapter 不使用此模式，
+     * 仅 MultiPortStreamAdapter / BidirectionalPortAdapter override。
+     *
+     * @param port_idx 端口索引（0..N-1）
+     * @param req_out   请求输出 MasterPort
+     * @param resp_in   响应输入 SlavePort
+     * @param resp_out  响应输出 MasterPort（可选）
+     * @param req_in    请求输入 SlavePort（可选）
+     */
+    virtual void bind_port_pair(
+        unsigned    port_idx,
+        MasterPort* req_out,
+        SlavePort*  resp_in,
+        MasterPort* resp_out = nullptr,
+        SlavePort*  req_in = nullptr
+    ) {}
+
+    /**
      * @brief 处理请求方向输入（Packet → ch_stream）
      */
     virtual void process_request_input(Packet* pkt) = 0;
