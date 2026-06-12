@@ -26,8 +26,12 @@ __pycache__/
 configs.bak1/
 configs/common/
 output/
+output/*.jsonl
+output/*.dot
+output/*.json
 topology.dot
 build_asan/
+build-debug/
 build_baseline/
 build_rtl/
 
