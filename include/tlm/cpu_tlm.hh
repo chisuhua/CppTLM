@@ -22,6 +22,9 @@ private:
     uint64_t next_txn_id_ = 1;
     static constexpr unsigned MAX_INFLIGHT = 4;
     std::unordered_map<uint64_t, uint64_t> inflight_txns_;
+    // 测试可观察性：最近收到的响应 transaction_id（端到端响应路径健康指标）
+    // P0-5 bug (module_factory.cc 多端口分支) 未修时此字段保持 0
+    uint64_t last_response_transaction_id_ = 0;
 
 public:
     explicit CPUTLM(const std::string& name, EventQueue* eq)
@@ -41,6 +44,7 @@ public:
             auto& resp = resp_in_.data();
             uint64_t txn_id = resp.transaction_id.read();
             inflight_txns_.erase(txn_id);
+            last_response_transaction_id_ = txn_id;  // 观察：端到端响应回路可达性
             resp_in_.consume();
         }
 
@@ -69,11 +73,16 @@ public:
         timer_ = 0;
         next_txn_id_ = 1;
         inflight_txns_.clear();
+        last_response_transaction_id_ = 0;
     }
 
     cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& resp_in() { return resp_in_; }
     cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& req_out() { return req_out_; }
     cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
+
+    // 端到端可观察性：返回最近收到的响应 transaction_id
+    // 0 表示尚未收到响应（P0-5 bug 未修时维持 0）
+    uint64_t last_response_transaction_id() const { return last_response_transaction_id_; }
 
     // Initiator 不接收请求，这些是空适配器（满足 StreamAdapter 接口）
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() {
