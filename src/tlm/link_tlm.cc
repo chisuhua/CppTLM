@@ -109,17 +109,6 @@ void LinkTLM::receive_credit(unsigned port, unsigned vc) {
             getName().c_str(), port, vc);
 }
 
-// ============================================================================
-// 注册到 ModuleFactory（静态注册）
-// ============================================================================
-
-namespace {
-struct LinkTLMRegistrar {
-    LinkTLMRegistrar() {
-        ModuleFactory::registerObject<LinkTLM>("LinkTLM");
-    }
-};
-static LinkTLMRegistrar g_registrar;
-}
+// LinkTLM registration is handled by REGISTER_CHSTREAM macro in chstream_register.hh
 
 } // namespace tlm
