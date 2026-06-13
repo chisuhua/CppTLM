@@ -67,7 +67,7 @@ jobs:
     - name: Run quick test suite (Python + key C++)
       if: matrix.build-type == 'Release'
       run: |
-        python3 -m pip install --quiet networkx pydot pytest
+        python3 -m pip install --quiet networkx pydot pydantic pytest
         ./scripts/test/run_all_tests.sh --quick
 
     - name: Upload test results
