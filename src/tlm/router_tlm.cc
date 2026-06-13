@@ -126,6 +126,9 @@ namespace tlm {
         if (credit_timeout_ > 0) {
             credit_safety_reset();
         }
+
+        if (adapter_)
+            adapter_->tick();
     }
 
     // ============================================================================

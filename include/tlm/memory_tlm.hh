@@ -7,15 +7,15 @@
 #ifndef TLM_MEMORY_TLM_HH
 #define TLM_MEMORY_TLM_HH
 
-#include "core/chstream_module.hh"
 #include "bundles/cache_bundles_tlm.hh"
+#include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include "metrics/stats.hh"
 #include <cstdint>
 
 class MemoryTLM : public ChStreamModuleBase {
 private:
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
+    cpptlm::InputStreamAdapter<bundles::CacheReqBundle> req_in_;
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
@@ -31,57 +31,66 @@ private:
 
 public:
     MemoryTLM(const std::string& name, EventQueue* eq)
-        : ChStreamModuleBase(name, eq),
-          stats_("memory"),
+        : ChStreamModuleBase(name, eq), stats_("memory"),
           stats_requests_read_(stats_.addScalar("requests_read", "Memory read requests", "count")),
-          stats_requests_write_(stats_.addScalar("requests_write", "Memory write requests", "count")),
+          stats_requests_write_(
+              stats_.addScalar("requests_write", "Memory write requests", "count")),
           stats_row_hits_(stats_.addScalar("row_hits", "Row buffer hits", "count")),
           stats_row_misses_(stats_.addScalar("row_misses", "Row buffer misses", "count")),
-          stats_latency_read_(stats_.addDistribution("latency_read", "Memory read latency", "cycle")),
-          stats_latency_write_(stats_.addDistribution("latency_write", "Memory write latency", "cycle")),
-          stats_row_buffer_hit_rate_(stats_.addFormula("row_buffer_hit_rate", "Row buffer hit rate", "ratio",
-              [this]() {
+          stats_latency_read_(
+              stats_.addDistribution("latency_read", "Memory read latency", "cycle")),
+          stats_latency_write_(
+              stats_.addDistribution("latency_write", "Memory write latency", "cycle")),
+          stats_row_buffer_hit_rate_(
+              stats_.addFormula("row_buffer_hit_rate", "Row buffer hit rate", "ratio", [this]() {
                   auto hits = stats_row_hits_.value();
                   auto misses = stats_row_misses_.value();
                   return (hits + misses) > 0 ? static_cast<double>(hits) / (hits + misses) : 0.0;
-              })) {}
+              })) {
+    }
 
     ~MemoryTLM() override = default;
 
-    std::string get_module_type() const override { return "MemoryTLM"; }
+    std::string get_module_type() const override {
+        return "MemoryTLM";
+    }
 
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
         adapter_ = adapter;
     }
 
     // ChStreamModuleBase 统计接口
-    tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
-    std::string get_stats_path() const override { return "system.memory"; }
+    tlm_stats::StatGroup* get_stats_group() override {
+        return &stats_;
+    }
+    std::string get_stats_path() const override {
+        return "system.memory";
+    }
 
     void tick() override {
         if (req_in_.valid() && req_in_.ready()) {
             const auto& req = req_in_.data();
             bool is_write = req.is_write.read();
-            
+
             // 统计：读/写请求
             if (is_write) {
                 ++stats_requests_write_;
-                stats_latency_write_.sample(120);  // 模拟写延迟
+                stats_latency_write_.sample(120); // 模拟写延迟
             } else {
                 ++stats_requests_read_;
-                stats_latency_read_.sample(100);   // 模拟读延迟
+                stats_latency_read_.sample(100); // 模拟读延迟
             }
-            
+
             // 模拟行缓冲命中（基于地址位简单模拟）
             uint64_t addr = req.address.read();
-            bool row_hit = (addr & 0xF000) == 0;  // 地址低 16KB 为行缓冲命中
-            
+            bool row_hit = (addr & 0xF000) == 0; // 地址低 16KB 为行缓冲命中
+
             if (row_hit) {
                 ++stats_row_hits_;
             } else {
                 ++stats_row_misses_;
             }
-            
+
             bundles::CacheRespBundle resp;
             resp.transaction_id.write(req.transaction_id.read());
             resp.data.write(0xDEADBEEF);
@@ -90,7 +99,8 @@ public:
             resp_out_.write(resp);
             req_in_.consume();
         }
-        if (adapter_) adapter_->tick();
+        if (adapter_)
+            adapter_->tick();
     }
 
     void do_reset(const ResetConfig& /*config*/) override {
@@ -99,13 +109,32 @@ public:
         stats_.reset();
     }
 
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& req_in() { return req_in_; }
-    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() { return resp_out_; }
-    cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
+    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& req_in() {
+        return req_in_;
+    }
+    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() {
+        return resp_out_;
+    }
+    // P0-5b: 被动响应模块,无 req 输出/resp 输入。返回静态 dummy 供 StreamAdapter 统一调用。
+    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& req_out() {
+        static cpptlm::OutputStreamAdapter<bundles::CacheReqBundle> dummy;
+        return dummy;
+    }
+    cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& resp_in() {
+        static cpptlm::InputStreamAdapter<bundles::CacheRespBundle> dummy;
+        return dummy;
+    }
+    cpptlm::StreamAdapterBase* get_adapter() const {
+        return adapter_;
+    }
 
     // 统计访问器
-    tlm_stats::StatGroup& stats() { return stats_; }
-    const tlm_stats::StatGroup& stats() const { return stats_; }
+    tlm_stats::StatGroup& stats() {
+        return stats_;
+    }
+    const tlm_stats::StatGroup& stats() const {
+        return stats_;
+    }
 
     void dumpStats(std::ostream& os) const {
         stats_.dump(os);

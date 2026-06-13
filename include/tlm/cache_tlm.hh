@@ -7,32 +7,32 @@
 #ifndef TLM_CACHE_TLM_HH
 #define TLM_CACHE_TLM_HH
 
-#include "core/chstream_module.hh"
 #include "bundles/cache_bundles_tlm.hh"
+#include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include "metrics/stats.hh"
-#include <map>
 #include <cstdint>
+#include <map>
 
 /**
  * @brief Cache TLM 模块（新式 ch_stream 内部模型）
- * 
+ *
  * 继承关系：
  *   SimObject
  *   └── ChStreamModuleBase
  *       └── CacheTLM
- * 
+ *
  * 设计原则：
  * - 模块内部使用 cpptlm::InputStreamAdapter/OutputStreamAdapter（ch_stream 语义）
  * - 框架层通过 StreamAdapter 自动转换为 MasterPort/SlavePort
  * - 业务逻辑不感知外部 Port 的存在
- * 
+ *
  * JSON 注册名："CacheTLM"
  */
 class CacheTLM : public ChStreamModuleBase {
 private:
     // 输入/输出适配器（提供 ch_stream valid/ready 语义）
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>  req_in_;
+    cpptlm::InputStreamAdapter<bundles::CacheReqBundle> req_in_;
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
 
     // 业务状态
@@ -48,16 +48,18 @@ private:
 
 public:
     CacheTLM(const std::string& name, EventQueue* eq)
-        : ChStreamModuleBase(name, eq),
-          stats_("cache"),
+        : ChStreamModuleBase(name, eq), stats_("cache"),
           stats_requests_(stats_.addScalar("requests", "Total cache requests", "count")),
           stats_hits_(stats_.addScalar("hits", "Cache hits", "count")),
           stats_misses_(stats_.addScalar("misses", "Cache misses", "count")),
-          stats_latency_(stats_.addDistribution("latency", "Cache access latency", "cycle")) {}
+          stats_latency_(stats_.addDistribution("latency", "Cache access latency", "cycle")) {
+    }
 
     ~CacheTLM() override = default;
 
-    std::string get_module_type() const override { return "CacheTLM"; }
+    std::string get_module_type() const override {
+        return "CacheTLM";
+    }
 
     // ChStreamModuleBase 接口
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
@@ -78,7 +80,7 @@ public:
 
             // 缓存查找
             bool hit = cache_lines_.count(addr) > 0;
-            uint64_t access_latency = hit ? 5 : 50;  // 模拟延迟
+            uint64_t access_latency = hit ? 5 : 50; // 模拟延迟
 
             if (is_write) {
                 cache_lines_[addr] = req.data.read();
@@ -104,7 +106,8 @@ public:
         }
 
         // 委托适配器 tick（输出方向数据搬运）
-        if (adapter_) adapter_->tick();
+        if (adapter_)
+            adapter_->tick();
     }
 
     void do_reset(const ResetConfig& /*config*/) override {
@@ -121,15 +124,34 @@ public:
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& resp_out() {
         return resp_out_;
     }
-    cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
+    // P0-5b: 被动响应模块,无 req 输出/resp 输入。返回静态 dummy 供 StreamAdapter 统一调用。
+    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& req_out() {
+        static cpptlm::OutputStreamAdapter<bundles::CacheReqBundle> dummy;
+        return dummy;
+    }
+    cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& resp_in() {
+        static cpptlm::InputStreamAdapter<bundles::CacheRespBundle> dummy;
+        return dummy;
+    }
+    cpptlm::StreamAdapterBase* get_adapter() const {
+        return adapter_;
+    }
 
-// 统计访问器
-    tlm_stats::StatGroup& stats() { return stats_; }
-    const tlm_stats::StatGroup& stats() const { return stats_; }
+    // 统计访问器
+    tlm_stats::StatGroup& stats() {
+        return stats_;
+    }
+    const tlm_stats::StatGroup& stats() const {
+        return stats_;
+    }
 
     // ChStreamModuleBase 统计接口
-    tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
-    std::string get_stats_path() const override { return "system.cache"; }
+    tlm_stats::StatGroup* get_stats_group() override {
+        return &stats_;
+    }
+    std::string get_stats_path() const override {
+        return "system.cache";
+    }
 
     void dumpStats(std::ostream& os) const {
         stats().dump(os);

@@ -101,8 +101,9 @@ TEST_CASE("CrossbarTLM: routing with communication", "[e2e][simulation][crossbar
     unsigned route = xbar.route_address(0x1234);
     REQUIRE(route == 1);
 
-    REQUIRE(xbar.resp_out[1].valid() == true);
-    auto resp = xbar.resp_out[1].data();
+    // P0-5b: 响应回源端口(0)
+    REQUIRE(xbar.resp_out[0].valid() == true);
+    auto resp = xbar.resp_out[0].data();
     REQUIRE(resp.transaction_id.read() == 7);
     REQUIRE(resp.is_hit.read() == 1);
 }
