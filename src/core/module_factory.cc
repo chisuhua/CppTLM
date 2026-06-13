@@ -581,9 +581,9 @@ bool ModuleFactory::instantiateAll(const json& config) {
             req_out_vec[i] = new cpptlm::ChStreamInitiatorPort(
                 name + ".req_out" + (n_ports > 1 ? suffix : ""), event_queue);
             resp_in_vec[i] = new cpptlm::ChStreamTargetPort(
-                name + ".resp_in" + (n_ports > 1 ? suffix : ""), adapter, event_queue);
+                name + ".resp_in" + (n_ports > 1 ? suffix : ""), adapter, event_queue, i);
             req_in_vec[i] = new cpptlm::ChStreamTargetPort(
-                name + ".req_in" + (n_ports > 1 ? suffix : ""), adapter, event_queue);
+                name + ".req_in" + (n_ports > 1 ? suffix : ""), adapter, event_queue, i);
             resp_out_vec[i] = new cpptlm::ChStreamInitiatorPort(
                 name + ".resp_out" + (n_ports > 1 ? suffix : ""), event_queue);
 
@@ -725,7 +725,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 src_name.c_str(), src_idx, dst_name.c_str(), dst_idx, latency);
 
         // 响应路径: dst → src
-        if (ch_resp_out.count(dst_name) > dst_idx && ch_resp_in.count(src_name) > src_idx) {
+        // P0-5b fix: count(name) 是键存在性(0/1),不是 vector 长度。
+        // 旧代码 `count(dst_name) > dst_idx` 在 dst_idx >= 1 时永远 false,
+        // 导致 xbar.resp_out[1/2/3] 永远没绑到 cpu1/2/3.resp_in,响应被丢弃。
+        if (ch_resp_out.count(dst_name) && ch_resp_out[dst_name].size() > dst_idx &&
+            ch_resp_in.count(src_name) && ch_resp_in[src_name].size() > src_idx) {
             port_pairs_.push_back(std::make_unique<PortPair>(ch_resp_out[dst_name][dst_idx],
                                                              ch_resp_in[src_name][src_idx]));
             ch_resp_out[dst_name][dst_idx]->setDelay(latency);

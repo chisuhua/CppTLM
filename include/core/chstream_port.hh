@@ -57,14 +57,17 @@ class ChStreamTargetPort : public SlavePort {
 private:
     StreamAdapterBase* adapter_;
     EventQueue* eq_;
+    unsigned port_idx_ = 0;  // P0-5b fix: 多端口路由必须知道自己的端口索引
 
 public:
-    ChStreamTargetPort(std::string name, StreamAdapterBase* adapter, EventQueue* eq)
-        : SlavePort(name), adapter_(adapter), eq_(eq) {}
+    ChStreamTargetPort(std::string name, StreamAdapterBase* adapter, EventQueue* eq,
+                       unsigned port_idx = 0)
+        : SlavePort(name), adapter_(adapter), eq_(eq), port_idx_(port_idx) {}
 
     bool recvReq(Packet* pkt) override {
         if (adapter_) {
-            adapter_->process_request_input(pkt);
+            // P0-5b fix: 多端口 adapter 需要知道请求来自哪个端口
+            adapter_->process_request_input(pkt, port_idx_);
         }
         PacketPool::get().release(pkt);
         return true;

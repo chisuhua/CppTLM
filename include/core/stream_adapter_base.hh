@@ -70,6 +70,20 @@ public:
     virtual void process_request_input(Packet* pkt) = 0;
 
     /**
+     * @brief 处理请求方向输入（多端口版本,P0-5b fix）
+     *
+     * 多端口 StreamAdapter 需要知道请求来自哪个端口才能正确路由到
+     * 内部 req_in[port_idx] / resp_in[port_idx]。单端口 adapter 使用
+     * 1 参数重载（默认 port_idx=0）。
+     *
+     * @param pkt      Packet
+     * @param port_idx 接收端口索引（0..N-1）
+     */
+    virtual void process_request_input(Packet* pkt, unsigned /*port_idx*/) {
+        process_request_input(pkt);  // 默认回退到单端口版本
+    }
+
+    /**
      * @brief 处理响应方向输出（ch_stream → Packet）
      * @return 待发送的 Packet（若无返回 nullptr）
      */
