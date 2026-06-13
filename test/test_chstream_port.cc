@@ -1,7 +1,7 @@
-#include <catch2/catch_all.hpp>
 #include "core/chstream_port.hh"
 #include "core/packet.hh"
 #include "core/packet_pool.hh"
+#include <catch2/catch_all.hpp>
 
 TEST_CASE("ChStreamInitiatorPort stores and drains responses", "[chstream][port]") {
     EventQueue eq;

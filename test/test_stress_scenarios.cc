@@ -17,55 +17,56 @@
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
-#include "metrics/stats_manager.hh"
 #include "metrics/metrics_reporter.hh"
+#include "metrics/stats_manager.hh"
 
-#include <nlohmann/json.hpp>
-#include <fstream>
-#include <sstream>
 #include <filesystem>
+#include <fstream>
+#include <nlohmann/json.hpp>
+#include <sstream>
 
 using json = nlohmann::json;
 
 namespace {
 
-// ============================================================================
-// 辅助函数
-// ============================================================================
+    // ============================================================================
+    // 辅助函数
+    // ============================================================================
 
-json loadConfig(const std::string& path) {
-    std::ifstream f(path);
-    REQUIRE(f.is_open());
-    return json::parse(f);
-}
+    json loadConfig(const std::string& path) {
+        std::ifstream f(path);
+        REQUIRE(f.is_open());
+        return json::parse(f);
+    }
 
-void registerAllStats(ModuleFactory& factory) {
-    tlm_stats::StatsManager::instance().reset_all();
+    void registerAllStats(ModuleFactory& factory) {
+        tlm_stats::StatsManager::instance().reset_all();
 
-    for (const auto& [name, obj] : factory.getAllInstances()) {
-        if (auto* tg = dynamic_cast<TrafficGenTLM*>(obj)) {
-            tlm_stats::StatsManager::instance().register_group(&tg->stats(), name);
-        } else if (auto* cache = dynamic_cast<CacheTLM*>(obj)) {
-            tlm_stats::StatsManager::instance().register_group(&cache->stats(), name);
-        } else if (auto* xbar = dynamic_cast<CrossbarTLM*>(obj)) {
-            tlm_stats::StatsManager::instance().register_group(&xbar->stats(), name);
-        } else if (auto* mem = dynamic_cast<MemoryTLM*>(obj)) {
-            tlm_stats::StatsManager::instance().register_group(&mem->stats(), name);
+        for (const auto& [name, obj] : factory.getAllInstances()) {
+            if (auto* tg = dynamic_cast<TrafficGenTLM*>(obj)) {
+                tlm_stats::StatsManager::instance().register_group(&tg->stats(), name);
+            } else if (auto* cache = dynamic_cast<CacheTLM*>(obj)) {
+                tlm_stats::StatsManager::instance().register_group(&cache->stats(), name);
+            } else if (auto* xbar = dynamic_cast<CrossbarTLM*>(obj)) {
+                tlm_stats::StatsManager::instance().register_group(&xbar->stats(), name);
+            } else if (auto* mem = dynamic_cast<MemoryTLM*>(obj)) {
+                tlm_stats::StatsManager::instance().register_group(&mem->stats(), name);
+            }
         }
     }
-}
 
-// ============================================================================
-// 场景 1: stress_hotspot_2cpu
-// ============================================================================
+    // ============================================================================
+    // 场景 1: stress_hotspot_2cpu
+    // ============================================================================
 
-TEST_CASE("Scenario: stress_hotspot_2cpu — HOTSPOT 模式热点延迟验证", "[phase8-stress][scenario][hotspot]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_hotspot_2cpu — HOTSPOT 模式热点延迟验证",
+              "[phase8-stress][scenario][hotspot]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {
                 "name": "tg_hot",
@@ -94,29 +95,30 @@ TEST_CASE("Scenario: stress_hotspot_2cpu — HOTSPOT 模式热点延迟验证", 
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    registerAllStats(factory);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        registerAllStats(factory);
+        factory.startAllTicks();
 
-    eq.run(5000);
+        eq.run(5000);
 
-    auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_hot"));
-    REQUIRE(tg != nullptr);
+        auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_hot"));
+        REQUIRE(tg != nullptr);
 
-    auto& stats = tg->stats();
-    REQUIRE(stats.stats().count("requests_issued") > 0);
+        auto& stats = tg->stats();
+        REQUIRE(stats.stats().count("requests_issued") > 0);
 
-    auto& issued_stat = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_issued"));
-    REQUIRE(issued_stat.value() > 0);
-}
+        auto& issued_stat = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_issued"));
+        REQUIRE(issued_stat.value() > 0);
+    }
 
-TEST_CASE("Scenario: stress_hotspot_2cpu — 多 TrafficGenTLM 并发", "[phase8-stress][scenario][hotspot]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_hotspot_2cpu — 多 TrafficGenTLM 并发",
+              "[phase8-stress][scenario][hotspot]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {
                 "name": "tg0",
@@ -148,32 +150,33 @@ TEST_CASE("Scenario: stress_hotspot_2cpu — 多 TrafficGenTLM 并发", "[phase8
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        factory.startAllTicks();
 
-    eq.run(5000);
+        eq.run(5000);
 
-    auto* tg0 = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg0"));
-    auto* tg1 = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg1"));
+        auto* tg0 = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg0"));
+        auto* tg1 = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg1"));
 
-    REQUIRE(tg0 != nullptr);
-    REQUIRE(tg1 != nullptr);
+        REQUIRE(tg0 != nullptr);
+        REQUIRE(tg1 != nullptr);
 
-    REQUIRE(tg0->stats().stats().at("requests_issued") != nullptr);
-    REQUIRE(tg1->stats().stats().at("requests_issued") != nullptr);
-}
+        REQUIRE(tg0->stats().stats().at("requests_issued") != nullptr);
+        REQUIRE(tg1->stats().stats().at("requests_issued") != nullptr);
+    }
 
-// ============================================================================
-// 场景 2: stress_strided_cache
-// ============================================================================
+    // ============================================================================
+    // 场景 2: stress_strided_cache
+    // ============================================================================
 
-TEST_CASE("Scenario: stress_strided_cache — STRIDED 模式缓存未命中率验证", "[phase8-stress][scenario][strided]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_strided_cache — STRIDED 模式缓存未命中率验证",
+              "[phase8-stress][scenario][strided]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {
                 "name": "tg_stride",
@@ -195,32 +198,33 @@ TEST_CASE("Scenario: stress_strided_cache — STRIDED 模式缓存未命中率�
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    registerAllStats(factory);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        registerAllStats(factory);
+        factory.startAllTicks();
 
-    eq.run(5000);
+        eq.run(5000);
 
-    auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_stride"));
-    REQUIRE(tg != nullptr);
+        auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_stride"));
+        REQUIRE(tg != nullptr);
 
-    auto& stats = tg->stats();
-    REQUIRE(stats.stats().count("requests_issued") > 0);
+        auto& stats = tg->stats();
+        REQUIRE(stats.stats().count("requests_issued") > 0);
 
-    auto* cache = dynamic_cast<CacheTLM*>(factory.getInstance("l1"));
-    REQUIRE(cache != nullptr);
+        auto* cache = dynamic_cast<CacheTLM*>(factory.getInstance("l1"));
+        REQUIRE(cache != nullptr);
 
-    auto& cache_stats = cache->stats();
-    REQUIRE(cache_stats.stats().count("requests") > 0);
-}
+        auto& cache_stats = cache->stats();
+        REQUIRE(cache_stats.stats().count("requests") > 0);
+    }
 
-TEST_CASE("Scenario: stress_strided_cache — STRIDED 地址分布验证", "[phase8-stress][scenario][strided]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_strided_cache — STRIDED 地址分布验证",
+              "[phase8-stress][scenario][strided]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {
                 "name": "tg_stride",
@@ -242,32 +246,33 @@ TEST_CASE("Scenario: stress_strided_cache — STRIDED 地址分布验证", "[pha
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        factory.startAllTicks();
 
-    eq.run(10000);
+        eq.run(10000);
 
-    auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_stride"));
-    REQUIRE(tg != nullptr);
+        auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_stride"));
+        REQUIRE(tg != nullptr);
 
-    auto& stats = tg->stats();
-    REQUIRE(stats.stats().count("addr_dist") > 0);
+        auto& stats = tg->stats();
+        REQUIRE(stats.stats().count("addr_dist") > 0);
 
-    auto& addr_dist = static_cast<tlm_stats::Distribution&>(*stats.stats().at("addr_dist"));
-    REQUIRE(addr_dist.count() > 0);
-}
+        auto& addr_dist = static_cast<tlm_stats::Distribution&>(*stats.stats().at("addr_dist"));
+        REQUIRE(addr_dist.count() > 0);
+    }
 
-// ============================================================================
-// 场景 3: stress_random_full
-// ============================================================================
+    // ============================================================================
+    // 场景 3: stress_random_full
+    // ============================================================================
 
-TEST_CASE("Scenario: stress_random_full — RANDOM 模式无丢包验证", "[phase8-stress][scenario][random]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_random_full — RANDOM 模式无丢包验证",
+              "[phase8-stress][scenario][random]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {
                 "name": "tg_rand",
@@ -288,31 +293,32 @@ TEST_CASE("Scenario: stress_random_full — RANDOM 模式无丢包验证", "[pha
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        factory.startAllTicks();
 
-    eq.run(5000);
+        eq.run(5000);
 
-    auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_rand"));
-    REQUIRE(tg != nullptr);
+        auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_rand"));
+        REQUIRE(tg != nullptr);
 
-    auto& stats = tg->stats();
-    REQUIRE(stats.stats().count("requests_issued") > 0);
-    REQUIRE(stats.stats().count("requests_completed") > 0);
+        auto& stats = tg->stats();
+        REQUIRE(stats.stats().count("requests_issued") > 0);
+        REQUIRE(stats.stats().count("requests_completed") > 0);
 
-    auto& issued = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_issued"));
-    auto& completed = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_completed"));
+        auto& issued = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_issued"));
+        auto& completed = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_completed"));
 
-    INFO("Issued: " << issued.value() << ", Completed: " << completed.value());
-}
+        INFO("Issued: " << issued.value() << ", Completed: " << completed.value());
+    }
 
-TEST_CASE("Scenario: stress_random_full — RANDOM 延迟稳定性验证", "[phase8-stress][scenario][random]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_random_full — RANDOM 延迟稳定性验证",
+              "[phase8-stress][scenario][random]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {
                 "name": "tg_rand",
@@ -333,32 +339,33 @@ TEST_CASE("Scenario: stress_random_full — RANDOM 延迟稳定性验证", "[pha
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        factory.startAllTicks();
 
-    eq.run(20000);
+        eq.run(20000);
 
-    auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_rand"));
-    REQUIRE(tg != nullptr);
+        auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_rand"));
+        REQUIRE(tg != nullptr);
 
-    auto& stats = tg->stats();
-    REQUIRE(stats.stats().count("requests_issued") > 0);
+        auto& stats = tg->stats();
+        REQUIRE(stats.stats().count("requests_issued") > 0);
 
-    auto& issued = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_issued"));
-    REQUIRE(issued.value() > 0);
-}
+        auto& issued = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_issued"));
+        REQUIRE(issued.value() > 0);
+    }
 
-// ============================================================================
-// 场景 4: stress_mixed_4cpu
-// ============================================================================
+    // ============================================================================
+    // 场景 4: stress_mixed_4cpu
+    // ============================================================================
 
-TEST_CASE("Scenario: stress_mixed_4cpu — 多模式混合系统稳定运行", "[phase8-stress][scenario][mixed]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_mixed_4cpu — 多模式混合系统稳定运行",
+              "[phase8-stress][scenario][mixed]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {
                 "name": "tg_seq",
@@ -401,34 +408,35 @@ TEST_CASE("Scenario: stress_mixed_4cpu — 多模式混合系统稳定运行", "
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    registerAllStats(factory);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        registerAllStats(factory);
+        factory.startAllTicks();
 
-    eq.run(10000);
+        eq.run(10000);
 
-    auto* xbar = dynamic_cast<CrossbarTLM*>(factory.getInstance("xbar"));
-    REQUIRE(xbar != nullptr);
-    REQUIRE(xbar->num_ports() == 4);
+        auto* xbar = dynamic_cast<CrossbarTLM*>(factory.getInstance("xbar"));
+        REQUIRE(xbar != nullptr);
+        REQUIRE(xbar->num_ports() == 4);
 
-    auto* tg_seq = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_seq"));
-    auto* tg_rand = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_rand"));
-    auto* tg_hot = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_hot"));
-    auto* tg_stride = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_stride"));
+        auto* tg_seq = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_seq"));
+        auto* tg_rand = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_rand"));
+        auto* tg_hot = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_hot"));
+        auto* tg_stride = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_stride"));
 
-    REQUIRE(tg_seq != nullptr);
-    REQUIRE(tg_rand != nullptr);
-    REQUIRE(tg_hot != nullptr);
-    REQUIRE(tg_stride != nullptr);
-}
+        REQUIRE(tg_seq != nullptr);
+        REQUIRE(tg_rand != nullptr);
+        REQUIRE(tg_hot != nullptr);
+        REQUIRE(tg_stride != nullptr);
+    }
 
-TEST_CASE("Scenario: stress_mixed_4cpu — Crossbar 多端口路由", "[phase8-stress][scenario][mixed]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_mixed_4cpu — Crossbar 多端口路由",
+              "[phase8-stress][scenario][mixed]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {"name": "cpu0", "type": "TrafficGenTLM", "config": {"num_requests": 30}},
             {"name": "cpu1", "type": "TrafficGenTLM", "config": {"num_requests": 30}},
@@ -452,29 +460,30 @@ TEST_CASE("Scenario: stress_mixed_4cpu — Crossbar 多端口路由", "[phase8-s
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        factory.startAllTicks();
 
-    eq.run(5000);
+        eq.run(5000);
 
-    auto* xbar = dynamic_cast<CrossbarTLM*>(factory.getInstance("xbar"));
-    REQUIRE(xbar != nullptr);
+        auto* xbar = dynamic_cast<CrossbarTLM*>(factory.getInstance("xbar"));
+        REQUIRE(xbar != nullptr);
 
-    auto& xbar_stats = xbar->stats();
-    REQUIRE(xbar_stats.stats().count("flits_received") > 0);
-}
+        auto& xbar_stats = xbar->stats();
+        REQUIRE(xbar_stats.stats().count("flits_received") > 0);
+    }
 
-// ============================================================================
-// 场景 5: stress_backpressure
-// ============================================================================
+    // ============================================================================
+    // 场景 5: stress_backpressure
+    // ============================================================================
 
-TEST_CASE("Scenario: stress_backpressure — SEQUENTIAL 突发反压验证", "[phase8-stress][scenario][backpressure]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_backpressure — SEQUENTIAL 突发反压验证",
+              "[phase8-stress][scenario][backpressure]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {
                 "name": "tg_seq",
@@ -495,29 +504,30 @@ TEST_CASE("Scenario: stress_backpressure — SEQUENTIAL 突发反压验证", "[p
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    registerAllStats(factory);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        registerAllStats(factory);
+        factory.startAllTicks();
 
-    eq.run(5000);
+        eq.run(5000);
 
-    auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_seq"));
-    REQUIRE(tg != nullptr);
+        auto* tg = dynamic_cast<TrafficGenTLM*>(factory.getInstance("tg_seq"));
+        REQUIRE(tg != nullptr);
 
-    auto& stats = tg->stats();
-    REQUIRE(stats.stats().count("requests_issued") > 0);
+        auto& stats = tg->stats();
+        REQUIRE(stats.stats().count("requests_issued") > 0);
 
-    auto& issued = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_issued"));
-    REQUIRE(issued.value() > 0);
-}
+        auto& issued = static_cast<tlm_stats::Scalar&>(*stats.stats().at("requests_issued"));
+        REQUIRE(issued.value() > 0);
+    }
 
-TEST_CASE("Scenario: stress_backpressure — Crossbar 反压传播验证", "[phase8-stress][scenario][backpressure]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: stress_backpressure — Crossbar 反压传播验证",
+              "[phase8-stress][scenario][backpressure]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 200}},
             {"name": "xbar", "type": "CrossbarTLM"},
@@ -529,35 +539,36 @@ TEST_CASE("Scenario: stress_backpressure — Crossbar 反压传播验证", "[pha
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        factory.startAllTicks();
 
-    eq.run(10000);
+        eq.run(10000);
 
-    auto* xbar = dynamic_cast<CrossbarTLM*>(factory.getInstance("xbar"));
-    REQUIRE(xbar != nullptr);
+        auto* xbar = dynamic_cast<CrossbarTLM*>(factory.getInstance("xbar"));
+        REQUIRE(xbar != nullptr);
 
-    auto& xbar_stats = xbar->stats();
-    REQUIRE(xbar_stats.stats().count("flits_received") > 0);
-    REQUIRE(xbar_stats.stats().count("flits_sent") > 0);
+        auto& xbar_stats = xbar->stats();
+        REQUIRE(xbar_stats.stats().count("flits_received") > 0);
+        REQUIRE(xbar_stats.stats().count("flits_sent") > 0);
 
-    auto& received = static_cast<tlm_stats::Scalar&>(*xbar_stats.stats().at("flits_received"));
-    auto& sent = static_cast<tlm_stats::Scalar&>(*xbar_stats.stats().at("flits_sent"));
+        auto& received = static_cast<tlm_stats::Scalar&>(*xbar_stats.stats().at("flits_received"));
+        auto& sent = static_cast<tlm_stats::Scalar&>(*xbar_stats.stats().at("flits_sent"));
 
-    INFO("Xbar received: " << received.value() << ", sent: " << sent.value());
-}
+        INFO("Xbar received: " << received.value() << ", sent: " << sent.value());
+    }
 
-// ============================================================================
-// 报告生成验证
-// ============================================================================
+    // ============================================================================
+    // 报告生成验证
+    // ============================================================================
 
-TEST_CASE("Scenario: generate stress results to output directory", "[phase8-stress][scenario][report]") {
-    EventQueue eq;
-    REGISTER_CHSTREAM;
+    TEST_CASE("Scenario: generate stress results to output directory",
+              "[phase8-stress][scenario][report]") {
+        EventQueue eq;
+        REGISTER_CHSTREAM;
 
-    ModuleFactory factory(&eq);
+        ModuleFactory factory(&eq);
 
-    json config = R"({
+        json config = R"({
         "modules": [
             {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 20}},
             {"name": "cache", "type": "CacheTLM"},
@@ -569,24 +580,24 @@ TEST_CASE("Scenario: generate stress results to output directory", "[phase8-stre
         ]
     })"_json;
 
-    factory.instantiateAll(config);
-    registerAllStats(factory);
-    factory.startAllTicks();
+        factory.instantiateAll(config);
+        registerAllStats(factory);
+        factory.startAllTicks();
 
-    eq.run(1000);
+        eq.run(1000);
 
-    std::string output_dir = "test/stress_results/scenario_test";
-    std::filesystem::create_directories(output_dir);
+        std::string output_dir = "test/stress_results/scenario_test";
+        std::filesystem::create_directories(output_dir);
 
-    tlm_stats::MultiReporter multi;
-    bool success = multi.generate_all(output_dir);
-    REQUIRE(success);
+        tlm_stats::MultiReporter multi;
+        bool success = multi.generate_all(output_dir);
+        REQUIRE(success);
 
-    REQUIRE(std::filesystem::exists(output_dir + "/metrics.txt"));
-    REQUIRE(std::filesystem::exists(output_dir + "/metrics.json"));
-    REQUIRE(std::filesystem::exists(output_dir + "/metrics.md"));
+        REQUIRE(std::filesystem::exists(output_dir + "/metrics.txt"));
+        REQUIRE(std::filesystem::exists(output_dir + "/metrics.json"));
+        REQUIRE(std::filesystem::exists(output_dir + "/metrics.md"));
 
-    std::filesystem::remove_all(output_dir);
-}
+        std::filesystem::remove_all(output_dir);
+    }
 
 } // namespace

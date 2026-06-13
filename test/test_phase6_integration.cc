@@ -2,13 +2,13 @@
 // Phase 6: End-to-end integration — Cache→Crossbar→Memory
 // 功能描述：验证 ChStream 模块端到端数据通路 + ModuleFactory 完整集成
 // 作者 CppTLM Team / 日期 2026-04-13
-#include <catch2/catch_all.hpp>
-#include "modules.hh"
+#include "bundles/cache_bundles_tlm.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "framework/chstream_adapter_factory.hh"
-#include "bundles/cache_bundles_tlm.hh"
+#include "modules.hh"
+#include <catch2/catch_all.hpp>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -146,7 +146,7 @@ TEST_CASE("Phase 6: CrossbarTLM tick routes request", "[phase6][crossbar]") {
     // Send request to port 0 with address routing to port 1
     bundles::CacheReqBundle req;
     req.transaction_id.write(42);
-    req.address.write(0x1234);  // Routes to port 1
+    req.address.write(0x1234); // Routes to port 1
     req.is_write.write(0);
     req.data.write(0);
     req.size.write(8);

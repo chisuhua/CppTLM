@@ -1,8 +1,8 @@
-#include <catch2/catch_all.hpp>
-#include "tlm/cache_tlm.hh"
-#include "bundles/cache_bundles_tlm.hh"
 #include "bundles/bundle_serialization.hh"
+#include "bundles/cache_bundles_tlm.hh"
 #include "core/event_queue.hh"
+#include "tlm/cache_tlm.hh"
+#include <catch2/catch_all.hpp>
 #include <cstdint>
 #include <cstring>
 
@@ -262,7 +262,9 @@ TEST_CASE("CacheTLM adapter tick delegation", "[tlm][cache][integration]") {
     // Create mock adapter
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> mock_out;
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle> mock_in;
-    auto* mock_adapter = new cpptlm::StreamAdapter<CacheTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(&cache);
+    auto* mock_adapter =
+        new cpptlm::StreamAdapter<CacheTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(
+            &cache);
 
     cache.set_stream_adapter(mock_adapter);
     REQUIRE(cache.get_adapter() == mock_adapter);

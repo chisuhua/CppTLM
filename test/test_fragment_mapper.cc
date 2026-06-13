@@ -1,10 +1,10 @@
 // test/test_fragment_mapper.cc
 // FragmentMapper 单元测试：以 TransactionContextExt 为真值源
 // 覆盖：单拍/多拍序列化、Extension 缺失回退、X.13 安全写入、辅助函数
-#include <catch2/catch_all.hpp>
-#include "rtl/fragment_mapper.hh"
 #include "core/packet_pool.hh"
+#include "rtl/fragment_mapper.hh"
 #include "tlm/tlm_stub.hh"
+#include <catch2/catch_all.hpp>
 
 using namespace cpptlm;
 using namespace cpptlm::rtl;
@@ -54,19 +54,20 @@ TEST_CASE("FragmentMapper: serialize multi-beat transaction (middle beat)", "[rt
 
     auto beat = FragmentMapper::serialize_req(pkt);
 
-    REQUIRE(beat.tid == 201);             // 每拍独立 tid
-    REQUIRE(beat.parent_id == 200);       // 共享 parent
+    REQUIRE(beat.tid == 201);       // 每拍独立 tid
+    REQUIRE(beat.parent_id == 200); // 共享 parent
     REQUIRE(beat.fragment_id == 1);
     REQUIRE(beat.fragment_total == 4);
-    REQUIRE(beat.first == false);         // 不是首拍
-    REQUIRE(beat.last == false);          // 不是末拍
+    REQUIRE(beat.first == false); // 不是首拍
+    REQUIRE(beat.last == false);  // 不是末拍
     REQUIRE(beat.addr == 0x2000);
     REQUIRE(beat.data == 0x1122334455667788ULL);
 
     PacketPool::get().release(pkt);
 }
 
-TEST_CASE("FragmentMapper: serialize without Extension (fallback to stream_id)", "[rtl][fragment]") {
+TEST_CASE("FragmentMapper: serialize without Extension (fallback to stream_id)",
+          "[rtl][fragment]") {
     Packet* pkt = PacketPool::get().acquire();
     pkt->type = PKT_REQ;
     pkt->stream_id = 42;
@@ -76,7 +77,7 @@ TEST_CASE("FragmentMapper: serialize without Extension (fallback to stream_id)",
 
     auto beat = FragmentMapper::serialize_req(pkt);
 
-    REQUIRE(beat.tid == 42);              // 回退到 stream_id
+    REQUIRE(beat.tid == 42); // 回退到 stream_id
     REQUIRE(beat.parent_id == 0);
     REQUIRE(beat.fragment_id == 0);
     REQUIRE(beat.fragment_total == 1);
@@ -114,7 +115,7 @@ TEST_CASE("FragmentMapper: serialize_beat_at overrides fragment_id", "[rtl][frag
     pkt->stream_id = 400;
     pkt->payload->set_data_length(sizeof(uint64_t));
     pkt->payload->set_address(0x4000);
-    create_transaction_context(pkt->payload, 400, 350, 2, 4);  // 起始 fragment_id=2
+    create_transaction_context(pkt->payload, 400, 350, 2, 4); // 起始 fragment_id=2
 
     SECTION("Beat 0: override to first") {
         auto beat = FragmentMapper::serialize_beat_at(pkt, 0);
@@ -140,7 +141,7 @@ TEST_CASE("FragmentMapper: serialize_beat_at overrides fragment_id", "[rtl][frag
 TEST_CASE("FragmentMapper: write_resp creates Extension with X.13 safety", "[rtl][fragment]") {
     Packet* resp = PacketPool::get().acquire();
     resp->type = PKT_RESP;
-    resp->payload->set_data_length(sizeof(uint64_t));  // 分配 data buffer
+    resp->payload->set_data_length(sizeof(uint64_t)); // 分配 data buffer
 
     CacheRespBeatRTL beat;
     beat.tid = 500;
@@ -178,7 +179,7 @@ TEST_CASE("FragmentMapper: write_resp creates Extension with X.13 safety", "[rtl
 TEST_CASE("FragmentMapper: write_resp replaces old Extension (X.13 safe)", "[rtl][fragment]") {
     Packet* resp = PacketPool::get().acquire();
     resp->type = PKT_RESP;
-    resp->payload->set_data_length(sizeof(uint64_t));  // 分配 data buffer
+    resp->payload->set_data_length(sizeof(uint64_t)); // 分配 data buffer
 
     // 预存旧 Extension
     create_transaction_context(resp->payload, 999, 0, 0, 1);
@@ -198,7 +199,7 @@ TEST_CASE("FragmentMapper: write_resp replaces old Extension (X.13 safe)", "[rtl
     // 验证替换成功（不是累积）
     auto* ext = get_transaction_context(resp->payload);
     REQUIRE(ext != nullptr);
-    REQUIRE(ext->transaction_id == 600);  // 新值
+    REQUIRE(ext->transaction_id == 600); // 新值
     REQUIRE(ext->parent_id == 550);
     REQUIRE(resp->get_transaction_id() == 600);
 
@@ -208,16 +209,20 @@ TEST_CASE("FragmentMapper: write_resp replaces old Extension (X.13 safe)", "[rtl
 TEST_CASE("FragmentMapper: beats_remaining computation", "[rtl][fragment]") {
     CacheReqBeatRTL beat;
 
-    beat.fragment_id = 0; beat.fragment_total = 4;
+    beat.fragment_id = 0;
+    beat.fragment_total = 4;
     REQUIRE(FragmentMapper::beats_remaining(beat) == 3);
 
-    beat.fragment_id = 1; beat.fragment_total = 4;
+    beat.fragment_id = 1;
+    beat.fragment_total = 4;
     REQUIRE(FragmentMapper::beats_remaining(beat) == 2);
 
-    beat.fragment_id = 2; beat.fragment_total = 4;
+    beat.fragment_id = 2;
+    beat.fragment_total = 4;
     REQUIRE(FragmentMapper::beats_remaining(beat) == 1);
 
-    beat.fragment_id = 3; beat.fragment_total = 4;  // last
+    beat.fragment_id = 3;
+    beat.fragment_total = 4; // last
     REQUIRE(FragmentMapper::beats_remaining(beat) == 0);
 
     // 边界：fragment_total=0
@@ -230,10 +235,10 @@ TEST_CASE("FragmentMapper: group_key uses parent_id when set", "[rtl][fragment]"
 
     beat.tid = 201;
     beat.parent_id = 200;
-    REQUIRE(FragmentMapper::group_key(beat) == 200);  // 用 parent_id
+    REQUIRE(FragmentMapper::group_key(beat) == 200); // 用 parent_id
 
-    beat.parent_id = 0;  // 根事务
-    REQUIRE(FragmentMapper::group_key(beat) == 201);  // 用 tid
+    beat.parent_id = 0;                              // 根事务
+    REQUIRE(FragmentMapper::group_key(beat) == 201); // 用 tid
 }
 
 TEST_CASE("FragmentMapper: is_single_beat detection", "[rtl][fragment]") {
@@ -245,7 +250,7 @@ TEST_CASE("FragmentMapper: is_single_beat detection", "[rtl][fragment]") {
     beat.fragment_total = 4;
     REQUIRE(FragmentMapper::is_single_beat(beat) == false);
 
-    beat.fragment_total = 0;  // 边界
+    beat.fragment_total = 0; // 边界
     REQUIRE(FragmentMapper::is_single_beat(beat) == true);
 }
 
@@ -283,7 +288,8 @@ TEST_CASE("FragmentMapper: serialize_req on packet with null payload is safe", "
 // Round-trip 测试(Oracle 评审 v4 缺失项)
 // =============================================================================
 
-TEST_CASE("FragmentMapper: round-trip single-beat preserves all fields", "[rtl][fragment][roundtrip]") {
+TEST_CASE("FragmentMapper: round-trip single-beat preserves all fields",
+          "[rtl][fragment][roundtrip]") {
     // Step 1: 创建请求 Packet
     Packet* req = PacketPool::get().acquire();
     req->type = PKT_REQ;
@@ -307,7 +313,7 @@ TEST_CASE("FragmentMapper: round-trip single-beat preserves all fields", "[rtl][
     resp->type = PKT_RESP;
     resp->payload->set_data_length(sizeof(uint64_t));
     CacheRespBeatRTL resp_beat;
-    resp_beat.tid = 700;                // 同一 tid
+    resp_beat.tid = 700; // 同一 tid
     resp_beat.parent_id = 0;
     resp_beat.fragment_id = 0;
     resp_beat.fragment_total = 1;
@@ -319,7 +325,7 @@ TEST_CASE("FragmentMapper: round-trip single-beat preserves all fields", "[rtl][
     FragmentMapper::write_resp(resp, resp_beat);
 
     // Step 4: 验证响应 Packet 字段
-    REQUIRE(resp->get_transaction_id() == 700);  // 同步 stream_id
+    REQUIRE(resp->get_transaction_id() == 700); // 同步 stream_id
     REQUIRE(resp->stream_id == 700);
     auto* ext = get_transaction_context(resp->payload);
     REQUIRE(ext != nullptr);
@@ -334,7 +340,8 @@ TEST_CASE("FragmentMapper: round-trip single-beat preserves all fields", "[rtl][
     PacketPool::get().release(resp);
 }
 
-TEST_CASE("FragmentMapper: round-trip multi-beat preserves fragment metadata", "[rtl][fragment][roundtrip]") {
+TEST_CASE("FragmentMapper: round-trip multi-beat preserves fragment metadata",
+          "[rtl][fragment][roundtrip]") {
     // 多拍事务:tid 100, parent 50, 4 beats
     Packet* req = PacketPool::get().acquire();
     req->type = PKT_REQ;
@@ -372,15 +379,15 @@ TEST_CASE("FragmentMapper: round-trip multi-beat preserves fragment metadata", "
         resp_pkts[i]->payload->set_data_length(sizeof(uint64_t));
 
         CacheRespBeatRTL resp_beat;
-        resp_beat.tid            = beats[i].tid;
-        resp_beat.parent_id      = beats[i].parent_id;
-        resp_beat.fragment_id    = beats[i].fragment_id;
+        resp_beat.tid = beats[i].tid;
+        resp_beat.parent_id = beats[i].parent_id;
+        resp_beat.fragment_id = beats[i].fragment_id;
         resp_beat.fragment_total = beats[i].fragment_total;
-        resp_beat.data           = 0xBEEF0000ULL + i;
-        resp_beat.hit            = true;
-        resp_beat.error_code     = 0;
-        resp_beat.first          = beats[i].first;
-        resp_beat.last           = beats[i].last;
+        resp_beat.data = 0xBEEF0000ULL + i;
+        resp_beat.hit = true;
+        resp_beat.error_code = 0;
+        resp_beat.first = beats[i].first;
+        resp_beat.last = beats[i].last;
 
         FragmentMapper::write_resp(resp_pkts[i], resp_beat);
 
@@ -396,7 +403,8 @@ TEST_CASE("FragmentMapper: round-trip multi-beat preserves fragment metadata", "
         REQUIRE(ext->get_group_key() == 50);
     }
 
-    for (auto* p : resp_pkts) PacketPool::get().release(p);
+    for (auto* p : resp_pkts)
+        PacketPool::get().release(p);
     PacketPool::get().release(req);
 }
 
@@ -404,11 +412,12 @@ TEST_CASE("FragmentMapper: round-trip multi-beat preserves fragment metadata", "
 // 边界条件测试(Oracle 评审 v4 缺失项)
 // =============================================================================
 
-TEST_CASE("FragmentMapper: serialize_req with partial data length (< 8 bytes)", "[rtl][fragment][edge]") {
+TEST_CASE("FragmentMapper: serialize_req with partial data length (< 8 bytes)",
+          "[rtl][fragment][edge]") {
     Packet* pkt = PacketPool::get().acquire();
     pkt->type = PKT_REQ;
     pkt->stream_id = 800;
-    pkt->payload->set_data_length(3);  // 只 3 字节
+    pkt->payload->set_data_length(3); // 只 3 字节
     pkt->payload->set_address(0x2000);
     uint8_t partial[3] = {0xAA, 0xBB, 0xCC};
     std::memcpy(pkt->payload->get_data_ptr(), partial, 3);
@@ -419,13 +428,14 @@ TEST_CASE("FragmentMapper: serialize_req with partial data length (< 8 bytes)", 
     REQUIRE(beat.tid == 800);
     REQUIRE(beat.addr == 0x2000);
     // 部分数据应被截断到 fit(只读 3 字节,其余保留为 0)
-    REQUIRE((beat.data & 0xFFFFFF) == 0x00CCBBAAULL);  // little-endian
+    REQUIRE((beat.data & 0xFFFFFF) == 0x00CCBBAAULL); // little-endian
     REQUIRE(beat.strb == 0xFF);
 
     PacketPool::get().release(pkt);
 }
 
-TEST_CASE("FragmentMapper: serialize_beat_at marks last when beat_index >= fragment_total-1", "[rtl][fragment][edge]") {
+TEST_CASE("FragmentMapper: serialize_beat_at marks last when beat_index >= fragment_total-1",
+          "[rtl][fragment][edge]") {
     Packet* pkt = PacketPool::get().acquire();
     pkt->type = PKT_REQ;
     pkt->stream_id = 900;
@@ -442,7 +452,8 @@ TEST_CASE("FragmentMapper: serialize_beat_at marks last when beat_index >= fragm
     PacketPool::get().release(pkt);
 }
 
-TEST_CASE("FragmentMapper: write_resp with empty data length (no data buffer)", "[rtl][fragment][edge]") {
+TEST_CASE("FragmentMapper: write_resp with empty data length (no data buffer)",
+          "[rtl][fragment][edge]") {
     Packet* resp = PacketPool::get().acquire();
     resp->type = PKT_RESP;
     // 不调用 set_data_length,保持 len=0

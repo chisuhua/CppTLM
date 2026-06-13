@@ -2,25 +2,26 @@
 // Phase 7 性能基准测试：CacheTLM tick 延迟
 // 作者 CppTLM Team
 // 日期 2026-04-13
-#include "catch_amalgamated.hpp"
-#include "core/module_factory.hh"
-#include "core/chstream_module.hh"
-#include "framework/chstream_adapter_factory.hh"
-#include "core/chstream_port.hh"
-#include "tlm/cache_tlm.hh"
 #include "bundles/cache_bundles_tlm.hh"
+#include "catch_amalgamated.hpp"
+#include "core/chstream_module.hh"
+#include "core/chstream_port.hh"
+#include "core/module_factory.hh"
+#include "framework/chstream_adapter_factory.hh"
 #include "framework/stream_adapter.hh"
+#include "tlm/cache_tlm.hh"
 #include <chrono>
 #include <cstdint>
 
 namespace {
-auto _register_bench = []() {
-    ModuleFactory::registerObject<CacheTLM>("CacheTLM");
-    ChStreamAdapterFactory::get().registerAdapter<CacheTLM,
-        bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM");
-    return 0;
-}();
-}
+    auto _register_bench = []() {
+        ModuleFactory::registerObject<CacheTLM>("CacheTLM");
+        ChStreamAdapterFactory::get()
+            .registerAdapter<CacheTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(
+                "CacheTLM");
+        return 0;
+    }();
+} // namespace
 
 TEST_CASE("Phase 7: Benchmark — CacheTLM tick latency", "[phase7][benchmark]") {
     EventQueue eq;

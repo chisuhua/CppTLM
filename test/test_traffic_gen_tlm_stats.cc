@@ -3,8 +3,8 @@
 // 标签: [phase8][traffic-gen][stats]
 
 #include "catch_amalgamated.hpp"
-#include "tlm/traffic_gen_tlm.hh"
 #include "core/event_queue.hh"
+#include "tlm/traffic_gen_tlm.hh"
 
 #include <sstream>
 

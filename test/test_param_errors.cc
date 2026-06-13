@@ -1,7 +1,7 @@
 // test/test_param_errors.cc
 
-#include <catch2/catch_all.hpp>
 #include "core/param_errors.hh"
+#include <catch2/catch_all.hpp>
 
 TEST_CASE("ParamValidationError: exception carries info", "[param_errors][phase3.3]") {
     cpptlm::ParamValidationError err("router_0", "node_x", "out of range");

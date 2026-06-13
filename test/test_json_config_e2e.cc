@@ -9,9 +9,9 @@
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
-#include <nlohmann/json.hpp>
-#include <fstream>
 #include <filesystem>
+#include <fstream>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 

@@ -3,8 +3,8 @@
 // 作者：CppTLM Team
 // 日期：2026-05-07
 
-#include <catch2/catch_all.hpp>
 #include "core/param_rules.hh"
+#include <catch2/catch_all.hpp>
 
 TEST_CASE("ParamRule: JSON serialization roundtrip", "[param][phase3.3]") {
     cpptlm::ParamRule rule;

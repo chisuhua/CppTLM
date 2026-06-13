@@ -81,4 +81,3 @@ TEST_CASE("evaluate_derive_expr: missing param returns 0", "[param][derive]") {
     int64_t result = ParamParser::evaluate_derive_expr("vc_count >= 4 ? 100 : 50", params);
     REQUIRE(result == 0);
 }
-

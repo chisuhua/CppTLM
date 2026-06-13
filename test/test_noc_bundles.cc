@@ -2,8 +2,8 @@
 // NoCFlitBundle 单元测试
 // 功能描述：验证 NoCFlitBundle 字段读写、类型常量、辅助方法
 // 作者 CppTLM Team / 日期 2026-04-23
-#include <catch2/catch_all.hpp>
 #include "bundles/noc_bundles_tlm.hh"
+#include <catch2/catch_all.hpp>
 
 using namespace bundles;
 
@@ -111,15 +111,14 @@ TEST_CASE("NoCFlitBundle is_request() and is_response() work correctly", "[noc][
 }
 
 TEST_CASE("NoCFlitBundle make_head() factory creates valid HEAD flit", "[noc][bundle]") {
-    NoCFlitBundle flit = NoCFlitBundle::make_head(
-        0x1234ULL,     // transaction_id
-        1,             // src_node
-        5,             // dst_node
-        0x1000ULL,     // address
-        2,             // vc_id
-        3,             // total_flits
-        true,          // is_write
-        0xDEADBEEFULL  // data_word
+    NoCFlitBundle flit = NoCFlitBundle::make_head(0x1234ULL,    // transaction_id
+                                                  1,            // src_node
+                                                  5,            // dst_node
+                                                  0x1000ULL,    // address
+                                                  2,            // vc_id
+                                                  3,            // total_flits
+                                                  true,         // is_write
+                                                  0xDEADBEEFULL // data_word
     );
 
     REQUIRE(flit.transaction_id.read() == 0x1234ULL);
@@ -127,7 +126,7 @@ TEST_CASE("NoCFlitBundle make_head() factory creates valid HEAD flit", "[noc][bu
     REQUIRE(flit.dst_node.read() == 5);
     REQUIRE(flit.address.read() == 0x1000ULL);
     REQUIRE(flit.vc_id.read() == 2);
-    REQUIRE(flit.flit_index.read() == 0);  // HEAD 总是 index 0
+    REQUIRE(flit.flit_index.read() == 0); // HEAD 总是 index 0
     REQUIRE(flit.flit_count.read() == 3);
     REQUIRE(flit.hops.read() == 0);
     REQUIRE(flit.flit_category.read() == NoCFlitBundle::CATEGORY_REQUEST);
@@ -137,23 +136,23 @@ TEST_CASE("NoCFlitBundle make_head() factory creates valid HEAD flit", "[noc][bu
 }
 
 TEST_CASE("NoCFlitBundle make_head() with single flit creates HEAD_TAIL", "[noc][bundle]") {
-    NoCFlitBundle flit = NoCFlitBundle::make_head(
-        0x1234ULL, 1, 5, 0x1000ULL, 2, 1, false, 0xDEADBEEFULL);
+    NoCFlitBundle flit =
+        NoCFlitBundle::make_head(0x1234ULL, 1, 5, 0x1000ULL, 2, 1, false, 0xDEADBEEFULL);
 
     REQUIRE(flit.flit_type.read() == NoCFlitBundle::FLIT_HEAD_TAIL);
     REQUIRE(flit.is_head() == true);
     REQUIRE(flit.is_tail() == true);
 }
 
-TEST_CASE("NoCFlitBundle make_resp_head() factory creates valid RESPONSE HEAD flit", "[noc][bundle]") {
-    NoCFlitBundle flit = NoCFlitBundle::make_resp_head(
-        0x5678ULL,     // transaction_id
-        5,             // src_node (Memory)
-        1,             // dst_node (NICTLM)
-        3,             // vc_id
-        2,             // total_flits
-        true,          // is_ok
-        0             // error_code
+TEST_CASE("NoCFlitBundle make_resp_head() factory creates valid RESPONSE HEAD flit",
+          "[noc][bundle]") {
+    NoCFlitBundle flit = NoCFlitBundle::make_resp_head(0x5678ULL, // transaction_id
+                                                       5,         // src_node (Memory)
+                                                       1,         // dst_node (NICTLM)
+                                                       3,         // vc_id
+                                                       2,         // total_flits
+                                                       true,      // is_ok
+                                                       0          // error_code
     );
 
     REQUIRE(flit.transaction_id.read() == 0x5678ULL);

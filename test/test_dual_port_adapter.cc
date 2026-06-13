@@ -3,14 +3,14 @@
 // 功能描述：验证 DualPortStreamAdapter 的 PE 侧 / Network 侧独立通信
 // 作者 CppTLM Team
 // 日期 2026-04-14
-#include <catch2/catch_all.hpp>
-#include "framework/dual_port_stream_adapter.hh"
-#include "framework/chstream_adapter_factory.hh"
+#include "bundles/cache_bundles_tlm.hh"
 #include "core/chstream_module.hh"
 #include "core/chstream_port.hh"
-#include "bundles/cache_bundles_tlm.hh"
 #include "core/packet.hh"
 #include "core/packet_pool.hh"
+#include "framework/chstream_adapter_factory.hh"
+#include "framework/dual_port_stream_adapter.hh"
+#include <catch2/catch_all.hpp>
 #include <memory>
 
 // ============================================================
@@ -18,25 +18,28 @@
 // ============================================================
 class MockDualPortModule : public ChStreamModuleBase {
 private:
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>  pe_req_in_;
+    cpptlm::InputStreamAdapter<bundles::CacheReqBundle> pe_req_in_;
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> pe_resp_out_;
     cpptlm::InputStreamAdapter<bundles::CacheRespBundle> net_resp_in_;
-    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>  net_req_out_;
+    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle> net_req_out_;
 
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
 public:
-    MockDualPortModule(const std::string& n, EventQueue* eq)
-        : ChStreamModuleBase(n, eq) {}
+    MockDualPortModule(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+    }
 
-    std::string get_module_type() const override { return "MockDualPortModule"; }
+    std::string get_module_type() const override {
+        return "MockDualPortModule";
+    }
 
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
         adapter_ = adapter;
     }
 
     void tick() override {
-        if (adapter_) adapter_->tick();
+        if (adapter_)
+            adapter_->tick();
     }
 
     void do_reset(const ResetConfig&) override {
@@ -47,24 +50,33 @@ public:
     }
 
     // PE 侧访问器
-    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& pe_req_in() { return pe_req_in_; }
-    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& pe_resp_out() { return pe_resp_out_; }
+    cpptlm::InputStreamAdapter<bundles::CacheReqBundle>& pe_req_in() {
+        return pe_req_in_;
+    }
+    cpptlm::OutputStreamAdapter<bundles::CacheRespBundle>& pe_resp_out() {
+        return pe_resp_out_;
+    }
 
     // Network 侧访问器
-    cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& net_resp_in() { return net_resp_in_; }
-    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& net_req_out() { return net_req_out_; }
+    cpptlm::InputStreamAdapter<bundles::CacheRespBundle>& net_resp_in() {
+        return net_resp_in_;
+    }
+    cpptlm::OutputStreamAdapter<bundles::CacheReqBundle>& net_req_out() {
+        return net_req_out_;
+    }
 
-    cpptlm::StreamAdapterBase* get_adapter() const { return adapter_; }
+    cpptlm::StreamAdapterBase* get_adapter() const {
+        return adapter_;
+    }
 };
 
 // ============================================================
 // Adapter type alias for test convenience
 // ============================================================
-using TestDualAdapter = cpptlm::DualPortStreamAdapter<
-    MockDualPortModule,
-    bundles::CacheReqBundle, bundles::CacheRespBundle,
-    bundles::CacheReqBundle, bundles::CacheRespBundle
->;
+using TestDualAdapter =
+    cpptlm::DualPortStreamAdapter<MockDualPortModule, bundles::CacheReqBundle,
+                                  bundles::CacheRespBundle, bundles::CacheReqBundle,
+                                  bundles::CacheRespBundle>;
 
 TEST_CASE("DualPortStreamAdapter can be instantiated", "[dualport][adapter]") {
     EventQueue eq;
@@ -81,14 +93,14 @@ TEST_CASE("DualPortStreamAdapter binds PE and Net ports independently", "[dualpo
     TestDualAdapter adapter(&mod);
 
     cpptlm::ChStreamInitiatorPort pe_req_out("pe_req_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_resp_in("pe_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_resp_in("pe_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort pe_resp_out("pe_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_req_in("pe_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_req_in("pe_req_in", &adapter, &eq);
 
     cpptlm::ChStreamInitiatorPort net_req_out("net_req_out", &eq);
-    cpptlm::ChStreamTargetPort    net_resp_in("net_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_resp_in("net_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort net_resp_out("net_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    net_req_in("net_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_req_in("net_req_in", &adapter, &eq);
 
     adapter.bind_pe_ports(&pe_req_out, &pe_resp_in, &pe_resp_out, &pe_req_in);
     adapter.bind_net_ports(&net_req_out, &net_resp_in, &net_resp_out, &net_req_in);
@@ -103,14 +115,14 @@ TEST_CASE("DualPortStreamAdapter PE side processes requests", "[dualport][adapte
     TestDualAdapter adapter(&mod);
 
     cpptlm::ChStreamInitiatorPort pe_req_out("pe_req_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_resp_in("pe_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_resp_in("pe_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort pe_resp_out("pe_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_req_in("pe_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_req_in("pe_req_in", &adapter, &eq);
 
     cpptlm::ChStreamInitiatorPort net_req_out("net_req_out", &eq);
-    cpptlm::ChStreamTargetPort    net_resp_in("net_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_resp_in("net_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort net_resp_out("net_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    net_req_in("net_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_req_in("net_req_in", &adapter, &eq);
 
     adapter.bind_pe_ports(&pe_req_out, &pe_resp_in, &pe_resp_out, &pe_req_in);
     adapter.bind_net_ports(&net_req_out, &net_resp_in, &net_resp_out, &net_req_in);
@@ -139,14 +151,14 @@ TEST_CASE("DualPortStreamAdapter Network side processes responses", "[dualport][
     TestDualAdapter adapter(&mod);
 
     cpptlm::ChStreamInitiatorPort pe_req_out("pe_req_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_resp_in("pe_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_resp_in("pe_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort pe_resp_out("pe_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_req_in("pe_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_req_in("pe_req_in", &adapter, &eq);
 
     cpptlm::ChStreamInitiatorPort net_req_out("net_req_out", &eq);
-    cpptlm::ChStreamTargetPort    net_resp_in("net_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_resp_in("net_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort net_resp_out("net_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    net_req_in("net_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_req_in("net_req_in", &adapter, &eq);
 
     adapter.bind_pe_ports(&pe_req_out, &pe_resp_in, &pe_resp_out, &pe_req_in);
     adapter.bind_net_ports(&net_req_out, &net_resp_in, &net_resp_out, &net_req_in);
@@ -167,20 +179,21 @@ TEST_CASE("DualPortStreamAdapter Network side processes responses", "[dualport][
     REQUIRE(mod.net_resp_in().data().data.read() == 0xDEADBEEF);
 }
 
-TEST_CASE("DualPortStreamAdapter tick processes both sides without interference", "[dualport][adapter]") {
+TEST_CASE("DualPortStreamAdapter tick processes both sides without interference",
+          "[dualport][adapter]") {
     EventQueue eq;
     MockDualPortModule mod("dual_mod", &eq);
     TestDualAdapter adapter(&mod);
 
     cpptlm::ChStreamInitiatorPort pe_req_out("pe_req_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_resp_in("pe_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_resp_in("pe_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort pe_resp_out("pe_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_req_in("pe_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_req_in("pe_req_in", &adapter, &eq);
 
     cpptlm::ChStreamInitiatorPort net_req_out("net_req_out", &eq);
-    cpptlm::ChStreamTargetPort    net_resp_in("net_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_resp_in("net_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort net_resp_out("net_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    net_req_in("net_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_req_in("net_req_in", &adapter, &eq);
 
     adapter.bind_pe_ports(&pe_req_out, &pe_resp_in, &pe_resp_out, &pe_req_in);
     adapter.bind_net_ports(&net_req_out, &net_resp_in, &net_resp_out, &net_req_in);
@@ -215,14 +228,14 @@ TEST_CASE("DualPortStreamAdapter PE and Net sides do not interfere", "[dualport]
     TestDualAdapter adapter(&mod);
 
     cpptlm::ChStreamInitiatorPort pe_req_out("pe_req_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_resp_in("pe_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_resp_in("pe_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort pe_resp_out("pe_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    pe_req_in("pe_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort pe_req_in("pe_req_in", &adapter, &eq);
 
     cpptlm::ChStreamInitiatorPort net_req_out("net_req_out", &eq);
-    cpptlm::ChStreamTargetPort    net_resp_in("net_resp_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_resp_in("net_resp_in", &adapter, &eq);
     cpptlm::ChStreamInitiatorPort net_resp_out("net_resp_out", &eq);
-    cpptlm::ChStreamTargetPort    net_req_in("net_req_in", &adapter, &eq);
+    cpptlm::ChStreamTargetPort net_req_in("net_req_in", &adapter, &eq);
 
     adapter.bind_pe_ports(&pe_req_out, &pe_resp_in, &pe_resp_out, &pe_req_in);
     adapter.bind_net_ports(&net_req_out, &net_resp_in, &net_resp_out, &net_req_in);
@@ -255,9 +268,9 @@ TEST_CASE("DualPortStreamAdapter registry via ChStreamAdapterFactory", "[dualpor
     MockDualPortModule mod("factory_test_mod", &eq);
     auto& factory = ChStreamAdapterFactory::get();
 
-    factory.registerDualPortAdapter<MockDualPortModule,
-        bundles::CacheReqBundle, bundles::CacheRespBundle,
-        bundles::CacheReqBundle, bundles::CacheRespBundle>("MockDualPortModule");
+    factory.registerDualPortAdapter<MockDualPortModule, bundles::CacheReqBundle,
+                                    bundles::CacheRespBundle, bundles::CacheReqBundle,
+                                    bundles::CacheRespBundle>("MockDualPortModule");
 
     REQUIRE(factory.knows("MockDualPortModule"));
     REQUIRE(factory.isDualPort("MockDualPortModule"));
@@ -275,9 +288,9 @@ TEST_CASE("ChStreamAdapterFactory creates dual-port adapter from factory", "[dua
     MockDualPortModule mod("factory_mod", &eq);
 
     auto& factory = ChStreamAdapterFactory::get();
-    factory.registerDualPortAdapter<MockDualPortModule,
-        bundles::CacheReqBundle, bundles::CacheRespBundle,
-        bundles::CacheReqBundle, bundles::CacheRespBundle>("FactoryDualModule");
+    factory.registerDualPortAdapter<MockDualPortModule, bundles::CacheReqBundle,
+                                    bundles::CacheRespBundle, bundles::CacheReqBundle,
+                                    bundles::CacheRespBundle>("FactoryDualModule");
 
     auto* adapter = factory.create("FactoryDualModule", &mod);
     REQUIRE(adapter != nullptr);

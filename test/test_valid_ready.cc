@@ -18,12 +18,10 @@ TEST_CASE("ValidReadyTest NoBuffer_NoBypass", "[valid][ready]") {
 
     // input_buffer_size=0 → 必须立即处理，否则反压
     producer.getPortManager().addDownstreamPort(&producer, {4}, {0});
-    consumer.getPortManager().addUpstreamPort(&consumer, {1}, {0});  // min buffer to receive first
+    consumer.getPortManager().addUpstreamPort(&consumer, {1}, {0}); // min buffer to receive first
 
-    auto pp = std::make_unique<PortPair>(
-        producer.getPortManager().getDownstreamPorts()[0],
-        consumer.getPortManager().getUpstreamPorts()[0]
-    );
+    auto pp = std::make_unique<PortPair>(producer.getPortManager().getDownstreamPorts()[0],
+                                         consumer.getPortManager().getUpstreamPorts()[0]);
 
     // 第一次发送：成功（consumer 可处理）
     producer.sendPacket();
@@ -37,6 +35,6 @@ TEST_CASE("ValidReadyTest NoBuffer_NoBypass", "[valid][ready]") {
 
     // 即使 consumer 不处理新包，producer 也不能绕过
     producer.sendPacket();
-    REQUIRE(producer.send_count == 2);  // still succeeds (buffered in output)
-    REQUIRE(consumer.received_packets.size() == 1);  // only one processed
+    REQUIRE(producer.send_count == 2);              // still succeeds (buffered in output)
+    REQUIRE(consumer.received_packets.size() == 1); // only one processed
 }

@@ -15,8 +15,7 @@ bool DynamicLoader::loadPlugin(const std::string& plugin_path) {
 
     void* handle = dlopen(plugin_path.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     if (!handle) {
-        DPRINTF(LOADER, "[ERROR] Cannot load plugin %s: %s\n",
-                plugin_path.c_str(), dlerror());
+        DPRINTF(LOADER, "[ERROR] Cannot load plugin %s: %s\n", plugin_path.c_str(), dlerror());
         return false;
     }
 

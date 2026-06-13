@@ -4,9 +4,9 @@
 // 作者 CppTLM Development Team
 // 日期 2026-04-16
 #include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
 #include "tlm/stress_patterns.hh"
 #include "tlm/traffic_gen_tlm.hh"
-#include "core/event_queue.hh"
 
 using namespace std;
 
@@ -16,20 +16,21 @@ TEST_CASE("SequentialStrategy produces linear addresses", "[phase8-stress-patter
     uint64_t range = 16;
 
     // 验证前5个地址是线性递增的
-    REQUIRE(strategy.next_address(base, range) == base + 0);  // 0x1000
-    REQUIRE(strategy.next_address(base, range) == base + 1);  // 0x1001
-    REQUIRE(strategy.next_address(base, range) == base + 2);  // 0x1002
-    REQUIRE(strategy.next_address(base, range) == base + 3);  // 0x1003
-    REQUIRE(strategy.next_address(base, range) == base + 4);  // 0x1004
+    REQUIRE(strategy.next_address(base, range) == base + 0); // 0x1000
+    REQUIRE(strategy.next_address(base, range) == base + 1); // 0x1001
+    REQUIRE(strategy.next_address(base, range) == base + 2); // 0x1002
+    REQUIRE(strategy.next_address(base, range) == base + 3); // 0x1003
+    REQUIRE(strategy.next_address(base, range) == base + 4); // 0x1004
 
     // 验证回绕
     for (int i = 5; i < 16; i++) {
         strategy.next_address(base, range);
     }
-    REQUIRE(strategy.next_address(base, range) == base);  // 回绕到起始地址
+    REQUIRE(strategy.next_address(base, range) == base); // 回绕到起始地址
 }
 
-TEST_CASE("SequentialStrategy reset works correctly", "[phase8-stress-patterns][sequential][reset]") {
+TEST_CASE("SequentialStrategy reset works correctly",
+          "[phase8-stress-patterns][sequential][reset]") {
     SequentialStrategy strategy;
     uint64_t base = 0x1000;
     uint64_t range = 16;
@@ -58,7 +59,8 @@ TEST_CASE("RandomStrategy produces values within range", "[phase8-stress-pattern
     }
 }
 
-TEST_CASE("RandomStrategy produces roughly uniform distribution", "[phase8-stress-patterns][random]") {
+TEST_CASE("RandomStrategy produces roughly uniform distribution",
+          "[phase8-stress-patterns][random]") {
     RandomStrategy strategy;
     uint64_t base = 0;
     uint64_t range = 100;
@@ -68,15 +70,16 @@ TEST_CASE("RandomStrategy produces roughly uniform distribution", "[phase8-stres
     vector<int> bucket_counts(4, 0);
     for (int i = 0; i < total_samples; i++) {
         uint64_t addr = strategy.next_address(base, range);
-        size_t bucket = (addr * 4) / range;  // 0-3
-        if (bucket >= 4) bucket = 3;
+        size_t bucket = (addr * 4) / range; // 0-3
+        if (bucket >= 4)
+            bucket = 3;
         bucket_counts[bucket]++;
     }
 
     // 验证每个桶至少有 10% 的样本
     for (int i = 0; i < 4; i++) {
         double ratio = static_cast<double>(bucket_counts[i]) / total_samples;
-        REQUIRE(ratio > 0.10);  // 至少 10%
+        REQUIRE(ratio > 0.10); // 至少 10%
     }
 }
 
@@ -100,7 +103,7 @@ TEST_CASE("RandomStrategy reset reinitializes RNG", "[phase8-stress-patterns][ra
 TEST_CASE("HotspotStrategy respects weights", "[phase8-stress-patterns][hotspot]") {
     HotspotStrategy strategy;
     vector<uint64_t> addrs = {0x1000, 0x2000, 0x3000};
-    vector<double> weights = {50.0, 30.0, 20.0};  // 50%, 30%, 20%
+    vector<double> weights = {50.0, 30.0, 20.0}; // 50%, 30%, 20%
     strategy.set_hotspot_config(addrs, weights);
 
     const int total_samples = 10000;
@@ -108,9 +111,12 @@ TEST_CASE("HotspotStrategy respects weights", "[phase8-stress-patterns][hotspot]
 
     for (int i = 0; i < total_samples; i++) {
         uint64_t addr = strategy.next_address(0, 0);
-        if (addr == 0x1000) counts[0]++;
-        else if (addr == 0x2000) counts[1]++;
-        else if (addr == 0x3000) counts[2]++;
+        if (addr == 0x1000)
+            counts[0]++;
+        else if (addr == 0x2000)
+            counts[1]++;
+        else if (addr == 0x3000)
+            counts[2]++;
     }
 
     // 验证比例在 ±5% 以内
@@ -118,11 +124,11 @@ TEST_CASE("HotspotStrategy respects weights", "[phase8-stress-patterns][hotspot]
     double ratio1 = static_cast<double>(counts[1]) / total_samples;
     double ratio2 = static_cast<double>(counts[2]) / total_samples;
 
-    REQUIRE(ratio0 > 0.45);  // 50% ± 5%
+    REQUIRE(ratio0 > 0.45); // 50% ± 5%
     REQUIRE(ratio0 < 0.55);
-    REQUIRE(ratio1 > 0.25);  // 30% ± 5%
+    REQUIRE(ratio1 > 0.25); // 30% ± 5%
     REQUIRE(ratio1 < 0.35);
-    REQUIRE(ratio2 > 0.15);  // 20% ± 5%
+    REQUIRE(ratio2 > 0.15); // 20% ± 5%
     REQUIRE(ratio2 < 0.25);
 }
 
@@ -156,13 +162,13 @@ TEST_CASE("StridedStrategy produces fixed stride", "[phase8-stress-patterns][str
     for (int i = 0; i < 5; i++) {
         values.push_back(strategy.next_address(base, range));
     }
-    
+
     // 验证都在范围内
     for (uint64_t v : values) {
         REQUIRE(v >= base);
         REQUIRE(v < base + range);
     }
-    
+
     // 验证差值正确（不 wrap 的情况下）
     REQUIRE(values[1] - values[0] == 64);
     REQUIRE(values[2] - values[1] == 64);
@@ -173,7 +179,7 @@ TEST_CASE("StridedStrategy wraps around correctly", "[phase8-stress-patterns][st
     StridedStrategy strategy;
     strategy.set_stride(64);
     uint64_t base = 0x1000;
-    uint64_t range = 128;  // 128 字节范围，stride 64 应该回绕
+    uint64_t range = 128; // 128 字节范围，stride 64 应该回绕
 
     vector<uint64_t> values;
     for (int i = 0; i < 10; i++) {
@@ -273,7 +279,8 @@ TEST_CASE("TornadoStrategy visits multiple nodes", "[phase8-stress-patterns][tor
 
     int visited_count = 0;
     for (bool v : visited) {
-        if (v) visited_count++;
+        if (v)
+            visited_count++;
     }
     REQUIRE(visited_count >= 8);
 }
@@ -353,7 +360,8 @@ TEST_CASE("TrafficGenTLM set_stress_pattern integration", "[phase8-stress-patter
     gen.tick();
 }
 
-TEST_CASE("TrafficGenTLM stress pattern address range validation", "[phase8-stress-patterns][traffic-gen]") {
+TEST_CASE("TrafficGenTLM stress pattern address range validation",
+          "[phase8-stress-patterns][traffic-gen]") {
     EventQueue eq;
     TrafficGenTLM gen("gen", &eq);
 

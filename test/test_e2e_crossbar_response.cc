@@ -10,14 +10,14 @@
 //   - CPU resp_in_ 永远空，last_response_transaction_id() == 0。
 // 修复后（PR2 Task 8 用 isMultiPort 统一处理）这两个测试应转为 GREEN。
 
-#include <catch2/catch_all.hpp>
-#include "modules.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
+#include "modules.hh"
 #include "tlm/cpu_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/memory_tlm.hh"
+#include <catch2/catch_all.hpp>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -81,8 +81,7 @@ TEST_CASE("E2E: CPU→Crossbar→Mem→Crossbar→CPU 完整响应回路",
 // 当前（P0-5 未修）：所有响应丢失 → 全部 RED
 // ============================================================================
 
-TEST_CASE("E2E: CrossbarTLM 4 端口并发响应不丢失",
-          "[e2e][crossbar][response][concurrent]") {
+TEST_CASE("E2E: CrossbarTLM 4 端口并发响应不丢失", "[e2e][crossbar][response][concurrent]") {
     registerAllModules();
 
     // 4 CPU → 各自占用 xbar 一个端口 → 4 Memory（隔离地址段避免 Crossbar 冲突）

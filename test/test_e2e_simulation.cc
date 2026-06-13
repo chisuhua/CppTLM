@@ -2,17 +2,17 @@
 // 端到端仿真测试：覆盖所有已注册模块类型的JSON配置加载、实例化和仿真运行验证
 // 标签体系：[e2e][module-type][topology][sim]
 
-#include <catch2/catch_all.hpp>
-#include "modules.hh"
+#include "bundles/cache_bundles_tlm.hh"
+#include "bundles/noc_bundles_tlm.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "framework/chstream_adapter_factory.hh"
-#include "bundles/cache_bundles_tlm.hh"
-#include "bundles/noc_bundles_tlm.hh"
-#include <nlohmann/json.hpp>
+#include "modules.hh"
+#include <catch2/catch_all.hpp>
 #include <filesystem>
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 using namespace bundles;
@@ -420,7 +420,8 @@ TEST_CASE("E2E: ring_8环形拓扑加载与仿真", "[e2e][topology][ring][exter
     SUCCEED("ring_8_tlm.json ring topology loaded and simulated");
 }
 
-TEST_CASE("E2E: hierarchical_2x2分层拓扑加载与仿真", "[e2e][topology][hierarchical][external-config]") {
+TEST_CASE("E2E: hierarchical_2x2分层拓扑加载与仿真",
+          "[e2e][topology][hierarchical][external-config]") {
     registerAllModules();
     auto config = loadConfig("configs/hierarchical_2x2_tlm.json");
     EventQueue eq;
@@ -442,13 +443,9 @@ TEST_CASE("E2E: hierarchical_2x2分层拓扑加载与仿真", "[e2e][topology][h
 TEST_CASE("E2E: 批量加载所有TLM配置文件", "[e2e][config][batch][external-config]") {
     registerAllModules();
     std::vector<std::string> config_files = {
-        "configs/crossbar_test.json",
-        "configs/cache_chstream_test.json",
-        "configs/cpu_tlm_test.json",
-        "configs/traffic_gen_tlm_test.json",
-        "configs/arbiter_tlm_test.json",
-        "configs/test/nic_router_nic.json"
-    };
+        "configs/crossbar_test.json",    "configs/cache_chstream_test.json",
+        "configs/cpu_tlm_test.json",     "configs/traffic_gen_tlm_test.json",
+        "configs/arbiter_tlm_test.json", "configs/test/nic_router_nic.json"};
     for (const auto& path : config_files) {
         INFO("Loading config: " << path);
         auto config = loadConfig(path);
@@ -474,7 +471,7 @@ TEST_CASE("E2E: 未注册模块类型被拒绝", "[e2e][negative][validation]") 
     })"_json;
     EventQueue eq;
     ModuleFactory factory(&eq);
-    factory.instantiateAll(config);  // 警告但不会阻止其他模块
+    factory.instantiateAll(config); // 警告但不会阻止其他模块
     REQUIRE(factory.getInstance("bad") == nullptr);
     SUCCEED("Unknown type warned and not instantiated");
 }
