@@ -177,6 +177,49 @@ gh run watch
 - **禁止 TODO 残留**: Step 7 中的 `// TODO: bind_ports_array` 等未完成逻辑必须在 Phase 完成前清除或归档
 - **禁止跳过本地 CI 验证**: 推送到 remote 前必须本地通过构建和测试
 
+## DEBUGGING DISCIPLINE（硬性纪律）
+
+源自 P0-5b 完整修复（6 个独立根因）经验。所有"test fail"类问题必须遵守：
+
+### 1. 4 件套验证（修改代码后必跑）
+任何"修复"后**必须**按顺序验证：
+```bash
+# 1. 改对位置了吗？
+git diff --stat <file>
+# 2. binary 时间戳新于源文件？
+stat -c '%y %n' build/bin/cpptlm_tests src/xxx.cc
+# 3. 修复 marker 真的在 binary 里？
+strings build/bin/cpptlm_tests | grep -c "<unique_marker>"
+# 4. 修复真的在执行？在修复前后各加日志对比
+```
+跳过任何一步 = 自欺欺人。本次踩坑：build 中断后跑旧 binary 误判"修复无效"。
+
+### 2. 诊断用 fopen，不用 printf/stderr
+测试框架（Catch2）抑制 stdout/stderr。`static FILE* diag = fopen("/tmp/cpputlm_xxx.log", "a")` + `fflush` 是唯一可靠方式。
+
+### 3. test pass 后立即清理诊断代码
+不允许"先 commit 跑通版,后面再清理" — 永远会忘。用 `grep -l "static FILE\* diag" include/ -r` 一键定位。
+
+### 4. N 个独立症状 = N 个独立根因
+修 1 个 bug 后失败模式变了 = 还有根因。一次 build 同时看全貌（加全链路日志），不要"逐个试修"。
+
+### 5. C++ 虚函数 override 必须加 `= override` 关键字
+类型不匹配（`std::size_t` vs `unsigned`）不构成 override，编译器不报错但虚分发表里仍是基类版本。
+
+### 6. reset() 之后才能设置状态
+`PacketPool::acquire()` 调 `payload->reset()` 和 `pkt->reset()` 两次，所有字段抹零。修复必须放在**最后一个 reset 之后**，否则白做。
+
+### 6 步响应回路检查模板（消息丢失类问题专用）
+当"A→B→A"响应不工作时，按顺序加 6 个 count 日志：
+1. A 发请求（SA tick 中 "sending req"）
+2. B 收到请求（recvReq 入口）
+3. B 写响应（resp_out.write）
+4. B 发出响应（port->send 调用）
+5. A 收到响应（recvReq on resp_in）
+6. A 消费响应（tick 更新状态）
+
+哪步 count=0 = 根因位置。详见 `.opencode/skills/cpptlm-debug/SKILL.md`。
+
 ## 文档维护原则
 
 **核心目标**: 防止 `AGENTS.md` / `ONBOARDING.md` / `roadmap.md` / `scripts/README.md` 中提及的路径随代码结构变更而漂移。
