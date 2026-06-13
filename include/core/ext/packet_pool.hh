@@ -74,12 +74,21 @@ public:
         if (!m_payload_freelist.empty()) {
             pkt->payload = m_payload_freelist.front();
             m_payload_freelist.pop();
-            pkt->payload->reset(); // 重置 TLM 状态
+            pkt->payload->reset(); // 重置 TLM 状态 — 会把 data=nullptr, len=0
         } else {
             pkt->payload = new_payload();
         }
 
-        pkt->reset(); // 重置 Packet 状态
+        pkt->reset(); // 重置 Packet 状态 — 也会调 payload->reset() 把 data=nullptr,len=0
+
+        // P0-5b: tlm_generic_payload::reset() 把 data=nullptr,len=0
+        // bundle_serialization.hh:24 检查 if (len < sizeof(BundleT)) return false
+        // (CacheReqBundle ≈ 64 bytes),导致 serialize_bundle 永远失败
+        // 必须在两次 reset 之后,显式设置 data_length=256 分配 256 字节 buffer
+        constexpr size_t kMinPayloadBytes = 256;
+        if (pkt->payload && pkt->payload->get_data_length() < kMinPayloadBytes) {
+            pkt->payload->set_data_length(kMinPayloadBytes);
+        }
         m_current_usage++;
         m_peak_usage = std::max(m_peak_usage, m_current_usage);
 
