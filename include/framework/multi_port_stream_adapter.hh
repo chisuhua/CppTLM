@@ -66,10 +66,11 @@ namespace cpptlm {
         }
 
         void process_request_input(Packet* pkt) override {
-            process_request_input(pkt, 0);
+            // 1-arg 版本: 默认 port_idx=0 (单端口或回退路径)
+            process_request_input(pkt, 0u);
         }
 
-        void process_request_input(Packet* pkt, std::size_t port_idx) {
+        void process_request_input(Packet* pkt, unsigned port_idx) override {
             if (!pkt || !pkt->payload || port_idx >= N)
                 return;
             auto& req_adapter = module_->req_in[port_idx];

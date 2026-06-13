@@ -145,9 +145,15 @@ namespace cpptlm {
                                                 pkt->payload->get_data_length());
 
             if (ok) {
-                port->send(pkt);
-                stream_valid_ = false; // 消费后清除 valid
-                return true;
+                bool sent = port->send(pkt);
+                if (sent) {
+                    stream_valid_ = false; // 消费后清除 valid
+                    return true;
+                }
+                // P0-5b fix: port->send 失败(pair=null)时,不要清除 valid
+                // 否则 CacheTLM 等被动模块的 resp_out 永远丢失数据,测试无法观察
+                PacketPool::get().release(pkt);
+                return false;
             }
 
             // 序列化失败，释放 Packet
