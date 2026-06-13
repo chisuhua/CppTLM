@@ -1,10 +1,10 @@
 // test/test_stream_adapter.cc
 // P1.8: StreamAdapter 单元测试 — InputStreamAdapter / OutputStreamAdapter
 
-#include <catch2/catch_all.hpp>
-#include "bundles/cache_bundles_tlm.hh"
 #include "bundles/bundle_serialization.hh"
+#include "bundles/cache_bundles_tlm.hh"
 #include "framework/stream_adapter.hh"
+#include <catch2/catch_all.hpp>
 
 #include <cstring>
 

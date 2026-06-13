@@ -20,10 +20,8 @@ TEST_CASE("ValidOnlyTest LargeInputBuffer_NoBackpressure", "[valid][only]") {
     producer.getPortManager().addDownstreamPort(&producer, {4}, {0});
     consumer.getPortManager().addUpstreamPort(&consumer, {1024}, {0});
 
-    auto pp = std::make_unique<PortPair>(
-        producer.getPortManager().getDownstreamPorts()[0],
-        consumer.getPortManager().getUpstreamPorts()[0]
-    );
+    auto pp = std::make_unique<PortPair>(producer.getPortManager().getDownstreamPorts()[0],
+                                         consumer.getPortManager().getUpstreamPorts()[0]);
 
     // 发送 100 个包，应全部成功
     for (int i = 0; i < 100; ++i) {

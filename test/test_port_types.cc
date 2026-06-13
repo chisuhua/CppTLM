@@ -2,19 +2,15 @@
 // Phase 3.2: Port Types and Compatibility Tests
 
 #include "catch_amalgamated.hpp"
-#include "core/port_types.hh"
 #include "core/port_compatibility.hh"
+#include "core/port_types.hh"
 
 using json = nlohmann::json;
 
 TEST_CASE("PortRole: JSON serialization roundtrip", "[port_types]") {
-    cpptlm::PortRole roles[] = {
-        cpptlm::PortRole::INITIATOR,
-        cpptlm::PortRole::TARGET,
-        cpptlm::PortRole::BI_DIRECTIONAL,
-        cpptlm::PortRole::NETWORK,
-        cpptlm::PortRole::PE
-    };
+    cpptlm::PortRole roles[] = {cpptlm::PortRole::INITIATOR, cpptlm::PortRole::TARGET,
+                                cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::PortRole::NETWORK,
+                                cpptlm::PortRole::PE};
 
     for (auto role : roles) {
         json j = role;
@@ -24,12 +20,8 @@ TEST_CASE("PortRole: JSON serialization roundtrip", "[port_types]") {
 }
 
 TEST_CASE("BundleType: JSON serialization roundtrip", "[port_types]") {
-    cpptlm::BundleType bundles[] = {
-        cpptlm::BundleType::CACHE_REQ,
-        cpptlm::BundleType::CACHE_RESP,
-        cpptlm::BundleType::NOC_FLIT,
-        cpptlm::BundleType::GENERIC
-    };
+    cpptlm::BundleType bundles[] = {cpptlm::BundleType::CACHE_REQ, cpptlm::BundleType::CACHE_RESP,
+                                    cpptlm::BundleType::NOC_FLIT, cpptlm::BundleType::GENERIC};
 
     for (auto bundle : bundles) {
         json j = bundle;
@@ -145,55 +137,55 @@ TEST_CASE("ModulePortSpec: JSON serialization roundtrip", "[port_types]") {
 }
 
 TEST_CASE("PortCompatibility: L1 role matrix INITIATOR->TARGET", "[port_compat]") {
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::INITIATOR, cpptlm::PortRole::TARGET) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::TARGET, cpptlm::PortRole::INITIATOR) == false);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::INITIATOR,
+                                                          cpptlm::PortRole::TARGET) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::TARGET,
+                                                          cpptlm::PortRole::INITIATOR) == false);
 }
 
 TEST_CASE("PortCompatibility: L1 role matrix BI_DIRECTIONAL", "[port_compat]") {
     REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::PortRole::BI_DIRECTIONAL) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::PortRole::INITIATOR) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::PortRole::PE) == false);
+                cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::PortRole::BI_DIRECTIONAL) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::BI_DIRECTIONAL,
+                                                          cpptlm::PortRole::INITIATOR) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::BI_DIRECTIONAL,
+                                                          cpptlm::PortRole::PE) == false);
 }
 
 TEST_CASE("PortCompatibility: L1 role matrix NETWORK", "[port_compat]") {
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::NETWORK,
+                                                          cpptlm::PortRole::NETWORK) == true);
     REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::NETWORK, cpptlm::PortRole::NETWORK) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::NETWORK, cpptlm::PortRole::BI_DIRECTIONAL) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::NETWORK, cpptlm::PortRole::PE) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::NETWORK, cpptlm::PortRole::INITIATOR) == false);
+                cpptlm::PortRole::NETWORK, cpptlm::PortRole::BI_DIRECTIONAL) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::NETWORK,
+                                                          cpptlm::PortRole::PE) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::NETWORK,
+                                                          cpptlm::PortRole::INITIATOR) == false);
 }
 
 TEST_CASE("PortCompatibility: L1 role matrix PE", "[port_compat]") {
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::PE,
+                                                          cpptlm::PortRole::NETWORK) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::PE,
+                                                          cpptlm::PortRole::PE) == false);
     REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::PE, cpptlm::PortRole::NETWORK) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::PE, cpptlm::PortRole::PE) == false);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::PE, cpptlm::PortRole::BI_DIRECTIONAL) == false);
+                cpptlm::PortRole::PE, cpptlm::PortRole::BI_DIRECTIONAL) == false);
 }
 
 TEST_CASE("PortCompatibility: L2 bundle matrix NOC_FLIT", "[port_compat]") {
+    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(cpptlm::BundleType::NOC_FLIT,
+                                                            cpptlm::BundleType::NOC_FLIT) == true);
     REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::NOC_FLIT, cpptlm::BundleType::NOC_FLIT) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::NOC_FLIT, cpptlm::BundleType::CACHE_REQ) == false);
+                cpptlm::BundleType::NOC_FLIT, cpptlm::BundleType::CACHE_REQ) == false);
 }
 
 TEST_CASE("PortCompatibility: L2 bundle matrix GENERIC", "[port_compat]") {
-    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::GENERIC, cpptlm::BundleType::GENERIC) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::GENERIC, cpptlm::BundleType::NOC_FLIT) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::CACHE_REQ, cpptlm::BundleType::GENERIC) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(cpptlm::BundleType::GENERIC,
+                                                            cpptlm::BundleType::GENERIC) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(cpptlm::BundleType::GENERIC,
+                                                            cpptlm::BundleType::NOC_FLIT) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(cpptlm::BundleType::CACHE_REQ,
+                                                            cpptlm::BundleType::GENERIC) == true);
 }
 
 TEST_CASE("PortCompatibility: L3 width check", "[port_compat]") {
@@ -219,16 +211,23 @@ TEST_CASE("PortCompatibility: is_compatible combines L1+L2", "[port_compat]") {
 }
 
 TEST_CASE("PortCompatibility: role_name returns correct string", "[port_compat]") {
-    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::INITIATOR), "initiator") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::INITIATOR),
+                   "initiator") == 0);
     REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::TARGET), "target") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::BI_DIRECTIONAL), "bi_directional") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::NETWORK), "network") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::BI_DIRECTIONAL),
+                   "bi_directional") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::NETWORK), "network") ==
+            0);
     REQUIRE(strcmp(cpptlm::PortCompatibility::role_name(cpptlm::PortRole::PE), "pe") == 0);
 }
 
 TEST_CASE("PortCompatibility: bundle_name returns correct string", "[port_compat]") {
-    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::CACHE_REQ), "cache_req") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::CACHE_RESP), "cache_resp") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::NOC_FLIT), "noc_flit") == 0);
-    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::GENERIC), "generic") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::CACHE_REQ),
+                   "cache_req") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::CACHE_RESP),
+                   "cache_resp") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::NOC_FLIT),
+                   "noc_flit") == 0);
+    REQUIRE(strcmp(cpptlm::PortCompatibility::bundle_name(cpptlm::BundleType::GENERIC),
+                   "generic") == 0);
 }

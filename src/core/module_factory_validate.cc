@@ -1,64 +1,64 @@
 /**
  * @file module_factory_validate.cc
  * @brief ModuleFactory 配置验证与 extends 处理实现
- * 
+ *
  * 本文件实现 ModuleFactory 的配置验证逻辑，负责：
  * - **extends 处理**：mergeConfigs() 递归合并继承配置
  * - **配置验证**：validateConfig() 检查 modules/connections 必需字段
  * - **参数解析**：parseModuleParams() 处理模块参数注入
  * - **拓扑验证**：validateTopology() 检查连接完整性
- * 
+ *
  * ## 核心功能
  * - `mergeConfigs(base, child, depth)` — 深度合并 JSON 配置，支持 circular reference 检测
  * - `validateConfig(config)` — 验证 JSON 拓扑配置合法性
  * - `parseModuleParams(module_name, config)` — 解析模块参数并注入实例
- * 
+ *
  * ## extends 处理流程
  * 1. 检测 circular reference（depth > MAX_DEPTH）
  * 2. 深度合并 modules 数组（按 name 匹配）
  * 3. 合并 connections 数组（追加）
  * 4. 合并 module_groups（递归）
- * 
+ *
  * ## 使用注意事项
  * - **深度限制**：MAX_DEPTH = 10，防止 circular reference
  * - **模块合并**：同名模块配置深度合并，不同名追加
  * - **验证时机**：instantiateAll() 调用前执行 validateConfig()
- * 
+ *
  * @author CppTLM Team
  * @date 2024-05
  * @see module_factory.hh
  * @see utils/config_utils.hh
  */
 
-#include "module_factory.hh"
-#include "sim_module.hh"
-#include "core/connection_resolver.hh"
-#include "core/chstream_module.hh"
-#include "framework/stream_adapter.hh"
-#include "core/chstream_port.hh"
-#include "framework/chstream_adapter_factory.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "bundles/noc_bundles_tlm.hh"
+#include "core/chstream_module.hh"
+#include "core/chstream_port.hh"
+#include "core/coherence_domain.hh"
+#include "core/connection_resolver.hh"
+#include "core/load_policy.hh"
+#include "core/param_errors.hh"
+#include "core/param_parser.hh"
+#include "core/plugin_load_exception.hh"
+#include "core/plugin_loader.hh"
+#include "core/port_compatibility.hh"
+#include "core/port_types.hh"
+#include "core/topology_parser.hh"
+#include "framework/chstream_adapter_factory.hh"
+#include "framework/stream_adapter.hh"
+#include "metrics/stats_manager.hh"
+#include "module_factory.hh"
+#include "sim_module.hh"
 #include "tlm/router_tlm.hh"
 #include "utils/config_utils.hh"
 #include "utils/json_includer.hh"
-#include "utils/wildcard.hh"
+#include "utils/module_group.hh"
 #include "utils/regex_matcher.hh"
 #include "utils/var_resolver.hh"
-#include "utils/module_group.hh"
-#include "core/plugin_load_exception.hh"
-#include "core/plugin_loader.hh"
-#include "core/load_policy.hh"
-#include "core/port_types.hh"
-#include "core/port_compatibility.hh"
-#include "core/param_parser.hh"
-#include "core/param_errors.hh"
-#include "metrics/stats_manager.hh"
-#include "core/topology_parser.hh"
-#include "core/coherence_domain.hh"
+#include "utils/wildcard.hh"
+#include <algorithm>
 #include <fstream>
 #include <set>
-#include <algorithm>
 
 using json = nlohmann::json;
 
@@ -68,7 +68,8 @@ using json = nlohmann::json;
 
 static json mergeConfigs(const json& base, const json& child, int depth = 0) {
     if (depth > 10) {
-        DPRINTF(MODULE, "[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
+        DPRINTF(MODULE,
+                "[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
         return child;
     }
 
@@ -143,7 +144,8 @@ static json mergeConfigs(const json& base, const json& child, int depth = 0) {
 
 json processExtends(const json& config, int depth = 0) {
     if (depth > 10) {
-        DPRINTF(MODULE, "[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
+        DPRINTF(MODULE,
+                "[CONFIG ERROR] extends depth limit exceeded (possible circular reference)\n");
         return json::object();
     }
 
@@ -153,8 +155,10 @@ json processExtends(const json& config, int depth = 0) {
 
     std::string extends_path = config["extends"].get<std::string>();
     if (ModuleFactory::debug_config()) {
-        for (int i = 0; i < depth; ++i) DPRINTF(MODULE, "  ");
-        DPRINTF(MODULE, "[DEBUG] Processing extends: %s (depth: %d)\n", extends_path.c_str(), depth);
+        for (int i = 0; i < depth; ++i)
+            DPRINTF(MODULE, "  ");
+        DPRINTF(MODULE, "[DEBUG] Processing extends: %s (depth: %d)\n", extends_path.c_str(),
+                depth);
     }
 
     std::ifstream f(extends_path);
@@ -167,7 +171,8 @@ json processExtends(const json& config, int depth = 0) {
     try {
         base_config = json::parse(f);
     } catch (const json::parse_error& e) {
-        DPRINTF(MODULE, "[CONFIG ERROR] Failed to parse extends file '%s': %s\n", extends_path.c_str(), e.what());
+        DPRINTF(MODULE, "[CONFIG ERROR] Failed to parse extends file '%s': %s\n",
+                extends_path.c_str(), e.what());
         return json::object();
     }
     f.close();
@@ -231,33 +236,40 @@ bool ModuleFactory::validateConfig(const json& config) {
 
         // type 字段检查
         if (!mod.contains("type")) {
-            DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing required field 'type'\n", name.c_str());
+            DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing required field 'type'\n",
+                    name.c_str());
             return false;
         }
         if (!mod["type"].is_string()) {
-            DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' field 'type' must be a string\n", name.c_str());
+            DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' field 'type' must be a string\n",
+                    name.c_str());
             return false;
         }
         std::string type = mod["type"].get<std::string>();
 
         const json* params_src = nullptr;
-        if (mod.contains("params")) params_src = &mod["params"];
-        else if (type == "RouterTLM" && mod.contains("node_x")) params_src = &mod;
-        else if (type == "NICTLM" && mod.contains("node_id")) params_src = &mod;
+        if (mod.contains("params"))
+            params_src = &mod["params"];
+        else if (type == "RouterTLM" && mod.contains("node_x"))
+            params_src = &mod;
+        else if (type == "NICTLM" && mod.contains("node_id"))
+            params_src = &mod;
 
         if (params_src) {
             const auto& params = *params_src;
             if (type == "RouterTLM") {
                 for (auto p : {"node_x", "node_y", "mesh_x", "mesh_y"}) {
                     if (!params.contains(p) || !params[p].is_number_integer()) {
-                        DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid '%s'\n", name.c_str(), p);
+                        DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid '%s'\n",
+                                name.c_str(), p);
                         return false;
                     }
                 }
             }
             if (type == "NICTLM") {
                 if (!params.contains("node_id") || !params["node_id"].is_number_integer()) {
-                    DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid 'node_id'\n", name.c_str());
+                    DPRINTF(MODULE, "[CONFIG ERROR] Module '%s' missing/invalid 'node_id'\n",
+                            name.c_str());
                     return false;
                 }
             }
@@ -276,14 +288,14 @@ bool validate_nic_pe_connection(const std::string& src_type, unsigned src_port,
     if (src_type == "NICTLM" && src_port == 0) {
         if (dst_type == "RouterTLM") {
             DPRINTF(CONN, "[CONN ERROR] NICTLM PE-side port (port 0) cannot connect directly "
-                    "to RouterTLM. Use NETWORK side (port 1) for router connections.\n");
+                          "to RouterTLM. Use NETWORK side (port 1) for router connections.\n");
             return false;
         }
     }
     if (dst_type == "NICTLM" && dst_port == 0) {
         if (src_type == "RouterTLM") {
             DPRINTF(CONN, "[CONN ERROR] NICTLM PE-side port (port 0) cannot connect directly "
-                    "to RouterTLM. Use NETWORK side (port 1) for router connections.\n");
+                          "to RouterTLM. Use NETWORK side (port 1) for router connections.\n");
             return false;
         }
     }
@@ -292,8 +304,8 @@ bool validate_nic_pe_connection(const std::string& src_type, unsigned src_port,
 
 // Phase 3.2: Port compatibility checking (T3.2-04~06)
 bool check_port_compatibility(const std::string& src_name, const std::string& dst_name,
-                             unsigned src_idx, unsigned dst_idx,
-                             const std::map<std::string, cpptlm::ModulePortSpec>& port_specs) {
+                              unsigned src_idx, unsigned dst_idx,
+                              const std::map<std::string, cpptlm::ModulePortSpec>& port_specs) {
     auto src_it = port_specs.find(src_name);
     auto dst_it = port_specs.find(dst_name);
 
@@ -305,8 +317,8 @@ bool check_port_compatibility(const std::string& src_name, const std::string& ds
     const auto& dst_ports = dst_it->second.ports;
 
     if (src_idx >= src_ports.size() || dst_idx >= dst_ports.size()) {
-        DPRINTF(CONN, "[WARN] Port index out of range: %s[%u] or %s[%u]\n",
-                src_name.c_str(), src_idx, dst_name.c_str(), dst_idx);
+        DPRINTF(CONN, "[WARN] Port index out of range: %s[%u] or %s[%u]\n", src_name.c_str(),
+                src_idx, dst_name.c_str(), dst_idx);
         return true;
     }
 
@@ -329,8 +341,8 @@ bool check_port_compatibility(const std::string& src_name, const std::string& ds
 
     if (!cpptlm::PortCompatibility::is_width_compatible(src_spec.width, dst_spec.width)) {
         DPRINTF(CONN, "[PORT WARN] Width mismatch: %s.%u (%u bits) -> %s.%u (%u bits)\n",
-                src_name.c_str(), src_idx, src_spec.width,
-                dst_name.c_str(), dst_idx, dst_spec.width);
+                src_name.c_str(), src_idx, src_spec.width, dst_name.c_str(), dst_idx,
+                dst_spec.width);
     }
 
     return true;
@@ -349,8 +361,7 @@ std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
             {"EAST", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
             {"SOUTH", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
             {"WEST", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
-            {"LOCAL", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
-        };
+            {"LOCAL", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}};
         spec.ports = ports;
         defaults["RouterTLM"] = spec;
         defaults["MeshRouter"] = spec;
@@ -362,8 +373,7 @@ std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
         spec.module_name = "NICTLM";
         std::vector<cpptlm::PortSpec> ports = {
             {"pe", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
-            {"network", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
-        };
+            {"network", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}};
         spec.ports = ports;
         defaults["NICTLM"] = spec;
         defaults["NetworkInterface"] = spec;
@@ -375,8 +385,7 @@ std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
         spec.module_name = "CacheTLM";
         std::vector<cpptlm::PortSpec> ports = {
             {"req_out", cpptlm::PortRole::INITIATOR, cpptlm::BundleType::CACHE_REQ, 64},
-            {"req_in", cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ, 64}
-        };
+            {"req_in", cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ, 64}};
         spec.ports = ports;
         defaults["CacheTLM"] = spec;
         defaults["Cache"] = spec;
@@ -390,8 +399,7 @@ std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
             {"port_0", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
             {"port_1", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
             {"port_2", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64},
-            {"port_3", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64}
-        };
+            {"port_3", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::CACHE_REQ, 64}};
         spec.ports = ports;
         defaults["CrossbarTLM"] = spec;
         defaults["Crossbar"] = spec;
@@ -402,8 +410,7 @@ std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
         cpptlm::ModulePortSpec spec;
         spec.module_name = "MemoryTLM";
         std::vector<cpptlm::PortSpec> ports = {
-            {"mem", cpptlm::PortRole::TARGET, cpptlm::BundleType::GENERIC, 64}
-        };
+            {"mem", cpptlm::PortRole::TARGET, cpptlm::BundleType::GENERIC, 64}};
         spec.ports = ports;
         defaults["MemoryTLM"] = spec;
         defaults["Memory"] = spec;
@@ -413,8 +420,7 @@ std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs() {
 }
 
 // Phase 3.3: Parameter validation helpers
-static bool validate_module_params(const std::string& module_type,
-                                   const json& params,
+static bool validate_module_params(const std::string& module_type, const json& params,
                                    const cpptlm::ParamRules& rules) {
     for (const auto& [param_name, rule] : rules) {
         if (rule.required && !params.contains(param_name)) {
@@ -424,9 +430,9 @@ static bool validate_module_params(const std::string& module_type,
         }
         if (params.contains(param_name)) {
             auto result = cpptlm::ParamParser::parse(
-                params[param_name].is_string() ? params[param_name].get<std::string>() : std::to_string(params[param_name].get<int64_t>()),
-                rule.type
-            );
+                params[param_name].is_string() ? params[param_name].get<std::string>()
+                                               : std::to_string(params[param_name].get<int64_t>()),
+                rule.type);
             if (!result.success) {
                 DPRINTF(MODULE, "[PARAM ERROR] Module '%s' param '%s' parse failed: %s\n",
                         module_type.c_str(), param_name.c_str(), result.error_message.c_str());
@@ -442,14 +448,13 @@ static bool validate_module_params(const std::string& module_type,
     return true;
 }
 
-bool ModuleFactory::validate_domain_boundary(
-    const std::string& src_module,
-    const std::string& dst_module,
-    const std::string& src_domain,
-    const std::string& bridge_name) {
-
+bool ModuleFactory::validate_domain_boundary(const std::string& src_module,
+                                             const std::string& dst_module,
+                                             const std::string& src_domain,
+                                             const std::string& bridge_name) {
     if (src_module.empty() || dst_module.empty() || src_domain.empty()) {
-        DPRINTF(MODULE, "[DOMAIN ERROR] Invalid domain boundary check: empty module or domain name\n");
+        DPRINTF(MODULE,
+                "[DOMAIN ERROR] Invalid domain boundary check: empty module or domain name\n");
         return false;
     }
 

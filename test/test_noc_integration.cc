@@ -2,12 +2,12 @@
 // NoC/NIC 集成测试
 // 功能描述：验证 Router 多跳转发、NIC packetize/reassemble 端到端
 // 作者 CppTLM Team / 日期 2026-04-24
-#include <catch2/catch_all.hpp>
-#include "tlm/router_tlm.hh"
-#include "tlm/nic_tlm.hh"
-#include "core/event_queue.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "bundles/noc_bundles_tlm.hh"
+#include "core/event_queue.hh"
+#include "tlm/nic_tlm.hh"
+#include "tlm/router_tlm.hh"
+#include <catch2/catch_all.hpp>
 
 using namespace tlm;
 
@@ -19,7 +19,7 @@ TEST_CASE("RouterTLM: single flit can traverse pipeline", "[noc][integration]") 
     bundles::NoCFlitBundle flit;
     flit.transaction_id.write(100);
     flit.src_node.write(0);
-    flit.dst_node.write(0);  // 同节点，XY 路由会选 LOCAL
+    flit.dst_node.write(0); // 同节点，XY 路由会选 LOCAL
     flit.vc_id.write(0);
     flit.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);
     flit.flit_index.write(0);
@@ -45,7 +45,7 @@ TEST_CASE("RouterTLM: two hops routing", "[noc][integration]") {
     bundles::NoCFlitBundle flit;
     flit.transaction_id.write(200);
     flit.src_node.write(0);
-    flit.dst_node.write(1);  // (1,0) - 同一行，X+1，EAST
+    flit.dst_node.write(1); // (1,0) - 同一行，X+1，EAST
     flit.vc_id.write(0);
     flit.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);
     flit.flit_index.write(0);
@@ -71,7 +71,7 @@ TEST_CASE("RouterTLM: SA can grant multiple flits in same cycle", "[noc][integra
     bundles::NoCFlitBundle flit1;
     flit1.transaction_id.write(301);
     flit1.src_node.write(5);
-    flit1.dst_node.write(7);  // (1,1) -> (3,1): X+2, EAST
+    flit1.dst_node.write(7); // (1,1) -> (3,1): X+2, EAST
     flit1.vc_id.write(0);
     flit1.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);
     flit1.flit_index.write(0);
@@ -81,7 +81,7 @@ TEST_CASE("RouterTLM: SA can grant multiple flits in same cycle", "[noc][integra
     bundles::NoCFlitBundle flit2;
     flit2.transaction_id.write(302);
     flit2.src_node.write(5);
-    flit2.dst_node.write(1);  // (1,1) -> (1,3): Y+2, NORTH
+    flit2.dst_node.write(1); // (1,1) -> (1,3): Y+2, NORTH
     flit2.vc_id.write(1);
     flit2.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);
     flit2.flit_index.write(0);
@@ -114,7 +114,7 @@ TEST_CASE("NICTLM: packetize then reassemble cycle", "[noc][integration]") {
     // 注入读请求
     bundles::CacheReqBundle req;
     req.transaction_id.write(400);
-    req.address.write(0x1500);  // 目标节点 5
+    req.address.write(0x1500); // 目标节点 5
     req.is_write.write(0);
     req.data.write(0);
     req.size.write(8);

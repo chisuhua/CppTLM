@@ -2,11 +2,11 @@
 // NICTLM 单元测试
 // 功能描述：验证 NICTLM packetize/reassemble 功能
 // 作者 CppTLM Team / 日期 2026-04-24
-#include <catch2/catch_all.hpp>
-#include "tlm/nic_tlm.hh"
-#include "core/event_queue.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "bundles/noc_bundles_tlm.hh"
+#include "core/event_queue.hh"
+#include "tlm/nic_tlm.hh"
+#include <catch2/catch_all.hpp>
 
 using namespace tlm;
 

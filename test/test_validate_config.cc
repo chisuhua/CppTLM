@@ -1,6 +1,6 @@
-#include <catch2/catch_all.hpp>
-#include "core/module_factory.hh"
 #include "core/event_queue.hh"
+#include "core/module_factory.hh"
+#include <catch2/catch_all.hpp>
 
 TEST_CASE("T3.1-11a: Missing modules field", "[validate][phase3]") {
     EventQueue eq;

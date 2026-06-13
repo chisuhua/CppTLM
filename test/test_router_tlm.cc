@@ -2,9 +2,9 @@
 // RouterTLM 单元测试
 // 功能描述：验证 RouterTLM 六阶段流水线、XY 路由、Credit Flow
 // 作者 CppTLM Team / 日期 2026-04-23
-#include <catch2/catch_all.hpp>
-#include "tlm/router_tlm.hh"
 #include "core/event_queue.hh"
+#include "tlm/router_tlm.hh"
+#include <catch2/catch_all.hpp>
 
 using namespace tlm;
 
@@ -74,12 +74,18 @@ TEST_CASE("RouterTLM node ID encoding/decoding", "[router][tlm]") {
     }
 
     SECTION("round-trip encoding") {
-        REQUIRE(RoutingAlgorithm::nodeToX(RoutingAlgorithm::coordToNode(0, 0, mesh_x), mesh_x) == 0);
-        REQUIRE(RoutingAlgorithm::nodeToY(RoutingAlgorithm::coordToNode(0, 0, mesh_x), mesh_x) == 0);
-        REQUIRE(RoutingAlgorithm::nodeToX(RoutingAlgorithm::coordToNode(1, 1, mesh_x), mesh_x) == 1);
-        REQUIRE(RoutingAlgorithm::nodeToY(RoutingAlgorithm::coordToNode(1, 1, mesh_x), mesh_x) == 1);
-        REQUIRE(RoutingAlgorithm::nodeToX(RoutingAlgorithm::coordToNode(3, 3, mesh_x), mesh_x) == 3);
-        REQUIRE(RoutingAlgorithm::nodeToY(RoutingAlgorithm::coordToNode(3, 3, mesh_x), mesh_x) == 3);
+        REQUIRE(RoutingAlgorithm::nodeToX(RoutingAlgorithm::coordToNode(0, 0, mesh_x), mesh_x) ==
+                0);
+        REQUIRE(RoutingAlgorithm::nodeToY(RoutingAlgorithm::coordToNode(0, 0, mesh_x), mesh_x) ==
+                0);
+        REQUIRE(RoutingAlgorithm::nodeToX(RoutingAlgorithm::coordToNode(1, 1, mesh_x), mesh_x) ==
+                1);
+        REQUIRE(RoutingAlgorithm::nodeToY(RoutingAlgorithm::coordToNode(1, 1, mesh_x), mesh_x) ==
+                1);
+        REQUIRE(RoutingAlgorithm::nodeToX(RoutingAlgorithm::coordToNode(3, 3, mesh_x), mesh_x) ==
+                3);
+        REQUIRE(RoutingAlgorithm::nodeToY(RoutingAlgorithm::coordToNode(3, 3, mesh_x), mesh_x) ==
+                3);
     }
 }
 

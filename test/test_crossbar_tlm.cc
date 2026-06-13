@@ -1,11 +1,12 @@
-#include <catch2/catch_all.hpp>
-#include "tlm/crossbar_tlm.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "core/event_queue.hh"
+#include "tlm/crossbar_tlm.hh"
+#include <catch2/catch_all.hpp>
 #include <cstdint>
 #include <cstring>
 
-static void inject_req(CrossbarTLM* xbar, unsigned port, uint64_t tid, uint64_t addr, uint64_t data = 0) {
+static void inject_req(CrossbarTLM* xbar, unsigned port, uint64_t tid, uint64_t addr,
+                       uint64_t data = 0) {
     bundles::CacheReqBundle req;
     req.transaction_id.write(tid);
     req.address.write(addr);
@@ -22,7 +23,7 @@ TEST_CASE("CrossbarTLM routes port 0 correctly", "[tlm][crossbar]") {
     CrossbarTLM xbar("xbar", &eq);
 
     // Port 0: 0x0000-0x0FFF
-    inject_req(&xbar, 0, 1, 0x0000);  // route to port 0
+    inject_req(&xbar, 0, 1, 0x0000); // route to port 0
     xbar.tick();
 
     REQUIRE(xbar.resp_out[0].valid());
@@ -35,7 +36,7 @@ TEST_CASE("CrossbarTLM routes port 1 correctly", "[tlm][crossbar]") {
     CrossbarTLM xbar("xbar", &eq);
 
     // Port 1: 0x1000-0x1FFF
-    inject_req(&xbar, 1, 2, 0x1000);  // route to port 1
+    inject_req(&xbar, 1, 2, 0x1000); // route to port 1
     xbar.tick();
 
     REQUIRE(xbar.resp_out[1].valid());
@@ -68,12 +69,12 @@ TEST_CASE("CrossbarTLM routes to boundary ports", "[tlm][crossbar]") {
     EventQueue eq;
     CrossbarTLM xbar("xbar", &eq);
 
-    inject_req(&xbar, 0, 1, 0x0FFF);  // Still port 0
+    inject_req(&xbar, 0, 1, 0x0FFF); // Still port 0
     xbar.tick();
     REQUIRE(xbar.resp_out[0].valid());
     xbar.resp_out[0].clear_valid();
 
-    inject_req(&xbar, 0, 2, 0x1000);  // Port 1
+    inject_req(&xbar, 0, 2, 0x1000); // Port 1
     xbar.tick();
     REQUIRE(xbar.resp_out[1].valid());
 }
@@ -162,7 +163,7 @@ TEST_CASE("CrossbarTLM route function edge cases", "[tlm][crossbar]") {
     REQUIRE(xbar.route_address(0x3FFF) == 3);
 
     // Wrap around (uint64 overflow behavior)
-    REQUIRE(xbar.route_address(UINT64_MAX) == 3);  // 0xFFFFFFFFFFFFFFFF >> 12 & 3 = 3
+    REQUIRE(xbar.route_address(UINT64_MAX) == 3); // 0xFFFFFFFFFFFFFFFF >> 12 & 3 = 3
 }
 
 TEST_CASE("CrossbarTLM data passthrough", "[tlm][crossbar]") {
@@ -204,7 +205,7 @@ TEST_CASE("CrossbarTLM detects bus conflict on same destination", "[tlm][crossba
     // 两个请求同时路由到 port 1 (0x1000-0x1FFF)
     bundles::CacheReqBundle req0;
     req0.transaction_id.write(100);
-    req0.address.write(0x1000);  // dst = port 1
+    req0.address.write(0x1000); // dst = port 1
     req0.is_write.write(0);
     req0.data.write(0xAAAA);
     req0.size.write(8);
@@ -213,7 +214,7 @@ TEST_CASE("CrossbarTLM detects bus conflict on same destination", "[tlm][crossba
 
     bundles::CacheReqBundle req1;
     req1.transaction_id.write(101);
-    req1.address.write(0x1500);  // dst = port 1 (same as above!)
+    req1.address.write(0x1500); // dst = port 1 (same as above!)
     req1.is_write.write(0);
     req1.data.write(0xBBBB);
     req1.size.write(8);

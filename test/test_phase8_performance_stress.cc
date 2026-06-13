@@ -1,12 +1,12 @@
 // test/test_phase8_performance_stress.cc
 // P2: 压力、性能与内存测试 (T10)
 
-#include <catch2/catch_all.hpp>
 #include "core/packet_pool.hh"
 #include "core/tlm_module.hh"
 #include "ext/transaction_context_ext.hh"
-#include "framework/transaction_tracker.hh"
 #include "framework/debug_tracker.hh"
+#include "framework/transaction_tracker.hh"
+#include <catch2/catch_all.hpp>
 #include <vector>
 
 #include "tlm/tlm_stub.hh"
@@ -15,8 +15,10 @@ using tlm::tlm_generic_payload;
 
 class Phase8TestTLM : public TLMModule {
 public:
-    Phase8TestTLM(const std::string& n, EventQueue* eq) : TLMModule(n, eq) {}
-    void tick() override {}
+    Phase8TestTLM(const std::string& n, EventQueue* eq) : TLMModule(n, eq) {
+    }
+    void tick() override {
+    }
 
     int hop_count = 0;
 
@@ -24,7 +26,8 @@ public:
         ++hop_count;
         TransactionInfo info;
         info.action = TransactionAction::PASSTHROUGH;
-        if (p) info.transaction_id = p->get_transaction_id();
+        if (p)
+            info.transaction_id = p->get_transaction_id();
         return info;
     }
 
@@ -37,7 +40,7 @@ TEST_CASE("T10.1: 大量并发交易", "[performance][stress][P2]") {
     auto& txn_tracker = TransactionTracker::instance();
     txn_tracker.reset_for_testing();
     txn_tracker.initialize();
-    
+
     const int NUM_TRANSACTIONS = 5000;
 
     SECTION("TransactionTracker 高频创建") {
@@ -47,7 +50,7 @@ TEST_CASE("T10.1: 大量并发交易", "[performance][stress][P2]") {
             // 记录 hop
             txn_tracker.record_hop(i + 1, "crossbar", 1, "hop");
         }
-        
+
         THEN("所有交易被记录且活跃") {
             // 注意：因为没有调用 complete_transaction，所以都应该在 active 列表中
             // 但由于 payload 销毁，Extension 会清理。Tracker 内部的 record 是否依赖 payload?
@@ -64,12 +67,14 @@ TEST_CASE("T10.1: 大量并发交易", "[performance][stress][P2]") {
 
         for (int i = 0; i < NUM_TRANSACTIONS; ++i) {
             tlm::tlm_generic_payload payload;
-            dbg_tracker.record_error(&payload, ErrorCode::COHERENCE_STATE_VIOLATION, "Error Msg", "module_" + std::to_string(i));
+            dbg_tracker.record_error(&payload, ErrorCode::COHERENCE_STATE_VIOLATION, "Error Msg",
+                                     "module_" + std::to_string(i));
         }
 
         THEN("错误计数正确") {
             REQUIRE(dbg_tracker.error_count() == NUM_TRANSACTIONS);
-            REQUIRE(dbg_tracker.get_errors_by_category(ErrorCategory::COHERENCE).size() == NUM_TRANSACTIONS);
+            REQUIRE(dbg_tracker.get_errors_by_category(ErrorCategory::COHERENCE).size() ==
+                    NUM_TRANSACTIONS);
         }
     }
 }
@@ -80,7 +85,7 @@ TEST_CASE("T10.2: 长时间运行稳定性", "[performance][stability][P2]") {
     SECTION("100,000 周期仿真") {
         auto& txn = TransactionTracker::instance();
         txn.initialize();
-        
+
         uint64_t txn_count = 0;
         const uint64_t TOTAL_CYCLES = 100000;
 
@@ -94,7 +99,7 @@ TEST_CASE("T10.2: 长时间运行稳定性", "[performance][stability][P2]") {
             // 简单的清理逻辑
             // pkt.set_error_code(ErrorCode::SUCCESS); // 简单操作
         }
-        
+
         THEN("系统未崩溃，交易计数正确") {
             REQUIRE(txn_count == (TOTAL_CYCLES / 100));
         }
@@ -124,33 +129,32 @@ TEST_CASE("T10.3: 内存泄漏检测", "[performance][memory][P2]") {
             {
                 tlm::tlm_generic_payload* p = new tlm::tlm_generic_payload();
                 create_transaction_context(p, 100 + i, 0, 0, 1); // 分配 Extension
-                
+
                 // 销毁 payload，应该自动删除 Extension
                 delete p;
             }
         }
         SUCCEED("Payload 及其扩展被正确清理");
     }
-    
+
     SECTION("PacketPool 内存重用") {
         // 验证 Pool 不会无限增长内存
         // Pool 应该复用对象
         std::vector<Packet*> pointers;
-        
+
         // 申请
-        for(int i=0; i<1000; ++i) {
-             pointers.push_back(PacketPool::get().acquire());
+        for (int i = 0; i < 1000; ++i) {
+            pointers.push_back(PacketPool::get().acquire());
         }
-        
+
         // 释放
-        for(auto* p : pointers) {
-             PacketPool::get().release(p);
+        for (auto* p : pointers) {
+            PacketPool::get().release(p);
         }
-        
+
         // Pool 现在的内部队列应该有对象可用，而不是不断 malloc
     }
 }
-
 
 // ========== P3.2 Lifecycle & Risk Fixes Verification ==========
 
@@ -180,7 +184,7 @@ TEST_CASE("Fix1: TLMModule Child Transaction ID Uniqueness (No Collision)", "[P3
                 REQUIRE(child_tids[0] != child_tids[1]);
                 REQUIRE(child_tids[1] != child_tids[2]);
                 REQUIRE(child_tids[0] != child_tids[2]);
-                REQUIRE(child_tids[0] >= 20000);  // g_sub_tid atomic baseline
+                REQUIRE(child_tids[0] >= 20000); // g_sub_tid atomic baseline
             }
 
             for (int i = 0; i < 3; ++i) {
@@ -191,7 +195,8 @@ TEST_CASE("Fix1: TLMModule Child Transaction ID Uniqueness (No Collision)", "[P3
     }
 }
 
-TEST_CASE("Fix2: TLMModule Reset Ordering (Fragment Buffers Cleared Before SimObject::do_reset)", "[P3.2][cache][reset]") {
+TEST_CASE("Fix2: TLMModule Reset Ordering (Fragment Buffers Cleared Before SimObject::do_reset)",
+          "[P3.2][cache][reset]") {
     GIVEN("A TLMModule-derived module with no pending state") {
         EventQueue eq;
         Phase8TestTLM cache("cache", &eq);
@@ -211,7 +216,8 @@ TEST_CASE("Fix2: TLMModule Reset Ordering (Fragment Buffers Cleared Before SimOb
     }
 }
 
-TEST_CASE("Fix3: TLMModule Lifecycle (Child TID Assigned Before Parent Release)", "[P3.2][cache][link]") {
+TEST_CASE("Fix3: TLMModule Lifecycle (Child TID Assigned Before Parent Release)",
+          "[P3.2][cache][link]") {
     GIVEN("A TLMModule-derived module and a Tracker") {
         EventQueue eq;
         Phase8TestTLM cache("cache", &eq);

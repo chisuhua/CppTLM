@@ -2,11 +2,11 @@
 // Legacy module E2E tests — ONLY CPUSim (PortPair model)
 // 所有其他模块测试在 test_e2e_simulation.cc 中使用 TLM 模块
 
-#include <catch2/catch_all.hpp>
-#include "modules.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
+#include "modules.hh"
+#include <catch2/catch_all.hpp>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;

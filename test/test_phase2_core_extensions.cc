@@ -1,9 +1,9 @@
 // test/test_phase2_core_extensions.cc
 // Phase 2: SimObject 扩展 + ErrorCode 测试
 
-#include <catch2/catch_all.hpp>
-#include "core/sim_object.hh"
 #include "core/error_category.hh"
+#include "core/sim_object.hh"
+#include <catch2/catch_all.hpp>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -30,30 +30,33 @@ class MockSimObject : public SimObject {
 public:
     int reset_called = 0;
     json last_snapshot;
-    
-    MockSimObject(const std::string& n, EventQueue* eq) 
-        : SimObject(n, eq) {}
-    
+
+    MockSimObject(const std::string& n, EventQueue* eq) : SimObject(n, eq) {
+    }
+
     void tick() override {
         // Mock 实现
     }
-    
+
     void do_reset(const ResetConfig& config) override {
         reset_called++;
         SimObject::do_reset(config);
     }
-    
+
     void save_snapshot(json& j) const override {
-        j = json{{"name", name}, {"initialized", initialized_}, {"type", get_module_type()}, {"custom", "data"}};
+        j = json{{"name", name},
+                 {"initialized", initialized_},
+                 {"type", get_module_type()},
+                 {"custom", "data"}};
     }
-    
+
     void load_snapshot(const json& j) override {
         SimObject::load_snapshot(j);
         if (j.contains("custom")) {
             // 自定义字段处理（mock）
         }
     }
-    
+
     std::string get_module_type() const override {
         return "MockSimObject";
     }
@@ -64,21 +67,21 @@ public:
 TEST_CASE("SimObject 基础功能", "[sim_object]") {
     EventQueue eq;
     MockSimObject obj("test_obj", &eq);
-    
+
     SECTION("名称查询") {
         REQUIRE(obj.getName() == "test_obj");
     }
-    
+
     SECTION("EventQueue 查询") {
         REQUIRE(obj.getEventQueue() == &eq);
     }
-    
+
     SECTION("初始化状态") {
         REQUIRE(obj.is_initialized() == false);
         obj.init();
         REQUIRE(obj.is_initialized() == true);
     }
-    
+
     SECTION("模块类型") {
         REQUIRE(obj.get_module_type() == "MockSimObject");
     }
@@ -89,29 +92,29 @@ TEST_CASE("SimObject 层次化管理", "[sim_object][hierarchy]") {
     auto* parent = new MockSimObject("parent", &eq);
     auto* child1 = new MockSimObject("child1", &eq);
     auto* child2 = new MockSimObject("child2", &eq);
-    
+
     SECTION("添加子模块") {
         parent->add_child(child1);
         parent->add_child(child2);
-        
+
         REQUIRE(parent->has_children() == true);
         REQUIRE(parent->get_children().size() == 2);
         REQUIRE(child1->get_parent() == parent);
         REQUIRE(child2->get_parent() == parent);
     }
-    
+
     SECTION("层次化复位") {
         parent->add_child(child1);
         child1->add_child(child2);
-        
+
         ResetConfig config;
         parent->reset(config);
-        
+
         REQUIRE(parent->reset_called == 1);
         REQUIRE(child1->reset_called == 1);
         REQUIRE(child2->reset_called == 1);
     }
-    
+
     delete parent;
     delete child1;
     delete child2;
@@ -120,20 +123,20 @@ TEST_CASE("SimObject 层次化管理", "[sim_object][hierarchy]") {
 TEST_CASE("SimObject 快照功能", "[sim_object][snapshot]") {
     EventQueue eq;
     MockSimObject obj("snapshot_test", &eq);
-    
+
     SECTION("保存快照") {
         json j;
         obj.save_snapshot(j);
-        
+
         REQUIRE(j.contains("name"));
         REQUIRE(j.contains("initialized"));
         REQUIRE(j["name"] == "snapshot_test");
     }
-    
+
     SECTION("加载快照") {
         json j = {{"name", "restored_obj"}, {"initialized", true}};
         obj.load_snapshot(j);
-        
+
         REQUIRE(obj.getName() == "restored_obj");
         REQUIRE(obj.is_initialized() == true);
     }
@@ -143,17 +146,17 @@ TEST_CASE("SimObject 非层次化复位", "[sim_object][reset]") {
     EventQueue eq;
     auto* parent = new MockSimObject("parent", &eq);
     auto* child = new MockSimObject("child", &eq);
-    
+
     parent->add_child(child);
-    
+
     ResetConfig config;
-    config.hierarchical = false;  // 禁用层次化
-    
+    config.hierarchical = false; // 禁用层次化
+
     parent->reset(config);
-    
+
     REQUIRE(parent->reset_called == 1);
-    REQUIRE(child->reset_called == 0);  // 子模块不应被复位
-    
+    REQUIRE(child->reset_called == 0); // 子模块不应被复位
+
     delete parent;
     delete child;
 }
@@ -212,14 +215,14 @@ TEST_CASE("错误码枚举值", "[error][category]") {
 TEST_CASE("SimObject + ErrorCode 集成", "[sim_object][error]") {
     EventQueue eq;
     MockSimObject obj("test", &eq);
-    
+
     SECTION("复位成功场景") {
         ResetConfig config;
         obj.reset(config);
         REQUIRE(obj.reset_called == 1);
         REQUIRE(obj.is_reset_pending() == false);
     }
-    
+
     SECTION("快照包含模块类型") {
         json j;
         obj.save_snapshot(j);

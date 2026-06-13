@@ -3,12 +3,12 @@
 // 功能描述：验证 hierarchy 解析与 ModuleFactory 的端到端集成
 
 #include "catch_amalgamated.hpp"
-#include "modules.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
-#include "core/topology_parser.hh"
 #include "core/topology_node.hh"
+#include "core/topology_parser.hh"
+#include "modules.hh"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -81,7 +81,8 @@ TEST_CASE("TGMS v4.1: Hierarchy tree parsing - nested tree", "[tgms-v4][hierarch
     REQUIRE(result == true);
 }
 
-TEST_CASE("TGMS v4.1: Hierarchy with coherence_domains", "[tgms-v4][hierarchy][coherence][integration]") {
+TEST_CASE("TGMS v4.1: Hierarchy with coherence_domains",
+          "[tgms-v4][hierarchy][coherence][integration]") {
     EventQueue eq;
     registerModules();
     ModuleFactory factory(&eq);
@@ -122,7 +123,8 @@ TEST_CASE("TGMS v4.1: Hierarchy with coherence_domains", "[tgms-v4][hierarchy][c
     REQUIRE(result == true);
 }
 
-TEST_CASE("TGMS v4.1: No hierarchy section - should still work", "[tgms-v4][hierarchy][integration]") {
+TEST_CASE("TGMS v4.1: No hierarchy section - should still work",
+          "[tgms-v4][hierarchy][integration]") {
     EventQueue eq;
     registerModules();
     ModuleFactory factory(&eq);
@@ -163,7 +165,8 @@ TEST_CASE("TGMS v4.1: Circular reference detection", "[tgms-v4][hierarchy][error
     REQUIRE(result == false);
 }
 
-TEST_CASE("TGMS v4.1: Missing name field in hierarchy", "[tgms-v4][hierarchy][error][integration]") {
+TEST_CASE("TGMS v4.1: Missing name field in hierarchy",
+          "[tgms-v4][hierarchy][error][integration]") {
     EventQueue eq;
     registerModules();
     ModuleFactory factory(&eq);
@@ -215,7 +218,8 @@ TEST_CASE("TGMS v4.1: parse_coherence_domains_array", "[tgms-v4][coherence][unit
     REQUIRE(domains[2] == "domain2");
 }
 
-TEST_CASE("TGMS v4.1: Hierarchy + Cache→Crossbar→Memory integration", "[tgms-v4][hierarchy][phase6][integration]") {
+TEST_CASE("TGMS v4.1: Hierarchy + Cache→Crossbar→Memory integration",
+          "[tgms-v4][hierarchy][phase6][integration]") {
     EventQueue eq;
     registerModules();
     ModuleFactory factory(&eq);

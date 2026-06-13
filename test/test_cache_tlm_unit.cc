@@ -1,8 +1,8 @@
 // test/test_cache_tlm_unit.cc
 // P1.8: CacheTLM 模块逻辑单元测试 — hit/miss/write
 
-#include <catch2/catch_all.hpp>
 #include "bundles/cache_bundles_tlm.hh"
+#include <catch2/catch_all.hpp>
 
 TEST_CASE("CacheTLM write caches data", "[chstream][cache]") {
     std::map<uint64_t, uint64_t> cache_lines;

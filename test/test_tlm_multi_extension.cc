@@ -10,43 +10,52 @@
 // Style: 12 TEST_CASEs, tag [multi_ext] (plus [regression]/[edge] subsets).
 // Catch2 v3.7.0 (precompiled catch_amalgamated.hpp).
 #include "catch_amalgamated.hpp"
-#include "tlm/tlm_stub.hh"
 #include "core/error_category.hh"
 #include "ext/error_context_ext.hh"
 #include "ext/transaction_context_ext.hh"
+#include "tlm/tlm_stub.hh"
 #include <cstring>
 #include <string>
 
 using tlm::tlm_generic_payload;
 
 namespace {
-// Test-only extension types. Distinct types → distinct T::ID → distinct slots
-// in m_extensions[]. This is what makes "multi-extension" actually multi.
-struct ExtA : public tlm::tlm_extension<ExtA> {
-    int val = 0;
-    explicit ExtA(int v = 0) : val(v) {}
-    tlm_extension_base* clone() const override { return new ExtA(*this); }
-    void copy_from(tlm_extension_base const& e) override {
-        val = static_cast<ExtA const&>(e).val;
-    }
-};
-struct ExtB : public tlm::tlm_extension<ExtB> {
-    std::string name;
-    explicit ExtB(std::string n = "") : name(std::move(n)) {}
-    tlm_extension_base* clone() const override { return new ExtB(*this); }
-    void copy_from(tlm_extension_base const& e) override {
-        name = static_cast<ExtB const&>(e).name;
-    }
-};
-struct ExtC : public tlm::tlm_extension<ExtC> {
-    double pi = 3.14;
-    explicit ExtC(double v = 3.14) : pi(v) {}
-    tlm_extension_base* clone() const override { return new ExtC(*this); }
-    void copy_from(tlm_extension_base const& e) override {
-        pi = static_cast<ExtC const&>(e).pi;
-    }
-};
-}  // namespace
+    // Test-only extension types. Distinct types → distinct T::ID → distinct slots
+    // in m_extensions[]. This is what makes "multi-extension" actually multi.
+    struct ExtA : public tlm::tlm_extension<ExtA> {
+        int val = 0;
+        explicit ExtA(int v = 0) : val(v) {
+        }
+        tlm_extension_base* clone() const override {
+            return new ExtA(*this);
+        }
+        void copy_from(tlm_extension_base const& e) override {
+            val = static_cast<ExtA const&>(e).val;
+        }
+    };
+    struct ExtB : public tlm::tlm_extension<ExtB> {
+        std::string name;
+        explicit ExtB(std::string n = "") : name(std::move(n)) {
+        }
+        tlm_extension_base* clone() const override {
+            return new ExtB(*this);
+        }
+        void copy_from(tlm_extension_base const& e) override {
+            name = static_cast<ExtB const&>(e).name;
+        }
+    };
+    struct ExtC : public tlm::tlm_extension<ExtC> {
+        double pi = 3.14;
+        explicit ExtC(double v = 3.14) : pi(v) {
+        }
+        tlm_extension_base* clone() const override {
+            return new ExtC(*this);
+        }
+        void copy_from(tlm_extension_base const& e) override {
+            pi = static_cast<ExtC const&>(e).pi;
+        }
+    };
+} // namespace
 
 // 1. Three distinct extensions stored on the same payload; all retrievable.
 TEST_CASE("Multi-ext: set 3 different extensions, all retrievable", "[multi_ext]") {
@@ -87,7 +96,7 @@ TEST_CASE("Multi-ext: set_extension returns old value (SysC 2.0 compat)", "[mult
     REQUIRE(old->val == 1);
     REQUIRE(p.get_extension<ExtA>() != nullptr);
     REQUIRE(p.get_extension<ExtA>()->val == 2);
-    delete old;  // caller owns the returned old pointer
+    delete old; // caller owns the returned old pointer
 }
 
 // 4. reset() must delete + nullify ALL extension slots (Phase 1c→1d upgrade).
@@ -123,7 +132,7 @@ TEST_CASE("Multi-ext: deep_copy_from duplicates all extensions", "[multi_ext]") 
     dst.deep_copy_from(src);
     REQUIRE(dst.get_extension<ExtA>() != nullptr);
     REQUIRE(dst.get_extension<ExtA>()->val == 99);
-    REQUIRE(dst.get_extension<ExtA>() != src.get_extension<ExtA>());  // cloned, not aliased
+    REQUIRE(dst.get_extension<ExtA>() != src.get_extension<ExtA>()); // cloned, not aliased
     REQUIRE(dst.get_extension<ExtB>() != nullptr);
     REQUIRE(dst.get_extension<ExtB>()->name == "src");
     REQUIRE(dst.get_extension<ExtB>() != src.get_extension<ExtB>());
@@ -171,7 +180,7 @@ TEST_CASE("Multi-ext: Two same-type set replaces, returns old", "[multi_ext]") {
     p.set_extension(first);
     auto* old = p.set_extension(second);
     REQUIRE(old == first);
-    delete old;  // caller frees returned old
+    delete old; // caller frees returned old
     REQUIRE(p.get_extension<ExtA>() == second);
     REQUIRE(p.get_extension<ExtA>()->val == 2);
 }
@@ -196,8 +205,8 @@ TEST_CASE("Multi-ext regression: set_transaction_id + set_error_code coexist (AD
     REQUIRE(payload.get_extension<TransactionContextExt>()->transaction_id == 100);
     REQUIRE(payload.get_extension<TransactionContextExt>()->source_module == "cpu_0");
     REQUIRE(payload.get_extension<ErrorContextExt>() != nullptr);
-    REQUIRE(payload.get_extension<ErrorContextExt>()->error_code
-            == ErrorCode::RESOURCE_BUFFER_FULL);
+    REQUIRE(payload.get_extension<ErrorContextExt>()->error_code ==
+            ErrorCode::RESOURCE_BUFFER_FULL);
 
     // reset() must clear BOTH.
     payload.reset();
@@ -231,11 +240,11 @@ TEST_CASE("Multi-ext regression: set_transaction_id + set_error_code coexist (AD
 //      reset() and dtor; this test only proves the heap-allocated path is safe.)
 TEST_CASE("Multi-ext edge: heap-allocated extensions only (no stack UB)", "[multi_ext][edge]") {
     tlm_generic_payload p;
-    auto* e = new ExtA{12345};  // heap — `this` test scope owns `e` until set
+    auto* e = new ExtA{12345}; // heap — `this` test scope owns `e` until set
     p.set_extension(e);
     REQUIRE(p.get_extension<ExtA>() != nullptr);
     REQUIRE(p.get_extension<ExtA>()->val == 12345);
-    p.reset();  // dtor-style cleanup: deletes e and nullifies the slot
+    p.reset(); // dtor-style cleanup: deletes e and nullifies the slot
     REQUIRE(p.get_extension<ExtA>() == nullptr);
     // No further access to `e` — reset() owns the deletion.
     SUCCEED("heap-allocated extension survived reset() without UB");

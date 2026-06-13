@@ -11,10 +11,8 @@ TEST_CASE("ResponsePathTest RequestReceivedByConsumer", "[response][path]") {
     producer.getPortManager().addDownstreamPort(&producer, {4}, {0});
     consumer.getPortManager().addUpstreamPort(&consumer, {4}, {0});
 
-    auto pp = std::make_unique<PortPair>(
-        producer.getPortManager().getDownstreamPorts()[0],
-        consumer.getPortManager().getUpstreamPorts()[0]
-    );
+    auto pp = std::make_unique<PortPair>(producer.getPortManager().getDownstreamPorts()[0],
+                                         consumer.getPortManager().getUpstreamPorts()[0]);
 
     producer.sendPacket();
     eq.run(1);

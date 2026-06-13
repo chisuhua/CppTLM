@@ -3,8 +3,8 @@
 
 #include "core/coherence_domain.hh"
 
-CoherenceDomain::CoherenceDomain(const std::string& name, EventQueue* eq)
-    : SimObject(name, eq) {}
+CoherenceDomain::CoherenceDomain(const std::string& name, EventQueue* eq) : SimObject(name, eq) {
+}
 
 bool CoherenceDomain::set_protocol(Protocol p) {
     protocol_ = p;
@@ -37,7 +37,8 @@ std::string CoherenceDomain::lookup_home_node(uint64_t addr) const {
     return members_[index];
 }
 
-void CoherenceDomain::register_bridge(const std::string& target_domain, const std::string& bridge_name) {
+void CoherenceDomain::register_bridge(const std::string& target_domain,
+                                      const std::string& bridge_name) {
     bridge_map_[target_domain] = bridge_name;
 }
 

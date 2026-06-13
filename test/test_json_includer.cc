@@ -1,8 +1,8 @@
 // test/test_json_includer.cc
 #include "catch_amalgamated.hpp"
 #include "utils/json_includer.hh"
-#include <fstream>
 #include <cstdlib>
+#include <fstream>
 
 TEST_CASE("JsonIncluderTest IncludeMergesContent", "[json][includer]") {
     // 创建临时目录和文件

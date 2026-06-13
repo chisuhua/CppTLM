@@ -45,7 +45,8 @@ COUNT=0
 for file in $FILES; do
     if [ "$CHECK_MODE" = true ]; then
         # 检查模式
-        if ! clang-format -style=file -output-replacements-xml "$file" | grep -q "<replacement"; then
+        # 注意: grep 必须用 "<replacement " (带空格),避免匹配父标签 <replacements>
+        if ! clang-format -style=file -output-replacements-xml "$file" | grep -q "<replacement "; then
             echo -e "${GREEN}✓${NC} $file"
         else
             echo -e "${RED}✗${NC} $file (需要格式化)"

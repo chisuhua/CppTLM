@@ -1,6 +1,6 @@
 #include "core/plugin_loader.hh"
-#include "core/plugin_load_exception.hh"
 #include "core/load_policy.hh"
+#include "core/plugin_load_exception.hh"
 
 #include <dlfcn.h>
 #include <iostream>
@@ -9,12 +9,12 @@ bool PluginLoader::loadPlugin(const std::string& path, LoadPolicy policy, bool i
     void* handle = dlopen(path.c_str(), RTLD_NOW);
     if (!handle) {
         std::cerr << "plugin load failed: " << path << " : " << dlerror() << std::endl;
-        
-        PluginLoadException::Severity severity = 
-            is_critical ? PluginLoadException::Severity::FATAL : 
-            policy == LoadPolicy::BEST_EFFORT ? PluginLoadException::Severity::WARNING :
-            PluginLoadException::Severity::ERROR;
-        
+
+        PluginLoadException::Severity severity = is_critical ? PluginLoadException::Severity::FATAL
+                                                 : policy == LoadPolicy::BEST_EFFORT
+                                                     ? PluginLoadException::Severity::WARNING
+                                                     : PluginLoadException::Severity::ERROR;
+
         if (!shouldContinue(policy, severity)) {
             throw PluginLoadException(severity, path, dlerror());
         }
@@ -25,13 +25,14 @@ bool PluginLoader::loadPlugin(const std::string& path, LoadPolicy policy, bool i
     typedef std::string (*RegisterTypeFunc)();
     RegisterTypeFunc registerType = (RegisterTypeFunc)dlsym(handle, "registerType");
     if (!registerType) {
-        std::cerr << "plugin load failed: " << path << " : missing registerType function" << std::endl;
-        
-        PluginLoadException::Severity severity = 
-            is_critical ? PluginLoadException::Severity::FATAL : 
-            policy == LoadPolicy::BEST_EFFORT ? PluginLoadException::Severity::WARNING :
-            PluginLoadException::Severity::ERROR;
-        
+        std::cerr << "plugin load failed: " << path << " : missing registerType function"
+                  << std::endl;
+
+        PluginLoadException::Severity severity = is_critical ? PluginLoadException::Severity::FATAL
+                                                 : policy == LoadPolicy::BEST_EFFORT
+                                                     ? PluginLoadException::Severity::WARNING
+                                                     : PluginLoadException::Severity::ERROR;
+
         dlclose(handle);
         if (!shouldContinue(policy, severity)) {
             throw PluginLoadException(severity, path, "missing registerType function");
@@ -61,7 +62,7 @@ void PluginLoader::clear() {
     loadedPlugins_.clear();
 }
 
-int PluginLoader::loadPlugins(const std::vector<std::string>& paths, LoadPolicy policy, 
+int PluginLoader::loadPlugins(const std::vector<std::string>& paths, LoadPolicy policy,
                               const std::vector<std::string>& critical_paths) {
     int loaded = 0;
     for (const auto& path : paths) {

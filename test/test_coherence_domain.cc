@@ -2,11 +2,11 @@
 // Phase 4.2: CoherenceDomain TDD Unit Tests
 // TDD Red Phase: Tests that should fail until implementation is complete
 
-#include <catch2/catch_all.hpp>
 #include "core/coherence_domain.hh"
 #include "core/sim_object.hh"
-#include <vector>
+#include <catch2/catch_all.hpp>
 #include <string>
+#include <vector>
 
 // Test helper to create a mock event queue for SimObject
 class MockEventQueue : public EventQueue {
