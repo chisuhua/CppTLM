@@ -156,9 +156,9 @@ TEST_CASE("Phase 6: CrossbarTLM tick routes request", "[phase6][crossbar]") {
 
     xbar.tick();
 
-    // Verify response appears on port 1 (routed destination)
-    REQUIRE(xbar.resp_out[1].valid());
-    auto resp = xbar.resp_out[1].data();
+    // P0-5b: 响应回源端口(0),不是路由目的端口(1)
+    REQUIRE(xbar.resp_out[0].valid());
+    auto resp = xbar.resp_out[0].data();
     REQUIRE(resp.transaction_id.read() == 42);
     REQUIRE(resp.is_hit.read() == true);
 }

@@ -76,7 +76,9 @@ TEST_CASE("CrossbarTLM routes to boundary ports", "[tlm][crossbar]") {
 
     inject_req(&xbar, 0, 2, 0x1000); // Port 1
     xbar.tick();
-    REQUIRE(xbar.resp_out[1].valid());
+    // P0-5b: 响应回源端口(0),不是路由目的端口(1)
+    REQUIRE(xbar.resp_out[0].valid());
+    xbar.resp_out[0].clear_valid();
 }
 
 TEST_CASE("CrossbarTLM preserves transaction ID", "[tlm][crossbar]") {
@@ -87,7 +89,8 @@ TEST_CASE("CrossbarTLM preserves transaction ID", "[tlm][crossbar]") {
     inject_req(&xbar, 0, tid, 0x1234);
     xbar.tick();
 
-    REQUIRE(xbar.resp_out[1].data().transaction_id.read() == tid);
+    // P0-5b: 响应回源端口(0)
+    REQUIRE(xbar.resp_out[0].data().transaction_id.read() == tid);
 }
 
 TEST_CASE("CrossbarTLM handles multiple sequential requests", "[tlm][crossbar]") {
@@ -97,9 +100,9 @@ TEST_CASE("CrossbarTLM handles multiple sequential requests", "[tlm][crossbar]")
     for (int i = 0; i < 4; i++) {
         inject_req(&xbar, 0, i + 1, 0x1000 * (i + 1));
         xbar.tick();
-        unsigned dst = xbar.route_address(0x1000 * (i + 1));
-        REQUIRE(xbar.resp_out[dst].valid());
-        xbar.resp_out[dst].clear_valid();
+        // P0-5b: 响应回源端口(0)
+        REQUIRE(xbar.resp_out[0].valid());
+        xbar.resp_out[0].clear_valid();
     }
 }
 
@@ -109,13 +112,14 @@ TEST_CASE("CrossbarTLM reset clears all outputs", "[tlm][crossbar][reset]") {
 
     inject_req(&xbar, 0, 1, 0x1000);
     xbar.tick();
-    REQUIRE(xbar.resp_out[1].valid());
+    // P0-5b: 响应回源端口(0)
+    REQUIRE(xbar.resp_out[0].valid());
 
     ResetConfig cfg;
     xbar.do_reset(cfg);
 
-    xbar.resp_out[1].clear_valid();
-    REQUIRE_FALSE(xbar.resp_out[1].valid());
+    xbar.resp_out[0].clear_valid();
+    REQUIRE_FALSE(xbar.resp_out[0].valid());
 }
 
 TEST_CASE("CrossbarTLM no input produces no output", "[tlm][crossbar]") {
@@ -173,7 +177,7 @@ TEST_CASE("CrossbarTLM data passthrough", "[tlm][crossbar]") {
     inject_req(&xbar, 0, 1, 0x1234, 0xDEADBEEF);
     xbar.tick();
 
-    REQUIRE(xbar.resp_out[1].data().data.read() == 0xDEADBEEF);
+    REQUIRE(xbar.resp_out[0].data().data.read() == 0xDEADBEEF);
 }
 
 TEST_CASE("CrossbarTLM error code always zero", "[tlm][crossbar]") {
@@ -183,9 +187,8 @@ TEST_CASE("CrossbarTLM error code always zero", "[tlm][crossbar]") {
     for (int i = 0; i < 4; i++) {
         inject_req(&xbar, 0, i, 0x1000 * (i + 1));
         xbar.tick();
-        unsigned dst = xbar.route_address(0x1000 * (i + 1));
-        REQUIRE(xbar.resp_out[dst].data().error_code.read() == 0);
-        xbar.resp_out[dst].clear_valid();
+        REQUIRE(xbar.resp_out[0].data().error_code.read() == 0);
+        xbar.resp_out[0].clear_valid();
     }
 }
 
@@ -195,7 +198,7 @@ TEST_CASE("CrossbarTLM is_hit always true (routing only)", "[tlm][crossbar]") {
 
     inject_req(&xbar, 0, 1, 0x1000);
     xbar.tick();
-    REQUIRE(xbar.resp_out[1].data().is_hit.read() == true);
+    REQUIRE(xbar.resp_out[0].data().is_hit.read() == true);
 }
 
 TEST_CASE("CrossbarTLM detects bus conflict on same destination", "[tlm][crossbar][conflict]") {

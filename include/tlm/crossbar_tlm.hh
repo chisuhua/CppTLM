@@ -6,19 +6,19 @@
 #ifndef TLM_CROSSBAR_TLM_HH
 #define TLM_CROSSBAR_TLM_HH
 
-#include "core/chstream_module.hh"
 #include "bundles/cache_bundles_tlm.hh"
+#include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include "metrics/stats.hh"
 #include <cstdint>
 
 /**
  * @brief Crossbar TLM 模块（4 端口路由）
- * 
+ *
  * 端口拓扑：
  * - req_in[0-3]   — 请求输入（来自 CPU/上游）
  * - resp_out[0-3] — 响应输出（路由后到下游 Memory/Cache）
- * 
+ *
  * 路由策略：addr >> 12 & 0x3
  * - Port 0: 0x0000-0x0FFF
  * - Port 1: 0x1000-0x1FFF
@@ -32,6 +32,7 @@ private:
     static constexpr unsigned PORT_MASK = 0x3;
 
     cpptlm::StreamAdapterBase* adapter[NUM_PORTS] = {nullptr};
+    cpptlm::StreamAdapterBase* multi_adapter_ = nullptr; // P0-5b fix: single MultiPortStreamAdapter
     bool port_busy_[NUM_PORTS] = {false};
 
     // 性能统计
@@ -47,28 +48,45 @@ public:
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> resp_out[NUM_PORTS];
 
     CrossbarTLM(const std::string& name, EventQueue* eq)
-        : ChStreamModuleBase(name, eq),
-          stats_("crossbar"),
-          stats_flits_received_(stats_.addScalar("flits_received", "Total flits received", "flits")),
+        : ChStreamModuleBase(name, eq), stats_("crossbar"),
+          stats_flits_received_(
+              stats_.addScalar("flits_received", "Total flits received", "flits")),
           stats_flits_sent_(stats_.addScalar("flits_sent", "Total flits sent", "flits")),
-          stats_flit_latency_(stats_.addDistribution("flit_latency", "Flit traversal latency", "cycle")),
-          stats_buffer_occupancy_(stats_.addAverage("buffer_occupancy", "Average buffer occupancy", "flits")) {}
+          stats_flit_latency_(
+              stats_.addDistribution("flit_latency", "Flit traversal latency", "cycle")),
+          stats_buffer_occupancy_(
+              stats_.addAverage("buffer_occupancy", "Average buffer occupancy", "flits")) {
+    }
 
     ~CrossbarTLM() override = default;
 
-    std::string get_module_type() const override { return "CrossbarTLM"; }
+    std::string get_module_type() const override {
+        return "CrossbarTLM";
+    }
 
     // ChStreamModuleBase 接口
-    void set_stream_adapter(cpptlm::StreamAdapterBase*) override {}
+    // P0-5b fix: 工厂通过单指针 set_stream_adapter(StreamAdapterBase*) 注入
+    // MultiPortStreamAdapter（内部已遍历 N 端口）。需存储为 multi_adapter_ 并
+    // 在 tick() 中单次调用，避免 N 次重复 tick。
+    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+        multi_adapter_ = a;
+        adapter[0] = a; // 兼容 get_adapter(0) 访问
+    }
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapters[]) override {
         for (unsigned i = 0; i < NUM_PORTS; i++) {
             adapter[i] = adapters[i];
         }
+        if (NUM_PORTS > 0)
+            multi_adapter_ = adapters[0];
     }
 
     // ChStreamModuleBase 统计接口
-    tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
-    std::string get_stats_path() const override { return "system.crossbar"; }
+    tlm_stats::StatGroup* get_stats_group() override {
+        return &stats_;
+    }
+    std::string get_stats_path() const override {
+        return "system.crossbar";
+    }
 
     void tick() override {
         bool conflicted = false;
@@ -96,7 +114,9 @@ public:
                 resp.data.write(req.data.read());
                 resp.is_hit.write(1);
                 resp.error_code.write(0);
-                resp_out[dst].write(resp);
+                // P0-5b: 响应必须回到请求的**源端口**(i),不是路由的**目的端口**(dst)
+                // 连接 cpu0→xbar.0 后,响应路径是 xbar.resp_out[0]→cpu0.resp_in[0]
+                resp_out[i].write(resp);
 
                 // 统计：发送 flit + 延迟采样
                 ++stats_flits_sent_;
@@ -105,8 +125,15 @@ public:
                 req_in[i].consume();
             }
         }
-        for (unsigned i = 0; i < NUM_PORTS; i++) {
-            if (adapter[i]) adapter[i]->tick();
+        // P0-5b fix: MultiPortStreamAdapter 内部遍历 N 端口，只需调用一次
+        if (multi_adapter_) {
+            multi_adapter_->tick();
+        } else {
+            // 回退：每个端口独立 adapter（legacy 数组接口）
+            for (unsigned i = 0; i < NUM_PORTS; i++) {
+                if (adapter[i])
+                    adapter[i]->tick();
+            }
         }
     }
 
@@ -123,12 +150,20 @@ public:
         return (addr >> PORT_SHIFT) & PORT_MASK;
     }
 
-    cpptlm::StreamAdapterBase* get_adapter(unsigned idx) const { return adapter[idx]; }
-    unsigned num_ports() const override { return NUM_PORTS; }
+    cpptlm::StreamAdapterBase* get_adapter(unsigned idx) const {
+        return adapter[idx];
+    }
+    unsigned num_ports() const override {
+        return NUM_PORTS;
+    }
 
     // 统计访问器
-    tlm_stats::StatGroup& stats() { return stats_; }
-    const tlm_stats::StatGroup& stats() const { return stats_; }
+    tlm_stats::StatGroup& stats() {
+        return stats_;
+    }
+    const tlm_stats::StatGroup& stats() const {
+        return stats_;
+    }
 
     void dumpStats(std::ostream& os) const {
         stats_.dump(os);
