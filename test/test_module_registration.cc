@@ -1,19 +1,23 @@
 // test/test_module_registration.cc
 #include "catch_amalgamated.hpp"
-#include "core/module_factory.hh"
 #include "core/event_queue.hh"
+#include "core/module_factory.hh"
 
 // 测试专用 Mock 模块
 class TestModuleA : public SimObject {
 public:
-    explicit TestModuleA(const std::string& n, EventQueue* eq) : SimObject(n, eq) {}
-    void tick() override {}
+    explicit TestModuleA(const std::string& n, EventQueue* eq) : SimObject(n, eq) {
+    }
+    void tick() override {
+    }
 };
 
 class TestModuleB : public SimObject {
 public:
-    explicit TestModuleB(const std::string& n, EventQueue* eq) : SimObject(n, eq) {}
-    void tick() override {}
+    explicit TestModuleB(const std::string& n, EventQueue* eq) : SimObject(n, eq) {
+    }
+    void tick() override {
+    }
 };
 
 TEST_CASE("Module Registration and Instantiation Tests", "[module][factory]") {

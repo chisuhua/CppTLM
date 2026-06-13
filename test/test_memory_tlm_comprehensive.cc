@@ -1,7 +1,7 @@
-#include <catch2/catch_all.hpp>
-#include "tlm/memory_tlm.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "core/event_queue.hh"
+#include "tlm/memory_tlm.hh"
+#include <catch2/catch_all.hpp>
 #include <cstdint>
 #include <cstring>
 
@@ -121,7 +121,9 @@ TEST_CASE("MemoryTLM adapter tick delegation", "[tlm][memory][integration]") {
     MemoryTLM mem("mem", &eq);
     REQUIRE(mem.get_adapter() == nullptr);
 
-    auto* mock_adapter = new cpptlm::StreamAdapter<MemoryTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(&mem);
+    auto* mock_adapter =
+        new cpptlm::StreamAdapter<MemoryTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(
+            &mem);
     mem.set_stream_adapter(mock_adapter);
     REQUIRE(mem.get_adapter() == mock_adapter);
 

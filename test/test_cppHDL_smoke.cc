@@ -5,12 +5,12 @@
 //           (canonical pattern 与 example_rtl_modules.md 一致)
 // 标签: [cpphdl][smoke]
 // 作者 CppTLM Team / 日期 2026-06-07
-#include <catch2/catch_all.hpp>
+#include "bundles/cache_bundles_rtl.hh"
 #include "ch.hpp"
 #include "chlib/stream.h"
-#include "simulator.h"
 #include "rtl/hybrid_cache_component.hh"
-#include "bundles/cache_bundles_rtl.hh"
+#include "simulator.h"
+#include <catch2/catch_all.hpp>
 
 using cpptlm::rtl::HybridCacheComponent;
 

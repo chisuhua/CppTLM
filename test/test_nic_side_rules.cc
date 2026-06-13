@@ -1,9 +1,9 @@
 // test/test_nic_side_rules.cc
-#include <catch2/catch_all.hpp>
-#include "modules.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
+#include "modules.hh"
+#include <catch2/catch_all.hpp>
 
 static void registerAllModules() {
     static bool registered = false;

@@ -1,13 +1,13 @@
 /**
  * @file module_factory.cc
  * @brief ModuleFactory 核心实现 - 双注册表、实例化、拓扑连接、StreamAdapter 注入
- * 
+ *
  * 本文件实现 ModuleFactory 类的核心流程，负责：
  * - **双注册表管理**：getObjectRegistry() / getModuleRegistry() 分离对象与模块注册
  * - **JSON 拓扑实例化**：instantiateAll() 从配置创建所有模块实例
  * - **端口连接解析**：resolveConnections() 处理 "module.port_index" 语法
  * - **StreamAdapter 注入**：Step 7 为 ChStreamModuleBase 模块注入适配器
- * 
+ *
  * ## 核心流程（8 步）
  * 1. registerAllObjects()    → 从 REGISTRY 注入所有 SimObject
  * 2. registerAllModules()    → 从 REGISTRY 注入所有 SimModule
@@ -17,19 +17,19 @@
  * 6. loadGroupTopology()     → 处理 module_groups 层级拓扑
  * 7. injectStreamAdapters()  → 为 ChStreamModuleBase 创建并注入 StreamAdapter
  * 8. startAllTicks()         → 启动所有模块 tick() 循环
- * 
+ *
  * ## 关键 API
  * - `instantiateAll(config)` — 主入口，执行完整实例化流程
  * - `parsePortSpec(name)` — 解析 "xbar.0" → ("xbar", 0)
  * - `injectStreamAdapters()` — Step 7，创建 ChStreamAdapterFactory 适配器
  * - `stream_adapters_` — vector<unique_ptr<StreamAdapterBase>> 适配器生命周期管理
- * 
+ *
  * ## 使用注意事项
  * - **显式源文件**：CMakeLists.txt 使用 set(CORE_SOURCES ...) 显式列举，禁用 GLOB
  * - **端口索引语法**：JSON 连接支持 "dst": "xbar.0" 表示模块 xbar 的第 0 端口
  * - **StreamAdapter 生命周期**：由 ModuleFactory::stream_adapters_ 管理，模块析构前自动清理
  * - **插件加载**：loadPlugins() 使用 dlopen/dlsym，需确保 .so 符合 REGISTER_OBJECT 约定
- * 
+ *
  * @author CppTLM Team
  * @date 2024-05
  * @see module_factory.hh
@@ -38,34 +38,34 @@
  */
 
 #include "module_factory.hh"
-#include "sim_module.hh"
-#include "core/connection_resolver.hh"
-#include "core/chstream_module.hh"
-#include "framework/stream_adapter.hh"
-#include "core/chstream_port.hh"
-#include "framework/chstream_adapter_factory.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "bundles/noc_bundles_tlm.hh"
+#include "core/chstream_module.hh"
+#include "core/chstream_port.hh"
+#include "core/coherence_domain.hh"
+#include "core/connection_resolver.hh"
+#include "core/load_policy.hh"
+#include "core/param_errors.hh"
+#include "core/param_parser.hh"
+#include "core/plugin_load_exception.hh"
+#include "core/plugin_loader.hh"
+#include "core/port_compatibility.hh"
+#include "core/port_types.hh"
+#include "core/topology_parser.hh"
+#include "framework/chstream_adapter_factory.hh"
+#include "framework/stream_adapter.hh"
+#include "metrics/stats_manager.hh"
+#include "sim_module.hh"
 #include "tlm/router_tlm.hh"
 #include "utils/config_utils.hh"
 #include "utils/json_includer.hh"
-#include "utils/wildcard.hh"
+#include "utils/module_group.hh"
 #include "utils/regex_matcher.hh"
 #include "utils/var_resolver.hh"
-#include "utils/module_group.hh"
-#include "core/plugin_load_exception.hh"
-#include "core/plugin_loader.hh"
-#include "core/load_policy.hh"
-#include "core/port_types.hh"
-#include "core/port_compatibility.hh"
-#include "core/param_parser.hh"
-#include "core/param_errors.hh"
-#include "metrics/stats_manager.hh"
-#include "core/topology_parser.hh"
-#include "core/coherence_domain.hh"
+#include "utils/wildcard.hh"
+#include <algorithm>
 #include <fstream>
 #include <set>
-#include <algorithm>
 
 using json = nlohmann::json;
 
@@ -75,21 +75,22 @@ json processExtends(const json& config, int depth = 0);
 bool validate_nic_pe_connection(const std::string& src_type, unsigned src_port,
                                 const std::string& dst_type, unsigned dst_port);
 bool check_port_compatibility(const std::string& src_name, const std::string& dst_name,
-                             unsigned src_idx, unsigned dst_idx,
-                             const std::map<std::string, cpptlm::ModulePortSpec>& port_specs);
+                              unsigned src_idx, unsigned dst_idx,
+                              const std::map<std::string, cpptlm::ModulePortSpec>& port_specs);
 std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs();
-
 
 // P3.x ASan: clear StatsManager paths (by pointer scan) before deleting instances,
 // then delegate to ModuleGroup::clearAll() to free the SimObjects.
 ModuleFactory::~ModuleFactory() {
     for (auto& [name, obj] : instances) {
-        if (!obj) continue;
+        if (!obj)
+            continue;
         if (auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj)) {
             if (auto* sg = ch_mod->get_stats_group()) {
                 std::vector<std::string> paths;
                 for (const auto& kv : tlm_stats::StatsManager::instance().groups()) {
-                    if (kv.second == sg) paths.push_back(kv.first);
+                    if (kv.second == sg)
+                        paths.push_back(kv.first);
                 }
                 for (const auto& p : paths) {
                     tlm_stats::StatsManager::instance().unregister_group(p);
@@ -114,8 +115,8 @@ std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) 
 static std::string resolve_port_alias(const std::string& port_spec) {
     auto it = cpptlm::PortSpec::deprecated_names().find(port_spec);
     if (it != cpptlm::PortSpec::deprecated_names().end()) {
-        DPRINTF(CONN, "[WARN] Deprecated port name '%s' resolved to index %u\n",
-                port_spec.c_str(), it->second);
+        DPRINTF(CONN, "[WARN] Deprecated port name '%s' resolved to index %u\n", port_spec.c_str(),
+                it->second);
         return std::to_string(it->second);
     }
     return port_spec;
@@ -150,9 +151,9 @@ bool ModuleFactory::instantiateAll(const json& config) {
         DPRINTF(MODULE, "[HIERARCHY] Parsing hierarchy tree...\n");
         try {
             auto hierarchy_root = cpptlm::parse_hierarchy_tree_with_validation(
-                final_config["hierarchy"],
-                final_config.contains("coherence_domains") ? final_config["coherence_domains"] : json::array()
-            );
+                final_config["hierarchy"], final_config.contains("coherence_domains")
+                                               ? final_config["coherence_domains"]
+                                               : json::array());
             (void)hierarchy_root;
             DPRINTF(MODULE, "[HIERARCHY] Hierarchy tree parsed successfully\n");
         } catch (const cpptlm::TopologyParseException& e) {
@@ -170,7 +171,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
             for (const auto& [name, rule] : rules) {
                 if (!mod["params"].contains(name.c_str())) {
                     if (rule.required) {
-                        DPRINTF(MODULE, "[PARAM ERROR] Required parameter '%s' missing for module '%s'\n",
+                        DPRINTF(MODULE,
+                                "[PARAM ERROR] Required parameter '%s' missing for module '%s'\n",
                                 name.c_str(), type.c_str());
                         return false;
                     }
@@ -187,7 +189,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
     // ========================
     std::map<std::string, cpptlm::ModulePortSpec> port_specs;
     for (const auto& mod : final_config["modules"]) {
-        if (!mod.contains("name") || !mod.contains("type")) continue;
+        if (!mod.contains("name") || !mod.contains("type"))
+            continue;
         std::string name = mod["name"];
         if (mod.contains("port_spec")) {
             try {
@@ -202,7 +205,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
 
     auto default_specs = get_default_port_specs();
     for (const auto& mod : final_config["modules"]) {
-        if (!mod.contains("name") || !mod.contains("type")) continue;
+        if (!mod.contains("name") || !mod.contains("type"))
+            continue;
         std::string name = mod["name"];
         std::string type = mod["type"];
         if (port_specs.find(name) == port_specs.end()) {
@@ -218,8 +222,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
     PluginLoader loader;
     if (final_config.contains("plugin")) {
         for (auto& plugin_path : final_config["plugin"]) {
-            if (!PluginLoader{}.loadPlugin(plugin_path.get<std::string>(), LoadPolicy::CRITICAL_ONLY, true)) {
-                DPRINTF(MODULE, "[ERROR] Failed to load plugin: %s\n", plugin_path.get<std::string>().c_str());
+            if (!PluginLoader{}.loadPlugin(plugin_path.get<std::string>(),
+                                           LoadPolicy::CRITICAL_ONLY, true)) {
+                DPRINTF(MODULE, "[ERROR] Failed to load plugin: %s\n",
+                        plugin_path.get<std::string>().c_str());
             }
         }
     }
@@ -231,7 +237,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
     std::unordered_map<std::string, SimModule*> module_instances;
 
     for (auto& mod : final_config["modules"]) {
-        if (!mod.contains("name") || !mod.contains("type")) continue;
+        if (!mod.contains("name") || !mod.contains("type"))
+            continue;
         std::string name = mod["name"];
         std::string type = mod["type"];
 
@@ -265,8 +272,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
         }
 
         const json* cfg_src = mod.contains("params") ? &mod["params"] : nullptr;
-        if (!cfg_src && type == "RouterTLM" && mod.contains("node_x")) cfg_src = &mod;
-        if (!cfg_src && type == "NICTLM" && mod.contains("node_id")) cfg_src = &mod;
+        if (!cfg_src && type == "RouterTLM" && mod.contains("node_x"))
+            cfg_src = &mod;
+        if (!cfg_src && type == "NICTLM" && mod.contains("node_id"))
+            cfg_src = &mod;
         if (cfg_src) {
             auto* obj = object_instances[name];
             if (obj) {
@@ -315,7 +324,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
         }
     }
 
-// ========================
+    // ========================
     // 5. 使用 ConnectionResolver 处理 connections
     // ========================
 
@@ -324,16 +333,21 @@ bool ModuleFactory::instantiateAll(const json& config) {
     std::set<std::string> seen_connections;
     std::map<std::string, int> connection_latencies;
     for (const auto& conn : final_config["connections"]) {
-        if (!conn.contains("src") || !conn.contains("dst")) continue;
-        std::string conn_key = conn["src"].get<std::string>() + "->" + conn["dst"].get<std::string>();
+        if (!conn.contains("src") || !conn.contains("dst"))
+            continue;
+        std::string conn_key =
+            conn["src"].get<std::string>() + "->" + conn["dst"].get<std::string>();
         if (seen_connections.count(conn_key)) {
             int existing_latency = connection_latencies[conn_key];
             int this_latency = conn.value("latency", 0);
             if (this_latency != existing_latency) {
-                DPRINTF(CONN, "[WARN] Duplicate connection %s has conflicting latency (first=%d, this=%d) - using first\n",
+                DPRINTF(CONN,
+                        "[WARN] Duplicate connection %s has conflicting latency (first=%d, "
+                        "this=%d) - using first\n",
                         conn_key.c_str(), existing_latency, this_latency);
             } else {
-                DPRINTF(CONN, "[CONN] Skipped duplicate connection at resolver stage: %s\n", conn_key.c_str());
+                DPRINTF(CONN, "[CONN] Skipped duplicate connection at resolver stage: %s\n",
+                        conn_key.c_str());
             }
             continue;
         }
@@ -343,10 +357,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
     }
 
     ConnectionResolver resolver;
-    
+
     // 简化的端口创建函数
-    auto createPortFunc = [&object_instances](const std::string& owner, const std::string& port, 
-                                               size_t buffer_size, bool is_upstream) -> bool {
+    auto createPortFunc = [&object_instances](const std::string& owner, const std::string& port,
+                                              size_t buffer_size, bool is_upstream) -> bool {
         auto it = object_instances.find(owner);
         if (it != object_instances.end() && it->second->hasPortManager()) {
             auto& pm = it->second->getPortManager();
@@ -359,13 +373,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
         }
         return false;
     };
-    
-    auto port_creations = resolver.resolveConnections(
-        deduplicated_connections,
-        module_instances,
-        createPortFunc
-    );
-    
+
+    auto port_creations =
+        resolver.resolveConnections(deduplicated_connections, module_instances, createPortFunc);
+
     // 创建端口
     for (const auto& info : port_creations) {
         auto it = object_instances.find(info.owner_name);
@@ -373,11 +384,15 @@ bool ModuleFactory::instantiateAll(const json& config) {
             auto& pm = it->second->getPortManager();
 
             if (info.is_upstream) {
-                auto* port = pm.addUpstreamPort(it->second, info.buffer_sizes, info.priorities, info.port_name);
-                if (port) port->setDelay(info.latency);
+                auto* port = pm.addUpstreamPort(it->second, info.buffer_sizes, info.priorities,
+                                                info.port_name);
+                if (port)
+                    port->setDelay(info.latency);
             } else {
-                auto* port = pm.addDownstreamPort(it->second, info.buffer_sizes, info.priorities, info.port_name);
-                if (port) port->setDelay(info.latency);
+                auto* port = pm.addDownstreamPort(it->second, info.buffer_sizes, info.priorities,
+                                                  info.port_name);
+                if (port)
+                    port->setDelay(info.latency);
             }
         }
     }
@@ -390,7 +405,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
     std::set<std::pair<std::string, std::string>> processed_connections;
 
     for (auto& conn : deduplicated_connections) {
-        if (!conn.contains("src") || !conn.contains("dst")) continue;
+        if (!conn.contains("src") || !conn.contains("dst"))
+            continue;
 
         std::string src_spec = conn["src"];
         std::string dst_spec = conn["dst"];
@@ -429,11 +445,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
 
         for (const std::string& src_full : src_names) {
             auto [src_module_name, src_port_name] = parsePortSpec(src_full);
-            
+
             MasterPort* src_port = nullptr;
-            if (auto mod_it = module_instances.find(src_module_name); 
+            if (auto mod_it = module_instances.find(src_module_name);
                 mod_it != module_instances.end() && !src_port_name.empty()) {
-                
                 std::string internal_path = mod_it->second->findInternalPath(src_port_name);
                 if (!internal_path.empty()) {
                     auto [internal_owner, internal_port] = parsePortSpec(internal_path);
@@ -452,17 +467,16 @@ bool ModuleFactory::instantiateAll(const json& config) {
             } else if (auto obj_it = object_instances.find(src_module_name);
                        obj_it != object_instances.end()) {
                 // Wildcard/group expansion: create default downstream port
-                src_port = obj_it->second->getPortManager().addDownstreamPort(
-                    obj_it->second, {4}, {}, src_module_name);
+                src_port = obj_it->second->getPortManager().addDownstreamPort(obj_it->second, {4},
+                                                                              {}, src_module_name);
             }
 
             for (const std::string& dst_full : dst_names) {
                 auto [dst_module_name, dst_port_name] = parsePortSpec(dst_full);
-                
+
                 SlavePort* dst_port = nullptr;
-                if (auto mod_it = module_instances.find(dst_module_name); 
+                if (auto mod_it = module_instances.find(dst_module_name);
                     mod_it != module_instances.end() && !dst_port_name.empty()) {
-                    
                     std::string internal_path = mod_it->second->findInternalPath(dst_port_name);
                     if (!internal_path.empty()) {
                         auto [internal_owner, internal_port] = parsePortSpec(internal_path);
@@ -494,8 +508,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
                         processed_connections.insert(conn_key);
                         port_pairs_.push_back(std::make_unique<PortPair>(src_port, dst_port));
                         src_port->setDelay(latency);
-                        DPRINTF(CONN, "[CONN] Connected %s -> %s (latency=%d)\n",
-                                src_full.c_str(), dst_full.c_str(), latency);
+                        DPRINTF(CONN, "[CONN] Connected %s -> %s (latency=%d)\n", src_full.c_str(),
+                                dst_full.c_str(), latency);
                     }
                 } else if (!src_port) {
                     DPRINTF(CONN, "[WARN] Source port not found: %s\n", src_full.c_str());
@@ -505,7 +519,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
             }
         }
     }
-    
+
     // ========================
     // 7. 为 ChStream 模块注入 StreamAdapter（多端口感知）
     // ========================
@@ -514,8 +528,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
     using ChStreamTargetPtr = cpptlm::ChStreamTargetPort*;
     std::unordered_map<std::string, cpptlm::StreamAdapterBase*> ch_adapters;
     std::unordered_map<std::string, std::vector<ChStreamInitiatorPtr>> ch_req_out;
-    std::unordered_map<std::string, std::vector<ChStreamTargetPtr>>    ch_resp_in;
-    std::unordered_map<std::string, std::vector<ChStreamTargetPtr>>    ch_req_in;
+    std::unordered_map<std::string, std::vector<ChStreamTargetPtr>> ch_resp_in;
+    std::unordered_map<std::string, std::vector<ChStreamTargetPtr>> ch_req_in;
     std::unordered_map<std::string, std::vector<ChStreamInitiatorPtr>> ch_resp_out;
 
     auto& factory = ChStreamAdapterFactory::get();
@@ -526,9 +540,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
     }
 
     for (auto& [name, obj] : object_instances) {
-        if (!obj) continue;
+        if (!obj)
+            continue;
         auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj);
-        if (!ch_mod) continue;
+        if (!ch_mod)
+            continue;
 
         const std::string& type = module_types[name];
         bool is_multi = factory.isMultiPort(type);
@@ -536,20 +552,22 @@ bool ModuleFactory::instantiateAll(const json& config) {
         unsigned n_ports = is_multi || is_dual ? factory.getPortCount(type) : 1;
 
         if (!factory.knows(type)) {
-            DPRINTF(MODULE, "[ERROR] No adapter factory for ChStream type: %s (%s)\n", type.c_str(), name.c_str());
+            DPRINTF(MODULE, "[ERROR] No adapter factory for ChStream type: %s (%s)\n", type.c_str(),
+                    name.c_str());
             continue;
         }
 
         auto adapter = factory.create(type, obj);
         if (!adapter) {
-            DPRINTF(MODULE, "[ERROR] Failed to create adapter for %s (type: %s)\n", name.c_str(), type.c_str());
+            DPRINTF(MODULE, "[ERROR] Failed to create adapter for %s (type: %s)\n", name.c_str(),
+                    type.c_str());
             continue;
         }
 
         // 创建 N 组端口
-        auto& req_out_vec  = ch_req_out[name];
-        auto& resp_in_vec  = ch_resp_in[name];
-        auto& req_in_vec   = ch_req_in[name];
+        auto& req_out_vec = ch_req_out[name];
+        auto& resp_in_vec = ch_resp_in[name];
+        auto& req_in_vec = ch_req_in[name];
         auto& resp_out_vec = ch_resp_out[name];
         req_out_vec.resize(n_ports);
         resp_in_vec.resize(n_ports);
@@ -559,11 +577,15 @@ bool ModuleFactory::instantiateAll(const json& config) {
         for (unsigned i = 0; i < n_ports; i++) {
             char suffix[16];
             snprintf(suffix, sizeof(suffix), "[%u]", i);
-            
-            req_out_vec[i]  = new cpptlm::ChStreamInitiatorPort(name + ".req_out"  + (n_ports > 1 ? suffix : ""), event_queue);
-            resp_in_vec[i]  = new cpptlm::ChStreamTargetPort(name + ".resp_in"  + (n_ports > 1 ? suffix : ""), adapter, event_queue);
-            req_in_vec[i]   = new cpptlm::ChStreamTargetPort(name + ".req_in"   + (n_ports > 1 ? suffix : ""), adapter, event_queue);
-            resp_out_vec[i] = new cpptlm::ChStreamInitiatorPort(name + ".resp_out" + (n_ports > 1 ? suffix : ""), event_queue);
+
+            req_out_vec[i] = new cpptlm::ChStreamInitiatorPort(
+                name + ".req_out" + (n_ports > 1 ? suffix : ""), event_queue);
+            resp_in_vec[i] = new cpptlm::ChStreamTargetPort(
+                name + ".resp_in" + (n_ports > 1 ? suffix : ""), adapter, event_queue);
+            req_in_vec[i] = new cpptlm::ChStreamTargetPort(
+                name + ".req_in" + (n_ports > 1 ? suffix : ""), adapter, event_queue);
+            resp_out_vec[i] = new cpptlm::ChStreamInitiatorPort(
+                name + ".resp_out" + (n_ports > 1 ? suffix : ""), event_queue);
 
             ch_initiator_ports_.emplace_back(req_out_vec[i]);
             ch_target_ports_.emplace_back(resp_in_vec[i]);
@@ -574,19 +596,21 @@ bool ModuleFactory::instantiateAll(const json& config) {
         // 注入 StreamAdapter（区分单端口 / 多端口 / 双端口）
         if (is_dual) {
             // 双端口非对称：组 0 = PE 侧，组 1 = Network 侧
-            auto* dual = static_cast<cpptlm::DualPortStreamAdapter<ChStreamModuleBase,
-                bundles::CacheReqBundle, bundles::CacheRespBundle,
+            auto* dual = static_cast<cpptlm::DualPortStreamAdapter<
+                ChStreamModuleBase, bundles::CacheReqBundle, bundles::CacheRespBundle,
                 bundles::NoCFlitBundle, bundles::NoCFlitBundle>*>(adapter);
             if (dual) {
                 dual->bind_pe_ports(req_out_vec[0], resp_in_vec[0], resp_out_vec[0], req_in_vec[0]);
-                dual->bind_net_ports(req_out_vec[1], resp_in_vec[1], resp_out_vec[1], req_in_vec[1]);
+                dual->bind_net_ports(req_out_vec[1], resp_in_vec[1], resp_out_vec[1],
+                                     req_in_vec[1]);
             }
             ch_mod->set_stream_adapter(adapter);
-            DPRINTF(MODULE, "[ChStream] Created DualPort adapter for %s (type: %s, PE+Net)\n", name.c_str(), type.c_str());
+            DPRINTF(MODULE, "[ChStream] Created DualPort adapter for %s (type: %s, PE+Net)\n",
+                    name.c_str(), type.c_str());
         } else if (is_multi) {
             for (unsigned i = 0; i < n_ports; i++) {
-                adapter->bind_port_pair(i, req_out_vec[i], resp_in_vec[i],
-                                        resp_out_vec[i], req_in_vec[i]);
+                adapter->bind_port_pair(i, req_out_vec[i], resp_in_vec[i], resp_out_vec[i],
+                                        req_in_vec[i]);
             }
             ch_mod->set_stream_adapter(adapter);
             DPRINTF(MODULE, "[ChStream] Created multi-port adapter for %s (%u ports, type: %s)\n",
@@ -594,7 +618,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
         } else {
             adapter->bind_ports(req_out_vec[0], resp_in_vec[0], resp_out_vec[0], req_in_vec[0]);
             ch_mod->set_stream_adapter(adapter);
-            DPRINTF(MODULE, "[ChStream] Created SinglePort adapter for %s (type: %s)\n", name.c_str(), type.c_str());
+            DPRINTF(MODULE, "[ChStream] Created SinglePort adapter for %s (type: %s)\n",
+                    name.c_str(), type.c_str());
         }
 
         ch_adapters[name] = adapter;
@@ -605,9 +630,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
     // 8. 自动注册 StatGroup 到 StatsManager（Phase 0 修复）
     // ========================
     for (auto& [name, obj] : object_instances) {
-        if (!obj) continue;
+        if (!obj)
+            continue;
         auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(obj);
-        if (!ch_mod) continue;
+        if (!ch_mod)
+            continue;
 
         auto* stat_group = ch_mod->get_stats_group();
         if (stat_group) {
@@ -621,14 +648,15 @@ bool ModuleFactory::instantiateAll(const json& config) {
     // DEF-02: 使用同一个 processed_connections 集合去重（Step 6 已填充）
     bool connection_failed = false;
     for (auto& conn : final_config["connections"]) {
-        if (!conn.contains("src") || !conn.contains("dst")) continue;
+        if (!conn.contains("src") || !conn.contains("dst"))
+            continue;
         std::string src_full = conn["src"];
         std::string dst_full = conn["dst"];
 
         auto conn_key = std::make_pair(src_full, dst_full);
         if (processed_connections.count(conn_key)) {
-            DPRINTF(CONN, "[ChStream] Skipped duplicate connection %s -> %s\n",
-                    src_full.c_str(), dst_full.c_str());
+            DPRINTF(CONN, "[ChStream] Skipped duplicate connection %s -> %s\n", src_full.c_str(),
+                    dst_full.c_str());
             continue;
         }
 
@@ -645,7 +673,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
             if (all_digits) {
                 src_idx = std::stoul(src_spec);
             } else {
-                DPRINTF(CONN, "[WARN] Invalid port index '%s' (expected digits only), defaulting to 0\n",
+                DPRINTF(CONN,
+                        "[WARN] Invalid port index '%s' (expected digits only), defaulting to 0\n",
                         src_spec.c_str());
             }
         }
@@ -654,25 +683,31 @@ bool ModuleFactory::instantiateAll(const json& config) {
             if (all_digits) {
                 dst_idx = std::stoul(dst_spec);
             } else {
-                DPRINTF(CONN, "[WARN] Invalid port index '%s' (expected digits only), defaulting to 0\n",
+                DPRINTF(CONN,
+                        "[WARN] Invalid port index '%s' (expected digits only), defaulting to 0\n",
                         dst_spec.c_str());
             }
         }
 
-        if (!validate_nic_pe_connection(module_types[src_name], src_idx,
-                                        module_types[dst_name], dst_idx)) {
+        if (!validate_nic_pe_connection(module_types[src_name], src_idx, module_types[dst_name],
+                                        dst_idx)) {
             connection_failed = true;
             continue;
         }
 
         // 单端口模块忽略端口索引
-        if (ch_adapters.count(src_name) && !factory.isMultiPort(module_types[src_name])) src_idx = 0;
-        if (ch_adapters.count(dst_name) && !factory.isMultiPort(module_types[dst_name])) dst_idx = 0;
+        if (ch_adapters.count(src_name) && !factory.isMultiPort(module_types[src_name]))
+            src_idx = 0;
+        if (ch_adapters.count(dst_name) && !factory.isMultiPort(module_types[dst_name]))
+            dst_idx = 0;
 
-        bool src_ch = (ch_adapters.count(src_name) > 0 && ch_req_out.count(src_name) && ch_req_out[src_name].size() > src_idx);
-        bool dst_ch = (ch_adapters.count(dst_name) > 0 && ch_req_in.count(dst_name) && ch_req_in[dst_name].size() > dst_idx);
+        bool src_ch = (ch_adapters.count(src_name) > 0 && ch_req_out.count(src_name) &&
+                       ch_req_out[src_name].size() > src_idx);
+        bool dst_ch = (ch_adapters.count(dst_name) > 0 && ch_req_in.count(dst_name) &&
+                       ch_req_in[dst_name].size() > dst_idx);
 
-        if (!src_ch || !dst_ch) continue;
+        if (!src_ch || !dst_ch)
+            continue;
 
         // Phase 3.2: L1/L2/L3 port compatibility check
         if (!check_port_compatibility(src_name, dst_name, src_idx, dst_idx, port_specs)) {
@@ -683,15 +718,19 @@ bool ModuleFactory::instantiateAll(const json& config) {
         processed_connections.insert(conn_key);
 
         // 请求路径: src → dst
-        port_pairs_.push_back(std::make_unique<PortPair>(ch_req_out[src_name][src_idx], ch_req_in[dst_name][dst_idx]));
+        port_pairs_.push_back(std::make_unique<PortPair>(ch_req_out[src_name][src_idx],
+                                                         ch_req_in[dst_name][dst_idx]));
         ch_req_out[src_name][src_idx]->setDelay(latency);
-        DPRINTF(CONN, "[ChStream] Connected %s.req_out[%u] -> %s.req_in[%u] (latency=%d)\n", src_name.c_str(), src_idx, dst_name.c_str(), dst_idx, latency);
+        DPRINTF(CONN, "[ChStream] Connected %s.req_out[%u] -> %s.req_in[%u] (latency=%d)\n",
+                src_name.c_str(), src_idx, dst_name.c_str(), dst_idx, latency);
 
         // 响应路径: dst → src
         if (ch_resp_out.count(dst_name) > dst_idx && ch_resp_in.count(src_name) > src_idx) {
-            port_pairs_.push_back(std::make_unique<PortPair>(ch_resp_out[dst_name][dst_idx], ch_resp_in[src_name][src_idx]));
+            port_pairs_.push_back(std::make_unique<PortPair>(ch_resp_out[dst_name][dst_idx],
+                                                             ch_resp_in[src_name][src_idx]));
             ch_resp_out[dst_name][dst_idx]->setDelay(latency);
-            DPRINTF(CONN, "[ChStream] Connected %s.resp_out[%u] -> %s.resp_in[%u] (latency=%d)\n", dst_name.c_str(), dst_idx, src_name.c_str(), src_idx, latency);
+            DPRINTF(CONN, "[ChStream] Connected %s.resp_out[%u] -> %s.resp_in[%u] (latency=%d)\n",
+                    dst_name.c_str(), dst_idx, src_name.c_str(), src_idx, latency);
         }
     }
 

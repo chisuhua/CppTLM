@@ -5,11 +5,11 @@
 
 // 注册 MockSim 类型
 namespace {
-auto _register = []() {
-    ModuleFactory::registerObject<MockSim>("MockSim");
-    return 0;
-}();
-}
+    auto _register = []() {
+        ModuleFactory::registerObject<MockSim>("MockSim");
+        return 0;
+    }();
+} // namespace
 
 TEST_CASE("ConnectionResolutionTest WildcardConnection", "[connection][resolution]") {
     EventQueue eq;
@@ -32,7 +32,7 @@ TEST_CASE("ConnectionResolutionTest WildcardConnection", "[connection][resolutio
     REQUIRE(l1 != nullptr);
 
     const auto& upstream_ports = l1->getPortManager().getUpstreamPorts();
-    REQUIRE(upstream_ports.size() == 2);  // cpu0 + cpu1
+    REQUIRE(upstream_ports.size() == 2); // cpu0 + cpu1
 }
 
 TEST_CASE("ConnectionResolutionTest RegexConnection", "[connection][resolution]") {
@@ -55,7 +55,7 @@ TEST_CASE("ConnectionResolutionTest RegexConnection", "[connection][resolution]"
 
     auto* l1 = factory.getInstance("l1");
     const auto& upstream_ports = l1->getPortManager().getUpstreamPorts();
-    REQUIRE(upstream_ports.size() == 2);  // cpu0 + cpu1
+    REQUIRE(upstream_ports.size() == 2); // cpu0 + cpu1
 }
 
 TEST_CASE("ConnectionResolutionTest ModuleGroupConnection", "[connection][resolution]") {
@@ -107,14 +107,15 @@ TEST_CASE("ConnectionResolutionTest ExcludeList", "[connection][resolution]") {
 
     auto* l1 = factory.getInstance("l1");
     const auto& upstream_ports = l1->getPortManager().getUpstreamPorts();
-    REQUIRE(upstream_ports.size() == 1);  // 只有 cpu0
+    REQUIRE(upstream_ports.size() == 1); // 只有 cpu0
 }
 
 // DEF-02: Step 6/7b duplicate connection deduplication test
 // When the same connection appears twice (or expands to same resolved pair),
 // only ONE PortPair should be created (not two).
 // This test verifies the connection deduplication behavior.
-TEST_CASE("ConnectionResolutionTest DuplicateConnectionDeduplication", "[connection][resolution][defect02]") {
+TEST_CASE("ConnectionResolutionTest DuplicateConnectionDeduplication",
+          "[connection][resolution][defect02]") {
     EventQueue eq;
 
     // DEFECT REPRODUCTION: This config has "cpu0->l1" specified twice.
@@ -141,7 +142,7 @@ TEST_CASE("ConnectionResolutionTest DuplicateConnectionDeduplication", "[connect
     // With deduplication: only 1 upstream port from cpu0
     // Without deduplication: 2 upstream ports from cpu0 (duplicate)
     const auto& upstream_ports = l1->getPortManager().getUpstreamPorts();
-    REQUIRE(upstream_ports.size() == 1);  // Must be 1, not 2
+    REQUIRE(upstream_ports.size() == 1); // Must be 1, not 2
 }
 
 // P1.2: Test that latency config propagates to port delay

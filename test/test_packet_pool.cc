@@ -3,11 +3,11 @@
 // 原因: tlm_generic_payload 生命周期管理与 Pool 复用模式存在冲突
 // 标记: Phase 7.3 延期项
 #include "catch_amalgamated.hpp"
+#include "core/cmd.hh" // 为了创建payload
 #include "core/event_queue.hh"
 #include "core/packet.hh"
-#include "ext/packet_pool.hh"
 #include "ext/mem_exts.hh" // 添加对mem_exts.hh的引用
-#include "core/cmd.hh" // 为了创建payload
+#include "ext/packet_pool.hh"
 #include <iostream>
 
 // 辅助函数：为 Packet 创建一个简单的 payload
@@ -29,7 +29,7 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
 
         Packet* pkt = pool.acquire();
         REQUIRE(pkt != nullptr);
-        
+
         // 初始化必要的字段
         pkt->payload = createSimplePayload();
         pkt->src_cycle = 10;
@@ -44,7 +44,8 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
         REQUIRE(pool.peak_usage() <= 1); // peak_usage 不会减少
     }
 
-    SECTION("ReferenceCounting_ResponseToRequest - Verify reference counting mechanism: Response points to Request") {
+    SECTION("ReferenceCounting_ResponseToRequest - Verify reference counting mechanism: Response "
+            "points to Request") {
         pool.reset_for_testing();
         // 步骤1: 创建一个请求包 (Req)
         Packet* req_pkt = pool.acquire();
@@ -80,7 +81,8 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
         REQUIRE(pool.current_usage() == 0); // 所有资源都已回收
     }
 
-    SECTION("ReferenceCounting_MultipleResponses - Verify reference counting mechanism: Multiple Responses point to the same Request") {
+    SECTION("ReferenceCounting_MultipleResponses - Verify reference counting mechanism: Multiple "
+            "Responses point to the same Request") {
         pool.reset_for_testing();
         // 创建一个请求包
         Packet* req_pkt = pool.acquire();
@@ -143,7 +145,8 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
         pool.release(req_pkt);
     }
 
-    SECTION("DelayCalculationWithoutOriginalReq - Verify delay calculation when original_req is null") {
+    SECTION(
+        "DelayCalculationWithoutOriginalReq - Verify delay calculation when original_req is null") {
         pool.reset_for_testing();
         Packet* orphaned_resp = pool.acquire();
         orphaned_resp->type = PKT_RESP;

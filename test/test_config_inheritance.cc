@@ -2,11 +2,11 @@
 // Phase 3.1: Config Inheritance Tests (extends field)
 
 #include "catch_amalgamated.hpp"
+#include "chstream_register.hh"
 #include "core/module_factory.hh"
 #include "mock_modules.hh"
-#include "chstream_register.hh"
-#include <fstream>
 #include <cstdio>
+#include <fstream>
 #include <unistd.h>
 
 using json = nlohmann::json;
@@ -171,8 +171,8 @@ TEST_CASE("ConfigInheritance: Connections are appended not merged", "[config][ex
 
     const auto& b_upstream = b->getPortManager().getUpstreamPorts();
     const auto& d_upstream = d->getPortManager().getUpstreamPorts();
-    REQUIRE(b_upstream.size() == 1);  // from a
-    REQUIRE(d_upstream.size() == 1);  // from c
+    REQUIRE(b_upstream.size() == 1); // from a
+    REQUIRE(d_upstream.size() == 1); // from c
 
     cleanupTempJson(base_path);
     cleanupTempJson(child_path);
@@ -234,8 +234,8 @@ TEST_CASE("ConfigInheritance: Groups from base and child are merged", "[config][
     // Both cluster_a and cluster_b should exist
     auto cluster_a = ModuleGroup::resolve("group:cluster_a");
     auto cluster_b = ModuleGroup::resolve("group:cluster_b");
-    REQUIRE(cluster_a.size() == 2);  // r0, r1
-    REQUIRE(cluster_b.size() == 1);  // r2
+    REQUIRE(cluster_a.size() == 2); // r0, r1
+    REQUIRE(cluster_b.size() == 1); // r2
 
     cleanupTempJson(base_path);
     cleanupTempJson(child_path);

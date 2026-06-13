@@ -20,5 +20,5 @@ TEST_CASE("RegexMatcherTest RegexMatching", "[regex][matching]") {
 
 TEST_CASE("RegexMatcherTest FallbackToWildcard", "[regex][matching]") {
     REQUIRE(RegexMatcher::match("cpu*", "cpu0"));
-    REQUIRE_FALSE(RegexMatcher::match("invalid[", "cpu0"));  // invalid regex → fallback to wildcard
+    REQUIRE_FALSE(RegexMatcher::match("invalid[", "cpu0")); // invalid regex → fallback to wildcard
 }

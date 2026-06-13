@@ -1,11 +1,11 @@
 // test/test_nic_packetization.cc
 // SPDX-License-Identifier: Apache-2.0
 // 作者 CppTLM Team / 日期 2026-05-09
-#include "catch_amalgamated.hpp"
-#include "tlm/nic_tlm.hh"
-#include "core/event_queue.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "bundles/noc_bundles_tlm.hh"
+#include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
+#include "tlm/nic_tlm.hh"
 
 using namespace tlm;
 using namespace bundles;

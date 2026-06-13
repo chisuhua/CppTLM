@@ -1,7 +1,7 @@
-#include <catch2/catch_all.hpp>
-#include "core/module_factory.hh"
 #include "core/coherence_domain.hh"
 #include "core/event_queue.hh"
+#include "core/module_factory.hh"
+#include <catch2/catch_all.hpp>
 #include <memory>
 
 TEST_CASE("validate_domain_boundary passes for same domain", "[domain][boundary]") {
@@ -35,7 +35,8 @@ TEST_CASE("validate_domain_boundary passes cross-domain with bridge", "[domain][
     domain->register_bridge("gpu_domain", "bridge_cpu_gpu");
     DomainRegistry::register_domain("cpu_domain", domain);
 
-    bool result = ModuleFactory::validate_domain_boundary("cpu0", "gpu0", "cpu_domain", "bridge_cpu_gpu");
+    bool result =
+        ModuleFactory::validate_domain_boundary("cpu0", "gpu0", "cpu_domain", "bridge_cpu_gpu");
     REQUIRE(result == true);
 
     DomainRegistry::clear();

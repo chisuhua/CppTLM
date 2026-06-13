@@ -1,15 +1,15 @@
 // test/test_chstream_integration.cc
 // P1.8 Phase 2: 集成测试 — ChStream 模块端到端验证
 
-#include <catch2/catch_all.hpp>
-#include "framework/stream_adapter.hh"
+#include "bundles/bundle_serialization.hh"
+#include "bundles/cache_bundles_tlm.hh"
+#include "core/event_queue.hh"
 #include "core/packet.hh"
 #include "core/packet_pool.hh"
-#include "core/event_queue.hh"
-#include "bundles/cache_bundles_tlm.hh"
-#include "bundles/bundle_serialization.hh"
+#include "framework/stream_adapter.hh"
 #include "tlm/cache_tlm.hh"
 #include "tlm/memory_tlm.hh"
+#include <catch2/catch_all.hpp>
 
 #include "tlm/tlm_stub.hh"
 
@@ -24,13 +24,18 @@ public:
     bool process_req_called = false;
     Packet* last_processed_pkt = nullptr;
 
-    void bind_ports(MasterPort*, SlavePort*, MasterPort*, SlavePort*) override {}
-    void tick() override { tick_called = true; }
+    void bind_ports(MasterPort*, SlavePort*, MasterPort*, SlavePort*) override {
+    }
+    void tick() override {
+        tick_called = true;
+    }
     void process_request_input(Packet* pkt) override {
         process_req_called = true;
         last_processed_pkt = pkt;
     }
-    Packet* process_response_output() override { return nullptr; }
+    Packet* process_response_output() override {
+        return nullptr;
+    }
 };
 
 TEST_CASE("CacheTLM stores adapter pointer correctly", "[chstream][phase2]") {
@@ -98,7 +103,8 @@ TEST_CASE("Bundle serialization in StreamAdapter context", "[chstream][serialize
 
     // Deserialize back
     bundles::CacheReqBundle recovered;
-    bundles::deserialize_bundle(pkt->payload->get_data_ptr(), pkt->payload->get_data_length(), recovered);
+    bundles::deserialize_bundle(pkt->payload->get_data_ptr(), pkt->payload->get_data_length(),
+                                recovered);
 
     REQUIRE(recovered.transaction_id.read() == 500);
     REQUIRE(recovered.address.read() == 0xABC0);
@@ -107,7 +113,8 @@ TEST_CASE("Bundle serialization in StreamAdapter context", "[chstream][serialize
     PacketPool::get().release(pkt);
 }
 
-TEST_CASE("OutputStreamAdapter write followed by serialize produces valid data", "[chstream][adapter]") {
+TEST_CASE("OutputStreamAdapter write followed by serialize produces valid data",
+          "[chstream][adapter]") {
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> out_adapter;
     REQUIRE_FALSE(out_adapter.valid());
 
@@ -123,12 +130,14 @@ TEST_CASE("OutputStreamAdapter write followed by serialize produces valid data",
     // Serialize to packet
     Packet* pkt = PacketPool::get().acquire();
     pkt->payload->set_data_length(sizeof(bundles::CacheRespBundle));
-    bool ok = bundles::serialize_bundle(out_adapter.data(), pkt->payload->get_data_ptr(), pkt->payload->get_data_length());
+    bool ok = bundles::serialize_bundle(out_adapter.data(), pkt->payload->get_data_ptr(),
+                                        pkt->payload->get_data_length());
     REQUIRE(ok);
 
     // Deserialize and verify
     bundles::CacheRespBundle recovered;
-    bundles::deserialize_bundle(pkt->payload->get_data_ptr(), pkt->payload->get_data_length(), recovered);
+    bundles::deserialize_bundle(pkt->payload->get_data_ptr(), pkt->payload->get_data_length(),
+                                recovered);
 
     REQUIRE(recovered.transaction_id.read() == 999);
     REQUIRE(recovered.data.read() == 0xDEADBEEF);

@@ -1,22 +1,22 @@
 // test/test_module_factory_fixes.cc
 #include "catch_amalgamated.hpp"
-#include "core/module_factory.hh"
 #include "core/event_queue.hh"
+#include "core/module_factory.hh"
 #include "mock_modules.hh"
-#include <sstream>
 #include <regex>
+#include <sstream>
 
 namespace {
-auto _reg1 = []() {
-    ModuleFactory::registerObject<MockSim>("MockSim");
-    return 0;
-}();
+    auto _reg1 = []() {
+        ModuleFactory::registerObject<MockSim>("MockSim");
+        return 0;
+    }();
 
-auto _reg2 = []() {
-    ModuleFactory::registerObject<MockSim>("RouterTLM");
-    return 0;
-}();
-}
+    auto _reg2 = []() {
+        ModuleFactory::registerObject<MockSim>("RouterTLM");
+        return 0;
+    }();
+} // namespace
 
 TEST_CASE("DEF-04b: Invalid port index produces WARNING", "[defect][phase3]") {
     EventQueue eq;

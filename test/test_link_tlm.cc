@@ -1,16 +1,16 @@
 // test/test_link_tlm.cc
 // SPDX-License-Identifier: Apache-2.0
 // 作者 CppTLM Team / 日期 2026-05-09
-#include <catch2/catch_all.hpp>
-#include "tlm/link_tlm.hh"
-#include "core/event_queue.hh"
 #include "bundles/noc_bundles_tlm.hh"
+#include "core/event_queue.hh"
+#include "tlm/link_tlm.hh"
+#include <catch2/catch_all.hpp>
 
 using namespace tlm;
 using namespace bundles;
 
-static void inject_flit(LinkTLM* link, uint64_t tid, uint32_t src, uint32_t dst,
-                        uint8_t vc, uint8_t flit_type) {
+static void inject_flit(LinkTLM* link, uint64_t tid, uint32_t src, uint32_t dst, uint8_t vc,
+                        uint8_t flit_type) {
     bundles::NoCFlitBundle flit;
     flit.transaction_id.write(tid);
     flit.src_node.write(src);

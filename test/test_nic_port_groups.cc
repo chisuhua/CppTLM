@@ -2,9 +2,9 @@
 // Phase 3.2 T3.2-08: NICTLM port_groups integration tests
 
 #include "catch_amalgamated.hpp"
+#include "chstream_register.hh"
 #include "core/module_factory.hh"
 #include "core/port_types.hh"
-#include "chstream_register.hh"
 #include "modules.hh"
 
 using json = nlohmann::json;
@@ -75,25 +75,22 @@ TEST_CASE("T3.2-08: NICTLM with port_groups in module spec", "[phase3.2][port_gr
     REQUIRE(nic->num_ports() == 4);
 }
 
-TEST_CASE("T3.2-08: ModulePortSpec with port_groups JSON roundtrip", "[phase3.2][port_groups][port_types]") {
+TEST_CASE("T3.2-08: ModulePortSpec with port_groups JSON roundtrip",
+          "[phase3.2][port_groups][port_types]") {
     cpptlm::ModulePortSpec spec;
     spec.module_name = "nic0";
 
     cpptlm::PortGroupSpec pe_group;
     pe_group.name = "pe";
     pe_group.bundle_type = cpptlm::PortGroupBundleType::SINGLE;
-    pe_group.ports = {
-        {0, cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ},
-        {1, cpptlm::PortRole::INITIATOR, cpptlm::BundleType::CACHE_RESP}
-    };
+    pe_group.ports = {{0, cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ},
+                      {1, cpptlm::PortRole::INITIATOR, cpptlm::BundleType::CACHE_RESP}};
 
     cpptlm::PortGroupSpec net_group;
     net_group.name = "Net";
     net_group.bundle_type = cpptlm::PortGroupBundleType::SINGLE;
-    net_group.ports = {
-        {2, cpptlm::PortRole::INITIATOR, cpptlm::BundleType::NOC_FLIT},
-        {3, cpptlm::PortRole::TARGET, cpptlm::BundleType::NOC_FLIT}
-    };
+    net_group.ports = {{2, cpptlm::PortRole::INITIATOR, cpptlm::BundleType::NOC_FLIT},
+                       {3, cpptlm::PortRole::TARGET, cpptlm::BundleType::NOC_FLIT}};
 
     spec.port_groups = {pe_group, net_group};
 
@@ -108,7 +105,8 @@ TEST_CASE("T3.2-08: ModulePortSpec with port_groups JSON roundtrip", "[phase3.2]
     REQUIRE(restored.port_groups[1].ports.size() == 2);
 }
 
-TEST_CASE("T3.2-08: NICTLM dual-port adapter creates 2 logical groups", "[phase3.2][port_groups][dualport]") {
+TEST_CASE("T3.2-08: NICTLM dual-port adapter creates 2 logical groups",
+          "[phase3.2][port_groups][dualport]") {
     registerAllModules();
     EventQueue eq;
     ModuleFactory factory(&eq);
@@ -135,7 +133,8 @@ TEST_CASE("T3.2-08: NICTLM dual-port adapter creates 2 logical groups", "[phase3
     REQUIRE(resp_in.valid() == false);
 }
 
-TEST_CASE("T3.2-08: PortGroupBundleType enum JSON serialization", "[phase3.2][port_groups][port_types]") {
+TEST_CASE("T3.2-08: PortGroupBundleType enum JSON serialization",
+          "[phase3.2][port_groups][port_types]") {
     cpptlm::PortGroupBundleType bt = cpptlm::PortGroupBundleType::BUNDLE_MASTER;
     json j = bt;
     REQUIRE(j.get<std::string>() == "BUNDLE_MASTER");

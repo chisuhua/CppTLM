@@ -2,10 +2,10 @@
 // Phase 3.2: Port Management Integration Tests
 
 #include "catch_amalgamated.hpp"
-#include "core/module_factory.hh"
-#include "core/port_types.hh"
-#include "core/port_compatibility.hh"
 #include "chstream_register.hh"
+#include "core/module_factory.hh"
+#include "core/port_compatibility.hh"
+#include "core/port_types.hh"
 #include "modules.hh"
 
 using json = nlohmann::json;
@@ -55,11 +55,8 @@ TEST_CASE("Phase 3.2: PortSpec JSON roundtrip", "[phase3.2][port_types]") {
 }
 
 TEST_CASE("Phase 3.2: PortGroupBundleType serialization", "[phase3.2][port_types]") {
-    auto types = {
-        cpptlm::PortGroupBundleType::SINGLE,
-        cpptlm::PortGroupBundleType::BUNDLE_MASTER,
-        cpptlm::PortGroupBundleType::BUNDLE_SLAVE
-    };
+    auto types = {cpptlm::PortGroupBundleType::SINGLE, cpptlm::PortGroupBundleType::BUNDLE_MASTER,
+                  cpptlm::PortGroupBundleType::BUNDLE_SLAVE};
 
     for (auto bt : types) {
         json j = bt;
@@ -98,41 +95,45 @@ TEST_CASE("Phase 3.2: ModulePortSpec with ports and aliases", "[phase3.2][port_t
     REQUIRE(restored.aliases.at("E") == "1");
 }
 
-TEST_CASE("Phase 3.2: PortCompatibility role matrix - INITIATOR to TARGET", "[phase3.2][port_compat]") {
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::INITIATOR, cpptlm::PortRole::TARGET) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::TARGET, cpptlm::PortRole::INITIATOR) == false);
+TEST_CASE("Phase 3.2: PortCompatibility role matrix - INITIATOR to TARGET",
+          "[phase3.2][port_compat]") {
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::INITIATOR,
+                                                          cpptlm::PortRole::TARGET) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::TARGET,
+                                                          cpptlm::PortRole::INITIATOR) == false);
 }
 
-TEST_CASE("Phase 3.2: PortCompatibility role matrix - NETWORK to NETWORK", "[phase3.2][port_compat]") {
+TEST_CASE("Phase 3.2: PortCompatibility role matrix - NETWORK to NETWORK",
+          "[phase3.2][port_compat]") {
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::NETWORK,
+                                                          cpptlm::PortRole::NETWORK) == true);
     REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::NETWORK, cpptlm::PortRole::NETWORK) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::NETWORK, cpptlm::PortRole::BI_DIRECTIONAL) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::NETWORK, cpptlm::PortRole::PE) == true);
+                cpptlm::PortRole::NETWORK, cpptlm::PortRole::BI_DIRECTIONAL) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::NETWORK,
+                                                          cpptlm::PortRole::PE) == true);
 }
 
 TEST_CASE("Phase 3.2: PortCompatibility PE to NETWORK allowed", "[phase3.2][port_compat]") {
-    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(
-        cpptlm::PortRole::PE, cpptlm::PortRole::NETWORK) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_role_compatible(cpptlm::PortRole::PE,
+                                                          cpptlm::PortRole::NETWORK) == true);
 }
 
-TEST_CASE("Phase 3.2: PortCompatibility bundle matrix - NOC_FLIT to NOC_FLIT", "[phase3.2][port_compat]") {
+TEST_CASE("Phase 3.2: PortCompatibility bundle matrix - NOC_FLIT to NOC_FLIT",
+          "[phase3.2][port_compat]") {
+    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(cpptlm::BundleType::NOC_FLIT,
+                                                            cpptlm::BundleType::NOC_FLIT) == true);
     REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::NOC_FLIT, cpptlm::BundleType::NOC_FLIT) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::NOC_FLIT, cpptlm::BundleType::CACHE_REQ) == false);
+                cpptlm::BundleType::NOC_FLIT, cpptlm::BundleType::CACHE_REQ) == false);
 }
 
-TEST_CASE("Phase 3.2: PortCompatibility bundle matrix - GENERIC compatible with all", "[phase3.2][port_compat]") {
-    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::GENERIC, cpptlm::BundleType::GENERIC) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::GENERIC, cpptlm::BundleType::NOC_FLIT) == true);
-    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(
-        cpptlm::BundleType::CACHE_REQ, cpptlm::BundleType::GENERIC) == true);
+TEST_CASE("Phase 3.2: PortCompatibility bundle matrix - GENERIC compatible with all",
+          "[phase3.2][port_compat]") {
+    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(cpptlm::BundleType::GENERIC,
+                                                            cpptlm::BundleType::GENERIC) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(cpptlm::BundleType::GENERIC,
+                                                            cpptlm::BundleType::NOC_FLIT) == true);
+    REQUIRE(cpptlm::PortCompatibility::is_bundle_compatible(cpptlm::BundleType::CACHE_REQ,
+                                                            cpptlm::BundleType::GENERIC) == true);
 }
 
 TEST_CASE("Phase 3.2: PortCompatibility width check", "[phase3.2][port_compat]") {
@@ -154,7 +155,8 @@ TEST_CASE("Phase 3.2: PortCompatibility full check - valid connection", "[phase3
     REQUIRE(cpptlm::PortCompatibility::is_compatible(src, dst) == true);
 }
 
-TEST_CASE("Phase 3.2: PortCompatibility full check - incompatible role", "[phase3.2][port_compat]") {
+TEST_CASE("Phase 3.2: PortCompatibility full check - incompatible role",
+          "[phase3.2][port_compat]") {
     cpptlm::PortSpec src;
     src.role = cpptlm::PortRole::INITIATOR;
     src.bundle = cpptlm::BundleType::CACHE_REQ;
@@ -193,7 +195,8 @@ TEST_CASE("Phase 3.2: Deprecated port names map", "[phase3.2][port_alias]") {
     REQUIRE(deprecated.at("LOCAL") == 4);
 }
 
-TEST_CASE("Phase 3.2: port_specs loaded and passed to check_port_compatibility", "[phase3.2][port_compat]") {
+TEST_CASE("Phase 3.2: port_specs loaded and passed to check_port_compatibility",
+          "[phase3.2][port_compat]") {
     registerAllModules();
     EventQueue eq;
     ModuleFactory factory(&eq);
@@ -234,7 +237,8 @@ TEST_CASE("Phase 3.2: port_specs loaded and passed to check_port_compatibility",
     REQUIRE(result == true);
 }
 
-TEST_CASE("Phase 3.2: incompatible port roles rejected by check_port_compatibility", "[phase3.2][port_compat]") {
+TEST_CASE("Phase 3.2: incompatible port roles rejected by check_port_compatibility",
+          "[phase3.2][port_compat]") {
     registerAllModules();
     EventQueue eq;
     ModuleFactory factory(&eq);
@@ -273,7 +277,8 @@ TEST_CASE("Phase 3.2: incompatible port roles rejected by check_port_compatibili
     REQUIRE(result == false);
 }
 
-TEST_CASE("Phase 3.2: default port specs applied when no port_spec in JSON", "[phase3.2][default_port_spec]") {
+TEST_CASE("Phase 3.2: default port specs applied when no port_spec in JSON",
+          "[phase3.2][default_port_spec]") {
     registerAllModules();
     EventQueue eq;
     ModuleFactory factory(&eq);
@@ -299,21 +304,20 @@ TEST_CASE("Phase 3.2: RouterTLM default port spec has 5 ports", "[phase3.2][defa
         {"EAST", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
         {"SOUTH", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
         {"WEST", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64},
-        {"LOCAL", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}
-    };
+        {"LOCAL", cpptlm::PortRole::BI_DIRECTIONAL, cpptlm::BundleType::NOC_FLIT, 64}};
     spec.ports = ports;
     REQUIRE(spec.ports.size() == 5);
     REQUIRE(spec.ports[0].name == "NORTH");
     REQUIRE(spec.ports[4].name == "LOCAL");
 }
 
-TEST_CASE("Phase 3.2: CacheTLM default port spec has INITIATOR and TARGET", "[phase3.2][default_port_spec]") {
+TEST_CASE("Phase 3.2: CacheTLM default port spec has INITIATOR and TARGET",
+          "[phase3.2][default_port_spec]") {
     cpptlm::ModulePortSpec spec;
     spec.module_name = "CacheTLM";
     std::vector<cpptlm::PortSpec> ports = {
         {"req_out", cpptlm::PortRole::INITIATOR, cpptlm::BundleType::CACHE_REQ, 64},
-        {"req_in", cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ, 64}
-    };
+        {"req_in", cpptlm::PortRole::TARGET, cpptlm::BundleType::CACHE_REQ, 64}};
     spec.ports = ports;
     REQUIRE(spec.ports.size() == 2);
     REQUIRE(spec.ports[0].role == cpptlm::PortRole::INITIATOR);

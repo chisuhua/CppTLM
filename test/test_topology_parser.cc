@@ -3,9 +3,9 @@
 // 日期：2026-05-27
 
 #include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
 #include "core/topology_node.hh"
 #include "core/topology_parser.hh"
-#include "core/event_queue.hh"
 
 using json = nlohmann::json;
 

@@ -22,10 +22,8 @@ TEST_CASE("StatsAccuracyTest CountAndBytes", "[stats][accuracy]") {
     producer.getPortManager().addDownstreamPort(&producer, {4}, {0});
     consumer.getPortManager().addUpstreamPort(&consumer, {4}, {0});
 
-    new PortPair(
-        producer.getPortManager().getDownstreamPorts()[0],
-        consumer.getPortManager().getUpstreamPorts()[0]
-    );
+    new PortPair(producer.getPortManager().getDownstreamPorts()[0],
+                 consumer.getPortManager().getUpstreamPorts()[0]);
 
     for (int i = 0; i < 3; ++i) {
         producer.sendPacket();
@@ -59,10 +57,8 @@ TEST_CASE("StatsTest EndToEndDelayAndBytes", "[stats][accuracy]") {
     producer.getPortManager().addDownstreamPort(&producer, {4}, {0});
     consumer.getPortManager().addUpstreamPort(&consumer, {4}, {0});
 
-    auto pp = std::make_unique<PortPair>(
-        producer.getPortManager().getDownstreamPorts()[0],
-        consumer.getPortManager().getUpstreamPorts()[0]
-    );
+    auto pp = std::make_unique<PortPair>(producer.getPortManager().getDownstreamPorts()[0],
+                                         consumer.getPortManager().getUpstreamPorts()[0]);
 
     // 测试基本的请求发送和接收功能
     producer.sendPacket();

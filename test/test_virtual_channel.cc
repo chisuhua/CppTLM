@@ -1,7 +1,7 @@
 // test/test_virtual_channel.cc
 #include "catch_amalgamated.hpp"
+#include "core/packet_pool.hh" // 添加PacketPool头文件
 #include "mock_modules.hh"
-#include "core/packet_pool.hh"  // 添加PacketPool头文件
 
 TEST_CASE("VirtualChannel Basic", "[virtual][channel]") {
     EventQueue eq;
@@ -21,16 +21,14 @@ TEST_CASE("VirtualChannelTest InOrderPerVC_OutOfOrderAcrossVC", "[virtual][chann
     producer.getPortManager().addDownstreamPort(&producer, {4, 4}, {0, 1});
     consumer.getPortManager().addUpstreamPort(&consumer, {4, 4}, {0, 1});
 
-    auto pp = std::make_unique<PortPair>(
-        producer.getPortManager().getDownstreamPorts()[0],
-        consumer.getPortManager().getUpstreamPorts()[0]
-    );
+    auto pp = std::make_unique<PortPair>(producer.getPortManager().getDownstreamPorts()[0],
+                                         consumer.getPortManager().getUpstreamPorts()[0]);
 
     // 交错发送 VC0 和 VC1
-    producer.sendPacket(0);  // VC0
-    producer.sendPacket(1);  // VC1
-    producer.sendPacket(0);  // VC0
-    producer.sendPacket(1);  // VC1
+    producer.sendPacket(0); // VC0
+    producer.sendPacket(1); // VC1
+    producer.sendPacket(0); // VC0
+    producer.sendPacket(1); // VC1
 
     // 启动 tick 循环并运行事件队列
     producer.initiate_tick();
@@ -38,7 +36,7 @@ TEST_CASE("VirtualChannelTest InOrderPerVC_OutOfOrderAcrossVC", "[virtual][chann
     eq.run(10);
 
     // 验证同 VC 内保序
-    REQUIRE(consumer.received_vcs.size() > 0);  // 至少有一些包被接收
+    REQUIRE(consumer.received_vcs.size() > 0); // 至少有一些包被接收
     // 不能保证跨 VC 顺序，但同 VC 必须有序
     int seq0 = -1, seq1 = -1;
     for (size_t i = 0; i < consumer.received_packets.size(); ++i) {

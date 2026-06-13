@@ -2,12 +2,12 @@
 // Phase 0: 统计注册验证 — 确保 StatGroup 正确注册到 StatsManager
 // 功能描述：验证 ModuleFactory::instantiateAll() 自动调用 register_group()
 // 作者 CppTLM Team / 日期 2026-05-11
-#include <catch2/catch_all.hpp>
-#include "modules.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "metrics/stats_manager.hh"
+#include "modules.hh"
+#include <catch2/catch_all.hpp>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;

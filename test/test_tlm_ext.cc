@@ -1,12 +1,11 @@
 // test_tlm_exts.cpp
 #include "catch_amalgamated.hpp"
+#include "ext/mem_exts.hh"
 #include "tlm/tlm_stub.hh"
 #include <sstream>
-#include "ext/mem_exts.hh"
 
 // 辅助函数：捕获 print() 输出
-template<typename ExtType>
-std::string capture_print(const ExtType& ext) {
+template <typename ExtType> std::string capture_print(const ExtType& ext) {
     std::ostringstream oss;
     ext.print(oss);
     return oss.str();
@@ -69,7 +68,10 @@ TEST_CASE("TLM Extension Tests - WriteDataExt", "[tlm][extension][write]") {
     SECTION("WriteDataExt_Basic - Basic functionality") {
         WriteData wd;
         wd.valid_bytes = 4;
-        wd.data[0] = 0xAA; wd.data[1] = 0xBB; wd.data[2] = 0xCC; wd.data[3] = 0xDD;
+        wd.data[0] = 0xAA;
+        wd.data[1] = 0xBB;
+        wd.data[2] = 0xCC;
+        wd.data[3] = 0xDD;
         wd.strb[0] = 0x0F;
 
         WriteDataExt ext(wd);
@@ -85,7 +87,7 @@ TEST_CASE("TLM Extension Tests - WriteDataExt", "[tlm][extension][write]") {
     SECTION("WriteDataExt_CloneCopy - Clone and copy functionality") {
         WriteData wd;
         wd.valid_bytes = 8;
-        for(int i = 0; i < 8; i++) {
+        for (int i = 0; i < 8; i++) {
             wd.data[i] = i + 0x10;
         }
         wd.strb[0] = 0xFF;
@@ -112,9 +114,12 @@ TEST_CASE("TLM Extension Tests - WriteDataExt", "[tlm][extension][write]") {
         tlm::tlm_generic_payload payload;
         WriteData wd;
         wd.valid_bytes = 4;
-        wd.data[0] = 0xDE; wd.data[1] = 0xAD; wd.data[2] = 0xBE; wd.data[3] = 0xEF;
+        wd.data[0] = 0xDE;
+        wd.data[1] = 0xAD;
+        wd.data[2] = 0xBE;
+        wd.data[3] = 0xEF;
         WriteDataExt ext(wd);
-        
+
         payload.set_extension(new WriteDataExt(ext));
 
         auto* ext_ptr = payload.get_extension<WriteDataExt>();

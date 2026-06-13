@@ -6,24 +6,25 @@
  * @date 2026-04-22
  */
 
-#include <iostream>
-#include <cstring>
-#include <cstdlib>
-#include "sim_core.hh"
+#include "chstream_register.hh"
 #include "event_queue.hh"
+#include "metrics/streaming_reporter.hh"
 #include "module_factory.hh"
+#include "modules.hh"
+#include "sim_core.hh"
 #include "utils/json_includer.hh"
 #include "utils/topology_dumper.hh"
-#include "metrics/streaming_reporter.hh"
-#include "modules.hh"
-#include "chstream_register.hh"
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 
 void print_usage(const char* prog) {
     std::cerr << "Usage: " << prog << " <config.json> [options]\n"
               << "Options:\n"
               << "  --stream-stats           Enable streaming statistics\n"
               << "  --stream-interval <N>    Report interval in cycles (default: 10000)\n"
-              << "  --stream-path <path>     Output path for stats stream (default: output/stats_stream.jsonl)\n"
+              << "  --stream-path <path>     Output path for stats stream (default: "
+                 "output/stats_stream.jsonl)\n"
               << "  --cycles <N>             Number of simulation cycles (default: 10000)\n"
               << "  --debug-config           Enable verbose config parsing output\n"
               << "  --help, -h               Show this help message\n";
