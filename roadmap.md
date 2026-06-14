@@ -58,13 +58,13 @@
 
 ### 已采纳的架构决策（D1-D5）
 
-| 决策 | 采纳方案 | 适用阶段 |
-|------|----------|----------|
-| **D1 协议策略** | 分步走：Phase 7.A 用简化 I/S/M 三态 + write-through bypass；Phase 7.C 升级为 MOESI + GPU_VIPER 简化版（C++ `switch` 表，**不**复制 gem5 slicc） | 7.A → 7.C |
-| **D2 CU 粒度** | 黑盒优先（只发请求，不模拟 5-stage pipeline / ISA / SIMD） | 7.A → 7.F |
-| **D3 Wavefront/Coalescing** | 抽象（用 `coalescing_factor` 参数代替精确模拟） | 7.A → 7.F |
-| **D4 HSAPP/CP/Dispatcher** | 简化到极致（用 `KernelLaunchTLM` ~150 行代替 HSA 三件套 3000+ 行） | 7.A → 7.F |
-| **D5 目录结构** | 新建 `include/tlm/gpu/` 子目录（`compute_unit_tlm.hh` / `tcc_tlm.hh` / `kernel_launch_tlm.hh` / `pcie_bridge_tlm.hh`） | 7.A 起 |
+| 决策 | 采纳方案 | 适用阶段 | ADR |
+|------|----------|----------|-----|
+| **D1 协议策略** | 分步走：Phase 7.A 用简化 I/S/M 三态 + write-through bypass；Phase 7.C 升级为 MOESI + GPU_VIPER 简化版（C++ `switch` 表，**不**复制 gem5 slicc） | 7.A → 7.C | [ADR-SOC-01](docs/soc_arch/adr/ADR-SOC-01-coherence-protocol-strategy.md) |
+| **D2 CU 粒度** | 黑盒优先（只发请求，不模拟 5-stage pipeline / ISA / SIMD） | 7.A → 7.F | [ADR-SOC-02](docs/soc_arch/adr/ADR-SOC-02-cu-granularity.md) |
+| **D3 Wavefront/Coalescing** | 抽象（用 `coalescing_factor` 参数代替精确模拟） | 7.A → 7.F | [ADR-SOC-03](docs/soc_arch/adr/ADR-SOC-03-wavefront-coalescing-abstraction.md) |
+| **D4 HSAPP/CP/Dispatcher** | 简化到极致（用 `KernelLaunchTLM` ~150 行代替 HSA 三件套 3000+ 行） | 7.A → 7.F | [ADR-SOC-04](docs/soc_arch/adr/ADR-SOC-04-hsapp-cp-dispatcher-simplification.md) |
+| **D5 目录结构** | 新建 `include/tlm/gpu/` 子目录（`compute_unit_tlm.hh` / `tcc_tlm.hh` / `kernel_launch_tlm.hh` / `pcie_bridge_tlm.hh`） | 7.A 起 | [ADR-SOC-05](docs/soc_arch/adr/ADR-SOC-05-gpu-directory-structure.md) |
 
 ### Phase 7 子任务（与调研报告 §4 对齐）
 

@@ -515,6 +515,8 @@ Memory (HBM)
 
 ### 4.1 D1 协议策略（分步走）
 
+> **ADR**: [`ADR-SOC-01-coherence-protocol-strategy.md`](../adr/ADR-SOC-01-coherence-protocol-strategy.md)
+
 **决策**: 不一次性实现完整 MOESI，而是**按阶段递进**：
 
 ```
@@ -554,6 +556,8 @@ Memory (HBM)
 
 ### 4.2 D2 CU 粒度（黑盒优先）
 
+> **ADR**: [`ADR-SOC-02-cu-granularity.md`](../adr/ADR-SOC-02-cu-granularity.md)
+
 **决策**: ComputeUnit 作为**黑盒发起器**，不模拟 5-stage pipeline / ISA / SIMD / LDS / wavefront 调度。
 
 ```
@@ -588,6 +592,8 @@ Memory (HBM)
 
 ### 4.3 D3 Wavefront/Coalescing（抽象）
 
+> **ADR**: [`ADR-SOC-03-wavefront-coalescing-abstraction.md`](../adr/ADR-SOC-03-wavefront-coalescing-abstraction.md)
+
 **决策**: 引入 `coalescing_factor` 标量参数，**不**模拟真实 coalescer 状态机。
 
 ```
@@ -621,6 +627,8 @@ CppTLM 抽象 (采纳):
 
 ### 4.4 D4 HSA Runtime 简化（极致）
 
+> **ADR**: [`ADR-SOC-04-hsapp-cp-dispatcher-simplification.md`](../adr/ADR-SOC-04-hsapp-cp-dispatcher-simplification.md)
+
 **决策**: KernelLaunchTLM ~150 行，**不**实现完整 HSAPP + GPUCommandProcessor + GPUDispatcher。
 
 ```
@@ -645,6 +653,8 @@ CppTLM 简化 (采纳):
 **理由**: HSA runtime 细节对 SoC 行为影响小；只需模拟"CPU 发 launch → GPU 收到 → 开始计算"的事件流。
 
 ### 4.5 D5 目录结构（`include/tlm/gpu/` 子目录）
+
+> **ADR**: [`ADR-SOC-05-gpu-directory-structure.md`](../adr/ADR-SOC-05-gpu-directory-structure.md)
 
 **决策**: 新建 `include/tlm/gpu/` 子目录，与 `cpptlm::rtl::*` 和 `tlm::*` 形成清晰分层。
 
