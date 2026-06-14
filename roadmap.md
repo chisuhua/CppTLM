@@ -1,8 +1,8 @@
 # CppTLM Roadmap
 
 > **Version**: 2.1
-> **Last Updated**: 2026-06-11
-> **Status**: ✅ v2.1 Released (2026-06-08) · 🆕 Phase 7 (GPU APU Fused SoC) 规划中
+> **Last Updated**: 2026-06-14
+> **Status**: ✅ v2.1 Released (2026-06-08) · 🚀 Phase 7 进行中（7.A ✅ 2026-06-11）
 
 ## 已完成里程碑 (v2.0 → v2.1)
 
@@ -48,7 +48,7 @@
 
 ---
 
-## Phase 7: CPU+GPGPU Fused SoC (APU-first, 规划中) 🆕
+## Phase 7: CPU+GPGPU Fused SoC (APU-first, 进行中) 🚀
 
 > **规划依据**: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](docs/research-cpptlm-gpu-fused-soc-survey.md)（2026-06-11 调研）
 > **蓝图**: gem5 `configs/example/apu_se.py`（APU 形态，shared DDR + MOESI_AMD_Base + GPU_VIPER）
@@ -70,7 +70,7 @@
 
 | 子任务 | 调研报告对应 | 状态 | 范围 | 风险 | 验收 |
 |--------|:------------:|:----:|------|------|------|
-| **7.A GPU 基础设施** | Phase 0（2-3 周） | 🟡 Pending | 新增 `include/bundles/compute_bundles_tlm.hh` + `include/tlm/gpu/gpu_tlm.hh` v0 + `REGISTER_CHSTREAM` 注册 + `configs/gpu_standalone.json` | 🟢 Low | `cpptlm_tests "[gpu]"` 通过；`gpu_standalone.json` 可执行 |
+| **7.A GPU 基础设施** | Phase 0（2-3 周） | ✅ Done (2026-06-11) | 新增 `include/bundles/compute_bundles_tlm.hh` + `include/tlm/gpu/gpu_tlm.hh` v0 + `REGISTER_CHSTREAM` 注册 + `configs/gpu_standalone.json` | 🟢 Low | `cpptlm_tests "[gpu]"` 通过；`gpu_standalone.json` 可执行 |
 | **7.B ComputeUnit 黑盒** | Phase 1（3-4 周） | 🟡 Pending | `ComputeUnitTLM`（tick loop 发请求 + inflight_kernel_reqs_ map + workgroup_progress_）；CrossbarTLM 扩展 GPU 地址路由；CacheTLM 临时 bypass GPU 请求 | 🟡 Med-High | `configs/apu_demo_v1.json` 端到端运行；`cpptlm_tests "[gpu][phase6]"` |
 | **7.C Coherence Protocol 集成** | Phase 2（4-5 周） | 🟡 Pending | CacheTLM protocol-aware 改造（`CacheLine = {data, state, sharers}` + 6×6 状态转换表）；CoherenceDomain 与 CacheTLM 集成（snoop callback + lookup_home_node） | 🔴 **High（最高风险）** | `configs/apu_demo_v2.json` 跨 cache 一致性；`cpptlm_tests "[coherence][gpu]"` |
 | **7.D TCC Bridge + 内存层次** | Phase 3（3-4 周） | 🟡 Pending | `TCC_TLM`（DualPortStreamAdapter，write coalescing + snoop fan-in）；`MemoryTLM` 扩展 `hbm_mode` 参数 | 🟡 Med | `configs/apu_demo_v3.json` 写合并；`cpptlm_tests "[gpu][tcc]"` |
@@ -133,7 +133,7 @@
 
 - [ ] Phase 5（ProtocolBridge）启动后回填 5.1-5.5 子任务细节
 - [ ] Phase 6.2 / 6.3 启动后回填 cross-cluster coherence + bridge 集成测试细节
-- [ ] Phase 7.A 启动前需更新 AGENTS.md STRUCTURE 节（添加 `include/tlm/gpu/` 子目录）
+- [x] Phase 7.A 启动前需更新 AGENTS.md STRUCTURE 节（添加 `include/tlm/gpu/` 子目录）— 2026-06-11 已完成（AGENTS.md L19）
 - [ ] Phase 7.C 启动前需更新 scripts/README.md（如新增 gpu_kernel_trace_gen.py）
 - [ ] Phase 7.F 完成后把 roadmap.md 升级为 v2.2
 - [ ] 考虑扩展 docs_sync_check.sh 扫描范围（Markdown 链接、include/AGENTS.md 一致性）

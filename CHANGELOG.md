@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- Phase 7.A GPU 基础设施落地（2026-06-11）
+  - `include/bundles/compute_bundles_tlm.hh` — ComputeReqBundle / ComputeRespBundle 类型
+  - `include/tlm/gpu/gpu_tlm.hh` — GPUTLM v0 黑盒发起器
+  - `REGISTER_CHSTREAM` 宏注册 GPUTLM（同时绑定 StreamAdapter 与多端口适配器）
+  - `configs/gpu_standalone.json` — 验证用最小拓扑配置
+  - `test/test_gpu_standalone.cc` — 5 个 `[gpu]` 标签单元测试
+  - AGENTS.md STRUCTURE 节新增 `include/tlm/gpu/` 子目录条目（Phase7.A+ GPU 模块）
+
+### Notes
+- Phase 7.A 状态: 🟡 Pending → ✅ Done
+- 后续: Phase 7.B–7.F（ComputeUnitTLM / Coherence / TCC / Multi-CU / Full APU Demo）保持 🟡 Pending
+
 ## [v2.1.0] - 2026-06-08
 
 ### Added

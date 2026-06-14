@@ -74,14 +74,11 @@ VIRTUAL_PATHS=(
     "ext/packet_to_payload.hh"
     "ext/payload_to_packet.hh"
     "modules_v2.hh"
-    # Phase 7 (GPU APU Fused SoC) 规划中文件（roadmap.md 2026-06-11）
-    "compute_bundles_tlm.hh"
+    # Phase 7.B-F (GPU APU Fused SoC) 规划中文件（roadmap.md 2026-06-11；7.A 已落地 2026-06-11）
     "compute_unit_tlm.hh"
     "tcc_tlm.hh"
     "kernel_launch_tlm.hh"
     "pcie_bridge_tlm.hh"
-    "gpu_tlm.hh"
-    "gpu_standalone.json"
     "apu_demo_v1.json"
     "apu_demo_v2.json"
     "apu_demo_v3.json"

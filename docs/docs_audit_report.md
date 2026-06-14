@@ -1,8 +1,8 @@
 # CppTLM 文档审计报告 (Snapshot)
 
-> **生成时间**: 2026-06-11
+> **生成时间**: 2026-06-14
 > **工具**: `scripts/test/docs_sync_check.sh`
-> **状态**: ✅ 361/361 路径引用有效
+> **状态**: ✅ 365/365 路径引用有效
 
 ## 检查范围
 
@@ -18,9 +18,9 @@
 | 指标 | 值 |
 |------|---|
 | 文档数 | 4 |
-| 扫描路径引用总数 | 361 |
+| 扫描路径引用总数 | 365 |
 | 缺失路径数 | **0** |
-| 误报（VIRTUAL_PATHS 排除） | 30（已删除/归档/规划中文件 + gem5 参考路径） |
+| 误报（VIRTUAL_PATHS 排除） | 27（已删除/归档/规划中文件 + gem5 参考路径） |
 
 ## VIRTUAL_PATHS（已删除/归档文件，仅在文档中说明删除原因时引用）
 
@@ -46,6 +46,7 @@
 | 2026-06-10（修复 ONBOARDING 过期引用） | 354 | 13 | 仅剩余"说明删除原因"引用 |
 | 2026-06-10（VIRTUAL_PATHS 完善） | 354 | 0 | 零误报 |
 | 2026-06-11（Phase 7 GPU APU 规划） | **361** | **0** | 新增 Phase 7 路径白名单（13 规划中文件 + 3 gem5 参考）；调研报告 [`research-cpptlm-gpu-fused-soc-survey.md`](research-cpptlm-gpu-fused-soc-survey.md) 入库 |
+| 2026-06-14（Phase 7.A 文档收尾） | **365** | **0** | CHANGELOG.md 新增 `[Unreleased]` 段记录 7.A 8 项落地；roadmap.md 7.A 行 Pending → ✅；VIRTUAL_PATHS 移除已落地的 `compute_bundles_tlm.hh`/`gpu_tlm.hh`/`gpu_standalone.json`（30 → 27） |
 
 ## 维护流程
 
