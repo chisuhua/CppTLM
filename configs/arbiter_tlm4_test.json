@@ -1,0 +1,104 @@
+{
+  "name": "arbiter_tlm4_test",
+  "description": "4 CPU → ArbiterTLM4 (4-port) → 2 Memory — fills ArbiterTLM<4> coverage gap",
+  "metadata": {
+    "version": "1.0.0",
+    "schema_version": "1.0"
+  },
+  "modules": [
+    {
+      "name": "cpu0",
+      "type": "CPUTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "cpu1",
+      "type": "CPUTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "cpu2",
+      "type": "CPUTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "cpu3",
+      "type": "CPUTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "arb4",
+      "type": "ArbiterTLM4",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "mem0",
+      "type": "MemoryTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "mem1",
+      "type": "MemoryTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    }
+  ],
+  "connections": [
+    {
+      "src": "cpu0",
+      "dst": "arb4.0",
+      "latency": 1,
+      "bandwidth": null
+    },
+    {
+      "src": "cpu1",
+      "dst": "arb4.1",
+      "latency": 1,
+      "bandwidth": null
+    },
+    {
+      "src": "cpu2",
+      "dst": "arb4.2",
+      "latency": 1,
+      "bandwidth": null
+    },
+    {
+      "src": "cpu3",
+      "dst": "arb4.3",
+      "latency": 1,
+      "bandwidth": null
+    },
+    {
+      "src": "arb4.0",
+      "dst": "mem0",
+      "latency": 50,
+      "bandwidth": 200
+    },
+    {
+      "src": "arb4.1",
+      "dst": "mem1",
+      "latency": 50,
+      "bandwidth": 200
+    }
+  ]
+}

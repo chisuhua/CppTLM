@@ -1,0 +1,62 @@
+{
+  "name": "link_tlm_chain",
+  "description": "3-hop chain via LinkTLM — fills LinkTLM coverage gap",
+  "metadata": {
+    "version": "1.0.0",
+    "schema_version": "1.0"
+  },
+  "modules": [
+    {
+      "name": "cpu0",
+      "type": "CPUTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "link0",
+      "type": "LinkTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "link1",
+      "type": "LinkTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    },
+    {
+      "name": "mem",
+      "type": "MemoryTLM",
+      "params": {},
+      "port_spec": null,
+      "ports": [],
+      "port_groups": []
+    }
+  ],
+  "connections": [
+    {
+      "src": "cpu0",
+      "dst": "link0",
+      "latency": 2,
+      "bandwidth": 100
+    },
+    {
+      "src": "link0",
+      "dst": "link1",
+      "latency": 2,
+      "bandwidth": 100
+    },
+    {
+      "src": "link1",
+      "dst": "mem",
+      "latency": 5,
+      "bandwidth": 100
+    }
+  ]
+}

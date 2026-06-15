@@ -1,0 +1,109 @@
+{
+  "name": "hierarchy_tree_3x2",
+  "description": "3-level hierarchy tree with 6 leaf nodes",
+  "hierarchy": {
+    "name": "system",
+    "children": [
+      {
+        "name": "cluster_a",
+        "children": [
+          {
+            "name": "sub_a0",
+            "children": []
+          },
+          {
+            "name": "sub_a1",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "cluster_b",
+        "children": [
+          {
+            "name": "sub_b0",
+            "children": []
+          },
+          {
+            "name": "sub_b1",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "cluster_c",
+        "children": [
+          {
+            "name": "sub_c0",
+            "children": []
+          },
+          {
+            "name": "sub_c1",
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "coherence_domains": [
+    {
+      "name": "domain_a",
+      "members": [
+        "sub_a0",
+        "sub_a1"
+      ],
+      "protocol": "MESI"
+    },
+    {
+      "name": "domain_b",
+      "members": [
+        "sub_b0",
+        "sub_b1"
+      ],
+      "protocol": "MESI"
+    },
+    {
+      "name": "domain_c",
+      "members": [
+        "sub_c0",
+        "sub_c1"
+      ],
+      "protocol": "MESI"
+    }
+  ],
+  "modules": [
+    {
+      "name": "mem_a",
+      "type": "MemoryTLM"
+    },
+    {
+      "name": "mem_b",
+      "type": "MemoryTLM"
+    },
+    {
+      "name": "mem_c",
+      "type": "MemoryTLM"
+    },
+    {
+      "name": "xbar",
+      "type": "CrossbarTLM"
+    }
+  ],
+  "connections": [
+    {
+      "src": "mem_a",
+      "dst": "xbar",
+      "latency": 10
+    },
+    {
+      "src": "mem_b",
+      "dst": "xbar",
+      "latency": 10
+    },
+    {
+      "src": "mem_c",
+      "dst": "xbar",
+      "latency": 10
+    }
+  ]
+}
