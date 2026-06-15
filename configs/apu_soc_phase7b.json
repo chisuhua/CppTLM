@@ -1,0 +1,165 @@
+{
+  "name": "APU SoC — Phase 7.B (CPU + Cache + GPUTLM + Crossbar + Memory)",
+  "description": "Phase 7.B: 2 CPU TrafficGen + L1+L2 caches + 1 GPUTLM CU + CrossbarTLM + MemoryTLM. Write-through simplified, bypass coherence. Mirrors apu-soc-design.md §2.3 7.B.",
+  "modules": [
+    {
+      "name": "cpu_0",
+      "type": "TrafficGenTLM",
+      "params": {
+        "pattern": "SEQUENTIAL",
+        "num_requests": 1000,
+        "start_addr": "0x1000",
+        "end_addr": "0x4000"
+      }
+    },
+    {
+      "name": "cpu_1",
+      "type": "TrafficGenTLM",
+      "params": {
+        "pattern": "RANDOM",
+        "num_requests": 1000,
+        "start_addr": "0x4000",
+        "end_addr": "0x8000"
+      }
+    },
+    {
+      "name": "l1_cpu_0",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "l1_cpu_1",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "l2_cpu_shared",
+      "type": "CacheTLM"
+    },
+    {
+      "name": "compute_unit_0",
+      "type": "GPUTLM",
+      "params": {
+        "kernel_id": 100,
+        "workgroup_size": 64,
+        "start_addr": "0x10000",
+        "end_addr": "0x40000"
+      }
+    },
+    {
+      "name": "xbar",
+      "type": "CrossbarTLM"
+    },
+    {
+      "name": "hbm_memory",
+      "type": "MemoryTLM",
+      "params": {
+        "capacity_gb": 16,
+        "read_latency": 100,
+        "write_latency": 120
+      }
+    }
+  ],
+  "connections": [
+    {
+      "src": "cpu_0",
+      "dst": "l1_cpu_0",
+      "latency": 1
+    },
+    {
+      "src": "l1_cpu_0",
+      "dst": "l2_cpu_shared",
+      "latency": 3
+    },
+    {
+      "src": "cpu_1",
+      "dst": "l1_cpu_1",
+      "latency": 1
+    },
+    {
+      "src": "l1_cpu_1",
+      "dst": "l2_cpu_shared",
+      "latency": 3
+    },
+    {
+      "src": "l2_cpu_shared",
+      "dst": "xbar.0",
+      "latency": 5
+    },
+    {
+      "src": "compute_unit_0",
+      "dst": "xbar.1",
+      "latency": 5
+    },
+    {
+      "src": "xbar",
+      "dst": "hbm_memory",
+      "latency": 100,
+      "bandwidth": 200
+    }
+  ],
+  "hierarchy": {
+    "name": "apu_phase7b",
+    "children": [
+      {
+        "name": "cpu_cluster",
+        "children": [
+          {
+            "name": "cpu_0",
+            "children": []
+          },
+          {
+            "name": "cpu_1",
+            "children": []
+          },
+          {
+            "name": "l1_cpu_0",
+            "children": []
+          },
+          {
+            "name": "l1_cpu_1",
+            "children": []
+          },
+          {
+            "name": "l2_cpu_shared",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "compute_cluster",
+        "children": [
+          {
+            "name": "compute_unit_0"
+          }
+        ]
+      },
+      {
+        "name": "interconnect",
+        "children": [
+          {
+            "name": "xbar"
+          }
+        ]
+      },
+      {
+        "name": "memory_cluster",
+        "children": [
+          {
+            "name": "hbm_memory"
+          }
+        ]
+      }
+    ]
+  },
+  "coherence_domains": [
+    {
+      "name": "apu_write_through",
+      "members": [
+        "l1_cpu_0",
+        "l1_cpu_1",
+        "l2_cpu_shared",
+        "compute_unit_0"
+      ],
+      "protocol": "WRITE_THROUGH_SIMPLIFIED"
+    }
+  ]
+}

@@ -1,0 +1,347 @@
+{
+  "name": "APU SoC — Phase 7.F Full (2CPU + 4CU + 2x2 Mesh)",
+  "description": "Phase 7.F final APU topology. Mirrors apu-soc-design.md §2.2. NOTE: ComputeUnitTLM/CoherentXBarTLM/TCCTLM not yet registered (planned Phase 7.B/C/D).",
+  "modules": [
+    {
+      "name": "cpu_0",
+      "type": "TrafficGenTLM",
+      "params": {
+        "pattern": "SEQUENTIAL",
+        "num_requests": 10000,
+        "start_addr": "0x1000",
+        "end_addr": "0x4000"
+      }
+    },
+    {
+      "name": "cpu_1",
+      "type": "TrafficGenTLM",
+      "params": {
+        "pattern": "RANDOM",
+        "num_requests": 10000,
+        "start_addr": "0x4000",
+        "end_addr": "0x8000"
+      }
+    },
+    {
+      "name": "l1_cpu_0",
+      "type": "CacheTLM",
+      "params": {
+        "size": "32KB",
+        "associativity": 4,
+        "protocol": "MOESI_AMD"
+      }
+    },
+    {
+      "name": "l1_cpu_1",
+      "type": "CacheTLM",
+      "params": {
+        "size": "32KB",
+        "associativity": 4,
+        "protocol": "MOESI_AMD"
+      }
+    },
+    {
+      "name": "l2_cpu_shared",
+      "type": "CacheTLM",
+      "params": {
+        "size": "256KB",
+        "associativity": 8,
+        "protocol": "MOESI_AMD"
+      }
+    },
+    {
+      "name": "compute_unit_0",
+      "type": "ComputeUnitTLM",
+      "params": {
+        "kernel_id": 0,
+        "workgroup_size": 64
+      }
+    },
+    {
+      "name": "compute_unit_1",
+      "type": "ComputeUnitTLM",
+      "params": {
+        "kernel_id": 1,
+        "workgroup_size": 64
+      }
+    },
+    {
+      "name": "compute_unit_2",
+      "type": "ComputeUnitTLM",
+      "params": {
+        "kernel_id": 2,
+        "workgroup_size": 64
+      }
+    },
+    {
+      "name": "compute_unit_3",
+      "type": "ComputeUnitTLM",
+      "params": {
+        "kernel_id": 3,
+        "workgroup_size": 64
+      }
+    },
+    {
+      "name": "gpu_router_0_0",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "gpu_router_1_0",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "gpu_router_0_1",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "gpu_router_1_1",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "tcc",
+      "type": "TCCTLM",
+      "params": {
+        "size": "1MB",
+        "coalescing": true
+      }
+    },
+    {
+      "name": "coherent_xbar",
+      "type": "CoherentXBarTLM",
+      "params": {
+        "snoop_filter": true,
+        "domain_protocol": "MOESI_AMD"
+      }
+    },
+    {
+      "name": "hbm_memory",
+      "type": "MemoryTLM",
+      "params": {
+        "capacity_gb": 16,
+        "read_latency": 100,
+        "write_latency": 120,
+        "type": "HBM2"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "src": "cpu_0",
+      "dst": "l1_cpu_0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l1_cpu_0",
+      "dst": "l2_cpu_shared",
+      "latency": 3,
+      "bandwidth": 100
+    },
+    {
+      "src": "cpu_1",
+      "dst": "l1_cpu_1",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "l1_cpu_1",
+      "dst": "l2_cpu_shared",
+      "latency": 3,
+      "bandwidth": 100
+    },
+    {
+      "src": "l2_cpu_shared",
+      "dst": "coherent_xbar.0",
+      "latency": 5,
+      "bandwidth": 100
+    },
+    {
+      "src": "compute_unit_0",
+      "dst": "gpu_router_0_0.4",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "compute_unit_1",
+      "dst": "gpu_router_1_0.4",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "compute_unit_2",
+      "dst": "gpu_router_0_1.4",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "compute_unit_3",
+      "dst": "gpu_router_1_1.4",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "gpu_router_0_0.1",
+      "dst": "gpu_router_1_0.3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "gpu_router_0_0.2",
+      "dst": "gpu_router_0_1.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "gpu_router_1_0.2",
+      "dst": "gpu_router_1_1.0",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "gpu_router_0_1.1",
+      "dst": "gpu_router_1_1.3",
+      "latency": 1,
+      "bandwidth": 100
+    },
+    {
+      "src": "tcc",
+      "dst": "coherent_xbar.1",
+      "latency": 5,
+      "bandwidth": 200
+    },
+    {
+      "src": "coherent_xbar",
+      "dst": "hbm_memory",
+      "latency": 100,
+      "bandwidth": 400
+    }
+  ],
+  "hierarchy": {
+    "name": "apu_phase7f",
+    "children": [
+      {
+        "name": "cpu_cluster",
+        "children": [
+          {
+            "name": "cpu_0",
+            "children": []
+          },
+          {
+            "name": "cpu_1",
+            "children": []
+          },
+          {
+            "name": "l1_cpu_0",
+            "children": []
+          },
+          {
+            "name": "l1_cpu_1",
+            "children": []
+          },
+          {
+            "name": "l2_cpu_shared",
+            "children": []
+          }
+        ]
+      },
+      {
+        "name": "gpu_cluster",
+        "children": [
+          {
+            "name": "compute_unit_0",
+            "children": []
+          },
+          {
+            "name": "compute_unit_1",
+            "children": []
+          },
+          {
+            "name": "compute_unit_2",
+            "children": []
+          },
+          {
+            "name": "compute_unit_3",
+            "children": []
+          },
+          {
+            "name": "tcc",
+            "children": []
+          },
+          {
+            "name": "gpu_mesh",
+            "children": [
+              {
+                "name": "gpu_router_0_0",
+                "children": []
+              },
+              {
+                "name": "gpu_router_1_0",
+                "children": []
+              },
+              {
+                "name": "gpu_router_0_1",
+                "children": []
+              },
+              {
+                "name": "gpu_router_1_1",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "interconnect",
+        "children": [
+          {
+            "name": "coherent_xbar"
+          }
+        ]
+      },
+      {
+        "name": "memory_cluster",
+        "children": [
+          {
+            "name": "hbm_memory"
+          }
+        ]
+      }
+    ]
+  },
+  "coherence_domains": [
+    {
+      "name": "apu_moesi_amd",
+      "members": [
+        "l1_cpu_0",
+        "l1_cpu_1",
+        "l2_cpu_shared",
+        "tcc"
+      ],
+      "protocol": "MOESI_AMD_6_STATE"
+    }
+  ]
+}
