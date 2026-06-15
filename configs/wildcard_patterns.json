@@ -1,0 +1,24 @@
+{
+  "name": "Wildcard Patterns Configuration",
+  "description": "Tests wildcard pattern matching for src/dst connections (RegexMatcher engine) — bulk-connect 4 cpus_* to shared cache",
+  "modules": [
+    { "name": "cpus_0", "type": "CPUTLM" },
+    { "name": "cpus_1", "type": "CPUTLM" },
+    { "name": "cpus_2", "type": "CPUTLM" },
+    { "name": "cpus_3", "type": "CPUTLM" },
+    { "name": "shared_l1", "type": "CacheTLM" },
+    { "name": "mem0", "type": "MemoryTLM" },
+    { "name": "mem1", "type": "MemoryTLM" }
+  ],
+  "groups": {
+    "cpus": ["cpus_0", "cpus_1", "cpus_2", "cpus_3"],
+    "mems": ["mem0", "mem1"]
+  },
+  "connections": [
+    { "src": "cpus_0", "dst": "shared_l1", "latency": 1, "bandwidth": 50 },
+    { "src": "cpus_1", "dst": "shared_l1", "latency": 1, "bandwidth": 50 },
+    { "src": "cpus_2", "dst": "shared_l1", "latency": 1, "bandwidth": 50 },
+    { "src": "cpus_3", "dst": "shared_l1", "latency": 1, "bandwidth": 50 },
+    { "src": "shared_l1", "dst": "group:mems", "latency": 10, "bandwidth": 200 }
+  ]
+}

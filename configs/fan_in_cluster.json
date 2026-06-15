@@ -1,0 +1,19 @@
+{
+  "name": "Fan-In Cluster Configuration",
+  "description": "Fan-in topology: 4 CPUs → 1 CrossbarTLM → 1 Memory (opposite direction of fan-out). Tests multi-port CrossbarTLM with N:1 aggregation.",
+  "modules": [
+    { "name": "cpu0", "type": "CPUTLM" },
+    { "name": "cpu1", "type": "CPUTLM" },
+    { "name": "cpu2", "type": "CPUTLM" },
+    { "name": "cpu3", "type": "CPUTLM" },
+    { "name": "xbar", "type": "CrossbarTLM" },
+    { "name": "mem", "type": "MemoryTLM" }
+  ],
+  "connections": [
+    { "src": "cpu0", "dst": "xbar.0", "latency": 1 },
+    { "src": "cpu1", "dst": "xbar.1", "latency": 1 },
+    { "src": "cpu2", "dst": "xbar.2", "latency": 1 },
+    { "src": "cpu3", "dst": "xbar.3", "latency": 1 },
+    { "src": "xbar", "dst": "mem", "latency": 5, "bandwidth": 100 }
+  ]
+}

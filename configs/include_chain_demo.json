@@ -1,0 +1,24 @@
+{
+  "name": "Include Chain Demo Configuration",
+  "description": "Demo $include directive in JSON config — embeds inline shared definitions (full file-resolution semantics tested via JsonIncluder)",
+  "$include": [
+    {
+      "modules": [
+        { "name": "shared_l1", "type": "CacheTLM", "params": { "size": "32KB" } },
+        { "name": "shared_mem", "type": "MemoryTLM" }
+      ],
+      "module_groups": [
+        { "name": "shared_resources", "members": ["shared_l1", "shared_mem"] }
+      ]
+    }
+  ],
+  "modules": [
+    { "name": "cpu0", "type": "CPUTLM" },
+    { "name": "cpu1", "type": "CPUTLM" }
+  ],
+  "connections": [
+    { "src": "cpu0", "dst": "shared_l1", "latency": 1 },
+    { "src": "cpu1", "dst": "shared_l1", "latency": 1 },
+    { "src": "shared_l1", "dst": "shared_mem", "latency": 5 }
+  ]
+}

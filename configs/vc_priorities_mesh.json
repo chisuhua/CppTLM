@@ -1,0 +1,88 @@
+{
+  "name": "vc_priorities_mesh_2x2",
+  "description": "2x2 mesh with alternating per-link VC priorities (fills vc_priorities coverage gap)",
+  "modules": [
+    {
+      "name": "router_0_0",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "router_1_0",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 0,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "router_0_1",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 0,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    },
+    {
+      "name": "router_1_1",
+      "type": "RouterTLM",
+      "params": {
+        "node_x": 1,
+        "node_y": 1,
+        "mesh_x": 2,
+        "mesh_y": 2
+      }
+    }
+  ],
+  "connections": [
+    {
+      "src": "router_0_0.1",
+      "dst": "router_1_0.3",
+      "latency": 1,
+      "bandwidth": 100,
+      "vc_priorities": [
+        0,
+        1
+      ]
+    },
+    {
+      "src": "router_0_0.2",
+      "dst": "router_0_1.0",
+      "latency": 1,
+      "bandwidth": 100,
+      "vc_priorities": [
+        0,
+        1
+      ]
+    },
+    {
+      "src": "router_1_0.2",
+      "dst": "router_1_1.0",
+      "latency": 1,
+      "bandwidth": 100,
+      "vc_priorities": [
+        1,
+        0
+      ]
+    },
+    {
+      "src": "router_0_1.1",
+      "dst": "router_1_1.3",
+      "latency": 1,
+      "bandwidth": 100,
+      "vc_priorities": [
+        1,
+        0
+      ]
+    }
+  ]
+}
