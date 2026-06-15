@@ -290,7 +290,7 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 - `configs/mesh_2x2_tlm.json` / `mesh_4x4_tlm.json` — 网格拓扑
 - `configs/hierarchical_2x2_tlm.json` — 层级拓扑
 - `configs/ring_8_tlm.json` — 环形拓扑
-- `configs/example_hierarchy/{chip,node,system}.json` — 层级化示例
+- `configs/example_hierarchy/{chip,node,system}.json` — ~~层级化示例~~（已归档至 `docs-archived/dead-configs-2026-q2/example_hierarchy/`，原因：legacy 类型无注册；现代层级化见 `configs/hierarchical_2x2_tlm.json`）
 - `configs/stress_*.json` — 压力测试场景
 - `configs/param_rules/{nic_tlm,router_tlm}.json` — 参数规则
 
