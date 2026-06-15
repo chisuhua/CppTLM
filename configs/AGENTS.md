@@ -52,4 +52,4 @@
 ## 注意事项
 
 - 修改拓扑后重新运行 `./build/bin/cpptlm_tests "[phase6]"` 验证
-- `configs/example_hierarchy/` 和 `configs/example_layout/` 包含示例结构
+- `configs/example_hier2/`、`example_hierarchy/`、`example_layout/` 已在 2026-06-15 归档至 `docs-archived/dead-configs-2026-q2/`（legacy 模块类型 CPUSim/CPUCluster/MemCluster/CacheSim/Router/Arbiter 在 `BUILD_LEGACY_MODULES=OFF` 默认配置下无注册）；现代示例见 `configs/{mesh_4x4_tlm,hierarchical_2x2_tlm,ring_8_tlm}.json`
