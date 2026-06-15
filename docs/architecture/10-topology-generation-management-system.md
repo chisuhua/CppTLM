@@ -99,7 +99,7 @@ Phase 7 完成后，CppTLM 已具备以下能力：
 - **ChStreamAdapterFactory**: 支持 SinglePort / MultiPort / DualPort / BidirectionalPort 四种适配器
 - **ModuleFactory Step 7**: 支持端口索引语法 `module.port_idx`，自动创建 ChStreamPort 向量
 - **topology_generator.py**: CPPTLM_TYPE_MAP 类型映射，5 种拓扑生成，DOT/JSON 导出
-- **层次化配置**: `configs/example_hier2/` 展示一级嵌套能力
+- **层次化配置**: ~~`configs/example_hier2/` 展示一级嵌套能力~~（已归档至 `docs-archived/dead-configs-2026-q2/example_hier2/`，原因：CPUCluster/MemCluster legacy 类型 no-op；现代层次化见 `configs/hierarchical_2x2_tlm.json`）
 
 ### 3.2 差距分析
 
