@@ -1,0 +1,64 @@
+{
+  "name": "APU SoC — Phase 7.A (GPUTLM + MemoryTLM direct)",
+  "description": "Phase 7.A: GPUTLM (ComputeUnitTLM v0 black-box) + MemoryTLM (HBM-like). Bypass Cache/Crossbar/Coherence. Mirrors apu-soc-design.md §2.3 7.A.",
+  "modules": [
+    {
+      "name": "gpu_unit_0",
+      "type": "GPUTLM",
+      "params": {
+        "kernel_id": 0,
+        "workgroup_size": 64,
+        "start_addr": "0x10000",
+        "end_addr": "0x80000"
+      }
+    },
+    {
+      "name": "hbm_memory",
+      "type": "MemoryTLM",
+      "params": {
+        "capacity_gb": 8,
+        "read_latency": 100,
+        "write_latency": 120
+      }
+    }
+  ],
+  "connections": [
+    {
+      "src": "gpu_unit_0",
+      "dst": "hbm_memory",
+      "latency": 100,
+      "bandwidth": 200
+    }
+  ],
+  "hierarchy": {
+    "name": "apu_phase7a",
+    "children": [
+      {
+        "name": "compute_cluster",
+        "children": [
+          {
+            "name": "gpu_unit_0"
+          }
+        ]
+      },
+      {
+        "name": "memory_cluster",
+        "children": [
+          {
+            "name": "hbm_memory"
+          }
+        ]
+      }
+    ]
+  },
+  "coherence_domains": [
+    {
+      "name": "apu_phase7a_domain",
+      "members": [
+        "gpu_unit_0",
+        "hbm_memory"
+      ],
+      "protocol": "NONE"
+    }
+  ]
+}
