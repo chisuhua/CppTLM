@@ -1,333 +1,200 @@
 # CppTLM — C++ TLM Hybrid Simulation Framework
 
-**Generated:** 2026-05-31
-**Commit:** 29940d1 — update on hierarchy archive
-**Branch:** main
-**Version:** 2.1.0
+**Version**: 2.1.0 · **Branch**: main · **Last verified**: 2026-06-16 @ `8d8ad6c`
 
-## OVERVIEW
+## WHAT THIS IS
 
-TLM 2.0 周期精确片上网络仿真框架。支持 JSON 驱动拓扑、ModuleFactory 动态注入、ChStream 内部通信协议。分层融合架构 v2.1 已实现 CacheTLM/CrossbarTLM/MemoryTLM 端到端全链路。
+TLM 2.0 周期精确片上网络 (NoC) 仿真框架。C++ 核心 + Python 工具链 + JSON 驱动拓扑，CacheTLM/CrossbarTLM/MemoryTLM 端到端全链路已验证（Phase 6），Phase 7.A GPU 黑盒发起器已落地（2026-06-11）。
 
-## STRUCTURE
+**First read** for new agents: `docs/ONBOARDING.md` (knowledge-graph-generated ramp-up)。
+Architecture 必读: `docs/architecture/01-hybrid-architecture-v2.1.md`。
+
+## STRUCTURE (verified)
 
 ```
-CppTLM/
-├── include/         # 头文件全部在此（10 子目录，无 src 头文件混用）
-│   ├── core/        # 核心：SimObject/ModuleFactory/Port/ChStream 基类
-│   ├── tlm/         # TLM 2.0 模块：CacheTLM, CrossbarTLM, MemoryTLM
-│   │   └── gpu/      # Phase7.A+ GPU 模块：GPUTLM v0 (黑盒发起器，2026-06-11)
-│   ├── framework/   # StreamAdapter 适配器（ChStream↔TLM 转换层）
-│   ├── bundles/     # Bundle 定义（CacheReqBundle, CacheRespBundle 等）
-│   ├── modules/     # 旧版 Legacy 模块（已迁移至 modules/legacy/ 子目录）
-│   ├── ext/         # TLM 扩展插件接口
-│   ├── utils/       # 工具：ConfigUtils, RegexMatcher, DynamicLoader
-│   ├── sc_core/     # SystemC 兼容层
-│   ├── chstream_register.hh  # ChStream 注册宏入口（REGISTER_CHSTREAM）
-│   └── modules.hh   # Object 注册宏入口（REGISTER_OBJECT/REGISTER_MODULE）
-├── src/             # 源实现 + 可执行文件
-│   ├── core/        # ModuleFactory connection/instantiate 实现
-│   ├── rtl/         # RTL 桥接实现（HybridCacheComponent, HybridCacheWrapper，BUILD_RTL=ON）
-│   ├── tlm/         # TLM 2.0 模块实现（router_tlm, nic_tlm, link_tlm）
-│   ├── utils/       # DynamicLoader 实现
-│   ├── main.cpp          # 主仿真入口
-├── test/            # 测试（Catch2 v3.7.0，75 文件）
-├── test/python/     # Python 单元测试（analyzer, linter, path_tracer 等）
-├── configs/         # JSON 拓扑配置（支持端口索引语法 "xbar.0"）
-├── docs/            # 架构文档、ADR、实现计划
-├── docs-archived/   # 已归档文档（v1 架构、dead-code、disabled-tests 等 12 子目录）
-├── plans/ # 实施计划 JSON/Markdown
-├── samples/ # 示例拓扑
-├── scripts/ # 工具脚本（按用途分 5 个子目录：build/, test/, pipeline/, topology/, stats/）
-├── cpptlm/ # Python 库（新，pyproject.toml 注册；含 cli.py, topo/, config/, simulation/）
-├── cpptlm_config/ # Python 配置包（旧，builder.py/models.py/validator.py，examples 与 scripts/topology 引用）
-├── .github/
-│ └── workflows/
-│ └── ci.yml # GitHub Actions CI/CD 工作流
-└── CMakeLists.txt # 根构建配置
+include/         # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
+  core/          # SimObject/ModuleFactory/Port/ChStream 基类 + ext/ 子目录
+  tlm/           # TLM 2.0 模块: cache/crossbar/memory/cpu/link/nic/router/traffic_gen/arbiter
+  tlm/gpu/       # Phase 7.A+ GPUTLM v0 (黑盒发起器)
+  framework/     # StreamAdapter 转换层 (单/多/双端口 + 双向)
+  bundles/       # Bundle 定义: cache/noc/compute_bundles_tlm + cpphdl_types
+  modules/legacy/# CPUSim/CpuCluster (BUILD_LEGACY_MODULES=OFF 默认, 已归档)
+  ext/           # TLM 扩展插件 (credit_stream / error_context / mem / transaction_context)
+  metrics/       # histogram / stats / metrics_reporter / streaming_reporter
+  rtl/           # RTL 桥接头文件 (fragment_mapper, hybrid_cache_*)
+  utils/         # config_utils / json_includer / var_resolver / wildcard / dynamic_loader
+  sc_core/       # SystemC 兼容层 (stub)
+  chstream_register.hh  # REGISTER_CHSTREAM 宏入口
+  modules.hh     # REGISTER_OBJECT / REGISTER_MODULE 宏入口
+  AGENTS.md      # 注册宏体系完整表 (必读)
+
+src/             # .cc 实现 + main.cpp
+  core/          # module_factory(.cc 604 行, ⭐complex) / connection_resolver / param_parser
+                 # port_compatibility / coherence_domain / topology_parser / plugin_loader
+  tlm/           # router_tlm(.cc 805 行) / nic_tlm / link_tlm
+  rtl/           # hybrid_cache_component / hybrid_cache_wrapper (BUILD_RTL=ON 才编)
+  utils/         # dynamic_loader 实现
+  main.cpp       # 主仿真入口
+
+test/            # Catch2 v3.7.0, 82 个 test_*.cc + Python pytest
+  catch_amalgamated.{cpp,hpp}  # 预编译头 (非 FetchContent 实时下载)
+  python/        # 15 用例: analyzer / path_tracer / topo_* / validator
+  rtl/           # RTL 桥接测试 (BUILD_RTL=ON)
+  AGENTS.md      # 测试分类 + 标签表
+
+configs/         # 30+ JSON 拓扑 (含 apu_soc_* Phase 7.A/7.B/7.F)
+  common/  param_rules/  test/   # 子目录: 共享 include 片段 / 参数规则 / 测试配置
+  AGENTS.md      # Schema 文档
+
+docs/
+  architecture/  # 01-hybrid-architecture-v2.1.md (主架构, 必读) + 02-transaction + 03-error + ...
+  adr/           # 不可变 ADR (12+ 份, 状态追加 ## Status Update 段)
+  soc_arch/adr/  # APU SoC 子项目 ADR (D1-D5)
+  guide/         # GETTING_STARTED / DEVELOPER / PYTHON_TOOLING / TOPOLOGY_USER
+  ONBOARDING.md  # 新人上手 (图谱生成)
+  docs_audit_report.md  # 365/365 路径快照
+
+docs-archived/   # 12+ 子目录: dead-code / disabled-tests / samples-orphaned / v1-architecture
+openspec/        # 变更提案工作流 (changes/<name>/proposal.md → design.md → specs/ → tasks.md)
+examples/        # C++ example_*.cc + Python demo_e2e_*.py + demo_configs/ + generate_*.py
+samples/         # 示例拓扑 (含已归档子集, 见 docs-archived/samples-orphaned/)
+external/        # git 子模块 (CppHDL, json)
+scripts/         # 5 子目录: build/(format.sh, build.sh) | test/(docs_sync_check.sh 等 4) | pipeline/ | topology/ | stats/
+cpptlm/          # Python 库 (新, pyproject.toml): cli / topo / config / simulation / analysis / visualization
+cpptlm_config/   # Python 配置包 (旧, examples 引用): builder / models / validator / topology_adapter
+plans/           # 实施计划: phase7-completion / p0-alignment-remediation / performance-metrics 等
 ```
 
-## 归档示例（docs-archived/samples-orphaned/）
-
-`samples/simple1/` 和 `samples/simple_hier/` 已于 2026-06-08 归档：
-- **simple1/**: `cpu_cluster` 在 v2.1 标记 DEPRECATED（v1 时代的 legacy 模块），推荐使用 `include/tlm/cpu_tlm.hh`（`cpu_cluster.cc` 源文件随 sample 一同归档至 docs-archived/samples-orphaned/simple1/）
-- **simple_hier/**: 无 CMakeLists.txt（孤儿），引用 v2.1 不再支持的 `CpuCluster` / `NOCTile`
-- 恢复方法：参见 [docs-archived/samples-orphaned/README.md](docs-archived/samples-orphaned/README.md)
-```
+子目录级 AGENTS.md 索引: `include/AGENTS.md`（注册宏体系）· `include/tlm/AGENTS.md` · `include/core/AGENTS.md` · `src/core/AGENTS.md` · `src/tlm/AGENTS.md` · `test/AGENTS.md` · `configs/AGENTS.md` · `cpptlm_config/AGENTS.md`
 
 ## WHERE TO LOOK
 
-| Task | Location | Notes |
-|------|----------|-------|
-| 添加新 TLM 模块 | `include/tlm/` + `include/chstream_register.hh` | 从 ChStreamModuleBase 派生，REGISTER_CHSTREAM 注册 |
-| 添加新 Legacy 模块 | `include/modules/legacy/` | 从 SimObject 派生，modules.hh REGISTER_OBJECT 注册 |
-| 修改模块工厂逻辑 | `src/core/module_factory.cc` | instantiateAll + Step 7 StreamAdapter 注入 |
-| 修改 JSON 配置格式 | `configs/` + `include/utils/config_utils.hh` | 支持 group/connection/latency |
-| 添加 StreamAdapter | `include/framework/stream_adapter.hh` 或 `multi_port_stream_adapter.hh` | 单端口 vs 多端口 |
-| 添加新 Bundle 类型 | `include/bundles/` | Bundle 定义 ChStream 内部消息格式 |
-| 查看 ChStream 集成验证 | `test/test_phase6_integration.cc` | Cache→Crossbar→Memory 端到端 |
-| 修改 CI/CD 工作流 | `.github/workflows/ci.yml` | GitHub Actions 配置 |
-| 运行测试 | `./build/bin/cpptlm_tests` | Catch2，支持 `[tag]` 过滤 |
+| 任务 | 位置 |
+|------|------|
+| 添加新 TLM 模块 | `include/tlm/<name>_tlm.hh` + `include/chstream_register.hh` (REGISTER_CHSTREAM) |
+| 添加 Legacy 模块 | `include/modules/legacy/` + `include/modules.hh` (需 `BUILD_LEGACY_MODULES=ON`) |
+| 写注册宏 | `include/AGENTS.md` (完整宏体系表 + 设计意图) |
+| 修改模块工厂 | `src/core/module_factory.cc` (instantiateAll + Step 7 StreamAdapter 注入) |
+| 修改 JSON 配置格式 | `configs/` + `include/utils/config_utils.hh` (支持 group/connection/latency + 端口索引 `"xbar.0"`) |
+| 添加 StreamAdapter | `include/framework/{stream,multi_port_stream,dual_port_stream,bidirectional_port}_adapter.hh` |
+| 添加 Bundle 类型 | `include/bundles/{cache,noc,compute}_bundles_tlm.hh` |
+| APU SoC / GPU 拓扑 | `configs/apu_soc_*.json` + `include/tlm/gpu/gpu_tlm.hh` + `examples/generate_apu_soc.py` |
+| E2E 集成验证 | `test/test_phase6_integration.cc` (Cache→Crossbar→Memory) + `test/test_complex_topologies_e2e.cc` |
+| 提议 / 实施架构变更 | `openspec/changes/<name>/` (proposal.md → design.md → specs/ → tasks.md) |
+| 修改 CI | `.github/workflows/ci.yml` (Release/Debug × ASan[OFF,ON] 矩阵) |
+| 调试 test fail | `.opencode/skills/cpptlm-debug/SKILL.md` (auto-loads on "test fail") |
 
 ## CONVENTIONS
 
-- **缩进**: 4 空格（.clang-format: IndentWidth: 4）
-- **例外**: 本文档（AGENTS.md）使用 2 空格缩进
-- **命名**: CamelCase 类, camelCase 函数, snake_case 变量, SCREAMING_SNAKE_CASE 宏
-- **注释**: 中文，文件头必须含功能描述/作者/日期
-- **模块注册**: 双注册表 — SimObject(对象) vs SimModule(模块)，分离 create 函数类型
-- **ChStream 注册**: `REGISTER_CHSTREAM` 宏同时注册对象 + StreamAdapter + 多端口适配器
-- **JSON 端口索引**: `"dst": "xbar.0"` 语法表示模块 `xbar` 的第 0 端口
-- **测试标签**: Catch2 TAG, `[phaseX]` 按阶段分组, `[chstream]` 标记 Stream 集成测试
-- **CMake**: 显式列出源文件（禁用 GLOB），核心库 `cpptlm_core`（静态）
-- **零债务原则**: 每个 Phase 完成即编译通过、测试覆盖、文档同步。禁止遗留 TODO、跳过测试、未归档的技术债
-
-## CI/CD WORKFLOW
-
-### 工作流配置
-
-`.github/workflows/ci.yml` 定义了 CI/CD 流程：
-
-```yaml
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
-
-jobs:
-  build-and-test:
-    strategy:
-      matrix:
-        build-type: [Release, Debug]
-        # 仅 stub 路径（USE_SYSTEMC option 已删除）
-    # 步骤: checkout → apt → ccache → cmake → build → test → upload-artifact
-
-  code-format:
-    # 步骤: checkout → clang-format → format.sh --check
-```
-
-### 本地提交流程（必须遵循）
-
-```
-1. 本地构建验证
-   cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-   cmake --build build -j$(nproc)
-   cd build && ctest --output-on-failure
-
-2. 创建特性分支
-   git checkout -b feature/xxx 或 git checkout -b fix/xxx
-
-3. 提交更改（使用 atomic commit）
-   git add <files>
-   git commit -m "type(scope): 简短描述"
-
-4. 推送分支
-   git push -u origin HEAD
-
-5. 创建 PR（使用 GitHub CLI 或 Web UI）
-   gh pr create --title "type: 描述" --body "## Summary\n\n..."
-   # 或通过 GitHub Web UI 创建
-
-6. 等待 CI 通过
-   gh run watch 或在 GitHub Actions 页面查看
-
-7. 合并 PR
-   gh pr merge #<number> --squash 或通过 Web UI 合并
-```
-
-### GitHub Token 配置
-
-使用 GitHub CLI 需要设置 Token：
-```bash
-export GITHUB_TOKEN="github_pat_xxx"
-echo $GITHUB_TOKEN | gh auth login --with-token
-gh auth status
-```
-
-### PR 合并策略
-
-- **推荐**: Squash merge（保留干净的历史）
-- **CI 必须通过**才能合并
-- Artifact 名称使用 `run_id` 避免冲突：`test-results-${{ runner.os }}-${{ matrix.build-type }}-${{ github.run_id }}`
-
-### 快速验证命令
-
-```bash
-# 本地完整构建 + 测试
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc) && cd build && ctest --output-on-failure
-
-# 格式检查
-./scripts/format.sh --check
-
-# 查看 CI 状态
-gh run list --limit 5
-
-# 监控 CI
-gh run watch
-```
-
-## ANTI-PATTERNS (THIS PROJECT)
-
-- **禁止 GLOB 源文件**: CMakeLists.txt 使用 `set(CORE_SOURCES ...)` 显式列举（test/ 除外，使用 GLOB 自动发现测试）
-- **禁止直接创建对象**: 必须通过 ModuleFactory::registerObject/registerModule 注册后由 instantiateAll 创建
-- **禁止跳过 StreamAdapter**: ChStreamModuleBase 派生类必须通过 set_stream_adapter() 注入，不可直接操作 ChStreamPort
-- **Legacy 模块**: `include/modules/legacy/` 下的模块已归档，仅修复严重 bug，新功能开发使用 `include/tlm/`
-- **测试禁止 `.disabled`**: `test_config_loader.cc.disabled` 等是已知跳过状态，非错误。新代码禁止创建 .disabled 测试
-- **禁止 TODO 残留**: Step 7 中的 `// TODO: bind_ports_array` 等未完成逻辑必须在 Phase 完成前清除或归档
-- **禁止跳过本地 CI 验证**: 推送到 remote 前必须本地通过构建和测试
-
-## DEBUGGING DISCIPLINE（硬性纪律）
-
-源自 P0-5b 完整修复（6 个独立根因）经验。所有"test fail"类问题必须遵守：
-
-### 1. 4 件套验证（修改代码后必跑）
-任何"修复"后**必须**按顺序验证：
-```bash
-# 1. 改对位置了吗？
-git diff --stat <file>
-# 2. binary 时间戳新于源文件？
-stat -c '%y %n' build/bin/cpptlm_tests src/xxx.cc
-# 3. 修复 marker 真的在 binary 里？
-strings build/bin/cpptlm_tests | grep -c "<unique_marker>"
-# 4. 修复真的在执行？在修复前后各加日志对比
-```
-跳过任何一步 = 自欺欺人。本次踩坑：build 中断后跑旧 binary 误判"修复无效"。
-
-### 2. 诊断用 fopen，不用 printf/stderr
-测试框架（Catch2）抑制 stdout/stderr。`static FILE* diag = fopen("/tmp/cpputlm_xxx.log", "a")` + `fflush` 是唯一可靠方式。
-
-### 3. test pass 后立即清理诊断代码
-不允许"先 commit 跑通版,后面再清理" — 永远会忘。用 `grep -l "static FILE\* diag" include/ -r` 一键定位。
-
-### 4. N 个独立症状 = N 个独立根因
-修 1 个 bug 后失败模式变了 = 还有根因。一次 build 同时看全貌（加全链路日志），不要"逐个试修"。
-
-### 5. C++ 虚函数 override 必须加 `= override` 关键字
-类型不匹配（`std::size_t` vs `unsigned`）不构成 override，编译器不报错但虚分发表里仍是基类版本。
-
-### 6. reset() 之后才能设置状态
-`PacketPool::acquire()` 调 `payload->reset()` 和 `pkt->reset()` 两次，所有字段抹零。修复必须放在**最后一个 reset 之后**，否则白做。
-
-### 6 步响应回路检查模板（消息丢失类问题专用）
-当"A→B→A"响应不工作时，按顺序加 6 个 count 日志：
-1. A 发请求（SA tick 中 "sending req"）
-2. B 收到请求（recvReq 入口）
-3. B 写响应（resp_out.write）
-4. B 发出响应（port->send 调用）
-5. A 收到响应（recvReq on resp_in）
-6. A 消费响应（tick 更新状态）
-
-哪步 count=0 = 根因位置。详见 `.opencode/skills/cpptlm-debug/SKILL.md`。
-
-## 文档维护原则
-
-**核心目标**: 防止 `AGENTS.md` / `ONBOARDING.md` / `roadmap.md` / `scripts/README.md` 中提及的路径随代码结构变更而漂移。
-
-### 自动化保障
-
-- **路径同步检查**: `scripts/test/docs_sync_check.sh` 扫描上述 4 个核心文档中所有 `path/to/file.ext` 反引号引用，验证文件/目录真实存在
-- **Pre-commit hook**: `.pre-commit-config.yaml` 已配置；开发者运行 `pre-commit install` 后，提交前自动执行 `--strict` 模式
-- **当前快照**: 见 [`docs/docs_audit_report.md`](docs/docs_audit_report.md)（2026-06-10：354/354 路径有效）
-
-### 手动规范
-
-- **结构调整 PR 必须包含**:
-  1. 同步更新 AGENTS.md 的 STRUCTURE 节
-  2. 同步更新 scripts/README.md 子目录表
-  3. 同步更新 docs/ONBOARDING.md §5.5 脚本表
-  4. 重命名/删除文件 → 检查 4 个核心文档中的引用
-- **PR 模板检查项** (建议未来加入 `.github/PULL_REQUEST_TEMPLATE.md`):
-  - [ ] 运行 `./scripts/test/docs_sync_check.sh --strict` 零误报
-  - [ ] 若新增/删除 `include/` `src/` `scripts/` `cpptlm*/` 下文件，更新 AGENTS.md / ONBOARDING.md / scripts/README.md
-  - [ ] 若重大阶段完成，更新 roadmap.md 状态表
-- **ADR 不可变原则**: ADR 文件（`docs/adr/ADR-X.*-*.md`）一旦签发不可修改；后续状态通过在文件末尾追加 `## Status Update` 段落记录
-
-### 添加新忽略路径
-
-`scripts/test/docs_sync_check.sh` 的 `VIRTUAL_PATHS` 数组维护文档中"说明删除原因"时引用的已删除文件。当新文档提及此类文件时，添加条目而非删除文档段落。
-
-## UNIQUE STYLES
-
-- **DPRINTF 调试宏**: 全局日志 `DPRINTF(MODULE, "fmt", args...)`，编译期 `-DDEBUG_PRINT` 启用
-- **端口索引语法**: `parsePortSpec(name)` 从 `"module.port_index"` 解析模块名 + 端口号
-- **ChStreamArchitecture**: 分层通信协议 Bundle→StreamAdapter→ChStreamModuleBase→ChStreamPort
-- **Phase 驱动开发**: Phase 0-6 + Phase 3.x (Port管理/Python验证) 已完成，Phase 3.2 端口类型系统已实施
-- **债务修复状态**: P0 (PortPair泄漏/wildcard/死代码) 和 P1 (routing_algo/src_port) 已完成
-- **预编译头**: test/ 使用 catch_amalgamated.cpp（2 文件版本）而非 FetchContent 实时下载
+- **缩进**: 4 空格 (`.clang-format: IndentWidth: 4`)；本 AGENTS.md 例外用 2 空格
+- **命名**: CamelCase 类 / camelCase 函数 / snake_case 变量 / SCREAMING_SNAKE_CASE 宏
+- **注释**: 中文，文件头必含功能/作者/日期
+- **双注册表**: `SimObject` (object) vs `SimModule` (module), create 函数类型分离 → 见 `include/AGENTS.md`
+- **ChStream 注册**: `REGISTER_CHSTREAM` 宏一次性注册 Object + StreamAdapter + 多端口适配器
+- **JSON 端口索引**: `"dst": "xbar.0"` 解析为 `module=xbar, port_index=0`
+- **测试标签**: Catch2 `[phaseX]` 按阶段 / `[chstream]` Stream 集成 / `[gpu]` GPU / `[crossbar]` Crossbar
+- **CMake**: 显式列源 (`set(CORE_SOURCES ...)`)，禁 GLOB (test/ 例外)；核心库 `cpptlm_core` (静态)
+- **零债务原则**: Phase 完成 = 编译通过 + 测试覆盖 + 文档同步；禁 TODO 残留 / 新建 .disabled 测试 / 跳过本地 CI
 
 ## COMMANDS
 
 ```bash
-# 配置
-cmake -S . -B build
+# 配置 + 编译
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
 
-# 编译
-cmake --build build
-
-# 运行测试
+# C++ 测试 (Catch2, 82 文件 / 610 用例)
 ./build/bin/cpptlm_tests                    # 全部
-./build/bin/cpptlm_tests "[chstream]"       # ChStream 相关 (84 用例)
-./build/bin/cpptlm_tests "[phase6]"         # Phase 6 集成 (9 用例)
-./build/bin/cpptlm_tests "[crossbar]"       # Crossbar 相关 (16 用例)
-./build/bin/cpptlm_tests ~"[crossbar]"      # 排除 Crossbar
+./build/bin/cpptlm_tests "[chstream]"       # Stream 相关 (84 用例)
+./build/bin/cpptlm_tests "[phase6]"         # Phase 6 集成
+./build/bin/cpptlm_tests "[crossbar]"       # Crossbar (16 用例)
+./build/bin/cpptlm_tests ~"[crossbar]"      # 排除
+ctest --test-dir build --output-on-failure -j4  # CMake 注册测试
 
-# 使用 ctest
-ctest --test-dir build --output-on-failure
+# 完整套件 (C++ + Python + E2E)
+./scripts/test/run_all_tests.sh --quick     # 快速模式
+./scripts/test/run_all_tests.sh --python-only  # 纯 Python
+./scripts/test/ci_e2e_test.sh               # CI 端到端
 
-# 快速验证编译
-cmake --build build -- -j$(nproc)
+# 格式化 (脚本在 scripts/build/, 不在 scripts/ 根目录!)
+./scripts/build/format.sh --check           # clang-format 校验
+./scripts/build/format.sh                   # 自动修复
 
-# GitHub CLI（需要 GITHUB_TOKEN）
-gh run list --limit 5                        # 查看 CI 状态
-gh run watch                                 # 监控当前 CI
-gh pr create --title "type: 描述" --body "..."  # 创建 PR
-gh pr merge #<number> --squash               # Squash 合并 PR
+# 文档路径同步 (pre-commit 自动跑)
+./scripts/test/docs_sync_check.sh --strict  # 当前: 365/365 有效
+cat docs/docs_audit_report.md               # 快照报告
+
+# 拓扑验证 (CMake target)
+cmake --build build --target validate_topology
+
+# 调试 test fail → auto-loads .opencode/skills/cpptlm-debug/SKILL.md
 ```
 
-## NOTES
+## ANTI-PATTERNS
 
-- **TLM stub 默认启用**: `USE_SYSTEMC_STUB=ON` 是默认配置（根 CMakeLists.txt），不再需要外部 SystemC 依赖
-- **ccache 自动检测**: 编译加速，未安装时降级（非 fatal）
-- **测试状态**: 无已知失败 (P0-remediation 后, 2026-06-12；当前实测 604 用例, ~14840 断言)
-- **构建产物**: `build/bin/` 下所有可执行文件，`build/lib/` 下 `cpptlm_core.a`
-- **CI 配置**: `.github/workflows/ci.yml` 定义了 Release/Debug 双模式构建和测试
+- **GLOB 源文件**: CMakeLists 用 `set(... 显式列举)`；`test/` 例外
+- **直接 `new` 对象**: 必须经 `ModuleFactory::registerObject/registerModule` + `instantiateAll`
+- **跳过 StreamAdapter**: `ChStreamModuleBase` 派生类必须 `set_stream_adapter()`，禁直接动 `ChStreamPort`
+- **新增 `.disabled` 测试**: `test_config_loader.cc.disabled` 等是历史跳过状态（多数已从磁盘删除），新代码禁创建
+- **TODO 残留**: `// TODO: bind_ports_array` 等未完成逻辑必须在 Phase 关闭前清掉或归档
+- **跳过本地 CI 验证**: 推送前必跑 `cmake --build` + `ctest`
+- **修改 legacy**: `include/modules/legacy/` 仅修严重 bug，新功能走 `include/tlm/`
+- **架构性变更未走 OpenSpec**: 重大变更（影响 ≥2 模块 / 公共 API / 配置文件 schema）必须先在 `openspec/changes/` 提案
 
-<!-- code-review-graph MCP tools -->
-## MCP Tools: code-review-graph
+## DEBUGGING DISCIPLINE (P0-5b, 6 独立根因)
 
-**IMPORTANT: This project has a knowledge graph. ALWAYS use the
-code-review-graph MCP tools BEFORE using Grep/Glob/Read to explore
-the codebase.** The graph is faster, cheaper (fewer tokens), and gives
-you structural context (callers, dependents, test coverage) that file
-scanning cannot.
+完整流程: `.opencode/skills/cpptlm-debug/SKILL.md`（auto-loads on "test fail" / "fix doesn't work" / "X not received"）。
 
-### When to use graph tools FIRST
+**4 件套验证**（任何"修复"后必跑）:
+```bash
+git diff --stat <file>                                     # 1. 改对位置了?
+stat -c '%y %n' build/bin/cpptlm_tests src/xxx.cc          # 2. binary 时间戳新于源?
+strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary 里?
+# 4. 修复在执行? 修复前后各加日志对比
+```
 
-- **Exploring code**: `semantic_search_nodes` or `query_graph` instead of Grep
-- **Understanding impact**: `get_impact_radius` instead of manually tracing imports
-- **Code review**: `detect_changes` + `get_review_context` instead of reading entire files
-- **Finding relationships**: `query_graph` with callers_of/callees_of/imports_of/tests_for
-- **Architecture questions**: `get_architecture_overview` + `list_communities`
+**6 条铁律**:
+1. 诊断用 `static FILE* diag = fopen("/tmp/cpptlm_xxx.log", "a")` + `fflush`，**不要** printf/stderr（Catch2 抑制）
+2. test pass 后**立即**清理诊断代码（`grep -l "static FILE\* diag" include/ -r` 一键定位）
+3. N 个独立症状 = N 个独立根因；修 1 个后失败模式变了 = 还有根因，不要"逐个试修"
+4. 虚函数 override 必须 `= override`（`std::size_t` vs `unsigned` 不构成 override，编译器不警告）
+5. 状态设置必须在**最后一个** `reset()` 之后（`PacketPool::acquire()` 调两次 reset，修复放错位置白做）
+6. "A→B→A" 响应丢失：按 6 步加 count 日志定位（A 发请求 / B 收到 / B 写 resp / B 发 resp / A 收到 / A 消费）—— count=0 即根因
 
-Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
+## DOC HYGIENE (硬性)
 
-### Key Tools
+- **结构调整 PR 必含**: 同步 `AGENTS.md` STRUCTURE 节 + `scripts/README.md` 子目录表 + `docs/ONBOARDING.md` §5.5 脚本表
+- **路径漂移防护**: `scripts/test/docs_sync_check.sh` 扫描 4 个核心文档（`AGENTS.md` / `ONBOARDING.md` / `roadmap.md` / `scripts/README.md`）中所有反引号路径，`--strict` 模式 pre-commit 自动执行
+- **VIRTUAL_PATHS**: 文档中提及已删除/归档文件时，必须在 `docs_sync_check.sh` 的 `VIRTUAL_PATHS` 数组添加条目（而非删除段落）
+- **ADR 不可变**: `docs/adr/ADR-X.*.md` 签发后不改，状态变化追加 `## Status Update` 段
+- **AGENTS.md 层级**: 根 + 子目录 AGENTS.md（域内详细表，如 `include/AGENTS.md` 的注册宏体系）
 
-| Tool | Use when |
-| ------ | ---------- |
-| `detect_changes` | Reviewing code changes — gives risk-scored analysis |
-| `get_review_context` | Need source snippets for review — token-efficient |
-| `get_impact_radius` | Understanding blast radius of a change |
-| `get_affected_flows` | Finding which execution paths are impacted |
-| `query_graph` | Tracing callers, callees, imports, tests, dependencies |
-| `semantic_search_nodes` | Finding functions/classes by name or keyword |
-| `get_architecture_overview` | Understanding high-level codebase structure |
-| `refactor_tool` | Planning renames, finding dead code |
+## KEY INVARIANTS
 
-### Workflow
+- **TLM stub 默认**: `USE_SYSTEMC_STUB=ON`（根 CMakeLists.txt），无外部 SystemC 依赖
+- **ccache**: 自动检测，未安装降级（非 fatal）
+- **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
+- **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
+- **测试状态**: **610/610 pass**（2026-06-16，82 个 test_*.cc）
 
-1. The graph auto-updates on file changes (via hooks).
-2. Use `detect_changes` for code review.
-3. Use `get_affected_flows` to understand impact.
-4. Use `query_graph` pattern="tests_for" to check coverage.
+## 归档索引（docs-archived/）
+
+- `samples-orphaned/`: `simple1/`（`cpu_cluster` DEPRECATED，推荐 `include/tlm/cpu_tlm.hh`）+ `simple_hier/`（孤儿，引用已删除的 `CpuCluster`/`NOCTile`）
+- `dead-code-headers-2026-q2/`: v2.1 归档的 `ext/packet_to_payload.hh` 等
+- `v1-architecture/` / `v2-architecture/`: 旧架构图与决策记录
+- `p0-p1-architecture-debt-fix-v2/`: P0/P1 修复记录（issues/learnings/decisions）
+- 恢复方法：各子目录 `README.md`
+
+## MCP TOOLS (code-review-graph)
+
+`.mcp.json` 已配置 `code-review-graph` server。**优先于** Grep/Glob/Read（图谱更快、更便宜，给出调用链/测试覆盖等结构上下文）。
+
+| 场景 | 工具 |
+|------|------|
+| 探索代码 | `semantic_search_nodes` / `query_graph` |
+| 影响分析 | `get_impact_radius` / `get_affected_flows` |
+| 代码审查 | `detect_changes` + `get_review_context` |
+| 架构视图 | `get_architecture_overview` + `list_communities` |
+| 重构 | `refactor_tool`（rename / dead_code / suggest） |
+
+Graph 通过 hooks auto-update。Fallback to Grep only when graph doesn't cover。
