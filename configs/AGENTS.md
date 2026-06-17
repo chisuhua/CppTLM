@@ -20,6 +20,11 @@
 }
 ```
 
+> **模块字段语义边界** (2026-06-17, see `openspec/changes/field-name-unification`):
+> - `params`: optional object, **模块参数 dict** (主路径, 通过 `ModuleFactory::validateConfig` 校验, 注入到 `SimObject::set_config()`)
+> - `config`: optional string, **外部配置文件路径** (SimModule 路径专用, 例如 `CpuCluster` 加载独立 JSON). **不要**把参数 dict 错放在此字段, C++ 端会**静默忽略** (LINT005 报错).
+> - 详见 `cpptlm/AGENTS.md` "推荐用法" 段.
+
 > **注意**: `module_groups` (数组形式, 老 schema) 已废弃 (2026-06-17, 见
 > `openspec/changes/unified-config-emitter/`)。请用 `groups` (dict 形式)。
 > C++ 端不识别 `module_groups` 字段 (`src/core/module_factory.cc:297-305` 只读

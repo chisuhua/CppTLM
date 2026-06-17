@@ -47,3 +47,32 @@ Parameters marked required SHALL be either explicitly provided or derivable; mis
 - **WHEN** RouterTLM param rule for "node_x" has required=true and derive_expr provides path to compute it
 - **THEN** missing but derivable node_x SHALL not cause validation failure
 
+### Requirement: Param/config field separation is a validation precondition
+
+The ModuleFactory param-validation pipeline SHALL treat the `params` / `config` field separation as a precondition: parameter validation logic operates on the `params` field, and the `config` field is reserved exclusively for external configuration file references.
+
+#### Scenario: Validation reads params field only
+
+- **WHEN** ModuleFactory::validateConfig() processes a module with both `params` and `config` fields
+- **THEN** param-validation logic SHALL only read the `params` field for type-specific rules (range, constraints, required)
+- **AND** SHALL NOT consult the `config` field for parameter values (it is a file path, not a parameter dict)
+
+#### Scenario: SimObject with config dict produces no params
+
+- **WHEN** a SimObject (e.g. `TrafficGenTLM`) module has `"config": { "pattern": "SEQUENTIAL" }` instead of `"params"`
+- **THEN** ModuleFactory SHALL inject empty/default parameters into the module instance
+- **AND** the user's intended configuration SHALL be silently ignored (CURRENT BUG)
+- **AND** the `config-lint` LINT005 rule SHALL flag this configuration as an error
+
+#### Scenario: SimModule with config as file path loads correctly
+
+- **WHEN** a SimModule (e.g. `CpuCluster`) module has `"config": "/path/to/cfg.json"` and the file exists
+- **THEN** ModuleFactory SHALL load the file and call `sim_mod->instantiate(internal_cfg)`
+- **AND** the file's contents SHALL be merged into the module's configuration
+
+#### Scenario: Param validation does not read config as fallback
+
+- **WHEN** param-validation needs a value that is not in `params`
+- **THEN** validation SHALL NOT fall back to reading the `config` field as a dict
+- **AND** SHALL fail validation with the standard "missing required parameter" error
+

@@ -247,6 +247,18 @@ bool ModuleFactory::validateConfig(const json& config) {
         }
         std::string type = mod["type"].get<std::string>();
 
+        // LINT005: config 字段必须是 string (file path) 或不存在。
+        // 把参数 dict 错放在 config 字段会触发 C++ 端静默忽略 (SimObject 路径)
+        // 或 json::type_error 崩溃 (SimModule 路径)。
+        // 详见 openspec/changes/field-name-unification (config-lint spec)。
+        if (mod.contains("config") && !mod["config"].is_string()) {
+            DPRINTF(MODULE,
+                    "[CONFIG ERROR] module '%s' uses 'config' for module configuration; "
+                    "use 'params' instead (LINT005)\n",
+                    name.c_str());
+            return false;
+        }
+
         const json* params_src = nullptr;
         if (mod.contains("params"))
             params_src = &mod["params"];

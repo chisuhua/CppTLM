@@ -366,7 +366,7 @@ namespace {
     TEST_CASE("StressTestRunner: basic instantiation", "[phase8-stress][framework]") {
         json config = R"({
         "modules": [
-            {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 10}},
+            {"name": "tg", "type": "TrafficGenTLM", "params": {"num_requests": 10}},
             {"name": "cache", "type": "CacheTLM"},
             {"name": "mem", "type": "MemoryTLM"}
         ],
@@ -392,7 +392,7 @@ namespace {
     TEST_CASE("StressTestRunner: run simulation", "[phase8-stress][framework]") {
         json config = R"({
         "modules": [
-            {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 10}},
+            {"name": "tg", "type": "TrafficGenTLM", "params": {"num_requests": 10}},
             {"name": "cache", "type": "CacheTLM"},
             {"name": "mem", "type": "MemoryTLM"}
         ],
@@ -416,7 +416,7 @@ namespace {
     TEST_CASE("StressTestRunner: stats access", "[phase8-stress][framework]") {
         json config = R"({
         "modules": [
-            {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 100}},
+            {"name": "tg", "type": "TrafficGenTLM", "params": {"num_requests": 100}},
             {"name": "cache", "type": "CacheTLM"},
             {"name": "mem", "type": "MemoryTLM"}
         ],
@@ -449,7 +449,7 @@ namespace {
               "[phase8-stress][framework][report]") {
         json config = R"({
         "modules": [
-            {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 10}},
+            {"name": "tg", "type": "TrafficGenTLM", "params": {"num_requests": 10}},
             {"name": "cache", "type": "CacheTLM"},
             {"name": "mem", "type": "MemoryTLM"}
         ],
@@ -487,7 +487,7 @@ namespace {
     TEST_CASE("StressTestRunner: getScalar and getDistributionMean", "[phase8-stress][framework]") {
         json config = R"({
         "modules": [
-            {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 50}},
+            {"name": "tg", "type": "TrafficGenTLM", "params": {"num_requests": 50}},
             {"name": "cache", "type": "CacheTLM"},
             {"name": "mem", "type": "MemoryTLM"}
         ],

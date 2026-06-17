@@ -352,6 +352,34 @@ soc.save("configs/my_soc.json")
 # 输出 JSON 含 "groups": {"compute": [...], "mem": [...]}
 ```
 
+#### 3.5.1 模块字段: `params` vs `config` 边界
+
+> **更新 (2026-06-17)**: 详见 `openspec/changes/field-name-unification`.
+
+模块 entry 顶层有两个易混淆字段, 语义边界如下:
+
+| 字段 | 类型 | 用途 | C++ 端处理 |
+|------|------|------|-----------|
+| `params` | object | **模块参数 dict** (主路径) | `SimObject::set_config()` 注入 |
+| `config` | string | **外部配置文件路径** (SimModule 路径) | `SimModule::instantiate()` 加载 |
+
+**不要**把参数 dict 错放在 `config` 字段: C++ 端对 `config` 类型为 object 会触发
+`config-lint` **LINT005** 错误 (`[CONFIG ERROR] module 'X' uses 'config' for
+module configuration; use 'params' instead (LINT005)`). 这条规则强制用户把参数
+放在正确字段, 避免静默配置漂移.
+
+Python API (cpptlm_config — 旧, 已弃用):
+```python
+ModuleSpec(name="cpu", type="TrafficGenTLM", params={"num_requests": 100})  # ✅
+ModuleSpec(name="cpu", type="TrafficGenTLM", config={"num_requests": 100})  # ❌ LINT005
+```
+
+Python API (cpptlm.topo + cpptlm.library — 新, 推荐):
+```python
+# TopoLayer 模块字典直接用 "params" 键
+{"name": "cpu", "type": "TrafficGenTLM", "params": {"num_requests": 100}}
+```
+
 ### 3.6 已知限制
 
 | 限制 | 说明 | 影响 |

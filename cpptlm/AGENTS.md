@@ -60,6 +60,13 @@ soc.save("configs/my_soc.json")
 
 输出的 JSON 字段与 C++ `ModuleFactory` 完整兼容, 不含 `module_groups`/`sublayers` 等死字段.
 
+> **模块字段语义边界** (2026-06-17, see `openspec/changes/field-name-unification`):
+> - **use `params` for module config; `config` is reserved for external file path**.
+> - `params` 字段是模块参数 dict 的规范位置 (`ModuleSpec.params` → emitted JSON `"params": {...}`).
+> - `config` 字段**仅**用于外部配置文件路径 (string), 适用于 `CpuCluster` 等 SimModule 加载独立 JSON 的场景.
+> - 把参数 dict 放在 `config` 字段会触发 C++ 端 `LINT005` 错误 (`config-lint` 规则), 不会被静默忽略.
+> - 例: `ModuleSpec(name="cpu", type="TrafficGenTLM", params={...})` (✅ 正确) vs `config={...}` (❌ LINT005).
+
 ## 测试
 
 ```bash
