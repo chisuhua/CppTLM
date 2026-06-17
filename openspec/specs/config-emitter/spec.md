@@ -1,13 +1,8 @@
 # config-emitter Specification
 
 ## Purpose
-
-Define how the Python `CxxCompatibleEmitter` expands an in-memory `TopoLayer` tree into a JSON dict that the C++ `ModuleFactory::instantiateAll()` can load. The emitter is the single source of truth for Python → C++ JSON schema translation; the C++ side accepts a fixed schema (modules, connections, groups, hierarchy, etc.) and this spec documents the Python mapping rules.
-
-## ADDED Requirements
-
-### Requirements
-
+TBD - created by archiving change unified-config-emitter. Update Purpose after archive.
+## Requirements
 ### Requirement: Emitter produces C++-compatible JSON
 
 The `CxxCompatibleEmitter.emit()` method SHALL return a JSON-serializable Python `dict` whose top-level keys are a strict subset of: `name`, `description`, `version`, `metadata`, `modules`, `connections`, `groups`, `hierarchy`, `coherence_domains`, `extends`, `include`, `plugin`. The emitter SHALL NOT emit `module_groups`, `sublayers`, or any other key that the C++ `ModuleFactory` does not read.
@@ -112,3 +107,4 @@ The emitter SHALL include `coherence_domains` in the output as a verbatim copy o
 #### Scenario: Populated coherence domains
 - **WHEN** the layer has `coherence_domains = [{"name": "d0", "members": ["cpu0"], "protocol": "MESI"}]`
 - **THEN** the emitted dict SHALL include `"coherence_domains": [{"name": "d0", "members": ["cpu0"], "protocol": "MESI"}]`
+

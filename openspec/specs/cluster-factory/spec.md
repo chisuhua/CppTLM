@@ -1,13 +1,8 @@
 # cluster-factory Specification
 
 ## Purpose
-
-Define the `cpptlm/library/` package: a curated set of pre-built SoC cluster templates and a `SoC` orchestrator. These primitives eliminate hand-written repetition of common SoC sub-structures (CPU+L1+Memory, Crossbar, Mesh, etc.) and let users compose arbitrarily complex topologies via Python function calls. All clusters are constructed on top of the `TopoLayer` core abstraction; `CxxCompatibleEmitter` (see `config-emitter` spec) is the only path to JSON output.
-
-## ADDED Requirements
-
-### Requirements
-
+TBD - created by archiving change unified-config-emitter. Update Purpose after archive.
+## Requirements
 ### Requirement: Library exports standard cluster factories
 
 The `cpptlm.library` package SHALL export the following factory functions, each returning a `TopoLayer`:
@@ -123,3 +118,4 @@ The library factory functions SHALL NOT produce module names that collide with r
 #### Scenario: Reserved name detection in factory
 - **WHEN** `cpu_l1_cluster(idx=0)` is called and the resulting module name `cluster0_modules` would collide with reserved `modules`
 - **THEN** the factory SHALL detect this and raise `ValueError("reserved module name 'modules'")` during the call
+
