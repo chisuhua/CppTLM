@@ -3,7 +3,7 @@
     {
       "name": "traffic_gen_stride",
       "type": "TrafficGenTLM",
-      "config": {
+      "params": {
         "pattern": "STRIDED",
         "stride": 64,
         "num_requests": 10000,

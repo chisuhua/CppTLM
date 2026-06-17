@@ -3,7 +3,7 @@
     {
       "name": "traffic_gen_hot",
       "type": "TrafficGenTLM",
-      "config": {
+      "params": {
         "pattern": "HOTSPOT",
         "hotspot_addrs": ["0x1000", "0x2000", "0x3000"],
         "hotspot_weights": [50, 30, 20],

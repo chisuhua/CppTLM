@@ -3,7 +3,7 @@
     {
       "name": "cpu0",
       "type": "TrafficGenTLM",
-      "config": {
+      "params": {
         "pattern": "SEQUENTIAL",
         "num_requests": 10000,
         "start_addr": "0x1000",
@@ -13,7 +13,7 @@
     {
       "name": "cpu1",
       "type": "TrafficGenTLM",
-      "config": {
+      "params": {
         "pattern": "RANDOM",
         "num_requests": 10000,
         "start_addr": "0x2000",
@@ -23,7 +23,7 @@
     {
       "name": "cpu2",
       "type": "TrafficGenTLM",
-      "config": {
+      "params": {
         "pattern": "HOTSPOT",
         "hotspot_addrs": ["0x1000", "0x2000", "0x3000"],
         "hotspot_weights": [50, 30, 20],
@@ -35,7 +35,7 @@
     {
       "name": "cpu3",
       "type": "TrafficGenTLM",
-      "config": {
+      "params": {
         "pattern": "STRIDED",
         "stride": 64,
         "num_requests": 10000,

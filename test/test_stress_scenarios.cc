@@ -71,7 +71,7 @@ namespace {
             {
                 "name": "tg_hot",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "HOTSPOT",
                     "hotspot_addrs": ["0x1000", "0x2000", "0x3000"],
                     "hotspot_weights": [50, 30, 20],
@@ -123,7 +123,7 @@ namespace {
             {
                 "name": "tg0",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "HOTSPOT",
                     "hotspot_addrs": ["0x1000", "0x2000"],
                     "hotspot_weights": [80, 20],
@@ -133,7 +133,7 @@ namespace {
             {
                 "name": "tg1",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "HOTSPOT",
                     "hotspot_addrs": ["0x3000", "0x4000"],
                     "hotspot_weights": [60, 40],
@@ -181,7 +181,7 @@ namespace {
             {
                 "name": "tg_stride",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "STRIDED",
                     "stride": 64,
                     "num_requests": 100,
@@ -229,7 +229,7 @@ namespace {
             {
                 "name": "tg_stride",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "STRIDED",
                     "stride": 64,
                     "num_requests": 200,
@@ -277,7 +277,7 @@ namespace {
             {
                 "name": "tg_rand",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "RANDOM",
                     "num_requests": 100,
                     "start_addr": "0x1000",
@@ -323,7 +323,7 @@ namespace {
             {
                 "name": "tg_rand",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "RANDOM",
                     "num_requests": 100,
                     "start_addr": "0x1000",
@@ -370,17 +370,17 @@ namespace {
             {
                 "name": "tg_seq",
                 "type": "TrafficGenTLM",
-                "config": {"pattern": "SEQUENTIAL", "num_requests": 50}
+                "params": {"pattern": "SEQUENTIAL", "num_requests": 50}
             },
             {
                 "name": "tg_rand",
                 "type": "TrafficGenTLM",
-                "config": {"pattern": "RANDOM", "num_requests": 50}
+                "params": {"pattern": "RANDOM", "num_requests": 50}
             },
             {
                 "name": "tg_hot",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "HOTSPOT",
                     "hotspot_addrs": ["0x1000", "0x2000"],
                     "hotspot_weights": [70, 30],
@@ -390,7 +390,7 @@ namespace {
             {
                 "name": "tg_stride",
                 "type": "TrafficGenTLM",
-                "config": {"pattern": "STRIDED", "stride": 64, "num_requests": 50}
+                "params": {"pattern": "STRIDED", "stride": 64, "num_requests": 50}
             },
             {"name": "l1", "type": "CacheTLM"},
             {"name": "xbar", "type": "CrossbarTLM"},
@@ -438,10 +438,10 @@ namespace {
 
         json config = R"({
         "modules": [
-            {"name": "cpu0", "type": "TrafficGenTLM", "config": {"num_requests": 30}},
-            {"name": "cpu1", "type": "TrafficGenTLM", "config": {"num_requests": 30}},
-            {"name": "cpu2", "type": "TrafficGenTLM", "config": {"num_requests": 30}},
-            {"name": "cpu3", "type": "TrafficGenTLM", "config": {"num_requests": 30}},
+            {"name": "cpu0", "type": "TrafficGenTLM", "params": {"num_requests": 30}},
+            {"name": "cpu1", "type": "TrafficGenTLM", "params": {"num_requests": 30}},
+            {"name": "cpu2", "type": "TrafficGenTLM", "params": {"num_requests": 30}},
+            {"name": "cpu3", "type": "TrafficGenTLM", "params": {"num_requests": 30}},
             {"name": "xbar", "type": "CrossbarTLM"},
             {"name": "mem0", "type": "MemoryTLM"},
             {"name": "mem1", "type": "MemoryTLM"},
@@ -488,7 +488,7 @@ namespace {
             {
                 "name": "tg_seq",
                 "type": "TrafficGenTLM",
-                "config": {
+                "params": {
                     "pattern": "SEQUENTIAL",
                     "num_requests": 100,
                     "start_addr": "0x1000",
@@ -529,7 +529,7 @@ namespace {
 
         json config = R"({
         "modules": [
-            {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 200}},
+            {"name": "tg", "type": "TrafficGenTLM", "params": {"num_requests": 200}},
             {"name": "xbar", "type": "CrossbarTLM"},
             {"name": "mem", "type": "MemoryTLM"}
         ],
@@ -570,7 +570,7 @@ namespace {
 
         json config = R"({
         "modules": [
-            {"name": "tg", "type": "TrafficGenTLM", "config": {"num_requests": 20}},
+            {"name": "tg", "type": "TrafficGenTLM", "params": {"num_requests": 20}},
             {"name": "cache", "type": "CacheTLM"},
             {"name": "mem", "type": "MemoryTLM"}
         ],

@@ -309,6 +309,17 @@ bool ModuleFactory::instantiateAll(const json& config) {
     // ========================
     for (auto& mod : final_config["modules"]) {
         if (mod.contains("config")) {
+            // 防御性类型检查: config 字段必须是 string (file path)。
+            // 如果是 object/array, 用户大概率是把参数 dict 错放在 config 字段
+            // (canonical 字段名是 params, 见 openspec/changes/field-name-unification)。
+            if (!mod["config"].is_string()) {
+                DPRINTF(MODULE,
+                        "[CONFIG WARN] module '%s' has 'config' field that is %s; "
+                        "expected string (file path). Did you mean 'params' for "
+                        "module configuration? Use 'params' field instead.\n",
+                        mod["name"].get<std::string>().c_str(), mod["config"].type_name());
+                continue;
+            }
             std::string name = mod["name"];
             auto* sim_mod = module_instances[name];
             if (sim_mod) {
