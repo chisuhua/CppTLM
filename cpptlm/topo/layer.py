@@ -68,6 +68,7 @@ class TopoLayer:
     coherence_domains: list = field(default_factory=list)
     sublayers: list = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
+    tags: set = field(default_factory=set)
 
     # ─────────────────────────────────────────────────────────────────
     # 模块操作
@@ -99,6 +100,67 @@ class TopoLayer:
         self.modules = [m for m in self.modules if m.name != name]
         self.connections = [c for c in self.connections
                            if c.src != name and c.dst != name]
+        return self
+
+    def _all_modules(self) -> list:
+        """递归收集当前层及所有子层中的所有模块（含 ModuleSpec 引用）。"""
+        result = list(self.modules)
+        for sub in self.sublayers:
+            result.extend(sub._all_modules())
+        return result
+
+    def _all_sublayers(self) -> list:
+        """递归收集所有子层（不包含 self）。"""
+        result = []
+        for sub in self.sublayers:
+            result.append(sub)
+            result.extend(sub._all_sublayers())
+        return result
+
+    def tag(self, *tags: str) -> "TopoLayer":
+        """为当前层添加 Python 端标签（链式调用）。
+
+        标签在 emit 时会展开为顶层 `groups` 字典（C++ `group:` 前缀消费）。
+        标签仅在 Python 端维护，不会出现在 JSON 中。
+        """
+        self.tags.update(tags)
+        return self
+
+    def clone(self, prefix: str = None) -> "TopoLayer":
+        """深拷贝当前层（递归所有子层）。
+
+        若提供 `prefix`，所有模块名和连接 src/dst 都会加上 `<prefix>_` 前缀；
+        新层 `name` 设为 `prefix`。否则 `name` 保持 `f"{self.name}_clone"`。
+        副本与原对象**无共享引用**（含 params / metadata / sublayers）。
+        """
+        import copy
+        new = copy.deepcopy(self)
+        if prefix is not None:
+            new.name = prefix
+            for layer in [new] + new._all_sublayers():
+                for m in layer.modules:
+                    m.name = f"{prefix}_{m.name}"
+                for c in layer.connections:
+                    c.src = f"{prefix}_{c.src}"
+                    c.dst = f"{prefix}_{c.dst}"
+        else:
+            new.name = f"{self.name}_clone"
+        return new
+
+    def layout_grid(self, dx: int, dy: int,
+                    x_offset: int = 0, y_offset: int = 0) -> "TopoLayer":
+        """自动为所有模块计算 layout.x/y 坐标（递归子层，链式调用）。
+
+        坐标公式: col = i % dx, row = i // dx; layout = (x_offset + col*100, y_offset + row*100)。
+        写入 `module.metadata["layout"]`，由 CxxCompatibleEmitter 提取到 JSON 的 `layout` 字段。
+        `dx` 控制列数；`dy` 是行数提示（不强制截断，超出会自动扩展行）。
+        """
+        all_modules = self._all_modules()
+        for i, m in enumerate(all_modules):
+            col = i % dx
+            row = i // dx
+            layout = {"x": x_offset + col * 100, "y": y_offset + row * 100}
+            m.metadata = {**m.metadata, "layout": layout}
         return self
 
     # ─────────────────────────────────────────────────────────────────

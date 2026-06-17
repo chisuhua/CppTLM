@@ -181,6 +181,86 @@ class TestTopoLayer(unittest.TestCase):
         self.assertIsNotNone(found)
         self.assertEqual(found.name, 'deep_cpu')
 
+    def test_tag_chainable(self):
+        l = TopoLayer('test')
+        result = l.tag('compute', 'shared')
+        self.assertIs(result, l)
+        self.assertEqual(l.tags, {'compute', 'shared'})
+
+    def test_tag_accumulates(self):
+        l = TopoLayer('test')
+        l.tag('a').tag('a', 'b')
+        self.assertEqual(l.tags, {'a', 'b'})
+
+    def test_clone_without_prefix(self):
+        l = TopoLayer('original')
+        l.add_module('cpu0', 'CPUTLM')
+        l.tag('compute')
+        clone = l.clone()
+        self.assertEqual(clone.name, 'original_clone')
+        self.assertEqual(clone.modules[0].name, 'cpu0')
+        clone.modules[0].params['new'] = 1
+        self.assertNotIn('new', l.modules[0].params)
+        clone.tags.add('modified')
+        self.assertNotIn('modified', l.tags)
+
+    def test_clone_with_prefix(self):
+        l = TopoLayer('cluster0')
+        l.add_module('cpu0', 'CPUTLM')
+        l.add_module('l1', 'CacheTLM')
+        l.add_connection('cpu0', 'l1', latency=1)
+        clone = l.clone(prefix='cluster1')
+        self.assertEqual(clone.name, 'cluster1')
+        names = sorted(m.name for m in clone.modules)
+        self.assertEqual(names, ['cluster1_cpu0', 'cluster1_l1'])
+        for c in clone.connections:
+            self.assertTrue(c.src.startswith('cluster1_'))
+            self.assertTrue(c.dst.startswith('cluster1_'))
+
+    def test_clone_preserves_sublayers(self):
+        root = TopoLayer('root')
+        sub = TopoLayer('sub')
+        sub.add_module('cpu0', 'CPUTLM')
+        root.add_sublayer(sub)
+        clone = root.clone()
+        self.assertEqual(len(clone.sublayers), 1)
+        self.assertEqual(clone.sublayers[0].name, 'sub')
+        self.assertEqual(len(clone.sublayers[0].modules), 1)
+        clone.sublayers[0].modules[0].params['x'] = 1
+        self.assertNotIn('x', sub.modules[0].params)
+
+    def test_layout_grid_basic(self):
+        l = TopoLayer('test')
+        for i in range(4):
+            l.add_module(f'cpu{i}', 'CPUTLM')
+        l.layout_grid(dx=2, dy=2)
+        coords = [m.metadata['layout'] for m in l.modules]
+        self.assertEqual(coords[0], {'x': 0, 'y': 0})
+        self.assertEqual(coords[1], {'x': 100, 'y': 0})
+        self.assertEqual(coords[2], {'x': 0, 'y': 100})
+        self.assertEqual(coords[3], {'x': 100, 'y': 100})
+
+    def test_layout_grid_with_offsets(self):
+        l = TopoLayer('test')
+        l.add_module('a', 'CPUTLM')
+        l.add_module('b', 'CPUTLM')
+        l.layout_grid(dx=2, dy=1, x_offset=500, y_offset=300)
+        coords = [m.metadata['layout'] for m in l.modules]
+        self.assertEqual(coords[0], {'x': 500, 'y': 300})
+        self.assertEqual(coords[1], {'x': 600, 'y': 300})
+
+    def test_layout_grid_recursive(self):
+        root = TopoLayer('root')
+        sub_a = TopoLayer('sub_a')
+        sub_a.add_module('a0', 'CPUTLM')
+        sub_b = TopoLayer('sub_b')
+        sub_b.add_module('b0', 'CPUTLM')
+        root.add_sublayer(sub_a)
+        root.add_sublayer(sub_b)
+        root.layout_grid(dx=1, dy=1)
+        self.assertIn('layout', sub_a.modules[0].metadata)
+        self.assertIn('layout', sub_b.modules[0].metadata)
+
 
 if __name__ == '__main__':
     unittest.main()
