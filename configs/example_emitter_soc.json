@@ -1,0 +1,183 @@
+{
+  "modules": [
+    {
+      "name": "cluster0_cpu0",
+      "type": "CPUTLM",
+      "params": {
+        "pattern": "SEQUENTIAL",
+        "start_addr": "0x1000"
+      },
+      "layout": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "name": "cluster0_cpu1",
+      "type": "CPUTLM",
+      "params": {
+        "pattern": "SEQUENTIAL",
+        "start_addr": "0x2000"
+      },
+      "layout": {
+        "x": 100,
+        "y": 0
+      }
+    },
+    {
+      "name": "cluster0_l1",
+      "type": "CacheTLM",
+      "params": {
+        "size": "32KB"
+      },
+      "layout": {
+        "x": 200,
+        "y": 0
+      }
+    },
+    {
+      "name": "cluster1_cpu0",
+      "type": "CPUTLM",
+      "params": {
+        "pattern": "SEQUENTIAL",
+        "start_addr": "0x1000"
+      },
+      "layout": {
+        "x": 300,
+        "y": 0
+      }
+    },
+    {
+      "name": "cluster1_cpu1",
+      "type": "CPUTLM",
+      "params": {
+        "pattern": "SEQUENTIAL",
+        "start_addr": "0x2000"
+      },
+      "layout": {
+        "x": 400,
+        "y": 0
+      }
+    },
+    {
+      "name": "cluster1_l1",
+      "type": "CacheTLM",
+      "params": {
+        "size": "32KB"
+      },
+      "layout": {
+        "x": 500,
+        "y": 0
+      }
+    },
+    {
+      "name": "mem_mem0",
+      "type": "MemoryTLM",
+      "params": {
+        "capacity_gb": 4,
+        "read_latency": 50,
+        "write_latency": 60
+      },
+      "layout": {
+        "x": 100,
+        "y": 200
+      }
+    },
+    {
+      "name": "mem_mem1",
+      "type": "MemoryTLM",
+      "params": {
+        "capacity_gb": 4,
+        "read_latency": 50,
+        "write_latency": 60
+      },
+      "layout": {
+        "x": 200,
+        "y": 200
+      }
+    },
+    {
+      "name": "xbar",
+      "type": "CrossbarTLM",
+      "params": {
+        "port_count": 4
+      }
+    }
+  ],
+  "connections": [
+    {
+      "src": "cluster0_l1",
+      "dst": "xbar.0",
+      "latency": 5
+    },
+    {
+      "src": "cluster1_l1",
+      "dst": "xbar.1",
+      "latency": 5
+    },
+    {
+      "src": "group:compute",
+      "dst": "xbar.2",
+      "latency": 10
+    },
+    {
+      "src": "group:mem",
+      "dst": "xbar.3",
+      "latency": 3
+    },
+    {
+      "src": "cluster0_cpu0",
+      "dst": "cluster0_l1",
+      "latency": 1
+    },
+    {
+      "src": "cluster0_cpu1",
+      "dst": "cluster0_l1",
+      "latency": 1
+    },
+    {
+      "src": "cluster1_cpu0",
+      "dst": "cluster1_l1",
+      "latency": 1
+    },
+    {
+      "src": "cluster1_cpu1",
+      "dst": "cluster1_l1",
+      "latency": 1
+    }
+  ],
+  "name": "example_emitter_soc",
+  "description": "2 clusters (2 cores + 1 L1 each) + crossbar + 2 memories, generated via cpptlm.topo + cpptlm.library",
+  "groups": {
+    "compute": [
+      "cluster0_cpu0",
+      "cluster0_cpu1",
+      "cluster0_l1",
+      "cluster1_cpu0",
+      "cluster1_cpu1",
+      "cluster1_l1"
+    ],
+    "mem": [
+      "mem_mem0",
+      "mem_mem1",
+      "xbar"
+    ]
+  },
+  "hierarchy": {
+    "name": "example_emitter_soc",
+    "children": [
+      {
+        "name": "cluster0",
+        "children": []
+      },
+      {
+        "name": "cluster1",
+        "children": []
+      },
+      {
+        "name": "mem",
+        "children": []
+      }
+    ]
+  }
+}
