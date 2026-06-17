@@ -1,16 +1,33 @@
-"""cpptlm/config/topologies.py — High-level topology builders."""
+"""cpptlm/config/topologies.py — High-level topology builders.
+
+DEPRECATED (2026-06-17): scripts.topology_generator backend 已不存在, 此文件保留
+向后兼容但所有 TopologyGenerator 调用现在会发出 ImportError + 警告.
+新代码请用 cpptlm.library.{mesh_cluster, ring_cluster, crossbar_cluster}.
+"""
 
 from __future__ import annotations
 
 from typing import Optional
 import sys
 import os
+import warnings
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from cpptlm_config.builder import ConfigBuilder
 from cpptlm_config.models import ModuleSpec, ConnectionSpec
 from cpptlm_config.types import ModuleType
+
+_warned = False
+def _warn_legacy():
+    global _warned
+    if not _warned:
+        warnings.warn(
+            "cpptlm.config.topologies is deprecated; use cpptlm.library "
+            "(mesh_cluster, ring_cluster, crossbar_cluster) instead.",
+            DeprecationWarning, stacklevel=3,
+        )
+        _warned = True
 
 
 class MeshTopology:
@@ -22,6 +39,7 @@ class MeshTopology:
         self._builder: Optional[ConfigBuilder] = None
 
     def build(self) -> ConfigBuilder:
+        _warn_legacy()
         try:
             from scripts.topology_generator import TopologyGenerator
         except ImportError as e:
