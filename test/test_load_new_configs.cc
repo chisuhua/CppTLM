@@ -91,7 +91,7 @@ TEST_CASE("E2E: Load hierarchy_tree_3level.json — tests hierarchy tree parsing
     REQUIRE(hierarchy_node->get_name() == "system");
 
     auto children = hierarchy_node->get_children();
-    REQUIRE(children.size() == 3);  // 3 top-level clusters
+    REQUIRE(children.size() == 3); // 3 top-level clusters
 
     // Verify first cluster has 2 sub-clusters
     REQUIRE(children[0]->get_children().size() == 2);
@@ -103,17 +103,15 @@ TEST_CASE("E2E: Load hierarchy_tree_3level.json — tests hierarchy tree parsing
     REQUIRE(eq.getCurrentCycle() == before + 50);
 }
 
-TEST_CASE("E2E: Load include_chain_demo.json — tests $include directive",
-          "[e2e][config][new-configs][include]") {
+TEST_CASE("E2E: include_chain_demo.json archived — $include array syntax unsupported",
+          "[e2e][config][new-configs][archived]") {
     EventQueue eq;
     REGISTER_CHSTREAM;
     ModuleFactory factory(&eq);
 
-    auto config = loadConfig("configs/include_chain_demo.json");
+    auto config = loadConfig("docs-archived/dead-configs-2026-q2/include_chain_demo.json");
     REQUIRE(config.contains("$include"));
 
-    // Note: $include expansion happens in JsonIncluder::loadAndInclude()
-    // Here we verify the raw config structure
     REQUIRE(factory.instantiateAll(config));
     factory.startAllTicks();
 
@@ -213,7 +211,7 @@ TEST_CASE("E2E: Bulk load all 7 new configs — instantiateAll returns true",
         "configs/arbiter_tlm4_test.json",
         "configs/link_tlm_chain.json",
         "configs/hierarchy_tree_3level.json",
-        "configs/include_chain_demo.json",
+        "docs-archived/dead-configs-2026-q2/include_chain_demo.json",
         "configs/vc_priorities_mesh.json",
         "configs/wildcard_patterns.json",
         "configs/fan_in_cluster.json",
