@@ -1,20 +1,33 @@
-# cpptlm_config/ — Python 配置验证与生成工具
+# cpptlm_config/ — Python 配置验证与生成工具 (DEPRECATED)
 
 **版本**: 1.0
-**最后更新**: 2026-05-09
-**状态**: ✅ 已实施
+**最后更新**: 2026-06-17
+**状态**: ⚠️ **Legacy / Deprecated** — 已被 `cpptlm.topo` + `cpptlm.topo.CxxCompatibleEmitter` + `cpptlm.library` 替代
 
-## 概述
+## 状态更新 (2026-06-17)
+
+本包保留仅为向后兼容, 每次 `import cpptlm_config` 触发 `DeprecationWarning`. 合并迁移在下一期 (见 `openspec/changes/unified-config-emitter/`).
+
+**已废弃字段**:
+- `module_groups` 数组 (C++ 端不识别, 见 `src/core/module_factory.cc:297-305`). 已迁移到 `groups` 字典形式.
+
+**新代码请用**:
+- `cpptlm.topo.TopoLayer` (递归嵌套拓扑层)
+- `cpptlm.topo.CxxCompatibleEmitter` (Python → C++ JSON 展开)
+- `cpptlm.library.{cpu_l1_cluster, mesh_cluster, SoC}` 等 (cluster 工厂)
+- 详见 `cpptlm/AGENTS.md`
+
+## 概述 (历史)
 
 Python 配置包，提供拓扑验证和配置生成功能。主要组件：
 
-| 文件 | 作用 | 关键类/函数 |
-|------|------|-------------|
-| `validator.py` | 两阶段验证（结构+参数） | `TopologyValidator`, `ValidationResult` |
-| `topology_adapter.py` | Mesh/Ring 拓扑生成适配器 | `TopologyAdapter` |
-| `builder.py` | Pydantic 模型 + ConfigBuilder | `ConfigBuilder` |
-| `models.py` | Pydantic 数据模型 | `ModuleSpec`, `ConnectionSpec` |
-| `types.py` | 类型枚举 | `RouterPort`, `NICPort`, `ModuleType` |
+| 文件 | 作用 | 关键类/函数 | 状态 |
+|------|------|-------------|------|
+| `validator.py` | 两阶段验证（结构+参数） | `TopologyValidator`, `ValidationResult` | 保留 |
+| `topology_adapter.py` | Mesh/Ring 拓扑生成适配器 | `TopologyAdapter` | DEPRECATED (backend 缺失) |
+| `builder.py` | Pydantic 模型 + ConfigBuilder | `ConfigBuilder` | DEPRECATED (仍可用) |
+| `models.py` | Pydantic 数据模型 | `ModuleSpec`, `ConnectionSpec`, `module_groups` 字段 | DEPRECATED |
+| `types.py` | 类型枚举 | `RouterPort`, `NICPort`, `ModuleType` | 保留 |
 
 ## 验证规则
 
