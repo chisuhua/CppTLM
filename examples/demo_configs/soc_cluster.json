@@ -59,14 +59,7 @@
       "bandwidth": null
     }
   ],
-  "module_groups": [
-    {
-      "name": "cluster_cpus",
-      "members": [
-        "cpu0",
-        "cpu1"
-      ],
-      "exclude": []
-    }
-  ]
+  "groups": {
+    "cluster_cpus": ["cpu0", "cpu1"]
+  }
 }
