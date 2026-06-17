@@ -57,7 +57,8 @@ TEST_CASE("E2E: Load mesh_4x4_tlm.json — 4x4 Mesh NoC (large topology)",
     // 16 routers + 16 NIs + 16 CPUs = 48 modules
     for (int x = 0; x < 4; ++x) {
         for (int y = 0; y < 4; ++y) {
-            REQUIRE(factory.getInstance("router_" + std::to_string(x) + "_" + std::to_string(y)) != nullptr);
+            REQUIRE(factory.getInstance("router_" + std::to_string(x) + "_" + std::to_string(y)) !=
+                    nullptr);
         }
     }
 

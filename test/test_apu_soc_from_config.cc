@@ -88,7 +88,8 @@ TEST_CASE("E2E: Load apu_soc_phase7b.json — Phase 7.B with CPU+Cache+CU",
     REQUIRE(xbar != nullptr);
     REQUIRE(xbar->num_ports() == 4);
 
-    // Verify hierarchy tree (4-level: root → cpu_cluster/compute_cluster/interconnect/memory_cluster)
+    // Verify hierarchy tree (4-level: root →
+    // cpu_cluster/compute_cluster/interconnect/memory_cluster)
     REQUIRE(config.contains("hierarchy"));
     auto root = parse_hierarchy_tree(config["hierarchy"]);
     REQUIRE(root != nullptr);
@@ -127,14 +128,16 @@ TEST_CASE("E2E: apu_soc_full.json documents target topology (Phase 7.F aspiratio
     // Verify 4 ComputeUnitTLM (Phase 7.B target)
     int cu_count = 0;
     for (const auto& m : config["modules"]) {
-        if (m["type"] == "ComputeUnitTLM") ++cu_count;
+        if (m["type"] == "ComputeUnitTLM")
+            ++cu_count;
     }
     REQUIRE(cu_count == 4);
 
     // Verify 2x2 GPU mesh (4 RouterTLM)
     int router_count = 0;
     for (const auto& m : config["modules"]) {
-        if (m["type"] == "RouterTLM") ++router_count;
+        if (m["type"] == "RouterTLM")
+            ++router_count;
     }
     REQUIRE(router_count == 4);
 
