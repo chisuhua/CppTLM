@@ -262,15 +262,25 @@ C++ `JsonIncluder` 自动解析 `include` 字段，合并结果等价于：
     { "name": "l1_0", "type": "CacheTLM" },
     { "name": "cpu0", "type": "TrafficGenTLM" }
   ],
-  "module_groups": [
-    { "name": "l1_caches", "members": ["l1_0", "l1_1"] }
-  ]
+  "groups": {
+    "l1_caches": ["l1_0", "l1_1"]
+  }
 }
 ```
 
-Python API:
+Python API (cpptlm_config — 旧, 已弃用):
 ```python
 ConfigBuilder("my_config").set_include("common/modules.json")
+```
+
+Python API (cpptlm.topo — 新, 推荐):
+```python
+from cpptlm.topo import TopoLayer
+from cpptlm.topo.emitter import CxxCompatibleEmitter
+root = TopoLayer(name="my_config")
+common = TopoLayer.from_dict(json.load(open("common/modules.json")))
+root.add_sublayer(common)
+# ... add modules, save via emitter
 ```
 
 ### 3.4 使用 extends 继承
@@ -290,28 +300,56 @@ ConfigBuilder("my_config").set_include("common/modules.json")
 }
 ```
 
-Python API:
+Python API (cpptlm_config — 旧, 已弃用):
 ```python
 ConfigBuilder("dual_cluster").set_extends("base_config.json")
 ```
 
-### 3.5 使用 module_groups
+### 3.5 使用 groups (推荐) / module_groups (已废弃)
 
-`module_groups` 定义命名模块组，用于连接展开。
+> **更新 (2026-06-17)**: `module_groups` (数组) 已废弃, C++ 端不识别. 请用
+> `groups` (dict) 形式. 详见 `openspec/changes/unified-config-emitter/`.
+
+`groups` 是**字典**形式 `{name: [members]}`, C++ `ModuleFactory::instantiateAll()`
+直接读取 (见 `src/core/module_factory.cc:297-305`):
 
 ```json
 {
-  "module_groups": [
-    { "name": "cluster_cpus", "members": ["cpu0", "cpu1"] },
-    { "name": "memories", "members": ["mem0", "mem1"], "exclude": ["mem1"] }
+  "groups": {
+    "cluster_cpus": ["cpu0", "cpu1"],
+    "memories": ["mem0", "mem1"]
+  }
+}
+```
+
+连接中使用 `group:` 前缀展开批量连接:
+
+```json
+{
+  "connections": [
+    { "src": "group:cluster_cpus", "dst": "l1_0" },
+    { "src": "group:memories", "dst": "xbar.0" }
   ]
 }
 ```
 
-Python API:
+Python API (cpptlm_config — 旧, 已弃用):
 ```python
 builder.add_group("cluster_cpus", ["cpu0", "cpu1"])
 builder.add_group("memories", ["mem0", "mem1"], exclude=["mem1"])
+```
+
+Python API (cpptlm.topo + cpptlm.library — 新, 推荐):
+```python
+from cpptlm.library import SoC, cpu_l1_cluster, memory_cluster
+from cpptlm.topo.emitter import CxxCompatibleEmitter
+
+soc = SoC("my_soc")
+soc.add_cluster(cpu_l1_cluster(0)).tag("compute")
+soc.add_cluster(memory_cluster("mem", n_banks=2)).tag("mem")
+soc.connect_group("compute", "xbar.0", latency=5)
+soc.save("configs/my_soc.json")
+# 输出 JSON 含 "groups": {"compute": [...], "mem": [...]}
 ```
 
 ### 3.6 已知限制
