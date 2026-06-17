@@ -6,8 +6,8 @@
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
-#include "core/topology_parser.hh"
 #include "core/topology_node.hh"
+#include "core/topology_parser.hh"
 #include <filesystem>
 #include <fstream>
 #include <nlohmann/json.hpp>

@@ -4,6 +4,7 @@
  */
 
 #include "core/topology_parser.hh"
+#include "core/sim_core.hh"
 #include "core/topology_node.hh"
 #include <algorithm>
 #include <unordered_set>
@@ -106,6 +107,12 @@ namespace cpptlm {
     std::shared_ptr<TopologyNode>
     parse_hierarchy_tree_with_validation(const nlohmann::json& hierarchy_json,
                                          const nlohmann::json& coherence_json) {
+        if (!coherence_json.is_null() && !coherence_json.empty()) {
+            DPRINTF(PARSER,
+                    "[STUB] coherence_domains field accepted but not consumed; see ADR-X.14 "
+                    "(members=%zu)\n",
+                    coherence_json.is_array() ? coherence_json.size() : 0);
+        }
         auto root = parse_hierarchy_tree(hierarchy_json);
         return root;
     }
