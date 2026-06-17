@@ -7,6 +7,7 @@ from cpptlm.topo.layer import TopoLayer, ModuleSpec, ConnectionSpec, CoherenceDo
 from cpptlm.topo.patch import TopoPatch, ConnectionSelector, ModuleSelector, LayerSelector, PatchAction
 from cpptlm.topo.variant import TopoVariant, TopoVariantSet
 from cpptlm.topo.orchestrator import TopoOrchestrator
+from cpptlm.topo.emitter import CxxCompatibleEmitter, TopoEmitError
 
 __all__ = [
     "TopoLayer",
@@ -21,4 +22,6 @@ __all__ = [
     "TopoVariant",
     "TopoVariantSet",
     "TopoOrchestrator",
+    "CxxCompatibleEmitter",
+    "TopoEmitError",
 ]
