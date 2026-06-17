@@ -22,11 +22,11 @@
     {"src": "xbar.0", "dst": "mem0", "latency": 10},
     {"src": "xbar.1", "dst": "mem1", "latency": 10}
   ],
-  "module_groups": [
-    {"name": "cluster0", "members": ["cpu0", "cpu1", "l2_0"]},
-    {"name": "cluster1", "members": ["cpu2", "cpu3", "l2_1"]},
-    {"name": "memories", "members": ["mem0", "mem1"]}
-  ],
+  "groups": {
+    "cluster0": ["cpu0", "cpu1", "l2_0"],
+    "cluster1": ["cpu2", "cpu3", "l2_1"],
+    "memories": ["mem0", "mem1"]
+  },
   "hierarchy": {
     "name": "soc",
     "children": [

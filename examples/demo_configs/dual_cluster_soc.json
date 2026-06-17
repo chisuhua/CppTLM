@@ -59,15 +59,8 @@
       "bandwidth": null
     }
   ],
-  "module_groups": [
-    {
-      "name": "memories",
-      "members": [
-        "mem0",
-        "mem1"
-      ],
-      "exclude": []
-    }
-  ],
+  "groups": {
+    "memories": ["mem0", "mem1"]
+  },
   "extends": "examples/demo_configs/soc_cluster.json"
 }

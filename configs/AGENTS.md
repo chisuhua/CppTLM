@@ -14,11 +14,16 @@
   "connections": [
     { "src": "cache0.req_out", "dst": "xbar.0", "latency": 1 }
   ],
-  "module_groups": [
-    { "name": "cluster0", "members": ["cache0", "cache1"] }
-  ]
+  "groups": {
+    "cluster0": ["cache0", "cache1"]
+  }
 }
 ```
+
+> **注意**: `module_groups` (数组形式, 老 schema) 已废弃 (2026-06-17, 见
+> `openspec/changes/unified-config-emitter/`)。请用 `groups` (dict 形式)。
+> C++ 端不识别 `module_groups` 字段 (`src/core/module_factory.cc:297-305` 只读
+> `groups` 字典)。新生成的 JSON 不再包含 `module_groups`。
 
 ## 文件分类
 
@@ -40,7 +45,8 @@
 ## 连接类型
 
 - **直连**: `"src": "cache.req_out", "dst": "xbar.0"`
-- **组内连接**: `module_groups` 定义层级关系
+- **组内连接**: `groups` 字典定义命名模块组, 连接 src 用 `group:<name>` 前缀展开
+- **正则展开**: 连接 src 用 `regex:<pattern>` 前缀按正则匹配模块名
 - **延迟注入**: `"latency": N` 在 StreamAdapter 层面注入周期延迟
 
 ## 约定
@@ -53,3 +59,5 @@
 
 - 修改拓扑后重新运行 `./build/bin/cpptlm_tests "[phase6]"` 验证
 - `configs/example_hier2/`、`example_hierarchy/`、`example_layout/` 已在 2026-06-15 归档至 `docs-archived/dead-configs-2026-q2/`（legacy 模块类型 CPUSim/CPUCluster/MemCluster/CacheSim/Router/Arbiter 在 `BUILD_LEGACY_MODULES=OFF` 默认配置下无注册）；现代示例见 `configs/{mesh_4x4_tlm,hierarchical_2x2_tlm,ring_8_tlm}.json`
+- `configs/include_chain_demo.json` 已在 2026-06-17 归档至 `docs-archived/dead-configs-2026-q2/include_chain_demo.json`（C++ 端不识别 `$include` 数组内联语法, 仅 `"include": "path"` 字符串被支持）
+- `coherence_domains` 字段当前为 **stub**（C++ 解析但不消费, 详见 `docs/adr/ADR-X.14-coherence-domains-stub.md`）。声明此字段不影响运行行为, 仅作为未来实现的占位符。
