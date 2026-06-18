@@ -12,7 +12,8 @@
 | `core/module_factory.hh` | 模块工厂：双注册表(registerObject/registerModule), instantiateAll |
 | `core/chstream_module.hh` | ChStreamModuleBase — TLM 模块的统一类型标识 |
 | `chstream_register.hh` | REGISTER_CHSTREAM 宏（注册 TLM 模块 + StreamAdapter + 多端口适配器） |
-| `modules.hh` | REGISTER_OBJECT 宏（v2.2 起为 no-op, CPUSim 已退场）+ REGISTER_MODULE 宏（无条件注册 CpuCluster） |
+| `modules.hh` | REGISTER_OBJECT 宏（v2.2 起为 no-op, CPUSim 已退场）+ REGISTER_MODULE 宏（参数化, P2-T2.4 起支持 5 个 SimModule 集中注册） |
+| `modules_cluster.hh` | P2-T2.4: 集中注册 5 个 SimModule 派生类 (CpuCluster + 4 GPU 端核心类) |
 
 ## 注册宏体系
 
@@ -21,9 +22,10 @@
 | 宏 | 入口文件 | 派生自 | 注册到 | Build flag |
 |----|----------|--------|--------|------------|
 | `REGISTER_OBJECT` | `include/modules.hh` | `SimObject`（v2.2 起为 no-op, 见宏体注释） | `getObjectRegistry()` | **Always ON**（v2.2: 宏体为空, CPUSim 已退场） |
-| `REGISTER_MODULE` | `include/modules.hh` | `SimModule`（无条件注册 CpuCluster, 位于 `include/tlm/cluster/`） | `getModuleRegistry()` | **Always ON** |
+| `REGISTER_MODULE(T)` | `include/modules.hh` | `SimModule`（参数化宏, P2-T2.4 起支持任意 SimModule 派生类） | `getModuleRegistry()` | **Always ON** |
 | `REGISTER_CHSTREAM` | `include/chstream_register.hh` | `ChStreamModuleBase`（如 `CacheTLM`/`CrossbarTLM`/`MemoryTLM`） | `getObjectRegistry()` + `ChStreamAdapterFactory` | **Always ON**（推荐） |
-| `REGISTER_ALL` | `include/chstream_register.hh` | 复合宏 | `REGISTER_OBJECT; REGISTER_CHSTREAM` | **Always ON**（v2.2: REGISTER_OBJECT 为 no-op, 实际等价 REGISTER_CHSTREAM） |
+| `REGISTER_ALL` | `include/chstream_register.hh` | 复合宏 | `REGISTER_OBJECT; REGISTER_CHSTREAM` + 末尾 `modules_cluster.hh`（触发 5 个 SimModule 集中注册） | **Always ON** |
+| `modules_cluster.hh` | `include/modules_cluster.hh` | 集中注册 | `REGISTER_MODULE(CpuCluster/ComputeCluster/TpcCluster/GpcCluster/GpuCluster)` 全 5 个 SimModule 派生类 | **Always ON**（P2-T2.4 引入） |
 
 ### 设计意图
 
@@ -37,16 +39,17 @@
    - `unregister/clear/getRegisteredTypes` 必须做联合遍历，增加迭代开销。
    因此采用 `getObjectRegistry()` 与 `getModuleRegistry()` 两个独立 `unordered_map`，看似"不对称"，实为类型系统强制约束，非设计冗余。
 4. **ChStreamModuleBase 必须用 `REGISTER_OBJECT`**：因 `ChStreamModuleBase` 继承 `SimObject`（非 `SimModule`），其 StreamAdapter 通过 `ChStreamAdapterFactory` 单独注册，两者解耦但同一对象通过 `REGISTER_CHSTREAM` 复合宏一次性完成。
-5. **v2.2 起无 Legacy 编译守卫**：`REGISTER_OBJECT` 始终为 no-op 注释（`/* no-op: CPUSim removed in v2.2; use REGISTER_CHSTREAM for CPUTLM */`）；`REGISTER_MODULE` 始终展开为 `ModuleFactory::registerModule<CpuCluster>("CpuCluster");`。`CpuCluster` 类源位于 `include/tlm/cluster/cpu_cluster.hh`，是唯一活跃的 `SimModule` 派生类。
+5. **P2-T2.4 起 `REGISTER_MODULE` 参数化**：v2.2 时 `REGISTER_MODULE` 是无参宏（硬编码 `CpuCluster`）；P2-T2.4 (2026-06-19) 改为 `#define REGISTER_MODULE(T) ModuleFactory::registerModule<T>(#T), true`（expression 形式, 末尾带 `, true` 允许全局作用域变量初始化）。5 个 SimModule 派生类（`CpuCluster` + `ComputeCluster` + `TpcCluster` + `GpcCluster` + `GpuCluster`）集中在 `include/modules_cluster.hh` 注册，通过 `chstream_register.hh` 末尾的 `#include "modules_cluster.hh"` 自动触发。
+6. **全局作用域 hack**：`REGISTER_MODULE` 宏体返回 `, true`（逗号表达式），允许 `const bool _reg_x = (REGISTER_MODULE(X), true);` 在全局作用域作为变量初始化器使用——因为 C++ 全局作用域禁止 expression statement。
 
 ### 使用顺序
 
 ```cpp
-#include "modules.hh"            // REGISTER_OBJECT + REGISTER_MODULE
-#include "chstream_register.hh"  // REGISTER_CHSTREAM + REGISTER_ALL
+#include "modules.hh"            // REGISTER_OBJECT + REGISTER_MODULE(T) 宏
+#include "chstream_register.hh"  // REGISTER_CHSTREAM + REGISTER_ALL + 自动 include modules_cluster.hh
 ```
 
-`REGISTER_ALL` = `REGISTER_OBJECT; REGISTER_CHSTREAM`（`chstream_register.hh:91`），一键注册 Object + ChStream 全量。v2.2 起 `REGISTER_OBJECT` 为 no-op, `REGISTER_ALL` 实际等价于 `REGISTER_CHSTREAM`。
+`REGISTER_ALL` = `REGISTER_OBJECT; REGISTER_CHSTREAM`（`chstream_register.hh:103`），末尾追加 `#include "modules_cluster.hh"`，一键注册 Object + ChStream + 5 个 SimModule 派生类全量。
 
 ## 约定差异
 

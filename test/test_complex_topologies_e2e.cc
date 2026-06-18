@@ -27,7 +27,7 @@ static void registerAllModules() {
     if (!registered) {
         REGISTER_OBJECT;
         REGISTER_CHSTREAM;
-        REGISTER_MODULE;
+        REGISTER_MODULE(CpuCluster);
         registered = true;
     }
 }

@@ -71,9 +71,9 @@ int main(int argc, char* argv[]) {
     const std::string config_path = argv[1];
     std::cout << "[example_simmodule_nested] Loading config: " << config_path << "\n";
 
-    // 1. 注册所有模块类型 (CPUTLM/CacheTLM/MemoryTLM + CpuCluster)
+    // 1. 注册所有模块类型 (CPUTLM/CacheTLM/MemoryTLM + 5 个 SimModule 派生类)
     REGISTER_ALL;
-    REGISTER_MODULE;
+    REGISTER_MODULE(CpuCluster);
     ModuleFactory::listRegisteredTypes();
 
     // 2. 加载 JSON 配置 (含 $include 处理)

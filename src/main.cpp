@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
     EventQueue eq;
 
     REGISTER_ALL
-    REGISTER_MODULE
+    REGISTER_MODULE(CpuCluster);
     ModuleFactory::listRegisteredTypes();
 
     // 加载配置文件

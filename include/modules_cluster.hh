@@ -1,17 +1,36 @@
 // include/modules_cluster.hh
-// 集群模块集中注册宏 (Phase P2 占位文件)
-// 当前阶段 (P1) 为占位,实际 REGISTER_MODULE 仍位于 include/modules.hh
-// P2 将新增 4 个 GPU 端核心 SimModule 的 REGISTER_MODULE 集中入口:
-//   ComputeCluster / TpcCluster / GpcCluster / GpuCluster
-// P4 / P5 将追加 CacheCluster / MemoryCluster / GpuNoC / ApuSoC
+// SimModule 派生类集中注册 (Phase 2: GPU 端 4 个核心类 + CpuCluster)
+// REGISTER_MODULE 宏走 getModuleRegistry() (双注册表 SimModule 路径)
 //
+// 使用方式: 在 #include "modules.hh" (拿到 REGISTER_MODULE 宏) 之后
+//           再 #include "modules_cluster.hh" (触发集中注册)
+//
+// 不在 modules.hh 末尾自动 include 是为了避免循环 include:
+//   modules.hh 定义 REGISTER_MODULE 宏 + 末尾 include modules_cluster.hh
+//   modules_cluster.hh 使用 REGISTER_MODULE 宏 (需 modules.hh 先处理)
+//
+// 参考: include/AGENTS.md 注册宏体系 + include/modules.hh::REGISTER_MODULE
+//       docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md §0.4
 // 作者: Sisyphus / 日期: 2026-06-19
-// 参考: docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md §6
 #ifndef MODULES_CLUSTER_HH
 #define MODULES_CLUSTER_HH
 
-// P1 占位: 暂不引入任何注册宏,后续 P2 在此追加。
-// 当前 SimModule 派生类 (CpuCluster) 通过 include/modules.hh::REGISTER_MODULE 注册。
 #include "tlm/cluster/cpu_cluster.hh"
+#include "tlm/cluster/compute_cluster.hh"
+#include "tlm/cluster/tpc_cluster.hh"
+#include "tlm/cluster/gpc_cluster.hh"
+#include "tlm/cluster/gpu_cluster.hh"
+#include "core/module_factory.hh"
 
-#endif // MODULES_CLUSTER_HH
+// ComputeCluster / TpcCluster / GpcCluster / GpuCluster 在 cpptlm::tlm 命名空间
+using namespace cpptlm::tlm;
+
+// 注册表写入是 expression statement, C++ 全局作用域禁止 expression statement,
+// 必须包成变量初始化: const auto _reg_X = REGISTER_MODULE(X);  触发 static init
+const bool _reg_cpucluster = (REGISTER_MODULE(CpuCluster), true);
+const bool _reg_computecluster = (REGISTER_MODULE(ComputeCluster), true);
+const bool _reg_tpccluster = (REGISTER_MODULE(TpcCluster), true);
+const bool _reg_gpccluster = (REGISTER_MODULE(GpcCluster), true);
+const bool _reg_gpucluster = (REGISTER_MODULE(GpuCluster), true);
+
+#endif  // MODULES_CLUSTER_HH
