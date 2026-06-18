@@ -1,7 +1,8 @@
 // include/chstream_register.hh
 // ChStream 模块注册宏：统一注册对象和 StreamAdapter + 双端口非对称适配器
 // 作者 CppTLM Team
-// 日期 2026-04-14
+// 日期 2026-04-14 (更新 2026-06-19: 末尾 include modules_cluster.hh)
+#include "modules.hh"  // P2-T2.4: 提供 REGISTER_MODULE 宏 (参数化)
 #include "tlm/cache_tlm.hh"
 #include "tlm/memory_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
@@ -97,4 +98,11 @@
 // - 当 BUILD_LEGACY_MODULES=OFF: REGISTER_OBJECT 退化为 no-op (空注释)
 //   仍产生空语句 (;)，C++ 合法
 // - 当 BUILD_LEGACY_MODULES=ON: 正常注册 Legacy + ChStream
+// P2-T2.4 (2026-06-19): 不包含 REGISTER_MODULE (避免宏与模块注册耦合)
+//   用户需显式 #include "modules_cluster.hh" (或在 REGISTER_ALL 之后) 触发 5 个 SimModule 集中注册
 #define REGISTER_ALL REGISTER_OBJECT; REGISTER_CHSTREAM
+
+// P2-T2.4: 集中注册 5 个 SimModule 派生类 (CpuCluster + ComputeCluster + TpcCluster + GpcCluster + GpuCluster)
+// 依赖关系: modules.hh 必须在 modules_cluster.hh 之前被 include (提供 REGISTER_MODULE 宏)
+// 此处 include 在 REGISTER_ALL 之后, 避免 REGISTER_CHSTREAM 注册的 inline 函数依赖未实例化模块
+#include "modules_cluster.hh"

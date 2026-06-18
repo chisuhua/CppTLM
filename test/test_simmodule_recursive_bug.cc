@@ -17,9 +17,9 @@
 static void registerSimModuleTypes() {
     static bool registered = false;
     if (!registered) {
-        REGISTER_OBJECT;   // CPUSim 已退场 - 展开为 no-op
-        REGISTER_CHSTREAM; // CPUTLM/CacheTLM/MemoryTLM 等
-        REGISTER_MODULE;   // CpuCluster
+        REGISTER_OBJECT;             // CPUSim 已退场 - 展开为 no-op
+        REGISTER_CHSTREAM;           // CPUTLM/CacheTLM/MemoryTLM 等
+        REGISTER_MODULE(CpuCluster); // CpuCluster + 4 GPU SimModule (via modules_cluster.hh)
         registered = true;
     }
 }
