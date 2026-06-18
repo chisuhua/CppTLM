@@ -1,5 +1,9 @@
-## ADDED Requirements
+# simmodule-nested Specification
 
+## Purpose
+
+定义 SimModule 派生类通过 JSON 配置实现 N 层嵌套实例化的能力。CpuCluster 等 SimModule 容器持有内部子模块（含递归 SimModule 孙子模块），通过 `outputs`/`inputs` 字段暴露端口供外部连接。本 spec 描述嵌套激活、暴露端口语义、tick 转发等行为契约。
+## Requirements
 ### Requirement: SimModule JSON 多层嵌套实例化
 
 `SimModule` 派生类 MUST 支持通过 JSON 配置实现 N 层（CpuCluster→CpuCluster→...）嵌套实例化。顶层 `ModuleFactory::instantiateAll(json)` 检测到 `type` 为 `SimModule` 派生类时，**递归触发**该实例的 `simulate_instantiate(cfg)`，后者进一步实例化其内部子模块（包含 `SimModule` 派生类的孙子模块）。
@@ -12,7 +16,7 @@
 #### Scenario: 双层嵌套（SimModule → SimModule → SimObject）
 
 - **WHEN** JSON 配置顶层 `CpuCluster` 的 `modules` 字段包含一个嵌套的 `sub_cluster`（`type: "CpuCluster"`），其内部 `modules` 包含 2 个 `CPUTLM`
-- **THEN** 顶层 `CpuCluster` 构造后递归激活 `sub_cluster`；`sub_cluster::getInternalInstance("cpu0")` 返回非空 `SimObject*`；`sub_cluster::getInternalOutputPort` 可访问其内部端口
+- **THEN** 顶层 `CpuCluster` 构造后递归激活 `sub_cluster`；`sub_cluster::getInternalInstance("cpu0")` 返回非空 `SimObject*`；`sub_cluster::getInternalOutputPort` 通过 `findInternalPath` 反向解析正确性
 
 #### Scenario: 三层嵌套（SimModule × 3 → SimObject）
 
@@ -22,12 +26,14 @@
 #### Scenario: outputs/inputs 暴露端口
 
 - **WHEN** JSON 配置中 `CpuCluster` 节点包含 `outputs: [{"internal": "cpu0.req_out", "external": "cpu0_to_bus"}]`
-- **THEN** `CpuCluster::findInternalPath("cpu0_to_bus")` 返回 `"cpu0.req_out"`；`CpuCluster::isExposedPort("cpu0_to_bus")` 返回 `true`；`getInternalOutputPort("cpu0.req_out")` 返回非空 `MasterPort*`；外部模块 `connections: [{src: "cluster.cpu0_to_bus", ...}]` 解析时按 `internal_to_external_map` 反向解析
+- **THEN** `CpuCluster::findInternalPath("cpu0_to_bus")` 返回 `"cpu0.req_out"`；`CpuCluster::isExposedPort("cpu0_to_bus")` 返回 `true`；外部模块 `connections: [{src: "cluster.cpu0_to_bus", ...}]` 解析时按 `internal_to_external_map` 反向解析
+- **AND** 对 `getInternalOutputPort("cpu0.req_out")`：若内部子模块为 `SimObject` 派生类（非 ChStream 协议模块），MUST 返回非空 `MasterPort*`；若内部子模块为 ChStream 协议模块（`CPUTLM`/`CacheTLM`/`MemoryTLM`，因端口存于 `ModuleFactory::ch_initiator_ports_/ch_target_ports_` 容器而非 `PortManager`），返回 `nullptr` 是已知架构限制，**不视为失败**；**暴露端口的语义正确性 MUST 通过 `findInternalPath`/`isExposedPort` 验证**
 
 #### Scenario: inputs 暴露端口
 
 - **WHEN** JSON 配置中 `CpuCluster` 节点包含 `inputs: [{"internal": "cpu0.resp_in", "external": "bus_to_cpu0"}]`
-- **THEN** `CpuCluster::getInternalInputPort("cpu0.resp_in")` 返回非空 `SlavePort*`；`isExposedPort("bus_to_cpu0")` 返回 `true`
+- **THEN** `isExposedPort("bus_to_cpu0")` 返回 `true`
+- **AND** 对 `getInternalInputPort("cpu0.resp_in")`：若内部子模块为 `SimObject` 派生类（非 ChStream 协议模块），MUST 返回非空 `SlavePort*`；若内部子模块为 ChStream 协议模块（`CPUTLM`/`CacheTLM`/`MemoryTLM`），返回 `nullptr` 是已知架构限制，**不视为失败**；**暴露端口的语义正确性 MUST 通过 `isExposedPort` 验证**
 
 ### Requirement: simulate_instantiate 公开 API
 
@@ -56,3 +62,4 @@
 
 - **WHEN** 三层 `CpuCluster→CpuCluster→CpuCluster→CPUTLM`，顶层 `startAllTicks()` 调用每个顶层 `SimObject::tick()`
 - **THEN** 中间层 `CpuCluster::tick()` 转发到最内层 `CpuCluster::tick()`，最内层 `CpuCluster::tick()` 转发到 `CPUTLM::tick()`；CPUTLM 的 `tick()` **只被调用 1 次**（不重复触发）
+

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# simmodule-depth-guard Specification
+
+## Purpose
+
+定义 SimModule 嵌套深度限制保护机制，防止 JSON 错误触发真递归栈溢出。`SimModule::simulate_instantiate` 通过 `static thread_local int depth_` 计数器 + `MAX_DEPTH=8`（可由 `CPPTLM_SIMMODULE_MAX_DEPTH` 编译宏覆盖）阻止过深嵌套，异常路径通过 RAII 自动恢复计数器。
+
+## Requirements
 
 ### Requirement: SimModule 嵌套深度限制
 

@@ -1,4 +1,10 @@
-## ADDED Requirements
+# legacy-modules-removal Specification
+
+## Purpose
+
+记录 CppTLM v2.2 中 `include/modules/legacy/` 目录、`BUILD_LEGACY_MODULES` CMake 开关、`CPUSim` 类型的完全移除。`CpuCluster` 移至 `include/tlm/cluster/`，`CPUSim` 由 `CPUTLM` 替代，CMake 选项删除，所有相关 `AGENTS.md` / `CHANGELOG.md` / `docs/migration-v2.2.md` 同步更新。
+
+## Requirements
 
 ### Requirement: BUILD_LEGACY_MODULES 编译开关完全删除
 
