@@ -63,6 +63,60 @@
 ## 注意事项
 
 - 修改拓扑后重新运行 `./build/bin/cpptlm_tests "[phase6]"` 验证
-- `configs/example_hier2/`、`example_hierarchy/`、`example_layout/` 已在 2026-06-15 归档至 `docs-archived/dead-configs-2026-q2/`（legacy 模块类型 CPUSim/CPUCluster/MemCluster/CacheSim/Router/Arbiter 在 `BUILD_LEGACY_MODULES=OFF` 默认配置下无注册）；现代示例见 `configs/{mesh_4x4_tlm,hierarchical_2x2_tlm,ring_8_tlm}.json`
+- `configs/example_hier2/`、`example_hierarchy/`、`example_layout/` 已在 2026-06-15 归档至 `docs-archived/dead-configs-2026-q2/`（legacy 模块类型 CPUSim/CPUCluster/MemCluster/CacheSim/Router/Arbiter 在 v2.1 起无注册, v2.2 已彻底移除）；现代示例见 `configs/{mesh_4x4_tlm,hierarchical_2x2_tlm,ring_8_tlm}.json`
 - `configs/include_chain_demo.json` 已在 2026-06-17 归档至 `docs-archived/dead-configs-2026-q2/include_chain_demo.json`（C++ 端不识别 `$include` 数组内联语法, 仅 `"include": "path"` 字符串被支持）
 - `coherence_domains` 字段当前为 **stub**（C++ 解析但不消费, 详见 `docs/adr/ADR-X.14-coherence-domains-stub.md`）。声明此字段不影响运行行为, 仅作为未来实现的占位符。
+
+## SimModule 嵌套 JSON (v2.2 新增)
+
+`SimModule` 派生类（如 `CpuCluster`）支持 JSON 内联 `modules` 数组实现多层嵌套实例化，**不限深度但有运行时保护**：
+
+```json
+{
+  "modules": [
+    {
+      "name": "cluster0",
+      "type": "CpuCluster",
+      "params": { "num_cpus": 4, "cluster_id": "outer" },
+      "modules": [
+        { "name": "cpu0", "type": "CPUTLM", "params": { "pattern": "SEQUENTIAL" } },
+        { "name": "cache", "type": "CacheTLM", "params": { "size": "32KB" } },
+        { "name": "mem", "type": "MemoryTLM", "params": { "capacity_gb": 4 } }
+      ],
+      "connections": [
+        { "src": "cpu0", "dst": "cache", "latency": 1 },
+        { "src": "cache", "dst": "mem", "latency": 10 }
+      ],
+      "outputs": [
+        { "internal": "cpu0.req_out", "external": "cpu0_to_bus" }
+      ],
+      "inputs": [
+        { "internal": "cpu0.resp_in", "external": "bus_to_cpu0" }
+      ]
+    }
+  ]
+}
+```
+
+**关键字段**:
+
+| 字段 | 用途 | 适用范围 |
+|------|------|----------|
+| 内联 `modules` | 子模块声明数组 | `SimModule` 类型（如 `CpuCluster`） |
+| 内联 `connections` | 子模块间连接（含 `latency`） | `SimModule` 内部 |
+| `outputs` | 暴露内部子模块端口到外部命名空间 | `SimModule` 类型 |
+| `inputs` | 暴露外部端口到内部子模块 | `SimModule` 类型 |
+| `params.num_cpus` | CPU 数量（CpuCluster 专用） | `CpuCluster` |
+| `params.cluster_id` | 集群 ID（debug 用） | `CpuCluster` |
+
+**限深保护**: `SimModule::MAX_DEPTH = 8`（`include/core/sim_module.hh`），超出抛 `std::runtime_error`。`thread_local` 计数器保证多线程仿真独立。
+
+**活跃示例**:
+- `configs/example_simmodule_nested_2level.json` — 顶层 CpuCluster + 4 CPUTLM + CacheTLM + MemoryTLM
+- `configs/example_simmodule_nested_3level_static.json` — 3 层 CpuCluster 嵌套（outer → mid → inner）
+
+**生成器**: `examples/generate_nested_soc.py` 用 `cpptlm/topo/` + `cpptlm/library/` API 程序化生成嵌套 JSON。
+
+**测试覆盖**:
+- C++ Catch2: `test/test_simmodule_nested.cc`（7 用例 `[simmodule]` 标签）
+- Python pytest: `test/python/test_simmodule_emitter.py`（6 用例）

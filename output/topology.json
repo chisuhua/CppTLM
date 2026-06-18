@@ -308,67 +308,67 @@
     },
     {
       "name": "proc_0_0",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_0_1",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_0_2",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_0_3",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_1_0",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_1_1",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_1_2",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_1_3",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_2_0",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_2_1",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_2_2",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_2_3",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_3_0",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_3_1",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_3_2",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     },
     {
       "name": "proc_3_3",
-      "type": "CPUSim"
+      "type": "CPUTLM"
     }
   ],
   "connections": [

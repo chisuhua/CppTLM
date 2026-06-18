@@ -36,15 +36,6 @@ target_include_directories(cpptlm_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/../external/json
 )
 
-# Legacy 模块支持（默认 OFF，v2.1 已废弃）
-if(BUILD_LEGACY_MODULES)
-    target_compile_definitions(cpptlm_core PUBLIC BUILD_LEGACY_MODULES=1)
-    message(STATUS "Legacy modules: ENABLED (CPUSim, CpuCluster)")
-else()
-    target_compile_definitions(cpptlm_core PUBLIC BUILD_LEGACY_MODULES=0)
-    message(STATUS "Legacy modules: DISABLED (default)")
-endif()
-
 # 覆盖率选项
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_core PRIVATE --coverage)

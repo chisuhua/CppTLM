@@ -1,0 +1,78 @@
+{
+  "name": "simmodule_nested_2level",
+  "description": "2-level CpuCluster nesting: cluster0 (CpuCluster) with 4 CPUTLM + 1 CacheTLM + 1 MemoryTLM, with outputs/inputs exposed ports",
+  "modules": [
+    {
+      "name": "cluster0",
+      "type": "CpuCluster",
+      "params": {
+        "num_cpus": 4,
+        "cluster_id": "outer"
+      },
+      "modules": [
+        {
+          "name": "cpu0",
+          "type": "CPUTLM",
+          "params": {
+            "pattern": "SEQUENTIAL",
+            "start_addr": "0x1000"
+          }
+        },
+        {
+          "name": "cpu1",
+          "type": "CPUTLM",
+          "params": {
+            "pattern": "SEQUENTIAL",
+            "start_addr": "0x2000"
+          }
+        },
+        {
+          "name": "cpu2",
+          "type": "CPUTLM",
+          "params": {
+            "pattern": "SEQUENTIAL",
+            "start_addr": "0x3000"
+          }
+        },
+        {
+          "name": "cpu3",
+          "type": "CPUTLM",
+          "params": {
+            "pattern": "SEQUENTIAL",
+            "start_addr": "0x4000"
+          }
+        },
+        {
+          "name": "cache",
+          "type": "CacheTLM",
+          "params": {
+            "size": "32KB"
+          }
+        },
+        {
+          "name": "mem",
+          "type": "MemoryTLM",
+          "params": {
+            "capacity_gb": 4,
+            "read_latency": 50,
+            "write_latency": 60
+          }
+        }
+      ],
+      "connections": [
+        { "src": "cpu0", "dst": "cache", "latency": 1 },
+        { "src": "cpu1", "dst": "cache", "latency": 1 },
+        { "src": "cpu2", "dst": "cache", "latency": 1 },
+        { "src": "cpu3", "dst": "cache", "latency": 1 },
+        { "src": "cache", "dst": "mem", "latency": 10 }
+      ],
+      "outputs": [
+        { "internal": "cpu0.req_out", "external": "cpu0_to_bus" }
+      ],
+      "inputs": [
+        { "internal": "cpu0.resp_in", "external": "bus_to_cpu0" }
+      ]
+    }
+  ],
+  "connections": []
+}

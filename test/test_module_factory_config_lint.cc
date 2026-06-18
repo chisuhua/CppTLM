@@ -79,7 +79,7 @@ TEST_CASE("LINT005b: 'config' as file path string passes lint", "[config-lint][l
 
     // 合法用法: 'config' 是外部配置文件路径 (string)
     // 使用 SimObject (TrafficGenTLM) 而非 SimModule, 因为 SimModule 类型
-    // 需要 REGISTER_MODULE 在测试范围注册 (BUILD_LEGACY_MODULES=OFF 默认 no-op)。
+    // 需要 REGISTER_MODULE 在测试范围注册（v2.2+ REGISTER_MODULE 仍由 CpuCluster 触发）。
     // LINT005 检查是 type-based (config 必须是 string), 不依赖模块是 SimObject 还是 SimModule.
     // 对 SimObject 而言, 即便 'config' 是 string, 文件加载代码路径 (在 module_instances 中查找)
     // 也找不到实例, 故不会尝试加载文件 → 不会因文件不存在而失败。

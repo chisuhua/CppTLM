@@ -79,8 +79,14 @@ bool check_port_compatibility(const std::string& src_name, const std::string& ds
                               const std::map<std::string, cpptlm::ModulePortSpec>& port_specs);
 std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs();
 
-// P3.x ASan: clear StatsManager paths (by pointer scan) before deleting instances,
-// then delegate to ModuleGroup::clearAll() to free the SimObjects.
+// P3.x ASan: clear StatsManager paths, then erase own entries from
+// ModuleGroup global registry (so cascade destruction does not see
+// stale pointers), then delete own SimObject* instances in a
+// second-pass vector to avoid iterator invalidation when SimModule's
+// internal_factory sub-factory re-enters ModuleGroup::clearAll() on
+// its own destruction. Each factory owns its own SimObjects; the
+// global ModuleGroup is just a name->pointer lookup, not an
+// ownership structure.
 ModuleFactory::~ModuleFactory() {
     for (auto& [name, obj] : instances) {
         if (!obj)
@@ -98,8 +104,21 @@ ModuleFactory::~ModuleFactory() {
             }
         }
     }
-    ModuleGroup::clearAll();
+    std::vector<std::pair<std::string, SimObject*>> to_release;
+    for (auto& [name, obj] : instances) {
+        if (obj) {
+            to_release.emplace_back(name, obj);
+            obj = nullptr;
+        }
+    }
     instances.clear();
+    for (auto& [name, obj] : to_release) {
+        ModuleGroup::eraseInstance(name);
+    }
+    for (auto& [name, obj] : to_release) {
+        delete obj;
+    }
+    ModuleGroup::clearAllGroups();
 }
 
 std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) {
@@ -336,6 +355,32 @@ bool ModuleFactory::instantiateAll(const json& config) {
     }
 
     // ========================
+    // 4.5. 触发顶层 SimModule 的 simulate_instantiate（处理 inline `modules` 嵌套）
+    // ========================
+    // Per design.md Decision 1: 顶层 instantiateAll 构造完顶层 SimObject 后,
+    // 对每个顶层 SimModule 派生类调 simulate_instantiate(top_cfg),
+    // 触发内部子模块 instantiateAll + 递归激活嵌套的孙子 SimModule.
+    // 内部递归由 SimModule::simulate_instantiate 自管理(1 次 RTTI / 子模块).
+    for (auto& mod : final_config["modules"]) {
+        if (!mod.contains("name") || !mod.contains("type"))
+            continue;
+        std::string name = mod["name"];
+        auto sim_it = module_instances.find(name);
+        if (sim_it == module_instances.end())
+            continue;
+        SimModule* sim = sim_it->second;
+        if (!sim)
+            continue;
+        try {
+            sim->simulate_instantiate(mod);
+        } catch (const std::exception& e) {
+            DPRINTF(MODULE, "[ERROR] simulate_instantiate failed for '%s': %s\n", name.c_str(),
+                    e.what());
+            return false;
+        }
+    }
+
+    // ========================
     // 5. 使用 ConnectionResolver 处理 connections
     // ========================
 
@@ -476,7 +521,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
                         obj_it->second->getPortManager().getDownstreamPort(src_port_name));
                 }
             } else if (auto obj_it = object_instances.find(src_module_name);
-                       obj_it != object_instances.end()) {
+                       obj_it != object_instances.end() && obj_it->second) {
                 // Wildcard/group expansion: create default downstream port
                 src_port = obj_it->second->getPortManager().addDownstreamPort(obj_it->second, {4},
                                                                               {}, src_module_name);
