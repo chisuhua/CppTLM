@@ -5,7 +5,7 @@
 // 作者: Sisyphus / 日期: 2026-06-19
 // 参考: docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md §4.1
 #include "core/sim_module.hh"
-#include "modules_cluster.hh"  // placeholder, P2 后存在
+#include "tlm/cluster/cpu_cluster.hh"
 #include "core/module_factory.hh"
 #include <catch2/catch_all.hpp>
 
@@ -44,8 +44,8 @@ TEST_CASE("D.4 findInternalPath recurses nested SimModule", "[simmodule][regress
 }
 
 // D.5: SimModule::tick 应递归到所有子孙 SimObject
-// 修复前: CpuCluster::tick 手动实现但不通用, 嵌套 SimModule 子类无默认递归
-// 修复后: SimModule 基类提供默认递归 tick
+// 修复前: SimModule 无默认 tick 实现,继承 SimObject::tick()=0 纯虚
+// 修复后: SimModule 基类提供默认递归 tick,所有未重写 tick 的 SimModule 子类自动获得
 class TickCounter : public SimObject {
 public:
     int tick_count = 0;
@@ -53,15 +53,34 @@ public:
     void tick() override { ++tick_count; }
 };
 
-TEST_CASE("D.5 tick recurses all descendants", "[simmodule][regression]") {
+// Stub SimModule: 不重写 tick(),依赖 SimModule 默认实现
+// 修复前 (Task 1.4 未实施): SimModule 无默认 tick,StubSimModule 继承 SimObject::tick()=0
+//                          → 抽象类,无法实例化 → 此测试编译失败 (演示 D.5 bug)
+// 修复后: SimModule 提供默认递归 tick
+//         → StubSimModule 可实例化,outer->tick() 递归触发 mid->tick() → counter->tick()
+class StubSimModule : public SimModule {
+public:
+    explicit StubSimModule(const std::string& n, EventQueue* eq) : SimModule(n, eq) {}
+    // NOTE: no tick() override - relies on SimModule's default recursive behavior
+};
+
+TEST_CASE("D.5 SimModule default tick recurses descendants", "[simmodule][regression]") {
+    // 3 层嵌套: outer (CpuCluster) → mid (StubSimModule) → counter (TickCounter)
+    // outer 用 CpuCluster,因为 CpuCluster 自身已实现手动递归 tick (cpu_cluster.hh:49-55)
+    // mid 用 StubSimModule,故意不重写 tick() 暴露 D.5 bug:
+    //   - 修复前: 编译失败 (StubSimModule 抽象)
+    //   - 修复后: SimModule 默认递归 tick 让 counter 被 tick
     EventQueue eq;
     auto* outer = new CpuCluster("outer", &eq);
-    auto* mid = new CpuCluster("mid", &eq);
+    auto* mid = new StubSimModule("mid", &eq);
     auto* counter = new TickCounter("counter", &eq);
 
     mid->addInternalInstance(counter);
     outer->addInternalInstance(mid);
 
+    // 修复后: outer.tick() 走 CpuCluster::tick 手动循环
+    //         → 调到 mid->tick() (SimModule 默认递归,深度 2)
+    //         → 调到 counter->tick() (TickCounter)
     outer->tick();
     REQUIRE(counter->tick_count == 1);
 
