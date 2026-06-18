@@ -12,10 +12,10 @@
     {"name": "router_0_1", "type": "RouterTLM", "params": {"node_x": 1, "node_y": 0, "mesh_x": 2, "mesh_y": 2}},
     {"name": "router_1_0", "type": "RouterTLM", "params": {"node_x": 0, "node_y": 1, "mesh_x": 2, "mesh_y": 2}},
     {"name": "router_1_1", "type": "RouterTLM", "params": {"node_x": 1, "node_y": 1, "mesh_x": 2, "mesh_y": 2}},
-    {"name": "proc_0_0", "type": "CPUSim"},
-    {"name": "proc_0_1", "type": "CPUSim"},
-    {"name": "proc_1_0", "type": "CPUSim"},
-    {"name": "proc_1_1", "type": "CPUSim"}
+    {"name": "proc_0_0", "type": "CPUTLM"},
+    {"name": "proc_0_1", "type": "CPUTLM"},
+    {"name": "proc_1_0", "type": "CPUTLM"},
+    {"name": "proc_1_1", "type": "CPUTLM"}
   ],
   "connections": [
     {"src": "ni_0_0.1", "dst": "router_0_0.4"},

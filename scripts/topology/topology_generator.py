@@ -49,12 +49,12 @@ class TopologyGenerator:
     # =========================================================================
     # 架构文档 (v2.2) 中的抽象类型 → CppTLM 注册表中的实际类型
     # 用于解决 "topology_generator 生成 MeshRouter/Processor，
-    # 但注册表只有 Router/CPUSim" 的不匹配问题
+    # 但注册表只有 Router/CPUTLM" 的不匹配问题
     # 参考: docs/architecture/02-complex-topology-architecture.md Section 5.1
 
     CPPTLM_TYPE_MAP: Dict[str, str] = {
         # 终端类型 (Terminal Types)
-        'Processor': 'CPUSim',           # 处理器核
+        'Processor': 'CPUTLM',           # 处理器核
         'Cache': 'CacheTLM',            # 缓存控制器
         'Memory': 'MemoryTLM',          # 内存控制器
         'Directory': 'DirectoryCtrl',  # 目录控制器 (如使用)

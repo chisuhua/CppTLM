@@ -41,7 +41,6 @@ option(BUILD_DOCS     "Build documentation (Doxygen)"        OFF)
 option(ENABLE_COVERAGE "Enable code coverage (gcov)"         OFF)
 option(USE_ASAN       "Enable AddressSanitizer (Debug only)" OFF)
 option(BUILD_RTL "Build CppHDL RTL bridge (Spike)" OFF)
-option(BUILD_LEGACY_MODULES "Build legacy CPUSim/CpuCluster modules (DEPRECATED in v2.1)" OFF)
 
 # ==============================================================================
 # 编译选项
