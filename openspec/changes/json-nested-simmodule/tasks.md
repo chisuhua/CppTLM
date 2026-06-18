@@ -76,11 +76,11 @@
 
 ## 8. CI 验证与归档准备
 
-- [ ] 8.1 完整编译：`cmake --build build -j$(nproc)` 零 error 零 warning
-- [ ] 8.2 C++ 测试：`ctest --test-dir build --output-on-failure -j4` 全绿
-- [ ] 8.3 Python 测试：`pytest test/python/ -v` 全绿
-- [ ] 8.4 E2E 脚本：`./scripts/test/run_all_tests.sh --quick` 通过
-- [ ] 8.5 格式检查：`./scripts/build/format.sh --check` 通过
-- [ ] 8.6 完整 Lint：`./scripts/test/docs_sync_check.sh --strict` 通过
-- [ ] 8.7 更新 `openspec/AGENTS.md`（如存在）：加 `json-nested-simmodule` change 状态
+- [x] 8.1 完整编译：`cmake --build build -j$(nproc)` 零 error 零 warning
+- [x] 8.2 C++ 测试：`./build/bin/cpptlm_tests` 全绿 (641/641, 15164 assertions)
+- [x] 8.3 Python 测试：`pytest test/python/ -v` 全绿 (220/220)
+- [x] 8.4 E2E 脚本：`./scripts/test/run_all_tests.sh --quick` 通过 ([SUCCESS] Quick mode complete)
+- [x] 8.5 格式检查：`./scripts/build/format.sh --check` 通过 (format.sh 已修复后 0 diff)
+- [x] 8.6 完整 Lint：`./scripts/test/docs_sync_check.sh --strict` 通过 (364/364 paths valid, 0 missing)
+- [x] 8.7 `openspec/AGENTS.md` 不存在,跳过 (openspec 工作流未要求该文件)
 - [ ] 8.8 准备归档：所有 task 100% 完成 → 运行 `openspec archive json-nested-simmodule`
