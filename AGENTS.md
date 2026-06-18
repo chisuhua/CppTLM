@@ -15,10 +15,12 @@ Architecture 必读: `docs/architecture/01-hybrid-architecture-v2.1.md`。
 include/         # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
   core/          # SimObject/ModuleFactory/Port/ChStream 基类 + ext/ 子目录
   tlm/           # TLM 2.0 模块: cache/crossbar/memory/cpu/link/nic/router/traffic_gen/arbiter
+  tlm/cluster/   # SimModule 多级层次: CpuCluster/ComputeCluster/TpcCluster/GpcCluster/
+                 #   GpuCluster/CacheCluster/MemoryCluster/GpuNoC/ApuSoC (9 类 P2-P5)
   tlm/gpu/       # Phase 7.A+ GPUTLM v0 (黑盒发起器)
   framework/     # StreamAdapter 转换层 (单/多/双端口 + 双向)
   bundles/       # Bundle 定义: cache/noc/compute_bundles_tlm + cpphdl_types
-  modules/legacy/# CPUSim/CpuCluster (BUILD_LEGACY_MODULES=OFF 默认, 已归档)
+  modules/legacy/# CPUSim (BUILD_LEGACY_MODULES=OFF 默认, 已归档)
   ext/           # TLM 扩展插件 (credit_stream / error_context / mem / transaction_context)
   metrics/       # histogram / stats / metrics_reporter / streaming_reporter
   rtl/           # RTL 桥接头文件 (fragment_mapper, hybrid_cache_*)
@@ -26,24 +28,28 @@ include/         # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
   sc_core/       # SystemC 兼容层 (stub)
   chstream_register.hh  # REGISTER_CHSTREAM 宏入口
   modules.hh     # REGISTER_OBJECT / REGISTER_MODULE 宏入口
+  modules_cluster.hh    # REGISTER_MODULE 参数化入口 (9 个 SimModule 派生类)
   AGENTS.md      # 注册宏体系完整表 (必读)
 
 src/             # .cc 实现 + main.cpp
   core/          # module_factory(.cc 604 行, ⭐complex) / connection_resolver / param_parser
                  # port_compatibility / coherence_domain / topology_parser / plugin_loader
   tlm/           # router_tlm(.cc 805 行) / nic_tlm / link_tlm
+  tlm/cluster/   # SimModule 派生类 .cc 实现 (P2-P5)
   rtl/           # hybrid_cache_component / hybrid_cache_wrapper (BUILD_RTL=ON 才编)
   utils/         # dynamic_loader 实现
   main.cpp       # 主仿真入口
 
-test/            # Catch2 v3.7.0, 82 个 test_*.cc + Python pytest
+test/            # Catch2 v3.7.0, 88 个 test_*.cc + Python pytest
   catch_amalgamated.{cpp,hpp}  # 预编译头 (非 FetchContent 实时下载)
-  python/        # 15 用例: analyzer / path_tracer / topo_* / validator
+  python/        # 15 用例: analyzer / path_tracer / topo_* / validator / apu_soc_emitter
   rtl/           # RTL 桥接测试 (BUILD_RTL=ON)
   AGENTS.md      # 测试分类 + 标签表
 
 configs/         # 30+ JSON 拓扑 (含 apu_soc_* Phase 7.A/7.B/7.F)
   common/  param_rules/  test/   # 子目录: 共享 include 片段 / 参数规则 / 测试配置
+  templates/     # JSON 蓝图 (P2): compute_unit_v1.json / cpu_cluster_2level.json /
+                 #   gpu_2gpc_2tpc_2cu.json (被 cu_template 引用, cu_count 控制复制)
   AGENTS.md      # Schema 文档
 
 docs/
@@ -103,7 +109,7 @@ plans/           # 实施计划: phase7-completion / p0-alignment-remediation / 
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# C++ 测试 (Catch2, 82 文件 / 610 用例)
+# C++ 测试 (Catch2, 88 文件 / 659 用例)
 ./build/bin/cpptlm_tests                    # 全部
 ./build/bin/cpptlm_tests "[chstream]"       # Stream 相关 (84 用例)
 ./build/bin/cpptlm_tests "[phase6]"         # Phase 6 集成
@@ -175,7 +181,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
-- **测试状态**: **610/610 pass**（2026-06-16，82 个 test_*.cc）
+- **测试状态**: **659/659 pass**（2026-06-19，88 个 test_*.cc）+ **222/222 Python** pass
 
 ## 归档索引（docs-archived/）
 
