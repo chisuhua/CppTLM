@@ -1,12 +1,12 @@
 ## 1. 基础设施：SimModule 限深 + CpuCluster 增强
 
-- [ ] 1.1 修改 `include/core/sim_module.hh`：加 `static constexpr int MAX_DEPTH = 8` + `static thread_local int depth_` 成员 + `MAX_DEPTH` 编译宏覆盖点
-- [ ] 1.2 修改 `include/core/sim_module.hh`：新增公共方法 `void simulate_instantiate(const json& cfg)`，实现：入口幂等守卫（`internal_factory->getAllInstances()` 非空则早退）→ `++depth_` → 构造 RAII `DepthGuard`（析构时 `--depth_`，异常安全）→ depth_ 越界抛 `runtime_error` → `internal_factory->instantiateAll(cfg)` + `parsePortConfigs(cfg)` → 遍历子模块用 `dynamic_cast<SimModule*>` 识别后递归触发其 `simulate_instantiate`
-- [ ] 1.3 修改 `include/core/sim_module.hh`：保留现有 `instantiate(const json& cfg)` 作为"构造期初始化"入口，**改为委托** `simulate_instantiate`（保持向后兼容）
-- [ ] 1.4 新建 `include/tlm/cluster/cpu_cluster.hh`：声明 CpuCluster 类（继承 SimModule），含 `num_cpus_/cluster_id_` 成员 + `get_module_type/set_config/tick` override
-- [ ] 1.5 新建 `include/tlm/cluster/cpu_cluster.cc`：实现 `set_config`（解析 num_cpus/cluster_id）+ `tick`（转发到 `internal_factory->getAllInstances()`）
-- [ ] 1.6 修改 `include/modules.hh`：删除 `#ifdef BUILD_LEGACY_MODULES ... #else ... #endif` 守卫；`REGISTER_OBJECT` 改为 no-op 注释；`REGISTER_MODULE` 改为无条件 `ModuleFactory::registerModule<CpuCluster>("CpuCluster");`
-- [ ] 1.7 验证编译：`cmake --build build -j$(nproc)` 通过，零 warning（CpuCluster 实现期间）
+- [x] 1.1 修改 `include/core/sim_module.hh`：加 `static constexpr int MAX_DEPTH = 8` + `static thread_local int depth_` 成员 + `MAX_DEPTH` 编译宏覆盖点
+- [x] 1.2 修改 `include/core/sim_module.hh`：新增公共方法 `void simulate_instantiate(const json& cfg)`，实现：入口幂等守卫（`internal_factory->getAllInstances()` 非空则早退）→ `++depth_` → 构造 RAII `DepthGuard`（析构时 `--depth_`，异常安全）→ depth_ 越界抛 `runtime_error` → `internal_factory->instantiateAll(cfg)` + `parsePortConfigs(cfg)` → 遍历子模块用 `dynamic_cast<SimModule*>` 识别后递归触发其 `simulate_instantiate`
+- [x] 1.3 修改 `include/core/sim_module.hh`：保留现有 `instantiate(const json& cfg)` 作为"构造期初始化"入口，**改为委托** `simulate_instantiate`（保持向后兼容）
+- [x] 1.4 新建 `include/tlm/cluster/cpu_cluster.hh`：声明 CpuCluster 类（继承 SimModule），含 `num_cpus_/cluster_id_` 成员 + `get_module_type/set_config/tick` override
+- [x] 1.5 新建 `include/tlm/cluster/cpu_cluster.cc`：实现 `set_config`（解析 num_cpus/cluster_id）+ `tick`（转发到 `internal_factory->getAllInstances()`）
+- [x] 1.6 修改 `include/modules.hh`：删除 `#ifdef BUILD_LEGACY_MODULES ... #else ... #endif` 守卫；`REGISTER_OBJECT` 改为 no-op 注释；`REGISTER_MODULE` 改为无条件 `ModuleFactory::registerModule<CpuCluster>("CpuCluster");`
+- [x] 1.7 验证编译：`cmake --build build -j$(nproc)` 通过，零 warning（CpuCluster 实现期间）
 
 ## 2. legacy 目录与 CPUSim 退场
 
