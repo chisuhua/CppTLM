@@ -79,8 +79,10 @@ bool check_port_compatibility(const std::string& src_name, const std::string& ds
                               const std::map<std::string, cpptlm::ModulePortSpec>& port_specs);
 std::map<std::string, cpptlm::ModulePortSpec> get_default_port_specs();
 
-// P3.x ASan: clear StatsManager paths (by pointer scan) before deleting instances,
-// then delegate to ModuleGroup::clearAll() to free the SimObjects.
+// P3.x ASan: clear StatsManager paths before deleting instances, then
+// unregister own entries from ModuleGroup global registry and delete
+// own SimObjects. Avoid ModuleGroup::clearAll() to prevent nested
+// cascade when SimModule's internal_factory sub-factory destructs.
 ModuleFactory::~ModuleFactory() {
     for (auto& [name, obj] : instances) {
         if (!obj)
@@ -98,8 +100,18 @@ ModuleFactory::~ModuleFactory() {
             }
         }
     }
-    ModuleGroup::clearAll();
+    std::vector<SimObject*> to_delete;
+    for (auto& [name, obj] : instances) {
+        if (obj) {
+            ModuleGroup::eraseInstance(name);
+            to_delete.push_back(obj);
+            obj = nullptr;
+        }
+    }
     instances.clear();
+    for (auto* obj : to_delete) {
+        delete obj;
+    }
 }
 
 std::pair<std::string, std::string> parsePortSpec(const std::string& full_name) {
@@ -332,6 +344,32 @@ bool ModuleFactory::instantiateAll(const json& config) {
                     DPRINTF(MODULE, "[ERROR] Cannot open config: %s\n", config_file.c_str());
                 }
             }
+        }
+    }
+
+    // ========================
+    // 4.5. 触发顶层 SimModule 的 simulate_instantiate（处理 inline `modules` 嵌套）
+    // ========================
+    // Per design.md Decision 1: 顶层 instantiateAll 构造完顶层 SimObject 后,
+    // 对每个顶层 SimModule 派生类调 simulate_instantiate(top_cfg),
+    // 触发内部子模块 instantiateAll + 递归激活嵌套的孙子 SimModule.
+    // 内部递归由 SimModule::simulate_instantiate 自管理(1 次 RTTI / 子模块).
+    for (auto& mod : final_config["modules"]) {
+        if (!mod.contains("name") || !mod.contains("type"))
+            continue;
+        std::string name = mod["name"];
+        auto sim_it = module_instances.find(name);
+        if (sim_it == module_instances.end())
+            continue;
+        SimModule* sim = sim_it->second;
+        if (!sim)
+            continue;
+        try {
+            sim->simulate_instantiate(mod);
+        } catch (const std::exception& e) {
+            DPRINTF(MODULE, "[ERROR] simulate_instantiate failed for '%s': %s\n",
+                    name.c_str(), e.what());
+            return false;
         }
     }
 
