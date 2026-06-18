@@ -109,6 +109,11 @@
 | `params.num_cpus` | CPU 数量（CpuCluster 专用） | `CpuCluster` |
 | `params.cluster_id` | 集群 ID（debug 用） | `CpuCluster` |
 
+> **跨层引用**: `outputs[]` 与 `inputs[]` 的 `internal` 字段支持跨层引用（如
+> `"mid.cpu0_to_bus"`）。外部代码调用 `findInternalPath(external_label)` 时，
+> 若当前 SimModule 未直接暴露该端口，会递归下钻到子 SimModule 查找并拼接路径前缀
+> (P1 修复 D.4, 见 `test/test_simmodule_recursive_bug.cc`)。
+
 **限深保护**: `SimModule::MAX_DEPTH = 8`（`include/core/sim_module.hh`），超出抛 `std::runtime_error`。`thread_local` 计数器保证多线程仿真独立。
 
 **活跃示例**:
