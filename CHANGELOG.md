@@ -49,6 +49,14 @@
 - Phase 7.A 状态: 🟡 Pending → ✅ Done
 - 后续: Phase 7.B–7.F（ComputeUnitTLM / Coherence / TCC / Multi-CU / Full APU Demo）保持 🟡 Pending
 
+## P1 - 2026-06-19: SimModule API 修复
+
+- fix(simmodule): make findInternalPath recurse to child SimModule (D.4)
+  解锁 3 层 JSON 配置端到端工作
+- fix(simmodule): add default recursive tick in SimModule base (D.5)
+  为新 SimModule 子类 (P2 ComputeCluster 等) 提供默认 tick
+- test: 3-level JSON config end-to-end regression (P1-T1.5)
+
 ## [v2.1.0] - 2026-06-08
 
 ### Added
