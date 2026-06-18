@@ -1,6 +1,6 @@
 # configs/ — JSON 拓扑配置
 
-**域**: 仿真拓扑配置文件（18 文件）
+**域**: 仿真拓扑配置文件（46 文件 + 3 模板）
 **作用**: 定义模块实例、连接关系、延迟参数、分组层级
 
 ## 核心 Schema
@@ -66,6 +66,43 @@
 - `configs/example_hier2/`、`example_hierarchy/`、`example_layout/` 已在 2026-06-15 归档至 `docs-archived/dead-configs-2026-q2/`（legacy 模块类型 CPUSim/CPUCluster/MemCluster/CacheSim/Router/Arbiter 在 v2.1 起无注册, v2.2 已彻底移除）；现代示例见 `configs/{mesh_4x4_tlm,hierarchical_2x2_tlm,ring_8_tlm}.json`
 - `configs/include_chain_demo.json` 已在 2026-06-17 归档至 `docs-archived/dead-configs-2026-q2/include_chain_demo.json`（C++ 端不识别 `$include` 数组内联语法, 仅 `"include": "path"` 字符串被支持）
 - `coherence_domains` 字段当前为 **stub**（C++ 解析但不消费, 详见 `docs/adr/ADR-X.14-coherence-domains-stub.md`）。声明此字段不影响运行行为, 仅作为未来实现的占位符。
+
+## JSON 蓝图模板 (configs/templates/, P2 新增)
+
+`configs/templates/` 目录存放可被 `cu_template` 引用的**蓝图 (blueprint)**：定义单一 CU/TPC/GPC 的标准子模块结构 + 内部连接，主配置通过 `cu_count` 字段控制蓝图复制数，避免在主 JSON 中重复 N 份相同子结构。
+
+**当前模板** (3 份):
+
+| 蓝图 | 描述 |
+|------|------|
+| `compute_unit_v1.json` | 单 Compute Unit 蓝图：1 个 CPUTLM 发起器 + 1 个 L1 cache + 1 个 memory port |
+| `cpu_cluster_2level.json` | CpuCluster 2 层嵌套蓝图（outer + 2 inner CPUTLM） |
+| `gpu_2gpc_2tpc_2cu.json` | 完整 4 级 GPU 蓝图（2 GPC × 2 TPC × 2 CU），用于 P2 GPU 端测试 |
+
+**引用机制**:
+
+```json
+{
+  "modules": [
+    {
+      "name": "tpc0",
+      "type": "TpcCluster",
+      "cu_template": "compute_unit_v1.json",
+      "cu_count": 4,
+      "params": { "tpc_id": 0 }
+    }
+  ]
+}
+```
+
+- `cu_template` (string): 蓝图 JSON 路径（相对 `configs/` 解析）
+- `cu_count` (int): 蓝图复制份数（≥ 1）
+
+**Cross-layer 端口引用**: D.4 修复（P1 完成）后，`TpcCluster` 内部 `tpc0.cu0.req_out` 这类跨层路径可在 `outputs[].internal` 中使用，`findInternalPath` 会递归下钻到子 SimModule 拼接路径。
+
+**测试覆盖**:
+- C++ Catch2: `test/test_simmodule_gpu_hierarchy.cc`（P2 GPU 端 4 类 SimModule 集成）
+- Python pytest: `test/python/test_apu_soc_emitter.py::test_apu_soc_template_load` + `test_gpu_2gpc_2tpc_2cu_simulate`（P5 端到端验证蓝图 + simulate 闭环）
 
 ## SimModule 嵌套 JSON (v2.2 新增)
 
