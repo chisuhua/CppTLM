@@ -160,6 +160,14 @@ public:
         return "";
     }
 
+    // P1 Fix D.5: 默认递归 tick - 遍历所有内部子模块
+    // 向后兼容: CpuCluster::tick 显式 override 保留, 不影响现有行为
+    virtual void tick() override {
+        for (const auto& kv : internal_factory->getAllInstances()) {
+            if (kv.second) kv.second->tick();
+        }
+    }
+
 #ifdef CPPTLM_TESTING
 public:
     // P1 测试辅助: 直接向 internal_factory 添加实例 (绕过 instantiateAll 的 8 步流程)
