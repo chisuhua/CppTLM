@@ -18,14 +18,23 @@ namespace cpptlm::tlm {
 
     void GpcCluster::simulate_instantiate(const nlohmann::json& cfg) {
         SimModule::simulate_instantiate(cfg);
+        nlohmann::json tpc_cfgs = nlohmann::json::array();
         for (int i = 0; i < tpc_per_gpc_; ++i) {
-            nlohmann::json tpc_cfg = {
-                {"name", "tpc" + std::to_string(i)},
-                {"type", "TpcCluster"},
-                {"params",
-                 {{"tpc_id", i}, {"cu_per_tpc", cu_per_tpc_}, {"cu_template", cu_template_path_}}}};
-            internal_factory->instantiateAll(tpc_cfg);
+            nlohmann::json tpc_entry;
+            tpc_entry["name"] = "tpc" + std::to_string(i);
+            tpc_entry["type"] = "TpcCluster";
+            tpc_entry["params"] = {
+                {"tpc_id", i},
+                {"cu_per_tpc", cu_per_tpc_},
+                {"cu_template", cu_template_path_}};
+            tpc_entry["modules"] = nlohmann::json::array();
+            tpc_entry["connections"] = nlohmann::json::array();
+            tpc_cfgs.push_back(tpc_entry);
         }
+        nlohmann::json gpc_cfg;
+        gpc_cfg["modules"] = tpc_cfgs;
+        gpc_cfg["connections"] = nlohmann::json::array();
+        internal_factory->instantiateAll(gpc_cfg);
     }
 
 } // namespace cpptlm::tlm
