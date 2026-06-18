@@ -18,16 +18,23 @@ namespace cpptlm::tlm {
 
     void GpuCluster::simulate_instantiate(const nlohmann::json& cfg) {
         SimModule::simulate_instantiate(cfg);
+        nlohmann::json gpc_cfgs = nlohmann::json::array();
         for (int i = 0; i < gpc_count_; ++i) {
-            nlohmann::json gpc_cfg = {{"name", "gpc" + std::to_string(i)},
-                                      {"type", "GpcCluster"},
-                                      {"params",
-                                       {{"gpc_id", i},
-                                        {"tpc_per_gpc", tpc_per_gpc_},
-                                        {"cu_per_tpc", cu_per_tpc_},
-                                        {"cu_template", cu_template_path_}}}};
-            internal_factory->instantiateAll(gpc_cfg);
+            nlohmann::json gpc_entry;
+            gpc_entry["name"] = "gpc" + std::to_string(i);
+            gpc_entry["type"] = "GpcCluster";
+            gpc_entry["params"] = {{"gpc_id", i},
+                                   {"tpc_per_gpc", tpc_per_gpc_},
+                                   {"cu_per_tpc", cu_per_tpc_},
+                                   {"cu_template", cu_template_path_}};
+            gpc_entry["modules"] = nlohmann::json::array();
+            gpc_entry["connections"] = nlohmann::json::array();
+            gpc_cfgs.push_back(gpc_entry);
         }
+        nlohmann::json gpu_cfg;
+        gpu_cfg["modules"] = gpc_cfgs;
+        gpu_cfg["connections"] = nlohmann::json::array();
+        internal_factory->instantiateAll(gpu_cfg);
     }
 
 } // namespace cpptlm::tlm

@@ -34,11 +34,19 @@ namespace cpptlm::tlm {
             throw std::runtime_error("ComputeCluster: cu_template must contain 'modules' array: " +
                                      cu_template_path_);
         }
+        nlohmann::json cu_cfg;
+        cu_cfg["modules"] = nlohmann::json::array();
+        cu_cfg["connections"] = nlohmann::json::array();
         for (int i = 0; i < cu_count_; ++i) {
-            auto cu = tmpl;
-            cu["name"] = "cu" + std::to_string(i);
-            internal_factory->instantiateAll(cu);
+            nlohmann::json cu_entry;
+            cu_entry["name"] = "cu" + std::to_string(i);
+            cu_entry["type"] = "ComputeCluster";
+            cu_entry["params"] = {{"cu_template", ""}, {"cu_count", 0}};
+            cu_entry["modules"] = tmpl["modules"];
+            cu_entry["connections"] = nlohmann::json::array();
+            cu_cfg["modules"].push_back(cu_entry);
         }
+        internal_factory->instantiateAll(cu_cfg);
     }
 
 } // namespace cpptlm::tlm

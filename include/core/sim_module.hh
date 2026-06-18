@@ -78,7 +78,7 @@ public:
     // ========================
     // 模拟激活入口 (v2.2 新增): 幂等守卫 + 限深检查 + 递归激活子 SimModule
     // ========================
-    void simulate_instantiate(const json& cfg) {
+    virtual void simulate_instantiate(const json& cfg) {
         // 幂等守卫:已 populate 则不重复构造 (只触发子 SimModule 递归激活)
         if (internal_factory && !internal_factory->getAllInstances().empty()) {
             return;
