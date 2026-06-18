@@ -160,6 +160,22 @@ public:
         return "";
     }
 
+#ifdef CPPTLM_TESTING
+public:
+    // P1 测试辅助: 直接向 internal_factory 添加实例 (绕过 instantiateAll 的 8 步流程)
+    void addInternalInstance(SimObject* obj) {
+        // 实际字段: instances (无下划线, 见 module_factory.hh:37)
+        internal_factory->addInstanceForTesting(obj->getName(), obj);
+    }
+    // P1 测试辅助: 直接添加 outputs 暴露端口配置 (绕过 parsePortConfigs JSON 路径)
+    void addOutputConfig(const std::string& internal, const std::string& external) {
+        output_configs.push_back({internal, external});
+        internal_to_external_map[external] = internal;
+    }
+    // P1 测试辅助: 设置 SimObject::name 字段 (用于 rename cu0_proxy -> cu0)
+    void setName(const std::string& n) { name = n; }  // SimObject 字段名 (无下划线)
+#endif
+
     // 检查是否为暴露的端口
     bool isExposedPort(const std::string& external_label) const {
         return internal_to_external_map.find(external_label) != internal_to_external_map.end();

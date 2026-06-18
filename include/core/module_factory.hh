@@ -260,6 +260,14 @@ public:
         get_bridges().insert(bridge_name);
     }
 
+#ifdef CPPTLM_TESTING
+public:
+    // P1 测试辅助: 直接向 instances 添加 (绕过 instantiateAll 的 8 步流程)
+    void addInstanceForTesting(const std::string& name, SimObject* obj) {
+        instances[name] = obj;  // 实际字段名 (无下划线)
+    }
+#endif
+
 private:
     static std::unordered_set<std::string>& get_bridges() {
         static std::unordered_set<std::string> bridges;
