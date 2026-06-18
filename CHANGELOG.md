@@ -6,7 +6,7 @@
 - **Added** `CpuCluster` 增强：override `tick`/`set_config`/`get_module_type`，支持 N 层 JSON 嵌套 + `MAX_DEPTH=8` 限深
 - **Added** `configs/example_simmodule_nested_{2level,3level_static}.json` 示例配置
 - **Added** `test/test_simmodule_nested.cc` 7 用例（含跨 cluster outputs 暴露端口 E2E）+ `test/python/test_simmodule_emitter.py` 6 用例
-- **Added** `include/tlm/cluster/cpu_cluster.hh` + `cpu_cluster.cc` (CpuCluster 移出 legacy, 无条件注册)
+- **Added** `include/tlm/cluster/cpu_cluster.hh` (CpuCluster 移出 legacy, 无条件注册; 实现为 header-only inline)
 - **Added** `SimModule::simulate_instantiate()` 公共方法 + `static thread_local int depth_` + `MAX_DEPTH=8` 限深护栏
 - **Added** `include/tlm/cluster/` 子目录, 预留 `MemoryCluster`/`CacheCluster` 未来扩展
 - **Added** `docs/migration-v2.2.md` (CPUSim → CPUTLM 迁移指南 + 路径替换速查表)
