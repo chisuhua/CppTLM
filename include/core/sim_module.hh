@@ -113,6 +113,16 @@ public:
 
     const ModuleFactory& getInternalFactory() const { return *internal_factory; }
 
+    // ========================
+    // 测试用 public getter (Stage 3 testing API)
+    // 用途: 验证 RAII DepthGuard 在抛错路径下能正确恢复 depth_ == 0
+    // thread_local 读取, 与 simulate_instantiate 调用同线程
+    // ========================
+    static int getCurrentDepth() { return depth_; }
+
+    // 暴露 MAX_DEPTH 供测试断言 (编译期常量)
+    static constexpr int getMaxDepth() { return MAX_DEPTH; }
+
     // 通过名称获取内部实例
     SimObject* getInternalInstance(const std::string& name) {
         return internal_factory->getInstance(name);
