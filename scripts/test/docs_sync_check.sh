@@ -70,6 +70,8 @@ VIRTUAL_PATHS=(
     "src/traffic_main.cpp"
     "src/sc_main.cpp"
     "cpu_cluster.cc"  # samples-orphaned 中；说明 DEPRECATED 时引用
+    "cpu_cluster.hh"  # v2.2 删除 (include/modules/legacy/)；docs/ONBOARDING.md §2.6 历史说明引用
+    "cpu_sim.hh"      # v2.2 删除 (include/modules/legacy/cpu_sim.hh)；docs/ONBOARDING.md §2.6 历史说明引用
     # 已归档到 docs-archived/
     "ext/packet_to_payload.hh"
     "ext/payload_to_packet.hh"
