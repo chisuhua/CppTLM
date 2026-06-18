@@ -20,9 +20,12 @@
 #include "tlm/cluster/tpc_cluster.hh"
 #include "tlm/cluster/gpc_cluster.hh"
 #include "tlm/cluster/gpu_cluster.hh"
+#include "tlm/cluster/cache_cluster.hh"
+#include "tlm/cluster/memory_cluster.hh"
+#include "tlm/cluster/gpu_noc_cluster.hh"
 #include "core/module_factory.hh"
 
-// ComputeCluster / TpcCluster / GpcCluster / GpuCluster 在 cpptlm::tlm 命名空间
+// ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC 在 cpptlm::tlm 命名空间
 using namespace cpptlm::tlm;
 
 // 注册表写入是 expression statement, C++ 全局作用域禁止 expression statement,
@@ -32,5 +35,8 @@ const bool _reg_computecluster = (REGISTER_MODULE(ComputeCluster), true);
 const bool _reg_tpccluster = (REGISTER_MODULE(TpcCluster), true);
 const bool _reg_gpccluster = (REGISTER_MODULE(GpcCluster), true);
 const bool _reg_gpucluster = (REGISTER_MODULE(GpuCluster), true);
+const bool _reg_cachecluster = (REGISTER_MODULE(CacheCluster), true);
+const bool _reg_memorycluster = (REGISTER_MODULE(MemoryCluster), true);
+const bool _reg_gpunoc = (REGISTER_MODULE(GpuNoC), true);
 
 #endif  // MODULES_CLUSTER_HH
