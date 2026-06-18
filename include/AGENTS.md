@@ -2,7 +2,7 @@
 
 **域**: C++ 头文件（C++17）
 **约定**: 所有 `.hh` 头文件在此，`src/` 仅放 `.cc` 实现
-**子域**: core(核心框架), tlm(V2.1 模块), framework(流适配器), bundles(消息定义), modules(Legacy), utils(工具), ext(插件), sc_core(SimC 兼容)
+**子域**: core(核心框架), tlm(V2.1+ 模块), framework(流适配器), bundles(消息定义), utils(工具), ext(插件), sc_core(SimC 兼容)
 
 ## 关键入口
 
@@ -12,7 +12,7 @@
 | `core/module_factory.hh` | 模块工厂：双注册表(registerObject/registerModule), instantiateAll |
 | `core/chstream_module.hh` | ChStreamModuleBase — TLM 模块的统一类型标识 |
 | `chstream_register.hh` | REGISTER_CHSTREAM 宏（注册 TLM 模块 + StreamAdapter + 多端口适配器） |
-| `modules.hh` | REGISTER_OBJECT 宏（注册 Legacy 模块）+ REGISTER_MODULE 宏 |
+| `modules.hh` | REGISTER_OBJECT 宏（v2.2 起为 no-op, CPUSim 已退场）+ REGISTER_MODULE 宏（无条件注册 CpuCluster） |
 
 ## 注册宏体系
 
@@ -20,10 +20,10 @@
 
 | 宏 | 入口文件 | 派生自 | 注册到 | Build flag |
 |----|----------|--------|--------|------------|
-| `REGISTER_OBJECT` | `include/modules.hh` | `SimObject`（含 Legacy `CPUSim` 与 `ChStreamModuleBase` 子树） | `getObjectRegistry()` | `BUILD_LEGACY_MODULES=OFF` → **no-op**（默认） |
-| `REGISTER_MODULE` | `include/modules.hh` | `SimModule`（如 `CpuCluster`） | `getModuleRegistry()` | `BUILD_LEGACY_MODULES=OFF` → **no-op**（默认） |
+| `REGISTER_OBJECT` | `include/modules.hh` | `SimObject`（v2.2 起为 no-op, 见宏体注释） | `getObjectRegistry()` | **Always ON**（v2.2: 宏体为空, CPUSim 已退场） |
+| `REGISTER_MODULE` | `include/modules.hh` | `SimModule`（无条件注册 CpuCluster, 位于 `include/tlm/cluster/`） | `getModuleRegistry()` | **Always ON** |
 | `REGISTER_CHSTREAM` | `include/chstream_register.hh` | `ChStreamModuleBase`（如 `CacheTLM`/`CrossbarTLM`/`MemoryTLM`） | `getObjectRegistry()` + `ChStreamAdapterFactory` | **Always ON**（推荐） |
-| `REGISTER_ALL` | `include/chstream_register.hh` | 复合宏 | `REGISTER_OBJECT; REGISTER_CHSTREAM` | `BUILD_LEGACY_MODULES=OFF` → 退化为 `REGISTER_CHSTREAM` |
+| `REGISTER_ALL` | `include/chstream_register.hh` | 复合宏 | `REGISTER_OBJECT; REGISTER_CHSTREAM` | **Always ON**（v2.2: REGISTER_OBJECT 为 no-op, 实际等价 REGISTER_CHSTREAM） |
 
 ### 设计意图
 
@@ -37,7 +37,7 @@
    - `unregister/clear/getRegisteredTypes` 必须做联合遍历，增加迭代开销。
    因此采用 `getObjectRegistry()` 与 `getModuleRegistry()` 两个独立 `unordered_map`，看似"不对称"，实为类型系统强制约束，非设计冗余。
 4. **ChStreamModuleBase 必须用 `REGISTER_OBJECT`**：因 `ChStreamModuleBase` 继承 `SimObject`（非 `SimModule`），其 StreamAdapter 通过 `ChStreamAdapterFactory` 单独注册，两者解耦但同一对象通过 `REGISTER_CHSTREAM` 复合宏一次性完成。
-5. **Legacy 模块编译守卫**：`REGISTER_OBJECT`/`REGISTER_MODULE` 当前总是展开为 `CPUSim`/`CpuCluster` 的注册代码；计划在 `BUILD_LEGACY_MODULES=OFF`（CMake 默认）时退化为 no-op（详见 wave0-t04 §6.3，本任务仅文档化意图，不改宏体）。
+5. **v2.2 起无 Legacy 编译守卫**：`REGISTER_OBJECT` 始终为 no-op 注释（`/* no-op: CPUSim removed in v2.2; use REGISTER_CHSTREAM for CPUTLM */`）；`REGISTER_MODULE` 始终展开为 `ModuleFactory::registerModule<CpuCluster>("CpuCluster");`。`CpuCluster` 类源位于 `include/tlm/cluster/cpu_cluster.hh`，是唯一活跃的 `SimModule` 派生类。
 
 ### 使用顺序
 
@@ -46,7 +46,7 @@
 #include "chstream_register.hh"  // REGISTER_CHSTREAM + REGISTER_ALL
 ```
 
-`REGISTER_ALL` = `REGISTER_OBJECT; REGISTER_CHSTREAM`（`chstream_register.hh:91`），一键注册 Legacy + ChStream 全量。
+`REGISTER_ALL` = `REGISTER_OBJECT; REGISTER_CHSTREAM`（`chstream_register.hh:91`），一键注册 Object + ChStream 全量。v2.2 起 `REGISTER_OBJECT` 为 no-op, `REGISTER_ALL` 实际等价于 `REGISTER_CHSTREAM`。
 
 ## 约定差异
 
@@ -54,11 +54,10 @@
 - **include 路径**: `include/` 直接作为 PUBLIC include dir，支持 `#include "core/xxx.hh"` 和 `#include "xxx.hh"`（无 core/ 前缀兼容旧代码）
 - **命名空间**: 大部分代码在全局命名空间（非 cpptlm），仅 StreamAdapter 在 `cpptlm::`
 - **DPRINTF 宏**: 编译期 `-DDEBUG_PRINT` 控制的日志，`DPRINTF(MODULE, "fmt", args...)`
-- **Legacy 模块迁移路径**：`BUILD_LEGACY_MODULES` CMake 选项（默认 `OFF`）控制 `REGISTER_OBJECT`/`REGISTER_MODULE` 是否展开为有效注册代码。`OFF` 时两宏退化为 no-op，Legacy 模块类仍可正常 `new` 实例化但不会被 `ModuleFactory::instantiateAll()` 发现；新代码统一走 `REGISTER_CHSTREAM`（Always ON）。迁移步骤：① `BUILD_LEGACY_MODULES=ON` 跑一次旧回归确认基线；② 将 Legacy 模块逐一重构为 `ChStreamModuleBase` 派生并改用 `REGISTER_CHSTREAM`；③ `BUILD_LEGACY_MODULES=OFF` 默认构建并删除 `include/modules/legacy/` 归档目录。
 
 ## 注意事项
 
 - `include/core/` 同时作为 include 目录添加到 CMake target，允许无 `core/` 前缀 `#include "packet.hh"` — 新旧代码共存
 - 添加新 TLM 模块时：`include/tlm/*.hh` + `REGISTER_CHSTREAM` 宏更新
-- 添加新 Legacy 模块时：`include/modules/legacy/*.hh` + `modules.hh` 更新
+- 添加新 SimModule 容器（如 MemoryCluster/CacheCluster）时：`include/tlm/cluster/*.hh` + `include/modules.hh` 的 `REGISTER_MODULE` 宏更新
 - `include/ext/` 多 extension 并存：`tlm::tlm_generic_payload` 通过 `tlm_extension_registry` + `tlm_array<T>` 支持多个不同类型 extension 同时附加（Phase 1c 升级，详见 `docs/adr/ADR-X.13-stub-multi-extension.md`）
