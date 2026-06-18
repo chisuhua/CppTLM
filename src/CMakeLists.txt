@@ -18,10 +18,12 @@ set(CORE_SOURCES
     core/topology_parser.cc
     # utils
     utils/dynamic_loader.cc
-    # tlm (Phase 7: RouterTLM + NICTLM + LinkTLM + Phase 2 SimModule 容器)
+    # tlm (Phase 7: RouterTLM + NICTLM + LinkTLM + Phase 2 SimModule 容器 + Phase 3 ChStream helpers)
     tlm/router_tlm.cc
     tlm/nic_tlm.cc
     tlm/link_tlm.cc
+    tlm/cache_tlm.cc
+    tlm/crossbar_tlm.cc
     tlm/cluster/compute_cluster.cc
     tlm/cluster/tpc_cluster.cc
     tlm/cluster/gpc_cluster.cc
