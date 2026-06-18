@@ -18,10 +18,11 @@ set(CORE_SOURCES
     core/topology_parser.cc
     # utils
     utils/dynamic_loader.cc
-    # tlm (Phase 7: RouterTLM + NICTLM + LinkTLM)
+    # tlm (Phase 7: RouterTLM + NICTLM + LinkTLM + Phase 2 SimModule 容器)
     tlm/router_tlm.cc
     tlm/nic_tlm.cc
     tlm/link_tlm.cc
+    tlm/cluster/compute_cluster.cc
 )
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
