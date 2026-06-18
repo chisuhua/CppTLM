@@ -8,9 +8,12 @@
 
 #include "bundles/cache_bundles_tlm.hh"
 #include "core/chstream_module.hh"
+#include "core/simple_port.hh"
 #include "framework/stream_adapter.hh"
 #include "metrics/stats.hh"
 #include <cstdint>
+#include <memory>
+#include <vector>
 
 /**
  * @brief Crossbar TLM 模块（4 端口路由）
@@ -34,6 +37,9 @@ private:
     cpptlm::StreamAdapterBase* adapter[NUM_PORTS] = {nullptr};
     cpptlm::StreamAdapterBase* multi_adapter_ = nullptr; // P0-5b fix: single MultiPortStreamAdapter
     bool port_busy_[NUM_PORTS] = {false};
+
+    // P3: helper 创建的 PortPair 容器,管理 lazy-bind 的端口对生命周期
+    std::vector<std::unique_ptr<PortPair>> helper_pairs_;
 
     // 性能统计
     tlm_stats::StatGroup stats_;
@@ -168,6 +174,13 @@ public:
     void dumpStats(std::ostream& os) const {
         stats_.dump(os);
     }
+
+    // P3: helper 方法 - 借鉴 gem5 caches.py::L2Cache.connectCPUSideBus / connectMemSideBus
+    // P3 partial: 不依赖 D.1, lazy 注册 cpu_side/mem_side 端口 + bind 总线
+    // 参数类型为 ChStreamModuleBase* (非 SimModule*),
+    //   因为 CacheTLM/CrossbarTLM/MemoryTLM 均派生自 ChStreamModuleBase 而非 SimModule
+    void connectCPUSideBus(ChStreamModuleBase* bus);
+    void connectMemSideBus(ChStreamModuleBase* bus);
 };
 
 #endif // TLM_CROSSBAR_TLM_HH

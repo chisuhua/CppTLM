@@ -9,10 +9,13 @@
 
 #include "bundles/cache_bundles_tlm.hh"
 #include "core/chstream_module.hh"
+#include "core/simple_port.hh"
 #include "framework/stream_adapter.hh"
 #include "metrics/stats.hh"
 #include <cstdint>
 #include <map>
+#include <memory>
+#include <vector>
 
 /**
  * @brief Cache TLM 模块（新式 ch_stream 内部模型）
@@ -38,6 +41,9 @@ private:
     // 业务状态
     std::map<uint64_t, uint64_t> cache_lines_;
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
+
+    // P3: helper 创建的 PortPair 容器,管理 lazy-bind 的端口对生命周期
+    std::vector<std::unique_ptr<PortPair>> helper_pairs_;
 
     // 性能统计
     tlm_stats::StatGroup stats_;
@@ -156,6 +162,13 @@ public:
     void dumpStats(std::ostream& os) const {
         stats().dump(os);
     }
+
+    // P3: helper 方法 - 隐藏 mem_side 端口方向
+    // 借鉴 gem5 caches.py::L1Cache.connectBus
+    // P3 partial: 不依赖 D.1, 仅 lazy 注册 mem_side 端口 + bind 总线
+    // 注意: 参数类型为 ChStreamModuleBase* (非 SimModule*),
+    //   因为 CacheTLM/CrossbarTLM/MemoryTLM 均派生自 ChStreamModuleBase 而非 SimModule
+    void connectBus(ChStreamModuleBase* bus);
 };
 
 #endif // TLM_CACHE_TLM_HH
