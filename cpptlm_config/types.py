@@ -22,10 +22,7 @@ class ModuleType(str, Enum):
     CACHE_TLM = "CacheTLM"
     CROSSBAR_TLM = "CrossbarTLM"
     MEMORY_TLM = "MemoryTLM"
-    # CPUSim/CpuCluster are DEPRECATED in CppTLM v2.1
-    # Use CPU_TLM = "CPUTLM" for new code (registered by default)
-    # CPU_SIM is only available when BUILD_LEGACY_MODULES=ON
-    CPU_SIM = "CPUSim"
+    CPU_TLM = "CPUTLM"
     BUS_SIM = "BusSim"
     TRAFFIC_GEN_TLM = "TrafficGenTLM"
     DIRECTORY_CTRL = "DirectoryCtrl"

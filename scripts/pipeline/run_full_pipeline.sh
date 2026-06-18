@@ -50,9 +50,9 @@ python3 "$SCRIPT_DIR/../topology/topology_generator.py" \
 {
     "name": "test_topology",
     "modules": [
-        {"name": "cpu", "type": "CPUSim"},
-        {"name": "cache", "type": "CacheSim"},
-        {"name": "mem", "type": "MemorySim"}
+        {"name": "cpu", "type": "CPUTLM"},
+        {"name": "cache", "type": "CacheTLM"},
+        {"name": "mem", "type": "MemoryTLM"}
     ],
     "connections": [
         {"src": "cpu", "dst": "cache", "latency": 1},
