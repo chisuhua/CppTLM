@@ -6,16 +6,8 @@
 // 参考: docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md §4.1
 #include "core/sim_module.hh"
 #include "modules_cluster.hh"  // placeholder, P2 后存在
-#include "chstream_register.hh"
 #include "core/module_factory.hh"
-#include "utils/json_includer.hh"
 #include <catch2/catch_all.hpp>
-#include <nlohmann/json.hpp>
-#include <filesystem>
-#include <fstream>
-
-using namespace cpptlm;
-using json = nlohmann::json;
 
 TEST_CASE("D.4 findInternalPath recurses nested SimModule", "[simmodule][regression]") {
     // 验证 findInternalPath 递归到子 SimModule
@@ -46,5 +38,7 @@ TEST_CASE("D.4 findInternalPath recurses nested SimModule", "[simmodule][regress
     REQUIRE(outer->findInternalPath("mid_cpu0_to_bus") == "mid.inner.inner_cpu0_to_bus");
     REQUIRE(outer->findInternalPath("inner_cpu0_to_bus") == "mid.inner.cpu0.req_out");
 
-    delete outer; delete mid; delete inner; delete cu0;
+    // 仅 delete outer: outer->internal_factory 销毁时递归 delete mid/inner/cu0
+    // (ModuleFactory::~ModuleFactory 迭代 instances 调用 delete)
+    delete outer;
 }
