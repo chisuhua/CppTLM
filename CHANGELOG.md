@@ -57,6 +57,38 @@
   为新 SimModule 子类 (P2 ComputeCluster 等) 提供默认 tick
 - test: 3-level JSON config end-to-end regression (P1-T1.5)
 
+## P2-P5 - 2026-06-19: SimModule 多级层次 + JSON 模板复用
+
+### P2: GPU 端 4 核心 SimModule 类
+- feat(simmodule): add ComputeCluster with cu_template/cu_count reuse
+- feat(configs): add compute_unit_v1.json blueprint template
+- feat(simmodule): add TpcCluster + GpcCluster + GpuCluster (4-level GPU hierarchy)
+- feat(register): add modules_cluster.hh for 4 GPU SimModule + CpuCluster
+  - 重构 REGISTER_MODULE 宏为参数化 (从无参 statement 改为 template 注册)
+- test(simmodule): add 4 GPU SimModule integration tests (4 cases)
+- 关键修复: SimModule::simulate_instantiate 缺 virtual + cfg schema {modules, connections}
+
+### P3: ChStream helper 方法 (partial)
+- feat(chstream): add connectBus/connectCPUSideBus/connectMemSideBus helpers
+- connectCPU 依赖 D.1 修复, 暂未实施
+
+### P4: 基础设施 3 类
+- feat(simmodule): add CacheCluster + MemoryCluster + GpuNoC
+  - CacheCluster: L1×N (私有) + L2 (共享)
+  - MemoryCluster: 多通道 HBM/DDR + Arbiter
+  - GpuNoC: Garnet 风格 NxN mesh (routers)
+
+### P5: 顶层 + incorporate_parent
+- feat(simmodule): add ApuSoC top + incorporate_parent hook
+- apu_soc_v1.json: 完整 APU (CPU + GPU + CrossbarTLM) 端到端
+- incorporate_parent 借鉴 gem5 incorporate_cache(board) late-binding
+- test(python): add apu_soc emitter tests (2 cases)
+
+### 统计
+- 10 个 SimModule 派生类 (CpuCluster + 8 新 + 1 顶层 ApuSoC 算容器)
+- 31 新增文件 + 12 修改文件
+- 659/659 C++ tests + 2/2 Python tests pass
+
 ## [v2.1.0] - 2026-06-08
 
 ### Added
