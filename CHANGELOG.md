@@ -1,5 +1,39 @@
 # Changelog
 
+## [v2.2.0] - 2026-06-18
+
+### Added
+- **Added** `CpuCluster` 增强：override `tick`/`set_config`/`get_module_type`，支持 N 层 JSON 嵌套 + `MAX_DEPTH=8` 限深
+- **Added** `configs/example_simmodule_nested_{2level,3level_static}.json` 示例配置
+- **Added** `test/test_simmodule_nested.cc` 7 用例（含跨 cluster outputs 暴露端口 E2E）+ `test/python/test_simmodule_emitter.py` 6 用例
+- **Added** `include/tlm/cluster/cpu_cluster.hh` + `cpu_cluster.cc` (CpuCluster 移出 legacy, 无条件注册)
+- **Added** `SimModule::simulate_instantiate()` 公共方法 + `static thread_local int depth_` + `MAX_DEPTH=8` 限深护栏
+- **Added** `include/tlm/cluster/` 子目录, 预留 `MemoryCluster`/`CacheCluster` 未来扩展
+- **Added** `docs/migration-v2.2.md` (CPUSim → CPUTLM 迁移指南 + 路径替换速查表)
+
+### Changed
+- `include/AGENTS.md`: 移除 `BUILD_LEGACY_MODULES` 守卫说明, `REGISTER_OBJECT` 标注 no-op, `REGISTER_MODULE` 标注无条件
+- `include/tlm/AGENTS.md`: 模块列表加 CpuCluster 行, 新增 `cluster/` 子目录说明
+- `configs/AGENTS.md`: 移除"已归档"段 `BUILD_LEGACY_MODULES` 描述, 新增"SimModule 嵌套 JSON" schema 示例段
+- `include/modules.hh`: 重构（移除 `#ifdef BUILD_LEGACY_MODULES` 守卫）
+
+### Removed
+- **Removed** `BUILD_LEGACY_MODULES` CMake option (`AGENTS.md` migration path updated)
+- **Removed** `include/modules/legacy/` 目录 (`cpu_sim.hh` removed; `cpu_cluster.hh` moved to `include/tlm/cluster/`)
+- **Removed** `CPUSim` 类型（由 `CPUTLM` (`include/tlm/cpu_tlm.hh`) 替代, 走 `REGISTER_CHSTREAM`）
+- **Removed** `REGISTER_OBJECT` 宏的 `CPUSim` 注册代码（宏体改为 no-op 注释）
+
+### Fixed
+- `ModuleFactory` 顶层 `instantiateAll` 触发 `SimModule::simulate_instantiate`（修复嵌套激活死代码问题）
+- `ModuleFactory` 安全的 per-factory cleanup（避免跨实例析构冲突）
+- `ModuleGroup::eraseInstance` 公开（支持 dynamic_cast + cleanup 路径）
+
+### BREAKING
+- **BREAKING** v2.1.x 引用 `BUILD_LEGACY_MODULES=ON` 项目需迁移到 CPUTLM（见 `docs/migration-v2.2.md`）
+- **BREAKING** `#include "modules/legacy/cpu_sim.hh"` 路径不存在, 需改为 `#include "tlm/cpu_tlm.hh"`
+- **BREAKING** `#include "modules/legacy/cpu_cluster.hh"` 路径不存在, 需改为 `#include "tlm/cluster/cpu_cluster.hh"`
+- **BREAKING** JSON `"type": "CPUSim"` 不再识别, 需改为 `"type": "CPUTLM"`
+
 ## [Unreleased]
 
 ### Added

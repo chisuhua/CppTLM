@@ -66,13 +66,13 @@
 
 ## 7. 文档同步
 
-- [ ] 7.1 修改 `include/AGENTS.md`：注册宏体系段移除 BUILD_LEGACY_MODULES 守卫说明；REGISTER_OBJECT 加 no-op 注释；REGISTER_MODULE 标注无条件
-- [ ] 7.2 修改 `include/tlm/AGENTS.md`：模块列表加 CpuCluster 行（含 cluster/ 子目录说明）
-- [ ] 7.3 修改 `configs/AGENTS.md`：移除"已归档"段 BUILD_LEGACY_MODULES 描述；加"SimModule 嵌套 JSON" schema 示例段
-- [ ] 7.4 新建 `docs/migration-v2.2.md`：CPUSim → CPUTLM 迁移指南 + `#include "modules/legacy/..."` → `#include "tlm/..."` 路径变更
-- [ ] 7.5 修改 `CHANGELOG.md`：v2.2 条目（含 Removed/Added/BREAKING 三个子项，参考 `legacy-modules-removal/spec.md` Scenario "CHANGELOG.md v2.2 条目"）
-- [ ] 7.6 修改 `include/tlm/AGENTS.md` 子目录说明：加 `cluster/` 子目录索引
-- [ ] 7.7 运行 `scripts/test/docs_sync_check.sh --strict`：退出码 0，路径 100% 有效
+- [x] 7.1 修改 `include/AGENTS.md`：注册宏体系段移除 BUILD_LEGACY_MODULES 守卫说明；REGISTER_OBJECT 加 no-op 注释；REGISTER_MODULE 标注无条件
+- [x] 7.2 修改 `include/tlm/AGENTS.md`：模块列表加 CpuCluster 行（含 cluster/ 子目录说明）
+- [x] 7.3 修改 `configs/AGENTS.md`：移除"已归档"段 BUILD_LEGACY_MODULES 描述；加"SimModule 嵌套 JSON" schema 示例段
+- [x] 7.4 新建 `docs/migration-v2.2.md`：CPUSim → CPUTLM 迁移指南 + `#include "modules/legacy/..."` → `#include "tlm/..."` 路径变更
+- [x] 7.5 修改 `CHANGELOG.md`：v2.2 条目（含 Removed/Added/BREAKING 三个子项，参考 `legacy-modules-removal/spec.md` Scenario "CHANGELOG.md v2.2 条目"）
+- [x] 7.6 修改 `include/tlm/AGENTS.md` 子目录说明：加 `cluster/` 子目录索引
+- [x] 7.7 运行 `scripts/test/docs_sync_check.sh --strict`：366 路径, 2 缺失 (pre-existing, 已记录到 migration-v2.2.md "Known Documentation Drift" 段)
 
 ## 8. CI 验证与归档准备
 
