@@ -1,0 +1,84 @@
+{
+  "name": "simmodule_nested_3level_static",
+  "description": "3-level CpuCluster nesting: outer (CpuCluster) -> mid (CpuCluster) -> inner (CpuCluster) with 2 CPUTLM at innermost, outputs/inputs exposed at every level",
+  "modules": [
+    {
+      "name": "outer",
+      "type": "CpuCluster",
+      "params": {
+        "num_cpus": 2,
+        "cluster_id": "outer"
+      },
+      "outputs": [
+        { "internal": "mid.cpu0_to_bus", "external": "outer_to_bus" }
+      ],
+      "inputs": [
+        { "internal": "mid.bus_to_cpu0", "external": "bus_to_outer" }
+      ],
+      "modules": [
+        {
+          "name": "mid",
+          "type": "CpuCluster",
+          "params": {
+            "num_cpus": 2,
+            "cluster_id": "mid"
+          },
+          "outputs": [
+            { "internal": "inner.cpu0_to_bus", "external": "mid_to_bus" }
+          ],
+          "inputs": [
+            { "internal": "inner.bus_to_cpu0", "external": "bus_to_mid" }
+          ],
+          "modules": [
+            {
+              "name": "inner",
+              "type": "CpuCluster",
+              "params": {
+                "num_cpus": 2,
+                "cluster_id": "inner"
+              },
+              "outputs": [
+                { "internal": "cpu0.req_out", "external": "cpu0_to_bus" }
+              ],
+              "inputs": [
+                { "internal": "cpu0.resp_in", "external": "bus_to_cpu0" }
+              ],
+              "modules": [
+                {
+                  "name": "cpu0",
+                  "type": "CPUTLM",
+                  "params": {
+                    "pattern": "SEQUENTIAL",
+                    "start_addr": "0x1000"
+                  }
+                },
+                {
+                  "name": "cpu1",
+                  "type": "CPUTLM",
+                  "params": {
+                    "pattern": "SEQUENTIAL",
+                    "start_addr": "0x2000"
+                  }
+                },
+                {
+                  "name": "l1",
+                  "type": "CacheTLM",
+                  "params": {
+                    "size": "16KB"
+                  }
+                }
+              ],
+              "connections": [
+                { "src": "cpu0", "dst": "l1", "latency": 1 },
+                { "src": "cpu1", "dst": "l1", "latency": 1 }
+              ]
+            }
+          ],
+          "connections": []
+        }
+      ],
+      "connections": []
+    }
+  ],
+  "connections": []
+}
