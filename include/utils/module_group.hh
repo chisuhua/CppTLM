@@ -37,8 +37,17 @@ public:
         DPRINTF(GROUP, "[Group] Unregistered instance '%s'\n", name.c_str());
     }
 
+    // Erase a single name from the instance registry without deleting the
+    // SimObject (caller owns the object and is responsible for its lifetime).
     static void eraseInstance(const std::string& name) {
         getInstanceRegistry().erase(name);
+    }
+
+    // Clear all groups. Used by ModuleFactory destructor to reset shared
+    // group state that may have been polluted by previous tests in the
+    // same process.
+    static void clearAllGroups() {
+        getGroups().clear();
     }
 
     static bool isInstanceRegistered(const std::string& name) {
@@ -111,10 +120,15 @@ public:
         return resolved;
     }
 
+    // clearAll: clears both registries. ModuleFactory::~ModuleFactory
+    // is responsible for deleting its own SimObject* instances (not
+    // ModuleGroup), so this method is a pure registry reset, not a
+    // ownership destructor. Previously this method called `delete obj`
+    // for every registered SimObject, which caused a double-free when
+    // SimModule's internal_factory sub-factory also re-entered clearAll
+    // during cascade destruction: the outer snapshot included child
+    // instances that the inner sub-factory had already deleted.
     static void clearAll() {
-        for (auto& [name, obj] : getInstanceRegistry()) {
-            delete obj;
-        }
         getInstanceRegistry().clear();
         getGroups().clear();
     }
