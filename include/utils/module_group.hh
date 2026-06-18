@@ -37,6 +37,10 @@ public:
         DPRINTF(GROUP, "[Group] Unregistered instance '%s'\n", name.c_str());
     }
 
+    static void eraseInstance(const std::string& name) {
+        getInstanceRegistry().erase(name);
+    }
+
     static bool isInstanceRegistered(const std::string& name) {
         return getInstanceRegistry().count(name) > 0;
     }
