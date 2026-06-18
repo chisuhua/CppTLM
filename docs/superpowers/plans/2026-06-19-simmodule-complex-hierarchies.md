@@ -256,7 +256,7 @@ cmake --build build --target cpptlm_tests -j$(nproc)
 
 ```bash
 cd /workspace/project/CppTLM
-git add include/core/sim_module.hh test/test_simmodule_recursive_bug.cc CMakeLists.txt
+git add include/core/sim_module.hh test/test_simmodule_recursive_bug.cc src/CMakeLists.txt
 git commit -m "fix(simmodule): make findInternalPath recurse to child SimModule (D.4)
 
 - 修复前: 3 层 outer→mid→inner 嵌套时, outer.findInternalPath('mid_cpu0_to_bus') 返回 ''
@@ -536,10 +536,10 @@ void ComputeCluster::simulate_instantiate(const nlohmann::json& cfg) {
 
 - [ ] **Step 2.1.3: 添加到 CMake**
 
-修改 `CMakeLists.txt` 的 `CORE_SOURCES` 列表：
+修改 `src/CMakeLists.txt` 的 `CORE_SOURCES` 列表：
 
 ```cmake
-# CMakeLists.txt
+# src/CMakeLists.txt
 set(CORE_SOURCES
     # ... 现有源 ...
     src/tlm/cluster/compute_cluster.cc
@@ -560,7 +560,7 @@ cmake --build build -j$(nproc)
 
 ```bash
 cd /workspace/project/CppTLM
-git add include/tlm/cluster/compute_cluster.hh src/tlm/cluster/compute_cluster.cc CMakeLists.txt
+git add include/tlm/cluster/compute_cluster.hh src/tlm/cluster/compute_cluster.cc src/CMakeLists.txt
 git commit -m "feat(simmodule): add ComputeCluster with cu_template/cu_count reuse
 
 - 接收 JSON 蓝图路径 (cu_template) + 份数 (cu_count)
@@ -582,10 +582,8 @@ git commit -m "feat(simmodule): add ComputeCluster with cu_template/cu_count reu
   "modules": [
     { "name": "scalar_cache", "type": "CacheTLM",
       "params": { "size": "16KB", "assoc": 4, "line_size": 64 } },
-    { "name": "vector_reg",   "type": "VectorRegFileTLM",
-      "params": { "num_regs": 64, "lanes": 16 } },
-    { "name": "wavefront",    "type": "WavefrontTLM",
-      "params": { "max_wavefronts": 10 } }
+    { "name": "l1_cache",     "type": "CacheTLM",
+      "params": { "size": "32KB", "assoc": 8, "line_size": 64 } }
   ]
 }
 ```
@@ -792,7 +790,7 @@ void GpuCluster::simulate_instantiate(const nlohmann::json& cfg) {
 - [ ] **Step 2.3.5: 添加到 CMake**
 
 ```cmake
-# CMakeLists.txt
+# src/CMakeLists.txt
 set(CORE_SOURCES
     # ... 现有 ...
     src/tlm/cluster/compute_cluster.cc
@@ -1170,16 +1168,33 @@ void CacheCluster::simulate_instantiate(const nlohmann::json& cfg) {
         internal_factory->instantiateAll(l1_cfg);
     }
     // 3. 自动连接: l1_<i>.mem_side → l2.cpu_side
-    nlohmann::json conns = {{"connections", nlohmann::json::array()}};
+    // 注: ModuleFactory 无 resolveConnections / connectAll 方法
+    // 正确做法: 构造完整 config (modules + connections), 一次性 instantiateAll
+    // Step 5 走完整连接流程 (src/core/module_factory.cc:388-577)
+    nlohmann::json full_config = {{"modules", nlohmann::json::array()}};
+    // 1. 实例化 L2 (单例)
+    full_config["modules"].push_back({
+        {"name", "l2"}, {"type", "CacheTLM"},
+        {"params", {{"size", l2_size_}, {"level", 2}}}
+    });
+    // 2. 实例化 L1 × N
     for (int i = 0; i < l1_count_; ++i) {
-        conns["connections"].push_back({
+        full_config["modules"].push_back({
+            {"name", "l1_" + std::to_string(i)}, {"type", "CacheTLM"},
+            {"params", {{"size", l1_size_}, {"level", 1}}}
+        });
+    }
+    // 3. Connections: l1_<i>.mem_side → l2.cpu_side
+    full_config["connections"] = nlohmann::json::array();
+    for (int i = 0; i < l1_count_; ++i) {
+        full_config["connections"].push_back({
             {"src", "l1_" + std::to_string(i)},
             {"dst", "l2"},
             {"latency", 5}
         });
     }
-    // 通过 internal_factory 走完整 8 步流程的 Step 5
-    internal_factory->resolveConnections(conns["connections"]);
+    // 4. 一次性 instantiateAll (走完整 8 步流程, 含 Step 5 connections 解析)
+    internal_factory->instantiateAll(full_config);
 }
 }  // namespace cpptlm::tlm
 ```
@@ -1300,7 +1315,7 @@ cp configs/gpu_2gpc_2tpc_2cu.json configs/templates/gpu_2gpc_2tpc_2cu.json
       "gpu_topology": "./templates/gpu_2gpc_2tpc_2cu.json"
     },
     "modules": [
-      { "name": "xbar", "type": "CoherentXBarTLM",
+      { "name": "xbar", "type": "CrossbarTLM",
         "params": { "ports": 8, "protocol": "MOESI" } }
     ]
   }]
@@ -1327,7 +1342,7 @@ git add include/tlm/cluster/apu_soc.hh src/tlm/cluster/apu_soc.cc \
         configs/templates/cpu_cluster_2level.json \
         configs/templates/gpu_2gpc_2tpc_2cu.json \
         configs/apu_soc_v1.json \
-        include/modules_cluster.hh include/core/sim_module.hh CMakeLists.txt
+        include/modules_cluster.hh include/core/sim_module.hh src/CMakeLists.txt
 git commit -m "feat(simmodule): add ApuSoC top container + incorporate_parent hook (P5)
 
 - ApuSoC: 顶层容器, 引用 cpu_topology + gpu_topology 模板
