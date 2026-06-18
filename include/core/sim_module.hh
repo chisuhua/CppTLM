@@ -145,16 +145,16 @@ public:
         return dynamic_cast<MasterPort*>(obj->getPortManager().getDownstreamPort(port_name));
     }
 
-    // 根据外部标签查找内部路径
+    // 根据外部标签查找内部路径 (P1 修复 D.4: 递归到子 SimModule)
     std::string findInternalPath(const std::string& external_label) const {
-        for (const auto& config : output_configs) {
-            if (config.external_label == external_label) {
-                return config.internal_path;
-            }
-        }
-        for (const auto& config : input_configs) {
-            if (config.external_label == external_label) {
-                return config.internal_path;
+        // 先查当前层
+        auto it = internal_to_external_map.find(external_label);
+        if (it != internal_to_external_map.end()) return it->second;
+        // 递归到子 SimModule (返回 "<子模块名>.<内部路径>")
+        for (const auto& kv : internal_factory->getAllInstances()) {
+            if (auto* sub = dynamic_cast<SimModule*>(kv.second)) {
+                std::string sub_path = sub->findInternalPath(external_label);
+                if (!sub_path.empty()) return kv.first + "." + sub_path;
             }
         }
         return "";
