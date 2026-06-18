@@ -23,8 +23,10 @@
 #include "tlm/cpu_tlm.hh"
 #include "tlm/memory_tlm.hh"
 #include <catch2/catch_all.hpp>
+#include <future>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <thread>
 
 using json = nlohmann::json;
 
@@ -463,4 +465,110 @@ TEST_CASE("SimModule CpuCluster set_config: num_cpus/cluster_id passthrough", "[
         REQUIRE(c->num_cpus() == 2);
         REQUIRE(c->cluster_id() == "test_cluster");
     }
+}
+
+// =====================================================================
+// Case 7: 8 层深度边界 - depth=8 不抛错, 最内层 CPUTLM 成功构造
+// 显式覆盖 simmodule-depth-guard §3 "8 层嵌套 depth=8 不抛错（边界）"
+// =====================================================================
+TEST_CASE("SimModule 8-level boundary: depth=8 succeeds with deepest CPUTLM constructed",
+          "[simmodule][depth][boundary]") {
+    registerSimModuleTypes();
+    REQUIRE(SimModule::getCurrentDepth() == 0);
+    REQUIRE(SimModule::getMaxDepth() == 8);
+
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+
+    json cfg;
+    cfg["modules"] = json::array();
+    cfg["connections"] = json::array();
+    json* current = &cfg;
+    for (int i = 0; i < 8; ++i) {
+        json child;
+        child["name"] = "level_" + std::to_string(i);
+        child["type"] = "CpuCluster";
+        child["params"] = {{"num_cpus", 0}, {"cluster_id", "deep_" + std::to_string(i)}};
+        child["modules"] = json::array();
+        child["connections"] = json::array();
+        (*current)["modules"].push_back(child);
+        current = &(*current)["modules"].back();
+    }
+    json cpu;
+    cpu["name"] = "cpu0";
+    cpu["type"] = "CPUTLM";
+    (*current)["modules"].push_back(cpu);
+
+    bool factory_ok = factory.instantiateAll(cfg);
+    INFO("factory.instantiateAll(8-level boundary) = " << factory_ok);
+    REQUIRE(factory_ok);
+
+    REQUIRE(SimModule::getCurrentDepth() == 0);
+
+    auto* level_0 = dynamic_cast<CpuCluster*>(factory.getInstance("level_0"));
+    REQUIRE(level_0 != nullptr);
+
+    CpuCluster* cur = level_0;
+    for (int target = 1; target <= 7; ++target) {
+        std::string child_name = "level_" + std::to_string(target);
+        auto* next = dynamic_cast<CpuCluster*>(cur->getInternalInstance(child_name));
+        INFO("walk to " << child_name << " got " << next);
+        REQUIRE(next != nullptr);
+        cur = next;
+    }
+    auto* cpu_instance = dynamic_cast<CPUTLM*>(cur->getInternalInstance("cpu0"));
+    REQUIRE(cpu_instance != nullptr);
+    REQUIRE(cpu_instance->get_module_type() == "CPUTLM");
+}
+
+// =====================================================================
+// Case 8: thread_local 多线程隔离 - 2 线程独立 EventQueue + ModuleFactory
+// 显式覆盖 simmodule-depth-guard §5 "thread_local 在多线程隔离"
+// =====================================================================
+TEST_CASE(
+    "SimModule thread_local depth isolation: concurrent simulate_instantiate per-thread counter",
+    "[simmodule][depth][threads]") {
+    registerSimModuleTypes();
+    REQUIRE(SimModule::getCurrentDepth() == 0);
+
+    auto run_in_thread = [](int n_levels) -> int {
+        EventQueue eq;
+        ModuleFactory factory(&eq);
+        json cfg;
+        cfg["modules"] = json::array();
+        cfg["connections"] = json::array();
+        json* current = &cfg;
+        for (int i = 0; i < n_levels; ++i) {
+            json child;
+            child["name"] = "level_" + std::to_string(i);
+            child["type"] = "CpuCluster";
+            child["params"] = {{"num_cpus", 0}};
+            child["modules"] = json::array();
+            child["connections"] = json::array();
+            (*current)["modules"].push_back(child);
+            current = &(*current)["modules"].back();
+        }
+        json cpu;
+        cpu["name"] = "cpu0";
+        cpu["type"] = "CPUTLM";
+        (*current)["modules"].push_back(cpu);
+        bool ok = factory.instantiateAll(cfg);
+        return ok ? SimModule::getCurrentDepth() : -1;
+    };
+
+    std::promise<int> pa, pb;
+    auto fa = pa.get_future();
+    auto fb = pb.get_future();
+    std::thread ta([&] { pa.set_value(run_in_thread(5)); });
+    std::thread tb([&] { pb.set_value(run_in_thread(3)); });
+    ta.join();
+    tb.join();
+
+    int a_depth = fa.get();
+    int b_depth = fb.get();
+    INFO("thread A final depth = " << a_depth);
+    INFO("thread B final depth = " << b_depth);
+    REQUIRE(a_depth == 0);
+    REQUIRE(b_depth == 0);
+    REQUIRE(SimModule::getCurrentDepth() == 0);
 }
