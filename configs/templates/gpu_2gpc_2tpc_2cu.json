@@ -1,0 +1,15 @@
+{
+  "name": "gpu_2gpc_2tpc_2cu",
+  "description": "GPU with 2 GPC × 2 TPC × 2 CU = 8 CUs (Phase 2 E2E test config)",
+  "modules": [{
+    "name": "gpu",
+    "type": "GpuCluster",
+    "params": {
+      "gpc_count": 2,
+      "tpc_per_gpc": 2,
+      "cu_per_tpc": 2,
+      "cu_template": "configs/templates/compute_unit_v1.json"
+    }
+  }],
+  "connections": []
+}

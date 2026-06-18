@@ -24,9 +24,7 @@ namespace cpptlm::tlm {
             tpc_entry["name"] = "tpc" + std::to_string(i);
             tpc_entry["type"] = "TpcCluster";
             tpc_entry["params"] = {
-                {"tpc_id", i},
-                {"cu_per_tpc", cu_per_tpc_},
-                {"cu_template", cu_template_path_}};
+                {"tpc_id", i}, {"cu_per_tpc", cu_per_tpc_}, {"cu_template", cu_template_path_}};
             tpc_entry["modules"] = nlohmann::json::array();
             tpc_entry["connections"] = nlohmann::json::array();
             tpc_cfgs.push_back(tpc_entry);

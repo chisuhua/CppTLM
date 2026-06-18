@@ -5,10 +5,10 @@
 // 日期: 2026-06-19
 #include "tlm/crossbar_tlm.hh"
 #include "core/chstream_module.hh"
+#include "core/master_port.hh"
 #include "core/port_manager.hh"
 #include "core/simple_port.hh"
 #include "core/slave_port.hh"
-#include "core/master_port.hh"
 #include <stdexcept>
 
 // P3 partial: 不依赖 D.1, lazy 注册 cpu_side 端口 + bind 上游 bus

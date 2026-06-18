@@ -19,7 +19,8 @@ namespace cpptlm::tlm {
         nlohmann::json compute_grp_entry;
         compute_grp_entry["name"] = "compute_grp";
         compute_grp_entry["type"] = "ComputeCluster";
-        compute_grp_entry["params"] = {{"cu_template", cu_template_path_}, {"cu_count", cu_per_tpc_}};
+        compute_grp_entry["params"] = {{"cu_template", cu_template_path_},
+                                       {"cu_count", cu_per_tpc_}};
         compute_grp_entry["modules"] = nlohmann::json::array();
         compute_grp_entry["connections"] = nlohmann::json::array();
         nlohmann::json compute_grp_cfg;

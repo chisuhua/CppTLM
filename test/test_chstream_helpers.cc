@@ -3,12 +3,12 @@
 // 验证 CacheTLM::connectBus + CrossbarTLM::connectCPUSideBus + connectMemSideBus
 // 参考: docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md §4.3
 // 作者: Sisyphus / 日期: 2026-06-19
+#include "core/event_queue.hh"
+#include "core/port_manager.hh"
+#include "core/sim_object.hh"
+#include "core/simple_port.hh"
 #include "tlm/cache_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
-#include "core/event_queue.hh"
-#include "core/sim_object.hh"
-#include "core/port_manager.hh"
-#include "core/simple_port.hh"
 #include <catch2/catch_all.hpp>
 
 TEST_CASE("CacheTLM::connectBus binds mem_side to bus.cpu_side", "[chstream][helper]") {
