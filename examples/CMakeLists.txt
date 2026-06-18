@@ -26,6 +26,13 @@ target_link_libraries(example_error_handling PRIVATE cpptlm_core)
 target_include_directories(example_error_handling PRIVATE ${EXAMPLES_INCLUDE_DIRS})
 
 # ==============================================================================
+# SimModule 多层嵌套示例 (v2.2, openspec/json-nested-simmodule Stage 4)
+# ==============================================================================
+add_executable(example_simmodule_nested example_simmodule_nested.cc)
+target_link_libraries(example_simmodule_nested PRIVATE cpptlm_core)
+target_include_directories(example_simmodule_nested PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+
+# ==============================================================================
 # 输出目录
 # ==============================================================================
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/examples)
