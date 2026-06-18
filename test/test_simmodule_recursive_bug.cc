@@ -42,3 +42,32 @@ TEST_CASE("D.4 findInternalPath recurses nested SimModule", "[simmodule][regress
     // (ModuleFactory::~ModuleFactory 迭代 instances 调用 delete)
     delete outer;
 }
+
+// D.5: SimModule::tick 应递归到所有子孙 SimObject
+// 修复前: CpuCluster::tick 手动实现但不通用, 嵌套 SimModule 子类无默认递归
+// 修复后: SimModule 基类提供默认递归 tick
+class TickCounter : public SimObject {
+public:
+    int tick_count = 0;
+    explicit TickCounter(const std::string& n, EventQueue* eq) : SimObject(n, eq) {}
+    void tick() override { ++tick_count; }
+};
+
+TEST_CASE("D.5 tick recurses all descendants", "[simmodule][regression]") {
+    EventQueue eq;
+    auto* outer = new CpuCluster("outer", &eq);
+    auto* mid = new CpuCluster("mid", &eq);
+    auto* counter = new TickCounter("counter", &eq);
+
+    mid->addInternalInstance(counter);
+    outer->addInternalInstance(mid);
+
+    outer->tick();
+    REQUIRE(counter->tick_count == 1);
+
+    outer->tick();
+    REQUIRE(counter->tick_count == 2);
+
+    // 仅 delete outer: outer->internal_factory 销毁时递归 delete mid → counter
+    delete outer;
+}
