@@ -5,10 +5,10 @@
 // 日期: 2026-06-19
 #include "tlm/cache_tlm.hh"
 #include "core/chstream_module.hh"
+#include "core/master_port.hh"
 #include "core/port_manager.hh"
 #include "core/simple_port.hh"
 #include "core/slave_port.hh"
-#include "core/master_port.hh"
 #include <stdexcept>
 
 // P3 partial: 不依赖 D.1, lazy 注册 mem_side 端口 + bind 总线
@@ -24,7 +24,8 @@ void CacheTLM::connectBus(ChStreamModuleBase* bus) {
     }
     auto* mem_side = getPortManager().getUpstreamPort("mem_side");
 
-    // P3 partial: lazy 注册 bus 的 cpu_side upstream 端口 (与 gem5 语义: bus.cpu_side 也是 upstream/输入)
+    // P3 partial: lazy 注册 bus 的 cpu_side upstream 端口 (与 gem5 语义: bus.cpu_side 也是
+    // upstream/输入)
     if (!bus->getPortManager().getUpstreamPort("cpu_side")) {
         bus->getPortManager().addUpstreamPort(bus, {4}, {}, "cpu_side");
     }

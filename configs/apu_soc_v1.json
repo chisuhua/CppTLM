@@ -1,0 +1,18 @@
+{
+  "name": "apu_soc_v1",
+  "description": "Full APU: CPU 2-level + GPU 2GPC×2TPC×2CU + CrossbarTLM (v2.2 简化版; Phase 7.C 升级 CoherentXBarTLM)",
+  "modules": [{
+    "name": "apu_top",
+    "type": "ApuSoC",
+    "params": {
+      "cpu_topology": "configs/templates/cpu_cluster_2level.json",
+      "gpu_topology": "configs/templates/gpu_2gpc_2tpc_2cu.json"
+    },
+    "modules": [
+      { "name": "xbar", "type": "CrossbarTLM",
+        "params": { "ports": 8 } }
+    ],
+    "connections": []
+  }],
+  "connections": []
+}

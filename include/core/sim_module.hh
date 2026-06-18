@@ -168,6 +168,18 @@ public:
         }
     }
 
+    // P5: 父对象在挂载后调用 - 默认递归到子模块
+    // 灵感: gem5 AbstractCacheHierarchy.incorporate_cache(board)
+    // 用于 ApuSoC 等顶层容器在 JSON 实例化完成后, 通知子模块"父对象已就位",
+    // 子模块可借此建立跨域 wiring (如 CPU cluster 连接 GPU 端 CoherentXBar)。
+    virtual void incorporate_parent(SimModule* parent) {
+        for (const auto& kv : internal_factory->getAllInstances()) {
+            if (auto* sub = dynamic_cast<SimModule*>(kv.second)) {
+                sub->incorporate_parent(this);
+            }
+        }
+    }
+
 #ifdef CPPTLM_TESTING
 public:
     // P1 测试辅助: 直接向 internal_factory 添加实例 (绕过 instantiateAll 的 8 步流程)
