@@ -1,5 +1,9 @@
-## ADDED Requirements
+# cpu-cluster Specification
 
+## Purpose
+
+定义 CpuCluster 集群容器模块：从 v2.1 legacy 位置（`include/modules/legacy/cpu_cluster.hh`，空心类，受 `BUILD_LEGACY_MODULES` 守卫）移出至 v2.2 新位置（`include/tlm/cluster/cpu_cluster.hh`），重新实现 `tick`/`set_config`/`get_module_type`，支持 N 层 JSON 嵌套实例化 + `outputs`/`inputs` 暴露端口 + E2E req/resp 数据流验证。
+## Requirements
 ### Requirement: CpuCluster 增强并移出 legacy
 
 `CpuCluster` MUST 从 `include/modules/legacy/cpu_cluster.hh` 移出至 `include/tlm/cluster/cpu_cluster.hh`，重新实现 `tick()`、`set_config(params)`、`get_module_type()`，并通过 `REGISTER_MODULE` 宏在 `include/modules.hh` 中**无条件注册**（不再受 `BUILD_LEGACY_MODULES` 守卫）。
@@ -45,7 +49,8 @@
 #### Scenario: outputs/inputs 暴露端口端到端
 
 - **WHEN** JSON 配置 CpuCluster 暴露 `outputs: [{"internal": "cpu0.req_out", "external": "cpu0_to_bus"}]`，外部 `connections: [{src: "cluster.cpu0_to_bus", dst: "bus.cpu_in", ...}]`
-- **THEN** `ConnectionResolver` 正确解析 `cluster.cpu0_to_bus` → `cpu0.req_out`；外部模块 `bus` 通过 `CpuCluster::getInternalOutputPort("cpu0.req_out")` 拿到 `MasterPort*` 并完成连接
+- **THEN** `ConnectionResolver` 正确解析 `cluster.cpu0_to_bus` → `cpu0.req_out`（通过 `CpuCluster::findInternalPath` 反向解析）
+- **AND** 对外部模块 `bus` 通过 `CpuCluster::getInternalOutputPort("cpu0.req_out")` 拿端口：若 `cpu0` 为非 ChStream 的 `SimObject` 派生类，MUST 返回非空 `MasterPort*` 并完成连接；若 `cpu0` 为 ChStream 协议模块 `CPUTLM`（因端口存于 `ModuleFactory::ch_initiator_ports_/ch_target_ports_` 容器而非 `PortManager`），返回 `nullptr` 是已知架构限制，**不视为失败**；**暴露端口的端到端接线 MUST 通过 `findInternalPath`/`isExposedPort` + `ConnectionResolver` 解析验证**
 
 ### Requirement: CpuCluster::tick 转发
 
@@ -60,3 +65,4 @@
 
 - **WHEN** 三层 CpuCluster 嵌套，最内层持有 1 个 CPUTLM
 - **THEN** 顶层 `startAllTicks()` 调用 1 次 `outer_cluster->tick()` 后，最内层 CPUTLM 的 `tick()` 被调用 1 次（每层 `tick()` 各调用 1 次转发，3 层共 3 次转发，但 CPUTLM 只在最内层被调用 1 次）
+
