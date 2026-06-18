@@ -183,14 +183,14 @@ public:
     // 已有的迭代接口添加, 或通过内部 addInstance 私有方法 + friend class.
     // 最简方案: 通过 createInstance + 私有 registerInstance (test guarded):
     void addInternalInstance(SimObject* obj) {
-        // friend 访问 internal_factory->instances_ (假设 SimModule 是 ModuleFactory 的 friend)
+        // 实际字段: instances (无下划线, 见 module_factory.hh:37)
         internal_factory->addInstanceForTesting(obj->getName(), obj);
     }
     void addOutputConfig(const std::string& internal, const std::string& external) {
         output_configs.push_back({internal, external});
         internal_to_external_map[external] = internal;
     }
-    void setName(const std::string& n) { name_ = n; }
+    void setName(const std::string& n) { name = n; }  // SimObject 字段名 (无下划线)
 #endif
 
 // 配套: include/core/module_factory.hh 添加 test-only 方法
@@ -200,7 +200,7 @@ class ModuleFactory {
 public:
     // P1 测试辅助: 直接向 instances_ 添加 (绕过 instantiateAll 的 8 步流程)
     void addInstanceForTesting(const std::string& name, SimObject* obj) {
-        instances_[name] = obj;
+        instances[name] = obj;  // 实际字段名 (无下划线)
     }
 #endif
 };
@@ -624,8 +624,9 @@ cd /workspace/project/CppTLM
 git add configs/templates/compute_unit_v1.json
 git commit -m "feat(configs): add compute_unit_v1.json blueprint template
 
-- 1 个 CU = ScalarCache (16KB) + VectorReg (64×16) + Wavefront (10 slots)
-- AMD-style SIMD CU, 蓝图可被 ComputeCluster 复制 N 份"
+- 1 个 CU = ScalarCache (16KB) + L1Cache (32KB) (v2.2 简化版, 2 个 CacheTLM)
+- AMD-style SIMD CU, 蓝图可被 ComputeCluster 复制 N 份
+- Phase 7.B 接入 GpuComputeUnitTLM 后扩展为 ScalarCache + VectorReg + Wavefront"
 ```
 
 ### Task 2.3: `TpcCluster` / `GpcCluster` / `GpuCluster` 头 + 实现
@@ -1048,7 +1049,7 @@ git commit -m "test(simmodule): add 4 GPU SimModule integration tests (4 cases)
 - ComputeCluster: cu_template + cu_count 验证 N 份实例化
 - TpcCluster: 包含 1 ComputeCluster
 - GpcCluster: 包含 M TpcCluster
-- GpuCluster: 完整 2GPC×2TPC×2CU=24 leaf 端到端验证
+- GpuCluster: 完整 2GPC×2TPC×2CU=16 leaf 端到端验证
 - 配置文件: gpu_2gpc_2tpc_2cu.json
 - Phase 2 (P2) 完成"
 ```
@@ -1381,10 +1382,12 @@ TEST_CASE("incorporate_parent hook wires GPU CU to top coherent bus", "[simmodul
     auto* apu = new ApuSoC("apu_top", &eq);
     apu->set_config({{"cpu_topology", ""}, {"gpu_topology", ""}});
     auto* gpu = new GpuCluster("gpu", &eq);
-    gpu->set_config({{"gpc_count", 1}, {"tpc_per_gpc", 1}, {"cu_per_tpc", 1}, {"cu_template", ""}});
+    gpu->set_config({{"gpc_count", 1}, {"tpc_per_gpc", 1}, {"cu_per_tpc", 1},
+                    {"cu_template", "configs/templates/compute_unit_v1.json"}});
+    gpu->simulate_instantiate({});  // 显式触发以创建 gpc0
     apu->addInternalInstance(gpu);
     apu->incorporate_parent(nullptr);  // 应递归
-    // 验证 gpu 已被 incorporate
+    // 验证 gpu 已被 incorporate (gpc0 已通过 simulate_instantiate 创建)
     REQUIRE(gpu->getInternalInstance("gpc0") != nullptr);
     delete apu; delete gpu;
 }
@@ -1438,7 +1441,7 @@ cmake --build build -j$(nproc)
 pytest test/python/ -v
 ```
 
-**Expected**: 82 + 4 + 3 + 3 = 92 C++ tests + 8 Python tests pass
+**Expected**: 82 (现有) + 3 (P1) + 4 (P2) + 3 (P3) + 3 (P4) + 3 (P5) = 98 C++ tests + 2 新 Python tests pass
 
 - [ ] **Step 5.3.4: 同步文档 + CHANGELOG**
 
