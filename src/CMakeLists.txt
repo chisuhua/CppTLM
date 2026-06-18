@@ -28,6 +28,9 @@ set(CORE_SOURCES
     tlm/cluster/tpc_cluster.cc
     tlm/cluster/gpc_cluster.cc
     tlm/cluster/gpu_cluster.cc
+    tlm/cluster/cache_cluster.cc
+    tlm/cluster/memory_cluster.cc
+    tlm/cluster/gpu_noc_cluster.cc
 )
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
