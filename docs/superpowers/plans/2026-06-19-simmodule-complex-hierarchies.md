@@ -42,7 +42,7 @@
 | `examples/example_simmodule_2gpc_2tpc_2cu.cc` | GPU 4 层嵌套示例 | Create |
 | `examples/CMakeLists.txt` | 注册新 example target | Modify |
 | `test/test_simmodule_gpu_hierarchy.cc` | GPU 4 类验证 (4 tests) | Create |
-| `CMakeLists.txt` | 添加新 .cc 源到 `cpptlm_core` | Modify |
+| `src/CMakeLists.txt` | 添加新 .cc 源到 `cpptlm_core` | Modify |
 
 ### Phase P3 - ChStream Helper (新增 0 类, 修改 2 文件, ~150 LOC, 依赖 D.1 修复)
 
@@ -177,19 +177,39 @@ cd build && cmake --build . --target cpptlm_tests -j$(nproc)
 // include/core/sim_module.hh (在 SimModule 类内)
 #ifdef CPPTLM_TESTING
 public:
-    void addInternalInstance(SimObject* obj) { internal_factory->registerInstance(obj->getName(), obj); }
+    // P1 修复: 之前调用 internal_factory->registerInstance() 不存在.
+    // ModuleFactory 无公共 registerInstance 方法, instances map 是 private.
+    // 改用 friend 访问: 在测试代码中直接通过 internal_factory->getAllInstances()
+    // 已有的迭代接口添加, 或通过内部 addInstance 私有方法 + friend class.
+    // 最简方案: 通过 createInstance + 私有 registerInstance (test guarded):
+    void addInternalInstance(SimObject* obj) {
+        // friend 访问 internal_factory->instances_ (假设 SimModule 是 ModuleFactory 的 friend)
+        internal_factory->addInstanceForTesting(obj->getName(), obj);
+    }
     void addOutputConfig(const std::string& internal, const std::string& external) {
         output_configs.push_back({internal, external});
         internal_to_external_map[external] = internal;
     }
     void setName(const std::string& n) { name_ = n; }
 #endif
+
+// 配套: include/core/module_factory.hh 添加 test-only 方法
+class ModuleFactory {
+    // ... 现有 public 接口 ...
+#ifdef CPPTLM_TESTING
+public:
+    // P1 测试辅助: 直接向 instances_ 添加 (绕过 instantiateAll 的 8 步流程)
+    void addInstanceForTesting(const std::string& name, SimObject* obj) {
+        instances_[name] = obj;
+    }
+#endif
+};
 ```
 
-并在 `CMakeLists.txt` 测试编译选项加 `-DCPPTLM_TESTING`:
+并在 `test/CMakeLists.txt` 测试编译选项加 `-DCPPTLM_TESTING`:
 
 ```cmake
-# CMakeLists.txt (test/ 段)
+# test/CMakeLists.txt
 target_compile_definitions(cpptlm_tests PRIVATE CPPTLM_TESTING)
 ```
 
@@ -256,7 +276,7 @@ cmake --build build --target cpptlm_tests -j$(nproc)
 
 ```bash
 cd /workspace/project/CppTLM
-git add include/core/sim_module.hh test/test_simmodule_recursive_bug.cc src/CMakeLists.txt
+git add include/core/sim_module.hh test/test_simmodule_recursive_bug.cc include/core/module_factory.hh test/CMakeLists.txt
 git commit -m "fix(simmodule): make findInternalPath recurse to child SimModule (D.4)
 
 - 修复前: 3 层 outer→mid→inner 嵌套时, outer.findInternalPath('mid_cpu0_to_bus') 返回 ''
@@ -578,7 +598,8 @@ git commit -m "feat(simmodule): add ComputeCluster with cu_template/cu_count reu
 
 ```json
 {
-  "description": "Single Compute Unit blueprint (CU = ScalarCache + VectorReg + Wavefront)",
+  "description": "Single Compute Unit blueprint (CU = ScalarCache + L1Cache, both CacheTLM. v2.2 简化版; Phase 7.B 接入 GpuComputeUnitTLM 后扩展为 ScalarCache + VectorRegFile + Wavefront)",
+  "p2_placeholder": "P2 注释: v2.2 仅有 CacheTLM (无 VectorRegFileTLM / WavefrontTLM), 用 2 个 CacheTLM 替代. Phase 7.B 随 GpuComputeUnitTLM 接入后丰富蓝图",
   "modules": [
     { "name": "scalar_cache", "type": "CacheTLM",
       "params": { "size": "16KB", "assoc": 4, "line_size": 64 } },
@@ -815,7 +836,7 @@ cd /workspace/project/CppTLM
 git add include/tlm/cluster/tpc_cluster.hh src/tlm/cluster/tpc_cluster.cc \
         include/tlm/cluster/gpc_cluster.hh src/tlm/cluster/gpc_cluster.cc \
         include/tlm/cluster/gpu_cluster.hh src/tlm/cluster/gpu_cluster.cc \
-        CMakeLists.txt
+        src/CMakeLists.txt
 git commit -m "feat(simmodule): add TpcCluster + GpcCluster + GpuCluster (4-level GPU hierarchy)
 
 - TpcCluster: 1 ComputeCluster + 共享 TextureUnit
@@ -924,8 +945,8 @@ TEST_CASE("ComputeCluster loads cu_template and instantiates N copies", "[simmod
     cluster->set_config(params);
     cluster->simulate_instantiate({});
 
-    // 期望 4 个 cu0..cu3, 每个含 3 子模块 (scalar_cache + vector_reg + wavefront) = 12 个
-    REQUIRE(cluster->getInternalFactory().getAllInstances().size() == 4 * 3);
+    // 期望 4 个 cu0..cu3, 每个含 2 子模块 (scalar_cache + l1_cache) = 8 个
+    REQUIRE(cluster->getInternalFactory().getAllInstances().size() == 4 * 2);
     REQUIRE(cluster->getInternalInstance("cu0") != nullptr);
     REQUIRE(cluster->getInternalInstance("cu3") != nullptr);
     delete cluster;
@@ -968,7 +989,7 @@ TEST_CASE("GpuCluster full APU-2GPC-2TPC-2CU runs E2E", "[simmodule][gpu][e2e]")
     REQUIRE_NOTHROW(factory.instantiateAll(config));
     auto* gpu = dynamic_cast<SimModule*>(factory.getInstance("gpu"));
     REQUIRE(gpu != nullptr);
-    // 验证 2 GPC × 2 TPC × 2 CU × 3 子 = 24 个 leaf module
+    // 验证 2 GPC × 2 TPC × 2 CU × 2 子 = 16 个 leaf module
     int total = 0;
     std::function<void(SimModule*)> count = [&](SimModule* m) {
         for (auto& [n, obj] : m->getInternalFactory().getAllInstances()) {
@@ -977,7 +998,7 @@ TEST_CASE("GpuCluster full APU-2GPC-2TPC-2CU runs E2E", "[simmodule][gpu][e2e]")
         }
     };
     count(gpu);
-    REQUIRE(total == 2 * 2 * 2 * 3);  // 24
+    REQUIRE(total == 2 * 2 * 2 * 2);  // 16
 }
 ```
 
@@ -1152,39 +1173,25 @@ void CacheCluster::set_config(const nlohmann::json& params) {
     if (params.contains("l2_size")) l2_size_ = params["l2_size"].get<std::string>();
 }
 void CacheCluster::simulate_instantiate(const nlohmann::json& cfg) {
+    // 1. 调基类处理 outputs/inputs (但 cfg 不含 "modules" 字段, 不递归激活)
     SimModule::simulate_instantiate(cfg);
-    // 1. 实例化 L2 (单例)
-    nlohmann::json l2_cfg = {
-        {"name", "l2"}, {"type", "CacheTLM"},
-        {"params", {{"size", l2_size_}, {"level", 2}}}
-    };
-    internal_factory->instantiateAll(l2_cfg);
-    // 2. 实例化 L1 × N
-    for (int i = 0; i < l1_count_; ++i) {
-        nlohmann::json l1_cfg = {
-            {"name", "l1_" + std::to_string(i)}, {"type", "CacheTLM"},
-            {"params", {{"size", l1_size_}, {"level", 1}}}
-        };
-        internal_factory->instantiateAll(l1_cfg);
-    }
-    // 3. 自动连接: l1_<i>.mem_side → l2.cpu_side
-    // 注: ModuleFactory 无 resolveConnections / connectAll 方法
-    // 正确做法: 构造完整 config (modules + connections), 一次性 instantiateAll
-    // Step 5 走完整连接流程 (src/core/module_factory.cc:388-577)
+    // 2. 构造完整 config (L2 + L1×N + connections), 一次性 instantiateAll
+    //    走完整 8 步流程含 Step 5 connections 解析
+    //    注: ModuleFactory 无 resolveConnections / connectAll, 唯一 API 是 instantiateAll
     nlohmann::json full_config = {{"modules", nlohmann::json::array()}};
-    // 1. 实例化 L2 (单例)
+    // 2a. L2 (单例)
     full_config["modules"].push_back({
         {"name", "l2"}, {"type", "CacheTLM"},
         {"params", {{"size", l2_size_}, {"level", 2}}}
     });
-    // 2. 实例化 L1 × N
+    // 2b. L1 × N
     for (int i = 0; i < l1_count_; ++i) {
         full_config["modules"].push_back({
             {"name", "l1_" + std::to_string(i)}, {"type", "CacheTLM"},
             {"params", {{"size", l1_size_}, {"level", 1}}}
         });
     }
-    // 3. Connections: l1_<i>.mem_side → l2.cpu_side
+    // 2c. Connections: l1_<i>.mem_side → l2.cpu_side
     full_config["connections"] = nlohmann::json::array();
     for (int i = 0; i < l1_count_; ++i) {
         full_config["connections"].push_back({
@@ -1193,7 +1200,7 @@ void CacheCluster::simulate_instantiate(const nlohmann::json& cfg) {
             {"latency", 5}
         });
     }
-    // 4. 一次性 instantiateAll (走完整 8 步流程, 含 Step 5 connections 解析)
+    // 3. 一次性 instantiateAll
     internal_factory->instantiateAll(full_config);
 }
 }  // namespace cpptlm::tlm
@@ -1306,7 +1313,7 @@ cp configs/gpu_2gpc_2tpc_2cu.json configs/templates/gpu_2gpc_2tpc_2cu.json
 ```json
 {
   "name": "apu_soc_v1",
-  "description": "Full APU: CPU 2-level + GPU 2GPC×2TPC×2CU + CoherentXBar",
+  "description": "Full APU: CPU 2-level + GPU 2GPC×2TPC×2CU + CrossbarTLM (v2.2 简化版; Phase 7.C 接入 CoherentXBarTLM 后升级)",
   "modules": [{
     "name": "apu_top",
     "type": "ApuSoC",
@@ -1347,7 +1354,7 @@ git commit -m "feat(simmodule): add ApuSoC top container + incorporate_parent ho
 
 - ApuSoC: 顶层容器, 引用 cpu_topology + gpu_topology 模板
 - SimModule::incorporate_parent 借鉴 gem5 incorporate_cache(board) late-binding
-- apu_soc_v1.json: 完整 APU (CPU + GPU + CoherentXBar) 端到端配置
+- apu_soc_v1.json: 完整 APU (CPU + GPU + CrossbarTLM) 端到端配置
 - Phase 5 (P5) 完成核心: ApuSoC + incorporate 钩子"
 ```
 
