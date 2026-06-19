@@ -92,7 +92,9 @@ if [[ -f "${BUILD_DIR}/bin/cpptlm_sim" ]]; then
         "${ROOT_DIR}/configs/crossbar_test.json" \
         "${ROOT_DIR}/configs/cache_chstream_test.json" \
         "${ROOT_DIR}/configs/arbiter_tlm_test.json" \
-        "${ROOT_DIR}/configs/traffic_gen_tlm_test.json"; do
+        "${ROOT_DIR}/configs/traffic_gen_tlm_test.json" \
+        "${ROOT_DIR}/configs/gpu_2gpc_2tpc_2cu.json" \
+        "${ROOT_DIR}/configs/apu_soc_v1.json"; do
         if [[ ! -f "$cfg" ]]; then
             continue
         fi
