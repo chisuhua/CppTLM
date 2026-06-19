@@ -24,6 +24,7 @@ set(CORE_SOURCES
     tlm/link_tlm.cc
     tlm/cache_tlm.cc
     tlm/crossbar_tlm.cc
+    tlm/coherent_xbar_tlm.cc
     tlm/cluster/compute_cluster.cc
     tlm/cluster/tpc_cluster.cc
     tlm/cluster/gpc_cluster.cc

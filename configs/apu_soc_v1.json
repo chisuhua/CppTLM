@@ -9,7 +9,7 @@
       "gpu_topology": "configs/templates/gpu_2gpc_2tpc_2cu.json"
     },
     "modules": [
-      { "name": "xbar", "type": "CrossbarTLM",
+      { "name": "xbar", "type": "CoherentXBarTLM",
         "params": { "ports": 8 } }
     ],
     "connections": []
