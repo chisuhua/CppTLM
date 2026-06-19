@@ -1,5 +1,28 @@
 # Changelog
 
+## [v2.3] - 2026-06-19
+
+### 修复 (Fixes)
+- **D.1 PortManager Mirror**: `SimModule::getInternalOutputPort` 对 ChStream 模块返回非空 (was nullptr)。
+  新增 `PortManager::mirrorExistingDownstreamPort` / `mirrorExistingUpstreamPort` 方法 (仅入 map)。
+  `ModuleFactory` Step 7 创建 ChStream 端口后镜像注册到子模块 PortManager。
+
+### 新增 (Features)
+- **CoherentXBarTLM**: APU 顶层跨域 snoop 广播总线 (继承 CrossbarTLM)。
+  Phase 7.A/7.B = write-through 透传; 6×6 state table 留 Phase 7.C。
+  `apu_soc_v1.json` 顶层 `top_xbar` 从 `CrossbarTLM` 升级为 `CoherentXBarTLM`。
+
+### 重构 (Refactor)
+- **Helper Safety**: 移除 P3 helpers (`CacheTLM::connectBus` / `CrossbarTLM::connectCPUSideBus` /
+  `connectMemSideBus`) 的 lazy registration + 死 throw 路径, 改为清晰报错。
+  符合零债务原则: 配置错误早暴露优于静默 fallback 到 {4} buffer。
+
+### 测试 (Tests)
+- 新增 11 用例: 4 (D.1 port visibility) + 4 (CoherentXBarTLM) + 3 (helper safety)
+- 升级 1 用例: `test_simmodule_nested.cc` L195-206 WARN → REQUIRE
+- 修复 5 用例: `test_chstream_helpers.cc` 显式注册依赖 port (替换 lazy)
+- 总数: 673/673 → 684/684
+
 ## [v2.2.0] - 2026-06-18
 
 ### Added

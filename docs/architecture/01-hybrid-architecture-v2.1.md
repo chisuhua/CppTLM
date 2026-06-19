@@ -679,6 +679,31 @@ CacheTLM (单端口) → xbar.0 (端口索引) → MemoryTLM (单端口)
 - StreamAdapter 自动注入（单端口 Standalone + 多端口 MultiPort）
 - JSON 端口索引语法端到端验证
 
+### 8.5 PortManager Mirror + CoherentXBarTLM（v2.3 新增，2026-06-19 更新）
+
+#### 8.5.1 D.1 PortManager Mirror
+
+`SimModule::getInternalOutputPort` 对 ChStream 模块（CPUTLM/CacheTLM/MemoryTLM/CrossbarTLM）的可见性修复。
+
+**机制**：`PortManager` 新增 `mirrorExistingDownstreamPort` / `mirrorExistingUpstreamPort` 方法。
+`ModuleFactory` Step 7 创建 ChStream 端口后调用 mirror 注册到子模块 PortManager（仅入 map，不入 vector）。
+
+**影响**：
+- 解锁 P3 `connectCPU` helper
+- 解锁 P5 `incorporate_parent` 真实 late-binding wiring
+- 解锁 CoherentXBarTLM snoop broadcast
+
+详见 spec: `docs/superpowers/specs/2026-06-19-p0-fixes-design.md §2`
+
+#### 8.5.2 CoherentXBarTLM
+
+APU 顶层跨域 snoop 广播总线，继承 `CrossbarTLM`。
+
+**当前范围（Phase 7.A/7.B）**：write-through 透传，不下场做 coherence 决策。
+**未来（Phase 7.C）**：引入 6×6 state transition switch 表（per ADR-SOC-01 §3）。
+
+详见 spec: `docs/superpowers/specs/2026-06-19-p0-fixes-design.md §3`
+
 ### 8.7 CI/CD 集成 + 零债务验收 (2026-04-22)
 
 **CI/CD 工作流** (`.github/workflows/ci.yml`):
