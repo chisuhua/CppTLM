@@ -44,6 +44,7 @@ TEST_CASE("MemoryCluster multi-channel", "[simmodule][infra]") {
     auto* mc = new MemoryCluster("mc0", &eq);
     json params = {{"channel_count", 4}, {"channel_size", "1GB"}, {"memory_type", "HBM"}};
     mc->set_config(params);
+    REQUIRE(mc->get_module_type() == "MemoryCluster");
     mc->simulate_instantiate({});
     REQUIRE(mc->getInternalFactory().getAllInstances().size() == 5);
     REQUIRE(mc->getInternalInstance("arbiter") != nullptr);
@@ -55,9 +56,53 @@ TEST_CASE("GpuNoC mesh 2x2 with 4 routers", "[simmodule][infra]") {
     auto* noc = new GpuNoC("noc0", &eq);
     json params = {{"mesh_size", 2}, {"routing", "XY"}};
     noc->set_config(params);
+    REQUIRE(noc->get_module_type() == "GpuNoC");
     noc->simulate_instantiate({});
     REQUIRE(noc->getInternalFactory().getAllInstances().size() == 4);
     REQUIRE(noc->getInternalInstance("router_0") != nullptr);
     REQUIRE(noc->getInternalInstance("router_3") != nullptr);
     delete noc;
+}
+
+TEST_CASE("MemoryCluster channel_count=2 uses ArbiterTLM2", "[simmodule][infra][boundary]") {
+    EventQueue eq;
+    auto* mc = new MemoryCluster("mc", &eq);
+    mc->set_config({{"channel_count", 2}});
+    mc->simulate_instantiate({});
+    // 期望 2 channel + 1 arbiter = 3 个
+    REQUIRE(mc->getInternalFactory().getAllInstances().size() == 3);
+    REQUIRE(mc->getInternalInstance("channel_0") != nullptr);
+    REQUIRE(mc->getInternalInstance("channel_1") != nullptr);
+    REQUIRE(mc->getInternalInstance("arbiter") != nullptr);
+    delete mc;
+}
+
+TEST_CASE("GpuNoC mesh_size=3 generates 9 routers", "[simmodule][infra][boundary]") {
+    EventQueue eq;
+    auto* noc = new GpuNoC("noc", &eq);
+    noc->set_config({{"mesh_size", 3}});
+    noc->simulate_instantiate({});
+    REQUIRE(noc->getInternalFactory().getAllInstances().size() == 9);
+    REQUIRE(noc->getInternalInstance("router_0") != nullptr);
+    REQUIRE(noc->getInternalInstance("router_8") != nullptr);
+    REQUIRE(noc->getInternalInstance("router_9") == nullptr);
+    delete noc;
+}
+
+TEST_CASE("CacheCluster l1_count=0 generates only L2", "[simmodule][infra][boundary]") {
+    EventQueue eq;
+    auto* cc = new CacheCluster("cc", &eq);
+    cc->set_config({{"l1_count", 0}});
+    cc->simulate_instantiate({});
+    REQUIRE(cc->getInternalFactory().getAllInstances().size() == 1);  // 仅 l2
+    REQUIRE(cc->getInternalInstance("l2") != nullptr);
+    REQUIRE(cc->getInternalInstance("l1_0") == nullptr);
+    delete cc;
+}
+
+TEST_CASE("CacheCluster get_module_type returns CacheCluster", "[simmodule][infra]") {
+    EventQueue eq;
+    auto* cc = new CacheCluster("cc", &eq);
+    REQUIRE(cc->get_module_type() == "CacheCluster");
+    delete cc;
 }
