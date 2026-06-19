@@ -647,6 +647,22 @@ bool ModuleFactory::instantiateAll(const json& config) {
             ch_target_ports_.emplace_back(resp_in_vec[i]);
             ch_target_ports_.emplace_back(req_in_vec[i]);
             ch_initiator_ports_.emplace_back(resp_out_vec[i]);
+
+            // P0 D.1 fix: 让 SimModule::getInternalOutputPort 能查到 ChStream 端口
+            // ch_mod 已是 dynamic_cast<ChStreamModuleBase*> 结果, 这里 cast 回 SimObject*
+            // 因 ChStreamModuleBase : public SimObject
+            if (auto* ch_obj = dynamic_cast<SimObject*>(ch_mod); ch_obj) {
+                // 注意: 单端口模块的 port_manager 尚未创建, 直接调用 getPortManager()
+                // 触发 lazy-create; 多端口模块首次 mirror 后已存在, 后续调用复用同一实例.
+                auto& pm = ch_obj->getPortManager();
+                std::string suffix = (n_ports > 1)
+                    ? (std::string("[") + std::to_string(i) + "]")
+                    : std::string("");
+                pm.mirrorExistingDownstreamPort("req_out" + suffix, req_out_vec[i]);
+                pm.mirrorExistingUpstreamPort("resp_in" + suffix, resp_in_vec[i]);
+                pm.mirrorExistingUpstreamPort("req_in" + suffix, req_in_vec[i]);
+                pm.mirrorExistingDownstreamPort("resp_out" + suffix, resp_out_vec[i]);
+            }
         }
 
         // 注入 StreamAdapter（区分单端口 / 多端口 / 双端口）
