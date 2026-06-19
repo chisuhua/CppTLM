@@ -40,6 +40,7 @@
 | `ring_8.json` | 8 节点 ring | 环状 |
 | `crossbar_test.json` | 单 crossbar | 测试用 |
 | `cache_chstream_test.json` | Cache→Xbar→Memory | ChStream 测试 |
+| `apu_soc_v1.json` | APU 顶层 (CPU + GPU + `top_xbar`=**CoherentXBarTLM**) | ApuSoC 端到端 v1 |
 
 ## 端口索引语法
 
