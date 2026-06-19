@@ -29,11 +29,11 @@ CURRENT STATE
 --------------
 - 工作树 clean（无 uncommitted changes）
 - Branch: main
-- HEAD: 268366c
-- 全部 24 commits 已落地 main 分支
+- HEAD: 888440c (docs(handoff): save P0 discussion handoff context for new session)
+- 全部 25 commits 已落地 main 分支（24 plan commits + 1 handoff commit）
 - Build 环境: cmake --build build -j$(nproc) 成功, cpptlm_tests 二进制 196MB
 - 659/659 → 673/673 (P1+P2+P3 coverage 补全新增 14 用例)
-- Plan 文件: docs/superpowers/plans/2026-06-19-simmodule-complex-hierarchies.md (1557 行, 3 轮 Momus PASS)
+- Plan 文件: docs/superpowers/plans/2026-06-19-simmodule-complex-hierarchies.md (1561 行, 3 轮 Momus PASS)
 - Spec 文件: docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md (860 行)
 
 PENDING TASKS
@@ -59,7 +59,7 @@ P3 阶段（生产化）：
 
 KEY FILES
 ---------
-- include/core/sim_module.hh - SimModule 基类（getInternalOutputPort L140, tick 默认递归 L163, incorporate_parent L175, findInternalPath 递归 L149）
+- include/core/sim_module.hh - SimModule 基类（getInternalOutputPort L140, tick 默认递归 L165, incorporate_parent L175, findInternalPath 递归 L149）
 - src/core/module_factory.cc - ModuleFactory Step 5/7/8（807 行, ChStream 端口创建在 L637-649）
 - include/core/port_manager.hh - PortManager 接口（addDownstreamPort/addUpstreamPort 需检查是否支持带名字重载）
 - include/tlm/cluster/{compute,tpc,gpc,gpu}_cluster.{hh,cc} - P2 4 个 GPU cluster
@@ -93,20 +93,31 @@ ch_initiator_ports_.emplace_back(req_out_vec[i]);  // ← 仅存于工厂成员
 **方案 A (推荐)：镜像方案**
 - 位置: src/core/module_factory.cc:649 后插入
 - 实施: Step 7 创建 ChStream 端口后, 同步向子模块 PortManager 注册"镜像"
+- **关键事实（已验证）**: `ChStreamInitiatorPort IS-A MasterPort` (include/core/chstream_port.hh:17) - 原理可行
+- **PortManager API 约束（已验证）**: 现有 addDownstreamPort 签名是 `addDownstreamPort(Owner*, sizes, priorities, label)`, 创建 NEW DownstreamPort<Owner>, 不支持注册已有指针
+- **需新增 API** 或修改方案 A 代码:
   ```cpp
+  // 方案 A 修订实现:
+  // 1) include/core/port_manager.hh 新增 registerMirrorPort 方法:
+  void registerMirrorPort(const std::string& label, MasterPort* port) {
+      downstream_map[label] = port;  // 直接注册已有指针, 不创建新 port
+  }
+  void registerMirrorInputPort(const std::string& label, SlavePort* port) {
+      upstream_map[label] = port;
+  }
+  // 2) src/core/module_factory.cc:649 后插入:
   if (ch_mod->hasPortManager()) {
       auto& pm = ch_mod->getPortManager();
-      pm.addDownstreamPort(name + ".req_out" + suffix, req_out_vec[i]);
-      pm.addUpstreamPort(name + ".resp_in" + suffix, resp_in_vec[i]);
-      pm.addUpstreamPort(name + ".req_in" + suffix, req_in_vec[i]);
-      pm.addDownstreamPort(name + ".resp_out" + suffix, resp_out_vec[i]);
+      pm.registerMirrorPort(name + ".req_out" + suffix, req_out_vec[i]);
+      pm.registerMirrorInputPort(name + ".resp_in" + suffix, resp_in_vec[i]);
+      pm.registerMirrorInputPort(name + ".req_in" + suffix, req_in_vec[i]);
+      pm.registerMirrorPort(name + ".resp_out" + suffix, resp_out_vec[i]);
   }
   ```
-- LOC: ~30
-- 改动: 仅 module_factory.cc
+- LOC: ~50 (PortManager 新 API + module_factory.cc 5 行)
+- 改动: include/core/port_manager.hh + src/core/module_factory.cc
 - 回归: 低（现有 WARN 测试可升级为 REQUIRE 验证修复）
 - 解锁: connectCPU + incorporate_parent 真实 wiring + CoherentXBarTLM snoop
-- 需确认: port_manager.hh::addDownstreamPort/addUpstreamPort 是否有带名字重载（否则需加 overload 或用镜像容器）
 - 测试增强: test_simmodule_nested.cc:195-206 升级 WARN→REQUIRE + 新 test_simmodule_d1_chstream_port_visibility.cc（5-8 用例）
 
 **方案 B：端口表重构**
