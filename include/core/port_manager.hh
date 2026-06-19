@@ -176,7 +176,7 @@ public:
      }
 
     template <typename Owner>
-    MasterPort* addDownstreamPort(Owner* owner, 
+    MasterPort* addDownstreamPort(Owner* owner,
                                const std::vector<size_t>& out_sizes,
                                const std::vector<size_t>& priorities = {},
                                const std::string& label = "") {
@@ -190,6 +190,19 @@ public:
             downstream_map[label] = port;
         }
         return port;
+    }
+
+    // P0 D.1 fix: 镜像外部拥有的端口（非拥有注册, 仅查找用）
+    // 设计意图: PortManager 是非拥有型注册表（无析构函数, 已存在的事实）,
+    // mirror 仅扩展查找能力. 调用方保证被 mirror 的指针生命周期 ≥ 此 PortManager.
+    // 不入 vector 的理由: ChStream 端口由 StreamAdapter 驱动, 不需 PortManager 的
+    // tick/stats 迭代; 避免 ChStreamInitiatorPort::tick 调用空 output_vcs 崩.
+    void mirrorExistingDownstreamPort(const std::string& label, MasterPort* port) {
+        if (!label.empty()) downstream_map[label] = port;  // 不动 downstream_ports vector
+    }
+
+    void mirrorExistingUpstreamPort(const std::string& label, SlavePort* port) {
+        if (!label.empty()) upstream_map[label] = port;
     }
 
     // 按索引访问

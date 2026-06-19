@@ -189,22 +189,15 @@ TEST_CASE("SimModule top-level exposed outputs/inputs ports", "[simmodule]") {
     REQUIRE(cluster->isExposedPort("bus_to_cpu0") == true);
     REQUIRE(cluster->isExposedPort("nonexistent_port") == false);
 
-    // (3) getInternalOutputPort: 拿内部 master port
-    // 已知限制: ChStreamModuleBase (CPUTLM/CacheTLM/MemoryTLM) 的端口在
-    // ModuleFactory 的 ch_initiator_ports_/ch_target_ports_ 中, 而非 PortManager.
-    // 因此 getInternalOutputPort() 对 ChStream 模块返回 nullptr.
-    // 使用 CHECK (软断言) 而非 REQUIRE, 保证核心接线断言通过.
+    // (3) getInternalOutputPort: 拿内部 master port (P0 D.1 修复后 ChStream 端口可见)
     auto* req_out_port = cluster->getInternalOutputPort("cpu0.req_out");
-    if (req_out_port == nullptr) {
-        WARN("getInternalOutputPort returned nullptr for CPUTLM.req_out ("
-             "ChStream 端口在 PortManager 之外, 这是已知架构限制). "
-             "findInternalPath/isExposedPort 已验证接线正确.");
-    }
+    REQUIRE(req_out_port != nullptr);  // ← P0 D.1 fix: WARN → REQUIRE
+    REQUIRE(req_out_port->getName() == "cpu0.req_out");
+
     // inputs 端同样
     auto* resp_in_port = cluster->getInternalInputPort("cpu0.resp_in");
-    if (resp_in_port == nullptr) {
-        WARN("getInternalInputPort returned nullptr for CPUTLM.resp_in (ChStream 限制).");
-    }
+    REQUIRE(resp_in_port != nullptr);
+    REQUIRE(resp_in_port->getName() == "cpu0.resp_in");
 }
 
 // =====================================================================
