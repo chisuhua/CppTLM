@@ -6,6 +6,7 @@
 #include "tlm/cache_tlm.hh"
 #include "tlm/memory_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
+#include "tlm/coherent_xbar_tlm.hh"
 #include "tlm/cpu_tlm.hh"
 #include "tlm/traffic_gen_tlm.hh"
 #include "tlm/arbiter_tlm.hh"
@@ -33,6 +34,7 @@
     ModuleFactory::registerObject<CacheTLM>("CacheTLM"); \
     ModuleFactory::registerObject<MemoryTLM>("MemoryTLM"); \
     ModuleFactory::registerObject<CrossbarTLM>("CrossbarTLM"); \
+    ModuleFactory::registerObject<cpptlm::tlm::CoherentXBarTLM>("CoherentXBarTLM"); \
     ModuleFactory::registerObject<CPUTLM>("CPUTLM"); \
     ModuleFactory::registerObject<TrafficGenTLM>("TrafficGenTLM"); \
     ModuleFactory::registerObject<ArbiterTLM<2>>("ArbiterTLM2"); \
@@ -47,6 +49,8 @@
         bundles::CacheReqBundle, bundles::CacheRespBundle>("MemoryTLM"); \
     ChStreamAdapterFactory::get().registerMultiPortAdapter<CrossbarTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle, 4>("CrossbarTLM"); \
+    ChStreamAdapterFactory::get().registerMultiPortAdapter<cpptlm::tlm::CoherentXBarTLM, \
+        bundles::CacheReqBundle, bundles::CacheRespBundle, 4>("CoherentXBarTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CPUTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CPUTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<TrafficGenTLM, \
