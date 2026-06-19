@@ -49,3 +49,57 @@ TEST_CASE("CrossbarTLM::connectCPUSideBus / connectMemSideBus", "[chstream][help
 TEST_CASE("[regression] existing 82+ test files still pass", "[chstream][regression]") {
     SUCCEED("P3 helper methods do not regress existing ChStream behavior");
 }
+
+TEST_CASE("connectBus throws on null bus", "[chstream][helper][safety]") {
+    EventQueue eq;
+    auto* cache = new CacheTLM("cache0", &eq);
+    REQUIRE_THROWS(cache->connectBus(nullptr));
+    delete cache;
+}
+
+TEST_CASE("connectBus accepts any ChStreamModuleBase via lazy registration", "[chstream][helper][safety]") {
+    EventQueue eq;
+    auto* cache = new CacheTLM("cache0", &eq);
+    auto* bus = new CacheTLM("bus", &eq);
+    REQUIRE_NOTHROW(cache->connectBus(bus));
+    REQUIRE(cache->getPortManager().getUpstreamPort("mem_side") != nullptr);
+    REQUIRE(bus->getPortManager().getUpstreamPort("cpu_side") != nullptr);
+    delete cache;
+    delete bus;
+}
+
+TEST_CASE("connectCPUSideBus throws on null bus", "[chstream][helper][safety]") {
+    EventQueue eq;
+    auto* xbar = new CrossbarTLM("xbar0", &eq);
+    REQUIRE_THROWS(xbar->connectCPUSideBus(nullptr));
+    delete xbar;
+}
+
+TEST_CASE("connectMemSideBus throws on null bus", "[chstream][helper][safety]") {
+    EventQueue eq;
+    auto* xbar = new CrossbarTLM("xbar0", &eq);
+    REQUIRE_THROWS(xbar->connectMemSideBus(nullptr));
+    delete xbar;
+}
+
+TEST_CASE("connectCPUSideBus accepts any ChStreamModuleBase via lazy registration", "[chstream][helper][safety]") {
+    EventQueue eq;
+    auto* xbar = new CrossbarTLM("xbar0", &eq);
+    auto* bus = new CacheTLM("bus", &eq);
+    REQUIRE_NOTHROW(xbar->connectCPUSideBus(bus));
+    REQUIRE(xbar->getPortManager().getUpstreamPort("cpu_side") != nullptr);
+    REQUIRE(bus->getPortManager().getUpstreamPort("mem_side") != nullptr);
+    delete xbar;
+    delete bus;
+}
+
+TEST_CASE("connectMemSideBus accepts any ChStreamModuleBase via lazy registration", "[chstream][helper][safety]") {
+    EventQueue eq;
+    auto* xbar = new CrossbarTLM("xbar0", &eq);
+    auto* bus = new CacheTLM("bus", &eq);
+    REQUIRE_NOTHROW(xbar->connectMemSideBus(bus));
+    REQUIRE(xbar->getPortManager().getUpstreamPort("mem_side") != nullptr);
+    REQUIRE(bus->getPortManager().getUpstreamPort("cpu_side") != nullptr);
+    delete xbar;
+    delete bus;
+}
