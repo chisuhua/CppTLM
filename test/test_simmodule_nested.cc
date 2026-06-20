@@ -191,7 +191,7 @@ TEST_CASE("SimModule top-level exposed outputs/inputs ports", "[simmodule]") {
 
     // (3) getInternalOutputPort: 拿内部 master port (P0 D.1 修复后 ChStream 端口可见)
     auto* req_out_port = cluster->getInternalOutputPort("cpu0.req_out");
-    REQUIRE(req_out_port != nullptr);  // ← P0 D.1 fix: WARN → REQUIRE
+    REQUIRE(req_out_port != nullptr); // ← P0 D.1 fix: WARN → REQUIRE
     REQUIRE(req_out_port->getName() == "cpu0.req_out");
 
     // inputs 端同样

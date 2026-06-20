@@ -94,7 +94,7 @@ TEST_CASE("CacheCluster l1_count=0 generates only L2", "[simmodule][infra][bound
     auto* cc = new CacheCluster("cc", &eq);
     cc->set_config({{"l1_count", 0}});
     cc->simulate_instantiate({});
-    REQUIRE(cc->getInternalFactory().getAllInstances().size() == 1);  // 仅 l2
+    REQUIRE(cc->getInternalFactory().getAllInstances().size() == 1); // 仅 l2
     REQUIRE(cc->getInternalInstance("l2") != nullptr);
     REQUIRE(cc->getInternalInstance("l1_0") == nullptr);
     delete cc;
