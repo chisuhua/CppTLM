@@ -655,9 +655,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 // 注意: 单端口模块的 port_manager 尚未创建, 直接调用 getPortManager()
                 // 触发 lazy-create; 多端口模块首次 mirror 后已存在, 后续调用复用同一实例.
                 auto& pm = ch_obj->getPortManager();
-                std::string suffix = (n_ports > 1)
-                    ? (std::string("[") + std::to_string(i) + "]")
-                    : std::string("");
+                std::string suffix =
+                    (n_ports > 1) ? (std::string("[") + std::to_string(i) + "]") : std::string("");
                 pm.mirrorExistingDownstreamPort("req_out" + suffix, req_out_vec[i]);
                 pm.mirrorExistingUpstreamPort("resp_in" + suffix, resp_in_vec[i]);
                 pm.mirrorExistingUpstreamPort("req_in" + suffix, req_in_vec[i]);

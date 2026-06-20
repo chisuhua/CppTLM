@@ -67,7 +67,8 @@ TEST_CASE("ComputeCluster clamps cu_count to [1, 64]", "[simmodule][gpu][boundar
     EventQueue eq;
     auto* cluster = new ComputeCluster("c", &eq);
     // cu_count=100 -> 应钳到 64 (cu0..cu63 存在, cu64 不存在)
-    cluster->set_config({{"cu_template", "configs/templates/compute_unit_v1.json"}, {"cu_count", 100}});
+    cluster->set_config(
+        {{"cu_template", "configs/templates/compute_unit_v1.json"}, {"cu_count", 100}});
     cluster->simulate_instantiate({});
     REQUIRE(cluster->getInternalInstance("cu63") != nullptr);
     REQUIRE(cluster->getInternalInstance("cu64") == nullptr);
@@ -78,7 +79,7 @@ TEST_CASE("ComputeCluster without cu_template is silent no-op", "[simmodule][gpu
     // 不提供 cu_template -> simulate_instantiate 后 internal_factory 为空
     EventQueue eq;
     auto* cluster = new ComputeCluster("c", &eq);
-    cluster->set_config({{"cu_count", 5}});  // 缺 cu_template
+    cluster->set_config({{"cu_count", 5}}); // 缺 cu_template
     cluster->simulate_instantiate({});
     REQUIRE(cluster->getInternalFactory().getAllInstances().empty());
     delete cluster;
@@ -94,7 +95,9 @@ TEST_CASE("ComputeCluster get_module_type returns ComputeCluster", "[simmodule][
 TEST_CASE("GpuCluster direct API path (no JSON)", "[simmodule][gpu][api]") {
     EventQueue eq;
     auto* gpu = new GpuCluster("g", &eq);
-    gpu->set_config({{"gpc_count", 2}, {"tpc_per_gpc", 1}, {"cu_per_tpc", 1},
+    gpu->set_config({{"gpc_count", 2},
+                     {"tpc_per_gpc", 1},
+                     {"cu_per_tpc", 1},
                      {"cu_template", "configs/templates/compute_unit_v1.json"}});
     gpu->simulate_instantiate({});
     REQUIRE(gpu->getInternalInstance("gpc0") != nullptr);

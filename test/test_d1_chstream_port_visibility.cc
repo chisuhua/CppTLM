@@ -17,28 +17,28 @@ using json = nlohmann::json;
 
 namespace {
 
-// 注册所有需要的模块类型 (C++ Catch2 TEST_CASE 间共享)
-static void registerD1Types() {
-    static bool registered = false;
-    if (!registered) {
-        REGISTER_OBJECT;             // CPUSim 已退场 - 展开为 no-op
-        REGISTER_CHSTREAM;           // CPUTLM/CacheTLM/MemoryTLM/CrossbarTLM
-        REGISTER_MODULE(CpuCluster); // SimModule 容器
-        registered = true;
+    // 注册所有需要的模块类型 (C++ Catch2 TEST_CASE 间共享)
+    static void registerD1Types() {
+        static bool registered = false;
+        if (!registered) {
+            REGISTER_OBJECT;             // CPUSim 已退场 - 展开为 no-op
+            REGISTER_CHSTREAM;           // CPUTLM/CacheTLM/MemoryTLM/CrossbarTLM
+            REGISTER_MODULE(CpuCluster); // SimModule 容器
+            registered = true;
+        }
     }
-}
 
-// 工具: 创建嵌套 SimModule (3 层) 用于端口可见性测试
-struct NestedFixture {
-    EventQueue eq;
-    CpuCluster root;
+    // 工具: 创建嵌套 SimModule (3 层) 用于端口可见性测试
+    struct NestedFixture {
+        EventQueue eq;
+        CpuCluster root;
 
-    explicit NestedFixture(const std::string& json_str) : root("root", &eq) {
-        // parsePortConfigs 由 simulate_instantiate 内部触发
-        json cfg = json::parse(json_str);
-        root.simulate_instantiate(cfg);
-    }
-};
+        explicit NestedFixture(const std::string& json_str) : root("root", &eq) {
+            // parsePortConfigs 由 simulate_instantiate 内部触发
+            json cfg = json::parse(json_str);
+            root.simulate_instantiate(cfg);
+        }
+    };
 
 } // namespace
 
@@ -58,7 +58,7 @@ TEST_CASE("D.1: getInternalOutputPort returns non-null for CPUTLM.req_out",
     auto* root = dynamic_cast<SimModule*>(&fix.root);
     REQUIRE(root != nullptr);
     auto* port = root->getInternalOutputPort("cpu0.req_out");
-    REQUIRE(port != nullptr);  // ← 当前 FAIL (返回 nullptr, D.1 修复后 PASS)
+    REQUIRE(port != nullptr); // ← 当前 FAIL (返回 nullptr, D.1 修复后 PASS)
     REQUIRE(port->getName() == "cpu0.req_out");
 }
 
@@ -101,8 +101,7 @@ TEST_CASE("D.1: getInternalOutputPort works for all ChStream module types",
 // 端口 [0] = PE 侧 (CacheReq/Resp), 端口 [1] = Network 侧 (NoCFlit)。
 // 与 CrossbarTLM N 路同构端口 (Case 2) 形成对比, 覆盖 DualPortStreamAdapter 路径。
 // =====================================================================
-TEST_CASE("D.1: NICTLM dual-port both groups visible (PE+Net)",
-          "[d1_port_visibility]") {
+TEST_CASE("D.1: NICTLM dual-port both groups visible (PE+Net)", "[d1_port_visibility]") {
     registerD1Types();
     NestedFixture fix(R"({
         "modules": [
