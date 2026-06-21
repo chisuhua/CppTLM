@@ -71,8 +71,7 @@ TEST_CASE("[E2E] apu_soc_v1.json runs 1000 cycles without crash", "[simmodule][a
 // 触发 ModuleFactory Step 7 (StreamAdapter 注入 + D.1 mirror), 否则
 // cache.getInternalOutputPort("req_out") 返回 nullptr。
 
-TEST_CASE("ApuSoC incorporates peer caches into CoherentXBar",
-          "[simmodule][apu][p1]") {
+TEST_CASE("ApuSoC incorporates peer caches into CoherentXBar", "[simmodule][apu][p1]") {
     EventQueue eq;
     auto* apu = new ApuSoC("apu", &eq);
 
@@ -96,8 +95,7 @@ TEST_CASE("ApuSoC incorporates peer caches into CoherentXBar",
     delete apu;
 }
 
-TEST_CASE("ApuSoC deep-recurses through CpuCluster/GpuCluster",
-          "[simmodule][apu][p1][e2e]") {
+TEST_CASE("ApuSoC deep-recurses through CpuCluster/GpuCluster", "[simmodule][apu][p1][e2e]") {
     auto config =
         JsonIncluder::loadAndInclude(std::string(CPPTLM_SOURCE_DIR) + "/configs/apu_soc_v1.json");
     EventQueue eq;
@@ -105,17 +103,16 @@ TEST_CASE("ApuSoC deep-recurses through CpuCluster/GpuCluster",
     REQUIRE_NOTHROW(factory.instantiateAll(config));
     auto* soc = dynamic_cast<SimModule*>(factory.getInstance("apu_top"));
     REQUIRE(soc != nullptr);
-    auto* xbar = dynamic_cast<CoherentXBarTLM*>(
-        soc->getInternalInstance("xbar"));
+    auto* xbar = dynamic_cast<CoherentXBarTLM*>(soc->getInternalInstance("xbar"));
     REQUIRE(xbar != nullptr);
     soc->incorporate_parent(nullptr);
     // P1 实现状态: CpuCluster 端 l2cache 贡献 3 peer (l2 + l1_0 + l1_1).
-    // GpuCluster 端 cu_template 完整传播待 Phase 7.B 修复 (compute_grp internal_factory 当前 count=0)
+    // GpuCluster 端 cu_template 完整传播待 Phase 7.B 修复 (compute_grp internal_factory 当前
+    // count=0)
     REQUIRE(xbar->peer_count() >= 3);
 }
 
-TEST_CASE("incorporate_parent is idempotent",
-          "[simmodule][apu][p1]") {
+TEST_CASE("incorporate_parent is idempotent", "[simmodule][apu][p1]") {
     EventQueue eq;
     auto* apu = new ApuSoC("apu", &eq);
 
@@ -140,8 +137,7 @@ TEST_CASE("incorporate_parent is idempotent",
     delete apu;
 }
 
-TEST_CASE("ApuSoC without xbar skips wiring gracefully",
-          "[simmodule][apu][p1]") {
+TEST_CASE("ApuSoC without xbar skips wiring gracefully", "[simmodule][apu][p1]") {
     EventQueue eq;
     auto* apu = new ApuSoC("apu", &eq);
 

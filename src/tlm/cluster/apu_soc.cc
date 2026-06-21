@@ -5,9 +5,9 @@
 // 作者: Sisyphus / 日期: 2026-06-19
 #include "tlm/cluster/apu_soc.hh"
 #include "core/module_factory.hh"
+#include "tlm/cache_tlm.hh"         // P1: collectAndRegisterPeerCaches needs CacheTLM
+#include "tlm/coherent_xbar_tlm.hh" // P1: incorporate_parent wiring needs CoherentXBarTLM
 #include "utils/json_includer.hh"
-#include "tlm/coherent_xbar_tlm.hh"  // P1: incorporate_parent wiring needs CoherentXBarTLM
-#include "tlm/cache_tlm.hh"            // P1: collectAndRegisterPeerCaches needs CacheTLM
 #include <string>
 
 namespace cpptlm::tlm {
@@ -83,7 +83,8 @@ namespace cpptlm::tlm {
 
     void ApuSoC::incorporate_parent(SimModule* /*parent*/) {
         // P1 幂等性: 多次调用早退
-        if (peer_caches_wired_) return;
+        if (peer_caches_wired_)
+            return;
         peer_caches_wired_ = true;
 
         // 1. 找 xbar (命名可配置, 默认 "xbar")
@@ -92,7 +93,7 @@ namespace cpptlm::tlm {
         if (!xbar) {
             DPRINTF(MODULE, "[ApuSoC] no CoherentXBarTLM '%s' found, skip peer wiring\n",
                     coherent_xbar_name_.c_str());
-            return;  // 软失败: 无 xbar 是合法拓扑 (单元测试场景)
+            return; // 软失败: 无 xbar 是合法拓扑 (单元测试场景)
         }
 
         // 2. 递归遍历整棵子树, 注册所有 CacheTLM peer
@@ -102,20 +103,21 @@ namespace cpptlm::tlm {
         SimModule::incorporate_parent(this);
     }
 
-    void ApuSoC::collectAndRegisterPeerCaches(CoherentXBarTLM* xbar,
-                                              SimModule* subtree_root,
+    void ApuSoC::collectAndRegisterPeerCaches(CoherentXBarTLM* xbar, SimModule* subtree_root,
                                               const std::string& path_prefix) {
         for (const auto& [name, obj] : subtree_root->getInternalFactory().getAllInstances()) {
-            if (!obj) continue;
+            if (!obj)
+                continue;
             std::string full_name = path_prefix.empty() ? name : path_prefix + "." + name;
 
             // 命中 CacheTLM: 取 D.1 修复后的 req_out 并注册
             if (auto* cache = dynamic_cast<CacheTLM*>(obj)) {
-                if (!cache->hasPortManager()) continue;
-                auto* req_out = dynamic_cast<MasterPort*>(
-                    cache->getPortManager().getDownstreamPort("req_out"));
+                if (!cache->hasPortManager())
+                    continue;
+                auto* req_out =
+                    dynamic_cast<MasterPort*>(cache->getPortManager().getDownstreamPort("req_out"));
                 if (req_out) {
-                    xbar->registerPeerCache(full_name, req_out);  // 内部按名去重
+                    xbar->registerPeerCache(full_name, req_out); // 内部按名去重
                 } else {
                     DPRINTF(MODULE, "[ApuSoC] cache '%s' has no req_out port, skip\n",
                             full_name.c_str());
