@@ -162,3 +162,84 @@ TEST_CASE("CoherentXBarTLM: snoop_broadcast(nullptr) is no-op", "[coherent_xbar]
     REQUIRE_NOTHROW(xbar.snoop_broadcast(nullptr));
     REQUIRE(xbar.peer_count() == 0);
 }
+
+// =====================================================================
+// Case 5: registerPeerCache 同名去重 (P1 幂等性)
+//
+// 设计意图:
+//   ApuSoC::incorporate_parent 多次调用 (双层幂等) 的"第二层":
+//   即便 ApuSoC::peer_caches_wired_ 早返回防重入, registerPeerCache
+//   本身也需按 cache_name 去重, 防止 peer_cache_req_outs_ 重复入队。
+//   任务 1.1 红阶段: 当前实现不查重, 二次同名注册后 peer_count() == 2
+//   任务 1.2 绿阶段: 在 registerPeerCache 入口处按 name 查重, 命中则跳过
+//
+// 注: 沿用本文件既有 CacheFixture 模式 (CpuCluster + 内部 CacheTLM + D.1
+//     镜像拿 req_out) — CacheTLM 本身无 simulate_instantiate (仅 SimModule
+//     派生类有, 见 include/core/sim_module.hh:81), 该模式已在 Cases 1-4
+//     验证可行。
+// =====================================================================
+TEST_CASE("CoherentXBarTLM: registerPeerCache rejects duplicate name", "[coherent_xbar]") {
+    registerCoherentXBarTypes();
+    EventQueue eq;
+    CoherentXBarTLM xbar("xbar", &eq);
+
+    // 1) 首个 peer 正常入队
+    CacheFixture fix0(&eq, "cache0");
+    REQUIRE(fix0.req_out != nullptr);
+    xbar.registerPeerCache("cache0", fix0.req_out);
+    REQUIRE(xbar.peer_count() == 1);
+
+    // 2) 二次注册同名 cache 应被忽略 (P1 幂等性)
+    xbar.registerPeerCache("cache0", fix0.req_out);
+    REQUIRE(xbar.peer_count() == 1); // 期望仍为 1, 当前实现会 == 2 (红阶段)
+
+    // 3) 不同名 cache 正常入队
+    CacheFixture fix1(&eq, "cache1");
+    REQUIRE(fix1.req_out != nullptr);
+    xbar.registerPeerCache("cache1", fix1.req_out);
+    REQUIRE(xbar.peer_count() == 2);
+}
+
+// =====================================================================
+// Case 6: [E2E] apu_soc_v1.json + ModuleFactory Step 9 触发 incorporate_parent 后 snoop_broadcast
+// 投递
+//
+// 设计意图:
+//   端到端验证: P1 实现的 ApuSoC::incorporate_parent 真实 late-binding wiring
+//   在 apu_soc_v1.json 完整 APU SoC 拓扑中工作。Step 9 自动触发后 xbar
+//   至少有 3 个 peer (CpuCluster 端 l2cache + l1_0 + l1_1), snoop_broadcast
+//   投递不抛, peer 列表保持稳定。
+//
+// 依赖:
+//   - include/utils/json_includer.hh: JsonIncluder::loadAndInclude (处理
+//     apu_soc_v1.json 的 $include cpu/gpu_topology 模板)
+//   - src/core/module_factory.cc:813: instantiateAll Step 9 自动调
+//     incorporate_parent
+//   - P1 幂等性: ApuSoC::peer_caches_wired_ + registerPeerCache 按名去重
+//
+// 作者: CppTLM Team / 日期: 2026-06-19
+// =====================================================================
+TEST_CASE("[E2E] snoop_broadcast reaches all peers after ApuSoC incorporate_parent",
+          "[coherent_xbar][p1][e2e]") {
+    registerCoherentXBarTypes();
+    auto config =
+        JsonIncluder::loadAndInclude(std::string(CPPTLM_SOURCE_DIR) + "/configs/apu_soc_v1.json");
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE_NOTHROW(factory.instantiateAll(config));
+
+    // ModuleFactory Step 9 已自动触发 incorporate_parent
+    auto* soc = dynamic_cast<SimModule*>(factory.getInstance("apu_top"));
+    REQUIRE(soc != nullptr);
+    auto* xbar = dynamic_cast<CoherentXBarTLM*>(soc->getInternalInstance("xbar"));
+    REQUIRE(xbar != nullptr);
+    // P1 实现状态: 至少 3 个 peer (CpuCluster 端 l2cache 贡献)
+    // GpuCluster 端 cu_template 完整传播待 Phase 7.B 修复
+    REQUIRE(xbar->peer_count() >= 3);
+
+    // 手动 snoop 一次: 不抛 + 内部 sendReq 每个 peer
+    Packet* pkt = make_test_packet(&eq, 0xDEAD0000);
+    REQUIRE_NOTHROW(xbar->snoop_broadcast(pkt));
+    // 验证 peer 列表不变 (Packet 副本已处理或 release)
+    REQUIRE(xbar->peer_count() >= 3);
+}

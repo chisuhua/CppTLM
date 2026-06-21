@@ -25,6 +25,16 @@ public:
 private:
     std::string cpu_topology_;
     std::string gpu_topology_;
+    // P1: coherent_xbar_name 配置 (params 可覆盖, 默认 "xbar")
+    std::string coherent_xbar_name_ = "xbar";
+    // P1: 幂等守卫 - 防止多次 incorporate_parent 重复注册
+    bool peer_caches_wired_ = false;
+
+    // P1: 全树递归收集 CacheTLM peer cache 并注册到 xbar
+    // path_prefix 形如 "cpu" 或 "gpu.gpc0.tpc0" (递归累积)
+    void collectAndRegisterPeerCaches(class CoherentXBarTLM* xbar,
+                                      SimModule* subtree_root,
+                                      const std::string& path_prefix);
 };
 
 }  // namespace cpptlm::tlm

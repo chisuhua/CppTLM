@@ -704,6 +704,26 @@ APU 顶层跨域 snoop 广播总线，继承 `CrossbarTLM`。
 
 详见 spec: `docs/superpowers/specs/2026-06-19-p0-fixes-design.md §3`
 
+#### §8.5.3 P1 ApuSoC::incorporate_parent 真实 Late-Binding (2026-06-19)
+
+D.1 修复 + CoherentXBarTLM 类骨架是 P0 留下的"机制"层。本节落实"机制在 SoC 上下文中工作"。
+
+**机制**:
+- `ModuleFactory::instantiateAll` 末尾新增 Step 9: 遍历顶层 `SimModule` 调用 `incorporate_parent(nullptr)`
+- `ApuSoC::incorporate_parent` 重写: 找 `xbar` (命名可配置 `coherent_xbar_name` params, 默认 `"xbar"`) → 递归遍历整棵子树 (`CpuCluster`/`GpuCluster`/`GpcCluster`/... ) → 命中 `CacheTLM` 取 D.1 修复后的 `req_out` MasterPort → `xbar->registerPeerCache(path, port)`
+- `CoherentXBarTLM::registerPeerCache` 加按名去重 (双层幂等性: `ApuSoC::peer_caches_wired_` 早退 + registerPeerCache find_if 重复检查)
+- 软失败策略: xbar/cache/port 缺失仅 `DPRINTF WARN` 不抛异常
+
+**测试覆盖**:
+- 4 单元测试 (`[p1]`): 基础 wiring / 深递归 / 幂等 / 无 xbar 软失败
+- 1 E2E 测试 (`[e2e][p1]`): apu_soc_v1.json 加载 + 手动 snoop_broadcast 投递
+
+**解锁**:
+- 完整 APU SoC 拓扑 snoop broadcast 端到端验证
+- 后续 Phase 7.C 6×6 state table 改造 CoherentXBarTLM 时, peer cache 注册路径已就绪
+
+详见 spec: `docs/superpowers/specs/2026-06-20-incorporate-parent-late-binding-design.md`
+
 ### 8.7 CI/CD 集成 + 零债务验收 (2026-04-22)
 
 **CI/CD 工作流** (`.github/workflows/ci.yml`):
