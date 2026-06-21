@@ -421,6 +421,12 @@ void GpuCluster::incorporate_parent(SimModule* parent) override {
 }
 ```
 
+> **P1 实施状态 (2026-06-19)**: 父端 `ApuSoC::incorporate_parent` 已实现全树递归 wiring (见 spec `2026-06-20-incorporate-parent-late-binding-design.md`), 通过 `collectAndRegisterPeerCaches` 私有 helper 收集所有 `CacheTLM` (含 GpuCluster 4 级嵌套内部) 并注册到 `CoherentXBarTLM::registerPeerCache`。
+>
+> **`GpuCluster::incorporate_parent` override 暂未实施** (Phase 7.C+ 可选): 父端全树遍历已覆盖 GPU 深层 cache, 无需 GPU 专用 hook。当未来 GPU 需独立 memory bridge 时, 可让 `GpuCluster` override `incorporate_parent` 接自己的 xbar (双层幂等性 `peer_caches_wired_` + `registerPeerCache` 按名去重 保护)。
+>
+> **P1 已知技术债**: GpuCluster → GpcCluster → TpcCluster → ComputeCluster 端 `cu_template` 完整传播链当前仅 1 cache 实际注册到 xbar (`peer_count >= 3` 而非 spec 估算的 16+). 根因为 `ComputeCluster::set_config` 显式 `cu_template: ""` 触发早返回 + `GpcCluster` 未传递 `cu_per_tpc` 到 TpcCluster params. Phase 7.B 修复计划: (a) 修复 `GpcCluster` params 传递 (b) `ComputeCluster` 用 `cfg.contains` 替代字段早返回 (c) 重新验证 `peer_count >= 16`。
+
 ---
 
 ## 5. 数据流

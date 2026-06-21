@@ -809,6 +809,17 @@ bool ModuleFactory::instantiateAll(const json& config) {
         }
     }
 
+    // ========================
+    // 9. P1: 触发 SimModule::incorporate_parent late-binding
+    //    对每个顶层 SimModule 调用一次, parent 传 nullptr
+    //    ApuSoC 等会重写 incorporate_parent 完成跨域 wiring
+    //    (Step 7 已注入 StreamAdapter + D.1 mirror, peer cache req_out 此时可查)
+    // ========================
+    for (auto& [name, mod] : module_instances) {
+        if (!mod) continue;
+        mod->incorporate_parent(nullptr);
+    }
+
     // 保存所有实例
     instances = object_instances;
     return !connection_failed;

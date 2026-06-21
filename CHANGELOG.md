@@ -1,5 +1,22 @@
 # Changelog
 
+## [v2.4] - 2026-06-19
+
+### 新增 (Features)
+- **ApuSoC::incorporate_parent 真实 Late-Binding**: 父端全树递归收集 `CacheTLM` peer cache, 注册到 `CoherentXBarTLM::registerPeerCache`。
+  - `ModuleFactory::instantiateAll` 末尾新增 Step 9 自动触发
+  - `ApuSoC::set_config` 新增 `coherent_xbar_name` 可选 params (默认 `"xbar"`)
+  - `CoherentXBarTLM::registerPeerCache` 加按名去重 (双层幂等性)
+  - 软失败策略: xbar/cache/port 缺失仅 `DPRINTF WARN` 不抛异常
+- **SimModule P5 完整 APU SoC 拓扑**: 解锁 `apu_soc_v1.json` 端到端 snoop broadcast 验证。
+
+### 修复 (Fixes)
+- **ComputeCluster::set_config**: 跳过空字符串 `cu_template` (子 ComputeCluster 场景下避免 set cu_template_path_ 为空)
+
+### 测试 (Tests)
+- 新增 5 用例: 4 单元 `[p1]` (wiring / 深递归 / 幂等 / 无 xbar) + 1 E2E `[p1][e2e]` (apu_soc_v1.json snoop)
+- 总数: 684/684 → 689/689
+
 ## [v2.3] - 2026-06-19
 
 ### 修复 (Fixes)

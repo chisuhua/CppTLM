@@ -7,6 +7,7 @@
 #include "core/packet_pool.hh" // PacketPool::acquire/release (Packet 不可拷贝)
 #include "core/sim_core.hh"    // DPRINTF
 #include <stdexcept>
+#include <algorithm>  // P1: registerPeerCache dedup needs std::find_if
 
 namespace cpptlm {
     namespace tlm {
@@ -21,6 +22,14 @@ namespace cpptlm {
                 throw std::runtime_error(
                     "CoherentXBarTLM::registerPeerCache: req_out is null for cache '" + cache_name +
                     "'");
+            }
+            // P1 幂等性: 同名 cache 不重复入队
+            auto it = std::find_if(peer_cache_req_outs_.begin(), peer_cache_req_outs_.end(),
+                                   [&](const auto& p) { return p.first == cache_name; });
+            if (it != peer_cache_req_outs_.end()) {
+                DPRINTF(MODULE, "[CoherentXBar] peer '%s' already registered, skip\n",
+                        cache_name.c_str());
+                return;
             }
             peer_cache_req_outs_.emplace_back(cache_name, req_out);
             DPRINTF(MODULE, "[CoherentXBar] Registered peer cache %s (req_out=%p)\n",

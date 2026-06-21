@@ -9,7 +9,7 @@ namespace cpptlm::tlm {
 
     void ComputeCluster::set_config(const nlohmann::json& params) {
         SimModule::set_config(params);
-        if (params.contains("cu_template")) {
+        if (params.contains("cu_template") && !params["cu_template"].get<std::string>().empty()) {
             cu_template_path_ = params["cu_template"].get<std::string>();
         }
         if (params.contains("cu_count")) {
@@ -27,6 +27,10 @@ namespace cpptlm::tlm {
 
     void ComputeCluster::simulate_instantiate(const nlohmann::json& cfg) {
         SimModule::simulate_instantiate(cfg);
+        // P1 fix: 子 ComputeCluster 场景下 cu_template_path_ 为空 (默认),
+        // 但父 ComputeCluster 已在 cu_entry["modules"] 提供蓝图实例, 通过基类
+        // SimModule::simulate_instantiate(cfg) 已实例化 cfg.modules.
+        // 此处不再构造额外 cu_cfg (避免 cu_count_ 重复实例化).
         if (cu_template_path_.empty())
             return;
         auto tmpl = JsonIncluder::loadAndInclude(cu_template_path_);

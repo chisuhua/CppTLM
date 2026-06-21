@@ -14,6 +14,8 @@
 #include "utils/json_includer.hh"
 #include <catch2/catch_all.hpp>
 
+using json = nlohmann::json;
+
 #define CPPTLM_TESTING
 
 namespace {
@@ -62,4 +64,90 @@ TEST_CASE("[E2E] apu_soc_v1.json runs 1000 cycles without crash", "[simmodule][a
     factory.startAllTicks();
     eq.run(1000);
     SUCCEED("1000 cycles completed without crash");
+}
+
+// CoherentXBarTLM / CacheTLM 派生自 ChStreamModuleBase (非 SimModule),
+// 无 simulate_instantiate() 方法。Case 1/3 用 ApuSoC::simulate_instantiate + JSON
+// 触发 ModuleFactory Step 7 (StreamAdapter 注入 + D.1 mirror), 否则
+// cache.getInternalOutputPort("req_out") 返回 nullptr。
+
+TEST_CASE("ApuSoC incorporates peer caches into CoherentXBar",
+          "[simmodule][apu][p1]") {
+    EventQueue eq;
+    auto* apu = new ApuSoC("apu", &eq);
+
+    json cfg = {{"modules", json::array()}};
+    cfg["modules"].push_back({{"name", "xbar"}, {"type", "CoherentXBarTLM"}});
+    json cpu_cfg = {{"name", "cpu"},
+                    {"type", "CpuCluster"},
+                    {"modules", json::array()},
+                    {"connections", json::array()}};
+    cpu_cfg["modules"].push_back({{"name", "cache0"}, {"type", "CacheTLM"}});
+    cpu_cfg["modules"].push_back({{"name", "cache1"}, {"type", "CacheTLM"}});
+    cfg["modules"].push_back(cpu_cfg);
+    apu->simulate_instantiate(cfg);
+
+    auto* xbar = dynamic_cast<CoherentXBarTLM*>(apu->getInternalInstance("xbar"));
+    REQUIRE(xbar != nullptr);
+    REQUIRE(xbar->peer_count() == 0);
+
+    apu->incorporate_parent(nullptr);
+    REQUIRE(xbar->peer_count() == 2);
+    delete apu;
+}
+
+TEST_CASE("ApuSoC deep-recurses through CpuCluster/GpuCluster",
+          "[simmodule][apu][p1][e2e]") {
+    auto config =
+        JsonIncluder::loadAndInclude(std::string(CPPTLM_SOURCE_DIR) + "/configs/apu_soc_v1.json");
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE_NOTHROW(factory.instantiateAll(config));
+    auto* soc = dynamic_cast<SimModule*>(factory.getInstance("apu_top"));
+    REQUIRE(soc != nullptr);
+    auto* xbar = dynamic_cast<CoherentXBarTLM*>(
+        soc->getInternalInstance("xbar"));
+    REQUIRE(xbar != nullptr);
+    soc->incorporate_parent(nullptr);
+    // P1 实现状态: CpuCluster 端 l2cache 贡献 3 peer (l2 + l1_0 + l1_1).
+    // GpuCluster 端 cu_template 完整传播待 Phase 7.B 修复 (compute_grp internal_factory 当前 count=0)
+    REQUIRE(xbar->peer_count() >= 3);
+}
+
+TEST_CASE("incorporate_parent is idempotent",
+          "[simmodule][apu][p1]") {
+    EventQueue eq;
+    auto* apu = new ApuSoC("apu", &eq);
+
+    json cfg = {{"modules", json::array()}};
+    cfg["modules"].push_back({{"name", "xbar"}, {"type", "CoherentXBarTLM"}});
+    json cpu_cfg = {{"name", "cpu"},
+                    {"type", "CpuCluster"},
+                    {"modules", json::array()},
+                    {"connections", json::array()}};
+    cpu_cfg["modules"].push_back({{"name", "cache0"}, {"type", "CacheTLM"}});
+    cfg["modules"].push_back(cpu_cfg);
+    apu->simulate_instantiate(cfg);
+
+    auto* xbar = dynamic_cast<CoherentXBarTLM*>(apu->getInternalInstance("xbar"));
+    REQUIRE(xbar != nullptr);
+
+    apu->incorporate_parent(nullptr);
+    REQUIRE(xbar->peer_count() == 1);
+
+    apu->incorporate_parent(nullptr);
+    REQUIRE(xbar->peer_count() == 1);
+    delete apu;
+}
+
+TEST_CASE("ApuSoC without xbar skips wiring gracefully",
+          "[simmodule][apu][p1]") {
+    EventQueue eq;
+    auto* apu = new ApuSoC("apu", &eq);
+
+    auto* cache0 = new CacheTLM("cache0", &eq);
+    apu->addInternalInstance(cache0);
+
+    REQUIRE_NOTHROW(apu->incorporate_parent(nullptr));
+    delete apu;
 }
