@@ -816,7 +816,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
     //    (Step 7 已注入 StreamAdapter + D.1 mirror, peer cache req_out 此时可查)
     // ========================
     for (auto& [name, mod] : module_instances) {
-        if (!mod) continue;
+        if (!mod)
+            continue;
         mod->incorporate_parent(nullptr);
     }
 

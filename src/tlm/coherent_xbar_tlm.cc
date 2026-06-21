@@ -6,8 +6,8 @@
 #include "core/packet.hh"
 #include "core/packet_pool.hh" // PacketPool::acquire/release (Packet 不可拷贝)
 #include "core/sim_core.hh"    // DPRINTF
+#include <algorithm>           // P1: registerPeerCache dedup needs std::find_if
 #include <stdexcept>
-#include <algorithm>  // P1: registerPeerCache dedup needs std::find_if
 
 namespace cpptlm {
     namespace tlm {
