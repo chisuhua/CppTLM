@@ -76,6 +76,7 @@ VIRTUAL_PATHS=(
     "ext/packet_to_payload.hh"
     "ext/payload_to_packet.hh"
     "modules_v2.hh"
+    "docs/superpowers/plans/2026-06-11-phase7a-gpu-infra.md"  # 2026-06-22 归档到 docs-archived/superpowers/plans/；docs/soc_arch/modules/*.md 引用旧路径
     # Phase 7.B-F (GPU APU Fused SoC) 规划中文件（roadmap.md 2026-06-11；7.A 已落地 2026-06-11）
     "compute_unit_tlm.hh"
     "tcc_tlm.hh"

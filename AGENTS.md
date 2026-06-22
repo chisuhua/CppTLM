@@ -189,7 +189,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - `dead-code-headers-2026-q2/`: v2.1 归档的 `ext/packet_to_payload.hh` 等
 - `v1-architecture/` / `v2-architecture/`: 旧架构图与决策记录
 - `p0-p1-architecture-debt-fix-v2/`: P0/P1 修复记录（issues/learnings/decisions）
-- `superpowers/`（2026-06-22 清理）: `plans/` 13 个 + `specs/` 5 个（已完成/已被取代/未执行的 planning 与设计文档）；活跃内容见 `docs/superpowers/{plans,specs}/`
+- `superpowers/`（2026-06-22 清理）: `plans/` 14 个 + `specs/` 5 个（已完成/已被取代/未执行的 planning 与设计文档）；活跃内容见 `docs/superpowers/{plans,specs}/`
 - `plans/`（2026-06-22 清理）: 项目根 `plans/` 下 10 个文件（已完成/已被取代/一次性报告的 planning 文档）；活跃规划见 `docs/superpowers/plans/2026-06-20-future-work-roadmap.md`
 - 恢复方法：各子目录 `README.md`
 
