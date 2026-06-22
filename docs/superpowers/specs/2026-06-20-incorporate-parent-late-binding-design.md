@@ -462,3 +462,18 @@ void ApuSoC::set_config(const nlohmann::json& params) {
 **Spec 版本**: v0.1 (Draft)
 **下一步**: 用户 review → writing-plans 写实施计划
 **预期开工**: 2026-06-20 (1-2 天)
+
+---
+
+## 9. P1.5 修复记录 (2026-06-19, 实施后回顾)
+
+P1 commit `04399c8` 后发现并修复的 2 处 tech debt:
+
+1. **`ApuSoC::wrap_template_as_module`** (`src/tlm/cluster/apu_soc.cc:23-39` 原版): `entry["params"] = nlohmann::json::object()` 覆盖模板的 params, 导致 GpuCluster 收到空 params, `gpc_count_` 默认 1 而非模板指定的 2. 修复: `entry["params"] = tmpl["modules"][0].value("params", json::object())` 正确传递模板参数.
+2. **`TpcCluster::simulate_instantiate`** (`src/tlm/cluster/tpc_cluster.cc:17-30`): 子 compute_grp_entry 缺失 `cu_template` 字段, 导致子 ComputeCluster L34 早返回, 不创建子 cu. 修复: 显式传 `cu_template: cu_template_path_` 让子 ComputeCluster 走 L37-49 创建 N cu 链.
+
+**效果**:
+- 完整 GPU 链路 (2 GPC × 2 TPC × 2 CU × 2 cache = 16 cache) 端到端工作
+- Case 2 期望: `>= 3` → `>= 16` (与 spec 估算对齐)
+- GPU 端 `peer_count` 实际: 3 → 16+ (8 CUs × 2 cache)
+- 全测套 690/690 通过

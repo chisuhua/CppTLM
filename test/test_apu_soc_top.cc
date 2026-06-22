@@ -13,8 +13,7 @@
 #include "tlm/cluster/gpu_cluster.hh"
 #include "utils/json_includer.hh"
 #include <catch2/catch_all.hpp>
-
-using json = nlohmann::json;
+#include <cstdio>
 
 #define CPPTLM_TESTING
 
@@ -106,10 +105,7 @@ TEST_CASE("ApuSoC deep-recurses through CpuCluster/GpuCluster", "[simmodule][apu
     auto* xbar = dynamic_cast<CoherentXBarTLM*>(soc->getInternalInstance("xbar"));
     REQUIRE(xbar != nullptr);
     soc->incorporate_parent(nullptr);
-    // P1 实现状态: CpuCluster 端 l2cache 贡献 3 peer (l2 + l1_0 + l1_1).
-    // GpuCluster 端 cu_template 完整传播待 Phase 7.B 修复 (compute_grp internal_factory 当前
-    // count=0)
-    REQUIRE(xbar->peer_count() >= 3);
+    REQUIRE(xbar->peer_count() >= 16);
 }
 
 TEST_CASE("incorporate_parent is idempotent", "[simmodule][apu][p1]") {

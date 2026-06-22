@@ -32,15 +32,15 @@ namespace cpptlm::tlm {
         nlohmann::json entry;
         entry["name"] = name;
         entry["type"] = type;
-        entry["params"] = nlohmann::json::object();
-        if (tmpl.contains("modules"))
-            entry["modules"] = tmpl["modules"];
-        else
+        if (tmpl.contains("modules") && tmpl["modules"].is_array() && !tmpl["modules"].empty()) {
+            entry["params"] = tmpl["modules"][0].value("params", nlohmann::json::object());
+            entry["modules"] = tmpl["modules"][0].value("modules", nlohmann::json::array());
+            entry["connections"] = tmpl["modules"][0].value("connections", nlohmann::json::array());
+        } else {
+            entry["params"] = nlohmann::json::object();
             entry["modules"] = nlohmann::json::array();
-        if (tmpl.contains("connections"))
-            entry["connections"] = tmpl["connections"];
-        else
             entry["connections"] = nlohmann::json::array();
+        }
         return entry;
     }
 
@@ -102,7 +102,6 @@ namespace cpptlm::tlm {
         // 3. 递归通知子 SimModule (保留 hook 语义供未来扩展)
         SimModule::incorporate_parent(this);
     }
-
     void ApuSoC::collectAndRegisterPeerCaches(CoherentXBarTLM* xbar, SimModule* subtree_root,
                                               const std::string& path_prefix) {
         for (const auto& [name, obj] : subtree_root->getInternalFactory().getAllInstances()) {
