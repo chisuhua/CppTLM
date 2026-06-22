@@ -1,6 +1,8 @@
 // src/tlm/cluster/tpc_cluster.cc
 #include "tlm/cluster/tpc_cluster.hh"
 #include "core/module_factory.hh"
+#include "utils/json_includer.hh"
+#include <stdexcept>
 
 namespace cpptlm::tlm {
 
@@ -16,6 +18,9 @@ namespace cpptlm::tlm {
 
     void TpcCluster::simulate_instantiate(const nlohmann::json& cfg) {
         SimModule::simulate_instantiate(cfg);
+        if (cu_template_path_.empty()) {
+            throw std::runtime_error("TpcCluster: cu_template must be set");
+        }
         nlohmann::json compute_grp_entry;
         compute_grp_entry["name"] = "compute_grp";
         compute_grp_entry["type"] = "ComputeCluster";

@@ -1,5 +1,17 @@
 # Changelog
 
+## [v2.4.1] - 2026-06-19
+
+### 修复 (Fixes)
+- **ApuSoC::wrap_template_as_module**: 修复模板 params 丢失 bug (P1.5 tech debt). 原代码 `entry["params"] = nlohmann::json::object()` 覆盖模板的 params 字段, 导致 GpuCluster 收到空 params, gpc_count_ 默认 1 而非 2. 现改为 `entry["params"] = tmpl["modules"][0].value("params", ...)` 正确传递模板参数. 完整 APU SoC 端到端 GPU 链路 (gpc_count=2 × tpc_per_gpc=2 × cu_per_tpc=2 = 8 CUs × 2 cache = 16 cache) 终于端到端工作.
+- **TpcCluster::simulate_instantiate**: 修子 compute_grp 蓝图传递 (L19-30 清理冗余, 显式抛 cu_template 缺失异常). 配合 ApuSoC params fix 触发完整 cu 复制链.
+
+### 测试 (Tests)
+- Case 2 期望: >= 3 → >= 16 (GPU 端 cache 实际数量与 spec 估算对齐)
+- 总数: 690/690
+
+---
+
 ## [v2.4] - 2026-06-19
 
 ### 新增 (Features)
