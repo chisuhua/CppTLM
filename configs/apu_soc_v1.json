@@ -1,6 +1,6 @@
 {
   "name": "apu_soc_v1",
-  "description": "Full APU: CPU 2-level + GPU 2GPC×2TPC×2CU + CrossbarTLM (v2.2 简化版; Phase 7.C 升级 CoherentXBarTLM)",
+  "description": "Full APU: CPU 2-level + GPU 2GPC×2TPC×2CU + CoherentXBarTLM (v2.4.1: P0/P1/P1.5 + F2/F3/F11/F1 落地后, Phase 7.C 升级 6×6 state table)",
   "modules": [{
     "name": "apu_top",
     "type": "ApuSoC",

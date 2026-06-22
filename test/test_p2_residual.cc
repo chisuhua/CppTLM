@@ -36,7 +36,8 @@ namespace {
 // P2.1: TpcCluster internal cu count
 // ─────────────────────────────────────────────────────────────────────────────
 
-TEST_CASE("P2.1: GpuCluster set_config accepts gpc_count/tpc_per_gpc/cu_per_tpc", "[p2-residual][gpu][tpc]") {
+TEST_CASE("P2.1: GpuCluster set_config accepts gpc_count/tpc_per_gpc/cu_per_tpc",
+          "[p2-residual][gpu][tpc]") {
     // 注: TpcCluster::cu_count 实际验证需走完整 ModuleFactory + apu_soc_v1.json 通路
     // (见 test_apu_soc_top.cc P5 集成测试覆盖 peer_count 16+)
     // 本测试聚焦 GpuCluster::set_config 链路接受三参数
@@ -77,7 +78,8 @@ TEST_CASE("P2.2: GpuNoC accepts routing=\"FIFO\" parameter", "[p2-residual][noc]
 // P2.3: l1_size / l2_size 参数透传 (CacheCluster → internal CacheTLM)
 // ─────────────────────────────────────────────────────────────────────────────
 
-TEST_CASE("P2.3: CacheCluster l1_size/l2_size parameters propagate", "[p2-residual][cache][params]") {
+TEST_CASE("P2.3: CacheCluster l1_size/l2_size parameters propagate",
+          "[p2-residual][cache][params]") {
     EventQueue eq;
     auto* cluster = new CacheCluster("cc0", &eq);
 
@@ -103,7 +105,8 @@ TEST_CASE("P2.3: CacheCluster l1_size/l2_size parameters propagate", "[p2-residu
 // P2.4: channel_size 参数透传 (MemoryCluster → internal MemoryTLM)
 // ─────────────────────────────────────────────────────────────────────────────
 
-TEST_CASE("P2.4: MemoryCluster channel_size parameter propagates", "[p2-residual][memory][params]") {
+TEST_CASE("P2.4: MemoryCluster channel_size parameter propagates",
+          "[p2-residual][memory][params]") {
     EventQueue eq;
     auto* mc = new MemoryCluster("mc0", &eq);
 
@@ -148,7 +151,8 @@ TEST_CASE("P2.5: MetricsReporter infrastructure structure exists", "[p2-residual
     reporter.generate(oss);
     std::string output = oss.str();
 
-    // 验证 JSON 输出非空 + 包含 group name 顶层段 (dotted name 被 nested 化: "a.b" → {"a": {"b": {}}})
+    // 验证 JSON 输出非空 + 包含 group name 顶层段 (dotted name 被 nested 化: "a.b" → {"a": {"b":
+    // {}}})
     REQUIRE_FALSE(output.empty());
     REQUIRE(output.find("\"p2_residual\"") != std::string::npos);
     REQUIRE(output.find("\"system\"") != std::string::npos);
