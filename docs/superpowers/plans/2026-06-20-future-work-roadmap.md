@@ -18,35 +18,105 @@
 
 **P0+P1+P1.5 合计**: 9 commits, ~2200 LOC 生产代码 + 测试 + 文档
 
+**测试基线验证** (single source of truth):
+```bash
+./build/bin/cpptlm_tests --reporter compact
+# 期望: "All tests passed (N assertions in 690 test cases)"
+# 当前 verified: 15330 assertions in 690 test cases (2026-06-22)
+# 注: AGENTS.md 写 "659/659" 是过期基线 (predates format cleanup), 本 roadmap 是最新
+```
+
+---
+
+## 0.5 依赖图 + 总工期
+
+### 总工期估算 (F1–F15)
+
+| 等级 | Task | 工期 (工作日) | 累计 |
+|:---:|------|:---:|:---:|
+| 🟢 | F8 cosmetic cleanup | 0.05 | 0.05 |
+| 🟢 | F2 pre-commit hook | 0.05 | 0.1 |
+| 🟢 | F3 ADR write | 0.05 | 0.15 |
+| 🟡 | F11 E2E 回归守护 | 0.5 | 0.65 |
+| 🟡 | F1 P2 补测 (5 TEST_CASEs) | 1 | 1.65 |
+| 🟡 | F5 cpptlm.library Python | 1.5 | 3.15 |
+| 🟡 | F7 params.ports: 8 schema | 0.5 | 3.65 |
+| 🔴 | F4 Phase 7.C 6×6 state table | 10 | 13.65 |
+| 🔴 | F12 Phase 7.B 三类实现 | 10 | 23.65 |
+| 🟡 | F6 blueprint 升级 | 1.5 | 25.15 |
+| 🟡 | F13 Phase 7.D TCC Bridge | 10 | 35.15 |
+| 🟢 | F14 Phase 7.E Multi-CU+NoC | 7 | 42.15 |
+| 🟢 | F15 Phase 7.F Full APU Demo | 5 | 47.15 |
+| 🟢 | F9 多 xbar 实例 | 1.5 | 48.65 |
+| 🟢 | F10 metric 收集 | 2.5 | 51.15 |
+
+**总工期估算**: ~51 工作日 (~10 周单人, 或 3-4 周 4 人并行)
+
+### 依赖图
+
+```
+                   ┌─ F2 (15min) ─┐
+                   ├─ F3 (30min) ─┤
+                   └─ F1 (1d) ────┤
+                                    │
+                                    ↓
+                  ┌─ F11 (0.5d) ─┐  (E2E 回归守护, 独立)
+                  └─ F5 (1.5d) ──┐ │
+                                  │ │
+       ┌──── F12 (Phase 7.B 三类, 10d) ────┐
+       │          (F6 F13 F14 都依赖)        │
+       │                                     ↓
+       ├─→ F6 (蓝图升级, 1.5d) ─→ F13 (Phase 7.D TCC, 10d) ─┐
+       │                                                      ↓
+       └──────────────────→ F4 (Phase 7.C state table, 10d) ─┴─→ F14 (Phase 7.E Multi-CU, 7d) ─┐
+                                                                                                  ↓
+                                                                                            F15 (Phase 7.F Demo, 5d) ─┐
+                                                                                                                       ↓
+                                                                                                       F9 (多 xbar, 1.5d)  [独立]
+                                                                                                       F10 (metric, 2.5d)   [独立]
+                                                                                                       F8 (cosmetic, <30min) [独立]
+                                                                                                       F7 (schema, 0.5d)    [独立]
+```
+
+**关键路径**: F12 → F13 → F14 → F15 (~32 工作日, 阻塞主线 Phase 7 推进)
+**快速收益路径**: F2 → F3 → F1 → F11 → F5 (~3.5 工作日, 1 周可完成)
+
 ---
 
 ## 1. 完整待办索引 (P2+)
 
-### 1.1 🔴 高优先级 (建议 1-2 周内启动)
+> **优先级语义**: 🔴 = 最高风险/最高紧迫性 (与 `roadmap.md` Phase 7 风险分级对齐) · 🟡 = 正常推进 · 🟢 = 按需/cosmetic
+> **依赖说明**: 全部依赖均已展开; 隐藏依赖标注在对应 task 详细规范节。
+
+### 1.1 🔴 高优先级 (1-2 周内启动 / 最高风险)
 
 | # | 任务 | 来源 | 工期 | 难度 | 依赖 |
 |---|------|------|:---:|:---:|:---:|
-| **F1** | **P2 阶段 5 项残留 △ 补测** (TpcCluster cu 计数 / routing="FIFO" / l1_size·l2_size 透传 / channel_size 透传 / 性能 metric) | Handoff PENDING §7 | 0.5-1 天 | 中 | 无 |
 | **F2** | **pre-commit 集成 clang-format 钩子** (.pre-commit-config.yaml 加 clang-format pass) | P0+P1 final review 建议 | <15min | 低 | 无 |
 | **F3** | **写 ADR: incorporate_parent late-binding semantics** (记录 P1 1A+2A+3A 决策 + 软失败 + 双层幂等) | Handoff PENDING §11 | <30min | 低 | 无 |
+| **F1** | **P2 阶段 5 项残留 △ 补测** (TpcCluster cu 计数 / routing="FIFO" / l1_size·l2_size 透传 / channel_size 透传 / 性能 metric 断言) | Handoff PENDING §7 | 0.5-1 天 | 中 | 无 |
+| **F4** | **Phase 7.C: CoherentXBarTLM 6×6 state table 改造** (取代 write-through 透传, 引入 MOESIF CoherenceState + 状态机) | ADR-SOC-01 §2 | 1-2 周 | **高** | 无 |
+| **F11** | **新风险#1: E2E 回归守护** (删 `test_phase6_integration.cc:153-155` 直接驱动 + 新增 "Phase 6: E2E data flow cache→xbar→mem" 测试) | 归档的 p0-alignment-remediation-plan.md | 0.5-1 天 | 中 | 无 |
 
-### 1.2 🟡 中优先级 (建议 1-2 月内启动)
+### 1.2 🟡 中优先级 (1-2 月内启动)
 
 | # | 任务 | 来源 | 工期 | 难度 | 依赖 |
 |---|------|------|:---:|:---:|:---:|
-| **F4** | **Phase 7.C: CoherentXBarTLM 6×6 state table 改造** (取代 write-through 透传, 引入 CoherenceState + 状态机) | ADR-SOC-01 §2 | 1-2 周 | 高 | 无 |
-| **F5** | **cpptlm.library Python 高级工厂函数** (`cpu_nested_cluster`, `memory_cluster_hierarchical`) | Handoff PENDING §5 | 1-2 天 | 中 | 无 |
-| **F6** | **compute_unit_v1.json 蓝图升级** (Phase 7.B 接入 GpuComputeUnitTLM, 扩 ScalarCache + VectorRegFile + Wavefront) | Handoff PENDING §6 | 1-2 天 | 中-高 | F4 部分 |
-| **F7** | **`params.ports: 8` schema 校验** (ap u_soc_v1.json 中 xbar 写死 8 端口但类硬编码 4 端口, 加 schema validate) | P0 final review 任务 #13 | 0.5 天 | 中 | 无 |
+| **F5** | **cpptlm.library Python 高级工厂函数** (`cpu_nested_cluster`, `memory_cluster_hierarchical`, `gpu_topology`) | Handoff PENDING §5 | 1-2 天 | 中 | 无 |
+| **F7** | **`params.ports: 8` schema 校验** (`apu_soc_v1.json` xbar 写死 8 端口但类硬编码 4 端口, 加 schema validate) | P0 final review 任务 #13 | 0.5 天 | 中 | 无 |
+| **F12** | **Phase 7.B 核心: GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM 三类实现** (F6 蓝图升级的实际前置) | `roadmap.md` Phase 7.B + ADR-SOC-02/03 | 1-2 周 | 高 | 无 |
+| **F6** | **compute_unit_v1.json 蓝图升级** (Phase 7.B 接入 GpuComputeUnitTLM, 扩 ScalarCache + VectorRegFile + Wavefront) | Handoff PENDING §6 | 1-2 天 | 中-高 | **F12** (而非 F4) |
+| **F13** | **Phase 7.D: TCC Bridge + 内存层次** (DualPortStreamAdapter write coalescing + MemoryTLM hbm_mode) | `roadmap.md` Phase 7.D + ADR-SOC-04 | 1-2 周 | 高 | F12 |
 
 ### 1.3 🟢 低优先级 (按需启动)
 
 | # | 任务 | 来源 | 工期 | 难度 | 依赖 |
 |---|------|------|:---:|:---:|:---:|
 | **F8** | **文档 cosmetic cleanup** (top_xbar 命名统一 / description v2.2→v2.3 / 命名空间缩进风格 / 红阶段注释清理) | P0 final review 任务 #12, 14, 15, 16 | <30min | 低 | 无 |
+| **F14** | **Phase 7.E: Multi-CU + NoC** (ComputeUnitTLM 数组模式 + BidirectionalPortAdapter + apu_soc_v1 完整 GPU 接入) | `roadmap.md` Phase 7.E | 1-2 周 | 中-高 | F12, F4 |
+| **F15** | **Phase 7.F: Full APU SoC Demo** (`apu_full_soc.json` + `test_apu_soc.py` + 222/222 Python 端到端) | `roadmap.md` Phase 7.F | 1 周 | 中 | F13, F14 |
 | **F9** | **多 xbar 实例支持** (当前单 xbar 设计, Phase 7.C+ 多 xbar 场景) | P1 spec §7 风险表 | 1-2 天 | 中 | F4 |
 | **F10** | **CPUTLM / CacheTLM 性能 metric 收集** (Phase 7 末, telemetry framework) | Phase 7 路线图 | 2-3 天 | 中 | 无 |
-| **F11** | **Packet::reset() 显式 release Extension** (P0-#4 + 新风险#1: 修复 Extension 泄漏 + 增 E2E data flow cache→xbar→mem 测试) | 归档的 p0-alignment-remediation-plan.md | 1 天 | 中 | 无 |
 
 ---
 
@@ -55,46 +125,73 @@
 ### Phase A: 1-2 周 quick wins (commit-based 增量交付)
 
 ```
-F2 (15min) → F3 (30min) → F1 (0.5-1天) → F8 (30min)
+F2 (15min) → F3 (30min) → F11 (0.5-1天) → F1 (0.5-1天) → F8 (30min)
    ↓
-[端到端测试覆盖率冲刺 92% → 95%+, 4 commits]
+[5 commits, 覆盖率冲刺, E2E 回归守护建立]
 ```
 
 | 步骤 | commit | 验收 |
 |------|--------|------|
 | F2: pre-commit clang-format | `chore: add pre-commit clang-format hook` | `pre-commit run --all-files` 通过 |
 | F3: ADR write | `docs(adr): ADR for incorporate_parent late-binding semantics` | `docs/adr/ADR-INC-*.md` 落地 |
-| F1: P2 补测 | `test: P2 5 项残留 △ 补测` (5 new TEST_CASEs) | 全测 690 → 695/695+, 覆盖率 92% → 95%+ |
+| F11: E2E 回归守护 | `test: 新增 Phase 6 E2E data flow cache→xbar→mem 测试 + 删 test_phase6_integration.cc:153-155 直接驱动` | grep 0 直接驱动; E2E 测试覆盖完整路径 |
+| F1: P2 补测 | `test: P2 5 项残留 △ 补测` (5 new TEST_CASEs) | 全测 690 → 695/695+ |
 | F8: cosmetic cleanup | `docs+test: cosmetic cleanup (top_xbar naming, v2.3 desc)` | grep 0 stale references |
 
-**Phase A 总工期**: 1-2 天, 4 commits
+**Phase A 总工期**: 1-2 天, 5 commits
 
-### Phase B: 2-3 周架构演进 (大块工作)
+### Phase B: 2-3 周架构演进 + 风险任务 (大块工作, 含 F4 brainstorming)
 
 ```
-F5 (1-2天) → F7 (0.5天) → F4 (1-2周) → F6 (1-2天) [F4 后期并行]
+F5 (1.5天) → F7 (0.5天) → [F12 (10d) ∥ F4 (10d)] → F6 (1.5d) [依赖 F12]
    ↓
-[Python 用户接口 + 架构验证 + Phase 7.C 6×6 state table + 蓝图升级]
+[Python 用户接口 + schema 校验 + Phase 7.B 核心三类 + Phase 7.C state table + 蓝图升级]
 ```
 
 | 步骤 | 依赖 | commit pattern |
 |------|------|----------------|
-| F5: cpptlm.library Python | 无 (独立) | `feat(cpptlm): Python 高级工厂 cpu_nested_cluster + memory_cluster_hierarchical` |
+| F5: cpptlm.library Python | 无 (独立) | `feat(cpptlm): Python 高级工厂 cpu_nested_cluster + memory_cluster_hierarchical + gpu_topology` |
 | F7: schema validate | 无 (独立) | `feat(json): validate params.ports against class max_ports` |
+| F12: Phase 7.B 三类 | 无 (但需新 brainstorming) | `feat(tlm): GpuComputeUnitTLM + VectorRegFileTLM + WavefrontTLM (per ADR-SOC-02/03)` |
 | F4: Phase 7.C state table | 无 (但需新 brainstorming) | `feat(tlm): CoherentXBarTLM 6×6 state table (per ADR-SOC-01)` |
-| F6: blueprint upgrade | 部分依赖 F4 (cache state 与 GpuComputeUnitTLM 集成) | `feat(templates): upgrade compute_unit_v1.json to GpuComputeUnitTLM` |
+| F6: blueprint upgrade | F12 (而非 F4) | `feat(templates): upgrade compute_unit_v1.json to GpuComputeUnitTLM (per ADR-SOC-02/03)` |
 
-**Phase B 总工期**: 2-3 周, 4-5 commits, 含 1 个新 brainstorming cycle (F4)
+**Phase B 总工期**: 2-3 周 (含 F12 + F4 并行), 5-6 commits, 含 2 个新 brainstorming cycle (F12 + F4)
 
-### Phase C: 按需扩展 (Phase 7.C+ 之后)
+### Phase C: 2-3 周 Phase 7.D-E 推进
 
 ```
-F9 (1-2天) → F10 (2-3天)
+F13 (10d) [依赖 F12] → F14 (7d) [依赖 F12 + F4]
    ↓
-[多 xbar + telemetry — 长期演进]
+[TCC Bridge + 内存层次 + Multi-CU + NoC + BidirectionalPortAdapter]
 ```
 
-**Phase C**: 仅在 F4 完成且 SoC 实际有 > 1 xbar 需求时启动
+| 步骤 | 依赖 | commit pattern |
+|------|------|----------------|
+| F13: Phase 7.D TCC | F12 (CU 类需先实现) | `feat(tlm): TCC Bridge + MemoryTLM hbm_mode (per ADR-SOC-04)` |
+| F14: Phase 7.E Multi-CU | F12 + F4 | `feat(tlm): ComputeUnitTLM 数组模式 + BidirectionalPortAdapter` |
+
+**Phase C 总工期**: 2-3 周, 2-3 commits
+
+### Phase D: 集成演示 + 按需扩展 (Phase 7.F 收官)
+
+```
+F15 (5d) [依赖 F13 + F14] → F9 (1.5d) ∥ F10 (2.5d) ∥ F7 (0.5d) [独立]
+   ↓
+[Full APU Demo + 多 xbar + metric + schema 校验]
+```
+
+| 步骤 | 依赖 | commit pattern |
+|------|------|----------------|
+| F15: Phase 7.F Demo | F13 + F14 | `feat(demo): apu_full_soc.json + test_apu_soc.py` |
+| F9: 多 xbar | F4 (CoherenceDomain) | `feat(simmodule): 多 xbar 实例支持 (P1 spec §7 风险表)` |
+| F10: metric 收集 | 无 | `feat(metrics): CPUTLM/CacheTLM/MemoryTLM telemetry` |
+
+**Phase D 总工期**: 1-2 周, 3-4 commits
+
+### 整体规划
+
+**A → B → C → D 全程**: ~10 周 (单人) / 3-4 周 (4 人并行, 关键路径 32 工作日)
 
 ---
 
@@ -112,7 +209,7 @@ F9 (1-2天) → F10 (2-3天)
 | P2.2 | `routing="FIFO" 路径` | 验证 FIFO vs XY 路由选择 |
 | P2.3 | `l1_size/l2_size 透传` | 验证 `params.l1_size` 正确传到 l1_0, l1_1; `l2_size` 传到 l2 |
 | P2.4 | `channel_size 透传` | 验证 MemoryCluster 通道配置 |
-| P2.5 | `性能 metric 断言` | 验证 `metrics_reporter.get_summary()` 包含 cache hit rate / avg latency |
+| P2.5 | `性能 metric 断言` | 验证 `metrics_reporter.get_summary()` **结构存在** (顶层字段), 不断言 hit rate 具体值 (F10 负责扩展 metric 类型) |
 
 **文件**: 1 个新 test 文件 + 必要 helper（直接修改现有 test file 也可）
 
@@ -222,10 +319,10 @@ F9 (1-2天) → F10 (2-3天)
 - `l1_cache` 升级为 `l1_data_cache` + `l1_inst_cache` (Harvard)
 
 **依赖**:
-- `GpuComputeUnitTLM` 类需先实现 (Phase 7.B 独立 workstream)
-- `VectorRegFileTLM` 和 `WavefrontTLM` 需先实现
+- **F12** (Phase 7.B 三类实现: `GpuComputeUnitTLM` / `VectorRegFileTLM` / `WavefrontTLM`) 是 F6 的实际前置
+- ~~`F4` (coherence state table) 不依赖 — F4 是 crossbar 侧, F6 是 CU 蓝图侧, **正交**~~
 
-**风险**: 中（需先实现 3 个新 TLM 类）
+**风险**: 中（需先实现 3 个新 TLM 类, 见 F12）
 
 ---
 
@@ -236,10 +333,11 @@ F9 (1-2天) → F10 (2-3天)
 **问题**: `configs/apu_soc_v1.json` 中 `xbar` 写 `"ports": 8`, 但 `CoherentXBarTLM` 硬编码 4 端口 (继承 CrossbarTLM)。`ports: 8` 字段被 silently ignored。
 
 **实现**:
+- **预检步骤** (Day 1): 先 `grep -rn '"ports"\s*:' configs/` 评估 backward compat 影响范围, 列出所有 "ports > n_ports" 的 JSON 文件
 - `ModuleFactory::validateConfig` 加 schema validation: 检查 `params.ports` 与类实际 `n_ports` 一致, 不一致抛 `std::runtime_error`
-- 或: 加 warning 提示用户参数被忽略
+- 或: 加 warning 提示用户参数被忽略 (二选一, 推荐 warning 模式避免 break 现有 config)
 
-**风险**: 低（防御性校验, 可能让某些合法配置 fail — 需小心 backward compat）
+**风险**: 低（防御性校验, 但 **必须先 grep configs/** 避免 break 现有 apu_soc_v1.json）
 
 ---
 
@@ -289,34 +387,146 @@ F9 (1-2天) → F10 (2-3天)
 
 ---
 
-### F11: Packet::reset() 显式 release Extension (P0-#4 + 新风险#1)
+### F11: 新风险#1 E2E 回归守护
 
-**来源**: `docs-archived/plans/p0-alignment-remediation-plan.md` (2026-06-09 状态审计)
+**来源**: `docs-archived/plans/p0-alignment-remediation-plan.md` (2026-06-09 状态审计, Oracle 2026-06-22 重新审计)
 
 **背景**:
 - 原 plan 列出 4 项 P0 + 2 项新风险
 - P0-#1 (PortRole/BundleType 字符串大小写) ✅ 2026-06 落地
 - P0-#2 (v3 hybrid 设计归档) ✅ 2026-06-09 落地
 - P0-#3 (CrossbarTLM 单指针化) ✅ 2026-06-19 P0 fix 落地 (multi_adapter_ + set_stream_adapter 单指针)
-- P0-#4 (Packet::reset release Extension) ⏳ **仍待实施**
-- 新风险#1 (test_phase6_integration.cc 直接驱动) ⏳ **仍待实施**
+- ~~P0-#4 (Packet::reset release Extension) ✅ **已修复 (Phase 1d) — 见下方 ⚠️ 假阳性说明**~~
+- 新风险#1 (test_phase6_integration.cc 直接驱动) ⏳ **仍待实施 (本 F11 范围)**
 
-**P0-#4 实现**:
-- `include/core/packet.hh` Packet::reset() 加 `payload->release_extension<>()` 调用
-- 验证扩展 release 后内存不增长 (ASan 测试)
-- 或：改为 `payload->reset_extensions()` (tlm_generic_payload 提供)
+**⚠️ P0-#4 假阳性说明 (Oracle 2026-06-22 发现)**:
+- 原 audit 基于 2026-06-09, 早于 Phase 1d 落地
+- `include/tlm/tlm_stub.hh:155-168` 的 `tlm_generic_payload::reset()` **已**在 `Packet::reset()` 调用时, 循环 `delete` + `nullify` 所有 extension
+- 文件 L151-154 注释明确: *"Phase 1d: full multi-extension reset semantics. Loop-deletes all owned extensions AND nullifies each slot... After reset(), get_extension<T>() returns nullptr for every T."*
+- **roadmap 原提议修复反而会破坏代码**:
+  - `payload->release_extension<>()` 会 double-delete (reset 已 delete)
+  - `payload->reset_extensions()` API 不存在 (实际是 `clear_extensions()` / `reset()` / `release_extension<T>()`)
+- **结论**: P0-#4 无需修复, 已被 Phase 1d 正确实现。已从 F11 移除
 
 **新风险#1 实现**:
-- 删 `test_phase6_integration.cc` 中直接驱动 `xbar.req_in[0]` 的代码
+- 删 `test/test_phase6_integration.cc:153-155` 中直接驱动 `xbar.req_in[0]` 的代码 (绕过 StreamAdapter 检测)
 - 新增 E2E 测试 `"Phase 6: E2E data flow cache→xbar→mem"`, 走 StreamAdapter/MasterPort/SlavePort/PortPair 标准通路
 - 测试目的: 在 P0-#3 未修时必失败 (因为直接驱动绕过检测), 修复后必通过
 
 **文件**:
-- 修改 `include/core/packet.hh` (reset 方法 ~5 行)
-- 修改 `test/test_phase6_integration.cc` (删除直接驱动, 新增 E2E 测试 ~30 行)
-- 或新建 `test/test_packet_extension_release.cc` (~50 行 ASan 测试)
+- 修改 `test/test_phase6_integration.cc` (删除 L153-155 直接驱动 ~3 行, 新增 E2E TEST_CASE ~30 行)
+- 新建可选 `test/test_packet_extension_release.cc` (~50 行 ASan 验证 Packet::reset 后 extension 已 nullptr)
 
-**风险**: 中（涉及内存管理, 需 ASan 验证）
+**验收**:
+- `grep "xbar.req_in\[0\]" test/` 返回 0 匹配
+- 新 E2E 测试在 P0-#3 未修时**必失败** (证明覆盖有效), 修复后通过
+- 690 → 691+ tests pass
+
+**风险**: 中（涉及测试架构改进, 需验证新测试可检测 P0-#3 regression）
+
+---
+
+### F12: Phase 7.B 核心 — GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM 三类实现
+
+**来源**: `roadmap.md` Phase 7.B + ADR-SOC-02 (CU 粒度) + ADR-SOC-03 (Wavefront coalescing)
+
+**当前状态** (Phase 7.A):
+- `GPUTLM v0` 黑盒发起器 (单端口 Initiator, 周期发出 ComputeReqBundle)
+- `ComputeReqBundle` / `ComputeRespBundle` 类型已定义 (4 GPU 维度字段)
+
+**目标** (Phase 7.B):
+- `GpuComputeUnitTLM` (新增, ~300 LOC) — 真实 CU 行为: 接收 wavefront → dispatch → SIMT 执行 → 写回
+- `VectorRegFileTLM` (新增, ~150 LOC) — vector register file 抽象, 支持 read/write/coalesce
+- `WavefrontTLM` (新增, ~200 LOC) — wavefront 调度 + `coalescing_factor` 合并 (per ADR-SOC-03)
+- 配套测试: `test/test_gpu_compute_unit.cc` + `test/test_vector_regfile.cc` + `test/test_wavefront.cc` (~30 TEST_CASEs)
+- 跨类集成测试: 1 wavefront → 64 lane coalesce → 1 load → CacheTLM (bypass coherence) → MemoryTLM
+
+**依赖**:
+- 无外部依赖 (新增类, 不改现有 TLM 接口)
+- 需新 brainstorming cycle (3 个新类的设计)
+- F6 (compute_unit 蓝图) 依赖此 F12
+
+**预估**:
+- 新增 ~650-800 LOC
+- 3 个新 .hh + 3 个 .cc + 1 个统一集成测试
+- 30+ new TEST_CASEs
+- 工期: 1-2 周 (含 brainstorming)
+
+**风险**: 中-高 (3 个新类, 需 careful 接口设计)
+
+**前置**: 需先与 ADR-SOC-02/03 重新对齐确认
+
+---
+
+### F13: Phase 7.D — TCC Bridge + 内存层次
+
+**来源**: `roadmap.md` Phase 7.D + ADR-SOC-04 (HSAPP 极简化)
+
+**目标**:
+- `TccTLM` (新增, ~200 LOC) — Translation Cache Coherent Bridge, 真实 GCN 架构参考
+- `MemoryTLM::hbm_mode` 扩展 (新增, ~50 LOC 修改) — HBM 带宽模型 + 通道并行
+- `DualPortStreamAdapter` 写合并 (write coalescing, ~100 LOC) — 多 request 合并为单 MemoryTLM 写
+
+**依赖**:
+- **F12** (CU 类需先实现, F13 是 CU 写回的 downstream)
+- 无 brainstorming (架构已在 ADR-SOC-04 中确定)
+
+**预估**:
+- 新增 ~350-400 LOC
+- 20+ new TEST_CASEs (TCC snoop + write coalescing correctness + HBM 带宽)
+- 工期: 1-2 周
+
+**风险**: 中-高 (TCC 状态机 + HBM 模型)
+
+---
+
+### F14: Phase 7.E — Multi-CU + NoC
+
+**来源**: `roadmap.md` Phase 7.E
+
+**目标**:
+- `ComputeUnitTLM` 数组模式 (扩展 F12 的 CU) — 1 TPC 容纳 N 个 CU
+- `BidirectionalPortAdapter` 真实多 CU 总线 (新增, ~150 LOC)
+- `apu_soc_v1.json` 完整 GPU 接入 (4GPC × 2TPC × 2CU = 16 CU, 替换当前的 16 简化 xbar)
+- 配套 E2E 测试: GPU 多 CU 并发执行, 验证 NoC 路由 + bandwidth saturation
+
+**依赖**:
+- F12 (CU 基础)
+- F4 (CoherenceDomain 集成, 多 CU 共享 L2)
+- 无 brainstorming (在 F12 基础上扩展)
+
+**预估**:
+- 新增 ~400-500 LOC
+- 15+ new TEST_CASEs
+- 工期: 1-2 周
+
+**风险**: 中 (多 CU 同步 + 真实 NoC 流量)
+
+---
+
+### F15: Phase 7.F — Full APU SoC Demo
+
+**来源**: `roadmap.md` Phase 7.F
+
+**目标**:
+- `apu_full_soc.json` (新增) — 完整 APU 拓扑: 2 CPU + 16 CU + 2x2 NoC + DDR4 + 简化 PCI
+- `test_apu_soc.py` (新增) — Python E2E 验证脚本: 启动仿真, 注入 CPU + GPU 混合工作负载, 验证 cache coherence + snoop 正确性
+- 222 → 230+ Python tests pass
+- 演示 demo: `examples/demo_e2e_apu_soc.py` (端到端 CPU+GPU 工作负载)
+
+**依赖**:
+- F13 (TCC Bridge)
+- F14 (Multi-CU 接入)
+- 无 brainstorming (整合已有组件)
+
+**预估**:
+- 新增 ~300 LOC (JSON + Python)
+- 5+ new Python TEST_CASEs
+- 工期: 1 周
+
+**风险**: 低-中 (整合, 主要风险在 F13/F14)
+
+---
 
 ---
 
@@ -338,9 +548,14 @@ F9 (1-2天) → F10 (2-3天)
 | # | ADR | 状态 | 触发条件 |
 |---|-----|:---:|---------|
 | INC-01 | incorporate_parent late-binding semantics | 🔴 待写 (F3) | 立即 (P1 已落地) |
-| 7C-01 | Phase 7.C 6×6 state table 决策 | 🟡 待写 (F4) | F4 启动前 |
+| 7B-01 | Phase 7.B GpuComputeUnitTLM + VectorRegFileTLM + WavefrontTLM 三类设计 | 🔴 待写 (F12) | F12 启动前 (新 brainstorming 必需) |
+| 7C-01 | Phase 7.C 6×6 state table 决策 | 🔴 待写 (F4) | F4 启动前 (新 brainstorming 必需) |
+| 7D-01 | Phase 7.D TCC Bridge + HBM 内存模型决策 | 🟡 待写 (F13) | F13 启动前 |
+| 7E-01 | Phase 7.E Multi-CU + NoC 架构 | 🟡 待写 (F14) | F14 启动前 |
+| 7F-01 | Phase 7.F Full APU Demo 集成策略 | 🟢 待写 (F15) | F15 启动前 |
 | LIB-01 | cpptlm.library Python API 决策 | 🟡 待写 (F5) | F5 启动前 |
 | GPU-01 | GpuComputeUnitTLM + 蓝图升级决策 | 🟡 待写 (F6) | F6 启动前 |
+| METRIC-01 | CPUTLM/CacheTLM/MemoryTLM 性能 metric 收集框架 | 🟢 待写 (F10) | F10 启动前 |
 | MULTI-XBAR-01 | 多 xbar 实例架构 | 🟢 待写 (F9) | F9 启动前 |
 
 新 ADR 应在 `docs/adr/ADR-<PREFIX>-<NN>-<topic>.md` 落地, 索引在 `docs/adr/README.md` 更新。
