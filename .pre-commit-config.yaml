@@ -6,9 +6,10 @@
 # 当前 hook 列表：
 #   1. docs-sync-check: 验证核心文档 (AGENTS.md, ONBOARDING.md, roadmap.md, scripts/README.md)
 #      中提及的文件/目录路径在仓库中真实存在。防止文档漂移。
+#   2. clang-format: 对 C++ 源文件运行 scripts/build/format.sh --check。
+#      任何未格式化的 .cc/.hh/.h/.cpp/.hpp/.c 文件会阻止 commit。防止格式漂移。
 #
 # 后续可扩展：
-#   - clang-format (scripts/build/format.sh)
 #   - 关键文件存在性检查（如 include/AGENTS.md 中声明的注册宏）
 #   - ADR frontmatter 校验
 
@@ -23,3 +24,11 @@ repos:
         files: ^(AGENTS\.md|docs/ONBOARDING\.md|roadmap\.md|scripts/README\.md)$
         pass_filenames: false
         stages: [pre-commit]
+      - id: clang-format
+        name: C++ 代码格式检查 (clang-format via scripts/build/format.sh --check)
+        description: 验证 C++ 源文件已按 .clang-format 规则格式化。失败则 commit 被阻止。绕过：git commit --no-verify
+        entry: bash scripts/build/format.sh --check
+        language: system
+        files: \.(cc|h|hpp|cpp|h|c)$
+        pass_filenames: false
+        stages: [pre-commit]  
