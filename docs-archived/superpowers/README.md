@@ -1,6 +1,6 @@
 # Archived Superpowers Plans & Specs
 
-**Archived on**: 2026-06-22 · **Reason**: 清理 docs/superpowers/ 下过期/已完成/未执行的 plans 和 specs, 减少后续实施计划的干扰噪音
+**Archived on**: 2026-06-22 (cleanup) + 2026-06-22 (incremental, Phase 7.A plan) · **Reason**: 清理 docs/superpowers/ 下过期/已完成/未执行的 plans 和 specs, 减少后续实施计划的干扰噪音
 
 ## 归档目录结构
 
@@ -21,7 +21,7 @@ docs-archived/superpowers/
 
 ---
 
-## plans/ 归档清单 (13 个文件)
+## plans/ 归档清单 (14 个文件)
 
 | 文件 | 日期 | 类型 | 备注 |
 |------|------|------|------|
@@ -35,6 +35,7 @@ docs-archived/superpowers/
 | `2026-05-12-unified-visualization-platform.md` | 2026-05-12 | 📋 未执行 | 统一可视化平台 (0 status markers) |
 | `2026-06-02-p0-debt-remediation.md` | 2026-06-02 | ✅ 已完成 | P0 debt: PortPair 泄漏 + 死代码 Python |
 | `2026-06-02-p3-debt-remediation.md` | 2026-06-02 | ✅ 已完成 | P3 debt: 循环依赖 + ASan CI |
+| `2026-06-11-phase7a-gpu-infra.md` | 2026-06-11 | ✅ 已完成 | Phase 7.A GPU 基础设施 ([gpu] 5 用例 GREEN); Phase 7.B+ 上下文见 spec |
 | `2026-06-19-p0-fixes.md` | 2026-06-19 | ✅ 已完成 | P0 全套 (D.1 + CoherentXBarTLM + 死代码) |
 | `2026-06-19-simmodule-complex-hierarchies.md` | 2026-06-19 | ✅ 已完成 | SimModule 5 Phase (P1-P5 全 ✅) |
 | `2026-06-20-incorporate-parent-late-binding.md` | 2026-06-20 | ✅ 已完成 | ApuSoC::incorporate_parent 真实 late-binding |
@@ -53,13 +54,12 @@ docs-archived/superpowers/
 
 ---
 
-## docs/superpowers/ 当前活跃内容 (3 个文件)
+## docs/superpowers/ 当前活跃内容 (2 个文件)
 
 仅保留作为后续实施参考:
 
-### plans/ (2 个)
-- `2026-06-11-phase7a-gpu-infra.md` — Phase 7.A 实施计划, 作为 Phase 7.B+ 上下文参考
-- `2026-06-20-future-work-roadmap.md` — **唯一 active planning doc**, 完整索引 P2+ 待办
+### plans/ (1 个)
+- `2026-06-20-future-work-roadmap.md` — **唯一 active planning doc**, 完整索引 P2+ 待办 (F1-F15)
 
 ### specs/ (1 个)
 - `2026-06-12-phase7-apu-fused-soc-design.md` — Phase 7 整体架构设计 (7.A 已落地, 7.B-F 待启动)
@@ -70,8 +70,8 @@ docs-archived/superpowers/
 
 | 原因 | 数量 | 文件 |
 |------|:---:|------|
-| ✅ 实施完成 | 12 | 所有 P0/P1/P1.5/P3/P3 debt 计划 |
+| ✅ 实施完成 | 13 | 所有 P0/P1/P1.5/P3/P3 debt + Phase 7.A 计划 |
 | ⚠️ 已被取代 (superseded) | 4 | phase-3-remaining-tasks + revised + hierarchical-topology-generator + 已合并到 final plan |
 | 📋 未执行 (deferred/superseded by other work) | 2 | phase-3-4-validation-toolchain + unified-visualization-platform |
 
-合计: 18 个文件归档 (13 plans + 5 specs)
+合计: 19 个文件归档 (14 plans + 5 specs)
