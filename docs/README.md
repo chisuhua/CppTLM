@@ -42,7 +42,7 @@
 
 ### 实施计划
 
-1. [实施计划 v2.1](../plans/implementation_plan_v2.1.md) - 详细实施计划
+1. [未来工作 Roadmap (P2+)](../docs/superpowers/plans/2026-06-20-future-work-roadmap.md) - **当前唯一 active planning doc**
 2. [TGMS 实施计划](./implementation/10-tgms-implementation-plan.md) - TGMS Phase 1-3 实现
 
 ---
@@ -111,7 +111,7 @@ docs/
 
 | 资源 | 位置 |
 |------|------|
-| 实施计划 | `plans/implementation_plan_v2.md` |
+| 未来工作规划 | `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` |
 | 技能文档 | `docs/skills/SKILLS_SUMMARY.md` |
 | 开发者指南 | `docs/guide/DEVELOPER_GUIDE.md` |
 

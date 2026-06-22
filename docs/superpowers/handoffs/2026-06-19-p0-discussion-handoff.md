@@ -33,8 +33,8 @@ CURRENT STATE
 - 全部 25 commits 已落地 main 分支（24 plan commits + 1 handoff commit）
 - Build 环境: cmake --build build -j$(nproc) 成功, cpptlm_tests 二进制 196MB
 - 659/659 → 673/673 (P1+P2+P3 coverage 补全新增 14 用例)
-- Plan 文件: docs/superpowers/plans/2026-06-19-simmodule-complex-hierarchies.md (1561 行, 3 轮 Momus PASS)
-- Spec 文件: docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md (860 行)
+- Plan 文件: docs-archived/superpowers/plans/2026-06-19-simmodule-complex-hierarchies.md (1561 行, 3 轮 Momus PASS)
+- Spec 文件: docs-archived/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md (860 行)
 
 PENDING TASKS
 --------------
@@ -68,7 +68,7 @@ KEY FILES
 - include/modules_cluster.hh - 9 个 REGISTER_MODULE 集中注册（含 P2-T2.4 重构后的 `const bool _reg_x = (REGISTER_MODULE(X), true)` hack）
 - src/tlm/{cache,crossbar}_tlm.cc - P3 helper 方法实现（含 lazy registration + "port not found" 死代码）
 - test/test_simmodule_*.cc - 5 个 P1-P5 新测试文件 + 1 个递归 bug 测试
-- docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md - Spec（860 行）
+- docs-archived/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md - Spec（860 行）
 
 IMPORTANT DECISIONS
 -------------------
@@ -205,8 +205,8 @@ CONTEXT FOR CONTINUATION
 - 实施顺序（D.1 先于 CoherentXBarTLM，二者可并行/串行）
 
 **关键文档引用**：
-- Spec: docs/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md §4.1.2 (D.5 fix), §4.2 (Component design), §15 (Decision log)
-- Plan: docs/superpowers/plans/2026-06-19-simmodule-complex-hierarchies.md (1557 行)
+- Spec: docs-archived/superpowers/specs/2026-06-19-simmodule-complex-hierarchies-design.md §4.1.2 (D.5 fix), §4.2 (Component design), §15 (Decision log)
+- Plan: docs-archived/superpowers/plans/2026-06-19-simmodule-complex-hierarchies.md (1557 行)
 - ADR: docs/soc_arch/adr/ADR-SOC-01-coherence-protocol-strategy.md (CoherentXBarTLM 协议)
 - 已有架构: docs/soc_arch/specs/apu-soc-design.md §2.2 (APU 蓝图, CPU/GPU cluster 图表)
 - Gem5 参考: /workspace/project/gem5/src/python/gem5/components/cachehierarchies/
