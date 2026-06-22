@@ -185,7 +185,8 @@ TEST_CASE("Phase 6: E2E data flow cache→xbar→mem", "[phase6][e2e][regression
     eq.run(200);
     REQUIRE(eq.getCurrentCycle() == 200);
 
-    SUCCEED("Phase 6 E2E data flow cache→xbar→mem 通过 StreamAdapter/MasterPort/SlavePort/PortPair 完整通路");
+    SUCCEED("Phase 6 E2E data flow cache→xbar→mem 通过 StreamAdapter/MasterPort/SlavePort/PortPair "
+            "完整通路");
 }
 
 TEST_CASE("Phase 6: JSON config with port-indexed connections", "[phase6][json]") {

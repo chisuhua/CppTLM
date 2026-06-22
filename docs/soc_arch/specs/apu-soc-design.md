@@ -257,7 +257,7 @@
 
 | 实例名 | 类型 | 说明 |
 |--------|------|------|
-| `top_xbar` | **CoherentXBarTLM** | APU 顶层跨域总线（继承 CrossbarTLM, 加 snoop broadcast 通道, Phase 7.A/7.B write-through 透传, 7.C 引入 6×6 state table） |
+| `xbar` | **CoherentXBarTLM** | APU 顶层跨域总线（继承 CrossbarTLM, 加 snoop broadcast 通道, Phase 7.A/7.B write-through 透传, 7.C 引入 6×6 state table） |
 
 ### 2.3 6 阶段递进（与最终态的差异）
 
