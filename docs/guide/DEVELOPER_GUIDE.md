@@ -157,7 +157,7 @@ txn.complete_transaction(tid);
 |------|------|
 | 架构文档 | `docs/architecture/` |
 | ADR 决策 | `../adr/` |
-| 实施计划 | `plans/implementation_plan_v2.md` |
+| 未来工作规划 | `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` |
 
 ---
 

@@ -45,8 +45,9 @@
 - `docs/architecture/13-dashboard-integration.md` — 仪表盘集成
 - `docs/guide/GETTING_STARTED.md` / `DEVELOPER_GUIDE.md` / `TOPOLOGY_USER_GUIDE.md` — 用户与开发指南
 - `docs/guide/PYTHON_TOOLING_GUIDE.md` — Python 工具链指南
-- `docs/superpowers/plans/` — 阶段实施计划(2026-05/06 系列)
-- `docs/superpowers/specs/2026-05-29-hierarchical-topology-generator-design.md` — 层级拓扑生成器设计
+- `docs/superpowers/plans/` — 活跃阶段实施计划(2026-06 系列: future-work-roadmap + phase7a-gpu-infra)
+- `docs/superpowers/specs/2026-06-12-phase7-apu-fused-soc-design.md` — Phase 7 整体架构设计
+- `docs-archived/superpowers/{plans,specs}/` — 已完成/已废弃的实施计划与设计文档(2026-05/06 早期系列)
 
 ### 2.3 C++ 核心层 (C++ Core,46 个文件)
 - **基类**:`sim_object.hh` ⭐complex、`sim_module.hh`、`tlm_module.hh`、`chstream_module.hh`

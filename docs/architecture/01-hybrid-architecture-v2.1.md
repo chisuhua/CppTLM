@@ -693,7 +693,7 @@ CacheTLM (单端口) → xbar.0 (端口索引) → MemoryTLM (单端口)
 - 解锁 P5 `incorporate_parent` 真实 late-binding wiring
 - 解锁 CoherentXBarTLM snoop broadcast
 
-详见 spec: `docs/superpowers/specs/2026-06-19-p0-fixes-design.md §2`
+详见 spec: `docs-archived/superpowers/specs/2026-06-19-p0-fixes-design.md §2`
 
 #### 8.5.2 CoherentXBarTLM
 
@@ -702,7 +702,7 @@ APU 顶层跨域 snoop 广播总线，继承 `CrossbarTLM`。
 **当前范围（Phase 7.A/7.B）**：write-through 透传，不下场做 coherence 决策。
 **未来（Phase 7.C）**：引入 6×6 state transition switch 表（per ADR-SOC-01 §3）。
 
-详见 spec: `docs/superpowers/specs/2026-06-19-p0-fixes-design.md §3`
+详见 spec: `docs-archived/superpowers/specs/2026-06-19-p0-fixes-design.md §3`
 
 #### §8.5.3 P1 ApuSoC::incorporate_parent 真实 Late-Binding (2026-06-19)
 
@@ -722,7 +722,7 @@ D.1 修复 + CoherentXBarTLM 类骨架是 P0 留下的"机制"层。本节落实
 - 完整 APU SoC 拓扑 snoop broadcast 端到端验证
 - 后续 Phase 7.C 6×6 state table 改造 CoherentXBarTLM 时, peer cache 注册路径已就绪
 
-详见 spec: `docs/superpowers/specs/2026-06-20-incorporate-parent-late-binding-design.md`
+详见 spec: `docs-archived/superpowers/specs/2026-06-20-incorporate-parent-late-binding-design.md`
 
 ### 8.7 CI/CD 集成 + 零债务验收 (2026-04-22)
 
