@@ -114,6 +114,7 @@ docs/
 | 未来工作规划 | `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` |
 | 技能文档 | `docs/skills/SKILLS_SUMMARY.md` |
 | 开发者指南 | `docs/guide/DEVELOPER_GUIDE.md` |
+| 贡献者指南 | `docs/development/CONTRIBUTING.md` (含 pre-commit + clang-format + 测试规范) |
 
 ---
 
