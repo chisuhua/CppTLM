@@ -6,6 +6,7 @@
 #include "core/chstream_module.hh"
 #include "bundles/cache_bundles_tlm.hh"
 #include "framework/stream_adapter.hh"
+#include "metrics/stats.hh"
 #include <cstdint>
 #include <unordered_map>
 
@@ -22,18 +23,33 @@ private:
     uint64_t next_txn_id_ = 1;
     static constexpr unsigned MAX_INFLIGHT = 4;
     std::unordered_map<uint64_t, uint64_t> inflight_txns_;
+    std::unordered_map<uint64_t, uint64_t> inflight_issue_cycles_;
     // 测试可观察性：最近收到的响应 transaction_id（端到端响应路径健康指标）
     // P0-5 bug (module_factory.cc 多端口分支) 未修时此字段保持 0
     uint64_t last_response_transaction_id_ = 0;
+
+    // F10 telemetry: transactions_issued + latency distribution
+    tlm_stats::StatGroup stats_;
+    tlm_stats::Scalar& stats_requests_issued_;
+    tlm_stats::Scalar& stats_requests_completed_;
+    tlm_stats::Distribution& stats_latency_;
 
 public:
     explicit CPUTLM(const std::string& name, EventQueue* eq)
         : ChStreamModuleBase(name, eq),
           cur_addr_(start_addr_),
           timer_(0),
-          next_txn_id_(1) {}
+          next_txn_id_(1),
+          stats_("cpu", nullptr),
+          stats_requests_issued_(stats_.addScalar("requests_issued", "Total CPU requests issued", "count")),
+          stats_requests_completed_(stats_.addScalar("requests_completed", "Total CPU responses received", "count")),
+          stats_latency_(stats_.addDistribution("latency", "CPU request-to-response latency", "cycle")) {}
 
     std::string get_module_type() const override { return "CPUTLM"; }
+
+    std::string get_stats_path() const override { return "system.cpu"; }
+
+    tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
 
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
         adapter_ = adapter;
@@ -44,6 +60,13 @@ public:
             auto& resp = resp_in_.data();
             uint64_t txn_id = resp.transaction_id.read();
             inflight_txns_.erase(txn_id);
+            auto it_cycle = inflight_issue_cycles_.find(txn_id);
+            if (it_cycle != inflight_issue_cycles_.end()) {
+                uint64_t latency = getEventQueue()->getCurrentCycle() - it_cycle->second;
+                stats_latency_.sample(latency);
+                inflight_issue_cycles_.erase(it_cycle);
+            }
+            ++stats_requests_completed_;
             last_response_transaction_id_ = txn_id;  // 观察：端到端响应回路可达性
             resp_in_.consume();
         }
@@ -56,7 +79,10 @@ public:
             req.data.write(0);
             req.size.write(4);
             req_out_.write(req);
-            inflight_txns_[req.transaction_id.read()] = cur_addr_;
+            uint64_t issued_txn = req.transaction_id.read();
+            inflight_txns_[issued_txn] = cur_addr_;
+            inflight_issue_cycles_[issued_txn] = getEventQueue()->getCurrentCycle();
+            ++stats_requests_issued_;
             cur_addr_ += 4;
             if (cur_addr_ >= start_addr_ + 0x100) cur_addr_ = start_addr_;
         }
@@ -73,6 +99,7 @@ public:
         timer_ = 0;
         next_txn_id_ = 1;
         inflight_txns_.clear();
+        inflight_issue_cycles_.clear();
         last_response_transaction_id_ = 0;
     }
 

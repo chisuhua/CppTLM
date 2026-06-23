@@ -201,7 +201,8 @@ TEST_CASE("Phase 6: E2E data flow cache→xbar→mem", "[phase6][e2e][regression
     if (tg_group) {
         for (auto& [name, stat] : tg_group->stats()) {
             if (name == "requests_issued") {
-                if (auto* s = dynamic_cast<tlm_stats::Scalar*>(stat.get())) tg_issued = s->value();
+                if (auto* s = dynamic_cast<tlm_stats::Scalar*>(stat.get()))
+                    tg_issued = s->value();
             }
         }
     }
