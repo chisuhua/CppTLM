@@ -79,9 +79,9 @@
 ## Task 5: Archive OpenSpec change (post-execution)
 
 - [x] Update `tasks.md` checkboxes to reflect completion (this commit)
-- [ ] Move `openspec/changes/2026-06-22-refine-future-work-roadmap/` → `openspec/changes/archive/2026-06-22-refine-future-work-roadmap/`
-- [ ] Stage the rename
-- [ ] Commit archive operation: `docs(openspec): archive 2026-06-22-refine-future-work-roadmap`
+- [x] Move `openspec/changes/2026-06-22-refine-future-work-roadmap/` → `openspec/changes/archive/2026-06-22-refine-future-work-roadmap/`
+- [x] Stage the rename
+- [x] Commit archive operation: `docs(openspec): archive 2026-06-22-refine-future-work-roadmap` (commit `f3c6067`, 2026-06-22)
 
 ## Notes
 
