@@ -1,0 +1,69 @@
+{
+  "modules": [
+    {
+      "name": "mem",
+      "type": "MemoryCluster",
+      "params": {
+        "channel_count": 4,
+        "channel_size": "2GB",
+        "memory_type": "DDR4"
+      }
+    },
+    {
+      "name": "mem_channel0",
+      "type": "MemoryTLM",
+      "params": {
+        "size": "2GB",
+        "mem_type": "DDR4"
+      }
+    },
+    {
+      "name": "mem_channel1",
+      "type": "MemoryTLM",
+      "params": {
+        "size": "2GB",
+        "mem_type": "DDR4"
+      }
+    },
+    {
+      "name": "mem_channel2",
+      "type": "MemoryTLM",
+      "params": {
+        "size": "2GB",
+        "mem_type": "DDR4"
+      }
+    },
+    {
+      "name": "mem_channel3",
+      "type": "MemoryTLM",
+      "params": {
+        "size": "2GB",
+        "mem_type": "DDR4"
+      }
+    },
+    {
+      "name": "mem_arbiter",
+      "type": "ArbiterTLM",
+      "params": {
+        "n_ports": 4
+      }
+    }
+  ],
+  "connections": [],
+  "name": "library_memory_demo",
+  "description": "F5 demo: memory_cluster_hierarchical (4 channels DDR4 + Arbiter)",
+  "hierarchy": {
+    "name": "library_memory_demo",
+    "children": [
+      {
+        "name": "memory_hier_mem",
+        "children": [
+          {
+            "name": "mem_inner",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

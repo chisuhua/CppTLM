@@ -16,6 +16,9 @@ from cpptlm.library import (
     cpu_l1_cluster,
     memory_cluster,
     crossbar_cluster,
+    cpu_nested_cluster,
+    memory_cluster_hierarchical,
+    gpu_topology,
     mesh_cluster,
     ring_cluster,
     SoC,
@@ -147,6 +150,105 @@ class TestReservedNames(unittest.TestCase):
         soc.add_module('groups', 'CPUTLM')
         with self.assertRaises(TopoEmitError):
             CxxCompatibleEmitter().emit(soc._root)
+
+
+class TestCpuNestedCluster(unittest.TestCase):
+
+    def test_default_2core(self):
+        l = cpu_nested_cluster()
+        self.assertEqual(l.name, 'cpu_nested_cpu')
+        module_names = [m.name for m in l.modules]
+        self.assertEqual(module_names, ['cpu'])
+        cpu_mod = l.modules[0]
+        self.assertEqual(cpu_mod.type, 'CpuCluster')
+        self.assertEqual(cpu_mod.params['num_cpus'], 2)
+
+    def test_4core_with_l1_l2(self):
+        l = cpu_nested_cluster(num_cores=4, l1_count=2, l1_size="32KB", l2_size="1MB")
+        cpu_mod = l.modules[0]
+        self.assertEqual(cpu_mod.params['num_cpus'], 4)
+        self.assertGreater(len(l.sublayers), 0)
+        inner = l.sublayers[0]
+        inner_modules = [m.name for m in inner.modules]
+        self.assertEqual(len(inner_modules), 4)
+        self.assertIn('cpu0_cpu0', inner_modules)
+        self.assertIn('cpu0_cpu3', inner_modules)
+        self.assertEqual(len(inner.sublayers), 1)
+        l2cache = inner.sublayers[0]
+        self.assertIn('l2cache', l2cache.name)
+        self.assertEqual(l2cache.modules[0].params['l1_count'], 2)
+        self.assertEqual(l2cache.modules[0].params['l1_size'], '32KB')
+        self.assertEqual(l2cache.modules[0].params['l2_size'], '1MB')
+
+    def test_inner_connections_route_to_l1(self):
+        l = cpu_nested_cluster(num_cores=2, l1_count=2)
+        inner = l.sublayers[0]
+        conns = inner.connections
+        self.assertEqual(len(conns), 2)
+        dsts = sorted([c.dst for c in conns])
+        self.assertEqual(dsts, ['cpu0_l2cache.l1_0', 'cpu0_l2cache.l1_1'])
+
+
+class TestMemoryClusterHierarchical(unittest.TestCase):
+
+    def test_4_channels(self):
+        l = memory_cluster_hierarchical(channels=4)
+        self.assertEqual(l.name, 'memory_hier_mem')
+        self.assertEqual(len(l.modules), 1)
+        mem_mod = l.modules[0]
+        self.assertEqual(mem_mod.type, 'MemoryCluster')
+        self.assertEqual(mem_mod.params['channel_count'], 4)
+
+    def test_inner_channels_and_arbiter(self):
+        l = memory_cluster_hierarchical(channels=4, channel_size="2GB", memory_type="DDR4")
+        inner = l.sublayers[0]
+        inner_names = sorted([m.name for m in inner.modules])
+        # 4 channels + 1 arbiter
+        self.assertEqual(len(inner_names), 5)
+        self.assertIn('mem_channel0', inner_names)
+        self.assertIn('mem_channel3', inner_names)
+        self.assertIn('mem_arbiter', inner_names)
+        for m in inner.modules:
+            if 'channel' in m.name:
+                self.assertEqual(m.params['size'], '2GB')
+
+
+class TestGpuTopology(unittest.TestCase):
+
+    def test_2gpc_2tpc_2cu_default(self):
+        l = gpu_topology()
+        gpu_mod = l.modules[0]
+        self.assertEqual(gpu_mod.type, 'GpuCluster')
+        self.assertEqual(gpu_mod.params['gpc_count'], 2)
+        self.assertEqual(gpu_mod.params['tpc_per_gpc'], 2)
+        self.assertEqual(gpu_mod.params['cu_per_tpc'], 2)
+        # 4-level: gpu → 2×gpc → 2×tpc per gpc → compute_grp
+        self.assertEqual(len(l.sublayers), 1)
+        inner = l.sublayers[0]
+        self.assertEqual(len(inner.sublayers), 2)
+        gpc0 = inner.sublayers[0]
+        self.assertIn('gpc0', gpc0.name)
+        self.assertEqual(len(gpc0.sublayers), 2)
+
+    def test_cu_template_passthrough(self):
+        l = gpu_topology(cu_template="configs/templates/custom_cu.json")
+        gpu_mod = l.modules[0]
+        self.assertEqual(gpu_mod.params['cu_template'],
+                         'configs/templates/custom_cu.json')
+        inner = l.sublayers[0]
+        gpc0 = inner.sublayers[0]
+        self.assertEqual(gpc0.modules[0].params['cu_template'],
+                         'configs/templates/custom_cu.json')
+
+    def test_4level_cu_count_8(self):
+        # 2 gpc × 2 tpc/gpc × 2 cu/tpc = 8 CUs
+        l = gpu_topology(gpc_count=2, tpc_per_gpc=2, cu_per_tpc=2)
+        total_cus = 0
+        for gpc in l.sublayers[0].sublayers:
+            for tpc in gpc.sublayers:
+                for compute_grp in tpc.sublayers:
+                    total_cus += compute_grp.modules[0].params['cu_count']
+        self.assertEqual(total_cus, 8)
 
 
 if __name__ == '__main__':

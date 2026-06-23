@@ -7,6 +7,9 @@ from cpptlm.library.standard import (
     cpu_l1_cluster,
     memory_cluster,
     crossbar_cluster,
+    cpu_nested_cluster,
+    memory_cluster_hierarchical,
+    gpu_topology,
 )
 from cpptlm.library.interconnect import (
     mesh_cluster,
@@ -18,6 +21,9 @@ __all__ = [
     "cpu_l1_cluster",
     "memory_cluster",
     "crossbar_cluster",
+    "cpu_nested_cluster",
+    "memory_cluster_hierarchical",
+    "gpu_topology",
     "mesh_cluster",
     "ring_cluster",
     "SoC",
