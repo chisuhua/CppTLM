@@ -1,0 +1,166 @@
+{
+  "modules": [
+    {
+      "name": "gpu",
+      "type": "GpuCluster",
+      "params": {
+        "gpc_count": 2,
+        "tpc_per_gpc": 2,
+        "cu_per_tpc": 2,
+        "cu_template": "configs/templates/compute_unit_v1.json"
+      }
+    },
+    {
+      "name": "gpc0",
+      "type": "GpcCluster",
+      "params": {
+        "gpc_id": 0,
+        "tpc_per_gpc": 2,
+        "cu_per_tpc": 2,
+        "cu_template": "configs/templates/compute_unit_v1.json"
+      }
+    },
+    {
+      "name": "gpc0_tpc0",
+      "type": "TpcCluster",
+      "params": {
+        "tpc_id": 0,
+        "cu_per_tpc": 2,
+        "cu_template": "configs/templates/compute_unit_v1.json"
+      }
+    },
+    {
+      "name": "gpc0_tpc0_compute_grp",
+      "type": "ComputeCluster",
+      "params": {
+        "cu_template": "configs/templates/compute_unit_v1.json",
+        "cu_count": 2
+      }
+    },
+    {
+      "name": "gpc0_tpc1",
+      "type": "TpcCluster",
+      "params": {
+        "tpc_id": 1,
+        "cu_per_tpc": 2,
+        "cu_template": "configs/templates/compute_unit_v1.json"
+      }
+    },
+    {
+      "name": "gpc0_tpc1_compute_grp",
+      "type": "ComputeCluster",
+      "params": {
+        "cu_template": "configs/templates/compute_unit_v1.json",
+        "cu_count": 2
+      }
+    },
+    {
+      "name": "gpc1",
+      "type": "GpcCluster",
+      "params": {
+        "gpc_id": 1,
+        "tpc_per_gpc": 2,
+        "cu_per_tpc": 2,
+        "cu_template": "configs/templates/compute_unit_v1.json"
+      }
+    },
+    {
+      "name": "gpc1_tpc0",
+      "type": "TpcCluster",
+      "params": {
+        "tpc_id": 0,
+        "cu_per_tpc": 2,
+        "cu_template": "configs/templates/compute_unit_v1.json"
+      }
+    },
+    {
+      "name": "gpc1_tpc0_compute_grp",
+      "type": "ComputeCluster",
+      "params": {
+        "cu_template": "configs/templates/compute_unit_v1.json",
+        "cu_count": 2
+      }
+    },
+    {
+      "name": "gpc1_tpc1",
+      "type": "TpcCluster",
+      "params": {
+        "tpc_id": 1,
+        "cu_per_tpc": 2,
+        "cu_template": "configs/templates/compute_unit_v1.json"
+      }
+    },
+    {
+      "name": "gpc1_tpc1_compute_grp",
+      "type": "ComputeCluster",
+      "params": {
+        "cu_template": "configs/templates/compute_unit_v1.json",
+        "cu_count": 2
+      }
+    }
+  ],
+  "connections": [],
+  "name": "library_gpu_demo",
+  "description": "F5 demo: gpu_topology (2×2×2 = 8 CUs, cu_template 透传到 GpuCluster/GpcCluster/TpcCluster)",
+  "hierarchy": {
+    "name": "library_gpu_demo",
+    "children": [
+      {
+        "name": "gpu_topo_gpu",
+        "children": [
+          {
+            "name": "gpu_inner",
+            "children": [
+              {
+                "name": "gpc0",
+                "children": [
+                  {
+                    "name": "gpc0_tpc0",
+                    "children": [
+                      {
+                        "name": "gpc0_tpc0_compute_grp",
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gpc0_tpc1",
+                    "children": [
+                      {
+                        "name": "gpc0_tpc1_compute_grp",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "gpc1",
+                "children": [
+                  {
+                    "name": "gpc1_tpc0",
+                    "children": [
+                      {
+                        "name": "gpc1_tpc0_compute_grp",
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "name": "gpc1_tpc1",
+                    "children": [
+                      {
+                        "name": "gpc1_tpc1_compute_grp",
+                        "children": []
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

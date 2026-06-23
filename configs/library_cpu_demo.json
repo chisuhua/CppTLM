@@ -1,0 +1,80 @@
+{
+  "modules": [
+    {
+      "name": "cpu",
+      "type": "CpuCluster",
+      "params": {
+        "num_cpus": 4,
+        "cluster_id": "cpu0"
+      }
+    },
+    {
+      "name": "cpu0_cpu0",
+      "type": "CPUTLM"
+    },
+    {
+      "name": "cpu0_cpu1",
+      "type": "CPUTLM"
+    },
+    {
+      "name": "cpu0_cpu2",
+      "type": "CPUTLM"
+    },
+    {
+      "name": "cpu0_cpu3",
+      "type": "CPUTLM"
+    },
+    {
+      "name": "cpu0_l2cache",
+      "type": "CacheCluster",
+      "params": {
+        "l1_count": 2,
+        "l1_size": "32KB",
+        "l2_size": "1MB"
+      }
+    }
+  ],
+  "connections": [
+    {
+      "src": "cpu0_cpu0",
+      "dst": "cpu0_l2cache.l1_0",
+      "latency": 1
+    },
+    {
+      "src": "cpu0_cpu1",
+      "dst": "cpu0_l2cache.l1_1",
+      "latency": 1
+    },
+    {
+      "src": "cpu0_cpu2",
+      "dst": "cpu0_l2cache.l1_0",
+      "latency": 1
+    },
+    {
+      "src": "cpu0_cpu3",
+      "dst": "cpu0_l2cache.l1_1",
+      "latency": 1
+    }
+  ],
+  "name": "library_cpu_demo",
+  "description": "F5 demo: cpu_nested_cluster (4 cores + L1x2 + L2)",
+  "hierarchy": {
+    "name": "library_cpu_demo",
+    "children": [
+      {
+        "name": "cpu_nested_cpu",
+        "children": [
+          {
+            "name": "cpu_inner",
+            "children": [
+              {
+                "name": "cpu0_l2cache",
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
