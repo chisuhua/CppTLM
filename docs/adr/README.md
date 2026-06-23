@@ -35,6 +35,12 @@
 | [ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md](./ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md) | cpptlm.library Python 高级复合 cluster 工厂 API (`cpu_nested_cluster` / `memory_cluster_hierarchical` / `gpu_topology`) | ✅ 已实施 | F5 (`140fffd`) |
 | [ADR-METRIC-01-cputlm-cache-memory-telemetry.md](./ADR-METRIC-01-cputlm-cache-memory-telemetry.md) | CPUTLM/CacheTLM/MemoryTLM Telemetry 统计收集框架 (`system.{cpu,cache,memory}` 命名空间) | ✅ 已实施 | F10 (`66d9674`) |
 
+### NV 级决策（NVIDIA GPU 仿真）
+
+| ADR | 议题 | 状态 | 阶段 |
+|-----|------|:---:|------|
+| [ADR-NV-01-gpu-soc-architecture-target.md](./ADR-NV-01-gpu-soc-architecture-target.md) | gpu_soc 独立 SoC 仿真目标（与 apu_soc 并行；14 新模块 + 3 阶段 + 共享 GpuCluster 子模块 + 借鉴 gpgpu-sim 不集成） | ✅ 已确认 | Phase 8.A-C |
+
 ### 汇总文档
 
 | 文档 | 说明 |
