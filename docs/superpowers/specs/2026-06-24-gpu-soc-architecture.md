@@ -105,7 +105,11 @@
 ### D2 — 核心定位：工业性能建模
 - ✅ Phase-accurate 抽象
 - ✅ 关键输出：带宽 / 延迟 / 吞吐 / cache 命中率 / snoop 流量 / TCC 合并比
-- ❌ 不做 cycle-accurate 5 管线 + scoreboard 状态机（sub-core 内部黑盒化）
+- ❌ **不做 cycle-accurate 5+V 管线 + scoreboard 状态机**——具体而言：
+  - `SubCoreTLM` 作为**单一 black-box 模块**（5+V 管线整体不分开建模）
+  - 对外只输出：分数 cycle 的执行时间 + 关键路径分支概率（如 cache hit/miss、TC busy/idle）
+  - 不模拟 17-bit 控制码、5-warp CGGTY 阈值、5 cycles 调度切换等微观行为
+  - 不模拟 sub-core 内寄存器文件、operand collector 4-bank 冲突
 - 理由：CppTLM 仿真目标是"系统级行为"而非"单 cycle 准确"，phase-accurate 平衡精度与速度
 
 ### D3 — SKU 范围：参数化 + 预置库
@@ -544,9 +548,11 @@ apu_soc 的 `ApuSoC::incorporate_parent` 与 gpu_soc 的 `GpuSocTLM` 都引用�
 | **8.A** | 5 (shared_mem / memory_cluster / gpu_noc / kernel_launch / gpu_soc + shared_iface) | 5 | 4 | 1250 |
 | **8.B** | 6 (subcore / warp_sched / scoreboard / tensor_core / pipeline / l2_partition) | 6 | 2 | 2150 |
 | **8.C** | 4 (tcc / tma / dsm / power_model) | 4 | 1 | 900 |
-| **小计** | 15 头文件 | 15 测试 | 7 配置 | **~4300 LOC** |
+| **小计（impl + tests）** | 15 头文件 | 15 测试 | 7 配置 | **~4300 LOC**（其中 impl 3650 + tests 650） |
 | **Python 库** | nvidia + gpu_workload + gpu_soc 子包 | pytest | — | **~800 LOC** |
 | **总** | 15 头文件 + 3 Python 子包 | 15+ 测试 | 7+ 配置 | **~5100 LOC** |
+
+> **LOC 一致性说明**：§2/§3.2/§5 列出的 3650 LOC 是 **impl-only**（仅 14 个新 .hh/.cc 文件实现）；§8.1 的 4300 C++ LOC 是 **impl + tests**（impl 3650 + 15 测试文件各 ~50 LOC）。两边数字都正确，仅口径不同。
 
 ### 8.2 修改文件清单
 
