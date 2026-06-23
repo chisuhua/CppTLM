@@ -7,6 +7,7 @@
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "framework/chstream_adapter_factory.hh"
+#include "metrics/stats_manager.hh"
 #include "modules.hh"
 #include <catch2/catch_all.hpp>
 #include <nlohmann/json.hpp>
@@ -185,8 +186,31 @@ TEST_CASE("Phase 6: E2E data flow cache→xbar→mem", "[phase6][e2e][regression
     eq.run(200);
     REQUIRE(eq.getCurrentCycle() == 200);
 
+    // F11 P2.2 strengthen (Metis review): 通过 StatsManager 验证 TrafficGen 实际发起事务。
+    // 比 SUCCEED-only 更强: 即便 P0-#3 regression 让 instantiation 偶然通过,
+    // 若 traffic_gen 未发起事务, 本测试必失败。
+    //
+    // 注: CacheTLM/MemoryTLM 也有 stats_requests_/stats_requests_read_ 计数器,
+    // 但 tick() 当前未 increment (这是 F10 待补工作)。本测试先验证 TrafficGen,
+    // Cache/Memory 验证待 F10 完成 stats increment 后在后续 P2 commit 追加。
+    //
+    // 不调用 reset_all() — 它会清零所有 Scalar 计数器, 直接读取 eq.run(200) 之后的状态。
+    auto* tg_group = tlm_stats::StatsManager::instance().find_group("system.traffic_gen");
+
+    tlm_stats::Counter tg_issued = 0;
+    if (tg_group) {
+        for (auto& [name, stat] : tg_group->stats()) {
+            if (name == "requests_issued") {
+                if (auto* s = dynamic_cast<tlm_stats::Scalar*>(stat.get())) tg_issued = s->value();
+            }
+        }
+    }
+
+    // TrafficGen 至少发起 1 个请求 (num_requests=5 期望 5)
+    CHECK(tg_issued >= 1);
+
     SUCCEED("Phase 6 E2E data flow cache→xbar→mem 通过 StreamAdapter/MasterPort/SlavePort/PortPair "
-            "完整通路");
+            "完整通路 + TrafficGen stats_issued>=1 (Cache/Memory 验证待 F10)");
 }
 
 TEST_CASE("Phase 6: JSON config with port-indexed connections", "[phase6][json]") {

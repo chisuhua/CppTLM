@@ -38,9 +38,8 @@ namespace {
 
 TEST_CASE("P2.1: GpuCluster set_config accepts gpc_count/tpc_per_gpc/cu_per_tpc",
           "[p2-residual][gpu][tpc]") {
-    // 注: TpcCluster::cu_count 实际验证需走完整 ModuleFactory + apu_soc_v1.json 通路
-    // (见 test_apu_soc_top.cc P5 集成测试覆盖 peer_count 16+)
-    // 本测试聚焦 GpuCluster::set_config 链路接受三参数
+    // 注: TpcCluster::cu_count 实际验证见 test_apu_soc_top.cc:108 P5 集成测试
+    // (REQUIRE(xbar->peer_count() >= 16)). 本测试仅验证 GpuCluster::set_config 链路.
     EventQueue eq;
     auto* gpu = new GpuCluster("gpu0", &eq);
 
@@ -48,8 +47,6 @@ TEST_CASE("P2.1: GpuCluster set_config accepts gpc_count/tpc_per_gpc/cu_per_tpc"
 
     REQUIRE_NOTHROW(gpu->set_config(params));
     REQUIRE(gpu->get_module_type() == "GpuCluster");
-    // 验证 set_config 解析后状态正确: simulate_instantiate 调用应能正常进入
-    // (会因 cu_template 未填抛错, 但已证明 set_config 链路 OK)
 
     delete gpu;
 }
