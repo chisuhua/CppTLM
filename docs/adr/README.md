@@ -1,7 +1,7 @@
 # ADR - 架构决策记录
 
-> **版本**: 1.2  
-> **最后更新**: 2026-05-05
+> **版本**: 1.3
+> **最后更新**: 2026-06-23
 
 ---
 
@@ -31,7 +31,7 @@
 | [ADR-X.12-python-config-generator.md](./ADR-X.12-python-config-generator.md) | Python 配置生成器 | 📋 提案 | Phase 3.2 |
 | [ADR-X.13-stub-multi-extension.md](./ADR-X.13-stub-multi-extension.md) | 多 TLM 扩展 stub 标记 | ✅ 已确认 | Phase 7+ |
 | [ADR-X.14-coherence-domains-stub.md](./ADR-X.14-coherence-domains-stub.md) | `coherence_domains` 字段 stub 标记 | ✅ 已确认 | Phase 7+ |
-| [ADR-INC-01-incorporate-parent-late-binding.md](./ADR-INC-01-incorporate-parent-late-binding.md) | ApuSoC::incorporate_parent 真实 late-binding 语义 (1A+2A+3A + 双层幂等 + 软失败 + 命名可配置) | ✅ 已实施 | P1 (`04399c8`) |↵
+| [ADR-INC-01-incorporate-parent-late-binding.md](./ADR-INC-01-incorporate-parent-late-binding.md) | ApuSoC::incorporate_parent 真实 late-binding 语义 (1A+2A+3A + 双层幂等 + 软失败 + 命名可配置) | ✅ 已实施 | P1 (`04399c8`) |
 
 ### 汇总文档
 

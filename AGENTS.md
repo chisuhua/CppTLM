@@ -57,6 +57,7 @@ docs/
   adr/           # 不可变 ADR (12+ 份, 状态追加 ## Status Update 段)
   soc_arch/adr/  # APU SoC 子项目 ADR (D1-D5)
   guide/         # GETTING_STARTED / DEVELOPER / PYTHON_TOOLING / TOPOLOGY_USER
+  development/   # CONTRIBUTING.md (贡献者指南, 含 pre-commit 钩子安装与日常使用)
   ONBOARDING.md  # 新人上手 (图谱生成)
   docs_audit_report.md  # 365/365 路径快照
 
@@ -84,6 +85,7 @@ plans/           # 实施计划: phase7-completion / p0-alignment-remediation / 
 | 修改 JSON 配置格式 | `configs/` + `include/utils/config_utils.hh` (支持 group/connection/latency + 端口索引 `"xbar.0"`) |
 | 添加 StreamAdapter | `include/framework/{stream,multi_port_stream,dual_port_stream,bidirectional_port}_adapter.hh` |
 | 添加 Bundle 类型 | `include/bundles/{cache,noc,compute}_bundles_tlm.hh` |
+| 贡献代码/PR | `docs/development/CONTRIBUTING.md` (pre-commit + clang-format + 测试规范) |
 | APU SoC / GPU 拓扑 | `configs/apu_soc_*.json` + `include/tlm/gpu/gpu_tlm.hh` + `examples/generate_apu_soc.py` |
 | E2E 集成验证 | `test/test_phase6_integration.cc` (Cache→Crossbar→Memory) + `test/test_complex_topologies_e2e.cc` |
 | 提议 / 实施架构变更 | `openspec/changes/<name>/` (proposal.md → design.md → specs/ → tasks.md) |
