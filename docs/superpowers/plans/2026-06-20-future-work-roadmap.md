@@ -174,9 +174,9 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 | 阶段 | OpenSpec Change | per-phase Plan | 周 | 任务数 | 验收点 |
 |:---:|------|------|:---:|:---:|------|
 | **8.A** 基础设施 | `2026-06-24-gpu-soc-phase8a-infra` | `2026-06-24-gpu-soc-phase8a.md` (`f7e67bc`) | 4 | 8 + 2 (Oracle+归档) | M1: 1 SM × 1M < 5s, apu_soc 兼容 |
-| **8.B** 核心仿真 | `2026-06-24-gpu-soc-phase8b-core` | ⏳ 待生成 (待 8.A plan review) | 6 | 8 + 2 | M2: 5 类 microbenchmark, gpgpu-sim ±15% |
-| **8.C** 高级特性 | `2026-06-24-gpu-soc-phase8c-advanced` | ⏳ 待生成 (待 8.A plan review) | 3 | 9 + 2 | M3: 完整验证, apu_soc 集成 |
-| **总** | 3 changes | 3 plans (1 done + 2 pending) | **13** | **25 + 6** | |
+| **8.B** 核心仿真 | `2026-06-24-gpu-soc-phase8b-core` | `2026-06-24-gpu-soc-phase8b.md` (`33991d6`) | 6 | 8 + 2 (Oracle+归档) | M2: 5 类 microbenchmark, gpgpu-sim ±15% |
+| **8.C** 高级特性 | `2026-06-24-gpu-soc-phase8c-advanced` | `2026-06-24-gpu-soc-phase8c.md` (`33991d6`) | 3 | 9 + 2 (Oracle+归档) | M3: 完整验证, apu_soc 集成 |
+| **总** | 3 changes | 3 plans ✅ 全部就绪 | **13** | **25 + 6** | |
 
 **关键设计原则**:
 - 与 apu_soc 共享 GpuCluster/GpcCluster/TpcCluster/ComputeCluster（通过 `GpuClusterSharedInterface` 抽象层）
@@ -185,8 +185,8 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 - 验证：5 类场景（GEMM/FlashAttn/vector_add/stencil/sparse）vs gpgpu-sim 带宽 ±15%, 延迟 ±20%
 
 **执行策略**:
-- 8.A 计划已就绪（`f7e67bc`），含 Oracle 审查 (Task 9) + OpenSpec 归档 (Task 10) 节点
-- 8.B/8.C 计划待 8.A plan 用户审查通过后生成
+- **3 个 per-phase plans 全部就绪**（`f7e67bc` + `33991d6`），每个含 Oracle 审查 + OpenSpec 归档节点
+- 执行顺序：8.A → Oracle 审查 → 归档 → 8.B → Oracle 审查 → 归档 → 8.C → Oracle 审查 → 归档 → Phase 8 收官
 - 每个阶段独立归档：Oracle 批准后 `git mv openspec/changes/.../ openspec/changes/archive/.../`
 
 **Phase E 总工期**: 13 周 (单人关键路径) / 3 周 (4 人并行)
