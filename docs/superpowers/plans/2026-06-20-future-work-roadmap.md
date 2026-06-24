@@ -1,9 +1,9 @@
 # 未来工作 Roadmap (P2+) — CppTLM
 
-**Status**: Active Planning · **Date**: 2026-06-23 (refresh) · **Author**: Sisyphus · **Branch**: main
-**Scope**: 完整索引 P0 + P1 + P1.5 + Phase A 之后的所有未完成工作, 按优先级/工期/依赖排序, 给执行者一个清晰的"接下来做什么"清单。
+**Status**: Active Planning · **Date**: 2026-06-24 (refresh) · **Author**: Sisyphus · **Branch**: main
+**Scope**: 完整索引 P0 + P1 + P1.5 + Phase A + Phase 8 之后的所有未完成工作, 按优先级/工期/依赖排序, 给执行者一个清晰的"接下来做什么"清单。
 
-> **2026-06-23 Refresh**: Phase A 全部 8 项任务 (F1/F2/F3/F5/F7/F8/F10/F11) 已落地, 移至 §7 已完成历史。当前活跃任务: F4 / F6 / F9 / F12-F15 (Phase 7.B/C/D/E/F 主力)。
+> **2026-06-24 Refresh (gpu_soc 启动)**: 6 轮 brainstorming 完成 gpu_soc 架构目标定义, 签发 ADR-NV-01 (`3aa810b`), spec (`801f8ea`), 主 plan (`3993129`)。**新增 Phase 8 路径**（与 Phase 7 apu_soc 并行）：3 个 OpenSpec change + 1 个 per-phase plan (8.A, commit `f7e67bc`)。8.B/8.C plan 待用户审查 8.A 后生成。
 
 ---
 
@@ -16,10 +16,12 @@
 | **P1.5** GPU cu_template 完整传播 | `e8c2a97` | ✅ Done | 690/690 (peer_count 3→16+) |
 | **format cleanup (P1)** | `c3bdb45` | ✅ Done | — |
 | **Phase A** (F1/F2/F3/F5/F7/F8/F10/F11) | 8 commits (见 §7) | ✅ Done | 690 → 703/703 (+13) |
+| **gpu_soc 架构定义** (2026-06-24) | `801f8ea` `3993129` `3aa810b` `f7e67bc` | ✅ Done | 703/703 (无破坏) |
+| **Phase 8.A 基础设施** | ⏳ 待启动 | 🔄 Ready | 目标: 703+5 → 708/708 |
 
-**E2E**: `[SUCCESS]` · **Format**: ✅ clean · **docs_sync_check**: ✅ 0 missing · **Origin/main**: up to date
+**E2E**: `[SUCCESS]` · **Format**: ✅ clean · **docs_sync_check**: ✅ 0 missing · **Origin/main**: 4 commits ahead
 
-**P0+P1+P1.5+Phase A 合计**: 17 commits, ~2400 LOC 生产代码 + 测试 + 文档
+**P0+P1+P1.5+Phase A+gpu_soc 架构定义 合计**: 21 commits, ~2400 LOC 生产代码 + ~5300 LOC 待写（Phase 8）
 
 **测试基线验证** (single source of truth):
 ```bash
@@ -154,6 +156,40 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 | F9: 多 xbar | F4 (CoherenceDomain) | `feat(simmodule): 多 xbar 实例支持 (P1 spec §7 风险表)` |
 
 **Phase D 总工期**: 1-2 周, 2 commits
+
+### Phase E: gpu_soc 独立 SoC 路径 (与 Phase 7 并行, 2026-06-24 新增)
+
+> **来源**: 6 轮 brainstorming + 调研 gpgpu-sim SM_120 paper + 本地 notes `04_Knowledge/D01-gpu-architecture/`
+> **架构目标**: 工业性能建模 (phase-accurate, 借鉴 gpgpu-sim 不集成)
+> **完整 spec**: `docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md` (`801f8ea`)
+> **主 plan**: `docs/superpowers/plans/2026-06-24-gpu-soc-roadmap.md` (`3993129`)
+> **ADR**: `docs/adr/ADR-NV-01-gpu-soc-architecture-target.md` (`3aa810b`)
+
+```
+[8.A (4w) 基础设施] → [8.B (6w) 核心仿真] → [8.C (3w) 高级特性 + apu_soc 集成] → M3
+   ↓
+[每个阶段后: Oracle 审查 + OpenSpec 归档]
+```
+
+| 阶段 | OpenSpec Change | per-phase Plan | 周 | 任务数 | 验收点 |
+|:---:|------|------|:---:|:---:|------|
+| **8.A** 基础设施 | `2026-06-24-gpu-soc-phase8a-infra` | `2026-06-24-gpu-soc-phase8a.md` (`f7e67bc`) | 4 | 8 + 2 (Oracle+归档) | M1: 1 SM × 1M < 5s, apu_soc 兼容 |
+| **8.B** 核心仿真 | `2026-06-24-gpu-soc-phase8b-core` | ⏳ 待生成 (待 8.A plan review) | 6 | 8 + 2 | M2: 5 类 microbenchmark, gpgpu-sim ±15% |
+| **8.C** 高级特性 | `2026-06-24-gpu-soc-phase8c-advanced` | ⏳ 待生成 (待 8.A plan review) | 3 | 9 + 2 | M3: 完整验证, apu_soc 集成 |
+| **总** | 3 changes | 3 plans (1 done + 2 pending) | **13** | **25 + 6** | |
+
+**关键设计原则**:
+- 与 apu_soc 共享 GpuCluster/GpcCluster/TpcCluster/ComputeCluster（通过 `GpuClusterSharedInterface` 抽象层）
+- 复用 F12 三类（GpuComputeUnitTLM/VectorRegFileTLM/WavefrontTLM）
+- 14 个新模块（3650 LOC impl + 650 tests + 800 Python = ~5100 LOC）
+- 验证：5 类场景（GEMM/FlashAttn/vector_add/stencil/sparse）vs gpgpu-sim 带宽 ±15%, 延迟 ±20%
+
+**执行策略**:
+- 8.A 计划已就绪（`f7e67bc`），含 Oracle 审查 (Task 9) + OpenSpec 归档 (Task 10) 节点
+- 8.B/8.C 计划待 8.A plan 用户审查通过后生成
+- 每个阶段独立归档：Oracle 批准后 `git mv openspec/changes/.../ openspec/changes/archive/.../`
+
+**Phase E 总工期**: 13 周 (单人关键路径) / 3 周 (4 人并行)
 
 ### 整体规划 (2026-06-23 重算)
 
@@ -361,6 +397,7 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 | ~~LIB-01~~ | ~~cpptlm.library Python API 决策~~ | ✅ **已追溯补 ADR** (`docs/adr/ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md`, commit `140fffd`) | F5 已完成 |
 | GPU-01 | GpuComputeUnitTLM + 蓝图升级决策 | 🟡 待写 (F6) | F6 启动前 |
 | ~~METRIC-01~~ | ~~CPUTLM/CacheTLM/MemoryTLM 性能 metric 收集框架~~ | ✅ **已追溯补 ADR** (`docs/adr/ADR-METRIC-01-cputlm-cache-memory-telemetry.md`, commit `66d9674`) | F10 已完成 |
+| **NV-01** | gpu_soc 独立 SoC 仿真目标 (与 apu_soc 并行; 14 新模块 + 3 阶段 + 共享 GpuCluster 子模块 + 借鉴 gpgpu-sim 不集成) | ✅ **已签发** (`docs/adr/ADR-NV-01-gpu-soc-architecture-target.md`, commit `3aa810b`) | Phase 8.A 启动前 (已就绪) |
 | MULTI-XBAR-01 | 多 xbar 实例架构 | 🟢 待写 (F9) | F9 启动前 |
 
 新 ADR 应在 `docs/adr/ADR-<PREFIX>-<NN>-<topic>.md` 落地, 索引在 `docs/adr/README.md` 更新。
