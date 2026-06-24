@@ -1,11 +1,11 @@
 # OpenSpec Change: gpu_soc Phase 8.A — 基础设施
 
 > **Change ID**: `2026-06-24-gpu-soc-phase8a-infra`
-> **Status**: 🔄 Draft（待用户审查）
+> **Status**: 🔄 Draft（待用户审查 + F12 依赖确认）
 > **Date**: 2026-06-24
 > **Author**: Sisyphus（基于 6 轮 brainstorming + spec 801f8ea + plan 3993129 + ADR-NV-01 3aa810b）
 > **Target Release**: Phase 8.A end (~4 weeks)
-> **Depends on**: 无（首个 Phase 8 change）
+> **Depends on**: **F12 (Phase 7.B: GpuComputeUnitTLM + VectorRegFileTLM + WavefrontTLM, ~10d, 🔴 待启动, 见 roadmap §3)** — F12 必须先 merge + Oracle 审查 APPROVED,否则 Task 5-8 不能开始
 
 ---
 
@@ -14,13 +14,13 @@
 **当前状态**：
 - apu_soc Phase 7.A 已落地 GPU 基础设施（`GPUTLM v0` + `ComputeReqBundle`）
 - gpu_soc 4 级 cluster 容器（GpuCluster/GpcCluster/TpcCluster/ComputeCluster）仅有 P5 stub
-- 缺 4 个核心模块：`MemoryClusterTLM` / `SharedMemoryTLM` / `GpuNoC` / `KernelLaunchTLM`
+- 缺 4 个核心模块：`MemoryClusterTLM` / `SharedMemoryTLM` / `GpuMeshNoC` / `KernelLaunchTLM`
 - 缺顶层 GpuSocTLM + 共享抽象层 `GpuClusterSharedInterface`
 - **结果**：gpu_soc 当前**不能跑任何端到端 GPU 仿真**——没有内存、NoC、kernel launch
 
 **目标（Phase 8.A 完成后）**：
 - ✅ 4 级 cluster 容器从 stub 升级为功能完整（与 apu_soc 共享）
-- ✅ 4 个核心模块落地（MemoryCluster / SharedMemory / GpuNoC / KernelLaunch）
+- ✅ 4 个核心模块落地（MemoryCluster / SharedMemory / GpuMeshNoC / KernelLaunch）
 - ✅ GpuSocTLM 顶层可独立运行
 - ✅ apu_soc 兼容性测试全绿（不破坏现有 `[gpu]` 14 cases + `[phase7]` 1 case）
 - ✅ M1 验收：1 SM × 1M cycles < 5s（单核）
@@ -36,18 +36,18 @@
 | Bundle | `include/bundles/shared_memory_bundle.hh` | 8.A |
 | Header | `include/tlm/gpu/shared_memory_tlm.hh` | 8.A |
 | Header | `include/tlm/gpu/memory_cluster_tlm.hh` | 8.A |
-| Header | `include/tlm/gpu/gpu_noc_tlm.hh` | 8.A |
+| Header | `include/tlm/gpu/gpu_mesh_noc_tlm.hh` | 8.A |
 | Header | `include/tlm/gpu/kernel_launch_tlm.hh` | 8.A |
 | Header | `include/tlm/gpu/gpu_soc_tlm.hh` | 8.A 顶层 |
 | Header | `include/tlm/gpu/gpu_cluster_shared_interface.hh` | 8.A 共享层 |
 | Impl | `src/tlm/gpu/shared_memory_tlm.cc` | 8.A |
 | Impl | `src/tlm/gpu/memory_cluster_tlm.cc` | 8.A |
-| Impl | `src/tlm/gpu/gpu_noc_tlm.cc` | 8.A |
+| Impl | `src/tlm/gpu/gpu_mesh_noc_tlm.cc` | 8.A |
 | Impl | `src/tlm/gpu/kernel_launch_tlm.cc` | 8.A |
 | Impl | `src/tlm/gpu/gpu_soc_tlm.cc` | 8.A |
 | Test | `test/test_shared_memory_tlm.cc` | 8.A |
 | Test | `test/test_memory_cluster_tlm.cc` | 8.A |
-| Test | `test/test_gpu_noc_tlm.cc` | 8.A |
+| Test | `test/test_gpu_mesh_noc_tlm.cc` | 8.A |
 | Test | `test/test_kernel_launch_tlm.cc` | 8.A |
 | Test | `test/test_gpu_cluster_shared.cc` | 8.A |
 | Test | `test/test_gpu_soc_phase8a.cc` | 8.A 集成 |
@@ -102,9 +102,11 @@
 
 | # | 风险 | 概率 | 影响 | 缓解 |
 |---|------|:---:|:---:|------|
-| **R1** | 4 级 cluster stub 改造破坏 apu_soc | 中 | 高 | GpuClusterSharedInterface 抽象层（Task 5） |
+| **R1** | 4 级 cluster stub 改造破坏 apu_soc | 中 | 高 | GpuClusterSharedInterface 抽象层（Task 5a-5e）+ ApuSoC::incorporate_parent 保留旧 `GpuCluster*` 路径作为 fallback + 纯虚函数 fail-fast |
 | **R2** | SharedMemory bank conflict 模型不准确 | 中 | 中 | 简化模型：1 + (num_threads-1) cyc，仅覆盖 4-way conflict |
-| **R3** | MemoryCluster 多通道分配性能瓶颈 | 低 | 中 | 简化 round-robin，不模拟真实 DRAM 调度 |
+| **R3** | F12 未完成导致 8.A Task 5-8 集成测试 `GpuComputeUnitTLM` 引用解析失败 | 高 | 高 | **前置门**: 8.A Task 1-4 独立模块（不依赖 F12）可单独完成；Task 5-8 在 F12 落地后才启动 |
+| **R4** | `GpuMeshNoC` 类名冲突（已与 `cluster/gpu_noc_cluster.hh` 旧 `GpuNoC` 区分） | 低 | 中 | 新类名 `GpuMeshNoC` + 同步更新所有引用 |
+| **R5** | namespace 不匹配（`tlm::` vs `cpptlm::tlm::`） | 低 | 高 | 全部声明在 `namespace cpptlm::tlm`，与现有 cluster 模块一致 |
 
 ---
 

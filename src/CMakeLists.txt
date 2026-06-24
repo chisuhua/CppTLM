@@ -33,6 +33,11 @@ set(CORE_SOURCES
     tlm/cluster/memory_cluster.cc
     tlm/cluster/gpu_noc_cluster.cc
     tlm/cluster/apu_soc.cc
+    # gpu_soc Phase 8.A: 基础设施层 (Task 1-4 独立模块, 不依赖 F12)
+    tlm/gpu/shared_memory_tlm.cc
+    tlm/gpu/memory_cluster_tlm.cc
+    tlm/gpu/gpu_mesh_noc_tlm.cc
+    tlm/gpu/kernel_launch_tlm.cc
 )
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
