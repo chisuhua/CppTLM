@@ -52,8 +52,8 @@ public:
 
 private:
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
-    uint32_t channels_;        // setter 注入
-    uint32_t capacity_gb_;     // setter 注入
+    uint32_t channels_ = 4;            // 默认 4 通道 (GB203 HBM 典型)
+    uint32_t capacity_gb_ = 8;         // 默认 8 GB (GB203 显存典型)
     uint64_t rr_counter_ = 0;
     uint64_t requests_completed_ = 0;
 };
