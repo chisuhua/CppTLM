@@ -13,21 +13,23 @@ Phase 8.A 在现有 `include/tlm/cluster/` stub 基础上，构建 gpu_soc 端�
 ```
 Phase 8.A 前 (现状)
   GpuCluster [stub] ─┬─ GpcCluster [stub] ─┬─ TpcCluster [stub] ─┬─ ComputeCluster [stub]
-                      │                     │                     ├─ GpuComputeUnitTLM [F12 已建]
-                      │                     │                     ├─ VectorRegFileTLM [F12 已建]
-                      │                     │                     └─ WavefrontTLM [F12 已建]
+                      │                     │                     ├─ GpuComputeUnitTLM [F12 待启动]
+                      │                     │                     ├─ VectorRegFileTLM [F12 待启动]
+                      │                     │                     └─ WavefrontTLM [F12 待启动]
                       │                     └─ (空)
                       └─ (空)
 
 Phase 8.A 后 (目标)
   GpuSocTLM [NEW] ─ GpuCluster [完善] ─┬─ GpcCluster [完善] ─┬─ TpcCluster [完善] ─┬─ ComputeCluster [完善]
-  ├─ GpuNoC [NEW]                      │                     │                     ├─ GpuComputeUnitTLM
-  ├─ MemoryClusterTLM [NEW]            │                     │                     ├─ VectorRegFileTLM
-  └─ KernelLaunchTLM [NEW]             │                     │                     ├─ WavefrontTLM
+  ├─ GpuMeshNoC [NEW]                  │                     │                     ├─ GpuComputeUnitTLM [F12]
+  ├─ MemoryClusterTLM [NEW]            │                     │                     ├─ VectorRegFileTLM [F12]
+  └─ KernelLaunchTLM [NEW]             │                     │                     ├─ WavefrontTLM [F12]
                                        │                     │                     └─ SharedMemoryTLM [NEW]
-                                       │                     └─ (GpuNoC 内部 mesh router)
-                                       └─ (GpuNoC 内部 mesh router)
+                                       │                     └─ (GpuMeshNoC 内部 mesh router)
+                                       └─ (GpuMeshNoC 内部 mesh router)
 ```
+
+> **依赖门 (Dependency Gate)**: Task 5 (GpuClusterSharedInterface + 4 级 cluster 改造) 和 Task 7 (集成测试 + JSON 端到端) **必须等待 F12 落地后才能启动**。Task 1-4 (SharedMemoryTLM / MemoryClusterTLM / GpuMeshNoC / KernelLaunchTLM) 为独立模块,可与 F12 并行实施。
 
 ---
 
@@ -37,7 +39,7 @@ Phase 8.A 后 (目标)
 
 apu_soc 与 gpu_soc 需要共享 GpuCluster 容器，但两者顶层 API 不同：
 - apu_soc 顶部：`ApuSoC → CpuCluster + CoherentXBarTLM + GpuCluster + MemoryCluster`
-- gpu_soc 顶部：`GpuSocTLM → GpuCluster + GpuNoC + MemoryCluster + KernelLauncher`
+- gpu_soc 顶部：`GpuSocTLM → GpuCluster + GpuMeshNoC + MemoryCluster + KernelLauncher`
 
 **直接共享的障碍**：GpuCluster 当前是 `SimModule` 派生，apu_soc 的 `ApuSoC::incorporate_parent` 通过 `ModuleFactory::get(name)` 强类型获取，无法让 gpu_soc 也获取同一实例。
 
@@ -45,7 +47,7 @@ apu_soc 与 gpu_soc 需要共享 GpuCluster 容器，但两者顶层 API 不同�
 
 ```cpp
 // include/tlm/gpu/gpu_cluster_shared_interface.hh
-namespace tlm {
+namespace cpptlm::tlm {
 
 struct GpuTopology {
     uint32_t num_gpc = 1;
@@ -62,9 +64,11 @@ public:
     virtual GpuTopology get_gpu_topology() const = 0;
     virtual void tick() = 0;
     virtual std::string get_module_type() const = 0;
+    // 与父 spec docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md §7.3 + 父类 ChStreamModuleBase::get_stats_group() 对齐
+    virtual tlm_stats::StatGroup* get_stats_group() = 0;
 };
 
-}  // namespace tlm
+}  // namespace cpptlm::tlm
 ```
 
 ### 2.3 GpuCluster 改造
@@ -138,20 +142,24 @@ private:
 
 **简化模型**：round-robin channel 分配（按 D2 决策，不模拟真实 DRAM 调度）
 
-### 3.3 GpuNoC
+### 3.3 GpuMeshNoC
 
-**职责**：GPC 之间 mesh interconnect（基于现有 RouterTLM + LinkTLM）
+**职责**：GPC 之间 mesh interconnect（基于现有 RouterTLM + LinkTLM）。**类名 `GpuMeshNoC` 避免与 `include/tlm/cluster/gpu_noc_cluster.hh` 中已有的 `GpuNoC` 类冲突**。
 
 **接口**：
 ```cpp
-class GpuNoC : public ChStreamModuleBase {
+namespace tlm {  // ChStreamModuleBase 派生 → namespace tlm（与 gpu_tlm.hh 一致）
+
+class GpuMeshNoC : public ChStreamModuleBase {
 public:
-    GpuNoC(const std::string& name, EventQueue* eq,
-           uint32_t dim, uint32_t hops_latency);
-    std::string get_module_type() const override { return "GpuNoC"; }
+    GpuMeshNoC(const std::string& name, EventQueue* eq,
+               uint32_t dim, uint32_t hops_latency);
+    std::string get_module_type() const override { return "GpuMeshNoC"; }
     uint32_t route_latency(std::pair<uint32_t,uint32_t> src,
                            std::pair<uint32_t,uint32_t> dst) const;
 };
+
+}  // namespace tlm
 ```
 
 **简化模型**：XY 路由 + hops × latency（按 D2 决策，不模拟 VC 分配/拥塞）
@@ -188,23 +196,99 @@ private:
 
 **接口**：
 ```cpp
+namespace cpptlm::tlm {  // SimModule 派生 → namespace cpptlm::tlm（与 apu_soc.hh 一致）
+
 class GpuSocTLM : public SimModule {
 public:
     GpuSocTLM(const std::string& name, EventQueue* eq);
     std::string get_module_type() const override { return "GpuSocTLM"; }
     GpuCluster* get_gpu_cluster();
-    GpuNoC* get_noc();
+    GpuMeshNoC* get_noc();
     MemoryClusterTLM* get_memory_cluster();
     KernelLaunchTLM* get_kernel_launch();
     void tick() override;
 };
+
+}  // namespace cpptlm::tlm
 ```
 
 **注册**：`REGISTER_MODULE(GpuSocTLM)` 添加到 `include/modules_cluster.hh`
 
 ---
 
-## 4. 注册宏扩展
+### 3.1 SharedMemoryTLM
+
+**职责**：SM 内部 shared memory + L1 unified，32 bank。**继承 `ChStreamModuleBase` → `namespace tlm`**。
+
+**接口**（完整）：
+```cpp
+namespace tlm {
+
+class SharedMemoryTLM : public ChStreamModuleBase {
+public:
+    SharedMemoryTLM(const std::string& name, EventQueue* eq,
+                    uint32_t size_kb, uint32_t banks);
+    std::string get_module_type() const override { return "SharedMemoryTLM"; }
+    uint32_t bank_conflict_cycles(uint32_t num_threads, uint32_t stride_bytes) const;
+private:
+    uint32_t size_kb_;
+    uint32_t banks_;
+};
+
+}  // namespace tlm
+```
+
+### 3.2 MemoryClusterTLM
+
+**职责**：HBM/GDDR 多通道内存控制器。**继承 `ChStreamModuleBase` → `namespace tlm`**。
+
+**接口**（完整）：
+```cpp
+namespace tlm {
+
+class MemoryClusterTLM : public ChStreamModuleBase {
+public:
+    MemoryClusterTLM(const std::string& name, EventQueue* eq,
+                     uint32_t channels, uint32_t capacity_gb);
+    std::string get_module_type() const override { return "MemoryClusterTLM"; }
+    uint32_t allocate_channel(uint64_t request_id);
+    uint32_t get_channels() const { return channels_; }
+private:
+    uint32_t channels_;
+    uint32_t capacity_gb_;
+    uint64_t rr_counter_ = 0;
+};
+
+}  // namespace tlm
+```
+
+### 3.4 KernelLaunchTLM
+
+**职责**：AQL 简化 dispatcher。**继承 `ChStreamModuleBase` → `namespace tlm`**。
+
+**接口**（完整）：
+```cpp
+namespace tlm {
+
+class KernelLaunchTLM : public ChStreamModuleBase {
+public:
+    KernelLaunchTLM(const std::string& name, EventQueue* eq);
+    std::string get_module_type() const override { return "KernelLaunchTLM"; }
+    void set_kernel_id(uint32_t id) { kernel_id_ = id; }
+    void set_workgroup_size(uint32_t sz) { workgroup_size_ = sz; }
+    void set_grid_size(uint32_t sz) { grid_size_ = sz; }
+    void set_kernel_launch_interval(uint32_t cyc) { interval_ = cyc; }
+    void tick() override;
+private:
+    uint32_t kernel_id_ = 0;
+    uint32_t workgroup_size_ = 64;
+    uint32_t grid_size_ = 1;
+    uint32_t interval_ = 1000;
+    uint64_t cycle_counter_ = 0;
+};
+
+}  // namespace tlm
+```
 
 ### 4.1 `include/chstream_register.hh`
 
@@ -212,7 +296,7 @@ public:
 ```cpp
 REGISTER_CHSTREAM(SharedMemoryTLM)
 REGISTER_CHSTREAM(MemoryClusterTLM)
-REGISTER_CHSTREAM(GpuNoC)
+REGISTER_CHSTREAM(GpuMeshNoC)
 REGISTER_CHSTREAM(KernelLaunchTLM)
 REGISTER_CHSTREAM(GpuSocTLM)
 ```
@@ -232,10 +316,10 @@ REGISTER_MODULE(GpuSocTLM)
 
 ```
 KernelLaunchTLM.tick() → 发 KernelDesc
-  → ComputeCluster → GpuComputeUnitTLM
+  → ComputeCluster → GpuComputeUnitTLM [F12]
     → SharedMemoryTLM (load/store)
     → CacheTLM (L1)
-    → GpuNoC
+    → GpuMeshNoC
     → MemoryClusterTLM
     → 响应回传
 ```
@@ -245,13 +329,13 @@ KernelLaunchTLM.tick() → 发 KernelDesc
 `configs/templates/gpu_soc/gpu_soc_gb203_v1.json`:
 ```json
 {
-  "name": "gpu_soc — GB203 minimal (Phase 8.A)",
+  "name": "gpu_soc — GB203 minimal (Phase 8.A, F12 待启动)",
   "modules": [
     { "name": "gpu_soc", "type": "GpuSocTLM" },
     { "name": "kernel_launch", "type": "KernelLaunchTLM" },
-    { "name": "compute_unit_0", "type": "GpuComputeUnitTLM" },
+    { "name": "compute_unit_0", "type": "GpuComputeUnitTLM", "_pending": "F12 not yet landed" },
     { "name": "shared_memory_0", "type": "SharedMemoryTLM", "params": {"size_kb": 64, "banks": 32} },
-    { "name": "noc", "type": "GpuNoC", "params": {"dim": 2, "hops_latency": 2} },
+    { "name": "noc", "type": "GpuMeshNoC", "params": {"dim": 2, "hops_latency": 2} },
     { "name": "memory_cluster", "type": "MemoryClusterTLM", "params": {"channels": 4, "capacity_gb": 8} }
   ],
   "connections": [
@@ -271,7 +355,7 @@ KernelLaunchTLM.tick() → 发 KernelDesc
 |:---:|------|---------|
 | 1 | SharedMemoryTLM（独立风险最低） | bank conflict 模型 |
 | 2 | MemoryClusterTLM（独立） | 通道分配 |
-| 3 | GpuNoC（独立） | XY 路由 |
+| 3 | GpuMeshNoC（独立） | XY 路由 |
 | 4 | KernelLaunchTLM（独立） | AQL 简化 |
 | 5 | GpuClusterSharedInterface + 4 级 cluster 改造（**风险最高**） | apu_soc 兼容性 |
 | 6 | GpuSocTLM 顶层（依赖 1-5） | 集成 |

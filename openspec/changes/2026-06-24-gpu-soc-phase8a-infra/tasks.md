@@ -9,9 +9,13 @@
 
 - [ ] **Task 1**: SharedMemoryTLM 接口 + bank conflict 单元测试 + commit
 - [ ] **Task 2**: MemoryClusterTLM 多通道 round-robin 单元测试 + commit
-- [ ] **Task 3**: GpuNoC mesh XY 路由单元测试 + commit
+- [ ] **Task 3**: GpuMeshNoC mesh XY 路由单元测试 + commit
 - [ ] **Task 4**: KernelLaunchTLM AQL 简化 dispatch 单元测试 + commit
-- [ ] **Task 5**: GpuClusterSharedInterface + 4 级 cluster 改造 + apu_soc 兼容测试 + commit
+- [ ] **Task 5a**: `GpuClusterSharedInterface` 接口 + `GpuTopology` 结构体 + commit
+- [ ] **Task 5b**: `GpuCluster` 改造（实现接口）+ commit
+- [ ] **Task 5c**: `GpcCluster` + `TpcCluster` + `ComputeCluster` stub 完善（实现接口）+ commit
+- [ ] **Task 5d**: `ApuSoC::incorporate_parent` 改用 `dynamic_cast<GpuClusterSharedInterface*>` + commit
+- [ ] **Task 5e**: `test_gpu_cluster_shared.cc` + apu_soc regression + commit
 - [ ] **Task 6**: GpuSocTLM 顶层 + REGISTER_MODULE + 单元测试 + commit
 - [ ] **Task 7**: 集成测试 + JSON 配置 (gb203_v1.json) + 端到端验证 + commit
 - [ ] **Task 8**: 5 个微架构 doc + 性能验收 (1 SM × 1M < 5s) + docs_sync + commit
@@ -32,5 +36,16 @@
 
 ## 4. 依赖关系
 
-- **无外部依赖**（首个 Phase 8 change）
-- **后续 change 依赖**：Phase 8.B (`2026-06-24-gpu-soc-phase8b-core`) 依赖本 change 的 GpuCluster 完善
+### 4.1 前置门 (Dependency Gates)
+
+- **🔴 F12 Gate**: Task 5 (GpuClusterSharedInterface + 4 级 cluster) 和 Task 7 (端到端集成) **必须等待 F12 (Phase 7.B) 完成后启动**
+  - F12 验证：`grep -rE 'class GpuComputeUnitTLM|class VectorRegFileTLM|class WavefrontTLM' include/tlm/gpu/` 应至少有 3 个匹配
+  - F12 commit: roadmap §3 F12 已 merge + Oracle 审查 APPROVED
+  - 若 F12 未完成，Task 5e 和 Task 7 测试用 `GpuComputeUnitTLM` 占位跳过，集成测试改为 stub-only
+
+- **🟢 Task 1-4 独立**: SharedMemoryTLM / MemoryClusterTLM / GpuMeshNoC / KernelLaunchTLM **可与 F12 并行实施**,不依赖 F12
+
+### 4.2 后续 change 依赖
+
+- Phase 8.B (`2026-06-24-gpu-soc-phase8b-core`) 依赖本 change 的 GpuCluster 完善
+- Phase 8.C (`2026-06-24-gpu-soc-phase8c-advanced`) 依赖 8.B + 8.A

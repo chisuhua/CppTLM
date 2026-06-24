@@ -14,6 +14,10 @@
 #include "tlm/nic_tlm.hh"
 #include "tlm/link_tlm.hh"
 #include "tlm/gpu/gpu_tlm.hh"
+#include "tlm/gpu/shared_memory_tlm.hh"
+#include "tlm/gpu/memory_cluster_tlm.hh"
+#include "tlm/gpu/gpu_mesh_noc_tlm.hh"
+#include "tlm/gpu/kernel_launch_tlm.hh"
 #include "bundles/compute_bundles_tlm.hh"
 #include "rtl/hybrid_cache_wrapper.hh"
 #include "core/module_factory.hh"
@@ -43,6 +47,10 @@
     ModuleFactory::registerObject<tlm::NICTLM>("NICTLM"); \
     ModuleFactory::registerObject<tlm::LinkTLM>("LinkTLM"); \
     ModuleFactory::registerObject<tlm::GPUTLM>("GPUTLM"); \
+    ModuleFactory::registerObject<tlm::SharedMemoryTLM>("SharedMemoryTLM"); \
+    ModuleFactory::registerObject<tlm::MemoryClusterTLM>("MemoryClusterTLM"); \
+    ModuleFactory::registerObject<tlm::GpuMeshNoC>("GpuMeshNoC"); \
+    ModuleFactory::registerObject<tlm::KernelLaunchTLM>("KernelLaunchTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
