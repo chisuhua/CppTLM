@@ -78,12 +78,11 @@
 
 ### REQ-GPU-8A-7: 注册宏
 
-`include/chstream_register.hh` 必须追加 5 行注册：
+`include/chstream_register.hh` 必须追加 4 行注册（仅 ChStream 派生模块；GpuSocTLM 是 SimModule 派生，见 REQ-GPU-8A-6）：
 - `REGISTER_CHSTREAM(SharedMemoryTLM)`
 - `REGISTER_CHSTREAM(MemoryClusterTLM)`
 - `REGISTER_CHSTREAM(GpuMeshNoC)`
 - `REGISTER_CHSTREAM(KernelLaunchTLM)`
-- `REGISTER_CHSTREAM(GpuSocTLM)`
 
 ### REQ-GPU-8A-8: 端到端集成测试
 

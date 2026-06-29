@@ -33,7 +33,6 @@
 
 | 类型 | 路径 | 阶段 |
 |------|------|:---:|
-| Bundle | `include/bundles/shared_memory_bundle.hh` | 8.A |
 | Header | `include/tlm/gpu/shared_memory_tlm.hh` | 8.A |
 | Header | `include/tlm/gpu/memory_cluster_tlm.hh` | 8.A |
 | Header | `include/tlm/gpu/gpu_mesh_noc_tlm.hh` | 8.A |
@@ -71,13 +70,21 @@
 
 无（纯新增 + 现有 stub 完善）
 
+### 延后到 8.B 的文件
+
+以下文件原列于 8.A "新增文件"，但实际作用域属于 8.B（SubCore/WarpScheduler/Scoreboard/TensorCore/Pipeline 之间的类型安全通信），不在 8.A 基础设施范围：
+
+- `include/bundles/shared_memory_bundle.hh` → **8.B**（与 SubCore/WarpScheduler 的 register bundle 同步落地）
+
+Tasks 1-4 实现使用直接字段（`size_kb_` / `banks_` / `channels_` / `kernel_id_` 等）而非 bundle，单元测试覆盖已验证 737/737 全绿。Bundle 在 8.B 多模块协同时再补充。
+
 ---
 
 ## 3. Goals（成功标准）
 
 | 编号 | 标准 | 验证方式 |
 |------|------|---------|
-| **G1** | 4 个核心模块通过单元测试 | `cpptlm_tests "[gpu][smem][memcluster][noc][kernel_launch]"` 全 pass |
+| **G1** | 4 个核心模块通过单元测试 | `cpptlm_tests "[shared_memory][memory_cluster][noc][kernel_launch]"` 全 pass |
 | **G2** | GpuClusterSharedInterface 兼容 apu_soc | `cpptlm_tests "[gpu][phase7]"` 仍 14+1 cases pass |
 | **G3** | 端到端 GPU 仿真跑通 | `test/test_gpu_soc_phase8a.cc` pass（CU→SMEM→L1→NoC→Mem 闭环） |
 | **G4** | 性能 M1 达标 | 1 SM × 1M cycles < 5s（单核） |
@@ -106,7 +113,7 @@
 | **R2** | SharedMemory bank conflict 模型不准确 | 中 | 中 | 简化模型：1 + (num_threads-1) cyc，仅覆盖 4-way conflict |
 | **R3** | F12 未完成导致 8.A Task 5-8 集成测试 `GpuComputeUnitTLM` 引用解析失败 | 高 | 高 | **前置门**: 8.A Task 1-4 独立模块（不依赖 F12）可单独完成；Task 5-8 在 F12 落地后才启动 |
 | **R4** | `GpuMeshNoC` 类名冲突（已与 `cluster/gpu_noc_cluster.hh` 旧 `GpuNoC` 区分） | 低 | 中 | 新类名 `GpuMeshNoC` + 同步更新所有引用 |
-| **R5** | namespace 不匹配（`tlm::` vs `cpptlm::tlm::`） | 低 | 高 | 全部声明在 `namespace cpptlm::tlm`，与现有 cluster 模块一致 |
+| **R5** | namespace 不匹配（`tlm::` vs `cpptlm::tlm::`） | 低 | 高 | ChStreamModuleBase 派生 → `namespace tlm`（与 `gpu_tlm.hh` 一致）；SimModule 派生（GpuSocTLM / GpuClusterSharedInterface / GpuCluster）→ `namespace cpptlm::tlm`（与 `apu_soc.hh` 一致）。B2 决策: 与现有 cluster 模块对齐 |
 
 ---
 
