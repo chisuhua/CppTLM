@@ -84,7 +84,7 @@
 | # | 任务 | 来源 | 工期 | 难度 | 依赖 |
 |---|------|------|:---:|:---:|:---:|
 | **F4** | **Phase 7.C: CoherentXBarTLM 6×6 state table 改造** (取代 write-through 透传, 引入 MOESIF CoherenceState + 状态机) | ADR-SOC-01 §2 | 1-2 周 | **高** | 无 |
-| **F12** | **Phase 7.B 核心: GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM 三类实现** (F6 蓝图升级的实际前置, 与 F4 并行) | `roadmap.md` Phase 7.B + ADR-SOC-02/03 | 1-2 周 | 高 | 无 |
+| **F12** | **Phase 7.B 核心: GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM / MinimalWarpScheduler 四类实现** (F6 蓝图升级 + Phase 8.A Tasks 5/7 双重前置, Option A 扩展; 与 F4 并行) | `roadmap.md` Phase 7.B + ADR-SOC-02/03 + Phase 8.A Task 5/7 依赖门 | **2-3 周** | 高 | 无 |
 
 ### 1.2 🟡 中优先级 (1-2 月内启动)
 
@@ -267,35 +267,38 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 
 ---
 
-### F12: Phase 7.B 核心 — GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM 三类实现
+### F12: Phase 7.B 核心 — GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM / MinimalWarpScheduler 四类实现 (**Option A 扩展**)
 
-**来源**: `roadmap.md` Phase 7.B + ADR-SOC-02 (CU 粒度) + ADR-SOC-03 (Wavefront coalescing)
+**来源**: `roadmap.md` Phase 7.B + ADR-SOC-02 (CU 粒度) + ADR-SOC-03 (Wavefront coalescing) + **Phase 8.A Task 5/7 依赖门** (Metis 2026-06-28 决策)
 
 **当前状态** (Phase 7.A):
 - `GPUTLM v0` 黑盒发起器 (单端口 Initiator, 周期发出 ComputeReqBundle)
 - `ComputeReqBundle` / `ComputeRespBundle` 类型已定义 (4 GPU 维度字段)
 
-**目标** (Phase 7.B):
-- `GpuComputeUnitTLM` (新增, ~300 LOC) — 真实 CU 行为: 接收 wavefront → dispatch → SIMT 执行 → 写回
-- `VectorRegFileTLM` (新增, ~150 LOC) — vector register file 抽象, 支持 read/write/coalesce
-- `WavefrontTLM` (新增, ~200 LOC) — wavefront 调度 + `coalescing_factor` 合并 (per ADR-SOC-03)
-- 配套测试: `test/test_gpu_compute_unit.cc` + `test/test_vector_regfile.cc` + `test/test_wavefront.cc` (~30 TEST_CASEs)
-- 跨类集成测试: 1 wavefront → 64 lane coalesce → 1 load → CacheTLM (bypass coherence) → MemoryTLM
+**目标** (Phase 7.B, **Option A 扩展后**):
+- `GpuComputeUnitTLM` (新增, ~300-400 LOC,含内部 `SubCoreSlot[4]`) — 真实 CU 行为: 接收 wavefront → minimal scheduler 派发 → 4 sub-core slot 并行 → SIMT 黑盒执行 → 写回
+- `VectorRegFileTLM` (新增, ~150 LOC) — vector register file 抽象, 支持 read/write/bank conflict (简化)
+- `WavefrontTLM` (新增, ~200 LOC) — wavefront 调度 + `coalescing_factor` 合并 (8.A 用常数,8.B 升级地址模式)
+- **`MinimalWarpSchedulerTLM` (新增, ~300-400 LOC, Option A 必加)** — round-robin 派发,CU 内部 4 sub-core slot,8.B 升级到 greedy/CGGTY。无此模块 → 8.A Task 5/7 端到端测试 `requests_completed > 0` 无法触发 (循环依赖)
+- 配套测试: `test/test_gpu_compute_unit.cc` + `test/test_vector_regfile.cc` + `test/test_wavefront.cc` + `test/test_minimal_warp_scheduler.cc` (~40 TEST_CASEs)
+- 跨类集成测试: 1 wavefront → minimal scheduler 派发 → 4 sub-core slot → 1 load → CacheTLM (bypass coherence) → MemoryTLM
 
 **依赖**:
 - 无外部依赖 (新增类, 不改现有 TLM 接口)
-- 需新 brainstorming cycle (3 个新类的设计)
+- 需新 brainstorming cycle (4 个新类的设计,Option A 增量 1 个)
 - F6 (compute_unit 蓝图) 依赖此 F12
+- **Phase 8.A Tasks 5/7 依赖此 F12** (含 MinimalWarpScheduler,否则循环依赖)
+- Phase 8.B (WarpScheduler 升级) 与 F12 MinimalWarpScheduler 接口对齐
 
 **预估**:
-- 新增 ~650-800 LOC
-- 3 个新 .hh + 3 个 .cc + 1 个统一集成测试
-- 30+ new TEST_CASEs
-- 工期: 1-2 周 (含 brainstorming)
+- 新增 **~950-1200 LOC** (含 MinimalWarpScheduler,Option A 增量 ~300-400 LOC)
+- **4 个新 .hh + 4 个 .cc + 1 个统一集成测试**
+- 40+ new TEST_CASEs
+- 工期: **2-3 周** (含 brainstorming + Option A scheduler)
 
-**风险**: 中-高 (3 个新类, 需 careful 接口设计)
+**风险**: 中-高 (4 个新类, 需 careful 接口设计; Option A 增量 1 个 scheduler 类)
 
-**前置**: 需先与 ADR-SOC-02/03 重新对齐确认
+**前置**: 需先与 ADR-SOC-02/03 重新对齐确认 + 验证 MinimalWarpScheduler 接口与 8.B WarpScheduler 兼容
 
 ---
 

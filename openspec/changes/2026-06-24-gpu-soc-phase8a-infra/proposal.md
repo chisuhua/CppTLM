@@ -88,6 +88,7 @@ Tasks 1-4 实现使用直接字段（`size_kb_` / `banks_` / `channels_` / `kern
 | **G2** | GpuClusterSharedInterface 兼容 apu_soc | `cpptlm_tests "[gpu][phase7]"` 仍 14+1 cases pass |
 | **G3** | 端到端 GPU 仿真跑通 | `test/test_gpu_soc_phase8a.cc` pass（CU→SMEM→L1→NoC→Mem 闭环） |
 | **G4** | 性能 M1 达标 | 1 SM × 1M cycles < 5s（单核） |
+| **G4+** | 性能 M1+ multi-SM 达标 | 4 SM × 100K cycles < 5s（验证 multi-SM contention, O(N²) 检查） |
 | **G5** | 文档同步 | `docs_sync_check.sh --strict` 0 missing |
 | **G6** | 代码风格 | `format.sh --check` clean |
 
@@ -110,10 +111,15 @@ Tasks 1-4 实现使用直接字段（`size_kb_` / `banks_` / `channels_` / `kern
 | # | 风险 | 概率 | 影响 | 缓解 |
 |---|------|:---:|:---:|------|
 | **R1** | 4 级 cluster stub 改造破坏 apu_soc | 中 | 高 | GpuClusterSharedInterface 抽象层（Task 5a-5e）+ ApuSoC::incorporate_parent 保留旧 `GpuCluster*` 路径作为 fallback + 纯虚函数 fail-fast |
-| **R2** | SharedMemory bank conflict 模型不准确 | 中 | 中 | 简化模型：1 + (num_threads-1) cyc，仅覆盖 4-way conflict |
+| **R2** | SharedMemory bank conflict 模型不准确（thread-count heuristic 而非地址模式） | 中 | 中 | 简化模型：1 + (num_threads-1) cyc；仅覆盖 4-way conflict。**已知简化**: 升级路径 design.md §10 (8.B) |
 | **R3** | F12 未完成导致 8.A Task 5-8 集成测试 `GpuComputeUnitTLM` 引用解析失败 | 高 | 高 | **前置门**: 8.A Task 1-4 独立模块（不依赖 F12）可单独完成；Task 5-8 在 F12 落地后才启动 |
 | **R4** | `GpuMeshNoC` 类名冲突（已与 `cluster/gpu_noc_cluster.hh` 旧 `GpuNoC` 区分） | 低 | 中 | 新类名 `GpuMeshNoC` + 同步更新所有引用 |
 | **R5** | namespace 不匹配（`tlm::` vs `cpptlm::tlm::`） | 低 | 高 | ChStreamModuleBase 派生 → `namespace tlm`（与 `gpu_tlm.hh` 一致）；SimModule 派生（GpuSocTLM / GpuClusterSharedInterface / GpuCluster）→ `namespace cpptlm::tlm`（与 `apu_soc.hh` 一致）。B2 决策: 与现有 cluster 模块对齐 |
+| **R6** | F12 的 CU 无 scheduler,8.A Task 5/7 端到端测试无法触发 `requests_completed > 0`（循环依赖） | 高 | 高 | **Option A 决策**: F12 范围扩展含 MinimalWarpScheduler (~300-400 LOC),F12 总预算 650-800→950-1200 LOC,工期 1-2→2-3 周 |
+| **R7** | GB202 192 SM × 4 sub-core 单 issue 模型导致 IPC 低估 4× | 中 | 高 | F12 GpuComputeUnitTLM 内部用 `SubCoreSlot` struct × 4 + round-robin 派发,保留 4-way parallelism |
+| **R8** | MemoryClusterTLM `channels:4` 与 GB203 实际 8 channels (256-bit GDDR7) 不符 | 中 | 中 | GpuTopology 扩展 `mem_bus_bits` + `mem_channels` 字段,JSON 示例改为 `channels:8` |
+| **R9** | Wavefront coalescing_factor 常数模型与真实地址模式 coalescing 失真 | 中 | 中 | 文档化于 design.md §10 "已知简化",8.B 升级为地址模式函数 |
+| **R10** | TensorCore/SFU/LSU 完全缺失 (8.A 仅通用 load/store) | 中 | 高 | 文档化于 design.md §10 升级路径 8.B/8.C,8.A 不支持 TC/SFU/LSU 操作 |
 
 ---
 
