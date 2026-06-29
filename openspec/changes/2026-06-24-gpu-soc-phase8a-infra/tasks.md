@@ -7,10 +7,10 @@
 
 > **TDD 模式**：每个任务 5 步（写测试 → 验失败 → 写实现 → 验通过 → commit），完整代码见 `docs/superpowers/plans/2026-06-24-gpu-soc-phase8a.md`
 
-- [ ] **Task 1**: SharedMemoryTLM 接口 + bank conflict 单元测试 + commit
-- [ ] **Task 2**: MemoryClusterTLM 多通道 round-robin 单元测试 + commit
-- [ ] **Task 3**: GpuMeshNoC mesh XY 路由单元测试 + commit
-- [ ] **Task 4**: KernelLaunchTLM AQL 简化 dispatch 单元测试 + commit
+- [x] **Task 1**: SharedMemoryTLM 接口 + bank conflict 单元测试 + commit (`b8bd411`)
+- [x] **Task 2**: MemoryClusterTLM 多通道 round-robin 单元测试 + commit (`6410ea9`)
+- [x] **Task 3**: GpuMeshNoC mesh XY 路由单元测试 + commit (`d164497`)
+- [x] **Task 4**: KernelLaunchTLM AQL 简化 dispatch 单元测试 + commit (`b8bd411`)
 - [ ] **Task 5a**: `GpuClusterSharedInterface` 接口 + `GpuTopology` 结构体 + commit
 - [ ] **Task 5b**: `GpuCluster` 改造（实现接口）+ commit
 - [ ] **Task 5c**: `GpcCluster` + `TpcCluster` + `ComputeCluster` stub 完善（实现接口）+ commit
@@ -22,7 +22,7 @@
 
 ## 2. 验收点 (Acceptance Gates)
 
-- [ ] **G1 单元测试**: `[gpu][smem][memcluster][noc][kernel_launch]` 全 pass
+- [x] **G1 单元测试 (Tasks 1-4)**: `[shared_memory][memory_cluster][noc][kernel_launch]` 全 pass (32 cases / 72 assertions)
 - [ ] **G2 apu_soc 兼容**: `[gpu]` 14 cases + `[phase7]` 1 case 全 pass（不破坏）
 - [ ] **G3 端到端**: `test_gpu_soc_phase8a.cc` pass
 - [ ] **G4 性能 M1**: 1 SM × 1M cycles < 5s
