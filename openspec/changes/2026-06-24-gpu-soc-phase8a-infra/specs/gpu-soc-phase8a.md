@@ -51,18 +51,36 @@
 ### REQ-GPU-8A-5: GpuClusterSharedInterface 抽象层
 
 `include/tlm/gpu/gpu_cluster_shared_interface.hh` 必须提供：
-- 结构体 `cpptlm::tlm::GpuTopology` (num_gpc, num_tpc_per_gpc, num_sm_per_tpc, num_subcore_per_sm, warp_size)
-- 类 `cpptlm::tlm::GpuClusterSharedInterface` 抽象接口(**与父 spec §7.3 对齐**):
+
+- 结构体 `cpptlm::tlm::GpuTopology`，包含以下字段：
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `num_gpc` | `uint32_t` | 1 | GPC 数量 |
+| `num_tpc_per_gpc` | `uint32_t` | 1 | 每 GPC 的 TPC 数量 |
+| `num_sm_per_tpc` | `uint32_t` | 1 | 每 TPC 的 SM 数量（GB202=1, H100/B200/GB203=2） |
+| `num_subcore_per_sm` | `uint32_t` | 4 | 每 SM 的 sub-core 数（NVIDIA 默认 4） |
+| `warp_size` | `uint32_t` | 32 | warp 线程数 |
+| `tensor_core_count_per_sm` | `uint32_t` | 4 | 每 SM TensorCore 数量（8.A 阶段不执行 TC 操作） |
+| `tensor_core_version` | `std::string` | "v4" | TC 版本："v4" Hopper, "v5" Blackwell DC, "v5-rtx" Blackwell RTX |
+| `smem_kb_per_sm` | `uint32_t` | 128 | 每 SM shared memory KB |
+| `l1_kb_per_sm` | `uint32_t` | 128 | 每 SM L1 cache KB |
+| `regfile_kb_per_sm` | `uint32_t` | 256 | 每 SM register file KB |
+| `mem_bus_bits` | `uint32_t` | 256 | 内存总线位宽：5120 HBM3 (H100), 8192 HBM3e (B200), 512 GDDR7 (GB202), 256 GDDR7 (GB203) |
+| `mem_channels` | `uint32_t` | 8 | 内存通道数：10 (H100), 8 (GB203), 16 (GB202) |
+| `has_nv_hub` | `bool` | false | true for B200 dual-reticle |
+
+- 类 `cpptlm::tlm::GpuClusterSharedInterface` 抽象接口（与父 spec §7.3 对齐）：
   - `set_gpu_topology(GpuTopology)`
   - `get_gpu_topology() -> GpuTopology`
   - `tick()`
   - `get_module_type() -> std::string`
-  - `get_stats_group() -> tlm_stats::StatGroup*` (**与父类 ChStreamModuleBase::get_stats_group() 对齐**)
+  - `get_stats_group() -> tlm_stats::StatGroup*`（与父类 ChStreamModuleBase::get_stats_group() 对齐）
 
 `include/tlm/cluster/gpu_cluster.hh` 必须改为同时继承 `SimModule` 和 `GpuClusterSharedInterface`。
 `include/tlm/cluster/{gpc,tpc,compute}_cluster.hh` 必须 stub 完善并实现接口。
 
-**前置门 (F12 Gate)**: 本 REQ 实施前须确认 F12 (Phase 7.B) `GpuComputeUnitTLM/VectorRegFileTLM/WavefrontTLM` 已落地,否则 `ComputeCluster::tick()` 调用 CU 接口编译失败。
+**前置门 (F12 Gate)**：本 REQ 实施前须确认 F12 (Phase 7.B) `GpuComputeUnitTLM/VectorRegFileTLM/WavefrontTLM` 已落地，否则 `ComputeCluster::tick()` 调用 CU 接口编译失败。
 
 ### REQ-GPU-8A-6: GpuSocTLM 顶层
 
@@ -101,7 +119,22 @@
 - 1 个 GpuComputeUnitTLM (F12 占位,待 F12 落地)
 - 1 个 SharedMemoryTLM (size_kb=64, banks=32)
 - 1 个 GpuMeshNoC (dim=2, hops_latency=2)
-- 1 个 MemoryClusterTLM (channels=4, capacity_gb=8)
+- 1 个 MemoryClusterTLM (channels=8, capacity_gb=8)
+
+### REQ-GPU-8A-12: MinimalWarpScheduler (F12 scope expansion - Option A)
+
+`include/tlm/gpu/minimal_warp_scheduler.hh` 必须提供：
+- 类 `cpptlm::tlm::MinimalWarpScheduler`
+- 构造参数：`(name, EventQueue*, num_subcores = 4)`
+- `tick(slots, ready_warps)` 方法按 cycle 派发 warp 到 sub-core slots
+- `get_dispatch_count()` 方法返回累计派发数
+- 模块类型字符串：`"MinimalWarpScheduler"`
+
+测试 `test/test_minimal_warp_scheduler.cc` 必须验证：
+- 4 sub-core 派发 round-robin
+- 派发计数随 tick 累加
+
+**F12 Gate**: 本 REQ 与 REQ-GPU-8A-5 (GpuComputeUnitTLM) 必须同时满足，8.A Task 5/7 才能启动。F12 总预算从 650-800 LOC 调整为 950-1200 LOC，工期 1-2 周调整为 2-3 周。
 
 ### REQ-GPU-8A-10: 微架构 doc
 

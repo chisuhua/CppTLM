@@ -26,6 +26,7 @@
 - [ ] **G2 apu_soc 兼容**: `[gpu]` 14 cases + `[phase7]` 1 case 全 pass（不破坏）
 - [ ] **G3 端到端**: `test_gpu_soc_phase8a.cc` pass
 - [ ] **G4 性能 M1**: 1 SM × 1M cycles < 5s
+- [ ] **G4+ 性能 M1+**: 4 SM × 100K cycles < 5s (multi-SM contention check)
 - [ ] **G5 文档**: `docs_sync_check.sh --strict` 0 missing
 - [ ] **G6 格式**: `format.sh --check` clean
 
@@ -39,7 +40,8 @@
 ### 4.1 前置门 (Dependency Gates)
 
 - **🔴 F12 Gate**: Task 5 (GpuClusterSharedInterface + 4 级 cluster) 和 Task 7 (端到端集成) **必须等待 F12 (Phase 7.B) 完成后启动**
-  - F12 验证：`grep -rE 'class GpuComputeUnitTLM|class VectorRegFileTLM|class WavefrontTLM' include/tlm/gpu/` 应至少有 3 个匹配
+- F12 验证：`grep -rE 'class GpuComputeUnitTLM|class VectorRegFileTLM|class WavefrontTLM|class MinimalWarpScheduler' include/tlm/gpu/` 应至少有 4 个匹配
+- F12 总预算：950-1200 LOC（含 MinimalWarpScheduler），工时 2-3 周（Option A 决策）
   - F12 commit: roadmap §3 F12 已 merge + Oracle 审查 APPROVED
   - 若 F12 未完成，Task 5e 和 Task 7 测试用 `GpuComputeUnitTLM` 占位跳过，集成测试改为 stub-only
 

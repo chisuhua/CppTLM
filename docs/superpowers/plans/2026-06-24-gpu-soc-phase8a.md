@@ -151,10 +151,20 @@ class KernelLaunchTLM : public ChStreamModuleBase {
 
 ### Task 5: GpuClusterSharedInterface + 4 级 cluster 改造（**风险最高**）
 
+**前置门 (F12 Gate, Option A 决策)**: 本 Task **必须等待 F12 含 MinimalWarpScheduler 完成后启动**。F12 验证：`grep -rE 'class GpuComputeUnitTLM|class VectorRegFileTLM|class WavefrontTLM|class MinimalWarpScheduler' include/tlm/gpu/` ≥4 匹配。F12 总预算 950-1200 LOC,工期 2-3 周。
+
 **关键 API**：
 ```cpp
 // 新 include/tlm/gpu/gpu_cluster_shared_interface.hh
-struct GpuTopology { uint32_t num_gpc, num_tpc_per_gpc, num_sm_per_tpc, num_subcore_per_sm; uint32_t warp_size; };
+struct GpuTopology {
+    uint32_t num_gpc = 1;
+    uint32_t num_tpc_per_gpc = 1;
+    uint32_t num_sm_per_tpc = 1;      // 1 for GB202, 2 for H100/B200/GB203
+    uint32_t num_subcore_per_sm = 4;  // configurable
+    uint32_t warp_size = 32;
+    // NEW (FP#4, #6, #10): tensor_core_count, smem/l1/regfile KB, mem_bus_bits, mem_channels, has_nv_hub
+    // 详见 design.md §2 + specs REQ-GPU-8A-5
+};
 class GpuClusterSharedInterface {
     virtual void set_gpu_topology(const GpuTopology&) = 0;
     virtual GpuTopology get_gpu_topology() const = 0;
@@ -163,7 +173,7 @@ class GpuClusterSharedInterface {
 
 // GpuCluster 改造
 class GpuCluster : public SimModule, public GpuClusterSharedInterface {
-    // 现有 GpuCluster 代码 + 实现上述 3 个虚函数
+    // 现有 GpuCluster 代码 + 实现上述虚函数
 };
 // GpcCluster / TpcCluster / ComputeCluster stub 完善（实现 GpuClusterSharedInterface）
 ```
@@ -205,6 +215,8 @@ class GpuSocTLM : public SimModule {
 ---
 
 ### Task 7: 集成测试 + JSON 配置 (gb203_v1.json)
+
+**前置门 (F12 Gate, Option A 决策)**: 集成测试要求 GpuComputeUnitTLM 已能 dispatch (`requests_completed > 0`)。F12 必须含 MinimalWarpScheduler (Option A 决策),否则循环依赖 (CU 不 dispatch → 无请求 → 测试不通过)。
 
 **Files**:
 - Create: `configs/templates/gpu_soc/gpu_soc_gb203_v1.json`
@@ -442,6 +454,7 @@ git status
 - [ ] **G2 apu_soc 兼容**: `[gpu]` 14 cases + `[phase7]` 1 case 全 pass
 - [ ] **G3 端到端**: `test_gpu_soc_phase8a.cc` pass
 - [ ] **G4 性能 M1**: 1 SM × 1M cycles < 5s
+- [ ] **G4+ 性能 M1+**: 4 SM × 100K cycles < 5s (multi-SM contention check, 验证 O(N²) 不会引入性能瓶颈)
 - [ ] **G5 文档**: 5 个微架构 doc + docs_sync 0 missing
 - [ ] **G6 格式**: format.sh --check clean
 - [ ] **G7 Oracle 审查**: docs/validation/phase8a_oracle_review.md 显示 APPROVED
