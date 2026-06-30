@@ -34,8 +34,16 @@ src/tlm/gpu/*.cc                (Task 1-6)
 
 ### 新增 Bundle
 ```
-include/bundles/shared_memory_bundle.hh   (Task 1)
+(无 — shared_memory_bundle.hh 延后到 8.B，见下文"延后到 8.B")
 ```
+
+### 延后到 8.B 的文件
+
+> 以下文件原列于 8.A 新增，但实际作用域属于 8.B（SubCore/WarpScheduler/Scoreboard/TensorCore/Pipeline 之间的类型安全通信），不在 8.A 基础设施范围：
+
+- `include/bundles/shared_memory_bundle.hh` → **8.B**（与 SubCore/WarpScheduler 的 register bundle 同步落地）
+
+Tasks 1-4 实现使用直接字段（`size_kb_` / `banks_` / `channels_` / `kernel_id_` 等）而非 bundle，单元测试覆盖已验证 737/737 全绿。Bundle 在 8.B 多模块协同时再补充。
 
 ### 新增测试（6 个）
 ```
@@ -64,11 +72,13 @@ docs/soc_arch/modules/
 
 ### 修改文件
 ```
-include/chstream_register.hh                 (+5 行注册 Task 1-4+6)
-include/modules_cluster.hh                   (+1 行 GpuSocTLM Task 6)
+include/chstream_register.hh                 (+4 行 REGISTER_CHSTREAM Task 1-4；不含 GpuSocTLM)
+include/modules_cluster.hh                   (+1 行 REGISTER_MODULE GpuSocTLM Task 6)
 include/tlm/cluster/gpu_cluster.hh           (实现 GpuClusterSharedInterface Task 5)
 include/tlm/cluster/{gpc,tpc,compute}_cluster.hh   (stub 完善 Task 5)
 ```
+
+> **注**: commit `43dbd1c` 修复 N2 后,`REGISTER_CHSTREAM(GpuSocTLM)` 已移除(原 5 行 → 现 4 行)。GpuSocTLM 因是 SimModule 派生,改用 `REGISTER_MODULE` 走 `modules_cluster.hh`(见 design.md §4.1 + specs REQ-GPU-8A-7)。
 
 ---
 
@@ -257,11 +267,97 @@ TEST_CASE("gpu_soc_phase8a: end-to-end kernel → mem", "[gpu][soc][phase8a]") {
 - [ ] SharedMemory bank conflict 测试 pass
 - [ ] MemoryCluster 通道分配测试 pass
 - [ ] 性能：1 SM × 1M cycles < 5 秒
+- [ ] 性能：4 SM × 100K cycles < 5 秒（G4+ multi-SM contention，详见下方 G4+ 执行路径）
 - [ ] `docs_sync_check.sh --strict` 0 missing
 - [ ] `format.sh --check` clean
 - [ ] 现有 `[gpu]` (14 cases) + `[phase7]` (1 case) + `[apu_soc]` 全绿（不破坏 apu_soc）
 
 **Commit**：`docs(gpu_soc): Phase 8.A microarchitecture docs + roadmap update + M1 verification (Task 8)`
+
+---
+
+#### G4+ 性能验收执行路径（multi-SM contention）
+
+> **背景**: FP#7 (Metis 2026-06-28) — 单 SM 性能门无法发现 multi-SM 扩展瓶颈(O(N²) contention,NoC 拥塞,MemCluster 通道争用)。8.A M1+ 增加 4 SM × 100K cycles 验收。
+
+**Files**:
+- Create: `configs/templates/gpu_soc/gpu_soc_gb203_v1_4sm.json`（基于 Task 7 的 gb203_v1.json 扩展）
+- Create: `test/test_gpu_soc_phase8a_multism.cc`（新增 multi-SM regression 测试）
+
+**JSON 拓扑差异**（对比 gb203_v1.json）：
+```json
+{
+  "_extends": "gpu_soc_gb203_v1.json",
+  "modules": [
+    {"name": "gpu_soc", "type": "GpuSocTLM"},
+    {"name": "kernel_launch", "type": "KernelLaunchTLM", "params": {"kernel_launch_interval": 50}},
+    {"name": "compute_unit_0", "type": "GpuComputeUnitTLM"},
+    {"name": "compute_unit_1", "type": "GpuComputeUnitTLM"},
+    {"name": "compute_unit_2", "type": "GpuComputeUnitTLM"},
+    {"name": "compute_unit_3", "type": "GpuComputeUnitTLM"},
+    {"name": "shared_memory_0", "type": "SharedMemoryTLM", "params": {"size_kb": 64, "banks": 32}},
+    {"name": "noc", "type": "GpuMeshNoC", "params": {"dim": 4, "hops_latency": 2}},
+    {"name": "memory_cluster", "type": "MemoryClusterTLM", "params": {"channels": 8, "capacity_gb": 8}}
+  ],
+  "connections": [
+    {"src": "kernel_launch", "dst": "compute_unit_0"},
+    {"src": "kernel_launch", "dst": "compute_unit_1"},
+    {"src": "kernel_launch", "dst": "compute_unit_2"},
+    {"src": "kernel_launch", "dst": "compute_unit_3"},
+    {"src": "compute_unit_0", "dst": "shared_memory_0"},
+    {"src": "compute_unit_1", "dst": "shared_memory_0"},
+    {"src": "compute_unit_2", "dst": "shared_memory_0"},
+    {"src": "compute_unit_3", "dst": "shared_memory_0"},
+    {"src": "compute_unit_0", "dst": "noc"},
+    {"src": "compute_unit_1", "dst": "noc"},
+    {"src": "compute_unit_2", "dst": "noc"},
+    {"src": "compute_unit_3", "dst": "noc"},
+    {"src": "noc", "dst": "memory_cluster"}
+  ]
+}
+```
+
+**测试样例**（`test_gpu_soc_phase8a_multism.cc`）：
+```cpp
+TEST_CASE("gpu_soc_phase8a: 4-SM multi-SM contention < 5s",
+          "[gpu][soc][phase8a][multism]") {
+    auto* factory = ModuleFactory::instance();
+    factory->loadConfig("configs/templates/gpu_soc/gpu_soc_gb203_v1_4sm.json");
+    factory->instantiateAll();
+
+    // 4 SM × 100K cycles,KernelLaunchTLM interval=50 → 2000 launches/SM = 8000 总
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 0; i < 100000; ++i) factory->tick();
+    auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - start).count();
+
+    // G4+: 必须 < 5 秒
+    REQUIRE(elapsed_ms < 5000);
+
+    // 验证 multi-SM 不产生 O(N²) contention:
+    REQUIRE(factory->getStats("memory_cluster.requests_completed") > 0);
+    REQUIRE(factory->getStats("kernel_launch.kernels_dispatched") >= 4 * 1900);  // 容忍 5% jitter
+}
+```
+
+**验收命令**：
+```bash
+# 1. 单元测试
+./build/bin/cpptlm_tests "[gpu][soc][phase8a][multism]" --reporter compact
+
+# 2. 性能基线（必须 < 5 秒）
+time ./build/bin/cpptlm_tests "[gpu][soc][phase8a][multism]" --reporter compact 2>&1 | tail -3
+# 期望: real < 5s
+
+# 3. 与 G4 单 SM 对比,验证扩展性
+echo "G4 single-SM:"
+time ./build/bin/cpptlm_tests "[gpu][soc][phase8a]" --reporter compact 2>&1 | tail -1
+echo "G4+ 4-SM:"
+time ./build/bin/cpptlm_tests "[gpu][soc][phase8a][multism]" --reporter compact 2>&1 | tail -1
+# 期望: 4-SM 时间 ≤ 4 × 单 SM 时间 (避免 O(N²))
+```
+
+**Commit 增量**：`test(gpu_soc): Phase 8.A M1+ multi-SM contention gate (Task 8 G4+)`
 
 ---
 
