@@ -1,6 +1,6 @@
 # Tasks: gpu_soc Phase 8.A — 基础设施
 
-> **Status**: 🔄 Draft
+> **Status**: 🔴 Tasks 1-4 Frozen (Oracle APPROVED 2026-06-30) | ⏸️ Tasks 5-8 Blocked by F12
 > **Parent**: `proposal.md` + `design.md` (2026-06-24-gpu-soc-phase8a-infra)
 
 ## 1. Task 列表
@@ -22,7 +22,7 @@
 
 ## 2. 验收点 (Acceptance Gates)
 
-- [x] **G1 单元测试 (Tasks 1-4)**: `[shared_memory][memory_cluster][noc][kernel_launch]` 全 pass (32 cases / 72 assertions)
+- [x] **G1 单元测试 (Tasks 1-4)**: `[phase8a]` 全 pass (34 cases / 82 assertions) — 含 `[gpu][noc]`, `[gpu][kernel_launch]`, `[gpu][memcluster]`, `[gpu][smem]`
 - [ ] **G2 apu_soc 兼容**: `[gpu]` 14 cases + `[phase7]` 1 case 全 pass（不破坏）
 - [ ] **G3 端到端**: `test_gpu_soc_phase8a.cc` pass
 - [ ] **G4 性能 M1**: 1 SM × 1M cycles < 5s
@@ -32,8 +32,28 @@
 
 ## 3. 实施后节点
 
-- [ ] **Oracle 审查**: 调用 oracle subagent 对所有 commit + 验收结果做审查
-- [ ] **OpenSpec 归档**: Oracle 批准后，`openspec mv 2026-06-24-gpu-soc-phase8a-infra archive/`
+- [x] **Oracle 审查 (Tasks 1-4)**: 2026-06-30 APPROVED for implementation freeze
+  - 737/737 tests pass (15471 assertions)
+  - 4 modules: `namespace tlm` consistent, `ModuleFactory::registerObject` complete
+  - apu_soc compatibility: `[gpu]` 48 cases pass, no regression
+  - Hidden issues identified (non-blocking, deferred to 8.B):
+    1. StreamAdapter registration missing for all 4 modules
+    2. KernelLaunchTLM tick() pure counter (no dispatch)
+    3. MemoryClusterTLM tick() unconditionally increments
+    4. SharedMemoryTLM stride_bytes ignored in formula
+- [ ] **Oracle 审查 (Full)**: Tasks 5-8 完成后复查 + F12 验证
+- [ ] **OpenSpec 归档**: Full Oracle 批准后，`openspec mv 2026-06-24-gpu-soc-phase8a-infra archive/`
+
+### 3.1 Tasks 1-4 实施冻结记录
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| SharedMemoryTLM | ✅ Frozen | `include/tlm/gpu/shared_memory_tlm.hh` + test `[gpu][smem][phase8a]` 9 cases |
+| MemoryClusterTLM | ✅ Frozen | `include/tlm/gpu/memory_cluster_tlm.hh` + test `[gpu][memcluster][phase8a]` 8 cases |
+| GpuMeshNoC | ✅ Frozen | `include/tlm/gpu/gpu_mesh_noc.hh` + test `[gpu][noc][phase8a]` 10 cases |
+| KernelLaunchTLM | ✅ Frozen | `include/tlm/gpu/kernel_launch_tlm.hh` + test `[gpu][kernel_launch][phase8a]` 7 cases |
+| G1 Gate | ✅ Verified | `[phase8a]` 34 cases / 82 assertions, all pass |
+| F12 Gate | ⏸️ Blocked | grep returns 0 matches (GpuComputeUnitTLM etc. not yet implemented) |
 
 ## 4. 依赖关系
 
