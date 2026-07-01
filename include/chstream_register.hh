@@ -21,6 +21,7 @@
 #include "tlm/gpu/wavefront_tlm.hh"
 #include "tlm/gpu/vector_regfile_tlm.hh"
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
+#include "tlm/gpu/gpu_compute_unit_tlm.hh"
 #include "bundles/compute_bundles_tlm.hh"
 #include "rtl/hybrid_cache_wrapper.hh"
 #include "core/module_factory.hh"
@@ -57,6 +58,7 @@
     ModuleFactory::registerObject<tlm::WavefrontTLM>("WavefrontTLM"); \
     ModuleFactory::registerObject<tlm::VectorRegFileTLM>("VectorRegFileTLM"); \
     ModuleFactory::registerObject<tlm::MinimalWarpSchedulerTLM>("MinimalWarpSchedulerTLM"); \
+    ModuleFactory::registerObject<tlm::GpuComputeUnitTLM>("GpuComputeUnitTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
