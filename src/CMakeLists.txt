@@ -39,6 +39,7 @@ set(CORE_SOURCES
     tlm/gpu/gpu_mesh_noc_tlm.cc
     tlm/gpu/kernel_launch_tlm.cc
     tlm/gpu/wavefront_tlm.cc
+    tlm/gpu/vector_regfile_tlm.cc
 )
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
