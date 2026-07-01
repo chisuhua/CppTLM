@@ -40,6 +40,7 @@ set(CORE_SOURCES
     tlm/gpu/kernel_launch_tlm.cc
     tlm/gpu/wavefront_tlm.cc
     tlm/gpu/vector_regfile_tlm.cc
+    tlm/gpu/minimal_warp_scheduler_tlm.cc
 )
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
