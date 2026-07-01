@@ -18,6 +18,7 @@
 #include "tlm/gpu/memory_cluster_tlm.hh"
 #include "tlm/gpu/gpu_mesh_noc_tlm.hh"
 #include "tlm/gpu/kernel_launch_tlm.hh"
+#include "tlm/gpu/wavefront_tlm.hh"
 #include "bundles/compute_bundles_tlm.hh"
 #include "rtl/hybrid_cache_wrapper.hh"
 #include "core/module_factory.hh"
@@ -51,6 +52,7 @@
     ModuleFactory::registerObject<tlm::MemoryClusterTLM>("MemoryClusterTLM"); \
     ModuleFactory::registerObject<tlm::GpuMeshNoC>("GpuMeshNoC"); \
     ModuleFactory::registerObject<tlm::KernelLaunchTLM>("KernelLaunchTLM"); \
+    ModuleFactory::registerObject<tlm::WavefrontTLM>("WavefrontTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
