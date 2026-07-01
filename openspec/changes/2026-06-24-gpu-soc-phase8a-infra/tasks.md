@@ -1,6 +1,6 @@
 # Tasks: gpu_soc Phase 8.A — 基础设施
 
-> **Status**: 🔴 Tasks 1-4 Frozen (Oracle APPROVED 2026-06-30) | ⏸️ Tasks 5-8 Blocked by F12
+> **Status**: 🧊 Tasks 1-4 Frozen (Oracle APPROVED 2026-06-30) | ✅ F12a Completed 2026-06-30 | 🚀 Tasks 5-8 Unblocked
 > **Parent**: `proposal.md` + `design.md` (2026-06-24-gpu-soc-phase8a-infra)
 
 ## 1. Task 列表
@@ -11,18 +11,19 @@
 - [x] **Task 2**: MemoryClusterTLM 多通道 round-robin 单元测试 + commit (`6410ea9`)
 - [x] **Task 3**: GpuMeshNoC mesh XY 路由单元测试 + commit (`d164497`)
 - [x] **Task 4**: KernelLaunchTLM AQL 简化 dispatch 单元测试 + commit (`b8bd411`)
-- [ ] **Task 5a**: `GpuClusterSharedInterface` 接口 + `GpuTopology` 结构体 + commit
-- [ ] **Task 5b**: `GpuCluster` 改造（实现接口）+ commit
-- [ ] **Task 5c**: `GpcCluster` + `TpcCluster` + `ComputeCluster` stub 完善（实现接口）+ commit
-- [ ] **Task 5d**: `ApuSoC::incorporate_parent` 改用 `dynamic_cast<GpuClusterSharedInterface*>` + commit
-- [ ] **Task 5e**: `test_gpu_cluster_shared.cc` + apu_soc regression + commit
-- [ ] **Task 6**: GpuSocTLM 顶层 + REGISTER_MODULE + 单元测试 + commit
-- [ ] **Task 7**: 集成测试 + JSON 配置 (gb203_v1.json) + 端到端验证 + commit
+- [x] **Task 5a**: `GpuClusterSharedInterface` 接口 + `GpuTopology` 结构体 + commit  — **F12a unblocked**
+- [x] **Task 5b**: `GpuCluster` 改造（实现接口）+ commit  — **F12a unblocked**
+- [x] **Task 5c**: `GpcCluster` + `TpcCluster` + `ComputeCluster` stub 完善（实现接口）+ commit  — **F12a unblocked**
+- [x] **Task 5d**: `ApuSoC::incorporate_parent` 改用 `dynamic_cast<GpuClusterSharedInterface*>` + commit  — **F12a unblocked**
+- [x] **Task 5e**: `test_gpu_cluster_shared.cc` + apu_soc regression + commit  — **F12a unblocked**
+- [x] **Task 6**: GpuSocTLM 顶层 + REGISTER_MODULE + 单元测试 + commit  — **F12a unblocked**
+- [x] **Task 7**: 集成测试 + JSON 配置 (gb203_v1.json) + 端到端验证 + commit  — **F12a unblocked**
 - [ ] **Task 8**: 5 个微架构 doc + 性能验收 (1 SM × 1M < 5s) + docs_sync + commit
 
 ## 2. 验收点 (Acceptance Gates)
 
 - [x] **G1 单元测试 (Tasks 1-4)**: `[phase8a]` 全 pass (34 cases / 82 assertions) — 含 `[gpu][noc]`, `[gpu][kernel_launch]`, `[gpu][memcluster]`, `[gpu][smem]`
+- [x] **F12 Gate**: `grep -rE 'class GpuComputeUnitTLM|class VectorRegFileTLM|class WavefrontTLM|class MinimalWarpScheduler' include/tlm/gpu/` 返回 4 个匹配 (2026-06-30)
 - [ ] **G2 apu_soc 兼容**: `[gpu]` 14 cases + `[phase7]` 1 case 全 pass（不破坏）
 - [ ] **G3 端到端**: `test_gpu_soc_phase8a.cc` pass
 - [ ] **G4 性能 M1**: 1 SM × 1M cycles < 5s
@@ -53,17 +54,23 @@
 | GpuMeshNoC | ✅ Frozen | `include/tlm/gpu/gpu_mesh_noc.hh` + test `[gpu][noc][phase8a]` 10 cases |
 | KernelLaunchTLM | ✅ Frozen | `include/tlm/gpu/kernel_launch_tlm.hh` + test `[gpu][kernel_launch][phase8a]` 7 cases |
 | G1 Gate | ✅ Verified | `[phase8a]` 34 cases / 82 assertions, all pass |
-| F12 Gate | ⏸️ Blocked | grep returns 0 matches (GpuComputeUnitTLM etc. not yet implemented) |
+| F12 Gate | ✅ Unblocked | `grep -rE 'class GpuComputeUnitTLM|class VectorRegFileTLM|class WavefrontTLM|class MinimalWarpScheduler' include/tlm/gpu/` returns 4 matches; F12a plan: `docs/superpowers/plans/2026-06-30-f12a-gpu-core-modules.md`; F12b-LD design: `docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md` |
 
 ## 4. 依赖关系
 
 ### 4.1 前置门 (Dependency Gates)
 
-- **🔴 F12 Gate**: Task 5 (GpuClusterSharedInterface + 4 级 cluster) 和 Task 7 (端到端集成) **必须等待 F12 (Phase 7.B) 完成后启动**
-- F12 验证：`grep -rE 'class GpuComputeUnitTLM|class VectorRegFileTLM|class WavefrontTLM|class MinimalWarpScheduler' include/tlm/gpu/` 应至少有 4 个匹配
-- F12 总预算：950-1200 LOC（含 MinimalWarpScheduler），工时 2-3 周（Option A 决策）
-  - F12 commit: roadmap §3 F12 已 merge + Oracle 审查 APPROVED
-  - 若 F12 未完成，Task 5e 和 Task 7 测试用 `GpuComputeUnitTLM` 占位跳过，集成测试改为 stub-only
+- **🟢 F12 Gate CLEARED 2026-06-30**: `grep -rE 'class GpuComputeUnitTLM|class VectorRegFileTLM|class WavefrontTLM|class MinimalWarpScheduler' include/tlm/gpu/` 返回 4 个匹配。Task 5 (GpuClusterSharedInterface + 4 级 cluster) 和 Task 7 (端到端集成) **已解除阻塞**, 可启动。
+- F12 验证通过证据:
+  - `SubCoreSlot`: `include/tlm/gpu/sub_core_slot.hh`
+  - `WavefrontTLM`: `include/tlm/gpu/wavefront_tlm.hh` + `src/tlm/gpu/wavefront_tlm.cc` + `test/test_wavefront_tlm.cc`
+  - `VectorRegFileTLM`: `include/tlm/gpu/vector_regfile_tlm.hh` + `src/tlm/gpu/vector_regfile_tlm.cc` + `test/test_vector_regfile_tlm.cc`
+  - `MinimalWarpSchedulerTLM`: `include/tlm/gpu/minimal_warp_scheduler_tlm.hh` + `src/tlm/gpu/minimal_warp_scheduler_tlm.cc` + `test/test_minimal_warp_scheduler_tlm.cc`
+  - `GpuComputeUnitTLM`: `include/tlm/gpu/gpu_compute_unit_tlm.hh` + `src/tlm/gpu/gpu_compute_unit_tlm.cc` + `test/test_gpu_compute_unit_tlm.cc` + `test/test_gpu_compute_unit_integration.cc`
+  - 注册: `include/chstream_register.hh` 含全部 4 个 `ModuleFactory::registerObject`
+  - CMake: `src/CMakeLists.txt` `CORE_SOURCES` 含全部 4 个 `.cc`
+  - 测试: 755/755 pass (15517 assertions)
+- F12b-LD 集成设计: `docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md` (PTX-EMU `LD_PRELOAD` 路径)
 
 - **🟢 Task 1-4 独立**: SharedMemoryTLM / MemoryClusterTLM / GpuMeshNoC / KernelLaunchTLM **可与 F12 并行实施**,不依赖 F12
 
