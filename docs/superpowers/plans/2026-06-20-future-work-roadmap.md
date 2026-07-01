@@ -17,7 +17,7 @@
 | **format cleanup (P1)** | `c3bdb45` | ✅ Done | — |
 | **Phase A** (F1/F2/F3/F5/F7/F8/F10/F11) | 8 commits (见 §7) | ✅ Done | 690 → 703/703 (+13) |
 | **gpu_soc 架构定义** (2026-06-24) | `801f8ea` `3993129` `3aa810b` `f7e67bc` | ✅ Done | 703/703 (无破坏) |
-| **Phase 8.A 基础设施** | ⏳ 待启动 | 🔄 Ready | 目标: 703+5 → 708/708 |
+| **Phase 8.A 基础设施** | 🧊 Tasks 1-4 Frozen | 🔄 F12a 完成, Tasks 5-8 unblocked | 目标: 703+52 → 755/755 |
 
 **E2E**: `[SUCCESS]` · **Format**: ✅ clean · **docs_sync_check**: ✅ 0 missing · **Origin/main**: 4 commits ahead
 
@@ -271,7 +271,8 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 
 **来源**: `roadmap.md` Phase 7.B + ADR-SOC-02 (CU 粒度) + ADR-SOC-03 (Wavefront coalescing) + **Phase 8.A Task 5/7 依赖门** (Metis 2026-06-28 决策)
 
-**当前状态** (Phase 7.A):
+**当前状态** (2026-06-30): ✅ **F12a 已完成** (standalone 4 类 + tests + integration), 755/755 tests pass
+- 下一步: **F12b-LD** PTX-EMU LD_PRELOAD 集成 (见 `docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md`)
 - `GPUTLM v0` 黑盒发起器 (单端口 Initiator, 周期发出 ComputeReqBundle)
 - `ComputeReqBundle` / `ComputeRespBundle` 类型已定义 (4 GPU 维度字段)
 
@@ -280,8 +281,10 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 - `VectorRegFileTLM` (新增, ~150 LOC) — vector register file 抽象, 支持 read/write/bank conflict (简化)
 - `WavefrontTLM` (新增, ~200 LOC) — wavefront 调度 + `coalescing_factor` 合并 (8.A 用常数,8.B 升级地址模式)
 - **`MinimalWarpSchedulerTLM` (新增, ~300-400 LOC, Option A 必加)** — round-robin 派发,CU 内部 4 sub-core slot,8.B 升级到 greedy/CGGTY。无此模块 → 8.A Task 5/7 端到端测试 `requests_completed > 0` 无法触发 (循环依赖)
-- 配套测试: `test/test_gpu_compute_unit.cc` + `test/test_vector_regfile.cc` + `test/test_wavefront.cc` + `test/test_minimal_warp_scheduler.cc` (~40 TEST_CASEs)
-- 跨类集成测试: 1 wavefront → minimal scheduler 派发 → 4 sub-core slot → 1 load → CacheTLM (bypass coherence) → MemoryTLM
+  - 配套测试: `test/test_gpu_compute_unit_tlm.cc` + `test/test_vector_regfile_tlm.cc` + `test/test_wavefront_tlm.cc` + `test/test_minimal_warp_scheduler_tlm.cc` + `test/test_gpu_compute_unit_integration.cc` (~16 TEST_CASEs)
+  - F12a 实施计划: `docs/superpowers/plans/2026-06-30-f12a-gpu-core-modules.md`
+  - F12b-LD 集成设计 (PTX-EMU `LD_PRELOAD`): `docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md`
+  - 跨类集成测试: 4 wavefront → minimal scheduler 派发 → 4 sub-core slot → tick → `requests_completed == 4`
 
 **依赖**:
 - 无外部依赖 (新增类, 不改现有 TLM 接口)
@@ -291,14 +294,13 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 - Phase 8.B (WarpScheduler 升级) 与 F12 MinimalWarpScheduler 接口对齐
 
 **预估**:
-- 新增 **~950-1200 LOC** (含 MinimalWarpScheduler,Option A 增量 ~300-400 LOC)
-- **4 个新 .hh + 4 个 .cc + 1 个统一集成测试**
-- 40+ new TEST_CASEs
-- 工期: **2-3 周** (含 brainstorming + Option A scheduler)
+- 新增 **~350 LOC** (F12a 实际: 4 个 .hh + 4 个 .cc + 5 个 test + 1 集成测试), 16 new TEST_CASEs
+- 工期: **1 天** (F12a 实际耗时 1 天; F12b-LD 另行评估)
+- 状态: **F12a 已完成**, commit 序列 `e2aa9f3` → `27bc204` → `8b0a649` → `af13e55` → `7ff067e` → `b5ece52`
 
-**风险**: 中-高 (4 个新类, 需 careful 接口设计; Option A 增量 1 个 scheduler 类)
+**风险**: 低 (F12a 已完成; F12b-LD 集成风险: 中, 需处理 PTX-EMU 全局 singleton + `LD_PRELOAD` 工作流)
 
-**前置**: 需先与 ADR-SOC-02/03 重新对齐确认 + 验证 MinimalWarpScheduler 接口与 8.B WarpScheduler 兼容
+**前置**: ✅ F12a 已完成; F12b-LD 需先完成 OpenSpec change 提案 + PTX-EMU 侧 `libcpptlm_cudart.so` 实现
 
 ---
 
