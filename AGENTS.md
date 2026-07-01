@@ -58,6 +58,7 @@ docs/
   soc_arch/adr/  # APU SoC 子项目 ADR (D1-D5)
   guide/         # GETTING_STARTED / DEVELOPER / PYTHON_TOOLING / TOPOLOGY_USER
   development/   # CONTRIBUTING.md (贡献者指南, 含 pre-commit 钩子安装与日常使用)
+  roadmap/       # 实施路线图 + 实时状态看板 (active planning)
   ONBOARDING.md  # 新人上手 (图谱生成)
   docs_audit_report.md  # 365/365 路径快照
 
