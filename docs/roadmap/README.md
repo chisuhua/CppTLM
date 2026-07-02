@@ -17,10 +17,11 @@
 │  ├── Phase A 8 项 quick wins (690→703)                                   │
 │  ├── Phase 7.A 基础设施 (GPU [gpu] tag GREEN)                             │
 │  ├── F12a 4 GPU 核心模块 (703→755)                                       │
-│  └── Phase 8.A Tasks 1-7 (4 stub 模块 + 接口 + 顶层 + 集成)                │
+│  ├── Phase 8.A Tasks 1-7 (4 stub 模块 + 接口 + 顶层 + 集成)                │
+│  └── Phase 8.A Task 8 (5 微架构 doc + M1 验收)                            │
 │                                                                         │
 │  活跃 🚀                                                                 │
-│  ├── Phase 8.A Task 8 (微架构 doc + M1 验收)                              │
+│  ├── Phase 8.A Oracle Full Review + Archive                              │
 │  ├── F12b-LD (PTX-EMU 集成, 等 PTX-EMU 侧对齐)                            │
 │  └── Python Library Phase 0 (C++ 统计注册)                                │
 │                                                                         │
@@ -59,16 +60,16 @@ CppTLM 当前有 **两条并行路线**，共享 F12 产出的 4 个 GPU 核心�
 
 | 序号 | 任务 | 工期 | 依赖 | 状态 |
 |:---:|------|:---:|------|:---:|
-| 1.1 | Phase 8.A Task 8 (doc + M1) | 0.5d | 8.A T1-7 ✅ | 🚀 |
-| 1.2 | Phase 8.A Oracle Full Review | 0.1d | 1.1 | ⏳ |
+| 1.1 | Phase 8.A Task 8 (doc + M1) | 0.5d | 8.A T1-7 ✅ | ✅ |
+| 1.2 | Phase 8.A Oracle Full Review | 0.1d | 1.1 | 🚀 |
 | 1.3 | Phase 8.A Archive | 0.1d | 1.2 | ⏳ |
 | 1.4 | Python Lib Phase 0 (Stats) | 1-2d | 无 | ⏳ |
 
-**入口条件** (1.1):
+**入口条件** (1.2):
 - [x] T1-7 全部 commit 已落地
 - [x] `[phase8a]` 34 cases pass
 - [x] F12 Gate cleared (4 类已实现)
-- [ ] (1.1 执行后) G2-G6 全部通过
+- [x] Task 8 完成 (5 docs, docs_sync 0 missing, format clean, 755/755 pass)
 
 ### 第二阶段：核心推进期 (~2-4 周)
 

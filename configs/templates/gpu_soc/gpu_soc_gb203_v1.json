@@ -1,0 +1,33 @@
+{
+  "_comment": "gpu_soc — GB203 minimal (Phase 8.A Task 7)",
+  "_description": "最小端到端 GPU SoC: 1 KernelLaunch → 1 GpuComputeUnit → 1 SharedMemory + GpuMeshNoC → MemoryClusterTLM",
+  "_reference": "openspec/changes/2026-06-24-gpu-soc-phase8a-infra/design.md §5.2",
+  "name": "gpu_soc_gb203_v1",
+  "modules": [
+    {
+      "name": "kernel_launch",
+      "type": "KernelLaunchTLM",
+      "params": { "kernel_launch_interval": 50 }
+    },
+    {
+      "name": "compute_unit_0",
+      "type": "GpuComputeUnitTLM",
+      "params": { "execution_latency": 2 }
+    },
+    {
+      "name": "shared_memory_0",
+      "type": "SharedMemoryTLM",
+      "params": { "size_kb": 64, "banks": 32 }
+    },
+    {
+      "name": "noc",
+      "type": "GpuMeshNoC",
+      "params": { "dim": 2, "hops_latency": 2 }
+    },
+    {
+      "name": "memory_cluster",
+      "type": "MemoryClusterTLM",
+      "params": { "channels": 4, "capacity_gb": 8 }
+    }
+  ]
+}
