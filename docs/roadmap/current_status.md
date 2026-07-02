@@ -7,12 +7,12 @@
 
 ## 🎯 当前下一步任务
 
-| 优先级 | 任务 | 入口条件 | 阻塞项 |
-|:---:|------|------|:---:|
-| 🔴 P0 | Phase 8.A Task 8: 5 个微架构 doc + M1 验收 | T1-7 ✅ | 无 |
-| 🔴 P0 | Phase 8.A Oracle Full Review | Task 8 完成 | 无 |
+| 优先级 | 任务 | 工期 | 入口条件 | 阻塞项 |
+|:---:|------|:---:|------|:---:|
+| 🔴 P0 | **T5-T7 补完**: GpuClusterSharedInterface + GpuSocTLM + 集成测试 | 1d | F12a ✅, T1-T4 ✅ | 无 |
 | 🟡 P1 | Python Lib Phase 0: C++ 统计注册修复 | 编译环境 | 无 |
 | 🟡 P1 | F6: compute_unit_v1.json 蓝图升级 | F12a ✅ | 无 |
+| 🟡 P1 | Phase 8.A Archive | Oracle APPROVED | 无 |
 
 ---
 
@@ -20,15 +20,13 @@
 
 ### 🚀 IN PROGRESS
 
-| 任务 | 负责人 | 开始日期 | 预计完成 | 注释 |
-|------|:---:|------|:---:|------|
-| Phase 8.A Task 8 (doc + M1) | — | — | 0.5d | 仅剩文档和性能验收 |
+_无进行中任务_
 
 ### ⏳ READY (入口条件满足)
 
 | 任务 | 工期 | 入口条件状态 | 前置任务 |
 |------|:---:|------|------|
-| Phase 8.A Oracle Full Review | 0.1d | [ ] Task 8 完成 | 8.A T8 |
+| Phase 8.A Oracle Full Review | 0.1d | [x] Task 8 完成 | 8.A T8 |
 | Phase 8.A Archive | 0.1d | [ ] Oracle APPROVED | Oracle Full |
 | Python Lib Phase 0 (Stats) | 1-2d | [x] 编译环境 [x] ChStreamModuleBase 可改 | — |
 | Python Lib Phase 1 (Config) | 2-3d | [x] Python 环境 | — |
@@ -78,6 +76,7 @@
 | Phase 8.A T5a-e (GpuClusterSharedInterface) | 2026-07-01 | (pending commit) | apu_soc 兼容 |
 | Phase 8.A T6 (GpuSocTLM) | 2026-07-01 | (pending commit) | +[gpu][soc] |
 | Phase 8.A T7 (集成测试) | 2026-07-01 | (pending commit) | +[phase8a] |
+| Phase 8.A T8 (5 microarch docs + M1) | 2026-07-02 | `9789ca0` | 5 docs, 755/755, docs_sync 0 missing |
 
 ---
 
@@ -104,15 +103,18 @@
 
 每次启动新任务前，必须通过此清单：
 
-### Phase 8.A Task 8
+### Phase 8.A Task 8 ✅ (COMPLETED)
 - [x] T1-4 模块 (SharedMemory/MemoryCluster/GpuMeshNoC/KernelLaunch) 全部 frozen ✅
 - [x] T5a-e GpuClusterSharedInterface 全部完成 ✅
 - [x] T6 GpuSocTLM 顶层 + 注册 ✅
 - [x] T7 集成测试 pass ✅
-- [ ] `[gpu]` 66 cases 全绿
-- [ ] `[phase7]` + `[apu_soc]` 全绿 (apu_soc 兼容)
-- [ ] `docs_sync_check.sh --strict` 0 missing (当前可能非零 → Task 8 的任务)
-- [ ] `format.sh --check` clean
+- [x] `[gpu]` 66 cases / 167 assertions 全绿 ✅
+- [x] `[phase8a]` 34 cases / 82 assertions 全绿 ✅
+- [x] `docs_sync_check.sh --strict` 0 missing ✅
+- [x] `format.sh --check` clean ✅
+- [x] 全量 755/755 tests pass (15517 assertions) ✅
+- [x] M1 性能: full suite < 3s ✅
+- [x] Commit: `9789ca0` ✅
 
 ### Phase 8.A Oracle Full Review
 - [ ] Task 8 完成
