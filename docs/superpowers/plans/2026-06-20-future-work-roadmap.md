@@ -17,7 +17,7 @@
 | **format cleanup (P1)** | `c3bdb45` | ✅ Done | — |
 | **Phase A** (F1/F2/F3/F5/F7/F8/F10/F11) | 8 commits (见 §7) | ✅ Done | 690 → 703/703 (+13) |
 | **gpu_soc 架构定义** (2026-06-24) | `801f8ea` `3993129` `3aa810b` `f7e67bc` | ✅ Done | 703/703 (无破坏) |
-| **Phase 8.A 基础设施** | 🧊 Tasks 1-4 Frozen | 🔄 F12a 完成, Tasks 5-8 unblocked | 目标: 703+52 → 755/755 |
+| **Phase 8.A 基础设施** | `e8280fe` | ✅ Archived (8 tasks + Oracle + 归档) | 703 → 764/764 (+61) |
 
 **E2E**: `[SUCCESS]` · **Format**: ✅ clean · **docs_sync_check**: ✅ 0 missing · **Origin/main**: 4 commits ahead
 
@@ -26,9 +26,9 @@
 **测试基线验证** (single source of truth):
 ```bash
 ./build/bin/cpptlm_tests --reporter compact
-# 期望: "All tests passed (N assertions in 703 test cases)"
-# 当前 verified: 15389 assertions in 703 test cases (2026-06-23)
-# 历史基线: 15330/690 (2026-06-22, Phase A 前) · 659/659 (AGENTS.md 过期, 2026-06-19)
+# 期望: "All tests passed (N assertions in 764 test cases)"
+# 当前 verified: 15547 assertions in 764 test cases (2026-07-02)
+# 历史基线: 755/755 (2026-06-30, F12a + Phase 8.A Tasks 5-7) · 703/703 (2026-06-23, Phase A 后)
 # 注: AGENTS.md 历史值 "659/659" 已不准确, 本 roadmap 是 single source of truth
 ```
 
@@ -36,9 +36,9 @@
 
 ## 0.5 依赖图 + 总工期
 
-### 总工期估算 (Phase A 已完成, 当前活跃 7 项)
+### 总工期估算 (Phase A + Phase 8.A 已完成, 当前活跃 6 项)
 
-> **2026-06-23 更新**: Phase A 8 项 (F1/F2/F3/F5/F7/F8/F10/F11) 已落地, 总工期从 51 → 45 工作日, 当前活跃任务 7 项。
+> **2026-07-02 更新**: Phase 8.A 已归档 (764/764), 当前活跃任务从 7 项减少为 6 项。
 
 | 等级 | Task | 工期 (工作日) | 累计 |
 |:---:|------|:---:|:---:|
@@ -178,6 +178,12 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 | **8.C** 高级特性 | `2026-06-24-gpu-soc-phase8c-advanced` | `2026-06-24-gpu-soc-phase8c.md` (`33991d6`) | 3 | 9 + 2 (Oracle+归档) | M3: 完整验证, apu_soc 集成 |
 | **总** | 3 changes | 3 plans ✅ 全部就绪 | **13** | **25 + 6** | |
 
+**8.A 实际完成状态**:
+- Commit: `e8280fe` (archive) · 前置实施 commits: `b8bd411`, `6410ea9`, `d164497`, `840ecb7`, `9789ca0`
+- 测试基线: 764/764 (15547 assertions)
+- M1 验收: 1 SM × 1M cycles < 5s, `[gpu]` 75 cases + `[phase7]` + apu_soc 全绿
+- OpenSpec change 已归档至 `openspec/changes/archive/2026-06-24-gpu-soc-phase8a-infra/`
+
 **关键设计原则**:
 - 与 apu_soc 共享 GpuCluster/GpcCluster/TpcCluster/ComputeCluster（通过 `GpuClusterSharedInterface` 抽象层）
 - 复用 F12 三类（GpuComputeUnitTLM/VectorRegFileTLM/WavefrontTLM）
@@ -185,22 +191,24 @@ F15 (5d) [依赖 F13 + F14] → F9 (1.5d) [依赖 F4]
 - 验证：5 类场景（GEMM/FlashAttn/vector_add/stencil/sparse）vs gpgpu-sim 带宽 ±15%, 延迟 ±20%
 
 **执行策略**:
-- **3 个 per-phase plans 全部就绪**（`f7e67bc` + `33991d6`），每个含 Oracle 审查 + OpenSpec 归档节点
-- 执行顺序：8.A → Oracle 审查 → 归档 → 8.B → Oracle 审查 → 归档 → 8.C → Oracle 审查 → 归档 → Phase 8 收官
+- **8.A 已完成并归档**（`e8280fe`）
+- **8.B / 8.C per-phase plans 已就绪**（`33991d6`）
+- 执行顺序：✅ 8.A → Oracle 审查 → 归档 → 8.B → Oracle 审查 → 归档 → 8.C → Oracle 审查 → 归档 → Phase 8 收官
 - 每个阶段独立归档：Oracle 批准后 `git mv openspec/changes/.../ openspec/changes/archive/.../`
 
 **Phase E 总工期**: 13 周 (单人关键路径) / 3 周 (4 人并行)
 
-### 整体规划 (2026-06-23 重算)
+### 整体规划 (2026-07-02 重算)
 
 **B → C → D 全程**: ~9 周 (单人, 关键路径 32 工作日) / ~3 周 (4 人并行)
+**Phase 8**: 8.A 已归档, 8.B → 8.C 仍需 **~9 周** (13 周总计划 - 4 周 8.A = 9 周)
 
 ---
 
-## 3. 各任务详细规范 (仅活跃 7 项, Phase A 8 项已归档至 §7)
+## 3. 各任务详细规范 (仅活跃 6 项, Phase A 8 项 + Phase 8.A 已归档至 §7)
 
-> **2026-06-23 更新**: F1 / F2 / F3 / F5 / F7 / F8 / F10 / F11 详细节已合并到 §7 已完成历史 (各 commit + 验收 + 风险), 不再单独展开。
-> 活跃任务 (F4 / F6 / F9 / F12 / F13 / F14 / F15) 详细规范保留在本节。
+> **2026-07-02 更新**: Phase 8.A 已完成并归档, 从活跃任务中移除。当前活跃 6 项: F4 / F6 / F9 / F12 / F13 / F14 / F15 中的 F12 已拆分为 F12a (Done) + F12b-LD (blocked), 因此实际活跃为 F4 / F6 / F9 / F13 / F14 / F15。
+> F1 / F2 / F3 / F5 / F7 / F8 / F10 / F11 详细节已合并到 §7 已完成历史。
 
 ---
 

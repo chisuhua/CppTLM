@@ -3,9 +3,9 @@
 // 验证 GpuCluster 正确实现抽象接口 + dynamic_cast 转换 + apu_soc 兼容性
 // 作者: CppTLM Team / 日期: 2026-07-02
 // Phase 8.A Task 5
+#include "core/event_queue.hh"
 #include "tlm/cluster/gpu_cluster.hh"
 #include "tlm/gpu/gpu_cluster_shared_interface.hh"
-#include "core/event_queue.hh"
 #include <catch2/catch_all.hpp>
 
 using namespace cpptlm::tlm;
@@ -56,7 +56,8 @@ TEST_CASE("GpuCluster: get_module_type unchanged", "[cluster_shared][gpu][phase8
     REQUIRE(cluster.get_module_type() == "GpuCluster");
 }
 
-TEST_CASE("GpuCluster: multiple inheritance does not break SimModule identity", "[cluster_shared][gpu][phase8a]") {
+TEST_CASE("GpuCluster: multiple inheritance does not break SimModule identity",
+          "[cluster_shared][gpu][phase8a]") {
     EventQueue eq;
     GpuCluster cluster("test_cluster", &eq);
 

@@ -5,6 +5,6 @@
 
 namespace tlm {
 
-// WavefrontTLM 当前为纯数据载体，实现位于头文件中。
+    // WavefrontTLM 当前为纯数据载体，实现位于头文件中。
 
-}  // namespace tlm
+} // namespace tlm
