@@ -1,7 +1,7 @@
 # CppTLM 实时状态看板
 
-> **最后更新**: 2026-07-02 · **测试基线**: ✅ 755/755 (15517 assertions) · **GPU**: 66 cases
-> **配套**: [实施路线图](./README.md) · **更新规则**: 每次任务完成后更新本文件
+> **最后更新**: 2026-07-02 · **测试基线**: ✅ 764/764 (15547 assertions) · **GPU**: 75 cases
+> **Phase 8.A**: ✅ Archived · **配套**: [实施路线图](./README.md)
 
 ---
 
@@ -9,10 +9,10 @@
 
 | 优先级 | 任务 | 工期 | 入口条件 | 阻塞项 |
 |:---:|------|:---:|------|:---:|
-| 🔴 P0 | **T5-T7 补完**: GpuClusterSharedInterface + GpuSocTLM + 集成测试 | 1d | F12a ✅, T1-T4 ✅ | 无 |
-| 🟡 P1 | Python Lib Phase 0: C++ 统计注册修复 | 编译环境 | 无 |
-| 🟡 P1 | F6: compute_unit_v1.json 蓝图升级 | F12a ✅ | 无 |
-| 🟡 P1 | Phase 8.A Archive | Oracle APPROVED | 无 |
+| 🔴 P0 | **Phase 8.B Task 9**: ScoreboardTLM ≥12 entries | 0.5d | Phase 8.A ✅ | 无 |
+| 🔴 P0 | **F4**: Phase 7.C CoherentXBarTLM 6×6 state table (brainstorming first) | 2d brainstorming | Phase 8.A ✅ | 需新 brainstorming |
+| 🟡 P1 | Python Lib Phase 0: C++ 统计注册修复 | 1-2d | 编译环境 | 无 |
+| 🟡 P1 | F6: compute_unit_v1.json 蓝图升级 | 1-2d | F12a ✅ | 无
 
 ---
 
@@ -26,11 +26,17 @@ _无进行中任务_
 
 | 任务 | 工期 | 入口条件状态 | 前置任务 |
 |------|:---:|------|------|
-| Phase 8.A Oracle Full Review | 0.1d | [x] Task 8 完成 | 8.A T8 |
-| Phase 8.A Archive | 0.1d | [ ] Oracle APPROVED | Oracle Full |
-| Python Lib Phase 0 (Stats) | 1-2d | [x] 编译环境 [x] ChStreamModuleBase 可改 | — |
+| Phase 8.B Task 9 (Scoreboard) | 0.5d | [x] Phase 8.A archived | — |
+| Python Lib Phase 0 (Stats) | 1-2d | [x] 编译环境 | — |
 | Python Lib Phase 1 (Config) | 2-3d | [x] Python 环境 | — |
 | F6 蓝图升级 | 1-2d | [x] F12a ✅ | — |
+
+### 🔴 BLOCKED
+
+| 任务 | 工期 | 缺失入口条件 | 阻塞原因 |
+|------|:---:|------|------|
+| F4 Brainstorming | 2d | [ ] 需新 brainstorming cycle | 架构重大变更 |
+| F12b-LD 实施 | 2-3w | [ ] PTX-EMU 团队确认 | 外部依赖 |
 
 ### 🔴 BLOCKED (入口条件不满足)
 
@@ -77,6 +83,8 @@ _无进行中任务_
 | Phase 8.A T6 (GpuSocTLM) | 2026-07-01 | (pending commit) | +[gpu][soc] |
 | Phase 8.A T7 (集成测试) | 2026-07-01 | (pending commit) | +[phase8a] |
 | Phase 8.A T8 (5 microarch docs + M1) | 2026-07-02 | `9789ca0` | 5 docs, 755/755, docs_sync 0 missing |
+| Phase 8.A T5-T7 (GpuClusterSharedInterface + GpuSocTLM + integration) | 2026-07-02 | `840ecb7` | +9 cases, 755→764 |
+| **Phase 8.A Oracle Full Review + Archive** | 2026-07-02 | (pending) | APPROVED, no blocking issues |
 
 ---
 
