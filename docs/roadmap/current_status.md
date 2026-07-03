@@ -27,27 +27,31 @@ _无进行中任务_
 | 任务 | 工期 | 入口条件状态 | 前置任务 |
 |------|:---:|------|------|
 | Phase 8.B Task 9 (Scoreboard) | 0.5d | [x] Phase 8.A archived | — |
+| Phase 8.B Task 10 (WarpScheduler) | 1d | [x] 8.A ✅ | — |
+| Phase 8.B Task 11 (Pipeline) | 1d | [x] 8.A ✅ | — |
+| Phase 8.B Task 12 (TensorCore) | 1d | [x] 8.A ✅ | — |
+| Phase 8.B Task 13 (L2Partition) | 0.5d | [x] 8.A ✅ | — |
+| Phase 8.B Task 14 (SubCore) | 1d | [x] 8.A ✅ + 8.B-T10-13 | 8.B-T10-13 |
+| Phase 8.B Task 15 (集成+对照) | 1w | [x] 8.A ✅ + 8.B-T14 | 8.B-T14 |
+| Phase 8.B Task 16 (6 docs + M2) | 1w | [x] 8.A ✅ + 8.B-T15 | 8.B-T15 |
 | Python Lib Phase 0 (Stats) | 1-2d | [x] 编译环境 | — |
 | Python Lib Phase 1 (Config) | 2-3d | [x] Python 环境 | — |
 | F6 蓝图升级 | 1-2d | [x] F12a ✅ | — |
+| F4 Brainstorming 启动 | 2d | [x] 8.A ✅ (并行复杂度降低) | — |
 
-### 🔴 BLOCKED
+### 🔴 BLOCKED (统一)
 
 | 任务 | 工期 | 缺失入口条件 | 阻塞原因 |
 |------|:---:|------|------|
-| F4 Brainstorming | 2d | [ ] 需新 brainstorming cycle | 架构重大变更 |
-| F12b-LD 实施 | 2-3w | [ ] PTX-EMU 团队确认 | 外部依赖 |
-
-### 🔴 BLOCKED (入口条件不满足)
-
-| 任务 | 工期 | 缺失的入口条件 | 阻塞原因 |
-|------|:---:|------|------|
-| F4 Brainstorming (state table) | 2d | [ ] Phase 8.A 归档 (降低上下文切换) | 建议等 8.A 完成后启动 |
-| F4 Spec | 1d | [ ] Brainstorming 完成 | — |
-| F12b-LD 实施 | 2-3w | [ ] PTX-EMU 团队确认 [ ] CMake PoC [ ] 参考 CUDA 程序选定 | PTX-EMU 侧未对齐 |
-| Phase 8.B (6 核心模块) | 6w | [ ] Phase 8.A 归档 | — |
-| F13 Phase 7.D TCC Bridge | 1-2w | [ ] F6 蓝图升级 (可选, 加速用) | F12a 已满足 |
-| Python Lib Phase 2 (Runner) | 2-3d | [ ] Python Lib P0 完成 | — |
+| F4 Brainstorming (state table) | 2d | [ ] 启动新 brainstorming cycle | 架构重大变更 (Phase 7.C coherence) |
+| F4 Spec 撰写 | 1d | [ ] Brainstorming 完成 | 依赖 F4 brainstorming 产出 |
+| F12b-LD 实施 | 2-3w | [ ] PTX-EMU 团队确认 [ ] CMake PoC [ ] 参考 CUDA 程序选定 | PTX-EMU 侧未对齐 (外部依赖) |
+| Phase 8.C (Task 17-25) | 3w | [ ] Phase 8.B 完成 (Task 16) | 锁 8.B M2 验收 |
+| F13 Phase 7.D TCC Bridge | 1-2w | [ ] F12b-LD TCC 路径确认 [ ] F6 蓝图升级 (可选) | F12a ✅ 已满足基础 |
+| F14 Phase 7.E Multi-CU | 1-2w | [ ] F4 完成 | 锁 coherence |
+| F15 Phase 7.F Full APU Demo | 1w | [ ] F13 + F14 完成 | 锁全链路 |
+| F9 多 xbar | 1-2d | [ ] F4 完成 | 锁 CoherentXBarTLM |
+| Python Lib Phase 2 (Runner) | 2-3d | [ ] Python Lib P0 完成 | 串行依赖 |
 
 ### 🔮 FUTURE (下一阶段)
 
@@ -135,7 +139,8 @@ _无进行中任务_
 
 ### F4 (Phase 7.C)
 - [x] Phase 8.A 已完成归档 (减少并行复杂度)
-- [ ] Brainstorming 完成
+- [x] ADR-SOC-01 coherence 协议策略已确认 (2026-06-14, 无需重新对齐)
+- [ ] Brainstorming 启动 (cycle 已 ready, 无外部阻塞)
 - [ ] Spec 文档已产出
 - [ ] ADR-7C-01 已签发
 

@@ -88,6 +88,18 @@ VIRTUAL_PATHS=(
     "apu_demo_v4.json"
     "apu_full_soc.json"
     "test_apu_soc.py"
+    # Phase 8.B (核心仿真) 规划中文件 — Task 16 才创建 (2026-07-03 roadmap 同步)
+    "docs/soc_arch/modules/gpu-subcore.md"
+    "docs/soc_arch/modules/gpu-warp-scheduler.md"
+    "docs/soc_arch/modules/gpu-scoreboard.md"
+    "docs/soc_arch/modules/gpu-tensor-core.md"
+    "docs/soc_arch/modules/gpu-pipeline.md"
+    "docs/soc_arch/modules/gpu-l2-partition.md"
+    # Phase 8.C (高级特性) 规划中文件 — Task 25 才创建 (2026-07-03 roadmap 同步)
+    "docs/soc_arch/modules/gpu-tcc.md"
+    "docs/soc_arch/modules/gpu-tma.md"
+    "docs/soc_arch/modules/gpu-dsm.md"
+    "docs/soc_arch/modules/gpu-power-model.md"
     # gem5 参考路径（roadmap.md 中引用，但非本仓库文件）
     "configs/example/apu_se.py"
     "configs/example/gpufs/Disjoint_VIPER.py"

@@ -1,6 +1,6 @@
 # Tasks: gpu_soc Phase 8.B — 核心仿真
 
-> **Status**: 🔄 Draft
+> **Status**: 🟢 Ready to Start (Phase 8.A ✅ Archived, `e8280fe`)
 > **Parent**: `proposal.md` + `design.md` (2026-06-24-gpu-soc-phase8b-core)
 
 ## Task 列表

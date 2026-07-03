@@ -557,7 +557,7 @@ time ./build/bin/cpptlm_tests "[gpu][soc][phase8a]" --reporter compact
 - [ ] 性能 1 SM × 1M cycles < 5s
 - [ ] docs_sync_check 0 missing
 - [ ] format check clean
-- [ ] 现有 `[gpu]` (14 cases) + `[phase7]` (1 case) + `[apu_soc]` 全绿（不破坏 apu_soc）
+- [ ] 现有 `[gpu]` (75 cases, Phase 8.A 完成后) + `[phase7]` (1 case) + `[apu_soc]` 全绿（不破坏 apu_soc）
 
 - [ ] **Step 5: Commit**
 

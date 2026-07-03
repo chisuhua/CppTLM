@@ -19,7 +19,7 @@
 | **gpu_soc 架构定义** (2026-06-24) | `801f8ea` `3993129` `3aa810b` `f7e67bc` | ✅ Done | 703/703 (无破坏) |
 | **Phase 8.A 基础设施** | `e8280fe` | ✅ Archived (8 tasks + Oracle + 归档) | 703 → 764/764 (+61) |
 
-**E2E**: `[SUCCESS]` · **Format**: ✅ clean · **docs_sync_check**: ✅ 0 missing · **Origin/main**: 4 commits ahead
+**E2E**: `[SUCCESS]` · **Format**: ✅ clean · **docs_sync_check**: ✅ 0 missing · **Origin/main**: 22 commits ahead
 
 **P0+P1+P1.5+Phase A+gpu_soc 架构定义 合计**: 21 commits, ~2400 LOC 生产代码 + ~5300 LOC 待写（Phase 8）
 
@@ -27,7 +27,7 @@
 ```bash
 ./build/bin/cpptlm_tests --reporter compact
 # 期望: "All tests passed (N assertions in 764 test cases)"
-# 当前 verified: 15547 assertions in 764 test cases (2026-07-02)
+# 当前 verified: 15547 assertions in 764 test cases (2026-07-02, Phase 8.A 完成)
 # 历史基线: 755/755 (2026-06-30, F12a + Phase 8.A Tasks 5-7) · 703/703 (2026-06-23, Phase A 后)
 # 注: AGENTS.md 历史值 "659/659" 已不准确, 本 roadmap 是 single source of truth
 ```
@@ -36,21 +36,29 @@
 
 ## 0.5 依赖图 + 总工期
 
-### 总工期估算 (Phase A + Phase 8.A 已完成, 当前活跃 6 项)
+### 总工期估算 (Phase A + Phase 8.A + F12a 已完成, 当前活跃 12 项)
 
-> **2026-07-02 更新**: Phase 8.A 已归档 (764/764), 当前活跃任务从 7 项减少为 6 项。
+> **2026-07-03 更新**: Phase 8.A 已归档 (764/764), F12a (4 GPU 核心模块) 已通过 Phase 8.A Tasks 5/7 落地。当前活跃任务: **Phase 7 path (4 项) + Phase 8 path (15 项) + Python Lib (2 项) + F12b-LD (1 项) = 12 项**。
+> **注意**: F12 主体已完成, 剩余 F12b (PTX-EMU LD_PRELOAD 集成) 为外部依赖阻塞项。
 
 | 等级 | Task | 工期 (工作日) | 累计 |
 |:---:|------|:---:|:---:|
 | 🔴 | F4 Phase 7.C 6×6 state table | 10 | 10 |
-| 🔴 | F12 Phase 7.B 三类实现 | 10 | 10 (与 F4 并行) |
-| 🟡 | F6 blueprint 升级 | 1.5 | 11.5 |
-| 🟡 | F13 Phase 7.D TCC Bridge | 10 | 21.5 |
-| 🟡 | F14 Phase 7.E Multi-CU+NoC | 7 | 28.5 |
-| 🟢 | F15 Phase 7.F Full APU Demo | 5 | 33.5 |
-| 🟢 | F9 多 xbar 实例 | 1.5 | 35 |
+| 🔴 | Phase 8.B Task 9 (ScoreboardTLM) | 0.5 | 10.5 |
+| 🔴 | Phase 8.B Task 10-14 (5 核心模块) | 5w | — |
+| 🔴 | F12b-LD (PTX-EMU LD_PRELOAD 集成) | 2-3w | 阻塞 |
+| 🟡 | Phase 8.B Task 15 (集成+对照) | 1w | — |
+| 🟡 | Phase 8.B Task 16 (6 docs + M2) | 1w | — |
+| 🟡 | F6 blueprint 升级 | 1.5 | — |
+| 🟡 | F13 Phase 7.D TCC Bridge | 10 | 阻塞 F12b-LD |
+| 🟡 | Python Lib Phase 0 (C++ 统计注册) | 1-2 | — |
+| 🟡 | Python Lib Phase 1 (纯 Python 配置层) | 2-3 | — |
+| 🟢 | Phase 8.C Task 17-25 (4 高级 + 3 Python 子包) | 3w | 锁 8.B |
+| 🟢 | F14 Phase 7.E Multi-CU+NoC | 7 | 锁 F4 + F12b |
+| 🟢 | F15 Phase 7.F Full APU Demo | 5 | 锁 F13 + F14 |
+| 🟢 | F9 多 xbar 实例 | 1.5 | 锁 F4 |
 
-**总工期估算**: ~35 工作日 (~7 周单人, 或 3 周 4 人并行关键路径)
+**总工期估算**: ~50 工作日 (~10 周单人, 或 5 周 4 人并行关键路径)
 
 ### 依赖图 (2026-06-23 重画, Phase A 已落地)
 
@@ -75,7 +83,7 @@
 
 ## 1. 完整待办索引 (P2+)
 
-> **2026-06-23 更新**: Phase A 8 项 (F1/F2/F3/F5/F7/F8/F10/F11) 已落地, 移至 §7。当前活跃 7 项 (F4/F6/F7/F9/F12/F13/F14/F15)。
+> **2026-07-03 更新**: Phase A 8 项 (F1/F2/F3/F5/F7/F8/F10/F11) 已落地, 移至 §7; F12a (4 GPU 核心模块) 已通过 Phase 8.A Tasks 5/7 落地; Phase 8.A 已归档。当前活跃 12 项 (Phase 7 path 4 项 + Phase 8 path 9 任务 + Python Lib 2 项 + F12b-LD 1 项)。
 > **优先级语义**: 🔴 = 最高风险/最高紧迫性 (与 `roadmap.md` Phase 7 风险分级对齐) · 🟡 = 正常推进 · 🟢 = 按需/cosmetic
 > **依赖说明**: 全部依赖均已展开; 隐藏依赖标注在对应 task 详细规范节。
 
@@ -84,20 +92,36 @@
 | # | 任务 | 来源 | 工期 | 难度 | 依赖 |
 |---|------|------|:---:|:---:|:---:|
 | **F4** | **Phase 7.C: CoherentXBarTLM 6×6 state table 改造** (取代 write-through 透传, 引入 MOESIF CoherenceState + 状态机) | ADR-SOC-01 §2 | 1-2 周 | **高** | 无 |
-| **F12** | **Phase 7.B 核心: GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM / MinimalWarpScheduler 四类实现** (F6 蓝图升级 + Phase 8.A Tasks 5/7 双重前置, Option A 扩展; 与 F4 并行) | `roadmap.md` Phase 7.B + ADR-SOC-02/03 + Phase 8.A Task 5/7 依赖门 | **2-3 周** | 高 | 无 |
+| **8.B-T9** | **Phase 8.B Task 9: ScoreboardTLM ≥12 entries** (raw hazard 检测, 13th allocate 失败) | `openspec/changes/2026-06-24-gpu-soc-phase8b-core/` | 0.5d | 中 | Phase 8.A ✅ |
+| **8.B-T10** | **Phase 8.B Task 10: WarpSchedulerTLM CGGTY 5-warp 阈值** (round-robin + priority 队列) | 同上 | 1d | 中 | 8.B-T9 |
+| **8.B-T11** | **Phase 8.B Task 11: PipelineTLM 5+V 抽象** (分数 cycle 查表) | 同上 | 1d | 中 | 8.B-T9 |
+| **8.B-T12** | **Phase 8.B Task 12: TensorCoreTLM 6 精度统一管线** (FP4/FP6/FP8/FP16/BF16/TF32) | 同上 | 1d | 中 | 8.B-T9 |
+| **8.B-T13** | **Phase 8.B Task 13: L2PartitionTLM multi-slice** (近/远分区, per GPC) | 同上 | 0.5d | 中 | 8.B-T9 |
+| **8.B-T14** | **Phase 8.B Task 14: SubCoreTLM black-box pipe 封装** | 同上 | 1d | 中 | 8.B-T10-13 |
+| **F12b** | **F12b-LD: PTX-EMU LD_PRELOAD 集成** (`CppTLMBridge` + `libcpptlm_cudart.so`) | `docs/superpowers/specs/2026-07-01-f12b-ld-ptxemu-collaboration-sync.md` | 2-3w | 中-高 | PTX-EMU 团队对齐 |
 
 ### 1.2 🟡 中优先级 (1-2 月内启动)
 
 | # | 任务 | 来源 | 工期 | 难度 | 依赖 |
 |---|------|------|:---:|:---:|:---:|
-| **F6** | **compute_unit_v1.json 蓝图升级** (Phase 7.B 接入 GpuComputeUnitTLM, 扩 ScalarCache + VectorRegFile + Wavefront) | Handoff PENDING §6 | 1-2 天 | 中-高 | **F12** (而非 F4) |
-| **F13** | **Phase 7.D: TCC Bridge + 内存层次** (DualPortStreamAdapter write coalescing + MemoryTLM hbm_mode) | `roadmap.md` Phase 7.D + ADR-SOC-04 | 1-2 周 | 高 | F12 |
+| **8.B-T15** | **Phase 8.B Task 15: 5 类 microbenchmark + gpgpu-sim 区间对照** (`test_gpu_soc_phase8b.cc` + `test_gpgpu_sim_comparison.py`) | `openspec/changes/2026-06-24-gpu-soc-phase8b-core/` | 1w | 高 | 8.B-T14 |
+| **8.B-T16** | **Phase 8.B Task 16: 6 微架构 doc + M2 性能 + docs_sync** | 同上 | 1w | 中 | 8.B-T15 |
+| **F6** | **compute_unit_v1.json 蓝图升级** (Phase 7.B 接入 GpuComputeUnitTLM, 扩 ScalarCache + VectorRegFile + Wavefront) | Handoff PENDING §6 | 1-2 天 | 中-高 | F12a ✅ (无锁) |
+| **F13** | **Phase 7.D: TCC Bridge + 内存层次** (DualPortStreamAdapter write coalescing + MemoryTLM hbm_mode) | `roadmap.md` Phase 7.D + ADR-SOC-04 | 1-2 周 | 高 | F12a ✅ (基础) + F12b-LD (TCC 路径) |
+| **PyLib-0** | **Python Library Phase 0: C++ 统计注册** (修复 cpptlm.metrics 暴露给 Python) | `docs/superpowers/plans/cpptlm-python-library-plan.md` | 1-2d | 低 | 编译环境 |
+| **PyLib-1** | **Python Library Phase 1: 纯 Python 配置层** (无 C++ 改动) | 同上 | 2-3d | 低 | Python 环境 |
 
 ### 1.3 🟢 低优先级 (按需启动)
 
 | # | 任务 | 来源 | 工期 | 难度 | 依赖 |
 |---|------|------|:---:|:---:|:---:|
-| **F14** | **Phase 7.E: Multi-CU + NoC** (ComputeUnitTLM 数组模式 + BidirectionalPortAdapter + apu_soc_v1 完整 GPU 接入) | `roadmap.md` Phase 7.E | 1-2 周 | 中-高 | F12, F4 |
+| **8.C-T17** | **Phase 8.C Task 17-20: 4 高级模块单元测试** (Tcc/Tma/Dsm/PowerModel) | `openspec/changes/2026-06-24-gpu-soc-phase8c-advanced/` | 2w | 中 | 8.B-T16 |
+| **8.C-T21** | **Phase 8.C Task 21: cpptlm.nvidia 拓扑生成 + 4 SKU 预置** | 同上 | 0.5w | 中 | 8.B-T16 |
+| **8.C-T22** | **Phase 8.C Task 22: cpptlm.gpu_workload + 5 pattern 构造器** | 同上 | 0.5w | 中 | 8.B-T16 |
+| **8.C-T23** | **Phase 8.C Task 23: cpptlm.gpu_soc 顶层 simulate + report** | 同上 | 0.5w | 中 | 8.C-T21/22 |
+| **8.C-T24** | **Phase 8.C Task 24: apu_soc 集成测试 + 完整验证报告** | 同上 | 0.5w | 高 | 8.C-T17-23 |
+| **8.C-T25** | **Phase 8.C Task 25: 4 微架构 doc + roadmap + AGENTS.md 更新** | 同上 | 0.5w | 低 | 8.C-T24 |
+| **F14** | **Phase 7.E: Multi-CU + NoC** (ComputeUnitTLM 数组模式 + BidirectionalPortAdapter + apu_soc_v1 完整 GPU 接入) | `roadmap.md` Phase 7.E | 1-2 周 | 中-高 | F12a ✅ + F4 |
 | **F15** | **Phase 7.F: Full APU SoC Demo** (`apu_full_soc.json` + `test_apu_soc.py` + 222/222 Python 端到端) | `roadmap.md` Phase 7.F | 1 周 | 中 | F13, F14 |
 | **F9** | **多 xbar 实例支持** (当前单 xbar 设计, Phase 7.C+ 多 xbar 场景) | P1 spec §7 风险表 | 1-2 天 | 中 | F4 |
 
@@ -111,36 +135,44 @@
 
 > Phase A 全部 8 项 (F1/F2/F3/F5/F7/F8/F10/F11) 于 2026-06-22 ~ 2026-06-23 期间落地, 8 commits, +13 tests (690 → 703/703)。
 
-### Phase B: 2-3 周架构演进 + 风险任务 (大块工作, 含 F4 + F12 brainstorming)
+### Phase B: 2-3 周架构演进 + 风险任务 (F4 + F6 + F12a 后续 + F12b-LD 阻塞)
 
 ```
-[F12 (10d) ∥ F4 (10d)] → F6 (1.5d) [依赖 F12]
+[F12a ✅ (Phase 8.A 落地) ∥ F4 (10d) ∥ Phase 8.B Task 9-14 (5w)]
    ↓
-[Phase 7.B 核心三类 (CU 蓝图升级前置) + Phase 7.C 6×6 state table + 蓝图升级]
+[F6 (1.5d) 蓝图升级] [PyLib-0 (1-2d)] [PyLib-1 (2-3d)]
+   ↓
+[F12b-LD 阻塞中 (PTX-EMU 团队对齐)]
 ```
 
 | 步骤 | 依赖 | commit pattern |
 |------|------|----------------|
-| F12: Phase 7.B 三类 | 无 (但需新 brainstorming) | `feat(tlm): GpuComputeUnitTLM + VectorRegFileTLM + WavefrontTLM (per ADR-SOC-02/03)` |
-| F4: Phase 7.C state table | 无 (但需新 brainstorming) | `feat(tlm): CoherentXBarTLM 6×6 state table (per ADR-SOC-01)` |
-| F6: blueprint upgrade | F12 (而非 F4) | `feat(templates): upgrade compute_unit_v1.json to GpuComputeUnitTLM (per ADR-SOC-02/03)` |
+| F4: Phase 7.C state table | 无 (但需新 brainstorming cycle) | `feat(tlm): CoherentXBarTLM 6×6 state table (per ADR-SOC-01)` |
+| F6: blueprint upgrade | F12a ✅ (无锁) | `feat(templates): upgrade compute_unit_v1.json to GpuComputeUnitTLM (per ADR-SOC-02/03)` |
+| 8.B-T9-14: Phase 8.B 核心模块 | Phase 8.A ✅ | `feat(tlm/gpu): ScoreboardTLM / WarpScheduler / Pipeline / TensorCore / L2Partition / SubCore` |
+| PyLib-0/1: Python Library | 编译/Python 环境 | `feat(cpptlm): metrics Python exposure + pure-Python config layer` |
+| F12b-LD: PTX-EMU 集成 | 外部 PTX-EMU 团队对齐 | `feat(tlm): CppTLMBridge + libcpptlm_cudart.so` |
 
-**Phase B 总工期**: 2-3 周 (含 F12 + F4 并行), 3 commits, 含 2 个新 brainstorming cycle (F12 + F4)
+**Phase B 总工期**: 2-3 周 (F4 + Phase 8.B Task 9-14 并行), 1 个新 brainstorming cycle (F4)
 
-### Phase C: 2-3 周 Phase 7.D-E 推进
+### Phase C: 2-3 周 Phase 7.D-E 推进 + Phase 8.B 集成对照
 
 ```
-F13 (10d) [依赖 F12] → F14 (7d) [依赖 F12 + F4]
+F13 (10d) [依赖 F12a ✅ + F12b-LD] → F14 (7d) [依赖 F12a ✅ + F4]
    ↓
-[TCC Bridge + 内存层次 + Multi-CU + NoC + BidirectionalPortAdapter]
+8.B-T15 (1w) [依赖 8.B-T14] → 8.B-T16 (1w) [依赖 8.B-T15]
+   ↓
+[TCC Bridge + 内存层次 + Multi-CU + NoC + BidirectionalPortAdapter + gpgpu-sim 对照 + 6 docs]
 ```
 
 | 步骤 | 依赖 | commit pattern |
 |------|------|----------------|
-| F13: Phase 7.D TCC | F12 (CU 类需先实现) | `feat(tlm): TCC Bridge + MemoryTLM hbm_mode (per ADR-SOC-04)` |
-| F14: Phase 7.E Multi-CU | F12 + F4 | `feat(tlm): ComputeUnitTLM 数组模式 + BidirectionalPortAdapter` |
+| F13: Phase 7.D TCC | F12a ✅ (基础) + F12b-LD (TCC 路径) | `feat(tlm): TCC Bridge + MemoryTLM hbm_mode (per ADR-SOC-04)` |
+| F14: Phase 7.E Multi-CU | F12a ✅ + F4 | `feat(tlm): ComputeUnitTLM 数组模式 + BidirectionalPortAdapter` |
+| 8.B-T15: 集成+对照 | 8.B-T14 | `test(gpu_soc): 5 类 microbenchmark + gpgpu-sim ±15% (Phase 8.B Task 15)` |
+| 8.B-T16: 6 docs + M2 | 8.B-T15 | `docs(gpu_soc): 6 microarch docs + M2 perf + docs_sync (Phase 8.B Task 16)` |
 
-**Phase C 总工期**: 2-3 周, 2-3 commits
+**Phase C 总工期**: 2-3 周, 4-5 commits
 
 ### Phase D: 集成演示 + 按需扩展 (Phase 7.F 收官)
 

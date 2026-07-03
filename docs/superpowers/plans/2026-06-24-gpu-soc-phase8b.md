@@ -230,7 +230,7 @@ def test_bandwidth_within_15pct(pattern, factory, baseline):
 - [ ] 性能：1 GB203 (110 SM) × 1M cycles < 60 秒
 - [ ] `docs_sync_check.sh --strict` 0 missing
 - [ ] `format.sh --check` clean
-- [ ] 现有 `[gpu]` (14 cases) + `[phase7]` (1 case) + `[apu_soc]` 全绿（不破坏 apu_soc，Phase 8.A 也不破坏）
+- [ ] 现有 `[gpu]` (75 cases) + `[phase7]` (1 case) + `[apu_soc]` 全绿（不破坏 apu_soc，Phase 8.A 也不破坏）
 
 **Commit**：`docs(gpu_soc): Phase 8.B microarchitecture docs + M2 verification (Task 16)`
 
