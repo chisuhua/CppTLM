@@ -26,7 +26,7 @@ namespace {
             registered = true;
         }
     }
-}  // namespace
+} // namespace
 
 TEST_CASE("GpuMeshNoC_MeshDiagonal_HopsTimesLatency", "[noc][gpu][phase8a]") {
     registerChStreamModules();

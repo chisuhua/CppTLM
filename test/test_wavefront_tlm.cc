@@ -19,7 +19,7 @@ namespace {
             registered = true;
         }
     }
-}
+} // namespace
 
 TEST_CASE("WavefrontTLM.Defaults", "[wavefront][gpu][phase7b]") {
     registerChStreamModules();

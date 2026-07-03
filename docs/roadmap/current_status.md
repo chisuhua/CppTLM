@@ -1,6 +1,6 @@
 # CppTLM 实时状态看板
 
-> **最后更新**: 2026-07-02 · **测试基线**: ✅ 764/764 (15547 assertions) · **GPU**: 75 cases
+> **最后更新**: 2026-07-03 · **测试基线**: ✅ 764/764 (15547 assertions) · **GPU**: 75 cases
 > **Phase 8.A**: ✅ Archived · **配套**: [实施路线图](./README.md)
 
 ---
@@ -84,7 +84,7 @@ _无进行中任务_
 | Phase 8.A T7 (集成测试) | 2026-07-01 | (pending commit) | +[phase8a] |
 | Phase 8.A T8 (5 microarch docs + M1) | 2026-07-02 | `9789ca0` | 5 docs, 755/755, docs_sync 0 missing |
 | Phase 8.A T5-T7 (GpuClusterSharedInterface + GpuSocTLM + integration) | 2026-07-02 | `840ecb7` | +9 cases, 755→764 |
-| **Phase 8.A Oracle Full Review + Archive** | 2026-07-02 | (pending) | APPROVED, no blocking issues |
+| **Phase 8.A Oracle Full Review + Archive** | 2026-07-02 | `e8280fe` | APPROVED, moved to archive/ |
 
 ---
 
@@ -116,30 +116,31 @@ _无进行中任务_
 - [x] T5a-e GpuClusterSharedInterface 全部完成 ✅
 - [x] T6 GpuSocTLM 顶层 + 注册 ✅
 - [x] T7 集成测试 pass ✅
-- [x] `[gpu]` 66 cases / 167 assertions 全绿 ✅
-- [x] `[phase8a]` 34 cases / 82 assertions 全绿 ✅
+- [x] `[gpu]` 75 cases / 197 assertions 全绿 ✅
+- [x] `[phase8a]` 43 cases / 112 assertions 全绿 ✅
 - [x] `docs_sync_check.sh --strict` 0 missing ✅
 - [x] `format.sh --check` clean ✅
-- [x] 全量 755/755 tests pass (15517 assertions) ✅
+- [x] 全量 764/764 tests pass (15547 assertions) ✅
 - [x] M1 性能: full suite < 3s ✅
 - [x] Commit: `9789ca0` ✅
 
-### Phase 8.A Oracle Full Review
-- [ ] Task 8 完成
-- [ ] G2-G6 全部通过
+### Phase 8.A Oracle Full Review ✅ (COMPLETED)
+- [x] Task 8 完成
+- [x] G2-G6 全部通过
+- [x] OpenSpec change 已归档 (`e8280fe`)
 
 ### Phase 8.B
-- [ ] Phase 8.A 已归档 (在 `archive/` 目录)
-- [ ] `[gpu]` 66 cases + apu_soc 兼容测试全绿
+- [x] Phase 8.A 已归档 (在 `archive/` 目录)
+- [x] `[gpu]` 75 cases + apu_soc 兼容测试全绿
 
 ### F4 (Phase 7.C)
-- [ ] Phase 8.A 已完成归档 (减少并行复杂度)
+- [x] Phase 8.A 已完成归档 (减少并行复杂度)
 - [ ] Brainstorming 完成
 - [ ] Spec 文档已产出
 - [ ] ADR-7C-01 已签发
 
 ### F12b-LD
-- [ ] F12a 完成 (✅)
+- [x] F12a 完成 (✅)
 - [ ] PTX-EMU 团队确认 bridge 接口 (`CppTLMBridge`)
 - [ ] CMake `libcpptlm_cudart.so` PoC 验证通过
 - [ ] 参考 CUDA 程序 + 期望输出选定
@@ -147,11 +148,11 @@ _无进行中任务_
 - [ ] PTX-EMU 全局 singleton 处理策略确定
 
 ### F13 Phase 7.D
-- [ ] F12a 完成 (✅)
+- [x] F12a 完成 (✅)
 - [ ] (可选) F6 蓝图升级加速验证
 
 ### F14 Phase 7.E
-- [ ] F12a 完成 (✅)
+- [x] F12a 完成 (✅)
 - [ ] F4 CoherentXBarTLM 完成 (coherence domain 前置)
 
 ### F15 Phase 7.F

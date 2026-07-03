@@ -1,6 +1,6 @@
 # CppTLM 实施路线图
 
-> **版本**: 1.0 · **日期**: 2026-07-02 · **基线**: 755/755 tests (15517 assertions)
+> **版本**: 1.0 · **日期**: 2026-07-03 · **基线**: 764/764 tests (15547 assertions)
 > **配套看板**: [`current_status.md`](./current_status.md) — 实时状态、入口条件、下一步任务
 
 ---
@@ -21,12 +21,11 @@
 │  └── Phase 8.A Task 8 (5 微架构 doc + M1 验收)                            │
 │                                                                         │
 │  活跃 🚀                                                                 │
-│  ├── Phase 8.A Oracle Full Review + Archive                              │
-│  ├── F12b-LD (PTX-EMU 集成, 等 PTX-EMU 侧对齐)                            │
+│  ├── Phase 8.B Task 9: ScoreboardTLM 单元测试                            │
+│  ├── F4 brainstorming (Phase 7.C 6×6 state table)                        │
 │  └── Python Library Phase 0 (C++ 统计注册)                                │
 │                                                                         │
 │  就绪 ⏳ (无阻塞)                                                        │
-│  ├── Phase 8.A Oracle Full Review + Archive                              │
 │  ├── Python Library Phase 1 (纯 Python 配置层)                            │
 │  └── F6 (compute_unit_v1.json 蓝图升级)                                   │
 │                                                                         │
@@ -54,22 +53,24 @@ CppTLM 当前有 **两条并行路线**，共享 F12 产出的 4 个 GPU 核心�
 
 ## 2. 阶段划分
 
-### 第一阶段：解锁期 (当前 ~ 2026-07 中旬)
+### 第一阶段：解锁期 (已完成)
 
 > **目标**: 完成 Phase 8.A 全部 gates，为 8.B 和 F4 铺路
+> **状态**: ✅ 全部完成
 
 | 序号 | 任务 | 工期 | 依赖 | 状态 |
 |:---:|------|:---:|------|:---:|
 | 1.1 | Phase 8.A Task 8 (doc + M1) | 0.5d | 8.A T1-7 ✅ | ✅ |
-| 1.2 | Phase 8.A Oracle Full Review | 0.1d | 1.1 | 🚀 |
-| 1.3 | Phase 8.A Archive | 0.1d | 1.2 | ⏳ |
+| 1.2 | Phase 8.A Oracle Full Review | 0.1d | 1.1 | ✅ |
+| 1.3 | Phase 8.A Archive | 0.1d | 1.2 | ✅ |
 | 1.4 | Python Lib Phase 0 (Stats) | 1-2d | 无 | ⏳ |
 
 **入口条件** (1.2):
 - [x] T1-7 全部 commit 已落地
-- [x] `[phase8a]` 34 cases pass
+- [x] `[phase8a]` 43 cases pass
 - [x] F12 Gate cleared (4 类已实现)
-- [x] Task 8 完成 (5 docs, docs_sync 0 missing, format clean, 755/755 pass)
+- [x] Task 8 完成 (5 docs, docs_sync 0 missing, format clean, 764/764 pass)
+- [x] OpenSpec change 已归档 (`e8280fe`)
 
 ### 第二阶段：核心推进期 (~2-4 周)
 
@@ -84,7 +85,7 @@ CppTLM 当前有 **两条并行路线**，共享 F12 产出的 4 个 GPU 核心�
 | 2.5 | Python Lib Phase 1 | 2-3d | 无 (纯 Python) | ⏳ |
 
 **入口条件** (2.1):
-- [ ] Phase 8.A 已完成归档 (1.3)
+- [x] Phase 8.A 已完成归档 (1.3)
 - [ ] 与 ADR-SOC-01 重新对齐确认
 
 ### 第三阶段：GPU 仿真深化期 (~6 周)
@@ -99,8 +100,8 @@ CppTLM 当前有 **两条并行路线**，共享 F12 产出的 4 个 GPU 核心�
 | 3.4 | F13 Phase 7.D TCC Bridge | 1-2w | F12a ✅ | 🔮 |
 
 **入口条件** (3.1):
-- [ ] Phase 8.A 已归档
-- [ ] `[gpu]` 66 cases + `[phase7]` + `[apu_soc]` 全绿
+- [x] Phase 8.A 已归档
+- [x] `[gpu]` 75 cases + `[phase7]` + `[apu_soc]` 全绿
 
 ### 第四阶段：集成收官期 (~5 周)
 
@@ -126,10 +127,10 @@ CppTLM 当前有 **两条并行路线**，共享 F12 产出的 4 个 GPU 核心�
 
 ```
                       F12a ✅ ────┬──→ F6 ──→ F13 ──┬──→ F14 ──→ F15
-                      (755/755)   │                    │
+                      (764/764)   │                    │
                                   │                    └──→ F9
                                   │
-Phase 8.A T1-7 ✅ ──→ 8.A T8 ──→ 8.A Oracle/Archive ──→ 8.B ──→ 8.C
+Phase 8.A ✅ ───────────────────────────→ 8.B ──→ 8.C
                                   │
                                   ├────────────────────────────────────────┐
                                   │                                        │

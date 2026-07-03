@@ -28,7 +28,7 @@ namespace {
         }
     }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("SharedMemoryTLM.BankConflict_FourWay_ReturnsFourCycles", "[smem][gpu][phase8a]") {
     registerChStreamModules();

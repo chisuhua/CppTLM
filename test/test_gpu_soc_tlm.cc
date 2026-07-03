@@ -3,15 +3,15 @@
 // 验证 GpuSocTLM 构造 + 4 个 setter/getter + tick() 推进子模块
 // 作者: CppTLM Team / 日期: 2026-07-02
 // Phase 8.A Task 6
-#include "tlm/gpu/gpu_soc_tlm.hh"
-#include "tlm/cluster/gpu_cluster.hh"
-#include "tlm/gpu/gpu_mesh_noc_tlm.hh"
-#include "tlm/gpu/memory_cluster_tlm.hh"
-#include "tlm/gpu/kernel_launch_tlm.hh"
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "modules.hh"
+#include "tlm/cluster/gpu_cluster.hh"
+#include "tlm/gpu/gpu_mesh_noc_tlm.hh"
+#include "tlm/gpu/gpu_soc_tlm.hh"
+#include "tlm/gpu/kernel_launch_tlm.hh"
+#include "tlm/gpu/memory_cluster_tlm.hh"
 #include <catch2/catch_all.hpp>
 
 using namespace tlm;
@@ -26,7 +26,7 @@ namespace {
             done = true;
         }
     }
-}
+} // namespace
 
 TEST_CASE("GpuSocTLM.ConstructorDefaults", "[gpu][soc][phase8a]") {
     registerModules();
