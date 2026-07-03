@@ -112,7 +112,7 @@ plans/           # 实施计划: phase7-completion / p0-alignment-remediation / 
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# C++ 测试 (Catch2, 94 文件 / 703 用例) — 2026-06-23 同步自 roadmap §0
+# C++ 测试 (Catch2, 94 文件 / 764 用例) — 2026-07-03 同步自 roadmap §0
 ./build/bin/cpptlm_tests                    # 全部
 ./build/bin/cpptlm_tests "[chstream]"       # Stream 相关 (84 用例)
 ./build/bin/cpptlm_tests "[phase6]"         # Phase 6 集成
@@ -184,7 +184,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
-- **测试状态**: **703/703 pass**（2026-06-23，94 个 test_*.cc，15389 assertions）+ **222/222 Python** pass · Single source of truth: `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` §0
+- **测试状态**: **764/764 pass**（2026-07-03，94 个 test_*.cc，15547 assertions）+ **222/222 Python** pass · Single source of truth: `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` §0
 
 ## 归档索引（docs-archived/）
 
