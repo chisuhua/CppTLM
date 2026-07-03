@@ -1,3 +1,0 @@
-=== Task4 QA Results ===
-[OK] scripts/__pycache__/linter.cpython-312.pyc deleted
-[OK] Other .pyc files preserved: $(ls scripts/__pycache__/ | wc -l) files remain

@@ -1,2 +1,0 @@
-ERROR: cpptlm_sim binary not found at ./build/bin/cpptlm_sim
-Build with: cmake --build build -j$(nproc)
