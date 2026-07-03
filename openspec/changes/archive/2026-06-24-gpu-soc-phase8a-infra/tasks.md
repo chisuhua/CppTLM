@@ -18,7 +18,9 @@
 - [x] **Task 5e**: `test_gpu_cluster_shared.cc` + apu_soc regression + commit  — **F12a unblocked**
 - [x] **Task 6**: GpuSocTLM 顶层 + REGISTER_MODULE + 单元测试 + commit  — **F12a unblocked**
 - [x] **Task 7**: 集成测试 + JSON 配置 (gb203_v1.json) + 端到端验证 + commit  — **F12a unblocked**
-- [ ] **Task 8**: 5 个微架构 doc + 性能验收 (1 SM × 1M < 5s) + docs_sync + commit
+- [x] **Task 9 (Oracle Full Review)**: ✅ APPROVED 2026-07-02 (no blocking issues)
+- [ ] **Task 10 (Archive)**: ✅ Archived 2026-07-02
+- [ ] **Task 8**: 5 个微架构 doc + 性能验收 (1 SM × 1M < 5s) + docs_sync + commit → ✅ `9789ca0`
 
 ## 2. 验收点 (Acceptance Gates)
 
