@@ -21,18 +21,19 @@
 │  └── Phase 8.A Task 8 (5 微架构 doc + M1 验收)                            │
 │                                                                         │
 │  活跃 🚀                                                                 │
-│  ├── Phase 8.B Task 9: ScoreboardTLM 单元测试                            │
+│  ├── Phase 8.B Task 9-14: 6 核心模块单元测试 (Scoreboard→SubCore)          │
 │  ├── F4 brainstorming (Phase 7.C 6×6 state table)                        │
 │  └── Python Library Phase 0 (C++ 统计注册)                                │
 │                                                                         │
 │  就绪 ⏳ (无阻塞)                                                        │
+│  ├── Phase 8.B Task 15-16 (5 类 microbenchmark + 6 docs + M2)              │
 │  ├── Python Library Phase 1 (纯 Python 配置层)                            │
 │  └── F6 (compute_unit_v1.json 蓝图升级)                                   │
 │                                                                         │
 │  下一阶段 🔮                                                              │
-│  ├── F4 (Phase 7.C: CoherentXBarTLM 6×6 state table)                    │
-│  ├── Phase 8.B (6 核心模块: Scoreboard→SubCore)                           │
-│  ├── F13 (Phase 7.D: TCC Bridge + 内存层次)                               │
+│  ├── F4 Spec + ADR-7C-01 (lock 8.B 完成后启动)                            │
+│  ├── Phase 8.C (4 高级模块 + 3 Python 子包)                               │
+│  ├── F13 (Phase 7.D: TCC Bridge + 内存层次, lock F12b-LD)                 │
 │  └── F14/F15/F9 (集成 + Demo + 多 xbar)                                  │
 │                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -74,33 +75,38 @@ CppTLM 当前有 **两条并行路线**，共享 F12 产出的 4 个 GPU 核心�
 
 ### 第二阶段：核心推进期 (~2-4 周)
 
-> **目标**: 双线并行 — F4 (coherence) + Python Lib + F12b-LD 前置
+> **目标**: 双线并行 — Phase 8.B Task 9-14 + F4 (coherence) + Python Lib + F12b-LD 前置
 
 | 序号 | 任务 | 工期 | 依赖 | 状态 |
 |:---:|------|:---:|------|:---:|
-| 2.1 | F4 Brainstorming (6×6 state table) | 2d | 无 | 🔴 待启动 |
-| 2.2 | F4 Spec 撰写 | 1d | 2.1 | 🔴 待启动 |
-| 2.3 | F4 ADR-7C-01 签发 | 0.5d | 2.2 | 🔴 待启动 |
-| 2.4 | F6 蓝图升级 | 1-2d | F12a ✅ | ⏳ |
-| 2.5 | Python Lib Phase 1 | 2-3d | 无 (纯 Python) | ⏳ |
+| 2.1 | Phase 8.B Task 9 (ScoreboardTLM ≥12 entries) | 0.5d | Phase 8.A ✅ | ⏳ |
+| 2.2 | Phase 8.B Task 10-13 (WarpScheduler/Pipeline/TC/L2) | 4d | 8.A ✅ | ⏳ |
+| 2.3 | Phase 8.B Task 14 (SubCoreTLM black-box pipe) | 1d | 2.2 | ⏳ |
+| 2.4 | F4 Brainstorming (6×6 state table) | 2d | 无 | ⏳ |
+| 2.5 | F4 Spec 撰写 | 1d | 2.4 | 🔴 待启动 |
+| 2.6 | F4 ADR-7C-01 签发 | 0.5d | 2.5 | 🔴 待启动 |
+| 2.7 | F6 蓝图升级 | 1-2d | F12a ✅ | ⏳ |
+| 2.8 | Python Lib Phase 0 (C++ 统计注册) | 1-2d | 编译环境 | ⏳ |
+| 2.9 | Python Lib Phase 1 (纯 Python 配置层) | 2-3d | 无 (纯 Python) | ⏳ |
 
 **入口条件** (2.1):
 - [x] Phase 8.A 已完成归档 (1.3)
-- [ ] 与 ADR-SOC-01 重新对齐确认
+- [x] ADR-SOC-01 coherence 协议策略已确认 (2026-06-14, 无需重新对齐)
 
 ### 第三阶段：GPU 仿真深化期 (~6 周)
 
-> **目标**: 并行推进 8.B 核心模块 + F13 TCC Bridge
+> **目标**: 并行推进 Phase 8.B 集成+对照 + F13 TCC Bridge
 
 | 序号 | 任务 | 工期 | 依赖 | 状态 |
 |:---:|------|:---:|------|:---:|
-| 3.1 | Phase 8.B Task 9-14 (6 核心) | 5.5w | 8.A Done | 🔮 |
-| 3.2 | Phase 8.B Task 15-16 (集成+doc) | 1w | 3.1 | 🔮 |
+| 3.1 | Phase 8.B Task 15 (5 类 microbenchmark + gpgpu-sim 区间对照) | 1w | 8.B-T14 | ⏳ |
+| 3.2 | Phase 8.B Task 16 (6 docs + M2 性能 + docs_sync) | 1w | 3.1 | ⏳ |
 | 3.3 | Phase 8.B Oracle + Archive | 0.2w | 3.2 | 🔮 |
-| 3.4 | F13 Phase 7.D TCC Bridge | 1-2w | F12a ✅ | 🔮 |
+| 3.4 | F13 Phase 7.D TCC Bridge | 1-2w | F12a ✅ + F12b-LD | 🔮 (lock F12b-LD) |
 
 **入口条件** (3.1):
 - [x] Phase 8.A 已归档
+- [x] Phase 8.B Task 9-14 已完成
 - [x] `[gpu]` 75 cases + `[phase7]` + `[apu_soc]` 全绿
 
 ### 第四阶段：集成收官期 (~5 周)
@@ -148,7 +154,7 @@ F4 (7.C) ←→ 与 F12 并行 ←→ 与 Phase 8.A/B 无关 ←→ 独立推进
 | 决策 | 状态 | 触发条件 | 阻塞 |
 |------|:---:|---------|:---:|
 | PTX-EMU 团队对齐 F12b-LD | ❌ 待确认 | `CppTLMBridge` 接口 + `libcpptlm_cudart.so` CMake | F12b 实施 |
-| F4 6×6 state table 方案 | ❌ 待 brainstorming | 需与 ADR-SOC-01 重新对齐 | F4 实施 |
+| F4 6×6 state table 方案 | 🟡 新 brainstorming cycle 启动 | ADR-SOC-01 已确认 (无需重新对齐)，启动新 cycle 即可 | F4 实施 |
 | Python 包结构统一 | ⚠️ 待解决 | Python Lib Plan 与 Phase 8.C 包冲突 | 两方可并行，合并前解决 |
 
 ---

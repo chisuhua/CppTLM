@@ -1,8 +1,8 @@
 # OpenSpec Change: gpu_soc Phase 8.B — 核心仿真
 
 > **Change ID**: `2026-06-24-gpu-soc-phase8b-core`
-> **Status**: 🔄 Draft（待 Phase 8.A 完成后启动）
-> **Date**: 2026-06-24
+> **Status**: 🟢 Ready to Start (Phase 8.A 已归档 `e8280fe`，前置已满足)
+> **Date**: 2026-06-24 (refreshed 2026-07-03)
 > **Author**: Sisyphus
 > **Target Release**: Phase 8.B end (~6 weeks)
 > **Depends on**: `2026-06-24-gpu-soc-phase8a-infra`（M1 必须先完成）
