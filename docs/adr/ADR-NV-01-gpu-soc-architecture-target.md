@@ -203,8 +203,32 @@ docs/adr/ADR-NV-01-...       # 本文档
 
 ---
 
-**关联 OpenSpec 变更**（待创建）：
-- `openspec/changes/2026-06-24-gpu-soc-architecture/proposal.md`（与本 ADR 同步）
+**关联 OpenSpec 变更**：
+- `openspec/changes/2026-06-24-gpu-soc-phase8a-infra/` — ✅ Archived (2026-07-02, commit `e8280fe`)
+- `openspec/changes/2026-06-24-gpu-soc-phase8b-core/` — 🟢 Ready to Start (前置 8.A 已完成)
+- `openspec/changes/2026-06-24-gpu-soc-phase8c-advanced/` — 🔄 Draft (依赖 8.B M2 验收)
+
+## Status Update
+
+### 2026-07-03 — Phase 8.A 已归档，Phase 8.B 启动 (refresh)
+
+- **触发事件**: Phase 8.A 8 个任务 + Oracle 审查 + OpenSpec 归档全部完成 (commit `e8280fe` 2026-07-02)
+- **基线影响**: 测试基线 703 → **764/764** (+61 tests)，`[gpu]` 14 → **75 cases**, `[phase8a]` 43 cases 全绿
+- **架构影响**: 本 ADR 的 8 项核心决策 (D1-D8) 通过 Phase 8.A 实施验证：
+  - **D1** 共享 GpuCluster 子模块 ✅ (GpuClusterSharedInterface 落地，apu_soc 兼容)
+  - **D2** 工业性能建模 (phase-accurate, sub-core black-box) ✅ (M1 验收：1 SM × 1M < 5s)
+  - **D3** SKU 范围参数化 ✅ (4 阶段集成测试通过)
+  - **D4** 工作负载模型 ✅ (KernelLaunchTLM 落地)
+  - **D5** gpgpu-sim 验证基线 ⏳ (留待 Phase 8.B Task 15 区间对照)
+  - **D6** 时间线 13 周 ⏳ (8.A 4w ✅，8.B 6w 🟢，8.C 3w 🔄)
+  - **D7** 3 阶段渐进 ✅ (8.A 已完成)
+  - **D8** Phase-accurate 抽象层级 ✅ (M1 sub-core black-box 输出分数 cycle)
+- **下一步行动**:
+  - Phase 8.B Task 9 (ScoreboardTLM ≥12 entries) 启动 — 0.5d
+  - Phase 8.B Task 10-14 (5 核心模块) 并行 — 4d
+  - F4 (Phase 7.C 6×6 state table) brainstorming 启动 — 2d
+  - F12b-LD (PTX-EMU 集成) 仍待外部团队对齐
+- **关联文档**: [`docs/roadmap/`](../../roadmap/) (实时看板), [`docs/superpowers/plans/2026-06-20-future-work-roadmap.md`](../../superpowers/plans/2026-06-20-future-work-roadmap.md) (single source of truth)
 
 **维护**: CppTLM 开发团队
-**下次 review**: 与 Phase 8.A 完成同步
+**下次 review**: Phase 8.B Task 9-14 完成后 (预计 2026-07-10)
