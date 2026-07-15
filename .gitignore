@@ -57,3 +57,6 @@ openspec/changes/archive/
 .code-review-graph/
 # Added by understand-anything tool
 .understand-anything/
+
+# Phase 0.5 baseline worktrees (isolated workspace per .opencode/skills/using-git-worktrees)
+.worktrees/
