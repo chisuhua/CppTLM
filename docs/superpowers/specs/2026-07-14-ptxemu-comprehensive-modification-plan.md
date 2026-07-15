@@ -109,18 +109,20 @@ CppTLM 是唯一时钟真相源（主动驱动方）:
 
 ### §2.0 F12b-LD 前置条件确认（来自原 F12+PTX-EMU Integration Plan §11）
 
+> **修订说明（2026-07-15）**：HSK-1/HSK-2 已就绪后同步更新状态：Item 3/7/10 由"待确认"升级为"已满足"。
+
 | # | 决策项 | 状态 | 证据/备注 |
 |---|--------|:----:|----------|
 | 1 | F12a 完成 + Phase 8.A 集成测试稳定 | ✅ 已满足 | ADR-NV-02 §1.2；NV-01 Status Update 2026-07-03（`e8280fe`） |
 | 2 | PTX-EMU 集成 OpenSpec change 审批 | 🗑️ 已 superseded | 原拟创建 `2026-06-xx-ptxemu-integration-strategy`，未执行。本文档替代其角色 |
-| 3 | PTX-EMU 版本/commit + ANTLR4 构建依赖锁定 | ❌ 待确认 | 需在 Task #5 CMake 片段中追加 `CPPTLM_PTXEMU_VERSION` 约束 |
+| 3 | PTX-EMU 版本/commit + ANTLR4 构建依赖锁定 | ✅ 已满足 | **HSK-1 commit `8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d`** + **HSK-2 ANTLR4 4.13.2**（PTX-EMU commit `9be56f8f` 锁定）|
 | 4 | PTX-EMU 团队确认接口变更并承诺版本稳定 | ✅ 已满足 | ADR-NV-02 §5 R4 风险消除；Status Update 2026-07-14 |
 | 5 | `libcpptlm_cudart.so` CMake 集成方式经编译验证 | ⚠️ 已设计未验证 | Task #5 已有 cmake 草案，0.5 day 实施时完成验证 |
 | 6 | 参考 CUDA 程序 + 预期输出 + 正确性验证方法确定 | ✅ 已满足 | §5.1 5 类场景 + gpgpu-sim baseline + `test_gpgpu_sim_comparison.py` |
-| 7 | 合成内存流量烟雾测试（先于完整 CUDA kernel 测试） | ❌ 待确认 | 尚需双方团队协商：是否增设 G-F0 验收标准，或明确取消此要求 |
+| 7 | 合成内存流量烟雾测试（先于完整 CUDA kernel 测试） | ✅ 已满足 | **G-F0 `vector_add` 烟雾测试已加入 §5.1**（Output 逐元素 + 延迟 ≤ 2× baseline，先于 G-F1~G-F4 验证）|
 | 8 | 性能验证方案（vs standalone PTX-EMU baseline） | ✅ 已满足 | §5 ±15% + openspec G5 ±10% 双轨对照 |
 | 9 | PTX-EMU 全局单例处理策略确定并验证 | ⚠️ 已决策未编码 | 协作规约 §10.1 方案已设计；`SingletonGuard` 实现归入 Task #3/#5 |
-| 10 | Top 3 hidden risks 缓解方案文档化并审查 | ❌ 待澄清 | 需在 ADR-NV-02 §5 补全 R7（静默数据损坏）和 R8（性能有效性幻觉）。参见原 Integration Plan §10 Risk #7/#8 |
+| 10 | Top 3 hidden risks 缓解方案文档化并审查 | ✅ 已满足 | **ADR-NV-02 §5.2 R9（静默数据损坏）+ 原始 R7/R8 继承关系注释**（已 commit `e749d41`）|
 
 ### §2.1 PTX-EMU 端改造任务
 
