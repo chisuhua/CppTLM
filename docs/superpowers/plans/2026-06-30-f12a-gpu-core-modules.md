@@ -1,5 +1,11 @@
 # F12a Implementation Plan: Standalone GPU Core Modules
 
+> **✅ COMPLETED 2026-07-03**: F12a 已实施完成（4 个独立 GPU 核心模块：GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM / MinimalWarpSchedulerTLM）。所有 Catch2 测试通过，apu_soc 兼容。
+> 后续 F12b-LD + D1-Full 集成请参考：
+> - **`docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md`** — 综合任务计划
+> - **`docs/superpowers/plans/2026-06-24-gpu-soc-phase8b.md`** — Phase 8.B D1-Full 实施计划（含 Task 15a Adapter 层）
+> 本文档保留作为 F12a 实施历史参考。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Implement four standalone GPU core modules (`GpuComputeUnitTLM`, `VectorRegFileTLM`, `WavefrontTLM`, `MinimalWarpSchedulerTLM`) to unblock Phase 8.A Tasks 5-7.
@@ -1166,7 +1172,7 @@ git commit -m "style(gpu): clang-format F12a modules and tests"
 Modify `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` §F12 to reflect:
 - F12a completed (standalone 4 classes)
 - F12b-LD now targets PTX-EMU LD_PRELOAD integration
-- Link to design doc `docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md`
+- Link to design doc `docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md`
 
 - [ ] **Step 2: Update Phase 8.A tasks.md**
 

@@ -77,6 +77,10 @@ VIRTUAL_PATHS=(
     "ext/payload_to_packet.hh"
     "modules_v2.hh"
     "docs/superpowers/plans/2026-06-11-phase7a-gpu-infra.md"  # 2026-06-22 归档到 docs-archived/superpowers/plans/；docs/soc_arch/modules/*.md 引用旧路径
+    "docs/soc_arch/modules/gpu-kernellaunch.md"  # 2026-07-14 删除（旧版 pending doc），由 gpu-kernel-launch.md（Phase 8.A 已实施版）取代；docs/soc_arch/modules/README.md 等 6 个文件历史引用保留
+    "docs/superpowers/specs/2026-07-03-ptxemu-modification-task.md"  # 2026-07-14 删除（被 comprehensive-plan.md §3 吸收）
+    "docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md"  # 2026-07-14 删除（设计被 comprehensive-plan.md §2.2/§3 吸收并扩展）
+    "docs/superpowers/plans/f12-ptxemu-ldpreload-integration.md"  # 2026-07-14 删除（计划被 comprehensive-plan.md §4 取代）
     # Phase 7.B-F (GPU APU Fused SoC) 规划中文件（roadmap.md 2026-06-11；7.A 已落地 2026-06-11）
     "compute_unit_tlm.hh"
     "tcc_tlm.hh"

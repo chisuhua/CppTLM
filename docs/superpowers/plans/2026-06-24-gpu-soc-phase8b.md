@@ -1,10 +1,18 @@
-# gpu_soc Phase 8.B Implementation Plan
+# gpu_soc Phase 8.B Implementation Plan (D1-Full)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Revision**: 2026-07-14 — D1-Full 策略升级（ADR-NV-02 Status Update）
 
-**Goal:** 实施 `openspec/changes/2026-06-24-gpu-soc-phase8b-core` change —— 6 个核心模块（Scoreboard / WarpScheduler / Pipeline / TensorCore / L2Partition / SubCore）+ 5 类 microbenchmark + gpgpu-sim 区间对照；M2 验收（带宽 ±15%, 1 GB203 × 1M < 60s）。
+**Goal:** 实施 `openspec/changes/2026-06-24-gpu-soc-phase8b-core` change —— 6 个核心模块（Scoreboard / WarpScheduler / Pipeline / TensorCore / L2Partition / SubCore）+ 4 个 Adapter + 5 类 microbenchmark + gpgpu-sim 区间对照；M2 验收（带宽 ±15%, 1 GB203 × 1M < 60s）。
 
 **Architecture:** Phase-accurate sub-core 仿真。SM 内部从 black-box（8.A）升级到 4 级层次（SubCore → 4 WarpScheduler + Scoreboard + Pipeline + TensorCore）。L2PartitionTLM 挂在 GpuCluster per GPC。CGGTY 5-warp 阈值（按 SM_120 paper Fig. 10）+ 6 精度 TC 统一管线（29/23 cyc）。
+
+**D1-Full 策略**：6 个核心模块同时支持**两种模式**：
+- **独立模式**（Phase A）：CppTLM 内部 `uint32_t` 接口，合成 workload 验证逻辑
+- **D1-Full 注入模式**（Phase B）：通过 `tlm::I*Internal` 接口 + 4 个 Adapter 桥接到 PTX-EMU 的 `IScoreboard` / `IPipelineLatencyProvider` / `ITensorCoreTiming` / `WarpScheduler` 纯虚接口
+
+**关联 ADR**: `docs/adr/ADR-NV-02-phase8b-d1-strategy.md`（2026-07-14 Status Update: D1-Lite → D1-Full）
+**PTX-EMU 改造综合任务书**: `docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md`
 
 **Tech Stack:**
 - C++17（CppTLM 核心）
@@ -16,7 +24,7 @@
 
 ## File Structure (新增/修改)
 
-### 新增头文件（6 个 + 2 个 bundle = 8 个）
+### 新增头文件（6 个 + 2 个 bundle + 4 个 internal 接口 + 4 个 Adapter = 16 个）
 ```
 include/tlm/gpu/
 ├── scoreboard_tlm.hh           (Task 9)
@@ -24,7 +32,14 @@ include/tlm/gpu/
 ├── pipeline_tlm.hh             (Task 11)
 ├── tensor_core_tlm.hh          (Task 12)
 ├── l2_partition_tlm.hh         (Task 13)
-└── subcore_tlm.hh              (Task 14)
+├── subcore_tlm.hh              (Task 14)
+├── iscoreboard_internal.hh     (Task 9 — D1-Full 内部接口)
+├── ipipeline_internal.hh       (Task 11 — D1-Full 内部接口)
+├── itensorcore_internal.hh     (Task 12 — D1-Full 内部接口)
+├── scoreboard_adapter.hh       (Task 15a — D1-Full Adapter)
+├── pipeline_adapter.hh         (Task 15a — D1-Full Adapter)
+├── tensorcore_adapter.hh       (Task 15a — D1-Full Adapter)
+└── warp_scheduler_adapter.hh   (Task 15a — D1-Full Adapter)
 include/bundles/
 ├── warp_state_bundle.hh        (Task 9)
 └── tensor_core_bundle.hh       (Task 12)
@@ -61,20 +76,33 @@ include/tlm/cluster/gpu_cluster.hh                        (集成 L2PartitionTLM
 
 ---
 
-## 实施任务（8 个 + 2 个验收节点 = 10 个任务）
+## 实施任务（9 个 + 2 个验收节点 = 11 个任务）
 
 > **TDD 模式说明**：完整 TDD 代码见主 plan `docs/superpowers/plans/2026-06-24-gpu-soc-roadmap.md` Phase 8.B 节。本 plan 列出**文件、关键 API、commit 消息**。
 
 ### Task 9: ScoreboardTLM ≥12 entries 单元测试
 
-**关键 API**：
+**关键 API**（独立模式 + D1-Full 内部接口）：
 ```cpp
+// 独立模式接口 (CppTLM 内部 uint32_t)
 class ScoreboardTLM : public ChStreamModuleBase {
     ScoreboardTLM(const std::string& name, EventQueue* eq, uint32_t entries = 12);
     bool has_free_entry() const;
     bool allocate(uint32_t sb_id);
     bool release(uint32_t sb_id);
+    void tick();
 };
+
+// D1-Full 内部接口 (桥接到 PTX-EMU IScoreboard)
+class tlm::IScoreboardInternal {
+public:
+    virtual ~IScoreboardInternal() = default;
+    virtual bool has_free_entry() const = 0;
+    virtual bool allocate(uint32_t reg_id, uint32_t warp_id) = 0;  // 双参数 match PTX-EMU
+    virtual bool release(uint32_t reg_id, uint32_t warp_id) = 0;
+    virtual void tick() = 0;
+};
+// ScoreboardTLM : public IScoreboardInternal
 // 12 个 allocate 全成功，第 13 个 allocate 失败
 ```
 
@@ -94,6 +122,8 @@ class WarpSchedulerTLM : public ChStreamModuleBase {
 };
 // active_warps < 5 → dep_chain_cyc; >= 5 → dep_chain_cyc / 6
 ```
+> **D1-Full**: `WarpSchedulerTLM` 本身保留 `uint32_t` 接口；Task 15a 的 `CppTLMWarpSchedulerAdapter : public ptxsim::WarpScheduler` 负责 `WarpContext* ↔ uint32_t` 映射。
+```
 
 **验收**：`./build/bin/cpptlm_tests "[gpu][sched]"` PASS (4 warps/268cyc=268, 5 warps/268cyc=44)
 
@@ -103,14 +133,26 @@ class WarpSchedulerTLM : public ChStreamModuleBase {
 
 ### Task 11: PipelineTLM 5+V 抽象 + 分数 cycle
 
-**关键 API**：
+**关键 API**（独立模式 + D1-Full 内部接口）：
 ```cpp
 enum class PipelineId { P0_INT_FP32, V_SIMD, P1_FP64, P2_SFU, P3_LSU, P4_TC };
 
+// 独立模式接口
 class PipelineTLM : public ChStreamModuleBase {
     PipelineTLM(const std::string& name, EventQueue* eq);
     double execute(const std::string& instruction, PipelineId pipe);
 };
+
+// D1-Full 内部接口 (桥接到 PTX-EMU IPipelineLatencyProvider)
+class tlm::IPipelineLatencyInternal {
+public:
+    virtual ~IPipelineLatencyInternal() = default;
+    virtual double get_fractional_cycles(
+        const std::string& instruction, tlm::PipelineId pipe_id) const = 0;
+    virtual double get_fractional_cycles_by_type(
+        int statement_type, tlm::PipelineId pipe_id) const = 0;
+};
+// PipelineTLM : public IPipelineLatencyInternal
 // 查表: IADD3=2.22, FFMA=4.22, VIADD.U8x4=4.0, DFMA=64.13, MUFU.RCP=44.28, LDG=30, HMMA=29
 ```
 
@@ -122,15 +164,25 @@ class PipelineTLM : public ChStreamModuleBase {
 
 ### Task 12: TensorCoreTLM 6 精度统一管线
 
-**关键 API**：
+**关键 API**（独立模式 + D1-Full 内部接口）：
 ```cpp
 enum class TcPrecision { FP4, FP6, FP8, FP16, BF16, TF32 };
 
+// 独立模式接口
 class TensorCoreTLM : public ChStreamModuleBase {
     TensorCoreTLM(const std::string& name, EventQueue* eq);
     uint32_t latency(TcPrecision) const { return 29; }  // 12 精度统一
     uint32_t throughput_cyc(TcPrecision) const { return 23; }
 };
+
+// D1-Full 内部接口 (桥接到 PTX-EMU ITensorCoreTiming)
+class tlm::ITensorCoreTimingInternal {
+public:
+    virtual ~ITensorCoreTimingInternal() = default;
+    virtual uint32_t get_latency(tlm::TcPrecision prec) const = 0;
+    virtual uint32_t get_throughput_cycles(tlm::TcPrecision prec) const = 0;
+};
+// TensorCoreTLM : public ITensorCoreTimingInternal
 ```
 
 **验收**：`./build/bin/cpptlm_tests "[gpu][tc]"` PASS（6 精度都返回 29/23）
@@ -157,7 +209,7 @@ class L2PartitionTLM : public ChStreamModuleBase {
 
 ---
 
-### Task 14: SubCoreTLM black-box pipe 封装
+### Task 14: SubCoreTLM black-box pipe 封装（双模式）
 
 **关键 API**：
 ```cpp
@@ -165,14 +217,73 @@ class SubCoreTLM : public ChStreamModuleBase {
     SubCoreTLM(const std::string& name, EventQueue* eq, uint32_t num_warps = 32);
     void tick() override;
     uint64_t get_current_cycle() const;
+
+    // D1-Full 注入模式 (Phase B: F12b-LD 后)
+    #ifdef HAS_PTXEMU
+    void set_sm_context(ptxsim::SMContext* sm_ctx);
+    void set_scoreboard(IScoreboard* sb);
+    void set_pipeline_latency_provider(IPipelineLatencyProvider* p);
+    void set_tensor_core_timing(ITensorCoreTiming* tc);
+    #endif
 };
-// 内部: 4×WarpScheduler + 1×Scoreboard + 1×Pipeline + 1×TensorCore
-// 对外: black-box，分数 cycle 输出
+// 独立模式: 内部 4×WarpScheduler + 1×Scoreboard + 1×Pipeline + 1×TC, 合成 workload
+// D1-Full 模式 (sm_ctx_ != nullptr): 通过 4 个 setter 注入 PTX-EMU, tick() → sm_ctx_->exe_once()
 ```
 
 **验收**：`./build/bin/cpptlm_tests "[gpu][subcore]"` PASS
 
 **Commit**：`feat(tlm/gpu): SubCoreTLM black-box pipe wrapper (Phase 8.B Task 14)`
+
+---
+
+### Task 15a: Adapter 层（4 个 PTX-EMU 桥接适配器）
+
+> **依赖**: Task 9-14 全部完成 + PTX-EMU 侧 #1~#4（接口头文件）交付
+> **D1-Full**: 本任务实现 CppTLM ↔ PTX-EMU 的桥接层
+
+**Files**:
+- Create: `include/tlm/gpu/warp_scheduler_adapter.hh` — `CppTLMWarpSchedulerAdapter : public ptxsim::WarpScheduler`
+- Create: `include/tlm/gpu/scoreboard_adapter.hh` — `ScoreboardAdapter : public IScoreboard`（桥接 `ScoreboardTLM` → `IScoreboard`）
+- Create: `include/tlm/gpu/pipeline_adapter.hh` — `PipelineAdapter : public IPipelineLatencyProvider`（桥接 `PipelineTLM` → `IPipelineLatencyProvider`）
+- Create: `include/tlm/gpu/tensorcore_adapter.hh` — `TensorCoreAdapter : public ITensorCoreTiming`（桥接 `TensorCoreTLM` → `ITensorCoreTiming`）
+
+**关键结构**：
+```cpp
+// ScoreboardAdapter: 转发 uint32_t → (reg_id, warp_id)
+class ScoreboardAdapter : public IScoreboard {
+    tlm::IScoreboardInternal* tlm_sb_;
+public:
+    bool has_free_entry() const override { return tlm_sb_->has_free_entry(); }
+    bool allocate(uint32_t reg_id, uint32_t warp_id) override {
+        // tlm_sb_ 内部维护 reg_id ↔ (warp_id, dest_reg) 映射
+        return tlm_sb_->allocate(reg_id, warp_id);
+    }
+    bool release(uint32_t reg_id, uint32_t warp_id) override {
+        return tlm_sb_->release(reg_id, warp_id);
+    }
+    void tick() override { tlm_sb_->tick(); }
+};
+
+// PipelineAdapter: 转发 PTX-EMU int statement_type → CppTLM PipelineId
+class PipelineAdapter : public IPipelineLatencyProvider {
+    tlm::IPipelineLatencyInternal* tlm_pipe_;
+public:
+    double get_fractional_cycles(const std::string& instr, PipelineId pipe) const override {
+        return tlm_pipe_->get_fractional_cycles(instr, static_cast<tlm::PipelineId>(pipe));
+    }
+    double get_fractional_cycles_by_type(int stmt_type, PipelineId pipe) const override {
+        return tlm_pipe_->get_fractional_cycles_by_type(stmt_type, static_cast<tlm::PipelineId>(pipe));
+    }
+};
+// static_assert: PipelineId 0-5 枚举值一致性
+```
+
+**验证**（独立模式，不依赖 PTX-EMU 编译）：
+- `ScoreboardAdapter` 用 Mock `IScoreboardInternal` 验证转发
+- `PipelineAdapter` 用 Mock `IPipelineLatencyInternal` 验证转发
+- 4 个 `static_assert` 验证枚举值一致性
+
+**Commit**：`feat(tlm/gpu): 4 PTX-EMU adapters for D1-Full injection (Phase 8.B Task 15a)`
 
 ---
 
@@ -385,14 +496,16 @@ ls -la openspec/changes/archive/ | grep gpu-soc-phase8b
 
 ```bash
 git add openspec/changes/ docs/superpowers/plans/2026-06-20-future-work-roadmap.md docs/validation/phase8b_oracle_review.md
-git commit -m "chore(openspec): archive gpu-soc-phase8b-core + update roadmap
+git commit -m "chore(openspec): archive gpu-soc-phase8b-core + update roadmap (D1-Full)
 
-OpenSpec change 2026-06-24-gpu-soc-phase8b-core 已完成:
+OpenSpec change 2026-06-24-gpu-soc-phase8b-core 已完成 (D1-Full):
 - 6 个核心模块 (Scoreboard / WarpScheduler / Pipeline / TensorCore / L2Partition / SubCore)
+- 4 个 Adapter (WarpScheduler / Scoreboard / Pipeline / TensorCore)
 - 5 类 microbenchmark + gpgpu-sim 区间对照 (±15%)
 - 6 个微架构 doc
-- M2 验收: 1 GB203 × 1M < 60s, apu_soc 兼容, 710/710 测试通过
+- M2 验收: 1 GB203 × 1M < 60s, apu_soc 兼容, 测试通过
 - Oracle 审查 APPROVED
+- ADR-NV-02: D1-Lite → D1-Full (2026-07-14 Status Update)
 
 后续依赖: 2026-06-24-gpu-soc-phase8c-advanced (8.C 高级特性, 3 周)"
 git push origin main
@@ -419,10 +532,11 @@ git status
 ## 整体验收 Gates
 
 - [ ] **G1 单元测试**: `[gpu][subcore][sched][sb][tc][pipe][l2]` 全 pass
+- [ ] **G1b Adapter 测试**: `[gpu][adapter]` 4 个 Adapter 转发 test + enum static_assert
 - [ ] **G2 集成测试**: `test_gpu_soc_phase8b.cc` 5 类 microbenchmark 跑通
 - [ ] **G3 gpgpu-sim 对照**: 5 类带宽 ±15%
 - [ ] **G4 性能 M2**: 1 GB203 × 1M < 60s
-- [ ] **G5 文档**: 6 个微架构 doc + docs_sync 0 missing
+- [ ] **G5 文档**: 6 个微架构 doc + PTX-EMU 改造任务书 + docs_sync 0 missing
 - [ ] **G6 格式**: format.sh --check clean
 - [ ] **G7 兼容**: Phase 8.A + apu_soc 全绿（不破坏）
 - [ ] **G8 Oracle 审查**: docs/validation/phase8b_oracle_review.md 显示 APPROVED
@@ -438,12 +552,13 @@ git status
 | Task 12 (TensorCore) | 0.5 | 3.5 |
 | Task 13 (L2Partition) | 0.5 | 4 |
 | Task 14 (SubCore) | 1 | 5 |
-| Task 15 (5 microbenchmarks + gpgpu-sim) | 0.5 | 5.5 |
-| Task 16 (6 microarch doc) | 0.5 | 6 |
-| **Task 17 (Oracle 审查)** | 0.1 | 6.1 |
-| **Task 18 (归档)** | 0.1 | **6.2 周** |
+| Task 15a (Adapter 层) | 0.5 | 5.5 |
+| Task 15 (5 microbenchmarks + gpgpu-sim) | 0.5 | 6 |
+| Task 16 (6 microarch doc) | 0.5 | 6.5 |
+| **Task 17 (Oracle 审查)** | 0.1 | 6.6 |
+| **Task 18 (归档)** | 0.1 | **6.8 周** |
 
-并行加速：Task 9-14 可 6 人并行（独立模块）→ 关键路径 ~1.5 周 + 0.5（microbenchmark）= 2 周
+并行加速：Task 9-14 可 6 人并行（独立模块）→ 关键路径 ~1.5 周 + 0.5（Adapter）+ 0.5（microbenchmark）= 2.5 周
 
 ## 关联文档
 
@@ -451,6 +566,8 @@ git status
 - **依赖**: `openspec/changes/2026-06-24-gpu-soc-phase8a-infra/`（M1 必须先完成）
 - **Spec**: `docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md` §5.2
 - **主 plan**: `docs/superpowers/plans/2026-06-24-gpu-soc-roadmap.md` Phase 8.B
-- **ADR**: `docs/adr/ADR-NV-01-gpu-soc-architecture-target.md`
+- **ADR**: `docs/adr/ADR-NV-01-gpu-soc-architecture-target.md` + `docs/adr/ADR-NV-02-phase8b-d1-strategy.md`（D1-Full, 2026-07-14 Status Update）
+- **PTX-EMU 改造综合任务书**: `docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md`
+- **D1-Full 协同计划**: `docs/superpowers/specs/2026-07-03-ptxemu-phase8b-d1full-plan.md`
 - **roadmap 父文档**: `docs/superpowers/plans/2026-06-20-future-work-roadmap.md`
 - **下一个 change**: `openspec/changes/2026-06-24-gpu-soc-phase8c-advanced/`（依赖本 M2）

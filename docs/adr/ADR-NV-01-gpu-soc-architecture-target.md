@@ -232,3 +232,18 @@ docs/adr/ADR-NV-01-...       # 本文档
 
 **维护**: CppTLM 开发团队
 **下次 review**: Phase 8.B Task 9-14 完成后 (预计 2026-07-10)
+
+### 2026-07-15 — D8 Phase-accurate 策略在 Phase 8.B D1-Full 中的演进说明
+
+**触发事件**：ADR-NV-02 将 Phase 8.B 目标从 D1-Lite 升级为 D1-Full（Scoreboard/Pipeline/TensorCore/WarpScheduler 4 组件注入 PTX-EMU），要求澄清 D8 与 D1-Full 的关系。
+
+**D8 不变的内核**：Phase-accurate 定位不变——sub-core 对外仍输出分数 cycle 的执行时间，不做 cycle-accurate 5 管线建模（反模式表第一项仍有效）。
+
+**演进部分**：D8 原描述"sub-core 内部 black-box 化，5+V 管线不分开建模"适用于 Phase 8.A（验证通过，M1 验收）。Phase 8.B D1-Full 在 sub-core 内部引入 4 个可独立注入的模块（ScoreboardTLM / PipelineTLM / TensorCoreTLM / WarpSchedulerTLM），供 PTX-EMU 集成使用。这是**抽象层级保持不变前提下的内部白箱化**，而非退回 cycle-accurate。具体变更由 ADR-NV-02 记录。
+
+**D1-Full 版本下 D8 兼容解读**：
+- Phase-accurate 输出 ✅ 保持（SubCoreTLM tick() 仍返回分数 cycle）
+- 5+V 管线不 cycle-accurate 建模 ✅ 保持（PipelineTLM 仍为查表模型，非 17-bit ctrl code）
+- Sub-core 内部模块化 ✅ 新增（为 PTX-EMU 集成提供注入接口，不影响 standalone 模式）
+
+**关联文档**：`docs/adr/ADR-NV-02-phase8b-d1-strategy.md` §3.6 Status Update + 第 329 行"与 ADR-NV-01 的关系"。

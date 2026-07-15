@@ -40,7 +40,7 @@
 | ADR | 议题 | 状态 | 阶段 |
 |-----|------|:---:|------|
 | [ADR-NV-01-gpu-soc-architecture-target.md](./ADR-NV-01-gpu-soc-architecture-target.md) | gpu_soc 独立 SoC 仿真目标（与 apu_soc 并行；14 新模块 + 3 阶段 + 共享 GpuCluster 子模块 + 借鉴 gpgpu-sim 不集成） | ✅ 已确认 | Phase 8.A-C |
-| [ADR-NV-02-phase8b-d1-strategy.md](./ADR-NV-02-phase8b-d1-strategy.md) | Phase 8.B D1-Lite 渐进策略（基于 PTX-EMU 真实 API——仅 WarpScheduler 通过 Adapter 注入，Scoreboard/Pipeline/TC 暂作独立模型） | ⏳ 待审批 | Phase 8.B |
+| [ADR-NV-02-phase8b-d1-strategy.md](./ADR-NV-02-phase8b-d1-strategy.md) | Phase 8.B D1-Full 全栈注入策略（WarpScheduler + Scoreboard + Pipeline + TensorCore 通过 SMContext 注入 PTX-EMU） | ✅ 已确认 | Phase 8.B |
 
 ### 汇总文档
 
