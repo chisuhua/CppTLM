@@ -441,13 +441,13 @@ if(cpptlm_FOUND AND BUILD_LIB_CPPTLM_CUDART)
 endif()
 ```
 
-> **PTX-EMU 版本 pin**: commit `<待 PTX-EMU 团队提供>` — 需锁定包含 Task #1 `CppTLMBridge` 完整接口的 commit
-> **ANTLR4 版本**: `>= 4.13.2`（PTX-EMU CI 使用，不进入 CppTLM CI；仅链接 `libcpptlm_cudart.so` 时需 ABI 匹配）
-> **`libcpptlm_cudart.so` 发现方式**: 待 PTX-EMU 团队确认（候选选项：`ExternalProject_Add` pin 到 commit / `find_library` + 环境变量 `CPPTLM_PTXEMU_LIBDIR` / `pkg-config`）
-> **需 PTX-EMU 团队行动**:
->   1. 提供包含 Task #1（`CppTLMBridge` 接口）的 PTX-EMU commit hash
->   2. 确认 ANTLR4 runtime 版本号
->   3. 确定 `libcpptlm_cudart.so` 的 CMake 暴露方式
+> **PTX-EMU 版本 pin**: commit `8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d` ✅ **HSK-1 已锁定**（main 分支，待 PTX-EMU push 到 origin 后由 CppTLM `ExternalProject_Add` 引用）
+> **ANTLR4 版本**: `4.13.2` ✅ **HSK-2 已满足**（PTX-EMU vendored 4.13.2 + `antlr-4.13.2-complete.jar` + docs/AGENTS.md/copilot-instructions.md 全源一致；满足综合计划 Task #5 下限 `>= 4.13.2`）
+> **`libcpptlm_cudart.so` 发现方式**: ✅ **HSK-3 候选 ExternalProject_Add**（PTX-EMU 倾向 `ExternalProject_Add` pin commit；待 CppTLM 评审确认，备选 find_library/pkg-config）
+> **PTX-EMU 团队行动状态**:
+>   - [x] 1. 提供包含 Task #1（`CppTLMBridge` 接口）的 PTX-EMU commit hash — `8dc000ec...` HSK-1
+>   - [x] 2. 确认 ANTLR4 runtime 版本号 — 4.13.2 HSK-2
+>   - [ ] 3. 确定 `libcpptlm_cudart.so` 的 CMake 暴露方式 — HSK-3 待 CppTLM 评审
 
 ---
 

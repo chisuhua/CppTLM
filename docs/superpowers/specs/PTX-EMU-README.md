@@ -23,11 +23,6 @@ PTX-EMU 需做 **§2 MemoryBridge (F12b-LD)** + **§3 Compute Timing (D1-Full)**
 
 **总阅读量**: 920 + 439 + 332 + 337 = **~2028 行**（~4 小时阅读 + 笔记时间）
 
-**已弃用文档（不要读）**：
-- ~~`2026-07-03-ptxemu-modification-task.md`~~ — 🗑️ 2026-07-14 已删除（被 comprehensive-plan.md §3 子集吸收）
-- ~~`2026-06-30-f12-ptxemu-ldpreload-design.md`~~ — 🗑️ 2026-07-14 已删除（设计已被 comprehensive-plan.md §2.2/§3 吸收并扩展）
-- ~~`f12-ptxemu-ldpreload-integration.md`~~ — 🗑️ 2026-07-14 已删除（计划已被 comprehensive-plan.md §4 取代）
-
 ---
 
 ## 2. 协同推进任务路径规划
