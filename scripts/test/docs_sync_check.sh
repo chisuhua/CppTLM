@@ -81,6 +81,7 @@ VIRTUAL_PATHS=(
     "docs/superpowers/specs/2026-07-03-ptxemu-modification-task.md"  # 2026-07-14 删除（被 comprehensive-plan.md §3 吸收）
     "docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md"  # 2026-07-14 删除（设计被 comprehensive-plan.md §2.2/§3 吸收并扩展）
     "docs/superpowers/plans/f12-ptxemu-ldpreload-integration.md"  # 2026-07-14 删除（计划被 comprehensive-plan.md §4 取代）
+    "include/cudart/cpptlm_bridge.h"  # PTX-EMU 端 ABI 真值源（CppTLM 通过 ExternalProject_Add 消费；物理文件在 PTX-EMU 仓库，commit 8dc000ec）
     # Phase 7.B-F (GPU APU Fused SoC) 规划中文件（roadmap.md 2026-06-11；7.A 已落地 2026-06-11）
     "compute_unit_tlm.hh"
     "tcc_tlm.hh"
