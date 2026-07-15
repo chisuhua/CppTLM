@@ -20,7 +20,7 @@
 本文件是 **GPU 路径的跨 phase 概念文档**——不绑定任何具体类，记录 v0 已采纳 + Phase 7.B-F 待细化的 GPU 通用术语、设计决策、字段语义对位。**与 gem5 对位**: `ComputeUnit.py` + `Wavefront.py`（共享概念子集）。
 
 **目标读者**:
-- `gpu-gputlm.md` / `gpu-compute_unit.md` / `gpu-kernellaunch.md` / `gpu-tcc.md` / `gpu-pcie_bridge.md` 的实施者
+- `gpu-gputlm.md` / `gpu-compute_unit.md` / `gpu-kernel-launch.md` / `gpu-tcc.md` / `gpu-pcie_bridge.md` 的实施者
 - Phase 7.A+ 任何 GPU 模块的 reviewer
 
 ## 2. 通用概念（规划）

@@ -1,19 +1,29 @@
 # F12b-LD 协作同步：CppTLM ↔ PTX-EMU
 
-> **Purpose**: PTX-EMU 团队一次性阅读本文档即可理解 CppTLM 侧的全部现状、需求和接口期望。
-> **Date**: 2026-07-01
-> **CppTLM Contact**: CppTLM Team (main branch, commit `9f7db6b`)
+> **Purpose**: CppTLM ↔ PTX-EMU 协作规范 — Timing Model、协作流程、双路径（D1 Compute + D2 Memory）
+> **Date**: 2026-07-01 (revised 2026-07-14)
+> **CppTLM Contact**: CppTLM Team (main branch)
 
 ---
 
-## 0. 快速导航：PTX-EMU 侧需阅读的文件
+## 0. PTX-EMU 团队入口（必读起点）
+
+**👉 推荐入口文档**: [`PTX-EMU-README.md`](./PTX-EMU-README.md) — 含 9 个改造任务路径规划 + 验收标准 + 协作流程图
+
+**必读 4 个核心文档**（按顺序，~4 小时）:
 
 | 优先级 | 文件（CppTLM 仓库） | 为什么需要读 |
 |--------|----------------------|-------------|
-| 🔴 | `docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md` | **集成设计全文**（318 行）。含 CppTLMBridge 接口定义、MemoryBridge 转发逻辑、KernelLaunchTLM 扩展、地址映射公式、A-B-A 决策 |
-| 🔴 | `docs/superpowers/plans/f12-ptxemu-ldpreload-integration.md` | **Momus 审查过的内部集成计划**（288 行）。含 Oracle 推荐的 Option A 渐进集成路径、correctness validation / performance baseline / interface versioning 要求 |
-| 🟡 | `docs/superpowers/plans/2026-06-30-f12a-gpu-core-modules.md` | F12a 实施计划（已完成）。了解 CppTLM 侧已实现的 4 个类的接口语义 |
-| 🟡 | `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` §F12 | 总体 roadmap 中 F12 部分，了解完整依赖链 |
+| 🔴 | [`PTX-EMU-README.md`](./PTX-EMU-README.md) | **入口文档** — 9 任务路径规划 + 验收标准 + 协作流程图（~250 行） |
+| 🔴 | [`2026-07-14-ptxemu-comprehensive-modification-plan.md`](./2026-07-14-ptxemu-comprehensive-modification-plan.md) | **顶层任务书**（920 行）。§2 MemoryBridge + §3 D1-Full Compute + §6 任务汇总 |
+| 🟡 | [`2026-07-03-ptxemu-phase8b-d1full-plan.md`](./2026-07-03-ptxemu-phase8b-d1full-plan.md) | D1-Full 接口对齐详细设计（439 行）— 作为 §3 子集参考 |
+| 🟡 | [`docs/adr/ADR-NV-02-phase8b-d1-strategy.md`](../../adr/ADR-NV-02-phase8b-d1-strategy.md) | 决策依据 + G-D1~G-D8 验收标准 + 风险 R1~R8 |
+
+**本文档（f12b-ld-ptxemu-collaboration-sync.md）的定位**：协作规范（Timing Model §7、§13 D1-Full 协作节、协作流程），作为协作期间的参考。
+
+**已弃用（不要读）**：
+- ~~`2026-06-30-f12-ptxemu-ldpreload-design.md`~~ — 🗑️ 2026-07-14 已删除（被 comprehensive-plan.md §2.2/§3 吸收）
+- ~~`f12-ptxemu-ldpreload-integration.md`~~ — 🗑️ 2026-07-14 已删除（被 comprehensive-plan.md §4 取代）
 
 ---
 
@@ -31,7 +41,7 @@
 | `MinimalWarpSchedulerTLM` | `include/tlm/gpu/minimal_warp_scheduler_tlm.hh` | `[warp_scheduler][gpu][phase7b]` | Round-robin warp 调度器 |
 | `GpuComputeUnitTLM` | `include/tlm/gpu/gpu_compute_unit_tlm.hh` | `[compute_unit][gpu][phase7b]` | SM 抽象，含 4 × SubCoreSlot + scheduler |
 
-**测试基线**: 755/755 pass (15517 assertions), docs_sync 0 missing, format clean.
+**测试基线**: 764/764 pass (15517 assertions), docs_sync 0 missing, format clean.
 
 ### 1.2 `MinimalWarpSchedulerTLM` 接口（与 PTX-EMU `WarpScheduler` 对齐）
 
@@ -102,86 +112,128 @@ CppTLM 负责 timing + NoC/cache/memory 路由，PTX-EMU 负责 PTX 指令级执
 | 文件 | 修改内容 |
 |------|----------|
 | `src/cudart/cudart_sim.cpp` | `cudaLaunchKernel`：if bridge → async submit；else → fallback standalone |
-| `src/memory/hardware_memory_manager.cpp` | GLOBAL 空间：if bridge → route to `MemoryBridge`，data 仍在 `SimpleMemory` |
-| `CMakeLists.txt` | 新增 `libcpptlm_cudart.so` 构建目标，链接 `cpptlm_core` |
+| `src/ptxsim/instructions/memory.cpp` | GLOBAL LD/ST：if bridge → route to MemoryBridge via `global_access()` (timing-only)，data 仍在 `SimpleMemory` |
 
 ### 4.3 `cudaLaunchKernel` Async 模式
 
 ```cpp
 // src/cudart/cudart_sim.cpp, cudaLaunchKernel 函数内
-if (cpptlm_bridge_) {
-    cpptlm_bridge_->submit_kernel(kernel_id, launch_params, param_size);
-    return cudaSuccess;  // 不等待完成（调用方通过 poll_kernel 轮询完成）
-} else {
-    g_ptx_interpreter->launchPtxInterpreter(...);
-    g_gpu_context->wait_for_completion();  // 原同步路径
+if (g_cpptlm_bridge) {
+    uint64_t kernel_id = generate_kernel_id();
+    uint64_t stream_id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(stream));
+    const char* kernel_name = func2name[(uint64_t)func].c_str();
+    const void** args_ptr = reinterpret_cast<const void**>(args);
+    size_t args_count = count_kernel_args(args);
+
+    int ret = g_cpptlm_bridge->submit_kernel(
+        kernel_id, kernel_name,
+        gridDim.x, gridDim.y, gridDim.z,
+        blockDim.x, blockDim.y, blockDim.z,
+        args_ptr, args_count,
+        sharedMem,
+        stream_id);
+
+    if (ret != 0) return cudaError_t(ret);
+    register_pending_kernel(kernel_id, stream_id, func, args, gridDim, blockDim, sharedMem);
+    return cudaSuccess;  // 立即返回！
 }
+
+// 原有路径 — 当 g_cpptlm_bridge 为 nullptr 时（向后兼容）
+g_ptx_interpreter->launchPtxInterpreter(...);
+g_gpu_context->wait_for_completion();
+return cudaSuccess;
 ```
+
+> **完整实现**: 参考综合任务书 `docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md` §2.1 Task #2。
 
 ### 4.4 `HardwareMemoryManager` GLOBAL 拦截
 
+> **注意**: 实际修改点不在 `hardware_memory_manager.cpp`，而在 `src/ptxsim/instructions/memory.cpp` 的 LdHandler/StHandler（参见综合任务书 §2.1 Task #4）。
+
 ```cpp
-// src/memory/hardware_memory_manager.cpp
-if (req.space == MemorySpace::GLOBAL && cpptlm_bridge_) {
-    uint64_t device_addr = req.address - cpptlm_bridge_->get_mmap_base();
-    uint64_t latency = cpptlm_bridge_->global_access(
-        device_addr, req.data, req.type);
-    if (latency == UINT64_MAX) {
-        // 地址未映射 → 回退到本地 fast path
-        return simple_memory_->direct_access(req.address, req.data, req.size, req.is_write);
+// src/ptxsim/instructions/memory.cpp, LdHandler::processOperation 内
+if (g_cpptlm_bridge && is_global_space(device_addr)) {
+    uint64_t latency = g_cpptlm_bridge->global_access(device_addr, 0, /*LD=*/0);
+    if (latency != UINT64_MAX) {
+        // 数据从 SimpleMemory 读取（功能正确性）
+        uint64_t value = 0;
+        SimpleMemory::read(device_addr, &value);
+        thread->write_register(stmt.dest_registers[0], value);
+        return latency;  // NoC 路由延迟（用于设置 blocked_cycles）
     }
-    // 数据仍在 SimpleMemory 中
-    simple_memory_->direct_access(req.address, req.data, req.size, req.is_write);
-    return latency;
+    // UINT64_MAX = 地址未映射，fallback 到原有路径
 }
+
+// 原有 PTX-EMU 内部路径
+return LdHandler::processOperation_internal(stmt, thread);
+```
+
+**关键语义**：
+- `global_access` 为 **timing-only 预计算**：返回的 latency 仅用于设置 `blocked_cycles_remaining`
+- 数据立即在 SimpleMemory 中完成读写（Phase 8.B 语义）
+- 地址空间判定由 PTX-EMU 端 `is_global_space()` 负责，不再通过 `get_mmap_base()` 做地址转换
 ```
 
 ---
 
 ## 5. `CppTLMBridge` 接口定义
 
-**文件**: `include/cudart/cpptlm_bridge.h`（PTX-EMU 侧新增）
+> **权威来源**: `docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md` §2.1 Task #1
+
+**文件**: `include/cudart/cpptlm_bridge.h`（PTX-EMU 侧新增，零 CppTLM 依赖）
 
 ```cpp
-static constexpr uint64_t CppTLMBRIDGE_VERSION = 1;
+#define CPPTLMBRIDGE_VERSION 1
 
+/// PTX-EMU ↔ CppTLM 桥接接口
 class CppTLMBridge {
 public:
     virtual ~CppTLMBridge() = default;
 
-    /// 异步提交 kernel launch（不等待完成）。返回 false 表示提交失败
-    virtual bool submit_kernel(uint64_t kernel_id, const void* params,
-                               size_t param_size) = 0;
+    /// 返回桥接实现的 ABI 版本（必须等于 CPPTLM_BRIDGE_VERSION）
+    virtual int version() const = 0;
 
-    /// GLOBAL 内存访问：传入 device_addr，返回 latency cycles。
-    /// 返回 UINT64_MAX 表示地址未映射
-    virtual uint64_t global_access(uint64_t device_addr, uint64_t val,
-                                   uint8_t type) = 0;
+    /// 异步提交 kernel launch（立即返回）
+    /// @return 0=成功, 非0=cudaError_t 错误码
+    virtual int submit_kernel(
+        uint64_t kernel_id, const char* kernel_name,
+        uint32_t grid_x, uint32_t grid_y, uint32_t grid_z,
+        uint32_t block_x, uint32_t block_y, uint32_t block_z,
+        const void** kernel_args, size_t args_count,
+        size_t shared_mem, uint64_t stream_id) = 0;
 
     /// 轮询 kernel 完成状态。返回 0 表示已完成，>0 表示剩余 cycles，
     /// UINT64_MAX 表示未知 kernel_id
     virtual uint64_t poll_kernel(uint64_t kernel_id) = 0;
 
-    /// 返回 SimpleMemory 的 mmap 基地址（用于 device_addr 转换）
-    virtual uint64_t get_mmap_base() const = 0;
+    /// 同步等待 stream 上所有 pending kernels 完成
+    /// @return 0=成功, 非0=cudaError_t 错误码
+    virtual int synchronize_stream(uint64_t stream_id) = 0;
 
-    /// 返回当前 CppTLM EventQueue tick 计数（仿真启动前返回 0）
-    virtual uint64_t get_current_cycle() const = 0;
+    /// GLOBAL 内存访问 — timing-only 预计算。返回延迟 cycles；UINT64_MAX = 地址未映射
+    virtual uint64_t global_access(uint64_t device_addr, uint64_t val,
+                                   uint8_t type) = 0;
 };
+
+/// 全局 bridge 指针（nullptr = 独立模式，行为字节级兼容）
+extern CppTLMBridge* g_cpptlm_bridge;
+
+/// 编译期断言 cudaStream_t 宽度可存入 uint64_t
+static_assert(sizeof(cudaStream_t) <= sizeof(uint64_t),
+               "cudaStream_t wider than uint64_t — bridge stream_id field must be enlarged");
 ```
 
 ### 5.1 错误语义
 
 | 条件 | 返回值 | 日志 |
 |------|--------|------|
-| `global_access` 地址不在 mmap 范围内 | `UINT64_MAX` | WARN "address not in mmap range" |
-| `submit_kernel` 在 bridge 未初始化时调用 | `false` | ERROR "bridge not initialized" |
-| `submit_kernel` 参数无效 | `false` | ERROR "invalid kernel params" |
+| `submit_kernel` 在 bridge 未初始化时调用 | `cudaErrorNotYetInitialized` | ERROR "bridge not initialized" |
+| `submit_kernel` 参数无效 | `cudaErrorInvalidValue` | ERROR "invalid kernel params" |
+| `global_access` 地址未映射 | `UINT64_MAX` | WARN "address not mapped" |
 | `poll_kernel` 未知 kernel_id | `UINT64_MAX` | WARN "unknown kernel_id" |
-| `get_current_cycle()` 在首次 `submit_kernel` 前调用 | `0`（有效，仿真尚未开始） | 无需日志 |
-| Bridge 版本不匹配 | 编译期 `static_assert(CppTLMBRIDGE_VERSION >= EXPECTED)` | FATAL 中止 |
+| Bridge 版本不匹配 | 编译期 `static_assert` | FATAL 中止 |
 
-**地址映射**: `device_addr = virtual_addr - mmap_base - device_base_offset`（通常 `device_base_offset = 0`）。
+**地址映射**：由 PTX-EMU 端 `is_global_space()` 判定地址空间（CUDA 虚拟地址 → GLOBAL/LOCAL/SHARED）。`global_access()` 传入的 `device_addr` 为 CUDA device address，CppTLM NoC 路由表直接基于此地址查表，无需 mmap base 转换。
 
 ---
 
@@ -206,11 +258,11 @@ public:
 
 ### 7.1 时序语义细节
 
-1. **Tick 先后顺序**：CppTLM 先完成一个 tick 推进，_然后_ bridge 调用 `exe_once()`。`get_current_cycle()` 返回 `exe_once()` 执行**之前**的 tick 值。
+1. **Tick 先后顺序**：CppTLM 先完成一个 tick 推进，_然后_ `KernelLaunchTLM::tick()` 调用 `exe_once()`。PTX-EMU `cycle_counter_` 与 CppTLM `cur_cycle` 同步（退化为相对计数器）。
 2. **空闲循环熔断**：两次 `global_access` 调用之间，PTX-EMU 可执行多次 `exe_once()`，但 simulation cycle counter **不**推进。
 3. **上限防护**：每个 CppTLM tick 最多执行 `max_ptx_steps_per_tick`（默认 10,000）次 `exe_once()`，防止无限循环/死锁。
 
-> 双时序模型对齐的详细风险分析见 `docs/superpowers/plans/f12-ptxemu-ldpreload-integration.md` §7 和 §10.1。
+> 双时序模型对齐的详细风险分析见综合任务书 `docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md` §0.3 和 §1.1。
 
 ---
 
@@ -231,7 +283,8 @@ public:
 | # | 问题 | 建议方向 |
 |---|------|----------|
 | 1 | CMake 集成方式 | `find_package(CppTLM)` vs FetchContent vs subdirectory？建议 PTX-EMU 侧决定 |
-| 2 | `SimpleMemory` mmap base 如何暴露给 `MemoryBridge` | 通过 `CppTLMBridge::get_mmap_base()` 解决 |
+| 2 | `SimpleMemory` mmap base 如何暴露给 `MemoryBridge` | 已决策：不再暴露 mmap base。由 PTX-EMU 端 `is_global_space()` 判定地址空间，CppTLM NoC 路由表直接基于 CUDA device address 查表。参见综合任务书 §2.2 Task #C1 |
+| 3 | ANTLR parser 对用户 CUDA 代码的 fallback | 当 parser 失败时是否回退到 standalone 路径？ |
 | 3 | ANTLR parser 对用户 CUDA 代码的 fallback | 当 parser 失败时是否回退到 standalone 路径？ |
 | 4 | `cudaMalloc`/`cudaMemcpy` 是否 Phase 8.B 路由到 CppTLM | 当前决定 A（留在 PTX-EMU），未来可改 |
 | 5 | `CppTLMBridge` 实现由哪方提供 | CppTLM 提供 `MemoryBridge`，PTX-EMU 提供 mock/stub |
@@ -267,6 +320,56 @@ PTX-EMU 当前使用全局单例（`g_gpu_context`、`g_ptx_interpreter`、`Cuda
 3. **PTX-EMU 侧创建** `include/cudart/cpptlm_bridge.h` 接口
 4. **CppTLM 侧实现** `MemoryBridge` + `KernelLaunchTLM` 扩展
 5. **联调**：参考 CUDA 程序端到端验证
+
+---
+
+## 13. Phase 8.B D1-Full 协作（2026-07-14 追加）
+
+> **关联**: `docs/adr/ADR-NV-02-phase8b-d1-strategy.md`（2026-07-14 Status Update: D1-Lite → D1-Full）
+
+### 13.1 与本协作文档的关系
+
+本协作文档的 §7（Timing Model）描述了 F12b-LD 的 **D2 路径**（MemoryBridge 注入 memory timing）。Phase 8.B D1-Full 扩展此路径，增加 **D1 路径**（SMContext 注入 compute timing）：
+
+```
+                    ┌── D1 路径 (Phase 8.B) ──────────────┐
+                    │  SMContext::exe_once()                │
+                    │  ├── IScoreboard (hazard 检测)        │
+                    │  ├── IPipelineLatencyProvider (延迟)  │
+                    │  ├── ITensorCoreTiming (TC timing)    │
+                    │  └── WarpScheduler (调度) ← 已有      │
+CUDA kernel ──→ PTX-EMU ──┤                              ├── Timing
+                    │  ┌── D2 路径 (F12b-LD) ──────────┐   │
+                    │  │  MemoryBridge                  │   │
+                    │  │  ├── GLOBAL load/store         │   │
+                    │  │  └── CppTLM NoC routing        │   │
+                    │  └────────────────────────────────┘   │
+                    └───────────────────────────────────────┘
+```
+
+### 13.2 PTX-EMU 侧改造要求
+
+PTX-EMU 团队需在 `SMContext` 中新增 3 个纯虚接口注入点（`IScoreboard` / `IPipelineLatencyProvider` / `ITensorCoreTiming`）。完整改造任务书见：
+
+- **`docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md`** — 综合任务书（§2 F12b-LD + §3 D1-Full，~9 天工时）
+- **`docs/superpowers/specs/2026-07-03-ptxemu-phase8b-d1full-plan.md`** — D1-Full 设计细节
+
+### 13.3 与 §7 Timing Model 的协同
+
+| 层面 | F12b-LD (D2) | Phase 8.B (D1-Full) |
+|------|:---:|:---:|
+| **注入点** | MemoryBridge → GLOBAL 访问 | SMContext → exe_once 内三步 |
+| **覆盖指令** | S_LD / S_ST (global memory) | 全部计算指令 + 矩阵指令 |
+| **延迟来源** | CppTLM NoC + L2 查表 | PipelineTLM / TensorCoreTLM |
+| **blocked_cycles** | 已有（仅 S_LD） | 扩展至全部指令（需 `set_blocked_cycles_for_active()`） |
+| **PTX-EMU 修改** | 仅 Bridge 头文件 | SMContext 3 注入点 + 2 新 API |
+
+### 13.4 双路径协作
+
+D1 (compute timing) 和 D2 (memory timing) 在 `exe_once()` 内协作：
+- D1 Pipeline 返回**分数 cycle 延迟**（替代 `InstructionLatencyTable`）
+- D2 MemoryBridge 对 GLOBAL access 返回**CppTLM NoC 路由延迟**
+- 两者通过 `blocked_cycles_remaining` 统一注入，PTX-EMU `decrement_blocked_cycles()` 统一递减
 
 ---
 

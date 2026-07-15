@@ -72,6 +72,6 @@ CppTLM 作为 TLM 仿真框架，**不模拟 Host 软件栈**，只关心 GPU �
 
 - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §3 D4（L635-655）
 - 复述: [`roadmap.md`](../../../roadmap.md) L66 D4 行
-- 微架构: [`docs/soc_arch/modules/gpu-kernellaunch.md`](../modules/gpu-kernellaunch.md)
+- 微架构: [`docs/soc_arch/modules/gpu-kernel-launch.md`](../modules/gpu-kernel-launch.md)
 - SoC 集成: [`docs/soc_arch/specs/apu-soc-design.md`](../specs/apu-soc-design.md)
 - 蓝图参考（仅作了解，不复制）: gem5 `src/dev/amdgpu/amdgpu_device.py`

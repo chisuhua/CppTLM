@@ -10,7 +10,7 @@
 > - 索引: [README.md](./README.md)
 > - Spec: [`docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md`](../../superpowers/specs/2026-06-24-gpu-soc-architecture.md) §3.4
 > - ADR: [`docs/soc_arch/adr/ADR-SOC-04-hsapp-simplification.md`](../../soc_arch/adr/ADR-SOC-04-hsapp-simplification.md)
-> - GPU Kernellaunch: [`gpu-kernellaunch.md`](./gpu-kernellaunch.md)（旧版 pending doc）
+> - GPU Kernellaunch: [`gpu-kernel-launch.md`](./gpu-kernel-launch.md)（旧版 pending doc 已删除，2026-07-14）
 > - GPU 通用: [`gpu.common.md`](./gpu.common.md)
 
 ---
@@ -143,7 +143,7 @@ F12b-LD (PTX-EMU 集成):
 - HSA Platform System Architecture Specification §2.5: AQL
 - AMD ROCm: HSAPacketProcessor + GPUDispatcher
 - NVIDIA CUDA: `cudaLaunchKernel` dispatch flow
-- F12b-LD 设计: [`docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md`](../../superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md)
+- F12b-LD 设计: [`docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md`](../../superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md)
 
 ---
 

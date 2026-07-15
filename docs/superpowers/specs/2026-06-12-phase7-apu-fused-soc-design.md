@@ -197,7 +197,7 @@
 
 | 阶段 | 依赖规划中模块（🟡） | 微架构 doc |
 |------|---------------------|-----------|
-| **7.B** | `ComputeUnitTLM` + `KernelLaunchTLM` | [`gpu-compute_unit.md`](../../soc_arch/modules/gpu-compute_unit.md) + [`gpu-kernellaunch.md`](../../soc_arch/modules/gpu-kernellaunch.md) |
+| **7.B** | `ComputeUnitTLM` + `KernelLaunchTLM` | [`gpu-compute_unit.md`](../../soc_arch/modules/gpu-compute_unit.md) + [`gpu-kernel-launch.md`](../../soc_arch/modules/gpu-kernel-launch.md) |
 | **7.C** | `CacheTLM` 升级 + `CoherenceDomain` 集成 + `SnoopFilter` + `CoherentXBar` | [`cache-protocol.md`](../../soc_arch/modules/cache-protocol.md) + [`coherence-protocol.md`](../../soc_arch/modules/coherence-protocol.md) + [`snoop_filter.md`](../../soc_arch/modules/snoop_filter.md) + [`coherent_xbar.md`](../../soc_arch/modules/coherent_xbar.md) |
 | **7.D** | `TCC_TLM` + `MemoryTLM` HBM 模式（双 Bundle） | [`gpu-tcc.md`](../../soc_arch/modules/gpu-tcc.md) + [`memory-hbm.md`](../../soc_arch/modules/memory-hbm.md) |
 | **7.E** | `NoCTopologyBuilder`（规划中）+ 4×CU mesh | [`noc.common.md`](../../soc_arch/modules/noc.common.md) |
@@ -302,7 +302,7 @@ include/tlm/
 |------|-----------|----------|
 | GPU 跨阶段通用 | [`gpu.common.md`](../../soc_arch/modules/gpu.common.md) | Phase 7.B+ |
 | `ComputeUnitTLM` | [`gpu-compute_unit.md`](../../soc_arch/modules/gpu-compute_unit.md) | Phase 7.B |
-| `KernelLaunchTLM` | [`gpu-kernellaunch.md`](../../soc_arch/modules/gpu-kernellaunch.md) | Phase 7.B |
+| `KernelLaunchTLM` | [`gpu-kernel-launch.md`](../../soc_arch/modules/gpu-kernel-launch.md) | Phase 7.B |
 | `TCC_TLM` | [`gpu-tcc.md`](../../soc_arch/modules/gpu-tcc.md) | Phase 7.D |
 | `PCIBridgeTLM` | [`gpu-pcie_bridge.md`](../../soc_arch/modules/gpu-pcie_bridge.md) | Phase 7 备选 dGPU |
 | Cache 跨阶段通用 | [`cache.common.md`](../../soc_arch/modules/cache.common.md) | Phase 7.C+ |
@@ -347,7 +347,7 @@ include/tlm/
 
 ### 6.2 Phase 7.B — ComputeUnit 黑盒（🟡 Pending）
 
-**微架构 doc**: [`gpu-compute_unit.md`](../../soc_arch/modules/gpu-compute_unit.md) + [`gpu-kernellaunch.md`](../../soc_arch/modules/gpu-kernellaunch.md) + [`gpu.common.md`](../../soc_arch/modules/gpu.common.md)
+**微架构 doc**: [`gpu-compute_unit.md`](../../soc_arch/modules/gpu-compute_unit.md) + [`gpu-kernel-launch.md`](../../soc_arch/modules/gpu-kernel-launch.md) + [`gpu.common.md`](../../soc_arch/modules/gpu.common.md)
 
 **Scope**:
 - 新建 `include/tlm/gpu/compute_unit_tlm.hh`：`ComputeUnitTLM`（黑盒发起器，与 GPUTLM 共享基类）

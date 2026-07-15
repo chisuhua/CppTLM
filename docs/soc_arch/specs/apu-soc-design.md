@@ -466,7 +466,7 @@ Memory (HBM)
 
 | 阶段 | 依赖规划中模块 | 引入文档 |
 |------|----------------|----------|
-| **7.B** | `ComputeUnitTLM` + `KernelLaunchTLM` | [`gpu-compute_unit.md`](../modules/gpu-compute_unit.md) + [`gpu-kernellaunch.md`](../modules/gpu-kernellaunch.md) |
+| **7.B** | `ComputeUnitTLM` + `KernelLaunchTLM` | [`gpu-compute_unit.md`](../modules/gpu-compute_unit.md) + [`gpu-kernel-launch.md`](../modules/gpu-kernel-launch.md) |
 | **7.C** | `CacheTLM` 升级 + `CoherenceDomain` 集成 + `SnoopFilter` + `CoherentXBar` | [`cache-protocol.md`](../modules/cache-protocol.md) + [`coherence-protocol.md`](../modules/coherence-protocol.md) + [`snoop_filter.md`](../modules/snoop_filter.md) + [`coherent_xbar.md`](../modules/coherent_xbar.md) |
 | **7.D** | `TCC_TLM` + `MemoryTLM` HBM 模式（双 Bundle） | [`gpu-tcc.md`](../modules/gpu-tcc.md) + [`memory-hbm.md`](../modules/memory-hbm.md) |
 | **7.E** | `NoCTopologyBuilder`（规划中）+ 4×CU mesh | [`noc.common.md`](../modules/noc.common.md) |
@@ -1009,7 +1009,7 @@ Phase 7.C (MOESI)  ──[5+ 回归]──►  Phase 7.B (write-through)  ──
 
 **规划中（Phase 7.B–F + 7 备选 dGPU）**:
 - GPU 跨阶段: [`gpu.common.md`](../modules/gpu.common.md)
-- GPU 端: [`gpu-compute_unit.md`](../modules/gpu-compute_unit.md) | [`gpu-kernellaunch.md`](../modules/gpu-kernellaunch.md) | [`gpu-tcc.md`](../modules/gpu-tcc.md) | [`gpu-pcie_bridge.md`](../modules/gpu-pcie_bridge.md)
+- GPU 端: [`gpu-compute_unit.md`](../modules/gpu-compute_unit.md) | [`gpu-kernel-launch.md`](../modules/gpu-kernel-launch.md) | [`gpu-tcc.md`](../modules/gpu-tcc.md) | [`gpu-pcie_bridge.md`](../modules/gpu-pcie_bridge.md)
 - Cache 跨阶段: [`cache.common.md`](../modules/cache.common.md)
 - Cache 端: [`cache-l2.md`](../modules/cache-l2.md) | [`cache-protocol.md`](../modules/cache-protocol.md) | [`cache-replacement.md`](../modules/cache-replacement.md) | [`cache-noncoherent.md`](../modules/cache-noncoherent.md)
 - Interconnect 端: [`interconnect-bridge.md`](../modules/interconnect-bridge.md) | [`comm_monitor.md`](../modules/comm_monitor.md) | [`coherent_xbar.md`](../modules/coherent_xbar.md) | [`snoop_filter.md`](../modules/snoop_filter.md)

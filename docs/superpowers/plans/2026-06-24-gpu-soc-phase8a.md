@@ -1,5 +1,11 @@
 # gpu_soc Phase 8.A Implementation Plan
 
+> **✅ ARCHIVED 2026-07-03**: Phase 8.A 已实施完成（commit `e8280fe`）。M1 验收已通过（1 SM × 1M cycles < 5s，5 类 microbenchmark 闭环，apu_soc 兼容）。
+> 后续 Phase 8.B/8.C 计划请参考：
+> - **`docs/superpowers/plans/2026-06-24-gpu-soc-phase8b.md`** — Phase 8.B D1-Full Compute 注入计划
+> - **`docs/adr/ADR-NV-01-gpu-soc-architecture-target.md`** — 顶层架构 ADR（含 Status Update）
+> 本文档保留作为 Phase 8.A 实施历史参考。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 实施 `openspec/changes/2026-06-24-gpu-soc-phase8a-infra` change —— 4 个核心模块（MemoryCluster / SharedMemory / GpuNoC / KernelLaunch）+ GpuClusterSharedInterface + GpuSocTLM 顶层，让 gpu_soc 端到端跑通；M1 验收（1 SM × 1M cycles < 5s, 5 类 microbenchmark 闭环, apu_soc 兼容）。
