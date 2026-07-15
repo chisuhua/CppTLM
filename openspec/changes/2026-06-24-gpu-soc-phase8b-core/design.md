@@ -351,11 +351,15 @@ sm->set_tensor_core_timing(tc_adapter.get());
 
 ### 5.2 验证双轨制
 
-| 层次 | 阶段 A (无 PTX-EMU) | 阶段 B (F12b-LD 后) |
-|------|--------------------|---------------------|
-| **Level 1** | 合成输入验证 6 模块逻辑 | PTX-EMU 集成 subcase |
+> **修订说明（2026-07-15）**：原表使用"阶段 A / 阶段 B"命名，与综合计划 P0/P1/P2/P3 阶段不匹配。修订为按当前 P0/P1/P2/P3 阶段描述验证双轨制。
+
+| 层次 | P1.1 (6 模块独立，无 PTX-EMU) | P0 + P1.2 + P3 (MemoryBridge + 4 Adapter + 集成验证) |
+|------|------------------------------|------------------------------------------------------|
+| **Level 1** | 合成输入验证 6 模块逻辑 | PTX-EMU 集成 subcase：4 Adapter 真实接口注入，enum 一致性 `static_assert` 通过 |
 | **Level 2** | 合成 workload → CppTLM NoC → bandwidth | 真实 CUDA kernel `.cu` → PTX-EMU → MemoryBridge → bandwidth |
 | **Level 3** | vs gpgpu-sim（同 workload 参数） | vs gpgpu-sim（同 `.cu` kernel）+ vs standalone PTX-EMU (±10%) |
+
+**关键依赖**：P0 MemoryBridge 必须先于 P1.2 Adapters 完成；P1.2 必须先于 P3 集成验证。详见 [`tasks.md`](./tasks.md) 的阶段总览与依赖关系图。
 
 ### 5.3 接口契约
 
