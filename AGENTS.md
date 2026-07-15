@@ -186,6 +186,41 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
 - **测试状态**: **764/764 pass**（2026-07-03，94 个 test_*.cc，15547 assertions）+ **222/222 Python** pass · Single source of truth: `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` §0
 
+## CROSS-PROJECT INTEGRATION (PTX-EMU 协同仿真)
+
+> **状态**: 🟢 PTX-EMU 端 HSK-1/2/3 已就绪并 CppTLM 端已确认（2026-07-15）
+
+**消费模式**：PTX-EMU 端通过 `ExternalProject_Add` 引用 CppTLM `cpptlm_core` 静态库 + `include/cudart/cpptlm_bridge.h` 头文件。PTX-EMU 端 `libcpptlm_cudart.so` 链接 CppTLM `cpptlm::core` 实现 MemoryBridge。
+
+**关键 reference**:
+- **PTX-EMU 端入口**: [`PTX-EMU-README.md`](docs/superpowers/specs/PTX-EMU-README.md) §10 PTX-EMU 端 6 项决策 + 3 个 handshake
+- **PTX-EMU 端 3 HSK**: `https://github.com/chisuhua/PTX-EMU/blob/main/openspec/changes/cpptlm-d1-full/hsk-{1,2,3}.md`
+- **CppTLM 端响应**: [`2026-07-15-cpptlm-hsk-response.md`](docs/superpowers/specs/2026-07-15-cpptlm-hsk-response.md) HSK-1/2 OK + HSK-3 选项 1 确认
+- **顶层任务书**: [`2026-07-14-ptxemu-comprehensive-modification-plan.md`](docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md) §2-§5
+
+**PTX-EMU 端 HSK 链路**（截止 2026-07-15）:
+- **HSK-1 ✅**: `CppTLMBridge` ABI 头文件 commit `8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d` + `CPPTLMBRIDGE_VERSION=1`
+- **HSK-2 ✅**: ANTLR4 4.13.2（满足 CppTLM 端 `>= 4.13.2` 下限；4 权威源全为 4.13.2）
+- **HSK-3 ✅**: CMake 集成方式选 `ExternalProject_Add`（零侵入、精确版本控制）
+
+**CppTLM 端 deliverable**:
+- `cpptlm_core` 静态库（`build/lib/cpptlm_core.a`）+ `include/cudart/cpptlm_bridge.h` 头文件可被 PTX-EMU `ExternalProject_Add` 消费
+- `MemoryBridge` 实现（`src/tlm/gpu/memory_bridge.{hh,cc}`）通过 PTX-EMU ABI 头文件实现
+- CppTLM CI 12 端点（PipelineId 6 + TcPrecision 6）双重 `static_assert` 编译期拦截
+
+**ExternalProject_Add 用法**（PTX-EMU 端 CMake）:
+```cmake
+ExternalProject_Add(cpptlm
+    GIT_REPOSITORY  https://github.com/chisuhua/CppTLM.git
+    GIT_TAG         <COMMIT_HASH>  # 与 HSK-1 锁定版本一致
+    CMAKE_ARGS      -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/cpptlm-install
+                    -DBUILD_TESTING=OFF
+    UPDATE_DISCONNECTED TRUE  # 不自动 fetch
+)
+```
+
+
+
 ## 归档索引（docs-archived/）
 
 - `samples-orphaned/`: `simple1/`（`cpu_cluster` DEPRECATED，推荐 `include/tlm/cpu_tlm.hh`）+ `simple_hier/`（孤儿，引用已删除的 `CpuCluster`/`NOCTile`）
