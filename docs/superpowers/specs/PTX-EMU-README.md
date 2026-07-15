@@ -8,7 +8,7 @@
 
 ## 0. 一句话总结
 
-PTX-EMU 需做 **§2 MemoryBridge (F12b-LD)** + **§3 Compute Timing (D1-Full)** 共 **15 项协同改造任务（~9 人天）**，使 CppTLM 成为唯一时钟真相源，通过 3 注入点（Scoreboard/Pipeline/TC）接管 Compute timing，通过 MemoryBridge 接管 GLOBAL 访存 timing。
+PTX-EMU 需做 **§2 MemoryBridge (F12b-LD)** + **§3 Compute Timing (D1-Full)** 共 **15 项协同改造任务（~9 人天）**（其中 #1~#10 为 PTX-EMU 端，#C1~#C5 为 CppTLM 端），使 CppTLM 成为唯一时钟真相源，通过 3 注入点（Scoreboard/Pipeline/TC）接管 Compute timing，通过 MemoryBridge 接管 GLOBAL 访存 timing。
 
 ---
 
@@ -313,6 +313,58 @@ cat docs/adr/ADR-NV-02-phase8b-d1-strategy.md                                   
 ./build/bin/cpptlm_tests [gpu]                        # 全 pass
 python -m pytest test/python/test_gpgpu_sim_comparison.py  # 5 类 ±15%
 ```
+
+## 10. PTX-EMU 端需要自行决定的事
+
+本节明确**哪些决策需要 PTX-EMU 团队自己做出**（不归 CppTLM 管）。
+
+### 10.1 PTX-EMU 端 6 项自主决策（请写进 PTX-EMU 仓库自己的 ADR）
+
+> **重要**：以下问题不在本 README 或综合计划中回答——这是 PTX-EMU 仓库自身的架构决策。CppTLM 团队**不替 PTX-EMU 决定**这些。
+
+| # | 决策 | CppTLM 提供的约束 | 备选 |
+|---|------|------------------|------|
+| **D-PTX-1** | `g_cpptlm_bridge` 全局指针放在哪个 TU、何时初始化 | 接口契约已在综合计划 §2.1 #1 | 可选：构造函数注入、static init、first-cuda-call hook |
+| **D-PTX-2** | 已有全局单例（`g_gpu_context` / `g_ptx_interpreter` / `CudaDriver::instance()` / `HardwareMemoryManager::instance()`）如何与 bridge 共存 | 协作规约 §10.1 提了方向 | 多实例 / per-bridge / 强制 reset-on-bridge-init |
+| **D-PTX-3** | SMContext exe_once 三步注入（A/B/C）的具体代码改法（含行号定位） | 综合计划 §3.1 描述 A/B/C 窗口语义 | 由熟悉 PTX-EMU 内部代码的人实施并选定 |
+| **D-PTX-4** | ANTLR4 runtime 版本策略（CI/CD 用什么、版本升级时影响范围） | CppTLM CI 不含 ANTLR4 | pin 版本 / 跟随上游 / 半年 review |
+| **D-PTX-5** | 错误码映射（PTX-EMU 内部错误 ↔ `cudaError_t` ↔ 日志级别） | 综合计划 §5.1 列了 5 种条件 + 返回值 | 由 PTX-EMU 工程师实现一致性表 |
+| **D-PTX-6** | 性能预算（`submit_kernel` / `global_access` 的 overhead 优化） | 综合计划 §5.3 ±15% | vtable 优化、内联、asm hint 取决于 PTX-EMU 编译流程 |
+
+### 10.2 PTX-EMU 端应自行创建的产物（路径与命名由 PTX-EMU 自定）
+
+> CppTLM **不替 PTX-EMU 决定**这些产物的路径和命名——以下是按行业惯例的建议，PTX-EMU 可完全自由组织。
+
+```
+PTX-EMU 仓库/
+├── docs/
+│   ├── adr/
+│   │   └── ADR-XXX-cpptlm-d1-full.md          ← D-PTX-1~6 的决策记录
+│   └── changes/
+│       └── cpptlm-d1-full/
+│           ├── proposal.md                     ← Why / What Changes / Cross-project / Impact
+│           ├── design.md                       ← 内部实施设计
+│           ├── tasks.md                        ← #1~#10 翻译成 PTX-EMU 内部任务列表
+│           └── internal-plan.md                ← 完整实施手册（PTX-EMU 风格）
+├── include/
+│   └── cudart/cpptlm_bridge.h                  ← ABI 真值源（与 CppTLM 端 header 字节相同）
+└── src/...                                      ← 实际代码
+```
+
+**`cppTLMBridge` 接口的位置约定**（必须统一）：
+- 接口合约 **定义在 PTX-EMU 仓库 `include/cudart/cpptlm_bridge.h`**（PTX-EMU 是 ABI 提供方，CppTLM 是 ABI 消费方）
+- CppTLM 端的 `#include` 通过 `ExternalProject_Add` + path include 引用
+- ABI 修订流程：PTX-EMU commit 修改 → bump `CPPTLMBRIDGE_VERSION` → 通知 CppTLM 同步 rebase
+
+### 10.3 PTX-EMU 回传给 CppTLM 的 3 个 handshake（开工前必须）
+
+| # | 内容 | 何时交付 | 形式 |
+|---|------|---------|------|
+| **HSK-1** | `cppTLMBridge` 头文件的初始 commit hash（含 `CPPTLMBRIDGE_VERSION=1`） | D1 开工前 | git commit hash |
+| **HSK-2** | ANTLR4 版本号 + CI yml 截图（证明 CppTLM CI 不会被牵连） | D1 开工前 | 版本号 + 文件路径 |
+| **HSK-3** | `libcpptlm_cudart.so` CMake 暴露方式（三选一：ExternalProject_Add / find_library / pkg-config） | D5 EOD 前 | CMake 草案 |
+
+**回传通道**：通过 PR comment 或专用 `#cpptlm-integration` Slack 频道，CppTLM 收到后回写进综合计划 Task #5 注释。
 
 ---
 
