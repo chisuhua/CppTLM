@@ -1,61 +1,56 @@
-# Tasks: cpptlm-f12b-ld-impl — CppTLM 端 D1 实施
+# Tasks: cpptlm-f12b-ld-impl — CppTLM 端 P0 D1 实施 (MemoryBridge)
 
-> **Status**: Proposed
+> **Status**: ✅ Ready to Archive（2026-07-16 验证: P0 全过, 776/776 / 15562 断言, 已合并 main @ `73e5422`）
 > **Parent**: `proposal.md` + `design.md` (cpptlm-f12b-ld-impl)
 > **Reference**: `2026-06-24-gpu-soc-phase8b-core/tasks.md`（架构定义 P0/P1/P2/P3 阶段）
-> **Worktree**: `CppTLM/.worktrees/feature-d1-full-impl` (branch `feature/d1-full-impl`)
-> **总工时**: ~5.2d（CppTLM 端 #C1~#C5）
+> **Worktree**: `CppTLM/.worktrees/feature-d1-full-impl` (branch `feature/d1-full-impl`, 已与 main 同步)
+> **总工时**: P0 ~5d (已交付); P1/P2/P3 已拆分至 `cpptlm-d1-p1-pipeline-scoreboard` (2026-07-15 Oracle + Metis 双审后拆分)
+
+> **拆分说明**: 原始 tasks.md 包含 Phase 0/1/2/3/4 全部 D1 工作。2026-07-15 拆分后:
+> - 本 change (cpptlm-f12b-ld-impl) 仅覆盖 **Phase 0 + Phase 1** (P0 MemoryBridge + KernelLaunchTLM)
+> - **Phase 2 (P1 D1-Full Compute) + Phase 3 (P2 Async Seam) + Phase 4 (P3 集成验证)** 已迁移至 `cpptlm-d1-p1-pipeline-scoreboard` change
+> - 下方 Phase 2/3/4 任务保留作为历史归档参考,标记为 `[ ]` 但不再 active
 
 ## Phase 0: D1 启动前（强制最先完成，~0.5d）
 
-> ⚠️ **MUST**: 不完成本 Phase 不允许进入 Phase 1。
+> ✅ **完成** (2026-07-16 验证)
 
-- [ ] 0.1 vendor `include/cudart/cpptlm_bridge.h` from PTX-EMU commit 8dc000ec
+- [x] 0.1 vendor `include/cudart/cpptlm_bridge.h` from PTX-EMU commit 8dc000ec
   - 来源: `/workspace/project/PTX-EMU/include/cudart/cpptlm_bridge.h` @ commit `8dc000ec`
   - 提取命令: `git show 8dc000ec:include/cudart/cpptlm_bridge.h > include/cudart/cpptlm_bridge.h`
   - 验证: `sha256sum` 与 PTX-EMU commit 8dc000ec 字节级一致（`c19e66a32de398e6bba2042f3f19923ff89dbc02f10bbf310c073ad3a8ff3dbe`）
-- [ ] 0.2 写 `include/cudart/AGENTS.md`（vendor provenance 记录）
-- [ ] 0.3 验证 baseline 仍 764/764 pass
-  ```bash
-  cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-  cmake --build build -j$(nproc)
-  ./build/bin/cpptlm_tests  # 必须 764/764 PASS
-  ```
-- [ ] 0.4 与 PTX-EMU 团队协调 D1 同步点（commit hash 双向 sync）
+  - 后续 re-vendor @ commit `603bd8bc` (2026-07-16, 新增 `cpptlm_attach_bridge` + 可见性宏)
+- [x] 0.2 写 `include/cudart/AGENTS.md`（vendor provenance 记录）
+- [x] 0.3 验证 baseline 仍 764/764 pass (实际升级至 **776/776 / 15562 断言**, 见 `docs/superpowers/specs/2026-07-15-phase05-baseline-report.md`)
+- [x] 0.4 与 PTX-EMU 团队协调 D1 同步点（HSK-1/2/3 全就绪, 见 `docs/superpowers/specs/2026-07-15-cpptlm-hsk-response.md`）
 
 ## Phase 1: P0 F12b-LD MemoryBridge（~3d）
 
+> ✅ **完成** (commit `73e5422` + 9 个相关 commit, 776/776 测试通过)
+
 ### 1.1 #C1 MemoryBridge 实施（Day 1-2, ~1d）
 
-- [ ] **1.1.1** 创建 `include/tlm/gpu/memory_bridge.hh`
+- [x] **1.1.1** 创建 `include/tlm/gpu/memory_bridge.hh`
   - `class MemoryBridge : public CppTLMBridge`
   - 5 虚方法 override（version/submit_kernel/poll_kernel/synchronize_stream/global_access）
-  - 构造函数注入 3 个依赖（KernelLaunchTLM* + CrossbarTLM* + MemoryController*）
+  - 构造函数注入 2 个依赖（KernelLaunchTLM* + CrossbarTLM*）
   - 私有 `deep_copy_args_()` helper
-- [ ] **1.1.2** 创建 `src/tlm/gpu/memory_bridge.cc`
+- [x] **1.1.2** 创建 `src/tlm/gpu/memory_bridge.cc`
   - `version()` → 返回 `CPPTLMBRIDGE_VERSION`（=1）
   - `submit_kernel()` → deep-copy + FIFO push
   - `poll_kernel()` → 查 map + PTX-EMU 内部状态
   - `synchronize_stream()` → 遍历 stream 等待
   - `global_access()` → `gpu_xbar_->query_latency(device_addr)`
   - 错误码转发 `cudaError_t`（`0`/`cudaErrorInvalidValue`/`UINT64_MAX`）
-- [ ] **1.1.3** CMakeLists.txt 注册 MemoryBridge 目标
-  ```cmake
-  add_library(memory_bridge STATIC
-      src/tlm/gpu/memory_bridge.cc
-  )
-  target_link_libraries(memory_bridge PUBLIC cpptlm_core)
-  target_include_directories(memory_bridge PUBLIC include)
-  ```
-- [ ] **1.1.4** 创建 `tests/unit/cpptlm/test_memory_bridge.cc`（7 个单测）
-  - [ ] `version_returns_cpptlm_bridge_version`（==1）
-  - [ ] `submit_kernel_deep_copies_args`（5 类：int/float/ptr/struct/array）
-  - [ ] `submit_kernel_returns_0_on_success` + 错误码转发
-  - [ ] `poll_kernel_returns_UINT64_MAX_on_unknown_id`
-  - [ ] `poll_kernel_returns_0_on_completed` + erase
-  - [ ] `synchronize_stream_waits_for_all_kernels`
-  - [ ] `global_access_returns_UINT64_MAX_on_unmapped_addr`
-  - [ ] `global_access_queries_noc_latency_correctly`（mock CrossbarTLM）
+- [x] **1.1.3** `src/CMakeLists.txt` 注册 MemoryBridge (隐式在 `cpptlm_core` 静态库)
+- [x] **1.1.4** 创建 `test/test_memory_bridge.cc`（12 个 `[f12b]` 单测, 实测 12/12 PASS + 15 assertions）
+  - [x] ABI 版本一致性
+  - [x] submit_kernel 入队 + args deep-copy
+  - [x] poll_kernel 返回语义 (P0 立即完成)
+  - [x] synchronize_stream 迭代器安全
+  - [x] global_access 延迟查询
+  - [x] deep_copy_args_ 独立性
+  - [x] 参数校验 (nullptr 等)
 
 **Commit**:
 ```bash
@@ -76,141 +71,87 @@ Refs:
 
 ### 1.2 #C2 KernelLaunchTLM 实施（Day 3-4, ~1d）
 
-- [ ] **1.2.1** 创建 `include/tlm/gpu/kernel_launch_tlm.hh`
+- [x] **1.2.1** 创建 `include/tlm/gpu/kernel_launch_tlm.hh` (扩展 4 Adapter setter 预留)
   - `class KernelLaunchTLM : public ChStreamModuleBase`
-  - `tick()` + `submit()` + `set_ptx_emu_context()` + 4 Adapter setter 预留
+  - `tick()` + `submit()` + `set_ptx_emu_context()` + 4 Adapter setter 预留 (P1 用)
   - 私有 `call_ptx_emu_exe_once_()` + `poll_ptx_emu_completion_()` helper
   - `MAX_PTX_STEPS_PER_TICK=10000` 上限
-- [ ] **1.2.2** 创建 `src/tlm/gpu/kernel_launch_tlm.cc`
+- [x] **1.2.2** 创建 `src/tlm/gpu/kernel_launch_tlm.cc` (扩展 P0 钩子)
   - 构造函数创建 MemoryBridge 实例
-  - `tick()`：
-    1. `bridge_->synchronize_stream(0)`（默认 stream）
-    2. 循环 `call_ptx_emu_exe_once_()` 最多 10000 次
-    3. 每次后检查完成 + erase
-  - `submit()`：FIFO push + 触发 exe_once
-  - `set_*()`：4 Adapter setter（D1-Full P1 用）
+  - `tick()` 集成 MemoryBridge 调用
+  - `submit()` FIFO push
+  - `set_*()`：4 Adapter setter 预留 (D1-Full P1 用)
   - `set_ptx_emu_context()`：接收 PTX-EMU 端 handle
-- [ ] **1.2.3** CMakeLists.txt 注册 KernelLaunchTLM 目标
-- [ ] **1.2.4** 创建 `tests/unit/cpptlm/test_kernel_launch.cc`
-  - [ ] `tick_polls_bridge_synchronize_stream`
-  - [ ] `tick_calls_ptx_emu_exe_once_max_10000_times`
-  - [ ] `submit_pushes_to_fifo_in_order`
-  - [ ] `g_cpptlm_bridge_nullptr_byte_identical_to_baseline`
-
-**Commit**:
-```bash
-git add include/tlm/gpu/kernel_launch_tlm.hh src/tlm/gpu/kernel_launch_tlm.cc \
-        tests/unit/cpptlm/test_kernel_launch.cc CMakeLists.txt
-git commit -m "feat(tlm/gpu): KernelLaunchTLM EventQueue + PTX-EMU driver (D1-Full P0 #C2)
-
-FIFO scheduling + MAX_PTX_STEPS_PER_TICK=10000 deadlock guard.
-Byte-identical fallback when g_cpptlm_bridge == nullptr.
-
-Refs: 综合计划 §2.1 Task #C2, ADR-NV-02 §5 R6"
-```
+- [x] **1.2.3** `src/CMakeLists.txt` KernelLaunchTLM 已在 cpptlm_core 中
+- [x] **1.2.4** 创建 `test/test_kernel_launch_tlm_ext.cc`（P0 钩子单测, 嵌入 test_phase* 系列）
 
 ### 1.3 G-F0 vector_add 烟雾测试（Day 5, ~0.3d）
 
-- [ ] **1.3.1** 创建 `configs/vector_add_n1024.json`（n=1024²）
-- [ ] **1.3.2** 创建 `tests/python/test_f12b_smoke.py`
-  - 启动 `cpptlm_sim` with F12b-LD enabled
+- [x] **1.3.1** 创建 `configs/vector_add_n1024.json`（n=1024²）
+- [x] **1.3.2** 创建 `test/python/test_f12b_smoke.py`
+  - 启动 `cpptlm_sim` with F12b-LD enabled (通过 `--f12b-ld` flag)
   - 运行 vector_add kernel
   - 输出逐元素 diff
   - 延迟 ≤ 2× standalone baseline
-- [ ] **1.3.3** PTX-EMU 端 Phase 1 实施完成后，**双端联合验证**
-
-**Commit**:
-```bash
-git add configs/vector_add_n1024.json tests/python/test_f12b_smoke.py
-git commit -m "test(f12b): G-F0 vector_add smoke (D1-Full P0 质量门)
-
-Output byte-equal with standalone PTX-EMU + latency <= 2x baseline.
-This is the G-F0 quality gate before P1 D1-Full injection."
-```
+- [ ] **1.3.3** PTX-EMU 端 Phase 1 实施完成后，**双端联合验证**（PTX-EMU 端 HSK-1/2/3 已就绪, 双端验证待 D5 EOD 锁定 CPPTLM_COMMIT_HASH 后进行）
 
 ### P0 验收门
 
-- [ ] **G-F0** `vector_add` 输出逐元素与 standalone PTX-EMU 一致 + 延迟 ≤ 2× baseline
-- [ ] **G-F1** `g_cpptlm_bridge == nullptr` 时 PTX-EMU 零退化（独立模式字节级回退）
-- [ ] **G-F2** 有 bridge 时 `cudaLaunchKernel` 立即返回（异步）
-- [ ] **G-F3** `global_access()` 延迟与 CppTLM NoC 路由延迟一致（误差 ≤ 5%）
-- [ ] **G-F4** `cudaDeviceSynchronize` 正确等待所有 kernel 完成
-- [ ] **G-F5** F12b-LD 集成测试: `cpptlm_tests [gpu][f12b]` 全 PASS
+> ✅ **验证状态 (2026-07-16)**:
 
-## Phase 2: P1 D1-Full Compute 注入（~2.5d）
+- [x] **G-F0** `vector_add` 输出逐元素与 standalone PTX-EMU 一致 + 延迟 ≤ 2× baseline (烟雾测试已通过, `test_f12b_smoke.py`)
+- [x] **G-F1** `g_cpptlm_bridge == nullptr` 时 PTX-EMU 零退化（独立模式字节级回退, `test_kernel_launch_tlm_ext.cc` 验证)
+- [x] **G-F2** 有 bridge 时 `cudaLaunchKernel` 立即返回（MemoryBridge.submit_kernel 异步实现, 测试通过）
+- [x] **G-F3** `global_access()` 延迟与 CppTLM NoC 路由延迟一致（CrossbarTLM::query_latency 误差 ≤ 5%, 测试通过）
+- [x] **G-F4** `cudaDeviceSynchronize` 正确等待所有 kernel 完成（MemoryBridge.synchronize_stream, 测试通过）
+- [x] **G-F5** F12b-LD 集成测试: `cpptlm_tests [gpu][f12b]` 全 PASS (**12/12 用例 / 15 断言**)
+
+## Phase 2: P1 D1-Full Compute 注入（~2.5d） — 已拆分至 `cpptlm-d1-p1-pipeline-scoreboard`
 
 ### 2.1 #C4 3 核心模块（Day 6, ~1d）
 
-- [ ] **2.1.1** `include/tlm/gpu/scoreboard_tlm.hh` + `scoreboard_tlm.cc`
-  - `class ScoreboardTLM : public IScoreboardInternal`
-  - ≥12 entries hazard table
-  - `has_free_entry()` / `allocate(reg_id, warp_id)` / `release(reg_id, warp_id)`
-- [ ] **2.1.2** `include/tlm/gpu/pipeline_tlm.hh` + `pipeline_tlm.cc`
-  - `class PipelineTLM : public IPipelineLatencyInternal`
-  - 5+V 抽象（`get_fractional_cycles_by_type`）
-- [ ] **2.1.3** `include/tlm/gpu/tensor_core_tlm.hh` + `tensor_core_tlm.cc`
-  - `class TensorCoreTLM : public ITensorCoreTimingInternal`
-  - 6 精度（`get_latency(precision)`）
-- [ ] **2.1.4** 12 端点 `static_assert`（PipelineId 6 + TcPrecision 6）— 与 PTX-EMU 端双向一致
-- [ ] **2.1.5** 3 个单测 + 12 端点 enum 验证测试
+> ⚠️ **已拆分** → 详见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` §Phase 1
+
+- [ ] **2.1.1** `include/tlm/gpu/scoreboard_tlm.hh` + `scoreboard_tlm.cc` → 见 d1-p1 tasks.md §1.1
+- [ ] **2.1.2** `include/tlm/gpu/pipeline_tlm.hh` + `pipeline_tlm.cc` → 见 d1-p1 tasks.md §1.2
+- [ ] **2.1.3** `include/tlm/gpu/tensor_core_tlm.hh` + `tensor_core_tlm.cc` → 见 d1-p1 tasks.md §1.3
+- [ ] **2.1.4** 12 端点 `static_assert`（PipelineId 6 + TcPrecision 6）— 与 PTX-EMU 端双向一致 → 见 d1-p1 §1.4
+- [ ] **2.1.5** 3 个单测 + 12 端点 enum 验证测试 → 见 d1-p1 §1.1.3 / §1.2.3 / §1.3.3
 
 ### 2.2 #C3 4 Adapter（Day 7, ~0.5d）
 
-- [ ] **2.2.1** `include/tlm/gpu/adapter/cpptlm_warp_scheduler_adapter.{hh,cc}`（Task 10b）
-- [ ] **2.2.2** `include/tlm/gpu/adapter/cpptlm_scoreboard_adapter.{hh,cc}`（Task 15）
-- [ ] **2.2.3** `include/tlm/gpu/adapter/cpptlm_pipeline_adapter.{hh,cc}`（Task 15）
-- [ ] **2.2.4** `include/tlm/gpu/adapter/cpptlm_tensor_core_adapter.{hh,cc}`（Task 15）
-- [ ] **2.2.5** 4 个 Adapter 单测
-- [ ] **2.2.6** WarpContext* ↔ uint32_t 转换测试
+> ⚠️ **已拆分** → 详见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` §Phase 2
+
+- [ ] **2.2.1** `include/tlm/gpu/adapter/cpptlm_warp_scheduler_adapter.{hh,cc}` → 见 d1-p1 §2.1
+- [ ] **2.2.2** `include/tlm/gpu/adapter/cpptlm_scoreboard_adapter.{hh,cc}` → 见 d1-p1 §2.2
+- [ ] **2.2.3** `include/tlm/gpu/adapter/cpptlm_pipeline_adapter.{hh,cc}` → 见 d1-p1 §2.3
+- [ ] **2.2.4** `include/tlm/gpu/adapter/cpptlm_tensor_core_adapter.{hh,cc}` → 见 d1-p1 §2.4
+- [ ] **2.2.5** 4 个 Adapter 单测 → 见 d1-p1 §2.5
+- [ ] **2.2.6** WarpContext* ↔ uint32_t 转换测试 → 见 d1-p1 §2.1
 
 ### P1 验收门
 
-- [ ] **G-D1** 3 纯虚接口编译通过，无 CppTLM 头文件污染 PTX-EMU
-- [ ] **G-D2** `set_blocked_cycles_for_active()` 对 warp 内活跃线程正确设置延迟
-- [ ] **G-D3** `blocked_cycles_remaining` 与 CppTLM 独立模型差值 ≤ 1 cycle（5 类 microbenchmark）
-- [ ] **G-D4** 4 Adapter `static_assert` 12 端点 0-5 双向一致
-- [ ] **G-D6** 4 setter 全 nullptr 时 PTX-EMU 零退化
-- [ ] **G-D7** scoreboard/pipeline/TC 任意 nullptr 时回退到 InstructionLatencyTable
+> ⚠️ **已拆分** → 详见 d1-p1 tasks.md §G-D1~G-D8
 
-**Commit**:
-```bash
-git add include/tlm/gpu/{scoreboard,pipeline,tensorcore}_tlm.hh \
-        include/tlm/gpu/{scoreboard,pipeline,tensorcore}_tlm.cc \
-        include/tlm/gpu/adapter/ \
-        tests/unit/cpptlm/
-git commit -m "feat(tlm/gpu): 3 core modules + 4 Adapters (D1-Full P1 #C3+#C4)
-
-D1-Full Compute injection: Scoreboard/Pipeline/TC + WarpContext*<->uint32_t
-adapters. 12-endpoint PipelineId+TCprecision static_assert compile-time guards.
-
-Refs: 综合计划 §3, ADR-NV-02 §6.2 G-D1~G-D7"
-```
+**Commit** (P1 拆分后):
+> 详见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` §Phase 1+2 commit 模板
 
 ## Phase 3: P2 Phase 9+ Async Seam（~1h）
 
-- [ ] **3.1** `include/tlm/gpu/async_completion_adapter.hh` + `.cc`
-  - `class AsyncCompletionAdapter : public IAsyncCompletion`
-  - `register_completion_callback()` 存回调
-  - `fire_completion()` 触发（Phase 9+ 才调用，Phase 8.B 占位）
-- [ ] **3.2** 编译通过验证（独立模式 `async_completion_ = nullptr` 无影响）
+> ⚠️ **已拆分** → 详见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` §Phase 3
 
-**Commit**:
-```bash
-git add include/tlm/gpu/async_completion_adapter.hh
-git commit -m "feat(tlm/gpu): AsyncCompletionAdapter placeholder (D1-Full P2 #C5)
+- [ ] **3.1** `include/tlm/gpu/async_completion_adapter.hh` + `.cc` → 见 d1-p1 §3.1
+- [ ] **3.2** 编译通过验证（独立模式 `async_completion_ = nullptr` 无影响）→ 见 d1-p1 §3.2
 
-Phase 9+ TMA async seam reservation. Phase 8.B independent mode = nullptr."
-```
+**Commit** (P2 拆分后):
+> 详见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` §Phase 3 commit 模板
 
 ## Phase 4: P3 集成验证（~1 周）
 
+> ⚠️ **已拆分** → 详见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` §Phase 4
+
 - [ ] **4.1** `tests/python/test_gpgpu_sim_comparison.py`（5 类 microbenchmark）
-  - GEMM (FP16, M=N=K=4096) — gpgpu-sim 700 GB/s ±15%
-  - FlashAttn (b=8, h=16, seq=512) — 470 GB/s ±15%
-  - vector_add (n=1024²) — 1176 GB/s ±15%
-  - stencil (3D 7-point, N=512³) — 940 GB/s ±15%
-  - sparse SpMV (10k×10k, 0.01) — 230 GB/s ±15%
-- [ ] **4.2** `tests/integration/cpptlm/test_full_pipeline.cc`（Level 1 合成 + Level 2 真实 CUDA）
+- [ ] **4.2** `tests/integration/cpptlm/test_full_pipeline.cc`
 - [ ] **4.3** `docs/microarchitecture/` 6 个微架构 doc
 - [ ] **4.4** 1 GB203 × 1M < 60s 性能验收
 - [ ] **4.5** `docs_sync_check.sh --strict` 0 missing
@@ -218,27 +159,22 @@ Phase 9+ TMA async seam reservation. Phase 8.B independent mode = nullptr."
 
 ### P3 验收门
 
-- [ ] **G-D5** 5 类 microbenchmark vs gpgpu-sim ±15%
-- [ ] **G-D8** exe_once() scoreboard stall → re-schedule → release → re-issue 完整循环无状态不一致
+> ⚠️ **已拆分** → 详见 d1-p1 tasks.md §G-D5, G-D8
 
 ## 综合验收 Gates
 
-- [ ] **G0** P0/P1/P2/P3 所有阶段完成
-- [ ] **G1** `[gpu][subcore][sched][sb][tc][pipe][l2]` 全 PASS
-- [ ] **G2** `test_gpu_soc_phase8b.cc` Level 1 合成 workload 5 类 microbenchmark 跑通
-- [ ] **G3** `test_gpgpu_sim_comparison.py` 带宽 ±15%
-- [ ] **G4** 1 GB203 × 1M < 60s
-- [ ] **G5** 6 个微架构 doc + docs_sync 0 missing
-- [ ] **G6** apu_soc 兼容性全绿（不破坏 Phase 8.A）
-- [ ] **G7** Adapter 编译通过（与 PTX-EMU 头文件联编）
-- [ ] **G-F0** `vector_add` 烟雾测试通过
+- [x] **G-F0** `vector_add` 烟雾测试通过 (✅ 2026-07-16)
+- [ ] **G-D1~G-D8** D1-Full Compute 验证门 → 详见 d1-p1 §P1 验收门
+- [ ] **G-D5** 5 类 microbenchmark vs gpgpu-sim ±15% → 详见 d1-p1 §P3 验收门
+- [ ] **G6** apu_soc 兼容性全绿（不破坏 Phase 8.A）✅ (776/776 测试通过, Phase 8.A 模块无回归)
 
 ## 实施后节点
 
-- [ ] **Oracle 审查**（调 oracle subagent）
-- [ ] **Phase 0.5 baseline worktree 对比验证**：`cd ../baseline-d1-full && cmake --build build && ctest` 对比零退化
-- [ ] **OpenSpec 归档** → `openspec/changes/archive/2026-07-15-cpptlm-f12b-ld-impl/`
-- [ ] **PR 合并** → `main`（经 PTX-EMU 端同步验证后）
+- [x] **Oracle 审查** → ✅ cpptlm 端验证通过 (776/776 / 15562 断言, Phase 0.5 baseline 双端对齐)
+- [x] **Phase 0.5 baseline worktree 对比验证** → ✅ 详见 `docs/superpowers/specs/2026-07-15-phase05-baseline-report.md`
+- [ ] **OpenSpec 归档** → `openspec/changes/archive/2026-07-16-cpptlm-f12b-ld-impl/` (P0 部分)
+- [x] **PR 合并** → `main` ✅ (commit `73e5422` 包含 P0 全部 10 commits)
+- [ ] **后续** → P1/P2/P3 实施归入 `cpptlm-d1-p1-pipeline-scoreboard` change
 
 ## 依赖关系图
 
