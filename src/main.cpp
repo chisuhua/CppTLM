@@ -12,11 +12,17 @@
 #include "module_factory.hh"
 #include "modules.hh"
 #include "sim_core.hh"
+#include "tlm/crossbar_tlm.hh"
+#include "tlm/gpu/kernel_launch_tlm.hh"
+#include "tlm/gpu/memory_bridge.hh"
 #include "utils/json_includer.hh"
 #include "utils/topology_dumper.hh"
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <memory>
+
+using namespace tlm;
 
 void print_usage(const char* prog) {
     std::cerr << "Usage: " << prog << " <config.json> [options]\n"
@@ -26,6 +32,7 @@ void print_usage(const char* prog) {
               << "  --stream-path <path>     Output path for stats stream (default: "
                  "output/stats_stream.jsonl)\n"
               << "  --cycles <N>             Number of simulation cycles (default: 10000)\n"
+              << "  --f12b-ld                Enable F12b-LD MemoryBridge (PTX-EMU bridge)\n"
               << "  --debug-config           Enable verbose config parsing output\n"
               << "  --help, -h               Show this help message\n";
 }
@@ -40,6 +47,7 @@ int main(int argc, char* argv[]) {
     std::string config_path;
     bool stream_stats = false;
     bool debug_config = false;
+    bool f12b_ld = false;
     uint64_t stream_interval = 10000;
     std::string stream_path = "output/stats_stream.jsonl";
     uint64_t sim_cycles = 10000;
@@ -58,6 +66,8 @@ int main(int argc, char* argv[]) {
             stream_path = argv[++i];
         } else if (strcmp(argv[i], "--cycles") == 0 && i + 1 < argc) {
             sim_cycles = std::strtoull(argv[++i], nullptr, 10);
+        } else if (strcmp(argv[i], "--f12b-ld") == 0) {
+            f12b_ld = true;
         } else if (config_path.empty()) {
             config_path = argv[i];
         }
@@ -92,6 +102,23 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     factory.startAllTicks();
+
+    // F12b-LD MemoryBridge（手动接线，不走 ModuleFactory/REGISTER_CHSTREAM）
+    std::unique_ptr<MemoryBridge> memory_bridge;
+    if (f12b_ld) {
+        auto* kl = factory.getInstance<KernelLaunchTLM>("kernel_launch");
+        auto* xbar = factory.getInstance<CrossbarTLM>("gpu_xbar");
+        if (!kl || !xbar) {
+            std::cerr << "[ERROR] --f12b-ld requires JSON config with 'kernel_launch' and "
+                         "'gpu_xbar' entries\n";
+            return 1;
+        }
+        memory_bridge = std::make_unique<MemoryBridge>(kl, xbar);
+        kl->setMemoryBridge(memory_bridge.get());
+        std::cout << "[INFO] --f12b-ld: MemoryBridge enabled (manual instantiation)\n";
+    } else {
+        std::cout << "[INFO] --f12b-ld: MemoryBridge disabled (zero regression)\n";
+    }
 
     TopologyDumper::dumpToDot(factory, config, "topology.dot");
 
