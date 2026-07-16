@@ -175,6 +175,10 @@ public:
         stats_.dump(os);
     }
 
+    // P0 F12b-LD: 查询 device_addr 的路由延迟（3 周期固定占位）
+    // Phase 9+ 改为真实路由表查表
+    uint64_t query_latency(uint64_t device_addr) const { return 3; }
+
     // P3: helper 方法 - 借鉴 gem5 caches.py::L2Cache.connectCPUSideBus / connectMemSideBus
     // P3 partial: 不依赖 D.1, lazy 注册 cpu_side/mem_side 端口 + bind 总线
     // 参数类型为 ChStreamModuleBase* (非 SimModule*),
