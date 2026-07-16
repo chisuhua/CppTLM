@@ -14,3 +14,6 @@
 ## 验收检查
 
 - [x] 2026-07-15 — vendor 与 PTX-EMU commit 8dc000ec 字节级一致
+- [x] 2026-07-16 — re-vendor from PTX-EMU commit 603bd8bc (B1 cpptlm_attach_bridge + PTXEMU_BRIDGE_API)
+  - SHA-256: `ca716a8179841da6de76e0c54406c76d21e42ca3cb8e08a8cd48907f865fe5e7`
+  - 变更: 新增 `cpptlm_attach_bridge()` / `cpptlm_detach_bridge()` extern "C" 入口 + `PTXEMU_BRIDGE_API` 可见性宏 + `g_cpptlm_bridge` 全局指针声明 + cudaStream_t 兼容层
