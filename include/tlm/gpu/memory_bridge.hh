@@ -3,7 +3,11 @@
 // 功能: 实现 5 个纯虚方法 (version/submit_kernel/poll_kernel/synchronize_stream/global_access)
 //       供 PTX-EMU 端 libcpptlm_cudart.so 通过 g_cpptlm_bridge 指针调用
 // 作者 CppTLM Team / 日期 2026-07-16
-// 参考: include/cudart/cpptlm_bridge.h (ABI 真值源, PTX-EMU commit 603bd8bc)
+// 参考: include/cudart/cpptlm_bridge.h (ABI 真值源)
+//       - HSK-1 原始基线: PTX-EMU commit 8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d (2026-07-15)
+//       - 2026-07-16 re-vendor: PTX-EMU commit 603bd8bc (新增 cpptlm_attach_bridge + 可见性宏)
+//       - 详见 include/cudart/AGENTS.md (SHA-256 双重锁定, vendor 字节级一致)
+//       - CPPTLMBRIDGE_VERSION = 1 (类接口签名未变, version bump 未触发)
 //       openspec/changes/cpptlm-f12b-ld-impl/design.md §2.2
 #ifndef TLM_GPU_MEMORY_BRIDGE_HH
 #define TLM_GPU_MEMORY_BRIDGE_HH

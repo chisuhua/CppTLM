@@ -12,7 +12,7 @@
 
 ### Requirement: cpptlm-scoreboard
 The system MUST provide a `ScoreboardTLM` class in `include/tlm/gpu/scoreboard_tlm.hh` + `src/tlm/gpu/scoreboard_tlm.cc` inheriting from `IScoreboardInternal` (defined in `include/tlm/gpu/scoreboard_internal.hh`) implementing a hazard table with at least 12 entries. The class MUST provide:
-- `bool has_free_entry(uint32_t reg_id) const`
+- `bool has_free_entry() const`
 - `bool allocate(uint32_t reg_id, uint32_t warp_id)`
 - `bool release(uint32_t reg_id, uint32_t warp_id)`
 - `void tick()`
@@ -37,7 +37,7 @@ The system MUST provide a `PipelineTLM` class in `include/tlm/gpu/pipeline_tlm.h
 ---
 
 ### Requirement: cpptlm-tensorcore
-The system MUST provide a `TensorCoreTLM` class in `include/tlm/gpu/tensorcore_tlm.hh` + `src/tlm/gpu/tensorcore_tlm.cc` inheriting from `ITensorCoreTimingInternal` (defined in `include/tlm/gpu/tensor_core_internal.hh`) supporting 6 precisions (FP4 / FP6 / FP8 / FP16 / BF16 / TF32). The class MUST provide:
+The system MUST provide a `TensorCoreTLM` class in `include/tlm/gpu/tensor_core_tlm.hh` + `src/tlm/gpu/tensor_core_tlm.cc` inheriting from `ITensorCoreTimingInternal` (defined in `include/tlm/gpu/tensor_core_internal.hh`) supporting 6 precisions (FP4 / FP6 / FP8 / FP16 / BF16 / TF32). The class MUST provide:
 - `uint32_t get_latency(TcPrecision prec) const`
 - `uint32_t get_throughput_cycles(TcPrecision prec) const`
 - `uint32_t get_latency_mnk(TcPrecision prec, uint32_t M, uint32_t N, uint32_t K) const`
