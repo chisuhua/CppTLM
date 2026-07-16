@@ -121,11 +121,10 @@ private:
     CrossbarTLM* gpu_xbar_;              // NoC 延迟查询
     MemoryController* gpu_memory_;      // 实际数据读写（如果需要）
 
-    // kernel_id → deep-copied args 映射（用于 poll_kernel 返回剩余 cycles）
+    // kernel_id -> pending kernel 追踪（用于 poll_kernel/synchronize_stream）
     struct PendingKernel {
         uint64_t kernel_id;
         uint64_t stream_id;
-        std::vector<std::vector<uint8_t>> deep_copied_args;
     };
     std::unordered_map<uint64_t, PendingKernel> pending_kernels_;
 };
@@ -194,13 +193,8 @@ struct KernelLaunchRequest {
     const char* kernel_name;        // PTX-EMU 内部长期存储，无需 deep-copy
     uint32_t grid_x, grid_y, grid_z;
     uint32_t block_x, block_y, block_z;
-    std::vector<std::vector<uint8_t>> deep_copied_args;  // MemoryBridge 负责 deep-copy
-    size_t args_count;
     size_t shared_mem;
-    // PTX-EMU 端所需的额外上下文
-    void* func_ptr;                  // PTX 函数指针（kernel_name 解析后）
-    std::array<uint32_t, 3> grid_dim;
-    std::array<uint32_t, 3> block_dim;
+    void* func_ptr = nullptr;       // PTX 函数指针（kernel_name 解析后）
 };
 ```
 
@@ -308,7 +302,6 @@ private:
 **实施内容**:
 1. `include/tlm/gpu/kernel_launch_tlm.hh`：类声明 + 4 Adapter setter 预留
 2. `src/tlm/gpu/kernel_launch_tlm.cc`：
-   - 构造函数：保存 EventQueue 指针 + 创建 `MemoryBridge` 实例
    - `tick()`：
      1. 调 `bridge_->synchronize_stream(0)`（默认 stream）
      2. 循环执行 `call_ptx_emu_exe_once_()` 最多 `MAX_PTX_STEPS_PER_TICK` 次

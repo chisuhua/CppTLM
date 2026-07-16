@@ -124,7 +124,11 @@ private:
 #include "tlm/gpu/kernel_launch_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/memory_tlm.hh"
-#include <cuda_runtime.h>
+
+namespace {
+constexpr int kCudaSuccess = 0;
+constexpr int kCudaErrorInvalidValue = 11;
+}  // namespace
 
 namespace tlm {
 
@@ -162,8 +166,8 @@ int MemoryBridge::submit_kernel(uint64_t kernel_id, const char* kernel_name,
                                  const void** kernel_args, size_t args_count,
                                  size_t shared_mem, uint64_t stream_id) {
     // 1. 校验
-    if (kernel_name == nullptr) return cudaErrorInvalidValue;
-    if (args_count > 0 && kernel_args == nullptr) return cudaErrorInvalidValue;
+    if (kernel_name == nullptr) return kCudaErrorInvalidValue;
+    if (args_count > 0 && kernel_args == nullptr) return kCudaErrorInvalidValue;
 
     // 2. deep-copy args
     auto copied = deep_copy_args_(kernel_args, args_count);
@@ -199,19 +203,25 @@ uint64_t MemoryBridge::poll_kernel(uint64_t kernel_id) {
 
 int MemoryBridge::synchronize_stream(uint64_t stream_id) {
     while (true) {
-        bool stream_empty = true;
+        // Snapshot IDs first - poll_kernel() erases from pending_kernels_,
+        // which would invalidate a range-for iterator over the map.
+        std::vector<uint64_t> ids_to_poll;
+        for (auto it = pending_kernels_.begin(); it != pending_kernels_.end(); ++it) {
+            if (it->second.stream_id == stream_id) {
+                ids_to_poll.push_back(it->first);
+            }
+        }
+        if (ids_to_poll.empty()) break;
+
         std::vector<uint64_t> completed_ids;
-        for (const auto& [id, info] : pending_kernels_) {
-            if (info.stream_id != stream_id) continue;
-            uint64_t remaining = poll_kernel(id);
+        bool stream_empty = true;
+        for (uint64_t id : ids_to_poll) {
+            uint64_t remaining = poll_kernel(id);  // safe - iterating vector, not map
             if (remaining == 0) {
-                completed_ids.push_back(id);
+                completed_ids.push_back(id);  // poll_kernel already erased from map
             } else if (remaining != UINT64_MAX) {
                 stream_empty = false;
             }
-        }
-        for (uint64_t id : completed_ids) {
-            pending_kernels_.erase(id);  // 安全 erase (range-for 已结束)
         }
         if (stream_empty) break;
         // PTX-EMU 外部事件循环会重新调用
@@ -230,7 +240,7 @@ uint64_t MemoryBridge::global_access(uint64_t device_addr, uint64_t val, uint8_t
 }
 
 int MemoryBridge::translate_error_(int ret) const {
-    if (ret == 0) return cudaSuccess;
+    if (ret == 0) return kCudaSuccess;
     return static_cast<int>(ret);  // cudaError_t 是 int 类型
 }
 
