@@ -43,6 +43,7 @@ set(CORE_SOURCES
     tlm/gpu/minimal_warp_scheduler_tlm.cc
     tlm/gpu/gpu_compute_unit_tlm.cc
     tlm/gpu/gpu_soc_tlm.cc
+    tlm/gpu/memory_bridge.cc   # D1-Full P0: CppTLMBridge 接口实现
 )
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
