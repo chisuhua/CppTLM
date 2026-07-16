@@ -66,7 +66,7 @@
 ### Phase 1: Core Modules (3 days, independent of PTX-EMU P1)
 - Day 1: `IScoreboardInternal` + `ScoreboardTLM` + 单测 `test/test_scoreboard_tlm.cc`
 - Day 2: `IPipelineLatencyInternal` + `PipelineTLM` + 单测 `test/test_pipeline_tlm.cc`
-- Day 3: `ITensorCoreTimingInternal` + `TensorCoreTLM` + 单测 `test/test_tensorcore_tlm.cc`
+- Day 3: `ITensorCoreTimingInternal` + `TensorCoreTLM` + 单测 `test/test_tensor_core_tlm.cc`
 
 ### Phase 2: Adapter Bridge (2 days, depends on PTX-EMU P1 interface freeze)
 - Day 4: 3 Adapters (Scoreboard/Pipeline/TC) + 单测 `test/test_d1_adapters.cc`

@@ -442,7 +442,7 @@ This is the G-F0 quality gate before P1 D1-Full injection."
 ### Step 4.1: Day 6 - 3 核心模块
 - `include/tlm/gpu/scoreboard_tlm.hh` + `.cc`（≥12 entries hazard table）
 - `include/tlm/gpu/pipeline_tlm.hh` + `.cc`（5+V 抽象）
-- `include/tlm/gpu/tensorcore_tlm.hh` + `.cc`（6 精度）
+- `include/tlm/gpu/tensor_core_tlm.hh` + `.cc`（6 精度）
 - 12 端点 `static_assert`（与 PTX-EMU 端双向一致）
 - 3 个单测
 

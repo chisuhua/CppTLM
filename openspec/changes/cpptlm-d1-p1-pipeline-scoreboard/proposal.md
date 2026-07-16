@@ -28,7 +28,7 @@ CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为
 
 - **新增** `include/tlm/gpu/scoreboard_tlm.hh` + `src/tlm/gpu/scoreboard_tlm.cc`（#C4a）
 - **新增** `include/tlm/gpu/pipeline_tlm.hh` + `src/tlm/gpu/pipeline_tlm.cc`（#C4b）
-- **新增** `include/tlm/gpu/tensorcore_tlm.hh` + `src/tlm/gpu/tensorcore_tlm.cc`（#C4c）
+- **新增** `include/tlm/gpu/tensor_core_tlm.hh` + `src/tlm/gpu/tensor_core_tlm.cc`（#C4c）
 - **新增** `include/tlm/gpu/scoreboard_internal.hh`（`IScoreboardInternal` 内部接口）
 - **新增** `include/tlm/gpu/pipeline_internal.hh`（`IPipelineLatencyInternal` 内部接口）
 - **新增** `include/tlm/gpu/tensor_core_internal.hh`（`ITensorCoreTimingInternal` 内部接口）
@@ -39,7 +39,7 @@ CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为
 - **新增** `include/tlm/gpu/async_completion_adapter.hh` + `.cc`（#C5 占位）
 - **新增** `test/test_scoreboard_tlm.cc`（#C4a 单测）
 - **新增** `test/test_pipeline_tlm.cc`（#C4b 单测）
-- **新增** `test/test_tensorcore_tlm.cc`（#C4c 单测）
+- **新增** `test/test_tensor_core_tlm.cc`（#C4c 单测）
 - **新增** `test/test_12_endpoint_static_assert.cc`（12 端点编译期验证）
 - **新增** `test/test_d1_adapters.cc`（4 Adapter 单测）
 - **新增** `test/python/test_gpgpu_sim_comparison.py`（G-D5 5 类 microbenchmark）
@@ -72,7 +72,7 @@ CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为
 |------|------|:---:|------|
 | `include/tlm/gpu/scoreboard_tlm.hh` + `.cc` | **新增** | 0.3d | `cpptlm_tests [gpu][sb]` PASS |
 | `include/tlm/gpu/pipeline_tlm.hh` + `.cc` | **新增** | 0.3d | `cpptlm_tests [gpu][pipe]` PASS |
-| `include/tlm/gpu/tensorcore_tlm.hh` + `.cc` | **新增** | 0.3d | `cpptlm_tests [gpu][tc]` PASS |
+| `include/tlm/gpu/tensor_core_tlm.hh` + `.cc` | **新增** | 0.3d | `cpptlm_tests [gpu][tc]` PASS |
 | `include/tlm/gpu/adapter/cpptlm_*_adapter.{hh,cc}` (4 个) | **新增** | 0.5d | `static_assert` 编译通过 + 单测 |
 | `include/tlm/gpu/async_completion_adapter.hh` | **新增** | 0.1d | 编译通过 + 占位 |
 | `test/test_12_endpoint_static_assert.cc` | **新增** | 0.1d | 编译通过 = 验证通过 |
@@ -80,7 +80,7 @@ CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为
 | `test/test_{scoreboard,pipeline,tensorcore}_tlm.cc` | **新增** | 0.4d | 单测 PASS |
 | `test/test_d1_adapters.cc` | **新增** | 0.2d | 4 Adapter 单测 PASS |
 | `test/python/test_gpgpu_sim_comparison.py` | **新增** | 0.3d | G-D5 5 类 microbenchmark |
-| **合计** | | **~2.7d** | **12 文件 + 5 测试** |
+| **合计** | | **~6.5d** | **12 文件 + 5 测试** |
 
 **影响类别**:
 - **新增公共 API 表面**: 3 核心模块 + 4 Adapter + IAsyncCompletion 占位

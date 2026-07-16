@@ -61,7 +61,7 @@ public:
 ### 2.3 TensorCoreTLM
 
 ```cpp
-// include/tlm/gpu/tensorcore_tlm.hh
+// include/tlm/gpu/tensor_core_tlm.hh
 class TensorCoreTLM : public ITensorCoreTimingInternal {
 public:
     uint32_t get_latency(TcPrecision prec) const override;

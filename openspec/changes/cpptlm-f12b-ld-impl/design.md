@@ -348,7 +348,7 @@ assert latency_cpptlm <= 2 * latency_standalone  # 延迟 ≤ 2× baseline
    - `class PipelineTLM : public IPipelineLatencyInternal`
    - 5+V 抽象（仅返回分数 cycle 延迟）
    - `get_fractional_cycles_by_type(instr_type, pipeline_id) → double`
-3. `include/tlm/gpu/tensorcore_tlm.hh` + `tensorcore_tlm.cc`：
+3. `include/tlm/gpu/tensor_core_tlm.hh` + `tensor_core_tlm.cc`：
    - `class TensorCoreTLM : public ITensorCoreTimingInternal`
    - 6 精度（FP16/FP32/FP64/BF16/INT8/INT4）
    - `get_latency(precision) → uint32_t cycles`

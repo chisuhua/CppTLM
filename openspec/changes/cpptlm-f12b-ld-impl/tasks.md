@@ -148,7 +148,7 @@ This is the G-F0 quality gate before P1 D1-Full injection."
 - [ ] **2.1.2** `include/tlm/gpu/pipeline_tlm.hh` + `pipeline_tlm.cc`
   - `class PipelineTLM : public IPipelineLatencyInternal`
   - 5+V 抽象（`get_fractional_cycles_by_type`）
-- [ ] **2.1.3** `include/tlm/gpu/tensorcore_tlm.hh` + `tensorcore_tlm.cc`
+- [ ] **2.1.3** `include/tlm/gpu/tensor_core_tlm.hh` + `tensor_core_tlm.cc`
   - `class TensorCoreTLM : public ITensorCoreTimingInternal`
   - 6 精度（`get_latency(precision)`）
 - [ ] **2.1.4** 12 端点 `static_assert`（PipelineId 6 + TcPrecision 6）— 与 PTX-EMU 端双向一致

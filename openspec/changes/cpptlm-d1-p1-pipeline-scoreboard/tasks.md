@@ -3,7 +3,7 @@
 > **Status**: Proposed（2026-07-15 从 `cpptlm-f12b-ld-impl` P1/P2/P3 剥离）
 > **Parent**: `proposal.md` + `design.md` (cpptlm-d1-p1-pipeline-scoreboard)
 > **前置**: P0 `cpptlm-f12b-ld-impl` 归档 + PTX-EMU 交付 P1 接口
-> **总工时**: ~2.7d（CppTLM 端 #C3~#C5）
+> **总工时**: ~6.5d（CppTLM 端 #C4+#C3+#C5, 与 internal-plan.md Day-by-Day 估算一致）
 
 ## ⚠️ 启动条件
 
@@ -42,13 +42,13 @@
 
 ### 1.3 TensorCoreTLM（~0.3d）
 
-- [ ] **1.3.1** `include/tlm/gpu/tensorcore_tlm.hh`
+- [ ] **1.3.1** `include/tlm/gpu/tensor_core_tlm.hh`
   - `class TensorCoreTLM : public ITensorCoreTimingInternal`
   - 6 精度（FP16/FP32/FP64/BF16/INT8/INT4）
   - `get_latency(prec)` / `get_throughput_cycles(prec)` / `get_latency_mnk(prec, M, N, K)`
-- [ ] **1.3.2** `src/tlm/gpu/tensorcore_tlm.cc`
+- [ ] **1.3.2** `src/tlm/gpu/tensor_core_tlm.cc`
   - 默认延迟：FP16=4, FP32=8, BF16=4, INT8=2, INT4=1
-- [ ] **1.3.3** `test/test_tensorcore_tlm.cc`（2 单测）
+- [ ] **1.3.3** `test/test_tensor_core_tlm.cc`（2 单测）
   - [ ] `fp16_returns_4_cycles`
   - [ ] `tf32_returns_8_cycles`
 
