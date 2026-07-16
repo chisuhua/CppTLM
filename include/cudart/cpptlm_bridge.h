@@ -1,6 +1,14 @@
 #ifndef PTX_CPPTLM_BRIDGE_H
 #define PTX_CPPTLM_BRIDGE_H
 
+// PTX-EMU ↔ CppTLM 跨 so 可见性宏
+// PTX-EMU 端导出符号的可见性宏（gcc/clang: visibility("default")；MSVC: dllexport）
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  define PTXEMU_BRIDGE_API __declspec(dllexport)
+#else
+#  define PTXEMU_BRIDGE_API __attribute__((visibility("default")))
+#endif
+
 // =====================================================================
 // CppTLM ↔ PTX-EMU Bridge ABI 真值源
 // =====================================================================
@@ -26,14 +34,14 @@
 #include <cstddef>
 #include <cstdint>
 
-// 必要时启用（cuda_runtime.h 在某些 PTX-EMU 构建配置中可能不可用）
-// 如果 cudaStream_t 不可用，提供 fallback 定义
-#ifdef __CUDACC_RUNTIME_H__
+// cudaStream_t 类型定义
+// 优先使用 cuda_runtime.h 的定义，否则使用 cudart_intrinsics.h 兼容的 void*
+#if defined(__CUDACC_RUNTIME_H__)
 #include <cuda_runtime.h>
-#else
-// Fallback: cudaStream_t 是 forward-declared pointer 类型
-// 大小通常为 8 字节（Linux/macOS 64-bit），满足 static_assert
-typedef struct CUstream_st* cudaStream_t;
+#elif !defined(CUDA_STREAM_T_DEFINED)
+// 与 cudart_intrinsics.h 保持一致：cudaStream_t = void*
+typedef void* cudaStream_t;
+#define CUDA_STREAM_T_DEFINED
 #endif
 
 /// Bridge ABI 版本号 — 编译期断言双方实现版本一致
@@ -144,6 +152,21 @@ public:
 ///   - PTX-EMU 是唯一持有方
 ///   - libcpptlm_cudart.so 卸载时通过 cpptlm_detach_bridge() 重置为 nullptr
 extern CppTLMBridge* g_cpptlm_bridge;
+
+/// CppTLM 加载时调用 — 设置 PTX-EMU 端全局 bridge 指针
+///
+/// 调用方：libcpptlm_cudart.so 的静态构造或显式初始化函数
+/// 可重复调用（后调用覆盖前调用）
+/// nullptr 参数表示 detach（reset 为 nullptr）
+/// 实现位置：src/cudart/cudart_sim.cpp（与 g_cpptlm_bridge 定义同 TU）
+extern "C" PTXEMU_BRIDGE_API void cpptlm_attach_bridge(CppTLMBridge* bridge);
+
+/// CppTLM 卸载时调用 — 重置 PTX-EMU 端全局 bridge 指针
+///
+/// 调用方：libcpptlm_cudart.so 的析构函数
+/// 安全重复调用（nullptr 状态下幂等）
+/// 实现位置：src/cudart/cudart_sim.cpp
+extern "C" PTXEMU_BRIDGE_API void cpptlm_detach_bridge();
 
 /// 编译期断言 cudaStream_t 宽度可存入 uint64_t
 ///
