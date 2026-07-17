@@ -103,18 +103,25 @@ Refs: 综合计划 §3 Task #C3, ADR-NV-02 §6.2 G-D1~G-D7"
 
 ## Phase 3: IAsyncCompletion 占位（#C5, ~1h）
 
-- [ ] **3.1** `include/tlm/gpu/async_completion_adapter.hh` + `.cc`
-  - `class AsyncCompletionAdapter : public IAsyncCompletion`
-  - `register_completion_callback()` 存 map
-  - `fire_completion()` 触发（Phase 9+ 才调用，当前占位）
-- [ ] **3.2** 编译通过（独立模式 `async_completion_ = nullptr` 无影响）
+> ✅ **状态（2026-07-17 验证）**:
+> - `include/tlm/gpu/async_completion_adapter.hh` 已落地（97 行, header-only 设计, 因体量小无需独立 `.cc`）
+> - 测试: `test/test_async_completion_adapter.cc`（5 TEST_CASE 全部通过）
+> - 4 件套验证: `[gpu]` 92 cases / 224 assertions ALL PASS
+> - commit: `e69cd1d feat(tlm/gpu): AsyncCompletionAdapter placeholder (D1-Full P2 #C5)`
 
-**Commit**:
+- [x] **3.1** `include/tlm/gpu/async_completion_adapter.hh`（header-only，因体量小无 `.cc`）
+  - `class AsyncCompletionAdapter : public IAsyncCompletion`
+  - `register_completion_callback()` 存 map（`std::unordered_map<uint64_t, std::function<void()>>`）
+  - `fire_completion()` 占位（仅递增 `fire_completion_count_`，**不调用 callback，Phase 8.B 语义**）
+  - 监控接口: `fire_completion_count() / pending_callback_size()`
+- [x] **3.2** 编译通过（独立模式 `async_completion_ = nullptr` 无影响）+ 单测 5 case 全 pass
+
+**Commit**（已落地于 `e69cd1d`）:
 ```bash
-git add include/tlm/gpu/async_completion_adapter.hh src/tlm/gpu/async_completion_adapter.cc
+git add include/tlm/gpu/async_completion_adapter.hh test/test_async_completion_adapter.cc
 git commit -m "feat(tlm/gpu): IAsyncCompletion placeholder (D1-Full P2 #C5)
 
-Phase 9+ TMA async seam. Phase 8.B = nullptr (no-op)."
+Phase 9+ TMA async callback reservation. Phase 8.B = no-op semantics."
 ```
 
 ---
