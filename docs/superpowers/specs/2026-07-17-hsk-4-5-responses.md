@@ -28,7 +28,7 @@
 | 2c. `ITensorCoreTiming` 2 纯虚 + 1 默认实现 | ✅ **字节级一致** | `get_latency(TcPrecision)` + `get_throughput_cycles(TcPrecision)` + `get_latency_mnk(prec,M,N,K)` 默认实现退化到 `get_latency(prec)`,与 RFC-P1-001 §3.3 匹配 |
 | 3a. `PipelineId` enum 值 0-5 | ✅ **完全匹配** | PTX-EMU `pipeline_interface.h:9-16` 与 CppTLM RFC-P1-003 锁定值一致: `P0_INT_FP32=0, V_SIMD=1, P1_FP64=2, P2_SFU=3, P3_LSU=4, P4_TC=5` |
 | 3b. `TcPrecision` enum 值 0-5 | ✅ **完全匹配** | PTX-EMU `tensor_core_interface.h:8-15` 与 CppTLM RFC-P1-003 锁定值一致: `FP4=0, FP6=1, FP8=2, FP16=3, BF16=4, TF32=5` |
-| 4. CppTLM 端 12 端点 `static_assert` 编译期验证 | ⏳ **待 rebase 验证** (todo I, 非阻塞) | CppTLM CI rebase 到 `463038e0` 后即可编译期断言;当前 RFC-P1-003 enum 值已锁定 (`2b28505`) |
+| 4. CppTLM 端 12 端点 `static_assert` 编译期验证 | ⏳ **待 rebase 验证** (todo I, **G-D4 验收门**) | CppTLM CI rebase 到 `463038e0` 后即可编译期断言;当前 RFC-P1-003 enum 值已锁定 (`2b28505`) |
 | 5. CppTLM 端实现 3 接口 (ScoreboardTLM/PipelineTLM/TensorCoreTLM) | ⏳ **待 P1 Phase 1 实施** (todo J) | `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` Phase 1, 0/4 完成 |
 | 6. 回复 commit hash + 接口签名确认 | 📤 本文件 | 见下 |
 
@@ -110,7 +110,7 @@ public:
 | 4. 3 public static helpers | ✅ **确认** | `is_tensor_core_instruction` / `map_instruction_to_pipeline` / `map_instruction_to_tc_precision` - CppTLM Adapter 实施时将复用这些 helper (避免重复实现 PTX 指令分类逻辑) |
 | 5. 3 file-local helpers (anonymous namespace) | ✅ **确认** | `step_a_scoreboard_check` / `step_b_set_blocked_cycles` / `step_c_release_scoreboard` - PTX-EMU 内部实现细节,CppTLM 端不直接依赖 |
 | 6. PTX-EMU 端验证: 27/27 helpers + 13/13 barrier PASS | ✅ **确认收到** | 0 回归 + nullptr fallback 字节级兼容 - 满足 CppTLM P1 启动条件 3 的核心测试部分 |
-| 7. CppTLM 端 rebase + 编译验证 | ⏳ **待 todo I** (非阻塞) | 需 CppTLM CI rebase 到 `367fd6a5` 后跑 12 端点 `static_assert` |
+| 7. CppTLM 端 rebase + 编译验证 | ⏳ **待 todo I** (**G-D4 验收门**) | 需 CppTLM CI rebase 到 `367fd6a5` 后跑 12 端点 `static_assert` + 签名级 `decltype` 验证 |
 | 8. CppTLM 端 e2e 集成测试 | ⏳ **待 PTX-7a/7b** (PTX-EMU 端) | CppTLM P1 Phase 4 集成验证 (`tasks.md` §Phase 4) 需 PTX-EMU 端 7 Mock + 4 集成 tests 完成 |
 
 ### Commit hash 回传
@@ -149,11 +149,12 @@ exe_once(stmt) 控制流 (PTX-EMU 端, commit 367fd6a5):
     next_warp->set_scheduled(false)
     ...
 
-CppTLM 端期望 (cpptlm-d1-p1-pipeline-scoreboard/design.md §3):
-  - ScoreboardTLM 实现 IScoreboard 4 方法
-  - PipelineTLM 实现 IPipelineLatencyProvider 2 方法
-  - TensorCoreTLM 实现 ITensorCoreTiming 2+1 方法
-  - 4 Adapter 将 CppTLM 实现注入 PTX-EMU SMContext 3 setter
+CppTLM 端期望 (cpptlm-d1-p1-pipeline-scoreboard/design.md §3, 2026-07-18 修订):
+  - ScoreboardTLM 直接实现 IScoreboard 4 方法 (vendor 头文件, 无 Internal 层)
+  - PipelineTLM 直接实现 IPipelineLatencyProvider 2 方法 (vendor 头文件)
+  - TensorCoreTLM 直接实现 ITensorCoreTiming 2+1 方法 (vendor 头文件)
+  - 3 核心模块直接 public IScoreboard/IPipelineLatencyProvider/ITensorCoreTiming
+    (2026-07-17 Design Revision: 去掉 3 空壳 Adapter; WarpScheduler Adapter optional 待 Phase 4 评估)
 ```
 
 ---
@@ -173,10 +174,10 @@ CppTLM 端期望 (cpptlm-d1-p1-pipeline-scoreboard/design.md §3):
 | Phase | 之前 | HSK-4/5 后可推进度 |
 |-------|:---:|:---:|
 | Phase 1: 3 核心模块 (`scoreboard_tlm`/`pipeline_tlm`/`tensor_core_tlm`) | 0/4 | 🟡 **可启动** (接口签名锁定) |
-| Phase 2: 4 Adapter | 0/6 | 🟡 **可启动** (依赖 Phase 1) |
+| Phase 2: WarpScheduler Adapter (optional) | 0/1 | 🟡 待 Phase 4 评估 (2026-07-17 Design Revision: 去掉 3 空壳 Adapter, 仅保留 WarpScheduler optional) |
 | Phase 3: AsyncCompletion 占位 | ✅ 1/2 (`e69cd1d`) | ✅ |
-| Phase 4: KernelLaunchTLM 激活 | 0/5 | ⏳ 等 Phase 1+2 |
-| **G-D4: 12 端点 `static_assert`** | ❌ | 🟡 **可立即编译期验证** (todo I) |
+| Phase 4: KernelLaunchTLM 新增 3 setter + inject + 改 call_ptx_emu_exe_once_ | 0/6 | ⏳ 等 Phase 1+2 (2026-07-18 Oracle: 非"激活预留", 是"新增", 工时 1d -> 1.5d) |
+| **G-D4: 12 端点 `static_assert` + 签名级 `decltype` 验证** | ❌ | 🟡 **可立即编译期验证** (todo I) |
 
 ### 阻塞关系图 (HSK-4/5 后更新)
 
@@ -192,22 +193,20 @@ CppTLM 端 (可立即启动):
   🟡 todo I: rebase + 12 端点 static_assert 编译验证 (G-D4)
        │
        ▼
-  🟡 todo J: P1 Phase 1 (3 核心模块, ~600 LOC)
-       │
-       ├── include/tlm/gpu/scoreboard_tlm.{hh,cc}      (IScoreboard impl)
-       ├── include/tlm/gpu/pipeline_tlm.{hh,cc}        (IPipelineLatencyProvider impl)
-       └── include/tlm/gpu/tensor_core_tlm.{hh,cc}     (ITensorCoreTiming impl)
-            │
-            ▼
-       todo J (cont): P1 Phase 2 (4 Adapter, ~400 LOC)
-            │
-            ├── include/tlm/gpu/adapter/cpptlm_scoreboard_adapter.{hh,cc}
-            ├── include/tlm/gpu/adapter/cpptlm_pipeline_adapter.{hh,cc}
-            ├── include/tlm/gpu/adapter/cpptlm_tensor_core_adapter.{hh,cc}
-            └── (WarpScheduler adapter - 已在 Phase 8.A 部分实施)
-                 │
-                 ▼
-            Phase 4: KernelLaunchTLM 激活 (待 PTX-7a/7b 完成)
+   🟡 todo J: P1 Phase 1 (3 核心模块, ~560 LOC, 2026-07-18 Oracle 审查后)
+        │
+        ├── include/cudart/{scoreboard,pipeline,tensor_core}_interface.h  (vendor from HSK-4, 76 行)
+        ├── include/tlm/gpu/scoreboard_tlm.{hh,cc}      (IScoreboard impl, MAX_ENTRIES=512 global)
+        ├── include/tlm/gpu/pipeline_tlm.{hh,cc}        (IPipelineLatencyProvider impl, 占位 1.0)
+        └── include/tlm/gpu/tensor_core_tlm.{hh,cc}     (ITensorCoreTiming impl, 占位 1)
+             │
+             ▼
+        todo J (cont): P1 Phase 2 (WarpScheduler Adapter optional, ~0.3d, 待 Phase 4 评估)
+             │   (2026-07-17 Design Revision: 去掉 3 空壳 Adapter; WarpContext::get_physical_warp_id
+             │    已返回 uint32_t, PTX-EMU step_a_scoreboard_check 直接用, Adapter 可能不需要)
+             │
+             ▼
+        Phase 4: KernelLaunchTLM 新增 3 setter + inject_into_sm_context() + 改 call_ptx_emu_exe_once_() (待 PTX-7a/7b)
 ```
 
 ---
@@ -253,7 +252,7 @@ cafb466 P1 §3.1+§3.2 勾选 ──┤            463038e0 HSK-4 ITensorCoreTim
 | todo | 动作 | 风险 | 时机 |
 |------|------|:---:|------|
 | **I** | CppTLM CI rebase 到 PTX-EMU `367fd6a5` + 跑 12 端点 `static_assert` 编译验证 | 中 | 用户授权后 1-2 天 |
-| **J** | P1 Phase 1 实施 (3 核心模块 ~600 LOC) + Phase 2 (4 Adapter ~400 LOC) | 中-高 | todo I 通过 + 等 PTX-7a/7b |
+| **J** | P1 Phase 1 实施 (3 核心模块 ~560 LOC, 2026-07-18 Oracle 审查后) + Phase 2 (WarpScheduler Adapter optional ~0.3d, 待 Phase 4 评估) | 中-高 | todo I 通过 + 等 PTX-7a/7b |
 | **K** | P1 Phase 4 集成验证 + G-D5 microbenchmark | 高 | PTX-7a/7b 完成 + Phase 1+2 实施完毕 |
 
 ---

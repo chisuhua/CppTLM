@@ -1,5 +1,23 @@
 # Internal Plan: cpptlm-d1-p1-pipeline-scoreboard (P1)
 
+> **⚠️ DEPRECATED (2026-07-18) -- 本文件已过时，仅保留用于历史参考**
+>
+> **当前真值源**:
+> - `design.md` §0 Design Revision（2026-07-17 HSK-4/5 后简化 + 2026-07-18 Metis+Oracle 双审）
+> - `tasks.md`（Phase 1-4 当前任务定义）
+> - `proposal.md` § Impact（当前工时 + 文件清单）
+> - `specs/cpptlm-d1-p1-pipeline-scoreboard/spec.md`（当前需求）
+>
+> **本文件过时原因**:
+> 1. §1 Adapter Mapping Table 基于**旧架构**（4 Adapter + Internal 接口），design.md §0.1 已声明去掉 3 空壳 Adapter + Internal 层
+> 2. §3 Commit Sync Points 假设 Phase 1-3 分别实现 3 个 Internal 接口（已废弃）
+> 3. §4 Implementation Order 说 6.5 days，与 tasks.md 当前 3.5d + 1.5d 矛盾
+> 4. §5 Open Questions 大部分已被 HSK-4/5（2026-07-17 交付）解答
+>
+> **不要基于本文件实施**。如需了解实施顺序，请看 `tasks.md` § Phase 1-4 + 依赖关系图。
+>
+> ---
+
 > **Purpose**: Implementation sequencing + Adapter mapping + cross-repo commit sync points
 > **Author**: CppTLM P1 implementer (autonomous from this plan)
 > **Created**: 2026-07-16 (Day 3 / Metis Round 4 follow-up)
