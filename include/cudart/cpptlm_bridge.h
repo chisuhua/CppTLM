@@ -181,4 +181,84 @@ extern "C" PTXEMU_BRIDGE_API void cpptlm_detach_bridge();
 static_assert(sizeof(cudaStream_t) <= sizeof(uint64_t),
               "cudaStream_t wider than uint64_t — bridge stream_id field must be enlarged");
 
+// =====================================================================
+// G-D4: 12 端点 + 签名级 ABI 一致性静态断言 (Phase 8.B HSK-4 验收门)
+// 详见 openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/design.md §4
+//            openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md §G-D4
+// =====================================================================
+#include <string>
+#include <type_traits>
+#include <utility>
+#include "scoreboard_interface.h"
+#include "pipeline_interface.h"
+#include "tensor_core_interface.h"
+
+namespace abi_guards_g_d4 {
+
+// PipelineId (6 端点)
+static_assert(static_cast<uint32_t>(PipelineId::P0_INT_FP32) == 0,
+              "G-D4 ABI drift: PipelineId::P0_INT_FP32 != 0 (expected 0)");
+static_assert(static_cast<uint32_t>(PipelineId::V_SIMD) == 1,
+              "G-D4 ABI drift: PipelineId::V_SIMD != 1 (expected 1)");
+static_assert(static_cast<uint32_t>(PipelineId::P1_FP64) == 2,
+              "G-D4 ABI drift: PipelineId::P1_FP64 != 2 (expected 2)");
+static_assert(static_cast<uint32_t>(PipelineId::P2_SFU) == 3,
+              "G-D4 ABI drift: PipelineId::P2_SFU != 3 (expected 3)");
+static_assert(static_cast<uint32_t>(PipelineId::P3_LSU) == 4,
+              "G-D4 ABI drift: PipelineId::P3_LSU != 4 (expected 4)");
+static_assert(static_cast<uint32_t>(PipelineId::P4_TC) == 5,
+              "G-D4 ABI drift: PipelineId::P4_TC != 5 (expected 5)");
+
+// TcPrecision (6 端点)
+static_assert(static_cast<uint32_t>(TcPrecision::FP4) == 0,
+              "G-D4 ABI drift: TcPrecision::FP4 != 0 (expected 0)");
+static_assert(static_cast<uint32_t>(TcPrecision::FP6) == 1,
+              "G-D4 ABI drift: TcPrecision::FP6 != 1 (expected 1)");
+static_assert(static_cast<uint32_t>(TcPrecision::FP8) == 2,
+              "G-D4 ABI drift: TcPrecision::FP8 != 2 (expected 2)");
+static_assert(static_cast<uint32_t>(TcPrecision::FP16) == 3,
+              "G-D4 ABI drift: TcPrecision::FP16 != 3 (expected 3)");
+static_assert(static_cast<uint32_t>(TcPrecision::BF16) == 4,
+              "G-D4 ABI drift: TcPrecision::BF16 != 4 (expected 4)");
+static_assert(static_cast<uint32_t>(TcPrecision::TF32) == 5,
+              "G-D4 ABI drift: TcPrecision::TF32 != 5 (expected 5)");
+
+// 签名级 ABI 验证 — 防 silent enum 替换 / 函数签名漂移
+// IScoreboard::allocate(uint32_t, uint32_t) -> bool
+static_assert(std::is_same_v<
+              decltype(std::declval<IScoreboard&>().allocate(
+                  uint32_t{}, uint32_t{})),
+              bool>,
+              "G-D4 ABI drift: IScoreboard::allocate signature drifted "
+              "(expected bool(uint32_t, uint32_t))");
+
+// IPipelineLatencyProvider::get_fractional_cycles_by_type(int, PipelineId) -> double
+static_assert(std::is_same_v<
+              decltype(std::declval<IPipelineLatencyProvider&>()
+                           .get_fractional_cycles_by_type(
+                               int{}, PipelineId::P0_INT_FP32)),
+              double>,
+              "G-D4 ABI drift: IPipelineLatencyProvider::"
+              "get_fractional_cycles_by_type signature drifted "
+              "(expected double(int, PipelineId) — int is the "
+              "HKS-4 byte-confirmed type, NOT StatementType)");
+
+// ITensorCoreTiming::get_latency(TcPrecision) -> uint32_t
+static_assert(std::is_same_v<
+              decltype(std::declval<ITensorCoreTiming&>().get_latency(
+                  TcPrecision::FP16)),
+              uint32_t>,
+              "G-D4 ABI drift: ITensorCoreTiming::get_latency signature drifted "
+              "(expected uint32_t(TcPrecision))");
+
+// ITensorCoreTiming::get_latency_mnk(TcPrecision, M, N, K) -> uint32_t (含 default impl)
+static_assert(std::is_same_v<
+              decltype(std::declval<ITensorCoreTiming&>().get_latency_mnk(
+                  TcPrecision::FP16, uint32_t{}, uint32_t{}, uint32_t{})),
+              uint32_t>,
+              "G-D4 ABI drift: ITensorCoreTiming::get_latency_mnk signature drifted "
+              "(expected uint32_t(TcPrecision, uint32_t, uint32_t, uint32_t))");
+
+}  // namespace abi_guards_g_d4
+
 #endif // PTX_CPPTLM_BRIDGE_H

@@ -56,8 +56,9 @@ CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为
 
 ### 修改产物
 
-- **修改** `include/tlm/gpu/kernel_launch_tlm.hh`：激活 3 setter（P0 已预留 4 setter 接口，Phase 4 激活）
-- **修改** `include/cudart/AGENTS.md`：记录 3 vendor 头文件 provenance（SHA-256 + commit hash）
+- **修改** `include/tlm/gpu/kernel_launch_tlm.hh`：**新增** 3 setter（`set_scoreboard` / `set_pipeline` / `set_tensor_core`）-- P0 仅预留了 2 setter（`setMemoryBridge` / `set_ptx_emu_context`），Phase 4 需新增此 3 setter + `inject_into_sm_context()` 方法
+- **修改** `src/tlm/gpu/kernel_launch_tlm.cc`：`call_ptx_emu_exe_once_()` 从 P0 stub 改为真实注入（详见 tasks.md Phase 4）
+- **修改** `include/cudart/AGENTS.md`：记录 3 vendor 头文件 provenance（SHA-256 + commit hash + 同步策略）
 - **修改** `CMakeLists.txt`：注册 3 核心模块到 `cpptlm_core` 静态库
 - **修改** `test/CMakeLists.txt`：GLOB 自动发现 4 个新测试（`test_*.cc` 模式）
 
@@ -81,23 +82,23 @@ CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为
 
 | 文件 | 类型 | 工时 | 验证 |
 |------|------|:---:|------|
+| `include/cudart/{scoreboard,pipeline,tensor_core}_interface.h` | **新增** (vendor) | 0.2d | 12 端点 static_assert 编译通过 |
 | `include/tlm/gpu/scoreboard_tlm.hh` + `.cc` | **新增** | 0.3d | `cpptlm_tests [gpu][sb]` PASS |
 | `include/tlm/gpu/pipeline_tlm.hh` + `.cc` | **新增** | 0.3d | `cpptlm_tests [gpu][pipe]` PASS |
 | `include/tlm/gpu/tensor_core_tlm.hh` + `.cc` | **新增** | 0.3d | `cpptlm_tests [gpu][tc]` PASS |
-| `include/tlm/gpu/adapter/cpptlm_*_adapter.{hh,cc}` (4 个) | **新增** | 0.5d | `static_assert` 编译通过 + 单测 |
-| `include/tlm/gpu/async_completion_adapter.hh` | **新增** | 0.1d | 编译通过 + 占位 |
+| `include/tlm/gpu/async_completion_adapter.hh` | **新增** (header-only) | 0.1d | 编译通过 + 占位 (✅ 已落地 `e69cd1d`) |
 | `test/test_12_endpoint_static_assert.cc` | **新增** | 0.1d | 编译通过 = 验证通过 |
 | `CMakeLists.txt` | **修改** | 0.2d | `cmake --build build` PASS |
 | `test/test_{scoreboard,pipeline,tensorcore}_tlm.cc` | **新增** | 0.4d | 单测 PASS |
-| `test/test_d1_adapters.cc` | **新增** | 0.2d | 4 Adapter 单测 PASS |
-| `test/python/test_gpgpu_sim_comparison.py` | **新增** | 0.3d | G-D5 5 类 microbenchmark |
-| **合计** | | **~6.5d** | **12 文件 + 5 测试** |
+| `test/python/test_gpgpu_sim_comparison.py` | **新增** | 0.3d | G-D5 5 类 microbenchmark (Phase 4) |
+| `include/tlm/gpu/kernel_launch_tlm.hh` + `.cc` | **修改** (Phase 4) | 0.5d | 新增 3 setter + `inject_into_sm_context()` + 改 `call_ptx_emu_exe_once_()` |
+| **合计** | | **~3.5d** (Phase 1) + **~1.5d** (Phase 4) | **8 文件新增 + 4 文件修改 + 5 测试** |
 
 **影响类别**:
-- **新增公共 API 表面**: 3 核心模块 + 4 Adapter + IAsyncCompletion 占位
-- **现有行为变更**: `KernelLaunchTLM::inject_into_sm_context()` 从空实现变为真实注入
+- **新增公共 API 表面**: 3 核心模块 + IAsyncCompletion 占位（已落地）
+- **现有行为变更**: `KernelLaunchTLM::call_ptx_emu_exe_once_()` 从 P0 stub 变为真实注入（Phase 4）
 - **依赖关系**: 依赖 PTX-EMU P1 接口（3 个纯虚基类 + SMContext 3 setter）
-- **回退路径**: 4 setter 全 nullptr 时 PTX-EMU 零退化
+- **回退路径**: 3 setter 全 nullptr 时 PTX-EMU 零退化（回退逻辑在 PTX-EMU 端 `step_a/b/c` helper 实现）
 
 ## Cross-Project Coordination Points
 
