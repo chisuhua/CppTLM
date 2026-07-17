@@ -7,6 +7,21 @@
 > **Branch**: `feature/d1-full-impl`（P0 同分支，P0 归档后继续）
 > **Worktree**: `CppTLM/.worktrees/feature-d1-full-impl`
 
+## Design Revision (2026-07-17 HSK-4/5 后)
+
+> 修订原因: 原 design 写于 2026-07-15（HSK-4 交付前），使用 `IScoreboardInternal` 等 Internal 接口 + 4 Adapter 翻译层。HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) 交付后，PTX-EMU 接口已是纯虚头文件（零依赖），可直接 vendor + 直接实现，无需 Internal 层和空壳 Adapter。
+
+3 项简化:
+1. Vendor 3 接口头文件到 `include/cudart/`（与 `cpptlm_bridge.h` 同策略），不再用 `IScoreboardInternal` 等 Internal 接口
+2. 去掉 3 空壳 Adapter（Scoreboard/Pipeline/TC Adapter 是纯转发空壳）-- 3 核心模块直接 `public IScoreboard` / `IPipelineLatencyProvider` / `ITensorCoreTiming`
+3. Phase 1 占位 latency = 1.0（G-D5 精确对齐留给 Phase 4）
+
+影响:
+- 文件数: 18 -> 15（省 3 个 Internal `.hh` + 3 个 Adapter `.hh/.cc`，加 3 个 vendor 头文件）
+- LOC: ~1000 -> ~560（省 44%）
+- Adapter 模式: 4 Adapter -> 1 optional WarpScheduler Adapter（待 Phase 4 评估）
+- 见 `docs/superpowers/specs/2026-07-17-hsk-4-5-responses.md` HSK-4/5 响应 + `design.md` §1 修订
+
 ## Why
 
 CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为时钟真相源。PTX-EMU `SMContext::exe_once()` 在每次 CppTLM tick 时被动调用。
@@ -26,29 +41,25 @@ CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为
 
 ### 新增产物
 
-- **新增** `include/tlm/gpu/scoreboard_tlm.hh` + `src/tlm/gpu/scoreboard_tlm.cc`（#C4a）
-- **新增** `include/tlm/gpu/pipeline_tlm.hh` + `src/tlm/gpu/pipeline_tlm.cc`（#C4b）
-- **新增** `include/tlm/gpu/tensor_core_tlm.hh` + `src/tlm/gpu/tensor_core_tlm.cc`（#C4c）
-- **新增** `include/tlm/gpu/scoreboard_internal.hh`（`IScoreboardInternal` 内部接口）
-- **新增** `include/tlm/gpu/pipeline_internal.hh`（`IPipelineLatencyInternal` 内部接口）
-- **新增** `include/tlm/gpu/tensor_core_internal.hh`（`ITensorCoreTimingInternal` 内部接口）
-- **新增** `include/tlm/gpu/adapter/cpptlm_warp_scheduler_adapter.{hh,cc}`（#C3a）
-- **新增** `include/tlm/gpu/adapter/cpptlm_scoreboard_adapter.{hh,cc}`（#C3b）
-- **新增** `include/tlm/gpu/adapter/cpptlm_pipeline_adapter.{hh,cc}`（#C3c）
-- **新增** `include/tlm/gpu/adapter/cpptlm_tensor_core_adapter.{hh,cc}`（#C3d）
-- **新增** `include/tlm/gpu/async_completion_adapter.hh` + `.cc`（#C5 占位）
+- **新增** `include/cudart/scoreboard_interface.h`（vendor from PTX-EMU `8acfd2d1`，HSK-4）
+- **新增** `include/cudart/pipeline_interface.h`（vendor from PTX-EMU `9e7361b9`，HSK-4）
+- **新增** `include/cudart/tensor_core_interface.h`（vendor from PTX-EMU `463038e0`，HSK-4）
+- **新增** `include/tlm/gpu/scoreboard_tlm.hh` + `src/tlm/gpu/scoreboard_tlm.cc`（#C4a，直接 `public IScoreboard`）
+- **新增** `include/tlm/gpu/pipeline_tlm.hh` + `src/tlm/gpu/pipeline_tlm.cc`（#C4b，直接 `public IPipelineLatencyProvider`）
+- **新增** `include/tlm/gpu/tensor_core_tlm.hh` + `src/tlm/gpu/tensor_core_tlm.cc`（#C4c，直接 `public ITensorCoreTiming`）
+- **新增** `include/tlm/gpu/async_completion_adapter.hh`（#C5 占位，已落地 commit `e69cd1d`）
 - **新增** `test/test_scoreboard_tlm.cc`（#C4a 单测）
 - **新增** `test/test_pipeline_tlm.cc`（#C4b 单测）
 - **新增** `test/test_tensor_core_tlm.cc`（#C4c 单测）
-- **新增** `test/test_12_endpoint_static_assert.cc`（12 端点编译期验证）
-- **新增** `test/test_d1_adapters.cc`（4 Adapter 单测）
-- **新增** `test/python/test_gpgpu_sim_comparison.py`（G-D5 5 类 microbenchmark）
+- **新增** `test/test_12_endpoint_static_assert.cc`（12 端点编译期验证，用 vendor enum）
+- **新增** `test/python/test_gpgpu_sim_comparison.py`（G-D5 5 类 microbenchmark，Phase 4）
 
 ### 修改产物
 
-- **修改** `include/tlm/gpu/kernel_launch_tlm.hh`：激活 4 Adapter setter（P0 已预留接口）
-- **修改** `CMakeLists.txt`：注册 3 核心模块 + 4 Adapter 目标
-- **修改** `test/CMakeLists.txt`：注册 5 个新测试目标
+- **修改** `include/tlm/gpu/kernel_launch_tlm.hh`：激活 3 setter（P0 已预留 4 setter 接口，Phase 4 激活）
+- **修改** `include/cudart/AGENTS.md`：记录 3 vendor 头文件 provenance（SHA-256 + commit hash）
+- **修改** `CMakeLists.txt`：注册 3 核心模块到 `cpptlm_core` 静态库
+- **修改** `test/CMakeLists.txt`：GLOB 自动发现 4 个新测试（`test_*.cc` 模式）
 
 ### 关键依赖
 
@@ -60,11 +71,11 @@ CppTLM P0（MemoryBridge + KernelLaunchTLM 扩展）完成后，CppTLM 已成为
 
 ### New Capabilities
 
-- `cpptlm-scoreboard`: `ScoreboardTLM : public IScoreboardInternal` — ≥12 entries hazard table, `has_free_entry()`/`allocate()`/`release()`
-- `cpptlm-pipeline`: `PipelineTLM : public IPipelineLatencyInternal` — 5+V pipeline 抽象, `get_fractional_cycles_by_type()`
-- `cpptlm-tensorcore`: `TensorCoreTLM : public ITensorCoreTimingInternal` — 6 精度, `get_latency(precision)`
-- `cpptlm-4-adapters`: WarpScheduler + Scoreboard + Pipeline + TC 4 个 Adapter — `WarpContext* ↔ uint32_t` 转换 + 12 端点 `static_assert`
-- `cpptlm-async-completion`: `IAsyncCompletion` 占位 Adapter（Phase 9+ TMA async 预留）
+- `cpptlm-scoreboard`: `ScoreboardTLM : public IScoreboard` - 64 entries hazard table, `has_free_entry()`/`allocate()`/`release()`/`tick()`（vendor `cudart/scoreboard_interface.h`）
+- `cpptlm-pipeline`: `PipelineTLM : public IPipelineLatencyProvider` - 6 pipeline 抽象 (PipelineId 0-5), `get_fractional_cycles_by_type()`，Phase 1 占位 1.0
+- `cpptlm-tensorcore`: `TensorCoreTLM : public ITensorCoreTiming` - 6 精度 (TcPrecision 0-5), `get_latency(precision)`，Phase 1 占位 1
+- `cpptlm-12-endpoint-assert`: 12 端点 `static_assert`（PipelineId 6 + TcPrecision 6）编译期双向拦截
+- `cpptlm-async-completion`: `IAsyncCompletion` 占位 Adapter（Phase 9+ TMA async 预留，已落地 `e69cd1d`）
 
 ## Impact
 
