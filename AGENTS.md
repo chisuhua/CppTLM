@@ -188,25 +188,29 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 ## CROSS-PROJECT INTEGRATION (PTX-EMU 协同仿真)
 
-> **状态**: 🟢 PTX-EMU 端 HSK-1/2/3 已就绪并 CppTLM 端已确认（2026-07-15）
+> **状态**: 🟢 HSK-1/2/3 Closed + 🟡 HSK-4/5 已收到待 rebase 验证（2026-07-17）· P1 实质解锁 2/3
 
 **消费模式**：PTX-EMU 端通过 `ExternalProject_Add` 引用 CppTLM `cpptlm_core` 静态库 + `include/cudart/cpptlm_bridge.h` 头文件。PTX-EMU 端 `libcpptlm_cudart.so` 链接 CppTLM `cpptlm::core` 实现 MemoryBridge。
 
 **关键 reference**:
 - **PTX-EMU 端入口**: [`PTX-EMU-README.md`](docs/superpowers/specs/PTX-EMU-README.md) §10 PTX-EMU 端 6 项决策 + 3 个 handshake
-- **PTX-EMU 端 3 HSK**: `https://github.com/chisuhua/PTX-EMU/blob/main/openspec/changes/cpptlm-d1-full/hsk-{1,2,3}.md`
-- **CppTLM 端响应**: [`2026-07-15-cpptlm-hsk-response.md`](docs/superpowers/specs/2026-07-15-cpptlm-hsk-response.md) HSK-1/2 OK + HSK-3 选项 1 确认
+- **PTX-EMU 端 HSK-1/2/3**: `https://github.com/chisuhua/PTX-EMU/blob/main/openspec/changes/cpptlm-d1-full/hsk-{1,2,3}.md`
+- **PTX-EMU 端 HSK-4/5**: `https://github.com/chisuhua/PTX-EMU/blob/main/openspec/changes/cpptlm-phase8b-injection-points/hsk-{4,5}.md`
+- **CppTLM 端 HSK-1/2/3 响应**: [`2026-07-17-hsk-1-2-3-responses.md`](docs/superpowers/specs/2026-07-17-hsk-1-2-3-responses.md)
+- **CppTLM 端 HSK-4/5 响应**: [`2026-07-17-hsk-4-5-responses.md`](docs/superpowers/specs/2026-07-17-hsk-4-5-responses.md)
 - **顶层任务书**: [`2026-07-14-ptxemu-comprehensive-modification-plan.md`](docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md) §2-§5
 
-**PTX-EMU 端 HSK 链路**（截止 2026-07-15）:
-- **HSK-1 ✅**: `CppTLMBridge` ABI 头文件 commit `8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d` + `CPPTLMBRIDGE_VERSION=1`
-- **HSK-2 ✅**: ANTLR4 4.13.2（满足 CppTLM 端 `>= 4.13.2` 下限；4 权威源全为 4.13.2）
-- **HSK-3 ✅**: CMake 集成方式选 `ExternalProject_Add`（零侵入、精确版本控制）
+**PTX-EMU 端 HSK 链路**（截止 2026-07-17）:
+- **HSK-1 ✅ Closed**: `CppTLMBridge` ABI 头文件 commit `8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d` + `CPPTLMBRIDGE_VERSION=1`
+- **HSK-2 ✅ Closed**: ANTLR4 4.13.2（满足 CppTLM 端 `>= 4.13.2` 下限；4 权威源全为 4.13.2）· N/A for CppTLM
+- **HSK-3 ✅ Closed**: CMake 集成方式选 `ExternalProject_Add`（零侵入、精确版本控制）· CPPTLM_COMMIT_HASH=`73e5422`
+- **HSK-4 🟡 Ack**: 3 纯虚接口头文件已交付 commit `8acfd2d1` (IScoreboard) / `9e7361b9` (IPipelineLatencyProvider) / `463038e0` (ITensorCoreTiming) · enum 值与 CppTLM RFC-P1-003 字节级一致 · 待 CppTLM rebase 编译验证
+- **HSK-5 🟡 Ack**: exe_once 3-step 注入完成 commit `367fd6a5` + `921b4542` · 27/27 helpers + 13/13 barrier PASS · 3 Oracle BUG 修复 · 待 CppTLM rebase + 集成测试
 
 **CppTLM 端 deliverable**:
 - `cpptlm_core` 静态库（`build/lib/cpptlm_core.a`）+ `include/cudart/cpptlm_bridge.h` 头文件可被 PTX-EMU `ExternalProject_Add` 消费
 - `MemoryBridge` 实现（`include/tlm/gpu/memory_bridge.hh` + `src/tlm/gpu/memory_bridge.cc`，按项目分层惯例：头在 `include/`、实在 `src/`）通过 PTX-EMU ABI 头文件实现
-- ⏳ CppTLM CI 12 端点（PipelineId 6 + TcPrecision 6）双重 `static_assert` 编译期拦截 — **P1 阻塞中**（依赖 PTX-EMU `cpptlm-phase8b-injection-points` Phase 1 交付，见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` G-D4 验收门 + `docs/superpowers/specs/2026-07-17-hsk-1-2-3-responses.md:134`）
+- 🟡 CppTLM CI 12 端点（PipelineId 6 + TcPrecision 6）双重 `static_assert` 编译期拦截 - **实质解锁，待 rebase 验证**（PTX-EMU HSK-4 enum 已交付 `463038e0`，CppTLM todo I: rebase 到 `367fd6a5` 后编译期断言，见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` G-D4 验收门 + `docs/superpowers/specs/2026-07-17-hsk-4-5-responses.md`）
 
 **ExternalProject_Add 用法**（PTX-EMU 端 CMake）:
 ```cmake
