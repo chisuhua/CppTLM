@@ -205,8 +205,8 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 **CppTLM 端 deliverable**:
 - `cpptlm_core` 静态库（`build/lib/cpptlm_core.a`）+ `include/cudart/cpptlm_bridge.h` 头文件可被 PTX-EMU `ExternalProject_Add` 消费
-- `MemoryBridge` 实现（`src/tlm/gpu/memory_bridge.{hh,cc}`）通过 PTX-EMU ABI 头文件实现
-- CppTLM CI 12 端点（PipelineId 6 + TcPrecision 6）双重 `static_assert` 编译期拦截
+- `MemoryBridge` 实现（`include/tlm/gpu/memory_bridge.hh` + `src/tlm/gpu/memory_bridge.cc`，按项目分层惯例：头在 `include/`、实在 `src/`）通过 PTX-EMU ABI 头文件实现
+- ⏳ CppTLM CI 12 端点（PipelineId 6 + TcPrecision 6）双重 `static_assert` 编译期拦截 — **P1 阻塞中**（依赖 PTX-EMU `cpptlm-phase8b-injection-points` Phase 1 交付，见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` G-D4 验收门 + `docs/superpowers/specs/2026-07-17-hsk-1-2-3-responses.md:134`）
 
 **ExternalProject_Add 用法**（PTX-EMU 端 CMake）:
 ```cmake
