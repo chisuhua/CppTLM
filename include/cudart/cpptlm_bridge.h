@@ -52,7 +52,7 @@ typedef void* cudaStream_t;
 ///   2. bump CPPTLMBRIDGE_VERSION（如 1 → 2）
 ///   3. 通知 CppTLM 同步 rebase（HSK-1 重新发出）
 ///   4. CppTLM MemoryBridge::version() 返回同步的新版本号
-#define CPPTLMBRIDGE_VERSION 1
+#define CPPTLMBRIDGE_VERSION 2
 
 /// PTX-EMU ↔ CppTLM 桥接接口
 ///

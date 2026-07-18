@@ -3,6 +3,8 @@
 > **Status**: Proposed（2026-07-15 从 `cpptlm-f12b-ld-impl` §2.5/§2.6/§3.3~§3.5 剥离）
 > **Design Revision 1**: 2026-07-17（HSK-4/5 后简化 -- vendor 头文件 + 去掉 Internal/空壳 Adapter）
 > **Design Revision 2**: 2026-07-18（Metis + Oracle 双审后修复 4 项架构 P0 + 4 项文档 P0）
+> **Design Revision 3**: 2026-07-18（Oracle P0 协同仿真架构设计 — IPtxEmuDriver 窄接口 + §8 完整数据流 + 9 步实施计划）
+> **Design Revision 4**: 2026-07-18（Oracle P0 审查修复实施 — unordered_map O(1) + CAPACITY=2048 + AdvanceResult + unique_ptr + reset() + VERSION=2）
 > **Parent**: `proposal.md` (cpptlm-d1-p1-pipeline-scoreboard)
 > **前置 change**: `cpptlm-f12b-ld-impl`（P0 MemoryBridge, 归档后启动）
 
@@ -62,26 +64,32 @@ KernelLaunchTLM::tick()
 
 ### 2.1 ScoreboardTLM
 
+> **Design Revision 3** (2026-07-18 Oracle P0): 数据结构从 `std::array` 线性扫描改为 `std::unordered_map` O(1) 查找，CAPACITY 从 512 提升至 2048（覆盖 3-dest 最坏场景），新增 `reset()` 跨 kernel 清空方法。
+
 ```cpp
 // include/tlm/gpu/scoreboard_tlm.hh
 #include "cudart/scoreboard_interface.h"  // vendor from PTX-EMU 8acfd2d1
-#include <array>
+#include <unordered_map>
 
 class ScoreboardTLM : public IScoreboard {
 public:
+    static constexpr size_t CAPACITY = 2048;  // 64 warps × 8 in-flight × 3 dest × 1.33 margin
     ScoreboardTLM();
 
-    // IScoreboard 4 纯虚方法
+    // IScoreboard 4 纯虚方法 — O(1) 实现
     bool has_free_entry() const override;
     bool allocate(uint32_t reg_id, uint32_t warp_id) override;
     bool release(uint32_t reg_id, uint32_t warp_id) override;
     void tick() override;
 
+    /// 跨 kernel 重置（非虚，CppTLM 特有 — IScoreboard vendored 接口不含此方法）
+    void reset();
+
 private:
-    static constexpr size_t MAX_ENTRIES = 512;  // global scoreboard, 见下文依据
-    struct Entry { uint32_t reg_id = 0; uint32_t warp_id = 0; bool active = false; };
-    std::array<Entry, MAX_ENTRIES> entries_;
-    size_t active_count_ = 0;
+    static uint64_t make_key(uint32_t reg_id, uint32_t warp_id) {
+        return (static_cast<uint64_t>(warp_id) << 32) | reg_id;
+    }
+    std::unordered_map<uint64_t, bool> entries_;  // key → active flag
 };
 ```
 
@@ -89,30 +97,32 @@ private:
 
 经 PTX-EMU 端代码验证，`scoreboard_` 是 `SMContext` 成员（`sm_context.h:188`），**所有 warp 共用一个 `IScoreboard` 实例**，用 `(reg_id, warp_id)` 二元组区分不同 warp 的 entries。PTX-EMU `step_a_scoreboard_check`（`sm_context.cpp:29-45`）从 `WarpContext::get_physical_warp_id()` 获取 `warp_id` 后传入 `allocate(reg_id, warp_id)`。
 
-**容量依据**（`MAX_ENTRIES = 512`）:
-- 典型 SM 配置: 64 warps/SM × 8 in-flight instructions/warp × 1-3 dest regs = **512-1536 entries**
-- 512 是保守下限（覆盖 64 warps × 8 in-flight × 1 dest reg）
-- 原 `MAX_ENTRIES = 64` 严重不足（连 1 个 warp 的 8 条 in-flight 都覆盖不了，会导致 Step A 频繁失败 -> warp stall -> 性能指标无意义）
+**容量依据**（`CAPACITY = 2048`）:
+- 最坏场景: 64 warps/SM × 8 in-flight instructions/warp × 3 dest regs = **1536 entries**
+- 2048 = 1536 × 1.33 margin（覆盖异常高并发 + hash table 负载因子 ~75%）
+- 原 `MAX_ENTRIES = 512` 修改为 2048（Oracle P0 审查: 512 在 3-dest 指令场景下严重不足）
 
 **行为**:
-- `has_free_entry()`: `active_count_ < MAX_ENTRIES`
+- `has_free_entry()`: `entries_.size() < CAPACITY`
 - `allocate(reg, warp)`: 
-  - **duplicate 检查**: 若已存在 active `(reg_id, warp_id)` entry，**返回 false（rejects）**（2026-07-18 决议）
-  - 找第一个 `!active` slot，标记 active，`++active_count_`，返回 true
+  - 构造函数 `reserve(CAPACITY)` 预分配 bucket，防频繁 rehash
+  - `emplace(make_key(reg_id, warp_id), true)` — O(1) 平均，插入失败 = **duplicate rejects**
   - 满则返回 false
-  - **rejects 决议依据**: PTX-EMU `step_a_scoreboard_check` 的 rollback 逻辑（`sm_context.cpp:37-43`）假设 allocate 失败即回滚已分配 entries。若 overwrite，rollback 会释放错误的 entry，导致状态不一致。
-- `release(reg, warp)`: 找匹配 `(reg_id, warp_id, active)` slot，标记 inactive，`--active_count_`，返回 true；未找到返回 false
+  - **rejects 决议依据**: `unordered_map::emplace` 的 `.second == false` 语义等同于 key 已存在 → 返回 false，与 PTX-EMU rollback 逻辑完全对齐（`sm_context.cpp:37-43`）
+- `release(reg, warp)`: `erase(make_key(reg_id, warp_id))` — O(1) 平均；返回是否成功删除
 - `tick()`: P1 阶段 no-op（Phase 4 可加超时释放逻辑）
+- `reset()`: `entries_.clear()` + `reserve(CAPACITY)` — 跨 kernel 清空，保留预分配（Phase 4 PTX-EMU 在 kernel launch 前调用）
 
-**死锁缓解说明**（2026-07-18 Oracle 审查）:
+**死锁缓解说明**（2026-07-18 Oracle 审查 + Design Revision 3 更新）:
 
 **潜在死锁场景**: Step A `allocate` 失败 -> `goto warp_done` -> `warp_executed = false` -> Step C 不执行 -> release 永不发生 -> scoreboard 越来越满。
 
 **缓解机制**（无需 P1 实现 `tick()` 超时释放）:
-1. **容量充足**: `MAX_ENTRIES = 512` 覆盖典型 workload，正常情况下不会占满
+1. **容量充足**: `CAPACITY = 2048` 覆盖 3-dest 最坏场景（1536），余量 508 entries
 2. **Step A rollback 完整**: `sm_context.cpp:37-43` 的 `for (auto prev : allocated) scoreboard->release(prev, warp_id)` 确保本批次已分配的 entries 完整回滚，**不会泄漏**
 3. **`decrement_blocked_cycles` 每 tick 执行**: `sm_context.cpp:313-316` 对所有 warp 调用 `WarpContext::decrement_blocked_cycles`，被 Step B `set_blocked_cycles_for_active` 阻塞的 warp 会自动恢复可调度
-4. **真死锁场景**（边缘）: warp 异常退出但 entries 未 release。留 Phase 4 `tick()` 超时释放处理（如 active > 1000 cycles 强制 release）
+4. **`reset()` 跨 kernel 隔离**: 每个 kernel launch 前 PTX-EMU 调用 `scoreboard->reset()`，kernel 间 stale entries 不回传播
+5. **真死锁场景**（边缘）: warp 异常退出但 entries 未 release。留 Phase 4 `tick()` 超时释放处理（如 active > 1000 cycles 强制 release）
 
 ### 2.2 PipelineTLM
 
@@ -297,7 +307,263 @@ PTX-EMU 端 `sm_context.cpp` Step A + B + C 三段式注入（HSK-5 commit `367f
 | **R3**: Scoreboard stall/release 状态不一致 | 低 | 高 | ~~chaos test: stall->re-schedule->release->re-issue 完整循环~~（P1 阶段无需额外测试）-- 2026-07-18 Oracle 审查: Step A rollback 完整（`sm_context.cpp:37-43`）+ `MAX_ENTRIES=512` 容量充足 + `decrement_blocked_cycles` 每 tick 执行，正常 workload 无死锁 |
 | **R4**: PTX-EMU P1 接口交付延迟 | 已消除 | - | HSK-4/5 已交付（2026-07-17） |
 | **R5**: Phase 1 占位 latency 偏离实际 | 高 | 低 | G-D5 (Phase 4) 精确对齐 gpgpu-sim ±15% + `is_placeholder()` 方法标注（§2.2/§2.3） |
-| **R6**: Scoreboard 容量不足导致 Step A 频繁失败 | ~~高~~ 低 | ~~高~~ 中 | ~~原 `MAX_ENTRIES=64` 严重不足~~ -- 2026-07-18 Oracle 审查: 已调整为 `MAX_ENTRIES=512`（global scoreboard, 覆盖 64 warps × 8 in-flight, §2.1） |
+| **R6**: Scoreboard 容量不足导致 Step A 频繁失败 | ~~高~~ 低 | ~~高~~ 中 | ~~原 `MAX_ENTRIES=64` 严重不足~~ -- 2026-07-18 Design Revision 4: `CAPACITY=2048`（`unordered_map` O(1)，覆盖 64 warps × 8 in-flight × 3 dest × 1.33 margin，远超前版 512） |
 | **R7**: HSK-4/5 响应文档残留旧架构表述误导 PTX-EMU 团队 | 中 | 中 | 2026-07-18 修订 L156/L176/L202-207/L31 四处过时表述 |
 | **R8**: AsyncCompletionAdapter 投机性脚手架维护负担 | 中 | 低 | Phase 9+ 确认 PTX-EMU 端是否需要 `set_async_completion` setter；若不需要则 deprecated |
+
+## 8. IPtxEmuDriver 窄驱动接口 — 跨仓库协同仿真架构（2026-07-18 Oracle P0 审查）
+
+> **Design Revision 3**: 原 Phase 4 设计采用 `static_cast<GPUContext*>(ptx_emu_context_)->exe_once(warp_id)` 直调 PTX-EMU，但 `cpptlm_core` (C++17) 无法 include PTX-EMU (C++20) 头文件。Oracle P0 审查重新设计为纯虚抽象接口 + PTX 侧 shim 模式。
+
+### 8.1 设计动机
+
+**原方案的根本问题**:
+1. `cpptlm_core` 静态库独立编译（C++17），不依赖任何 PTX-EMU 头文件
+2. PTX-EMU 使用 C++20 + ANTLR4 + 自定义 IR 类型，无法被 CppTLM 消费
+3. `void* ptx_emu_context_` 在不引入 PTX-EMU 头文件的前提下无法安全转换
+4. `exe_once(warp_id)` API 签名与实际 `GPUContext::exe_once()`（无参数，`EXE_STATE` 返回值）不符
+
+**替代方案**: 定义 C++17 纯虚窄接口 `IPtxEmuDriver`，PTX-EMU 侧实现 shim。
+
+### 8.2 接口定义 (CppTLM 侧)
+
+> **Design Revision 3** (2026-07-18 Oracle P0): `advance()` 返回 `AdvanceResult` enum（替代 `void`），`inject_*()` 改为 `unique_ptr` 转移所有权，新增错误传播语义。
+
+```cpp
+// include/tlm/gpu/ptx_emu_driver.hh
+// C++17, 零 PTX-EMU 依赖 (仅 include 已 vendor 的 3 个纯虚接口头)
+#ifndef TLM_GPU_PTX_EMU_DRIVER_HH
+#define TLM_GPU_PTX_EMU_DRIVER_HH
+
+#include "cudart/scoreboard_interface.h"    // IScoreboard
+#include "cudart/pipeline_interface.h"      // IPipelineLatencyProvider + PipelineId
+#include "cudart/tensor_core_interface.h"   // ITensorCoreTiming + TcPrecision
+#include <cstdint>
+#include <memory>
+
+namespace tlm {
+
+/// advance() 返回值 — 区分 4 种执行状态
+enum class AdvanceResult : uint8_t {
+    Executed,       // 推进 ≥1 cycle
+    NoOp,           // 无 pending work（kernel 完成或未启动）
+    KernelComplete, // kernel 执行完毕（is_kernel_complete 可查询）
+    Error           // PTX-EMU 异常（exe_once 抛异常 / SM 越界）
+};
+
+/// PTX-EMU 执行引擎的抽象驱动接口
+/// CppTLM (C++17) 定义，PTX-EMU (C++20) 实现
+class IPtxEmuDriver {
+public:
+    virtual ~IPtxEmuDriver() = default;
+
+    /// 推进 PTX-EMU 执行最多 max_cycles 个周期
+    /// @return AdvanceResult（替代原 uint32_t，支持错误传播）
+    virtual AdvanceResult advance(uint32_t max_cycles, uint32_t& actual_cycles) = 0;
+
+    /// 查询 kernel 是否已完成执行
+    virtual bool is_kernel_complete(uint64_t kernel_id) = 0;
+
+    /// 注入 per-SM scoreboard（转移所有权）
+    /// CppTLM 调用后不再持有该实例；PTX-EMU 负责 SM 销毁时释放
+    virtual void inject_scoreboard(uint32_t sm_id, std::unique_ptr<IScoreboard> sb) = 0;
+
+    /// 注入 per-SM pipeline latency provider（转移所有权）
+    virtual void inject_pipeline(uint32_t sm_id, std::unique_ptr<IPipelineLatencyProvider> p) = 0;
+
+    /// 注入 per-SM tensor core timing（转移所有权）
+    virtual void inject_tensor_core(uint32_t sm_id, std::unique_ptr<ITensorCoreTiming> tc) = 0;
+
+    /// 获取 SM 数量
+    virtual uint32_t num_sms() const = 0;
+};
+
+}  // namespace tlm
+#endif
+```
+
+**Design Revision 3 变更要点**:
+- `AdvanceResult` enum: `advance()` 原返回 `uint32_t`（歧义: 0 = 成功? 失败?），改为 `AdvanceResult` 显式语义。`actual_cycles` 输出参数报告实际推进数。
+- `unique_ptr` 所有权转移: `inject_*()` 原裸指针无所有权语义 → CppTLM 注入后不再持有 → PTX-EMU 负责销毁。避免 `shared_ptr` 循环引用风险（CppTLM ↔ PTX-EMU 交叉持有）。
+- 可 mock: 测试时注入 fake driver，`AdvanceResult` 枚举支持 4 种状态的分支覆盖。
+
+**设计原则**:
+- 纯虚接口仅使用 `uint32_t`、`uint64_t`、`unique_ptr` 和已 vendor 的纯虚接口（均为 C++17 兼容）
+- C++17/20 ABI 安全：纯虚表布局在两个语言版本间一致；`unique_ptr` ABI 跨语言版本兼容
+- 错误不可静默：`AdvanceResult::Error` 要求 CppTLM 端 `KernelLaunchTLM::tick()` 记录日志 + 终止 tick
+
+### 8.3 Shim 实现 (PTX-EMU 侧)
+
+> **Design Revision 3**: `advance()` 返回 `AdvanceResult` + 输出 `actual_cycles`，`inject_*()` 接收 `unique_ptr`。
+
+```cpp
+// PTX-EMU src/cudart/cpptlm_bridge/PtxEmuDriverShim.h  (C++20)
+#include "tlm/gpu/ptx_emu_driver.hh"   // from CppTLM install
+#include "ptxsim/gpu_context.h"         // GPUContext
+#include <mutex>
+#include <unordered_map>
+
+class PtxEmuDriverShim : public tlm::IPtxEmuDriver {
+    GPUContext* ctx_;  // 非所有权
+    std::unordered_map<uint64_t, bool> completion_;
+    mutable std::mutex mu_;
+
+    // 持有 CppTLM 注入的 per-SM 资源（unique_ptr，PTX-EMU 负责销毁）
+    std::vector<std::unique_ptr<IScoreboard>> scoreboards_;
+    std::vector<std::unique_ptr<IPipelineLatencyProvider>> pipelines_;
+    std::vector<std::unique_ptr<ITensorCoreTiming>> tensorcores_;
+
+public:
+    explicit PtxEmuDriverShim(GPUContext* ctx) : ctx_(ctx) {}
+
+    AdvanceResult advance(uint32_t max_cycles, uint32_t& actual_cycles) override {
+        actual_cycles = 0;
+        if (!ctx_) return AdvanceResult::Error;
+        try {
+            while (actual_cycles < max_cycles && ctx_->get_state() != EXIT) {
+                ctx_->exe_once();
+                ++actual_cycles;
+            }
+            if (ctx_->get_state() == EXIT) {
+                // 标记所有已注册 kernel 为完成
+                std::lock_guard lock(mu_);
+                for (auto& [kid, done] : completion_) done = true;
+            }
+        } catch (...) {
+            return AdvanceResult::Error;
+        }
+        return actual_cycles > 0 ? AdvanceResult::Executed : AdvanceResult::NoOp;
+    }
+
+    bool is_kernel_complete(uint64_t kernel_id) override {
+        std::lock_guard lock(mu_);
+        auto it = completion_.find(kernel_id);
+        return it != completion_.end() && it->second;
+    }
+
+    void register_kernel(uint64_t kid) {
+        std::lock_guard lock(mu_);
+        completion_[kid] = false;
+    }
+    void mark_complete(uint64_t kid) {
+        std::lock_guard lock(mu_);
+        if (auto it = completion_.find(kid); it != completion_.end())
+            it->second = true;
+    }
+
+    void inject_scoreboard(uint32_t sm_id, std::unique_ptr<IScoreboard> sb) override {
+        if (sm_id < num_sms()) {
+            // kernel launch 前调用 reset() 清除上一 kernel 的 stale entries
+            if (auto* scoreboard = dynamic_cast<ScoreboardTLM*>(sb.get()))
+                scoreboard->reset();
+            ctx_->get_sm(sm_id)->set_scoreboard(sb.get());
+            scoreboards_.push_back(std::move(sb));  // 转移所有权
+        }
+    }
+    void inject_pipeline(uint32_t sm_id, std::unique_ptr<IPipelineLatencyProvider> p) override {
+        if (sm_id < num_sms()) {
+            ctx_->get_sm(sm_id)->set_pipeline_latency_provider(p.get());
+            pipelines_.push_back(std::move(p));
+        }
+    }
+    void inject_tensor_core(uint32_t sm_id, std::unique_ptr<ITensorCoreTiming> tc) override {
+        if (sm_id < num_sms()) {
+            ctx_->get_sm(sm_id)->set_tensor_core_timing(tc.get());
+            tensorcores_.push_back(std::move(tc));
+        }
+    }
+    uint32_t num_sms() const override {
+        return static_cast<uint32_t>(ctx_->get_num_sms());
+    }
+};
+```
+
+**Design Revision 3 关键变更**:
+- `advance()` 捕获 `exe_once()` 异常 → `AdvanceResult::Error`（不再静默）
+- `inject_*()` 接收 `unique_ptr` → 存入 `vector<unique_ptr>` → PTX-EMU 负责生命周期
+- `inject_scoreboard()` 调用 `ScoreboardTLM::reset()` 清空上一 kernel 的 stale entries
+- `completion_` 使用 `std::mutex` + `bool`（非 `std::atomic<bool>` — `atomic` 不可复制/移动，无法直接放入 `unordered_map`）
+- `SMContext` 的 3 setter 已在 `sm_context.h:67-75` 定义（inline），shim 仅做转发 — 零 PTX-EMU 核心代码修改
+- `GPUContext::KernelLaunchRequest::on_complete` 回调已存在（`gpu_context.h:62`），bridge path 构造 request 时设置即可
+
+### 8.4 运行时加载
+
+新增 ABI 入口（与 `cpptlm_attach_bridge` 同层级）:
+
+```cpp
+// PTX-EMU: cudart_sim.cpp
+extern "C" PTXEMU_BRIDGE_API void cpptlm_set_driver(tlm::IPtxEmuDriver* driver);
+
+// CppTLM: 全局指针
+namespace tlm { inline IPtxEmuDriver* g_ptx_emu_driver = nullptr; }
+```
+
+加载时机: PTX-EMU `initialize_environment()` 创建 `GPUContext` → 创建 `PtxEmuDriverShim` → `cpptlm_set_driver()` → CppTLM `KernelLaunchTLM::set_ptx_emu_driver()`。
+
+### 8.5 端到端数据流
+
+```
+cudaLaunchKernel (PTX-EMU bridge path)
+  ├─ kernel_id = generate_kernel_id()
+  ├─ shared_ptr deep-copy args (单次，消除双重深拷贝)
+  ├─ g_cpptlm_bridge->submit_kernel(kernel_id, ...)
+  │    → MemoryBridge → KernelLaunchTLM::pending_.push(req)
+  ├─ g_driver_shim->register_kernel(kernel_id)       ─┐
+  ├─ g_ptx_interpreter->launchPtxInterpreter(...)      │
+  │    → GPUContext::submit_kernel_request({            │
+  │        on_complete = [kid]{                         │
+  │          g_driver_shim->mark_complete(kid); ────────┤ shared
+  │        }                                            │ completion
+  │      })                                             │ map
+  └─ return cudaSuccess                                │
+                                                         │
+CppTLM EventQueue::run(1)                               │
+  └─ KernelLaunchTLM::tick()                            │
+       ├─ result = driver_->advance(MAX_PTX_STEPS, actual) │
+       │    switch (result):                             │
+       │      Error       → log + abort tick             │
+       │      NoOp        → skip completion check        │
+       │      Executed / KernelComplete:                 │
+       │         → GPUContext::exe_once() × N             │
+       │              → SMContext::exe_once()             │
+       │                   ├─ Step A: sb->allocate()      │
+       │                   ├─ execute_warp_instruction()  │
+       │                   ├─ Step B: pipeline->get_frac  │
+       │                   └─ Step C: sb->release()       │
+       │              → kernel done → on_complete ────────┘
+       │
+       └─ for each pending req:
+            if driver_->is_kernel_complete(req.kernel_id)
+              → bridge_->mark_complete()
+              → pending_.pop_front()
+```
+
+### 8.6 KernelLaunchTLM 与 Phase 1 模块的关系
+
+**Phase 1 创建的 3 模块** (`ScoreboardTLM`/`PipelineTLM`/`TensorCoreTLM`):
+- **不通过 KernelLaunchTLM setter 注入**（原 tasks.md 4.1/4.2 设计已废弃）
+- 改为: `main.cpp` 通过 `IPtxEmuDriver::inject_*()` 直接注入到 PTX-EMU `SMContext`
+- **多 SM**: `num_sms()` 查询数量 → 创建 N 个 `std::unique_ptr<ScoreboardTLM>` → 逐 SM 注入
+- **理由**: 注入发生在仿真启动时，不在 tick() 热路径中；职责分离（KernelLaunchTLM 是调度器，非资源管理器）
+
+### 8.7 Cycle 契约
+
+| 维度 | 定义 |
+|------|------|
+| **1 CppTLM EventQueue tick** | = 1 次 `KernelLaunchTLM::tick()` |
+| **1 tick → PTX-EMU** | = `driver->advance(N)` → 最多 N 次 `GPUContext::exe_once()` |
+| **1 GPUContext::exe_once()** | = 1 个 PTX-EMU cycle（所有 SM 各推进 1 cycle） |
+| **推荐的 N** | `MAX_PTX_STEPS_PER_TICK = 1`（1:1 映射，满足 G-D3 ≤1 cycle） |
+| **Stall 语义** | `cycle_counter_++` 在 stall check 之前执行 — stall 消耗 1 cycle（有意设计） |
+
+### 8.8 构建修复
+
+```cmake
+# CppTLM src/CMakeLists.txt: 启用 PIC（静态库链接到 .so 必须）
+set_target_properties(cpptlm_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# PTX-EMU CMakeLists.txt: pin commit + 修正选项名
+set(CPPTLM_COMMIT_HASH "73e5422" CACHE STRING "...")
+# ExternalProject_Add: -DBUILD_TESTS=OFF (非 -DBUILD_TESTING=OFF)
+```
 
