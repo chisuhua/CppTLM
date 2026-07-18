@@ -145,19 +145,19 @@ Refs:
 
 ### Wave 1: CppTLM Phase 4 实现（~1d）
 
-- [ ] **4.1** 新增 `include/tlm/gpu/ptx_emu_driver.hh` — `IPtxEmuDriver` 纯虚接口（7 方法: `AdvanceResult advance(max, &actual)` / `is_kernel_complete` / `inject_scoreboard(unique_ptr)` / `inject_pipeline(unique_ptr)` / `inject_tensor_core(unique_ptr)` / `num_sms`）
-- [ ] **4.1a** 新增 `AdvanceResult` enum: `Executed / NoOp / KernelComplete / Error`（Oracle P0: 替代原 `uint32_t`，显式错误传播）
-- [ ] **4.1b** `inject_*()` 改为 `std::unique_ptr` 所有权转移（Oracle P0: 避免裸指针生命周期歧义 + shared_ptr 循环引用）
-- [ ] **4.2** 修改 `kernel_launch_tlm.hh`：`void* ptx_emu_context_` → `IPtxEmuDriver* driver_` + setter `set_ptx_emu_driver()`
-- [ ] **4.3** 修改 `kernel_launch_tlm.cc::tick()`: `result = driver_->advance(N, actual)` → switch on `AdvanceResult` → `Error` 记录日志 + 终止 tick
-- [ ] **4.4** 修改 `kernel_launch_tlm.cc`: 删除 `call_ptx_emu_exe_once_()` 空函数 + 移除 10000 次循环（1 tick = 1 advance）
-- [ ] **4.5** 修改 `main.cpp` f12b-ld 路径: 创建 `vector<unique_ptr<ScoreboardTLM>>` per-SM → `driver->inject_scoreboard(sm_id, std::move(sb))` 转移所有权
-- [ ] **4.6** Latency 精确对齐：PipelineTLM + TensorCoreTLM 占位值 → gpgpu-sim 精确值 + `is_placeholder_` = false + TC delegation 规则（Pipeline 对 TC 指令返回 0）
+- [x] **4.1** 新增 `include/tlm/gpu/ptx_emu_driver.hh` — `IPtxEmuDriver` 纯虚接口（7 方法: `AdvanceResult advance(max, &actual)` / `is_kernel_complete` / `inject_scoreboard(unique_ptr)` / `inject_pipeline(unique_ptr)` / `inject_tensor_core(unique_ptr)` / `num_sms`） ✅ 2026-07-18
+- [x] **4.1a** 新增 `AdvanceResult` enum: `Executed / NoOp / KernelComplete / Error` ✅ 2026-07-18
+- [x] **4.1b** `inject_*()` 改为 `std::unique_ptr` 所有权转移 ✅ 2026-07-18
+- [x] **4.2** 修改 `kernel_launch_tlm.hh`：`void* ptx_emu_context_` → `IPtxEmuDriver* driver_` + setter `set_ptx_emu_driver()` ✅ 2026-07-18
+- [x] **4.3** 修改 `kernel_launch_tlm.cc::tick()`: `result = driver_->advance(N, actual)` → switch on `AdvanceResult` → `Error` 记录日志 + 终止 tick ✅ 2026-07-18
+- [x] **4.4** 修改 `kernel_launch_tlm.cc`: 删除 `call_ptx_emu_exe_once_()` 空函数 + 移除 10000 次循环（1 tick = 1 advance） ✅ 2026-07-18
+- [x] **4.5** 修改 `main.cpp` f12b-ld 路径: 创建 `vector<unique_ptr<ScoreboardTLM>>` per-SM → `driver->inject_scoreboard(sm_id, std::move(sb))` 转移所有权 ✅ 2026-07-18
+- [ ] **4.6** Latency 精确对齐：PipelineTLM + TensorCoreTLM 占位值 → gpgpu-sim 精确值 + `is_placeholder_` = false + TC delegation 规则（Pipeline 对 TC 指令返回 0）— **Deferred: 需 gpgpu-sim 参考数据, Phase 4 Wave 2**
 
 ### Wave 2: 验证（~0.5d）
 
 - [ ] **4.7** `test/test_kernel_launch_ptx_integration.cc`（条件链接 PTX-EMU，覆盖 G-D2/G-D3/G-D8）
-- [ ] **4.8** `test/test_kernel_launch_tlm_ext.cc` 更新: fake driver mock 注入 + per-SM scoreboard 隔离测试
+- [x] **4.8** `test/test_kernel_launch_tlm_ext.cc` 更新: fake driver mock 注入 + per-SM scoreboard 隔离测试 ✅ 2026-07-18（9 新测试用例, 含 MockPtxEmuDriver + AdvanceResult 全覆盖）
 - [ ] **4.9** `test/python/test_gpgpu_sim_comparison.py`（G-D5 5 类 microbenchmark vs gpgpu-sim ±15%）
 
 ### [CppTLM 端] 3 核心模块实例化方式

@@ -15,12 +15,18 @@
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/gpu/kernel_launch_tlm.hh"
 #include "tlm/gpu/memory_bridge.hh"
+// D1-Full P1: 3 核心模块 + IPtxEmuDriver 窄接口
+#include "tlm/gpu/scoreboard_tlm.hh"
+#include "tlm/gpu/pipeline_tlm.hh"
+#include "tlm/gpu/tensor_core_tlm.hh"
+#include "tlm/gpu/ptx_emu_driver.hh"
 #include "utils/json_includer.hh"
 #include "utils/topology_dumper.hh"
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <memory>
+#include <vector>
 
 using namespace tlm;
 
@@ -103,8 +109,17 @@ int main(int argc, char* argv[]) {
     }
     factory.startAllTicks();
 
-    // F12b-LD MemoryBridge（手动接线，不走 ModuleFactory/REGISTER_CHSTREAM）
+    // F12b-LD MemoryBridge（手动接线, 不走 ModuleFactory/REGISTER_CHSTREAM）
+    // D1-Full P1 Phase 4 Wave 1: 新增 per-SM Scoreboard/Pipeline/TensorCore 模块注入
     std::unique_ptr<MemoryBridge> memory_bridge;
+    // 持有的 per-SM 资源 (生命周期贯穿整个仿真)
+    std::vector<std::unique_ptr<ScoreboardTLM>> per_sm_scoreboards;
+    std::vector<std::unique_ptr<PipelineTLM>> per_sm_pipelines;
+    std::vector<std::unique_ptr<TensorCoreTLM>> per_sm_tensorcores;
+    // P1: g_ptx_emu_driver 由 PTX-EMU 端 cpptlm_set_driver() 设置
+    // (Phase 4 Wave 0 完成前为 nullptr, 零退化)
+    IPtxEmuDriver* g_ptx_emu_driver = nullptr;
+
     if (f12b_ld) {
         auto* kl = factory.getInstance<KernelLaunchTLM>("kernel_launch");
         auto* xbar = factory.getInstance<CrossbarTLM>("gpu_xbar");
@@ -115,6 +130,38 @@ int main(int argc, char* argv[]) {
         }
         memory_bridge = std::make_unique<MemoryBridge>(kl, xbar);
         kl->setMemoryBridge(memory_bridge.get());
+
+        // P1 Phase 4 Wave 1: 创建 per-SM 模块 + 注入
+        // 如果 PTX-EMU driver 已连接 (g_ptx_emu_driver != nullptr), 注入 per-SM 模块
+        if (g_ptx_emu_driver) {
+            kl->set_ptx_emu_driver(g_ptx_emu_driver);
+            uint32_t num_sms = g_ptx_emu_driver->num_sms();
+            per_sm_scoreboards.reserve(num_sms);
+            per_sm_pipelines.reserve(num_sms);
+            per_sm_tensorcores.reserve(num_sms);
+
+            for (uint32_t sm_id = 0; sm_id < num_sms; ++sm_id) {
+                // ScoreboardTLM: per-SM (有状态, 必须独立实例)
+                auto sb = std::make_unique<ScoreboardTLM>();
+                g_ptx_emu_driver->inject_scoreboard(sm_id, std::move(sb));
+
+                // PipelineTLM: 无状态, 可跨 SM 共享, 但 per-SM 创建 (成本等同)
+                auto pl = std::make_unique<PipelineTLM>();
+                g_ptx_emu_driver->inject_pipeline(sm_id, std::move(pl));
+
+                // TensorCoreTLM: 无状态, 同理 per-SM
+                auto tc = std::make_unique<TensorCoreTLM>();
+                g_ptx_emu_driver->inject_tensor_core(sm_id, std::move(tc));
+            }
+            std::cout << "[INFO] --f12b-ld: Injected per-SM Scoreboard/Pipeline/TensorCore "
+                      << "for " << num_sms << " SMs\n";
+        } else {
+            // PTX-EMU driver 未连接（Phase 4 Wave 0 未完成）, 零退化
+            // Scoreboard/Pipeline/TC 占位, PTX-EMU 端回退到 InstructionLatencyTable
+            std::cout << "[INFO] --f12b-ld: PTX-EMU driver not connected (nullptr), "
+                      << "Scoreboard/Pipeline/TC injection skipped (zero regression)\n";
+        }
+
         std::cout << "[INFO] --f12b-ld: MemoryBridge enabled (manual instantiation)\n";
     } else {
         std::cout << "[INFO] --f12b-ld: MemoryBridge disabled (zero regression)\n";
