@@ -1,11 +1,12 @@
 // include/tlm/gpu/kernel_launch_tlm.hh
-// KernelLaunchTLM: AQL 简化 dispatcher + D1-Full P0 PTX-EMU 驱动层
+// KernelLaunchTLM: AQL 简化 dispatcher + D1-Full P1 PTX-EMU 驱动层（IPtxEmuDriver 窄接口）
 // 功能:
 //   Phase 8.A: 按 interval 周期向 ComputeCluster 发 KernelDesc (简化版 AQL packet)
 //   P0 F12b-LD: 接 MemoryBridge, tick() 调 synchronize_stream(0) + 循环 exe_once
-// 作者 CppTLM Team / 日期 2026-06-24 (Phase 8.A) + 2026-07-16 (P0 扩展)
+//   Phase 4 Wave 1: 升级为 IPtxEmuDriver 窄接口, advance() 推进 PTX-EMU 执行
+// 作者 CppTLM Team / 日期 2026-06-24 (Phase 8.A) + 2026-07-16 (P0 扩展) + 2026-07-18 (Phase 4 P1)
 // 参考: openspec/changes/2026-06-24-gpu-soc-phase8a-infra/design.md §3.4
-//       openspec/changes/cpptlm-f12b-ld-impl/design.md §2.3
+//       openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/design.md §8
 #ifndef TLM_GPU_KERNEL_LAUNCH_TLM_HH
 #define TLM_GPU_KERNEL_LAUNCH_TLM_HH
 
@@ -16,7 +17,8 @@
 
 namespace tlm {
 
-class MemoryBridge;  // forward declare (定义在 memory_bridge.hh, tick() 中调用)
+class MemoryBridge;   // forward declare (定义在 memory_bridge.hh)
+class IPtxEmuDriver;  // forward declare (定义在 ptx_emu_driver.hh, 窄接口)
 
 /**
  * @brief Kernel launch 请求数据结构 (MemoryBridge → KernelLaunchTLM FIFO)
@@ -36,14 +38,14 @@ struct KernelLaunchRequest {
 };
 
 /**
- * @brief AQL 简化 dispatcher (按 ADR-SOC-04 黑盒决策) + D1-Full P0 PTX-EMU 驱动
+ * @brief AQL 简化 dispatcher (按 ADR-SOC-04 黑盒决策) + D1-Full P1 PTX-EMU 驱动
  *
  * Phase 8.A: tick() 按 interval 周期 launch kernel (简化 AQL model)
- * P0 F12b-LD: 接 MemoryBridge 后 tick() 改为 PTX-EMU 驱动模式:
+ * Phase 4 Wave 1: IPtxEmuDriver 窄接口模式:
  *   1. bridge_->synchronize_stream(0) 清空默认 stream 已完成 kernel
- *   2. 循环调用 call_ptx_emu_exe_once_() 推进 PTX-EMU 内部 warp 状态
- *   3. 上限 MAX_PTX_STEPS_PER_TICK 防止死循环
- * bridge_ == nullptr 时退化回 Phase 8.A 行为 (零回归)
+ *   2. driver_->advance(max, actual) 推进 PTX-EMU GPUContext::exe_once()
+ *   3. AdvanceResult switch: Error 记录日志 + 终止, Executed/KernelComplete 检查 pending
+ * driver_ == nullptr 时退化回 Phase 8.A 行为 (零回归)
  */
 class KernelLaunchTLM : public ChStreamModuleBase {
 public:
@@ -73,11 +75,12 @@ public:
 
     // === D1-Full P0 扩展 APIs ===
 
-    /// 注入 MemoryBridge (非所有权)。tick() 中检查 bridge_ != nullptr 决定走 P0 还是 Phase 8.A 路径
+    /// 注入 MemoryBridge (非所有权)。tick() 中检查 bridge_ != nullptr 决定走 P0/P1 还是 Phase 8.A 路径
     void setMemoryBridge(MemoryBridge* bridge) { bridge_ = bridge; }
 
-    /// 注入 PTX-EMU 端 gpu_context handle (P0 不实际调用 exe_once, 仅存储)
-    void set_ptx_emu_context(void* ctx) { ptx_emu_context_ = ctx; }
+    /// 注入 PTX-EMU 驱动接口 (Phase 4 Wave 1: 替代 P0 的 void* ptx_emu_context_)
+    /// 非所有权, 由调用方管理生命周期
+    void set_ptx_emu_driver(IPtxEmuDriver* driver) { driver_ = driver; }
 
     /// MemoryBridge::submit_kernel 调用: push KernelLaunchRequest 到 FIFO pending_
     void submit(KernelLaunchRequest&& req) {
@@ -90,9 +93,6 @@ public:
     void tick() override;
 
 private:
-    /// 调用 PTX-EMU 端 exe_once() 推进 1 个 warp 步进 (P0 stub: 仅计数占位, 不真实驱动)
-    void call_ptx_emu_exe_once_();
-
     // Phase 8.A 状态 (bridge_ == nullptr 路径)
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
     uint32_t kernel_id_ = 0;
@@ -102,13 +102,13 @@ private:
     uint64_t cycle_counter_ = 0;
     uint64_t kernels_launched_ = 0;
 
-    // D1-Full P0 状态 (bridge_ != nullptr 路径)
-    MemoryBridge* bridge_ = nullptr;            // 非所有权, 由调用方管理生命周期
-    void* ptx_emu_context_ = nullptr;            // PTX-EMU 端 gpu_context handle
-    std::deque<KernelLaunchRequest> pending_;   // FIFO kernel 队列 (MemoryBridge submit 入队)
+    // D1-Full P1 状态 (driver_ != nullptr 路径)
+    MemoryBridge* bridge_ = nullptr;             // 非所有权
+    IPtxEmuDriver* driver_ = nullptr;            // 非所有权 (P1: 替代 void* ptx_emu_context_)
+    std::deque<KernelLaunchRequest> pending_;    // FIFO kernel 队列
 
-    /// 每 tick 调用 exe_once 的上限, 防止 PTX-EMU 内部死循环卡住 EventQueue
-    static constexpr uint32_t MAX_PTX_STEPS_PER_TICK = 10000;
+    /// Phase 4 Wave 1: 每 tick 调用 advance() 的最大步数, 1:1 映射满足 G-D3 ≤1 cycle
+    static constexpr uint32_t MAX_PTX_STEPS_PER_TICK = 1;
 };
 
 }  // namespace tlm

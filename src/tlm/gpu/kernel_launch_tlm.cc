@@ -1,10 +1,12 @@
 // src/tlm/gpu/kernel_launch_tlm.cc
-// KernelLaunchTLM 实现 (Phase 8.A Task 4 + D1-Full P0 PTX-EMU 驱动)
-// 作者 CppTLM Team / 日期 2026-06-24 (Phase 8.A) + 2026-07-16 (P0 扩展)
+// KernelLaunchTLM 实现 (Phase 8.A Task 4 + D1-Full P1 Phase 4 Wave 1)
+// 作者 CppTLM Team / 日期 2026-06-24 (Phase 8.A) + 2026-07-16 (P0 扩展) + 2026-07-18 (Phase 4 P1)
 #include "tlm/gpu/kernel_launch_tlm.hh"
 
 // tick() 中 bridge_ 路径需要 MemoryBridge 完整定义 (synchronize_stream + poll)
 #include "tlm/gpu/memory_bridge.hh"
+// IPtxEmuDriver 接口 (AdvanceResult enum + advance/is_kernel_complete)
+#include "tlm/gpu/ptx_emu_driver.hh"
 
 namespace tlm {
 
@@ -14,39 +16,49 @@ KernelLaunchTLM::KernelLaunchTLM(const std::string& name, EventQueue* eq)
 
 void KernelLaunchTLM::tick() {
     if (bridge_ != nullptr) {
-        // === D1-Full P0 PTX-EMU 驱动路径 ===
-        // 1. 同步 stream 0 — 清掉已完成的 kernel (P0 立即完成语义)
+        // === D1-Full P1 PTX-EMU 驱动路径 ===
+        // 1. 同步 stream 0 — 清掉已完成的 kernel
         bridge_->synchronize_stream(0);
 
-        // 2. 推进 PTX-EMU 内部 warp 状态 (最多 MAX_PTX_STEPS_PER_TICK 次, 防死循环)
-        //    当 pending_ 非空时连续调用 exe_once() 推进仿真
-        //    (P0 stub: call_ptx_emu_exe_once_() 仅计数, 不真实驱动 PTX-EMU)
-        uint32_t steps = 0;
-        while (!pending_.empty() && steps < MAX_PTX_STEPS_PER_TICK) {
-            call_ptx_emu_exe_once_();
-            ++steps;
+        // 2. 通过 IPtxEmuDriver 推进 PTX-EMU 执行 (1:1 映射, 满足 G-D3 ≤1 cycle)
+        if (driver_ != nullptr) {
+            uint32_t actual_cycles = 0;
+            AdvanceResult result = driver_->advance(MAX_PTX_STEPS_PER_TICK, actual_cycles);
+
+            switch (result) {
+            case AdvanceResult::Error:
+                // PTX-EMU 异常 — 记录日志并终止 tick
+                fprintf(stderr, "[WARN] KernelLaunchTLM: PTX-EMU driver advance() returned Error\n");
+                return;  // 不继续处理 pending queue
+
+            case AdvanceResult::Executed:
+            case AdvanceResult::KernelComplete:
+                // 3. 检查 kernel 完成状态
+                // 遍历 pending_ FIFO, 已完成项 pop
+                while (!pending_.empty()) {
+                    auto& front = pending_.front();
+                    if (driver_->is_kernel_complete(front.kernel_id)) {
+                        // MemoryBridge 通过 poll_kernel 自行跟踪完成状态,
+                        // 无需 CppTLM 端显式调 mark_complete
+                        pending_.pop_front();
+                    } else {
+                        break;  // FIFO 保序 — 后续 kernel 也一定未完成
+                    }
+                }
+                break;
+
+            case AdvanceResult::NoOp:
+                // 无 pending work — kernel 未启动或全部完成
+                break;
+            }
         }
-
-        // 3. 检查 kernel 完成状态
-        //    P0: poll_kernel 立即返回 0, pending_kernels_ 在首次 synchronize_stream 清空
-        //    P1+: 遍历 pending_ FIFO 逐项 poll, 已完成项 pop
-
     } else {
-        // === Phase 8.A 独立模式 (零回归, 不受 P0 扩展影响) ===
+        // === Phase 8.A 独立模式 (零回归, bridge_ 为空时退化为独立模拟) ===
         cycle_counter_++;
         if (interval_ > 0 && (cycle_counter_ % interval_) == 0) {
             kernels_launched_++;
         }
     }
-}
-
-void KernelLaunchTLM::call_ptx_emu_exe_once_() {
-    // P0 stub: 不真实驱动 PTX-EMU, 仅占位。
-    // Phase 9+ 实现: 通过 set_ptx_emu_context() 传入的 handle 调用 PTX-EMU exe_once()
-    //   auto* ctx = static_cast<GPUContext*>(ptx_emu_context_);
-    //   ctx->exe_once(next_warp_id);
-    // P0 阶段 pending_ kernel 立即通过 bridge_->synchronize_stream(0) 完成,
-    // queue 将在 P1+ 真实 exe_once 驱动后才变空。
 }
 
 }  // namespace tlm
