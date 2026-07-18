@@ -38,8 +38,8 @@ TEST_CASE("MemoryBridge: ABI 版本一致性", "[gpu][f12b]") {
     auto bridge = std::make_unique<MemoryBridge>(kl.get(), xbar.get());
 
     REQUIRE(bridge->version() == CPPTLMBRIDGE_VERSION);
-    // P0: 保持 v1 (非 bump)
-    REQUIRE(CPPTLMBRIDGE_VERSION == 1);
+    // 2026-07-18 Oracle P0: v1 → v2 (新增 3 vendor header: scoreboard/pipeline/tensor_core_interface.h)
+    REQUIRE(CPPTLMBRIDGE_VERSION == 2);
 }
 
 TEST_CASE("MemoryBridge: submit_kernel 存储 PendingKernel + 无回归", "[gpu][f12b]") {
