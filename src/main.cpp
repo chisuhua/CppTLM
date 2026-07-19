@@ -116,9 +116,6 @@ int main(int argc, char* argv[]) {
     std::vector<std::unique_ptr<ScoreboardTLM>> per_sm_scoreboards;
     std::vector<std::unique_ptr<PipelineTLM>> per_sm_pipelines;
     std::vector<std::unique_ptr<TensorCoreTLM>> per_sm_tensorcores;
-    // P1: g_ptx_emu_driver 由 PTX-EMU 端 cpptlm_set_driver() 设置
-    // (Phase 4 Wave 0 完成前为 nullptr, 零退化)
-    IPtxEmuDriver* g_ptx_emu_driver = nullptr;
 
     if (f12b_ld) {
         auto* kl = factory.getInstance<KernelLaunchTLM>("kernel_launch");
@@ -131,8 +128,8 @@ int main(int argc, char* argv[]) {
         memory_bridge = std::make_unique<MemoryBridge>(kl, xbar);
         kl->setMemoryBridge(memory_bridge.get());
 
-        // P1 Phase 4 Wave 1: 创建 per-SM 模块 + 注入
-        // 如果 PTX-EMU driver 已连接 (g_ptx_emu_driver != nullptr), 注入 per-SM 模块
+        // P1 Phase 4 Wave 0 跟进: g_ptx_emu_driver 由 cpptlm_set_driver() 设置
+        // (全局变量, 定义在 src/tlm/gpu/ptx_emu_driver_shim.cc)
         if (g_ptx_emu_driver) {
             kl->set_ptx_emu_driver(g_ptx_emu_driver);
             uint32_t num_sms = g_ptx_emu_driver->num_sms();
@@ -141,23 +138,18 @@ int main(int argc, char* argv[]) {
             per_sm_tensorcores.reserve(num_sms);
 
             for (uint32_t sm_id = 0; sm_id < num_sms; ++sm_id) {
-                // ScoreboardTLM: per-SM (有状态, 必须独立实例)
                 auto sb = std::make_unique<ScoreboardTLM>();
                 g_ptx_emu_driver->inject_scoreboard(sm_id, std::move(sb));
 
-                // PipelineTLM: 无状态, 可跨 SM 共享, 但 per-SM 创建 (成本等同)
                 auto pl = std::make_unique<PipelineTLM>();
                 g_ptx_emu_driver->inject_pipeline(sm_id, std::move(pl));
 
-                // TensorCoreTLM: 无状态, 同理 per-SM
                 auto tc = std::make_unique<TensorCoreTLM>();
                 g_ptx_emu_driver->inject_tensor_core(sm_id, std::move(tc));
             }
             std::cout << "[INFO] --f12b-ld: Injected per-SM Scoreboard/Pipeline/TensorCore "
                       << "for " << num_sms << " SMs\n";
         } else {
-            // PTX-EMU driver 未连接（Phase 4 Wave 0 未完成）, 零退化
-            // Scoreboard/Pipeline/TC 占位, PTX-EMU 端回退到 InstructionLatencyTable
             std::cout << "[INFO] --f12b-ld: PTX-EMU driver not connected (nullptr), "
                       << "Scoreboard/Pipeline/TC injection skipped (zero regression)\n";
         }
