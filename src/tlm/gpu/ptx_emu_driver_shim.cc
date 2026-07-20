@@ -43,25 +43,24 @@ IPtxEmuDriver* g_ptx_emu_driver = nullptr;
 /// @param shim_ctx  PtxEmuDriverShim 不透明指针 (non-owning)
 /// @param api       C-compatible vtable (方法表)
 ///
+/// @note 声明在 include/cudart/cpptlm_bridge.h (vendored)
 /// @note 可重复调用 — 后调用替换前调用 (最后一次调用的 driver 生效)
 /// @note nullptr shim_ctx 或 api 为空指针表时重置为 nullptr (安全退场)
-extern "C" void cpptlm_set_driver(void* shim_ctx, tlm::PtxEmuDriverApi api) {
+extern "C" void cpptlm_set_driver(void* shim_ctx, PtxEmuDriverApi api) {
     if (!shim_ctx) {
-        // nullptr shim → 重置驱动 (安全退场, 如 PTX-EMU 卸载)
         tlm::g_driver_wrapper.reset();
         tlm::g_ptx_emu_driver = nullptr;
         std::fprintf(stdout, "[INFO] cpptlm_set_driver: driver reset (nullptr)\n");
         return;
     }
 
-    // 创建 DriverWrapper 包装 shim
     try {
         tlm::g_driver_wrapper = std::make_unique<tlm::DriverWrapper>(shim_ctx, api);
         tlm::g_ptx_emu_driver = tlm::g_driver_wrapper.get();
         std::fprintf(stdout,
                      "[INFO] cpptlm_set_driver: wrapped PtxEmuDriverShim @ %p into "
                      "DriverWrapper -> g_ptx_emu_driver = %p\n",
-                     static_cast<void*>(shim_ctx),
+                     shim_ctx,
                      static_cast<void*>(tlm::g_ptx_emu_driver));
     } catch (const std::exception& e) {
         std::fprintf(stderr, "[ERROR] cpptlm_set_driver: failed to create DriverWrapper: %s\n",

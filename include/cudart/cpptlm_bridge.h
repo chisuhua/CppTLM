@@ -168,6 +168,50 @@ extern "C" PTXEMU_BRIDGE_API void cpptlm_attach_bridge(CppTLMBridge* bridge);
 /// 实现位置：src/cudart/cudart_sim.cpp
 extern "C" PTXEMU_BRIDGE_API void cpptlm_detach_bridge();
 
+// =====================================================================
+// CppTLM D1-Full P1: cpptlm_set_driver ABI 入口 (PTX-EMU → CppTLM)
+// =====================================================================
+// PTX-EMU 通过此入口将 PtxEmuDriverShim 实例 + 方法 vtable 传递给
+// CppTLM 对端。CppTLM 侧的 DriverWrapper 通过 vtable 调用 shim 方法。
+//
+// 方向: PTX-EMU → CppTLM（与 cpptlm_attach_bridge 方向相反）
+// 实现: CppTLM 的 libcpptlm_cudart.so 提供强定义；
+//       PTX-EMU 的 libcudart.so 提供 __attribute__((weak)) 空实现。
+//
+// 与 cpptlm_attach_bridge 的区别:
+//   - attach_bridge: CppTLM 把 bridge 传给 PTX-EMU
+//   - set_driver:    PTX-EMU 把 driver 传给 CppTLM
+// =====================================================================
+
+/// 跨 .so 边界的 vtable — 每个函数指针指向 PtxEmuDriverShim 的对应方法。
+/// CppTLM 侧 DriverWrapper 通过此 vtable 在不解引用 PTX-EMU 符号的
+/// 情况下调用 shim 方法。8 个函数指针必须与 PTX-EMU 侧 PtxEmuDriverApi
+/// 定义完全一致。
+struct PtxEmuDriverApi {
+    /// advance: 0=NoOp, 1=Executed, 2=KernelComplete, -1=Error
+    int (*advance)(void* shim, uint32_t max_cycles, uint32_t* actual);
+
+    void (*inject_scoreboard)(void* shim, uint32_t sm_id, void* sb_ptr);
+    void (*inject_pipeline)(void* shim, uint32_t sm_id, void* pp_ptr);
+    void (*inject_tensor_core)(void* shim, uint32_t sm_id, void* tc_ptr);
+
+    /// is_kernel_complete: 1=complete, 0=not complete or unknown
+    int (*is_kernel_complete)(void* shim, uint64_t kernel_id);
+    void (*mark_complete)(void* shim, uint64_t kernel_id);
+
+    uint32_t (*num_sms)(void* shim);
+
+    /// destroy: 释放 shim 实例（CppTLM 卸载时调用）
+    void (*destroy)(void* shim);
+};
+
+/// PTX-EMU 调用此函数向 CppTLM 注册 driver。
+/// - shim:   PtxEmuDriverShim 实例的不透明指针
+/// - api:    包含 8 个函数指针的 vtable
+///
+/// 方向: PTX-EMU → CppTLM
+extern "C" void cpptlm_set_driver(void* shim, PtxEmuDriverApi api);
+
 /// 编译期断言 cudaStream_t 宽度可存入 uint64_t
 ///
 /// 必要性：

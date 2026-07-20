@@ -567,3 +567,17 @@ set(CPPTLM_COMMIT_HASH "73e5422" CACHE STRING "...")
 # ExternalProject_Add: -DBUILD_TESTS=OFF (非 -DBUILD_TESTING=OFF)
 ```
 
+### 8.9 Wave 0a 跟进 — PTX-EMU 实际实现差异 (2026-07-18)
+
+PTX-EMU Wave 0 落地 (commit `13325cd8`+) 与 CppTLM 初始 §8.2-§8.4 设计存在以下差异：
+
+| 设计项 | CppTLM 初始设计 | PTX-EMU 实际 | CppTLM 适配 |
+|--------|-----------------|-------------|------------|
+| **PtxEmuDriverApi 位置** | `ptx_emu_driver.hh` (tlm 命名空间) | `cpptlm_bridge.h` (全局命名空间, ABI 真值源) | vendor `cpptlm_bridge.h`，删除本地定义 |
+| **inject_* payload** | 类型化 (`IScoreboard*`/`IPipelineLatencyProvider*`) | `void*` (caller release, callee wrap) | `static_cast<void*>(sb.release())` |
+| **is_kernel_complete** | `bool` 返回值 | `int` (1=complete, 0=not) | `!= 0` 转换 |
+| **Shim 继承** | `public tlm::IPtxEmuDriver` | 独立类 (不继承, 避免 C++20 dep) | DriverWrapper 通过 vtable 适配 |
+| **cpptlm_set_driver** | `extern "C"` 在 tlm 命名空间 | `__attribute__((weak))` 全局 weak 默认 | CppTLM 提供强定义覆盖 |
+| **构建** | ExternalProject_Add | `add_subdirectory()` + `--whole-archive` | CppTLM 兼容子项目 include |
+| **Vtable 布局防御** | 无 | 无 | `static_assert(sizeof(PtxEmuDriverApi) == 64)` |
+

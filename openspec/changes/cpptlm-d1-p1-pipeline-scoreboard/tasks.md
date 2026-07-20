@@ -136,12 +136,26 @@ Refs:
 >
 > 替代方案: **`IPtxEmuDriver` 窄接口 + `PtxEmuDriverShim`**。详见 design.md §8。
 
-### Wave 0: PTX-EMU 修复（强前置，~1d）
+### Wave 0: PTX-EMU 修复（强前置，~1d）— ✅ 已完成 (PTX-EMU commit `13325cd8`+)
 
-- [ ] **4.0.1** 修复 `cudart_sim.cpp` bridge path: 同时 enqueue 到 `GPUContext` + 设置 `on_complete` callback（统一 kernel_id、shared_ptr 单次深拷贝）
-- [ ] **4.0.2** PTX-EMU 新增 `src/cudart/cpptlm_bridge/PtxEmuDriverShim`（实现 `IPtxEmuDriver`，持有 `GPUContext*`，维护 `completion_map_`，转发 `inject_*` 到 `SMContext` setter）
-- [ ] **4.0.3** 构建修复: CppTLM `cpptlm_core` 启用 PIC + pin PTX-EMU `CPPTLM_COMMIT_HASH` + CMake export target
-- [ ] **4.0.4** PTX-EMU 侧新增 `cpptlm_set_driver` ABI 入口（与 `cpptlm_attach_bridge` 同层级），在 `initialize_environment()` 中调用
+> PTX-EMU 侧 Wave 0 已实施并归档（`openspec/changes/cpptlm-p1-ptxemu-shim/` archived）。
+> CppTLM 侧跟进修复见 Wave 0a。
+
+- [x] **4.0.1** 修复 `cudart_sim.cpp` bridge path: 同时 enqueue 到 `GPUContext` + 设置 `on_complete` callback ✅ PTX-EMU `13325cd8`
+- [x] **4.0.2** PTX-EMU 新增 `src/cudart/cpptlm_bridge/PtxEmuDriverShim` ✅ PTX-EMU `13325cd8`
+- [x] **4.0.3** 构建修复: CppTLM PIC + pin commit + add_subdirectory ✅ PTX-EMU `35ffeba8`
+- [x] **4.0.4** PTX-EMU 侧新增 `cpptlm_set_driver` ABI 入口（weak default + strong override） ✅ PTX-EMU `13325cd8`
+
+### Wave 0a: CppTLM 跟进修复 — vtable 对齐 + 构建适配（~1h）
+
+> PTX-EMU 实现与 CppTLM 初始设计存在差异: PtxEmuDriverApi vtable 在 `cpptlm_bridge.h` (ABI 真值源), 字段顺序 + 类型需完全一致。
+
+- [x] **4.0a.1** Vendor PTX-EMU `cpptlm_bridge.h` rebase — 新增 `PtxEmuDriverApi` struct + `cpptlm_set_driver` 声明 ✅ 2026-07-18
+- [x] **4.0a.2** `ptx_emu_driver.hh` 删除本地 `PtxEmuDriverApi`, include vendored `cpptlm_bridge.h` ✅
+- [x] **4.0a.3** `DriverWrapper` 适配 PTX-EMU vtable: `inject_*` 用 `void*` payload, `is_kernel_complete` 返回 `int` ✅
+- [x] **4.0a.4** `ptx_emu_driver_shim.cc` 修复: `PtxEmuDriverApi` 全局命名空间 (非 `tlm::`) ✅
+- [x] **4.0a.5** 编译期 static_assert: `sizeof(PtxEmuDriverApi) == 64` ✅
+- [x] **4.0a.6** 全量回归: 808/808 PASS, 18829 assertions ✅
 
 ### Wave 1: CppTLM Phase 4 实现（~1d）
 
