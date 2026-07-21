@@ -6,7 +6,9 @@
 #include "tlm/gpu/memory_bridge.hh"
 
 #include "tlm/crossbar_tlm.hh"          // CrossbarTLM::query_latency
-#include "tlm/gpu/kernel_launch_tlm.hh"  // KernelLaunchTLM::submit + KernelLaunchRequest
+#include "tlm/gpu/kernel_launch_tlm.hh"  // KernelLaunchTLM::submit + get_ptx_emu_driver
+#include "tlm/gpu/ptx_emu_driver.hh"     // IPtxEmuDriver::is_kernel_complete (S2 P1)
+
 
 #include <cassert>
 #include <climits>
@@ -91,10 +93,18 @@ uint64_t MemoryBridge::poll_kernel(uint64_t kernel_id) {
         return UINT64_MAX;  // 未知 kernel_id (错误)
     }
 
-    // P0 阶段: kernel 立即完成 (无真实 PTX-EMU 驱动)
-    // P1+: 查询 KernelLaunchTLM 内部 PTX-EMU 完成状态, 返回剩余 cycles
+    // S2 Phase 1.1 P1: 查询 PTX-EMU driver 的 kernel 完成状态
+    if (kernel_launch_ && kernel_launch_->get_ptx_emu_driver()) {
+        if (kernel_launch_->get_ptx_emu_driver()->is_kernel_complete(kernel_id)) {
+            pending_kernels_.erase(it);
+            return 0;  // 已完成
+        }
+        return 1;  // 未完成 — 保留 pending_kernels_ 记录，等待下次 poll
+    }
+
+    // Fallback (无 driver): P0 行为 — 立即标记完成
     pending_kernels_.erase(it);
-    return 0;  // 已完成
+    return 0;
 }
 
 int MemoryBridge::synchronize_stream(uint64_t stream_id) {

@@ -55,6 +55,13 @@
   - 还原后再次 build PASS（无副作用）
   - docs_sync_check --strict PASS (366/366 路径有效)
 
+- [x] 2026-07-21 — **S0 HSK-4/5 Rebase + CI 验证门通过** (808/808 PASS, 18829 assertions)
+  - PTX-EMU 3 接口头文件 commit 无变化: `8acfd2d1`/`9e7361b9`/`463038e0` 保持锁定
+  - `cpptlm_bridge.h`: PTX-EMU `97539fdb` 仅 `__attribute__((weak))` 从声明移至定义，CppTLM vendored 声明已对齐（无 weak）
+  - `cpptlm_bridge.h` 函数签名无变化 (`PtxEmuDriverApi` struct 布局不变, `sizeof==64` 保持)
+  - G-D4 16/16 static_assert 编译通过 (29 GPU/D1P1 tests, 3256 assertions PASS)
+  - S0→S2 门禁: `static_assert` 16/16 绿 ✅ — 可推进 Phase 1.1 poll_kernel 修复
+
 ## 文件名一致性验证（2026-07-18）
 
 通过 `grep -rn "pipeline_latency_provider_interface\|tensor_core_timing_interface" openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/` 确认：

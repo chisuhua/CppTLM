@@ -82,6 +82,9 @@ public:
     /// 非所有权, 由调用方管理生命周期
     void set_ptx_emu_driver(IPtxEmuDriver* driver) { driver_ = driver; }
 
+    /// 获取 PTX-EMU 驱动接口 (S2 Phase 1.1: poll_kernel 查询 kernel 完成状态)
+    IPtxEmuDriver* get_ptx_emu_driver() const { return driver_; }
+
     /// MemoryBridge::submit_kernel 调用: push KernelLaunchRequest 到 FIFO pending_
     void submit(KernelLaunchRequest&& req) {
         pending_.push_back(std::move(req));
