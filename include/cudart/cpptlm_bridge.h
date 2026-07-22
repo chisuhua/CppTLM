@@ -210,7 +210,7 @@ struct PtxEmuDriverApi {
 /// - api:    包含 8 个函数指针的 vtable
 ///
 /// 方向: PTX-EMU → CppTLM
-extern "C" void cpptlm_set_driver(void* shim, PtxEmuDriverApi api);
+extern "C" PTXEMU_BRIDGE_API void cpptlm_set_driver(void* shim, PtxEmuDriverApi api);
 
 /// 编译期断言 cudaStream_t 宽度可存入 uint64_t
 ///

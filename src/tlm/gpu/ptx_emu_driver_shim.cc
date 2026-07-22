@@ -46,7 +46,7 @@ IPtxEmuDriver* g_ptx_emu_driver = nullptr;
 /// @note 声明在 include/cudart/cpptlm_bridge.h (vendored)
 /// @note 可重复调用 — 后调用替换前调用 (最后一次调用的 driver 生效)
 /// @note nullptr shim_ctx 或 api 为空指针表时重置为 nullptr (安全退场)
-extern "C" void cpptlm_set_driver(void* shim_ctx, PtxEmuDriverApi api) {
+extern "C" PTXEMU_BRIDGE_API void cpptlm_set_driver(void* shim_ctx, PtxEmuDriverApi api) {
     if (!shim_ctx) {
         tlm::g_driver_wrapper.reset();
         tlm::g_ptx_emu_driver = nullptr;
