@@ -109,6 +109,7 @@ private:
     MemoryBridge* bridge_ = nullptr;             // 非所有权
     IPtxEmuDriver* driver_ = nullptr;            // 非所有权 (P1: 替代 void* ptx_emu_context_)
     std::deque<KernelLaunchRequest> pending_;    // FIFO kernel 队列
+    bool tlm_objects_injected_ = false;          // Phase 2a: PipelineTLM/ScoreboardTLM/TensorCoreTLM 注入标志
 
     /// Phase 4 Wave 1: 每 tick 调用 advance() 的最大步数, 1:1 映射满足 G-D3 ≤1 cycle
     static constexpr uint32_t MAX_PTX_STEPS_PER_TICK = 1;

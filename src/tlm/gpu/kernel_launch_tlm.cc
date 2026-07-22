@@ -7,6 +7,10 @@
 #include "tlm/gpu/memory_bridge.hh"
 // IPtxEmuDriver 接口 (AdvanceResult enum + advance/is_kernel_complete)
 #include "tlm/gpu/ptx_emu_driver.hh"
+// Phase 2a: PipelineTLM / ScoreboardTLM / TensorCoreTLM 注入
+#include "tlm/gpu/pipeline_tlm.hh"
+#include "tlm/gpu/scoreboard_tlm.hh"
+#include "tlm/gpu/tensor_core_tlm.hh"
 
 namespace tlm {
 
@@ -23,6 +27,23 @@ void KernelLaunchTLM::tick() {
         // 2. 通过 IPtxEmuDriver 推进 PTX-EMU 执行 (1:1 映射, 满足 G-D3 ≤1 cycle)
         if (driver_ != nullptr) {
             uint32_t actual_cycles = 0;
+
+            // Phase 2a: 惰性注入 PipelineTLM / ScoreboardTLM / TensorCoreTLM
+            // 在各 SM 的 exe_once 第一次执行前注入，确保 Step A/B/C
+            // 三段式注入点收到非 nullptr 的 CppTLM 时序模型对象
+            if (!tlm_objects_injected_) {
+                uint32_t num_sms = driver_->num_sms();
+                for (uint32_t sm_id = 0; sm_id < num_sms; ++sm_id) {
+                    driver_->inject_scoreboard(sm_id,
+                        std::make_unique<ScoreboardTLM>());
+                    driver_->inject_pipeline(sm_id,
+                        std::make_unique<PipelineTLM>());
+                    driver_->inject_tensor_core(sm_id,
+                        std::make_unique<TensorCoreTLM>());
+                }
+                tlm_objects_injected_ = true;
+            }
+
             AdvanceResult result = driver_->advance(MAX_PTX_STEPS_PER_TICK, actual_cycles);
 
             switch (result) {
