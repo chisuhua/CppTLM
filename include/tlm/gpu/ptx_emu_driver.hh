@@ -21,10 +21,8 @@
 #include <cstdint>
 #include <memory>
 
-// 编译期防御: PtxEmuDriverApi 布局与 PTX-EMU 端一致
-// 8 个函数指针 * 8 字节 = 64 字节 (LP64)
-static_assert(sizeof(PtxEmuDriverApi) == 64,
-              "PtxEmuDriverApi size mismatch — check vendor sync with PTX-EMU cpptlm_bridge.h");
+// HSK-6 §2.2 P0-1: sizeof(PtxEmuDriverApi) == 64 布局锁已迁移至 abi_guards.h
+#include "cudart/abi_guards.h"               // G-D4 17 条 static_assert 集中托管 (HSK-6 commit 25e36f60)
 
 namespace tlm {
 
