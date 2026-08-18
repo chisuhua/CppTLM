@@ -23,6 +23,9 @@
 | **ADR-X.10** | Phase 3+ 参数框架 | 📋 待实施 | nlohmann/json 序列化 + 双重验证 + ParamRule 统一验证 |
 | **ADR-X.11** | 配置继承与缺陷修复策略 | ✅ 已实施 | 深合并 + 层级拓扑 + Credit Flow 扩展 |
 | **ADR-X.12** | Python 配置生成器 | 📋 提案 | Pydantic v2 + 可视化集成 + 版本管理 + 验证器 |
+| **ADR-X.13** | tlm_stub 多 Extension 升级 | ✅ 已实施 | `tlm_array<T>` + thread-safe API + SystemC TLM 2.0 等价 |
+| **ADR-X.14** | `coherence_domains` 字段 stub 标记 | ✅ 已确认 | `DPRINTF(PARSER, "[STUB] ...")` 警告 + 文档同步 |
+| **ADR-X.15** | cpptlm-v3-dgpu-extract（角色反转 + BREAKING bump + 11 项删除）| ✅ Accepted | 9 周 P0-P4 (W1-9); HSK-6 P0-1 门禁 ✅ `fa2b3ec` |
 
 ---
 
@@ -445,8 +448,55 @@ config.save("configs/mesh_2x2.json")
 
 ---
 
+### ADR-X.13: tlm_stub 多 Extension 升级
+
+**决策**: 升级 stub 至 Accellera SystemC TLM 2.0 标准实现 — `tlm_array<tlm_extension_base*>` 替代单指针 + `tlm_extension_registry` Meyers-singleton + thread-safe `set/get/clear/release_extension<T>()` + `set_extension` 返回旧指针（**调用方负责 delete**，匹配 SystemC 2.0 语义）
+
+**理由**: 原单指针 `set_extension<T>()` 静默 delete 前一个扩展，导致 `modules_v2.hh:79` 错误路径 `set_error_code()` 静默删除上游 `TransactionContextExt`，与 ADR-X.2 设计意图冲突
+
+**实施**: `include/tlm/tlm_stub.hh` 94 → 283 行 + 5 个原子 commit (1a~1.5) + 12 个 multi_ext 测试
+
+**文档**: `ADR-X.13-stub-multi-extension.md`
+
+---
+
+### ADR-X.14: `coherence_domains` 字段 stub 标记
+
+**决策**: `coherence_domains` JSON 字段标记为 stub — `src/core/topology_parser.cc:106-111` 加 `DPRINTF(PARSER, "[STUB] ...")` 日志 + 文档同步 (`configs/AGENTS.md` + `02-transaction-architecture.md`)
+
+**理由**: 字段被解析但完全未使用（`parse_hierarchy_tree_with_validation` 的 `coherence_json` 参数未消费），4 个 APU configs 声明 MESI/MOESI_AMD_6_STATE 协议但零运行时效果，会误导用户
+
+**实施**: 0 行代码删除，仅加日志；现有 configs 继续运行
+
+**文档**: `ADR-X.14-coherence-domains-stub.md`
+
+---
+
+### ADR-X.15: cpptlm-v3-dgpu-extract (角色反转 + BREAKING bump + 11 项物理删除)
+
+**决策**: 4 个核心决策
+- **D1 角色反转**: CppTLM 从"桥接层"转变为"被驱动 dGPU 板卡"（PCIe 设备语义：CFG + BAR0 MMIO + Doorbell SQ tail + CQ）
+- **D2 v3.0.0 BREAKING bump**: CMakeLists 2.1.0 → 3.0.0；新建 `include/cpptlm_version.h`
+- **D3 CPPTLMBRIDGE_VERSION 永久冻结于 2**: 任何解冻触发 HSK-7（per `PTX-EMU@ccd34155:include/cudart/AGENTS.md` "CPPTLMBRIDGE_VERSION bump 治理"）
+- **D4 11 项物理删除**: HSK-6 §2.1 表 1-11（MemoryBridge / IPtxEmuDriver / DriverWrapper / 4 全局/ABI 入口 / shim / 4 vendored cudart 头）
+
+**理由**: UsrLinuxEmu ADR-076 v1 模式违反 ADR-036 three-way separation；CppTLM 物理上回归纯设备仿真（对齐 gem5 full-system GPU 工业惯例）
+
+**P0-1 门禁已完成** (commit `fa2b3ec`): G-D4 17 条 static_assert 迁至 `include/cudart/abi_guards.h` (16 from `cpptlm_bridge.h:243-306` + 1 from `ptx_emu_driver.hh:27`)；双重验证（`grep -c` + 反向故意失败 + 全部测试 846 PASS）
+
+**实施路线**: 9 周 P0-P4 (W1-W9)
+- P0 (W1): G-D4 迁 ✅ + Mode A 冻结（待）
+- P1 双轨 (W1-3): PtxEmuSubmodule + DGpuBar/Doorbell/SQ/CQ + CompletionRing
+- P2 收敛 (W4-6): ISmExecutor 汇合 + E2E
+- P3 重构 (W6-8): KernelLaunchTLM + dual-rail E2E (5 类 microbenchmark, ±15% tolerance)
+- P4 物理删除 (W8-9): 11 项 + v3.0.0 + 808 测试 baseline + tag
+
+**文档**: `ADR-X.15-cpptlm-v3-dgpu-extract.md`
+
+---
+
 **维护**: DevMate  
-**版本**: v6.0
+**版本**: v7.0 (2026-08-18 增 X.13/X.14/X.15)
 
 ---
 
