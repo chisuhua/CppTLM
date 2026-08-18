@@ -1,127 +1,160 @@
-# tadr-308: IGpuDriver::load_kernel_module (H2D DMA VRAM Load) — Implementation Proposal
+# cpptlm-v3-dgpu-extract: dGPU Board Submodule Implementation Proposal
 
 ## Why
 
-[TaskRunner `tadr-307`](https://github.com/chisuhua/TaskRunner/blob/cdb3633/docs/shared/adr/tadr-307-igpu-driver-kernel-module-extension.md) 提议 3 个 `IGpuDriver` 方法（`load/launch/unload_kernel_module`），对齐 UsrLinuxEmu [ADR-076](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-076-gpgpu-kernel-module-ioctl.md) v1 / PTX-EMU ADR-0029 §D8 的 3 fn-ptrs 方案。
+[UsrLinuxEmu ADR-090 v2 commit `37a91b6`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md)（2026-08-18 升 ✅ Accepted，Gate #1/#2/#5/#6 ✅）决策：
 
-2026-08-17 Oracle session `ses_ff2106f84ffeM2oItBEa9iu4hL` 识别该方案违反 [ADR-036 three-way separation](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-036-three-way-separation.md)（HAL 桥承担硬件行为提供者职责）。
+- **CppTLM 角色反转**：UsrLinuxEmu + TaskRunner = CUDA app 入口；**CppTLM = 被驱动的 dGPU 板卡**（PCIe 设备语义，对齐 gem5 full-system GPU 工业惯例）
+- **替代 UsrLinuxEmu HAL backend 集成**：原 ADR-076 v1 模式（HAL dlopen `libptxemu_device.so` 同步执行）违反 [ADR-036 three-way separation](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-036-three-way-separation.md)
+- **CPPTLMBRIDGE_VERSION 冻结于 2**：HSK-6 协议承诺，任何解冻触发 HSK-7
 
-UsrLinuxEmu [ADR-090 v2](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md) commit `e03b5a1` 在 UsrLinuxEmu 仓升 ✅ Accepted（Gate #1/#2/#5/#6 ✅），提议 H2D DMA 路径 + 1 fn-ptr 替代 tadr-307 的 3 fn-ptrs。
+[PTX-EMU HSK-6 公告 commit `25e36f60`](https://github.com/chisuhua/PTX-EMU/blob/main/docs/superpowers/specs/2026-08-18-hsk-6-cpptlm-bridge-deprecation.md)（CppTLM 已 ack `369cf71`）：消费关系废止两阶段删除流程。
 
-**[tadr-308](https://github.com/chisuhua/TaskRunner/blob/cdb3633/docs/shared/adr/tadr-308-igpu-driver-vram-load.md)** 是 tadr-307 的对齐重写版（仅追加 1 方法，不删除现有方法）。
+[CppTLM issue #19 v3.0 RFC](https://github.com/chisuhua/CppTLM/issues/19)（Gate #2 ack 2026-08-18）：完整实施路径 = `PtxEmuSubmodule façade + DGpuBar/Doorbell/SQ-CQ 三件套 + CompletionRing 重设计 + 9 周 P0-P4 时间线`。
+
+Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy`（4 轮评估）验证事实基础：8 函数 ABI（PTX-EMU `cpptlm_module.h:12-52`）、17 条 G-D4 static_assert（cpptlm_bridge.h:243-306 + ptx_emu_driver.hh:27）、HSK-1 真相源归属、ANTLR4 不在 CppTLM scope。
 
 ## What Changes
 
-### 1. `include/shared/igpu_driver.hpp` 新增 1 方法（append-only per ADR-023 §D4）
+### 1. 新建文件（Per Phase）
 
-```cpp
-// 新增方法(默认 -ENOSYS, 不破坏 3 个现有实现者)
-virtual int load_kernel_module(const void* image, size_t image_size,
-                               uint64_t* out_vram_addr) {
-    (void)image; (void)image_size; (void)out_vram_addr;
-    return -ENOSYS;
-}
+| Phase | 文件 | 用途 |
+|---|---|---|
+| **P0** | `include/cudart/abi_guards.h` | 集中 17 条 G-D4 static_assert（从 cpptlm_bridge.h:243-306 + ptx_emu_driver.hh:27 迁移） |
+| **P1** | `include/tlm/gpu/ptx_emu_submodule.{h,cc}` | 8 函数 ABI façade（封装 `libptxemu_device.so` dlsym） |
+| **P1** | `include/tlm/gpu/dgpu_bar.hh` | PCIe BAR0 MMIO 模拟（CFG + BAR0 regs + BAR1 VRAM） |
+| **P1** | `include/tlm/gpu/doorbell.hh` | SQ tail register（host→device 异步信号） |
+| **P1** | `include/tlm/gpu/submission_queue.hh` | SQ consumer（NVMe 模型） |
+| **P1** | `include/tlm/gpu/completion_ring.hh` | CompletionRing push + host_notify 钩子（替代 `AsyncCompletionAdapter::setCompletionCallback`） |
+| **P2** | `include/tlm/gpu/is_m_executor.{h,cc}` | SM executor 接口（installImage / dispatch / setCompletionCallback） |
+| **P3** | `include/tlm/gpu/kernel_launch_tlm.hh`（重构） | 适配 `ISmExecutor` 接口 |
+| **P4** | `include/cpptlm_version.h` | CPPTLM_VERSION_MAJOR/MINOR/PATCH（3.0.0） |
+
+### 2. 修改文件
+
+| 文件 | 修改 |
+|---|---|
+| `include/cudart/cpptlm_bridge.h` | 删除 16 条 static_assert（:243-306），改 `#include "cudart/abi_guards.h"`；保留 ABI 真值源声明（CPPLMBRIDGE_VERSION + 函数声明） |
+| `include/tlm/gpu/ptx_emu_driver.hh` | 删除 1 条 static_assert（:27），改 `#include "cudart/abi_guards.h"`；`IPtxEmuDriver`/`DriverWrapper` 加 `[[deprecated]]` |
+| `include/tlm/gpu/memory_bridge.hh` | `MemoryBridge` 类加 `[[deprecated]]` |
+| `CMakeLists.txt` | v2.1.0 → v3.0.0 BREAKING bump（per ADR-088 §D6.2） |
+| `CMakeLists.txt` | 注册 `cpptlm_ptx_emu_submodule` target（link `${CMAKE_DL_LIBS}`） |
+
+### 3. 删除清单（11 项，per UsrLinuxEmu `37a91b6` §D6.1）
+
+**Phase 4 物理删除**：
+
+| # | 项 | 位置 |
+|---|---|---|
+| 1 | `MemoryBridge` 类 | `include/tlm/gpu/memory_bridge.hh` |
+| 2 | `IPtxEmuDriver` 接口 | `include/tlm/gpu/ptx_emu_driver.hh:19` |
+| 3 | `DriverWrapper` 类 | `include/tlm/gpu/ptx_emu_driver.hh:51` |
+| 4 | `g_ptx_emu_driver` 全局 | CppTLM 仓（PTX-EMU ↔ CppTLM 入口点） |
+| 5 | `cpptlm_set_driver` ABI 入口 | CppTLM 仓（PTX-EMU 方向） |
+| 6 | `ptx_emu_driver_shim.cc` | `src/tlm/gpu/ptx_emu_driver_shim.cc` |
+| 7 | vendored `cpptlm_bridge.h` | `include/cudart/cpptlm_bridge.h`（14837 字节） |
+| 8 | vendored `pipeline_interface.h` | `include/cudart/pipeline_interface.h`（1659 字节） |
+| 9 | vendored `scoreboard_interface.h` | `include/cudart/scoreboard_interface.h`（1278 字节） |
+| 10 | vendored `tensor_core_interface.h` | `include/cudart/tensor_core_interface.h`（1709 字节） |
+| 11 | `PtxEmuDriverApi` 布局锁 | `include/tlm/gpu/ptx_emu_driver.hh:27`（已迁至 `abi_guards.h`） |
+
+### 4. 4 测试文件处置（per UsrLinuxEmu `37a91b6` §D6.2）
+
+| 测试 | 处置 |
+|---|---|
+| `tests/test_memory_bridge.cc` | 🗑️ **删除**（测试对象 `MemoryBridge` 物理删除） |
+| `tests/test_memory_bridge_poll.cc` | 🔄 **重写**为 `tests/test_completion_ring.cc`（`poll_kernel` 语义 → CompletionRing push/host_notify） |
+| `tests/test_kernel_launch_tlm_ext.cc` | ✅ **保留 + 改符号**（`MockPtxEmuDriver` → SQ/CQ doorbell mock；`KernelLaunchRequest`/`setMemoryBridge` 复用） |
+| `tests/test_gpu_soc_perf.cc` | ✂️ **拆分**（scoreboard perf 保留；MemoryBridge poll perf → CompletionRing） |
+
+### 5. 9 周双轨时间线（per #19 v3.0 RFC）
+
 ```
-
-### 2. `src/umd/libcuda_shim/cu_module.cpp` 适配
-
-`cuModuleLoadData` (:135) 接入 `runtime()->load_kernel_module`:
-```cpp
-CUresult cuModuleLoadData(CUmodule* module, const void* image) {
-    uint64_t vram_addr = 0;
-    int rc = runtime()->load_kernel_module(image, image_size, &vram_addr);
-    if (rc != 0) return rc;
-    *module = (CUmodule)vram_addr;  // CUmodule 重定义 = code BO GPU VA
-    return CUDA_SUCCESS;
-}
+W1      (P0 冻结):    G-D4 迁移 + HSK-6 ack + Mode A [[deprecated]]
+W1-3    (P1 双轨):    PtxEmuSubmodule + DGpuBar/Doorbell/SQ/CQ + CompletionRing
+W4-6    (P2 收敛):    ISmExecutor + PtxEmuSubmodule 汇合 + E2E
+W6-8    (P3 重构):    KernelLaunchTLM 重构 + CompletionRing push + dual-rail E2E
+W8-9    (P4 物理删除): 11 项删除 + v2.1.0 → v3.0.0 bump + 808 测试验证 + tag
 ```
-
-`cuModuleUnload` (:93) 补 vram_addr → `GPU_IOCTL_FREE_BO` 路径:
-```cpp
-CUresult cuModuleUnload(CUmodule module) {
-    uint64_t vram_addr = (uint64_t)module;
-    return runtime()->free_bo(vram_addr);  // 走 FREE_BO
-}
-```
-
-### 3. `cu_launch.cpp` **本轮不动**
-
-`GPU_IOCTL_LAUNCH_KERNEL_MODULE` (0x28) 在 UsrLinuxEmu 已 deprecated stub 化返回 -ENOSYS。kernel 实际执行走 `submit_batch` + DISPATCH_KERNEL packet（per ADR-090 v2 §D3.3）。
-
-### 4. 测试扩展
-
-新增 `tests/test_load_kernel_module_standalone.cpp`（TDD 5 步结构）：
-- Section 1: 默认实现返回 -ENOSYS
-- Section 2: cuModuleLoadData → load_kernel_module 链路
-- Section 3: vram_addr → free_bo 链路
-- Section 4: 并发 load race
-- Section 5: error 注入 (image_size = 0, image = NULL 等)
-
-### 5. tadr-307 标 STALE
-
-`tadr-307-igpu-driver-kernel-module-extension.md` 头部加 STALE 标注（不撤不删）：
-```
-> **STATUS: STALE (2026-08-18)** — 本文对齐 ADR-076/ADR-0029 §D8 的 3 方法方案
-> (load/launch/unload_kernel_module)，已被 ADR-090 v2 §D1 的 1 方法 vram-load 语义取代。
-> 后继: tadr-308。
-```
-
-### 6. 现有实现者更新（可选，非阻塞）
-
-3 个 IGpuDriver 实现者暂不实现 `load_kernel_module`（默认 -ENOSYS 不报错）：
-- `include/test_fixture/cuda_stub.hpp` (`:161` submit_batch 实现可后续添加)
-- `include/test_fixture/gpu_driver_client.h` (`:300` submit_batch 已实现, IGpuDriver::load_kernel_module 默认 -ENOSYS 即可)
-- `tests/test_fixture/mock_gpu_driver.hpp` (mock 实现, 默认 -ENOSYS 即可)
 
 ## Acceptance Gate
 
-| Gate | Owner | 状态 |
+| Gate | Owner | 当前状态 |
 |---|---|:---:|
-| #1 UsrLinuxEmu ADR-090 v2 ✅ Accepted | UsrLinuxEmu | ✅ |
-| #2 CppTLM maintainer ack | CppTLM | ✅ |
-| #3 TaskRunner owner ack | TaskRunner | ⏳ **本 change 待 owner 审阅** |
-| #4 PTX-EMU HSK-6 联发 | PTX-EMU | 🚫 跟踪 |
-| #5 TaskRunner openspec change 通过 | TaskRunner | ⏳ 本 change |
-| #6 新增方法 E2E 测试 | TaskRunner | ⏳ |
+| #1 UsrLinuxEmu ADR-090 v2 ✅ Accepted | UsrLinuxEmu | ✅ commit `37a91b6` |
+| #2 CppTLM maintainer ack | CppTLM | ✅ commit `369cf71`（HSK-6 ack） |
+| #3 PTX-EMU Architecture Team HSK-6 发出 | PTX-EMU | ✅ commit `25e36f60` |
+| #4 PTX-EMU HSK-6 + UsrLinuxEmu 双 ack 收齐 | PTX-EMU + UsrLinuxEmu | 🚫 Ack 截止 2026-09-01 |
+| #5 G-D4 17 条 static_assert 迁移 | CppTLM | ⏳ W1 启动 |
+| #6 Mode A/B dual-rail E2E (5 类 microbenchmark, cycle ±15%) | CppTLM + UsrLinuxEmu | ⏳ W6-8 |
+| #7 808 测试 baseline 验证 | CppTLM | ⏳ W8-9 |
+| #8 v3.0.0 tag + 删除 11 项完成 | CppTLM | ⏳ W9 |
 
 ## Cross-Repo Coordination
 
-| 仓 | 跟踪载体 | 状态 |
+| 仓 | 跟踪载体 | 当前状态 |
 |---|---|---|
-| UsrLinuxEmu | ADR-090 v2 + annex §E | ✅ Accepted |
-| CppTLM | #19 v3.0 RFC | ✅ Gate #2 ack |
-| PTX-EMU | HSK-6 公告草稿 | 🚫 待 PTX-EMU owner 发出 |
-| TaskRunner | tadr-308 (本 change) | 📋 待 owner 启动 |
+| UsrLinuxEmu | ADR-090 v2 (`e03b5a1` + `37a91b6`) + annex §E | ✅ Accepted |
+| CppTLM | **本 openspec change** + HSK-6 ack (`369cf71`) | 🔄 实施中 |
+| PTX-EMU | HSK-6 (`25e36f60`) + HSK-PROTOCOL-NOTES (`bf1a652d`) | ✅ 已发出 |
+| TaskRunner | tadr-308 + openspec change (独立并行) | 🟡 进行中 |
 
-## Migration
+**跨仓 commit 顺序**（per ADR-035 §R5.1）：
+```
+UsrLinuxEmu ADR-090 v2 ✅ → PTX-EMU HSK-6 ✅ → CppTLM ack ✅ → CppTLM P0-P4 实施 → UsrLinuxEmu submodule bump + Mode B E2E
+```
 
-tadr-307 → tadr-308 迁移策略：
-- tadr-307 不撤不删（保留作历史决策记录），头部加 STALE 标注
-- tadr-308 是**追加**而非**替换**：1 新方法（默认 -ENOSYS），不动现有 49 方法
-- 现有 3 个 IGpuDriver 实现者不受影响（默认体不破坏）
-- 增量铺开：tadr-308 Accepted 后, test-fixture 可逐步实现 `load_kernel_module` 而不强制
+## Migration (Phase 化详细)
 
-## Effort
+完整 P0-P4 操作步骤 + commit 模板 + 验证命令，详见：
 
-| 任务 | 工作量 |
-|---|---|
-| tadr-308 文档 | 0.5 天 ✅ 已起草 |
-| tadr-307 STALE 标注 | 0.1 天 |
-| `include/shared/igpu_driver.hpp` 新增 1 method | 0.2 天 |
-| `src/umd/libcuda_shim/cu_module.cpp` 适配 | 0.5 天 |
-| `tests/test_load_kernel_module_standalone.cpp` 新增 | 0.5 天 |
-| CI 集成测试 + L1 portability check | 0.5 天 |
-| **总计** | ~2.3 天 |
+- [`docs/05-advanced/cpptlm-v3-dgpu-extract-action-plan.md`](../../05-advanced/cpptlm-v3-dgpu-extract-action-plan.md)（如已 commit）或 `/tmp/cpptlm-action-plan.md`（起草版本，22 操作步骤，~740 行）
+- [`tasks.md`](tasks.md)（P0-P4 任务清单）
 
 ## References
 
-- UsrLinuxEmu [ADR-090 v2 commit `e03b5a1`](https://github.com/chisuhua/UsrLinuxEmu/commit/e03b5a1) (✅ Accepted)
-- UsrLinuxEmu [ADR-090 v2 commit `37a91b6`](https://github.com/chisuhua/UsrLinuxEmu/commit/37a91b6) (Oracle F-NEW-2 修订)
-- TaskRunner [tadr-308](https://github.com/chisuhua/TaskRunner/blob/cdb3633/docs/shared/adr/tadr-308-igpu-driver-vram-load.md) (本 change 配套)
-- TaskRunner [tadr-307 STALE](tadr-307-igpu-driver-kernel-module-extension.md)
-- TaskRunner [tadr-301 IGpuDriver contract](tadr-301-igpu-driver-contract.md)
-- TaskRunner [tadr-107 shared scope policy](tadr-107-shared-infrastructure-boundary.md)
-- PTX-EMU [ADR-0029 §D8](https://github.com/chisuhua/PTX-EMU/blob/main/docs/adr/ADR-0029-ptxemu-image-executor.md) (HSK-1 真相源, accepted)
-- CppTLM [issue #19](https://github.com/chisuhua/CppTLM/issues/19) (Gate #2 ack, v3.0 RFC)
-- Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` (4 轮评估, 关键修正: 默认体而非纯虚 + 3 vendored 头 + 1 static_assert + DriverWrapper 行号)
--)
+### 上游 ADR
+- UsrLinuxEmu [ADR-090 v2 commit `e03b5a1`](https://github.com/chisuhua/UsrLinuxEmu/commit/e03b5a1)（✅ Accepted）
+- UsrLinuxEmu [ADR-090 v2 commit `37a91b6`](https://github.com/chisuhua/UsrLinuxEmu/commit/37a91b6)（Oracle F-NEW-2 §D5/§D6 修订）
+- UsrLinuxEmu [annex §E 跟踪表](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/05-advanced/adr-090-cross-repo-coordination.md)
+- UsrLinuxEmu [ADR-036 three-way separation](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-036-three-way-separation.md)
+- UsrLinuxEmu [ADR-023 HAL append-only](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-023-hal-interface.md)
+- UsrLinuxEmu [ADR-088 §D6.2 BREAKING 流程](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md)
+- UsrLinuxEmu [ADR-035 §R5.1 cross-repo commit 顺序](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-035-governance-policy.md)
+
+### 跨仓 ADR/TADR/HSK
+- PTX-EMU [ADR-0029 §D8](https://github.com/chisuhua/PTX-EMU/blob/main/docs/adr/ADR-0029-ptxemu-image-executor.md)（HSK-1 真相源，已 ship）
+- PTX-EMU [HSK-6 公告 commit `25e36f60`](https://github.com/chisuhua/PTX-EMU/commit/25e36f60)
+- PTX-EMU [HSK-PROTOCOL-NOTES commit `bf1a652d`](https://github.com/chisuhua/PTX-EMU/commit/bf1a652d)
+- CppTLM [HSK-6 ack commit `369cf71`](https://github.com/chisuhua/CppTLM/commit/369cf71)
+- CppTLM [issue #19 v3.0 RFC](https://github.com/chisuhua/CppTLM/issues/19)（Gate #2 ack）
+- TaskRunner [tadr-308 openspec change commit `6b1d39d`](https://github.com/chisuhua/TaskRunner/commit/6b1d39d)（独立并行）
+
+### Oracle Session
+- `ses_ff2106f84ffeM2oItBEa9iu4hL`（v1 启动，识别 ADR-076 v1 违规）
+- `ses_fef78854dffeLfDJh7p8ELuMLy`（v2 决策 + 4 轮评估 + 5-step self-check）
+
+### 仓 HEAD 锚点（v2 §C0.4 新规）
+```
+PTX-EMU    @ccd34155 (真相源持有方)
+CppTLM     @585e4ff (实施起点)
+UsrLinuxEmu@e03b5a1 + 37a91b6 (ADR-090 v2)
+TaskRunner @cdb3633 (submodule)
+```
+
+### 关键文件位置（CppTLM 仓 @585e4ff）
+- `include/cudart/cpptlm_bridge.h:14-16`（HSK-1 真相源自述）
+- `include/cudart/cpptlm_bridge.h:55`（CPPTLMBRIDGE_VERSION = 2 冻结点）
+- `include/cudart/cpptlm_bridge.h:243-306`（16 条 G-D4 static_assert，迁移源）
+- `include/tlm/gpu/ptx_emu_driver.hh:19`（IPtxEmuDriver 接口，待删）
+- `include/tlm/gpu/ptx_emu_driver.hh:27`（1 条 G-D4 static_assert，迁移源）
+- `include/tlm/gpu/ptx_emu_driver.hh:51`（DriverWrapper 类，待删）
+- `src/tlm/gpu/ptx_emu_driver_shim.cc`（待删）
+- `include/tlm/gpu/memory_bridge.hh`（MemoryBridge 类，待删）
+- `include/tlm/gpu/kernel_launch_tlm.hh:30`（KernelLaunchRequest，复用）
+
+---
+
+**起草**: Sisyphus (2026-08-18, 基于 HSK-6 ack `369cf71` + UsrLinuxEmu ADR-090 v2 Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy` 4 轮评估)
+**Owner**: CppTLM Team
+**配合**: [`tasks.md`](tasks.md)
