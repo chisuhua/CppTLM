@@ -42,7 +42,7 @@ namespace tlm {
  *   - 不走 REGISTER_CHSTREAM (非 ChStreamModuleBase 派生, 手动实例化)
  *   - 不依赖 <cuda_runtime.h> (用 constexpr 占位错误码)
  */
-class MemoryBridge : public CppTLMBridge {
+class [[deprecated("MemoryBridge frozen by HSK-6; removed in cpptlm-v3-dgpu-extract P4 after Mode B E2E")]] MemoryBridge : public CppTLMBridge {
 public:
     MemoryBridge(KernelLaunchTLM* kernel_launch, CrossbarTLM* gpu_xbar);
     ~MemoryBridge() override = default;

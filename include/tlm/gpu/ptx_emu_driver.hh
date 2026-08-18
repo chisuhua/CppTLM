@@ -33,7 +33,7 @@ enum class AdvanceResult : uint8_t {
     Error
 };
 
-class IPtxEmuDriver {
+class [[deprecated("IPtxEmuDriver frozen by HSK-6; replace with ISmExecutor before P4 physical deletion")]] IPtxEmuDriver {
 public:
     virtual ~IPtxEmuDriver() = default;
     virtual AdvanceResult advance(uint32_t max_cycles, uint32_t& actual_cycles) = 0;
@@ -46,7 +46,7 @@ public:
     virtual uint32_t num_sms() const = 0;
 };
 
-class DriverWrapper : public IPtxEmuDriver {
+class [[deprecated("DriverWrapper frozen by HSK-6; replace with PtxEmuSubmodule before P4 physical deletion")]] DriverWrapper : public IPtxEmuDriver {
 public:
     DriverWrapper(void* shim_ctx, PtxEmuDriverApi api)
         : shim_ctx_(shim_ctx), api_(api) {}
