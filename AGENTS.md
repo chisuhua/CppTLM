@@ -90,6 +90,10 @@ plans/           # 实施计划: phase7-completion / p0-alignment-remediation / 
 | APU SoC / GPU 拓扑 | `configs/apu_soc_*.json` + `include/tlm/gpu/gpu_tlm.hh` + `examples/generate_apu_soc.py` |
 | E2E 集成验证 | `test/test_phase6_integration.cc` (Cache→Crossbar→Memory) + `test/test_complex_topologies_e2e.cc` |
 | 提议 / 实施架构变更 | `openspec/changes/<name>/` (proposal.md → design.md → specs/ → tasks.md) |
+| **v3.0 dGPU 板卡 (W1-W9)** | `openspec/changes/2026-08-18-cpptlm-v3-dgpu-extract/` (proposal + design + 3 specs + tasks) + [ADR-X.15](docs/adr/ADR-X.15-cpptlm-v3-dgpu-extract.md) + 实施指南 `/tmp/cpptlm-action-plan.md` |
+| **G-D4 静态断言** | `include/cudart/abi_guards.h` (17 条集中托管, HSK-6 P0-1 门禁已完成 `fa2b3ec`) |
+| **跨仓 HSK 协议** | `docs/superpowers/specs/2026-08-18-hsk-6-response.md` (CppTLM ack) + `https://github.com/chisuhua/PTX-EMU/blob/25e36f60/docs/superpowers/specs/2026-08-18-hsk-6-cpptlm-bridge-deprecation.md` (PTX-EMU 发起) |
+| ADR 索引 | `docs/adr/README.md` (X.1~X.15 + INC-01 + LIB-01 + METRIC-01 + NV-01/02) |
 | 修改 CI | `.github/workflows/ci.yml` (Release/Debug × ASan[OFF,ON] 矩阵) |
 | 调试 test fail | `.opencode/skills/cpptlm-debug/SKILL.md` (auto-loads on "test fail") |
 
@@ -188,7 +192,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 ## CROSS-PROJECT INTEGRATION (PTX-EMU 协同仿真)
 
-> **状态**: 🟢 HSK-1/2/3 Closed + 🟡 HSK-4/5 已收到待 rebase 验证（2026-07-17）· P1 实质解锁 2/3
+> **状态**: 🟢 HSK-1/2/3 Closed + 🟢 HSK-6 Accepted（2026-08-18）· P0-1 门禁已完成（commit `fa2b3ec`）· 🟡 HSK-4/5 待 rebase 验证
 
 **消费模式**：PTX-EMU 端通过 `ExternalProject_Add` 引用 CppTLM `cpptlm_core` 静态库 + `include/cudart/cpptlm_bridge.h` 头文件。PTX-EMU 端 `libcpptlm_cudart.so` 链接 CppTLM `cpptlm::core` 实现 MemoryBridge。
 
@@ -196,21 +200,26 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **PTX-EMU 端入口**: [`PTX-EMU-README.md`](docs/superpowers/specs/PTX-EMU-README.md) §10 PTX-EMU 端 6 项决策 + 3 个 handshake
 - **PTX-EMU 端 HSK-1/2/3**: `https://github.com/chisuhua/PTX-EMU/blob/main/openspec/changes/cpptlm-d1-full/hsk-{1,2,3}.md`
 - **PTX-EMU 端 HSK-4/5**: `https://github.com/chisuhua/PTX-EMU/blob/main/openspec/changes/cpptlm-phase8b-injection-points/hsk-{4,5}.md`
+- **PTX-EMU 端 HSK-6**: [`2026-08-18-hsk-6-cpptlm-bridge-deprecation.md`](https://github.com/chisuhua/PTX-EMU/blob/25e36f60/docs/superpowers/specs/2026-08-18-hsk-6-cpptlm-bridge-deprecation.md) (commit `25e36f60`)
 - **CppTLM 端 HSK-1/2/3 响应**: [`2026-07-17-hsk-1-2-3-responses.md`](docs/superpowers/specs/2026-07-17-hsk-1-2-3-responses.md)
 - **CppTLM 端 HSK-4/5 响应**: [`2026-07-17-hsk-4-5-responses.md`](docs/superpowers/specs/2026-07-17-hsk-4-5-responses.md)
+- **CppTLM 端 HSK-6 响应**: [`2026-08-18-hsk-6-response.md`](docs/superpowers/specs/2026-08-18-hsk-6-response.md) (commit `369cf71`) — 消费关系废止 ack + 11 项删除清单接受 + HSK-5 advance() CANCELLED + 替代路径 v3.0.0 dGPU board
 - **顶层任务书**: [`2026-07-14-ptxemu-comprehensive-modification-plan.md`](docs/superpowers/specs/2026-07-14-ptxemu-comprehensive-modification-plan.md) §2-§5
+- **CppTLM 端 v3.0 实施指南**: `/tmp/cpptlm-action-plan.md` (UsrLinuxEmu 提供, 9 周 P0-P4 22 个操作步骤)
+- **CppTLM 端 v3.0 决策锁定**: [`ADR-X.15-cpptlm-v3-dgpu-extract`](docs/adr/ADR-X.15-cpptlm-v3-dgpu-extract.md) (commit `1c8ae67`)
 
-**PTX-EMU 端 HSK 链路**（截止 2026-07-17）:
+**PTX-EMU 端 HSK 链路**（截止 2026-08-18）:
 - **HSK-1 ✅ Closed**: `CppTLMBridge` ABI 头文件 commit `8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d` + `CPPTLMBRIDGE_VERSION=1`
 - **HSK-2 ✅ Closed**: ANTLR4 4.13.2（满足 CppTLM 端 `>= 4.13.2` 下限；4 权威源全为 4.13.2）· N/A for CppTLM
 - **HSK-3 ✅ Closed**: CMake 集成方式选 `ExternalProject_Add`（零侵入、精确版本控制）· CPPTLM_COMMIT_HASH=`73e5422`
 - **HSK-4 🟡 Ack**: 3 纯虚接口头文件已交付 commit `8acfd2d1` (IScoreboard) / `9e7361b9` (IPipelineLatencyProvider) / `463038e0` (ITensorCoreTiming) · enum 值与 CppTLM RFC-P1-003 字节级一致 · 待 CppTLM rebase 编译验证
-- **HSK-5 🟡 Ack**: exe_once 3-step 注入完成 commit `367fd6a5` + `921b4542` · 27/27 helpers + 13/13 barrier PASS · 3 Oracle BUG 修复 · 待 CppTLM rebase + 集成测试
+- **HSK-5 🔴 CANCELLED by HSK-6**: exe_once 3-step 注入 deferred → 永久废止（随 `IPtxEmuDriver` 整体删除）· commit `367fd6a5` + `921b4542` 实施记录归档
+- **HSK-6 ✅ Accepted**: 消费关系废止（commit `25e36f60` PTX-EMU 端 → `369cf71` CppTLM 端 ack）· CPPTLMBRIDGE_VERSION 冻结于 2 · P0-1 门禁已完成（commit `fa2b3ec` G-D4 静态断言迁至 `abi_guards.h`）· 11 项物理删除清单 P4 阶段实施
 
 **CppTLM 端 deliverable**:
 - `cpptlm_core` 静态库（`build/lib/cpptlm_core.a`）+ `include/cudart/cpptlm_bridge.h` 头文件可被 PTX-EMU `ExternalProject_Add` 消费
 - `MemoryBridge` 实现（`include/tlm/gpu/memory_bridge.hh` + `src/tlm/gpu/memory_bridge.cc`，按项目分层惯例：头在 `include/`、实在 `src/`）通过 PTX-EMU ABI 头文件实现
-- 🟡 CppTLM CI 12 端点（PipelineId 6 + TcPrecision 6）双重 `static_assert` 编译期拦截 - **实质解锁，待 rebase 验证**（PTX-EMU HSK-4 enum 已交付 `463038e0`，CppTLM todo I: rebase 到 `367fd6a5` 后编译期断言，见 `openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md` G-D4 验收门 + `docs/superpowers/specs/2026-07-17-hsk-4-5-responses.md`）
+- ✅ **G-D4 静态断言已迁至 `include/cudart/abi_guards.h`**（commit `fa2b3ec`）— 17 条集中托管（`cpptlm_bridge.h:243-306` 16 条 + `ptx_emu_driver.hh:27` 1 条），双重验证（`grep -c` + 反向故意失败触发 `G-D4 ABI drift` 编译错误 + 846 test cases PASS）· HSK-6 P0-1 门禁完成
 
 **ExternalProject_Add 用法**（PTX-EMU 端 CMake）:
 ```cmake
