@@ -93,6 +93,24 @@ public:
 - ✅ VRAM backing 可被 H2D DMA 写入并被 CPU 端读回
 - ✅ 并发 read_reg / write_reg 线程安全（per `std::atomic<uint32_t>` 语义）
 
+### 2.5 BAR0 MMIO 地址映射表 [Oracle A.5 新增]
+
+> **触发**: Oracle 评审 A.5 — 真实 PCIe GPU 的 doorbell 是对 BAR0 特定 offset 的 MMIO write;当前 spec 中 DGpuBar 与 Doorbell 是两个无连线的对象,host 直接调 `doorbell->ring()` 绕过了 BAR 抽象。**应统一从 `DGpuBar::write_reg` 入口进入,MMIO trace 可统一记录**。
+
+| BAR0 Offset 范围 | 用途 | 访问语义 |
+|---|---|---|
+| `0x0000 - 0x00FF` | PCIe Config Space 镜像(VENDOR_ID / DEVICE_ID / STATUS / COMMAND) | R/W,4-byte aligned |
+| `0x0100 - 0x0FFF` | 中断控制寄存器(MSI-X msg addr/data, mask) | R/W |
+| `0x1000 - 0x1FFF` | **Doorbell SQ tail register space**(per-stream) | W only,8-byte aligned |
+| `0x1000 + stream_id * 8` | doorbell ring(stream_id) → `Doorbell::ring(stream_id, value)` | W only |
+| `0x2000 - 0x2FFF` | 控制 regs(reset / power state / debug) | R/W |
+| `0x3000+` | 保留 / 厂商自定义 | — |
+
+**集成契约**:
+- `DGpuBar::write_reg(offset, value)` 检查 offset 范围;若落在 `0x1000-0x1FFF` doorbell 空间,内部转调 `Doorbell::ring((offset - 0x1000) / 8, value)`
+- host 侧 API 收敛为:**所有"通知 device"操作都经 `DGpuBar::write_reg` 一个入口**(MMIO trace 一致性)
+- 单元测试新增:`test_dgpu_bar.cc` §"Doorbell MMIO routing" 验证 `write_reg(0x1000 + stream*8, tail)` 触发 `Doorbell::ring` 回调
+
 ---
 
 ## 3. Doorbell 规格
@@ -162,7 +180,10 @@ class SubmissionQueue {
 public:
     static constexpr size_t MAX_ENTRIES = 4096;  // NVMe 风格深度
 
-    void enqueue(KernelLaunchRequest req);
+    // [Oracle C-NEW-4 改写]: 返回 bool 而不是 void
+    // - true: 成功入队
+    // - false: SQ 满,入队失败（host IOCTL 应返回 -EBUSY）
+    bool enqueue(KernelLaunchRequest req);
     size_t pending_count() const;
     bool tick();  // 推进 SQ consumer 状态机（消费一个 entry）
 
@@ -176,10 +197,10 @@ public:
 
 #### enqueue(req)
 
-- **Precondition**: `pending_count() < MAX_ENTRIES`（否则 -EBUSY）
+- **Precondition**: 无（满 SQ 由返回值 false 表达）
 - **Side effects**:
-  - 入队 `req` 到内部 vector
-  - 返回 void（错误通过 host 端 IOCTL 返回值传播）
+  - 成功:入队 `req` 到内部 vector,返回 `true`
+  - 失败(SQ 满):不入队,返回 `false`(host 端 IOCTL 返回 -EBUSY)
 - **并发保证**: 由调用方保证 host 端 enqueue 串行
 
 #### pending_count() const
