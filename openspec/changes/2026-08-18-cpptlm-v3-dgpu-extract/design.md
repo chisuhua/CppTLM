@@ -24,6 +24,9 @@
 - ❌ 不实现完整 PCIe 协议栈（CFG + BAR0 + BAR1 最小子集）
 - ❌ 不实现 CUDA driver API（由 UsrLinuxEmu + TaskRunner 端承担）
 - ❌ 不实现真实 GPU 指令发射路径（由 PTX-EMU 端 `libptxemu_device.so` 承担）
+- ❌ **不实施 SMContext Adapter 注入（ADR-NV-02 D1-Full 路径废止）**[Oracle 二次审查 T-P3-5]
+  - **理由**: PTX-EMU `libptxemu_device.so::image_execute` 已是自包含 GPU 仿真器(含 warp scheduling / scoreboard / pipeline / tensor core / barrier / atomic),CppTLM 端 12 个 SM 模块(GpuComputeUnitTLM/ScoreboardTLM/PipelineTLM/TensorCoreTLM 等)仅为 timing reference stubs,**不构成可执行 SM**(per ADR-NV-02 §2.4 "PTX-EMU 无独立 Scoreboard 组件")
+  - **影响**: D1-Full 4 Adapter (CppTLMWarpSchedulerAdapter / CppTLMScoreboardAdapter / CppTLMPipelineAdapter / CppTLMTensorCoreAdapter) 不实施;Phase 8.B D1-Full 升级(ADR-NV-02 §3.2-3.6)路径废止;G-D5 验收标准从 tasks.md Gate #6 移除
 - ❌ ANTLR4 不在 CppTLM scope（per HSK-6 §3.3 + Oracle session 决议）
 
 ---

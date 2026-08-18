@@ -99,13 +99,17 @@ CppTLM 当前**只有一个 SoC 架构目标**——apu_soc（CPU + GPU 融合�
 | | **+ Python** | | **800** | |
 | | **总** | | **5100** | |
 
-### 3.2 3 阶段里程碑
+### 3.2 3 阶段里程碑 [Oracle 二次审查 Status Update — 2026-08-18]
+
+> **⚠️ Phase 8.B/8.C phase-accurate 验收标准降级**: 自 ADR-X.15 v3.0 dGPU 板卡决策起,Phase 8.B 的 4 Adapter (WarpScheduler/Scoreboard/Pipeline/TensorCore) **不实施**,Phase-accurate 仿真仅对 **synthetic workload** 有效;**真实 CUDA kernel 上的 phase-accurate 研究由 PTX-EMU `libptxemu_device.so` 承担**(per ADR-NV-02 §2.4)。
+>
+> **M2/M3 验收点修订**: 8.B M2 (±15% gpgpu-sim 带宽) 仅在 synthetic workload 下验证;8.C M3 (±20% 延迟) 同样限定 synthetic workload。详见 `ADR-NV-02-phase8b-d1-strategy.md` Status Update。
 
 | Phase | 周数 | 任务数 | 关键交付 | 验收点 |
 |:---:|:---:|:---:|------|------|
 | **8.A** | 4 | 8 | MemoryCluster + SharedMemory + GpuNoC + KernelLaunch + GpuSocTLM 顶层 + GpuClusterSharedInterface | M1: 端到端跑通, 1 SM × 1M cycles < 5s |
-| **8.B** | 6 | 8 | SubCore + WarpScheduler + Scoreboard + TensorCore + Pipeline + L2Partition + 5 类 microbenchmark | M2: gpgpu-sim ±15% 带宽, 1 GB203 × 1M cycles < 60s |
-| **8.C** | 3 | 9 | Tcc + Tma + Dsm + PowerModel + cpptlm.{nvidia,gpu_workload,gpu_soc} + apu_soc 集成 | M3: 完整验证报告, ±20% 延迟 |
+| **8.B** ⚠️ | 6 | 8 | SubCore + WarpScheduler + Scoreboard + TensorCore + Pipeline + L2Partition + 5 类 microbenchmark | M2: ⚠️ synthetic workload 下 gpgpu-sim ±15% 带宽; 1 GB203 × 1M cycles < 60s |
+| **8.C** ⚠️ | 3 | 9 | Tcc + Tma + Dsm + PowerModel + cpptlm.{nvidia,gpu_workload,gpu_soc} + apu_soc 集成 | M3: ⚠️ synthetic workload 下 ±20% 延迟 |
 
 ### 3.3 Python API（`cpptlm.nvidia` / `cpptlm.gpu_workload` / `cpptlm.gpu_soc`）
 

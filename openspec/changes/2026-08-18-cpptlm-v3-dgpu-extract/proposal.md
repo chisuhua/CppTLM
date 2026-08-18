@@ -89,9 +89,9 @@ W8-9    (P4 物理删除): 11 项删除 + v2.1.0 → v3.0.0 bump + 808 测试验
 | #6 Mode A/B dual-rail E2E [Oracle A.4 改写] | CppTLM + UsrLinuxEmu | ⏳ W6-8 |
 | #6.a **功能等价** blocking | CppTLM | ⏳ W6-8 |
 | #6.b **cycle 偏差 informational**（median/p95 报告,超 ±15% 触发人工 review）| CppTLM | ⏳ W6-8 |
-| #7 baseline 测试验证 [Oracle 改写] | CppTLM | ⏳ W8-9 |
-| #7.a **指标定义**:Catch2 test cases 数(消除 proposal.md 808、tasks.md:231 ~148、AGENTS.md 764、实际 846 四处不一致);来源 `./build/bin/cpptlm_tests --list-tests \| wc -l` | CppTLM | ⏳ W8-9 |
-| #7.b **门槛**:P0-P4 累计新增 ≥ 600 test cases(原 P0-P4 表 +5/+30/+25/+50/+50=~160 与"P0-P4 累计 ~600"口径不一致,以总测试增量为准) | CppTLM | ⏳ W8-9 |
+| #7 baseline 测试验证 [Oracle 二次改写 — T-P3-5 双轨] | CppTLM | ⏳ W8-9 |
+| #7.a **兼容 baseline**: 全部 Catch2 test cases ≥ **846**(含 legacy SM 单元测试,保证不破坏现有覆盖) | CppTLM | ⏳ W8-9 |
+| #7.b **dGPU 路径 coverage**: DGpuBoardTLM / Doorbell / SQ / CQ / /PtxEmuSubmodule 直接相关测试 ≥ **60**(per tasks.md § 测试目标 +5/+30/+25/+50/+50=160,只统计与 dGPU 直接相关者) | CppTLM | ⏳ W8-9 |
 | #8 v3.0.0 tag + 删除 11 项完成 | CppTLM | ⏳ W9 |
 | **#9** JSON-config E2E [Oracle 新增 / 用户主需求] | CppTLM | ⏳ W6-8 |
 | **#9.a** `configs/dgpu_board_v1.json` 通过 `validate_topology` | CppTLM | ⏳ W6-8 |
@@ -128,6 +128,40 @@ UsrLinuxEmu ADR-090 v2 ✅ → PTX-EMU HSK-6 ✅ → CppTLM ack ✅ → CppTLM P
 | **Oracle A.5** Doorbell 不在 BAR0 MMIO 空间 | MEDIUM | specs/dgpu-board.md §2.5 新增 BAR0 MMIO 地址映射表 |
 | **Oracle B.3** mock .so 双层策略 | LOW | specs/sm-executor.md §7.2 改双层 + 删 mock_smock_pcie_device.so |
 | **Oracle Section C** JSON-config E2E 测试规格 | 用户主需求 | tasks.md T-P3-4 + Gate #9 新增 |
+
+## v3.0.0 弃用与遗留路径声明 [Oracle 二次审查 T-P3-5]
+
+> **触发**: Oracle 二次审查 F-NEW-CONCERN-1 [HIGH] — 12 个 SM 模块 + 18 个 GPU 测试在 v3.0.0 继续 PASS 但无 dGPU 路径调用方,构成"静默弃用" + "假绿"风险。
+>
+> **结论**: **Option A (Pure PTX-EMU delegation) 路径本身正确**,但必须显式声明模块命运与 boundary。
+
+### 12 SM 模块 v3.0.0 命运表
+
+| # | 模块 | 位置 | v3.0.0 命运 | 理由 |
+|:---:|---|---|---|---|
+| 1 | `GpuComputeUnitTLM` | `include/tlm/gpu/gpu_compute_unit_tlm.hh/.cc` | ⚠️ **Legacy** | apu_soc / Phase 8.A 单元测试覆盖;dGPU 路径不调用 |
+| 2 | `MinimalWarpSchedulerTLM` | `include/tlm/gpu/minimal_warp_scheduler_tlm.hh/.cc` | ⚠️ **Legacy** | 同上 |
+| 3 | `WavefrontTLM` | `include/tlm/gpu/wavefront_tlm.hh/.cc` | ⚠️ **Legacy** | 同上 |
+| 4 | `ScoreboardTLM` | `include/tlm/gpu/scoreboard_tlm.hh/.cc` | ⚠️ **Legacy + Internal-deprecate** | 原为 D1-Full Adapter 设计;D1-Full 路径废止 |
+| 5 | `PipelineTLM` | `include/tlm/gpu/pipeline_tlm.hh/.cc` | ⚠️ **Legacy + Internal-deprecate** | 同上 |
+| 6 | `TensorCoreTLM` | `include/tlm/gpu/tensor_core_tlm.hh/.cc` | ⚠️ **Legacy + Internal-deprecate** | 同上 |
+| 7 | `SharedMemoryTLM` | `include/tlm/gpu/shared_memory_tlm.hh/.cc` | ⚠️ **Legacy** | apu_soc 单元测试覆盖 |
+| 8 | `VectorRegfileTLM` | `include/tlm/gpu/vector_regfile_tlm.hh/.cc` | ⚠️ **Legacy** | 同上 |
+| 9 | `GpuMeshNoC` | `include/tlm/gpu/gpu_mesh_noc_tlm.hh/.cc` | ✅ **保留重构** | DGpuBoardTLM 内部 VRAM routing 可复用 |
+| 10 | `MemoryClusterTLM` | `include/tlm/gpu/memory_cluster_tlm.hh/.cc` | ✅ **保留重构** | DGpuBoardTLM 内部 VRAM backing 可复用 |
+| 11 | `GpuSocTLM` | `include/tlm/gpu/gpu_soc_tlm.hh/.cc` | ✅ **保留**(apu_soc 顶层需要) | 与 dGPU board path 正交 |
+| 12 | `AsyncCompletionAdapter` | `include/tlm/gpu/async_completion_adapter.hh` | 🗑️ **删除 `setCompletionCallback` 入口** | T-P3-2 替换为 CompletionRing |
+
+### 显式声明
+
+- ❌ **v3.0.0 不删除**上述 Legacy SM 模块(避免 apu_soc 兼容破坏 + Phase 8.A/B 单元测试失效)
+- ❌ **v3.0.0 不实施** SMContext Adapter 注入(ADR-NV-02 D1-Full 路径废止)
+- ❌ **v3.0.0 不要求** "完备 Nvidia SM 仿真" — PTX-EMU `libptxemu_device.so::image_execute` 已是自包含 SM 执行器(per ADR-NV-02 §2.4 "PTX-EMU 无独立 Scoreboard 组件"),CppTLM 端只需 PCIe 设备语义 + VRAM backing + 8 ABI 透传
+- ⚠️ **Gate #7 baseline** = "全部 ≥ 846 PASS (含 legacy SM)" 而非 "dGPU 路径 N PASS"
+
+### 影响范围
+
+- 18 个 GPU 单元测试(`test_gpu_compute_unit_*.cc` / `test_minimal_warp_scheduler_tlm.cc` / `test_pipeline_tlm.cc` / `test_scoreboard_tlm.cc` / `test_tensor_core_tlm.cc` / `test_shared_memory_tlm.cc` / `test_vector_regfile_tlm.cc` / `test_wavefront_tlm.cc` / `test_memory_cluster_tlm.cc` / `test_gpu_mesh_noc_tlm.cc` / `test_simmodule_gpu_hierarchy.cc` / `test_gpu_cluster_shared.cc` / `test_gpu_standalone.cc` / `test_gpu_soc_phase8a.cc` / `test_gpu_soc_tlm.cc` 等): ✅ 保留作为 legacy 单元测试,新增 `[legacy]` Catch2 标签区分
 
 ## Migration (Phase 化详细)
 

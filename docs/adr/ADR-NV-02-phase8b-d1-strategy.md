@@ -333,6 +333,23 @@ SubCoreTLM 不再"内部包含 4 scheduler + scoreboard + pipeline + TC + black-
 
 **与 ADR-NV-01 的关系**：`docs/adr/ADR-NV-01-gpu-soc-architecture-target.md` §2.1 D8 原文"5+V pipeline 不分开建模"——该决策针对 Phase 8.A 时序。Phase 8.B 的 `PipelineTLM`（5+V 抽象）+ `TensorCoreTLM`（6 精度）分开建模是对 D8 的预期演进，与 Phase 8.A 决策不冲突。后续如需正式变更 D8，应在 ADR-NV-01 追加 Status Update 段（独立于本 ADR 处理）。
 
+## Status Update
+
+### 2026-08-18 — D1-Full 路径废止 (per ADR-X.15 v3.0 dGPU 板卡决策)
+
+> **触发事件**: `openspec/changes/2026-08-18-cpptlm-v3-dgpu-extract/` (commit `d867a5f`) 采纳 PTX-EMU 完整代理模式 — Oracle 二次审查 F-NEW-CONCERN-1/3 揭示 CppTLM 端 SM 模块仅为 timing reference stubs,非可执行 SM。
+
+- **废止范围**: §3.2-3.6 全部 4 个 Adapter (CppTLMWarpSchedulerAdapter / CppTLMScoreboardAdapter / CppTLMPipelineAdapter / CppTLMTensorCoreAdapter) **不实施**
+- **保留范围**:
+  - `ScoreboardTLM` / `PipelineTLM` / `TensorCoreTLM` 作为独立 timing reference 模块(无 PTX-EMU 注入调用方)
+  - 18 个 GPU 单元测试文件保留作为 legacy 覆盖(新增 `[legacy]` Catch2 标签)
+- **G-D5 验收**: 因 Mode B (PTX-EMU 代理) 不注入 Adapter,本验收标准已无对应测试场景;从 `openspec/changes/2026-08-18-cpptlm-v3-dgpu-extract/proposal.md` Gate #6 移除
+- **关联文档**:
+  - `openspec/changes/2026-08-18-cpptlm-v3-dgpu-extract/tasks.md` T-P3-5
+  - `openspec/changes/2026-08-18-cpptlm-v3-dgpu-extract/design.md` §1.2
+  - ADR-X.15 §3 + Oracle review `ses_febd64a69ffea61HXB7oilue7H`
+- **决策追溯**: 本 ADR §2.4 "PTX-EMU 无独立 Scoreboard 组件" 原文即为本次决策依据 — PTX-EMU 已是自包含 SM,CppTLM 不必重复实现
+
 ---
 
 **关联 OpenSpec 变更**：
