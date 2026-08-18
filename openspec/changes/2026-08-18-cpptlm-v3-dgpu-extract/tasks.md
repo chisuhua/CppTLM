@@ -234,6 +234,49 @@ ctest -R "test_dgpu_board_tlm"  # 单元测试,确认 ChStreamModuleBase 派生�
 - [ ] baseline 报告 `median/p95 cycle` 分布(每个 benchmark N≥30 runs,固定 seed),超 ±15% 触发人工 review 而非自动 fail
 - [ ] 与 UsrLinuxEmu 联合测试（submodule 集成）
 
+### T-P3-5: 弃用模块声明 + Gate #7 baseline 指标双轨定义 [🟡 MEDIUM — Oracle Section E]
+
+> **触发**: Oracle 二次审查 F-NEW-CONCERN-1 [HIGH] — 12 个 SM 模块(GpuComputeUnitTLM/MinimalWarpSchedulerTLM/WavefrontTLM/ScoreboardTLM/PipelineTLM/TensorCoreTLM/SharedMemoryTLM/VectorRegfileTLM/GpuMeshNoC/MemoryClusterTLM/GpuSocTLM/AsyncCompletionAdapter)+ 18 个测试文件在 v3.0.0 继续 PASS 但无 dGPU 路径调用方,**静默弃用风险**。
+>
+> **本任务前置**: Gate #7 baseline 指标当前 4 处不一致(proposal.md 808, tasks.md:231 ~148, AGENTS.md 764, 实际 846),必须双轨定义才能 ship-blocker。
+
+**Acceptance**:
+- [ ] `proposal.md` 新增 §6 "v3.0.0 弃用与遗留路径声明"(per Oracle Section E.1):
+  - 12 SM 模块 v3.0 命运表(GpuComputeUnitTLM/MinimalWarpSchedulerTLM/WavefrontTLM/ScoreboardTLM/PipelineTLM/TensorCoreTLM/SharedMemoryTLM/VectorRegfileTLM → Legacy;GpuMeshNoC/MemoryClusterTLM/GpuSocTLM → 重构或保留;AsyncCompletionAdapter → 删除 `setCompletionCallback` 入口)
+  - 显式声明 v3.0.0 **不删除** SM 模块(避免 apu_soc 兼容破坏)
+  - 显式声明 v3.0.0 **不实施** SMContext Adapter 注入(ADR-NV-02 D1-Full 路径废止)
+  - 显式声明 Gate #7 baseline = "全部 ≥ 846 PASS (含 legacy SM)" 而非"dGPU 路径 N"
+- [ ] `design.md` §1.2 "非目标" 追加 "❌ 不实施 SMContext Adapter 注入 (ADR-NV-02 D1-Full 废止)"
+- [ ] `docs/adr/ADR-NV-02-phase8b-d1-strategy.md` 追加 `## Status Update (2026-08-18)` 段说明 D1-Full 路径废止(per Oracle Section E.4):
+  - 4 Adapter (WarpScheduler/Scoreboard/Pipeline/TensorCore) 不实施
+  - 保留 ScoreboardTLM/PipelineTLM/TensorCoreTLM 作为独立 timing reference
+  - G-D5 验收标准从 tasks.md Gate #6 移除
+- [ ] `docs/adr/ADR-NV-01-gpu-soc-architecture-target.md` §3.2 8.B/8.C 状态 ⏳ → ⚠️ Phase-accurate 仅对 synthetic workload 有效
+- [ ] Gate #7 拆分为:
+  - **#7.a (兼容 baseline)**: 全部 Catch2 test cases ≥ 846(含 legacy SM 单元测试)
+  - **#7.b (dGPU 路径 coverage)**: DGpuBoardTLM/Doorbell/SQ/CQ/PtxEmuSubmodule 直接相关测试 ≥ 60(per tasks.md 表 § 测试目标 +5/+30/+25/+50/+50 = 160,只统计与 dGPU 直接相关者)
+
+**验证**:
+```bash
+grep -l "GpuComputeUnitTLM\|ScoreboardTLM\|PipelineTLM\|TensorCoreTLM" test/*.cc | wc -l  # ≥ 10 (legacy 保留)
+./build/bin/cpptlm_tests --list-tests | wc -l                                          # ≥ 846 (Gate #7.a)
+./build/bin/cpptlm_tests --list-tags | grep -E "\[dgpu|\[e2e\]\[dgpu\]" | wc -l          # ≥ 60 (Gate #7.b)
+```
+
+**Commit**:
+```bash
+git commit -am "docs(cpptlm-v3-dgpu-extract): Oracle 2nd review — deprecation scaffold for 12 SM modules + Gate #7 dual baseline
+
+Per Oracle F-NEW-CONCERN-1 [HIGH] + Section E:
+- proposal.md §6: explicit v3.0.0 deprecation list (12 SM modules + 18 tests)
+- design.md §1.2: ❌ 不实施 SMContext Adapter 注入
+- ADR-NV-02 Status Update (2026-08-18): D1-Full 路径废止
+- ADR-NV-01 §3.2: 8.B/8.C 状态改 ⏳ → ⚠️ Phase-accurate 仅 synthetic 有效
+- Gate #7 双轨: 7.a 全部 ≥ 846 (含 legacy) + 7.b dGPU 直接相关 ≥ 60
+
+Refs: Oracle review Session 'ses_febd64a69ffea61HXB7oilue7H'"
+```
+
 ### T-P3-4: JSON-config E2E 测试 [🔴 HIGH — 用户主需求]
 
 > **触发**: 用户要求 + Oracle Section C。**唯一能验证 ModuleFactory 参数解析 + StreamAdapter 注入 + 端口绑定的层**;单元/集成层做不到。
