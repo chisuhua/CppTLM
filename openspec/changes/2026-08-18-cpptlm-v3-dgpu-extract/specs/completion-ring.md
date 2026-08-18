@@ -87,25 +87,28 @@ private:
 
 - **Precondition**: 无
 - **Postcondition**:
-  - 成功: 注册 hook，后续 push() 触发调用 `hook()`
+  - 成功: 注册 hook,后续 `push()` **在释放内部 mutex 后**才异步调用 `hook()`(per Oracle C-NEW-3 裁决)
   - `hook = nullptr` 表示清除 hook
 
 - **线程安全**:
   - 仅 device 端单线程调用（设置 hook）
 
-- **重入保证**:
-  - hook 内部**不应**直接调 `CompletionRing::pop()`（可能死锁）
-  - 应通过 `Entry` 队列中间层
+- **重入保证** [Oracle C-NEW-3 裁决]:
+  - hook **只应做 signal**(如设置 `cq_event_.set()` 或压入外部就绪队列),**不应**直接调 `CompletionRing::try_pop()`(避免自死锁)
+  - hook **不应**重入 `CompletionRing::push()`(可能与正在执行的 push 形成 ABA)
+  - 真正的 entry drain 在 host 端 `try_pop()` 循环中独立执行,与 hook 解耦
 
-### 3.3 pop()
+### 3.3 try_pop()
 
 - **Precondition**: 无
 - **Postcondition**:
-  - 若 ring 非空: 返回并移除最早 Entry
-  - 若 ring 空: 返回 `Entry { image_id=0, status=0, timestamp=0 }`（哨兵值）
+  - 若 ring 非空: 返回并移除最早 `Entry`,包装在 `std::optional<Entry>`
+  - 若 ring 空: 返回 `std::nullopt`(无哨兵值歧义)
 
 - **线程安全**:
   - host 端单线程调用（cuStreamSynchronize 等待时）
+
+- **替代**: 旧版 `pop() -> Entry` 哨兵值方案在 hook/pop 重入检查中易误用,**强制使用 `try_pop()` 返回 `std::optional<Entry>`**
 
 ### 3.4 pending_count() const
 
@@ -158,8 +161,9 @@ class CompletionRing {
 // src/tlm/gpu/sm_executor_impl.cc
 class SmExecutorImpl : public ISmExecutor {
 public:
-    SmExecutorImpl()
-        : ptx_emu_("libptxemu_device.so"),
+    // Oracle B/D.2 修订: 构造函数接收 DSO 路径(默认 soname)
+    explicit SmExecutorImpl(const std::string& dso_path = "libptxemu_device.so")
+        : ptx_emu_(dso_path),
           completion_ring_(std::make_unique<CompletionRing>()) {}
 
     int dispatch(SmImageId image, uint64_t args_vram_addr, size_t args_size,
@@ -182,7 +186,7 @@ private:
 };
 ```
 
-### 5.2 setCompletionCallback 转调
+### 5.2 setCompletionCallback 转调 [Oracle C-NEW-3 重写]
 
 ```cpp
 int SmExecutorImpl::setCompletionCallback(CompletionCallback cb) override {
@@ -190,16 +194,25 @@ int SmExecutorImpl::setCompletionCallback(CompletionCallback cb) override {
         completion_ring_->set_host_notify(nullptr);
         return 0;
     }
-    // 转调 CompletionRing::set_host_notify
-    completion_ring_->set_host_notify([cb, this]() {
-        // pop 所有 entry，调 callback
-        while (auto entry = completion_ring_->pop()) {
-            if (entry.image_id != 0) {  // 跳过哨兵值
-                cb(entry.image_id, entry.status);
-            }
-        }
+    // 转调 CompletionRing::set_host_notify — 仅做 signal，不在 hook 内 drain
+    // (per Oracle C-NEW-3 裁决: push 释放 mutex 后调 hook;hook 不能直接 try_pop)
+    completion_ring_->set_host_notify([this]() {
+        // 仅 signal fence(per §6.1 集成):把"有 entry 可读"事实通知 host
+        hal_fence_signal(cpp_tlm::FENCE_GPU_COMPLETION);
+        // 真正的 entry drain 由 host 端 try_pop() 循环完成
+        // (cuStreamSynchronize 路径,见 UsrLinuxEmu FenceRegistry)
     });
+    pending_callback_ = std::move(cb);  // 保存 callback 备用
     return 0;
+}
+
+// Host 端 drain 路径（UsrLinuxEmu + CppTLM 边界）
+void SmExecutorImpl::drain_for_fence_wait() {
+    while (auto entry = completion_ring_->try_pop()) {
+        if (pending_callback_) {
+            pending_callback_(entry->image_id, entry->status);
+        }
+    }
 }
 ```
 

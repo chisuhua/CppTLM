@@ -58,14 +58,14 @@ Oracle session `ses_fef78854dffeLfDJh7p8ELuMLy`（4 轮评估）验证事实基�
 | 10 | vendored `tensor_core_interface.h` | `include/cudart/tensor_core_interface.h`（1709 字节） |
 | 11 | `PtxEmuDriverApi` 布局锁 | `include/tlm/gpu/ptx_emu_driver.hh:27`（已迁至 `abi_guards.h`） |
 
-### 4. 4 测试文件处置（per UsrLinuxEmu `37a91b6` §D6.2）
+### 4. 4 测试文件处置（per UsrLinuxEmu `37a91b6` §D6.2）[Oracle C-NEW-1 路径修正]
 
 | 测试 | 处置 |
 |---|---|
-| `tests/test_memory_bridge.cc` | 🗑️ **删除**（测试对象 `MemoryBridge` 物理删除） |
-| `tests/test_memory_bridge_poll.cc` | 🔄 **重写**为 `tests/test_completion_ring.cc`（`poll_kernel` 语义 → CompletionRing push/host_notify） |
-| `tests/test_kernel_launch_tlm_ext.cc` | ✅ **保留 + 改符号**（`MockPtxEmuDriver` → SQ/CQ doorbell mock；`KernelLaunchRequest`/`setMemoryBridge` 复用） |
-| `tests/test_gpu_soc_perf.cc` | ✂️ **拆分**（scoreboard perf 保留；MemoryBridge poll perf → CompletionRing） |
+| `test/test_memory_bridge.cc` | 🗑️ **删除**（测试对象 `MemoryBridge` 物理删除） |
+| `test/test_memory_bridge_poll.cc` | 🔄 **重写**为 `test/test_completion_ring.cc`（`poll_kernel` 语义 → CompletionRing push/host_notify） |
+| `test/test_kernel_launch_tlm_ext.cc` | ✅ **保留 + 改符号**（`MockPtxEmuDriver` → SQ/CQ doorbell mock；`KernelLaunchRequest`/`setMemoryBridge` 复用） |
+| `test/test_gpu_soc_perf.cc` | ✂️ **拆分**（scoreboard perf 保留；MemoryBridge poll perf → CompletionRing） |
 
 ### 5. 9 周双轨时间线（per #19 v3.0 RFC）
 
@@ -85,10 +85,17 @@ W8-9    (P4 物理删除): 11 项删除 + v2.1.0 → v3.0.0 bump + 808 测试验
 | #2 CppTLM maintainer ack | CppTLM | ✅ commit `369cf71`（HSK-6 ack） |
 | #3 PTX-EMU Architecture Team HSK-6 发出 | PTX-EMU | ✅ commit `25e36f60` |
 | #4 PTX-EMU HSK-6 + UsrLinuxEmu 双 ack 收齐 | PTX-EMU + UsrLinuxEmu | 🚫 Ack 截止 2026-09-01 |
-| #5 G-D4 17 条 static_assert 迁移 | CppTLM | ⏳ W1 启动 |
-| #6 Mode A/B dual-rail E2E (5 类 microbenchmark, cycle ±15%) | CppTLM + UsrLinuxEmu | ⏳ W6-8 |
-| #7 808 测试 baseline 验证 | CppTLM | ⏳ W8-9 |
+| #5 G-D4 17 条 static_assert 迁移 | CppTLM | ✅ commit `fa2b3ec`（P0-1 已完成） |
+| #6 Mode A/B dual-rail E2E [Oracle A.4 改写] | CppTLM + UsrLinuxEmu | ⏳ W6-8 |
+| #6.a **功能等价** blocking | CppTLM | ⏳ W6-8 |
+| #6.b **cycle 偏差 informational**（median/p95 报告,超 ±15% 触发人工 review）| CppTLM | ⏳ W6-8 |
+| #7 baseline 测试验证 [Oracle 改写] | CppTLM | ⏳ W8-9 |
+| #7.a **指标定义**:Catch2 test cases 数(消除 proposal.md 808、tasks.md:231 ~148、AGENTS.md 764、实际 846 四处不一致);来源 `./build/bin/cpptlm_tests --list-tests \| wc -l` | CppTLM | ⏳ W8-9 |
+| #7.b **门槛**:P0-P4 累计新增 ≥ 600 test cases(原 P0-P4 表 +5/+30/+25/+50/+50=~160 与"P0-P4 累计 ~600"口径不一致,以总测试增量为准) | CppTLM | ⏳ W8-9 |
 | #8 v3.0.0 tag + 删除 11 项完成 | CppTLM | ⏳ W9 |
+| **#9** JSON-config E2E [Oracle 新增 / 用户主需求] | CppTLM | ⏳ W6-8 |
+| **#9.a** `configs/dgpu_board_v1.json` 通过 `validate_topology` | CppTLM | ⏳ W6-8 |
+| **#9.b** `test/test_dgpu_board_from_config.cc` 6 条 SECTION 全部 PASS(instantiateAll + StreamAdapter 注入 + installImage + doorbell→SQ→dispatch→CompletionRing + host_notify + 负面路径)| CppTLM | ⏳ W6-8 |
 
 ## Cross-Repo Coordination
 
@@ -103,6 +110,24 @@ W8-9    (P4 物理删除): 11 项删除 + v2.1.0 → v3.0.0 bump + 808 测试验
 ```
 UsrLinuxEmu ADR-090 v2 ✅ → PTX-EMU HSK-6 ✅ → CppTLM ack ✅ → CppTLM P0-P4 实施 → UsrLinuxEmu submodule bump + Mode B E2E
 ```
+
+### Oracle 评审修订记录（2026-08-18）
+
+本提案经过 Oracle read-only 咨询,确认以下必改项已纳入 tasks.md / specs:
+
+| Oracle Finding | 严重度 | 修订落地 |
+|---|---|---|
+| **C-NEW-1** 路径与扩展名约定违反（`tests/` → `test/`, `.cpp` → `.cc`）| HIGH | tasks.md T-P0-4；proposal.md §4 已修正 |
+| **C-NEW-2** 非 SimObject 组件无仿真时间集成,JSON 注册路径缺失 | **CRITICAL** | tasks.md T-P2-4（DGpuBoardTLM 包装前置） |
+| **C-NEW-3** CompletionRing spec 自死锁矛盾 | HIGH | specs/completion-ring.md §3.2/§5.2 裁决 |
+| **C-NEW-4** SQ::enqueue 签名 void vs bool 矛盾 | MEDIUM | specs/dgpu-board.md §4.1 改 `bool enqueue` |
+| **C-NEW-5** mock .so 路径/依赖未定义 | MEDIUM | tasks.md T-P1-A4 |
+| **C-NEW-6** P4 删 cpptlm_bridge.h 与 17 条断言的生存关系 | MEDIUM | 风险登记 R10（per Oracle D.3）|
+| **C-NEW-7** `g_ptx_emu_driver` 位置含糊 | LOW | 风险登记 R11（per Oracle D.3）|
+| **Oracle A.4** ±15% cycle tolerance 科学性不足 | MEDIUM | Gate #6 改写为功能等价 blocking + cycle informational |
+| **Oracle A.5** Doorbell 不在 BAR0 MMIO 空间 | MEDIUM | specs/dgpu-board.md §2.5 新增 BAR0 MMIO 地址映射表 |
+| **Oracle B.3** mock .so 双层策略 | LOW | specs/sm-executor.md §7.2 改双层 + 删 mock_smock_pcie_device.so |
+| **Oracle Section C** JSON-config E2E 测试规格 | 用户主需求 | tasks.md T-P3-4 + Gate #9 新增 |
 
 ## Migration (Phase 化详细)
 

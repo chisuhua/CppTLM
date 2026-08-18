@@ -211,15 +211,18 @@ int SmExecutorImpl::setCompletionCallback(CompletionCallback cb) {
 
 ## 6. 集成契约 (Integration Contracts)
 
-### 6.1 PtxEmuSubmodule 集成
+### 6.1 PtxEmuSubmodule 集成 [Oracle D.2 改写]
 
 `SmExecutorImpl` 持有 `PtxEmuSubmodule` 实例（构造时 dlopen `libptxemu_device.so`）。
 
 ```cpp
 class SmExecutorImpl : public ISmExecutor {
 public:
-    SmExecutorImpl()
-        : ptx_emu_("libptxemu_device.so"),
+    // [Oracle D.2 改写]: 构造函数接收 DSO 路径(默认 soname)
+    // 生产环境: 默认 "libptxemu_device.so"(由 PTX-EMU 真值源 ccd34155 提供)
+    // 测试环境: 通过 JSON params 注入 mock .so 绝对路径(per T-P1-A4 + T-P3-4)
+    explicit SmExecutorImpl(const std::string& dso_path = "libptxemu_device.so")
+        : ptx_emu_(dso_path, /*dlopen_flags=*/RTLD_NOW | RTLD_LOCAL),
           completion_ring_(std::make_unique<CompletionRing>()) {}
 
 private:
@@ -227,6 +230,8 @@ private:
     std::unique_ptr<CompletionRing> completion_ring_;
 };
 ```
+
+> **dlopen flags 备忘**:`RTLD_NOW` 立即解析所有符号(失败早暴露);`RTLD_LOCAL` 防符号污染到全局命名空间(per Oracle B.3);`RTLD_GLOBAL` 仅在需要 `dlsym(RTLD_DEFAULT, ...)` 时才加。
 
 ### 6.2 SubmissionQueue 集成
 
@@ -257,10 +262,19 @@ void SmExecutorImpl::tick() {
 | dispatch 异步语义 | 返回 0 后 CompletionRing 才 push | `[sm-executor]` |
 | setCompletionCallback 转调 | callback 注册后 CompletionRing host_notify 触发 callback | `[sm-executor]` |
 
-### 7.2 Mock 库
+### 7.2 Mock 库 [Oracle B.3 改写 — 双层策略]
 
-- `tests/mock_libptxemu_device.so`: 提供 mock 的 8 个 dlsym 函数（返回可预测值）
-- `tests/mock_smock_pcie_device.so`: 提供 mock 的 DGpuBar/Doorbell/SQ（用于隔离测试）
+> **Oracle B.3 评审**:共享库 mock 方向正确(dlsym 行为只能用真只测),但应**双层**。
+
+| Mock 类型 | 路径 | 用途 | 覆盖测试 |
+|---|---|---|---|
+| **Header-only C++ Mock** | `test/mock/mock_ptx_emu_submodule.hh` | C++ 替身,实现 `PtxEmuSubmodule` 行为(可重写 8 方法) | `test_sm_executor_impl.cc`、`test_is_m_executor.cc` 等单测 |
+| **Header-only C++ Mock** | `test/mock/mock_dgpu_bar.hh`、`test/mock/mock_doorbell.hh`、`test/mock/mock_submission_queue.hh`、`test/mock/mock_completion_ring.hh` | DGpuBar/Doorbell/SQ/CompletionRing 的 C++ 替身 | 所有依赖这些组件的单测(无需 .so) |
+| **Shared library mock** | `test/mock/mock_libptxemu_device.so` | 提供 8 个 dlsym 函数的可预测实现 | **仅** `test_ptx_emu_submodule.cc`(验 dlopen/dlsym/module_version) |
+
+**删除原 `mock_smock_pcie_device.so`**:DGpuBar/Doorbell/SQ 是纯 C++ 类,header mock 足够,做 .so 是过度工程。
+
+**路径修正** [Oracle C-NEW-1]:所有 `tests/mock_*.so` → `test/mock/mock_*.so`(对齐根 CMakeLists 的 `test/` 目录)。
 
 ---
 
