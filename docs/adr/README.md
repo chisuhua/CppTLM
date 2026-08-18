@@ -31,6 +31,7 @@
 | [ADR-X.12-python-config-generator.md](./ADR-X.12-python-config-generator.md) | Python 配置生成器 | 📋 提案 | Phase 3.2 |
 | [ADR-X.13-stub-multi-extension.md](./ADR-X.13-stub-multi-extension.md) | 多 TLM 扩展 stub 标记 | ✅ 已确认 | Phase 7+ |
 | [ADR-X.14-coherence-domains-stub.md](./ADR-X.14-coherence-domains-stub.md) | `coherence_domains` 字段 stub 标记 | ✅ 已确认 | Phase 7+ |
+| [ADR-X.15-cpptlm-v3-dgpu-extract.md](./ADR-X.15-cpptlm-v3-dgpu-extract.md) | cpptlm-v3-dgpu-extract (角色反转 + v3.0.0 BREAKING bump + 11 项物理删除清单, HSK-6 P0-1 门禁已完成 `fa2b3ec`) | ✅ Accepted | Phase 9 (W1-9) |
 | [ADR-INC-01-incorporate-parent-late-binding.md](./ADR-INC-01-incorporate-parent-late-binding.md) | ApuSoC::incorporate_parent 真实 late-binding 语义 (1A+2A+3A + 双层幂等 + 软失败 + 命名可配置) | ✅ 已实施 | P1 (`04399c8`) |
 | [ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md](./ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md) | cpptlm.library Python 高级复合 cluster 工厂 API (`cpu_nested_cluster` / `memory_cluster_hierarchical` / `gpu_topology`) | ✅ 已实施 | F5 (`140fffd`) |
 | [ADR-METRIC-01-cputlm-cache-memory-telemetry.md](./ADR-METRIC-01-cputlm-cache-memory-telemetry.md) | CPUTLM/CacheTLM/MemoryTLM Telemetry 统计收集框架 (`system.{cpu,cache,memory}` 命名空间) | ✅ 已实施 | F10 (`66d9674`) |
