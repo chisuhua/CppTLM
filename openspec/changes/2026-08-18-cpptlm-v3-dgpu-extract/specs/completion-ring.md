@@ -271,11 +271,11 @@ completion_ring_->set_host_notify([]() {
 | 测试 | 内容 | Catch2 标签 |
 |---|---|---|
 | push + pending_count | push 后 pending_count = 1 | `[completion-ring]` |
-| push + pop round-trip | push 后 pop 返回相同 Entry | `[completion-ring]` |
+| push + try_pop round-trip | push 后 try_pop 返回相同 Entry | `[completion-ring]` |
 | host_notify 触发 | push 后 hook 被调 | `[completion-ring]` |
-| pop 哨兵值 | 空 ring pop 返回 `{0, 0, 0}` | `[completion-ring]` |
+| try_pop 空 ring [v0.4.1] | 空 ring try_pop 返回 `std::nullopt` | `[completion-ring]` |
 | 清除 host_notify | `set_host_notify(nullptr)` 后 push 不触发 hook | `[completion-ring]` |
-| 并发 push/pop | 跨线程 push + pop 数据一致 | `[completion-ring]` |
+| 并发 push/try_pop | 跨线程 push + try_pop 数据一致 | `[completion-ring]` |
 
 ### 8.2 集成测试 (W6-8 P3)
 
