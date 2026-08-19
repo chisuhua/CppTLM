@@ -143,6 +143,42 @@
 
 **并发保证**: `sq_tail_` 用 `std::atomic<uint64_t>` 保证 host ring / device consume 的可见性
 
+#### 3.2.5 PCIe Strong-Ordered Write Semantics [Oracle v0.4 增量]
+
+`Doorbell::ring(stream_id, tail)` 调用必须通过 **strong-ordered write path**,因为 PCIe TLP posted writes **不保序**(尤其跨 aperture)。
+
+**机制**(per `docs/research/PCIe/PCIe_上的保序write.md` §2-§5):
+- MMU ordering pipe 在 aperture-switch 时插入 **dummy non-posted read flush event**
+- 性能代价:**PCIe Gen5 x16 ≈ 250-350ns**;多级 switch 400-600ns;跨 RC > 700ns
+- 实现链路:weak store → posted write(入队)→ strong store → aperture-switch 检查 → MMU 生成 dummy non-posted read → PCIe switch 强制 flush posted writes → read completion → strong store 发出
+
+**CppTLM 落地**(`Doorbell::ring`):
+```cpp
+void Doorbell::ring(uint32_t stream_id, uint64_t tail) {
+    // Step 1: weak atomic write (本仓内)
+    sq_tail_[stream_id].store(tail, std::memory_order_release);
+
+    // Step 2: aperture-switch check (BAR2 = doorbell MMIO)
+    if (mmu_->cross_aperture(BAR2_DOORBELL_SPACE)) {
+        // Step 3: dummy non-posted read flush
+        uint32_t flush_id = mmu_->insert_dummy_read_flush(BAR2_DOORBELL_SPACE);
+
+        // Step 4: schedule completion (250-700ns 延迟)
+        eq_->schedule_after_cycles(flush_id, PCIe_GEN5_FLUSH_CYCLES);
+    }
+
+    // Step 5: notify (existing 异步)
+    notify_cb_(stream_id);
+}
+```
+
+**测试要求**:`test_doorbell.cc §strong-ordered-path` 验证:
+1. read completion 必须等待 weak store 入队后才能发出(强制 flush)
+2. latency 区间在 250-700ns 范围
+3. 同 stream 多次 ring 顺序保持
+
+**跨仓参考**:NVIDIA 同样使用该模式处理 GPU doorbell write(per `PCIe_上的保序write.md` §5)。
+
 ### 3.3 SubmissionQueue (SQ)
 
 **位置**: `include/tlm/gpu/submission_queue.hh`
@@ -154,6 +190,27 @@
 - `tick()`: 推进 SQ consumer 状态机（消费一个 entry → 触发 `ISmExecutor::dispatch`）
 
 **复用**: `KernelLaunchRequest` from `include/tlm/gpu/kernel_launch_tlm.hh:30`（已存在，不新写）
+
+#### 3.3.5 Task Dependency Table (per Oracle v0.4)
+
+`SubmissionQueue::tick()` 内部维护 **`inflight_kernel_reqs_ map`** 作为 **Task Dependency Table 抽象**(per US20230236878A1 §3.3 Task Dependency Table 240):
+
+| 字段 | 类型 | 含义 |
+|------|------|------|
+| `task_id` | uint32_t | PTX-EMU 完成信号关联 |
+| `dispatch_record_ptr` | `TmuDispatchRecord*` | 调度记录引用 |
+| `wait_on_latch_id` | uint32_t | Wait On 依赖锁存器 |
+| `arrive_at_latch_id` | uint32_t | Arrive At 依赖锁存器 |
+| `pre_exit_policy` | enum | NONE / LAST_BLOCK / EXPLICIT_KERNEL_MARKER |
+| `enqueue_cycle` | uint64_t | 入队 cycle,用于超时检测 |
+
+**容量上限**:`tmu_max_active_tasks` 配置项,默认 **256** (对齐 GPU 一代活跃任务上界)
+**溢出策略**:**LIFO eviction** + 软栅栏(fence_ring entry 标记 CUDA_ERROR_LAUNCH_TIMEOUT)
+
+**测试要求**:
+1. `test_submission_queue.cc §task-dependency-table` 验证 map 插入/查找/删除
+2. `test_submission_queue.cc §overflow-eviction` 验证 256+1 第 257 task 触发 LIFO + 软栅栏
+3. `test_submission_queue.cc §latch-matching` 验证 wait_on ↔ arrive_at 配对
 
 ### 3.4 CompletionRing (重设计 — 替代 AsyncCompletionAdapter)
 
@@ -221,6 +278,126 @@ public:
 - `dispatch` → 调 `PtxEmuSubmodule::image_execute` + CompletionRing push
 - `setCompletionCallback` → 调 `CompletionRing::set_host_notify`
 
+#### 3.6.4 Dispatch 经 TMU Glue (per Oracle v0.4)
+
+`ISmExecutor::dispatch` 调用通过 **TMU (Task Management Unit) glue logic** 触发(per Option B 决策,见 §3.8):
+```
+SQ::tick() → TMU::pre_dispatch() (评估 pre-exit policy)
+           → TMU::check_dependencies() (验证 wait_on ↔ arrive_at 匹配)
+           → ISmExecutor::dispatch()
+           → PtxEmuSubmodule::image_execute() (PTX-EMU 自包含 GPU 仿真)
+```
+
+**不仿真** PREEXIT/ACQBULK 指令(per `docs/research/TMU/高效任务启动_解析.md` §3.2/3.4)——这些由 PTX-EMU 端 `libptxemu_device.so` 自包含,CppTLM 端只追踪完成信号。
+
+**TMU 内部职责**(详见 §3.8):
+- 维护 `inflight_kernel_reqs_ map`(per §3.3.5)
+- 依赖锁存器管理(`wait_on_latch_id ↔ arrive_at_latch_id` 匹配)
+- pre-exit policy 调度(NONE/LAST_BLOCK/EXPLICIT_KERNEL_MARKER 三档)
+- 完成信号回收(CompletionRing::push → TMU::on_complete → map evict)
+
+**新增位置**:`include/tlm/gpu/tmu_dispatch_processor.hh`(约 200 LOC)
+
+### 3.8 Task Dispatch Frontend (TMU Glue Logic) [Oracle v0.4 新增]
+
+本节定义 **TMU (Task Management Unit) glue logic**——位于 `SubmissionQueue` 与 `ISmExecutor` 之间的内部组件。
+
+#### 3.8.1 组件定位
+
+TMU **不属于** openspec spec(非用户面对 ABI),仅作 `DGpuBoardTLM` 内部组件,约 200 LOC,负责 `SQ::tick()` 与 `ISmExecutor::dispatch()` 之间的依赖解耦与调度策略。
+
+#### 3.8.2 数据结构
+
+```cpp
+// include/tlm/gpu/tmu_dispatch_processor.hh
+namespace tlm::gpu {
+
+enum class PreExitPolicy : uint8_t {
+    NONE,                       // 直接 dispatch
+    LAST_BLOCK,                 // 等生产者最后一个线程块后 dispatch
+    EXPLICIT_KERNEL_MARKER      // 等 PTX-EMU 端 PREEXIT 指令标记
+};
+
+struct TmuDispatchRecord {
+    uint64_t kernel_entry_pc;
+    uint32_t grid_dim[3];
+    uint32_t block_dim[3];
+    uint64_t args_vram_addr;
+    uint32_t args_size;
+    uint32_t shared_mem_bytes;
+    uint32_t reg_per_thread;
+    uint8_t  priority;
+    uint8_t  stream_id;
+    uint8_t  cluster_id;
+    bool     dep_enable;
+    uint64_t dep_tmd_handle;
+    uint64_t dep_ptr;
+    uint8_t  tmd_type;           // TMD_TYPE_GRID (v3.0 固定)
+    uint64_t tmd_handle;
+    uint64_t completion_ring_slot;
+    PreExitPolicy pre_exit_policy;
+    uint32_t table_slot_id;
+    uint32_t wait_on_latch_id;
+    uint32_t arrive_at_latch_id;
+};
+
+class TmuDispatchProcessor {
+public:
+    TmuSubmitResult submit(KernelLaunchRequest req,
+                           const DispatchBinding& binding);
+    void on_complete(TmuDispatchRecord& rec);
+    bool try_chain_dependent(TmuDispatchRecord& rec);
+
+private:
+    uint16_t select_cluster(uint64_t stream_id) const;
+    std::unordered_map<uint32_t, TmuDispatchRecord> inflight_kernel_reqs_;
+    std::vector<SubmissionQueue*> queues_;
+    static constexpr uint32_t MAX_ACTIVE_TASKS = 256;
+};
+
+}  // namespace tlm::gpu
+```
+
+#### 3.8.3 接口契约
+
+| 接口 | 调用方 | 用途 |
+|------|--------|------|
+| `submit(req, binding)` | `CommandProcessor` (DISPATCH 状态) | 提交 kernel launch 请求 |
+| `on_complete(rec)` | `SubmissionQueue::tick()` (完成路径) | 处理完成信号 + 触发 dep 链 |
+| `try_chain_dependent(rec)` | `on_complete` 内部 | 链式推进 dep.ptr 指向的下一任务 |
+
+#### 3.8.4 调度策略
+
+**`select_cluster(stream_id)`** (MVP):`stream_id % cluster_count` 固定绑定,生命周期内禁止迁移。
+
+**`pre_dispatch(record)`** 检查:
+1. `dep_enable == false` → 直接 dispatch
+2. `dep_enable == true && dep_tmd_handle != 0` → 检查 dep 锁存器匹配后 dispatch
+3. `pre_exit_policy == LAST_BLOCK` → 等生产者最后一个线程块到达(通过 `inflight_kernel_reqs_[producer_id].last_block_seen` 判定)
+
+#### 3.8.5 容量管理
+
+**`inflight_kernel_reqs_.size() >= MAX_ACTIVE_TASKS`** → **LIFO eviction**:
+- 选择最近入队的非 pinned 任务
+- 触发 `CompletionRing::push(evicted_id, CUDA_ERROR_LAUNCH_TIMEOUT)`
+- host 端 FenceRegistry 返回错误
+
+#### 3.8.6 性能预期
+
+| 操作 | 时间复杂度 | 备注 |
+|------|----------|------|
+| `submit` | O(1) amortized | hash map insert |
+| `select_cluster` | O(1) | 取模 |
+| `pre_dispatch` | O(1) | 简单条件检查 |
+| `on_complete` | O(1) | hash map erase + 可选 chain |
+| LIFO eviction | O(N) | 全表扫描,256 entries 实际可忽略 |
+
+#### 3.8.7 跨文档参考
+
+- US20230236878A1 `Task Dependency Table 240` (per `docs/research/TMU/高效任务启动_解析.md` §3.3)
+- TMU 三代形态(per `docs/research/TMU/TMU专利专题整理.md` §1):Kepler → Volta/Ampere → Hopper (WSDU)
+- **dGPU v3 路径**:TMU 简化,不实施 PREEXIT/ACQBULK(由 PTX-EMU 自带),不实施 SM 端任务提交(per `docs/research/TMU/高效任务启动_解析.md` §3.1 [0050])
+
 ### 3.7 复用组件
 
 - **`MemoryCluster`** (`include/tlm/cluster/memory_cluster.hh`): 多通道 HBM/DDR + Arbiter + VRAM backing
@@ -231,63 +408,108 @@ public:
 
 ## 4. 端到端数据流 (E2E Flow)
 
-### 4.1 路径 1: kernel launch (host → device → host notify)
+### 4.1 Pipeline Overview
 
 ```
-1. Host (UsrLinuxEmu)
-   cuLaunchKernel(grid, block)
-   → IOCTL PUSHBUFFER_SUBMIT_BATCH
-   → HAL #66 (cuLaunchKernel IOCTL handler)
-   → CppTLM Doorbell::ring(stream_id, ring_offset)
-   → atomic<uint64_t> sq_tail_[stream_id] = new_tail
-   → NotifyCallback 触发 SQ consumer tick
-
-2. Device (CppTLM)
-   SQ consumer tick()
-   → dequeue KernelLaunchRequest
-   → ISmExecutor::dispatch(image, args_vram_addr, ...)
-     → 内部: map_vram_to_host(args_vram_addr) → host pointer
-     → PtxEmuSubmodule::image_execute(handle, args_ptr, ...)
-       → DSO call into libptxemu_device.so
-       → 异步执行 (PTX-EMU 端 advance cycles)
-       → 完成后返回 status
-     → CompletionRing::push(image_id, status)
-     → host_notify() 触发 HAL fence_signal
-
-3. Host (UsrLinuxEmu)
-   cuStreamSynchronize(stream)
-   → 等 fence (CompletionRing host_notify 链路)
-   → 返回 CUDA_SUCCESS
+┌────────────────────────────────────────────────────────────────────────┐
+│                          Host (UsrLinuxEmu + TaskRunner)                │
+│                                                                        │
+│  cuModuleLoadData(image_bytes)                                         │
+│    → IOCTL 0x27 LOAD_KERNEL_MODULE                                    │
+│    → HAL 构造 KernelLaunchRequest                                     │
+│    → H2D DMA: image_bytes → VRAM (vram_addr)                          │
+│    → 返回 CUmodule handle                                              │
+│                                                                        │
+│  cuLaunchKernel(grid, block, args, shared_mem, ...)                    │
+│    → IOCTL 0x01 PUSHBUFFER_SUBMIT_BATCH                               │
+│    → 构造 PM4 TYPE3 DISPATCH_DIRECT packet                           │
+│    → 写入 gpu_gpfifo_entry.payload[0..N]                              │
+│    → Doorbell ring(stream_id, new_tail)  ← strong-ordered write     │
+└────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ (PCIe TLP via MMU ordering pipe, 250-700ns)
+┌────────────────────────────────────────────────────────────────────────┐
+│                      CppTLM DGpuBoardTLM                                │
+│                                                                        │
+│  ┌────────────────────────────────────────────────────────────────┐  │
+│  │  PCIe Substrate (DGpuBar + Doorbell)                              │  │
+│  │  ├─ BAR0: device regs (0x0000-0x0FFF)                            │  │
+│  │  ├─ BAR1: VRAM backing (HBM2 region, mmap'd to host)            │  │
+│  │  └─ BAR2: doorbell MMIO space (0x1000-0x1FFF per subchannel)     │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                              │                                          │
+│  ┌────────────────────────────▼────────────────────────────────────┐  │
+│  │  CommandProcessor (CP, 5-state FSM)                              │  │
+│  │  ├─ IDLE: 等待 doorbell wake                                    │  │
+│  │  ├─ FETCH: 读 gpu_gpfifo_entry.payload[0]                        │  │
+│  │  ├─ DECODE: Pm4Decoder (TYPE3 only, Mesa-style bit fields)      │  │
+│  │  ├─ DISPATCH (DISPATCH_DIRECT 0x15):                            │  │
+│  │  │    └─ build_tmd(record) → TmuDispatchProcessor::submit()    │  │
+│  │  └─ COMPLETE: advance to next entry                              │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                              │                                          │
+│  ┌────────────────────────────▼────────────────────────────────────┐  │
+│  │  TmuDispatchProcessor (TMU Glue, §3.8)                            │  │
+│  │  ├─ submit: hash map insert (table_slot_id = inflight_kernel_reqs_.size())│  │
+│  │  ├─ pre_dispatch: dep + pre_exit_policy check                    │  │
+│  │  └─ dispatch: ISmExecutor::dispatch(image, args_vram, params)   │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                              │                                          │
+│  ┌────────────────────────────▼────────────────────────────────────┐  │
+│  │  SubmissionQueue[cluster] (per-cluster FIFO, §3.3)                 │  │
+│  │  ├─ enqueue(KernelLaunchRequest) → trigger TMU submit            │  │
+│  │  ├─ tick(): pop → ISmExecutor::dispatch via TMU                   │  │
+│  │  └─ on_complete: TMU::on_complete(record) → map evict           │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+│                              │                                          │
+│  ┌────────────────────────────▼────────────────────────────────────┐  │
+│  │  ISmExecutor / SmExecutorImpl (PTX-EMU 自包含执行器)              │  │
+│  │  ├─ dispatch(image, args_vram, params) → map_vram_to_host()     │  │
+│  │  ├─ PtxEmuSubmodule::image_execute(handle, gx,gy,gz, bx,by,bz, ...) │  │
+│  │  └─ (PTX-EMU 内部: warp scheduling + scoreboard + pipeline + TC) │  │
+│  └────────────────────────────────────────────────────────────────�  │
+│                              │                                          │
+│  ┌────────────────────────────▼────────────────────────────────────┐  │
+│  │  CompletionRing + FenceRegistry (host-side signal)                │  │
+│  │  ├─ CompletionRing::push(image_id, status) → release mutex        │  │
+│  │  ├─ host_notify_() → signal hook (release lock 后调)           │  │
+│  │  └─ host 端: FenceRegistry.complete(request_id, status)          │  │
+│  └────────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ (cuStreamSynchronize 等 fence)
+┌────────────────────────────────────────────────────────────────────────┐
+│                          Host (UsrLinuxEmu)                             │
+│                                                                        │
+│  cuStreamSynchronize(stream) → FenceRegistry.wait → 返回 CUDA_SUCCESS  │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 4.2 路径 2: kernel load (host → H2D DMA → device)
+### 4.2 关键时序特性
 
-```
-1. Host (UsrLinuxEmu)
-   cuModuleLoadData(image_bytes)
-   → IOCTL 0x27 (LOAD_KERNEL_MODULE)
-   → HAL #66
-   → CppTLM IGpuDriver::load_kernel_module
-   → H2D DMA: image_bytes → VRAM (MemoryCluster vram_addr)
-   → 返回 vram_addr 给 host
-
-2. Device (CppTLM)
-   PtxEmuSubmodule::installImage(vram_addr, size)
-   → map_vram_to_host(vram_addr) → host pointer
-   → PtxEmuSubmodule::image_load(host_ptr, size) → SmImageId
-   → 返回 SmImageId 给 host
-```
+| 阶段 | 延迟 | 备注 |
+|------|------|------|
+| cuLaunchKernel → gpfifo_entry write | ~100ns | host DMA |
+| gpfifo_entry → doorbell ring | ~50ns | host 内 |
+| PCIe MMIO weak store | 0ns | 本地 |
+| PCIe MMU ordering pipe flush | **250-700ns** | strong-ordered,Gen5 x16 |
+| CP FETCH → DECODE → DISPATCH | ~1us | TMU glue |
+| SQ tick → ISmExecutor::dispatch | ~50ns | queue pop |
+| PTX-EMU image_execute | variable | 自包含 GPU sim |
+| CompletionRing::push + host_notify | ~50ns | signal |
+| **总 cycle budget** | **500ns-2us + kernel exec** | 取决于 PTX-EMU 内部 |
 
 ### 4.3 错误传播
 
 | 错误源 | 错误位置 | 传播路径 |
 |---|---|---|
-| `dlopen` 失败 | PtxEmuSubmodule 构造 | `throw runtime_error` + 进程退出 |
-| `image_load` 失败 | Ptx-EMU 端 | CompletionRing::push(image_id, ERROR) + host_notify |
-| `image_execute` 失败 | PTX-EMU 端 | 同上 |
-| H2D DMA 失败 | MemoryCluster | IOCTL 返回错误码给 host |
-| Doorbell ring 失败 | CppTLM Doorbell | 返回 -EINVAL 给 host IOCTL handler |
-| SQ 满 | SubmissionQueue | host 端 IOCTL 返回 -EBUSY |
+| Doorbell strong-order fail | Doorbell::ring | 同步失败,IOCTL 返回 EAGAIN |
+| SQ 满 | SubmissionQueue::enqueue | Busy → CP 重试 ring buffer head 不前移 |
+| TMU 容量满(256) | TmuDispatchProcessor | LIFO eviction + 软栅栏 |
+| pre_exit_policy 失效 | TMU::pre_dispatch | CompletionRing::push(evicted_id, CUDA_ERROR_LAUNCH_TIMEOUT) |
+| dep 锁存器不匹配 | TMU::check_dependencies | log warn + CompletionRing::push(id, CUDA_ERROR_LAUNCH_FAILED) |
+| image_load 失败 | PTX-EMU image_execute | CompletionRing::push(image_id, CUDA_ERROR_INVALID_HANDLE) |
+| PCIe flush 超时(rare) | MMU ordering pipe | log + retry,最大 3 次 |
 
 ---
 
