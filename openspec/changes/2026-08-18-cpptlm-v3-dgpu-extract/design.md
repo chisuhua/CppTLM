@@ -521,6 +521,9 @@ private:
 - ✅ `CompletionRing` `Entry { image_id, status, timestamp }` 结构
 - ✅ `PtxEmuSubmodule` 8 个 dlsym 名称（per PTX-EMU 真值源）
 - ✅ `KernelLaunchRequest` 结构（已存在）
+- ✅ `Doorbell::ring` strong-ordered write path（per §3.2.5 PCIe Gen5 x16 250-700ns 区间断言）
+- ✅ `SubmissionQueue::inflight_kernel_reqs_ map` 字段 + LIFO eviction（per §3.3.5,256 slot 默认）
+- ✅ `TmuDispatchProcessor` 接口契约（submit/on_complete/try_chain_dependent，per §3.8.3）
 
 ### 5.2 可演进接口（P1-P3 期间允许调整）
 
@@ -537,6 +540,17 @@ private:
 - �️ `ptx_emu_driver_shim.cc`（P4 物理删除）
 - 🗑️ 4 vendored cudart 头（cpptlm_bridge.h + pipeline_interface.h + scoreboard_interface.h + tensor_core_interface.h）（P4 物理删除）
 
+### 5.4 内部接口（P3 后允许调整，非用户面对）
+
+> **声明**: TMU 内部组件属于 `DGpuBoardTLM` 实现细节,**不是 openspec spec**(非 PTX-EMU ABI 边界)。
+
+- 🟡 `TmuDispatchRecord` 21 字段结构（per §3.8.2）
+- 🟡 `TmuDispatchProcessor::pre_dispatch` 检查顺序（per §3.8.4）
+- 🟡 `PreExitPolicy` 三档枚举：`NONE` / `LAST_BLOCK` / `EXPLICIT_KERNEL_MARKER`
+- 🟡 `MMU ordering pipe` flush 模型与 latency 区间（per §3.2.5,PCIe Gen5 x16 250-700ns）
+- 🟡 `inflight_kernel_reqs_ map` LIFO eviction 策略（per §3.3.5）
+- 🟡 `TmuDispatchRecord::dep_ptr` 环检测深度上限（8）
+
 ---
 
 ## 6. 测试策略 (Testing Strategy)
@@ -548,8 +562,46 @@ private:
 | PtxEmuSubmodule | dlsym 8 个函数指针 + module_version 检查 | `[ptx-emu-submodule]` |
 | DGpuBar | BAR0 regs 读写 + VRAM backing | `[dgpu-bar]` |
 | Doorbell | atomic ring + notify 回调 | `[doorbell]` |
+| **Doorbell §strong-ordered-path** | **read completion 等待 + 250-700ns latency + 同 stream 顺序** | `[doorbell][strong-order]` |
 | SubmissionQueue | enqueue/tick + pending_count | `[submission-queue]` |
+| **SubmissionQueue §task-dependency-table** | **map insert/lookup/delete + overflow-eviction + latch-matching** | `[submission-queue][tdt]` |
 | CompletionRing | push/pop + host_notify | `[completion-ring]` |
+| **ISmExecutor §tmu-glue** | **dispatch 经 TMU + pre-exit policy 调度** | `[sm-executor][tmu]` |
+| **TmuDispatchProcessor** | **submit/on_complete/try_chain_dependent + LIFO eviction** | `[tmu][glue]` |
+
+### 6.2 集成测试 (W6-8 P3 重构)
+
+| 测试 | 内容 | Catch2 标签 |
+|---|---|---|
+| cuModuleLoadData E2E | IOCTL → H2D DMA → PtxEmuSubmodule::installImage | `[P3][E2E]` |
+| cuLaunchKernel E2E | IOCTL → Doorbell (strong-ordered) → SQ → TMU → ISmExecutor → CompletionRing | `[P3][E2E]` |
+| cuStreamSynchronize E2E | fence 等待 → CompletionRing pop | `[P3][E2E]` |
+
+### 6.3 Dual-rail 验证 (W6-8 P3 重构)
+
+**目的**: Mode A (MemoryBridge 同步路径) vs Mode B (DGpu/Doorbell/SQ/CQ 异步路径) cycle 数对比
+
+**5 类 microbenchmark**:
+1. **GEMM** (FP32/FP16/TensorCore)
+2. **vector_add** (基础算子)
+3. **FlashAttention** (复杂访存模式)
+4. **stencil** (规则访存)
+5. **SpMV** (稀疏访存)
+
+**通过条件**: cycle 数 ±15% tolerance（per CppTLM #19 v3.0 RFC Gate 4.7）
+
+### 6.4 TMD-aware 测试 (W4-6 P2)
+
+| 测试 | 内容 | 标签 |
+|------|------|------|
+| `T-TMD-01` | CP 解析 PM4 → 构造 TMD 6 区字段，字段偏移正确 | `[tmu][tmd]` |
+| `T-TMD-02` | Grid TMD vs Queue TMD 类型判定（v3.0 拒绝 Queue TMD） | `[tmu][tmd]` |
+| `T-TMD-03` | Scheduler Cache insert + lookup（key-only fields） | `[tmu][cache]` |
+| `T-TMD-04` | TmuDispatchRecord field round-trip（serialize/deserialize） | `[tmu][record]` |
+| `T-TMD-05` | dep.enable=0 → reclaim；dep.enable=1 → chain | `[tmu][dep]` |
+| `T-TMD-06` | 链式 depth=3 推进，验证 dep.ptr 解引用正确 | `[tmu][dep][chain]` |
+| `T-TMD-07` | TMU reclaim 时正确从 Scheduler Cache evict（无泄漏） | `[tmu][lifecycle]` |
+| `T-TMD-08` | 异常路径：dep.ptr 悬空 → TMU 拒绝（环检测简化版） | `[tmu][error]` |
 
 ### 6.2 集成测试 (W6-8 P3 重构)
 
@@ -576,7 +628,30 @@ private:
 
 ## 7. 风险与缓解 (Risk & Mitigation)
 
-详见 ADR-X.15 §7.3 风险登记（R1-R6）。
+### 7.1 ADR-X.15 原始风险（R1-R6）
+
+详见 [`ADR-X.15-cpptlm-v3-dgpu-extract.md` §7.3](../adr/ADR-X.15-cpptlm-v3-dgpu-extract.md)（per Oracle 一审 + 二审已锁定）。
+
+### 7.2 v0.4 新增风险（per Oracle TMU Catalog v3）
+
+| ID | 风险 | 概率 | 影响 | 缓解 |
+|----|------|:---:|:---:|------|
+| **R7** | **MMU ordering pipe 仿真误差** | 中 | 中 | per `docs/research/PCIe/PCIe_上的保序write.md` §4 latency 区间（PCIe Gen5 x16 250-350ns；多级 switch 400-600ns；跨 RC > 700ns）；MVP 用**区间断言**而非精确点 |
+| **R8** | **Task Dependency Table 容量溢出** | 中 | 中 | LIFO eviction + 软栅栏（per §3.3.5）；`tmu_max_active_tasks` 默认 256；溢出率 > 1% 触发 review |
+| **R9** | **TMD 字段版本不匹配** | 低 | 中 | 6 区字段表头带 `version` 字段；不匹配则 CP 拒绝 |
+| **R10** | **Grid TMD vs Queue TMD 误用** | 中 | 高 | v3.0 硬约束 `TMD_TYPE_GRID only`；CP 解析阶段拒绝 Queue TMD |
+| **R11** | **dep.ptr 悬空/环依赖** | 中 | 中 | 简化环检测（链深 ≤ 8）；reclaim 前检查 refcount=0 |
+| **R12** | **Scheduler Cache 容量耗尽** | 中 | 中 | 容量可配（默认 1024 entries）；LRU 驱逐；超限拒绝并 log |
+
+### 7.3 升级触发条件
+
+以下条件任一触发，应升级到 v0.5（含硬件 refcount + Event Stream）：
+
+1. **多流真实并发需求**：超过 2 stream × 4 cluster，且 CompletionRing fence 不够用
+2. **CUDA Graph-like 设备侧图启动**：需要在 CppTLM 端支持 device-launch graph
+3. **TMD 数量 > 1024**：Scheduler Cache 频繁驱逐，性能下降
+4. **依赖链深度 > 8**：单级链式推进延迟过高
+5. **PREEXIT/ACQBULK 性能优化成为验收项**：当前由 PTX-EMU 端 libptxemu_device.so 自包含
 
 ---
 
