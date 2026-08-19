@@ -143,39 +143,34 @@
 
 **并发保证**: `sq_tail_` 用 `std::atomic<uint64_t>` 保证 host ring / device consume 的可见性
 
-#### 3.2.5 PCIe Strong-Ordered Write Semantics [Oracle v0.4 增量]
+#### 3.2.5 PCIe Strong-Ordered Write Semantics [Oracle v0.4.1 简化]
 
-`Doorbell::ring(stream_id, tail)` 调用必须通过 **strong-ordered write path**,因为 PCIe TLP posted writes **不保序**(尤其跨 aperture)。
+`Doorbell::ring(stream_id, tail)` 是 host → device 的 doorbell 通知。仿真中 host → device 是直接函数调用,**PCIe TLP 物理传输层在仿真内不存在**。本节仅建模**延迟预算**,不仿真 MMU ordering pipe(per Oracle E5 HIGH: device 端不可达)。
 
-**机制**(per `docs/research/PCIe/PCIe_上的保序write.md` §2-§5):
-- MMU ordering pipe 在 aperture-switch 时插入 **dummy non-posted read flush event**
-- 性能代价:**PCIe Gen5 x16 ≈ 250-350ns**;多级 switch 400-600ns;跨 RC > 700ns
-- 实现链路:weak store → posted write(入队)→ strong store → aperture-switch 检查 → MMU 生成 dummy non-posted read → PCIe switch 强制 flush posted writes → read completion → strong store 发出
+**机制简化**(per `docs/research/PCIe/PCIe_上的保序write.md` §4 引用作为 latency 上界):
+- 延迟预算:**PCIe Gen5 x16 ≈ 250-350ns**;多级 switch 400-600ns;跨 RC > 700ns
+- 实际仿真延迟:取上限 700ns(Gen5 x16 worst case) 作为 `Doorbell::ring` 默认延迟参数(可配置)
+- **删除**:MMU ordering pipe + aperture-switch check + dummy read flush (device 端无 host MMU 状态,不可实现)
 
-**CppTLM 落地**(`Doorbell::ring`):
+**CppTLM 落地**(`Doorbell::ring`, v0.4.1 简化):
 ```cpp
 void Doorbell::ring(uint32_t stream_id, uint64_t tail) {
     // Step 1: weak atomic write (本仓内)
     sq_tail_[stream_id].store(tail, std::memory_order_release);
 
-    // Step 2: aperture-switch check (BAR2 = doorbell MMIO)
-    if (mmu_->cross_aperture(BAR2_DOORBELL_SPACE)) {
-        // Step 3: dummy non-posted read flush
-        uint32_t flush_id = mmu_->insert_dummy_read_flush(BAR2_DOORBELL_SPACE);
+    // Step 2: 延迟预算 (区间断言 250-700ns, 不仿真 MMU pipe)
+    uint64_t flush_cycles = DOORBELL_PCIE_GEN5_FLUSH_CYCLES;  // ~700ns @ 1GHz
+    eq_->schedule_after_cycles(sq_tail_[stream_id], flush_cycles);
 
-        // Step 4: schedule completion (250-700ns 延迟)
-        eq_->schedule_after_cycles(flush_id, PCIe_GEN5_FLUSH_CYCLES);
-    }
-
-    // Step 5: notify (existing 异步)
+    // Step 3: notify (existing 异步)
     notify_cb_(stream_id);
 }
 ```
 
 **测试要求**:`test_doorbell.cc §strong-ordered-path` 验证:
-1. read completion 必须等待 weak store 入队后才能发出(强制 flush)
-2. latency 区间在 250-700ns 范围
-3. 同 stream 多次 ring 顺序保持
+1. latency 区间在 250-700ns 范围(可配置,默认 700ns)
+2. 同 stream 多次 ring 顺序保持
+3. ~~read completion 必须等待 weak store 入队后才能发出~~ — 仿真内无 PCIe 物理传输,改为验证 `notify_cb_` 在延迟 budget 后调用
 
 **跨仓参考**:NVIDIA 同样使用该模式处理 GPU doorbell write(per `PCIe_上的保序write.md` §5)。
 
