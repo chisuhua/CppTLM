@@ -44,6 +44,7 @@ set(CORE_SOURCES
     tlm/gpu/gpu_compute_unit_tlm.cc
     tlm/gpu/gpu_soc_tlm.cc
     tlm/gpu/memory_bridge.cc   # D1-Full P0: CppTLMBridge 接口实现
+    tlm/gpu/dgpu_bar.cc
 tlm/gpu/scoreboard_tlm.cc  # D1-Full P1: IScoreboard 实现
 tlm/gpu/pipeline_tlm.cc    # D1-Full P1: IPipelineLatencyProvider 实现
 tlm/gpu/tensor_core_tlm.cc # D1-Full P1: ITensorCoreTiming 实现
