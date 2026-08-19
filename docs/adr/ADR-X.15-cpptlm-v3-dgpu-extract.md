@@ -286,3 +286,42 @@ v2.1 时期，CppTLM 在 PTX-EMU 协同仿真中扮演"桥接层 (bridge)"角色
 - HSK-1~3 响应: `2026-07-17-hsk-1-2-3-responses.md`
 - HSK-4~5 响应: `2026-07-17-hsk-4-5-responses.md`
 - **HSK-6 响应**: `2026-08-18-hsk-6-response.md` (本 ADR 决策源头)
+
+---
+
+## Status Update
+
+### 2026-08-19: v0.5 redo 反转 (per ADR-X.16)
+
+**触发事件**: `openspec/changes/2026-08-19-cpptlm-v05-redo/` (commits `74c2fd1`/`c00c895`/`fc52477`/`b7fdde5`/`02c7b74`) + [`ADR-X.16-cpptlm-v05-redo.md`](./ADR-X.16-cpptlm-v05-redo.md)
+
+**反转决策清单**(per ADR-X.16 §3):
+
+| 本 ADR § | 原决策 | v0.5 反转 |
+|---|---|---|
+| D1 (角色反转) | 黑盒 dlopen `libptxemu_device.so` | **submodule + adapter** (静态链接 + C++ 源码契约) |
+| D3 (CPPTLMBRIDGE_VERSION) | 永久冻结 v2 | **保持冻结 v2**(新路径走源码级契约,不是 C ABI v3) |
+| §1.2 (12 SM 模块) | Legacy + `[legacy]` 标 | **ScoreboardTLM + PipelineTLM 升 production**(2 个) |
+| (隐含) PM4 解析 | 委托 host (UsrLinuxEmu) | **CppTLM CP 模块解析**(符合 PCIe 设备语义) |
+| (隐含) 精度 | PCIe-only (250-700ns) | **per-warp instruction precision**(10x-50x slowdown) |
+| 9 周 P0-P4 时间线 | 已锁定 | **撤销**(Net-new 12 周 P0'-P4') |
+| 11 项物理删除清单 | P4 必交付 | **全部撤销**(submodule 模式不需要 dlopen 假设) |
+| v3.0.0 BREAKING bump | P4 必交付 | **撤销**(v3.0-extract 不再 ship) |
+
+**理由**(per Oracle + Metis 重评):
+- PTX-EMU 内部已具备指令级骨架 (`WarpContext::execute_warp_instruction` 已存在),v0.5 = "暴露 + 适配",非 "打开 + 重写"
+- per-instruction precision 是 dGPU 仿真核心需求(对标 nvprof / nsight)
+- 双路径(byte-identical)验证是零额外成本的 internal consistency 测试(per A2 验证基础)
+
+**保留不动**(per ADR-X.16 §3.1 锁定):
+- ✅ P0-1 G-D4 17 条静态断言(`include/cudart/abi_guards.h` commit `fa2b3ec`)
+- ✅ HSK-6 协议承诺与决策源头
+- ✅ `CPPTLMBRIDGE_VERSION = 2` 黑盒兼容路径(`libptxemu_device.so::image_execute` 仍可用)
+- ✅ DGpuBar/Doorbell/PCIe strong-order 物理行为不变
+
+**新增引用**:
+- [`ADR-X.16-cpptlm-v05-redo.md`](./ADR-X.16-cpptlm-v05-redo.md) — v0.5 redo 决策锁定(Net-new,8 项决策)
+- [`openspec/changes/2026-08-19-cpptlm-v05-redo/`](../../openspec/changes/2026-08-19-cpptlm-v05-redo/) — 实施 proposal/design/tasks/specs
+
+**下次 review**: W1 P0' 启动后(submodule pin + HSK-7 公告确认后)
+**Watch 触发**: 若 PTX-EMU 拒绝 stepOneWarpInstruction API PR(回退 Option A → B);若 fork diff > 1000 LOC(评估独立 release)
