@@ -96,6 +96,12 @@ W8-9    (P4 物理删除): 11 项删除 + v2.1.0 → v3.0.0 bump + 808 测试验
 | **#9** JSON-config E2E [Oracle 新增 / 用户主需求] | CppTLM | ⏳ W6-8 |
 | **#9.a** `configs/dgpu_board_v1.json` 通过 `validate_topology` | CppTLM | ⏳ W6-8 |
 | **#9.b** `test/test_dgpu_board_from_config.cc` 6 条 SECTION 全部 PASS(instantiateAll + StreamAdapter 注入 + installImage + doorbell→SQ→dispatch→CompletionRing + host_notify + 负面路径)| CppTLM | ⏳ W6-8 |
+| **#10** v0.4 增量验收 [design.md §3-§7 落地] | CppTLM | ⏳ W4-8 |
+| **#10.a** Doorbell::ring strong-ordered write path 测试 PASS(PCIe Gen5 x16 250-700ns 区间断言) | CppTLM | ⏳ W4-6 |
+| **#10.b** Task Dependency Table 256 slot + LIFO eviction 测试 PASS | CppTLM | ⏳ W4-6 |
+| **#10.c** TMU Glue `TmuDispatchProcessor` submit/on_complete/try_chain_dependent 测试 PASS | CppTLM | ⏳ W4-6 |
+| **#10.d** TMD-aware 8 用例(T-TMD-01~08) PASS(6 区字段 + Grid vs Queue + Scheduler Cache + dep chain + LIFO + 环检测)| CppTLM | ⏳ W4-6 |
+| **#10.e** Task Dispatch Pipeline 端到端(500ns-2us 预算 + 7 条错误传播路径)| CppTLM | ⏳ W6-8 |
 
 ## Cross-Repo Coordination
 

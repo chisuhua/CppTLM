@@ -319,6 +319,110 @@ Per Oracle review Section C + user requirement:
 Refs: Oracle C.4 acceptance criteria, ADR-X.15 §3"
 ```
 
+### T-P3-6: Doorbell strong-ordered write path [🟠 HIGH — design.md §3.2.5 / Gate #10.a]
+
+> **触发**: Oracle TMU Catalog v3 + `docs/research/PCIe/PCIe_上的保序write.md` §2-§5 — PCIe TLP posted writes **不保序**(尤其跨 aperture),Doorbell 必须走 strong-ordered path。
+
+**Acceptance**:
+- [ ] `Doorbell::ring()` 实现 `weak atomic write → aperture-switch check → dummy non-posted read flush → strong store 发出` (per design.md §3.2.5)
+- [ ] `mmu_->cross_aperture(BAR2_DOORBELL_SPACE)` 检测
+- [ ] `mmu_->insert_dummy_read_flush()` 调度 `eq_->schedule_after_cycles(flush_id, PCIe_GEN5_FLUSH_CYCLES)`(250-700ns)
+- [ ] `test_doorbell.cc §strong-ordered-path` 三个 SECTION:
+  1. read completion 必须等待 weak store 入队后才能发出(强制 flush)
+  2. latency 区间在 250-700ns 范围
+  3. 同 stream 多次 ring 顺序保持
+- [ ] Catch2 标签 `[doorbell][strong-order]`
+
+**验证**:
+```bash
+ctest -R "test_doorbell.*strong-order" --output-on-failure
+# 预期: 3 SECTION PASS, latency 区间断言 250-700ns
+```
+
+**Commit**:
+```bash
+git commit -am "feat(doorbell): strong-ordered write path with MMU ordering pipe (PCIe Gen5 x16)
+
+Per design.md §3.2.5 + docs/research/PCIe/PCIe_上的保序write.md:
+- weak atomic store → aperture-switch check → dummy non-posted read flush → strong store
+- latency: PCIe Gen5 x16 ≈ 250-350ns;多级 switch 400-600ns;跨 RC > 700ns
+- 测试: test_doorbell.cc §strong-ordered-path 3 SECTION
+
+Refs: ADR-X.15, design.md §3.2.5"
+```
+
+### T-P3-7: TMU Glue `TmuDispatchProcessor` [🔴 CRITICAL — design.md §3.8 / Gate #10.c]
+
+> **触发**: Oracle TMU Catalog v3 + US20230236878A1 §3.3 Task Dependency Table + Wait On/Arrive At Latch + pre-exit policy。TMU 是 `DGpuBoardTLM` 内部组件,~200 LOC。
+
+**Acceptance**:
+- [ ] 新建 `include/tlm/gpu/tmu_dispatch_processor.hh` + `src/tlm/gpu/tmu_dispatch_processor.cc`
+- [ ] `TmuDispatchRecord` 21 字段(per design.md §3.8.2)
+- [ ] `PreExitPolicy` 枚举:NONE / LAST_BLOCK / EXPLICIT_KERNEL_MARKER
+- [ ] `inflight_kernel_reqs_ map` 256 slot + LIFO eviction(per design.md §3.3.5 / §3.8.5)
+- [ ] 接口契约: `submit(req, binding)` / `on_complete(rec)` / `try_chain_dependent(rec)`
+- [ ] 依赖锁存器 `wait_on_latch_id ↔ arrive_at_latch_id` 匹配检查
+- [ ] pre-dispatch 3 段条件检查(per design.md §3.8.4)
+- [ ] 测试 `test_tmu_dispatch_processor.cc` 覆盖:submit / on_complete / LIFO eviction / dep chain / 环检测(≤ 8 深度)
+
+**验证**:
+```bash
+ctest -R "test_tmu_dispatch_processor" --output-on-failure
+# 预期: ~12 测试 PASS,涵盖 submit/on_complete/LIFO/dep chain/环检测
+```
+
+**Commit**:
+```bash
+git commit -am "feat(tmu): TmuDispatchProcessor glue logic (per Oracle v0.4 + US20230236878A1)
+
+Per design.md §3.8:
+- TmuDispatchRecord 21 字段
+- inflight_kernel_reqs_ map 256 slot + LIFO eviction
+- PreExitPolicy 三档(NONE/LAST_BLOCK/EXPLICIT_KERNEL_MARKER)
+- 依赖锁存器 wait_on/arrive_at 匹配
+- pre-dispatch 3 段条件检查
+
+Refs: US20230236878A1 §3.3, design.md §3.8"
+```
+
+### T-P3-8: TMD-aware 8 用例测试 [🟠 HIGH — design.md §6.4 / Gate #10.d]
+
+> **触发**: Oracle v0.4 推荐——TMD 6 区字段 + Grid vs Queue + Scheduler Cache + dep chain + LIFO + 环检测需独立测试覆盖。
+
+**Acceptance**:
+- [ ] 新建 `test/test_tmd.cc` + `test/test_dispatch_record_roundtrip.cc`
+- [ ] T-TMD-01: CP 解析 PM4 → 构造 TMD 6 区字段,字段偏移正确(Init/Sched/Exec/QueueState/HW-only/Dep+Queue)
+- [ ] T-TMD-02: Grid TMD vs Queue TMD 类型判定(v3.0 拒绝 Queue TMD,return error)
+- [ ] T-TMD-03: Scheduler Cache insert + lookup(key-only fields)
+- [ ] T-TMD-04: TmuDispatchRecord field round-trip(serialize/deserialize)
+- [ ] T-TMD-05: dep.enable=0 → reclaim;dep.enable=1 → chain
+- [ ] T-TMD-06: 链式 depth=3 推进,验证 dep.ptr 解引用正确
+- [ ] T-TMD-07: TMU reclaim 时正确从 Scheduler Cache evict(无泄漏)
+- [ ] T-TMD-08: dep.ptr 悬空 → TMU 拒绝(环检测简化版,depth > 8 报错)
+- [ ] Catch2 标签 `[tmu][tmd]` / `[tmu][cache]` / `[tmu][record]` / `[tmu][dep]` / `[tmu][lifecycle]` / `[tmu][error]`
+
+**验证**:
+```bash
+ctest -R "test_tmd|test_dispatch_record_roundtrip" --output-on-failure
+# 预期: 8 用例 PASS
+```
+
+**Commit**:
+```bash
+git commit -am "test(tmu): TMD-aware 8 用例覆盖 6 区字段/Grid vs Queue/Scheduler Cache/dep chain/LIFO/环检测
+
+Per design.md §6.4:
+- T-TMD-01: 6 区字段偏移验证
+- T-TMD-02: Grid vs Queue 硬拒绝
+- T-TMD-03: Scheduler Cache key-only insert/lookup
+- T-TMD-04: TmuDispatchRecord round-trip
+- T-TMD-05/06: dep chain 链式
+- T-TMD-07: reclaim evict 路径
+- T-TMD-08: 环检测 depth > 8 拒绝
+
+Refs: design.md §6.4"
+```
+
 ---
 
 ## P4 物理删除 (W8-9)
