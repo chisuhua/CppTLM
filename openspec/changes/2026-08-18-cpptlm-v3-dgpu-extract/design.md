@@ -312,10 +312,14 @@ TMU **不属于** openspec spec(非用户面对 ABI),仅作 `DGpuBoardTLM` 内�
 // include/tlm/gpu/tmu_dispatch_processor.hh
 namespace tlm::gpu {
 
+// [v0.4.1 修订] PreExitPolicy 收缩为 NONE 单档
+// - 理由: LAST_BLOCK/EXPLICIT_KERNEL_MARKER 需 PTX-EMU 提供 block/PREEXIT 进度回调,
+//   而 8 ABI(image_load/image_execute/image_unload 等)无此信息通道(per Oracle E2 CRITICAL)
+// - LAST_BLOCK/EXPLICIT_KERNEL_MARKER 移入 §7.3 升级触发(需 HSK-7 ABI 扩展)
 enum class PreExitPolicy : uint8_t {
-    NONE,                       // 直接 dispatch
-    LAST_BLOCK,                 // 等生产者最后一个线程块后 dispatch
-    EXPLICIT_KERNEL_MARKER      // 等 PTX-EMU 端 PREEXIT 指令标记
+    NONE,                       // [v0.4.1 唯一实现档] 直接 dispatch
+    LAST_BLOCK = NONE,          // [v0.4.1 标记 deprecated, 移到 §7.3]
+    EXPLICIT_KERNEL_MARKER = NONE  // [v0.4.1 标记 deprecated, 移到 §7.3]
 };
 
 struct TmuDispatchRecord {
@@ -330,8 +334,8 @@ struct TmuDispatchRecord {
     uint8_t  stream_id;
     uint8_t  cluster_id;
     bool     dep_enable;
-    uint64_t dep_tmd_handle;
-    uint64_t dep_ptr;
+    uint32_t dep_tmd_handle;   // [v0.4.1 修订] 改为 uint32_t (task_id 索引),非原始指针
+    uint32_t dep_ptr;          // [v0.4.1 修订] 改为 uint32_t (指向 inflight_kernel_reqs_ entry)
     uint8_t  tmd_type;           // TMD_TYPE_GRID (v3.0 固定)
     uint64_t tmd_handle;
     uint64_t completion_ring_slot;
@@ -343,14 +347,17 @@ struct TmuDispatchRecord {
 
 class TmuDispatchProcessor {
 public:
-    TmuSubmitResult submit(KernelLaunchRequest req,
-                           const DispatchBinding& binding);
+    // [v0.4.1 修订] 删除 DispatchBinding 参数(未定义),submit 直接接 TmuDispatchRecord
+    TmuSubmitResult submit(TmuDispatchRecord record);
     void on_complete(TmuDispatchRecord& rec);
     bool try_chain_dependent(TmuDispatchRecord& rec);
 
 private:
     uint16_t select_cluster(uint64_t stream_id) const;
-    std::unordered_map<uint32_t, TmuDispatchRecord> inflight_kernel_reqs_;
+    // [v0.4.1 修订] Scheduler Cache 与 inflight_kernel_reqs_ 同结构 (合并)
+    // - key: uint32_t task_id
+    // - value: TmuDispatchRecord (含所有调度字段)
+    std::unordered_map<uint32_t, TmuDispatchRecord> scheduler_cache_;
     std::vector<SubmissionQueue*> queues_;
     static constexpr uint32_t MAX_ACTIVE_TASKS = 256;
 };
@@ -362,7 +369,7 @@ private:
 
 | 接口 | 调用方 | 用途 |
 |------|--------|------|
-| `submit(req, binding)` | `CommandProcessor` (DISPATCH 状态) | 提交 kernel launch 请求 |
+| `submit(record)` | host `DGpuBoardTLM::submit_kernel` (v0.4.1 host 直接调用) | 提交 kernel launch 请求 |
 | `on_complete(rec)` | `SubmissionQueue::tick()` (完成路径) | 处理完成信号 + 触发 dep 链 |
 | `try_chain_dependent(rec)` | `on_complete` 内部 | 链式推进 dep.ptr 指向的下一任务 |
 
@@ -370,10 +377,9 @@ private:
 
 **`select_cluster(stream_id)`** (MVP):`stream_id % cluster_count` 固定绑定,生命周期内禁止迁移。
 
-**`pre_dispatch(record)`** 检查:
+**`pre_dispatch(record)`** 检查 (v0.4.1 简化):
 1. `dep_enable == false` → 直接 dispatch
 2. `dep_enable == true && dep_tmd_handle != 0` → 检查 dep 锁存器匹配后 dispatch
-3. `pre_exit_policy == LAST_BLOCK` → 等生产者最后一个线程块到达(通过 `inflight_kernel_reqs_[producer_id].last_block_seen` 判定)
 
 #### 3.8.5 容量管理
 
