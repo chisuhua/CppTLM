@@ -6,7 +6,19 @@
 
 namespace tlm::gpu {
 
+    DGpuBar::DGpuBar() {
+        init();
+    }
+
+    DGpuBar::~DGpuBar() {
+        shutdown();
+    }
+
     void DGpuBar::init() {
+        if (vram_base_ != nullptr) {
+            shutdown();
+        }
+
         bar0_regs_[0x00 / 4] = VENDOR_ID;
         bar0_regs_[0x04 / 4] = DEVICE_ID;
         bar0_regs_[0x08 / 4] = REVISION;
