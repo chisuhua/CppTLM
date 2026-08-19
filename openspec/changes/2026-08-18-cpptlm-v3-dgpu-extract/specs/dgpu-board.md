@@ -55,7 +55,7 @@ public:
 - **Postcondition**:
   - BAR0 regs 初始化（设备 ID、中断状态、控制位）
   - `vram_base_` 非空，`vram_size_` > 0
-  - 默认 VRAM size = 16 GB（per gem5 full-system GPU 工业惯例，可 JSON 配置覆盖）
+  - 默认 VRAM size = **256 MB** (v0.4.1 修订：16GB 在多数 CI 环境 OOM; gem5 full-system GPU 工业惯例改为可通过 JSON 配置覆盖)
 - **错误**: VRAM 分配失败 → 抛 `std::bad_alloc`
 
 #### read_reg(offset)

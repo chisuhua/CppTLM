@@ -131,15 +131,17 @@ virtual int dispatch(SmImageId image,
   - `[args_vram_addr, args_vram_addr + args_size)` 区间已被 H2D DMA 填充
   - `params` 各字段合法（grid/block 维度非 0，shared_mem 合理）
 
-- **Postcondition**:
-  - 成功: 返回 0，dispatch 异步执行（不等待完成）
+- **Postcondition [v0.4.1 修订]**:
+  - 成功: 返回 0。**MVP 阶段 dispatch 在仿真时间内同步推进至 kernel 完成**(per Oracle E7 裁决)
+    - 即 `image_execute` 是 black-box run-to-completion(per ADR-NV-02 §2.4)
+    - 多流并发经 per-stream SQ 交错 tick 实现(不在 dispatch 内部并行)
   - 失败: 返回负的 cudaError_t
 
 - **实现路径**:
   1. `SmExecutorImpl::dispatch` 调 `map_vram_to_host(args_vram_addr, args_size)` 获取 args pointer
-  2. 调 `PtxEmuSubmodule::image_execute(image, params, args_ptr, args_size)`
-  3. image_execute 是**异步**的（PTX-EMU 端 advance cycles），立即返回 status
-  4. 完成后通过 `CompletionRing::push(image_id, status)` + `host_notify` 通知 host
+  2. 调 `PtxEmuSubmodule::image_execute(image, params, args_ptr, args_size)`(同步, kernel exec 在 sim time 内联推进)
+  3. image_execute 返回 status(同步)
+  4. 同步通过 `CompletionRing::push(image_id, status)` 触发 host_notify
 
 ### 4.3 错误处理
 
@@ -150,11 +152,12 @@ virtual int dispatch(SmImageId image,
 | `CUDA_ERROR_INVALID_VALUE` | args_vram_addr 无效 / params 非法 |
 | `CUDA_ERROR_UNKNOWN` | PTX-EMU 端 image_execute 失败 |
 
-### 4.4 异步语义
+### 4.4 同步语义 [v0.4.1 修订]
 
-- `dispatch()` 返回 0 表示**成功提交**，不代表 kernel 完成
-- Kernel 完成通过 `CompletionRing` + `host_notify` 链路通知（per [completion-ring.md](completion-ring.md) §3）
-- host 端用 `cuStreamSynchronize` 等 fence 完成
+- `dispatch()` 返回 0 表示**kernel 已完成**(MVP 同步路径)
+- kernel 完成后同步通过 `CompletionRing::push(image_id, status)` 触发 host_notify
+- host 端 `cuStreamSynchronize` 时调用 `CompletionRing::try_pop()` 获取已完成 entry
+- **MVP 不仿真异步执行**:PTX-EMU `image_execute` 已是自包含 run-to-completion,真实时序靠 EventQueue 推进
 
 ---
 
