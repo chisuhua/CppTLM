@@ -65,13 +65,13 @@ CppTLM (dGPU board)
 
 | 组件 | 位置 | 状态 |
 |------|------|:---:|
-| `DGpuBar` | `include/tlm/gpu/dgpu_bar.hh` | v0.4 |
-| `Doorbell` | `include/tlm/gpu/doorbell.hh` | **v0.4 增量**(§3.2.5 strong-ordered) |
-| `SubmissionQueue` | `include/tlm/gpu/submission_queue.hh` | **v0.4 增量**(§3.3.5 TDT) |
-| `CompletionRing` | `include/tlm/gpu/completion_ring.hh` | v0.4 |
-| `PtxEmuSubmodule` | `include/tlm/gpu/ptx_emu_submodule.hh` | v0.4 |
-| `ISmExecutor` | `include/tlm/gpu/is_m_executor.hh` | **v0.4 增量**(§3.6.4 TMU Glue) |
-| **`TmuDispatchProcessor`** | **`include/tlm/gpu/tmu_dispatch_processor.hh`** | **� v0.4 新增**(§3.8) |
+| `DGpuBar` | `include/tlm/gpu/dgpu_bar.hh` | v0.4 稳定(无变更) |
+| `Doorbell` | `include/tlm/gpu/doorbell.hh` | **v0.4 增量**(§3.2.5 strong-ordered path) |
+| `SubmissionQueue` | `include/tlm/gpu/submission_queue.hh` | **v0.4 增量**(§3.3.5 Task Dependency Table) |
+| `CompletionRing` | `include/tlm/gpu/completion_ring.hh` | v0.4 稳定(无变更) |
+| `PtxEmuSubmodule` | `include/tlm/gpu/ptx_emu_submodule.hh` | v0.4 稳定(无变更) |
+| `ISmExecutor` | `include/tlm/gpu/is_m_executor.hh` | **v0.4 增量**(§3.6.4 dispatch 经 TMU Glue) |
+| **`TmuDispatchProcessor`** | **`include/tlm/gpu/tmu_dispatch_processor.hh`** | **� v0.4 新增**(§3.8 TMU Glue Logic) |
 
 ---
 
@@ -89,9 +89,9 @@ CppTLM (dGPU board)
 
 | 机制 | 来源 | dGPU v3 落地 |
 |------|------|-------------|
-| TMD 6 区字段 | TMD.md / Atomatic_dependent_task_launch.md | §3.8.2 TmuDispatchRecord 21 字段 |
-| **Task Dependency Table 240** | 高效任务启动_解析.md §3.3 | **§3.3.5 inflight_kernel_reqs_ map** |
-| Wait On/Arrive At Latch | 同上 | dep 锁存器(wait_on_latch_id ↔ arrive_at_latch_id) |
+| TMD 6 区字段 | TMD.md / Atomatic_dependent_task_launch.md | §3.8.2 `TmuDispatchRecord` 21 字段(注：6 区对应 dGPU v3 简化的关键子集,21 字段含 Init/Sched/Exec/Dep/TMD-handle/ring-slot 等;详细字段表见 design.md §3.8.2) |
+| **Task Dependency Table 240** | 高效任务启动_解析.md §3.3 | **§3.3.5 `inflight_kernel_reqs_ map`** |
+| Wait On/Arrive At Latch | 同上 | dep 锁存器(wait_on_latch_id ↔ arrive_at_latch_id)|
 | PREEXIT 指令 330 | 同上 §3.2 | **不仿真**(PTX-EMU 自含) |
 | ACQBULK 指令 390 | 同上 §3.4 | **不仿真**(PTX-EMU 自含) |
 | Preemptive Memory Flush 320 | 同上 §3.5 | N/A(dGPU 走 PTX-EMU 路径) |
@@ -160,7 +160,7 @@ PCIe TLP posted writes **不保序**(尤其跨 aperture)。Doorbell 必须走 st
 |------|-------|:---:|
 | **#10.a** Doorbell::ring strong-ordered write path | CppTLM | ⏳ W4-6 |
 | **#10.b** Task Dependency Table 256 slot + LIFO eviction | CppTLM | ⏳ W4-6 |
-| **#10.c** TMU Glue `TmuDispatchProcessor` 单元测试 | CppTLM | ⏳ W4-6 |
+| **#10.c** TMU Glue `TmuDispatchProcessor` 单元测试(覆盖:submit / on_complete / try_chain_dependent / LIFO eviction / dep latches / 环检测) | CppTLM | ⏳ W4-6 |
 | **#10.d** TMD-aware 8 用例 (T-TMD-01~08) | CppTLM | ⏳ W4-6 |
 | **#10.e** Task Dispatch Pipeline 端到端 | CppTLM | ⏳ W6-8 |
 
