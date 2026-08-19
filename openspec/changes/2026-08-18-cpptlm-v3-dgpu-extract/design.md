@@ -422,30 +422,32 @@ private:
 │                                                                        │
 │  cuLaunchKernel(grid, block, args, shared_mem, ...)                    │
 │    → IOCTL 0x01 PUSHBUFFER_SUBMIT_BATCH                               │
-│    → 构造 PM4 TYPE3 DISPATCH_DIRECT packet                           │
-│    → 写入 gpu_gpfifo_entry.payload[0..N]                              │
-│    → Doorbell ring(stream_id, new_tail)  ← strong-ordered write     │
+│    → [v0.4.1 修订] host 解析 PM4 (UsrLinuxEmu 端 PM4 decoder)        │
+│    → 构造 `KernelLaunchRequest`(已填字段)                              │
+│    → 调用 `DGpuBoardTLM::submit_kernel(req)` (直接 API, 不走 ring)     │
+│    → DGpuBoardTLM 内部 `TmuDispatchProcessor::submit(record)`          │
 └────────────────────────────────────────────────────────────────────────┘
                               │
                               ▼ (PCIe TLP via MMU ordering pipe, 250-700ns)
 ┌────────────────────────────────────────────────────────────────────────┐
 │                      CppTLM DGpuBoardTLM                                │
 │                                                                        │
-│  ┌────────────────────────────────────────────────────────────────┐  │
+│  �────────────────────────────────────────────────────────────────┐  │
 │  │  PCIe Substrate (DGpuBar + Doorbell)                              │  │
 │  │  ├─ BAR0: device regs (0x0000-0x0FFF)                            │  │
-│  │  ├─ BAR1: VRAM backing (HBM2 region, mmap'd to host)            │  │
-│  │  └─ BAR2: doorbell MMIO space (0x1000-0x1FFF per subchannel)     │  │
+│  │  │       └─ 0x1000-0x1FFF: doorbell MMIO space (per subchannel)    │  │
+│  │  └─ BAR1: VRAM backing (HBM2 region, mmap'd to host)            │  │
 │  └────────────────────────────────────────────────────────────────┘  │
 │                              │                                          │
 │  ┌────────────────────────────▼────────────────────────────────────┐  │
-│  │  CommandProcessor (CP, 5-state FSM)                              │  │
-│  │  ├─ IDLE: 等待 doorbell wake                                    │  │
-│  │  ├─ FETCH: 读 gpu_gpfifo_entry.payload[0]                        │  │
-│  │  ├─ DECODE: Pm4Decoder (TYPE3 only, Mesa-style bit fields)      │  │
-│  │  ├─ DISPATCH (DISPATCH_DIRECT 0x15):                            │  │
-│  │  │    └─ build_tmd(record) → TmuDispatchProcessor::submit()    │  │
-│  │  └─ COMPLETE: advance to next entry                              │  │
+│  │  **[v0.4.1 修订]** PM4 解析委托 host 端(UsrLinuxEmu/TaskRunner) │  │
+│  │  ├─ host 构造 `KernelLaunchRequest`(已解码 fields)               │  │
+│  │  ├─ host 直接调 `DGpuBoardTLM::submit_kernel(req)`                │  │
+│  │  ├─ DGpuBoardTLM 内部 `TmuDispatchProcessor::submit(record)`      │  │
+│  │  └─ Doorbell ring 触发 SQ consumer tick                           │  │
+│  │  **删除**: CommandProcessor + Pm4Decoder (v3.0 无 PM4 解析)     │  │
+│  │  **理由**: host 已实现 CUDA driver API + PM4 解析,                  │  │
+│  │           CppTLM 仅消费已解码 `KernelLaunchRequest`                  │  │
 │  └────────────────────────────────────────────────────────────────┘  │
 │                              │                                          │
 │  ┌────────────────────────────▼────────────────────────────────────┐  │
