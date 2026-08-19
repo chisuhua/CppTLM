@@ -49,7 +49,9 @@ public:
     void set_host_notify(HostNotifyHook hook);
 
     // CQ consumer 读取
-    Entry pop();
+    // [v0.4.1 修订] pop() → try_pop() 返回 std::optional<Entry> (per Oracle C-NEW-3 裁决)
+    // - 解决哨兵值 {0,0,0} 歧义,空 ring 返回 std::nullopt
+    std::optional<Entry> try_pop();
     size_t pending_count() const;
 
 private:
@@ -247,11 +249,12 @@ completion_ring_->set_host_notify([]() {
 | image_id 无效 | status = CUDA_ERROR_INVALID_HANDLE（由 device 端设置）|
 | status 字段 | 通过 Entry.status 表达（不抛）|
 
-### 7.2 pop 错误
+### 7.2 try_pop 错误 [v0.4.1 修订]
 
 | 错误源 | 处理 |
 |---|---|
-| ring 空 | 返回哨兵 Entry `{0, 0, 0}`（host 端判断哨兵值）|
+| ring 空 | 返回 `std::nullopt`（v0.4.1 修订：删除哨兵值 `{0,0,0}` 歧义）|
+| hook 内重入 try_pop | 不抛（同 §3.2 重入保证，与真实硬件 IRQ 一致）|
 
 ### 7.3 host_notify 错误
 
