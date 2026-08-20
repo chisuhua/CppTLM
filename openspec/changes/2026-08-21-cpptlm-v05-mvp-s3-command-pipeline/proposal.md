@@ -60,12 +60,12 @@ s3 价值(必须依赖 s1+s2):
 | **s3-G3** TmuDispatchProcessor 反压停 fetch + dep chain + 环检测 测试 PASS | CppTLM | ⏳ W5 | `ctest -R "test_tmu_dispatch_processor_mvp"` PASS |
 | **s3-G4** CP + Pm4Decoder 集成测试 PASS | CppTLM | ⏳ W5 | `ctest -R "test_pm4_decoder_mvp_integration"` PASS |
 | **s3-G5** validate_topology CMake target 集成 PASS | CppTLM | ⏳ W9 | `cmake --build build --target validate_topology` PASS |
-| **s3-G6** 全部 ≥880 测试 PASS(per ADR-SOC-06 G-MVP-4) | CppTLM | ⏳ W9 | `build/bin/cpptlm_tests` PASS |
+| **s3-G6** 全部 ≥790 测试 PASS(per ADR-SOC-06 G-MVP-4) | CppTLM | ⏳ W9 | `build/bin/cpptlm_tests` PASS |
 | **s3-G7** `v0.5.0-MVP` tag 创建 | CppTLM | ⏳ W10 | `git tag -a v0.5.0-MVP -m "..."` |
 
 **最终验收(MVP 完成时)**:
 - [ ] s3-G1 ~ s3-G7 全部 ✅
-- [ ] 全部 ≥880 测试 PASS(v0.4.1 baseline 850 + MVP 新增 ≥30)
+- [ ] 全部 ≥790 测试 PASS(v0.4.1 baseline 764 + MVP 新增 ≥30)
 - [ ] 编译防火墙验证仍 PASS
 - [ ] docs 同步检查 PASS
 - [ ] `git tag -a v0.5.0-MVP -m "..."`

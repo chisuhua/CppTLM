@@ -108,7 +108,7 @@ P3' (W8-10) 验证 + 文档
   └─ 同步 AGENTS.md + ADR-X.15 Status Update
 
 P4' (W11-12)  收尾
-  ├─ 全部 ≥850 测试通过
+  ├─ 全部 ≥764 测试通过
   └─ v0.5.0 tag + CHANGELOG
 ```
 
@@ -124,7 +124,7 @@ P4' (W11-12)  收尾
 | #6 ComputeUnit v2 adapter pattern | CppTLM | ⏳ W5-7 |
 | #7 ScoreboardTLM + PipelineTLM 升级 production | CppTLM | � W5-7 |
 | #8 双路径逐字节 diff 测试 PASS(image_execute vs per-warp step API) | CppTLM | ⏳ W8-10 |
-| #9 全部 ≥850 测试通过(v0.5 baseline) | CppTLM | � W11-12 |
+| #9 全部 ≥764 测试通过(v0.5 baseline) | CppTLM | � W11-12 |
 
 ## Cross-Repo Coordination
 

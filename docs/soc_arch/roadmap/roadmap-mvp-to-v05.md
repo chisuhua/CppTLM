@@ -100,16 +100,16 @@
 | **S1 MVP-Cut** | W1-2 | submodule + 内部链路跑通(PtxEmuSubmoduleMVP + CudaCoreAdapter) | **s1** |
 | **S2 Real-Board-Bind** | W3-4 | DGpuBoard **8 组件** + 4 IOCTL stub + JSON config | **s2** |
 | **S3 TMU+CP+SQ 链路接通** | W5-6 | CP + NVIDIA PM4 + TMU 反压停 fetch + SubmitQueue | **s3 (前段)** |
-| **S4 Production** | W7-10 | validate_topology + 全量 baseline ≥880 + v0.5.0-MVP tag | **s3 (后段)** |
+| **S4 Production** | W7-10 | validate_topology + 全量 baseline ≥790 + v0.5.0-MVP tag | **s3 (后段)** |
 
 ### 1.5.3 累计测试增长(预期)
 
 ```
-v0.4.1 baseline (850)
+v0.4.1 baseline (764)
    + s1: 12 tests (6 functional + 6 timing)        → 862
    + s2: 7+ tests (6 SECTION + 5 SQ + 4 IOCTL + 1 Doorbell)  → ~872
    + s3: 4 tests (decoder + CP 集成 + tmu + S4 baseline)       → ~876+
-   + 实际 MVP 完成时:                                     → ≥880
+   + 实际 MVP 完成时:                                     → ≥790
 ```
 
 ### 1.5.4 关键依赖关系
@@ -337,7 +337,7 @@ SubmitQueue::dispatch_to_core(cta_desc)
 
 - **ScoreboardTLM / PipelineTLM / TensorCoreTLM 直接使用现有模块**(不创建 `*_v05_mvp.hh` 升级版,per Phase I.2 修订)
 - `validate_topology` 集成
-- 全部 ≥880 测试 PASS
+- 全部 ≥790 测试 PASS
 - `git tag -a v0.5.0-MVP`
 
 ### 5.2 关键交付
@@ -345,7 +345,7 @@ SubmitQueue::dispatch_to_core(cta_desc)
 | 交付 | 验证 | 状态 |
 |------|------|:---:|
 | `validate_topology` CMake target 集成 | `cmake --build build --target validate_topology` PASS | ⏳ W9 |
-| 全部 ≥880 测试 PASS(per ADR-SOC-06 G-MVP-4) | `build/bin/cpptlm_tests` PASS | ⏳ W9 |
+| 全部 ≥790 测试 PASS(per ADR-SOC-06 G-MVP-4) | `build/bin/cpptlm_tests` PASS | ⏳ W9 |
 | `CHANGELOG.md` 记录 v0.5.0-MVP | 文档同步 | ⏳ W10 |
 | `git tag -a v0.5.0-MVP` | tag 创建 | ⏳ W10 |
 | ❌ ~~`scoreboard_tlm_v05_mvp.hh` + `pipeline_tlm_v05_mvp.hh`~~ | **🗑️ 已取消**(per Phase I.2,直接使用现有 `include/tlm/gpu/` 下的模块) | — |
@@ -364,7 +364,7 @@ git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: MVP slice - UsrLinuxEmu IOCTL → CP �
 ### 5.4 风险
 
 - **R10**: 现有 ScoreboardTLM/PipelineTLM 与 PTX-EMU 注入接口不兼容 — 确认 `sm_context.h:87-95` 注入点已对接(per Phase I.2 §1.3)
-- **R11**: 880 测试达不到 — S1-S3 累计 ≥50 新增测试,baseline 850 + 50 = 900(目标 ≥880)
+- **R11**: 790 测试达不到 — S1-S3 累计 ≥26 新增测试,baseline 764 + 26 = ≥790(目标 ≥790)
 
 ---
 

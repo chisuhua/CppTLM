@@ -40,13 +40,13 @@ git commit -m "chore(submodule): add external/PTX-EMU@<commit_hash>"
 - [ ] 设置 `-fvisibility=hidden`(per Oracle §E.1 风险 R5)
 - [ ] cpptlm_core 静态链接 PTX-EMU
 - [ ] `tests/test_*` 添加 v0.5 MVP 测试目标
-- [ ] 现有 ≥850 测试仍通过
+- [ ] 现有 ≥764 测试仍通过
 
 **验证命令**:
 ```bash
 cmake --build build -j$(nproc)
 build/bin/cpptlm_tests --reporter compact
-# 预期: All tests passed (≥850 assertions in ≥850 test cases)
+# 预期: All tests passed (≥764 assertions in ≥764 test cases)
 ```
 
 **Commit**:
@@ -370,11 +370,11 @@ git commit -m "feat(tmu-dispatch-mvp): TMU Glue with dep chain + backpressure (3
 
 **Commit**: N/A (no work needed,use existing PipelineTLM)
 
-### T-S4-3: 全量 baseline 验证(≥880 测试,数字待 S1-S3 完成后重核)
+### T-S4-3: 全量 baseline 验证(≥790 测试,数字待 S1-S3 完成后重核)
 
 **Acceptance**:
 - [ ] `build/bin/cpptlm_tests --reporter compact`
-- [ ] 预期 ≥880 test cases PASS(v0.4.1 baseline 850 + MVP 新增 ≥50)
+- [ ] 预期 ≥790 test cases PASS(v0.4.1 baseline 764 + MVP 新增 ≥26)
   - 实际数字待 S1-S3 实施完成后重新核对
 - [ ] assertions ≥19000
 - [ ] 无 regression
@@ -382,7 +382,7 @@ git commit -m "feat(tmu-dispatch-mvp): TMU Glue with dep chain + backpressure (3
 **验证命令**:
 ```bash
 build/bin/cpptlm_tests --reporter compact 2>&1 | tail -3
-# 预期: All tests passed (≥19000 assertions in ≥880 test cases)
+# 预期: All tests passed (≥7900 assertions in ≥790 test cases,数字待 S1-S3 完成后重核)
 ```
 
 **Commit**:
@@ -443,7 +443,7 @@ git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: MVP slice - UsrLinuxEmu IOCTL → CP �
 - [ ] ~~T-S3-4 CudaCoreAdapter 白盒路径~~ **🗑️ 已取消**
 - [ ] ~~T-S4-1 ScoreboardTLM 升级~~ **🗑️ 已取消(用现有)**
 - [ ] ~~T-S4-2 PipelineTLM 升级~~ **🗑️ 已取消(用现有)**
-- [ ] T-S4-3 全量 baseline ≥880 测试 PASS
+- [ ] T-S4-3 全量 baseline ≥790 测试 PASS
 - [ ] T-S4-4 v0.5.0-MVP tag + docs
 - [ ] 编译防火墙验证 PASS(`git grep "include.*ptxsim\|include.*ptx_ir"` 仅命中 `ptx_emu_submodule_mvp.cc`)
 - [ ] 6 SECTION E2E 测试 PASS

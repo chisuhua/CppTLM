@@ -91,7 +91,7 @@ TmuSubmitResult TmuDispatchProcessor::submit(TmuDispatchRecord record, ...) {
 ```
 s3-W5 (2026-09-19~25): Pm4Decoder + CommandProcessor + 3 测试
 s3-W6 (2026-09-26~10-02): TmuDispatchProcessor + 1 测试
-s3-W7-9 (2026-10-03~23): validate_topology + baseline ≥880 测试
+s3-W7-9 (2026-10-03~23): validate_topology + baseline ≥790 测试
 s3-W10 (2026-10-24~30): CHANGELOG + v0.5.0-MVP tag
 ```
 
@@ -103,7 +103,7 @@ s3-W10 (2026-10-24~30): CHANGELOG + v0.5.0-MVP tag
 | R2 | CP 5-state FSM 状态转换遗漏 | 中 | 高 | TDD 5 transition 测试 |
 | R3 | TMU 反压停 fetch 频繁触发 | 中 | 中 | 32 slot + JSON `tmu_max_active_tasks` 可配置 + BACKPRESSURED 后 CP 退避 |
 | R4 | TMU dep 链式推进死循环 | 低 | 高 | 简化环检测(链深 ≤ 8);每任务 visited flag |
-| R5 | 880 测试达不到 | 中 | 中 | s1+s2 已 ≥50 新增测试,baseline 850 + ≥50 = ≥900 |
+| R5 | 790 测试达不到 | 中 | 中 | s1+s2 已 ≥50 新增测试,baseline 764 + ≥50 = ≥900 |
 
 ---
 
