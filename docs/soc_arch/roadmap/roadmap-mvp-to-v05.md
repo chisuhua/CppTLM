@@ -1,12 +1,16 @@
 # Roadmap: cpptlm-v05-mvp → cpptlm-v05-full (MVP 切片到完整版)
 
 > **类别**: SoC Architecture > Roadmap · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
-> **日期**: 2026-08-19 / 修订 2026-08-20(Phase A/C 修复 + DP1=B/DP2=A/DP4=C 决策)· **维护者**: CppTLM Team (Sisyphus)
+> **日期**: 2026-08-19 / 修订 2026-08-21(Phase K:Oracle ses_fe179d02 拆分 + FIX-C1~C3/H5~H9/B.2/B.3 修复)
+> **维护者**: CppTLM Team (Sisyphus)
 > **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D1
-> **关联 OpenSpec**:
-> - MVP: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
+> **关联 OpenSpec**(per Phase K Oracle 拆分,2026-08-21):
+> - **s1** PTX-EMU 集成: [`openspec/changes/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/`](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/) (W1-2 基础设施,2 模块,12 测试)
+> - **s2** DGpuBoard 板卡: [`openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/`](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/) (W3-4,依赖 s1,6 组件 + 4 IOCTL)
+> - **s3** Command 数据面: [`openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/`](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/) (W5-10,依赖 s1+s2,NVIDIA PM4 + TMU 反压 + tag)
+> - ~~原 change~~: `openspec/changes/2026-08-19-cpptlm-v05-mvp/` → 已归档 `openspec/changes/archive/2026-08-19-cpptlm-v05-mvp-superseded-by-s1-s2-s3/` (per Phase K 拆分,2026-08-21)
 > - 完整版: [`openspec/changes/2026-08-19-cpptlm-v05-redo/`](../../../openspec/changes/2026-08-19-cpptlm-v05-redo/) (12 周 P0'-P4',MVP 验证后启动)
-> **关联模块**: [DGpuBoardTLM](../modules/dgpu-board.md) + [CommandProcessor](../modules/command-processor.md) + [Pm4Decoder](../modules/pm4-decoder.md) + [TmuDispatchProcessor](../modules/tmu-dispatch-processor.md) + [CudaCoreAdapter](../modules/cuda-core-adapter.md) + [PtxEmuSubmoduleMVP](../modules/ptx-emu-submodule-mvp.md)
+> **关联模块**: [DGpuBoardTLM](../modules/dgpu-board.md) + [SubmitQueue](../modules/submit-queue.md) + [CommandProcessor](../modules/command-processor.md) + [Pm4Decoder](../modules/pm4-decoder.md) + [TmuDispatchProcessor](../modules/tmu-dispatch-processor.md) + [CudaCoreAdapter](../modules/cuda-core-adapter.md) + [PtxEmuSubmoduleMVP](../modules/ptx-emu-submodule-mvp.md)
 
 ---
 
@@ -70,9 +74,80 @@
 │  │   - v0.5.0 release tag                                               │ │
 │  └─────────────────────────────────────────────────────────────────────┘ │
 │                                                                             │
-│  累计 6-10 周 MVP + 12 周 v0.5 完整版 = 18-22 周(4-5 月)                    │
+ │  累计 6-10 周 MVP + 12 周 v0.5 完整版 = 18-22 周(4-5 月)                    │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 1.5 进度追踪(per Phase K Oracle 拆分,2026-08-21)
+
+> **关键拆分**:原单 change `2026-08-19-cpptlm-v05-mvp` 按依赖关系拆为 **3 个独立 change**,每个 change 独立可交付、独立 archive。
+
+### 1.5.1 Openspec change 状态总览
+
+| Openspec Change | 周次 | 模块数 | 测试数 | 状态 | 依赖 |
+|------------------|------|:---:|:---:|:---:|------|
+| **[s1-ptxemu-integration](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/)** | W1-2 | 2 | 12 | ⏳ 待启动 | — |
+| **[s2-dgpu-board](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/)** | W3-4 | 4(Doorbell/SubmitQueue/CQ/IOCTL stub) | 7+ | ⏳ 待启动 | s1 |
+| **[s3-command-pipeline](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/)** | W5-10 | 3(CP/Pm4Decoder/TMU) | 4 | ⏳ 待启动 | s1+s2 |
+| **小计** | **6-10 周** | **9 模块** | **~23 测试** | | |
+
+### 1.5.2 4 阶段 vs 3 change 映射(per Phase K)
+
+| 阶段 | 周次 | 范围 | 对应 openspec change |
+|------|------|------|---------------------|
+| **S1 MVP-Cut** | W1-2 | submodule + 内部链路跑通(PtxEmuSubmoduleMVP + CudaCoreAdapter) | **s1** |
+| **S2 Real-Board-Bind** | W3-4 | DGpuBoard 6 组件 + 4 IOCTL stub + JSON config | **s2** |
+| **S3 TMU+CP+SQ 链路接通** | W5-6 | CP + NVIDIA PM4 + TMU 反压停 fetch + SubmitQueue | **s3 (前段)** |
+| **S4 Production** | W7-10 | validate_topology + 全量 baseline ≥880 + v0.5.0-MVP tag | **s3 (后段)** |
+
+### 1.5.3 累计测试增长(预期)
+
+```
+v0.4.1 baseline (850)
+   + s1: 12 tests (6 functional + 6 timing)        → 862
+   + s2: 7+ tests (6 SECTION + 5 SQ + 4 IOCTL + 1 Doorbell)  → ~872
+   + s3: 4 tests (decoder + CP 集成 + tmu + S4 baseline)       → ~876+
+   + 实际 MVP 完成时:                                     → ≥880
+```
+
+### 1.5.4 关键依赖关系
+
+```
+s1 独立 ─────────────────┐
+                          ↓
+s2 依赖 s1 编译         ──┤  依赖链: s1 → s2 → s3
+                          ↓
+s3 依赖 s1 + s2 集成    ──┘
+```
+
+- **s1 可独立 archive**(无 s2/s3 依赖,Phase F-H/I 重构后 functional/timing 分离,facade + timing 可单独验证)
+- **s2 编译依赖 s1**(PtxEmuSubmoduleMVP + CudaCoreAdapter 头文件 + .cc 编译),**可独立 archive**(4 IOCTL stub + SubmitQueue 自身可验证)
+- **s3 集成依赖 s1+s2**(CP fetch GPU VA → TMU submit → SQ enqueue → CudaCore on_cta_arrival 全链路,需前两阶段实施完成)
+
+### 1.5.5 Phase K 同步内容(2026-08-21 修订)
+
+**已修复**(per Oracle ses_fe179d02 审查):
+- ✅ CRITICAL ADR-SOC-06 §3 端到端图 + §8.1 冻结接口表全过时
+- ✅ CRITICAL command-processor.md §4.2 fetch_packet 位提取(`h>>1` + `h>>20`,非 `h` + `h>>24`)
+- ✅ CRITICAL tmu-dispatch-processor.md §5.4 LIFO 残留(反压停 fetch 替代)
+- ✅ HIGH dgpu-board.md 5→8 组件 + SubchannelContext[5]→[8] + tmu_lifo_evict→tmu_enable_backpressure
+- ✅ HIGH dgpu-board.md 0x29 IOCTL 语义(handler 走 FREE_BO 真实工作,非 -ENOSYS)
+- ✅ HIGH roadmap §4/§5 整节重写(NVIDIA method packet + 深度集成 + 不升级 v05_mvp)
+- ✅ HIGH cuda-core-adapter.md 接口矛盾(facade create_*→make_unique,补 read_blocked_cycles)
+- ✅ HIGH proposal.md 死引用(ADR-X.17→ADR-SOC-06)+ SubmitQueue 归属(S3→S2)
+- ✅ B.2/B.3 接口矛盾裁定(CudaCoreAdapter 持有 4 TLM 模块 + facade 补 read_blocked_cycles)
+
+**Commits**(2026-08-21,6 commit push to origin):
+1. `330e94c` fix CRITICAL + HIGH (Phase K)
+2. `a17ea24` fix dgpu-board.md HIGH (H5/H6)
+3. `b8b0177` fix roadmap.md HIGH (H7)
+4. `46dac69` fix cuda-core-adapter + ptx-emu-submodule-mvp (H8 + B.2/B.3)
+5. `9b3f472` fix proposal.md HIGH (H9)
+6. `aea457c` split openspec into 3 changes (per Oracle)
+
+**当前状态**: ahead of origin/main by 9 commits · docs_sync_check 仅剩 pre-existing `abi_guards.h` 误报(与本路线图无关)
 
 ---
 
@@ -399,6 +474,18 @@ P4' (W11-12) 收尾 + v0.5.0 tag
   - **S3 阶段扩展**:从"CP + PM4 + TMU + per-warp 调用"改为"CP + NVIDIA PM4 + TMU + **SubmitQueue(WDU 分发网络)** + CudaCore **深度集成 PTX-EMU**"
   - **S1 S2 单元测试更新**:`8 ABI 单测` → `深度集成接口单测`;`黑盒 dispatch_blackbox` → `驱动式 warp 执行(on_cta_arrival + per-tick exe_once + WarpState 镜像)`
   - **新增模块**:`include/tlm/gpu/submit_queue_mvp.hh` + `.cc`(per `submit-queue.md` §F-H.5 WDU 单 SM 路由 + per-cluster pending FIFO 32 + per-core active 4)
+- **2026-08-20**: **Phase I 重构**(functional/timing 分离,per gpgpu-sim 分层):
+  - PtxEmuSubmoduleMVP 重定位为 **PTX functional facade**(删除 8 ABI 黑盒 + stepOneWarpInstruction,改 4 类 functional 接口)
+  - CudaCoreAdapter 重定位为 **SM 微架构探索器**(集成 4 个 TLM 模块,删除双路径 dispatch_blackbox/whitebox)
+  - WarpState 重新设计(timing only,不含 PC,PC 由 facade 负责)
+  - `read_blocked_cycles` 补缺(per FIX-H8/B.3,避免裸调 PTX-EMU)
+- **2026-08-21**: **Phase K 全面修复 + 拆分**(Oracle ses_fe179d02 审查后):
+  - **CRITICAL 修复**(3 项):ADR-SOC-06 §3 + §8.1 全过时;command-processor.md §4.2 fetch_packet 位提取错误(`h>>1` + `h>>20`,非 `h` + `h>>24`);tmu-dispatch-processor.md §5.4 LIFO 残留(反压停 fetch 替代)
+  - **HIGH 修复**(6 项):dgpu-board.md 5→8 组件 + SubchannelContext[5]→[8] + 0x29 IOCTL 真实工作;roadmap §4/§5 整节重写;cuda-core-adapter.md 接口矛盾 + read_blocked_cycles;proposal.md 死引用 + SubmitQueue 归属 S3→S2
+  - **B.2/B.3 裁定**:CudaCoreAdapter 持有 4 TLM 模块 + facade 补 read_blocked_cycles
+  - **拆分**:原单 change 拆为 3 个独立 change(s1 基础设施 / s2 板卡 / s3 数据面+tag,per Oracle 拆分建议)
+  - **6 commits 累计 9 commit push 到 origin/main**(ahead by 9)
+  - **新增 §1.5 进度追踪**:openspec change 状态表 + 4 阶段 vs 3 change 映射 + 测试增长 + 依赖关系 + Phase K 同步内容
 
 ---
 
