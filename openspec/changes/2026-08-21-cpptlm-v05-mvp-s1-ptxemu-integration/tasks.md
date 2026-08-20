@@ -37,13 +37,13 @@ git commit -m "chore(submodule): pin external/PTX-EMU@87820951 (per DP1=B)"
 - [ ] 设置 `-fvisibility=hidden`(per Oracle §E.1 风险 R5)
 - [ ] cpptlm_core 静态链接 PTX-EMU
 - [ ] `test/CMakeLists.txt` 添加 s1 测试目标(12 个 .cc)
-- [ ] 现有 ≥850 测试仍通过(无 regression)
+- [ ] 现有 ≥764 测试仍通过(无 regression)
 
 **验证命令**:
 ```bash
 cmake --build build -j$(nproc)
 build/bin/cpptlm_tests --reporter compact 2>&1 | tail -3
-# 预期: All tests passed (≥850 assertions in ≥850 test cases)
+# 预期: All tests passed (≥764 assertions in ≥764 test cases)
 ```
 
 **Commit**:

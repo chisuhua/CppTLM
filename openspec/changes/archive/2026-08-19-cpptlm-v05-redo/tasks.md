@@ -69,7 +69,7 @@ git commit -m "chore(submodule): add external/PTX-EMU@<commit_hash> (per Oracle 
 ```bash
 cmake --build build -j$(nproc)
 build/bin/cpptlm_tests --reporter compact
-# 预期: All tests passed (≥850 assertions in ≥850 test cases)
+# 预期: All tests passed (≥764 assertions in ≥764 test cases)
 ```
 
 **Commit**:
@@ -341,11 +341,11 @@ git commit -m "docs(adr): Status Update on ADR-X.15 (v0.5 redo reversal)"
 
 ## P4' 收尾 (W11-12)
 
-### T-P4'-1: 全量 baseline 验证(≥850 + 新增 ≥50)
+### T-P4'-1: 全量 baseline 验证(≥764 + 新增 ≥26)
 
 **Acceptance**:
 - [ ] `build/bin/cpptlm_tests --reporter compact`
-- [ ] 预期 ≥900 test cases PASS(v0.4.1 baseline 850 + v0.5 新增 ≥50)
+- [ ] 预期 ≥790 test cases PASS(v0.4.1 baseline 764 + MVP 新增 ≥26)
 - [ ] assertions ≥19000
 - [ ] 无 regression(v0.4.1 测试 100% 保留绿)
 

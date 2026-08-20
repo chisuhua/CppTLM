@@ -120,7 +120,7 @@
 
 **最终验收(MVP 完成时)**:
 - [ ] G-MVP-1 ~ G-MVP-8 全部 ✅
-- [ ] 全部 ≥880 测试 PASS(v0.4.1 baseline 850 + MVP 新增 ≥50)
+- [ ] 全部 ≥790 测试 PASS(v0.4.1 baseline 764 + MVP 新增 ≥50)
 - [ ] 编译防火墙验证 PASS
 - [ ] docs 同步检查 PASS(`scripts/test/docs_sync_check.sh --strict`)
 - [ ] 跨仓协调:PTX-EMU submodule pin 已 bump

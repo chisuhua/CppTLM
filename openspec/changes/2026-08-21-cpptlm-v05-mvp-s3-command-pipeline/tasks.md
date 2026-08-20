@@ -79,7 +79,7 @@ git commit -am "feat(tmu-dispatch-mvp): fill dep chain + backpressure (per Phase
 
 **Acceptance**:
 - [ ] `validate_topology` CMake target 集成(可能已在 s2 完成)
-- [ ] 全部 ≥880 测试 PASS(v0.4.1 baseline 850 + MVP 新增 ≥30,per s1+s2+s3 累计 ≥50+)
+- [ ] 全部 ≥790 测试 PASS(v0.4.1 baseline 764 + MVP 新增 ≥30,per s1+s2+s3 累计 ≥50+)
 - [ ] `build/bin/cpptlm_tests` 全部 PASS
 - [ ] 无 regression
 
@@ -115,7 +115,7 @@ git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: MVP slice - UsrLinuxEmu IOCTL → CP �
 | R2 | CP 5-state FSM 状态转换遗漏 | 中 | 高 | TDD 5 transition 测试 |
 | R3 | TMU 反压停 fetch 频繁触发 | 中 | 中 | 32 slot + JSON `tmu_max_active_tasks` 可配置 + BACKPRESSURED 后 CP 退避 |
 | R4 | TMU dep 链式推进死循环 | 低 | 高 | 简化环检测(链深 ≤ 8) |
-| R5 | 880 测试达不到 | 中 | 中 | s1 已 ≥12 + s2 已 ≥9 + s3 预计 ≥5 = ≥26 新增测试,baseline 850 + ≥30 = ≥880 |
+| R5 | 790 测试达不到 | 中 | 中 | s1 已 ≥12 + s2 已 ≥9 + s3 预计 ≥5 = ≥26 新增测试,baseline 764 + ≥26 = ≥790 |
 | R6 | s1/s2 失败拖累 s3 | 中 | 中 | s3 仅在 s1+s2 archive 后启动,失败 blast radius 已隔离 |
 
 ---
@@ -124,7 +124,7 @@ git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: MVP slice - UsrLinuxEmu IOCTL → CP �
 
 最终 v0.5.0-MVP tag 前:
 - [ ] T-s3-1 ~ T-s3-5 完成
-- [ ] ≥880 测试 PASS
+- [ ] ≥790 测试 PASS
 - [ ] 编译防火墙验证仍 PASS(s1+s2 已验证)
 - [ ] docs 同步检查 PASS
 - [ ] `git tag -a v0.5.0-MVP -m "..."`

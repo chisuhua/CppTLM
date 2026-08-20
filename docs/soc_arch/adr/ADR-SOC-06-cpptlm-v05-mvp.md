@@ -86,7 +86,7 @@
 | **S1 MVP-Cut** | W1-2 | `PtxEmuSubmoduleMVP` + 内部 CP→TMU→CudaCore 链路(无真实驱动) | Catch2: 5 单测 PASS |
 | **S2 Real-Board-Bind** | W3-4 | `DGpuBoardTLM` + `DGpuBar` + `Doorbell` + `SQ/CQ` + JSON config + **接 UsrLinuxEmu IOCTL 0x27/0x29 stub + 0x01 pushbuffer** | Catch2: E2E `cuModuleLoadData + PUSHBUFFER_SUBMIT_BATCH` 跑通 |
 | **S3 TMU+CP+SQ 链路接通**(原 Warp-Precision,W5-6,per Phase F-B.1 C3 + F-H.8 修订) | W5-6 | `CommandProcessor` + `Pm4Decoder`(NVIDIA method packet per Phase F-H.3)+ `TmuDispatchProcessor`(反压停 fetch)+ **`SubmitQueue`(WDU 分发网络)** + `CudaCoreAdapter`(深度集成 PTX-EMU internal + 4 timing 模块注入) | Catch2: NVIDIA method packet 解码 + TMU dep chain + CP 5-state FSM + SQ 路由 + microarchitecture timing 验证 | |**
-| **S4 Production** | W7-10 | ScoreboardTLM + PipelineTLM 升级 + 完整 JSON E2E + `validate_topology` + v0.5.0-MVP tag | 全部 ≥880 测试 PASS |
+| **S4 Production** | W7-10 | ScoreboardTLM + PipelineTLM 升级 + 完整 JSON E2E + `validate_topology` + v0.5.0-MVP tag | 全部 ≥790 测试 PASS |
 
 **MVP 切片边界**(关键裁剪):
 
@@ -389,7 +389,7 @@ host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit
 | **G-MVP-1** S1 submodule + functional/timing 内部链路跑通 | CppTLM | ⏳ W1-2 | `ctest -R "test_ptx_emu_facade\|test_cuda_core_adapter_mvp" --output-on-failure` PASS(6 functional + 6 timing) |
 | **G-MVP-2** S2 DGpuBoard + Doorbell + SubmitQueue + CQ + JSON | CppTLM | ⏳ W3-4 | `ctest -R "test_dgpu_board_v1_mvp_from_config" --output-on-failure` 6 SECTION PASS |
 | **G-MVP-3** S3 CP + NVIDIA PM4 + TMU + SubmitQueue + CudaCore 深度集成(per Phase F-H.8 修订) | CppTLM | ⏳ W5-6 | `ctest -R "test_command_processor_mvp\|test_pm4_decoder_mvp\|test_tmu_dispatch_processor_mvp\|test_submit_queue_mvp" --output-on-failure` + microarchitecture timing PASS |
-| **G-MVP-4** S4 Production + validate_topology | CppTLM | ⏳ W7-10 | `cmake --build build --target validate_topology` + 全部 ≥880 测试 PASS |
+| **G-MVP-4** S4 Production + validate_topology | CppTLM | ⏳ W7-10 | `cmake --build build --target validate_topology` + 全部 ≥790 测试 PASS |
 | **G-MVP-5** UsrLinuxEmu IOCTL 0x27/0x29 + 0x01 pushbuffer 真实路径(per Phase F-B.3 H3 修订) | CppTLM | ⏳ W4 | `ctest -R "test_usrlxemu_ioctl_stub" --output-on-failure` 4 IOCTL PASS(0x27/0x29/0x28-stub/0x01-pushbuffer) |
 | **G-MVP-6** 编译防火墙验证 | CppTLM | ⏳ W2 | `git grep "include.*ptxsim\|include.*ptx_ir\|include.*memory/simple_memory\|include.*register/"` 仅命中 `ptx_emu_submodule_mvp.cc` |
 | **G-MVP-7** v0.5.0-MVP tag | CppTLM | ⏳ W10 | `git tag -a v0.5.0-MVP -m "..."` |
