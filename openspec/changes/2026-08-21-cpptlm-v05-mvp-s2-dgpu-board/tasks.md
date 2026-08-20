@@ -60,6 +60,22 @@ git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per
   };
   ```
 - [ ] **骨架实现**(W3-4 即可编译): tick() 内**默认 no-op**(状态机转换但不实际 fetch/decode);提供 `set_decoder` 接口供 s3 注入
+- [ ] `include/tlm/gpu/pm4_types_mvp.hh`(数据头,~30 LOC,per Phase L round 3 Oracle 补):
+  ```cpp
+  struct Pm4MethodHeader {
+      uint32_t inc : 1;            // bit 0
+      uint32_t method_addr : 15;   // bits 1-15
+      uint32_t subchannel : 4;     // bits 16-19
+      uint32_t data_count : 4;     // bits 20-23
+      uint32_t reserved : 8;       // bits 24-31
+  };
+  struct Pm4MethodDispatch {
+      uint16_t method_addr;
+      uint8_t subchannel_id;
+      uint8_t data_count;
+      // ... decoded fields: grid, block, shared_mem, args_vram_addr
+  };
+  ```
 - [ ] `include/tlm/gpu/pm4_decoder_mvp.hh`(纯接口头,s3 可扩展加具体类):
   ```cpp
   #include "tlm/gpu/pm4_types_mvp.hh"  // s2 定义 Pm4MethodHeader/Pm4MethodDispatch

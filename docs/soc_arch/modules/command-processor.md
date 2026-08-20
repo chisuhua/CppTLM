@@ -129,6 +129,13 @@ public:
     /// JSON params 注入(可选)
     void set_max_dwords_per_packet(uint32_t n) { max_dwords_per_packet_ = n; }
 
+    /// s2 注入接口(per s2 T-s2-3a / s3 T-s3-1 契约):
+    ///   s2 创建骨架时调用 set_decoder(unique_ptr<Pm4DecoderInterface>)
+    ///   s3 实现 Pm4Decoder 派生类后,DGpuBoardTLM 在 init 时调用注入
+    void set_decoder(std::unique_ptr<Pm4DecoderInterface> decoder) {
+        decoder_ = std::move(decoder);
+    }
+
 private:
     // === 5-state FSM 状态 ===
     State state_ = State::IDLE;

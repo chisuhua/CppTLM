@@ -14,7 +14,7 @@
 > **关键**: s2 已创建 `pm4_decoder_mvp.hh` 接口(纯虚 `Pm4DecoderInterface`)+ `command_processor_mvp.hh` 骨架;s3 填充实际实现。
 
 **Acceptance**:
-- [ ] 填充 `include/tlm/gpu/pm4_decoder_mvp.cc`(~200 LOC,头文件 s2 已创建)
+- [ ] 填充 `src/tlm/gpu/pm4_decoder_mvp.cc`(~200 LOC,头文件 s2 已创建)
 - [ ] `Pm4Decoder` 继承 `Pm4DecoderInterface`(per s2 骨架)
 - [ ] **`Pm4MethodHeader` 结构体**(per `unpackPm4Header`):
   ```cpp
