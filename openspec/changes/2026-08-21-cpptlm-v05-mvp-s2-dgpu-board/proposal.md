@@ -35,11 +35,17 @@ s2 价值独立(但**编译依赖 s1**):
 | `include/tlm/gpu/submit_queue_mvp.hh` + `.cc` | **🆕 WDU 分发网络**(per Phase F-H.5,per `docs/research/WDUtoSM/overview.md` NVIDIA Hopper) |
 | `include/tlm/gpu/completion_ring_mvp.hh` + `.cc` | push + host_notify 重设计 |
 | `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `.cc` | **4 IOCTL** stub(per Phase F-H.3): 0x27 LOAD / 0x28 -ENOSYS / 0x29 UNLOAD / 0x01 PUSHBUFFER |
+| `include/tlm/gpu/command_processor_mvp.hh` + `src/tlm/gpu/command_processor_mvp.cc` | **🆕 CP 骨架**(per s2 T-s2-3a,5-state FSM no-op + set_decoder 注入接口,s3 填充) |
+| `include/tlm/gpu/pm4_decoder_mvp.hh` | **🆕 Pm4DecoderInterface 纯接口头**(per s2 T-s2-3a,含 `parse_method` 纯虚方法,s3 填充) |
+| `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `src/tlm/gpu/tmu_dispatch_processor_mvp.cc` | **🆕 TMU 骨架**(per s2 T-s2-3b,反压 + set_handler 注入接口,s3 填充) |
+| `include/tlm/gpu/tmu_handler_mvp.hh` | **🆕 TmuHandlerInterface 纯接口头**(per s2 T-s2-3b,s3 填充) |
 | `configs/dgpu_board_v1_mvp.json.in` | JSON config + CMake configure_file 注入 `${PTX_EMU_ROOT}` |
-| `test/test_dgpu_board_v1_mvp_from_config.cc` | 6 SECTION E2E(per ADR-SOC-06 G-MVP-2) |
+| `test/test_dgpu_board_v1_mvp_from_config.cc` | 6 SECTION E2E(per ADR-SOC-06 G-MVP-2)**s2 W4 降级为 5 SECTION**(item 4 标 ⏳) |
 | `test/test_usrlxemu_ioctl_stub.cc` | **4 IOCTL** PASS(per Phase F-H.3) |
 | `test/test_submit_queue_mvp_route.cc` + `_enqueue.cc` + `_dispatch.cc` + `_complete.cc` + `_concurrent.cc` | **5 个单测**(per Phase F-H.5 §7) |
 | `test/test_doorbell_strong_order_mvp.cc` | Doorbell strong-order 250-700ns 区间 + 同 stream 顺序 PASS |
+| `test/test_command_processor_mvp_skeleton.cc` | **🆕 CP 骨架测试**:5 state 转换 no-op + wake PASS |
+| `test/test_tmu_dispatch_processor_mvp_skeleton.cc` | **🆕 TMU 骨架测试**:反压 + 容量管理 PASS |
 
 ### 2. 修改文件
 
@@ -67,7 +73,7 @@ s2 价值独立(但**编译依赖 s1**):
 
 **最终验收(本 change 完成时)**:
 - [ ] s2-G1 ~ s2-G6 全部 ✅
-- [ ] 8 个测试文件 PASS(1 Doorbell + 5 SQ + 1 E2E 6 SECTION + 1 IOCTL 4 IOCTL)
+- [ ] **10 个测试文件 PASS**(per Phase L:1 Doorbell + 5 SQ + 1 E2E 6 SECTION + 1 IOCTL 4 IOCTL + 2 骨架测试 CP/TMU)
 - [ ] **本 change 可独立 archive**
 
 ---

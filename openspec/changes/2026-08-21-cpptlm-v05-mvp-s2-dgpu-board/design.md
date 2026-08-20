@@ -38,7 +38,7 @@ public:
     void write_reg(uint32_t offset, uint32_t value);                      // Doorbell ring trigger
     void tick();  // cp_→ tmu_→ sq_→ cuda_core_ 4 阶段
 
-    // 6 私有成员(s1 提供的 + s2 新增的):
+    // 8 私有成员(s1 提供的 + s2 新增的,per Phase F-H.2):
     DGpuBar bar_;
     Doorbell doorbell_;
     CommandProcessor cp_;

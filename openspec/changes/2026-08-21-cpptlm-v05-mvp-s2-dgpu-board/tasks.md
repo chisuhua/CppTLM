@@ -60,13 +60,25 @@ git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per
   };
   ```
 - [ ] **骨架实现**(W3-4 即可编译): tick() 内**默认 no-op**(状态机转换但不实际 fetch/decode);提供 `set_decoder` 接口供 s3 注入
-- [ ] `include/tlm/gpu/pm4_decoder_mvp.hh`(纯接口头,无 .cc,15 LOC):
+- [ ] `include/tlm/gpu/pm4_decoder_mvp.hh`(纯接口头,s3 可扩展加具体类):
   ```cpp
+  #include "tlm/gpu/pm4_types_mvp.hh"  // s2 定义 Pm4MethodHeader/Pm4MethodDispatch
+
   class Pm4DecoderInterface {
   public:
       virtual ~Pm4DecoderInterface() = default;
-      virtual void tick(CommandProcessor& cp) = 0;  // s3 填充
+      // s3 填充:4 method_addr ranges NVIDIA method packet 解析
+      // (per Phase F-H.3,真相源 UsrLinuxEmu gpfifo_translator.h:60-73 unpackPm4Header)
+      virtual Pm4MethodDispatch parse_method(
+          uint32_t method_header,
+          const uint32_t* payload,
+          uint32_t max_dwords) = 0;
   };
+
+  // s3 可选添加具体类(若 s2 头文件已含可省略):
+  // class Pm4Decoder : public Pm4DecoderInterface {
+  //     Pm4MethodDispatch parse_method(...) override { ... }
+  // };
   ```
 - [ ] 6 SECTION E2E 第 3 项"H2D 写 VRAM → install_kernel_module 返回 0"在 s2 W4 即可 PASS(CP 骨架 no-op,install_kernel_module 直接调 facade)
 - [ ] 6 SECTION E2E 第 4 项"IOCTL 0x01 pushbuffer → CQ 收到 N entry"**在 s2 W4 仍 FAIL**(待 s3 填充 CP decoder 后);s2 E2E 降级为 5 SECTION + "CP-pending" 标记
@@ -193,7 +205,7 @@ git commit -am "test(dgpu-board-v1-mvp): 6 SECTION E2E + 4 IOCTL tests (per Phas
 
 最终 s2 archive 前:
 - [ ] T-s2-1 ~ T-s2-5 完成
-- [ ] 7+ 个测试 PASS(6 SECTION + 5 SQ + 4 IOCTL + 1 Doorbell)
+- [ ] **10 个测试文件 PASS**(per Phase L:1 Doorbell + 5 SQ + 1 E2E 6 SECTION + 1 IOCTL 4 IOCTL + 2 骨架测试 CP/TMU)
 - [ ] 编译防火墙仍 PASS(s1 验证基础 + s2 不破坏)
 - [ ] docs 同步检查 PASS
 

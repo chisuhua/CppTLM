@@ -63,8 +63,8 @@ git commit -am "feat(command-processor-mvp): fill 5-state FSM (NVIDIA method pac
 - [ ] `TmuSubmitResult` 枚举: SUBMITTED / **BACKPRESSURED** / DEP_LATCH_MISMATCH / **SUBMIT_QUEUE_REJECTED**(per Phase F-H.4)
 - [ ] 依赖锁存器 `wait_on_latch_id ↔ arrive_at_latch_id` 匹配检查
 - [ ] pre-dispatch 3 段条件检查
-- [ ] **依赖**:`SubmitQueue& submit_queue_` + `CompletionRing& cq_`(per Phase F-H.4,不直接调 CudaCore)
-- [ ] `set_handler()` 注入到 SubmitQueue(替换 s2 no-op 骨架,`TmuHandlerInterface`)
+- [ ] **依赖**:`CompletionRing& cq_`(per Phase F-H.4,**不**直接调 CudaCore);**派发路径经 handler 注入**(per s2 T-s2-3b):handler 在 on_dispatch 内部调 SubmitQueue,TMU 不直持 SQ 引用
+- [ ] `set_handler()` 注入到 TmuDispatchProcessor(替换 s2 no-op 骨架,`TmuHandlerInterface`);s3 实现 handler 内部 `submit_queue_.enqueue(cta_desc)`
 - [ ] `test/test_tmu_dispatch_processor_mvp.cc` ~10 测试 PASS(替代 s2 骨架的反压测试):
   - submit / on_complete / BACKPRESSURED / dep chain / 环检测
 

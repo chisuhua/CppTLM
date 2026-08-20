@@ -98,7 +98,7 @@
 | 阶段 | 周次 | 范围 | 对应 openspec change |
 |------|------|------|---------------------|
 | **S1 MVP-Cut** | W1-2 | submodule + 内部链路跑通(PtxEmuSubmoduleMVP + CudaCoreAdapter) | **s1** |
-| **S2 Real-Board-Bind** | W3-4 | DGpuBoard 6 组件 + 4 IOCTL stub + JSON config | **s2** |
+| **S2 Real-Board-Bind** | W3-4 | DGpuBoard **8 组件** + 4 IOCTL stub + JSON config | **s2** |
 | **S3 TMU+CP+SQ 链路接通** | W5-6 | CP + NVIDIA PM4 + TMU 反压停 fetch + SubmitQueue | **s3 (前段)** |
 | **S4 Production** | W7-10 | validate_topology + 全量 baseline ≥880 + v0.5.0-MVP tag | **s3 (后段)** |
 
