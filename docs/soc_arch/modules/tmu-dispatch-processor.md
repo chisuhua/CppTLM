@@ -1,11 +1,11 @@
 # tmu-dispatch-processor 微架构文档
 
-> **类别**: GPU > TMU Glue · **状态**: 🔵 MVP 切片 (per ADR-X.17)
+> **类别**: GPU > TMU Glue · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
 > **Header**: `include/tlm/gpu/tmu_dispatch_processor_mvp.hh`
 > **位置**: DGpuBoardTLM 内部组件(非独立 ChStreamModuleBase)
 > **蓝图来源**: US20230236878A1 Task Dependency Table + per ADR-X.16 + v0.4 design §3.8
 > **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
-> **关联 ADR**: [`ADR-X.17-cpptlm-v05-mvp.md`](../../adr/ADR-X.17-cpptlm-v05-mvp.md) D5
+> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
 > **关联模块**: [`command-processor.md`](./command-processor.md) · [`cuda-core-adapter.md`](./cuda-core-adapter.md)
 > **首版 commit**: 🔵 W5-6 实施 · **最近更新**: 2026-08-19
 > **维护者**: CppTLM Team (Sisyphus)
@@ -21,46 +21,54 @@
 **核心特性**:
 - **MVP 简化版**:`submit` / `on_complete` / `try_chain_dependent` 三接口
 - **`inflight_kernel_reqs_` map**:32 slot(MVP 简化,v0.5 完整版 256 slot)
-- **LIFO eviction**:容量满时驱逐最近入队的非 pinned 任务
+- **反压停 fetch**(per Phase F-D.2 H5 修订):容量满时**拒绝新任务**并等待 CP tick 反压(对齐真实硬件 + UsrLinuxEmu `HardwarePullerEmu` channel backpressure);**不主动驱逐入队任务**(LIFO 驱逐会破坏 `pending_fence_id_` + `sim_fence_id_signal` 记账契约,per Oracle ses_fe29aa0d 审查)
+  - 历史(已废弃):原 LIFO eviction 模式 per Phase A S3 修订— **Oracle 审查发现此为 modeling red flag**:真实 GPU 队列满是反压停 fetch,不会主动驱逐+ 错误完成
 - **dep latch**:`wait_on_latch_id ↔ arrive_at_latch_id` 匹配检查
 - **pre-exit policy**:MVP 仅 NONE 档(LAST_BLOCK/EXPLICIT_KERNEL_MARKER 推到 v0.5 完整版)
 
 **MVP vs v0.5 完整版简化**:
-- ✅ 保留:3 接口 + dep latch + LIFO eviction
+- ✅ 保留:3 接口 + dep latch + **反压停 fetch**(per Phase F-D.2 H5 修订,原 LIFO eviction 改为反压)
 - ❌ 裁剪:32 slot(v0.5 完整版 256 slot)
 - ❌ 裁剪:Scheduler Cache LRU(仅 hash map)
 - ❌ 裁剪:TMD 字段 6 区精细化(per `docs/research/TMU/TMD.md`)
 - ❌ 裁剪:LAST_BLOCK/EXPLICIT_KERNEL_MARKER 档(MVP 仅 NONE)
 - ❌ 裁剪:refcount + OutDependence[] 管理
-- ❌ 裁剪:PREEXIT/ACQBULK 指令仿真(由 PTX-EMU 自含)
+- ❌ 裁剪:PREEXIT/ACQBULK **指令语义**(由 PTX-EMU 自含);**device-side 调度动作**(per Hopper WSDU PDL per `docs/research/TMU/US20230236878A1`)推迟到 v0.5 完整版(per Phase F-D.1 H4)— 真实 PDL 链路见 UsrLinuxEmu `sim_pdl_launch`(`plugins/gpu_driver/sim/pdl.cpp`)
 
 ---
 
-## 2. 架构概览
+## 2. 架构概览(per Phase F-H.4 修订)
 
 ```
 CommandProcessor (CP)
-    │ DISPATCH_DIRECT opcode
+    │ DISPATCH_DIRECT method_addr (0x4000-0x40FF)
     ▼
 TmuDispatchProcessor::submit(record)
     │
-    ├─ 1. select_cluster(stream_id) → cluster_id(固定绑定)
+    ├─ 1. select_cluster(stream_id) → cluster_id(MVP 单 cluster 返回 0)
     ├─ 2. inflight_kernel_reqs_[task_id] = record
     ├─ 3. pre_dispatch():
-    │      - dep_enable=false → 直接 dispatch
+    │      - dep_enable=false → 直接 dispatch 到 SubmitQueue
     │      - dep_enable=true → check_dep_latches()
-    │      - 若 inflight_kernel_reqs_.size() >= MAX_ACTIVE_TASKS → LIFO evict
-    └─ 4. CudaCoreAdapter::issueTask(record)
+    │      - 若 inflight_kernel_reqs_.size() >= MAX_ACTIVE_TASKS → **反压 stop fetch**(per Phase F-D.2 H5)
+    └─ 4. SubmitQueue[cluster_id].enqueue(cta_descriptor)
          │
-         ▼ (kernel 执行)
+         ▼ (分发网络:SubmitQueue = WDU + Work Distribution Crossbar 简化版)
          │
-CudaCoreAdapter::on_complete(image_id)
+SubmitQueue::dispatch_to_core(cta_desc)
+    │
+    ├─ 路由:cluster_id → target_core_id(MVP 单 SM = target_core_id=0)
+    └─ CudaCoreAdapter[target_core_id].on_cta_arrival(cta_desc)
+         │
+         ▼ (驱动式 warp 执行,深度集成 PTX-EMU)
+         │
+CudaCoreAdapter::on_warp_complete(task_id, status)
     │
     ▼
-TmuDispatchProcessor::on_complete(record)
+SubmitQueue::on_warp_complete(task_id) → TmuDispatchProcessor::on_complete
     │
     ├─ 1. inflight_kernel_reqs_.erase(task_id)
-    ├─ 2. CompletionRing::push(image_id, status)
+    ├─ 2. CompletionRing::push(task_id, status)
     ├─ 3. try_chain_dependent(record):
     │      - 遍历 inflight_kernel_reqs_,查找 wait_on_latch_id == record.arrive_at_latch_id
     │      - 链式推进(dep.ptr 指向的下一任务)
@@ -94,14 +102,14 @@ struct TmuDispatchRecord {
 };
 ```
 
-### 3.2 TmuSubmitResult 枚举
+### 3.2 TmuSubmitResult 枚举(per Phase F-H.4 修订:SUBMIT_QUEUE_REJECTED 替代 CUDA_CORE_REJECTED)
 
 ```cpp
 enum class TmuSubmitResult : uint8_t {
-    SUBMITTED,              // 成功提交
-    EVICTED_PREVIOUS,       // 容量满,驱逐前一任务(返回 evicted_id)
+    SUBMITTED,              // 成功提交到 SubmitQueue
+    BACKPRESSURED,           // 容量满,反压等待(per Phase F-D.2 H5 修订,替代原 EVICTED_PREVIOUS)
     DEP_LATCH_MISMATCH,     // dep latch 不匹配
-    CUDA_CORE_REJECTED,     // CudaCoreAdapter 拒绝
+    SUBMIT_QUEUE_REJECTED,  // SubmitQueue 拒绝(per Phase F-H.4:TMU 不再直接调 CudaCore)
 };
 ```
 
@@ -115,15 +123,15 @@ public:
     /// MVP 简化:32 slot 默认(可由 JSON params 配置)
     static constexpr uint32_t MAX_ACTIVE_TASKS_MVP = 32;
 
-    explicit TmuDispatchProcessor(CudaCoreAdapter& cuda_core,
-                                   CompletionRing& cq);
+    explicit TmuDispatchProcessor(SubmitQueue& submit_queue,
+                                   CompletionRing& cq);  // per Phase F-H.4:SubmitQueue 替代 CudaCoreAdapter
 
     /// CP 调:提交 kernel launch 请求
-    /// @return TmuSubmitResult(若 EVICTED_PREVIOUS,evicted_task_id 通过 out_evicted 输出)
+    /// @return TmuSubmitResult(若 BACKPRESSURED,evicted_task_id 仍通过 out_evicted 输出但表示被拒绝,需 CP tick 重试)
     TmuSubmitResult submit(TmuDispatchRecord record,
                            uint32_t* out_evicted = nullptr);
 
-    /// CudaCoreAdapter 完成 kernel 后调
+    /// SubmitQueue 完成后调(经 CudaCoreAdapter::on_warp_complete → SubmitQueue::on_warp_complete → TMU::on_complete)
     void on_complete(uint32_t task_id, int32_t status);
 
     /// 内部 dep chain 推进
@@ -135,12 +143,12 @@ public:
     // === 测试/监控接口 ===
     size_t inflight_count() const { return scheduler_cache_.size(); }
     uint64_t submit_count() const { return submit_count_; }
-    uint64_t evict_count() const { return evict_count_; }
+    uint64_t evict_count() const { return backpressure_count_; }  // per Phase F-D.2 H5:重命名为 backpressure_count_
     uint64_t complete_count() const { return complete_count_; }
 
     /// JSON params 注入
     void set_max_active_tasks(uint32_t n) { max_active_tasks_ = n; }
-    void set_lifo_evict(bool enabled) { lifo_evict_ = enabled; }
+    void set_backpressure(bool enabled) { backpressure_ = enabled; }  // per Phase F-D.2 H5 修订
 
 private:
     /// 简化版 cluster 选择(MVP:固定绑定 stream_id % cluster_count)
@@ -157,21 +165,22 @@ private:
     /// dep latch 匹配检查
     bool check_dep_latches(const TmuDispatchRecord& record) const;
 
-    /// LIFO eviction(选择最近入队的非 pinned 任务)
-    uint32_t lifo_evict();
+    /// 反压等待(per Phase F-D.2 H5 修订:替代原 LIFO eviction)
+    /// 返回 true 表示等待成功(callers 应 back off);false 表示 scheduler_cache_ 已空
+    bool backpressure_wait();
 
-    // === 依赖 ===
-    CudaCoreAdapter& cuda_core_;
+    // === 依赖(per Phase F-H.4 修订) ===
+    SubmitQueue& submit_queue_;       // 分发网络入口
     CompletionRing& cq_;
 
     // === 状态 ===
     std::unordered_map<uint32_t, TmuDispatchRecord> scheduler_cache_;
     uint32_t max_active_tasks_ = MAX_ACTIVE_TASKS_MVP;
-    bool lifo_evict_ = true;
+    bool backpressure_ = true;  // per Phase F-D.2 H5:反压停 fetch 替代 LIFO
 
     // === 统计 ===
     uint64_t submit_count_ = 0;
-    uint64_t evict_count_ = 0;
+    uint64_t backpressure_count_ = 0;  // per Phase F-D.2 H5
     uint64_t complete_count_ = 0;
     uint64_t dep_chain_advance_count_ = 0;
 };
@@ -195,29 +204,27 @@ TmuSubmitResult TmuDispatchProcessor::submit(TmuDispatchRecord record,
         return TmuSubmitResult::DEP_LATCH_MISMATCH;
     }
 
-    // 2. 容量检查 + LIFO eviction
-    uint32_t evicted_id = 0;
+    // 2. 容量检查 + 反压停 fetch(per Phase F-D.2 H5 修订)
+    //    替代原 LIFO eviction:真实 GPU 队列满时**反压** stop fetch,
+    //    不会主动驱逐入队任务(避免破坏 pending_fence_id_ + sim_fence_id_signal 记账契约)
     if (scheduler_cache_.size() >= max_active_tasks_) {
-        if (!lifo_evict_) {
-            return TmuSubmitResult::EVICTED_PREVIOUS;  // 不可驱逐
-        }
-        evicted_id = lifo_evict();
-        if (out_evicted) *out_evicted = evicted_id;
-        evict_count_++;
+        // 反压:返回 BACKPRESSURED,调用者应 back off 并重试
+        backpressure_count_++;
+        return TmuSubmitResult::BACKPRESSURED;
     }
 
     // 3. 插入 scheduler cache
     scheduler_cache_[record.task_id] = record;
     submit_count_++;
 
-    // 4. 派发到 CudaCoreAdapter
-    bool issued = cuda_core_.issueTask(record);
-    if (!issued) {
+    // 4. 派发到 SubmitQueue(per Phase F-H.4 修订:TMU 不再直接调 CudaCoreAdapter)
+    bool enqueued = submit_queue_.enqueue(cta_descriptor);
+    if (!enqueued) {
         scheduler_cache_.erase(record.task_id);
-        return TmuSubmitResult::CUDA_CORE_REJECTED;
+        return TmuSubmitResult::SUBMIT_QUEUE_REJECTED;
     }
 
-    return evicted_id ? TmuSubmitResult::EVICTED_PREVIOUS : TmuSubmitResult::SUBMITTED;
+    return TmuSubmitResult::SUBMITTED;
 }
 ```
 
@@ -259,7 +266,7 @@ void TmuDispatchProcessor::try_chain_dependent(const TmuDispatchRecord& complete
 }
 ```
 
-### 5.4 LIFO eviction
+### 5.4 反压停 fetch(per Phase F-D.2 H5 修订,替代原 §5.4 LIFO eviction)
 
 ```cpp
 uint32_t TmuDispatchProcessor::lifo_evict() {
@@ -324,7 +331,7 @@ MVP dep latch 实现:
 |----------|------|------|
 | `test_tmu_dispatch_processor_mvp.cc` | `[tmu][mvp][glue]` | submit / on_complete / try_chain_dependent / LIFO eviction / dep chain / 环检测 |
 
-**验收标准**(per ADR-X.17 G-MVP-3):
+**验收标准**(per ADR-SOC-06 G-MVP-3):
 - 3 接口(单测) PASS
 - 32+1 LIFO eviction PASS(第 33 task 触发驱逐)
 - dep chain 链式推进 PASS(depth=3)
@@ -355,8 +362,10 @@ MVP dep latch 实现:
 
 ## 10. 修订历史
 
-- **2026-08-19**: 初版 — per ADR-X.17 D5 切片(MVP 4 阶段 S3)
+- **2026-08-19**: 初版 — per ADR-SOC-06 D5 切片(MVP 4 阶段 S3)
+- **2026-08-20**: Phase F-D.2 H5 修订(LIFO eviction → 反压停 fetch)
+- **2026-08-20**: **Phase F-H.4 修订**:**TMU 不再直接调 CudaCoreAdapter**;改为 `TmuDispatchProcessor → SubmitQueue → CudaCoreAdapter` 链路(per `dgpu-board.md` §2.3.1 架构重定义 + `cuda-core-adapter.md` §F-H.1 深度集成)。`TmuSubmitResult::CUDA_CORE_REJECTED` → `SUBMIT_QUEUE_REJECTED`。R1/R3 缓解措施同步更新(无 LIFO 驱逐,无驱逐丢失 completion 路径)
 
 ---
 
-*维护者: CppTLM Team (Sisyphus) · 最后更新: 2026-08-19*
+*维护者: CppTLM Team (Sisyphus) · 最后更新: 2026-08-20*

@@ -1,8 +1,8 @@
 # Roadmap: cpptlm-v05-mvp → cpptlm-v05-full (MVP 切片到完整版)
 
-> **类别**: SoC Architecture > Roadmap · **状态**: 🔵 MVP 切片 (per ADR-X.17)
+> **类别**: SoC Architecture > Roadmap · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
 > **日期**: 2026-08-19 / 修订 2026-08-20(Phase A/C 修复 + DP1=B/DP2=A/DP4=C 决策)· **维护者**: CppTLM Team (Sisyphus)
-> **关联 ADR**: [`ADR-X.17-cpptlm-v05-mvp.md`](../../adr/ADR-X.17-cpptlm-v05-mvp.md) D1
+> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D1
 > **关联 OpenSpec**:
 > - MVP: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
 > - 完整版: [`openspec/changes/2026-08-19-cpptlm-v05-redo/`](../../../openspec/changes/2026-08-19-cpptlm-v05-redo/) (12 周 P0'-P4',MVP 验证后启动)
@@ -38,11 +38,13 @@
 │             │ 验收通过                                                      │
 │             ▼                                                                │
 │  ┌─────────────────────┐                                                   │
-│  │ S3 Warp-Precision    │  ← CP + PM4 + TMU + per-warp 调用                │
-│  │   - CommandProcessor │                                                   │
+│  │ S3 TMU+CP+SQ 链路接通  ← CP + NVIDIA PM4 + TMU + SubmitQueue(WDU 分发网络)│
+│  │   - CommandProcessor │   + CudaCore 深度集成 PTX-EMU(per Phase F-H)        │
 │  │   - Pm4Decoder       │                                                   │
 │  │   - TmuDispatch      │                                                   │
-│  │   - 白盒 warp 路径   │                                                   │
+│  │   - SubmitQueue(新)  │                                                   │
+│  │   - CudaCoreAdapter  │                                                   │
+│  │     (深度集成 PTX-EMU)│                                                   │
 │  └──────────┬──────────┘                                                   │
 │             │ 验收通过                                                      │
 │             ▼                                                                │
@@ -80,7 +82,7 @@
 
 - `PtxEmuSubmoduleMVP` 加载 PTX-EMU submodule
 - `CudaCoreAdapter` 黑盒 dispatch 路径跑通
-- 5 单测 PASS(per ADR-X.17 G-MVP-1)
+- 5 单测 PASS(per ADR-SOC-06 G-MVP-1)
 
 ### 2.2 关键交付
 
@@ -89,9 +91,9 @@
 | `git submodule add external/PTX-EMU` + pin 到 `PTX-EMU@87820951`(per **DP1=B** 决策,2026-08-13 audit commit) | `git submodule status` 显示 PTX-EMU commit hash | ⏳ W1 |
 | `CMakeLists.txt` `add_subdirectory(external/PTX-EMU)` + `PTX_EMU_BUILD_TESTS=OFF` + `-fvisibility=hidden` | `cmake --build build` 通过 | ⏳ W1 |
 | `include/tlm/gpu/ptx_emu_submodule_mvp.hh` + `.cc` | 编译通过 | � W1-2 |
-| `include/tlm/gpu/cuda_core_adapter_mvp.hh` + `.cc` | 黑盒 dispatch_blackbox 通过 | ⏳ W2 |
-| `test/test_ptx_emu_submodule_mvp.cc` 8 ABI 单测 | ctest PASS | ⏳ W2 |
-| `test/test_cuda_core_adapter_mvp.cc` 黑盒 dispatch | ctest PASS | � W2 |
+| `include/tlm/gpu/cuda_core_adapter_mvp.hh` + `.cc` | **深度集成 PTX-EMU 内部 C++ 接口**(per Phase F-H.1):`on_cta_arrival/tick/on_warp_complete` | ⏳ W2 |
+| `test/test_ptx_emu_submodule_mvp.cc` **深度集成接口单测**(per Phase F-H.6) | ctest PASS | ⏳ W2 |
+| `test/test_cuda_core_adapter_mvp.cc` **驱动式 warp 执行**(per Phase F-H.1) | ctest PASS | ⏳ W2 |
 
 ### 2.3 关键 Commit
 
@@ -120,7 +122,7 @@ git commit -am "feat(cuda-core-mvp): CudaCoreAdapter with dispatch_blackbox (ima
 - `DGpuBoardTLM` 包装 5 内部组件
 - 接入 UsrLinuxEmu IOCTL 0x27/0x28 stub(端到端跑通)
 - JSON config 驱动 `instantiateAll`
-- 6 SECTION E2E 测试 PASS(per ADR-X.17 G-MVP-2)
+- 6 SECTION E2E 测试 PASS(per ADR-SOC-06 G-MVP-2)
 
 ### 3.2 关键交付
 
@@ -272,7 +274,7 @@ CudaCoreAdapter::issueTask()
 | `ScoreboardTLM::tick()` per-warp tracking 与 PTX-EMU 同步 | 集成测试 PASS | ⏳ W8 |
 | `PipelineTLM::issue(latency)` API | 集成测试 PASS | ⏳ W8 |
 | `validate_topology` CMake target 集成 | `cmake --build build --target validate_topology` PASS | ⏳ W9 |
-| 全部 ≥880 测试 PASS(per ADR-X.17 G-MVP-4) | `build/bin/cpptlm_tests` PASS | ⏳ W9 |
+| 全部 ≥880 测试 PASS(per ADR-SOC-06 G-MVP-4) | `build/bin/cpptlm_tests` PASS | ⏳ W9 |
 | `CHANGELOG.md` 记录 v0.5.0-MVP | 文档同步 | ⏳ W10 |
 | `git tag -a v0.5.0-MVP` | tag 创建 | ⏳ W10 |
 
@@ -345,7 +347,7 @@ P4' (W11-12) 收尾 + v0.5.0 tag
 | **PTX-EMU** | submodule pin `PTX-EMU@87820951`(per DP1=B)— 白盒 API 不需要(per DP4=C 永久禁用) | 🟡 W1 submodule 锁定 | 🟡 v0.5 完整版白盒补足(per ADR-X.16 P0'-P4') |
 | **UsrLinuxEmu** | IOCTL 0x27/0x28 真实路径 + ADR-090 v2 ✅ Accepted(2026-08-18) | 🟡 S2 stub 模式(W3-4) | 🟡 完整集成(后续) |
 | **TaskRunner** | `cuModuleLoadData` 解析(已有) + tadr-308 待创建(per ADR-090 §C0.3) | ✅ 已 ship | - |
-| **CppTLM** | 本 roadmap + ADR-X.17 + openspec change | 🔵 MVP 实施 | 🟡 v0.5 完整版(后续) |
+| **CppTLM** | 本 roadmap + ADR-SOC-06 + openspec change | 🔵 MVP 实施 | 🟡 v0.5 完整版(后续) |
 
 **MVP 跨仓 commit 顺序**(per ADR-035 §R5.1 + UsrLinuxEmu ADR-090 v2 §C0.4 跨仓引用新规 + DP1=B + DP4=C 决策):
 ```
@@ -401,8 +403,13 @@ P4' (W11-12) 收尾 + v0.5.0 tag
 
 ## 10. 修订历史
 
-- **2026-08-19**: 初版 — per ADR-X.17 D1 切片(MVP 4 阶段 6-10 周 + 可选 v0.5 完整版 12 周)
+- **2026-08-19**: 初版 — per ADR-SOC-06 D1 切片(MVP 4 阶段 6-10 周 + 可选 v0.5 完整版 12 周)
+- **2026-08-20**: Phase A/C/F/F-G 修订 — 阶段链路、决策落地、Phase F Oracle 审查
+- **2026-08-20**: **Phase F-H 架构重定义**(用户要求"TMU→CudaCore 之间有分发网络 + MVP 深度集成 PTX-EMU"):
+  - **S3 阶段扩展**:从"CP + PM4 + TMU + per-warp 调用"改为"CP + NVIDIA PM4 + TMU + **SubmitQueue(WDU 分发网络)** + CudaCore **深度集成 PTX-EMU**"
+  - **S1 S2 单元测试更新**:`8 ABI 单测` → `深度集成接口单测`;`黑盒 dispatch_blackbox` → `驱动式 warp 执行(on_cta_arrival + per-tick exe_once + WarpState 镜像)`
+  - **新增模块**:`include/tlm/gpu/submit_queue_mvp.hh` + `.cc`(per `submit-queue.md` §F-H.5 WDU 单 SM 路由 + per-cluster pending FIFO 32 + per-core active 4)
 
 ---
 
-*维护者: CppTLM Team (Sisyphus) · 最后更新: 2026-08-19*
+*维护者: CppTLM Team (Sisyphus) · 最后更新: 2026-08-20*

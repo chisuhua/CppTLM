@@ -1,11 +1,11 @@
 # command-processor 微架构文档
 
-> **类别**: GPU > Command Processor · **状态**: 🔵 MVP 切片 (per ADR-X.17)
+> **类别**: GPU > Command Processor · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
 > **Header**: `include/tlm/gpu/command_processor_mvp.hh`
 > **位置**: DGpuBoardTLM 内部组件(非独立 ChStreamModuleBase)
-> **蓝图来源**: AMD PM4 spec + Mesa convention + per ADR-X.16 §3.2
+> **蓝图来源**: AMD PM4 spec + Mesa convention + per ADR-X.16 §3.2 + **per Phase F-B.2 H2 修订:路径3(Oracle 推荐)嵌入式 PM4 模式**(GPFIFO 外壳 + `payload[0]`=PM4 header,与 UsrLinuxEmu `gpfifo_translator.cpp:103 parsePm4Packet` 先例对齐)
 > **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
-> **关联 ADR**: [`ADR-X.17-cpptlm-v05-mvp.md`](../../adr/ADR-X.17-cpptlm-v05-mvp.md) D5
+> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
 > **首版 commit**: 🔵 W5-6 实施 · **最近更新**: 2026-08-19
 > **维护者**: CppTLM Team (Sisyphus)
 
@@ -15,6 +15,9 @@
 > - PM4 解析: [`pm4-decoder.md`](./pm4-decoder.md)
 > - TMU Glue: [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md)
 > - AMD PM4 调研: [`docs/research/CP/`](../../research/CP/) (12 专利)
+>   - [`docs/research/CP/amd/overview.md`](../../research/CP/amd/overview.md):AMD CP/IB/doorbell/HQD/SPI 全链路 + 6 专利族 + 与 NVIDIA 对照
+>   - [`docs/research/CP/nvidia/overview.md`](../../research/CP/nvidia/overview.md):NVIDIA pushbuffer/Front End/TMU/WDU + 7 专利族
+> - **UsrLinuxEmu 端 GPFIFO 先例**:`plugins/gpu_driver/sim/scheduler/translator/gpfifo_translator.cpp:103 parsePm4Packet` 已实现 "GPFIFO 外壳 + `payload[0]`=PM4 header" 嵌入式— **本 MVP 路径 3 与此先例字节级对齐**(per Phase F-B.4 M2)
 
 ---
 
@@ -26,13 +29,13 @@
 - **5-state FSM**:`IDLE → FETCH → DECODE → DISPATCH → COMPLETE`
 - **Mesa-style TYPE3** header 解析(per ADR-X.16 §3.2 位字段修正)
 - **MVP 4 opcodes**:DISPATCH_DIRECT(0x15)/ EVENT_WRITE(0x46)/ RELEASE_MEM(0x49)/ ACQUIRE_MEM(0x58)
-- **5 subchannel context**(subchannel 0-4,per Mesa convention)
+- **8 subchannel context**(subchannel 0-7,per UsrLinuxEmu `gpu_types.h:40` `gpu_gpfifo_entry.subchannel : 3`)— **Phase F-B.2 H2 修订**:原"5 个 per Mesa convention"为事实错误;AMD PM4 实际无 subchannel 概念(用 per-queue/ring doorbell),NVIDIA GPFIFO 是 3-bit(0-7)
 - **反 v0.4.1 决策**:host driver 仅写入 ring buffer,硬件 CP 解析 PM4(符合真实 PCIe 设备语义)
 
 **MVP vs v0.5 完整版简化**:
-- ✅ 保留:5-state FSM + Mesa TYPE3 + 5 subchannel
+- ✅ 保留:5-state FSM + Mesa TYPE3 + **8 subchannel**(per Phase F-B.2 H2 修订)
 - ❌ 裁剪:14 deferred opcodes(MVP 仅 4 个)
-- ❌ 裁剪:PREEXIT/ACQBULK 指令仿真(由 PTX-EMU 自含)
+- ❌ 裁剪:PREEXIT/ACQBULK **指令语义**(由 PTX-EMU 自含);**device-side 调度动作**推迟到 v0.5 完整版(per Phase F-D.1 H4 修订,纠正原"PTX-EMU 自含"混淆)— 真实 PDL 链路见 UsrLinuxEmu `sim_pdl_launch`
 - ❌ 裁剪:ring buffer 完整 cycle 精度(仅延迟区间断言)
 - ❌ 裁剪:CP microcode(per AMD PM4 spec §D7,推到 v0.5 完整版)
 
@@ -106,7 +109,7 @@ CP.tick()
 ```cpp
 class CommandProcessor {
 public:
-    /// 状态枚举(per Mesa convention)
+    /// 状态枚举(per Mesa convention + ADR-X.16 §3.2)
     enum class State { IDLE, FETCH, DECODE, DISPATCH, COMPLETE };
 
     /// 5-state FSM 状态查询
@@ -132,22 +135,22 @@ private:
     uint32_t current_entry_index_ = 0;
     uint32_t current_dword_count_ = 0;
 
-    // === Subchannel context[5](per Mesa convention) ===
+    // === Subchannel context[8](per Phase F-B.2 H2 修订:NVIDIA GPFIFO 3-bit = 8 subchannels) ===
     struct SubchannelContext {
         uint64_t ring_base_addr = 0;
         uint64_t ring_size = 0;
         uint64_t wptr = 0;
         uint64_t rptr = 0;
     };
-    std::array<SubchannelContext, 5> sub_ctx_;
+    std::array<SubchannelContext, 8> sub_ctx_;
 
-    // === PM4 解析 ===
+    // === PM4 解析(per Phase F-H.3 修订:NVIDIA method packet 替代 Mesa-style TYPE3) ===
     Pm4Decoder decoder_;
     uint32_t max_dwords_per_packet_ = 64;  // MVP 简化
 
     // === 依赖注入 ===
     DGpuBar& bar_;
-    TmuDispatchProcessor& tmu_;
+    TmuDispatchProcessor& tmu_;       // 输出 Pm4MethodDispatch → TMU
     CompletionRing& cq_;
 
     // === 统计 ===
@@ -157,13 +160,13 @@ private:
     uint64_t release_mem_count_ = 0;
     uint64_t acquire_mem_count_ = 0;
 
-    // === 内部方法 ===
-    Pm4Packet fetch_packet();
-    void dispatch_packet(const Pm4Packet& packet);
-    void handle_dispatch_direct(const Pm4Packet& packet);
-    void handle_event_write(const Pm4Packet& packet);
-    void handle_release_mem(const Pm4Packet& packet);
-    void handle_acquire_mem(const Pm4Packet& packet);
+    // === 内部方法(per Phase F-H.3 修订) ===
+    Pm4MethodDispatch fetch_packet();         // 返回 method_addr + decoded fields
+    void dispatch_packet(const Pm4MethodDispatch& packet);
+    void handle_dispatch_direct(const Pm4MethodDispatch& packet);
+    void handle_event_write(const Pm4MethodDispatch& packet);
+    void handle_release_mem(const Pm4MethodDispatch& packet);
+    void handle_acquire_mem(const Pm4MethodDispatch& packet);
 };
 ```
 
@@ -186,9 +189,10 @@ void CommandProcessor::tick() {
             break;
 
         case State::DECODE:
-            decoder_.parse_type3(current_packet_.header,
+            // per Phase F-H.3 修订:NVIDIA method packet 解码(替代 Mesa-style TYPE3)
+            decoder_.parse_method(current_packet_.method_header,
                                   current_packet_.payload.data(),
-                                  current_packet_.count);
+                                  current_packet_.data_count);
             state_ = State::DISPATCH;
             packets_decoded_++;
             break;
@@ -210,65 +214,88 @@ void CommandProcessor::tick() {
 }
 ```
 
-### 4.2 fetch_packet()
+### 4.2 fetch_packet()(per 路径 3 修订:GPU VA 内存读 + 真实 sizeof 步进)
 
 ```cpp
-Pm4Packet CommandProcessor::fetch_packet() {
-    Pm4Packet packet;
+Pm4MethodDispatch CommandProcessor::fetch_packet() {
+    Pm4MethodDispatch packet;
 
-    // 读 gpu_gpfifo_entry.payload[0](PM4 header)
-    // 注:每 gpfifo_entry = 16 字节(per UsrLinuxEmu ADR-057 D2 v2 修订:76→84 字节;
-    //     头部 4 字节(PM4 header)+ payload[0] 起点 4 字节 + 后续 dword 步进 4 字节)
-    //     MVP 简化:每 entry 固定 16 字节(header + 起始 payload dword)
-    uint32_t header = bar_.read_reg(CP_HEADER_OFFSET + current_entry_index_ * 16);
-    packet.header = header;
-    packet.count = (header >> 16) & 0x3FFF;  // bits 16-29
+    // 注(per Phase F-C.3 H1 修订):CP 从 **GPU VA 内存** 读 GPFIFO entries,
+    //    不是从 BAR0 MMIO 读(per UsrLinuxEmu `hardware_puller_emu.cpp:82-83` +
+    //    `fetchEntry(entry)` + Oracle ses_fe29aa0d 审查)
+    //    ring buffer 在设备内存(VRAM),BAR0 MMIO 只放 doorbell
 
-    // 读 payload(count dwords)
-    for (uint32_t i = 0; i < packet.count && i < max_dwords_per_packet_; ++i) {
-        packet.payload.push_back(
-            bar_.read_reg(CP_HEADER_OFFSET + current_entry_index_ * 16 + 4 + i * 4)
-        );
+    // 步进 = 真实 sizeof(gpu_gpfifo_entry) packed ≈ 109 字节
+    constexpr size_t ENTRY_STRIDE = sizeof(gpu_gpfifo_entry);  // ≈ 109B
+    uint64_t entry_addr = ring_base_addr_ + current_entry_index_ * ENTRY_STRIDE;
+
+    // 读 entry header(bitfield + format)
+    gpu_gpfifo_entry entry;
+    mem_read_vram(entry_addr, &entry, sizeof(entry));
+
+    // 路径 3(per Phase F-C.1 + Phase F-H.3):FORMAT_PM4 时,从 payload[0] 取 **NVIDIA method packet header**
+    if (entry.format == FORMAT_PM4) {
+        uint32_t method_header = static_cast<uint32_t>(entry.payload[0]);
+        if (method_header == 0) return packet;  // invalid, per UsrLinuxEmu `gpfifo_translator.cpp:105`
+
+        // 调 Pm4Decoder::parse_method(从 payload[1..data_count] 取 method payload)
+        // per Phase F-H.3:NVIDIA method packet 格式(inc:1 / method_addr:15 / subchannel:4 / data_count:4)
+        packet = pm4_decoder_.parse_method(method_header,
+                                            &entry.payload[1],
+                                            max_dwords_per_packet_);
+        packet.subchannel_id = static_cast<uint8_t>((method_header >> 16) & 0xF);
+        packet.method_addr = static_cast<uint16_t>((method_header >> 0) & 0x7FFF);  // per unpackPm4Header
+        packet.data_count = static_cast<uint8_t>((method_header >> 24) & 0xF);
+    } else {
+        // 非 FORMAT_PM4 entry:原生 GPFIFO 方法(per UsrLinuxEmu `gpu_types.h:56-67` GPU_OP_*)
+        // MVP 阶段仅支持 FORMAT_PM4;其他格式视为 invalid
+        packet.valid = false;
+        return packet;
     }
 
     return packet;
 }
 ```
 
-> **gpfifo_entry size 来源**:
-> - **真实硬件**: AMD gpfifo_entry = 8 dword(32 字节),前 4 dword 是 PM4 header
-> - **UsrLinuxEmu `gpu_gpfifo_entry`**: per [UsrLinuxEmu ADR-057](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-057-cp-profiling-hooks-timestamp.md) D2 v2 修订后 = 84 字节(原 76 字节 + 8 字节 timestamp 扩展);MVP 简化采用 16 字节步进假设(header 4B + 起始 payload 4B + 步进 4B × 后续)
-> - **v0.5 完整版**:对齐 UsrLinuxEmu 真实 84 字节结构,fetch_packet() 引入 `payload_offset_within_entry` 字段
-> - **追溯锚点**: UsrLinuxEmu ADR-057 §D3 方案 2 + `include/gpu_gpfifo_entry` 真实定义
+> **修订注记**(per Phase F-C.3 H1 + Oracle ses_fe29aa0d 审查):
+> 1. **fetch 源位置**:`mem_read_vram(GPU_VA)` 替代 `bar_.read_reg(BAR0 MMIO)` — 真实硬件与 UsrLinuxEmu sim 均从设备内存拉 ring,BAR0 仅放 doorbell
+> 2. **步进大小**:`sizeof(gpu_gpfifo_entry)` packed ≈ 109B 替代原"16 字节" — 原值是 MVP 简化错误,真实结构详见 UsrLinuxEmu `plugins/gpu_driver/shared/gpu_types.h:36-53`
+> 3. **FORMAT 字段**:`gpu_gpfifo_entry` 含 `format` 字段(per `gpu_ioctl.h`),路径 3 仅处理 `FORMAT_PM4`,其他 format 视为 invalid
+> 4. **追溯锚点**:UsrLinuxEmu `gpu_types.h:36-53` + `gpu_ioctl.h:723-779` + `gpfifo_translator.cpp:103-140`
 
-### 4.3 dispatch_packet()(MVP 4 opcodes)
+### 4.3 dispatch_packet()(per Phase F-H.3:NVIDIA method_addr ranges 替代 Pm4Opcode)
 
 ```cpp
-void CommandProcessor::dispatch_packet(const Pm4Packet& packet) {
-    switch (packet.opcode) {
-        case Pm4Opcode::DISPATCH_DIRECT:  // 0x15
+void CommandProcessor::dispatch_packet(const Pm4MethodDispatch& packet) {
+    // NVIDIA method_addr 范围判定(per Pm4MethodOpcode 枚举):
+    switch (packet.method_addr) {
+        case Pm4MethodOpcode::DISPATCH_DIRECT:  // 0x4000-0x40FF range
             handle_dispatch_direct(packet);
             dispatch_direct_count_++;
+            // → tmu_.submit(dispatch_packet)
             break;
 
-        case Pm4Opcode::EVENT_WRITE:  // 0x46
+        case Pm4MethodOpcode::EVENT_WRITE:  // 0x4200-0x42FF range
             handle_event_write(packet);
             event_write_count_++;
+            // → cq_.push(event_id)
             break;
 
-        case Pm4Opcode::RELEASE_MEM:  // 0x49
+        case Pm4MethodOpcode::RELEASE_MEM:  // 0x4400-0x44FF range
             handle_release_mem(packet);
             release_mem_count_++;
+            // → cq_.push(mem_release_status)
             break;
 
-        case Pm4Opcode::ACQUIRE_MEM:  // 0x58
+        case Pm4MethodOpcode::ACQUIRE_MEM:  // 0x4500-0x45FF range
             handle_acquire_mem(packet);
             acquire_mem_count_++;
+            // → cq_.push(mem_acquire_status)
             break;
 
         default:
-            // 14 deferred opcodes(MVP 不支持,log warn)
-            log_warn("CommandProcessor: unsupported opcode 0x%02x", packet.opcode);
+            // 14 deferred method_addr ranges(MVP 不支持,log warn)
+            log_warn("CommandProcessor: unsupported method_addr 0x%04x", packet.method_addr);
             break;
     }
 }
@@ -285,36 +312,48 @@ per ADR-X.16 D5:
 - v0.4.1 设计删除 CP(让 host 解析),**反 PCIe 设备语义**
 - MVP 重新启用 CP 模块,符合真实硬件
 
-### 5.2 Mesa-style TYPE3 header(per Oracle C-NEW-3 修正)
+### 5.2 NVIDIA method packet header(per Phase F-H.3 修订,替代 Mesa-style TYPE3)
 
-per `ADR-X.16 §3.2`:
+per UsrLinuxEmu `plugins/gpu_driver/sim/scheduler/translator/gpfifo_translator.h:60-73` `unpackPm4Header`:
 ```cpp
-struct Pm4Type3Header {
-    uint32_t IT          : 1;    // bit 0 (Increment Type)
-    uint32_t predicate  : 1;    // bit 1
-    uint32_t opcode     : 8;    // bits 2-9 (256 opcodes)
-    uint32_t reserved   : 6;    // bits 10-15
-    uint32_t count      : 14;   // bits 16-29 (16K dwords)
-    uint32_t type       : 2;    // bits 30-31 = 0b11 (TYPE3 标志)
+struct Pm4MethodHeader {
+    uint32_t inc        : 1;    // bit 0 (Increment register;1=write-then-inc,0=write-only)
+    uint32_t method_addr: 15;   // bits 1-15 (32K method addresses)
+    uint32_t subchannel : 4;    // bits 16-19 (NVIDIA GPFIFO 4-bit = 16 subchannels)
+    uint32_t data_count : 4;    // bits 20-23 (up to 15 dwords payload)
+    uint32_t reserved   : 8;    // bits 24-31
 };
 ```
 
-**注意**:v0.5 修正了 `opcode` 字段宽度从 7 bits → 8 bits,`reserved` 从 7 bits → 6 bits(per Oracle 评审)。
+**修订要点**(per Phase F-H.3):
+- **MVP MVP method_addr 范围**(per Pm4MethodOpcode):
+  - `0x4000-0x40FF`:DISPATCH_DIRECT(per Hopper PM4 spec)
+  - `0x4200-0x42FF`:EVENT_WRITE
+  - `0x4400-0x44FF`:RELEASE_MEM
+  - `0x4500-0x45FF`:ACQUIRE_MEM
+- **subchannel**:`unpackPm4Header` 是 4-bit(per UsrLinuxEmu 真实),但 `gpu_gpfifo_entry.subchannel` 是 3-bit(per `gpu_types.h:40`)= 8 subchannels(MVP 实际使用上限);Phase F-H.3 与 Phase F-B.2 协调
+- **与 Mesa-style TYPE3 不兼容**:Mesa 用 `type=0b11` 标识 TYPE3 header,MVP 路径 3 用 NVIDIA 字段布局;**两种格式字节级不兼容**,MVP 路径 3 仅支持 NVIDIA
 
-### 5.3 5 subchannel context
+### 5.3 8 subchannel context(per Phase F-B.2 H2 修订)
 
-per Mesa convention,每个 subchannel 独立 ring buffer:
-- subchannel 0-3: graphics / compute / DMA / VCN
-- subchannel 4: reserved
+per UsrLinuxEmu `gpu_types.h:40` `gpu_gpfifo_entry.subchannel : 3`(NVIDIA GPFIFO 惯例),每个 subchannel 独立 ring buffer(AMD PM4 不使用此概念,仅列作对比参考):
+- subchannel 0-3: graphics / compute / DMA / VCN(per Mesa 命名约定,**仅作参考**)
+- subchannel 4-7: reserved(per NVIDIA GPFIFO 3-bit 全 8 范围)
 
-MVP 仅用 subchannel 0 (compute),其他 4 个预留。
+MVP 仅用 subchannel 0 (compute),其他 7 个预留。
+
+> **修订注记**(per Phase F-B.2 H2 + Oracle ses_fe29aa0d 审查):
+> 原文档"5 个 subchannel per Mesa convention"为事实错误,**两头不靠**:
+> - NVIDIA GPFIFO 是 3-bit(8 subchannels),UsrLinuxEmu 真实采用
+> - AMD PM4 无 subchannel 概念(用 per-queue doorbell)
+> - "Mesa convention"无权威定义(grep `docs/research/CP/{amd,nvidia}/overview.md` 中 "subchannel" 零命中)
 
 ### 5.4 状态转换正确性
 
 5-state FSM 转换必须严格:
 - `IDLE → FETCH`: 仅 doorbell wake
-- `FETCH → DECODE`: 仅当 header.type == TYPE3(否则回 IDLE + log error)
-- `DECODE → DISPATCH`: 仅当 Pm4Decoder 返回有效 Pm4Packet
+- `FETCH → DECODE`: 仅当 `entry.format == FORMAT_PM4` 且 `method_header != 0`(per `gpfifo_translator.cpp:105`)
+- `DECODE → DISPATCH`: 仅当 Pm4Decoder::parse_method 返回有效 Pm4MethodDispatch
 - `DISPATCH → COMPLETE`: 仅当 handler 成功返回
 - `COMPLETE → IDLE|FETCH`: ring 空回 IDLE,否则回 FETCH
 
@@ -327,10 +366,10 @@ MVP 仅用 subchannel 0 (compute),其他 4 个预留。
 | `test_command_processor_mvp.cc` | `[command-processor][mvp]` | 5-state FSM 转换测试 + 4 opcode 路径测试 |
 | `test_pm4_decoder_mvp_integration.cc` | `[command-processor][pm4-decoder][integration]` | CP + Pm4Decoder 集成测试 |
 
-**验收标准**(per ADR-X.17 G-MVP-3):
+**验收标准**(per ADR-SOC-06 G-MVP-3):
 - 5 transition 测试 PASS(每个 FSM 转换)
-- 4 opcode 路径 PASS(DISPATCH_DIRECT/EVENT_WRITE/RELEASE_MEM/ACQUIRE_MEM)
-- Mesa-style TYPE3 bit field round-trip PASS
+- 4 method_addr range 路径 PASS(DISPATCH_DIRECT/EVENT_WRITE/RELEASE_MEM/ACQUIRE_MEM)
+- **NVIDIA method packet** bit field round-trip PASS(`inc/method_addr/subchannel/data_count` per `unpackPm4Header`)
 
 ---
 
@@ -348,9 +387,9 @@ MVP 仅用 subchannel 0 (compute),其他 4 个预留。
 
 | # | 风险 | 概率 | 影响 | 缓解 |
 |---|------|:---:|:---:|------|
-| R1 | Mesa-style TYPE3 bit field 与 KFD 约定不同 | 中 | 中 | 同时验证 Mesa + KFD 两种 convention |
+| R1 | NVIDIA method packet 与 AMD PM4 TYPE3 字节级不兼容(per Phase F-H.3) | 中 | 中 | MVP 路径 3 仅支持 NVIDIA;AMD PM4 推迟到 v0.5 完整版 |
 | R2 | 5-state FSM 状态转换遗漏 | 中 | 高 | TDD 5 transition 测试 |
-| R3 | 14 deferred opcodes 缺失触发 host 程序崩溃 | 中 | 中 | log warn + 错误传播 + CQ::push(status=ERROR) |
+| R3 | 14 deferred method_addr ranges 缺失触发 host 程序崩溃 | 中 | 中 | log warn + 错误传播 + CQ::push(status=ERROR) |
 | R4 | Subchannel context 切换错误 | 低 | 中 | MVP 仅用 subchannel 0,其他预留 |
 | R5 | ring buffer 空触发状态机卡死 | 低 | 高 | COMPLETE 状态显式检查 `more_entries_in_ring()` |
 
@@ -358,8 +397,10 @@ MVP 仅用 subchannel 0 (compute),其他 4 个预留。
 
 ## 9. 修订历史
 
-- **2026-08-19**: 初版 — per ADR-X.17 D5 切片(MVP 4 阶段 S3)
+- **2026-08-19**: 初版 — per ADR-SOC-06 D5 切片(MVP 4 阶段 S3)
+- **2026-08-20**: Phase F-C.1/C.2/C.3/B.2/B.4/B.3 修订(路径 3 NVIDIA method packet + GPU VA fetch + 8 subchannels + 0x28 stub 语义)
+- **2026-08-20**: **Phase F-H.3 修订**:**完全切换至 NVIDIA method packet 格式家族** — `Pm4Packet/Pm4Opcode` 替换为 `Pm4MethodDispatch/Pm4MethodOpcode`(uint16_t method_addr 范围);**删除 Mesa-style TYPE3 header 段落**;`dispatch_packet` 4 cases 改为 4 method_addr range;`parse_type3` 替换为 `parse_method`。**CP 输出统一为 Pm4MethodDispatch packet → TMU**(per `tmu-dispatch-processor.md` §F-H.4 修订)
 
 ---
 
-*维护者: CppTLM Team (Sisyphus) · 最后更新: 2026-08-19*
+*维护者: CppTLM Team (Sisyphus) · 最后更新: 2026-08-20*

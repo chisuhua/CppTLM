@@ -1,337 +1,478 @@
-# cuda-core-adapter 微架构文档
+# cuda-core-adapter 微架构文档(per Phase I.2 重构)
 
-> **类别**: GPU > Cuda Core Adapter (新概念) · **状态**: 🔵 MVP 切片 (per ADR-X.17)
+> **类别**: GPU > Cuda Core Adapter (SM **Microarchitecture Exploration**) · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
 > **Header**: `include/tlm/gpu/cuda_core_adapter_mvp.hh`
 > **位置**: **DGpuBoardTLM 内部组件**(`dgpu-board.md` §3 已作为 `CudaCoreAdapter cuda_core_` 私有成员固定);独立 ChStreamModuleBase 暴露模式推到 v0.5 完整版
-> **蓝图来源**: PTX-EMU `WarpContext::execute_warp_instruction` + `SMContext::exe_once` + CUDA Core 抽象
+> **蓝图来源**: gpgpu-sim `gpgpu-sim/shader_core/`(timing model 层)+ PTX-EMU `SMContext::exe_once` 3-Step 注入机制 + 现有 `ScoreboardTLM` / `PipelineTLM` / `TensorCoreTLM` / `MinimalWarpSchedulerTLM`
 > **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
-> **关联 ADR**: [`ADR-X.17-cpptlm-v05-mvp.md`](../../adr/ADR-X.17-cpptlm-v05-mvp.md) D2/D5
-> **关联模块**: [`ptx-emu-submodule-mvp.md`](./ptx-emu-submodule-mvp.md) · [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md)
-> **首版 commit**: 🔵 W3-4 实施(基础)+ W5-6 升级(per-warp)· **最近更新**: 2026-08-20
+> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp`](../../soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
+> **关联模块**: [`ptx-emu-submodule-mvp.md`](./ptx-emu-submodule-mvp.md)(PTX functional facade,与本模块严格分离)| [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md) · [`submit-queue.md`](./submit-queue.md)
+> **首版 commit**: 🔵 W3-4 实施(基础)+ W5-6 升级(timing 微架构)· **最近更新**: 2026-08-20(Phase I 重构)
 > **维护者**: CppTLM Team (Sisyphus)
+
+> **关联调研**: gpgpu-sim `gpgpu-sim/shader_core/`(timing model 模块) + PTX-EMU `ptxsim/sm_context.h:59 exe_once` 3-Step 注入机制。架构参照:本模块是 timing 微架构模拟器,不关心单条 PTX 指令计算什么;`PtxEmuSubmoduleMVP` 才是 functional 责任人。
 
 ---
 
-## 1. 设计目标
+## 1. 设计目标(per Phase I.2 重构)
 
-`CudaCoreAdapter` 是 **新概念模块**,包装 **Cuda Core(SM)** 与 PTX-EMU 之间的 bridge,**调用 PTX-EMU 的 warp 指令实现指令执行**。MVP 通过 PtxEmuSubmoduleMVP adapter 与 PTX-EMU 交互,支持双路径(黑盒 + 白盒)。
+`CudaCoreAdapter` 是 **SM 微架构探索器**(timing model),严格遵循 **gpgpu-sim functional/timing 分离原则**:
 
-**MVP 模块归属(per Phase A 修复 M4)**:
-- ✅ **S1-S4 阶段固定为 DGpuBoardTLM 内部组件**(与 `dgpu-board.md` §3 实现一致)
-- ❌ **不允许独立暴露为 ChStreamModuleBase**(会破 CP→TMU→CudaCoreAdapter 单链路契约)
-- 🟡 **v0.5 完整版**可评估独立 ChStreamModuleBase(per ADR-X.16 D4 ComputeUnit 架构 = Adapter pattern)— 但 MVP 不实施
+| 维度 | 本模块(CudaCoreAdapter) | PtxEmuSubmoduleMVP(对偶模块) |
+|------|------------------------|-----------------------------|
+| **职责** | SM **微架构行为**(timing/pipeline/调度) | PTX 指令**功能正确性** |
+| **关心** | cycle 推进、warp 调度、scoreboard hazard、pipeline latency、TC timing | 寄存器值、内存值、PC 推进、SIMT 分支、barrier sync |
+| **不关心** | 单条指令具体计算什么 | cycle 数、stall 原因、调度策略、流水线延迟 |
+| **API 调用** | `tick()` 驱动 `sm->exe_once()` 推进 cycle | `functional_execute_warp(warp, stmt, pc)` |
+| **类比 gpgpu-sim** | `gpgpu-sim/shader_core/`(timing) | `cuda-sim/`(functional) |
 
-**核心特性**:
-- **双路径 dispatch**:`dispatch_blackbox`(image_execute)+ `dispatch_whitebox`(stepOneWarpInstruction)
-- **黑盒 MVP 路径**(S1 默认):调 `ptxemu_image_execute`,PTX-EMU 内部完整执行
-- **白盒精度路径**(S3 可选,需 PTX-EMU 新 API):循环 `stepOneWarpInstruction`,返回 PC + cycle + status
-- **per-warp cycle 跟踪**(白盒):per-warp WarpState { pc, cycle_count, register_deps }
-- **承接 ComputeUnitTLM Legacy 角色**(per ADR-X.15 §"12 SM 模块命运表"):GpuComputeUnitTLM 推 Legacy,CudaCoreAdapter 作为 MVP 替代
+### 1.1 微架构组件清单(per Phase I.2)
 
-**MVP vs 现有 ComputeUnitTLM 差异**:
-- ❌ `GpuComputeUnitTLM`(Legacy,Phase 8.A):黑盒 4 SubCoreSlot + MinimalWarpSchedulerTLM + WavefrontTLM,**不调 PTX-EMU**
-- ✅ `CudaCoreAdapter`(MVP):调 PTX-EMU warp 指令,继承 ChStreamModuleBase 或作为内部组件
+本模块集成 **5 个 timing 组件**:
 
-**MVP vs v0.5 完整版简化**:
-- ✅ 保留:双路径 dispatch
-- ✅ 保留:per-warp cycle 跟踪(白盒路径)
-- ❌ 裁剪:ScoreboardTLM + PipelineTLM 升级(MVP 推迟到 S4)
-- � 裁剪:TensorCoreTLM + SharedMemoryTLM + VectorRegfileTLM(MVP 不实施)
-- ❌ 裁剪:WarpScheduler 注入策略(由 PTX-EMU 自带)
+| 组件 | 作用 | 来源 |
+|------|------|------|
+| `MinimalWarpSchedulerTLM` | per-cycle 选哪个 warp issue | `include/tlm/gpu/minimal_warp_scheduler_tlm.hh`(已存在) |
+| `ScoreboardTLM` | RAW hazard 跟踪(`IScoreboard` 实现) | `include/tlm/gpu/scoreboard_tlm.hh`(已存在) |
+| `PipelineTLM` | pipeline latency 注入(`IPipelineLatencyProvider` 实现) | `include/tlm/gpu/pipeline_tlm.hh`(已存在) |
+| `TensorCoreTLM` | TC 延迟注入(`ITensorCoreTiming` 实现) | `include/tlm/gpu/tensor_core_tlm.hh`(已存在) |
+| `WarpState[warp_id]` | per-warp 微架构状态镜像(cycle/exec_mask/blocked_cycles/scheduler_state)| 本模块定义 |
+
+### 1.2 职责严格分离(per Phase I.2)
+
+**本模块(CudaCoreAdapter)负责**:
+1. ❌ **不**调 PTX-EMU internal 直接接口(都通过 PtxEmuSubmoduleMVP 转发)
+2. ✅ 调 `PtxEmuSubmoduleMVP::functional_execute_warp()` 触发 functional 计算(由 PtxEmuSubmoduleMVP 保证正确性)
+3. ✅ per-tick `tick()` 推进 `sm->exe_once()`(timing model 主入口)
+4. ✅ 持有 `MinimalWarpSchedulerTLM`(warp 调度策略)
+5. ✅ 持有 `ScoreboardTLM`(RAW hazard 检查 + 释放)
+6. ✅ 持有 `PipelineTLM`(流水线延迟查询)
+7. ✅ 持有 `TensorCoreTLM`(TC 指令延迟)
+8. ✅ 镜像 `WarpState[warp_id]`(cycle / exec_mask / blocked_cycles / scheduler_state)— **不含 PC**(PC 由 PtxEmuSubmoduleMVP 负责)
+9. ✅ 接管 SM 资源反压(reserve_resources / release_resources)
+10. ✅ 完成检测 + 完成回调(→ SQ → TMU → CQ)
+
+**本模块不负责**(由 PtxEmuSubmoduleMVP 处理):
+1. ❌ PTX 指令功能正确性(`functional_execute_warp` 内核)
+2. ❌ 寄存器值/内存值的读写 API(由 PtxEmuSubmoduleMVP::read_register/write_register 处理)
+3. ❌ PC 推进(由 PtxEmuSubmoduleMVP::advance_thread_pc 处理)
+4. ❌ exec mask 读写(由 PtxEmuSubmoduleMVP::read_active_mask 处理)
+5. ❌ PTX IR 解码(由 PtxEmuSubmoduleMVP::decode_ptxir 处理)
+
+### 1.3 与 PTX-EMU 注入点对接
+
+per PTX-EMU `sm_context.h:87-95`,SMContext 接受 3 个注入:
+```cpp
+void set_scoreboard(IScoreboard* scoreboard);
+void set_pipeline_latency_provider(IPipelineLatencyProvider* provider);
+void set_tensor_core_timing(ITensorCoreTiming* tc);
+void set_warp_scheduler(std::unique_ptr<WarpScheduler> scheduler);
+```
+
+本模块在 `init()` 时**通过 PtxEmuSubmoduleMVP 创建这些注入对象**:
+- `scoreboard = ptx_emu_facade_.create_scoreboard()`(默认 `ScoreboardTLM`)
+- `pipeline_provider = ptx_emu_facade_.create_pipeline_latency_provider()`(默认 `PipelineTLM`)
+- `tensor_core_timing = ptx_emu_facade_.create_tensor_core_timing()`(默认 `TensorCoreTLM`)
+- `warp_scheduler = std::make_unique<MinimalWarpSchedulerTLM>(...)`
+
+然后**注入到 PTX-EMU SMContext**(一次性,在 `init()` 完成)。
 
 ---
 
 ## 2. 架构概览
 
-### 2.1 黑盒 MVP 路径(S1-S2)
-
 ```
-TmuDispatchProcessor::submit(record)
-    │
-    ▼
-CudaCoreAdapter::issueTask(record)
-    │
-    ▼ (黑盒默认)
-PtxEmuSubmoduleMVP::image_execute(handle, grid, block, shared_mem, args, argc)
-    │
-    ▼
-PTX-EMU (submodule)
-    ├─ GPUContext 分配 SM
-    ├─ SMContext::exe_once() × N cycles (每 cycle 推进)
-    │    └─ (PTX-EMU 内部)WarpContext::execute_warp_instruction × M times
-    │       ├─ Step A: Scoreboard hazard check
-    │       ├─ Step B: Pipeline/TC latency query (PTX-EMU 内部)
-    │       └─ Step C: Scoreboard release
-    └─ Kernel 完成 → completion callback
-         │
-         ▼
-CudaCoreAdapter::on_complete(task_id, status)
-    │
-    ▼
-TmuDispatchProcessor::on_complete(task_id, status)
-    │
-    ▼
-CompletionRing::push(task_id, status) → host_notify
-```
-
-### 2.2 白盒精度路径(S3 可选)
-
-```
-CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
-    │
-    ▼ 循环每个 warp
-PtxEmuSubmoduleMVP::stepOneWarpInstruction(warp_id, &pc, &status, &cycle_count)
-    │
-    ▼
-PTX-EMU SMContext::get_warp(warp_id)
-    └─ WarpContext::execute_warp_instruction(stmt, target_pc)
-    └─ 返回 PC + cycle_count + status(per-warp 精度)
-    │
-    ▼
-CudaCoreAdapter 更新 WarpState[warp_id] = { pc, cycle_count, register_deps }
+┌─────────────────────────────────────────────────────────────────────┐
+│ SubmitQueue::on_warp_complete(task_id, status)                     │
+│   ├─ 推送完成到 TmuDispatchProcessor::on_complete                 │
+│   └─ 释放 CudaCore in_flight 槽位                                  │
+└─────────────────────────────────────────────────────────────────────┘
+        │
+        ▼ 反压/调度
+┌─────────────────────────────────────────────────────────────────────┐
+│ CudaCoreAdapter::tick()(★ 微架构 timing 主入口)                   │
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │ 1. WarpScheduler 调度 (per cycle)                         │    │
+│   │    MinimalWarpSchedulerTLM::schedule_next() → next_warp  │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │ 2. SM cycle 推进(★ timing 核心)                          │    │
+│   │    sm->exe_once()                                          │    │
+│   │      ├─ cycle_counter_++                                  │    │
+│   │      ├─ WarpScheduler 选 next_warp                         │    │
+│   │      ├─ Step A: ScoreboardTLM.allocate() — RAW hazard?    │    │
+│   │      │      └─ false → skip (warp stall)                  │    │
+│   │      ├─ ★ PtxEmuSubmoduleMVP.functional_execute_warp()    │    │
+│   │      │      → PTX-EMU WarpContext::execute_warp_instruction│    │
+│   │      │      → 寄存器/内存/PC 按指令语义更新(FUNCTIONAL)   │    │
+│   │      ├─ Step B: PipelineTLM.get_fractional_cycles()        │    │
+│   │      │      → warp.set_blocked_cycles_for_active(N)        │    │
+│   │      ├─ Step C: ScoreboardTLM.release()                   │    │
+│   │      └─ TensorCoreTLM.get_latency() (TC 指令时)             │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │ 3. WarpState[warp_id] 镜像(本模块专有)                   │    │
+│   │    for warp in 0..warp_count_:                             │    │
+│   │      warp_states_[warp] = {                                │    │
+│   │        cycle_count = sm->get_cycle_count(),                │    │
+│   │        exec_mask = sm->get_warp(w)->get_active_mask(),     │    │
+│   │        blocked_cycles = w->get_blocked_cycles_remaining(),│    │
+│   │        scheduler_state = (last_scheduled_warp_id == warp)  │    │
+│   │      }                                                      │    │
+│   │    ⚠ 注意: WarpState 不含 PC (由 PtxEmuSubmoduleMVP 读)    │    │
+│   └─────────────────────────────────────────────────────────┘    │
+│                                                                      │
+│   ┌─────────────────────────────────────────────────────────┐    │
+│   │ 4. 完成检测                                                │    │
+│   │    if (sm->is_idle() && last_warp_state_dirty_):          │    │
+│   │      submit_queue_->on_warp_complete(task_id, 0)         │    │
+│   │      sm->release_resources(reservation_id)               │    │
+│   │      gpu_ctx_->clear_requests()                           │    │
+│   │      last_warp_state_dirty_ = false                       │    │
+│   └─────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────────┘
+        │
+        ▼ 反向流
+┌─────────────────────────────────────────────────────────────────────┐
+│ SubmitQueue::on_warp_complete → TmuDispatchProcessor::on_complete │
+│                                → CompletionRing::push → host_notify│
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. 接口(Public API)
+## 3. WarpState 微架构状态镜像(本模块专有)
 
 ```cpp
+struct WarpState {
+    // === Timing 状态(本模块管)===
+    uint64_t cycle_count = 0;          // SM cycle counter(单调递增)
+    uint32_t exec_mask = 0;            // 32-lane 活跃掩码(per WarpContext::get_active_mask)
+    uint32_t blocked_cycles = 0;       // 剩余阻塞 cycles(per pipeline latency)
+    bool     scheduler_state = false;  // true = 本 cycle 被 scheduler 选中
+    
+    // === ❌ 本结构不含 === 
+    // - pc: 由 PtxEmuSubmoduleMVP::read_thread_pc 读取
+    // - 寄存器值: 由 PtxEmuSubmoduleMVP::read_register 读取
+    // - 内存值: 由 PtxEmuSubmoduleMVP::read_global_memory 读取
+};
+```
+
+**为什么 WarpState 不含 PC**:
+- PC 是 **functional 状态**(指令语义的一部分),"PC=42 表示这个 warp 正在执行 PC=42 位置的 PTX 指令" — 这是指令逻辑关心的,不是 timing 关心的
+- Timing model 只关心 "warp 何时被 issue"、"issue 后 stall 多久"、"什么时候能完成" — 这些都不需要看 PC
+- 强行把 PC 放到 WarpState 会模糊 functional/timing 边界,违反 gpgpu-sim 分层原则
+
+---
+
+## 4. 接口(Public API)(per Phase I.2 重构)
+
+```cpp
+// include/tlm/gpu/cuda_core_adapter_mvp.hh
+// 不 include PTX-EMU 头(只通过 PtxEmuSubmoduleMVP 转发)
+#include "ptx_emu_submodule_mvp.hh"
+#include "minimal_warp_scheduler_tlm.hh"  // WarpScheduler
+#include <vector>
+
+class PtxEmuSubmoduleMVP;
+class MinimalWarpSchedulerTLM;
+
 class CudaCoreAdapter {
 public:
-    /// Warp 状态(per-warp cycle 跟踪)
+    // === Warp 微架构状态镜像(timing only,不含 PC)===
     struct WarpState {
-        uint64_t pc = 0;
         uint64_t cycle_count = 0;
-        // MVP 升 4 reg dep(per Phase A 修复 S4):32 lanes × 4 reg id
-        // - 原 MVP 简化:32 lanes × 1 reg id(几乎等于非精度,违反 ADR-X.16 §3.3 per-warp 精度目标)
-        // - v0.5 完整版:32 lanes × 8 reg deps(对齐 Hopper/Ampere 真硬件 scoreboard 模拟)
-        // - MVP 4 reg dep = 满足真实 scoreboard 最低需求(写后写、写后读 hazard 检测)
-        std::array<std::array<uint64_t, 4>, 32> register_deps = {};
+        uint32_t exec_mask = 0;
+        uint32_t blocked_cycles = 0;
+        bool     scheduler_state = false;
     };
 
-    /// DispatchParams: image_execute 调用参数
-    struct DispatchParams {
-        uint32_t grid_x = 1, grid_y = 1, grid_z = 1;
-        uint32_t block_x = 1, block_y = 1, block_z = 1;
-        uint32_t shared_mem_bytes = 0;
-        void** kernel_args = nullptr;
-        size_t args_count = 0;
+    /// CTA 描述符(从 SubmitQueue 接收,per submit-queue.md §3)
+    struct CtaDescriptor {
+        uint64_t vram_image_addr;
+        size_t image_size;
+        uint32_t grid_x, grid_y, grid_z;
+        uint32_t block_x, block_y, block_z;
+        size_t shared_mem_bytes;
+        void** kernel_args;
+        size_t args_count;
+        uint64_t task_id;
+        uint32_t cluster_id;
     };
 
-    explicit CudaCoreAdapter(PtxEmuSubmoduleMVP& ptx_emu);
+    /// JSON 配置字段(per configs/dgpu_mvp_*.json)
+    struct Config {
+        uint32_t num_sms = 1;              // MVP 默认 1 SM
+        uint32_t max_warps_per_sm = 64;
+        size_t shared_mem_size = 64 * 1024;
+        uint32_t registers_per_sm = 65536;
+        uint32_t max_blocks_per_sm = 1;
+        uint32_t warp_size = 32;
+        // ✅ timing 注入开关
+        bool enable_scoreboard = true;     // MVP 默认启用
+        bool enable_pipeline_latency = true;
+        bool enable_tensor_core_timing = true;
+        uint32_t target_core_id = 0;
+    };
 
-    /// TmuDispatchProcessor 调用:接收 task
-    /// @return true=成功接受,false=拒绝(资源不足)
-    bool issueTask(const TmuDispatchRecord& record);
+    explicit CudaCoreAdapter(const Config& cfg, EventQueue* eq);
+    ~CudaCoreAdapter();
 
-    /// 黑盒 dispatch(默认 MVP 路径)
-    /// @return image_id (>=0=成功, -1=失败)
-    int32_t dispatch_blackbox(uint64_t image_handle, const DispatchParams& params);
+    std::string get_module_type() const override { return "CudaCoreAdapter"; }
 
-    /// 白盒 dispatch(可选,需 PTX-EMU 新 API)
-    /// @return 完成 warp 数(等于 warp_count 表示全部完成)
-    uint32_t dispatch_whitebox(uint32_t warp_count, uint64_t max_cycles);
+    /// 初始化(注入 PTX-EMU functional facade + timing 模块)
+    /// @param ptx_emu_facade PTX functional facade(编译防火墙守护)
+    void init(PtxEmuSubmoduleMVP& ptx_emu_facade);
 
-    /// PTX-EMU 完成 kernel 后回调
-    void on_complete(uint64_t task_id, int32_t status);
+    /// SubmitQueue 调用:接收 CTA 描述符
+    /// @return true=成功接受,false=拒绝(SM 资源不足,反压停 dispatch)
+    bool on_cta_arrival(const CtaDescriptor& cta);
 
-    // === 测试/监控 ===
-    WarpState warp_state(uint32_t warp_id) const;
-    uint64_t total_cycle_count() const { return total_cycle_count_; }
-    uint64_t blackbox_dispatch_count() const { return blackbox_dispatch_count_; }
-    uint64_t whitebox_dispatch_count() const { return whitebox_dispatch_count_; }
-    bool is_enabled_whitebox() const { return enable_whitebox_; }
-
-    /// JSON params 注入
-    void set_enable_whitebox(bool enabled) { enable_whitebox_ = enabled; }
-    void set_max_warps(uint32_t n) { max_warps_ = n; }
-
-    /// Per-tick 推进(由 DGpuBoardTLM::tick() 调用)
+    /// per-tick 推进(由 DGpuBoardTLM::tick() 调用)— ★ 微架构 timing 主入口 ★
     void tick();
 
+    /// warp 完成回调(由 GPUContext::submit_kernel_request on_complete 触发)
+    void on_warp_complete(uint64_t task_id, int32_t status);
+
+    // === 测试/监控用(timing only)===
+    WarpState warp_state(uint32_t warp_id) const;
+    uint64_t total_cycle_count() const { return total_cycle_count_; }
+    uint64_t ctas_completed() const { return ctas_completed_; }
+    bool is_idle() const;
+    uint64_t scoreboard_allocate_count() const;
+    uint64_t scoreboard_release_count() const;
+    uint64_t pipeline_latency_injected_count() const;
+
 private:
-    // === 依赖 ===
-    PtxEmuSubmoduleMVP& ptx_emu_;
+    Config cfg_;
+    EventQueue* eq_;
+    PtxEmuSubmoduleMVP* ptx_emu_facade_ = nullptr;  // 转发 functional 调用
 
-    // === 状态 ===
-    std::unordered_map<uint64_t, int32_t> active_tasks_;  // task_id → PTX-EMU image_id
-    std::vector<WarpState> warp_states_;  // per-warp 状态(白盒路径)
+    // === Timing 组件(集成已有 TLM 模块)===
+    std::unique_ptr<ptxsim::GPUContext> gpu_ctx_;       // 持有 SMContext 实例
+    std::unique_ptr<MinimalWarpSchedulerTLM> warp_scheduler_;
+    std::unique_ptr<ScoreboardTLM> scoreboard_;
+    std::unique_ptr<PipelineTLM> pipeline_provider_;
+    std::unique_ptr<TensorCoreTLM> tensor_core_timing_;
 
-    // === 配置 ===
-    bool enable_whitebox_ = false;  // 默认 false(MVP 黑盒优先)
-    uint32_t max_warps_ = 64;       // per-SM warps 上限
-
-    // === 统计 ===
+    // === 状态镜像(本模块管 timing only)===
+    std::vector<WarpState> warp_states_;
+    uint64_t current_task_id_ = UINT64_MAX;
+    uint32_t warp_count_ = 0;
     uint64_t total_cycle_count_ = 0;
-    uint64_t blackbox_dispatch_count_ = 0;
-    uint64_t whitebox_dispatch_count_ = 0;
+    uint64_t ctas_completed_ = 0;
+    uint64_t ctas_failed_ = 0;
+    bool last_warp_state_dirty_ = false;
+
+    // === 注入到 PTX-EMU SMContext ===
+    void inject_timing_modules(ptxsim::SMContext& sm);
 };
 ```
 
 ---
 
-## 4. 行为流程
+## 5. 数据流(微架构 timing 视角)
 
-### 4.1 issueTask()(TmuDispatchProcessor 调用)
+### 5.1 init()(注入 timing 模块到 PTX-EMU)
 
 ```cpp
-bool CudaCoreAdapter::issueTask(const TmuDispatchRecord& record) {
-    // 1. 从 PtxEmuSubmoduleMVP 获取 image handle(per vram_addr)
-    //    注:install_kernel_module 已返回 vram_addr + image handle 映射
-    uint64_t image_handle = record.image_handle;  // pre-loaded in install_kernel_module
+void CudaCoreAdapter::init(PtxEmuSubmoduleMVP& ptx_emu_facade) {
+    ptx_emu_facade_ = &ptx_emu_facade;
 
-    // 2. 构造 DispatchParams
-    DispatchParams params;
-    params.grid_x = record.grid_dim[0];
-    params.grid_y = record.grid_dim[1];
-    params.grid_z = record.grid_dim[2];
-    params.block_x = record.block_dim[0];
-    params.block_y = record.block_dim[1];
-    params.block_z = record.block_dim[2];
-    params.shared_mem_bytes = record.shared_mem_bytes;
-    params.kernel_args = ...;  // 从 args_vram_addr 映射(MVP 简化)
-    params.args_count = record.args_size;
+    // 1. ★ 通过 facade 创建 GPUContext(facade 管 functional 构造)
+    gpu_ctx_ = ptx_emu_facade_->create_gpu_context();
 
-    // 3. 双路径 dispatch
-    int32_t image_id;
-    if (enable_whitebox_) {
-        // 白盒路径(per-warp)
-        uint32_t warp_count = params.block_x * params.block_y * params.block_z;
-        image_id = dispatch_whitebox(warp_count, /*max_cycles=*/1000);
-    } else {
-        // 黑盒路径(整 kernel)
-        image_id = dispatch_blackbox(image_handle, params);
+    // 2. 创建 timing 组件(MVP 默认全部启用)
+    warp_scheduler_ = std::make_unique<MinimalWarpSchedulerTLM>(
+        /* policy = */ MinimalWarpSchedulerTLM::Policy::ROUND_ROBIN);
+
+    if (cfg_.enable_scoreboard) {
+        scoreboard_ = std::make_unique<ScoreboardTLM>();
+    }
+    if (cfg_.enable_pipeline_latency) {
+        pipeline_provider_ = std::make_unique<PipelineTLM>();
+    }
+    if (cfg_.enable_tensor_core_timing) {
+        tensor_core_timing_ = std::make_unique<TensorCoreTLM>();
     }
 
-    if (image_id < 0) return false;
+    // 3. ★ 注入到 PTX-EMU SMContext(per sm_context.h:87-98)
+    ptxsim::SMContext* sm = ptx_emu_facade_->get_sm_context(*gpu_ctx_, 0);
+    inject_timing_modules(*sm);
+}
 
-    // 4. 记录 active task
-    active_tasks_[record.task_id] = image_id;
+void CudaCoreAdapter::inject_timing_modules(ptxsim::SMContext& sm) {
+    // 注入 scoreboard(per sm_context.h:87)
+    if (scoreboard_) {
+        sm.set_scoreboard(scoreboard_.get());
+    }
+    // 注入 pipeline latency provider(per sm_context.h:90)
+    if (pipeline_provider_) {
+        sm.set_pipeline_latency_provider(pipeline_provider_.get());
+    }
+    // 注入 tensor core timing(per sm_context.h:93)
+    if (tensor_core_timing_) {
+        sm.set_tensor_core_timing(tensor_core_timing_.get());
+    }
+    // 注入 warp scheduler(per sm_context.h:83)
+    if (warp_scheduler_) {
+        sm.set_warp_scheduler(std::move(warp_scheduler_));
+    }
+}
+```
+
+### 5.2 tick()(per-cycle 微架构推进)
+
+```cpp
+void CudaCoreAdapter::tick() {
+    if (!gpu_ctx_ || !ptx_emu_facade_) return;
+
+    ptxsim::SMContext* sm = ptx_emu_facade_->get_sm_context(*gpu_ctx_, 0);
+
+    // ★ Timing model 主入口:推进一个 SM cycle
+    // sm->exe_once() 内部完成:
+    //   1. cycle_counter_++
+    //   2. WarpScheduler::schedule_next() → 选 next_warp
+    //   3. Step A: scoreboard->allocate(reg_id, warp_id) — RAW hazard 检查
+    //   4. (★ 通过 PtxEmuSubmoduleMVP 转发) functional_execute_warp()
+    //   5. Step B: pipeline_provider->get_fractional_cycles() — 注入延迟
+    //   6. Step C: scoreboard->release(reg_id, warp_id)
+    sm->exe_once();
+
+    // 镜像 WarpState(timing only,不含 PC)
+    uint64_t now_cycle = sm->get_cycle_count();
+    for (uint32_t i = 0; i < warp_count_; ++i) {
+        ptxsim::WarpContext* w = ptx_emu_facade_->get_warp_context(*sm, i);
+        if (!w) continue;
+        warp_states_[i].cycle_count = now_cycle;
+        warp_states_[i].exec_mask = w->get_active_mask();
+        warp_states_[i].blocked_cycles = w->get_blocked_cycles_remaining();
+        warp_states_[i].scheduler_state = (last_scheduled_warp_id_ == i);
+        last_warp_state_dirty_ = true;
+    }
+    total_cycle_count_ = now_cycle;
+}
+```
+
+### 5.3 on_cta_arrival()(SubmitQueue 调用)
+
+```cpp
+bool CudaCoreAdapter::on_cta_arrival(const CtaDescriptor& cta) {
+    ptxsim::SMContext* sm = ptx_emu_facade_->get_sm_context(*gpu_ctx_, 0);
+    int warp_count = (cta.block_x * cta.block_y * cta.block_z + 31) / 32;
+
+    // ★ Timing model 资源管理
+    if (!sm->reserve_resources(cta.shared_mem_bytes, warp_count)) {
+        return false;  // 反压停 dispatch,SubmitQueue 应 back off
+    }
+
+    // ★ Functional 模型初始化(通过 facade,不直接调 PTX-EMU)
+    //    - decode_ptxir(per PtxEmuSubmoduleMVP)
+    //    - 构造 KernelLaunchRequest
+    //    - submit_kernel_request(per PtxEmuSubmoduleMVP)
+    const uint8_t* image_bytes = vram_.read(cta.vram_image_addr, cta.image_size);
+    auto stmts = ptx_emu_facade_->decode_ptxir(image_bytes, cta.image_size);
+
+    ptxsim::KernelLaunchRequest req {
+        .args = cta.kernel_args,
+        .gridDim = {cta.grid_x, cta.grid_y, cta.grid_z},
+        .blockDim = {cta.block_x, cta.block_y, cta.block_z},
+        .statements = &stmts,
+        .name2Sym = ...,
+        .label2pc = ...,
+        .request_id = static_cast<int>(cta.task_id),
+        .on_complete = [this, task_id = cta.task_id](int) {
+            on_warp_complete(task_id, 0);
+        },
+        .shared_mem_size = cta.shared_mem_bytes
+    };
+    ptx_emu_facade_->submit_kernel_request(*gpu_ctx_, std::move(req));
+
+    warp_count_ = warp_count;
+    warp_states_.resize(warp_count);
     return true;
 }
 ```
 
-### 4.2 黑盒 dispatch_blackbox()
+### 5.4 on_warp_complete()(GPUContext on_complete callback)
 
 ```cpp
-int32_t CudaCoreAdapter::dispatch_blackbox(uint64_t image_handle,
-                                           const DispatchParams& params) {
-    blackbox_dispatch_count_++;
-
-    // 调 PtxEmuSubmoduleMVP::image_execute(8 ABI 透传)
-    int32_t status = ptx_emu_.image_execute(
-        image_handle,
-        params.grid_x, params.grid_y, params.grid_z,
-        params.block_x, params.block_y, params.block_z,
-        params.shared_mem_bytes,
-        params.kernel_args, params.args_count
-    );
-
-    // PTX-EMU 自包含执行,完成后回调 on_complete
-    if (status == 0) {
-        // 模拟执行完成(MVP:同步返回)
-        return /*image_id*/ next_image_id_++;
-    } else {
-        return -1;  // 失败
+void CudaCoreAdapter::on_warp_complete(uint64_t task_id, int32_t status) {
+    if (status != 0) {
+        ctas_failed_++;
+        return;
     }
-}
-```
+    ptxsim::SMContext* sm = ptx_emu_facade_->get_sm_context(*gpu_ctx_, 0);
+    sm->release_resources(0);  // MVP 单 reservation
 
-### 4.3 白盒 dispatch_whitebox()(S3 启用)
+    // ★ 反向流: 提交到 SQ → TMU → CQ → host_notify
+    submit_queue_->on_warp_complete(task_id, status);
+    ctas_completed_++;
+    last_warp_state_dirty_ = false;
 
-```cpp
-uint32_t CudaCoreAdapter::dispatch_whitebox(uint32_t warp_count, uint64_t max_cycles) {
-    whitebox_dispatch_count_++;
-
-    uint32_t completed = 0;
-    uint64_t cycle_accum = 0;
-
-    for (uint32_t warp_id = 0; warp_id < warp_count; ++warp_id) {
-        // 循环 stepOneWarpInstruction 直到 warp 完成或超 max_cycles
-        while (cycle_accum < max_cycles) {
-            uint64_t pc = 0;
-            int32_t status = 0;
-            uint64_t cycle_count = 0;
-
-            int32_t rc = ptx_emu_.stepOneWarpInstruction(warp_id, &pc, &status, &cycle_count);
-            cycle_accum += cycle_count;
-            warp_states_[warp_id].pc = pc;
-            warp_states_[warp_id].cycle_count += cycle_count;
-            total_cycle_count_ += cycle_count;
-
-            if (rc != 0 || status != 0) {
-                // warp 完成或错误
-                completed++;
-                break;
-            }
-        }
-    }
-
-    return completed;
+    gpu_ctx_->clear_requests();
 }
 ```
 
 ---
 
-## 5. 关键设计取舍
+## 6. Timing vs Functional 分离矩阵(完整版)
 
-### 5.1 双路径共存(per ADR-X.16 D8)
-
-- **黑盒 MVP 路径**(`image_execute`):快速模式,完整 kernel 执行,cycle 数不暴露
-- **白盒精度路径**(`stepOneWarpInstruction`):per-warp PC + cycle 精度,**可选启用**
-
-**MVP 选择**:默认黑盒(`enable_whitebox=false`),S3 可选启用白盒。白盒需 PTX-EMU 端新增 `stepOneWarpInstruction` API;若 PTX-EMU 维护者拒收,MVP 仅黑盒。
-
-### 5.2 承接 GpuComputeUnitTLM Legacy 角色
-
-per `ADR-X.15 §"12 SM 模块命运表"`:
-- `GpuComputeUnitTLM` v0.4 保留 Legacy(Phase 8.A 单元测试覆盖)
-- `CudaCoreAdapter` 作为 MVP 替代,调 PTX-EMU warp 指令
-- **不破 apu_soc 兼容**:GpuComputeUnitTLM 单元测试保留(v0.4 §"显式声明 v3.0.0 不删除")
-
-### 5.3 per-warp WarpState(白盒路径)
-
-MVP 白盒路径 per-warp 跟踪(per Phase A 修复 S4):
-- `pc`:当前指令 PC
-- `cycle_count`:累计 cycle 数
-- `register_deps`:**32 lanes × 4 reg id**(MVP 升级,原 1 reg dep 几乎等于非精度)
-- v0.5 完整版 32 lanes × 8 reg deps(对齐 Hopper/Ampere 真硬件 scoreboard)
-
-### 5.4 简化版 args 映射
-
-MVP `kernel_args` 从 VRAM 映射(MVP 简化):
-- `args_vram_addr` → 直接当 host pointer(MVP 不仿真 H2D DMA 反向映射)
-- v0.5 完整版:实现 `map_vram_to_host()`(per `ADR-X.15 §3.6.4`)
+| 操作 | CudaCoreAdapter(timing)负责 | PtxEmuSubmoduleMVP(functional)负责 |
+|------|---------------------------|-----------------------------------|
+| 解码 PTX IR | ❌ | ✅ `decode_ptxir()` |
+| 创建 GPUContext/SMContext/WarpContext | ❌ | ✅ `create_*()` |
+| 提交 kernel | ❌(只调 facade.submit_kernel_request)| ✅ `submit_kernel_request()` |
+| **推进一个 SM cycle** | ✅ `tick()` → `sm->exe_once()` | ❌ |
+| **WarpScheduler 选 warp** | ✅(注入 PTX-EMU) | ❌ |
+| **Scoreboard hazard 检查** | ✅ Step A(注入 IScoreboard)| ❌ |
+| **Pipeline latency 注入** | ✅ Step B(注入 IPipelineLatencyProvider)| ❌ |
+| **TC timing 注入** | ✅ Step C(注入 ITensorCoreTiming)| ❌ |
+| **单条 PTX 指令功能执行** | ❌(只转发) | ✅ `functional_execute_warp()` |
+| Barrier sync | ❌(只转发)| ✅ `functional_barrier_sync()` |
+| Warp exit | ❌(只转发)| ✅ `functional_exit_warp()` |
+| 读 lane 寄存器值 | ❌(WarpState 不含) | ✅ `read_register<T>()` |
+| 写 lane 寄存器值 | ❌ | ✅ `write_register<T>()` |
+| 读全局内存 | ❌ | ✅ `read_global_memory<T>()` |
+| 写全局内存 | ❌ | ✅ `write_global_memory<T>()` |
+| 读 lane PC | ❌(WarpState 不含) | ✅ `read_thread_pc()` |
+| 推进 lane PC | ❌ | ✅ `advance_thread_pc()` |
+| 读 active mask | ✅(WarpState.exec_mask = 镜像)| ✅ `read_active_mask()`(本征) |
+| Warp 完成判断 | ❌ | ✅ `is_warp_finished()` |
+| Lane 退出判断 | ❌ | ✅ `is_thread_exited()` |
+| **镜像 cycle_count** | ✅ WarpState.cycle_count | ❌ |
+| **镜像 blocked_cycles** | ✅ WarpState.blocked_cycles | ❌ |
+| **镜像 scheduler_state** | ✅ WarpState.scheduler_state | ❌ |
+| **创建 Scoreboard 实例** | ❌(调 facade)| ✅ `create_scoreboard()` |
+| **创建 Pipeline 实例** | ❌(调 facade)| ✅ `create_pipeline_latency_provider()` |
+| **创建 TC 实例** | ❌(调 facade)| ✅ `create_tensor_core_timing()` |
+| 注入 timing 到 SMContext | ✅ `inject_timing_modules()` | ❌ |
+| SM 资源管理(reserve/release)| ✅ | ❌ |
+| 完成检测 + 反向流推送 | ✅ `on_warp_complete()` | ❌ |
 
 ---
 
-## 6. 测试覆盖
+## 7. 单元测试覆盖(微架构 timing 验证)
 
 | 测试文件 | 标签 | 内容 |
 |----------|------|------|
-| `test_cuda_core_adapter_mvp.cc` | `[cuda-core][mvp]` | issueTask + dispatch_blackbox + on_complete |
-| `test_cuda_core_adapter_mvp_whitebox.cc` | `[cuda-core][mvp][whitebox]` | 白盒路径(S3)+ per-warp WarpState 跟踪 |
+| `test_cuda_core_adapter_mvp_tick.cc` | `[cuda-core][mvp][tick]` | per-tick cycle 推进 + WarpScheduler 行为 |
+| `test_cuda_core_adapter_mvp_scoreboard.cc` | `[cuda-core][mvp][scoreboard]` | RAW hazard 检查 + allocate/release 计数 |
+| `test_cuda_core_adapter_mvp_pipeline.cc` | `[cuda-core][mvp][pipeline]` | Pipeline latency 注入 + blocked_cycles 镜像 |
+| `test_cuda_core_adapter_mvp_dispatch.cc` | `[cuda-core][mvp][dispatch]` | on_cta_arrival 反压 + resource 管理 |
+| `test_cuda_core_adapter_mvp_warp_state.cc` | `[cuda-core][mvp][warp-state]` | WarpState timing 状态镜像正确性(**不**含 PC) |
+| `test_cuda_core_adapter_mvp_injection.cc` | `[cuda-core][mvp][injection]` | IScoreboard/IPipelineLatencyProvider/ITensorCoreTiming 注入路径 |
 
-**验收标准**(per ADR-X.17 G-MVP-1, G-MVP-3):
-- 黑盒路径:issueTask → dispatch_blackbox → PTX-EMU image_execute → on_complete 完整 PASS
-- 白盒路径(S3):stepOneWarpInstruction per-warp cycle 跟踪 PASS
-
----
-
-## 7. 实施路径
-
-### 7.1 S1 MVP-Cut(W1-2)
-
-1. 新建 `include/tlm/gpu/cuda_core_adapter_mvp.hh` + `src/tlm/gpu/cuda_core_adapter_mvp.cc`(~200 LOC)
-2. 引用 `ptx_emu_submodule_mvp.hh`(编译防火墙)
-3. 黑盒 dispatch_blackbox 完整实现
-4. 新建 `test/test_cuda_core_adapter_mvp.cc`(issueTask + 黑盒 dispatch)
-
-### 7.2 S3 Warp-Precision(W5-6)
-
-1. 升级白盒 dispatch_whitebox(需 PTX-EMU 新 API)
-2. per-warp WarpState 跟踪
-3. 新建 `test/test_cuda_core_adapter_mvp_whitebox.cc`
+**验收标准**(per ADR-SOC-06 G-MVP-3):
+- [ ] per-tick `tick()` cycle_count 单调递增
+- [ ] WarpScheduler 在 cycle 内选不同 warp(Round-Robin policy)
+- [ ] RAW hazard 时 Step A 拒绝,blocked_cycles 镜像正确
+- [ ] Pipeline latency 注入后 warp.blocked_cycles ≥ 期望值
+- [ ] WarpState **不**含 PC 字段(架构契约)
+- [ ] Functional 调用(`functional_execute_warp`)通过 facade 转发,本模块不直接调 PTX-EMU
 
 ---
 
@@ -339,18 +480,23 @@ MVP `kernel_args` 从 VRAM 映射(MVP 简化):
 
 | # | 风险 | 概率 | 影响 | 缓解 |
 |---|------|:---:|:---:|------|
-| R1 | PTX-EMU 维护者拒收 `stepOneWarpInstruction` | 中 | 中 | MVP 仅黑盒;fork 兜底 |
-| R2 | GpuComputeUnitTLM Legacy 单元测试与 CudaCoreAdapter 冲突 | 低 | 中 | Legacy 保留(Legacy 标签),CudaCoreAdapter 新建独立 namespace |
-| R3 | 黑盒路径无 per-warp 精度,违反 G-D5 | 中 | 低 | 白盒路径可选;MVP 仅"内部一致性"验证 |
-| R4 | args 简化映射触发真实工作负载崩溃 | 中 | 中 | MVP 仅验证简单 kernel(vec_add);真实负载推到 v0.5 完整版 |
-| R5 | on_complete 回调未触发导致 active_tasks_ 泄漏 | 中 | 中 | 超时 watchdog(per S5+);MVP 简单计数验证 |
+| R1 | PTX-EMU 注入接口变更(`set_scoreboard/set_pipeline_latency_provider/set_tensor_core_timing`) | 中 | 高 | submodule pin `PTX-EMU@87820951`(per ADR-SOC-06 §7.5);`abi_guards.h` 17 条静态断言 |
+| R2 | 误用 functional API(直接调 PTX-EMU internal) | 中 | 高 | 编译期隔离:本模块接口**禁止** `WarpContext::execute_warp_instruction` 等 functional API;只能调 PtxEmuSubmoduleMVP facade |
+| R3 | WarpState 误加 PC 字段 | 低 | 中 | 文档 + 接口表明确分离;测试 `warp_states_[warp_id]` 与 PtxEmuSubmoduleMVP::read_thread_pc 是不同来源 |
+| R4 | Scoreboard/Pipeline/TC timing 注入时序错(在 sm->exe_once() 之前调注入) | 低 | 高 | 注入只在 `init()` 中调用一次;`tick()` 只调 `sm->exe_once()` |
+| R5 | MinimalWarpSchedulerTLM 调度策略不适配 MVP | 低 | 中 | MVP 默认 Round-Robin;v0.5 完整版可加 GTO/Two-Level 等策略(per `warp_scheduler.h:42 RoundRobinWarpScheduler`) |
+| R6 | WarpScheduler 接口与 PTX-EMU 不匹配(我们用 `MinimalWarpSchedulerTLM`,PTX-EMU 期望 `WarpScheduler`) | 中 | 高 | 适配器层:`MinimalWarpSchedulerTLM` 包装 `WarpScheduler` 纯虚接口(类似 ScoreboardTLM 适配 IScoreboard) |
 
 ---
 
 ## 9. 修订历史
 
-- **2026-08-19**: 初版 — per ADR-X.17 D2/D5 切片(MVP 4 阶段 S1+S3)
+| 日期 | 修订 |
+|------|------|
+| 2026-08-19 | 初版 — per ADR-SOC-06 D2 切片(双路径 blackbox/whitebox) |
+| 2026-08-20 | Phase F-H.1 重构:改为深度集成 PTX-EMU 内部接口 |
+| 2026-08-20 | **Phase I.2 重构(本次)**:严格按 gpgpu-sim functional/timing 分离原则重写。本模块定位为 **SM 微架构探索器**(timing model),集成 4 个已有 TLM 模块(`MinimalWarpSchedulerTLM` + `ScoreboardTLM` + `PipelineTLM` + `TensorCoreTLM`)。Functional 全部通过 `PtxEmuSubmoduleMVP` facade 转发,**不**直接调 PTX-EMU 内部接口。`WarpState` **不**含 PC(由 PtxEmuSubmoduleMVP 负责)。`tick()` 是 timing 主入口,3-Step 注入(scoreboard → functional → pipeline)由 PTX-EMU `sm->exe_once()` 内部完成。`inject_timing_modules()` 一次性注入 3 个 IScoreboard/IPipelineLatencyProvider/ITensorCoreTiming 实例。 |
 
 ---
 
-*维护者: CppTLM Team (Sisyphus) · 最后更新: 2026-08-19*
+*维护者: CppTLM Team (Sisyphus) · 最后更新: 2026-08-20*
