@@ -19,18 +19,19 @@
 
 ## 1. 设计目标
 
-`DGpuBoardTLM` 是 **dGPU 板卡的 ChStreamModuleBase 包装**,在 MVP 阶段引入,负责将 5 个内部组件(DGpuBar + Doorbell + CommandProcessor + TmuDispatchProcessor + CudaCoreAdapter + SubmissionQueue + CompletionRing)组装为一个 **JSON-driven 单芯片 dGPU 仿真目标**。
+`DGpuBoardTLM` 是 **dGPU 板卡的 ChStreamModuleBase 包装**,在 MVP 阶段引入,负责将 8 个内部组件(DGpuBar + Doorbell + CommandProcessor + TmuDispatchProcessor + SubmitQueue + CudaCoreAdapter + PtxEmuSubmoduleMVP + CompletionRing)组装为一个 **JSON-driven 单芯片 dGPU 仿真目标**。
 
 **核心特性**:
 - 继承 `ChStreamModuleBase`,支持 JSON 拓扑驱动实例化(per `ModuleFactory::instantiateAll`)
-- 内部 5 组件组合:DGpuBar(PCIe BAR0 MMIO)+ Doorbell + CommandProcessor + TmuDispatchProcessor + CudaCoreAdapter
+- 内部 8 组件组合:DGpuBar(PCIe BAR0 MMIO)+ Doorbell + CommandProcessor + TmuDispatchProcessor + SubmitQueue + CudaCoreAdapter + PtxEmuSubmoduleMVP + CompletionRing
 - 入口方法:`install_kernel_module(vram_addr, size)` + `submit_kernel(KernelLaunchRequest)` + `write_reg(offset, value)` 模拟 UsrLinuxEmu driver 角色
-- **`tick()` 由 EventQueue 调度**,内部驱动 SQ consumer + CudaCoreAdapter + CompletionRing::host_notify
-- **MVP 接 UsrLinuxEmu IOCTL 0x27/0x28 stub server**(不直接 link UsrLinuxEmu)
+- **`tick()` 由 EventQueue 调度**,内部驱动 CP→TMU→SQ→CudaCore 4 阶段串联(per Phase F-H.2)
+- **MVP 接 UsrLinuxEmu IOCTL 0x27/0x29/0x01 + 0x28 永久 -ENOSYS**(per Phase F-H.3)
 
 **MVP vs v0.4 简化**:
-- ✅ 保留:DGpuBar + Doorbell + SQ + CQ(per ADR-X.15 §4.2 + v0.4 design §3)
-- ❌ 裁剪:TmuDispatchProcessor 32 slot(v0.4 是 256 slot)+ Scheduler Cache LRU(仅 LIFO)
+- ✅ 保留:DGpuBar + Doorbell + SubmitQueue(WDU 分发网络)+ CQ(per ADR-X.15 §4.2 + Phase F-H.5)
+- ✅ 保留:4 个已有 TLM 模块(`ScoreboardTLM`/`PipelineTLM`/`TensorCoreTLM`/`MinimalWarpSchedulerTLM`)集成(CudaCoreAdapter 注入)
+- ❌ 裁剪:TmuDispatchProcessor 32 slot(MVP 简化,v0.5 完整版 256 slot)+ 反压停 fetch(非 LIFO)
 - ❌ 裁剪:MMU ordering pipe 精确建模(仅延迟区间断言 250-700ns)
 - ❌ 裁剪:MSI-X 中断 + DMA channel(推到 v0.5 完整版)
 
@@ -38,33 +39,38 @@
 
 ## 2. 架构概览
 
-### 2.1 内部 5 组件层次
+### 2.1 内部组件层次(per Phase F-H.2 + Phase I.1/I.2,8 组件)
 
 ```
 DGpuBoardTLM (ChStreamModuleBase, JSON-driven)
 ├── DGpuBar (PCIe BAR0 MMIO + BAR1 VRAM)
 │    ├── BAR0 0x0000-0x0FFF: device regs (vendor/device ID + 控制)
 │    ├── BAR0 0x1000-0x1FFF: doorbell ring MMIO space (per subchannel)
-│    └── BAR1: VRAM backing (256MB, mmap'd to host)
+│    └── BAR1: VRAM backing (256MB, mmap'd to host + pushbuffer_ring)
 ├── Doorbell (SQ tail register, strong-ordered)
 │    ├── atomic<uint64_t> sq_tail_[MAX_STREAMS=1024]
-│    └── ring(stream_id, tail) → notify SQ consumer
+│    └── ring(stream_id, tail) → notify CP consumer
 ├── CommandProcessor (CP, 5-state FSM)
-│    ├── Pm4Decoder (Mesa-style TYPE3, 4 MVP opcodes)
-│    ├── SubchannelContext[5] (subchannel 0-4)
-│    └── CommandDispatcher (opcode → handler)
+│    ├── Pm4Decoder (NVIDIA method packet, 4 method_addr ranges)
+│    ├── SubchannelContext[8] (subchannel 0-7,per Phase F-B.2 H2)
+│    └── CommandDispatcher (method_addr → handler)
 ├── TmuDispatchProcessor (TMU Glue, 32 slot MVP)
-│    ├── inflight_kernel_reqs_ map (32 slot + LIFO)
+│    ├── inflight_kernel_reqs_ map (32 slot + 反压停 fetch,per Phase F-D.2 H5)
 │    ├── dep latch: wait_on ↔ arrive_at 匹配
 │    └── submit / on_complete / try_chain_dependent
-├── SubmissionQueue[stream_id] (per-stream FIFO)
-│    └── enqueue(KernelLaunchRequest) → tick() → dispatch
-├── CompletionRing (host_notify)
-│    ├── push(image_id, status) → release mutex
-│    └── host_notify_() → HAL fence_signal
-└── CudaCoreAdapter (per-warp step 入口)
-     ├── 黑盒路径: PtxEmuSubmoduleMVP::image_execute
-     └── 白盒路径: 循环 PtxEmuSubmoduleMVP::stepOneWarpInstruction (S3 启用)
+├── SubmitQueue (WDU 分发网络,per Phase F-H.5)
+│    ├── per-cluster pending FIFO(32 槽)+ per-core active(4 槽)
+│    └── enqueue(cta_descriptor) → tick() → dispatch_to_core
+├── CudaCoreAdapter (★ SM 微架构探索器,per Phase I.2)
+│    ├── tick() → sm->exe_once()(驱动 PTX-EMU 3-Step 注入)
+│    ├── 4 timing 模块注入(ScoreboardTLM/PipelineTLM/TensorCoreTLM/MinimalWarpSchedulerTLM)
+│    └── WarpState 镜像(cycle/exec_mask/blocked,不含 PC)
+├── PtxEmuSubmoduleMVP (★ PTX functional facade,per Phase I.1)
+│    ├── functional_execute_warp / decode_ptxir / create_gpu_context
+│    └── 唯一 include PTX-EMU 头的 .cc(编译防火墙)
+└── CompletionRing (host_notify)
+     ├── push(task_id, status) → release mutex
+     └── host_notify_() → HAL fence_signal
 ```
 
 ### 2.2 ChStream 端口
@@ -90,8 +96,8 @@ DGpuBoardTLM (ChStreamModuleBase, JSON-driven)
         "max_streams": 4,
         "sq_depth": 32,
         "tmu_max_active_tasks": 32,
-        "tmu_lifo_evict": true,
-        "enable_whitebox_path": false,
+        "tmu_max_active_tasks": 32,
+        "tmu_enable_backpressure": true,
         "enable_dgpu_bar_mmio": true
       }
     },
@@ -218,7 +224,7 @@ DGpuBoardTLM (ChStreamModuleBase, JSON-driven)
 | **IOCTL 0x01** (PUSHBUFFER SUBMIT BATCH) | handler = 写 gpfifo entries 到 CppTLM VRAM.pushbuffer_ring | CP::tick() fetch + decode + dispatch |
 | **IOCTL 0x27** (LOAD) | handler = HAL #66 → H2D DMA 写 CppTLM VRAM | `DGpuBoardTLM::install_kernel_module` 接收 |
 | **IOCTL 0x28** (LAUNCH) | handler = -ENOSYS(永久锁定) | **MVP 不直接承载**,0x01 pushbuffer 才是真 launch 入口 |
-| **IOCTL 0x29** (UNLOAD) | handler = -ENOSYS → driver 改走 FREE_BO | `DGpuBoardTLM::uninstall_kernel_module` 接收(vram_addr 释放) |
+| **IOCTL 0x29** (UNLOAD) | handler = 走 FREE_BO 路径 → `DGpuBoardTLM::uninstall_kernel_module(vram_addr)`(真实工作,per ADR-SOC-06 D4) | `DGpuBoardTLM::uninstall_kernel_module` 接收(vram_addr 释放) |
 
 **MVP stub 模式测试覆盖**: `test_usrlxemu_ioctl_stub.cc` 验证 4 IOCTL 端到端链路(per ADR-SOC-06 G-MVP-5)。
 
@@ -355,8 +361,8 @@ void DGpuBoardTLM::tick() {
 | `ioctl(0x27)` → H2D DMA → `install_kernel_module` | 模拟为 1 tick(0 cycle 延迟) | MVP 不仿真 H2D 物理延迟 |
 | `write_reg(0x1000+stream_id)` → Doorbell ring | **250-700ns 区间断言**(per v0.4 §3.2.5 + [`docs/research/PCIe/PCIe_上的保序write.md`](../../research/PCIe/PCIe_上的保序write.md) §4 non-posted read flush 延迟 Gen5 250-350ns / 多级 switch 400-600ns / 跨 RC >700ns,per Phase F-E.2 L1) | MVP 仅断言区间,**不仿真 MMU ordering pipe**(stub 模式单线程 tick 不可能真发生 TLP 乱序) |
 | CP FETCH → DECODE → DISPATCH | ~1 tick(简化) | MVP 不仿真 PM4 解析 cycle 精度 |
-| SQ tick → TMU.submit → CudaCoreAdapter::issueTask | 1 tick | 黑盒 MVP 路径(per Phase F-G 修订,单链路) |
-| CudaCoreAdapter::image_execute → PTX-EMU | variable | 自包含 GPU sim |
+| SQ tick → SubmitQueue.dispatch_to_core → CudaCoreAdapter::on_cta_arrival | 1 tick | 深度集成路径(per Phase I.2) |
+| CudaCoreAdapter::tick() → sm->exe_once() | variable | 驱动 SM cycle + WarpState 镜像 |
 | CompletionRing::push + host_notify | ~50ns 模拟 | signal hook |
 
 **总 cycle budget(MVP 默认)**:`500ns-2us + kernel exec`
@@ -385,13 +391,13 @@ void DGpuBoardTLM::tick() {
 |------|------|:---:|------|
 | `ptx_emu_root` | string | `@PTX_EMU_ROOT@` | PTX-EMU submodule 路径(由 CMake configure_file 注入) |
 | `vram_size_mb` | uint32 | 256 | BAR1 VRAM 容量 |
-| `max_streams` | uint32 | 4 | SubmissionQueue 数(per-stream FIFO) |
-| `sq_depth` | uint32 | 32 | 每 SQ 深度 |
+| `max_streams` | uint32 | 4 | SubmitQueue 流数(per-stream FIFO) |
+| `sq_depth` | uint32 | 32 | 每 SubmitQueue pending 深度 |
 | `tmu_max_active_tasks` | uint32 | 32 | TmuDispatchProcessor slot 数 |
-| `tmu_lifo_evict` | bool | true | 容量满时是否 LIFO 驱逐 |
-| `enable_whitebox_path` | bool | false | 是否启用 `stepOneWarpInstruction` 白盒路径(需 PTX-EMU 新 API) |
+| `tmu_enable_backpressure` | bool | true | 容量满时反压停 fetch(per Phase F-D.2 H5) |
 | `enable_dgpu_bar_mmio` | bool | true | 是否启用 BAR0 MMIO 路由(否则直接 API 路径) |
 | `usrlxemu_ioctl_stub_mode` | string | `all` | stub 启用 IOCTL: `all` / `load` / `launch` / `unload` / `none` |
+| ❌ 删除(已废弃) | — | — | `tmu_lifo_evict`(反压替代 LIFO,per Phase F-D.2 H5); `enable_whitebox_path`(深度集成替代白盒,per Phase I.1) |
 
 ---
 
@@ -399,10 +405,10 @@ void DGpuBoardTLM::tick() {
 
 | # | 风险 | 概率 | 影响 | 缓解 |
 |---|------|:---:|:---:|------|
-| R1 | TmuDispatchProcessor LIFO 频繁驱逐 | 中 | 中 | 32 slot MVP 默认;溢出率 >5% 触发 review |
+| ~~R1 | TmuDispatchProcessor LIFO 频繁驱逐~~ | — | — | **🗑️ 风险已消除(per Phase F-D.2 H5)**:反压停 fetch,容量满拒绝不驱逐 |
 | R2 | Doorbell strong-order 延迟区间违反 | 中 | 中 | 测试断言 250-700ns 区间;PCIe Gen5 x16 默认;**数字依据** per [`docs/research/PCIe/PCIe_上的保序write.md`](../../research/PCIe/PCIe_上的保序write.md) §4(per Phase F-E.2 L1) |
 | R3 | UsrLinuxEmu IOCTL stub 与真实 IOCTL 行为偏差 | 中 | 中 | stub 严格遵循 `gpu_ioctl.h` 真实结构 |
-| R4 | 5 组件组合 tick() 调度顺序冲突 | 低 | 高 | 严格顺序:SQ → CP → TMU → CQ + Adapter |
+| R4 | 8 组件组合 tick() 调度顺序冲突 | 低 | 高 | 严格顺序:cp_.tick() → tmu_.tick() → sq_.tick() → cuda_core_.tick() |
 | R5 | JSON config params 注入失败 | 中 | 中 | `on_config_loaded` try-catch + 详细错误日志 |
 | R6 | VRAM backing 与 MemoryTLM 端口不匹配 | 中 | 中 | DualPortStreamAdapter 验证 |
 
@@ -412,17 +418,17 @@ void DGpuBoardTLM::tick() {
 
 ### 9.1 S2 Real-Board-Bind(W3-4)
 
-1. 新建 `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc`(~400 LOC)
+1. 新建 `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc`(~500 LOC)
 2. 复用 `include/tlm/gpu/dgpu_bar.hh`(v0.4 已实施)
 3. 新建 `include/tlm/gpu/doorbell_mvp.hh` + `.cc`(~150 LOC,简化 strong-order)
-4. 新建 `include/tlm/gpu/submission_queue_mvp.hh` + `.cc`(~100 LOC)
+4. 新建 `include/tlm/gpu/submit_queue_mvp.hh` + `.cc`(~150 LOC,WDU 分发网络,per Phase F-H.5)
 5. 新建 `include/tlm/gpu/completion_ring_mvp.hh` + `.cc`(~150 LOC,重设计 host_notify)
-6. 新建 `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `.cc`(~250 LOC)
+6. 新建 `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `.cc`(~300 LOC)
 7. 修改 `include/chstream_register.hh`:加 `REGISTER_CHSTREAM(DGpuBoardTLM)` + `UsrLinuxEmuIoctlStub`
 8. 新建 `configs/dgpu_board_v1_mvp.json.in`(CMake configure_file 注入 `${PTX_EMU_ROOT}`)
 9. 新建 `test/test_dgpu_board_v1_mvp_from_config.cc`(6 SECTION)
-10. 新建 `test/test_usrlxemu_ioctl_stub.cc`(3 IOCTL)
-11. 更新 `docs/soc_arch/modules/README.md` + `docs/adr/README.md`
+10. 新建 `test/test_usrlxemu_ioctl_stub.cc`(**4 IOCTL**:0x27/0x28-ENOSYS/0x29/0x01,per Phase F-H.3)
+11. 更新 `docs/soc_arch/modules/README.md` + `docs/soc_arch/adr/README.md`
 
 ### 9.2 估计工作量
 
