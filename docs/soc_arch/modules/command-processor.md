@@ -23,17 +23,17 @@
 
 ## 1. 设计目标
 
-`CommandProcessor`(CP)是 DGpuBoardTLM 内部组件,负责 **解析 PM4 (Packet Manager 4) 命令**(Mesa-style TYPE3 header),将 host 写入 ring buffer 的命令分发到对应 handler(MVP: TmuDispatchProcessor)。
+`CommandProcessor`(CP)是 DGpuBoardTLM 内部组件,负责 **解析 NVIDIA method packet 命令**(per Phase F-H.3 路径 3,真相源 UsrLinuxEmu `gpfifo_translator.h:60-73 unpackPm4Header`),将 host 写入 ring buffer 的命令分发到对应 handler(MVP: TmuDispatchProcessor)。
 
 **核心特性**:
 - **5-state FSM**:`IDLE → FETCH → DECODE → DISPATCH → COMPLETE`
-- **Mesa-style TYPE3** header 解析(per ADR-X.16 §3.2 位字段修正)
-- **MVP 4 opcodes**:DISPATCH_DIRECT(0x15)/ EVENT_WRITE(0x46)/ RELEASE_MEM(0x49)/ ACQUIRE_MEM(0x58)
+- **NVIDIA method packet** header 解析(per Phase F-H.3 路径 3,替代原 Mesa-style TYPE3)
+- **MVP 4 method_addr ranges**:0x4000-0x40FF DISPATCH_DIRECT / 0x4200-0x42FF EVENT_WRITE / 0x4400-0x44FF RELEASE_MEM / 0x4500-0x45FF ACQUIRE_MEM
 - **8 subchannel context**(subchannel 0-7,per UsrLinuxEmu `gpu_types.h:40` `gpu_gpfifo_entry.subchannel : 3`)— **Phase F-B.2 H2 修订**:原"5 个 per Mesa convention"为事实错误;AMD PM4 实际无 subchannel 概念(用 per-queue/ring doorbell),NVIDIA GPFIFO 是 3-bit(0-7)
-- **反 v0.4.1 决策**:host driver 仅写入 ring buffer,硬件 CP 解析 PM4(符合真实 PCIe 设备语义)
+- **反 v0.4.1 决策**:host driver 仅写入 ring buffer,硬件 CP 解析 NVIDIA method packet(符合真实 PCIe 设备语义)
 
 **MVP vs v0.5 完整版简化**:
-- ✅ 保留:5-state FSM + Mesa TYPE3 + **8 subchannel**(per Phase F-B.2 H2 修订)
+- ✅ 保留:5-state FSM + **NVIDIA method packet** + **8 subchannel**(per Phase F-B.2 H2 修订)
 - ❌ 裁剪:14 deferred opcodes(MVP 仅 4 个)
 - ❌ 裁剪:PREEXIT/ACQBULK **指令语义**(由 PTX-EMU 自含);**device-side 调度动作**推迟到 v0.5 完整版(per Phase F-D.1 H4 修订,纠正原"PTX-EMU 自含"混淆)— 真实 PDL 链路见 UsrLinuxEmu `sim_pdl_launch`
 - ❌ 裁剪:ring buffer 完整 cycle 精度(仅延迟区间断言)
@@ -85,18 +85,18 @@ CP.tick()
     │       payload = dgpu_bar_.read_payload(count dwords)
     │
     ├─ DECODE: pm4_decoder_.parse_method(method_header, payload, max_dwords)
-    │       → Pm4Packet { opcode, subchannel_id, count, payload }
+    │       → Pm4MethodDispatch { method_addr, subchannel_id, data_count, decoded_fields }
     │
-    ├─ DISPATCH (per opcode):
-    │   - DISPATCH_DIRECT(0x15):
+    ├─ DISPATCH (per method_addr range,per Phase F-H.3):
+    │   - 0x4000-0x40FF DISPATCH_DIRECT:
     │       tmu_.submit(TmuDispatchRecord{
     │           grid_dim, block_dim, args_vram_addr, kernel_id, ...
     │       })
-    │   - EVENT_WRITE(0x46):
+    │   - 0x4200-0x42FF EVENT_WRITE:
     │       cq_.push(event_id, status)
-    │   - RELEASE_MEM(0x49):
+    │   - 0x4400-0x44FF RELEASE_MEM:
     │       tmu_.try_chain_dependent(record)
-    │   - ACQUIRE_MEM(0x58):
+    │   - 0x4500-0x45FF ACQUIRE_MEM:
     │       tmu_.check_dependencies(record)
     │
     └─ COMPLETE: cp_state_.next_entry()

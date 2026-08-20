@@ -166,7 +166,7 @@ CudaCoreAdapter::on_cta_arrival(cta_desc)
 > 现统一语义:0x28 stub 必返回 -ENOSYS,真实 launch 走 0x01 pushbuffer。
 > G-MVP-5 验收补充 0x01 pushbuffer 端到端测试覆盖真实 launch 数据面。
 
-### D5. 模块架构 = CP→TMU→SQ→Cuda Core 链路(per Phase F-H.2 架构重定义:新增 8 模块)
+### D5. 模块架构 = CP→TMU→SQ→Cuda Core 链路(per Phase F-H.2 架构重定义:新增 6 个新模块 + DGpuBoardTLM 8 组件包装)
 
 ✅ **MVP 引入 6 个新模块**(均派生自 `ChStreamModuleBase` 或内部组件):
 
