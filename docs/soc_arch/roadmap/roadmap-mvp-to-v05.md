@@ -28,7 +28,7 @@
 │             │ 验收通过                                                      │
 │             ▼                                                                │
 │  �─────────────────────┐                                                   │
-│  │ S2 Real-Board-Bind  │  ← 接 UsrLinuxEmu IOCTL 0x27/0x28                  │
+│  │ S2 Real-Board-Bind  │  ← 接 UsrLinuxEmu IOCTL 0x27/0x29/0x01 + 0x28 永久 -ENOSYS
 │  │   - DGpuBoardTLM     │                                                   │
 │  │   - DGpuBar/Doorbell │                                                   │
 │  │   - SQ/CQ            │                                                   │
@@ -104,7 +104,7 @@ git commit -am "build(cmake): add_subdirectory(external/PTX-EMU) — submodule s
 git commit -am "feat(ptx-emu-mvp): PtxEmuSubmoduleMVP adapter with 8 ABI passthrough"
 
 # W2
-git commit -am "feat(cuda-core-mvp): CudaCoreAdapter with dispatch_blackbox (image_execute path)"
+git commit -am "feat(cuda-core-mvp): CudaCoreAdapter with on_cta_arrival/tick (per Phase I.2 timing model)"
 ```
 
 ### 2.4 风险
@@ -119,8 +119,8 @@ git commit -am "feat(cuda-core-mvp): CudaCoreAdapter with dispatch_blackbox (ima
 
 ### 3.1 目标
 
-- `DGpuBoardTLM` 包装 5 内部组件
-- 接入 UsrLinuxEmu IOCTL 0x27/0x28 stub(端到端跑通)
+- `DGpuBoardTLM` 包装 8 内部组件(含 SubmitQueue WDU 分发网络,per Phase F-H.5)
+- 接入 UsrLinuxEmu IOCTL 0x27/0x29/0x01 + 0x28 永久 -ENOSYS(4 IOCTL stub,per Phase F-H.3)
 - JSON config 驱动 `instantiateAll`
 - 6 SECTION E2E 测试 PASS(per ADR-SOC-06 G-MVP-2)
 
@@ -128,29 +128,27 @@ git commit -am "feat(cuda-core-mvp): CudaCoreAdapter with dispatch_blackbox (ima
 
 | 交付 | 验证 | 状态 |
 |------|------|:---:|
-| `include/tlm/gpu/dgpu_board_mvp.hh` + `.cc`(5 组件包装) | 编译通过 | ⏳ W3 |
+| `include/tlm/gpu/dgpu_board_mvp.hh` + `.cc`(8 组件包装,含 SubmitQueue + CudaCoreAdapter + PtxEmuSubmoduleMVP) | 编译通过 | ⏳ W3 |
 | `include/tlm/gpu/doorbell_mvp.hh` + `.cc`(SQ tail + strong-order) | strong-order 延迟区间 250-700ns 测试 PASS | ⏳ W3 |
-| `include/tlm/gpu/submission_queue_mvp.hh` + `.cc`(per-stream FIFO) | enqueue/tick PASS | ⏳ W3 |
 | `include/tlm/gpu/completion_ring_mvp.hh` + `.cc`(push + host_notify) | push/host_notify PASS | ⏳ W3 |
-| `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `.cc`(0x27/0x28/0x29 stub) | 3 IOCTL PASS | ⏳ W4 |
-| `include/chstream_register.hh` 加 `REGISTER_CHSTREAM(DGpuBoardTLM)` + `UsrLinuxEmuIoctlStub` | 编译通过 | � W4 |
+| `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `.cc`(0x27/0x28-ENOSYS/0x29/0x01 pushbuffer) | 4 IOCTL PASS | ⏳ W4 |
+| `include/chstream_register.hh` 加 `REGISTER_CHSTREAM(DGpuBoardTLM)` + `UsrLinuxEmuIoctlStub` | 编译通过 | ⏳ W4 |
 | `configs/dgpu_board_v1_mvp.json.in`(CMake configure_file 注入 `${PTX_EMU_ROOT}`) | `validate_topology` PASS | ⏳ W4 |
 | `test/test_dgpu_board_v1_mvp_from_config.cc`(6 SECTION) | ctest PASS | ⏳ W4 |
-| `test/test_usrlxemu_ioctl_stub.cc`(3 IOCTL) | ctest PASS | ⏳ W4 |
+| `test/test_usrlxemu_ioctl_stub.cc`(**4 IOCTL**:0x27/0x28-ENOSYS/0x29/0x01) | ctest PASS | ⏳ W4 |
 
 ### 3.3 关键 Commit
 
 ```bash
 # W3
 git commit -am "feat(doorbell-mvp): SQ tail register with strong-order write path (250-700ns)"
-git commit -am "feat(submission-queue-mvp): per-stream FIFO consumer"
 git commit -am "feat(completion-ring-mvp): push + host_notify hook"
 
 # W4
-git commit -am "feat(dgpu-board-mvp): DGpuBoardTLM ChStreamModuleBase with 5 components"
-git commit -am "feat(usrlxemu-ioctl-stub): IOCTL 0x27/0x28/0x29 stub for Mode B dGPU board"
+git commit -am "feat(dgpu-board-mvp): DGpuBoardTLM ChStreamModuleBase with 8 components (per Phase F-H.2)"
+git commit -am "feat(usrlxemu-ioctl-stub): 4 IOCTL stub (0x27/0x28-ENOSYS/0x29/0x01) for Mode B dGPU board"
 git commit -am "feat(configs): dgpu_board_v1_mvp.json with validate_topology support"
-git commit -am "test(dgpu-board-v1-mvp): 6 SECTION E2E test + 3 IOCTL tests"
+git commit -am "test(dgpu-board-v1-mvp): 6 SECTION E2E test + 4 IOCTL tests (per Phase F-H.3)"
 ```
 
 ### 3.4 端到端数据流(W3-4 验证)
@@ -165,102 +163,104 @@ cuModuleLoadData(image_bytes)
     → 返回 vram_addr                              → 返回 image_handle
 
 cuLaunchKernel(grid, block, args, ...)
-  → [Mode B 重写] DGpuBoardTLM::submit_kernel(req)
-                                                 → CommandProcessor (S3 启用)
-                                                 → TmuDispatchProcessor::submit()
-                                                 → CudaCoreAdapter::issueTask()
-                                                    → PtxEmuSubmoduleMVP::image_execute()
-                                                       → PTX-EMU GPUContext
-                                                       → SMContext::exe_once() × N
-                                                          → WarpContext::execute_warp_instruction × M
-    → 返回 image_id                               → kernel 完成 → on_complete
-                                                      → CompletionRing::push()
-                                                      → host_notify()
-                                                         → cuStreamSynchronize 返回
+  → ioctl(0x01 PUSHBUFFER_SUBMIT_BATCH) → 写 gpfifo_entries[] → DGpuBar.vram.pushbuffer_ring
+  → ioctl(0x28 LAUNCH_KERNEL_MODULE) → 永久 -ENOSYS(per ADR-090 §D2.2)
+  → [Mode B] 直调 DGpuBoardTLM::submit_kernel(req) (UMD shim 简化路径)
+                                                  → CommandProcessor (S3:CP fetch + decode)
+                                                  → TmuDispatchProcessor::submit()
+                                                  → SubmitQueue::enqueue(cta_descriptor)
+                                                  → CudaCoreAdapter::on_cta_arrival(cta_desc)
+                                                     → PtxEmuSubmoduleMVP::decode_ptxir + submit_kernel_request
+                                                     → PTX-EMU::GPUContext → SMContext::exe_once() × N
+                                                       → WarpContext::execute_warp_instruction × M
+                                                         (functional,per PtxEmuSubmoduleMVP facade)
+                                                  → 完成 → sq_.on_warp_complete → tmu_.on_complete
+                                                       → CompletionRing::push()
+                                                       → host_notify()
+                                                          → cuStreamSynchronize 返回
 ```
 
 ### 3.5 风险
 
-- **R4**: TmuDispatchProcessor LIFO 频繁驱逐(32 slot MVP)— 溢出率 >5% 触发 review
+- **R4**: ~~TmuDispatchProcessor LIFO 频繁驱逐(32 slot MVP)~~ — **🗑️ 风险已消除(per Phase F-D.2 H5)**:反压停 fetch,容量满拒绝不驱逐;溢出率 >5% 触发 review(统计 `backpressure_count_/submit_count_`)
 - **R5**: Doorbell strong-order 延迟区间违反(PCIe Gen5 x16 250-700ns)— 测试断言区间
 - **R6**: UsrLinuxEmu IOCTL stub 与真实 IOCTL 行为偏差 — stub 严格遵循 `gpu_ioctl.h`
 
 ---
 
-## 4. S3 Warp-Precision(W5-6)— per-warp 指令调用
+## 4. S3 TMU+CP+SQ 链路接通(W5-6)— NVIDIA method packet + TMU 反压 + SubmitQueue 分发
 
 ### 4.1 目标
 
-- `CommandProcessor` 5-state FSM 解析 PM4
-- `Pm4Decoder` Mesa-style TYPE3(4 MVP opcodes)
-- `TmuDispatchProcessor` dep chain + LIFO
-- `CudaCoreAdapter` WarpState 4 reg dep(MVP,per Phase A S4 修复)— **白盒路径代码占位,永久不启用**(per DP4=C 决策)
-- 黑盒路径 per-warp cycle 内部一致性测试 PASS
+- `CommandProcessor` 5-state FSM 解析 NVIDIA method packet(per Phase F-H.3)
+- `Pm4Decoder` NVIDIA method packet(4 method_addr ranges:0x4000-0x40FF DISPATCH_DIRECT / 0x4200-0x42FF EVENT_WRITE / 0x4400-0x44FF RELEASE_MEM / 0x4500-0x45FF ACQUIRE_MEM)
+- `TmuDispatchProcessor` dep chain + 反压停 fetch(per Phase F-D.2 H5,非 LIFO)
+- **`SubmitQueue` WDU 分发网络**(per Phase F-H.5,单 SM 路由)
+- CudaCoreAdapter 深度集成 PTX-EMU(per Phase I.2,4 timing 模块注入)
+- 全链路验证:CP→TMU→SQ→CudaCore→CQ
 
 ### 4.2 关键交付
 
 | 交付 | 验证 | 状态 |
 |------|------|:---:|
-| `include/tlm/gpu/command_processor_mvp.hh` + `.cc`(5-state FSM) | 5 transition 测试 PASS | ⏳ W5 |
-| `include/tlm/gpu/pm4_decoder_mvp.hh` + `.cc`(Mesa TYPE3 + 4 opcodes) | 4 opcode + bit field round-trip PASS | ⏳ W5 |
-| `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `.cc`(32 slot + dep) | submit / on_complete / LIFO / dep chain PASS | ⏳ W5 |
-| `CudaCoreAdapter` WarpState 4 reg dep + 内部一致性测试 | per-warp WarpState PASS | ⏳ W6 |
-| `PtxEmuSubmoduleMVP` stepOneWarpInstruction 代码占位 | **代码框架,enable_whitebox=false 永久不调用**(per DP4=C) | ⏳ W6 |
-| `test/test_command_processor_mvp.cc` | 5 transition PASS | ⏳ W5 |
-| `test/test_pm4_decoder_mvp.cc` + `test_pm4_decoder_mvp_integration.cc` | PASS | ⏳ W5 |
-| `test/test_tmu_dispatch_processor_mvp.cc` | PASS | ⏳ W5 |
-| `test/test_cuda_core_adapter_mvp_whitebox.cc` | per-warp cycle PASS | ⏳ W6 |
+| `include/tlm/gpu/command_processor_mvp.hh` + `.cc`(5-state FSM,GPU VA fetch) | 5 transition 测试 PASS | ⏳ W5 |
+| `include/tlm/gpu/pm4_decoder_mvp.hh` + `.cc`(NVIDIA method packet) | 4 method_addr range + bit field round-trip PASS | ⏳ W5 |
+| `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `.cc`(32 slot + 反压停 fetch) | submit / on_complete / BACKPRESSURED / dep chain PASS | ⏳ W5 |
+| `include/tlm/gpu/submit_queue_mvp.hh` + `.cc`(WDU 分发网络) | enqueue / tick / dispatch_to_core / on_warp_complete PASS | ⏳ W5 |
+| CudaCoreAdapter 深度集成(per Phase I.2) | 6 timing 测试(tick/scoreboard/pipeline/dispatch/warp-state/injection) | ⏳ W6 |
+| `test/test_command_processor_mvp.cc` | 5 transition + NVIDIA method packet decode PASS | ⏳ W5 |
+| `test/test_pm4_decoder_mvp.cc` + `test_pm4_decoder_mvp_integration.cc` | NVIDIA method packet + CP 集成 PASS | ⏳ W5 |
+| `test/test_tmu_dispatch_processor_mvp.cc` | submit / 反压停 fetch / dep chain / 环检测 PASS | ⏳ W5 |
+| `test/test_submit_queue_mvp_route.cc` + `_enqueue.cc` + `_dispatch.cc` + `_complete.cc` + `_concurrent.cc` | 5 单测 PASS | ⏳ W5 |
+| ❌ ~~`test_cuda_core_adapter_mvp_whitebox.cc`~~ | **🗑️ 已删除**(per DP4=C 决策,由深度集成路径替代) | — |
 
 ### 4.3 关键 Commit
 
 ```bash
 # W5
-git commit -am "feat(pm4-decoder-mvp): Mesa-style TYPE3 header parsing (4 MVP opcodes)"
-git commit -am "feat(command-processor-mvp): 5-state FSM with Pm4Decoder integration"
-git commit -am "feat(tmu-dispatch-mvp): TMU Glue with dep chain + LIFO (32 slot MVP)"
+git commit -am "feat(pm4-decoder-mvp): NVIDIA method packet parsing (per Phase F-H.3 path 3)"
+git commit -am "feat(command-processor-mvp): 5-state FSM with Pm4Decoder (NVIDIA method packet)"
+git commit -am "feat(tmu-dispatch-mvp): TMU Glue with dep chain + backpressure (32 slot)"
+git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per Phase F-H.5)"
 
 # W6
-git commit -am "feat(cuda-core-mvp): whitebox dispatch_whitebox + per-warp WarpState"
-git commit -am "feat(ptx-emu-mvp): stepOneWarpInstruction whitebox API"
+git commit -am "feat(cuda-core-mvp): SM microarchitecture exploration (timing model, per Phase I.2)"
 ```
 
-### 4.4 per-warp 调用接口
+### 4.4 深度集成调用路径(per Phase I.1/I.2)
 
-**黑盒路径**(MVP 默认,无需新 API):
+**深度集成路径(MVP 唯一路径,per Phase F-H.7/I.1)**:
 ```
-CudaCoreAdapter::issueTask()
-  → PtxEmuSubmoduleMVP::image_execute()
-    → PTX-EMU GPUContext (内部完整执行)
-      → SMContext::exe_once() × N (每 cycle 内部)
-        → (PTX-EMU 内部)WarpContext::execute_warp_instruction × M
+SubmitQueue::dispatch_to_core(cta_desc)
+  → CudaCoreAdapter::on_cta_arrival(cta_desc)
+    → PtxEmuSubmoduleMVP::decode_ptxir(image_bytes, size) → StatementContext[]
+    → PtxEmuSubmoduleMVP::submit_kernel_request(gpu_ctx_, KernelLaunchRequest)
+      → PTX-EMU::GPUContext::submit_kernel_request (内部 C++ 实例方法)
+        → PTX-EMU::SMContext::exe_once() × N cycles (per-tick CudaCoreAdapter 调用)
+          → (PTX-EMU 内部)WarpContext::execute_warp_instruction(stmt, target_pc)
+            → 寄存器/内存/PC 按指令语义更新(FUNCTIONAL,per PtxEmuSubmoduleMVP facade)
+  → CudaCoreAdapter::tick() 镜像 WarpState[warp_id] = {cycle_count, exec_mask, blocked_cycles}
+    → **不含 PC**(由 PtxEmuSubmoduleMVP::read_thread_pc 读取)
+  → CudaCoreAdapter::on_warp_complete → sq_.on_warp_complete → tmu_.on_complete → CQ::push
 ```
 
-**白盒路径**(代码占位,per DP4=C **永久不启用**):
-```
-// CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
-//   → 循环 PtxEmuSubmoduleMVP::stepOneWarpInstruction(warp_id, &pc, &status, &cycle_count)
-//     → PTX-EMU SMContext::stepOneWarpInstruction(warp_id, ...) ← API 不存在,2026-08-20 验证
-//       → WarpContext::execute_warp_instruction(stmt, target_pc)
-//       → 返回 PC + cycle_count + status
-//   → 更新 WarpState[warp_id] = { pc, cycle_count, register_deps[4] }
-// 
-// MVP 范围: enable_whitebox=false 强制不调用,per-warp 精度推到 v0.5 完整版(ADR-X.16 P0'-P4')
-```
+**❌ 已删除路径**(per Phase I.1 重构):
+- ~~黑盒 `image_execute`(8 ABI 黑盒)~~
+- ~~白盒 `stepOneWarpInstruction`(per DP4=C 永久禁用)~~
 
 ### 4.5 风险
 
 - **R7**: CommandProcessor 5-state FSM 状态转换遗漏 — TDD 5 transition 测试
-- **R8**: Pm4Decoder Mesa-style 与 KFD convention 冲突 — 同时验证两种 convention
-- **R9**: ~~PTX-EMU 维护者拒收 `stepOneWarpInstruction` API~~ — **per DP4=C 决策消除该风险**
+- **R8**: Pm4Decoder NVIDIA method packet 与 UsrLinuxEmu `unpackPm4Header` 比特字段对齐 — 确认 `gpfifo_translator.h:60-73` 真相源一致
+- **R9**: ~~PTX-EMU 维护者拒收 `stepOneWarpInstruction` API~~ — **🗑️ 风险已消除(per DP4=C + Phase I.1)**
 
 ---
 
-## 5. S4 Production(W7-10)— ScoreboardTLM/PipelineTLM 升级 + v0.5.0-MVP tag
+## 5. S4 Production(W7-10)— 全量集成 + validate_topology + v0.5.0-MVP tag
 
 ### 5.1 目标
 
-- `ScoreboardTLM` 升级 production(per-warp cycle tracking)
-- `PipelineTLM` 升级 production(latency issue)
+- **ScoreboardTLM / PipelineTLM / TensorCoreTLM 直接使用现有模块**(不创建 `*_v05_mvp.hh` 升级版,per Phase I.2 修订)
 - `validate_topology` 集成
 - 全部 ≥880 测试 PASS
 - `git tag -a v0.5.0-MVP`
@@ -269,37 +269,27 @@ CudaCoreAdapter::issueTask()
 
 | 交付 | 验证 | 状态 |
 |------|------|:---:|
-| `include/tlm/gpu/scoreboard_tlm_v05_mvp.hh` per-warp cycle | 单元测试 PASS | ⏳ W7 |
-| `include/tlm/gpu/pipeline_tlm_v05_mvp.hh` latency issue | 单元测试 PASS | ⏳ W7 |
-| `ScoreboardTLM::tick()` per-warp tracking 与 PTX-EMU 同步 | 集成测试 PASS | ⏳ W8 |
-| `PipelineTLM::issue(latency)` API | 集成测试 PASS | ⏳ W8 |
 | `validate_topology` CMake target 集成 | `cmake --build build --target validate_topology` PASS | ⏳ W9 |
 | 全部 ≥880 测试 PASS(per ADR-SOC-06 G-MVP-4) | `build/bin/cpptlm_tests` PASS | ⏳ W9 |
 | `CHANGELOG.md` 记录 v0.5.0-MVP | 文档同步 | ⏳ W10 |
 | `git tag -a v0.5.0-MVP` | tag 创建 | ⏳ W10 |
+| ❌ ~~`scoreboard_tlm_v05_mvp.hh` + `pipeline_tlm_v05_mvp.hh`~~ | **🗑️ 已取消**(per Phase I.2,直接使用现有 `include/tlm/gpu/` 下的模块) | — |
 
 ### 5.3 关键 Commit
 
 ```bash
-# W7
-git commit -am "feat(scoreboard-v05-mvp): per-warp cycle tracking (upgrade from Legacy)"
-
-# W8
-git commit -am "feat(pipeline-v05-mvp): latency issue API (upgrade from Legacy)"
-
 # W9
 git commit -am "build: integrate validate_topology target for dgpu_board_v1_mvp.json"
 
 # W10
 git commit -am "docs(changelog): record v0.5.0-MVP release (MVP slice)"
-git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: MVP slice - UsrLinuxEmu IOCTL → CP → TMU → Cuda Core → PTX-EMU warp"
+git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: MVP slice - UsrLinuxEmu IOCTL → CP → TMU → SQ → CudaCore + PTX-EMU functional/timing split"
 ```
 
 ### 5.4 风险
 
-- **R10**: ScoreboardTLM 升级与 PTX-EMU 同步错误 — TDD 5 步结构 + 集成测试
-- **R11**: PipelineTLM latency issue 与 PTX-EMU 内部不一致 — 白盒路径校准
-- **R12**: 880 测试达不到 — S1-S3 累计 ≥50 新增测试,baseline 850 + 50 = 900(目标 ≥880)
+- **R10**: 现有 ScoreboardTLM/PipelineTLM 与 PTX-EMU 注入接口不兼容 — 确认 `sm_context.h:87-95` 注入点已对接(per Phase I.2 §1.3)
+- **R11**: 880 测试达不到 — S1-S3 累计 ≥50 新增测试,baseline 850 + 50 = 900(目标 ≥880)
 
 ---
 
@@ -345,14 +335,14 @@ P4' (W11-12) 收尾 + v0.5.0 tag
 | 仓 | 跟踪载体 | MVP 状态 | v0.5 完整版状态 |
 |----|---------|:---:|:---:|
 | **PTX-EMU** | submodule pin `PTX-EMU@87820951`(per DP1=B)— 白盒 API 不需要(per DP4=C 永久禁用) | 🟡 W1 submodule 锁定 | 🟡 v0.5 完整版白盒补足(per ADR-X.16 P0'-P4') |
-| **UsrLinuxEmu** | IOCTL 0x27/0x28 真实路径 + ADR-090 v2 ✅ Accepted(2026-08-18) | 🟡 S2 stub 模式(W3-4) | 🟡 完整集成(后续) |
+| **UsrLinuxEmu** | IOCTL 0x27/0x29/0x01 真实路径 + 0x28 永久 -ENOSYS + ADR-090 v2 ✅ Accepted(2026-08-18) | 🟡 S2 stub 模式(W3-4) | 🟡 完整集成(后续) |
 | **TaskRunner** | `cuModuleLoadData` 解析(已有) + tadr-308 待创建(per ADR-090 §C0.3) | ✅ 已 ship | - |
 | **CppTLM** | 本 roadmap + ADR-SOC-06 + openspec change | 🔵 MVP 实施 | 🟡 v0.5 完整版(后续) |
 
 **MVP 跨仓 commit 顺序**(per ADR-035 §R5.1 + UsrLinuxEmu ADR-090 v2 §C0.4 跨仓引用新规 + DP1=B + DP4=C 决策):
 ```
 [1] PTX-EMU submodule pin @ PTX-EMU@87820951(per DP1=B,2026-08-13 audit commit) → CppTLM S1
-    └─ 不发出 HSK-7 公告(per DP4=C,MVP 永久仅黑盒路径,不依赖 stepOneWarpInstruction API)
+    └─ 不发出 HSK-7 公告(per DP4=C,MVP 深度集成路径,不依赖 stepOneWarpInstruction API)
 [2] CppTLM S2 stub 模式 → 不依赖 UsrLinuxEmu 编译
 [3] CppTLM S3 CP+PM4+TMU+黑盒 warp 调用 → 不需要 PTX-EMU 新 API(per DP4=C)
 [4] CppTLM S4 v0.5.0-MVP tag → user sign-off(维持 4 周 W7-W10,per DP2=A)
@@ -362,7 +352,7 @@ P4' (W11-12) 收尾 + v0.5.0 tag
 **HSK 协议编号澄清**(per Phase A 修复 S6/NR5 + DP4=C):
 - **HSK-1**: PTX-EMU ABI 真相源(`include/cudart/cpptlm_module.h:12-52`,`CPPTLM_MODULE_VERSION=2`)— 已 ship
 - **HSK-6**: UsrLinuxEmu ADR-090 v2 §D5 联发协议(PTX-EMU 发起,CppTLM ack,UsrLinuxEmu 利益相关方)— ✅ Accepted 2026-08-18
-- ~~HSK-7~~(per DP4=C 决策)— **不发出**:MVP 永久仅黑盒路径,不依赖 PTX-EMU 新增 API
+- ~~HSK-7~~(per DP4=C 决策)— **不发出**:MVP 深度集成路径,不依赖 PTX-EMU 新增 API
 - ~~HSK-8~~(原 roadmap 误称)— **废除**(与 ADR-090 §D5 编号冲突)
 
 ---
@@ -375,10 +365,10 @@ P4' (W11-12) 收尾 + v0.5.0 tag
 | **G-MVP-2** | S2 DGpuBoard + Doorbell + SQ/CQ + JSON | ⏳ | W3-4 |
 | **G-MVP-3** | S3 CP + PM4 + TMU + warp 调用 | ⏳ | W5-6 |
 | **G-MVP-4** | S4 Production + validate_topology | ⏳ | W7-10 |
-| **G-MVP-5** | UsrLinuxEmu IOCTL 0x27/0x28 真实路径 | ⏳ | W4 |
+| **G-MVP-5** | UsrLinuxEmu IOCTL 0x27/0x29/0x01 + 0x28 永久 -ENOSYS 真实路径(4 IOCTL,per Phase F-H.3)| ⏳ | W4 |
 | **G-MVP-6** | 编译防火墙验证 | ⏳ | W2 |
 | **G-MVP-7** | v0.5.0-MVP tag | � | W10 |
-| **G-MVP-8** | ~~HSK-7/8 公告发出~~(per DP4=C **不需要**,MVP 永久仅黑盒) | — | — |
+| **G-MVP-8** | ~~HSK-7/8 公告发出~~(per DP4=C **不需要**,MVP 深度集成路径) | — | — |
 
 ---
 
@@ -387,10 +377,10 @@ P4' (W11-12) 收尾 + v0.5.0 tag
 | ID | 风险 | 概率 | 影响 | 缓解 |
 |----|------|:---:|:---:|------|
 | R1 | PTX-EMU submodule 版本漂移 | 中 | 中 | submodule pin commit + 月度 bump PR |
-| R2 | PTX-EMU 维护者拒收 `stepOneWarpInstruction` API | 中 | 中 | MVP 仅黑盒,白盒推迟到 v0.5 完整版;fork 兜底 |
+| R2 | ~~PTX-EMU 维护者拒收 `stepOneWarpInstruction` API~~ | — | — | **🗑️ 风险已消除(per DP4=C + Phase I.1)**:MVP 深度集成路径,不依赖该 API |
 | R3 | UsrLinuxEmu IOCTL stub 与真实 IOCTL 行为偏差 | 中 | 中 | stub 严格遵循 `gpu_ioctl.h` 真实结构 |
 | R4 | CommandProcessor 5-state FSM 状态转换遗漏 | 中 | 高 | TDD 5 transition 测试 |
-| R5 | TmuDispatchProcessor LIFO 频繁驱逐 | 中 | 中 | 32 slot MVP;溢出率 >5% 触发 review |
+| R5 | ~~TmuDispatchProcessor LIFO 频繁驱逐~~ | — | — | **🗑️ 风险已消除(per Phase F-D.2 H5)**:反压停 fetch,32 slot MVP 容量满 `BACKPRESSURED` 拒绝不驱逐 |
 | R6 | 6-10 周时间线偏紧 | 中 | 中 | MVP 切片(4 件)+ 严格 TDD 5 步 |
 | R7 | PtxEmuSubmoduleMVP 编译防火墙破裂 | 低 | 高 | 严格 `git grep` 检查 + CI 拦截 |
 | R8 | PTX-EMU submodule 构建依赖扩散(ANTLR4 4.13.2) | 中 | 低 | `PTX_EMU_BUILD_TESTS=OFF` + `-fvisibility=hidden` |
