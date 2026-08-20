@@ -11,7 +11,7 @@
 
 | Spec | 内容 | 状态 |
 |------|------|------|
-| `dgpu-board-mvp.md` | DGpuBoardTLM 6 组件接口契约(per Phase F-H.2) | 📋 待 T-s2-3 实施时输出 |
+| `dgpu-board-mvp.md` | DGpuBoardTLM 8 组件接口契约(per Phase F-H.2) | 📋 待 T-s2-3 实施时输出 |
 | `submit-queue-mvp.md` | SubmitQueue WDU 分发网络接口契约(per Phase F-H.5) | 📋 待 T-s2-2 实施时输出 |
 | `usrlxemu-ioctl-stub-mvp.md` | 4 IOCTL stub 端到端契约(per Phase F-H.3) | 📋 待 T-s2-4 实施时输出 |
 

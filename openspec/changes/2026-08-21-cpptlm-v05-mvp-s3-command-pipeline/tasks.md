@@ -9,10 +9,13 @@
 
 ## W5 (2026-09-19 ~ 2026-09-25)
 
-### T-s3-1: Pm4Decoder (NVIDIA method packet,per Phase F-H.3 路径 3)
+### T-s3-1: Pm4Decoder (填充实现,per Oracle ses_fe0b6e44 s2 骨架修复)
+
+> **关键**: s2 已创建 `pm4_decoder_mvp.hh` 接口(纯虚 `Pm4DecoderInterface`)+ `command_processor_mvp.hh` 骨架;s3 填充实际实现。
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/pm4_decoder_mvp.hh` + `.cc`(~200 LOC)
+- [ ] 填充 `include/tlm/gpu/pm4_decoder_mvp.cc`(~200 LOC,头文件 s2 已创建)
+- [ ] `Pm4Decoder` 继承 `Pm4DecoderInterface`(per s2 骨架)
 - [ ] **`Pm4MethodHeader` 结构体**(per `unpackPm4Header`):
   ```cpp
   uint32_t inc : 1;            // bit 0
@@ -24,35 +27,36 @@
 - [ ] **`Pm4MethodDispatch`**(替代原 `Pm4Packet`)
 - [ ] `parse_method(method_header, payload, max_dwords) → Pm4MethodDispatch`
 - [ ] 4 method_addr ranges: 0x4000-0x40FF DISPATCH_DIRECT / 0x4200-0x42FF EVENT_WRITE / 0x4400-0x44FF RELEASE_MEM / 0x4500-0x45FF ACQUIRE_MEM
-- [ ] `tests/test_pm4_decoder_mvp.cc` 全部 PASS
+- [ ] `set_decoder()` 注入到 CommandProcessor(替换 s2 no-op 骨架)
+- [ ] `test/test_pm4_decoder_mvp.cc` 全部 PASS
 
 **Commit**:
 ```bash
-git commit -am "feat(pm4-decoder-mvp): NVIDIA method packet parsing (per Phase F-H.3 path 3)"
+git commit -am "feat(pm4-decoder-mvp): fill NVIDIA method packet parsing (per Phase F-H.3 path 3)"
 ```
 
-### T-s3-2: CommandProcessor (5-state FSM,per Phase F-H.3)
+### T-s3-2: CommandProcessor (填充实现,per s2 骨架)
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/command_processor_mvp.hh` + `.cc`(~250 LOC)
+- [ ] 填充 `src/tlm/gpu/command_processor_mvp.cc`(.cc,头文件 s2 已创建,~150 LOC 填充 + ~150 LOC 已有骨架)
 - [ ] 5-state FSM: IDLE → FETCH → DECODE → DISPATCH → COMPLETE
 - [ ] **FETCH**:`mem_read_vram(GPU VA, sizeof(gpu_gpfifo_entry))`(per Phase F-C.3 H1)
-- [ ] 内部调 `Pm4Decoder::parse_method`(替代 `parse_type3`)
+- [ ] DECODE 调 `pm4_decoder_->parse_method()`(通过 s2 的 `set_decoder` 注入,非直接构造)
 - [ ] **DISPATCH**:`tmu_.submit(Pm4MethodDispatch)`(替代 `record`)
-- [ ] `tests/test_command_processor_mvp.cc` 5 transition PASS
-- [ ] `tests/test_pm4_decoder_mvp_integration.cc` CP + Decoder 集成 PASS
+- [ ] `test/test_command_processor_mvp.cc` 5 transition + NVIDIA method packet decode PASS(替代 s2 no-op 骨架测试)
+- [ ] `test/test_pm4_decoder_mvp_integration.cc` CP + Decoder 集成 PASS
 
 **Commit**:
 ```bash
-git commit -am "feat(command-processor-mvp): 5-state FSM with Pm4Decoder integration (NVIDIA method packet)"
+git commit -am "feat(command-processor-mvp): fill 5-state FSM (NVIDIA method packet decode)"
 ```
 
 ## W6 (2026-09-26 ~ 2026-10-02)
 
-### T-s3-3: TmuDispatchProcessor (反压停 fetch,per Phase F-D.2 H5)
+### T-s3-3: TmuDispatchProcessor (填充实现,per s2 骨架 + Phase F-D.2 H5)
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `.cc`(~250 LOC)
+- [ ] 填充 `src/tlm/gpu/tmu_dispatch_processor_mvp.cc`(.cc,头文件 s2 已创建,~250 LOC 填充)
 - [ ] `TmuDispatchRecord` 9 字段
 - [ ] `PreExitPolicy` 枚举: NONE 档(MVP)
 - [ ] `inflight_kernel_reqs_` 32 slot + **反压停 fetch**(`BACKPRESSURED` 替代 LIFO)
@@ -60,12 +64,13 @@ git commit -am "feat(command-processor-mvp): 5-state FSM with Pm4Decoder integra
 - [ ] 依赖锁存器 `wait_on_latch_id ↔ arrive_at_latch_id` 匹配检查
 - [ ] pre-dispatch 3 段条件检查
 - [ ] **依赖**:`SubmitQueue& submit_queue_` + `CompletionRing& cq_`(per Phase F-H.4,不直接调 CudaCore)
-- [ ] `tests/test_tmu_dispatch_processor_mvp.cc` ~10 测试 PASS:
+- [ ] `set_handler()` 注入到 SubmitQueue(替换 s2 no-op 骨架,`TmuHandlerInterface`)
+- [ ] `test/test_tmu_dispatch_processor_mvp.cc` ~10 测试 PASS(替代 s2 骨架的反压测试):
   - submit / on_complete / BACKPRESSURED / dep chain / 环检测
 
 **Commit**:
 ```bash
-git commit -am "feat(tmu-dispatch-mvp): TMU Glue with dep chain + backpressure (32 slot, per Phase F-D.2 H5)"
+git commit -am "feat(tmu-dispatch-mvp): fill dep chain + backpressure (per Phase F-D.2 H5)"
 ```
 
 ## W7-9 (2026-10-03 ~ 2026-10-23)

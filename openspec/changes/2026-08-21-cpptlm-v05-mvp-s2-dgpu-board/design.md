@@ -8,7 +8,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                  DGpuBoardTLM (ChStreamModuleBase, 6 组件)               │
+│                  DGpuBoardTLM (ChStreamModuleBase, 8 组件)               │
 │                                                                              │
 │  DGpuBar + Doorbell + CommandProcessor + TmuDispatchProcessor + SubmitQueue │
 │  + CompletionRing + CudaCoreAdapter(从 s1)+ PtxEmuSubmoduleMVP(从 s1) │
@@ -83,7 +83,7 @@ public:
 ## 6. 阶段化交付(本 change)
 
 ```
-s2-W3 (2026-09-05~11): DGpuBoardTLM 6 组件 + Doorbell + SubmitQueue + CompletionRing
+s2-W3 (2026-09-05~11): DGpuBoardTLM 8 组件 + Doorbell + SubmitQueue + CompletionRing
 s2-W4 (2026-09-12~18): 4 IOCTL stub + JSON config + validate_topology + 8 个测试 PASS + archive
 ```
 
@@ -91,7 +91,7 @@ s2-W4 (2026-09-12~18): 4 IOCTL stub + JSON config + validate_topology + 8 个测
 
 | ID | 风险 | 概率 | 影响 | 缓解 |
 |----|------|:---:|:---:|------|
-| R1 | 6 组件接口签名对齐 | 中 | 中 | s1 冻结接口约束 + s2 单元测试覆盖 |
+| R1 | 8 组件接口签名对齐 | 中 | 中 | s1 冻结接口约束 + s2 单元测试覆盖 |
 | R2 | 4 IOCTL stub 与真实 IOCTL 行为偏差 | 中 | 中 | stub 严格遵循 `gpu_ioctl.h` 真实结构 |
 | R3 | SubmitQueue 反压链路 | 中 | 中 | 容量满 → 拒绝不驱逐 + CP backoff |
 | R4 | Doorbell strong-order 延迟违反 | 中 | 中 | 测试断言 250-700ns 区间(per `docs/research/PCIe/PCIe_上的保序write.md` §4) |

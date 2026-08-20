@@ -53,12 +53,12 @@
          ▼                              │
     ┌─────────┐                        │
     │  FETCH  │ 读 gpu_gpfifo_entry    │
-    └────┬────� payload[0](PM4 header) │
-         │ + 解析 header.type == TYPE3 │
+    └────┬────� payload[0](method header) │
+         │ + 解析 unpackPm4Header │
          ▼                              │
     ┌─────────┐                        │
-    │ DECODE  │ Pm4Decoder::parse_type3│
-    └────┬────┘ 提取 opcode + count    │
+    │ DECODE  │ Pm4Decoder::parse_method│
+    └────┬────┘ 提取 method_addr + data_count    │
          │                              │
          ▼                              │
     ┌─────────┐                        │
@@ -84,7 +84,7 @@ CP.tick()
     ├─ FETCH: dgpu_bar_.read_reg(CP_FETCH_OFFSET) → header
     │       payload = dgpu_bar_.read_payload(count dwords)
     │
-    ├─ DECODE: pm4_decoder_.parse_type3(header, payload, max_dwords)
+    ├─ DECODE: pm4_decoder_.parse_method(method_header, payload, max_dwords)
     │       → Pm4Packet { opcode, subchannel_id, count, payload }
     │
     ├─ DISPATCH (per opcode):

@@ -6,7 +6,7 @@
 > **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D1
 > **关联 OpenSpec**(per Phase K Oracle 拆分,2026-08-21):
 > - **s1** PTX-EMU 集成: [`openspec/changes/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/`](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/) (W1-2 基础设施,2 模块,12 测试)
-> - **s2** DGpuBoard 板卡: [`openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/`](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/) (W3-4,依赖 s1,6 组件 + 4 IOCTL)
+> - **s2** DGpuBoard 板卡: [`openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/`](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/) (W3-4,依赖 s1,8 组件 + 4 IOCTL)
 > - **s3** Command 数据面: [`openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/`](../../../openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/) (W5-10,依赖 s1+s2,NVIDIA PM4 + TMU 反压 + tag)
 > - ~~原 change~~: `openspec/changes/2026-08-19-cpptlm-v05-mvp/` → 已归档 `openspec/changes/archive/2026-08-19-cpptlm-v05-mvp-superseded-by-s1-s2-s3/` (per Phase K 拆分,2026-08-21)
 > - 完整版: [`openspec/changes/2026-08-19-cpptlm-v05-redo/`](../../../openspec/changes/2026-08-19-cpptlm-v05-redo/) (12 周 P0'-P4',MVP 验证后启动)
@@ -234,7 +234,7 @@ UsrLinuxEmu (host)                            CppTLM (dGPU board)
 cuModuleLoadData(image_bytes)
   → ioctl(0x27 LOAD_KERNEL_MODULE)            UsrLinuxEmuIoctlStub::ioctl(0x27)
   → HAL #66 → H2D DMA                           DGpuBoardTLM::install_kernel_module()
-    → 写 image_bytes → DGpuBar.vram_base()       → PtxEmuSubmoduleMVP::image_load()
+    → 写 image_bytes → DGpuBar.vram_base()       → PtxEmuSubmoduleMVP::decode_ptxir()
     → 返回 vram_addr                              → 返回 image_handle
 
 cuLaunchKernel(grid, block, args, ...)

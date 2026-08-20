@@ -14,7 +14,7 @@ DGpuBoardTLM 是 MVP 切片的"宿主"——把 s1 完成的 PtxEmuSubmoduleMVP 
 
 s2 价值独立(但**编译依赖 s1**):
 - 可独立测试 4 IOCTL stub 端到端(driver fallback 路径)
-- DGpuBoardTLM 6 组件包装是 S3 数据面的物理载体
+- DGpuBoardTLM 8 组件包装是 S3 数据面的物理载体
 - SubmitQueue WDU 分发网络是 NVIDIA Hopper 蓝图的关键中间层
 
 **触发事件**:
@@ -30,7 +30,7 @@ s2 价值独立(但**编译依赖 s1**):
 
 | 文件 | 用途 |
 |------|------|
-| `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc` | DGpuBoardTLM ChStreamModuleBase(**6 组件**包装,per Phase F-H.2) |
+| `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc` | DGpuBoardTLM ChStreamModuleBase(**8 组件**包装,per Phase F-H.2) |
 | `include/tlm/gpu/doorbell_mvp.hh` + `.cc` | SQ tail register + strong-order write(per `docs/research/PCIe/PCIe_上的保序write.md`) |
 | `include/tlm/gpu/submit_queue_mvp.hh` + `.cc` | **🆕 WDU 分发网络**(per Phase F-H.5,per `docs/research/WDUtoSM/overview.md` NVIDIA Hopper) |
 | `include/tlm/gpu/completion_ring_mvp.hh` + `.cc` | push + host_notify 重设计 |
@@ -39,6 +39,7 @@ s2 价值独立(但**编译依赖 s1**):
 | `test/test_dgpu_board_v1_mvp_from_config.cc` | 6 SECTION E2E(per ADR-SOC-06 G-MVP-2) |
 | `test/test_usrlxemu_ioctl_stub.cc` | **4 IOCTL** PASS(per Phase F-H.3) |
 | `test/test_submit_queue_mvp_route.cc` + `_enqueue.cc` + `_dispatch.cc` + `_complete.cc` + `_concurrent.cc` | **5 个单测**(per Phase F-H.5 §7) |
+| `test/test_doorbell_strong_order_mvp.cc` | Doorbell strong-order 250-700ns 区间 + 同 stream 顺序 PASS |
 
 ### 2. 修改文件
 
@@ -57,7 +58,7 @@ s2 价值独立(但**编译依赖 s1**):
 
 | Gate | Owner | 状态 | 验证方法 |
 |------|-------|:---:|----------|
-| **s2-G1** DGpuBoardTLM 6 组件编译通过 | CppTLM | ⏳ W3 | `cmake --build build` 通过 |
+| **s2-G1** DGpuBoardTLM 8 组件编译通过 | CppTLM | ⏳ W3 | `cmake --build build` 通过 |
 | **s2-G2** Doorbell strong-order 250-700ns 区间测试 PASS | CppTLM | ⏳ W3 | `ctest -R "test_doorbell_strong_order_mvp"` PASS |
 | **s2-G3** SubmitQueue WDU 5 个单测 PASS | CppTLM | ⏳ W3 | `ctest -R "test_submit_queue_mvp"` 5 个文件 PASS |
 | **s2-G4** UsrLinuxEmuIoctlStub 4 IOCTL 端到端 PASS | CppTLM | ⏳ W4 | `ctest -R "test_usrlxemu_ioctl_stub"` PASS(0x27/0x28-ENOSYS/0x29/0x01) |
@@ -66,7 +67,7 @@ s2 价值独立(但**编译依赖 s1**):
 
 **最终验收(本 change 完成时)**:
 - [ ] s2-G1 ~ s2-G6 全部 ✅
-- [ ] 7 个测试文件 PASS(6 SECTION + 5 SQ + 4 IOCTL + 1 Doorbell)
+- [ ] 8 个测试文件 PASS(1 Doorbell + 5 SQ + 1 E2E 6 SECTION + 1 IOCTL 4 IOCTL)
 - [ ] **本 change 可独立 archive**
 
 ---

@@ -14,7 +14,7 @@
 **Acceptance**:
 - [ ] 新建 `include/tlm/gpu/doorbell_mvp.hh` + `.cc`(SQ tail register + strong-order write,per `docs/research/PCIe/PCIe_上的保序write.md` §4 250-700ns 区间)
 - [ ] 新建 `include/tlm/gpu/completion_ring_mvp.hh` + `.cc`(push + host_notify 重设计)
-- [ ] `tests/test_doorbell_strong_order_mvp.cc`:latency 区间 + 同 stream 顺序 PASS
+- [ ] `test/test_doorbell_strong_order_mvp.cc`:latency 区间 + 同 stream 顺序 PASS
 
 **Commit**:
 ```bash
@@ -31,30 +31,105 @@ git commit -am "feat(completion-ring-mvp): push + host_notify hook"
 - [ ] `SubmitQueue::on_warp_complete(task_id, status)` 反向流
 - [ ] `select_target_core(cta_desc) → uint8_t`:MVP 固定返回 0
 - [ ] **5 个单测**全部 PASS:
-  - `tests/test_submit_queue_mvp_route.cc`
-  - `tests/test_submit_queue_mvp_enqueue.cc`
-  - `tests/test_submit_queue_mvp_dispatch.cc`
-  - `tests/test_submit_queue_mvp_complete.cc`
-  - `tests/test_submit_queue_mvp_concurrent.cc`
+  - `test/test_submit_queue_mvp_route.cc`
+  - `test/test_submit_queue_mvp_enqueue.cc`
+  - `test/test_submit_queue_mvp_dispatch.cc`
+  - `test/test_submit_queue_mvp_complete.cc`
+  - `test/test_submit_queue_mvp_concurrent.cc`
 
 **Commit**:
 ```bash
 git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per Phase F-H.5)"
 ```
 
-### T-s2-3: DGpuBoardTLM(**6 组件**包装,per Phase F-H.2)
+### T-s2-3a: CommandProcessor 骨架(per Oracle ses_fe0b6e44 修复 CRITICAL s2 逆依赖 s3)
+
+> **关键**: s2 W3-4 须创建 CP/TMU 类骨架(头文件 + stub 实现),使 DGpuBoardTLM 可独立编译;s3 W5-6 填充数据面(NVIDIA method packet + 反压停 fetch)。
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc`(~500 LOC)
-- [ ] 内部 6 组件(从 s1 拿 PtxEmuSubmoduleMVP + CudaCoreAdapter,s2 新增 SubmitQueue):
-  - `DGpuBar` + `Doorbell` + `CommandProcessor` + `TmuDispatchProcessor` + **`SubmitQueue`** + `CompletionRing` + `CudaCoreAdapter`(s1) + `PtxEmuSubmoduleMVP`(s1)
-- [ ] `tick()` 串联 4 阶段:`cp_.tick() → tmu_.tick() → sq_.tick() → cuda_core_.tick()`(per Phase F-H.2 §4)
-- [ ] 入口方法:`install_kernel_module(vram_addr, size)` + `submit_kernel(req)` + `write_reg(offset, value)`
-- [ ] `include/chstream_register.hh` 追加 `REGISTER_CHSTREAM(DGpuBoardTLM)`
+- [ ] 新建 `include/tlm/gpu/command_processor_mvp.hh` + `src/tlm/gpu/command_processor_mvp.cc`(~150 LOC 骨架,~30 LOC 实现)
+- [ ] **接口契约**:
+  ```cpp
+  class CommandProcessor {
+  public:
+      enum class State { IDLE, FETCH, DECODE, DISPATCH, COMPLETE };
+      State state() const { return state_; }
+      void wake();  // 供 DGpuBoardTLM 在 Doorbell ring 后调
+      void tick();  // 5-state FSM 主入口
+      void set_decoder(std::unique_ptr<Pm4DecoderInterface> decoder);  // s3 注入实现
+  };
+  ```
+- [ ] **骨架实现**(W3-4 即可编译): tick() 内**默认 no-op**(状态机转换但不实际 fetch/decode);提供 `set_decoder` 接口供 s3 注入
+- [ ] `include/tlm/gpu/pm4_decoder_mvp.hh`(纯接口头,无 .cc,15 LOC):
+  ```cpp
+  class Pm4DecoderInterface {
+  public:
+      virtual ~Pm4DecoderInterface() = default;
+      virtual void tick(CommandProcessor& cp) = 0;  // s3 填充
+  };
+  ```
+- [ ] 6 SECTION E2E 第 3 项"H2D 写 VRAM → install_kernel_module 返回 0"在 s2 W4 即可 PASS(CP 骨架 no-op,install_kernel_module 直接调 facade)
+- [ ] 6 SECTION E2E 第 4 项"IOCTL 0x01 pushbuffer → CQ 收到 N entry"**在 s2 W4 仍 FAIL**(待 s3 填充 CP decoder 后);s2 E2E 降级为 5 SECTION + "CP-pending" 标记
+- [ ] `test/test_command_processor_mvp_skeleton.cc`:CP 状态机骨架测试 PASS(5 state 转换 no-op + wake)
 
 **Commit**:
 ```bash
-git commit -am "feat(dgpu-board-mvp): DGpuBoardTLM ChStreamModuleBase with 8 components (per Phase F-H.2)"
+git commit -am "feat(command-processor-mvp): skeleton (5-state FSM stub, per Oracle s2-dep fix)"
+```
+
+### T-s2-3b: TmuDispatchProcessor 骨架(per Oracle 修复)
+
+**Acceptance**:
+- [ ] 新建 `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `src/tlm/gpu/tmu_dispatch_processor_mvp.cc`(~150 LOC 骨架)
+- [ ] **接口契约**:
+  ```cpp
+  class TmuDispatchProcessor {
+  public:
+      TmuSubmitResult submit(TmuDispatchRecord record, uint32_t* out_evicted = nullptr);
+      void on_complete(uint32_t task_id, int32_t status);
+      void try_chain_dependent(const TmuDispatchRecord& completed_record);
+      size_t inflight_count() const;
+      // s3 填充
+      void set_handler(std::unique_ptr<TmuHandlerInterface> handler);  // s3 注入
+  };
+  ```
+- [ ] **骨架实现**(W3-4 即可编译): submit() 在容量满时返回 `BACKPRESSURED`(反压,不驱逐);on_complete() / try_chain_dependent() 骨架 no-op;`set_handler` 注入
+- [ ] `include/tlm/gpu/tmu_handler_mvp.hh`(纯接口头,15 LOC):
+  ```cpp
+  class TmuHandlerInterface {
+  public:
+      virtual ~TmuHandlerInterface() = default;
+      virtual void on_dispatch(const TmuDispatchRecord& record) = 0;  // s3 填充→调 SubmitQueue
+  };
+  ```
+- [ ] `test/test_tmu_dispatch_processor_mvp_skeleton.cc`:反压 + 容量管理测试 PASS
+
+**Commit**:
+```bash
+git commit -am "feat(tmu-dispatch-mvp): skeleton (backpressure stub, per Oracle s2-dep fix)"
+```
+
+### T-s2-3: DGpuBoardTLM(8 组件包装,per Phase F-H.2 修订)
+
+**Acceptance**:
+- [ ] 新建 `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc`(~500 LOC)
+- [ ] 内部 **8 组件**(全部 s2 内部成员):
+  - `DGpuBar` + `Doorbell` + `CommandProcessor`(s2 骨架)+ `TmuDispatchProcessor`(s2 骨架)+ `SubmitQueue`(s2 新增) + `CompletionRing` + `CudaCoreAdapter`(s1) + `PtxEmuSubmoduleMVP`(s1)
+- [ ] `tick()` 串联 4 阶段:`cp_.tick() → tmu_.tick() → sq_.tick() → cuda_core_.tick()`(per Phase F-H.2 §4)
+- [ ] 入口方法:`install_kernel_module(vram_addr, size)` + `submit_kernel(req)` + `write_reg(offset, value)`
+- [ ] `include/chstream_register.hh` 追加 `REGISTER_CHSTREAM(DGpuBoardTLM)`
+- [ ] **6 SECTION E2E 降级验收**(s2 W4 可达):
+  1. `validate_topology` 通过该 JSON
+  2. `instantiateAll` 返回 true,`getInstance("dgpu_board0")` 存在
+  3. H2D: 写 VRAM → `install_kernel_module` 返回 0 + image_handle ≠ 0 ✅
+  4. Launch(0x01 pushbuffer)→ `cp_.tick()` no-op + CQ 收到 N entry(因 s3 CP decoder 未填充,**此处可能 N=0 — 在 s3 完成后才 N=N)⏳
+  5. host_notify 触发 ≥1 次 ✅
+  6. 负面: `ptx_emu_root` 指向不存在路径 → `instantiateAll` 失败 ✅
+- [ ] **W3-4 可独立 archive**(CP/TMU 骨架编译通过 + 5 SECTION PASS + 第 4 项标注"待 s3 填充")
+
+**Commit**:
+```bash
+git commit -am "feat(dgpu-board-mvp): DGpuBoardTLM ChStreamModuleBase with 8 components (per Phase F-H.2 + s2-dep fix)"
 ```
 
 ## W4 (2026-09-12 ~ 2026-09-18)
@@ -69,7 +144,7 @@ git commit -am "feat(dgpu-board-mvp): DGpuBoardTLM ChStreamModuleBase with 8 com
   - 0x29 `UNLOAD_KERNEL_MODULE` → 走 FREE_BO 路径 → `uninstall_kernel_module(vram_addr)`(真实工作)
   - **0x01 `PUSHBUFFER_SUBMIT_BATCH` → 写 gpfifo_entries[] 到 DGpuBar.vram.pushbuffer_ring + Doorbell ring**(per Phase F-H.3 真实 launch 入口)
 - [ ] `include/chstream_register.hh` 追加 `REGISTER_CHSTREAM(UsrLinuxEmuIoctlStub)`
-- [ ] `tests/test_usrlxemu_ioctl_stub.cc`:**4 IOCTL** PASS(含 0x28 -ENOSYS 验证 + driver fallback 路径)
+- [ ] `test/test_usrlxemu_ioctl_stub.cc`:**4 IOCTL** PASS(含 0x28 -ENOSYS 验证 + driver fallback 路径)
 
 **Commit**:
 ```bash
@@ -106,7 +181,7 @@ git commit -am "test(dgpu-board-v1-mvp): 6 SECTION E2E + 4 IOCTL tests (per Phas
 
 | ID | 风险 | 概率 | 影响 | 缓解 |
 |----|------|:---:|:---:|------|
-| R1 | 6 组件接口签名对齐 | 中 | 中 | s1 冻结接口约束 + s2 单元测试覆盖 |
+| R1 | 8 组件接口签名对齐 | 中 | 中 | s1 冻结接口约束 + s2 单元测试覆盖 |
 | R2 | 4 IOCTL stub 与真实 IOCTL 行为偏差 | 中 | 中 | stub 严格遵循 `gpu_ioctl.h` 真实结构 |
 | R3 | SubmitQueue 反压链路 | 中 | 中 | 容量满 → 拒绝不驱逐 + CP backoff |
 | R4 | Doorbell strong-order 延迟违反 | 中 | 中 | 测试断言 250-700ns 区间 |
