@@ -26,16 +26,16 @@ s3 价值(必须依赖 s1+s2):
 
 ## What Changes
 
-### 1. 新建文件
+### 1. 修改文件(per Oracle ses_fe0b6e44 s2 骨架修复,2026-08-21)
 
-| 文件 | 用途 |
+| 文件 | 修改 |
 |------|------|
-| `include/tlm/gpu/command_processor_mvp.hh` + `.cc` | CP 5-state FSM(per Phase F-H.3,GPU VA fetch)|
-| `include/tlm/gpu/pm4_decoder_mvp.hh` + `.cc` | **NVIDIA method packet** 解析(4 method_addr ranges) |
-| `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `.cc` | TMU Glue(32 slot + **反压停 fetch**,per Phase F-D.2 H5) |
-| `test/test_command_processor_mvp.cc` | 5 transition + NVIDIA method packet decode |
-| `test/test_pm4_decoder_mvp.cc` + `test_pm4_decoder_mvp_integration.cc` | NVIDIA method packet + CP 集成 |
-| `test/test_tmu_dispatch_processor_mvp.cc` | submit / 反压停 fetch / dep chain / 环检测 |
+| `include/tlm/gpu/command_processor_mvp.hh` + `.cc`(s2 骨架已创建) | **填充实现**: NVIDIA method packet 5-state FSM(GPU VA fetch + parse_method + DECODE 实际逻辑) |
+| `include/tlm/gpu/pm4_decoder_mvp.hh`(s2 接口已创建)| **填充实现**: `Pm4Decoder` 继承 `Pm4DecoderInterface`,4 method_addr ranges 解析 |
+| `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `.cc`(s2 骨架已创建) | **填充实现**: dep chain + 反压停 fetch + `set_handler` 注入到 SubmitQueue |
+| `test/test_command_processor_mvp.cc` | 5 transition + NVIDIA method packet decode 真实测试(替代 s2 骨架的 no-op 测试) |
+| `test/test_pm4_decoder_mvp.cc` + `test_pm4_decoder_mvp_integration.cc` | NVIDIA method packet + CP 集成 PASS |
+| `test/test_tmu_dispatch_processor_mvp.cc` | submit / 反压停 fetch / dep chain / 环检测 真实测试(替代 s2 骨架的反压测试) |
 
 ### 2. 修改文件
 

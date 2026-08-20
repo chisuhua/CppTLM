@@ -36,7 +36,7 @@ git commit -m "chore(submodule): pin external/PTX-EMU@87820951 (per DP1=B)"
 - [ ] 设置 `PTX_EMU_BUILD_SHARED=OFF`(强制静态库)
 - [ ] 设置 `-fvisibility=hidden`(per Oracle §E.1 风险 R5)
 - [ ] cpptlm_core 静态链接 PTX-EMU
-- [ ] `tests/CMakeLists.txt` 添加 s1 测试目标(12 个 .cc)
+- [ ] `test/CMakeLists.txt` 添加 s1 测试目标(12 个 .cc)
 - [ ] 现有 ≥850 测试仍通过(无 regression)
 
 **验证命令**:
@@ -48,7 +48,7 @@ build/bin/cpptlm_tests --reporter compact 2>&1 | tail -3
 
 **Commit**:
 ```bash
-git add CMakeLists.txt tests/CMakeLists.txt
+git add CMakeLists.txt test/CMakeLists.txt
 git commit -m "build(cmake): add_subdirectory(external/PTX-EMU) — submodule static link"
 ```
 
@@ -68,12 +68,12 @@ git commit -m "build(cmake): add_subdirectory(external/PTX-EMU) — submodule st
 - [ ] **functional 调用不增加 cycle 计数**(`sm->get_cycle_count()` 前后不变)
 
 **6 个测试文件**(per Phase I.1 §6):
-- [ ] `tests/test_ptx_emu_facade_decode.cc` — PTXIR 格式校验 + magic/version 异常路径
-- [ ] `tests/test_ptx_emu_facade_arith.cc` — ADD/SUB/MUL/DIV 寄存器结果正确性
-- [ ] `tests/test_ptx_emu_facade_memory.cc` — LD/ST 共享/全局内存读写
-- [ ] `tests/test_ptx_emu_facade_branch.cc` — SIMT 分支/active mask
-- [ ] `tests/test_ptx_emu_facade_barrier.cc` — `bar.sync` 多 warp 同步
-- [ ] `tests/test_ptx_emu_facade_state.cc` — 状态读写 round-trip
+- [ ] `test/test_ptx_emu_facade_decode.cc` — PTXIR 格式校验 + magic/version 异常路径
+- [ ] `test/test_ptx_emu_facade_arith.cc` — ADD/SUB/MUL/DIV 寄存器结果正确性
+- [ ] `test/test_ptx_emu_facade_memory.cc` — LD/ST 共享/全局内存读写
+- [ ] `test/test_ptx_emu_facade_branch.cc` — SIMT 分支/active mask
+- [ ] `test/test_ptx_emu_facade_barrier.cc` — `bar.sync` 多 warp 同步
+- [ ] `test/test_ptx_emu_facade_state.cc` — 状态读写 round-trip
 
 **验证命令**:
 ```bash
@@ -89,7 +89,7 @@ ctest -R "test_ptx_emu_facade" --output-on-failure
 
 **Commit**:
 ```bash
-git add include/tlm/gpu/ptx_emu_submodule_mvp.hh src/tlm/gpu/ptx_emu_submodule_mvp.cc tests/test_ptx_emu_facade_*.cc CMakeLists.txt
+git add include/tlm/gpu/ptx_emu_submodule_mvp.hh src/tlm/gpu/ptx_emu_submodule_mvp.cc test/test_ptx_emu_facade_*.cc CMakeLists.txt
 git commit -m "feat(ptx-emu-mvp): PTX functional facade (depth-integration, per Phase I.1)"
 ```
 
@@ -119,12 +119,12 @@ git commit -m "feat(ptx-emu-mvp): PTX functional facade (depth-integration, per 
 - [ ] tick() 通过 facade 读 `read_active_mask` / `read_blocked_cycles`(per FIX-H8/B.3)
 
 **6 个测试文件**(per Phase I.2 §7):
-- [ ] `tests/test_cuda_core_adapter_mvp_tick.cc` — per-tick cycle 推进
-- [ ] `tests/test_cuda_core_adapter_mvp_scoreboard.cc` — RAW hazard + allocate/release 计数
-- [ ] `tests/test_cuda_core_adapter_mvp_pipeline.cc` — Pipeline latency 注入
-- [ ] `tests/test_cuda_core_adapter_mvp_dispatch.cc` — on_cta_arrival 反压
-- [ ] `tests/test_cuda_core_adapter_mvp_warp_state.cc` — WarpState 镜像(**不**含 PC)
-- [ ] `tests/test_cuda_core_adapter_mvp_injection.cc` — 4 timing 模块注入路径
+- [ ] `test/test_cuda_core_adapter_mvp_tick.cc` — per-tick cycle 推进
+- [ ] `test/test_cuda_core_adapter_mvp_scoreboard.cc` — RAW hazard + allocate/release 计数
+- [ ] `test/test_cuda_core_adapter_mvp_pipeline.cc` — Pipeline latency 注入
+- [ ] `test/test_cuda_core_adapter_mvp_dispatch.cc` — on_cta_arrival 反压
+- [ ] `test/test_cuda_core_adapter_mvp_warp_state.cc` — WarpState 镜像(**不**含 PC)
+- [ ] `test/test_cuda_core_adapter_mvp_injection.cc` — 4 timing 模块注入路径
 
 **验证命令**:
 ```bash
@@ -134,7 +134,7 @@ ctest -R "test_cuda_core_adapter_mvp" --output-on-failure
 
 **Commit**:
 ```bash
-git add include/tlm/gpu/cuda_core_adapter_mvp.hh src/tlm/gpu/cuda_core_adapter_mvp.cc tests/test_cuda_core_adapter_mvp_*.cc CMakeLists.txt
+git add include/tlm/gpu/cuda_core_adapter_mvp.hh src/tlm/gpu/cuda_core_adapter_mvp.cc test/test_cuda_core_adapter_mvp_*.cc CMakeLists.txt
 git commit -m "feat(cuda-core-mvp): SM microarchitecture exploration (timing model, per Phase I.2)"
 ```
 

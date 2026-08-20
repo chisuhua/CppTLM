@@ -52,11 +52,13 @@ struct Pm4MethodDispatch {
 };
 ```
 
-## 3. CommandProcessor 5-state FSM(per Phase F-H.3 修订)
+## 3. CommandProcessor 5-state FSM(per Phase F-H.3 修订 + s2 骨架)
+
+> **关键**(per Oracle ses_fe0b6e44 s2 骨架修复,2026-08-21): s2 已创建 `command_processor_mvp.hh` + `pm4_decoder_mvp.hh` 接口骨架(纯虚 `Pm4DecoderInterface`),s3 W5-6 填充实际实现(GPU VA fetch + parse_method + DECODE 实际逻辑)。
 
 - IDLE → FETCH → DECODE → DISPATCH → COMPLETE
 - **FETCH**:`mem_read_vram(GPU VA, sizeof(gpu_gpfifo_entry))` (per Phase F-C.3 H1,不是 BAR0 MMIO)
-- DECODE:调 Pm4Decoder::parse_method(替代 parse_type3,per Phase F-H.3)
+- DECODE:通过 s2 `set_decoder()` 注入的 `Pm4DecoderInterface` 调 `parse_method`(替代 parse_type3,per Phase F-H.3)
 - DISPATCH:`tmu_.submit(Pm4MethodDispatch)`
 
 ## 4. TmuDispatchProcessor 反压停 fetch(per Phase F-D.2 H5)

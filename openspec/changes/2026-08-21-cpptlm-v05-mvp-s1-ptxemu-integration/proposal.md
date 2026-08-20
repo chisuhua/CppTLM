@@ -58,7 +58,7 @@ s1 价值独立:
 |------|------|
 | `.gitmodules` | 加 `external/PTX-EMU` submodule 入口(per **DP1=B** pin @ `87820951`) |
 | `CMakeLists.txt` | `add_subdirectory(external/PTX-EMU)` + `PTX_EMU_BUILD_TESTS=OFF` + `PTX_EMU_BUILD_SHARED=OFF` + `-fvisibility=hidden` |
-| `tests/CMakeLists.txt` | 加 s1 测试目标(12 个 .cc) |
+| `test/CMakeLists.txt` | 加 s1 测试目标(12 个 .cc) |
 
 ### 3. **不**修改文件(沿用,per Phase I.2 修订)
 

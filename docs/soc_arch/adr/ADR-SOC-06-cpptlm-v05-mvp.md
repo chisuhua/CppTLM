@@ -166,7 +166,7 @@ CudaCoreAdapter::on_cta_arrival(cta_desc)
 > 现统一语义:0x28 stub 必返回 -ENOSYS,真实 launch 走 0x01 pushbuffer。
 > G-MVP-5 验收补充 0x01 pushbuffer 端到端测试覆盖真实 launch 数据面。
 
-### D5. 模块架构 = CP→TMU→SQ→Cuda Core 链路(per Phase F-H.2 架构重定义:新增 6 模块)
+### D5. 模块架构 = CP→TMU→SQ→Cuda Core 链路(per Phase F-H.2 架构重定义:新增 8 模块)
 
 ✅ **MVP 引入 6 个新模块**(均派生自 `ChStreamModuleBase` 或内部组件):
 
@@ -237,7 +237,7 @@ host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit
 - ❌ **删除**:8 ABI 黑盒(`image_load / image_execute / image_unload / image_kernel_name / image_kernel_count / image_kernel_name_at / image_execute_named / module_version`)
 - ❌ **删除**:`stepOneWarpInstruction`(由 `functional_execute_warp` 替代)
 
-**DGpuBoardTLM(per Phase F-H.2,6 组件包装)**:
+**DGpuBoardTLM(per Phase F-H.2,8 组件包装)**:
 - ✅ `DGpuBoardTLM::install_kernel_module(vram_addr, size)` + `submit_kernel(req)` + `write_reg(offset, value)`
 - ✅ `tick()` 串联 4 阶段(cp_.tick() → tmu_.tick() → sq_.tick() → cuda_core_.tick())
 
@@ -374,7 +374,7 @@ host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit
 
 **MVP 切片 = 完整版的最小可运行子集**(per Phase F-H.2 + Phase I.1/I.2 修正):
 - S1 = P0' + P1'-mini(PtxEmuSubmoduleMVP **PTX functional facade** + CudaCoreAdapter **SM 微架构探索器** + 4 timing 模块注入)
-- S2 = P2'-mini(DGpuBoardTLM **6 组件** + Doorbell + SubmitQueue + CQ + JSON config + UsrLinuxEmu IOCTL stub)
+- S2 = P2'-mini(DGpuBoardTLM **8 组件** + Doorbell + SubmitQueue + CQ + JSON config + UsrLinuxEmu IOCTL stub)
 - S3 = P1'-rest(CommandProcessor + Pm4Decoder NVIDIA method packet + TmuDispatchProcessor 反压停 fetch + SubmitQueue WDU 分发)
 - S4 = P3'-mini(全量 baseline + validate_topology + v0.5.0-MVP tag;ScoreboardTLM/PipelineTLM 复用现有,不升级 v05_mvp 版本)
 
@@ -489,7 +489,7 @@ host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit
 | 2026-08-20 | **Phase A 修复**: M2/M4/S1-S6/NR1/NR2/NR5 + **Phase C 决策落地**(DP1=B/DP2=A/DP4=C)— D2 改为单路径黑盒(MVP 永久禁用白盒),R2 风险消除,HSK-7 不发出,submodule pin `PTX-EMU@87820951` | Sisyphus |
 | 2026-08-20 | **Phase F 修订**(Oracle ses_fe29aa0d 审查后):**选定路径 3**(GPFIFO 外壳 + PM4 嵌入式,与 UsrLinuxEmu `gpfifo_translator.cpp:103` 先例对齐)— 修复 **3 CRITICAL + 3 HIGH + 3 MEDIUM/LOW**: C1 PM4 格式家族(NVIDIA method packet 替代 Mesa TYPE3)/C2 双 dispatch 路径消歧(SQ shim 唯一)/C3 S3 交付物与 D2 矛盾/H2 5 subchannel→8 subchannel/H3 0x28 stub 语义统一(必返 -ENOSYS)/H5 TMU LIFO eviction 改反压停 fetch;**待 Phase F-F 后续 review 升 Accepted** | Sisyphus |
 | 2026-08-20 | **Phase F-G 修订**(Oracle ses_fe1e321d 用户质疑复核后):**纠正 F-C.2 过度修正**——用户指出 §2.3.1 图与 D5/S1 均约定 SQ→TMU→CudaCore 单链路,F-C.2 早期修订把 `tmu_.tick()` 归档出 tick 循环与三处文档矛盾。**正确路径**:只 `注释 cp_.tick()`(CP 在 MVP 无 GPFIFO 输入源),保留 `sq_->tick() + tmu_.tick()`(同一链路,TMU 推进 dep chain 不发起新 dispatch)。**移除未登记的 `enable_mvp_dataflow_only_` flag**。F-D.3 保留正确(ABI 证据:PTX-EMU `cpptlm_module.h` 8 个 ABI 均为 kernel 级,`ptxemu_image_execute` 内部循环 `exe_once()` × N 整 kernel 黑盒;`stepOneWarpInstruction` 全仓 0 命中;用户"warp 级指令 = 白盒"主张与 ABI 边界事实不符,warp 级执行是 PTX-EMU 黑盒内部实现,不是 CppTLM 调用方式) | Sisyphus |
-| 2026-08-20 | **Phase F-H 架构重定义**(用户要求"TMU 到 CudaCore 之间有一个分发的网络,MVP 阶段能尽量接近最终形态"+"MVP 要用 CppTLM 搭建接近真实 CudaCore 的模型,指令执行依赖 PTX-EMU"):**D2 反转**——MVP 不再调 ABI 黑盒 `ptxemu_image_execute`,改为**深度集成 PTX-EMU 内部 C++ 接口**(`ptxsim::GPUContext` / `SMContext` / `WarpContext` / `ptx_ir::PtxirReader`),CppTLM 驱动 PC,逐指令 `execute_warp_instruction`。**D5 模块表扩展为 6 模块**,新增 `SubmitQueue`(per `docs/research/WDUtoSM/overview.md` NVIDIA WDU + Work Distribution Crossbar 简化版)填补 CP→TMU→SQ→CudaCore 链路。**D5 链路重画**:`host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit → SQ.enqueue → SQ.dispatch → CudaCore.on_cta_arrival → per-tick exe_once + WarpState 镜像 → on_warp_complete → SQ.on_warp_complete → TMU.on_complete → CQ.push`。**Dp4=C 含义反转**:原"白盒永久禁用"改为"深度集成路径即白盒 + PTX-EMU 默认 scoreboard/pipeline 透明"。涉及文件:cuda-core-adapter.md, dgpu-board.md, command-processor.md, tmu-dispatch-processor.md, submit-queue.md (新), ptx-emu-submodule-mvp.md, roadmap-mvp-to-v05.md | Sisyphus |
+| 2026-08-20 | **Phase F-H 架构重定义**(用户要求"TMU 到 CudaCore 之间有一个分发的网络,MVP 阶段能尽量接近最终形态"+"MVP 要用 CppTLM 搭建接近真实 CudaCore 的模型,指令执行依赖 PTX-EMU"):**D2 反转**——MVP 不再调 ABI 黑盒 `ptxemu_image_execute`,改为**深度集成 PTX-EMU 内部 C++ 接口**(`ptxsim::GPUContext` / `SMContext` / `WarpContext` / `ptx_ir::PtxirReader`),CppTLM 驱动 PC,逐指令 `execute_warp_instruction`。**D5 模块表扩展为 8 模块**,新增 `SubmitQueue`(per `docs/research/WDUtoSM/overview.md` NVIDIA WDU + Work Distribution Crossbar 简化版)填补 CP→TMU→SQ→CudaCore 链路。**D5 链路重画**:`host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit → SQ.enqueue → SQ.dispatch → CudaCore.on_cta_arrival → per-tick exe_once + WarpState 镜像 → on_warp_complete → SQ.on_warp_complete → TMU.on_complete → CQ.push`。**Dp4=C 含义反转**:原"白盒永久禁用"改为"深度集成路径即白盒 + PTX-EMU 默认 scoreboard/pipeline 透明"。涉及文件:cuda-core-adapter.md, dgpu-board.md, command-processor.md, tmu-dispatch-processor.md, submit-queue.md (新), ptx-emu-submodule-mvp.md, roadmap-mvp-to-v05.md | Sisyphus |
 
 ---
 

@@ -29,7 +29,7 @@
 [`ADR-SOC-06`](./ADR-SOC-06-cpptlm-v05-mvp.md) 原文件位于 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md`,per Phase I.4 (2026-08-20) 迁回本目录,因为这是 SoC 应用层决策(CP→TMU→SQ→CudaCore 完整链路 + PTX-EMU 深度集成),符合 `docs/soc_arch/adr/` 命名空间与层划分。
 
 具体 SoC 模块设计见:
-- [`dgpu-board.md`](../modules/dgpu-board.md)(DGpuBoardTLM 6 组件包装,含新增 SubmitQueue)
+- [`dgpu-board.md`](../modules/dgpu-board.md)(DGpuBoardTLM **8 组件**包装,含新增 SubmitQueue)
 - [`command-processor.md`](../modules/command-processor.md)(CP 5-state FSM,NVIDIA method packet)
 - [`pm4-decoder.md`](../modules/pm4-decoder.md)(NVIDIA method packet 解析)
 - [`tmu-dispatch-processor.md`](../modules/tmu-dispatch-processor.md)(TMU Glue,反压停 fetch)

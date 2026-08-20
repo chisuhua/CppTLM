@@ -276,7 +276,7 @@ public:
     void on_config_loaded() override;
 
 private:
-    // === 内部 6 组件(per Phase F-H.2 架构重定义: CP→TMU→SQ→CudaCore) ===
+    // === 内部 8 组件(per Phase F-H.2 架构重定义: CP→TMU→SQ→CudaCore) ===
     DGpuBar bar_;
     Doorbell doorbell_;
     CommandProcessor cp_;
