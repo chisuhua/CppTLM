@@ -217,6 +217,9 @@ Pm4Packet CommandProcessor::fetch_packet() {
     Pm4Packet packet;
 
     // 读 gpu_gpfifo_entry.payload[0](PM4 header)
+    // 注:每 gpfifo_entry = 16 字节(per UsrLinuxEmu ADR-057 D2 v2 修订:76→84 字节;
+    //     头部 4 字节(PM4 header)+ payload[0] 起点 4 字节 + 后续 dword 步进 4 字节)
+    //     MVP 简化:每 entry 固定 16 字节(header + 起始 payload dword)
     uint32_t header = bar_.read_reg(CP_HEADER_OFFSET + current_entry_index_ * 16);
     packet.header = header;
     packet.count = (header >> 16) & 0x3FFF;  // bits 16-29
@@ -231,6 +234,12 @@ Pm4Packet CommandProcessor::fetch_packet() {
     return packet;
 }
 ```
+
+> **gpfifo_entry size 来源**:
+> - **真实硬件**: AMD gpfifo_entry = 8 dword(32 字节),前 4 dword 是 PM4 header
+> - **UsrLinuxEmu `gpu_gpfifo_entry`**: per [UsrLinuxEmu ADR-057](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-057-cp-profiling-hooks-timestamp.md) D2 v2 修订后 = 84 字节(原 76 字节 + 8 字节 timestamp 扩展);MVP 简化采用 16 字节步进假设(header 4B + 起始 payload 4B + 步进 4B × 后续)
+> - **v0.5 完整版**:对齐 UsrLinuxEmu 真实 84 字节结构,fetch_packet() 引入 `payload_offset_within_entry` 字段
+> - **追溯锚点**: UsrLinuxEmu ADR-057 §D3 方案 2 + `include/gpu_gpfifo_entry` 真实定义
 
 ### 4.3 dispatch_packet()(MVP 4 opcodes)
 

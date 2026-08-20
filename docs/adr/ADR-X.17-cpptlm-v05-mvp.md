@@ -1,6 +1,6 @@
 # ADR-X.17: cpptlm-v05-mvp — dGPU Board MVP (CP→TMU→Cuda Core → PTX-EMU warp)
 
-> **状态**: � Proposed — 2026-08-19 · **日期**: 2026-08-19 · **Owner**: CppTLM Team (Sisyphus)
+> **状态**: 📋 Proposed — 2026-08-19 (Phase A/C 修复后,等待 Phase D 升 ✅ Accepted) · **日期**: 2026-08-19 / 修订 2026-08-20 · **Owner**: CppTLM Team (Sisyphus)
 > **取代**: 部分撤销 [`ADR-X.16-cpptlm-v05-redo.md`](../docs-archived/adr/ADR-X.16-cpptlm-v05-redo.md) 的 12 周完整时间线(保留其 8 项决策),抽取 **MVP 切片**作为先导
 > **撤销**: 无 — 不撤销任何已有 ADR(基于 ADR-X.15 / X.16 / NV-02 / d1-p1-pipeline-scoreboard 的设计沉淀)
 > **关联 OpenSpec**:
@@ -16,12 +16,12 @@
 
 ### 1.1 三方文档沉淀的共识
 
-[`ADR-X.15-cpptlm-v3-dgpu-extract.md`](../docs-archived/adr/ADR-X.15-cpptlm-v3-dgpu-extract.md)(v0.4,v3.0-extract)+ [`ADR-X.16-cpptlm-v05-redo.md`](../docs-archived/adr/ADR-X.16-cpptlm-v05-redo.md)(v0.5 redo)+ [`openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/`](../../../openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/)(D1-Full)+ [`docs-archived/superpowers/specs/2026-08-19-dgpu-v4-design.md`](../../superpowers/specs/2026-08-19-dgpu-v4-design.md)(v0.4 设计)沉淀出以下不冲突共识:
+[`ADR-X.15-cpptlm-v3-dgpu-extract.md`](../docs-archived/adr/ADR-X.15-cpptlm-v3-dgpu-extract.md)(v0.4,v3.0-extract)+ [`ADR-X.16-cpptlm-v05-redo.md`](../docs-archived/adr/ADR-X.16-cpptlm-v05-redo.md)(v0.5 redo)+ [`openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/`](../../../openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/)(D1-Full)+ [`docs-archived/superpowers/specs/2026-08-19-dgpu-v4-design.md`](../../superpowers/specs/2026-08-19-dgpu-v4-design.md)(v0.4 设计)+ **UsrLinuxEmu [`ADR-088-dgpu-complete-simulation.md`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted 2026-08-16 + UsrLinuxEmu [`ADR-090 v2-ptxir-via-h2d-dma-v2.md`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md) ✅ Accepted 2026-08-18** 沉淀出以下不冲突共识(per Phase A 修复 NR1):
 
 | 维度 | 沉淀共识 | 来源 |
 |------|---------|------|
-| **角色** | CppTLM = 被驱动的 dGPU 板卡(PCIe device semantics),非桥接层 | ADR-X.15 D1 / ADR-X.16 反转决策 |
-| **PCIe 设备语义** | DGpuBar(BAR0 MMIO + BAR1 VRAM)+ Doorbell(SQ tail)+ SQ + CQ(CompletionRing) | ADR-X.15 §4.2 / v0.4 design §3 |
+| **角色** | CppTLM = 被驱动的 dGPU 板卡(PCIe device semantics),非桥接层 | ADR-X.15 D1 / ADR-X.16 反转决策 / ADR-088 §C2 |
+| **PCIe 设备语义** | DGpuBar(BAR0 MMIO + BAR1 VRAM)+ Doorbell(SQ tail)+ SQ + CQ(CompletionRing) | ADR-X.15 §4.2 / v0.4 design §3 / ADR-090 §D3.3 |
 | **PM4 解析** | 由 CppTLM CP 模块解析(PCIe 设备语义对齐真实硬件) | ADR-X.16 D5 |
 | **PM4 风格** | Mesa-style TYPE3 header(`IT` bit 0 + `opcode` bits 2-9 + `count` bits 16-29 + `type` bits 30-31 = `0b11`) | ADR-X.16 §3.2 |
 | **TMU Glue** | TmuDispatchProcessor(`submit` / `on_complete` / `try_chain_dependent`)内部组件,~200 LOC | v0.4 design §3.8 |
@@ -31,7 +31,7 @@
 
 ### 1.2 现有 PTX-EMU 真实接口(已验证)
 
-`PTX-EMU@ccd34155`(本地仓位于 `/workspace/project/PTX-EMU`)已具备:
+`PTX-EMU@87820951`(本地仓位于 `/workspace/project/PTX-EMU` + CppTLM `external/PTX-EMU` submodule,per **DP1=B** 决策)已具备:
 
 | 接口 | 位置 | 状态 |
 |------|------|:---:|
@@ -45,15 +45,22 @@
 
 ### 1.3 UsrLinuxEmu 板卡驱动接入方式(已验证)
 
-`UsrLinuxEmu@37a91b6`([`docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md`](../../../))dGPU 板卡驱动链路:
+`UsrLinuxEmu@37a91b6`([`docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md`](https://github.com/chisuhua/UsrLinuxEmu/blob/37a91b6/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md) ✅ Accepted 2026-08-18)dGPU 板卡驱动链路:
 
 | 调用链 | IOCTL / 接口 | Mode B(v3.0+/v0.5)路径 |
 |--------|--------------|------------------------|
 | `cuModuleLoadData` | `ioctl(fd, GPU_IOCTL_LOAD_KERNEL_MODULE, 0x27)` | HAL #66 → H2D DMA → `DGpuBar.vram_base()` 写入 image bytes |
-| `cuLaunchKernel` | `ioctl(fd, GPU_IOCTL_LAUNCH_KERNEL_MODULE, 0x28)` | Mode B 重写 → `DGpuBar.write_reg(0x1000+stream_id, tail)` → **Doorbell ring** → SQ consumer tick |
-| `cuModuleUnload` | `ioctl(fd, GPU_IOCTL_UNLOAD_KERNEL_MODULE, 0x29)` | BO 释放 + CompletionRing push |
+| `cuLaunchKernel` | `ioctl(fd, GPU_IOCTL_LAUNCH_KERNEL_MODULE, 0x28)` | **handler 永久返回 -ENOSYS**(per UsrLinuxEmu ADR-090 §D2.2 编号永久保留规则)→ driver 改走 CppTLM `DGpuBoardTLM::submit_kernel` → `write_reg(0x1000+stream_id, tail)` → **Doorbell ring** → SQ consumer tick |
+| `cuModuleUnload` | `ioctl(fd, GPU_IOCTL_UNLOAD_KERNEL_MODULE, 0x29)` | handler 走 `FREE_BO` 路径 → CppTLM `DGpuBoardTLM::uninstall_kernel_module(vram_addr)` |
 
-**关键观察**: UsrLinuxEmu `0x28` LAUNCH IOCTL 当前返回 `-ENOSYS`(v2 stub 化),Mode B 必须由 CppTLM 提供 DGpuBar MMIO 路径替代。**这就是 MVP 必须做的"接入真实板卡驱动"**。
+**关键观察**(per Phase A 修复 NR5 + Phase C DP4 决策):
+- UsrLinuxEmu `0x28` LAUNCH IOCTL handler **永久锁定返回 `-ENOSYS`**(per UsrLinuxEmu ADR-090 §D2.2 + ADR-023 §D4 append-only 治理)
+- Mode B 必须由 CppTLM 提供 DGpuBar MMIO 路径替代(per ADR-090 §D3.3 dGPU 板卡最小完整集)— **这就是 MVP 必须做的"接入真实板卡驱动"**
+- **HSK 协议编号澄清**(per ADR-090 §D5 + DP4=C 决策):
+  - ~~HSK-8~~(原 §1.3 误称)— **废除**(与 ADR-090 §D5 编号冲突)
+  - **HSK-6** = UsrLinuxEmu ADR-090 v2 §D5 联发协议(PTX-EMU 发起,CppTLM ack,UsrLinuxEmu 利益相关方)— ✅ Accepted 2026-08-18
+  - ~~HSK-7~~(per DP4=C 决策)— **不发出**:MVP **永久仅黑盒路径**,不需要 `stepOneWarpInstruction` API;
+    per-warp 精度推到 v0.5 完整版(per ADR-X.16 12 周 P0'-P4')
 
 ### 1.4 MVP 切片动机
 
@@ -92,11 +99,11 @@
 | UsrLinuxEmu IOCTL 0x27/0x28 真实路径接入 | MSI-X 中断 + DMA channel + 多板卡 |
 | ChStreamModuleBase + JSON config + validate_topology | PREEXIT/ACQBULK 指令仿真(由 PTX-EMU 自含) |
 
-### D2. PTX-EMU warp 调用 = 双路径(MVP 黑盒 + 精度白盒)
+### D2. PTX-EMU warp 调用 = **单路径(MVP 仅黑盒,per DP4=C)**
 
-✅ **MVP 双路径并存,黑盒优先**(`image_execute`),白盒路径可选启用(`WarpContext::execute_warp_instruction`):
+✅ **MVP 永久仅黑盒路径**(`image_execute`),白盒路径代码占位但**永久不启用**(per **DP4=C 决策** 2026-08-20)— 不需要 PTX-EMU 新增 `stepOneWarpInstruction` API:
 
-**黑盒 MVP 路径**(S1 默认):
+**黑盒 MVP 路径**(S1 唯一启用路径):
 ```
 CudaCoreAdapter::dispatch_blackbox()
   → PtxEmuSubmoduleMVP::image_execute(handle, grid, block, shared_mem, args, argc)
@@ -105,21 +112,29 @@ CudaCoreAdapter::dispatch_blackbox()
         → (PTX-EMU 内部)WarpContext::execute_warp_instruction × M times
 ```
 
-**白盒精度路径**(S3 启用):
+**白盒路径**(代码占位,**永久不启用** per DP4=C):
 ```
-CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
-  → 循环 PtxEmuSubmoduleMVP::stepOneWarpInstruction(warp_id, &pc, &status, &cycle_count)
-    → PTX-EMU SMContext::get_warp(warp_id) → WarpContext::execute_warp_instruction
-      → 返回 PC + cycle_count + status(per-warp 精度)
+// 保留 CudaCoreAdapter::dispatch_whitebox() + PtxEmuSubmoduleMVP::stepOneWarpInstruction()
+// 代码框架,但 MVP 范围内 enable_whitebox=false 强制不调用
+// per-warp 精度推到 v0.5 完整版(per ADR-X.16 12 周 P0'-P4')
 ```
 
-**MVP 选择**: 默认走黑盒(`image_execute`),S3 启用白盒需 PTX-EMU 端新增 `SMContext::stepOneWarpInstruction(uint32_t, uint64_t*, int32_t*, uint64_t*)` API(若 PTX-EMU 维护者接受,白盒 MVP 可立即启用;否则 MVP 仅黑盒,白盒推到 v0.5 完整版)。
+**MVP 选择理由**(per DP4=C 决策):
+- 降低跨仓协作复杂度:不需要 HSK-7 公告,不需要 PTX-EMU 端新增 API
+- 缩短时间线:S3 不再需要等待 PTX-EMU 接受 API(节省 2 周 + 减少跨仓风险)
+- per-warp 精度延迟到 v0.5 完整版:不损失最终能力,仅调整交付时机
+- per ADR-X.16 D8 验证基础:"PTX-EMU 自家参考 + 双路径内部一致性"白盒路径在 v0.5 完整版统一实现
+
+**接口保留**(per D8.1 冻结接口):
+- ✅ `CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)` — 接口保留,代码占位
+- ✅ `PtxEmuSubmoduleMVP::stepOneWarpInstruction(warp_id, &pc, &status, &cycle_count)` — 接口保留,代码占位
+- 🟡 MVP 范围内 `enable_whitebox=false` 强制,JSON params `enable_whitebox_path=false` 锁定默认
 
 ### D3. PTX-EMU 集成 = git submodule + adapter 编译防火墙
 
 ✅ **沿用 ADR-X.16 D2/D4**:
 
-- `external/PTX-EMU`(git submodule, pin commit hash,例如 `ccd34155`)
+- `external/PTX-EMU`(git submodule, pin commit hash `87820951`,per **DP1=B** 决策)
 - `src/tlm/gpu/ptx_emu_submodule_mvp.cc` = **唯一** include PTX-EMU 头(编译防火墙)
 - 其他 CppTLM `.cc/.hh` 仅前向声明 `namespace ptxsim { class SMContext; class WarpContext; }`
 - 验证命令:`git grep "include.*ptxsim" -- "include/tlm/gpu/*.hh" "src/tlm/gpu/*.cc"` 应仅命中 `ptx_emu_submodule_mvp.cc`
@@ -153,6 +168,7 @@ CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
 - 新建 `configs/dgpu_board_v1_mvp.json`(per `test_dgpu_board_from_config.cc` 模式,见 ADR-X.15 §4.4 Gate #9)
 - Catch2 测试 `test/test_dgpu_board_v1_mvp_from_config.cc`(6 SECTION: validate_topology / instantiateAll / H2D / launch / host_notify / 负面路径)
 - 纳入 `validate_topology` CMake target(`scripts/test/docs_sync_check.sh`)
+- **JSON params 完整列表**(9 项,默认,见 `dgpu-board.md` §7):`ptx_emu_root` / `vram_size_mb` / `max_streams` / `sq_depth` / `tmu_max_active_tasks` / `tmu_lifo_evict` / `enable_whitebox_path` / `enable_dgpu_bar_mmio` / `usrlxemu_ioctl_stub_mode`
 
 ### D7. CPPTLMBRIDGE_VERSION = 2 永久冻结(沿用 ADR-X.16 D7)
 
@@ -325,8 +341,8 @@ CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
 | ID | 风险 | 概率 | 影响 | 缓解 |
 |----|------|:---:|:---:|------|
 | R1 | PTX-EMU submodule 版本漂移 | 中 | 中 | submodule pin commit + 月度 bump PR |
-| R2 | PTX-EMU 维护者拒收 `stepOneWarpInstruction` API | 中 | 中 | MVP 仅黑盒,白盒推到 v0.5 完整版;fork 兜底 |
-| R3 | UsrLinuxEmu IOCTL stub 与真实 IOCTL 行为偏差 | 中 | 中 | stub 严格遵循 `gpu_ioctl.h` 真实结构,后续 HSK-8 联调验证 |
+| R2 | ~~PTX-EMU 维护者拒收 `stepOneWarpInstruction` API~~ | — | — | **per DP4=C 决策消除该风险**:MVP 永久仅黑盒路径,不依赖该 API |
+| R3 | UsrLinuxEmu IOCTL stub 与真实 IOCTL 行为偏差 | 中 | 中 | stub 严格遵循 `gpu_ioctl.h` 真实结构(per UsrLinuxEmu@37a91b6:plugins/gpu_driver/shared/gpu_ioctl.h:723-779),后续真实集成由独立 HSK 跟踪 |
 | R4 | CommandProcessor 5-state FSM 状态转换遗漏 | 中 | 高 | TDD 5 transition 测试 + 真实 PM4 流量回放 |
 | R5 | TmuDispatchProcessor LIFO 频繁驱逐 | 中 | 中 | 默认 32 slot + 软栅栏,溢出率 >5% 触发 review |
 | R6 | 6-10 周时间线偏紧 | 中 | 中 | MVP 切片(4 件)+ 严格 TDD 5 步 |
@@ -364,18 +380,27 @@ CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
 
 - [`docs/soc_arch/roadmap/roadmap-mvp-to-v05.md`](../../soc_arch/roadmap/roadmap-mvp-to-v05.md) — 4 阶段 6-10 周路线图
 
-### 7.5 跨仓锚点
+### 7.5 跨仓锚点(per ADR-090 §C0.4 新规:`repo@commit:path:line` 锚点)
 
-- PTX-EMU(本地仓 `/workspace/project/PTX-EMU`):
-  - `include/ptxsim/sm_context.h:59` — `EXE_STATE exe_once()`
-  - `include/ptxsim/warp_context.h:62` — `execute_warp_instruction(StatementContext&, int)`
-  - `include/cudart/cpptlm_module.h:18-52` — 8 ABI 函数
-  - `include/cudart/cpptlm_bridge.h:162/211` — `cpptlm_attach_bridge / cpptlm_set_driver`
-- UsrLinuxEmu(本地仓 `/workspace/project/UsrLinuxEmu`):
-  - [`docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md`](../../../external/UsrLinuxEmu/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md) — dGPU 板卡驱动接入规范
-  - IOCTL 0x27 `GPU_IOCTL_LOAD_KERNEL_MODULE`(H2D DMA)
-  - IOCTL 0x28 `GPU_IOCTL_LAUNCH_KERNEL_MODULE`(Mode B 重写为 DGpuBar MMIO)
-  - IOCTL 0x29 `GPU_IOCTL_UNLOAD_KERNEL_MODULE`
+- **PTX-EMU**(`PTX-EMU@87820951`,per **DP1=B 决策**(2026-08-20)— 本地最新,含 `docs(audit): add PTX-EMU HAL backend cross-repo defect audit (2026-08-13)` commit):
+  - [`PTX-EMU@87820951:include/cudart/cpptlm_module.h:12-52`](https://github.com/chisuhua/PTX-EMU/blob/87820951/include/cudart/cpptlm_module.h#L12-L52) — **8 ABI 函数真相源**(`CPPTLM_MODULE_VERSION=2`)
+  - [`PTX-EMU@87820951:include/ptxsim/sm_context.h:59`](https://github.com/chisuhua/PTX-EMU/blob/87820951/include/ptxsim/sm_context.h#L59) — `EXE_STATE exe_once()`
+  - [`PTX-EMU@87820951:include/ptxsim/warp_context.h:62`](https://github.com/chisuhua/PTX-EMU/blob/87820951/include/ptxsim/warp_context.h#L62) — `execute_warp_instruction(StatementContext&, int)`
+  - [`PTX-EMU@87820951:include/cudart/cpptlm_bridge.h:162/211`](https://github.com/chisuhua/PTX-EMU/blob/87820951/include/cudart/cpptlm_bridge.h#L162-L211) — `cpptlm_attach_bridge / cpptlm_set_driver`
+  - **🔴 注意**:`stepOneWarpInstruction` API 在 PTX-EMU@87820951 **当前不存在**(2026-08-20 全仓 grep 0 命中)— **per DP4=C 决策,MVP 永久仅黑盒路径,不需要该 API**
+
+- **UsrLinuxEmu**(`UsrLinuxEmu@37a91b6`,本地仓 `/workspace/project/UsrLinuxEmu`):
+  - [`UsrLinuxEmu@37a91b6:docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md`](https://github.com/chisuhua/UsrLinuxEmu/blob/37a91b6/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md) ✅ Accepted 2026-08-18 — dGPU 板卡驱动接入规范 + HSK-6 联发协议
+  - [`UsrLinuxEmu@37a91b6:docs/00_adr/adr-088-dgpu-complete-simulation.md`](https://github.com/chisuhua/UsrLinuxEmu/blob/37a91b6/docs/00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted 2026-08-16 — dGPU 完整子系统仿真(23 ABI)
+  - [`UsrLinuxEmu@37a91b6:plugins/gpu_driver/shared/gpu_ioctl.h:723-779`](https://github.com/chisuhua/UsrLinuxEmu/blob/37a91b6/plugins/gpu_driver/shared/gpu_ioctl.h#L723-L779) — IOCTL 0x27/0x28/0x29 struct 定义
+  - IOCTL 0x27 `GPU_IOCTL_LOAD_KERNEL_MODULE`(H2D DMA 写 CppTLM VRAM,handler = HAL #66)
+  - IOCTL 0x28 `GPU_IOCTL_LAUNCH_KERNEL_MODULE`(handler **永久锁定返回 -ENOSYS** per ADR-090 §D2.2 + ADR-023 §D4 append-only)— Mode B 由 CppTLM DGpuBar MMIO 替代
+  - IOCTL 0x29 `GPU_IOCTL_UNLOAD_KERNEL_MODULE`(handler 走 `FREE_BO` 路径)
+
+- **TaskRunner**:
+  - `tadr-307` 当前 📋 PROPOSED **STALE**(per ADR-090 §C0.3)— 3 个 IGpuDriver 方法与 HSK-1 真相源 + ADR-023 append-only 不兼容
+  - `tadr-308` 待创建(per ADR-090 §C0.3)— 基于 annex §B v2 重写版
+  - 追踪载体:[`TaskRunner #10`](https://github.com/chisuhua/TaskRunner/issues/10) closed;per **DP4=C** 不需 HSK 联署
 
 ---
 
@@ -384,9 +409,10 @@ CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
 | 日期 | 修订 | 修订人 |
 |------|------|--------|
 | 2026-08-19 | 初版 — 8 项决策 + MVP 4 阶段 6-10 周 | Sisyphus |
+| 2026-08-20 | **Phase A 修复**: M2/M4/S1-S6/NR1/NR2/NR5 + **Phase C 决策落地**(DP1=B/DP2=A/DP4=C)— D2 改为单路径黑盒(MVP 永久禁用白盒),R2 风险消除,HSK-7 不发出,submodule pin `PTX-EMU@87820951` | Sisyphus |
 
 ---
 
 **维护**: CppTLM Team (Sisyphus)
-**下次 review**: S1 W1 启动后(submodule pin + PtxEmuSubmoduleMVP 骨架完成后)
-**Status Update 触发**: PTX-EMU `stepOneWarpInstruction` API 拒收;UsrLinuxEmu IOCTL 0x28 真实接口与 stub 偏差 >15%;MVP 6 周节点延迟
+**下次 review**: Phase D 完成(submodule add 落地后)→ 升 ✅ Accepted
+**Status Update 触发**: ~~PTX-EMU `stepOneWarpInstruction` API 拒收~~(DP4=C 消除);UsrLinuxEmu IOCTL 0x28 真实接口与 stub 偏差 >15%;MVP 6 周节点延迟;submodule commit hash 漂移

@@ -120,6 +120,46 @@ DGpuBoardTLM (ChStreamModuleBase, JSON-driven)
 }
 ```
 
+### 2.3.1 UsrLinuxEmu IOCTL → CppTLM DGpuBoardTLM 链路图(per UsrLinuxEmu `adr-090` §D3.3 Mode B 替代路径)
+
+> **关键澄清**:UsrLinuxEmu `GPU_IOCTL_LAUNCH_KERNEL_MODULE` (0x28) handler **永久锁定返回 -ENOSYS**(per UsrLinuxEmu ADR-090 v2 §D2.2 编号永久保留规则 + ADR-023 §D4 append-only 治理)。**真实 launch 由 CppTLM DGpuBoardTLM 直接承载**,driver 通过改走 CppTLM DGpuBoardTLM::submit_kernel() 触发。
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│ driver (TaskRunner/UMD 或移植版 amdgpu 真实 driver)                  │
+│   ↓ 调用 cuLaunchKernel(grid, block, args, ...)                      │
+│ UsrLinuxEmu gpgpu_device::ioctl(0x28 GPU_IOCTL_LAUNCH_KERNEL_MODULE) │
+│   ↓ handler 永久返回 -ENOSYS(per UsrLinuxEmu ADR-090 §D2.2)            │
+│ driver 改走 CppTLM 路径                                                 │
+└────────────────────────────────────────────────────────────────────────┘
+                               │
+                               ▼ (用户态 IPC 或直接函数调用,MVP stub 模式)
+┌────────────────────────────────────────────────────────────────────────┐
+│ CppTLM DGpuBoardTLM::submit_kernel(KernelLaunchRequest)              │
+│   ├─ write_reg(0x1000+stream_id, tail) → Doorbell ring                │
+│   │     └─ strong-ordered write(250-700ns 区间断言)                    │
+│   ├─ SubmissionQueue[stream_id]::enqueue(req)                         │
+│   └─ SQ::tick() 推进                                                  │
+│         ├─ TmuDispatchProcessor::submit(record)                       │
+│         │     └─ CudaCoreAdapter::issueTask(record)                   │
+│         │           └─ PtxEmuSubmoduleMVP::image_execute(...)         │
+│         │                 └─ PTX-EMU SMContext::exe_once() × N        │
+│         └─ CompletionRing::push(task_id, status)                      │
+│               └─ host_notify_() → HAL fence_signal                    │
+│                     └─ driver cuStreamSynchronize() 返回              │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+**对比表**:
+
+| 路径 | UsrLinuxEmu 端 | CppTLM 端 |
+|------|----------------|-----------|
+| **IOCTL 0x27** (LOAD) | handler = HAL #66 → H2D DMA 写 CppTLM VRAM | `DGpuBoardTLM::install_kernel_module` 接收 |
+| **IOCTL 0x28** (LAUNCH) | handler = -ENOSYS(永久锁定) | `DGpuBoardTLM::submit_kernel` 实际承载 |
+| **IOCTL 0x29** (UNLOAD) | handler = -ENOSYS → driver 改走 FREE_BO | `DGpuBoardTLM::uninstall_kernel_module` 接收(vram_addr 释放) |
+
+**MVP stub 模式测试覆盖**: `test_usrlxemu_ioctl_stub.cc` 验证 3 IOCTL 端到端链路(per ADR-X.17 G-MVP-5)。
+
 ---
 
 ## 3. 接口(Public API)

@@ -3,17 +3,19 @@
 > **类别**: GPU > PTX-EMU Adapter · **状态**: 🔵 MVP 切片 (per ADR-X.17)
 > **Header**: `include/tlm/gpu/ptx_emu_submodule_mvp.hh` + **`.cc` 为唯一 PTX-EMU 头 include 位置(编译防火墙)**
 > **位置**: DGpuBoardTLM 内部组件
-> **蓝图来源**: PTX-EMU `cpptlm_module.h` 8 ABI + 3 multi-kernel API + ADR-X.16 D2/D4
+> **蓝图来源**: PTX-EMU `cpptlm_module.h` 8 ABI + 3 multi-kernel API + ADR-X.16 D2/D4 + DP4=C 白盒永久禁用
 > **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
 > **关联 ADR**: [`ADR-X.17-cpptlm-v05-mvp.md`](../../adr/ADR-X.17-cpptlm-v05-mvp.md) D3
 > **关联模块**: [`cuda-core-adapter.md`](./cuda-core-adapter.md)
-> **首版 commit**: 🔵 W1-2 实施 · **最近更新**: 2026-08-19
+> **首版 commit**: 🔵 W1-2 实施 · **最近更新**: 2026-08-20
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联调研**:
-> - PTX-EMU(本地仓 `/workspace/project/PTX-EMU`) `include/cudart/cpptlm_module.h:18-52`(8 ABI 真相源)
-> - PTX-EMU `include/ptxsim/sm_context.h:59` `EXE_STATE exe_once()`
-> - PTX-EMU `include/ptxsim/warp_context.h:62` `execute_warp_instruction(StatementContext&, int)`
+> - PTX-EMU submodule `external/PTX-EMU@87820951`(per DP1=B 决策,2026-08-13 audit commit):
+>   - `include/cudart/cpptlm_module.h:18-52` — 8 ABI 真相源(`CPPTLM_MODULE_VERSION=2`)
+>   - `include/ptxsim/sm_context.h:59` — `EXE_STATE exe_once()`
+>   - `include/ptxsim/warp_context.h:62` — `execute_warp_instruction(StatementContext&, int)`
+> - **🔴 白盒 API 状态**:`stepOneWarpInstruction` API **当前不存在**(2026-08-20 全仓 grep 0 命中)— per DP4=C 决策,MVP 永久仅黑盒
 
 ---
 
@@ -197,17 +199,34 @@ private:
 ```cpp
 void PtxEmuSubmoduleMVP::init(const std::string& ptx_emu_root) {
     ptx_emu_root_ = ptx_emu_root;
+
+    // 1. 验证 submodule 路径有效(per Phase A 修复 S5)
+    //    检查 ptx_emu_root 包含 expected include path(<ptxsim/sm_context.h>)
+    //    失败时:抛 std::runtime_error,阻止 ModuleFactory 继续 instantiateAll
+    validate_ptx_emu_root(ptx_emu_root);
+
+    // 2. 验证 vendored 副本就绪(per UsrLinuxEmu ADR-090 v2 §D5)
+    //    cpptlm_attach_bridge() 确认 PTX-EMU HSK-1 真相源与 vendored 副本版本一致
+    //    失败时:log fatal + abort(防止 submodule 漂移)
+    if (cpptlm_attach_bridge() != 0) {
+        throw std::runtime_error("cpptlm_attach_bridge failed: PTX-EMU submodule version mismatch");
+    }
+
+    // 3. **per DP4=C 决策**:强制 enable_whitebox_ = false
+    //    MVP 永久仅黑盒路径,不需要 stepOneWarpInstruction API
+    //    即使外部 JSON params 设置 enable_whitebox_path=true,init() 也强制改为 false
+    enable_whitebox_ = false;
+
     initialized_ = true;
 
     // 注:PTX-EMU 子模块静态链接到 cpptlm_core,无需显式 dlopen
     //     PTX-EMU::GPUContext 由 main.cpp 单例管理
     //     PtxEmuSubmoduleMVP 通过 cpptlm_set_driver() 或全局指针访问
-
-    // 可选:若白盒路径启用,验证 PTX-EMU 提供 stepOneWarpInstruction API
-    if (enable_whitebox_) {
-        // 调用 PTX-EMU::SMContext::stepOneWarpInstruction 探测 API 存在
-        // 若编译失败,disable 白盒路径
-    }
+    //
+    // 白盒路径代码占位(per DP4=C):
+    //   - CudaCoreAdapter::dispatch_whitebox() + PtxEmuSubmoduleMVP::stepOneWarpInstruction() 接口保留
+    //   - 但 MVP 范围内 enable_whitebox=false 强制不调用
+    //   - per-warp 精度推到 v0.5 完整版(per ADR-X.16 P0'-P4')
 }
 ```
 
@@ -270,11 +289,12 @@ int32_t PtxEmuSubmoduleMVP::stepOneWarpInstruction(uint32_t warp_id,
 - 其他 `.cc/.hh` 仅前向声明 `namespace ptxsim { class SMContext; class WarpContext; }`
 - 测试: `git grep "include.*ptxsim"` 仅命中 `ptx_emu_submodule_mvp.cc`
 
-### 5.3 黑盒 MVP 优先(per ADR-X.17 D2)
+### 5.3 黑盒 MVP 永久优先(per ADR-X.17 D2 + DP4=C 决策)
 
-- **MVP 默认 `enable_whitebox=false`**:黑盒路径
-- **S3 可选启用白盒**:需 PTX-EMU 维护者接受新 API
-- **若 PTX-EMU 维护者拒收**:`enable_whitebox` 强制 false,MVP 仅黑盒
+- **MVP 永久 `enable_whitebox=false`**(per DP4=C 决策 2026-08-20):黑盒路径是唯一启用路径
+- **白盒路径代码占位**:接口保留(`stepOneWarpInstruction` 框架存在)但 `init()` 强制 `enable_whitebox_ = false`
+- **per-warp 精度推到 v0.5 完整版**(per ADR-X.16 P0'-P4'):不损失最终能力,仅调整交付时机
+- **简化协作**:不需要 HSK-7 公告,不需要 PTX-EMU 端新增 API,跨仓风险降低
 
 ### 5.4 不实施 D1-Full Adapter 注入(per `ADR-NV-02 Status Update`)
 
@@ -320,11 +340,14 @@ per ADR-NV-02 Status Update (2026-08-18):
 7. 8 ABI 透传实现
 8. 新建 `test/test_ptx_emu_submodule_mvp.cc`(8 ABI + 编译防火墙)
 
-### 7.2 S3 Warp-Precision(W5-6)
+### 7.2 S3 Warp-Precision(W5-6,per DP4=C **白盒路径代码占位,不启用**)
 
-1. 升级 `ptx_emu_submodule_mvp.cc` 加入白盒 `stepOneWarpInstruction`
-2. PTX-EMU 端需新增 `SMContext::stepOneWarpInstruction(uint32_t, uint64_t*, int32_t*, uint64_t*)` API
-3. 新建 `test/test_ptx_emu_submodule_mvp_whitebox.cc`
+1. **白盒路径代码占位**:保留 `stepOneWarpInstruction` 框架(代码 + 接口 + 测试桩)
+   - 但 init() 强制 `enable_whitebox_ = false`
+   - dispatch_whitebox() 调用前检查 `enable_whitebox_`,未启用时立即返回 -1
+2. **不发起 HSK-7 公告**:per DP4=C 决策,MVP 永久仅黑盒
+3. **测试覆盖**:`test/test_ptx_emu_submodule_mvp_whitebox.cc` 测试白盒 API stub 行为(返回 -1,不实际调用 PTX-EMU)
+4. **v0.5 完整版**:per ADR-X.16 P0'-P4',届时再评估 HSK-N 公告
 
 ---
 
@@ -335,7 +358,7 @@ per ADR-NV-02 Status Update (2026-08-18):
 | R1 | PTX-EMU submodule 版本漂移 | 中 | 中 | submodule pin commit + 月度 bump PR |
 | R2 | 编译防火墙破裂 | 低 | 高 | 严格 `git grep` + CI 拦截 |
 | R3 | PTX-EMU 构建依赖扩散(ANTLR4 4.13.2) | 中 | 低 | `PTX_EMU_BUILD_TESTS=OFF` + `-fvisibility=hidden` |
-| R4 | PTX-EMU 维护者拒收 `stepOneWarpInstruction` | 中 | 中 | MVP 仅黑盒;fork 兜底 |
+| R4 | ~~PTX-EMU 维护者拒收 `stepOneWarpInstruction` API~~ | — | — | **per DP4=C 决策消除该风险**:MVP 永久仅黑盒路径,不依赖该 API |
 | R5 | 8 ABI 透传 ABI 漂移 | 中 | 中 | 真相源锁定 `cpptlm_module.h:18-52` commit hash |
 | R6 | submodule 包含 PTX-EMU 整个仓库(~大) | 中 | 中 | 仅构建 PTX-EMU `libptxemu_device.a`(无需 cudart_sim) |
 

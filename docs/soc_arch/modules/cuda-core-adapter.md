@@ -2,12 +2,12 @@
 
 > **类别**: GPU > Cuda Core Adapter (新概念) · **状态**: 🔵 MVP 切片 (per ADR-X.17)
 > **Header**: `include/tlm/gpu/cuda_core_adapter_mvp.hh`
-> **位置**: DGpuBoardTLM 内部组件 + 也可作为独立 ChStreamModuleBase 暴露
+> **位置**: **DGpuBoardTLM 内部组件**(`dgpu-board.md` §3 已作为 `CudaCoreAdapter cuda_core_` 私有成员固定);独立 ChStreamModuleBase 暴露模式推到 v0.5 完整版
 > **蓝图来源**: PTX-EMU `WarpContext::execute_warp_instruction` + `SMContext::exe_once` + CUDA Core 抽象
 > **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
 > **关联 ADR**: [`ADR-X.17-cpptlm-v05-mvp.md`](../../adr/ADR-X.17-cpptlm-v05-mvp.md) D2/D5
 > **关联模块**: [`ptx-emu-submodule-mvp.md`](./ptx-emu-submodule-mvp.md) · [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md)
-> **首版 commit**: 🔵 W3-4 实施(基础)+ W5-6 升级(per-warp)· **最近更新**: 2026-08-19
+> **首版 commit**: 🔵 W3-4 实施(基础)+ W5-6 升级(per-warp)· **最近更新**: 2026-08-20
 > **维护者**: CppTLM Team (Sisyphus)
 
 ---
@@ -15,6 +15,11 @@
 ## 1. 设计目标
 
 `CudaCoreAdapter` 是 **新概念模块**,包装 **Cuda Core(SM)** 与 PTX-EMU 之间的 bridge,**调用 PTX-EMU 的 warp 指令实现指令执行**。MVP 通过 PtxEmuSubmoduleMVP adapter 与 PTX-EMU 交互,支持双路径(黑盒 + 白盒)。
+
+**MVP 模块归属(per Phase A 修复 M4)**:
+- ✅ **S1-S4 阶段固定为 DGpuBoardTLM 内部组件**(与 `dgpu-board.md` §3 实现一致)
+- ❌ **不允许独立暴露为 ChStreamModuleBase**(会破 CP→TMU→CudaCoreAdapter 单链路契约)
+- 🟡 **v0.5 完整版**可评估独立 ChStreamModuleBase(per ADR-X.16 D4 ComputeUnit 架构 = Adapter pattern)— 但 MVP 不实施
 
 **核心特性**:
 - **双路径 dispatch**:`dispatch_blackbox`(image_execute)+ `dispatch_whitebox`(stepOneWarpInstruction)
@@ -97,7 +102,11 @@ public:
     struct WarpState {
         uint64_t pc = 0;
         uint64_t cycle_count = 0;
-        std::array<uint64_t, 32> register_deps = {};  // 32 lanes × 1 reg id(MVP 简化)
+        // MVP 升 4 reg dep(per Phase A 修复 S4):32 lanes × 4 reg id
+        // - 原 MVP 简化:32 lanes × 1 reg id(几乎等于非精度,违反 ADR-X.16 §3.3 per-warp 精度目标)
+        // - v0.5 完整版:32 lanes × 8 reg deps(对齐 Hopper/Ampere 真硬件 scoreboard 模拟)
+        // - MVP 4 reg dep = 满足真实 scoreboard 最低需求(写后写、写后读 hazard 检测)
+        std::array<std::array<uint64_t, 4>, 32> register_deps = {};
     };
 
     /// DispatchParams: image_execute 调用参数
@@ -282,10 +291,11 @@ per `ADR-X.15 §"12 SM 模块命运表"`:
 
 ### 5.3 per-warp WarpState(白盒路径)
 
-MVP 白盒路径 per-warp 跟踪:
+MVP 白盒路径 per-warp 跟踪(per Phase A 修复 S4):
 - `pc`:当前指令 PC
 - `cycle_count`:累计 cycle 数
-- `register_deps`:32 lanes × 1 reg id(MVP 简化,v0.5 完整版 32 lanes × 8 reg deps)
+- `register_deps`:**32 lanes × 4 reg id**(MVP 升级,原 1 reg dep 几乎等于非精度)
+- v0.5 完整版 32 lanes × 8 reg deps(对齐 Hopper/Ampere 真硬件 scoreboard)
 
 ### 5.4 简化版 args 映射
 
