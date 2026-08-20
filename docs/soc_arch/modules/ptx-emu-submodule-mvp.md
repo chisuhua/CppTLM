@@ -246,6 +246,11 @@ public:
     /// 读 lane 指令 PC
     uint32_t read_thread_pc(const ptxsim::WarpContext& warp, int lane_id);
 
+    /// 读 warp blocked cycles 剩余(per `WarpState::blocked_cycles_remaining`,
+    /// FIX-H8/B.3 补缺 — CudaCoreAdapter 镜像 WarpState.blocked_cycles 需此读口,
+    /// 避免直接调 PTX-EMU `WarpContext::get_blocked_cycles_remaining` 破坏编译防火墙)
+    uint32_t read_blocked_cycles(const ptxsim::WarpContext& warp);
+
     /// 推进 lane PC(per WarpContext::advance_thread_pc)
     void advance_thread_pc(ptxsim::WarpContext& warp, int lane_id, int new_pc);
 
