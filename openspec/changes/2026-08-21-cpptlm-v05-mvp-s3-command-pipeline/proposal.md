@@ -1,0 +1,100 @@
+# cpptlm-v05-mvp-s3-command-pipeline: CP + PM4 + TMU + 全链路 E2E + v0.5.0-MVP tag
+
+> **状态**: 📋 Proposed — 2026-08-21 · **日期**: 2026-08-21 · **Owner**: CppTLM Team (Sisyphus)
+> **关联 ADR**: [`docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md`](../../../docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
+> **取代**: [`openspec/changes/archive/2026-08-19-cpptlm-v05-mvp-superseded-by-s1-s2-s3/`](../../archive/2026-08-19-cpptlm-v05-mvp-superseded-by-s1-s2-s3/) (原单 change)
+> **依赖**: [`s1-ptxemu-integration/`](../2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/) + [`s2-dgpu-board/`](../2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/) 必须已 archive
+> **目标**: W5-10 交付 CP/NVIDIA PM4/TMU 深度集成 + 全链路 E2E + v0.5.0-MVP tag
+
+---
+
+## Why
+
+s3 是 MVP 切片的"数据面贯通"——把 s1 (PTX-EMU 集成) + s2 (板卡骨架) 通过 NVIDIA method packet + TMU 反压停 fetch 接通到端到端 cuLaunchKernel→kernel 执行→cuStreamSynchronize 完整数据面。
+
+s3 价值(必须依赖 s1+s2):
+- CP fetch NVIDIA method packet(替代原 Mesa-style TYPE3)对齐 UsrLinuxEmu `unpackPm4Header`
+- TMU 反压停 fetch(替代 LIFO)对齐真实 GPU 行为
+- 全链路 E2E + v0.5.0-MVP tag 收官
+
+**触发事件**:
+- s1+s2 已 archive(PtxEmuSubmoduleMVP + CudaCoreAdapter + DGpuBoardTLM)
+- 2026-08-20 Phase F-H.3 决定 NVIDIA method packet 格式家族
+- 2026-08-20 Phase F-D.2 H5 决定反压停 fetch
+
+---
+
+## What Changes
+
+### 1. 新建文件
+
+| 文件 | 用途 |
+|------|------|
+| `include/tlm/gpu/command_processor_mvp.hh` + `.cc` | CP 5-state FSM(per Phase F-H.3,GPU VA fetch)|
+| `include/tlm/gpu/pm4_decoder_mvp.hh` + `.cc` | **NVIDIA method packet** 解析(4 method_addr ranges) |
+| `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `.cc` | TMU Glue(32 slot + **反压停 fetch**,per Phase F-D.2 H5) |
+| `test/test_command_processor_mvp.cc` | 5 transition + NVIDIA method packet decode |
+| `test/test_pm4_decoder_mvp.cc` + `test_pm4_decoder_mvp_integration.cc` | NVIDIA method packet + CP 集成 |
+| `test/test_tmu_dispatch_processor_mvp.cc` | submit / 反压停 fetch / dep chain / 环检测 |
+
+### 2. 修改文件
+
+| 文件 | 修改 |
+|------|------|
+| `CHANGELOG.md` | 记录 v0.5.0-MVP release |
+| `git tag` | 创建 `v0.5.0-MVP` tag |
+
+### 3. **不**修改文件(沿用)
+
+- `include/tlm/gpu/scoreboard_tlm_v05_mvp.hh` + `pipeline_tlm_v05_mvp.hh`(**已取消**,per Phase I.2,直接使用现有 `scoreboard_tlm.hh`/`pipeline_tlm.hh`)
+- ~~`test_cuda_core_adapter_mvp_whitebox.cc`~~(**已删除**,per DP4=C)
+
+---
+
+## Acceptance Gate(本 change 独立)
+
+| Gate | Owner | 状态 | 验证方法 |
+|------|-------|:---:|----------|
+| **s3-G1** Pm4Decoder NVIDIA method packet 4 method_addr ranges 测试 PASS | CppTLM | ⏳ W5 | `ctest -R "test_pm4_decoder_mvp"` PASS |
+| **s3-G2** CommandProcessor 5 transition + GPU VA fetch 测试 PASS | CppTLM | ⏳ W5 | `ctest -R "test_command_processor_mvp"` PASS |
+| **s3-G3** TmuDispatchProcessor 反压停 fetch + dep chain + 环检测 测试 PASS | CppTLM | ⏳ W5 | `ctest -R "test_tmu_dispatch_processor_mvp"` PASS |
+| **s3-G4** CP + Pm4Decoder 集成测试 PASS | CppTLM | ⏳ W5 | `ctest -R "test_pm4_decoder_mvp_integration"` PASS |
+| **s3-G5** validate_topology CMake target 集成 PASS | CppTLM | ⏳ W9 | `cmake --build build --target validate_topology` PASS |
+| **s3-G6** 全部 ≥880 测试 PASS(per ADR-SOC-06 G-MVP-4) | CppTLM | ⏳ W9 | `build/bin/cpptlm_tests` PASS |
+| **s3-G7** `v0.5.0-MVP` tag 创建 | CppTLM | ⏳ W10 | `git tag -a v0.5.0-MVP -m "..."` |
+
+**最终验收(MVP 完成时)**:
+- [ ] s3-G1 ~ s3-G7 全部 ✅
+- [ ] 全部 ≥880 测试 PASS(v0.4.1 baseline 850 + MVP 新增 ≥30)
+- [ ] 编译防火墙验证仍 PASS
+- [ ] docs 同步检查 PASS
+- [ ] `git tag -a v0.5.0-MVP -m "..."`
+
+---
+
+## Cross-Repo Coordination(本 change)
+
+| 仓 | 跟踪载体 | 状态 |
+|----|---------|:---:|
+| **PTX-EMU** | 无新 API 需求 | ✅ 已 satisfied |
+| **UsrLinuxEmu** | 无新 API 需求(0x28 -ENOSYS 永久锁定)| ✅ 已 satisfied |
+| **TaskRunner** | `cuLaunchKernel` 解析 | ✅ 已 ship |
+
+---
+
+**Refs**:
+- [`proposal.md`](../2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/proposal.md)
+- [`design.md`](../2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/design.md)
+- [`tasks.md`](../2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/tasks.md)
+- [`../../../docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md`](../../../docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md)
+- [`../../../docs/soc_arch/modules/command-processor.md`](../../../docs/soc_arch/modules/command-processor.md)
+- [`../../../docs/soc_arch/modules/pm4-decoder.md`](../../../docs/soc_arch/modules/pm4-decoder.md)
+- [`../../../docs/soc_arch/modules/tmu-dispatch-processor.md`](../../../docs/soc_arch/modules/tmu-dispatch-processor.md)
+- [`../2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/`](../2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/) (依赖)
+- [`../2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/`](../2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/) (依赖)
+
+---
+
+**起草**: Sisyphus (2026-08-21,per Oracle ses_fe179d02 拆分建议)
+**Owner**: CppTLM Team
+**状态**: 📋 Proposed — 等 s1+s2 archive + W5 启动后开始实施
