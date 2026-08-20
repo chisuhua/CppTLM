@@ -23,6 +23,18 @@
 | [ADR-SOC-04-hsapp-cp-dispatcher-simplification.md](./ADR-SOC-04-hsapp-cp-dispatcher-simplification.md) | HSAPP/CP/Dispatcher 极简化（`KernelLaunchTLM` 取代 HSA 三件套） | ✅ 已确认 | Phase 7.B+ |
 | [ADR-SOC-05-gpu-directory-structure.md](./ADR-SOC-05-gpu-directory-structure.md) | GPU 目录结构（`include/tlm/gpu/` 子目录） | ✅ 已确认 | Phase 7.A 起 |
 
+## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference
+
+[`ADR-X.17`](../../adr/ADR-X.17-cpptlm-v05-mvp.md)(cpptlm-v05-mvp,2026-08-19)涉及 SoC 应用层决策(CP→TMU→Cuda Core 完整链路),在框架层 ADR(位于 `docs/adr/`)实施。具体 SoC 模块设计见:
+- [`dgpu-board.md`](../modules/dgpu-board.md)(DGpuBoardTLM 5 组件包装)
+- [`command-processor.md`](../modules/command-processor.md)(CP 5-state FSM)
+- [`pm4-decoder.md`](../modules/pm4-decoder.md)(Mesa-style TYPE3)
+- [`tmu-dispatch-processor.md`](../modules/tmu-dispatch-processor.md)(TMU Glue)
+- [`cuda-core-adapter.md`](../modules/cuda-core-adapter.md)(新概念,per-warp step 入口)
+- [`ptx-emu-submodule-mvp.md`](../modules/ptx-emu-submodule-mvp.md)(PTX-EMU adapter + 编译防火墙)
+
+路线图:[`roadmap-mvp-to-v05.md`](../roadmap/roadmap-mvp-to-v05.md)(MVP 4 阶段 6-10 周 + 可选 v0.5 完整版 12 周)
+
 ---
 
 ## 状态说明
