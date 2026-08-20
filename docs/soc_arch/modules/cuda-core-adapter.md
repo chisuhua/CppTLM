@@ -70,9 +70,9 @@ void set_warp_scheduler(std::unique_ptr<WarpScheduler> scheduler);
 ```
 
 本模块在 `init()` 时**通过 PtxEmuSubmoduleMVP 创建这些注入对象**:
-- `scoreboard = ptx_emu_facade_.create_scoreboard()`(默认 `ScoreboardTLM`)
-- `pipeline_provider = ptx_emu_facade_.create_pipeline_latency_provider()`(默认 `PipelineTLM`)
-- `tensor_core_timing = ptx_emu_facade_.create_tensor_core_timing()`(默认 `TensorCoreTLM`)
+- `scoreboard_ = std::make_unique<ScoreboardTLM>()`(IScoreboard 实现,`include/tlm/gpu/scoreboard_tlm.hh`)
+- `pipeline_provider_ = std::make_unique<PipelineTLM>()`(IPipelineLatencyProvider 实现,`include/tlm/gpu/pipeline_tlm.hh`)
+- `tensor_core_timing_ = std::make_unique<TensorCoreTLM>()`(ITensorCoreTiming 实现,`include/tlm/gpu/tensor_core_tlm.hh`)
 - `warp_scheduler = std::make_unique<MinimalWarpSchedulerTLM>(...)`
 
 然后**注入到 PTX-EMU SMContext**(一次性,在 `init()` 完成)。
@@ -266,6 +266,7 @@ private:
     uint64_t ctas_completed_ = 0;
     uint64_t ctas_failed_ = 0;
     bool last_warp_state_dirty_ = false;
+    uint32_t last_scheduled_warp_id_ = UINT32_MAX;  // FIX-H8:声明缺失成员(per Phase I.2 §5.2)
 
     // === 注入到 PTX-EMU SMContext ===
     void inject_timing_modules(ptxsim::SMContext& sm);
@@ -348,8 +349,8 @@ void CudaCoreAdapter::tick() {
         ptxsim::WarpContext* w = ptx_emu_facade_->get_warp_context(*sm, i);
         if (!w) continue;
         warp_states_[i].cycle_count = now_cycle;
-        warp_states_[i].exec_mask = w->get_active_mask();
-        warp_states_[i].blocked_cycles = w->get_blocked_cycles_remaining();
+        warp_states_[i].exec_mask = ptx_emu_facade_->read_active_mask(*w);  // FIX-H8/B.3:经 facade 读
+        warp_states_[i].blocked_cycles = ptx_emu_facade_->read_blocked_cycles(*w);  // FIX-H8/B.3:经 facade 读
         warp_states_[i].scheduler_state = (last_scheduled_warp_id_ == i);
         last_warp_state_dirty_ = true;
     }
