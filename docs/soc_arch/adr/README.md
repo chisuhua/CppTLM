@@ -22,16 +22,20 @@
 | [ADR-SOC-03-wavefront-coalescing-abstraction.md](./ADR-SOC-03-wavefront-coalescing-abstraction.md) | Wavefront Coalescing 抽象（`coalescing_factor` 参数） | ✅ 已确认 | Phase 7.B+ |
 | [ADR-SOC-04-hsapp-cp-dispatcher-simplification.md](./ADR-SOC-04-hsapp-cp-dispatcher-simplification.md) | HSAPP/CP/Dispatcher 极简化（`KernelLaunchTLM` 取代 HSA 三件套） | ✅ 已确认 | Phase 7.B+ |
 | [ADR-SOC-05-gpu-directory-structure.md](./ADR-SOC-05-gpu-directory-structure.md) | GPU 目录结构（`include/tlm/gpu/` 子目录） | ✅ 已确认 | Phase 7.A 起 |
+| [ADR-SOC-06-cpptlm-v05-mvp.md](./ADR-SOC-06-cpptlm-v05-mvp.md) | cpptlm-v05-mvp(**MVP 切片**:UsrLinuxEmu IOCTL → CppTLM CP→TMU→SQ→CudaCore + PTX-EMU functional/timing 分离,4 阶段 6-10 周,沿用 ADR-X.16 决策) | 📋 Proposed | Phase 10 MVP (W1-10) |
 
-## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference
+## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference(已迁回本目录)
 
-[`ADR-X.17`](../../adr/ADR-X.17-cpptlm-v05-mvp.md)(cpptlm-v05-mvp,2026-08-19)涉及 SoC 应用层决策(CP→TMU→Cuda Core 完整链路),在框架层 ADR(位于 `docs/adr/`)实施。具体 SoC 模块设计见:
-- [`dgpu-board.md`](../modules/dgpu-board.md)(DGpuBoardTLM 5 组件包装)
-- [`command-processor.md`](../modules/command-processor.md)(CP 5-state FSM)
-- [`pm4-decoder.md`](../modules/pm4-decoder.md)(Mesa-style TYPE3)
-- [`tmu-dispatch-processor.md`](../modules/tmu-dispatch-processor.md)(TMU Glue)
-- [`cuda-core-adapter.md`](../modules/cuda-core-adapter.md)(新概念,per-warp step 入口)
-- [`ptx-emu-submodule-mvp.md`](../modules/ptx-emu-submodule-mvp.md)(PTX-EMU adapter + 编译防火墙)
+[`ADR-SOC-06`](./ADR-SOC-06-cpptlm-v05-mvp.md) 原文件位于 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md`,per Phase I.4 (2026-08-20) 迁回本目录,因为这是 SoC 应用层决策(CP→TMU→SQ→CudaCore 完整链路 + PTX-EMU 深度集成),符合 `docs/soc_arch/adr/` 命名空间与层划分。
+
+具体 SoC 模块设计见:
+- [`dgpu-board.md`](../modules/dgpu-board.md)(DGpuBoardTLM 6 组件包装,含新增 SubmitQueue)
+- [`command-processor.md`](../modules/command-processor.md)(CP 5-state FSM,NVIDIA method packet)
+- [`pm4-decoder.md`](../modules/pm4-decoder.md)(NVIDIA method packet 解析)
+- [`tmu-dispatch-processor.md`](../modules/tmu-dispatch-processor.md)(TMU Glue,反压停 fetch)
+- [`submit-queue.md`](../modules/submit-queue.md)(🆕 WDU 分发网络,per `docs/research/WDUtoSM/overview.md`)
+- [`cuda-core-adapter.md`](../modules/cuda-core-adapter.md)(per Phase I.2 **SM 微架构探索器**)
+- [`ptx-emu-submodule-mvp.md`](../modules/ptx-emu-submodule-mvp.md)(per Phase I.1 **PTX functional facade**)
 
 路线图:[`roadmap-mvp-to-v05.md`](../roadmap/roadmap-mvp-to-v05.md)(MVP 4 阶段 6-10 周 + 可选 v0.5 完整版 12 周)
 
