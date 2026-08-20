@@ -56,11 +56,11 @@
 | **S3** | `include/tlm/gpu/command_processor_mvp.hh` + `.cc` | 5-state FSM(IDLE/FETCH/DECODE/DISPATCH/COMPLETE) |
 | **S3** | `include/tlm/gpu/pm4_decoder_mvp.hh` + `.cc` | **NVIDIA method packet**(per Phase F-H.3) + 4 method_addr ranges |
 | **S3** | `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `.cc` | TMU Glue(32 slot MVP + dep chain + **反压停 fetch**,per Phase F-D.2 H5) |
-| **S3** | `include/tlm/gpu/submit_queue_mvp.hh` + `.cc` | **🆕 WDU 分发网络**(per Phase F-H.5,per `docs/research/WDUtoSM/overview.md` NVIDIA Hopper) |
+| **S2** | `include/tlm/gpu/submit_queue_mvp.hh` + `.cc` | **🆕 WDU 分发网络**(per Phase F-H.5,per `docs/research/WDUtoSM/overview.md` NVIDIA Hopper;与 DGpuBoardTLM 6 组件同阶段) |
 | **S3** | `test/test_command_processor_mvp.cc` | 5 FSM transition 测试 |
 | **S3** | `test/test_pm4_decoder_mvp.cc` + `test_pm4_decoder_mvp_integration.cc` | **NVIDIA method packet** bit field + 4 method_addr range |
 | **S3** | `test/test_tmu_dispatch_processor_mvp.cc` | submit / on_complete / 反压停 fetch / dep chain |
-| **S3** | `test/test_submit_queue_mvp_*.cc` | 5 单测:route/enqueue/dispatch/complete/concurrent |
+| **S2** | `test/test_submit_queue_mvp_*.cc` | 5 单测:route/enqueue/dispatch/complete/concurrent |
 | ❌ **S3 删除** | ~~`test_cuda_core_adapter_mvp_whitebox.cc`~~ | **per DP4=C 永久禁用白盒路径**(per Phase I.1 重构) |
 | ❌ **S4 删除** | ~~`scoreboard_tlm_v05_mvp.hh` + `pipeline_tlm_v05_mvp.hh` + 2 tests~~ | **MVP 阶段直接使用现有 `scoreboard_tlm.hh` / `pipeline_tlm.hh`**(per Phase I.2,已有模块集成) |
 
@@ -152,7 +152,7 @@
 
 完整 S1-S4 操作步骤 + commit 模板,见:
 - [`docs/soc_arch/roadmap/roadmap-mvp-to-v05.md`](../../../docs/soc_arch/roadmap/roadmap-mvp-to-v05.md) — 阶段化路线图
-- ADR-X.17 §7.1-7.2 acceptance gates + 跨仓协调
+- ADR-SOC-06 §7.1-7.2 acceptance gates + 跨仓协调(per Phase I.4 ADR 移动)
 
 ---
 
@@ -184,7 +184,7 @@ UsrLinuxEmu @37a91b6 (ADR-090 v2,dGPU 接入规范)
 ### 跨仓 commit 顺序(per ADR-035 §R5.1)
 
 ```
-PTX-EMU 新 API PR → PTX-EMU submodule pin → CppTLM S1 → S2 stub → S3 白盒可选 → S4 tag
+PTX-EMU 新 API PR → PTX-EMU submodule pin → CppTLM S1 → S2 stub → S3 深度集成 PTX-EMU internal → S4 tag
 ```
 
 ---
