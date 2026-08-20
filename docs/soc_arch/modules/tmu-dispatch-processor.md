@@ -256,9 +256,9 @@ void TmuDispatchProcessor::try_chain_dependent(const TmuDispatchRecord& complete
     for (auto& [task_id, record] : scheduler_cache_) {
         if (record.dep_enable &&
             record.wait_on_latch_id == completed.arrive_at_latch_id) {
-            // dep 满足,重新 pre_dispatch
+            // dep 满足,重新 pre_dispatch(per Phase F-H.4:经 SubmitQueue 派发)
             if (check_dep_latches(record)) {
-                cuda_core_.issueTask(record);
+                submit_queue_.enqueue(cta_descriptor(record));  // FIX-C3:替代 cuda_core_.issueTask
                 dep_chain_advance_count_++;
             }
         }
@@ -266,28 +266,36 @@ void TmuDispatchProcessor::try_chain_dependent(const TmuDispatchRecord& complete
 }
 ```
 
-### 5.4 反压停 fetch(per Phase F-D.2 H5 修订,替代原 §5.4 LIFO eviction)
+### 5.4 反压停 fetch(per Phase F-D.2 H5 修订,替代原 LIFO eviction)
 
 ```cpp
-uint32_t TmuDispatchProcessor::lifo_evict() {
-    // 选择最近入队(enqueue_cycle 最大)的非 pinned 任务
-    auto victim_it = scheduler_cache_.end();
-    uint64_t max_cycle = 0;
-    for (auto it = scheduler_cache_.begin(); it != scheduler_cache_.end(); ++it) {
-        if (it->second.enqueue_cycle > max_cycle) {
-            max_cycle = it->second.enqueue_cycle;
-            victim_it = it;
-        }
-    }
+// FIX-C3(Oracle ses_fe179d02 审查纠正):
+// 原 §5.4 声称"反压停 fetch 替代 LIFO"但正文仍贴旧 lifo_evict() 完整实现,矛盾。
+// 规范实现如下 —— 容量满时**拒绝新任务**并反压,不驱逐任何入队任务:
 
-    if (victim_it != scheduler_cache_.end()) {
-        uint32_t evicted_id = victim_it->first;
-        // 通知 CompletionRing:evicted status
-        cq_.push(evicted_id, /*status=*/CUDA_ERROR_LAUNCH_TIMEOUT);
-        scheduler_cache_.erase(victim_it);
-        return evicted_id;
+TmuSubmitResult TmuDispatchProcessor::submit(TmuDispatchRecord record,
+                                              uint32_t* /*out_evicted*/) {
+    // 1. dep latch 检查(MVP)
+    if (record.dep_enable && !check_dep_latches(record)) {
+        return TmuSubmitResult::DEP_LATCH_MISMATCH;
     }
-    return 0;
+    // 2. 容量检查 + 反压停 fetch(per Phase F-D.2 H5)
+    //    **不驱逐入队任务** — 真实 GPU 队列满时反压 stop fetch,
+    //    避免破坏 pending_fence_id_ + sim_fence_id_signal 记账契约
+    if (scheduler_cache_.size() >= max_active_tasks_) {
+        backpressure_count_++;
+        return TmuSubmitResult::BACKPRESSURED;  // CP 应 back off 重试
+    }
+    // 3. 插入 scheduler cache
+    scheduler_cache_[record.task_id] = record;
+    submit_count_++;
+    // 4. 经 SubmitQueue 派发(per Phase F-H.4:TMU 不再直接调 CudaCoreAdapter)
+    bool enqueued = submit_queue_.enqueue(cta_descriptor(record));
+    if (!enqueued) {
+        scheduler_cache_.erase(record.task_id);
+        return TmuSubmitResult::SUBMIT_QUEUE_REJECTED;
+    }
+    return TmuSubmitResult::SUBMITTED;
 }
 ```
 
@@ -299,7 +307,8 @@ uint32_t TmuDispatchProcessor::lifo_evict() {
 
 - **MVP 默认 32 slot**:够覆盖 1-4 stream × 8 active tasks MVP 验证场景
 - **v0.5 完整版 256 slot**:覆盖真实 GPU 一代活跃任务上界
-- LIFO eviction 默认启用,溢出率 >5% 触发 review
+- **反压停 fetch 默认启用**(替代 LIFO eviction,per Phase F-D.2 H5),容量满时 `BACKPRESSURED` 返回 CP,不驱逐任何入队任务
+- 溢出率 >5% 触发 review(统计 `backpressure_count_ / submit_count_`)
 
 ### 6.2 单 cluster(MVP 简化)
 
@@ -313,7 +322,7 @@ uint32_t TmuDispatchProcessor::lifo_evict() {
 
 per Oracle v0.4.1 简化(per `ADR-X.15 §7.3` v0.5 反转):
 - LAST_BLOCK / EXPLICIT_KERNEL_MARKER 需 PTX-EMU 提供 block/PREEXIT 进度回调
-- 8 ABI(`image_load/image_execute` 等)无此信息通道
+- 深度集成路径(functional facade)**当前**无此信息通道(per Phase I.1 重构,MVP 不实施 PREEXIT/ACQBULK)
 - MVP 仅 NONE 档(直接 dispatch)
 
 ### 6.4 dep latch 简化
@@ -329,20 +338,21 @@ MVP dep latch 实现:
 
 | 测试文件 | 标签 | 内容 |
 |----------|------|------|
-| `test_tmu_dispatch_processor_mvp.cc` | `[tmu][mvp][glue]` | submit / on_complete / try_chain_dependent / LIFO eviction / dep chain / 环检测 |
+| `test_tmu_dispatch_processor_mvp.cc` | `[tmu][mvp][glue]` | submit / on_complete / try_chain_dependent / **反压停 fetch** / dep chain / 环检测 |
 
 **验收标准**(per ADR-SOC-06 G-MVP-3):
 - 3 接口(单测) PASS
-- 32+1 LIFO eviction PASS(第 33 task 触发驱逐)
+- **32+1 反压停 fetch PASS**(第 33 task 返回 `BACKPRESSURED`,不驱逐)
 - dep chain 链式推进 PASS(depth=3)
 - 环检测 PASS(depth > 8 拒绝)
+- `TmuSubmitResult::BACKPRESSURED` 返回后 CP 重试逻辑 PASS
 
 ---
 
 ## 8. 实施路径(S3 W5-6)
 
 1. 新建 `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `src/tlm/gpu/tmu_dispatch_processor_mvp.cc`(~250 LOC)
-2. 引用 `cuda_core_adapter_mvp.hh` + `completion_ring_mvp.hh`
+2. 引用 `submit_queue_mvp.hh` + `completion_ring_mvp.hh`(per Phase F-H.4:TMU 不再直接调 CudaCoreAdapter)
 3. 新建 `test/test_tmu_dispatch_processor_mvp.cc`(~10 单测)
 4. 集成到 `DGpuBoardTLM::tick()`
 
@@ -352,10 +362,10 @@ MVP dep latch 实现:
 
 | # | 风险 | 概率 | 影响 | 缓解 |
 |---|------|:---:|:---:|------|
-| R1 | LIFO 频繁驱逐 | 中 | 中 | 32 slot MVP 默认;溢出率 >5% 触发 review |
+| ~~R1 | LIFO 频繁驱逐~~ | — | — | **🗑️ 风险已消除(per Phase F-D.2 H5)**:反压停 fetch,容量满拒绝不驱逐 |
 | R2 | dep 链式推进死循环 | 低 | 高 | 简化环检测(链深 ≤ 8);每任务 visited flag |
-| R3 | LIFO 驱逐丢失 completion 通知 | 低 | 高 | `cq_.push(evicted_id, CUDA_ERROR_LAUNCH_TIMEOUT)` 显式通知 |
-| R4 | submit_count_/evict_count_ 计数器溢出 | 低 | 低 | uint64_t 计数 |
+| ~~R3 | LIFO 驱逐丢失 completion 通知~~ | — | — | **🗑️ 风险已消除(per Phase F-D.2 H5)**:无反压驱逐,无 CUDA_ERROR_LAUNCH_TIMEOUT 通知路径 |
+| R4 (原) | 反压停 fetch 频繁触发导致 CP 忙等 | 中 | 中 | JSON `tmu_max_active_tasks` 可配置;`BACKPRESSURED` 后 CP tick 退避重试 |
 | R5 | 32 slot MVP 不够真实工作负载 | 中 | 低 | JSON params 暴露 `tmu_max_active_tasks` 可配置 |
 
 ---
@@ -365,6 +375,7 @@ MVP dep latch 实现:
 - **2026-08-19**: 初版 — per ADR-SOC-06 D5 切片(MVP 4 阶段 S3)
 - **2026-08-20**: Phase F-D.2 H5 修订(LIFO eviction → 反压停 fetch)
 - **2026-08-20**: **Phase F-H.4 修订**:**TMU 不再直接调 CudaCoreAdapter**;改为 `TmuDispatchProcessor → SubmitQueue → CudaCoreAdapter` 链路(per `dgpu-board.md` §2.3.1 架构重定义 + `cuda-core-adapter.md` §F-H.1 深度集成)。`TmuSubmitResult::CUDA_CORE_REJECTED` → `SUBMIT_QUEUE_REJECTED`。R1/R3 缓解措施同步更新(无 LIFO 驱逐,无驱逐丢失 completion 路径)
+- **2026-08-20**: **FIX-C3(Oracle ses_fe179d02 审查)**:消除 LIFO 残留 — §5.3 `try_chain_dependent` 改调 `submit_queue_.enqueue`(替代 `cuda_core_.issueTask`);§5.4 删除旧 `lifo_evict()` 实现,补规范反压实现;§6.1/§7/§9 R1/R3/R4 同步(反压停 fetch + BACKPRESSURED);§8 引用改 `submit_queue_mvp.hh`
 
 ---
 

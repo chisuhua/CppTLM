@@ -239,13 +239,19 @@ Pm4MethodDispatch CommandProcessor::fetch_packet() {
         if (method_header == 0) return packet;  // invalid, per UsrLinuxEmu `gpfifo_translator.cpp:105`
 
         // 调 Pm4Decoder::parse_method(从 payload[1..data_count] 取 method payload)
-        // per Phase F-H.3:NVIDIA method packet 格式(inc:1 / method_addr:15 / subchannel:4 / data_count:4)
+        // per Phase F-H.3 + FIX-C2:NVIDIA method packet 格式(per UsrLinuxEmu `unpackPm4Header`):
+        //   inc = header & 1 (bit 0)
+        //   method_addr = (header >> 1) & 0x7FFF (bits 1-15)
+        //   subchannel = (header >> 16) & 0xF (bits 16-19)
+        //   data_count = (header >> 20) & 0xF (bits 20-23)
+        //   WARNING:原代码写 method_addr=h&0x7FFF(含inc位) + data_count=h>>24(错位),
+        //   经 Oracle ses_fe179d02 审查纠正(2026-08-20)
         packet = pm4_decoder_.parse_method(method_header,
                                             &entry.payload[1],
                                             max_dwords_per_packet_);
         packet.subchannel_id = static_cast<uint8_t>((method_header >> 16) & 0xF);
-        packet.method_addr = static_cast<uint16_t>((method_header >> 0) & 0x7FFF);  // per unpackPm4Header
-        packet.data_count = static_cast<uint8_t>((method_header >> 24) & 0xF);
+        packet.method_addr = static_cast<uint16_t>((method_header >> 1) & 0x7FFF);  // FIX-C2:>>1
+        packet.data_count = static_cast<uint8_t>((method_header >> 20) & 0xF);      // FIX-C2:>>20
     } else {
         // 非 FORMAT_PM4 entry:原生 GPFIFO 方法(per UsrLinuxEmu `gpu_types.h:56-67` GPU_OP_*)
         // MVP 阶段仅支持 FORMAT_PM4;其他格式视为 invalid
