@@ -1,7 +1,7 @@
 # Roadmap: cpptlm-v05-mvp → cpptlm-v05-full (MVP 切片到完整版)
 
 > **类别**: SoC Architecture > Roadmap · **状态**: 🔵 MVP 切片 (per ADR-X.17)
-> **日期**: 2026-08-19 · **维护者**: CppTLM Team (Sisyphus)
+> **日期**: 2026-08-19 / 修订 2026-08-20(Phase A/C 修复 + DP1=B/DP2=A/DP4=C 决策)· **维护者**: CppTLM Team (Sisyphus)
 > **关联 ADR**: [`ADR-X.17-cpptlm-v05-mvp.md`](../../adr/ADR-X.17-cpptlm-v05-mvp.md) D1
 > **关联 OpenSpec**:
 > - MVP: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
@@ -86,7 +86,7 @@
 
 | 交付 | 验证 | 状态 |
 |------|------|:---:|
-| `git submodule add external/PTX-EMU` | `git submodule status` 显示 PTX-EMU commit hash | ⏳ W1 |
+| `git submodule add external/PTX-EMU` + pin 到 `PTX-EMU@87820951`(per **DP1=B** 决策,2026-08-13 audit commit) | `git submodule status` 显示 PTX-EMU commit hash | ⏳ W1 |
 | `CMakeLists.txt` `add_subdirectory(external/PTX-EMU)` + `PTX_EMU_BUILD_TESTS=OFF` + `-fvisibility=hidden` | `cmake --build build` 通过 | ⏳ W1 |
 | `include/tlm/gpu/ptx_emu_submodule_mvp.hh` + `.cc` | 编译通过 | � W1-2 |
 | `include/tlm/gpu/cuda_core_adapter_mvp.hh` + `.cc` | 黑盒 dispatch_blackbox 通过 | ⏳ W2 |
@@ -97,7 +97,7 @@
 
 ```bash
 # W1
-git commit -am "chore(submodule): add external/PTX-EMU@<commit_hash>"
+git commit -am "chore(submodule): add external/PTX-EMU@87820951"
 git commit -am "build(cmake): add_subdirectory(external/PTX-EMU) — submodule static link"
 git commit -am "feat(ptx-emu-mvp): PtxEmuSubmoduleMVP adapter with 8 ABI passthrough"
 
@@ -109,7 +109,7 @@ git commit -am "feat(cuda-core-mvp): CudaCoreAdapter with dispatch_blackbox (ima
 
 - **R1**: PTX-EMU submodule 构建依赖扩散(ANTLR4 4.13.2)— `PTX_EMU_BUILD_TESTS=OFF` 缓解
 - **R2**: 编译防火墙破裂 — `git grep` CI 拦截
-- **R3**: PTX-EMU 维护者拒收 API — MVP 黑盒路径不依赖新 API
+- **R3**: ~~PTX-EMU 维护者拒收 API~~ — **per DP4=C 决策消除该风险**:MVP 仅黑盒路径,不依赖新 API
 
 ---
 
@@ -192,8 +192,8 @@ cuLaunchKernel(grid, block, args, ...)
 - `CommandProcessor` 5-state FSM 解析 PM4
 - `Pm4Decoder` Mesa-style TYPE3(4 MVP opcodes)
 - `TmuDispatchProcessor` dep chain + LIFO
-- `CudaCoreAdapter` **白盒路径**调 PTX-EMU `WarpContext::execute_warp_instruction`
-- per-warp cycle 跟踪 PASS
+- `CudaCoreAdapter` WarpState 4 reg dep(MVP,per Phase A S4 修复)— **白盒路径代码占位,永久不启用**(per DP4=C 决策)
+- 黑盒路径 per-warp cycle 内部一致性测试 PASS
 
 ### 4.2 关键交付
 
@@ -202,8 +202,8 @@ cuLaunchKernel(grid, block, args, ...)
 | `include/tlm/gpu/command_processor_mvp.hh` + `.cc`(5-state FSM) | 5 transition 测试 PASS | ⏳ W5 |
 | `include/tlm/gpu/pm4_decoder_mvp.hh` + `.cc`(Mesa TYPE3 + 4 opcodes) | 4 opcode + bit field round-trip PASS | ⏳ W5 |
 | `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `.cc`(32 slot + dep) | submit / on_complete / LIFO / dep chain PASS | ⏳ W5 |
-| `CudaCoreAdapter` 升级白盒 dispatch_whitebox | per-warp step PASS | ⏳ W6 |
-| `PtxEmuSubmoduleMVP` 升级白盒 stepOneWarpInstruction | PTX-EMU 新 API 接入(S3 触发 HSK-7 公告)| ⏳ W6 |
+| `CudaCoreAdapter` WarpState 4 reg dep + 内部一致性测试 | per-warp WarpState PASS | ⏳ W6 |
+| `PtxEmuSubmoduleMVP` stepOneWarpInstruction 代码占位 | **代码框架,enable_whitebox=false 永久不调用**(per DP4=C) | ⏳ W6 |
 | `test/test_command_processor_mvp.cc` | 5 transition PASS | ⏳ W5 |
 | `test/test_pm4_decoder_mvp.cc` + `test_pm4_decoder_mvp_integration.cc` | PASS | ⏳ W5 |
 | `test/test_tmu_dispatch_processor_mvp.cc` | PASS | ⏳ W5 |
@@ -233,21 +233,23 @@ CudaCoreAdapter::issueTask()
         → (PTX-EMU 内部)WarpContext::execute_warp_instruction × M
 ```
 
-**白盒路径**(S3 启用,需 PTX-EMU 新 API):
+**白盒路径**(代码占位,per DP4=C **永久不启用**):
 ```
-CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
-  → 循环 PtxEmuSubmoduleMVP::stepOneWarpInstruction(warp_id, &pc, &status, &cycle_count)
-    → PTX-EMU SMContext::stepOneWarpInstruction(warp_id, ...)
-      → WarpContext::execute_warp_instruction(stmt, target_pc)
-      → 返回 PC + cycle_count + status
-  → 更新 WarpState[warp_id] = { pc, cycle_count, register_deps }
+// CudaCoreAdapter::dispatch_whitebox(warp_count, max_cycles)
+//   → 循环 PtxEmuSubmoduleMVP::stepOneWarpInstruction(warp_id, &pc, &status, &cycle_count)
+//     → PTX-EMU SMContext::stepOneWarpInstruction(warp_id, ...) ← API 不存在,2026-08-20 验证
+//       → WarpContext::execute_warp_instruction(stmt, target_pc)
+//       → 返回 PC + cycle_count + status
+//   → 更新 WarpState[warp_id] = { pc, cycle_count, register_deps[4] }
+// 
+// MVP 范围: enable_whitebox=false 强制不调用,per-warp 精度推到 v0.5 完整版(ADR-X.16 P0'-P4')
 ```
 
 ### 4.5 风险
 
 - **R7**: CommandProcessor 5-state FSM 状态转换遗漏 — TDD 5 transition 测试
 - **R8**: Pm4Decoder Mesa-style 与 KFD convention 冲突 — 同时验证两种 convention
-- **R9**: PTX-EMU 维护者拒收 `stepOneWarpInstruction` API — MVP 仅黑盒,白盒推迟到 v0.5 完整版
+- **R9**: ~~PTX-EMU 维护者拒收 `stepOneWarpInstruction` API~~ — **per DP4=C 决策消除该风险**
 
 ---
 
@@ -340,19 +342,26 @@ P4' (W11-12) 收尾 + v0.5.0 tag
 
 | 仓 | 跟踪载体 | MVP 状态 | v0.5 完整版状态 |
 |----|---------|:---:|:---:|
-| **PTX-EMU** | submodule pin + (可选)`stepOneWarpInstruction` 新 API | 🟡 W1 submodule + W6 可选白盒 API | 🟡 12 周内可推动 |
-| **UsrLinuxEmu** | IOCTL 0x27/0x28 真实路径 + HSK-8 协议(后续) | 🟡 S2 stub 模式(W3-4) | 🟡 完整集成(后续) |
-| **TaskRunner** | `cuModuleLoadData` 解析(已有) | ✅ 已 ship | - |
+| **PTX-EMU** | submodule pin `PTX-EMU@87820951`(per DP1=B)— 白盒 API 不需要(per DP4=C 永久禁用) | 🟡 W1 submodule 锁定 | 🟡 v0.5 完整版白盒补足(per ADR-X.16 P0'-P4') |
+| **UsrLinuxEmu** | IOCTL 0x27/0x28 真实路径 + ADR-090 v2 ✅ Accepted(2026-08-18) | 🟡 S2 stub 模式(W3-4) | 🟡 完整集成(后续) |
+| **TaskRunner** | `cuModuleLoadData` 解析(已有) + tadr-308 待创建(per ADR-090 §C0.3) | ✅ 已 ship | - |
 | **CppTLM** | 本 roadmap + ADR-X.17 + openspec change | 🔵 MVP 实施 | 🟡 v0.5 完整版(后续) |
 
-**MVP 跨仓 commit 顺序**(per ADR-035 §R5.1):
+**MVP 跨仓 commit 顺序**(per ADR-035 §R5.1 + UsrLinuxEmu ADR-090 v2 §C0.4 跨仓引用新规 + DP1=B + DP4=C 决策):
 ```
-[1] PTX-EMU submodule pin(已有 ccd34155) → CppTLM S1
+[1] PTX-EMU submodule pin @ PTX-EMU@87820951(per DP1=B,2026-08-13 audit commit) → CppTLM S1
+    └─ 不发出 HSK-7 公告(per DP4=C,MVP 永久仅黑盒路径,不依赖 stepOneWarpInstruction API)
 [2] CppTLM S2 stub 模式 → 不依赖 UsrLinuxEmu 编译
-[3] CppTLM S3 可选白盒 → 需 PTX-EMU 接受 stepOneWarpInstruction
-[4] CppTLM S4 v0.5.0-MVP tag → user sign-off
-[5] (可选) v0.5 完整版 12 周 + HSK-8 UsrLinuxEmu 联调
+[3] CppTLM S3 CP+PM4+TMU+黑盒 warp 调用 → 不需要 PTX-EMU 新 API(per DP4=C)
+[4] CppTLM S4 v0.5.0-MVP tag → user sign-off(维持 4 周 W7-W10,per DP2=A)
+[5] (可选) v0.5 完整版 12 周 + 白盒 warp 调用补足(per ADR-X.16 P0'-P4',需 HSK-N 公告)
 ```
+
+**HSK 协议编号澄清**(per Phase A 修复 S6/NR5 + DP4=C):
+- **HSK-1**: PTX-EMU ABI 真相源(`include/cudart/cpptlm_module.h:12-52`,`CPPTLM_MODULE_VERSION=2`)— 已 ship
+- **HSK-6**: UsrLinuxEmu ADR-090 v2 §D5 联发协议(PTX-EMU 发起,CppTLM ack,UsrLinuxEmu 利益相关方)— ✅ Accepted 2026-08-18
+- ~~HSK-7~~(per DP4=C 决策)— **不发出**:MVP 永久仅黑盒路径,不依赖 PTX-EMU 新增 API
+- ~~HSK-8~~(原 roadmap 误称)— **废除**(与 ADR-090 §D5 编号冲突)
 
 ---
 
@@ -367,7 +376,7 @@ P4' (W11-12) 收尾 + v0.5.0 tag
 | **G-MVP-5** | UsrLinuxEmu IOCTL 0x27/0x28 真实路径 | ⏳ | W4 |
 | **G-MVP-6** | 编译防火墙验证 | ⏳ | W2 |
 | **G-MVP-7** | v0.5.0-MVP tag | � | W10 |
-| **G-MVP-8** | HSK-7/8 公告发出(可选,若需 PTX-EMU 新 API) | ⏳ | W1 |
+| **G-MVP-8** | ~~HSK-7/8 公告发出~~(per DP4=C **不需要**,MVP 永久仅黑盒) | — | — |
 
 ---
 

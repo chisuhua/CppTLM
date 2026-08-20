@@ -145,6 +145,12 @@ public:
 private:
     /// 简化版 cluster 选择(MVP:固定绑定 stream_id % cluster_count)
     uint8_t select_cluster(uint64_t stream_id) const {
+        // MVP 单 cluster(per Phase A 修复 S3):
+        //   - JSON `max_streams` 默认值在 MVP 阶段仅用于 SQ 多流管理,**不启用多 cluster 调度**
+        //   - 真实 GPU 中 stream_id 与 cluster_id 是不同维度(stream 跨 cluster 调度),
+        //     MVP 不仿真该跨维度,直接返回 0(stream 与 cluster 1:1 映射,所有 stream 共享单 cluster)
+        //   - v0.5 完整版: select_cluster() 升级支持 `cluster_count` JSON param +
+        //     跨 cluster dep chain 调度
         return static_cast<uint8_t>(stream_id % 1);  // MVP 单 cluster
     }
 
@@ -290,7 +296,10 @@ uint32_t TmuDispatchProcessor::lifo_evict() {
 
 ### 6.2 单 cluster(MVP 简化)
 
-- MVP 仅 1 cluster(全 stream 共享)
+- **MVP 阶段**:**仅 1 cluster**(全 stream 共享,per Phase A 修复 S3)— `select_cluster()` 永远返回 0
+- **JSON `max_streams` 默认 = 1**(而非 `dgpu-board.md` §2.3 示例的 4)— 避免 S3 期间被误解为多 cluster 调度
+  - **或**:保留 `max_streams=4` 但**仅用于 SQ 多流 FIFO 数量**,**不**进入 TMU cluster 选择
+  - **建议**:S1 实施前在 `dgpu-board.md` §2.3 JSON 示例默认值改为 `max_streams=1`(per S3 修复)
 - v0.5 完整版支持多 cluster + cluster_id 选择策略
 
 ### 6.3 pre_exit_policy 仅 NONE
