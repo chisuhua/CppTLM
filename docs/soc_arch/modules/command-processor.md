@@ -145,7 +145,8 @@ private:
     std::array<SubchannelContext, 8> sub_ctx_;
 
     // === PM4 解析(per Phase F-H.3 修订:NVIDIA method packet 替代 Mesa-style TYPE3) ===
-    Pm4Decoder decoder_;
+    //   per s2 T-s2-3a / s3 T-s3-1 契约:decoder 注入,非直接成员
+    std::unique_ptr<Pm4DecoderInterface> decoder_;  // s2 注入,s3 填充实现
     uint32_t max_dwords_per_packet_ = 64;  // MVP 简化
 
     // === 依赖注入 ===
@@ -379,13 +380,20 @@ MVP 仅用 subchannel 0 (compute),其他 7 个预留。
 
 ---
 
-## 7. 实施路径(S3 W5-6)
+## 7. 实施路径(s2 骨架 + s3 填充,per Phase L split)
 
-1. 新建 `include/tlm/gpu/command_processor_mvp.hh` + `src/tlm/gpu/command_processor_mvp.cc`(~250 LOC)
-2. 引用 `include/tlm/gpu/pm4_decoder_mvp.hh` + `tmu_dispatch_processor_mvp.hh` + `dgpu_bar.hh`
-3. 新建 `test/test_command_processor_mvp.cc`(5 transition + 4 opcode)
-4. 新建 `test/test_pm4_decoder_mvp_integration.cc`(CP + Decoder 集成)
-5. 更新 `include/chstream_register.hh`(若 CP 暴露为独立 module;MVP 不暴露)
+**s2 W3-4 创建骨架**(per s2 T-s2-3a):
+1. 新建 `include/tlm/gpu/pm4_types_mvp.hh`(Pm4MethodHeader/Pm4MethodDispatch 数据类型)
+2. 新建 `include/tlm/gpu/pm4_decoder_mvp.hh`(Pm4DecoderInterface 纯接口,含 `parse_method` 纯虚)
+3. 新建 `include/tlm/gpu/command_processor_mvp.hh` + `src/tlm/gpu/command_processor_mvp.cc`(5-state FSM 骨架,`set_decoder(unique_ptr<Pm4DecoderInterface>)` 注入接口,~250 LOC)
+4. 引用 `include/tlm/gpu/dgpu_bar.hh`
+5. 新建 `test/test_command_processor_mvp_skeleton.cc`(CP 状态机 no-op + wake 测试)
+
+**s3 W5-6 填充实现**(per s3 T-s3-1/2):
+6. 填充 `src/tlm/gpu/pm4_decoder_mvp.cc`(新增 Pm4Decoder 具体类继承 Pm4DecoderInterface,4 method_addr ranges NVIDIA method packet 解析)
+7. 填充 `src/tlm/gpu/command_processor_mvp.cc` 的 DECODE 状态(调 `decoder_->parse_method()`)
+8. 新建 `test/test_command_processor_mvp.cc`(5 transition + NVIDIA method packet decode 真实测试)
+9. 新建 `test/test_pm4_decoder_mvp_integration.cc`(CP + Decoder 集成)
 
 ---
 

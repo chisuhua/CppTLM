@@ -37,6 +37,7 @@ s2 价值独立(但**编译依赖 s1**):
 | `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `.cc` | **4 IOCTL** stub(per Phase F-H.3): 0x27 LOAD / 0x28 -ENOSYS / 0x29 UNLOAD / 0x01 PUSHBUFFER |
 | `include/tlm/gpu/command_processor_mvp.hh` + `src/tlm/gpu/command_processor_mvp.cc` | **🆕 CP 骨架**(per s2 T-s2-3a,5-state FSM no-op + set_decoder 注入接口,s3 填充) |
 | `include/tlm/gpu/pm4_decoder_mvp.hh` | **🆕 Pm4DecoderInterface 纯接口头**(per s2 T-s2-3a,含 `parse_method` 纯虚方法,s3 填充) |
+| `include/tlm/gpu/pm4_types_mvp.hh` | **🆕 Pm4MethodHeader/Pm4MethodDispatch 数据类型**(per s2 T-s2-3a,被 pm4_decoder_mvp.hh include,s3 依赖此类型定义 `parse_method` 返回值) |
 | `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `src/tlm/gpu/tmu_dispatch_processor_mvp.cc` | **🆕 TMU 骨架**(per s2 T-s2-3b,反压 + set_handler 注入接口,s3 填充) |
 | `include/tlm/gpu/tmu_handler_mvp.hh` | **🆕 TmuHandlerInterface 纯接口头**(per s2 T-s2-3b,s3 填充) |
 | `configs/dgpu_board_v1_mvp.json.in` | JSON config + CMake configure_file 注入 `${PTX_EMU_ROOT}` |

@@ -79,12 +79,14 @@ public:
 | `test_submit_queue_mvp_concurrent.cc` | `[submit-queue][mvp][concurrent]` | 多 CTA 并发 |
 | `test_dgpu_board_v1_mvp_from_config.cc` | `[dgpu-board][mvp][e2e]` | 6 SECTION E2E |
 | `test_usrlxemu_ioctl_stub.cc` | `[usrlxemu-ioctl][stub]` | **4 IOCTL** PASS |
+| `test_command_processor_mvp_skeleton.cc` | `[command-processor][mvp][skeleton]` | **🆕 s2 骨架**:5 state 转换 no-op + wake |
+| `test_tmu_dispatch_processor_mvp_skeleton.cc` | `[tmu][mvp][skeleton]` | **🆕 s2 骨架**:反压 + 容量管理 |
 
 ## 6. 阶段化交付(本 change)
 
 ```
 s2-W3 (2026-09-05~11): DGpuBoardTLM 8 组件 + Doorbell + SubmitQueue + CompletionRing
-s2-W4 (2026-09-12~18): 4 IOCTL stub + JSON config + validate_topology + 8 个测试 PASS + archive
+s2-W4 (2026-09-12~18): 4 IOCTL stub + JSON config + validate_topology + **10 个测试 PASS** + archive
 ```
 
 ## 7. 风险与缓解(本 change)
