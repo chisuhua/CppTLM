@@ -30,6 +30,7 @@ include/         # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
   modules.hh     # REGISTER_OBJECT / REGISTER_MODULE 宏入口
   modules_cluster.hh    # REGISTER_MODULE 参数化入口 (9 个 SimModule 派生类)
   AGENTS.md      # 注册宏体系完整表 (必读)
+  cudart/        # HSK-6 vendored 接口头 (cpptlm_bridge.h / abi_guards.h / pipeline_interface.h 等)
 
 src/             # .cc 实现 + main.cpp
   core/          # module_factory(.cc 604 行, ⭐complex) / connection_resolver / param_parser
@@ -96,6 +97,7 @@ plans/           # 实施计划: phase7-completion / p0-alignment-remediation / 
 | ADR 索引 | `docs/adr/README.md` (X.1~X.15 + INC-01 + LIB-01 + METRIC-01 + NV-01/02) |
 | 修改 CI | `.github/workflows/ci.yml` (Release/Debug × ASan[OFF,ON] 矩阵) |
 | 调试 test fail | `.opencode/skills/cpptlm-debug/SKILL.md` (auto-loads on "test fail") |
+| **v0.5 MVP S1 PTX-EMU 集成** | `cmake/PTXEmuCore.cmake` (shim: 73 PTX-EMU 源 + 4 道门禁 + GLOB drift 校验) + `openspec/changes/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/` (proposal+design+tasks) + `include/tlm/gpu/ptx_emu_submodule_mvp.{hh,cc}` (functional facade) + `include/tlm/gpu/cuda_core_adapter_mvp.{hh,cc}` (timing adapter) |
 
 ## CONVENTIONS
 
