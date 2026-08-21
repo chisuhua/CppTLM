@@ -13,6 +13,29 @@ if(NOT BUILD_RTL)
         "${CMAKE_CURRENT_SOURCE_DIR}/test_cppHDL_smoke.cc")
 endif()
 
+# S1 WU-3/T-s1-3: PtxEmuSubmoduleMVP facade tests 仅在 ON 路径编译
+# (OFF 路径下 src/tlm/gpu/ptx_emu_submodule_mvp.cc 不存在)
+if(NOT CPPTLM_WITH_PTX_EMU)
+    list(REMOVE_ITEM TEST_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_decode.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_arith.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_memory.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_branch.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_barrier.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_state.cc")
+endif()
+
+# S1 WU-4: CudaCoreAdapter tests gated by CPPTLM_WITH_PTX_EMU
+if(NOT CPPTLM_WITH_PTX_EMU)
+    list(REMOVE_ITEM TEST_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_tick.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_scoreboard.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_pipeline.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_dispatch.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_warp_state.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_injection.cc")
+endif()
+
 # 将 Catch2 amalgamated 源直接加入编译（避免外部依赖）
 add_executable(cpptlm_tests ${TEST_SOURCES} catch_amalgamated.cpp)
 

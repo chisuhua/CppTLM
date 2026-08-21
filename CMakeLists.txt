@@ -42,6 +42,10 @@ option(ENABLE_COVERAGE "Enable code coverage (gcov)"         OFF)
 option(USE_ASAN       "Enable AddressSanitizer (Debug only)" OFF)
 option(BUILD_RTL "Build CppHDL RTL bridge (Spike)" OFF)
 
+# S1: PTX-EMU submodule 集成 (默认 OFF — submodule 未初始化时 ON 会全员
+# configure 失败; GPU 集成开发者/CI 显式 -DCPPTLM_WITH_PTX_EMU=ON)
+option(CPPTLM_WITH_PTX_EMU "Build PTX-EMU core as static lib (S1)" OFF)
+
 # ==============================================================================
 # 编译选项
 # ==============================================================================
@@ -112,6 +116,10 @@ install(TARGETS cpptlm_core
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
 )
+
+# S1: PTX-EMU shim (内部早退当 CPPTLM_WITH_PTX_EMU=OFF; 须在 cpptlm_core
+# 定义之后 include)
+include(cmake/PTXEmuCore.cmake)
 
 # ==============================================================================
 # 配置摘要
