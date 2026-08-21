@@ -5,7 +5,19 @@
 > **接收方**: PTX-EMU Architecture Team
 > **回传目标**: PTX-EMU 仓 `docs/superpowers/specs/2026-08-21-hsk-8-cpptlm-response.md` 或 PR 评论
 > **关联变更**: [`openspec/changes/cpptlm-ptxemu-public-device-api/`](../../changes/cpptlm-ptxemu-public-device-api/)
-> **HSK 历史**: HSK-1 (`8dc000ec`) · HSK-2 (ANTLR4 4.13.2) · HSK-3 (ExternalProject_Add, ⚠️ 已被 HSK-6 废止方向) · HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) · HSK-5 (`advance()`, 🟥 CANCELLED by HSK-6) · HSK-6 (`25e36f60` CppTLM ack `369cf71`) · **HSK-8 (本协议)**
+> **HSK 历史**: HSK-1 (`8dc000ec`) · HSK-2 (ANTLR4 4.13.2) · HSK-3 (ExternalProject_Add, ⚠️ 已被 HSK-6 废止方向) · HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) · HSK-5 (`advance()`, 🟥 CANCELLED by HSK-6) · HSK-6 (PTX-EMU `25e36f60` · CppTLM ack `369cf71` · 实施 refs `585e4ff`/`5d9473a`/`fa2b3ec`) · HSK-7 (🔵 预留 — 仅 `CPPTLMBRIDGE_VERSION` 解冻时触发, 截至 2026-08-21 未签发, 编号保留) · **HSK-8 (本协议)**
+
+> **HSK-6 commit 角色澄清** (避免审查时的 hash 混淆):
+> - `25e36f60` (PTX-EMU 端): HSK-6 公告 commit (PTX-EMU 仓)
+> - `369cf71` (CppTLM 端): CppTLM 对 HSK-6 的 ack commit — 本 spec HSK 历史段的 ack 引用
+> - `585e4ff` (CppTLM 端): HSK-6 实施前 main HEAD (Phase 2a 起点, S1/MVP 工作线)
+> - `5d9473a` (CppTLM 端): HSK-6 openspec change `cpptlm-v3-dgpu-extract` 启动 commit
+> - `fa2b3ec` (CppTLM 端): HSK-6 P0-1 实施 commit (17 条 static_assert 迁移至 `abi_guards.h`)
+
+> **HSK-7 预留语义** (审计可追溯):
+> HSK-6 response (`docs-archived/superpowers/specs/2026-08-18-hsk-6-response.md` 第 30 行) 显式声明:
+> "CPPTLMBRIDGE_VERSION 冻结于 2 (任何解冻触发 HSK-7)"
+> 即 HSK-7 协议号已**锁定给** ABI 解冻事件, 编号保留, 不被任何其他变更占用。
 
 ---
 
@@ -126,7 +138,7 @@ PTX-EMU 仓 MUST 在 `include/ptxemu/ir/statement.h` 提供 `ptxemu::Statement`�
 | 2 | 根 `CMakeLists.txt`: 删除 `include(cmake/PTXEmuCore.cmake)`, 改 `add_subdirectory(external/PTX-EMU)` |
 | 3 | 删除 `cmake/PTXEmuCore.cmake` (246 行) + `src/tlm/gpu/ptx_emu_bridge_stub.cc` + `include/cudart/cpptlm_bridge.h` + `MemoryBridge`/`PtxEmuDriverShim` 桥接残留簇 5 项 |
 | 4 | 重写 `ptx_emu_submodule_mvp.cc/.hh` + `cuda_core_adapter_mvp.cc/.hh`（12+5 include → 1，模板→重载，指针→`uint32_t warp_id` 句柄）|
-| 5 | `abi_guards.h` 拆分：16 条 enum 断言迁至 `include/cudart/hsk4_abi_guards.h`，删除 `sizeof(PtxEmuDriverApi)==64` |
+| 5 | `abi_guards.h` 拆分（per HSK-6 P0-1 `fa2b3ec`）: (a) 16 条 enum 断言（`PipelineId` 6 条 + `TcPrecision` 6 条 + `is_same_v` 4 条，from `cpptlm_bridge.h:243-306`）迁至新建 `include/cudart/hsk4_abi_guards.h`; (b) 删除 `sizeof(PtxEmuDriverApi)==64` 这条布局锁（理由：`PtxEmuDriverApi` 在 HSK-6 已废止，布局锁失去意义）；拆分后 `abi_guards.h` 自身清空（H3 review fix: 16+1=17 总数与 `fa2b3ec` 当前内容一致） |
 | 6 | 12 测试改写（facade fixture 改用 PTX 源码字符串）|
 | 7 | 新增 include 防火墙 grep 门禁（除 facade/adapter 外任何 .cc include `ptxsim/`/`ptx_ir/`/`memory/`/`register/` 即 FATAL_ERROR）|
 | 8 | 跑 8 条验证标准（OFF 850 + ON 891 + grep 归零 + 版本守卫 + 反向故意失败）|
@@ -158,9 +170,9 @@ PTX-EMU 仓 MUST 在 `include/ptxemu/ir/statement.h` 提供 `ptxemu::Statement`�
 **Cc**: @ptx_emu_owner · @ptx_emu_architecture_team · @usr_linux_emu_architecture_team
 
 **Refs**:
-- HSK-1 (`8dc000ec`) · HSK-2 (ANTLR4 4.13.2) · HSK-3 (ExternalProject_Add, HSK-6 废止方向) · HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) · HSK-5 (🟥 CANCELLED by HSK-6) · HSK-6 (`25e36f60`/`369cf71`)
+- HSK-1 (`8dc000ec`) · HSK-2 (ANTLR4 4.13.2) · HSK-3 (ExternalProject_Add, HSK-6 废止方向) · HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) · HSK-5 (🟥 CANCELLED by HSK-6) · HSK-6 (PTX-EMU `25e36f60` / CppTLM ack `369cf71` / 实施 `585e4ff`·`5d9473a`·`fa2b3ec`) · HSK-7 (🔵 预留 — 仅 ABI 解冻时签发, 未使用) · **HSK-8 (本 spec)**
 - PTX-EMU cleanup Phase 1-4: `a9a14e1d` / `292022a3` / `e4d7e369` / `09786635`
-- CppTLM openspec change `cpptlm-ptxemu-public-device-api` (4/4 artifacts complete)
+- CppTLM openspec change `cpptlm-ptxemu-public-device-api` (proposal + design + tasks + 3 specs = 7 artifacts)
 - Oracle session `ses_fdb70164bffe2vBN71uiaV90aY`
 
 ---
