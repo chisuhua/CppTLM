@@ -8,11 +8,11 @@
 > **HSK 历史**: HSK-1 (`8dc000ec`) · HSK-2 (ANTLR4 4.13.2) · HSK-3 (ExternalProject_Add, ⚠️ 已被 HSK-6 废止方向) · HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) · HSK-5 (`advance()`, 🟥 CANCELLED by HSK-6) · HSK-6 (PTX-EMU `25e36f60` · CppTLM ack `369cf71` · 实施 refs `585e4ff`/`5d9473a`/`fa2b3ec`) · HSK-7 (🔵 预留 — 仅 `CPPTLMBRIDGE_VERSION` 解冻时触发, 截至 2026-08-21 未签发, 编号保留) · **HSK-8 (本协议)**
 
 > **HSK-6 commit 角色澄清** (避免审查时的 hash 混淆):
-> - `25e36f60` (PTX-EMU 端): HSK-6 公告 commit (PTX-EMU 仓)
-> - `369cf71` (CppTLM 端): CppTLM 对 HSK-6 的 ack commit — 本 spec HSK 历史段的 ack 引用
-> - `585e4ff` (CppTLM 端): HSK-6 实施前 main HEAD (Phase 2a 起点, S1/MVP 工作线)
-> - `5d9473a` (CppTLM 端): HSK-6 openspec change `cpptlm-v3-dgpu-extract` 启动 commit
-> - `fa2b3ec` (CppTLM 端): HSK-6 P0-1 实施 commit (17 条 static_assert 迁移至 `abi_guards.h`)
+> - `25e36f60` (PTX-EMU 端): HSK-6 公告 commit (PTX-EMU 仓 `chisuhua/PTX-EMU`, 不在 CppTLM git history — CppTLM submodule 仅镜像 PTX-EMU 仓内容快照, 验证需 PTX-EMU 仓 `git log 25e36f60`)
+> - `369cf71` (CppTLM 端): CppTLM 对 HSK-6 的 ack commit — 本 spec HSK 历史段的 ack 引用 (`docs(hsk-6): ack PTX-EMU HSK-6 bridge deprecation announcement`)
+> - `585e4ff` (CppTLM 端): Phase 2a 实施 commit (origin/main 祖先, HSK-6 ack 前; S1/MVP 工作线承接 — `feat(phase2a): inject PipelineTLM/ScoreboardTLM/TensorCoreTLM into PTX-EMU`)
+> - `5d9473a` (CppTLM 端): HSK-6 openspec change `cpptlm-v3-dgpu-extract` 启动 commit (`docs(openspec): start cpptlm-v3-dgpu-extract change (per #19 v3.0 RFC)`)
+> - `fa2b3ec` (CppTLM 端): HSK-6 P0-1 实施 commit (17 条 static_assert 迁移至 `abi_guards.h` — `feat(abi-guards): migrate 17 G-D4 static_asserts to abi_guards.h (HSK-6 P0-1)`)
 
 > **HSK-7 预留语义** (审计可追溯):
 > HSK-6 response (`docs-archived/superpowers/specs/2026-08-18-hsk-6-response.md` 第 30 行) 显式声明:
