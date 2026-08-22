@@ -1,11 +1,25 @@
 # HSK-8: PTX-EMU 端公共设备 API (CppTLM → PTX-EMU 发起)
 
-> **状态**: 📤 **Draft** — 待 PTX-EMU ack · **日期**: 2026-08-21
-> **发起方**: CppTLM Team (Sisyphus)
+> **状态**: ✅ **Acked** — PTX-EMU owner ack commit `738b412c` (origin/main, 2026-08-22 23:27:15 +0800) · **原始 Draft**: 2026-08-21 · **Acked**: 2026-08-22
+> **发起方**: CppTLM Team (Sisyphus, `docs/hsk-8` 草拟 `f2b8aa0`, review fixes `4cdedc5` + `2043b28`)
 > **接收方**: PTX-EMU Architecture Team
-> **回传目标**: PTX-EMU 仓 `docs/superpowers/specs/2026-08-21-hsk-8-cpptlm-response.md` 或 PR 评论
+> **PTX-EMU ack**: [`738b412c`](https://github.com/chisuhua/PTX-EMU/commit/738b412c82a11068c1286a611a30593dcc1d1afc) (commit message `docs(hsk-8): PTX-EMU owner ack public device API contract (issue #22)`)
+> **issue #22 ack comment**: [comment 5381166580](https://github.com/chisuhua/CppTLM/issues/22#issuecomment-5381166580)
 > **关联变更**: [`openspec/changes/cpptlm-ptxemu-public-device-api/`](../../changes/cpptlm-ptxemu-public-device-api/)
-> **HSK 历史**: HSK-1 (`8dc000ec`) · HSK-2 (ANTLR4 4.13.2) · HSK-3 (ExternalProject_Add, ⚠️ 已被 HSK-6 废止方向) · HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) · HSK-5 (`advance()`, 🟥 CANCELLED by HSK-6) · HSK-6 (PTX-EMU `25e36f60` · CppTLM ack `369cf71` · 实施 refs `585e4ff`/`5d9473a`/`fa2b3ec`) · HSK-7 (🔵 预留 — 仅 `CPPTLMBRIDGE_VERSION` 解冻时触发, 截至 2026-08-21 未签发, 编号保留) · **HSK-8 (本协议)**
+> **HSK 历史**: HSK-1 (`8dc000ec`) · HSK-2 (ANTLR4 4.13.2) · HSK-3 (ExternalProject_Add, ⚠️ 已被 HSK-6 废止方向) · HSK-4 (`8acfd2d1`/`9e7361b9`/`463038e0`) · HSK-5 (`advance()`, 🟥 CANCELLED by HSK-6) · HSK-6 (PTX-EMU `25e36f60` · CppTLM ack `369cf71` · 实施 refs `585e4ff`/`5d9473a`/`fa2b3ec`) · HSK-7 (🔵 预留 — 仅 `CPPTLMBRIDGE_VERSION` 解冻时触发, 截至 2026-08-21 未签发, 编号保留) · **HSK-8 (本协议 — CppTLM 草拟 `f2b8aa0`/`4cdedc5`/`2043b28`, PTX-EMU ack `738b412c`, issue #22 ack comment `5381166580`)**
+
+> **PTX-EMU ack 详情** (per `738b412c` commit message):
+>
+> **Ack 时间窗**: Ack 截止 2026-09-05 (14 天窗口, per HSK-6 precedent); Phase 2 PR 开工 ETD 2026-09-19
+>
+> **4 决策点答复** (含 Oracle 闭包审计):
+> 1. **`StatementContext` 公共化 → 路径 (a) 选**（晋升 `ptxemu/ir/statement.h`）, 但有 **CONDITIONAL Phase 0 净化**（路径 (a) 选定的 2 原因: CppTLM Decision 5 锁定 'sizeof visibility is mandatory' 与路径 (b) opaque handle 冲突; 路径 (b) 题面描述含内在矛盾 — PtxirReader 仍暴露 `StatementContext`）:
+>    - **污染点 1**: `ptx_ir/operand_context.h:59` `mutable void *operand_phy_addr` (运行时指针混入值类型)
+>    - **污染点 2**: `ptx_ir/statement_context.h:310` `InstructionState state` (执行态嵌入 IR, 违反 §1 教训)
+>    - **闭包实际**: 5 文件 ~1053 LOC, 含 2 个 `.def` X-Macro 公共化
+> 2. **CI 集成**: 本期 `drift_check` (新 workflow); 下期 `consumer_smoke` (HSK-9 准入)
+> 3. **`PROJECT_IS_TOP_LEVEL` 隔离**: 接受 + `option(PTXEMU_BUILD_TESTING OFF)` 默认值
+> 4. **Phase 2 PR 排期**: `origin/main` base, **12-15d** (Oracle 上调 50% over spec 1-2d 估算); 目标 2026-09-19 前合入
 
 > **HSK-6 commit 角色澄清** (避免审查时的 hash 混淆):
 > - `25e36f60` (PTX-EMU 端): HSK-6 公告 commit (PTX-EMU 仓 `chisuhua/PTX-EMU`, 不在 CppTLM git history — CppTLM submodule 仅镜像 PTX-EMU 仓内容快照, 验证需 PTX-EMU 仓 `git log 25e36f60`)
@@ -13,6 +27,7 @@
 > - `585e4ff` (CppTLM 端): Phase 2a 实施 commit (origin/main 祖先, HSK-6 ack 前; S1/MVP 工作线承接 — `feat(phase2a): inject PipelineTLM/ScoreboardTLM/TensorCoreTLM into PTX-EMU`)
 > - `5d9473a` (CppTLM 端): HSK-6 openspec change `cpptlm-v3-dgpu-extract` 启动 commit (`docs(openspec): start cpptlm-v3-dgpu-extract change (per #19 v3.0 RFC)`)
 > - `fa2b3ec` (CppTLM 端): HSK-6 P0-1 实施 commit (17 条 static_assert 迁移至 `abi_guards.h` — `feat(abi-guards): migrate 17 G-D4 static_asserts to abi_guards.h (HSK-6 P0-1)`)
+> - `738b412c` (PTX-EMU 端): HSK-8 ack commit (本 spec 接收方签发, 含 4 决策点答复 + CONDITIONAL Phase 0 净化)
 
 > **HSK-7 预留语义** (审计可追溯):
 > HSK-6 response (`docs-archived/superpowers/specs/2026-08-18-hsk-6-response.md` 第 30 行) 显式声明:
