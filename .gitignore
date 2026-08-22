@@ -1,5 +1,9 @@
 # CMake build
 build/
+# S1 OFF-path test build (CppTLM alone, no PTX-EMU)
+build-off/
+# S1 ON-path test build (CppTLM + PTX-EMU submodule)
+build-on/
 cmake-build-*/
 *.o
 *.a
