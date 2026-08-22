@@ -9,17 +9,22 @@
 
 ## 0. 前置条件
 
-- [ ] 0.1 **S1 已 archive**（commit 聚合 13 新文件 + 6 修改文件 @ c2038a93, OFF 850/850 + ON 891/891 全 PASS）
-- [ ] 0.2 **PTX-EMU 开发者接受 HSK-8 契约**（书面 ack commit）
-- [ ] 0.3 **`StatementContext` 传递闭包审计通过**（PTX-EMU 端确认可晋升为公共 IR 头；或确认降级到 `StatementHandle` 不透明句柄方案）
+- [x] 0.1 **S1 已 archive**（commit 聚合 13 新文件 + 6 修改文件 @ c2038a93, OFF 850/850 + ON 891/891 全 PASS, archive commit `b68abe6`）
+- [x] 0.2 **PTX-EMU 开发者接受 HSK-8 契约**（PTX-EMU owner ack commit [`738b412c`](https://github.com/chisuhua/PTX-EMU/commit/738b412c82a11068c1286a611a30593dcc1d1afc) on `origin/main`, 2026-08-22 23:27:15 +0800; issue #22 ack comment `5381166580`）
+- [ ] 0.3 **PTX-EMU 端 `StatementContext` Phase 0 净化**（HSK-8 ack 提出的 CONDITIONAL 前置条件, 不完成不进入 Phase 2 PR submodule bump）:
+  - [ ] 0.3.1 PTX-EMU PR 合入: `ptx_ir/operand_context.h:59` `mutable void *operand_phy_addr` 净化 (运行时指针不应混入值类型) — PTX-EMU 端 PR, ETD 2026-09-19 前
+  - [ ] 0.3.2 PTX-EMU PR 合入: `ptx_ir/statement_context.h:310` `InstructionState state` 净化 (执行态不应嵌入 IR, 违反 §1 教训) — PTX-EMU 端 PR, ETD 2026-09-19 前
+  - [ ] 0.3.3 CppTLM 端 submodule bump 至 PTX-EMU Phase 0 净化 commit + 验证 `ptxemu_core` 库目标可在含净化的 PTX-EMU 主干上构建
+  - [ ] 0.3.4 CppTLM 端审计：`ptxemu/ir/statement.h` 公共头闭包仅含 5 文件 ~1053 LOC + 2 个 `.def` X-Macro, 无运行时/执行态依赖
+- [ ] 0.4 **CppTLM 端 HSK-8 spec 本地状态确认**（mark Acked + 引用 PTX-EMU `738b412c`）
 
 ---
 
 ## 1. HSK-8 Handshake（CppTLM 发起, ~1h）
 
 - [x] 1.1 新建 `docs/superpowers/specs/2026-08-21-hsk-8-ptxemu-public-api.md` 锁定：`ptxemu_core` target 名 + PUBLIC include 路径 + `PTXEMU_API_VERSION` 语义（初始 1）+ "PTX-EMU 内部重构不影响 device_api.h"承诺 + 实施工作量（Short~Medium 1-2d）+ 跨仓协调顺序（PTX-EMU PR 合入 → CppTLM bump PR）
-- [x] 1.2 CppTLM 侧 commit（spec 文档签发 — pending 当前 commit）
-- [ ] 1.3 PTX-EMU 侧 ack commit（PTX-EMU maintainer 在 PR 中 +1 同意）
+- [x] 1.2 CppTLM 侧 commit（spec 文档签发 — `f2b8aa0`/`4cdedc5`/`2043b28`）
+- [x] 1.3 PTX-EMU 侧 ack commit（`738b412c` on PTX-EMU `origin/main`, issue #22 comment `5381166580`; 含 4 决策点答复 + CONDITIONAL Phase 0 净化要求）
 
 ---
 
