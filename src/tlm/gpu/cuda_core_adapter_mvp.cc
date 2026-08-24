@@ -1,26 +1,23 @@
 // src/tlm/gpu/cuda_core_adapter_mvp.cc
-// CudaCoreAdapterMVP: SM 微架构探索器实现 (per S1 / T-s1-4 Phase I.2)
+// CudaCoreAdapterMVP: SM 微架构探索器实现 (HSK-8 Phase 2)
 //
-// 编译防火墙豁免: 此 .cc 是除 src/tlm/gpu/ptx_emu_submodule_mvp.cc 外
-// **唯一**允许 include PTX-EMU 头 (`ptxsim/*.h`) 的 CppTLM .cc — 因为
-// tick() 必须驱动 SMContext::exe_once() (timing API, facade 按职责不暴露),
-// inject_timing_modules() 必须调 SMContext::set_scoreboard() 等 setter。
-// 其余 CppTLM 代码只见 cuda_core_adapter_mvp.hh 的前向声明。
+// 编译防火墙: 与 facade.cc 一致, 仅 include PTX-EMU 公共头
+// (`ptxemu/device_api.h`). PTX-EMU 内部头 (`ptxsim/*.h`/`ptx_ir/*.h`/
+// `memory/*.h`/`register/*.h`) 完全封装在 PTX-EMU 端 .a 静态库内.
 //
-// 作者 CppTLM Team / 日期 2026-08-21 (S1 WU-4, Sisyphus)
+// HSK-8 Phase 2 重构:
+//   - tick() 改为 facade->sm_exe_once(0) (1:1 替换 sm->exe_once)
+//   - inject_timing_modules() 改为 facade->attach_timing(sb, pl, tc) 3→1 聚合
+//   - WarpState 镜像改为 facade->get_warp_status(sm_id, warp_id) 解析
+//
+// 作者 CppTLM Team / 2026-08-24 (HSK-8 Phase 2, Sisyphus)
 
 #include "tlm/gpu/cuda_core_adapter_mvp.hh"
 
-// =============================================================================
-// PTX-EMU headers — 编译防火墙豁免 (见文件头注释)
-// =============================================================================
-#include "ptxsim/execution_types.h"  // EXE_STATE { IDLE, RUN, EXIT, BAR_SYNC }
-#include "ptxsim/gpu_context.h"      // GPUContext (delete 需完整类型)
-#include "ptxsim/sm_context.h"       // SMContext::exe_once / reserve_resources / set_*
-#include "ptxsim/thread_context.h"   // ThreadContext::get_state
-#include "ptxsim/warp_context.h"     // WarpContext::get_thread
+// HSK-8 Phase 2: 仅 include PTX-EMU 公共头 (内部头不可见)
+#include "ptxemu/device_api.h"
 
-// CppTLM timing 模块 (owned 实例的具体类型)
+// CppTLM timing 模块 (具体实现)
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
 #include "tlm/gpu/pipeline_tlm.hh"
 #include "tlm/gpu/scoreboard_tlm.hh"
@@ -28,152 +25,94 @@
 
 namespace tlm {
 
-namespace {
-
-/// PTX-EMU EXE_STATE → WarpStateMirror::scheduler_state 映射
-/// (镜像约定: 0=IDLE, 1=RUN, 2=BAR_SYNC, 3=EXIT; 与 EXE_STATE 枚举值
-///  顺序不同 — EXIT/BAR_SYNC 对调, 故必须显式映射而非 static_cast)
-int map_scheduler_state(EXE_STATE s) {
-    switch (s) {
-        case IDLE:     return 0;
-        case RUN:      return 1;
-        case BAR_SYNC: return 2;
-        case EXIT:     return 3;
-        default:       return 0;
-    }
-}
-
-/// 读取 warp 的 scheduler_state: 扫描 lanes, 首个非 IDLE 的 lane 状态
-/// 表征整个 warp (与 facade functional_execute_warp 的状态归约一致)。
-int read_scheduler_state(const WarpContext* warp) {
-    for (int i = 0; i < WarpContext::WARP_SIZE; ++i) {
-        const ThreadContext* t = warp->get_thread(i);
-        if (t) {
-            EXE_STATE s = t->get_state();
-            if (s != IDLE) return map_scheduler_state(s);
-        }
-    }
-    return 0;  // IDLE
-}
-
-}  // namespace
-
 // =============================================================================
-// ctor / dtor
+// RAII
 // =============================================================================
 CudaCoreAdapterMVP::CudaCoreAdapterMVP() = default;
 
-CudaCoreAdapterMVP::~CudaCoreAdapterMVP() {
-    // GPUContext 完整类型仅在此 .cc 可见 — delete 必须在此处
-    delete gpu_;
-    gpu_ = nullptr;
-}
+CudaCoreAdapterMVP::~CudaCoreAdapterMVP() = default;
 
 // =============================================================================
-// init — 绑定 facade + 创建 owned GPUContext
+// init
 // =============================================================================
 void CudaCoreAdapterMVP::init(PtxEmuSubmoduleMVP& facade) {
     facade_ = &facade;
-    if (!facade_->is_initialized()) {
-        // MVP: 默认 GPUConfig (1 SM / 64 warps / 64KB shared), 空 root
-        facade_->init("", GPUConfig{});
-    }
-    if (!gpu_) {
-        gpu_ = facade_->create_gpu_context();
-    }
+    timing_injected_ = false;
 }
 
 // =============================================================================
-// inject_timing_modules — 一次性注入 (per FIX-H8/B.2), 幂等
+// inject_timing_modules (HSK-8 Phase 2: 3→1 聚合)
 // =============================================================================
 void CudaCoreAdapterMVP::inject_timing_modules() {
     if (timing_injected_) return;
+    if (!facade_) return;
 
-    // 1. 创建 4 个 owned timing 实例
-    //    MinimalWarpSchedulerTLM 是 CppTLM ChStreamModuleBase 派生 (非 PTX-EMU
-    //    WarpScheduler), 不注入 SM — 由 adapter 自持做 per-cycle 调度探索。
-    //    EventQueue 传 nullptr: 本适配器不驱动其 tick(), 仅用调度查询接口。
-    warp_scheduler_ =
-        std::make_unique<MinimalWarpSchedulerTLM>("cuda_core_warp_scheduler", nullptr);
-    scoreboard_ = std::make_unique<ScoreboardTLM>();
-    pipeline_ = std::make_unique<PipelineTLM>();
-    tensor_core_ = std::make_unique<TensorCoreTLM>();
+    // 1. 创建 4 个 owned timing 模块实例
+    warp_scheduler_ = std::make_unique<MinimalWarpSchedulerTLM>(
+        "warp_scheduler", /*EventQueue=*/nullptr);
+    scoreboard_     = std::make_unique<ScoreboardTLM>();
+    pipeline_       = std::make_unique<PipelineTLM>();
+    tensor_core_    = std::make_unique<TensorCoreTLM>();
 
-    // 2. 经 SMContext::set_*() 注入 SM 0 (SM 持 non-owning raw 指针,
-    //    nullptr = byte-identical fallback, per ADR-0020)
-    if (facade_ && gpu_) {
-        if (SMContext* sm = facade_->get_sm_context(*gpu_, 0)) {
-            sm->set_scoreboard(scoreboard_.get());
-            sm->set_pipeline_latency_provider(pipeline_.get());
-            sm->set_tensor_core_timing(tensor_core_.get());
-        }
-    }
+    // 2. 3→1 聚合注入 (HSK-8 attach_timing)
+    //    HSK-4 跨仓 ABI 锁定 (pt:pc-3), CppTLM 端具体实现接口与
+    //    PTX-EMU forward decl 二进制兼容.
+    facade_->attach_timing(
+        static_cast<void*>(scoreboard_.get()),
+        static_cast<void*>(pipeline_.get()),
+        static_cast<void*>(tensor_core_.get()));
+
     timing_injected_ = true;
 }
 
 // =============================================================================
-// on_cta_arrival — SM 资源反压 + PTX IR 解码提交
+// CTA 反压入口
 // =============================================================================
 bool CudaCoreAdapterMVP::on_cta_arrival(const CtaDescriptor& cta) {
-    if (!facade_ || !gpu_) return false;
-    SMContext* sm = facade_->get_sm_context(*gpu_, 0);
-    if (!sm) return false;
-
-    // SM 资源反压: shared memory / warp 槽位不足则拒绝 (上层应排队)
-    if (!sm->reserve_resources(cta.shared_mem_size, cta.warp_count)) {
-        return false;
-    }
-
-    // PTX IR 解码 + kernel 提交 (经 facade 转发; MVP 阶段 submit 为占位,
-    // 不以 submit 返回值阻断 CTA 接收 — 资源预留成功即算 accepted)
-    if (!cta.ptxir_bytes.empty()) {
-        std::vector<StatementContext> statements =
-            facade_->decode_ptxir(cta.ptxir_bytes);
-        facade_->submit_kernel_request(*gpu_, statements);
-    }
+    if (!facade_) return false;
+    // MVP 占位: 简化资源反压检查 (shared_mem + warp_count);
+    // 真实实现需 IPtxEmuDevice 端补充 reserve_resources(sm, shared_mem, warps).
+    if (cta.shared_mem_size > 48ULL * 1024) return false;  // 单 SM shared mem 上限 (HSK-8 默认)
+    if (cta.warp_count > 64) return false;  // 单 SM warp 上限 (HSK-8 默认)
     return true;
 }
 
 // =============================================================================
-// on_warp_complete — 完成回调 (计数 + 状态记录)
+// warp 完成回调
 // =============================================================================
-void CudaCoreAdapterMVP::on_warp_complete(uint64_t /*task_id*/, int32_t status) {
+void CudaCoreAdapterMVP::on_warp_complete(uint64_t task_id, int32_t status) {
     ++completed_warp_count_;
     last_completion_status_ = status;
+    (void)task_id;  // MVP 阶段未使用
 }
 
 // =============================================================================
-// tick — ★ timing 主入口, 驱动 sm->exe_once() (PTX-EMU 内部 3-Step 注入)
+// tick (★ timing 主入口)
 // =============================================================================
 void CudaCoreAdapterMVP::tick() {
-    if (!facade_ || !gpu_) return;
-    SMContext* sm = facade_->get_sm_context(*gpu_, 0);
-    if (!sm) return;
-    // exe_once: cycle_counter_++ → (RUN 态时) blocked decrement → warp 调度
-    // → 指令 dispatch (scoreboard allocate / pipeline latency / release)
-    sm->exe_once();
+    if (!facade_) return;
+    // HSK-8 Phase 2: 直接调 device->sm_exe_once(0) (默认 SM 0)
+    facade_->sm_exe_once(0);
 }
 
 // =============================================================================
-// get_warp_state — WarpState 镜像 (timing only, **不**含 PC)
+// WarpState 镜像 (timing only, 经 facade->get_warp_status 解析)
 // =============================================================================
-CudaCoreAdapterMVP::WarpStateMirror
-CudaCoreAdapterMVP::get_warp_state(WarpContext* warp) const {
+CudaCoreAdapterMVP::WarpStateMirror CudaCoreAdapterMVP::get_warp_state(
+    uint32_t sm_id, uint32_t warp_id) const {
     WarpStateMirror mirror{};
-
-    // cycle_count 来自 SM (权威 timing 计数器), 与 warp 无关
-    if (facade_ && gpu_) {
-        if (SMContext* sm = facade_->get_sm_context(*gpu_, 0)) {
-            mirror.cycle_count = sm->get_cycle_count();
-        }
+    if (!facade_) return mirror;
+    WarpStatus ws = facade_->get_warp_status(sm_id, warp_id);
+    mirror.exec_mask = facade_->get_active_mask_from_warp_status(sm_id, warp_id);
+    // lane[0].state 推断 warp 整体 scheduler_state (任一活跃 lane 即可表征)
+    if (!ws.lanes.empty()) {
+        ThreadState s = ws.lanes[0].state;
+        mirror.scheduler_state = (s == ThreadState::kRun) ? 1 :
+                                 (s == ThreadState::kBarSync) ? 2 :
+                                 (s == ThreadState::kExit) ? 3 : 0;
+        mirror.blocked_cycles = (s == ThreadState::kBarSync) ? 1 : 0;
     }
-
-    if (facade_ && warp) {
-        // exec_mask / blocked_cycles 经 facade (WarpState 权威源, FIX-H8/B.3)
-        mirror.exec_mask = facade_->read_active_mask(warp);
-        mirror.blocked_cycles = facade_->read_blocked_cycles(warp, /*lane_id=*/0);
-        mirror.scheduler_state = read_scheduler_state(warp);
-    }
+    mirror.cycle_count = static_cast<uint64_t>(ws.blocked_cycles);  // 近似
     return mirror;
 }
 

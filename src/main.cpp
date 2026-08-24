@@ -109,15 +109,23 @@ int main(int argc, char* argv[]) {
     }
     factory.startAllTicks();
 
-    // F12b-LD MemoryBridge（手动接线, 不走 ModuleFactory/REGISTER_CHSTREAM）
-    // D1-Full P1 Phase 4 Wave 1: 新增 per-SM Scoreboard/Pipeline/TensorCore 模块注入
-    std::unique_ptr<MemoryBridge> memory_bridge;
-    // 持有的 per-SM 资源 (生命周期贯穿整个仿真)
+    // HSK-8 Phase 2 Step 4: --f12b-ld wiring block disabled (MemoryBridge + g_ptx_emu_driver removed).
     std::vector<std::unique_ptr<ScoreboardTLM>> per_sm_scoreboards;
     std::vector<std::unique_ptr<PipelineTLM>> per_sm_pipelines;
     std::vector<std::unique_ptr<TensorCoreTLM>> per_sm_tensorcores;
 
     if (f12b_ld) {
+        std::cerr << "[ERROR] --f12b-ld disabled (HSK-8 Phase 2 Step 4 removed "
+                     "MemoryBridge + g_ptx_emu_driver; use PtxEmuSubmoduleMVP "
+                     "facade->attach_timing instead)\n";
+        return 1;
+    }
+    (void)per_sm_scoreboards;
+    (void)per_sm_pipelines;
+    (void)per_sm_tensorcores;
+
+#if 0  // Disabled HSK-8 Phase 2 Step 4: --f12b-ld wiring block (history reference)
+    if (false && f12b_ld) {
         auto* kl = factory.getInstance<KernelLaunchTLM>("kernel_launch");
         auto* xbar = factory.getInstance<CrossbarTLM>("gpu_xbar");
         if (!kl || !xbar) {
@@ -128,8 +136,6 @@ int main(int argc, char* argv[]) {
         memory_bridge = std::make_unique<MemoryBridge>(kl, xbar);
         kl->setMemoryBridge(memory_bridge.get());
 
-        // P1 Phase 4 Wave 0 跟进: g_ptx_emu_driver 由 cpptlm_set_driver() 设置
-        // (全局变量, 定义在 src/tlm/gpu/ptx_emu_driver_shim.cc)
         if (g_ptx_emu_driver) {
             kl->set_ptx_emu_driver(g_ptx_emu_driver);
             uint32_t num_sms = g_ptx_emu_driver->num_sms();
@@ -140,10 +146,8 @@ int main(int argc, char* argv[]) {
             for (uint32_t sm_id = 0; sm_id < num_sms; ++sm_id) {
                 auto sb = std::make_unique<ScoreboardTLM>();
                 g_ptx_emu_driver->inject_scoreboard(sm_id, std::move(sb));
-
                 auto pl = std::make_unique<PipelineTLM>();
                 g_ptx_emu_driver->inject_pipeline(sm_id, std::move(pl));
-
                 auto tc = std::make_unique<TensorCoreTLM>();
                 g_ptx_emu_driver->inject_tensor_core(sm_id, std::move(tc));
             }
@@ -158,6 +162,7 @@ int main(int argc, char* argv[]) {
     } else {
         std::cout << "[INFO] --f12b-ld: MemoryBridge disabled (zero regression)\n";
     }
+#endif  // Disabled HSK-8 Phase 2 Step 4 wiring block
 
     TopologyDumper::dumpToDot(factory, config, "topology.dot");
 

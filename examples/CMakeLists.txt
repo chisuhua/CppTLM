@@ -35,4 +35,22 @@ target_include_directories(example_simmodule_nested PRIVATE ${EXAMPLES_INCLUDE_D
 # ==============================================================================
 # 输出目录
 # ==============================================================================
+# ==============================================================================
+# 输出目录
+# ==============================================================================
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/examples)
+
+# ==============================================================================
+# HSK-8 Phase 2 Step 6: examples 同样需要 PTX-EMU shared libs
+# ==============================================================================
+if(CPPTLM_WITH_PTX_EMU)
+    set(PTXEMU_EXAMPLE_LIBS ptxemu_device ptxsim ptx_parser ptxir cudart)
+    foreach(example
+            example_basic_transaction
+            example_error_handling
+            example_simmodule_nested)
+        if(TARGET ${example})
+            target_link_libraries(${example} PRIVATE ${PTXEMU_EXAMPLE_LIBS})
+        endif()
+    endforeach()
+endif()
