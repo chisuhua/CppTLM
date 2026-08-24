@@ -17,11 +17,11 @@
 
 namespace tlm {
 
-class MemoryBridge;   // forward declare (定义在 memory_bridge.hh)
-class IPtxEmuDriver;  // forward declare (定义在 ptx_emu_driver.hh, 窄接口)
+// HSK-8 Phase 2 Step 4: MemoryBridge + IPtxEmuDriver 已物理删除 (HSK-6 deprecate by 369cf71).
+// KernelLaunchTLM 的 P0/P1 路径已废弃, 仅保留 Phase 8.A 路径 (独立运行, 无桥接).
 
 /**
- * @brief Kernel launch 请求数据结构 (MemoryBridge → KernelLaunchTLM FIFO)
+ * @brief Kernel launch 请求数据结构 (KernelLaunchTLM FIFO 入口)
  *
  * 字段与 CppTLMBridge::submit_kernel 参数对齐, kernel_name 为非所有权 char*
  * (PTX-EMU func2name 表长期存储, 无需拷贝)。func_ptr 当前 P0 未使用,
@@ -73,30 +73,21 @@ public:
     /// 统计: 已 launch kernel 数 (测试用)
     uint64_t kernels_launched() const { return kernels_launched_; }
 
-    // === D1-Full P0 扩展 APIs ===
+    // === HSK-8 Phase 2 Step 4: setMemoryBridge() + set_ptx_emu_driver() 已废弃删除
+    //     (MemoryBridge + IPtxEmuDriver 类已物理删除, HSK-6 deprecate by 369cf71)
 
-    /// 注入 MemoryBridge (非所有权)。tick() 中检查 bridge_ != nullptr 决定走 P0/P1 还是 Phase 8.A 路径
-    void setMemoryBridge(MemoryBridge* bridge) { bridge_ = bridge; }
-
-    /// 注入 PTX-EMU 驱动接口 (Phase 4 Wave 1: 替代 P0 的 void* ptx_emu_context_)
-    /// 非所有权, 由调用方管理生命周期
-    void set_ptx_emu_driver(IPtxEmuDriver* driver) { driver_ = driver; }
-
-    /// 获取 PTX-EMU 驱动接口 (S2 Phase 1.1: poll_kernel 查询 kernel 完成状态)
-    IPtxEmuDriver* get_ptx_emu_driver() const { return driver_; }
-
-    /// MemoryBridge::submit_kernel 调用: push KernelLaunchRequest 到 FIFO pending_
+    /// KernelLaunchTLM::submit 接口: push KernelLaunchRequest 到 FIFO pending_
     void submit(KernelLaunchRequest&& req) {
         pending_.push_back(std::move(req));
     }
 
-    /// 统计: FIFO 中 pending kernel 数 (P0 测试用)
+    /// 统计: FIFO 中 pending kernel 数
     size_t pending_count() const { return pending_.size(); }
 
     void tick() override;
 
 private:
-    // Phase 8.A 状态 (bridge_ == nullptr 路径)
+    // Phase 8.A 状态 (仅保留此路径, P0/P1 已废弃)
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
     uint32_t kernel_id_ = 0;
     uint32_t workgroup_size_ = 64;
@@ -105,9 +96,6 @@ private:
     uint64_t cycle_counter_ = 0;
     uint64_t kernels_launched_ = 0;
 
-    // D1-Full P1 状态 (driver_ != nullptr 路径)
-    MemoryBridge* bridge_ = nullptr;             // 非所有权
-    IPtxEmuDriver* driver_ = nullptr;            // 非所有权 (P1: 替代 void* ptx_emu_context_)
     std::deque<KernelLaunchRequest> pending_;    // FIFO kernel 队列
     bool tlm_objects_injected_ = false;          // Phase 2a: PipelineTLM/ScoreboardTLM/TensorCoreTLM 注入标志
 
