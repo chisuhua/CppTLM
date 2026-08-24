@@ -6,7 +6,7 @@
 
 | 目录 | 内容 | 用途 |
 |------|------|------|
-| `build/` | `build.sh`, `format.sh` | 构建与代码格式化 |
+| `build/` | `build.sh`, `format.sh`, `build_ptx_emu.sh` | 构建与代码格式化（`build_ptx_emu.sh` 启用 PTX-EMU 集成，dGPU/APU SoC 默认路径） |
 | `test/` | `test.sh`, `run_all_tests.sh`, `ci_e2e_test.sh` | 测试与 E2E 验证 |
 | `pipeline/` | `run_full_pipeline.sh` | 完整仿真流程（生成→仿真→可视化） |
 | `topology/` | `topology_validator.py`, `topology_generator.py`, `analyzer.py`, `path_tracer.py`, `credit_flow.py` | 拓扑生成/分析/验证 |

@@ -1,9 +1,5 @@
-# CMake build
-build/
-# S1 OFF-path test build (CppTLM alone, no PTX-EMU)
-build-off/
-# S1 ON-path test build (CppTLM + PTX-EMU submodule)
-build-on/
+# CMake build (用 / 前缀只匹配仓库根的 build/ 目录,不影响 scripts/build/)
+/build/        # 仓库根 build/ 目录 (CMake 默认输出)
 cmake-build-*/
 *.o
 *.a

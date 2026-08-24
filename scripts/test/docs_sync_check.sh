@@ -83,6 +83,8 @@ VIRTUAL_PATHS=(
     "docs/superpowers/plans/f12-ptxemu-ldpreload-integration.md"  # 2026-07-14 删除（计划被 comprehensive-plan.md §4 取代）
     "include/cudart/cpptlm_bridge.h"  # PTX-EMU 端 ABI 真值源（CppTLM 通过 ExternalProject_Add 消费；物理文件在 PTX-EMU 仓库，commit 8dc000ec）
     "abi_guards.h"  # AGENTS.md 中 HSK-6 P0-1 commit fa2b3ec 短名引用, 完整路径在 include/cudart/abi_guards.h (物理存在, 但 docsync 匹配到短名误报)
+    "include/tlm/gpu/memory_bridge.hh"  # HSK-8 Phase 2 Step 6+ 物理删除 (HSK-6 deprecate by 369cf71); AGENTS.md §CROSS-PROJECT 描述历史实施保留
+    "src/tlm/gpu/memory_bridge.cc"  # 同上, 与 .hh 一同物理删除
     ".understand-anything/knowledge-graph.json"  # ONBOARDING.md 自动生成的工具输入, 知识图谱由 `/understand` 技能生成, 未提交到仓库
     # Phase 7.B-F (GPU APU Fused SoC) 规划中文件（roadmap.md 2026-06-11；7.A 已落地 2026-06-11）
     "compute_unit_tlm.hh"
