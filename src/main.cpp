@@ -14,12 +14,12 @@
 #include "sim_core.hh"
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/gpu/kernel_launch_tlm.hh"
-#include "tlm/gpu/memory_bridge.hh"
+// HSK-8 Phase 2 Step 4: memory_bridge.hh 已物理删除 (HSK-6 deprecate by 369cf71).
 // D1-Full P1: 3 核心模块 + IPtxEmuDriver 窄接口
 #include "tlm/gpu/scoreboard_tlm.hh"
 #include "tlm/gpu/pipeline_tlm.hh"
 #include "tlm/gpu/tensor_core_tlm.hh"
-#include "tlm/gpu/ptx_emu_driver.hh"
+// HSK-8 Phase 2 Step 4: ptx_emu_driver.hh + memory_bridge.hh 已物理删除 (HSK-6 deprecate by 369cf71).
 #include "utils/json_includer.hh"
 #include "utils/topology_dumper.hh"
 #include <cstdlib>
