@@ -64,3 +64,4 @@ openspec/changes/archive/
 
 # Phase 0.5 baseline worktrees (isolated workspace per .opencode/skills/using-git-worktrees)
 .worktrees/
+lib/

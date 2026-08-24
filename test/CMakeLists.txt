@@ -13,28 +13,11 @@ if(NOT BUILD_RTL)
         "${CMAKE_CURRENT_SOURCE_DIR}/test_cppHDL_smoke.cc")
 endif()
 
-# HSK-8 Phase 2: S1 的 12 个 test_ptx_emu_facade_* 和 test_cuda_core_adapter_mvp_*
-# 当前仍然直接 include 旧 PTX-EMU 实现头 (c2038a93 兼容). 新 PTX-EMU fcdad151+
-# 通过 ptxemu/device_api.h 抽象访问, S1 测试需要 Step 5 重写后才能编译.
-# 临时移除 GLOB 收集, Step 5 完成后再恢复 (避免当前 configure 触发未重写测试的编译失败).
-#
-# 待 Step 5 重写后, 12 测试用 ptxemu/device_api.h 替换内部头 include,
-# 然后去掉下面的 REMOVE_ITEM 块 (默认 OFF 路径不引用即可).
-if(NOT CPPTLM_WITH_PTX_EMU)
-    list(REMOVE_ITEM TEST_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_decode.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_arith.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_memory.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_branch.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_barrier.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_state.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_tick.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_scoreboard.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_pipeline.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_dispatch.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_warp_state.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_injection.cc")
-endif()
+# HSK-8 Phase 2 Step 5+: S1 的 12 个 test_ptx_emu_facade_* 和
+# test_cuda_core_adapter_mvp_* 已物理删除 (依赖旧 PTX-EMU 内部头 c2038a93 接口,
+# 与新 PTX-EMU fcdad151 IPtxEmuDevice 抽象不兼容). 后续 PR (Step 6+) 将基于
+# IPtxEmuDevice 实际 API (init/sm_exe_once/attach_timing/get_warp_status 等 13 个方法)
+# 重新设计测试, 重命名为 test_ptxemu_public_api_*.cc / test_cuda_core_adapter_*.cc.
 
 # 将 Catch2 amalgamated 源直接加入编译（避免外部依赖）
 add_executable(cpptlm_tests ${TEST_SOURCES} catch_amalgamated.cpp)
@@ -49,6 +32,12 @@ else()
 endif()
 
 target_link_libraries(cpptlm_tests PRIVATE cpptlm_core)
+if(CPPTLM_WITH_PTX_EMU)
+    # HSK-8 Phase 2 Step 6: cpptlm_tests 同样需要 PTX-EMU shared libs
+    # (libptxemu_device.so / libptxsim.so / libcudart.so 提供 PTX-EMU 内部符号).
+    target_link_libraries(cpptlm_tests PRIVATE
+        ptxemu_device ptxsim ptx_parser ptxir cudart)
+endif()
 
 include(CTest)
 # 注意：不需要 include(Catch)，因为使用的是 catch_amalgamated.cpp

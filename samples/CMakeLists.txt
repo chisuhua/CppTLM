@@ -23,6 +23,16 @@ add_executable(streaming_demo streaming_demo.cc)
 target_link_libraries(streaming_demo PRIVATE cpptlm_core)
 target_include_directories(streaming_demo PRIVATE ${SAMPLES_INCLUDE_DIRS})
 
+# HSK-8 Phase 2 Step 6: samples 同样需要 PTX-EMU shared libs
+if(CPPTLM_WITH_PTX_EMU)
+    set(PTXEMU_SAMPLE_LIBS ptxemu_device ptxsim ptx_parser ptxir cudart)
+    foreach(sample stats_demo traffic_gen_demo streaming_demo)
+        if(TARGET ${sample})
+            target_link_libraries(${sample} PRIVATE ${PTXEMU_SAMPLE_LIBS})
+        endif()
+    endforeach()
+endif()
+
 # ==============================================================================
 # Python 演示 target（手动触发，避免 Python 错误打断默认构建）
 # ==============================================================================

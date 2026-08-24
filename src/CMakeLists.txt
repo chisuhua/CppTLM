@@ -100,6 +100,14 @@ endif()
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
     add_executable(cpptlm_sim main.cpp)
     target_link_libraries(cpptlm_sim PRIVATE cpptlm_core)
+    if(CPPTLM_WITH_PTX_EMU)
+        # HSK-8 Phase 2 Step 6: cpptlm_sim 需要 PTX-EMU shared libs
+        # (libptxemu_device.so / libptxsim.so / libptx_parser.so / libcudart.so
+        #  提供 CudaDriver::instance() / SimpleMemoryAllocator::init() /
+        #  PtxInterpreter::launchPtxInterpreter() / AtomicLockGuard 等符号)。
+        target_link_libraries(cpptlm_sim PRIVATE
+            ptxemu_device ptxsim ptx_parser ptxir cudart)
+    endif()
 endif()
 
     # CPU 模式主程序
