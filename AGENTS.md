@@ -30,7 +30,7 @@ include/         # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
   modules.hh     # REGISTER_OBJECT / REGISTER_MODULE 宏入口
   modules_cluster.hh    # REGISTER_MODULE 参数化入口 (9 个 SimModule 派生类)
   AGENTS.md      # 注册宏体系完整表 (必读)
-  cudart/        # HSK-6 vendored 接口头 (cpptlm_bridge.h / abi_guards.h / pipeline_interface.h 等)
+  cudart/        # HSK-6 vendored 接口头 (pipeline_interface.h / scoreboard_interface.h / tensor_core_interface.h; cpptlm_bridge.h+abi_guards.h 已由 HSK-6 deprecate 删除)
 
 src/             # .cc 实现 + main.cpp
   core/          # module_factory(.cc 604 行, ⭐complex) / connection_resolver / param_parser
@@ -68,7 +68,7 @@ openspec/        # 变更提案工作流 (changes/<name>/proposal.md → design.
 examples/        # C++ example_*.cc + Python demo_e2e_*.py + demo_configs/ + generate_*.py
 samples/         # 示例拓扑 (含已归档子集, 见 docs-archived/samples-orphaned/)
 external/        # git 子模块 (CppHDL, json)
-scripts/         # 5 子目录: build/(format.sh, build.sh) | test/(docs_sync_check.sh 等 4) | pipeline/ | topology/ | stats/
+scripts/         # 5 子目录: build/(format.sh, build.sh, build_ptx_emu.sh) | test/(docs_sync_check.sh 等 4) | pipeline/ | topology/ | stats/
 cpptlm/          # Python 库 (新, pyproject.toml): cli / topo / config / simulation / analysis / visualization
 cpptlm_config/   # Python 配置包 (旧, examples 引用): builder / models / validator / topology_adapter
 plans/           # 实施计划: phase7-completion / p0-alignment-remediation / performance-metrics 等
@@ -118,8 +118,15 @@ plans/           # 实施计划: phase7-completion / p0-alignment-remediation / 
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# C++ 测试 (Catch2, 94 文件 / 764 用例) — 2026-07-03 同步自 roadmap §0
-./build/bin/cpptlm_tests                    # 全部
+# 🆕 PTX-EMU 集成模式 (dGPU/APU SoC 长期开发路径) — 默认 ON
+#   自动处理 ANTLR4 symlink workaround (PTX-EMU 端硬编码路径 bug)
+#   编译 ptxemu_core + libptxemu_device.so + libptxsim.so + libptx_parser.so + libcudart.so
+./scripts/build/build_ptx_emu.sh            # 构建 build-on/ 目录 (CPPTLM_WITH_PTX_EMU=ON)
+BUILD_DIR=build-on ./scripts/test/run_all_tests.sh --quick  # 跑 PTX-EMU 集成测试
+
+# C++ 测试 (Catch2, 94 文件 / 817 用例, 18864 assertions) — 2026-08-24 bump @530bd6ca 验证
+./build/bin/cpptlm_tests                    # 全部 (默认 build/ OFF 路径)
+./build-on/bin/cpptlm_tests                 # PTX-EMU ON 路径 (build_ptx_emu.sh 产出)
 ./build/bin/cpptlm_tests "[chstream]"       # Stream 相关 (84 用例)
 ./build/bin/cpptlm_tests "[phase6]"         # Phase 6 集成
 ./build/bin/cpptlm_tests "[crossbar]"       # Crossbar (16 用例)
@@ -134,6 +141,7 @@ ctest --test-dir build --output-on-failure -j4  # CMake 注册测试
 # 格式化 (脚本在 scripts/build/, 不在 scripts/ 根目录!)
 ./scripts/build/format.sh --check           # clang-format 校验
 ./scripts/build/format.sh                   # 自动修复
+./scripts/build/build_ptx_emu.sh            # 🆕 PTX-EMU 集成构建 (dGPU/APU SoC 默认路径)
 
 # 文档路径同步 (pre-commit 自动跑)
 ./scripts/test/docs_sync_check.sh --strict  # 当前: 365/365 有效
