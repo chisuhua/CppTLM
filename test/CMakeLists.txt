@@ -13,8 +13,13 @@ if(NOT BUILD_RTL)
         "${CMAKE_CURRENT_SOURCE_DIR}/test_cppHDL_smoke.cc")
 endif()
 
-# S1 WU-3/T-s1-3: PtxEmuSubmoduleMVP facade tests 仅在 ON 路径编译
-# (OFF 路径下 src/tlm/gpu/ptx_emu_submodule_mvp.cc 不存在)
+# HSK-8 Phase 2: S1 的 12 个 test_ptx_emu_facade_* 和 test_cuda_core_adapter_mvp_*
+# 当前仍然直接 include 旧 PTX-EMU 实现头 (c2038a93 兼容). 新 PTX-EMU fcdad151+
+# 通过 ptxemu/device_api.h 抽象访问, S1 测试需要 Step 5 重写后才能编译.
+# 临时移除 GLOB 收集, Step 5 完成后再恢复 (避免当前 configure 触发未重写测试的编译失败).
+#
+# 待 Step 5 重写后, 12 测试用 ptxemu/device_api.h 替换内部头 include,
+# 然后去掉下面的 REMOVE_ITEM 块 (默认 OFF 路径不引用即可).
 if(NOT CPPTLM_WITH_PTX_EMU)
     list(REMOVE_ITEM TEST_SOURCES
         "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_decode.cc"
@@ -22,12 +27,7 @@ if(NOT CPPTLM_WITH_PTX_EMU)
         "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_memory.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_branch.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_barrier.cc"
-        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_state.cc")
-endif()
-
-# S1 WU-4: CudaCoreAdapter tests gated by CPPTLM_WITH_PTX_EMU
-if(NOT CPPTLM_WITH_PTX_EMU)
-    list(REMOVE_ITEM TEST_SOURCES
+        "${CMAKE_CURRENT_SOURCE_DIR}/test_ptx_emu_facade_state.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_tick.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_scoreboard.cc"
         "${CMAKE_CURRENT_SOURCE_DIR}/test_cuda_core_adapter_mvp_pipeline.cc"

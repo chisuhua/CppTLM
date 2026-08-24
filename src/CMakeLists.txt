@@ -43,53 +43,37 @@ set(CORE_SOURCES
     tlm/gpu/minimal_warp_scheduler_tlm.cc
     tlm/gpu/gpu_compute_unit_tlm.cc
     tlm/gpu/gpu_soc_tlm.cc
-    tlm/gpu/memory_bridge.cc   # D1-Full P0: CppTLMBridge 接口实现
+    # HSK-8 Phase 2 Step 4: 桥接残留簇删除 (PTX-EMU 已废弃 cpptlm_bridge.h)
+    # - tlm/gpu/memory_bridge.cc       (deprecated by HSK-6, removed in v3.0 P4 — early delete OK)
+    # - tlm/gpu/ptx_emu_driver_shim.cc (cpptlm_set_driver removed by HSK-6 — early delete OK)
     tlm/gpu/dgpu_bar.cc
     tlm/gpu/scoreboard_tlm.cc  # D1-Full P1: IScoreboard 实现
     tlm/gpu/pipeline_tlm.cc    # D1-Full P1: IPipelineLatencyProvider 实现
     tlm/gpu/tensor_core_tlm.cc # D1-Full P1: ITensorCoreTiming 实现
-    tlm/gpu/ptx_emu_driver_shim.cc # D1-Full P1: cpptlm_set_driver ABI + DriverWrapper
 )
 
 # ==============================================================================
-# S1 WU-2/WU-3/WU-4: PTX-EMU 集成代码仅在 CPPTLM_WITH_PTX_EMU=ON 时编译
-# (默认 OFF 路径不编译 PTX-EMU 相关 .cc, 避免头依赖错误)
-# - tlm/gpu/ptx_emu_bridge_stub.cc  (C++17, 含 PTX-EMU 类型前向声明)
-# - tlm/gpu/ptx_emu_submodule_mvp.cc (C++20 OBJECT 库, 唯一 include PTX-EMU 头)
-# - tlm/gpu/cuda_core_adapter_mvp.cc (C++20 OBJECT 库, 唯一允许 PTX-EMU 头)
+# HSK-8 Phase 2 (PTX-EMU owner ack 738b412c):
+# PTX-EMU 集成代码仅在 CPPTLM_WITH_PTX_EMU=ON 时编译 (默认 OFF)
+# - ptx_emu_submodule_mvp.cc (facade, 仅 include ptxemu/device_api.h, C++17)
+# - cuda_core_adapter_mvp.cc (adapter, 仅 include ptxemu/device_api.h, C++17)
+#
+# 旧 S1 (c2038a93 pin) 的 WU-2 stub.cc + WU-3/WU-4 OBJECT 库块 已废弃:
+# - 新 PTX-EMU fcdad151+ 不再消费 g_cpptlm_bridge, stub.cc 不需要
+# - 新 PTX-EMU 头 (ptxemu/device_api.h) 是 C++17 兼容, 不需要 OBJECT 库隔离
 # ==============================================================================
 if(CPPTLM_WITH_PTX_EMU)
     list(APPEND CORE_SOURCES
-        tlm/gpu/ptx_emu_bridge_stub.cc # S1 T-s1-2: stub for g_cpptlm_bridge + get_gpu_clock_from_context
-        tlm/gpu/ptx_emu_submodule_mvp.cc # S1 T-s1-3: PTX functional facade (唯一 include PTX-EMU 头的 .cc)
-        tlm/gpu/cuda_core_adapter_mvp.cc # S1 T-s1-4: CudaCoreAdapter timing (唯一允许 PTX-EMU 头)
+        tlm/gpu/ptx_emu_submodule_mvp.cc # HSK-8: PTX functional facade (仅 include ptxemu/device_api.h)
+        tlm/gpu/cuda_core_adapter_mvp.cc  # HSK-8: CudaCoreAdapter timing (仅 include ptxemu/device_api.h)
     )
-
-    # S1 WU-3: facade.cc 必须用 C++20 (PTX-EMU logger.h 用 std::source_location)
-    # 用单独 add_library 让 facade.cc 独立编译为 C++20 对象, 然后 merge 到 cpptlm_core
-    add_library(ptx_emu_submodule_mvp_obj OBJECT tlm/gpu/ptx_emu_submodule_mvp.cc)
-    target_compile_features(ptx_emu_submodule_mvp_obj PUBLIC cxx_std_20)
-    # OBJECT 库不继承 INTERFACE include, 必须显式加 CppTLM include
-    target_include_directories(ptx_emu_submodule_mvp_obj PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include/core)
-    # PTX-EMU include 由 cmake/PTXEmuCore.cmake 通过 add_dependencies 注入
-    # (但实际 OBJECT 库不会自动继承 INTERFACE, 需在 cmake/PTXEmuCore.cmake 中显式设置)
-
-    # S1 WU-4: cuda_core_adapter_mvp.cc uses C++20 (PTX-EMU sm_context.h)
-    add_library(cuda_core_adapter_mvp_obj OBJECT tlm/gpu/cuda_core_adapter_mvp.cc)
-    target_compile_features(cuda_core_adapter_mvp_obj PUBLIC cxx_std_20)
-    target_include_directories(cuda_core_adapter_mvp_obj PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../include/core)
-    # PTX-EMU include 由 cmake/PTXEmuCore.cmake 通过 add_dependencies 注入
 endif()
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
-# S1 WU-3/WU-4: merge OBJECT 库到 cpptlm_core (静态库合并) - 仅 ON 时
 if(CPPTLM_WITH_PTX_EMU)
-    target_link_libraries(cpptlm_core PUBLIC ptx_emu_submodule_mvp_obj)
-    target_link_libraries(cpptlm_core PUBLIC cuda_core_adapter_mvp_obj)
+    # HSK-8 Phase 2 (per #22 comment step 2): link ptxemu_core (PUBLIC
+    # propagates include path + lib deps to cpptlm_core consumers)
+    target_link_libraries(cpptlm_core PUBLIC ptxemu_core)
 endif()
 
 # 包含目录：

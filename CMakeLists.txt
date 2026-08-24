@@ -117,9 +117,31 @@ install(TARGETS cpptlm_core
     RUNTIME DESTINATION bin
 )
 
-# S1: PTX-EMU shim (内部早退当 CPPTLM_WITH_PTX_EMU=OFF; 须在 cpptlm_core
-# 定义之后 include)
-include(cmake/PTXEmuCore.cmake)
+# ==============================================================================
+# HSK-8 Phase 2 (PTX-EMU owner ack 738b412c + 6 步指南 in #22 comment):
+# Replace S1 cmake/PTXEmuCore.cmake shim with PTX-EMU native add_subdirectory.
+# PTX-EMU src/CMakeLists.txt exports ptxemu_core STATIC target with PUBLIC
+# ${PROJECT_SOURCE_DIR}/include/ptxemu (PUBLIC) + PRIVATE internal headers
+# (PRIVATE = internal implementation hidden from CppTLM).
+#
+# Must be AFTER add_subdirectory(src) + install(TARGETS cpptlm_core) so the
+# ptxemu_core target's PUBLIC include path propagates via target_link_libraries.
+# ==============================================================================
+if(CPPTLM_WITH_PTX_EMU)
+    if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/PTX-EMU/CMakeLists.txt")
+        message(FATAL_ERROR
+            "CPPTLM_WITH_PTX_EMU=ON 但 external/PTX-EMU 未初始化 (HSK-8 ack 738b412c 要求 PTX-EMU fcdad151+)。\n"
+            "  修复: git submodule update --init external/PTX-EMU && cd external/PTX-EMU && git checkout fcdad151\n"
+            "  或:   -DCPPTLM_WITH_PTX_EMU=OFF 关闭 GPU 集成功能")
+    endif()
+    # PTXEMU_BUILD_TESTING=OFF default — CppTLM ctest gate 与 PTX-EMU tests 隔离
+    # (PROJECT_IS_TOP_LEVEL 在 add_subdirectory 调用时会自动变为 FALSE)
+    set(PTXEMU_BUILD_TESTING OFF CACHE BOOL "PTX-EMU tests when not top-level" FORCE)
+    add_subdirectory(external/PTX-EMU)
+    if(NOT TARGET ptxemu_core)
+        message(FATAL_ERROR "PTX-EMU 未导出 ptxemu_core target (submodule 过旧, 需 bump 到 >= HSK-8 Phase 2 commit fcdad151)")
+    endif()
+endif()
 
 # ==============================================================================
 # 配置摘要
