@@ -36,8 +36,13 @@ CudaCoreAdapterMVP::~CudaCoreAdapterMVP() = default;
 // init
 // =============================================================================
 void CudaCoreAdapterMVP::init(PtxEmuSubmoduleMVP& facade) {
+    if (facade_ == &facade && timing_injected_) {
+        return;  // 同 facade 已注入, 幂等 no-op (保留已创建模块)
+    }
     facade_ = &facade;
     timing_injected_ = false;
+    // init-time injection per D1-Full tasks.md §1.5.1 (避免 caller 遗漏)
+    inject_timing_modules();
 }
 
 // =============================================================================
