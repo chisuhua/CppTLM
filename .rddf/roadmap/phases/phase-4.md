@@ -1,7 +1,7 @@
 ---
 id: phase-4
 kind: phase
-status: active
+status: done
 phase_refs: []
 主题: Hierarchy Core（已完成 4/6）
 ---
