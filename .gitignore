@@ -61,3 +61,17 @@ openspec/changes/archive/
 # Phase 0.5 baseline worktrees (isolated workspace per .opencode/skills/using-git-worktrees)
 .worktrees/
 lib/
+
+# PTX-EMU integration build dirs (per scripts/build/build_ptx_emu.sh)
+#   build-on/  = CPPTLM_WITH_PTX_EMU=ON  (PTX-EMU submodule linked)
+#   build-off/ = CPPTLM_WITH_PTX_EMU=OFF (default; PTX-EMU not built)
+#   Both are heavy (1-2 GB each), regenerated on demand, never tracked.
+/build-on/
+/build-off/
+
+# Temporary test scratch dirs (e.g. `Testing/` from CTest/Catch2)
+/Testing/
+
+# Roadmap migrate backups (transient; produced by rddf roadmap migrate).
+#   Each backup dir is timestamped (.rddf/.roadmap-migrate-backup-<TS>/)
+/.rddf/.roadmap-migrate-backup-*/
