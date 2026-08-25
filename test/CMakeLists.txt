@@ -37,6 +37,9 @@ if(CPPTLM_WITH_PTX_EMU)
     # (libptxemu_device.so / libptxsim.so / libcudart.so 提供 PTX-EMU 内部符号).
     target_link_libraries(cpptlm_tests PRIVATE
         ptxemu_device ptxsim ptx_parser ptxir cudart)
+    # HSK-8 Phase 2 P0-1 任务 1: 传递 CPPTLM_WITH_PTX_EMU 宏给测试源
+    # (test_cuda_core_adapter_timing.cc 等 ON-only 测试用 #ifdef 保护).
+    target_compile_definitions(cpptlm_tests PRIVATE CPPTLM_WITH_PTX_EMU=1)
 endif()
 
 include(CTest)
