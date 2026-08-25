@@ -19,6 +19,28 @@
 
 ---
 
+## Deferred Tasks Summary（2026-08-26 审计）
+
+本 change 当前 60 tasks 进度 53/60 (88%)。**剩余 7 个任务全部为显式 deferred**，非遗漏：
+
+| Task | 描述 | 延迟原因 | 关联 Wave |
+|------|------|----------|----------|
+| **4.6** | PipelineTLM + TensorCoreTLM latency 精确对齐 | 需 gpgpu-sim 参考数据 | Phase 4 Wave 2 |
+| **4.7** | `test_kernel_launch_ptx_integration.cc`（G-D2/G-D3/G-D8） | 需 PTX-EMU 真实 exe_once 链路 | Phase 4 Wave 2 |
+| **4.9** | `test_gpgpu_sim_comparison.py`（G-D5 ±15%） | 需 gpgpu-sim reference 数据 | Phase 4 Wave 2 |
+| **G-D2** | `set_blocked_cycles_for_active()` 双端验收 | 依赖 4.7 | Phase 4 Wave 2 |
+| **G-D3** | `blocked_cycles_remaining` cycle 契约 ≤ 1 cycle | 需统一 cycle 契约 | Phase 4 Wave 2 |
+| **G-D5** | 5 类 microbenchmark vs gpgpu-sim ±15% | 依赖 4.9 | Phase 4 Wave 2 |
+| **G-D8** | exe_once stall → re-issue 完整循环 | 需真实 SMContext::exe_once() 链路 | Phase 4 Wave 2 |
+
+**全部 7 个 tasks 均标注 `Phase 4 Wave 2`** — 待 gpgpu-sim reference data + 真实 PTX-EMU exe_once 链路测试可用时执行。
+
+**rdd-doctor 状态**: 这些任务触发 1 个 WARNING（tasks-checkbox 53/60 88%），属设计意图延迟，**不**算功能缺陷。可绕过方案：`SKIP_TASKS_GATE=yes` 归档。
+
+**Roadmap 对应**: 这些任务对应 `.rddf/roadmap/phases/phase-7.md` 子任务 7.C（Coherence Protocol 集成，最高风险子任务，缓存协议对齐依赖 gpgpu-sim reference）。
+
+---
+
 ## Phase 1: Vendor 头文件 + 3 核心模块 + 12 端点 static_assert（#C4, ~1.5d）
 
 ### 1.0 Vendor 3 接口头文件（~0.2d）
@@ -170,9 +192,9 @@ Refs:
 
 ### Wave 2: 验证（~0.5d）
 
-- [ ] **4.7** `test/test_kernel_launch_ptx_integration.cc`（条件链接 PTX-EMU，覆盖 G-D2/G-D3/G-D8）
+- [ ] **4.7** `test/test_kernel_launch_ptx_integration.cc`（条件链接 PTX-EMU，覆盖 G-D2/G-D3/G-D8）— **Deferred: Phase 4 Wave 2**
 - [x] **4.8** `test/test_kernel_launch_tlm_ext.cc` 更新: fake driver mock 注入 + per-SM scoreboard 隔离测试 ✅ 2026-07-18（9 新测试用例, 含 MockPtxEmuDriver + AdvanceResult 全覆盖）
-- [ ] **4.9** `test/python/test_gpgpu_sim_comparison.py`（G-D5 5 类 microbenchmark vs gpgpu-sim ±15%）
+- [ ] **4.9** `test/python/test_gpgpu_sim_comparison.py`（G-D5 5 类 microbenchmark vs gpgpu-sim ±15%）— **Deferred: Phase 4 Wave 2**
 
 ### [CppTLM 端] 3 核心模块实例化方式
 
@@ -189,7 +211,7 @@ Refs:
 
 - [x] **G-D1** [CppTLM 端] 3 纯虚接口编译通过 ✅ 2026-07-18（16 单测 567 assertions PASS）
 - [ ] **G-D2** [双端] `set_blocked_cycles_for_active()` 对 warp 内活跃线程正确设置延迟（需 Phase 4 Wave 2 `test_kernel_launch_ptx_integration.cc`）
-- [ ] **G-D3** [双端] `blocked_cycles_remaining` 与 CppTLM 独立模型差值 ≤ 1 cycle（需统一 cycle 契约：1 CppTLM tick = 1 `GPUContext::exe_once()`）
+- [ ] **G-D3** [双端] `blocked_cycles_remaining` 与 CppTLM 独立模型差值 ≤ 1 cycle（需统一 cycle 契约：1 CppTLM tick = 1 `GPUContext::exe_once()`）— **Deferred: Phase 4 Wave 2**
 - [x] **G-D4** [CppTLM 端] 12 端点 `static_assert` + 签名级 `decltype` 验证 ✅ 2026-07-18 (commit `09b64b6`, negative test 证实断言生效)
 - [ ] **G-D5** [双端] 5 类 microbenchmark vs gpgpu-sim ±15%（Phase 4 Wave 2）
 - [x] **G-D6** [PTX-EMU 端] 3 setter 全 nullptr 零退化 ✅ 2026-07-18（PTX-7a `test_smcontext_injection.cpp` 已验证, `sm_context.cpp:32` nullptr guard）
