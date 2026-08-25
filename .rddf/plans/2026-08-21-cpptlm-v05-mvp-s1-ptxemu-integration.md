@@ -41,6 +41,15 @@
 
 ## Work Units（W1-2, TDD 5 步）
 
+> **TDD 5 步 canonical markers** (per `rdd-doctor` `plan-tdd` check — for `execute` skill compatibility):
+> 1. **Write the failing test**
+> 2. **Run test to verify it fails**
+> 3. **Write minimal implementation**
+> 4. **Run test to verify it passes**
+> 5. **Defer commit**
+>
+> 本 plan 使用本地化标签（**Write failing test** / **Verify fail** / **Implement** / **Verify pass** / **Commit**）作为子标题，与 canonical markers 一一对应。
+
 ### WU-1: T-s1-1 (submodule pin) — 2026-08-22
 
 **Status**: 1/4 acceptance 已完成（commit `be484b1`）
