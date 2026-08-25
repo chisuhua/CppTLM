@@ -3,7 +3,7 @@
   "adr_count": 21,
   "completed_adr_ids": [],
   "roadmap_exists": true,
-  "current_phase": "Phase 7 (APU-first) + Phase 9 (dGPU-first, per ADR-088 v3) **并行**",
+  "current_phase": "phase-7,phase-9",
   "plan_started_at": null,
   "adr_dir": "docs/adr",
   "roadmap_path": "roadmap.md",
