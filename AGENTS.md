@@ -71,7 +71,7 @@ external/        # git 子模块 (CppHDL, json)
 scripts/         # 5 子目录: build/(format.sh, build.sh, build_ptx_emu.sh) | test/(docs_sync_check.sh 等 4) | pipeline/ | topology/ | stats/
 cpptlm/          # Python 库 (新, pyproject.toml): cli / topo / config / simulation / analysis / visualization
 cpptlm_config/   # Python 配置包 (旧, examples 引用): builder / models / validator / topology_adapter
-plans/           # 实施计划: phase7-completion / p0-alignment-remediation / performance-metrics 等
+plans/           # 实施计划: `ptxemu-followup-roadmap.md` (活跃) + `archive/tgms-{dev-plan,handoff}.md` (历史归档)
 ```
 
 子目录级 AGENTS.md 索引: `include/AGENTS.md`（注册宏体系）· `include/tlm/AGENTS.md` · `include/core/AGENTS.md` · `src/core/AGENTS.md` · `src/tlm/AGENTS.md` · `test/AGENTS.md` · `configs/AGENTS.md` · `cpptlm_config/AGENTS.md`
@@ -98,6 +98,7 @@ plans/           # 实施计划: phase7-completion / p0-alignment-remediation / 
 | 修改 CI | `.github/workflows/ci.yml` (Release/Debug × ASan[OFF,ON] 矩阵) |
 | 调试 test fail | `.opencode/skills/cpptlm-debug/SKILL.md` (auto-loads on "test fail") |
 | **v0.5 MVP S1 PTX-EMU 集成** | `cmake/PTXEmuCore.cmake` (shim: 73 PTX-EMU 源 + 4 道门禁 + GLOB drift 校验) + `openspec/changes/2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/` (proposal+design+tasks) + `include/tlm/gpu/ptx_emu_submodule_mvp.{hh,cc}` (functional facade) + `include/tlm/gpu/cuda_core_adapter_mvp.{hh,cc}` (timing adapter) |
+| **PTX-EMU 后续 Roadmap** | `plans/ptxemu-followup-roadmap.md` (HSK-8 Phase 2 + 12/12 IPtxEmuDevice delegation 完成后的 P0-P5 任务规划; D1-Full 收尾 + v0.5 MVP S2/S3) |
 
 ## CONVENTIONS
 
