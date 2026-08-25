@@ -1,0 +1,31 @@
+{
+  "arch_complete_at": "2026-08-15T04:31:24.735111+00:00",
+  "adr_count": 21,
+  "completed_adr_ids": [],
+  "roadmap_exists": true,
+  "current_phase": "Phase 7 (APU-first) + Phase 9 (dGPU-first, per ADR-088 v3) **并行**",
+  "plan_started_at": null,
+  "adr_dir": "docs/adr",
+  "roadmap_path": "roadmap.md",
+  "architecture_dir": "docs/architecture",
+  "adr_pattern": "ADR-*.md",
+  "discovered": {
+    "adr_dir": {
+      "found": true,
+      "created": false,
+      "candidates_tried": 1
+    },
+    "roadmap_path": {
+      "found": true,
+      "created": false,
+      "candidates_tried": 1
+    },
+    "architecture_dir": {
+      "found": true,
+      "created": false,
+      "candidates_tried": 1
+    }
+  },
+  "version": 2,
+  "roadmap_fragments_dir": ".rddf/roadmap"
+}
