@@ -53,24 +53,31 @@ git commit -am "feat(command-processor-mvp): fill 5-state FSM (NVIDIA method pac
 
 ## W6 (2026-09-26 ~ 2026-10-02)
 
-### T-s3-3: TmuDispatchProcessor (填充实现,per s2 骨架 + Phase F-D.2 H5)
+### T-s3-3: TmuDispatchProcessor (填充实现,per s2 骨架 + Phase F-D.2 H5 + Oracle M4)
 
 **Acceptance**:
 - [ ] 填充 `src/tlm/gpu/tmu_dispatch_processor_mvp.cc`(.cc,头文件 s2 已创建,~250 LOC 填充)
 - [ ] `TmuDispatchRecord` 9 字段
 - [ ] `PreExitPolicy` 枚举: NONE 档(MVP)
 - [ ] `inflight_kernel_reqs_` 32 slot + **反压停 fetch**(`BACKPRESSURED` 替代 LIFO)
-- [ ] `TmuSubmitResult` 枚举: SUBMITTED / **BACKPRESSURED** / DEP_LATCH_MISMATCH / **SUBMIT_QUEUE_REJECTED**(per Phase F-H.4)
+- [ ] `TmuSubmitResult` 枚举: SUBMITTED / **BACKPRESSURED** / DEP_LATCH_MISMATCH / **SUBMIT_QUEUE_REJECTED** / **INTERNAL_ERROR**(per Phase F-H.4 + Oracle M4 新增 INTERNAL_ERROR)
+- [ ] **TmuHandlerInterface 扩展**(per Oracle M4):`on_dispatch() → TmuHandlerResult`(原 void 改返回 result,SQ_REJECTED 需上报)
+- [ ] `TmuHandlerResult` 枚举: HANDLED / SQ_REJECTED / INVALID_RECORD(per Oracle M4)
 - [ ] 依赖锁存器 `wait_on_latch_id ↔ arrive_at_latch_id` 匹配检查
 - [ ] pre-dispatch 3 段条件检查
-- [ ] **依赖**:`CompletionRing& cq_`(per Phase F-H.4,**不**直接调 CudaCore);**派发路径经 handler 注入**(per s2 T-s2-3b):handler 在 on_dispatch 内部调 SubmitQueue,TMU 不直持 SQ 引用
-- [ ] `set_handler()` 注入到 TmuDispatchProcessor(替换 s2 no-op 骨架,`TmuHandlerInterface`);s3 实现 handler 内部 `submit_queue_.enqueue(cta_desc)`
-- [ ] `test/test_tmu_dispatch_processor_mvp.cc` ~10 测试 PASS(替代 s2 骨架的反压测试):
+- [ ] **依赖**:`CompletionRing& cq_`(per Phase F-H.4,**不**直接调 CudaCore);**派发路径经 handler 注入**(per s2 T-s2-3b + Oracle M4):handler 在 on_dispatch 内部调 SubmitQueue,TMU 不直持 SQ 引用;handler 返回 SQ_REJECTED → TMU 上报 SUBMIT_QUEUE_REJECTED
+- [ ] **CP 退避策略**(per Oracle M4):收到 BACKPRESSURED / SUBMIT_QUEUE_REJECTED → 退避窗口 8 cycles + 状态 DECODE → FETCH(非 IDLE);超阈值进入 DEGRADED 状态
+- [ ] `set_handler()` 注入到 TmuDispatchProcessor(替换 s2 no-op 骨架,`TmuHandlerInterface`)
+- [ ] S3SubmitQueueHandler 类(per design §4.3):handler 内部 `sq_.enqueue(cta_desc)` + 返回 HANDLED/SQ_REJECTED
+- [ ] `test/test_tmu_dispatch_processor_mvp.cc` ~10 测试 PASS(替代 s2 骨架的反压测试,per design §4.5):
   - submit / on_complete / BACKPRESSURED / dep chain / 环检测
+  - **新增**:SQ_REJECTED 路径(handler 探测 SQ 满)
+  - **新增**:INTERNAL_ERROR 路径(handler 返回 INVALID_RECORD)
+  - **新增**:CP 退避窗口测试(连续 3 次 BACKPRESSURED → DEGRADED)
 
 **Commit**:
 ```bash
-git commit -am "feat(tmu-dispatch-mvp): fill dep chain + backpressure (per Phase F-D.2 H5)"
+git commit -am "feat(tmu-dispatch-mvp): fill dep chain + backpressure (per Phase F-D.2 H5 + Oracle M4)"
 ```
 
 ## W7-9 (2026-10-03 ~ 2026-10-23)
