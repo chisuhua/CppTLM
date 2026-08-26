@@ -100,10 +100,15 @@ git commit -am "build: integrate validate_topology target for dgpu_board_v1_mvp.
 ### T-s3-5: CHANGELOG + v0.5.0-MVP tag
 
 **Acceptance**:
-- [ ] `CHANGELOG.md` 记录 v0.5.0-MVP release
+- [ ] **`CHANGELOG.md` 记录 v0.5.0-MVP release**(per Oracle m4 + CHANGELOG.md 已确立的格式约定):
+  - 顶部新增 `## [v0.5.0-MVP] - 2026-10-30`(per T-s3-5 W10 截止)
+  - 子章节按现有约定:`### 新增 (Features)` / `### 修复 (Fixes)` / `### 测试 (Tests)`
+  - MVP 标注:在标题后或注释中标注 **MVP slice — pre-release, 不保证 GA**(per Oracle m3)
+  - 每个 bullet 用 `**Component::method**` 格式,s2 + s3 累计 ~10 组件
+- [ ] **版本号论证(per Oracle m3)**:v0.5.0-MVP 直接从 v2.4.1 跳号而非 v2.5.0,**MVP 视为 feature branch 命名而非 semver 顺序** — 与 v3.0.0 dGPU extract (per ADR-X.15) 并列,均代表 dGPU 演进的分支版本。**正式 GA 应为 v0.5.0**(MVP 验证 + bugfix 之后,M11+ 规划)
 - [ ] `docs/soc_arch/modules/README.md` 同步 7 模块(6 + SubmitQueue)
 - [ ] `scripts/test/docs_sync_check.sh --strict` PASS
-- [ ] `git tag -a v0.5.0-MVP -m "..."`
+- [ ] `git tag -a v0.5.0-MVP -m "..."`(tag annotation 引用此 change proposal.md 路径)
 
 **Commit**:
 ```bash
@@ -153,3 +158,23 @@ git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: MVP slice - UsrLinuxEmu IOCTL → CP �
 **起草**: Sisyphus (2026-08-21,per Oracle ses_fe179d02 拆分建议)
 **Owner**: CppTLM Team
 **状态**: 📋 Tasks — 等 s1+s2 archive + W5 启动后开始实施
+
+---
+
+## Oracle Review Status Update (2026-08-26)
+
+Per Oracle review (2026-08-26, s2/s3 联合审查),以下 corrections 已应用(3 个 commit):
+
+| Finding | Commit | 修复位置 |
+|---------|--------|---------|
+| **C1** (CRITICAL) s1 archive 元数据腐烂 | `bec31a6` | 重建 s1 archive 目录 from `b68abe6^` |
+| **M1** baseline 数字过期(764→817) | `2c2d55a` | s3 proposal.md + design.md + tasks.md |
+| **M2** cuda_core_.tick() 接口归属 | `2c2d55a` | s2 design.md L39 + s3 design.md L31 |
+| **M3** s2 E2E SECTION 数(6→5+1 deferred) | `2c2d55a` | s2 proposal.md + tasks.md + spec |
+| **M4** TMU 反压传播路径细化 | `0775c78` | s3 design.md §4 (4.1-4.6) + tasks.md T-s3-3 |
+| **m3+m4** 跳号论证 + CHANGELOG 规范 | `this commit` | T-s3-5 acceptance |
+| **m5** WIP git commits 备忘 | `this commit` | 本节 |
+
+**未修改**: ADR-SOC-06 (immutable,仅追加 Status Update 段);s2/s3 proposals 中 `📋 Proposed` 状态(openspec list 的 in-progress 由工具根据 tasks checkboxes 自动计算,非 proposal 文本)。
+
+**WIP commit 备忘**: git 自动产生的 `2ec944a WIP on ...` + `3f62d4a index on ...` 是 worktree 切换 checkpoint,**无害**,已合并 s1 主分支。彻底清理需 `git rebase --interactive --root`,属 cosmetic 不在 s2/s3 scope。
