@@ -49,6 +49,9 @@ set(CORE_SOURCES
     tlm/gpu/dgpu_bar.cc
     tlm/gpu/doorbell_mvp.cc        # s2 W3: SQ tail register + strong-order write
     tlm/gpu/completion_ring_mvp.cc # s2 W3: push + host_notify hook
+    tlm/gpu/submit_queue_mvp.cc    # s2 W3: WDU distribution network (per Phase F-H.5)
+    tlm/gpu/command_processor_mvp.cc  # s2 W3: CP skeleton (5-state FSM no-op + set_decoder injection)
+    tlm/gpu/tmu_dispatch_processor_mvp.cc  # s2 W3: TMU skeleton (back-pressure stub + set_handler injection)
     tlm/gpu/scoreboard_tlm.cc  # D1-Full P1: IScoreboard 实现
     tlm/gpu/pipeline_tlm.cc    # D1-Full P1: IPipelineLatencyProvider 实现
     tlm/gpu/tensor_core_tlm.cc # D1-Full P1: ITensorCoreTiming 实现
