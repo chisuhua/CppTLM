@@ -12,9 +12,9 @@
 ### T-s2-1: Doorbell + CompletionRing
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/doorbell_mvp.hh` + `.cc`(SQ tail register + strong-order write,per `docs/research/PCIe/PCIe_上的保序write.md` §4 250-700ns 区间)
-- [ ] 新建 `include/tlm/gpu/completion_ring_mvp.hh` + `.cc`(push + host_notify 重设计)
-- [ ] `test/test_doorbell_strong_order_mvp.cc`:latency 区间 + 同 stream 顺序 PASS
+- [x] 新建 `include/tlm/gpu/doorbell_mvp.hh` + `.cc`(SQ tail register + strong-order write,per `docs/research/PCIe/PCIe_上的保序write.md` §4 250-700ns 区间)
+- [x] 新建 `include/tlm/gpu/completion_ring_mvp.hh` + `.cc`(push + host_notify 重设计)
+- [x] `test/test_doorbell_strong_order_mvp.cc`:latency 区间 + 同 stream 顺序 PASS (6 cases / 80 assertions)
 
 **Commit**:
 ```bash
@@ -25,12 +25,12 @@ git commit -am "feat(completion-ring-mvp): push + host_notify hook"
 ### T-s2-2: SubmitQueue(🆕 WDU 分发网络,per Phase F-H.5)
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/submit_queue_mvp.hh` + `.cc`(~150 LOC,per `docs/research/WDUtoSM/overview.md` NVIDIA Hopper)
-- [ ] `SubmitQueue::enqueue(cta_desc) → bool`(per-cluster pending FIFO 32 槽)
-- [ ] `SubmitQueue::tick()` 派发(per-core active 4 槽)
-- [ ] `SubmitQueue::on_warp_complete(task_id, status)` 反向流
-- [ ] `select_target_core(cta_desc) → uint8_t`:MVP 固定返回 0
-- [ ] **5 个单测**全部 PASS:
+- [x] 新建 `include/tlm/gpu/submit_queue_mvp.hh` + `.cc`(~150 LOC,per `docs/research/WDUtoSM/overview.md` NVIDIA Hopper)
+- [x] `SubmitQueue::enqueue(cta_desc) → bool`(per-cluster pending FIFO 32 槽)
+- [x] `SubmitQueue::tick()` 派发(per-core active 4 槽)
+- [x] `SubmitQueue::on_warp_complete(task_id, status)` 反向流
+- [x] `select_target_core(cta_desc) → uint8_t`:MVP 固定返回 0
+- [x] **5 个单测**全部 PASS (17 cases / 192 assertions):
   - `test/test_submit_queue_mvp_route.cc`
   - `test/test_submit_queue_mvp_enqueue.cc`
   - `test/test_submit_queue_mvp_dispatch.cc`
@@ -47,7 +47,7 @@ git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per
 > **关键**: s2 W3-4 须创建 CP/TMU 类骨架(头文件 + stub 实现),使 DGpuBoardTLM 可独立编译;s3 W5-6 填充数据面(NVIDIA method packet + 反压停 fetch)。
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/command_processor_mvp.hh` + `src/tlm/gpu/command_processor_mvp.cc`(~150 LOC 骨架,~30 LOC 实现)
+- [x] 新建 `include/tlm/gpu/command_processor_mvp.hh` + `src/tlm/gpu/command_processor_mvp.cc`(~150 LOC 骨架,~30 LOC 实现)
 - [ ] **接口契约**:
   ```cpp
   class CommandProcessor {
@@ -59,8 +59,8 @@ git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per
       void set_decoder(std::unique_ptr<Pm4DecoderInterface> decoder);  // s3 注入实现
   };
   ```
-- [ ] **骨架实现**(W3-4 即可编译): tick() 内**默认 no-op**(状态机转换但不实际 fetch/decode);提供 `set_decoder` 接口供 s3 注入
-- [ ] `include/tlm/gpu/pm4_types_mvp.hh`(数据头,~30 LOC,per Phase L round 3 Oracle 补):
+- [x] **骨架实现**(W3-4 即可编译): tick() 内**默认 no-op**(状态机转换但不实际 fetch/decode);提供 `set_decoder` 接口供 s3 注入
+- [x] `include/tlm/gpu/pm4_types_mvp.hh`(数据头,~30 LOC,per Phase L round 3 Oracle 补):
   ```cpp
   struct Pm4MethodHeader {
       uint32_t inc : 1;            // bit 0
@@ -76,7 +76,7 @@ git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per
       // ... decoded fields: grid, block, shared_mem, args_vram_addr
   };
   ```
-- [ ] `include/tlm/gpu/pm4_decoder_mvp.hh`(纯接口头,s3 可扩展加具体类):
+- [x] `include/tlm/gpu/pm4_decoder_mvp.hh`(纯接口头,s3 可扩展加具体类):
   ```cpp
   #include "tlm/gpu/pm4_types_mvp.hh"  // s2 定义 Pm4MethodHeader/Pm4MethodDispatch
 
@@ -96,9 +96,9 @@ git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per
   //     Pm4MethodDispatch parse_method(...) override { ... }
   // };
   ```
-- [ ] 5 SECTION E2E 第 3 项"H2D 写 VRAM → install_kernel_module 返回 0"在 s2 W4 即可 PASS(CP 骨架 no-op,install_kernel_module 直接调 facade)
+- [x] 5 SECTION E2E 第 3 项"H2D 写 VRAM → install_kernel_module 返回 0"在 s2 W4 即可 PASS(CP 骨架 no-op,install_kernel_module 直接调 facade)
 - [ ] 5 SECTION E2E 第 4 项"IOCTL 0x01 pushbuffer → CQ 收到 N entry"**在 s2 W4 仍 ⏳ FAIL**(待 s3 填充 CP decoder 后);s2 E2E 降级为 5 SECTION + "CP-pending" 标记(per Oracle M3)
-- [ ] `test/test_command_processor_mvp_skeleton.cc`:CP 状态机骨架测试 PASS(5 state 转换 no-op + wake)
+- [x] `test/test_command_processor_mvp_skeleton.cc`:CP 状态机骨架测试 PASS(7 cases / 27 assertions)
 
 **Commit**:
 ```bash
@@ -108,7 +108,7 @@ git commit -am "feat(command-processor-mvp): skeleton (5-state FSM stub, per Ora
 ### T-s2-3b: TmuDispatchProcessor 骨架(per Oracle 修复)
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `src/tlm/gpu/tmu_dispatch_processor_mvp.cc`(~150 LOC 骨架)
+- [x] 新建 `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `src/tlm/gpu/tmu_dispatch_processor_mvp.cc`(~150 LOC 骨架)
 - [ ] **接口契约**:
   ```cpp
   class TmuDispatchProcessor {
@@ -121,8 +121,8 @@ git commit -am "feat(command-processor-mvp): skeleton (5-state FSM stub, per Ora
       void set_handler(std::unique_ptr<TmuHandlerInterface> handler);  // s3 注入
   };
   ```
-- [ ] **骨架实现**(W3-4 即可编译): submit() 在容量满时返回 `BACKPRESSURED`(反压,不驱逐);on_complete() / try_chain_dependent() 骨架 no-op;`set_handler` 注入
-- [ ] `include/tlm/gpu/tmu_handler_mvp.hh`(纯接口头,15 LOC):
+- [x] **骨架实现**(W3-4 即可编译): submit() 在容量满时返回 `BACKPRESSURED`(反压,不驱逐);on_complete() / try_chain_dependent() 骨架 no-op;`set_handler` 注入
+- [x] `include/tlm/gpu/tmu_handler_mvp.hh`(纯接口头,15 LOC):
   ```cpp
   class TmuHandlerInterface {
   public:
@@ -130,7 +130,7 @@ git commit -am "feat(command-processor-mvp): skeleton (5-state FSM stub, per Ora
       virtual void on_dispatch(const TmuDispatchRecord& record) = 0;  // s3 填充→调 SubmitQueue
   };
   ```
-- [ ] `test/test_tmu_dispatch_processor_mvp_skeleton.cc`:反压 + 容量管理测试 PASS
+- [x] `test/test_tmu_dispatch_processor_mvp_skeleton.cc`:反压 + 容量管理测试 PASS (9 cases / 64 assertions)
 
 **Commit**:
 ```bash
@@ -140,13 +140,13 @@ git commit -am "feat(tmu-dispatch-mvp): skeleton (backpressure stub, per Oracle 
 ### T-s2-3: DGpuBoardTLM(8 组件包装,per Phase F-H.2 修订)
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc`(~500 LOC)
+- [x] 新建 `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc`(PIMPL skeleton)
 - [ ] 内部 **8 组件**(全部 s2 内部成员):
   - `DGpuBar` + `Doorbell` + `CommandProcessor`(s2 骨架)+ `TmuDispatchProcessor`(s2 骨架)+ `SubmitQueue`(s2 新增) + `CompletionRing` + `CudaCoreAdapter`(s1) + `PtxEmuSubmoduleMVP`(s1)
 - [ ] `tick()` 串联 4 阶段:`cp_.tick() → tmu_.tick() → sq_.tick() → cuda_core_.tick()`(per Phase F-H.2 §4)
 - [ ] 入口方法:`install_kernel_module(vram_addr, size)` + `submit_kernel(req)` + `write_reg(offset, value)`
-- [ ] `include/chstream_register.hh` 追加 `REGISTER_CHSTREAM(DGpuBoardTLM)`
-- [ ] **5 SECTION E2E 降级验收**(s2 W4 可达,per Oracle M3):
+- [x] `include/chstream_register.hh` 追加 `REGISTER_CHSTREAM(DGpuBoardTLM)`
+- [x] **5 SECTION E2E 降级验收**(s2 W4 可达,per Oracle M3):
   1. `validate_topology` 通过该 JSON
   2. `instantiateAll` 返回 true,`getInstance("dgpu_board0")` 存在
   3. H2D: 写 VRAM → `install_kernel_module` 返回 0 + image_handle ≠ 0 ✅
@@ -165,14 +165,14 @@ git commit -am "feat(dgpu-board-mvp): DGpuBoardTLM ChStreamModuleBase with 8 com
 ### T-s2-4: UsrLinuxEmuIoctlStub(**4 IOCTL**,per Phase F-H.3)
 
 **Acceptance**:
-- [ ] 新建 `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `.cc`(~300 LOC)
-- [ ] 实现 4 IOCTL(per Phase F-H.3):
+- [x] 新建 `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `.cc`(4 IOCTL stub)
+- [x] 实现 4 IOCTL(per Phase F-H.3):
   - 0x27 `LOAD_KERNEL_MODULE` → `install_kernel_module()`(真实工作,per UsrLinuxEmu ADR-090 §D2.1)
   - **0x28 `LAUNCH_KERNEL_MODULE` → 永久 -ENOSYS**(per UsrLinuxEmu ADR-090 §D2.2 + ADR-023 §D4 append-only 治理)
   - 0x29 `UNLOAD_KERNEL_MODULE` → 走 FREE_BO 路径 → `uninstall_kernel_module(vram_addr)`(真实工作)
   - **0x01 `PUSHBUFFER_SUBMIT_BATCH` → 写 gpfifo_entries[] 到 DGpuBar.vram.pushbuffer_ring + Doorbell ring**(per Phase F-H.3 真实 launch 入口)
-- [ ] `include/chstream_register.hh` 追加 `REGISTER_CHSTREAM(UsrLinuxEmuIoctlStub)`
-- [ ] `test/test_usrlxemu_ioctl_stub.cc`:**4 IOCTL** PASS(含 0x28 -ENOSYS 验证 + driver fallback 路径)
+- [x] `include/chstream_register.hh` 追加 `REGISTER_CHSTREAM(UsrLinuxEmuIoctlStub)`
+- [x] `test/test_usrlxemu_ioctl_stub.cc`:**4 IOCTL** PASS (5 cases / 7 assertions)(含 0x28 -ENOSYS 验证 + driver fallback 路径)
 
 **Commit**:
 ```bash
@@ -182,13 +182,13 @@ git commit -am "feat(usrlxemu-ioctl-stub): 4 IOCTL stub (0x27/0x28-ENOSYS/0x29/0
 ### T-s2-5: JSON config + validate_topology
 
 **Acceptance**:
-- [ ] 新建 `configs/dgpu_board_v1_mvp.json.in`(CMake configure_file 注入 `${PTX_EMU_ROOT}`)
-- [ ] 1 个 `DGpuBoardTLM` 模块(`ptx_emu_root` 用 `${PTX_EMU_ROOT}` placeholder)
-- [ ] 1 个 `MemoryTLM` 模块作为 H2D DMA + VRAM backing
-- [ ] 1 个 `UsrLinuxEmuIoctlStub` 绑定 dgpu_board0
-- [ ] 根 CMakeLists 配置 `configure_file(...)`
-- [ ] 纳入 `validate_topology` CMake target 扫描
-- [ ] 新建 `test/test_dgpu_board_v1_mvp_from_config.cc`(5 SECTION 验收 + item 4 ⏳,per Oracle M3)
+- [x] 新建 `configs/dgpu_board_v1_mvp.json.in`(CMake configure_file 注入 `${PTX_EMU_ROOT}`)
+- [x] 1 个 `DGpuBoardTLM` 模块(`ptx_emu_root` 用 `${PTX_EMU_ROOT}` placeholder)
+- [x] 1 个 `MemoryTLM` 模块作为 H2D DMA + VRAM backing
+- [x] 1 个 `UsrLinuxEmuIoctlStub` 绑定 dgpu_board0
+- [x] 根 CMakeLists 配置 `configure_file(...)`
+- [x] 纳入 `validate_topology` CMake target 扫描
+- [x] 新建 `test/test_dgpu_board_v1_mvp_from_config.cc`(5 SECTION 验收 + item 4 ⏳,per Oracle M3)
 - [ ] 5 SECTION E2E 验收(per ADR-SOC-06 G-MVP-2 + Oracle M3,item 4 ⏳ deferred to s3):
   1. `validate_topology` 通过该 JSON
   2. `instantiateAll` 返回 true,`getInstance("dgpu_board0")` 存在
