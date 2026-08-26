@@ -36,7 +36,7 @@ public:
     void install_kernel_module(const uint8_t* image_bytes, size_t size);  // 0x27
     int32_t submit_kernel(const KernelLaunchRequest& req);                // UMD shim 简化路径
     void write_reg(uint32_t offset, uint32_t value);                      // Doorbell ring trigger
-    void tick();  // cp_→ tmu_→ sq_→ cuda_core_ 4 阶段
+    void tick();  // cp_→ tmu_→ sq_→ cuda_core_(s1 CudaCoreAdapterMVP)4 阶段
 
     // 8 私有成员(s1 提供的 + s2 新增的,per Phase F-H.2):
     DGpuBar bar_;
@@ -77,7 +77,7 @@ public:
 | `test_submit_queue_mvp_dispatch.cc` | `[submit-queue][mvp][dispatch]` | tick() 派发到 active 槽满 |
 | `test_submit_queue_mvp_complete.cc` | `[submit-queue][mvp][complete]` | on_warp_complete → SQ → TMU |
 | `test_submit_queue_mvp_concurrent.cc` | `[submit-queue][mvp][concurrent]` | 多 CTA 并发 |
-| `test_dgpu_board_v1_mvp_from_config.cc` | `[dgpu-board][mvp][e2e]` | 6 SECTION E2E |
+| `test_dgpu_board_v1_mvp_from_config.cc` | `[dgpu-board][mvp][e2e]` | 5 SECTION E2E (item 4 deferred to s3, per Oracle M3) |
 | `test_usrlxemu_ioctl_stub.cc` | `[usrlxemu-ioctl][stub]` | **4 IOCTL** PASS |
 | `test_command_processor_mvp_skeleton.cc` | `[command-processor][mvp][skeleton]` | **🆕 s2 骨架**:5 state 转换 no-op + wake |
 | `test_tmu_dispatch_processor_mvp_skeleton.cc` | `[tmu][mvp][skeleton]` | **🆕 s2 骨架**:反压 + 容量管理 |
