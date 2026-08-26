@@ -61,18 +61,125 @@ struct Pm4MethodDispatch {
 - DECODE:通过 s2 `set_decoder()` 注入的 `Pm4DecoderInterface` 调 `parse_method`(替代 parse_type3,per Phase F-H.3)
 - DISPATCH:`tmu_.submit(Pm4MethodDispatch)`
 
-## 4. TmuDispatchProcessor 反压停 fetch(per Phase F-D.2 H5)
+## 4. TmuDispatchProcessor 反压停 fetch(per Phase F-D.2 H5 + Oracle M4)
+
+### 4.1 反压传播 4 路径(per Oracle M4 细化)
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ TMU.submit(record)                                                  │
+│   │                                                                │
+│   ├─① check_dep_latches                                            │
+│   │     FAIL → return DEP_LATCH_MISMATCH                            │
+│   │     (CP 不重试,记录 dep_latch_mismatch_count_)                  │
+│   │                                                                │
+│   ├─② scheduler_cache.size() ≥ max_active_tasks_?                   │
+│   │     YES → return BACKPRESSURED                                  │
+│   │     (CP 退避,记录 backpressure_count_)                          │
+│   │                                                                │
+│   ├─③ handler_->on_dispatch(record) → TmuHandlerResult              │
+│   │     handler 内部调 sq_.enqueue(cta_desc)                        │
+│   │                                                                │
+│   │     SQ 满(pending FIFO 32 满) → handler 探测到 SQ.enqueue=false │
+│   │     → handler 返回 SQ_REJECTED → TMU 记录 sq_rejected_count_    │
+│   │     → TMU 撤销 record 注册 → return SUBMIT_QUEUE_REJECTED        │
+│   │     (CP 退避同 BACKPRESSURED,语义区分便于 metrics)              │
+│   │                                                                │
+│   │     SQ 成功 → handler 返回 HANDLED → TMU 注册 record 到          │
+│   │     scheduler_cache_ → return SUBMITTED                         │
+│   │                                                                │
+│   └─ (其他内部错误 → return INTERNAL_ERROR)                         │
+└────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Handler 接口扩展(per Oracle M4)
+
+```cpp
+// s2 原始接口(仅单向调用):
+class TmuHandlerInterface {
+public:
+    virtual ~TmuHandlerInterface() = default;
+    virtual void on_dispatch(const TmuDispatchRecord& record) = 0;
+};
+
+// s3 扩展为返回 result(handler 探测 SQ 失败需上报):
+class TmuHandlerInterface {
+public:
+    virtual ~TmuHandlerInterface() = default;
+    virtual TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) = 0;
+};
+
+enum class TmuHandlerResult {
+    HANDLED,              // SQ.enqueue 成功
+    SQ_REJECTED,          // SQ 满(handler 调 sq_.enqueue 返回 false)
+    INVALID_RECORD,       // record 字段非法(防御性)
+};
+```
+
+### 4.3 TMU → SQ 派发:handler 实现示例(s3 W6 实施)
+
+```cpp
+class S3SubmitQueueHandler : public TmuHandlerInterface {
+public:
+    explicit S3SubmitQueueHandler(SubmitQueue& sq) : sq_(sq) {}
+
+    TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
+        CtaDescriptor cta_desc = build_cta_descriptor(record);
+        if (sq_.enqueue(cta_desc)) {       // SQ 内部:32 满 → 返回 false
+            return TmuHandlerResult::HANDLED;
+        }
+        return TmuHandlerResult::SQ_REJECTED;
+    }
+
+private:
+    SubmitQueue& sq_;
+};
+
+// TMU 注入方式(s3 W6 T-s3-3):
+tmu_.set_handler(std::make_unique<S3SubmitQueueHandler>(sq_));
+```
+
+### 4.4 CP 退避策略(per Oracle M4)
+
+CP 收到 `BACKPRESSURED` / `SUBMIT_QUEUE_REJECTED` 时:
+- **不要立即重试** — 引入最小退避窗口(per Phase F-D.2 H5:`MIN_BACKOFF_CYCLES = 8`)
+- 状态保持在 DECODE,DISPATCH 失败时**回到 FETCH 而不是 IDLE**
+- 失败计数累计到 `cp_backoff_count_`,> 阈值时进入 **DEGRADED 状态**(只 fetch 不 dispatch,等 SQ 清空)
+
+### 4.5 测试覆盖(s3 W6 T-s3-3 acceptance,新增 4 项)
+
+| 测试场景 | 期望 TmuSubmitResult | 期望 handler 行为 |
+|----------|---------------------|------------------|
+| submit 正常 | SUBMITTED | sq_.enqueue=true,返回 HANDLED |
+| scheduler 满 | BACKPRESSURED | handler 未调用,TMU 内 counter++ |
+| dep latch 不匹配 | DEP_LATCH_MISMATCH | handler 未调用 |
+| SQ 满(handler 探测)| SUBMIT_QUEUE_REJECTED | sq_.enqueue=false,返回 SQ_REJECTED,TMU 撤销 record |
+| dep chain 环检测 | DEP_LATCH_MISMATCH | handler 未调用 |
+| handler 返回 INVALID_RECORD | INTERNAL_ERROR | record 校验失败,防御性 |
+
+### 4.6 原始代码模板(保留作参考)
 
 ```cpp
 TmuSubmitResult TmuDispatchProcessor::submit(TmuDispatchRecord record, ...) {
+    // ① dep 检查
     if (record.dep_enable && !check_dep_latches(record))
         return TmuSubmitResult::DEP_LATCH_MISMATCH;
+    // ② 容量检查
     if (scheduler_cache_.size() >= max_active_tasks_) {
         backpressure_count_++;
         return TmuSubmitResult::BACKPRESSURED;  // 反压 CP,非 LIFO 驱逐
     }
-    // ... 提交并通过 SubmitQueue 派发(per Phase F-H.4)
-    submit_queue_.enqueue(cta_descriptor(record));
+    // ③ handler 派发(handler 内部调 SQ.enqueue)
+    TmuHandlerResult hresult = handler_->on_dispatch(record);
+    if (hresult == TmuHandlerResult::SQ_REJECTED) {
+        sq_rejected_count_++;
+        return TmuSubmitResult::SUBMIT_QUEUE_REJECTED;
+    }
+    if (hresult != TmuHandlerResult::HANDLED) {
+        return TmuSubmitResult::INTERNAL_ERROR;
+    }
+    // ④ 注册到 scheduler_cache
+    scheduler_cache_[record.task_id] = record;
     return TmuSubmitResult::SUBMITTED;
 }
 ```
