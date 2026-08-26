@@ -1,14 +1,8 @@
-# Spec: CommandProcessor Skeleton (s2 T-s2-3a)
+# command-processor-skeleton-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s2 change — CP 骨架（5-state FSM no-op + set_decoder 注入接口，s3 填充数据面）
-> **关键约束**: s2 W3-4 必须创建 CP 类骨架使 DGpuBoardTLM 可独立编译；s3 W5-6 填充 NVIDIA method packet 数据面
-> **关联**: Oracle ses_fe0b6e44 修复 CRITICAL s2 逆依赖 s3
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s2-dgpu-board. Update Purpose after archive.
+## Requirements
 ### Requirement: command-processor-skeleton-interface
 
 The system MUST provide a `CommandProcessor` class in `include/tlm/gpu/command_processor_mvp.hh` + `src/tlm/gpu/command_processor_mvp.cc` (~150 LOC 骨架, ~30 LOC no-op 实现) with the following interface:
@@ -34,3 +28,4 @@ The system MUST provide `test/test_command_processor_mvp_skeleton.cc` validating
 #### Scenario: Skeleton test passes 5 transitions
 - **WHEN** `ctest -R "test_command_processor_mvp_skeleton"` runs
 - **THEN** it MUST PASS (s2 W3 acceptance for CP 骨架)
+

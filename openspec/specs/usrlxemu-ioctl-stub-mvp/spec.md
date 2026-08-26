@@ -1,13 +1,8 @@
-# Spec: UsrLinuxEmuIoctlStub (s2 IOCTL bridge)
+# usrlxemu-ioctl-stub-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s2 change — 4 IOCTL stub for UsrLinuxEmu ↔ CppTLM bridge
-> **关联**: Phase F-H.3
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s2-dgpu-board. Update Purpose after archive.
+## Requirements
 ### Requirement: usrlxemu-ioctl-stub-4-codes
 
 The system MUST provide a `UsrLinuxEmuIoctlStub` class in `include/tlm/gpu/usrlxemu_ioctl_stub_mvp.hh` + `src/tlm/gpu/usrlxemu_ioctl_stub_mvp.cc` implementing exactly **4 IOCTL codes**:
@@ -40,3 +35,4 @@ The system MUST provide `test/test_usrlxemu_ioctl_stub.cc` covering all 4 IOCTL 
 #### Scenario: All 4 IOCTL codes covered
 - **WHEN** `ctest -R "test_usrlxemu_ioctl_stub"` runs after s2 W4
 - **THEN** it MUST PASS covering 0x27 LOAD / 0x28 -ENOSYS / 0x29 UNLOAD / 0x01 PUSHBUFFER (s2-G4 acceptance)
+

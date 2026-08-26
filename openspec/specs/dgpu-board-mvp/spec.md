@@ -1,15 +1,8 @@
-# Spec: DGpuBoardTLM (dGPU Board MVP, s2 W3-4)
+# dgpu-board-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s2 change — dGPU 板卡 8-组件 ChStreamModuleBase wrapper
-> **Parent**: `cpptlm-v05-mvp-s1-ptxemu-integration` (P0, archived b68abe6)
-> **关联 ADR**: [`docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md`](../../../../docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md) D4/D5
-> **依赖**: s1 PtxEmuSubmoduleMVP + CudaCoreAdapterMVP 已 archive
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s2-dgpu-board. Update Purpose after archive.
+## Requirements
 ### Requirement: dgpu-board-8-component-wrapper
 
 The system MUST provide a `DGpuBoardTLM` class in `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc` inheriting from `ChStreamModuleBase` that wraps **8 components** as a single ChStream module (per Phase F-H.2 of design.md). The 8 components MUST be:
@@ -40,3 +33,4 @@ The system MUST register `DGpuBoardTLM` and `UsrLinuxEmuIoctlStub` via `REGISTER
 #### Scenario: ModuleFactory creates DGpuBoardTLM
 - **WHEN** JSON config contains `{"name": "dgpu_board_0", "type": "DGpuBoardTLM"}`
 - **THEN** `ModuleFactory::instantiateAll` MUST succeed and return a non-null `SimObject*`
+

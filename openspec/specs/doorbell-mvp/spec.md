@@ -1,14 +1,8 @@
-# Spec: Doorbell + CompletionRing (s2 T-s2-1)
+# doorbell-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s2 change — SQ tail register + strong-order write + completion ring push
-> **关联**: `docs/research/PCIe/PCIe_上的保序write.md` §4 (250-700ns latency range)
-> **依赖**: s1 已 archive
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s2-dgpu-board. Update Purpose after archive.
+## Requirements
 ### Requirement: doorbell-strong-order-write
 
 The system MUST provide a `Doorbell` class in `include/tlm/gpu/doorbell_mvp.hh` + `src/tlm/gpu/doorbell_mvp.cc` implementing SQ tail register write with **strong-order write** semantics. Latency MUST fall within the 250-700ns range per PCIe ordering research.
@@ -36,3 +30,4 @@ The system MUST provide a `CompletionRing` class in `include/tlm/gpu/completion_
 #### Scenario: Host notify hook fires once per entry
 - **WHEN** 10 `on_warp_complete` calls happen in sequence
 - **THEN** `host_notify` MUST fire exactly 10 times (no drops, no duplicates)
+
