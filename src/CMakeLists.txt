@@ -62,6 +62,7 @@ set(CORE_SOURCES
 # PTX-EMU 集成代码仅在 CPPTLM_WITH_PTX_EMU=ON 时编译 (默认 OFF)
 # - ptx_emu_submodule_mvp.cc (facade, 仅 include ptxemu/device_api.h, C++17)
 # - cuda_core_adapter_mvp.cc (adapter, 仅 include ptxemu/device_api.h, C++17)
+# - dgpu_board_mvp.cc (s2 W3-4: DGpuBoardTLM 8-component wrapper, 依赖 cuda_core_adapter_mvp + ptx_emu_submodule_mvp)
 #
 # 旧 S1 (c2038a93 pin) 的 WU-2 stub.cc + WU-3/WU-4 OBJECT 库块 已废弃:
 # - 新 PTX-EMU fcdad151+ 不再消费 g_cpptlm_bridge, stub.cc 不需要
@@ -71,6 +72,7 @@ if(CPPTLM_WITH_PTX_EMU)
     list(APPEND CORE_SOURCES
         tlm/gpu/ptx_emu_submodule_mvp.cc # HSK-8: PTX functional facade (仅 include ptxemu/device_api.h)
         tlm/gpu/cuda_core_adapter_mvp.cc  # HSK-8: CudaCoreAdapter timing (仅 include ptxemu/device_api.h)
+        tlm/gpu/dgpu_board_mvp.cc  # s2 W3-4: DGpuBoardTLM 8-component wrapper (depends on cuda_core_adapter_mvp + ptx_emu_submodule_mvp)
     )
 endif()
 
