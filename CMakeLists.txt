@@ -73,6 +73,16 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 # ==============================================================================
+# s2 W4: dGPU MVP config generation
+# ==============================================================================
+set(PTX_EMU_ROOT "${CMAKE_SOURCE_DIR}/external/PTX-EMU" CACHE PATH "PTX-EMU source root")
+configure_file(
+    "${CMAKE_SOURCE_DIR}/configs/dgpu_board_v1_mvp.json.in"
+    "${CMAKE_BINARY_DIR}/configs/dgpu_board_v1_mvp.json"
+    @ONLY
+)
+
+# ==============================================================================
 # 输出目录
 # ==============================================================================
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

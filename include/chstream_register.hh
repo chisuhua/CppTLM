@@ -23,6 +23,7 @@
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
 #include "tlm/gpu/gpu_compute_unit_tlm.hh"
 #include "tlm/gpu/dgpu_board_mvp.hh"
+#include "tlm/gpu/usrlxemu_ioctl_stub_mvp.hh"
 #include "bundles/compute_bundles_tlm.hh"
 #include "rtl/hybrid_cache_wrapper.hh"
 #include "core/module_factory.hh"
@@ -61,6 +62,7 @@
     ModuleFactory::registerObject<tlm::MinimalWarpSchedulerTLM>("MinimalWarpSchedulerTLM"); \
     ModuleFactory::registerObject<tlm::GpuComputeUnitTLM>("GpuComputeUnitTLM"); \
     ModuleFactory::registerObject<tlm::gpu::DGpuBoardTLM>("DGpuBoardTLM"); \
+    ModuleFactory::registerObject<tlm::gpu::UsrLinuxEmuIoctlStub>("UsrLinuxEmuIoctlStub"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
