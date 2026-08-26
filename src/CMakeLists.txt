@@ -47,6 +47,8 @@ set(CORE_SOURCES
     # - tlm/gpu/memory_bridge.cc       (deprecated by HSK-6, removed in v3.0 P4 — early delete OK)
     # - tlm/gpu/ptx_emu_driver_shim.cc (cpptlm_set_driver removed by HSK-6 — early delete OK)
     tlm/gpu/dgpu_bar.cc
+    tlm/gpu/doorbell_mvp.cc        # s2 W3: SQ tail register + strong-order write
+    tlm/gpu/completion_ring_mvp.cc # s2 W3: push + host_notify hook
     tlm/gpu/scoreboard_tlm.cc  # D1-Full P1: IScoreboard 实现
     tlm/gpu/pipeline_tlm.cc    # D1-Full P1: IPipelineLatencyProvider 实现
     tlm/gpu/tensor_core_tlm.cc # D1-Full P1: ITensorCoreTiming 实现
