@@ -1,6 +1,6 @@
 {
   "name": "ring_topology_tlm",
-  "description": "8-node ring topology with TLM modules (CPUTLM + CacheTLM + MemoryTLM)",
+  "description": "8-node ring topology with TLM modules (CPUTLM + CacheTLM + MemoryTLM). Each CPU ↔ cache and cache ↔ mem is bidirectional to satisfy topology reachability (VALID-02).",
   "modules": [
     { "name": "node_0", "type": "CPUTLM" },
     { "name": "node_1", "type": "CPUTLM" },
@@ -23,7 +23,17 @@
     { "src": "node_5", "dst": "cache_1", "latency": 1, "bandwidth": 100 },
     { "src": "node_6", "dst": "cache_1", "latency": 1, "bandwidth": 100 },
     { "src": "node_7", "dst": "cache_1", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_0", "dst": "node_0", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_0", "dst": "node_1", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_0", "dst": "node_2", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_0", "dst": "node_3", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_1", "dst": "node_4", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_1", "dst": "node_5", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_1", "dst": "node_6", "latency": 1, "bandwidth": 100 },
+    { "src": "cache_1", "dst": "node_7", "latency": 1, "bandwidth": 100 },
     { "src": "cache_0", "dst": "mem", "latency": 10, "bandwidth": 100 },
-    { "src": "cache_1", "dst": "mem", "latency": 10, "bandwidth": 100 }
+    { "src": "cache_1", "dst": "mem", "latency": 10, "bandwidth": 100 },
+    { "src": "mem", "dst": "cache_0", "latency": 10, "bandwidth": 100 },
+    { "src": "mem", "dst": "cache_1", "latency": 10, "bandwidth": 100 }
   ]
 }
