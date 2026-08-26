@@ -9,6 +9,7 @@
 #define CPPTLM_DGPU_BOARD_MVP_H
 
 #include "core/chstream_module.hh"
+#include "framework/stream_adapter.hh"
 #include <cstdint>
 #include <memory>
 
@@ -43,6 +44,10 @@ namespace tlm::gpu {
         void init() override;
         void tick() override;
         void shutdown();
+
+        void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
+        void set_stream_adapter(cpptlm::StreamAdapterBase* adapters[]) override;
+        unsigned num_ports() const override { return 1; }
 
         bool has_s1_components() const;
 

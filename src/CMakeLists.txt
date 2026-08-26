@@ -78,6 +78,9 @@ endif()
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
 if(CPPTLM_WITH_PTX_EMU)
+    target_compile_definitions(cpptlm_core PRIVATE CPPTLM_WITH_PTX_EMU)
+endif()
+if(CPPTLM_WITH_PTX_EMU)
     # HSK-8 Phase 2 (per #22 comment step 2): link ptxemu_core (PUBLIC
     # propagates include path + lib deps to cpptlm_core consumers)
     target_link_libraries(cpptlm_core PUBLIC ptxemu_core)

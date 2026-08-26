@@ -68,7 +68,6 @@ namespace tlm::gpu {
         }
         if (!impl_->ptx_emu) {
             impl_->ptx_emu = std::make_unique<PtxEmuSubmoduleMVP>();
-            impl_->ptx_emu->initialize();
         }
 #endif
         impl_->initialized = true;
@@ -83,6 +82,14 @@ namespace tlm::gpu {
 #endif
         impl_->bar.shutdown();
         impl_->initialized = false;
+    }
+
+    void DGpuBoardTLM::set_stream_adapter(cpptlm::StreamAdapterBase*) {
+        // No-op for s2 MVP (single-port module, no stream adapter needed)
+    }
+
+    void DGpuBoardTLM::set_stream_adapter(cpptlm::StreamAdapterBase*[]) {
+        // No-op for s2 MVP
     }
 
     uint64_t DGpuBoardTLM::install_kernel_module(const uint8_t* image_bytes, size_t size) {
