@@ -4,6 +4,7 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 file(GLOB TEST_SOURCES "test_*.cc")
+# s2 W3 T-s2-1: test_doorbell_strong_order_mvp.cc 由上述 GLOB 自动收录
 # test_cppHDL_smoke.cc 需要 CppHDL 头文件 (ch.hpp 等)，
 # 仅当 BUILD_RTL=ON 时可编译。它已在 test/rtl/CMakeLists.txt 中
 # 按 BUILD_RTL 条件注册（产生 cpptlm_rtl_tests），主测试 target
