@@ -69,12 +69,12 @@ s2 价值独立(但**编译依赖 s1**):
 | **s2-G2** Doorbell strong-order 250-700ns 区间测试 PASS | CppTLM | ⏳ W3 | `ctest -R "test_doorbell_strong_order_mvp"` PASS |
 | **s2-G3** SubmitQueue WDU 5 个单测 PASS | CppTLM | ⏳ W3 | `ctest -R "test_submit_queue_mvp"` 5 个文件 PASS |
 | **s2-G4** UsrLinuxEmuIoctlStub 4 IOCTL 端到端 PASS | CppTLM | ⏳ W4 | `ctest -R "test_usrlxemu_ioctl_stub"` PASS(0x27/0x28-ENOSYS/0x29/0x01) |
-| **s2-G5** DGpuBoardTLM 6 SECTION E2E 测试 PASS | CppTLM | ⏳ W4 | `ctest -R "test_dgpu_board_v1_mvp_from_config"` 6 SECTION PASS |
+| **s2-G5** DGpuBoardTLM 5 SECTION E2E 测试 PASS(item 4 deferred to s3,per Oracle M3)| CppTLM | ⏳ W4 | `ctest -R "test_dgpu_board_v1_mvp_from_config"` 5 SECTION PASS |
 | **s2-G6** validate_topology 集成 PASS | CppTLM | ⏳ W4 | `cmake --build build --target validate_topology` PASS |
 
 **最终验收(本 change 完成时)**:
 - [ ] s2-G1 ~ s2-G6 全部 ✅
-- [ ] **10 个测试文件 PASS**(per Phase L:1 Doorbell + 5 SQ + 1 E2E 6 SECTION + 1 IOCTL 4 IOCTL + 2 骨架测试 CP/TMU)
+- [ ] **10 个测试文件 PASS**(per Phase L:1 Doorbell + 5 SQ + 1 E2E 5 SECTION + 1 IOCTL 4 IOCTL + 2 骨架测试 CP/TMU)
 - [ ] **本 change 可独立 archive**
 
 ---

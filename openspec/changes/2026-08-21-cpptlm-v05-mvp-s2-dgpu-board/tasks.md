@@ -96,8 +96,8 @@ git commit -am "feat(submit-queue-mvp): WDU distribution network (single-SM, per
   //     Pm4MethodDispatch parse_method(...) override { ... }
   // };
   ```
-- [ ] 6 SECTION E2E 第 3 项"H2D 写 VRAM → install_kernel_module 返回 0"在 s2 W4 即可 PASS(CP 骨架 no-op,install_kernel_module 直接调 facade)
-- [ ] 6 SECTION E2E 第 4 项"IOCTL 0x01 pushbuffer → CQ 收到 N entry"**在 s2 W4 仍 FAIL**(待 s3 填充 CP decoder 后);s2 E2E 降级为 5 SECTION + "CP-pending" 标记
+- [ ] 5 SECTION E2E 第 3 项"H2D 写 VRAM → install_kernel_module 返回 0"在 s2 W4 即可 PASS(CP 骨架 no-op,install_kernel_module 直接调 facade)
+- [ ] 5 SECTION E2E 第 4 项"IOCTL 0x01 pushbuffer → CQ 收到 N entry"**在 s2 W4 仍 ⏳ FAIL**(待 s3 填充 CP decoder 后);s2 E2E 降级为 5 SECTION + "CP-pending" 标记(per Oracle M3)
 - [ ] `test/test_command_processor_mvp_skeleton.cc`:CP 状态机骨架测试 PASS(5 state 转换 no-op + wake)
 
 **Commit**:
@@ -146,14 +146,14 @@ git commit -am "feat(tmu-dispatch-mvp): skeleton (backpressure stub, per Oracle 
 - [ ] `tick()` 串联 4 阶段:`cp_.tick() → tmu_.tick() → sq_.tick() → cuda_core_.tick()`(per Phase F-H.2 §4)
 - [ ] 入口方法:`install_kernel_module(vram_addr, size)` + `submit_kernel(req)` + `write_reg(offset, value)`
 - [ ] `include/chstream_register.hh` 追加 `REGISTER_CHSTREAM(DGpuBoardTLM)`
-- [ ] **6 SECTION E2E 降级验收**(s2 W4 可达):
+- [ ] **5 SECTION E2E 降级验收**(s2 W4 可达,per Oracle M3):
   1. `validate_topology` 通过该 JSON
   2. `instantiateAll` 返回 true,`getInstance("dgpu_board0")` 存在
   3. H2D: 写 VRAM → `install_kernel_module` 返回 0 + image_handle ≠ 0 ✅
   4. Launch(0x01 pushbuffer)→ `cp_.tick()` no-op + CQ 收到 N entry(因 s3 CP decoder 未填充,**此处可能 N=0 — 在 s3 完成后才 N=N)⏳
   5. host_notify 触发 ≥1 次 ✅
   6. 负面: `ptx_emu_root` 指向不存在路径 → `instantiateAll` 失败 ✅
-- [ ] **W3-4 可独立 archive**(CP/TMU 骨架编译通过 + 5 SECTION PASS + 第 4 项标注"待 s3 填充")
+- [ ] **W3-4 可独立 archive**(CP/TMU 骨架编译通过 + 5 SECTION PASS + 第 4 项标注"⏳ 待 s3 填充",per Oracle M3)
 
 **Commit**:
 ```bash
@@ -188,8 +188,8 @@ git commit -am "feat(usrlxemu-ioctl-stub): 4 IOCTL stub (0x27/0x28-ENOSYS/0x29/0
 - [ ] 1 个 `UsrLinuxEmuIoctlStub` 绑定 dgpu_board0
 - [ ] 根 CMakeLists 配置 `configure_file(...)`
 - [ ] 纳入 `validate_topology` CMake target 扫描
-- [ ] 新建 `test/test_dgpu_board_v1_mvp_from_config.cc`(6 SECTION 验收)
-- [ ] 6 SECTION E2E 验收(per ADR-SOC-06 G-MVP-2):
+- [ ] 新建 `test/test_dgpu_board_v1_mvp_from_config.cc`(5 SECTION 验收 + item 4 ⏳,per Oracle M3)
+- [ ] 5 SECTION E2E 验收(per ADR-SOC-06 G-MVP-2 + Oracle M3,item 4 ⏳ deferred to s3):
   1. `validate_topology` 通过该 JSON
   2. `instantiateAll` 返回 true,`getInstance("dgpu_board0")` 存在
   3. H2D: 写 VRAM → `install_kernel_module` 返回 0 + image_handle ≠ 0
@@ -200,7 +200,7 @@ git commit -am "feat(usrlxemu-ioctl-stub): 4 IOCTL stub (0x27/0x28-ENOSYS/0x29/0
 **Commit**:
 ```bash
 git commit -am "feat(configs): dgpu_board_v1_mvp.json with validate_topology support"
-git commit -am "test(dgpu-board-v1-mvp): 6 SECTION E2E + 4 IOCTL tests (per Phase F-H.3)"
+git commit -am "test(dgpu-board-v1-mvp): 5 SECTION E2E (item 4 ⏳ s3) + 4 IOCTL tests (per Phase F-H.3 + Oracle M3)"
 ```
 
 ---
@@ -213,7 +213,7 @@ git commit -am "test(dgpu-board-v1-mvp): 6 SECTION E2E + 4 IOCTL tests (per Phas
 | R2 | 4 IOCTL stub 与真实 IOCTL 行为偏差 | 中 | 中 | stub 严格遵循 `gpu_ioctl.h` 真实结构 |
 | R3 | SubmitQueue 反压链路 | 中 | 中 | 容量满 → 拒绝不驱逐 + CP backoff |
 | R4 | Doorbell strong-order 延迟违反 | 中 | 中 | 测试断言 250-700ns 区间 |
-| R5 | `ptx_emu_root` 注入失败(JSON config 负面场景)| 中 | 低 | 6 SECTION 第 6 项专门验证 |
+| R5 | `ptx_emu_root` 注入失败(JSON config 负面场景)| 中 | 低 | 5 SECTION 第 5 项专门验证(item 4 ⏳ deferred,per Oracle M3)|
 
 ---
 
@@ -221,7 +221,7 @@ git commit -am "test(dgpu-board-v1-mvp): 6 SECTION E2E + 4 IOCTL tests (per Phas
 
 最终 s2 archive 前:
 - [ ] T-s2-1 ~ T-s2-5 完成
-- [ ] **10 个测试文件 PASS**(per Phase L:1 Doorbell + 5 SQ + 1 E2E 6 SECTION + 1 IOCTL 4 IOCTL + 2 骨架测试 CP/TMU)
+- [ ] **10 个测试文件 PASS**(per Phase L:1 Doorbell + 5 SQ + 1 E2E 5 SECTION + 1 IOCTL 4 IOCTL + 2 骨架测试 CP/TMU)
 - [ ] 编译防火墙仍 PASS(s1 验证基础 + s2 不破坏)
 - [ ] docs 同步检查 PASS
 
