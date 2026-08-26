@@ -35,6 +35,8 @@ if(Python3_EXECUTABLE)
     # Create a combined validation target
     add_custom_target(validate_topology
         COMMAND ${Python3_EXECUTABLE} ${TOPOLOGY_VALIDATOR}
+            ${CMAKE_BINARY_DIR}/configs/dgpu_board_v1_mvp.json
+        COMMAND ${Python3_EXECUTABLE} ${TOPOLOGY_VALIDATOR}
             ${CMAKE_SOURCE_DIR}/configs/mesh_2x2_tlm.json
         COMMAND ${Python3_EXECUTABLE} ${TOPOLOGY_VALIDATOR}
             ${CMAKE_SOURCE_DIR}/configs/mesh_4x4_tlm.json
