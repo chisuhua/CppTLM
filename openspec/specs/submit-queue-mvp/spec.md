@@ -1,13 +1,8 @@
-# Spec: SubmitQueue WDU Distribution (s2 T-s2-2)
+# submit-queue-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s2 change — WDU 分发网络 (single-SM MVP)
-> **关联**: `docs/research/WDUtoSM/overview.md` (NVIDIA Hopper); Phase F-H.5
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s2-dgpu-board. Update Purpose after archive.
+## Requirements
 ### Requirement: submit-queue-wdu-distribution
 
 The system MUST provide a `SubmitQueue` class in `include/tlm/gpu/submit_queue_mvp.hh` + `src/tlm/gpu/submit_queue_mvp.cc` (~150 LOC) implementing **WDU distribution network** with:
@@ -50,3 +45,4 @@ All 5 MUST pass `ctest -R "test_submit_queue_mvp"` (s2-G3 acceptance).
 #### Scenario: All 5 SQ tests pass
 - **WHEN** `ctest -R "test_submit_queue_mvp"` runs after s2 W3
 - **THEN** all 5 test files MUST PASS (s2-G3 acceptance)
+

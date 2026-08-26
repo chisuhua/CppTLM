@@ -1,13 +1,8 @@
-# Spec: TmuDispatchProcessor Skeleton (s2 T-s2-3b)
+# tmu-dispatch-skeleton-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s2 change — TMU 骨架（反压 + set_handler 注入接口，s3 填充 dep chain + 真实 handler）
-> **关联**: Oracle ses_fe0b6e44 修复 CRITICAL s2 逆依赖 s3
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s2-dgpu-board. Update Purpose after archive.
+## Requirements
 ### Requirement: tmu-dispatch-skeleton-interface
 
 The system MUST provide a `TmuDispatchProcessor` class in `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` + `src/tlm/gpu/tmu_dispatch_processor_mvp.cc` (~150 LOC 骨架) with:
@@ -33,3 +28,4 @@ The system MUST provide `test/test_tmu_dispatch_processor_mvp_skeleton.cc` valid
 #### Scenario: Skeleton test passes back-pressure + capacity
 - **WHEN** `ctest -R "test_tmu_dispatch_processor_mvp_skeleton"` runs
 - **THEN** it MUST PASS (s2 W3 acceptance for TMU 骨架)
+
