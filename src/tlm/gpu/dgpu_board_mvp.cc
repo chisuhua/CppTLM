@@ -12,6 +12,8 @@
 #include "tlm/gpu/command_processor_mvp.hh"
 #include "tlm/gpu/tmu_dispatch_processor_mvp.hh"
 
+#include <cstring>
+
 #ifdef CPPTLM_WITH_PTX_EMU
 #include "tlm/gpu/cuda_core_adapter_mvp.hh"
 #include "tlm/gpu/ptx_emu_submodule_mvp.hh"
@@ -123,8 +125,59 @@ namespace tlm::gpu {
         return impl_->sq.enqueue(cta) ? 0 : -1;
     }
 
+    bool DGpuBoardTLM::cp_is_idle() const {
+        return impl_->cp.state() == CommandProcessor::State::IDLE;
+    }
+
+    size_t DGpuBoardTLM::sq_pending_count() const {
+        return impl_->sq.pending_count();
+    }
+
+    size_t DGpuBoardTLM::sq_active_count() const {
+        return impl_->sq.active_count();
+    }
+
+    size_t DGpuBoardTLM::sq_inflight_count() const {
+        return impl_->sq.inflight_count();
+    }
+
+    uint64_t DGpuBoardTLM::doorbell_sq_tail(uint32_t stream_id) const {
+        return impl_->doorbell.sq_tail(stream_id);
+    }
+
+    size_t DGpuBoardTLM::bar0_size() const {
+        return 0x10000;
+    }
+
+    size_t DGpuBoardTLM::bar1_size() const {
+        return 256ULL * 1024ULL * 1024ULL;
+    }
+
+    int32_t DGpuBoardTLM::read_vram(uint64_t offset, void* host_buf, size_t size) {
+        if (!impl_->initialized) return -19;
+        if (host_buf == nullptr || size == 0) return -22;
+        void* vram = impl_->bar.vram_base();
+        if (vram == nullptr) return -5;
+        if (offset > 256ULL * 1024ULL * 1024ULL || size > 256ULL * 1024ULL * 1024ULL - offset) return -22;
+        std::memcpy(host_buf, static_cast<uint8_t*>(vram) + offset, size);
+        return 0;
+    }
+
+    int32_t DGpuBoardTLM::write_vram(uint64_t offset, const void* host_buf, size_t size) {
+        if (!impl_->initialized) return -19;
+        if (host_buf == nullptr || size == 0) return -22;
+        void* vram = impl_->bar.vram_base();
+        if (vram == nullptr) return -5;
+        if (offset > 256ULL * 1024ULL * 1024ULL || size > 256ULL * 1024ULL * 1024ULL - offset) return -22;
+        std::memcpy(static_cast<uint8_t*>(vram) + offset, host_buf, size);
+        return 0;
+    }
+
     void DGpuBoardTLM::write_reg(uint32_t offset, uint32_t value) {
-        if (offset >= 0x1000 && offset < 0x2000) {
+        if (offset == 0x0014) {
+            impl_->doorbell.ring(0, value);
+            impl_->cp.wake();
+        } else if (offset >= 0x1000 && offset < 0x2000) {
             uint32_t stream_id = (offset - 0x1000) >> 2;
             impl_->doorbell.ring(stream_id, value);
             impl_->cp.wake();

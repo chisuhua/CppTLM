@@ -51,6 +51,23 @@ namespace tlm::gpu {
 
         bool has_s1_components() const;
 
+        // PCIe driver visibility: BAR0 status registers that driver polls
+        // to observe SOC internal state (no direct sub-component access)
+        bool cp_is_idle() const;
+        size_t sq_pending_count() const;
+        size_t sq_active_count() const;
+        size_t sq_inflight_count() const;
+        uint64_t doorbell_sq_tail(uint32_t stream_id) const;
+
+        // PCIe BAR1 VRAM access (DMA-style)
+        // Returns BAR0/1 region sizes for driver enumeration
+        size_t bar0_size() const;
+        size_t bar1_size() const;
+        // Read BAR1 (VRAM) at offset (driver reads DMA-completion buffer)
+        int32_t read_vram(uint64_t offset, void* host_buf, size_t size);
+        // Write BAR1 (VRAM) at offset (driver H2D image upload)
+        int32_t write_vram(uint64_t offset, const void* host_buf, size_t size);
+
     private:
         struct Impl;
         std::unique_ptr<Impl> impl_;
