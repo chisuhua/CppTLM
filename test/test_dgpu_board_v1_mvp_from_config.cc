@@ -13,7 +13,11 @@ TEST_CASE("DGpuBoardTLM: 5 SECTION E2E (item 4 ⏳ deferred to s3, per Oracle M3
 
     SECTION("1. validate_topology: DGpuBoardTLM instantiates without error") {
         REQUIRE_NOTHROW(board.init());
+#ifdef CPPTLM_WITH_PTX_EMU
         REQUIRE(board.has_s1_components());
+#else
+        REQUIRE_FALSE(board.has_s1_components());
+#endif
     }
 
     SECTION("2. instantiateAll: DGpuBoardTLM tick() runs without crash") {

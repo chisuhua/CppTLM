@@ -72,10 +72,14 @@ if(CPPTLM_WITH_PTX_EMU)
     list(APPEND CORE_SOURCES
         tlm/gpu/ptx_emu_submodule_mvp.cc # HSK-8: PTX functional facade (仅 include ptxemu/device_api.h)
         tlm/gpu/cuda_core_adapter_mvp.cc  # HSK-8: CudaCoreAdapter timing (仅 include ptxemu/device_api.h)
-        tlm/gpu/dgpu_board_mvp.cc  # s2 W3-4: DGpuBoardTLM 8-component wrapper (depends on cuda_core_adapter_mvp + ptx_emu_submodule_mvp)
-        tlm/gpu/usrlxemu_ioctl_stub_mvp.cc  # s2 W4: 4 IOCTL bridge
     )
 endif()
+
+# s2 W3-4: dGPU board always compiled; s1 components are #ifdef CPPTLM_WITH_PTX_EMU inside
+list(APPEND CORE_SOURCES
+    tlm/gpu/dgpu_board_mvp.cc            # s2 W3-4: DGpuBoardTLM 8-component wrapper
+    tlm/gpu/usrlxemu_ioctl_stub_mvp.cc    # s2 W4: 4 IOCTL bridge
+)
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
 if(CPPTLM_WITH_PTX_EMU)
