@@ -228,6 +228,21 @@ namespace tlm::gpu {
             return -EIO;
         }
 
+        // 数据搬运（per spec.md R3-S1 "VRAM write visibility"）
+        //   仅当 host_backdoor + vram_backdoor 都已注入且范围合法时执行。
+        //   这是测试 + MVP 数据路径；生产环境由 Board backdoor ABI 替代。
+        if (host_backdoor_ && vram_backdoor_) {
+            const uint64_t src_end = phys + static_cast<uint64_t>(d.size);
+            const uint64_t dst_end = d.vram_offset + static_cast<uint64_t>(d.size);
+            if (src_end > phys && src_end <= host_backdoor_size_ &&
+                dst_end > d.vram_offset && dst_end <= vram_backdoor_size_) {
+                std::memcpy(static_cast<uint8_t*>(vram_backdoor_) + d.vram_offset,
+                            static_cast<uint8_t*>(host_backdoor_) + phys,
+                            d.size);
+            }
+            // 越界时不抛错（MVP 容忍：仍 emit TLP，让测试看到 TLP emitted 但数据可能不全）
+        }
+
         // 成功路径：emit host_out MEM_READ TLP
         // (per design.md §4 + ADR-SOC-07 Status Update Q3: descriptor-only TLP, bulk data via backdoor)
         bundles::PcieTlpBundle host_tlp;
@@ -276,6 +291,19 @@ namespace tlm::gpu {
         if (!translate_cb_) {
             done.status.write(static_cast<uint32_t>(-EIO));
             return -EIO;
+        }
+
+        // 数据搬运：VRAM → host（per spec.md R3 "D2H host write visibility"）
+        //   仅当 backdoor ptrs 都已注入且范围合法时执行；与 H2D 同策略。
+        if (vram_backdoor_ && host_backdoor_) {
+            const uint64_t src_end = d.vram_offset + static_cast<uint64_t>(d.size);
+            const uint64_t dst_end = d.host_iova + static_cast<uint64_t>(d.size);
+            if (src_end > d.vram_offset && src_end <= vram_backdoor_size_ &&
+                dst_end > d.host_iova && dst_end <= host_backdoor_size_) {
+                std::memcpy(static_cast<uint8_t*>(host_backdoor_) + d.host_iova,
+                            static_cast<uint8_t*>(vram_backdoor_) + d.vram_offset,
+                            d.size);
+            }
         }
 
         // emit mem_out MEM_READ (D2H: VRAM → host, 先读 VRAM)

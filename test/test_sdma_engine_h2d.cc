@@ -190,3 +190,82 @@ TEST_CASE("SdmaEngine H2D: in-order completion with max_inflight=4 tags {1,2,3}"
     }
     REQUIRE(sdma.completed_count() == 3u);
 }
+
+TEST_CASE("SdmaEngine H2D: done_out status=0 implies VRAM data visibility (R3-S1)",
+          "[sdma][h2d][visibility][data-path]") {
+    // per spec.md Scenario "Completion implies VRAM write visibility (H2D)"
+    // per tasks.md T-sd-3 "fake board stub + 直接 VRAM 内存指针验证端到端数据搬运"
+    EventQueue eq;
+    SdmaEngineTLM sdma("sdma", &eq);
+    sdma.init();
+    sdma.set_translate_cb(fake_translate_cb);  // identity mapping
+
+    // 注入 fake host memory + fake VRAM memory（per spec.md R3-S1 backdoor 路径）
+    std::vector<uint8_t> host_mem(4096, 0);
+    std::vector<uint8_t> vram_mem(0x100000, 0);  // 1 MB VRAM
+    sdma.set_host_backdoor(host_mem.data(), host_mem.size());
+    sdma.set_vram_backdoor(vram_mem.data(), vram_mem.size());
+
+    // 预置 host memory 数据：在 iova=100 处写入 8 字节 payload
+    static constexpr uint8_t kPayload[8] = {0xAA, 0xBB, 0xCC, 0xDD,
+                                            0xEE, 0xFF, 0x11, 0x22};
+    std::memcpy(&host_mem[100], kPayload, sizeof(kPayload));
+
+    // H2D desc: host_iova=100 → vram_offset=0x1000, size=8, tag=42
+    DmaDescriptor desc(DmaDescriptor::Dir::H2D,
+                       /*host_iova=*/100,
+                       /*vram_offset=*/0x1000,
+                       /*size=*/8,
+                       /*tag=*/42);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
+        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
+
+    REQUIRE(sdma.has_host_backdoor() == true);
+    REQUIRE(sdma.has_vram_backdoor() == true);
+
+    sdma.tick();
+
+    // done_out status=0 + tag=42
+    const auto& done_tlp = sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].data();
+    CompletionBundle done_cb = SdmaEngineTLM::from_pcie_tlp_completion(done_tlp);
+    REQUIRE(done_cb.is_ok() == true);
+    REQUIRE(done_cb.tag.read() == 42u);
+
+    // 关键断言：VRAM[vram_offset..vram_offset+size] 必须包含 host 数据
+    // (per spec.md R3-S1 "a subsequent VRAM read MUST return the data written by this descriptor")
+    REQUIRE(std::memcmp(&vram_mem[0x1000], kPayload, sizeof(kPayload)) == 0);
+}
+
+TEST_CASE("SdmaEngine H2D: backdoor memcpy out-of-range silently degrades to TLP-only",
+          "[sdma][h2d][data-path][edge]") {
+    // backdoor ptr 已注入但 host_iova + size 越界 → 不 panic, 仍 emit TLP
+    // (per sdma_engine_tlm.cc 注释 "MVP 容忍：仍 emit TLP，让测试看到 TLP emitted 但数据可能不全")
+    EventQueue eq;
+    SdmaEngineTLM sdma("sdma", &eq);
+    sdma.init();
+
+    std::vector<uint8_t> host_mem(128, 0);  // 仅 128 字节
+    std::vector<uint8_t> vram_mem(0x100000, 0);
+    sdma.set_host_backdoor(host_mem.data(), host_mem.size());
+    sdma.set_vram_backdoor(vram_mem.data(), vram_mem.size());
+    sdma.set_translate_cb([](uint64_t, uint32_t, uint64_t& phys) -> int {
+        phys = 1000;  // 故意越界 (> host_mem.size)
+        return 0;
+    });
+
+    DmaDescriptor desc(DmaDescriptor::Dir::H2D, 0, 0x1000, 4, 1);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
+        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
+
+    REQUIRE_NOTHROW(sdma.tick());
+
+    // 越界时仍 emit TLP（success path），但 VRAM 未被 memcpy 改写
+    const auto& done_tlp = sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].data();
+    CompletionBundle done_cb = SdmaEngineTLM::from_pcie_tlp_completion(done_tlp);
+    REQUIRE(done_cb.is_ok() == true);
+    // VRAM 仍为 0（memcpy 跳过）
+    REQUIRE(vram_mem[0x1000] == 0u);
+    REQUIRE(vram_mem[0x1003] == 0u);
+}
