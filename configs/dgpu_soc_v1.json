@@ -1,0 +1,43 @@
+{
+  "name": "dgpu_soc_v1",
+  "description": "CppTLM dGPU SOC topology with PCIe Endpoint (per openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/tasks.md T-pe-5). Integrates SOC-internal PcieEndpointTLM (slave) with the DGpuBoardTLM C++ ABI shell (per ADR-SOC-07 D2).",
+  "modules": [
+    {
+      "name": "dgpu_board_0",
+      "type": "DGpuBoardTLM",
+      "params": {
+        "ptx_emu_root": "@PTX_EMU_ROOT@"
+      }
+    },
+    {
+      "name": "vram0",
+      "type": "MemoryTLM",
+      "params": {
+        "capacity_gb": 1
+      }
+    },
+    {
+      "name": "usrlxemu_ioctl_0",
+      "type": "UsrLinuxEmuIoctlStub",
+      "params": {}
+    },
+    {
+      "name": "pcie_ep",
+      "type": "PcieEndpointTLM",
+      "params": {
+        "config_size": 4096,
+        "msix_num_vectors": 16,
+        "bar0_registers": [
+          {
+            "offset": 20,
+            "name": "GPU_REG_DOORBELL",
+            "access": "WO",
+            "side_effect": "doorbell",
+            "stream_id": 0
+          }
+        ]
+      }
+    }
+  ],
+  "connections": []
+}

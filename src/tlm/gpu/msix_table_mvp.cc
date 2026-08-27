@@ -8,8 +8,7 @@
 
 namespace tlm::gpu {
 
-    MsiXTable::MsiXTable(uint16_t num_vectors)
-        : num_vectors_(num_vectors) {
+    MsiXTable::MsiXTable(uint16_t num_vectors) : num_vectors_(num_vectors) {
         if (num_vectors == 0) {
             throw std::invalid_argument("MsiXTable: num_vectors must be > 0");
         }
@@ -20,14 +19,15 @@ namespace tlm::gpu {
         for (auto& e : entries_) {
             e.msg_addr = 0;
             e.msg_data = 0;
-            e.control = 0;  // mask bit = 0 (unmasked by default)
+            e.control = 0; // mask bit = 0 (unmasked by default)
         }
         pending_irq_out_.clear();
     }
 
     bool MsiXTable::configure_vector(uint16_t vector, uint64_t msg_addr, uint32_t msg_data,
-                                      uint32_t control) {
-        if (vector >= num_vectors_) return false;
+                                     uint32_t control) {
+        if (vector >= num_vectors_)
+            return false;
         entries_[vector].msg_addr = msg_addr;
         entries_[vector].msg_data = msg_data;
         entries_[vector].control = control;
@@ -35,9 +35,10 @@ namespace tlm::gpu {
     }
 
     bool MsiXTable::set_mask(uint16_t vector, bool masked) {
-        if (vector >= num_vectors_) return false;
+        if (vector >= num_vectors_)
+            return false;
         if (masked) {
-            entries_[vector].control |= 0x1u;  // bit 0 = mask
+            entries_[vector].control |= 0x1u; // bit 0 = mask
         } else {
             entries_[vector].control &= ~0x1u;
         }
@@ -49,15 +50,18 @@ namespace tlm::gpu {
     }
 
     bool MsiXTable::is_masked(uint16_t vector) const {
-        if (vector >= num_vectors_) return false;
+        if (vector >= num_vectors_)
+            return false;
         return (entries_[vector].control & 0x1u) != 0;
     }
 
     bool MsiXTable::update_pending(uint16_t vector, uint32_t trans_id) {
-        if (vector >= num_vectors_) return false;
+        if (vector >= num_vectors_)
+            return false;
 
         // 触发前判断 mask：masked vector 不投递
-        if (is_masked(vector)) return false;
+        if (is_masked(vector))
+            return false;
 
         const auto& entry = entries_[vector];
         IrqOutEvent evt;
@@ -70,7 +74,8 @@ namespace tlm::gpu {
     }
 
     bool MsiXTable::clear_pending(uint16_t vector) {
-        if (vector >= num_vectors_) return false;
+        if (vector >= num_vectors_)
+            return false;
         // pending_irq_out_ 是 FIFO，按 vector 匹配并删除第一个匹配项
         for (auto it = pending_irq_out_.begin(); it != pending_irq_out_.end(); ++it) {
             if (it->vector == vector) {
@@ -82,15 +87,18 @@ namespace tlm::gpu {
     }
 
     bool MsiXTable::is_pending(uint16_t vector) const {
-        if (vector >= num_vectors_) return false;
+        if (vector >= num_vectors_)
+            return false;
         for (const auto& evt : pending_irq_out_) {
-            if (evt.vector == vector) return true;
+            if (evt.vector == vector)
+                return true;
         }
         return false;
     }
 
     const MsiXTable::IrqOutEvent* MsiXTable::try_pop_irq_out() {
-        if (pending_irq_out_.empty()) return nullptr;
+        if (pending_irq_out_.empty())
+            return nullptr;
         return &pending_irq_out_.front();
     }
 

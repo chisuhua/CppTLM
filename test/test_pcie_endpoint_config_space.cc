@@ -5,12 +5,12 @@
 // 参考: openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/design.md §6
 //       spec.md Scenario "Capability chain walk"
 
-#include "catch_amalgamated.hpp"
-#include "tlm/gpu/pcie_endpoint_tlm.h"
-#include "tlm/gpu/pcie_config_space_mvp.hh"
 #include "bundles/pcie_bundles_tlm.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "framework/stream_adapter.hh"
+#include "tlm/gpu/pcie_config_space_mvp.hh"
+#include "tlm/gpu/pcie_endpoint_tlm.h"
 
 using namespace tlm::gpu;
 using namespace bundles;
@@ -45,7 +45,7 @@ TEST_CASE("PcieEndpoint: Config Space capability chain walk", "[pcie][endpoint][
     // 添加 3 个 capability：MSI-X (id=17) → PCIe (id=16) → AER (id=1) → end
     REQUIRE(ep.config_space().add_capability(17, 0x40, 0x50, 0xAB00) == true);
     REQUIRE(ep.config_space().add_capability(16, 0x50, 0x60, 0x0002) == true);
-    REQUIRE(ep.config_space().add_capability(1,  0x60, 0x00, 0x0000) == true);
+    REQUIRE(ep.config_space().add_capability(1, 0x60, 0x00, 0x0000) == true);
 
     // capability_count = 3
     REQUIRE(ep.config_space().capability_count() == 3u);
@@ -56,16 +56,16 @@ TEST_CASE("PcieEndpoint: Config Space capability chain walk", "[pcie][endpoint][
     // walk chain：通过 next 字段连接
     const auto* c0 = ep.config_space().get_capability(0);
     REQUIRE(c0 != nullptr);
-    REQUIRE(c0->id == 17);  // MSI-X
+    REQUIRE(c0->id == 17); // MSI-X
     REQUIRE(c0->next == 0x50);
 
     const auto* c1 = ep.config_space().get_capability(1);
-    REQUIRE(c1->id == 16);  // PCIe
+    REQUIRE(c1->id == 16); // PCIe
     REQUIRE(c1->next == 0x60);
 
     const auto* c2 = ep.config_space().get_capability(2);
-    REQUIRE(c2->id == 1);   // AER
-    REQUIRE(c2->next == 0x00);  // chain end
+    REQUIRE(c2->id == 1);      // AER
+    REQUIRE(c2->next == 0x00); // chain end
 }
 
 TEST_CASE("PcieEndpoint: Config Space RO field protection", "[pcie][endpoint][config]") {
