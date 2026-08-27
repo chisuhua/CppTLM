@@ -46,6 +46,11 @@ endif()
 include(CTest)
 # 注意：不需要 include(Catch)，因为使用的是 catch_amalgamated.cpp
 
+# sdma-engine T-sd-3: 注册 sdma_engine 系列测试到 ctest
+# (per openspec/changes/2026-08-26-cpptlm-dgpu-sdma-engine/tasks.md §T-sd-3)
+# 通过 ctest 标签 + Catch2 -t 标志过滤到对应测试
+add_test(NAME sdma_engine COMMAND cpptlm_tests "[sdma]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)
