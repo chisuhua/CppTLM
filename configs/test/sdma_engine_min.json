@@ -1,0 +1,16 @@
+{
+  "name": "sdma_engine_min",
+  "description": "SdmaEngineTLM minimal topology for SD-G5 (JSON instantiation + 5-port adapter injection). Per openspec/changes/2026-08-26-cpptlm-dgpu-sdma-engine/tasks.md T-sd-3. 仅声明类型，无 connections (因 SdmaEngineTLM 的端到端测试用 fake stub harness 而非真实 board 接线)。",
+  "modules": [
+    {
+      "name": "sdma",
+      "type": "SdmaEngineTLM",
+      "params": {
+        "max_inflight": 4,
+        "translate_latency": 0,
+        "vram_size_bytes": 268435456
+      }
+    }
+  ],
+  "connections": []
+}
