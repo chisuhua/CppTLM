@@ -20,6 +20,7 @@ namespace tlm::gpu {
 
     void PcieConfigSpace::init() {
         std::memset(regs_.data(), 0, regs_.size() * sizeof(uint32_t));
+        capabilities_.clear();
 
         // Standard PCI header (Type 0): offsets 0x00..0x3F
         regs_[0x00 / 4] = (static_cast<uint32_t>(DEFAULT_VENDOR_ID) << 0)
@@ -28,8 +29,6 @@ namespace tlm::gpu {
                         | (static_cast<uint32_t>(DEFAULT_HEADER_TYPE) << 24);
         // Status register (offset 0x06): Capabilities Present bit
         regs_[0x06 / 4] = (1u << 4);  // bit 4 = Capabilities List
-        // Capabilities pointer (offset 0x34): start of chain
-        // (set by first add_capability call)
     }
 
     bool PcieConfigSpace::add_capability(uint8_t id, uint8_t offset, uint8_t next,
