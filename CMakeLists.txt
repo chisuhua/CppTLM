@@ -81,6 +81,12 @@ configure_file(
     "${CMAKE_BINARY_DIR}/configs/dgpu_board_v1_mvp.json"
     @ONLY
 )
+# pcie-endpoint T-pe-5: SOC topology with PcieEndpointTLM (per ADR-SOC-07 D2)
+configure_file(
+    "${CMAKE_SOURCE_DIR}/configs/dgpu_soc_v1.json.in"
+    "${CMAKE_BINARY_DIR}/configs/dgpu_soc_v1.json"
+    @ONLY
+)
 
 # ==============================================================================
 # 输出目录

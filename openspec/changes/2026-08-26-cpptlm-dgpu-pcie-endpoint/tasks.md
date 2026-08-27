@@ -37,8 +37,8 @@
 
 ### T-pe-5: 集成验证
 
-- [x] `configs/dgpu_soc_v1.json` 加入 `pcie_ep` 节点示例（仓库中无 `.in` 变体，直接交付 `.json`）
-- [x] 注：`configs/dgpu_soc_v1.json` 含 `@PTX_EMU_ROOT@` 占位符，实际装配走 `dgpu_board_v1_mvp.json.in` 路径；`pcie_ep` 节点为独立可验证的 SOC 片内 slave 示例
+- [x] `configs/dgpu_soc_v1.json.in` 加入 `pcie_ep` 节点示例（cmake `configure_file` 替换 `@PTX_EMU_ROOT@` 占位符 → 生成 `build-off/configs/dgpu_soc_v1.json`，与 `dgpu_board_v1_mvp.json.in` 同源）
+- [x] CMakeLists.txt 加 `configure_file(dgpu_soc_v1.json.in → dgpu_soc_v1.json)` 步骤
 - [x] `cmake --build build --target validate_topology` PASS
 - [x] `configs/test/pcie_endpoint_min.json` fixture：最小 `DGpuSoc` + `pcie_ep` JSON，用于 `test_pcie_endpoint_from_config.cc`（PE-G5 验证依赖）
 - [x] 全量 `build/bin/cpptlm_tests` 无回归
