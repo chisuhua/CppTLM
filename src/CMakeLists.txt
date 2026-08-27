@@ -52,6 +52,9 @@ set(CORE_SOURCES
     tlm/gpu/submit_queue_mvp.cc    # s2 W3: WDU distribution network (per Phase F-H.5)
     tlm/gpu/command_processor_mvp.cc  # s2 W3: CP skeleton (5-state FSM no-op + set_decoder injection)
     tlm/gpu/tmu_dispatch_processor_mvp.cc  # s2 W3: TMU skeleton (back-pressure stub + set_handler injection)
+    tlm/gpu/pcie_config_space_mvp.cc  # pcie-endpoint T-pe-2: Config Space MVP
+    tlm/gpu/pcie_bar_router_mvp.cc     # pcie-endpoint T-pe-2: BAR0 register routing (data-driven)
+    tlm/gpu/msix_table_mvp.cc          # pcie-endpoint T-pe-2: MSI-X vector table + mask
     tlm/gpu/scoreboard_tlm.cc  # D1-Full P1: IScoreboard 实现
     tlm/gpu/pipeline_tlm.cc    # D1-Full P1: IPipelineLatencyProvider 实现
     tlm/gpu/tensor_core_tlm.cc # D1-Full P1: ITensorCoreTiming 实现
