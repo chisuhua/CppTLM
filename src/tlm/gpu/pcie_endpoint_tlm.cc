@@ -180,6 +180,9 @@ namespace tlm::gpu {
             // BAR1 MEM 转发：descriptor-only, size > 8 时 data=0 (per design.md §2.3)
             if (req.size.read() > 8) {
                 resp.data.write(0);
+            } else {
+                // size <= 8: 内联 data 直接转发
+                resp.data.write(req.data.read());
             }
             resp.kind.write(kind);
             resp_out[PORT_MEM_OUT].write(resp);
