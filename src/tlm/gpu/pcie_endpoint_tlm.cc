@@ -14,23 +14,24 @@ namespace tlm::gpu {
     namespace {
         // JSON → Access 转换
         PcieBarRouter::Access parse_access(const std::string& s) {
-            if (s == "RO" || s == "ro") return PcieBarRouter::Access::RO;
-            if (s == "WO" || s == "wo") return PcieBarRouter::Access::WO;
-            return PcieBarRouter::Access::RW;  // 默认
+            if (s == "RO" || s == "ro")
+                return PcieBarRouter::Access::RO;
+            if (s == "WO" || s == "wo")
+                return PcieBarRouter::Access::WO;
+            return PcieBarRouter::Access::RW; // 默认
         }
 
         // JSON → SideEffect 转换
         PcieBarRouter::SideEffect parse_side_effect(const std::string& s) {
-            if (s == "doorbell") return PcieBarRouter::SideEffect::DOORBELL;
+            if (s == "doorbell")
+                return PcieBarRouter::SideEffect::DOORBELL;
             return PcieBarRouter::SideEffect::NONE;
         }
-    }  // namespace
+    } // namespace
 
     PcieEndpointTLM::PcieEndpointTLM(const std::string& name, EventQueue* eq)
-        : ChStreamModuleBase(name, eq),
-          cfg_space_(std::make_unique<PcieConfigSpace>()),
-          bar_router_(std::make_unique<PcieBarRouter>()),
-          msix_(std::make_unique<MsiXTable>()) {
+        : ChStreamModuleBase(name, eq), cfg_space_(std::make_unique<PcieConfigSpace>()),
+          bar_router_(std::make_unique<PcieBarRouter>()), msix_(std::make_unique<MsiXTable>()) {
     }
 
     PcieEndpointTLM::~PcieEndpointTLM() = default;
@@ -42,10 +43,10 @@ namespace tlm::gpu {
     }
 
     void PcieEndpointTLM::do_reset(const ResetConfig&) {
-        slave_in_.reset();
-        mmio_out_.reset();
-        mem_out_.reset();
-        irq_out_.reset();
+        for (unsigned i = 0; i < NUM_PORTS; i++) {
+            req_in[i].reset();
+            resp_out[i].reset();
+        }
     }
 
     void PcieEndpointTLM::set_stream_adapter(cpptlm::StreamAdapterBase* a) {
@@ -62,7 +63,8 @@ namespace tlm::gpu {
 
     bool PcieEndpointTLM::all_ports_have_adapter() const {
         for (unsigned i = 0; i < NUM_PORTS; i++) {
-            if (adapters_[i] == nullptr) return false;
+            if (adapters_[i] == nullptr)
+                return false;
         }
         return true;
     }
@@ -70,14 +72,14 @@ namespace tlm::gpu {
     void PcieEndpointTLM::on_config_loaded() {
         // params 从 sim_object set_config 注入
         const auto& cfg = get_config();
-        if (!cfg.is_object()) return;
+        if (!cfg.is_object())
+            return;
 
         // config_size 参数化 PcieConfigSpace
         if (cfg.contains("config_size")) {
             const std::size_t sz = cfg.value("config_size", 4096u);
             if (sz != 256 && sz != 4096) {
-                throw std::invalid_argument(
-                    "PcieEndpointTLM: config_size must be 256 or 4096");
+                throw std::invalid_argument("PcieEndpointTLM: config_size must be 256 or 4096");
             }
             cfg_space_ = std::make_unique<PcieConfigSpace>(sz);
         }
@@ -124,15 +126,16 @@ namespace tlm::gpu {
             const std::string effect_s = reg.value("side_effect", std::string{"none"});
             const uint32_t stream_id = reg.value("stream_id", uint32_t{0});
             if (!bar_router_->add_register(offset, name, parse_access(access_s),
-                                            parse_side_effect(effect_s), stream_id)) {
+                                           parse_side_effect(effect_s), stream_id)) {
                 // 失败静默（offset 越界/未对齐/重叠）
             }
         }
     }
 
     void PcieEndpointTLM::handle_slave_in_tlp() {
-        if (!slave_in_.valid()) return;
-        const auto& req = slave_in_.data();
+        if (!req_in[PORT_SLAVE_IN].valid())
+            return;
+        const auto& req = req_in[PORT_SLAVE_IN].data();
         const uint8_t kind = req.kind.read();
 
         bundles::PcieTlpBundle resp;
@@ -143,50 +146,50 @@ namespace tlm::gpu {
         resp.trans_id.write(req.trans_id.read());
 
         switch (kind) {
-            case bundles::PcieTlpBundle::CFG_READ: {
-                const uint16_t cfg_offset = static_cast<uint16_t>(req.offset.read());
-                resp.data.write(cfg_space_->read(cfg_offset));
-                resp.kind.write(bundles::PcieTlpBundle::CFG_READ);
-                mmio_out_.write(resp);
-                break;
+        case bundles::PcieTlpBundle::CFG_READ: {
+            const uint16_t cfg_offset = static_cast<uint16_t>(req.offset.read());
+            resp.data.write(cfg_space_->read(cfg_offset));
+            resp.kind.write(bundles::PcieTlpBundle::CFG_READ);
+            resp_out[PORT_MMIO_OUT].write(resp);
+            break;
+        }
+        case bundles::PcieTlpBundle::CFG_WRITE: {
+            const uint16_t cfg_offset = static_cast<uint16_t>(req.offset.read());
+            cfg_space_->write(cfg_offset, static_cast<uint32_t>(req.data.read()));
+            resp.kind.write(bundles::PcieTlpBundle::CFG_WRITE);
+            resp_out[PORT_MMIO_OUT].write(resp);
+            break;
+        }
+        case bundles::PcieTlpBundle::MMIO_READ: {
+            const uint32_t off = static_cast<uint32_t>(req.offset.read());
+            resp.data.write(bar_router_->mmio_read(off));
+            resp.kind.write(bundles::PcieTlpBundle::MMIO_READ);
+            resp_out[PORT_MMIO_OUT].write(resp);
+            break;
+        }
+        case bundles::PcieTlpBundle::MMIO_WRITE: {
+            const uint32_t off = static_cast<uint32_t>(req.offset.read());
+            const uint32_t val = static_cast<uint32_t>(req.data.read());
+            bar_router_->mmio_write(off, val, req.trans_id.read());
+            resp.kind.write(bundles::PcieTlpBundle::MMIO_WRITE);
+            resp_out[PORT_MMIO_OUT].write(resp);
+            break;
+        }
+        case bundles::PcieTlpBundle::MEM_READ:
+        case bundles::PcieTlpBundle::MEM_WRITE: {
+            // BAR1 MEM 转发：descriptor-only, size > 8 时 data=0 (per design.md §2.3)
+            if (req.size.read() > 8) {
+                resp.data.write(0);
             }
-            case bundles::PcieTlpBundle::CFG_WRITE: {
-                const uint16_t cfg_offset = static_cast<uint16_t>(req.offset.read());
-                cfg_space_->write(cfg_offset, static_cast<uint32_t>(req.data.read()));
-                resp.kind.write(bundles::PcieTlpBundle::CFG_WRITE);
-                mmio_out_.write(resp);
-                break;
-            }
-            case bundles::PcieTlpBundle::MMIO_READ: {
-                const uint32_t off = static_cast<uint32_t>(req.offset.read());
-                resp.data.write(bar_router_->mmio_read(off));
-                resp.kind.write(bundles::PcieTlpBundle::MMIO_READ);
-                mmio_out_.write(resp);
-                break;
-            }
-            case bundles::PcieTlpBundle::MMIO_WRITE: {
-                const uint32_t off = static_cast<uint32_t>(req.offset.read());
-                const uint32_t val = static_cast<uint32_t>(req.data.read());
-                bar_router_->mmio_write(off, val, req.trans_id.read());
-                resp.kind.write(bundles::PcieTlpBundle::MMIO_WRITE);
-                mmio_out_.write(resp);
-                break;
-            }
-            case bundles::PcieTlpBundle::MEM_READ:
-            case bundles::PcieTlpBundle::MEM_WRITE: {
-                // BAR1 MEM 转发：descriptor-only, size > 8 时 data=0 (per design.md §2.3)
-                if (req.size.read() > 8) {
-                    resp.data.write(0);
-                }
-                resp.kind.write(kind);
-                mem_out_.write(resp);
-                break;
-            }
-            default:
-                break;  // 未知 kind 静默丢弃
+            resp.kind.write(kind);
+            resp_out[PORT_MEM_OUT].write(resp);
+            break;
+        }
+        default:
+            break; // 未知 kind 静默丢弃
         }
 
-        slave_in_.consume();
+        req_in[PORT_SLAVE_IN].consume();
     }
 
     void PcieEndpointTLM::tick() {
@@ -196,18 +199,10 @@ namespace tlm::gpu {
         // 2. 推进 bar_router_ 周期（完成 doorbell 强序写）
         bar_router_->tick();
 
-        // 3. mmio_out 端口：把 bar_router_ 中到期的 doorbell 事件写出
-        while (const auto* evt = bar_router_->try_pop_doorbell_out()) {
-            bundles::PcieTlpBundle mmio;
-            mmio.kind.write(bundles::PcieTlpBundle::MMIO_WRITE);
-            mmio.bar_index.write(0);
-            mmio.offset.write(0x0014);
-            mmio.size.write(4);
-            mmio.data.write(evt->wdu_offset);
-            mmio.trans_id.write(evt->trans_id);
-            // mmio_out_ 已经持有 MMIO_WRITE 的 resp（（handle_slave_in_tlp 写入））
-            // 这里只触发 doorbell 副作用完成；不强写，避免覆盖
-            (void)mmio;
+        // 3. mmio_out 端口：把 bar_router_ 中到期的 doorbell 事件 consume
+        // (resp_out[PORT_MMIO_OUT] 已经在 handle_slave_in_tlp 中写入了响应,
+        //  这里只负责清空 doorbell 副作用队列)
+        while (bar_router_->try_pop_doorbell_out()) {
             bar_router_->consume_doorbell_out();
         }
 
@@ -215,18 +210,18 @@ namespace tlm::gpu {
         while (const auto* evt = msix_->try_pop_irq_out()) {
             bundles::PcieTlpBundle irq_tlp;
             irq_tlp.kind.write(bundles::PcieTlpBundle::IRQ_DELIVERY);
-            irq_tlp.bar_index.write(0);
-            irq_tlp.offset.write(static_cast<uint64_t>(evt->vector));  // vector 编码到 offset
-            irq_tlp.size.write(evt->msg_data);                         // msg_data 编码到 size
-            irq_tlp.data.write(evt->msg_addr);                         // msg_addr 编码到 data
+            irq_tlp.offset.write(static_cast<uint64_t>(evt->vector)); // vector 编码到 offset
+            irq_tlp.size.write(evt->msg_data);                        // msg_data 编码到 size
+            irq_tlp.data.write(evt->msg_addr);                        // msg_addr 编码到 data
             irq_tlp.trans_id.write(evt->trans_id);
-            irq_out_.write(irq_tlp);
+            resp_out[PORT_IRQ_OUT].write(irq_tlp);
             msix_->consume_irq_out();
         }
 
         // 5. 调用各 adapter 的 tick()（如需要）
         for (unsigned i = 0; i < NUM_PORTS; i++) {
-            if (adapters_[i]) adapters_[i]->tick();
+            if (adapters_[i])
+                adapters_[i]->tick();
         }
     }
 

@@ -6,22 +6,22 @@
 //       spec.md Scenarios "JSON instantiation with multi-port adapter injection"
 //                          "All 4 ports receive non-null StreamAdapter"
 
-#include "catch_amalgamated.hpp"
-#include "tlm/gpu/pcie_endpoint_tlm.h"
 #include "bundles/pcie_bundles_tlm.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/master_port.hh"
-#include "core/slave_port.hh"
-#include "core/packet.hh"
-#include "core/stream_adapter_base.hh"
-#include "framework/stream_adapter.hh"
-#include "framework/multi_port_stream_adapter.hh"
 #include "core/module_factory.hh"
+#include "core/packet.hh"
+#include "core/slave_port.hh"
+#include "core/stream_adapter_base.hh"
 #include "framework/chstream_adapter_factory.hh"
+#include "framework/multi_port_stream_adapter.hh"
+#include "framework/stream_adapter.hh"
+#include "tlm/gpu/pcie_endpoint_tlm.h"
 
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <memory>
+#include <nlohmann/json.hpp>
 
 using namespace tlm::gpu;
 using namespace bundles;
@@ -33,19 +33,23 @@ namespace {
     // (test stub — 使用 MultiPortStreamAdapter 模板的最小子集)
     class FakeStreamAdapter : public cpptlm::StreamAdapterBase {
     public:
-        void tick() override {}
-        void bind_ports(MasterPort*, SlavePort*,
-                        MasterPort* = nullptr,
-                        SlavePort* = nullptr) override {}
-        void process_request_input(Packet*) override {}
-        Packet* process_response_output() override { return nullptr; }
+        void tick() override {
+        }
+        void bind_ports(MasterPort*, SlavePort*, MasterPort* = nullptr,
+                        SlavePort* = nullptr) override {
+        }
+        void process_request_input(Packet*) override {
+        }
+        Packet* process_response_output() override {
+            return nullptr;
+        }
     };
 
     std::unique_ptr<FakeStreamAdapter> make_fake() {
         return std::make_unique<FakeStreamAdapter>();
     }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("PcieEndpoint: JSON config loads config_size", "[pcie][endpoint][json]") {
     EventQueue eq;
@@ -69,10 +73,12 @@ TEST_CASE("PcieEndpoint: JSON bar0_registers data-driven loading", "[pcie][endpo
 
     json cfg;
     cfg["bar0_registers"] = json::array({
-        {{"offset", 0x0014}, {"name", "GPU_REG_DOORBELL"},
-         {"access", "WO"}, {"side_effect", "doorbell"}, {"stream_id", 0}},
-        {{"offset", 0x0020}, {"name", "GPU_REG_STATUS"},
-         {"access", "RO"}, {"side_effect", "none"}},
+        {{"offset", 0x0014},
+         {"name", "GPU_REG_DOORBELL"},
+         {"access", "WO"},
+         {"side_effect", "doorbell"},
+         {"stream_id", 0}},
+        {{"offset", 0x0020}, {"name", "GPU_REG_STATUS"}, {"access", "RO"}, {"side_effect", "none"}},
     });
 
     ep.set_config(cfg);
@@ -93,17 +99,18 @@ TEST_CASE("PcieEndpoint: JSON capabilities chain loading", "[pcie][endpoint][jso
     json cfg;
     cfg["capabilities"] = json::array({
         {{"id", 17}, {"offset", 64}, {"next", 80}, {"control", 0xAB00}},
-        {{"id", 16}, {"offset", 80}, {"next", 0},  {"control", 0}},
+        {{"id", 16}, {"offset", 80}, {"next", 0}, {"control", 0}},
     });
 
     ep.set_config(cfg);
     ep.on_config_loaded();
 
     REQUIRE(ep.config_space().capability_count() == 2u);
-    REQUIRE((ep.config_space().read(0x34) & 0xFFu) == 64u);  // capabilities pointer
+    REQUIRE((ep.config_space().read(0x34) & 0xFFu) == 64u); // capabilities pointer
 }
 
-TEST_CASE("PcieEndpoint: All 4 ports receive non-null StreamAdapter (PE-G5)", "[pcie][endpoint][adapter]") {
+TEST_CASE("PcieEndpoint: All 4 ports receive non-null StreamAdapter (PE-G5)",
+          "[pcie][endpoint][adapter]") {
     EventQueue eq;
     PcieEndpointTLM ep("pcie_ep", &eq);
     ep.init();
@@ -134,18 +141,24 @@ TEST_CASE("PcieEndpoint: All 4 ports receive non-null StreamAdapter (PE-G5)", "[
     REQUIRE(ep.get_adapter(0) == single_ptr);
 }
 
-TEST_CASE("PcieEndpoint: ModuleFactory registers PcieEndpointTLM type", "[pcie][endpoint][json][factory]") {
+TEST_CASE("PcieEndpoint: ModuleFactory registers PcieEndpointTLM type",
+          "[pcie][endpoint][json][factory]") {
     // 验证 "PcieEndpointTLM" 已注册到 ModuleFactory（REGISTER_CHSTREAM 副作用）
     auto types = ModuleFactory::getRegisteredTypes();
     bool found = false;
     for (const auto& t : types) {
-        if (t == "PcieEndpointTLM") { found = true; break; }
+        if (t == "PcieEndpointTLM") {
+            found = true;
+            break;
+        }
     }
     REQUIRE(found);
 }
 
-TEST_CASE("PcieEndpoint: ModuleFactory.isMultiPort PcieEndpointTLM returns true", "[pcie][endpoint][json][factory]") {
-    // PcieEndpointTLM 是 4 端口模块（per spec.md Scenario "JSON instantiation with multi-port adapter injection"）
+TEST_CASE("PcieEndpoint: ModuleFactory.isMultiPort PcieEndpointTLM returns true",
+          "[pcie][endpoint][json][factory]") {
+    // PcieEndpointTLM 是 4 端口模块（per spec.md Scenario "JSON instantiation with multi-port
+    // adapter injection"）
     REQUIRE(ModuleFactory::getRegisteredTypes().size() > 0);
     // ChStreamAdapterFactory 的 isMultiPort 通过 registerMultiPortAdapter 注册
     auto& factory = ChStreamAdapterFactory::get();

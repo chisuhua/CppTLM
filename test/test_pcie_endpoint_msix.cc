@@ -5,11 +5,11 @@
 // 参考: openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/design.md §6
 //       spec.md Scenario "Masked vector does not deliver IRQ"
 
-#include "catch_amalgamated.hpp"
-#include "tlm/gpu/pcie_endpoint_tlm.h"
-#include "tlm/gpu/msix_table_mvp.hh"
 #include "bundles/pcie_bundles_tlm.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
+#include "tlm/gpu/msix_table_mvp.hh"
+#include "tlm/gpu/pcie_endpoint_tlm.h"
 
 using namespace tlm::gpu;
 using namespace bundles;
@@ -42,7 +42,8 @@ TEST_CASE("PcieEndpoint: MSI-X update_pending emits irq_out", "[pcie][endpoint][
     REQUIRE(ep.msix().pending_count() == 0u);
 }
 
-TEST_CASE("PcieEndpoint: MSI-X masked vector does NOT deliver IRQ", "[pcie][endpoint][msix][mask]") {
+TEST_CASE("PcieEndpoint: MSI-X masked vector does NOT deliver IRQ",
+          "[pcie][endpoint][msix][mask]") {
     EventQueue eq;
     PcieEndpointTLM ep("pcie_ep", &eq);
     ep.init();
