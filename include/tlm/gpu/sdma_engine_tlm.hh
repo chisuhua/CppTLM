@@ -185,6 +185,33 @@ namespace tlm::gpu {
             return error_cb_;
         }
 
+        // 数据面 backdoor 注入（per design.md §2 + spec.md R3-S1 "VRAM write visibility"）
+        //
+        // MVP 范围内：backdoor 路径仅在测试场景下使用，绕过 descriptor-only TLP
+        // （per ADR-SOC-07 Status Update Q3）的限制直接搬运数据，验证 spec 中
+        // "Completion implies VRAM write visibility" 语义。生产环境中由
+        // DGpuBoard backdoor ABI（cpptlm-dgpu-abi-export change 交付）替代。
+        //
+        // 调用规则：
+        //   - ptr != nullptr + size > 0：注入 fake memory，组件在 H2D/D2H 处理时
+        //     直接 memcpy（带越界检查）；无 TLP 数据字段修改（descriptor-only TLP
+        //     不变，向后兼容）
+        //   - ptr == nullptr：清空注入，组件降级为 descriptor-only TLP 模式
+        void set_host_backdoor(void* ptr, uint64_t size_bytes) {
+            host_backdoor_ = ptr;
+            host_backdoor_size_ = size_bytes;
+        }
+        void set_vram_backdoor(void* ptr, uint64_t size_bytes) {
+            vram_backdoor_ = ptr;
+            vram_backdoor_size_ = size_bytes;
+        }
+        bool has_host_backdoor() const {
+            return host_backdoor_ != nullptr;
+        }
+        bool has_vram_backdoor() const {
+            return vram_backdoor_ != nullptr;
+        }
+
         // Wire-format ↔ DmaDescriptor / CompletionBundle 转换（public for testability）
         static bundles::PcieTlpBundle to_pcie_tlp_descriptor(const DmaDescriptor& d);
         static DmaDescriptor from_pcie_tlp_descriptor(const bundles::PcieTlpBundle& p);
@@ -214,6 +241,12 @@ namespace tlm::gpu {
         std::vector<InflightDesc> inflight_;
         uint64_t completed_count_ = 0;
         uint64_t error_count_ = 0;
+
+        // 数据面 backdoor（per spec.md R3-S1 测试用，生产由 Board backdoor ABI 替代）
+        void*    host_backdoor_ = nullptr;
+        uint64_t host_backdoor_size_ = 0;
+        void*    vram_backdoor_ = nullptr;
+        uint64_t vram_backdoor_size_ = 0;
 
         // 内部：处理 desc_in 入口（每 tick 一次）
         void handle_desc_in();
