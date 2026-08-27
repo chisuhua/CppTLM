@@ -56,6 +56,7 @@ set(CORE_SOURCES
     tlm/gpu/pcie_bar_router_mvp.cc     # pcie-endpoint T-pe-2: BAR0 register routing (data-driven)
     tlm/gpu/msix_table_mvp.cc          # pcie-endpoint T-pe-2: MSI-X vector table + mask
     tlm/gpu/pcie_endpoint_tlm.cc       # pcie-endpoint T-pe-3: 4-port ChStream module
+    tlm/gpu/sdma_engine_tlm.cc        # sdma-engine T-sd-2: 5-port ChStream SDMA/copy engine (PCIe master)
     tlm/gpu/scoreboard_tlm.cc  # D1-Full P1: IScoreboard 实现
     tlm/gpu/pipeline_tlm.cc    # D1-Full P1: IPipelineLatencyProvider 实现
     tlm/gpu/tensor_core_tlm.cc # D1-Full P1: ITensorCoreTiming 实现

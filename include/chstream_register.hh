@@ -25,6 +25,7 @@
 #include "tlm/gpu/dgpu_board_mvp.hh"
 #include "tlm/gpu/usrlxemu_ioctl_stub_mvp.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
+#include "tlm/gpu/sdma_engine_tlm.hh"
 #include "bundles/compute_bundles_tlm.hh"
 #include "rtl/hybrid_cache_wrapper.hh"
 #include "core/module_factory.hh"
@@ -65,6 +66,7 @@
     ModuleFactory::registerObject<tlm::gpu::DGpuBoardTLM>("DGpuBoardTLM"); \
     ModuleFactory::registerObject<tlm::gpu::UsrLinuxEmuIoctlStub>("UsrLinuxEmuIoctlStub"); \
     ModuleFactory::registerObject<tlm::gpu::PcieEndpointTLM>("PcieEndpointTLM"); \
+    ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
@@ -96,6 +98,8 @@
        调用方无感。BUILD_RTL 通过 target_compile_definitions 传递。 */ \
     ChStreamAdapterFactory::get().registerMultiPortAdapter<tlm::gpu::PcieEndpointTLM, \
         bundles::PcieTlpBundle, bundles::PcieTlpBundle, 4>("PcieEndpointTLM"); \
+    ChStreamAdapterFactory::get().registerMultiPortAdapter<tlm::gpu::SdmaEngineTLM, \
+        bundles::PcieTlpBundle, bundles::PcieTlpBundle, 5>("SdmaEngineTLM"); \
     HYBRID_CACHE_WRAPPER_REGISTER_RTL
 
 // ============================================================
