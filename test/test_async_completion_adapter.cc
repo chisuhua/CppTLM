@@ -29,7 +29,7 @@ TEST_CASE("AsyncCompletionAdapter placeholder: fire does NOT invoke callback", "
     adapter.register_completion_callback(1, [&call_count]() { call_count.fetch_add(1); });
     adapter.fire_completion(1);
 
-    REQUIRE(call_count.load() == 0);  // Phase 8.B 占位: callback 不应被调用
+    REQUIRE(call_count.load() == 0); // Phase 8.B 占位: callback 不应被调用
 }
 
 TEST_CASE("AsyncCompletionAdapter placeholder: fire_completion_count_ increments on each fire",
@@ -44,12 +44,11 @@ TEST_CASE("AsyncCompletionAdapter placeholder: fire_completion_count_ increments
     adapter.fire_completion(42);
     REQUIRE(adapter.fire_completion_count() == 2);
 
-    adapter.fire_completion(999);  // 未知 id 也递增
+    adapter.fire_completion(999); // 未知 id 也递增
     REQUIRE(adapter.fire_completion_count() == 3);
 }
 
-TEST_CASE("AsyncCompletionAdapter placeholder: fire unknown id does not crash",
-          "[gpu][async]") {
+TEST_CASE("AsyncCompletionAdapter placeholder: fire unknown id does not crash", "[gpu][async]") {
     AsyncCompletionAdapter adapter;
 
     // 未 register 直接 fire
@@ -71,8 +70,8 @@ TEST_CASE("AsyncCompletionAdapter placeholder: register overwrites previous call
     // fire: Phase 8.B 占位不调用任何 callback, 但计数+1
     adapter.fire_completion(10);
 
-    REQUIRE(first_count.load() == 0);   // 已被覆盖, 未调用
-    REQUIRE(second_count.load() == 0);  // 占位未调用
+    REQUIRE(first_count.load() == 0);  // 已被覆盖, 未调用
+    REQUIRE(second_count.load() == 0); // 占位未调用
     REQUIRE(adapter.fire_completion_count() == 1);
 }
 
@@ -83,7 +82,7 @@ TEST_CASE("AsyncCompletionAdapter placeholder: nullptr safety pattern (caller ch
     AsyncCompletionAdapter adapter;
     AsyncCompletionAdapter* null_adapter = nullptr;
 
-    REQUIRE_NOTHROW((void)null_adapter);  // 编译器不警告
+    REQUIRE_NOTHROW((void)null_adapter); // 编译器不警告
     // 实际 nullptr 调用未定义, 不测试以避免 UB
     REQUIRE(adapter.fire_completion_count() == 0);
 }

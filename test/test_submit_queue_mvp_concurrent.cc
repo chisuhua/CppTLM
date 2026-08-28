@@ -79,7 +79,8 @@ TEST_CASE("SubmitQueue: high throughput 8 rounds of 4 CTAs", "[submit-queue][mvp
     REQUIRE(sq.backpressure_count() == 0);
 }
 
-TEST_CASE("SubmitQueue: back-pressure recovery via tick after complete", "[submit-queue][mvp][concurrent]") {
+TEST_CASE("SubmitQueue: back-pressure recovery via tick after complete",
+          "[submit-queue][mvp][concurrent]") {
     tlm::gpu::SubmitQueue sq;
     tlm::gpu::CtaDescriptor cta{};
 

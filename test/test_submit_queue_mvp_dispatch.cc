@@ -6,7 +6,8 @@
 #include "catch_amalgamated.hpp"
 #include "tlm/gpu/submit_queue_mvp.hh"
 
-TEST_CASE("SubmitQueue: tick() dispatches up to 4 entries to active slots", "[submit-queue][mvp][dispatch]") {
+TEST_CASE("SubmitQueue: tick() dispatches up to 4 entries to active slots",
+          "[submit-queue][mvp][dispatch]") {
     tlm::gpu::SubmitQueue sq;
     tlm::gpu::CtaDescriptor cta{};
 
@@ -62,7 +63,7 @@ TEST_CASE("SubmitQueue: tick() with full active does nothing", "[submit-queue][m
         cta.task_id = i;
         sq.enqueue(cta);
     }
-    sq.tick();  // → active=4, pending=0
+    sq.tick(); // → active=4, pending=0
 
     // Now add more to pending
     for (uint32_t i = 4; i < 8; i++) {
@@ -74,8 +75,8 @@ TEST_CASE("SubmitQueue: tick() with full active does nothing", "[submit-queue][m
 
     // tick() with full active: cannot dispatch
     sq.tick();
-    REQUIRE(sq.pending_count() == 4);  // unchanged
-    REQUIRE(sq.active_count() == 4);   // unchanged
+    REQUIRE(sq.pending_count() == 4); // unchanged
+    REQUIRE(sq.active_count() == 4);  // unchanged
 }
 
 TEST_CASE("SubmitQueue: tick() preserves FIFO order on dispatch", "[submit-queue][mvp][dispatch]") {

@@ -4,9 +4,9 @@
 // Date: 2026-08-26
 
 #include "catch_amalgamated.hpp"
-#include "tlm/gpu/usrlxemu_ioctl_stub_mvp.hh"
-#include "tlm/gpu/dgpu_board_mvp.hh"
 #include "core/event_queue.hh"
+#include "tlm/gpu/dgpu_board_mvp.hh"
+#include "tlm/gpu/usrlxemu_ioctl_stub_mvp.hh"
 
 TEST_CASE("UsrLinuxEmuIoctlStub: LOAD 0x27 returns image handle", "[usrlxemu-ioctl][stub]") {
     EventQueue eq;
@@ -55,7 +55,8 @@ TEST_CASE("UsrLinuxEmuIoctlStub: UNLOAD 0x29 frees image handle", "[usrlxemu-ioc
     REQUIRE(response.status == 0);
 }
 
-TEST_CASE("UsrLinuxEmuIoctlStub: PUSHBUFFER 0x01 submits and rings doorbell", "[usrlxemu-ioctl][stub]") {
+TEST_CASE("UsrLinuxEmuIoctlStub: PUSHBUFFER 0x01 submits and rings doorbell",
+          "[usrlxemu-ioctl][stub]") {
     EventQueue eq;
     tlm::gpu::DGpuBoardTLM board("board", &eq);
     board.init();
