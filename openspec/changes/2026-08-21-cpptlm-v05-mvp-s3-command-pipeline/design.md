@@ -84,7 +84,7 @@ struct Pm4MethodDispatch {
 
 ### 3.2 装配接口(s3 W5 扩展 CommandProcessor .hh)
 
-s2 骨架仅提供 `set_decoder(std::unique_ptr<Pm4DecoderInterface>)`。s3 实施需扩展 .hh 加 3 个装配方法(均在 `include/tlm/gpu/command_processor_mvp.hh`,s3 commit T-s3-2 引入):
+s2 骨架仅提供 `set_decoder(std::unique_ptr<Pm4DecoderInterface>)`。s3 实施需扩展 .hh 加 4 个装配方法(均在 `include/tlm/gpu/command_processor_mvp.hh`,s3 commit T-s3-2 引入):
 
 ```cpp
 class CommandProcessor {
@@ -103,7 +103,11 @@ public:
     using DispatchFn = std::function<TmuSubmitResult(const TmuDispatchRecord&)>;
     void set_dispatch_target(DispatchFn fn);
 
-    // 退避控制(per §4.4):TMU 返回 BACKPRESSURED/SUBMIT_QUEUE_REJECTED 时由 DGpuBoardTLM 调
+    // 退避控制(per §4.4 + Oracle P1-a 修复 2026-08-28):
+    // 主路径 = CP 内部自动从 dispatch_target 返回值退避(无需外部调用)。
+    // on_backpressure / on_submit_queue_rejected 是**可选**外部通知接口,
+    // 默认空实现;DGpuBoardTLM §3.3 装配 4 行不调用它们。
+    // 测试断言通过 cp_backoff_count() / degraded() getter 直接读取 CP 内部状态。
     void on_backpressure(uint64_t cycles);
     void on_submit_queue_rejected(uint64_t cycles);
 };
@@ -112,6 +116,34 @@ public:
 **设计意图**:
 - 用 `std::function` 而非裸指针:便于测试注入 mock(`test_command_processor_mvp.cc` 可传 lambda 替代真实 VRAM/TMU),无需拆 dgpu_board_mvp.hh 的实现
 - 解耦编译依赖:CommandProcessor .hh 不直接 include tmu_dispatch_processor_mvp.hh / submit_queue_mvp.hh,减少 s3 commit 头文件改动
+
+### 3.2.1 状态查询 getter(per Oracle P1-a 修复,2026-08-28)
+
+CP 内部从 `dispatch_target_` 返回值自动检测反压/退避,测试通过以下 getter 断言状态:
+
+```cpp
+// 状态机计数器(诊断/测试断言用)
+uint64_t cp_backoff_count() const;            // 累计 BACKPRESSURED/SUBMIT_QUEUE_REJECTED 次数
+uint64_t wake_count() const;                  // wake() 调用次数(s2 已有)
+uint64_t tick_count() const;                  // tick() 调用次数(s2 已有)
+uint64_t state_transitions() const;           // state 转换次数(s2 已有)
+
+bool degraded() const;                        // CP_BACKOFF_DEGRADED_THRESHOLD 触发后返回 true
+uint64_t backoff_cycles_remaining() const;    // 剩余退避 cycles(≥ MIN_BACKOFF_CYCLES 时 DISPATCH 跳过)
+
+// State enum 新增 DEGRADED(per Oracle P2 决策):
+enum class State { IDLE, FETCH, DECODE, DISPATCH, COMPLETE, DEGRADED };
+// DEGRADED = 仅 fetch,不 dispatch,等 SQ 清空
+// transition: ≥ CP_BACKOFF_DEGRADED_THRESHOLD 次反压 → 进入 DEGRADED
+```
+
+**常量定义**(放 `include/tlm/gpu/command_processor_mvp.hh`,s3 commit T-s3-2 引入):
+```cpp
+static constexpr uint64_t MIN_BACKOFF_CYCLES = 8;
+static constexpr uint64_t CP_BACKOFF_DEGRADED_THRESHOLD = 3;
+```
+
+**测试模式**:`test_command_processor_mvp.cc` 用 lambda 注入 mock `dispatch_target`,连续返回 3 次 `BACKPRESSURED` → 断言 `cp_backoff_count() == 3` + `state() == State::DEGRADED` + `degraded() == true`。
 
 ### 3.3 DGpuBoardTLM 装配位置(s3 W6 T-s3-3 实施)
 
