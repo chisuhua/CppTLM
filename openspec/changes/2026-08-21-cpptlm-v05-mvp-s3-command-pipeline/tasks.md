@@ -56,6 +56,9 @@ git commit -am "feat(pm4-decoder-mvp): fill NVIDIA method packet parsing (per Ph
   - **≥3 次**进入 DEGRADED(per design §4.4 + tasks T-s3-3 测试三方统一)
 - [ ] `test/test_command_processor_mvp.cc` 5 transition + NVIDIA method packet decode + 退避窗口 PASS(测试用 lambda 注入 mock vram_reader/dispatch_target)
 - [ ] `test/test_pm4_decoder_mvp_integration.cc` CP + Decoder 集成 PASS
+  - **测试定义**(per Oracle P1-b 修复 2026-08-28):集成 = `CommandProcessor` + 真 `Pm4Decoder` + mock `vram_reader` + mock `dispatch_target`(均为 lambda 注入),**不**依赖 `DGpuBoardTLM` 装配
+  - 这样 T-s3-2 创建并跑通该测试;T-s3-3 仅做 ctest 回归(-R 命令重跑,per L101)
+  - DGpuBoardTLM 端到端 E2E 由 T-s3-3 的 `test_tmu_dispatch_processor_mvp.cc` + `S3SubmitQueueHandler` 集成覆盖
 - [ ] **ctest 验收**:`ctest --test-dir build -R "test_command_processor_mvp|test_pm4_decoder_mvp_integration"` PASS(test/CMakeLists.txt 已 add_test,per Metis P1-1 修复 2026-08-28)
 - [ ] **删除** s2 骨架测试 `test_command_processor_mvp_skeleton.cc`(per Metis P1-2 修复 2026-08-28,已 rm)
 
