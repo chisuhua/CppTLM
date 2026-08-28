@@ -11,36 +11,36 @@
 
 namespace tlm {
 
-ScoreboardTLM::ScoreboardTLM() {
-    entries_.reserve(CAPACITY);  // 预分配，防频繁 rehash
-}
-
-bool ScoreboardTLM::has_free_entry() const {
-    return entries_.size() < CAPACITY;
-}
-
-bool ScoreboardTLM::allocate(uint32_t reg_id, uint32_t warp_id) {
-    if (entries_.size() >= CAPACITY) {
-        return false;  // table full
+    ScoreboardTLM::ScoreboardTLM() {
+        entries_.reserve(CAPACITY); // 预分配，防频繁 rehash
     }
-    // emplace returns pair<iterator, bool> — second=false 表示 key 已存在 (duplicate)
-    auto [it, inserted] = entries_.emplace(make_key(reg_id, warp_id), true);
-    return inserted;  // false = duplicate rejects (2026-07-18 决议, 见 design.md §2.1)
-}
 
-bool ScoreboardTLM::release(uint32_t reg_id, uint32_t warp_id) {
-    return entries_.erase(make_key(reg_id, warp_id)) > 0;
-}
+    bool ScoreboardTLM::has_free_entry() const {
+        return entries_.size() < CAPACITY;
+    }
 
-void ScoreboardTLM::tick() {
-    // Phase 1 no-op: 死锁缓解由容量 (2048) + PTX-EMU Step A rollback 完整性
-    // + decrement_blocked_cycles 每 tick 执行保障。Phase 4 可加超时释放。
-}
+    bool ScoreboardTLM::allocate(uint32_t reg_id, uint32_t warp_id) {
+        if (entries_.size() >= CAPACITY) {
+            return false; // table full
+        }
+        // emplace returns pair<iterator, bool> — second=false 表示 key 已存在 (duplicate)
+        auto [it, inserted] = entries_.emplace(make_key(reg_id, warp_id), true);
+        return inserted; // false = duplicate rejects (2026-07-18 决议, 见 design.md §2.1)
+    }
 
-void ScoreboardTLM::reset() {
-    entries_.clear();
-    // reserve 在 clear() 后保留 — 避免下次 kernel 重新分配
-    entries_.reserve(CAPACITY);
-}
+    bool ScoreboardTLM::release(uint32_t reg_id, uint32_t warp_id) {
+        return entries_.erase(make_key(reg_id, warp_id)) > 0;
+    }
 
-}  // namespace tlm
+    void ScoreboardTLM::tick() {
+        // Phase 1 no-op: 死锁缓解由容量 (2048) + PTX-EMU Step A rollback 完整性
+        // + decrement_blocked_cycles 每 tick 执行保障。Phase 4 可加超时释放。
+    }
+
+    void ScoreboardTLM::reset() {
+        entries_.clear();
+        // reserve 在 clear() 后保留 — 避免下次 kernel 重新分配
+        entries_.reserve(CAPACITY);
+    }
+
+} // namespace tlm
