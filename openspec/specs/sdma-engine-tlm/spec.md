@@ -1,13 +1,8 @@
-# Spec: SdmaEngineTLM（PCIe master / DMA 引擎，归属 dGPU SOC）
+# sdma-engine-tlm Specification
 
-> **Status**: Proposed — 2026-08-26
-> **Scope**: cpptlm-dgpu-sdma-engine change
-> **关联 ADR**: [`docs/soc_arch/adr/ADR-SOC-07-dgpu-board-soc-layering.md`](../../../../docs/soc_arch/adr/ADR-SOC-07-dgpu-board-soc-layering.md) D3 · UsrLinuxEmu ADR-088 §D3.8
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-26-cpptlm-dgpu-sdma-engine. Update Purpose after archive.
+## Requirements
 ### Requirement: sdma-engine-component
 
 The system MUST provide an `SdmaEngineTLM` class in `include/tlm/gpu/sdma_engine_tlm.hh` + `src/tlm/gpu/sdma_engine_tlm.cc` inheriting from `ChStreamModuleBase`, registered via `REGISTER_CHSTREAM`, modeling the SOC-internal PCIe **master** engine (SDMA/copy engine). The component MUST support both H2D (host→device) and D2H (device→host) transfers described by `DmaDescriptorBundle` values (POD bundle delivered over `desc_in`; the C++ `DmaDescriptor` type in `include/tlm/gpu/dma_descriptor_mvp.hh` is the component-API type, internally converted to/from the bundle), and MUST be instantiable from JSON with 5 ports. The `CompletionBundle` type (carrying `task_id`, `status`, `tag`) is owned exclusively by this change and MUST be reused by any consumer (notably board-soc-split) — no other change defines a same-named bundle type in the `bundles` namespace.
@@ -55,3 +50,4 @@ For H2D: `done_out` completion with `status==0` MUST imply that all VRAM writes 
 #### Scenario: In-order completion with max_inflight > 1
 - **WHEN** 2+ descriptors are submitted to `desc_in` with `max_inflight=4` and tags {1, 2, 3}
 - **THEN** `done_out` MUST emit completions in tag order {1, 2, 3} (in-order completion) (SD-G2)
+
