@@ -4,9 +4,9 @@
 // Date: 2026-08-26
 
 #include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_mvp.hh"
 #include "tlm/gpu/usrlxemu_ioctl_stub_mvp.hh"
-#include "core/event_queue.hh"
 #include <array>
 #include <cstdint>
 #include <cstring>
@@ -18,7 +18,7 @@ namespace {
     constexpr uint32_t GPU_IOCTL_UNLOAD_KERNEL_MODULE = 0x29;
     constexpr uint32_t GPU_REG_GPFIFO_PUT = 0x0000;
     constexpr uint32_t GPU_REG_DOORBELL = 0x0014;
-}
+} // namespace
 
 TEST_CASE("PCIe driver perspective: BAR0 doorbell write wakes CP", "[pcie][dGPU][s2]") {
     EventQueue eq;
@@ -39,9 +39,8 @@ TEST_CASE("PCIe driver perspective: BAR1 VRAM write/read round trip", "[pcie][dG
     REQUIRE(board.bar0_size() == 0x10000);
     REQUIRE(board.bar1_size() == 256ULL * 1024ULL * 1024ULL);
 
-    const std::array<uint8_t, 16> image = {
-        0x50, 0x54, 0x58, 0x49, 0x52, 0x00, 0x01, 0x00,
-        0xDE, 0xAD, 0xBE, 0xEF, 0x11, 0x22, 0x33, 0x44};
+    const std::array<uint8_t, 16> image = {0x50, 0x54, 0x58, 0x49, 0x52, 0x00, 0x01, 0x00,
+                                           0xDE, 0xAD, 0xBE, 0xEF, 0x11, 0x22, 0x33, 0x44};
     std::array<uint8_t, image.size()> readback{};
 
     REQUIRE(board.write_vram(0x2000, image.data(), image.size()) == 0);
@@ -71,7 +70,8 @@ TEST_CASE("PCIe driver perspective: IOCTL 0x27/0x28/0x29 ABI path", "[pcie][dGPU
     REQUIRE(ioctl.ioctl(GPU_IOCTL_UNLOAD_KERNEL_MODULE, unload).status == 0);
 }
 
-TEST_CASE("PCIe driver perspective: PUSHBUFFER submit then MMIO doorbell", "[pcie][dGPU][ioctl][s2]") {
+TEST_CASE("PCIe driver perspective: PUSHBUFFER submit then MMIO doorbell",
+          "[pcie][dGPU][ioctl][s2]") {
     EventQueue eq;
     tlm::gpu::DGpuBoardTLM board("pcie_dgpu", &eq);
     board.init();

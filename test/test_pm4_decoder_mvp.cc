@@ -16,16 +16,14 @@ using tlm::gpu::Pm4MethodType;
 
 namespace {
 
-// Helper: pack Pm4MethodHeader fields into uint32_t word for test inputs
-// Per Pm4MethodHeader bit layout: inc:1 | method_addr:15 | subchannel:4 | data_count:4 | reserved:8
-uint32_t pack_header(uint32_t inc, uint32_t method_addr, uint32_t subchannel,
-                     uint32_t data_count, uint32_t reserved) {
-    return (inc & 0x1u)
-         | ((method_addr & 0x7FFFu) << 1)
-         | ((subchannel & 0xFu) << 16)
-         | ((data_count & 0xFu) << 20)
-         | ((reserved & 0xFFu) << 24);
-}
+    // Helper: pack Pm4MethodHeader fields into uint32_t word for test inputs
+    // Per Pm4MethodHeader bit layout: inc:1 | method_addr:15 | subchannel:4 | data_count:4 |
+    // reserved:8
+    uint32_t pack_header(uint32_t inc, uint32_t method_addr, uint32_t subchannel,
+                         uint32_t data_count, uint32_t reserved) {
+        return (inc & 0x1u) | ((method_addr & 0x7FFFu) << 1) | ((subchannel & 0xFu) << 16) |
+               ((data_count & 0xFu) << 20) | ((reserved & 0xFFu) << 24);
+    }
 
 } // namespace
 
@@ -58,7 +56,7 @@ TEST_CASE("Pm4Decoder: DISPATCH_DIRECT preserves subchannel/data_count", "[pm4-d
 // ── DISPATCH_DIRECT (0x4000-0x40FF) ──
 TEST_CASE("Pm4Decoder: DISPATCH_DIRECT (0x4000-0x40FF) parsed", "[pm4-decoder][mvp]") {
     Pm4Decoder decoder;
-    uint32_t packed = pack_header(/*inc*/1, /*addr*/0x4001, /*subch*/0, /*dc*/3, /*res*/0);
+    uint32_t packed = pack_header(/*inc*/ 1, /*addr*/ 0x4001, /*subch*/ 0, /*dc*/ 3, /*res*/ 0);
     const uint32_t payload[16] = {0xDEADBEEFu, 0xCAFEBABEu, 0xFEEDFACEu};
     Pm4MethodDispatch result = decoder.parse_method(packed, payload, 16);
 
@@ -144,7 +142,8 @@ TEST_CASE("Pm4Decoder: boundary 0x40FF (DISPATCH_DIRECT upper bound)", "[pm4-dec
 }
 
 // ── Boundary: 0x4100 just above DISPATCH_DIRECT → UNKNOWN ──
-TEST_CASE("Pm4Decoder: boundary 0x4100 (just above DISPATCH_DIRECT, UNKNOWN)", "[pm4-decoder][mvp]") {
+TEST_CASE("Pm4Decoder: boundary 0x4100 (just above DISPATCH_DIRECT, UNKNOWN)",
+          "[pm4-decoder][mvp]") {
     Pm4Decoder decoder;
     uint32_t packed = pack_header(0, 0x4100, 0, 0, 0);
     const uint32_t payload[16] = {0};
@@ -176,7 +175,7 @@ TEST_CASE("Pm4Decoder: boundary 0x4600 (just above ACQUIRE_MEM, UNKNOWN)", "[pm4
 // ── reserved bits: 0xFF should not affect classification ──
 TEST_CASE("Pm4Decoder: reserved bits (0xFF) do not affect classification", "[pm4-decoder][mvp]") {
     Pm4Decoder decoder;
-    uint32_t packed = pack_header(0, 0x4001, 0, 3, 0xFF);  // reserved=0xFF
+    uint32_t packed = pack_header(0, 0x4001, 0, 3, 0xFF); // reserved=0xFF
     const uint32_t payload[16] = {0};
     Pm4MethodDispatch result = decoder.parse_method(packed, payload, 16);
 

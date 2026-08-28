@@ -6,7 +6,8 @@
 #include "catch_amalgamated.hpp"
 #include "tlm/gpu/submit_queue_mvp.hh"
 
-TEST_CASE("SubmitQueue: select_target_core returns 0 (single-SM MVP)", "[submit-queue][mvp][route]") {
+TEST_CASE("SubmitQueue: select_target_core returns 0 (single-SM MVP)",
+          "[submit-queue][mvp][route]") {
     tlm::gpu::SubmitQueue sq;
     tlm::gpu::CtaDescriptor cta{};
     cta.task_id = 1;

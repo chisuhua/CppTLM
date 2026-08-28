@@ -26,7 +26,8 @@ TEST_CASE("SubmitQueue: enqueue multiple entries sequentially", "[submit-queue][
     REQUIRE(sq.pending_count() == 5);
 }
 
-TEST_CASE("SubmitQueue: enqueue returns false when FIFO full (back-pressure, no eviction)", "[submit-queue][mvp][enqueue]") {
+TEST_CASE("SubmitQueue: enqueue returns false when FIFO full (back-pressure, no eviction)",
+          "[submit-queue][mvp][enqueue]") {
     tlm::gpu::SubmitQueue sq;
     tlm::gpu::CtaDescriptor cta{};
 
@@ -41,11 +42,12 @@ TEST_CASE("SubmitQueue: enqueue returns false when FIFO full (back-pressure, no 
     // 33rd 必须被拒绝 (无驱逐)
     cta.task_id = 100;
     REQUIRE(sq.enqueue(cta) == false);
-    REQUIRE(sq.pending_count() == 32);  // 仍 32, 不是 33
+    REQUIRE(sq.pending_count() == 32); // 仍 32, 不是 33
     REQUIRE(sq.backpressure_count() == 1);
 }
 
-TEST_CASE("SubmitQueue: after dispatch, FIFO can accept more entries", "[submit-queue][mvp][enqueue]") {
+TEST_CASE("SubmitQueue: after dispatch, FIFO can accept more entries",
+          "[submit-queue][mvp][enqueue]") {
     tlm::gpu::SubmitQueue sq;
     tlm::gpu::CtaDescriptor cta{};
 

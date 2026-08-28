@@ -6,12 +6,12 @@
 // Per design.md §4 + Phase F-D.2 H5 + Oracle M4
 // TDD: Step 1 (FAIL) - 预期部分失败 (scheduler_cache_ 未实现, dep chain 推进待 T-s3-3 落地)
 #include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
+#include "tlm/gpu/dgpu_board_mvp.hh"
+#include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/tmu_dispatch_processor_mvp.hh"
 #include "tlm/gpu/tmu_handler_mvp.hh"
-#include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/tmu_types_mvp.hh"
-#include "tlm/gpu/dgpu_board_mvp.hh"
-#include "core/event_queue.hh"
 
 #include <memory>
 #include <vector>
@@ -26,43 +26,44 @@ using tlm::gpu::TmuSubmitResult;
 
 namespace {
 
-// Mock handler: 直接记录 dispatch,返回配置的 result
-struct MockHandler : public TmuHandlerInterface {
-    std::vector<TmuDispatchRecord> records;
-    TmuHandlerResult next_return = TmuHandlerResult::HANDLED;
-    int call_count = 0;
+    // Mock handler: 直接记录 dispatch,返回配置的 result
+    struct MockHandler : public TmuHandlerInterface {
+        std::vector<TmuDispatchRecord> records;
+        TmuHandlerResult next_return = TmuHandlerResult::HANDLED;
+        int call_count = 0;
 
-    TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
-        ++call_count;
-        records.push_back(record);
-        return next_return;
-    }
-};
-
-// Mock handler: 真实测 SQ 满 → 返回 SQ_REJECTED
-struct SqBoundHandler : public TmuHandlerInterface {
-    SubmitQueue& sq;
-    explicit SqBoundHandler(SubmitQueue& s) : sq(s) {}
-
-    TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
-        CtaDescriptor cta{};
-        cta.task_id = record.task_id;
-        if (sq.enqueue(cta)) {
-            return TmuHandlerResult::HANDLED;
+        TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
+            ++call_count;
+            records.push_back(record);
+            return next_return;
         }
-        return TmuHandlerResult::SQ_REJECTED;
-    }
-};
+    };
 
-TmuDispatchRecord make_record(uint32_t task_id, bool dep_enable = false,
-                              uint32_t wait_on = 0, uint32_t arrive_at = 0) {
-    TmuDispatchRecord rec{};
-    rec.task_id = task_id;
-    rec.dep_enable = dep_enable;
-    rec.wait_on_latch_id = wait_on;
-    rec.arrive_at_latch_id = arrive_at;
-    return rec;
-}
+    // Mock handler: 真实测 SQ 满 → 返回 SQ_REJECTED
+    struct SqBoundHandler : public TmuHandlerInterface {
+        SubmitQueue& sq;
+        explicit SqBoundHandler(SubmitQueue& s) : sq(s) {
+        }
+
+        TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
+            CtaDescriptor cta{};
+            cta.task_id = record.task_id;
+            if (sq.enqueue(cta)) {
+                return TmuHandlerResult::HANDLED;
+            }
+            return TmuHandlerResult::SQ_REJECTED;
+        }
+    };
+
+    TmuDispatchRecord make_record(uint32_t task_id, bool dep_enable = false, uint32_t wait_on = 0,
+                                  uint32_t arrive_at = 0) {
+        TmuDispatchRecord rec{};
+        rec.task_id = task_id;
+        rec.dep_enable = dep_enable;
+        rec.wait_on_latch_id = wait_on;
+        rec.arrive_at_latch_id = arrive_at;
+        return rec;
+    }
 
 } // namespace
 
@@ -73,7 +74,7 @@ TEST_CASE("TmuDispatchProcessor: submit normal returns SUBMITTED", "[tmu][mvp][g
     auto* hptr = h.get();
     tmu.set_handler(std::move(h));
 
-    auto rec = make_record(/*task_id*/1);
+    auto rec = make_record(/*task_id*/ 1);
     auto result = tmu.submit(rec);
     REQUIRE(result == TmuSubmitResult::SUBMITTED);
     REQUIRE(tmu.inflight_count() == 1);
@@ -86,7 +87,8 @@ TEST_CASE("TmuDispatchProcessor: submit normal returns SUBMITTED", "[tmu][mvp][g
 }
 
 // ── 反压路径: 32 个 submit 成功, 33 个 BACKPRESSURED ──
-TEST_CASE("TmuDispatchProcessor: 32 submits succeed, 33rd returns BACKPRESSURED", "[tmu][mvp][glue]") {
+TEST_CASE("TmuDispatchProcessor: 32 submits succeed, 33rd returns BACKPRESSURED",
+          "[tmu][mvp][glue]") {
     TmuDispatchProcessor tmu;
     tmu.set_handler(std::make_unique<MockHandler>());
 
@@ -96,7 +98,7 @@ TEST_CASE("TmuDispatchProcessor: 32 submits succeed, 33rd returns BACKPRESSURED"
     REQUIRE(tmu.inflight_count() == 32);
 
     REQUIRE(tmu.submit(make_record(100)) == TmuSubmitResult::BACKPRESSURED);
-    REQUIRE(tmu.inflight_count() == 32);  // 不增长
+    REQUIRE(tmu.inflight_count() == 32); // 不增长
     REQUIRE(tmu.backpressure_count() == 1);
 }
 
@@ -107,21 +109,22 @@ TEST_CASE("TmuDispatchProcessor: dep_enable returns DEP_LATCH_MISMATCH", "[tmu][
     auto* hptr = h.get();
     tmu.set_handler(std::move(h));
 
-    auto rec = make_record(/*task_id*/1, /*dep_enable*/true);
+    auto rec = make_record(/*task_id*/ 1, /*dep_enable*/ true);
     REQUIRE(tmu.submit(rec) == TmuSubmitResult::DEP_LATCH_MISMATCH);
     REQUIRE(tmu.dep_latch_mismatch_count() == 1);
     REQUIRE(tmu.inflight_count() == 0);
-    REQUIRE(hptr->call_count == 0);  // handler 未调
+    REQUIRE(hptr->call_count == 0); // handler 未调
 }
 
 // ── Dep 环检测: 任务链 A → B → A 视为环 ──
-TEST_CASE("TmuDispatchProcessor: dep cycle detected returns DEP_LATCH_MISMATCH", "[tmu][mvp][glue]") {
+TEST_CASE("TmuDispatchProcessor: dep cycle detected returns DEP_LATCH_MISMATCH",
+          "[tmu][mvp][glue]") {
     TmuDispatchProcessor tmu;
     tmu.set_handler(std::make_unique<MockHandler>());
 
     // Task A: arrive_at=1
-    REQUIRE(tmu.submit(make_record(1, /*dep_enable*/true, /*wait*/0, /*arrive*/1))
-            == TmuSubmitResult::DEP_LATCH_MISMATCH);  // 没等任何 latch,直接 dep_enable
+    REQUIRE(tmu.submit(make_record(1, /*dep_enable*/ true, /*wait*/ 0, /*arrive*/ 1)) ==
+            TmuSubmitResult::DEP_LATCH_MISMATCH); // 没等任何 latch,直接 dep_enable
 
     // s3 简化:检测环需 visited flag + 链深 ≤ 8 跟踪
     // 此测试仅验证 dep chain 基本的访问逻辑入口存在
@@ -130,7 +133,8 @@ TEST_CASE("TmuDispatchProcessor: dep cycle detected returns DEP_LATCH_MISMATCH",
 
 // SQ_REJECTED: handler 探测 SQ 满 → SQ_REJECTED。MVP 验证 handler 行为;
 // TMU 上报 SUBMIT_QUEUE_REJECTED 路径由 mock handler 触发,见下。
-TEST_CASE("TmuDispatchProcessor: SqBoundHandler returns SQ_REJECTED when SQ full", "[tmu][mvp][glue]") {
+TEST_CASE("TmuDispatchProcessor: SqBoundHandler returns SQ_REJECTED when SQ full",
+          "[tmu][mvp][glue]") {
     SubmitQueue sq;
     SqBoundHandler handler(sq);
     TmuDispatchRecord rec = make_record(1);
@@ -145,7 +149,8 @@ TEST_CASE("TmuDispatchProcessor: SqBoundHandler returns SQ_REJECTED when SQ full
     REQUIRE(handler.on_dispatch(rec) == TmuHandlerResult::SQ_REJECTED);
 }
 
-TEST_CASE("TmuDispatchProcessor: TMU reports SUBMIT_QUEUE_REJECTED on handler SQ_REJECTED", "[tmu][mvp][glue]") {
+TEST_CASE("TmuDispatchProcessor: TMU reports SUBMIT_QUEUE_REJECTED on handler SQ_REJECTED",
+          "[tmu][mvp][glue]") {
     TmuDispatchProcessor tmu;
     auto h = std::make_unique<MockHandler>();
     h->next_return = TmuHandlerResult::SQ_REJECTED;
@@ -158,7 +163,8 @@ TEST_CASE("TmuDispatchProcessor: TMU reports SUBMIT_QUEUE_REJECTED on handler SQ
 }
 
 // ── INTERNAL_ERROR: handler 返回 INVALID_RECORD ──
-TEST_CASE("TmuDispatchProcessor: INVALID_RECORD from handler returns INTERNAL_ERROR", "[tmu][mvp][glue]") {
+TEST_CASE("TmuDispatchProcessor: INVALID_RECORD from handler returns INTERNAL_ERROR",
+          "[tmu][mvp][glue]") {
     TmuDispatchProcessor tmu;
     auto h = std::make_unique<MockHandler>();
     h->next_return = TmuHandlerResult::INVALID_RECORD;
@@ -169,7 +175,8 @@ TEST_CASE("TmuDispatchProcessor: INVALID_RECORD from handler returns INTERNAL_ER
 }
 
 // ── on_complete + try_chain_dependent 推进 ──
-TEST_CASE("TmuDispatchProcessor: on_complete decrements inflight + dep chain advances", "[tmu][mvp][glue]") {
+TEST_CASE("TmuDispatchProcessor: on_complete decrements inflight + dep chain advances",
+          "[tmu][mvp][glue]") {
     TmuDispatchProcessor tmu;
     tmu.set_handler(std::make_unique<MockHandler>());
 
@@ -182,21 +189,23 @@ TEST_CASE("TmuDispatchProcessor: on_complete decrements inflight + dep chain adv
 }
 
 // ── 与真实 SQ 集成 (SqBoundHandler + 验证 SQ 收到 record) ──
-TEST_CASE("TmuDispatchProcessor: integrates with real SubmitQueue via SqBoundHandler", "[tmu][mvp][glue]") {
+TEST_CASE("TmuDispatchProcessor: integrates with real SubmitQueue via SqBoundHandler",
+          "[tmu][mvp][glue]") {
     TmuDispatchProcessor tmu;
     SubmitQueue sq;
     tmu.set_handler(std::make_unique<SqBoundHandler>(sq));
 
     auto rec = make_record(42);
     REQUIRE(tmu.submit(rec) == TmuSubmitResult::SUBMITTED);
-    REQUIRE(tmu.inflight_count() == 1);  // TMU inflight
+    REQUIRE(tmu.inflight_count() == 1); // TMU inflight
     // SQ pending 收到 record
     REQUIRE(sq.pending_count() == 1);
     REQUIRE(sq.inflight_count() == 1);
 }
 
 // ── Handler 未设置:不调 handler,直接注册 ──
-TEST_CASE("TmuDispatchProcessor: no handler means direct register (no SQ push)", "[tmu][mvp][glue]") {
+TEST_CASE("TmuDispatchProcessor: no handler means direct register (no SQ push)",
+          "[tmu][mvp][glue]") {
     TmuDispatchProcessor tmu;
     // 不 set_handler
 
@@ -229,7 +238,8 @@ TEST_CASE("TmuDispatchProcessor: refill after on_complete", "[tmu][mvp][glue]") 
 // (此项实际测 CP,但通过 dispatcher 间接验证,见 test_command_processor_mvp)
 
 // ── DGpuBoardTLM E2E: init() 装配接线 + tick() 走通 CP→TMU→SQ 链路 ──
-TEST_CASE("DGpuBoardTLM E2E: init wires CP/decoder/vram_reader/dispatch_target/TMU/handler", "[tmu][mvp][glue]") {
+TEST_CASE("DGpuBoardTLM E2E: init wires CP/decoder/vram_reader/dispatch_target/TMU/handler",
+          "[tmu][mvp][glue]") {
     EventQueue eq;
     tlm::gpu::DGpuBoardTLM board("e2e_board", &eq);
     board.init();

@@ -4,10 +4,11 @@
 // Date: 2026-08-26
 
 #include "catch_amalgamated.hpp"
-#include "tlm/gpu/dgpu_board_mvp.hh"
 #include "core/event_queue.hh"
+#include "tlm/gpu/dgpu_board_mvp.hh"
 
-TEST_CASE("DGpuBoardTLM: 5 SECTION E2E (item 4 ⏳ deferred to s3, per Oracle M3)", "[dgpu-board][mvp][e2e]") {
+TEST_CASE("DGpuBoardTLM: 5 SECTION E2E (item 4 ⏳ deferred to s3, per Oracle M3)",
+          "[dgpu-board][mvp][e2e]") {
     EventQueue eq;
     tlm::gpu::DGpuBoardTLM board("dgpu_board_0", &eq);
 

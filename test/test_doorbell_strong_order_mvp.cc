@@ -32,7 +32,8 @@ TEST_CASE("Doorbell: same stream observes call order", "[doorbell][mvp][strong-o
     db.ring(0, 0x200); // second (overrides first per SQ tail semantics)
 
     // Drain all pending
-    while (db.is_pending(0)) db.tick();
+    while (db.is_pending(0))
+        db.tick();
 
     // Final visible tail must be 0x200 (most recent)
     REQUIRE(db.sq_tail(0) == 0x200);
@@ -64,7 +65,8 @@ TEST_CASE("CompletionRing: 10 sequential on_warp_complete → 10 host_notify",
         cq.on_warp_complete(i, 0);
     }
     // Drain all
-    for (int j = 0; j < 100; j++) cq.tick();
+    for (int j = 0; j < 100; j++)
+        cq.tick();
 
     REQUIRE(notify_count == 10);
 }
@@ -83,7 +85,8 @@ TEST_CASE("CompletionRing: entries delivered in FIFO order with payload intact",
     REQUIRE(cq.on_warp_complete(43, -1));
     REQUIRE(cq.inflight_count() == 2);
 
-    while (cq.inflight_count() > 0) cq.tick();
+    while (cq.inflight_count() > 0)
+        cq.tick();
 
     REQUIRE(seen_tasks == std::vector<uint32_t>{42, 43});
     REQUIRE(seen_status == std::vector<int32_t>{0, -1});
