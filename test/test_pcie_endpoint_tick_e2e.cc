@@ -111,8 +111,10 @@ TEST_CASE("PcieEndpoint e2e: MSI-X update_pending -> irq_out emits IRQ_DELIVERY"
     REQUIRE(ep.msix().pending_count() == 0u);
 }
 
-TEST_CASE("PcieEndpoint e2e: masked vector does NOT emit irq_out",
-          "[pcie][endpoint][e2e][msix][mask]") {
+TEST_CASE("PcieEndpoint e2e: masked vector defers IRQ to PBA (no immediate delivery)",
+          "[pcie][endpoint][e2e][msix][mask][pba]") {
+    // T-prereq-3 PBA semantics: masked vector still accepts update_pending
+    // (PBA bit set), but does NOT emit IRQ immediately. Unmask triggers delivery.
     EventQueue eq;
     PcieEndpointTLM ep("pcie_ep", &eq);
     ep.init();
@@ -120,15 +122,17 @@ TEST_CASE("PcieEndpoint e2e: masked vector does NOT emit irq_out",
     ep.msix().configure_vector(3, 0xFEE00000ULL, 0xCAFEBABEu);
     ep.msix().set_mask(3, true);
 
-    REQUIRE(ep.msix().update_pending(3) == false); // masked: 不投递
+    REQUIRE(ep.msix().update_pending(3) == true);
     REQUIRE(ep.msix().pending_count() == 0u);
+    REQUIRE(ep.msix().is_pba_set(3) == true);
 
     ep.tick();
-    REQUIRE(ep.resp_out[3].valid() == false); // irq_out 端口必须空
+    REQUIRE(ep.resp_out[3].valid() == false);
 
-    // 解除 mask 后投递
     ep.msix().clear_mask(3);
-    REQUIRE(ep.msix().update_pending(3) == true);
+    REQUIRE(ep.msix().pending_count() == 1u);
+    REQUIRE(ep.msix().is_pba_set(3) == true);
+
     ep.tick();
     REQUIRE(ep.resp_out[3].valid() == true);
 }
