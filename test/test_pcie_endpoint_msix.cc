@@ -30,8 +30,9 @@ TEST_CASE("PcieEndpoint: MSI-X update_pending emits irq_out", "[pcie][endpoint][
     REQUIRE(ep.msix().configure_vector(3, 0xFEE00000ULL, 0xCAFEBABEu) == true);
     REQUIRE(ep.msix().update_pending(3, /*trans_id=*/42) == true);
     REQUIRE(ep.msix().pending_count() == 1u);
+    REQUIRE(ep.msix().pba_count() == 1u);
+    REQUIRE(ep.msix().is_pba_set(3) == true);
 
-    // 拉取 IRQ 事件
     const auto* evt = ep.msix().try_pop_irq_out();
     REQUIRE(evt != nullptr);
     REQUIRE(evt->vector == 3);
@@ -40,10 +41,15 @@ TEST_CASE("PcieEndpoint: MSI-X update_pending emits irq_out", "[pcie][endpoint][
     REQUIRE(evt->trans_id == 42u);
     ep.msix().consume_irq_out();
     REQUIRE(ep.msix().pending_count() == 0u);
+    // PBA bit is preserved after consume_irq_out (front-end pop):
+    // driver EOI path invokes clear_pending() to drop the PBA bit.
+    REQUIRE(ep.msix().is_pba_set(3) == true);
 }
 
-TEST_CASE("PcieEndpoint: MSI-X masked vector does NOT deliver IRQ",
-          "[pcie][endpoint][msix][mask]") {
+// T-prereq-3 PBA semantics: masked → update_pending accepted (PBA bit set),
+// but no IRQ queueing. Unmasking auto-delivers accumulated pending.
+TEST_CASE("PcieEndpoint: MSI-X masked vector defers IRQ to PBA (no immediate delivery)",
+          "[pcie][endpoint][msix][mask][pba]") {
     EventQueue eq;
     PcieEndpointTLM ep("pcie_ep", &eq);
     ep.init();
@@ -52,14 +58,26 @@ TEST_CASE("PcieEndpoint: MSI-X masked vector does NOT deliver IRQ",
     ep.msix().set_mask(3, true);
     REQUIRE(ep.msix().is_masked(3) == true);
 
-    // masked vector: update_pending 返回 true 但不投递（per PCI-SIG MSI-X spec）
-    REQUIRE(ep.msix().update_pending(3) == false);
+    // Per PCI-SIG MSI-X ECN + T-prereq-3 spec: masked update_pending still accepted
+    // (PBA bit tracked) but no IRQ event is queued.
+    REQUIRE(ep.msix().update_pending(3) == true);
     REQUIRE(ep.msix().pending_count() == 0u);
+    REQUIRE(ep.msix().pba_count() == 1u);
+    REQUIRE(ep.msix().is_pba_set(3) == true);
     REQUIRE(ep.msix().try_pop_irq_out() == nullptr);
 
-    // 解除 mask 后 update_pending 投递
+    // Unmasking auto-delivers accumulated PBA pending (per T-prereq-3 PBA semantics).
     REQUIRE(ep.msix().clear_mask(3) == true);
     REQUIRE(ep.msix().is_masked(3) == false);
+    REQUIRE(ep.msix().pending_count() == 1u);
+    REQUIRE(ep.msix().is_pba_set(3) == true);
+
+    const auto* evt = ep.msix().try_pop_irq_out();
+    REQUIRE(evt != nullptr);
+    REQUIRE(evt->vector == 3);
+    ep.msix().consume_irq_out();
+    REQUIRE(ep.msix().pending_count() == 0u);
+
     REQUIRE(ep.msix().update_pending(3) == true);
     REQUIRE(ep.msix().pending_count() == 1u);
 }
@@ -69,15 +87,17 @@ TEST_CASE("PcieEndpoint: MSI-X out-of-range vector rejected", "[pcie][endpoint][
     PcieEndpointTLM ep("pcie_ep", &eq);
     ep.init();
 
-    // num_vectors = 16, 越界 99 应拒绝
     REQUIRE(ep.msix().configure_vector(99, 0, 0) == false);
     REQUIRE(ep.msix().set_mask(99, true) == false);
     REQUIRE(ep.msix().update_pending(99) == false);
     REQUIRE(ep.msix().is_masked(99) == false);
     REQUIRE(ep.msix().is_pending(99) == false);
+    REQUIRE(ep.msix().is_pba_set(99) == false);
 }
 
-TEST_CASE("PcieEndpoint: MSI-X clear_pending removes from queue", "[pcie][endpoint][msix]") {
+TEST_CASE("PcieEndpoint: MSI-X clear_pending removes from PBA + queue",
+          "[pcie][endpoint][msix][pba]") {
+    // Per T-prereq-3 PBA semantics: clear_pending clears both PBA bit and queue entry.
     EventQueue eq;
     PcieEndpointTLM ep("pcie_ep", &eq);
     ep.init();
@@ -85,13 +105,13 @@ TEST_CASE("PcieEndpoint: MSI-X clear_pending removes from queue", "[pcie][endpoi
     ep.msix().configure_vector(5, 0xFEE00000ULL, 0x12345678u);
     REQUIRE(ep.msix().update_pending(5) == true);
     REQUIRE(ep.msix().is_pending(5) == true);
+    REQUIRE(ep.msix().is_pba_set(5) == true);
     REQUIRE(ep.msix().pending_count() == 1u);
 
-    // clear_pending 移除
     REQUIRE(ep.msix().clear_pending(5) == true);
     REQUIRE(ep.msix().is_pending(5) == false);
+    REQUIRE(ep.msix().is_pba_set(5) == false);
     REQUIRE(ep.msix().pending_count() == 0u);
 
-    // 重复 clear 返回 false（已无 pending）
     REQUIRE(ep.msix().clear_pending(5) == false);
 }
