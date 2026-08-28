@@ -48,21 +48,21 @@ UsrLinuxEmu VFIO 仿真 → cpptlm_emulator_* 23 ABI → CppTLM PcieEndpointTLM/
 5. **backdoor ABI 隔离**(MMIO 与 backdoor 路径)
 6. **23 ABI shell 包装**(per `cpptlm-dgpu-abi-export` change)
 
-### 1.3 跨仓治理边界(per ADR-036 + ADR-088 §C2)
+### 1.3 跨仓治理边界(per UsrLinuxEmu ADR-036 + UsrLinuxEmu ADR-088 §C2)
 
 **本 ADR- 责任**:
 - ✅ 本仓侧前置测试增强(OpenSpec change 实施)
 - ✅ 提议 UsrLinuxEmu ADR-089 / ADR-088 增量修订(供 UsrLinuxEmu owner 决策)
 
 **不在本 ADR- 责任**:
-- ❌ 修改 UsrLinuxEmu 仓文档(违反 ADR-036 3 区分)
+- ❌ 修改 UsrLinuxEmu 仓文档(违反 UsrLinuxEmu ADR-036 3 区分)
 - ❌ 在本仓实施 UsrLinuxEmu 端测试(超出本仓范围)
 
 ## 2. Decision
 
-### D1: 接受 ADR-089 v0.5 范围(不修订)
+### D1: 接受 UsrLinuxEmu ADR-089 v0.5 范围(不修订)
 
-ADR-089 v0.5 已 Accepted,本仓**不**提议重新打开。本 ADR- 仅作为**本仓侧前置测试的治理载体**,不涉及 UsrLinuxEmu 决策变更。
+UsrLinuxEmu ADR-089 v0.5 已 Accepted,本仓**不**提议重新打开。本 ADR- 仅作为**本仓侧前置测试的治理载体**,不涉及 UsrLinuxEmu 决策变更。
 
 ### D2: 在本仓实施 5 项前置测试(per OpenSpec change)
 
@@ -123,7 +123,7 @@ T-prereq-5: backdoor ABI 隔离测试 (P2-D)
 - [ ] 提交本 ADR- SOC-08 后,创建 UsrLinuxEmu issue/ADR 提议(由本仓 owner 发起,UsrLinuxEmu owner 决策)
 - [ ] UsrLinuxEmu ADR-089 §D7 增量(可选)
 - [ ] UsrLinuxEmu ADR-088 §C2 增量补注(可选)
-- [ ] 跨仓 commit 顺序(per ADR-035 §R5.1):CppTLM PR#1(本 ADR- + 前置测试) → UsrLinuxEmu PR#2(消费前置测试)
+- [ ] 跨仓 commit 顺序(per UsrLinuxEmu ADR-035 §R5.1):CppTLM PR#1(本 ADR- + 前置测试) → UsrLinuxEmu PR#2(消费前置测试)
 
 ## 4. Consequences
 

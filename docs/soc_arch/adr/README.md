@@ -23,6 +23,8 @@
 | [ADR-SOC-04-hsapp-cp-dispatcher-simplification.md](./ADR-SOC-04-hsapp-cp-dispatcher-simplification.md) | HSAPP/CP/Dispatcher 极简化（`KernelLaunchTLM` 取代 HSA 三件套） | ✅ 已确认 | Phase 7.B+ |
 | [ADR-SOC-05-gpu-directory-structure.md](./ADR-SOC-05-gpu-directory-structure.md) | GPU 目录结构（`include/tlm/gpu/` 子目录） | ✅ 已确认 | Phase 7.A 起 |
 | [ADR-SOC-06-cpptlm-v05-mvp.md](./ADR-SOC-06-cpptlm-v05-mvp.md) | cpptlm-v05-mvp(**MVP 切片**:UsrLinuxEmu IOCTL → CppTLM CP→TMU→SQ→CudaCore + PTX-EMU functional/timing 分离,4 阶段 6-10 周,沿用 ADR-X.16 决策) | 📋 Proposed | Phase 10 MVP (W1-10) |
+| [ADR-SOC-07-dgpu-board-soc-layering.md](./ADR-SOC-07-dgpu-board-soc-layering.md) | dGPU Board/SOC 两层分离（`DGpuBoard` C++ ABI shell + `DGpuSoc` JSON 拓扑；PCIe Config Space/BAR/MSI-X 归属 SOC 片内 `PcieEndpointTLM`，upstream DMA 归属 `SdmaEngineTLM`；细化 ADR-SOC-06 D4/D5，23 ABI 外部契约不变） | 📋 Proposed | MVP 后续 (s3 之后) |
+| [ADR-SOC-08-v55-system-hw-integration-preconditions.md](./ADR-SOC-08-v55-system-hw-integration-preconditions.md) | **v5.5+ 系统级硬件仿真集成的前置测试契约**（per UsrLinuxEmu ADR-089 v0.5 + ADR-088 §C2；本仓 5 项 Tier 2 前置测试 P0/P1/P2 治理 + 4 项 UsrLinuxEmu 增量提议送审；不修订 UsrLinuxEmu 文档，遵守 ADR-035 跨仓治理边界）| 📋 Proposed | OpenSpec change `2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites/` |
 
 ## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference(已迁回本目录)
 
@@ -60,7 +62,7 @@
 | **示例议题** | 事务追踪、错误处理、端口类型 | 一致性协议、CU 建模粒度、Host-GPU 接口 |
 | **稳定性** | 极稳定，跨 SoC 共用 | 较不稳定，随 SoC 拓扑变化 |
 | **模板** | `docs/adr/ADR-P1-TEMPLATE.md` | 本目录 ADR 沿用 X.N 结构（Context/Decision/Implementation） |
-| **当前规模** | 13 个（X.1-X.13） | 5 个（SOC-01-SOC-05） |
+| **当前规模** | 13 个（X.1-X.13） | 8 个（SOC-01-SOC-08） |
 
 ---
 

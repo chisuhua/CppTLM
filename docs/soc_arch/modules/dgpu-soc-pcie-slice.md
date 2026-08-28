@@ -82,9 +82,14 @@
 
 **所有权声明**:`CompletionBundle` 由 `cpptlm-dgpu-sdma-engine` 独占所有者(per design.md §2 ownership),`board-soc-split` T-bs-2 复用本类型,不得在其 `dgpu_bundles_tlm.hh` 中重复定义。
 
-### 3.2 跨仓 wire-format 冻结(per ADR-090 v2 §C0 Canonical 仲裁)
+### 3.2 跨仓 wire-format 冻结(per Oracle 审查 2026-08-28 scope 修正)
 
-本仓交付的 `PcieTlpBundle` / `DmaDescriptorBundle` / `CompletionBundle` 是 UsrLinuxEmu 仓 `cpptlm_bridge.h` 与 `cpptlm_module.h` 解析的目标。**任何字段重排或新增会破坏 UsrLinuxEmu 仓的解析**(per ADR-090 v2 §C0)。详见 §7 前置测试 (E) wire-format 快照。
+**重要边界澄清**:
+- `bundle_serialization.hh:23-27` 自带注释"**仅在单一仿真进程内使用**",UsrLinuxEmu 经 23 ABI C 符号消费,从不 memcpy 这些 TLM Bundle
+- **真正的跨仓 ABI 由 `include/cudart/abi_guards.h` G-D4 17 条静态断言覆盖**(per AGENTS.md CROSS-PROJECT),与本仓 `PcieTlpBundle` / `DmaDescriptorBundle` 等**不**共享字段布局
+- 本仓 wire-format 快照测试(`test_pcie_slice_wire_format_snapshot.cc`)的**真正作用是仓内布局守卫**:防止 `cpptlm-dgpu-board-soc-split` change 集成时,本仓 PcieEndpointTLM/SdmaEngineTLM 复用的 bundle 布局被意外修改而未发现
+
+详见 §7 前置测试 (E) wire-format 快照。
 
 ## 4. 接口契约
 
@@ -167,7 +172,30 @@ OpenSpec change: [`openspec/changes/2026-08-28-cpptlm-dgpu-pcie-slice-prerequisi
 | **CPUs/Memory/NoC** | ✅ TLM 仿真 | — | 本仓独占 |
 | **PTX-EMU Image Executor** | ✅ submodule (per ADR-090 v2) | — | 本仓独占 |
 
-**关键不变量**:UsrLinuxEmu 仿真 VFIO 时,经 23 ABI 调用本仓 PcieEndpointTLM / SdmaEngineTLM 的契约,**必须**与本文档 §4 + §5 描述一致。
+**关键不变量**:UsrLinuxEmu 仿真 VFIO 时,经 23 ABI 调用本仓 PcieEndpointTLM / SdmaEngineTLM 的契约,**必须**与本文档 §4 + §6 描述一致。
+
+---
+
+## 5. 跨仓契约与 UsrLinuxEmu ADR 治理边界(per Oracle 审查 2026-08-28)
+
+### 5.1 跨仓 wire-format 边界澄清
+
+本仓的 `PcieTlpBundle` / `DmaDescriptorBundle` / `CompletionBundle` **不**与 UsrLinuxEmu 仓的 `cpptlm_module.h` 直接共享字段布局:
+- `bundle_serialization.hh:23-27` 自带注释"**仅在单一仿真进程内使用**"
+- UsrLinuxEmu 经 23 ABI C 符号消费,从不 memcpy 这些 TLM Bundle
+- 真正的跨仓 ABI 由 `include/cudart/abi_guards.h` G-D4 17 条静态断言覆盖(per AGENTS.md CROSS-PROJECT)
+- 本仓 wire-format 快照测试(`test_pcie_slice_wire_format_snapshot.cc`)的**真正作用是仓内布局守卫**:防止 `cpptlm-dgpu-board-soc-split` change 集成时本仓 bundle 布局被意外修改
+
+### 5.2 跨仓 ADR 引用规范(per Oracle 审查 Minor 修复)
+
+跨仓 ADR 引用必须**显式标注仓名**,避免本仓 ADR-X/SOC 与 UsrLinuxEmu ADR-035/036 编号冲突:
+
+| 编号体系 | 仓 | 示例 |
+|----------|-----|------|
+| **ADR-SOC-0X** | CppTLM(本仓)| ADR-SOC-06 / ADR-SOC-07 / ADR-SOC-08 |
+| **ADR-0XX (无 SOC 前缀)**)** | UsrLinuxEmu | UsrLinuxEmu ADR-035 / ADR-036 / ADR-088 / ADR-089 / ADR-090 |
+
+**约定**:本文档与姊妹 ADR 引用 UsrLinuxEmu ADR 时,必须加 "UsrLinuxEmu ADR-XXX" 前缀。已在本文档所有跨仓引用中采用。
 
 ---
 
