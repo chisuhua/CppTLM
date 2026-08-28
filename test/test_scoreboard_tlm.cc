@@ -29,8 +29,7 @@ TEST_CASE("ScoreboardTLM: has_free_entry initially returns true", "[gpu][d1p1]")
     REQUIRE(sb.has_free_entry());
 }
 
-TEST_CASE("ScoreboardTLM: allocate fills entries and returns false when full",
-          "[gpu][d1p1]") {
+TEST_CASE("ScoreboardTLM: allocate fills entries and returns false when full", "[gpu][d1p1]") {
     ScoreboardTLM sb;
 
     // Fill all 2048 entries (64 warps × 8 in-flight × 3 dest margin)
@@ -65,22 +64,21 @@ TEST_CASE("ScoreboardTLM: release unknown reg returns false", "[gpu][d1p1]") {
     REQUIRE_FALSE(sb.release(42, 0));
 }
 
-TEST_CASE("ScoreboardTLM: duplicate allocate returns false (rejects)",
-          "[gpu][d1p1]") {
+TEST_CASE("ScoreboardTLM: duplicate allocate returns false (rejects)", "[gpu][d1p1]") {
     ScoreboardTLM sb;
 
     REQUIRE(sb.allocate(10, 0));
-    REQUIRE_FALSE(sb.allocate(10, 0));  // duplicate rejects
+    REQUIRE_FALSE(sb.allocate(10, 0)); // duplicate rejects
 
     REQUIRE(sb.release(10, 0));
-    REQUIRE(sb.allocate(10, 0));  // 释放后可重新 allocate
+    REQUIRE(sb.allocate(10, 0)); // 释放后可重新 allocate
 }
 
 TEST_CASE("ScoreboardTLM: multi_warp allocate independent", "[gpu][d1p1]") {
     ScoreboardTLM sb;
 
     REQUIRE(sb.allocate(5, 0));
-    REQUIRE(sb.allocate(5, 1));  // 同 reg_id, 不同 warp_id — 独立
+    REQUIRE(sb.allocate(5, 1)); // 同 reg_id, 不同 warp_id — 独立
     REQUIRE(sb.allocate(5, 2));
 
     REQUIRE(sb.release(5, 0));
@@ -93,12 +91,12 @@ TEST_CASE("ScoreboardTLM: tick is no-op in Phase 1", "[gpu][d1p1]") {
 
     REQUIRE(sb.allocate(1, 0));
     REQUIRE(sb.allocate(2, 0));
-    REQUIRE(sb.has_free_entry());  // 2048 capacity, 2 used → yes
+    REQUIRE(sb.has_free_entry()); // 2048 capacity, 2 used → yes
 
-    sb.tick();  // no-op
+    sb.tick(); // no-op
 
     // tick 后状态不变
-    REQUIRE_FALSE(sb.release(99, 0));  // 未分配 entry 应 release 失败
+    REQUIRE_FALSE(sb.release(99, 0)); // 未分配 entry 应 release 失败
     REQUIRE(sb.release(1, 0));
     REQUIRE(sb.release(2, 0));
 }
@@ -110,13 +108,13 @@ TEST_CASE("ScoreboardTLM: reset clears all entries", "[gpu][d1p1]") {
     for (uint32_t i = 0; i < 100; ++i) {
         REQUIRE(sb.allocate(i, 0));
     }
-    REQUIRE_FALSE(sb.allocate(0, 0));  // duplicate → alloc 100 entries
+    REQUIRE_FALSE(sb.allocate(0, 0)); // duplicate → alloc 100 entries
 
     sb.reset();
 
     // reset 后所有 entries 清空，可重新分配
     REQUIRE(sb.has_free_entry());
-    REQUIRE(sb.allocate(0, 0));       // 之前是 duplicate 的 reg 现在可用
+    REQUIRE(sb.allocate(0, 0)); // 之前是 duplicate 的 reg 现在可用
     REQUIRE(sb.allocate(1, 0));
     REQUIRE(sb.release(0, 0));
     REQUIRE(sb.release(1, 0));
@@ -131,7 +129,7 @@ TEST_CASE("ScoreboardTLM: O(1) lookup — many entries", "[gpu][d1p1]") {
     }
 
     // 中间 entry 的 duplicate 检测应为 O(1)
-    REQUIRE_FALSE(sb.allocate(512, 512 % 64));  // duplicate
+    REQUIRE_FALSE(sb.allocate(512, 512 % 64)); // duplicate
 
     // 释放也应 O(1)
     REQUIRE(sb.release(512, 512 % 64));

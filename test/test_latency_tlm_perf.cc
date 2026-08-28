@@ -25,18 +25,18 @@ using namespace std::chrono;
 
 namespace {
 
-/// 微秒级计时辅助
-struct Timer {
-    high_resolution_clock::time_point t0 = high_resolution_clock::now();
-    double us() const {
-        return duration_cast<nanoseconds>(high_resolution_clock::now() - t0).count() / 1000.0;
-    }
-};
+    /// 微秒级计时辅助
+    struct Timer {
+        high_resolution_clock::time_point t0 = high_resolution_clock::now();
+        double us() const {
+            return duration_cast<nanoseconds>(high_resolution_clock::now() - t0).count() / 1000.0;
+        }
+    };
 
-constexpr int kWarmup = 100;
-constexpr int kIters  = 100000;
+    constexpr int kWarmup = 100;
+    constexpr int kIters = 100000;
 
-}  // namespace
+} // namespace
 
 // ===== PipelineTLM 字符串查询 =====
 
@@ -52,7 +52,7 @@ TEST_CASE("pipeline perf: P0 best-path (add.s32) string lookup", "[gpu][perf]") 
 
     double ns_per_call = t.us() * 1e3 / kIters;
     INFO("P0 best-path: " << ns_per_call << " ns/call");
-    REQUIRE(ns_per_call < 1000.0);  // 含 string 子串匹配
+    REQUIRE(ns_per_call < 1000.0); // 含 string 子串匹配
 }
 
 TEST_CASE("pipeline perf: P0 fma.f32 string lookup (4.22 path)", "[gpu][perf]") {
@@ -94,7 +94,7 @@ TEST_CASE("pipeline perf: P0 fallback (unknown instr) string lookup", "[gpu][per
 
     double ns_per_call = t.us() * 1e3 / kIters;
     INFO("P0 fallback: " << ns_per_call << " ns/call");
-    REQUIRE(ns_per_call < 1000.0);  // 全子串扫描最坏路径
+    REQUIRE(ns_per_call < 1000.0); // 全子串扫描最坏路径
 }
 
 // ===== PipelineTLM type-based (核心热路径) =====
@@ -110,13 +110,13 @@ TEST_CASE("pipeline perf: type-based P0 average (2.0)", "[gpu][perf]") {
 
     double ns_per_call = t.us() * 1e3 / kIters;
     INFO("type-based P0: " << ns_per_call << " ns/call");
-    REQUIRE(ns_per_call < 100.0);  // 纯 switch, 应极快
+    REQUIRE(ns_per_call < 100.0); // 纯 switch, 应极快
 }
 
 TEST_CASE("pipeline perf: type-based all 6 pipelines", "[gpu][perf]") {
     PipelineTLM pipe;
     PipelineId ids[] = {PipelineId::P0_INT_FP32, PipelineId::V_SIMD, PipelineId::P1_FP64,
-                        PipelineId::P2_SFU,      PipelineId::P3_LSU,  PipelineId::P4_TC};
+                        PipelineId::P2_SFU,      PipelineId::P3_LSU, PipelineId::P4_TC};
 
     for (auto pid : ids)
         for (int i = 0; i < kWarmup; ++i)
