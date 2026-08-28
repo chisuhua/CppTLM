@@ -67,7 +67,7 @@ TEST_CASE("SdmaEngine: JSON config loads max_inflight/translate_latency/vram_siz
     json cfg;
     cfg["max_inflight"] = 8;
     cfg["translate_latency"] = 3;
-    cfg["vram_size_bytes"] = 134217728u;  // 128 MB
+    cfg["vram_size_bytes"] = 134217728u; // 128 MB
 
     sdma.set_config(cfg);
     sdma.on_config_loaded();
@@ -78,8 +78,7 @@ TEST_CASE("SdmaEngine: JSON config loads max_inflight/translate_latency/vram_siz
     REQUIRE_NOTHROW(sdma.init());
 }
 
-TEST_CASE("SdmaEngine: All 5 ports receive non-null StreamAdapter (SD-G5)",
-          "[sdma][adapter]") {
+TEST_CASE("SdmaEngine: All 5 ports receive non-null StreamAdapter (SD-G5)", "[sdma][adapter]") {
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
     sdma.init();
@@ -94,8 +93,7 @@ TEST_CASE("SdmaEngine: All 5 ports receive non-null StreamAdapter (SD-G5)",
     auto a3 = make_fake();
     auto a4 = make_fake();
 
-    cpptlm::StreamAdapterBase* arr[5] = {a0.get(), a1.get(), a2.get(),
-                                         a3.get(), a4.get()};
+    cpptlm::StreamAdapterBase* arr[5] = {a0.get(), a1.get(), a2.get(), a3.get(), a4.get()};
     sdma.set_stream_adapter(arr);
 
     // 5 个端口都收到非空 adapter
@@ -120,8 +118,7 @@ TEST_CASE("SdmaEngine: All 5 ports receive non-null StreamAdapter (SD-G5)",
     REQUIRE(sdma.get_adapter(0) == single_ptr);
 }
 
-TEST_CASE("SdmaEngine: ModuleFactory registers SdmaEngineTLM type",
-          "[sdma][json][factory]") {
+TEST_CASE("SdmaEngine: ModuleFactory registers SdmaEngineTLM type", "[sdma][json][factory]") {
     // 验证 "SdmaEngineTLM" 已注册到 ModuleFactory（REGISTER_CHSTREAM 副作用）
     auto types = ModuleFactory::getRegisteredTypes();
     bool found = false;
@@ -134,8 +131,7 @@ TEST_CASE("SdmaEngine: ModuleFactory registers SdmaEngineTLM type",
     REQUIRE(found);
 }
 
-TEST_CASE("SdmaEngine: ModuleFactory multi-port SdmaEngineTLM returns 5",
-          "[sdma][json][factory]") {
+TEST_CASE("SdmaEngine: ModuleFactory multi-port SdmaEngineTLM returns 5", "[sdma][json][factory]") {
     // SdmaEngineTLM 是 5 端口模块（per spec.md Scenario "JSON instantiation"）
     REQUIRE(ModuleFactory::getRegisteredTypes().size() > 0);
     auto& factory = ChStreamAdapterFactory::get();
@@ -144,8 +140,7 @@ TEST_CASE("SdmaEngine: ModuleFactory multi-port SdmaEngineTLM returns 5",
     REQUIRE(factory.getPortCount("SdmaEngineTLM") == 5u);
 }
 
-TEST_CASE("SdmaEngine: JSON fixture sdma_engine_min.json loads",
-          "[sdma][json][fixture]") {
+TEST_CASE("SdmaEngine: JSON fixture sdma_engine_min.json loads", "[sdma][json][fixture]") {
     // 加载 fixtures JSON（per tasks.md T-sd-3 "JSON fixture configs/test/sdma_engine_min.json"）
     const std::string path = std::string(CPPTLM_SOURCE_DIR) + "/configs/test/sdma_engine_min.json";
     std::ifstream ifs(path);
@@ -160,9 +155,9 @@ TEST_CASE("SdmaEngine: JSON fixture sdma_engine_min.json loads",
     REQUIRE(cfg["modules"][0]["params"]["max_inflight"] == 4);
 }
 
-TEST_CASE("SdmaEngine: SdmaEngineTLM::num_ports() == 5",
-          "[sdma][json][port-count]") {
-    // 验证 ChStreamModuleBase::num_ports() 返回 5（per design.md §3 + spec.md Scenario "JSON instantiation"）
+TEST_CASE("SdmaEngine: SdmaEngineTLM::num_ports() == 5", "[sdma][json][port-count]") {
+    // 验证 ChStreamModuleBase::num_ports() 返回 5（per design.md §3 + spec.md Scenario "JSON
+    // instantiation"）
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
     REQUIRE(sdma.num_ports() == 5u);

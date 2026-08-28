@@ -33,20 +33,18 @@ TEST_CASE("SdmaEngine IOMMU fault: translate_cb returns non-zero → CompleterAb
     // 注入 fake translate callback：返回非 0 模拟 IOMMU 翻译失败
     int translate_call_count = 0;
     sdma.set_translate_cb(
-        [&translate_call_count](uint64_t /*iova*/, uint32_t /*size*/,
-                                uint64_t& /*phys*/) -> int {
+        [&translate_call_count](uint64_t /*iova*/, uint32_t /*size*/, uint64_t& /*phys*/) -> int {
             translate_call_count++;
-            return -EFAULT;  // 模拟 IOMMU translation fault
+            return -EFAULT; // 模拟 IOMMU translation fault
         });
 
     // 注入 error callback（捕获上报）
-    int    received_err_code = 0;
+    int received_err_code = 0;
     std::string received_err_msg;
-    sdma.set_error_cb(
-        [&received_err_code, &received_err_msg](int err, const std::string& msg) {
-            received_err_code = err;
-            received_err_msg = msg;
-        });
+    sdma.set_error_cb([&received_err_code, &received_err_msg](int err, const std::string& msg) {
+        received_err_code = err;
+        received_err_msg = msg;
+    });
 
     // 构造 desc_in（H2D: host_iova=100 → vram_offset=0x1000, size=4, tag=1）
     DmaDescriptor desc(DmaDescriptor::Dir::H2D,
@@ -54,8 +52,7 @@ TEST_CASE("SdmaEngine IOMMU fault: translate_cb returns non-zero → CompleterAb
                        /*vram_offset=*/0x1000,
                        /*size=*/4,
                        /*tag=*/1);
-    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
-        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
 
     REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].valid() == false);
@@ -67,9 +64,10 @@ TEST_CASE("SdmaEngine IOMMU fault: translate_cb returns non-zero → CompleterAb
     //   no VRAM write MUST occur (mem_out 不发出)
     //   error completion MUST be emitted on done_out
     //   board error channel MUST be signaled
-    REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_MEM_OUT].valid() == false);  // 无 VRAM 写
-    REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_HOST_OUT].valid() == false);  // 无 host upstream（即使失败也无事务）
-    REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].valid() == true);   // 错误完成发出
+    REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_MEM_OUT].valid() == false); // 无 VRAM 写
+    REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_HOST_OUT].valid() ==
+            false); // 无 host upstream（即使失败也无事务）
+    REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].valid() == true); // 错误完成发出
 
     // 验证 done_out: kind=DMA_DONE, status=-EIO
     const auto& done_tlp = sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].data();
@@ -88,8 +86,7 @@ TEST_CASE("SdmaEngine IOMMU fault: translate_cb returns non-zero → CompleterAb
     REQUIRE(sdma.error_count() == 1u);
 }
 
-TEST_CASE("SdmaEngine Invalid: size == 0 → rejected with -EINVAL",
-          "[sdma][error][invalid]") {
+TEST_CASE("SdmaEngine Invalid: size == 0 → rejected with -EINVAL", "[sdma][error][invalid]") {
     // per spec.md Scenario "Invalid descriptor rejected" (size == 0)
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
@@ -98,8 +95,7 @@ TEST_CASE("SdmaEngine Invalid: size == 0 → rejected with -EINVAL",
     // 注意：translate_cb 不应被调用（size==0 在 cb 之前就拒绝）
     int translate_call_count = 0;
     sdma.set_translate_cb(
-        [&translate_call_count](uint64_t /*iova*/, uint32_t /*size*/,
-                                uint64_t& /*phys*/) -> int {
+        [&translate_call_count](uint64_t /*iova*/, uint32_t /*size*/, uint64_t& /*phys*/) -> int {
             translate_call_count++;
             return 0;
         });
@@ -108,10 +104,9 @@ TEST_CASE("SdmaEngine Invalid: size == 0 → rejected with -EINVAL",
     DmaDescriptor desc(DmaDescriptor::Dir::H2D,
                        /*host_iova=*/100,
                        /*vram_offset=*/0x1000,
-                       /*size=*/0,  // 非法
+                       /*size=*/0, // 非法
                        /*tag=*/1);
-    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
-        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
 
     sdma.tick();
@@ -120,7 +115,7 @@ TEST_CASE("SdmaEngine Invalid: size == 0 → rejected with -EINVAL",
     REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_HOST_OUT].valid() == false);
     REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_MEM_OUT].valid() == false);
     REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].valid() == true);
-    REQUIRE(translate_call_count == 0);  // cb 未触发
+    REQUIRE(translate_call_count == 0); // cb 未触发
 
     const auto& done_tlp = sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].data();
     CompletionBundle done_cb = SdmaEngineTLM::from_pcie_tlp_completion(done_tlp);
@@ -134,18 +129,16 @@ TEST_CASE("SdmaEngine Invalid: vram_offset out-of-range → rejected with -EINVA
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
     sdma.init();
-    sdma.set_vram_size_bytes(0x100000);  // 1 MB VRAM
-    sdma.set_translate_cb(
-        [](uint64_t, uint32_t, uint64_t&) -> int { return 0; });
+    sdma.set_vram_size_bytes(0x100000); // 1 MB VRAM
+    sdma.set_translate_cb([](uint64_t, uint32_t, uint64_t&) -> int { return 0; });
 
     // desc with vram_offset + size 越界
     DmaDescriptor desc(DmaDescriptor::Dir::H2D,
                        /*host_iova=*/100,
-                       /*vram_offset=*/0x100000,  // 刚好越界
+                       /*vram_offset=*/0x100000, // 刚好越界
                        /*size=*/4,
                        /*tag=*/2);
-    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
-        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
 
     sdma.tick();
@@ -160,8 +153,7 @@ TEST_CASE("SdmaEngine Invalid: vram_offset out-of-range → rejected with -EINVA
     REQUIRE(static_cast<int32_t>(done_cb.status.read()) == -EINVAL);
 }
 
-TEST_CASE("SdmaEngine Missing translate_cb: error path still works",
-          "[sdma][error][no-cb]") {
+TEST_CASE("SdmaEngine Missing translate_cb: error path still works", "[sdma][error][no-cb]") {
     // 不注入 translate_cb（未注册）→ 应触发 -EIO 错误路径
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
@@ -169,17 +161,15 @@ TEST_CASE("SdmaEngine Missing translate_cb: error path still works",
     // 注意：未调用 sdma.set_translate_cb()
 
     int received_err_code = 0;
-    sdma.set_error_cb([&received_err_code](int err, const std::string&) {
-        received_err_code = err;
-    });
+    sdma.set_error_cb(
+        [&received_err_code](int err, const std::string&) { received_err_code = err; });
 
     DmaDescriptor desc(DmaDescriptor::Dir::H2D,
                        /*host_iova=*/100,
                        /*vram_offset=*/0x1000,
                        /*size=*/4,
                        /*tag=*/3);
-    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
-        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
 
     sdma.tick();

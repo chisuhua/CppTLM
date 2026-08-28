@@ -135,7 +135,7 @@ TEST_CASE("PipelineTLM: is_placeholder = false", "[gpu][d1p1][s4]") {
 TEST_CASE("PipelineTLM: all 6 pipelines have valid non-negative values", "[gpu][d1p1][s4]") {
     PipelineTLM pipe;
     PipelineId ids[] = {PipelineId::P0_INT_FP32, PipelineId::V_SIMD, PipelineId::P1_FP64,
-                        PipelineId::P2_SFU,      PipelineId::P3_LSU,  PipelineId::P4_TC};
+                        PipelineId::P2_SFU,      PipelineId::P3_LSU, PipelineId::P4_TC};
     for (auto pid : ids) {
         double v = pipe.get_fractional_cycles("add.f32", pid);
         double t = pipe.get_fractional_cycles_by_type(0, pid);

@@ -104,8 +104,7 @@ TEST_CASE("SdmaEngine D2H: completion implies upstream host write visibility",
                        /*vram_offset=*/0x4000,
                        /*size=*/16,
                        /*tag=*/99);
-    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
-        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
     sdma.tick();
 
@@ -127,7 +126,7 @@ TEST_CASE("SdmaEngine D2H: done_out status=0 implies host memory data written (R
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
     sdma.init();
-    sdma.set_translate_cb(fake_translate_cb_d2h);  // identity mapping
+    sdma.set_translate_cb(fake_translate_cb_d2h); // identity mapping
 
     // 注入 fake host memory + fake VRAM memory（per spec.md R3 backdoor 路径）
     std::vector<uint8_t> host_mem(4096, 0);
@@ -136,9 +135,8 @@ TEST_CASE("SdmaEngine D2H: done_out status=0 implies host memory data written (R
     sdma.set_vram_backdoor(vram_mem.data(), vram_mem.size());
 
     // 预置 VRAM 数据：在 vram_offset=0x4000 处写入 16 字节 payload
-    static constexpr uint8_t kPayload[16] = {
-        0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE,
-        0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
+    static constexpr uint8_t kPayload[16] = {0xDE, 0xAD, 0xBE, 0xEF, 0xCA, 0xFE, 0xBA, 0xBE,
+                                             0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF};
     std::memcpy(&vram_mem[0x4000], kPayload, sizeof(kPayload));
 
     // D2H desc: vram_offset=0x4000 → host_iova=1000, size=16, tag=99
@@ -147,8 +145,7 @@ TEST_CASE("SdmaEngine D2H: done_out status=0 implies host memory data written (R
                        /*vram_offset=*/0x4000,
                        /*size=*/16,
                        /*tag=*/99);
-    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
-        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
 
     REQUIRE(sdma.has_host_backdoor() == true);

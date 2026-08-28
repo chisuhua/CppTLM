@@ -42,7 +42,7 @@ TEST_CASE("TensorCoreTLM: FP4 latency is 32", "[gpu][d1p1][s4]") {
 
 TEST_CASE("TensorCoreTLM: throughput_cycles equals latency", "[gpu][d1p1][s4]") {
     TensorCoreTLM tc;
-    TcPrecision precs[] = {TcPrecision::FP4, TcPrecision::FP6, TcPrecision::FP8,
+    TcPrecision precs[] = {TcPrecision::FP4,  TcPrecision::FP6,  TcPrecision::FP8,
                            TcPrecision::FP16, TcPrecision::BF16, TcPrecision::TF32};
     for (auto prec : precs) {
         REQUIRE(tc.get_throughput_cycles(prec) == tc.get_latency(prec));
@@ -64,7 +64,7 @@ TEST_CASE("TensorCoreTLM: is_placeholder returns false in Phase 2a", "[gpu][d1p1
 
 TEST_CASE("TensorCoreTLM: all 6 precisions have distinct valid values", "[gpu][d1p1][s4]") {
     TensorCoreTLM tc;
-    TcPrecision precs[] = {TcPrecision::FP4, TcPrecision::FP6, TcPrecision::FP8,
+    TcPrecision precs[] = {TcPrecision::FP4,  TcPrecision::FP6,  TcPrecision::FP8,
                            TcPrecision::FP16, TcPrecision::BF16, TcPrecision::TF32};
     for (auto prec : precs) {
         uint32_t lat = tc.get_latency(prec);
