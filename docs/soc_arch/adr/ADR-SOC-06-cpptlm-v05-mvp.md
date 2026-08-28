@@ -493,6 +493,14 @@ host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit
 
 ---
 
+---
+
+## Status Update
+
+- **2026-08-26**: **Board/SOC 两层分离细化**（per [`ADR-SOC-07-dgpu-board-soc-layering.md`](./ADR-SOC-07-dgpu-board-soc-layering.md) 📋 Proposed）。本 ADR D4/D5 中的 "DGpuBoardTLM 8 组件 ChStreamModuleBase wrapper"（s2 单体实现）被澄清为**过渡形态**：目标架构为 `DGpuBoard`（C++ ABI shell，仅 PCIe 设备契约：ABI 翻译 / 设备枚举 / SOC 装配 / 回调接线 / 生命周期）+ `DGpuSoc`（SimModule 容器，JSON + ModuleFactory 构建全部内部组件）。**PCIe Config Space / BAR0 MMIO / BAR1 aperture / MSI-X 归属 SOC 片内 `PcieEndpointTLM`（PCIe slave）；upstream DMA 归属 `SdmaEngineTLM`（PCIe master）**——与真实硬件拓扑一致（PCIe endpoint IP 在 SOC die 内，per ADR-088 P1）。23 ABI 外部契约不变。s2 `Impl` 8 值成员的迁移映射见 ADR-SOC-07 D6。实施 change：`2026-08-26-cpptlm-dgpu-pcie-endpoint` / `-sdma-engine` / `-board-soc-split`（C 依赖 s3 archive）。本 ADR 原有决策不撤销。
+
+---
+
 **维护**: CppTLM Team (Sisyphus)
 **下次 review**: Phase D 完成(submodule add 落地后)→ 升 ✅ Accepted
 **Status Update 触发**: ~~PTX-EMU `stepOneWarpInstruction` API 拒收~~(DP4=C 消除);UsrLinuxEmu IOCTL 0x28 真实接口与 stub 偏差 >15%;MVP 6 周节点延迟;submodule commit hash 漂移

@@ -1,6 +1,7 @@
 # dgpu-board 微架构文档
 
 > **类别**: GPU > dGPU Board · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
+> **⚠️ 修订注记（2026-08-26）**: 本文档描述的 "DGpuBoardTLM 8 组件 ChStreamModuleBase wrapper"（s2 单体 PIMPL 实现）已被 [`ADR-SOC-07-dgpu-board-soc-layering.md`](../adr/ADR-SOC-07-dgpu-board-soc-layering.md) 澄清为**过渡形态**。目标架构：`DGpuBoard` C++ ABI shell + `DGpuSoc` JSON 拓扑；PCIe Config Space/BAR/MSI-X 迁移至 SOC 片内 `PcieEndpointTLM`，upstream DMA 迁移至 `SdmaEngineTLM`，s2 `Impl` 值成员按 ADR-SOC-07 D6 映射表迁移为 JSON 注册组件。本文 §1-§N 的"8 组件单体"描述保留作 s2 历史记录，新设计以 ADR-SOC-07 为准。
 > **Header**: `include/tlm/gpu/dgpu_board_mvp.hh`
 > **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`, 新增)
 > **蓝图来源**: gem5 `src/dev/amdgpu/amdgpu_device.py` + `src/dev/pci/pci_host.py` + UsrLinuxEmu ADR-090 v2 §D3.3
