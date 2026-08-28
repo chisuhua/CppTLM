@@ -16,10 +16,11 @@
 #include "tlm/gpu/kernel_launch_tlm.hh"
 // HSK-8 Phase 2 Step 4: memory_bridge.hh 已物理删除 (HSK-6 deprecate by 369cf71).
 // D1-Full P1: 3 核心模块 + IPtxEmuDriver 窄接口
-#include "tlm/gpu/scoreboard_tlm.hh"
 #include "tlm/gpu/pipeline_tlm.hh"
+#include "tlm/gpu/scoreboard_tlm.hh"
 #include "tlm/gpu/tensor_core_tlm.hh"
-// HSK-8 Phase 2 Step 4: ptx_emu_driver.hh + memory_bridge.hh 已物理删除 (HSK-6 deprecate by 369cf71).
+// HSK-8 Phase 2 Step 4: ptx_emu_driver.hh + memory_bridge.hh 已物理删除 (HSK-6 deprecate by
+// 369cf71).
 #include "utils/json_includer.hh"
 #include "utils/topology_dumper.hh"
 #include <cstdlib>
@@ -109,7 +110,8 @@ int main(int argc, char* argv[]) {
     }
     factory.startAllTicks();
 
-    // HSK-8 Phase 2 Step 4: --f12b-ld wiring block disabled (MemoryBridge + g_ptx_emu_driver removed).
+    // HSK-8 Phase 2 Step 4: --f12b-ld wiring block disabled (MemoryBridge + g_ptx_emu_driver
+    // removed).
     std::vector<std::unique_ptr<ScoreboardTLM>> per_sm_scoreboards;
     std::vector<std::unique_ptr<PipelineTLM>> per_sm_pipelines;
     std::vector<std::unique_ptr<TensorCoreTLM>> per_sm_tensorcores;
@@ -162,7 +164,7 @@ int main(int argc, char* argv[]) {
     } else {
         std::cout << "[INFO] --f12b-ld: MemoryBridge disabled (zero regression)\n";
     }
-#endif  // Disabled HSK-8 Phase 2 Step 4 wiring block
+#endif // Disabled HSK-8 Phase 2 Step 4 wiring block
 
     TopologyDumper::dumpToDot(factory, config, "topology.dot");
 

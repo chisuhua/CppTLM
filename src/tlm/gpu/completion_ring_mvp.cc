@@ -10,7 +10,8 @@ namespace tlm::gpu {
     CompletionRing::CompletionRing() = default;
 
     CompletionRing::CompletionRing(size_t capacity)
-        : capacity_(capacity == 0 ? DEFAULT_CAPACITY : capacity) {}
+        : capacity_(capacity == 0 ? DEFAULT_CAPACITY : capacity) {
+    }
 
     CompletionRing::~CompletionRing() = default;
 

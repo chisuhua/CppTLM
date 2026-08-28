@@ -8,7 +8,8 @@
 namespace tlm::gpu {
 
     UsrLinuxEmuIoctlStub::UsrLinuxEmuIoctlStub(const std::string& name, EventQueue* eq)
-        : ChStreamModuleBase(name, eq) {}
+        : ChStreamModuleBase(name, eq) {
+    }
 
     UsrLinuxEmuIoctlStub::~UsrLinuxEmuIoctlStub() = default;
 
@@ -20,10 +21,13 @@ namespace tlm::gpu {
         initialized_ = true;
     }
 
-    void UsrLinuxEmuIoctlStub::tick() {}
+    void UsrLinuxEmuIoctlStub::tick() {
+    }
 
-    void UsrLinuxEmuIoctlStub::set_stream_adapter(cpptlm::StreamAdapterBase*) {}
-    void UsrLinuxEmuIoctlStub::set_stream_adapter(cpptlm::StreamAdapterBase*[]) {}
+    void UsrLinuxEmuIoctlStub::set_stream_adapter(cpptlm::StreamAdapterBase*) {
+    }
+    void UsrLinuxEmuIoctlStub::set_stream_adapter(cpptlm::StreamAdapterBase*[]) {
+    }
 
     IoctlResponse UsrLinuxEmuIoctlStub::ioctl(uint32_t request, const IoctlRequest& input) {
         IoctlResponse response{};
@@ -33,27 +37,27 @@ namespace tlm::gpu {
         }
 
         switch (static_cast<UsrLinuxEmuIoctl>(request)) {
-            case UsrLinuxEmuIoctl::LOAD_KERNEL_MODULE: {
-                const uint8_t* bytes = input.image_bytes.empty() ? nullptr : input.image_bytes.data();
-                response.image_handle = board_->install_kernel_module(bytes, input.image_bytes.size());
-                response.status = response.image_handle == 0 ? -22 : 0;
-                break;
+        case UsrLinuxEmuIoctl::LOAD_KERNEL_MODULE: {
+            const uint8_t* bytes = input.image_bytes.empty() ? nullptr : input.image_bytes.data();
+            response.image_handle = board_->install_kernel_module(bytes, input.image_bytes.size());
+            response.status = response.image_handle == 0 ? -22 : 0;
+            break;
+        }
+        case UsrLinuxEmuIoctl::LAUNCH_KERNEL_MODULE:
+            response.status = -38;
+            break;
+        case UsrLinuxEmuIoctl::UNLOAD_KERNEL_MODULE:
+            response.status = board_->uninstall_kernel_module(input.image_handle);
+            break;
+        case UsrLinuxEmuIoctl::PUSHBUFFER_SUBMIT_BATCH:
+            response.status = board_->submit_kernel(input.launch);
+            if (response.status == 0) {
+                board_->write_reg(0x1000 + (input.stream_id << 2), input.wdu_offset);
             }
-            case UsrLinuxEmuIoctl::LAUNCH_KERNEL_MODULE:
-                response.status = -38;
-                break;
-            case UsrLinuxEmuIoctl::UNLOAD_KERNEL_MODULE:
-                response.status = board_->uninstall_kernel_module(input.image_handle);
-                break;
-            case UsrLinuxEmuIoctl::PUSHBUFFER_SUBMIT_BATCH:
-                response.status = board_->submit_kernel(input.launch);
-                if (response.status == 0) {
-                    board_->write_reg(0x1000 + (input.stream_id << 2), input.wdu_offset);
-                }
-                break;
-            default:
-                response.status = -25;
-                break;
+            break;
+        default:
+            response.status = -25;
+            break;
         }
         return response;
     }

@@ -34,8 +34,7 @@ namespace tlm::gpu {
             return false;
         }
 
-        const uint64_t lat_cycles =
-            (latency_ns(stream_id, wdu_offset) + cycle_ns_ - 1) / cycle_ns_;
+        const uint64_t lat_cycles = (latency_ns(stream_id, wdu_offset) + cycle_ns_ - 1) / cycle_ns_;
         // 强序: 同 stream 后到的写不得先于先到的写完成。
         // 完成周期取 max(issue+latency, 前一笔完成周期), 保证 FIFO 完成顺序。
         uint64_t complete_cycle = now_ + lat_cycles;

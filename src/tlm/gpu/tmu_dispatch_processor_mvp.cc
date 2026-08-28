@@ -22,7 +22,8 @@ namespace tlm::gpu {
     TmuDispatchProcessor::TmuDispatchProcessor() = default;
     TmuDispatchProcessor::~TmuDispatchProcessor() = default;
 
-    TmuSubmitResult TmuDispatchProcessor::submit(TmuDispatchRecord record, uint32_t* /*out_evicted*/) {
+    TmuSubmitResult TmuDispatchProcessor::submit(TmuDispatchRecord record,
+                                                 uint32_t* /*out_evicted*/) {
         if (record.dep_enable) {
             dep_latch_mismatch_count_++;
             return TmuSubmitResult::DEP_LATCH_MISMATCH;

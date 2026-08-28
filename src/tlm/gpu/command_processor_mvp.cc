@@ -68,86 +68,84 @@ namespace tlm::gpu {
         }
 
         switch (state_) {
-            case State::IDLE:
-                // 等待 wake()
-                break;
+        case State::IDLE:
+            // 等待 wake()
+            break;
 
-            case State::FETCH: {
-                // 调 vram_read_cb_ 读取 32-bit Pm4MethodHeader (per design §3.1)
-                // s3 MVP: 仅读一个 dword;后续 T-s3-3 / Phase F-H.3 扩展读 gpfifo_entry 完整 payload
-                uint32_t packed_header = 0;
-                int32_t rv = vram_read_cb_
-                    ? vram_read_cb_(0 /* gpu_va, MVP 不维护*/, &packed_header, sizeof(packed_header))
-                    : -22;
-                if (rv != 0) {
-                    // VRAM read 失败 → 进 COMPLETE (跳过 DISPATCH)
-                    transition_to(State::COMPLETE);
-                    break;
-                }
-                transition_to(State::DECODE);
-                break;
-            }
-
-            case State::DECODE: {
-                // 调 decoder_->parse_method 解析 Pm4MethodDispatch
-                // s3 MVP: payload 暂未消费,仅传 header
-                if (!decoder_) {
-                    transition_to(State::COMPLETE);
-                    break;
-                }
-                // 简化:把上一步读取的 header 重新解析。
-                // 生产实现会在 FETCH 阶段缓存 packed_header。
-                uint32_t packed_header = 0;
-                int32_t rv = vram_read_cb_
-                    ? vram_read_cb_(0, &packed_header, sizeof(packed_header))
-                    : -22;
-                if (rv != 0) {
-                    transition_to(State::COMPLETE);
-                    break;
-                }
-                Pm4MethodDispatch dispatch = decoder_->parse_method(
-                    packed_header, nullptr, 0);
-                if (dispatch.type == Pm4MethodType::UNKNOWN) {
-                    // 错误方法 → 跳过 DISPATCH,直接 COMPLETE
-                    transition_to(State::COMPLETE);
-                    break;
-                }
-                transition_to(State::DISPATCH);
-                break;
-            }
-
-            case State::DISPATCH: {
-                // 调 dispatch_target_ 把 Pm4MethodDispatch 适配为 TmuDispatchRecord
-                // s3 MVP: 简化适配 - 仅 task_id + method_addr 代理(后续 T-s3-3 填充 CTA fields)
-                if (!dispatch_target_) {
-                    transition_to(State::COMPLETE);
-                    break;
-                }
-                TmuDispatchRecord rec{};
-                rec.task_id = next_task_id_++;
-                TmuSubmitResult result = dispatch_target_(rec);
-                if (result == TmuSubmitResult::BACKPRESSURED ||
-                    result == TmuSubmitResult::SUBMIT_QUEUE_REJECTED) {
-                    enter_backoff(result);
-                    // 不进 COMPLETE,回到 FETCH (per §4.4 退避策略)
-                    transition_to(State::FETCH);
-                    break;
-                }
+        case State::FETCH: {
+            // 调 vram_read_cb_ 读取 32-bit Pm4MethodHeader (per design §3.1)
+            // s3 MVP: 仅读一个 dword;后续 T-s3-3 / Phase F-H.3 扩展读 gpfifo_entry 完整 payload
+            uint32_t packed_header = 0;
+            int32_t rv = vram_read_cb_ ? vram_read_cb_(0 /* gpu_va, MVP 不维护*/, &packed_header,
+                                                       sizeof(packed_header))
+                                       : -22;
+            if (rv != 0) {
+                // VRAM read 失败 → 进 COMPLETE (跳过 DISPATCH)
                 transition_to(State::COMPLETE);
                 break;
             }
+            transition_to(State::DECODE);
+            break;
+        }
 
-            case State::COMPLETE:
+        case State::DECODE: {
+            // 调 decoder_->parse_method 解析 Pm4MethodDispatch
+            // s3 MVP: payload 暂未消费,仅传 header
+            if (!decoder_) {
+                transition_to(State::COMPLETE);
+                break;
+            }
+            // 简化:把上一步读取的 header 重新解析。
+            // 生产实现会在 FETCH 阶段缓存 packed_header。
+            uint32_t packed_header = 0;
+            int32_t rv =
+                vram_read_cb_ ? vram_read_cb_(0, &packed_header, sizeof(packed_header)) : -22;
+            if (rv != 0) {
+                transition_to(State::COMPLETE);
+                break;
+            }
+            Pm4MethodDispatch dispatch = decoder_->parse_method(packed_header, nullptr, 0);
+            if (dispatch.type == Pm4MethodType::UNKNOWN) {
+                // 错误方法 → 跳过 DISPATCH,直接 COMPLETE
+                transition_to(State::COMPLETE);
+                break;
+            }
+            transition_to(State::DISPATCH);
+            break;
+        }
+
+        case State::DISPATCH: {
+            // 调 dispatch_target_ 把 Pm4MethodDispatch 适配为 TmuDispatchRecord
+            // s3 MVP: 简化适配 - 仅 task_id + method_addr 代理(后续 T-s3-3 填充 CTA fields)
+            if (!dispatch_target_) {
+                transition_to(State::COMPLETE);
+                break;
+            }
+            TmuDispatchRecord rec{};
+            rec.task_id = next_task_id_++;
+            TmuSubmitResult result = dispatch_target_(rec);
+            if (result == TmuSubmitResult::BACKPRESSURED ||
+                result == TmuSubmitResult::SUBMIT_QUEUE_REJECTED) {
+                enter_backoff(result);
+                // 不进 COMPLETE,回到 FETCH (per §4.4 退避策略)
+                transition_to(State::FETCH);
+                break;
+            }
+            transition_to(State::COMPLETE);
+            break;
+        }
+
+        case State::COMPLETE:
+            transition_to(State::IDLE);
+            break;
+
+        case State::DEGRADED:
+            // DEGRADED 是过渡态:每个 tick 重新评估 → IDLE (退避结束) 或保留 DEGRADED
+            if (backoff_cycles_remaining_ == 0) {
+                degraded_ = false; // 退出 DEGRADED
                 transition_to(State::IDLE);
-                break;
-
-            case State::DEGRADED:
-                // DEGRADED 是过渡态:每个 tick 重新评估 → IDLE (退避结束) 或保留 DEGRADED
-                if (backoff_cycles_remaining_ == 0) {
-                    degraded_ = false;  // 退出 DEGRADED
-                    transition_to(State::IDLE);
-                }
-                break;
+            }
+            break;
         }
     }
 
