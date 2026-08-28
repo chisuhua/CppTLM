@@ -79,7 +79,30 @@
 
 **v0.5 应用**: Doorbell::ring strong-ordered path(per design.md §3.2.5 + `ptx-emu-v05-submodule.md` §3)+ PCIe Gen5 x16 250-700ns latency 区间断言(per `tasks.md` T-P1'-1 验证)。
 
-### 2.5 顶层文件
+### 2.5 SM/ — SM 内部实现 (NVIDIA Hopper/Blackwell，15 文件 + 1 综述)
+
+| 文件 | 主题 |
+|------|------|
+| `SM/overview.md` | **NVIDIA Blackwell/Hopper SM 内部实现专利与论文综述**（10 专利 + 4 微基准论文 + 1 官方简报） |
+| `SM/NVIDIA_Blackwell_Architecture_Technical_Brief_v2.1_官方技术简报_解析.md` | Blackwell 架构官方技术简报解析 |
+| `SM/CudaCore/US20230289211A1_线程组可扩展负载均衡_解析.md` | CWD/CGA 准入（Group F 调度） |
+| `SM/CudaCore/US20240231830A1_工作负载分配_解析.md` | SpMV 线程级均衡（Group F 调度软件外围） |
+| `SM/CudaCore/US20240378089A1_基于性能指标的寄存器配置_解析.md` | 寄存器文件配置（Group E） |
+| `SM/CudaCore/arXiv2402.13499_Hopper微基准剖析_解析.md` | Hopper 微基准剖析（论文） |
+| `SM/CudaCore/arXiv2501.12084_Hopper微基准剖析v2_解析.md` | Hopper 微基准剖析 v2 |
+| `SM/CudaCore/arXiv2507.10789_Blackwell微基准剖析_解析.md` | Blackwell 微基准剖析 |
+| `SM/CudaCore/arXiv2512.02189_Blackwell微基准深入_解析.md` | Blackwell 微基准深入 |
+| `SM/TMA/US12020035B2_TMA可编程多播_解析.md` | TMA 多播(LRC 跟踪)|
+| `SM/TMA/US20230289242A1_mbarrier异步事务同步_解析.md` | mbarrier SYNCS（Group C 同步） |
+| `SM/TMA/US20230289304A1_TMA多维数据异步访问_解析.md` | TMAU 核心（Group A 异步搬运） |
+| `SM/TMA/US20230315655A1_快速数据同步_解析.md` | store-and-arrive 同步（Group C） |
+| `SM/TMA/US20240176663A1_TMA张量映射缓存_解析.md` | TMA 描述符缓存（Group A） |
+| `SM/TMA/US20250173152A1_分布式共享内存_解析.md` | DSMEM/cluster（Group D） |
+| `SM/Tensor/US20230289398A1_wgmma组矩阵乘加_解析.md` | wgmma warp 组矩阵乘加（Group B 张量核心） |
+
+**v3.0 / W4+ 应用候选**: TMA multicast (per design.md §DSMEM 通信)+ wgmma 周期预算（per `tensor_core_tlm.cc` PrecisionTable）+ mbarrier 同步原语（per `cuda_core_adapter` 资源模型）。当前 MVP (s2-s3) **不直接消费**，仅 reference。
+
+### 2.6 顶层文件
 
 | 文件 | 主题 |
 |------|------|
@@ -104,9 +127,10 @@
 | `WDU/` | 5 | ✅ tracked |
 | `TMU/` | 16 | ✅ tracked |
 | `PCIe/` | 1 | ✅ tracked |
+| `SM/` | 16 | ✅ tracked (per ADR-SOC-06 v3.0 / Blackwell 调研) |
 | **顶层** | 1 (gem5-soc-survey.md) | ✅ tracked |
 
-**注**: 当前 `git status` 显示 `docs/research/{CP/,PCIe/,TMU/,WDU/}` 为 **untracked** 状态。**v0.5 redo 实施前**需要 `git add` 入仓跟踪(per `tasks.md` T-P3'-2)。
+**注**: v0.5 redo 已 archive（2026-08-28）；新 SM/ 区段于 2026-08-29 跟踪入仓（v3.0 dGPU Board W4+ 候选 reference）。
 
 ## 5. 与 v0.5 redo 关联
 
