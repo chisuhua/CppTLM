@@ -5,14 +5,14 @@
 
 #include "tlm/gpu/dgpu_board_mvp.hh"
 
+#include "tlm/gpu/command_processor_mvp.hh"
+#include "tlm/gpu/completion_ring_mvp.hh"
 #include "tlm/gpu/dgpu_bar.hh"
 #include "tlm/gpu/doorbell_mvp.hh"
-#include "tlm/gpu/completion_ring_mvp.hh"
+#include "tlm/gpu/pm4_decoder_mvp.hh"
 #include "tlm/gpu/submit_queue_mvp.hh"
-#include "tlm/gpu/command_processor_mvp.hh"
 #include "tlm/gpu/tmu_dispatch_processor_mvp.hh"
 #include "tlm/gpu/tmu_handler_mvp.hh"
-#include "tlm/gpu/pm4_decoder_mvp.hh"
 
 #include <cstring>
 
@@ -23,37 +23,38 @@
 
 namespace tlm::gpu {
 
-namespace {
+    namespace {
 
-// S3 TMU handler: TmuDispatchRecord → SubmitQueue (per design §4.3)
-// 匿名 namespace,避免污染 .hh 编译依赖
-class S3SubmitQueueHandler : public TmuHandlerInterface {
-public:
-    explicit S3SubmitQueueHandler(SubmitQueue& sq) : sq_(sq) {}
+        // S3 TMU handler: TmuDispatchRecord → SubmitQueue (per design §4.3)
+        // 匿名 namespace,避免污染 .hh 编译依赖
+        class S3SubmitQueueHandler : public TmuHandlerInterface {
+        public:
+            explicit S3SubmitQueueHandler(SubmitQueue& sq) : sq_(sq) {
+            }
 
-    TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
-        CtaDescriptor cta_desc{};
-        cta_desc.task_id = record.task_id;
-        cta_desc.vram_image_addr = record.vram_image_addr;
-        cta_desc.grid_x = record.grid_x;
-        cta_desc.grid_y = record.grid_y;
-        cta_desc.grid_z = record.grid_z;
-        cta_desc.block_x = record.block_x;
-        cta_desc.block_y = record.block_y;
-        cta_desc.block_z = record.block_z;
-        cta_desc.shared_mem_bytes = record.shared_mem_bytes;
-        cta_desc.args_vram_addr = record.args_vram_addr;
-        if (sq_.enqueue(cta_desc)) {
-            return TmuHandlerResult::HANDLED;
-        }
-        return TmuHandlerResult::SQ_REJECTED;
-    }
+            TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
+                CtaDescriptor cta_desc{};
+                cta_desc.task_id = record.task_id;
+                cta_desc.vram_image_addr = record.vram_image_addr;
+                cta_desc.grid_x = record.grid_x;
+                cta_desc.grid_y = record.grid_y;
+                cta_desc.grid_z = record.grid_z;
+                cta_desc.block_x = record.block_x;
+                cta_desc.block_y = record.block_y;
+                cta_desc.block_z = record.block_z;
+                cta_desc.shared_mem_bytes = record.shared_mem_bytes;
+                cta_desc.args_vram_addr = record.args_vram_addr;
+                if (sq_.enqueue(cta_desc)) {
+                    return TmuHandlerResult::HANDLED;
+                }
+                return TmuHandlerResult::SQ_REJECTED;
+            }
 
-private:
-    SubmitQueue& sq_;
-};
+        private:
+            SubmitQueue& sq_;
+        };
 
-} // namespace
+    } // namespace
 
 #ifdef CPPTLM_WITH_PTX_EMU
     struct DGpuBoardTLM::Impl {
@@ -82,7 +83,8 @@ private:
 #endif
 
     DGpuBoardTLM::DGpuBoardTLM(const std::string& n, EventQueue* eq)
-        : ChStreamModuleBase(n, eq), impl_(std::make_unique<Impl>()) {}
+        : ChStreamModuleBase(n, eq), impl_(std::make_unique<Impl>()) {
+    }
 
     DGpuBoardTLM::~DGpuBoardTLM() = default;
 
@@ -95,16 +97,15 @@ private:
     }
 
     void DGpuBoardTLM::init() {
-        if (impl_->initialized) return;
+        if (impl_->initialized)
+            return;
 
         impl_->bar.init();
         impl_->cp.set_decoder(std::make_unique<Pm4Decoder>());
-        impl_->cp.set_vram_reader([this](uint64_t va, void* out, size_t sz) {
-            return this->read_vram(va, out, sz);
-        });
-        impl_->cp.set_dispatch_target([this](const TmuDispatchRecord& rec) {
-            return impl_->tmu.submit(rec);
-        });
+        impl_->cp.set_vram_reader(
+            [this](uint64_t va, void* out, size_t sz) { return this->read_vram(va, out, sz); });
+        impl_->cp.set_dispatch_target(
+            [this](const TmuDispatchRecord& rec) { return impl_->tmu.submit(rec); });
         impl_->tmu.set_handler(std::make_unique<S3SubmitQueueHandler>(impl_->sq));
 #ifdef CPPTLM_WITH_PTX_EMU
         if (!impl_->cuda_core) {
@@ -118,7 +119,8 @@ private:
     }
 
     void DGpuBoardTLM::shutdown() {
-        if (!impl_->initialized) return;
+        if (!impl_->initialized)
+            return;
 #ifdef CPPTLM_WITH_PTX_EMU
         if (impl_->ptx_emu) {
             impl_->ptx_emu->shutdown();
@@ -137,20 +139,25 @@ private:
     }
 
     uint64_t DGpuBoardTLM::install_kernel_module(const uint8_t* image_bytes, size_t size) {
-        if (!impl_->initialized) return 0;
-        if (image_bytes == nullptr || size == 0) return 0;
+        if (!impl_->initialized)
+            return 0;
+        if (image_bytes == nullptr || size == 0)
+            return 0;
         uint64_t handle = impl_->next_image_handle++;
         return handle;
     }
 
     int32_t DGpuBoardTLM::uninstall_kernel_module(uint64_t image_handle) {
-        if (!impl_->initialized) return -1;
-        if (image_handle == 0) return -1;
+        if (!impl_->initialized)
+            return -1;
+        if (image_handle == 0)
+            return -1;
         return 0;
     }
 
     int32_t DGpuBoardTLM::submit_kernel(const KernelLaunchRequest& req) {
-        if (!impl_->initialized) return -1;
+        if (!impl_->initialized)
+            return -1;
 
         CtaDescriptor cta{};
         cta.task_id = req.task_id;
@@ -196,21 +203,29 @@ private:
     }
 
     int32_t DGpuBoardTLM::read_vram(uint64_t offset, void* host_buf, size_t size) {
-        if (!impl_->initialized) return -19;
-        if (host_buf == nullptr || size == 0) return -22;
+        if (!impl_->initialized)
+            return -19;
+        if (host_buf == nullptr || size == 0)
+            return -22;
         void* vram = impl_->bar.vram_base();
-        if (vram == nullptr) return -5;
-        if (offset > 256ULL * 1024ULL * 1024ULL || size > 256ULL * 1024ULL * 1024ULL - offset) return -22;
+        if (vram == nullptr)
+            return -5;
+        if (offset > 256ULL * 1024ULL * 1024ULL || size > 256ULL * 1024ULL * 1024ULL - offset)
+            return -22;
         std::memcpy(host_buf, static_cast<uint8_t*>(vram) + offset, size);
         return 0;
     }
 
     int32_t DGpuBoardTLM::write_vram(uint64_t offset, const void* host_buf, size_t size) {
-        if (!impl_->initialized) return -19;
-        if (host_buf == nullptr || size == 0) return -22;
+        if (!impl_->initialized)
+            return -19;
+        if (host_buf == nullptr || size == 0)
+            return -22;
         void* vram = impl_->bar.vram_base();
-        if (vram == nullptr) return -5;
-        if (offset > 256ULL * 1024ULL * 1024ULL || size > 256ULL * 1024ULL * 1024ULL - offset) return -22;
+        if (vram == nullptr)
+            return -5;
+        if (offset > 256ULL * 1024ULL * 1024ULL || size > 256ULL * 1024ULL * 1024ULL - offset)
+            return -22;
         std::memcpy(static_cast<uint8_t*>(vram) + offset, host_buf, size);
         return 0;
     }
@@ -227,7 +242,8 @@ private:
     }
 
     void DGpuBoardTLM::tick() {
-        if (!impl_->initialized) return;
+        if (!impl_->initialized)
+            return;
 
         impl_->cp.tick();
         impl_->sq.tick();

@@ -51,7 +51,7 @@ namespace tlm::gpu {
     }
 
     uint8_t SubmitQueue::select_target_core(const CtaDescriptor& /*cta*/) const {
-        return TARGET_CORE_MVP;  // 单 SM MVP 路由
+        return TARGET_CORE_MVP; // 单 SM MVP 路由
     }
 
 } // namespace tlm::gpu
