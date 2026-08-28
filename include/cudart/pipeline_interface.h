@@ -19,11 +19,11 @@
 /// Ref: ADR-0020, CppTLM RFC-P1-003 §3.1
 enum class PipelineId : uint32_t {
     P0_INT_FP32 = 0,
-    V_SIMD     = 1,
-    P1_FP64    = 2,
-    P2_SFU     = 3,
-    P3_LSU     = 4,
-    P4_TC      = 5
+    V_SIMD = 1,
+    P1_FP64 = 2,
+    P2_SFU = 3,
+    P3_LSU = 4,
+    P4_TC = 5
 };
 
 /// Pure virtual interface for fractional-cycle pipeline latency injection.
@@ -32,9 +32,8 @@ enum class PipelineId : uint32_t {
 class IPipelineLatencyProvider {
 public:
     virtual ~IPipelineLatencyProvider() = default;
-    virtual double get_fractional_cycles(
-        const std::string& instruction, PipelineId pipe_id) const = 0;
-    virtual double get_fractional_cycles_by_type(
-        int statement_type, PipelineId pipe_id) const = 0;
+    virtual double get_fractional_cycles(const std::string& instruction,
+                                         PipelineId pipe_id) const = 0;
+    virtual double get_fractional_cycles_by_type(int statement_type, PipelineId pipe_id) const = 0;
 };
 #endif
