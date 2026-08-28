@@ -16,7 +16,7 @@
 **Acceptance**:
 - [ ] 填充 `src/tlm/gpu/pm4_decoder_mvp.cc`(~200 LOC,头文件 s2 已创建)
 - [ ] `Pm4Decoder` 继承 `Pm4DecoderInterface`(per s2 骨架)
-- [ ] **`Pm4MethodHeader` 结构体**(per `unpackPm4Header`):
+- [ ] **`Pm4MethodHeader` 结构体**(per `unpackPm4Header`,bitfield 与 spec 一致):
   ```cpp
   uint32_t inc : 1;            // bit 0
   uint32_t method_addr : 15;   // bits 1-15
@@ -29,6 +29,8 @@
 - [ ] 4 method_addr ranges: 0x4000-0x40FF DISPATCH_DIRECT / 0x4200-0x42FF EVENT_WRITE / 0x4400-0x44FF RELEASE_MEM / 0x4500-0x45FF ACQUIRE_MEM
 - [ ] `set_decoder()` 注入到 CommandProcessor(替换 s2 no-op 骨架)
 - [ ] `test/test_pm4_decoder_mvp.cc` 全部 PASS
+- [ ] **ctest 验收**:`ctest --test-dir build -R "^test_pm4_decoder_mvp$"` PASS(test/CMakeLists.txt 已 add_test NAME=test_pm4_decoder_mvp,per Metis P1-1/C1 修复 2026-08-28)
+- [ ] **spec 比特断言**:`0x12345678` → `method_addr=0x2B3C, subchannel=0x4`(per spec.md Scenario: "Pm4MethodHeader bit layout matches NVIDIA spec",per Metis P0-1 修复 2026-08-28)
 
 **Commit**:
 ```bash
@@ -39,12 +41,23 @@ git commit -am "feat(pm4-decoder-mvp): fill NVIDIA method packet parsing (per Ph
 
 **Acceptance**:
 - [ ] 填充 `src/tlm/gpu/command_processor_mvp.cc`(.cc,头文件 s2 已创建,~150 LOC 填充 + ~150 LOC 已有骨架)
+- [ ] **头文件扩展**(per design §3.2,per Metis P0-2/C3 修复 2026-08-28):
+  - `command_processor_mvp.hh` 加 `set_vram_reader(VramReadFn)`、`set_dispatch_target(DispatchFn)`、`on_backpressure(uint64_t)`、`on_submit_queue_rejected(uint64_t)` 4 个装配/退避方法
+  - `VramReadFn = std::function<int32_t(uint64_t, void*, size_t)>`、`DispatchFn = std::function<TmuSubmitResult(const TmuDispatchRecord&)>`
+  - **`command_processor_mvp.hh` 直接 `#include "tlm/gpu/tmu_types_mvp.hh"`**(轻量,仅 cstdint,无循环 include 风险;`std::function` 模板实例化要求完整类型,前向声明会导致编译错误 per Metis C3)
+- [ ] **TEST_CASE 标签一致性**:实施时所有 `TEST_CASE(...)` 标签必须与 `test/CMakeLists.txt` add_test 过滤标签一致(即 `test_pm4_decoder_mvp.cc` 用 `[pm4-decoder][mvp]`、`test_command_processor_mvp.cc` 用 `[command-processor][mvp]`、`test_tmu_dispatch_processor_mvp.cc` 用 `[tmu][mvp][glue]`、`test_pm4_decoder_mvp_integration.cc` 用 `[pm4-decoder-integration]`,per Metis C1/C2 修复 2026-08-28)
 - [ ] 5-state FSM: IDLE → FETCH → DECODE → DISPATCH → COMPLETE
-- [ ] **FETCH**:`mem_read_vram(GPU VA, sizeof(gpu_gpfifo_entry))`(per Phase F-C.3 H1)
-- [ ] DECODE 调 `pm4_decoder_->parse_method()`(通过 s2 的 `set_decoder` 注入,非直接构造)
-- [ ] **DISPATCH**:`tmu_.submit(Pm4MethodDispatch)`(替代 `record`)
-- [ ] `test/test_command_processor_mvp.cc` 5 transition + NVIDIA method packet decode PASS(替代 s2 no-op 骨架测试)
+- [ ] **FETCH**:调 `vram_read_cb_(gpu_va, sizeof(gpu_gpfifo_entry))` → `gpfifo_entry_`(per Phase F-C.3 H1,**不是** BAR0 MMIO)
+- [ ] DECODE 调 `decoder_->parse_method()`(通过 s2 的 `set_decoder` 注入,非直接构造)
+- [ ] **DISPATCH**:调 `dispatch_target_(TmuDispatchRecord)`(per design §3.2,替代原"tmu_.submit"伪签名)
+- [ ] **退避**(per design §4.4,per Oracle P2-2 修复 2026-08-28):
+  - `command_processor_mvp.hh` 加 `static constexpr uint64_t MIN_BACKOFF_CYCLES = 8;` + `static constexpr uint64_t CP_BACKOFF_DEGRADED_THRESHOLD = 3;` 两个常量
+  - `dispatch_target` 返回 `BACKPRESSURED`/`SUBMIT_QUEUE_REJECTED` 时 CP 保持 DECODE→FETCH(非 IDLE),记 `cp_backoff_count_`
+  - **≥3 次**进入 DEGRADED(per design §4.4 + tasks T-s3-3 测试三方统一)
+- [ ] `test/test_command_processor_mvp.cc` 5 transition + NVIDIA method packet decode + 退避窗口 PASS(测试用 lambda 注入 mock vram_reader/dispatch_target)
 - [ ] `test/test_pm4_decoder_mvp_integration.cc` CP + Decoder 集成 PASS
+- [ ] **ctest 验收**:`ctest --test-dir build -R "test_command_processor_mvp|test_pm4_decoder_mvp_integration"` PASS(test/CMakeLists.txt 已 add_test,per Metis P1-1 修复 2026-08-28)
+- [ ] **删除** s2 骨架测试 `test_command_processor_mvp_skeleton.cc`(per Metis P1-2 修复 2026-08-28,已 rm)
 
 **Commit**:
 ```bash
@@ -57,8 +70,10 @@ git commit -am "feat(command-processor-mvp): fill 5-state FSM (NVIDIA method pac
 
 **Acceptance**:
 - [ ] 填充 `src/tlm/gpu/tmu_dispatch_processor_mvp.cc`(.cc,头文件 s2 已创建,~250 LOC 填充)
-- [ ] `TmuDispatchRecord` 9 字段
-- [ ] `PreExitPolicy` 枚举: NONE 档(MVP)
+- [ ] `TmuDispatchRecord` **13 字段**(10 基础 + 3 dep latch,per `tmu_types_mvp.hh` 实际定义,per Oracle P3-8 修复 2026-08-28 — 原 "9 字段" 描述不准确,头文件注释也需同步)
+- [ ] `PreExitPolicy` 枚举(per Oracle P2-1 修复 2026-08-28,本应 s2 就有但 s2 漏了):
+  - `enum class PreExitPolicy { NONE };`  定义在 `include/tlm/gpu/tmu_types_mvp.hh`(s3 W6 commit 引入)
+  - MVP 仅 NONE 档(无 pre-exit 优化)
 - [ ] `inflight_kernel_reqs_` 32 slot + **反压停 fetch**(`BACKPRESSURED` 替代 LIFO)
 - [ ] `TmuSubmitResult` 枚举: SUBMITTED / **BACKPRESSURED** / DEP_LATCH_MISMATCH / **SUBMIT_QUEUE_REJECTED** / **INTERNAL_ERROR**(per Phase F-H.4 + Oracle M4 新增 INTERNAL_ERROR)
 - [ ] **TmuHandlerInterface 扩展**(per Oracle M4):`on_dispatch() → TmuHandlerResult`(原 void 改返回 result,SQ_REJECTED 需上报)
@@ -69,11 +84,22 @@ git commit -am "feat(command-processor-mvp): fill 5-state FSM (NVIDIA method pac
 - [ ] **CP 退避策略**(per Oracle M4):收到 BACKPRESSURED / SUBMIT_QUEUE_REJECTED → 退避窗口 8 cycles + 状态 DECODE → FETCH(非 IDLE);超阈值进入 DEGRADED 状态
 - [ ] `set_handler()` 注入到 TmuDispatchProcessor(替换 s2 no-op 骨架,`TmuHandlerInterface`)
 - [ ] S3SubmitQueueHandler 类(per design §4.3):handler 内部 `sq_.enqueue(cta_desc)` + 返回 HANDLED/SQ_REJECTED
+- [ ] **DGpuBoardTLM 装配**(per design §3.3,per Metis P0-2 修复 2026-08-28):
+  - `src/tlm/gpu/dgpu_board_mvp.cc::init()` 增加 4 行装配接线:
+    - `cp.set_decoder(make_unique<Pm4Decoder>())`
+    - `cp.set_vram_reader([this](va,out,sz){ return read_vram(va,out,sz); })`
+    - `cp.set_dispatch_target([this](rec){ return tmu.submit(rec); })`
+    - `tmu.set_handler(make_unique<S3SubmitQueueHandler>(sq))`
+  - 装配接线整体归本 commit,避免跨 T-s3-2/T-s3-3 半接线
 - [ ] `test/test_tmu_dispatch_processor_mvp.cc` ~10 测试 PASS(替代 s2 骨架的反压测试,per design §4.5):
   - submit / on_complete / BACKPRESSURED / dep chain / 环检测
   - **新增**:SQ_REJECTED 路径(handler 探测 SQ 满)
   - **新增**:INTERNAL_ERROR 路径(handler 返回 INVALID_RECORD)
   - **新增**:CP 退避窗口测试(连续 3 次 BACKPRESSURED → DEGRADED)
+- [ ] **ctest 验收**(分两条锚定,per Metis C1 修复 2026-08-28):
+  - `ctest --test-dir build -R "^test_tmu_dispatch_processor_mvp$"` PASS
+  - `ctest --test-dir build -R "^test_pm4_decoder_mvp_integration$"` PASS
+- [ ] **删除** s2 骨架测试 `test_tmu_dispatch_processor_mvp_skeleton.cc`(per Metis P1-2 修复 2026-08-28,已 rm)
 
 **Commit**:
 ```bash

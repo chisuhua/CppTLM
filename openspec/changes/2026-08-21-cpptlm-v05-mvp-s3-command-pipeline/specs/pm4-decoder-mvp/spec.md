@@ -27,8 +27,12 @@ These types MUST live in `include/tlm/gpu/pm4_types_mvp.hh` (s2 已 create heade
 
 #### Scenario: Pm4MethodHeader bit layout matches NVIDIA spec
 - **WHEN** a 32-bit word `0x12345678` is parsed
-- **THEN** `inc=0`, `method_addr=0x2ACF`, `subchannel=0x5`, `data_count=0x3`, `reserved=0x12`
+- **THEN** `inc=0`, `method_addr=0x2B3C`, `subchannel=0x4`, `data_count=0x3`, `reserved=0x12`
 - **AND** the bit positions match the documented layout
+
+> **字段校验参考** (per bitfield: inc:1, method_addr:15, subchannel:4, data_count:4, reserved:8):
+> - `method_addr` = `(0x12345678 >> 1) & 0x7FFF` = `0x2B3C`
+> - `subchannel`  = `(0x12345678 >> 16) & 0xF`  = `0x4`
 
 ### Requirement: pm4-decoder-class
 
@@ -42,12 +46,13 @@ The system MUST provide a `Pm4Decoder` class in `include/tlm/gpu/pm4_decoder_mvp
 - `set_decoder()` injection into CommandProcessor (replaces s2 no-op 骨架)
 
 #### Scenario: DISPATCH_DIRECT (0x4000-0x40FF) parsed
-- **WHEN** `parse_method(header{inc=0, method_addr=0x4001, subchannel=0, data_count=3}, payload, 16)` is called
-- **THEN** result MUST be `Pm4MethodDispatch{type=DISPATCH_DIRECT, addr=0x4001, payload=..., dword_count=3}`
+- **WHEN** `parse_method(0x80004001u /* inc=1, method_addr=0x4001, subchannel=0, data_count=3, reserved=0 */, payload, 16)` is called
+- **THEN** result MUST be `Pm4MethodDispatch{type=Pm4MethodType::DISPATCH_DIRECT, method_addr=0x4001, subchannel_id=0, data_count=3}`
 
 #### Scenario: Unknown method_addr rejected
-- **WHEN** `parse_method` receives `method_addr=0x9999` (不在 4 个 range 内)
-- **THEN** it MUST return an error result (or throw; design.md 定义)
+- **WHEN** `parse_method` receives a packed header word with `method_addr` not in any of the 4 ranges (e.g. `0x19999`)
+- **THEN** it MUST return `Pm4MethodDispatch{type=Pm4MethodType::UNKNOWN, method_addr=0x9999, ...}`(其他字段填充为 0)(per design.md §2 — 错误通道 = `type=Pm4MethodType::UNKNOWN`,非抛异常)
+- **AND** MUST NOT throw
 
 #### Scenario: Decoder injected into CP via set_decoder
 - **WHEN** `CommandProcessor::set_decoder(std::make_unique<Pm4Decoder>())` is called
