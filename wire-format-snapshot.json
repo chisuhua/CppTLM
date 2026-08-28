@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "generator": "scripts/test/gen_wire_format_snapshot.sh",
+    "purpose": "In-repo bundle layout guards (per openspec/changes/2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites)",
+    "note": "Field offsets are compile-time fixed by test_pcie_slice_wire_format_snapshot.cc static_asserts. Regenerate this file when intentional layout changes are made.",
+    "schema_version": "1.0",
+    "generation_date": "2026-08-28T11:13:31Z"
+  },
+  "bundles": {
+    "PcieTlpBundle": {
+      "_file": "include/bundles/pcie_bundles_tlm.hh",
+      "_namespace": "bundles",
+      "_base": "bundle_base",
+      "sizeof": 56,
+      "fields": [
+        {"name": "kind",         "offset": 0,  "width_bits": 8,  "type": "ch_uint<8>"},
+        {"name": "bar_index",    "offset": 8,  "width_bits": 8,  "type": "ch_uint<8>"},
+        {"name": "offset",       "offset": 16, "width_bits": 64, "type": "ch_uint<64>"},
+        {"name": "size",         "offset": 24, "width_bits": 32, "type": "ch_uint<32>"},
+        {"name": "data",         "offset": 32, "width_bits": 64, "type": "ch_uint<64>"},
+        {"name": "requester_id", "offset": 40, "width_bits": 16, "type": "ch_uint<16>"},
+        {"name": "trans_id",     "offset": 48, "width_bits": 32, "type": "ch_uint<32>"}
+      ]
+    },
+    "DmaDescriptorBundle": {
+      "_file": "include/bundles/dma_bundles_tlm.hh",
+      "_namespace": "bundles",
+      "_base": "bundle_base",
+      "sizeof": 40,
+      "fields": [
+        {"name": "dir",         "offset": 0,  "width_bits": 8,  "type": "ch_uint<8>"},
+        {"name": "host_iova",   "offset": 8,  "width_bits": 64, "type": "ch_uint<64>"},
+        {"name": "vram_offset", "offset": 16, "width_bits": 64, "type": "ch_uint<64>"},
+        {"name": "size",        "offset": 24, "width_bits": 32, "type": "ch_uint<32>"},
+        {"name": "tag",         "offset": 32, "width_bits": 32, "type": "ch_uint<32>"}
+      ]
+    },
+    "CompletionBundle": {
+      "_file": "include/bundles/dma_bundles_tlm.hh",
+      "_namespace": "bundles",
+      "_base": "bundle_base",
+      "sizeof": 24,
+      "fields": [
+        {"name": "task_id", "offset": 0,  "width_bits": 32, "type": "ch_uint<32>"},
+        {"name": "status",  "offset": 8,  "width_bits": 32, "type": "ch_uint<32>"},
+        {"name": "tag",     "offset": 16, "width_bits": 32, "type": "ch_uint<32>"}
+      ]
+    },
+    "MsiXDeliveryBundle": {
+      "_file": "include/bundles/pcie_bundles_tlm.hh",
+      "_namespace": "bundles",
+      "_base": "bundle_base",
+      "sizeof": 32,
+      "fields": [
+        {"name": "vector",   "offset": 0,  "width_bits": 16, "type": "ch_uint<16>"},
+        {"name": "msg_data", "offset": 8,  "width_bits": 32, "type": "ch_uint<32>"},
+        {"name": "msg_addr", "offset": 16, "width_bits": 64, "type": "ch_uint<64>"},
+        {"name": "trans_id", "offset": 24, "width_bits": 32, "type": "ch_uint<32>"}
+      ]
+    }
+  },
+  "invariants": {
+    "all_bundles_standard_layout": true,
+    "base_class_owns_no_data": true,
+    "compile_time_guards": "test/test_pcie_slice_wire_format_snapshot.cc"
+  }
+}
