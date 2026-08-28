@@ -11,6 +11,8 @@
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/command_processor_mvp.hh"
 #include "tlm/gpu/tmu_dispatch_processor_mvp.hh"
+#include "tlm/gpu/tmu_handler_mvp.hh"
+#include "tlm/gpu/pm4_decoder_mvp.hh"
 
 #include <cstring>
 
@@ -20,6 +22,38 @@
 #endif
 
 namespace tlm::gpu {
+
+namespace {
+
+// S3 TMU handler: TmuDispatchRecord → SubmitQueue (per design §4.3)
+// 匿名 namespace,避免污染 .hh 编译依赖
+class S3SubmitQueueHandler : public TmuHandlerInterface {
+public:
+    explicit S3SubmitQueueHandler(SubmitQueue& sq) : sq_(sq) {}
+
+    TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
+        CtaDescriptor cta_desc{};
+        cta_desc.task_id = record.task_id;
+        cta_desc.vram_image_addr = record.vram_image_addr;
+        cta_desc.grid_x = record.grid_x;
+        cta_desc.grid_y = record.grid_y;
+        cta_desc.grid_z = record.grid_z;
+        cta_desc.block_x = record.block_x;
+        cta_desc.block_y = record.block_y;
+        cta_desc.block_z = record.block_z;
+        cta_desc.shared_mem_bytes = record.shared_mem_bytes;
+        cta_desc.args_vram_addr = record.args_vram_addr;
+        if (sq_.enqueue(cta_desc)) {
+            return TmuHandlerResult::HANDLED;
+        }
+        return TmuHandlerResult::SQ_REJECTED;
+    }
+
+private:
+    SubmitQueue& sq_;
+};
+
+} // namespace
 
 #ifdef CPPTLM_WITH_PTX_EMU
     struct DGpuBoardTLM::Impl {
@@ -64,6 +98,14 @@ namespace tlm::gpu {
         if (impl_->initialized) return;
 
         impl_->bar.init();
+        impl_->cp.set_decoder(std::make_unique<Pm4Decoder>());
+        impl_->cp.set_vram_reader([this](uint64_t va, void* out, size_t sz) {
+            return this->read_vram(va, out, sz);
+        });
+        impl_->cp.set_dispatch_target([this](const TmuDispatchRecord& rec) {
+            return impl_->tmu.submit(rec);
+        });
+        impl_->tmu.set_handler(std::make_unique<S3SubmitQueueHandler>(impl_->sq));
 #ifdef CPPTLM_WITH_PTX_EMU
         if (!impl_->cuda_core) {
             impl_->cuda_core = std::make_unique<CudaCoreAdapterMVP>();

@@ -11,6 +11,7 @@
 #include "tlm/gpu/tmu_types_mvp.hh"
 #include "tlm/gpu/tmu_handler_mvp.hh"
 #include <memory>
+#include <unordered_map>
 
 namespace tlm::gpu {
 
@@ -58,6 +59,9 @@ namespace tlm::gpu {
         uint64_t completed_count_ = 0;
         uint64_t dep_latch_mismatch_count_ = 0;
         uint64_t sq_rejected_count_ = 0;
+
+        // s3: dep chain 跟踪 — task_id → TmuDispatchRecord (s4 再实现 advance)
+        std::unordered_map<uint32_t, TmuDispatchRecord> scheduler_cache_;
     };
 
 } // namespace tlm::gpu
