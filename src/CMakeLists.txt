@@ -51,6 +51,7 @@ set(CORE_SOURCES
     tlm/gpu/completion_ring_mvp.cc # s2 W3: push + host_notify hook
     tlm/gpu/submit_queue_mvp.cc    # s2 W3: WDU distribution network (per Phase F-H.5)
     tlm/gpu/command_processor_mvp.cc  # s2 W3: CP skeleton (5-state FSM no-op + set_decoder injection)
+    tlm/gpu/pm4_decoder_mvp.cc        # s3 T-s3-1: Pm4Decoder 4 method_addr ranges + UNKNOWN error channel
     tlm/gpu/tmu_dispatch_processor_mvp.cc  # s2 W3: TMU skeleton (back-pressure stub + set_handler injection)
     tlm/gpu/pcie_config_space_mvp.cc  # pcie-endpoint T-pe-2: Config Space MVP
     tlm/gpu/pcie_bar_router_mvp.cc     # pcie-endpoint T-pe-2: BAR0 register routing (data-driven)

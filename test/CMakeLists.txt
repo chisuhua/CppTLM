@@ -51,6 +51,14 @@ include(CTest)
 # 通过 ctest 标签 + Catch2 -t 标志过滤到对应测试
 add_test(NAME sdma_engine COMMAND cpptlm_tests "[sdma]" -r compact)
 
+# s3 W5-6: Pm4Decoder + CommandProcessor + TmuDispatchProcessor 测试
+# (per openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/tasks.md §T-s3-1/2/3)
+# 每个 add_test 用对应 Catch2 标签过滤;测试文件由 file(GLOB TEST_SOURCES ...) 自动收录
+add_test(NAME test_pm4_decoder_mvp COMMAND cpptlm_tests "[pm4-decoder][mvp]" -r compact)
+add_test(NAME test_command_processor_mvp COMMAND cpptlm_tests "[command-processor][mvp]" -r compact)
+add_test(NAME test_tmu_dispatch_processor_mvp COMMAND cpptlm_tests "[tmu][mvp][glue]" -r compact)
+add_test(NAME test_pm4_decoder_mvp_integration COMMAND cpptlm_tests "[pm4-decoder-integration]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)

@@ -35,6 +35,15 @@
 ## 2. Pm4Decoder NVIDIA method packet(per Phase F-H.3 路径 3)
 
 ```cpp
+// 4 个 method packet 类型枚举(per Phase F-H.3 路径 3 + s3 Oracle P1-1,2026-08-28)
+enum class Pm4MethodType {
+    DISPATCH_DIRECT,   // 0x4000-0x40FF — CTA 启动
+    EVENT_WRITE,       // 0x4200-0x42FF — 时间戳/事件
+    RELEASE_MEM,       // 0x4400-0x44FF — 显存释放
+    ACQUIRE_MEM,       // 0x4500-0x45FF — 显存获取
+    UNKNOWN,           // 不在 4 ranges 内,parse_method 错误通道
+};
+
 struct Pm4MethodHeader {
     uint32_t inc : 1;            // bit 0 (Increment register)
     uint32_t method_addr : 15;   // bits 1-15 (32K method addresses)
@@ -43,23 +52,92 @@ struct Pm4MethodHeader {
     uint32_t reserved : 8;       // bits 24-31
 };
 // 真相源:UsrLinuxEmu gpfifo_translator.h:60-73 unpackPm4Header
+// static_assert(sizeof(Pm4MethodHeader) == 4, "Pm4MethodHeader must be 32-bit"); (实施时 GCC/Clang LSB packing)
 
 struct Pm4MethodDispatch {
-    uint16_t method_addr;   // 4 method_addr ranges(见上)
-    uint8_t subchannel_id;
-    uint8_t data_count;
-    // ... decoded fields: grid, block, shared_mem, args_vram_addr
+    Pm4MethodType type = Pm4MethodType::UNKNOWN;
+    uint16_t method_addr = 0;
+    uint8_t subchannel_id = 0;
+    uint8_t data_count = 0;
+    // s3 will add (per Pm4MethodDispatch 填充):
+    //   grid_x, grid_y, grid_z (per CTA grid dimensions)
+    //   block_x, block_y, block_z (per CTA block dimensions)
+    //   shared_mem_bytes
+    //   args_vram_addr (kernel args VRAM pointer)
 };
+
+// parse_method 错误通道(per Oracle P1-2,2026-08-28):
+//   - 不抛异常
+//   - 错误响应 = Pm4MethodDispatch{type=Pm4MethodType::UNKNOWN, method_addr=原值, 其他=0}
+//   - 调用方应先检查 type 字段,UNKNOWN 即为错误
 ```
 
 ## 3. CommandProcessor 5-state FSM(per Phase F-H.3 修订 + s2 骨架)
 
 > **关键**(per Oracle ses_fe0b6e44 s2 骨架修复,2026-08-21): s2 已创建 `command_processor_mvp.hh` + `pm4_decoder_mvp.hh` 接口骨架(纯虚 `Pm4DecoderInterface`),s3 W5-6 填充实际实现(GPU VA fetch + parse_method + DECODE 实际逻辑)。
 
+### 3.1 5 状态定义
 - IDLE → FETCH → DECODE → DISPATCH → COMPLETE
-- **FETCH**:`mem_read_vram(GPU VA, sizeof(gpu_gpfifo_entry))` (per Phase F-C.3 H1,不是 BAR0 MMIO)
-- DECODE:通过 s2 `set_decoder()` 注入的 `Pm4DecoderInterface` 调 `parse_method`(替代 parse_type3,per Phase F-H.3)
-- DISPATCH:`tmu_.submit(Pm4MethodDispatch)`
+- **FETCH**:`vram_read_cb_(gpu_va, sizeof(gpu_gpfifo_entry))` → `gpfifo_entry_`(per Phase F-C.3 H1,**不是 BAR0 MMIO**)
+- DECODE:通过 `decoder_->parse_method(header, payload, max_dwords)` 解析 `Pm4MethodDispatch`
+- DISPATCH:`dispatch_target_(TmuDispatchRecord)` → `TmuSubmitResult`,CP 据此推进/退避
+
+### 3.2 装配接口(s3 W5 扩展 CommandProcessor .hh)
+
+s2 骨架仅提供 `set_decoder(std::unique_ptr<Pm4DecoderInterface>)`。s3 实施需扩展 .hh 加 3 个装配方法(均在 `include/tlm/gpu/command_processor_mvp.hh`,s3 commit T-s3-2 引入):
+
+```cpp
+class CommandProcessor {
+public:
+    // ── s2 接口(已有) ──
+    void set_decoder(std::unique_ptr<Pm4DecoderInterface> decoder);
+
+    // ── s3 新增装配接口 ──
+    // FETCH 阶段:CP 调 reader(gpu_va, out_buf, sizeof(gpu_gpfifo_entry))
+    // 返回值语义与 DGpuBoardTLM::read_vram 对齐(0 = 成功,负值 = errno)
+    using VramReadFn = std::function<int32_t(uint64_t gpu_va, void* out, size_t size)>;
+    void set_vram_reader(VramReadFn reader);
+
+    // DISPATCH 阶段:CP 把 Pm4MethodDispatch 适配为 TmuDispatchRecord 后调 fn(record)
+    // 返回 TmuSubmitResult,CP 据此推进或退避(per §4.4)
+    using DispatchFn = std::function<TmuSubmitResult(const TmuDispatchRecord&)>;
+    void set_dispatch_target(DispatchFn fn);
+
+    // 退避控制(per §4.4):TMU 返回 BACKPRESSURED/SUBMIT_QUEUE_REJECTED 时由 DGpuBoardTLM 调
+    void on_backpressure(uint64_t cycles);
+    void on_submit_queue_rejected(uint64_t cycles);
+};
+```
+
+**设计意图**:
+- 用 `std::function` 而非裸指针:便于测试注入 mock(`test_command_processor_mvp.cc` 可传 lambda 替代真实 VRAM/TMU),无需拆 dgpu_board_mvp.hh 的实现
+- 解耦编译依赖:CommandProcessor .hh 不直接 include tmu_dispatch_processor_mvp.hh / submit_queue_mvp.hh,减少 s3 commit 头文件改动
+
+### 3.3 DGpuBoardTLM 装配位置(s3 W6 T-s3-3 实施)
+
+`src/tlm/gpu/dgpu_board_mvp.cc::init()` 增加如下装配(per Phase F-H.2 + Oracle ses_fe0b6e44):
+
+```cpp
+void DGpuBoardTLM::init() {
+    if (impl_->initialized) return;
+    impl_->bar.init();
+    // ── s3 装配接线(T-s3-3 落地,避免跨 commit 半接线) ──
+    impl_->cp.set_decoder(std::make_unique<Pm4Decoder>());
+    impl_->cp.set_vram_reader([this](uint64_t va, void* out, size_t sz) {
+        return this->read_vram(va, out, sz);  // 委托到 DGpuBoardTLM::read_vram(BAR1 DMA)
+    });
+    impl_->cp.set_dispatch_target([this](const TmuDispatchRecord& rec) {
+        return impl_->tmu.submit(rec);  // 直接调 TMU,经其内部 handler 派发到 SQ
+    });
+    impl_->tmu.set_handler(std::make_unique<S3SubmitQueueHandler>(impl_->sq));
+    impl_->initialized = true;
+}
+```
+
+**注意**:
+- S3SubmitQueueHandler 定义在 `src/tlm/gpu/dgpu_board_mvp.cc`(per §4.3),不放 .hh 避免污染 CommandProcessor 编译依赖
+- 装配接线**必须**整体归入 T-s3-3 commit,不在 T-s3-2 提前——否则 CP 持有空 reader/target 会运行时崩
+- T-s3-2 仅实现 CP .cc 逻辑,**不**创建 Pm4Decoder 实例(由 T-s3-3 init 注入);但 T-s3-2 测试需手动 set_decoder + set_vram_reader + set_dispatch_target mock
 
 ## 4. TmuDispatchProcessor 反压停 fetch(per Phase F-D.2 H5 + Oracle M4)
 
@@ -139,12 +217,16 @@ private:
 tmu_.set_handler(std::make_unique<S3SubmitQueueHandler>(sq_));
 ```
 
-### 4.4 CP 退避策略(per Oracle M4)
+### 4.4 CP 退避策略(per Oracle M4 + P2-2 修复 2026-08-28)
 
 CP 收到 `BACKPRESSURED` / `SUBMIT_QUEUE_REJECTED` 时:
-- **不要立即重试** — 引入最小退避窗口(per Phase F-D.2 H5:`MIN_BACKOFF_CYCLES = 8`)
+- **不要立即重试** — 引入最小退避窗口(per Phase F-D.2 H5 + Oracle P2-2):
+  - `static constexpr uint64_t MIN_BACKOFF_CYCLES = 8;` — 定义在 `include/tlm/gpu/command_processor_mvp.hh`,s3 T-s3-2 commit 引入
 - 状态保持在 DECODE,DISPATCH 失败时**回到 FETCH 而不是 IDLE**
-- 失败计数累计到 `cp_backoff_count_`,> 阈值时进入 **DEGRADED 状态**(只 fetch 不 dispatch,等 SQ 清空)
+- 失败计数累计到 `cp_backoff_count_`,**≥ 阈值**时进入 **DEGRADED 状态**(只 fetch 不 dispatch,等 SQ 清空):
+  - `static constexpr uint64_t CP_BACKOFF_DEGRADED_THRESHOLD = 3;` — 同上 .hh,s3 T-s3-2 commit 引入
+  - 三方统一:design §4.4 = tasks T-s3-2 = tasks T-s3-3 测试 均为"**≥3 次进入 DEGRADED**"
+  - 实施测试:`tmu` mock 连续返回 BACKPRESSURED 3 次 → CP.state() == DEGRADED(若 CP 引入 DEGRADED 状态;s3 仅作计数+future hook 即可)
 
 ### 4.5 测试覆盖(s3 W6 T-s3-3 acceptance,新增 4 项)
 
@@ -190,7 +272,7 @@ TmuSubmitResult TmuDispatchProcessor::submit(TmuDispatchRecord record, ...) {
 |----------|------|------|
 | `test_pm4_decoder_mvp.cc` | `[pm4-decoder][mvp]` | NVIDIA method packet + 4 method_addr ranges |
 | `test_command_processor_mvp.cc` | `[command-processor][mvp]` | 5 transition + GPU VA fetch |
-| `test_pm4_decoder_mvp_integration.cc` | `[command-processor][pm4-decoder][integration]` | CP + Decoder 集成 |
+| `test_pm4_decoder_mvp_integration.cc` | `[pm4-decoder-integration]` | CP + Decoder 集成 |
 | `test_tmu_dispatch_processor_mvp.cc` | `[tmu][mvp][glue]` | submit / 反压停 fetch / dep chain / 环检测 |
 
 ## 6. 阶段化交付(本 change)
