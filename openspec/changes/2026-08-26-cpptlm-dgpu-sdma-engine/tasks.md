@@ -15,8 +15,8 @@
 ### T-sd-2: SdmaEngineTLM 组件（5 端口）
 
 - [x] 新建 `include/tlm/gpu/sdma_engine_tlm.hh` + `src/tlm/gpu/sdma_engine_tlm.cc`（ChStreamModuleBase，`num_ports()=5`）
-- [x] H2D / D2H 处理流程（per design §3）+ `max_inflight` 反压 + `translate_latency` 参数
-- [x] 错误路径：translate fault → CompleterAbort + error 通道（per design §5）
+- [x] H2D / D2H 处理流程（per design §4）+ `max_inflight` 反压 + `translate_latency` 参数
+- [x] 错误路径：translate fault → CompleterAbort + error 通道（per design §6）
 - [x] `include/chstream_register.hh` 注册 `REGISTER_CHSTREAM(SdmaEngineTLM)` + multi-port adapter
 - [x] `src/tlm/gpu/sdma_engine_tlm.cc` 加入 `src/CMakeLists.txt` 的 `CORE_SOURCES` 显式列表（项目约定禁 GLOB）
 - [x] **Commit**: `feat(sdma): SdmaEngineTLM PCIe master engine + registration`
