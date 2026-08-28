@@ -59,6 +59,20 @@ add_test(NAME test_command_processor_mvp COMMAND cpptlm_tests "[command-processo
 add_test(NAME test_tmu_dispatch_processor_mvp COMMAND cpptlm_tests "[tmu][mvp][glue]" -r compact)
 add_test(NAME test_pm4_decoder_mvp_integration COMMAND cpptlm_tests "[pm4-decoder-integration]" -r compact)
 
+# 2026-08-28 cpptlm-dgpu-pcie-slice-prerequisites (T-prereq-1..5 前置测试)
+# (per openspec/changes/2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites/tasks.md §T-prereq-6)
+# NAMING CONVENTION: add_test NAME 严格匹配文件名前缀去 'test_' (per Metis naming review)
+add_test(NAME pcie_slice_wire_format_snapshot COMMAND cpptlm_tests "[pcie][slice][wire-format]" -r compact)
+add_test(NAME sdma_engine_translate_boundary COMMAND cpptlm_tests "[sdma][translate-boundary]" -r compact)
+add_test(NAME pcie_endpoint_msix_state COMMAND cpptlm_tests "[pcie][endpoint][msix][state]" -r compact)
+add_test(NAME pcie_endpoint_doorbell_queue COMMAND cpptlm_tests "[pcie][endpoint][doorbell][queue]" -r compact)
+add_test(NAME sdma_engine_backdoor_isolation COMMAND cpptlm_tests "[sdma][backdoor][isolation]" -r compact)
+
+# Edge case 防御性测试 (T-prereq-7 补充 2026-08-28)
+# 涵盖 3 个 invariants: MsiXTable(0) 抛错, MsiXTable::init() 清零 PBA, Doorbell cycle_ns=0 fallback
+add_test(NAME pcie_endpoint_msix_state_edge COMMAND cpptlm_tests "[pcie][endpoint][msix][state][edge]" -r compact)
+add_test(NAME pcie_endpoint_doorbell_edge COMMAND cpptlm_tests "[pcie][endpoint][doorbell][edge]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)
