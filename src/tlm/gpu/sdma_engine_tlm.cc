@@ -18,8 +18,8 @@ namespace tlm::gpu {
 
         // 错误消息（per design.md §6）
         constexpr const char* ERR_MSG_TRANSLATE_FAULT = "SDMA: IOMMU translation fault";
-        constexpr const char* ERR_MSG_SIZE_ZERO       = "SDMA: descriptor size == 0";
-        constexpr const char* ERR_MSG_VRAM_OOB        = "SDMA: VRAM window out of range";
+        constexpr const char* ERR_MSG_SIZE_ZERO = "SDMA: descriptor size == 0";
+        constexpr const char* ERR_MSG_VRAM_OOB = "SDMA: VRAM window out of range";
         constexpr const char* ERR_MSG_NO_TRANSLATE_CB = "SDMA: translate callback not registered";
 
         // Wire-format 编码辅助（per sdma_engine_tlm.hh "Wire-format 选择" 注释）：
@@ -64,8 +64,7 @@ namespace tlm::gpu {
         //   data   = host_iova (64-bit) | tag (高 32 位? 但 ch_uint<64> 是单字段)
         // → 实际 ch_uint<64>.read() 返回 uint64_t; 我们把整个 64-bit 数据塞进 uint64 字段
         p.offset.write(static_cast<uint64_t>(d.vram_offset));
-        p.size.write(static_cast<uint32_t>(d.size) |
-                     (static_cast<uint32_t>(d.dir) << 24));
+        p.size.write(static_cast<uint32_t>(d.size) | (static_cast<uint32_t>(d.dir) << 24));
         p.data.write(d.host_iova);
         p.requester_id.write(0);
         p.trans_id.write(static_cast<uint32_t>(d.tag));
@@ -74,22 +73,23 @@ namespace tlm::gpu {
 
     DmaDescriptor SdmaEngineTLM::from_pcie_tlp_descriptor(const bundles::PcieTlpBundle& p) {
         DmaDescriptor d;
-        const uint8_t  k = p.kind.read();
+        const uint8_t k = p.kind.read();
         const uint64_t vram = p.offset.read();
-        const uint32_t sz  = p.size.read();
+        const uint32_t sz = p.size.read();
         const uint32_t dir_enc = (sz >> 24) & 0xFF;
         const uint64_t iova = p.data.read();
         const uint32_t tag = p.trans_id.read();
-        d.dir         = static_cast<DmaDescriptor::Dir>(dir_enc & 0xFF);
-        d.host_iova   = iova;
+        d.dir = static_cast<DmaDescriptor::Dir>(dir_enc & 0xFF);
+        d.host_iova = iova;
         d.vram_offset = vram;
-        d.size        = sz & 0x00FFFFFFu;  // 低 24 位是 size, 高 8 位是 dir
-        d.tag         = tag;
-        (void)k;  // kind 在调方已校验为 KIND_DMA_DESC
+        d.size = sz & 0x00FFFFFFu; // 低 24 位是 size, 高 8 位是 dir
+        d.tag = tag;
+        (void)k; // kind 在调方已校验为 KIND_DMA_DESC
         return d;
     }
 
-    bundles::PcieTlpBundle SdmaEngineTLM::to_pcie_tlp_completion(const bundles::CompletionBundle& c) {
+    bundles::PcieTlpBundle
+    SdmaEngineTLM::to_pcie_tlp_completion(const bundles::CompletionBundle& c) {
         bundles::PcieTlpBundle p;
         p.kind.write(KIND_DMA_DONE);
         p.bar_index.write(0);
@@ -101,7 +101,8 @@ namespace tlm::gpu {
         return p;
     }
 
-    bundles::CompletionBundle SdmaEngineTLM::from_pcie_tlp_completion(const bundles::PcieTlpBundle& p) {
+    bundles::CompletionBundle
+    SdmaEngineTLM::from_pcie_tlp_completion(const bundles::PcieTlpBundle& p) {
         bundles::CompletionBundle c;
         c.task_id.write(static_cast<uint32_t>(p.offset.read()));
         c.status.write(p.size.read());
@@ -185,7 +186,7 @@ namespace tlm::gpu {
         if (vram_offset >= vram_size_bytes_)
             return false;
         const uint64_t end = vram_offset + static_cast<uint64_t>(size);
-        if (end < vram_offset)  // overflow
+        if (end < vram_offset) // overflow
             return false;
         if (end > vram_size_bytes_)
             return false;
@@ -224,7 +225,7 @@ namespace tlm::gpu {
         uint64_t phys = 0;
         int rc = translate_cb_(d.host_iova, d.size, phys);
         if (rc != 0) {
-            done.status.write(static_cast<uint32_t>(-EIO));  // RequesterCompleterAbort
+            done.status.write(static_cast<uint32_t>(-EIO)); // RequesterCompleterAbort
             return -EIO;
         }
 
@@ -234,23 +235,23 @@ namespace tlm::gpu {
         if (host_backdoor_ && vram_backdoor_) {
             const uint64_t src_end = phys + static_cast<uint64_t>(d.size);
             const uint64_t dst_end = d.vram_offset + static_cast<uint64_t>(d.size);
-            if (src_end > phys && src_end <= host_backdoor_size_ &&
-                dst_end > d.vram_offset && dst_end <= vram_backdoor_size_) {
+            if (src_end > phys && src_end <= host_backdoor_size_ && dst_end > d.vram_offset &&
+                dst_end <= vram_backdoor_size_) {
                 std::memcpy(static_cast<uint8_t*>(vram_backdoor_) + d.vram_offset,
-                            static_cast<uint8_t*>(host_backdoor_) + phys,
-                            d.size);
+                            static_cast<uint8_t*>(host_backdoor_) + phys, d.size);
             }
             // 越界时不抛错（MVP 容忍：仍 emit TLP，让测试看到 TLP emitted 但数据可能不全）
         }
 
         // 成功路径：emit host_out MEM_READ TLP
-        // (per design.md §4 + ADR-SOC-07 Status Update Q3: descriptor-only TLP, bulk data via backdoor)
+        // (per design.md §4 + ADR-SOC-07 Status Update Q3: descriptor-only TLP, bulk data via
+        // backdoor)
         bundles::PcieTlpBundle host_tlp;
         host_tlp.kind.write(bundles::PcieTlpBundle::MEM_READ);
         host_tlp.bar_index.write(0);
-        host_tlp.offset.write(phys);   // 经 translate 后的 PA
+        host_tlp.offset.write(phys); // 经 translate 后的 PA
         host_tlp.size.write(d.size);
-        host_tlp.data.write(0);        // descriptor-only, bulk data via backdoor
+        host_tlp.data.write(0); // descriptor-only, bulk data via backdoor
         host_tlp.requester_id.write(0);
         host_tlp.trans_id.write(static_cast<uint32_t>(d.tag));
         resp_out[PORT_HOST_OUT].write(host_tlp);
@@ -258,7 +259,7 @@ namespace tlm::gpu {
         // 同步 emit mem_out MEM_WRITE TLP (数据写入 VRAM)
         bundles::PcieTlpBundle mem_tlp;
         mem_tlp.kind.write(bundles::PcieTlpBundle::MEM_WRITE);
-        mem_tlp.bar_index.write(1);  // BAR1 = VRAM aperture (per pcie_bundles_tlm.hh doc)
+        mem_tlp.bar_index.write(1); // BAR1 = VRAM aperture (per pcie_bundles_tlm.hh doc)
         mem_tlp.offset.write(d.vram_offset);
         mem_tlp.size.write(d.size);
         mem_tlp.data.write(0);
@@ -266,7 +267,7 @@ namespace tlm::gpu {
         mem_tlp.trans_id.write(static_cast<uint32_t>(d.tag));
         resp_out[PORT_MEM_OUT].write(mem_tlp);
 
-        done.status.write(0);  // success
+        done.status.write(0); // success
         return 0;
     }
 
@@ -301,15 +302,14 @@ namespace tlm::gpu {
             if (src_end > d.vram_offset && src_end <= vram_backdoor_size_ &&
                 dst_end > d.host_iova && dst_end <= host_backdoor_size_) {
                 std::memcpy(static_cast<uint8_t*>(host_backdoor_) + d.host_iova,
-                            static_cast<uint8_t*>(vram_backdoor_) + d.vram_offset,
-                            d.size);
+                            static_cast<uint8_t*>(vram_backdoor_) + d.vram_offset, d.size);
             }
         }
 
         // emit mem_out MEM_READ (D2H: VRAM → host, 先读 VRAM)
         bundles::PcieTlpBundle mem_tlp;
         mem_tlp.kind.write(bundles::PcieTlpBundle::MEM_READ);
-        mem_tlp.bar_index.write(1);  // BAR1 = VRAM aperture
+        mem_tlp.bar_index.write(1); // BAR1 = VRAM aperture
         mem_tlp.offset.write(d.vram_offset);
         mem_tlp.size.write(d.size);
         mem_tlp.data.write(0);
@@ -323,12 +323,12 @@ namespace tlm::gpu {
         host_tlp.bar_index.write(0);
         host_tlp.offset.write(d.host_iova);
         host_tlp.size.write(d.size);
-        host_tlp.data.write(0);        // descriptor-only
+        host_tlp.data.write(0); // descriptor-only
         host_tlp.requester_id.write(0);
         host_tlp.trans_id.write(static_cast<uint32_t>(d.tag));
         resp_out[PORT_HOST_OUT].write(host_tlp);
 
-        done.status.write(0);  // success
+        done.status.write(0); // success
         return 0;
     }
 
@@ -369,7 +369,7 @@ namespace tlm::gpu {
 
         DmaDescriptor d = from_pcie_tlp_descriptor(req);
         bundles::CompletionBundle done;
-        done.task_id.write(static_cast<uint32_t>(d.tag));  // MVP: task_id == tag
+        done.task_id.write(static_cast<uint32_t>(d.tag)); // MVP: task_id == tag
         done.tag.write(static_cast<uint32_t>(d.tag));
 
         int rc = 0;
