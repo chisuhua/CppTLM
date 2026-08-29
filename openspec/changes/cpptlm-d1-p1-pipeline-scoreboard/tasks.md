@@ -44,7 +44,9 @@
 | gpgpu-sim reference data（4.6/4.9/G-D5 前置） | ❌ **仍阻塞** | `which gpgpu-sim` 空,本地无 reference 数据 |
 | 统一 cycle 契约（G-D3 前置） | ⚠️ 部分就绪 | 1 CppTLM tick = 1 GPUContext::exe_once() 契约已定义,待 4.7 落地实证 |
 
-**结论**: 4.7/G-D2/G-D3/G-D8 的前置已大部分解除（PTX-EMU 链可用）,但 G-D3 的 cycle 契约实证与 4.6/4.9/G-D5 仍需 gpgpu-sim reference 数据。**Wave 2 启动时 4.7 可直接实施**,4.9/G-D5 仍需外部数据。
+**架构发现（2026-08-30 补充）**: 4.7 的**原始设计**基于 `IPtxEmuDriver` 窄接口（`KernelLaunchTLM.driver_->advance()`），但该接口已被 HSK-6 物理删除（`IPtxEmuDriver` 类定义 0 处，`kernel_launch_tlm.cc` 仅保留 Phase 8.A 计数路径）。**替代路径已存在并实证可用**: `CudaCoreAdapterMVP::sm_exe_once()` → `facade->attach_timing()` → `PtxEmuSubmoduleMVP`（`IPtxEmuDevice`）。因此 **4.7 不是"直接实施"，而是需基于替代路径重新设计测试对象**（`test_kernel_launch_ptx_integration.cc` 需改驱动 `CudaCoreAdapterMVP` 而非 `IPtxEmuDriver`），且 G-D2/G-D3/G-D8 均为 **[双端] 验收**（需 PTX-EMU 仓协同，非本仓可独立验收）。
+
+**结论**: 4.6/4.9/G-D5 被 gpgpu-sim reference data 硬阻塞（外部数据，本仓无法解决）；4.7/G-D2/G-D3/G-D8 的前置（PTX-EMU exe_once 链）已解除但需**架构迁移 + 双端协同**。Wave 2 启动时先实施 4.7（基于 CudaCoreAdapterMVP 替代路径），4.9/G-D5 仍需外部 gpgpu-sim 数据。
 
 **rdd-doctor 状态**: 这些任务触发 1 个 WARNING（tasks-checkbox 53/60 88%），属设计意图延迟，**不**算功能缺陷。可绕过方案：`SKIP_TASKS_GATE=yes` 归档。
 
