@@ -110,8 +110,8 @@
 
 ### T-bs-6: 23 ABI C 头文件冻结（per ADR-SOC-07 Q2 裁决）
 
-- [ ] 新建 `include/abi/cpptlm_emulator.h`（**纯 C 声明**，`#ifdef __cplusplus extern "C"`，0 实现）
-- [ ] 声明 ADR-088 §D5 的 23 ABI：`cpptlm_emulator_get_version` / `create` / `mmio_read` / `mmio_write` / `pcie_config_read` / `pcie_config_write` / `backdoor_read` / `backdoor_write` / `msix_init` / `msix_update_pending` / `msix_clear_pending` / `get_device_count` / `get_device_info` / `create_by_id` / `register_callbacks` / `register_backdoor_cb` / `register_dma_translate_cb` / `lookup_register` / `destroy` / 及 4 个 callback typedef
-- [ ] **Commit**: `feat(abi): 23 C ABI header freeze for cpptlm_emulator (no implementation)`
-- [ ] 函数体实现移交后续独立 change `cpptlm-dgpu-abi-export`（SHARED 库 + `cpptlm_core` PIC + 全局设备注册表 mutex，per Oracle Q2 落地建议）
-- [ ] 新建 `include/abi/` 目录（如不存在）；后续 ARCHIVE 时同步根 `AGENTS.md` STRUCTURE 节增加 `include/abi/` 行（per DOC HYGIENE 硬性规则：结构调整 PR 必含 AGENTS.md STRUCTURE 同步）
+- [x] 新建 `include/abi/cpptlm_emulator.h`（**纯 C 声明**，`#ifdef __cplusplus extern "C"`，0 实现）
+- [x] 声明 ADR-088 §D5 的 23 ABI：`cpptlm_emulator_get_version` / `create` / `mmio_read` / `mmio_write` / `pcie_config_read` / `pcie_config_write` / `backdoor_read` / `backdoor_write` / `msix_init` / `msix_update_pending` / `msix_clear_pending` / `get_device_count` / `get_device_info` / `create_by_id` / `register_callbacks` / `register_backdoor_cb` / `register_dma_translate_cb` / `lookup_register` / `destroy` / 及 4 个 callback typedef
+- [x] **Commit**: `feat(abi): 23 C ABI header freeze for cpptlm_emulator (no implementation)`
+- [x] 函数体实现移交后续独立 change `cpptlm-dgpu-abi-export`（SHARED 库 + `cpptlm_core` PIC + 全局设备注册表 mutex，per Oracle Q2 落地建议）
+- [x] 新建 `include/abi/` 目录（如不存在）；后续 ARCHIVE 时同步根 `AGENTS.md` STRUCTURE 节增加 `include/abi/` 行（per DOC HYGIENE 硬性规则：结构调整 PR 必含 AGENTS.md STRUCTURE 同步）

@@ -20,6 +20,7 @@ include/         # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
   tlm/gpu/       # Phase 7.A+ GPUTLM v0 (黑盒发起器)
   framework/     # StreamAdapter 转换层 (单/多/双端口 + 双向)
   bundles/       # Bundle 定义: cache/noc/compute_bundles_tlm + cpphdl_types
+  abi/           # 23 ABI C extern "C" 头冻结 (per ADR-088 §D5 + W3.2 ABI 暴露)
   modules/legacy/# CPUSim (BUILD_LEGACY_MODULES=OFF 默认, 已归档)
   ext/           # TLM 扩展插件 (credit_stream / error_context / mem / transaction_context)
   metrics/       # histogram / stats / metrics_reporter / streaming_reporter
