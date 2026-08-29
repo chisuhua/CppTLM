@@ -21,7 +21,7 @@ CppTLM 模块按功能域分 **8 大类**：
 | 3 | **Cache 层级** | 0 (v0 归为 memory) | 3 | 调研 §2.3 | [`cache-l1.md`](./cache-l1.md) [`cache.common.md`](./cache.common.md) [`cache-l2.md`](./cache-l2.md) [`cache-protocol.md`](./cache-protocol.md) [`cache-replacement.md`](./cache-replacement.md) [`cache-noncoherent.md`](./cache-noncoherent.md) | ✅ (v0) / 🟡 5 个 (B3.3.1) |
 | 4 | **Interconnect / NoC** | 5 | 1 | 调研 §2.4 | [`interconnect-crossbar.md`](./interconnect-crossbar.md) [`interconnect-arbiter.md`](./interconnect-arbiter.md) [`noc-router.md`](./noc-router.md) [`noc-nic.md`](./noc-nic.md) [`noc.common.md`](./noc.common.md) [`interconnect-bridge.md`](./interconnect-bridge.md) [`comm_monitor.md`](./comm_monitor.md) [`coherent_xbar.md`](./coherent_xbar.md) [`snoop_filter.md`](./snoop_filter.md) | ✅ 5 (v0) / 🟡 4 (B3.3.2) + 1 common (B3.3.3) |
 | 5 | **GPU / GPGPU** | 1 | 5 | 调研 §2, §4 Phase 7.A-F | [`gpu-gputlm.md`](./gpu-gputlm.md) [`gpu.common.md`](./gpu.common.md) [`gpu-compute_unit.md`](./gpu-compute_unit.md) [`gpu-kernel-launch.md`](./gpu-kernel-launch.md) [`gpu-tcc.md`](./gpu-tcc.md) [`gpu-pcie_bridge.md`](./gpu-pcie_bridge.md) | ✅ (v0 1/6) / 🟡 5 个 |
-| 5b | **GPU / dGPU MVP 切片** (per [ADR-SOC-06](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md)) | 0 | 6 | ADR-SOC-06 + v0.4 设计 | [`dgpu-board.md`](./dgpu-board.md) [`command-processor.md`](./command-processor.md) [`pm4-decoder.md`](./pm4-decoder.md) [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md) [`cuda-core-adapter.md`](./cuda-core-adapter.md) [`ptx-emu-submodule-mvp.md`](./ptx-emu-submodule-mvp.md) | 🟡 (MVP 4 阶段 6-10 周) |
+| 5b | **GPU / dGPU MVP 切片** (per [ADR-SOC-06](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md)) | 7 | 0 | ADR-SOC-06 + v0.4 设计 | [`dgpu-board.md`](./dgpu-board.md) [`command-processor.md`](./command-processor.md) [`pm4-decoder.md`](./pm4-decoder.md) [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md) [`submit-queue.md`](./submit-queue.md) [`completion-ring.md`](./completion-ring.md) [`cuda-core-adapter.md`](./cuda-core-adapter.md) [`ptx-emu-submodule-mvp.md`](./ptx-emu-submodule-mvp.md) | 🔵 Implemented (W2 board-soc-split + W3.2 abi-export) |
 | 5c | **GPU / dGPU SOC PCIe Slice** (per [ADR-SOC-07](../../adr/ADR-SOC-07-dgpu-board-soc-layering.md)) | 2 | 0 | ADR-SOC-07 D2/D3 拆分决策 | [`dgpu-soc-pcie-slice.md`](./dgpu-soc-pcie-slice.md) | 🔵 Implemented |
 | 6 | **IO / DMA / 设备** | 0 | 5 | 调研 §2.5 | [`io-pio.md`](./io-pio.md) [`io-dma.md`](./io-dma.md) [`io-disk.md`](./io-disk.md) [`io-terminal.md`](./io-terminal.md) [`io-uart.md`](./io-uart.md) [`io-ether.md`](./io-ether.md) [`io-pci.md`](./io-pci.md) [`io-nvram.md`](./io-nvram.md) | 🟡 8 (B3.4.2) |
 | 7 | **Coherence / 桥接** | 0 | 3 | 调研 §2.6, §4 Phase 7.C-D | [`coherence-domain.md`](./coherence-domain.md) [`coherence-protocol.md`](./coherence-protocol.md) [`coherence-bridge.md`](./coherence-bridge.md) | ✅ 1 (v0) / 🟡 2 (B3.3.4) |
@@ -66,6 +66,18 @@ CppTLM 模块按功能域分 **8 大类**：
 | 模块类 | Header | 命名空间 | 角色 | 注册位置 | 状态 |
 |--------|--------|----------|------|----------|------|
 | `tlm::GPUTLM` | `include/tlm/gpu/gpu_tlm.hh` | `tlm` | GPU 黑盒发起器（5 setter + 50% 读写混合 + 7 个 StatGroup 统计） | `REGISTER_CHSTREAM` (chstream_register.hh:42 + ComputeReqBundle/ComputeRespBundle) | ✅ **v0 已实施**（Phase 7.A commit `828f037`） |
+| `DGpuBoard` | `include/tlm/gpu/dgpu_board_shell.hh` | `tlm::gpu` | dGPU C++ ABI shell (5 职责: SOC 装配/ABI 翻译/回调接线/设备枚举/生命周期, 非数据面) | N/A (C++ shell, 非 SimModule) | ✅ **v0.5.0-MVP** (W2 T-bs-3a~3e) |
+| `DGpuSoc` | `include/tlm/gpu/dgpu_soc.hh` | `cpptlm::tlm` | dGPU SOC SimModule 容器 (JSON 嵌套实例化 pcie_ep/sdma/cp/tmu/sq/cq/gpu/vram) | `REGISTER_MODULE` (modules_cluster.hh:46) | ✅ **v0.5.0-MVP** (W2 T-bs-1) |
+| `SubmitQueueTLM` | `include/tlm/gpu/submit_queue_tlm.hh` | `tlm::gpu` | WDU 分发网络 (4 端口 cta_in/dispatch/done_in) | `REGISTER_CHSTREAM` | ✅ **v0.5.0-MVP** (W2 T-bs-2a) |
+| `CompletionRingTLM` | `include/tlm/gpu/completion_ring_tlm.hh` | `tlm::gpu` | 完成通知 FIFO (4 端口 done_in[0]/[1]/done_out/irq_out, 多源汇聚) | `REGISTER_CHSTREAM` | ✅ **v0.5.0-MVP** (W2 T-bs-2b) |
+| `CommandProcessorTLM` | `include/tlm/gpu/command_processor_tlm.hh` | `tlm::gpu` | NVIDIA PM4 CP (5-state FSM + backpressure + DEGRADED) | `REGISTER_CHSTREAM` | ✅ **v0.5.0-MVP** (W2 T-bs-2c) |
+| `TmuDispatchProcessorTLM` | `include/tlm/gpu/tmu_dispatch_processor_tlm.hh` | `tlm::gpu` | TMU Glue (3 端口 dispatch_in/cta_out/done_in + dep 链) | `REGISTER_CHSTREAM` | ✅ **v0.5.0-MVP** (W2 T-bs-2c-TMU) |
+| `CudaCoreAdapterMVP` | `include/tlm/gpu/cuda_core_adapter_mvp.hh` | `tlm` | HSK-8 timing adapter (init 注入 3 timing 模块) | (PTX-EMU ON) | ✅ **v0.5.0-MVP** |
+| `PtxEmuSubmoduleMVP` | `include/tlm/gpu/ptx_emu_submodule_mvp.hh` | `tlm::gpu` | PTX functional facade (HSK-8) | (PTX-EMU ON) | ✅ **v0.5.0-MVP** |
+| `PcieEndpointTLM` | `include/tlm/gpu/pcie_endpoint_tlm.h` | `tlm::gpu` | SOC 片内 PCIe slave (ConfigSpace + BarRouter + MSI-X) | `REGISTER_CHSTREAM` | ✅ **v0.5.0-MVP** (pcie-endpoint) |
+| `SdmaEngineTLM` | `include/tlm/gpu/sdma_engine_tlm.hh` | `tlm::gpu` | PCIe master DMA/copy engine (5 端口) | `REGISTER_CHSTREAM` | ✅ **v0.5.0-MVP** (sdma-engine) |
+
+> **dGPU 数据面拓扑** (per ADR-SOC-07 D1/D7 + configs/dgpu_board_v1.json): DGpuBoard C++ shell 装载 DGpuSoc SimModule 容器; SOC 内 PcieEndpointTLM (slave) + SdmaEngineTLM (master) + CP→PM4→TMU→SQ→CQ 命令链路 + MemoryTLM (VRAM).
 
 ### 2.6 IO / DMA / 设备
 
