@@ -1,12 +1,13 @@
-// tmu_dispatch_processor_mvp.hh
-// TMU Dispatch Processor 骨架 - 反压停 fetch (per Phase F-D.2 H5)
+// tmu_dispatch_processor_tlm.hh
+// TMU Dispatch Processor (TmuDispatchProcessorTLM) - 3 端口 ChStreamModuleBase:
+//   dispatch_in / cta_out / done_in. 反压停 fetch + dep 链推进.
 // Author: CppTLM Team
-// Date: 2026-08-26
+// Date: 2026-08-26 (命名提升 2026-08-29 per T-bs-2c-TMU)
 //
-// s2 阶段: 骨架编译通过即可
-// s3 阶段: 填充 dep chain + 反压退避 + 派发路径经 handler (S3SubmitQueueHandler)
-#ifndef CPPTLM_TMU_DISPATCH_PROCESSOR_MVP_H
-#define CPPTLM_TMU_DISPATCH_PROCESSOR_MVP_H
+// s2 W3 阶段: 骨架编译通过即可 (back-pressure stub + set_handler injection)
+// s3 W6 阶段: 填充 dep chain + 反压退避 + 派发路径经 handler (S3SubmitQueueHandler)
+#ifndef CPPTLM_TMU_DISPATCH_PROCESSOR_TLM_H
+#define CPPTLM_TMU_DISPATCH_PROCESSOR_TLM_H
 
 #include "tlm/gpu/tmu_types_mvp.hh"
 #include "tlm/gpu/tmu_handler_mvp.hh"
@@ -66,4 +67,4 @@ namespace tlm::gpu {
 
 } // namespace tlm::gpu
 
-#endif // CPPTLM_TMU_DISPATCH_PROCESSOR_MVP_H
+#endif // CPPTLM_TMU_DISPATCH_PROCESSOR_TLM_H
