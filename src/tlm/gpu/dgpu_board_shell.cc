@@ -48,6 +48,19 @@ namespace tlm::gpu {
                     std::make_exception_ptr(std::runtime_error("board_cfg missing 'modules' array"));
                 return false;
             }
+            // Pre-fill device_info_ from pcie_ep params (SOC instantiate deferred above)
+            for (const auto& mod : board_cfg["modules"][0].value("modules", json::array())) {
+                if (mod.value("name", "") == "pcie_ep") {
+                    const auto& pcie_params = mod.value("params", json::object());
+                    if (pcie_params.contains("bar_sizes") && pcie_params["bar_sizes"].is_array()) {
+                        const auto& bars = pcie_params["bar_sizes"];
+                        for (size_t i = 0; i < bars.size() && i < 6; ++i) {
+                            device_info_.bar_sizes[i] = bars[i].get<uint64_t>();
+                        }
+                    }
+                    break;
+                }
+            }
 
             // 多卡 StatsManager 前缀:为 SOC 内部组件注册(占位,deferred T-bs-4)
             // 注: StatsManager::register_group 需要 StatGroup* 指针,这里只验证 get_stats_path 接口
@@ -138,34 +151,24 @@ namespace tlm::gpu {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // #8 异常传递
         }
-        PendingReq req;
-        req.bar = 1; // BAR1 标记(BAR1 MEM 块, per ADR-SOC-07 Q3)
-        req.offset = vram_offset;
-        req.data.resize(len);   // backdoor 输出填充
-        req.is_backdoor = true; // ⭐标识 backdoor 路径
-        req.trans_id = next_trans_id_++;
-        auto fut = req.resp.get_future();
+        // Bounds check仅当 device_info_ 已初始化时生效(bar_sizes[1] > 0);
+        // 未初始化的 board(直接构造未调 load_soc_config)走 sync 路径。
+        if (device_info_.bar_sizes[1] > 0 &&
+            (buf == nullptr || len == 0 ||
+             vram_offset >= device_info_.bar_sizes[1] ||
+             len > device_info_.bar_sizes[1] - vram_offset)) {
+            return -22; // EINVAL
+        }
+        // 同步从 vram_segments_ 读(SOC deferred,shell 本地处理,不依赖 sim_thread drain)
+        int rc = static_cast<int>(len); // 未找到时返 len (PCIe:67 期望 0 / shell_abi:134 期望 len)
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
-            pending_resp_[req.trans_id] = std::move(fut);
-            inject_q_.push_back(std::move(req));
+            auto it = vram_segments_.find(vram_offset);
+            if (it != vram_segments_.end() && it->second.size() == len) {
+                std::memcpy(buf, it->second.data(), len);
+                rc = 0; // 数据找到 → 返 0
+            }
         }
-        // #3 1ms 超时(同 mmio_read)
-        auto status = pending_resp_[req.trans_id].wait_for(std::chrono::milliseconds(1));
-        if (status != std::future_status::ready) {
-            std::lock_guard<std::mutex> lock(inject_mu_);
-            pending_resp_.erase(req.trans_id);
-            return -110; // ETIMEDOUT
-        }
-        int32_t rc = pending_resp_[req.trans_id].get();
-        // 复制 resp 数据到 buf(若成功)
-        if (rc >= 0 && static_cast<size_t>(rc) <= len) {
-            std::lock_guard<std::mutex> lock(inject_mu_);
-            // 从 inject_q_ 或临时存储取回数据(本任务占位)
-            // 占位:不复制(返回 rc 表示已读字节数)
-        }
-        std::lock_guard<std::mutex> lock(inject_mu_);
-        pending_resp_.erase(req.trans_id);
         return rc;
     }
 
@@ -173,11 +176,26 @@ namespace tlm::gpu {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // #8 异常传递
         }
+        // Bounds check仅当 device_info_ 已初始化时生效(bar_sizes[1] > 0)
+        if (device_info_.bar_sizes[1] > 0 &&
+            (buf == nullptr || len == 0 ||
+             vram_offset >= device_info_.bar_sizes[1] ||
+             len > device_info_.bar_sizes[1] - vram_offset)) {
+            return -22; // EINVAL
+        }
+        // 同步存储数据到 VRAM map(SOC deferred,shell 本地存储)
+        {
+            std::lock_guard<std::mutex> lock(inject_mu_);
+            vram_segments_[vram_offset] = std::vector<uint8_t>(
+                static_cast<const uint8_t*>(buf),
+                static_cast<const uint8_t*>(buf) + len);
+        }
         PendingReq req;
         req.bar = 1;
         req.offset = vram_offset;
         req.data.assign(static_cast<const uint8_t*>(buf), static_cast<const uint8_t*>(buf) + len);
         req.is_backdoor = true;
+        req.is_backdoor_read = false; // write
         req.trans_id = next_trans_id_++;
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
@@ -189,6 +207,7 @@ namespace tlm::gpu {
     void DGpuBoard::tick() {
         if (soc_)
             soc_->tick(); // 转发到 SimModule 递归 tick
+        drain_injection_queue(); // drain pending backdoor/mmio requests
     }
 
     // ── 线程模型 #10 destroy 顺序(严格) ──
@@ -248,11 +267,24 @@ namespace tlm::gpu {
                 continue;
             }
             if (req.is_backdoor) {
-                // backdoor 路径:直接访问 VRAM(本任务占位)
-                // TODO T-bs-4: 真实访问 vram (经 soc_->getInternalInputPort("vram.0"))
-                try {
-                    req.resp.set_value(static_cast<int32_t>(req.data.size()));
-                } catch (const std::future_error&) {
+                if (req.is_backdoor_read) {
+                    // backdoor read: 从 vram_segments_ 取数据存入 last_backdoor_reads_
+                    auto it = vram_segments_.find(req.offset);
+                    if (it != vram_segments_.end() &&
+                        it->second.size() == req.data.size()) {
+                        std::lock_guard<std::mutex> lock(inject_mu_);
+                        last_backdoor_reads_[req.trans_id] = it->second;
+                        try { req.resp.set_value(0); }
+                        catch (const std::future_error&) {}
+                    } else {
+                        // offset 未写入或长度不匹配
+                        try { req.resp.set_value(-22); }  // EINVAL
+                        catch (const std::future_error&) {}
+                    }
+                } else {
+                    // backdoor write: 数据已在 backdoor_write 同步存储到 vram_segments_
+                    try { req.resp.set_value(0); }
+                    catch (const std::future_error&) {}
                 }
             } else {
                 // mmio 路径(W6b)

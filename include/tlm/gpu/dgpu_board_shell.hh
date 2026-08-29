@@ -33,6 +33,7 @@ struct PendingReq {
     uint64_t trans_id;          // 用于 future 关联
     std::promise<int32_t> resp; // mmio_read 用,mmio_write 无值
     bool is_backdoor = false;   // backdoor 标识(默认 false,mmio 路径不设)
+    bool is_backdoor_read = false; // backdoor read/write 区分(SOC deferred 时 shell 本地处理)
 };
 
 // DGpuBoard - 23 ABI 翻译 shell
@@ -114,6 +115,10 @@ private:
     void sim_loop();                              // sim 线程主循环
     void drain_injection_queue();                 // #2/#5 inject_q 服务
     void destroy();                               // #10 严格顺序
+
+    // backdoor VRAM 存储(SOC deferred 时 shell 本地处理 backdoor_read/write)
+    std::map<uint64_t, std::vector<uint8_t>> vram_segments_;
+    std::unordered_map<uint64_t, std::vector<uint8_t>> last_backdoor_reads_;
 };
 
 } // namespace tlm::gpu
