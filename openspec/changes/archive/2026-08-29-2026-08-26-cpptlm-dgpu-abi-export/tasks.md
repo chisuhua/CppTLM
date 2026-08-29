@@ -40,8 +40,8 @@
 
 ### T-ae-5: 集成验证 + archive
 
-- [ ] 全量 `build/bin/cpptlm_tests` PASS + `validate_topology` PASS（AE-G6）
-- [ ] `./scripts/test/docs_sync_check.sh --strict` PASS（365/365 路径有效）
-- [ ] `scripts/build/format.sh --check` PASS
-- [ ] 在 `AGENTS.md` §CROSS-PROJECT INTEGRATION 段补一行："CppTLM 端 23 ABI 由 `libcpptlm_emulator.so` SHARED 暴露（2026-08-26 起），UsrLinuxEmu `ExternalProject_Add` / dlopen 消费"
-- [ ] **Commit**: `chore(abi): integration validation + AGENTS.md cross-project note`
+- [x] 全量 `build/bin/cpptlm_tests` PASS + `validate_topology` PASS（AE-G6）
+- [x] `./scripts/test/docs_sync_check.sh --strict` PASS（365/365 路径有效）
+- [x] `scripts/build/format.sh --check` PASS
+- [x] 在 `AGENTS.md` §CROSS-PROJECT INTEGRATION 段补一行："CppTLM 端 23 ABI 由 `libcpptlm_emulator.so` SHARED 暴露（2026-08-26 起），UsrLinuxEmu `ExternalProject_Add` / dlopen 消费"
+- [x] **Commit**: `chore(abi): integration validation + AGENTS.md cross-project note`
