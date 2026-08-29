@@ -28,8 +28,7 @@ TEST_CASE("ABI: get_version returns v1.0-dgpu-v0", "[abi][get_version]") {
     REQUIRE(std::string(v) == "v1.0-dgpu-v0");
 }
 
-TEST_CASE("ABI: get_device_count + get_device_info on empty registry",
-          "[abi][registry][empty]") {
+TEST_CASE("ABI: get_device_count + get_device_info on empty registry", "[abi][registry][empty]") {
     REQUIRE(cpptlm_emulator_get_device_count() == 0u);
 
     cpptlm_device_info_t info{};
@@ -39,7 +38,8 @@ TEST_CASE("ABI: get_device_count + get_device_info on empty registry",
     REQUIRE(cpptlm_emulator_get_device_info(1, nullptr) == -EINVAL);
 }
 
-TEST_CASE("ABI: lookup_register / mmio_* / pcie_config_* / backdoor_* return -ENOSYS or EINVAL on null handle",
+TEST_CASE("ABI: lookup_register / mmio_* / pcie_config_* / backdoor_* return -ENOSYS or EINVAL on "
+          "null handle",
           "[abi][null_handle]") {
     cpptlm_register_info_t ri{};
     uint32_t v = 0;
@@ -57,14 +57,13 @@ TEST_CASE("ABI: lookup_register / mmio_* / pcie_config_* / backdoor_* return -EN
     REQUIRE(cpptlm_emulator_msix_update_pending(nullptr, 0) == -EINVAL);
     REQUIRE(cpptlm_emulator_msix_clear_pending(nullptr, 0) == -EINVAL);
 
-    REQUIRE(cpptlm_emulator_register_callbacks(
-                nullptr, nullptr, nullptr, nullptr, nullptr, nullptr) == -EINVAL);
+    REQUIRE(cpptlm_emulator_register_callbacks(nullptr, nullptr, nullptr, nullptr, nullptr,
+                                               nullptr) == -EINVAL);
     REQUIRE(cpptlm_emulator_register_backdoor_cb(nullptr, nullptr) == -EINVAL);
     REQUIRE(cpptlm_emulator_register_dma_translate_cb(nullptr, nullptr) == -EINVAL);
 }
 
-TEST_CASE("ABI: create / destroy / get_device_count lifecycle",
-          "[abi][lifecycle]") {
+TEST_CASE("ABI: create / destroy / get_device_count lifecycle", "[abi][lifecycle]") {
     // 注意: cpptlm_emulator_create 会调 board->load_soc_config,
     // 当前 shell 有 SIGSEGV (deferred T-bs-4 follow-up). 这里用 nullptr profile_path
     // 测试注册表逻辑不依赖成功 init (-- 用 create_by_id 0 path?)
@@ -87,7 +86,7 @@ TEST_CASE("ABI: msix_* and lookup_register return -ENOSYS (shell deferred)",
     // 直到 shell 完整化 (T-bs-4 follow-up). 这确保 ABI 函数存在 + 返回合理错误码.
     cpptlm_emulator_t* emu = nullptr;
     // 创建可能失败 (load_soc_config SIGSEGV),用 nullptr 测试 ENOSYS 路径.
-    REQUIRE(cpptlm_emulator_msix_init(emu, 16, 0) == -EINVAL);  // null -> EINVAL
+    REQUIRE(cpptlm_emulator_msix_init(emu, 16, 0) == -EINVAL); // null -> EINVAL
     REQUIRE(cpptlm_emulator_msix_update_pending(emu, 0) == -EINVAL);
     REQUIRE(cpptlm_emulator_msix_clear_pending(emu, 0) == -EINVAL);
 
@@ -95,8 +94,7 @@ TEST_CASE("ABI: msix_* and lookup_register return -ENOSYS (shell deferred)",
     REQUIRE(cpptlm_emulator_lookup_register(emu, 0x14, &ri) == -EINVAL);
 }
 
-TEST_CASE("ABI: 23 symbols are linked (link-time verification)",
-          "[abi][link]") {
+TEST_CASE("ABI: 23 symbols are linked (link-time verification)", "[abi][link]") {
     // 链接器保证 cpptlm_emulator SHARED 库被链接到测试二进制;
     // 19 符号在 nm -D 中可见 (per AE-G2 计数).
     // 本 TEST_CASE 编译时强制 include 头 + 调用 19 函数指针,确保 ABI 符号
@@ -117,8 +115,7 @@ TEST_CASE("ABI: 23 symbols are linked (link-time verification)",
     using FnMsixInit = int (*)(cpptlm_emulator_t*, uint32_t, uint32_t);
     using FnMsixUpd = int (*)(cpptlm_emulator_t*, uint32_t);
     using FnMsixClr = int (*)(cpptlm_emulator_t*, uint32_t);
-    using FnRegCbs = int (*)(cpptlm_emulator_t*,
-                             cpptlm_intr_deliver_cb_t, cpptlm_error_cb_t,
+    using FnRegCbs = int (*)(cpptlm_emulator_t*, cpptlm_intr_deliver_cb_t, cpptlm_error_cb_t,
                              cpptlm_reset_complete_cb_t, cpptlm_power_cb_t, void*);
     using FnRegBdCb = int (*)(cpptlm_emulator_t*, void*);
     using FnRegDmaCb = int (*)(cpptlm_emulator_t*, void*);
@@ -163,8 +160,23 @@ TEST_CASE("ABI: 23 symbols are linked (link-time verification)",
     REQUIRE(p18 != nullptr);
     REQUIRE(p19 != nullptr);
 
-    (void)p1; (void)p2; (void)p3; (void)p4; (void)p5;
-    (void)p6; (void)p7; (void)p8; (void)p9; (void)p10;
-    (void)p11; (void)p12; (void)p13; (void)p14; (void)p15;
-    (void)p16; (void)p17; (void)p18; (void)p19;
+    (void)p1;
+    (void)p2;
+    (void)p3;
+    (void)p4;
+    (void)p5;
+    (void)p6;
+    (void)p7;
+    (void)p8;
+    (void)p9;
+    (void)p10;
+    (void)p11;
+    (void)p12;
+    (void)p13;
+    (void)p14;
+    (void)p15;
+    (void)p16;
+    (void)p17;
+    (void)p18;
+    (void)p19;
 }

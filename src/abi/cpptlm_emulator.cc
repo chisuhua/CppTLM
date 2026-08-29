@@ -40,52 +40,51 @@ struct cpptlm_emulator_s {
 
 namespace {
 
-std::mutex registry_mu_;
-std::unordered_map<uint32_t, cpptlm_emulator_t*> registry_;
-std::atomic<uint32_t> next_dev_id_{1};
+    std::mutex registry_mu_;
+    std::unordered_map<uint32_t, cpptlm_emulator_t*> registry_;
+    std::atomic<uint32_t> next_dev_id_{1};
 
-cpptlm_emulator_t* lookup(uint32_t dev_id) {
-    std::lock_guard<std::mutex> lk(registry_mu_);
-    auto it = registry_.find(dev_id);
-    return (it != registry_.end()) ? it->second : nullptr;
-}
+    cpptlm_emulator_t* lookup(uint32_t dev_id) {
+        std::lock_guard<std::mutex> lk(registry_mu_);
+        auto it = registry_.find(dev_id);
+        return (it != registry_.end()) ? it->second : nullptr;
+    }
 
-std::string resolve_profile_path(uint32_t dev_id) {
-    if (dev_id != 0) {
-        char buf[64];
-        std::snprintf(buf, sizeof(buf), "configs/dgpu_board_%u.json",
-                      static_cast<unsigned>(dev_id));
-        std::filesystem::path p(buf);
-        if (std::filesystem::exists(p)) {
-            return buf;
+    std::string resolve_profile_path(uint32_t dev_id) {
+        if (dev_id != 0) {
+            char buf[64];
+            std::snprintf(buf, sizeof(buf), "configs/dgpu_board_%u.json",
+                          static_cast<unsigned>(dev_id));
+            std::filesystem::path p(buf);
+            if (std::filesystem::exists(p)) {
+                return buf;
+            }
         }
-    }
-    for (uint32_t i = 1; i < 32; ++i) {
-        char buf[64];
-        std::snprintf(buf, sizeof(buf), "configs/dgpu_board_%u.json",
-                      static_cast<unsigned>(i));
-        std::filesystem::path p(buf);
-        if (std::filesystem::exists(p)) {
-            return buf;
+        for (uint32_t i = 1; i < 32; ++i) {
+            char buf[64];
+            std::snprintf(buf, sizeof(buf), "configs/dgpu_board_%u.json", static_cast<unsigned>(i));
+            std::filesystem::path p(buf);
+            if (std::filesystem::exists(p)) {
+                return buf;
+            }
         }
+        return "configs/dgpu_board_v1.json";
     }
-    return "configs/dgpu_board_v1.json";
-}
 
-nlohmann::json load_profile_json(const std::string& path) {
-    std::ifstream f(path);
-    nlohmann::json j;
-    if (f.is_open()) {
-        f >> j;
+    nlohmann::json load_profile_json(const std::string& path) {
+        std::ifstream f(path);
+        nlohmann::json j;
+        if (f.is_open()) {
+            f >> j;
+        }
+        if (!j.contains("params")) {
+            j["params"] = nlohmann::json::object();
+        }
+        if (!j["params"].contains("ptx_emu_root")) {
+            j["params"]["ptx_emu_root"] = "/tmp/test-ptx-emu";
+        }
+        return j;
     }
-    if (!j.contains("params")) {
-        j["params"] = nlohmann::json::object();
-    }
-    if (!j["params"].contains("ptx_emu_root")) {
-        j["params"]["ptx_emu_root"] = "/tmp/test-ptx-emu";
-    }
-    return j;
-}
 
 } // namespace
 
@@ -103,8 +102,7 @@ uint32_t cpptlm_emulator_get_device_count(void) {
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_get_device_info(uint32_t dev_id,
-                                   cpptlm_device_info_t* out_info) {
+int cpptlm_emulator_get_device_info(uint32_t dev_id, cpptlm_device_info_t* out_info) {
     if (out_info == nullptr) {
         return -EINVAL;
     }
@@ -119,9 +117,8 @@ int cpptlm_emulator_get_device_info(uint32_t dev_id,
         out_info->revision = 0x01;
         out_info->subsys_vendor_id = 0x10DE;
         out_info->subsys_device_id = 0x1234;
-        std::snprintf(out_info->profile_path,
-                      sizeof(out_info->profile_path),
-                      "%s", emu->profile_path.c_str());
+        std::snprintf(out_info->profile_path, sizeof(out_info->profile_path), "%s",
+                      emu->profile_path.c_str());
         return 0;
     } catch (const std::exception&) {
         return -EINVAL;
@@ -135,8 +132,8 @@ cpptlm_emulator_t* cpptlm_emulator_create(const char* profile_path) {
     try {
         std::string path = profile_path ? profile_path : "configs/dgpu_board_v1.json";
         auto* emu = new cpptlm_emulator_s();
-        emu->board = std::make_unique<tlm::gpu::DGpuBoard>(
-            "board_" + std::to_string(next_dev_id_.load()));
+        emu->board =
+            std::make_unique<tlm::gpu::DGpuBoard>("board_" + std::to_string(next_dev_id_.load()));
         emu->board->load_soc_config(load_profile_json(path));
         emu->board->init();
         emu->profile_path = path;
@@ -157,8 +154,7 @@ cpptlm_emulator_t* cpptlm_emulator_create_by_id(uint32_t dev_id) {
         auto* emu = new cpptlm_emulator_s();
         auto path = resolve_profile_path(dev_id);
         emu->board = std::make_unique<tlm::gpu::DGpuBoard>(
-            "board_" + std::to_string(dev_id != 0 ? dev_id
-                                                    : next_dev_id_.load()));
+            "board_" + std::to_string(dev_id != 0 ? dev_id : next_dev_id_.load()));
         emu->board->load_soc_config(load_profile_json(path));
         emu->board->init();
         emu->profile_path = path;
@@ -172,8 +168,7 @@ cpptlm_emulator_t* cpptlm_emulator_create_by_id(uint32_t dev_id) {
             delete emu;
             return existing;
         }
-        uint32_t assigned =
-            (dev_id != 0) ? dev_id : next_dev_id_.fetch_add(1);
+        uint32_t assigned = (dev_id != 0) ? dev_id : next_dev_id_.fetch_add(1);
         emu->dev_id = assigned;
         registry_[assigned] = emu;
         return emu;
@@ -207,11 +202,8 @@ void cpptlm_emulator_destroy(cpptlm_emulator_t* emu) {
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_mmio_write(cpptlm_emulator_t* emu,
-                              uint8_t bar,
-                              uint64_t offset,
-                              const void* buf,
-                              size_t len) {
+int cpptlm_emulator_mmio_write(cpptlm_emulator_t* emu, uint8_t bar, uint64_t offset,
+                               const void* buf, size_t len) {
     try {
         if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
             return -EINVAL;
@@ -225,11 +217,8 @@ int cpptlm_emulator_mmio_write(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_mmio_read(cpptlm_emulator_t* emu,
-                             uint8_t bar,
-                             uint64_t offset,
-                             void* buf,
-                             size_t len) {
+int cpptlm_emulator_mmio_read(cpptlm_emulator_t* emu, uint8_t bar, uint64_t offset, void* buf,
+                              size_t len) {
     try {
         if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
             return -EINVAL;
@@ -243,10 +232,8 @@ int cpptlm_emulator_mmio_read(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_pcie_config_write(cpptlm_emulator_t* emu,
-                                     uint16_t offset,
-                                     uint8_t width,
-                                     uint32_t val) {
+int cpptlm_emulator_pcie_config_write(cpptlm_emulator_t* emu, uint16_t offset, uint8_t width,
+                                      uint32_t val) {
     try {
         if (emu == nullptr || emu->board == nullptr) {
             return -EINVAL;
@@ -260,10 +247,8 @@ int cpptlm_emulator_pcie_config_write(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_pcie_config_read(cpptlm_emulator_t* emu,
-                                    uint16_t offset,
-                                    uint8_t width,
-                                    uint32_t* val) {
+int cpptlm_emulator_pcie_config_read(cpptlm_emulator_t* emu, uint16_t offset, uint8_t width,
+                                     uint32_t* val) {
     try {
         if (emu == nullptr || emu->board == nullptr || val == nullptr) {
             return -EINVAL;
@@ -277,10 +262,7 @@ int cpptlm_emulator_pcie_config_read(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_backdoor_read(cpptlm_emulator_t* emu,
-                                  uint8_t bar,
-                                  uint64_t offset,
-                                  void* buf,
+int cpptlm_emulator_backdoor_read(cpptlm_emulator_t* emu, uint8_t bar, uint64_t offset, void* buf,
                                   size_t len) {
     try {
         if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
@@ -295,11 +277,8 @@ int cpptlm_emulator_backdoor_read(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_backdoor_write(cpptlm_emulator_t* emu,
-                                   uint8_t bar,
-                                   uint64_t offset,
-                                   const void* buf,
-                                   size_t len) {
+int cpptlm_emulator_backdoor_write(cpptlm_emulator_t* emu, uint8_t bar, uint64_t offset,
+                                   const void* buf, size_t len) {
     try {
         if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
             return -EINVAL;
@@ -313,9 +292,7 @@ int cpptlm_emulator_backdoor_write(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_msix_init(cpptlm_emulator_t* emu,
-                              uint32_t table_size,
-                              uint32_t mask) {
+int cpptlm_emulator_msix_init(cpptlm_emulator_t* emu, uint32_t table_size, uint32_t mask) {
     (void)table_size;
     (void)mask;
     if (emu == nullptr || emu->board == nullptr) {
@@ -325,8 +302,7 @@ int cpptlm_emulator_msix_init(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_msix_update_pending(cpptlm_emulator_t* emu,
-                                        uint32_t vector) {
+int cpptlm_emulator_msix_update_pending(cpptlm_emulator_t* emu, uint32_t vector) {
     (void)vector;
     if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
@@ -335,8 +311,7 @@ int cpptlm_emulator_msix_update_pending(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_msix_clear_pending(cpptlm_emulator_t* emu,
-                                       uint32_t vector) {
+int cpptlm_emulator_msix_clear_pending(cpptlm_emulator_t* emu, uint32_t vector) {
     (void)vector;
     if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
@@ -345,8 +320,7 @@ int cpptlm_emulator_msix_clear_pending(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_lookup_register(cpptlm_emulator_t* emu,
-                                    uint32_t offset,
+int cpptlm_emulator_lookup_register(cpptlm_emulator_t* emu, uint32_t offset,
                                     cpptlm_register_info_t* out_info) {
     (void)offset;
     (void)out_info;
@@ -357,12 +331,10 @@ int cpptlm_emulator_lookup_register(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_register_callbacks(cpptlm_emulator_t* emu,
-                                      cpptlm_intr_deliver_cb_t intr_cb,
-                                      cpptlm_error_cb_t err_cb,
-                                      cpptlm_reset_complete_cb_t reset_cb,
-                                      cpptlm_power_cb_t power_cb,
-                                      void* user_ctx) {
+int cpptlm_emulator_register_callbacks(cpptlm_emulator_t* emu, cpptlm_intr_deliver_cb_t intr_cb,
+                                       cpptlm_error_cb_t err_cb,
+                                       cpptlm_reset_complete_cb_t reset_cb,
+                                       cpptlm_power_cb_t power_cb, void* user_ctx) {
     (void)reset_cb;
     (void)power_cb;
     if (emu == nullptr || emu->board == nullptr) {
@@ -375,20 +347,18 @@ int cpptlm_emulator_register_callbacks(cpptlm_emulator_t* emu,
         emu->power_cb = power_cb;
         emu->user_ctx = user_ctx;
         if (intr_cb != nullptr) {
-            emu->board->set_irq_callback(
-                [emu](uint32_t vector_id) {
-                    if (emu->intr_cb != nullptr) {
-                        emu->intr_cb(emu->user_ctx, vector_id, 0);
-                    }
-                });
+            emu->board->set_irq_callback([emu](uint32_t vector_id) {
+                if (emu->intr_cb != nullptr) {
+                    emu->intr_cb(emu->user_ctx, vector_id, 0);
+                }
+            });
         }
         if (err_cb != nullptr) {
-            emu->board->set_error_callback(
-                [emu](int err_code, const std::string& msg) {
-                    if (emu->err_cb != nullptr) {
-                        emu->err_cb(emu->user_ctx, err_code, msg.c_str());
-                    }
-                });
+            emu->board->set_error_callback([emu](int err_code, const std::string& msg) {
+                if (emu->err_cb != nullptr) {
+                    emu->err_cb(emu->user_ctx, err_code, msg.c_str());
+                }
+            });
         }
         return 0;
     } catch (const std::exception&) {
@@ -399,8 +369,7 @@ int cpptlm_emulator_register_callbacks(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_register_backdoor_cb(cpptlm_emulator_t* emu,
-                                        void* cb) {
+int cpptlm_emulator_register_backdoor_cb(cpptlm_emulator_t* emu, void* cb) {
     (void)cb;
     if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
@@ -409,19 +378,17 @@ int cpptlm_emulator_register_backdoor_cb(cpptlm_emulator_t* emu,
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_register_dma_translate_cb(cpptlm_emulator_t* emu,
-                                             void* cb) {
+int cpptlm_emulator_register_dma_translate_cb(cpptlm_emulator_t* emu, void* cb) {
     if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
     }
     try {
-        emu->board->set_dma_translate_callback(
-            [cb](uint64_t iova, size_t size) -> uint64_t {
-                (void)cb;
-                (void)iova;
-                (void)size;
-                return 0;
-            });
+        emu->board->set_dma_translate_callback([cb](uint64_t iova, size_t size) -> uint64_t {
+            (void)cb;
+            (void)iova;
+            (void)size;
+            return 0;
+        });
         return 0;
     } catch (const std::exception&) {
         return -EINVAL;

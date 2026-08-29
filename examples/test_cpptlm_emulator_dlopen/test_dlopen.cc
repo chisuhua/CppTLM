@@ -27,16 +27,12 @@ int main(void) {
     using FnMmioRead = int (*)(void*, uint8_t, uint64_t, void*, size_t);
     using FnDestroy = void (*)(void*);
 
-    auto get_version =
-        reinterpret_cast<FnGetVersion>(dlsym(handle, "cpptlm_emulator_get_version"));
+    auto get_version = reinterpret_cast<FnGetVersion>(dlsym(handle, "cpptlm_emulator_get_version"));
     auto create_by_id =
         reinterpret_cast<FnCreateById>(dlsym(handle, "cpptlm_emulator_create_by_id"));
-    auto mmio_write =
-        reinterpret_cast<FnMmioWrite>(dlsym(handle, "cpptlm_emulator_mmio_write"));
-    auto mmio_read =
-        reinterpret_cast<FnMmioRead>(dlsym(handle, "cpptlm_emulator_mmio_read"));
-    auto destroy =
-        reinterpret_cast<FnDestroy>(dlsym(handle, "cpptlm_emulator_destroy"));
+    auto mmio_write = reinterpret_cast<FnMmioWrite>(dlsym(handle, "cpptlm_emulator_mmio_write"));
+    auto mmio_read = reinterpret_cast<FnMmioRead>(dlsym(handle, "cpptlm_emulator_mmio_read"));
+    auto destroy = reinterpret_cast<FnDestroy>(dlsym(handle, "cpptlm_emulator_destroy"));
 
     if (!get_version || !create_by_id || !mmio_write || !mmio_read || !destroy) {
         std::fprintf(stderr, "test_dlopen: dlsym missing: %s\n", dlerror());
@@ -54,8 +50,7 @@ int main(void) {
 
     void* emu = create_by_id(0);
     if (emu == nullptr) {
-        std::fprintf(stderr,
-                     "test_dlopen: create_by_id returned NULL (shell deferred)\n");
+        std::fprintf(stderr, "test_dlopen: create_by_id returned NULL (shell deferred)\n");
         dlclose(handle);
         return 0;
     }
