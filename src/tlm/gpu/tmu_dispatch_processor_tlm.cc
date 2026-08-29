@@ -1,4 +1,4 @@
-// tmu_dispatch_processor_mvp.cc
+// tmu_dispatch_processor_tlm.cc (renamed 2026-08-29 T-bs-2c-TMU)
 // TMU Dispatch Processor 实现 - 反压 4 路径 + dep chain + handler 派发
 // Author: CppTLM Team
 // Date: 2026-08-26 (s3 commit 2026-08-28 填充 scheduler_cache_ + dep chain 推进)
@@ -12,7 +12,7 @@
 //   dep chain 推进:on_complete → try_chain_dependent 扫 cache 找 wait_on 匹配
 //
 // GCC -O2 寄存器复用陷阱规避同 pm4_decoder_mvp.cc (.cc 内注释)
-#include "tlm/gpu/tmu_dispatch_processor_mvp.hh"
+#include "tlm/gpu/tmu_dispatch_processor_tlm.hh"
 
 #include <unordered_map>
 #include <vector>

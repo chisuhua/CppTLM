@@ -61,7 +61,7 @@ add_test(NAME test_dgpu_board_shell_abi COMMAND cpptlm_tests "[dgpu][shell]" -r 
 # 每个 add_test 用对应 Catch2 标签过滤;测试文件由 file(GLOB TEST_SOURCES ...) 自动收录
 add_test(NAME test_pm4_decoder_mvp COMMAND cpptlm_tests "[pm4-decoder][mvp]" -r compact)
 add_test(NAME test_command_processor_mvp COMMAND cpptlm_tests "[command-processor][mvp]" -r compact)
-add_test(NAME test_tmu_dispatch_processor_mvp COMMAND cpptlm_tests "[tmu][mvp][glue]" -r compact)
+add_test(NAME test_tmu_dispatch_processor_tlm COMMAND cpptlm_tests "[tmu][mvp][glue]" -r compact)
 add_test(NAME test_pm4_decoder_mvp_integration COMMAND cpptlm_tests "[pm4-decoder-integration]" -r compact)
 
 # 2026-08-28 cpptlm-dgpu-pcie-slice-prerequisites (T-prereq-1..5 前置测试)

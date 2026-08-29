@@ -1,4 +1,4 @@
-// test_tmu_dispatch_processor_mvp.cc
+// test_tmu_dispatch_processor_tlm.cc (renamed 2026-08-29 T-bs-2c-TMU)
 // TmuDispatchProcessor 单元测试 - 反压 4 路径 + dep chain + 环检测 + handler 派发
 // Author: CppTLM Team
 // Date: 2026-08-28
@@ -9,7 +9,7 @@
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_mvp.hh"
 #include "tlm/gpu/submit_queue_mvp.hh"
-#include "tlm/gpu/tmu_dispatch_processor_mvp.hh"
+#include "tlm/gpu/tmu_dispatch_processor_tlm.hh"
 #include "tlm/gpu/tmu_handler_mvp.hh"
 #include "tlm/gpu/tmu_types_mvp.hh"
 
