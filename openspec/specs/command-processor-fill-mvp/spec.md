@@ -1,13 +1,8 @@
-# Spec: CommandProcessor Fill Implementation (s3 T-s3-2)
+# command-processor-fill-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s3 change — fill `command_processor_mvp.cc` 实现 (header 由 s2 已创建)
-> **依赖**: s1 + s2 已 archive (s2 已建立 CP skeleton with `set_decoder` injection)
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s3-command-pipeline. Update Purpose after archive.
+## Requirements
 ### Requirement: command-processor-fsm-fill
 
 The system MUST fill `src/tlm/gpu/command_processor_mvp.cc` (~150 LOC 填充 + 既有 ~150 LOC 骨架) implementing the 5-state FSM:
@@ -49,3 +44,4 @@ Both MUST pass `ctest -R "test_command_processor_mvp"`.
 #### Scenario: CP fill test passes 5 transitions with real NVIDIA packet
 - **WHEN** `ctest -R "test_command_processor_mvp"` runs after s3 W5
 - **THEN** all state transitions with real NVIDIA method packet decode MUST PASS
+

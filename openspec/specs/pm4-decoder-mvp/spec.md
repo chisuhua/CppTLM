@@ -1,14 +1,8 @@
-# Spec: Pm4Decoder Fill Implementation (s3 T-s3-1)
+# pm4-decoder-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s3 change — fill `pm4_decoder_mvp.cc` 实现 (header 由 s2 已创建 Pm4DecoderInterface)
-> **依赖**: s1 + s2 已 archive
-> **关联**: Per Oracle ses_fe0b6e44 s2 骨架修复；Phase F-H.3 path 3
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s3-command-pipeline. Update Purpose after archive.
+## Requirements
 ### Requirement: pm4-decoder-data-types
 
 The system MUST define `Pm4MethodHeader` bitfield struct (per `unpackPm4Header` semantics):
@@ -69,3 +63,4 @@ Both MUST pass `ctest -R "test_pm4_decoder_mvp"`.
 #### Scenario: Both pm4-decoder tests pass
 - **WHEN** `ctest -R "test_pm4_decoder_mvp"` runs after s3 W5
 - **THEN** both `test_pm4_decoder_mvp` (parse correctness) and `test_pm4_decoder_mvp_integration` (CP+Decoder) MUST PASS
+
