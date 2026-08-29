@@ -35,6 +35,17 @@
 
 **全部 7 个 tasks 均标注 `Phase 4 Wave 2`** — 待 gpgpu-sim reference data + 真实 PTX-EMU exe_once 链路测试可用时执行。
 
+### 前置状态更新（2026-08-30 D15 修复后）
+
+| 前置 | 状态 | 证据 |
+|------|------|------|
+| PTX-EMU 真实 exe_once 链路（4.7/G-D8 前置） | ✅ **已解除** | `./build/bin/cpptlm_tests "[timing]"` 7/7 PASS + `"[gpu]"` 131/131 PASS（含 `test_cuda_core_adapter_timing.cc` 实证 `facade->sm_exe_once()` 经注入后正常驱动） |
+| attach_timing 激活（P0 任务1, 4.7 前置） | ✅ 已完成 | `cuda_core_adapter_mvp.cc:67` 3→1 聚合注入 + `ptx_emu_submodule_mvp.cc:157` attach_timing 实现 |
+| gpgpu-sim reference data（4.6/4.9/G-D5 前置） | ❌ **仍阻塞** | `which gpgpu-sim` 空,本地无 reference 数据 |
+| 统一 cycle 契约（G-D3 前置） | ⚠️ 部分就绪 | 1 CppTLM tick = 1 GPUContext::exe_once() 契约已定义,待 4.7 落地实证 |
+
+**结论**: 4.7/G-D2/G-D3/G-D8 的前置已大部分解除（PTX-EMU 链可用）,但 G-D3 的 cycle 契约实证与 4.6/4.9/G-D5 仍需 gpgpu-sim reference 数据。**Wave 2 启动时 4.7 可直接实施**,4.9/G-D5 仍需外部数据。
+
 **rdd-doctor 状态**: 这些任务触发 1 个 WARNING（tasks-checkbox 53/60 88%），属设计意图延迟，**不**算功能缺陷。可绕过方案：`SKIP_TASKS_GATE=yes` 归档。
 
 **Roadmap 对应**: 这些任务对应 `.rddf/roadmap/phases/phase-7.md` 子任务 7.C（Coherence Protocol 集成，最高风险子任务，缓存协议对齐依赖 gpgpu-sim reference）。
