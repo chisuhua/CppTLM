@@ -33,6 +33,9 @@ else()
 endif()
 
 target_link_libraries(cpptlm_tests PRIVATE cpptlm_core)
+# T-W3-2 (T-ae-3): link cpptlm_emulator SHARED 库让 19 forward ABI 符号在
+# 测试二进制中可解析 (test_cpptlm_emulator_abi.cc + test_cpptlm_emulator_registry.cc).
+target_link_libraries(cpptlm_tests PRIVATE cpptlm_emulator)
 if(CPPTLM_WITH_PTX_EMU)
     # HSK-8 Phase 2 Step 6: cpptlm_tests 同样需要 PTX-EMU shared libs
     # (libptxemu_device.so / libptxsim.so / libcudart.so 提供 PTX-EMU 内部符号).

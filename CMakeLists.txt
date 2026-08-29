@@ -40,6 +40,9 @@ option(BUILD_EXAMPLES "Build example programs"               ON)
 option(BUILD_DOCS     "Build documentation (Doxygen)"        OFF)
 option(ENABLE_COVERAGE "Enable code coverage (gcov)"         OFF)
 option(USE_ASAN       "Enable AddressSanitizer (Debug only)" OFF)
+# T-W3-2 (T-ae-3): USE_TSAN 用于 cpptlm_emulator 设备注册表 mutex 多卡并发验证 (AE-G4).
+# 与 USE_ASAN 互斥 (两者都修改 link/compile flag, 不能同时开)。
+option(USE_TSAN       "Enable ThreadSanitizer (Debug only; mutually exclusive with USE_ASAN)" OFF)
 option(BUILD_RTL "Build CppHDL RTL bridge (Spike)" OFF)
 
 # S1: PTX-EMU submodule 集成 (默认 OFF — submodule 未初始化时 ON 会全员
