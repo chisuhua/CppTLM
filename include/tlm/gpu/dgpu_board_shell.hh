@@ -69,12 +69,17 @@ public:
 
     // 5. 生命周期
     void tick();  // 转发到 soc_->tick()(SimModule 递归)
-
+    
     // StatsManager 多卡前缀(per design §2.5 #6)
     std::string get_stats_path(const std::string& module_name) const {
         // 格式: "<device_id>.<module_name>" 防止多卡 singleton 冲突
         return std::to_string(device_id_) + "." + module_name;
     }
+    
+    // 内部触发接口(供 SOC 组件调用,deferred T-bs-4 装配)
+    void trigger_irq_async(uint32_t vector_id);
+    void trigger_dma_translate_async(uint64_t iova, size_t size);
+    void trigger_error_async(int err_code, const std::string& msg);
 
 private:
     // ── 线程模型字段(per design §2.5) ──
@@ -97,6 +102,7 @@ private:
     IrqCallback irq_cb_;
     DmaTranslateCallback dma_translate_cb_;
     ErrorCallback error_cb_;
+    std::mutex callback_mu_;  // 保护 callback 指针(避免 host-sim race)
 
     // ── 内部方法 ──
     void sim_loop();                              // sim 线程主循环
