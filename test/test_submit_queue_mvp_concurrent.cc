@@ -7,7 +7,7 @@
 #include "tlm/gpu/submit_queue_mvp.hh"
 
 TEST_CASE("SubmitQueue: multiple CTAs concurrent lifecycle", "[submit-queue][mvp][concurrent]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     // Phase 1: enqueue 10 CTAs (task_ids 0..9)
@@ -53,7 +53,7 @@ TEST_CASE("SubmitQueue: multiple CTAs concurrent lifecycle", "[submit-queue][mvp
 }
 
 TEST_CASE("SubmitQueue: high throughput 8 rounds of 4 CTAs", "[submit-queue][mvp][concurrent]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     for (uint32_t round = 0; round < 8; round++) {
@@ -81,7 +81,7 @@ TEST_CASE("SubmitQueue: high throughput 8 rounds of 4 CTAs", "[submit-queue][mvp
 
 TEST_CASE("SubmitQueue: back-pressure recovery via tick after complete",
           "[submit-queue][mvp][concurrent]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     // Fill pending to 32 (back-pressured state)

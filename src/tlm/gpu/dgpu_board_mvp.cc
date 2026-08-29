@@ -23,64 +23,24 @@
 
 namespace tlm::gpu {
 
-    namespace {
+    // S3SubmitQueueHandler 已删除 — handler 注入模式由端口连接替代 (per design §3.5 陷阱 5)
 
-        // S3 TMU handler: TmuDispatchRecord → SubmitQueue (per design §4.3)
-        // 匿名 namespace,避免污染 .hh 编译依赖
-        class S3SubmitQueueHandler : public TmuHandlerInterface {
-        public:
-            explicit S3SubmitQueueHandler(SubmitQueue& sq) : sq_(sq) {
-            }
-
-            TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
-                CtaDescriptor cta_desc{};
-                cta_desc.task_id = record.task_id;
-                cta_desc.vram_image_addr = record.vram_image_addr;
-                cta_desc.grid_x = record.grid_x;
-                cta_desc.grid_y = record.grid_y;
-                cta_desc.grid_z = record.grid_z;
-                cta_desc.block_x = record.block_x;
-                cta_desc.block_y = record.block_y;
-                cta_desc.block_z = record.block_z;
-                cta_desc.shared_mem_bytes = record.shared_mem_bytes;
-                cta_desc.args_vram_addr = record.args_vram_addr;
-                if (sq_.enqueue(cta_desc)) {
-                    return TmuHandlerResult::HANDLED;
-                }
-                return TmuHandlerResult::SQ_REJECTED;
-            }
-
-        private:
-            SubmitQueue& sq_;
-        };
-
-    } // namespace
-
-#ifdef CPPTLM_WITH_PTX_EMU
     struct DGpuBoardTLM::Impl {
         DGpuBar bar;
         Doorbell doorbell;
-        SubmitQueue sq;
+        SubmitQueueTLM sq;
         CompletionRing cq;
         CommandProcessor cp;
         TmuDispatchProcessor tmu;
+        uint64_t next_image_handle = 1;
+        bool initialized = false;
+#ifdef CPPTLM_WITH_PTX_EMU
         std::unique_ptr<CudaCoreAdapterMVP> cuda_core;
         std::unique_ptr<PtxEmuSubmoduleMVP> ptx_emu;
-        uint64_t next_image_handle = 1;
-        bool initialized = false;
-    };
-#else
-    struct DGpuBoardTLM::Impl {
-        DGpuBar bar;
-        Doorbell doorbell;
-        SubmitQueue sq;
-        CompletionRing cq;
-        CommandProcessor cp;
-        TmuDispatchProcessor tmu;
-        uint64_t next_image_handle = 1;
-        bool initialized = false;
-    };
 #endif
+
+        Impl() : sq("sq", nullptr) {}
+    };
 
     DGpuBoardTLM::DGpuBoardTLM(const std::string& n, EventQueue* eq)
         : ChStreamModuleBase(n, eq), impl_(std::make_unique<Impl>()) {
@@ -106,7 +66,7 @@ namespace tlm::gpu {
             [this](uint64_t va, void* out, size_t sz) { return this->read_vram(va, out, sz); });
         impl_->cp.set_dispatch_target(
             [this](const TmuDispatchRecord& rec) { return impl_->tmu.submit(rec); });
-        impl_->tmu.set_handler(std::make_unique<S3SubmitQueueHandler>(impl_->sq));
+        // S3SubmitQueueHandler 已删除 — handler 注入模式由端口连接替代 (per design §3.5 陷阱 5)
 #ifdef CPPTLM_WITH_PTX_EMU
         if (!impl_->cuda_core) {
             impl_->cuda_core = std::make_unique<CudaCoreAdapterMVP>();

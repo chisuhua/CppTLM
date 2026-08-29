@@ -17,7 +17,7 @@
 #include <vector>
 
 using tlm::gpu::CtaDescriptor;
-using tlm::gpu::SubmitQueue;
+using tlm::gpu::SubmitQueueTLM;
 using tlm::gpu::TmuDispatchProcessor;
 using tlm::gpu::TmuDispatchRecord;
 using tlm::gpu::TmuHandlerInterface;
@@ -41,8 +41,8 @@ namespace {
 
     // Mock handler: 真实测 SQ 满 → 返回 SQ_REJECTED
     struct SqBoundHandler : public TmuHandlerInterface {
-        SubmitQueue& sq;
-        explicit SqBoundHandler(SubmitQueue& s) : sq(s) {
+        SubmitQueueTLM& sq;
+        explicit SqBoundHandler(SubmitQueueTLM& s) : sq(s) {
         }
 
         TmuHandlerResult on_dispatch(const TmuDispatchRecord& record) override {
@@ -135,11 +135,11 @@ TEST_CASE("TmuDispatchProcessor: dep cycle detected returns DEP_LATCH_MISMATCH",
 // TMU 上报 SUBMIT_QUEUE_REJECTED 路径由 mock handler 触发,见下。
 TEST_CASE("TmuDispatchProcessor: SqBoundHandler returns SQ_REJECTED when SQ full",
           "[tmu][mvp][glue]") {
-    SubmitQueue sq;
+    SubmitQueueTLM sq("sq", nullptr);
     SqBoundHandler handler(sq);
     TmuDispatchRecord rec = make_record(1);
 
-    for (uint32_t i = 0; i < SubmitQueue::PENDING_FIFO_SIZE; ++i) {
+    for (uint32_t i = 0; i < SubmitQueueTLM::PENDING_FIFO_SIZE; ++i) {
         CtaDescriptor c{};
         c.task_id = i;
         REQUIRE(sq.enqueue(c));
@@ -192,7 +192,7 @@ TEST_CASE("TmuDispatchProcessor: on_complete decrements inflight + dep chain adv
 TEST_CASE("TmuDispatchProcessor: integrates with real SubmitQueue via SqBoundHandler",
           "[tmu][mvp][glue]") {
     TmuDispatchProcessor tmu;
-    SubmitQueue sq;
+    SubmitQueueTLM sq("sq", nullptr);
     tmu.set_handler(std::make_unique<SqBoundHandler>(sq));
 
     auto rec = make_record(42);

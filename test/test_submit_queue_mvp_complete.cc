@@ -7,7 +7,7 @@
 #include "tlm/gpu/submit_queue_mvp.hh"
 
 TEST_CASE("SubmitQueue: on_warp_complete releases active slot", "[submit-queue][mvp][complete]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
     cta.task_id = 42;
     sq.enqueue(cta);
@@ -25,7 +25,7 @@ TEST_CASE("SubmitQueue: on_warp_complete releases active slot", "[submit-queue][
 
 TEST_CASE("SubmitQueue: on_warp_complete unknown task_id is silent no-op",
           "[submit-queue][mvp][complete]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     sq.on_warp_complete(999, -1); // 空队列
     REQUIRE(sq.inflight_count() == 0);
     REQUIRE(sq.completed_count() == 0);
@@ -33,7 +33,7 @@ TEST_CASE("SubmitQueue: on_warp_complete unknown task_id is silent no-op",
 
 TEST_CASE("SubmitQueue: on_warp_complete selectively releases matching slot",
           "[submit-queue][mvp][complete]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     for (uint32_t i = 0; i < 4; i++) {
@@ -61,7 +61,7 @@ TEST_CASE("SubmitQueue: on_warp_complete selectively releases matching slot",
 
 TEST_CASE("SubmitQueue: after release, tick() can dispatch new entries",
           "[submit-queue][mvp][complete]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     // Fill pending 8

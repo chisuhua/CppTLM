@@ -7,7 +7,7 @@
 #include "tlm/gpu/submit_queue_mvp.hh"
 
 TEST_CASE("SubmitQueue: enqueue returns true when FIFO not full", "[submit-queue][mvp][enqueue]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
     cta.task_id = 1;
 
@@ -17,7 +17,7 @@ TEST_CASE("SubmitQueue: enqueue returns true when FIFO not full", "[submit-queue
 }
 
 TEST_CASE("SubmitQueue: enqueue multiple entries sequentially", "[submit-queue][mvp][enqueue]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     for (uint32_t i = 0; i < 5; i++) {
         tlm::gpu::CtaDescriptor cta{};
         cta.task_id = i;
@@ -28,7 +28,7 @@ TEST_CASE("SubmitQueue: enqueue multiple entries sequentially", "[submit-queue][
 
 TEST_CASE("SubmitQueue: enqueue returns false when FIFO full (back-pressure, no eviction)",
           "[submit-queue][mvp][enqueue]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     // 填满 32 槽
@@ -48,7 +48,7 @@ TEST_CASE("SubmitQueue: enqueue returns false when FIFO full (back-pressure, no 
 
 TEST_CASE("SubmitQueue: after dispatch, FIFO can accept more entries",
           "[submit-queue][mvp][enqueue]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     // Fill all 32
