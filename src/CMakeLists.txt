@@ -86,11 +86,11 @@ if(CPPTLM_WITH_PTX_EMU)
     )
 endif()
 
-# s2 W3-4: dGPU board always compiled; s1 components are #ifdef CPPTLM_WITH_PTX_EMU inside
-list(APPEND CORE_SOURCES
-    tlm/gpu/dgpu_board_mvp.cc            # s2 W3-4: DGpuBoardTLM 8-component wrapper
-    tlm/gpu/usrlxemu_ioctl_stub_mvp.cc    # s2 W4: 4 IOCTL bridge
-)
+# s2 W3-4: DGpuBoardTLM monolith retired (T-bs-5, c064628 cycle); SOC topology
+# 走 DGpuBoard C++ ABI shell + DGpuSoc SimModule 容器 (per ADR-SOC-07 D1/D7).
+# UsrLinuxEmuIoctlStub (host-side IOCTL bridge) 已随 s2 W4 退役: IOCTL 语义
+# 走 23 ABI cpptlm_emulator_register_callbacks (per ADR-088 §D5 + W3.2).
+# CORE_SOURCES 此处留空 — s2 单体相关源已全部 T-bs-5 commit 1+2 清理.
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
 if(CPPTLM_WITH_PTX_EMU)
