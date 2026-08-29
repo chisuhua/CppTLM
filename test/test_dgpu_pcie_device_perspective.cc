@@ -1,6 +1,6 @@
 // test_dgpu_pcie_device_perspective.cc
 // PCIe driver perspective tests using DGpuBoard C++ shell (per ADR-SOC-07 D7).
-// Replaces s2 DGpuBoardTLM monolith (per design.md §5 stage-1 deprecation).
+// Replaces s2 monolith (per design.md §5 stage-1 deprecation).
 // Uses:
 //   - board.mmio_write()         for BAR0 register access (doorbell, GPFIFO_PUT)
 //   - board.backdoor_write/read() for BAR1 VRAM (per ADR-SOC-07 Q3)
@@ -97,7 +97,7 @@ TEST_CASE("PCIe driver perspective: GPFIFO PUT register is an MMIO address",
 }
 
 // Deferred to follow-up per design.md §5 stage-1:
-//   - "IOCTL 0x27/0x28/0x29 ABI path"        (depends on UsrLinuxEmuIoctlStub::attach_board(DGpuBoardTLM*))
+//   - "IOCTL 0x27/0x28/0x29 ABI path"
 //   - "PUSHBUFFER submit then MMIO doorbell" (depends on UsrLinuxEmuIoctlStub IOCTL stub)
 // Both depend on UsrLinuxEmuIoctlStub being refactored to attach DGpuBoard shell,
 // which is sequenced into T-bs-4 follow-up + subsequent adapter iteration.

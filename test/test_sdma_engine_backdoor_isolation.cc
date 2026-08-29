@@ -8,7 +8,7 @@
 //   2026-08-28) change B sdma-engine R6: SdmaEngineTLM::set_host_backdoor/set_vram_backdoor 独立性
 //
 // Scope 降级注记 (per Oracle 审查 2026-08-28):
-//   原计划测试 "backdoor 不影响 BAR0 寄存器",但 DGpuBoardTLM::read_vram/write_vram
+//   原计划测试 "backdoor 不影响 BAR0 寄存器",但 board::read_vram/write_vram
 //   属 change C (未实施), PcieEndpointTLM 无 backdoor API,
 //   cpptlm_backdoor_read/write 属 change D (未实施). 本任务降级为
 //   仅测试 SdmaEngineTLM 已交付的 backdoor API 隔离:

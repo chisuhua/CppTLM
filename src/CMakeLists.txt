@@ -51,8 +51,8 @@ set(CORE_SOURCES
     # - tlm/gpu/dgpu_bar.cc (s2 W3 BAR0+VRAM wrapper; T-bs-2d 93e05ab 已物理删除 — BAR0 由
     #   PcieEndpointTLM::bar0_registers JSON 接管; VRAM 由 MemoryTLM `vram0` 接管)
     tlm/gpu/doorbell_mvp.cc        # SQ tail register + strong-order write (T-bs-2d 后已不
-                                   # 是 s2 顶级 API; 现为 PcieBarRouter 内部 helper;
-                                   # 物理文件删除推迟到 T-bs-5 dgpu_board_mvp 退役时一并处理)
+                                   # 是 s2 顶级 API; 现为 PcieBarRouter 内部 helper,
+                                   # 物理保留作 PIMPL 封装)
     tlm/gpu/completion_ring_mvp.cc # s2 W3: push + host_notify hook
     tlm/gpu/submit_queue_mvp.cc    # s2 W3: WDU distribution network (per Phase F-H.5)
     tlm/gpu/command_processor_mvp.cc  # s2 W3: CP skeleton (5-state FSM no-op + set_decoder injection)
@@ -73,7 +73,6 @@ set(CORE_SOURCES
 # PTX-EMU 集成代码仅在 CPPTLM_WITH_PTX_EMU=ON 时编译 (默认 OFF)
 # - ptx_emu_submodule_mvp.cc (facade, 仅 include ptxemu/device_api.h, C++17)
 # - cuda_core_adapter_mvp.cc (adapter, 仅 include ptxemu/device_api.h, C++17)
-# - dgpu_board_mvp.cc (s2 W3-4: DGpuBoardTLM 8-component wrapper, 依赖 cuda_core_adapter_mvp + ptx_emu_submodule_mvp)
 #
 # 旧 S1 (c2038a93 pin) 的 WU-2 stub.cc + WU-3/WU-4 OBJECT 库块 已废弃:
 # - 新 PTX-EMU fcdad151+ 不再消费 g_cpptlm_bridge, stub.cc 不需要
@@ -86,7 +85,7 @@ if(CPPTLM_WITH_PTX_EMU)
     )
 endif()
 
-# s2 W3-4: DGpuBoardTLM monolith retired (T-bs-5, c064628 cycle); SOC topology
+# s2 W3-4: 8-component 单体 retired (T-bs-5, c064628 cycle); SOC topology
 # 走 DGpuBoard C++ ABI shell + DGpuSoc SimModule 容器 (per ADR-SOC-07 D1/D7).
 # UsrLinuxEmuIoctlStub (host-side IOCTL bridge) 已随 s2 W4 退役: IOCTL 语义
 # 走 23 ABI cpptlm_emulator_register_callbacks (per ADR-088 §D5 + W3.2).
