@@ -1,11 +1,11 @@
 // command_processor_mvp.hh
-// CommandProcessor MVP 5-state FSM + 退避策略 (per design §3 + §4.4)
+// CommandProcessor MVP 5-state FSM + degraded latch(退避窗口门控 deferred to s4) (per design §3 + §4.4)
 // Author: CppTLM Team
-// Date: 2026-08-26 (s3 commit 2026-08-28 扩展 4 装配方法 + DEGRADED + 常量 + getter)
+// Date: 2026-08-26 (s3 commit 2026-08-28 扩展 4 装配方法 + 常量 + getter)
 //
 // s3 W5 T-s3-2: 填充 GPU VA fetch + parse_method + DECODE 实际逻辑 + 退避策略
 //
-// 5-state FSM: IDLE → FETCH → DECODE → DISPATCH → COMPLETE → IDLE (+ DEGRADED)
+// 5-state FSM: IDLE → FETCH → DECODE → DISPATCH → COMPLETE → IDLE
 #ifndef CPPTLM_COMMAND_PROCESSOR_MVP_H
 #define CPPTLM_COMMAND_PROCESSOR_MVP_H
 
@@ -19,14 +19,13 @@ namespace tlm::gpu {
 
     class CommandProcessor {
     public:
-        // 5-state FSM + DEGRADED (per Oracle P2 决策 2026-08-28)
+        // 5-state FSM + degraded latch(退避窗口门控 deferred to s4)
         enum class State {
             IDLE,
             FETCH,
             DECODE,
             DISPATCH,
-            COMPLETE,
-            DEGRADED  // ≥ CP_BACKOFF_DEGRADED_THRESHOLD 次反压后进入,只 fetch 不 dispatch
+            COMPLETE
         };
 
         // 退避常量 (per Oracle P2-2 修复 2026-08-28)

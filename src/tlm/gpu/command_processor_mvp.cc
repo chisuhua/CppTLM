@@ -1,10 +1,10 @@
 // command_processor_mvp.cc
-// CommandProcessor MVP 5-state FSM 实现 + 退避策略 (per design §3 + §4.4)
+// CommandProcessor MVP 5-state FSM 实现 + degraded latch(退避窗口门控 deferred to s4) (per design §3 + §4.4)
 // Author: CppTLM Team
 // Date: 2026-08-28
 //
 // s3 T-s3-2: 填充 GPU VA fetch + parse_method + DECODE 实际逻辑 + 退避策略
-// 5-state FSM: IDLE → FETCH → DECODE → DISPATCH → COMPLETE → IDLE (+ DEGRADED)
+// 5-state FSM: IDLE → FETCH → DECODE → DISPATCH → COMPLETE → IDLE
 //
 // 关键约束 (per Oracle P1-a 修复):
 //   - CP 内部自动从 dispatch_target 返回值触发退避(无需外部调 on_backpressure)
@@ -55,17 +55,6 @@ namespace tlm::gpu {
 
     void CommandProcessor::tick() {
         ++tick_count_;
-
-        // DEGRADED 状态:只 fetch,不 dispatch (per design §4.4 + Oracle P2 决策)
-        // 其他状态正常推进 FSM
-        if (degraded_ && state_ != State::IDLE) {
-            // 退避窗口期内:保持 FETCH→DECODE 链,跳过 DISPATCH 调 dispatch_target
-            if (backoff_cycles_remaining_ > 0) {
-                --backoff_cycles_remaining_;
-            }
-            // DEGRADED 时退避窗口计数到 0 后,允许 DISPATCH 重试(测试验证)
-            // 但正常推进仍按 IDLE→FETCH→DECODE→DISPATCH→COMPLETE→IDLE
-        }
 
         switch (state_) {
         case State::IDLE:
@@ -138,14 +127,6 @@ namespace tlm::gpu {
         case State::COMPLETE:
             transition_to(State::IDLE);
             break;
-
-        case State::DEGRADED:
-            // DEGRADED 是过渡态:每个 tick 重新评估 → IDLE (退避结束) 或保留 DEGRADED
-            if (backoff_cycles_remaining_ == 0) {
-                degraded_ = false; // 退出 DEGRADED
-                transition_to(State::IDLE);
-            }
-            break;
         }
     }
 
@@ -154,8 +135,7 @@ namespace tlm::gpu {
         backoff_cycles_remaining_ = MIN_BACKOFF_CYCLES;
         (void)dispatch_result;
         if (cp_backoff_count_ >= CP_BACKOFF_DEGRADED_THRESHOLD) {
-            degraded_ = true;
-            state_ = State::DEGRADED;
+            degraded_ = true;  // latch,不自动恢复,s4 实现
         }
     }
 

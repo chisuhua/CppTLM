@@ -83,16 +83,15 @@ TEST_CASE("CommandProcessor: on_backpressure no-op default", "[command-processor
     REQUIRE_NOTHROW(cp.on_submit_queue_rejected(8));
 }
 
-TEST_CASE("CommandProcessor: DEGRADED state enum exists", "[command-processor][mvp]") {
-    // 验证 DEGRADED 是合法 state 值
-    CommandProcessor cp;
-    bool degraded_seen = false;
-    for (int s = 0; s <= 10; ++s) {
-        auto st = static_cast<CommandProcessor::State>(s);
-        if (st == CommandProcessor::State::DEGRADED)
-            degraded_seen = true;
-    }
-    REQUIRE(degraded_seen);
+TEST_CASE("CommandProcessor: 5-state FSM enum has exactly 5 members (no DEGRADED)", "[command-processor][mvp]") {
+    // Per Oracle P0-1: DEGRADED state removed; latch kept
+    using State = tlm::gpu::CommandProcessor::State;
+    REQUIRE(static_cast<int>(State::IDLE) == 0);
+    REQUIRE(static_cast<int>(State::FETCH) == 1);
+    REQUIRE(static_cast<int>(State::DECODE) == 2);
+    REQUIRE(static_cast<int>(State::DISPATCH) == 3);
+    REQUIRE(static_cast<int>(State::COMPLETE) == 4);
+    // No State::DEGRADED in MVP (deferred to s4)
 }
 
 // ── Getter 接口 ──
