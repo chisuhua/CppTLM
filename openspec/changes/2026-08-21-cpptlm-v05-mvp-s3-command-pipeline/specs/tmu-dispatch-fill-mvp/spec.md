@@ -11,11 +11,13 @@
 
 ### Requirement: tmu-dispatch-fill-data-structure
 
-The system MUST define `TmuDispatchRecord` struct with **9 fields** (per s2 design). Field layout MUST be specified in `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` (s3 fills the inline comments).
+The system MUST define `TmuDispatchRecord` struct with **13 fields (10 base + 3 dep latch)** (per s2 design). Field layout MUST be specified in `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` (s3 fills the inline comments).
 
-#### Scenario: TmuDispatchRecord 9-field layout
+#### Scenario: TmuDispatchRecord 13-field layout matches tmu_types_mvp.hh
 - **WHEN** a `TmuDispatchRecord` is constructed
-- **THEN** it MUST contain exactly 9 fields per design.md §3 (s3 填字段语义注释)
+- **THEN** it MUST contain exactly 13 fields per `include/tlm/gpu/tmu_types_mvp.hh:19-35`:
+  - 10 base fields (task_id / grid/block / shared_mem / kernel_args / ...)
+  - 3 dep latch fields (dep_enable / wait_on_latch_id / arrive_at_latch_id)
 
 ### Requirement: tmu-dispatch-fill-logic
 
