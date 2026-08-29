@@ -37,7 +37,7 @@ v0.5.0-MVP 是 feature branch 命名而非 semver 顺序,与 v3.0.0 dGPU extract
 
 ## Acceptance Gate
 - [ ] G-RG-1: validate_topology PASS
-- [ ] G-RG-2: 全量 ≥978 测试 PASS
+- [ ] G-RG-2: 全量 980/981 测试 PASS (D15 commit 17413e4/e9d0030/496db2f 后; 1 已知失败: test_cpptlm_emulator_registry.cc:123 pre-existing concurrent race in create_by_id,待独立调查)
 - [ ] G-RG-3: CHANGELOG.md 记录 v0.5.0-MVP
 - [ ] G-RG-4: docs_sync_check --strict PASS
 - [ ] G-RG-5: git tag v0.5.0-MVP 创建
