@@ -227,6 +227,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **HSK-4 🟡 Ack**: 3 纯虚接口头文件已交付 commit `8acfd2d1` (IScoreboard) / `9e7361b9` (IPipelineLatencyProvider) / `463038e0` (ITensorCoreTiming) · enum 值与 CppTLM RFC-P1-003 字节级一致 · 待 CppTLM rebase 编译验证
 - **HSK-5 🔴 CANCELLED by HSK-6**: exe_once 3-step 注入 deferred → 永久废止（随 `IPtxEmuDriver` 整体删除）· commit `367fd6a5` + `921b4542` 实施记录归档
 - **HSK-6 ✅ Accepted**: 消费关系废止（commit `25e36f60` PTX-EMU 端 → `369cf71` CppTLM 端 ack）· CPPTLMBRIDGE_VERSION 冻结于 2 · P0-1 门禁已完成（commit `fa2b3ec` G-D4 静态断言迁至 `abi_guards.h`）· 11 项物理删除清单 P4 阶段实施
+- **23 ABI SHARED 暴露** (T-W3-2 commit series, 2026-08-29 起): CppTLM 端 23 ABI 由 `libcpptlm_emulator.so` SHARED 暴露，UsrLinuxEmu `ExternalProject_Add` / dlopen 消费 (`include/abi/cpptlm_emulator.h` + `src/abi/cpptlm_emulator.cc` + `examples/test_cpptlm_emulator_dlopen/`)
 
 **CppTLM 端 deliverable**:
 - `cpptlm_core` 静态库（`build/lib/cpptlm_core.a`）+ `include/cudart/cpptlm_bridge.h` 头文件可被 PTX-EMU `ExternalProject_Add` 消费
