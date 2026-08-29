@@ -69,13 +69,12 @@ void DGpuBoard::shutdown() {
 
 int DGpuBoard::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len) {
     if (last_exception_) {
-        std::rethrow_exception(last_exception_);  // #8 下次调用 rethrow
+        std::rethrow_exception(last_exception_);  // #8 异常传递
     }
-    // #3 注入队列 + future + 1ms 超时
     PendingReq req;
     req.bar = bar;
     req.offset = offset;
-    req.data.resize(len);
+    req.data.resize(len);  // pre-allocate for response
     req.trans_id = next_trans_id_++;
     auto fut = req.resp.get_future();
     {
@@ -83,18 +82,24 @@ int DGpuBoard::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len) {
         pending_resp_[req.trans_id] = std::move(fut);
         inject_q_.push_back(std::move(req));
     }
-    // #3 关键:必须带超时,防 sim 线程死锁
+    // #3 关键: 1ms 超时(防 sim 线程死锁)
     auto status = pending_resp_[req.trans_id].wait_for(std::chrono::milliseconds(1));
     if (status != std::future_status::ready) {
+        std::lock_guard<std::mutex> lock(inject_mu_);
+        pending_resp_.erase(req.trans_id);
         return -110;  // ETIMEDOUT
     }
     int32_t rc = pending_resp_[req.trans_id].get();
-    // TODO: copy buf from resp data
+    // TODO T-bs-3c: copy resp data to buf (per design §2.5 同步等待)
+    std::lock_guard<std::mutex> lock(inject_mu_);
+    pending_resp_.erase(req.trans_id);
     return rc;
 }
 
 int DGpuBoard::mmio_write(uint8_t bar, uint64_t offset, const void* buf, size_t len) {
-    // mmio_write 无返回值,只注入
+    if (last_exception_) {
+        std::rethrow_exception(last_exception_);  // #8 异常传递
+    }
     PendingReq req;
     req.bar = bar;
     req.offset = offset;
@@ -104,7 +109,7 @@ int DGpuBoard::mmio_write(uint8_t bar, uint64_t offset, const void* buf, size_t 
         std::lock_guard<std::mutex> lock(inject_mu_);
         inject_q_.push_back(std::move(req));
     }
-    return 0;  // async,no wait
+    return 0;  // async, no wait
 }
 
 int DGpuBoard::pcie_config_read(uint16_t offset, uint8_t width, uint32_t* val) {
@@ -173,19 +178,18 @@ void DGpuBoard::drain_injection_queue() {
     }
     for (auto& req : drained) {
         if (req.trans_id == UINT64_MAX) {
-            // poison pill,跳过(sim 线程将退出)
+            // poison pill,跳过
             continue;
         }
-        // TODO T-bs-3b: 构造 PcieTlpBundle 注入 soc_->getInternalInputPort("pcie_ep.slave_in")
-        // 占位:立即 set_value 0(success)
+        // TODO T-bs-3c: 构造 PcieTlpBundle 注入 soc_->getInternalInputPort("pcie_ep.slave_in")
+        // 占位: 立即 set_value 0(success) - 让 mmio_read 至少能响应
         try {
             req.resp.set_value(0);
         } catch (const std::future_error&) {
-            // already set or no future, ignore
+            // already set, ignore
         }
-        // 从 pending_resp_ 清理(若 mmio_read 还在等)
-        std::lock_guard<std::mutex> lock(inject_mu_);
-        pending_resp_.erase(req.trans_id);
+        // 清理 pending_resp_
+        // 注: mmio_read 的 future 由调用方持锁清理,这里不需要重复 erase
     }
 }
 

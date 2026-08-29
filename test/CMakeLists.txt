@@ -54,6 +54,7 @@ add_test(NAME sdma_engine COMMAND cpptlm_tests "[sdma]" -r compact)
 # board-soc-split T-bs-1: DGpuSoc 容器测试
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/tasks.md §T-bs-1)
 add_test(NAME test_dgpu_soc_from_config COMMAND cpptlm_tests "[dgpu][json]" -r compact)
+add_test(NAME test_dgpu_board_shell_abi COMMAND cpptlm_tests "[dgpu][shell]" -r compact)
 
 # s3 W5-6: Pm4Decoder + CommandProcessor + TmuDispatchProcessor 测试
 # (per openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/tasks.md §T-s3-1/2/3)
