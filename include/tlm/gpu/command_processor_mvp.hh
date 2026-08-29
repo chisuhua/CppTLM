@@ -50,7 +50,7 @@ struct Pm4DispatchBundle {
 
         // ── 装配回调签名 (per design §3.2) ──
         // FETCH: CP 调 reader(gpu_va, out_buf, sizeof(gpu_gpfifo_entry))
-        // 返回 0 = 成功,负值 = errno (与 DGpuBoardTLM::read_vram 对齐)
+        // 返回 0 = 成功,负值 = errno (per errno 语义)
         using VramReadFn = std::function<int32_t(uint64_t gpu_va, void* out, size_t size)>;
 
         // DISPATCH: CP 把 Pm4MethodDispatch 适配为 TmuDispatchRecord 后调 fn(record)
@@ -78,7 +78,7 @@ struct Pm4DispatchBundle {
         // 状态查询
         State state() const { return state_; }
 
-        // wake(): IDLE → FETCH (供 DGpuBoardTLM 在 Doorbell ring 后调)
+        // wake(): IDLE → FETCH (供外部 doorbell 副作用触发)
         // 仅当 state == IDLE 时生效;其他状态 no-op
         void wake();
 
@@ -104,7 +104,7 @@ struct Pm4DispatchBundle {
 
         // on_backpressure / on_submit_queue_rejected: 可选外部通知接口(per Oracle P1-a
         // 修复 2026-08-28)。CP 内部已自动从 dispatch_target 返回值退避,默认空实现;
-        // DGpuBoardTLM §3.3 装配 4 行不调用它们。测试断言通过 getter 直接读取状态。
+        // 装配 stage 不调用这些 setter。测试断言通过 getter 直接读取状态。
         void on_backpressure(uint64_t cycles);
         void on_submit_queue_rejected(uint64_t cycles);
 

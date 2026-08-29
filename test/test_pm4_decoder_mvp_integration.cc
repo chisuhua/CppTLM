@@ -5,9 +5,9 @@
 //
 // 集成测试定义(per tasks L54 Oracle P1-b):
 //   CommandProcessor + 真 Pm4Decoder + mock vram_reader + mock dispatch_target
-//   **不**依赖 DGpuBoardTLM 装配,这样 T-s3-2 创建并跑通该测试。
+//   **不**依赖 board 装配,这样 T-s3-2 创建并跑通该测试。
 //   T-s3-3 仅做 ctest 回归(per L101)。
-//   DGpuBoardTLM 端到端 E2E 由 T-s3-3 的 test_tmu_dispatch_processor_tlm.cc + S3SubmitQueueHandler
+//   端到端 board E2E 由 T-s3-3 的 test_tmu_dispatch_processor_tlm.cc + S3SubmitQueueHandler
 //   覆盖。
 //
 // TDD: Step 1 (FAIL) - 预期编译失败 (set_vram_reader/set_dispatch_target 未实现)
