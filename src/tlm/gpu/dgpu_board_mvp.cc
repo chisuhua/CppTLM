@@ -7,8 +7,6 @@
 
 #include "tlm/gpu/command_processor_mvp.hh"
 #include "tlm/gpu/completion_ring_mvp.hh"
-#include "tlm/gpu/dgpu_bar.hh"
-#include "tlm/gpu/doorbell_mvp.hh"
 #include "tlm/gpu/pm4_decoder_mvp.hh"
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/tmu_dispatch_processor_mvp.hh"
@@ -26,8 +24,7 @@ namespace tlm::gpu {
     // S3SubmitQueueHandler 已删除 — handler 注入模式由端口连接替代 (per design §3.5 陷阱 5)
 
     struct DGpuBoardTLM::Impl {
-        DGpuBar bar;
-        Doorbell doorbell;
+        // Doorbell/DGpuBar PIMPL 已迁出 (T-bs-2d): 强序+MMIO 由 PcieEndpointTLM 承担
         SubmitQueueTLM sq;
         CompletionRing cq;
         CommandProcessor cp;
@@ -60,7 +57,6 @@ namespace tlm::gpu {
         if (impl_->initialized)
             return;
 
-        impl_->bar.init();
         impl_->cp.set_decoder(std::make_unique<Pm4Decoder>());
         impl_->cp.set_vram_reader(
             [this](uint64_t va, void* out, size_t sz) { return this->read_vram(va, out, sz); });
@@ -86,7 +82,6 @@ namespace tlm::gpu {
             impl_->ptx_emu->shutdown();
         }
 #endif
-        impl_->bar.shutdown();
         impl_->initialized = false;
     }
 
@@ -151,7 +146,8 @@ namespace tlm::gpu {
     }
 
     uint64_t DGpuBoardTLM::doorbell_sq_tail(uint32_t stream_id) const {
-        return impl_->doorbell.sq_tail(stream_id);
+        (void)stream_id;
+        return 0;
     }
 
     size_t DGpuBoardTLM::bar0_size() const {
@@ -163,42 +159,22 @@ namespace tlm::gpu {
     }
 
     int32_t DGpuBoardTLM::read_vram(uint64_t offset, void* host_buf, size_t size) {
-        if (!impl_->initialized)
-            return -19;
-        if (host_buf == nullptr || size == 0)
-            return -22;
-        void* vram = impl_->bar.vram_base();
-        if (vram == nullptr)
-            return -5;
-        if (offset > 256ULL * 1024ULL * 1024ULL || size > 256ULL * 1024ULL * 1024ULL - offset)
-            return -22;
-        std::memcpy(host_buf, static_cast<uint8_t*>(vram) + offset, size);
-        return 0;
+        (void)offset;
+        (void)host_buf;
+        (void)size;
+        return -38; // -ENOSYS: VRAM 由 MemoryTLM (`vram0`) 承担,改走 BAR1 路径
     }
 
     int32_t DGpuBoardTLM::write_vram(uint64_t offset, const void* host_buf, size_t size) {
-        if (!impl_->initialized)
-            return -19;
-        if (host_buf == nullptr || size == 0)
-            return -22;
-        void* vram = impl_->bar.vram_base();
-        if (vram == nullptr)
-            return -5;
-        if (offset > 256ULL * 1024ULL * 1024ULL || size > 256ULL * 1024ULL * 1024ULL - offset)
-            return -22;
-        std::memcpy(static_cast<uint8_t*>(vram) + offset, host_buf, size);
-        return 0;
+        (void)offset;
+        (void)host_buf;
+        (void)size;
+        return -38;
     }
 
     void DGpuBoardTLM::write_reg(uint32_t offset, uint32_t value) {
-        if (offset == 0x0014) {
-            impl_->doorbell.ring(0, value);
-            impl_->cp.wake();
-        } else if (offset >= 0x1000 && offset < 0x2000) {
-            uint32_t stream_id = (offset - 0x1000) >> 2;
-            impl_->doorbell.ring(stream_id, value);
-            impl_->cp.wake();
-        }
+        (void)offset;
+        (void)value;
     }
 
     void DGpuBoardTLM::tick() {
@@ -207,7 +183,6 @@ namespace tlm::gpu {
 
         impl_->cp.tick();
         impl_->sq.tick();
-        impl_->doorbell.tick();
         impl_->cq.tick();
 #ifdef CPPTLM_WITH_PTX_EMU
         if (impl_->cuda_core) {
