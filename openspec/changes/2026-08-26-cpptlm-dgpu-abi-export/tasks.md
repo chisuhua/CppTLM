@@ -33,10 +33,10 @@
 
 ### T-ae-4: dlopen 示例（UsrLinuxEmu 端集成模板）
 
-- [ ] 新建 `examples/test_cpptlm_emulator_dlopen/test_dlopen.cc` + `CMakeLists.txt`
-- [ ] `dlopen("libcpptlm_emulator.so")` → `dlsym` 23 ABI 中至少 `get_version` + `create_by_id` + `mmio_read/write` + `destroy` → 调通
-- [ ] 示例二进制构建并执行（AE-G5）：stdout 输出 `"v1.0-dgpu-v0"` + 成功 create/destroy 退出码 0
-- [ ] **Commit**: `examples(abi): dlopen usage template for UsrLinuxEmu integration`
+- [x] 新建 `examples/test_cpptlm_emulator_dlopen/test_dlopen.cc` + `CMakeLists.txt`
+- [x] `dlopen("libcpptlm_emulator.so")` → `dlsym` 23 ABI 中至少 `get_version` + `create_by_id` + `mmio_read/write` + `destroy` → 调通
+- [x] 示例二进制构建并执行（AE-G5）：stdout 输出 `"v1.0-dgpu-v0"` + 成功 create/destroy 退出码 0
+- [x] **Commit**: `examples(abi): dlopen usage template for UsrLinuxEmu integration`
 
 ### T-ae-5: 集成验证 + archive
 
