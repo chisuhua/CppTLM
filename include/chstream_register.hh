@@ -22,9 +22,8 @@
 #include "tlm/gpu/vector_regfile_tlm.hh"
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
 #include "tlm/gpu/gpu_compute_unit_tlm.hh"
-#include "tlm/gpu/usrlxemu_ioctl_stub_mvp.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
-#include "tlm/gpu/sdma_engine_tlm.hh"
+#include "tlm/gpu/sdma_engine_tlm.h"
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/completion_ring_mvp.hh"
 #include "tlm/gpu/command_processor_mvp.hh"  // CommandProcessorTLM
@@ -65,7 +64,6 @@
     ModuleFactory::registerObject<tlm::VectorRegFileTLM>("VectorRegFileTLM"); \
     ModuleFactory::registerObject<tlm::MinimalWarpSchedulerTLM>("MinimalWarpSchedulerTLM"); \
     ModuleFactory::registerObject<tlm::GpuComputeUnitTLM>("GpuComputeUnitTLM"); \
-    ModuleFactory::registerObject<tlm::gpu::UsrLinuxEmuIoctlStub>("UsrLinuxEmuIoctlStub"); \
     ModuleFactory::registerObject<tlm::gpu::PcieEndpointTLM>("PcieEndpointTLM"); \
     ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM"); \
     ModuleFactory::registerObject<tlm::gpu::SubmitQueueTLM>("SubmitQueueTLM"); \
