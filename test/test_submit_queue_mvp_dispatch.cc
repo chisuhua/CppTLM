@@ -8,7 +8,7 @@
 
 TEST_CASE("SubmitQueue: tick() dispatches up to 4 entries to active slots",
           "[submit-queue][mvp][dispatch]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     for (uint32_t i = 0; i < 10; i++) {
@@ -45,7 +45,7 @@ TEST_CASE("SubmitQueue: tick() dispatches up to 4 entries to active slots",
 }
 
 TEST_CASE("SubmitQueue: tick() with empty pending does nothing", "[submit-queue][mvp][dispatch]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     REQUIRE(sq.pending_count() == 0);
     REQUIRE(sq.active_count() == 0);
 
@@ -55,7 +55,7 @@ TEST_CASE("SubmitQueue: tick() with empty pending does nothing", "[submit-queue]
 }
 
 TEST_CASE("SubmitQueue: tick() with full active does nothing", "[submit-queue][mvp][dispatch]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
 
     // Fill pending 4 + active 4
@@ -80,7 +80,7 @@ TEST_CASE("SubmitQueue: tick() with full active does nothing", "[submit-queue][m
 }
 
 TEST_CASE("SubmitQueue: tick() preserves FIFO order on dispatch", "[submit-queue][mvp][dispatch]") {
-    tlm::gpu::SubmitQueue sq;
+    tlm::gpu::SubmitQueueTLM sq("sq", nullptr);
     tlm::gpu::CtaDescriptor cta{};
     for (uint32_t i = 0; i < 4; i++) {
         cta.task_id = i;

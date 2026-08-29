@@ -1,7 +1,8 @@
 // submit_queue_mvp.hh
-// SubmitQueue MVP: WDU (Work Distribution Unit) 分发网络
+// SubmitQueueTLM - ChStream 组件 (SQ tail + 32-slot pending FIFO + done_in 释放)
+// Per board-soc-split design §3.5 ports table + ADR-SOC-07 D1
 // Author: CppTLM Team
-// Date: 2026-08-26
+// Date: 2026-08-26 (updated 2026-08-29: promote to ChStreamModuleBase)
 //
 // 依据 docs/research/WDUtoSM/overview.md NVIDIA Hopper:
 //   - per-cluster pending FIFO: 32 槽
@@ -11,13 +12,36 @@
 #ifndef CPPTLM_SUBMIT_QUEUE_MVP_H
 #define CPPTLM_SUBMIT_QUEUE_MVP_H
 
+#include "bundles/cpphdl_types.hh"
+#include "bundles/dma_bundles_tlm.hh"
+#include "core/chstream_module.hh"
+#include "framework/stream_adapter.hh"
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
+
+namespace bundles {
+
+struct CtaDescriptorBundle : public bundle_base {
+    ch_uint<32> task_id;
+    ch_uint<64> vram_image_addr;
+    ch_uint<32> grid_x;
+    ch_uint<32> grid_y;
+    ch_uint<32> grid_z;
+    ch_uint<32> block_x;
+    ch_uint<32> block_y;
+    ch_uint<32> block_z;
+    ch_uint<32> shared_mem_bytes;
+    ch_uint<64> args_vram_addr;
+
+    CtaDescriptorBundle() = default;
+};
+
+} // namespace bundles
 
 namespace tlm::gpu {
 
-    // CTA (Cooperative Thread Array) 描述符
     struct CtaDescriptor {
         uint32_t task_id = 0;
         uint64_t vram_image_addr = 0;
@@ -31,58 +55,58 @@ namespace tlm::gpu {
         uint64_t args_vram_addr = 0;
     };
 
-    // WDU 分发网络 - 简化版 (单 cluster + 单 SM)
-    // v0.5 完整版: 升级为多 cluster crossbar 逐周期仲裁
-    class SubmitQueue {
+    class SubmitQueueTLM : public ChStreamModuleBase {
     public:
-        static constexpr size_t PENDING_FIFO_SIZE = 32;       // per-cluster pending 容量
-        static constexpr size_t ACTIVE_SLOTS_PER_CORE = 4;    // per-core active 容量
-        static constexpr uint8_t TARGET_CORE_MVP = 0;        // 单 SM MVP 路由
+        static constexpr size_t PENDING_FIFO_SIZE = 32;
+        static constexpr size_t ACTIVE_SLOTS_PER_CORE = 4;
+        static constexpr uint8_t TARGET_CORE_MVP = 0;
 
-        SubmitQueue();
-        ~SubmitQueue();
+        explicit SubmitQueueTLM(const std::string& n, EventQueue* eq);
+        ~SubmitQueueTLM() override = default;
 
-        SubmitQueue(const SubmitQueue&) = delete;
-        SubmitQueue& operator=(const SubmitQueue&) = delete;
+        SubmitQueueTLM(const SubmitQueueTLM&) = delete;
+        SubmitQueueTLM& operator=(const SubmitQueueTLM&) = delete;
 
-        // 入队 WDU (Work Distribution Unit)
-        // @return true = 入队成功; false = pending FIFO 满 (反压信号,不驱逐)
+        std::string get_module_type() const override { return "SubmitQueueTLM"; }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override {
+            adapter_ = adapter;
+        }
+
         bool enqueue(const CtaDescriptor& cta);
+        bool dequeue(CtaDescriptor* out);
 
-        // 派发: 从 pending 移动最多 ACTIVE_SLOTS_PER_CORE 个 entry 到 active
-        void tick();
+        void tick() override;
 
-        // 反向流: warp 完成时释放 active 槽
-        // 未知的 task_id 静默忽略 (防御性)
         void on_warp_complete(uint32_t task_id, int32_t status);
 
-        // MVP: 始终返回 0 (单 SM 路由)
         uint8_t select_target_core(const CtaDescriptor& cta) const;
 
-        // 状态查询
         size_t pending_count() const { return pending_count_; }
         size_t active_count() const { return active_count_; }
         size_t inflight_count() const { return pending_count_ + active_count_; }
         bool is_full() const { return pending_count_ >= PENDING_FIFO_SIZE; }
 
-        // 诊断统计
         uint64_t backpressure_count() const { return backpressure_count_; }
         uint64_t completed_count() const { return completed_count_; }
 
     private:
-        // 循环 FIFO (head/tail 索引 + count)
+        cpptlm::InputStreamAdapter<bundles::CtaDescriptorBundle> cta_in_;
+        cpptlm::InputStreamAdapter<bundles::CompletionBundle> done_in_;
+        cpptlm::StreamAdapterBase* adapter_ = nullptr;
+
         std::array<CtaDescriptor, PENDING_FIFO_SIZE> pending_;
         size_t pending_head_ = 0;
         size_t pending_tail_ = 0;
         size_t pending_count_ = 0;
 
-        // Active slots (compact array)
         std::array<CtaDescriptor, ACTIVE_SLOTS_PER_CORE> active_;
         size_t active_count_ = 0;
 
         uint64_t backpressure_count_ = 0;
         uint64_t completed_count_ = 0;
     };
+
+    using SubmitQueue = SubmitQueueTLM;
 
 } // namespace tlm::gpu
 
