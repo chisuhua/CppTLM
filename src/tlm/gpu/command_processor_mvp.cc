@@ -1,10 +1,11 @@
 // command_processor_mvp.cc
-// CommandProcessor MVP 5-state FSM 实现 + degraded latch(退避窗口门控 deferred to s4) (per design §3 + §4.4)
-// Author: CppTLM Team
-// Date: 2026-08-28
+// CommandProcessorTLM - ChStream 组件(CP 5-state FSM + 4 端口) 实现
+// Per board-soc-split design §3.5 ports table + ADR-SOC-07 D1
+// Author: CppTLM Team · Date: 2026-08-31 (updated 2026-08-31: promote to ChStreamModuleBase)
 //
 // s3 T-s3-2: 填充 GPU VA fetch + parse_method + DECODE 实际逻辑 + 退避策略
 // 5-state FSM: IDLE → FETCH → DECODE → DISPATCH → COMPLETE → IDLE
+// 4 端口化: cmd_in[0] / fetch_out[1] ⭐新增 / dma_req[2] / dispatch[3]
 //
 // 关键约束 (per Oracle P1-a 修复):
 //   - CP 内部自动从 dispatch_target 返回值触发退避(无需外部调 on_backpressure)
@@ -20,40 +21,40 @@
 
 namespace tlm::gpu {
 
-    CommandProcessor::CommandProcessor() = default;
-    CommandProcessor::~CommandProcessor() = default;
+    CommandProcessorTLM::CommandProcessorTLM(const std::string& n, EventQueue* eq)
+        : ChStreamModuleBase(n, eq) {}
 
-    void CommandProcessor::set_decoder(std::unique_ptr<Pm4DecoderInterface> decoder) {
+    void CommandProcessorTLM::set_decoder(std::unique_ptr<Pm4DecoderInterface> decoder) {
         decoder_ = std::move(decoder);
     }
 
-    void CommandProcessor::set_vram_reader(VramReadFn reader) {
+    void CommandProcessorTLM::set_vram_reader(VramReadFn reader) {
         vram_read_cb_ = std::move(reader);
     }
 
-    void CommandProcessor::set_dispatch_target(DispatchFn fn) {
+    void CommandProcessorTLM::set_dispatch_target(DispatchFn fn) {
         dispatch_target_ = std::move(fn);
     }
 
-    void CommandProcessor::on_backpressure(uint64_t cycles) {
+    void CommandProcessorTLM::on_backpressure(uint64_t cycles) {
         // 可选外部通知接口(per Oracle P1-a);默认空实现。
         // CP 已自动从 dispatch_target 返回值退避(见 enter_backoff)。
         (void)cycles;
     }
 
-    void CommandProcessor::on_submit_queue_rejected(uint64_t cycles) {
+    void CommandProcessorTLM::on_submit_queue_rejected(uint64_t cycles) {
         // 同 on_backpressure:可选外部通知,默认空实现
         (void)cycles;
     }
 
-    void CommandProcessor::wake() {
+    void CommandProcessorTLM::wake() {
         ++wake_count_;
         if (state_ == State::IDLE) {
             transition_to(State::FETCH);
         }
     }
 
-    void CommandProcessor::tick() {
+    void CommandProcessorTLM::tick() {
         ++tick_count_;
 
         switch (state_) {
@@ -130,7 +131,7 @@ namespace tlm::gpu {
         }
     }
 
-    void CommandProcessor::enter_backoff(TmuSubmitResult dispatch_result) {
+    void CommandProcessorTLM::enter_backoff(TmuSubmitResult dispatch_result) {
         ++cp_backoff_count_;
         backoff_cycles_remaining_ = MIN_BACKOFF_CYCLES;
         (void)dispatch_result;
@@ -139,7 +140,7 @@ namespace tlm::gpu {
         }
     }
 
-    void CommandProcessor::transition_to(State new_state) {
+    void CommandProcessorTLM::transition_to(State new_state) {
         state_ = new_state;
         ++state_transitions_;
     }

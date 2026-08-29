@@ -28,6 +28,7 @@
 #include "tlm/gpu/sdma_engine_tlm.hh"
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/completion_ring_mvp.hh"
+#include "tlm/gpu/command_processor_mvp.hh"  // CommandProcessorTLM
 #include "bundles/compute_bundles_tlm.hh"
 #include "rtl/hybrid_cache_wrapper.hh"
 #include "core/module_factory.hh"
@@ -71,6 +72,7 @@
     ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM"); \
     ModuleFactory::registerObject<tlm::gpu::SubmitQueueTLM>("SubmitQueueTLM"); \
     ModuleFactory::registerObject<tlm::gpu::CompletionRingTLM>("CompletionRingTLM"); \
+    ModuleFactory::registerObject<tlm::gpu::CommandProcessorTLM>("CommandProcessorTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<CacheTLM, \
         bundles::CacheReqBundle, bundles::CacheRespBundle>("CacheTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<MemoryTLM, \
