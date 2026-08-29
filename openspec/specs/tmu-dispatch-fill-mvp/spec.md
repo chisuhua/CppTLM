@@ -1,14 +1,8 @@
-# Spec: TmuDispatchProcessor Fill Implementation (s3 T-s3-3)
+# tmu-dispatch-fill-mvp Specification
 
-> **Status**: Proposed — 2026-08-21
-> **Scope**: s3 change — fill `tmu_dispatch_processor_mvp.cc` 实现 (header 由 s2 已创建)
-> **依赖**: s1 + s2 已 archive (s2 已建立 TMU skeleton with `set_handler` injection)
-> **关联**: Phase F-D.2 H5 (dep chain)
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-08-21-cpptlm-v05-mvp-s3-command-pipeline. Update Purpose after archive.
+## Requirements
 ### Requirement: tmu-dispatch-fill-data-structure
 
 The system MUST define `TmuDispatchRecord` struct with **13 fields (10 base + 3 dep latch)** (per s2 design). Field layout MUST be specified in `include/tlm/gpu/tmu_dispatch_processor_mvp.hh` (s3 fills the inline comments).
@@ -59,3 +53,4 @@ All MUST pass `ctest -R "test_tmu_dispatch_processor_mvp"`.
 #### Scenario: All 4 TMU behaviors verified
 - **WHEN** `ctest -R "test_tmu_dispatch_processor_mvp"` runs after s3 W6
 - **THEN** submit + back-pressure + dep chain + cycle detection MUST all PASS
+
