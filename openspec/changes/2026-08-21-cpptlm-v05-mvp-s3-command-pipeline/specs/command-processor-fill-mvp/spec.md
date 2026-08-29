@@ -14,13 +14,15 @@ The system MUST fill `src/tlm/gpu/command_processor_mvp.cc` (~150 LOC 填充 + �
 - **IDLE** → **FETCH**: `mem_read_vram(GPU_VA, sizeof(gpu_gpfifo_entry))` (per Phase F-C.3 H1)
 - **FETCH** → **DECODE**: call `pm4_decoder_->parse_method(method_header, payload, max_dwords)` (via s2's `set_decoder` injection, NOT direct construction)
 - **DECODE** → **DISPATCH**: call `tmu_.submit(Pm4MethodDispatch)` (replaces s2's `record` stub)
-- **DISPATCH** → **COMPLETE**: notify CompletionRing via `on_warp_complete(task_id, status)`
+- **DISPATCH** → `dispatch_target_(TmuDispatchRecord)` → TMU → S3SubmitQueueHandler → SubmitQueue.enqueue (per Oracle M4 handler 模式); CQ 通知 deferred to cpptlm-dgpu-abi-export change
 - **COMPLETE** → **IDLE**: cycle restart
 
-#### Scenario: Full IDLE→COMPLETE cycle with NVIDIA method packet
+#### Scenario: Full IDLE→DISPATCH→TMU→SQ cycle with NVIDIA method packet
 - **WHEN** CP wakes (Doorbell ring) and processes a real `gpu_gpfifo_entry` containing DISPATCH_DIRECT (0x4001)
-- **THEN** CP MUST complete all 5 transitions
-- **AND** TMU MUST receive the dispatched `Pm4MethodDispatch`
+- **THEN** CP MUST complete IDLE→FETCH→DECODE→DISPATCH
+- **AND** DISPATCH MUST call `dispatch_target_(record)` to submit TmuDispatchRecord to TMU
+- **AND** TMU MUST forward to S3SubmitQueueHandler → SubmitQueue.enqueue
+- **AND** CQ notification is deferred to cpptlm-dgpu-abi-export change
 
 #### Scenario: FETCH via VRAM read
 - **WHEN** CP FETCH state runs `tick()`

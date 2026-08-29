@@ -1,6 +1,6 @@
 # cpptlm-v05-mvp-s3-command-pipeline: CP + PM4 + TMU + 全链路 E2E + v0.5.0-MVP tag
 
-> **状态**: 📋 Proposed — 2026-08-21 · **日期**: 2026-08-21 · **Owner**: CppTLM Team (Sisyphus)
+> **状态**: 🚧 In Progress (39/53, T-s3-1/2/3 done, T-s3-4/5 deferred to v05-mvp-release-gate) · **日期**: 2026-08-21 · **Owner**: CppTLM Team (Sisyphus)
 > **关联 ADR**: [`docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md`](../../../docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
 > **取代**: [`openspec/changes/archive/2026-08-19-cpptlm-v05-mvp-superseded-by-s1-s2-s3/`](../../archive/2026-08-19-cpptlm-v05-mvp-superseded-by-s1-s2-s3/) (原单 change)
 > **依赖**: [`s1-ptxemu-integration/`](../2026-08-21-cpptlm-v05-mvp-s1-ptxemu-integration/) + [`s2-dgpu-board/`](../2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/) 必须已 archive
@@ -97,4 +97,4 @@ s3 价值(必须依赖 s1+s2):
 
 **起草**: Sisyphus (2026-08-21,per Oracle ses_fe179d02 拆分建议)
 **Owner**: CppTLM Team
-**状态**: 📋 Proposed — 等 s1+s2 archive + W5 启动后开始实施
+**状态**: 🚧 In Progress
