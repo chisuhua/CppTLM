@@ -80,7 +80,7 @@
 
 - [ ] **destroy 顺序**：`stop_=true` → inject_q 推 poison pill → `sim_thread_.join()` → 析构 SOC → 析构 EventQueue
 - [ ] **异常跨线程**：`sim_loop` 顶层 catch → `std::exception_ptr` → 下一 ABI 调用时 rethrow
-- [ ] **Commit**: `feat(dgpu-board): deterministic destroy + cross-thread exception capture`
+- [x] **Commit**: `feat(dgpu-board): deterministic destroy + cross-thread exception capture`
 
 #### T-bs-3e: backdoor 路径走 inject_q + 测试 + 注册
 
