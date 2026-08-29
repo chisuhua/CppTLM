@@ -39,8 +39,15 @@ namespace tlm::gpu {
             if (board_cfg.contains("params") && board_cfg["params"].contains("quantum_cycles")) {
                 quantum_cycles_ = board_cfg["params"]["quantum_cycles"].get<uint64_t>();
             }
-            // SOC 内部组件实例化
-            soc_->simulate_instantiate(board_cfg);
+            // SOC instantiate deferred (T-bs-4 follow-up): GpuCluster 嵌套 instantiateAll 链
+            // 中 unique_ptr SIGSEGV, test_cpptlm_emulator_abi.cc 已 deferred 标记.
+            if (!board_cfg.contains("modules") || !board_cfg["modules"].is_array() ||
+                board_cfg["modules"].empty()) {
+                std::lock_guard<std::mutex> lock(inject_mu_);
+                last_exception_ =
+                    std::make_exception_ptr(std::runtime_error("board_cfg missing 'modules' array"));
+                return false;
+            }
 
             // 多卡 StatsManager 前缀:为 SOC 内部组件注册(占位,deferred T-bs-4)
             // 注: StatsManager::register_group 需要 StatGroup* 指针,这里只验证 get_stats_path 接口
