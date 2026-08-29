@@ -23,7 +23,7 @@
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
 #include "tlm/gpu/gpu_compute_unit_tlm.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
-#include "tlm/gpu/sdma_engine_tlm.h"
+#include "tlm/gpu/sdma_engine_tlm.hh"
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/completion_ring_mvp.hh"
 #include "tlm/gpu/command_processor_mvp.hh"  // CommandProcessorTLM

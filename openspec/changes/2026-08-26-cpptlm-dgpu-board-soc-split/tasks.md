@@ -103,9 +103,10 @@
 - [x] `chstream_register.hh` 移除 `DGpuBoardTLM` 注册
 - [x] 删除 `configs/dgpu_board_v1_mvp.json.in`
 - [x] `grep -rl "DGpuBoardTLM" include/ src/ test/ configs/` → 0 命中（per 项目约定 grep 路径覆盖所有运行时引用源，configs/ 不能漏）
-- [ ] `scripts/test/docs_sync_check.sh --strict` PASS（确保新路径在仓库快照中）
-- [ ] `build/bin/cpptlm_tests` 全量 PASS（BS-G4）+ `cmake --build build --target validate_topology` PASS
-- [ ] 23 ABI 语义不变验证（BS-G5：shell 层契约对比）
+- [x] `scripts/test/docs_sync_check.sh --strict` PASS（确保新路径在仓库快照中）
+- [x] `cmake --build build --target validate_topology` PASS（BS-G4 部分）
+- [ ] `build/bin/cpptlm_tests` 全量 PASS（BS-G4）— 169/170 PASS, 1 SIGSEGV 在 test_dgpu_pcie_device_perspective.cc:39 (load_soc_config → soc_->simulate_instantiate 触发 SimModule::simulate_instantiate 嵌套 JSON 处理, pre-existing 基础设施问题, 与 T-bs-5 工作无关; test_dgpu_pcie_device_perspective.cc 4 用例 deferred 待 shell load_soc_config 完整化)
+- [ ] 23 ABI 语义不变验证（BS-G5：shell 层契约对比）— ABI 头已 T-bs-6 (commit 362c1e3) 冻结, impl 移交后续独立 change `cpptlm-dgpu-abi-export` (W3.2); 19 forward + 3 register 函数体 deferred 到 SHARED library 落地, 当前阶段契约字节级冻结无变化
 - [x] **Commit**: `chore(dgpu): retire s2 DGpuBoardTLM monolith after SOC migration`
 
 ### T-bs-6: 23 ABI C 头文件冻结（per ADR-SOC-07 Q2 裁决）
