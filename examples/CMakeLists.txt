@@ -33,6 +33,15 @@ target_link_libraries(example_simmodule_nested PRIVATE cpptlm_core)
 target_include_directories(example_simmodule_nested PRIVATE ${EXAMPLES_INCLUDE_DIRS})
 
 # ==============================================================================
+# T-W3-2 (T-ae-4): dlopen usage template for UsrLinuxEmu integration
+# (per ADR-088 §D5 + ADR-SOC-07 D5). 演示 dlopen libcpptlm_emulator.so +
+# dlsym 19 forward ABI + 调通关键路径 (get_version/create_by_id/mmio_/destroy).
+# ==============================================================================
+add_executable(test_cpptlm_emulator_dlopen
+               test_cpptlm_emulator_dlopen/test_dlopen.cc)
+target_link_libraries(test_cpptlm_emulator_dlopen PRIVATE cpptlm_core cpptlm_emulator)
+
+# ==============================================================================
 # 输出目录
 # ==============================================================================
 # ==============================================================================
