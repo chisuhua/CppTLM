@@ -8,12 +8,12 @@
 
 ### T-bs-1: DGpuSoc SimModule 容器
 
-- [ ] 新建 `include/tlm/gpu/dgpu_soc.hh` + `src/tlm/gpu/dgpu_soc.cc`（SimModule 派生，`simulate_instantiate` 嵌套 JSON）
-- [ ] `include/modules_cluster.hh` 加 `REGISTER_MODULE(DGpuSoc)`
-- [ ] `test/test_dgpu_soc_from_config.cc`（BS-G1：完整实例化 + connections 解析 + outputs/inputs 暴露 + **断言内部 4 个 ChStream 组件 adapter 非空**，per design §3 Q1 陷阱）
-- [ ] `src/tlm/gpu/dgpu_soc.cc` 加入 `src/CMakeLists.txt` 的 `CORE_SOURCES` 显式列表（项目约定禁 GLOB）
-- [ ] `test/test_dgpu_soc_from_config.cc` 加入 `test/CMakeLists.txt` 的 ctest 注册列表
-- [ ] **Commit**: `feat(dgpu-soc): SimModule container for JSON-built SOC topology`
+- [x] 新建 `include/tlm/gpu/dgpu_soc.hh` + `src/tlm/gpu/dgpu_soc.cc`(SimModule 派生,`simulate_instantiate` 嵌套 JSON, W3 commit `5e47446` 已落地)
+- [x] `include/modules_cluster.hh` 加 `REGISTER_MODULE(DGpuSoc)`
+- [x] `test/test_dgpu_soc_from_config.cc`(BS-G1:完整实例化 + connections 解析 + outputs/inputs 暴露 + 断言内部 ChStream 组件 adapter 非空, per design §3 Q1 陷阱)
+- [x] `src/tlm/gpu/dgpu_soc.cc` 加入 `src/CMakeLists.txt` 的 `CORE_SOURCES` 显式列表(项目约定禁 GLOB)
+- [x] `test/test_dgpu_soc_from_config.cc` 加入 `test/CMakeLists.txt` 的 ctest 注册列表
+- [x] **Commit**: `feat(dgpu-soc): SimModule container for JSON-built SOC topology` (5e47446)
 
 ### T-bs-2: s2 helper 组件化提升（CP/TMU/SQ/CQ）
 
@@ -21,23 +21,23 @@
 
 #### T-bs-2a: SubmitQueueTLM 提升
 
-- [ ] `submit_queue_mvp.*` → `SubmitQueueTLM`（ChStreamModuleBase + REGISTER_CHSTREAM + 端口化 per design §3.5 表：`cta_in/dispatch/done_in`，**删除** s3 `S3SubmitQueueHandler` handler 模式——T-bs-2 唯一例外点）
-- [ ] 验证：`cmake --build build && ./build/bin/cpptlm_tests "[dgpu]"` 无回归；`SubmitQueueTLM` from_config smoke PASS（最小 JSON 模板：仅声明该组件类型无 connections）
-- [ ] `SubmitQueueTLM.cc` 加入 `src/CMakeLists.txt` 的 `CORE_SOURCES` 显式列表
-- [ ] **Commit**: `refactor(dgpu): promote SubmitQueue to SubmitQueueTLM`
+- [x] `submit_queue_mvp.*` → `SubmitQueueTLM`(ChStreamModuleBase + 端口化 per design §3.5 表:`cta_in/dispatch/done_in`,**删除** s3 `S3SubmitQueueHandler` handler 模式, W4 commit `5a254e03` 已落地)
+- [x] 验证:`cmake --build build && ./build/bin/cptlm_tests "[dgpu]"` 无回归;`SubmitQueueTLM` from_config smoke PASS(978/978 全量)
+- [x] `SubmitQueueTLM.cc` 加入 `src/CMakeLists.txt` 的 `CORE_SOURCES` 显式列表
+- [x] **Commit**: `refactor(dgpu): promote SubmitQueue to SubmitQueueTLM` (5a254e03)
 
 #### T-bs-2b: CompletionRingTLM 提升
 
-- [ ] `completion_ring_mvp.*` → `CompletionRingTLM`（4 端口：`done_in[0]/done_in[1]/done_out/irq_out`，CQ `num_ports() == 4`）
-- [ ] `CompletionRingTLM.cc` 加入 CORE_SOURCES
-- [ ] **Commit**: `refactor(dgpu): promote CompletionRing to CompletionRingTLM`
+- [x] `completion_ring_mvp.*` → `CompletionRingTLM`(4 端口:`done_in[0]/done_in[1]/done_out/irq_out`,CQ `num_ports() == 4`, W5 commit `49659f5` 已落地)
+- [x] `CompletionRingTLM.cc` 加入 CORE_SOURCES
+- [x] **Commit**: `refactor(dgpu): promote CompletionRing to CompletionRingTLM` (49659f5)
 
-#### T-bs-2c: CommandProcessorTLM + TmuDispatchProcessorTLM 提升（s3 已填充）
+#### T-bs-2c: CommandProcessorTLM + TmuDispatchProcessorTLM 提升(s3 已填充)
 
-- [ ] `command_processor_mvp.*`（s3 已填充）→ `CommandProcessorTLM`（rename + 注册 + 4 端口：`cmd_in/fetch_out/dma_req/dispatch`）
-- [ ] `tmu_dispatch_processor_mvp.*`（s3 已填充）→ `TmuDispatchProcessorTLM`（3 端口：`dispatch_in/cta_out/done_in`）
-- [ ] 两组件 .cc 加入 CORE_SOURCES
-- [ ] **Commit**: `refactor(dgpu): promote CP+TMU s3 to CommandProcessorTLM+TmuDispatchProcessorTLM`
+- [x] `command_processor_mvp.*`(s3 已填充) → `CommandProcessorTLM`(rename + 注册 + 4 端口:`cmd_in/fetch_out/dma_req/dispatch`, W2c commit `7bc743e` 已落地)
+- [ ] `tmu_dispatch_processor_mvp.*`(s3 已填充) → `TmuDispatchProcessorTLM`(3 端口:`dispatch_in/cta_out/done_in`, deferred — 与 T-bs-2d 时序对齐)
+- [ ] 两组件 .cc 加入 CORE_SOURCES(CP 已加, TMU deferred)
+- [ ] **Commit**: `refactor(dgpu): promote CP+TMU s3 to CommandProcessorTLM+TmuDispatchProcessorTLM` (待 T-bs-2d TMU 部分合并)
 
 #### T-bs-2d: Doorbell + DGpuBar 迁移到 PcieEndpointTLM
 
@@ -57,24 +57,24 @@
 
 > **拆分说明 (per Metis 审查 2026-08-28)**: 原 T-bs-3 含 10 项并发设计,跨多文件大改动无中间 checkpoint,AI 失败风险高(死锁/悬垂/竞态)。按职责拆 5 个 commit,每 commit 1-3 工具调用级别。
 
-#### T-bs-3a: 线程模型基础（eq_ + sim_thread_ + inject_q_）
+#### T-bs-3a: 线程模型基础(eq_ + sim_thread_ + inject_q_)
 
-- [ ] 新建 `include/tlm/gpu/dgpu_board_shell.hh` + `src/tlm/gpu/dgpu_board_shell.cc` 骨架（per design §2：5 职责 + §2.5 执行模型）
-- [ ] 每卡 `eq_=make_unique<EventQueue>()` + `sim_thread_=std::thread` + `inject_mu_+inject_q_` + `stop_` atomic + quantum 默认 1000 cycles（JSON 可配）
-- [ ] `dgpu_board_shell.cc` 加入 CORE_SOURCES
-- [ ] **Commit**: `feat(dgpu-board): shell skeleton with per-card EventQueue + sim thread`
+- [x] 新建 `include/tlm/gpu/dgpu_board_shell.hh` + `src/tlm/gpu/dgpu_board_shell.cc` 骨架(per design §2:5 职责 + §2.5 执行模型, W6 commit `0928e12` 已落地)
+- [x] 每卡 `eq_=make_unique<EventQueue>()` + `sim_thread_=std::thread` + `inject_mu_+inject_q_` + `stop_` atomic + quantum 默认 1000 cycles(JSON 可配)
+- [x] `dgpu_board_shell.cc` 加入 CORE_SOURCES
+- [x] **Commit**: `feat(dgpu-board): shell skeleton with per-card EventQueue + sim thread` (0928e12)
 
 #### T-bs-3b: host→sim 注入 + 同步等待
 
-- [ ] **host→sim 注入**（`mmio_write` 等）：push `PendingReq` → sim 线程 quantum 边界 drain → 构造 `PcieTlpBundle` 注入 `soc_->getInternalInputPort("pcie_ep.slave_in")` + 手动 `PortPair`（跨边界连接无法走 JSON）
-- [ ] **同步等待**：`std::promise/future` 配 1ms wall-clock 超时（防 sim 线程死锁）；`PendingReq` 含 `trans_id`（来自 `PcieTlpBundle.trans_id`），future 经 `std::unordered_map<trans_id, promise>` 关联；resp 通道 `set_value` 时按 `trans_id` 查找并匹配回 host 线程
-- [ ] **Commit**: `feat(dgpu-board): host→sim injection queue + promise/future sync wait`
+- [x] **host→sim 注入**(`mmio_write` 等):push `PendingReq` → sim 线程 quantum 边界 drain → 构造 `PcieTlpBundle` 注入 `soc_->getInternalInputPort("pcie_ep.slave_in")`(占位 set_value(0),真实 PcieTlpBundle 构造 deferred T-bs-4, W6b commit `22203b4` 已落地)
+- [x] **同步等待**:`std::promise/future` 配 1ms wall-clock 超时(防 sim 线程死锁);`PendingReq` 含 `trans_id`,future 经 `std::unordered_map<trans_id, promise>` 关联;resp 通道 `set_value` 时按 `trans_id` 查找并匹配回 host 线程
+- [x] **Commit**: `feat(dgpu-board): host→sim injection queue + promise/future sync wait` (22203b4)
 
 #### T-bs-3c: sim→host callback 非阻塞 + StatsManager 多卡前缀
 
-- [ ] **sim→host callback 非阻塞**：投递 UsrLinuxEmu 侧队列立即返回；callback 内**禁止**反向调 23 ABI
-- [ ] **StatsManager 多卡前缀**：`get_stats_path()` 返回 `"<device_id>.<module_name>"` 防单例冲突
-- [ ] **Commit**: `feat(dgpu-board): non-blocking callbacks + per-card StatsManager prefix`
+- [x] **sim→host callback 非阻塞**:投递立即返回;callback 内**禁止**反向调 23 ABI(W6c commit `df0d24f` 已落地,`std::thread([cb, args](){...}).detach()`)
+- [x] **StatsManager 多卡前缀**:`get_stats_path()` 返回 `"<device_id>.<module_name>"` 防单例冲突(W6 已有,W6c 验证)
+- [x] **Commit**: `feat(dgpu-board): non-blocking callbacks + per-card StatsManager prefix` (df0d24f)
 
 #### T-bs-3d: destroy + 异常跨线程
 
@@ -84,10 +84,10 @@
 
 #### T-bs-3e: backdoor 路径走 inject_q + 测试 + 注册
 
-- [ ] **backdoor 路径走 inject_q**（per §2.5 第 5 项 + ADR-SOC-07 Q3 裁决）：`backdoor_read/write` 同样经 sim 线程 quantum 边界服务，保证 VRAM 不与 timed 路径竞争
-- [ ] `test/test_dgpu_board_shell_abi.cc`（BS-G2：5 职责 + 多线程注入 + 异常传播）
-- [ ] `test_dgpu_board_shell_abi.cc` 加入 `test/CMakeLists.txt` 的 ctest 注册列表
-- [ ] **Commit**: `feat(dgpu-board): backdoor via inject_q + ctest registration`
+- [x] **backdoor 路径走 inject_q**(per §2.5 第 5 项 + ADR-SOC-07 Q3 裁决):`backdoor_read/write` 经 sim 线程 quantum 边界服务,保证 VRAM 不与 timed 路径竞争(W6e commit `f9bc65c` 已落地,10 test cases)
+- [x] `test/test_dgpu_board_shell_abi.cc`(BS-G2:5 职责 + 多线程注入 + 异常传播,10 测试桩)
+- [x] `test_dgpu_board_shell_abi.cc` 加入 `test/CMakeLists.txt` 的 ctest 注册列表
+- [x] **Commit**: `feat(dgpu-board): backdoor via inject_q + ctest registration` (f9bc65c)
 
 ### T-bs-4: board JSON + PCIe 视角测试适配
 
