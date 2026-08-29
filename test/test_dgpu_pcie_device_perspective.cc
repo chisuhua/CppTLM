@@ -13,16 +13,16 @@
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
-#include <nlohmann/json.hpp>
 #include <array>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 namespace {
     constexpr uint32_t GPU_REG_GPFIFO_PUT = 0x0000;
-    constexpr uint32_t GPU_REG_DOORBELL    = 0x0014;
-    constexpr size_t   VRAM_TEST_OFFSET   = 0x2000;
+    constexpr uint32_t GPU_REG_DOORBELL = 0x0014;
+    constexpr size_t VRAM_TEST_OFFSET = 0x2000;
 
     nlohmann::json load_board_config() {
         std::ifstream f("configs/dgpu_board_v1.json");
@@ -34,7 +34,7 @@ namespace {
         j["params"]["ptx_emu_root"] = "/tmp/test-ptx-emu";
         return j;
     }
-}
+} // namespace
 
 TEST_CASE("PCIe driver perspective: BAR0 doorbell write (shell path)",
           "[pcie][dGPU][soc][stage-1]") {

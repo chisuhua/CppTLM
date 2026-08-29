@@ -7,9 +7,9 @@
 
 namespace cpptlm::tlm {
 
-void DGpuSoc::simulate_instantiate(const nlohmann::json& cfg) {
-    // 嵌套实例化: SimModule 默认实现已递归 (参见 compute_cluster.cc:28-53 先例)
-    SimModule::simulate_instantiate(cfg);
-}
+    void DGpuSoc::simulate_instantiate(const nlohmann::json& cfg) {
+        // 嵌套实例化: SimModule 默认实现已递归 (参见 compute_cluster.cc:28-53 先例)
+        SimModule::simulate_instantiate(cfg);
+    }
 
 } // namespace cpptlm::tlm

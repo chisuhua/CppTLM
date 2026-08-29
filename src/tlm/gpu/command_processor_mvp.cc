@@ -22,7 +22,8 @@
 namespace tlm::gpu {
 
     CommandProcessorTLM::CommandProcessorTLM(const std::string& n, EventQueue* eq)
-        : ChStreamModuleBase(n, eq) {}
+        : ChStreamModuleBase(n, eq) {
+    }
 
     void CommandProcessorTLM::set_decoder(std::unique_ptr<Pm4DecoderInterface> decoder) {
         decoder_ = std::move(decoder);
@@ -136,7 +137,7 @@ namespace tlm::gpu {
         backoff_cycles_remaining_ = MIN_BACKOFF_CYCLES;
         (void)dispatch_result;
         if (cp_backoff_count_ >= CP_BACKOFF_DEGRADED_THRESHOLD) {
-            degraded_ = true;  // latch,不自动恢复,s4 实现
+            degraded_ = true; // latch,不自动恢复,s4 实现
         }
     }
 
