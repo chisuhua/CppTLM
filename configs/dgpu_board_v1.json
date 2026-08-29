@@ -1,0 +1,91 @@
+{
+  "name": "dgpu_board_v1",
+  "description": "CppTLM dGPU board topology (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/design.md §4, ADR-SOC-07 D1/D2/D7). DGpuBoard C++ ABI shell owns a DGpuSoc SimModule container; SOC-internal PcieEndpointTLM (slave) handles BAR0/doorbell/MSI-X; MemoryTLM 'vram' holds BAR1 VRAM; SDMA/CP/TMU/SQ/CQ form command/data path. UsrLinuxEmuIoctlStub NOT in JSON (host-side, lives in test harness).",
+  "params": {
+    "device_id": "0x1234",
+    "quantum_cycles": 1000,
+    "ptx_emu_root": "@PTX_EMU_ROOT@"
+  },
+  "modules": [
+    {
+      "name": "soc",
+      "type": "DGpuSoc",
+      "modules": [
+        {
+          "name": "pcie_ep",
+          "type": "PcieEndpointTLM",
+          "params": {
+            "config_size": 4096,
+            "num_msix_vectors": 16,
+            "bar_sizes": [65536, 268435456],
+            "bar0_registers": [
+              {
+                "offset": 0,
+                "name": "GPU_REG_GPFIFO_PUT",
+                "access": "rw"
+              },
+              {
+                "offset": 20,
+                "name": "GPU_REG_DOORBELL",
+                "access": "wo",
+                "side_effect": "doorbell"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sdma",
+          "type": "SdmaEngineTLM",
+          "params": { "max_inflight": 4 }
+        },
+        {
+          "name": "cp",
+          "type": "CommandProcessorTLM"
+        },
+        {
+          "name": "tmu",
+          "type": "TmuDispatchProcessorTLM"
+        },
+        {
+          "name": "sq",
+          "type": "SubmitQueueTLM"
+        },
+        {
+          "name": "cq",
+          "type": "CompletionRingTLM"
+        },
+        {
+          "name": "gpu",
+          "type": "GpuCluster",
+          "config": "configs/templates/gpu_2gpc_2tpc_2cu.json"
+        },
+        {
+          "name": "vram",
+          "type": "MemoryTLM",
+          "params": { "capacity_gb": 1 }
+        }
+      ],
+      "connections": [
+        { "src": "pcie_ep.mmio_out", "dst": "cp.cmd_in" },
+        { "src": "pcie_ep.mem_out",  "dst": "vram.0" },
+        { "src": "cp.fetch_out",     "dst": "vram.0" },
+        { "src": "cp.dma_req",       "dst": "sdma.desc_in" },
+        { "src": "cp.dispatch",      "dst": "tmu.dispatch_in" },
+        { "src": "tmu.cta_out",      "dst": "sq.cta_in" },
+        { "src": "sq.dispatch",      "dst": "gpu.cta_in" },
+        { "src": "gpu.done",         "dst": "cq.done_in[0]" },
+        { "src": "sdma.done_out",    "dst": "cq.done_in[1]" },
+        { "src": "cq.done_out",      "dst": "tmu.done_in" },
+        { "src": "gpu.done",         "dst": "sq.done_in[0]" }
+      ],
+      "outputs": [
+        { "internal": "pcie_ep.irq_out", "external": "irq" },
+        { "internal": "sdma.host_out",   "external": "host_dma" }
+      ],
+      "inputs": [
+        { "internal": "pcie_ep.slave_in", "external": "host_tlp" }
+      ]
+    }
+  ],
+  "connections": []
+}
