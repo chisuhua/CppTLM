@@ -42,6 +42,11 @@ bool DGpuBoard::load_soc_config(const nlohmann::json& board_cfg) {
         }
         // SOC 内部组件实例化
         soc_->simulate_instantiate(board_cfg);
+        
+        // 多卡 StatsManager 前缀:为 SOC 内部组件注册(占位,deferred T-bs-4)
+        // 注: StatsManager::register_group 需要 StatGroup* 指针,这里只验证 get_stats_path 接口
+        // 实际注册 deferred T-bs-4(JSON 装配)
+        
         return true;
     } catch (...) {
         last_exception_ = std::current_exception();  // #8 异常捕获
@@ -190,6 +195,56 @@ void DGpuBoard::drain_injection_queue() {
         }
         // 清理 pending_resp_
         // 注: mmio_read 的 future 由调用方持锁清理,这里不需要重复 erase
+    }
+}
+
+// ── 内部触发接口(供 SOC 组件调用,deferred T-bs-4 装配) ──
+
+void DGpuBoard::trigger_irq_async(uint32_t vector_id) {
+    IrqCallback cb;
+    {
+        std::lock_guard<std::mutex> lock(callback_mu_);
+        cb = irq_cb_;
+    }
+    if (cb) {
+        // 异步执行:立即返回 sim 线程不被阻塞
+        std::thread([cb, vector_id]() {
+            try {
+                cb(vector_id);
+            } catch (...) {
+                // host 端错误不应反向影响 sim 线程
+            }
+        }).detach();
+    }
+}
+
+void DGpuBoard::trigger_dma_translate_async(uint64_t iova, size_t size) {
+    DmaTranslateCallback cb;
+    {
+        std::lock_guard<std::mutex> lock(callback_mu_);
+        cb = dma_translate_cb_;
+    }
+    if (cb) {
+        std::thread([cb, iova, size]() {
+            try {
+                cb(iova, size);  // host 返回翻译地址(deferred)
+            } catch (...) {}
+        }).detach();
+    }
+}
+
+void DGpuBoard::trigger_error_async(int err_code, const std::string& msg) {
+    ErrorCallback cb;
+    {
+        std::lock_guard<std::mutex> lock(callback_mu_);
+        cb = error_cb_;
+    }
+    if (cb) {
+        std::thread([cb, err_code, msg]() {
+            try {
+                cb(err_code, msg);
+            } catch (...) {}
+        }).detach();
     }
 }
 

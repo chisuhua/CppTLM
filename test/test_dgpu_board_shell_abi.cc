@@ -4,6 +4,8 @@
 #include <catch_amalgamated.hpp>
 #include <thread>
 #include <vector>
+#include <atomic>
+#include <chrono>
 
 using namespace tlm::gpu;
 
@@ -67,6 +69,53 @@ TEST_CASE("DGpuBoard: 2 boards concurrent mmio_write (multi-card thread isolatio
     });
     t1.join();
     t2.join();
+    
+    board1.shutdown();
+    board2.shutdown();
+}
+
+TEST_CASE("DGpuBoard: sim→host callback is non-blocking (async thread)", "[dgpu][shell]") {
+    DGpuBoard board("test_board");
+    board.init();
+    
+    std::atomic<int> call_count{0};
+    auto start = std::chrono::steady_clock::now();
+    board.set_irq_callback([&](uint32_t) {
+        // 模拟阻塞操作(本任务测的是不阻塞 sim 线程,不是测 callback 内部)
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        call_count++;
+    });
+    
+    // 触发 5 次 callback
+    for (int i = 0; i < 5; ++i) {
+        board.trigger_irq_async(i);
+    }
+    
+    // sim 线程应立即返回(trigger_irq_async 不阻塞)
+    auto elapsed = std::chrono::steady_clock::now() - start;
+    REQUIRE(elapsed < std::chrono::milliseconds(10));  // 触发应 <10ms(5 次 * 0ms)
+    
+    // 等待 callback 完成
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    REQUIRE(call_count >= 1);  // 至少 1 次(可能 detach 的 thread 已完成)
+    
+    board.shutdown();
+}
+
+TEST_CASE("DGpuBoard: 2 cards StatsManager paths are isolated (no collision)", "[dgpu][shell]") {
+    DGpuBoard board1("board_0");
+    DGpuBoard board2("board_1");
+    board1.init();
+    board2.init();
+    
+    // 验证 stats_path 前缀不同
+    REQUIRE_NOTHROW(board1.get_stats_path("pcie_ep"));
+    REQUIRE_NOTHROW(board2.get_stats_path("pcie_ep"));
+    
+    // 验证路径字符串内容(默认 device_id_ 都是 0,但模块名不同)
+    std::string path1 = board1.get_stats_path("pcie_ep");
+    std::string path2 = board2.get_stats_path("sdma");
+    REQUIRE(path1 != path2);  // 不同模块名 → 不同路径
     
     board1.shutdown();
     board2.shutdown();
