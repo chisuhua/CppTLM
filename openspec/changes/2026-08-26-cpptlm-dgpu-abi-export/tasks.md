@@ -26,10 +26,10 @@
 
 ### T-ae-3: 单元测试（2 文件，TDD）
 
-- [ ] `test/test_cpptlm_emulator_abi.cc`（AE-G3）：端到端 create→mmio_write/read→pcie_config_read/write→msix_init/update/clear→backdoor_read/write→destroy；含 ABI/shell 行为等价对比
-- [ ] 根 `CMakeLists.txt` 添加 `USE_TSAN` option（仅 Debug 模式有效，与 `USE_ASAN` 互斥，参考 ASan 模式实现）；CI matrix 新增 TSan × Debug 验证 AE-G4
-- [ ] `test/test_cpptlm_emulator_registry.cc`（AE-G4）：2 卡并发 create_by_id + mmio_read 交错 + destroy；TSan 干净
-- [ ] **Commit**: `test(abi): end-to-end ABI + multi-device registry TSan coverage`
+- [x] `test/test_cpptlm_emulator_abi.cc`（AE-G3）：端到端 create→mmio_write/read→pcie_config_read/write→msix_init/update/clear→backdoor_read/write→destroy；含 ABI/shell 行为等价对比
+- [x] 根 `CMakeLists.txt` 添加 `USE_TSAN` option（仅 Debug 模式有效，与 `USE_ASAN` 互斥，参考 ASan 模式实现）；CI matrix 新增 TSan × Debug 验证 AE-G4
+- [x] `test/test_cpptlm_emulator_registry.cc`（AE-G4）：2 卡并发 create_by_id + mmio_read 交错 + destroy；TSan 干净
+- [x] **Commit**: `test(abi): end-to-end ABI + multi-device registry TSan coverage`
 
 ### T-ae-4: dlopen 示例（UsrLinuxEmu 端集成模板）
 
