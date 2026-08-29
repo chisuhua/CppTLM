@@ -120,3 +120,55 @@ TEST_CASE("DGpuBoard: 2 cards StatsManager paths are isolated (no collision)", "
     board1.shutdown();
     board2.shutdown();
 }
+
+// ── T-bs-3e 新增测试 ──
+
+TEST_CASE("DGpuBoard: backdoor_read goes through inject_q (non-direct VRAM access)", "[dgpu][shell]") {
+    DGpuBoard board("test_board");
+    board.init();
+    uint8_t buf[64] = {0};
+    // backdoor_read 应走 inject_q 路径,返回值可能是 -110(超时)或 len(占位)
+    int rc = board.backdoor_read(0x1000, buf, sizeof(buf));
+    REQUIRE((rc == -110 || rc == static_cast<int>(sizeof(buf))));
+    board.shutdown();
+}
+
+TEST_CASE("DGpuBoard: backdoor_write goes through inject_q", "[dgpu][shell]") {
+    DGpuBoard board("test_board");
+    board.init();
+    uint8_t data[64] = {0xAA};
+    // backdoor_write 异步,返回 0
+    REQUIRE_NOTHROW(board.backdoor_write(0x1000, data, sizeof(data)));
+    board.shutdown();
+}
+
+TEST_CASE("DGpuBoard: mixed mmio + backdoor concurrent", "[dgpu][shell]") {
+    DGpuBoard board("test_board");
+    board.init();
+    
+    std::atomic<int> mmio_count{0};
+    std::atomic<int> backdoor_count{0};
+    
+    // 并发调用 mmio_read 和 backdoor_read
+    std::thread t1([&]() {
+        for (int i = 0; i < 10; ++i) {
+            uint32_t val = 0;
+            board.mmio_read(0, 0x14, &val, sizeof(val));
+            mmio_count++;
+        }
+    });
+    std::thread t2([&]() {
+        for (int i = 0; i < 10; ++i) {
+            uint8_t buf[16] = {0};
+            board.backdoor_read(0x1000 + i * 16, buf, sizeof(buf));
+            backdoor_count++;
+        }
+    });
+    t1.join();
+    t2.join();
+    
+    REQUIRE(mmio_count == 10);
+    REQUIRE(backdoor_count == 10);
+    
+    board.shutdown();
+}

@@ -126,6 +126,60 @@ int DGpuBoard::pcie_config_write(uint16_t offset, uint8_t width, uint32_t val) {
     return -ENOSYS;
 }
 
+// ── backdoor ABI(per design §2.5 #5 + ADR-SOC-07 Q3) ──
+
+int DGpuBoard::backdoor_read(uint64_t vram_offset, void* buf, size_t len) {
+    if (last_exception_) {
+        std::rethrow_exception(last_exception_);  // #8 异常传递
+    }
+    PendingReq req;
+    req.bar = 1;  // BAR1 标记(BAR1 MEM 块, per ADR-SOC-07 Q3)
+    req.offset = vram_offset;
+    req.data.resize(len);  // backdoor 输出填充
+    req.is_backdoor = true;  // ⭐标识 backdoor 路径
+    req.trans_id = next_trans_id_++;
+    auto fut = req.resp.get_future();
+    {
+        std::lock_guard<std::mutex> lock(inject_mu_);
+        pending_resp_[req.trans_id] = std::move(fut);
+        inject_q_.push_back(std::move(req));
+    }
+    // #3 1ms 超时(同 mmio_read)
+    auto status = pending_resp_[req.trans_id].wait_for(std::chrono::milliseconds(1));
+    if (status != std::future_status::ready) {
+        std::lock_guard<std::mutex> lock(inject_mu_);
+        pending_resp_.erase(req.trans_id);
+        return -110;  // ETIMEDOUT
+    }
+    int32_t rc = pending_resp_[req.trans_id].get();
+    // 复制 resp 数据到 buf(若成功)
+    if (rc >= 0 && static_cast<size_t>(rc) <= len) {
+        std::lock_guard<std::mutex> lock(inject_mu_);
+        // 从 inject_q_ 或临时存储取回数据(本任务占位)
+        // 占位:不复制(返回 rc 表示已读字节数)
+    }
+    std::lock_guard<std::mutex> lock(inject_mu_);
+    pending_resp_.erase(req.trans_id);
+    return rc;
+}
+
+int DGpuBoard::backdoor_write(uint64_t vram_offset, const void* buf, size_t len) {
+    if (last_exception_) {
+        std::rethrow_exception(last_exception_);  // #8 异常传递
+    }
+    PendingReq req;
+    req.bar = 1;
+    req.offset = vram_offset;
+    req.data.assign(static_cast<const uint8_t*>(buf), static_cast<const uint8_t*>(buf) + len);
+    req.is_backdoor = true;
+    req.trans_id = next_trans_id_++;
+    {
+        std::lock_guard<std::mutex> lock(inject_mu_);
+        inject_q_.push_back(std::move(req));
+    }
+    return 0;  // async
+}
+
 void DGpuBoard::tick() {
     if (soc_) soc_->tick();  // 转发到 SimModule 递归 tick
 }
@@ -186,12 +240,19 @@ void DGpuBoard::drain_injection_queue() {
             // poison pill,跳过
             continue;
         }
-        // TODO T-bs-3c: 构造 PcieTlpBundle 注入 soc_->getInternalInputPort("pcie_ep.slave_in")
-        // 占位: 立即 set_value 0(success) - 让 mmio_read 至少能响应
-        try {
-            req.resp.set_value(0);
-        } catch (const std::future_error&) {
-            // already set, ignore
+        if (req.is_backdoor) {
+            // backdoor 路径:直接访问 VRAM(本任务占位)
+            // TODO T-bs-4: 真实访问 vram (经 soc_->getInternalInputPort("vram.0"))
+            try {
+                req.resp.set_value(static_cast<int32_t>(req.data.size()));
+            } catch (const std::future_error&) {}
+        } else {
+            // mmio 路径(W6b)
+            // TODO T-bs-3c: 构造 PcieTlpBundle 注入 soc_->getInternalInputPort("pcie_ep.slave_in")
+            // 占位: 立即 set_value 0(success) - 让 mmio_read 至少能响应
+            try {
+                req.resp.set_value(0);
+            } catch (const std::future_error&) {}
         }
         // 清理 pending_resp_
         // 注: mmio_read 的 future 由调用方持锁清理,这里不需要重复 erase
