@@ -5,9 +5,10 @@
 //
 // 验证: 19 forward ABI 函数符号可调 + 签名匹配 + 基本错误处理 (NULL,
 // invalid args, 未知 dev_id) + 异常边界不逃逸.
-// 注意: msix_*/lookup_register 当前 shell 未暴露 (deferred T-bs-4+),
-// 测试期望返回 -ENOSYS (-38). full e2e 数据面 round-trip 待 shell
-// load_soc_config SIGSEGV 修复 (W2 follow-up) 后补全.
+// 注意: msix_*/lookup_register 当前 shell 未暴露 (deferred T-bs-4 follow-up),
+// 测试期望返回 -ENOSYS (-38). load_soc_config SIGSEGV 已修复 (D15 commit
+// 17413e4), backdoor sync 路径已实现 (commit e9d0030). full e2e 数据面
+// round-trip 待 T-bs-4 后续工作补全.
 //
 // Link: target_link_libraries(cpptlm_tests PRIVATE cpptlm_emulator)
 // 让符号在测试二进制中直接解析 (无需 dlopen).
@@ -64,9 +65,8 @@ TEST_CASE("ABI: lookup_register / mmio_* / pcie_config_* / backdoor_* return -EN
 }
 
 TEST_CASE("ABI: create / destroy / get_device_count lifecycle", "[abi][lifecycle]") {
-    // 注意: cpptlm_emulator_create 会调 board->load_soc_config,
-    // 当前 shell 有 SIGSEGV (deferred T-bs-4 follow-up). 这里用 nullptr profile_path
-    // 测试注册表逻辑不依赖成功 init (-- 用 create_by_id 0 path?)
+    // create 调用 load_soc_config (SIGSEGV 已修复 per D15 commit 17413e4).
+    // load_soc_config 已 defer SOC instantiate (T-bs-4 follow-up),返回 true.
     // 实际: create 失败时 create 返回 nullptr, 注册表 size 仍为 0.
     // 期望: create 返回 nullptr 或非-null, registry size 跟踪.
     uint32_t before = cpptlm_emulator_get_device_count();
