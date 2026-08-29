@@ -83,7 +83,8 @@ TEST_CASE("CommandProcessor: on_backpressure no-op default", "[command-processor
     REQUIRE_NOTHROW(cp.on_submit_queue_rejected(8));
 }
 
-TEST_CASE("CommandProcessor: 5-state FSM enum has exactly 5 members (no DEGRADED)", "[command-processor][mvp]") {
+TEST_CASE("CommandProcessor: 5-state FSM enum has exactly 5 members (no DEGRADED)",
+          "[command-processor][mvp]") {
     // Per Oracle P0-1: DEGRADED state removed; latch kept
     using State = tlm::gpu::CommandProcessor::State;
     REQUIRE(static_cast<int>(State::IDLE) == 0);

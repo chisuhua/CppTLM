@@ -9,7 +9,8 @@
 namespace tlm::gpu {
 
     SubmitQueueTLM::SubmitQueueTLM(const std::string& n, EventQueue* eq)
-        : ChStreamModuleBase(n, eq) {}
+        : ChStreamModuleBase(n, eq) {
+    }
 
     bool SubmitQueueTLM::enqueue(const CtaDescriptor& cta) {
         // 容量检查 (无驱逐,反压信号)
@@ -25,7 +26,8 @@ namespace tlm::gpu {
     }
 
     bool SubmitQueueTLM::dequeue(CtaDescriptor* out) {
-        if (pending_count_ == 0) return false;
+        if (pending_count_ == 0)
+            return false;
         *out = pending_[pending_head_];
         pending_head_ = (pending_head_ + 1) % PENDING_FIFO_SIZE;
         pending_count_--;

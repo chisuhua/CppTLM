@@ -9,18 +9,20 @@
 namespace tlm::gpu {
 
     CompletionRingTLM::CompletionRingTLM(const std::string& n, EventQueue* eq)
-        : ChStreamModuleBase(n, eq) {}
+        : ChStreamModuleBase(n, eq) {
+    }
 
     void CompletionRingTLM::push(const bundles::CompletionEntry& entry) {
         if (ring_.size() >= kRingSize) {
-            return;  // 满 → 丢包 (防御性)
+            return; // 满 → 丢包 (防御性)
         }
         ring_.push_back(entry);
         // TODO: 触发 done_out 转发 + irq_out (MSI-X delivery)
     }
 
     bool CompletionRingTLM::pop(bundles::CompletionEntry* out) {
-        if (ring_.empty()) return false;
+        if (ring_.empty())
+            return false;
         *out = ring_.front();
         ring_.pop_front();
         return true;

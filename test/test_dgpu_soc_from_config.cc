@@ -17,18 +17,12 @@ TEST_CASE("DGpuSoc: BS-G1 full JSON instantiation with connections", "[dgpu][jso
     EventQueue eq;
     ModuleFactory factory(&eq);
 
-    json board_cfg = {
-        {"name", "test_dgpu_soc"},
-        {"modules", json::array({
-            {
-                {"name", "soc"},
-                {"type", "DGpuSoc"},
-                {"modules", json::array()},
-                {"connections", json::array()}
-            }
-        })},
-        {"connections", json::array()}
-    };
+    json board_cfg = {{"name", "test_dgpu_soc"},
+                      {"modules", json::array({{{"name", "soc"},
+                                                {"type", "DGpuSoc"},
+                                                {"modules", json::array()},
+                                                {"connections", json::array()}}})},
+                      {"connections", json::array()}};
 
     REQUIRE(factory.instantiateAll(board_cfg));
 
@@ -44,18 +38,12 @@ TEST_CASE("DGpuSoc: BS-G1 internal factory empty when no modules", "[dgpu][json]
     EventQueue eq;
     ModuleFactory factory(&eq);
 
-    json board_cfg = {
-        {"name", "test_dgpu_soc_empty"},
-        {"modules", json::array({
-            {
-                {"name", "soc"},
-                {"type", "DGpuSoc"},
-                {"modules", json::array()},
-                {"connections", json::array()}
-            }
-        })},
-        {"connections", json::array()}
-    };
+    json board_cfg = {{"name", "test_dgpu_soc_empty"},
+                      {"modules", json::array({{{"name", "soc"},
+                                                {"type", "DGpuSoc"},
+                                                {"modules", json::array()},
+                                                {"connections", json::array()}}})},
+                      {"connections", json::array()}};
 
     REQUIRE(factory.instantiateAll(board_cfg));
 
