@@ -1,27 +1,21 @@
 // include/abi/cpptlm_emulator.h
-// CppTLM Emulator C ABI (pure declarations; impl moves to
-// cpptlm-dgpu-abi-export change W3.2)
+// CppTLM Emulator C ABI (19 forward functions + 4 callback typedefs)
 // Author: CppTLM Team
 // Date: 2026-08-29
-// Reference: ADR-088 §D5 (23 ABI contract), ADR-088 §D6.2 (semver),
-//            ADR-SOC-07 D5 (Board/SOC split + ABI translation),
-//            HSK-6 ack commit 369cf71 (CPPTLMBRIDGE_VERSION=2 freeze)
-//
-// ABI frozen per cpptlm-dgpu-board-soc-split T-bs-6. Implementation in a
-// later change (cpptlm-dgpu-abi-export) provides SHARED library
-// `libcpptlm_emulator.so` + cpptlm_core PIC + device-registry mutex.
-//
-// ABI ownership (per ADR-088 §D5 + UsrLinuxEmu ADR-088 cross-crate hand-off):
-//   - 19 forward functions (16 device + 3 register)
-//   -  4 callback typedefs (interrupt/error/reset/power)
-//
-// Header is C-clean: #ifdef __cplusplus extern "C" linkage-safe.
-// Consumers: UsrLinuxEmu linux_compat (dlopen) + CppTLM test harnesses.
+// Reference: ADR-088 §D5, ADR-088 §D6.2, ADR-SOC-07 D5, HSK-6 369cf71
 #ifndef CPPTLM_EMULATOR_H
 #define CPPTLM_EMULATOR_H
 
 #include <stddef.h>
 #include <stdint.h>
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#  define CPPTLM_EMULATOR_EXPORT __declspec(dllexport)
+#elif defined(__GNUC__) && (__GNUC__ >= 4)
+#  define CPPTLM_EMULATOR_EXPORT __attribute__((visibility("default")))
+#else
+#  define CPPTLM_EMULATOR_EXPORT
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
