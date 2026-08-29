@@ -25,6 +25,7 @@
 #include "tlm/cluster/gpu_noc_cluster.hh"
 #include "tlm/cluster/apu_soc.hh"
 #include "tlm/gpu/gpu_soc_tlm.hh"
+#include "tlm/gpu/dgpu_soc.hh"
 #include "core/module_factory.hh"
 
 // ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC / ApuSoC 在 cpptlm::tlm 命名空间
@@ -42,5 +43,6 @@ const bool _reg_memorycluster = (REGISTER_MODULE(MemoryCluster), true);
 const bool _reg_gpunoc = (REGISTER_MODULE(GpuNoC), true);
 const bool _reg_apusoc = (REGISTER_MODULE(ApuSoC), true);
 const bool _reg_gpusoc = (REGISTER_MODULE(GpuSocTLM), true);
+const bool _reg_dgpusoc = (REGISTER_MODULE(DGpuSoc), true);
 
 #endif  // MODULES_CLUSTER_HH
