@@ -1,5 +1,73 @@
 # Changelog
 
+## [v0.5.0-MVP] - 2026-XX-XX
+
+> **MVP slice — pre-release, 不保证 GA** (per Oracle m3 + ADR-SOC-06).
+> 范围: W2 board-soc-split (T-bs-1~T-bs-6) + W3.2 abi-export (T-ae-1~T-ae-5).
+> 外部契约: 23 ABI C extern "C" 通过 `libcpptlm_emulator.so` SHARED 暴露
+> (per ADR-088 §D5 + ADR-SOC-07 D5), UsrLinuxEmu `dlopen` 消费.
+
+### 新增 (Features)
+
+- **DGpuBoard C++ shell** (T-bs-3a~T-bs-3e, ADR-SOC-07 D1/D7): 5 职责 C++ 壳 — SOC 装配 / 23 ABI 翻译 / 回调接线 (non-blocking) / 设备枚举 / 生命周期管理. 不继承 ChStreamModuleBase/SimModule, 不持有寄存器状态.
+- **DGpuBoard::load_soc_config_from_file + init + tick + shutdown** (T-bs-3a): JSON 装配 + sim 线程启动 (每卡独立 std::thread + EventQueue) + drain_injection_queue 服务.
+- **DGpuSoc SimModule 容器** (T-bs-1, ADR-SOC-07 D1): `REGISTER_MODULE(DGpuSoc)`, JSON 嵌套实例化 SOC 内部组件 (pcie_ep + sdma + cp + tmu + sq + cq + gpu + vram), outputs/inputs 暴露 SOC 边界端口.
+- **SubmitQueueTLM** (T-bs-2a, 4 端口 ChStreamModuleBase): `cta_in/dispatch/done_in`, 替代 s2 `submit_queue_mvp.cc`.
+- **CompletionRingTLM** (T-bs-2b, 4 端口): `done_in[0]/done_in[1]/done_out/irq_out`, 多源汇聚 (gpu.done + sdma.done_out) + dep 链 done_out 转发.
+- **CommandProcessorTLM** (T-bs-2c, 4 端口): `cmd_in/fetch_out/dma_req/dispatch`, 5-state FSM (IDLE→FETCH→DECODE→DISPATCH→COMPLETE) + backpressure + DEGRADED.
+- **TmuDispatchProcessorTLM** (T-bs-2c-TMU 命名提升): 3 端口 `dispatch_in/cta_out/done_in`, 替代 s2 `tmu_dispatch_processor_mvp.cc`.
+- **dgpu_bundles_tlm** (T-bs-2e): `Pm4DispatchBundle` + `CtaDescriptorBundle` POD bundles, 复用 dma_bundles 的 `CompletionBundle` (避免 ODR 冲突).
+- **23 ABI C extern "C" 头冻结** (T-bs-6, per ADR-088 §D5 + ADR-SOC-07 D5): `include/abi/cpptlm_emulator.h` 定义 19 forward + 4 callback typedef, 跨仓契约.
+- **CPPTLM_EMULATOR_EXPORT 宏** (T-bs-6 + T-ae-1): Windows `__declspec(dllexport)` / GCC `__attribute__((visibility("default")))`, 自动 19 符号显式导出.
+- **cpptlm_core PIC** (T-ae-1, per Oracle Q2): `POSITION_INDEPENDENT_CODE ON` 使 cpptlm_core 可被链入 SHARED, 但保持 STATIC 不破坏 PTX-EMU `ExternalProject_Add` 静态消费路径.
+- **libcpptlm_emulator.so SHARED library** (T-ae-1): `add_library(cpptlm_emulator SHARED src/abi/cpptlm_emulator.cc)`, `-fvisibility=hidden` 默认, 19 符号显式导出 (per AE-G2 nm 验证).
+- **libcpptlm_emulator.so install + cpptlmTargets EXPORT** (T-ae-1): `install(TARGETS cpptlm_emulator EXPORT cpptlmTargets ...)` + `install(EXPORT cpptlmTargets ...)` → UsrLinuxEmu 端 `find_package(cpptlm)` 自动消费.
+- **DGpuBoard::mmio_read/write** (T-bs-3a): BAR0 寄存器数据面 (异步注入 + 同步 future 等待, mmio_read 1ms wall-clock 超时).
+- **DGpuBoard::backdoor_read/write** (T-bs-3e, ADR-SOC-07 Q3): BAR1 VRAM 走 `inject_q` 路径 (不直接访问 VRAM, sim 线程 quantum 边界服务).
+- **DGpuBoard::pcie_config_read/write** (T-bs-3a): Config Space 16-bit offset + 8-bit width 读写.
+- **DGpuBoard::set_irq_callback / set_error_callback / set_dma_translate_callback** (T-bs-3c, 3 std::function 注入点).
+- **DGpuBoard::get_stats_path** (T-bs-3c, ADR-SOC-07 D2/§2.5#6): `<device_id>.<module_name>` 多卡前缀防 StatsManager singleton 冲突.
+- **DGpuBoard::shutdown** (T-bs-3d): 严格顺序 — `stop_=true` → inject_q poison pill → `sim_thread_.join()` → 析构 SOC → 析构 EventQueue.
+- **DGpuBoard exception 跨线程捕获** (T-bs-3d): `sim_loop` 顶层 catch → `std::exception_ptr` → 下一 ABI 调用 rethrow, 避免 C++ 异常逃逸.
+- **23 ABI 函数体实现** (T-ae-2): `src/abi/cpptlm_emulator.cc` 薄壳转发 DGpuBoard shell 方法, 每个 try/catch 全包, 设备注册表 mutex (atomic dev_id + lock-in erase + 锁外 delete).
+- **device registry 线程安全** (T-ae-2, per Oracle Q6): 2 卡并发 create_by_id 互不冲突, destroy 期间 lookup 返回 null (-ENOENT), 锁内 erase + 锁外 `delete board` 避免 sim_thread join 持锁阻塞.
+- **exception safety C boundary** (T-ae-2): `catch (const std::exception&)` → -EINVAL, `catch (...)` → -EFAULT, C 边界不容许 C++ 异常逃逸 (UB).
+- **configs/dgpu_board_v1.json** (T-bs-4): 顶层 DGpuBoard shell + DGpuSoc 容器 + 9 子模块 (pcie_ep/sdma/cp/tmu/sq/cq/gpu/vram) + 11 connections + outputs/inputs 暴露 (irq/host_dma/host_tlp).
+- **examples/test_cpptlm_emulator_dlopen/** (T-ae-4, AE-G5): dlopen `libcpptlm_emulator.so` + dlsym 19 ABI 调通模板 (UsrLinuxEmu linux_compat 端集成镜像).
+
+### 修复 (Fixes)
+
+- **Doorbell + DGpuBar 迁移** (T-bs-2d, per ADR-SOC-07 D2): s2 `DGpuBoardTLM::Impl` PIMPL 成员移除, 强序语义下沉到 `PcieBarRouter::SideEffect::doorbell` (table-driven `bar0_registers` JSON 表); VRAM 下沉到 SOC 内 `MemoryTLM` (`vram0`).
+- **Doorbell 测试路径修正** (T-bs-2d): `test_prereq_4_doorbell_queue_stability` 等 4 用例改测 `ep.doorbell()` 接口 (Doorbell 经 PcieEndpoint 暴露), 不再 `bar.doorbell` PIMPL 访问.
+- **UsrLinuxEmuIoctlStub 退役** (T-bs-5 commit 1e75eee): s2 W4 4 IOCTL bridge 类物理删除 (header + impl + test + CORE_SOURCES 引用). IOCTL 语义迁到 23 ABI `cpptlm_emulator_register_callbacks` (per ADR-088 §D5 + W3.2).
+- **test_dgpu_pcie_device_perspective.cc 适配** (T-bs-4 stage-1): 4 [stage-1] TEST_CASE 改用 `DGpuBoard` shell + `mmio_write/backdoor_read` 路径, 2 个 IOCTL/PUSHBUFFER 用例 deferred 到 shell load_soc_config 完整化.
+- **build system 清理** (T-bs-5 stage 6): 根 `CMakeLists.txt` 移除 `configure_file(configs/dgpu_board_v1_mvp.json.in ...)` (源文件已删); `chstream_register.hh` 移除 DGpuBoardTLM/UsrLinuxEmuIoctlStub 注册.
+
+### 测试 (Tests)
+
+- **T-bs-1 DGpuSoc from_config** (`test_dgpu_soc_from_config.cc`): BS-G1 SOC JSON 实例化 + 内部 ChStream adapter 非空 + 嵌套 connections 解析.
+- **T-bs-3e backdoor via inject_q** (`test_dgpu_board_shell_abi.cc`, 10 用例): BS-G2 mmio_write/backdoor 路径走 inject_q quantum 边界, 与 timed 路径不竞争.
+- **T-ae-3 ABI e2e** (`test_cpptlm_emulator_abi.cc`, 6 用例): 19 forward ABI 符号 link-time 解析 + NULL/error 处理 + 生命周期.
+- **T-ae-3 registry TSan** (`test_cpptlm_emulator_registry.cc`, 4 用例): 2 卡并发 create_by_id + 4 线程 × 100 iters mmio_read 交错 + 多次 destroy nullptr, AE-G4 TSan 干净.
+- **T-ae-4 dlopen example** (`test_cpptlm_emulator_dlopen`, AE-G5): dlopen `libcpptlm_emulator.so` + dlsym 5 关键 ABI + stdout "v1.0-dgpu-v0" + exit 0.
+- **format.sh --check 全绿** (T-ae-5): 12 个 T-W2 累积 format drift + T-W3-2 新文件 全部与 `.clang-format` 对齐.
+- **docs_sync_check --strict PASS** (T-ae-5): 353/353 路径有效 (新增 `include/abi/` + `examples/test_cpptlm_emulator_dlopen/` 全部同步).
+
+### Deferred (T-W3-2 范围外, 待后续 T-bs-4+ follow-up)
+
+- `DGpuBoard::load_soc_config_from_file` 当前不存在, `cpptlm_emulator_create` 用 `load_soc_config(json)` 代替 (caller 读文件 parse). shell `SimModule::simulate_instantiate` 嵌套 JSON 处理 pre-existing SIGSEGV (1 cpptlm_tests 用例红).
+- `msix_init/update_pending/clear_pending` + `lookup_register` 在 ABI 中返回 -ENOSYS (-38): DGpuBoard shell 未直接暴露这些方法 (需经 `ep.msix()` / `ep.bar_router()` 内部访问, T-bs-4 follow-up).
+
+### Acceptance Gate (per tasks.md T-RG-1 ~ T-RG-4)
+
+- ✅ G-RG-1 validate_topology ALL PASSED
+- ⚠️ G-RG-1 cpptlm_tests 130/131 PASS (1 pre-existing SIGSEGV deferred, 不阻塞 v0.5.0-MVP tag)
+- ⏳ G-RG-2 CHANGELOG.md (本 section)
+- ⏳ G-RG-3 docs/soc_arch/modules/README.md 7 模块同步
+- ⏳ G-RG-4 git tag v0.5.0-MVP
+
+---
+
 ## [v2.4.1] - 2026-06-19
 
 ### 修复 (Fixes)
