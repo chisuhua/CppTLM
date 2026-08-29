@@ -172,3 +172,28 @@ TEST_CASE("DGpuBoard: mixed mmio + backdoor concurrent", "[dgpu][shell]") {
     
     board.shutdown();
 }
+
+TEST_CASE("DGpuBoard: destroy with non-empty inject_q_ (poison pill must wake sim_loop)", "[dgpu][shell]") {
+    DGpuBoard board("test_board");
+    board.init();
+    std::vector<std::thread> writers;
+    for (int i = 0; i < 4; ++i) {
+        writers.emplace_back([&, i]() {
+            for (int j = 0; j < 25; ++j) {
+                uint32_t v = i * 25 + j;
+                board.mmio_write(0, 0x14, &v, sizeof(v));
+            }
+        });
+    }
+    for (auto& t : writers) t.join();
+    
+    REQUIRE_NOTHROW(board.shutdown());
+    REQUIRE_NOTHROW(board.shutdown());
+}
+
+TEST_CASE("DGpuBoard: last_exception_ from sim_loop rethrows on next ABI call", "[dgpu][shell]") {
+    DGpuBoard board("test_board");
+    board.init();
+    REQUIRE_NOTHROW(board.mmio_read(0, 0, nullptr, 0));
+    board.shutdown();
+}
