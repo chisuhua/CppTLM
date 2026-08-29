@@ -15,7 +15,6 @@
 #include "bundles/pcie_bundles_tlm.hh"
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
-#include "tlm/gpu/doorbell_mvp.hh"
 #include "tlm/gpu/pcie_bar_router_mvp.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 
@@ -73,7 +72,7 @@ TEST_CASE("PcieEndpoint Doorbell queue: 副作用队列上限 (MAX_PENDING_PER_S
                                          PcieBarRouter::SideEffect::DOORBELL,
                                          /*stream_id=*/1) == true);
 
-    constexpr uint32_t kMaxPending = Doorbell::MAX_PENDING_PER_STREAM;
+    constexpr uint32_t kMaxPending = PcieBarRouter::MAX_PENDING_PER_STREAM;
     constexpr uint32_t kOverflow = 4;
 
     for (uint32_t i = 0; i < kMaxPending + kOverflow; ++i) {
@@ -114,8 +113,8 @@ TEST_CASE("PcieEndpoint Doorbell queue: latency 区间稳定性 (250-700 cycles)
     }
     const uint64_t elapsed_single = ep.bar_router().doorbell_now_cycles() - t0;
 
-    REQUIRE(elapsed_single >= Doorbell::MIN_LATENCY_NS);
-    REQUIRE(elapsed_single <= Doorbell::MAX_LATENCY_NS);
+    REQUIRE(elapsed_single >= PcieBarRouter::MIN_LATENCY_NS);
+    REQUIRE(elapsed_single <= PcieBarRouter::MAX_LATENCY_NS);
     REQUIRE(ep.bar_router().doorbell_sq_tail(2) == 0x3000u);
 
     // 多次写 — burst 总耗时受 MAX_LATENCY 上限约束 (now_ 仅在 tick() 推进,
@@ -134,8 +133,8 @@ TEST_CASE("PcieEndpoint Doorbell queue: latency 区间稳定性 (250-700 cycles)
     const uint64_t elapsed_burst = ep.bar_router().doorbell_now_cycles() - t1;
 
     // burst 总耗时 ∈ [MIN, MAX*N] (FIFO 累积可能 > MAX 但非 MIN N 倍)
-    REQUIRE(elapsed_burst >= Doorbell::MIN_LATENCY_NS);
-    REQUIRE(elapsed_burst <= kN * Doorbell::MAX_LATENCY_NS);
+    REQUIRE(elapsed_burst >= PcieBarRouter::MIN_LATENCY_NS);
+    REQUIRE(elapsed_burst <= kN * PcieBarRouter::MAX_LATENCY_NS);
     INFO("Doorbell burst (" << kN << " writes) elapsed: " << elapsed_burst << " cycles");
     REQUIRE(ep.bar_router().doorbell_sq_tail(2) >= 0x4000u);
 }
