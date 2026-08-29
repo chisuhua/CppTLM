@@ -99,14 +99,14 @@
 
 ### T-bs-5: s2 单体物理删除 + 全量验证
 
-- [ ] 删除 `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc`
-- [ ] `chstream_register.hh` 移除 `DGpuBoardTLM` 注册
-- [ ] 删除 `configs/dgpu_board_v1_mvp.json.in`
-- [ ] `grep -rl "DGpuBoardTLM" include/ src/ test/ configs/` → 0 命中（per 项目约定 grep 路径覆盖所有运行时引用源，configs/ 不能漏）
+- [x] 删除 `include/tlm/gpu/dgpu_board_mvp.hh` + `src/tlm/gpu/dgpu_board_mvp.cc`
+- [x] `chstream_register.hh` 移除 `DGpuBoardTLM` 注册
+- [x] 删除 `configs/dgpu_board_v1_mvp.json.in`
+- [x] `grep -rl "DGpuBoardTLM" include/ src/ test/ configs/` → 0 命中（per 项目约定 grep 路径覆盖所有运行时引用源，configs/ 不能漏）
 - [ ] `scripts/test/docs_sync_check.sh --strict` PASS（确保新路径在仓库快照中）
 - [ ] `build/bin/cpptlm_tests` 全量 PASS（BS-G4）+ `cmake --build build --target validate_topology` PASS
 - [ ] 23 ABI 语义不变验证（BS-G5：shell 层契约对比）
-- [ ] **Commit**: `chore(dgpu): retire s2 DGpuBoardTLM monolith after SOC migration`
+- [x] **Commit**: `chore(dgpu): retire s2 DGpuBoardTLM monolith after SOC migration`
 
 ### T-bs-6: 23 ABI C 头文件冻结（per ADR-SOC-07 Q2 裁决）
 

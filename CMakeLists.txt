@@ -73,14 +73,11 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 # ==============================================================================
-# s2 W4: dGPU MVP config generation
+# W2 (board-soc-split T-bs-5): dGPU board topology generation
+# dgpu_board_v1_mvp.json.in (s2 W4) 已物理删除 (T-bs-5 commit 569917d)
+# s2 单体退役 → DGpuBoard C++ shell + DGpuSoc SimModule 容器 (per ADR-SOC-07 D1/D7)
 # ==============================================================================
 set(PTX_EMU_ROOT "${CMAKE_SOURCE_DIR}/external/PTX-EMU" CACHE PATH "PTX-EMU source root")
-configure_file(
-    "${CMAKE_SOURCE_DIR}/configs/dgpu_board_v1_mvp.json.in"
-    "${CMAKE_BINARY_DIR}/configs/dgpu_board_v1_mvp.json"
-    @ONLY
-)
 # pcie-endpoint T-pe-5: SOC topology with PcieEndpointTLM (per ADR-SOC-07 D2)
 configure_file(
     "${CMAKE_SOURCE_DIR}/configs/dgpu_soc_v1.json.in"
