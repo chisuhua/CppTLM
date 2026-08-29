@@ -91,10 +91,10 @@
 
 ### T-bs-4: board JSON + PCIe 视角测试适配
 
-- [ ] `configs/dgpu_board_v1.json`（per design §4：connections 含 `cq.done_in[0]/[1]` 多源汇聚 + `cq.done_out→tmu.done_in` + `cp.fetch_out→vram.0` + `gpu.done→sq.done_in[0]` + `outputs/inputs` 暴露 + `params.quantum_cycles`）
-- [ ] `test/test_dgpu_pcie_device_perspective.cc` 适配：shell→SOC 端口注入路径，6 测试语义逐条保留（BS-G3）
-- [ ] `UsrLinuxEmuIoctlStub` 从 board JSON 移出，保留为测试内直接构造工具
-- [ ] `test/test_dgpu_pcie_device_perspective.cc` 适配更新后，加入 `test/CMakeLists.txt` 的 ctest 注册列表（确保仍可 ctest -R 找到）
+- [x] `configs/dgpu_board_v1.json`（per design §4：connections 含 `cq.done_in[0]/[1]` 多源汇聚 + `cq.done_out→tmu.done_in` + `cp.fetch_out→vram.0` + `gpu.done→sq.done_in[0]` + `outputs/inputs` 暴露 + `params.quantum_cycles`）
+- [x] `test/test_dgpu_pcie_device_perspective.cc` 适配：shell→SOC 端口注入路径，6 测试语义逐条保留（BS-G3）
+- [x] `UsrLinuxEmuIoctlStub` 从 board JSON 移出，保留为测试内直接构造工具
+- [x] `test/test_dgpu_pcie_device_perspective.cc` 适配更新后，加入 `test/CMakeLists.txt` 的 ctest 注册列表（确保仍可 ctest -R 找到）
 - [ ] **Commit**: `test(dgpu): adapt PCIe device-perspective tests to shell+SOC path`
 
 ### T-bs-5: s2 单体物理删除 + 全量验证
