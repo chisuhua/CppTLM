@@ -150,8 +150,9 @@ cpptlm_emulator_t* cpptlm_emulator_create(const char* profile_path) {
 
 CPPTLM_EMULATOR_EXPORT
 cpptlm_emulator_t* cpptlm_emulator_create_by_id(uint32_t dev_id) {
+    cpptlm_emulator_t* emu = nullptr;
     try {
-        auto* emu = new cpptlm_emulator_s();
+        emu = new cpptlm_emulator_s();
         auto path = resolve_profile_path(dev_id);
         emu->board = std::make_unique<tlm::gpu::DGpuBoard>(
             "board_" + std::to_string(dev_id != 0 ? dev_id : next_dev_id_.load()));
@@ -173,8 +174,10 @@ cpptlm_emulator_t* cpptlm_emulator_create_by_id(uint32_t dev_id) {
         registry_[assigned] = emu;
         return emu;
     } catch (const std::exception&) {
+        if (emu) delete emu;
         return nullptr;
     } catch (...) {
+        if (emu) delete emu;
         return nullptr;
     }
 }
