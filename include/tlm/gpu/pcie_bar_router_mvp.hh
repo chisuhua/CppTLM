@@ -75,6 +75,12 @@ namespace tlm::gpu {
         PcieBarRouter(PcieBarRouter&&) = delete;
         PcieBarRouter& operator=(PcieBarRouter&&) = delete;
 
+        // 强序写延迟区间 (per PCIe_上的保序write.md §4). 导出为 PcieBarRouter
+        // public 常量以便测试用例引用,不再依赖 Doorbell 内部 helper 类符号.
+        static constexpr uint64_t MIN_LATENCY_NS = 250;
+        static constexpr uint64_t MAX_LATENCY_NS = 700;
+        static constexpr size_t MAX_PENDING_PER_STREAM = 64;
+
         // 初始化（构造 regs_ 与 doorbell_）
         void init(uint64_t cycle_ns = 1);
 
