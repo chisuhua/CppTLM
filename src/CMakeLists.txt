@@ -92,6 +92,10 @@ endif()
 # CORE_SOURCES 此处留空 — s2 单体相关源已全部 T-bs-5 commit 1+2 清理.
 
 add_library(cpptlm_core STATIC ${CORE_SOURCES})
+# T-W3-2 (T-ae-1): cpptlm_core 增 PIC,使其可被链入 SHARED cpptlm_emulator
+# (per Oracle Q2 + ADR-SOC-07 D5: cpptlm_core 保持 STATIC,仅增 PIC 不破坏
+# PTX-EMU 端 ExternalProject_Add 静态消费路径; ABI 暴露走独立 SHARED).
+set_target_properties(cpptlm_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
 if(CPPTLM_WITH_PTX_EMU)
     target_compile_definitions(cpptlm_core PRIVATE CPPTLM_WITH_PTX_EMU)
 endif()
@@ -100,6 +104,13 @@ if(CPPTLM_WITH_PTX_EMU)
     # propagates include path + lib deps to cpptlm_core consumers)
     target_link_libraries(cpptlm_core PUBLIC ptxemu_core)
 endif()
+
+# T-W3-2 (T-ae-1): 23 ABI 暴露层 SHARED 库 cpptlm_emulator
+# (per ADR-088 §D5 + ADR-SOC-07 D5 + Oracle Q2: 19 forward ABI + 3 register
+# 函数 = 22 显式 CPPTLM_EMULATOR_EXPORT 导出; 默认 -fvisibility=hidden)
+add_library(cpptlm_emulator SHARED abi/cpptlm_emulator.cc)
+target_compile_options(cpptlm_emulator PRIVATE -fvisibility=hidden)
+target_link_libraries(cpptlm_emulator PRIVATE cpptlm_core)
 
 # 包含目录：
 #   - include/       → 公共头文件（core/*.hh, utils/*.hh 等）

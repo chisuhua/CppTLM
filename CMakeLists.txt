@@ -130,6 +130,22 @@ install(TARGETS cpptlm_core
     RUNTIME DESTINATION bin
 )
 
+# T-W3-2 (T-ae-1): 23 ABI 暴露 SHARED 库 cpptlm_emulator install + find_package 支持
+# (per design §5 + ADR-SOC-07 D5: UsrLinuxEmu 端通过 find_package(cpptlm) 或
+# dlopen libcpptlm_emulator.so 消费 19 forward ABI + 4 callback typedefs)
+install(TARGETS cpptlm_emulator
+    EXPORT cpptlmTargets
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+    INCLUDES DESTINATION include/cpp-tlm
+)
+install(EXPORT cpptlmTargets
+    FILE cpptlmTargets.cmake
+    NAMESPACE cpptlm::
+    DESTINATION lib/cmake/cpptlm
+)
+
 # ==============================================================================
 # HSK-8 Phase 2 (PTX-EMU owner ack 738b412c + 6 步指南 in #22 comment):
 # Replace S1 cmake/PTXEmuCore.cmake shim with PTX-EMU native add_subdirectory.
