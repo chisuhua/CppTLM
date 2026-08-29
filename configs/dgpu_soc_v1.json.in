@@ -1,10 +1,10 @@
 {
   "name": "dgpu_soc_v1",
-  "description": "CppTLM dGPU SOC topology with PCIe Endpoint (per openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/tasks.md T-pe-5). Integrates SOC-internal PcieEndpointTLM (slave) with the DGpuBoardTLM C++ ABI shell (per ADR-SOC-07 D2).",
+  "description": "CppTLM dGPU SOC topology with PCIe Endpoint (per openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/tasks.md T-pe-5). Integrates SOC-internal PcieEndpointTLM (slave) with the DGpuBoard C++ ABI shell + DGpuSoc SimModule container (per ADR-SOC-07 D1/D2/D7; legacy s2 DGpuBoardTLM 8-component monolith retired T-bs-5).",
   "modules": [
     {
-      "name": "dgpu_board_0",
-      "type": "DGpuBoardTLM",
+      "name": "dgpu_soc",
+      "type": "DGpuSoc",
       "params": {
         "ptx_emu_root": "@PTX_EMU_ROOT@"
       }
