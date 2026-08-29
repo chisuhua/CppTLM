@@ -19,11 +19,11 @@
 - [x] `scripts/test/docs_sync_check.sh --strict` PASS
 
 ### T-RG-4: git tag
-- [ ] `git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: ..."`
-- [ ] tag annotation 引用本 proposal.md
+- [x] `git tag -a v0.5.0-MVP -m "cpptlm-v05-mvp: ..."`
+- [x] tag annotation 引用本 proposal.md
 
 ## Acceptance Checklist
-- [ ] T-RG-1 ~ T-RG-4 完成
+- [x] T-RG-1 ~ T-RG-4 完成
 - [x] board-soc-split archive (T-bs-1 已落地 5e47446)
 - [x] abi-export archive
 - [ ] UsrLinuxEmu 集成 smoke PASS
