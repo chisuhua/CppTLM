@@ -1,55 +1,11 @@
-// test_doorbell_strong_order_mvp.cc
-// Doorbell 强序写 + 延迟区间 / CompletionRing exactly-once 测试
+// test_completion_ring_mvp.cc (former test_doorbell_strong_order_mvp.cc)
+// CompletionRing exactly-once 测试 (T-bs-2d 移除了原 [doorbell] 3 用例,改由
+// test_pcie_endpoint_doorbell_queue.cc 4 用例 PcieBarRouter 路径覆盖)
 // Author: CppTLM Team
-// Date: 2026-08-26
+// Date: 2026-08-26 (T-bs-2d 修订 2026-08-29)
 
 #include "catch_amalgamated.hpp"
 #include "tlm/gpu/completion_ring_mvp.hh"
-#include "tlm/gpu/doorbell_mvp.hh"
-
-TEST_CASE("Doorbell: latency in 250-700ns range", "[doorbell][mvp][strong-order]") {
-    tlm::gpu::Doorbell db;
-    db.init(/*cycle_ns=*/1);
-
-    auto t0 = db.now_cycles();
-    db.ring(0, 0x100);
-
-    // Advance simulation 700 cycles
-    while (db.is_pending(0) && db.now_cycles() - t0 < 1000) {
-        db.tick();
-    }
-
-    auto latency = db.now_cycles() - t0;
-    REQUIRE(latency >= 250);
-    REQUIRE(latency <= 700);
-}
-
-TEST_CASE("Doorbell: same stream observes call order", "[doorbell][mvp][strong-order]") {
-    tlm::gpu::Doorbell db;
-    db.init(1);
-
-    db.ring(0, 0x100); // first
-    db.ring(0, 0x200); // second (overrides first per SQ tail semantics)
-
-    // Drain all pending
-    while (db.is_pending(0))
-        db.tick();
-
-    // Final visible tail must be 0x200 (most recent)
-    REQUIRE(db.sq_tail(0) == 0x200);
-}
-
-TEST_CASE("Doorbell: pending queue full returns false", "[doorbell][mvp][strong-order]") {
-    tlm::gpu::Doorbell db;
-    db.init(1);
-
-    // 不 tick, 填满 64 深度在途队列
-    for (size_t i = 0; i < tlm::gpu::Doorbell::MAX_PENDING_PER_STREAM; i++) {
-        REQUIRE(db.ring(1, 0x1000 + i));
-    }
-    // 第 65 次应失败
-    REQUIRE_FALSE(db.ring(1, 0xDEAD));
-}
 
 TEST_CASE("CompletionRing: 10 sequential on_warp_complete → 10 host_notify",
           "[completion-ring][mvp]") {
