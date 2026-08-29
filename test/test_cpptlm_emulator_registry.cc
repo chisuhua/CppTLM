@@ -30,12 +30,14 @@ TEST_CASE("Registry: 2 threads concurrent create_by_id get distinct dev_ids",
         cpptlm_emulator_t* emu = cpptlm_emulator_create_by_id(0);
         if (emu != nullptr) {
             dev_id_a.store(reinterpret_cast<uintptr_t>(emu) & 0xFFFFFFFFu);
+            cpptlm_emulator_destroy(emu);
         }
     });
     std::thread t2([&] {
         cpptlm_emulator_t* emu = cpptlm_emulator_create_by_id(0);
         if (emu != nullptr) {
             dev_id_b.store(reinterpret_cast<uintptr_t>(emu) & 0xFFFFFFFFu);
+            cpptlm_emulator_destroy(emu);
         }
     });
     t1.join();
