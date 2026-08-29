@@ -48,10 +48,11 @@ set(CORE_SOURCES
     # HSK-8 Phase 2 Step 4: 桥接残留簇删除 (PTX-EMU 已废弃 cpptlm_bridge.h)
     # - tlm/gpu/memory_bridge.cc       (deprecated by HSK-6, removed in v3.0 P4 — early delete OK)
     # - tlm/gpu/ptx_emu_driver_shim.cc (cpptlm_set_driver removed by HSK-6 — early delete OK)
-    # - tlm/gpu/dgpu_bar.cc (s2 W3 BAR0+VRAM wrapper; T-bs-2d 拆分退役 — BAR0 由
+    # - tlm/gpu/dgpu_bar.cc (s2 W3 BAR0+VRAM wrapper; T-bs-2d 93e05ab 已物理删除 — BAR0 由
     #   PcieEndpointTLM::bar0_registers JSON 接管; VRAM 由 MemoryTLM `vram0` 接管)
-    tlm/gpu/doorbell_mvp.cc        # s2 W3: SQ tail register + strong-order write (T-bs-2d
-    #                              # 留作 PcieBarRouter 内部 helper; 不再独存外部 API)
+    tlm/gpu/doorbell_mvp.cc        # SQ tail register + strong-order write (T-bs-2d 后已不
+                                   # 是 s2 顶级 API; 现为 PcieBarRouter 内部 helper;
+                                   # 物理文件删除推迟到 T-bs-5 dgpu_board_mvp 退役时一并处理)
     tlm/gpu/completion_ring_mvp.cc # s2 W3: push + host_notify hook
     tlm/gpu/submit_queue_mvp.cc    # s2 W3: WDU distribution network (per Phase F-H.5)
     tlm/gpu/command_processor_mvp.cc  # s2 W3: CP skeleton (5-state FSM no-op + set_decoder injection)
