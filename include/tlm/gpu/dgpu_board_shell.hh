@@ -32,6 +32,7 @@ struct PendingReq {
     std::vector<uint8_t> data;  // mmio_write payload
     uint64_t trans_id;          // 用于 future 关联
     std::promise<int32_t> resp; // mmio_read 用,mmio_write 无值
+    bool is_backdoor = false;   // backdoor 标识(默认 false,mmio 路径不设)
 };
 
 // DGpuBoard - 23 ABI 翻译 shell
@@ -53,6 +54,11 @@ public:
     int mmio_write(uint8_t bar, uint64_t offset, const void* buf, size_t len);
     int pcie_config_read(uint16_t offset, uint8_t width, uint32_t* val);
     int pcie_config_write(uint16_t offset, uint8_t width, uint32_t val);
+
+    // 2.1 backdoor ABI(per design §2.5 #5 + ADR-SOC-07 Q3)
+    //     走 inject_q 路径,不直接访问 VRAM
+    int backdoor_read(uint64_t vram_offset, void* buf, size_t len);
+    int backdoor_write(uint64_t vram_offset, const void* buf, size_t len);
 
     // 3. 回调接线(non-blocking,per design §2.5 #4)
     using IrqCallback = std::function<void(uint32_t vector_id)>;
