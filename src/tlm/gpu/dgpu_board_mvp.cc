@@ -9,7 +9,7 @@
 #include "tlm/gpu/completion_ring_mvp.hh"
 #include "tlm/gpu/pm4_decoder_mvp.hh"
 #include "tlm/gpu/submit_queue_mvp.hh"
-#include "tlm/gpu/tmu_dispatch_processor_mvp.hh"
+#include "tlm/gpu/tmu_dispatch_processor_tlm.hh"
 #include "tlm/gpu/tmu_handler_mvp.hh"
 
 #include <cstring>
