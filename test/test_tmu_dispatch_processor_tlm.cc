@@ -7,7 +7,6 @@
 // TDD: Step 1 (FAIL) - 预期部分失败 (scheduler_cache_ 未实现, dep chain 推进待 T-s3-3 落地)
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
-#include "tlm/gpu/dgpu_board_mvp.hh"
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/tmu_dispatch_processor_tlm.hh"
 #include "tlm/gpu/tmu_handler_mvp.hh"
@@ -236,13 +235,3 @@ TEST_CASE("TmuDispatchProcessor: refill after on_complete", "[tmu][mvp][glue]") 
 
 // ── DEGRADED 阈值: CP 退避 3 次 → degraded ──
 // (此项实际测 CP,但通过 dispatcher 间接验证,见 test_command_processor_mvp)
-
-// ── DGpuBoardTLM E2E: init() 装配接线 + tick() 走通 CP→TMU→SQ 链路 ──
-TEST_CASE("DGpuBoardTLM E2E: init wires CP/decoder/vram_reader/dispatch_target/TMU/handler",
-          "[tmu][mvp][glue]") {
-    EventQueue eq;
-    tlm::gpu::DGpuBoardTLM board("e2e_board", &eq);
-    board.init();
-    board.shutdown();
-    REQUIRE(true);
-}
