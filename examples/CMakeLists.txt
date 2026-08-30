@@ -41,6 +41,13 @@ add_executable(test_cpptlm_emulator_dlopen
                test_cpptlm_emulator_dlopen/test_dlopen.cc)
 target_link_libraries(test_cpptlm_emulator_dlopen PRIVATE cpptlm_core cpptlm_emulator)
 
+# T-RG-5: 注册到 ctest 让 CI 自动验证 dlopen 集成 (per release-gate tasks.md)
+# ENVIRONMENT 注入 LD_LIBRARY_PATH 让 dlopen 能找到 libcpptlm_emulator.so
+# (UsrLinuxEmu linux_compat 端 dlopen 模板的镜像测试, AE-G5)
+add_test(NAME test_cpptlm_emulator_dlopen COMMAND test_cpptlm_emulator_dlopen)
+set_tests_properties(test_cpptlm_emulator_dlopen PROPERTIES
+    ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}")
+
 # ==============================================================================
 # 输出目录
 # ==============================================================================
