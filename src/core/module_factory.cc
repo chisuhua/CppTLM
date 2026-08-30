@@ -284,7 +284,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
             double x = l.value("x", -1);
             double y = l.value("y", -1);
             if (x >= 0 && y >= 0) {
-                object_instances[name]->setLayout(x, y);
+                auto it = object_instances.find(name);
+                if (it != object_instances.end() && it->second) {
+                    it->second->setLayout(x, y);
+                }
             }
         }
 
@@ -302,9 +305,11 @@ bool ModuleFactory::instantiateAll(const json& config) {
             }
         }
 
-        // 注册实例到 ModuleGroup（供通配符展开使用）
-        if (object_instances[name]) {
-            ModuleGroup::registerInstance(name, object_instances[name]);
+        // 注册实例到 ModuleGroup（供通配符展开使用）——使用 find 避免 operator[]
+        // 在类型未注册时隐式插入 nullptr 条目
+        auto reg_it = object_instances.find(name);
+        if (reg_it != object_instances.end() && reg_it->second) {
+            ModuleGroup::registerInstance(name, reg_it->second);
         }
     }
 
@@ -416,7 +421,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
     auto createPortFunc = [&object_instances](const std::string& owner, const std::string& port,
                                               size_t buffer_size, bool is_upstream) -> bool {
         auto it = object_instances.find(owner);
-        if (it != object_instances.end() && it->second->hasPortManager()) {
+        if (it != object_instances.end() && it->second && it->second->hasPortManager()) {
             auto& pm = it->second->getPortManager();
             if (is_upstream) {
                 pm.addUpstreamPort(it->second, {buffer_size}, {}, port);
@@ -434,7 +439,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
     // 创建端口
     for (const auto& info : port_creations) {
         auto it = object_instances.find(info.owner_name);
-        if (it != object_instances.end() && it->second->hasPortManager()) {
+        if (it != object_instances.end() && it->second && it->second->hasPortManager()) {
             auto& pm = it->second->getPortManager();
 
             if (info.is_upstream) {
@@ -507,14 +512,15 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 if (!internal_path.empty()) {
                     auto [internal_owner, internal_port] = parsePortSpec(internal_path);
                     auto obj_it = object_instances.find(internal_owner);
-                    if (obj_it != object_instances.end() && obj_it->second->hasPortManager()) {
+                    if (obj_it != object_instances.end() && obj_it->second &&
+                        obj_it->second->hasPortManager()) {
                         src_port = dynamic_cast<MasterPort*>(
                             obj_it->second->getPortManager().getDownstreamPort(internal_port));
                     }
                 }
             } else if (!src_port_name.empty()) {
                 if (auto obj_it = object_instances.find(src_module_name);
-                    obj_it != object_instances.end()) {
+                    obj_it != object_instances.end() && obj_it->second) {
                     src_port = dynamic_cast<MasterPort*>(
                         obj_it->second->getPortManager().getDownstreamPort(src_port_name));
                 }
@@ -535,19 +541,20 @@ bool ModuleFactory::instantiateAll(const json& config) {
                     if (!internal_path.empty()) {
                         auto [internal_owner, internal_port] = parsePortSpec(internal_path);
                         auto obj_it = object_instances.find(internal_owner);
-                        if (obj_it != object_instances.end() && obj_it->second->hasPortManager()) {
+                        if (obj_it != object_instances.end() && obj_it->second &&
+                            obj_it->second->hasPortManager()) {
                             dst_port = dynamic_cast<SlavePort*>(
                                 obj_it->second->getPortManager().getUpstreamPort(internal_port));
                         }
                     }
                 } else if (!dst_port_name.empty()) {
                     if (auto obj_it = object_instances.find(dst_module_name);
-                        obj_it != object_instances.end()) {
+                        obj_it != object_instances.end() && obj_it->second) {
                         dst_port = dynamic_cast<SlavePort*>(
                             obj_it->second->getPortManager().getUpstreamPort(dst_port_name));
                     }
                 } else if (auto obj_it = object_instances.find(dst_module_name);
-                           obj_it != object_instances.end()) {
+                           obj_it != object_instances.end() && obj_it->second) {
                     // Wildcard/group expansion: create default upstream port
                     dst_port = obj_it->second->getPortManager().addUpstreamPort(
                         obj_it->second, {4}, {}, dst_module_name);
