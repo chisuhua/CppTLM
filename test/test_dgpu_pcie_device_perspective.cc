@@ -16,7 +16,6 @@
 #include <array>
 #include <cstdint>
 #include <cstring>
-#include <fstream>
 #include <nlohmann/json.hpp>
 
 namespace {
@@ -24,15 +23,63 @@ namespace {
     constexpr uint32_t GPU_REG_DOORBELL = 0x0014;
     constexpr size_t VRAM_TEST_OFFSET = 0x2000;
 
+    // Inline board config mirrors configs/dgpu_board_v1.json (cwd-independent).
     nlohmann::json load_board_config() {
-        std::ifstream f("configs/dgpu_board_v1.json");
-        nlohmann::json j;
-        f >> j;
-        // ptx_emu_root 必须指向真实路径才能加载 PTX-EMU submodule;
-        // 测试环境若未配 PTX-EMU, SOC 初始化会被 PtxEmuSubmodule 失败跳过,
-        // 这里用 /tmp 占位使 init() 至少走到 SOC 装配阶段 (load_soc_config 不触发 PTX-EMU 加载).
-        j["params"]["ptx_emu_root"] = "/tmp/test-ptx-emu";
-        return j;
+        constexpr const char* kBoardCfg = R"({
+            "name": "dgpu_board_v1",
+            "params": {
+                "device_id": "0x1234",
+                "quantum_cycles": 1000,
+                "ptx_emu_root": "/tmp/test-ptx-emu"
+            },
+            "modules": [{
+                "name": "soc",
+                "type": "DGpuSoc",
+                "modules": [
+                    { "name": "pcie_ep", "type": "PcieEndpointTLM",
+                      "params": {
+                          "config_size": 4096,
+                          "num_msix_vectors": 16,
+                          "bar_sizes": [65536, 268435456],
+                          "bar0_registers": [
+                              { "offset": 0, "name": "GPU_REG_GPFIFO_PUT", "access": "rw" },
+                              { "offset": 20, "name": "GPU_REG_DOORBELL", "access": "wo", "side_effect": "doorbell" }
+                          ]
+                      }
+                    },
+                    { "name": "sdma", "type": "SdmaEngineTLM", "params": { "max_inflight": 4 } },
+                    { "name": "cp",   "type": "CommandProcessorTLM" },
+                    { "name": "tmu",  "type": "TmuDispatchProcessorTLM" },
+                    { "name": "sq",   "type": "SubmitQueueTLM" },
+                    { "name": "cq",   "type": "CompletionRingTLM" },
+                    { "name": "gpu",  "type": "GpuCluster",
+                      "config": "configs/templates/gpu_2gpc_2tpc_2cu.json" },
+                    { "name": "vram", "type": "MemoryTLM", "params": { "capacity_gb": 1 } }
+                ],
+                "connections": [
+                    { "src": "pcie_ep.mmio_out", "dst": "cp.cmd_in" },
+                    { "src": "pcie_ep.mem_out",  "dst": "vram.0" },
+                    { "src": "cp.fetch_out",     "dst": "vram.0" },
+                    { "src": "cp.dma_req",       "dst": "sdma.desc_in" },
+                    { "src": "cp.dispatch",      "dst": "tmu.dispatch_in" },
+                    { "src": "tmu.cta_out",      "dst": "sq.cta_in" },
+                    { "src": "sq.dispatch",      "dst": "gpu.cta_in" },
+                    { "src": "gpu.done",         "dst": "cq.done_in[0]" },
+                    { "src": "sdma.done_out",    "dst": "cq.done_in[1]" },
+                    { "src": "cq.done_out",      "dst": "tmu.done_in" },
+                    { "src": "gpu.done",         "dst": "sq.done_in[0]" }
+                ],
+                "outputs": [
+                    { "internal": "pcie_ep.irq_out", "external": "irq" },
+                    { "internal": "sdma.host_out",   "external": "host_dma" }
+                ],
+                "inputs": [
+                    { "internal": "pcie_ep.slave_in", "external": "host_tlp" }
+                ]
+            }],
+            "connections": []
+        })";
+        return nlohmann::json::parse(kBoardCfg);
     }
 } // namespace
 
