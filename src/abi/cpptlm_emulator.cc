@@ -298,41 +298,69 @@ int cpptlm_emulator_backdoor_write(cpptlm_emulator_t* emu, uint8_t bar, uint64_t
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_msix_init(cpptlm_emulator_t* emu, uint32_t table_size, uint32_t mask) {
-    (void)table_size;
-    (void)mask;
-    if (emu == nullptr || emu->board == nullptr) {
+    try {
+        if (emu == nullptr || emu->board == nullptr) {
+            return -EINVAL;
+        }
+        return emu->board->msix_init(table_size, mask);
+    } catch (const std::exception&) {
         return -EINVAL;
+    } catch (...) {
+        return -EFAULT;
     }
-    return -38;
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_msix_update_pending(cpptlm_emulator_t* emu, uint32_t vector) {
-    (void)vector;
-    if (emu == nullptr || emu->board == nullptr) {
+    try {
+        if (emu == nullptr || emu->board == nullptr) {
+            return -EINVAL;
+        }
+        return emu->board->msix_update_pending(vector);
+    } catch (const std::exception&) {
         return -EINVAL;
+    } catch (...) {
+        return -EFAULT;
     }
-    return -38;
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_msix_clear_pending(cpptlm_emulator_t* emu, uint32_t vector) {
-    (void)vector;
-    if (emu == nullptr || emu->board == nullptr) {
+    try {
+        if (emu == nullptr || emu->board == nullptr) {
+            return -EINVAL;
+        }
+        return emu->board->msix_clear_pending(vector);
+    } catch (const std::exception&) {
         return -EINVAL;
+    } catch (...) {
+        return -EFAULT;
     }
-    return -38;
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_lookup_register(cpptlm_emulator_t* emu, uint32_t offset,
                                     cpptlm_register_info_t* out_info) {
-    (void)offset;
-    (void)out_info;
-    if (emu == nullptr || emu->board == nullptr) {
+    try {
+        if (emu == nullptr || emu->board == nullptr || out_info == nullptr) {
+            return -EINVAL;
+        }
+        const auto* entry = emu->board->lookup_register_entry(offset);
+        if (entry == nullptr) {
+            return -38; // ENOSYS: SOC null / unaligned / > BAR0 / not registered
+        }
+        out_info->offset = entry->offset;
+        std::strncpy(out_info->name, entry->name.c_str(), sizeof(out_info->name) - 1);
+        out_info->name[sizeof(out_info->name) - 1] = '\0';
+        out_info->access = static_cast<uint8_t>(entry->access);
+        out_info->side_effect = static_cast<uint8_t>(entry->side_effect);
+        out_info->stream_id = entry->doorbell_stream_id;
+        return 0;
+    } catch (const std::exception&) {
         return -EINVAL;
+    } catch (...) {
+        return -EFAULT;
     }
-    return -38;
 }
 
 CPPTLM_EMULATOR_EXPORT

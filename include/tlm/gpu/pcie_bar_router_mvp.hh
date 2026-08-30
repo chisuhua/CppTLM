@@ -92,6 +92,10 @@ namespace tlm::gpu {
         // MMIO_READ：返回寄存器值；未知偏移返回 0xFFFFFFFF
         uint32_t mmio_read(uint32_t offset) const;
 
+        // Lookup register metadata (per ABI lookup_register contract)
+        // 返回 nullptr 当 offset 未注册；指针稳定直到下一次 add_register/init
+        const RegisterEntry* lookup(uint32_t offset) const;
+
         // MMIO_WRITE：写寄存器；doorbell side_effect 触发 Doorbell.ring()
         // 返回 true 表示成功；false 表示 offset 越界/未对齐/RO 写
         bool mmio_write(uint32_t offset, uint32_t value, uint32_t trans_id = 0);

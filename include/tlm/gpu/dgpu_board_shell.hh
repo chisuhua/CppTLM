@@ -6,6 +6,7 @@
 
 #include "event_queue.hh"
 #include "tlm/gpu/dgpu_soc.hh"  // DGpuSoc SimModule 容器
+#include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -60,6 +61,17 @@ public:
     //     走 inject_q 路径,不直接访问 VRAM
     int backdoor_read(uint64_t vram_offset, void* buf, size_t len);
     int backdoor_write(uint64_t vram_offset, const void* buf, size_t len);
+
+    // 2.2 msix + lookup_register wrappers (per T-W3-3)
+    //     soc_ null 或 ep 缺失时返 -ENOSYS; table_size > 2048 返 -EINVAL
+    int msix_init(uint32_t table_size, uint32_t mask);
+    int msix_update_pending(uint32_t vector);
+    int msix_clear_pending(uint32_t vector);
+    int lookup_register(uint32_t offset, uint32_t* value);
+
+    // lookup_register_entry: returns full RegisterEntry for ABI metadata
+    // (name/access/side_effect). nullptr when SOC null / unaligned / > BAR0 / miss.
+    const PcieBarRouter::RegisterEntry* lookup_register_entry(uint32_t offset);
 
     // 3. 回调接线(non-blocking,per design §2.5 #4)
     using IrqCallback = std::function<void(uint32_t vector_id)>;

@@ -41,6 +41,15 @@ namespace tlm::gpu {
         return it->second.value;
     }
 
+    const PcieBarRouter::RegisterEntry* PcieBarRouter::lookup(uint32_t offset) const {
+        if ((offset & 0x3) != 0)
+            return nullptr;
+        auto it = regs_.find(offset);
+        if (it == regs_.end())
+            return nullptr;
+        return &it->second;
+    }
+
     bool PcieBarRouter::mmio_write(uint32_t offset, uint32_t value, uint32_t trans_id) {
         if ((offset & 0x3) != 0)
             return false;

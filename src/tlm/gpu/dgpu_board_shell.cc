@@ -1,6 +1,7 @@
 // Per board-soc-split design §2 + §2.5 thread model (10 约束)
 // Owner: CppTLM Team · Date: 2026-08-31
 #include "tlm/gpu/dgpu_board_shell.hh"
+#include "tlm/gpu/pcie_endpoint_tlm.h"
 // #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
 #include <chrono>
 #include <iostream>
@@ -205,6 +206,75 @@ namespace tlm::gpu {
             inject_q_.push_back(std::move(req));
         }
         return 0; // async
+    }
+
+    // ── T-W3-3: msix_* + lookup_register wrappers ──
+
+    int DGpuBoard::msix_init(uint32_t table_size, uint32_t mask) {
+        if (table_size > 2048)
+            return -22; // EINVAL: PCI-SIG MSI-X 11-bit cap
+        if (!soc_)
+            return -38; // ENOSYS: SOC not instantiated
+        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        if (!ep)
+            return -38;
+        ep->msix().init();
+        for (uint32_t v = 0; v < table_size && v < ep->msix().num_vectors(); ++v) {
+            if (mask & (1u << v)) {
+                ep->msix().set_mask(static_cast<uint16_t>(v), true);
+            }
+        }
+        return 0;
+    }
+
+    int DGpuBoard::msix_update_pending(uint32_t vector) {
+        if (!soc_)
+            return -38;
+        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        if (!ep)
+            return -38;
+        return ep->msix().update_pending(static_cast<uint16_t>(vector)) ? 0 : -22;
+    }
+
+    int DGpuBoard::msix_clear_pending(uint32_t vector) {
+        if (!soc_)
+            return -38;
+        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        if (!ep)
+            return -38;
+        return ep->msix().clear_pending(static_cast<uint16_t>(vector)) ? 0 : -22;
+    }
+
+    int DGpuBoard::lookup_register(uint32_t offset, uint32_t* value) {
+        if (!value)
+            return -22;
+        if ((offset & 0x3) != 0)
+            return -22; // 4-byte align
+        if (offset >= 65536)
+            return -22; // BAR0 only
+        if (!soc_)
+            return -38;
+        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        if (!ep)
+            return -38;
+        const auto* entry = ep->bar_router().lookup(offset);
+        if (!entry)
+            return -38;
+        *value = entry->value;
+        return 0;
+    }
+
+    const PcieBarRouter::RegisterEntry* DGpuBoard::lookup_register_entry(uint32_t offset) {
+        if ((offset & 0x3) != 0)
+            return nullptr;
+        if (offset >= 65536)
+            return nullptr;
+        if (!soc_)
+            return nullptr;
+        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        if (!ep)
+            return nullptr;
+        return ep->bar_router().lookup(offset);
     }
 
     void DGpuBoard::tick() {
