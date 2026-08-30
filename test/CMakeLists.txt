@@ -81,6 +81,13 @@ add_test(NAME sdma_engine_backdoor_isolation COMMAND cpptlm_tests "[sdma][backdo
 add_test(NAME pcie_endpoint_msix_state_edge COMMAND cpptlm_tests "[pcie][endpoint][msix][state][edge]" -r compact)
 add_test(NAME pcie_endpoint_doorbell_edge COMMAND cpptlm_tests "[pcie][endpoint][doorbell][edge]" -r compact)
 
+# T-W3-3: msix_* + lookup_register wrapper + ABI coverage + full ABI lifecycle
+add_test(NAME dgpu_board_msix_wrappers COMMAND cpptlm_tests "[dgpu][shell][msix][wrapper]" -r compact)
+add_test(NAME dgpu_board_lookup_register_wrapper COMMAND cpptlm_tests "[dgpu][shell][lookup_register][wrapper]" -r compact)
+add_test(NAME cpptlm_emulator_msix COMMAND cpptlm_tests "[abi][msix][t-w3-3]" -r compact)
+add_test(NAME cpptlm_emulator_lookup_register COMMAND cpptlm_tests "[abi][lookup_register][t-w3-3]" -r compact)
+add_test(NAME dgpu_board_shell_full_abi COMMAND cpptlm_tests "[dgpu][shell][full_abi]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)

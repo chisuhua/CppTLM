@@ -56,7 +56,7 @@
 ### Deferred (T-W3-2 范围外, 待后续 T-bs-4+ follow-up)
 
 - `DGpuBoard::load_soc_config_from_file` 当前不存在, `cpptlm_emulator_create` 用 `load_soc_config(json)` 代替 (caller 读文件 parse). shell `SimModule::simulate_instantiate` 嵌套 JSON 处理 pre-existing SIGSEGV (1 cpptlm_tests 用例红).
-- `msix_init/update_pending/clear_pending` + `lookup_register` 在 ABI 中返回 -ENOSYS (-38): DGpuBoard shell 未直接暴露这些方法 (需经 `ep.msix()` / `ep.bar_router()` 内部访问, T-bs-4 follow-up).
+- `msix_init/update_pending/clear_pending` + `lookup_register` 在 ABI 中返回 -ENOSYS (-38) 当 SOC 未实例化 (T-bs-4 follow-up): DGpuBoard shell 已加 4 个 wrapper 转发到 `ep.msix()` / `ep.bar_router()`,SOC 实例化后即生效 (per T-W3-3 Phase 2+3, commit `6cb6204`)。
 
 ### Acceptance Gate (per tasks.md T-RG-1 ~ T-RG-4)
 
