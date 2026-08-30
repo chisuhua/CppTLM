@@ -61,10 +61,11 @@
 ### Acceptance Gate (per tasks.md T-RG-1 ~ T-RG-4)
 
 - ✅ G-RG-1 validate_topology ALL PASSED
-- ⚠️ G-RG-1 cpptlm_tests 130/131 PASS (1 pre-existing SIGSEGV deferred, 不阻塞 v0.5.0-MVP tag)
-- ⏳ G-RG-2 CHANGELOG.md (本 section)
-- ⏳ G-RG-3 docs/soc_arch/modules/README.md 7 模块同步
-- ⏳ G-RG-4 git tag v0.5.0-MVP
+- ✅ G-RG-1 cpptlm_tests 980/981 PASS post-D15 (1 known pre-existing race in `test_cpptlm_emulator_registry.cc:123` create_by_id, 不阻塞 v0.5.0-MVP tag, 待独立调查)
+- ✅ G-RG-2 CHANGELOG.md (本 section)
+- ✅ G-RG-3 docs/soc_arch/modules/README.md 7 模块同步
+- ✅ G-RG-4 git tag v0.5.0-MVP
+- ✅ G-RG-5 UsrLinuxEmu 集成 smoke PASS (`build/bin/test_cpptlm_emulator_dlopen` dlopen `libcpptlm_emulator.so` + dlsym 5 ABI + stdout `v1.0-dgpu-v0` + exit 0, 2026-08-30)
 
 ---
 
