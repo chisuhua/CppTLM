@@ -44,8 +44,8 @@ namespace tlm::gpu {
             if (!board_cfg.contains("modules") || !board_cfg["modules"].is_array() ||
                 board_cfg["modules"].empty()) {
                 std::lock_guard<std::mutex> lock(inject_mu_);
-                last_exception_ =
-                    std::make_exception_ptr(std::runtime_error("board_cfg missing 'modules' array"));
+                last_exception_ = std::make_exception_ptr(
+                    std::runtime_error("board_cfg missing 'modules' array"));
                 return false;
             }
             // Pre-fill device_info_ from pcie_ep params (SOC instantiate deferred above)
@@ -154,8 +154,7 @@ namespace tlm::gpu {
         // Bounds check仅当 device_info_ 已初始化时生效(bar_sizes[1] > 0);
         // 未初始化的 board(直接构造未调 load_soc_config)走 sync 路径。
         if (device_info_.bar_sizes[1] > 0 &&
-            (buf == nullptr || len == 0 ||
-             vram_offset >= device_info_.bar_sizes[1] ||
+            (buf == nullptr || len == 0 || vram_offset >= device_info_.bar_sizes[1] ||
              len > device_info_.bar_sizes[1] - vram_offset)) {
             return -22; // EINVAL
         }
@@ -178,8 +177,7 @@ namespace tlm::gpu {
         }
         // Bounds check仅当 device_info_ 已初始化时生效(bar_sizes[1] > 0)
         if (device_info_.bar_sizes[1] > 0 &&
-            (buf == nullptr || len == 0 ||
-             vram_offset >= device_info_.bar_sizes[1] ||
+            (buf == nullptr || len == 0 || vram_offset >= device_info_.bar_sizes[1] ||
              len > device_info_.bar_sizes[1] - vram_offset)) {
             return -22; // EINVAL
         }
@@ -187,8 +185,7 @@ namespace tlm::gpu {
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
             vram_segments_[vram_offset] = std::vector<uint8_t>(
-                static_cast<const uint8_t*>(buf),
-                static_cast<const uint8_t*>(buf) + len);
+                static_cast<const uint8_t*>(buf), static_cast<const uint8_t*>(buf) + len);
         }
         PendingReq req;
         req.bar = 1;
@@ -206,7 +203,7 @@ namespace tlm::gpu {
 
     void DGpuBoard::tick() {
         if (soc_)
-            soc_->tick(); // 转发到 SimModule 递归 tick
+            soc_->tick();        // 转发到 SimModule 递归 tick
         drain_injection_queue(); // drain pending backdoor/mmio requests
     }
 
@@ -270,21 +267,27 @@ namespace tlm::gpu {
                 if (req.is_backdoor_read) {
                     // backdoor read: 从 vram_segments_ 取数据存入 last_backdoor_reads_
                     auto it = vram_segments_.find(req.offset);
-                    if (it != vram_segments_.end() &&
-                        it->second.size() == req.data.size()) {
+                    if (it != vram_segments_.end() && it->second.size() == req.data.size()) {
                         std::lock_guard<std::mutex> lock(inject_mu_);
                         last_backdoor_reads_[req.trans_id] = it->second;
-                        try { req.resp.set_value(0); }
-                        catch (const std::future_error&) {}
+                        try {
+                            req.resp.set_value(0);
+                        } catch (const std::future_error&) {
+                        }
                     } else {
                         // offset 未写入或长度不匹配
-                        try { req.resp.set_value(-22); }  // EINVAL
-                        catch (const std::future_error&) {}
+                        try {
+                            req.resp.set_value(-22);
+                        } // EINVAL
+                        catch (const std::future_error&) {
+                        }
                     }
                 } else {
                     // backdoor write: 数据已在 backdoor_write 同步存储到 vram_segments_
-                    try { req.resp.set_value(0); }
-                    catch (const std::future_error&) {}
+                    try {
+                        req.resp.set_value(0);
+                    } catch (const std::future_error&) {
+                    }
                 }
             } else {
                 // mmio 路径(W6b)

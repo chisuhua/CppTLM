@@ -174,10 +174,12 @@ cpptlm_emulator_t* cpptlm_emulator_create_by_id(uint32_t dev_id) {
         registry_[assigned] = emu;
         return emu;
     } catch (const std::exception&) {
-        if (emu) delete emu;
+        if (emu)
+            delete emu;
         return nullptr;
     } catch (...) {
-        if (emu) delete emu;
+        if (emu)
+            delete emu;
         return nullptr;
     }
 }
