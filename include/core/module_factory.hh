@@ -44,8 +44,10 @@ private:
     bool _metrics_enabled = false;
     std::unique_ptr<tlm_stats::StatGroup> _stats_root;
 
-    // debug-config flag
-    static bool _debug_config;
+    // debug-config flag (inline since C++17: single definition across TUs,
+    // avoids ODR violation when cpptlm_core is linked into both cpptlm_tests
+    // and libcpptlm_emulator.so)
+    inline static bool _debug_config = false;
 
     // JSON Schema 验证器（CFG-08）
     static bool validateConfig(const json& config);
@@ -66,11 +68,14 @@ public:
     ~ModuleFactory();
 
     // 用于注册普通的 SimObject 类型
+    // early-return on duplicate: cpptlm_core linked into both cpptlm_tests and
+    // libcpptlm_emulator.so causes REGISTER_OBJECT to fire twice for the same type;
+    // second call would overwrite first lambda (identical content) — skip it.
     template<typename T>
     static void registerObject(const std::string& name) {
         auto& registry = getObjectRegistry();
         if (registry.find(name) != registry.end()) {
-            DPRINTF(MODULE, "[ModuleFactory] Warning: Object type '%s' already registered.\n", name.c_str());
+            return;
         }
         registry[name] = [](const std::string& n, EventQueue* eq) -> SimObject* {
             return new T(n, eq);
@@ -83,7 +88,7 @@ public:
         static_assert(std::is_base_of_v<SimModule, T>, "T must derive from SimModule");
         auto& registry = getModuleRegistry();
         if (registry.find(name) != registry.end()) {
-            DPRINTF(MODULE, "[ModuleFactory] Warning: Module type '%s' already registered.\n", name.c_str());
+            return;
         }
         registry[name] = [](const std::string& n, EventQueue* eq) -> SimModule* {
             return new T(n, eq);

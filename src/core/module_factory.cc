@@ -69,8 +69,6 @@
 
 using json = nlohmann::json;
 
-bool ModuleFactory::_debug_config = false;
-
 json processExtends(const json& config, int depth = 0);
 bool validate_nic_pe_connection(const std::string& src_type, unsigned src_port,
                                 const std::string& dst_type, unsigned dst_port);

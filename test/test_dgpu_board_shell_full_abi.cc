@@ -75,8 +75,8 @@ TEST_CASE("Full ABI: register_callbacks accepts non-null callbacks on valid emu"
           "[dgpu][shell][full_abi][callback]") {
     cpptlm_emulator_t* e = cpptlm_emulator_create_by_id(0);
     REQUIRE(e != nullptr);
-    REQUIRE(cpptlm_emulator_register_callbacks(e, nullptr, nullptr, nullptr, nullptr,
-                                               nullptr) == 0);
+    REQUIRE(cpptlm_emulator_register_callbacks(e, nullptr, nullptr, nullptr, nullptr, nullptr) ==
+            0);
     REQUIRE(cpptlm_emulator_register_callbacks(nullptr, nullptr, nullptr, nullptr, nullptr,
                                                nullptr) == -22);
     cpptlm_emulator_destroy(e);
