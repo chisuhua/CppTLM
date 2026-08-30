@@ -197,3 +197,56 @@ TEST_CASE("DGpuBoard: last_exception_ from sim_loop rethrows on next ABI call", 
     REQUIRE_NOTHROW(board.mmio_read(0, 0, nullptr, 0));
     board.shutdown();
 }
+
+// ── T-W3-3 1A: backdoor happy path ──
+// ABI 契约: hit 返 0 + buf echo; miss / size mismatch 返 len (per design §2.5)
+TEST_CASE("DGpuBoard: backdoor_write→backdoor_read happy path echoes data through vram_segments_",
+          "[dgpu][shell][backdoor][happy]") {
+    DGpuBoard board("test_board");
+    board.init();
+
+    std::vector<uint8_t> write_data(64);
+    for (size_t i = 0; i < 64; ++i) {
+        write_data[i] = static_cast<uint8_t>(i * 3 + 7);
+    }
+    REQUIRE(board.backdoor_write(0x1000, write_data.data(), write_data.size()) == 0);
+
+    std::vector<uint8_t> read_data(64, 0xFF);
+    REQUIRE(board.backdoor_read(0x1000, read_data.data(), read_data.size()) == 0);
+    REQUIRE(read_data == write_data);
+
+    std::vector<uint8_t> miss_buf(32, 0);
+    REQUIRE(board.backdoor_read(0x9000, miss_buf.data(), miss_buf.size()) == 32);
+
+    std::vector<uint8_t> mismatch_buf(32, 0);
+    REQUIRE(board.backdoor_read(0x1000, mismatch_buf.data(), mismatch_buf.size()) == 32);
+
+    board.shutdown();
+}
+
+// ── T-W3-3 1A: tick drain ──
+// 100 reqs (50 backdoor + 50 mmio) push → tick×3 不抛, backdoor 数据未丢
+TEST_CASE("DGpuBoard: tick drains injection queue across 100 pending reqs without exception",
+          "[dgpu][shell][tick][drain]") {
+    DGpuBoard board("test_board");
+    board.init();
+
+    for (int i = 0; i < 50; ++i) {
+        uint8_t data[8] = {static_cast<uint8_t>(i & 0xFF)};
+        board.backdoor_write(0x2000 + i * 8, data, sizeof(data));
+    }
+    for (int i = 0; i < 50; ++i) {
+        uint32_t val = static_cast<uint32_t>(i);
+        board.mmio_write(0, 0x14, &val, sizeof(val));
+    }
+
+    REQUIRE_NOTHROW(board.tick());
+    REQUIRE_NOTHROW(board.tick());
+    REQUIRE_NOTHROW(board.tick());
+
+    std::vector<uint8_t> buf(8, 0);
+    REQUIRE(board.backdoor_read(0x2000, buf.data(), buf.size()) == 0);
+    REQUIRE(buf[0] == 0);
+
+    board.shutdown();
+}
