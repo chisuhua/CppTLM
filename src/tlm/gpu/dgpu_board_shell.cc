@@ -137,11 +137,17 @@ namespace tlm::gpu {
     }
 
     int DGpuBoard::pcie_config_read(uint16_t offset, uint8_t width, uint32_t* val) {
+        (void)offset;
+        (void)width;
+        (void)val;
         // TODO T-bs-3b
         return -ENOSYS;
     }
 
     int DGpuBoard::pcie_config_write(uint16_t offset, uint8_t width, uint32_t val) {
+        (void)offset;
+        (void)width;
+        (void)val;
         return -ENOSYS;
     }
 
