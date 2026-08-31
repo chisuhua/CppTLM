@@ -66,6 +66,9 @@ public:
     // UpdateFC DLLP 到达时由 Link Layer 调用（唯一补充路径），不超 capacity
     void update(Type t, uint32_t credit) noexcept;
 
+    // InitFC1/InitFC2 DLLP 到达时设置 capacity 上限与各桶初始值（per §3.4.1）
+    void init_fc(uint32_t cap, uint32_t p, uint32_t np, uint32_t cpl) noexcept;
+
     // 当前 token 数（测试/诊断）
     uint32_t token_count(Type t) const noexcept;
 

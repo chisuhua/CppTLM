@@ -38,6 +38,14 @@ uint32_t FcTokenBucket::token_count(Type t) const noexcept {
     return tokens(t);
 }
 
+void FcTokenBucket::init_fc(uint32_t cap, uint32_t p, uint32_t np,
+                             uint32_t cpl) noexcept {
+    capacity_ = std::max({cap, p, np, cpl});
+    tokens_p_ = p;
+    tokens_np_ = np;
+    tokens_cpl_ = cpl;
+}
+
 uint32_t FcTokenBucket::weight(Type t) const noexcept {
     switch (t) {
     case Type::Posted:      return weight_p_;
