@@ -107,3 +107,29 @@
 **起草**: PTX-EMU Architecture Team (本协议接收方) · 2026-XX-XX (PTX-EMU 端 ack 时回填)
 **Owner**: CppTLM Team (Sisyphus) (本协议发起方)
 **状态**: ⏳ Pending PTX-EMU Owner ACK
+
+---
+
+## Status Update (2026-08-31) — HSK-8 Phase 2 Step 4 落地后回归验证
+
+**触发**: CppTLM 2026-08-31 全量回归审计（HEAD=`1d16e5f`）发现 HSK-8 Phase 2 Step 4 (commit `738b412c`) 落地后 2 项测试基础设施漂移。
+
+**修复 change**: `cpptlm-2026-08-31-fix-test-infra-drift`（已归档，commit 序列 `5a460d4`→`641c663`）
+
+| 项 | 结果 | 关联 commit |
+|----|------|-------------|
+| `--f12b-ld` observability 日志恢复 | ✅ `src/main.cpp` else 分支恢复 `MemoryBridge disabled`，`test_f12b_default_off` 2/2 PASS | `5a460d4` |
+| `test_f12b_enabled_no_crash` 移除 | ✅ 与 HSK-8 永久禁用决策矛盾的用例删除（无 "enabled" 合法语义） | `6085cbd` |
+| PTX-EMU `bench/cute/` ctest 隔离 | ✅ wrapper-level `ctest -E cute`（cmake `set_tests_properties` 跨子目录 scope 不可行） | `2bfea64` |
+
+**回归基线**（2026-08-31 复验）:
+- `cpptlm_tests`: **998 test cases / 32600 assertions / ALL PASSED**
+- Python pytest: **255 passed / 2 PASS**（f12b_smoke 从 2 fail 改为 2/2 PASS）
+- ctest gate: **20/21 PASS + 1 Not Run**（`test_cpptlm_emulator_dlopen` 因 BUILD_RTL=OFF，pre-existing）
+- E2E: **12/12 PASS**
+
+**遗留 follow-up**:
+- [ ] PTX-EMU 上游 PR: `external/PTX-EMU/CMakeLists.txt:138-139` 加 `if(PTXEMU_BUILD_TESTING OR PROJECT_IS_TOP_LEVEL)` 守卫（与 `tests/` 守卫 line 130-137 对称）— 根治 `bench/cute/` leak
+- [ ] AGENTS.md § KEY INVARIANTS: `cpptlm_tests 764/764 (2026-07-03)` → `998/998 (2026-08-31)`
+
+**HSK-8 主协议状态**: 不变（仍 ⏳ 待 PTX-EMU owner ack 公共设备 API 契约 `3d7898b`）
