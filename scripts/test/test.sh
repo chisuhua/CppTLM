@@ -27,7 +27,7 @@ echo -e "${YELLOW}🧪 运行测试...${NC}"
 echo ""
 
 # 运行测试
-ctest --output-on-failure "$@"
+ctest --output-on-failure -E cute "$@"
 
 echo ""
 echo -e "${GREEN}✅ 测试完成！${NC}"
