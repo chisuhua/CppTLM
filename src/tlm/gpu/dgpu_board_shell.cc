@@ -49,8 +49,9 @@ namespace tlm::gpu {
                     std::runtime_error("board_cfg missing 'modules' array"));
                 return false;
             }
-            soc_->simulate_instantiate(board_cfg);
-            // Pre-fill device_info_ from pcie_ep params (SOC instantiate deferred above)
+            const auto& soc_cfg = board_cfg["modules"][0];
+            soc_->simulate_instantiate(soc_cfg);
+            // Pre-fill device_info_ from pcie_ep params
             for (const auto& mod : board_cfg["modules"][0].value("modules", json::array())) {
                 if (mod.value("name", "") == "pcie_ep") {
                     const auto& pcie_params = mod.value("params", json::object());
