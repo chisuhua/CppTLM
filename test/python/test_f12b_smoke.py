@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
-"""test_f12b_smoke.py — F12b-LD 基础烟雾测试 (G-F0)
+"""test_f12b_smoke.py — F12b-LD 烟雾测试 (HSK-8 Phase 2 Step 4 后)
 
-验证:
-  - CppTLM 以 --f12b-ld 启动时不崩溃
-  - 不带 --f12b-ld 时零退化 (回归基线)
+HSK-8 Phase 2 Step 4 (commit 738b412c) 已永久禁用 --f12b-ld wiring (MemoryBridge + g_ptx_emu_driver
+物理删除于 HSK-6 ack 369cf71)。本文件验证:
+  - 默认 (无 --f12b-ld) cpptlm_sim 正常运行 (零退化), stdout 含 observability 日志
+  - --f12b-ld 触发时 rc != 0 (stderr 禁用错误) 而非崩溃
+
+历史: 原 3 用例中 test_f12b_enabled_no_crash (期望 "MemoryBridge enabled" + rc=0)
+      与 HSK-8 决策矛盾, 已删除 (HSK-8 永久禁用, 无 "enabled" 合法语义)。
 """
 
 import unittest
@@ -37,15 +41,6 @@ class TestF12bSmoke(unittest.TestCase):
             capture_output=True, text=True, timeout=30,
         )
         self.assertIn("MemoryBridge disabled", result.stdout)
-        self.assertEqual(result.returncode, 0)
-
-    def test_f12b_enabled_no_crash(self):
-        """带 --f12b-ld: MemoryBridge 初始化不崩溃"""
-        result = subprocess.run(
-            [CPPTLM_SIM, CONFIG_SMOKE, "--cycles", "100", "--f12b-ld"],
-            capture_output=True, text=True, timeout=30,
-        )
-        self.assertIn("MemoryBridge enabled", result.stdout)
         self.assertEqual(result.returncode, 0)
 
     def test_f12b_requires_json_entries(self):
