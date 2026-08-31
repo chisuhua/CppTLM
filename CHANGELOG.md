@@ -66,6 +66,11 @@
 - ✅ G-RG-3 docs/soc_arch/modules/README.md 7 模块同步
 - ✅ G-RG-4 git tag v0.5.0-MVP
 - ✅ G-RG-5 UsrLinuxEmu 集成 smoke PASS (`build/bin/test_cpptlm_emulator_dlopen` dlopen `libcpptlm_emulator.so` + dlsym 5 ABI + stdout `v1.0-dgpu-v0` + exit 0, 2026-08-30)
+- ✅ **D15 真修复** (`5425c45`): `soc_->simulate_instantiate` 改传 `board_cfg["modules"][0]`(soc 模块 config)而非整个 board_cfg,SOC 真正实例化;`msix_init/update_pending/clear_pending/lookup_register` 4 个 wrapper 实际转发到 PcieEndpointTLM(返回 0)而非 -ENOSYS。同步更新 `test_cpptlm_emulator_msix.cc` 4 个断言(-38 → 0,保留 nullptr/table_size>2048 检查)。
+- ✅ **D15 永久回归测试** (`test_dgpu_board_d15_regression` ctest, `[dgpu][shell][d15][regression]` tag): inline JSON mini-board 验证 load_soc_config → msix_init(16,0)=0, lookup_register(0/20)=0 命中 GPFIFO_PUT/DOORBELL, 0x100=-38 miss。cwd-independent。
+- ⚠️ **Pre-existing flaky** (与 D15 修复无关,非本次引入):
+  - `test_cpptlm_emulator_registry.cc:125` — `concurrent create + destroy` 并发 race(create_by_id 并发 + 计数),release-gate 已记录 known 1 failure
+  - `test_latency_tlm_perf.cc:97` — 性能阈值断言 `<1000ns/call`,machine-load dependent(全量 3 次跑:6/6/7 failed 抖动)
 
 ---
 

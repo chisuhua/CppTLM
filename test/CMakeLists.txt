@@ -59,6 +59,22 @@ add_test(NAME sdma_engine COMMAND cpptlm_tests "[sdma]" -r compact)
 add_test(NAME test_dgpu_soc_from_config COMMAND cpptlm_tests "[dgpu][json]" -r compact)
 add_test(NAME test_dgpu_board_shell_abi COMMAND cpptlm_tests "[dgpu][shell]" -r compact)
 
+# T-W3-3 D15 (5425c45) 端到端回归: SOC 真正实例化后 wrapper 转发到 PcieEndpointTLM
+add_test(NAME test_dgpu_board_d15_regression
+         COMMAND cpptlm_tests "[dgpu][shell][d15][regression]" -r compact)
+
+# T-W3-3 ABI: msix_*/lookup_register 转发测试 (D15 修复后 SOC 真正实例化 → 返 0)
+add_test(NAME test_cpptlm_emulator_msix COMMAND cpptlm_tests "[abi][msix][t-w3-3]" -r compact)
+add_test(NAME test_cpptlm_emulator_lookup_register
+         COMMAND cpptlm_tests "[abi][lookup_register][t-w3-3]" -r compact)
+
+# cpptlm_emulator ABI tests: create_by_id(0) 读 cwd 相对 configs/dgpu_board_v1.json,
+# ctest 默认 cwd=build/ 加载失败 → SOC 未实例化 → wrapper 返 -38 而非 0/-22.
+# WORKING_DIRECTORY 设回仓库根,让 config 路径解析正确。
+set_tests_properties(test_cpptlm_emulator_msix
+                 test_cpptlm_emulator_lookup_register
+                 PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # s3 W5-6: Pm4Decoder + CommandProcessor + TmuDispatchProcessor 测试
 # (per openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/tasks.md §T-s3-1/2/3)
 # 每个 add_test 用对应 Catch2 标签过滤;测试文件由 file(GLOB TEST_SOURCES ...) 自动收录
@@ -84,8 +100,6 @@ add_test(NAME pcie_endpoint_doorbell_edge COMMAND cpptlm_tests "[pcie][endpoint]
 # T-W3-3: msix_* + lookup_register wrapper + ABI coverage + full ABI lifecycle
 add_test(NAME dgpu_board_msix_wrappers COMMAND cpptlm_tests "[dgpu][shell][msix][wrapper]" -r compact)
 add_test(NAME dgpu_board_lookup_register_wrapper COMMAND cpptlm_tests "[dgpu][shell][lookup_register][wrapper]" -r compact)
-add_test(NAME cpptlm_emulator_msix COMMAND cpptlm_tests "[abi][msix][t-w3-3]" -r compact)
-add_test(NAME cpptlm_emulator_lookup_register COMMAND cpptlm_tests "[abi][lookup_register][t-w3-3]" -r compact)
 add_test(NAME dgpu_board_shell_full_abi COMMAND cpptlm_tests "[dgpu][shell][full_abi]" -r compact)
 
 if(ENABLE_COVERAGE)
