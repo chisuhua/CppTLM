@@ -121,6 +121,8 @@ int main(int argc, char* argv[]) {
                      "MemoryBridge + g_ptx_emu_driver; use PtxEmuSubmoduleMVP "
                      "facade->attach_timing instead)\n";
         return 1;
+    } else {
+        std::cout << "[INFO] --f12b-ld: MemoryBridge disabled (zero regression)\n";
     }
     (void)per_sm_scoreboards;
     (void)per_sm_pipelines;
