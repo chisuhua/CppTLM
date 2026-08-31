@@ -175,6 +175,17 @@ public:
     // 周期 tick：消费错误注入（NAK 注入触发 → 等效于收到 NAK DLLP）
     void tick();
 
+    // ========== PcieEndpointTLM composition 注册表（冻结 .h 布局下的集成通道）==========
+    // PcieEndpointTLM 头文件类成员布局冻结（23 ABI），不能加成员 → 通过静态注册表
+    // 关联 EP（按模块名）↔ PcieLinkLayer 实例。定义并实现在 pcie_link_layer_tlm.{hh,cc}，
+    // 由 src/tlm/gpu/pcie_endpoint_tlm.cc 在 on_config_loaded() 时挂接。
+    static PcieLinkLayer* attach_to_endpoint(const std::string& endpoint_name,
+                                             EventQueue* eq,
+                                             const PcieLinkLayerConfig& cfg);
+    static PcieLinkLayer* for_endpoint(const std::string& endpoint_name) noexcept;
+    static void detach_from_endpoint(const std::string& endpoint_name) noexcept;
+    static std::size_t endpoint_count() noexcept;
+
     // 诊断
     const std::string& name() const { return name_; }
     EventQueue* event_queue() const { return eq_; }

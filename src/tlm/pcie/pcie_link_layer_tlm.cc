@@ -6,9 +6,50 @@
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
 
 #include <algorithm>
+#include <unordered_map>
 #include <utility>
 
 namespace tlm::pcie {
+
+namespace {
+
+// PcieEndpointTLM ↔ PcieLinkLayer composition 注册表（按 EP 模块名）
+// 冻结 .h 布局不能加成员 → EP 侧通过 on_config_loaded() 挂接，这里持有生命周期。
+std::unordered_map<std::string, std::unique_ptr<PcieLinkLayer>>& endpoint_registry() {
+    static std::unordered_map<std::string, std::unique_ptr<PcieLinkLayer>> registry;
+    return registry;
+}
+
+} // namespace
+
+PcieLinkLayer* PcieLinkLayer::attach_to_endpoint(const std::string& endpoint_name,
+                                                 EventQueue* eq,
+                                                 const PcieLinkLayerConfig& cfg) {
+    auto& reg = endpoint_registry();
+    auto it = reg.find(endpoint_name);
+    if (it != reg.end()) {
+        it->second = std::make_unique<PcieLinkLayer>(eq, cfg);
+        return it->second.get();
+    }
+    auto [new_it, _] = reg.emplace(endpoint_name,
+                                   std::make_unique<PcieLinkLayer>(eq, cfg));
+    return new_it->second.get();
+}
+
+PcieLinkLayer* PcieLinkLayer::for_endpoint(const std::string& endpoint_name) noexcept {
+    auto& reg = endpoint_registry();
+    auto it = reg.find(endpoint_name);
+    return (it != reg.end()) ? it->second.get() : nullptr;
+}
+
+void PcieLinkLayer::detach_from_endpoint(const std::string& endpoint_name) noexcept {
+    auto& reg = endpoint_registry();
+    reg.erase(endpoint_name);
+}
+
+std::size_t PcieLinkLayer::endpoint_count() noexcept {
+    return endpoint_registry().size();
+}
 
 namespace {
 

@@ -5,6 +5,7 @@
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 
 #include "bundles/pcie_bundles_tlm.hh"
+#include "tlm/pcie/pcie_link_layer_tlm.hh"
 #include <algorithm>
 #include <stdexcept>
 #include <vector>
@@ -26,6 +27,26 @@ namespace tlm::gpu {
             if (s == "doorbell")
                 return PcieBarRouter::SideEffect::DOORBELL;
             return PcieBarRouter::SideEffect::NONE;
+        }
+
+        // JSON params.link_layer → PcieLinkLayerConfig（composition 集成通道）
+        // per design.md §10.1：fc_token_bucket_capacity / retry_buffer_size /
+        // link_error_injection.enabled；无 fc_refill_rate（per Q2 修订）
+        tlm::pcie::PcieLinkLayerConfig parse_link_layer_config(const nlohmann::json& cfg) {
+            tlm::pcie::PcieLinkLayerConfig lc;
+            if (!cfg.is_object())
+                return lc;
+            lc.enabled = cfg.value("enabled", true);
+            lc.fc_capacity = cfg.value("fc_token_bucket_capacity", 256u);
+            lc.fc_init_p = cfg.value("fc_initial_credit_p", lc.fc_capacity);
+            lc.fc_init_np = cfg.value("fc_initial_credit_np", lc.fc_capacity);
+            lc.fc_init_cpl = cfg.value("fc_initial_credit_cpl", lc.fc_capacity);
+            lc.retry_buffer_size = cfg.value("retry_buffer_size", 4096u);
+            if (cfg.contains("link_error_injection")) {
+                lc.link_error_injection_enabled =
+                    cfg["link_error_injection"].value("enabled", false);
+            }
+            return lc;
         }
     } // namespace
 
@@ -104,6 +125,18 @@ namespace tlm::gpu {
         if (cfg.contains("bar0_registers")) {
             apply_bar0_registers_config(cfg);
         }
+
+        // composition 集成 PcieLinkLayer（per Phase 1 T-P1-7，不改 .h 布局）
+        // JSON params.link_layer.enabled=true → 挂接链路层（FC/ACK-NAK/Rx 双向）
+        if (cfg.contains("link_layer")) {
+            const auto ll_cfg = parse_link_layer_config(cfg["link_layer"]);
+            if (ll_cfg.enabled) {
+                tlm::pcie::PcieLinkLayer::attach_to_endpoint(
+                    getName(), event_queue, ll_cfg);
+            } else {
+                tlm::pcie::PcieLinkLayer::detach_from_endpoint(getName());
+            }
+        }
     }
 
     void PcieEndpointTLM::apply_capabilities_config(const nlohmann::json& cfg) {
@@ -137,6 +170,14 @@ namespace tlm::gpu {
             return;
         const auto& req = req_in[PORT_SLAVE_IN].data();
         const uint8_t kind = req.kind.read();
+
+        // composition: 若挂接了 PcieLinkLayer，先过链路层 FC 门控 + Rx ACK 生成
+        // （per Phase 1 T-P1-7 + spec Scenario "FC 反压"）。FC 不足 → 反压，不消费。
+        if (auto* ll = tlm::pcie::PcieLinkLayer::for_endpoint(getName())) {
+            if (!ll->rx_tlp_from_host(req)) {
+                return;  // FC 不足：backpressure，req 保持 pending
+            }
+        }
 
         bundles::PcieTlpBundle resp;
         resp.bar_index.write(req.bar_index.read());
@@ -225,6 +266,11 @@ namespace tlm::gpu {
         for (unsigned i = 0; i < NUM_PORTS; i++) {
             if (adapters_[i])
                 adapters_[i]->tick();
+        }
+
+        // 6. composition: 推进 PcieLinkLayer（消费错误注入等周期逻辑）
+        if (auto* ll = tlm::pcie::PcieLinkLayer::for_endpoint(getName())) {
+            ll->tick();
         }
     }
 
