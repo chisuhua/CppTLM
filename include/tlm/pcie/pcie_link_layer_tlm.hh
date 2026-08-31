@@ -196,7 +196,7 @@ private:
 
     // Tx：retry buffer (seq → TLP) + wire 队列（携带 seq 供错误注入丢包判定）
     uint16_t next_tx_seq_ = 0;
-    uint16_t last_acked_seq_ = 0;
+    uint16_t last_acked_seq_ = SEQ_MASK;  // 初始为"首个 seq 前一值"（wrap 语义基准）
     std::map<uint16_t, bundles::PcieTlpBundle> retry_buf_;
     std::deque<std::pair<uint16_t, bundles::PcieTlpBundle>> tx_tlp_out_;
     std::deque<bundles::PcieDllpBundle> tx_dllp_out_;

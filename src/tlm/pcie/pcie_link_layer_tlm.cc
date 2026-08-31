@@ -298,9 +298,14 @@ PcieLinkLayer::Dispatch PcieLinkLayer::rx_dllp_from_host(
 // ========== ACK/NAK retry（累积确认，per §3.6）==========
 
 void PcieLinkLayer::on_ack_received(uint16_t ack_seq) {
-    // 累积确认：清 retry buffer 中所有 seq ≤ ack_seq 的条目
+    // 累积确认（per §3.6）：ACK(seq=AckSeq) 清 retry buffer 中所有
+    // 在 (last_acked, AckSeq] 区间内的条目（含 12-bit wrap 单调推进）
+    const uint16_t delta = seq_dist(ack_seq, last_acked_seq_);
+    if (delta == 0)
+        return;  // 重复/旧 ACK：无新确认
     for (auto it = retry_buf_.begin(); it != retry_buf_.end();) {
-        if (seq_le(it->first, ack_seq)) {
+        const uint16_t d = seq_dist(it->first, last_acked_seq_);
+        if (d != 0 && d <= delta) {
             it = retry_buf_.erase(it);
         } else {
             ++it;
