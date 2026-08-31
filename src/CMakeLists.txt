@@ -66,6 +66,8 @@ set(CORE_SOURCES
     tlm/gpu/scoreboard_tlm.cc  # D1-Full P1: IScoreboard 实现
     tlm/gpu/pipeline_tlm.cc    # D1-Full P1: IPipelineLatencyProvider 实现
     tlm/gpu/tensor_core_tlm.cc # D1-Full P1: ITensorCoreTiming 实现
+    # pcie-ip-microarch Phase 1: 链路层 + FC Token Bucket (P1)
+    tlm/pcie/pcie_flow_control_token_bucket.cc
 )
 
 # ==============================================================================
