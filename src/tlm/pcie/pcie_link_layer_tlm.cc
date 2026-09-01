@@ -232,6 +232,21 @@ void PcieLinkLayer::update_fc(FcTokenBucket::Type t, uint32_t credit,
     fc_upstream_.update(vf, t, credit);
 }
 
+// ========== Phase 3: BypassMux 清理 ==========
+
+void PcieLinkLayer::reset_fc_buckets() {
+    // 重置 FC token bucket: 恢复初始 credit (per design §7 步骤 5)
+    // 镜像重装两个桶 (与构造函数一致的初始配置)
+    fc_upstream_.install_bucket(0, FcTokenBucket(cfg_.fc_capacity));
+    fc_upstream_.bucket(0).update(FcTokenBucket::Type::Posted, cfg_.fc_init_p);
+    fc_upstream_.bucket(0).update(FcTokenBucket::Type::NonPosted, cfg_.fc_init_np);
+    fc_upstream_.bucket(0).update(FcTokenBucket::Type::Completion, cfg_.fc_init_cpl);
+    fc_downstream_.install_bucket(0, FcTokenBucket(cfg_.fc_capacity));
+    fc_downstream_.bucket(0).update(FcTokenBucket::Type::Posted, cfg_.fc_init_p);
+    fc_downstream_.bucket(0).update(FcTokenBucket::Type::NonPosted, cfg_.fc_init_np);
+    fc_downstream_.bucket(0).update(FcTokenBucket::Type::Completion, cfg_.fc_init_cpl);
+}
+
 // ========== Phase 2: 128b/130b 编码延迟注入 ==========
 
 void PcieLinkLayer::set_encoding_latency(PcieEncodingLatencyModel::Rate rate,
@@ -252,6 +267,21 @@ uint64_t wire_now_ns(const EventQueue* eq) {
 }
 } // namespace
 
+// ========== Phase 3: Rate Switch（修 Phase 2 评审 #1）==========
+
+void PcieLinkLayer::trigger_rate_switch(PcieEncodingLatencyModel::Rate from,
+                                        PcieEncodingLatencyModel::Rate to) {
+    // 触发速率切换: 设 rate_switching_=true, wire 在 rate_switch_delay_us 内不可用
+    // (含 Gen3+ 均衡协商, ~µs 级)。ready 前 tx_tlp / rx_tlp_from_host 立即拒绝。
+    const uint64_t delay_us = PcieEncodingLatencyModel::rate_switch_delay_us(from, to);
+    const uint64_t now_ns = wire_now_ns(eq_);
+    rate_switching_ = true;
+    rate_switch_ready_ns_ = now_ns + delay_us * 1000u;
+    // 切换期间 wire busy 时刻重置（链路重训练清零传输流水线）
+    tx_wire_busy_until_ns_ = 0;
+    rx_wire_busy_until_ns_ = 0;
+}
+
 // ========== Tx path ==========
 
 FcTokenBucket::Type PcieLinkLayer::fc_type_for_kind(uint8_t kind) {
@@ -270,6 +300,14 @@ FcTokenBucket::Type PcieLinkLayer::fc_type_for_kind(uint8_t kind) {
 }
 
 bool PcieLinkLayer::tx_tlp(const bundles::PcieTlpBundle& tlp, uint32_t vf) {
+    // Phase 3 修复 #1: 速率切换期间 wire 不可用 → 拒绝 (不消费 FC)
+    if (rate_switching_) {
+        const uint64_t now_ns = wire_now_ns(eq_);
+        if (now_ns < rate_switch_ready_ns_) {
+            return false;
+        }
+        rate_switching_ = false;
+    }
     const FcTokenBucket::Type fc_type = fc_type_for_kind(
         static_cast<uint8_t>(tlp.kind.read()));
     if (!fc_downstream_.can_send(vf, fc_type)) {
@@ -359,6 +397,21 @@ bool PcieLinkLayer::try_pop_tx_dllp(bundles::PcieDllpBundle& out) {
 
 bool PcieLinkLayer::rx_tlp_from_host(const bundles::PcieTlpBundle& tlp,
                                      uint32_t vf) {
+    // Phase 3 修复 #1: 速率切换期间 wire 不可用 → 立即拒绝 (不 advance busy)
+    if (rate_switching_) {
+        const uint64_t now_ns = wire_now_ns(eq_);
+        if (now_ns < rate_switch_ready_ns_) {
+            return false;
+        }
+        rate_switching_ = false;  // ready 后恢复
+    }
+    // Phase 3 修复 #2: **先做 FC check**, 通过后再 advance wire busy
+    // (修复前: advance 在前 → FC reject 也会 advance → 重试被双倍计费)
+    const FcTokenBucket::Type fc_type = fc_type_for_kind(
+        static_cast<uint8_t>(tlp.kind.read()));
+    if (!fc_upstream_.can_send(vf, fc_type)) {
+        return false;  // FC 不足: 反压, 不消费, **不 advance busy**
+    }
     // Phase 2: 下行 wire busy 检查 — 未到 ready 时刻则返回 false (反压)
     if (enc_enabled_) {
         const uint64_t now_ns = wire_now_ns(eq_);
@@ -369,11 +422,6 @@ bool PcieLinkLayer::rx_tlp_from_host(const bundles::PcieTlpBundle& tlp,
             enc_rate_, enc_block_bytes_, enc_lanes_);
         if (rx_wire_busy_until_ns_ < now_ns) rx_wire_busy_until_ns_ = now_ns;
         rx_wire_busy_until_ns_ += lat;
-    }
-    const FcTokenBucket::Type fc_type = fc_type_for_kind(
-        static_cast<uint8_t>(tlp.kind.read()));;
-    if (!fc_upstream_.can_send(vf, fc_type)) {
-        return false;  // FC 不足：反压，不消费
     }
     fc_upstream_.consume(vf, fc_type);
 
@@ -441,6 +489,13 @@ void PcieLinkLayer::on_nak_received(uint16_t nak_seq) {
 // ========== Error Injector / tick ==========
 
 void PcieLinkLayer::tick() {
+    // Phase 3 评审 #1: 速率切换 ready 后清除标志 (wire 恢复可用)
+    if (rate_switching_) {
+        const uint64_t now_ns = wire_now_ns(eq_);
+        if (now_ns >= rate_switch_ready_ns_) {
+            rate_switching_ = false;
+        }
+    }
     if (!err_.enabled)
         return;
     // inject_nak(seq) 注入 → 等效于收到 NAK DLLP → 触发重传

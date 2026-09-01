@@ -183,6 +183,26 @@ public:
     std::size_t dllp_drop_count() const { return dllp_dropped_; }
     std::size_t tlp_drop_count() const { return tlp_dropped_; }
 
+    // ========== Phase 3: BypassMux 模式切换清理（apply_mode 10 步）==========
+    // 仅新增公开方法 + 私有字段, 不改 Phase 1/2 既有签名（23 ABI 零破坏）。
+    // 1) 清空 retry buffer（DRAIN 语义下 in-flight 已全部确认/丢弃）
+    void clear_retry_buffer() noexcept { retry_buf_.clear(); }
+    // 2) 重置 seq# 计数器（从 0 重新开始, 防对端失步, per design §7 步骤 4）
+    void reset_seq_counters() noexcept {
+        next_tx_seq_ = 0;
+        next_rx_seq_ = 0;
+        last_acked_seq_ = SEQ_MASK;  // 初始基准（wrap 语义）
+    }
+    // 3) 重置 FC token bucket（恢复初始 credit, per design §7 步骤 5）
+    void reset_fc_buckets();
+
+    // ========== Phase 3: Rate Switch（修 Phase 2 评审 #1）==========
+    // PHY Digital Ctrl 调用; 触发后 wire 在 rate_switch_delay_us 内不可用。
+    void trigger_rate_switch(PcieEncodingLatencyModel::Rate from,
+                             PcieEncodingLatencyModel::Rate to);
+    bool is_rate_switching() const noexcept { return rate_switching_; }
+    uint64_t rate_switch_ready_ns() const noexcept { return rate_switch_ready_ns_; }
+
     // 周期 tick：消费错误注入（NAK 注入触发 → 等效于收到 NAK DLLP）
     void tick();
 
@@ -219,6 +239,10 @@ public:
     //   修复后：downstream TLP 立即转发 + ACK，链路层不再保留副本 → 恒为 0
     //   修复前：downstream_rx_buf_ push_back 无访问器 → 无界增长
     std::size_t downstream_rx_buffer_size() const { return 0u; }
+    // Phase 3 评审 #2 观察钩子: rx wire busy 时刻 (验证 FC reject 不 advance)
+    uint64_t rx_wire_busy_until_ns_debug() const { return rx_wire_busy_until_ns_; }
+    // Phase 3 评审 #1 观察钩子: rate switch ready 时刻
+    uint64_t rate_switch_ready_ns_debug() const { return rate_switch_ready_ns_; }
 #endif
 
 private:
@@ -264,6 +288,12 @@ private:
     std::size_t enc_block_bytes_ = 128;
     uint64_t tx_wire_busy_until_ns_ = 0;  // 上行 wire 忙到哪个虚拟 ns
     uint64_t rx_wire_busy_until_ns_ = 0;  // 下行 wire 忙到哪个虚拟 ns
+
+    // ========== Phase 3: Rate Switch 状态（修 Phase 2 评审 #1）==========
+    // PHY Digital Ctrl 调用 trigger_rate_switch 期间, wire 不可用;
+    // ready 前 tx_tlp / rx_tlp_from_host 立即拒绝.
+    bool rate_switching_ = false;
+    uint64_t rate_switch_ready_ns_ = 0;
 };
 
 } // namespace tlm::pcie
