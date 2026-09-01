@@ -71,6 +71,9 @@ set(CORE_SOURCES
     tlm/pcie/pcie_link_layer_tlm.cc
     # pcie-ip-microarch Phase 2: 128b/130b 编码延迟建模器 (T-P2-3)
     tlm/pcie/pcie_encoding_latency_model.cc
+    # pcie-ip-microarch Phase 3: PHY Digital Ctrl + Bypass Mux (T-P3-1)
+    tlm/pcie/pcie_bypass_mux.cc
+    tlm/pcie/pcie_phy_digital_ctrl_tlm.cc
 )
 
 # ==============================================================================
