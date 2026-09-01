@@ -16,6 +16,7 @@
 #include "bundles/pcie_bundles_tlm.hh"
 #include "bundles/pcie_dllp_bundles_tlm.hh"
 #include "core/event_queue.hh"
+#include "tlm/pcie/pcie_encoding_latency_model.hh"
 #include "tlm/pcie/pcie_flow_control_token_bucket.hh"
 
 #include <cstdint>
@@ -185,6 +186,19 @@ public:
     // 周期 tick：消费错误注入（NAK 注入触发 → 等效于收到 NAK DLLP）
     void tick();
 
+    // ========== Phase 2: 128b/130b 编码延迟注入（默认关闭）==========
+    // 开启后 Tx/Rx 路径按 block_latency 节流 wire 输出（方式 1：累加 ready 时刻检查）。
+    // 仅新增 setter + 查询，不改动 Phase 1 公共方法签名（23 ABI 零破坏）。
+    void set_encoding_latency(PcieEncodingLatencyModel::Rate rate,
+                              std::size_t active_lanes,
+                              std::size_t block_bytes = 128);
+    bool encoding_latency_enabled() const noexcept { return enc_enabled_; }
+    PcieEncodingLatencyModel::Rate encoding_rate() const noexcept {
+        return enc_rate_;
+    }
+    std::size_t encoding_active_lanes() const noexcept { return enc_lanes_; }
+    std::size_t encoding_block_bytes() const noexcept { return enc_block_bytes_; }
+
     // ========== PcieEndpointTLM composition 注册表（冻结 .h 布局下的集成通道）==========
     // PcieEndpointTLM 头文件类成员布局冻结（23 ABI），不能加成员 → 通过静态注册表
     // 关联 EP（按模块名）↔ PcieLinkLayer 实例。定义并实现在 pcie_link_layer_tlm.{hh,cc}，
@@ -240,6 +254,16 @@ private:
     link_error_injector_t err_;
     std::size_t dllp_dropped_ = 0;
     std::size_t tlp_dropped_ = 0;
+
+    // ========== Phase 2: 128b/130b 编码延迟状态（默认关闭）==========
+    // 方式 1（简单方案）: 在 wire 输出累加 ready 时刻（ns），try_pop_* 读取
+    // EventQueue cycle 作为虚拟 ns 时钟检查；未达 ready 时刻 → 返回 false（wire busy）。
+    bool enc_enabled_ = false;
+    PcieEncodingLatencyModel::Rate enc_rate_ = PcieEncodingLatencyModel::Rate::GEN5;
+    std::size_t enc_lanes_ = 1;
+    std::size_t enc_block_bytes_ = 128;
+    uint64_t tx_wire_busy_until_ns_ = 0;  // 上行 wire 忙到哪个虚拟 ns
+    uint64_t rx_wire_busy_until_ns_ = 0;  // 下行 wire 忙到哪个虚拟 ns
 };
 
 } // namespace tlm::pcie

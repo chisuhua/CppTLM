@@ -232,6 +232,26 @@ void PcieLinkLayer::update_fc(FcTokenBucket::Type t, uint32_t credit,
     fc_upstream_.update(vf, t, credit);
 }
 
+// ========== Phase 2: 128b/130b 编码延迟注入 ==========
+
+void PcieLinkLayer::set_encoding_latency(PcieEncodingLatencyModel::Rate rate,
+                                         std::size_t active_lanes,
+                                         std::size_t block_bytes) {
+    enc_enabled_ = true;
+    enc_rate_ = rate;
+    enc_lanes_ = active_lanes;
+    enc_block_bytes_ = block_bytes;
+    tx_wire_busy_until_ns_ = 0;
+    rx_wire_busy_until_ns_ = 0;
+}
+
+namespace {
+// EventQueue cycle 作为虚拟 ns 时钟 (1 cycle = 1 ns)
+uint64_t wire_now_ns(const EventQueue* eq) {
+    return eq ? eq->getCurrentCycle() : 0u;
+}
+} // namespace
+
 // ========== Tx path ==========
 
 FcTokenBucket::Type PcieLinkLayer::fc_type_for_kind(uint8_t kind) {
@@ -271,6 +291,16 @@ bool PcieLinkLayer::tx_tlp(const bundles::PcieTlpBundle& tlp, uint32_t vf) {
 
     // 入 wire 输出队列（携带 seq 供错误注入丢包判定）
     tx_tlp_out_.emplace_back(seq, tlp);
+
+    // Phase 2: 128b/130b 编码延迟注入 (累加 wire busy 时刻, 方式 1)
+    // 仅当启用时累加; Phase 1 默认 enc_enabled_=false → 零行为变化
+    if (enc_enabled_) {
+        const uint64_t now_ns = wire_now_ns(eq_);
+        const uint64_t lat = PcieEncodingLatencyModel::block_latency_ns(
+            enc_rate_, enc_block_bytes_, enc_lanes_);
+        if (tx_wire_busy_until_ns_ < now_ns) tx_wire_busy_until_ns_ = now_ns;
+        tx_wire_busy_until_ns_ += lat;
+    }
     return true;
 }
 
@@ -279,6 +309,19 @@ void PcieLinkLayer::tx_dllp(const bundles::PcieDllpBundle& dllp) {
 }
 
 bool PcieLinkLayer::try_pop_tx_tlp(bundles::PcieTlpBundle& out) {
+    // Phase 2: wire busy 检查 (方式 1: 累加 busy 时刻 + 剩余块数折算 front ready)
+    // front ready = busy_until - lat × (queue_size - 1): 每个块依次占 lat ns
+    // 即 TLP_i 在 (i-1)×lat 时刻完成传输。Phase 1 默认关闭 → 恒通过
+    if (enc_enabled_ && !tx_tlp_out_.empty()) {
+        const uint64_t now_ns = wire_now_ns(eq_);
+        const uint64_t lat = PcieEncodingLatencyModel::block_latency_ns(
+            enc_rate_, enc_block_bytes_, enc_lanes_);
+        const uint64_t front_ready_ns = tx_wire_busy_until_ns_ -
+            lat * (tx_tlp_out_.size() - 1u);
+        if (now_ns < front_ready_ns) {
+            return false;
+        }
+    }
     while (!tx_tlp_out_.empty()) {
         const auto& [seq, tlp] = tx_tlp_out_.front();
         // 错误注入 TLP 丢包（若启用）：指定 seq 的 TLP 从 wire 消失
@@ -316,8 +359,19 @@ bool PcieLinkLayer::try_pop_tx_dllp(bundles::PcieDllpBundle& out) {
 
 bool PcieLinkLayer::rx_tlp_from_host(const bundles::PcieTlpBundle& tlp,
                                      uint32_t vf) {
+    // Phase 2: 下行 wire busy 检查 — 未到 ready 时刻则返回 false (反压)
+    if (enc_enabled_) {
+        const uint64_t now_ns = wire_now_ns(eq_);
+        if (now_ns < rx_wire_busy_until_ns_) {
+            return false;
+        }
+        const uint64_t lat = PcieEncodingLatencyModel::block_latency_ns(
+            enc_rate_, enc_block_bytes_, enc_lanes_);
+        if (rx_wire_busy_until_ns_ < now_ns) rx_wire_busy_until_ns_ = now_ns;
+        rx_wire_busy_until_ns_ += lat;
+    }
     const FcTokenBucket::Type fc_type = fc_type_for_kind(
-        static_cast<uint8_t>(tlp.kind.read()));
+        static_cast<uint8_t>(tlp.kind.read()));;
     if (!fc_upstream_.can_send(vf, fc_type)) {
         return false;  // FC 不足：反压，不消费
     }
