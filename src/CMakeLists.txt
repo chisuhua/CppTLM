@@ -69,6 +69,8 @@ set(CORE_SOURCES
     # pcie-ip-microarch Phase 1: 链路层 + FC Token Bucket (P1)
     tlm/pcie/pcie_flow_control_token_bucket.cc
     tlm/pcie/pcie_link_layer_tlm.cc
+    # pcie-ip-microarch Phase 2: 128b/130b 编码延迟建模器 (T-P2-3)
+    tlm/pcie/pcie_encoding_latency_model.cc
 )
 
 # ==============================================================================
