@@ -120,6 +120,11 @@ add_test(NAME dgpu_board_msix_wrappers COMMAND cpptlm_tests "[dgpu][shell][msix]
 add_test(NAME dgpu_board_lookup_register_wrapper COMMAND cpptlm_tests "[dgpu][shell][lookup_register][wrapper]" -r compact)
 add_test(NAME dgpu_board_shell_full_abi COMMAND cpptlm_tests "[dgpu][shell][full_abi]" -r compact)
 
+# 2026-09-29 cpptlm-dgpu-pcie-130b-encoding Phase 2 (T-P2-1/T-P2-2 测试注册)
+# 2 个新测试: PcieEncodingLatencyModel 延迟单元 + Gen5 吞吐回归
+add_test(NAME pcie_encoding_latency COMMAND cpptlm_tests "[pcie][encoding][latency]" -r compact)
+add_test(NAME pcie_endpoint_throughput COMMAND cpptlm_tests "[pcie][ll][throughput]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)
