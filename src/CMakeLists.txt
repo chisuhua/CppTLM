@@ -74,6 +74,8 @@ set(CORE_SOURCES
     # pcie-ip-microarch Phase 3: PHY Digital Ctrl + Bypass Mux (T-P3-1)
     tlm/pcie/pcie_bypass_mux.cc
     tlm/pcie/pcie_phy_digital_ctrl_tlm.cc
+    # pcie-ip-microarch Phase 4: SR-IOV VF Pool (T-P4-4)
+    tlm/pcie/pcie_sriov_vf_pool_tlm.cc
 )
 
 # ==============================================================================
