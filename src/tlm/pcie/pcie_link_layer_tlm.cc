@@ -69,14 +69,18 @@ PcieLinkLayer::PcieLinkLayer(EventQueue* eq)
     : PcieLinkLayer(eq, PcieLinkLayerConfig{}) {}
 
 PcieLinkLayer::PcieLinkLayer(EventQueue* eq, const PcieLinkLayerConfig& cfg)
-    : name_("pcie_link_layer"), eq_(eq), cfg_(cfg), fc_(eq) {
+    : name_("pcie_link_layer"), eq_(eq), cfg_(cfg),
+      fc_upstream_(eq), fc_downstream_(eq) {
     err_.enabled = cfg_.link_error_injection_enabled;
-    // 初始 credit：InitFC 未到达时使用 cfg 默认（PCIe 链路训练后由 InitFC 设定上限）
-    fc_.install_bucket(0, FcTokenBucket(cfg_.fc_capacity));
-    // 设初始 token = cfg 初始 credit（bruteforce 一致：FcTokenBucket 构造已填 capacity）
-    fc_.bucket(0).update(FcTokenBucket::Type::Posted, cfg_.fc_init_p);
-    fc_.bucket(0).update(FcTokenBucket::Type::NonPosted, cfg_.fc_init_np);
-    fc_.bucket(0).update(FcTokenBucket::Type::Completion, cfg_.fc_init_cpl);
+    // 初始 credit：两个桶镜像填充（Phase 1 简化）；InitFC 镜像重置见 apply_initial_fc
+    fc_upstream_.install_bucket(0, FcTokenBucket(cfg_.fc_capacity));
+    fc_upstream_.bucket(0).update(FcTokenBucket::Type::Posted, cfg_.fc_init_p);
+    fc_upstream_.bucket(0).update(FcTokenBucket::Type::NonPosted, cfg_.fc_init_np);
+    fc_upstream_.bucket(0).update(FcTokenBucket::Type::Completion, cfg_.fc_init_cpl);
+    fc_downstream_.install_bucket(0, FcTokenBucket(cfg_.fc_capacity));
+    fc_downstream_.bucket(0).update(FcTokenBucket::Type::Posted, cfg_.fc_init_p);
+    fc_downstream_.bucket(0).update(FcTokenBucket::Type::NonPosted, cfg_.fc_init_np);
+    fc_downstream_.bucket(0).update(FcTokenBucket::Type::Completion, cfg_.fc_init_cpl);
 }
 
 // ========== DLLP 生成 ==========
@@ -187,10 +191,10 @@ PcieLinkLayer::Dispatch PcieLinkLayer::rx_dllp(
         apply_initial_fc(dllp);
         break;
     case Dispatch::UPDATE_FC:
-        // UpdateFC：增加 credit（唯一补充路径，per Q2）
-        fc_.update(0, FcTokenBucket::Type::Posted, dllp.credit_P.read());
-        fc_.update(0, FcTokenBucket::Type::NonPosted, dllp.credit_NP.read());
-        fc_.update(0, FcTokenBucket::Type::Completion, dllp.credit_Cpl.read());
+        // UpdateFC 补充 fc_upstream_（EP 收侧，host→EP）：host 告诉 EP「我又有空间了」
+        fc_upstream_.update(0, FcTokenBucket::Type::Posted, dllp.credit_P.read());
+        fc_upstream_.update(0, FcTokenBucket::Type::NonPosted, dllp.credit_NP.read());
+        fc_upstream_.update(0, FcTokenBucket::Type::Completion, dllp.credit_Cpl.read());
         break;
     case Dispatch::NOP:
     case Dispatch::VENDOR:
@@ -203,28 +207,29 @@ PcieLinkLayer::Dispatch PcieLinkLayer::rx_dllp(
 }
 
 void PcieLinkLayer::apply_initial_fc(const bundles::PcieDllpBundle& fc1) {
-    // 重建 bucket：InitFC1/InitFC2 设定 capacity 上限与各桶初始 credit
+    // InitFC1/InitFC2 设定 capacity 上限与各桶初始 credit（Phase 1 简化：镜像两桶）
     const uint16_t p = static_cast<uint16_t>(fc1.credit_P.read());
     const uint16_t np = static_cast<uint16_t>(fc1.credit_NP.read());
     const uint16_t cpl = static_cast<uint16_t>(fc1.credit_Cpl.read());
     FcTokenBucket bucket(cfg_.fc_capacity);
     bucket.init_fc(cfg_.fc_capacity, p, np, cpl);
-    fc_.install_bucket(0, std::move(bucket));
+    fc_upstream_.install_bucket(0, bucket);
+    fc_downstream_.install_bucket(0, bucket);
 }
 
 // ========== FC delegates ==========
 
 bool PcieLinkLayer::can_send_fc(FcTokenBucket::Type t, uint32_t vf) {
-    return fc_.can_send(vf, t);
+    return fc_upstream_.can_send(vf, t);
 }
 
 bool PcieLinkLayer::consume_fc(FcTokenBucket::Type t, uint32_t vf) {
-    return fc_.consume(vf, t);
+    return fc_upstream_.consume(vf, t);
 }
 
 void PcieLinkLayer::update_fc(FcTokenBucket::Type t, uint32_t credit,
                               uint32_t vf) {
-    fc_.update(vf, t, credit);
+    fc_upstream_.update(vf, t, credit);
 }
 
 // ========== Tx path ==========
@@ -244,10 +249,10 @@ FcTokenBucket::Type PcieLinkLayer::fc_type_for_kind(uint8_t kind) {
 bool PcieLinkLayer::tx_tlp(const bundles::PcieTlpBundle& tlp, uint32_t vf) {
     const FcTokenBucket::Type fc_type = fc_type_for_kind(
         static_cast<uint8_t>(tlp.kind.read()));
-    if (!fc_.can_send(vf, fc_type)) {
+    if (!fc_downstream_.can_send(vf, fc_type)) {
         return false;
     }
-    fc_.consume(vf, fc_type);
+    fc_downstream_.consume(vf, fc_type);
 
     // 分配 12-bit seq
     const uint16_t seq = next_tx_seq_;
@@ -307,10 +312,10 @@ bool PcieLinkLayer::rx_tlp_from_host(const bundles::PcieTlpBundle& tlp,
                                      uint32_t vf) {
     const FcTokenBucket::Type fc_type = fc_type_for_kind(
         static_cast<uint8_t>(tlp.kind.read()));
-    if (!fc_.can_send(vf, fc_type)) {
+    if (!fc_upstream_.can_send(vf, fc_type)) {
         return false;  // FC 不足：反压，不消费
     }
-    fc_.consume(vf, fc_type);
+    fc_upstream_.consume(vf, fc_type);
 
     // 分配下行 seq（与上行独立，per Q17）
     const uint16_t rx_seq = next_rx_seq_;

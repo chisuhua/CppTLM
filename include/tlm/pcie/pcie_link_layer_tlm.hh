@@ -126,11 +126,18 @@ public:
     bool parse_dllp(const bundles::PcieDllpBundle& dllp, ParsedDllp& out) const;
 
     // ========== FC Token Bucket（VF0 = PF）==========
+    // 上下行独立 credit 桶（per Q17 / Oracle Issue #3）：
+    //   fc_upstream_  = EP 收侧（host→EP 方向），rx_tlp_from_host 消耗，
+    //                   UpdateFC/InitFC DLLP 到达补充；
+    //   fc_downstream_ = EP 发侧（EP→host 方向），tx_tlp 消耗，
+    //                   InitFC DLLP 镜像填充（Phase 1 简化）。
+    // 公共委托（can_send_fc/consume_fc/update_fc/fc()）指向 fc_upstream_
+    // （DLLP 面向桶，与 rx_dllp UpdateFC 语义一致）。
     bool can_send_fc(FcTokenBucket::Type t, uint32_t vf = 0);
     bool consume_fc(FcTokenBucket::Type t, uint32_t vf = 0);
     void update_fc(FcTokenBucket::Type t, uint32_t credit, uint32_t vf = 0);
-    FcEngine& fc() { return fc_; }
-    const FcEngine& fc() const { return fc_; }
+    FcEngine& fc() { return fc_upstream_; }
+    const FcEngine& fc() const { return fc_upstream_; }
 
     // ========== Tx 路径（EP→host）==========
     // 发送 TLP：分配 12-bit seq + FC 检查 + 入 retry buffer；FC 不足返回 false
@@ -210,7 +217,9 @@ private:
     std::string name_;
     EventQueue* eq_ = nullptr;
     PcieLinkLayerConfig cfg_;
-    FcEngine fc_;
+    // 上下行独立 FC 桶（per Q17 / Oracle Issue #3）
+    FcEngine fc_upstream_;    // EP 收侧（host→EP）：rx_tlp_from_host 消耗
+    FcEngine fc_downstream_;  // EP 发侧（EP→host）：tx_tlp 消耗
 
     // Tx：retry buffer (seq → TLP) + wire 队列（携带 seq 供错误注入丢包判定）
     uint16_t next_tx_seq_ = 0;
