@@ -27,60 +27,59 @@ using json = nlohmann::json;
 
 namespace {
 
-// 构造一个 bar0 MMIO_WRITE 寄存器（side_effect none）→ 通过 bar_router 观察落写
-void add_bar0_reg(PcieEndpointTLM& ep, uint32_t off) {
-    ep.bar_router().add_register(off, "REG",
-                                 PcieBarRouter::Access::RW,
-                                 PcieBarRouter::SideEffect::NONE, 0);
-}
+    // 构造一个 bar0 MMIO_WRITE 寄存器（side_effect none）→ 通过 bar_router 观察落写
+    void add_bar0_reg(PcieEndpointTLM& ep, uint32_t off) {
+        ep.bar_router().add_register(off, "REG", PcieBarRouter::Access::RW,
+                                     PcieBarRouter::SideEffect::NONE, 0);
+    }
 
-PcieTlpBundle make_mmio_write(uint32_t off, uint64_t data) {
-    PcieTlpBundle t;
-    t.kind.write(PcieTlpBundle::MMIO_WRITE);
-    t.offset.write(off);
-    t.size.write(4);
-    t.data.write(data);
-    t.requester_id.write(0x0100);
-    t.trans_id.write(1);
-    return t;
-}
+    PcieTlpBundle make_mmio_write(uint32_t off, uint64_t data) {
+        PcieTlpBundle t;
+        t.kind.write(PcieTlpBundle::MMIO_WRITE);
+        t.offset.write(off);
+        t.size.write(4);
+        t.data.write(data);
+        t.requester_id.write(0x0100);
+        t.trans_id.write(1);
+        return t;
+    }
 
-// 通用构造: named endpoint + link_layer 配置 (fc_credit 可配, bypass_mode 可配)
-struct EndpointFixture {
-    EventQueue eq;
-    std::unique_ptr<PcieEndpointTLM> ep;
-    PcieTlpBundle tlp;
+    // 通用构造: named endpoint + link_layer 配置 (fc_credit 可配, bypass_mode 可配)
+    struct EndpointFixture {
+        EventQueue eq;
+        std::unique_ptr<PcieEndpointTLM> ep;
+        PcieTlpBundle tlp;
 
-    EndpointFixture(const std::string& name, uint32_t fc_credit,
-                    const std::string& bypass_mode)
-        : ep(std::make_unique<PcieEndpointTLM>(name, &eq)),
-          tlp(make_mmio_write(0x1000, 0xAA)) {
-        ep->init();
-        json cfg;
-        cfg["link_layer"]["enabled"] = true;
-        cfg["link_layer"]["fc_token_bucket_capacity"] = fc_credit;
-        cfg["link_layer"]["fc_initial_credit_p"] = fc_credit;
-        cfg["link_layer"]["fc_initial_credit_np"] = fc_credit;
-        cfg["link_layer"]["fc_initial_credit_cpl"] = fc_credit;
-        if (!bypass_mode.empty()) {
-            cfg["link_layer"]["bypass_mode"] = bypass_mode;
+        EndpointFixture(const std::string& name, uint32_t fc_credit, const std::string& bypass_mode)
+            : ep(std::make_unique<PcieEndpointTLM>(name, &eq)), tlp(make_mmio_write(0x1000, 0xAA)) {
+            ep->init();
+            json cfg;
+            cfg["link_layer"]["enabled"] = true;
+            cfg["link_layer"]["fc_token_bucket_capacity"] = fc_credit;
+            cfg["link_layer"]["fc_initial_credit_p"] = fc_credit;
+            cfg["link_layer"]["fc_initial_credit_np"] = fc_credit;
+            cfg["link_layer"]["fc_initial_credit_cpl"] = fc_credit;
+            if (!bypass_mode.empty()) {
+                cfg["link_layer"]["bypass_mode"] = bypass_mode;
+            }
+            ep->set_config(cfg);
+            add_bar0_reg(*ep, 0x1000);
         }
-        ep->set_config(cfg);
-        add_bar0_reg(*ep, 0x1000);
-    }
 
-    void inject(uint64_t data) {
-        tlp.data.write(data);
-        ep->req_in[PcieEndpointTLM::PORT_SLAVE_IN].data() = tlp;
-        ep->req_in[PcieEndpointTLM::PORT_SLAVE_IN].set_valid(true);
-    }
+        void inject(uint64_t data) {
+            tlp.data.write(data);
+            ep->req_in[PcieEndpointTLM::PORT_SLAVE_IN].data() = tlp;
+            ep->req_in[PcieEndpointTLM::PORT_SLAVE_IN].set_valid(true);
+        }
 
-    void tick() { ep->tick(); }
+        void tick() {
+            ep->tick();
+        }
 
-    bool pending() const {
-        return ep->req_in[PcieEndpointTLM::PORT_SLAVE_IN].valid();
-    }
-};
+        bool pending() const {
+            return ep->req_in[PcieEndpointTLM::PORT_SLAVE_IN].valid();
+        }
+    };
 
 } // namespace
 

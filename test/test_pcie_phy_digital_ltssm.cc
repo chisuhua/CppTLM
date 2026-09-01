@@ -17,10 +17,11 @@
 using namespace tlm::pcie;
 
 namespace {
-inline void train_to_l0(PciePhyDigitalCtrl& phy) {
-    phy.start_link_training();
-    while (!phy.advance_training()) {}
-}
+    inline void train_to_l0(PciePhyDigitalCtrl& phy) {
+        phy.start_link_training();
+        while (!phy.advance_training()) {
+        }
+    }
 } // namespace
 
 TEST_CASE("LTSSM: 初始状态 Detect + 链路未 up", "[pcie][phy][ltssm][t-p3-2]") {
@@ -132,8 +133,7 @@ TEST_CASE("LTSSM: Hot_Reset 是 Recovery 内子状态 (enum 存在且可查询)"
     (void)phy;
 }
 
-TEST_CASE("LTSSM: in_recovery 覆盖 Recovery + Hot_Reset",
-          "[pcie][phy][ltssm][t-p3-2]") {
+TEST_CASE("LTSSM: in_recovery 覆盖 Recovery + Hot_Reset", "[pcie][phy][ltssm][t-p3-2]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
     REQUIRE(phy.in_recovery() == false);

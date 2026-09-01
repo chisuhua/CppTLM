@@ -22,10 +22,11 @@ using namespace tlm::pcie;
 using namespace bundles;
 
 namespace {
-inline void train_to_l0(PciePhyDigitalCtrl& phy) {
-    phy.start_link_training();
-    while (!phy.advance_training()) {}
-}
+    inline void train_to_l0(PciePhyDigitalCtrl& phy) {
+        phy.start_link_training();
+        while (!phy.advance_training()) {
+        }
+    }
 } // namespace
 
 TEST_CASE("HotPlug: 默认信号状态 (PRSNT present, MRL latched, PWRGOOD ok, REFCLK ok)",
@@ -58,17 +59,16 @@ TEST_CASE("HotPlug: 重新插入 (present=true) 计数 + 链路保持 Detect",
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
     train_to_l0(phy);
-    phy.signal_prsnt(false);  // remove
+    phy.signal_prsnt(false); // remove
     REQUIRE(phy.surprise_removal_count() == 1u);
 
-    phy.signal_prsnt(true);   // re-insert
+    phy.signal_prsnt(true); // re-insert
     REQUIRE(phy.hotplug_insertion_count() == 1u);
     // 插入后需重新训练 (PERST# deassert + 信号就绪)
     REQUIRE(phy.state() == LtState::Detect);
 }
 
-TEST_CASE("HotPlug: MRL latch 解除 — 只是信号状态变化",
-          "[pcie][phy][hotplug][t-p3-4]") {
+TEST_CASE("HotPlug: MRL latch 解除 — 只是信号状态变化", "[pcie][phy][hotplug][t-p3-4]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
     phy.signal_mrl(false);
@@ -77,8 +77,7 @@ TEST_CASE("HotPlug: MRL latch 解除 — 只是信号状态变化",
     REQUIRE(phy.state() == LtState::Detect);
 }
 
-TEST_CASE("HotPlug: PWRGOOD 掉电 + 恢复",
-          "[pcie][phy][hotplug][t-p3-4]") {
+TEST_CASE("HotPlug: PWRGOOD 掉电 + 恢复", "[pcie][phy][hotplug][t-p3-4]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
     phy.signal_pwrgood(false);
@@ -87,8 +86,7 @@ TEST_CASE("HotPlug: PWRGOOD 掉电 + 恢复",
     REQUIRE(phy.pwrgood_ok() == true);
 }
 
-TEST_CASE("HotPlug: REFCLK+ 检测 + 恢复",
-          "[pcie][phy][hotplug][t-p3-4]") {
+TEST_CASE("HotPlug: REFCLK+ 检测 + 恢复", "[pcie][phy][hotplug][t-p3-4]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
     phy.signal_refclk(false);
@@ -104,16 +102,17 @@ TEST_CASE("HotPlug: PERST# assert → Detect (复位) + deassert → 训练 L0",
     train_to_l0(phy);
     REQUIRE(phy.is_link_up() == true);
 
-    phy.signal_perst(true);   // assert → 复位
+    phy.signal_perst(true); // assert → 复位
     REQUIRE(phy.perst_asserted() == true);
     REQUIRE(phy.state() == LtState::Detect);
     REQUIRE(phy.is_link_up() == false);
 
-    phy.signal_perst(false);  // deassert + 信号就绪 → 训练 (C3: 分步)
+    phy.signal_perst(false); // deassert + 信号就绪 → 训练 (C3: 分步)
     REQUIRE(phy.perst_asserted() == false);
     REQUIRE(phy.state() == LtState::Detect);
     // 训练序列开始: 每 tick 一状态 → L0
-    for (int i = 0; i < 4; ++i) phy.tick();
+    for (int i = 0; i < 4; ++i)
+        phy.tick();
     REQUIRE(phy.state() == LtState::L0);
     REQUIRE(phy.is_link_up() == true);
 }
@@ -123,7 +122,7 @@ TEST_CASE("HotPlug: 完整插入序列 (PRSNT→MRL→PWRGOOD→REFCLK→PERST# 
     EventQueue eq;
     PcieLinkLayer ll(&eq);
     PciePhyDigitalCtrl phy(&eq);
-    phy.link_layer(&ll);   // 挂 LL 保持一致性
+    phy.link_layer(&ll); // 挂 LL 保持一致性
     // 模拟空槽: PRSNT 不在
     phy.signal_prsnt(false);
     phy.signal_mrl(false);
@@ -138,7 +137,8 @@ TEST_CASE("HotPlug: 完整插入序列 (PRSNT→MRL→PWRGOOD→REFCLK→PERST# 
     // PERST# deassert 触发训练 (所有信号就绪)
     phy.signal_perst(true);
     phy.signal_perst(false);
-    for (int i = 0; i < 4; ++i) phy.tick();
+    for (int i = 0; i < 4; ++i)
+        phy.tick();
     REQUIRE(phy.state() == LtState::L0);
     REQUIRE(phy.is_link_up() == true);
     REQUIRE(phy.hotplug_insertion_count() == 1u);
@@ -151,7 +151,7 @@ TEST_CASE("HotPlug: Recovery 内 PERST# assert → Hot_Reset 子状态 (C3)",
     EventQueue eq;
     PcieLinkLayer ll(&eq);
     PciePhyDigitalCtrl phy(&eq);
-    phy.link_layer(&ll);   // 挂 LL → start_rate_switch 停留在 Recovery (非立即完成)
+    phy.link_layer(&ll); // 挂 LL → start_rate_switch 停留在 Recovery (非立即完成)
     train_to_l0(phy);
     phy.set_rate(PcieEncodingLatencyModel::Rate::GEN3);
 
@@ -171,11 +171,12 @@ TEST_CASE("HotPlug: Hot_Reset 可退出 — PERST# deassert 恢复训练 (C3)",
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
     train_to_l0(phy);
-    phy.signal_perst(true);   // 从 L0 assert → Detect
+    phy.signal_perst(true); // 从 L0 assert → Detect
     REQUIRE(phy.state() == LtState::Detect);
 
-    phy.signal_perst(false);  // deassert → 训练分步
-    for (int i = 0; i < 4; ++i) phy.tick();
+    phy.signal_perst(false); // deassert → 训练分步
+    for (int i = 0; i < 4; ++i)
+        phy.tick();
     REQUIRE(phy.state() == LtState::L0);
     REQUIRE(phy.is_link_up() == true);
 }
@@ -235,7 +236,7 @@ TEST_CASE("HotPlug: Surprise Removal — 无 mux 时 link_layer 清 retry/seq/FC
     EventQueue eq;
     PcieLinkLayer ll(&eq);
     PciePhyDigitalCtrl phy(&eq);
-    phy.link_layer(&ll);   // 只挂 LL, 不挂 mux → 回退路径
+    phy.link_layer(&ll); // 只挂 LL, 不挂 mux → 回退路径
     train_to_l0(phy);
 
     // 上行发 4 个 TLP → retry buffer 非空, seq 计数器 4

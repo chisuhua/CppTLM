@@ -14,26 +14,26 @@
 #include "bundles/pcie_bundles_tlm.hh"
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
-#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
+#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 
 using namespace tlm::pcie;
 using namespace bundles;
 
 namespace {
 
-PcieLinkLayerConfig abundant_config() {
-    PcieLinkLayerConfig c;
-    c.fc_capacity = 4096;
-    c.fc_init_p = 4096;
-    c.fc_init_np = 4096;
-    c.fc_init_cpl = 4096;
-    return c;
-}
+    PcieLinkLayerConfig abundant_config() {
+        PcieLinkLayerConfig c;
+        c.fc_capacity = 4096;
+        c.fc_init_p = 4096;
+        c.fc_init_np = 4096;
+        c.fc_init_cpl = 4096;
+        return c;
+    }
 
-PcieTlpBundle make_write(uint32_t tid) {
-    return PcieTlpBundle(PcieTlpBundle::MMIO_WRITE, 0, 0x1000, 4, 1, 0x0100, tid);
-}
+    PcieTlpBundle make_write(uint32_t tid) {
+        return PcieTlpBundle(PcieTlpBundle::MMIO_WRITE, 0, 0x1000, 4, 1, 0x0100, tid);
+    }
 
 } // namespace
 
@@ -109,8 +109,8 @@ TEST_CASE("RateSwitch: tick 推进 — ready 后 link 恢复可用",
 
     // 推进 2000ns (GEN3→GEN5 切换 1µs=1000ns 已过), tick 链路层 + PHY
     eq.run(2000);
-    ll.tick();   // 链路层 tick: ready 后清除 rate_switching_
-    phy.tick();  // PHY tick: 完成 Recovery → L0
+    ll.tick();  // 链路层 tick: ready 后清除 rate_switching_
+    phy.tick(); // PHY tick: 完成 Recovery → L0
     REQUIRE(ll.is_rate_switching() == false);
     REQUIRE(phy.is_rate_switching() == false);
     REQUIRE(phy.state() == LtState::L0);
@@ -118,8 +118,7 @@ TEST_CASE("RateSwitch: tick 推进 — ready 后 link 恢复可用",
     REQUIRE(phy.rate() == PcieEncodingLatencyModel::Rate::GEN5);
 }
 
-TEST_CASE("RateSwitch: PHY 同速率 → no-op",
-          "[pcie][phy][rate-switch][t-p3-5]") {
+TEST_CASE("RateSwitch: PHY 同速率 → no-op", "[pcie][phy][rate-switch][t-p3-5]") {
     EventQueue eq;
     PcieLinkLayer ll(&eq, abundant_config());
     PciePhyDigitalCtrl phy(&eq);
@@ -128,8 +127,8 @@ TEST_CASE("RateSwitch: PHY 同速率 → no-op",
     phy.set_rate(PcieEncodingLatencyModel::Rate::GEN5);
 
     REQUIRE(ll.is_rate_switching() == false);
-    phy.start_rate_switch(PcieEncodingLatencyModel::Rate::GEN5);  // same rate
-    REQUIRE(ll.is_rate_switching() == false);  // 无切换触发
+    phy.start_rate_switch(PcieEncodingLatencyModel::Rate::GEN5); // same rate
+    REQUIRE(ll.is_rate_switching() == false);                    // 无切换触发
 }
 
 TEST_CASE("RateSwitch: 反向切换 (GEN5→GEN1) ≥ 1µs (downshift 重训练)",
@@ -189,10 +188,10 @@ TEST_CASE("RateSwitch: 切换完成后 block_latency 按新速率计费 (C2)",
 
     // GEN3 x16: 128B 块 = 8ns; GEN5 x16: 128B 块 = 2ns
     ll.set_encoding_latency(PcieEncodingLatencyModel::Rate::GEN3, 16);
-    REQUIRE(PcieEncodingLatencyModel::block_latency_ns(
-                PcieEncodingLatencyModel::Rate::GEN3, 128, 16) == 8u);
-    REQUIRE(PcieEncodingLatencyModel::block_latency_ns(
-                PcieEncodingLatencyModel::Rate::GEN5, 128, 16) == 2u);
+    REQUIRE(PcieEncodingLatencyModel::block_latency_ns(PcieEncodingLatencyModel::Rate::GEN3, 128,
+                                                       16) == 8u);
+    REQUIRE(PcieEncodingLatencyModel::block_latency_ns(PcieEncodingLatencyModel::Rate::GEN5, 128,
+                                                       16) == 2u);
 
     phy.start_rate_switch(PcieEncodingLatencyModel::Rate::GEN5);
     eq.run(2000);

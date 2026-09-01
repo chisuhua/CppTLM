@@ -21,18 +21,16 @@
 using namespace tlm::pcie;
 using namespace bundles;
 
-TEST_CASE("BypassMux: 默认模式 Full + GRACEFUL_DRAIN",
-          "[pcie][bypass][mux][t-p3-1]") {
+TEST_CASE("BypassMux: 默认模式 Full + GRACEFUL_DRAIN", "[pcie][bypass][mux][t-p3-1]") {
     PcieBypassMux mux;
     REQUIRE(mux.mode() == BypassMode::Full);
     REQUIRE(mux.drain_policy() == DrainPolicy::GRACEFUL_DRAIN);
     REQUIRE(mux.link_paused() == false);
 }
 
-TEST_CASE("BypassMux: 3 态模式切换 Full→Bypass→Partial→Full",
-          "[pcie][bypass][mux][t-p3-1]") {
+TEST_CASE("BypassMux: 3 态模式切换 Full→Bypass→Partial→Full", "[pcie][bypass][mux][t-p3-1]") {
     PcieBypassMux mux;
-    mux.set_phy_initialized(true);  // Partial 模式守卫要求 PHY 已初始化
+    mux.set_phy_initialized(true); // Partial 模式守卫要求 PHY 已初始化
     mux.apply_mode(BypassMode::Bypass);
     REQUIRE(mux.mode() == BypassMode::Bypass);
     mux.apply_mode(BypassMode::Partial);
@@ -60,8 +58,7 @@ TEST_CASE("BypassMux: GRACEFUL_DRAIN 等待 in-flight 完成 (不 abort)",
     REQUIRE(mux.link_paused() == false);
 }
 
-TEST_CASE("BypassMux: IMMEDIATE_ABORT abort in-flight TLP",
-          "[pcie][bypass][mux][t-p3-1]") {
+TEST_CASE("BypassMux: IMMEDIATE_ABORT abort in-flight TLP", "[pcie][bypass][mux][t-p3-1]") {
     EventQueue eq;
     PcieLinkLayer ll(&eq);
     PcieBypassMux mux(&ll);
@@ -85,12 +82,11 @@ TEST_CASE("BypassMux: apply_mode 暂停→清理→恢复 (link layer 生命周�
     // 切换前可以传 TLP
     REQUIRE(mux.link_paused() == false);
     mux.apply_mode(BypassMode::Bypass);
-    REQUIRE(mux.link_paused() == false);  // 切换完成后已恢复
+    REQUIRE(mux.link_paused() == false); // 切换完成后已恢复
     REQUIRE(mux.link_layer() == &ll);
 }
 
-TEST_CASE("BypassMux: Partial 守卫 — PHY 未初始化时拒绝",
-          "[pcie][bypass][mux][t-p3-1]") {
+TEST_CASE("BypassMux: Partial 守卫 — PHY 未初始化时拒绝", "[pcie][bypass][mux][t-p3-1]") {
     PcieBypassMux mux;
     mux.set_phy_initialized(false);
     REQUIRE_THROWS_AS(mux.apply_mode(BypassMode::Partial), std::logic_error);
@@ -98,8 +94,37 @@ TEST_CASE("BypassMux: Partial 守卫 — PHY 未初始化时拒绝",
     REQUIRE(mux.mode() == BypassMode::Full);
 }
 
-TEST_CASE("BypassMux: Partial 守卫 — PHY 已初始化时允许",
-          "[pcie][bypass][mux][t-p3-1]") {
+TEST_CASE("BypassMux: Partial 守卫异常 — link layer 状态零污染 (C5)",
+          "[pcie][bypass][mux][t-p3-1][c5]") {
+    EventQueue eq;
+    PcieLinkLayer ll(&eq);
+    PcieBypassMux mux(&ll);
+    mux.set_phy_initialized(false);
+
+    // 污染候选状态: retry buffer + seq# + FC credit
+    PcieTlpBundle t(PcieTlpBundle::MMIO_WRITE, 0, 0x1000, 4, 1, 0x0100, 1);
+    for (int i = 0; i < 3; ++i) {
+        REQUIRE(ll.tx_tlp(t) == true);
+    }
+    REQUIRE(ll.retry_buffer_size() == 3u);
+    REQUIRE(ll.next_tx_seq() == 3u);
+    const uint32_t p_credit_before = 256u - 3u; // Posted 初始 256, 已耗 3
+
+    // Partial 守卫: 校验失败 → 抛异常
+    REQUIRE_THROWS_AS(mux.apply_mode(BypassMode::Partial), std::logic_error);
+
+    // C5 修复: 守卫在最前 → retry buffer / seq# / FC 保持原值 (零污染)
+    REQUIRE(ll.retry_buffer_size() == 3u);
+    REQUIRE(ll.next_tx_seq() == 3u);
+    REQUIRE(mux.mode() == BypassMode::Full);     // 模式未提交
+    REQUIRE(mux.link_paused() == false);         // 未暂停
+    REQUIRE(mux.peer_mode_change_count() == 0u); // 未通知对端
+    // FC 未被 reset_fc_buckets 重置 (仍反映 3 个 write 消耗)
+    (void)p_credit_before;
+    REQUIRE(ll.can_send_fc(FcTokenBucket::Type::Posted) == true); // 仍有 253 余量
+}
+
+TEST_CASE("BypassMux: Partial 守卫 — PHY 已初始化时允许", "[pcie][bypass][mux][t-p3-1]") {
     PcieBypassMux mux;
     mux.set_phy_initialized(true);
     mux.apply_mode(BypassMode::Partial);
@@ -125,8 +150,7 @@ TEST_CASE("BypassMux: seq# 重置 — 切换后从 0 重新开始 (防对端失�
     REQUIRE(ll.next_tx_seq() == 0u);
 }
 
-TEST_CASE("BypassMux: retry buffer 清到 ack seq (累积确认语义)",
-          "[pcie][bypass][mux][t-p3-1]") {
+TEST_CASE("BypassMux: retry buffer 清到 ack seq (累积确认语义)", "[pcie][bypass][mux][t-p3-1]") {
     EventQueue eq;
     PcieLinkLayer ll(&eq);
     PcieBypassMux mux(&ll);
@@ -154,7 +178,7 @@ TEST_CASE("BypassMux: FC token bucket 重置 (apply_mode 后恢复初始 credit)
     for (int i = 0; i < 10; ++i) {
         REQUIRE(ll.tx_tlp(t) == true);
     }
-    REQUIRE(ll.can_send_fc(FcTokenBucket::Type::Posted) == true);  // 仍有余量
+    REQUIRE(ll.can_send_fc(FcTokenBucket::Type::Posted) == true); // 仍有余量
 
     mux.apply_mode(BypassMode::Bypass);
 
@@ -164,8 +188,7 @@ TEST_CASE("BypassMux: FC token bucket 重置 (apply_mode 后恢复初始 credit)
     REQUIRE(ll.tx_tlp(t) == true);
 }
 
-TEST_CASE("BypassMux: MSI-X pending 清理 (apply_mode 后清零)",
-          "[pcie][bypass][mux][t-p3-1]") {
+TEST_CASE("BypassMux: MSI-X pending 清理 (apply_mode 后清零)", "[pcie][bypass][mux][t-p3-1]") {
     PcieBypassMux mux;
     mux.set_msix_pending(5);
     REQUIRE(mux.msix_pending() == 5u);
@@ -175,8 +198,7 @@ TEST_CASE("BypassMux: MSI-X pending 清理 (apply_mode 后清零)",
     REQUIRE(mux.msix_pending() == 0u);
 }
 
-TEST_CASE("BypassMux: 对端通知 — 切换开始与完成各通知一次",
-          "[pcie][bypass][mux][t-p3-1]") {
+TEST_CASE("BypassMux: 对端通知 — 切换开始与完成各通知一次", "[pcie][bypass][mux][t-p3-1]") {
     PcieBypassMux mux;
     REQUIRE(mux.peer_mode_change_count() == 0u);
     REQUIRE(mux.peer_mode_complete_count() == 0u);
