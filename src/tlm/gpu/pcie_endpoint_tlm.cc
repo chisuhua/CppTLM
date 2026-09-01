@@ -5,6 +5,7 @@
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 
 #include "bundles/pcie_bundles_tlm.hh"
+#include "tlm/pcie/pcie_axi_adapter_tlm.hh"
 #include "tlm/pcie/pcie_bypass_mux.hh"
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
 #include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
@@ -178,6 +179,15 @@ namespace tlm::gpu {
                 tlm::pcie::PciePhyDigitalCtrl::detach_from_endpoint(getName());
                 tlm::pcie::PcieBypassMux::detach_from_endpoint(getName());
             }
+        }
+
+        // composition 集成 PcieAxiAdapter（per Phase 5 T-P5-6，不改 .h 布局）
+        // JSON params.axi_adapter → 挂接 AXI Stream Adapter（axi_master_out /
+        // axi_slave_in / cfg_slave_in 三端口），供 SoC 侧 for_endpoint() 消费。
+        if (cfg.contains("axi_adapter")) {
+            tlm::pcie::PcieAxiAdapter::attach_to_endpoint(getName(), event_queue);
+        } else {
+            tlm::pcie::PcieAxiAdapter::detach_from_endpoint(getName());
         }
     }
 

@@ -8,10 +8,14 @@
 #include "bundles/axi4_bundles_tlm.hh"
 #include "catch_amalgamated.hpp"
 #include "framework/axi4_stream_adapter.hh"
+#include "tlm/gpu/pcie_endpoint_tlm.h"
+#include "tlm/pcie/pcie_axi_adapter_tlm.hh"
 
 #include <cstdint>
+#include <nlohmann/json.hpp>
 
 using namespace bundles;
+using json = nlohmann::json;
 
 TEST_CASE("Axi4StreamAdapter: master write request reaches downstream with awid/awaddr",
           "[axi][adapter][basic][master]") {
@@ -174,4 +178,30 @@ TEST_CASE("Axi4StreamAdapter: initial state has no valid transactions",
     REQUIRE(a.cfg_resp_valid() == false);
     REQUIRE(a.outstanding_wr() == 0);
     REQUIRE(a.outstanding_rd() == 0);
+}
+
+TEST_CASE("PcieEndpointTLM: axi_adapter config attaches PcieAxiAdapter",
+          "[axi][adapter][basic][compose]") {
+    tlm::gpu::PcieEndpointTLM ep("pcie_ep_axi_cfg", nullptr);
+    ep.init();
+
+    json cfg;
+    cfg["axi_adapter"] = json::object();  // 启用 AXI Adapter 挂接
+    ep.set_config(cfg);  // → on_config_loaded → attach_to_endpoint
+
+    REQUIRE(tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_axi_cfg") != nullptr);
+    REQUIRE(tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_axi_cfg")->event_queue() == nullptr);
+
+    // 清理（detach 防跨测试污染）
+    tlm::pcie::PcieAxiAdapter::detach_from_endpoint("pcie_ep_axi_cfg");
+    REQUIRE(tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_axi_cfg") == nullptr);
+}
+
+TEST_CASE("PcieEndpointTLM: without axi_adapter config no adapter attached",
+          "[axi][adapter][basic][compose][regression]") {
+    tlm::gpu::PcieEndpointTLM ep("pcie_ep_axi_plain", nullptr);
+    ep.init();
+    ep.set_config(json::object());  // 无 axi_adapter
+
+    REQUIRE(tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_axi_plain") == nullptr);
 }

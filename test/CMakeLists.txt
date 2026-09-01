@@ -145,6 +145,14 @@ add_test(NAME pcie_sriov_completion_tracking COMMAND cpptlm_tests "[pcie][sriov]
 add_test(NAME pcie_sriov_endpoint_ip_basic COMMAND cpptlm_tests "[pcie][sriov][endpoint-ip][basic]" -r compact)
 add_test(NAME pcie_sriov_all COMMAND cpptlm_tests "[pcie][sriov]" -r compact)
 
+# 2026-11-03 cpptlm-dgpu-axi-stream-adapter Phase 5 (T-P5-1..T-P5-6 测试注册)
+# 5 个新测试: axi4_bundle / axi_adapter_basic / 64byte_burst / backpressure / ids
+add_test(NAME axi4_bundle COMMAND cpptlm_tests "[axi][bundle]" -r compact)
+add_test(NAME pcie_axi_adapter_basic COMMAND cpptlm_tests "[axi][adapter][basic]" -r compact)
+add_test(NAME pcie_axi_adapter_64byte_burst COMMAND cpptlm_tests "[axi][pcie][adapter][burst]" -r compact)
+add_test(NAME pcie_axi_adapter_backpressure COMMAND cpptlm_tests "[axi][adapter][backpressure]" -r compact)
+add_test(NAME pcie_axi_adapter_ids COMMAND cpptlm_tests "[axi][adapter][ids]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)

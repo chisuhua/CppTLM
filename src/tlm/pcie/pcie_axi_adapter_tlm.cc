@@ -9,7 +9,44 @@
 
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 
+#include <unordered_map>
+#include <memory>
+
 namespace tlm::pcie {
+
+namespace {
+
+// PcieEndpointIP ↔ PcieAxiAdapter composition 注册表（按 EP 模块名）
+// 冻结 .h 布局不能加成员 → EP 侧通过 on_config_loaded() 挂接，这里持有生命周期。
+std::unordered_map<std::string, std::unique_ptr<PcieAxiAdapter>>& axi_registry() {
+    static std::unordered_map<std::string, std::unique_ptr<PcieAxiAdapter>> registry;
+    return registry;
+}
+
+} // namespace
+
+PcieAxiAdapter* PcieAxiAdapter::attach_to_endpoint(const std::string& endpoint_name,
+                                                   EventQueue* eq) {
+    auto& reg = axi_registry();
+    auto it = reg.find(endpoint_name);
+    if (it != reg.end()) {
+        it->second = std::make_unique<PcieAxiAdapter>(nullptr, eq);
+        return it->second.get();
+    }
+    auto [new_it, _] = reg.emplace(endpoint_name,
+                                   std::make_unique<PcieAxiAdapter>(nullptr, eq));
+    return new_it->second.get();
+}
+
+PcieAxiAdapter* PcieAxiAdapter::for_endpoint(const std::string& endpoint_name) noexcept {
+    auto& reg = axi_registry();
+    auto it = reg.find(endpoint_name);
+    return (it != reg.end()) ? it->second.get() : nullptr;
+}
+
+void PcieAxiAdapter::detach_from_endpoint(const std::string& endpoint_name) noexcept {
+    axi_registry().erase(endpoint_name);
+}
 
 PcieAxiAdapter::PcieAxiAdapter(PcieEndpointIP* ep, EventQueue* eq)
     : ep_(ep), eq_(eq) {

@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <deque>
+#include <string>
 
 namespace tlm::pcie {
 
@@ -35,6 +36,15 @@ public:
     PcieAxiAdapter(PcieEndpointIP* ep, EventQueue* eq);
     PcieAxiAdapter(const PcieAxiAdapter&) = delete;
     PcieAxiAdapter& operator=(const PcieAxiAdapter&) = delete;
+
+    // ===================== composition 接线（静态注册表）=====================
+    // 按 EP 模块名挂接/查找/detach（与 PcieLinkLayer 同模式；.h 布局冻结时用）。
+    // 由 PcieEndpointTLM/PcieEndpointIP 的 on_config_loaded() 在 JSON 含
+    // "axi_adapter" 时调用。
+    static PcieAxiAdapter* attach_to_endpoint(const std::string& endpoint_name,
+                                              EventQueue* eq);
+    static PcieAxiAdapter* for_endpoint(const std::string& endpoint_name) noexcept;
+    static void detach_from_endpoint(const std::string& endpoint_name) noexcept;
 
     // 绑定的 Endpoint
     PcieEndpointIP* endpoint() const noexcept { return ep_; }
