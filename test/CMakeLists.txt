@@ -107,6 +107,14 @@ add_test(NAME pcie_link_layer_downstream_rx COMMAND cpptlm_tests "[pcie][ll][dow
 add_test(NAME pcie_link_layer_ack_nak COMMAND cpptlm_tests "[pcie][ll][ack-nak]" -r compact)
 add_test(NAME pcie_endpoint_with_ll COMMAND cpptlm_tests "[pcie][endpoint][ll][compose]" -r compact)
 
+# 2026-09-01 Oracle Phase 1 Critical Issue 修复回归测试
+#   Issue #1: NAK 重传顺序(升序 wire order) / #2: 下行 rx buffer 泄漏 / #3: 上下行独立 FC
+#   #4: seq 窗口卫生(outstanding<2048 + stale ACK guard)
+add_test(NAME pcie_link_layer_nak_retransmit_order COMMAND cpptlm_tests "[pcie][ll][nak-order]" -r compact)
+add_test(NAME pcie_link_layer_no_rx_buffer_leak COMMAND cpptlm_tests "[pcie][ll][no-rx-leak]" -r compact)
+add_test(NAME pcie_link_layer_per_direction_fc COMMAND cpptlm_tests "[pcie][ll][per-dir-fc]" -r compact)
+add_test(NAME pcie_link_layer_seq_window COMMAND cpptlm_tests "[pcie][ll][seq-window]" -r compact)
+
 # T-W3-3: msix_* + lookup_register wrapper + ABI coverage + full ABI lifecycle
 add_test(NAME dgpu_board_msix_wrappers COMMAND cpptlm_tests "[dgpu][shell][msix][wrapper]" -r compact)
 add_test(NAME dgpu_board_lookup_register_wrapper COMMAND cpptlm_tests "[dgpu][shell][lookup_register][wrapper]" -r compact)
