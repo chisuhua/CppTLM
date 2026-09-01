@@ -363,9 +363,10 @@ void PcieLinkLayer::on_nak_received(uint16_t nak_seq) {
             retransmit.emplace_back(seq, tlp);
         }
     }
-    // 按序重发（seq 升序）
-    for (auto& item : retransmit) {
-        tx_tlp_out_.push_front(std::move(item));
+    // 按序重发（seq 升序）：push_front 会反转顺序 → 必须降序遍历
+    // 才能得到 wire 输出升序（per Oracle Issue #1）
+    for (auto it = retransmit.rbegin(); it != retransmit.rend(); ++it) {
+        tx_tlp_out_.push_front(std::move(*it));
     }
 }
 
