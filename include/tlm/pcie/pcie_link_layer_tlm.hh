@@ -107,6 +107,9 @@ public:
     // 12-bit seq（PCIe 5.0 §3.6，wrap @4095→0）
     static constexpr uint16_t SEQ_MASK = 0x0FFF;
     static constexpr uint16_t SEQ_WRAP = 0x1000;
+    // PCIe half-window：合法 outstanding 上限 + stale ACK 判定阈值（Oracle #4）
+    //   合法 ACK 前向距离 ∈ [1, 2048]；delta > 2048 为 stale（反向旧 ACK）
+    static constexpr uint16_t SEQ_WINDOW = 2048;
 
     explicit PcieLinkLayer(EventQueue* eq);
     PcieLinkLayer(EventQueue* eq, const PcieLinkLayerConfig& cfg);

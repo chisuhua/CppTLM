@@ -254,14 +254,17 @@ bool PcieLinkLayer::tx_tlp(const bundles::PcieTlpBundle& tlp, uint32_t vf) {
     }
     fc_downstream_.consume(vf, fc_type);
 
+    // outstanding 上限检查（per Oracle #4）：超过 PCIe half-window 反压
+    if (retry_buf_.size() >= SEQ_WINDOW) {
+        return false;
+    }
+
     // 分配 12-bit seq
     const uint16_t seq = next_tx_seq_;
     next_tx_seq_ = static_cast<uint16_t>((next_tx_seq_ + 1) & SEQ_MASK);
 
-    // 入 retry buffer（retry buffer 深度限制）
-    if (retry_buf_.size() < cfg_.retry_buffer_size) {
-        retry_buf_.emplace(seq, tlp);
-    }
+    // 入 retry buffer（保证 SEQ_WINDOW 上限下永不冲突）
+    retry_buf_.emplace(seq, tlp);
 
     // 入 wire 输出队列（携带 seq 供错误注入丢包判定）
     tx_tlp_out_.emplace_back(seq, tlp);
@@ -348,6 +351,10 @@ void PcieLinkLayer::on_ack_received(uint16_t ack_seq) {
     const uint16_t delta = seq_dist(ack_seq, last_acked_seq_);
     if (delta == 0)
         return;  // 重复/旧 ACK：无新确认
+    // stale guard（per Oracle #4）：delta > SEQ_WINDOW(2048) 的"巨大前向 ACK"
+    // 实为反向旧 ACK（seq 空间为环，半窗口内才能判定前后）→ 忽略，防抹空 retry buffer
+    if (delta > SEQ_WINDOW)
+        return;
     for (auto it = retry_buf_.begin(); it != retry_buf_.end();) {
         const uint16_t d = seq_dist(it->first, last_acked_seq_);
         if (d != 0 && d <= delta) {
