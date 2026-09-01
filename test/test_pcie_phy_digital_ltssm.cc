@@ -16,6 +16,13 @@
 
 using namespace tlm::pcie;
 
+namespace {
+inline void train_to_l0(PciePhyDigitalCtrl& phy) {
+    phy.start_link_training();
+    while (!phy.advance_training()) {}
+}
+} // namespace
+
 TEST_CASE("LTSSM: 初始状态 Detect + 链路未 up", "[pcie][phy][ltssm][t-p3-2]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
@@ -29,6 +36,13 @@ TEST_CASE("LTSSM: start_link_training Detect→Polling→Configuration→L0",
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
     phy.start_link_training();
+    REQUIRE(phy.state() == LtState::Detect);
+    REQUIRE(phy.is_link_up() == false);
+    REQUIRE(phy.advance_training() == false);
+    REQUIRE(phy.state() == LtState::Polling);
+    REQUIRE(phy.advance_training() == false);
+    REQUIRE(phy.state() == LtState::Configuration);
+    REQUIRE(phy.advance_training() == true);
     REQUIRE(phy.state() == LtState::L0);
     REQUIRE(phy.is_link_up() == true);
     REQUIRE(phy.is_initialized() == true);
@@ -37,7 +51,7 @@ TEST_CASE("LTSSM: start_link_training Detect→Polling→Configuration→L0",
 TEST_CASE("LTSSM: set_link_up(false) 回 Detect", "[pcie][phy][ltssm][t-p3-2]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
-    phy.start_link_training();
+    train_to_l0(phy);
     REQUIRE(phy.is_link_up() == true);
     phy.set_link_up(false);
     REQUIRE(phy.is_link_up() == false);
@@ -61,7 +75,7 @@ TEST_CASE("LTSSM: 11 主状态枚举值映射正确", "[pcie][phy][ltssm][t-p3-2
 TEST_CASE("LTSSM: enter_l0s 链路 down + exit 回 L0", "[pcie][phy][ltssm][t-p3-2]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
-    phy.start_link_training();
+    train_to_l0(phy);
     phy.enter_l0s();
     REQUIRE(phy.state() == LtState::L0s);
     REQUIRE(phy.is_link_up() == false);
@@ -73,7 +87,7 @@ TEST_CASE("LTSSM: enter_l0s 链路 down + exit 回 L0", "[pcie][phy][ltssm][t-p3
 TEST_CASE("LTSSM: enter_l1 链路 down + exit 回 L0", "[pcie][phy][ltssm][t-p3-2]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
-    phy.start_link_training();
+    train_to_l0(phy);
     phy.enter_l1();
     REQUIRE(phy.state() == LtState::L1);
     REQUIRE(phy.is_link_up() == false);
@@ -85,7 +99,7 @@ TEST_CASE("LTSSM: enter_l1 链路 down + exit 回 L0", "[pcie][phy][ltssm][t-p3-
 TEST_CASE("LTSSM: enter_l2 不自动退出 (PERST# 唤醒)", "[pcie][phy][ltssm][t-p3-2]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
-    phy.start_link_training();
+    train_to_l0(phy);
     phy.enter_l2();
     REQUIRE(phy.state() == LtState::L2);
     REQUIRE(phy.is_link_up() == false);
@@ -98,7 +112,7 @@ TEST_CASE("LTSSM: Recovery 内速率切换 → 新速率 + L0 (tick 推进)",
           "[pcie][phy][ltssm][t-p3-2][rate-switch]") {
     EventQueue eq;
     PciePhyDigitalCtrl phy(&eq);
-    phy.start_link_training();
+    train_to_l0(phy);
     phy.set_rate(PcieEncodingLatencyModel::Rate::GEN3);
 
     phy.start_rate_switch(PcieEncodingLatencyModel::Rate::GEN5);

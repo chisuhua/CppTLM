@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-08-25T16:39:48.516962+00:00",
+  "categories_checked": [
+    "state",
+    "plan-tdd",
+    "roadmap-meta",
+    "proposal-table",
+    "proposal-section",
+    "tasks-checkbox",
+    "migration-residue",
+    "orphan-gates",
+    "roadmap-refs"
+  ],
+  "findings": [
+    {
+      "severity": "INFO",
+      "category": "tasks-checkbox",
+      "file": "/workspace/project/CppTLM/openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/tasks.md",
+      "line": null,
+      "snippet": "2026-08-21-cpptlm-v05-mvp-s2-dgpu-board: tasks 0/45 (0%)",
+      "fix_hint": "complete tasks checkboxes; ratio is 0/45"
+    },
+    {
+      "severity": "INFO",
+      "category": "tasks-checkbox",
+      "file": "/workspace/project/CppTLM/openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/tasks.md",
+      "line": null,
+      "snippet": "2026-08-21-cpptlm-v05-mvp-s3-command-pipeline: tasks 0/38 (0%)",
+      "fix_hint": "complete tasks checkboxes; ratio is 0/38"
+    },
+    {
+      "severity": "WARNING",
+      "category": "tasks-checkbox",
+      "file": "/workspace/project/CppTLM/openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md",
+      "line": null,
+      "snippet": "cpptlm-d1-p1-pipeline-scoreboard: tasks 53/60 (88%)",
+      "fix_hint": "complete remaining 7 of 60 tasks before archive (set SKIP_TASKS_GATE=yes to bypass archive gate)"
+    }
+  ],
+  "summary": {
+    "critical": 0,
+    "warning": 1,
+    "info": 2
+  }
+}

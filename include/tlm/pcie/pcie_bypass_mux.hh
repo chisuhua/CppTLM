@@ -82,6 +82,10 @@ public:
     void apply_mode(BypassMode new_mode,
                     DrainPolicy policy = DrainPolicy::GRACEFUL_DRAIN);
 
+    // ========== C5: Surprise Removal 清理 (Q14) ==========
+    // PRSNT# 移除时: abort in-flight + 清 retry/seq/FC + MSI-X pending → Detect
+    void surprise_removal_cleanup() noexcept;
+
     // ========== 状态查询 (供测试 + 诊断) ==========
     [[nodiscard]] bool link_paused() const noexcept { return link_paused_; }
 

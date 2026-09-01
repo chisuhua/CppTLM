@@ -54,6 +54,12 @@ void PcieBypassMux::detach_from_endpoint(
 void PcieBypassMux::apply_mode(BypassMode new_mode, DrainPolicy policy) {
     drain_policy_ = policy;
 
+    // C5: Partial 模式守卫移到最前 (步骤 6 → 步骤 0)
+    // 先校验 phy_initialized 再清理状态，异常时零状态污染
+    if (new_mode == BypassMode::Partial && !phy_initialized_) {
+        throw std::logic_error("Partial mode requires PHY Digital Ctrl initialized");
+    }
+
     // 0. 通知对端 (RC BFM / HostBypass) 准备切换
     notify_peer_mode_change(new_mode);
 
@@ -78,12 +84,7 @@ void PcieBypassMux::apply_mode(BypassMode new_mode, DrainPolicy policy) {
     // 5. 重置 FC Token Bucket (所有 VF/VC)
     reset_fc_buckets();
 
-    // 6. Partial 模式守卫 (§1 未初始化不能 flush)
-    if (new_mode == BypassMode::Partial && !phy_initialized_) {
-        // 清理失败 → 恢复传输后抛异常 (模式未提交)
-        resume_link_layer();
-        throw std::logic_error("Partial mode requires PHY Digital Ctrl initialized");
-    }
+    // 6. (已前移) Partial 模式守卫
 
     // 7. MSI-X pending 状态清理 (Oracle Top-7 遗漏)
     clear_msix_pending();
@@ -128,6 +129,19 @@ void PcieBypassMux::reset_fc_buckets() {
 
 void PcieBypassMux::clear_msix_pending() {
     // MSI-X pending 状态清理 (per design §7 步骤 7)
+    msix_pending_ = 0;
+}
+
+void PcieBypassMux::surprise_removal_cleanup() noexcept {
+    // C5 (Q14): PRSNT# 移除 → drain/abort + 清 retry/seq/FC + MSI-X pending
+    // 与 apply_mode 复用同一清理管线 (步骤 2/3/4/5/7), 但不提交模式切换
+    aborted_tlps_ += in_flight_tlps_;
+    in_flight_tlps_ = 0;
+    if (link_layer_) {
+        link_layer_->clear_retry_buffer();
+        link_layer_->reset_seq_counters();
+        link_layer_->reset_fc_buckets();
+    }
     msix_pending_ = 0;
 }
 

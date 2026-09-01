@@ -17,6 +17,7 @@
 #ifndef TLM_PCIE_PCIE_PHY_DIGITAL_CTRL_TLM_HH
 #define TLM_PCIE_PCIE_PHY_DIGITAL_CTRL_TLM_HH
 
+#include "bundles/pcie_dllp_bundles_tlm.hh"
 #include "core/event_queue.hh"
 #include "tlm/pcie/pcie_encoding_latency_model.hh"
 
@@ -28,6 +29,7 @@
 namespace tlm::pcie {
 
 class PcieLinkLayer;
+class PcieBypassMux;
 
 /**
  * @brief LTSSM 11 主状态 (per design.md §5)
@@ -63,14 +65,23 @@ enum class EqPhase : uint8_t {
 
 /**
  * @brief PHY 配置 (per design.md §6.2 PciePhyConfig 冻结字段)
+ *
+ * C4 修复: 与 bundles::PciePhyConfig (pcie_dllp_bundles_tlm.hh) 对齐
+ *   - 新增 sr_iov_vf_pool_size 字段 (0 = SR-IOV 未启用, per design §6.2)
+ *   - 默认 preset 对齐 bundle 版 (7) / hot_plug_supported 语义一致
+ *   - from_bundle() 转换工厂统一两处定义
  */
 struct PciePhyConfig {
     PcieEncodingLatencyModel::Rate max_speed = PcieEncodingLatencyModel::Rate::GEN5;
     uint8_t max_lanes = 16;
-    uint8_t preset_P = 0;   // 8 presets (0..7)
-    uint8_t preset_NP = 0;
-    uint8_t preset_Cpl = 0;
-    bool hot_plug_supported = true;
+    uint8_t preset_P = 7;    // 8 presets (0..7), 对齐 bundle 版默认
+    uint8_t preset_NP = 7;
+    uint8_t preset_Cpl = 7;
+    uint8_t sr_iov_vf_pool_size = 0;  // SR-IOV VF pool 大小 (0 = 未启用)
+    bool hot_plug_supported = false;  // 对齐 bundle 版语义 (默认不支持)
+
+    // C4: 从 bundle 版 PciePhyConfig 转换 (统一双类型)
+    static PciePhyConfig from_bundle(const bundles::PciePhyConfig& b) noexcept;
 };
 
 /**
@@ -151,6 +162,11 @@ public:
     void signal_refclk(bool ok) noexcept;
     void signal_perst(bool asserted) noexcept;
 
+    // C3: 显式 API 进入 Disabled / Loopback / Hot_Reset (测试可达)
+    void enter_disabled() noexcept;      // 进入 Disabled 态
+    void enter_loopback() noexcept;      // 进入 Loopback 态
+    void enter_hot_reset() noexcept;     // 进入 Hot_Reset 子态 (Recovery 内)
+
     [[nodiscard]] bool prsnt_present() const noexcept { return prsnt_present_; }
     [[nodiscard]] bool mrl_latched() const noexcept { return mrl_latched_; }
     [[nodiscard]] bool pwrgood_ok() const noexcept { return pwrgood_ok_; }
@@ -168,6 +184,10 @@ public:
     // ========== 周期推进 ==========
     void tick();
 
+    // C3: LTSSM 训练序列推进 (tick 驱动: Detect → Polling → Configuration → L0)
+    // 返回 true 表示到达 L0
+    bool advance_training() noexcept;
+
     // ========== PcieEndpointTLM composition 注册表（冻结 .h 布局下的集成通道）==========
     // 与 PcieLinkLayer::attach_to_endpoint 同机制：PcieEndpointTLM 头文件类成员布局
     // 冻结（23 ABI），不能加成员 → 通过静态注册表按 EP 模块名关联。
@@ -177,9 +197,14 @@ public:
     static PciePhyDigitalCtrl* for_endpoint(const std::string& endpoint_name) noexcept;
     static void detach_from_endpoint(const std::string& endpoint_name) noexcept;
 
+// C5: 挂接 Bypass Mux 以便 Surprise Removal 清理
+    void mux(PcieBypassMux* m) noexcept { mux_ = m; }
+    [[nodiscard]] PcieBypassMux* mux() const noexcept { return mux_; }
+
 private:
     EventQueue* eq_ = nullptr;
     PcieLinkLayer* link_layer_ = nullptr;
+    PcieBypassMux* mux_ = nullptr;
     PciePhyConfig cfg_;
     LtState state_ = LtState::Detect;
     bool link_up_ = false;
@@ -194,6 +219,10 @@ private:
     // 速率切换
     bool rate_switching_ = false;
     PcieEncodingLatencyModel::Rate rate_switch_to_ = rate_;
+
+    // C3: 训练序列推进状态 (tick 驱动)
+    uint8_t training_step_ = 0;
+    bool training_in_progress_ = false;
 
     // 热插拔
     bool prsnt_present_ = true;

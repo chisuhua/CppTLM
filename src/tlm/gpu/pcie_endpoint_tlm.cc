@@ -160,14 +160,13 @@ namespace tlm::gpu {
                     "bypass_mode", "Full");
                 auto* phy = tlm::pcie::PciePhyDigitalCtrl::attach_to_endpoint(
                     getName(), event_queue);
-                if (phy) {
-                    phy->link_layer(ll);
-                    phy->set_link_up(true);
-                }
                 auto* mux = tlm::pcie::PcieBypassMux::attach_to_endpoint(
                     getName(), ll);
-                if (mux) {
+                if (phy && mux) {
+                    phy->link_layer(ll);
+                    phy->mux(mux);   // C5: Surprise Removal 需要 mux 清理
                     mux->set_phy_initialized(phy != nullptr);
+                    phy->set_link_up(true);
                     if (bypass_mode == "Bypass") {
                         mux->apply_mode(tlm::pcie::BypassMode::Bypass);
                     } else if (bypass_mode == "Partial") {

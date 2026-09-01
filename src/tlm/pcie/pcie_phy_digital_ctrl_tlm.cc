@@ -6,6 +6,7 @@
 
 #include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 
+#include "tlm/pcie/pcie_bypass_mux.hh"
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
 
 #include <memory>
@@ -13,6 +14,34 @@
 #include <unordered_map>
 
 namespace tlm::pcie {
+
+namespace {
+
+// bundle PciePhyConfig GENx 常量 (0..4) → PcieEncodingLatencyModel::Rate
+PcieEncodingLatencyModel::Rate bundle_rate_to_model(uint8_t speed) noexcept {
+    switch (speed) {
+    case bundles::PciePhyConfig::GEN1: return PcieEncodingLatencyModel::Rate::GEN1;
+    case bundles::PciePhyConfig::GEN2: return PcieEncodingLatencyModel::Rate::GEN2;
+    case bundles::PciePhyConfig::GEN3: return PcieEncodingLatencyModel::Rate::GEN3;
+    case bundles::PciePhyConfig::GEN4: return PcieEncodingLatencyModel::Rate::GEN4;
+    case bundles::PciePhyConfig::GEN5: return PcieEncodingLatencyModel::Rate::GEN5;
+    default: return PcieEncodingLatencyModel::Rate::GEN5;
+    }
+}
+
+} // namespace
+
+PciePhyConfig PciePhyConfig::from_bundle(const bundles::PciePhyConfig& b) noexcept {
+    PciePhyConfig c;
+    c.max_speed = bundle_rate_to_model(b.max_speed.read());
+    c.max_lanes = static_cast<uint8_t>(b.max_lanes.read());
+    c.preset_P = static_cast<uint8_t>(b.preset_P.read());
+    c.preset_NP = static_cast<uint8_t>(b.preset_NP.read());
+    c.preset_Cpl = static_cast<uint8_t>(b.preset_Cpl.read());
+    c.sr_iov_vf_pool_size = static_cast<uint8_t>(b.sr_iov_vf_pool_size.read());
+    c.hot_plug_supported = b.hot_plug_supported.read() != 0;
+    return c;
+}
 
 namespace {
 
@@ -53,11 +82,35 @@ void PciePhyDigitalCtrl::detach_from_endpoint(
 }
 
 void PciePhyDigitalCtrl::start_link_training() noexcept {
-    // Detect → Polling → Configuration → L0
-    // TLM 侧简化为: 训练同步完成 (无真实比特/符号锁定延迟窗口)
-    state_ = LtState::L0;
-    link_up_ = true;
+    state_ = LtState::Detect;
+    link_up_ = false;
     initialized_ = true;
+    training_step_ = 0;
+    training_in_progress_ = true;
+}
+
+bool PciePhyDigitalCtrl::advance_training() noexcept {
+    if (!training_in_progress_) {
+        return state_ == LtState::L0;
+    }
+    switch (state_) {
+    case LtState::Detect:
+        state_ = LtState::Polling;
+        break;
+    case LtState::Polling:
+        state_ = LtState::Configuration;
+        break;
+    case LtState::Configuration:
+        state_ = LtState::L0;
+        link_up_ = true;
+        training_in_progress_ = false;
+        break;
+    default:
+        // 非训练态不推进
+        break;
+    }
+    ++training_step_;
+    return state_ == LtState::L0;
 }
 
 void PciePhyDigitalCtrl::set_link_up(bool up) noexcept {
@@ -67,6 +120,7 @@ void PciePhyDigitalCtrl::set_link_up(bool up) noexcept {
         state_ = LtState::Detect;
         equalizing_ = false;
         eq_phase_ = EqPhase::Idle;
+        training_in_progress_ = false;  // 手动 link down: 不自动重训
     }
 }
 
@@ -84,6 +138,7 @@ void PciePhyDigitalCtrl::start_rate_switch(PcieEncodingLatencyModel::Rate to) {
     rate_switch_to_ = to;
     state_ = LtState::Recovery;
     link_up_ = false;
+    training_in_progress_ = false;  // 速率切换打断训练序列
     // 调用链路层使 wire 不可用 (修 Phase 2 评审 #1)
     if (link_layer_) {
         link_layer_->trigger_rate_switch(from, to);
@@ -102,6 +157,21 @@ void PciePhyDigitalCtrl::set_active_state(LtState s) noexcept {
         state_ = s;
         link_up_ = false;  // 低功耗: 链路不可用 (wire 挂起)
     }
+}
+
+void PciePhyDigitalCtrl::enter_disabled() noexcept {
+    state_ = LtState::Disabled;
+    link_up_ = false;
+}
+
+void PciePhyDigitalCtrl::enter_loopback() noexcept {
+    state_ = LtState::Loopback;
+    link_up_ = false;
+}
+
+void PciePhyDigitalCtrl::enter_hot_reset() noexcept {
+    state_ = LtState::Hot_Reset;
+    link_up_ = false;
 }
 
 void PciePhyDigitalCtrl::enter_l0s() noexcept { set_active_state(LtState::L0s); }
@@ -183,13 +253,21 @@ void PciePhyDigitalCtrl::signal_prsnt(bool present) noexcept {
     const bool was_present = prsnt_present_;
     prsnt_present_ = present;
     if (was_present && !present) {
-        // Surprise Removal (per Q14): drain(1µs) + abort + 回 Detect
+        // C5 (Q14): Surprise Removal — drain(1µs) + abort + clear MSI-X pending + 回 Detect
         ++surprise_removal_count_;
-        // drain in-flight: TLM 简化 (in-flight 由链路层/事务层处理)
+        if (mux_) {
+            mux_->surprise_removal_cleanup();
+        } else if (link_layer_) {
+            // 无 mux: 至少 abort in-flight + 清 retry/seq/FC + MSI-X pending
+            link_layer_->clear_retry_buffer();
+            link_layer_->reset_seq_counters();
+            link_layer_->reset_fc_buckets();
+        }
         state_ = LtState::Detect;
         link_up_ = false;
         equalizing_ = false;
         eq_phase_ = EqPhase::Idle;
+        training_in_progress_ = false;
     } else if (!was_present && present) {
         // 插入: 等待其余信号就绪后触发链路训练
         ++hotplug_insertion_count_;
@@ -211,16 +289,21 @@ void PciePhyDigitalCtrl::signal_refclk(bool ok) noexcept {
 void PciePhyDigitalCtrl::signal_perst(bool asserted) noexcept {
     perst_asserted_ = asserted;
     if (asserted) {
-        // PERST# assert → LTSSM Detect (复位)
-        state_ = LtState::Detect;
-        link_up_ = false;
-        equalizing_ = false;
-        eq_phase_ = EqPhase::Idle;
+        // C3: Recovery 内 PERST# assert → Hot_Reset 子状态 (per design §5);
+        // 其余状态 → Detect (复位)
+        if (state_ == LtState::Recovery || state_ == LtState::Hot_Reset) {
+            enter_hot_reset();
+        } else {
+            state_ = LtState::Detect;
+            link_up_ = false;
+            equalizing_ = false;
+            eq_phase_ = EqPhase::Idle;
+            training_in_progress_ = false;
+        }
     } else {
-        // PERST# deassert + 所有信号就绪 → 训练
+        // PERST# deassert + 所有信号就绪 → 训练 (C3: 分步序列)
         if (prsnt_present_ && mrl_latched_ && pwrgood_ok_ && refclk_ok_) {
-            state_ = LtState::L0;
-            link_up_ = true;
+            start_link_training();
         }
     }
 }
@@ -228,6 +311,10 @@ void PciePhyDigitalCtrl::signal_perst(bool asserted) noexcept {
 // ========== 周期推进 ==========
 
 void PciePhyDigitalCtrl::tick() {
+    // C3: 训练序列推进 (每 tick 一状态: Detect→Polling→Configuration→L0)
+    if (training_in_progress_) {
+        advance_training();
+    }
     // Recovery 内速率切换完成检测: ready 后切换到新速率并回 L0
     if (rate_switching_) {
         const uint64_t ready_ns = link_layer_ ? link_layer_->rate_switch_ready_ns()
