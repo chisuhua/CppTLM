@@ -125,6 +125,15 @@ add_test(NAME dgpu_board_shell_full_abi COMMAND cpptlm_tests "[dgpu][shell][full
 add_test(NAME pcie_encoding_latency COMMAND cpptlm_tests "[pcie][encoding][latency]" -r compact)
 add_test(NAME pcie_endpoint_throughput COMMAND cpptlm_tests "[pcie][ll][throughput]" -r compact)
 
+# 2026-10-06 cpptlm-dgpu-pcie-phy-digital-ctrl Phase 3 (T-P3-1..T-P3-6 测试注册)
+# 6 个新测试: LTSSM / Equalization / Hotplug / RateSwitch / BypassMux / RxNoDoubleCharge
+add_test(NAME pcie_phy_digital_ltssm COMMAND cpptlm_tests "[pcie][phy][ltssm]" -r compact)
+add_test(NAME pcie_phy_digital_equalization COMMAND cpptlm_tests "[pcie][phy][eq]" -r compact)
+add_test(NAME pcie_phy_digital_hotplug COMMAND cpptlm_tests "[pcie][phy][hotplug]" -r compact)
+add_test(NAME pcie_phy_digital_rate_switch COMMAND cpptlm_tests "[pcie][phy][rate-switch]" -r compact)
+add_test(NAME pcie_bypass_mux COMMAND cpptlm_tests "[pcie][bypass][mux]" -r compact)
+add_test(NAME pcie_link_layer_rx_no_double_charge COMMAND cpptlm_tests "[pcie][ll][rx-no-double]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)
