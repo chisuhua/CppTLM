@@ -1,0 +1,73 @@
+// src/tlm/pcie/pcie_sriov_vf_pool_tlm.cc
+// PcieSriovVfPool 实现：dispatch_tlp / dispatch_msix / next_seq / FLR (T-P4-4/5)
+// 作者 CppTLM Team / 日期 2026-10-13
+#include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
+
+namespace tlm::pcie {
+
+namespace {
+constexpr uint16_t kSeqMask = 0x0FFFu;  // 12-bit wrap
+}
+
+bool PcieSriovVfPool::dispatch_tlp(uint16_t stream_id,
+                                   const bundles::PcieTlpBundle& tlp) {
+    if (!is_valid_stream_id(stream_id)) {
+        return false;
+    }
+    auto& cfg = config_pool_.config_of(stream_id);
+    const uint8_t kind = tlp.kind.read();
+    const uint16_t cfg_offset = static_cast<uint16_t>(tlp.offset.read());
+    switch (kind) {
+    case bundles::PcieTlpBundle::CFG_READ:
+        return true;
+    case bundles::PcieTlpBundle::CFG_WRITE:
+        cfg.write(cfg_offset, static_cast<uint32_t>(tlp.data.read()));
+        return true;
+    default:
+        return true;
+    }
+}
+
+bool PcieSriovVfPool::dispatch_msix(uint16_t stream_id, uint16_t vector) {
+    if (!is_valid_stream_id(stream_id)) {
+        return false;
+    }
+    return msix_pool_.update_pending(stream_id, vector);
+}
+
+uint16_t PcieSriovVfPool::next_seq(uint16_t stream_id) noexcept {
+    if (!is_valid_stream_id(stream_id)) {
+        return 0;
+    }
+    const uint16_t s = tlp_seq_[stream_id];
+    tlp_seq_[stream_id] = (s + 1u) & kSeqMask;
+    return s;
+}
+
+uint16_t PcieSriovVfPool::seq_of(uint16_t stream_id) const noexcept {
+    if (!is_valid_stream_id(stream_id)) {
+        return 0;
+    }
+    return tlp_seq_[stream_id];
+}
+
+void PcieSriovVfPool::flr_pf() noexcept {
+    config_pool_.init_all();
+    msix_pool_.init_all();
+    tlp_seq_.fill(0);
+    for (uint16_t sid = 0; sid < NUM_PORTS; ++sid) {
+        fc_engine_.install_bucket(sid, FcTokenBucket());
+    }
+}
+
+void PcieSriovVfPool::flr_vf(uint16_t vf_id) noexcept {
+    if (!is_valid_stream_id(vf_id)) {
+        return;
+    }
+    config_pool_.config_of(vf_id).init();
+    msix_pool_.table_of(vf_id).init();
+    tlp_seq_[vf_id] = 0;
+    fc_engine_.install_bucket(vf_id, FcTokenBucket());
+}
+
+} // namespace tlm::pcie

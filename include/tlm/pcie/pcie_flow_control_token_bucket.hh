@@ -112,6 +112,7 @@ private:
  */
 class FcEngine {
 public:
+    FcEngine() : eq_(nullptr) {}
     explicit FcEngine(EventQueue* eq) : eq_(eq) {}
 
     // 访问/创建 per-VF bucket
