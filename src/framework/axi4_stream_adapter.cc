@@ -52,6 +52,10 @@ bool Axi4StreamAdapter::master_req_valid() const {
     return master_req_valid_;
 }
 
+const bundles::Axi4Bundle& Axi4StreamAdapter::master_req_data() const {
+    return master_req_data_;
+}
+
 void Axi4StreamAdapter::master_req_consume() {
     master_req_valid_ = false;
 }

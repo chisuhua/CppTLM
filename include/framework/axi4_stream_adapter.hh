@@ -56,6 +56,7 @@ public:
     bool master_ready() const;
     // 请求通道状态
     bool master_req_valid() const;
+    const bundles::Axi4Bundle& master_req_data() const;
     // 下游消费当前请求（ready=1 且 tick() 后调用）
     void master_req_consume();
 
