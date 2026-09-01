@@ -97,6 +97,16 @@ add_test(NAME sdma_engine_backdoor_isolation COMMAND cpptlm_tests "[sdma][backdo
 add_test(NAME pcie_endpoint_msix_state_edge COMMAND cpptlm_tests "[pcie][endpoint][msix][state][edge]" -r compact)
 add_test(NAME pcie_endpoint_doorbell_edge COMMAND cpptlm_tests "[pcie][endpoint][doorbell][edge]" -r compact)
 
+# 2026-09-08 cpptlm-dgpu-pcie-link-layer-and-fc Phase 1 (T-P1-1..T-P1-7 测试注册)
+# 7 个新测试: PcieDllpBundle / FcTokenBucket / LinkLayer DLLP / ErrorInjector / DownstreamRx / AckNak / Endpoint+LL
+add_test(NAME pcie_dllp_bundle COMMAND cpptlm_tests "[pcie][dllp][bundle]" -r compact)
+add_test(NAME pcie_link_layer_fc_token_bucket COMMAND cpptlm_tests "[pcie][fc][token]" -r compact)
+add_test(NAME pcie_link_layer_dllp COMMAND cpptlm_tests "[pcie][ll][dllp]" -r compact)
+add_test(NAME pcie_link_layer_error_injector COMMAND cpptlm_tests "[pcie][ll][error-inject]" -r compact)
+add_test(NAME pcie_link_layer_downstream_rx COMMAND cpptlm_tests "[pcie][ll][downstream]" -r compact)
+add_test(NAME pcie_link_layer_ack_nak COMMAND cpptlm_tests "[pcie][ll][ack-nak]" -r compact)
+add_test(NAME pcie_endpoint_with_ll COMMAND cpptlm_tests "[pcie][endpoint][ll][compose]" -r compact)
+
 # T-W3-3: msix_* + lookup_register wrapper + ABI coverage + full ABI lifecycle
 add_test(NAME dgpu_board_msix_wrappers COMMAND cpptlm_tests "[dgpu][shell][msix][wrapper]" -r compact)
 add_test(NAME dgpu_board_lookup_register_wrapper COMMAND cpptlm_tests "[dgpu][shell][lookup_register][wrapper]" -r compact)
