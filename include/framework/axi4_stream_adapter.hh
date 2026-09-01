@@ -69,6 +69,9 @@ public:
     // outstanding 请求 ID 计数
     std::size_t outstanding_wr() const { return outstanding_wr_ids_.size(); }
     std::size_t outstanding_rd() const { return outstanding_rd_ids_.size(); }
+    // outstanding 请求 ID 集合访问（Phase 6 OOO 匹配/测试断言）
+    const std::deque<uint16_t>& outstanding_wr_ids() const { return outstanding_wr_ids_; }
+    const std::deque<uint16_t>& outstanding_rd_ids() const { return outstanding_rd_ids_; }
 
     // ===================== axi_slave_in（SoC → EP）=====================
     // SoC 注入 AXI4 请求（写或读）
