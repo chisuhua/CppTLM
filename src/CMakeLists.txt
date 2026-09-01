@@ -81,6 +81,8 @@ set(CORE_SOURCES
     tlm/pcie/pcie_endpoint_ip.cc
     # pcie-ip-microarch Phase 5: AXI Stream Adapter (T-P5-2)
     framework/axi4_stream_adapter.cc
+    # pcie-ip-microarch Phase 5: PcieAxiAdapter (T-P5-3)
+    tlm/pcie/pcie_axi_adapter_tlm.cc
 )
 
 # ==============================================================================

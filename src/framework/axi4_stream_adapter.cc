@@ -20,7 +20,7 @@ namespace cpptlm {
 
 // ===================== axi_master_out（EP → SoC，模块产出）=====================
 
-bool Axi4StreamAdapter::master_req(const bundles::Axi4Bundle& req) {
+bool Axi4StreamAdapter::master_req(const bundles::Axi4Bundle& req, bool track_id) {
     if (master_req_valid_) {
         return false;  // 上一请求未转移（backpressure），拒绝覆盖
     }
@@ -29,6 +29,9 @@ bool Axi4StreamAdapter::master_req(const bundles::Axi4Bundle& req) {
 
     // 登记 outstanding 请求 ID：写请求以 awid 登记，读请求以 arid 登记
     // （读写独立 ID 空间，per design.md §6.3）
+    if (!track_id) {
+        return true;  // burst 后续拍：不重复登记（整体作为一个事务）
+    }
     if (req.awid.read() != 0 || req.awaddr.read() != 0 || req.awlen.read() != 0) {
         outstanding_wr_ids_.push_back(static_cast<uint16_t>(req.awid.read()));
     } else {

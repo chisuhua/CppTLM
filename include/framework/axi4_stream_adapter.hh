@@ -49,7 +49,8 @@ public:
     // ===================== axi_master_out（EP → SoC）=====================
     // EP 注入 AXI4 请求（写或读）。返回 true 表示接受（valid 置位），
     // false 表示上一请求尚未被下游消费（backpressure）。
-    bool master_req(const bundles::Axi4Bundle& req);
+    // track_id=false 用于 burst 的后续拍（burst 整体作为一个事务，只登记首拍）。
+    bool master_req(const bundles::Axi4Bundle& req, bool track_id = true);
     // 下游 ready 信号（SoC 侧）
     void set_master_ready(bool ready);
     bool master_ready() const;
