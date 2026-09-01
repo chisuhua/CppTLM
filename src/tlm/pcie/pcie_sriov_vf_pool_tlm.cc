@@ -55,6 +55,7 @@ void PcieSriovVfPool::flr_pf() noexcept {
     config_pool_.init_all();
     msix_pool_.init_all();
     tlp_seq_.fill(0);
+    ari_router_.set_ari_enabled(false);  // ARI Forwarding Enable 是 PF 属性, FLR 后回默认
     for (uint16_t sid = 0; sid < NUM_PORTS; ++sid) {
         fc_engine_.install_bucket(sid, FcTokenBucket());
     }

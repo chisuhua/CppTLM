@@ -182,3 +182,18 @@ TEST_CASE("PcieSriovVfPool: flr_vf(0) rejects PF slot (C1 Oracle fix)",
     REQUIRE(pool.seq_of(0) == 2u);                       // seq# 未复位
     REQUIRE(pool.msix_pending(0, 2) == true);            // MSI-X pending 未清
 }
+
+TEST_CASE("PcieSriovVfPool: flr_pf resets ARI forwarding enable (C2 Oracle fix)",
+          "[pcie][sriov][vf-pool][flr]") {
+    PcieSriovVfPool pool;
+    pool.init_all();
+
+    // 先开启 ARI Forwarding Enable（PCI Express Capability Control bit 0）
+    pool.ari_router().set_ari_enabled(true);
+    REQUIRE(pool.ari_router().ari_enabled() == true);
+
+    // FLR PF → ARI 状态回默认 (disabled)
+    pool.flr_pf();
+
+    REQUIRE(pool.ari_router().ari_enabled() == false);
+}
