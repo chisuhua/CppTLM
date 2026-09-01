@@ -235,6 +235,9 @@ void PcieLinkLayer::update_fc(FcTokenBucket::Type t, uint32_t credit,
 // ========== Tx path ==========
 
 FcTokenBucket::Type PcieLinkLayer::fc_type_for_kind(uint8_t kind) {
+    // Completion credit bucket reserved for Phase 4 (Q12). CplD TLP kind not in
+    // PcieTlpBundle yet → fc_type_for_kind 暂不返回 Type::Completion，Completion
+    // 仅由 UpdateFC DLLP 单独更新（Cpl 类 TLP 落地后由事务层回发时再消耗）
     switch (kind) {
     case bundles::PcieTlpBundle::CFG_READ:
     case bundles::PcieTlpBundle::MMIO_READ:
