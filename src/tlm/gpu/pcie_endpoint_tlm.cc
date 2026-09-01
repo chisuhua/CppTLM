@@ -5,7 +5,9 @@
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 
 #include "bundles/pcie_bundles_tlm.hh"
+#include "tlm/pcie/pcie_bypass_mux.hh"
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
+#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 #include <algorithm>
 #include <stdexcept>
 #include <vector>
@@ -131,10 +133,30 @@ namespace tlm::gpu {
         if (cfg.contains("link_layer")) {
             const auto ll_cfg = parse_link_layer_config(cfg["link_layer"]);
             if (ll_cfg.enabled) {
-                tlm::pcie::PcieLinkLayer::attach_to_endpoint(
+                auto* ll = tlm::pcie::PcieLinkLayer::attach_to_endpoint(
                     getName(), event_queue, ll_cfg);
+                const std::string bypass_mode = cfg["link_layer"].value(
+                    "bypass_mode", "Full");
+                auto* phy = tlm::pcie::PciePhyDigitalCtrl::attach_to_endpoint(
+                    getName(), event_queue);
+                if (phy) {
+                    phy->link_layer(ll);
+                    phy->set_link_up(true);
+                }
+                auto* mux = tlm::pcie::PcieBypassMux::attach_to_endpoint(
+                    getName(), ll);
+                if (mux) {
+                    mux->set_phy_initialized(phy != nullptr);
+                    if (bypass_mode == "Bypass") {
+                        mux->apply_mode(tlm::pcie::BypassMode::Bypass);
+                    } else if (bypass_mode == "Partial") {
+                        mux->apply_mode(tlm::pcie::BypassMode::Partial);
+                    }
+                }
             } else {
                 tlm::pcie::PcieLinkLayer::detach_from_endpoint(getName());
+                tlm::pcie::PciePhyDigitalCtrl::detach_from_endpoint(getName());
+                tlm::pcie::PcieBypassMux::detach_from_endpoint(getName());
             }
         }
     }
