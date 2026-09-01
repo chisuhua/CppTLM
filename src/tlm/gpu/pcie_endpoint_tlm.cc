@@ -50,6 +50,27 @@ namespace tlm::gpu {
             }
             return lc;
         }
+
+        // C1 (Oracle C1): 按 Bypass Mux mode 分派 TLP 入口数据路径。
+        //   - Full   : 完整链路 → TLP 过 PcieLinkLayer (FC 门控 + Rx ACK + rate-switch 检查)
+        //   - Bypass : 短路链路层 → TLP 直接送事务层 (绕过 LL FC/busy/rate-switch 检查)
+        //   - Partial: 跳过 PHY 阶段但保留 LL FC/DLLP → 数据路径与 Full 一致 (LL 仍工作)
+        // 无 mux (未配置 bypass_mode) 时回退：有 LL 则走 LL, 无 LL 直通。
+        // 返回 false = 反压 (TLP 保持 pending 不消费)。
+        bool dispatch_tlp_entry(PcieEndpointTLM& ep,
+                                const bundles::PcieTlpBundle& req) {
+            auto* ll = tlm::pcie::PcieLinkLayer::for_endpoint(ep.getName());
+            auto* mux = tlm::pcie::PcieBypassMux::for_endpoint(ep.getName());
+            if (mux && mux->mode() == tlm::pcie::BypassMode::Bypass) {
+                // Bypass: 绕过链路层 (不检查 FC / rate-switch / wire busy)
+                return true;
+            }
+            // Full / Partial / 无 mux：过链路层 FC 门控 + ACK 生成
+            if (ll) {
+                return ll->rx_tlp_from_host(req);
+            }
+            return true;
+        }
     } // namespace
 
     PcieEndpointTLM::PcieEndpointTLM(const std::string& name, EventQueue* eq)
@@ -193,12 +214,11 @@ namespace tlm::gpu {
         const auto& req = req_in[PORT_SLAVE_IN].data();
         const uint8_t kind = req.kind.read();
 
-        // composition: 若挂接了 PcieLinkLayer，先过链路层 FC 门控 + Rx ACK 生成
-        // （per Phase 1 T-P1-7 + spec Scenario "FC 反压"）。FC 不足 → 反压，不消费。
-        if (auto* ll = tlm::pcie::PcieLinkLayer::for_endpoint(getName())) {
-            if (!ll->rx_tlp_from_host(req)) {
-                return;  // FC 不足：backpressure，req 保持 pending
-            }
+        // composition: 按 Bypass Mux mode 分派 TLP 数据路径 (C1)。
+        //   Full/Partial → 过 PcieLinkLayer (FC 门控 + Rx ACK)；Bypass → 短路链路层直送事务层。
+        // 返回 false = 反压 (FC 不足 / rate-switch 中 / wire busy)，req 保持 pending。
+        if (!dispatch_tlp_entry(*this, req)) {
+            return;
         }
 
         bundles::PcieTlpBundle resp;
