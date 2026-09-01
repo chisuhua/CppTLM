@@ -158,3 +158,27 @@ TEST_CASE("PcieSriovVfPool: flr_vf rejects invalid vf_id",
     REQUIRE(pool.config_of(0).read(0x04) == 0x10u);
     REQUIRE(pool.seq_of(0) == 0u);
 }
+
+TEST_CASE("PcieSriovVfPool: flr_vf(0) rejects PF slot (C1 Oracle fix)",
+          "[pcie][sriov][vf-pool][flr]") {
+    PcieSriovVfPool pool;
+    pool.init_all();
+
+    // PF (slot 0) 写入非默认值 + 消耗 seq# + MSI-X pending
+    bundles::PcieTlpBundle t(bundles::PcieTlpBundle::CFG_WRITE, 0,
+                             0x04, 4, 0xBEEFu, 0x0000, 0);
+    REQUIRE(pool.dispatch_tlp(0, t) == true);
+    REQUIRE(pool.next_seq(0) == 0u);
+    REQUIRE(pool.next_seq(0) == 1u);
+    REQUIRE(pool.dispatch_msix(0, 2) == true);
+    REQUIRE(pool.config_of(0).read(0x04) == 0xBEEFu);
+    REQUIRE(pool.seq_of(0) == 2u);
+    REQUIRE(pool.msix_pending(0, 2) == true);
+
+    // flr_vf(0): vf_id=0 是 PF, 必须拒绝 — PF 全部状态保持不变
+    pool.flr_vf(0);
+
+    REQUIRE(pool.config_of(0).read(0x04) == 0xBEEFu);   // Config 未复位
+    REQUIRE(pool.seq_of(0) == 2u);                       // seq# 未复位
+    REQUIRE(pool.msix_pending(0, 2) == true);            // MSI-X pending 未清
+}

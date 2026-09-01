@@ -61,7 +61,8 @@ void PcieSriovVfPool::flr_pf() noexcept {
 }
 
 void PcieSriovVfPool::flr_vf(uint16_t vf_id) noexcept {
-    if (!is_valid_stream_id(vf_id)) {
+    // vf_id=0 是 PF, 拒绝; 合法 VF 范围 1..16
+    if (vf_id < 1 || vf_id >= NUM_PORTS) {
         return;
     }
     config_pool_.config_of(vf_id).init();
