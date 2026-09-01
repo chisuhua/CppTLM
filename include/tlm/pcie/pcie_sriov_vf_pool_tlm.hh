@@ -13,6 +13,7 @@
 
 #include "bundles/pcie_bundles_tlm.hh"
 #include "tlm/pcie/pcie_ari_router_tlm.hh"
+#include "tlm/pcie/pcie_completion_tracker_tlm.hh"
 #include "tlm/pcie/pcie_config_space_per_vf_tlm.hh"
 #include "tlm/pcie/pcie_flow_control_token_bucket.hh"
 #include "tlm/pcie/pcie_msix_per_vf_tlm.hh"
@@ -48,6 +49,7 @@ public:
     void init_all() {
         config_pool_.init_all();
         msix_pool_.init_all();
+        completions_.init();
     }
 
     // ========== 路由验证 ==========
@@ -101,16 +103,25 @@ public:
 
     // ========== TLP 分发（按 stream_id 路由到对应 VF Config Space）==========
     // 处理 CFG_READ/CFG_WRITE；其他 kind 暂不处理（per proposal.md P4-G1 范围）
+    // NP 请求（CFG_READ）→ completions_.register_np 登记，Phase 5 AXI 接 CplD 后调 dispatch_completion
     bool dispatch_tlp(uint16_t stream_id, const bundles::PcieTlpBundle& tlp);
 
     // ========== MSI-X pending 分发（按 stream_id 路由到对应 VF MSI-X）==========
     bool dispatch_msix(uint16_t stream_id, uint16_t vector);
+
+    // ========== Completion 跟踪（per Q12）==========
+    CompletionTracker& completions() noexcept { return completions_; }
+    const CompletionTracker& completions() const noexcept { return completions_; }
+    // CplD 到达：匹配并清除 outstanding
+    bool dispatch_completion(uint16_t stream_id, uint32_t trans_id,
+                             const CompletionTracker::CplData& cpl);
 
 private:
     PcieConfigSpacePerVf config_pool_;
     PcieMsixTablePerVf msix_pool_;
     AriRouter ari_router_;
     FcEngine fc_engine_;
+    CompletionTracker completions_;
     std::array<uint16_t, NUM_PORTS> tlp_seq_{};
 };
 

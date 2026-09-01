@@ -23,6 +23,7 @@
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
 #include "tlm/gpu/gpu_compute_unit_tlm.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/gpu/completion_ring_mvp.hh"
@@ -65,6 +66,7 @@
     ModuleFactory::registerObject<tlm::MinimalWarpSchedulerTLM>("MinimalWarpSchedulerTLM"); \
     ModuleFactory::registerObject<tlm::GpuComputeUnitTLM>("GpuComputeUnitTLM"); \
     ModuleFactory::registerObject<tlm::gpu::PcieEndpointTLM>("PcieEndpointTLM"); \
+    ModuleFactory::registerObject<tlm::pcie::PcieEndpointIP>("PcieEndpointIP"); \
     ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM"); \
     ModuleFactory::registerObject<tlm::gpu::SubmitQueueTLM>("SubmitQueueTLM"); \
     ModuleFactory::registerObject<tlm::gpu::CompletionRingTLM>("CompletionRingTLM"); \
@@ -100,6 +102,8 @@
        调用方无感。BUILD_RTL 通过 target_compile_definitions 传递。 */ \
     ChStreamAdapterFactory::get().registerMultiPortAdapter<tlm::gpu::PcieEndpointTLM, \
         bundles::PcieTlpBundle, bundles::PcieTlpBundle, 4>("PcieEndpointTLM"); \
+    ChStreamAdapterFactory::get().registerMultiPortAdapter<tlm::pcie::PcieEndpointIP, \
+        bundles::PcieTlpBundle, bundles::PcieTlpBundle, 17>("PcieEndpointIP"); \
     ChStreamAdapterFactory::get().registerMultiPortAdapter<tlm::gpu::SdmaEngineTLM, \
         bundles::PcieTlpBundle, bundles::PcieTlpBundle, 5>("SdmaEngineTLM"); \
     HYBRID_CACHE_WRAPPER_REGISTER_RTL

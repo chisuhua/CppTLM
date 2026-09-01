@@ -10,18 +10,15 @@ namespace tlm::pcie {
 PcieEndpointIP::PcieEndpointIP(const std::string& name, EventQueue* eq)
     : ChStreamModuleBase(name, eq) {
     pool_.init_all();
-    completions_.init();
 }
 
 void PcieEndpointIP::init() {
     ChStreamModuleBase::init();
     pool_.init_all();
-    completions_.init();
 }
 
 void PcieEndpointIP::do_reset(const ResetConfig&) {
     pool_.init_all();
-    completions_.init();
 }
 
 void PcieEndpointIP::set_stream_adapter(cpptlm::StreamAdapterBase* a) {
@@ -104,12 +101,10 @@ void PcieEndpointIP::tick() {
 
 void PcieEndpointIP::flr_pf() noexcept {
     pool_.flr_pf();
-    completions_.flr_pf();
 }
 
 void PcieEndpointIP::flr_vf(uint16_t vf_id) noexcept {
     pool_.flr_vf(vf_id);
-    completions_.flr_vf(vf_id);
 }
 
 PcieLinkLayer* PcieEndpointIP::link_layer() const noexcept {

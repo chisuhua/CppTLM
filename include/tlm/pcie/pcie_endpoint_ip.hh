@@ -76,8 +76,10 @@ public:
 
     PcieSriovVfPool& vf_pool() noexcept { return pool_; }
     const PcieSriovVfPool& vf_pool() const noexcept { return pool_; }
-    CompletionTracker& completions() noexcept { return completions_; }
-    const CompletionTracker& completions() const noexcept { return completions_; }
+    // completion 状态单一真源在 PcieSriovVfPool（生产路径 dispatch_tlp 登记到
+    // pool_.completions()）；此处委托而非另持副本，避免双份 outstanding 失配。
+    CompletionTracker& completions() noexcept { return pool_.completions(); }
+    const CompletionTracker& completions() const noexcept { return pool_.completions(); }
 
     tlm::gpu::PcieConfigSpace& config_of(uint16_t stream_id) {
         return pool_.config_of(stream_id);
@@ -95,9 +97,13 @@ public:
 
     bool all_ports_have_adapter() const;
 
+    // 单 adapter 访问（测试断言）
+    cpptlm::StreamAdapterBase* get_adapter(unsigned idx) const {
+        return (idx < NUM_PORTS) ? adapters_[idx] : nullptr;
+    }
+
 private:
     PcieSriovVfPool pool_;
-    CompletionTracker completions_;
     cpptlm::StreamAdapterBase* adapters_[NUM_PORTS] = {nullptr};
     void attach_composition(const nlohmann::json& params);
 };
