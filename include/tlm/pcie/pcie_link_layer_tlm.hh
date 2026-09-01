@@ -190,6 +190,13 @@ public:
     const std::string& name() const { return name_; }
     EventQueue* event_queue() const { return eq_; }
 
+#ifdef CPPTLM_TESTING
+    // Issue #2 观察钩子：链路层当前保留的下行 TLP 副本数
+    //   修复后：downstream TLP 立即转发 + ACK，链路层不再保留副本 → 恒为 0
+    //   修复前：downstream_rx_buf_ push_back 无访问器 → 无界增长
+    std::size_t downstream_rx_buffer_size() const { return 0u; }
+#endif
+
 private:
     static FcTokenBucket::Type fc_type_for_kind(uint8_t kind);
 
@@ -214,7 +221,6 @@ private:
 
     // Rx（下行）：下行 seq 跟踪 + ACK 生成
     uint16_t next_rx_seq_ = 0;
-    std::deque<bundles::PcieTlpBundle> downstream_rx_buf_;
     std::function<void(const bundles::PcieTlpBundle&)> tlp_sink_;
     std::function<void(const bundles::PcieDllpBundle&)> dllp_sink_;
 

@@ -312,10 +312,9 @@ bool PcieLinkLayer::rx_tlp_from_host(const bundles::PcieTlpBundle& tlp,
     }
     fc_.consume(vf, fc_type);
 
-    // 分配下行 seq + 记录到下行 retry buffer（与上行独立，per Q17）
+    // 分配下行 seq（与上行独立，per Q17）
     const uint16_t rx_seq = next_rx_seq_;
     next_rx_seq_ = static_cast<uint16_t>((next_rx_seq_ + 1) & SEQ_MASK);
-    downstream_rx_buf_.push_back(tlp);
 
     // 生成 ACK DLLP 发回 host（累积确认）
     tx_dllp(make_ack(rx_seq));
