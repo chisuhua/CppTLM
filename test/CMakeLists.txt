@@ -134,6 +134,17 @@ add_test(NAME pcie_phy_digital_rate_switch COMMAND cpptlm_tests "[pcie][phy][rat
 add_test(NAME pcie_bypass_mux COMMAND cpptlm_tests "[pcie][bypass][mux]" -r compact)
 add_test(NAME pcie_link_layer_rx_no_double_charge COMMAND cpptlm_tests "[pcie][ll][rx-no-double]" -r compact)
 
+# 2026-10-13 cpptlm-dgpu-pcie-sriov-vf-pool Phase 4 (T-P4-1..T-P4-7 测试注册)
+# 8 个新测试: per-VF Config / per-VF MSI-X / ARI / VF Pool 路由 / FLR / Completion / EndpointIP
+add_test(NAME pcie_sriov_per_vf_config COMMAND cpptlm_tests "[pcie][sriov][per-vf-config]" -r compact)
+add_test(NAME pcie_sriov_per_vf_msix COMMAND cpptlm_tests "[pcie][sriov][per-vf-msix]" -r compact)
+add_test(NAME pcie_sriov_ari_capability COMMAND cpptlm_tests "[pcie][sriov][ari]" -r compact)
+add_test(NAME pcie_sriov_vf_pool_routing COMMAND cpptlm_tests "[pcie][sriov][vf-pool][routing]" -r compact)
+add_test(NAME pcie_sriov_flr COMMAND cpptlm_tests "[pcie][sriov][vf-pool][flr]" -r compact)
+add_test(NAME pcie_sriov_completion_tracking COMMAND cpptlm_tests "[pcie][sriov][completion][tracking]" -r compact)
+add_test(NAME pcie_sriov_endpoint_ip_basic COMMAND cpptlm_tests "[pcie][sriov][endpoint-ip][basic]" -r compact)
+add_test(NAME pcie_sriov_all COMMAND cpptlm_tests "[pcie][sriov]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)

@@ -77,6 +77,8 @@ set(CORE_SOURCES
     # pcie-ip-microarch Phase 4: SR-IOV VF Pool (T-P4-4/5/6)
     tlm/pcie/pcie_sriov_vf_pool_tlm.cc
     tlm/pcie/pcie_completion_tracker_tlm.cc
+    # pcie-ip-microarch Phase 4: PcieEndpointIP 新类 17 端口 (T-P4-7)
+    tlm/pcie/pcie_endpoint_ip.cc
 )
 
 # ==============================================================================
