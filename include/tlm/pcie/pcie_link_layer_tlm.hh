@@ -219,6 +219,13 @@ public:
     std::size_t encoding_active_lanes() const noexcept { return enc_lanes_; }
     std::size_t encoding_block_bytes() const noexcept { return enc_block_bytes_; }
 
+    // C2: 速率切换完成后同步新编码速率 (仅当编码已启用时更新, 避免意外启用)
+    void on_rate_switch_complete(PcieEncodingLatencyModel::Rate new_rate) noexcept {
+        if (enc_enabled_) {
+            enc_rate_ = new_rate;
+        }
+    }
+
     // ========== PcieEndpointTLM composition 注册表（冻结 .h 布局下的集成通道）==========
     // PcieEndpointTLM 头文件类成员布局冻结（23 ABI），不能加成员 → 通过静态注册表
     // 关联 EP（按模块名）↔ PcieLinkLayer 实例。定义并实现在 pcie_link_layer_tlm.{hh,cc}，

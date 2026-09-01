@@ -231,13 +231,18 @@ void PciePhyDigitalCtrl::tick() {
     // Recovery 内速率切换完成检测: ready 后切换到新速率并回 L0
     if (rate_switching_) {
         const uint64_t ready_ns = link_layer_ ? link_layer_->rate_switch_ready_ns()
-                                             : 0u;
+                                              : 0u;
         const uint64_t now_ns = eq_ ? eq_->getCurrentCycle() : 0u;
         if (now_ns >= ready_ns) {
             rate_switching_ = false;
             rate_ = rate_switch_to_;
             state_ = LtState::L0;
             link_up_ = true;
+            // C2: 速率切换完成后, 同步链路层编码延迟模型到新速率
+            // (仅当编码已启用时更新 rate, 后续 TLP 按新 Gen 计费)
+            if (link_layer_) {
+                link_layer_->on_rate_switch_complete(rate_);
+            }
         }
     }
 }

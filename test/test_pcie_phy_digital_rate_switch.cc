@@ -146,3 +146,63 @@ TEST_CASE("RateSwitch: 反向切换 (GEN5→GEN1) ≥ 1µs (downshift 重训练)
     const uint64_t now = eq.getCurrentCycle();
     REQUIRE(ll.rate_switch_ready_ns() >= now + 1000u);
 }
+
+// ========== Oracle C2: 速率切换完成 → 编码延迟模型同步新速率 ==========
+
+TEST_CASE("RateSwitch: 切换完成后 encoding_rate 同步 GEN5 (C2)",
+          "[pcie][phy][rate-switch][c2][encoding]") {
+    EventQueue eq;
+    PcieLinkLayer ll(&eq, abundant_config());
+    PciePhyDigitalCtrl phy(&eq);
+    phy.link_layer(&ll);
+    phy.start_link_training();
+    phy.set_rate(PcieEncodingLatencyModel::Rate::GEN3);
+
+    // 开启编码延迟 (GEN3, 16 lane) → 未启用时切换不会意外开启
+    ll.set_encoding_latency(PcieEncodingLatencyModel::Rate::GEN3, 16);
+    REQUIRE(ll.encoding_latency_enabled() == true);
+    REQUIRE(ll.encoding_rate() == PcieEncodingLatencyModel::Rate::GEN3);
+
+    // GEN3 → GEN5 切换
+    phy.start_rate_switch(PcieEncodingLatencyModel::Rate::GEN5);
+    REQUIRE(ll.is_rate_switching() == true);
+
+    // 推进 2000ns (切换 1µs 已过) + tick → 完成时同步编码速率
+    eq.run(2000);
+    ll.tick();
+    phy.tick();
+
+    REQUIRE(phy.rate() == PcieEncodingLatencyModel::Rate::GEN5);
+    // C2 修复: 编码延迟模型也切到 GEN5
+    REQUIRE(ll.encoding_latency_enabled() == true);
+    REQUIRE(ll.encoding_rate() == PcieEncodingLatencyModel::Rate::GEN5);
+}
+
+TEST_CASE("RateSwitch: 切换完成后 block_latency 按新速率计费 (C2)",
+          "[pcie][phy][rate-switch][c2][latency]") {
+    EventQueue eq;
+    PcieLinkLayer ll(&eq, abundant_config());
+    PciePhyDigitalCtrl phy(&eq);
+    phy.link_layer(&ll);
+    phy.start_link_training();
+    phy.set_rate(PcieEncodingLatencyModel::Rate::GEN3);
+
+    // GEN3 x16: 128B 块 = 8ns; GEN5 x16: 128B 块 = 2ns
+    ll.set_encoding_latency(PcieEncodingLatencyModel::Rate::GEN3, 16);
+    REQUIRE(PcieEncodingLatencyModel::block_latency_ns(
+                PcieEncodingLatencyModel::Rate::GEN3, 128, 16) == 8u);
+    REQUIRE(PcieEncodingLatencyModel::block_latency_ns(
+                PcieEncodingLatencyModel::Rate::GEN5, 128, 16) == 2u);
+
+    phy.start_rate_switch(PcieEncodingLatencyModel::Rate::GEN5);
+    eq.run(2000);
+    ll.tick();
+    phy.tick();
+
+    // 切换完成后: 后续 TLP 延迟按 GEN5 (2ns) 而非 GEN3 (8ns) 计费
+    REQUIRE(ll.encoding_rate() == PcieEncodingLatencyModel::Rate::GEN5);
+    PcieTlpBundle t = make_write(99);
+    REQUIRE(ll.rx_tlp_from_host(t) == true);
+    // RX wire busy 推进: 2ns (GEN5) 而非 8ns (GEN3)
+    REQUIRE(ll.rx_wire_busy_until_ns_debug() - eq.getCurrentCycle() == 2u);
+}
