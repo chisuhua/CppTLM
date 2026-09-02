@@ -16,7 +16,7 @@
 
 ### Requirement: 新建 ADR-SOC-09 v1-nvidia-amd-dual-vendor
 
-`docs/soc_arch/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md` 必须存在且包含：
+The system SHALL `docs/soc_arch/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md` 必须存在且包含：
 - 主题：v1.0 战略 = 同时支持 CUDA + ROCm 双 driver stack
 - 决策点 D1-D4：
   - D1 AMD 路径与 NVIDIA 路径共享 ComputeUnitTLM 蓝图（cu_template + nv_mode/amd_mode）
@@ -32,7 +32,7 @@
 
 ### Requirement: 新建 ADR-SOC-10 module-factory-topology
 
-`docs/soc_arch/adr/ADR-SOC-10-module-factory-topology.md` 必须存在且包含：
+The system SHALL `docs/soc_arch/adr/ADR-SOC-10-module-factory-topology.md` 必须存在且包含：
 - 主题：9 类 SimModule P2-P5 层级容器 + ApuSoC 顶层
 - 决策点 D1-D4：
   - D1 单一入口 JSON 拓扑
@@ -47,7 +47,7 @@
 
 ### Requirement: 新建 ADR-SOC-11 pcie-endpoint-ip
 
-`docs/soc_arch/adr/ADR-SOC-11-pcie-endpoint-ip.md` 必须存在且包含：
+The system SHALL `docs/soc_arch/adr/ADR-SOC-11-pcie-endpoint-ip.md` 必须存在且包含：
 - 主题：17 ports PcieEndpointIP 整合模块替代 4 端口 PcieEndpointTLM
 - 决策点 D1-D4：
   - D1 PcieEndpointTLM 加 `[[deprecated("use PcieEndpointIP")]]`（已实施,429327d）
@@ -62,7 +62,7 @@
 
 ### Requirement: 新建 ADR-SOC-12 host-bypass-and-rc
 
-`docs/soc_arch/adr/ADR-SOC-12-host-bypass-and-rc.md` 必须存在且包含：
+The system SHALL `docs/soc_arch/adr/ADR-SOC-12-host-bypass-and-rc.md` 必须存在且包含：
 - 主题：Phase 7 HostBypassTLM + PcieRootComplexTLM（PF0-only 简化）
 - 决策点 D1-D3：
   - D1 软件 bring-up 跳过 PCIe RC BFM
@@ -76,7 +76,7 @@
 
 ### Requirement: 新建 ADR-SOC-13 axi-stream-adapter-mapper
 
-`docs/soc_arch/adr/ADR-SOC-13-axi-stream-adapter-mapper.md` 必须存在且包含：
+The system SHALL `docs/soc_arch/adr/ADR-SOC-13-axi-stream-adapter-mapper.md` 必须存在且包含：
 - 主题：Phase 5/6 Axi4Bundle + Axi4StreamAdapter + Axi4Mapper
 - 决策点 D1-D5：
   - D1 Axi4Bundle 17 字段 + Axi4LiteBundle 9 字段
@@ -92,7 +92,7 @@
 
 ### Requirement: 新建 ADR-SOC-14 v55-integration-revision
 
-`docs/soc_arch/adr/ADR-SOC-14-v55-integration-revision.md` 必须存在且包含：
+The system SHALL `docs/soc_arch/adr/ADR-SOC-14-v55-integration-revision.md` 必须存在且包含：
 - 主题：Phase 8 完成后 v5.5+ 集成修订
 - 决策点 D1-D4：
   - D1 5 项前置测试当前实施状态（详见 ADR-SOC-08 状态追加）
@@ -107,7 +107,7 @@
 
 ### Requirement: 现有 ADR Status Update 段追加
 
-8 份现有 ADR（ADR-SOC-01..08）必须包含 `## Status Update` 段：
+The system SHALL 8 份现有 ADR（ADR-SOC-01..08）必须包含 `## Status Update` 段：
 - ADR-SOC-01: Phase 7.C 部分落地 + 双 vendor
 - ADR-SOC-02: Superseded by ADR-SOC-06 D2
 - ADR-SOC-03: Superseded by ADR-SOC-06 D2
@@ -126,7 +126,7 @@
 
 ### Requirement: ADR README 索引同步
 
-`docs/soc_arch/adr/README.md` 必须包含：
+The system SHALL `docs/soc_arch/adr/README.md` 必须包含：
 - 状态图例（Proposed / Accepted / Superseded）
 - 14 份 ADR 完整清单（ADR-SOC-01..14）
 - 修订规划引用（revision-plan-v1.0.md）
@@ -138,7 +138,7 @@
 
 ### Requirement: 修订规划权威源
 
-`docs/soc_arch/adr/revision-plan-v1.0.md` 必须存在且：
+The system SHALL `docs/soc_arch/adr/revision-plan-v1.0.md` 必须存在且：
 - 包含 §1-§9 完整结构（背景/策略/修订清单/状态追加/新增/执行计划/风险/ADR 树/映射）
 - 通过 Metis 评审（X1-X9 + M1-M2 修复已落地）
 - 引用 `openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-adr-revision/`（本 change）
@@ -150,7 +150,7 @@
 
 ### Requirement: 4 份新模块微架构文档
 
-4 份新模块微架构文档必须存在（对应 ADR-SOC-12/13）：
+The system SHALL 4 份新模块微架构文档必须存在（对应 ADR-SOC-12/13）：
 - `docs/soc_arch/modules/host-bypass.md`（HostBypassTLM 微架构）
 - `docs/soc_arch/modules/pcie-root-complex.md`（PcieRootComplexTLM 微架构）
 - `docs/soc_arch/modules/axi4-stream-adapter.md`（Axi4StreamAdapter 微架构）
