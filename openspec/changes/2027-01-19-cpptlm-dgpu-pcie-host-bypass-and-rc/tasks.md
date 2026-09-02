@@ -27,11 +27,11 @@
 
 | 子任务 | 详情 |
 |---|---|
-| ⏳ 1 | 写 `test/test_host_bypass_basic.cc`（AXI Bridge 路径基础读写） |
-| ⏳ 2 | 跑 → **FAIL** |
-| ⏳ 3 | 创建 `include/tlm/pcie/host_bypass_tlm.hh` + `src/tlm/pcie/host_bypass_tlm.cc` |
-| ⏳ 4 | 跑 → **PASS** |
-| ⏳ 5 | 提交:`feat(pcie-host): HostBypassTLM 基础桥接 (AXI ↔ PcieEndpointIP)` |
+| ✅ 1 | 写 `test/test_host_bypass_basic.cc`（AXI Bridge 路径基础读写） |
+| ✅ 2 | 跑 → **FAIL** |
+| ✅ 3 | 创建 `include/tlm/pcie/host_bypass_tlm.hh` + `src/tlm/pcie/host_bypass_tlm.cc` |
+| ✅ 4 | 跑 → **PASS** |
+| ✅ 5 | 提交:`feat(pcie-host): HostBypassTLM 基础桥接 (AXI ↔ PcieEndpointIP)` |
 
 **测试场景**：
 - ✅ 软件经 HostBypassTLM 发起对 EP 访问，事务经 AXI 送达 PcieEndpointIP
@@ -41,11 +41,11 @@
 
 | 子任务 | 详情 |
 |---|---|
-| ⏳ 1 | 写 `test/test_host_bypass_software_bringup.cc` |
-| ⏳ 2 | 跑 → **FAIL** |
-| ⏳ 3 | 扩展 `host_bypass_tlm` — 配置空间写/读回/BAR 访问 |
-| ⏳ 4 | 跑 → **PASS** |
-| ⏳ 5 | 提交:`feat(pcie-host): 软件 bring-up 场景 (config space + BAR)` |
+| ✅ 1 | 写 `test/test_host_bypass_software_bringup.cc` |
+| ✅ 2 | 跑 → **FAIL** |
+| ✅ 3 | 扩展 `host_bypass_tlm` — 配置空间写/读回/BAR 访问 |
+| ✅ 4 | 跑 → **PASS** |
+| ✅ 5 | 提交:`feat(pcie-host): 软件 bring-up 场景 (config space + BAR)` |
 
 **测试场景**：
 - ✅ 配置空间写 → 读回值正确
@@ -55,11 +55,11 @@
 
 | 子任务 | 详情 |
 |---|---|
-| ⏳ 1 | 写 `test/test_pcie_root_complex_enumeration.cc` |
-| ⏳ 2 | 跑 → **FAIL** |
-| ⏳ 3 | 创建 `include/tlm/pcie/pcie_root_complex_tlm.hh` + `.cc`（枚举 + 配置访问） |
-| ⏳ 4 | 跑 → **PASS** |
-| ⏳ 5 | 提交:`feat(pcie-rc): PcieRootComplexTLM 枚举 + 配置访问` |
+| ✅ 1 | 写 `test/test_pcie_root_complex_enumeration.cc` |
+| ✅ 2 | 跑 → **FAIL** |
+| ✅ 3 | 创建 `include/tlm/pcie/pcie_root_complex_tlm.hh` + `.cc`（枚举 + 配置访问） |
+| ✅ 4 | 跑 → **PASS** |
+| ✅ 5 | 提交:`feat(pcie-rc): PcieRootComplexTLM 枚举 + 配置访问` |
 
 **测试场景**：
 - ✅ 设备/功能被发现，配置空间可读
@@ -69,11 +69,11 @@
 
 | 子任务 | 详情 |
 |---|---|
-| ⏳ 1 | 写 `examples/demo_pcie_full_e2e.py`（PcieEndpointIP ↔ Host 全链路） |
-| ⏳ 2 | 跑 → **FAIL**（或无对应 Python 测试则先验证 demo 可执行） |
-| ⏳ 3 | 实现 demo + 必要接线 |
-| ⏳ 4 | 跑 → **PASS** |
-| ⏳ 5 | 提交:`feat(demo): PcieEndpointIP ↔ Host E2E demo` |
+| ✅ 1 | 写 `examples/demo_pcie_full_e2e.py`（PcieEndpointIP ↔ Host 全链路） |
+| ✅ 2 | 跑 → **FAIL**（或无对应 Python 测试则先验证 demo 可执行） |
+| ✅ 3 | 实现 demo + 必要接线 |
+| ✅ 4 | 跑 → **PASS** |
+| ✅ 5 | 提交:`feat(demo): PcieEndpointIP ↔ Host E2E demo` |
 
 **测试场景**：
 - ✅ 全链路端到端成功
@@ -83,11 +83,11 @@
 
 | 子任务 | 详情 |
 |---|---|
-| ⏳ 1 | 修改 `src/CMakeLists.txt` + `test/CMakeLists.txt` — 注册新源与测试 |
-| ⏳ 2 | `cmake --build build -j$(nproc)` |
-| ⏳ 3 | `ctest -R "host_bypass|root_complex"` + 全量 `[pcie]` 无回归 |
-| ⏳ 4 | `openspec validate --changes --strict` PASS |
-| ⏳ 5 | 提交:`build(pcie): register Phase 7 sources in CMakeLists` |
+| ✅ 1 | 修改 `src/CMakeLists.txt` + `test/CMakeLists.txt` — 注册新源与测试 |
+| ✅ 2 | `cmake --build build -j$(nproc)` |
+| ✅ 3 | `ctest -R "host_bypass|root_complex"` + 全量 `[pcie]` 无回归 |
+| ✅ 4 | `openspec validate --changes --strict` PASS |
+| ✅ 5 | 提交:`build(pcie): register Phase 7 sources in CMakeLists` |
 
 ---
 

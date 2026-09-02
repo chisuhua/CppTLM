@@ -160,6 +160,12 @@ add_test(NAME axi4_mapper_outstanding COMMAND cpptlm_tests "[axi][mapper][outsta
 add_test(NAME axi4_mapper_out_of_order COMMAND cpptlm_tests "[axi][mapper][ooo]" -r compact)
 add_test(NAME axi4_mapper_integration_with_pcie COMMAND cpptlm_tests "[axi][mapper][integration]" -r compact)
 
+# 2027-01-19 cpptlm-dgpu-pcie-host-bypass-and-rc Phase 7 (T-P7-1..T-P7-3 测试注册)
+# 3 个新测试: host_bypass_basic / host_bypass_software_bringup / root_complex_enumeration
+add_test(NAME test_host_bypass_basic COMMAND cpptlm_tests "[pcie][host-bypass][basic]" -r compact)
+add_test(NAME test_host_bypass_software_bringup COMMAND cpptlm_tests "[pcie][host-bypass][software]" -r compact)
+add_test(NAME test_pcie_root_complex_enumeration COMMAND cpptlm_tests "[pcie][root-complex][enum]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)
