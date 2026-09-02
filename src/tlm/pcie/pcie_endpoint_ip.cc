@@ -103,6 +103,59 @@ void PcieEndpointIP::attach_composition(const nlohmann::json& params) {
 }
 
 void PcieEndpointIP::tick() {
+    // Phase 8 M1: 真实 AXI 数据路径接线 — PcieEndpointIP::tick() 驱动
+    // PcieAxiAdapter 消费 slave_in 请求，EP 内部真实处理并产生真实响应。
+    // HostBypass/RC (Host 侧 master) ↔ PcieAxiAdapter (EP 侧 slave) 双向闭环。
+    if (auto* ax = PcieAxiAdapter::for_endpoint(getName())) {
+        cpptlm::Axi4StreamAdapter& axi = ax->axi();
+
+        if (axi.slave_req_valid()) {
+            const bundles::Axi4Bundle& req = axi.slave_req_data();
+            if (req.awid.read() != 0 || req.awaddr.read() != 0 || req.awlen.read() != 0) {
+                // 写请求：配置空间偏移 (< config_size) vs BAR 空间
+                const uint64_t addr = req.awaddr.read();
+                const uint16_t bid = static_cast<uint16_t>(req.awid.read());
+
+                if (addr < pool_.config_of(0).config_size()) {
+                    pool_.config_of(0).write(static_cast<uint16_t>(addr),
+                                             static_cast<uint32_t>(req.wdata.read()));
+                } else {
+                    // BAR 空间：地址低位路由到 backing store（8B 对齐字）
+                    bar_store_[addr & ~0x7ULL] = req.wdata.read();
+                }
+
+                bundles::Axi4Bundle wresp;
+                wresp.bid.write(bid);
+                wresp.bresp.write(0);
+                axi.slave_resp(wresp);
+            } else {
+                // 读请求：配置空间偏移 (< config_size) vs BAR 空间
+                const uint64_t addr = req.araddr.read();
+                const uint16_t rid = static_cast<uint16_t>(req.arid.read());
+                uint64_t rdata = 0;
+
+                if (addr < pool_.config_of(0).config_size()) {
+                    rdata = pool_.config_of(0).read(static_cast<uint16_t>(addr));
+                } else {
+                    const auto it = bar_store_.find(addr & ~0x7ULL);
+                    if (it != bar_store_.end()) {
+                        rdata = it->second;
+                    }
+                }
+
+                bundles::Axi4Bundle rresp;
+                rresp.rid.write(rid);
+                rresp.rdata.write(rdata);
+                rresp.rresp.write(0);
+                rresp.rlast.write(1);
+                axi.slave_resp(rresp);
+            }
+            axi.slave_req_consume();
+        }
+
+        axi.tick();
+    }
+
     for (unsigned i = 0; i < NUM_PORTS; ++i) {
         if (adapters_[i]) {
             adapters_[i]->tick();

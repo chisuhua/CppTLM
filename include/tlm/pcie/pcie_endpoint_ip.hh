@@ -30,6 +30,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 namespace tlm::pcie {
 
@@ -105,6 +106,8 @@ public:
 private:
     PcieSriovVfPool pool_;
     cpptlm::StreamAdapterBase* adapters_[NUM_PORTS] = {nullptr};
+    // BAR 空间 backing store（Phase 8 M1: AXI slave 写经地址路由落写/读回真实值）
+    std::unordered_map<uint64_t, uint64_t> bar_store_;
     void attach_composition(const nlohmann::json& params);
 };
 
