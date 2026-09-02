@@ -49,6 +49,8 @@ public:
     // 绑定的 Endpoint
     PcieEndpointIP* endpoint() const noexcept { return ep_; }
     EventQueue* event_queue() const noexcept { return eq_; }
+    // composition 挂接后绑定真实 EP（attach_to_endpoint 先注册, 再 set_endpoint 回填）
+    void set_endpoint(PcieEndpointIP* ep) noexcept { ep_ = ep; }
 
     // 底层 AXI Stream Adapter（三端口访问）
     cpptlm::Axi4StreamAdapter& axi() noexcept { return axi_; }

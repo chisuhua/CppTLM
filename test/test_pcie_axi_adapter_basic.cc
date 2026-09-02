@@ -7,9 +7,11 @@
 
 #include "bundles/axi4_bundles_tlm.hh"
 #include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
 #include "framework/axi4_stream_adapter.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 #include "tlm/pcie/pcie_axi_adapter_tlm.hh"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
 
 #include <cstdint>
 #include <nlohmann/json.hpp>
@@ -204,4 +206,23 @@ TEST_CASE("PcieEndpointTLM: without axi_adapter config no adapter attached",
     ep.set_config(json::object());  // 无 axi_adapter
 
     REQUIRE(tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_axi_plain") == nullptr);
+}
+
+TEST_CASE("PcieEndpointIP: axi_adapter config binds real endpoint pointer (M3)",
+          "[axi][adapter][basic][compose][endpoint-ip]") {
+    EventQueue eq;
+    tlm::pcie::PcieEndpointIP ep("pcie_ep_ip_axi_cfg", &eq);
+    ep.init();
+
+    json cfg;
+    cfg["axi_adapter"] = json::object();
+    ep.set_config(cfg);  // → on_config_loaded → attach_composition → attach + set_endpoint(this)
+
+    auto* ax = tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_ip_axi_cfg");
+    REQUIRE(ax != nullptr);
+    REQUIRE(ax->endpoint() == &ep);  // M3: composition 路径必须回填真实 EP 指针
+    REQUIRE(ax->event_queue() == &eq);
+
+    tlm::pcie::PcieAxiAdapter::detach_from_endpoint("pcie_ep_ip_axi_cfg");
+    REQUIRE(tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_ip_axi_cfg") == nullptr);
 }

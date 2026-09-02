@@ -3,6 +3,7 @@
 // 作者 CppTLM Team / 日期 2026-10-13
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/gpu/pcie_config_space_mvp.hh"
+#include "tlm/pcie/pcie_axi_adapter_tlm.hh"
 #include <nlohmann/json.hpp>
 
 namespace tlm::pcie {
@@ -51,6 +52,15 @@ void PcieEndpointIP::on_config_loaded() {
 }
 
 void PcieEndpointIP::attach_composition(const nlohmann::json& params) {
+    // AXI Stream Adapter 独立挂接（per Phase 5 T-P5-6, 不依赖 link_layer 分支）
+    if (params.contains("axi_adapter")) {
+        auto* ax = PcieAxiAdapter::attach_to_endpoint(getName(), event_queue);
+        if (ax) {
+            ax->set_endpoint(this);
+        }
+    } else {
+        PcieAxiAdapter::detach_from_endpoint(getName());
+    }
     if (!params.contains("link_layer")) {
         return;
     }

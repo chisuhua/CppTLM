@@ -25,6 +25,13 @@ PcieEndpointIP **SHALL** 暴露多端口 AXI Stream Adapter（master / slave / c
 - 支持 valid/ready 反压（backpressure），不允许丢事务
 - 支持 outstanding 请求 ID 关联（awid→bid / arid→rid，Phase 6 Mapper 消费）
 
+> **⚠️ 已知限制（Oracle M1, 2026-11 Phase 5 评审确认）**: `ch_uint<512>` 内部以
+> `uint64_t` 存储（见 `include/core/ext/cpphdl_types.hh`），故 `wdata`/`rdata` 名义
+> 512-bit 实际仅 64-bit。当前实现遵循项目轻量仿真约定（CacheTLM 等均为 64-bit
+> 数据路径），burst 总字节公式 `(awlen+1) × 2^awsize` 在寻址/拍数层面成立。**Phase 6/7
+> 数据通路工单必须纳入**: 若需搬运真实 VRAM/DMA 数据（>64-bit），须扩展 `ch_uint`
+> 支持宽位或引入 64B 载体数组；在 Phase 6 实施前不得假定数据宽度真实 512-bit。
+
 实现位置:
 - `include/bundles/axi4_bundles_tlm.hh`
 - `include/framework/axi4_stream_adapter.hh`

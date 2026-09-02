@@ -185,3 +185,43 @@ TEST_CASE("Axi4StreamAdapter: mismatched response ID does not remove outstanding
     REQUIRE(a.master_resp(ok) == true);
     REQUIRE(a.outstanding_wr() == 0);
 }
+
+TEST_CASE("Axi4StreamAdapter: multi-beat read burst keeps outstanding until RLAST (M2)",
+          "[axi][adapter][ids][rd][burst]") {
+    cpptlm::Axi4StreamAdapter a;
+
+    // 4 拍读 burst（arlen=3, arid=7）：登记 1 个 outstanding
+    Axi4Bundle req;
+    req.arid.write(7);
+    req.araddr.write(0x4000);
+    req.arlen.write(3);
+    REQUIRE(a.master_req(req) == true);
+    a.set_master_ready(true);
+    a.tick();
+    a.master_req_consume();
+    REQUIRE(a.outstanding_rd() == 1);
+    REQUIRE(contains(a.outstanding_rd_ids(), 7));
+
+    // 前 3 拍 RLAST=0：outstanding 必须保持（M2: 旧实现 rid!=0 即清除, 这里验证修复）
+    for (int i = 0; i < 3; ++i) {
+        Axi4Bundle beat;
+        beat.rid.write(7);
+        beat.rdata.write(static_cast<uint64_t>(i));
+        beat.rresp.write(0);
+        beat.rlast.write(0);
+        REQUIRE(a.master_resp(beat) == true);
+        REQUIRE(a.outstanding_rd() == 1);  // 中途不清
+        REQUIRE(contains(a.outstanding_rd_ids(), 7));
+        a.master_resp_consume();
+    }
+
+    // 末拍 RLAST=1：outstanding 清除
+    Axi4Bundle last;
+    last.rid.write(7);
+    last.rdata.write(0xDEADBEEF);
+    last.rresp.write(0);
+    last.rlast.write(1);
+    REQUIRE(a.master_resp(last) == true);
+    REQUIRE(a.outstanding_rd() == 0);
+    REQUIRE(a.outstanding_rd_ids().empty());
+}

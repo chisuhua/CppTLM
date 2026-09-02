@@ -68,10 +68,11 @@ bool Axi4StreamAdapter::master_resp(const bundles::Axi4Bundle& resp) {
     master_resp_valid_ = true;
 
     // 按响应 ID 匹配并移除 outstanding 请求：
-    //   读响应 → rid 匹配 arid；写响应 → bid 匹配 awid
+    //   读响应 → rid 匹配 arid，仅当 RLAST（多拍 burst 中途不清，条目存活到末拍）
+    //   写响应 → bid 匹配 awid
     const uint16_t rid = static_cast<uint16_t>(resp.rid.read());
     const uint16_t bid = static_cast<uint16_t>(resp.bid.read());
-    if (rid != 0 || resp.rlast.read()) {
+    if (resp.rlast.read()) {
         auto it = std::find(outstanding_rd_ids_.begin(), outstanding_rd_ids_.end(), rid);
         if (it != outstanding_rd_ids_.end()) {
             outstanding_rd_ids_.erase(it);
