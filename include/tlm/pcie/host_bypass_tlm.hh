@@ -96,16 +96,34 @@ public:
     const bundles::Axi4LiteBundle& axi_cfg_resp_data() const { return axi_.cfg_resp_data(); }
     void axi_cfg_resp_consume() { axi_.cfg_resp_consume(); }
 
+    // ===================== 软件 bring-up API (T-P7-2) =====================
+    // 配置空间写：经 AXI 边界直达 EP 配置空间（stream_id 0=PF, 1..16=VF0..VF15）。
+    // 返回 false 表示未挂接 EP 或 EP 不可达。
+    bool config_write(uint16_t offset, uint32_t value, uint16_t stream_id = 0);
+    // 配置空间读：返回 EP 配置空间实际存储值（未挂接 EP 时返回 0xFFFFFFFF）。
+    uint32_t config_read(uint16_t offset, uint16_t stream_id = 0);
+    // BAR 空间写：经 AXI master 通道路由到 EP（bytes=1/2/4/8）。
+    // 返回 false 表示未挂接 EP 或通道忙。
+    bool bar_write(uint64_t addr, uint64_t data, uint8_t bytes);
+    // BAR 空间读：经 AXI master 通道路由到 EP，data 输出读回值。
+    // 返回 false 表示未挂接 EP 或通道忙。
+    bool bar_read(uint64_t addr, uint64_t& data, uint8_t bytes);
+
     // 每周期推进（转发至底层 Axi4StreamAdapter）
     void tick() { axi_.tick(); }
     // 全量复位
     void reset() { axi_.reset(); }
 
 private:
+    // 由 awsize（2^awsize 字节/拍）计算 burst 总字节数
+    static uint8_t bytes_to_awsize(uint8_t bytes);
+
     std::string name_;
     EventQueue* eq_;
     PcieEndpointIP* ep_ = nullptr;
     cpptlm::Axi4StreamAdapter axi_;
+    // BAR 事务 ID 计数器（每次 bar_write/bar_read 自增）
+    uint16_t bar_tx_id_ = 0;
 };
 
 } // namespace tlm::pcie
