@@ -83,6 +83,9 @@ set(CORE_SOURCES
     framework/axi4_stream_adapter.cc
     # pcie-ip-microarch Phase 5: PcieAxiAdapter (T-P5-3)
     tlm/pcie/pcie_axi_adapter_tlm.cc
+    # pcie-ip-microarch Phase 6: AXI4Mapper 信号 ↔ Bundle 转换 (T-P6-1)
+    framework/axi4_signal_to_bundle.cc
+    framework/axi4_bundle_to_signal.cc
 )
 
 # ==============================================================================
