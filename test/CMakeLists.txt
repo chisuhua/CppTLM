@@ -153,6 +153,13 @@ add_test(NAME pcie_axi_adapter_64byte_burst COMMAND cpptlm_tests "[axi][pcie][ad
 add_test(NAME pcie_axi_adapter_backpressure COMMAND cpptlm_tests "[axi][adapter][backpressure]" -r compact)
 add_test(NAME pcie_axi_adapter_ids COMMAND cpptlm_tests "[axi][adapter][ids]" -r compact)
 
+# 2026-12-22 cpptlm-dgpu-axi4-mapper Phase 6 (T-P6-1..T-P6-4 测试注册)
+# 4 个新测试: basic / outstanding / out_of_order / integration_with_pcie
+add_test(NAME axi4_mapper_basic COMMAND cpptlm_tests "[axi][mapper][basic]" -r compact)
+add_test(NAME axi4_mapper_outstanding COMMAND cpptlm_tests "[axi][mapper][outstanding]" -r compact)
+add_test(NAME axi4_mapper_out_of_order COMMAND cpptlm_tests "[axi][mapper][ooo]" -r compact)
+add_test(NAME axi4_mapper_integration_with_pcie COMMAND cpptlm_tests "[axi][mapper][integration]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)
