@@ -86,6 +86,8 @@ set(CORE_SOURCES
     # pcie-ip-microarch Phase 6: AXI4Mapper 信号 ↔ Bundle 转换 (T-P6-1)
     framework/axi4_signal_to_bundle.cc
     framework/axi4_bundle_to_signal.cc
+    # pcie-ip-microarch Phase 6: Axi4Mapper 独立模块 (T-P6-2..T-P6-3)
+    framework/axi4_mapper.cc
 )
 
 # ==============================================================================
