@@ -88,6 +88,8 @@ set(CORE_SOURCES
     framework/axi4_bundle_to_signal.cc
     # pcie-ip-microarch Phase 6: Axi4Mapper 独立模块 (T-P6-2..T-P6-3)
     framework/axi4_mapper.cc
+    # pcie-ip-microarch Phase 7: HostBypassTLM (T-P7-1)
+    tlm/pcie/host_bypass_tlm.cc
 )
 
 # ==============================================================================
