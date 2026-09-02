@@ -1,0 +1,100 @@
+{
+  "name": "dgpu_soc_with_pcie_ip",
+  "description": "CppTLM dGPU SOC + PCIe Endpoint IP 完整示例配置 (Phase 8 整合交付)。含 PcieEndpointIP (17 端口: 1 PF + 16 VF, 带 AXI StreamAdapter + AXI4Mapper 可选注入) + HostBypassTLM (软件 bring-up) + PcieRootComplexTLM (PCIe 枚举, PF0-only 简化模型)。参考 configs/apu_soc_v1.json + design.md §10 配置 Schema。",
+  "modules": [
+    {
+      "name": "pcie_ep",
+      "type": "PcieEndpointIP",
+      "params": {
+        "bypass_mode": "bypass",
+        "axi_adapter": {
+          "data_width": 512,
+          "address_width": 64,
+          "axi4_mapper_inject": true,
+          "ports": {
+            "axi_master_out": { "enabled": true, "type": "axi4" },
+            "axi_slave_in": { "enabled": true, "type": "axi4" },
+            "cfg_slave_in": { "enabled": true, "type": "axi4lite" }
+          }
+        },
+        "link_layer": {
+          "enabled": true,
+          "bypass_mode": "Bypass",
+          "fc_token_bucket_capacity": 256,
+          "fc_initial_credit_p": 256,
+          "fc_initial_credit_np": 256,
+          "fc_initial_credit_cpl": 256,
+          "retry_buffer_size": 4096
+        },
+        "phy_digital": {
+          "pipe_interface": "lightweight_4_signal",
+          "ltssm_initial_state": "detect",
+          "equalization_preset_p": 7,
+          "equalization_preset_np": 7,
+          "hot_plug_supported": true,
+          "perst_signal_initial": "asserted"
+        },
+        "sr_iov": {
+          "enabled": true,
+          "initial_vfs": 8,
+          "total_vfs": 16,
+          "num_vfs": 8,
+          "vf_bar0_size": 65536,
+          "vf_bar1_size": 268435456,
+          "vf_msix_vectors": 4,
+          "ari_capable": true,
+          "vf_pool_stream_adapter": "shared"
+        },
+        "transaction_layer": {
+          "config_size": 4096,
+          "msix_num_vectors": 16,
+          "bar_sizes": [65536, 268435456],
+          "bar0_registers": [
+            {
+              "offset": 20,
+              "name": "GPU_REG_DOORBELL",
+              "access": "WO",
+              "side_effect": "doorbell",
+              "stream_id": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "host_bypass",
+      "type": "HostBypassTLM",
+      "params": {
+        "bridge": "axi",
+        "ep_attach": "pcie_ep"
+      }
+    },
+    {
+      "name": "root_complex",
+      "type": "PcieRootComplexTLM",
+      "params": {
+        "enumerate_pf0_only": true
+      }
+    },
+    {
+      "name": "xbar",
+      "type": "CoherentXBarTLM",
+      "params": {
+        "ports": 8
+      }
+    },
+    {
+      "name": "vram0",
+      "type": "MemoryTLM",
+      "params": {
+        "capacity_gb": 1
+      }
+    }
+  ],
+  "connections": [
+    { "src": "host_bypass.axi_master", "dst": "pcie_ep.axi_slave_in", "latency": 1 },
+    { "src": "root_complex.axi_master", "dst": "pcie_ep.axi_slave_in", "latency": 1 },
+    { "src": "pcie_ep.axi_master_out", "dst": "xbar.0", "latency": 1 },
+    { "src": "xbar.1", "dst": "vram0", "latency": 10 }
+  ]
+}
