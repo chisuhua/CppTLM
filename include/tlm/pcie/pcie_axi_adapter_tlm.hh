@@ -4,14 +4,18 @@
 //           持有 Axi4StreamAdapter（axi_master_out / axi_slave_in / cfg_slave_in
 //           三端口），并提供 64-byte burst 写序列化（awlen/awsize 驱动的多拍
 //           W 通道 + wlast）。
+//           Phase 6: 可选注入 AXI4Mapper（JSON axi4_mapper_inject: true），提供
+//           outstanding 跟踪与 OOO completion（rid 关联）。
 // 作者 CppTLM Team / 日期 2026-11-03
 // 参考: openspec/changes/2026-11-03-cpptlm-dgpu-axi-stream-adapter/spec.md
 //       openspec/changes/2026-09-01-cpptlm-dgpu-pcie-ip-microarch/design.md §6
+//       openspec/changes/2026-12-22-cpptlm-dgpu-axi4-mapper/spec.md T-P6-4
 #ifndef TLM_PCIE_PCIE_AXI_ADAPTER_TLM_HH
 #define TLM_PCIE_PCIE_AXI_ADAPTER_TLM_HH
 
 #include "core/event_queue.hh"
 #include "framework/axi4_stream_adapter.hh"
+#include "framework/axi4_mapper.hh"
 
 #include <cstdint>
 #include <deque>
@@ -30,6 +34,8 @@ class PcieEndpointIP;
  *   - 总传输字节 = (awlen+1) × 2^awsize（per spec.md Scenario "64-byte burst"）
  *   - 绑定 PcieEndpointIP（endpoint() 访问器），后续 composition 接线到
  *     PcieEndpointIP 数据路径（T-P5-6）
+ *   - Phase 6: 可选注入 AXI4Mapper（JSON axi4_mapper_inject: true），提供
+ *     outstanding 跟踪与 OOO completion（rid 关联）
  */
 class PcieAxiAdapter {
 public:
@@ -55,6 +61,14 @@ public:
     // 底层 AXI Stream Adapter（三端口访问）
     cpptlm::Axi4StreamAdapter& axi() noexcept { return axi_; }
     const cpptlm::Axi4StreamAdapter& axi() const noexcept { return axi_; }
+
+    // AXI4Mapper 访问（Phase 6 T-P6-4: JSON 可选注入，axi4_mapper_inject: true 时非 null）
+    cpptlm::Axi4Mapper* axi_mapper() noexcept { return mapper_injected_ ? &mapper_ : nullptr; }
+    const cpptlm::Axi4Mapper* axi_mapper() const noexcept { return mapper_injected_ ? &mapper_ : nullptr; }
+
+    // AXI4Mapper 注入控制（由 PcieEndpointIP::attach_composition 调用）
+    void set_mapper_injected(bool injected) noexcept { mapper_injected_ = injected; }
+    bool is_mapper_injected() const noexcept { return mapper_injected_; }
 
     // ===================== 64-byte burst 写序列化 =====================
     // 启动一个 burst 写事务（登记 awlen/awsize/awaddr/awid，计算总字节）。
@@ -88,6 +102,10 @@ private:
     PcieEndpointIP* ep_ = nullptr;
     EventQueue* eq_ = nullptr;
     cpptlm::Axi4StreamAdapter axi_;
+    cpptlm::Axi4Mapper mapper_;  // always constructed, but only exposed when injected
+
+    // AXI4Mapper 注入标志（JSON axi4_mapper_inject: true 时为 true）
+    bool mapper_injected_ = false;
 
     // ---- burst 状态 ----
     bool burst_active_ = false;

@@ -57,6 +57,10 @@ void PcieEndpointIP::attach_composition(const nlohmann::json& params) {
         auto* ax = PcieAxiAdapter::attach_to_endpoint(getName(), event_queue);
         if (ax) {
             ax->set_endpoint(this);
+            // Phase 6 T-P6-4: JSON axi4_mapper_inject: true → 注入 AXI4Mapper（缺省 false 不注入）
+            const auto& axi_json = params["axi_adapter"];
+            const bool mapper_inject = axi_json.value("axi4_mapper_inject", false);
+            ax->set_mapper_injected(mapper_inject);
         }
     } else {
         PcieAxiAdapter::detach_from_endpoint(getName());
