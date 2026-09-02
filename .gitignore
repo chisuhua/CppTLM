@@ -3,10 +3,10 @@
 # 把整个 build/ 目录 (~500 MB) 加入 git,迫使清理 commit。本次强化 .gitignore
 # 防止再次发生。CMake 输出永远是 noise,不在 review 范围,不应进 git。
 # CMake build (用 / 前缀只匹配仓库根的 build/ 目录,不影响 scripts/build/)
-/build/        # 仓库根 build/ 目录 (CMake 默认输出)
-/build-*/      # 任意 build-<variant> 形式 (build-asan/build-debug/build-rtl 等)
-/build_*/      # 任意 build_<variant> 形式 (build_asan/build_baseline/build_rtl 等)
-/cmake-build*/
+build/        # 仓库根 build/ 目录 (CMake 默认输出)
+build-*/      # 任意 build-<variant> 形式 (build-asan/build-debug/build-rtl 等)
+build_*/      # 任意 build_<variant> 形式 (build_asan/build_baseline/build_rtl 等)
+cmake-build*/
 cmake-build-*/
 *.o
 *.a
@@ -73,12 +73,12 @@ lib/
 #   build-on/  = CPPTLM_WITH_PTX_EMU=ON  (PTX-EMU submodule linked)
 #   build-off/ = CPPTLM_WITH_PTX_EMU=OFF (default; PTX-EMU not built)
 #   Both are heavy (1-2 GB each), regenerated on demand, never tracked.
-/build-on/
-/build-off/
+build-on/
+build-off/
 
 # Temporary test scratch dirs (e.g. `Testing/` from CTest/Catch2)
-/Testing/
+Testing/
 
 # Roadmap migrate backups (transient; produced by rddf roadmap migrate).
 #   Each backup dir is timestamped (.rddf/.roadmap-migrate-backup-<TS>/)
-/.rddf/.roadmap-migrate-backup-*/
+.rddf/.roadmap-migrate-backup-*/
