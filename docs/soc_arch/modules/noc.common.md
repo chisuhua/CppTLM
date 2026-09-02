@@ -5,7 +5,7 @@
 > **Header**: (无独立文件 — 概念文档)
 > **蓝图来源**: gem5 `src/mem/ruby/network/`（Garnet 2.0）+ `src/mem/ruby/network/BasicLink.hh`
 > **首版 commit**: 蓝图（来自调研 §2.4）
-> **最近更新**: 2026-06-12
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 ---

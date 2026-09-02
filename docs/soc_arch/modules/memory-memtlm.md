@@ -1,18 +1,20 @@
 # memory-memtlm 微架构文档
 
-> **类别**: Memory > Simplified
-> **状态**: ✅ 已实施
+> **类别**: Memory > Simplified · **状态**: ✅ 已实施 + 📋 v1.0 dGPU SoC 战略补充
 > **Header**: `include/tlm/memory_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:31`）
 > **蓝图来源**: gem5 `src/mem/simple_mem.hh`（SimpleMemory 桩）
 > **首版 commit**: v2.1 路径同步
-> **最近更新**: 2026-06-11
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.2
 > - Phase 7.D: [`roadmap.md`](../../../roadmap.md) §Phase 7.D (hbm_mode 扩展)
+> - **L7 Memory 子系统架构**: [`docs/soc_arch/architecture/07-memory-system.md`](../architecture/07-memory-system.md) §3 HBM3e + §4 L2
+> - **关联 ADR**:
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) — v1.0 双 vendor MemoryCluster 共享
 
 ---
 

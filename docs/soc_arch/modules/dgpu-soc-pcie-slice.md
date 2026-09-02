@@ -1,24 +1,29 @@
 # dgpu-soc-pcie-slice 微架构文档
 
-> **类别**: GPU > dGPU SOC PCIe Slice · **状态**: 🔵 Implemented (per ADR-SOC-07)
-> **Header**: `include/tlm/gpu/pcie_endpoint_tlm.h` + `include/tlm/gpu/sdma_engine_tlm.hh`
-> **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`, 已注册 `PcieEndpointTLM` / `SdmaEngineTLM`)
+> **类别**: GPU > dGPU SOC PCIe Slice · **状态**: 🔵 Implemented (per ADR-SOC-07) + ⚠️ **Phase 4-8 演进**:PcieEndpointTLM (4 端口) → **PcieEndpointIP (17 端口)** per [`ADR-SOC-11`](../adr/ADR-SOC-11-pcie-endpoint-ip.md)
+> **Header**: ~~`include/tlm/gpu/pcie_endpoint_tlm.h`~~ (`[[deprecated("use PcieEndpointIP")]]` per commit `429327d`) + **`include/tlm/pcie/pcie_endpoint_ip.hh`** (active) + `include/tlm/gpu/sdma_engine_tlm.hh`
+> **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`, 保留 `PcieEndpointTLM` 注册以保证既有测试零回归;新代码统一用 `PcieEndpointIP`)
 > **蓝图来源**: AMD/NVIDIA PCIe Endpoint IP + AMD SDMA/copy engine IP (per gem5 `src/dev/amdgpu/amdgpu_device.py` + `src/dev/pci/pci_host.py`)
 > **关联 ADR**:
-> - [`ADR-SOC-07-dgpu-board-soc-layering.md`](../adr/ADR-SOC-07-dgpu-board-soc-layering.md) D2/D3 — **本仓 PCI slice 拆分决策**
+> - [`ADR-SOC-07-dgpu-board-soc-layering.md`](../adr/ADR-SOC-07-dgpu-board-soc-layering.md) D2/D3 — **本仓 PCI slice 拆分决策**(原 4 端口 PcieEndpointTLM)
+> - [`ADR-SOC-11-pcie-endpoint-ip.md`](../adr/ADR-SOC-11-pcie-endpoint-ip.md) — **PcieEndpointIP 17 端口替代决策**(Phase 4-8 演进)
+> - [`ADR-SOC-12-host-bypass-and-rc.md`](../adr/ADR-SOC-12-host-bypass-and-rc.md) — Host Bypass 软件 bring-up + 自研 RC
 > - [`ADR-SOC-06-cpptlm-v05-mvp.md`](../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5 — dGPU MVP 切片总纲
 > - UsrLinuxEmu [`ADR-088`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) §C2/§D3.8 — **23 ABI + `cpptlm_dma_translate_cb` 外部契约源**
 > - UsrLinuxEmu [`ADR-089`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-089-v55-system-hw-simulation.md) v0.5 — **系统级硬件仿真扩展 (VFIO/IOMMUFD/vDPA/Migration)**
 > - UsrLinuxEmu [`ADR-090 v2`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md) — PTX-EMU 归属 CppTLM submodule
 > **关联 OpenSpec**:
-> - [`openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/`](../../../openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/) — PcieEndpointTLM 实施
+> - [`openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/`](../../../openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/) — PcieEndpointTLM 原始 4 端口实施
 > - [`openspec/changes/2026-08-26-cpptlm-dgpu-sdma-engine/`](../../../openspec/changes/2026-08-26-cpptlm-dgpu-sdma-engine/) — SdmaEngineTLM 实施
-> **首版 commit**: `4380c20` T-sd-1 + `7fc9cce` T-sd-2 (2026-08-27) · **最近更新**: 2026-08-28
+> - [`openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/`](../../../openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/) — Phase 4 SR-IOV VF Pool(引入 17 端口 PcieEndpointIP)
+> - [`openspec/changes/2027-02-09-cpptlm-dgpu-pcie-ip-integration/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-pcie-ip-integration/) — Phase 8 整合交付(HEAD `429327d`)
+> **首版 commit**: `4380c20` T-sd-1 + `7fc9cce` T-sd-2 (2026-08-27) · **最近更新**: 2027-02-09 (Phase 8 + ADR-SOC-11 同步)
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - Board 顶层: [`dgpu-board.md`](./dgpu-board.md) (s2 单体, deprecated per ADR-SOC-07)
+> - L1 Host Interface 子系统架构: [`docs/soc_arch/architecture/01-host-interface.md`](../architecture/01-host-interface.md)
 > - 下游 Module 文档:
 >   - `command-processor.md` · `pm4-decoder.md` · `tmu-dispatch-processor.md`
 >   - `submit-queue.md` · `cuda-core-adapter.md` · `ptx-emu-submodule-mvp.md`
@@ -28,12 +33,21 @@
 
 ## 1. 设计目标
 
-`dgpu-soc-pcie-slice` 是 **dGPU SOC 片内 PCIe + DMA 引擎组合**,由两个 ChStreamModuleBase 组件组成:
+`dgpu-soc-pcie-slice` 是 **dGPU SOC 片内 PCIe + DMA 引擎组合**,由两个组件组成:
 
 | 组件 | Header | 端口数 | 方向 | 职责 |
 |------|--------|------|------|------|
-| **PcieEndpointTLM** | `pcie_endpoint_tlm.h` | 4 | host→device (PCIe slave) | BAR0 MMIO 解码 + 门铃副作用 / BAR1 VRAM 转发 / MSI-X 中断投递 |
+| **PcieEndpointIP** ⭐ 新 | `include/tlm/pcie/pcie_endpoint_ip.hh` | **17 ports** (`req_in[17]` + `resp_out[17]`,NUM_PORTS=17) | host↔device (PCIe slave+master) | 1 PF + 16 VF + 内部 `stream_id` 路由;per-VF Config Space / MSI-X / FC / seq# 独立 |
+| **PcieEndpointTLM** ⚠️ 旧 | `pcie_endpoint_tlm.h` | 4 | host→device (PCIe slave) | BAR0 MMIO 解码 + 门铃副作用 / BAR1 VRAM 转发 / MSI-X 中断投递(已 `[[deprecated]]` 标注 per `429327d`)|
 | **SdmaEngineTLM** | `sdma_engine_tlm.hh` | 5 | device→host (PCIe master) | 接收 DMA 描述符,发起 upstream DMA 经 IOMMU 翻译访问 host 内存 |
+
+**⭐ PcieEndpointIP 17 端口替代决策**(per [`ADR-SOC-11`](../adr/ADR-SOC-11-pcie-endpoint-ip.md),Phase 4-8 演进):
+
+- **NUM_PORTS = 17** = 1 PF + 16 VF(per `include/tlm/pcie/pcie_endpoint_ip.hh:48`)
+- **`req_in[NUM_PORTS]` + `resp_out[NUM_PORTS]` 数组**(per L50-53),非功能命名端口(避免 N×16 端口爆炸)
+- **内部 `stream_id` 路由**:用 `stream_id`(PCIe Requester ID 的 function 部分)区分 VF,避免端口按 VF 数量级展开(per `docs/architecture/14-pcie-ip-microarchitecture.md` §3 端口图)
+- **Q12 Completion 单一真源**:`PcieEndpointIP.completions()` 委托 `PcieSriovVfPool.completions()`(per L82-83),避免双份 outstanding 失配
+- **`PcieEndpointTLM` 已 deprecated**:头文件 `include/tlm/gpu/pcie_endpoint_tlm.h` 添加 `[[deprecated("use PcieEndpointIP")]]`(per commit `429327d`),**layout 完全不变**(仅加属性,23 ABI 冻结不变量)
 
 **核心特性**:
 

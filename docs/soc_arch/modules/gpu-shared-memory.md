@@ -1,15 +1,19 @@
 # gpu-shared-memory 微架构文档
 
-> **类别**: GPU > SM 内部 · **状态**: ✅ Phase 8.A Task 1
+> **类别**: GPU > SM 内部 · **状态**: ✅ Phase 8.A Task 1 + 📋 **v1.0 SMEM/LDS + DSMEM/TMEM 扩展**(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D5 + L6 SM/CU 子系统架构)
 > **Header**: `include/tlm/gpu/shared_memory_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`)
-> **蓝图来源**: NVIDIA SM shared memory + L1 unified (32 bank 可配置)
-> **首版 commit**: `b8bd411` (2026-06-28) · **最近更新**: 2026-07-02
+> **蓝图来源**: NVIDIA SM shared memory + L1 unified (32 bank 可配置) + AMD LDS (Local Data Share, 64KB per CU)
+> **首版 commit**: `b8bd411` (2026-06-28) · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - Spec: [`docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md`](../../superpowers/specs/2026-06-24-gpu-soc-architecture.md) §3.1
 > - GPU Compute Unit: [`gpu-compute_unit.md`](./gpu-compute_unit.md)
+> - **L6 SM/CU 子系统架构**: [`docs/soc_arch/architecture/05-sm-compute-unit.md`](../architecture/05-sm-compute-unit.md) §5-§6 Warp 调度 + 寄存器
+> - **L7 Memory 子系统架构**: [`docs/soc_arch/architecture/07-memory-system.md`](../architecture/07-memory-system.md) §5 L1 + SMEM
+> - **关联 ADR**:
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D5 — v1.0 SMEM/LDS 共享
 > - GPU 通用: [`gpu.common.md`](./gpu.common.md)
 
 ---

@@ -1,18 +1,21 @@
 # cache-l1 微架构文档
 
-> **类别**: Cache > L1
-> **状态**: ✅ 已实施
+> **类别**: Cache > L1 · **状态**: ✅ 已实施 + 📋 **v1.0 协议感知扩展**(per [`ADR-SOC-01`](../../adr/ADR-SOC-01-coherence-protocol-strategy.md) Phase 7.C + [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D4)
 > **Header**: `include/tlm/cache_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:30`）
 > **蓝图来源**: gem5 `src/mem/cache/base_cache.hh`（BaseCache 抽象）— v0 简化版
 > **首版 commit**: v2.1 路径同步（2026-06-08 附近）
-> **最近更新**: 2026-06-11
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.3
 > - Spec: [`docs/superpowers/specs/2026-06-11-phase7a-gpu-infra-design.md`](../../superpowers/specs/2026-06-11-phase7a-gpu-infra-design.md) §2（GPU 内部互联关键模板）
+> - **L7 Memory 子系统架构**: [`docs/soc_arch/architecture/07-memory-system.md`](../architecture/07-memory-system.md) §5 L1 + SMEM
+> - **关联 ADR**:
+>   - [`ADR-SOC-01-coherence-protocol-strategy.md`](../../adr/ADR-SOC-01-coherence-protocol-strategy.md) — Phase 7.A→7.B→7.C 分步走策略
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D4 — v1.0 L1/L2 跨 vendor coherence
 
 ---
 

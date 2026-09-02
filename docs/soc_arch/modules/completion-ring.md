@@ -1,13 +1,13 @@
 # completion-ring 微架构文档
 
-> **类别**: GPU > Completion Ring · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
+> **类别**: GPU > Completion Ring · **状态**: 🔵 MVP 切片 (per ADR-SOC-06) + 📋 v1.0 dGPU SoC 战略补充(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) + L2 Completion & Notification)
 > **Header**: `include/tlm/gpu/completion_ring_mvp.hh` → **`include/tlm/gpu/completion_ring_tlm.hh`** (T-bs-2b rename)
 > **位置**: DGpuBoardTLM 内部组件 (s2) → **SOC 内 `CompletionRingTLM`** (T-bs-2b, 4 端口 ChStreamModuleBase, per ADR-SOC-07 D1/D7)
 > **蓝图来源**: NVIDIA Completion Queue + Doorbell 强序 (per `docs/research/PCIe/PCIe_上的保序write.md` §4)
 > **OpenSpec**: `openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/`
 > **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5 · [`ADR-SOC-07-dgpu-board-soc-layering.md`](../../adr/ADR-SOC-07-dgpu-board-soc-layering.md) D1/D2
 > **关联模块**: [`submit-queue.md`](./submit-queue.md) · [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md) · [`dgpu-board.md`](./dgpu-board.md)
-> **首版 commit**: 🔵 W3-4 实施 (s2) · **命名提升**: T-bs-2b `49659f5` · **最近更新**: 2026-08-29
+> **首版 commit**: 🔵 W3-4 实施 (s2) · **命名提升**: T-bs-2b `49659f5` · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team (Sisyphus)
 
 ---

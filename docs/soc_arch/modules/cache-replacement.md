@@ -5,7 +5,7 @@
 > **Header**: (规划) `include/tlm/cache/replacement_policy.hh`
 > **蓝图来源**: gem5 `src/mem/cache/replacement_policies/`（LRU / LFU / FIFO / RRIP / MRU / Random）
 > **首版 commit**: 蓝图（来自调研 §2.3）
-> **最近更新**: 2026-06-11
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 ---

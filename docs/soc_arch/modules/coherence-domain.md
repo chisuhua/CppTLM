@@ -1,25 +1,33 @@
 # coherence-domain 微架构文档
 
-> **类别**: Coherence > Domain
-> **状态**: ✅ 已实施（基础设施级）
+> **类别**: Coherence > Domain · **状态**: ✅ 已实施（基础设施级 + v1.0 dGPU SoC 战略补充）
 > **Header**: `include/core/coherence_domain.hh`
 > **注册**: **未注册到 ModuleFactory**（基础设施，**非 TLM 模块**）
-> **蓝图来源**: gem5 `src/mem/ruby/slicc_interface/AbstractController.hh`（简化版）
+> **蓝图来源**: gem5 `src/mem/ruby/slicc_interface/AbstractController.hh`（简化版）+ Ruby MOESI Hammer（per `docs/research/gem5-soc-survey.md` §2.5）
 > **首版 commit**: Phase 4.2（v2.1 路径同步，2026-04-30 附近）
-> **最近更新**: 2026-06-11
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略 + ADR-SOC-09 D4 双 vendor coherence)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.6
 > - Spec: [`docs/superpowers/specs/2026-06-11-phase7a-gpu-infra-design.md`](../../superpowers/specs/2026-06-11-phase7a-gpu-infra-design.md) §5
 > - Phase 7.C: [`roadmap.md`](../../../roadmap.md) §Phase 7.C（最高风险）
+> - **L7 Coherence 子系统架构**: [`docs/soc_arch/architecture/09-coherence-protocol.md`](../architecture/09-coherence-protocol.md) — 完整 v1.0 设计
+> - **关联 ADR**:
+>   - [`ADR-SOC-01-coherence-protocol-strategy.md`](../../adr/ADR-SOC-01-coherence-protocol-strategy.md) — 分步走策略 (✅ Accepted + Status Update)
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D4 — v1.0 双 vendor coherence 跨域桥接
 
 ---
 
 ## 1. 设计目标
 
 `CoherenceDomain` 是 CppTLM v2.1 的**跨 cache 一致性域基础设施**（Phase 4.2 引入 + Phase 4.3 扩展）。**与 gem5 对位**: `gem5::RubySystem`（抽象基类，简化版）。
+
+**v1.0 dGPU SoC 战略补充**(per `00-overview.md` v3.0 PASS §4-bis R23-R24 + ADR-SOC-09 D4):
+- **共享 MOESI/GPU 6 状态 × 6 事件**:v1.0 MVP 基础(per `coherence-protocol.md` + ADR-SOC-01)
+- **v1.0 跨域桥接基础**:CPU↔GPU coherence 基础;v1.1 完整版追加完整 snoop filter + 优化(per `00-overview` §4-bis R24)
+- **NVIDIA + AMD 双 vendor 跨域**:NVIDIA 域(USRI 路径)+ AMD 域(Infinity Fabric 路径)
 
 **核心特性**（来自 `coherence_domain.hh:14-69`）：
 - `Protocol` 枚举：`MESI` / `MOESI`（**未实现 `MSI` / `MESIF` / `CHI`**——待 v2.2 扩展）

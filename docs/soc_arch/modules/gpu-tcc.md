@@ -5,7 +5,7 @@
 > **Header**: (规划) `include/tlm/gpu/tcc_tlm.hh`
 > **注册**: (规划) `REGISTER_CHSTREAM` 扩展 `ModuleFactory::registerObject<tlm::TCC_TLM>("TCC_TLM")`
 > **蓝图来源**: gem5 `src/mem/ruby/protocol/GPU_VIPER-TCC.sm`
-> **首版 commit**: 🟡 蓝图（来自 spec §3.3 + plan §3.4）
+> **首版 commit**: 🟡 蓝图（来自 spec §3.3 + plan §3.4） · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **最近更新**: 2026-06-11
 > **维护者**: CppTLM Team
 

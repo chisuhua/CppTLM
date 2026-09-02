@@ -5,7 +5,7 @@
 > **Header**: `include/tlm/crossbar_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:32`）
 > **蓝图来源**: gem5 `src/mem/xbar.hh` + `src/mem/noncoherent_xbar.hh`（非一致 crossbar）
-> **首版 commit**: v2.1 路径同步
+> **首版 commit**: v2.1 路径同步 · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **最近更新**: 2026-06-11
 > **维护者**: CppTLM Team
 

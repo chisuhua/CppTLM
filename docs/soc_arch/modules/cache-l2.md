@@ -1,12 +1,11 @@
 # cache-l2 微架构文档
 
-> **类别**: cache > l2
-> **状态**: 🟡 规划中
+> **类别**: cache > l2 · **状态**: 🟡 规划中 → 🔵 Implemented (v1.0 dGPU SoC 战略补充)
 > **Header**: (规划) `include/tlm/cache/l2_cache_tlm.hh`
-> **蓝图来源**: gem5 `src/mem/cache/cache.cc`（L2 实例化 + `memtest.py -c "2:2:1"` 多级树）
+> **蓝图来源**: gem5 `src/mem/cache/cache.cc`（L2 实例化 + `memtest.py -c "2:2:1"` 多级树）+ NVIDIA B200 ~60MB/die + AMD MI300X ~8MB/XCD
 > **首版 commit**: 蓝图（来自调研 §2.3）
-> **最近更新**: 2026-06-11
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 ---
 

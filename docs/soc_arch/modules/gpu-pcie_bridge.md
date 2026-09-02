@@ -5,7 +5,7 @@
 > **Header**: (规划) `include/tlm/gpu/pcie_bridge_tlm.hh`
 > **注册**: (规划) `REGISTER_CHSTREAM` 扩展 `ModuleFactory::registerObject<tlm::PCIBridgeTLM>("PCIBridgeTLM")`
 > **蓝图来源**: gem5 `src/dev/amdgpu/amdgpu_device.py` + `src/dev/pci/pci_host.py`
-> **首版 commit**: 🟡 蓝图（来自调研 §4 Phase 2 备选）
+> **首版 commit**: 🟡 蓝图（来自调研 §4 Phase 2 备选） · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **最近更新**: 2026-06-11
 > **维护者**: CppTLM Team
 

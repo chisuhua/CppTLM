@@ -1,11 +1,11 @@
 # io-nvram 微架构文档
 
-> **类别**: io > nvram
+> **类别**: io > nvram · **状态**: 🟡 规划中 + 📋 v1.0 dGPU SoC 战略补充
 > **状态**: 🟡 规划中
 > **Header**: (规划) `include/tlm/io/nvram_tlm.hh`
 > **蓝图来源**: gem5 `src/mem/noncoherent_xbar.hh` + NVRAM 设备仿真（无直接 gem5 对位，参考 Optane persistent memory 模型）
 > **首版 commit**: 蓝图（来自调研 §2.5）
-> **最近更新**: 2026-06-12
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

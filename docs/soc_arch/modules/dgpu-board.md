@@ -1,18 +1,29 @@
 # dgpu-board 微架构文档
 
-> **类别**: GPU > dGPU Board · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
+> **类别**: GPU > dGPU Board · **状态**: 🔵 MVP 切片 (per ADR-SOC-06) + 📋 **v1.0 蓝图模式升级**(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2)
 > **⚠️ 修订注记（2026-08-26）**: 本文档描述的 "DGpuBoardTLM 8 组件 ChStreamModuleBase wrapper"（s2 单体 PIMPL 实现）已被 [`ADR-SOC-07-dgpu-board-soc-layering.md`](../adr/ADR-SOC-07-dgpu-board-soc-layering.md) 澄清为**过渡形态**。目标架构：`DGpuBoard` C++ ABI shell + `DGpuSoc` JSON 拓扑；PCIe Config Space/BAR/MSI-X 迁移至 SOC 片内 `PcieEndpointTLM`，upstream DMA 迁移至 `SdmaEngineTLM`，s2 `Impl` 值成员按 ADR-SOC-07 D6 映射表迁移为 JSON 注册组件。本文 §1-§N 的"8 组件单体"描述保留作 s2 历史记录，新设计以 ADR-SOC-07 为准。
-> **Header**: `include/tlm/gpu/dgpu_board_mvp.hh`
+> **⚠️ 进一步修订注记（2027-02-09）**: per [`ADR-SOC-07` Status Update §D2](../../adr/ADR-SOC-07-dgpu-board-soc-layering.md) + [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2:**PcieEndpointTLM 4 端口已 `[[deprecated]]`**(per commit `429327d`,`include/tlm/gpu/pcie_endpoint_tlm.h`),**新代码统一使用 PcieEndpointIP 17 ports**(per [`ADR-SOC-11`](../../adr/ADR-SOC-11-pcie-endpoint-ip.md))。**ComputeUnitTLM 升级为蓝图模式**(cu_template + cu_count,per ComputeCluster)+ **双 vendor 路径切换**(`nv_mode` / `amd_mode` config param)。
+> **Header**: `include/tlm/gpu/dgpu_board_mvp.hh`(s2 单体 PIMPL)
 > **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`, 新增)
 > **蓝图来源**: gem5 `src/dev/amdgpu/amdgpu_device.py` + `src/dev/pci/pci_host.py` + UsrLinuxEmu ADR-090 v2 §D3.3
-> **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
-> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5/D6
-> **首版 commit**: � W3-4 实施 · **最近更新**: 2026-08-19
+> **OpenSpec**:
+> - `openspec/changes/2026-08-19-cpptlm-v05-mvp/` (s2 实施)
+> - `openspec/changes/2027-02-09-cpptlm-dgpu-pcie-ip-integration/` (Phase 8 整合交付)
+> - `openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/` (v1.0 蓝图归口)
+> **关联 ADR**:
+> - [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5/D6 — v0.5 路径
+> - [`ADR-SOC-07-dgpu-board-soc-layering.md`](../../adr/ADR-SOC-07-dgpu-board-soc-layering.md) D1-D7 — Board/SOC 两层分离(已 ✅ Accepted per 2027-02-09 Status Update)
+> - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D1-D4 — v1.0 双 vendor 蓝图模式
+> - [`ADR-SOC-10-module-factory-topology.md`](../../adr/ADR-SOC-10-module-factory-topology.md) D1-D4 — v1.0 ModuleFactory 拓扑层
+> - [`ADR-SOC-11-pcie-endpoint-ip.md`](../../adr/ADR-SOC-11-pcie-endpoint-ip.md) — PcieEndpointIP 17 ports
+> **首版 commit**: � W3-4 实施 · **最近更新**: 2027-02-09 (v1.0 蓝图模式补充)
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - ADR: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D1-D6
+> - **v1.0 总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) §1.3 多层 SimModule 拓扑
+> - **L1 Host Interface 子系统架构**: [`docs/soc_arch/architecture/01-host-interface.md`](../architecture/01-host-interface.md)
 > - 组件契约: [`command-processor.md`](./command-processor.md) · [`pm4-decoder.md`](./pm4-decoder.md) · [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md) · [`cuda-core-adapter.md`](./cuda-core-adapter.md) · [`ptx-emu-submodule-mvp.md`](./ptx-emu-submodule-mvp.md)
 > - UsrLinuxEmu IOCTL: [`UsrLinuxEmu/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md`](../../../external/UsrLinuxEmu/docs/00_adr/adr-090-ptxir-via-h2d-dma-v2.md) §D3.3
 

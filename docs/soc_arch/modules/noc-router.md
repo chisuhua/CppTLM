@@ -1,19 +1,20 @@
 # noc-router 微架构文档
 
-> **类别**: NoC > Router
-> **状态**: ✅ 已实施
+> **类别**: NoC > Router · **状态**: ✅ 已实施 + 📋 **v1.0 dGPU SoC 战略补充**(per L8 NoC Interconnect 子系统架构)
 > **Header**: `include/tlm/router_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:37`）
-> **蓝图来源**: gem5 `src/mem/ruby/network/garnet2.0/Router.hh` + `src/mem/ruby/network/simple/SimpleRouter.hh`
+> **蓝图来源**: gem5 `src/mem/ruby/network/garnet2.0/Router.hh` + `src/mem/ruby/network/simple/SimpleRouter.hh` + NVIDIA GPU 多层互连
 > **首版 commit**: `1d176db`（v2.1 路径与早期 RouterTLM 实现；具体重构 commit 见 §10）
-> **最近更新**: 2026-06-11
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.4
 > - Spec: [`docs/superpowers/specs/2026-06-11-phase7a-gpu-infra-design.md`](../../superpowers/specs/2026-06-11-phase7a-gpu-infra-design.md) §8（GPU 内部互联关键模板）
 > - Plan: [`docs/superpowers/plans/2026-06-11-phase7a-gpu-infra.md`](../../superpowers/plans/2026-06-11-phase7a-gpu-infra.md) §8（Phase 7.E 蓝图）
+> - **L8 NoC Interconnect 子系统架构**: [`docs/soc_arch/architecture/08-noc-interconnect.md`](../architecture/08-noc-interconnect.md) §3-4
+> - **关联 ADR**: [`ADR-SOC-10-module-factory-topology.md`](../../adr/ADR-SOC-10-module-factory-topology.md) D2 — SimModule 多层容器
 
 ---
 

@@ -1,11 +1,11 @@
 # io-dma 微架构文档
 
-> **类别**: io > dma
+> **类别**: io > dma · **状态**: ✅ 已实施 + 📋 v1.0 dGPU SoC 战略补充(per `dgpu-soc-pcie-slice.md` ADR-SOC-07 D3)
 > **状态**: 🟡 规划中
 > **Header**: (规划) `include/tlm/io/dma_device_tlm.hh`
 > **蓝图来源**: gem5 `src/dev/dma_device.hh`（DmaDevice 抽象 + DmaPort）
 > **首版 commit**: 蓝图（来自调研 §2.5）
-> **最近更新**: 2026-06-12
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

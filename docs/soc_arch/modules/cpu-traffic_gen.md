@@ -1,12 +1,12 @@
 # cpu-traffic_gen 微架构文档
 
-> **类别**: CPU > TrafficGen
+> **类别**: CPU > TrafficGen · **状态**: ✅ 已实施 + 📋 v1.0 dGPU SoC 战略补充
 > **状态**: ✅ 已实施
 > **Header**: `include/tlm/traffic_gen_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:34`）
 > **蓝图来源**: gem5 `src/cpu/testers/traffic_gen/` (LinearGen / RandomGen / DrSimGen)
 > **首版 commit**: v2.1 路径同步
-> **最近更新**: 2026-06-11
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

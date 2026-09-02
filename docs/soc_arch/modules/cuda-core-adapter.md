@@ -1,13 +1,16 @@
 # cuda-core-adapter 微架构文档(per Phase I.2 重构)
 
-> **类别**: GPU > Cuda Core Adapter (SM **Microarchitecture Exploration**) · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
+> **类别**: GPU > Cuda Core Adapter (SM **Microarchitecture Exploration**) · **状态**: 🔵 MVP 切片 (per ADR-SOC-06) + 📋 **v1.0 蓝图模式 + 双 vendor 路径切换**(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2)
 > **Header**: `include/tlm/gpu/cuda_core_adapter_mvp.hh`
 > **位置**: **DGpuBoardTLM 内部组件**(`dgpu-board.md` §3 已作为 `CudaCoreAdapter cuda_core_` 私有成员固定);独立 ChStreamModuleBase 暴露模式推到 v0.5 完整版
-> **蓝图来源**: gpgpu-sim `gpgpu-sim/shader_core/`(timing model 层)+ PTX-EMU `SMContext::exe_once` 3-Step 注入机制 + 现有 `ScoreboardTLM` / `PipelineTLM` / `TensorCoreTLM` / `MinimalWarpSchedulerTLM`
+> **蓝图来源**: gpgpu-sim `gpgpu-sim/shader_core/`(timing model 层)+ PTX-EMU `SMContext::exe_once` 3-Step 注入机制 + 现有 `ScoreboardTLM` / `PipelineTLM` / `TensorCoreTLM` / `MinimalWarpSchedulerTLM` + **NVIDIA Hopper SM_90 / Blackwell SM_100/120 + AMD CDNA 3 MI300X**(per [L6 SM/CU 子系统架构](../architecture/05-sm-compute-unit.md))
 > **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
-> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp`](../../soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
+> **关联 ADR**:
+> - [`ADR-SOC-06-cpptlm-v05-mvp`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5 — v0.5 路径
+> - [`ADR-SOC-02-cu-granularity.md`](../../adr/ADR-SOC-02-cu-granularity.md) — ⚠️ Superseded by ADR-SOC-06 D2 (CU 黑盒 → 白盒 warp 级)
+> - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2 — v1.0 蓝图模式 + 双 vendor 切换
 > **关联模块**: [`ptx-emu-submodule-mvp.md`](./ptx-emu-submodule-mvp.md)(PTX functional facade,与本模块严格分离)| [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md) · [`submit-queue.md`](./submit-queue.md)
-> **首版 commit**: 🔵 W3-4 实施(基础)+ W5-6 升级(timing 微架构)· **最近更新**: 2026-08-20(Phase I 重构)
+> **首版 commit**: 🔵 W3-4 实施(基础)+ W5-6 升级(timing 微架构)· **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联调研**: gpgpu-sim `gpgpu-sim/shader_core/`(timing model 模块) + PTX-EMU `ptxsim/sm_context.h:59 exe_once` 3-Step 注入机制。架构参照:本模块是 timing 微架构模拟器,不关心单条 PTX 指令计算什么;`PtxEmuSubmoduleMVP` 才是 functional 责任人。

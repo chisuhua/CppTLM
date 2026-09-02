@@ -1,11 +1,11 @@
 # comm_monitor 微架构文档
 
-> **类别**: Interconnect > CommMonitor
+> **类别**: Interconnect > CommMonitor · **状态**: ✅ 已实施 + 📋 v1.0 dGPU SoC 战略补充
 > **状态**: 🟡 规划中
 > **Header**: (规划) `include/tlm/interconnect/comm_monitor_tlm.hh`
 > **蓝图来源**: gem5 `src/mem/comm_monitor.hh`（流量监控/带宽/延迟/outstanding）
 > **首版 commit**: 蓝图（来自调研 §2.4）
-> **最近更新**: 2026-06-12
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

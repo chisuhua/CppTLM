@@ -1,11 +1,11 @@
 # io-disk 微架构文档
 
-> **类别**: io > disk
+> **类别**: io > disk · **状态**: 🟡 规划中 + 📋 v1.0 dGPU SoC 战略补充
 > **状态**: 🟡 规划中
 > **Header**: (规划) `include/tlm/io/simple_disk_tlm.hh`
 > **蓝图来源**: gem5 `src/dev/storage/simple_disk.hh`（简化块设备）
 > **首版 commit**: 蓝图（来自调研 §2.5）
-> **最近更新**: 2026-06-12
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

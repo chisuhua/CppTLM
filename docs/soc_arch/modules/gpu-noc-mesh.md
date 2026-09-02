@@ -1,14 +1,16 @@
 # gpu-noc-mesh 微架构文档
 
-> **类别**: Interconnect > GPU NoC · **状态**: ✅ Phase 8.A Task 3
+> **类别**: Interconnect > GPU NoC · **状态**: ✅ Phase 8.A Task 3 + 📋 v1.0 dGPU SoC 战略补充(per L8 NoC 子系统架构)
 > **Header**: `include/tlm/gpu/gpu_mesh_noc_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`)
 > **蓝图来源**: gpgpu-sim SM_120 paper + NVIDIA GPC mesh interconnect
-> **首版 commit**: `d164497` (2026-06-28) · **最近更新**: 2026-07-02
+> **首版 commit**: `d164497` (2026-06-28) · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **类名**: `GpuMeshNoC`（避免与 `include/tlm/cluster/gpu_noc_cluster.hh` 中已有的 `GpuNoC` SimModule 类冲突）
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
+> - **L8 NoC Interconnect 子系统架构**: [`docs/soc_arch/architecture/08-noc-interconnect.md`](../architecture/08-noc-interconnect.md) §3-4
+> - **关联 ADR**: [`ADR-SOC-10-module-factory-topology.md`](../../adr/ADR-SOC-10-module-factory-topology.md) D2 — SimModule 多层容器
 > - Spec: [`docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md`](../../superpowers/specs/2026-06-24-gpu-soc-architecture.md) §3.3
 > - 已有 NoC Router: [`noc-router.md`](./noc-router.md)
 

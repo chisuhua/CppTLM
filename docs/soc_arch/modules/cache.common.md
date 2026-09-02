@@ -5,7 +5,7 @@
 > **Header**: (无独立文件 — 概念文档)
 > **蓝图来源**: gem5 `src/mem/cache/base_cache.hh`（BaseCache 抽象）
 > **首版 commit**: 蓝图（来自调研 §2.3）
-> **最近更新**: 2026-06-11
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 ---

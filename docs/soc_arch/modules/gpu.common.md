@@ -5,7 +5,7 @@
 > **Header**: (无独立文件 — 概念文档)
 > **蓝图来源**: gem5 `src/gpu-compute/ComputeUnit.py` + `src/gpu-compute/Wavefront.py`
 > **首版 commit**: 蓝图（来自 `docs/research-cpptlm-gpu-fused-soc-survey.md` §2.3 + §2.5）
-> **最近更新**: 2026-06-11
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

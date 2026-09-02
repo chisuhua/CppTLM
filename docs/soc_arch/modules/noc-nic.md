@@ -1,18 +1,19 @@
 # noc-nic 微架构文档
 
-> **类别**: NoC > NIC
-> **状态**: ✅ 已实施
+> **类别**: NoC > NIC · **状态**: ✅ 已实施 + 📋 **v1.0 dGPU SoC 战略补充**
 > **Header**: `include/tlm/nic_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:38`）
 > **蓝图来源**: gem5 `src/mem/ruby/network/NetworkInterface.hh`（Garnet 2.0）
 > **首版 commit**: v2.1 路径同步
-> **最近更新**: 2026-06-11
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.4
 > - Spec: [`docs/superpowers/specs/2026-06-11-phase7a-gpu-infra-design.md`](../../superpowers/specs/2026-06-11-phase7a-gpu-infra-design.md) §8
+> - **L8 NoC Interconnect 子系统架构**: [`docs/soc_arch/architecture/08-noc-interconnect.md`](../architecture/08-noc-interconnect.md) §5 NIC
+> - **关联 ADR**: [`ADR-SOC-10-module-factory-topology.md`](../../adr/ADR-SOC-10-module-factory-topology.md) D2 — SimModule 多层容器
 
 ---
 

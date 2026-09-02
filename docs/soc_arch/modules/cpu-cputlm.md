@@ -1,12 +1,12 @@
 # cpu-cputlm 微架构文档
 
-> **类别**: CPU > CPUTLM
+> **类别**: CPU > CPUTLM · **状态**: ✅ 已实施 + 📋 v1.0 dGPU SoC 战略补充
 > **状态**: ✅ 已实施
 > **Header**: `include/tlm/cpu_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:33`）
 > **蓝图来源**: gem5 `BaseSimpleCPU`（简化为地址发起器）
 > **首版 commit**: v2.1 路径同步
-> **最近更新**: 2026-06-11
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

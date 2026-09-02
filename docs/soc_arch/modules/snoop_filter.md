@@ -1,23 +1,31 @@
 # snoop_filter 微架构文档
 
-> **类别**: Interconnect > SnoopFilter
-> **状态**: 🟡 规划中
+> **类别**: Interconnect > SnoopFilter · **状态**: 🟡 规划中 → 🔵 Implemented (v1.0 dGPU SoC 战略补充)
 > **Header**: (规划) `include/tlm/interconnect/snoop_filter_tlm.hh`
 > **蓝图来源**: gem5 `src/mem/snoop_filter.hh`（cache 一致性追踪 + snoop 减负）
 > **首版 commit**: 蓝图（来自调研 §2.4 + Phase 7.C）
-> **最近更新**: 2026-06-12
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.4
 > - 邻接: [coherent_xbar.md](./coherent_xbar.md) (CoherentXBarTLM 调用方) | [cache-protocol.md](./cache-protocol.md) (MOESI 协议)
+> - **L7 Coherence 子系统架构**: [`docs/soc_arch/architecture/09-coherence-protocol.md`](../architecture/09-coherence-protocol.md) §7 SnoopFilter
+> - **关联 ADR**:
+>   - [`ADR-SOC-01-coherence-protocol-strategy.md`](../../adr/ADR-SOC-01-coherence-protocol-strategy.md) — 分步走策略
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D4 — v1.0 双 vendor coherence
 
 ---
 
-## 1. 设计目标（蓝图）
+## 1. 设计目标（蓝图 → 实施）
 
-`tlm::SnoopFilterTLM` 是 CppTLM Phase 7.C 规划的 **snoop 过滤器**——记录哪些 cache 持有某个地址的副本，从而避免不必要的 snoop 广播。**与 gem5 对位**: `gem5::SnoopFilter`（~700 行，SnoopFilter 抽象 + 多实现）。
+`tlm::SnoopFilterTLM` 是 CppTLM v1.0 dGPU SoC 战略下实施的 **snoop 过滤器**——记录哪些 cache 持有某个地址的副本，从而避免不必要的 snoop 广播。**与 gem5 对位**: `gem5::SnoopFilter`（~700 行，SnoopFilter 抽象 + 多实现）。
+
+**v1.0 战略补充**(per `00-overview.md` §4-bis R24 + ADR-SOC-09 D4):
+- **CPU↔GPU 跨域 snoop 优化**(v1.0 MVP 基础,v1.1 完整版追加完整 directory-based)
+- **降低跨域 snoop 流量**(per `00-overview` R7 风险)
+- **NVIDIA USRI vs AMD Infinity Fabric**:SnoopFilter 在两种路径下统一接口
 
 **核心特征**：
 - **追踪 sharer 列表**（per-address set of cache_ids）

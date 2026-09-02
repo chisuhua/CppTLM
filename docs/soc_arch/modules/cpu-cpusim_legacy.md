@@ -1,12 +1,12 @@
 # cpu-cpusim_legacy 微架构文档
 
-> **类别**: CPU > Legacy
+> **类别**: CPU > Legacy · **状态**: 🟡 规划中 + 📋 v1.0 dGPU SoC 战略补充(per [`00-overview.md`](../architecture/00-overview.md) §1.3 多层 SimModule 拓扑)
 > **状态**: ⚠️ Legacy（v2.1 已弃用）
 > **Header**: `include/modules/legacy/cpu_sim.hh`
 > **注册**: `REGISTER_OBJECT`（`include/modules.hh:30`）— **仅当 `BUILD_LEGACY_MODULES=ON`**
 > **蓝图来源**: gem5 v1 风格的 Port-pair 通信
 > **首版 commit**: v1 路径（具体追溯 `git log -- include/modules/cpu_sim.hh`）
-> **最近更新**: 2026-06-11
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team (legacy 维护)
 
 > **关联文档**:

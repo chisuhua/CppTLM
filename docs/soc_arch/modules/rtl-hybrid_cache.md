@@ -1,12 +1,12 @@
 # rtl-hybrid_cache 微架构文档
 
-> **类别**: RTL > HybridCache
+> **类别**: RTL > HybridCache · **状态**: ✅ 已实施 + 📋 v1.0 dGPU SoC 战略补充
 > **状态**: ✅ 已实施（仅当 `BUILD_RTL=ON`）
 > **Header**: `include/rtl/hybrid_cache_component.hh` + `include/rtl/hybrid_cache_wrapper.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:65`，`HYBRID_CACHE_WRAPPER_REGISTER_RTL` 守卫宏，`BUILD_RTL=OFF` 退化为 no-op）
 > **蓝图来源**: gem5 RTL 风格（C++20 CppHDL），canonical pattern 来自 `docs/example_rtl_modules.md:20-66`
 > **首版 commit**: v2.1 RTL 子树（2026-06-07 附近）
-> **最近更新**: 2026-06-11
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

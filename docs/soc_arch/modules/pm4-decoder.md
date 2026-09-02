@@ -1,18 +1,21 @@
 # pm4-decoder 微架构文档(路径 3 嵌入式 PM4 模式,per Phase F-C.1 C1)
 
-> **类别**: GPU > PM4 Decoder · **状态**: 🔵 MVP 切片 (per ADR-SOC-06 + Phase F Oracle 审查路径 3)
-> **Header**: `include/tlm/gpu/pm4_decoder_mvp.hh`
+> **类别**: GPU > PM4 Decoder · **状态**: 🔵 MVP 切片 (per ADR-SOC-06 + Phase F Oracle 审查路径 3) + 📋 **v1.0 双 vendor 解码器扩展**(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2)
+> **Header**: `include/tlm/gpu/pm4_decoder_mvp.hh`(v0.5 NVIDIA only) + v1.0 拆分 `pm4_decoder_nv` / `pm4_decoder_amd`
 > **位置**: CommandProcessor 内部组件(非独立 ChStreamModuleBase)
 > **蓝图来源**: AMD PM4 spec + Mesa convention + **UsrLinuxEmu `gpfifo_translator.cpp:103 parsePm4Packet` 先例**(per Phase F Oracle 审查选定路径 3)
-> **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
-> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
-> **关联模块**: [`command-processor.md`](./command-processor.md)
+> **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/` + v1.0 待启动 (per `openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`)
+> **关联 ADR**:
+> - [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5 — v0.5 路径3 NVIDIA method packet
+> - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2 — v1.0 双 vendor PM4 解码
+> - [`ADR-SOC-04-hsapp-cp-dispatcher-simplification.md`](../../adr/ADR-SOC-04-hsapp-cp-dispatcher-simplification.md) §4 ⚠️ Superseded partial(per Status Update:ROCm KFD / AQL / Doorbell 已在 v1.0 AMD 路径实施)
+> **关联模块**: [`command-processor.md`](./command-processor.md) · [L3 子系统架构](../architecture/02-command-processor.md)
 >
 > **关联调研**(per Phase F-B.4 M2):
 > - [`docs/research/CP/amd/overview.md`](../../research/CP/amd/overview.md):AMD CP 全链路 + 6 专利族
 > - [`docs/research/CP/nvidia/overview.md`](../../research/CP/nvidia/overview.md):NVIDIA pushbuffer/Front End/TMU/WDU + 7 专利族
 > - **UsrLinuxEmu 端 GPFIFO+PM4 嵌入式先例**:`plugins/gpu_driver/sim/scheduler/translator/gpfifo_translator.cpp:103 parsePm4Packet` 已实现 "GPFIFO 外壳 + `payload[0]`=PM4 header"— **本 MVP 路径 3 与此先例字节级对齐**
-> **首版 commit**: 🔵 W5-6 实施 · **最近更新**: 2026-08-20
+> **首版 commit**: 🔵 W5-6 实施 · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team (Sisyphus)
 
 ---

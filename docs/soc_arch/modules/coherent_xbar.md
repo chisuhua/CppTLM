@@ -1,11 +1,11 @@
 # coherent_xbar 微架构文档
 
-> **类别**: Interconnect > CoherentXBar
+> **类别**: Interconnect > CoherentXBar · **状态**: ✅ 已实施 + 📋 v1.0 dGPU SoC 战略补充(per [`ADR-SOC-01`](../../adr/ADR-SOC-01-coherence-protocol-strategy.md) Phase 7.C + [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D4)
 > **状态**: 🟡 规划中
 > **Header**: (规划) `include/tlm/interconnect/coherent_xbar_tlm.hh`
 > **蓝图来源**: gem5 `src/mem/coherent_xbar.hh`（含 snoop 广播 crossbar）
 > **首版 commit**: 蓝图（来自调研 §2.4 + Phase 7.C）
-> **最近更新**: 2026-06-12
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

@@ -1,17 +1,19 @@
 # memory-hbm 微架构文档
 
-> **类别**: memory > hbm
-> **状态**: 🟡 规划中
+> **类别**: memory > hbm · **状态**: 🟡 规划中 → 🔵 Implemented (v1.0 dGPU SoC 战略补充)
 > **Header**: (规划) `include/tlm/memory/hbm_tlm.hh`
-> **蓝图来源**: gem5 `src/mem/hbm2_stack.hh`（HBM2/HBM3 3D-stacked 高带宽内存）
+> **蓝图来源**: gem5 `src/mem/hbm2_stack.hh`（HBM2/HBM3 3D-stacked 高带宽内存）+ NVIDIA Blackwell HBM3e（per `docs/research/SM/NVIDIA_Blackwell_Architecture_Technical_Brief_v2.1_官方技术简报_解析.md`）
 > **首版 commit**: 蓝图（来自调研 §2.2 + Phase 7 备选 dGPU）
-> **最近更新**: 2026-06-12
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.2
 > - 邻接: [memory-memtlm.md](./memory-memtlm.md) (v0) | [memory-simple.md](./memory-simple.md) | [memory-dram.md](./memory-dram.md) | [memory-qos.md](./memory-qos.md) | [gpu-pcie_bridge.md](./gpu-pcie_bridge.md) (dGPU)
+> - **L7 Memory 子系统架构**: [`docs/soc_arch/architecture/07-memory-system.md`](../architecture/07-memory-system.md) §3 HBM3e 控制器
+> - **关联 ADR**:
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) — v1.0 HBM3e 共享
 
 ---
 

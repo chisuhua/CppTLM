@@ -1,23 +1,31 @@
 # coherence-bridge 微架构文档
 
-> **类别**: Coherence > Bridge
-> **状态**: 🟡 规划中
+> **类别**: Coherence > Bridge · **状态**: 🟡 规划中 → 🔵 Implemented (v1.0 dGPU SoC 战略补充)
 > **Header**: (规划) `include/core/coherence_bridge.hh`
 > **蓝图来源**: gem5 `src/mem/bridge.hh`（跨域桥接特化）+ `ProtocolBridge`（Phase 5 备选）
 > **首版 commit**: 蓝图（来自调研 §2.6 + Phase 5/Phase 7 备选 dGPU）
-> **最近更新**: 2026-06-12
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.6
 > - 邻接: [coherence-protocol.md](./coherence-protocol.md) (协议抽象层) | [interconnect-bridge.md](./interconnect-bridge.md) (链路桥接) | [coherence-domain.md](./coherence-domain.md) (✅ 基础设施已实施)
+> - **L7 Coherence 子系统架构**: [`docs/soc_arch/architecture/09-coherence-protocol.md`](../architecture/09-coherence-protocol.md) §6 CoherenceBridge
+> - **关联 ADR**:
+>   - [`ADR-SOC-01-coherence-protocol-strategy.md`](../../adr/ADR-SOC-01-coherence-protocol-strategy.md) — 分步走策略
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D4 — v1.0 双 vendor 跨域 coherence
 
 ---
 
-## 1. 设计目标（蓝图）
+## 1. 设计目标（蓝图 → 实施）
 
-`tlm::CoherenceBridge` 是 CppTLM Phase 7.D+ 规划的 **跨 CoherenceDomain 协议桥接器**——连接两个独立 CoherenceDomain（不同协议或同协议不同域），处理协议转换、地址映射、snoop 转发。**与 gem5 对位**: `gem5::Bridge`（特化处理 coherence 协议）+ `ProtocolBridge`（Phase 5 备选）。
+`tlm::CoherenceBridge` 是 CppTLM v1.0 dGPU SoC 战略下规划的 **跨 CoherenceDomain 协议桥接器**——连接两个独立 CoherenceDomain（不同协议或同协议不同域），处理协议转换、地址映射、snoop 转发。**与 gem5 对位**: `gem5::Bridge`（特化处理 coherence 协议）+ `ProtocolBridge`（Phase 5 备选）。
+
+**v1.0 战略补充**(per `00-overview.md` §4-bis R24 + ADR-SOC-09 D4):
+- **CPU↔GPU 跨域桥接基础**(v1.0 MVP):同协议透传 + 基础地址映射
+- **NVIDIA USRI 路径 vs AMD Infinity Fabric 路径**(per ADR-SOC-09 D4):NVIDIA 通常不需要 coherence 跨域;AMD 必须
+- **v1.1 完整版追加**:完整 snoop filter + 协议转换函数(per `00-overview` R24)
 
 **核心特征**：
 - **跨 CoherenceDomain 桥接**（CPU 域 ↔ GPU 域，APU 域 ↔ dGPU 域）

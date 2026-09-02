@@ -1,14 +1,18 @@
 # gpu-soc 微架构文档
 
-> **类别**: GPU > SoC · **状态**: ✅ Phase 8.A Task 6
+> **类别**: GPU > SoC · **状态**: ✅ Phase 8.A Task 6 + 📋 v1.0 dGPU SoC 战略补充(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D1 + L0 总架构蓝图 §1.3)
 > **Header**: `include/tlm/cluster/gpu_soc_cluster.hh`
 > **注册**: `REGISTER_MODULE` (`include/modules_cluster.hh`)
-> **蓝图来源**: `docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md` §3
+> **蓝图来源**: `docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md` §3 + dGPU SoC v1.0 总架构蓝图
 > **OpenSpec**: `openspec/changes/2026-06-24-gpu-soc-phase8a-infra/`
-> **首版 commit**: (Task 6) · **最近更新**: 2026-07-01
+> **首版 commit**: (Task 6) · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
+> - **L0 总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) §1.3 多层 SimModule 拓扑
+> - **关联 ADR**:
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D1 — v1.0 双 vendor 蓝图
+>   - [`ADR-SOC-10-module-factory-topology.md`](../../adr/ADR-SOC-10-module-factory-topology.md) D2 — SimModule 多层容器
 > - Spec: [`docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md`](../../superpowers/specs/2026-06-24-gpu-soc-architecture.md) §3
 > - ADR: [`docs/adr/ADR-NV-01-gpu-soc-architecture-target.md`](../../adr/ADR-NV-01-gpu-soc-architecture-target.md)
 > - 主 plan: [`docs/superpowers/plans/2026-06-24-gpu-soc-roadmap.md`](../../superpowers/plans/2026-06-24-gpu-soc-roadmap.md)

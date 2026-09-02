@@ -1,15 +1,17 @@
 # gpu-kernel-launch 微架构文档
 
-> **类别**: GPU > Dispatcher · **状态**: ✅ Phase 8.A Task 4
+> **类别**: GPU > Dispatcher · **状态**: ✅ Phase 8.A Task 4 + 📋 **v1.0 双 vendor 蓝图共享**(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2)
 > **Header**: `include/tlm/gpu/kernel_launch_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`)
-> **蓝图来源**: HSA AQL (Architected Queuing Language) 简化 + NVIDIA CUDA kernel dispatch
-> **首版 commit**: `b8bd411` (2026-06-28) · **最近更新**: 2026-07-02
+> **蓝图来源**: HSA AQL (Architected Queuing Language) 简化 + NVIDIA CUDA kernel dispatch + AMD PM4 dispatch
+> **首版 commit**: `b8bd411` (2026-06-28) · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - Spec: [`docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md`](../../superpowers/specs/2026-06-24-gpu-soc-architecture.md) §3.4
-> - ADR: [`docs/soc_arch/adr/ADR-SOC-04-hsapp-simplification.md`](../../soc_arch/adr/ADR-SOC-04-hsapp-simplification.md)
+> - ADR:
+>   - [`docs/soc_arch/adr/ADR-SOC-04-hsapp-simplification.md`](../../soc_arch/adr/ADR-SOC-04-hsapp-simplification.md) — HSAPP/CP/Dispatcher 极简化 (KernelLaunchTLM ~150 行)
+>   - [`docs/soc_arch/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../soc_arch/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2 — v1.0 双 vendor 蓝图共享
 > - GPU Kernellaunch: [`gpu-kernel-launch.md`](./gpu-kernel-launch.md)（旧版 pending doc 已删除，2026-07-14）
 > - GPU 通用: [`gpu.common.md`](./gpu.common.md)
 

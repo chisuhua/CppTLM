@@ -1,32 +1,41 @@
 # coherence-protocol 微架构文档
 
-> **类别**: Coherence > Protocol
-> **状态**: 🟡 规划中
-> **Header**: (规划) `include/core/coherence_protocol.hh`
-> **蓝图来源**: gem5 `src/mem/protocol/`（MOESI_AMD 状态机，slicc → C++ switch）
-> **首版 commit**: 蓝图（来自调研 §2.6 + Phase 7.C）
-> **最近更新**: 2026-06-12
-> **维护者**: CppTLM Team
+> **类别**: Coherence > Protocol · **状态**: 🔵 Implemented (per ADR-SOC-01 + ADR-SOC-09 D4 v1.0 扩展)
+> **Header**: `include/core/coherence_protocol.hh`
+> **蓝图来源**: gem5 `src/mem/protocol/`（MOESI_AMD 状态机，slicc → C++ switch）+ Ruby MOESI Hammer（per `docs/research/gem5-soc-survey.md` §2.5）
+> **首版 commit**: Phase 7.C 实施 · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略 + ADR-SOC-09 D4 双 vendor coherence 扩展)
+> **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - 调研: [`docs/research-cpptlm-gpu-fused-soc-survey.md`](../../research-cpptlm-gpu-fused-soc-survey.md) §2.6
 > - 邻接: [cache-protocol.md](./cache-protocol.md) (Cache 侧协议) | [coherence-bridge.md](./coherence-bridge.md) (跨域桥接) | [coherence-domain.md](./coherence-domain.md) (✅ 基础设施已实施)
+> - **L7 Coherence 子系统架构**: [`docs/soc_arch/architecture/09-coherence-protocol.md`](../architecture/09-coherence-protocol.md) — 完整 v1.0 设计
+> - **关联 ADR**:
+>   - [`ADR-SOC-01-coherence-protocol-strategy.md`](../../adr/ADR-SOC-01-coherence-protocol-strategy.md) — 分步走策略 (Phase 7.A → 7.B → 7.C, ✅ Accepted + Status Update)
+>   - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D4 — v1.0 NVIDIA+AMD 双 vendor coherence
 
 ---
 
-## 1. 设计目标（蓝图）
+## 1. 设计目标（蓝图 → 实施）
 
-`tlm::CoherenceProtocol` 是 CppTLM Phase 7.C 规划的 **协议无关抽象层**——定义 6 状态 MOESI 完整状态机、snoop probe/response 消息类型、协议转换占位。**与 gem5 对位**: `gem5::MOESI_AMD_Base-dir`（slicc 描述，CppTLM 用 C++ `switch` 表简化）。
+`tlm::CoherenceProtocol` 是 CppTLM Phase 7.C 实施的 **协议无关抽象层**——定义 6 状态 MOESI 完整状态机、snoop probe/response 消息类型、协议转换占位。**与 gem5 对位**: `gem5::MOESI_AMD_Base-dir`（slicc 描述，CppTLM 用 C++ `switch` 表简化, per ADR-SOC-01 §2 决策（永不复制 gem5 slicc DSL））。
 
-**核心特征**：
-- **6 状态 MOESI 完整状态机**（I/S/E/M/O/T）
-- **协议无关 Bundle**（`SnoopProbe` / `SnoopResp` / `CoherenceMsg`）
-- **多协议实现**（MOESI_AMD / MESI_GPU / MESI_Three_Level / Custom）
-- **协议转换函数**（`translate(probe, from, to)`）
-- **统计独立**（per-protocol miss rate / invalidation 计数）
+**v1.0 dGPU SoC 战略补充**(per `00-overview.md` v3.0 PASS §4-bis R23-R24 + ADR-SOC-09 D4):
+- **NVIDIA 路径**:通常不需要 CPU↔GPU coherence(per USRI path);NVIDIA coherence 仅在 GPU 内部 L1/L2
+- **AMD 路径**:AMD Infinity Fabric 需要 CPU↔GPU coherence(per ROCm path);完整跨域桥接
+- **共享 MOESI/GPU 6 状态 × 6 事件**:跨 vendor 复用同一状态机
 
-> **与 [cache-protocol.md](./cache-protocol.md) 的关系**: `cache-protocol.md` 关注**单 cache 行的 6×6 状态转换**，本文档关注**协议抽象层**（多协议、消息类型、协议转换）。两者共同构成 Phase 7.C coherence 体系。
+**核心特征**:
+- **6 状态 MOESI/GPU 完整状态机**(I/S/E/M/O/T)
+- **6 事件 × 6 状态转换表**:`uint8_t state_transition[6][6]`(per ADR-SOC-01 §2 决策，36 个转换)
+- **协议无关 Bundle**(`SnoopProbe` / `SnoopResp` / `CoherenceMsg`)
+- **多协议实现**(MOESI/GPU 主推 / MESI 备选 / Custom)
+- **协议转换函数**(`translate(probe, from, to)`)
+- **统计独立**(per-protocol miss rate / invalidation 计数)
+- **v1.0 跨 vendor 复用**:NVIDIA + AMD GPU 端共享同一状态机,仅 Domain ID 区分
+
+> **与 [cache-protocol.md](./cache-protocol.md) 的关系**: `cache-protocol.md` 关注**单 cache 行的 6×6 状态转换**,本文档关注**协议抽象层**(多协议、消息类型、协议转换)。两者共同构成 Phase 7.C coherence 体系。
 
 ## 2. 架构概览（规划）
 

@@ -1,6 +1,6 @@
 # gpu-memory-cluster 微架构文档
 
-> **类别**: GPU > 内存子系统 · **状态**: ✅ Phase 8.A Task 2
+> **类别**: GPU > 内存子系统 · **状态**: ✅ Phase 8.A Task 2 + 📋 v1.0 dGPU SoC HBM3e 补充(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D5 + L7 Memory 子系统架构)
 > **Header**: `include/tlm/gpu/memory_cluster_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`)
 > **蓝图来源**: NVIDIA HBM/GDDR 多通道内存控制器

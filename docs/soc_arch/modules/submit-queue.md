@@ -1,13 +1,16 @@
 # submit-queue 微架构文档(per Phase F-H.5 新增)
 
-> **类别**: GPU > Submit Queue (WDU 分发网络) · **状态**: 🟢 MVP 切片 (per ADR-SOC-06)
+> **类别**: GPU > Submit Queue (WDU 分发网络) · **状态**: 🟢 MVP 切片 (per ADR-SOC-06) + 📋 **v1.0 双 vendor 共享 + CGA Cluster 推迟**(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2 + [`ADR-SOC-12`](../../adr/ADR-SOC-12-host-bypass-and-rc.md))
 > **Header**: `include/tlm/gpu/submit_queue_mvp.hh`
 > **位置**: DGpuBoardTLM 内部组件(非独立 ChStreamModuleBase)
-> **蓝图来源**: NVIDIA Hopper WDU + Work Distribution Crossbar(per `docs/research/WDUtoSM/overview.md` §三)
+> **蓝图来源**: NVIDIA Hopper WDU + Work Distribution Crossbar(per `docs/research/WDUtoSM/overview.md` §三) + AMD SPI/SQ(per §四)
 > **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
-> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
-> **关联模块**: [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md) · [`cuda-core-adapter.md`](./cuda-core-adapter.md)
-> **首版 commit**: 🔵 W3-4 实施 · **最近更新**: 2026-08-20
+> **关联 ADR**:
+> - [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5 — v0.5 路径
+> - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2 — v1.0 双 vendor 共享
+> - [`ADR-SOC-10-module-factory-topology.md`](../../adr/ADR-SOC-10-module-factory-topology.md) D2 — SimModule 9 类容器
+> **关联模块**: [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md) · [`cuda-core-adapter.md`](./cuda-core-adapter.md) · [`L5 WDU 子系统架构`](../architecture/04-work-distribution.md)
+> **首版 commit**: 🔵 W3-4 实施 · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联调研**: [`docs/research/WDUtoSM/overview.md`](../../research/WDUtoSM/overview.md)(NVIDIA WDU + Work Distribution Crossbar + 12 专利族)、[`docs/research/WDUtoSM/nvidia/US8112614B2_...md`](../../research/WDUtoSM/nvidia/US8112614B2_协作线程阵列并行数据处理_解析.md)(CTA 奠基)

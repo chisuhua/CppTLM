@@ -1,6 +1,7 @@
 # ptx-emu-submodule-mvp 微架构文档(per Phase I.1 重构)
 
-> **类别**: GPU > PTX-EMU **Functional Model Facade** · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
+> **类别**: GPU > PTX-EMU **Functional Model Facade** · **状态**: 🔵 MVP 切片 (per ADR-SOC-06) + 📋 v1.0 dGPU SoC 战略补充(per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md))
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **Header**: `include/tlm/gpu/ptx_emu_submodule_mvp.hh` + **`.cc` 为唯一 PTX-EMU 头 include 位置(编译防火墙)**
 > **位置**: DGpuBoardTLM 内部组件
 > **蓝图来源**: PTX-EMU 内部 C++ 实例接口(`ptxsim/gpu_context.h` + `ptxsim/sm_context.h` + `ptxsim/warp_context.h` + `ptx_ir/ptxir_reader.h`) + gpgpu-sim `cuda-sim/` 功能模拟分层模式

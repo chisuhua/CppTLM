@@ -5,7 +5,7 @@
 > **Header**: (规划) `include/tlm/cache/noncoherent_cache_tlm.hh`
 > **注册**: (规划) `REGISTER_CHSTREAM` 扩展
 > **蓝图来源**: gem5 `src/mem/cache/noncoherent_cache.cc`
-> **首版 commit**: 蓝图（来自调研 §2.3）
+> **首版 commit**: 蓝图（来自调研 §2.3） · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **最近更新**: 2026-06-11
 > **维护者**: CppTLM Team
 

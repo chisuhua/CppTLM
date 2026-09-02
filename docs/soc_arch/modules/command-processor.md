@@ -1,18 +1,22 @@
 # command-processor 微架构文档
 
-> **类别**: GPU > Command Processor · **状态**: 🔵 MVP 切片 (per ADR-SOC-06)
-> **Header**: `include/tlm/gpu/command_processor_mvp.hh`
+> **类别**: GPU > Command Processor · **状态**: 🔵 MVP 切片 (per ADR-SOC-06) + 📋 **v1.0 双 vendor 扩展**(NVIDIA + AMD, per [`ADR-SOC-09`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md))
+> **Header**: `include/tlm/gpu/command_processor_mvp.hh`(v0.5 NVIDIA only) + v1.0 拆分 `pm4_decoder_nv` / `pm4_decoder_amd`
 > **位置**: DGpuBoardTLM 内部组件(非独立 ChStreamModuleBase)
 > **蓝图来源**: AMD PM4 spec + Mesa convention + per ADR-X.16 §3.2 + **per Phase F-B.2 H2 修订:路径3(Oracle 推荐)嵌入式 PM4 模式**(GPFIFO 外壳 + `payload[0]`=PM4 header,与 UsrLinuxEmu `gpfifo_translator.cpp:103 parsePm4Packet` 先例对齐)
-> **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/`
-> **关联 ADR**: [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5
-> **首版 commit**: 🔵 W5-6 实施 · **最近更新**: 2026-08-19
+> **OpenSpec**: `openspec/changes/2026-08-19-cpptlm-v05-mvp/` + v1.0 待启动 (per `openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`)
+> **关联 ADR**:
+> - [`ADR-SOC-06-cpptlm-v05-mvp.md`](../../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5 — v0.5 路径3 NVIDIA method packet
+> - [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](../../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D2 — v1.0 L3 双 vendor PM4 解码
+> - [`ADR-SOC-04-hsapp-cp-dispatcher-simplification.md`](../../adr/ADR-SOC-04-hsapp-cp-dispatcher-simplification.md) §4 "永不做" 列表 ⚠️ 部分 Superseded(per Status Update:ROCm KFD / AQL / Doorbell 已在 v1.0 AMD 路径实施)
+> **首版 commit**: 🔵 W5-6 实施 · **最近更新**: 2027-02-09 (v1.0 双 vendor 补充)
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
 > - 索引: [README.md](./README.md)
 > - DGpuBoardTLM 包装: [`dgpu-board.md`](./dgpu-board.md)
 > - PM4 解析: [`pm4-decoder.md`](./pm4-decoder.md)
+> - **L3 子系统架构**: [`docs/soc_arch/architecture/02-command-processor.md`](../architecture/02-command-processor.md) — L3 双 vendor 详细设计
 > - TMU Glue: [`tmu-dispatch-processor.md`](./tmu-dispatch-processor.md)
 > - AMD PM4 调研: [`docs/research/CP/`](../../research/CP/) (12 专利)
 >   - [`docs/research/CP/amd/overview.md`](../../research/CP/amd/overview.md):AMD CP/IB/doorbell/HQD/SPI 全链路 + 6 专利族 + 与 NVIDIA 对照

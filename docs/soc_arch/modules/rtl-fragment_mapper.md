@@ -1,12 +1,12 @@
 # rtl-fragment_mapper 微架构文档
 
-> **类别**: RTL > FragmentMapper
+> **类别**: RTL > FragmentMapper · **状态**: ✅ 已实施 + 📋 v1.0 dGPU SoC 战略补充
 > **状态**: ✅ 已实施
 > **Header**: `include/rtl/fragment_mapper.hh`
 > **注册**: **无**（基础设施类，**非模块**）
 > **蓝图来源**: ADR-X.6 TransactionContext + ADR-X.13 多 extension API
 > **首版 commit**: v2.1 RTL 子树（2026-06-06 附近）
-> **最近更新**: 2026-06-11
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

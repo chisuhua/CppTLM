@@ -5,7 +5,7 @@
 > **Header**: (规划) `include/tlm/gpu/compute_unit_tlm.hh`
 > **注册**: (规划) `REGISTER_CHSTREAM` 扩展 `ModuleFactory::registerObject<tlm::ComputeUnitTLM>("ComputeUnitTLM")`
 > **蓝图来源**: gem5 `src/gpu-compute/ComputeUnit.py`（接口对位，黑盒版）
-> **首版 commit**: 🟡 蓝图（来自 spec §3 + plan Task 8+）
+> **首版 commit**: 🟡 蓝图（来自 spec §3 + plan Task 8+） · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **最近更新**: 2026-06-11
 > **维护者**: CppTLM Team
 

@@ -5,7 +5,7 @@
 > **Header**: (规划) `include/tlm/memory/simple_memory_tlm.hh`
 > **蓝图来源**: gem5 `src/mem/simple_mem.hh`（吞吐/带宽/带宽限制队列模型）
 > **首版 commit**: 蓝图（来自调研 §2.2）
-> **最近更新**: 2026-06-12
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **维护者**: CppTLM Team
 
 > **关联文档**:

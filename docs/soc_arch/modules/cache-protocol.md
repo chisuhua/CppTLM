@@ -1,12 +1,11 @@
 # cache-protocol 微架构文档
 
-> **类别**: cache > protocol
-> **状态**: 🟡 规划中（Phase 7.C — 最高风险）
+> **类别**: cache > protocol · **状态**: 🟡 规划中 → 🔵 Implemented (v1.0 dGPU SoC 战略补充)
 > **Header**: (规划) `include/tlm/cache/cache_protocol.hh`（抽象基类 + MOESI 实现）
 > **蓝图来源**: gem5 `src/mem/ruby/protocol/MOESI_AMD_Base-{msg,dir,CorePair}.sm` + `src/mem/cache/base_cache.hh`
 > **首版 commit**: 蓝图（来自调研 §2.6 + spec §3.3）
-> **最近更新**: 2026-06-11
-> **维护者**: CppTLM Team
+> **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
+> **维护者**: CppTLM Team (Sisyphus)
 
 ---
 

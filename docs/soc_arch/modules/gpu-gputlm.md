@@ -5,7 +5,7 @@
 > **Header**: `include/tlm/gpu/gpu_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM`（`include/chstream_register.hh:42`）+ `registerAdapter<tlm::GPUTLM, ComputeReqBundle, ComputeRespBundle>`
 > **蓝图来源**: gem5 `src/gpu-compute/ComputeUnit.py`（接口对位，v0 黑盒版）
-> **首版 commit**: `828f037`（feat(gpu): add GPUTLM v0 blackbox initiator）
+> **首版 commit**: `828f037`（feat(gpu): add GPUTLM v0 blackbox initiator） · **最近更新**: 2027-02-09 (v1.0 dGPU SoC 战略补充)
 > **最近更新**: `fb6011b`（REGISTER_CHSTREAM 扩展 + namespace tlm 修复）
 > **维护者**: CppTLM Team
 
