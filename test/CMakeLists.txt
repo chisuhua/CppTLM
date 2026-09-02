@@ -166,6 +166,12 @@ add_test(NAME test_host_bypass_basic COMMAND cpptlm_tests "[pcie][host-bypass][b
 add_test(NAME test_host_bypass_software_bringup COMMAND cpptlm_tests "[pcie][host-bypass][software]" -r compact)
 add_test(NAME test_pcie_root_complex_enumeration COMMAND cpptlm_tests "[pcie][root-complex][enum]" -r compact)
 
+# 2027-02-09 cpptlm-dgpu-pcie-ip-integration Phase 8 (T-P8-3 全链路 E2E 测试)
+# 解决 Phase 7 M1 (EP 真实消费 AXI 请求，HostBypass/RC ↔ PcieEndpointIP 真实闭环)
+add_test(NAME test_pcie_endpoint_ip_full_e2e_config COMMAND cpptlm_tests "[pcie][axi][e2e][phase8][config]" -r compact)
+add_test(NAME test_pcie_endpoint_ip_full_e2e_bar COMMAND cpptlm_tests "[pcie][axi][e2e][phase8][bar]" -r compact)
+add_test(NAME test_pcie_endpoint_ip_full_e2e_rc COMMAND cpptlm_tests "[pcie][axi][e2e][phase8][rc]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)

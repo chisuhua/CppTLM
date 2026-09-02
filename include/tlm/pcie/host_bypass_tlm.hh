@@ -110,7 +110,7 @@ public:
     bool bar_read(uint64_t addr, uint64_t& data, uint8_t bytes);
 
     // 每周期推进（转发至底层 Axi4StreamAdapter）
-    void tick() { axi_.tick(); }
+    void tick();
     // 全量复位
     void reset() { axi_.reset(); }
 

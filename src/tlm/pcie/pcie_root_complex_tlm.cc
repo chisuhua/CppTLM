@@ -2,6 +2,7 @@
 // PcieRootComplexTLM 实现 (T-P7-3)
 // 作者 CppTLM Team / 日期 2027-01-19
 #include "tlm/pcie/pcie_root_complex_tlm.hh"
+#include "tlm/pcie/pcie_axi_adapter_tlm.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 
 namespace tlm::pcie {
@@ -136,6 +137,35 @@ bool PcieRootComplexTLM::bar_read(uint16_t device, uint64_t addr, uint64_t& data
 
     data = 0;
     return axi_.master_req(req);
+}
+
+// Phase 8 M1: tick() 在 RC ↔ EP 之间建立真实数据路径闭环（同 HostBypassTLM）。
+void PcieRootComplexTLM::tick() {
+    if (ep_) {
+        auto* ep_ax = PcieAxiAdapter::for_endpoint(ep_->getName());
+        if (ep_ax) {
+            cpptlm::Axi4StreamAdapter& ep_axi = ep_ax->axi();
+            cpptlm::Axi4StreamAdapter& rc_axi = axi_;
+
+            if (rc_axi.master_req_valid() && !ep_axi.slave_req_valid()) {
+                ep_axi.slave_req(rc_axi.master_req_data());
+                rc_axi.master_req_consume();
+            }
+            if (ep_axi.master_req_valid() && !rc_axi.slave_req_valid()) {
+                rc_axi.slave_req(ep_axi.master_req_data());
+                ep_axi.master_req_consume();
+            }
+            if (ep_axi.slave_resp_valid() && !rc_axi.master_resp_valid()) {
+                rc_axi.master_resp(ep_axi.slave_resp_data());
+                ep_axi.slave_resp_consume();
+            }
+            if (rc_axi.slave_resp_valid() && !ep_axi.master_resp_valid()) {
+                ep_axi.master_resp(rc_axi.slave_resp_data());
+                rc_axi.slave_resp_consume();
+            }
+        }
+    }
+    axi_.tick();
 }
 
 } // namespace tlm::pcie

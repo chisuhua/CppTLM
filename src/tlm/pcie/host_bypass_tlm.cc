@@ -2,6 +2,7 @@
 // HostBypassTLM 实现 (T-P7-1 + T-P7-2)
 // 作者 CppTLM Team / 日期 2027-01-19
 #include "tlm/pcie/host_bypass_tlm.hh"
+#include "tlm/pcie/pcie_axi_adapter_tlm.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 
 namespace tlm::pcie {
@@ -88,6 +89,46 @@ bool HostBypassTLM::bar_read(uint64_t addr, uint64_t& data, uint8_t bytes) {
 
     data = 0;  // 输出初始化（读数据经 axi_master_resp 呈现，此处仅为占位）
     return axi_.master_req(req);
+}
+
+// Phase 8 M1: tick() 在 hb ↔ EP 之间建立真实数据路径闭环。
+//  hb.axi_master_req_valid → ep.axi_slave_in（host → EP）
+//  ep.axi_master_out_valid → hb.axi_slave_in（EP → host，反向桥接）
+//  ep.axi_slave_resp_valid → hb.axi_master_resp（EP 响应 → host 主通道）
+//  让 hb 与 EP 真正双向互通，EP 内部消费请求并产生真实响应（M1 闭合）。
+void HostBypassTLM::tick() {
+    if (ep_) {
+        auto* ep_ax = PcieAxiAdapter::for_endpoint(ep_->getName());
+        if (ep_ax) {
+            cpptlm::Axi4StreamAdapter& ep_axi = ep_ax->axi();
+            cpptlm::Axi4StreamAdapter& hb_axi = axi_;
+
+            // host master_out → EP slave_in
+            if (hb_axi.master_req_valid() && !ep_axi.slave_req_valid()) {
+                ep_axi.slave_req(hb_axi.master_req_data());
+                hb_axi.master_req_consume();
+            }
+
+            // EP master_out → host slave_in
+            if (ep_axi.master_req_valid() && !hb_axi.slave_req_valid()) {
+                hb_axi.slave_req(ep_axi.master_req_data());
+                ep_axi.master_req_consume();
+            }
+
+            // EP slave_resp → host master_resp
+            if (ep_axi.slave_resp_valid() && !hb_axi.master_resp_valid()) {
+                hb_axi.master_resp(ep_axi.slave_resp_data());
+                ep_axi.slave_resp_consume();
+            }
+
+            // host slave_resp → EP master_resp（反向
+            if (hb_axi.slave_resp_valid() && !ep_axi.master_resp_valid()) {
+                ep_axi.master_resp(hb_axi.slave_resp_data());
+                hb_axi.slave_resp_consume();
+            }
+        }
+    }
+    axi_.tick();
 }
 
 } // namespace tlm::pcie

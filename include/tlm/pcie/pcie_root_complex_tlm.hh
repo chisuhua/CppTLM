@@ -119,7 +119,7 @@ public:
     std::size_t axi_outstanding_rd() const { return axi_.outstanding_rd(); }
 
     // 每周期推进（转发至底层 Axi4StreamAdapter）
-    void tick() { axi_.tick(); }
+    void tick();
     // 全量复位
     void reset() { axi_.reset(); }
 

@@ -54,6 +54,7 @@ namespace tlm::gpu {
      *   250-700ns 区间延迟的 mmio_out 门铃事务（沿用 s2 Doorbell 强序）。
      *   **禁止** C++ `if (offset == 0x0014)` 硬编码路径。
      */
+    [[deprecated("use PcieEndpointIP instead; Phase 8 整合迁移")]]
     class PcieEndpointTLM : public ChStreamModuleBase {
     public:
         static constexpr unsigned NUM_PORTS = 4;
