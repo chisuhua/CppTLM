@@ -66,3 +66,12 @@ void ComputeUnitTLM::tick() {
 - 复述: [`roadmap.md`](../../../roadmap.md) L64 D2 行
 - 微架构: [`docs/soc_arch/modules/gpu-compute_unit.md`](../modules/gpu-compute_unit.md), [`gpu-gputlm.md`](../modules/gpu-gputlm.md)
 - SoC 集成: [`docs/soc_arch/specs/apu-soc-design.md`](../specs/apu-soc-design.md)
+
+---
+
+## Status Update
+
+- **2027-02-09**: ⚠️ **Superseded by ADR-SOC-06 D2** (CU 黑盒路径 → CudaCoreAdapter SM 微架构探索器 + 深度集成 PTX-EMU internal + WarpState 镜像 PC/cycle)
+  **理由**:Phase 7.B+ 黑盒 MVP 路径不足以观测 PC/cycle,与"接近真实 CudaCore"目标矛盾(per `docs/research/SM/overview.md` §3.2 + ADR-SOC-06 Phase F-H 架构重定义 D2 反转);PTX-EMU internal C++ 接口已成熟(per `include/cudart/` 4 个 vendored 接口 + `cpptlm_emu/ptxsim` 编译防火墙)。
+  **保留原文作为 v0.5 s2 历史记录**;`ComputeUnitTLM::tick()` 黑盒循环在 v0.5 MVP 仍有 1 处使用(per `docs/soc_arch/specs/apu-soc-design.md` D2)。
+- **2027-02-09**: v1.0 战略下 ComputeUnitTLM 升级为蓝图模式 + 双 vendor 路径切换(per [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D1)

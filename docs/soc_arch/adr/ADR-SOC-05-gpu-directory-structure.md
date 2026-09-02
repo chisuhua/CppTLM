@@ -70,3 +70,13 @@ REGISTER_CHSTREAM(TCC_TLM, ComputeReqBundle, ComputeRespBundle)         // 7.D
 - 落地: [`AGENTS.md`](../../../AGENTS.md) L19 STRUCTURE 节（已含 `include/tlm/gpu/`）
 - SoC 集成: [`docs/soc_arch/specs/apu-soc-design.md`](../specs/apu-soc-design.md)
 - 关联: [ADR-SOC-01 一致性策略](./ADR-SOC-01-coherence-protocol-strategy.md)、[ADR-SOC-02 CU 粒度](./ADR-SOC-02-cu-granularity.md)、[ADR-SOC-04 HSAPP 简化](./ADR-SOC-04-hsapp-cp-dispatcher-simplification.md)
+
+---
+
+## Status Update
+
+- **2027-02-09**: 目录结构已扩展，实际包含 3 个子目录：
+  - `include/tlm/gpu/`（本 ADR 决策，保留）
+  - `include/tlm/pcie/`（2026-09..2027-02 Phase 1-7 PCIe EP 子链路新增，17+ 文件：`pcie_endpoint_ip.h`、`pcie_sriov_vf_pool_tlm.hh`、`pcie_link_layer_tlm.hh`、`pcie_phy_digital_ctrl_tlm.hh`、`pcie_bypass_mux.hh`、`axi4_mapper.hh`、`pcie_axi_adapter_tlm.hh`、`host_bypass_tlm.hh`、`pcie_root_complex_tlm.hh`、`axi4_stream_adapter.hh` 等）
+  - `include/tlm/cluster/`（2026-06..2026-08 Phase 8 SimModule 9 类 P2-P5 容器，ApuSoC 顶层：`cpu_cluster.hh`、`compute_cluster.hh`、`tpc_cluster.hh`、`gpc_cluster.hh`、`gpu_cluster.hh`、`cache_cluster.hh`、`memory_cluster.hh`、`gpu_noc_cluster.hh`、`apu_soc.hh`）
+  `include/tlm/` 顶层目录决策保留；新增子目录决策详见 [`ADR-SOC-10-module-factory-topology.md`](./ADR-SOC-10-module-factory-topology.md) D2（SimModule 多层容器）

@@ -75,3 +75,17 @@ CppTLM 作为 TLM 仿真框架，**不模拟 Host 软件栈**，只关心 GPU �
 - 微架构: [`docs/soc_arch/modules/gpu-kernel-launch.md`](../modules/gpu-kernel-launch.md)
 - SoC 集成: [`docs/soc_arch/specs/apu-soc-design.md`](../specs/apu-soc-design.md)
 - 蓝图参考（仅作了解，不复制）: gem5 `src/dev/amdgpu/amdgpu_device.py`
+
+---
+
+## Status Update
+
+- **2027-02-09**: ⚠️ **Superseded partial**(Section 4 "永不做" 列表与 v1.0 双 vendor 战略部分冲突)
+  **冲突项与处理**:
+  - ❌ ROCm KFD 接口（Post MVP）→ **v1.0 AMD 路径必需**(per [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D1 + D3);需依赖 UsrLinuxEmu 跨仓承诺(UsrLinuxEmu ADR-088 当前 NVIDIA-only,需 owner 联签/分阶段实施)
+  - ❌ AQL packet 流解析（永久不做）→ **Pm4Decoder-AMD TYPE3 opcode v1.0 MVP 实施**(per [`docs/soc_arch/architecture/02-command-processor.md`](../architecture/02-command-processor.md) §5);v1.1 完整版追加全 TYPE3 opcode
+  - ❌ Doorbell 寄存器交互（永久不做）→ **AMD Ring Buffer / Doorbell v1.0 MVP 实施**(per [`02-command-processor.md`](../architecture/02-command-processor.md) §7.2)
+  **保留项**:
+  - ✅ 真实 HSA runtime 行为模拟（永久不做）—— 保留
+  - ✅ KernelLaunchTLM ~150 行代替 HSA 三件套 —— **保留**(per ADR-SOC-06 D5 CP→TMU→SQ→Cuda Core 链路,KernelLaunchTLM 作为 CP 一部分)
+  **决策性变更不写入本 ADR 正文**;需双 vendor 战略落地的具体决策决策请参考 [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md)

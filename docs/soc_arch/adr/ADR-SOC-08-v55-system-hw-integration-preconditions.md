@@ -171,3 +171,30 @@ T-prereq-5: backdoor ABI 隔离测试 (P2-D)
 **Owner**: CppTLM Team
 **送审**: UsrLinuxEmu Architecture Team(供 ADR-089 / ADR-088 增量修订评估)
 **状态**: 📋 Proposed — 待评审 + OpenSpec change 实施
+
+---
+
+## Status Update
+
+- **2027-02-09**: 5 项前置测试当前状态（全部已实施，per Phase 8 整合交付）：
+
+  | 测试 | 状态 | 测试文件 |
+  |------|:----:|---------|
+  | **P1 MSI-X 状态机细粒度（mask/unmask/PBA）** | ✅ 已实施 | `test/test_pcie_endpoint_msix_state.cc` |
+  | **P2 wire-format 跨仓字节级一致性** | ✅ 已实施 | `test/test_pcie_slice_wire_format_snapshot.cc` |
+  | **P3 DMA translate callback 边界（phys 越界）** | ✅ 已实施 | `test/test_sdma_engine_iommu_fault.cc` |
+  | **P4 Doorbell 排队/并发** | ✅ 已实施 | `test/test_pcie_endpoint_doorbell_queue.cc` |
+  | **P5 backdoor ABI 隔离（MMIO 与 backdoor 路径）** | ✅ 已实施 | `test/test_sdma_engine_backdoor_isolation.cc` |
+
+- **2027-02-09**: 4 项 UsrLinuxEmu 跨仓提议反馈状态（全部待回应）：
+  - 1 ADR-089 §D7 IOMMUFD consumer 追加 CppTLM 跨仓契约验证段：**待 UsrLinuxEmu 回应**
+  - 2 ADR-089 §D7 VFIO consumer BAR0 寄存器行为契约来源：**待 UsrLinuxEmu 回应**
+  - 3 ADR-088 §C2 CppTLM C ABI 范围扩展：**待 UsrLinuxEmu 回应**
+  - 4 ADR-089 v0.5 更新到 v5.5+ 节奏：**待 UsrLinuxEmu 回应**
+
+- **2027-02-09**: 仓内 23 ABI 实现进展（per [`00-overview.md`](../architecture/00-overview.md) §4-bis R26/R27 + [`ADR-SOC-14-v55-integration-revision.md`](./ADR-SOC-14-v55-integration-revision.md)）：
+  - **头冻结**：✅ 19 声明（per `include/abi/cpptlm_emulator.h`）
+  - **仓内实现**：✅ 19/19 函数 + 4 回调 typedef 契约（per `src/abi/cpptlm_emulator.cc` 433 行）
+  - **UsrLinuxEmu 侧集成与完整 23 函数闭环**：❌ 待 UsrLinuxEmu v5.5+ 节奏（per UsrLinuxEmu ADR-089 v0.5）
+
+- **2027-02-09**: v1.0 战略下双 vendor 跨仓依赖追加（per [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D3）：UsrLinuxEmu ADR-088 当前 NVIDIA-only，AMD KFD 路径需 UsrLinuxEmu owner 联签/分阶段实施

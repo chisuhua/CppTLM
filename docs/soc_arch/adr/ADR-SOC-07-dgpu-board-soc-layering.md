@@ -225,3 +225,15 @@ DGpuSoc（SimModule 容器，JSON + ModuleFactory 构建）
   - **Q3 BAR1 大块数据路径裁决**：bundle 保持 POD（descriptor-only, `offset+size`），timed TLP 路径一律经 `PcieEndpointTLM::mem_out` → `MemoryTLM`；>8B 的实际数据走 23 ABI 已有的 `backdoor_read/backdoor_write` 通道（绕过 timing 的批量数据通道，与 SystemC TLM DMI 同构），经"descriptor-only TLP 推进带宽模型"实现时序一致性。VRAM 存储单一 owner 为 `MemoryCluster`，backdoor 路径必须落到同一存储。**禁止** driver-side BAR1 访问绕过 `PcieEndpointTLM`（违反本 ADR D2）。
   - **Q5 s3 archive 触发器定义**：change C 启动条件 = s3 T-s3-1 + T-s3-2 + **T-s3-3** 三个 commit 落地（`TmuHandlerInterface` 接口扩展在 T-s3-3 完成，change C 端口化必须以此为锚点），不等 T-s3-4/5（发布动作，不改接口）。判据：3 commit hash + `command_processor_mvp.hh`/`tmu_dispatch_processor_mvp.hh`/`pm4_decoder_mvp.hh` 在 T-s3-3 后无 diff + 对应测试 PASS。
   - **Q6 shell 执行模型裁决**：每张 `DGpuBoard` 在 `cpptlm_emulator_create_by_id()` 时启动独立 `std::thread`，持有独立 `EventQueue*`（`event_queue.hh` 非线程安全，故每卡独立 EQ 是唯一正确选择）。多卡 = 多线程并行，每张卡独立仿真时间。SimModule::depth_ 已为 thread_local 框架层支持多线程。**禁止** host 线程直接 `eq_->schedule()`，必须经注入队列（`mutex+deque`）；sim→host callback 必须非阻塞并禁止反向调用 ABI（防死锁）；`backdoor_read` 同样走注入队列由 sim 线程 quantum 边界服务（呼应 Q3 一致性要求）；`StatsManager` 单例多卡注册需 `stats_path` 带 `device_id` 前缀；quantum 循环 `while(!stop) { eq_->run(quantum); drain_injection_queue(); }`，quantum 默认 1000 cycles（JSON 可配）；destroy 顺序 `stop_→join→destruct SOC`（防悬垂）。
+- **2027-02-09**: ✅ **Accepted**(由 Proposed 升级,理由:Phase 4-8 整合交付完成 + dGPU SoC v1.0 战略修订)
+  **证据清单**:
+  - **git commits**: `4e9564e`(SR-IOV VF Pool)+ `2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool`(Phase 4)+ `e29defd..429327d`(Phase 8 整合交付)
+  - **测试**: `test/test_pcie_endpoint_ip_full_e2e.cc` 3 TEST_CASE(config/bar/rc)全链路 PASS
+  - **配置**: `examples/dgpu_soc_with_pcie_ip.json` validate_topology PASS
+  - **真实 17 ports 实施**: `include/tlm/pcie/pcie_endpoint_ip.hh` L50-53(`req_in[NUM_PORTS]` + `resp_out[NUM_PORTS]`,NUM_PORTS=17)
+- **2027-02-09**: D2/D3/D6 状态补充(非决策变更,per Metis 评审去重):
+  - **D2**: PcieEndpointTLM(4 端口冻结)已 `[[deprecated]]` 标注(`429327d`,per `include/tlm/gpu/pcie_endpoint_tlm.h`);17 ports PcieEndpointIP 替代决策 → [`ADR-SOC-11-pcie-endpoint-ip.md`](./ADR-SOC-11-pcie-endpoint-ip.md)
+  - **D3**: SdmaEngineTLM 仍归属 SOC(不变,per `include/tlm/gpu/sdma_engine_tlm.hh`)
+  - **D6**: s2 单体迁移路径 → 补充 Phase 8 完成状态(所有 s2 → PcieEndpointIP + SdmaEngineTLM 迁移完成);23 ABI 头冻结 + 仓内 19/19 函数实现 + 4 回调 typedef 契约(per `src/abi/cpptlm_emulator.cc` 433 行);完整 23 函数闭环需 UsrLinuxEmu ADR-089 v0.5 节奏
+- **2027-02-09**: Oracle 3 项记录(Q3/Q5/Q6)保留作 Status Update 段落(正文 D1-D7 不变,per ADR 不可变原则)
+- **2027-02-09**: 修订状态:**正文 D1-D7 不变**;仅 Status Update 段追加

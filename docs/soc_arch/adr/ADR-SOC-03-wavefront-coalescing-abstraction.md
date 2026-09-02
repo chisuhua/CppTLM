@@ -62,3 +62,11 @@ class ComputeUnitTLM {
 - 复述: [`roadmap.md`](../../../roadmap.md) L65 D3 行
 - 微架构: [`docs/soc_arch/modules/gpu-compute_unit.md`](../modules/gpu-compute_unit.md)
 - 关联: [ADR-SOC-02 CU 粒度](./ADR-SOC-02-cu-granularity.md)（CU 黑盒与 wavefront 抽象是组合策略）
+
+---
+
+## Status Update
+
+- **2027-02-09**: ⚠️ **Superseded by ADR-SOC-06 D2** (wavefront 抽象 → WavefrontState 镜像 PC/cycle 观测)
+  **理由**:v0.5 真实白盒需要 PC/cycle 观测,wavefront 抽象不再成立;`coalescing_factor` 作为 TLA 端配置参数保留用于 L2/NoC 性能建模(不影响 warp 级真实模拟,per `docs/soc_arch/specs/apu-soc-design.md` D3)。
+- **2027-02-09**: v1.0 战略下 SM/CU 内核保持双 vendor 路径 + 共享蓝图模式(per [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D1 + [`docs/soc_arch/architecture/05-sm-compute-unit.md`](../architecture/05-sm-compute-unit.md))

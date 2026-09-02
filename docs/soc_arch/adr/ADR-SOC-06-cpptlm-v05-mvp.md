@@ -502,5 +502,22 @@ host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit
 ---
 
 **维护**: CppTLM Team (Sisyphus)
-**下次 review**: Phase D 完成(submodule add 落地后)→ 升 ✅ Accepted
+**下次 review**: ✅ Accepted(2027-02-09 升级,per Phase 8 整合交付完成 + dGPU SoC v1.0 战略文档修订规划)
 **Status Update 触发**: ~~PTX-EMU `stepOneWarpInstruction` API 拒收~~(DP4=C 消除);UsrLinuxEmu IOCTL 0x28 真实接口与 stub 偏差 >15%;MVP 6 周节点延迟;submodule commit hash 漂移
+
+---
+
+## Status Update
+
+- **2027-02-09**: ✅ **Accepted**(由 Proposed 升级,理由:v0.5 MVP 已落地 + Phase 8 整合交付完成 + dGPU SoC v1.0 战略修订)
+  **证据清单**:
+  - **git commits**: `6ebbd7d`(Phase 4 critical fix)+ `710c734..b6e5be1`(Phase 5 AXI Stream Adapter)+ `8b92bfb..fe4d745`(Phase 6 AXI4Mapper)+ `ce50b05..45763fa`(Phase 7 Host Bypass + RC)+ `e29defd..429327d`(Phase 8 整合交付)
+  - **测试**: `test_dgpu_board_v1_mvp_from_config.cc` 6 SECTION(validate_topology / instantiateAll / H2 / launch / host_notify / 负面路径)PASS
+  - **配置**: `configs/dgpu_soc_with_pcie_ip.json`(Phase 8 完整 dGPU SoC + PCIe EP 配置)
+  - **CudaCoreAdapter 实施**:`include/tlm/gpu/cuda_core_adapter_mvp.hh`(SM 微架构探索器 + 深度集成 PTX-EMU internal,per Phase F-H 反转)
+  - **PtxEmuSubmoduleMVP 实施**:`include/tlm/gpu/ptx_emu_submodule_mvp.hh`(PTX functional facade + 编译防火墙)
+- **2027-02-09**: D5 状态补充(非决策变更):CP→TMU→SQ→Cuda Core 链路**当前**接入 PcieEndpointIP(17 ports,per `include/tlm/pcie/pcie_endpoint_ip.hh:50-53`)而非 PcieEndpointTLM(4 端口,已 `[[deprecated]]` 标注)。决策性内容详见 [`ADR-SOC-11-pcie-endpoint-ip.md`](./ADR-SOC-11-pcie-endpoint-ip.md)
+- **2027-02-09**: 双 vendor 战略决策 → [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md)(CU 蓝图模式共享 + nv_mode/amd_mode config 切换)
+- **2027-02-09**: ModuleFactory 拓扑决策 → [`ADR-SOC-10-module-factory-topology.md`](./ADR-SOC-10-module-factory-topology.md)(9 类 SimModule P2-P5 容器 + ApuSoC 顶层)
+- **2027-02-09**: **D8/D9 不再追加**(避免与既有 D8 接口稳定性编号冲突,per Metis 评审 X1);ModuleFactory 拓扑与双 vendor 战略决策落入新 ADR-SOC-10 / ADR-SOC-09
+- **2027-02-09**: 修订状态:**正文 D1-D8 不变**(per ADR 不可变原则);仅 Status Update 段追加
