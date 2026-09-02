@@ -33,6 +33,13 @@ target_link_libraries(example_simmodule_nested PRIVATE cpptlm_core)
 target_include_directories(example_simmodule_nested PRIVATE ${EXAMPLES_INCLUDE_DIRS})
 
 # ==============================================================================
+# Phase 7: PCIe Full E2E Demo (HostBypassTLM + PcieRootComplexTLM <-> PcieEndpointIP)
+# ==============================================================================
+add_executable(demo_pcie_full_e2e demo_pcie_full_e2e.cc)
+target_link_libraries(demo_pcie_full_e2e PRIVATE cpptlm_core)
+target_include_directories(demo_pcie_full_e2e PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+
+# ==============================================================================
 # T-W3-2 (T-ae-4): dlopen usage template for UsrLinuxEmu integration
 # (per ADR-088 §D5 + ADR-SOC-07 D5). 演示 dlopen libcpptlm_emulator.so +
 # dlsym 19 forward ABI + 调通关键路径 (get_version/create_by_id/mmio_/destroy).
@@ -64,7 +71,8 @@ if(CPPTLM_WITH_PTX_EMU)
     foreach(example
             example_basic_transaction
             example_error_handling
-            example_simmodule_nested)
+            example_simmodule_nested
+            demo_pcie_full_e2e)
         if(TARGET ${example})
             target_link_libraries(${example} PRIVATE ${PTXEMU_EXAMPLE_LIBS})
         endif()
