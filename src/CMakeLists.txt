@@ -90,6 +90,8 @@ set(CORE_SOURCES
     framework/axi4_mapper.cc
     # pcie-ip-microarch Phase 7: HostBypassTLM (T-P7-1)
     tlm/pcie/host_bypass_tlm.cc
+    # pcie-ip-microarch Phase 7: PcieRootComplexTLM (T-P7-3)
+    tlm/pcie/pcie_root_complex_tlm.cc
 )
 
 # ==============================================================================
