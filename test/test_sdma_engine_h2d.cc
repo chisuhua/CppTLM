@@ -230,6 +230,113 @@ TEST_CASE("SdmaEngine H2D: done_out status=0 implies VRAM data visibility (R3-S1
     REQUIRE(std::memcmp(&vram_mem[0x1000], kPayload, sizeof(kPayload)) == 0);
 }
 
+TEST_CASE("SdmaEngine H2D: PTXIR-like 4 KiB image copies host→VRAM end-to-end",
+          "[sdma][h2d][ptxir]") {
+    // per tasks.md T-sd-3 PTXIR 图像搬运回归：决定性 4096 字节 payload（header 8B + body 4088B）
+    //   1) header 可识别 magic "PTX0" + 长度字段（自洽，避免依赖外部 PTX-EMU magic）
+    //   2) body 用确定性 PRNG 填充（避免字节全 0/全 1 的退化样本）
+    //   3) tag=0xC0DE, host_iova=0, vram_offset=0x10000（避开 0x1000 等既有测试基址）
+    //   4) 经 fake translate_cb identity mapping + backdoor memcpy 端到端搬运
+    //   5) 断言：completion is_ok / tag matches / completed_count++ / error_count 不增
+    //   6) 逐字节对比 VRAM 与 host 副本（4096B 全覆盖）
+    //
+    // 注：本测试不依赖 CPPTLM_WITH_PTX_EMU=ON，可在 OFF/ON 双构建下编译运行；
+    //     仅覆盖 PTXIR 图像搬运通路，不涉及 SM 执行 / kernel launch。
+    EventQueue eq;
+    SdmaEngineTLM sdma("sdma", &eq);
+    sdma.init();
+    sdma.set_translate_cb(fake_translate_cb); // identity mapping (PA=IOVA)
+
+    // backdoor：host (16 KiB) + VRAM (1 MiB)，容纳 4096B 负载 + 安全 margin
+    constexpr uint64_t kPayloadSize  = 4096;
+    constexpr uint64_t kVramOffset   = 0x10000;
+    constexpr uint64_t kHostIova     = 0;
+    constexpr uint32_t kTag          = 0xC0DE;
+
+    std::vector<uint8_t> host_mem(static_cast<size_t>(kPayloadSize) * 4, 0);
+    std::vector<uint8_t> vram_mem(0x100000, 0);
+    sdma.set_host_backdoor(host_mem.data(), host_mem.size());
+    sdma.set_vram_backdoor(vram_mem.data(), vram_mem.size());
+
+    REQUIRE(sdma.has_host_backdoor() == true);
+    REQUIRE(sdma.has_vram_backdoor() == true);
+
+    // 构造确定性 PTXIR-like payload：magic + 长度头 + PRNG body
+    //   头 8B: 'P','T','X','0' (magic) | version=u16 (LE) | reserved=u16 (LE)
+    //   体 4088B: xorshift64 PRNG 派生 (seed=0x9E3779B97F4A7C15)
+    host_mem[0] = 'P'; host_mem[1] = 'T'; host_mem[2] = 'X'; host_mem[3] = '0';
+    host_mem[4] = 0x01; host_mem[5] = 0x00; // version=1 (LE)
+    host_mem[6] = 0x00; host_mem[7] = 0x00; // reserved
+
+    uint64_t rng_state = 0x9E3779B97F4A7C15ull; // golden ratio 常量 seed
+    for (size_t i = 8; i < kPayloadSize; ++i) {
+        // xorshift64 — 确定性、可移植、无 <random> 依赖
+        rng_state ^= rng_state << 13;
+        rng_state ^= rng_state >> 7;
+        rng_state ^= rng_state << 17;
+        host_mem[i] = static_cast<uint8_t>(rng_state & 0xFFu);
+    }
+
+    // snapshot：host payload 应在搬运前与构造时一致
+    REQUIRE(host_mem[0] == 'P');
+    REQUIRE(host_mem[3] == '0');
+    REQUIRE(vram_mem[kVramOffset] == 0u);
+    REQUIRE(vram_mem[kVramOffset + kPayloadSize - 1] == 0u);
+
+    // 提交 H2D descriptor：host_iova=0 → vram_offset=0x10000, size=4096, tag=0xC0DE
+    DmaDescriptor desc(DmaDescriptor::Dir::H2D,
+                       /*host_iova=*/kHostIova,
+                       /*vram_offset=*/kVramOffset,
+                       /*size=*/static_cast<uint32_t>(kPayloadSize),
+                       /*tag=*/kTag);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() =
+        SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
+
+    // 执行 tick(): SdmaEngineTLM 应走 backdoor memcpy 路径搬运 host→VRAM
+    sdma.tick();
+
+    // 1) 描述符完成元数据（per spec.md Scenario "Completion implies VRAM write visibility"）
+    const auto& done_tlp = sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].data();
+    CompletionBundle done_cb = SdmaEngineTLM::from_pcie_tlp_completion(done_tlp);
+    REQUIRE(done_cb.is_ok() == true);                  // status=OK
+    REQUIRE(done_cb.tag.read() == kTag);               // tag 回传匹配
+    REQUIRE(sdma.completed_count() == 1u);             // 单次完成
+    REQUIRE(sdma.error_count() == 0u);                 // 零错误
+
+    // 2) host_out: MEM_READ TLP 指向 translate 后的 PA (= IOVA, identity mapping)
+    const auto& host_tlp = sdma.resp_out[SdmaEngineTLM::PORT_HOST_OUT].data();
+    REQUIRE(host_tlp.kind.read() == PcieTlpBundle::MEM_READ);
+    REQUIRE(host_tlp.offset.read() == kHostIova);
+    REQUIRE(host_tlp.size.read() == static_cast<uint32_t>(kPayloadSize));
+    REQUIRE(host_tlp.trans_id.read() == kTag);
+
+    // 3) mem_out: MEM_WRITE TLP 指向 VRAM (BAR1 aperture)
+    const auto& mem_tlp = sdma.resp_out[SdmaEngineTLM::PORT_MEM_OUT].data();
+    REQUIRE(mem_tlp.kind.read() == PcieTlpBundle::MEM_WRITE);
+    REQUIRE(mem_tlp.bar_index.read() == 1u);
+    REQUIRE(mem_tlp.offset.read() == kVramOffset);
+    REQUIRE(mem_tlp.size.read() == static_cast<uint32_t>(kPayloadSize));
+
+    // 4) done_out kind 应为 DMA_DONE
+    REQUIRE(done_tlp.kind.read() == SdmaEngineTLM::KIND_DMA_DONE);
+
+    // 5) 端到端：VRAM[kVramOffset..kVramOffset+kPayloadSize) 字节比对 host
+    //    (per spec.md R3-S1 "a subsequent VRAM read MUST return the data written by this descriptor")
+    REQUIRE(std::memcmp(&vram_mem[kVramOffset],
+                        &host_mem[kHostIova],
+                        static_cast<size_t>(kPayloadSize)) == 0);
+
+    // 6) 额外头 4B magic + body 首尾采样校验（避免 PRNG 巧合全 0/全 1 通过 memcmp）
+    REQUIRE(vram_mem[kVramOffset + 0] == 'P');
+    REQUIRE(vram_mem[kVramOffset + 1] == 'T');
+    REQUIRE(vram_mem[kVramOffset + 2] == 'X');
+    REQUIRE(vram_mem[kVramOffset + 3] == '0');
+    REQUIRE(vram_mem[kVramOffset + 8] == host_mem[8]);
+    REQUIRE(vram_mem[kVramOffset + kPayloadSize - 1] ==
+            host_mem[kHostIova + kPayloadSize - 1]);
+}
+
 TEST_CASE("SdmaEngine H2D: backdoor memcpy out-of-range silently degrades to TLP-only",
           "[sdma][h2d][data-path][edge]") {
     // backdoor ptr 已注入但 host_iova + size 越界 → 不 panic, 仍 emit TLP
