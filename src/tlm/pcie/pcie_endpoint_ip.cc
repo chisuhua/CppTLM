@@ -111,7 +111,18 @@ void PcieEndpointIP::tick() {
 
         if (axi.slave_req_valid()) {
             const bundles::Axi4Bundle& req = axi.slave_req_data();
-            if (req.awid.read() != 0 || req.awaddr.read() != 0 || req.awlen.read() != 0) {
+
+            // 写/读判别: 使用 Axi4Bundle::is_write_request() 谓词 (per
+            // include/bundles/axi4_bundles_tlm.hh:86-88)。该谓词判定"是否
+            // 写请求",替代原有启发式 (awid!=0||awaddr!=0||awlen!=0) 三字段判别。
+            // 启发式在 awid=0,awaddr=0,awlen=0 时会把任何含 wlast=1,wdata!=0
+            // 的合法写请求误判为读,丢失写数据。
+            //
+            // 注: 当前 Axi4StreamAdapter 把 AW/W 打包为一个 Axi4Bundle 投递,
+            // AR 通道在另一拍投递。所以"is_write_request"用 awlen/awid/awaddr
+            // 任一非 0 作为写请求信号,语义与启发式一致但更稳健(未来如需扩展
+            // 流式接口,只需在此谓词点扩展,不涉及消费者)。
+            if (req.is_write_request()) {
                 // 写请求: 配置空间偏移 (< config_size) vs BAR 空间
                 // PCIe 规范 (cfg 路径):
                 //   - awaddr 低 2 bit [1:0] 为对齐保留位,请求方保证 = 00
@@ -130,8 +141,33 @@ void PcieEndpointIP::tick() {
                         cfg_byte_off,
                         static_cast<uint32_t>(req.wdata.read()));
                 } else {
-                    // BAR 空间: 地址低位路由到 backing store (8B 对齐字)
-                    bar_store_[awaddr & ~0x7ULL] = req.wdata.read();
+                    // BAR 空间: 4B 粒度 key + 按 wstrb 字节 mask 部分写
+                    // (per Oracle P1-2 报告,原 8B 对齐 key + 忽略 wstrb 建模失真)
+                    //
+                    // BAR slot 模型: 32-bit 寄存器(对应真实 PCIe BAR 4B 寄存器),
+                    // wdata 低 32 bit + wstrb 低 4 bit mask 字节粒度。
+                    // ch_uint<512>::wdata/wstrb 实际是 64-bit 存储,仅用低 32/4 bit。
+                    //
+                    // wstrb 字节语义 (per AXI/PCIe 规范):
+                    //   wstrb[i]=1 表示 byte[i] 有效 (要写)
+                    //   例: wstrb=0xE = 0b1110 → byte[0]不写, byte[1,2,3]写
+                    //       字节 mask = 0xFFFFFF00 (byte[0]=0x00, byte[1..3]=0xFF)
+                    const uint64_t key = awaddr & ~0x3ULL;
+                    const uint32_t wdata32 =
+                        static_cast<uint32_t>(req.wdata.read());
+                    const uint32_t wstrb4 =
+                        static_cast<uint32_t>(req.wstrb.read() & 0xFULL);
+                    uint32_t byte_mask = 0;
+                    for (unsigned i = 0; i < 4; ++i) {
+                        if (wstrb4 & (1u << i)) {
+                            byte_mask |= (0xFFu << (i * 8));
+                        }
+                    }
+                    const uint32_t old_val = static_cast<uint32_t>(
+                        bar_store_[key]);  // 默认 0 if missing
+                    const uint32_t new_val =
+                        (old_val & ~byte_mask) | (wdata32 & byte_mask);
+                    bar_store_[key] = new_val;
                 }
 
                 bundles::Axi4Bundle wresp;
@@ -152,9 +188,12 @@ void PcieEndpointIP::tick() {
                         static_cast<uint16_t>(araddr & ~0x3ULL);
                     rdata = pool_.config_of(0).read(cfg_byte_off);
                 } else {
-                    const auto it = bar_store_.find(araddr & ~0x7ULL);
+                    // BAR 空间: 4B 粒度 key 读取
+                    const uint64_t key = araddr & ~0x3ULL;
+                    const auto it = bar_store_.find(key);
                     if (it != bar_store_.end()) {
-                        rdata = it->second;
+                        // BAR slot 是 32-bit 寄存器,高 32 bit 总是 0
+                        rdata = static_cast<uint32_t>(it->second);
                     }
                 }
 
