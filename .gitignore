@@ -3,9 +3,9 @@
 # 把整个 build/ 目录 (~500 MB) 加入 git,迫使清理 commit。本次强化 .gitignore
 # 防止再次发生。CMake 输出永远是 noise,不在 review 范围,不应进 git。
 # CMake build (用 / 前缀只匹配仓库根的 build/ 目录,不影响 scripts/build/)
-build/        # 仓库根 build/ 目录 (CMake 默认输出)
-build-*/      # 任意 build-<variant> 形式 (build-asan/build-debug/build-rtl 等)
-build_*/      # 任意 build_<variant> 形式 (build_asan/build_baseline/build_rtl 等)
+build/
+build-*/
+build_*/
 cmake-build*/
 cmake-build-*/
 *.o
