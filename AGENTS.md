@@ -84,6 +84,8 @@ src/                    # .cc 实现 + main.cpp
   utils/                 # dynamic_loader 实现
   main.cpp               # 主仿真入口
 
+test.sh                 # 统一构建与测试入口（auto/off/ptx-emu/both）
+
 test/                   # Catch2 v3.7.0 测试套件 (≥100 个 test_*.cc)
   catch_amalgamated.hpp  # Catch2 预编译 (非 FetchContent)
   CMakeLists.txt         # 测试构建配置 (file GLOB test_*.cc — AGENTS.md 例外)
@@ -207,42 +209,107 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 
 ## COMMANDS
 
+### 统一构建与测试入口
+
 ```bash
-# 配置 + 编译（默认 OFF 路径）
+# 默认模式（auto-detect OFF/PTX-EMU，执行完整回归）
+./test.sh
+
+# 显式模式
+./test.sh --mode off                         # OFF 路径：Python + Catch2 + TLM E2E + 可执行文件
+./test.sh --mode ptx-emu                     # PTX-EMU 路径：12 项核心检查 + CuTe 链接检查 + ON 回归
+./test.sh --mode both                        # 依次运行 OFF + PTX-EMU 全量
+
+# 快速验证（跳过 E2E 和部分核心测试）
+./test.sh --quick                            # OFF: Python + phase6 Catch2; PTX-EMU: 核心 6 项
+./test.sh --mode ptx-emu --quick             # PTX-EMU 快速子集
+
+# 仅构建/仅测试
+./test.sh --build-only                       # 配置并构建，不测试
+./test.sh --test-only                        # 仅测试（需已有构建产物）
+./test.sh --mode ptx-emu --test-only         # 仅 PTX-EMU 测试
+
+# 专项测试
+./test.sh --python-only                      # 仅 Python（不要求构建产物）
+./test.sh --e2e                              # 仅 TLM CLI E2E
+./test.sh --ctest                            # 仅 ctest（替代旧 scripts/test/test.sh）
+
+# 环境变量控制
+BUILD_DIR=build-on ./test.sh --test-only    # 指定构建目录
+BUILD_TYPE=Debug ./test.sh --mode off        # 指定构建类型
+```
+
+**PTX-EMU 集成模式范围**：严格限于 PTXIR image H2D DMA；**不执行** kernel/CuTe 程序。
+
+### 执行测试回归命令
+
+```bash
+# 完整回归（推荐 CI 和本地验证）
+./test.sh --mode both                        # OFF + PTX-EMU 全量（~5-10 分钟）
+
+# OFF 路径完整回归
+./test.sh --mode off                         # Python + Catch2 全量 + TLM E2E + 可执行文件
+
+# PTX-EMU 路径完整回归
+./test.sh --mode ptx-emu                     # 12 项核心 + Catch2 ON 全量 + TLM/SoC 回归
+
+# 快速回归（本地开发）
+./test.sh --quick                            # OFF: Python + phase6; PTX-EMU: 6 项核心
+
+# 单独 Catch2 测试（按标签）
+./build/bin/cpptlm_tests "[pcie]"            # 全部 PCIe EP 测试 (1500+ assertions)
+./build/bin/cpptlm_tests "[axi]"             # 全部 AXI 测试
+./build/bin/cpptlm_tests "[phase6]"          # Phase 6 端到端
+./build/bin/cpptlm_tests "[sdma][h2d]"       # SDMA H2D 测试（含新 PTXIR 回归）
+./build-on/bin/cpptlm_tests "[sdma][h2d][ptxir]"  # 仅 PTXIR H2D 测试
+
+# CTest（CMake 注册的测试集）
+ctest --test-dir build --output-on-failure -j4
+ctest --test-dir build-on --output-on-failure -j4
+
+# 专项脚本（高级用法，优先使用根 test.sh）
+BUILD_DIR=build ./scripts/test/test_off.sh --quick
+BUILD_DIR=build-on ./scripts/test/test_ptx_emu.sh --quick
+```
+
+### 直接构建命令
+
+```bash
+# OFF 路径（默认）
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# PTX-EMU 集成模式（dGPU/APU 长期开发路径）— ./scripts/build/build_ptx_emu.sh
-./scripts/build/build_ptx_emu.sh            # 编译 build-on/ (CPPTLM_WITH_PTX_EMU=ON)
-BUILD_DIR=build-on ./scripts/test/run_all_tests.sh --quick  # 跑 PTX-EMU 集成测试
+# PTX-EMU 路径（需初始化 submodule）
+git submodule update --init --recursive external/PTX-EMU
+cmake -S . -B build-on -DCMAKE_BUILD_TYPE=Release -DCPPTLM_WITH_PTX_EMU=ON
+cmake --build build-on -j$(nproc)
+```
 
-# C++ 测试 (build/ 默认 OFF 路径)
-./build/bin/cpptlm_tests                    # 全部
-./build-on/bin/cpptlm_tests                 # PTX-EMU ON 路径
-./build/bin/cpptlm_tests "[pcie]"           # 全部 PCIe EP 测试 (1500+ assertions)
-./build/bin/cpptlm_tests "[axi]"            # 全部 AXI 测试
-./build/bin/cpptlm_tests "[phase6]"         # Phase 6 端到端
-ctest --test-dir build --output-on-failure -j4
+### SoC 端到端 demo
 
-# SoC 端到端 demo
+```bash
 python3 examples/demo_e2e_soc.py             # 顶层 SoC Python demo
 python3 examples/demo_pcie_full_e2e.py       # PCIe EP ↔ Host demo
+```
 
-# 完整套件 (C++ + Python + E2E)
-./scripts/test/run_all_tests.sh --quick
-./scripts/test/ci_e2e_test.sh
+### 格式化与文档检查
 
-# 格式化 (脚本在 scripts/build/, 不在 scripts/ 根目录!)
+```bash
+# 格式化（脚本在 scripts/build/，不在 scripts/ 根目录）
 ./scripts/build/format.sh --check
 ./scripts/build/format.sh
 
-# 文档路径同步 (pre-commit 自动跑)
+# 文档路径同步（pre-commit 自动跑）
 ./scripts/test/docs_sync_check.sh --strict
 cat docs/docs_audit_report.md
 
-# 拓扑验证 (CMake target)
+# 拓扑验证（CMake target）
 cmake --build build --target validate_topology
+```
 
+### 调试与工作流
+
+```bash
 # 调试 test fail → auto-loads .opencode/skills/cpptlm-debug/SKILL.md
 
 # OpenSpec 工作流

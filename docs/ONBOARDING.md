@@ -15,7 +15,7 @@
 | 测试框架 | Catch2 v3.7.0(单二进制,预编译 amalgamated) |
 | 仿真协议 | TLM 2.0 + 内部 ChStream 协议(Bundle→StreamAdapter→Module) |
 | 可视化 | Dash/Plotly 后端 + Svelte 拓扑编辑器前端 |
-| 持续集成 | GitHub Actions(Release/Debug × SystemC ON/OFF 矩阵) |
+| 持续集成 | GitHub Actions(Release/Debug × OFF 矩阵，另有 PTX-EMU Release job) |
 | 代码量级 | 285 文件节点,4 个可执行入口,77 个 C++ 测试,15 个 Python 测试 |
 
 **关键设计决策**:
@@ -301,9 +301,10 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 |------|------|------|
 | 构建 | `scripts/build/build.sh` | 主构建脚本（ccache 自动检测） |
 | 构建 | `scripts/build/format.sh` | clang-format 格式检查 |
-| 测试 | `scripts/test/test.sh` | 单次测试入口 |
-| 测试 | `scripts/test/run_all_tests.sh` | 全量测试（支持 `--quick`） |
-| 测试 | `scripts/test/ci_e2e_test.sh` | CI 端到端验证 |
+| 测试 | `test.sh` | 统一构建与测试入口（`--mode auto|off|ptx-emu|both`） |
+| 测试 | `scripts/test/test_off.sh` | OFF 路径回归 |
+| 测试 | `scripts/test/test_ptx_emu.sh` | PTX-EMU 路径（仅 PTXIR image H2D DMA） |
+| 测试 | `scripts/test/run_all_tests.sh` | 兼容包装入口 |
 | 流水线 | `scripts/pipeline/run_full_pipeline.sh` | 仿真 → 统计 → 可视化 |
 | 拓扑 | `scripts/topology/topology_validator.py` | 拓扑校验 |
 | 拓扑 | `scripts/topology/topology_generator.py` | 拓扑生成 |
@@ -372,7 +373,7 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 1. 读 `AGENTS.md` — 了解项目结构、约定、命令
 2. 读 `docs/architecture/01-hybrid-architecture-v2.1.md` — v2.1 架构主文档
 3. 跑通构建:`cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc)`
-4. 跑通测试:`cd build && ctest --output-on-failure`
+4. 跑通测试:`./test.sh --mode off`
 5. 浏览 `configs/mesh_2x2_tlm.json` — 看一个简单拓扑
 
 ### 第 2 天:C++ 核心
@@ -405,7 +406,11 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 
-# 运行测试
+# 运行测试（统一入口）
+./test.sh --mode off
+./test.sh --mode ptx-emu                    # 仅 PTXIR image H2D DMA，不执行 kernel/CuTe
+
+# 直接运行 Catch2
 ./build/bin/cpptlm_tests                    # 全部
 ./build/bin/cpptlm_tests "[chstream]"       # ChStream 集成
 ./build/bin/cpptlm_tests "[phase6]"         # 端到端集成
@@ -413,7 +418,7 @@ cmake --build build -j$(nproc)
 ctest --test-dir build --output-on-failure  # ctest 入口
 
 # 格式检查
-./scripts/format.sh --check
+./scripts/build/format.sh --check
 
 # Python 工具
 python -m cpptlm --help
