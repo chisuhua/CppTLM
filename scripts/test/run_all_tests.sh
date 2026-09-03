@@ -1,158 +1,80 @@
 #!/bin/bash
-set -e
-
-BUILD_DIR="${BUILD_DIR:-build}"
-TEST_BIN="${BUILD_DIR}/bin/cpptlm_tests"
-PYTEST="python3 -m pytest"
-EXECUTABLES=(
-    "cpptlm_sim"
-"stats_demo"
-    "traffic_gen_demo"
-)
+# CppTLM 统一测试编排（迁移后的向后兼容薄包装）
+#
+# 说明:
+#   迁移后各模式测试已拆分到:
+#     - scripts/test/test_off.sh      OFF 路径（Python + Catch2 + TLM E2E + 可执行文件）
+#     - scripts/test/test_ptx_emu.sh  PTX-EMU 路径（H2D-only PTXIR image DMA 目录 PTX-EMU-001..012）
+#   PTX-EMU 功能验证**不以 ctest -E cute 为凭**（ctest 只反映 CTest 注册的测试集，
+#   不能证明 PTX-EMU 库/ABI/ptxir 往返的工作性），因此本包装不再将 --ctest 视为
+#   PTX-EMU 验证入口；PTX-EMU 验证请直接运行 scripts/test/test_ptx_emu.sh。
+#
+# 向后兼容转发（受支持的 legacy 参数转发到根 test.sh）:
+#   --quick        → root test.sh --quick
+#   --python-only  → root test.sh --python-only
+#   --e2e          → root test.sh --e2e
+#   --ctest        → root test.sh --ctest
+#   --build-dir D  → BUILD_DIR=D root test.sh（等效 --mode off --test-only）
+#   --ptx-emu      → BUILD_DIR=build-on（默认）scripts/test/test_ptx_emu.sh
+#   --off          → BUILD_DIR=build（默认）scripts/test/test_off.sh
+#   其他参数/无参数 → root test.sh（默认模式回归），未知参数报错
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+ROOT_TEST="$ROOT_DIR/test.sh"
 
-echo "=========================================="
-echo "CppTLM Full Test Suite"
-echo "=========================================="
-echo ""
+usage() {
+    cat <<'EOF'
+用法: ./scripts/test/run_all_tests.sh [选项]
 
-if [[ "$1" == "--python-only" ]]; then
-    echo "[Python-only mode] Pure Python tests (no build required)"
-    echo ""
-    cd "$ROOT_DIR"
-    $PYTEST cpptlm_config/tests/ test/python/ -v --tb=short
-    echo ""
-    echo "[SUCCESS] All Python tests passed!"
-    exit 0
-fi
+选项（向后兼容转发）:
+  --quick                快速模式（转发 root test.sh --quick）
+  --python-only          仅 Python 测试
+  --e2e                  仅 E2E
+  --ctest                运行 ctest（root test.sh --ctest）
+  --off                  直接运行 OFF 路径 test_off.sh（默认 build）
+  --ptx-emu              直接运行 PTX-EMU 路径 test_ptx_emu.sh（默认 build-on）
+  --build-dir <dir>      指定构建目录
+  --help                 显示帮助
 
-if [[ "$1" == "--quick" ]]; then
-    echo "[Quick mode] Python tests + key C++ tests"
-    echo ""
-    cd "$ROOT_DIR"
-    $PYTEST cpptlm_config/tests/ test/python/ --tb=short || exit 1
-    if [[ -f "$TEST_BIN" ]]; then
-        echo ""
-        echo "--- Key C++ tests (critical path) ---"
-        timeout 60 "$TEST_BIN" --order rand --rng-seed 0 2>&1 | tail -5 || true
-    else
-        echo "[SKIP] cpptlm_tests not built"
-    fi
-    echo ""
-    echo "[SUCCESS] Quick mode complete"
-    exit 0
-fi
+说明:
+  legacy 脚本已迁移；PTX-EMU 功能验证请使用 scripts/test/test_ptx_emu.sh
+  （ctest -E cute 不是 PTX-EMU 功能证明）。
+EOF
+}
 
-echo "=========================================="
-echo "Python Tests (cpptlm_config + test/python)"
-echo "=========================================="
-cd "$ROOT_DIR"
-FAILED_PY=0
-$PYTEST cpptlm_config/tests/ test/python/ -v --tb=short || ((FAILED_PY++))
-echo ""
-
-echo "=========================================="
-echo "C++ Test case count (cpptlm_tests)"
-echo "=========================================="
-if [[ ! -f "$TEST_BIN" ]]; then
-    echo ""
-    echo "[ERROR] cpptlm_tests not found in ${BUILD_DIR}/bin/"
-    echo ""
-    echo "  Full mode requires C++ tests to be built."
-    echo "  Build with: cmake --build build"
-    echo "  Or run Python-only: $0 --python-only"
-    echo ""
-    echo "[FAIL] C++ not built - cannot run full test suite"
-    exit 1
-fi
-
-"$TEST_BIN" --list-tests | wc -l
-echo ""
-echo "[Full mode] Running all C++ test cases"
-"$TEST_BIN" 2>&1 | tee "${BUILD_DIR}/test_output.txt"
-
-echo ""
-echo "=========================================="
-echo "Test Results Summary (cpptlm_tests)"
-echo "=========================================="
-grep -E "(test cases:|assertions:)" "${BUILD_DIR}/test_output.txt" | tail -2
-
-echo ""
-echo "=========================================="
-echo "E2E Test: cpptlm_sim with all TLM configs"
-echo "=========================================="
-FAILED_E2E=0
-if [[ -f "${BUILD_DIR}/bin/cpptlm_sim" ]]; then
-    for cfg in \
-        "${ROOT_DIR}/configs/"*_tlm.json \
-        "${ROOT_DIR}/configs/tlm_e2e_test.json" \
-        "${ROOT_DIR}/configs/cpu_tlm_test.json" \
-        "${ROOT_DIR}/configs/crossbar_test.json" \
-        "${ROOT_DIR}/configs/cache_chstream_test.json" \
-        "${ROOT_DIR}/configs/arbiter_tlm_test.json" \
-        "${ROOT_DIR}/configs/traffic_gen_tlm_test.json" \
-        "${ROOT_DIR}/configs/gpu_2gpc_2tpc_2cu.json" \
-        "${ROOT_DIR}/configs/apu_soc_v1.json"; do
-        if [[ ! -f "$cfg" ]]; then
-            continue
-        fi
-        cfg_name=$(basename "$cfg")
-        echo "--- $cfg_name ---"
-        timeout 30 "${BUILD_DIR}/bin/cpptlm_sim" "$cfg" --cycles 100 > /dev/null 2>&1 && echo "[PASS] $cfg_name" || {
-            echo "[FAIL] $cfg_name"
-            ((FAILED_E2E++))
-        }
-    done
-    if [[ $FAILED_E2E -gt 0 ]]; then
-        echo ""
-        echo "[FAIL] $FAILED_E2E configs failed E2E test"
-        exit 1
-    fi
-else
-    echo "[SKIP] cpptlm_sim not built"
-fi
-
-echo ""
-echo "=========================================="
-echo "Running other executables"
-echo "=========================================="
-FAILED_EXECS=0
-for exe in "${EXECUTABLES[@]}"; do
-    exe_path="${BUILD_DIR}/bin/${exe}"
-    if [[ ! -f "$exe_path" ]]; then
-        echo "[SKIP] $exe (not built)"
-        continue
-    fi
-
-    echo ""
-    echo "--- $exe ---"
-    if [[ "$exe" == "cpptlm_sim" ]]; then
-        timeout 5 "$exe_path" --help > /dev/null 2>&1 && echo "[PASS] $exe (help shown)" || echo "[INFO] $exe needs config file"
-    else
-        timeout 10 "$exe_path" 2>&1 && echo "[PASS] $exe" || {
-            echo "[FAIL] $exe exited with error"
-            ((FAILED_EXECS++))
-        }
-    fi
+MODE_ARG="run_all"
+BUILD_DIR_ARG=""
+MODE=""
+while (($#)); do
+    case "$1" in
+        --quick) MODE_ARG=quick; shift ;;
+        --python-only) MODE_ARG=python_only; shift ;;
+        --e2e) MODE_ARG=e2e; shift ;;
+        --ctest) MODE_ARG=ctest; shift ;;
+        --off) MODE_ARG=off; shift ;;
+        --ptx-emu) MODE_ARG=ptx_emu; shift ;;
+        --build-dir)
+            [[ $# -ge 2 ]] || { echo "ERROR: --build-dir 需要参数" >&2; exit 2; }
+            BUILD_DIR_ARG="$2"; shift 2 ;;
+        --help|-h) usage; exit 0 ;;
+        --) shift; break ;;
+        -*) echo "ERROR: 不支持的参数: $1" >&2; usage >&2; exit 2 ;;
+        *) MODE_ARG=root; shift ;;
+    esac
 done
 
-if [[ -f "${BUILD_DIR}/test_output.txt" ]]; then
-    if grep -q "failed" "${BUILD_DIR}/test_output.txt"; then
-        echo ""
-        echo "[WARNING] Some C++ tests failed:"
-        grep -B5 "FAILED" "${BUILD_DIR}/test_output.txt" | tail -10
-        exit 1
-    fi
+if [[ -n "$BUILD_DIR_ARG" ]]; then
+    export BUILD_DIR="$BUILD_DIR_ARG"
 fi
 
-if [[ $FAILED_PY -gt 0 ]] || [[ $FAILED_EXECS -gt 0 ]]; then
-    echo ""
-    echo "[FAIL] Some tests failed (Python: $FAILED_PY, Executables: $FAILED_EXECS)"
-    exit 1
-else
-    echo ""
-    echo "[SUCCESS] All tests passed!"
-    exit 0
-fi
+case "$MODE_ARG" in
+    quick) exec "$ROOT_TEST" --quick ;;
+    python_only) exec "$ROOT_TEST" --python-only ;;
+    e2e) exec "$ROOT_TEST" --e2e ;;
+    ctest) exec "$ROOT_TEST" --ctest ;;
+    off) exec "$SCRIPT_DIR/test_off.sh" ;;
+    ptx_emu) exec "$SCRIPT_DIR/test_ptx_emu.sh" ;;
+    *) exec "$ROOT_TEST" ;;
+esac

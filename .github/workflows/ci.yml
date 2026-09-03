@@ -62,13 +62,39 @@ jobs:
 
     - name: Run E2E simulation tests (Release only)
       if: matrix.build-type == 'Release'
-      run: ./scripts/test/ci_e2e_test.sh
+      run: ./test.sh --e2e
 
     - name: Run quick test suite (Python + key C++)
       if: matrix.build-type == 'Release'
       run: |
         python3 -m pip install --quiet networkx pydot pydantic pytest
-        ./scripts/test/run_all_tests.sh --quick
+        ./test.sh --quick
+
+  # PTX-EMU 集成验证：仅覆盖 PTXIR image H2D DMA；不执行 kernel/CuTe 程序。
+  ptx-emu-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    name: PTX-EMU (Release, PTXIR H2D DMA only)
+
+    steps:
+    - name: Checkout code with submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential ccache ninja-build
+
+    - name: Configure ccache
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ${{ runner.os }}-ptx-emu-release
+        max-size: 500M
+
+    - name: Build and run PTX-EMU H2D DMA tests
+      run: ./test.sh --mode ptx-emu
 
     - name: Upload test results
       if: always()
