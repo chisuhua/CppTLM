@@ -1,7 +1,8 @@
-# pcie-cfg-encoding-minor Spec — PCIe Config Space 地址编码修复
+# pcie-cfg-encoding-minor Specification
 
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-09-03-cpptlm-dgpu-pcie-cfg-encoding-minor. Update Purpose after archive.
+## Requirements
 ### Requirement: pci-config-address-decoding
 
 PCIe AXI 配置请求路径 SHALL 按 PCIe 配置空间地址编码解码 AXI 地址：低 2 bit 为对齐保留位，配置空间 byte offset 使用 `((awaddr >> 2) & 0x3f)`；BAR/MMIO 请求 SHALL 保持既有地址语义。
@@ -38,3 +39,4 @@ PCIe AXI 配置请求路径 SHALL 按 PCIe 配置空间地址编码解码 AXI �
 - **WHEN** 执行 `test_pcie_endpoint_ip_full_e2e_bar`
 - **THEN** BAR 请求仍按 BAR 地址语义处理并返回真实响应
 - **AND** 不引入既有 PCIe/AXI 回归失败
+
