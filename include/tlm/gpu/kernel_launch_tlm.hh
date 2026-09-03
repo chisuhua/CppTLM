@@ -1,12 +1,21 @@
 // include/tlm/gpu/kernel_launch_tlm.hh
-// KernelLaunchTLM: AQL 简化 dispatcher + D1-Full P1 PTX-EMU 驱动层（IPtxEmuDriver 窄接口）
+// KernelLaunchTLM: AQL 简化 dispatcher (按 ADR-SOC-04 黑盒决策)
+//
 // 功能:
 //   Phase 8.A: 按 interval 周期向 ComputeCluster 发 KernelDesc (简化版 AQL packet)
-//   P0 F12b-LD: 接 MemoryBridge, tick() 调 synchronize_stream(0) + 循环 exe_once
-//   Phase 4 Wave 1: 升级为 IPtxEmuDriver 窄接口, advance() 推进 PTX-EMU 执行
+//   tick() 仅递增 cycle_counter_ + 按 interval 触发 kernels_launched_++
+//
+// PTX-EMU 集成路径 (HSK-8 后):
+//   - 旧的 P0/P1 路径 (MemoryBridge + IPtxEmuDriver 窄接口) 已物理删除
+//     (commit 369cf71, HSK-6 deprecate)
+//   - 当前 PTX-EMU 集成走独立 facade: PtxEmuSubmoduleMVP + IPtxEmuDevice 公共 API
+//     (per include/tlm/gpu/ptx_emu_submodule_mvp.hh, HSK-8 Phase 2 Step 4)
+//   - 未来 Wave 2 接入: KernelLaunchTLM::tick() 应驱动 facade->exe_once()
+//     (per docs/soc_arch/architecture/11-cdna-real-isa-integration.md 阶段 B)
+//
 // 作者 CppTLM Team / 日期 2026-06-24 (Phase 8.A) + 2026-07-16 (P0 扩展) + 2026-07-18 (Phase 4 P1)
 // 参考: openspec/changes/2026-06-24-gpu-soc-phase8a-infra/design.md §3.4
-//       openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/design.md §8
+//       docs/soc_arch/architecture/11-cdna-real-isa-integration.md §11.2.2
 #ifndef TLM_GPU_KERNEL_LAUNCH_TLM_HH
 #define TLM_GPU_KERNEL_LAUNCH_TLM_HH
 
@@ -23,9 +32,9 @@ namespace tlm {
 /**
  * @brief Kernel launch 请求数据结构 (KernelLaunchTLM FIFO 入口)
  *
- * 字段与 CppTLMBridge::submit_kernel 参数对齐, kernel_name 为非所有权 char*
- * (PTX-EMU func2name 表长期存储, 无需拷贝)。func_ptr 当前 P0 未使用,
- * Phase 9+ PTX-EMU 真实集成时传入 kernel 函数指针。
+ * 字段与原 CppTLMBridge::submit_kernel 参数对齐, kernel_name 为非所有权 char*
+ * (PTX-EMU func2name 表长期存储, 无需拷贝)。func_ptr 当前未使用,
+ * 未来 Phase 9+ PTX-EMU 真实集成时 (per ADR-SOC-15) 传入 kernel 函数指针。
  */
 struct KernelLaunchRequest {
     uint64_t kernel_id = 0;
@@ -38,14 +47,14 @@ struct KernelLaunchRequest {
 };
 
 /**
- * @brief AQL 简化 dispatcher (按 ADR-SOC-04 黑盒决策) + D1-Full P1 PTX-EMU 驱动
+ * @brief AQL 简化 dispatcher (按 ADR-SOC-04 黑盒决策)
  *
  * Phase 8.A: tick() 按 interval 周期 launch kernel (简化 AQL model)
- * Phase 4 Wave 1: IPtxEmuDriver 窄接口模式:
- *   1. bridge_->synchronize_stream(0) 清空默认 stream 已完成 kernel
- *   2. driver_->advance(max, actual) 推进 PTX-EMU GPUContext::exe_once()
- *   3. AdvanceResult switch: Error 记录日志 + 终止, Executed/KernelComplete 检查 pending
- * driver_ == nullptr 时退化回 Phase 8.A 行为 (零回归)
+ *
+ * 历史 P0/P1 路径 (commit 369cf71 前): bridge_->synchronize_stream() + driver_->advance()
+ * 已废弃。`driver_ == nullptr` 退化逻辑不再需要,本类当前不持有任何 PTX-EMU 驱动指针。
+ *
+ * 未来 Wave 2 接入 (per ADR-SOC-15 B.4): tick() 增加 `facade_->exe_once()` 调用。
  */
 class KernelLaunchTLM : public ChStreamModuleBase {
 public:

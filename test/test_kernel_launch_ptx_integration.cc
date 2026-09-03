@@ -4,15 +4,20 @@
 // 条件编译: 仅在 CPPTLM_WITH_PTX_EMU=ON 时实际启用双端断言
 //           OFF 模式下,cycle contract mock 提供等价语义回归覆盖
 //
-// 历史: HSK-6 (commit 369cf71) 已物理删除 IPtxEmuDriver + MemoryBridge +
-//       set_pipeline/set_scoreboard/set_tensor_core API. 当前 KernelLaunchTLM
-//       仅提供 set_kernel_id / set_workgroup_size / set_grid_size /
-//       set_kernel_launch_interval 等 AQL 接口,不持有 3 个 inject 模块的指针。
+// 当前状态 (HSK-8 Phase 2 后):
+//   - KernelLaunchTLM 不再持有 IPtxEmuDriver/PTX-EMU 桥接 (commit 369cf71 物理删除)
+//   - PTX-EMU 集成走 PtxEmuSubmoduleMVP facade + IPtxEmuDevice 公共 API
+//     (per include/tlm/gpu/ptx_emu_submodule_mvp.hh, HSK-8 Phase 2 Step 4)
+//   - KernelLaunchTLM::tick() 当前不调用 facade->exe_once() (per ADR-SOC-15 B.4 待办)
+//
+// G-D3 (real) 用例: 利用 KernelLaunchTLM 真实 cycle_counter_/kernels_launched_
+// 语义间接验证 1 tick = 1 cycle 契约 — 已覆盖。
+//
+// G-D8 (双端 stall→re-schedule→release→re-issue): 待 ADR-SOC-15 B.4 接入后实化,
+// 当前测试仅以 mock-only 覆盖契约设计一致性,不覆盖真实双端路径。
 //
 // 验收覆盖:
-//   - G-D3: 1 CppTLM tick = 1 PTX-EMU cycle (≤ 1 cycle diff),通过 KernelLaunchTLM
-//           真实 cycle_counter_/kernels_launched_ 间接验证 (cycle contract mock 标记
-//           [mock-only],G-D8 待 IPtxEmuDriver 跨仓恢复)
+//   - G-D3: 1 CppTLM tick = 1 PTX-EMU cycle (≤ 1 cycle diff), real + mock 双轨
 //   - G-D2: ScoreboardTLM allocate/release 触发 RAW hazard 路径
 //   - T1.3/T1.4: PipelineTLM P4_TC delegation = 0.0
 //   - T2.1: TensorCoreTLM 6 精度 latency 均为有效 A100 值
@@ -31,9 +36,9 @@ using namespace tlm;
 namespace {
 
 // [mock-only] cycle contract mock: 验证契约本身的概念正确性,不对真实双端
-// cycle 路径提供覆盖。真实 G-D3 双端验证需 IPtxEmuDriver 接口恢复 (per
-// `cpptlm-d1-ptxemu-driver-restore` change)。该 mock 仅在 cycle contract 设计
-// 评审时验证 "1 tick = 1 cycle" 概念一致性,不计入覆盖率叙事。
+// cycle 路径提供覆盖。真实 G-D3 双端验证需 KernelLaunchTLM::tick() 接入
+// PtxEmuSubmoduleMVP->exe_once() (per ADR-SOC-15 B.4 待办)。该 mock 仅在
+// cycle contract 设计评审时验证 "1 tick = 1 cycle" 概念一致性,不计入覆盖率叙事。
 struct CycleContractMock {
     uint64_t cpp_tlm_cycle = 0;
     uint64_t ptx_emu_cycle = 0;
@@ -58,7 +63,8 @@ struct CycleContractMock {
 TEST_CASE("Wave2 G-D3: 1 CppTLM tick = 1 PTX-EMU cycle (≤ 1 cycle diff)",
           "[gpu][d1p1][wave2][cycle-contract][mock-only]") {
     // [mock-only]: 本测试仅验证 cycle contract 设计概念,不对真实双端 cycle
-    // 路径提供覆盖。真实 G-D3 双端验证需 IPtxEmuDriver 接口恢复。
+    // 路径提供覆盖。真实 G-D3 双端验证需 KernelLaunchTLM::tick() 接入
+    // PtxEmuSubmoduleMVP->exe_once() (per ADR-SOC-15 B.4 待办)。
     CycleContractMock m;
     for (int i = 0; i < 100; ++i) {
         m.tick();
@@ -66,7 +72,7 @@ TEST_CASE("Wave2 G-D3: 1 CppTLM tick = 1 PTX-EMU cycle (≤ 1 cycle diff)",
     REQUIRE(m.cpp_tlm_cycle == 100);
     REQUIRE(m.ptx_emu_cycle == 100);
     REQUIRE(m.g_d3_within_one_cycle());
-    SUCCEED("mock-only: G-D3 真实双端验证需 IPtxEmuDriver 接口恢复");
+    SUCCEED("mock-only: G-D3 真实双端验证需 KernelLaunchTLM::tick() 接入 facade");
 }
 
 TEST_CASE("Wave2 G-D3 (real): KernelLaunchTLM::tick() 推进 cycle 计数与预期一致",
@@ -130,17 +136,17 @@ TEST_CASE("Wave2 G-D2: ScoreboardTLM allocate/release 触发 RAW hazard 路径",
 TEST_CASE("Wave2 G-D8: 双端 stall → re-schedule → release → re-issue (PTX-EMU 真实链路)",
           "[gpu][d1p1][wave2][ptxemu]") {
     // 当 CPPTLM_WITH_PTX_EMU=ON 时编译。
-    // 当前实现因 HSK-6 deprecation 缺少 IPtxEmuDriver + set_pipeline/set_scoreboard
-    // /set_tensor_core 接口 (commit 369cf71),提供基础 cycle contract mock。
-    // 完整 G-D8 测试需要 PTX-EMU 团队补充:
-    //   1. IPtxEmuDriver::advance() 恢复
-    //   2. KernelLaunchTLM 恢复 set_pipeline/set_scoreboard/set_tensor_core API
-    //   3. PtxEmuDriverShim 实现 (per `cpptlm-d1-full` 跨仓 change)
+    // 当前实现因 HSK-8 Phase 2 已迁移至 PtxEmuSubmoduleMVP facade + IPtxEmuDevice
+    // 公共 API,提供基础 cycle contract mock。
+    // 完整 G-D8 测试需要:
+    //   1. KernelLaunchTLM::tick() 接入 facade->exe_once() (per ADR-SOC-15 B.4)
+    //   2. CudaCoreAdapterMVP::inject_timing_modules() 实际注入 + 真实循环
+    //   3. IMemoryPort 异步内存 Seam (per ADR-SOC-15 阶段 B)
     CycleContractMock m;
     for (int i = 0; i < 10; ++i) {
         m.tick();
     }
     REQUIRE(m.g_d3_within_one_cycle());
-    SUCCEED("G-D8 stub PASS: 双端 cycle contract mock 就绪,等待 IPtxEmuDriver 接口恢复");
+    SUCCEED("G-D8 stub PASS: 双端 cycle contract mock 就绪,等待 KernelLaunchTLM::tick() 接入 facade");
 }
 #endif

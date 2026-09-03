@@ -14,20 +14,21 @@
 #include "sim_core.hh"
 #include "tlm/crossbar_tlm.hh"
 #include "tlm/gpu/kernel_launch_tlm.hh"
-// HSK-8 Phase 2 Step 4: memory_bridge.hh 已物理删除 (HSK-6 deprecate by 369cf71).
-// D1-Full P1: 3 核心模块 + IPtxEmuDriver 窄接口
+// HSK-8 Phase 2 Step 4: memory_bridge.hh + ptx_emu_driver.hh 已物理删除
+// (HSK-6 deprecate by 369cf71). 当前 PTX-EMU 集成走 PtxEmuSubmoduleMVP
+// facade (`include/tlm/gpu/ptx_emu_submodule_mvp.hh`) + IPtxEmuDevice 公共 API.
+// 3 核心模块 ScoreboardTLM / PipelineTLM / TensorCoreTLM 仍编译进 cpptlm_core
+// 作为 vendored cudart/{scoreboard,pipeline,tensor_core}_interface.h 的 C++17
+// 派生,供 CudaCoreAdapterMVP::attach_timing() 注入使用,非死代码。
 #include "tlm/gpu/pipeline_tlm.hh"
 #include "tlm/gpu/scoreboard_tlm.hh"
 #include "tlm/gpu/tensor_core_tlm.hh"
-// HSK-8 Phase 2 Step 4: ptx_emu_driver.hh + memory_bridge.hh 已物理删除 (HSK-6 deprecate by
-// 369cf71).
 #include "utils/json_includer.hh"
 #include "utils/topology_dumper.hh"
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <memory>
-#include <vector>
 
 using namespace tlm;
 
@@ -110,12 +111,11 @@ int main(int argc, char* argv[]) {
     }
     factory.startAllTicks();
 
-    // HSK-8 Phase 2 Step 4: --f12b-ld wiring block disabled (MemoryBridge + g_ptx_emu_driver
-    // removed).
-    std::vector<std::unique_ptr<ScoreboardTLM>> per_sm_scoreboards;
-    std::vector<std::unique_ptr<PipelineTLM>> per_sm_pipelines;
-    std::vector<std::unique_ptr<TensorCoreTLM>> per_sm_tensorcores;
-
+    // HSK-8 Phase 2 Step 4: --f12b-ld wiring block disabled (MemoryBridge +
+    // g_ptx_emu_driver 物理删除, commit 369cf71).
+    // 当前契约: --f12b-ld 启用直接报错,禁止路径使用;默认 disabled (zero regression).
+    // (替代路径走 PtxEmuSubmoduleMVP facade + IPtxEmuDevice::attach_timing,
+    // 见 docs/soc_arch/architecture/11-cdna-real-isa-integration.md 阶段 B.)
     if (f12b_ld) {
         std::cerr << "[ERROR] --f12b-ld disabled (HSK-8 Phase 2 Step 4 removed "
                      "MemoryBridge + g_ptx_emu_driver; use PtxEmuSubmoduleMVP "
@@ -124,49 +124,6 @@ int main(int argc, char* argv[]) {
     } else {
         std::cout << "[INFO] --f12b-ld: MemoryBridge disabled (zero regression)\n";
     }
-    (void)per_sm_scoreboards;
-    (void)per_sm_pipelines;
-    (void)per_sm_tensorcores;
-
-#if 0  // Disabled HSK-8 Phase 2 Step 4: --f12b-ld wiring block (history reference)
-    if (false && f12b_ld) {
-        auto* kl = factory.getInstance<KernelLaunchTLM>("kernel_launch");
-        auto* xbar = factory.getInstance<CrossbarTLM>("gpu_xbar");
-        if (!kl || !xbar) {
-            std::cerr << "[ERROR] --f12b-ld requires JSON config with 'kernel_launch' and "
-                         "'gpu_xbar' entries\n";
-            return 1;
-        }
-        memory_bridge = std::make_unique<MemoryBridge>(kl, xbar);
-        kl->setMemoryBridge(memory_bridge.get());
-
-        if (g_ptx_emu_driver) {
-            kl->set_ptx_emu_driver(g_ptx_emu_driver);
-            uint32_t num_sms = g_ptx_emu_driver->num_sms();
-            per_sm_scoreboards.reserve(num_sms);
-            per_sm_pipelines.reserve(num_sms);
-            per_sm_tensorcores.reserve(num_sms);
-
-            for (uint32_t sm_id = 0; sm_id < num_sms; ++sm_id) {
-                auto sb = std::make_unique<ScoreboardTLM>();
-                g_ptx_emu_driver->inject_scoreboard(sm_id, std::move(sb));
-                auto pl = std::make_unique<PipelineTLM>();
-                g_ptx_emu_driver->inject_pipeline(sm_id, std::move(pl));
-                auto tc = std::make_unique<TensorCoreTLM>();
-                g_ptx_emu_driver->inject_tensor_core(sm_id, std::move(tc));
-            }
-            std::cout << "[INFO] --f12b-ld: Injected per-SM Scoreboard/Pipeline/TensorCore "
-                      << "for " << num_sms << " SMs\n";
-        } else {
-            std::cout << "[INFO] --f12b-ld: PTX-EMU driver not connected (nullptr), "
-                      << "Scoreboard/Pipeline/TC injection skipped (zero regression)\n";
-        }
-
-        std::cout << "[INFO] --f12b-ld: MemoryBridge enabled (manual instantiation)\n";
-    } else {
-        std::cout << "[INFO] --f12b-ld: MemoryBridge disabled (zero regression)\n";
-    }
-#endif // Disabled HSK-8 Phase 2 Step 4 wiring block
 
     TopologyDumper::dumpToDot(factory, config, "topology.dot");
 
