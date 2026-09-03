@@ -198,8 +198,10 @@ TEST_CASE("Phase8 E2E: BAR 写经 AXI 到达 EP 内部处理后返回真实响�
     }
 
     // EP 返回真实读响应（BAR 内部值，不是手写注入）
+    // BAR slot 是 32-bit 寄存器 (per Oracle P1-2 hardening):
+    //   rdata 高 32 bit 总是 0,低 32 bit = bar_store_[addr & ~3] 的 32-bit 值
     REQUIRE(hb.axi_master_resp_valid() == true);
-    REQUIRE(hb.axi_master_resp_data().rdata.read() == 0xDEADBEEFDEADBEEFu);
+    REQUIRE(hb.axi_master_resp_data().rdata.read() == 0xDEADBEEFu);
     hb.axi_master_resp_consume();
 }
 
