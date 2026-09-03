@@ -100,6 +100,9 @@ TEST_CASE("Phase8 E2E: EP 真实消费 HostBypass 配置空间写 (M1 closed)", 
 
     // EP 配置空间必须真实写入（不是测试直写）
     REQUIRE(ep.vf_pool().config_of(0).read(0x04) == 0x0007u);
+    REQUIRE(hb.axi_master_resp_valid() == true);
+    REQUIRE(hb.axi_master_resp_data().bid.read() == 0x10u);
+    hb.axi_master_resp_consume();
 
     // 读回：经 AXI 通道发起读请求 → EP 返回真实配置值
     Axi4Bundle rreq;
@@ -155,6 +158,9 @@ TEST_CASE("Phase8 E2E: BAR 写经 AXI 到达 EP 内部处理后返回真实响�
         hb.tick();
     }
     REQUIRE(ep.vf_pool().config_of(0).read(0x10) == 0x10000008u);
+    REQUIRE(hb.axi_master_resp_valid() == true);
+    REQUIRE(hb.axi_master_resp_data().bid.read() == 0x30u);
+    hb.axi_master_resp_consume();
 
     // BAR0 空间写：经 AXI master 通道路由到 EP BAR 内部
     // （真实数据路径：请求经 hb.master_req → EP AXI slave 消费 → EP bar 内部处理）
@@ -173,6 +179,9 @@ TEST_CASE("Phase8 E2E: BAR 写经 AXI 到达 EP 内部处理后返回真实响�
         ep.tick();
         hb.tick();
     }
+    REQUIRE(hb.axi_master_resp_valid() == true);
+    REQUIRE(hb.axi_master_resp_data().bid.read() == 0x31u);
+    hb.axi_master_resp_consume();
 
     // BAR 读回：经 AXI 发起读 → EP 内部 bar_router 返回真实值
     Axi4Bundle br;
