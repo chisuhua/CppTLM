@@ -1,10 +1,8 @@
-# gpgpu-precision-wave2 Spec — D1-Full 精度对齐 Wave 2
+# gpgpu-precision-wave2 Specification
 
-> **配套**: [`proposal.md`](../proposal.md)
-> **父 change**: `cpptlm-d1-p1-pipeline-scoreboard`（Phase 4 Wave 2 Deferred 任务）
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-09-03-cpptlm-dgpu-gpgpu-precision-wave2. Update Purpose after archive.
+## Requirements
 ### Requirement: calibrated-compute-latency
 
 CppTLM SHALL 将 `PipelineTLM` 与 `TensorCoreTLM` 的 Phase 1 placeholder latency 替换为可追溯的 gpgpu-sim 参考值，并在校准完成后令 `is_placeholder()` 返回 `false`。
@@ -47,9 +45,3 @@ CppTLM SHALL 将 `PipelineTLM` 与 `TensorCoreTLM` 的 Phase 1 placeholder laten
 - **THEN** 每类 benchmark 的结果与 gpgpu-sim 参考值误差不超过 ±15%
 - **AND** 失败输出包含 benchmark 名称、CppTLM 值、参考值和偏差百分比
 
-## Verification
-
-- `test/test_kernel_launch_ptx_integration.cc` 在 `CPPTLM_WITH_PTX_EMU=ON` 下通过
-- `test/python/test_gpgpu_sim_comparison.py` 通过
-- G-D2 / G-D3 / G-D5 / G-D8 全部 PASS
-- `openspec validate 2026-09-03-cpptlm-dgpu-gpgpu-precision-wave2 --strict` PASS
