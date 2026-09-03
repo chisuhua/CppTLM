@@ -1,0 +1,3 @@
+schema: spec-driven
+created: 2026-09-03
+goal: 建立 ISA-agnostic 时序宿主核心抽象，消除 PTX 字符串查表与虚拟寄存器硬编码，为阶段 B/C 双轨前端+真实物理 ISA 切换铺路
