@@ -686,7 +686,7 @@ int cpptlm_emulator_msix_clear_pending(...);
 | # | 风险 | 等级 | 缓解 |
 |---|------|------|------|
 | **R1** | `ch_uint<512>` 实际为 64-bit 存储(已知限制) | 🟢 低 | 已 Phase 5 M1 文档化;真实 PCIe PHY 兼容通过多次 burst 拼接 |
-| **R2** | PCIe Cfg 地址编码简化(Phase8 M1 用 `awaddr` 当 offset) | 🟡 中 | 已知 Minor,未来 v1.1 按 PCIe 规范 `bits[1:0]=0, bits[7:2]=offset` 细化 |
+| **R2** | PCIe Cfg 地址编码 v1.1 已修复:awaddr 按 PCIe 规范解码 (`cfg_byte_off = awaddr & ~0x3` + 范围判定 cfg vs BAR) | 🟢 低 | 见 `[cfg-encoding]` 测试 + ADR-SOC-13 D5 |
 | **R3** | 23 ABI 头冻结 + 仓内 19/19 函数实现（+4 回调 typedef 契约）+ UsrLinuxEmu 端集成未闭环 | 🟡 中 | per `00-overview` §4-bis R26/R27;UsrLinuxEmu ADR-089 v0.5 节奏决定 |
 | **R4** | PcieRootComplexTLM 仅 PF0-only(VF 需 ARI + SR-IOV capability) | 🟡 中 | Oracle M2 已文档化;v1.1 完整版追加 ARI/SR-IOV capability |
 | **R5** | Phase 7 M1 修复(HostBypassTLM 4 方向 AXI 桥接)回归风险 | 🟢 低 | 已 commit `429327d` + `test_pcie_endpoint_ip_full_e2e.cc` 3 TEST_CASE PASS |

@@ -95,13 +95,14 @@ dGPU SoC v1.0 需要在 PcieEndpointIP 与 SoC 内部模块之间建立：
 - 真实 PCIe PHY 兼容通过多次 burst 拼接
 - 已 Phase 5 M1 文档化（spec.md）
 
-### D5. PCIe Cfg 地址编码简化（已知 Minor）
+### D5. PCIe Cfg 地址编码修复（v1.1 实现完成）
 
-✅ **Phase 8 M1 简化**：
+✅ **Phase 8 M1 简化 → v1.1 修复**：
 
-- `awaddr` 直接当 offset（per Phase 8 M1 修复 `429327d`）
-- **完整实现需按 PCIe 规范**：`bits[1:0]=0, bits[7:2]=offset`
-- 推迟至 v1.1 完整版
+- Phase 8 M1：awaddr 直接当 offset（per commit `429327d`）
+- v1.1：按 PCIe 规范解码 — `cfg_byte_off = awaddr & ~0x3`，低 2 bit [1:0] 为对齐保留位
+- 范围判定：`awaddr < config_size` 区分 cfg 与 BAR 路径
+- 测试覆盖：见 `[cfg-encoding]` 标签（`test/test_pcie_cfg_address_encoding.cc`）
 
 ---
 

@@ -368,7 +368,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **23 ABI 冻结**: `include/tlm/gpu/pcie_endpoint_tlm.h` 与 `include/abi/cpptlm_emulator.h` 零修改（仅可加 `[[deprecated]]` 属性）
 - **PcieEndpointTLM deprecated**: `[[deprecated("use PcieEndpointIP")]]`，chstream_register 仍注册（既有 Phase 4 测试依赖），新增 PcieEndpointIP 并存
 - **512-bit 数据限制**: `ch_uint<512>` 内部 `uint64_t`，`wdata/rdata` 真实宽度 64-bit（per `include/bundles/cpphdl_types.hh`）
-- **PCIe Cfg 地址编码** (Phase 8 已知 Minor): M1 接线简化用 `awaddr` 直接当 cfg offset；完整实现需按 PCIe 规范 `bits[1:0]=0, bits[7:2]=offset`
+- **PCIe Cfg 地址编码** (v1.1 实现完成): `PcieEndpointIP::tick()` 按 PCIe 规范解码 AXI 配置请求 — 低 2 bit 对齐保留位，`awaddr` 直接用于 cfg/BAR 路径范围判定，cfg 内部屏蔽低 2 bit 后右移得到 byte offset；测试覆盖见 `[cfg-encoding]` 标签。
 
 ## PHASE STATE
 
@@ -394,7 +394,6 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - 桥接修复 (429327d): HostBypassTLM/RC::tick() 自动转发 4 方向 AXI 通道, 让 EP 真实消费请求
 
 **已知问题 (Minor, 不阻断)**:
-- Phase 8 e2e `test_pcie_endpoint_ip_full_e2e_config` + `_bar` 失败: AXI↔PCIe Config Space 地址映射简化 (直接用 awaddr 当 offset, 需未来细化按 PCIe 规范 `bits[1:0]=0, bits[7:2]=offset`)
 - `ch_uint<512>` 实际 64-bit 存储 (per Phase 5 M1 文档化限制)
 
 ### ★ GPGPU / SoC 既有交付（2026 之前，跨 Phase 1-7 与本项目同期）
