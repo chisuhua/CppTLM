@@ -153,7 +153,9 @@ void PcieEndpointIP::tick() {
             axi.slave_req_consume();
         }
 
-        axi.tick();
+        // 注意：此处不调用 axi.tick()。slave_resp 通道由 HostBypass/RootComplex
+        // 在桥接转发完成后调用 ep_axi.tick() 推进（避免响应被同周期 self-clear，
+        // 保证 HostBypass/RC tick 能读到 EP 产生的真实响应）。Phase 8 M1 修复。
     }
 
     for (unsigned i = 0; i < NUM_PORTS; ++i) {

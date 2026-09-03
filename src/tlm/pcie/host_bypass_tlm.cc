@@ -126,6 +126,10 @@ void HostBypassTLM::tick() {
                 ep_axi.master_resp(hb_axi.slave_resp_data());
                 hb_axi.slave_resp_consume();
             }
+
+            // 桥接转发完成后推进 EP adapter：转移 slave_resp/master_req 产出通道
+            // （避免 EP tick 同周期 self-clear 响应，Phase 8 M1 修复）
+            ep_axi.tick();
         }
     }
     axi_.tick();
