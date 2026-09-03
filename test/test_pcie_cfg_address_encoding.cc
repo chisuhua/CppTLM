@@ -155,8 +155,8 @@ TEST_CASE("PCIe cfg: 不同 dword offset 写入不同寄存器 (awaddr=0x10 vs 0
     REQUIRE(f.ep.vf_pool().config_of(0).read(0x10) == 0x10000008u);
 
     // 紧邻 dword offset (dword 5 → byte 0x14),不应串扰 BAR0
-    // 当前实现把 0x14 直接当 byte offset,会写入 offset 0x14 (位于 BAR1)
-    // 修复后: dword offset 5 (byte 0x14) 应写 BAR1
+    // awaddr=0x14: 按 PCIe 规范, byte 0x14 是 cfg dword offset 5 (BAR1 寄存器)
+    // 不应影响 BAR0 (cfg offset 0x10)
     REQUIRE(f.axi_write(0x14, 0x00000000u, 0x201) == true);
     REQUIRE(f.ep.vf_pool().config_of(0).read(0x10) == 0x10000008u); // BAR0 不变
     REQUIRE(f.ep.vf_pool().config_of(0).read(0x14) == 0x00000000u); // BAR1 写入

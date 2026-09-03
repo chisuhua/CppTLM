@@ -10,13 +10,16 @@
 //       set_kernel_launch_interval 等 AQL 接口,不持有 3 个 inject 模块的指针。
 //
 // 验收覆盖:
-//   - G-D3: 1 CppTLM tick = 1 PTX-EMU cycle (≤ 1 cycle diff),通过 mock 验证
+//   - G-D3: 1 CppTLM tick = 1 PTX-EMU cycle (≤ 1 cycle diff),通过 KernelLaunchTLM
+//           真实 cycle_counter_/kernels_launched_ 间接验证 (cycle contract mock 标记
+//           [mock-only],G-D8 待 IPtxEmuDriver 跨仓恢复)
 //   - G-D2: ScoreboardTLM allocate/release 触发 RAW hazard 路径
 //   - T1.3/T1.4: PipelineTLM P4_TC delegation = 0.0
 //   - T2.1: TensorCoreTLM 6 精度 latency 均为有效 A100 值
-//   - G-D8: 待 IPtxEmuDriver / set_* 重新引入后补 (HSK-6 deprecation 移除依赖)
 
 #include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
+#include "tlm/gpu/kernel_launch_tlm.hh"
 #include "tlm/gpu/pipeline_tlm.hh"
 #include "tlm/gpu/scoreboard_tlm.hh"
 #include "tlm/gpu/tensor_core_tlm.hh"
@@ -27,8 +30,10 @@ using namespace tlm;
 
 namespace {
 
-// 最小 cycle contract mock: 验证 1 CppTLM tick = 1 PTX-EMU 周期
-// 完整 PTX-EMU 集成测试需 HSK-6 路径恢复 (per `cpptlm-d1-full` 跨仓 change)
+// [mock-only] cycle contract mock: 验证契约本身的概念正确性,不对真实双端
+// cycle 路径提供覆盖。真实 G-D3 双端验证需 IPtxEmuDriver 接口恢复 (per
+// `cpptlm-d1-ptxemu-driver-restore` change)。该 mock 仅在 cycle contract 设计
+// 评审时验证 "1 tick = 1 cycle" 概念一致性,不计入覆盖率叙事。
 struct CycleContractMock {
     uint64_t cpp_tlm_cycle = 0;
     uint64_t ptx_emu_cycle = 0;
@@ -51,7 +56,9 @@ struct CycleContractMock {
 } // namespace
 
 TEST_CASE("Wave2 G-D3: 1 CppTLM tick = 1 PTX-EMU cycle (≤ 1 cycle diff)",
-          "[gpu][d1p1][wave2][cycle-contract]") {
+          "[gpu][d1p1][wave2][cycle-contract][mock-only]") {
+    // [mock-only]: 本测试仅验证 cycle contract 设计概念,不对真实双端 cycle
+    // 路径提供覆盖。真实 G-D3 双端验证需 IPtxEmuDriver 接口恢复。
     CycleContractMock m;
     for (int i = 0; i < 100; ++i) {
         m.tick();
@@ -59,6 +66,30 @@ TEST_CASE("Wave2 G-D3: 1 CppTLM tick = 1 PTX-EMU cycle (≤ 1 cycle diff)",
     REQUIRE(m.cpp_tlm_cycle == 100);
     REQUIRE(m.ptx_emu_cycle == 100);
     REQUIRE(m.g_d3_within_one_cycle());
+    SUCCEED("mock-only: G-D3 真实双端验证需 IPtxEmuDriver 接口恢复");
+}
+
+TEST_CASE("Wave2 G-D3 (real): KernelLaunchTLM::tick() 推进 cycle 计数与预期一致",
+          "[gpu][d1p1][wave2][cycle-contract]") {
+    // G-D3 真实单端验证: 利用 KernelLaunchTLM::tick() 公开语义
+    // (cycle_counter_ 每次 +1, kernels_launched_ 在 interval_ 整除 cycle 时 +1)。
+    // 当 interval_=1,每个 tick 都触发 kernel_launch,可作为 1 tick = 1 cycle
+    // 的真实单端证据。
+    EventQueue eq;
+    KernelLaunchTLM kl("kl_wave2_gd3_real", &eq);
+    kl.set_kernel_launch_interval(1u);
+
+    // 50 个 tick → cycle_counter_=50, kernels_launched_=50
+    for (uint64_t i = 0; i < 50; ++i) {
+        kl.tick();
+    }
+    REQUIRE(kl.kernels_launched() == 50u);
+
+    // 100 个 tick → kernels_launched_=100
+    for (uint64_t i = 0; i < 50; ++i) {
+        kl.tick();
+    }
+    REQUIRE(kl.kernels_launched() == 100u);
 }
 
 TEST_CASE("Wave2 T1.3/T1.4: PipelineTLM P4_TC delegation = 0.0",
