@@ -267,11 +267,13 @@ else
 fi
 
 # ============================================================
-# PTX-EMU-012: 未来 [sdma][h2d][ptxir] 测试
+# PTX-EMU-012: [sdma][h2d][ptxir] Catch2 测试
 # ============================================================
+# 测试已存在 (test_sdma_engine_h2d.cc:234 "PTXIR-like 4 KiB image copies host→VRAM"),
+# OFF 模式也可跑 (per test_sdma_engine_h2d.cc:243 注释 "不依赖 ON / 不涉及 SM 执行")。
+# 仅当测试二进制未构建时跳过。
 if [[ -x "$TEST_BIN" ]]; then
     if "$TEST_BIN" --list-tests 2>/dev/null | grep -q '\[sdma\]\[h2d\]\[ptxir\]'; then
-        # 未来测试已落地 → 实际运行
         if run_with_timeout 120 "$TEST_BIN" "[sdma][h2d][ptxir]" -r compact >/tmp/ptxemu_ptxir.log 2>&1; then
             pass_result "PTX-EMU-012 ([sdma][h2d][ptxir] 通过)"
         else
@@ -279,8 +281,8 @@ if [[ -x "$TEST_BIN" ]]; then
         fi
         rm -f /tmp/ptxemu_ptxir.log
     else
-        # 未来测试尚未落地 → 明确 SKIP，不静默通过也不误报失败
-        echo "[SKIP] PTX-EMU-012 (future test [sdma][h2d][ptxir] 尚未落地，跳过)"
+        # 测试用例未注册 → 明确 SKIP, 不静默通过也不误报失败
+        echo "[SKIP] PTX-EMU-012 (test [sdma][h2d][ptxir] 未注册,跳过)"
     fi
 else
     fail_result "PTX-EMU-012 ($TEST_BIN 缺失)"

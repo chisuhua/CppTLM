@@ -1,17 +1,17 @@
 # cudart/ Vendored Headers
 
-## cpptlm_bridge.h (ABI 头文件)
+## 状态 (HSK-8 Phase 2 后, 2027-02)
 
-- **Source**: `/workspace/project/PTX-EMU` 本地仓库 @ commit `8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d`
-- **Public repo**: github.com/chisuhua/PTX-EMU @ commit `8dc000eca9f78e8ee017eafcb305eb4ca62ffd6d`
-- **Vendor method**: 从 PTX-EMU 本地仓库 commit 显式提取（`git show 8dc000ec:include/cudart/cpptlm_bridge.h`），不复制 working tree
-- **ABI 真值源**: PTX-EMU 是 ABI 提供方（CppTLM 通过 HSK-3 选项 1 `ExternalProject_Add` 消费）
-- **SHA-256 (commit 8dc000ec)**: `c19e66a32de398e6bba2042f3f19923ff89dbc02f10bbf310c073ad3a8ff3dbe`
-- **Last verified**: 2026-07-15（vendor 与 PTX-EMU commit 8dc000ec 字节级一致）
-- **Sync policy**: HSK-1 每次重发时手动同步（`git show <new-hash>:include/cudart/cpptlm_bridge.h`）
-- **Replaced by**: 未来 HSK-3 选项 1（ExternalProject_Add）实施后，此 vendor 改为动态拉取（无需手动同步）
+- **cpptlm_bridge.h**: 已物理删除 (HSK-6 deprecate by commit `369cf71`)
+  - 任何残留引用应迁移至 `external/PTX-EMU/include/ptxemu/device_api.h` (HSK-8 公共 API)
+  - `scripts/test/docs_sync_check.sh` VIRTUAL_PATHS:84 已登记
+- **3 接口头 (scoreboard/pipeline/tensor_core_interface.h)**: 仍有效 — 为
+  `PtxEmuSubmoduleMVP::attach_timing()` ABI 真值源,与 PTX-EMU 端
+  `src/ptxemu/device_api_impl.cc:313-330` 的 `static_cast<void*>` 往返桥接配套
+- **未来演进**: ADR-SOC-15 §D2 规划以 CDNA 描述符化接口 (`InstrDescriptor` +
+  `CDNAHazardTracker`) 替换当前 `attach_timing`/`set_scoreboard` 路径
 
-## Phase 8.B HSK-4 纯虚接口头文件（PTX-1/2/3, vendored 2026-07-18）
+## Phase 8.B HSK-4 纯虚接口头文件 (vendored 2026-07-18)
 
 ### scoreboard_interface.h
 
@@ -19,7 +19,9 @@
 - **Source path**: `include/ptxsim/scoreboard_interface.h` (16 lines)
 - **Vendor method**: `git show 8acfd2d1:include/ptxsim/scoreboard_interface.h` + 添加 vendor 头注释（不改原文）
 - **SHA-256 (commit 8acfd2d1)**: `4935b50fdea76e8ceb3d37374fd5e453b8d40419a02effd4ffb75c5c3ed63f15`
-- **ABI 真值类**: `IScoreboard`（无依赖, 仅 include `<cstdint>`）
+- **ABI 真值类**: `IScoreboard` (无依赖, 仅 include `<cstdint>`)
+- **当前消费方**: `include/tlm/gpu/scoreboard_tlm.hh` (派生类) →
+  `src/tlm/gpu/cuda_core_adapter_mvp.cc::inject_timing_modules()` → `facade->attach_timing(sb, pl, tc)`
 
 ### pipeline_interface.h
 
@@ -27,6 +29,8 @@
 - **Source path**: `include/ptxsim/pipeline_interface.h` (29 lines)
 - **SHA-256 (commit 9e7361b9)**: `14c4b8209fc22de24e86312b3a77596491e66e5981dd97e51a676efdb30dd681`
 - **ABI 真值类**: `IPipelineLatencyProvider` + enum class `PipelineId` (6 值, P0_INT_FP32=0 ... P4_TC=5)
+- **当前消费方**: `include/tlm/gpu/pipeline_tlm.hh` (派生类,字符串查表实现,
+  per ADR-SOC-15 阶段 A 计划重写为 `LatencyClass` 枚举查表)
 
 ### tensor_core_interface.h
 
@@ -34,6 +38,7 @@
 - **Source path**: `include/ptxsim/tensor_core_interface.h` (31 lines)
 - **SHA-256 (commit 463038e0)**: `6ff8351d01feea3c2b783e047738df5ddf91a4dfbc8e492b9e3cfcb93d11e4a5`
 - **ABI 真值类**: `ITensorCoreTiming` + enum class `TcPrecision` (6 值, FP4=0 ... TF32=5)
+- **当前消费方**: `include/tlm/gpu/tensor_core_tlm.hh` (派生类) → 同上 attach_timing 链路
 
 ### 共同策略
 
@@ -69,3 +74,11 @@
 - 无误命名残留需要 sweep
 
 （先前"已知修正"段为初次审计时未经验证的推测，与实际 openspec 文档不符；本次 grep 验证消除该虚警。）
+
+## Status Update
+
+- **2027-02-09**: HSK-6 物理删除 `cpptlm_bridge.h` + 全部桥接符号（commit `369cf71`）。
+  本目录仅保留 HSK-4 3 接口头作为 `IPtxEmuDevice::attach_timing()` ABI 真值源。
+  Oracle 审查报告 `ses_f97f0695dffe9chfxwIlpaP2mn` 确认 vendored 3 接口头**非过时残留**，
+  是 ISA 层面 functional executor 集成的必要组件。`cpptlm_bridge.h` 相关历史验收条目
+  保留为审计追溯记录，仅顶部"状态"段标识已删除。

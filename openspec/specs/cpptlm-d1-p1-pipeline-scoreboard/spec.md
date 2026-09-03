@@ -51,17 +51,28 @@ The system MUST provide a `TensorCoreTLM` class in `include/tlm/gpu/tensor_core_
 
 ### Requirement: cpptlm-12-endpoint-static-assert
 
+> **Status: SUPERSEDED (2027-02-09)** — `include/cudart/cpptlm_bridge.h` 已由 HSK-6 物理删除 (commit `369cf71`)。原 G-D4 静态断言宿主文件不再存在。本 Requirement 由 PTX-EMU 仓 `drift_check.yml` 6 invariants 替代守卫 (HSK-8 ACCEPTED, ctest 251/251 PASS)。
+
+**历史描述（已不适用，仅作审计追溯保留）**：
+
 The system MUST perform **编译期** `static_assert` on all 12 enum endpoints (6 `PipelineId` + 6 `TcPrecision`) using the vendored PTX-EMU enum definitions as truth source. Implementation lives in `include/cudart/cpptlm_bridge.h` within the `namespace abi_guards_g_d4` block (lines 196–262), which is compiled every time `cpptlm_bridge.h` is included via the `memory_bridge.hh → src/main.cpp` build chain.
 
 Additionally, to guard against silent ABI drift when PTX-EMU changes method signatures (not just enum values), the implementation includes **signature-level** `static_assert`s using `decltype` on each pure virtual method (see design.md §4).
 
 > **Implementation note (2026-07-18)**: No standalone `test/test_12_endpoint_static_assert.cc` file exists. The 16 static_asserts (12 enum values + 4 signature-level `decltype`) are co-located with the vendored headers in `cpptlm_bridge.h` — this ensures they are evaluated on every build, not only when a specific test file is compiled. A negative test (temporarily breaking `TcPrecision::FP4 = 1`) confirmed the assertions fire at compile time.
 
-#### Scenario: PipelineId and TcPrecision enum values match PTX-EMU
+#### Scenario: PipelineId and TcPrecision enum values match PTX-EMU (历史)
 - **WHEN** any translation unit that includes `cpptlm_bridge.h` is compiled (e.g., `src/main.cpp` via `memory_bridge.hh`)
 - **THEN** all 6 `PipelineId` values (P0_INT_FP32, V_SIMD, P1_FP64, P2_SFU, P3_LSU, P4_TC) match PTX-EMU enum values (0..5)
 - **AND** all 6 `TcPrecision` values (FP4, FP6, FP8, FP16, BF16, TF32) match PTX-EMU enum values (0..5)
 - **AND** any mismatch causes a compile-time failure
+
+#### Scenario (现行): PTX-EMU 仓 drift_check invariants 守护 ABI
+
+- **WHEN** PTX-EMU 仓 CI 触发 `drift_check.yml` workflow
+- **THEN** 6 invariants PASS (per `external/PTX-EMU/AGENTS.md` IPtxEmuDevice METHOD STATUS)
+- **AND** CppTLM 侧 CppTLM_WITH_PTX_EMU=ON 构建通过，证明 3 接口头 ABI 与 PTX-EMU 公共头一致
+- **AND** future HSK-9 bump 公共签名时, CppTLM 侧 InspectorTask 由 `drift_check` 自动捕获
 
 ---
 
