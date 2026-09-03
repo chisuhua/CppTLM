@@ -62,5 +62,5 @@ Phase 7 APU SoC 需要 CPU 与 GPU 共享 `CoherenceDomain` 与 `CacheTLM` 层�
 ## Status Update
 
 - **2027-02-09**: Phase 7.C 部分落地（per `docs/soc_arch/modules/coherence-protocol.md` + `coherence-domain.md` + `coherence-bridge.md` + `coherent_xbar.md` + `snoop_filter.md` 已实施,Phase 7.D Cache protocol 升级推迟）。
-  v1.0 战略下 MOESI/GPU 6×6 状态机成为基础（per [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS D8 + §4-bis R23）;跨域桥接 v1.0 MVP 基础 + v1.1 完整版两阶段实施（per §4-bis R24）。详细子系统架构见 [`docs/soc_arch/architecture/09-coherence-protocol.md`](../architecture/09-coherence-protocol.md)。
+  v1.0 战略下 MOESI/GPU 6×6 状态机成为基础（per [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS D8 + §4-bis R23）;跨域桥接 v1.0 MVP 基础 + v1.1 完整版两阶段实施（per §4-bis R24）。详细子系统架构见 [`docs/soc_arch/architecture/09-coherence-protocol.md`](../architecture/09-coherence-protocol.md)。
 - **2027-02-09**: dGPU SoC v1.0 双 vendor 战略(per [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D4) — Coherence 共享(NVIDIA 不需 CPU↔GPU coherence;AMD Infinity Fabric 需要),MOESI/GPU 6 状态 × 6 事件跨 vendor 复用

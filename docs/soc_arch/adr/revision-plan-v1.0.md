@@ -4,7 +4,7 @@
 > **状态**: 📋 Draft v2 (Metis 评审 → 修复中,2027-02-09)
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **关联 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)（v1.0 总架构蓝图 + 子系统架构归口,已建立）+ `openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-adr-revision/`(本规划的归属 change,**待建立**)
-> **关联文档**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS + 现有 8 份 ADR-SOC + 50+ 模块微架构 + [`docs/soc_arch/adr/README.md`](./README.md)（维护规则权威源）
+> **关联文档**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS + 现有 8 份 ADR-SOC + 50+ 模块微架构 + [`docs/soc_arch/adr/README.md`](./README.md)（维护规则权威源）
 > **本版本修复 Metis 评审 2027-02-09 暴露的 P0 问题**: X1 D8 重号 / X2/X4/X9 A4 去重 / X3 C6 D3 虚构 ABI 增量 / X6 C1 D1 AMD 路径 / X7 C1 D3 KFD 跨仓依赖 / M1 ADR-SOC-04 / M2 ADR-SOC-05 / 工作量 6-8 hr → 15-25 hr
 
 ---
@@ -144,7 +144,7 @@
 
 - **2027-02-09**: ✅ Accepted(由 Proposed 升级)
   证据清单:
-  - git commits: `6ebbd7d`(Phase 4 critical fix)+ `710c734..b6e5be1`(Phase 5 AXI Stream Adapter)+ `8b92bfb..fe4d745`(Phase 6 AXI4Mapper)+ `ce50b05..45763fa`(Phase 7 Host Bypass + RC)+ `e29defd..429327d`(Phase 8 整合交付)
+  - git commits: `6ebbd7d`(Phase 4 critical fix)+ `6223534..b1811703`(Phase 5 AXI Stream Adapter)+ `ae8ecd7..f2540e8`(Phase 6 AXI4Mapper)+ `a771253..91e515f`(Phase 7 Host Bypass + RC)+ `13ee09d..429327d`(Phase 8 整合交付)
   - 测试: `test_dgpu_board_v1_mvp_from_config.cc` 6 SECTION PASS
   - 配置: `configs/dgpu_soc_with_pcie_ip.json`(Phase 8 完整 dGPU SoC + PCIe EP 配置)
 - **2027-02-09**: D5 状态补充(非决策变更):CP→TMU→SQ→Cuda Core 链路**当前**接入 PcieEndpointIP(17 ports)

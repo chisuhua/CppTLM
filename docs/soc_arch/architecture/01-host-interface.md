@@ -4,8 +4,8 @@
 > **状态**: 📋 Draft v1 (待 Oracle 评审,2027-02-09)
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)
-> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（§3.1 L1 Host Interface 层）
-> **关联 PCIe EP 微架构**: [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md)（948 行,Phase 1-7 PCIe EP 整合）
+> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§3.1 L1 Host Interface 层）
+> **关联 PCIe EP 微架构**: [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md)（950 行,Phase 1-7 PCIe EP 整合）
 > **关联真实代码**:
 > - [`include/tlm/pcie/pcie_endpoint_ip.hh`](../../../include/tlm/pcie/pcie_endpoint_ip.hh)
 > - [`include/tlm/pcie/pcie_sriov_vf_pool_tlm.hh`](../../../include/tlm/pcie/pcie_sriov_vf_pool_tlm.hh)
@@ -81,7 +81,7 @@
 
 ### 1.3 与总架构蓝图的一致性
 
-本文档**严格对齐** `00-overview.md` v3.0 PASS 的 §3.1 L1 Host Interface 层 + §4-bis 范围矩阵 R01-R03 + §6.1 兼容性分析 + §7.2 模块微架构引用矩阵。
+本文档**严格对齐** `00-overview.md` v3.1 PASS 的 §3.1 L1 Host Interface 层 + §4-bis 范围矩阵 R01-R03 + §6.1 兼容性分析 + §7.2 模块微架构引用矩阵。
 
 ---
 
@@ -664,11 +664,11 @@ int cpptlm_emulator_msix_clear_pending(...);
 | **PciePhyDigitalCtrlTLM** | (待新建 `pcie-phy-digital-ctrl.md`) |
 | **PcieBypassMux** | (待新建 `pcie-bypass-mux.md`) |
 | **PcieSriovVfPoolTLM** | (待新建 `pcie-sriov-vf-pool.md`) |
-| **Axi4StreamAdapter** | (待新建 `axi4-stream-adapter.md`) |
-| **Axi4Mapper** | (待新建 `axi4-mapper.md`) |
+| **Axi4StreamAdapter** | [`axi4-stream-adapter.md`](../../modules/axi4-stream-adapter.md) ✅ 已交付 |
+| **Axi4Mapper** | [`axi4-mapper.md`](../../modules/axi4-mapper.md) ✅ 已交付 |
 | **PcieAxiAdapter** | (待新建 `pcie-axi-adapter.md`) |
-| **HostBypassTLM** | (待新建 `host-bypass.md`) |
-| **PcieRootComplexTLM** | (待新建 `root-complex.md`) |
+| **HostBypassTLM** | [`host-bypass.md`](../../modules/host-bypass.md) ✅ 已交付 |
+| **PcieRootComplexTLM** | [`root-complex.md` (实际为 `pcie-root-complex.md`)](../../modules/pcie-root-complex.md) ✅ 已交付 |
 
 ### 15.3 关联 OpenSpec changes
 

@@ -1,182 +1,109 @@
 # CppTLM 实时状态看板
 
-> **最后更新**: 2026-07-03 · **测试基线**: ✅ 764/764 (15547 assertions) · **GPU**: 75 cases
-> **Phase 8.A**: ✅ Archived · **配套**: [实施路线图](./README.md)
+> **🚧 历史快照 — 已停止实时维护 🚧**
+> **原始最后更新**: 2026-07-03 · **原始基线**: ✅ 764/764 (15547 assertions)
+>
+> ⚠️ **本文档于 2027-02-09 由 Oracle 评审判定 FAIL 并标记为历史快照**。原内容描述 2026-07-03 时点项目状态,7 个月未更新。当前权威实施状态请参阅:
+> - [`docs/soc_arch/architecture/00-overview.md`](../soc_arch/architecture/00-overview.md) — v1.0 总架构蓝图
+> - [`docs/roadmap/README.md`](./README.md) — 本目录历史快照(已标注失效)
+> - [`openspec/changes/`](../../../openspec/changes/) — 11 个活跃 changes + archive
+> - **当前实测基线**: 1241 cases / 47634 assertions / 2 known fail (Phase 8 e2e `_config` + `_bar` Minor, per AGENTS.md)
 
 ---
 
-## 🎯 当前下一步任务
+## 🎯 当前下一步任务(2027-02-09 视角)
 
 | 优先级 | 任务 | 工期 | 入口条件 | 阻塞项 |
 |:---:|------|:---:|------|:---:|
-| 🔴 P0 | **Phase 8.B Task 9**: ScoreboardTLM ≥12 entries | 0.5d | Phase 8.A ✅ | 无 |
-| 🔴 P0 | **F4**: Phase 7.C CoherentXBarTLM 6×6 state table (brainstorming first) | 2d brainstorming | Phase 8.A ✅ | 需新 brainstorming |
-| 🟡 P1 | Python Lib Phase 0: C++ 统计注册修复 | 1-2d | 编译环境 | 无 |
-| 🟡 P1 | F6: compute_unit_v1.json 蓝图升级 | 1-2d | F12a ✅ | 无
+| 🟡 P1 | ADR-SOC-09 D5 修订(基于 UsrLinuxEmu ADR-088 KFD 反馈) | TBD | UsrLinuxEmu ADR-088 反馈 | 跨仓依赖 |
+| 🟡 P1 | ADR-SOC-14 D5 修订(live migration 节奏) | TBD | UsrLinuxEmu ADR-089 v5.5+ 更新 | 跨仓依赖 |
+| 🟡 P1 | Phase 1-3 PCIe 子链路 3 项 ADR(Link Layer / 130b Encoding / PHY Digital) | 4 hr | 已交付实施 | 文档化 |
+| 🟢 P2 | 9 类 SimModule 容器单独 ADR(拆分 ADR-SOC-10) | 2 hr | ADR-SOC-10 实施后 | 可选 |
+| 🟢 P2 | docs_sync_check 加 dGPU SoC 路径 | 1 hr | 路径已纳入 | 可选 |
+| 🟢 P2 | 历史 roadmap 整体归档或重写 | 1-2 hr | Oracle FAIL | ✅ 已降级为快照 |
 
 ---
 
 ## 📋 Kanban 看板
 
-### 🚀 IN PROGRESS
+### 🚀 IN PROGRESS (2027-02-09)
 
-_无进行中任务_
+_无进行中任务(全部 2027-02 v1.0 战略交付已完成归档)_
 
 ### ⏳ READY (入口条件满足)
 
 | 任务 | 工期 | 入口条件状态 | 前置任务 |
 |------|:---:|------|------|
-| Phase 8.B Task 9 (Scoreboard) | 0.5d | [x] Phase 8.A archived | — |
-| Phase 8.B Task 10 (WarpScheduler) | 1d | [x] 8.A ✅ | — |
-| Phase 8.B Task 11 (Pipeline) | 1d | [x] 8.A ✅ | — |
-| Phase 8.B Task 12 (TensorCore) | 1d | [x] 8.A ✅ | — |
-| Phase 8.B Task 13 (L2Partition) | 0.5d | [x] 8.A ✅ | — |
-| Phase 8.B Task 14 (SubCore) | 1d | [x] 8.A ✅ + 8.B-T10-13 | 8.B-T10-13 |
-| Phase 8.B Task 15 (集成+对照) | 1w | [x] 8.A ✅ + 8.B-T14 | 8.B-T14 |
-| Phase 8.B Task 16 (6 docs + M2) | 1w | [x] 8.A ✅ + 8.B-T15 | 8.B-T15 |
-| Python Lib Phase 0 (Stats) | 1-2d | [x] 编译环境 | — |
-| Python Lib Phase 1 (Config) | 2-3d | [x] Python 环境 | — |
-| F6 蓝图升级 | 1-2d | [x] F12a ✅ | — |
-| F4 Brainstorming 启动 | 2d | [x] 8.A ✅ (并行复杂度降低) | — |
+| ADR-SOC-09 D5 修订(KFD 路径) | TBD | [ ] UsrLinuxEmu ADR-088 KFD 反馈 | 跨仓依赖 |
+| ADR-SOC-14 D5 修订(live migration) | TBD | [ ] UsrLinuxEmu ADR-089 v5.5+ | 跨仓依赖 |
+| Phase 1-3 PCIe 子链路 ADR | 4 hr | [x] 实施已完成 | 文档化 |
+| 9 类 SimModule 容器 ADR | 2 hr | [x] ADR-SOC-10 已签发 | 可选拆分 |
 
-### 🔴 BLOCKED (统一)
+### ✅ DONE (2026-09..2027-02 v1.0 战略全部交付)
+
+| 任务 | commit | 工期 | 状态 |
+|------|--------|:---:|:---:|
+| PCIe EP Phase 1 Link Layer | `e9b1b..` | 3 mo | ✅ Oracle PASS |
+| PCIe EP Phase 2 128b/130b Encoding | `8d1f1d5` `b21d290` | 1 mo | ✅ Oracle PASS |
+| PCIe EP Phase 3 PHY Digital Ctrl | `05be913..bac9267` | 1 mo | ✅ Oracle 9/10 PASS |
+| PCIe EP Phase 4 SR-IOV VF Pool | `4e9564e..6ebbd7d` | 2 mo | ✅ Oracle PASS |
+| PCIe EP Phase 5 AXI Stream Adapter | `6223534..b1811703` | 2 mo | ✅ Oracle M1/M2/M3 PASS |
+| PCIe EP Phase 6 AXI4Mapper | `ae8ecd7..f2540e8` | 1 mo | ✅ Oracle PASS |
+| PCIe EP Phase 7 Host Bypass + RC | `a771253..91e515f` | 2 mo | ✅ Oracle 有条件 PASS |
+| PCIe EP Phase 8 整合交付 | `13ee09d..429327d` | 2 mo | ✅ 整合完成 |
+| dGPU SoC v1.0 总架构蓝图 | `c568a5a` | 1 day | ✅ Oracle v3.0/v3.1 PASS |
+| ADR-SOC-09..14 新增 | `164224f` | 1 day | ✅ Oracle PASS-WITH-CONDITIONS |
+| ADR-SOC-01..08 Status Update | `a478d7b` | 1 day | ✅ Oracle PASS |
+| 54 份模块微架构同步 | `fd19a7a` | 1 day | ✅ |
+| AGENTS.md v3.1 (SoC) 迁移 | `3511922` | 0.5 day | ✅ |
+| 4 份新模块微架构(host-bypass等) | `f559bc5` | 0.5 day | ✅ |
+| ADR 修订规划 OpenSpec change | `ef78907` `dcd4598` | 1 day | ✅ Oracle validate PASS |
+
+### 🔴 BLOCKED (跨仓依赖)
 
 | 任务 | 工期 | 缺失入口条件 | 阻塞原因 |
 |------|:---:|------|------|
-| F4 Brainstorming (state table) | 2d | [ ] 启动新 brainstorming cycle | 架构重大变更 (Phase 7.C coherence) |
-| F4 Spec 撰写 | 1d | [ ] Brainstorming 完成 | 依赖 F4 brainstorming 产出 |
-| F12b-LD 实施 | 2-3w | [ ] PTX-EMU 团队确认 [ ] CMake PoC [ ] 参考 CUDA 程序选定 | PTX-EMU 侧未对齐 (外部依赖) |
-| Phase 8.C (Task 17-25) | 3w | [ ] Phase 8.B 完成 (Task 16) | 锁 8.B M2 验收 |
-| F13 Phase 7.D TCC Bridge | 1-2w | [ ] F12b-LD TCC 路径确认 [ ] F6 蓝图升级 (可选) | F12a ✅ 已满足基础 |
-| F14 Phase 7.E Multi-CU | 1-2w | [ ] F4 完成 | 锁 coherence |
-| F15 Phase 7.F Full APU Demo | 1w | [ ] F13 + F14 完成 | 锁全链路 |
-| F9 多 xbar | 1-2d | [ ] F4 完成 | 锁 CoherentXBarTLM |
-| Python Lib Phase 2 (Runner) | 2-3d | [ ] Python Lib P0 完成 | 串行依赖 |
+| ADR-SOC-09 D5 修订(KFD 路径) | TBD | UsrLinuxEmu ADR-088 KFD 反馈 | 跨仓承诺 |
+| ADR-SOC-14 D5 修订(live migration) | TBD | UsrLinuxEmu ADR-089 v5.5+ 更新 | 跨仓承诺 |
 
-### 🔮 FUTURE (下一阶段)
+### 📜 历史看板(2026-07-03 视角,已过时)
 
-| 任务 | 工期 | 依赖链 |
+以下为原始 2026-07-03 时点看板,仅供历史对比:
+
+| 任务 | 原始状态 | 当前实际状态 |
 |------|:---:|------|
-| F14 Phase 7.E Multi-CU + NoC | 1-2w | F12a ✅ + F4 |
-| F15 Phase 7.F Full APU Demo | 1w | F13 + F14 |
-| F9 多 xbar 支持 | 1-2d | F4 |
-| Phase 8.C (高级 + Python) | 3w | 8.B |
-| Python Lib Phase 3 (Viz) | 2-3d | P0 + P2 |
-
-### ✅ COMPLETED
-
-| 任务 | 完成日期 | Commit | 测试增量 |
-|------|:---:|------|:---:|
-| P0 全套修复 | 2026-06-19 | `fb56cc3` 等 6 个 | 659→684 |
-| P1 incorporate_parent | 2026-06-19 | `04399c8` | 684→690 (+6) |
-| P1.5 cu_template | 2026-06-19 | `e8c2a97` | — |
-| Phase A (8 项) | 2026-06-22~23 | 8 commits | 690→703 (+13) |
-| gpu_soc 架构定义 | 2026-06-24 | `801f8ea` 等 4 个 | — |
-| Phase 8.A T1 SharedMemoryTLM | 2026-06-28 | `6410ea9` | +9 cases [smem] |
-| Phase 8.A T2 MemoryClusterTLM | 2026-06-28 | `6410ea9` | +8 cases [memcluster] |
-| Phase 8.A T3 GpuMeshNoC | 2026-06-28 | `d164497` | +10 cases [noc] |
-| Phase 8.A T4 KernelLaunchTLM | 2026-06-28 | `b8bd411` | +7 cases [kernel_launch] |
-| Phase 8.A T1-4 Oracle Review | 2026-06-30 | `71e47ff` | APPROVED |
-| F12a SubCoreSlot | 2026-06-30 | `e2aa9f3` | header-only |
-| F12a WavefrontTLM | 2026-06-30 | `27bc204` | +3 cases [wavefront] |
-| F12a VectorRegFileTLM | 2026-06-30 | `8b0a649` | +4 cases [vector_regfile] |
-| F12a MinimalWarpSchedulerTLM | 2026-06-30 | `af13e55` | +5 cases [warp_scheduler] |
-| F12a GpuComputeUnitTLM | 2026-06-30 | `7ff067e` | +5 cases [compute_unit] |
-| F12a Integration Test | 2026-06-30 | `b5ece52` | +1 case [integration] |
-| Phase 8.A T5a-e (GpuClusterSharedInterface) | 2026-07-01 | (pending commit) | apu_soc 兼容 |
-| Phase 8.A T6 (GpuSocTLM) | 2026-07-01 | (pending commit) | +[gpu][soc] |
-| Phase 8.A T7 (集成测试) | 2026-07-01 | (pending commit) | +[phase8a] |
-| Phase 8.A T8 (5 microarch docs + M1) | 2026-07-02 | `9789ca0` | 5 docs, 755/755, docs_sync 0 missing |
-| Phase 8.A T5-T7 (GpuClusterSharedInterface + GpuSocTLM + integration) | 2026-07-02 | `840ecb7` | +9 cases, 755→764 |
-| **Phase 8.A Oracle Full Review + Archive** | 2026-07-02 | `e8280fe` | APPROVED, moved to archive/ |
+| Phase 8.B Task 9-14 | ⏳ READY | ✅ 已交付 + 注入 PTX-EMU |
+| F4 (Phase 7.C CoherentXBarTLM) | 🔴 待启动 | ✅ skeleton + tests + 归档 change |
+| F12b-LD (PTX-EMU 集成) | 🔴 blocked | ✅ 已实施归档 (`0f0136e`, 2026-07-16) |
+| Python Lib Phase 0/1 | ⏳ READY | ✅ cpptlm/ Python 包已就位 |
+| Phase 8.A Oracle + Archive | ✅ | ✅ |
 
 ---
 
-## 📊 测试基线演化
+## 📊 测试基线演进
 
-```
-659 ──P0──→ 684 ──P1──→ 690 ──Phase A──→ 703 ──F12a/8.A──→ 755
-                                                        (当前)
-                                                           │
-                                         8.A T8  ──→ 755 (不变, 仅 doc)
-                                         8.B     ──→ ~762 (+7 模块测试)
-                                         8.C     ──→ ~766 (+4 模块测试)
-                                         F4      ──→ ~805 (+50 state table)
-                                         F6      ──→ ~766 (1 blueprint)
-                                         F13     ──→ ~786 (+20 TCC)
-                                         F14     ──→ ~801 (+15 Multi-CU)
-                                         F15     ──→ ~806 (+5 Python)
-                                         终点目标 ──→ ~810/810
-```
+| 时点 | cases | assertions | 状态 |
+|:---:|:---:|:---:|------|
+| 2026-07-03 | 764 | 15547 | ✅ 快照(原始基线) |
+| 2026-08-31 | ~870 | ~18000 | ✅ v0.5.0-MVP tag 已打 |
+| 2027-02-09 | **1241** | **47634** | ⚠️ 2 known fail (Phase 8 e2e `_config` + `_bar` Minor) |
 
 ---
 
-## 🔗 入口条件检查清单
+## 🔧 已知问题 (Known Issues)
 
-每次启动新任务前，必须通过此清单：
+### Major
+- 无
 
-### Phase 8.A Task 8 ✅ (COMPLETED)
-- [x] T1-4 模块 (SharedMemory/MemoryCluster/GpuMeshNoC/KernelLaunch) 全部 frozen ✅
-- [x] T5a-e GpuClusterSharedInterface 全部完成 ✅
-- [x] T6 GpuSocTLM 顶层 + 注册 ✅
-- [x] T7 集成测试 pass ✅
-- [x] `[gpu]` 75 cases / 197 assertions 全绿 ✅
-- [x] `[phase8a]` 43 cases / 112 assertions 全绿 ✅
-- [x] `docs_sync_check.sh --strict` 0 missing ✅
-- [x] `format.sh --check` clean ✅
-- [x] 全量 764/764 tests pass (15547 assertions) ✅
-- [x] M1 性能: full suite < 3s ✅
-- [x] Commit: `9789ca0` ✅
-
-### Phase 8.A Oracle Full Review ✅ (COMPLETED)
-- [x] Task 8 完成
-- [x] G2-G6 全部通过
-- [x] OpenSpec change 已归档 (`e8280fe`)
-
-### Phase 8.B
-- [x] Phase 8.A 已归档 (在 `archive/` 目录)
-- [x] `[gpu]` 75 cases + apu_soc 兼容测试全绿
-
-### F4 (Phase 7.C)
-- [x] Phase 8.A 已完成归档 (减少并行复杂度)
-- [x] ADR-SOC-01 coherence 协议策略已确认 (2026-06-14, 无需重新对齐)
-- [ ] Brainstorming 启动 (cycle 已 ready, 无外部阻塞)
-- [ ] Spec 文档已产出
-- [ ] ADR-7C-01 已签发
-
-### F12b-LD
-- [x] F12a 完成 (✅)
-- [ ] PTX-EMU 团队确认 bridge 接口 (`CppTLMBridge`)
-- [ ] CMake `libcpptlm_cudart.so` PoC 验证通过
-- [ ] 参考 CUDA 程序 + 期望输出选定
-- [ ] 性能基线对比方法确定
-- [ ] PTX-EMU 全局 singleton 处理策略确定
-
-### F13 Phase 7.D
-- [x] F12a 完成 (✅)
-- [ ] (可选) F6 蓝图升级加速验证
-
-### F14 Phase 7.E
-- [x] F12a 完成 (✅)
-- [ ] F4 CoherentXBarTLM 完成 (coherence domain 前置)
-
-### F15 Phase 7.F
-- [ ] F13 TCC Bridge 完成
-- [ ] F14 Multi-CU 完成
+### Minor
+- `test_pcie_endpoint_ip_full_e2e.cc:_config` + `_bar` — Phase 8 e2e 已知 Minor,AXI↔PCIe Cfg 地址编码简化(直接用 `awaddr` 当 offset,需未来细化按 PCIe 规范 `bits[1:0]=0, bits[7:2]=offset`)
+- `ch_uint<512>` 数据宽度实为 64-bit 存储(per `include/bundles/cpphdl_types.hh`)
 
 ---
 
-## 🏷️ 标签体系
+## 📅 维护历史
 
-| 标签 | 含义 | 颜色 |
-|------|------|:---:|
-| 🔴 P0 | 最高优先级, 当前阻塞其他任务 | 红 |
-| 🟡 P1 | 重要但可并行 | 黄 |
-| 🟢 P2 | 正常推进 | 绿 |
-| 🔮 | 远期目标 | 紫 |
-| ⚠️ | 需要决策 / 风险待解决 | 橙 |
-
----
-
-*自动维护: 每次 `git commit` 后由开发者手动更新本文件*
-*下次全量 review: 2026-07-09*
+| 日期 | 版本 | 维护者 | 说明 |
+|------|------|--------|------|
+| 2026-07-03 | v1.0 | (原维护者) | 初版,764/764 基线,Phase 8.B 活跃中 |
+| 2027-02-09 | v2.0-historical | Sisyphus | Oracle 评审 FAIL → 降级为历史快照,顶部加横幅,新增 ✅ DONE 段列出 2026-09..2027-02 v1.0 战略全部交付 |

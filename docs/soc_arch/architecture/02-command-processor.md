@@ -4,14 +4,14 @@
 > **状态**: 📋 Draft v1 (待 Oracle 评审,2027-02-09)
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)
-> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（§3.3 L3 Command Protocol 层）
+> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§3.3 L3 Command Protocol 层）
 > **关联现有模块微架构**:
 > - [`docs/soc_arch/modules/command-processor.md`](../modules/command-processor.md)（ADR-SOC-06 D5 v0.5 MVP 路径）
 > - [`docs/soc_arch/modules/pm4-decoder.md`](../modules/pm4-decoder.md)（NVIDIA method packet 简化）
 > **关联研究综述**:
 > - [`docs/research/CP/nvidia/overview.md`](../../research/CP/nvidia/overview.md)（NVIDIA CP 专利综述:SM 队列管理器 + 计算图 + 可执行图修改）
 > - [`docs/research/CP/amd/overview.md`](../../research/CP/amd/overview.md)（AMD CP 专利综述:HQD + IB prefetch + 用户态分发）
-> **关联 ADR**: ADR-SOC-04（HSAP 极简化）/ ADR-SOC-06 D5（CommandProcessor + Pm4Decoder + 双 vendor 扩展）/ ADR-SOC-09（Proposed,v1.0 NVIDIA+AMD dual vendor）
+> **关联 ADR**: ADR-SOC-04（HSAPP 极简化）/ ADR-SOC-06 D5（CommandProcessor + Pm4Decoder + 双 vendor 扩展）/ ADR-SOC-09（Proposed,v1.0 NVIDIA+AMD dual vendor）
 
 ---
 
@@ -65,7 +65,7 @@
 
 ### 1.3 与总架构蓝图的一致性
 
-本文档**严格对齐** `00-overview.md` v3.0 PASS 的 §3.3 L3 Command Protocol 层 + §4-bis 范围矩阵 R07-R09 + §6.1 兼容性分析。
+本文档**严格对齐** `00-overview.md` v3.1 PASS 的 §3.3 L3 Command Protocol 层 + §4-bis 范围矩阵 R07-R09 + §6.1 兼容性分析。
 
 ---
 

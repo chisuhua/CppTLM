@@ -6,7 +6,7 @@
 > **影响**: ModuleFactory 单一入口 JSON 拓扑 + 9 类 SimModule P2-P5 层级 + ApuSoC 顶层
 > **类别**: SoC 架构 / v1.0 拓扑
 > **关联文档**:
-> - [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（§1.3 多层 SimModule 拓扑）
+> - [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§1.3 多层 SimModule 拓扑）
 > - [`include/tlm/cluster/`](../../../include/tlm/cluster/)（9 类 SimModule + ApuSoC 真实代码）
 > - [`include/modules_cluster.hh`](../../../include/modules_cluster.hh)（REGISTER_MODULE 集中注册）
 > - [`examples/dgpu_soc_with_pcie_ip.json`](../../../examples/dgpu_soc_with_pcie_ip.json)（Phase 8 完整 dGPU SoC + PCIe EP 配置）

@@ -21,7 +21,7 @@
 
 `tlm::CoherenceProtocol` 是 CppTLM Phase 7.C 实施的 **协议无关抽象层**——定义 6 状态 MOESI 完整状态机、snoop probe/response 消息类型、协议转换占位。**与 gem5 对位**: `gem5::MOESI_AMD_Base-dir`（slicc 描述，CppTLM 用 C++ `switch` 表简化, per ADR-SOC-01 §2 决策（永不复制 gem5 slicc DSL））。
 
-**v1.0 dGPU SoC 战略补充**(per `00-overview.md` v3.0 PASS §4-bis R23-R24 + ADR-SOC-09 D4):
+**v1.0 dGPU SoC 战略补充**(per `00-overview.md` v3.1 PASS §4-bis R23-R24 + ADR-SOC-09 D4):
 - **NVIDIA 路径**:通常不需要 CPU↔GPU coherence(per USRI path);NVIDIA coherence 仅在 GPU 内部 L1/L2
 - **AMD 路径**:AMD Infinity Fabric 需要 CPU↔GPU coherence(per ROCm path);完整跨域桥接
 - **共享 MOESI/GPU 6 状态 × 6 事件**:跨 vendor 复用同一状态机

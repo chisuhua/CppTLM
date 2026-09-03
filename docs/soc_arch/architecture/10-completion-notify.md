@@ -4,11 +4,11 @@
 > **状态**: 📋 Draft v1 (待 Oracle 评审,2027-02-09)
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)
-> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（§3.2 L2.4 CompletionRing + §3.2 L2.5 MSI-X）
+> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§3.2 L2.4 CompletionRing + §3.2 L2.5 MSI-X）
 > **关联现有模块微架构**:
 > - [`docs/soc_arch/modules/completion-ring.md`](../modules/completion-ring.md)
-> - [`docs/soc_arch/modules/msix_table_mvp.md`](../modules/msix_table_mvp.md)
-> - [`docs/soc_arch/modules/pcie_config_space_mvp.md`](../modules/pcie_config_space_mvp.md)（MSI-X 状态机）
+> - [`docs/architecture/14-pcie-ip-microarchitecture.md §4 (MSI-X)`](../modules/msix_table_mvp.md)
+> - [`docs/architecture/14-pcie-ip-microarchitecture.md §4 (PCIe Config Space)`](../modules/pcie_config_space_mvp.md)（MSI-X 状态机）
 > **关联研究综述**:
 > - [`docs/research/PCIe/PCIe_上的保序write.md`](../../research/PCIe/PCIe_上的保序write.md)（PCIe 强序 write 机制）
 > - [`docs/research/CP/amd/US20210191730A1_未映射队列聚合门铃_解析.md`](../../research/CP/amd/US20210191730A1_未映射队列聚合门铃_解析.md)（AMD 聚合 doorbell）
@@ -52,7 +52,7 @@
 
 ### 1.3 与总架构蓝图的一致性
 
-本文档**严格对齐** `00-overview.md` v3.0 PASS 的 §3.2 L2.4-L2.5 + §4-bis 范围矩阵 R25 + §6.1 兼容性分析。
+本文档**严格对齐** `00-overview.md` v3.1 PASS 的 §3.2 L2.4-L2.5 + §4-bis 范围矩阵 R25 + §6.1 兼容性分析。
 
 ---
 
@@ -304,7 +304,7 @@ public:
 
 | 模块 | 路径 | 角色 |
 |------|------|------|
-| **CompletionRing** | `include/tlm/gpu/completion_ring_tlm.hh` | GPU 完成环 |
+| **CompletionRing** | `include/tlm/gpu/completion_ring_mvp.hh` (rename 为 `_tlm` 后缀待执行,per §6 表 T-bs-2b) | GPU 完成环 |
 | **MsiXTable** | `include/tlm/gpu/msix_table_mvp.hh` | MSI-X 状态机 |
 | **PcieConfigSpace** | `include/tlm/gpu/pcie_config_space_mvp.hh` | Config Space(MSI-X capability)|
 | **Doorbell** | (PcieEndpointIP 内部)| Doorbell MMIO 寄存器 |
@@ -385,8 +385,8 @@ public:
 | 模块 | 微架构文档 |
 |------|-----------|
 | **CompletionRing** | [`docs/soc_arch/modules/completion-ring.md`](../modules/completion-ring.md) |
-| **MsiXTable** | [`docs/soc_arch/modules/msix_table_mvp.md`](../modules/msix_table_mvp.md) |
-| **PcieConfigSpace** | [`docs/soc_arch/modules/pcie_config_space_mvp.md`](../modules/pcie_config_space_mvp.md) |
+| **MsiXTable** | [`docs/architecture/14-pcie-ip-microarchitecture.md §4 (MSI-X)`](../modules/msix_table_mvp.md) |
+| **PcieConfigSpace** | [`docs/architecture/14-pcie-ip-microarchitecture.md §4 (PCIe Config Space)`](../modules/pcie_config_space_mvp.md) |
 | **PcieEndpointIP** | [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md) |
 
 ### 10.3 关联研究综述
@@ -429,7 +429,7 @@ public:
 
 | # | 文档 | 状态 | 行数(估) |
 |---|------|------|----------:|
-| 00 | 总架构蓝图 | ✅ v3.0 PASS(Oracle 2 轮)| 873 |
+| 00 | 总架构蓝图 | ✅ v3.1 PASS(Oracle 2 轮)| 873 |
 | 01 | Host Interface | ✅ Draft v1 | 715 |
 | 02 | Command Processor | ✅ Draft v1 | ~600 |
 | 03 | Task Management Unit | ✅ Draft v1 | ~580 |

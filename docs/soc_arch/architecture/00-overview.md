@@ -1,12 +1,12 @@
 # dGPU SoC v1.0 总架构蓝图 — 融合 NVIDIA Blackwell + AMD CDNA 3/3.5 视角
 
 > **类别**: SoC Architecture > 总架构蓝图 (v1.0)
-> **状态**: ✅ v3.0 PASS (Oracle 评审 PASS-WITH-CONDITIONS + N1/N2 修复完成,2027-02-09)
+> **状态**: ✅ v3.1 PASS (Oracle 评审 PASS-WITH-CONDITIONS + N1/N2/v3.1 修复完成,2027-02-09)
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)（已建立,作为本总架构蓝图及后续 01-10 子架构文档归口）
 > **关联文档**:
 > - 系统级设计 [`docs/soc_arch/specs/apu-soc-design.md`](../specs/apu-soc-design.md)（1056 行,Phase 7 APU 视角）
-> - PCIe EP 微架构 [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md)（948 行,PCIe IP 视角）
+> - PCIe EP 微架构 [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md)（950 行,PCIe IP 视角）
 > - 9 类 SimModule 拓扑 [`include/tlm/cluster/`](../../../include/tlm/cluster/)（CpuCluster / ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC / ApuSoC）
 > - 研究综述 [`docs/research/SM/overview.md`](../../research/SM/overview.md)（NVIDIA Hopper→Blackwell SM 内部专利与微基准综述）
 > - 分发段综述 [`docs/research/WDUtoSM/overview.md`](../../research/WDUtoSM/overview.md)（NVIDIA WDU + AMD SPI/SQ 对照）
@@ -33,16 +33,16 @@
 docs/soc_arch/
 ├── architecture/                  # ★ 本目录 — 总架构蓝图 + 子系统架构
 │   ├── 00-overview.md             # 本文档(v1.0 总架构蓝图)
-│   ├── 01-host-interface.md       # (规划中) PcieEndpointIP + HostBypassTLM + PcieRootComplexTLM
-│   ├── 02-command-processor.md    # (规划中) CommandProcessor + Pm4Decoder(Nvidia PM4 + AMD PM4 TYPE3)
-│   ├── 03-task-management-unit.md # (规划中) TMU + TMD + 依赖预取 + PDL
-│   ├── 04-work-distribution.md    # (规划中) WDU + SubmitQueue + Crossbar + CGA Cluster
-│   ├── 05-sm-compute-unit.md      # (规划中) CU/SM + Warp调度 + 寄存器文件 + DSMEM/TMEM
-│   ├── 06-tensor-core.md          # (规划中) wgmma(Hopper) / tcgen05(Blackwell) + 5th Tensor Core
-│   ├── 07-memory-system.md        # (规划中) HBM3e + L1/L2 + Shared Memory + DSMEM/TMEM
-│   ├── 08-noc-interconnect.md     # (规划中) Mesh NoC + Router + NIC + 跨 cluster 通信
-│   ├── 09-coherence-protocol.md   # (规划中) MOESI/GPU + CoherenceDomain + Bridge
-│   └── 10-completion-notify.md    # (规划中) Doorbell + CompletionRing + MSI-X
+│   ├── 01-host-interface.md       # PcieEndpointIP + HostBypassTLM + PcieRootComplexTLM
+│   ├── 02-command-processor.md    # CommandProcessor + Pm4Decoder(Nvidia PM4 + AMD PM4 TYPE3)
+│   ├── 03-task-management-unit.md # TMU + TMD + 依赖预取 + PDL
+│   ├── 04-work-distribution.md    # WDU + SubmitQueue + Crossbar + CGA Cluster
+│   ├── 05-sm-compute-unit.md      # CU/SM + Warp调度 + 寄存器文件 + DSMEM/TMEM
+│   ├── 06-tensor-core.md          # wgmma(Hopper) / tcgen05(Blackwell) + 5th Tensor Core
+│   ├── 07-memory-system.md        # HBM3e + L1/L2 + Shared Memory + DSMEM/TMEM
+│   ├── 08-noc-interconnect.md     # Mesh NoC + Router + NIC + 跨 cluster 通信
+│   ├── 09-coherence-protocol.md   # MOESI/GPU + CoherenceDomain + Bridge
+│   └── 10-completion-notify.md    # Doorbell + CompletionRing + MSI-X
 ├── adr/                           # ADR-SOC-01..08 架构决策记录(本版本不修订;由 Metis 审查的独立 change 负责)
 └── modules/                       # IP 微架构文档(25+ 份,每 IP 一份;由独立 change 修订)
 ```
@@ -397,7 +397,7 @@ CP → SPI (Shader Processor Input 202) → SQ → CU / SIMD wavefront
 | IB | 间接缓冲(per US20210304349A1) | v1.0 |
 | KFD IOCTL | 用户态驱动(per US9176795B2) | v1.0 |
 
-**L6.3 CppTLM ComputeUnitTLM 蓝图**(per `include/tlm/gpu/compute_unit_tlm.hh`):
+**L6.3 CppTLM ComputeUnitTLM 蓝图**(per `include/tlm/gpu/gpu_compute_unit_tlm.hh`):
 - `cu_template` + `cu_count`(per `ComputeCluster`, per ADR-SOC-06)
 - 黑盒 MVP 路径(v0.5)+ 白盒 warp 级(v0.5 完整版)
 - 双 vendor 路径作为可选模式(per JSON config param `nv_mode` / `amd_mode`)
@@ -784,10 +784,10 @@ ComputeReqBundle v1.0 扩展:
 |------|-----------|---------------|
 | **PcieEndpointIP** | [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../modules/dgpu-soc-pcie-slice.md) + [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md) | [`2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool`](../../../openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/) + [`2027-02-09-cpptlm-dgpu-pcie-ip-integration`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-pcie-ip-integration/) |
 | **SdmaEngineTLM** | [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../modules/dgpu-soc-pcie-slice.md) | (per `2026-08-26-cpptlm-dgpu-sdma-engine`,已归档 `archive/`) |
-| **HostBypassTLM** | (待新建) | [`2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc`](../../../openspec/changes/2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc/) |
-| **PcieRootComplexTLM** | (待新建) | [`2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc`](../../../openspec/changes/2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc/) |
-| **Axi4StreamAdapter** | (待新建) | [`2026-11-03-cpptlm-dgpu-axi-stream-adapter`](../../../openspec/changes/2026-11-03-cpptlm-dgpu-axi-stream-adapter/) |
-| **Axi4Mapper** | (待新建) | [`2026-12-22-cpptlm-dgpu-axi4-mapper`](../../../openspec/changes/2026-12-22-cpptlm-dgpu-axi4-mapper/) |
+| **[HostBypassTLM](../modules/host-bypass.md)** | ✅ 已交付 (429327d) | [`2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc`](../../../openspec/changes/2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc/) |
+| **[PcieRootComplexTLM](../modules/pcie-root-complex.md)** | ✅ 已交付 (429327d) | [`2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc`](../../../openspec/changes/2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc/) |
+| **[Axi4StreamAdapter](../modules/axi4-stream-adapter.md)** | ✅ 已交付 (Phase 5) | [`2026-11-03-cpptlm-dgpu-axi-stream-adapter`](../../../openspec/changes/2026-11-03-cpptlm-dgpu-axi-stream-adapter/) |
+| **[Axi4Mapper](../modules/axi4-mapper.md)** | ✅ 已交付 (Phase 6) | [`2026-12-22-cpptlm-dgpu-axi4-mapper`](../../../openspec/changes/2026-12-22-cpptlm-dgpu-axi4-mapper/) |
 | **ComputeUnitTLM** | [`docs/soc_arch/modules/gpu-compute_unit.md`](../modules/gpu-compute_unit.md) | (per v0.5 redo archive `2026-08-19-cpptlm-v05-redo`) |
 | **CommandProcessor** | [`docs/soc_arch/modules/command-processor.md`](../modules/command-processor.md) | (per v0.5 redo) |
 | **Pm4Decoder** | [`docs/soc_arch/modules/pm4-decoder.md`](../modules/pm4-decoder.md) | (per v0.5 redo) |
@@ -863,13 +863,13 @@ ComputeReqBundle v1.0 扩展:
 |------|------|------|------|
 | 2027-02-09 | v1.0-draft | Sisyphus | 首版创建(v1.0 战略 + 融合 NVIDIA + AMD 决策) |
 | 2027-02-09 | v2.0-fixed | Sisyphus | Oracle 评审 FAIL → 修复 P0(PcieEndpointIP 端口语义 / OpenSpec 引用 / 层数统一 / 范围矩阵)+ P1(R7 23 ABI / PDL 错误 / 硬件规格 / MI300X 拓扑 / ADR 决策编号)+ P2(链接/术语/标注) |
-| 2027-02-09 | v3.0-PASS | Sisyphus | Oracle 复审 PASS-WITH-CONDITIONS → 修复 N1(23 ABI 部分交付,18/23 函数,非"0 命中")+ N2(ADR-089 v0.5 版本对齐仓内引用) → PASS
+| 2027-02-09 | v3.0-PASS | Sisyphus | Oracle 复审 PASS-WITH-CONDITIONS → 修复 N1(23 ABI 状态误述,文档曾写 18/23 函数且非"0 命中")+ N2(ADR-089 v0.5 版本对齐仓内引用) → PASS
 | 2027-02-09 | v3.1-PASS | Sisyphus | 23 ABI 状态复核:仓内 19/19 函数全部实现 + 4 回调 typedef 契约(per `src/abi/cpptlm_emulator.cc` 实测),R27/R5 同步 → PASS |
 
 **关联 OpenSpec 计划**:
 - 归属 change: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)(已建立)
-- 01-10 子架构文档:由本 change 后续 task 实施,每份独立 Oracle 评审
-- ADR-SOC 修订/新建:由独立 OpenSpec change(`cpptlm-dgpu-soc-v1-adr-revision`,待启动)负责,需先 Metis 审查
-- 模块微架构修订:由独立 OpenSpec change(`cpptlm-dgpu-soc-v1-modules-update`,待启动)负责,需先 Metis 审查
+- 01-10 子架构文档:已全部交付 (commit `c568a5a`),每份独立 Oracle 评审 PASS-WITH-CONDITIONS
+- ADR-SOC 修订/新建:由独立 OpenSpec change(`cpptlm-dgpu-soc-v1-adr-revision`)负责,已建立 + 归档 (commit `ef78907`)
+- 模块微架构修订:已在 commit `fd19a7a` 同步完成 (54/56 份模块微架构 v1.0 标注)
 
 **下次更新**:Oracle 复审通过后归档 v2 → v3 标记 PASS

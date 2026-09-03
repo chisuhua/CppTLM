@@ -10,7 +10,7 @@
 > - [`ADR-SOC-11-pcie-endpoint-ip.md`](../adr/ADR-SOC-11-pcie-endpoint-ip.md) — PcieEndpointIP 17 ports 持有 Axi4StreamAdapter
 > - [`ADR-SOC-12-host-bypass-and-rc.md`](../adr/ADR-SOC-12-host-bypass-and-rc.md) — HostBypassTLM/RC 持有 Axi4StreamAdapter
 > **关联 OpenSpec**: [`openspec/changes/2026-11-03-cpptlm-dgpu-axi-stream-adapter/`](../../../openspec/changes/2026-11-03-cpptlm-dgpu-axi-stream-adapter/)
-> **首版 commit**: `2026-11-03` T-AXI-1 + `710c734..dd8c44a` (Phase 5 实施) + Oracle M1/M2/M3 修复 · **最近更新**: 2027-02-09 (Phase 8 整合 + ADR-SOC-13 同步)
+> **首版 commit**: `2026-11-03` T-AXI-1 + `6223534..b1811703` (Phase 5 实施,Oracle M1/M2/M3 修复) + Oracle M1/M2/M3 修复 · **最近更新**: 2027-02-09 (Phase 8 整合 + ADR-SOC-13 同步)
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:

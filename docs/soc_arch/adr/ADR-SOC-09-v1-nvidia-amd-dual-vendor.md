@@ -6,7 +6,7 @@
 > **影响**: L3/L5/L6 双 vendor 路径 + UsrLinuxEmu 跨仓依赖标注 + 23 ABI 兼容性
 > **类别**: SoC 架构 / v1.0 战略
 > **关联文档**:
-> - [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（v1.0 总架构蓝图，§1.2 关键决策 + §4-bis 范围矩阵 R01/R06/R09/R17）
+> - [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（v1.0 总架构蓝图，§1.2 关键决策 + §4-bis 范围矩阵 R01/R06/R09/R17）
 > - [`docs/soc_arch/architecture/02-command-processor.md`](../architecture/02-command-processor.md)（L3 双 vendor 解码落地）
 > - [`docs/soc_arch/architecture/05-sm-compute-unit.md`](../architecture/05-sm-compute-unit.md)（L6 双 vendor 内核落地）
 > **关联 ADR**:

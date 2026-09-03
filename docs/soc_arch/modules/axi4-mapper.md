@@ -10,7 +10,7 @@
 > - [`ADR-SOC-10-module-factory-topology.md`](../adr/ADR-SOC-10-module-factory-topology.md) D4 — JSON `axi4_mapper_inject: true` 可选注入
 > - [`ADR-SOC-11-pcie-endpoint-ip.md`](../adr/ADR-SOC-11-pcie-endpoint-ip.md) — PcieEndpointIP 不内嵌 Mapper（解耦）
 > **关联 OpenSpec**: [`openspec/changes/2026-12-22-cpptlm-dgpu-axi4-mapper/`](../../../openspec/changes/2026-12-22-cpptlm-dgpu-axi4-mapper/)
-> **首版 commit**: `2026-12-22` T-MAP-1 + `8b92bfb..fe4d745` (Phase 6 实施, Oracle PASS) · **最近更新**: 2027-02-09 (Phase 8 整合 + ADR-SOC-13 同步)
+> **首版 commit**: `2026-12-22` T-MAP-1 + `ae8ecd7..f2540e8` (Phase 6 实施, Oracle PASS) · **最近更新**: 2027-02-09 (Phase 8 整合 + ADR-SOC-13 同步)
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:

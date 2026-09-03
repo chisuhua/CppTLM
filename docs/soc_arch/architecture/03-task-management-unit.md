@@ -4,7 +4,7 @@
 > **状态**: 📋 Draft v1 (待 Oracle 评审,2027-02-09)
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)
-> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（§3.4 L4 TMU/TMD 层）
+> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§3.4 L4 TMU/TMD 层）
 > **关联现有模块微架构**:
 > - [`docs/soc_arch/modules/tmu-dispatch-processor.md`](../modules/tmu-dispatch-processor.md)（v0.5 MVP 简化）
 > - [`docs/soc_arch/modules/gpu-memory-cluster.md`](../modules/gpu-memory-cluster.md)（TMD 关联）
@@ -67,7 +67,7 @@
 
 ### 1.3 与总架构蓝图的一致性
 
-本文档**严格对齐** `00-overview.md` v3.0 PASS 的 §3.4 L4 TMU/TMD 层 + §4-bis 范围矩阵 R10-R12 + §6.1 兼容性分析。
+本文档**严格对齐** `00-overview.md` v3.1 PASS 的 §3.4 L4 TMU/TMD 层 + §4-bis 范围矩阵 R10-R12 + §6.1 兼容性分析。
 
 ---
 

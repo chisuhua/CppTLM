@@ -24,7 +24,7 @@
 
 `CoherenceDomain` 是 CppTLM v2.1 的**跨 cache 一致性域基础设施**（Phase 4.2 引入 + Phase 4.3 扩展）。**与 gem5 对位**: `gem5::RubySystem`（抽象基类，简化版）。
 
-**v1.0 dGPU SoC 战略补充**(per `00-overview.md` v3.0 PASS §4-bis R23-R24 + ADR-SOC-09 D4):
+**v1.0 dGPU SoC 战略补充**(per `00-overview.md` v3.1 PASS §4-bis R23-R24 + ADR-SOC-09 D4):
 - **共享 MOESI/GPU 6 状态 × 6 事件**:v1.0 MVP 基础(per `coherence-protocol.md` + ADR-SOC-01)
 - **v1.0 跨域桥接基础**:CPU↔GPU coherence 基础;v1.1 完整版追加完整 snoop filter + 优化(per `00-overview` §4-bis R24)
 - **NVIDIA + AMD 双 vendor 跨域**:NVIDIA 域(USRI 路径)+ AMD 域(Infinity Fabric 路径)

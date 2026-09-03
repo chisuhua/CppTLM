@@ -511,7 +511,7 @@ host pushbuffer → CP.fetch → CP.decode(Pm4MethodDispatch) → TMU.submit
 
 - **2027-02-09**: ✅ **Accepted**(由 Proposed 升级,理由:v0.5 MVP 已落地 + Phase 8 整合交付完成 + dGPU SoC v1.0 战略修订)
   **证据清单**:
-  - **git commits**: `6ebbd7d`(Phase 4 critical fix)+ `710c734..b6e5be1`(Phase 5 AXI Stream Adapter)+ `8b92bfb..fe4d745`(Phase 6 AXI4Mapper)+ `ce50b05..45763fa`(Phase 7 Host Bypass + RC)+ `e29defd..429327d`(Phase 8 整合交付)
+  - **git commits**: `6ebbd7d`(Phase 4 critical fix)+ `6223534..b1811703`(Phase 5 AXI Stream Adapter)+ `ae8ecd7..f2540e8`(Phase 6 AXI4Mapper)+ `a771253..91e515f`(Phase 7 Host Bypass + RC)+ `13ee09d..429327d`(Phase 8 整合交付)
   - **测试**: `test_dgpu_board_v1_mvp_from_config.cc` 6 SECTION(validate_topology / instantiateAll / H2 / launch / host_notify / 负面路径)PASS
   - **配置**: `configs/dgpu_soc_with_pcie_ip.json`(Phase 8 完整 dGPU SoC + PCIe EP 配置)
   - **CudaCoreAdapter 实施**:`include/tlm/gpu/cuda_core_adapter_mvp.hh`(SM 微架构探索器 + 深度集成 PTX-EMU internal,per Phase F-H 反转)

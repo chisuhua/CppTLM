@@ -4,7 +4,7 @@
 > **状态**: 📋 Draft v1 (待 Oracle 评审,2027-02-09)
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)
-> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（§3.5 L5 WDU 互连 + §3.7 L7 Memory 互连）
+> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§3.5 L5 WDU 互连 + §3.7 L7 Memory 互连）
 > **关联现有模块微架构**:
 > - [`docs/soc_arch/modules/gpu-noc-mesh.md`](../modules/gpu-noc-mesh.md)
 > - [`docs/soc_arch/modules/noc-router.md`](../modules/noc-router.md)
@@ -60,7 +60,7 @@
 
 ### 1.3 与总架构蓝图的一致性
 
-本文档**严格对齐** `00-overview.md` v3.0 PASS 的 §3.5 + §3.7 + §6.1 兼容性分析。
+本文档**严格对齐** `00-overview.md` v3.1 PASS 的 §3.5 + §3.7 + §6.1 兼容性分析。
 
 ---
 

@@ -4,7 +4,7 @@
 > **状态**: 📋 Draft v1 (待 Oracle 评审,2027-02-09)
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)
-> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（§3.6 L6.1 + L6.2 Tensor Core 路径）
+> **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§3.6 L6.1 + L6.2 Tensor Core 路径）
 > **关联现有模块微架构**:
 > - [`docs/soc_arch/modules/cuda-core-adapter.md`](../modules/cuda-core-adapter.md)（v0.5 MVP Tensor Core 集成）
 > - [`docs/soc_arch/modules/gpu-compute_unit.md`](../modules/gpu-compute_unit.md)
@@ -56,7 +56,7 @@
 
 ### 1.3 与总架构蓝图的一致性
 
-本文档**严格对齐** `00-overview.md` v3.0 PASS 的 §3.6 L6.1 NVIDIA 路径 + L6.2 AMD 路径 + §4-bis 范围矩阵 R05-R06。
+本文档**严格对齐** `00-overview.md` v3.1 PASS 的 §3.6 L6.1 NVIDIA 路径 + L6.2 AMD 路径 + §4-bis 范围矩阵 R05-R06。
 
 ---
 

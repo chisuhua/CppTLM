@@ -7,7 +7,7 @@
 > **类别**: SoC 架构 / 跨仓集成
 > **取代/补充**: [`ADR-SOC-08-v55-system-hw-integration-preconditions.md`](./ADR-SOC-08-v55-system-hw-integration-preconditions.md)
 > **关联文档**:
-> - [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.0 PASS（§4-bis R26/R27 23 ABI 状态）
+> - [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§4-bis R26/R27 23 ABI 状态）
 > - [`include/abi/cpptlm_emulator.h`](../../../include/abi/cpptlm_emulator.h)（19 声明）
 > - [`src/abi/cpptlm_emulator.cc`](../../../src/abi/cpptlm_emulator.cc)（433 行，19/19 函数 + 4 回调 typedef）
 > **关联 OpenSpec**: [`archive/2026-08-28-2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites/`（已归档）](../../../openspec/changes/archive/2026-08-28-2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites/)
