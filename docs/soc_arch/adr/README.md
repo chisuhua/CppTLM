@@ -32,6 +32,7 @@
 | [ADR-SOC-12-host-bypass-and-rc.md](./ADR-SOC-12-host-bypass-and-rc.md) | **Host Bypass 软件 bring-up 路径 + 自研 RC PF0-only 简化**（Oracle M1/M2 修复） | 📋 Proposed | Phase 7-8 (已实施，HEAD `429327d`) |
 | [ADR-SOC-13-axi-stream-adapter-mapper.md](./ADR-SOC-13-axi-stream-adapter-mapper.md) | **AXI Stream Adapter + AXI4Mapper 集成**（PCIe↔AXI 边界 + outstanding 跟踪 + OOO completion + 512-bit 限制） | 📋 Proposed | Phase 5-6 (已实施) |
 | [ADR-SOC-14-v55-integration-revision.md](./ADR-SOC-14-v55-integration-revision.md) | **v5.5+ 系统级硬件仿真集成修订**（Phase 8 后 23 ABI 状态 + 5 项前置测试已实施 + UsrLinuxEmu 集成未闭环） | 📋 Proposed | v1.0+ |
+| [ADR-SOC-15-cdna-real-isa-roadmap.md](./ADR-SOC-15-cdna-real-isa-roadmap.md) | **dGPU SoC v1.0 CDNA 真实物理 ISA 演进路线图**（双轨前端 + 统一 Timing 宿主，4 阶段 43-73 人天：InstrDescriptor 中立化 → IMemoryPort 异步内存 Seam → CDNA 引擎接入 → 双轨校准；完整方案设计见 [`architecture/11-cdna-real-isa-integration.md`](../architecture/11-cdna-real-isa-integration.md)） | 📋 Proposed | v1.0+ |
 
 ## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference(已迁回本目录)
 
