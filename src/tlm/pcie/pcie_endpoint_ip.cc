@@ -112,16 +112,26 @@ void PcieEndpointIP::tick() {
         if (axi.slave_req_valid()) {
             const bundles::Axi4Bundle& req = axi.slave_req_data();
             if (req.awid.read() != 0 || req.awaddr.read() != 0 || req.awlen.read() != 0) {
-                // 写请求：配置空间偏移 (< config_size) vs BAR 空间
-                const uint64_t addr = req.awaddr.read();
+                // 写请求: 配置空间偏移 (< config_size) vs BAR 空间
+                // PCIe 规范 (cfg 路径):
+                //   - awaddr 低 2 bit [1:0] 为对齐保留位,请求方保证 = 00
+                //   - dword offset = awaddr >> 2,byte offset = (awaddr >> 2) << 2
+                // 范围判定用原始 awaddr (无屏蔽) 以正确区分 cfg vs BAR 空间。
+                const uint64_t awaddr = req.awaddr.read();
                 const uint16_t bid = static_cast<uint16_t>(req.awid.read());
 
-                if (addr < pool_.config_of(0).config_size()) {
-                    pool_.config_of(0).write(static_cast<uint16_t>(addr),
-                                             static_cast<uint32_t>(req.wdata.read()));
+                const bool is_cfg = awaddr < pool_.config_of(0).config_size();
+
+                if (is_cfg) {
+                    // cfg 路径: 屏蔽低 2 bit 后右移得到 byte offset
+                    const uint16_t cfg_byte_off =
+                        static_cast<uint16_t>(awaddr & ~0x3ULL);
+                    pool_.config_of(0).write(
+                        cfg_byte_off,
+                        static_cast<uint32_t>(req.wdata.read()));
                 } else {
-                    // BAR 空间：地址低位路由到 backing store（8B 对齐字）
-                    bar_store_[addr & ~0x7ULL] = req.wdata.read();
+                    // BAR 空间: 地址低位路由到 backing store (8B 对齐字)
+                    bar_store_[awaddr & ~0x7ULL] = req.wdata.read();
                 }
 
                 bundles::Axi4Bundle wresp;
@@ -129,15 +139,20 @@ void PcieEndpointIP::tick() {
                 wresp.bresp.write(0);
                 axi.slave_resp(wresp);
             } else {
-                // 读请求：配置空间偏移 (< config_size) vs BAR 空间
-                const uint64_t addr = req.araddr.read();
+                // 读请求: 配置空间偏移 (< config_size) vs BAR 空间
+                // PCIe 规范解码同上
+                const uint64_t araddr = req.araddr.read();
                 const uint16_t rid = static_cast<uint16_t>(req.arid.read());
                 uint64_t rdata = 0;
 
-                if (addr < pool_.config_of(0).config_size()) {
-                    rdata = pool_.config_of(0).read(static_cast<uint16_t>(addr));
+                const bool is_cfg = araddr < pool_.config_of(0).config_size();
+
+                if (is_cfg) {
+                    const uint16_t cfg_byte_off =
+                        static_cast<uint16_t>(araddr & ~0x3ULL);
+                    rdata = pool_.config_of(0).read(cfg_byte_off);
                 } else {
-                    const auto it = bar_store_.find(addr & ~0x7ULL);
+                    const auto it = bar_store_.find(araddr & ~0x7ULL);
                     if (it != bar_store_.end()) {
                         rdata = it->second;
                     }
