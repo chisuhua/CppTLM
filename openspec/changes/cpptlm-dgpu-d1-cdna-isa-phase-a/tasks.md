@@ -39,7 +39,7 @@
 ## 3. IHazardTracker + ScoreboardTLMv2（2-3 工作日）
 
 - [ ] 3.1 在 `include/tlm/gpu/hazard_tracker_interface.hh` 定义 `class IHazardTracker` 抽象接口（**与 vendored `IScoreboard` (commit `8acfd2d1`) 语义对齐**：5 个方法 `has_free_entry/try_acquire(instr,sm,wave)→bool/release(instr,sm,wave)/tick` + 1 个 P2 阶段 C 扩展点 `mark_waiting(sm,wave,wait_vmcnt,wait_lgkmcnt,wait_expcnt) { /* default no-op */ }`）
-- [ ] 3.2 在 `include/tlm/gpu/scoreboard_tlm_v2.hh` 定义 `class ScoreboardTLMv2 : public IHazardTracker`
+- [ ] 3.2 在 `include/tlm/gpu/scoreboard_tlm_v2.hh` 定义 `class ScoreboardTLMv2 : public IScoreboard, public IHazardTracker` (**双继承**, per Oracle 三轮 P0-T1 Option B) — 满足 `attach_timing(void*,void*,void*)` HSK-4 冻结 ABI 兼容
 - [ ] 3.3 添加 `enum class Mode { kVirtualReg, kHardwareCounter }` 构造函数参数
 - [ ] 3.4 `Mode::kVirtualReg` 路径：内部组合 `ScoreboardTLM sb_` 成员 + 影子 per-warp outstanding 集合；`try_acquire` 委托给 `sb_.allocate(reg_id, warp_id)`，从 `instr.dst_regs[0..num_dst]` 提取 reg_id
 - [ ] 3.5 `Mode::kHardwareCounter` 路径：定义 `vmcnt_[64][64]/lgkmcnt_[64][64]/expcnt_[64][64]` 三维数组（MAX_SM_ID=64, MAX_WAVE_PER_SM=64 per `apu_soc_v1.json`）；`try_acquire` 按 `instr.ctrl.*_req` **increment** 对应 counter（CDNA 真实语义：issue 增, completed 减）；`release` decrement；sm_id ≥64 抛 `std::out_of_range`
@@ -50,8 +50,8 @@
 
 - [ ] 4.1 在 `include/tlm/gpu/cuda_core_adapter_mvp.hh` **新增** `set_scoreboard_v2(IHazardTracker*)` 与 `set_pipeline_v2(CdnaPipelineTLM*)` setter
 - [ ] 4.2 **不修改**原有 `inject_timing_modules()` 函数主体（保留 `make_unique<ScoreboardTLM/PipelineTLM>` 默认路径）
-- [ ] 4.3 修改 `src/tlm/gpu/cuda_core_adapter_mvp.cc:inject_timing_modules()`：当 `scoreboard_v2_/pipeline_v2_` 非 nullptr 时使用 v2 实例，否则回退到 `make_unique<>`（3 路径：默认 / v2 / v2+kHardwareCounter）
-- [ ] 4.4 添加单元测试 `test_cuda_core_adapter_v2_paths.cc`：默认路径不变 / v2 注入 / v2 nullptr 回退 / 混合注入（仅 v2 一个 setter 调用）
+- [ ] 4.3 修改 `src/tlm/gpu/cuda_core_adapter_mvp.cc:inject_timing_modules()`：当 `scoreboard_v2_/pipeline_v2_` 非 nullptr 时使用 v2 实例，否则回退到 `make_unique<>`（3 路径：默认 / v2 / v2+kHardwareCounter）；**ScoreboardTLMv2 双继承 IScoreboard, `attach_timing(static_cast<void*>(scoreboard_v2_.get()), ...)` 通过 PTX-EMU 端 `static_cast<IScoreboard*>(void*)` 后调用 allocate 委托给内部 sb_ (kVirtualReg) 或 stub (kHardwareCounter)** (per Oracle 三轮 P0-T1 Option B 修复)
+- [ ] 4.4 添加单元测试 `test_cuda_core_adapter_v2_paths.cc` **(双构建, per Oracle 三轮 P0-T2 Option F)**：默认路径不变 / v2 注入 / v2 nullptr 回退 / 混合注入（仅 v2 一个 setter 调用）
 
 > **重要修订 (Oracle P0-A3)**：本 task group **不修改** `kernel_launch_tlm.hh`。原 spec 假设在 `KernelLaunchTLM` 注入 v2 是基于错误代码假设——`KernelLaunchTLM` 当前**无** `set_scoreboard/set_pipeline` setter 且 `tick()` 不消费 scoreboard/pipeline。真正的 scoreboard_/pipeline_ 持有者是 `CudaCoreAdapterMVP`（per `src/tlm/gpu/cuda_core_adapter_mvp.cc:60-61`）。
 
@@ -66,20 +66,24 @@
 
 ## 6. 回归对比 + 门禁验证（1-2 工作日）
 
-- [ ] 6.1 在 `test/test_pipeline_parity.cc` 实现：**枚举式分支覆盖 + 1000 条随机（固定 seed）双层**：
-  - 硬编码覆盖 latency_p0/p1/p2/p3 每个 return 分支 ≥2 用例（fma/mul.f32/mad/空串/bar/sin/cos/rcp/sqrt/lg.global/st.global/atom/red./ld.shared/ld.local 等）
+- [ ] 6.1 在 `test/test_pipeline_parity.cc` 实现：**needle 级覆盖 + 1000 条随机（mt19937(42) seed）双层（per Oracle 三轮 P1-T3/T4/T5/T7）**：
+  - **needle 级硬编码（per Oracle 三轮 P1-T3）**：spec.md:101-120 真值表**每个 needle 行 ≥1 用例**（p0=15 字段: fma/mul.f32/add.f32/sub.f32/div/min.f32/max.f32/abs.f32/neg.f32/mad/mul.lo/mul.hi/sad/mul.wide + 默认; p2=7: sin/cos/tan/rcp/rsqrt/sqrt/lg2/ex2 + 默认; p3=11: ld.global/ld.volatile/st.global/ld.shared/st.shared/ld.local/st.local/atom/red./ld./st. + 默认）= 33 条 + 6 PipelineId 矩阵
   - 6 PipelineId × 全模式矩阵
-  - `get_fractional_cycles_by_type` 全 6 管线矩阵
-  - 边界（空串/无匹配/大小写变体）
-  - 1000 条固定 seed 随机 PTX 指令序列
+  - `get_fractional_cycles_by_type` 全 6 管线矩阵（int statement_type 用 0/1/-1 三值证明不敏感）
+  - 边界（空串/无匹配/大小写变体 `"FMA.RN.F32"` 同 `"fma.rn.f32"`）
+  - 1000 条 **std::mt19937(42) 固定 seed** 随机（per Oracle 三轮 P1-T4），加权采样自 needle 池 + 噪声池 + 边界池；测试入口 `std::cerr << "seed=" << seed` 便于复现
+  - **byte-equal 断言必须用 `==` 或 `std::bit_cast<uint64_t>` 比较（per Oracle 三轮 P1-T5）— 显式禁止 Catch2 `Approx` 容差断言**（避免 4.22 vs 4.2200001 假阳性）
 - [ ] 6.2 在 `test/test_instruction_descriptor.cc` 实现：`std::bit_cast<uint64_t>` 序列化 + 反序列化跨字段 round-trip + 10k random hash collision 验证
 - [ ] 6.3 全量回归：`./build/bin/cpptlm_tests "[pcie]"` 全部 PASS（基线 15137 assertions）
 - [ ] 6.4 全量回归：`./build/bin/cpptlm_tests "[axi]"` 全部 PASS（基线 561 assertions）
 - [ ] 6.5 全量回归：`./build/bin/cpptlm_tests "[e2e]"` 全部 PASS（基线 657 assertions）
 - [ ] 6.6 全量回归：`./build/bin/cpptlm_tests "[wave2]"` 全部 PASS（保持 6 个 mock-only 用例 PASS, per `test_kernel_launch_ptx_integration.cc`；不计入真实覆盖率）
 - [ ] 6.7 全量回归：`./build/bin/cpptlm_tests "[gpu]"` 全部 PASS
-- [ ] 6.8 新增回归：`./build/bin/cpptlm_tests "[cdna-phase-a]"` 全部 PASS（5 个新测试文件：test_instruction_descriptor / test_cdna_pipeline_tlm / test_scoreboard_tlm_v2 / test_pipeline_parity / test_cuda_core_adapter_v2_paths / test_ptx_string_to_descriptor）
-- [ ] 6.9 **新增**：跑现有 `[wave2]/PTX 模式 E2E`，记录改造前后 `kernels_launched`/cycle 计数做 diff（per Oracle P1-5 端到端 parity）
+- [ ] 6.8 新增回归：**双构建全 PASS（per Oracle 三轮 P0-T2 Option F）**：
+  - `./build/bin/cpptlm_tests "[cdna-phase-a]"` OFF 模式（5 个文件 PASS）：test_instruction_descriptor / test_cdna_pipeline_tlm / test_scoreboard_tlm_v2 / test_pipeline_parity / test_ptx_string_to_descriptor
+  - `./build-on/bin/cpptlm_tests "[cdna-phase-a]"` PTX-EMU 模式（6 个文件 PASS）：上述 5 + test_cuda_core_adapter_v2_paths（**须 `#ifdef CPPTLM_WITH_PTX_EMU` 包围 + `#error "OFF build cannot run adapter v2 tests, requires CPPTLM_WITH_PTX_EMU"`** 防止 vacuous PASS）
+  - Gate A 须双构建全绿才 PASS
+- [ ] 6.9 **新增（per Oracle 三轮 P1-T7 度量源修正）**：跑同 PTX 指令序列分别走 legacy 注入与 v2 (kPtxCompat + kVirtualReg) 注入各跑 `facade->exe_once()` 步进，比较 SM cycle 计数（基线存为 test 内常量而非外部文件）；**不是 kernels_launched diff（KernelLaunchTLM 本 change 不动 diff 恒为 0 自证循环，无证明力）**
 
 ## 7. 文档同步 + OpenSpec 收尾（0.5 工作日）
 
