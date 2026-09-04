@@ -21,7 +21,7 @@
 - [ ] 1.1 在 `include/tlm/gpu/instruction_descriptor.hh` 定义 `PipeClass` enum（7 个值）
 - [ ] 1.2 在同文件定义 `LatencyClass` enum（6 个值）
 - [ ] 1.3 在同文件定义 `CtrlBits` struct（**6 字段，每字段 1 字节 = 6 bytes 总，**per arch 11 §11.2.1 默认值 0xFF 语义，**NOT 1 byte**）
-- [ ] 1.4 在同文件定义 `InstrDescriptor` POD struct（含 `dst_regs[4]`/`src_regs[4]`/`is_memory`/`target_vaddr`/`mem_size`/`transaction_id:uint64_t=0`/`reserved[8]:uint8_t`），加 **`static_assert(sizeof(InstrDescriptor) == 48 || == 56, "size drift from arch 11 §11.2.1")`**（实测值由 gcc 验证后填入；不强制 packed，用具名 reserved 填平 padding hole）
+- [ ] 1.4 在同文件定义 `InstrDescriptor` POD struct（含 `dst_regs[4]`/`src_regs[4]`/`is_memory`/`target_vaddr`/`mem_size`/`transaction_id:uint64_t=0`/`reserved[8]:uint8_t`），加 **`static_assert(sizeof(InstrDescriptor) == 64, "size drift from arch 11 §11.2.1")`**（per Oracle 二轮算术验证：字段表精确 60 bytes + 末尾 4 bytes 隐式 padding 到 8-byte 对齐边界 = 64 bytes；不强制 packed，用具名 reserved 填平中间 padding hole）
 - [ ] 1.5 提供 `std::hash<InstrDescriptor>` 特化（用于 unordered_set），加 **P2 退化测试**（10k random descriptors collision rate < 30%, load_factor < 0.7）
 - [ ] 1.6 添加 `static_assert(std::is_trivially_copyable_v<InstrDescriptor>)` 编译期保障
 - [ ] 1.7 文档化 sizeof 精确统计到 `instruction_descriptor.hh` 头注释（per spec §cpptlm-instruction-descriptor）
@@ -42,7 +42,7 @@
 - [ ] 3.2 在 `include/tlm/gpu/scoreboard_tlm_v2.hh` 定义 `class ScoreboardTLMv2 : public IHazardTracker`
 - [ ] 3.3 添加 `enum class Mode { kVirtualReg, kHardwareCounter }` 构造函数参数
 - [ ] 3.4 `Mode::kVirtualReg` 路径：内部组合 `ScoreboardTLM sb_` 成员 + 影子 per-warp outstanding 集合；`try_acquire` 委托给 `sb_.allocate(reg_id, warp_id)`，从 `instr.dst_regs[0..num_dst]` 提取 reg_id
-- [ ] 3.5 `Mode::kHardwareCounter` 路径：定义 `vmcnt_[64][64]/lgkmcnt_[64][64]/expcnt_[64][64]` 三维数组（MAX_SM_ID=64, MAX_WAVE_PER_SM=64 per `apu_soc_v1.json`）；`release` 减 `instr.ctrl.*_req` 字段对应 counter；sm_id ≥64 抛 `std::out_of_range`
+- [ ] 3.5 `Mode::kHardwareCounter` 路径：定义 `vmcnt_[64][64]/lgkmcnt_[64][64]/expcnt_[64][64]` 三维数组（MAX_SM_ID=64, MAX_WAVE_PER_SM=64 per `apu_soc_v1.json`）；`try_acquire` 按 `instr.ctrl.*_req` **increment** 对应 counter（CDNA 真实语义：issue 增, completed 减）；`release` decrement；sm_id ≥64 抛 `std::out_of_range`
 - [ ] 3.6 `Mode::kHardwareCounter` **枚举值**加 `[[deprecated("stage C only")]]` 警告（**C++17 enumerator deprecation, NOT 构造函数——deprecate 构造函数会连累 kVirtualReg**）
 - [ ] 3.7 添加单元测试 `test/test_scoreboard_tlm_v2.cc`：kVirtualReg 行为对齐 ScoreboardTLM（duplicate-allocate 返回 false）+ kHardwareCounter 计数器增减 + 越界抛 out_of_range
 
@@ -97,7 +97,7 @@
 - [ ] 8.3 `test_pipeline_parity.cc` PTX 字节级 bit-identical 全矩阵 PASS（6 PipelineId × 全模式 × 2 method）
 - [ ] 8.4 全部 `[pcie]/[axi]/[e2e]/[wave2]/[gpu]` 测试保持基线 100% 通过
 - [ ] 8.5 23 ABI 头文件 `git diff` 确认零修改
-- [ ] 8.6 `instruction_descriptor.hh` `static_assert(sizeof == 48 || == 56)` 通过
+- [ ] 8.6 `instruction_descriptor.hh` `static_assert(sizeof == 64)` 通过
 - [ ] 8.7 端到端 PTX 模式 `kernels_launched`/cycle 计数 diff = 0
 
 ## 阶段 A Gate 后解锁

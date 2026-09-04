@@ -29,19 +29,20 @@ The system MUST provide a `cpptlm::gpu::InstrDescriptor` POD struct in `include/
 - **`uint64_t transaction_id` (8 bytes, 阶段 B IMemoryPort::send_request tag 回执匹配用；阶段 A 默认 0)**
 - **`uint8_t reserved[8]` (8 bytes, 阶段 C prefetch_hint / 阶段 D tensor tile 字段预留; 阶段 A 末尾静态断言 reserved[0..7] == 0; 任何阶段首次使用前需 `static_assert(reserved_used_bytes <= 8)` 校验不超预留)**
 
-The struct MUST be `std::is_trivially_copyable` (POD), **`sizeof(InstrDescriptor) == 48 bytes`** (per arch 11 §11.2.1 + 字段表精确统计; 不得 packed; 不用 `pragma pack`)，and support `std::hash<InstrDescriptor>` for hashing in unordered containers. The struct MUST NOT contain any platform-specific (PTX/SASS/CDNA) text fields in the **main path**; original PTX instruction string MUST NOT be carried (even as debug sidecar; 调试信息由调用点保留，不进 POD)。
+The struct MUST be `std::is_trivially_copyable` (POD), **`sizeof(InstrDescriptor) == 64 bytes`** (per arch 11 §11.2.1 + 字段表精确统计; 不得 packed; 不用 `pragma pack`)，and support `std::hash<InstrDescriptor>` for hashing in unordered containers. The struct MUST NOT contain any platform-specific (PTX/SASS/CDNA) text fields in the **main path**; original PTX instruction string MUST NOT be carried (even as debug sidecar; 调试信息由调用点保留，不进 POD)。
 
-**字段大小精确统计**（验证 `sizeof == 48`）：
-- pipe + latency_class = 2
+**字段大小精确统计**（验证 `sizeof == 64`，per arch 11 §11.2.1 字段序，**不**重排）:
+- pipe (1) + latency_class (1) = 2
 - ctrl = 6
-- dst_regs + src_regs = 16
-- num_dst + num_src + is_memory + (1 byte padding to align target_vaddr) = 4
+- dst_regs[4] (8) + src_regs[4] (8) = 16
+- num_dst (1) + num_src (1) + is_memory (1) + 1 byte padding (align target_vaddr) = 4
 - target_vaddr = 8
 - mem_size = 4
+- 4 bytes padding (align transaction_id) = 4
 - transaction_id = 8
 - reserved[8] = 8
-- 末尾 padding 到下一个 8-byte 对齐 = 0
-- **总计 = 56 bytes？**（实际精确计算需 gcc 验证，tasks.md 1.4 增加 `static_assert(sizeof(InstrDescriptor) == 48 || == 56)` 显式约束并 修）
+- 末尾 padding = 0
+- **总计 = 60 bytes？**（**实际计算：2 + 6 + 16 + 4 + 8 + 4 + 4 + 8 + 8 = 60**——gcc 实测应得 **64**（含末尾 4 bytes 隐式 padding 到结构体对齐边界 8）; tasks.md 1.4 静态断言 `sizeof == 64`，实测若为 60/56 立即阻断）
 
 #### Scenario: cross-ISA pipe class mapping
 - **WHEN** a PTX `fma.rn.f32` is decoded
@@ -174,7 +175,7 @@ public:
 
 The system MUST provide a `ScoreboardTLMv2` class in `include/tlm/gpu/scoreboard_tlm_v2.hh` + `src/tlm/gpu/scoreboard_tlm_v2.cc` implementing `IHazardTracker` with two modes selected at construction:
 - `Mode::kVirtualReg`: delegates to existing `ScoreboardTLM` (CAPACITY=2048, `(reg_id, warp_id)` hash map) via **composition + 影子 per-warp outstanding 集合**——`is_stalled` 不在 `IHazardTracker` 接口里（已删除），由消费方 (CudaCoreAdapterMVP) 维护影子状态
-- `Mode::kHardwareCounter`: provides `vmcnt_[64][64]` / `lgkmcnt_[64][64]` / `expcnt_[64][64]` arrays；`try_acquire` 不修改 counter（counter 由 `release` 在 instruction completed 时 decrement），`is_stalled` 在消费方通过比较 `instr.ctrl.wait_*cnt` 与当前 counter 决定
+- `Mode::kHardwareCounter`: provides `vmcnt_[64][64]` / `lgkmcnt_[64][64]` / `expcnt_[64][64]` arrays；`try_acquire(instr, sm, wave)` 按 `instr.ctrl.vmcnt_req/lgkmcnt_req/expcnt_req` **increment** 对应 counter（CDNA 真实语义：指令 issue 时增，completed 时减）；`release(instr, sm, wave)` decrement 对应 counter；`is_stalled` 在消费方通过比较 `instr.ctrl.wait_*cnt` 与当前 counter 决定
 
 The `Mode::kHardwareCounter` constructor parameter MUST be marked `[[deprecated("stage C only")]]` at the **enumerator level** (C++17 allows enumerator deprecation, **NOT at constructor level** which would deprecate both modes)。
 
@@ -185,9 +186,11 @@ The `Mode::kHardwareCounter` constructor parameter MUST be marked `[[deprecated(
 - **AND** after `release(instr_with_dst_reg_5, sm=0, wave=0)`, the next `try_acquire` returns true again
 
 #### Scenario: kHardwareCounter 阶段 C readiness
-- **WHEN** `ScoreboardTLMv2` is constructed with `Mode::kHardwareCounter` and `release(instr_with_vmcnt_req=1, sm=0, wave=0)` is called
-- **THEN** `vmcnt_[0][0]` is decremented by 1
-- **AND** `lgkmcnt_[0][0]` is unchanged
+- **WHEN** `ScoreboardTLMv2` is constructed with `Mode::kHardwareCounter` and `try_acquire(instr_with_vmcnt_req=1_lgkmcnt_req=0_expcnt_req=0, sm=0, wave=0)` is called
+- **THEN** `vmcnt_[0][0]` is incremented by 1 (初值 0 → 1)
+- **AND** `lgkmcnt_[0][0]` is unchanged (0)
+- **AND** `expcnt_[0][0]` is unchanged (0)
+- **AND** subsequent `release(instr_with_vmcnt_req=1, sm=0, wave=0)` decrements `vmcnt_[0][0]` by 1 (1 → 0)
 - **AND** `mark_waiting(0, 0, wait_vmcnt=0, wait_lgkmcnt=0, wait_expcnt=0)` marks wave 0 as waiting (阶段 C 启用)
 
 #### Scenario: SM id out-of-range defense
@@ -238,34 +241,14 @@ This MUST NOT break any existing `[pcie]/[axi]/[e2e]/[wave2]` tests that use the
 
 ## MODIFIED Requirements
 
-> **重大修订 (P0-A4)**：原 spec `cpptlm-pipeline-ptx-shim` / `cpptlm-scoreboard-v1-shim` 在主 spec 中**不存在**；`openspec validate --strict` 失败。改名为与主 spec 一致的 `cpptlm-pipeline` / `cpptlm-scoreboard`，归属 capability `cpptlm-d1-p1-pipeline-scoreboard`。
-
-### Requirement: cpptlm-pipeline (MODIFIED in capability `cpptlm-d1-p1-pipeline-scoreboard`)
-
-The existing `PipelineTLM` class in `include/tlm/gpu/pipeline_tlm.hh` + `src/tlm/gpu/pipeline_tlm.cc` MUST remain **unchanged at the source level** (no source modifications; 验证: `git diff cpptlm-d1-p1-pipeline-scoreboard..cpptlm-dgpu-d1-cdna-isa-phase-a -- src/tlm/gpu/pipeline_tlm.cc` 为空). It serves as the PTX 阶段 A backward compatibility shim. New code MUST use `CdnaPipelineTLM` instead.
-
-> **Stage A 阶段异常**：D1 design 决策"重写 PipelineTLM 内部为枚举表"在阶段 A **不实施**——本 spec 显式偏离 ADR-SOC-15 §4.1 A.3 字面计划（per Oracle P0-A1）。阶段 C 启动时需同步修订 ADR §4.1 表格 + 本 Requirement 状态。
-
-#### Scenario: PipelineTLM legacy path unchanged
-- **WHEN** existing tests use `PipelineTLM::get_fractional_cycles(instr, pipe)` directly
-- **THEN** the function returns the same value as before 阶段 A (no behavior change)
-- **AND** the function signature remains `double get_fractional_cycles(const std::string& instr, PipelineId pipe) const`
-- **AND** `get_fractional_cycles_by_type` 仍为 6 管线 switch 真值表 (per `pipeline_tlm.cc:120-137`)
-
-### Requirement: cpptlm-scoreboard (MODIFIED in capability `cpptlm-d1-p1-pipeline-scoreboard`)
-
-The existing `ScoreboardTLM` class in `include/tlm/gpu/scoreboard_tlm.hh` MUST remain **unchanged at the source level**. `ScoreboardTLMv2::kVirtualReg` mode delegates to it via composition.
-
-#### Scenario: ScoreboardTLM legacy path unchanged
-- **WHEN** existing tests use `ScoreboardTLM::allocate(reg_id, warp_id)` directly
-- **THEN** the function returns the same value as before 阶段 A
-- **AND** the function signature remains `bool allocate(uint32_t reg_id, uint32_t warp_id)`
-- **AND** duplicate-allocate returns false (rejects; per `ScoreboardTLM` line 35)
+**重大修订 (Oracle 二轮 N-P1-1)**：本 capability 文件**不再**承载 MODIFIED `cpptlm-pipeline` / `cpptlm-scoreboard` 两条 Requirement。已迁移到 [`../cpptlm-d1-p1-pipeline-scoreboard/spec.md`](../cpptlm-d1-p1-pipeline-scoreboard/spec.md) 同 change 平行 delta 文件,主 capability 按文件夹归并避免 archive 阶段主 spec 污染。
 
 ---
 
 ## REMOVED Requirements
 
-无（阶段 A 不删除任何现有功能；保留 `PipelineTLM` 与 `ScoreboardTLM` 作为 PTX 阶段 A 兼容 shim）
+**已迁移声明 (Oracle 二轮 N-P1-1)**：原 `cpptlm-kernel-launch-v2-setters` Requirement 已被 `cpptlm-cuda-core-adapter-v2-injection` 取代（per Oracle P0-A3: 注入点从虚构的 `KernelLaunchTLM::set_scoreboard_v2` 改为真实消费者 `CudaCoreAdapterMVP::set_scoreboard_v2`）。**不**算 REMOVED——是 ADDED 替换 + 旧 Requirement 不写在本 spec。
+
+无（阶段 A 不删除任何现有功能；保留 `PipelineTLM` 与 `ScoreboardTLM` 作为 PTX 阶段 A 兼容 shim，MODIFIED 约束在 `../cpptlm-d1-p1-pipeline-scoreboard/spec.md`）
 
 > **原 spec `cpptlm-kernel-launch-v2-setters` 已被 `cpptlm-cuda-core-adapter-v2-injection` 取代**（per Oracle P0-A3: 注入点从虚构的 `KernelLaunchTLM::set_scoreboard_v2` 改为真实消费者 `CudaCoreAdapterMVP::set_scoreboard_v2`）。
