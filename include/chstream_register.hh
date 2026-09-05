@@ -22,6 +22,7 @@
 #include "tlm/gpu/vector_regfile_tlm.hh"
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
 #include "tlm/gpu/gpu_compute_unit_tlm.hh"
+#include "tlm/gpu/streaming_multiprocessor_tlm.hh"  // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
@@ -65,6 +66,19 @@
     ModuleFactory::registerObject<tlm::VectorRegFileTLM>("VectorRegFileTLM"); \
     ModuleFactory::registerObject<tlm::MinimalWarpSchedulerTLM>("MinimalWarpSchedulerTLM"); \
     ModuleFactory::registerObject<tlm::GpuComputeUnitTLM>("GpuComputeUnitTLM"); \
+    ModuleFactory::registerObject<tlm::StreamingMultiprocessorTLM>("StreamingMultiprocessorTLM"); \
+    ModuleFactory::registerObject<tlm::sm::FetchUnitTLM>("FetchUnitTLM"); \
+    ModuleFactory::registerObject<tlm::sm::DecodeUnitTLM>("DecodeUnitTLM"); \
+    ModuleFactory::registerObject<tlm::sm::IssueUnitTLM>("IssueUnitTLM"); \
+    ModuleFactory::registerObject<tlm::sm::ScalarALU>("ScalarALU"); \
+    ModuleFactory::registerObject<tlm::sm::VectorALU>("VectorALU"); \
+    ModuleFactory::registerObject<tlm::sm::MatrixCore>("MatrixCore"); \
+    ModuleFactory::registerObject<tlm::sm::SIMTLane>("SIMTLane"); \
+    ModuleFactory::registerObject<tlm::sm::LsuGlobal>("LsuGlobal"); \
+    ModuleFactory::registerObject<tlm::sm::LsuLDS>("LsuLDS"); \
+    ModuleFactory::registerObject<tlm::sm::RegFileUnit>("RegFileUnit"); \
+    ModuleFactory::registerObject<tlm::sm::WritebackUnit>("WritebackUnit"); \
+    ModuleFactory::registerObject<tlm::sm::HazardTracker>("HazardTracker"); \
     ModuleFactory::registerObject<tlm::gpu::PcieEndpointTLM>("PcieEndpointTLM"); \
     ModuleFactory::registerObject<tlm::pcie::PcieEndpointIP>("PcieEndpointIP"); \
     ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM"); \
