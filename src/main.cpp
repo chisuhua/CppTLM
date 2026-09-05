@@ -111,8 +111,7 @@ int main(int argc, char* argv[]) {
     // 见 docs/soc_arch/architecture/11-cdna-real-isa-integration.md 阶段 B.)
     if (f12b_ld) {
         std::cerr << "[ERROR] --f12b-ld disabled (HSK-8 Phase 2 Step 4 removed "
-                     "MemoryBridge + g_ptx_emu_driver; use PtxEmuSubmoduleMVP "
-                     "facade->attach_timing instead)\n";
+                     "MemoryBridge + g_ptx_emu_driver; PTX-EMU 集成走 IComputeDevice::set_instr_descriptor_buf per HSK-9)\n";
         return 1;
     } else {
         std::cout << "[INFO] --f12b-ld: MemoryBridge disabled (zero regression)\n";

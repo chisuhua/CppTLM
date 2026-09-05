@@ -109,6 +109,12 @@
         bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM"); \
     ChStreamAdapterFactory::get().registerAdapter<tlm::GPUTLM, \
         bundles::ComputeReqBundle, bundles::ComputeRespBundle>("GPUTLM"); \
+    /* SM 重构 Task 17 关闭: SM 顶层暂不注册 StreamAdapter (per Oracle Tasks 9-17 评审 P1-1).
+       原因: StreamAdapter 要求模块实现 req_in/resp_out 访问器 (per stream_adapter.hh:218+),
+       SM 当前是 stub 状态 (Task 18 才补 req_in/resp_out 接口). Task 18 实施:
+       1. SM 顶层加 req_in/resp_out 端口访问器 (Task 18 P1-1 fix).
+       2. 解开此注释注册 adapter.
+       3. F12b smoke 才能真验证 SM 接线 (per Oracle P1-1). */ \
     /* HybridCacheWrapper 的 .cc 实现位于 src/rtl/，仅在 BUILD_RTL=ON 时编译。
        宏体内不能直接用 ifdef 因续行问题，改用空宏守卫
        HYBRID_CACHE_WRAPPER_REGISTER_RTL：BUILD_RTL=OFF 时展开为空注释，
