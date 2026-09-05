@@ -1,14 +1,8 @@
-# Spec: SM Microarchitecture
+# sm-microarchitecture Specification
 
-> **Capability**: `sm-microarchitecture`
-> **Status**: Proposed
-> **Created**: 2027-02-09
-> **References**: `docs/soc_arch/architecture/15-sm-microarchitecture-design.md` (v5.0) · `docs/soc_arch/adr/ADR-SOC-16-sm-microarchitecture.md`
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change cpptlm-dgpu-d1-cdna-isa-sm-rewrite. Update Purpose after archive.
+## Requirements
 ### Requirement: SM 拓扑与 12 子模块
 
 The system SHALL SM 顶层容器 (`StreamingMultiprocessorTLM`) SHALL持有 12 个 ChStream 子模块，每个子模块继承 `ChStreamModuleBase`，通过 8 种 Bundle 连接成完整 SM 微架构：
@@ -229,3 +223,4 @@ PTX-EMU 端改造SHALL跟踪（14 天反馈窗口）：
 
 - **WHEN** HSK-9 公告发布
 - **THEN** PTX-EMU 团队 14 天反馈窗口（不阻塞 CppTLM 侧 archive）
+
