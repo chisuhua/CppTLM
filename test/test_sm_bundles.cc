@@ -97,8 +97,8 @@ TEST_CASE("ScoreboardQueryBundle QueryType enum + ctrl bits", "[sm-bundle][sm-mi
     b.query_type = ScoreboardQueryBundle::QueryType::kIncrement;
     b.warp_id = 7;
     b.sm_id = 0;
-    b.ctrl.exec_mask_lo = 0xFF;
+    b.ctrl.branch_type = 1;  // COND
     REQUIRE(b.query_type == ScoreboardQueryBundle::QueryType::kIncrement);
     REQUIRE(b.warp_id == 7);
-    REQUIRE(b.ctrl.exec_mask_lo == 0xFF);
+    REQUIRE(b.ctrl.branch_type == 1);
 }

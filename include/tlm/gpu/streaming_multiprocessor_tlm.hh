@@ -178,7 +178,11 @@ public:
         (void)instr_id; return false;
     }
     // 1 reset
-    void reset() override {}
+    // Per Oracle P0-2 Task 8 review: IComputeDevice::reset() 与 SimObject::reset(const ResetConfig&)
+    // 名字遮蔽. 桥接方案: IComputeDevice::reset() 委托给框架 do_reset(),
+    // 并 using SimObject::reset 恢复框架签名.
+    void reset() override { do_reset({}); }
+    using ChStreamModuleBase::reset;  // 恢复框架 reset(const ResetConfig&) 重载可见性
 
     // === ChStreamModuleBase tick() ===
     void tick() override;
