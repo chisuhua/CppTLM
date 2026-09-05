@@ -15,7 +15,9 @@
 
 namespace tlm {
 
-class MinimalWarpSchedulerTLM : public ChStreamModuleBase {
+// Task 10 (per architecture/15 §15.7.2 + plan): MinimalWarpSchedulerTLM 内化到 sm::IssueUnitTLM.
+// 保留旧类, 标记 deprecated, chstream_register 注销. Task 16 删除文件.
+class [[deprecated("use tlm::sm::IssueUnitTLM")]] MinimalWarpSchedulerTLM : public ChStreamModuleBase {
 public:
     explicit MinimalWarpSchedulerTLM(const std::string& name, EventQueue* eq)
         : ChStreamModuleBase(name, eq) {

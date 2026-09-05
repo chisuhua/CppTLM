@@ -22,7 +22,9 @@ namespace tlm {
         }
     };
 
-    class VectorRegFileTLM : public ChStreamModuleBase {
+    // Task 10 (per architecture/15 §15.7.2 + plan): VectorRegFileTLM 内化到 sm::RegFileUnit.
+    // 保留旧类, 标记 deprecated, chstream_register 注销. Task 16 删除文件.
+    class [[deprecated("use tlm::sm::RegFileUnit")]] VectorRegFileTLM : public ChStreamModuleBase {
     public:
         explicit VectorRegFileTLM(const std::string& name, EventQueue* eq)
             : ChStreamModuleBase(name, eq) {

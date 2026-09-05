@@ -62,11 +62,9 @@
     ModuleFactory::registerObject<tlm::MemoryClusterTLM>("MemoryClusterTLM"); \
     ModuleFactory::registerObject<tlm::GpuMeshNoC>("GpuMeshNoC"); \
     /* Task 9: GpuComputeUnitTLM 删除, 由 StreamingMultiprocessorTLM 接管.
-       Task 10: WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM 改为内部子模块 typedef (Task 10 处理).
+       Task 10: WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM -> SM 内部子模块 (类标 [[deprecated]],
+       chstream_register 注销, Task 16 删除文件).
        Task 12: KernelLaunchTLM 删除 (待执行). */ \
-    ModuleFactory::registerObject<tlm::WavefrontTLM>("WavefrontTLM"); \
-    ModuleFactory::registerObject<tlm::VectorRegFileTLM>("VectorRegFileTLM"); \
-    ModuleFactory::registerObject<tlm::MinimalWarpSchedulerTLM>("MinimalWarpSchedulerTLM"); \
     ModuleFactory::registerObject<tlm::StreamingMultiprocessorTLM>("StreamingMultiprocessorTLM"); \
     ModuleFactory::registerObject<tlm::sm::FetchUnitTLM>("FetchUnitTLM"); \
     ModuleFactory::registerObject<tlm::sm::DecodeUnitTLM>("DecodeUnitTLM"); \

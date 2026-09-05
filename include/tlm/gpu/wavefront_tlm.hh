@@ -11,7 +11,9 @@
 
 namespace tlm {
 
-class WavefrontTLM : public ChStreamModuleBase {
+// Task 10 (per architecture/15 §15.7.2 + plan): WavefrontTLM 内化到 sm::SIMTLane.
+// 保留旧类, 标记 deprecated, chstream_register 注销. Task 16 删除文件.
+class [[deprecated("use tlm::sm::SIMTLane")]] WavefrontTLM : public ChStreamModuleBase {
 public:
     explicit WavefrontTLM(const std::string& name, EventQueue* eq)
         : ChStreamModuleBase(name, eq) {}
