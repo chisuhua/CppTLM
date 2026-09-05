@@ -13,7 +13,6 @@
 #include "modules.hh"
 #include "sim_core.hh"
 #include "tlm/crossbar_tlm.hh"
-#include "tlm/gpu/kernel_launch_tlm.hh"
 // HSK-8 Phase 2 Step 4: memory_bridge.hh + ptx_emu_driver.hh 已物理删除
 // (HSK-6 deprecate by 369cf71). 当前 PTX-EMU 集成走 PtxEmuSubmoduleMVP
 // facade (`include/tlm/gpu/ptx_emu_submodule_mvp.hh`) + IPtxEmuDevice 公共 API.
