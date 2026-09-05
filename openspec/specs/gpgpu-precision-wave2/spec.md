@@ -45,3 +45,6 @@ CppTLM SHALL 将 `PipelineTLM` 与 `TensorCoreTLM` 的 Phase 1 placeholder laten
 - **THEN** 每类 benchmark 的结果与 gpgpu-sim 参考值误差不超过 ±15%
 - **AND** 失败输出包含 benchmark 名称、CppTLM 值、参考值和偏差百分比
 
+
+## Status Update
+- **2027-02-09**: **Superseded** by cpptlm-dgpu-d1-cdna-isa-sm-rewrite. 旧 PipelineTLM/ScoreboardTLM/TensorCoreTLM 路径已物理删除 (Task 13); gpgpu-sim comparison 路径由 SM 重构直接承接.

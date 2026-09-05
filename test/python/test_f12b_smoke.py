@@ -44,8 +44,8 @@ class TestF12bSmoke(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
 
     def test_f12b_requires_json_entries(self):
-        """带 --f12b-ld 但 JSON 缺 kernel_launch: 报错而非崩溃"""
-        # 使用不含 kernel_launch 的最小配置
+        """带 --f12b-ld 但 JSON 缺 streaming_multiprocessor (Task 14 SM 重构): 报错而非崩溃"""
+        # 使用不含 streaming_multiprocessor 的最小配置 (Task 14 后 KernelLaunchTLM 已物理删除)
         min_config = os.path.join(
             os.path.dirname(__file__), "..", "test_minimal_config.json"
         )

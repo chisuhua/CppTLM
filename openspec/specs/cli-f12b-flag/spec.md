@@ -30,3 +30,5 @@ The CLI MUST emit distinct, predictable output for both code paths so the `pytho
 - **WHEN** the user invokes `cpptlm_sim <config_without_kernel_launch.json> --cycles <N> --f12b-ld`
 - **THEN** the behavior SHALL be identical to "Flag present — HSK-8 permanent disable" (returncode=1, stderr disabled-error)
 - **AND** the binary SHALL NOT emit the legacy "requires JSON config with 'kernel_launch'" diagnostic (the entire wiring block is unreachable post-HSK-8)
+## Status Update
+- **2027-02-09**: **Superseded** by cpptlm-dgpu-d1-cdna-isa-sm-rewrite. 旧 PipelineTLM/ScoreboardTLM/TensorCoreTLM 路径已物理删除 (Task 13); gpgpu-sim comparison 路径由 SM 重构直接承接.

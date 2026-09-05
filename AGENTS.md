@@ -30,16 +30,17 @@ include/                 # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
     memory_cluster.hh     # 多通道 HBM/DDR 控制器
     gpu_noc_cluster.hh    # GPU 端 mesh interconnect
     apu_soc.hh            # ★ 顶层 dGPU/APU SoC: CPU侧 + GPGPU侧 + Crossbar 互联
-  tlm/gpu/               # ★ GPGPU 端 MVP 模块
-    gpu_compute_unit_tlm.hh    # GPU CU (黑盒发起器, Phase 7.A+)
-    vector_regfile_tlm.hh / minimal_warp_scheduler_tlm.hh / wavefront_tlm.hh
-    kernel_launch_tlm.hh / gpu_mesh_noc_tlm.hh
+  tlm/gpu/               # ★ SM 重构 GPGPU 端 (Task 4-13, 2027-02-09)
+    streaming_multiprocessor_tlm.hh    # ★ SM 顶层容器 (12 子模块 + IComputeDevice 15 方法)
+    i_compute_device.hh / instruction_descriptor.hh    # SM-owns-state 跨仓契约 (HSK-9)
+    sm/                       # ★ 12 个 ChStream SM 子模块 (Fetch/Decode/Issue/ScalarALU/VectorALU/MatrixCore/SIMTLane/LsuGlobal/LsuLDS/RegFileUnit/WritebackUnit/HazardTracker)
     gpu_tlm.hh / shared_memory_tlm.hh / memory_cluster_tlm.hh
     dma_descriptor_mvp.hh / doorbell_mvp.hh / completion_ring_mvp.hh
-    command_processor_mvp.hh / cuda_core_adapter_mvp.hh
-    async_completion_adapter.hh / gpu_cluster_shared_interface.hh
+    command_processor_mvp.hh / async_completion_adapter.hh
+    gpu_cluster_shared_interface.hh
     pcie_endpoint_tlm.h        # PcieEndpointTLM 4 端口冻结 (Phase 7.A, [[deprecated]])
     sdma_engine_tlm.hh / msix_table_mvp.hh / pcie_config_space_mvp.hh
+    # [[deprecated]] 类 (Task 10): vector_regfile_tlm / minimal_warp_scheduler_tlm / wavefront_tlm (待 Task 16 删除)
   tlm/pcie/              # ★ 7 阶段 PCIe EP 微架构 (本项目主体,2026-2027)
     pcie_link_layer_tlm.{hh,cc}                # Phase 1: 链路层 + DLLP + FC Token Bucket
     pcie_encoding_latency_model.hh             # Phase 2: 128b/130b Encoding
@@ -67,8 +68,9 @@ include/                 # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
   chstream_register.hh   # REGISTER_CHSTREAM 宏入口 (注册 Object + StreamAdapter)
   modules.hh             # REGISTER_OBJECT / REGISTER_MODULE 宏入口
   modules_cluster.hh     # REGISTER_MODULE 参数化入口 (9 个 SimModule 派生类集中注册)
-  cudart/                # CUDA Runtime vendored 接口 (pipeline/scoreboard/tensor_core)
-  dgpu_bundles_tlm.hh    # dGPU 专用 bundle (legacy,见 bundles/dgpu_bundles_tlm.hh)
+  bundles/               # Bundle 定义: cache/noc/compute/pcie_bundles + cpphdl_types + dgpu_bundles
+                          # + sm_bundles_tlm.hh (Task 6: 8 种 SM 内部 Bundle)
+  abi/                   # 23 ABI C extern "C" 头冻结 (per ADR-088 §D5)
 
 src/                    # .cc 实现 + main.cpp
   core/                  # module_factory / connection_resolver / param_parser / plugin_loader
@@ -79,6 +81,7 @@ src/                    # .cc 实现 + main.cpp
                          #   pcie_endpoint_ip.cc (Phase 8 M1: tick() 处理 PcieAxiAdapter slave 请求)
                          #   pcie_axi_adapter_tlm.cc
   tlm/gpu/               # dgpu_board_shell.cc / pcie_endpoint_tlm.cc (Phase 7.A 冻结)
+                         # + streaming_multiprocessor_tlm.cc (Task 4 SM 顶层 stub, Task 18 完整实现)
   framework/             # axi4_stream_adapter.cc / multi_port_stream_adapter.cc
   rtl/                   # hybrid_cache_component / hybrid_cache_wrapper (BUILD_RTL=ON)
   utils/                 # dynamic_loader 实现
@@ -402,6 +405,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 |------|------|------|
 | 9 类 SimModule (P2-P5) | CpuCluster / ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC / ApuSoC | ✅ 完成 + Oracle 评审 |
 | GPGPU 端 MVP | GPU CU / Warp / Vector RegFile / KernelLaunch / MeshNoC / SharedMemory / MemoryCluster | ✅ 完成 |
+| SM 重构 (Task 1-14) | 12 ChStream 子模块 + 8 Bundle + IComputeDevice 15 方法; supersedes KernelLaunch/CudaCoreAdapter/PtxEmuSubmodule | ✅ 完成 |
 | DMA / Doorbell / CommandProcessor / CompletionRing MVP | 端到端 SoC 集成路径 | ✅ 完成 |
 | 顶层 ApuSoC | CPU侧 + GPGPU侧 + Crossbar 互联, `incorporate_parent` 钩子(借鉴 gem5 late-binding) | ✅ 完成 |
 | dGPU Board Shell | `src/tlm/gpu/dgpu_board_shell.cc` 端到端板级集成 | ✅ 完成 |

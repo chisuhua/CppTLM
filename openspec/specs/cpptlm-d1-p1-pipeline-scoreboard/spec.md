@@ -125,3 +125,6 @@ The shim MUST be registered via `extern "C" PTXEMU_BRIDGE_API void cpptlm_set_dr
 
 ---
 
+
+## Status Update
+- **2027-02-09**: **Superseded** by cpptlm-dgpu-d1-cdna-isa-sm-rewrite. 旧 PipelineTLM/ScoreboardTLM/TensorCoreTLM 路径已物理删除 (Task 13); gpgpu-sim comparison 路径由 SM 重构直接承接.
