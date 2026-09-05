@@ -41,7 +41,7 @@ set(CORE_SOURCES
     tlm/gpu/wavefront_tlm.cc
     tlm/gpu/vector_regfile_tlm.cc
     tlm/gpu/minimal_warp_scheduler_tlm.cc
-    tlm/gpu/gpu_compute_unit_tlm.cc
+    # Task 9: 删除 gpu_compute_unit_tlm.cc (rename -> streaming_multiprocessor_tlm.cc)
     tlm/gpu/gpu_soc_tlm.cc
     tlm/gpu/dgpu_soc.cc
     tlm/gpu/dgpu_board_shell.cc

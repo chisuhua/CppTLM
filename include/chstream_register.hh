@@ -21,7 +21,7 @@
 #include "tlm/gpu/wavefront_tlm.hh"
 #include "tlm/gpu/vector_regfile_tlm.hh"
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
-#include "tlm/gpu/gpu_compute_unit_tlm.hh"
+// Task 9: 删除 gpu_compute_unit_tlm.hh include (rename -> StreamingMultiprocessorTLM)
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh"  // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
@@ -61,11 +61,12 @@
     ModuleFactory::registerObject<tlm::SharedMemoryTLM>("SharedMemoryTLM"); \
     ModuleFactory::registerObject<tlm::MemoryClusterTLM>("MemoryClusterTLM"); \
     ModuleFactory::registerObject<tlm::GpuMeshNoC>("GpuMeshNoC"); \
-    ModuleFactory::registerObject<tlm::KernelLaunchTLM>("KernelLaunchTLM"); \
+    /* Task 9: GpuComputeUnitTLM 删除, 由 StreamingMultiprocessorTLM 接管.
+       Task 10: WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM 改为内部子模块 typedef (Task 10 处理).
+       Task 12: KernelLaunchTLM 删除 (待执行). */ \
     ModuleFactory::registerObject<tlm::WavefrontTLM>("WavefrontTLM"); \
     ModuleFactory::registerObject<tlm::VectorRegFileTLM>("VectorRegFileTLM"); \
     ModuleFactory::registerObject<tlm::MinimalWarpSchedulerTLM>("MinimalWarpSchedulerTLM"); \
-    ModuleFactory::registerObject<tlm::GpuComputeUnitTLM>("GpuComputeUnitTLM"); \
     ModuleFactory::registerObject<tlm::StreamingMultiprocessorTLM>("StreamingMultiprocessorTLM"); \
     ModuleFactory::registerObject<tlm::sm::FetchUnitTLM>("FetchUnitTLM"); \
     ModuleFactory::registerObject<tlm::sm::DecodeUnitTLM>("DecodeUnitTLM"); \
