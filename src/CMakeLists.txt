@@ -37,7 +37,7 @@ set(CORE_SOURCES
     tlm/gpu/shared_memory_tlm.cc
     tlm/gpu/memory_cluster_tlm.cc
     tlm/gpu/gpu_mesh_noc_tlm.cc
-    tlm/gpu/kernel_launch_tlm.cc
+    # Task 12: kernel_launch_tlm.cc + cuda_core_adapter_mvp.cc + ptx_emu_submodule_mvp.cc 删除
     tlm/gpu/wavefront_tlm.cc
     tlm/gpu/vector_regfile_tlm.cc
     tlm/gpu/minimal_warp_scheduler_tlm.cc
@@ -97,21 +97,14 @@ set(CORE_SOURCES
 )
 
 # ==============================================================================
-# HSK-8 Phase 2 (PTX-EMU owner ack 738b412c):
-# PTX-EMU 集成代码仅在 CPPTLM_WITH_PTX_EMU=ON 时编译 (默认 OFF)
-# - ptx_emu_submodule_mvp.cc (facade, 仅 include ptxemu/device_api.h, C++17)
-# - cuda_core_adapter_mvp.cc (adapter, 仅 include ptxemu/device_api.h, C++17)
-#
-# 旧 S1 (c2038a93 pin) 的 WU-2 stub.cc + WU-3/WU-4 OBJECT 库块 已废弃:
-# - 新 PTX-EMU fcdad151+ 不再消费 g_cpptlm_bridge, stub.cc 不需要
-# - 新 PTX-EMU 头 (ptxemu/device_api.h) 是 C++17 兼容, 不需要 OBJECT 库隔离
+# HSK-8 Phase 2 (PTX-EMU owner ack 738b412c): 已物理删除 (Task 12)
+# PTX-EMU 集成代码已废弃, 新架构走 IComputeDevice 接口 (per SM 重构 §15.5):
+#   - ptx_emu_submodule_mvp.cc → 删除 (Task 12)
+#   - cuda_core_adapter_mvp.cc → 删除 (Task 12)
+# 旧 S1 (c2038a93 pin) 的 WU-2 stub.cc + WU-3/WU-4 OBJECT 库块 也已废弃.
 # ==============================================================================
-if(CPPTLM_WITH_PTX_EMU)
-    list(APPEND CORE_SOURCES
-        tlm/gpu/ptx_emu_submodule_mvp.cc # HSK-8: PTX functional facade (仅 include ptxemu/device_api.h)
-        tlm/gpu/cuda_core_adapter_mvp.cc  # HSK-8: CudaCoreAdapter timing (仅 include ptxemu/device_api.h)
-    )
-endif()
+# CPPTLM_WITH_PTX_EMU 块已清空, 标记 deprecated. PTX-EMU 集成改走 IComputeDevice
+# (per openspec/changes/cpptlm-dgpu-d1-cdna-isa-sm-rewrite)
 
 # s2 W3-4: 8-component 单体 retired (T-bs-5, c064628 cycle); SOC topology
 # 走 DGpuBoard C++ ABI shell + DGpuSoc SimModule 容器 (per ADR-SOC-07 D1/D7).

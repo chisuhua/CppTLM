@@ -17,7 +17,7 @@
 #include "tlm/gpu/shared_memory_tlm.hh"
 #include "tlm/gpu/memory_cluster_tlm.hh"
 #include "tlm/gpu/gpu_mesh_noc_tlm.hh"
-#include "tlm/gpu/kernel_launch_tlm.hh"
+// Task 12: kernel_launch_tlm.hh 已物理删除
 #include "tlm/gpu/wavefront_tlm.hh"
 #include "tlm/gpu/vector_regfile_tlm.hh"
 #include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
@@ -64,7 +64,7 @@
     /* Task 9: GpuComputeUnitTLM 删除, 由 StreamingMultiprocessorTLM 接管.
        Task 10: WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM -> SM 内部子模块 (类标 [[deprecated]],
        chstream_register 注销, Task 16 删除文件).
-       Task 12: KernelLaunchTLM 删除 (待执行). */ \
+       Task 12: KernelLaunchTLM + CudaCoreAdapterMVP + PtxEmuSubmoduleMVP 已物理删除. */ \
     ModuleFactory::registerObject<tlm::StreamingMultiprocessorTLM>("StreamingMultiprocessorTLM"); \
     ModuleFactory::registerObject<tlm::sm::FetchUnitTLM>("FetchUnitTLM"); \
     ModuleFactory::registerObject<tlm::sm::DecodeUnitTLM>("DecodeUnitTLM"); \
