@@ -34,7 +34,7 @@ CppTLM 当前 dGPU SoC v1.0 GPU 算力侧通过 ComputeUnitTLM 黑盒（per ADR-
 
 #### SM 顶层 + 12 子模块（per architecture/15 §15.2-§15.3）
 
-- **新增** `include/tlm/gpu/i_compute_device.hh`（14 方法接口契约）
+- **新增** `include/tlm/gpu/i_compute_device.hh`（15 方法接口契约）
 - **新增** `include/tlm/gpu/streaming_multiprocessor_tlm.hh` + `src/tlm/gpu/streaming_multiprocessor_tlm.cc`（SM 顶层容器 + `IComputeDevice` 实现）
 - **新增** `include/tlm/gpu/instruction_descriptor.hh`（`PipeClass` + `LatencyClass` + `CtrlBits` + `InstrDescriptor` POD）
 - **新增** `include/tlm/gpu/sm/fetch_unit_tlm.{hh,cc}`（指令抓取）
@@ -119,7 +119,7 @@ CppTLM 当前 dGPU SoC v1.0 GPU 算力侧通过 ComputeUnitTLM 黑盒（per ADR-
 
 ### New Capabilities
 
-- `sm-microarchitecture`：SM 微架构完整重构（12 子模块 + 8 Bundle + IComputeDevice 14 方法 + bit-exact Gate + SM-owns-state 模式）
+- `sm-microarchitecture`：SM 微架构完整重构（12 子模块 + 8 Bundle + IComputeDevice 15 方法 + bit-exact Gate + SM-owns-state 模式）
 
 ### Modified Capabilities
 

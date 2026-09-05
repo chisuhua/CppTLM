@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 完整重构 CppTLM GPU 算力侧：删除 6 个 GPU 算力侧模块 + 3 vendor 接口 + 15 测试；新增 12 个 ChStream SM 子模块 + 8 种 Bundle + `IComputeDevice` 14 方法；PTX-EMU 仅通过 `IComputeDevice` 接口步进模拟指令（`attach_timing` 保留为 deprecated stub，device_api.h 不动）。
+**Goal:** 完整重构 CppTLM GPU 算力侧：删除 6 个 GPU 算力侧模块 + 3 vendor 接口 + 15 测试；新增 12 个 ChStream SM 子模块 + 8 种 Bundle + `IComputeDevice` 15 方法；PTX-EMU 仅通过 `IComputeDevice` 接口步进模拟指令（`attach_timing` 保留为 deprecated stub，device_api.h 不动）。
 
 **Architecture:** 双轨前端 + 统一 Timing 宿主模式（per Oracle 范式分析 + architecture/15 v5.0 + HSK-9 草稿 v3）。SM 端持寄存器唯一真值（RegFileUnit），PTX-EMU 端通过 `set_instr_descriptor_buf()` 注入已解码 InstrDescriptor + 通过 `get_register_value()`/`is_instruction_completed()` 读路径/就绪协议同步；Gate 验证两边 ALU 实现 bit-exact。12 子模块通过 8 种 Bundle 连接：FetchUnit→DecodeUnit→IssueUnit→ScalarALU/VectorALU/MatrixCore/SIMTLane/LsuGlobal/LsuLDS/RegFileUnit/WritebackUnit/HazardTracker。
 
@@ -53,7 +53,7 @@ Append to `docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md`:
 
 Edit `docs/soc_arch/adr/README.md` append ADR-SOC-16 row to the table:
 ```markdown
-| [ADR-SOC-16-sm-microarchitecture.md](./ADR-SOC-16-sm-microarchitecture.md) | **dGPU SoC v1.0 SM 微架构重构**（反转 ADR-SOC-02 黑盒优先，12 个 ChStream 子模块 + 8 种 Bundle + IComputeDevice 14 方法 + SM-owns-state 模式；实施见 `cpptlm-dgpu-d1-cdna-isa-sm-rewrite`） | ✅ Accepted | v1.0 (2027-Q3+) |
+| [ADR-SOC-16-sm-microarchitecture.md](./ADR-SOC-16-sm-microarchitecture.md) | **dGPU SoC v1.0 SM 微架构重构**（反转 ADR-SOC-02 黑盒优先，12 个 ChStream 子模块 + 8 种 Bundle + IComputeDevice 15 方法 + SM-owns-state 模式；实施见 `cpptlm-dgpu-d1-cdna-isa-sm-rewrite`） | ✅ Accepted | v1.0 (2027-Q3+) |
  |
 ```
 
@@ -100,12 +100,12 @@ Expected: 971 + 179 行。
 
 - [ ] **Step 1: 创建 change 骨架**
 
-Run: `cd /workspace/project/CppTLM && openspec new change cpptlm-dgpu-d1-cdna-isa-sm-rewrite --description "dGPU SoC SM 微架构重构 - 12 ChStream 子模块 + 8 Bundle + IComputeDevice 14 方法" --goal "完整重构 GPU 算力侧为 gpgpu-sim 风格 SM 微架构；PTX-EMU 仅通过 IComputeDevice 接口步进；supersedes cpptlm-dgpu-d1-cdna-isa-phase-a"`
+Run: `cd /workspace/project/CppTLM && openspec new change cpptlm-dgpu-d1-cdna-isa-sm-rewrite --description "dGPU SoC SM 微架构重构 - 12 ChStream 子模块 + 8 Bundle + IComputeDevice 15 方法" --goal "完整重构 GPU 算力侧为 gpgpu-sim 风格 SM 微架构；PTX-EMU 仅通过 IComputeDevice 接口步进；supersedes cpptlm-dgpu-d1-cdna-isa-phase-a"`
 Expected: 创建 6 个文件骨架。
 
 - [ ] **Step 2: 覆写 proposal.md**
 
-Write proposal.md per architecture/15 §15.1 + §15.10.4: Why (PTX-EMU 集成清理 + SM 微架构) + What Changes (12 子模块 + 8 Bundle + IComputeDevice 14 方法 + 18 删除 + DOC HYGIENE 9 项) + Capabilities (sm-microarchitecture) + Impact (20 commits, per Oracle Round 4 终稿).
+Write proposal.md per architecture/15 §15.1 + §15.10.4: Why (PTX-EMU 集成清理 + SM 微架构) + What Changes (12 子模块 + 8 Bundle + IComputeDevice 15 方法 + 18 删除 + DOC HYGIENE 9 项) + Capabilities (sm-microarchitecture) + Impact (20 commits, per Oracle Round 4 终稿).
 
 - [ ] **Step 3: 覆写 design.md**
 
@@ -113,7 +113,7 @@ Write design.md per architecture/15 §15.2-§15.6 + §15.5.6 sync 协议 + §15.
 
 - [ ] **Step 4: 覆写 specs/sm-microarchitecture/spec.md**
 
-Write spec.md per OpenSpec schema: 14 Requirements covering 12 submodules + 8 bundles + IComputeDevice 14 methods + dual-compute bit-exact Gate. Scenarios for each.
+Write spec.md per OpenSpec schema: 14 Requirements covering 12 submodules + 8 bundles + IComputeDevice 15 methods + dual-compute bit-exact Gate. Scenarios for each.
 
 - [ ] **Step 5: 覆写 tasks.md**
 
@@ -178,7 +178,7 @@ TEST_CASE("InstrDescriptor ISA discriminator + instr_id fields exist", "[icomput
 Run: `cmake --build build --target cpptlm_tests && ./build/bin/cpptlm_tests "[icompute]"`
 Expected: FAIL with "include/tlm/gpu/i_compute_device.hh: No such file or directory".
 
-- [ ] **Step 2: 实现 IComputeDevice 接口 (14 方法 stub)**
+- [ ] **Step 2: 实现 IComputeDevice 接口 (15 方法 stub)**
 
 Create `include/tlm/gpu/i_compute_device.hh`:
 ```cpp
@@ -280,7 +280,7 @@ public:
     std::string get_module_type() const override { return "StreamingMultiprocessorTLM"; }
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
     
-    // IComputeDevice 14 methods: all stub return false/0
+    // IComputeDevice 15 methods: all stub return false/0
     bool initialize(const cpptlm::gpu::DeviceConfig& cfg) override { return false; }
     void shutdown() override {}
     int  exe_once() override { return 0; }
@@ -399,7 +399,7 @@ TEST_CASE("12 SM submodules instantiate as ChStreamModuleBase stubs", "[sm-unit]
     auto ll = std::make_unique<LsuLDS>("ll", &eq);
     REQUIRE(ll->get_module_type() == "LsuLDS");
     auto rf = std::make_unique<RegFileUnit>("rf", &eq);
-    REQUIRE(rf->->get_module_type() == "RegFileUnit");
+    REQUIRE(rf->get_module_type() == "RegFileUnit");
     auto wb = std::make_unique<WritebackUnit>("wb", &eq);
     REQUIRE(wb->get_module_type() == "WritebackUnit");
     auto ht = std::make_unique<HazardTracker>("ht", &eq);
@@ -749,26 +749,35 @@ GIT_MASTER=1 git commit -m "feat(register): chstream_register.hh 注册 SM 顶�
 
 ### Task 9: GpuComputeUnitTLM 重构为 SM 内部状态机
 
-**Files:**
-- Rename: `include/tlm/gpu/gpu_compute_unit_tlm.{hh,cc}` → `include/tlm/gpu/streaming_multiprocessor_tlm_internal.{hh,cc}` (deprecated)
-- Create: `include/tlm/gpu/sm_top_legacy_adapter.hh` (forward-compat shim)
+**Files (per architecture/15 §15.7.2 决策：rename 而非 deprecated shim)**：
+- Rename: `include/tlm/gpu/gpu_compute_unit_tlm.{hh,cc}` → `include/tlm/gpu/streaming_multiprocessor_tlm.{hh,cc}`（Task 4 已建 stub）
+- Rename: `src/tlm/gpu/gpu_compute_unit_tlm.cc` → 删除（旧 cc 内容并入 streaming_multiprocessor_tlm.cc）
+- Modify: `include/tlm/gpu/streaming_multiprocessor_tlm.hh` 持有 12 子模块 + 删旧 GpuComputeUnitTLM 注册
 
-- [ ] **Step 1: 写失败测试 — 旧 GpuComputeUnitTLM API 调用兼容**
+- [ ] **Step 1: 写失败测试 — 旧 GpuComputeUnitTLM 类型不应存在**
 
-Create `test/test_sm_top_legacy_compat.cc`:
-```cpp
-#include "catch_amalgamated.hpp"
-#include "tlm/gpu/streaming_multiprocessor_tlm_internal.hh"
-
-TEST_CASE("Legacy GpuComputeUnitTLM alias compiles via shim", "[sm-compat][cdna-phase-a]") {
-    // Verify the shim typedef still compiles
-    using LegacyCU = tlm::gpu_compute_unit_tlm;
-    static_assert(std::is_same_v<LegacyCU, tlm::GpuComputeUnitTLM>,
-                  "Legacy alias must point to GpuComputeUnitTLM");
-}
+Create `test/test_sm_top_no_legacy_type.sh`:
+```bash
+#!/bin/bash
+# Verify GpuComputeUnitTLM type no longer exists
+set -e
+HITS=$(grep -rE "tlm::GpuComputeUnitTLM|\"GpuComputeUnitTLM\"" include/ src/ 2>/dev/null || true)
+if [ -n "$HITS" ]; then
+    echo "FAIL: GpuComputeUnitTLM references found:"
+    echo "$HITS"
+    exit 1
+fi
+echo "PASS: no GpuComputeUnitTLM references"
 ```
 
-- [ ] **Step 2: 保留旧 GpuComputeUnitTLM 作为 SM 顶层内部状态机**
+Run: should FAIL initially (old code still references GpuComputeUnitTLM).
+
+- [ ] **Step 2: 重命名文件 + 修改 StreamingMultiprocessorTLM 持有 12 子模块**
+
+```bash
+git mv include/tlm/gpu/gpu_compute_unit_tlm.hh include/tlm/gpu/streaming_multiprocessor_tlm.hh
+git mv src/tlm/gpu/gpu_compute_unit_tlm.cc src/tlm/gpu/streaming_multiprocessor_tlm.cc
+```
 
 Modify `include/tlm/gpu/streaming_multiprocessor_tlm.hh` to internally hold 12 submodules:
 ```cpp
@@ -789,7 +798,7 @@ private:
     
 public:
     explicit StreamingMultiprocessorTLM(const std::string& name, EventQueue* eq);
-    // ... IComputeDevice 14 methods delegate to submodules ...
+    // ... IComputeDevice 15 methods delegate to submodules ...
     void tick() override;
 };
 ```
@@ -803,14 +812,19 @@ ModuleFactory::registerObject<tlm::GpuComputeUnitTLM>("GpuComputeUnitTLM");  // 
 ChStreamAdapterFactory::get().registerAdapter<tlm::GpuComputeUnitTLM, ...>  // 同上
 ```
 
-- [ ] **Step 4: 提交**
+- [ ] **Step 4: 验证测试通过**
+
+Run: `bash test/test_sm_top_no_legacy_type.sh`
+Expected: PASS.
+
+- [ ] **Step 5: 提交**
 
 ```bash
 GIT_MASTER=1 git add include/tlm/gpu/streaming_multiprocessor_tlm.hh \
                    src/tlm/gpu/streaming_multiprocessor_tlm.cc \
                    include/chstream_register.hh \
-                   test/test_sm_top_legacy_compat.cc
-GIT_MASTER=1 git commit -m "refactor(gpu_compute_unit): GpuComputeUnitTLM 重构为 SM 内部状态机 (chstream_register 注销旧名)"
+                   test/test_sm_top_no_legacy_type.sh
+GIT_MASTER=1 git commit -m "refactor(gpu_compute_unit): GpuComputeUnitTLM 重命名为 StreamingMultiprocessorTLM (per architecture/15 §15.7.2, chstream_register 注销旧名)"
 ```
 
 ### Task 10: 重构 WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM 为 SM 内部子模块
@@ -868,20 +882,25 @@ GIT_MASTER=1 git commit -m "refactor(legacy): 重构 WavefrontTLM/MinimalWarpSch
 
 - [ ] **Step 1: 写失败测试 — 旁路修复验证 (KernelLaunchTLM 符号应全无残留)**
 
-Create `test/test_no_kernel_launch_residual.cc`:
-```cpp
-#include "catch_amalgamated.hpp"
+**改为 shell 脚本测试**（per Oracle 评审 P1-2：原版 `#include` 在函数体内永远无法编译）：
 
-// Verify all removed files are not referenced
-TEST_CASE("Removed modules not transitively referenced", "[gpu-cleanup][cdna-phase-a]") {
-    // This test runs at compile time: if any of the removed headers
-    // are still included by any other .hh in the build, this file
-    // fails to compile (we include everything that might reference them)
-    #include "tlm/gpu/kernel_launch_tlm.hh"  // should fail
-}
+Create `test/test_no_kernel_launch_residual.sh`:
+```bash
+#!/bin/bash
+# Verify all removed modules are not referenced from include/ and src/
+set -e
+PATTERNS='KernelLaunchTLM|CudaCoreAdapterMVP|PtxEmuSubmoduleMVP|PipelineTLM|ScoreboardTLM|TensorCoreTLM|cudart'
+HITS=$(grep -rE "$PATTERNS" include/ src/ 2>/dev/null || true)
+if [ -n "$HITS" ]; then
+    echo "FAIL: removed module references found:"
+    echo "$HITS"
+    exit 1
+fi
+echo "PASS: no removed module references in include/ src/"
 ```
 
-Run: should fail to compile.
+Run: `bash test/test_no_kernel_launch_residual.sh`
+Expected: PASS (after Task 12-13 deletions).
 
 - [ ] **Step 2: 修改 gpu_soc_tlm.{h,cc}**
 
@@ -937,7 +956,7 @@ GIT_MASTER=1 git add include/tlm/gpu/gpu_soc_tlm.hh \
                    include/tlm/gpu/async_completion_adapter.hh \
                    src/main.cpp \
                    include/chstream_register.hh \
-                   test/test_no_kernel_launch_residual.cc
+                   test/test_no_kernel_launch_residual.sh
 GIT_MASTER=1 git commit -m "refactor(headers): 修复 gpu_soc_tlm.{h,cc} + async_completion_adapter + main.cpp + chstream_register 旁路依赖 (改接 IComputeDevice)"
 ```
 
@@ -1264,7 +1283,7 @@ Create `test/test_streaming_multiprocessor_tlm.cc` (per architecture/15 §15.8.2
 - [ ] **Step 4: 写 L4 IComputeDevice 步进测试**
 
 Create `test/test_i_compute_device_stepping.cc` (per architecture/15 §15.8.2 L4, 25+ assertions):
-- 14 方法 smoke test (每个方法 1 assertion)
+- 15 方法 smoke test (每个方法 1 assertion)
 - 1 tick = 1 cycle 契约
 - PTX-EMU facade 兼容性 (与 HSK-8 同构)
 
@@ -1298,7 +1317,7 @@ GIT_MASTER=1 git add test/test_sm_*.cc test/test_streaming_multiprocessor_tlm.cc
 GIT_MASTER=1 git commit -m "feat(tests): 新增 12 SM 子模块单测 + L2-L6 集成测试 + L7 JSON reload 测试 + test_f12b_smoke 重定位 (146+ assertions)"
 ```
 
-### Task 18: 完整实现 IComputeDevice 14 方法与同步协议 (含 Gate 验证)
+### Task 18: 完整实现 IComputeDevice 15 方法与同步协议 (含 Gate 验证)
 
 **Files:**
 - Modify: `src/tlm/gpu/streaming_multiprocessor_tlm.cc` (full impl)
@@ -1343,7 +1362,7 @@ public:
 
 Implement with explicit FP32/INT32/INT64 ALU bit-exact semantics (refer to PTX-EMU functional executor + ACCVGPR MFMA accumulation).
 
-- [ ] **Step 3: 完整实现 SM 顶层 tick() 与 14 方法**
+- [ ] **Step 3: 完整实现 SM 顶层 tick() 与 15 方法**
 
 Modify `src/tlm/gpu/streaming_multiprocessor_tlm.cc`:
 - `tick()`: 协调 12 子模块 + 调用 bit_exact Gate 验证
@@ -1377,7 +1396,7 @@ GIT_MASTER=1 git add include/tlm/gpu/sm/bit_exact_gate.hh \
                    src/tlm/gpu/sm/bit_exact_gate.cc \
                    src/tlm/gpu/streaming_multiprocessor_tlm.cc \
                    src/tlm/gpu/sm/*.cc
-GIT_MASTER=1 git commit -m "feat(tlm): 完整实现 IComputeDevice 与 14 方法同步协议 + Execute 单元真实逻辑 + bit-exact Gate"
+GIT_MASTER=1 git commit -m "feat(tlm): 完整实现 IComputeDevice 与 15 方法同步协议 + Execute 单元真实逻辑 + bit-exact Gate"
 ```
 
 ### Task 19: Archive OpenSpec change + 同步 main specs
@@ -1477,7 +1496,7 @@ GIT_MASTER=1 git commit -m "chore(cross-repo): HSK-9 公告正式发布 + PTX-EM
 **2. Placeholder scan**: 检查每 Task 的代码块完整（无 TBD/TODO/fill in details）,每个 step 都有具体命令与预期输出。✓
 
 **3. Type consistency**:
-- `IComputeDevice` 14 方法在 Task 4 定义 (Step 2) 与 Task 18 Step 3 实现一致
+- `IComputeDevice` 15 方法在 Task 4 定义 (Step 2) 与 Task 18 Step 3 实现一致
 - `InstrDescriptor` 字段 (isa_type, instr_id, result_value, memory_data) 在 Task 4 Step 2 与 §15.5.6 一致
 - `PipeClass`/`LatencyClass`/`CtrlBits` enum 在 Task 4 引用 Task 7 实现, 8 Bundle 在 Task 6 定义与 Task 7 引用一致
 - `BitExactGate` 在 Task 18 Step 1 测试定义, Step 2 实现, Task 18 Step 3 在 SM 顶层 tick() 协调调用

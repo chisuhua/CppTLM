@@ -11,7 +11,7 @@
 
 ### Requirement: SM 拓扑与 12 子模块
 
-The system SHALL SM 顶层容器 (`StreamingMultiprocessorTLM`) ShALL持有 12 个 ChStream 子模块，每个子模块继承 `ChStreamModuleBase`，通过 8 种 Bundle 连接成完整 SM 微架构：
+The system SHALL SM 顶层容器 (`StreamingMultiprocessorTLM`) SHALL持有 12 个 ChStream 子模块，每个子模块继承 `ChStreamModuleBase`，通过 8 种 Bundle 连接成完整 SM 微架构：
 
 - `FetchUnitTLM`：指令抓取（per-warp PC + instr buf）
 - `DecodeUnitTLM`：指令解码 → `InstrDescriptor`（`PipeClass` + `LatencyClass` + `CtrlBits`）
@@ -29,11 +29,11 @@ The system SHALL SM 顶层容器 (`StreamingMultiprocessorTLM`) ShALL持有 12 �
 #### Scenario: 12 子模块注册为 ChStreamModuleBase
 
 - **WHEN** 任何 `ChStreamModuleBase` 派生类被实例化
-- **THEN** `get_module_type()` ShALL返回对应字符串（`"FetchUnitTLM"` / `"DecodeUnitTLM"` / `"IssueUnitTLM"` / `"ScalarALU"` / `"VectorALU"` / `"MatrixCore"` / `"SIMTLane"` / `"LsuGlobal"` / `"LsuLDS"` / `"RegFileUnit"` / `"WritebackUnit"` / `"HazardTracker"`）
+- **THEN** `get_module_type()` SHALL返回对应字符串（`"FetchUnitTLM"` / `"DecodeUnitTLM"` / `"IssueUnitTLM"` / `"ScalarALU"` / `"VectorALU"` / `"MatrixCore"` / `"SIMTLane"` / `"LsuGlobal"` / `"LsuLDS"` / `"RegFileUnit"` / `"WritebackUnit"` / `"HazardTracker"`）
 
 ### Requirement: 8 Bundle POD 定义
 
-The system SHALL `include/bundles/sm_bundles_tlm.hh` ShALL定义 8 种 Bundle 类型：
+The system SHALL `include/bundles/sm_bundles_tlm.hh` SHALL定义 8 种 Bundle 类型：
 
 - `FetchToIssueBundle`：Fetch → Issue（`instr_desc`, `warp_id`, `pc`）
 - `DecodeToIssueBundle`：Decode → Issue（+ `PipeClass`, `LatencyClass`）
@@ -47,11 +47,11 @@ The system SHALL `include/bundles/sm_bundles_tlm.hh` ShALL定义 8 种 Bundle �
 #### Scenario: Bundle 字段完整性验证
 
 - **WHEN** Bundle POD 构造时
-- **THEN** 每个字段类型 + 默认值ShALL符合 architecture/15 §15.4 表
+- **THEN** 每个字段类型 + 默认值SHALL符合 architecture/15 §15.4 表
 
-### Requirement: IComputeDevice 14 方法接口契约
+### Requirement: IComputeDevice 15 方法接口契约
 
-The system SHALL `include/tlm/gpu/i_compute_device.hh` ShALL定义 `IComputeDevice` 抽象接口，含 14 个纯虚方法，命名空间 `cpptlm::gpu`：
+The system SHALL `include/tlm/gpu/i_compute_device.hh` SHALL定义 `IComputeDevice` 抽象接口，含 15 个纯虚方法，命名空间 `cpptlm::gpu`：
 
 **11 preserved from IPtxEmuDevice**：
 - `initialize`, `shutdown`, `exe_once`, `sm_exe_once`, `warp_exe_once`
@@ -73,16 +73,23 @@ The system SHALL `include/tlm/gpu/i_compute_device.hh` ShALL定义 `IComputeDevi
 #### Scenario: IComputeDevice 是抽象类
 
 - **WHEN** `std::is_abstract_v<IComputeDevice>` 求值
-- **THEN** ShALL返回 `true`（至少 1 个纯虚方法）
+- **THEN** SHALL返回 `true`（至少 1 个纯虚方法）
 
-#### Scenario: StreamingMultiprocessorTLM 实现 14 方法
+#### Scenario: StreamingMultiprocessorTLM 实现 15 方法
 
 - **WHEN** `StreamingMultiprocessorTLM` 派生自 `IComputeDevice`
-- **THEN** ShALL override 全部 14 方法（不可遗漏）
+- **THEN** SHALL override 全部 15 方法（不可遗漏）
 
 ### Requirement: SM-owns-state 同步协议
 
-The system SHALL `set_instr_descriptor_buf` ShALL支持 PTX-EMU 上行注入 `InstrDescriptor` 数组，SM 端通过 `FetchUnit → Decode → Exec → RegFileUnit` 流水写入寄存器真值；`get_register_value` ShALL从 `RegFileUnit` 读取真值（不可绕过）；`is_instruction_completed` ShALL查询 `HazardTracker` 完成状态。
+The system SHALL `set_instr_descriptor_buf` SHALL支持 PTX-EMU 上行注入 `InstrDescriptor` 数组，SM 端通过 `FetchUnit → Decode → Exec → RegFileUnit` 流水写入寄存器真值；`get_register_value` SHALL从 `RegFileUnit` 读取真值（不可绕过）；`is_instruction_completed` SHALL查询 `HazardTracker` 完成状态。
+
+**协议语义**（per architecture/15 §15.5.6 + Oracle Round 4 F1.4 双计算决策）：
+1. **tick 驱动方**：PTX-EMU 在调用 `set_instr_descriptor_buf` 之后必须调用 `exe_once()` 推进 SM cycle（1 调用 = 1 cycle 契约）；不允许 PTX-EMU 在不调 `exe_once()` 的情况下连续 `set_instr_descriptor_buf`。
+2. **末批指令结果取回**：kernel 最后一批指令（无后续 `set_instr_descriptor_buf` 调用）必须由 PTX-EMU 调用 `is_finished()` 阻塞等待 + 轮询 `get_register_value()` 取回剩余寄存器真值；SM 不主动 push。
+3. **buf 内存所有权**：`InstrDescriptor* buf` 由 PTX-EMU 持有，SM 仅在 `set_instr_descriptor_buf` 调用期间浅拷贝字段值；PTX-EMU 在 `set_instr_descriptor_buf` 返回后即可复用/释放 buf。SM 不持有 buf 指针。
+4. **`get_register_value` lane_id 默认 0xFFFFFFFF** 语义：表示"该 warp 所有 lane 寄存器值相同（SIMT 同构），返回 lane 0 的值"；具体 lane_id 调用时返回该 lane 真值。
+5. **`is_instruction_completed` 轮询语义**：PTX-EMU 必须轮询（spin）直到返回 `true` 或 `exe_once()` 调用 N 次后仍 false（per `exe_once()` 返回值）；不允许基于时间/事件回调（无 back-pressure 机制）。
 
 #### Scenario: PTX-EMU 注入 + 读寄存器
 
@@ -90,12 +97,25 @@ The system SHALL `set_instr_descriptor_buf` ShALL支持 PTX-EMU 上行注入 `In
 - **AND** `desc.isa_type = InstrDescriptor::IsaType::kCDNA64`, `desc.instr_id = 42`
 - **AND** `desc.result_value[0] = 1.0f + 2.0f = 3.0f`（PTX-EMU functional 计算）
 - **WHEN** SM 执行 1 cycle 后
-- **THEN** `get_register_value(sm_id, warp_id, dst_reg, &out_value)` ShALL返回 `out_value = 3.0f`（SM Exec 计算真值，per F1.4 决策）
-- **AND** `is_instruction_completed(42)` ShALL返回 `true`
+- **THEN** `get_register_value(sm_id, warp_id, dst_reg, &out_value)` SHALL返回 `out_value = 3.0f`（SM Exec 计算真值，per F1.4 决策）
+- **AND** `is_instruction_completed(42)` SHALL返回 `true`
+
+#### Scenario: buf 内存所有权
+
+- **WHEN** PTX-EMU 调用 `set_instr_descriptor_buf(buf, count)` 并立即 `free(buf)` 或复用 `buf` 内存
+- **THEN** SM 端 SHALL NOT 持有 `buf` 指针或解引用 `buf` 在调用返回后
+- **AND** SM 端 SHALL 已在调用期间浅拷贝全部字段值到内部 storage
+
+#### Scenario: 末批指令结果取回
+
+- **GIVEN** PTX-EMU 已调用 `set_instr_descriptor_buf` 注入 kernel 最后 N 条指令
+- **WHEN** `exe_once()` 已推进到 `is_finished() == true`
+- **THEN** PTX-EMU SHALL 通过 `get_register_value(...)` 轮询取回剩余寄存器真值
+- **AND** `get_register_value` SHALL 返回 SM `RegFileUnit` 中的最终真值
 
 ### Requirement: bit-exact Gate 验证
 
-The system SHALL `BitExactGate` ShALL验证 PTX-EMU functional 与 SM Exec ALU 输出 bit-exact 一致，覆盖 FP32/INT32/INT64 ALU + CDNA MFMA ACCVGPR 累加器。
+The system SHALL `BitExactGate` SHALL验证 PTX-EMU functional 与 SM Exec ALU 输出 bit-exact 一致，覆盖 FP32/INT32/INT64 ALU + CDNA MFMA ACCVGPR 累加器。
 
 #### Scenario: v_add_f32 bit-exact
 
@@ -105,7 +125,7 @@ The system SHALL `BitExactGate` ShALL验证 PTX-EMU functional 与 SM Exec ALU �
 
 ### Requirement: 删除旧模块
 
-The system SHALL 下列模块ShALL从 `include/tlm/gpu/` + `src/tlm/gpu/` 删除，并从 `chstream_register.hh` 注销：
+The system SHALL 下列模块SHALL从 `include/tlm/gpu/` + `src/tlm/gpu/` 删除，并从 `chstream_register.hh` 注销：
 
 - `KernelLaunchTLM` (`.hh` + `.cc`)
 - `CudaCoreAdapterMVP` (`.hh` + `.cc`)
@@ -114,9 +134,9 @@ The system SHALL 下列模块ShALL从 `include/tlm/gpu/` + `src/tlm/gpu/` 删除
 - `ScoreboardTLM` (`.hh` + `.cc`)
 - `TensorCoreTLM` (`.hh` + `.cc`)
 
-`include/cudart/{pipeline,scoreboard,tensor_core}_interface.h` ShALL删除，`include/cudart/` 目录ShALL为空目录。
+`include/cudart/{pipeline,scoreboard,tensor_core}_interface.h` SHALL删除，`include/cudart/` 目录SHALL为空目录。
 
-15 旧测试文件（per architecture/15 §15.7.1.B）ShALL从 `test/` 删除。
+15 旧测试文件（per architecture/15 §15.7.1.B）SHALL从 `test/` 删除。
 
 #### Scenario: 旧模块符号无残留
 
@@ -125,7 +145,7 @@ The system SHALL 下列模块ShALL从 `include/tlm/gpu/` + `src/tlm/gpu/` 删除
 
 ### Requirement: 23 ABI 冻结不变量
 
-The system SHALL 下列头文件ShALL零修改（除 `pcie_endpoint_tlm.h` 可加 `[[deprecated]]` 属性）：
+The system SHALL 下列头文件SHALL零修改（除 `pcie_endpoint_tlm.h` 可加 `[[deprecated]]` 属性）：
 
 - `include/abi/cpptlm_emulator.h`
 - `include/tlm/gpu/pcie_endpoint_tlm.h`（仅可加 `[[deprecated]]`）
@@ -138,7 +158,7 @@ The system SHALL 下列头文件ShALL零修改（除 `pcie_endpoint_tlm.h` 可�
 
 ### Requirement: JSON config 修订
 
-The system SHALL 下列 JSON config ShALL修订：
+The system SHALL 下列 JSON config SHALL修订：
 
 - `configs/vector_add_n1024.json`：`"type": "KernelLaunchTLM"` → `"type": "StreamingMultiprocessorTLM"`
 - `configs/templates/compute_unit_v1.json`：注释更新（per Oracle Round 3 P2，无 type 字符串改动）
@@ -166,7 +186,7 @@ The system SHALL - `AGENTS.md` STRUCTURE + WHERE-TO-LOOK + PHASE-STATE + ADR 计
 
 ### Requirement: 测试覆盖 146+ assertions
 
-The system SHALL ShALL新增下列测试覆盖：
+The system SHALL SHALL新增下列测试覆盖：
 
 - 12 子模块单测（每个 1 文件，约 30 LOC × 12）
 - L2 Bundle 接线测试（20+ assertions）
@@ -186,19 +206,19 @@ The system SHALL ShALL新增下列测试覆盖：
 
 ### Requirement: OpenSpec change lifecycle
 
-The system SHALL 本 change ShALL supersede `cpptlm-dgpu-d1-cdna-isa-phase-a`，archive 时同步合并 `cdna-isa-abstraction` capability spec 到 `openspec/specs/sm-microarchitecture/spec.md`。
+The system SHALL 本 change SHALL supersede `cpptlm-dgpu-d1-cdna-isa-phase-a`，archive 时同步合并 `cdna-isa-abstraction` capability spec 到 `openspec/specs/sm-microarchitecture/spec.md`。
 
 #### Scenario: archive 同步
 
 - **WHEN** 实施完成 + Gate 14 项 PASS
-- **THEN** `openspec archive cpptlm-dgpu-d1-cdna-isa-sm-rewrite` ShALL成功 + 同步 archive phase-a
-- **AND** `openspec/specs/sm-microarchitecture/spec.md` ShALL存在
+- **THEN** `openspec archive cpptlm-dgpu-d1-cdna-isa-sm-rewrite` SHALL成功 + 同步 archive phase-a
+- **AND** `openspec/specs/sm-microarchitecture/spec.md` SHALL存在
 
 ### Requirement: HSK-9 跨仓协调
 
-The system SHALL HSK-9 公告ShALL发布到 PTX-EMU 仓 `docs/superpowers/specs/2027-02-09-hsk-9-cpptlm-sm-rewrite.md`（per architecture/15 §15.6.3 final draft），CppTLM 仓镜像到 `docs/cross_repo/HSK-9-2027-02-09-cpptlm-sm-rewrite.md`。
+The system SHALL HSK-9 公告SHALL发布到 PTX-EMU 仓 `docs/superpowers/specs/2027-02-09-hsk-9-cpptlm-sm-rewrite.md`（per architecture/15 §15.6.3 final draft），CppTLM 仓镜像到 `docs/cross_repo/HSK-9-2027-02-09-cpptlm-sm-rewrite.md`。
 
-PTX-EMU 端改造ShALL跟踪（14 天反馈窗口）：
+PTX-EMU 端改造SHALL跟踪（14 天反馈窗口）：
 
 - `external/PTX-EMU/src/ptxemu/device_api_impl.cc::attach_timing()` → deprecated stub body
 - `external/PTX-EMU/src/ptxsim/core/sm_context.cpp` (L34/67/206) → 删除 IScoreboard/IPipelineLatencyProvider/ITensorCoreTiming 用法，改用 IComputeDevice::set_instr_descriptor_buf()

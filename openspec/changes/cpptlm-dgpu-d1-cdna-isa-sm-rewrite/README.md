@@ -1,6 +1,6 @@
 # cpptlm-dgpu-d1-cdna-isa-sm-rewrite
 
-dGPU SoC v1.0 SM 微架构重构 — 12 ChStream 子模块 + 8 Bundle + `IComputeDevice` 14 方法
+dGPU SoC v1.0 SM 微架构重构 — 12 ChStream 子模块 + 8 Bundle + `IComputeDevice` 15 方法
 
 ## Goal
 

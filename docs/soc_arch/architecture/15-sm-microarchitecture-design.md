@@ -83,7 +83,7 @@
 │       │                                  ▼                    ▼                │                │
 │  ┌────┴──────────────────────┐    ┌──────────────┐    ┌─────────────────┐    │                │
 │  │  IComputeDevice 入口       │    │ VectorALU    │    │ MatrixCore      │    │                │
-│  │  (PTX-EMU 通过 IComputeDevice 14 方法步进) │    │ Unit         │    │ Unit            │    │                │
+│  │  (PTX-EMU 通过 IComputeDevice 15 方法步进) │    │ Unit         │    │ Unit            │    │                │
 │  └───────────────────────────┘    │ (ExecToWB)   │    │ (ExecToWB)      │    │                │
 │                                   └──────────────┘    └─────────────────┘    │                │
 │                                          ▲                    ▲              │                │
@@ -367,7 +367,7 @@ public:
 ```cpp
 class IComputeDevice {
 public:
-    // ... 原有 11 方法 + set_instr_descriptor_buf + 2 扩展方法 = 14 方法 ...
+    // ... 原有 11 方法 + set_instr_descriptor_buf + 2 扩展方法 + reset = 15 方法 ...
     
     // === 新增：寄存器读路径（PTX-EMU functional simulator 读 SM 真值）===
     virtual bool get_register_value(uint32_t sm_id, uint32_t warp_id, uint32_t reg_id,
@@ -424,7 +424,7 @@ struct InstrDescriptor {
 - SM 持唯一寄存器真值（PTX-EMU 仅缓存 snapshot via `get_register_value()`）
 
 **IComputeDevice 总方法数修订**（Oracle Round 3 P1-a 闭合）：
-- 原 12 方法 → **14 方法**（新增 `get_register_value()` + `is_instruction_completed()`）
+- 原 12 方法 → **15 方法**（新增 `get_register_value()` + `is_instruction_completed()` + `reset()`）
 - HSK-9 草稿 §2 表与 §3 代码块必须同步更新
 
 ### 15.5.3 真实 IPtxEmuDevice 方法映射（Oracle P0 修订）
@@ -522,12 +522,12 @@ struct InstrDescriptor {
 
 > **HSK-9 公告正文（CppTLM → PTX-EMU）**：
 >
-> **摘要**：CppTLM 端 GPU 算力侧重构，删除 `IScoreboard/IPipelineLatencyProvider/ITensorCoreTiming` 3 个 vendor 接口的 CppTLM 端实现，新增 SM 微架构（12 个 ChStream 子模块 + 8 种 Bundle + `IComputeDevice` 接口 14 方法）。PTX-EMU 端 `SMContext::exe_once()` 必须改造；`attach_timing()` 保留为 deprecated stub per §15.6.3 F3.1 拍板（device_api.h 不动）。
+> **摘要**：CppTLM 端 GPU 算力侧重构，删除 `IScoreboard/IPipelineLatencyProvider/ITensorCoreTiming` 3 个 vendor 接口的 CppTLM 端实现，新增 SM 微架构（12 个 ChStream 子模块 + 8 种 Bundle + `IComputeDevice` 接口 **15 方法**）。PTX-EMU 端 `SMContext::exe_once()` 必须改造；`attach_timing()` 保留为 deprecated stub per §15.6.3 F3.1 拍板（device_api.h 不动）。
 >
 > **跨仓契约变更**（`IPtxEmuDevice` 12 方法签名**冻结不变**）：
 > - `attach_timing()` 实现侧：PTX-EMU 端 `device_api_impl.cc` 改造为 deprecated stub（保留方法签名，body 报 `[[deprecated]]` 警告）；CppTLM 端删除实现
 > - PTX-EMU 端 `sm_context_cpptlm_inject.cpp` 移除 `attach_timing()` consumer 路径（不再依赖 3 vendor 接口注入）
-> - 配套 `IComputeDevice` 是 **CppTLM 端新接口**（`include/tlm/gpu/i_compute_device.hh`），14 方法，与 `IPtxEmuDevice` 平行（不是修改 PTX-EMU 公共头）
+> - 配套 `IComputeDevice` 是 **CppTLM 端新接口**（`include/tlm/gpu/i_compute_device.hh`），**15 方法**，与 `IPtxEmuDevice` 平行（不是修改 PTX-EMU 公共头）
 > - **ICOMPUTE_API_VERSION=1 保持**（public header 未变 → 不触发 VERSION bump；语义质变已标注为 breaking change）
 >
 > **PTX-EMU 端必须修改**：
@@ -658,7 +658,7 @@ struct InstrDescriptor {
 - WritebackToRegFileBundle, MemoryReqBundle, MemoryRespBundle, ScoreboardQueryBundle
 
 **IComputeDevice**（`include/tlm/gpu/i_compute_device.hh`）：
-- 14 方法（per §15.5.3 + §15.5.6——11 IPtxEmuDevice 同构保留 + `set_instr_descriptor_buf` 新增 + `get_register_value()`/`is_instruction_completed()` 2 扩展 = 14）
+- **15 方法**（per §15.5.3 + §15.5.6——11 IPtxEmuDevice 同构保留 + `set_instr_descriptor_buf` 新增 + `get_register_value()`/`is_instruction_completed()` 2 扩展 + `reset()` = 15）
 
 ### 15.7.4 chstream_register.hh 修改
 
@@ -736,7 +736,7 @@ ChStreamAdapterFactory::get().registerAdapter<StreamingMultiprocessorTLM,
 
 #### L4 IComputeDevice 步进
 
-- 14 方法 smoke test（每个方法至少 1 assertion；含 11 IPtxEmuDevice 同构 + `set_instr_descriptor_buf` + `get_register_value` + `is_instruction_completed`）
+- **15 方法** smoke test（每个方法至少 1 assertion；含 11 IPtxEmuDevice 同构 + `set_instr_descriptor_buf` + `get_register_value` + `is_instruction_completed` + `reset`）
 - 1 tick = 1 cycle 契约（与 Wave 2 G-D3 对齐）
 - PTX-EMU facade 兼容性测试（与 HSK-8 同构）
 
@@ -784,7 +784,7 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 | 1 | `docs(adr): ADR-SOC-16 背书 SM 重构 + 修订 ADR-SOC-02 Status Update` | 仅文档 | ✅ N/A | — |
 | 2 | `docs(soc_arch): 修订 15-sm-microarchitecture-design + hsk9-announcement-draft.md` | 仅文档 | ✅ N/A | commit 1 |
 | 3 | `feat(openspec): 启动 cpptlm-dgpu-d1-cdna-isa-sm-rewrite change + 标 phase-a superseded` | OpenSpec 流程 | ✅ N/A | commit 2 |
-| 4 | `feat(tlm): 新增 SM 顶层容器 StreamingMultiprocessorTLM + IComputeDevice 接口 14 方法 (stub 实现)` | **新增 + stub** | ✅ 编译通过（SM 内部子模块都是 stub）| commit 2 |
+| 4 | `feat(tlm): 新增 SM 顶层容器 StreamingMultiprocessorTLM + IComputeDevice 接口 15 方法 (stub 实现)` | **新增 + stub** | ✅ 编译通过（SM 内部子模块都是 stub）| commit 2 |
 | 5 | `feat(sm): 新增 12 个 ChStream 子模块 stub (.hh + 空 .cc)` | **新增 + stub** | ✅ 编译通过 | commit 4 |
 | 6 | `feat(bundles): 新增 sm_bundles_tlm.hh 8 种 Bundle 定义` | **新增** | ✅ 编译通过 | commit 5 |
 | 7 | `feat(sm): 完整实现 12 个 ChStream 子模块（连接 Bundle）` | **填充** | ✅ 编译通过 | commit 6 |
@@ -798,7 +798,7 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 | 15 | `chore(docs): AGENTS.md STRUCTURE + ONBOARDING.md + docs/soc_arch/modules/{gpu-kernel-launch,cuda-core-adapter,ptx-emu-submodule-mvp,dgpu-board,gpu-compute_unit,gpu-soc,gpu.common}.md + modules/README.md + openspec/main specs/{cpptlm-d1-p1-pipeline-scoreboard,gpgpu-precision-wave2,cli-f12b-flag}.md + scripts/test/docs_sync_check.sh VIRTUAL_PATHS (DOC HYGIENE 全套)` | **文档同步** | ✅ 编译通过 | commit 14 |
 | 16 | `refactor(tests): 删除 15 旧测试文件` | **测试删除** | ✅ 编译通过 | commit 14 |
 | 17 | `feat(tests): 新增 12 SM 子模块单测 + L2-L6 集成测试 + L7 JSON reload 测试 + test_f12b_smoke 重定位` | **新增测试** | ✅ 编译通过 | commit 16 |
-| 18 | `feat(tlm): 完整实现 IComputeDevice 与 14 方法 (含 get_register_value 读路径 + is_instruction_completed 就绪协议) + set_instr_descriptor_buf 同步协议 + Execute 单元真实逻辑` | **完整实现** | ✅ 编译通过 | commit 17 |
+| 18 | `feat(tlm): 完整实现 IComputeDevice 与 15 方法 (含 get_register_value 读路径 + is_instruction_completed 就绪协议 + reset) + set_instr_descriptor_buf 同步协议 + Execute 单元真实逻辑` | **完整实现** | ✅ 编译通过 | commit 17 |
 | 19 | `chore(openspec): archive cpptlm-dgpu-d1-cdna-isa-sm-rewrite + archive cpptlm-dgpu-d1-cdna-isa-phase-a (superseded)` | OpenSpec 收尾 | ✅ 编译通过 | commit 18 |
 | 20 | `chore(commit): HSK-9 公告正式发布到 PTX-EMU 仓 docs/superpowers/specs/ + PTX-EMU 端 sm_context.cpp/2cpptlm_inject.cpp 改造` | 跨仓协调 | ✅ N/A | commit 19 |
 
@@ -883,8 +883,8 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 **新建 OpenSpec change**：`cpptlm-dgpu-d1-cdna-isa-sm-rewrite`
 
 - proposal.md: 反转 ADR-SOC-02 黑盒决策 + 新增 SM 微架构（per §15.2-§15.6）
-- design.md: SM 子模块分解 + Bundle + IComputeDevice 14 方法 + 23 ABI 保护
-- specs/sm-microarchitecture/spec.md: 12 子模块 + 8 Bundle + IComputeDevice 14 方法 requirement
+- design.md: SM 子模块分解 + Bundle + IComputeDevice **15 方法** + 23 ABI 保护
+- specs/sm-microarchitecture/spec.md: 12 子模块 + 8 Bundle + IComputeDevice 15 方法 requirement
 - tasks.md: 20 个原子 commit task 列表（per §15.9.1，每 commit 可编译）
 - supersedes: `cpptlm-dgpu-d1-cdna-isa-phase-a`（保留 InstrDescriptor/LatencyClass 等基础抽象）
 

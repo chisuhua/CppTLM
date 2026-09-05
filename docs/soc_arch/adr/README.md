@@ -33,7 +33,7 @@
 | [ADR-SOC-13-axi-stream-adapter-mapper.md](./ADR-SOC-13-axi-stream-adapter-mapper.md) | **AXI Stream Adapter + AXI4Mapper 集成**（PCIe↔AXI 边界 + outstanding 跟踪 + OOO completion + 512-bit 限制） | 📋 Proposed | Phase 5-6 (已实施) |
 | [ADR-SOC-14-v55-integration-revision.md](./ADR-SOC-14-v55-integration-revision.md) | **v5.5+ 系统级硬件仿真集成修订**（Phase 8 后 23 ABI 状态 + 5 项前置测试已实施 + UsrLinuxEmu 集成未闭环） | 📋 Proposed | v1.0+ |
 | [ADR-SOC-15-cdna-real-isa-roadmap.md](./ADR-SOC-15-cdna-real-isa-roadmap.md) | **dGPU SoC v1.0 CDNA 真实物理 ISA 演进路线图**（双轨前端 + 统一 Timing 宿主，4 阶段 43-73 人天：InstrDescriptor 中立化 → IMemoryPort 异步内存 Seam → CDNA 引擎接入 → 双轨校准；完整方案设计见 [`architecture/11-cdna-real-isa-integration.md`](../architecture/11-cdna-real-isa-integration.md)） | 📋 Proposed | v1.0+ |
-| [ADR-SOC-16-sm-microarchitecture.md](./ADR-SOC-16-sm-microarchitecture.md) | **dGPU SoC v1.0 SM 微架构重构**（反转 ADR-SOC-02 黑盒优先；12 个 ChStream 子模块 + 8 种 Bundle + `IComputeDevice` 14 方法 + SM-owns-state 模式 + bit-exact Gate；实施见 OpenSpec change `cpptlm-dgpu-d1-cdna-isa-sm-rewrite`） | ✅ Accepted | v1.0 (2027-Q3+) |
+| [ADR-SOC-16-sm-microarchitecture.md](./ADR-SOC-16-sm-microarchitecture.md) | **dGPU SoC v1.0 SM 微架构重构**（反转 ADR-SOC-02 黑盒优先；12 个 ChStream 子模块 + 8 种 Bundle + `IComputeDevice` 15 方法 + SM-owns-state 模式 + bit-exact Gate；实施见 OpenSpec change `cpptlm-dgpu-d1-cdna-isa-sm-rewrite`） | ✅ Accepted | v1.0 (2027-Q3+) |
 
 ## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference(已迁回本目录)
 

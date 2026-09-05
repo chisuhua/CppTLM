@@ -22,7 +22,7 @@ ADR-SOC-02 (2026-06-14) 确立"CU 黑盒优先"决策：ComputeUnitTLM 简化为
 
 ## 2. 决策
 
-✅ **完整 SM 微架构重构**：删除 ADR-SOC-02 黑盒 CU，改为 gpgpu-sim 风格 12 子模块 + 8 Bundle + `IComputeDevice` 14 方法接口。
+✅ **完整 SM 微架构重构**：删除 ADR-SOC-02 黑盒 CU，改为 gpgpu-sim 风格 12 子模块 + 8 Bundle + `IComputeDevice` **15 方法**接口。
 
 ### 2.1 SM 拓扑（per architecture/15 §15.2）
 
@@ -55,9 +55,9 @@ StreamingMultiprocessorTLM (顶层 ChStreamModuleBase + IComputeDevice)
 | MemoryRespBundle | NoC→Lsu | data, cycles |
 | ScoreboardQueryBundle | 任意→Hazard | QueryType, ctrl |
 
-### 2.3 IComputeDevice 14 方法（per architecture/15 §15.5 + HSK-9）
+### 2.3 IComputeDevice 15 方法（per architecture/15 §15.5 + HSK-9）
 
-11 preserved from `IPtxEmuDevice` + 1 new (`set_instr_descriptor_buf`) + 2 new (Round 4 user decisions):
+11 preserved from `IPtxEmuDevice` + 1 new (`set_instr_descriptor_buf`) + 2 new (Round 4 user decisions) + 1 (`reset`):
 - `initialize` / `shutdown` / `exe_once` / `sm_exe_once` / `warp_exe_once`
 - `set_scoreboard` / `get_thread_state` / `set_active_mask` / `set_next_pc`
 - `get_warp_status` / `is_finished`
@@ -96,9 +96,9 @@ StreamingMultiprocessorTLM (顶层 ChStreamModuleBase + IComputeDevice)
 ### 4.1 正面
 
 - **精度对齐**：SM 微架构与 AMD CDNA2/CDNA3 ISA Reference、NV Blackwell SM_120 微架构对齐，可支持 MGPUSim/Mi300X 校准基线（per `architecture/12`）；
-- **PTX-EMU 集成清理**：HSK-9 公告（179 行）冻结 `IPtxEmuDevice` 12 方法 + 标记 `attach_timing` deprecated + 新增 `IComputeDevice` 14 方法，跨仓协调清晰；
+- **PTX-EMU 集成清理**：HSK-9 公告（修订后 ~210 行）冻结 `IPtxEmuDevice` 12 方法 + 标记 `attach_timing` deprecated + 新增 `IComputeDevice` **15 方法**，跨仓协调清晰；
 - **gpgpu-sim 范式**：业界标准 SM 微架构（Fetch→Decode→Issue→Exec→Writeback 5-stage pipeline），可参考 MGPUSim/Gem5 等成熟仿真框架；
-- **可扩展性**：12 子模块独立可测 + 8 Bundle 灵活替换 + SM 顶层 14 方法标准化；
+- **可扩展性**：12 子模块独立可测 + 8 Bundle 灵活替换 + SM 顶层 15 方法标准化；
 - **Gate bit-exact 验证**：双计算 + Gate 比对确保 PTX-EMU functional 与 SM timing 一致。
 
 ### 4.2 负面
@@ -125,20 +125,24 @@ StreamingMultiprocessorTLM (顶层 ChStreamModuleBase + IComputeDevice)
 
 ## 7. Gate 14 项（per architecture/15 §15.10）
 
-- [x] SM 拓扑：12 子模块 + ChStreamModuleBase + Bundle 连接 ✓
-- [x] IComputeDevice 14 方法签名冻结 + 命名空间 cpptlm::gpu ✓
-- [x] SM-owns-state：RegFileUnit 唯一真值源 + PTX-EMU 通过 set_instr_descriptor_buf 同步 ✓
-- [x] 8 Bundle POD 字段完整 + 流向正确（Fetch→Decode→Issue→Exec→WB→RegFile）✓
-- [x] Gate bit-exact：PTX-EMU functional 与 SM Exec ALU 实现 bit-exact ✓
-- [x] HSK-9 协议：attach_timing 保留为 IPtxEmuDevice deprecated stub（device_api.h 不动）✓
-- [x] SFU 子管道在 ScalarALU 内（INT/FP32/FP64/SFU/Branch 5 子管道）✓
-- [x] 23 ABI 冻结：`include/abi/cpptlm_emulator.h` 零修改 + `pcie_endpoint_tlm.h` 仅可加 `[[deprecated]]` ✓
-- [x] 删除范围：6 实现 + 3 vendor + 15 测试 + 4 JSON + 旁路 + DOC HYGIENE ✓
-- [x] 20 原子 commit：每 commit 可独立编译 ✓
-- [x] OpenSpec change sm-rewrite (supersedes phase-a) ✓
-- [x] HSK-9 公告草稿 179 行发布（PTX-EMU 仓 docs/superpowers/specs/）✓
-- [x] 测试覆盖：12 子模块单测 + L2-L6 集成测试 + L7 JSON reload (146+ assertions) ✓
-- [x] Oracle 5 轮评审通过（Round 5 0 P0, 0 P1）✓
+**状态说明**：以下 Gate 14 项是实施期间必须验证的目标，**当前状态为待验证（pending）**——实施未启动前任何 [x] 都是过度承诺。本节列出 Gate 项 + 验证手段 + 责任人 + 时间窗口；每项在对应 Task 实施 + Oracle 复评通过后才置 [x]。
+
+- [ ] **G1**: SM 拓扑：12 子模块 + ChStreamModuleBase + Bundle 连接 — 验证手段: `nm build/bin/cpptlm_tests | grep -E "FetchUnitTLM|DecodeUnitTLM|..."`（Task 8 完成）; 责任人: Task 8 实施者; 目标日期: Task 8 完成时
+- [ ] **G2**: IComputeDevice **15 方法**签名冻结 + 命名空间 cpptlm::gpu（含 11 IPtxEmuDevice 同构保留 + 1 HSK-9 同步通道 + 2 Round 4 读路径 + 1 reset；`get_thread_state` 返回 `ThreadState` per `device_api.h:104`）— 验证手段: `static_assert` in test_i_compute_device_interface.cc（Task 4 完成）; 责任人: Task 4 实施者
+- [ ] **G3**: SM-owns-state：RegFileUnit 唯一真值源 + PTX-EMU 通过 set_instr_descriptor_buf 同步 — 验证手段: Task 18 L3 集成测试 30+ assertions
+- [ ] **G4**: 8 Bundle POD 字段完整 + 流向正确（Fetch→Decode→Issue→Exec→WB→RegFile）— 验证手段: Task 17 L2 Bundle 接线测试 20+ assertions
+- [ ] **G5**: Gate bit-exact：PTX-EMU functional 与 SM Exec ALU 实现 bit-exact — 验证手段: Task 18 Gate bit-exact 测试 (test_bit_exact_gate.cc)
+- [ ] **G6**: HSK-9 协议：attach_timing 保留为 IPtxEmuDevice deprecated stub（device_api.h 不动）— 验证手段: `git diff device_api.h` 应为空（除已 [[deprecated]] 标记）; 责任人: 每 Task commit 前静态检查
+- [ ] **G7**: SFU 子管道在 ScalarALU 内（INT/FP32/FP64/SFU/Branch 5 子管道）— 验证手段: Task 17 test_sm_scalar_alu_tlm.cc
+- [ ] **G8**: 23 ABI 冻结：`include/abi/cpptlm_emulator.h` 零修改 + `pcie_endpoint_tlm.h` 仅可加 [[deprecated]] — 验证手段: `git diff include/abi/cpptlm_emulator.h include/tlm/gpu/pcie_endpoint_tlm.h` 应为空（除 [[deprecated]]）
+- [ ] **G9**: 删除范围：**15** 旧测试文件（per architecture/15 §15.7.1.B）+ 6 实现 + 3 vendor + 4 JSON + 旁路修复 + DOC HYGIENE — 验证手段: Task 16 完成 + Task 11 脚本测试 PASS
+- [ ] **G10**: 20 原子 commit：每 commit 可独立编译 — 验证手段: `cmake --build build` 在每个 commit 上 PASS
+- [ ] **G11**: OpenSpec change sm-rewrite (supersedes phase-a) — 验证手段: `openspec validate cpptlm-dgpu-d1-cdna-isa-sm-rewrite --strict` PASS（已完成）
+- [ ] **G12**: HSK-9 公告草稿发布到 PTX-EMU 仓 `docs/superpowers/specs/` — 验证手段: Task 20 完成
+- [ ] **G13**: 测试覆盖：12 子模块单测 + L2-L6 集成测试 + L7 JSON reload (146+ assertions) — 验证手段: `cpptlm_tests "[sm-unit][sm-bundle][sm-top][sm-icompute][sm-cdna][sm-e2e][sm-json][sm-gate]"` PASS
+- [ ] **G14**: Oracle 复评通过（实施期间每 Task 完成后 + 最终 Round 6 0 P0, 0 P1）— 验证手段: Oracle session PASS
+
+**整体 Gate 通过条件**：G1-G14 全部 [x] + `cpptlm_tests "[pcie][axi][e2e][wave2][gpu][sm-microarch]"` 全绿 + Oracle 最终复评 PASS。
 
 ## 8. 风险与缓解
 

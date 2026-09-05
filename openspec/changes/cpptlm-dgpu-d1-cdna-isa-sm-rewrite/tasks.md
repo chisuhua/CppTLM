@@ -13,9 +13,10 @@
 
 ### 阶段 1: 文档 + OpenSpec（Task 1-3）
 
-- [ ] **Task 1**: ADR 背书 SM 重构 + 修订 ADR-SOC-02/15 Status Update（✅ commit `90c9778`）
-- [ ] **Task 2**: 验证设计文档 v5.0 + HSK-9 草稿已在 main（commit `650e9e9`）✅
-- [ ] **Task 3**: 启动 OpenSpec change `cpptlm-dgpu-d1-cdna-isa-sm-rewrite`（supersedes phase-a）✅ 当前任务
+- [x] **Task 1**: ADR 背书 SM 重构 + 修订 ADR-SOC-02/15 Status Update（✅ commit `90c9778`）
+- [x] **Task 2**: 验证设计文档 v5.0 + HSK-9 草稿已在 main（commit `650e9e9`）
+- [x] **Task 3**: 启动 OpenSpec change `cpptlm-dgpu-d1-cdna-isa-sm-rewrite`（supersedes phase-a）（commit `59e2baa`）
+- [x] **Task 3.5**: 修复 Oracle 评审发现的 P0 缺陷（commit pending）
 
 ### 阶段 2: 接口 + 12 子模块 stub（Task 4-5）
 
@@ -38,7 +39,7 @@
 ### 阶段 4: 旧模块重构（Task 9-11）
 
 - [ ] **Task 9**: `GpuComputeUnitTLM` 重构为 SM 内部状态机
-  - SM 顶层持有 12 子模块 unique_ptr + IComputeDevice 14 方法委托
+  - SM 顶层持有 12 子模块 unique_ptr + IComputeDevice 15 方法委托
 - [ ] **Task 10**: 重构 `WavefrontTLM` / `MinimalWarpSchedulerTLM` / `VectorRegFileTLM` 为 SM 内部子模块
   - `[[deprecated]]` typedef 指向 `tlm::sm::SIMTLane` / `IssueUnitTLM` / `RegFileUnit`
   - chstream_register 注销旧名
@@ -60,7 +61,7 @@
 ### 阶段 7: 新测试 + 完整实现（Task 17-18）
 
 - [ ] **Task 17**: 新增 12 SM 子模块单测 + L2-L6 集成测试 + L7 JSON reload + `test_f12b_smoke` 重定位（146+ assertions）
-- [ ] **Task 18**: 完整实现 IComputeDevice 14 方法与同步协议 + bit-exact Gate + 12 子模块 full + 全量回归（Gate 14 项）
+- [ ] **Task 18**: 完整实现 IComputeDevice 15 方法与同步协议 + bit-exact Gate + 12 子模块 full + 全量回归（Gate 14 项）
 
 ### 阶段 8: Archive + 跨仓协调（Task 19-20）
 

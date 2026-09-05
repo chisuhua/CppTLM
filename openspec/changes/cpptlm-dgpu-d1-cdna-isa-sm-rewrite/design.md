@@ -40,7 +40,7 @@ StreamingMultiprocessorTLM (顶层 ChStreamModuleBase + IComputeDevice)
 
 ## 3. IComputeDevice 接口（per architecture/15 §15.5）
 
-14 方法 = 11 preserved from `IPtxEmuDevice` + 1 new (`set_instr_descriptor_buf`) + 2 new (Round 4 user decisions):
+15 方法 = 11 preserved from `IPtxEmuDevice` + 1 new (`set_instr_descriptor_buf`) + 2 new (Round 4 user decisions):
 
 ```cpp
 class IComputeDevice {
@@ -109,7 +109,7 @@ public:
 ## 7. Gate 14 项（per architecture/15 §15.10）
 
 1. ✅ SM 拓扑：12 子模块 + ChStreamModuleBase + Bundle 连接
-2. ✅ IComputeDevice 14 方法签名冻结 + 命名空间 `cpptlm::gpu`
+2. ✅ IComputeDevice 15 方法签名冻结 + 命名空间 `cpptlm::gpu`
 3. ✅ SM-owns-state：RegFileUnit 唯一真值源 + PTX-EMU 通过 set_instr_descriptor_buf 同步
 4. ✅ 8 Bundle POD 字段完整 + 流向正确
 5. ✅ Gate bit-exact：PTX-EMU functional 与 SM Exec ALU 实现 bit-exact
