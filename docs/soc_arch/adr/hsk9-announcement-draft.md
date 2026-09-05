@@ -7,7 +7,7 @@
 > **影响范围**:
 > - **CppTLM 端**：删除 6 个 GPU 算力侧模块 + 3 vendor 接口 + 14 测试；新增 SM 微架构 12 子模块 + 8 Bundle + `IComputeDevice`
 > - **PTX-EMU 端**：`SMContext::exe_once()` 必须同步改造移除 `attach_timing()` 调用栈 + `device_api_impl.cc` 新增 `set_instr_descriptor_buf()` 实现
-> - **跨仓契约变更**：1 个方法删除 (`attach_timing`) + 1 个方法新增 (`set_instr_descriptor_buf`)，净 12 → 12 方法不变
+> - **跨仓契约变更**：`IPtxEmuDevice` 12 方法签名**冻结不变**（`attach_timing` 保留为 deprecated stub）；新增 CppTLM 端 `IComputeDevice` 接口 14 方法
 > - **版本号**：`PTXEMU_API_VERSION=1` 冻结（保持）+ `ICOMPUTE_API_VERSION=1` 保持（语义质变已显式标注为 breaking change，HSK 纪律要求所有方法签名变更必须 bump 版本号，本变更恰好不触发——净新增 1 + 净删除 1 = 0 方法数变化）
 > **关联文档**:
 > - [`docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md`](../../../../docs/soc_arch/adr/ADR-SOC-15-cdna-real-isa-roadmap.md) §3 D3 R3（HSK 协调纪律）
@@ -59,16 +59,14 @@ C++ dGPU SoC v1.0 周期精确仿真框架按 ADR-SOC-15 路线图进入 SM 重�
 | `set_next_pc(sm_id, warp_id, lane_id, pc)` | ✅ 保留 | per-lane PC 控制 |
 | `get_warp_status(sm_id, warp_id) → WarpStatus` | ✅ 保留 | per-warp status |
 | `is_finished()` | ✅ 保留 | 全局 finished 状态 |
-| `attach_timing(IScoreboard*, IPipelineLatencyProvider*, ITensorCoreTiming*)` | ❌ **删除**（per `device_api.h:114`）| 3 vendor 接口已废 |
-| `set_instr_descriptor_buf(InstrDescriptor*, uint32_t)` | 🆕 **新增** | producer 侧：PTX-EMU 写入已解码的 `InstrDescriptor[]`；consumer 侧：SM 接收推进 timing |
-| `get_register_value(sm, warp, reg_id, out_value, lane_id)` | 🆕 **新增**（IComputeDevice 扩）| PTX-EMU functional simulator 读 SM 寄存器真值（分支判定/地址计算）|
-| `is_instruction_completed(instr_id)` | 🆕 **新增**（IComputeDevice 扩）| PTX-EMU 等 SM `WritebackUnit` 写回 `RegFileUnit` 完成 |
+| `attach_timing(IScoreboard*, IPipelineLatencyProvider*, ITensorCoreTiming*)` | ⚠️ **保留为 deprecated stub**（per `device_api.h:114`）| 公共头不变；PTX-EMU 端 body 改 stub 报 `[[deprecated]]` 警告；CppTLM 端删除实现 |
+| `set_instr_descriptor_buf(InstrDescriptor*, uint32_t)` | ❌ **不属于 IPtxEmuDevice**——该方法在新接口 `IComputeDevice`（`include/tlm/gpu/i_compute_device.hh`，CppTLM 端），由 SM 实现，PTX-EMU 调用 | producer 侧：PTX-EMU 写入已解码的 `InstrDescriptor[]`；consumer 侧：SM 接收推进 timing |
 
 **关键不变量**：
-- ✅ `IPtxEmuDevice` 12 方法签名**冻结**（除 `attach_timing` 删除 + `set_instr_descriptor_buf` 新增；**净方法数仍为 12**——HSK-9 不触发 VERSION bump）
+- ✅ `IPtxEmuDevice` 12 方法签名**冻结不变**（`attach_timing` 保留为 deprecated stub，public header 未动）
 - ✅ 配套 `IComputeDevice` 是 **CppTLM 端新接口**（`include/tlm/gpu/i_compute_device.hh`），14 方法（独立于 `IPtxEmuDevice`，不修改 PTX-EMU 公共头）
 - ✅ `PTXEMU_API_VERSION=1` 冻结
-- ✅ `ICOMPUTE_API_VERSION=1` 冻结（语义质变已显式标注，**未触发** HSK-N bump）
+- ✅ `ICOMPUTE_API_VERSION=1` 冻结（语义质变已显式标注为 breaking change，但 public 方法签名未变 → 不触发 VERSION bump）
 - ✅ 现有 `[pcie]/[axi]/[gpu]` PTX 模式测试保持基线 100% 通过
 
 #### 3. 跨仓契约细节
@@ -169,7 +167,7 @@ public:
 | `ICOMPUTE_API_VERSION` | 1 (保持) | 1 (保持，语义质变已标注) |
 | CppTLM 端实现 | 保留 3 vendor 接口 + Stage A 双轨 | 删 3 vendor 接口 + 完整 SM 重构 |
 | PTX-EMU 端代码变更 | 零修改（HSK-8 兼容假设） | 必须修改（SMContext 移除 attach_timing 路径） |
-| `IPtxEmuDevice` 方法 | 12 方法保持 + `set_instr_descriptor_buf` 新增 = 13 方法 | 12 方法保持（删 attach_timing + 新增 set_instr_descriptor_buf = 净 12 方法）|
+| `IPtxEmuDevice` 方法 | 12 方法保持（attach_timing 保留）| 12 方法保持不变（attach_timing 改 deprecated stub 实现）+ 配套 IComputeDevice 14 方法（CppTLM 端新接口） |
 | 触发阶段 | 阶段 A Gate 后 | SM 重构 Gate 后（阶段 A supersede by SM rewrite） |
 
 **supersede 理由**：旧草稿基于"阶段 A 双轨并存"假设（PTX-EMU 与 CppTLM 双边均有 `PipelineTLM/ScoreboardTLM` 实现）；本设计反转该假设（SM 重构后 PTX-EMU 端必须同步改造）。HSK 协议允许同号公告被新版正文 supersede（per HSK-8 spec §Doc Hygiene）。

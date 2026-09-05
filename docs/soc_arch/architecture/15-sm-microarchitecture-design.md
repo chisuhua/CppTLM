@@ -39,7 +39,7 @@
 | 重构范围 | **完整 SM 微架构**（5-stage + SIMT + wavefront）| 反转 ADR-SOC-02 黑盒优先 |
 | 子模块分解 | **CDNA 完整子模块**（与 §11.3 对齐）| 贴近硬件真实拓扑 |
 | Bundle 连接 | **现存 ComputeReqBundle + 新增子类**（每连接一个 Bundle）| 与项目现有风格统一 |
-| IComputeDevice 契约 | **完整 IPtxEmuDevice 12 方法保留**| 与 HSK-8 兼容，与 §11.2.2 对齐 |
+| IComputeDevice 契约 | **完整 IPtxEmuDevice 12 方法保留**（含 `attach_timing` 保留为 deprecated stub per §15.6.3 F3.1 拍板）| 与 HSK-8 兼容，与 §11.2.2 对齐 |
 | KernelLaunchTLM | **删除**，后续再规划 CommandProcessor 实现| 与"清理 PTX-EMU 集成"一致 |
 | 旧 WavefrontTLM 等 4 个 | **重新设计**（参考 Blackwell SM_120 + CDNA）| 用户在选项外指定 |
 | 实施路径 | **大爆炸重写**（一次全部替换）| 用户明确选择 |
@@ -63,7 +63,7 @@
 `StreamingMultiprocessorTLM`（顶层容器，原 `GpuComputeUnitTLM` 重命名）是 SM 微架构的根。它：
 - **继承** `ChStreamModuleBase`（同 GpuComputeUnitTLM）
 - **持有** 12 个 ChStream 子模块（Fetch/Decode/Issue/3 个 Exec/SIMT/2 个 LSU/RegFile/Writeback/HazardTracker）
-- **实现** `IComputeDevice`（与 `IPtxEmuDevice` 12 方法同构）
+- **实现** `IComputeDevice`（与 `IPtxEmuDevice` 12 方法同构，含 `get_register_value()`+`is_instruction_completed()` 2 扩展方法 + `attach_timing` deprecated stub per §15.5.6 + §15.6.3 F3.1）
 - **驱动** 子模块通过 `tick()` 推进 1 个 SM cycle
 
 ### 15.2.2 整体架构图
@@ -83,7 +83,7 @@
 │       │                                  ▼                    ▼                │                │
 │  ┌────┴──────────────────────┐    ┌──────────────┐    ┌─────────────────┐    │                │
 │  │  IComputeDevice 入口       │    │ VectorALU    │    │ MatrixCore      │    │                │
-│  │  (PTX-EMU 通过 12 方法步进) │    │ Unit         │    │ Unit            │    │                │
+│  │  (PTX-EMU 通过 IComputeDevice 14 方法步进) │    │ Unit         │    │ Unit            │    │                │
 │  └───────────────────────────┘    │ (ExecToWB)   │    │ (ExecToWB)      │    │                │
 │                                   └──────────────┘    └─────────────────┘    │                │
 │                                          ▲                    ▲              │                │
@@ -220,7 +220,7 @@ FetchUnit ──▶ DecodeUnit ──▶ IssueUnit ──┬──▶ ScalarALU 
 - **职责**：管理 VGPR/SGPR/ACCVGPR（CDNA 专用）三段寄存器
 - **CDNA 模式**：512 VGPR/lane + 106 SGPR + 256 ACCVGPR/lane
 - **Bank conflict**：operand collector 4 bank（per NV §10.6 完全消解 bank conflict）
-- **读写**：经 WritebackToRegFileBundle 写入；经 ScoreboardQueryBundle 查询当前值
+- **读写**：经 WritebackToRegFileBundle 写入（SM 内部 WritebackUnit → RegFileUnit）；经 `IComputeDevice::get_register_value()` 外部读路径（PTX-EMU 调用）查询当前值
 
 #### 15.3.3.8 WritebackUnit
 
@@ -325,13 +325,13 @@ public:
 
 **理论参考**：accel-sim trace-driven 模型 + MGPUSim functional-timing 分离（per Oracle 范式分析 `ses_f982f1597ffejYGzVek5F7zBfP`）—— SM 是 timing 容器，PTX-EMU 是 functional reference。
 
-### 15.5.2 Functional/Timing State 划分（Oracle Round 2 P0 修订）
+### 15.5.2 Functional/Timing State 划分（Oracle Round 4 F1.4 修订）
 
-> **Oracle Round 2 P0 指出**："§15.5.2 表正确，但 §15.3.3.4/§15.3.3.7/§15.3.3.8/§15.4.1 全部按'SM 持有并计算寄存器值'设计 → 双 register state 必然发散"。
+> **Oracle Round 4 F1.4 指出**："PTX-EMU 用 `get_register_value()` 读源值**做 functional 计算** 与 SM WritebackUnit 填充 `result_value[]` —— 同一条指令被两边各算一遍，可能发散"。
 
-**用户拍板（2027-02-09）**：**SM 持寄存器值**（单真值源）；PTX-EMU 通过 `set_instr_descriptor_buf()` 同步机制从 SM 拉回结果，但 SM 端是权威。
+**用户拍板（2027-02-09 Round 4）**：**双计算 + Gate 验证 bit-exact**。PTX-EMU functional 用于控制流决策，SM Exec 算 timing 写 RegFile 唯一真值；两侧 ALU 实现必须 bit-exact，由 Gate 验证。
 
-**明确划分（SM-owns-state 模式）**：
+**明确划分（dual-compute + cross-check 模式）**：
 
 | 状态类别 | PTX-EMU 持有 | SM 持有 | 同步机制 |
 |----------|--------------|---------|----------|
@@ -339,18 +339,24 @@ public:
 | **寄存器值（VGPR/SGPR/ACCVGPR）** | ❌ 不持有（仅缓存快照）| ✅ **唯一真值源** | SM `RegFileUnit` 写值 → `set_instr_descriptor_buf()` 下次调用时 PTX-EMU 拉回 |
 | **Lane-level EXEC mask** | ✅ 持有（functional state）| ⚠️ 部分跟踪（timing state）| PTX-EMU 通过 `set_active_mask()` 写入；SM `SIMTLane` 追踪 lane 是否可发射 |
 | **Warp/Wavefront 调度顺序** | ❌ 不持有 | ✅ 持有 | SM `IssueUnit` 内部状态 |
-| **Hazard 状态（vmcnt/lgkmcnt/expcnt）** | ❌ 不持有 | ✅ 持有（SM `HazardTracker`）| Hazard 是 timing concern |
-| **内存数据值** | ❌ 不持有 | ✅ 持有（SM `LsuGlobal` 回调）| SM `MemoryRespBundle` 返回 data，PTX-EMU 通过 `set_instr_descriptor_buf()` 拉取 |
-| **内存事务（NoC transactions）** | ❌ 不发起 | ✅ 持有（SM 发起并接收）| SM `LsuGlobal` → `IMemoryPort` 异步 |
-| **Cycle 计数** | ✅ 持有（PTX-EMU 内部）| ✅ 持有（SM 内部）| 双重持有但各自有用途（PTX-EMU 给 functional 时间，SM 给 timing 时间）|
+| **Hazard 状态（vmcnt/lgkmcnt/expcnt）** | ❌ 不持有 | ✅ 持有（SM `HazardTracker`）| |
+| **内存数据值** | ❌ 不持有 | ✅ 持有（SM `LsuGlobal` 回调）| |
+| **Cycle 计数** | ✅ 持有 | ✅ 持有 | 双重持有（functional time vs timing time）|
+
+**双计算 bit-exact 契约**：
+- PTX-EMU functional 计算：**PTX-EMU 自身** 解码 ALU 指令后**调用自己的 functional executor**（ANTLR4/LLVM MC 解码 + functional ALU 实现）算结果，仅用于**控制流决策**（分支判定、内存地址计算）
+- SM timing 计算：：SM `ScalarALU/VectorALU/MatrixCore` 单元也计算一次结果，写入 `RegFileUnit` 作为**时序真值源**（按 `LatencyClass` 占用 cycle 数）
+- **bit-exact Gate**：每一对 (PTX-EMU functional result, SM timing result) 必须逐位相等。Gate 在 §15.10.1 第 14 项 "PTX-EMU functional 闭环验证" 中实现——每次 `set_instr_descriptor_buf()` 后，PTX-EMU 拉回的 `result_value[]` 与 PTX-EMU functional 自算结果比对，不等即触发 Gate 失败
+- 跨 SM 多次 cycle 的累加器（ACCVGPR）也需要 bit-exact——MFMA 累加由 SM 唯一管理，PTX-EMU functional 不维护累加器，仅在每个 MFMA 完成后拉回
 
 **契约（同步语义）**：
-1. PTX-EMU 调用 `set_instr_descriptor_buf(InstrDescriptor* buf, uint32_t count)` 注入下一批指令
-2. SM 接收 buf 后推进 1 cycle：`FetchUnit` 从 buf 抓取 → DecodeUnit 分类 → IssueUnit 调度 → Execute 单元（ScalarALU/VectorALU/MatrixCore）计算结果 → WritebackUnit **写回 `RegFileUnit`** → 释放 `HazardTracker`
-3. **PTX-EMU 下次调用 `set_instr_descriptor_buf()` 时**，SM 通过同一个 buf 的回填字段返回寄存器写值（per §15.5.6 sync 协议）
-4. PTX-EMU 通过 `get_thread_state/get_warp_status` 查询 lane-level EXEC mask，但 lane 是否可发射由 SM 内部 hazard 决定
+1. PTX-EMU 调用 `set_instr_descriptor_buf(InstrDescriptor* buf, uint32_t count)` 注入下一批指令（含 `isa_type/instr_id/pc/pipe/latency_class/ctrl/dst_regs/src_regs/target_vaddr/mem_size` 等下行字段）
+2. SM 推进 1 cycle：FetchUnit → DecodeUnit → IssueUnit → Execute 单元按 LatencyClass 占用 cycles → WritebackUnit 写回 RegFileUnit → 释放 HazardTracker
+3. **下次调用 `set_instr_descriptor_buf()`** 时，SM 在 buf `result_value[]` 字段回填已写回的真值；PTX-EMU 拉回后**与自算 functional 结果比对**（Gate）
+4. PTX-EMU 通过 `is_instruction_completed(instr_id)` 阻塞等写回，避免读到陈旧值
+5. PTX-EMU 通过 `get_register_value(reg_id, lane_id)` 读 SM 寄存器真值做 functional 计算
 
-**单真值源保证**：寄存器值唯一存在 SM `RegFileUnit`；PTX-EMU 不维护 register state —— 通过 `set_instr_descriptor_buf()` 双向同步。这避免了双 register state 发散风险（Oracle Round 2 P0 核心关切）。
+**单真值源保证**：寄存器值唯一存在 SM `RegFileUnit`；PTX-EMU 不维护 register state。PTX-EMU functional 计算仅用于分支判定和地址计算（不下行写入 SM），与 SM Exec 计算在 Gate 验证下 bit-exact。
 
 ### 15.5.6 set_instr_descriptor_buf 同步协议（新增，Oracle Round 3 P0 修复）
 
@@ -361,7 +367,7 @@ public:
 ```cpp
 class IComputeDevice {
 public:
-    // ... 原有 12 方法 ...
+    // ... 原有 11 方法 + set_instr_descriptor_buf + 2 扩展方法 = 14 方法 ...
     
     // === 新增：寄存器读路径（PTX-EMU functional simulator 读 SM 真值）===
     virtual bool get_register_value(uint32_t sm_id, uint32_t warp_id, uint32_t reg_id,
@@ -504,36 +510,36 @@ struct InstrDescriptor {
 - ✅ `PcieEndpointIP` 17 端口布局冻结
 - ✅ `PTXEMU_API_VERSION=1` 冻结（per HSK-8 spec）
 - ✅ CppTLM Clean Room 原则（不感知 PTX-EMU 内部）
-- ✅ IComputeDevice 与 IPtxEmuDevice 12 方法同构（per 用户决策 + §15.5.3）
+- ✅ IComputeDevice 与 IPtxEmuDevice 11 保留方法同构（per 用户决策 + §15.5.3 + F3.1 attach_timing stub 保留）
 
-### 15.6.3 HSK-9 必要性 + 与既有草稿冲突（Oracle Round 2 N-P0-2 修订）
+### 15.6.3 HSK-9 必要性 + 与既有草稿冲突（Oracle Round 4 F3.1 修订）
 
-> **Oracle Round 2 N-P0-2 指出**：仓内已存在 `docs/soc_arch/adr/hsk9-announcement-draft.md`（commit `4105602`），其 HSK-9 定义为"阶段 A 后发布、`ICOMPUTE_API_VERSION=1` 双轨并存、**PTX-EMU 端无任何代码变更**、attach_timing **保留**"——与本设计"PTX-EMU 端必须修改、attach_timing 删除"互斥。同号双契约。
+> **Oracle Round 4 F3.1 指出**：草稿"删 attach_timing 但冻结 device_api.h"自相矛盾。
 
-**用户拍板（2027-02-09）**：**重写 `hsk9-announcement-draft.md`** 为 SM 重构版（HSK-9 编号不变，ICOMPUTE_API_VERSION=1 保持；版本号不变，但语义质变在公告正文中显式标注为 breaking change）。
+**用户拍板（2027-02-09 Round 4）**：**device_api.h 不动**（冻结不变）；`attach_timing` 保留为 deprecated stub 实现（public header 不动，body 改 stub）；HSK-9 作为"删除实现 + 新增 SM 重构"协调公告。
 
 **HSK-9 内容（重写版）**：
 
 > **HSK-9 公告正文（CppTLM → PTX-EMU）**：
 >
-> **摘要**：CppTLM 端 GPU 算力侧重构，删除 `IScoreboard/IPipelineLatencyProvider/ITensorCoreTiming` 3 个 vendor 接口的 CppTLM 端实现，新增 SM 微架构（12 个 ChStream 子模块 + 8 种 Bundle + `IComputeDevice` 接口 12 方法）。PTX-EMU 端 `SMContext::exe_once()` 必须同步改造移除 `attach_timing()` 调用栈。
+> **摘要**：CppTLM 端 GPU 算力侧重构，删除 `IScoreboard/IPipelineLatencyProvider/ITensorCoreTiming` 3 个 vendor 接口的 CppTLM 端实现，新增 SM 微架构（12 个 ChStream 子模块 + 8 种 Bundle + `IComputeDevice` 接口 14 方法）。PTX-EMU 端 `SMContext::exe_once()` 必须改造；`attach_timing()` 保留为 deprecated stub per §15.6.3 F3.1 拍板（device_api.h 不动）。
 >
-> **跨仓契约变更**：
-> - 删除：`attach_timing(IScoreboard*, IPipelineLatencyProvider*, ITensorCoreTiming*)` 1 个方法（CppTLM 端实现 + PTX-EMU 端 consumer 双边删除）
-> - 新增：`set_instr_descriptor_buf(InstrDescriptor*, uint32_t)` 1 个方法（producer 侧由 PTX-EMU 端写入；consumer 侧由 SM 接收）
-> - 保留 11 个方法（同构）
-> - 总数：12 → **12** 方法（净不变）
-> - **ICOMPUTE_API_VERSION=1 保持**（版本号未变，但本公告标注为**语义质变 breaking change**——HSK 纪律要求所有方法签名变更必须 bump 版本号，本变更恰好不触发——净新增 1 + 净删除 1 = 0 方法数变化。这是边界情况，故显式标注以避免 PTX-EMU 仓静态断言失败）
+> **跨仓契约变更**（`IPtxEmuDevice` 12 方法签名**冻结不变**）：
+> - `attach_timing()` 实现侧：PTX-EMU 端 `device_api_impl.cc` 改造为 deprecated stub（保留方法签名，body 报 `[[deprecated]]` 警告）；CppTLM 端删除实现
+> - PTX-EMU 端 `sm_context_cpptlm_inject.cpp` 移除 `attach_timing()` consumer 路径（不再依赖 3 vendor 接口注入）
+> - 配套 `IComputeDevice` 是 **CppTLM 端新接口**（`include/tlm/gpu/i_compute_device.hh`），14 方法，与 `IPtxEmuDevice` 平行（不是修改 PTX-EMU 公共头）
+> - **ICOMPUTE_API_VERSION=1 保持**（public header 未变 → 不触发 VERSION bump；语义质变已标注为 breaking change）
 >
 > **PTX-EMU 端必须修改**：
-> 1. `src/ptxemu/device_api_impl.cc` 新增 `set_instr_descriptor_buf()` 实现（producer 侧）
+> 1. `src/ptxemu/device_api_impl.cc` `attach_timing()` 改 deprecated stub
 > 2. `src/ptxsim/core/sm_context_cpptlm_inject.cpp` 移除 `attach_timing()` consumer 路径
-> 3. 移除 `src/ptxsim/core/sm_context_cpptlm_inject.{h,cpp}` 跨仓注入头文件
-> 4. `tests/integration/cpptlm/test_attach_timing_consumer_e2e.cpp` 等 5 个依赖 attach_timing 的测试必须重定位到 SM 重构版测试
+> 3. 重构或删除 `src/ptxsim/core/sm_context_cpptlm_inject.{h,cpp}` 跨仓注入头文件
+> 4. `src/ptxsim/core/sm_context.cpp`（L34/67/206 直接使用 `IScoreboard`/`IPipelineLatencyProvider`/`ITensorCoreTiming`）改造
+> 5. 3 个依赖 `attach_timing` 的测试重定位：`tests/integration/cpptlm/test_attach_timing_consumer_e2e.cpp` + `tests/unit/ptxemu/test_device_api_attach_timing.cpp` + `tests/unit/cpptlm/test_cpptlm_injection_interfaces.cpp` → SM 重构版测试
 >
-> **版本号**：PTXEMU_API_VERSION=1（保持）+ ICOMPUTE_API_VERSION=1（保持，语义质变已标注）
+> **版本号**：`PTXEMU_API_VERSION=1` 冻结（保持）+ `ICOMPUTE_API_VERSION=1` 冻结（保持；语义质变已显式标注）
 >
-> **退路**：如 PTX-EMU 端无法在 14 天协调窗口内同步改造，则 CppTLM 端**保留 3 个 vendor 接口的兼容 shim**（即 v1.0 compat shim），仅废弃 `KernelLaunchTLM` + `CudaCoreAdapterMVP` + `PtxEmuSubmoduleMVP` + 旧 WavefrontTLM/VectorRegFileTLM/MinimalWarpSchedulerTLM。**注意：这是退路方案，主推方案仍是大爆炸 + HSK-9**。
+> **退路**：如 PTX-EMU 端无法在 14 天协调窗口内同步改造，则 CppTLM 端**保留 3 vendor 接口的兼容 shim**，仅废弃 `KernelLaunchTLM` + `CudaCoreAdapterMVP` + `PtxEmuSubmoduleMVP` + 旧 4 孤岛模块。
 >
 > **与既有 HSK-9 草稿的关系**：`docs/soc_arch/adr/hsk9-announcement-draft.md`（commit `4105602`）的"双轨并存、PTX-EMU 零修改"版本**被本公告 supersede**；该草稿文件**重写**为 SM 重构版正文（commit 与本设计同步推送）。
 
@@ -541,7 +547,7 @@ struct InstrDescriptor {
 
 - **允许**：PTX-EMU 端 facade 实现内部修改（`SMContext::exe_once()` 调用栈 + `device_api_impl.cc` `set_instr_descriptor_buf()` 实现）
 - **允许**：`src/ptxsim/core/sm_context_cpptlm_inject.{h,cpp}` 重构或删除
-- **不允许**：修改 `IPtxEmuDevice` 12 方法签名（`device_api.h:85-114` 冻结）
+- **不允许**：修改 `IPtxEmuDevice` 公共头方法签名（`device_api.h:85-114` 冻结；`attach_timing` 保留为 deprecated stub 实现，per §15.6.3 F3.1 拍板）
 - **不允许**：修改 `PTXEMU_API_VERSION=1`
 - **不允许**：删除 `IPtxEmuDevice` 类定义本身（per HSK-8 ACCEPTED）
 
@@ -652,39 +658,7 @@ struct InstrDescriptor {
 - WritebackToRegFileBundle, MemoryReqBundle, MemoryRespBundle, ScoreboardQueryBundle
 
 **IComputeDevice**（`include/tlm/gpu/i_compute_device.hh`）：
-- 12 方法（per §15.5.3——含 `set_instr_descriptor_buf` 新增 + `attach_timing` 删除 = 净 12，**与 IPtxEmuDevice 同构**）
-
-### 15.7.2 重构（不删除但重建）
-
-| # | 路径 | 重构内容 |
-|---|------|----------|
-| 1 | `include/tlm/gpu/gpu_compute_unit_tlm.hh` + `.cc` | **重命名为** `include/tlm/gpu/streaming_multiprocessor_tlm.hh` + `.cc`，持有 12 个子模块 |
-| 2 | `include/tlm/gpu/wavefront_tlm.hh` + `.cc` | 重新设计为 SIMTLane 内部状态载体（仍 ChStreamModuleBase）|
-| 3 | `include/tlm/gpu/minimal_warp_scheduler_tlm.hh` + `.cc` | 重新设计为 IssueUnit 内部调度器 |
-| 4 | `include/tlm/gpu/vector_regfile_tlm.hh` + `.cc` | 重新设计为 RegFileUnit（支持 32/64 双宽度 + ACCVGPR）|
-
-### 15.7.3 新增（12 子模块 + 8 Bundle + IComputeDevice）
-
-**12 子模块**：
-- `include/tlm/gpu/sm/fetch_unit_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/decode_unit_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/issue_unit_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/scalar_alu_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/vector_alu_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/matrix_core_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/simt_lane_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/lsu_global_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/lsu_lds_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/reg_file_unit_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/writeback_unit_tlm.{hh,cc}`
-- `include/tlm/gpu/sm/hazard_tracker_tlm.{hh,cc}`
-
-**8 Bundle**（`include/bundles/sm_bundles_tlm.hh`）：
-- FetchToIssueBundle, DecodeToIssueBundle, IssueToExecBundle, ExecToWritebackBundle
-- WritebackToRegFileBundle, MemoryReqBundle, MemoryRespBundle, ScoreboardQueryBundle
-
-**IComputeDevice**（`include/tlm/gpu/i_compute_device.hh`）：
-- 12 方法（per §15.5.3——含 `set_instr_descriptor_buf` 新增 + `attach_timing` 删除 = 净 12）
+- 14 方法（per §15.5.3 + §15.5.6——11 IPtxEmuDevice 同构保留 + `set_instr_descriptor_buf` 新增 + `get_register_value()`/`is_instruction_completed()` 2 扩展 = 14）
 
 ### 15.7.4 chstream_register.hh 修改
 
@@ -762,7 +736,7 @@ ChStreamAdapterFactory::get().registerAdapter<StreamingMultiprocessorTLM,
 
 #### L4 IComputeDevice 步进
 
-- 12 方法 smoke test（每个方法至少 1 assertion；含 `set_instr_descriptor_buf` 新增 + `attach_timing` 缺位）
+- 14 方法 smoke test（每个方法至少 1 assertion；含 11 IPtxEmuDevice 同构 + `set_instr_descriptor_buf` + `get_register_value` + `is_instruction_completed`）
 - 1 tick = 1 cycle 契约（与 Wave 2 G-D3 对齐）
 - PTX-EMU facade 兼容性测试（与 HSK-8 同构）
 
@@ -817,7 +791,7 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 | 8 | `feat(register): chstream_register.hh 注册 SM 顶层 + 12 子模块 + 8 Bundle 适配器 (新增 side)` | **新增注册** | ✅ 编译通过 | commit 7 |
 | 9 | `refactor(gpu_compute_unit): GpuComputeUnitTLM 重构为 SM 内部状态机（保留旧 API 作为 SM 顶层内部调用，chstream_register 注销旧名）` | **重构 + 注销** | ✅ 编译通过 | commit 8 |
 | 10 | `refactor(legacy): 重构 WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM 为 SM 内部子模块（chstream_register 注销旧名）` | **重构 + 注销** | ✅ 编译通过 | commit 9 |
-| 11 | **`refactor(headers): 修复 gpu_soc_tlm.hh + async_completion_adapter.hh + main.cpp 旁路依赖（改接 IComputeDevice，去除 KernelLaunchTLM 引用）`** | **修复** | ✅ 编译通过 | commit 10 |
+| 11 | **`refactor(headers): 修复 gpu_soc_tlm.{h,cc} + async_completion_adapter.hh + main.cpp + chstream_register.hh (移除 KernelLaunchTLM 等 6 个 registerObject + include) 旁路依赖（改接 IComputeDevice，去除 KernelLaunchTLM 等被删模块引用）`** | **修复** | ✅ 编译通过（lib + test 都通过，因 commit 16 才删测试，10→11 不破头文件） | commit 10 |
 | 12 | `refactor(soc): 删除 KernelLaunchTLM + CudaCoreAdapterMVP + PtxEmuSubmoduleMVP` | **删除** | ✅ 编译通过 | **commit 11** |
 | 13 | `refactor(tlm): 删除 PipelineTLM + ScoreboardTLM + TensorCoreTLM + 3 vendor 接口头文件 (include/cudart/)` | **删除** | ✅ 编译通过 | commit 12 |
 | 14 | `chore(configs): 修订 4 个 JSON config (vector_add_n1024, compute_unit_v1 注释, gpu_soc_gb203_v1 modules + connections, dgpu_soc_with_pcie_ip 验证)` | | ✅ 编译通过 | commit 13 |
@@ -993,6 +967,6 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 - **2027-02-09 (Round 1)**: 📋 Proposed v1.0-draft。Oracle Round 1 评审出 4 P0 + 9 P1 + 5 P2 缺陷。
 - **2027-02-09 (Round 2 修订)**: 📋 Proposed v2.0-draft。已修复 Oracle Round 1 全部 4 P0 + 关键 P1。
 - **2027-02-09 (Round 3 修订)**: 📋 Proposed v3.0-draft。**用户决策**：(1) SM 持寄存器值单真值源 + PTX-EMU 通过 `set_instr_descriptor_buf` 上行同步；(3) 重写 HSK-9 草稿为 SM 重构版。已修复 Oracle Round 2 全部 2 P0 + 9 P1 + 5 P2。
-- **2027-02-09 (Round 4 修订)**: 📋 Proposed v4.0-draft。**用户决策**：(1) IComputeDevice 扩 2 方法（`get_register_value()` + `is_instruction_completed()`）解决 SM-owns-state 读路径+就绪协议。修复 Oracle Round 3 残留 P0 + 4 P1：§15.5.6 同步协议完整化（双向）+ commit 11/13 顺序对调 + DOC HYGIENE 9.3/9.7/9.8 补 5 个遗漏 + §15.10.2 Stage A fate 表 8 节全覆盖 + §15.10.1 Gate 14 项 + InstrDescriptor 加 ISA 判别位。
-- **前置**: 阶段 A OpenSpec change `cpptlm-dgpu-d1-cdna-isa-phase-a`（commit `e607814`）+ 9 个架构文档（commits `5a9eb4c`/`3c76398`/`4105602`/`5efbc6a`/`7708d9f`/`4549ac9`/`1b8a318`/`06dcc63`/`6881cfd`）+ ADR-SOC-15 路线图（commit `3c76398`）。
+- **2027-02-09 (Round 5 修订)**: 📋 Proposed v5.0-draft（终稿）。**用户决策**：(1) F1.4 双计算 + Gate bit-exact；(3) F3.1 `attach_timing` 保留为 deprecated stub（device_api.h 不动）。修复 Oracle Round 4 全部 4 项残留：(a) §15.5.2 双计算契约；(b) §15.6.3 HSK-9 接口归属（set_instr_descriptor_buf 在 IComputeDevice 不在 IPtxEmuDevice，attach_timing 改 stub）；(c) commit 11 修复 chstream_register.hh 注销 + gpu_soc_tlm.cc；(d) §15.7.3 重复段删除 + §15.7.3/§15.8.2/§15.12.3 陈旧 "12 方法" 引用批量改 14 + §15.3.3.7 RegFileUnit 读路径补 `get_register_value()` + HSK-9 草稿正文同步。
+- **前置**: 阶段 A OpenSpec change `cpptlm-dgpu-d1-cdna-isa-phase-a`（commit `e607814`）+ 10 个架构文档（commits `5a9eb4c`/`3c76398`/`4105602`/`5efbc6a`/`7708d9f`/`4549ac9`/`1b8a318`/`06dcc63`/`6881cfd`/`034d33c`）+ ADR-SOC-15 路线图（commit `3c76398`）。
 - **后续**: 用户 review → writing-plans skill 启动 → 实施 20 原子 commit（每步可编译）→ OpenSpec `cpptlm-dgpu-d1-cdna-isa-sm-rewrite` 实施 → HSK-9 公告正式发布 + ADR-SOC-16 背书。
