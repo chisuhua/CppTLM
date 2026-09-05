@@ -65,9 +65,7 @@ set(CORE_SOURCES
     tlm/gpu/msix_table_mvp.cc          # pcie-endpoint T-pe-2: MSI-X vector table + mask
     tlm/gpu/pcie_endpoint_tlm.cc       # pcie-endpoint T-pe-3: 4-port ChStream module
     tlm/gpu/sdma_engine_tlm.cc        # sdma-engine T-sd-2: 5-port ChStream SDMA/copy engine (PCIe master)
-    tlm/gpu/scoreboard_tlm.cc  # D1-Full P1: IScoreboard 实现
-    tlm/gpu/pipeline_tlm.cc    # D1-Full P1: IPipelineLatencyProvider 实现
-    tlm/gpu/tensor_core_tlm.cc # D1-Full P1: ITensorCoreTiming 实现
+    # Task 13: PipelineTLM/ScoreboardTLM/TensorCoreTLM + cudart 物理删除 (功能内化到 SM 子模块)
     # pcie-ip-microarch Phase 1: 链路层 + FC Token Bucket (P1)
     tlm/pcie/pcie_flow_control_token_bucket.cc
     tlm/pcie/pcie_link_layer_tlm.cc

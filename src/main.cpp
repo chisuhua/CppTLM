@@ -14,14 +14,8 @@
 #include "sim_core.hh"
 #include "tlm/crossbar_tlm.hh"
 // HSK-8 Phase 2 Step 4: memory_bridge.hh + ptx_emu_driver.hh 已物理删除
-// (HSK-6 deprecate by 369cf71). 当前 PTX-EMU 集成走 PtxEmuSubmoduleMVP
-// facade (`include/tlm/gpu/ptx_emu_submodule_mvp.hh`) + IPtxEmuDevice 公共 API.
-// 3 核心模块 ScoreboardTLM / PipelineTLM / TensorCoreTLM 仍编译进 cpptlm_core
-// 作为 vendored cudart/{scoreboard,pipeline,tensor_core}_interface.h 的 C++17
-// 派生,供 CudaCoreAdapterMVP::attach_timing() 注入使用,非死代码。
-#include "tlm/gpu/pipeline_tlm.hh"
-#include "tlm/gpu/scoreboard_tlm.hh"
-#include "tlm/gpu/tensor_core_tlm.hh"
+// (HSK-6 deprecate by 369cf71). PTX-EMU 集成走 IComputeDevice 接口 (per SM 重构).
+// Task 13: PipelineTLM/ScoreboardTLM/TensorCoreTLM + cudart 物理删除 (功能内化到 SM 子模块).
 #include "utils/json_includer.hh"
 #include "utils/topology_dumper.hh"
 #include <cstdlib>
