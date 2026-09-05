@@ -26,7 +26,7 @@
 
 ### HSK-9 / 2027-02-XX: `ICOMPUTE_API_VERSION=1` SM 重构版
 
-**摘要**：CppTLM 端 GPU 算力侧重构为完整 SM 微架构（12 ChStream 子模块 + 8 Bundle + `IComputeDevice` 12 方法），删除 PTX-EMU 端 `attach_timing()` 调用栈依赖。本公告邀请 PTX-EMU 端评审 + 协调 CppTLM 端 `cpptlm-dgpu-d1-cdna-isa-sm-rewrite` change 的接口变更。
+**摘要**：CppTLM 端 GPU 算力侧重构为完整 SM 微架构（12 ChStream 子模块 + 8 Bundle + `IComputeDevice` 14 方法），删除 PTX-EMU 端 `attach_timing()` 调用栈依赖。本公告邀请 PTX-EMU 端评审 + 协调 CppTLM 端 `cpptlm-dgpu-d1-cdna-isa-sm-rewrite` change 的接口变更。
 
 #### 1. 重构动机
 
@@ -61,9 +61,12 @@ C++ dGPU SoC v1.0 周期精确仿真框架按 ADR-SOC-15 路线图进入 SM 重�
 | `is_finished()` | ✅ 保留 | 全局 finished 状态 |
 | `attach_timing(IScoreboard*, IPipelineLatencyProvider*, ITensorCoreTiming*)` | ❌ **删除**（per `device_api.h:114`）| 3 vendor 接口已废 |
 | `set_instr_descriptor_buf(InstrDescriptor*, uint32_t)` | 🆕 **新增** | producer 侧：PTX-EMU 写入已解码的 `InstrDescriptor[]`；consumer 侧：SM 接收推进 timing |
+| `get_register_value(sm, warp, reg_id, out_value, lane_id)` | 🆕 **新增**（IComputeDevice 扩）| PTX-EMU functional simulator 读 SM 寄存器真值（分支判定/地址计算）|
+| `is_instruction_completed(instr_id)` | 🆕 **新增**（IComputeDevice 扩）| PTX-EMU 等 SM `WritebackUnit` 写回 `RegFileUnit` 完成 |
 
 **关键不变量**：
-- ✅ `IPtxEmuDevice` 12 方法签名**冻结**（除 `attach_timing` 删除 + `set_instr_descriptor_buf` 新增；净方法数不变）
+- ✅ `IPtxEmuDevice` 12 方法签名**冻结**（除 `attach_timing` 删除 + `set_instr_descriptor_buf` 新增；**净方法数仍为 12**——HSK-9 不触发 VERSION bump）
+- ✅ 配套 `IComputeDevice` 是 **CppTLM 端新接口**（`include/tlm/gpu/i_compute_device.hh`），14 方法（独立于 `IPtxEmuDevice`，不修改 PTX-EMU 公共头）
 - ✅ `PTXEMU_API_VERSION=1` 冻结
 - ✅ `ICOMPUTE_API_VERSION=1` 冻结（语义质变已显式标注，**未触发** HSK-N bump）
 - ✅ 现有 `[pcie]/[axi]/[gpu]` PTX 模式测试保持基线 100% 通过

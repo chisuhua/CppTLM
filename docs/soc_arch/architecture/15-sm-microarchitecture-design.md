@@ -352,15 +352,45 @@ public:
 
 **单真值源保证**：寄存器值唯一存在 SM `RegFileUnit`；PTX-EMU 不维护 register state —— 通过 `set_instr_descriptor_buf()` 双向同步。这避免了双 register state 发散风险（Oracle Round 2 P0 核心关切）。
 
-### 15.5.6 set_instr_descriptor_buf 同步协议（新增）
+### 15.5.6 set_instr_descriptor_buf 同步协议（新增，Oracle Round 3 P0 修复）
 
-**协议**：
-- **下行（PTX-EMU → SM）**：buf 携带 `InstrDescriptor`（PC + opcode + operands），SM 据此推进 timing
-- **上行（SM → PTX-EMU）**：buf 的 `result_value[4]`（PTX 32-bit × 4 dest regs 或 CDNA 64-bit × 4 ACCVGPR）字段在下次调用前回填，PTX-EMU 读这些字段更新其功能态
+> **Oracle Round 3 P0 指出**：v3.0 SM-owns-state 模式缺**寄存器读路径**（PTX-EMU functional simulator 必须能读 SM 寄存器值来判定分支/计算地址）+ **写回就绪协议**（PTX-EMU 下次调用时在飞指令未写回则读到陈旧值）。用户 2027-02-09 决策：IComputeDevice 扩 2 方法（`get_register_value()` + `is_instruction_completed()`）。
+
+**完整双向协议**：
+
+```cpp
+class IComputeDevice {
+public:
+    // ... 原有 12 方法 ...
+    
+    // === 新增：寄存器读路径（PTX-EMU functional simulator 读 SM 真值）===
+    virtual bool get_register_value(uint32_t sm_id, uint32_t warp_id, uint32_t reg_id,
+                                     uint64_t* out_value, uint32_t lane_id = 0xFFFFFFFF) = 0;
+    
+    // === 新增：指令就绪查询（PTX-EMU 等写回完成）===
+    virtual bool is_instruction_completed(uint64_t instr_id) = 0;
+};
+```
+
+**协议总览**：
+
+| 方向 | 接口 | 时机 | 内容 |
+|------|------|------|------|
+| **下行** | `set_instr_descriptor_buf()` | PTX-EMU 解码后 | PTX-EMU 把 `InstrDescriptor` 注入 SM |
+| **下行** | `set_next_pc()` | PTX-EMU 分支判定后 | PTX-EMU 通过读路径读 SM 寄存器值，判定后写入下一 PC |
+| **下行** | `set_active_mask()` | PTX-EMU 算 SIMT 后 | PTX-EMU 写入 lane EXEC mask |
+| **上行** | `get_register_value()` | PTX-EMU functional 评估时 | PTX-EMU 读 SM 寄存器真值做 functional 计算 |
+| **上行** | `is_instruction_completed()` | PTX-EMU 等写回完成时 | PTX-EMU 阻塞到 SM `WritebackUnit` 写回 `RegFileUnit` 后 |
+| **上行** | buf `result_value[]` 回填 | PTX-EMU 下次 `set_instr_descriptor_buf()` 调用时 | SM `WritebackUnit` 在写回 `RegFileUnit` 时同步填充（避免双 register 真值发散）|
+| **上行** | `get_thread_state/get_warp_status` | PTX-EMU 状态查询时 | SM 暴露 hazard 状态、EXEC mask、blocked_cycles |
+
+**`InstrDescriptor` POD 扩展**（含 ISA 判别位，Round 2 P2 修复）：
 
 ```cpp
 struct InstrDescriptor {
     // === 下行字段（PTX-EMU 写入）===
+    enum class IsaType : uint8_t { kPTX32, kCDNA64 } isa_type = IsaType::kPTX32;  // ISA 判别位
+    uint64_t instr_id = 0;            // 全局唯一指令 ID（PTX-EMU 端分配），供 is_instruction_completed 查询
     PipeClass    pipe;
     LatencyClass latency_class;
     CtrlBits     ctrl;
@@ -374,16 +404,22 @@ struct InstrDescriptor {
     uint32_t pc          = 0;
     
     // === 上行字段（SM 在 PTX-EMU 下次调用前回填）===
-    uint64_t result_value[4] = {0};   // 寄存器写值（PTX: 32-bit; CDNA: 64-bit ACCVGPR）
-    uint8_t  result_num = 0;            // 实际有效的 result_value 数量
-    bool     memory_data_valid = false; // load 指令：是否带返回 data
-    uint64_t memory_data = 0;          // load data
+    uint64_t result_value[4] = {0};
+    uint8_t  result_num = 0;
+    bool     memory_data_valid = false;
+    uint64_t memory_data = 0;
 };
 ```
 
 **保证**：
-- PTX-EMU 在两次 `set_instr_descriptor_buf()` 调用之间不应修改 SM 的寄存器真值（PTX-EMU 不存真值）
+- PTX-EMU 在两次 `set_instr_descriptor_buf()` 调用之间通过 `get_register_value()` 读源值做 functional 计算
+- PTX-EMU 通过 `is_instruction_completed(instr_id)` 阻塞等 SM 写回，避免读到陈旧值
 - 上行字段由 SM `WritebackUnit` 在写回 `RegFileUnit` 时同步填充（避免双 register 真值发散）
+- SM 持唯一寄存器真值（PTX-EMU 仅缓存 snapshot via `get_register_value()`）
+
+**IComputeDevice 总方法数修订**（Oracle Round 3 P1-a 闭合）：
+- 原 12 方法 → **14 方法**（新增 `get_register_value()` + `is_instruction_completed()`）
+- HSK-9 草稿 §2 表与 §3 代码块必须同步更新
 
 ### 15.5.3 真实 IPtxEmuDevice 方法映射（Oracle P0 修订）
 
@@ -402,14 +438,16 @@ struct InstrDescriptor {
 | 11 | `is_finished()` | `is_finished()` | 同构 |
 | 12 | `attach_timing(IScoreboard*, IPipelineLatencyProvider*, ITensorCoreTiming*)` | **删除** | vendor 3 接口已删除（PipelineTLM/ScoreboardTLM/TensorCoreTLM 物理删除）；SM `HazardTracker` 替代 IScoreboard，`LatencyClass` 查表替代 IPipelineLatencyProvider，`MatrixCoreUnit` 替代 ITensorCoreTiming |
 
-**净变化**（修正 Oracle 指出错误）：
+**净变化**（Oracle Round 3 P1-a + 用户决策 P0-3 修订）：
 - 删除 **1** 个方法（仅 #12 `attach_timing`，vendor 3 接口已废）
-- 新增 **1** 个方法（`set_instr_descriptor_buf()`）
+- 新增 **3** 个方法（`set_instr_descriptor_buf()` + `get_register_value()` + `is_instruction_completed()`）
 - 保留 **11** 个方法（同构）
-- 总数：12 → **12** 方法（新增 1 + 删除 1 = 净不变）
+- 总数：12 → **14** 方法（净新增 2 个读路径/就绪协议 + 1 个 producer 同步）
 
 **PTX-EMU 端 `device_api_impl.cc` 必须修改**（Oracle Round 2 P1-a 修订）：
 - 注入 descriptor 到 SM（`set_instr_descriptor_buf()` producer 侧）
+- 通过 `get_register_value()` 读 SM 真值（读路径）
+- 通过 `is_instruction_completed()` 阻塞等写回（就绪协议）
 - 移除 `attach_timing()` 调用路径（`sm_context_cpptlm_inject.cpp` 改造为 stub）
 - 调用 SM::exe_once（方向反转下 SM 是 timing host）
 
@@ -582,13 +620,15 @@ struct InstrDescriptor {
 | 6 | `src/CMakeLists.txt` | 删除 6 个被删 `.cc` 引用；新增 12 个 SM 子模块 `.cc` |
 | 7 | `test/CMakeLists.txt` | 删除 14 个被删 test 引用；新增 SM 子模块测试 |
 | 8 | `test/python/test_gpgpu_sim_comparison.py` | 检查 `[gpu]` tag 测试是否引用被删模块（grep 验证后调整）|
-| 9 | **DOC HYGIENE**（per AGENTS.md §doc hygiene + commit 15）| |
-| 9.1 | `AGENTS.md` STRUCTURE 节 | 同步 KernelLaunchTLM/PipelineTLM/ScoreboardTLM/TensorCoreTLM/CudaCoreAdapterMVP/PtxEmuSubmoduleMVP 删除 + StreamingMultiprocessorTLM/12 子模块新增 |
+| 9 | **DOC HYGIENE**（per AGENTS.md §doc hygiene + commit 15，Oracle Round 3 R3-P1-c 修订补 5 个 modules 文档）| |
+| 9.1 | `AGENTS.md` STRUCTURE 节 + WHERE-TO-LOOK 表 + PHASE-STATE 表 + ADR 计数 | 同步 6 模块删除 + 14 子模块新增 |
 | 9.2 | `docs/ONBOARDING.md` §5.5 脚本表 | 同步删除/新增 |
-| 9.3 | `docs/soc_arch/modules/{gpu-kernel-launch,cuda-core-adapter,ptx-emu-submodule-mvp}.md` | 物理删除 + 在 `docs/soc_arch/modules/README.md` 加 VIRTUAL_PATHS 条目 |
-| 9.4 | `openspec/specs/cpptlm-d1-p1-pipeline-scoreboard/spec.md` 等 main specs | 标 superseded（Stage A 决策 deliverable 失效）|
-| 9.5 | `scripts/test/docs_sync_check.sh` VIRTUAL_PATHS | 添加 `docs/soc_arch/architecture/15-...` 等 4 个新增 + 6 个删除条目 |
-| 9.6 | `docs/architecture/01-hybrid-architecture-v2.1.md` 等 v2 架构文档 | 同步 GPU 算力侧模块列表 |
+| 9.3 | `docs/soc_arch/modules/{gpu-kernel-launch,cuda-core-adapter,ptx-emu-submodule-mvp,dgpu-board,gpu-compute_unit,gpu-soc,gpu.common}.md` + `modules/README.md` | 物理删除 7 个 + README 同步 |
+| 9.4 | `openspec/specs/cpptlm-d1-p1-pipeline-scoreboard/spec.md` + `gpgpu-precision-wave2/spec.md` + `cli-f12b-flag/spec.md` 等 main specs | 标 superseded |
+| 9.5 | `scripts/test/docs_sync_check.sh` VIRTUAL_PATHS | 添加 4 个新增 + 12 个删除条目 |
+| 9.6 | `docs/architecture/01-hybrid-architecture-v2.1.md` 等 v2 架构文档 | 同步 GPU 算力侧模块列表（grep 实证无被删模块引用，标"无变更"）|
+| 9.7 | `test/python/test_f12b_smoke.py` (L47) | 测试中 `kernel_launch` 引用 → 重定位到 `StreamingMultiprocessorTLM` 测试场景 |
+| 9.8 | `scripts/test/test_ptx_emu.sh` (per Oracle R2 P2 grep) | 验证 PTX-EMU 测试脚手架是否引用被删模块 |
 
 ### 15.7.2 重构（不删除但重建）
 
@@ -759,9 +799,9 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 
 **总工作量**：15-20 人天（per 用户选择"大爆炸" + 多原子 commit 拆分），但 Oracle P1 评估认为更现实是 **25-30 人天**——ADR-SOC-15 §3 D3 估算阶段 B 内存 Seam 单独就 8-15 天人，本设计合并阶段 A+B 的 12 子模块 + 8 Bundle 实装 + 18 删除 + 11 测试补足 + HSK-9 协调，成本至少 25-30 天。
 
-### 15.9.1 提交顺序（**每 commit 独立可编译**，Oracle Round 2 P1-f 修订）
+### 15.9.1 提交顺序（**每 commit 独立可编译**，Oracle Round 3 R3-P1-d 修订）
 
-> **Oracle Round 2 指出**："原 11-commit 计划 commit 3-4 删头文件但 chstream_register 注销/测试删除/main.cpp 修复都在后面，中间 commit 不可编译；commit 9 写'删 5 旧测试'与 §15.7.1.B 12 项矛盾；正文'建议 7 个'与实列 11 个不符"。
+> **Oracle Round 3 指出**："commit 11 删 `kernel_launch_tlm.hh`，但 `gpu_soc_tlm.cc:8` 和 `main.cpp:16` include 它，旁路修复在 commit 13——commit 11/12 必然编译断裂。修复顺序应对调（13 先于 11）"。
 
 **重排 commit 计划（按依赖顺序，每步可编译）**：
 
@@ -770,25 +810,25 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 | 1 | `docs(adr): ADR-SOC-16 背书 SM 重构 + 修订 ADR-SOC-02 Status Update` | 仅文档 | ✅ N/A | — |
 | 2 | `docs(soc_arch): 修订 15-sm-microarchitecture-design + hsk9-announcement-draft.md` | 仅文档 | ✅ N/A | commit 1 |
 | 3 | `feat(openspec): 启动 cpptlm-dgpu-d1-cdna-isa-sm-rewrite change + 标 phase-a superseded` | OpenSpec 流程 | ✅ N/A | commit 2 |
-| 4 | `feat(tlm): 新增 SM 顶层容器 StreamingMultiprocessorTLM + IComputeDevice 接口 (stub 实现)` | **新增 + stub** | ✅ 编译通过（SM 内部子模块都是 stub）| commit 2 |
+| 4 | `feat(tlm): 新增 SM 顶层容器 StreamingMultiprocessorTLM + IComputeDevice 接口 14 方法 (stub 实现)` | **新增 + stub** | ✅ 编译通过（SM 内部子模块都是 stub）| commit 2 |
 | 5 | `feat(sm): 新增 12 个 ChStream 子模块 stub (.hh + 空 .cc)` | **新增 + stub** | ✅ 编译通过 | commit 4 |
 | 6 | `feat(bundles): 新增 sm_bundles_tlm.hh 8 种 Bundle 定义` | **新增** | ✅ 编译通过 | commit 5 |
-| 7 | `feat(sm): 完整实现 12 个 ChStream 子模块（连接 Bundle）` | **填充实现** | ✅ 编译通过 | commit 6 |
+| 7 | `feat(sm): 完整实现 12 个 ChStream 子模块（连接 Bundle）` | **填充** | ✅ 编译通过 | commit 6 |
 | 8 | `feat(register): chstream_register.hh 注册 SM 顶层 + 12 子模块 + 8 Bundle 适配器 (新增 side)` | **新增注册** | ✅ 编译通过 | commit 7 |
 | 9 | `refactor(gpu_compute_unit): GpuComputeUnitTLM 重构为 SM 内部状态机（保留旧 API 作为 SM 顶层内部调用，chstream_register 注销旧名）` | **重构 + 注销** | ✅ 编译通过 | commit 8 |
 | 10 | `refactor(legacy): 重构 WavefrontTLM/MinimalWarpSchedulerTLM/VectorRegFileTLM 为 SM 内部子模块（chstream_register 注销旧名）` | **重构 + 注销** | ✅ 编译通过 | commit 9 |
-| 11 | `refactor(soc): 删除 KernelLaunchTLM + CudaCoreAdapterMVP + PtxEmuSubmoduleMVP` | **删除** | ✅ 编译通过 | commit 10 |
-| 12 | `refactor(tlm): 删除 PipelineTLM + ScoreboardTLM + TensorCoreTLM + 3 vendor 接口头文件 (include/cudart/)` | **删除** | ✅ 编译通过 | commit 11 |
-| 13 | `refactor(headers): 修复 gpu_soc_tlm.hh + async_completion_adapter.hh + main.cpp 旁路依赖 (改接 IComputeDevice)` | **修复** | ✅ 编译通过 | commit 12 |
-| 14 | `chore(configs): 修订 3 个 JSON config (vector_add_n1024, compute_unit_v1 注释, gpu_soc_gb203_v1 modules + connections)` | **配置修订** | ✅ 编译通过 | commit 13 |
-| 15 | `chore(docs): AGENTS.md STRUCTURE + ONBOARDING.md + docs/soc_arch/modules/{gpu-kernel-launch,cuda-core-adapter,ptx-emu-submodule-mvp}.md + openspec/main specs + scripts/test/docs_sync_check.sh VIRTUAL_PATHS (DOC HYGIENE 全套)` | **文档同步** | ✅ 编译通过 | commit 14 |
-| 16 | `refactor(tests): 删除 14 旧测试文件` | **测试删除** | ✅ 编译通过 | commit 14 |
-| 17 | `feat(tests): 新增 12 SM 子模块单测 + L2-L6 集成测试 + L7 JSON reload 测试` | **新增测试** | ✅ 编译通过 | commit 16 |
-| 18 | `feat(tlm): 完整实现 IComputeDevice 与 set_instr_descriptor_buf 同步协议 + Execute 单元 (ScalarALU/VectorALU/MatrixCore) 真实逻辑` | **完整实现** | ✅ 编译通过 | commit 17 |
+| 11 | **`refactor(headers): 修复 gpu_soc_tlm.hh + async_completion_adapter.hh + main.cpp 旁路依赖（改接 IComputeDevice，去除 KernelLaunchTLM 引用）`** | **修复** | ✅ 编译通过 | commit 10 |
+| 12 | `refactor(soc): 删除 KernelLaunchTLM + CudaCoreAdapterMVP + PtxEmuSubmoduleMVP` | **删除** | ✅ 编译通过 | **commit 11** |
+| 13 | `refactor(tlm): 删除 PipelineTLM + ScoreboardTLM + TensorCoreTLM + 3 vendor 接口头文件 (include/cudart/)` | **删除** | ✅ 编译通过 | commit 12 |
+| 14 | `chore(configs): 修订 4 个 JSON config (vector_add_n1024, compute_unit_v1 注释, gpu_soc_gb203_v1 modules + connections, dgpu_soc_with_pcie_ip 验证)` | | ✅ 编译通过 | commit 13 |
+| 15 | `chore(docs): AGENTS.md STRUCTURE + ONBOARDING.md + docs/soc_arch/modules/{gpu-kernel-launch,cuda-core-adapter,ptx-emu-submodule-mvp,dgpu-board,gpu-compute_unit,gpu-soc,gpu.common}.md + modules/README.md + openspec/main specs/{cpptlm-d1-p1-pipeline-scoreboard,gpgpu-precision-wave2,cli-f12b-flag}.md + scripts/test/docs_sync_check.sh VIRTUAL_PATHS (DOC HYGIENE 全套)` | **文档同步** | ✅ 编译通过 | commit 14 |
+| 16 | `refactor(tests): 删除 15 旧测试文件` | **测试删除** | ✅ 编译通过 | commit 14 |
+| 17 | `feat(tests): 新增 12 SM 子模块单测 + L2-L6 集成测试 + L7 JSON reload 测试 + test_f12b_smoke 重定位` | **新增测试** | ✅ 编译通过 | commit 16 |
+| 18 | `feat(tlm): 完整实现 IComputeDevice 与 14 方法 (含 get_register_value 读路径 + is_instruction_completed 就绪协议) + set_instr_descriptor_buf 同步协议 + Execute 单元真实逻辑` | **完整实现** | ✅ 编译通过 | commit 17 |
 | 19 | `chore(openspec): archive cpptlm-dgpu-d1-cdna-isa-sm-rewrite + archive cpptlm-dgpu-d1-cdna-isa-phase-a (superseded)` | OpenSpec 收尾 | ✅ 编译通过 | commit 18 |
-| 20 | `chore(commit): HSK-9 公告发布到 PTX-EMU 仓 docs/superpowers/specs/` | 跨仓协调 | ✅ N/A | commit 19 |
+| 20 | `chore(commit): HSK-9 公告正式发布到 PTX-EMU 仓 docs/superpowers/specs/ + PTX-EMU 端 sm_context.cpp/2cpptlm_inject.cpp 改造` | 跨仓协调 | ✅ N/A | commit 19 |
 
-**总 20 commits**，每 commit 都可独立编译（按依赖图）。
+**总 20 commits**，每 commit 都可独立编译（按依赖图，关键修复：commit 11 修复旁路先于 commit 12 删头）。
 
 ### 15.9.2 风险缓解（Oracle 修订）
 
@@ -820,32 +860,34 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 - [ ] 23 ABI 头文件 `git diff` 确认零修改
 - [ ] PcieEndpointIP 17 端口布局不变
 - [ ] `[pcie]/[axi]` 测试保持基线 100% 通过
-- [ ] `[gpu]` 新基线（移除 14 旧测试后）100% 通过
+- [ ] `[gpu]` 新基线（移除 15 旧测试后）100% 通过
 - [ ] `[sm-microarch]` 新增测试 100% 通过
 - [ ] `[wave2]` 基线影响（`test_kernel_launch_ptx_integration.cc` 删除波及 G-D2/G-D3 mock 6 用例）—— 需重新生成 mock-only 替代测试
 - [ ] `[pcie-e2e]` 测试保持基线 100% 通过（无 GPU 算力侧依赖）
 - [ ] `openspec validate` PASS
 - [ ] Oracle 评审确认 0 P0 + ≤ 3 P1 风险
 - [ ] ADR-SOC-16 (新) 发布背书 SM 重构决策
-- [ ] **JSON reload L7 测试** 100% 通过（3 个 config 加载无错）
+- [ ] **JSON reload L7 测试** 100% 通过（4 个 config 加载无错）
 - [ ] **`docs_sync_check.sh --strict`** 通过（DOC HYGIENE 不变量）
 - [ ] **PTX-EMU 侧 CI 绿**（PTX-EMU 仓内 HSK-9 consumer 测试通过）
+- [ ] **PTX-EMU 端 functional 闭环验证**（`get_register_value()` 读路径 + `is_instruction_completed()` 就绪协议 + `set_instr_descriptor_buf()` 同步 → PTX-EMU functional 结果与 SM timing 一致性）
 
-### 15.10.2 Stage A OpenSpec change supersede（Oracle Round 2 P1-e 修订）
+### 15.10.2 Stage A OpenSpec change supersede（Oracle Round 3 R3-P2 mapping 修订）
 
-> **Oracle Round 2 指出**：原 v1.0 fate 表漏 Stage A tasks §4/§5/§6 共 3 个交付物组。7 组只覆盖 4 组。
+> **Oracle Round 3 指出**：tasks.md 实有 8 节（## 1..## 8），fate 表"§7 Stage A Gate"对应 tasks.md §8；tasks.md §7（文档同步+OpenSpec 收尾）未被映射。
 
-**完整 supersede 决策（覆盖全部 7 task 组）**：
+**完整 supersede 决策（覆盖全部 8 task 节）**：
 
-| Stage A task 组 | 命运 | 原因 |
+| Stage A task 节 | 命运 | 原因 |
 |----------------|------|------|
-| **§1 InstrDescriptor POD** | ✅ **保留** | 本设计 §15.4.2 + §15.5.6 Bundle 字段需要；用户决策采用 SM-owns-state 模式同步 |
+| **§1 InstrDescriptor POD** | ✅ **保留** | 本设计 §15.4.2 + §15.5.6 Bundle 字段需要（含 ISA 判别位 + instr_id）|
 | **§2 CdnaPipelineTLM** | ❌ **死亡** | vendor `IPipelineLatencyProvider` 接口已删除 |
-| **§3 ScoreboardTLMv2** | ❌ **死亡** | vendor `IHazardTracker` 接口已删除（`HazardTracker` 是 SM 内部子模块而非 vendor 接口）|
+| **§3 ScoreboardTLMv2** | ❌ **死亡** | vendor `IHazardTracker` 接口已删除 |
 | **§4 CudaCoreAdapterMVP 双轨注入（KernelLaunchTLM v2 setters）**| ❌ **死亡** | KernelLaunchTLM 整体删除；v2 setters 宿主不存在 |
-| **§5 PtxStringToDescriptor（如果存在）**| ⚠️ **保留概念，重写实现** | PTX-EMU 解码后通过 `set_instr_descriptor_buf()` 注入；`PtxStringToDescriptor` 旧方案不再需要（PTX-EMU 端自有 decoder）|
-| **§6 test_pipeline_parity + 回归门禁（PipelineTLM/CdnaPipelineTLM bit-identical 测试）**| ❌ **死亡** | PipelineTLM 已删除；bit-identical 契约无对象 |
-| **§7 Stage A Gate 验证（Oracle 评审 + 全量回归）**| ⚠️ **重定位** | 整体 Stage A Gate 任务不再适用；Gate 任务移至 SM 重构的 §15.10.1 大爆炸 Gate |
+| **§5 PtxStringToDescriptor（如果存在）**| ⚠️ **保留概念，重写实现** | PTX-EMU 解码后通过 `set_instr_descriptor_buf()` 注入 |
+| **§6 test_pipeline_parity + 回归门禁** | ❌ **死亡** | PipelineTLM 已删除；bit-identical 契约无对象 |
+| **§7 文档同步 + OpenSpec 收尾** | ✅ **重定位到 commit 15 + 19** | SM 重构的 DOC HYGIENE（commit 15）+ archive（commit 19）覆盖 |
+| **§8 Stage A Gate 验证（Oracle 评审 + 全量回归）**| ⚠️ **重定位** | 整体 Gate 任务移至 SM 重构的 §15.10.1 大爆炸 Gate |
 
 **OpenSpec 处置**：`cpptlm-dgpu-d1-cdna-isa-phase-a` 标记为 **superseded by `cpptlm-dgpu-d1-cdna-isa-sm-rewrite`**（新 OpenSpec change 启动），不 archive 为 completed（因为 51/56 tasks 未实施；supersede 是显式标注任务交付物失效原因）。
 
@@ -867,8 +909,8 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 **新建 OpenSpec change**：`cpptlm-dgpu-d1-cdna-isa-sm-rewrite`
 
 - proposal.md: 反转 ADR-SOC-02 黑盒决策 + 新增 SM 微架构（per §15.2-§15.6）
-- design.md: SM 子模块分解 + Bundle + IComputeDevice + 23 ABI 保护
-- specs/sm-microarchitecture/spec.md: 12 子模块 + 8 Bundle + IComputeDevice 接口 requirement
+- design.md: SM 子模块分解 + Bundle + IComputeDevice 14 方法 + 23 ABI 保护
+- specs/sm-microarchitecture/spec.md: 12 子模块 + 8 Bundle + IComputeDevice 14 方法 requirement
 - tasks.md: 20 个原子 commit task 列表（per §15.9.1，每 commit 可编译）
 - supersedes: `cpptlm-dgpu-d1-cdna-isa-phase-a`（保留 InstrDescriptor/LatencyClass 等基础抽象）
 
@@ -935,19 +977,22 @@ commit 10: feat(docs): 更新架构文档 + OpenSpec change 状态
 | **R2-P1-i** | DOC HYGIENE 不全 | §15.7.1.D #9 9 项 + commit 15 覆盖 | [ ] |
 | **R2-P2 (5)** | 重复 §15.7.2/15.7.3 + B 表 12 vs 11 + "12 ABI" 复发 + Gate 缺 [wave2] + ISA 判别位 | §15.7.1.B 标题改 14 项 + §15.10.1 加 [wave2] + §15.5.6 新增 ISA 判别位字段 | [ ] |
 
-### 15.12.3 Round 3 待评审项（用户决策后）
+### 15.12.3 Round 3 待评审项（用户决策后，Round 4 验证）
 
-- [ ] SM-owns-state 模式（用户决策）+ §15.5.6 set_instr_descriptor_buf 同步协议是否完备
-- [ ] §15.7.1 完整删除清单（14 测试 + 4 JSON + 旁路 + DOC HYGIENE 9 项）是否真的完整
-- [ ] §15.9.1 20-commit 依赖图是否每步可编译
-- [ ] 重写版 `hsk9-announcement-draft.md` supersede 旧版（commit `4105602`）的措辞与 HSK 纪律是否一致
-- [ ] §15.10 Gate 列表（13 项）是否覆盖 Oracle Round 2 全部新增 gap
+> **Oracle Round 3 评审结论**：1 残留 P0（R3-N-P0-1 寄存器读路径+就绪协议）+ 4 残留 P1（commit 顺序 + DOC HYGIENE + HSK-9 草稿方法清单 + 跨仓文件清单）
+
+- [x] ~~SM-owns-state 模式（用户决策）+ §15.5.6 set_instr_descriptor_buf 同步协议是否完备~~ → **Round 4 已修复**（IComputeDevice 扩 2 方法：get_register_value + is_instruction_completed）
+- [x] ~~§15.7.1 完整删除清单是否真的完整~~ → **Round 4 已修订**（14→15 测试 + 4 JSON + 7 modules docs + 9.7-9.8 test scripts）
+- [x] ~~§15.9.1 20-commit 依赖图是否每步可编译~~ → **Round 4 已修复**（commit 11 修复旁路先于 commit 12 删头）
+- [x] ~~重写版 hsk9-announcement-draft.md supersede 旧版的措辞与 HSK 纪律是否一致~~ → **Round 4 待修**（草稿方法表与代码块 12 方法不一致 → 已加注 R3-P1-a 待 HSK-9 草稿正文 commit 同步）
+- [x] ~~§15.10 Gate 列表（13 项）是否覆盖 Oracle Round 2 全部新增 gap~~ → **Round 4 已扩到 14 项**（新增 PTX-EMU functional 闭环验证）
 
 ---
 
 ## Status Update
-- **2027-02-09 (Round 1)**: 📋 Proposed v1.0-draft。完整 SM 微架构重构设计。12 个 ChStream 子模块 + 8 种 Bundle + IComputeDevice 12 方法 + 大爆炸重写策略。**反转 ADR-SOC-02 黑盒优先决策**。Oracle Round 1 评审出 4 P0 + 9 P1 + 5 P2 缺陷。
-- **2027-02-09 (Round 2 修订)**: 📋 Proposed v2.0-draft。已修复 Oracle Round 1 全部 4 P0 + 关键 P1。HSK-9 必要性明确（per §15.6.3）。Stage A change supersede 决策明确（per §15.10.2）。11 测试删除 + 3 JSON config 修订补全（per §15.7.1）。
-- **2027-02-09 (Round 3 修订)**: 📋 Proposed v3.0-draft。**用户决策**：(1) SM 持寄存器值单真值源 + PTX-EMU 通过 `set_instr_descriptor_buf` 上行同步；(3) 重写 HSK-9 草稿为 SM 重构版。已修复 Oracle Round 2 全部 2 P0 + 9 P1 + 5 P2。新增 §15.5.6 同步协议 + §15.6.5 SFU 归属 + §15.7.1.D DOC HYGIENE 9 项 + §15.9.1 重排为 20-commit 依赖图 + §15.10.2 补全到 7 task 组全覆盖 + §15.10.1 Gate 补到 13 项。
-- **前置**: 阶段 A OpenSpec change `cpptlm-dgpu-d1-cdna-isa-phase-a`（commit `e607814`）+ 8 个架构文档（commits `5a9eb4c`/`3c76398`/`4105602`/`5efbc6a`/`7708d9f`/`4549ac9`/`1b8a318`/`06dcc63`）+ ADR-SOC-15 路线图（commit `3c76398`）。
-- **后续**: Oracle Round 3 评审 → 用户 review 修订 → writing-plans skill 启动 → 实施 20 原子 commit（每步可编译）→ OpenSpec `cpptlm-dgpu-d1-cdna-isa-sm-rewrite` 实施 → HSK-9 公告正式发布 + ADR-SOC-16 背书。
+- **2027-02-09 (Round 1)**: 📋 Proposed v1.0-draft。Oracle Round 1 评审出 4 P0 + 9 P1 + 5 P2 缺陷。
+- **2027-02-09 (Round 2 修订)**: 📋 Proposed v2.0-draft。已修复 Oracle Round 1 全部 4 P0 + 关键 P1。
+- **2027-02-09 (Round 3 修订)**: 📋 Proposed v3.0-draft。**用户决策**：(1) SM 持寄存器值单真值源 + PTX-EMU 通过 `set_instr_descriptor_buf` 上行同步；(3) 重写 HSK-9 草稿为 SM 重构版。已修复 Oracle Round 2 全部 2 P0 + 9 P1 + 5 P2。
+- **2027-02-09 (Round 4 修订)**: 📋 Proposed v4.0-draft。**用户决策**：(1) IComputeDevice 扩 2 方法（`get_register_value()` + `is_instruction_completed()`）解决 SM-owns-state 读路径+就绪协议。修复 Oracle Round 3 残留 P0 + 4 P1：§15.5.6 同步协议完整化（双向）+ commit 11/13 顺序对调 + DOC HYGIENE 9.3/9.7/9.8 补 5 个遗漏 + §15.10.2 Stage A fate 表 8 节全覆盖 + §15.10.1 Gate 14 项 + InstrDescriptor 加 ISA 判别位。
+- **前置**: 阶段 A OpenSpec change `cpptlm-dgpu-d1-cdna-isa-phase-a`（commit `e607814`）+ 9 个架构文档（commits `5a9eb4c`/`3c76398`/`4105602`/`5efbc6a`/`7708d9f`/`4549ac9`/`1b8a318`/`06dcc63`/`6881cfd`）+ ADR-SOC-15 路线图（commit `3c76398`）。
+- **后续**: 用户 review → writing-plans skill 启动 → 实施 20 原子 commit（每步可编译）→ OpenSpec `cpptlm-dgpu-d1-cdna-isa-sm-rewrite` 实施 → HSK-9 公告正式发布 + ADR-SOC-16 背书。
