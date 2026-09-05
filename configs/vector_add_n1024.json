@@ -1,12 +1,12 @@
 {
-    "comment": "F12b-LD 烟雾测试 (G-F0) — 最小 vector_add 拓扑",
+    "comment": "F12b-LD 烟雾测试 (G-F0) — 最小 vector_add 拓扑 (Task 14: SM 重构 KernelLaunchTLM → StreamingMultiprocessorTLM)",
     "modules": [
-        {"name": "kernel_launch", "type": "KernelLaunchTLM"},
-        {"name": "gpu_xbar",      "type": "CrossbarTLM"},
-        {"name": "mem",           "type": "MemoryTLM"}
+        {"name": "sm",   "type": "StreamingMultiprocessorTLM"},
+        {"name": "gpu_xbar", "type": "CrossbarTLM"},
+        {"name": "mem",      "type": "MemoryTLM"}
     ],
     "connections": [
-        {"src": "gpu_xbar.0", "dst": "mem",              "latency": 1},
-        {"src": "kernel_launch", "dst": "gpu_xbar.1",    "latency": 1}
+        {"src": "gpu_xbar.0", "dst": "mem",       "latency": 1},
+        {"src": "sm",         "dst": "gpu_xbar.1","latency": 1}
     ]
 }

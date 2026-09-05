@@ -1,6 +1,6 @@
 {
-  "description": "Single Compute Unit blueprint (CU = ScalarCache + L1Cache, both CacheTLM. v2.2 简化版; Phase 7.B 接入 GpuComputeUnitTLM 后扩展为 ScalarCache + VectorRegFile + Wavefront)",
-  "p2_placeholder": "P2 注释: v2.2 仅有 CacheTLM (无 VectorRegFileTLM / WavefrontTLM), 用 2 个 CacheTLM 替代. Phase 7.B 随 GpuComputeUnitTLM 接入后丰富蓝图",
+  "description": "Single Compute Unit blueprint (CU = ScalarCache + L1Cache, both CacheTLM. v2.2 简化版; SM rewrite 后, 完整 CU = StreamingMultiprocessorTLM (12 ChStream 子模块 + IComputeDevice 接口))",
+  "p2_placeholder": "P2 注释: v2.2 仅有 CacheTLM. Task 14 (SM 重构) 后, 完整 CU 蓝图应替换为 StreamingMultiprocessorTLM + 12 子模块, 此处保持向后兼容",
   "modules": [
     { "name": "scalar_cache", "type": "CacheTLM",
       "params": { "size": "16KB", "assoc": 4, "line_size": 64 } },

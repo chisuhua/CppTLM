@@ -1,18 +1,13 @@
 {
-  "_comment": "gpu_soc — GB203 minimal (Phase 8.A Task 7)",
-  "_description": "最小端到端 GPU SoC: 1 KernelLaunch → 1 GpuComputeUnit → 1 SharedMemory + GpuMeshNoC → MemoryClusterTLM",
-  "_reference": "openspec/changes/2026-06-24-gpu-soc-phase8a-infra/design.md §5.2",
+  "_comment": "gpu_soc — GB203 minimal (Phase 8.A Task 7 + SM rewrite Task 14)",
+  "_description": "最小端到端 GPU SoC: 1 StreamingMultiprocessor(SM 顶层含 12 子模块) → 1 SharedMemory + GpuMeshNoC → MemoryClusterTLM",
+  "_reference": "openspec/changes/cpptlm-dgpu-d1-cdna-isa-sm-rewrite",
   "name": "gpu_soc_gb203_v1",
   "modules": [
     {
-      "name": "kernel_launch",
-      "type": "KernelLaunchTLM",
-      "params": { "kernel_launch_interval": 50 }
-    },
-    {
       "name": "compute_unit_0",
-      "type": "GpuComputeUnitTLM",
-      "params": { "execution_latency": 2 }
+      "type": "StreamingMultiprocessorTLM",
+      "params": { "execution_latency": 2, "warp_size": 64 }
     },
     {
       "name": "shared_memory_0",
