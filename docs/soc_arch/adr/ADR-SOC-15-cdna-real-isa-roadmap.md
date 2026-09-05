@@ -259,3 +259,4 @@
 
 ## Status Update
 - **2027-02-09**: 📋 Proposed。本 ADR 是 ADR-SOC-09 §2 D3"AMD KFD 路径"在 CppTLM 端的执行延伸；AMD KFD 用户态 IOCTL 与 Driver Stack 由 UsrLinuxEmu ADR-088 协调（不在本 ADR 范围）。4 阶段路线图（中立化 → 内存 Seam → CDNA 引擎 → 双轨校准）合计 43-73 人天。完整方案设计见 [`docs/soc_arch/architecture/11-cdna-real-isa-integration.md`](../architecture/11-cdna-real-isa-integration.md)。
+- **2027-02-09**: ⚠️ 本 ADR §3 D2 "PipelineTLM 双轨实现"决策**被反转**。`openspec/changes/cpptlm-dgpu-d1-cdna-isa-phase-a/` (阶段 A) OpenSpec change 被 `cpptlm-dgpu-d1-cdna-isa-sm-rewrite` **superseded**。新设计直接构建完整 SM 微架构（per [`architecture/15-sm-microarchitecture-design.md`](../architecture/15-sm-microarchitecture-design.md)），不再分阶段双轨。背书: [`ADR-SOC-16-sm-microarchitecture.md`](./ADR-SOC-16-sm-microarchitecture.md)。

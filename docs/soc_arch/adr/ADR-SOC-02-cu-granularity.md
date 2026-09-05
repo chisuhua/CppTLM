@@ -75,3 +75,4 @@ void ComputeUnitTLM::tick() {
   **理由**:Phase 7.B+ 黑盒 MVP 路径不足以观测 PC/cycle,与"接近真实 CudaCore"目标矛盾(per `docs/research/SM/overview.md` §3.2 + ADR-SOC-06 Phase F-H 架构重定义 D2 反转);PTX-EMU internal C++ 接口已成熟(per `include/cudart/` 4 个 vendored 接口 + `cpptlm_emu/ptxsim` 编译防火墙)。
   **保留原文作为 v0.5 s2 历史记录**;`ComputeUnitTLM::tick()` 黑盒循环在 v0.5 MVP 仍有 1 处使用(per `docs/soc_arch/specs/apu-soc-design.md` D2)。
 - **2027-02-09**: v1.0 战略下 ComputeUnitTLM 升级为蓝图模式 + 双 vendor 路径切换(per [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D1)
+- **2027-02-09**: 📋 本 ADR 决策**被反转**。新设计 [`architecture/15-sm-microarchitecture-design.md`](../architecture/15-sm-microarchitecture-design.md) §15.2-§15.6 实施完整 SM 微架构（5-stage pipeline + SIMT lane + wavefront 调度 + 精确 issue/execute 周期建模），取代本 ADR 的"CU 黑盒 + 永久推迟"决策。背书: [`ADR-SOC-16-sm-microarchitecture.md`](./ADR-SOC-16-sm-microarchitecture.md)。
