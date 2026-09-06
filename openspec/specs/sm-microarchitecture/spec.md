@@ -224,3 +224,33 @@ PTX-EMU 端改造SHALL跟踪（14 天反馈窗口）：
 - **WHEN** HSK-9 公告发布
 - **THEN** PTX-EMU 团队 14 天反馈窗口（不阻塞 CppTLM 侧 archive）
 
+---
+
+## Status Update
+
+### 2026-09-06 — `cdna-isa-abstraction` 僵尸清理 (per Oracle 二次审查 ses_f8b315fb9ffewMsrZj0K5dS39f)
+
+**修订内容**:原 Requirement "OpenSpec change lifecycle" (line 201-209) 规定"archive 时同步合并 `cdna-isa-abstraction` capability spec 到 `sm-microarchitecture/spec.md`"——但 ac95fb7 (Task 19 archive commit) 实际仅完成 SM 重构 archive + main spec 半成品 cp (291 行新增但内容描述不存在的代码),本 Requirement 未真正闭环。
+
+**本次修订**:
+
+1. **`cpptlm-dgpu-d1-cdna-isa-phase-a` 正式 archive** (2026-09-06):
+   - 命令: `openspec archive cpptlm-dgpu-d1-cdna-isa-phase-a --skip-specs -y`
+   - 移动至: `openspec/changes/archive/2026-09-06-cpptlm-dgpu-d1-cdna-isa-phase-a/`
+   - 5/56 勾选均为前置 gate,实际实施 0/56 (per Oracle 二次审查)
+   - `--skip-specs` 因 phase-a delta spec 合并会污染 main (main 已标 superseded)
+
+2. **`cdna-isa-abstraction` main spec 删除**:
+   - 文件: `openspec/specs/cdna-isa-abstraction/spec.md` (291 行,ac95fb7 半成品 cp)
+   - 原因: 描述的代码 (`CdnaPipelineTLM`/`ScoreboardTLMv2`/`cuda-core-adapter-v2-injection`) 80% 不存在
+   - 替代契约: `InstrDescriptor` POD 由 `sm-microarchitecture` 自身承载,见 `include/tlm/gpu/instruction_descriptor.hh` (commit 1068df3,SM 重构 Task 4)
+
+3. **Requirement:201-209 修订声明**:本 spec 现行 Requirement:201 "archive 时同步合并 `cdna-isa-abstraction` 到本 spec" 实际**未执行**;本 Status Update 作为正式修订声明:`cdna-isa-abstraction` capability 不再独立存在,`InstrDescriptor` POD + SM 12 子模块 + 8 Bundle 全部由 `sm-microarchitecture` 完整承接。
+
+**后续跟踪**:
+
+- 引用 `cdna-isa-abstraction` capability 的代码/测试/文档应迁移到 `sm-microarchitecture` 路径 (本次不动 5 个 doc 引用,作为单独 chore commit 处理)
+- `cpptlm-d1-p1-pipeline-scoreboard` MODIFIED 内容未进入 main (main 已标 superseded),phase-a delta 同样 archive
+- tasks 7.6 `[CDNA-Phase-C] Cleanup-Trigger` issue 随 supersede 自然消解 (阶段 C 不再实施)
+- `ac95fb7` commit message 三处虚报 (5/56 任务完成 / pipeline-scoreboard 同步 / change 目录删除) 已知悉,不再 amend (已公开历史),本 Status Update 作为永久追溯依据
+
