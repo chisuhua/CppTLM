@@ -46,6 +46,8 @@ set(CORE_SOURCES
     tlm/gpu/dgpu_board_shell.cc
     # SM Microarchitecture Rewrite (Task 4) — stub; Task 18 full impl
     tlm/gpu/streaming_multiprocessor_tlm.cc
+    # SM Task 1.3 P1-3: ScalarALU 真值 (独立 cpptlm::gpu::ScalarALU, per plan)
+    tlm/gpu/sm/scalar_alu.cc
     # HSK-8 Phase 2 Step 4: 桥接残留簇删除 (PTX-EMU 已废弃 cpptlm_bridge.h)
     # - tlm/gpu/memory_bridge.cc       (deprecated by HSK-6, removed in v3.0 P4 — early delete OK)
     # - tlm/gpu/ptx_emu_driver_shim.cc (cpptlm_set_driver removed by HSK-6 — early delete OK)

@@ -49,7 +49,7 @@
 
 **总工作量**: 28-40 工作日 (1 人) / 16-22 工作日 (2 人协作) (per Oracle 修订, 反映 P0-3 + P0-4 + Top 1/2 增量)
 
-**会话结构**: 5 子波次 (本计划总 **30 Task**, 编号与正文一一对应, 修订 v2)
+**会话结构**: 5 子波次 (本计划总 **38 标题 / 48 子任务**, 含 Task 2.2-2.12 区间 11 子模块, 修订 v3.1)
 
 ```
 子波 0 (会话准备):      Tasks 0.1 - 0.5    (1-2 天)
@@ -57,7 +57,7 @@
 子波 2 (CppTLM 18b):   Tasks 2.1 - 2.18   (8-12 天)
 子波 3 (PTX-EMU HSK-9):Tasks PTX-0..6      (6-10 天)
 子波 4 (CppTLM 18c):   Tasks 4.1 - 4.11   (6-10 天)
-合计: 30 Task, 24-39 天
+合计: 38 标题 (含 Task 2.2-2.12 区间 11 子模块) + 48 子任务, 28-40 天 (1 人协作; 16-22 天 2 人; 含 v3 Oracle 修订 P0-3 + P0-4 + Top 1/2 增量)
 ```
 
 ---
@@ -68,8 +68,8 @@
 
 | Gate | 内容 | 验证手段 | 对应 Task | 状态 |
 |------|------|----------|-----------|------|
-| **G1** | 12 子模块 stub 全部注册 | `nm libcpptlm_core.a \| grep -E "FetchUnitTLM\|DecodeUnitTLM\|..."` 输出 12 个 | Task 1.6 + 8.5 | ✅ 已 PASS (HEAD 39bbf2e) |
-| **G2** | IComputeDevice 15 方法纯虚 | `grep -c "= 0" include/tlm/gpu/i_compute_device.hh` = 15 | Task 4.5 | ✅ 已 PASS |
+| **G1** | 12 子模块 stub 全部注册 | `nm libcpptlm_core.a \| grep -E "FetchUnitTLM\|DecodeUnitTLM\|..."` 输出 12 个 (Task 2.1 拆分前 nm 见嵌套类, 拆分后见独立 .o) | Task 1.6 + 8.5 | ✅ 已 PASS (HEAD 34638d6) |
+| **G2** | IComputeDevice 15 方法纯虚 | `perl -0777 -ne 'print scalar(() = /virtual\s+[^;{]*?=\s*0\s*;/gs), "\n"' include/tlm/gpu/i_compute_device.hh` = 15 (实测 15 ✓, 注释与实现一致, 无 HSK-9 契约差异) | Task 4.5 | ✅ 已 PASS |
 | **G3** | InstrDescriptor POD sizeof ≤ 128 | `static_assert` + 编译 | Task 8.5 | ✅ 已 PASS |
 | **G4** | 8 Bundle POD 类型存在 | `bundles/sm_bundles_tlm.hh` 编译 | Task 6 | ✅ 已 PASS |
 | **G5** | SM 顶层端口 4 个访问器 (InputStreamAdapter/OutputStreamAdapter) | `grep` + 编译 + 测试 | **Task 1.1 (v2 修订)** | ⏸ Pending |
@@ -767,7 +767,7 @@ GIT_MASTER=1 git add include/tlm/gpu/sm/ src/tlm/gpu/sm/ include/tlm/gpu/streami
 GIT_MASTER=1 git commit -m "refactor(sm): 拆分 12 子模块到独立 .hh/.cc (保类名, P2-2 + P0-5 修复)"
 ```
 
-### Task 2.2 - 2.12: 12 子模块真值实现 (v2 修订验收: 每子模块 ≥2 条断言真实行为)
+### Task 2.2 - 2.12: 11 子模块真值实现 (HazardTracker 见 Task 2.13; v2 修订验收: 每子模块 ≥2 条断言真实行为)
 
 > **v2 修订**: per Metis Top 3, 验收标准改为"≥2 条断言真实行为" (禁止 REQUIRE(true) 型验收). 0.5 天/子模块过于乐观, 实际 ≥1 天/子模块 (per Oracle 工作量修订).
 
@@ -2036,5 +2036,5 @@ cmake --build build -j$(nproc)
 **v2 修订完成 (1538 → 2645 行, 总 30 Task)**.
 **修订前**: NEEDS-REWORK (5 P0 + 7 P1 + Metis Top 3).
 **修订后**: APPROVE (Oracle + Metis 同步修订建议均落实 + Top 3 新增实现 Task).
-**HEAD 基线**: 39bbf2e (稳定).
-**worktree**: feat/sm-mp-impl (CppTLM) + feat/hsk-9-impl (PTX-EMU).
+**HEAD 基线**: 34638d6 (历经 6b64841 v2 + 9cd2167 v3 + 34638d6 openspec 清理).
+**worktree**: feat/sm-mp-impl (CppTLM) + feat/hsk-9-impl (PTX-EMU). [v3.1 备注: Task 0.1 启动时创建, 当前尚未初始化]

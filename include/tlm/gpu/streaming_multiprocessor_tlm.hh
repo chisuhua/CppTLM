@@ -21,190 +21,392 @@
 #ifndef TLM_GPU_STREAMING_MULTIPROCESSOR_TLM_HH
 #define TLM_GPU_STREAMING_MULTIPROCESSOR_TLM_HH
 
+#include "bundles/compute_bundles_tlm.hh"
 #include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include "tlm/gpu/i_compute_device.hh"
+#include "tlm/gpu/sm/scalar_alu.hh" // Task 1.3 P1-3 ScalarALU 真值 (独立 cpptlm::gpu::ScalarALU)
 
+#include <array>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace tlm::sm {
 
-// === 12 个 SM 子模块 stub 定义 (per architecture/15 §15.3) ===
-// Task 5: 这些 stub 将拆分到独立 .hh 文件; Task 7: 完整实现
+    // === 12 个 SM 子模块 stub 定义 (per architecture/15 §15.3) ===
+    // Task 5: 这些 stub 将拆分到独立 .hh 文件; Task 7: 完整实现
 
-class FetchUnitTLM : public ChStreamModuleBase {
-public:
-    explicit FetchUnitTLM(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "FetchUnitTLM"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class FetchUnitTLM : public ChStreamModuleBase {
+    public:
+        explicit FetchUnitTLM(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "FetchUnitTLM";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class DecodeUnitTLM : public ChStreamModuleBase {
-public:
-    explicit DecodeUnitTLM(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "DecodeUnitTLM"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class DecodeUnitTLM : public ChStreamModuleBase {
+    public:
+        explicit DecodeUnitTLM(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "DecodeUnitTLM";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class IssueUnitTLM : public ChStreamModuleBase {
-public:
-    explicit IssueUnitTLM(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "IssueUnitTLM"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class IssueUnitTLM : public ChStreamModuleBase {
+    public:
+        explicit IssueUnitTLM(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "IssueUnitTLM";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class ScalarALU : public ChStreamModuleBase {
-public:
-    explicit ScalarALU(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "ScalarALU"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class ScalarALU : public ChStreamModuleBase {
+    public:
+        explicit ScalarALU(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "ScalarALU";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class VectorALU : public ChStreamModuleBase {
-public:
-    explicit VectorALU(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "VectorALU"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class VectorALU : public ChStreamModuleBase {
+    public:
+        explicit VectorALU(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "VectorALU";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class MatrixCore : public ChStreamModuleBase {
-public:
-    explicit MatrixCore(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "MatrixCore"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class MatrixCore : public ChStreamModuleBase {
+    public:
+        explicit MatrixCore(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "MatrixCore";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class SIMTLane : public ChStreamModuleBase {
-public:
-    explicit SIMTLane(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "SIMTLane"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class SIMTLane : public ChStreamModuleBase {
+    public:
+        explicit SIMTLane(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "SIMTLane";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class LsuGlobal : public ChStreamModuleBase {
-public:
-    explicit LsuGlobal(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "LsuGlobal"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class LsuGlobal : public ChStreamModuleBase {
+    public:
+        explicit LsuGlobal(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "LsuGlobal";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class LsuLDS : public ChStreamModuleBase {
-public:
-    explicit LsuLDS(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "LsuLDS"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class LsuLDS : public ChStreamModuleBase {
+    public:
+        explicit LsuLDS(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "LsuLDS";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class RegFileUnit : public ChStreamModuleBase {
-public:
-    explicit RegFileUnit(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "RegFileUnit"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class RegFileUnit : public ChStreamModuleBase {
+    public:
+        explicit RegFileUnit(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "RegFileUnit";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class WritebackUnit : public ChStreamModuleBase {
-public:
-    explicit WritebackUnit(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "WritebackUnit"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class WritebackUnit : public ChStreamModuleBase {
+    public:
+        explicit WritebackUnit(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "WritebackUnit";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-class HazardTracker : public ChStreamModuleBase {
-public:
-    explicit HazardTracker(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {}
-    std::string get_module_type() const override { return "HazardTracker"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { (void)a; }
-    void tick() override {}
-};
+    class HazardTracker : public ChStreamModuleBase {
+    public:
+        explicit HazardTracker(const std::string& n, EventQueue* eq) : ChStreamModuleBase(n, eq) {
+        }
+        std::string get_module_type() const override {
+            return "HazardTracker";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* a) override {
+            (void)a;
+        }
+        void tick() override {
+        }
+    };
 
-}  // namespace tlm::sm
+} // namespace tlm::sm
 
 namespace tlm {
 
-class StreamingMultiprocessorTLM : public ChStreamModuleBase,
-                                    public cpptlm::gpu::IComputeDevice {
-public:
-    explicit StreamingMultiprocessorTLM(const std::string& name, EventQueue* eq);
-    ~StreamingMultiprocessorTLM() override = default;
+    class StreamingMultiprocessorTLM : public ChStreamModuleBase,
+                                       public cpptlm::gpu::IComputeDevice {
+    public:
+        explicit StreamingMultiprocessorTLM(const std::string& name, EventQueue* eq);
+        ~StreamingMultiprocessorTLM() override = default;
 
-    std::string get_module_type() const override { return "StreamingMultiprocessorTLM"; }
-    void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
+        std::string get_module_type() const override {
+            return "StreamingMultiprocessorTLM";
+        }
+        void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
 
-    // === IComputeDevice 15 方法 stub (Task 18 完整实现) ===
-    // 11 preserved
-    bool initialize(const cpptlm::gpu::DeviceConfig& cfg) override { (void)cfg; return false; }
-    void shutdown() override {}
-    int  exe_once() override { return 0; }
-    int  sm_exe_once(uint32_t sm_id) override { (void)sm_id; return 0; }
-    int  warp_exe_once(uint32_t sm_id, uint32_t warp_id) override { (void)sm_id; (void)warp_id; return 0; }
-    bool set_scoreboard(uint32_t sm_id, uint32_t warp_id, uint64_t mask) override {
-        (void)sm_id; (void)warp_id; (void)mask; return false;
-    }
-    cpptlm::gpu::ThreadState get_thread_state(uint32_t sm_id, uint32_t warp_id, uint32_t lane_id) override {
-        (void)sm_id; (void)warp_id; (void)lane_id; return cpptlm::gpu::ThreadState::kIdle;
-    }
-    bool set_active_mask(uint32_t sm_id, uint32_t warp_id, uint64_t mask) override {
-        (void)sm_id; (void)warp_id; (void)mask; return false;
-    }
-    bool set_next_pc(uint32_t sm_id, uint32_t warp_id, uint32_t lane_id, uint32_t pc) override {
-        (void)sm_id; (void)warp_id; (void)lane_id; (void)pc; return false;
-    }
-    cpptlm::gpu::WarpStatus get_warp_status(uint32_t sm_id, uint32_t warp_id) override {
-        (void)sm_id; (void)warp_id; return {};
-    }
-    bool is_finished() override { return false; }
-    // 1 HSK-9 new
-    void set_instr_descriptor_buf(const cpptlm::gpu::InstrDescriptor* buf, uint32_t count) override {
-        (void)buf; (void)count;
-    }
-    // 2 Round 4 new
-    bool get_register_value(uint32_t sm_id, uint32_t warp_id, uint32_t reg_id,
-                             uint64_t* out_value, uint32_t lane_id = 0xFFFFFFFF) override {
-        (void)sm_id; (void)warp_id; (void)reg_id; (void)out_value; (void)lane_id; return false;
-    }
-    bool is_instruction_completed(uint64_t instr_id) override {
-        (void)instr_id; return false;
-    }
-    // 1 reset
-    // Per Oracle P0-2 Task 8 review: IComputeDevice::reset() 与 SimObject::reset(const ResetConfig&)
-    // 名字遮蔽. 桥接方案: IComputeDevice::reset() 委托给框架 do_reset(),
-    // 并 using SimObject::reset 恢复框架签名.
-    void reset() override { do_reset({}); }
-    using ChStreamModuleBase::reset;  // 恢复框架 reset(const ResetConfig&) 重载可见性
+        // === 4 端口访问器 (GPUTLM 范式, per include/tlm/gpu/gpu_tlm.hh:177-189) ===
+        // StreamAdapter::tick() 契约要求 ModuleT 提供 req_out()/resp_in() (master 方向)
+        // + req_in()/resp_out() (slave 方向), 全部 4 方向 (per plan Task 1.1 v2 P0-1 修订)
+        cpptlm::OutputStreamAdapter<bundles::ComputeReqBundle>& req_out() {
+            return req_out_;
+        }
+        cpptlm::InputStreamAdapter<bundles::ComputeRespBundle>& resp_in() {
+            return resp_in_;
+        }
+        cpptlm::InputStreamAdapter<bundles::ComputeReqBundle>& req_in() {
+            return req_in_;
+        }
+        cpptlm::OutputStreamAdapter<bundles::ComputeRespBundle>& resp_out() {
+            return resp_out_;
+        }
 
-    // === ChStreamModuleBase tick() ===
-    void tick() override;
+        // === get/set_scalar_reg (per Oracle P1-7, Task 1.3 依赖) ===
+        // interim 真值源, Task 2.11 须迁移到 RegFileUnit. 见 plan Task 1.1 Step 3.
+        void set_scalar_reg(uint32_t reg_id, uint64_t value) {
+            scalar_regs_[reg_id] = value;
+        }
+        uint64_t get_scalar_reg(uint32_t reg_id) const {
+            auto it = scalar_regs_.find(reg_id);
+            return it != scalar_regs_.end() ? it->second : 0;
+        }
 
-private:
-    // 12 子模块 (per architecture/15 §15.2)
-    std::unique_ptr<sm::FetchUnitTLM>    fu_;
-    std::unique_ptr<sm::DecodeUnitTLM>    du_;
-    std::unique_ptr<sm::IssueUnitTLM>     iu_;
-    std::unique_ptr<sm::ScalarALU>        sa_;
-    std::unique_ptr<sm::VectorALU>        va_;
-    std::unique_ptr<sm::MatrixCore>       mc_;
-    std::unique_ptr<sm::SIMTLane>         sl_;
-    std::unique_ptr<sm::LsuGlobal>        lg_;
-    std::unique_ptr<sm::LsuLDS>           ll_;
-    std::unique_ptr<sm::RegFileUnit>      rf_;
-    std::unique_ptr<sm::WritebackUnit>    wb_;
-    std::unique_ptr<sm::HazardTracker>    ht_;
+        // === IComputeDevice 15 方法 stub (Task 18 完整实现) ===
+        // 11 preserved
+        bool initialize(const cpptlm::gpu::DeviceConfig& cfg) override {
+            (void)cfg;
+            scalar_regs_.clear();
+            ring_head_ = 0;
+            ring_tail_ = 0;
+            ring_count_ = 0;
+            completed_instr_ids_.clear();
+            return true;
+        }
+        void shutdown() override {
+        }
+        int exe_once() override {
+            if (ring_count_ == 0)
+                return 0;
+            auto& desc = instr_ring_[ring_head_];
+            if (desc.pipe == cpptlm::gpu::PipeClass::kScalarALU) {
+                scalar_alu_->execute(desc);
+                // Task 1.4 P1-4: ScalarALU 完成后, 标记 instr_id 已完成 (per HSK-9 §3
+                // is_instruction_completed 协议)
+                completed_instr_ids_.insert(desc.instr_id);
+            }
+            // ring buffer consume: 推进 head, 减 count
+            ring_head_ = (ring_head_ + 1) % 64;
+            --ring_count_;
+            return 1;
+        }
+        int sm_exe_once(uint32_t sm_id) override {
+            (void)sm_id;
+            return 0;
+        }
+        int warp_exe_once(uint32_t sm_id, uint32_t warp_id) override {
+            (void)sm_id;
+            (void)warp_id;
+            return 0;
+        }
+        bool set_scoreboard(uint32_t sm_id, uint32_t warp_id, uint64_t mask) override {
+            (void)sm_id;
+            (void)warp_id;
+            (void)mask;
+            return false;
+        }
+        cpptlm::gpu::ThreadState get_thread_state(uint32_t sm_id, uint32_t warp_id,
+                                                  uint32_t lane_id) override {
+            (void)sm_id;
+            (void)warp_id;
+            (void)lane_id;
+            return cpptlm::gpu::ThreadState::kIdle;
+        }
+        bool set_active_mask(uint32_t sm_id, uint32_t warp_id, uint64_t mask) override {
+            (void)sm_id;
+            (void)warp_id;
+            (void)mask;
+            return false;
+        }
+        bool set_next_pc(uint32_t sm_id, uint32_t warp_id, uint32_t lane_id, uint32_t pc) override {
+            (void)sm_id;
+            (void)warp_id;
+            (void)lane_id;
+            (void)pc;
+            return false;
+        }
+        cpptlm::gpu::WarpStatus get_warp_status(uint32_t sm_id, uint32_t warp_id) override {
+            (void)sm_id;
+            (void)warp_id;
+            return {};
+        }
+        bool is_finished() override {
+            return false;
+        }
+        // 1 HSK-9 new
+        void set_instr_descriptor_buf(const cpptlm::gpu::InstrDescriptor* buf,
+                                      uint32_t count) override {
+            // Task 1.5 P1-5: ring buffer (固定 64, 满时覆盖最旧 head, per plan)
+            if (!buf || count == 0 || count > 64)
+                return;
+            for (uint32_t i = 0; i < count; ++i) {
+                instr_ring_[ring_tail_] = buf[i]; // 浅拷贝 POD copy (per HSK-9 §3 buf 内存所有权)
+                ring_tail_ = (ring_tail_ + 1) % 64;
+                if (ring_count_ == 64) {
+                    ring_head_ = (ring_head_ + 1) % 64; // 覆盖最旧
+                } else {
+                    ++ring_count_;
+                }
+            }
+        }
+        // 2 Round 4 new
+        bool get_register_value(uint32_t sm_id, uint32_t warp_id, uint32_t reg_id,
+                                uint64_t* out_value, uint32_t lane_id = 0xFFFFFFFF) override {
+            (void)sm_id;
+            (void)warp_id;
+            (void)lane_id;
+            if (!out_value)
+                return false;
+            auto it = scalar_regs_.find(reg_id);
+            if (it == scalar_regs_.end())
+                return false;
+            *out_value = it->second;
+            return true;
+        }
+        bool is_instruction_completed(uint64_t instr_id) override {
+            // Task 1.4 P1-4: 已完成 instr_id 集合 (per HSK-9 §3 协议)
+            return completed_instr_ids_.count(instr_id) > 0;
+        }
+        // 1 reset
+        // Per Oracle P0-2 Task 8 review: IComputeDevice::reset() 与 SimObject::reset(const
+        // ResetConfig&) 名字遮蔽. 桥接方案: IComputeDevice::reset() 委托给框架 do_reset(), 并 using
+        // SimObject::reset 恢复框架签名.
+        void reset() override {
+            do_reset({});
+        }
+        using ChStreamModuleBase::reset; // 恢复框架 reset(const ResetConfig&) 重载可见性
 
-    cpptlm::StreamAdapterBase* adapter_ = nullptr;
-};
+        // === ChStreamModuleBase tick() ===
+        void tick() override;
 
-}  // namespace tlm
+    private:
+        // 12 子模块 (per architecture/15 §15.2)
+        std::unique_ptr<sm::FetchUnitTLM> fu_;
+        std::unique_ptr<sm::DecodeUnitTLM> du_;
+        std::unique_ptr<sm::IssueUnitTLM> iu_;
+        std::unique_ptr<sm::ScalarALU> sa_;
+        std::unique_ptr<sm::VectorALU> va_;
+        std::unique_ptr<sm::MatrixCore> mc_;
+        std::unique_ptr<sm::SIMTLane> sl_;
+        std::unique_ptr<sm::LsuGlobal> lg_;
+        std::unique_ptr<sm::LsuLDS> ll_;
+        std::unique_ptr<sm::RegFileUnit> rf_;
+        std::unique_ptr<sm::WritebackUnit> wb_;
+        std::unique_ptr<sm::HazardTracker> ht_;
+
+        // === 4 适配器成员 (GPUTLM 范式, per include/tlm/gpu/gpu_tlm.hh:28-29) ===
+        cpptlm::OutputStreamAdapter<bundles::ComputeReqBundle> req_out_;
+        cpptlm::InputStreamAdapter<bundles::ComputeRespBundle> resp_in_;
+        cpptlm::InputStreamAdapter<bundles::ComputeReqBundle> req_in_;
+        cpptlm::OutputStreamAdapter<bundles::ComputeRespBundle> resp_out_;
+
+        // === scalar_regs_ (per Oracle P1-7 Task 1.3 依赖, interim 真值源) ===
+        // Task 2.11 须迁移到 RegFileUnit
+        std::unordered_map<uint32_t, uint64_t> scalar_regs_;
+
+        // === Task 1.3 P1-3 ScalarALU 真值 (per plan) ===
+        // cpptlm::gpu::ScalarALU 独立真值类 (include/tlm/gpu/sm/scalar_alu.hh),
+        // SM 顶层持 unique_ptr, exe_once() 调用其 execute() 处理 ring buffer 中 kScalarALU 指令
+        std::unique_ptr<cpptlm::gpu::ScalarALU> scalar_alu_;
+        // Task 1.5 P1-5: instr_descriptor ring buffer (固定大小 64, 覆盖最旧)
+        // 浅拷贝 PTX-EMU 注入的 InstrDescriptor buf (per HSK-9 §3 buf 内存所有权语义)
+        std::array<cpptlm::gpu::InstrDescriptor, 64> instr_ring_{};
+        uint32_t ring_head_ = 0;  // 最早未处理 desc 位置 (consume 位置)
+        uint32_t ring_tail_ = 0;  // 下一个写入位置 (produce 位置)
+        uint32_t ring_count_ = 0; // 当前未处理 desc 数 (满时 = 64, 覆盖 head)
+        // Task 1.4 P1-4: 已完成 instr_id 集合 (ScalarALU.execute 后 insert,
+        // is_instruction_completed 查)
+        std::unordered_set<uint64_t> completed_instr_ids_;
+
+        cpptlm::StreamAdapterBase* adapter_ = nullptr;
+    };
+
+} // namespace tlm
 
 #endif

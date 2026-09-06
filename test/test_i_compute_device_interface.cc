@@ -55,7 +55,7 @@ TEST_CASE("StreamingMultiprocessorTLM IComputeDevice 15 methods callable (stub r
 
     // 11 preserved
     DeviceConfig cfg{};
-    REQUIRE(sm.initialize(cfg) == false);
+    REQUIRE(sm.initialize(cfg) == true);  // Task 1.3 P1-3: ScalarALU 真值 (per plan)
     sm.shutdown();
     REQUIRE(sm.exe_once() == 0);
     REQUIRE(sm.sm_exe_once(0) == 0);
