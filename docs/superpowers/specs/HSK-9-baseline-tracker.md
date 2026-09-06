@@ -71,3 +71,54 @@ AGENTS.md 声明 **15098 assertions**, 实测 **44498**. 偏差 +294%.
 - **PTX-EMU build 一律 -j2** (15GB/no-swap 环境, nvcc 重型 .cu 易 OOM)
 - **失败即降 -j1** (避免 524s 阻塞)
 - 记录位置: `external/PTX-EMU/.worktrees/hsk-9-impl/build/` (非 sm-mp-impl submodule 视角, 同 SHA baseline 数据有效)
+
+## Task 0.5 跨仓 build 拓扑验证 (实测, 2026-09-06)
+
+### Build 拓扑矩阵
+
+| Step | 模式 | PTX-EMU SHA | -j | Build 耗时 | 结果 | 备注 |
+|------|------|-------------|----|-----------|------|------|
+| 1 | CppTLM ON (嵌套, `CPPTLM_WITH_PTX_EMU=ON`) | 73a5ecee | 1 (重试自 -j2 失败) | 496s + tests 3s | **44498 / 1232 PASS** (与 OFF 一致, 未新增 PTXIR tests) | -j2 在 50% 时 OOM 失败; -j1 重试成功 (Oracle P1 风险 #2 修复) |
+| 2 | PTX-EMU 独立 (引用 Task 0.1.5) | 73a5ecee | 2 | **524s (引用 Task 0.1.5)** | **254 / 254 PASS (引用)** | 裁剪 (Oracle 推荐): 同 SHA, 跳过冗余构建, 引用 Task 0.1.5 数据 |
+| 3 | submodule detached 切换演练 | 73a5ecee → e7aa69d6 → 73a5ecee | — | < 1 min | **PASS** | `git status --porcelain` 空, superproject `git submodule status` 无 `+` 前缀, HEAD 复位 73a5ecee |
+
+### Step 1 断言基线 (ON 模式 vs OFF)
+
+| 指标 | OFF (Task 0.1.4) | ON (本 Task 0.5 Step 1) | 差值 |
+|------|-----------------|------------------------|------|
+| Assertions | 44498 | **44498** | **0** (与 OFF 一致, 未触发预期 `[sdma][h2d][ptxir]` 类) |
+| Test cases | 1232 | **1232** | **0** |
+| 通过率 | 100% | **100%** | 0 |
+| Build 耗时 (CppTLM_core + cpptlm_tests) | 810s | **496s** (ccache 命中, -j1) | -314s (-39%) |
+| ON 模式新增 PTXIR 集成 | — | **0** | — |
+
+### Step 1 ON 模式 ctest 链接配置
+
+- `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCPPTLM_WITH_PTX_EMU=ON`
+- 链接产物: `libcpptlm_core.a` + `libcudart.so` (PTX-EMU cudart 模拟) + `libptxemu_device.so` + `libantlr4_shared.so`
+- 测试 binary: `build/bin/cpptlm_tests` (1232 test cases, 44498 assertions, 100% PASS)
+- 配置检测: CUDA toolkit 13.0.88 + cuobjdump detected, Java 21.0.10 detected, "Building without demo" (默认 `-DWITH_DEMO=False`)
+
+### HSK-9 分支 tip 记录 (per Task 0.3 PR #21 + 0.5 fetch)
+
+- `origin/feat/hsk-9-impl` tip: **e7aa69d6** (Task 0.3.5b AGENTS.md commit, PR #21 squash merge 后**保留分支**)
+- `origin/main` HEAD: **d5a58cf5** (PR #21 squash merge commit, 含 HSK-9 spec 镜像 80911163 + AGENTS.md 修订 e7aa69d6 共 2 commit)
+- PR #21 merge commit SHA: **d5a58cf5** (Task 0.3.7 squash merge `--body "Merged via single-owner ack per Oracle §5 re-anchoring"`)
+- 注意: Oracle 预审假设 PR merge 会删 `feat/hsk-9-impl` 分支 (false), 实测保留 (squash merge 不删默认分支)
+
+### Step 1 失败记录 + 回滚
+
+- **第一次失败**: `cmake --build build --target cpptlm_tests -j2` 在 50% (cudart 100% 编译后) 失败 `Error 2`, `cpptlm_tests.dir/rule` 编译错误. 根因疑似 OOM (Oracle 已警示 ANTLR TU 内存压力).
+- **回滚**: ccache + -j1 重试 → 100% 成功. 无需清理 (增量构建).
+- **回滚命令模板** (per Oracle §5):
+  ```bash
+  # Step 1 完全失败 (从零重建 OFF 模式)
+  cd /workspace/project/CppTLM/.worktrees/sm-mp-impl
+  rm -rf build
+  cmake -S . -B build -DCMAKE_BUILD_TYPE=Release  # OFF 模式回退
+
+  # Step 3 detached SHA 切换失败 (复位)
+  cd /workspace/project/CppTLM/.worktrees/sm-mp-impl/external/PTX-EMU
+  git checkout --detach 73a5ecee
+  git status --porcelain  # 必须空
+  ```
