@@ -13,6 +13,7 @@
 // 作者 CppTLM Team / 2027-02-09 (Task 18 实施)
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
+#include "framework/chstream_adapter_factory.hh"
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh"
 #include "framework/stream_adapter.hh"
 
@@ -44,4 +45,17 @@ TEST_CASE("StreamingMultiprocessorTLM get/set_scalar_reg (Task 1.3 依赖)",
     REQUIRE(sm.get_scalar_reg(999) == 0);  // 未设置返回 0
     sm.set_scalar_reg(0, 0xDEADBEEF);
     REQUIRE(sm.get_scalar_reg(0) == 0xDEADBEEF);
+}
+
+// Task 1.2 TDD 失败测试 (Oracle 预审 P1 修复):
+// 解开 SM StreamAdapter 注册前, ChStreamAdapterFactory 必须知道 "StreamingMultiprocessorTLM".
+// 当前 chstream_register.hh line 112-116 仍被 Task 17 closeout 注释屏蔽 (per Task 18 P1-1),
+// 故此 REQUIRE 必然 FAIL. Task 1.2 Step 3 注册后 PASS.
+TEST_CASE("ChStreamAdapterFactory knows StreamingMultiprocessorTLM (Task 1.2 pre-req)",
+          "[sm-port][sm-microarch][chstream]") {
+    // Task 1.2: 删除 chstream_register.hh line 112-116 Task 17 closeout 注释,
+    // 在 line 110 GPUTLM 注册后追加 StreamingMultiprocessorTLM registerAdapter.
+    REQUIRE(ChStreamAdapterFactory::get().knows("StreamingMultiprocessorTLM"));
+    // sanity: GPUTLM 早已注册 (per Task 17 之前), 同 Bundle 类型对照
+    REQUIRE(ChStreamAdapterFactory::get().knows("GPUTLM"));
 }
