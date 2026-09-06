@@ -123,3 +123,19 @@ AGENTS.md 声明 **15098 assertions**, 实测 **44498**. 偏差 +294%.
   git checkout --detach 73a5ecee
   git status --porcelain  # 必须空
   ```
+
+## Task 1.1 follow-up: scalar_regs_ → RegFileUnit 迁移 (Task 2.11)
+
+per Oracle 复审 Task 1.1 (session `ses_f88ce48aeffeQwofrS4Z42ajxw` §9 P1 watch):
+
+`StreamingMultiprocessorTLM::scalar_regs_` 是 **interim 真值源** (Task 1.1 commit `7c461b6` 引入, per Oracle P1-7 Task 1.3 依赖). Task 2.11 **必须**迁移到 `RegFileUnit` 子模块.
+
+迁移步骤 (预计 Task 2.11):
+- 移除 `StreamingMultiprocessorTLM::scalar_regs_` 私有成员 (`include/tlm/gpu/streaming_multiprocessor_tlm.hh` line ~226)
+- 移除 `get_scalar_reg` / `set_scalar_reg` inline 方法 (line ~157-161), 或改为 forward to `RegFileUnit::get/set_reg`
+- `RegFileUnit` 子模块持寄存器真值 (per `architecture/15 §15.5.6 SM-owns-state`)
+- 验证 `[sm-port]` 测试通过 + 全量 baseline 44508/1234 不回归
+
+回归基线 (Task 1.1 完成态):
+- `[sm-port]` 标签: 10 assertions / 2 test cases (per commit 7c461b6)
+- 全量: 44508 assertions / 1234 test cases (从 44498/1232 baseline +10 / +2)
