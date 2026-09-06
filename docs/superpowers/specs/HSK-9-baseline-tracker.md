@@ -69,6 +69,7 @@ AGENTS.md 声明 **15098 assertions**, 实测 **44498**. 偏差 +294%.
 ### 约束固化 (track 后续 build)
 
 - **PTX-EMU build 一律 -j2** (15GB/no-swap 环境, nvcc 重型 .cu 易 OOM)
+- **CppTLM ON build 一律 -j1** (15GB/no-swap + ANTLR TU 内存压力; -j2 实测 OOM 失败, -j1 通过 per Oracle final 信息级修补)
 - **失败即降 -j1** (避免 524s 阻塞)
 - 记录位置: `external/PTX-EMU/.worktrees/hsk-9-impl/build/` (非 sm-mp-impl submodule 视角, 同 SHA baseline 数据有效)
 
