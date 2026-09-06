@@ -4,8 +4,8 @@
 // 验证 StreamingMultiprocessorTLM 暴露 4 个 GPUTLM 范式端口访问器:
 //   - req_out() (OutputStreamAdapter<ComputeReqBundle>, master 方向)
 //   - resp_in() (InputStreamAdapter<ComputeRespBundle>, slave 方向)
-//   - req_in() (InputStreamAdapter<ComputeReqBundle>, static dummy)
-//   - resp_out() (OutputStreamAdapter<ComputeRespBundle>, static dummy)
+//   - req_in() (InputStreamAdapter<ComputeReqBundle>, 真实成员)
+//   - resp_out() (OutputStreamAdapter<ComputeRespBundle>, 真实成员)
 //
 // StreamAdapter::tick() 契约要求 ModuleT 提供 req_in() + resp_out() 访问器
 // (per include/framework/stream_adapter.hh:186 注释)
