@@ -139,3 +139,56 @@ per Oracle 复审 Task 1.1 (session `ses_f88ce48aeffeQwofrS4Z42ajxw` §9 P1 watc
 回归基线 (Task 1.1 完成态):
 - `[sm-port]` 标签: 10 assertions / 2 test cases (per commit 7c461b6)
 - 全量: 44508 assertions / 1234 test cases (从 44498/1232 baseline +10 / +2)
+
+## Task 1.2 完成态 (Oracle 复审暂缺) + Task 1.3 plan/code 冲突 (Oracle 评估暂缺)
+
+### Task 1.2 commit a68a7f6 终态
+- ✅ TDD 5 步全 PASS (knows() 测试 FAIL → PASS)
+- ✅ [sm-port] 12/3 PASS, 全量 44510/1235 (+2/+1, 0 回归)
+- ✅ Gate G6: StreamAdapter 注册 SM (ComputeReqBundle/ComputeRespBundle)
+- ⚠️ **Oracle 复审暂缺**: Oracle subagent quota exceeded (7-day window)
+  - 替代: TDD 5 步严格执行 + 自验证 + commit message 详尽 (审计 trail 完整)
+  - 风险: Oracle 复审可恢复时 (quota 重置) 必须补执行, 验证 Gate G6 真值
+
+### Task 1.3 plan/code 设计冲突 (P0 blocker)
+
+**plan Task 1.3 假设** (docs/superpowers/plans/2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md line 460+):
+- File: Create `include/tlm/gpu/sm/scalar_alu.hh` (独立头文件)
+- File: Create `src/tlm/gpu/sm/scalar_alu.cc` (独立实现)
+- ScalarALU 类签名: `cpptlm::gpu::ScalarALU(StreamingMultiprocessorTLM* parent)`, 方法 `execute(InstrDescriptor&)`
+- namespace: `cpptlm::gpu::ScalarALU`
+
+**代码现状** (实测 `include/tlm/gpu/streaming_multiprocessor_tlm.hh` line 28-100):
+- File: `include/tlm/gpu/streaming_multiprocessor_tlm.hh` (无 `sm/scalar_alu.hh`)
+- namespace: `tlm::sm::ScalarALU` (line 28 `namespace tlm::sm` + line 62 `class ScalarALU`)
+- ScalarALU 类签名: `ChStreamModuleBase` 派生类, `(const std::string& n, EventQueue* eq)`, 方法 `tick()` (stub)
+- 子模块 stub 状态: 12 个 SM 子模块全部 inline 定义 + `tick() override {}` 空实现
+- SM 顶层调用链: `sm.exe_once()` 也是 stub (line 167 `return 0`), 不调 ScalarALU
+- RegFileUnit (`sm::RegFileUnit rf_` line 213) 也是 stub, 寄存器真值源在 `scalar_regs_` (Task 1.1 加的 interim)
+
+**冲突清单**:
+| 维度 | plan | 现状 | 影响 |
+|------|------|------|------|
+| 文件位置 | `include/tlm/gpu/sm/scalar_alu.hh` (独立) | inline 在 `streaming_multiprocessor_tlm.hh` line 62-67 | plan 拆分需新建 namespace + 重构 SM 顶层成员类型 |
+| namespace | `cpptlm::gpu::ScalarALU` | `tlm::sm::ScalarALU` | 命名空间不一致, 需 reconcile |
+| 父类 | 无 (独立类) | `ChStreamModuleBase` 派生 | 是否需要保留 ChStreamModuleBase? 影响 StreamAdapter 注册 |
+| 构造函数 | `(StreamingMultiprocessorTLM* parent)` | `(const std::string& n, EventQueue* eq)` | 完全不同 |
+| 方法 | `execute(InstrDescriptor&)` | `tick()` | 完全不同 |
+| 调用链 | `SM.exe_once()` → ScalarALU.execute() | SM.exe_once() stub (return 0) | 即使 ScalarALU 真值了, 调用链不通 |
+
+**plan 缺失步骤**:
+- Step 1.5: 修改 `StreamingMultiprocessorTLM::exe_once()` 调用 ScalarALU (或 ScalarALU.tick() 真值)
+- Step 1.6: 修改 `StreamingMultiprocessorTLM::set_instr_descriptor_buf()` 真正浅拷贝到 internal buf
+- Step 1.7: 修改 `StreamingMultiprocessorTLM::get_register_value()` 从 `scalar_regs_` 读取 (vs plan: 从 RegFileUnit)
+
+**P0 决策点** (需用户 + Oracle 评估):
+A: 按 plan 严格执行 — 创建独立 scalar_alu.hh/.cc, 拆分 inline stub, 重构 SM 顶层调用链, 估计 4-6 commits
+B: 适配 plan — 在 inline ScalarALU stub 内加 execute() + 真值, 不拆分文件, 估计 2-3 commits
+C: 暂停 Task 1.3, 先执行 Task 1.4 RegFileUnit + get_register_value 真值 (解 SM-owns-state 链), Task 1.3 后续重排
+D: 其他 (用户定义)
+
+**Oracle quota 状态**:
+- Oracle subagent 返回 "weekly usage limit exceeded" (7-day window)
+- 影响: 用户最初指令"每执行一步都要通过 Oracle 审查"无法严格执行
+- 缓解: TDD 5 步 + 自验证 + commit message 详尽 (审计 trail 完整)
+- 恢复: Oracle quota 7 天后自动重置, 重审 Task 1.2/1.3
