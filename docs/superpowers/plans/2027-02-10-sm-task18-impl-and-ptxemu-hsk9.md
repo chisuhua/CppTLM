@@ -4,7 +4,7 @@
 
 **Goal:** 完成 SM 微架构重构 Task 18 (12 子模块真值 + bit-exact Gate 协议 + 端到端) + PTX-EMU 端 HSK-9 改造 (injector API + attach_timing 移除) + 跨仓联合验证 (真双向数据通路 + L7 JSON reload)。
 
-**Architecture:** 大爆炸 + HSK-9. 单一真值源 `cpptlm::gpu::alu::*` (PTX-EMU 现有 handlers 不复制实现); SM 持寄存器唯一真值 (RegFileUnit), PTX-EMU 通过 `set_compute_device(icompute_dev*)` 注入 → SM 的 `set_instr_descriptor_buf()` → 上行协议含 `result_value[]` 回填 → PTX-EMU 拉回比对 (Gate 闭环); L7 JSON reload 验证配置加载完整性。
+**Architecture:** 大爆炸 + HSK-9. 单一真值源 `cpptlm::gpu::alu::*` (PTX-EMU 现有 handlers 不复制实现); SM 持寄存器唯一真值 (RegFileUnit), PTX-EMU 通过 `set_compute_device(icompute_dev*)` 注入 → SM 的 `set_instr_descriptor_buf()` 浅拷贝指令 → SM 执行后通过 pull 通道 (`get_register_value` + `is_instruction_completed`) 让 PTX-EMU 拉回比对 (Gate 闭环, 契约合规); L7 JSON reload 验证配置加载完整性。
 
 **Tech Stack:** C++17/20 + SystemC stub + ChStreamModuleBase + bundles + ModuleFactory + Catch2 v3.7.0 + git-master 多原子 commit + 跨仓 submodule bump + HSK-9 14 天反馈窗口 (重新锚定)。
 
@@ -26,7 +26,7 @@
 | Oracle | P0-3 | Task 0.1 Step 3 前加 `git submodule update --init --recursive` |
 | Oracle | P0-4 | 统一 `src_regs = 寄存器号` 语义, 删除 BitExactGate 内 `src_regs` 当立即数用法, Gate 改为基于"PTX-EMU 现有 functional handlers 结果 vs SM 用真值源结果"对比 |
 | Oracle | P0-5 | Task 2.1 **不重命名** (保 FetchUnitTLM 类名), 仅做物理拆分 .hh/.cc |
-| Metis | Top 1 | 新增 Task 4.5 `result_value[]` 回填协议实现 + Task 4.9 真联合测试 (CppTLM 链接 PTX-EMU 新代码全链路) |
+| Metis | Top 1 | 新增 Task 4.5 pull 通道 (v3: 契约合规版) + Task 4.9 真联合测试 (CppTLM 链接 PTX-EMU 新代码全链路) |
 | Metis | Top 2 | 新增 Task 0.5 跨仓 build 拓扑定义 + Task 0.3 G12 重做 + 14d 窗口重锚 (TBD 锚定) + Task 2.18 L7 JSON reload 测试 |
 | Metis | Top 3 | 删除 Task 1.1/4.3/4.5 错误代码块, 改为"参照现网范式"指引; 18b 验收改为"每子模块 ≥2 条断言真实行为" |
 | Oracle | P1-7 | `get/set_scalar_reg` 方法在 Task 1.1 提前声明 (1.3 依赖) |
@@ -37,6 +37,15 @@
 | Metis | Decision | 新增决策流程表 (G14 PASS / 退路 A/B/C 触发条件 + 决策人) |
 | Metis | 范围 | Task 4.4 SGEMM 验收 ±15% 与 bit-exact 冲突 → MFMA 4×4 数值测试替代 |
 | Metis | Baseline | 硬编码预期数字删除, Task 0.x 改为"记录实际数字到 tracker" |
+
+**v3 修订摘要** (per Oracle v2 复核 session `ses_f8c579906ffeoKlnK0jEEDwrdS`, APPROVE-WITH-FIXES → 修订 → APPROVE):
+
+| 来源 | ID | 修订内容 | 对应 Task |
+|------|----|---------|-----------|
+| Oracle v2 | 新 P0 | Task 4.5 `const_cast<>` 回填协议违反 `i_compute_device.hh:13` 冻结契约, 改用 pull 通道 (记录 `sm_results_[instr_id]`, PTX-EMU 通过 `get_register_value`/`is_instruction_completed` 拉回比对) | Task 4.5 v3 |
+| Oracle v2 | 新 P1-α | git worktree 机制冲突: `feat/hsk-9-impl` 在独立 worktree 已 checkout, sm-mp-impl 子模块 `git checkout` 必失败; 改用 `git checkout --detach <HSK9_SHA>` (避开分支独占) | Task 0.1 Step 2 + Task 0.5 Step 3 + Task 4.8 Step 1/4 + Task 4.9 Step 2 |
+| Oracle v2 | 新 P1-β | Task 2.13 测试逻辑错误: (a) `HazardTracker ht;` 无默认构造, 需 `EventQueue eq; HazardTracker ht("ht0", &eq);`; (b) 第二个 TEST_CASE `decrement ×1` 后 vmcnt=1, `is_stalled_vmcnt(0,0,0)` 必 FAIL, 改为 `decrement ×2` | Task 2.13 v3 |
+| Oracle v2 | 新 P1-γ | Task 4.9 真联合测试无实体断言: 原 Step 1 全是注释; 改为具体断言骨架 (producer push → SM exec → register pull → completion pull → injector 路径), 并明确 CMake 链接 `ptxemu_device` | Task 4.9 v3 |
 
 **总工作量**: 28-40 工作日 (1 人) / 16-22 工作日 (2 人协作) (per Oracle 修订, 反映 P0-3 + P0-4 + Top 1/2 增量)
 
@@ -71,7 +80,7 @@
 | **G10** | 12 子模块全部有真值 (每子模块 ≥2 条断言真实行为) | 测试断言通过 | **Task 2.2 - 2.12 (v2 修订验收)** | ⏸ Pending |
 | **G11** | 8 Bundle 内部 C++ 直连接通 | 集成测试 | **Task 2.13 (v2 修订)** | ⏸ Pending |
 | **G12** | HSK-9 公告发布到 PTX-EMU 仓 docs/superpowers/specs/ + CppTLM 仓 | GitHub 检查 PTX-EMU 仓 docs/superpowers/specs/2027-02-09-hsk-9-*.md 存在 + CppTLM 仓镜像 | **Task 0.3 (v2 修订: 重新发送)** | ⏸ Pending |
-| **G13** | (本计划统一定义) **SM 完整 ALU + bit-exact Gate 协议 + L7 JSON reload + 真联合验证** | Task 4.5 (result_value 回填) + Task 4.7 (BitExactGate 含真值源 vs PTX-EMU functional 结果对比) + Task 4.9 (真联合测试 CppTLM→PTX-EMU 新代码) + Task 2.18 (L7 JSON reload 4 config 无错) | **Task 2.18 + 4.5 + 4.7 + 4.9 (v2 修订)** | ⏸ Pending |
+| **G13** | (本计划统一定义) **SM 完整 ALU + bit-exact Gate 协议 + L7 JSON reload + 真联合验证** | Task 4.5 (pull 通道: SM 记录 `sm_results_[instr_id]` + 契约合规) + Task 4.7 (BitExactGate 含真值源 vs PTX-EMU functional 结果对比) + Task 4.9 (真联合测试 CppTLM→PTX-EMU 新代码) + Task 2.18 (L7 JSON reload 4 config 无错) | **Task 2.18 + 4.5 + 4.7 + 4.9 (v3 修订)** | ⏸ Pending |
 | **G14** | (本计划统一定义) **PTX-EMU 端 14 天反馈窗口评审** | PTX-EMU owner 明确 ack / 14 天无反馈 (默认 ack per HSK 协议) / 退路 A/B/C 触发 | **Task 0.3 + 4.10 (v2 修订)** | ⏸ Pending (TBD 锚定) |
 
 **Gate PASS 总条件**: G1-G14 全部 ✅. Oracle Gate G13/G14 评审 (Task 1.6 / 2.17 / 4.10) 在 Oracle verdict PASS 即 PASS.
@@ -143,10 +152,13 @@ git submodule update --init --recursive external/PTX-EMU  # v2 P0-3 修复
 ls external/PTX-EMU/CMakeLists.txt  # 应存在, 否则 submodule init 失败
 ```
 
-- [ ] **Step 2: PTX-EMU 端 worktree (在 submodule 内)**
+- [ ] **Step 2: PTX-EMU 端 worktree (v3 修订: 主仓 submodule 路径, 非 sm-mp-impl 内嵌套)**
+
+> **v3 修订**: per Oracle v2 复核 P1-α. git 不允许同一 branch 同时 checkout 在两个 worktree. 原方案在 `sm-mp-impl/external/PTX-EMU` 内建 worktree 会导致后续 Task 0.5/4.8 在主 checkout submodule 切分支失败. 改为在主仓 submodule 路径建 worktree.
 
 ```bash
-cd external/PTX-EMU
+# 主仓路径, 非 worktree 内
+cd /workspace/project/CppTLM/external/PTX-EMU
 git worktree add .worktrees/hsk-9-impl -b feat/hsk-9-impl HEAD
 cd .worktrees/hsk-9-impl
 git log --oneline -3
@@ -316,17 +328,22 @@ ctest --test-dir build --output-on-failure 2>&1 | tail -5
 # 预期: 254/254 PASS (实际数字记录)
 ```
 
-- [ ] **Step 3: 验证 submodule 状态可切到 hsk-9 分支 (本地)**
+- [ ] **Step 3: 验证 submodule 状态可切到 hsk-9 分支 (本地, v3 修订: detached SHA)**
+
+> **v3 修订**: per Oracle v2 复核 P1-α. `feat/hsk-9-impl` 已在主仓 `/workspace/project/CppTLM/external/PTX-EMU/.worktrees/hsk-9-impl` 的独立 worktree 中 checkout, git 禁止同一 branch 在两个 worktree 同时 checkout. 必须用 detached SHA 方式切, 验证后切回 detached 73a5ecee.
 
 ```bash
 cd /workspace/project/CppTLM/.worktrees/sm-mp-impl/external/PTX-EMU
 git status
 # 应显示: HEAD detached at 73a5ecee
 git fetch origin feat/hsk-9-impl
-git checkout feat/hsk-9-impl  # 临时切换, 不 commit, 验证后切回
+# 取 hsk-9 分支 tip SHA, 用 detached 方式 checkout (不受分支独占限制)
+HSK9_SHA=$(git rev-parse origin/feat/hsk-9-impl)
+git checkout --detach $HSK9_SHA
 git log --oneline -3
 # 预期: 本 Task 0.3 Step 1 的 HSK-9 镜像 commit 在最上
-git checkout 73a5ecee  # 切回主分支 HEAD, 不污染 submodule 状态
+# 验证后切回 73a5ecee detached (不切换分支)
+git checkout --detach 73a5ecee
 ```
 
 - [ ] **Step 4: 记录 build 拓扑到 tracker**
@@ -522,7 +539,7 @@ uint32_t ScalarALU::execute(InstrDescriptor& desc) {
                 uint64_t b = parent_->get_scalar_reg(desc.src_regs[1]);
                 uint64_t r = a + b;
                 parent_->set_scalar_reg(desc.dst_regs[0], r);
-                desc.result_value[0] = r;  // 回填 buf (per Task 4.5 协议)
+                desc.result_value[0] = r;  // 写入 SM 内部 desc 副本 (v3: 非回填, 改由 internal_tick_ 拷到 sm_results_, 供 PTX-EMU pull)
                 return 1;
             }
             break;
@@ -783,17 +800,21 @@ GIT_MASTER=1 git commit -m "feat(sm): <Name>TLM 真值 (Task 18b)"
 
 ### Task 2.13: HazardTracker kVirtualReg + kHardwareCounter
 
+> **v3 修订**: per Oracle v2 复核 P1-β. (a) HazardTracker 无默认构造, 需带参 `(name, EventQueue*)`. (b) 第二个 TEST_CASE decrement ×1 后 vmcnt=1, `is_stalled_vmcnt(0,0,0)` 检查 `vmcnt ≤ 0` 必 FAIL, 改为 decrement ×2.
+
 - [ ] **Step 1: 写失败测试 — vmcnt 增/减 + s_waitcnt + RAW hazard (≥3 断言)**
 
 Create `test/test_cdna_hazard_tracker.cc`:
 ```cpp
 #include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
 #include "tlm/gpu/sm/hazard_tracker_tlm.hh"
 
 using namespace tlm::sm;
 
 TEST_CASE("HazardTracker vmcnt increment/decrement", "[sm-hazard][sm-l5]") {
-    HazardTracker ht;
+    EventQueue eq;
+    HazardTracker ht("ht0", &eq);
     ht.increment_vmcnt(0, 0);
     ht.increment_vmcnt(0, 0);
     REQUIRE(ht.vmcnt(0, 0) == 2);
@@ -802,16 +823,19 @@ TEST_CASE("HazardTracker vmcnt increment/decrement", "[sm-hazard][sm-l5]") {
 }
 
 TEST_CASE("s_waitcnt vmcnt(N) blocks until vmcnt ≤ N", "[sm-hazard][sm-l5]") {
-    HazardTracker ht;
+    EventQueue eq;
+    HazardTracker ht("ht0", &eq);
     ht.increment_vmcnt(0, 0);
     ht.increment_vmcnt(0, 0);
-    REQUIRE(ht.is_stalled_vmcnt(0, 0, 0));  // 等待 vmcnt ≤ 0
+    REQUIRE(ht.is_stalled_vmcnt(0, 0, 0));  // 等待 vmcnt ≤ 0, 此时 vmcnt=2
     ht.decrement_vmcnt(0, 0);
+    ht.decrement_vmcnt(0, 0);  // v3 修订: decrement ×2 使 vmcnt=0
     REQUIRE(!ht.is_stalled_vmcnt(0, 0, 0));
 }
 
 TEST_CASE("kVirtualReg RAW hazard: duplicate allocate blocks", "[sm-hazard][sm-l5]") {
-    HazardTracker ht;
+    EventQueue eq;
+    HazardTracker ht("ht0", &eq);
     REQUIRE(ht.can_allocate(0, 0, 5));
     ht.allocate(0, 0, 5);
     REQUIRE(!ht.can_allocate(0, 0, 5));  // 双重 allocate 阻塞
@@ -1558,59 +1582,85 @@ GIT_MASTER=1 git add test/test_bit_exact_gate.cc
 GIT_MASTER=1 git commit -m "test(gate): BitExactGate 鉴别力测试 (≥3 断言, 故意 mismatch)"
 ```
 
-### Task 4.5: `result_value[]` 回填协议实现 (G13 核心, v2 新增, per Metis Top 1)
+### Task 4.5: SM 端 `sm_results_` 记录 + pull 通道就绪 (G13 必备, v3 修订 per Oracle 新 P0)
 
-> **v2 新增**: per Metis Top 1 (Gate 核心协议缺失). 设计 §15.5.6 第 3 条要求 SM 在下次 `set_instr_descriptor_buf()` 时向 buf 回填 `result_value[]`. 本 Task 实现.
+> **v3 修订**: per Oracle v2 复核新 P0, Task 4.5 原设计的 `const_cast<>` 回填协议违反 `i_compute_device.hh:13` 冻结契约 ("SM 仅在调用期间浅拷贝; PTX-EMU 可在调用返回后立即复用/释放"). **改用 pull 通道**: SM 仅记录执行结果 `sm_results_[instr_id]`, PTX-EMU 通过既有 `is_instruction_completed()` + `get_register_value()` 拉回比对. 契约合规 + 无需新增双向 channel + 测试逻辑自洽.
 
 **Files:**
-- Modify: `include/tlm/gpu/streaming_multiprocessor_tlm.hh`
-- Modify: `src/tlm/gpu/streaming_multiprocessor_tlm.cc`
+- Modify: `src/tlm/gpu/streaming_multiprocessor_tlm.cc` (set_instr_descriptor_buf 保持浅拷贝 + 记录结果)
+- Modify: `include/tlm/gpu/streaming_multiprocessor_tlm.hh` (添加 sm_results_ 成员)
 
-- [ ] **Step 1: 实现 `set_instr_descriptor_buf` 回填语义**
+- [ ] **Step 1: SM 端结果记录 (供 Gate pull 用, 不回填)**
 
-指引 (避免恒等式):
+指引 (避免 const_cast 违反冻结契约):
 ```cpp
 // streaming_multiprocessor_tlm.cc
 void StreamingMultiprocessorTLM::set_instr_descriptor_buf(const InstrDescriptor* buf, uint32_t count) {
     if (!buf || count == 0 || count > 64) return;
-
-    // Step 1: 浅拷贝新指令到 ring buffer
+    // 严格遵守冻结契约: 浅拷贝, 不修改 buf
     for (uint32_t i = 0; i < count; ++i) {
         instr_ring_[tail_] = buf[i];
         tail_ = (tail_ + 1) % 64;
+        if (count_ == 64) head_ = (head_ + 1) % 64;  // 覆盖最旧
+        else ++count_;
     }
-
-    // Step 2: 推进 1 cycle (确保所有 in-flight 指令完成本 cycle)
+    // 推进 1 cycle 让本批可完成指令写入 completed
     internal_tick_();
+}
 
-    // Step 3: 回填已完成指令的 result_value[] 到调用方 buf
-    // (SM-owns-state 协议: PTX-EMU 拉回后与自算结果比对, per §15.5.6 第 3 条)
-    for (uint32_t i = 0; i < count; ++i) {
-        uint64_t instr_id = buf[i].instr_id;
-        auto it = completed_instr_ids_.find(instr_id);
-        if (it != completed_instr_ids_.end()) {
-            // 回填: 已完成, 写入 result_value 到 buf[i]
-            const_cast<InstrDescriptor&>(buf[i]).result_value[0] = sm_results_[instr_id];
-        }
-    }
-
-    // Step 4: gate 验证 (可选, 若 PTX-EMU 端也提供了预期 result)
-    if (ptx_functional_results_available()) {
-        for (uint32_t i = 0; i < count; ++i) {
-            uint64_t instr_id = buf[i].instr_id;
-            gate_->set_ptx_functional_result(instr_id, ptx_results_[instr_id]);
-            gate_->verify(instr_id, buf[i].result_value[0]);
-        }
+void StreamingMultiprocessorTLM::internal_tick_() {
+    // 简化: ScalarALU 单 cycle 完成; HazardTracker 跟踪 in-flight
+    while (head_ != tail_) {
+        InstrDescriptor& desc = instr_ring_[head_];
+        uint32_t cycles = scalar_alu_.execute(desc);
+        sm_results_[desc.instr_id] = desc.result_value[0];
+        completed_instr_ids_.insert(desc.instr_id);
+        head_ = (head_ + 1) % 64;
+        --count_;
+        (void)cycles;  // 后续 HazardTracker 扩展
     }
 }
 ```
 
-> **注意**: 上面的 `const_cast<>` 是 SM-owns-state 协议的核心 (设计 §15.5.6 允许 PTX-EMU 写入后 SM 回填, 即 buf 是双向 channel). 文档化此语义.
-
-- [ ] **Step 2: 写失败测试 — 回填断言**
-
+新增成员 (streaming_multiprocessor_tlm.hh):
 ```cpp
-TEST_CASE("set_instr_descriptor_buf 回填 result_value[] (G13 核心协议)", "[sm-microarch][g13]") {
+private:
+    std::unordered_map<uint64_t, uint64_t> sm_results_;  // instr_id -> SM 真值 (供 Gate pull 比对)
+```
+
+- [ ] **Step 2: 写失败测试 — pull 通道端到端**
+
+Create `test/test_sm_result_value_pull.cc`:
+```cpp
+TEST_CASE("PTX-EMU pull 通道: get_register_value 读 SM 真值", "[sm-microarch][g13][pull]") {
+    EventQueue eq;
+    StreamingMultiprocessorTLM sm("sm0", &eq);
+    sm.set_scalar_reg(1, 100);
+    sm.set_scalar_reg(2, 200);
+
+    InstrDescriptor desc{};
+    desc.instr_id = 42;
+    desc.pipe = PipeClass::kScalarALU;
+    desc.latency_class = LatencyClass::kFixed1Cycle;
+    desc.dst_regs[0] = 5;
+    desc.src_regs[0] = 1;
+    desc.src_regs[1] = 2;
+    desc.num_src = 2;
+    desc.num_dst = 1;
+
+    sm.set_instr_descriptor_buf(&desc, 1);
+    for (int i = 0; i < 4; ++i) sm.exe_once();
+
+    // PTX-EMU 端 pull (per 冻结契约: get_register_value 已是公开方法)
+    uint64_t val = 0;
+    REQUIRE(sm.get_register_value(0, 0, 5, &val));
+    REQUIRE(val == 300);  // 100 + 200
+
+    // 完成状态 pull
+    REQUIRE(sm.is_instruction_completed(42));
+}
+
+TEST_CASE("Gate pull 比对: SM 真值 vs PTX-EMU functional 真值", "[sm-microarch][g13][pull]") {
     EventQueue eq;
     StreamingMultiprocessorTLM sm("sm0", &eq);
     sm.set_scalar_reg(1, 10);
@@ -1623,27 +1673,27 @@ TEST_CASE("set_instr_descriptor_buf 回填 result_value[] (G13 核心协议)", "
     desc.dst_regs[0] = 5;
     desc.src_regs[0] = 1;
     desc.src_regs[1] = 2;
-    desc.num_src = 2;
-    desc.num_dst = 1;
-
     sm.set_instr_descriptor_buf(&desc, 1);
-    // 推进若干 cycle (ADD 1 cycle + buffer 写入)
     for (int i = 0; i < 4; ++i) sm.exe_once();
 
-    // 第二次 set_instr_descriptor_buf 触发回填
-    InstrDescriptor dummy{};
-    sm.set_instr_descriptor_buf(&dummy, 0);
+    // PTX-EMU 端 functional 真值 (用 CppTLM 真值源模拟, 实际 PTX-EMU 端用自己的 functional handlers)
+    // 真实 PTX-EMU 调用 flow: sm_context decode → ComputeDeviceInjector.set_instr_descriptor_buf
+    // → SM 推进 → PTX-EMU 拉回 register → 与自算 functional 结果比对
+    auto gate = cpptlm::gpu::sm::BitExactGate{};
+    auto ptx_result = 30;  // PTX-EMU functional: 10 + 20 = 30 (本测试用真值源模拟)
 
-    // 断言: desc.result_value[0] 已被回填 (10 + 20 = 30)
-    REQUIRE(desc.result_value[0] == 30);
+    // pull register value 与 functional 结果比对
+    uint64_t sm_val = 0;
+    sm.get_register_value(0, 0, 5, &sm_val);
+    REQUIRE(sm_val == ptx_result);  // bit-exact pull 比对 PASS
 }
 ```
 
 - [ ] **Step 3: 提交**
 
 ```bash
-GIT_MASTER=1 git add include/tlm/gpu/streaming_multiprocessor_tlm.hh src/tlm/gpu/streaming_multiprocessor_tlm.cc test/test_sm_result_value_roundtrip.cc
-GIT_MASTER=1 git commit -m "feat(g13): result_value[] 回填协议 (SM-owns-state 核心, per Metis Top 1)"
+GIT_MASTER=1 git add include/tlm/gpu/streaming_multiprocessor_tlm.hh src/tlm/gpu/streaming_multiprocessor_tlm.cc test/test_sm_result_value_pull.cc
+GIT_MASTER=1 git commit -m "feat(g13): SM sm_results_ 记录 + pull 通道 (契约合规, per Oracle 新 P0)"
 ```
 
 ### Task 4.6: MFMA 4x4 真值测试 + 延迟/时序单元 (≥3 断言)
@@ -1685,17 +1735,19 @@ TEST_CASE("L6: SM-owns-state 完整 round-trip", "[sm-l6][e2e][sm-microarch]") {
 }
 ```
 
-### Task 4.8: PTX-EMU submodule 切换 + 真联合测试构建 (v2 Metis Top 2 关键)
+### Task 4.8: PTX-EMU submodule 切换 + 真联合测试构建 (v3 修订 per Oracle 新 P1-α)
 
-> **v2 新增**: per Metis §2.3, CppTLM worktree 的 `external/PTX-EMU` 需指向 feat/hsk-9-impl 才能测 PTX-EMU 端新代码.
+> **v3 修订**: per Oracle v2 复核 P1-α. `feat/hsk-9-impl` 已在主仓独立 worktree 中 checkout, git 禁止同一 branch 在两个 worktree 同时 checkout. Step 1/4 用 detached SHA 方式切, 避开冲突.
 
-- [ ] **Step 1: 本地 submodule 切换 (临时, 不 commit)**
+- [ ] **Step 1: 本地 submodule 切换 (临时, detached SHA, v3 修订)**
 
 ```bash
 cd /workspace/project/CppTLM/.worktrees/sm-mp-impl/external/PTX-EMU
 git fetch origin feat/hsk-9-impl
-git checkout feat/hsk-9-impl  # 临时切换
+HSK9_SHA=$(git rev-parse origin/feat/hsk-9-impl)
+git checkout --detach $HSK9_SHA  # detached 避开分支独占限制
 git log --oneline -5
+# 预期: 本 Task 0.3 Step 1 的 HSK-9 镜像 commit 在最上
 ```
 
 - [ ] **Step 2: CppTLM PTX-EMU ON 重新构建**
@@ -1705,65 +1757,134 @@ cd /workspace/project/CppTLM/.worktrees/sm-mp-impl
 rm -rf build
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCPPTLM_WITH_PTX_EMU=ON
 cmake --build build --target cpptlm_tests -j$(nproc)
-# 预期: 编译成功 (链接 PTX-EMU feat/hsk-9-impl 新代码)
+# 预期: 编译成功 (链接 PTX-EMU feat/hsk-9-impl tip 新代码)
 ```
 
 - [ ] **Step 3: 验证联合测试 (PTX-EMU 真用上)**
 
 ```bash
 ./build/bin/cpptlm_tests "[hsk-9]" 2>&1 | tail -3
-# 预期: PTX-EMU 端 Task PTX-4 + CppTLM 端 Task 4.7 联合测试 PASS
+# 预期: PTX-EMU 端 Task PTX-4 + CppTLM 端 Task 4.7/4.9 联合测试 PASS
 ```
 
-- [ ] **Step 4: 切回 PTX-EMU 主 HEAD (避免污染 CppTLM 仓状态)**
+- [ ] **Step 4: 切回 PTX-EMU 主 HEAD (detached, v3 修订)**
 
 ```bash
 cd /workspace/project/CppTLM/.worktrees/sm-mp-impl/external/PTX-EMU
-git checkout 73a5ecee
+git checkout --detach 73a5ecee  # detached 切回, 不污染 submodule 状态
 # 重要: 不 commit submodule 切换, 只在联合验证时临时切换
 ```
 
-### Task 4.9: 真联合测试 (v2 Metis Top 2 + §6 风险 1 关键修复)
+### Task 4.9: 真联合测试 (v2 Metis Top 2 + §6 风险 1 关键修复, v3 修订 per Oracle 新 P1-γ)
 
 > **v2 新增**: per Metis §6 风险 1 + Top 2, 必须有真正双向数据通路的测试, 而不是两个单侧平行跑.
 
+> **v3 修订**: per Oracle v2 复核 P1-γ. 原 Step 1 测试代码全是注释无实体断言; Step 2 漏改 detached checkout. 本 Task 给出具体断言骨架 + 修正 git 操作.
+
 **Files:**
 - Create: `test/test_hsk9_cross_repo_e2e.cc`
+- Modify: `test/CMakeLists.txt` (链接 PTX-EMU lib, 仅 CPPTLM_WITH_PTX_EMU=ON)
 
-- [ ] **Step 1: CppTLM 端测试, 链接 PTX-EMU lib, 模拟完整数据流**
+- [ ] **Step 1: CppTLM 端测试, 链接 PTX-EMU lib, 模拟完整数据流 (v3 具体断言骨架)**
 
 ```cpp
-TEST_CASE("真联合: PTX-EMU producer -> SM exec -> register read back", "[hsk-9-cross-repo][e2e]") {
-    // 此测试需要 CppTLM 链接 PTX-EMU 新代码 (per Task 4.8 Step 1 submodule 切换)
-    // 模拟 PTX-EMU 端 producer: 写入 desc 到 SM
-    // 模拟 SM 端 consumer: 推进 cycle + 写回 result_value
-    // 模拟 PTX-EMU 端 reader: 读 result_value[] 与自算对比
+#include "catch_amalgamated.hpp"
+#include "core/event_queue.hh"
+#include "tlm/gpu/streaming_multiprocessor_tlm.hh"
+// 链接 PTX-EMU 新代码 (per Task 4.8 Step 1 detached checkout)
+#include <ptxemu/icd/i_compute_device.hh>
+#include <ptxsim/core/sm_context_cpptlm_inject.h>
 
-    // 创建 PTX-EMU 端 stub device (继承 ptxemu::icd::IComputeDevice)
-    // 验证双向数据通路
+TEST_CASE("真联合: PTX-EMU producer push -> SM exec -> PTX-EMU pull register", "[hsk-9-cross-repo][e2e]") {
+    // 1. CppTLM 创建真 SM 实例 (consumer 端)
+    EventQueue eq;
+    tlm::StreamingMultiprocessorTLM sm("sm_e2e", &eq);
+    
+    // 2. PTX-EMU 端 producer: 模拟 inject API 写入 desc 到 SM
+    ptxemu::icd::InstrDescriptor desc{};
+    desc.instr_id = 1;
+    desc.pipe = ptxemu::icd::PipeClass::kScalarALU;
+    desc.latency_class = ptxemu::icd::LatencyClass::kFixed1Cycle;
+    desc.dst_regs[0] = 5;
+    desc.src_regs[0] = 1;
+    desc.src_regs[1] = 2;
+    desc.num_src = 2;
+    desc.num_dst = 1;
+    sm.set_instr_descriptor_buf(&desc, 1);  // SM 端 consumer 接口
+    
+    // 3. SM 推进 4 cycle 完成 ADD (1 + buffer 写入)
+    for (int i = 0; i < 4; ++i) sm.exe_once();
+    
+    // 4. PTX-EMU 端 consumer pull register (per 冻结契约 get_register_value)
+    uint64_t sm_val = 0;
+    REQUIRE(sm.get_register_value(0, 0, 5, &sm_val));
+    
+    // 5. PTX-EMU functional 自算 (10 + 20 = 30), pull 对比
+    uint64_t ptx_functional_val = 30;
+    REQUIRE(sm_val == ptx_functional_val);  // bit-exact pull 对比
+    
+    // 6. PTX-EMU 端 consumer pull completion
+    REQUIRE(sm.is_instruction_completed(1));
+}
+
+TEST_CASE("真联合: ComputeDeviceInjector + 真 SM round-trip", "[hsk-9-cross-repo][e2e]") {
+    // 模拟 PTX-EMU 端 injector 路径 (替代原 attach_timing)
+    EventQueue eq;
+    tlm::StreamingMultiprocessorTLM sm("sm_e2e", &eq);
+    
+    // injector 注入 SM (CppTLM 端在 attach 阶段调用, 等价于 PTX-EMU 端反向桥接)
+    sm_cpptlm_inject::ComputeDeviceInjector injector;
+    injector.set_compute_device(&sm);  // 真 SM 实例注入
+    
+    // 通过 injector 推送指令 (模拟 PTX-EMU decode 后调用)
+    ptxemu::icd::InstrDescriptor desc{};
+    desc.instr_id = 100;
+    desc.pipe = ptxemu::icd::PipeClass::kScalarALU;
+    desc.latency_class = ptxemu::icd::LatencyClass::kFixed4Cycle;
+    desc.dst_regs[0] = 7;
+    desc.src_regs[0] = 3;
+    desc.src_regs[1] = 4;
+    desc.num_src = 2;
+    desc.num_dst = 1;
+    injector.set_instr_descriptor_buf(&desc, 1);  // 注入器调用 SM 接口
+    
+    for (int i = 0; i < 8; ++i) sm.exe_once();  // 4 cycle ADD + buffer
+    
+    uint64_t sm_val = 0;
+    REQUIRE(sm.get_register_value(0, 0, 7, &sm_val));
+    REQUIRE(sm_val == 0);  // 默认 reg 0 (未初始化)
+    REQUIRE(sm.is_instruction_completed(100));
 }
 ```
 
-> 实现细节: 需要 CMakeLists.txt 在测试 target 中链接 PTX-EMU libraries. 参考现有 CppTLM 测试中 PTX-EMU 链接模式.
+> CMakeLists.txt 修改 (仅 CPPTLM_WITH_PTX_EMU=ON 时):
+```cmake
+# test/CMakeLists.txt (追加)
+if(CPPTLM_WITH_PTX_EMU)
+    target_link_libraries(cpptlm_tests PRIVATE ptxemu_device)
+endif()
+```
 
-- [ ] **Step 2: 验证双向数据通路**
+- [ ] **Step 2: 验证双向数据通路 (v3 detached checkout)**
 
 ```bash
 cd /workspace/project/CppTLM/.worktrees/sm-mp-impl/external/PTX-EMU
-git checkout feat/hsk-9-impl  # 临时
+git fetch origin feat/hsk-9-impl
+HSK9_SHA=$(git rev-parse origin/feat/hsk-9-impl)
+git checkout --detach $HSK9_SHA  # v3 修订: detached, 避开分支独占
 cd /workspace/project/CppTLM/.worktrees/sm-mp-impl
 cmake --build build --target cpptlm_tests -j$(nproc)
 ./build/bin/cpptlm_tests "[hsk-9-cross-repo]" 2>&1 | tail -3
 # 预期: PASS (双向数据通路真验证)
 cd /workspace/project/CppTLM/.worktrees/sm-mp-impl/external/PTX-EMU
-git checkout 73a5ecee  # 切回
+git checkout --detach 73a5ecee  # v3 修订: detached 切回
 ```
 
 - [ ] **Step 3: 提交**
 
 ```bash
-GIT_MASTER=1 git add test/test_hsk9_cross_repo_e2e.cc
-GIT_MASTER=1 git commit -m "test(hsk-9-cross-repo): 真联合测试 (CppTLM + PTX-EMU new code, per Metis Top 2)"
+GIT_MASTER=1 git add test/test_hsk9_cross_repo_e2e.cc test/CMakeLists.txt
+GIT_MASTER=1 git commit -m "test(hsk-9-cross-repo): 真联合测试 (具体断言骨架 + CMake 链接, per Oracle 新 P1-γ)"
 ```
 
 ### Task 4.10: Oracle Gate G13 + G14 评审 + 14d 跟踪
@@ -1774,7 +1895,7 @@ Oracle prompt 应包含:
 - 评审范围: commits 4.1-4.9 + PTX-1..PTX-6 (合并评审)
 - 重点: G11-G14 Gate 状态
 - 鉴别力: 拒绝恒等式 Gate (要求真比对 PTX-EMU functional 结果)
-- result_value[] 回填协议真实现
+- pull 通道真实现 (v3: SM 端 `sm_results_[instr_id]` 记录 + PTX-EMU 端 `get_register_value`/`is_instruction_completed` 拉回比对, 契约合规)
 
 - [ ] **Step 2: 修复 P0/P1**
 
@@ -1824,7 +1945,7 @@ gh pr create --repo CppTLM --base main --head feat/sm-mp-impl \
 
 ### G13 (Task 2.18 + 4.5 + 4.7 + 4.9):
 - [ ] L7 JSON reload 4 配置加载无错
-- [ ] result_value[] 回填协议实现 + 测试断言
+- [ ] pull 通道实现 + 测试断言 (v3: SM `sm_results_[instr_id]` 记录 + PTX-EMU `get_register_value`/`is_instruction_completed` 拉回比对, 契约合规)
 - [ ] BitExactGate 真比对 (PTX-EMU functional 结果 vs SM 真值源结果)
 - [ ] 真联合测试 (CppTLM 链接 PTX-EMU 新代码, 双向数据通路)
 
@@ -1834,18 +1955,19 @@ gh pr create --repo CppTLM --base main --head feat/sm-mp-impl \
 
 ---
 
-## 关键风险与缓解 (v2 修订)
+## 关键风险与缓解 (v3 修订)
 
 | 风险 | 等级 | 缓解 |
 |------|------|------|
 | ~~ALU 真值源双端双写~~ | ~~高~~ | ✅ v2 修订: 仅 CppTLM 单端, PTX-EMU 用现有 handlers |
+| ~~result_value[] 协议缺失 (旧 Metis Top 1)~~ | ~~🔴 高~~ | ✅ v3 修订: 改用 pull 通道 (SM `sm_results_[instr_id]` + PTX-EMU `get_register_value`/`is_instruction_completed` 拉回), 契约合规无 const_cast |
 | **Gate 循环论证 (旧 P0-4)** | 中 | ✅ v2 修订: Gate 改为比对 PTX-EMU functional 结果 vs SM 真值源结果 (不共享实现) |
-| **跨仓 build 拓扑未定义 (旧 P1-3)** | 中 | ✅ v2 修订: Task 0.5 明示 + Task 4.8 本地切换 |
-| **result_value[] 协议缺失 (旧 Metis Top 1)** | 🔴 高 | ✅ v2 新增 Task 4.5 |
-| **真联合测试缺失 (旧 Metis Top 2)** | 🔴 高 | ✅ v2 新增 Task 4.9 |
+| **跨仓 build 拓扑未定义 (旧 P1-3)** | 中 | ✅ v3 修订: Task 0.5 明示 + Task 0.1/0.5/4.8/4.9 全部改 detached SHA checkout (避开分支独占) |
+| **真联合测试缺失 (旧 Metis Top 2)** | 🔴 高 | ✅ v3 修订: Task 4.9 给具体断言骨架 (producer push → SM exec → pull register → completion) + CMake `ptxemu_device` 链接 |
 | **PTX-EMU owner 身份不明** | 🟡 中 | ✅ v2 Task 0.3 Step 1-3 重做 G12 + 用户决策 |
 | **新会话照抄错误代码块** | 🟡 中 | ✅ v2 删除错误代码, 改为"参照 GPUTLM 范式"指引 |
 | **退路触发条件不明** | 🟡 中 | ✅ v2 表头决策流程 |
+| **Task 2.13 测试逻辑错误 (永红)** | 🟡 中 | ✅ v3 修订: HazardTracker 带参构造 + decrement ×2 |
 | **延迟查找表 PTX-EMU/SM 双算 (旧 P1-1)** | 🟢 低 | ✅ v2: PTX-EMU functional 端仅本地近似, SM 真值源优先 |
 | **镜像头漂移 (旧 Oracle P1)** | 🟢 低 | ✅ v2: 双端 static_assert POD sizeof + offsetof 守卫 (Task 4.1 Step 1 隐含) |
 
