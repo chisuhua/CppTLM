@@ -246,3 +246,45 @@ b70eb0a docs(specs) Task 1.1 follow-up P1 watch
 | Task 1.4 (G8) | 44519 | 1238 | +6/+2 |
 | Task 1.5 | 44519 | 1238 | 0/0 (架构升级, 无回归) |
 | **子波 1 完成态** | **44519** | **1238** | **+21/+6** |
+
+## Oracle P2 跟踪项 (子波 2 启动前补, per Oracle APPROVE-WITH-FIXES)
+
+Per Oracle 复审子波 1 (session ses_f8753c360ffepoeFV044s4tkSs):
+- Oracle verdict: APPROVE-WITH-FIXES
+- P1-1 (IMAD 测试) ✅ commit e1694a7 (本节)
+- P1-2 (initialize 期望修复) ✅ commit 2676049 (Task 1.3 已含)
+- **P2 修补项 5 项** (子波 2 启动前补, 跟踪如下):
+
+### P2-1: ring buffer 满覆盖测试
+- 测试: set_instr_descriptor_buf 注入 70 条 instr (超 64 限制)
+- 期望: ring buffer 覆盖最旧 6 条 (ring_count_=64, head/tail 推进)
+- 关联: Task 1.5 ring buffer 升级 (commit 8110770)
+- 状态: ⏸ 跟踪项
+
+### P2-2: is_instruction_completed 负测试
+- 测试: 未注入 instr, 调 is_instruction_completed(99)
+- 期望: return false (completed_instr_ids_ 空集)
+- 关联: Gate G8 真值
+- 状态: ⏸ 跟踪项
+
+### P2-3: 非 kScalarALU 指令丢弃文档化
+- 文档: SM.exe_once() 当前只处理 kScalarALU desc, 其他 pipe (VectorALU/MatrixCore/SIMTLane/LsuGlobal/LsuLDS/Branch) 静默丢弃且永不标记 completed_instr_ids_
+- 风险: PTX-EMU 注入非 ScalarALU 指令会 spin 死循环 (is_instruction_completed 永 false)
+- 缓解: HSK-9 §3 协议明确 + PTX-EMU 端 guard
+- 状态: ⏸ 跟踪项
+
+### P2-4: exe_once cycles 语义对齐
+- 当前: ScalarALU::execute(IMAD) 返回 4 cycles, 但 SM.exe_once() 不消耗 cycles, 每次只 consume ring buffer front 1 cycle
+- 风险: HazardTracker (Task 2.13) 上线后 cycle 计数失真
+- 缓解: Task 2.13 HazardTracker 实施前对齐 cycles 语义 (returns ScalarALU 实际 cycles, 多 cycle desc 保留在 ring buffer 多 cycle)
+- 状态: ⏸ 跟踪项
+
+### P2-5: G6 原始 P1-1 F12b 接线真验证
+- 当前: SM.tick() 仍空 (Task 4 stub), F12b 接线真验证未做
+- 关联: Task 1.2 Gate G6 原始意图 (F12b smoke)
+- 状态: ⏸ 跟踪项, 留子波 2 (tick() 协调 12 子模块时再补)
+
+### 子波 2 启动条件 (Oracle 评审后)
+- ✅ Oracle 复审子波 1 PASS (含 P1-1 IMAD 测试)
+- ⏸ Oracle P2 修补项 5 项 (子波 2 启动决策: A.立即启动 + P2 在子波 2 内部补 | B.P2 修补完再启动)
+- 子波 2 内容: Task 2.1-2.11 (VectorALU/MatrixCore/SIMTLane/LsuGlobal/LsuLDS/WritebackUnit/HazardTracker + RegFileUnit 真值迁移)
