@@ -24,9 +24,11 @@
 #include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include "tlm/gpu/i_compute_device.hh"
+#include "bundles/compute_bundles_tlm.hh"
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 namespace tlm::sm {
 
@@ -142,6 +144,22 @@ public:
     std::string get_module_type() const override { return "StreamingMultiprocessorTLM"; }
     void set_stream_adapter(cpptlm::StreamAdapterBase* adapter) override;
 
+    // === 4 端口访问器 (GPUTLM 范式, per include/tlm/gpu/gpu_tlm.hh:177-189) ===
+    // StreamAdapter::tick() 契约要求 ModuleT 提供 req_out()/resp_in() (master 方向)
+    // + req_in()/resp_out() (slave 方向), 全部 4 方向 (per plan Task 1.1 v2 P0-1 修订)
+    cpptlm::OutputStreamAdapter<bundles::ComputeReqBundle>&  req_out()  { return req_out_;  }
+    cpptlm::InputStreamAdapter<bundles::ComputeRespBundle>&   resp_in()  { return resp_in_;  }
+    cpptlm::InputStreamAdapter<bundles::ComputeReqBundle>&    req_in()   { return req_in_;   }
+    cpptlm::OutputStreamAdapter<bundles::ComputeRespBundle>&  resp_out() { return resp_out_; }
+
+    // === get/set_scalar_reg (per Oracle P1-7, Task 1.3 依赖) ===
+    // interim 真值源, Task 2.11 须迁移到 RegFileUnit. 见 plan Task 1.1 Step 3.
+    void set_scalar_reg(uint32_t reg_id, uint64_t value) { scalar_regs_[reg_id] = value; }
+    uint64_t get_scalar_reg(uint32_t reg_id) const {
+        auto it = scalar_regs_.find(reg_id);
+        return it != scalar_regs_.end() ? it->second : 0;
+    }
+
     // === IComputeDevice 15 方法 stub (Task 18 完整实现) ===
     // 11 preserved
     bool initialize(const cpptlm::gpu::DeviceConfig& cfg) override { (void)cfg; return false; }
@@ -201,6 +219,16 @@ private:
     std::unique_ptr<sm::RegFileUnit>      rf_;
     std::unique_ptr<sm::WritebackUnit>    wb_;
     std::unique_ptr<sm::HazardTracker>    ht_;
+
+    // === 4 适配器成员 (GPUTLM 范式, per include/tlm/gpu/gpu_tlm.hh:28-29) ===
+    cpptlm::OutputStreamAdapter<bundles::ComputeReqBundle>   req_out_;
+    cpptlm::InputStreamAdapter<bundles::ComputeRespBundle>    resp_in_;
+    cpptlm::InputStreamAdapter<bundles::ComputeReqBundle>     req_in_;
+    cpptlm::OutputStreamAdapter<bundles::ComputeRespBundle>  resp_out_;
+
+    // === scalar_regs_ (per Oracle P1-7 Task 1.3 依赖, interim 真值源) ===
+    // Task 2.11 须迁移到 RegFileUnit
+    std::unordered_map<uint32_t, uint64_t> scalar_regs_;
 
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
 };
