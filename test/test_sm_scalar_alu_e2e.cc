@@ -25,7 +25,7 @@ TEST_CASE("ScalarALU ADD: reg 1 + reg 2 → reg 5 (round-trip via IComputeDevice
     EventQueue eq;
     StreamingMultiprocessorTLM sm("sm0", &eq);
     DeviceConfig cfg{};
-    REQUIRE(sm.initialize(cfg));  // Task 1.3 真值
+    REQUIRE(sm.initialize(cfg)); // Task 1.3 真值
     sm.set_scalar_reg(1, 100);
     sm.set_scalar_reg(2, 200);
 
@@ -34,11 +34,11 @@ TEST_CASE("ScalarALU ADD: reg 1 + reg 2 → reg 5 (round-trip via IComputeDevice
     desc.pipe = PipeClass::kScalarALU;
     desc.latency_class = LatencyClass::kFixed1Cycle;
     desc.dst_regs[0] = 5;
-    desc.src_regs[0] = 1;  // 寄存器号 (语义统一 per Oracle P0-4)
+    desc.src_regs[0] = 1; // 寄存器号 (语义统一 per Oracle P0-4)
     desc.src_regs[1] = 2;
     desc.num_src = 2;
     desc.num_dst = 1;
-    sm.set_instr_descriptor_buf(&desc, 1);  // 浅拷贝 internal_buf_
+    sm.set_instr_descriptor_buf(&desc, 1); // 浅拷贝 internal_buf_
 
     // 推进 4 cycle (ADD 1 cycle, 留 buffer 写入 + Result 收集)
     for (int i = 0; i < 4; ++i) {
@@ -47,5 +47,5 @@ TEST_CASE("ScalarALU ADD: reg 1 + reg 2 → reg 5 (round-trip via IComputeDevice
 
     uint64_t val = 0;
     REQUIRE(sm.get_register_value(0, 0, 5, &val));
-    REQUIRE(val == 300);  // 100 + 200
+    REQUIRE(val == 300); // 100 + 200
 }

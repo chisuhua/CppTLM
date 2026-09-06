@@ -15,37 +15,37 @@
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh"
 
 namespace cpptlm {
-namespace gpu {
+    namespace gpu {
 
-uint32_t ScalarALU::execute(InstrDescriptor& desc) {
-    switch (desc.latency_class) {
-        case LatencyClass::kFixed1Cycle:
-            // ADD: dst = src[0] + src[1]
-            if (desc.num_dst >= 1 && desc.num_src >= 2) {
-                uint64_t a = parent_->get_scalar_reg(desc.src_regs[0]);
-                uint64_t b = parent_->get_scalar_reg(desc.src_regs[1]);
-                uint64_t r = a + b;
-                parent_->set_scalar_reg(desc.dst_regs[0], r);
-                desc.result_value[0] = r;
-                return 1;
+        uint32_t ScalarALU::execute(InstrDescriptor& desc) {
+            switch (desc.latency_class) {
+            case LatencyClass::kFixed1Cycle:
+                // ADD: dst = src[0] + src[1]
+                if (desc.num_dst >= 1 && desc.num_src >= 2) {
+                    uint64_t a = parent_->get_scalar_reg(desc.src_regs[0]);
+                    uint64_t b = parent_->get_scalar_reg(desc.src_regs[1]);
+                    uint64_t r = a + b;
+                    parent_->set_scalar_reg(desc.dst_regs[0], r);
+                    desc.result_value[0] = r;
+                    return 1;
+                }
+                break;
+            case LatencyClass::kFixed4Cycle:
+                // IMAD: dst = src[0] * src[1] (简化版)
+                if (desc.num_dst >= 1 && desc.num_src >= 2) {
+                    uint64_t a = parent_->get_scalar_reg(desc.src_regs[0]);
+                    uint64_t b = parent_->get_scalar_reg(desc.src_regs[1]);
+                    uint64_t r = a * b;
+                    parent_->set_scalar_reg(desc.dst_regs[0], r);
+                    desc.result_value[0] = r;
+                    return 4;
+                }
+                break;
+            default:
+                return 0;
             }
-            break;
-        case LatencyClass::kFixed4Cycle:
-            // IMAD: dst = src[0] * src[1] (简化版)
-            if (desc.num_dst >= 1 && desc.num_src >= 2) {
-                uint64_t a = parent_->get_scalar_reg(desc.src_regs[0]);
-                uint64_t b = parent_->get_scalar_reg(desc.src_regs[1]);
-                uint64_t r = a * b;
-                parent_->set_scalar_reg(desc.dst_regs[0], r);
-                desc.result_value[0] = r;
-                return 4;
-            }
-            break;
-        default:
             return 0;
-    }
-    return 0;
-}
+        }
 
-}  // namespace gpu
-}  // namespace cpptlm
+    } // namespace gpu
+} // namespace cpptlm

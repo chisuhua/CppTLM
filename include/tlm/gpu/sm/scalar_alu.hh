@@ -24,24 +24,25 @@
 #include <cstdint>
 
 namespace tlm {
-class StreamingMultiprocessorTLM;  // 前向声明 (SM 实际 namespace)
+    class StreamingMultiprocessorTLM; // 前向声明 (SM 实际 namespace)
 }
 
 namespace cpptlm {
-namespace gpu {
+    namespace gpu {
 
-class ScalarALU {
-public:
-    explicit ScalarALU(::tlm::StreamingMultiprocessorTLM* parent) : parent_(parent) {}
+        class ScalarALU {
+        public:
+            explicit ScalarALU(::tlm::StreamingMultiprocessorTLM* parent) : parent_(parent) {
+            }
 
-    // execute: 真值计算, 返回 cycles 占用 (1 / 4 / 0=不支持)
-    uint32_t execute(InstrDescriptor& desc);
+            // execute: 真值计算, 返回 cycles 占用 (1 / 4 / 0=不支持)
+            uint32_t execute(InstrDescriptor& desc);
 
-private:
-    ::tlm::StreamingMultiprocessorTLM* parent_;
-};
+        private:
+            ::tlm::StreamingMultiprocessorTLM* parent_;
+        };
 
-}  // namespace gpu
-}  // namespace cpptlm
+    } // namespace gpu
+} // namespace cpptlm
 
-#endif  // TLM_GPU_SM_SCALAR_ALU_HH
+#endif // TLM_GPU_SM_SCALAR_ALU_HH

@@ -58,7 +58,8 @@ TEST_CASE("is_instruction_completed returns true after instr_id consumed",
     sm.set_scalar_reg(2, 200);
     sm.set_instr_descriptor_buf(&desc, 1);
 
-    for (int i = 0; i < 4; ++i) sm.exe_once();
+    for (int i = 0; i < 4; ++i)
+        sm.exe_once();
 
     REQUIRE(sm.is_instruction_completed(42));
 }

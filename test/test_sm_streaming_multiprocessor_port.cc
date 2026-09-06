@@ -14,8 +14,8 @@
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "framework/chstream_adapter_factory.hh"
-#include "tlm/gpu/streaming_multiprocessor_tlm.hh"
 #include "framework/stream_adapter.hh"
+#include "tlm/gpu/streaming_multiprocessor_tlm.hh"
 
 using namespace tlm;
 
@@ -24,10 +24,10 @@ TEST_CASE("StreamingMultiprocessorTLM has 4 port accessors (GPUTLM pattern)",
     EventQueue eq;
     StreamingMultiprocessorTLM sm("sm0", &eq);
     // 4 访问器存在性 (per StreamAdapter 契约, framework/stream_adapter.hh:186)
-    REQUIRE_NOTHROW(sm.req_out());    // OutputStreamAdapter<ComputeReqBundle>
-    REQUIRE_NOTHROW(sm.resp_in());    // InputStreamAdapter<ComputeRespBundle>
-    REQUIRE_NOTHROW(sm.req_in());     // InputStreamAdapter<ComputeReqBundle> (static dummy)
-    REQUIRE_NOTHROW(sm.resp_out());   // OutputStreamAdapter<ComputeRespBundle> (static dummy)
+    REQUIRE_NOTHROW(sm.req_out());  // OutputStreamAdapter<ComputeReqBundle>
+    REQUIRE_NOTHROW(sm.resp_in());  // InputStreamAdapter<ComputeRespBundle>
+    REQUIRE_NOTHROW(sm.req_in());   // InputStreamAdapter<ComputeReqBundle> (static dummy)
+    REQUIRE_NOTHROW(sm.resp_out()); // OutputStreamAdapter<ComputeRespBundle> (static dummy)
 
     // P1 修复 (Oracle §6 引用恒等性): req_out/resp_in 是真实成员,
     // 每次调用应返回同一引用 (避免 dummy 互换错误)
@@ -42,7 +42,7 @@ TEST_CASE("StreamingMultiprocessorTLM get/set_scalar_reg (Task 1.3 依赖)",
     // Oracle P1-7 Task 1.3 依赖: get/set_scalar_reg 提前声明
     REQUIRE_NOTHROW(sm.set_scalar_reg(0, 0xCAFE));
     REQUIRE(sm.get_scalar_reg(0) == 0xCAFE);
-    REQUIRE(sm.get_scalar_reg(999) == 0);  // 未设置返回 0
+    REQUIRE(sm.get_scalar_reg(999) == 0); // 未设置返回 0
     sm.set_scalar_reg(0, 0xDEADBEEF);
     REQUIRE(sm.get_scalar_reg(0) == 0xDEADBEEF);
 }
