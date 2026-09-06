@@ -30,6 +30,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace tlm::sm {
@@ -176,6 +177,8 @@ public:
         auto& desc = internal_buf_.front();
         if (desc.pipe == cpptlm::gpu::PipeClass::kScalarALU) {
             scalar_alu_->execute(desc);
+            // Task 1.4 P1-4: ScalarALU 完成后, 标记 instr_id 已完成 (per HSK-9 §3 is_instruction_completed 协议)
+            completed_instr_ids_.insert(desc.instr_id);
         }
         internal_buf_.erase(internal_buf_.begin());
         return 1;
@@ -217,7 +220,8 @@ public:
         return true;
     }
     bool is_instruction_completed(uint64_t instr_id) override {
-        (void)instr_id; return false;
+        // Task 1.4 P1-4: 已完成 instr_id 集合 (per HSK-9 §3 协议)
+        return completed_instr_ids_.count(instr_id) > 0;
     }
     // 1 reset
     // Per Oracle P0-2 Task 8 review: IComputeDevice::reset() 与 SimObject::reset(const ResetConfig&)
@@ -260,6 +264,8 @@ private:
     std::unique_ptr<cpptlm::gpu::ScalarALU> scalar_alu_;
     // 浅拷贝 PTX-EMU 注入的 InstrDescriptor buf (per HSK-9 §3 buf 内存所有权语义)
     std::vector<cpptlm::gpu::InstrDescriptor> internal_buf_;
+    // Task 1.4 P1-4: 已完成 instr_id 集合 (ScalarALU.execute 后 insert, is_instruction_completed 查)
+    std::unordered_set<uint64_t> completed_instr_ids_;
 
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
 };
