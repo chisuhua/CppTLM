@@ -18,7 +18,7 @@
 |------|------|----------|
 | CppTLM 端 HSK-9 spec Active (原) | 2027-02-09 | `c656222` (feat(adr): 正式发布 HSK-9 ICOMPUTE_API_VERSION=1 SM 重构版) |
 | CppTLM 端 SM 重构 §15.10 Gate 通过 | 2027-02-09 | `b369aa8` + `ac95fb7` |
-| **PR 创建 (PTX-EMU 端 14d 窗口起点)** | TBD (Task 0.3.6 push 后回填) | TBD (PR 编号) |
+| **PR 创建 (PTX-EMU 端 14d 窗口起点)** | 2026-09-06 | TBD (PR 编号) |
 | **窗口关闭 (PR 创建 + 14d)** | TBD | — |
 | **PR merge = ack (单 owner 重锚)** | TBD | TBD (PR merge commit SHA) |
 | CppTLM 端 submodule bump (Task PTX-6 Step 3) | TBD (PTX-6) | TBD |
@@ -56,7 +56,8 @@
 | 2027-02-09 | ✅ Active (CppTLM 端) | HSK-9 spec 发布, ICOMPUTE_API_VERSION=1, SM-owns-state 契约 |
 | 2026-09-06 | 📤 已发布 (PTX-EMU 镜像) | Task 0.3.2 镜像 spec 到 PTX-EMU 仓 |
 | 2026-09-06 | 📤 已发布 (PTX-EMU AGENTS.md 更新) | Task 0.3.3 HSK-9 行从 "🔵 预留" → "📤 已发布 + ICOMPUTE_API_VERSION 引入" |
-| TBD | 📤 等待 PR | Task 0.3.6 push feat/hsk-9-impl + 创建 PR |
+| 2026-09-06 | 📤 PR 创建 (PTX-EMU #21) | Task 0.3.6 push feat/hsk-9-impl + 创建 PR |
+| 2026-09-06 → 2026-09-20 | ⏳ 14d 窗口中 | PTX-EMU owner review (单 owner = self-ack at PR merge) |
 | TBD | ⏳ 14d 窗口中 | PR 创建日起 14d |
 | TBD | ✅ ACCEPTED | PR merge (单 owner 重锚 = ack) |
 | TBD | 🔒 SM-owns-state 契约生效 | CppTLM submodule bump (Task PTX-6 Step 3) + 联合验证 (Task 4.8/4.9) |
