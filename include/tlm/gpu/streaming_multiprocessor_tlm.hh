@@ -27,6 +27,7 @@
 #include "tlm/gpu/sm/scalar_alu.hh"  // Task 1.3 P1-3 ScalarALU 真值 (独立 cpptlm::gpu::ScalarALU)
 #include "bundles/compute_bundles_tlm.hh"
 
+#include <array>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -168,19 +169,24 @@ public:
     bool initialize(const cpptlm::gpu::DeviceConfig& cfg) override {
         (void)cfg;
         scalar_regs_.clear();
-        internal_buf_.clear();
+        ring_head_ = 0;
+        ring_tail_ = 0;
+        ring_count_ = 0;
+        completed_instr_ids_.clear();
         return true;
     }
     void shutdown() override {}
     int  exe_once() override {
-        if (internal_buf_.empty()) return 0;
-        auto& desc = internal_buf_.front();
+        if (ring_count_ == 0) return 0;
+        auto& desc = instr_ring_[ring_head_];
         if (desc.pipe == cpptlm::gpu::PipeClass::kScalarALU) {
             scalar_alu_->execute(desc);
             // Task 1.4 P1-4: ScalarALU 完成后, 标记 instr_id 已完成 (per HSK-9 §3 is_instruction_completed 协议)
             completed_instr_ids_.insert(desc.instr_id);
         }
-        internal_buf_.erase(internal_buf_.begin());
+        // ring buffer consume: 推进 head, 减 count
+        ring_head_ = (ring_head_ + 1) % 64;
+        --ring_count_;
         return 1;
     }
     int  sm_exe_once(uint32_t sm_id) override { (void)sm_id; return 0; }
@@ -203,10 +209,16 @@ public:
     bool is_finished() override { return false; }
     // 1 HSK-9 new
     void set_instr_descriptor_buf(const cpptlm::gpu::InstrDescriptor* buf, uint32_t count) override {
-        if (!buf || count == 0) return;
-        internal_buf_.reserve(internal_buf_.size() + count);
+        // Task 1.5 P1-5: ring buffer (固定 64, 满时覆盖最旧 head, per plan)
+        if (!buf || count == 0 || count > 64) return;
         for (uint32_t i = 0; i < count; ++i) {
-            internal_buf_.push_back(buf[i]);  // 浅拷贝 POD copy (per HSK-9 §3 buf 内存所有权)
+            instr_ring_[ring_tail_] = buf[i];  // 浅拷贝 POD copy (per HSK-9 §3 buf 内存所有权)
+            ring_tail_ = (ring_tail_ + 1) % 64;
+            if (ring_count_ == 64) {
+                ring_head_ = (ring_head_ + 1) % 64;  // 覆盖最旧
+            } else {
+                ++ring_count_;
+            }
         }
     }
     // 2 Round 4 new
@@ -260,10 +272,14 @@ private:
 
     // === Task 1.3 P1-3 ScalarALU 真值 (per plan) ===
     // cpptlm::gpu::ScalarALU 独立真值类 (include/tlm/gpu/sm/scalar_alu.hh),
-    // SM 顶层持 unique_ptr, exe_once() 调用其 execute() 处理 internal_buf_ 中 kScalarALU 指令
+    // SM 顶层持 unique_ptr, exe_once() 调用其 execute() 处理 ring buffer 中 kScalarALU 指令
     std::unique_ptr<cpptlm::gpu::ScalarALU> scalar_alu_;
+    // Task 1.5 P1-5: instr_descriptor ring buffer (固定大小 64, 覆盖最旧)
     // 浅拷贝 PTX-EMU 注入的 InstrDescriptor buf (per HSK-9 §3 buf 内存所有权语义)
-    std::vector<cpptlm::gpu::InstrDescriptor> internal_buf_;
+    std::array<cpptlm::gpu::InstrDescriptor, 64> instr_ring_{};
+    uint32_t ring_head_ = 0;   // 最早未处理 desc 位置 (consume 位置)
+    uint32_t ring_tail_ = 0;   // 下一个写入位置 (produce 位置)
+    uint32_t ring_count_ = 0;  // 当前未处理 desc 数 (满时 = 64, 覆盖 head)
     // Task 1.4 P1-4: 已完成 instr_id 集合 (ScalarALU.execute 后 insert, is_instruction_completed 查)
     std::unordered_set<uint64_t> completed_instr_ids_;
 
