@@ -18,8 +18,8 @@
 |------|------|----------|
 | CppTLM 端 HSK-9 spec Active (原) | 2027-02-09 | `c656222` (feat(adr): 正式发布 HSK-9 ICOMPUTE_API_VERSION=1 SM 重构版) |
 | CppTLM 端 SM 重构 §15.10 Gate 通过 | 2027-02-09 | `b369aa8` + `ac95fb7` |
-| **PR 创建 (PTX-EMU 端 14d 窗口起点)** | 2026-09-06 | TBD (PR 编号) |
-| **窗口关闭 (PR 创建 + 14d)** | TBD | — |
+| **PR 创建 (PTX-EMU 端 14d 窗口起点)** | 2026-09-06 | #21 |
+| **窗口关闭 (PR 创建 + 14d)** | 2026-09-20 | — |
 | **PR merge = ack (单 owner 重锚)** | TBD | TBD (PR merge commit SHA) |
 | CppTLM 端 submodule bump (Task PTX-6 Step 3) | TBD (PTX-6) | TBD |
 
