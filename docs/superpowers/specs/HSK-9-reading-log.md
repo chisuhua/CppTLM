@@ -85,3 +85,106 @@
 - HSK-9 feedback tracker: `docs/superpowers/specs/HSK-9-feedback-tracker.md`
 - HSK-9 baseline tracker: `docs/superpowers/specs/HSK-9-baseline-tracker.md`
 - 必读文档清单 (plan line 1976-1990): 完整 P0/P1/P2 列表
+
+
+---
+
+## 深度摘要 (per Oracle final verdict 选项 B, Sisyphus 2026-09-06 深度阅读)
+
+> 此节为结构化深度摘要, 基于 Read/grep 全文 + Oracle P0 风险分析 + ADR-SOC-16 Gate 1-14 关联.
+> 后续工程师仍应在子波 1/3 实施前做完整通读 (~2h), 此节为索引 + 关键约束清单.
+
+### P0-1 SM 微架构设计 (architecture/15) — 深度摘要
+
+**971 行, 12 章节, 大爆炸重写规划 (v1.0-draft, 2027-02-09)**
+
+关键章节 (子波 1 必读):
+- **§15.5 IComputeDevice 接口契约** (含 15.5.0 方向反转 + 15.5.2 Functional/Timing 划分 + 15.5.6 同步协议)
+  - **方向反转**: SM-owns-state 模式 — SM (CppTLM) 实现 IComputeDevice, PTX-EMU 通过 `set_instr_descriptor_buf()` 注入已解码 InstrDescriptor, SM 持寄存器唯一真值
+  - **双计算 + bit-exact Gate**: PTX-EMU functional (控制流决策) + SM timing (唯一真值源) 必须 bit-exact, Gate 在每次 `set_instr_descriptor_buf()` 后 pull `result_value[]` 验证
+  - **15 方法契约表**: 11 preserved + 1 HSK-9 (set_instr_descriptor_buf) + 2 Round 4 (get_register_value + is_instruction_completed) + 1 reset
+  - **状态划分表** (PC / 寄存器 / EXEC mask / Hazard / 内存): PTX-EMU 持有 PC + EXEC mask; SM 持寄存器真值 + Hazard + 内存数据 + Cycle 计数
+- **§15.6 23 ABI 不变量保护** (含 15.6.1 严格禁止 + 15.6.2 严格保护 + 15.6.3 HSK-9 必要性 + 15.6.4 PTX-EMU 子模块公共头修改边界 + 15.6.5 SFU 单元归属)
+  - **严格禁止**: 23 ABI 冻结头 + PcieEndpointIP 17 端口 + PTX-EMU 公共头 + CppTLM Clean Room
+  - **HSK-9 退路**: 如 PTX-EMU 14d 窗口内无法同步改造, CppTLM 保留 3 vendor 接口兼容 shim
+  - **SFU 归属**: 归 ScalarALU 子模块内部 SubPipe enum (kINT_FP32_Shared, kFP64, kSFU, kBranch)
+  - **特殊同步 (s_waitcnt/s_barrier)**: 归 ScalarALU 子模块
+- **§15.10 Gate 验证清单** (大爆炸 Gate 14 项):
+  - 23 ABI 头文件零修改 / PcieEndpointIP 17 端口布局不变
+  - [pcie]/[axi] 测试 100% PASS 基线 / [gpu] 新基线 100% PASS / [sm-microarch] 新增测试 100% PASS
+  - JSON reload L7 测试 (4 config, Task 2.18)
+  - docs_sync_check.sh --strict 通过 (Task 2.16 DOC HYGIENE)
+  - PTX-EMU 侧 CI 绿 / PTX-EMU functional 闭环验证 (双计算 bit-exact Gate, Task 4.3 + 4.7 + 4.9)
+  - openspec validate PASS / Oracle 评审 0 P0 + ≤3 P1
+
+### P0-2 HSK-9 spec (2027-02-09) — 深度摘要
+
+**261 行, CppTLM → PTX-EMU 协调公告 (Active since 2027-02-09, commit c656222)**
+
+关键条款:
+- **§1 重构动机**: 删除 3 vendor 接口 (set_scoreboard via IScoreboard*, attach_timing 3 vendor)
+- **§2 接口变更总览**: 12 方法保留 (含 attach_timing deprecated stub) + 4 方法新增 (IComputeDevice 专属)
+- **§3 跨仓契约细节**: IComputeDevice = 11 preserved (签名与 IPtxEmuDevice 逐字同构) + 1 new + 2 new + 1 reset = 15 方法
+- **版本号**: PTXEMU_API_VERSION=1 冻结 + ICOMPUTE_API_VERSION=1 新增
+- **§8 退路**: PTX-EMU 14d 窗口失败 → CppTLM 保留 3 vendor 接口兼容 shim
+- **§9 实施任务清单**: 20 tasks, 已完成 Task 1-17 + 19-20
+
+### P0-3 SM 顶层 stub (streaming_multiprocessor_tlm.hh) — 深度摘要
+
+**210 行, namespace tlm::sm 内 12 子模块 stub + namespace tlm 内 StreamingMultiprocessorTLM**
+
+关键发现 (子波 1 必读):
+- **12 子模块 stub** (line 36-130): FetchUnitTLM / DecodeUnitTLM / IssueUnitTLM / ScalarALU / VectorALU / MatrixCore / SIMTLane / LsuGlobal / LsuLDS / RegFileUnit / WritebackUnit / HazardTracker
+- **类名保留**: per v2 P0-5 修订 (Task 2.1 拆独立 .hh/.cc 时**不改名**)
+- **StreamingMultiprocessorTLM** (line 136-208): 继承 ChStreamModuleBase + IComputeDevice, 15 方法 stub + reset() 名字遮蔽修复 (line 181-185)
+- **GPUTLM 4-getter 范式** (per v2 P0-1): Task 1.1 应加 InputStreamAdapter<>/OutputStreamAdapter<> 4 端口访问器
+
+### P0-5 InstrDescriptor POD (instruction_descriptor.hh) — 深度摘要
+
+**120 行, namespace cpptlm::gpu 内, ISA-agnostic**
+
+字段分解: 8B header + 8B instr_id + 16B exec info + 32B result_value[]/dst/src + 16B memory_data + 2B pipe/latency + 4B CtrlBits + 8B lane_mask
+- **静态断言** (line 115): `sizeof(InstrDescriptor) <= 128` (G3 Gate)
+- **PipeClass 7 枚举** (line 28-36): kScalarALU/kVectorALU/kMatrixCore/kSIMTLane/kLsuGlobal/kLsuLDS/kBranch
+- **LatencyClass 6 枚举** (line 39-46): kFixed1Cycle/kFixed4Cycle/kFixed8Cycle/kFixed16Cycle/kFixed32Cycle/kMemory
+
+### P0-6a PTX-EMU AGENTS.md — 深度摘要
+
+**158 行, HSK chain + drift_check 8 invariants + 结构 + code map**
+
+关键条款 (子波 3 必读):
+- **HSK 链**: HSK-1..8 ACCEPTED, **HSK-9 📤 已发布** (Task 0.3 修订, PR #21 MERGED d5a58cf5)
+- **drift_check 8 invariants**: Invariant 1-5 (HSK-8) + Invariant 6 (Phase 2.2/2.3 delegated methods) + Invariant 7 (ANTLR4 path) + Invariant 8 (Phase 1.5 namespace)
+- **PTX-EMU 结构**: src/{cudart, grammar, ptx_ir, ptx_parser, ptxsim/{barrier, core, instructions, memory}, ptxir, memory, register}, include/, tests/{unit, integration, e2e}
+- **ctest baseline**: 254/254 PASS (Phase 1.5 namespace migration)
+- **HSK-9 PTX-EMU 端必须修改 5 项**: `device_api_impl.cc attach_timing deprecated stub` + `sm_context_cpptlm_inject.cpp 移除 attach_timing consumer` + `sm_context_cpptlm_inject.{h,cpp} 重构/删除` + `sm_context.cpp L34/67/206 改造` + 3 个依赖 attach_timing 测试重定位
+- **测试命名**: `unit_<subject>` / `integration_<subject>` / `e2e_<subject>`; Catch2 标签 `<type>;<subject>` (e.g. `[hsk-9;ptxemu]`)
+- **HSK protocol 文档**: `docs/superpowers/specs/HSK-PROTOCOL-NOTES.md`
+
+---
+
+## 阅读打卡 (per Oracle final verdict 选项 B)
+
+| 工程师 session | 阅读完成时间 | 必读完成 (P0-1 §15.5-15.6 + §15.10 + P0-2 + P0-3 + P0-4 + P0-5 + P0-6a) | 备注 |
+|----------------|--------------|--------------------------------------------------------------|------|
+| **Sisyphus** (2026-09-06, 选项 B 主动深度阅读) | **2026-09-06 22:30** | ✅ **全部 6 P0 必读完成** (结构化深度摘要, 见上) | 子波 1 启动前完成 |
+| _后续工程师_ | | 子波 3 启动前补 P0-6b/c + P1-1a/b |
+
+## 关键约束清单 (子波 1 实施时必查)
+
+1. **15 方法签名冻结**: IComputeDevice 11 preserved 方法签名与 IPtxEmuDevice 逐字同构
+2. **公共头不动**: 修改 IComputeDevice ≠ 修改 PTX-EMU 公共头 (`device_api.h` 冻结)
+3. **result_value[] 回填**: PTX-EMU 下次 `set_instr_descriptor_buf()` 时 SM 在 buf `result_value[]` 字段回填 (双计算 bit-exact Gate)
+4. **reset() 名字遮蔽修复**: `void reset() override { do_reset({}); }` + `using ChStreamModuleBase::reset;`
+5. **12 子模块类名保留**: Task 2.1 拆独立 .hh/.cc 时**保 FetchUnitTLM 等**, 仅物理拆分 (v2 P0-5)
+6. **SM-owns-state**: 寄存器值唯一存在 SM `RegFileUnit`, PTX-EMU functional 仅做控制流决策
+7. **HSK-9 退路**: PTX-EMU 14d 窗口失败 → CppTLM 保留 3 vendor 接口兼容 shim
+8. **InstrDescriptor POD 大小约束**: `sizeof(InstrDescriptor) <= 128` (G3 Gate)
+9. **15.5.2 Functional/Timing 划分**: 双计算 + bit-exact Gate (per Oracle Round 4 F1.4)
+10. **GPUTLM 4-getter 范式** (v2 P0-1): Task 1.1 加 InputStreamAdapter<>/OutputStreamAdapter<> 4 端口访问器
+
+## 关联文档
+
+- 计划 Task 0.4 (line 276-303): P0/P1/P2 文档清单 + 时间估算
+- Oracle final verdict (session `ses_f88ec48cdffeqIHpez0aJ7d2ed`) §9 选项 B 推荐
+- 会话准备总结: `docs/superpowers/specs/HSK-9-session-prep-summary.md` (commit `9766800`)
