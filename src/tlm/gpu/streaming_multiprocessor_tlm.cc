@@ -9,10 +9,10 @@ namespace tlm {
 
 StreamingMultiprocessorTLM::StreamingMultiprocessorTLM(const std::string& name, EventQueue* eq)
     : ChStreamModuleBase(name, eq) {
-    // Task 5 添加 12 子模块 .hh 后, 在构造函数中 make_unique 初始化:
-    //   fu_ = std::make_unique<sm::FetchUnitTLM>(name + ".fu", eq);
-    //   ... 等 12 个
-    // Task 18 完整实现 15 方法 (IComputeDevice) + tick() 协调 12 子模块
+    // Task 1.3 P1-3: 初始化 ScalarALU 真值 (独立 cpptlm::gpu::ScalarALU)
+    // parent_ = this, ScalarALU 通过 parent_->get_scalar_reg / set_scalar_reg
+    // 访问 SM 顶层 scalar_regs_ 真值源 (Task 1.1 interim, Task 2.11 迁移到 RegFileUnit)
+    scalar_alu_ = std::make_unique<cpptlm::gpu::ScalarALU>(this);
 }
 
 void StreamingMultiprocessorTLM::set_stream_adapter(cpptlm::StreamAdapterBase* adapter) {

@@ -24,11 +24,13 @@
 #include "core/chstream_module.hh"
 #include "framework/stream_adapter.hh"
 #include "tlm/gpu/i_compute_device.hh"
+#include "tlm/gpu/sm/scalar_alu.hh"  // Task 1.3 P1-3 ScalarALU 真值 (独立 cpptlm::gpu::ScalarALU)
 #include "bundles/compute_bundles_tlm.hh"
 
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace tlm::sm {
 
@@ -162,9 +164,22 @@ public:
 
     // === IComputeDevice 15 方法 stub (Task 18 完整实现) ===
     // 11 preserved
-    bool initialize(const cpptlm::gpu::DeviceConfig& cfg) override { (void)cfg; return false; }
+    bool initialize(const cpptlm::gpu::DeviceConfig& cfg) override {
+        (void)cfg;
+        scalar_regs_.clear();
+        internal_buf_.clear();
+        return true;
+    }
     void shutdown() override {}
-    int  exe_once() override { return 0; }
+    int  exe_once() override {
+        if (internal_buf_.empty()) return 0;
+        auto& desc = internal_buf_.front();
+        if (desc.pipe == cpptlm::gpu::PipeClass::kScalarALU) {
+            scalar_alu_->execute(desc);
+        }
+        internal_buf_.erase(internal_buf_.begin());
+        return 1;
+    }
     int  sm_exe_once(uint32_t sm_id) override { (void)sm_id; return 0; }
     int  warp_exe_once(uint32_t sm_id, uint32_t warp_id) override { (void)sm_id; (void)warp_id; return 0; }
     bool set_scoreboard(uint32_t sm_id, uint32_t warp_id, uint64_t mask) override {
@@ -185,12 +200,21 @@ public:
     bool is_finished() override { return false; }
     // 1 HSK-9 new
     void set_instr_descriptor_buf(const cpptlm::gpu::InstrDescriptor* buf, uint32_t count) override {
-        (void)buf; (void)count;
+        if (!buf || count == 0) return;
+        internal_buf_.reserve(internal_buf_.size() + count);
+        for (uint32_t i = 0; i < count; ++i) {
+            internal_buf_.push_back(buf[i]);  // 浅拷贝 POD copy (per HSK-9 §3 buf 内存所有权)
+        }
     }
     // 2 Round 4 new
     bool get_register_value(uint32_t sm_id, uint32_t warp_id, uint32_t reg_id,
                              uint64_t* out_value, uint32_t lane_id = 0xFFFFFFFF) override {
-        (void)sm_id; (void)warp_id; (void)reg_id; (void)out_value; (void)lane_id; return false;
+        (void)sm_id; (void)warp_id; (void)lane_id;
+        if (!out_value) return false;
+        auto it = scalar_regs_.find(reg_id);
+        if (it == scalar_regs_.end()) return false;
+        *out_value = it->second;
+        return true;
     }
     bool is_instruction_completed(uint64_t instr_id) override {
         (void)instr_id; return false;
@@ -229,6 +253,13 @@ private:
     // === scalar_regs_ (per Oracle P1-7 Task 1.3 依赖, interim 真值源) ===
     // Task 2.11 须迁移到 RegFileUnit
     std::unordered_map<uint32_t, uint64_t> scalar_regs_;
+
+    // === Task 1.3 P1-3 ScalarALU 真值 (per plan) ===
+    // cpptlm::gpu::ScalarALU 独立真值类 (include/tlm/gpu/sm/scalar_alu.hh),
+    // SM 顶层持 unique_ptr, exe_once() 调用其 execute() 处理 internal_buf_ 中 kScalarALU 指令
+    std::unique_ptr<cpptlm::gpu::ScalarALU> scalar_alu_;
+    // 浅拷贝 PTX-EMU 注入的 InstrDescriptor buf (per HSK-9 §3 buf 内存所有权语义)
+    std::vector<cpptlm::gpu::InstrDescriptor> internal_buf_;
 
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
 };
