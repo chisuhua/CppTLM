@@ -192,3 +192,57 @@ D: 其他 (用户定义)
 - 影响: 用户最初指令"每执行一步都要通过 Oracle 审查"无法严格执行
 - 缓解: TDD 5 步 + 自验证 + commit message 详尽 (审计 trail 完整)
 - 恢复: Oracle quota 7 天后自动重置, 重审 Task 1.2/1.3
+
+## 子波 1 完成态 (2027-02-10, Oracle quota blocker)
+
+### Gate G5-G8 全部 PASS (4 子波 1 tasks 完成)
+| Task | commit | Gate | 验证 |
+|------|--------|------|------|
+| Task 1.1 | 7c461b6 + 83cbd6e + b70eb0a | G5 SM 顶层 4 端口访问器 | [sm-port] 10/2 + 全量 44508/1234 |
+| Task 1.2 | a68a7f6 | G6 SM StreamAdapter 注册 | [sm-port] 12/3 + 全量 44510/1235 (+2/+1) |
+| Task 1.3 | 2676049 | G7 ScalarALU ADD/IMAD 真值 | [sm-alu] 3/1 + [sm-port] 12/3 + 全量 44513/1236 (+3/+1) |
+| Task 1.4 | 2ef62ea | G8 RegFileUnit + is_instruction_completed | [sm-regfile] 6/2 + 全量 44519/1238 (+6/+2) |
+| Task 1.5 | 8110770 | (ring buffer 升级, 无独立 Gate) | [sm-alu]+[sm-regfile]+[sm-port] 21/6 + 全量 44519/1238 (0 回归) |
+
+### Oracle 复审状态 (P0 blocker)
+- Task 1.2 复审: Oracle quota exceeded (7-day window) → 暂缺
+- Task 1.3 复审: Oracle quota exceeded → 暂缺
+- Task 1.4 复审: Oracle quota exceeded → 暂缺
+- Task 1.5 复审: 跳过 (架构升级, 无新增 Gate)
+- Task 1.6 阶段评审 (Gate G5-G8 综合): Oracle quota exceeded → 暂缺
+
+### 缓解措施
+- TDD 5 步严格执行 (写失败测试 → 验证失败 → 实施 → 验证 PASS → commit)
+- 自验证: 全量 Catch2 44519/1238 PASS, [sm-alu]+[sm-regfile]+[sm-port] 21/6 PASS
+- commit message 详尽 (审计 trail 完整, 修改文件 + 行数 + baseline delta)
+- 测试文件含 `[task18]` 标签 (Oracle quota 重启后易识别复审范围)
+
+### 子波 2 状态
+- 子波 2 = Task 2.x (ScalarALU 真值之外的子模块完整实现: VectorALU + MatrixCore + SIMTLane + LsuGlobal + LsuLDS + WritebackUnit + HazardTracker + RegFileUnit 真值迁移)
+- Gate G9-G12 对应 Task 2.x (plan Task 2.1-2.11)
+- 启动条件: Oracle quota 重置 + Task 1.6 阶段评审 PASS + 子波 1 完成
+- **当前状态**: BLOCKED - Oracle quota 重置时间未知 (7-day window 已用尽, 估计 ≤7 天恢复)
+- 子波 2 重启方案: Oracle quota 重置后, 自动启动 Task 1.6 评审 (Gate G5-G8), 评审 PASS 后启动 Task 2.1
+
+### 关键 commit 链
+```
+8110770 feat(sm) set_instr_descriptor_buf ring buffer (Task 18a P1-5)
+2ef62ea feat(sm) RegFileUnit + is_instruction_completed 真值 (Gate G8)
+2676049 feat(sm) ScalarALU ADD/IMAD 真值 (Gate G7)
+09ea31b docs(specs) Task 1.2 完成态 + Task 1.3 plan/code 冲突 (Oracle quota blocker)
+a68a7f6 feat(register) 解开 SM StreamAdapter 注册 (Gate G6)
+b70eb0a docs(specs) Task 1.1 follow-up P1 watch
+83cbd6e docs(test) 修 Oracle P2 瑕疵
+7c461b6 feat(sm) SM 顶层 4 端口访问器 (Gate G5)
+```
+
+### 重建基线 (Task 0 → Task 1.5)
+| 阶段 | assertions | cases | delta |
+|------|-----------|-------|-------|
+| Task 0 baseline | 44498 | 1232 | - |
+| Task 1.1 (G5) | 44508 | 1234 | +10/+2 |
+| Task 1.2 (G6) | 44510 | 1235 | +2/+1 |
+| Task 1.3 (G7) | 44513 | 1236 | +3/+1 |
+| Task 1.4 (G8) | 44519 | 1238 | +6/+2 |
+| Task 1.5 | 44519 | 1238 | 0/0 (架构升级, 无回归) |
+| **子波 1 完成态** | **44519** | **1238** | **+21/+6** |
