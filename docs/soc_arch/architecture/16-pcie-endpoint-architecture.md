@@ -5,9 +5,9 @@
 > **范围**: 跨仓 SSOT（CppTLM 硬件侧 + UsrLinuxEmu 驱动侧）
 > **关联**:
 > - [`docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md`](../roadmap/pcie-ep-cpptlm-collaboration-roadmap.md) — 5 步实施 roadmap
-> - [`docs/soc_arch/architecture/17-sdma-engine-design.md`](sdma-engine-design.md) — **SDMA 引擎内部设计**（Ring Buffer + RPTR/WPTR + Doorbell + Packet + 状态机 + 地址翻译 + Fence + D2D 路径 + CmdProc 集成；11 章节）
-> - [`openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md`](../../openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md) — 14 ADDED Requirements
-> - UsrLinuxEmu 对应文档: `docs/soc_arch/architecture/16-pcie-endpoint-architecture.md`（驱动侧同步）
+> - [`docs/soc_arch/architecture/17-sdma-engine-design.md`](sdma-engine-design.md) — **SDMA 引擎内部设计**（Ring Buffer + RPTR/WPTR + Doorbell + Packet + 状态机 + 地址翻译 + Fence + D2D 路径 + CmdProc 集成；§1-§14 全 14 章节）
+> - [`openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md`](../../openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md) — 13 ADDED Requirements（v0.2 修订：原文本误为 14，实测 spec.md 含 13 个 `### Requirement:` 章节）
+> - UsrLinuxEmu 对应文档: [`docs/02_architecture/pcie-endpoint-architecture.md`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/02_architecture/pcie-endpoint-architecture.md)（**驱动侧同步**；v0.2 修订：原文本错写为 CppTLM 自仓路径 `docs/soc_arch/architecture/16-pcie-endpoint-architecture.md`，正确目标为本仓 — UsrLinuxEmu 仓 `docs/02_architecture/` 无编号风格）
 
 ---
 
