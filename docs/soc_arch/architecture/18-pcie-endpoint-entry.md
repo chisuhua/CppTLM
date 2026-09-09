@@ -193,20 +193,26 @@ CppTLM 5+4 步 (5.0-6.0 周)
 | **虚拟化必备** | SR-IOV + VF 配置 + VF 中断隔离 | ❌ 排除（移交 VFIO） |
 | **高级可选** | CXL/NTB/TPH/ATS/PRI/PASID | ❌ 排除（后续阶段） |
 
-### §4.3 跨仓边界（23 ABI）
+### §4.3 跨仓边界（23 ABI 契约 / 22 = 绑定子集）
 
 ```
 UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   GpgpuDevice (drv/ioctl)              23 ABI functions
     ↓                                     ↑
-  HAL struct (73 fn-ptrs)              cpptlm_emulator_*
+  HAL struct (71 fn-ptrs)              cpptlm_emulator_*
     ↓                                     ↑
-  CpptlmBridge (23 ABI dlopen)         DGpuBoard / PcieEndpointIP / SDMA / CmdProc
-                                         ↑
+  CpptlmBridge (23 ABI dlopen；         DGpuBoard / PcieEndpointIP / SDMA / CmdProc
+                  22 = 绑定子集)         ↑
                               dlopen("libcpptlm_emulator.so")
 ```
 
 **核心约束**：23 ABI 函数签名不变（5 端口 wire-format 冻结，HAL append-only）
+
+> **ABI 数字三口径说明**（mirror 自 UsrLinuxEmu 仓 `pcie-endpoint-entry.md §4.3`，per [ADR-088 §D5](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) 冻结契约：基础 6 + callback typedef 4 + register 1 + 板卡扩展 8 + MSI-X 3 + DMA translate 1 = 23）：
+> - **23** = 契约（19 forward functions + 4 callback typedefs；per `include/abi/cpptlm_emulator.h` 文件头注释）
+> - **22** = 5.5.6 `bridge.cpp` dlsym 实际绑定数（19 契约函数 + 3 adapter 扩展 `open/close/get_adapter_info`，见 ADR-092）；经 `nm -D libcpptlm_emulator.so` 实测，`.so` 实际导出亦为 22——契约 23 中 4 个 callback typedef 非函数符号，不参与 dlsym/导出计数
+> - **71** = `struct gpu_hal_ops` 函数指针数（去重 unique 符号；canonical SSOT 由 UsrLinuxEmu `tools/docs-audit.sh §1.5` 强制执行）。v0.3 修订：原 7f4d26a4 commit 误用 73（`grep -c "(\*"` 错算，含 `(*callback)`/`(*handler)` 两个嵌套参数名），已更正。
+> - **结论**：23 = 契约；22 = 绑定数 = 导出数；71 = HAL fn-ptrs（unique 计数）。原"24"/"73"口径经核对实测均不成立。
 
 ---
 
@@ -382,7 +388,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 
 | ADR | 内容 | 关联 |
 |-----|------|------|
-| [ADR-023 HAL append-only](../../00_adr/adr-023-hal-interface.md) | HAL 73 fn-ptrs append-only | §4 §6 D.4 |
+| [ADR-023 HAL append-only](../../00_adr/adr-023-hal-interface.md) | HAL 71 fn-ptrs append-only（v0.3 修订：原 73 来自 `grep -c "(\*"` 错算，含 `(*callback)`/`(*handler)` 嵌套参数名；以 UsrLinuxEmu `tools/docs-audit.sh §1.5` 强制值 71 为准）| §4 §6 D.4 |
 | [ADR-088 dGPU 完整仿真](../../00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 仿真边界 + 23 ABI | §4 §1 |
 | [ADR-091 4 象限布局](../../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) | 4 象限 + PCIe tier | §4.2 |
 | [ADR-092 HAL adapter + bypass binding](../../00_adr/adr-092-hal-adapter-and-bypass-binding.md) | 3 个后端 + bypass | §4.3 |
@@ -412,10 +418,10 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 ## §12 修订记录
 
 - **v0.1** (2026-09-09, Draft): 初版,基于 2026-09-08 文档重命名 + 2026-09-09 战略调整 + 5+4 步 roadmap + SDMA 内部设计
-  - §1 双仓文档地图（5 CppTLM + 5 UsrLinuxEmu 条目）
-  - §2 实施路径图（5+4 步 + 5.0-6.0 周）
+  - §1 双仓文档地图（5 CppTLM + 4 UsrLinuxEmu 核心文档）
+  - §2 实施路径图（5+4 步 + 4.5-6.5 周）
   - §3 openspec change 全景（CppTLM 1 + UsrLinuxEmu 3 已 ship + Deferred）
-  - §4 架构核心概念（双层 DMA + 4 层 PCIe + 23 ABI 边界）
+  - §4 架构核心概念（双层 DMA + 4 层 PCIe + 22 ABI 边界）
   - §5 跨仓同步点（9 个时序检查清单）
   - §6 关键决策（6 条固化决策）
   - §7 验证清单（阶段完成 + 跨仓集成 + 架构约束）
@@ -424,7 +430,28 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   - §10 文档维护规则
   - §11 关联资源（4 ADR + 3 spec + 7 代码模块）
 
-- **待 v0.2**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准）
+- **v0.2** (2026-09-09, 7f4d26a4 commit): 跨仓镜像 UsrLinuxEmu 端 entry.md v0.2 同步
+  - §1.2 标题 4 核心文档 → 5 条目
+  - §2.2/§2.3 总工期 4.5-6.5 → 5.0-6.0 周（阶段求和正确值）
+  - §3.2/§4.3/§6/§7/§11.3 ABI 口径 22 → 23（**含未在 commit message 声明的副作用**，且未补 §4.3 ABI 三口径脚注）
+  - §4.3 图 HAL 71 → 73 fn-ptrs（**错误**：73 来自 `grep -c "(\*"` 错算嵌套参数名；canonical SSOT = 71）
+  - §11.1 ADR-023 HAL 71 → 73（同上错误）
+  - §12 v0.1 描述项被改写为新数字（**违反 append-only 纪律**，本 commit v0.3 还原）
+
+- **v0.3** (2026-09-09, post-Oracle 复审): 修正 7f4d26a4 引入的 4 类错误
+  - **§4.3 ABI 口径正确化**:
+    - 图内 HAL 73 → **71 fn-ptrs**（对齐 UsrLinuxEmu `tools/docs-audit.sh §1.5` 强制 SSOT；73 错算已说明）
+    - §11.1 ADR-023 行 73 → **71 fn-ptrs**
+    - **补 §4.3 ABI 三口径脚注**（mirror UsrLinuxEmu 仓 `pcie-endpoint-entry.md §4.3`）：23 = 契约 / 22 = 绑定子集 / 71 = HAL fn-ptrs，避免"23 ABI dlopen"在无限定下字面错误
+  - **仓内一致性修复**（7f4d26a4 编辑 roadmap/17-doc 但未统一 ABI 口径，遗留 5 处 "22 ABI"）：
+    - roadmap L61/L102/L228/L251 "22 ABI" → "23 ABI（22 = 5.5.6 dlsym 绑定子集）"
+    - 17-doc L765 §12.1 "22 ABI" → 同上
+  - **changelog 还原**:
+    - §12 v0.1 描述项还原为 7f4d26a4 篡改前的真实数字（4 UsrLinuxEmu 文档 / 4.5-6.5 周 / 22 ABI / 7 代码模块）
+    - 追加 v0.2 条目如实记录 7f4d26a4 的全部变更（含副作用与错误）
+  - **已知遗留**: UsrLinuxEmu 仓 `570b977` commit 同样把 entry.md 图内 71→73，是本次错误的源头；该仓 v0.3+ 修正应先于 CppTLM 后续镜像动作，否则再 sync 又会把 73 拉进来
+
+- **待 v0.4**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准）
 
 ---
 

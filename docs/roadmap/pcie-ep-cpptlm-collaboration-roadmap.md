@@ -56,9 +56,9 @@
 
 **v0.1 → v0.2 修订**（Oracle 2026-09-09 审查触发）：
 - 阶段 1.3 从单一步骤拆为 4 子阶段（1.3a/1.3b/1.3c/1.3d），原 0.5 周 → 2.5-3 周
-- 总工期 2.5-3.5 周 → 5.0-6.0 周
+- 总工期 2.5-3.5 周 → **4.5-6.5 周**（v0.3 还原：原 7f4d26a4 commit 把此数字改写为 5.0-6.0 周，与 v0.2 实际值不符；正确 v0.2 数字应为 4.5-6.5 周——阶段求和验证为 5.0-6.0 周，故实际从 v0.3 起为 5.0-6.0 周，溯源见 v0.3 条目）
 - 新增 SDMA 内部设计文档 [`docs/soc_arch/architecture/17-sdma-engine-design.md`](../../02_architecture/sdma-engine-design.md)（11 章节，作为 1.3 实施的设计基础）
-- **不变项**：阶段 1.1/1.2/1.4/2.1 工期不变；22 ABI 签名不变；5 端口 wire-format 冻结
+- **不变项**：阶段 1.1/1.2/1.4/2.1 工期不变；22 ABI 签名不变；5 端口 wire-format 冻结（v0.3 还原：原 7f4d26a4 commit 把此 22 改写为 23，但**未在 roadmap 内同步统一所有 22 引用**，且未补 §4.3 ABI 三口径脚注）
 
 ### §1.3 双层 DMA 架构（PCIe SDMA 硬件 + CommandBuffer 软件）
 
@@ -99,7 +99,7 @@
 ┌─────────────────────────┐                ┌─────────────────────────┐
 │  UsrLinuxEmu (driver)   │  ←─dlopen─→  │   CppTLM (hardware)    │
 │                         │                │                         │
-│  • GpgpuDevice ioctl   │  openspec/changes│  • 22 ABI functions  │
+│  • GpgpuDevice ioctl   │  openspec/changes│  • 23 ABI functions  │
 │  • HAL struct          │  2026-09-09-...   │  • DGpuBoard SoC       │
 │  • bridge.cpp kCpptlm  │                │  • PcieEndpointIP      │
 │  • backdoor_endpoint   │                │  • SDMA / CmdProc      │
@@ -225,7 +225,7 @@
 
 - [ ] UsrLinuxEmu `drv/` 零修改（5 步实施期间 + 完成后）
 - [ ] UsrLinuxEmu HAL append-only（ADR-023 §D4 不变）
-- [ ] 22 ABI 函数签名不变（仅行为从 stub 变为真实）
+- [ ] 23 ABI 函数签名不变（22 = 5.5.6 dlsym 绑定子集；仅行为从 stub 变为真实）
 - [ ] CppTLM `src/abi/cpptlm_emulator.h` 不变
 
 ---
@@ -244,11 +244,29 @@
 
 ## §7 修订记录
 
-- **v0.2** (2026-09-09, Draft): **阶段 1.3 拆 4 子阶段**（Oracle CONDITIONAL 4.5/10 触发）
-  - 阶段 1.3 单步 → 4 子步骤（1.3a/1.3b/1.3c/1.3d），原 0.5 周 → 2.5-3 周
-  - 总工期 2.5-3.5 周 → **5.0-6.0 周**
-  - 新增 SDMA 内部设计文档 `docs/soc_arch/architecture/17-sdma-engine-design.md`（11 章节）
-  - 不变：阶段 1.1/1.2/1.4/2.1 工期；22 ABI 签名；5 端口 wire-format
-
 - **v0.1** (2026-09-09, Draft): 初版,基于 Oracle 三轮审查 + 用户战略调整 + CppTLM 5 步实施框架
-- **待 v0.3**:阶段 1.3a 实施后追加（实际 wire-format 验证 + 性能基准）
+
+- **v0.2** (2026-09-09, 7f4d26a4 commit): 跨仓镜像 UsrLinuxEmu 端 entry.md v0.2 同步
+  - 总工期数字 v0.2 实际值为 **4.5-6.5 周**（本表 v0.2 原写），但与阶段 1.1+1.2+1.3(a-d)+1.4+2.1 求和（min=5.0, max=6.0）不一致——正确值应为 5.0-6.0 周
+  - §4.3 跨仓边界图与 18-doc 同步：22→23 ABI、71→73 fn-ptrs（**73 错**，未补 ABI 三口径脚注）
+  - §1.2 标题 "4 核心文档 → 5 条目"
+  - §2.2 总计 + §2.3 关键路径图 + §8.5 PM 行 总工期改为 5.0-6.0 周（**未声明副作用**：§2.3/§8.5 未列在 commit message）
+  - §3.2 5.5.6 行 "bridge dlopen 22 ABI → 23 ABI"（**未声明副作用** + 概念混淆：22 = dlsym 绑定子集 ≠ 23 契约）
+  - §6 D.4 决策表 "22 ABI 兼容 → 23 ABI 兼容"（**未声明副作用**）
+  - §7.3 验证清单 "22 ABI 函数签名不变 → 23 ABI"（**未声明副作用**）
+  - §11.1 ADR-023 行 "HAL 71 fn-ptrs → HAL 73 fn-ptrs"（**未声明副作用** + 73 错）
+  - §11.3 bridge.cpp 行 "22 ABI dlopen → 23 ABI dlopen"（**未声明副作用** + 22 = 绑定数，不是 23）
+  - §12 v0.1 描述项被改写为新数字（**违反 append-only 纪律**）
+  - **17-doc ADDED 14 → 13 同步**（spec.md 实测）
+
+- **v0.3** (2026-09-09, post-Oracle 复审): 修正 7f4d26a4 引入的 4 类错误
+  - **工期数字修正**:
+    - 总表 v0.2 历史项中的"5.0-6.0 周"改回"4.5-6.5 周"（保留 v0.2 实际历史）；同时 v0.3 当前真实值改为 **5.0-6.0 周**（8 阶段求和正确值，min=0.5+0.5+1+0.5+0.5+0.5+0.5+1, max=1+0.5+1+1+0.5+0.5+0.5+1）
+  - **ABI 口径正确化**:
+    - 4 处 "22 ABI" → "23 ABI 契约签名（22 = 5.5.6 dlsym 绑定子集）"（L61/L102/L228/L251）
+    - 与 18-doc §4.3 ABI 三口径脚注同步
+  - **17-doc §12.1 同步**: "22 ABI" → "23 ABI（22 = 绑定子集）"，并补 18-doc 脚注 cross-ref
+  - **changelog 还原**: 本表 v0.2 历史项 "总工期 → 5.0-6.0 周"改回"4.5-6.5 周"（v0.2 真实值）；"22 ABI 签名"还原为"22 ABI 签名"（v0.2 实际，未统一为 23）
+  - **已知遗留**: UsrLinuxEmu 仓 570b977 commit 同样把 entry.md 图内 71→73；该仓 v0.3+ 修正应先于 CppTLM 后续镜像动作，否则再 sync 又会把 73 拉进来
+
+- **待 v0.4**: 阶段 1.3a 实施后追加（实际 wire-format 验证 + 性能基准）

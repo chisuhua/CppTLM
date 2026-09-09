@@ -762,7 +762,7 @@ CP dma_req[2] → (暂时) DmaDescriptorBundle → SDMA desc_in 端口 (现有)
 ### §12.1 ABI 兼容性约束
 
 - 5 端口 wire-format 不变（`design.md §2.5` 冻结）
-- 22 ABI 函数签名不变（`pcie-endpoint-architecture.md §4.3`）
+- 23 ABI 函数签名不变（22 = 5.5.6 dlsym 绑定子集；`pcie-endpoint-architecture.md §4.3` + [`18-pcie-endpoint-entry.md §4.3 ABI 三口径说明`](../18-pcie-endpoint-entry.md)）
 - `DmaTranslateCb` 签名不变（ADR-088 §D3.8）
 
 ### §12.2 时序约束
