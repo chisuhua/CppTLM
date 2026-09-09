@@ -52,11 +52,11 @@
 | **阶段 1.3d** | SDMA 完成通知: Fence + MSI-X 接线 | 0.5 周 | 同上 §阶段 1.3 + [`sdma-engine-design.md` §9](../../02_architecture/sdma-engine-design.md) | 🔄 Proposed |
 | **阶段 1.4** | 电源管理 | 0.5 周 | 同上 §阶段 1.4 | 🔄 Proposed |
 | **阶段 2.1** | P2P + Resizable BAR | 1 周 | 同上 §阶段 2.1 | 🔄 Proposed |
-| **总计** | | **4.5-6.5 周** | | |
+| **总计** | | **5.0-6.0 周** | | |
 
 **v0.1 → v0.2 修订**（Oracle 2026-09-09 审查触发）：
 - 阶段 1.3 从单一步骤拆为 4 子阶段（1.3a/1.3b/1.3c/1.3d），原 0.5 周 → 2.5-3 周
-- 总工期 2.5-3.5 周 → 4.5-6.5 周
+- 总工期 2.5-3.5 周 → 5.0-6.0 周
 - 新增 SDMA 内部设计文档 [`docs/soc_arch/architecture/17-sdma-engine-design.md`](../../02_architecture/sdma-engine-design.md)（11 章节，作为 1.3 实施的设计基础）
 - **不变项**：阶段 1.1/1.2/1.4/2.1 工期不变；22 ABI 签名不变；5 端口 wire-format 冻结
 
@@ -246,7 +246,7 @@
 
 - **v0.2** (2026-09-09, Draft): **阶段 1.3 拆 4 子阶段**（Oracle CONDITIONAL 4.5/10 触发）
   - 阶段 1.3 单步 → 4 子步骤（1.3a/1.3b/1.3c/1.3d），原 0.5 周 → 2.5-3 周
-  - 总工期 2.5-3.5 周 → **4.5-6.5 周**
+  - 总工期 2.5-3.5 周 → **5.0-6.0 周**
   - 新增 SDMA 内部设计文档 `docs/soc_arch/architecture/17-sdma-engine-design.md`（11 章节）
   - 不变：阶段 1.1/1.2/1.4/2.1 工期；22 ABI 签名；5 端口 wire-format
 

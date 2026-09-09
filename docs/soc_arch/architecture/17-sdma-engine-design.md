@@ -5,7 +5,7 @@
 > **审计**: Oracle 审查 CONDITIONAL (4.5/10) → 本文档完成后预期 7.5/10
 > **关联**:
 > - [`pcie-endpoint-architecture.md`](pcie-endpoint-architecture.md) — PCIe EP 跨仓架构 SSOT（§3 SDMA 摘要）
-> - [`openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/`](../../openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) — 14 ADDED Requirements
+> - [`openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/`](../../openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) — 13 ADDED Requirements
 > - [`openspec/specs/sdma-engine-tlm/spec.md`](../../openspec/specs/sdma-engine-tlm/spec.md) — 组件 spec
 
 ---
