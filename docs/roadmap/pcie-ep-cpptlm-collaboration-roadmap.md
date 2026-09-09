@@ -270,3 +270,9 @@
   - **已知遗留**: UsrLinuxEmu 仓 570b977 commit 同样把 entry.md 图内 71→73；该仓 v0.3+ 修正应先于 CppTLM 后续镜像动作，否则再 sync 又会把 73 拉进来
 
 - **待 v0.4**: 阶段 1.3a 实施后追加（实际 wire-format 验证 + 性能基准）
+
+- **v0.3.1** (2026-09-09, post-Oracle 闭环登记, Oracle session `ses_f79101668ffeNaDC6a2mvarbOm`): 双仓 73→71 错误链闭环
+  - **UsrLinuxEmu 仓 `1145540` (v0.2.2) 已完成** 71 fn-ptrs 全面回滚 + changelog discipline 修正
+  - **本仓 300ddc45 (v0.3)** 已完成 5 处 22→23 + 1 处 71→73→71 自愈
+  - **撤销**: 本表 v0.3 "已知遗留" 中"UsrLinuxEmu 仓 570b977 commit 同样把 entry.md 图内 71→73，该仓 v0.3+ 修正应先于 CppTLM 后续镜像动作"——**已过时**, UE 已闭环
+  - **跨仓 SSOT**: UsrLinuxEmu `tools/docs-audit.sh §1.5` = **71** fn-ptrs

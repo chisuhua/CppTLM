@@ -399,7 +399,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 |------|------|
 | [`cpptlm-pcie-ep-foundation/spec.md`](../../openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/specs/cpptlm-pcie-ep-foundation/spec.md) | 13 ADDED Requirements |
 | [`sdma-engine-tlm/spec.md`](../../openspec/specs/sdma-engine-tlm/spec.md) | SDMA 组件 spec |
-| [`cpptlm-emulator-abi-contract-extension`](../../openspec/specs/cpptlm-emulator-abi-contract-extension/) | ABI 契约扩展 |
+| [`dgpu-board-adapter-info/spec.md`](../../openspec/specs/dgpu-board-adapter-info/spec.md) | DGpuBoard adapter 信息通道（per ADR-092）|
 
 ### §11.3 代码事实
 
@@ -452,6 +452,13 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   - **已知遗留**: UsrLinuxEmu 仓 `570b977` commit 同样把 entry.md 图内 71→73，是本次错误的源头；该仓 v0.3+ 修正应先于 CppTLM 后续镜像动作，否则再 sync 又会把 73 拉进来
 
 - **待 v0.4**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准）
+
+- **v0.3.1** (2026-09-09, post-Oracle 闭环登记, Oracle session `ses_f79101668ffeNaDC6a2mvarbOm`): 双仓 73→71 错误链闭环
+  - **UsrLinuxEmu 仓 `1145540` (v0.2.2) 已完成** `71 fn-ptrs` 全面回滚 + changelog discipline 修正（§11.1 ADR-023 行、§12 v0.2 历史还原、v0.2.1/v0.2.2 独立条目、header v0.2.2 升级）
+  - **本仓 300ddc45 (v0.3)** 已完成图内 71 + §11.1 ADR-023 行 71 + §4.3 ABI 三口径脚注 + 仓内一致性（roadmap/17-doc 5 处 22→23）
+  - **撤销**: 本文档 §12 v0.3 "已知遗留" 条目中"UsrLinuxEmu 仓 `570b977` commit 同样把 entry.md 图内 71→73，该仓 v0.3+ 修正应先于 CppTLM 后续镜像动作"——**已过时**, UsrLinuxEmu 仓已闭环完成（`1145540`）。本 v0.3.1 闭环条目按 append-only 纪律保留 v0.3 原文, 仅追加闭环登记。
+  - **新发现**: §11.2 引用死链 `cpptlm-emulator-abi-contract-extension/spec.md` —— 该 spec 在本仓 `openspec/specs/` **不存在**; ABI 契约范围已被 `cpptlm-pcie-ep-foundation/spec.md` 13 ADDED Requirements 完整覆盖, 单独 spec 已无存在必要。已替换为 `dgpu-board-adapter-info/spec.md` (per ADR-092 adapter 信息通道)。
+  - **跨仓 SSOT**: UsrLinuxEmu `tools/docs-audit.sh §1.5` 权威方法 `grep -oE "\(\*[a-z_]+\)" | grep -vE "callback|handler" | sort -u | wc -l = **71**; ADR-023 §D4 + ADR-092 §D1 累计 68→71 与之一致。
 
 ---
 
