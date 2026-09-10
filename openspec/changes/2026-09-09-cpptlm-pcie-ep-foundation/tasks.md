@@ -103,16 +103,16 @@
 
 > **工期**: 1 周 | **对应 SDMA 设计**: §2-§6（类 + Ring + RPTR/WPTR + Doorbell + Packet）| **原任务**: 1.3.1 + 1.3.2 + 新增 Ring/RPTR/WPTR/Doorbell 绑定
 
-**量化 AC（待复审确认）**:
-- Ring Buffer 容量: ≥ 4096 entries × 64B = 256KB（按 PCIe BAR MMIO 4KB-aligned 页面分配）
-- RPTR / WPTR 位宽: 32 位（支持 4G 容量环）
-- Doorbell 寄存器: BAR offset `0x18`（per [sdma-engine-design.md §3.2](../../../docs/soc_arch/architecture/17-sdma-engine-design.md)）
-- SG 描述符支持: 单描述符链长度 ≥ 16（满足大块 DMA 传输）
+**量化 AC（Oracle 复审确认 2026-09-09，per design §3.2/§3.3/§2/§13）**:
+- Ring Buffer 容量: `cfg.ring_size ∈ {4KB, 8KB, 16KB, 64KB}`，entry 32B（basic）/ 64B（含 SG），最大 1024 条目 @64B（per design §3.2；原 256KB 与 §3.3 BAR1 布局冲突，AMEND）
+- RPTR / WPTR 位宽: 32 位（per design §2 `std::atomic<uint32_t>` / §3.3 寄存器 4B）
+- Doorbell 寄存器: `BAR1 + 0x10010000`，4B，仅 WPTR 写入触发（per design §3.3 / §5.1 L296；原 0x18 无仓内出处，AMEND）
+- SG 描述符支持: 单描述符链长度 ≥ 8（per design §2 L157 / §13 L785 `MAX_SG_ENTRIES = 8`；原 ≥16 与设计冻结值不符，AMEND）
 
 **任务清单**:
-- [ ] **任务 1.3a.1**: 新建 `src/tlm/gpu/sdma_ring_buffer.h/cc` — Ring Buffer 数据结构（4096 entries + 32-bit RPTR/WPTR + 内存屏障）
-- [ ] **任务 1.3a.2**: 新建 `src/tlm/gpu/sdma_packet.h/cc` — Packet 数据结构（含 SG 描述符链，链长 ≥ 16）
-- [ ] **任务 1.3a.3**: `src/tlm/gpu/sdma_engine_tlm.cc` 改造 — descriptor 直投 → Ring Buffer + RPTR/WPTR + Doorbell 绑定（BAR offset 0x18）
+- [ ] **任务 1.3a.1**: 新建 `src/tlm/gpu/sdma_ring_buffer.h/cc` — Ring Buffer 数据结构（`cfg.ring_size ∈ {4KB, 8KB, 16KB, 64KB}`，最大 1024 entries @64B + 32-bit RPTR/WPTR + 内存屏障；per design §3.2）
+- [ ] **任务 1.3a.2**: 新建 `src/tlm/gpu/sdma_packet.h/cc` — Packet 数据结构（含 SG 描述符链，链长 ≥ 8；per design §2/§13 `MAX_SG_ENTRIES=8`）
+- [ ] **任务 1.3a.3**: `src/tlm/gpu/sdma_engine_tlm.cc` 改造 — descriptor 直投 → Ring Buffer + RPTR/WPTR + Doorbell 绑定（`BAR1 + 0x10010000`；per design §3.3/§5.1 L296）
 - [ ] **任务 1.3a.4**: `src/tlm/gpu/dma_descriptor_mvp.hh` + `dma_bundles_tlm.hh` — `Dir::D2D` 扩展 + SG 描述符
 - [ ] **Write test**: `test_sdma_ring_rptr_wptr`（Ring Buffer RPTR/WPTR 正确性）+ `test_sg_descriptor_chain`（SG 链正确性）
 - [ ] **Verify pass**: Ring Buffer RPTR/WPTR + SG 描述符 + Doorbell 绑定测试全 PASS
@@ -121,14 +121,14 @@
 
 > **工期**: 0.5-1 周 | **对应 SDMA 设计**: §10（D2D 路径）| **原任务**: 全新增（无 1.3.1-1.3.3 对应）
 
-**量化 AC（待复审确认）**:
-- NoC 数据面带宽: ≥ 32 GB/s（满足 dGPU 内部搬运需求）
-- 显存控制器 bypass: 路径不经过 host_out 端口（断言 host_out 零事务）
-- D2D descriptor: `Dir::D2D` 类型 + NoC target address（显存 VA）
+**量化 AC（Oracle 复审确认 2026-09-09，per design §10.4/§10.3/§10.1）**:
+- NoC 数据面带宽: ≥ 100 GB/s（per design §10.4 "数百 GB/s" 保守下限；原 32 GB/s 是 PCIe P2P 列张冠李戴，AMEND）
+- 显存控制器 bypass: 路径不经过 host_out 端口（断言 host_out 零事务；per design §10.3）
+- D2D descriptor: `Dir::D2D` 类型 + NoC target address（显存 VA；per design §10.1）
 
 **任务清单**:
 - [ ] **任务 1.3b.1**: 新建 `src/tlm/gpu/d2d_noc_path.h/cc` — D2D NoC 路径（payload 转发）
-- [ ] **任务 1.3b.2**: `src/tlm/gpu/gpu_mesh_noc.h/cc` — NoC 从延迟模型扩为 payload 转发（带宽 ≥ 32 GB/s）
+- [ ] **任务 1.3b.2**: `src/tlm/gpu/gpu_mesh_noc.h/cc` — NoC 从延迟模型扩为 payload 转发（带宽 ≥ 100 GB/s；per design §10.4）
 - [ ] **任务 1.3b.3**: 显存控制器 bypass 路径 — 写入直达 VRAM（绕过 PCIe TLP）
 - [ ] **Write test**: `test_d2d_noc_path`（NoC payload 转发正确性）+ `test_host_out_zero_transactions`（断言 host_out 零事务）
 - [ ] **Verify pass**: D2D 路径正确 + host_out 零事务测试 PASS
@@ -137,16 +137,18 @@
 
 > **工期**: 0.5 周 | **对应 SDMA 设计**: §8（地址翻译）+ §11（CmdProc 集成）| **原任务**: 1.3.1 + 1.3.3
 
-**量化 AC（待复审确认）**:
-- 4 级页表翻译链（page walk 深度 = 4）
-- 双模式: identity mapping + IOMMU 翻译（VT-d / AMD IOMMU 兼容）
-- CP→SDMA 转发: PM4 DMA opcode `0x4600-0x4900` 范围（per design.md §3.3 1.3c）
-- 修复 #2: cb 失败 fallback 返回 `pa = iova`（identity 模式）或 0 错误码（IOMMU 模式失败）
+**量化 AC（Oracle 复审确认 2026-09-09，per design §8.1/§8.2/§8.3/§11.2）**:
+- 4 级翻译链（per design §8.1，CPU VA→PA→IOVA→GPU MC 四**阶段**，非 x86 四级页表 walk；措辞对齐避免实现者误读）
+- 双模式: identity mapping + IOMMU 翻译（VT-d / AMD IOMMU 兼容；per design §8.1/§8.2）
+- CP→SDMA 转发: PM4 DMA opcode `0x4600-0x4900` 范围（per design §11.2 表）
+- 修复 #2: identity 模式 `pa = iova` 返回 0；IOMMU 模式 cb 失败传播**负 errno**（-ENOSYS/-EIO）至 `error_cb`（per design §8.2/§8.3；原 "0 错误码（IOMMU 模式失败）" 0=成功 语义颠倒，AMEND）
 
 **任务清单**:
 - [ ] **任务 1.3c.1**: `src/abi/cpptlm_emulator.cc:443-460` — 修复 #2（lambda 内移除 `(void)cb`，真实调用 UsrLinuxEmu cb）
   - 签名适配两套：board shell 层 vs SDMA 引擎层
-  - cb 失败返 `pa = iova` fallback（identity 模式）
+  - cb 失败处理（per design §8.2/§8.3）:
+    - identity 模式: 返 `pa = iova` 返回 0
+    - IOMMU 模式: cb 失败传播**负 errno**（-ENOSYS/-EIO）至 `error_cb`
 - [ ] **任务 1.3c.2**: `src/tlm/pcie/pcie_endpoint_ip.cc` — GART/IOMMU 4 级翻译链（identity + IOMMU 双模式）
 - [ ] **任务 1.3c.3**: `src/tlm/gpu/command_processor_mvp.cc` — DISPATCH 态 dma_req 分支（PM4 opcode 0x4600-0x4900 映射）
 - [ ] **Write test**: `test_register_dma_translate_cb_returns_iova`（identity mapping）+ `test_dma_translate_iommu`（IOMMU 4 级翻译）
@@ -157,16 +159,16 @@
 
 > **工期**: 0.5 周 | **对应 SDMA 设计**: §9（完成通知）| **原任务**: 全新增（无 1.3.1-1.3.3 对应，修复 #4）
 
-**量化 AC（待复审确认）**:
-- Fence 命令（Ring 内）正确触发完成事件
-- done_out → CompletionRing → MSI-X 接线延迟 ≤ 1 ms（per [§5.1 msix intr_cb 触发验证（200ms 内 ≥1 次）](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/02_architecture/pcie-endpoint-entry.md#51-同步检查清单) 放宽 200×）
-- MSI-X vector 0-3 分配（4 个完成通知向量）
-- 修复 #4: 中断链断裂（per entry §9 Oracle 风险行）
+**量化 AC（Oracle 复审确认 2026-09-09，per design §9.2/§9.1 + UE entry §5.1/§7.1）**:
+- Fence 命令（Ring 内）正确触发完成事件（per design §9.2）
+- 完成通知非量化 AC: done_out → CompletionRing → MSI-X → intr_cb 链路在测试 **200ms 超时窗口内触发 ≥1 次**（对齐 entry §5.1/§7.1 验证协议；原 ≤1ms 引用链断裂 + TLM wall-clock 无可重复性，REJECT 改为非量化）
+- MSI-X vector 非量化 AC: vector 由 entry/驱动指定并正确路由至对应 intr_cb；vector 值须在 `msix_init` table_size 合法范围内（per design §9.1 `trigger_msix(vector)` 透传；原 vector 0-3 硬编无设计出处，REJECT 改为非量化）
+- 修复 #4: 中断链断裂（per entry §9 Oracle 风险行 + §9.1 调用链完整）
 
 **任务清单**:
 - [ ] **任务 1.3d.1**: `src/tlm/gpu/sdma_engine_tlm.cc` — Fence 命令支持（Ring 内 Fence descriptor）
 - [ ] **任务 1.3d.2**: 新建 `src/tlm/gpu/sdma_completion_ring.h/cc` — done_out → CompletionRing 转发
-- [ ] **任务 1.3d.3**: `src/abi/cpptlm_emulator.cc` — MSI-X vector 0-3 接线（trigger_irq_async）
+- [ ] **任务 1.3d.3**: `src/abi/cpptlm_emulator.cc` — MSI-X vector 路由（vector 由 entry/驱动指定，须在 `msix_init` table_size 合法范围内；per design §9.1）
 - [ ] **Write test**: `test_sdma_fence`（Fence 命令触发完成事件）+ `test_msix_completion`（MSI-X 触发延迟）
 - [ ] **Verify pass**: Fence + MSI-X 接线测试全 PASS；修复 #4 验证（UsrLinuxEmu 侧 intr_cb 在 200ms 内 ≥1 次触发）
 
