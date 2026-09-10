@@ -3,7 +3,7 @@
 > **TDD 纪律**: 每个 task 顺序 = Write test → Verify fail → Implement → Verify pass → Commit
 > **状态**: 🔄 Proposed v1.0（2026-09-09）
 > **前置基线**: CppTLM 现有 22 ABI 函数（7 个根本错误）+ 14 PCIe 头文件骨架 + 10 PCIe .cc 实现
-> **工期**: 2-3 周（基础必备 4 步）+ 1 周（性能增强 1 步）
+> **工期**: 4.0-5.0 周（基础必备 4 步；按 Oracle 2026-09-09 修订拆分 1.3 → 1.3a-d 4 子阶段）+ 1 周（性能增强 1 步）= **5.0-6.0 周**（per UE entry §2.2 总计）
 > **关联**: [proposal.md](proposal.md) + [design.md](design.md) + [specs/cpptlm-pcie-ep-foundation/spec.md](specs/cpptlm-pcie-ep-foundation/spec.md)
 
 ---
@@ -14,10 +14,13 @@
 |------|--------|:---:|------|:------:|
 | **阶段 1.1** | PCIe EP 基础（修复 #3 + #5 + #6 + #7） | 0.5-1 周 | — | P0 |
 | **阶段 1.2** | MSI-X 中断（修复 #4） | 0.5 周 | 阶段 1.1 | P0 |
-| **阶段 1.3** | DMA 引擎（修复 #2） | 0.5 周 | 阶段 1.2 | P0 |
-| **阶段 1.4** | 电源管理 | 0.5 周 | 阶段 1.3 | P0 |
+| **阶段 1.3a** | SDMA 基础（Ring Buffer + RPTR/WPTR + Doorbell + SG） | 1 周 | 阶段 1.2 | P0 |
+| **阶段 1.3b** | D2D SDMA 路径（NoC 数据面 + 显存 bypass） | 0.5-1 周 | 阶段 1.3a | P0 |
+| **阶段 1.3c** | dma_translate_cb + GART/IOMMU + CP→SDMA（修复 #2） | 0.5 周 | 阶段 1.3b | P0 |
+| **阶段 1.3d** | SDMA 完成通知（Fence + MSI-X 接线，修复 #4） | 0.5 周 | 阶段 1.3c | P0 |
+| **阶段 1.4** | 电源管理 | 0.5 周 | 阶段 1.3d | P0 |
 | **阶段 2.1** | P2P + Resizable BAR | 1 周 | 阶段 1.4 | P1 |
-| **总计** | | **3-4 周** | | |
+| **总计** | | **5.0-6.0 周** | | |
 
 **关键路径**: 阶段 1.1 → 1.2 → 1.3 → 1.4 → 2.1
 

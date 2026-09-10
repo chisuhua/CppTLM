@@ -6,8 +6,8 @@
 > **关联 change**:
 > - [2026-09-09-cpptlm-pcie-ep-foundation](../2026-09-09-cpptlm-pcie-ep-foundation/) — 父 change（5 步综合实施）；本 change 是阶段 1.1 聚焦子集
 > **关联 ADR**:
-> - [ADR-088](../../docs/00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 仿真边界
-> - [ADR-091](../../docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 — 4 象限
+> - [ADR-088](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 仿真边界
+> - [ADR-091](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 — 4 象限
 > **前置基线**:
 > - 探索报告完整：`explore session ses_f76db853affeOKwc99O4walT80` 给出 4 bug 详细代码位置
 > - Oracle Gate D 4 项 checklist 验证（已 ship `bab64dd5` adapter 扩展）
@@ -97,7 +97,7 @@
 
 ### 不在范围内
 
-- 阶段 1.2 MSI-X 修复 #4（独立 change 跟踪）
+- 阶段 1.2 MSI-X 修复 #4（由父 change `pcie-ep-foundation` tasks.md §3 任务 1.2.1 跟踪）
 - 阶段 1.3a/b/c/d SDMA 修复（4 子阶段，已在父 change tasks.md §4）
 - 阶段 1.4 电源管理（父 change tasks.md §5）
 - 阶段 2.1 P2P + Resizable BAR（父 change tasks.md §6）

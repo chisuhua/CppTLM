@@ -280,6 +280,6 @@ board->set_dma_translate_callback([cb](uint64_t iova, size_t size) -> uint64_t {
 - [specs/cpptlm-pcie-ep-foundation/spec.md](specs/cpptlm-pcie-ep-foundation/spec.md) — capability 规范
 - Oracle 审查三连（PCIe EP 3.5/10 + CP attach 3.5/10 + 5.5.8 8.7/10）
 - UsrLinuxEmu 5.5.6+ dGPU E2E 主线解锁（依赖本 change 完成）
-- [ADR-088](../../docs/00_adr/adr-088-dgpu-complete-simulation.md) — dGPU 完整仿真边界
-- [ADR-091](../../docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) — 4 象限
-- [ADR-052](../../docs/00_adr/adr-052-pm4-microcode.md) — PM4 microcode（依赖）
+- [ADR-088](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) — dGPU 完整仿真边界
+- [ADR-091](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) — 4 象限
+- [ADR-052](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-052-pm4-microcode.md) — PM4 microcode（依赖）

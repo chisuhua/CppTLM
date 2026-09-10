@@ -2,10 +2,10 @@
 
 > **状态**: 🔄 Proposed v1.0（2026-09-09）
 > **优先级**: P0（前置 UsrLinuxEmu 5.5.6+ dGPU E2E 主线解锁）
-> **工期**: 2-3 周（基础必备 4 步）+ 1 周（性能增强 1 步）
+> **工期**: 4.0-5.0 周（基础必备 4 步；按 Oracle 2026-09-09 修订拆分 1.3 → 1.3a-d 4 子阶段）+ 1 周（性能增强 1 步）= **5.0-6.0 周**
 > **关联 ADR**:
-> - [ADR-088](../../docs/00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 完整仿真
-> - [ADR-091](../../docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 — 4 象限
+> - [ADR-088](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted — dGPU 完整仿真
+> - [ADR-091](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) ✅ Accepted v0.2 — 4 象限
 > - ADR-052 ✅ Accepted — PM4 microcode（依赖本 change）
 > **前置基线**:
 > - CppTLM `cpptlm_emulator.cc` 22 ABI 函数（部分 stub/NO-OP，详见 §1）
@@ -185,10 +185,10 @@ UsrLinuxEmu 通过 dlopen `libcpptlm_emulator.so` 委托 dGPU 板卡仿真。Ora
 
 ## Cross-References
 
-- [proposal.md](../proposal.md) — UsrLinuxEmu 5.5.8 立项（已 commit `d4a98f7`）
-- [5.5.6 立项](../archive/2026-09-08-2026-09-08-5-5-6-cpptlm-ep-binding/) — 已 Oracle 9.5/10 归档
-- [5.5.7 立项](../2026-09-09-5-5-7-cpptlm-cp-real-ification/) — Oracle CONDITIONAL PASS 9.3/10 + P5.NEW-A 9.4/10
-- [5.5.8 立项](../2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/) — Oracle CONDITIONAL PASS 8.7/10，阶段 1 cp_attach 待删除
-- [ADR-088](../../docs/00_adr/adr-088-dgpu-complete-simulation.md) — dGPU 完整仿真
-- [ADR-091](../../docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) — 4 象限
-- [ADR-052](../../docs/00_adr/adr-052-pm4-microcode.md) — PM4 microcode（依赖本 change）
+- [5.5.6 立项](https://github.com/chisuhua/UsrLinuxEmu/blob/main/openspec/changes/archive/2026-09-08-2026-09-08-5-5-6-cpptlm-ep-binding/) — 已 Oracle 9.5/10 归档
+- [5.5.7 立项](https://github.com/chisuhua/UsrLinuxEmu/blob/main/openspec/changes/2026-09-09-5-5-7-cpptlm-cp-real-ification/) — Oracle CONDITIONAL PASS 9.3/10 + P5.NEW-A 9.4/10
+- [5.5.8 立项](https://github.com/chisuhua/UsrLinuxEmu/blob/main/openspec/changes/2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/) — Oracle CONDITIONAL PASS 8.7/10，阶段 1 cp_attach 待删除
+- [ue-stage-1-1-bridge-sync](https://github.com/chisuhua/UsrLinuxEmu/blob/main/openspec/changes/2026-09-10-ue-stage-1-1-bridge-sync/) — UE 侧桥接层断言升级 + 跨仓集成测试（5.5.7 启动 gate 解锁条件之一）
+- [ADR-088](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) — dGPU 完整仿真
+- [ADR-091](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) — 4 象限
+- [ADR-052](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-052-pm4-microcode.md) — PM4 microcode（依赖本 change）
