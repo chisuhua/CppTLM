@@ -1,6 +1,7 @@
 // test/test_dgpu_board_shell_abi.cc
 // BS-G2: DGpuBoard shell 5 职责 + 多线程注入 + 异常传播测试
 #include <atomic>
+#include <cerrno>
 #include <chrono>
 #include <thread>
 #include <vector>
@@ -129,9 +130,9 @@ TEST_CASE("DGpuBoard: backdoor_read goes through inject_q (non-direct VRAM acces
     DGpuBoard board("test_board");
     board.init();
     uint8_t buf[64] = {0};
-    // backdoor_read 应走 inject_q 路径,返回值可能是 -110(超时)或 len(占位)
+    // backdoor_read 同步查 vram_segments_, 未写入 offset → miss 返 -ENOENT (修复 #6)
     int rc = board.backdoor_read(0x1000, buf, sizeof(buf));
-    REQUIRE((rc == -110 || rc == static_cast<int>(sizeof(buf))));
+    REQUIRE(rc == -ENOENT);
     board.shutdown();
 }
 
@@ -199,7 +200,7 @@ TEST_CASE("DGpuBoard: last_exception_ from sim_loop rethrows on next ABI call", 
 }
 
 // ── T-W3-3 1A: backdoor happy path ──
-// ABI 契约: hit 返 0 + buf echo; miss / size mismatch 返 len (per design §2.5)
+// ABI 契约: hit 返 0 + buf echo; miss 返 -ENOENT; size mismatch 返 -EINVAL (修复 #6)
 TEST_CASE("DGpuBoard: backdoor_write→backdoor_read happy path echoes data through vram_segments_",
           "[dgpu][shell][backdoor][happy]") {
     DGpuBoard board("test_board");
@@ -216,10 +217,10 @@ TEST_CASE("DGpuBoard: backdoor_write→backdoor_read happy path echoes data thro
     REQUIRE(read_data == write_data);
 
     std::vector<uint8_t> miss_buf(32, 0);
-    REQUIRE(board.backdoor_read(0x9000, miss_buf.data(), miss_buf.size()) == 32);
+    REQUIRE(board.backdoor_read(0x9000, miss_buf.data(), miss_buf.size()) == -ENOENT);
 
     std::vector<uint8_t> mismatch_buf(32, 0);
-    REQUIRE(board.backdoor_read(0x1000, mismatch_buf.data(), mismatch_buf.size()) == 32);
+    REQUIRE(board.backdoor_read(0x1000, mismatch_buf.data(), mismatch_buf.size()) == -EINVAL);
 
     board.shutdown();
 }
