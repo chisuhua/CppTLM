@@ -4,6 +4,7 @@
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 // #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
 #include <chrono>
+#include <cerrno>
 #include <iostream>
 
 namespace tlm::gpu {
@@ -149,18 +150,27 @@ namespace tlm::gpu {
     }
 
     int DGpuBoard::pcie_config_read(uint16_t offset, uint8_t width, uint32_t* val) {
-        (void)offset;
         (void)width;
-        (void)val;
-        // TODO T-bs-3b
-        return -ENOSYS;
+        if (!val)
+            return -EINVAL;
+        if (!soc_)
+            return -ENOSYS;
+        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        if (!ep)
+            return -ENOSYS;
+        *val = ep->config_space().read(offset);
+        return 0;
     }
 
     int DGpuBoard::pcie_config_write(uint16_t offset, uint8_t width, uint32_t val) {
-        (void)offset;
         (void)width;
-        (void)val;
-        return -ENOSYS;
+        if (!soc_)
+            return -ENOSYS;
+        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        if (!ep)
+            return -ENOSYS;
+        ep->config_space().write(offset, val);
+        return 0;
     }
 
     // ── backdoor ABI(per design §2.5 #5 + ADR-SOC-07 Q3) ──
