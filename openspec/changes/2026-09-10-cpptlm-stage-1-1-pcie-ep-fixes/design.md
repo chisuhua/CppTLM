@@ -171,7 +171,7 @@ TEST_CASE("mmio_read returns real data", "[dgpu][mmio]") {
 ### 当前文档矛盾
 - `design.md §3.1` 步骤 1.1 描述："mmio_write blocks synchronously until sim_loop drain completes"
 - `architecture/18-pcie-endpoint-entry.md §2.1`："MMIO Write 是异步（sim_loop tick 内 drain）"
-- 实际代码（`dgpu_board_shell.cc:148`）：`return 0; // async, no wait`
+- 实际代码（`dgpu_board_shell.cc:185`）：`return 0; // async, no wait (修复 #7: 保持异步语义)`
 
 ### 裁决
 **保持 async 行为**（当前代码正确）：

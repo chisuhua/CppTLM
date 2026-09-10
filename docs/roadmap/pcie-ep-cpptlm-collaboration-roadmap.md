@@ -134,7 +134,7 @@
 - #3 pcie_config_read/write → 转发 `ep_->cfg_space_->read/write`
 - #5 mmio_read 数据缺口 → TLP 注入 TODO T-bs-3c + race 修复
 - #6 backdoor_read 返 len → 未命中返 -ENOENT
-- #7 mmio_write 数据丢弃 → 同步阻塞至 sim_loop drain
+- #7 mmio_write 数据丢弃 → 保持 async（返 0 立即返回，数据由 sim_loop next tick drain）
 
 **关键代码文件**（CppTLM 端）：
 - `src/tlm/gpu/dgpu_board_shell.cc` (line 106-220) — 4 个函数真实化
