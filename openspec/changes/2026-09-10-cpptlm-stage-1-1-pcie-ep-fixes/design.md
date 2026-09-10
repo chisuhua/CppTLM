@@ -189,6 +189,12 @@ TEST_CASE("mmio_read returns real data", "[dgpu][mmio]") {
 ### 测试
 - N/A（仅文档修订）
 
+### 已解决（Oracle Gate E 复审确认）
+- 矛盾源 `openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/design.md` §3.1 已随 foundation change 归档（`d6a93ebc`），无需再修改
+- roadmap（`docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md`）与 `architecture/18-pcie-endpoint-entry.md` §2.1 已描述 async 契约
+- 实现 `dgpu_board_shell.cc::mmio_write` 返回 `0` 立即返回（async，数据由 sim_loop next tick drain）
+- 既有 "blocks synchronously" 措辞仅存于已归档历史文档，不构成活跃矛盾
+
 ## 实施顺序
 
 ```

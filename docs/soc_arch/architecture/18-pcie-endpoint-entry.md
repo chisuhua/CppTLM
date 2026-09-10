@@ -133,7 +133,7 @@ CppTLM 5+4 步 (5.0-6.0 周)
 | Change | 范围 | 阶段覆盖 | 状态 |
 |--------|------|---------|------|
 | [`2026-09-09-cpptlm-pcie-ep-foundation`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) | CppTLM PCIe EP 基础必备 + 性能增强 + 电源管理 + 完成通知 | **§1.1-1.4 + §2.1**（8 步全覆盖）| 🔄 Proposed |
-| [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/) | **聚焦子集**：阶段 1.1 4 bug 修复（#3 pcie_config_read/write / #6 backdoor_read miss / #5 mmio_read 数据 / #7 mmio_write async 文档澄清）| §1.1（父 change 阶段 1.1 聚焦实施，0.5-1 周）| 🔄 Proposed（Blocked-by：父 change `pcie-ep-foundation` 同步验证）|
+| [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/) | **聚焦子集**：阶段 1.1 4 bug 修复（#3 pcie_config_read/write / #6 backdoor_read miss / #5 mmio_read 数据 / #7 mmio_write async 文档澄清）| §1.1（父 change 阶段 1.1 聚焦实施，0.5-1 周）| ✅ 已实施 + Oracle Gate E PASS |
 
 **关键文档**：
 - `proposal.md` — Why / What / Capabilities / Impact（含 7 修复 + 5 步建议）
@@ -480,7 +480,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 |------|------|------|------|
 | SDMA 引擎（现有）| `src/tlm/gpu/sdma_engine_tlm.cc` | 420 | descriptor 直投，阶段 1.3a 待扩展 |
 | Command Processor（现有）| `src/tlm/gpu/command_processor_mvp.cc` | 149 | 5-state FSM，阶段 1.3c 待扩 DMA 类 |
-| DGpuBoard（现有）| `src/tlm/gpu/dgpu_board_shell.cc` | 445 | 7 错误修复点 |
+| DGpuBoard（现有）| `src/tlm/gpu/dgpu_board_shell.cc` | 521 | 7 错误修复点 |
 | CpptlmBridge（UsrLinuxEmu 已 ship）| `sim_hardware/src/cpptlm/bridge.cpp` | 405 | 23 ABI dlopen + 4 data path |
 | BackdoorEndpoint（UsrLinuxEmu 已 ship）| `sim_hardware/src/cpptlm/backdoor_endpoint.cpp` | 390 | 5 ule_dgpu_* functions |
 | HAL cpptlm（UsrLinuxEmu 已 ship）| `plugins/gpu_driver/hal/hal_cpptlm.cpp` | 79 | 3 adapter op 真化 |

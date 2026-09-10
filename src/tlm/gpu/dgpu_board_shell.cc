@@ -138,6 +138,10 @@ namespace tlm::gpu {
         if (status != std::future_status::ready) {
             std::lock_guard<std::mutex> lock(inject_mu_);
             pending_resp_.erase(req.trans_id);
+            // Oracle Gate E: 超时放弃时同步清理 pending_data_ 残留 — drain 线程可能在超时前已
+            // 回填该 trans_id 的 payload (其 future 共享状态仍被 promise 持有, set_value 不抛
+            // future_error), 否则 vector 条目永久泄漏. 与下方成功路径的 erase 模式一致.
+            pending_data_.erase(req.trans_id);
             return -110; // ETIMEDOUT, buf 不变
         }
         int32_t rc = pending_resp_[req.trans_id].get();
