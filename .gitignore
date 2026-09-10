@@ -82,3 +82,4 @@ Testing/
 # Roadmap migrate backups (transient; produced by rddf roadmap migrate).
 #   Each backup dir is timestamped (.rddf/.roadmap-migrate-backup-<TS>/)
 .rddf/.roadmap-migrate-backup-*/
+plugin.log

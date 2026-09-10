@@ -40,10 +40,10 @@
 
 ## 6. 提交与 PR
 
-- [ ] 6.1 提交 1：`fix(asan): resolve test_cpptlm_emulator leaks (config schema + gpu params + simmodule idempotency + registry registrar)`
-- [ ] 6.2 提交 2：`test(cpptlm-emulator): use RAII guard for exception-safe cleanup`
-- [ ] 6.3 提交 3：`docs(openspec): fix-asan-cpptlm-emulator-leak change artifacts`
-- [ ] 6.4 push 到 fix/asan-cpptlm-emulator-leak 分支
-- [ ] 6.5 开 PR 到 main，标题 "fix(asan): resolve test_cpptlm_emulator memory leaks (pre-existing 53+ days)"
-- [ ] 6.6 验证 CI：Build (Debug, ASan=ON) 转 pass, 其他 4 个 job 保持 pass
-- [ ] 6.7 merge PR 后验证 main CI 5/5 pass
+- [x] 6.1 提交 1：`fix(asan): resolve test_cpptlm_emulator leaks (config schema + gpu params + simmodule idempotency + registry registrar)`
+- [x] 6.2 提交 2：`test(cpptlm-emulator): use RAII guard for exception-safe cleanup`
+- [x] 6.3 提交 3：`docs(openspec): fix-asan-cpptlm-emulator-leak change artifacts`
+- [x] 6.4 push 到 fix/asan-cpptlm-emulator-leak 分支
+- [x] 6.5 开 PR 到 main，标题 "fix(asan): resolve test_cpptlm_emulator memory leaks (pre-existing 53+ days)"
+- [x] 6.6 验证 CI：Build (Debug, ASan=ON) 转 pass, 其他 4 个 job 保持 pass
+- [x] 6.7 merge PR 后验证 main CI 5/5 pass
