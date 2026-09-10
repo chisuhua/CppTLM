@@ -29,6 +29,9 @@
 
 ## §2 Oracle 复审（验收）
 
+> **Oracle 复审位置（Metis M6 修订 2026-09-10）**：实施 commit 后、docs mirror commit **前**进行。复审发现问题需追加 commit 而非 amend docs。
+
+
 ### 任务 2.1: 1 次轻量复审
 - [ ] **Oracle review**: intr_cb 真实触发 + 修复 #4 闭环验证
 - [ ] **Verify**: `ctest -R "dgpu|msix"` 全 PASS（既有 ABI 测试零回归）

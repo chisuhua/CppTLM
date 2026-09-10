@@ -1,82 +1,70 @@
-# Design: cpptlm-stage-1-2-msix
+# Design: cpptlm-stage-1-2-msix — Oracle O5 修订 2026-09-10
 
 > **关联**: [proposal.md](../proposal.md) + [tasks.md](../tasks.md) + [specs/cpptlm-stage-1-2-msix/spec.md](../specs/cpptlm-stage-1-2-msix/spec.md)
+>
+> **⚠️ Oracle 修订**：原 design 误认为 `PcieEndpointTLM::trigger_irq_async` 是 stub，但该函数实际**已存在**（`dgpu_board_shell.cc:396-410`，detached std::thread 调 `irq_cb_`）。真正的修复 #4 断链点是 **`msix_update_pending`（`cpptlm_emulator.cc:241-247`）从不调 `board->trigger_irq_async`**。本 change 修复点已重写。
 
 ## 设计概述
 
-修复 #4 中断链断裂（`trigger_irq_async` 真实接线）。设计原则：
+修复 #4 中断链断裂（在 `msix_update_pending` 接线 `board->trigger_irq_async(vector)`）。设计原则：
 1. **TDD 5 步**：先写失败测试，再实施
-2. **路径独立**：trigger_irq_async 路径不依赖其他 ABI
+2. **路径独立**：修复点仅在 cpptlm_emulator.cc 一处
 3. **架构约束**：不改 23 ABI + 5 ports
+4. **payload 不在 23 ABI 范围内**（头文件 L96 `cpptlm_emulator_msix_update_pending(emu, vector)` 无 payload 参数；intr_cb typedef L56 为 `(user_ctx, vector, trans_id)`）
 
-## 当前代码（stub）
+## 当前代码（断链点）
 
 ```cpp
-// src/tlm/pcie/pcie_endpoint_ip.cc
-int PcieEndpointTLM::trigger_irq_async(uint32_t vector, uint64_t payload) {
-    (void)vector;
-    (void)payload;
-    return -ENOSYS;  // ← stub：导致 intr_cb 永远不被调用
+// src/abi/cpptlm_emulator.cc:241-247 (msix_update_pending)
+int cpptlm_emulator_msix_update_pending(cpptlm_emulator_t* emu, uint32_t vector) {
+    if (vector >= emu->msix_table_size) return -EINVAL;
+    std::atomic_fetch_add(&emu->msix_pending[vector], 1);  // ← 只 set pending bit
+    return 0;  // ← 从未触发 trigger_irq_async → intr_cb 永不被调
 }
+// DGpuBoard::trigger_irq_async(vector) 已实现（dgpu_board_shell.cc:396-410），但未被调用
 ```
 
 ## 目标代码（真实接线）
 
 ```cpp
-int PcieEndpointTLM::trigger_irq_async(uint32_t vector, uint64_t payload) {
-    if (vector >= msix_table_size_) {
-        return -EINVAL;  // vector 越界
+// src/abi/cpptlm_emulator.cc:241-247 (msix_update_pending)
+int cpptlm_emulator_msix_update_pending(cpptlm_emulator_t* emu, uint32_t vector) {
+    if (vector >= emu->msix_table_size) return -EINVAL;
+    std::atomic_fetch_add(&emu->msix_pending[vector], 1);
+    // ← 新增：触发 DGpuBoard::trigger_irq_async（已存在，无需重写）
+    if (emu->board) {
+        emu->board->trigger_irq_async(vector);  // detached std::thread → irq_cb_(vector)
     }
-    if (msix_pending_[vector]) {
-        return -EAGAIN;  // 已有 pending，避免重入
-    }
-    // 1. 标记 pending
-    msix_pending_[vector] = true;
-    msix_payload_[vector] = payload;
-
-    // 2. 构造 MSI-X TLP 推入 inject_q_
-    PcieTlpBundle tlp;
-    tlp.type = PcieTlpType::MSI_X;
-    tlp.vector = vector;
-    tlp.payload = payload;
-    tlp.completion_cb = [this, vector]() {
-        // 3. sim_loop drain 后调 intr_cb
-        if (intr_cb_) {
-            intr_cb_(vector, payload);
-        }
-        msix_pending_[vector] = false;
-    };
-    {
-        std::lock_guard<std::mutex> lock(inject_mu_);
-        inject_q_.push_back(std::move(tlp));
-    }
-    return 0;  // async fire-and-forget
+    return 0;
 }
+// msix_init 路径补全：msix_init 后确保 board->register_irq_callback(intr_cb) 已绑定
 ```
 
 ## 关键变更
 
-- **新增数据结构**：`msix_pending_[vector]` + `msix_payload_[vector]` 跟踪 pending 状态
-- **msix_init 后立即可用**：`msix_table_size_` 在 init 时设置，trigger_irq_async 即可用
-- **intr_cb 真实触发**：sim_loop drain 后通过 completion_cb 调用
-- **vector 由 driver 指定**：参数化 vector（per design §9.1 `trigger_msix(vector)` 透传）
+- **新增接线点**：`msix_update_pending` 末尾调 `board->trigger_irq_async(vector)`（detached thread）
+- **msix_init 路径补全**：确保 `register_callbacks` 已设置 `intr_cb_`（per `cpptlm_emulator_register_callbacks` L103-106，4 cb 捆绑）
+- **vector 由 driver 指定**：参数化 vector（per design §9.1）
+- **payload 不可用**：23 ABI 冻结面无 payload 参数；spec Scenario 断言 intr_cb 的 trans_id 而非 payload
+- **线程模型**：detached std::thread（非 inject_q_/sim_loop），需注意测试稳定性（entry §9 retry 1 + CI 容忍度）
 
 ## 实施顺序
 
 TDD 5 步（1 commit）：
 1. 写 `test_dgpu_msix.cc::test_msix_intr_cb_called_within_200ms` 失败测试
-2. 验证失败（当前 -ENOSYS）
-3. 实施 trigger_irq_async 真实接线
-4. 验证通过（200ms 内 intr_cb ≥1 次触发）
+2. 验证失败（当前 msix_update_pending 只 set pending，从不调 trigger_irq_async，cb_called = 0）
+3. 实施 `msix_update_pending` 末尾添加 `board->trigger_irq_async(vector)` 调用
+4. 验证通过（200ms 内 intr_cb ≥1 次触发，captured_vector == 测试 vector）
 5. commit
 
 ## 风险评估
 
 | 风险 | 缓解 |
 |------|------|
-| msix_table_size_ 未初始化 | msix_init 时强制设置；trigger_irq_async 越界返 -EINVAL |
-| completion_cb 重入 | msix_pending_[vector] 标记避免 |
-| intr_cb 线程安全 | completion_cb 在 sim_loop 单线程执行 |
+| detached thread 完成时机不可控 | entry §9 retry 1 + CI 容忍度放大（200ms → 2s 标称） |
+| `board` 指针为空 | `msix_update_pending` null check |
+| 多次 `msix_update_pending` 同 vector 触发多次 thread | 由 `DGpuBoard::trigger_irq_async` 内部 mutex 保护 |
+| 测试 flaky（CI 慢机器） | 200ms 是验证上限，非性能断言；retry 1 缓解 |
 
 ## 不在设计范围
 

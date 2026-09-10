@@ -47,7 +47,7 @@ void on_fence_complete(uint64_t fence_id);  // done_out → CompletionRing → M
 - RPTR/WPTR: 32-bit
 - Doorbell: BAR1 + 0x10010000
 - SG: ≥ 8
-- NoC: ≥ 100 GB/s
+- **NoC: ≥ 100 GB/s（Oracle O9 修订：测量定义 = bytes / simulated_latency；`gpu_mesh_noc` payload 转发后必须上报 simulated latency；测试断言 `simulated_throughput_GBps = payload_bytes / simulated_latency_s ≥ 100`）**
 - dma_translate: identity/IOMMU 双模式
 - MSI-X vector: 200ms 内 intr_cb ≥1
 

@@ -39,6 +39,9 @@
 - [ ] **CppTLM 18-doc mirror**: `docs/soc_arch/architecture/18-pcie-endpoint-entry.md §12` 同步
 
 ## §6 Oracle 复审（4 次轻量）
+
+> **Oracle 复审位置（Metis M6 修订 2026-09-10）**：实施 commit 后、docs mirror commit **前**进行。复审发现问题需追加 commit 而非 amend docs。
+
 - [ ] 每子阶段 1 次轻量复审，确认 Ring Buffer wire-format / D2D / 翻译 / 完成通知
 
 ## §7 总计

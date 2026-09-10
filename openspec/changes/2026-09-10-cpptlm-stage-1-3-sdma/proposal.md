@@ -43,7 +43,7 @@
 - **新建**：`sdma_ring_buffer.h/cc` + `sdma_packet.h/cc` + `d2d_noc_path.h/cc` + `sdma_completion_ring.h/cc`
 - **修改**：`sdma_engine_tlm.cc` + `gpu_mesh_noc.h/cc` + `pcie_endpoint_ip.cc` + `cpptlm_emulator.cc` + `command_processor_mvp.cc` + `dma_descriptor_mvp.hh` + `dma_bundles_tlm.hh`
 - **不改**：23 ABI / 5 ports wire-format
-- **5.5.8 阶段 3 gate**：本 change §10（1.3c）ship 后 5.5.8 阶段 3 可启动
+- **5.5.8 阶段 3 gate**：本 change §3（1.3c）ship 后 5.5.8 阶段 3 可启动
 
 ## Oracle 复审（验收）
 

@@ -80,6 +80,13 @@
 - [ ] **Verify**: UsrLinuxEmu 桥接层测试（`test_bridge_dgpu_with_real_pcie_ep`）PASS
 - [ ] **Verify**: UsrLinuxEmu 5.5.6 profile_real 测试从 "ret != -ENOSYS" 升级到数据正确性
 
+### 任务 5.3: 更新既有 ABI 测试期望（修复 #6 打破零回归）
+- [ ] **Modify**: `test/test_dgpu_board_shell_abi.cc`
+  - L219: `REQUIRE(board.backdoor_read(0xDEADBEEF, buf, 64) == 32)` → 改为 `REQUIRE(board.backdoor_read(0xDEADBEEF, buf, 64) == -ENOENT)`
+  - L222: `REQUIRE(board.backdoor_read(0x1000, buf, 32) == 32)` (size mismatch) → 改为 `REQUIRE(board.backdoor_read(0x1000, buf, 32) == -EINVAL)`
+  - 理由：修复 #6 把 miss 返 `len` 改为返 `-ENOENT`、size mismatch 返 `-EINVAL`，既有 2 断言预期是 stub 行为必须更新
+- [ ] **Verify**: 更新后 test_dgpu_board_shell_abi PASS（既有 ABI 测试**预期**因修复 #6 行为变更而调整，非"零回归"）
+
 ## §6 Oracle Gate E 复审（v1.0 → v1.1 升档）
 
 ### 任务 6.1: Oracle 实施后复审

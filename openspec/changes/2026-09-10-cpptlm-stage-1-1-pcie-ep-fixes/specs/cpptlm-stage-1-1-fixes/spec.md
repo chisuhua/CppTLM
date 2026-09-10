@@ -35,12 +35,12 @@ The system MUST forward `DGpuBoard::pcie_config_read` / `_write` to `PcieEndpoin
 
 ### Requirement: Backdoor Read Miss Returns -ENOENT (修复 #6)
 
-The system MUST return -ENOENT (-38) from `DGpuBoard::backdoor_read` when the requested vram_offset is not found in vram_segments_, instead of returning the length as a "fake success" value.
+The system MUST return -ENOENT from `DGpuBoard::backdoor_read` when the requested vram_offset is not found in vram_segments_, instead of returning the length as a "fake success" value.
 
 #### Scenario: Miss returns -ENOENT not len
 
 - **WHEN** `backdoor_read(0xDEADBEEF, buf, 64)` is called with unregistered vram_offset
-- **THEN** the function returns -ENOENT (-38)
+- **THEN** the function returns -ENOENT
 - **AND** `buf` is NOT modified (no false data fill)
 
 #### Scenario: Hit returns 0 with buf filled
@@ -59,16 +59,15 @@ The system MUST return -ENOENT (-38) from `DGpuBoard::backdoor_read` when the re
 - **WHEN** `backdoor_read(0x0, nullptr, 64)` is called
 - **THEN** the function returns -EINVAL
 
-### Requirement: MMIO Read Data Copy (修复 #5)
+### Requirement: MMIO Read Data Copy (修复 #5, Oracle R7 裁决 2026-09-10)
 
-The system MUST copy the response data from sim_loop drain into the caller's buffer in `DGpuBoard::mmio_read`, instead of leaving buf uninitialized. Return value MUST be the byte count on success or negative errno on failure (not just the status code).
+The system MUST copy the response data from sim_loop drain into the caller's buffer in `DGpuBoard::mmio_read`. Return value MUST be `0` on success (与 ABI 家族 `pcie_config_read`/`backdoor_read` 成功返 0 一致 + 与 5.5.7/5.5.8 强约束 `REQUIRE(ret == 0)` 兼容) or negative errno on failure.
 
-#### Scenario: MMIO read returns real data
+#### Scenario: MMIO read returns 0 with real data filled
 
 - **WHEN** `mmio_read(0, 0, buf, 4)` is called and sim_loop responds with data
-- **THEN** the function returns a non-negative byte count (typically 4)
-- **AND** `buf` contains the actual response data (not garbage)
-- **AND** NOT all zeros (the TODO T-bs-3c stub behavior)
+- **THEN** the function returns 0 (success convention, NOT byte count)
+- **AND** `buf` contains the actual response data (not garbage, NOT all zeros — the TODO T-bs-3c stub behavior fixed)
 
 #### Scenario: MMIO read timeout returns -ETIMEDOUT
 
