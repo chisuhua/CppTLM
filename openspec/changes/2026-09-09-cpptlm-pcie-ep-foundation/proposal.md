@@ -11,6 +11,8 @@
 > - CppTLM `cpptlm_emulator.cc` 22 ABI 函数（部分 stub/NO-OP，详见 §1）
 > - PCIe EP 子模块骨架存在但功能不完整（详见 §2）
 > **下游**: UsrLinuxEmu 5.5.6+ dGPU E2E 主线解锁（command_processor → kernel dispatch → 真机验证）
+>
+> **角色声明（Oracle R3 修订 2026-09-10）**: 本 change = **spec/design SSOT + 残余增强任务**（LTSSM 1.1.5 / MSI-X 向量表 1.2.2 / 中断节流 1.2.3）。**实施跟踪由 [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](../2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/proposal.md) 承担**（4 bug 修复 + 阶段 1.2-2.1 全量实施动作，已扩展 97 tasks）。spec.md 13 ADDED Requirements 为能力 SSOT，本 change archive 时提升至 `openspec/specs/`。
 
 ---
 

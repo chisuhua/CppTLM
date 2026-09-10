@@ -28,7 +28,7 @@
 | 4 | `msix_update_pending` 中断链断裂 | `src/tlm/gpu/dgpu_board_shell.cc` + `src/tlm/pcie/pcie_endpoint_ip.cc` | `pcie_ep.irq_out` → `board->trigger_irq_async` 接线 |
 | 5 | `mmio_read` 数据缺口 + race | `src/tlm/gpu/dgpu_board_shell.cc:106-133` | TLP 注入 TODO T-bs-3c 实现 + race 修复 |
 | 6 | `backdoor_read` 返 len 伪装成功 | `src/tlm/gpu/dgpu_board_shell.cc:180` | 精确匹配返 0 + 填充 buf；不匹配返 -ENOENT |
-| 7 | `mmio_write` 数据丢弃 | `src/tlm/gpu/dgpu_board_shell.cc` | 同步阻塞至 sim_loop drain 完成 |
+| 7 | `mmio_write` 数据丢弃 | `src/tlm/gpu/dgpu_board_shell.cc` | **异步**（Oracle R4 裁决 2026-09-10：保持 async，per PCIe posted-write 语义；read-after-write 一致性由 mmio_read 阻塞 + inject_q_ FIFO 保证） |
 
 ### §1.3 测试覆盖现状
 
@@ -73,7 +73,7 @@ int DGpuBoard::config_read(uint16_t offset, uint8_t width, uint32_t* value) {
 }
 ```
 
-**修复 #5（mmio_read 数据缺口）+ #7（mmio_write 同步阻塞）**：
+**修复 #5（mmio_read 数据缺口）+ #7（mmio_write 文档澄清：保持 async）**：
 ```cpp
 // Before (race + 数据缺口)
 int DGpuBoard::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len) {
@@ -93,6 +93,12 @@ int DGpuBoard::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len) {
     auto data = pending_resp_[req.trans_id].get();  // 真实数据
     std::memcpy(buf, data.data(), std::min(len, data.size()));
     return static_cast<int>(std::min(len, data.size()));  // byte-count convention
+}
+
+// mmio_write 保持 async（Oracle R4 裁决 2026-09-10，per PCIe posted-write 语义）
+int DGpuBoard::mmio_write(uint8_t bar, uint64_t offset, const void* buf, size_t len) {
+    inject_q_.push_back(std::move(req));  // 推入队列即返回 0（async）
+    return 0;  // 数据由 sim_loop 下个 tick drain；read-after-write 由 mmio_read FIFO 保证
 }
 ```
 
@@ -235,7 +241,7 @@ board->set_dma_translate_callback([cb](uint64_t iova, size_t size) -> uint64_t {
 | 测试 | 验证 |
 |------|------|
 | test_mmio_read_real_data | buf 被真实填充（不是原值） |
-| test_mmio_write_sync_block | 数据真正落地 |
+| test_mmio_write_async | 数据推入队列即返 0（async，<1ms）；read 后经 FIFO 读回一致 |
 | test_backdoor_read_enoent | 未命中返 -ENOENT（不是 len） |
 | test_backdoor_read_data_roundtrip | roundtrip 数据一致 |
 | test_pcie_config_read_vendor_id | Vendor ID = 0x10DE |

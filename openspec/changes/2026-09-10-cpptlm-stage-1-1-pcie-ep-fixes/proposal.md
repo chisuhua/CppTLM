@@ -95,12 +95,12 @@
 - **中等风险**：修复 #5 涉及 sim_loop drain 同步等待，需要时序验证
 - **需澄清**：修复 #7 文档修订需 Oracle 1 次轻量复审确认裁决方向
 
-### 不在范围内
+### 不在范围内（范围声明 v1.1 修订，Oracle R5 2026-09-10）
 
-- 阶段 1.2 MSI-X 修复 #4（由父 change `pcie-ep-foundation` tasks.md §3 任务 1.2.1 跟踪）
-- 阶段 1.3a/b/c/d SDMA 修复（4 子阶段，已在父 change tasks.md §4）
-- 阶段 1.4 电源管理（父 change tasks.md §5）
-- 阶段 2.1 P2P + Resizable BAR（父 change tasks.md §6）
+> **v1.1 修订**：本 change 已扩展 §7-§13 覆盖阶段 1.2-2.1 全量实施动作（4 bug 修复 + MSI-X + SDMA 4 子阶段 + 电源 + P2P），为**唯一实施 tracker**。以下仅为**父 change 残余增强任务**（不重复）：
+
+- LTSSM Link 管理（父 change tasks.md 任务 1.1.5）— 阶段 1.1 链路状态机增强，非 4 bug 修复范围
+- MSI-X Capability + 向量表（父 change 任务 1.2.2）+ 中断节流（任务 1.2.3）— 中断增强，非修复 #4 接线范围
 
 ---
 
