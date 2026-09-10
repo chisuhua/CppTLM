@@ -99,7 +99,10 @@ namespace tlm::gpu {
         void on_config_loaded() override;
 
         // 测试/调试访问器
-        bool has_config_space() const noexcept { return cfg_space_ != nullptr; }
+        // cfg_space_ 构造后通常存在；查询它以满足规范的空状态语义。
+        bool has_config_space() const noexcept {
+            return cfg_space_ != nullptr;
+        }
 
         PcieConfigSpace& config_space() {
             return *cfg_space_;

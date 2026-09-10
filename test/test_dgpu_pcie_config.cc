@@ -6,8 +6,8 @@
 //   - null val 指针:     返 -EINVAL (-22)
 //   - SOC 未实例化:      返 -ENOSYS (-38), 不 segfault
 // 测试沿用 D15 (5425c45) 模式: inline JSON + load_soc_config 走真实生产路径。
-#include <catch_amalgamated.hpp>
 #include <cerrno>
+#include <catch_amalgamated.hpp>
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include <nlohmann/json.hpp>

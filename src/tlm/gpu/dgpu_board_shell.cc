@@ -3,8 +3,8 @@
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 // #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
-#include <chrono>
 #include <cerrno>
+#include <chrono>
 #include <iostream>
 
 namespace tlm::gpu {
