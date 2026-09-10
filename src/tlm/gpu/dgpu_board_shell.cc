@@ -3,8 +3,10 @@
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 // #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
+#include <algorithm>
 #include <cerrno>
 #include <chrono>
+#include <cstring>
 #include <iostream>
 
 namespace tlm::gpu {
@@ -108,11 +110,16 @@ namespace tlm::gpu {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // #8 异常传递
         }
+        // null buf 无条件拒绝(避免 memcpy nullptr)(修复 #5)
+        if (buf == nullptr) {
+            return -EINVAL;
+        }
         PendingReq req;
         req.bar = bar;
         req.offset = offset;
         req.data.resize(len); // pre-allocate for response
         req.trans_id = next_trans_id_++;
+        req.is_mmio_read = true; // drain 时按读路径回填 pending_data_ (修复 #5)
         auto fut = req.resp.get_future();
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
@@ -124,12 +131,23 @@ namespace tlm::gpu {
         if (status != std::future_status::ready) {
             std::lock_guard<std::mutex> lock(inject_mu_);
             pending_resp_.erase(req.trans_id);
-            return -110; // ETIMEDOUT
+            return -110; // ETIMEDOUT, buf 不变
         }
         int32_t rc = pending_resp_[req.trans_id].get();
-        // TODO T-bs-3c: copy resp data to buf (per design §2.5 同步等待)
-        std::lock_guard<std::mutex> lock(inject_mu_);
-        pending_resp_.erase(req.trans_id);
+        // 修复 #5: 从 drain 响应 payload 拷贝真实数据到调用方 buf (TODO T-bs-3c 占位 set_value(0) 已真实化)
+        std::vector<uint8_t> payload;
+        {
+            std::lock_guard<std::mutex> lock(inject_mu_);
+            auto it = pending_data_.find(req.trans_id);
+            if (it != pending_data_.end()) {
+                payload = std::move(it->second);
+                pending_data_.erase(it);
+            }
+            pending_resp_.erase(req.trans_id);
+        }
+        if (rc == 0 && !payload.empty()) {
+            std::memcpy(buf, payload.data(), std::min(len, payload.size()));
+        }
         return rc;
     }
 
@@ -137,16 +155,26 @@ namespace tlm::gpu {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // #8 异常传递
         }
+        if (buf == nullptr) {
+            return -EINVAL;
+        }
+        // 修复 #5: 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
+        std::vector<uint8_t> payload(static_cast<const uint8_t*>(buf),
+                                     static_cast<const uint8_t*>(buf) + len);
+        {
+            std::lock_guard<std::mutex> lock(inject_mu_);
+            mmio_regs_[std::make_pair(bar, offset)] = payload;
+        }
         PendingReq req;
         req.bar = bar;
         req.offset = offset;
-        req.data.assign(static_cast<const uint8_t*>(buf), static_cast<const uint8_t*>(buf) + len);
+        req.data = std::move(payload);
         req.trans_id = next_trans_id_++;
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
             inject_q_.push_back(std::move(req));
         }
-        return 0; // async, no wait
+        return 0; // async, no wait (修复 #7: 保持异步语义)
     }
 
     int DGpuBoard::pcie_config_read(uint16_t offset, uint8_t width, uint32_t* val) {
@@ -392,15 +420,39 @@ namespace tlm::gpu {
                     } catch (const std::future_error&) {
                     }
                 }
-            } else {
-                // mmio 路径(W6b)
-                // TODO T-bs-3c: 构造 PcieTlpBundle 注入
-                // soc_->getInternalInputPort("pcie_ep.slave_in") 占位: 立即 set_value 0(success) -
-                // 让 mmio_read 至少能响应
-                try {
-                    req.resp.set_value(0);
-                } catch (const std::future_error&) {
+            } else if (req.is_mmio_read) {
+                // mmio read (修复 #5): 从 mmio_regs_ 取数据存入 pending_data_, 再 set_value
+                auto key = std::make_pair(req.bar, req.offset);
+                std::vector<uint8_t> payload;
+                int32_t rc = 0;
+                {
+                    std::lock_guard<std::mutex> lock(inject_mu_);
+                    auto it = mmio_regs_.find(key);
+                    if (it != mmio_regs_.end()) {
+                        if (it->second.size() == req.data.size()) {
+                            payload = it->second;
+                        } else {
+                            rc = -EINVAL; // 长度不匹配
+                        }
+                    }
+                    // full miss: rc=0, 未写寄存器按复位值 0 回填(保持既有 mmio_read 语义)
+                    if (rc == 0 && payload.empty()) {
+                        payload.assign(req.data.size(), 0);
+                    }
+                    if (rc == 0) {
+                        pending_data_[req.trans_id] = std::move(payload);
+                    }
                 }
+                try {
+                    req.resp.set_value(rc);
+                } catch (const std::future_error&) {
+                    // 调用方已超时放弃(future 已销毁): 清理 pending_data_ 防泄漏
+                    std::lock_guard<std::mutex> lock(inject_mu_);
+                    pending_data_.erase(req.trans_id);
+                }
+            } else {
+                // mmio write (修复 #5): 数据已在 mmio_write 同步存入 mmio_regs_, 无 future 等待
+                // (默认构造 promise 无 shared state, 不 set_value)
             }
             // 清理 pending_resp_
             // 注: mmio_read 的 future 由调用方持锁清理,这里不需要重复 erase

@@ -15,11 +15,13 @@
 #include <vector>
 #include <functional>
 #include <future>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <utility>
 #include <nlohmann/json.hpp>
 
 namespace tlm::gpu {
@@ -35,10 +37,12 @@ struct PendingReq {
     std::promise<int32_t> resp; // mmio_read 用,mmio_write 无值
     bool is_backdoor = false;   // backdoor 标识(默认 false,mmio 路径不设)
     bool is_backdoor_read = false; // backdoor read/write 区分(SOC deferred 时 shell 本地处理)
+    bool is_mmio_read = false;  // mmio read/write 区分(修复 #5: drain 时读路径需回填数据)
 };
 
 // DGpuBoard - 23 ABI 翻译 shell
-// 设计原则(per ADR-SOC-07 D7):不继承 ChStreamModuleBase/SimModule;不持有寄存器状态
+// 设计原则(per ADR-SOC-07 D7):不继承 ChStreamModuleBase/SimModule;
+// SOC deferred 期间 shell 本地持有 mmio_regs_/vram_segments_ 等回退存储(修复 #5/#6 确定性 roundtrip)
 class DGpuBoard {
 public:
     // 5 职责接口(per ADR-SOC-07 D1)
@@ -141,6 +145,10 @@ private:
     // backdoor VRAM 存储(SOC deferred 时 shell 本地处理 backdoor_read/write)
     std::map<uint64_t, std::vector<uint8_t>> vram_segments_;
     std::unordered_map<uint64_t, std::vector<uint8_t>> last_backdoor_reads_;
+    // mmio 读响应 payload(SOC deferred 时 drain_injection_queue 回填, mmio_read 消费后清除)(修复 #5)
+    std::unordered_map<uint64_t, std::vector<uint8_t>> pending_data_;
+    // mmio 寄存器映射: (bar, offset) → 写入字节(SOC deferred 时 shell 本地, 确定性 roundtrip)(修复 #5)
+    std::map<std::pair<uint8_t, uint64_t>, std::vector<uint8_t>> mmio_regs_;
 };
 
 } // namespace tlm::gpu
