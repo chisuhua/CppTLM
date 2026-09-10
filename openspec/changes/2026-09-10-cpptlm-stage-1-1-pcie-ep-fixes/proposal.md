@@ -50,7 +50,7 @@
 
 #### 修复 #5: `mmio_read` 数据拷贝
 - **当前代码**：`dgpu_board_shell.cc:106-133` `TODO T-bs-3c` 未填 buf
-- **实施**：`std::memcpy(buf, data.data(), std::min(len, data.size()))` + 返 byte count
+- **实施**：`std::memcpy(buf, data.data(), std::min(len, data.size()))` + 返 0（per Oracle R7 裁决，与 ABI 家族 + 5.5.8 ret==0 强约束一致；不返 byte count）
 - **依赖**：sim_loop drain 真实化（per design.md §2.5 同步等待）
 - **测试**：`test/test_dgpu_mmio.cc::test_mmio_read_real_data_not_garbage`
 

@@ -40,7 +40,7 @@
 
 ## §3 阶段 1.2: MSI-X 中断
 
-> **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：任务 1.2.1（修复 #4 中断链断裂）已迁移至 [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](../2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/tasks.md) §7（阶段 1.2 MSI-X，含 intr_cb 真实接线 + 200ms 触发 open-spec）。本 change 仅保留不重复的残余任务。
+> **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：任务 1.2.1（修复 #4 中断链断裂）已迁移至 [`2026-09-10-cpptlm-stage-1-2-msix`](../2026-09-10-cpptlm-stage-1-2-msix/tasks.md)（阶段 1.2 MSI-X，含 intr_cb 真实接线 + 200ms 触发；本 change 仅保留 1.2.2 MSI-X Cap + 1.2.3 中断节流残余任务）。本 change 仅保留不重复的残余任务。
 
 ### 任务 1.2.2：MSI-X Capability + 向量表 ★残余
 
@@ -58,19 +58,19 @@
 
 ## §4 阶段 1.3: DMA 引擎
 
-> **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：4 子阶段（1.3a SDMA 基础 / 1.3b D2D 路径 / 1.3c dma_translate+IOMMU+CP→SDMA / 1.3d 完成通知）已整体迁移至 [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](../2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/tasks.md) §8-§11（含 Oracle 量化 AC：Ring 4 档 / BAR1+0x10010000 / SG≥8 / NoC≥100GB/s / 负 errno）。4 子阶段量化 AC 明细见 [design.md](../2026-09-09-cpptlm-pcie-ep-foundation/design.md) §3.3 + fixes tasks.md §8-§11。
+> **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：4 子阶段（1.3a SDMA 基础 / 1.3b D2D 路径 / 1.3c dma_translate+IOMMU+CP→SDMA / 1.3d 完成通知）已整体迁移至 [`2026-09-10-cpptlm-stage-1-3-sdma`](../2026-09-10-cpptlm-stage-1-3-sdma/tasks.md) §1-§4（4 子阶段 1.3a-d，含 Oracle 量化 AC：Ring 4 档 / BAR1+0x10010000 / SG≥8 / NoC≥100GB/s / 负 errno / fence→MSI-X 200ms）。量化 AC 明细见 stage-1-3-sdma design.md。
 
 ---
 
 ## §5 阶段 1.4: 电源管理
 
-> **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：阶段 1.4（PM Capability + D0/D3 + ASPM）已迁移至 [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](../2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/tasks.md) §12。
+> **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：阶段 1.4（PM Capability + D0/D3 + ASPM）已迁移至 [`2026-09-10-cpptlm-stage-1-4-2-1`](../2026-09-10-cpptlm-stage-1-4-2-1/tasks.md)（阶段 1.4 PM + 2.1 P2P+ReBAR）。
 
 ---
 
 ## §6 阶段 2.1: P2P + Resizable BAR
 
-> **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：阶段 2.1（P2P DMA + ACS + Resizable BAR）已迁移至 [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](../2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/tasks.md) §13。
+> **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：阶段 2.1（P2P DMA + ACS + Resizable BAR）已迁移至 [`2026-09-10-cpptlm-stage-1-4-2-1`](../2026-09-10-cpptlm-stage-1-4-2-1/tasks.md)（阶段 2.1 PM + 2.1 P2P+ReBAR）。
 
 ## §7 关键路径
 
