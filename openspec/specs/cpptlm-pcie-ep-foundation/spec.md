@@ -1,23 +1,8 @@
-# Spec: cpptlm-pcie-ep-foundation
-
-> **Capability**: cpptlm-pcie-ep-foundation
-> **Owner**: CppTLM Architecture Team
-> **Status**: 🔄 Proposed（2026-09-09）
-> **Created**: 2026-09-09
-> **关联**: [proposal.md](../proposal.md) + [design.md](../design.md) + [tasks.md](../tasks.md)
+# cpptlm-pcie-ep-foundation Specification
 
 ## Purpose
-
-补全 CppTLM dGPU **基础必备 PCIe 能力**（PCIe EP 基础 / MSI-X / DMA 引擎 / 电源管理）+ **性能增强 P2P**，消除 Oracle 三轮审查揭示的 7 个根本性错误（PCIe EP 评审 3.5/10 + CP attach 评审 3.5/10 + 5.5.8 评审 8.7/10）。解锁 UsrLinuxEmu 5.5.6+ dGPU E2E 主线（用户 2026-09-09 战略调整：**先打通 CppTLM PCIe EP 协同流程，再考虑 CommandProcessor**）。
-
-4 层 PCIe 能力框架：
-- **基础必备**（本 change 实施）：PCIe EP + MSI-X + DMA + 电源管理
-- **性能增强**（本 change 阶段 2）：P2P + Resizable BAR
-- **虚拟化必备**（本 change 排除）：SR-IOV + VF 配置 + VF 中断隔离
-- **高级可选**（本 change 排除）：CXL / NTB / TPH / ATS / PRI / PASID
-
-## ADDED Requirements
-
+TBD - created by archiving change 2026-09-09-cpptlm-pcie-ep-foundation. Update Purpose after archive.
+## Requirements
 ### Requirement: PCIe Configuration Space Real Implementation
 
 The system MUST implement `cpptlm_emulator_pcie_config_read` / `_write` by forwarding to `DGpuBoard::ep_->cfg_space_->read` / `write` (not returning -ENOSYS stub). Configuration space MUST contain standard Type 0 Header fields: Vendor ID (0x10DE), Device ID, Class Code (0x03 for Display Controller), Revision ID.
@@ -195,3 +180,4 @@ The system MUST implement Resizable BAR Capability, allowing the CPU to map the 
 - **WHEN** driver writes `BAR_SIZE = 0b11` (8GB) to Resizable BAR Control register
 - **THEN** the BAR aperture is resized to 8GB
 - **AND** subsequent MMIO accesses to the resized BAR are routed correctly
+
