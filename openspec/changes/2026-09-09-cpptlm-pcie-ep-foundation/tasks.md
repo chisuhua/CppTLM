@@ -95,34 +95,95 @@
 
 ---
 
-## §4 阶段 1.3: DMA 引擎
+## §4 阶段 1.3: DMA 引擎（**已细分 4 子阶段** per design.md §3.3）
 
-### 任务 1.3.1：修复 #2（dma_translate_cb 硬编码 pa=0）
+> **重要修订背景**：Oracle 2026-09-09 审查指出，原"阶段 1.3 = 0.5 周"严重低估（现有 `sdma_engine_tlm.cc` 是 descriptor 直投而非 Ring Buffer 架构，需"补架构"而非"修 bug"）。按 SDMA 内部设计（[`docs/soc_arch/architecture/17-sdma-engine-design.md`](../../../docs/soc_arch/architecture/17-sdma-engine-design.md) §1-§14 全 14 章节）拆分如下。量化 AC 待下次 Oracle 1 次轻量复审确认。
 
-- [ ] **Modify**: `src/abi/cpptlm_emulator.cc:443-460`
-  - lambda 内移除 `(void)cb`
-  - 真实调用 UsrLinuxEmu cb（签名适配两套：board shell 层 vs SDMA 引擎层）
-  - cb 失败返 0 fallback
-- [ ] **Write test**: `test_register_dma_translate_cb_returns_iova`（identity mapping）
+### §4.1 阶段 1.3a: PCIe SDMA 基础
+
+> **工期**: 1 周 | **对应 SDMA 设计**: §2-§6（类 + Ring + RPTR/WPTR + Doorbell + Packet）| **原任务**: 1.3.1 + 1.3.2 + 新增 Ring/RPTR/WPTR/Doorbell 绑定
+
+**量化 AC（待复审确认）**:
+- Ring Buffer 容量: ≥ 4096 entries × 64B = 256KB（按 PCIe BAR MMIO 4KB-aligned 页面分配）
+- RPTR / WPTR 位宽: 32 位（支持 4G 容量环）
+- Doorbell 寄存器: BAR offset `0x18`（per [sdma-engine-design.md §3.2](../../../docs/soc_arch/architecture/17-sdma-engine-design.md)）
+- SG 描述符支持: 单描述符链长度 ≥ 16（满足大块 DMA 传输）
+
+**任务清单**:
+- [ ] **任务 1.3a.1**: 新建 `src/tlm/gpu/sdma_ring_buffer.h/cc` — Ring Buffer 数据结构（4096 entries + 32-bit RPTR/WPTR + 内存屏障）
+- [ ] **任务 1.3a.2**: 新建 `src/tlm/gpu/sdma_packet.h/cc` — Packet 数据结构（含 SG 描述符链，链长 ≥ 16）
+- [ ] **任务 1.3a.3**: `src/tlm/gpu/sdma_engine_tlm.cc` 改造 — descriptor 直投 → Ring Buffer + RPTR/WPTR + Doorbell 绑定（BAR offset 0x18）
+- [ ] **任务 1.3a.4**: `src/tlm/gpu/dma_descriptor_mvp.hh` + `dma_bundles_tlm.hh` — `Dir::D2D` 扩展 + SG 描述符
+- [ ] **Write test**: `test_sdma_ring_rptr_wptr`（Ring Buffer RPTR/WPTR 正确性）+ `test_sg_descriptor_chain`（SG 链正确性）
+- [ ] **Verify pass**: Ring Buffer RPTR/WPTR + SG 描述符 + Doorbell 绑定测试全 PASS
+
+### §4.2 阶段 1.3b: D2D SDMA 路径
+
+> **工期**: 0.5-1 周 | **对应 SDMA 设计**: §10（D2D 路径）| **原任务**: 全新增（无 1.3.1-1.3.3 对应）
+
+**量化 AC（待复审确认）**:
+- NoC 数据面带宽: ≥ 32 GB/s（满足 dGPU 内部搬运需求）
+- 显存控制器 bypass: 路径不经过 host_out 端口（断言 host_out 零事务）
+- D2D descriptor: `Dir::D2D` 类型 + NoC target address（显存 VA）
+
+**任务清单**:
+- [ ] **任务 1.3b.1**: 新建 `src/tlm/gpu/d2d_noc_path.h/cc` — D2D NoC 路径（payload 转发）
+- [ ] **任务 1.3b.2**: `src/tlm/gpu/gpu_mesh_noc.h/cc` — NoC 从延迟模型扩为 payload 转发（带宽 ≥ 32 GB/s）
+- [ ] **任务 1.3b.3**: 显存控制器 bypass 路径 — 写入直达 VRAM（绕过 PCIe TLP）
+- [ ] **Write test**: `test_d2d_noc_path`（NoC payload 转发正确性）+ `test_host_out_zero_transactions`（断言 host_out 零事务）
+- [ ] **Verify pass**: D2D 路径正确 + host_out 零事务测试 PASS
+
+### §4.3 阶段 1.3c: dma_translate_cb + GART/IOMMU + CP→SDMA
+
+> **工期**: 0.5 周 | **对应 SDMA 设计**: §8（地址翻译）+ §11（CmdProc 集成）| **原任务**: 1.3.1 + 1.3.3
+
+**量化 AC（待复审确认）**:
+- 4 级页表翻译链（page walk 深度 = 4）
+- 双模式: identity mapping + IOMMU 翻译（VT-d / AMD IOMMU 兼容）
+- CP→SDMA 转发: PM4 DMA opcode `0x4600-0x4900` 范围（per design.md §3.3 1.3c）
+- 修复 #2: cb 失败 fallback 返回 `pa = iova`（identity 模式）或 0 错误码（IOMMU 模式失败）
+
+**任务清单**:
+- [ ] **任务 1.3c.1**: `src/abi/cpptlm_emulator.cc:443-460` — 修复 #2（lambda 内移除 `(void)cb`，真实调用 UsrLinuxEmu cb）
+  - 签名适配两套：board shell 层 vs SDMA 引擎层
+  - cb 失败返 `pa = iova` fallback（identity 模式）
+- [ ] **任务 1.3c.2**: `src/tlm/pcie/pcie_endpoint_ip.cc` — GART/IOMMU 4 级翻译链（identity + IOMMU 双模式）
+- [ ] **任务 1.3c.3**: `src/tlm/gpu/command_processor_mvp.cc` — DISPATCH 态 dma_req 分支（PM4 opcode 0x4600-0x4900 映射）
+- [ ] **Write test**: `test_register_dma_translate_cb_returns_iova`（identity mapping）+ `test_dma_translate_iommu`（IOMMU 4 级翻译）
 - [ ] **Verify fail**: 当前 pa=0（identity 是 iova，不是 0）
-- [ ] **Verify pass**: cb 真实调用，pa == iova
+- [ ] **Verify pass**: cb 真实调用，pa == iova；IOMMU 翻译正确
 
-### 任务 1.3.2：Scatter-Gather DMA 描述符
+### §4.4 阶段 1.3d: SDMA 完成通知
 
-- [ ] **Modify**: `src/tlm/gpu/sdma_engine_tlm.cc`
-  - SDMA Ring Buffer + RPTR/WPTR + Doorbell
-  - Scatter-Gather 描述符支持
-- [ ] **Verify pass**: sg_dma_test PASS
+> **工期**: 0.5 周 | **对应 SDMA 设计**: §9（完成通知）| **原任务**: 全新增（无 1.3.1-1.3.3 对应，修复 #4）
 
-### 任务 1.3.3：IOMMU 兼容地址翻译
+**量化 AC（待复审确认）**:
+- Fence 命令（Ring 内）正确触发完成事件
+- done_out → CompletionRing → MSI-X 接线延迟 ≤ 1 ms（per [§5.1 msix intr_cb 触发验证（200ms 内 ≥1 次）](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/02_architecture/pcie-endpoint-entry.md#51-同步检查清单) 放宽 200×）
+- MSI-X vector 0-3 分配（4 个完成通知向量）
+- 修复 #4: 中断链断裂（per entry §9 Oracle 风险行）
 
-- [ ] **Modify**: `src/tlm/pcie/pcie_endpoint_ip.cc`
-  - IOMMU 翻译接口（Intel VT-d / AMD IOMMU）
-- [ ] **Verify pass**: iommu_compat_test PASS
+**任务清单**:
+- [ ] **任务 1.3d.1**: `src/tlm/gpu/sdma_engine_tlm.cc` — Fence 命令支持（Ring 内 Fence descriptor）
+- [ ] **任务 1.3d.2**: 新建 `src/tlm/gpu/sdma_completion_ring.h/cc` — done_out → CompletionRing 转发
+- [ ] **任务 1.3d.3**: `src/abi/cpptlm_emulator.cc` — MSI-X vector 0-3 接线（trigger_irq_async）
+- [ ] **Write test**: `test_sdma_fence`（Fence 命令触发完成事件）+ `test_msix_completion`（MSI-X 触发延迟）
+- [ ] **Verify pass**: Fence + MSI-X 接线测试全 PASS；修复 #4 验证（UsrLinuxEmu 侧 intr_cb 在 200ms 内 ≥1 次触发）
 
----
+### §4.5 累计影响面
 
-## §5 阶段 1.4: 电源管理
+**修改文件（总计）**:
+- `src/abi/cpptlm_emulator.cc` — 修复 #2（1.3c）+ MSI-X 接线（1.3d）
+- `src/tlm/gpu/sdma_engine_tlm.cc` — Ring/RPTR/WPTR/Doorbell + SG（1.3a）+ Fence（1.3d）
+- `src/tlm/pcie/pcie_endpoint_ip.cc` — IOMMU 翻译（1.3c）
+- `src/tlm/gpu/command_processor_mvp.cc` — DISPATCH dma_req（1.3c）
+- `src/tlm/gpu/dma_descriptor_mvp.hh` + `dma_bundles_tlm.hh` — Dir::D2D + SG（1.3a）
+- `src/tlm/gpu/gpu_mesh_noc.h/cc` — NoC payload 转发（1.3b）
+- 新建：`src/tlm/gpu/sdma_ring_buffer.h/cc`（1.3a）+ `sdma_packet.h/cc`（1.3a）+ `d2d_noc_path.h/cc`（1.3b）+ `sdma_completion_ring.h/cc`（1.3d）
+
+**总计**: 工期 **2.5-3 周**（原 0.5 周；Oracle 修订后），任务数 **+13**（原 3 任务，拆分为 4 子阶段约 16 checkbox）。
+
+---## §5 阶段 1.4: 电源管理
 
 ### 任务 1.4.1：PCIe PM Capability
 
@@ -165,9 +226,9 @@
 
 ## §7 关键路径
 
-**阶段 1.1** (PCIe EP 基础) → **1.2** (MSI-X) → **1.3** (DMA) → **1.4** (电源) → **2.1** (P2P)
+**阶段 1.1** (PCIe EP 基础) → **1.2** (MSI-X) → **1.3a** (SDMA 基础) → **1.3b** (D2D 路径) → **1.3c** (翻译+CP→SDMA) → **1.3d** (完成通知) → **1.4** (电源) → **2.1** (P2P)
 
-**总工时**: 0.5-1 + 0.5 + 0.5 + 0.5 + 1 = **3-4 周**
+**总工时**: 0.5-1 + 0.5 + 1 + 0.5-1 + 0.5 + 0.5 + 0.5 + 1 = **4.0-5.0 周**（per Oracle 2026-09-09 修订：原 1.3 = 0.5 周严重低估）
 
 ---
 
