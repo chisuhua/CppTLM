@@ -179,6 +179,10 @@ namespace tlm::gpu {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // #8 异常传递
         }
+        // null buf 无条件拒绝(未初始化 board 也返 -EINVAL, 避免 memcpy 到 nullptr)(修复 #6)
+        if (buf == nullptr) {
+            return -EINVAL;
+        }
         // Bounds check仅当 device_info_ 已初始化时生效(bar_sizes[1] > 0);
         // 未初始化的 board(直接构造未调 load_soc_config)走 sync 路径。
         if (device_info_.bar_sizes[1] > 0 &&
@@ -187,16 +191,18 @@ namespace tlm::gpu {
             return -22; // EINVAL
         }
         // 同步从 vram_segments_ 读(SOC deferred,shell 本地处理,不依赖 sim_thread drain)
-        int rc = static_cast<int>(len); // 未找到时返 len (PCIe:67 期望 0 / shell_abi:134 期望 len)
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
             auto it = vram_segments_.find(vram_offset);
-            if (it != vram_segments_.end() && it->second.size() == len) {
-                std::memcpy(buf, it->second.data(), len);
-                rc = 0; // 数据找到 → 返 0
+            if (it == vram_segments_.end()) {
+                return -ENOENT; // miss → -ENOENT, 不再伪装成功返 len (修复 #6)
             }
+            if (it->second.size() != len) {
+                return -EINVAL;
+            }
+            std::memcpy(buf, it->second.data(), len);
         }
-        return rc;
+        return 0;
     }
 
     int DGpuBoard::backdoor_write(uint64_t vram_offset, const void* buf, size_t len) {
