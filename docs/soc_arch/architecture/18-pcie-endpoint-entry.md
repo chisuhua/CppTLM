@@ -517,6 +517,33 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   - **新发现**: §11.2 引用死链 `cpptlm-emulator-abi-contract-extension/spec.md` —— 该 spec 在本仓 `openspec/specs/` **不存在**; ABI 契约范围已被 `cpptlm-pcie-ep-foundation/spec.md` 13 ADDED Requirements 完整覆盖, 单独 spec 已无存在必要。已替换为 `dgpu-board-adapter-info/spec.md` (per ADR-092 adapter 信息通道)。
   - **跨仓 SSOT**: UsrLinuxEmu `tools/docs-audit.sh §1.5` 权威方法 `grep -oE "\(\*[a-z_]+\)" | grep -vE "callback|handler" | sort -u | wc -l = **71**; ADR-023 §D4 + ADR-092 §D1 累计 68→71 与之一致。
 
+- **v0.5** (2026-09-09, post-Sprint C 治理闭环, mirror UsrLinuxEmu entry v0.3): Sprint C 全套治理修订落地 + P1.1 量化 AC 复审
+  - **§8.5 L362 残留清理** (`aa1a22a6`): 删除旧 M8 格式行（v0.4.1）
+  - **§10.4 双仓镜像规则** (`b1814313`): 新增结构性章节镜像规则段（mirror UE `0ef42ff`）
+    - 镜像清单 9 项 + 触发条件 + CI 检查绑定 docs-audit + 失败处理 + 例外
+    - 防 v0.4 (84350648) + dca050a2 半成品教训复发
+  - **tasks.md §4 拆分** (`c9ce049c`, mirror UE `b9df3d1`):
+    - 3 任务 → 4 子阶段（1.3a/b/c/d）
+    - 总 checkbox 41 → 55（+14）；总工期 3-4 周 → **4-5 周**
+    - 量化 AC 标注"待复审确认"
+  - **P1.1 量化 AC 复审** (`d99ab2e0`, Oracle `ses_f77b67eb6ffe4bhFqs4qQJ3Woy`):
+    - 9 项 AC 复审裁决：**7 ACCEPT + 5 AMEND + 2 REJECT**
+    - 5 AMEND 应用到 §4.1-§4.4（与 UsrLinuxEmu 仓镜像一致）：
+      - Ring Buffer 256KB → `cfg.ring_size ∈ {4KB, 8KB, 16KB, 64KB}` 最大 1024 entries @64B
+      - Doorbell `0x18` → `BAR1 + 0x10010000`（per §3.3 / §5.1 L296）
+      - SG 链长 ≥16 → ≥8（per §2 / §13 MAX_SG_ENTRIES=8）
+      - NoC ≥32 GB/s → ≥100 GB/s（per §10.4 "数百 GB/s" 保守下限）
+      - cb fallback: "0 错误码（IOMMU 失败）" 0=成功 语义颠倒 → identity 模式 pa=iova 返回 0；IOMMU 模式传播负 errno（-ENOSYS/-EIO）至 error_cb
+    - 2 REJECT 改为非量化：
+      - MSI-X ≤1ms → "200ms 超时窗口内触发 ≥1 次"（引用链断裂 + TLM wall-clock 无可重复性）
+      - vector 0-3 → "vector 由 entry/驱动指定 + msix_init table_size 合法范围"
+    - 任务清单同步对齐（6 处子任务描述修订）
+    - **实施就绪度**：阶段 1.1 可立即启动；阶段 1.3a 在此 commit 后启动
+  - **§10.4 镜像规则首次应用**: 本次 P1.4 commit 按 §10.4 镜像规则双仓同步落地
+  - **剩余 0 项已知遗留**
+
+- **待 v0.6**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准）
+
 ---
 
 **入口文档使用提示**：
