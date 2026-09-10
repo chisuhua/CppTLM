@@ -14,7 +14,7 @@
 
 ## §1 双仓文档地图
 
-### §1.1 CppTLM 仓文档（5 核心文档）
+### §1.1 CppTLM 仓文档（5 核心文档 + 1 聚焦 change = 6 条目）
 
 | 文档 | 路径 | 角色 | 何时读 |
 |------|------|------|-------|
@@ -23,16 +23,18 @@
 | **sdma-engine-design.md** | `docs/soc_arch/architecture/17-sdma-engine-design.md` | **SDMA 内部设计**（§1-§14 全 14 章节）| 阶段 1.3a-1.3d 实施时 |
 | **pcie-ep-cpptlm-collaboration-roadmap.md** | `docs/roadmap/pcie-ep-cpptlm-collaboration-roadmap.md` | **5+4 步实施 roadmap** | 路径规划 + 工期估算时 |
 | **openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/** | `openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/` | **openspec change**（proposal + design + tasks + spec）| change 提案 + 13 ADDED Requirements 时 |
+| **openspec/changes/2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/** | `openspec/changes/2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/` | **聚焦子集 change**（阶段 1.1 4 bug 修复 TDD 5 步）| 实施修复 #3/#5/#6/#7 + 4 ADDED Requirements 时 |
 
-### §1.2 UsrLinuxEmu 仓文档（5 条目）
+### §1.2 UsrLinuxEmu 仓文档（3 文档 + 2 change + 1 聚焦 = 6 条目）
 
 | 文档 | 路径 | 角色 | 何时读 |
 |------|------|------|-------|
 | **pcie-endpoint-entry.md**（本文档同源）| [`docs/02_architecture/pcie-endpoint-entry.md`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/02_architecture/pcie-endpoint-entry.md) | **入口（SSOT for navigation）** | 任何 PCIe EP 工作的**起点** |
 | **pcie-endpoint-architecture.md** | [`docs/02_architecture/pcie-endpoint-architecture.md`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/02_architecture/pcie-endpoint-architecture.md) | **架构 SSOT（驱动侧）** | 了解驱动/HAL/bridge 架构时 |
 | **pcie-bus-bridge-roadmap.md** | `docs/roadmap/pcie-bus-bridge-roadmap.md` | **总 roadmap**（v0.2.3 战略调整）| 阶段关系 + 跨轨道依赖时 |
-| **openspec/changes/2026-09-09-5-5-7-cpptlm-cp-real-ification/** | `openspec/changes/2026-09-09-5-5-7-cpptlm-cp-real-ification/` | **CP 真实化 change**（Deferred 待 CppTLM 5 步完成）| 5.5.7 重启时 |
-| **openspec/changes/2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/** | `openspec/changes/2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/` | **kernel dispatch + DMA change**（Deferred 待 CppTLM 5 步完成）| 5.5.8 重启时 |
+| **openspec/changes/2026-09-09-5-5-7-cpptlm-cp-real-ification/** | `openspec/changes/2026-09-09-5-5-7-cpptlm-cp-real-ification/` | **CP 真实化 change**（Deferred 待 CppTLM 5+4 步完成 + bridge-sync ship）| 5.5.7 重启时 |
+| **openspec/changes/2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/** | `openspec/changes/2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/` | **kernel dispatch + DMA change**（Deferred 待 5.5.7 ship）| 5.5.8 重启时 |
+| **openspec/changes/2026-09-10-ue-stage-1-1-bridge-sync/** | `openspec/changes/2026-09-10-ue-stage-1-1-bridge-sync/` | **聚焦子集 change**（UE 侧桥接层断言升级 + 跨仓集成测试，P0 前置）| 5.5.7 启动 gate 解锁条件之一 |
 
 ### §1.3 跨仓引用关系
 
@@ -108,38 +110,51 @@
 
 ```
 CppTLM 5+4 步 (5.0-6.0 周)
+  ├─→ [聚焦] 阶段 1.1 (staged via cpptlm-stage-1-1-pcie-ep-fixes, 0.5-1 周): 修复 #3/#5/#6/#7 + Oracle Gate E
+  ├─→ 阶段 1.2 (MSI-X 修复 #4)
   ├─→ 阶段 1.3a 完成后: UsrLinuxEmu profile 测试升级 (data assertion)
   ├─→ 阶段 1.3c 完成后: dma_translate_cb 真实化（#2 修复）
   ├─→ 阶段 1.3d 完成后: MSI-X 中断链真实（#4 修复）
-  └─→ 全 5+4 步完成后:
-        ├─→ UsrLinuxEmu 5.5.7 重启 (CommandProcessor 真实化)
-        ├─→ UsrLinuxEmu 5.5.8 重启 (kernel dispatch + DMA)
-        └─→ UsrLinuxEmu 5.5.9 真机双轨验证
+  ├─→ 阶段 1.4 + 2.1 完成后:
+  │     └─→ [UE 同步] ue-stage-1-1-bridge-sync (0.5-1 周): UE 侧桥接层断言升级 + 跨仓集成测试
+  │           验证 CppTLM 4 bug 修复在 UE 进程端到端正确
+  └─→ 5.5.7 启动 gate (阶段 1.1+1.2+1.3a ship + bridge-sync ship):
+        ├─→ UsrLinuxEmu 5.5.7 重启 (CommandProcessor 真实化, 1-2 周)
+        ├─→ UsrLinuxEmu 5.5.8 重启 (kernel dispatch + DMA, 2-3 周)
+        └─→ UsrLinuxEmu 5.5.9 真机双轨验证 (4-6 周)
 ```
 
 ---
 
 ## §3 openspec change 全景
 
-### §3.1 CppTLM 仓 change（当前 1 个，13 ADDED Requirements）
+### §3.1 CppTLM 仓 change（当前 2 个，17 ADDED Requirements）
 
 | Change | 范围 | 阶段覆盖 | 状态 |
 |--------|------|---------|------|
-| [`2026-09-09-cpptlm-pcie-ep-foundation`](https://github.com/chisuhua/CppTLM/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) | CppTLM PCIe EP 基础必备 + 性能增强 + 电源管理 + 完成通知 | **§1.1-1.4 + §2.1**（8 步全覆盖）| 🔄 Proposed |
+| [`2026-09-09-cpptlm-pcie-ep-foundation`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) | CppTLM PCIe EP 基础必备 + 性能增强 + 电源管理 + 完成通知 | **§1.1-1.4 + §2.1**（8 步全覆盖）| 🔄 Proposed |
+| [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](https://github.com/chisuhua/CppTLM/blob/main/openspec/changes/2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/) | **聚焦子集**：阶段 1.1 4 bug 修复（#3 pcie_config_read/write / #6 backdoor_read miss / #5 mmio_read 数据 / #7 mmio_write async 文档澄清）| §1.1（父 change 阶段 1.1 聚焦实施，0.5-1 周）| 🔄 Proposed（Blocked-by：父 change `pcie-ep-foundation` 同步验证）|
 
 **关键文档**：
 - `proposal.md` — Why / What / Capabilities / Impact（含 7 修复 + 5 步建议）
 - `design.md` — 技术设计（含 7 错误定位 + 阶段 1.3 细分 4 子阶段）
-- `tasks.md` — TDD 5 步结构（8 个阶段任务）
+- `tasks.md` — TDD 5 步结构（5 个阶段章节 §2-§6；阶段 1.3 已按 design.md §3.3 拆分为 §4.1-§4.4 即 1.3a/1.3b/1.3c/1.3d 4 子阶段）
 - `specs/cpptlm-pcie-ep-foundation/spec.md` — 13 ADDED Requirements（覆盖 7 修复）
+- `specs/cpptlm-stage-1-1-fixes/spec.md` — 4 ADDED Requirements（聚焦 4 修复）
 
-### §3.2 UsrLinuxEmu 仓 change（当前 3 个，已 ship 1 个 + Deferred 2 个）
+### §3.2 UsrLinuxEmu 仓 change（当前 4 个，Archived 1 + Deferred 2 + Proposed 1）
+
+> **状态词三口径说明**：
+> - **change proposal 状态**：`🔄 Proposed v1.0` = 提案待批/启动
+> - **实施状态**：`⏸️ Deferred` = 实施被 CppTLM 5+4 步阻塞；`🚧 Blocked-by <上游 change>` = 实施被聚焦 change 阻塞
+> - **三词共存合法**：proposal 在审，实施待 CppTLM 完成；归档后状态合并为 ✅ Archived
 
 | Change | 范围 | 状态 |
 |--------|------|------|
 | [`2026-09-08-5-5-6-cpptlm-ep-binding`](../archive/2026-09-08-2026-09-08-5-5-6-cpptlm-ep-binding/) | 5.5.6 dGPU E2E 主线 #1（背门端点 + bridge dlopen 23 ABI + hal_cpptlm 3 op + backend 选择）| ✅ Archived（接线真实，Oracle 9.5/10）|
-| [`2026-09-09-5-5-7-cpptlm-cp-real-ification`](../2026-09-09-5-5-7-cpptlm-cp-real-ification/) | 5.5.7 dGPU E2E 主线 #2（CommandProcessor 真实化）| ⏸️ Deferred（待 CppTLM 5+4 步完成）|
-| [`2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma`](../2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/) | 5.5.8 dGPU E2E 主线 #3（kernel dispatch + DMA）| ⏸️ Deferred（同上）|
+| [`2026-09-09-5-5-7-cpptlm-cp-real-ification`](../2026-09-09-5-5-7-cpptlm-cp-real-ification/) | 5.5.7 dGPU E2E 主线 #2（CommandProcessor 真实化）| ⏸️ Deferred（待 CppTLM 5+4 步完成 + bridge-sync ship）|
+| [`2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma`](../2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma/) | 5.5.8 dGPU E2E 主线 #3（kernel dispatch + DMA）| ⏸️ Deferred（待 5.5.7 ship）|
+| [`2026-09-10-ue-stage-1-1-bridge-sync`](../2026-09-10-ue-stage-1-1-bridge-sync/) | **聚焦子集**：UE 侧桥接层断言升级（`ret != -ENOSYS` → 数据正确性）+ 跨仓集成测试（dlopen `libcpptlm_emulator.so` 验证 4 修复端到端）| 🔄 Proposed v1.0 + 🚧 Blocked-by `cpptlm-stage-1-1-pcie-ep-fixes`（P0 前置，5.5.7 启动 gate 解锁条件之一）|
 | **5.5.7.1 P5.NEW-A**（已在 `2026-09-09-5-5-7-cpptlm-cp-real-ification/specs/`）| Profile 真实化验证（独立 P5.NEW-A 任务）| ✅ Oracle 9.4/10 |
 
 ### §3.3 5.5.6-5.5.9 状态（来自 UsrLinuxEmu roadmap v0.2.3）
@@ -354,9 +369,10 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
    - M2 (阶段 1.2): 1.0-1.5 周
    - M3 (阶段 1.3 4 子步完成): 3.5-4.5 周（= M2 + 1.3a 1 + 1.3b 0.5-1 + 1.3c 0.5 + 1.3d 0.5 = 2.5-3.0）
    - M4 (阶段 1.4): 4.0-5.0 周（= M3 + 0.5）
-   - M5 (5+4 步全部完成 / 阶段 2.1): **5.0-6.0 周**（5.5.7 启动门）
-   - M6 (5.5.7 启动): M5 完成时
-   - M7 (5.5.7 完成 / 5.5.8 启动): M5 + 1-2 周（per 5.5.7 proposal 工期）= **6.0-8.0 周**
+   - M5 (5+4 步全部完成 / 阶段 2.1): **5.0-6.0 周**（5.5.7 启动 gate 之一）
+   - M5.5 (UE bridge-sync 同步): M5 + 0.5-1 周（5.5.7 启动 gate 关键前置，per `2026-09-10-ue-stage-1-1-bridge-sync/` change）
+   - M6 (5.5.7 启动): M5.5 完成时（per Q1 裁决口径：阶段 1.1+1.2+1.3a + bridge-sync 全部 ship）
+   - M7 (5.5.7 完成 / 5.5.8 启动): M5.5 + 1-2 周（per 5.5.7 proposal 工期）= **6.5-9.0 周**
    - M8 (5.5.8 完成 / 5.5.9 启动): M7 + 2-3 周（per 5.5.8 proposal 工期）= **8.0-11.0 周**
    - M9 (5.5.9 真机双轨验证完成): M8 + 4-6 周 = **12.0-17.0 周**
 
