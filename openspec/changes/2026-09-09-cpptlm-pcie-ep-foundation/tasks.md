@@ -30,11 +30,9 @@
 
 > **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：任务 1.1.1-1.1.4（测试骨架 + 修复 #3/#5/#6）已迁移至 [`2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`](../2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes/tasks.md) §1-§4（4 bug 修复 TDD 5 步）。本 change 仅保留不重复的残余任务。
 
-### 任务 1.1.5：PCIe Link 管理（LTSSM + 速率/宽度协商）★残余
+### 任务 1.1.5：已迁移 → `cpptlm-stage-1-4-2-1` §0 任务 0.1（Oracle R-E 修订 2026-09-10，LTSSM 与 ASPM 同域）
 
-- [ ] **Modify**: `src/tlm/pcie/pcie_link_layer_tlm.cc` 补全状态机
-- [ ] **Implement**: L0/L0s/L1/L2/L3 状态切换 + x16 Gen4/Gen5 协商
-- [ ] **Verify pass**: link_state_machine 单元测试
+> **当前状态**: ✅ 已迁移。本 change archive 时此任务不实施。
 
 ---
 
@@ -42,17 +40,9 @@
 
 > **实施跟踪重定向**（Oracle R1 修订 2026-09-10）：任务 1.2.1（修复 #4 中断链断裂）已迁移至 [`2026-09-10-cpptlm-stage-1-2-msix`](../2026-09-10-cpptlm-stage-1-2-msix/tasks.md)（阶段 1.2 MSI-X，含 intr_cb 真实接线 + 200ms 触发；本 change 仅保留 1.2.2 MSI-X Cap + 1.2.3 中断节流残余任务）。本 change 仅保留不重复的残余任务。
 
-### 任务 1.2.2：MSI-X Capability + 向量表 ★残余
+### 任务 1.2.2 + 1.2.3：已迁移 → `cpptlm-stage-1-2-msix` §2.5 任务 2.5.1 + 2.5.2（Oracle R-E 修订 2026-09-10，msix_init table_size 语义依赖 Cap）
 
-- [ ] **Modify**: `src/tlm/pcie/pcie_msix_per_vf_tlm.cc`
-  - 实现 MSI-X Extended Capability
-  - 至少 4-8 个中断向量
-- [ ] **Verify pass**: msix_init + msix_update_pending 真实生效
-
-### 任务 1.2.3：中断节流（Interrupt Coalescing）★残余
-
-- [ ] **Implement**: 基础中断合并机制（避免高频小任务导致中断风暴）
-- [ ] **Verify pass**: msix_throttle_test PASS
+> **当前状态**: ✅ 已迁移。本 change archive 时此任务不实施。
 
 ---
 

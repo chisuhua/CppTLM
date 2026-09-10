@@ -36,6 +36,26 @@
 - [ ] **Oracle review**: intr_cb 真实触发 + 修复 #4 闭环验证
 - [ ] **Verify**: `ctest -R "dgpu|msix"` 全 PASS（既有 ABI 测试零回归）
 
+## §2.5 残余任务（从 cpptlm-pcie-ep-foundation 迁移）
+
+> **Oracle R-E 修订 2026-09-10**：1.2.2 MSI-X Cap + 1.2.3 中断节流原属 foundation 残余 3 任务之一，因 stage-1-2-msix 的 `msix_init(table_size)` 语义依赖 Cap 存在，并入本 change 实施更合理。
+
+### 任务 2.5.1：MSI-X Capability + 4-8 向量表（基础任务 1.2.2）
+- [ ] **Modify**: `src/tlm/pcie/pcie_msix_per_vf_tlm.cc`
+  - 实现 MSI-X Extended Capability 结构
+  - 至少 4-8 个中断向量表项
+- [ ] **Write test**: `test/test_dgpu_msix_cap.cc::test_msix_cap_vector_count_4_to_8`
+  - 验证 Cap 存在 + table_size ∈ [4, 8]
+- [ ] **Verify fail → implement → Verify pass**: 表项可独立 mask/unmask
+- [ ] **Commit (CppTLM)**: `feat(cpptlm): MSI-X Cap 4-8 vectors (基础 1.2.2)`
+
+### 任务 2.5.2：中断节流 Interrupt Coalescing（基础任务 1.2.3）
+- [ ] **Implement**: `pcie_endpoint_ip.cc` 基础中断合并机制（避免高频小任务导致中断风暴）
+  - 可配置 threshold（默认 8）+ timeout（默认 50us）
+- [ ] **Write test**: `test/test_dgpu_msix_throttle.cc::test_msix_throttle_burst_8_in_one_intr`
+- [ ] **Verify fail → implement → Verify pass**: 8 次连续 trigger 合并为 1 次 intr_cb 触发
+- [ ] **Commit (CppTLM)**: `feat(cpptlm): MSI-X interrupt coalescing (基础 1.2.3)`
+
 ## §3 总计
 
 - **CppTLM 仓 commits**: 3（修复 + UE entry sync + CppTLM 18-doc mirror）

@@ -1,6 +1,18 @@
 # Tasks: cpptlm-stage-1-4-2-1
 
-> **工期**: 1.5 周 | TDD 5 步
+> **工期**: 1.5 周 + 0.5-1 周 LTSSM 残余 = **2.0-2.5 周** | TDD 5 步
+
+## §0 残余任务（从 cpptlm-pcie-ep-foundation 迁移）
+
+> **Oracle R-E 修订 2026-09-10**：1.1.5 LTSSM 与 1.4 ASPM 链路状态同域（PCIe Link 层 LTSSM 与 ASPM L0s/L1 共享状态机），并入本 change 实施更合理。
+
+### 任务 0.1：PCIe Link 管理 LTSSM（基础任务 1.1.5）
+- [ ] **Modify**: `src/tlm/pcie/pcie_link_layer_tlm.cc` 补全状态机
+  - L0/L0s/L1/L2/L3 状态切换
+  - x16 Gen4/Gen5 速率/宽度协商
+- [ ] **Write test**: `test/test_dgpu_link_layer.cc::test_ltssm_l0_to_l1_to_l0_roundtrip`
+- [ ] **Verify fail → implement → Verify pass**: link_state_machine 单元测试全 PASS
+- [ ] **Commit (CppTLM)**: `feat(cpptlm): LTSSM L0/L0s/L1 + Gen4/5 协商 (基础 1.1.5)`
 
 ## §1 阶段 1.4 电源管理（0.5 周）
 - [ ] **写失败测试**: `test_pm_capability` + `test_power_state_transition` + `test_aspm`
