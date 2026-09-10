@@ -1,17 +1,8 @@
-# Spec: cpptlm-stage-1-1-fixes
-
-> **Capability**: cpptlm-stage-1-1-fixes
-> **Owner**: CppTLM Architecture Team
-> **状态**: 🔄 Proposed（2026-09-10）
-> **Created**: 2026-09-10
-> **关联**: [proposal.md](../proposal.md) + [design.md](../design.md) + [tasks.md](../tasks.md)
+# cpptlm-stage-1-1-fixes Specification
 
 ## Purpose
-
-补全 `2026-09-09-cpptlm-pcie-ep-foundation` change 阶段 1.1 暴露的 4 个根本性错误（Oracle 三轮审查：PCIe EP 评审 3.5/10 + CP attach 评审 3.5/10 + 5.5.8 立项评审 8.7/10）。本 spec 是父 change 阶段 1.1 的聚焦子集，独立推进可加速 UsrLinuxEmu 5.5.7+ dGPU E2E 主线解锁。
-
-## ADDED Requirements
-
+TBD - created by archiving change 2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes. Update Purpose after archive.
+## Requirements
 ### Requirement: PCIe Configuration Space Forwarding (修复 #3)
 
 The system MUST forward `DGpuBoard::pcie_config_read` / `_write` to `PcieEndpointTLM::cfg_space_->read` / `write` instead of returning -ENOSYS stub. When `soc_->getInternalInstance("pcie_ep")` returns null or `cfg_space_` is null, MUST return -ENOSYS (not segfault).
@@ -102,17 +93,3 @@ The system documentation MUST clarify that `mmio_write` is asynchronous and retu
 - **THEN** they describe the same async semantics for mmio_write
 - **AND** there is no contradiction
 
-## MODIFIED Requirements
-
-(N/A — this change does not modify existing specs)
-
-## REMOVED Requirements
-
-(N/A — this change does not remove existing specs)
-
-## Cross-References
-
-- Parent change `2026-09-09-cpptlm-pcie-ep-foundation` — overall PCIe EP foundation
-- Sibling change `2026-09-10-ue-stage-1-1-bridge-sync` (UsrLinuxEmu) — UE-side bridge sync
-- ADR-088 dGPU 仿真边界 — 23 ABI 冻结
-- ADR-091 4 象限布局 — PcieBypassController 3 态
