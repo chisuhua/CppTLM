@@ -156,7 +156,7 @@ namespace tlm::gpu {
         if (!soc_)
             return -ENOSYS;
         auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
-        if (!ep)
+        if (!ep || !ep->has_config_space())
             return -ENOSYS;
         *val = ep->config_space().read(offset);
         return 0;
@@ -167,7 +167,7 @@ namespace tlm::gpu {
         if (!soc_)
             return -ENOSYS;
         auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
-        if (!ep)
+        if (!ep || !ep->has_config_space())
             return -ENOSYS;
         ep->config_space().write(offset, val);
         return 0;
