@@ -126,7 +126,14 @@ namespace tlm::gpu {
             pending_resp_[req.trans_id] = std::move(fut);
             inject_q_.push_back(std::move(req));
         }
-        // #3 关键: kMmioWaitTimeout 超时(防 sim 线程死锁; 50ms 吸收一次 sim-tick 调度延迟, 修复 #5 flakiness)
+        // 调用线程自 drain 回退(修复 #5 flakiness): 成功路径不依赖 sim 线程被调度 —
+        // 重载主机上外部 drain 线程可能 50ms 内未获调度, 由本线程确定性完成自身读请求.
+        // 若另一 drain 线程已 swap 走本请求, 此处队列为空, wait 仍由该线程完成.
+        if (mmio_self_drain_enabled) {
+            drain_injection_queue();
+        }
+        // #3 关键: kMmioWaitTimeout 超时(防 sim 线程死锁; 50ms 吸收一次 sim-tick 调度延迟, 修复 #5
+        // flakiness)
         auto status = pending_resp_[req.trans_id].wait_for(kMmioWaitTimeout);
         if (status != std::future_status::ready) {
             std::lock_guard<std::mutex> lock(inject_mu_);
@@ -134,7 +141,8 @@ namespace tlm::gpu {
             return -110; // ETIMEDOUT, buf 不变
         }
         int32_t rc = pending_resp_[req.trans_id].get();
-        // 修复 #5: 从 drain 响应 payload 拷贝真实数据到调用方 buf (TODO T-bs-3c 占位 set_value(0) 已真实化)
+        // 修复 #5: 从 drain 响应 payload 拷贝真实数据到调用方 buf (TODO T-bs-3c 占位 set_value(0)
+        // 已真实化)
         std::vector<uint8_t> payload;
         {
             std::lock_guard<std::mutex> lock(inject_mu_);

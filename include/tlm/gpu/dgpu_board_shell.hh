@@ -45,8 +45,12 @@ struct PendingReq {
 // SOC deferred 期间 shell 本地持有 mmio_regs_/vram_segments_ 等回退存储(修复 #5/#6 确定性 roundtrip)
 class DGpuBoard {
 public:
-    // mmio_read 同步等待窗口(修复 #5 flakiness: 1ms 硬超时 vs 加载主机 async drain 延迟; 公开供调用方/测试覆写)
+    // mmio_read 同步等待窗口(修复 #5 flakiness: 1ms 硬超时 vs 加载主机 async drain 延迟;
+    // 公开供调用方/测试覆写)
     static constexpr std::chrono::milliseconds kMmioWaitTimeout{50};
+    // mmio_read 调用线程自 drain 回退: 默认开启, 保证成功路径确定性(不依赖 sim 线程被调度);
+    // 测试超时路径时置 false, 仅依赖外部 drain 以稳定触发 -110 (公开供调用方/测试覆写)
+    bool mmio_self_drain_enabled{true};
 
     // 5 职责接口(per ADR-SOC-07 D1)
     explicit DGpuBoard(const std::string& name, EventQueue* eq = nullptr);
