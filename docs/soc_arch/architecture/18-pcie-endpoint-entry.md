@@ -448,7 +448,7 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 | [ADR-023 HAL append-only](../../00_adr/adr-023-hal-interface.md) | HAL 71 fn-ptrs append-only（v0.3 修订：原 73 来自 `grep -c "(\*"` 错算，含 `(*callback)`/`(*handler)` 嵌套参数名；以 UsrLinuxEmu `tools/docs-audit.sh §1.5` 强制值 71 为准）| §4 §6 D.4 |
 | [ADR-088 dGPU 完整仿真](../../00_adr/adr-088-dgpu-complete-simulation.md) | dGPU 仿真边界 + 23 ABI | §4 §1 |
 | [ADR-091 4 象限布局](../../00_adr/adr-091-pci-driver-architecture-and-four-quadrant.md) | 4 象限 + PCIe tier | §4.2 |
-| [ADR-092 HAL adapter + bypass binding](../../00_adr/adr-092-hal-adapter-and-bypass-binding.md) | 3 个后端 + bypass | §4.3 |
+| [ADR-092 HAL adapter + bypass binding](../../00_adr/adr-092-hal-adapter-and-bypass-binding.md) | ✅ **Accepted v0.2**（2026-09-09 — Gate D 4/4 PASS：① UE tasks 100% ② CppTLM `bab64dd5` ship 8 项 ③ nm 22 fn ④ BypassMode canonical 双仓对齐；详见 ADR-092 §v0.2 修订段 + UE commit `ec672ab`） | §4.3 |
 
 ### §11.2 spec（功能规范）
 
