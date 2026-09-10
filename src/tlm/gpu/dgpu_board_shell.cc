@@ -126,8 +126,8 @@ namespace tlm::gpu {
             pending_resp_[req.trans_id] = std::move(fut);
             inject_q_.push_back(std::move(req));
         }
-        // #3 关键: 1ms 超时(防 sim 线程死锁)
-        auto status = pending_resp_[req.trans_id].wait_for(std::chrono::milliseconds(1));
+        // #3 关键: kMmioWaitTimeout 超时(防 sim 线程死锁; 50ms 吸收一次 sim-tick 调度延迟, 修复 #5 flakiness)
+        auto status = pending_resp_[req.trans_id].wait_for(kMmioWaitTimeout);
         if (status != std::future_status::ready) {
             std::lock_guard<std::mutex> lock(inject_mu_);
             pending_resp_.erase(req.trans_id);
