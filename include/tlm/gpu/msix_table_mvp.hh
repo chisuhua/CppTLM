@@ -64,6 +64,14 @@ namespace tlm::gpu {
         // 初始化（vector table + PBA 清零）
         void init();
 
+        // 调整 vector 表大小（C2, 基础任务 1.2.2）。返回 false 仅当 new_n == 0
+        // （保留构造器 > 0 不变式）。
+        //   - new_n > num_vectors_: 扩表, 新槽位零填充 (VectorEntry 默认清零 + PBA 0)
+        //   - new_n < num_vectors_: 缩表, 丢弃 vector >= new_n 的 pending IRQ 事件
+        //   - did_deliver_last_update_ 语义跨 resize 保持不变 (由 init()/clear_pending()
+        //     重置的既有约定不变)
+        bool resize(uint16_t new_n);
+
         // 配置 vector table entry（addr + data + control）
         bool configure_vector(uint16_t vector, uint64_t msg_addr, uint32_t msg_data,
                               uint32_t control = 0);

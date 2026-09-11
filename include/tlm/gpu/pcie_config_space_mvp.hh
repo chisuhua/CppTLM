@@ -70,6 +70,11 @@ namespace tlm::gpu {
         // Get capability by index（用于测试验证 chain 顺序）
         const Capability* get_capability(std::size_t index) const;
 
+        // 更新已有 capability 的 control word：就地修改 descriptor.control 并重写
+        // cap dword 到 regs_（id | next<<8 | control<<16），保持 host CFG_READ 视角
+        // 与 descriptor 一致。越界 index 返回 false。
+        bool update_capability_control(std::size_t index, uint16_t control);
+
         // Get config_size
         std::size_t config_size() const { return config_size_; }
 

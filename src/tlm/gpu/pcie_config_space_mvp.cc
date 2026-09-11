@@ -54,6 +54,23 @@ namespace tlm::gpu {
             cp = (cp & 0xFFFFFF00u) | static_cast<uint32_t>(offset);
             regs_[0x34 / 4] = cp;
         }
+
+        // C2 修复 (Oracle HIGH-1): 把完整 cap dword (id | next<<8 | control<<16) 写入
+        // regs_, 使 host CFG_READ 可见。此前 cap 仅存在于 capabilities_ 链表,
+        // regs_ 未写 → host 读 0。write() 内建越界/RO 保护 (offset 已在上方校验)。
+        write(offset, (static_cast<uint32_t>(id) << 0) | (static_cast<uint32_t>(next) << 8) |
+                          (static_cast<uint32_t>(control) << 16));
+        return true;
+    }
+
+    bool PcieConfigSpace::update_capability_control(std::size_t index, uint16_t control) {
+        if (index >= capabilities_.size())
+            return false;
+        capabilities_[index].control = control;
+        const Capability& c = capabilities_[index];
+        // 重写 cap dword, 保持 host CFG_READ 视角与 descriptor 一致
+        write(c.offset, (static_cast<uint32_t>(c.id) << 0) | (static_cast<uint32_t>(c.next) << 8) |
+                            (static_cast<uint32_t>(c.control) << 16));
         return true;
     }
 

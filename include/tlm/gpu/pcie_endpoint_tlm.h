@@ -123,6 +123,11 @@ namespace tlm::gpu {
             return *msix_;
         }
 
+        // C2 (基础任务 1.2.2): find-or-insert MSI-X Extended Capability (id 0x11)
+        // 并同步 Message Control 的 Table Size 字段 (bits[15:11] = n-1)。
+        // 测试经 pcie_ep()->config_space() 遍历 capability chain 复用。
+        void sync_msix_cap_table_size(uint16_t n);
+
         // 测试断言 helper：4 个端口是否都接收到非空 adapter
         bool all_ports_have_adapter() const;
 

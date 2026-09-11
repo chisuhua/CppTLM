@@ -28,6 +28,30 @@ namespace tlm::gpu {
         did_deliver_last_update_ = false; // 重置投递标志 (隔离跨操作状态)
     }
 
+    bool MsiXTable::resize(uint16_t new_n) {
+        if (new_n == 0)
+            return false; // 保留构造器 > 0 不变式
+
+        if (new_n < num_vectors_) {
+            // 缩表: 丢弃 vector >= new_n 的 pending IRQ 事件 (PBA/entries 截断同步)
+            std::deque<IrqOutEvent> kept;
+            for (const auto& evt : pending_irq_out_) {
+                if (evt.vector < new_n) {
+                    kept.push_back(evt);
+                }
+            }
+            pending_irq_out_.swap(kept);
+        }
+        // 扩表: std::vector::resize 对新 VectorEntry 槽位 value-initialize
+        // (msg_addr/msg_data/control 默认清零); pba_ 显式 0 填充新槽位
+        entries_.resize(new_n);
+        pba_.resize(new_n, 0);
+        num_vectors_ = new_n;
+        // did_deliver_last_update_ 语义跨 resize 不变 (仅 update_pending/init/
+        // clear_pending 维护), 保持既有调用方 (DGpuBoard wrapper) 的判定一致
+        return true;
+    }
+
     bool MsiXTable::configure_vector(uint16_t vector, uint64_t msg_addr, uint32_t msg_data,
                                      uint32_t control) {
         if (vector >= num_vectors_)

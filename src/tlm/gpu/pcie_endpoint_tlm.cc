@@ -128,9 +128,12 @@ namespace tlm::gpu {
             cfg_space_ = std::make_unique<PcieConfigSpace>(sz);
         }
 
-        // msix_num_vectors 参数化 MsiXTable
-        if (cfg.contains("msix_num_vectors")) {
-            const uint16_t n = cfg.value("msix_num_vectors", 16);
+        // msix_num_vectors / num_msix_vectors 参数化 MsiXTable
+        // (C2 双名兼容: 优先 msix_num_vectors, 回退 num_msix_vectors 旧 JSON 名)
+        if (cfg.contains("msix_num_vectors") || cfg.contains("num_msix_vectors")) {
+            const uint16_t n = cfg.contains("msix_num_vectors")
+                                   ? cfg.value("msix_num_vectors", uint16_t{16})
+                                   : cfg.value("num_msix_vectors", uint16_t{16});
             msix_ = std::make_unique<MsiXTable>(n);
         }
 
@@ -139,10 +142,14 @@ namespace tlm::gpu {
         bar_router_->init();
         msix_->init();
 
-        // 应用 capabilities（chain 声明）
+        // 应用 capabilities（chain 声明）— 先于 MSI-X Cap 同步, 使 JSON 声明的
+        // MSI-X Cap (id 0x11) 可被找到并仅更新 control word (不重复插入)
         if (cfg.contains("capabilities")) {
             apply_capabilities_config(cfg);
         }
+
+        // C2: find-or-insert MSI-X Cap + 同步 Message Control (Table Size = n-1)
+        sync_msix_cap_table_size(static_cast<uint16_t>(msix_->num_vectors()));
 
         // 应用 bar0_registers（数据化寄存器表）
         if (cfg.contains("bar0_registers")) {
@@ -198,6 +205,44 @@ namespace tlm::gpu {
                 // 失败时静默（per spec.md：capability 重叠不应 crash）
             }
         }
+    }
+
+    void PcieEndpointTLM::sync_msix_cap_table_size(uint16_t n) {
+        // C2 (基础任务 1.2.2): find-or-insert MSI-X Extended Capability (id 0x11)
+        //   并同步 Message Control 的 Table Size (bits[15:11] = n-1)。
+        //   - 无 MSI-X Cap → 在空闲 4-byte 对齐 offset (0x40) 插入, next=0x00,
+        //     MSI-X Enable (bit 0) 保持 0 (driver 使能前)
+        //   - 已有 (JSON capabilities 声明) → 仅更新 control word, 保留 [10:0]
+        if (!cfg_space_ || n == 0)
+            return;
+        constexpr uint8_t kMsixCapId = 0x11;
+        constexpr uint8_t kMsixCapOffset = 0x40;
+        const uint16_t table_size_field = static_cast<uint16_t>(n - 1);
+
+        int msix_idx = -1;
+        for (std::size_t i = 0; i < cfg_space_->capability_count(); ++i) {
+            const auto* cap = cfg_space_->get_capability(i);
+            if (cap && cap->id == kMsixCapId) {
+                msix_idx = static_cast<int>(i);
+                break;
+            }
+        }
+
+        if (msix_idx < 0) {
+            cfg_space_->add_capability(kMsixCapId, kMsixCapOffset, 0x00,
+                                       static_cast<uint16_t>(table_size_field << 11));
+            return;
+        }
+
+        // 已声明: 更新 control word = (n-1)<<11 | (existing & ~0xF800)。
+        // C2 修复 (Oracle MEDIUM-2): 就地更新 descriptor.control (update_capability_control
+        // 同时重写 cap dword → host 视角与 descriptor 一致; 此前仅改 regs_ → descriptor stale)
+        const auto* cap = cfg_space_->get_capability(static_cast<std::size_t>(msix_idx));
+        const uint16_t existing = cap->control;
+        const uint16_t new_control =
+            static_cast<uint16_t>(static_cast<uint16_t>(table_size_field << 11) |
+                                  (existing & static_cast<uint16_t>(~0xF800u)));
+        cfg_space_->update_capability_control(static_cast<std::size_t>(msix_idx), new_control);
     }
 
     void PcieEndpointTLM::apply_bar0_registers_config(const nlohmann::json& cfg) {

@@ -285,12 +285,19 @@ namespace tlm::gpu {
         auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep)
             return -38;
+        // C2 (基础任务 1.2.2): resize 先于 init, 使 table_size 真正生效到 MsiXTable。
+        // resize(0) 拒绝 (保留 MsiXTable >0 不变式) → -EINVAL
+        if (!ep->msix().resize(static_cast<uint16_t>(table_size)))
+            return -22;
         ep->msix().init();
         for (uint32_t v = 0; v < table_size && v < ep->msix().num_vectors(); ++v) {
             if (mask & (1u << v)) {
                 ep->msix().set_mask(static_cast<uint16_t>(v), true);
             }
         }
+        // C2 修复 (Oracle MEDIUM-2): 运行时 resize 后同步 MSI-X Cap Table Size 字段,
+        // 使 host CFG_READ 的 Message Control (bits[31:16]) 跟随最新 vector 数。
+        ep->sync_msix_cap_table_size(static_cast<uint16_t>(table_size));
         return 0;
     }
 
