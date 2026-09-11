@@ -81,3 +81,45 @@ TEST_CASE("test_msix_update_pending_oob_returns_einval", "[dgpu][msix][intr-cb]"
     REQUIRE(board.msix_update_pending(999) == -22);
     board.shutdown();
 }
+
+// 修复 #4 review Gap-2: masked vector 的 update_pending 仅置 PBA 不入队 (per PCI-SIG MSI-X),
+// wrapper 不得触发 host intr_cb; unmask auto-deliver 后重新断言中断须恢复触发
+// (pre-fix: wrapper 无条件 trigger → masked 也触发 cb → cb_count==1 ≠ 0 → RED)
+TEST_CASE("msix_update_pending_masked_does_not_trigger_intr_cb", "[dgpu][msix][intr-cb][mask]") {
+    DGpuBoard board("msix_mask_test_board");
+    board.init();
+    REQUIRE(board.load_soc_config(d15_mini_board_cfg()));
+
+    std::atomic<int> cb_count{0};
+    std::atomic<uint32_t> captured_vector{0xFFFFFFFFu};
+    board.set_irq_callback([&](uint32_t vector_id) {
+        captured_vector.store(vector_id);
+        cb_count.fetch_add(1);
+    });
+
+    // mask 全部 8 个 vector, 然后 update_pending(0): 仅置 PBA, 不投递 → cb 永不触发
+    REQUIRE(board.msix_init(8, 0xFFu) == 0);
+    REQUIRE(board.msix_update_pending(0) == 0);
+
+    auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(50);
+    while (std::chrono::steady_clock::now() < deadline) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    REQUIRE(cb_count.load() == 0); // masked: cb MUST NOT fire
+
+    // unmask vector 0 → PBA 累积的 pending 经 auto-deliver 入队 (MsiXTable 内部);
+    // 随后 driver 重新断言中断 (第二次 update_pending 走 wrapper) 必须恢复触发 cb
+    auto* ep = board.pcie_ep();
+    REQUIRE(ep != nullptr);
+    REQUIRE(ep->msix().set_mask(0, false) == true);
+    REQUIRE(board.msix_update_pending(0) == 0);
+
+    deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
+    while (cb_count.load() < 1 && std::chrono::steady_clock::now() < deadline) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    REQUIRE(cb_count.load() >= 1);
+    REQUIRE(captured_vector.load() == 0);
+
+    board.shutdown();
+}

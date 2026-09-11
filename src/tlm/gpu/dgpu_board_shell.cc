@@ -301,8 +301,11 @@ namespace tlm::gpu {
         if (!ep)
             return -38;
         if (ep->msix().update_pending(static_cast<uint16_t>(vector))) {
-            // 修复 #4: 中断链接线 — pending 置位成功后触发 host 侧 intr_cb
-            trigger_irq_async(vector);
+            // 修复 #4: 中断链接线 — 仅当 IRQ 真正投递 (unmasked, did_deliver) 才触发 host 侧
+            // intr_cb; masked vector 仅置 PBA 不入队 (per PCI-SIG MSI-X), 不得触发
+            if (ep->msix().did_deliver_last_update()) {
+                trigger_irq_async(vector);
+            }
             return 0;
         }
         return -22;

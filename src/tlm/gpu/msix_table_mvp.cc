@@ -25,6 +25,7 @@ namespace tlm::gpu {
         }
         std::fill(pba_.begin(), pba_.end(), 0); // clear PBA bits
         pending_irq_out_.clear();
+        did_deliver_last_update_ = false; // 重置投递标志 (隔离跨操作状态)
     }
 
     bool MsiXTable::configure_vector(uint16_t vector, uint64_t msg_addr, uint32_t msg_data,
@@ -65,6 +66,7 @@ namespace tlm::gpu {
     }
 
     bool MsiXTable::update_pending(uint16_t vector, uint32_t trans_id) {
+        did_deliver_last_update_ = false; // 每次 update_pending 重置投递标志
         if (vector >= num_vectors_)
             return false;
 
@@ -84,10 +86,12 @@ namespace tlm::gpu {
         evt.msg_addr = entry.msg_addr;
         evt.trans_id = trans_id;
         pending_irq_out_.push_back(evt);
+        did_deliver_last_update_ = true; // 真正投递到出向队列
         return true;
     }
 
     bool MsiXTable::clear_pending(uint16_t vector) {
+        did_deliver_last_update_ = false; // 重置投递标志 (隔离跨操作状态)
         if (vector >= num_vectors_)
             return false;
         bool cleared = false;

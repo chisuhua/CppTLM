@@ -6,6 +6,7 @@
 
 #include "event_queue.hh"
 #include "tlm/gpu/dgpu_soc.hh"  // DGpuSoc SimModule 容器
+#include "tlm/gpu/pcie_endpoint_tlm.h"  // PcieEndpointTLM (pcie_ep accessor 返回类型)
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include <atomic>
 #include <chrono>
@@ -83,6 +84,14 @@ public:
     // lookup_register_entry: returns full RegisterEntry for ABI metadata
     // (name/access/side_effect). nullptr when SOC null / unaligned / > BAR0 / miss.
     const PcieBarRouter::RegisterEntry* lookup_register_entry(uint32_t offset);
+
+    // pcie_ep accessor: 返回 SOC 内 PcieEndpointTLM 实例 (nullptr 当 SOC 未实例化/ep 缺失)
+    // 只读, 供测试/工具直接访问底层 MsiXTable (如 unmask auto-deliver 验证)
+    PcieEndpointTLM* pcie_ep() const {
+        if (!soc_)
+            return nullptr;
+        return dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+    }
 
     // 3. 回调接线(non-blocking,per design §2.5 #4)
     using IrqCallback = std::function<void(uint32_t vector_id)>;

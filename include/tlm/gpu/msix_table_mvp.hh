@@ -81,6 +81,12 @@ namespace tlm::gpu {
         bool update_pending(uint16_t vector, uint32_t trans_id = 0);
         bool clear_pending(uint16_t vector);
 
+        // 上次 update_pending 是否真正投递 IRQ 到出向队列 (unmasked branch)。
+        // masked vector 仅置 PBA 不入队 → 返回 false, 供上层 (DGpuBoard wrapper)
+        // 区分 "accepted (PBA set)" 与 "delivered (enqueued)", 避免 masked 中断误触发 host cb。
+        // init()/clear_pending() 亦重置以隔离跨操作状态。
+        bool did_deliver_last_update() const noexcept { return did_deliver_last_update_; }
+
         // 查询 vector 是否 pending（兼容旧 API：检查 irq_out 队列 + PBA）
         bool is_pending(uint16_t vector) const;
 
@@ -106,6 +112,10 @@ namespace tlm::gpu {
         // pba_[v]=1 表示 vector v 有 pending write 请求待处理
         // 累积语义: 多次 update_pending 不增加计数, clear_pending 清除
         std::vector<uint8_t> pba_;
+
+        // last update_pending 是否投递 IRQ 到出向队列 (unmasked branch only);
+        // 供 did_deliver_last_update() 查询, init()/clear_pending() 重置
+        bool did_deliver_last_update_ = false;
 
         // 内部 helper: 当 unmask 后, 若 pba_[v] 置位, 投递累积 IRQ 到队列
         void try_deliver_pending_on_unmask(uint16_t vector);
