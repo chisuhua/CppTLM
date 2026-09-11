@@ -10,6 +10,7 @@
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <deque>
 #include <exception>
@@ -130,6 +131,23 @@ public:
     void trigger_dma_translate_async(uint64_t iova, size_t size);
     void trigger_error_async(int err_code, const std::string& msg);
 
+    // ── C3 (基础任务 1.2.3): MSI-X 中断合并 (interrupt coalescing) ──
+    // 位于 msix_update_pending 与 trigger_irq_async 之间的唯一 choke point:
+    // N 次投递 (threshold) 或首个投递后 timeout 窗口 → 合并为 1 次 intr_cb。
+    // 默认: enabled=true, threshold=8, timeout=50us (per §2.5.2)。
+    // 公开旋钮 (供测试 disable + 未来 tuning)。
+    std::atomic<bool> msix_coalesce_enabled_{true};
+    uint32_t msix_coalesce_threshold_ = 8;
+    std::chrono::microseconds msix_coalesce_timeout_{50};
+
+    // 线程安全访问器 (set 方法唤醒/重算 timer)
+    void set_msix_coalesce_enabled(bool en) { msix_coalesce_enabled_.store(en); }
+    bool msix_coalesce_enabled() const { return msix_coalesce_enabled_.load(); }
+    void set_msix_coalesce_threshold(uint32_t threshold);
+    uint32_t msix_coalesce_threshold() const { return msix_coalesce_threshold_; }
+    void set_msix_coalesce_timeout(std::chrono::microseconds timeout);
+    std::chrono::microseconds msix_coalesce_timeout() const { return msix_coalesce_timeout_; }
+
 private:
     // ── 线程模型字段(per design §2.5) ──
     std::string name_;
@@ -165,6 +183,23 @@ private:
     std::unordered_map<uint64_t, std::vector<uint8_t>> pending_data_;
     // mmio 寄存器映射: (bar, offset) → 写入字节(SOC deferred 时 shell 本地, 确定性 roundtrip)(修复 #5)
     std::map<std::pair<uint8_t, uint64_t>, std::vector<uint8_t>> mmio_regs_;
+
+    // ── C3 (基础任务 1.2.3): MSI-X 中断合并内部状态 ──
+    // 全部由 coalesce_mu_ 保护 (除 coalesce_stop_ atomic); timer 线程 joinable,
+    // lazy-start (首次 arm 时), shutdown/destroy 时 stop+notify+join (确定性析构)。
+    std::mutex coalesce_mu_;                                   // 保护合并计数器/armed/deadline
+    std::condition_variable coalesce_cv_;                      // timer 等待/唤醒
+    std::atomic<bool> coalesce_stop_{false};                   // timer 线程停止标志
+    std::thread coalesce_timer_;                               // 合并 timer 线程 (joinable)
+    std::chrono::steady_clock::time_point coalesce_deadline_;  // 当前合并窗口截止 (armed 时有效)
+    uint32_t coalesce_count_ = 0;                              // 窗口内已累计投递数
+    uint32_t coalesce_rep_vector_ = 0;                         // 窗口内首个投递的 vector (代表)
+    bool coalesce_armed_ = false;                              // timer 已武装 (有未决合并窗口)
+
+    // C3 内部方法
+    void coalesce_timer_loop();                   // timer 线程主循环 (wait_until deadline → drain)
+    void coalesce_arm_or_drain(uint32_t vector);  // 合并投递: 累计/arm/阈值 drain 决策
+    void coalesce_force_flush();                  // msix_init resize 时强制排空 armed 状态
 };
 
 } // namespace tlm::gpu

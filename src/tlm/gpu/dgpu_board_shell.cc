@@ -104,6 +104,103 @@ namespace tlm::gpu {
         destroy();
     }
 
+    // ── C3 (基础任务 1.2.3): MSI-X 中断合并访问器 ──
+
+    void DGpuBoard::set_msix_coalesce_threshold(uint32_t threshold) {
+        std::lock_guard<std::mutex> lock(coalesce_mu_);
+        msix_coalesce_threshold_ = threshold;
+        coalesce_cv_.notify_all();
+    }
+
+    void DGpuBoard::set_msix_coalesce_timeout(std::chrono::microseconds timeout) {
+        std::lock_guard<std::mutex> lock(coalesce_mu_);
+        msix_coalesce_timeout_ = timeout;
+        // 若已有 armed 窗口: 重算 deadline 并唤醒 timer (窗口延长/缩短生效)
+        if (coalesce_armed_) {
+            coalesce_deadline_ = std::chrono::steady_clock::now() + timeout;
+        }
+        coalesce_cv_.notify_all();
+    }
+
+    // ── C3: 合并器核心 (threshold + timeout) ──
+    // 设计选择 (spec §2.5.2 授权 "cancel the timer deadline (extend it)" 变体):
+    //   每次新投递都延长 deadline (窗口从最近一次投递起算) → 密集 burst 持续推后窗口,
+    //   阈值路径 (无 sleep 的紧连调用) 保持确定性: timer 不可能在 burst 中途触发,
+    //   唯一 drain 源是同步的阈值 drain。源静默 timeout 后由 timer flush。
+    //   阈值 drain 不取消 deadline — timer 醒来见 armed==false 即 no-op (回到等待)。
+
+    void DGpuBoard::coalesce_arm_or_drain(uint32_t vector) {
+        uint32_t rep = 0;
+        bool fire = false;
+        {
+            std::lock_guard<std::mutex> lock(coalesce_mu_);
+            ++coalesce_count_;
+            if (coalesce_count_ == 1) {
+                coalesce_rep_vector_ = vector; // 代表 vector = 窗口内首个投递
+                coalesce_armed_ = true;
+            }
+            coalesce_deadline_ = std::chrono::steady_clock::now() + msix_coalesce_timeout_;
+            if (!coalesce_timer_.joinable()) {
+                coalesce_timer_ = std::thread(&DGpuBoard::coalesce_timer_loop, this);
+            }
+            if (coalesce_count_ >= msix_coalesce_threshold_) {
+                rep = coalesce_rep_vector_;
+                coalesce_count_ = 0;
+                coalesce_armed_ = false;
+                fire = true;
+            }
+        }
+        coalesce_cv_.notify_all();
+        if (fire) {
+            trigger_irq_async(rep);
+        }
+    }
+
+    void DGpuBoard::coalesce_timer_loop() {
+        std::unique_lock<std::mutex> lock(coalesce_mu_);
+        while (!coalesce_stop_.load()) {
+            if (!coalesce_armed_) {
+                coalesce_cv_.wait(lock,
+                                  [this] { return coalesce_stop_.load() || coalesce_armed_; });
+                continue;
+            }
+            auto deadline = coalesce_deadline_;
+            if (coalesce_cv_.wait_until(lock, deadline) == std::cv_status::timeout) {
+                if (coalesce_armed_ && coalesce_count_ > 0) {
+                    uint32_t rep = coalesce_rep_vector_;
+                    coalesce_count_ = 0;
+                    coalesce_armed_ = false;
+                    lock.unlock(); // trigger 在锁外执行, 不阻塞其他 update_pending
+                    trigger_irq_async(rep);
+                    lock.lock();
+                } else {
+                    coalesce_armed_ = false; // 已被阈值 drain 清空 → 仅清 armed
+                }
+            }
+        }
+    }
+
+    void DGpuBoard::coalesce_force_flush() {
+        // msix_init resize 钩子 (Oracle caveat ①): 合并状态绝不跨 resize 悬空 —
+        // 不缓存 MsiXTable::pending_irq_out_ 原始指针; 仅排空任何 armed 窗口
+        // (释放累计 pending 计数, 以防丢中断)。
+        uint32_t rep = 0;
+        bool fire = false;
+        {
+            std::lock_guard<std::mutex> lock(coalesce_mu_);
+            if (coalesce_armed_ && coalesce_count_ > 0) {
+                rep = coalesce_rep_vector_;
+                coalesce_count_ = 0;
+                coalesce_armed_ = false;
+                fire = true;
+            }
+        }
+        coalesce_cv_.notify_all(); // timer 若在旧 deadline 上等待 → 见 armed==false → no-op
+        if (fire) {
+            trigger_irq_async(rep);
+        }
+    }
+
     // ── ABI 翻译(占位实现,完整 deferred T-bs-3b) ──
 
     int DGpuBoard::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len) {
@@ -287,6 +384,9 @@ namespace tlm::gpu {
             return -38;
         // C2 (基础任务 1.2.2): resize 先于 init, 使 table_size 真正生效到 MsiXTable。
         // resize(0) 拒绝 (保留 MsiXTable >0 不变式) → -EINVAL
+        // C3 (Oracle caveat ①): resize 前 force-flush 任何 armed 合并窗口 —
+        // 合并状态绝不跨 resize 悬空 (不缓存 pending_irq_out_ 指针, 仅释放累计计数)。
+        coalesce_force_flush();
         if (!ep->msix().resize(static_cast<uint16_t>(table_size)))
             return -22;
         ep->msix().init();
@@ -311,7 +411,13 @@ namespace tlm::gpu {
             // 修复 #4: 中断链接线 — 仅当 IRQ 真正投递 (unmasked, did_deliver) 才触发 host 侧
             // intr_cb; masked vector 仅置 PBA 不入队 (per PCI-SIG MSI-X), 不得触发
             if (ep->msix().did_deliver_last_update()) {
-                trigger_irq_async(vector);
+                // C3 (基础任务 1.2.3): 合并开关 — off 时直发 (保留 C1 语义);
+                // on 时进 threshold+timeout 合并器 (N 次投递 → 1 次 intr_cb)
+                if (msix_coalesce_enabled_.load()) {
+                    coalesce_arm_or_drain(vector);
+                } else {
+                    trigger_irq_async(vector);
+                }
             }
             return 0;
         }
@@ -382,6 +488,15 @@ namespace tlm::gpu {
         // Step 3: join sim 线程
         if (sim_thread_.joinable()) {
             sim_thread_.join();
+        }
+
+        // Step 3.5 (C3): stop + notify + join 合并 timer 线程 — 必须在析构任一成员之前,
+        // 保证 joinable 线程不泄漏、也不在已析构 board 上运行 (确定性析构 per §2.5 #10:
+        // stop_ → poison → join → destruct; 此处 stop 顺序: stop_ → cv notify → join)
+        coalesce_stop_.store(true);
+        coalesce_cv_.notify_all();
+        if (coalesce_timer_.joinable()) {
+            coalesce_timer_.join();
         }
 
         // Step 4: 析构 SOC
