@@ -300,7 +300,12 @@ namespace tlm::gpu {
         auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep)
             return -38;
-        return ep->msix().update_pending(static_cast<uint16_t>(vector)) ? 0 : -22;
+        if (ep->msix().update_pending(static_cast<uint16_t>(vector))) {
+            // 修复 #4: 中断链接线 — pending 置位成功后触发 host 侧 intr_cb
+            trigger_irq_async(vector);
+            return 0;
+        }
+        return -22;
     }
 
     int DGpuBoard::msix_clear_pending(uint32_t vector) {
