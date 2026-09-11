@@ -1,17 +1,8 @@
-# Spec: cpptlm-stage-1-2-msix
-
-> **Capability**: cpptlm-stage-1-2-msix
-> **Owner**: CppTLM Architecture Team
-> **状态**: 🔄 Proposed（2026-09-10）
-> **Created**: 2026-09-10
-> **关联**: [proposal.md](../proposal.md) + [design.md](../design.md) + [tasks.md](../tasks.md)
+# cpptlm-stage-1-2-msix Specification
 
 ## Purpose
-
-修复 #4 中断链断裂：`cpptlm_emulator_msix_init/update/clear` intr_cb 真实接线，但 `trigger_irq_async` 全仓无调用方，导致测试验证 0 触发。本 spec 实施 `trigger_irq_async` 真实实现，闭合中断链。
-
-## ADDED Requirements
-
+TBD - created by archiving change 2026-09-10-cpptlm-stage-1-2-msix. Update Purpose after archive.
+## Requirements
 ### Requirement: MSI-X trigger_irq_async 真实实现
 
 The system MUST implement `PcieEndpointTLM::trigger_irq_async(uint32_t vector, uint64_t payload)` to push MSI-X TLP into inject_q_ and invoke the registered intr_cb after sim_loop drain completes. When vector is out of range or already pending, MUST return appropriate error (not segfault).
@@ -55,18 +46,3 @@ The system MUST preserve the existing `cpptlm_emulator_msix_init/update/clear` A
 - **THEN** no caller code modification required
 - **AND** ABI function signatures/return values unchanged
 
-## MODIFIED Requirements
-
-(N/A — this change does not modify existing specs)
-
-## REMOVED Requirements
-
-(N/A — this change does not remove existing specs)
-
-## Cross-References
-
-- Upstream: `2026-09-10-cpptlm-stage-1-1-pcie-ep-fixes`（阶段 1.1 4 bug 修复，前置）
-- Downstream: `2026-09-10-ue-stage-1-2-msix-integration`（UE 集成测试）
-- Parent: `2026-09-09-cpptlm-pcie-ep-foundation`（spec SSOT）
-- ADR-092 HAL adapter + bypass binding
-- [design.md §9.1](../design.md) — `trigger_msix(vector)` 透传
