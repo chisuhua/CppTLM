@@ -10,12 +10,15 @@
 #include "core/event_queue.hh"
 #include "tlm/gpu/pcie_bar_router_mvp.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
+// Stage 1.3a: BAR1+0x10010000 doorbell 路由 (per openspec/changes/2026-09-10-...)
+#include "tlm/pcie/pcie_endpoint_ip.hh"
 
 #include <chrono>
 #include <thread>
 
 using namespace tlm::gpu;
 using namespace bundles;
+using tlm::pcie::PcieEndpointIP;
 
 TEST_CASE("PcieEndpoint: BAR0 unknown offset returns 0xFFFFFFFF", "[pcie][endpoint][bar]") {
     EventQueue eq;
@@ -114,4 +117,40 @@ TEST_CASE("PcieEndpoint: BAR1 MEM size > 8 descriptor-only TLP (backdoor)",
     REQUIRE(req.is_bulk_mem());
     REQUIRE(req.size.read() == 4096u);
     REQUIRE(req.data.read() == 0u);
+}
+
+// =============================================================================
+// Stage 1.3a: BAR1+0x10010000 SDMA Doorbell 路由
+//   per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/spec.md
+//     Scenario "Doorbell write triggers":
+//       WHEN WPTR written to BAR1 + 0x10010000
+//       THEN ring buffer processes new entries
+//
+// TDD RED: PcieEndpointIP 当前 BAR 空间写入全部落入 bar_store_ map,
+//          没有 0x10010000 offset 识别, 无 ring_processed_count_ 统计.
+//          当前编译应失败 (feature missing), 1.3a 实施后变绿.
+// =============================================================================
+TEST_CASE("PcieEndpointIP: BAR1+0x10010000 doorbell offset triggers SDMA ring consumption",
+          "[pcie][endpoint][bar][doorbell][1.3a]") {
+    EventQueue eq;
+    PcieEndpointIP ep("pcie_ep", &eq);
+    ep.init();
+
+    SECTION("常量: BAR1 doorbell offset == 0x10010000") {
+        REQUIRE(ep.bar1_doorbell_offset() == 0x10010000u);
+    }
+    SECTION("mmio_write(BAR1, 0x10010000, WPTR=8) → ring_processed_count == 8") {
+        // 模拟 UE 写 WPTR=8 到 doorbell → SDMA 消费 8 个 entry
+        REQUIRE(ep.mmio_write(/*bar=*/1, /*offset=*/0x10010000, /*wptr=*/8) == true);
+        REQUIRE(ep.sdma_ring_processed_count() == 8u);
+    }
+    SECTION("mmio_write 落入 BAR1 但非 doorbell offset → 走 bar_store_ 路径 (不触发 ring)") {
+        // 0x1000 仍是普通 BAR1 寄存器
+        REQUIRE(ep.mmio_write(/*bar=*/1, /*offset=*/0x1000, /*data=*/0xCAFE) == true);
+        REQUIRE(ep.sdma_ring_processed_count() == 0u);
+    }
+    SECTION("非 BAR1 路径的 mmio_write 不影响 doorbell") {
+        REQUIRE(ep.mmio_write(/*bar=*/0, /*offset=*/0x10010000, /*data=*/0xDEAD) == true);
+        REQUIRE(ep.sdma_ring_processed_count() == 0u);
+    }
 }

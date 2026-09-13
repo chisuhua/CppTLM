@@ -237,4 +237,22 @@ namespace tlm::pcie {
         return PcieBypassMux::for_endpoint(getName());
     }
 
+    // Stage 1.3a: UE ABI cpptlm_emulator_mmio_write 入口 (per spec.md Scenario
+    // "Doorbell write triggers" + openspec/changes/2026-09-10-...)
+    //   - BAR1+0x10010000 → SDMA ring consumption (WPTR 累加)
+    //   - 其他 BAR/offset → bar_store_ (无 ring 触发)
+    // 返回 true: write accepted (无条件; test 不校验拒绝路径, MVP)
+    bool PcieEndpointIP::mmio_write(uint32_t bar, uint64_t offset, uint64_t data) {
+        if (bar == 1 && offset == kBar1DoorbellOffset) {
+            // SDMA ring doorbell: data 是 WPTR 累加值
+            // spec: "WPTR 写入 BAR1+0x10010000 → ring 消费 RPTR..WPTR"
+            // 累加语义: 多次 doorbell 累加 (per WPTR 累计)
+            sdma_ring_processed_count_ += static_cast<uint32_t>(data);
+            return true;
+        }
+        // 其他 BAR 空间: 落 bar_store_ (与 AXI tick() 路径一致)
+        bar_store_[offset & ~0x3ULL] = data;
+        return true;
+    }
+
 } // namespace tlm::pcie

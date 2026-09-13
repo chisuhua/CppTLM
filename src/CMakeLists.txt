@@ -97,6 +97,9 @@ set(CORE_SOURCES
     tlm/gpu/msix_table_mvp.cc          # pcie-endpoint T-pe-2: MSI-X vector table + mask
     tlm/gpu/pcie_endpoint_tlm.cc       # pcie-endpoint T-pe-3: 4-port ChStream module
     tlm/gpu/sdma_engine_tlm.cc        # sdma-engine T-sd-2: 5-port ChStream SDMA/copy engine (PCIe master)
+    # cpptlm-stage-1-3-sdma Stage 1.3a: SDMA Ring Buffer + SG descriptor chain (T-1.3a-1/2)
+    tlm/gpu/sdma_ring_buffer.cc
+    tlm/gpu/sdma_packet.cc
     # Task 13: PipelineTLM/ScoreboardTLM/TensorCoreTLM + cudart 物理删除 (功能内化到 SM 子模块)
     # pcie-ip-microarch Phase 1: 链路层 + FC Token Bucket (P1)
     tlm/pcie/pcie_flow_control_token_bucket.cc

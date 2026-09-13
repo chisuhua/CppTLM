@@ -103,11 +103,31 @@ public:
         return (idx < NUM_PORTS) ? adapters_[idx] : nullptr;
     }
 
+    // Stage 1.3a: SDMA Ring Buffer Doorbell 路由 (per openspec/.../2026-09-10-...)
+    //   BAR1+0x10010000 offset 写入 WPTR → SDMA ring consumption trigger
+    //   其他 BAR/offset → bar_store_ (无 ring 触发)
+    static constexpr uint64_t kBar1DoorbellOffset = 0x10010000ULL;
+    static constexpr uint64_t bar1_doorbell_offset() noexcept {
+        return kBar1DoorbellOffset;
+    }
+
+    // UE 进程 ABI cpptlm_emulator_mmio_write 路径 (per Phase 8 ABI 表)
+    //   返回 true = write accepted (无论 ring 触发与否)
+    //   当 (bar==1 && offset==0x10010000) → sdma_ring_processed_count_ += data (WPTR)
+    bool mmio_write(uint32_t bar, uint64_t offset, uint64_t data);
+
+    // SDMA ring 已处理的 entry 数 (累计 WPTR, 测试断言用)
+    uint32_t sdma_ring_processed_count() const noexcept {
+        return sdma_ring_processed_count_;
+    }
+
 private:
     PcieSriovVfPool pool_;
     cpptlm::StreamAdapterBase* adapters_[NUM_PORTS] = {nullptr};
     // BAR 空间 backing store（Phase 8 M1: AXI slave 写经地址路由落写/读回真实值）
     std::unordered_map<uint64_t, uint64_t> bar_store_;
+    // Stage 1.3a: SDMA ring 已处理的 entry 数 (累计 WPTR via doorbell writes)
+    uint32_t sdma_ring_processed_count_ = 0;
     void attach_composition(const nlohmann::json& params);
 };
 

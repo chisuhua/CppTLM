@@ -172,6 +172,15 @@ add_test(NAME test_pcie_endpoint_ip_full_e2e_config COMMAND cpptlm_tests "[pcie]
 add_test(NAME test_pcie_endpoint_ip_full_e2e_bar COMMAND cpptlm_tests "[pcie][axi][e2e][phase8][bar]" -r compact)
 add_test(NAME test_pcie_endpoint_ip_full_e2e_rc COMMAND cpptlm_tests "[pcie][axi][e2e][phase8][rc]" -r compact)
 
+# 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3a: SDMA Ring Buffer + BAR1 Doorbell)
+# (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §1)
+# TDD RED 状态: 1.3a 实施前编译失败 (feature missing), 实施后变绿
+add_test(NAME test_sdma_ring_buffer_capacity COMMAND cpptlm_tests "[sdma][ring][1.3a][capacity]" -r compact)
+add_test(NAME test_sdma_ring_buffer_atomic COMMAND cpptlm_tests "[sdma][ring][1.3a][atomic]" -r compact)
+add_test(NAME test_sdma_ring_buffer_doorbell COMMAND cpptlm_tests "[sdma][ring][1.3a][doorbell]" -r compact)
+add_test(NAME test_sdma_packet_sg_chain COMMAND cpptlm_tests "[sdma][packet][sg][1.3a]" -r compact)
+add_test(NAME test_pcie_endpoint_ip_bar1_doorbell COMMAND cpptlm_tests "[pcie][endpoint][bar][doorbell][1.3a]" -r compact)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)
