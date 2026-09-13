@@ -31,6 +31,9 @@ namespace tlm {
 
 namespace tlm::gpu {
 
+    // 前向声明 CompletionRingTLM (Stage 1.3d Fence → CompletionRing 接线)
+    class CompletionRingTLM;
+
     // 前向声明
     class SdmaEngineTLM;
 
@@ -96,18 +99,34 @@ namespace tlm::gpu {
      */
     class SdmaEngineTLM : public ChStreamModuleBase {
     public:
-        static constexpr unsigned NUM_PORTS = 5;
+    static constexpr unsigned NUM_PORTS = 5;
 
-        // 端口索引常量（per design.md §2.5 Port index ordering lock）
-        static constexpr unsigned PORT_DESC_IN  = 0;  // ingress
-        static constexpr unsigned PORT_MEM_IN   = 1;  // ingress
-        static constexpr unsigned PORT_MEM_OUT  = 2;  // egress
-        static constexpr unsigned PORT_HOST_OUT = 3;  // egress
-        static constexpr unsigned PORT_DONE_OUT = 4;  // egress
+    // 端口索引常量（per design.md §2.5 Port index ordering lock）
+    static constexpr unsigned PORT_DESC_IN  = 0;  // ingress
+    static constexpr unsigned PORT_MEM_IN   = 1;  // ingress
+    static constexpr unsigned PORT_MEM_OUT  = 2;  // egress
+    static constexpr unsigned PORT_HOST_OUT = 3;  // egress
+    static constexpr unsigned PORT_DONE_OUT = 4;  // egress
 
-        // 扩展 kind（PcieTlpBundle::kind 字段复用，标识 DMA wire-format 语义）
-        static constexpr uint8_t KIND_DMA_DESC = 7;  // desc_in 端口：DmaDescriptorBundle 编码
-        static constexpr uint8_t KIND_DMA_DONE = 8;  // done_out 端口：CompletionBundle 编码
+    // 扩展 kind（PcieTlpBundle::kind 字段复用，标识 DMA wire-format 语义）
+    static constexpr uint8_t KIND_DMA_DESC = 7;  // desc_in 端口：DmaDescriptorBundle 编码
+    static constexpr uint8_t KIND_DMA_DONE = 8;  // done_out 端口：CompletionBundle 编码
+
+    // Stage 1.3d: Fence descriptor (per openspec/.../2026-09-10-... §1.3d)
+    //   - opcode 0x04 → Fence 完成触发 MSI-X vector 0
+    //   - fence_id 是 driver 端 fence 句柄 (单调递增)
+    //   - tag 与 DMA descriptor 对齐 (用于与 SDMA 提交关联)
+    struct FenceDescriptor {
+        uint8_t  opcode = 0x04;     // 固定 0x04 (Fence)
+        uint64_t fence_id = 0;      // driver fence handle
+        uint32_t tag = 0;           // SDMA submit 关联 tag
+    };
+
+    // Stage 1.3d: fence-related MSI-X vector (Oracle R-D 修订, 2026-09-10)
+    //   PCI MSI-X 规范约定 fence = vector 0; 本 change msix_init(table_size=4) 默认 fence 占 vector 0
+    //   UE 集成测试断言: captured_vector == 0
+    //   单点常量: 全链路禁散落字面量 0
+    static constexpr uint16_t kSdmaFenceVector = 0;
 
         // 多端口 ChStream 端口（per MultiPortStreamAdapter 模板要求 public 访问）
         cpptlm::InputStreamAdapter<bundles::PcieTlpBundle> req_in[NUM_PORTS];
@@ -222,6 +241,22 @@ namespace tlm::gpu {
         d2d_noc_ = noc;
     }
 
+    // Stage 1.3d: Fence + MSI-X 接线 (per openspec/.../2026-09-10-... §1.3d)
+    //   submit_fence(): 提交 Fence descriptor, 内部存 fence queue
+    //   set_completion_ring(): 注入 CompletionRingTLM 引用 (fence → ring 转发)
+    //   set_fence_msix_handler(): 注入 fence 完成 MSI-X handler (vector=0, 200ms 内触发)
+    using FenceMsixHandler = std::function<void(uint32_t vector_id, uint32_t payload)>;
+
+    void submit_fence(const FenceDescriptor& fence) {
+        fence_queue_.push_back(fence);
+    }
+    void set_completion_ring(::tlm::gpu::CompletionRingTLM* ring) noexcept {
+        completion_ring_ = ring;
+    }
+    void set_fence_msix_handler(FenceMsixHandler h) noexcept {
+        fence_msix_handler_ = std::move(h);
+    }
+
     // Stage 1.3b: D2D NoC payload forwarding (per openspec/.../2026-09-10-...)
     //   VRAM→VRAM payload 转发, 不经 host_out (bypassing PCIe TLP)
     //   - src_va: source VRAM offset
@@ -278,8 +313,16 @@ namespace tlm::gpu {
         // Stage 1.3b: 可选 D2D NoC 引用 (注入后 D2D 转发走 NoC payload 路径)
         ::tlm::GpuMeshNoC* d2d_noc_ = nullptr;
 
+        // Stage 1.3d: Fence 队列 + CompletionRing 引用 + MSI-X handler
+        std::vector<FenceDescriptor> fence_queue_;
+        ::tlm::gpu::CompletionRingTLM* completion_ring_ = nullptr;
+        FenceMsixHandler fence_msix_handler_;
+
         // 内部：处理 desc_in 入口（每 tick 一次）
         void handle_desc_in();
+
+        // Stage 1.3d: 处理 fence_queue_ (Fence → CompletionRing + MSI-X handler)
+        void process_fence_queue();
 
         // 内部：H2D 处理（无 IOMMU callback stub：直接 emit host_out + mem_out）
         //   返回 0=ok, <0=errno

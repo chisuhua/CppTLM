@@ -186,6 +186,11 @@ add_test(NAME test_pcie_endpoint_ip_bar1_doorbell COMMAND cpptlm_tests "[pcie][e
 # D2D NoC ≥ 100 GB/s payload forward + memctl bypass
 add_test(NAME test_d2d_noc_path COMMAND cpptlm_tests "[sdma][d2d][1.3b]" -r compact)
 
+# 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3d: SDMA Fence + MSI-X vector 0 + CompletionRing)
+# (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §4)
+# Fence descriptor (opcode=0x04) → completion_ring → MSI-X vector 0 → intr_cb 200ms
+add_test(NAME test_sdma_completion COMMAND cpptlm_tests "[sdma][fence][1.3d]" -r compact)
+
 # 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3c: dma_translate_cb 真实化, 修复 #2)
 # (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §3)
 # 修复 #2: 移除 cpptlm_emulator.cc:449 (void)cb stub, 真实调用 cb 函数指针

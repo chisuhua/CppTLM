@@ -6,12 +6,14 @@
 
 #include "bundles/dma_bundles_tlm.hh"
 #include "bundles/pcie_bundles_tlm.hh"
+#include "tlm/gpu/completion_ring_mvp.hh"
 #include "tlm/gpu/gpu_mesh_noc_tlm.hh"
 
 #include <cerrno>
 #include <cstring>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 namespace tlm::gpu {
 
@@ -130,6 +132,7 @@ namespace tlm::gpu {
         completed_count_ = 0;
         error_count_ = 0;
         host_out_tx_count_ = 0;  // Stage 1.3b
+        fence_queue_.clear();    // Stage 1.3d
     }
 
     void SdmaEngineTLM::do_reset(const ResetConfig&) {
@@ -415,6 +418,9 @@ namespace tlm::gpu {
         // 1. 处理 desc_in 入口（带反压）
         handle_desc_in();
 
+        // Stage 1.3d: 处理 Fence queue (Fence → CompletionRing → MSI-X vector 0)
+        process_fence_queue();
+
         // 2. 调用各 adapter 的 tick()（如需要）
         for (unsigned i = 0; i < NUM_PORTS; i++) {
             if (adapters_[i])
@@ -448,6 +454,39 @@ namespace tlm::gpu {
             // 直 memcpy fallback (测试场景下与 noc 路径等价)
             std::memcpy(static_cast<uint8_t*>(vram_backdoor_) + dst_va,
                         static_cast<uint8_t*>(vram_backdoor_) + src_va, len);
+        }
+    }
+
+    // Stage 1.3d: 处理 fence_queue_ 内的所有 Fence descriptor
+    //   - push entry 到 CompletionRing (if injected)
+    //   - 触发 MSI-X vector 0 (via fence_msix_handler_ async)
+    void SdmaEngineTLM::process_fence_queue() {
+        while (!fence_queue_.empty()) {
+            FenceDescriptor fence = fence_queue_.front();
+            fence_queue_.erase(fence_queue_.begin());
+
+            // 1. push entry 到 CompletionRing (legacy push API 接受 task_id/status)
+            if (completion_ring_ != nullptr) {
+                bundles::CompletionEntry entry;
+                entry.task_id.write(static_cast<uint32_t>(fence.fence_id));
+                entry.status.write(0);  // Fence 成功 status=0
+                entry.tag.write(fence.tag);
+                completion_ring_->push(entry);
+            }
+
+            // 2. 异步触发 MSI-X vector kSdmaFenceVector (= 0) via handler
+            //    200ms 内必触发 (per spec); 测试通过 sleep 验证
+            if (fence_msix_handler_) {
+                // detach 异步线程模拟 sim_loop drain 后延迟触发
+                FenceMsixHandler h = fence_msix_handler_;
+                uint16_t vector = kSdmaFenceVector;
+                uint32_t payload = static_cast<uint32_t>(fence.fence_id);
+                std::thread([h, vector, payload]() {
+                    // 短延迟 (模拟 sim_loop drain; 测试 < 200ms)
+                    std::this_thread::sleep_for(std::chrono::microseconds(100));
+                    h(vector, payload);
+                }).detach();
+            }
         }
     }
 
