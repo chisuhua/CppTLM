@@ -216,6 +216,12 @@ add_test(NAME test_pm4_dispatch_dma_req COMMAND cpptlm_tests "[pm4][decoder][1.3
 # 修复 #2: 移除 cpptlm_emulator.cc:449 (void)cb stub, 真实调用 cb 函数指针
 add_test(NAME test_cpptlm_dma_translate_cb_real COMMAND cpptlm_tests "[abi][dma_translate][1.3c]" -r compact)
 
+# 2026-09-13 ue-sdma-p0-unblock (Task 2: DGpuBoard BAR1 doorbell routing)
+# (per docs/superpowers/specs/2026-09-13-ue-sdma-p0-unblock-design.md §3.2 目标 1)
+# 验证: doorbell write → mmio_regs_ stored (修复 #5) + SOC pcie_ep doorbell_count_++
+add_test(NAME test_dgpu_board_doorbell_routing_p0 COMMAND cpptlm_tests "[dgpu-board][doorbell][1.3a][integration]" -r compact)
+# Task 4 测试将按 plan 顺序创建 (Task 4 step 1)
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)

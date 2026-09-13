@@ -284,6 +284,15 @@ namespace tlm::gpu {
             std::lock_guard<std::mutex> lock(inject_mu_);
             inject_q_.push_back(std::move(req));
         }
+
+        // Stage 1.3a integration (per docs/superpowers/specs/2026-09-13-... §3.2 目标 1):
+        //   BAR1+0x10010000 doorbell 路由到 SOC (计数 + 触发 SDMA ring 处理)
+        //   非 doorbell 写仍走原路径 (mmio_regs_ + inject_q_)
+        if (bar == 1 && offset == kBar1DoorbellOffset) {
+            std::lock_guard<std::mutex> lock(callback_mu_);
+            ++pcie_ep_doorbell_count_;
+        }
+
         return 0; // async, no wait (修复 #7: 保持异步语义)
     }
 

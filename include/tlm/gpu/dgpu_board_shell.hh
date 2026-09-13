@@ -102,6 +102,15 @@ public:
     void set_dma_translate_callback(DmaTranslateCallback cb) { dma_translate_cb_ = std::move(cb); }
     void set_error_callback(ErrorCallback cb) { error_cb_ = std::move(cb); }
 
+    // Stage 1.3a integration (per docs/superpowers/specs/2026-09-13-ue-sdma-p0-unblock-design.md §3.2 目标 1):
+    //   BAR1+0x10010000 doorbell 路由到 SOC SDMA ring 计数 (测试断言)
+    uint32_t pcie_ep_doorbell_count() const noexcept {
+        return pcie_ep_doorbell_count_;
+    }
+
+    // BAR1+0x10010000 doorbell offset (per 1.3a spec)
+    static constexpr uint64_t kBar1DoorbellOffset = 0x10010000ULL;
+
     // Stage 1.3d: SDMA Fence → MSI-X vector 0 接线 (per openspec/.../2026-09-10-...)
     //   SdmaEngineTLM::process_fence_queue 调用此 API → DGpuBoard::msix_update_pending(0)
     //   → trigger_irq_async(0) → UE intr_cb(vector=0, payload=fence_id)
@@ -175,6 +184,10 @@ private:
     DmaTranslateCallback dma_translate_cb_;
     ErrorCallback error_cb_;
     std::mutex callback_mu_;  // 保护 callback 指针(避免 host-sim race)
+
+    // Stage 1.3a integration: BAR1+0x10010000 doorbell 路由计数器
+    // (per docs/superpowers/specs/2026-09-13-ue-sdma-p0-unblock-design.md §3.2 目标 1)
+    uint32_t pcie_ep_doorbell_count_ = 0;
 
     // ── 内部方法 ──
     void sim_loop();                              // sim 线程主循环
