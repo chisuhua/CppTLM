@@ -196,6 +196,11 @@ add_test(NAME test_sdma_completion COMMAND cpptlm_tests "[sdma][fence][1.3d]" -r
 # SdmaEngineTLM 内部 ring consume + desc_in 互斥 + BAR1 doorbell 触发 ring
 add_test(NAME test_sdma_ring_engine_integration COMMAND cpptlm_tests "[sdma][ring_engine][1.3a_integration]" -r compact)
 
+# 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3c: PcieEndpointIP GART/IOMMU 模式开关)
+# (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §3, pcie_endpoint_ip.cc GART/IOMMU 4 级翻译链)
+# C++ 端暴露 mode 开关 + cb 转发; 真实 4 级 walk 在 UE 进程
+add_test(NAME test_pcie_iommu_translation COMMAND cpptlm_tests "[pcie][iommu][1.3c]" -r compact)
+
 # 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3c: dma_translate_cb 真实化, 修复 #2)
 # (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §3)
 # 修复 #2: 移除 cpptlm_emulator.cc:449 (void)cb stub, 真实调用 cb 函数指针

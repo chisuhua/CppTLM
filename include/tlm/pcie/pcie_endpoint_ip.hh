@@ -116,6 +116,22 @@ public:
     //   当 (bar==1 && offset==0x10010000) → sdma_ring_processed_count_ += data (WPTR)
     bool mmio_write(uint32_t bar, uint64_t offset, uint64_t data);
 
+    // Stage 1.3c: GART/IOMMU 翻译模式开关 (per openspec/.../2026-09-10-... §1.3c)
+    //   - C++ 端不实施 4 级页表 walk (UE 进程实现, 通过 dma_translate_cb 接口注入)
+    //   - 这里只暴露 mode 开关 + iommu cb 转发路径
+    //   - 默认 Mode::IDENTITY → cb(iova) 直接返 pa=iova (identity)
+    //   - Mode::IOMMU → cb 内部走 4 级页表 walk (UE 实现)
+    enum class DmaTranslateMode : uint8_t {
+        IDENTITY = 0,  // pa = iova (Stage 1.3c 默认)
+        IOMMU = 1,     // 4 级页表 walk (UE 进程实现)
+    };
+    void set_dma_translate_mode(DmaTranslateMode m) noexcept {
+        dma_translate_mode_ = m;
+    }
+    DmaTranslateMode dma_translate_mode() const noexcept {
+        return dma_translate_mode_;
+    }
+
     // SDMA ring 已处理的 entry 数 (累计 WPTR, 测试断言用)
     uint32_t sdma_ring_processed_count() const noexcept {
         return sdma_ring_processed_count_;
@@ -128,6 +144,8 @@ private:
     std::unordered_map<uint64_t, uint64_t> bar_store_;
     // Stage 1.3a: SDMA ring 已处理的 entry 数 (累计 WPTR via doorbell writes)
     uint32_t sdma_ring_processed_count_ = 0;
+    // Stage 1.3c: DMA 翻译模式 (identity / IOMMU)
+    DmaTranslateMode dma_translate_mode_ = DmaTranslateMode::IDENTITY;
     void attach_composition(const nlohmann::json& params);
 };
 
