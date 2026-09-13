@@ -7,6 +7,7 @@
 #include "bundles/dma_bundles_tlm.hh"
 #include "bundles/pcie_bundles_tlm.hh"
 #include "tlm/gpu/completion_ring_mvp.hh"
+#include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/gpu_mesh_noc_tlm.hh"
 
 #include <cerrno>
@@ -532,7 +533,7 @@ namespace tlm::gpu {
 
     // Stage 1.3d: 处理 fence_queue_ 内的所有 Fence descriptor
     //   - push entry 到 CompletionRing (if injected)
-    //   - 触发 MSI-X vector 0 (via fence_msix_handler_ async)
+    //   - 触发 MSI-X vector 0 (via DGpuBoard 真实路径 或 fence_msix_handler_ mock)
     void SdmaEngineTLM::process_fence_queue() {
         while (!fence_queue_.empty()) {
             FenceDescriptor fence = fence_queue_.front();
@@ -547,15 +548,17 @@ namespace tlm::gpu {
                 completion_ring_->push(entry);
             }
 
-            // 2. 异步触发 MSI-X vector kSdmaFenceVector (= 0) via handler
-            //    200ms 内必触发 (per spec); 测试通过 sleep 验证
-            if (fence_msix_handler_) {
-                // detach 异步线程模拟 sim_loop drain 后延迟触发
+            // 2. 触发 MSI-X vector kSdmaFenceVector (= 0) 真实链路
+            // 优先级: dgpu_board_ (真实 board 路径) > fence_msix_handler_ (mock 路径)
+            if (dgpu_board_ != nullptr) {
+                // 真实路径: SDMA fence → board → msix_update_pending(0) → trigger_irq_async(0)
+                dgpu_board_->sdma_fence_complete(fence.fence_id);
+            } else if (fence_msix_handler_) {
+                // Mock 路径 (测试用): 直接触发注入的 handler (模拟 sim_loop drain 后延迟)
                 FenceMsixHandler h = fence_msix_handler_;
                 uint16_t vector = kSdmaFenceVector;
                 uint32_t payload = static_cast<uint32_t>(fence.fence_id);
                 std::thread([h, vector, payload]() {
-                    // 短延迟 (模拟 sim_loop drain; 测试 < 200ms)
                     std::this_thread::sleep_for(std::chrono::microseconds(100));
                     h(vector, payload);
                 }).detach();

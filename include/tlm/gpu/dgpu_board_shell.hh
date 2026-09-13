@@ -102,6 +102,11 @@ public:
     void set_dma_translate_callback(DmaTranslateCallback cb) { dma_translate_cb_ = std::move(cb); }
     void set_error_callback(ErrorCallback cb) { error_cb_ = std::move(cb); }
 
+    // Stage 1.3d: SDMA Fence → MSI-X vector 0 接线 (per openspec/.../2026-09-10-...)
+    //   SdmaEngineTLM::process_fence_queue 调用此 API → DGpuBoard::msix_update_pending(0)
+    //   → trigger_irq_async(0) → UE intr_cb(vector=0, payload=fence_id)
+    void sdma_fence_complete(uint64_t fence_id);
+
     // 4. 设备枚举
     uint32_t device_id() const { return device_id_; }
     struct DeviceInfo {

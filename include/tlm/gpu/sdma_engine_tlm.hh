@@ -33,6 +33,9 @@ namespace tlm {
 
 namespace tlm::gpu {
 
+    // 前向声明 DGpuBoard (Stage 1.3d: 真实 MSI-X 接线, fence → board)
+    class DGpuBoard;
+
     // 前向声明 CompletionRingTLM (Stage 1.3d Fence → CompletionRing 接线)
     class CompletionRingTLM;
 
@@ -267,6 +270,11 @@ namespace tlm::gpu {
         return last_err_msg_;
     }
 
+    // Stage 1.3d: 注入 DGpuBoard 引用 (真实 MSI-X 接线, fence → board → intr_cb)
+    void set_dgpu_board(::tlm::gpu::DGpuBoard* board) noexcept {
+        dgpu_board_ = board;
+    }
+
     // Stage 1.3d: Fence + MSI-X 接线 (per openspec/.../2026-09-10-... §1.3d)
     //   submit_fence(): 提交 Fence descriptor, 内部存 fence queue
     //   set_completion_ring(): 注入 CompletionRingTLM 引用 (fence → ring 转发)
@@ -350,6 +358,7 @@ namespace tlm::gpu {
         std::vector<FenceDescriptor> fence_queue_;
         ::tlm::gpu::CompletionRingTLM* completion_ring_ = nullptr;
         FenceMsixHandler fence_msix_handler_;
+        ::tlm::gpu::DGpuBoard* dgpu_board_ = nullptr;
 
         // 内部：处理 desc_in 入口（每 tick 一次）
         void handle_desc_in();

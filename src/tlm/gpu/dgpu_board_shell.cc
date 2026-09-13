@@ -603,6 +603,14 @@ namespace tlm::gpu {
 
     // ── 内部触发接口(供 SOC 组件调用,deferred T-bs-4 装配) ──
 
+    // Stage 1.3d: SDMA Fence → MSI-X vector 0 接线
+    //   SdmaEngineTLM::process_fence_queue → board->sdma_fence_complete(fence_id)
+    //   → DGpuBoard::msix_update_pending(kSdmaFenceVector=0) → trigger_irq_async(0) → UE intr_cb
+    void DGpuBoard::sdma_fence_complete(uint64_t /*fence_id*/) {
+        // 单点常量: kSdmaFenceVector = 0 (per Oracle R-D 修订)
+        msix_update_pending(0);
+    }
+
     void DGpuBoard::trigger_irq_async(uint32_t vector_id) {
         IrqCallback cb;
         {
