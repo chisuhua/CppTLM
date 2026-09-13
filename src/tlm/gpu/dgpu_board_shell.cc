@@ -291,6 +291,35 @@ namespace tlm::gpu {
         if (bar == 1 && offset == kBar1DoorbellOffset) {
             std::lock_guard<std::mutex> lock(callback_mu_);
             ++pcie_ep_doorbell_count_;
+
+            // P0 unblock Task 6: 转发到 SdmaEngineTLM::mmio_write (1.3a 已 ship)
+            //   1.3a 的 SdmaEngineTLM::mmio_write 内部完整处理 ring consume:
+            //     - 解析 wptr_count, consume ring[WPTR..WPTR+wptr_count)
+            //     - 反序列化 DmaDescriptor
+            //     - 调 process_h2d / process_d2h
+            //     - emit_completion (KIND_DMA_DONE)
+            //   ring_consumed_count_ 累加作为测试断言
+            // 注: payload 已在 line 281 被 std::move 到 req.data, 需在 move 前复制 wptr
+            if (sdma_engine_ != nullptr) {
+                // 从 mmio_regs_ 取回 payload (未 move) 解析 wptr
+                std::vector<uint8_t> reg_data;
+                {
+                    std::lock_guard<std::mutex> lock(inject_mu_);
+                    auto it = mmio_regs_.find(std::make_pair(bar, offset));
+                    if (it != mmio_regs_.end()) {
+                        reg_data = it->second;
+                    }
+                }
+                uint64_t doorbell_wptr = 0;
+                if (reg_data.size() >= 4) {
+                    // 4-byte doorbell payload (wptr_count uint32_t)
+                    doorbell_wptr = *reinterpret_cast<const uint32_t*>(reg_data.data());
+                } else if (reg_data.size() >= 8) {
+                    doorbell_wptr = *reinterpret_cast<const uint64_t*>(reg_data.data());
+                }
+                sdma_engine_->mmio_write(/*bar=*/1, /*offset=*/kBar1DoorbellOffset,
+                                         /*data=*/doorbell_wptr);
+            }
         }
 
         return 0; // async, no wait (修复 #7: 保持异步语义)

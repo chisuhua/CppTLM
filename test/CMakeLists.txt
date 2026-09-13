@@ -220,7 +220,8 @@ add_test(NAME test_cpptlm_dma_translate_cb_real COMMAND cpptlm_tests "[abi][dma_
 # (per docs/superpowers/specs/2026-09-13-ue-sdma-p0-unblock-design.md §3.2 目标 1)
 # 验证: doorbell write → mmio_regs_ stored (修复 #5) + SOC pcie_ep doorbell_count_++
 add_test(NAME test_dgpu_board_doorbell_routing_p0 COMMAND cpptlm_tests "[dgpu-board][doorbell][1.3a][integration]" -r compact)
-# Task 4 测试将按 plan 顺序创建 (Task 4 step 1)
+# Task 4 (2026-09-13 ue-sdma-p0-unblock): DGpuBoard BAR1 doorbell → SdmaEngineTLM ring consume
+add_test(NAME test_sdma_ring_engine_integration_p0 COMMAND cpptlm_tests "[sdma][ring][integration][1.3a]" -r compact)
 
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)

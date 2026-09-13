@@ -8,6 +8,7 @@
 #include "tlm/gpu/dgpu_soc.hh"  // DGpuSoc SimModule 容器
 #include "tlm/gpu/pcie_endpoint_tlm.h"  // PcieEndpointTLM (pcie_ep accessor 返回类型)
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
+#include "tlm/gpu/sdma_engine_tlm.hh"  // SdmaEngineTLM (P0 unblock Task 5+6: BAR1 doorbell wiring)
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -111,6 +112,14 @@ public:
     // BAR1+0x10010000 doorbell offset (per 1.3a spec)
     static constexpr uint64_t kBar1DoorbellOffset = 0x10010000ULL;
 
+    // Stage 1.3a integration (P0 unblock Task 5+6):
+    //   Inject SdmaEngineTLM reference, so DGpuBoard::mmio_write BAR1 doorbell
+    //   can dispatch to SdmaEngineTLM::mmio_write (1.3a 已 ship, BAR1 doorbell
+    //   → ring consume 完整逻辑)
+    void set_sdma_engine(::tlm::gpu::SdmaEngineTLM* sdma) noexcept {
+        sdma_engine_ = sdma;
+    }
+
     // Stage 1.3d: SDMA Fence → MSI-X vector 0 接线 (per openspec/.../2026-09-10-...)
     //   SdmaEngineTLM::process_fence_queue 调用此 API → DGpuBoard::msix_update_pending(0)
     //   → trigger_irq_async(0) → UE intr_cb(vector=0, payload=fence_id)
@@ -188,6 +197,10 @@ private:
     // Stage 1.3a integration: BAR1+0x10010000 doorbell 路由计数器
     // (per docs/superpowers/specs/2026-09-13-ue-sdma-p0-unblock-design.md §3.2 目标 1)
     uint32_t pcie_ep_doorbell_count_ = 0;
+
+    // Stage 1.3a integration (P0 unblock Task 5+6):
+    //   SdmaEngineTLM 引用 (set_sdma_engine 注入), 转发 BAR1 doorbell 到 SDMA ring
+    ::tlm::gpu::SdmaEngineTLM* sdma_engine_ = nullptr;
 
     // ── 内部方法 ──
     void sim_loop();                              // sim 线程主循环
