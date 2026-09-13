@@ -1,7 +1,7 @@
 # PCIe Endpoint 实施入口文档（双仓 SSOT）
 
 > **定位**: 本文档是 UsrLinuxEmu ↔ CppTLM 双仓 **PCIe EP 驱动到硬件链路**所有实施工作的**集中入口**（Single Source of Truth Entry Point）。
-> **状态**: v0.8 (2026-09-14, post-ue-stage-1-3c 跨仓集成 ship, 修复 #2)
+> **状态**: v0.9 (2026-09-14, post-ue-stage-1-3d 跨仓集成 ship, 1.3c+d AND 真实解锁 5.5.8 阶段 3)
 > **维护**: CppTLM + UsrLinuxEmu 架构组（跨仓同步）
 > **目的**: 让任何进入 PCIe EP / dGPU E2E 主线工作的工程师，能够**从这里找到所有需要的文档、openspec change、实施路径、同步点、验证清单**，而不需要在双仓搜索
 > **关联索引**:
