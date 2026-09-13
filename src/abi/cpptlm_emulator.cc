@@ -444,12 +444,35 @@ int cpptlm_emulator_register_dma_translate_cb(cpptlm_emulator_t* emu, void* cb) 
     if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
     }
+    // Stage 1.3c 修复 #2 (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma §1.3c):
+    //   移除 (void)cb stub, 真实调用 cb 函数指针.
+    //   cb 签名 (per ADR-088 §D3.8):
+    //     int (*cb)(uint64_t iova, uint32_t size, uint64_t* out_pa)
+    //   返回 0 = 成功 (out_pa = 翻译后 PA), < 0 = 负 errno (-ENOSYS/-EIO).
+    //
+    // 适配: board 内部 DmaTranslateCallback 签名是
+    //   std::function<uint64_t(uint64_t iova, size_t size)>
+    // 转换规则:
+    //   - cb == nullptr → fallback identity (pa = iova)
+    //   - cb != nullptr → reinterpret_cast<TranslateFn>(cb)(iova, size, &pa)
+    //     返回 < 0 (负 errno) → lambda 返 (uint64_t)(int64_t)errno 编码为 64-bit 无符号,
+    //       调用方 (SdmaEngineTLM 等) 通过 static_cast<int64_t>(...) 解码回 errno
     try {
         emu->board->set_dma_translate_callback([cb](uint64_t iova, size_t size) -> uint64_t {
-            (void)cb;
-            (void)iova;
-            (void)size;
-            return 0;
+            if (cb == nullptr) {
+                // Fallback identity: pa = iova (per spec "identity mode")
+                return iova;
+            }
+            using TranslateFn = int (*)(uint64_t iova, uint32_t size, uint64_t* out_pa);
+            auto* fn = reinterpret_cast<TranslateFn>(cb);
+            uint64_t pa = 0;
+            int rc = fn(iova, static_cast<uint32_t>(size), &pa);
+            if (rc < 0) {
+                // 负 errno 编码: 位图 (rc | 0x8000'0000'0000'0000ULL)
+                // 真实 IOVA/PA 永远不会用到该最高位 (canonical 48-bit), 安全编码
+                return static_cast<uint64_t>(static_cast<int64_t>(rc));
+            }
+            return pa;
         });
         return 0;
     } catch (const std::exception&) {
