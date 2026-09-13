@@ -17,6 +17,8 @@
 #include "core/sim_object.hh"
 #include "framework/stream_adapter.hh"
 #include "tlm/gpu/dma_descriptor_mvp.hh"
+#include "tlm/gpu/sdma_packet.hh"
+#include "tlm/gpu/sdma_ring_buffer.hh"
 
 #include <cstdint>
 #include <functional>
@@ -241,6 +243,30 @@ namespace tlm::gpu {
         d2d_noc_ = noc;
     }
 
+    // Stage 1.3a 接入: Ring Buffer 路径 (per openspec/.../2026-09-10-... §1.3a)
+    //   - enable_ring_mode(): 启用 ring mode (替代 desc_in 直投)
+    //   - is_ring_mode(): 查询当前 mode
+    //   - mmio_write(bar, offset, data): 公开 ABI (BAR1+0x10010000 触发 ring consume)
+    //   - ring_write_entry(index, data): UE 经 BAR1 窗口写 entry (测试 + 真实路径)
+    //   - ring_consumed_count() / dropped_desc_in_count(): 统计
+    //   - last_err_msg(): 互斥拒绝时的最近错误消息
+    void enable_ring_mode(::tlm::gpu::SdmaRingBuffer::RingSize size,
+                          ::tlm::gpu::SdmaRingBuffer::EntrySize entry_sz);
+    bool is_ring_mode() const noexcept {
+        return ring_mode_;
+    }
+    bool mmio_write(uint32_t bar, uint64_t offset, uint64_t data);
+    bool ring_write_entry(uint32_t index, const uint8_t* data, size_t len);
+    uint64_t ring_consumed_count() const noexcept {
+        return ring_consumed_count_;
+    }
+    uint64_t dropped_desc_in_count() const noexcept {
+        return dropped_desc_in_count_;
+    }
+    const std::string& last_err_msg() const noexcept {
+        return last_err_msg_;
+    }
+
     // Stage 1.3d: Fence + MSI-X 接线 (per openspec/.../2026-09-10-... §1.3d)
     //   submit_fence(): 提交 Fence descriptor, 内部存 fence queue
     //   set_completion_ring(): 注入 CompletionRingTLM 引用 (fence → ring 转发)
@@ -309,6 +335,13 @@ namespace tlm::gpu {
 
         // Stage 1.3b: host_out emit 计数 (D2D 路径应不增此计数)
         uint64_t host_out_tx_count_ = 0;
+
+        // Stage 1.3a 接入: ring mode + 内部 ring 存储
+        bool ring_mode_ = false;
+        std::unique_ptr<::tlm::gpu::SdmaRingBuffer> ring_buffer_;
+        uint64_t ring_consumed_count_ = 0;   // 累计通过 ring 处理的 desc 数
+        uint64_t dropped_desc_in_count_ = 0; // ring 模式下 desc_in 收到包数 (互斥拒绝)
+        std::string last_err_msg_;            // 最近错误消息 (测试断言)
 
         // Stage 1.3b: 可选 D2D NoC 引用 (注入后 D2D 转发走 NoC payload 路径)
         ::tlm::GpuMeshNoC* d2d_noc_ = nullptr;

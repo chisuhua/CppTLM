@@ -10,6 +10,9 @@
 
 #include <array>
 #include <cstdint>
+#include <cstring>
+
+#include "tlm/gpu/dma_descriptor_mvp.hh"
 
 namespace tlm::gpu {
 
@@ -41,11 +44,14 @@ namespace tlm::gpu {
      *   - MAX_SG_ENTRIES = 8 (硬上限; 超过 add_sg 返回 false)
      *   - add_sg() 追加到 chain; sg_count() 返回当前大小
      *   - sg_at(i) 返回第 i 个 SG 的常量引用 (i 越界未定义, MVP 不 assert)
+     *   - serialize_descriptor() / deserialize_descriptor(): 64B ring entry 编解码
      */
     class SdmaPacket {
     public:
         // spec: "SG ≥ 8" — 硬上限 8 (chain 链式, >8 不实现)
         static constexpr uint32_t MAX_SG_ENTRIES = 8;
+        // Ring entry 大小 (per spec "max 1024 entries @64B")
+        static constexpr size_t kEntryBytes = 64;
 
         SdmaPacket() = default;
         ~SdmaPacket() = default;
@@ -69,6 +75,24 @@ namespace tlm::gpu {
 
         const SgDescriptor& sg_at(uint32_t i) const {
             return sg_chain_[i];
+        }
+
+        // serialize_descriptor / deserialize_descriptor: 64B ring entry helper
+        //   - serialize: DmaDescriptor → 64B array (ring entry 字节布局)
+        //   - deserialize: 64B array → DmaDescriptor (round-trip 校验)
+        // 注: Stage 1.3a wire-format 与 PcieTlpBundle 编码不同 (无 KIND_DMA_DESC),
+        //   直接 memcpy 截断 sizeof(DmaDescriptor) 部分, 后续 bit field 留 0.
+        static std::array<uint8_t, kEntryBytes> serialize_descriptor(const DmaDescriptor& d) {
+            std::array<uint8_t, kEntryBytes> buf{};
+            std::memcpy(buf.data(), &d, sizeof(DmaDescriptor));
+            return buf;
+        }
+        static DmaDescriptor deserialize_descriptor(const uint8_t* data, size_t len) {
+            DmaDescriptor d{};
+            if (data != nullptr && len >= sizeof(DmaDescriptor)) {
+                std::memcpy(&d, data, sizeof(DmaDescriptor));
+            }
+            return d;
         }
 
     private:

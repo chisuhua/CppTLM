@@ -133,6 +133,10 @@ namespace tlm::gpu {
         error_count_ = 0;
         host_out_tx_count_ = 0;  // Stage 1.3b
         fence_queue_.clear();    // Stage 1.3d
+        // Stage 1.3a 接入: ring_mode_ 保留 (enable_ring_mode 调用后才启用); 但统计重置
+        dropped_desc_in_count_ = 0;
+        ring_consumed_count_ = 0;
+        last_err_msg_.clear();
     }
 
     void SdmaEngineTLM::do_reset(const ResetConfig&) {
@@ -367,6 +371,19 @@ namespace tlm::gpu {
         if (!req_in[PORT_DESC_IN].valid())
             return;
 
+        // Stage 1.3a 接入: ring 模式互斥规则
+        //   - ring 模式下 desc_in 收到包 → dropped_desc_in_count_++ + error_cb
+        //   - 严禁同生命周期双路径产生 inflight (fence/in-order 语义要求单一提交点)
+        if (ring_mode_) {
+            dropped_desc_in_count_++;
+            last_err_msg_ = "desc_in disabled in ring mode (use BAR1+0x10010000 doorbell)";
+            if (error_cb_) {
+                error_cb_(-EINVAL, last_err_msg_);
+            }
+            req_in[PORT_DESC_IN].consume();
+            return;
+        }
+
         const auto& req = req_in[PORT_DESC_IN].data();
         if (req.kind.read() != KIND_DMA_DESC) {
             // 未知 kind 静默丢弃（与 PcieEndpointTLM 一致）
@@ -455,6 +472,62 @@ namespace tlm::gpu {
             std::memcpy(static_cast<uint8_t*>(vram_backdoor_) + dst_va,
                         static_cast<uint8_t*>(vram_backdoor_) + src_va, len);
         }
+    }
+
+    // Stage 1.3a 接入: ring mode 启用 + BAR1 doorbell 触发 ring consume
+    void SdmaEngineTLM::enable_ring_mode(::tlm::gpu::SdmaRingBuffer::RingSize size,
+                                        ::tlm::gpu::SdmaRingBuffer::EntrySize entry_sz) {
+        ring_buffer_ = std::make_unique<::tlm::gpu::SdmaRingBuffer>(size, entry_sz);
+        ring_mode_ = true;
+        ring_consumed_count_ = 0;
+    }
+
+    // UE 经 BAR1 窗口写 entry (测试 + 真实路径)
+    bool SdmaEngineTLM::ring_write_entry(uint32_t index, const uint8_t* data, size_t len) {
+        if (!ring_mode_ || ring_buffer_ == nullptr || data == nullptr) {
+            return false;
+        }
+        return ring_buffer_->write_entry(index, data, len);
+    }
+
+    // 公开 ABI: mmio_write (与 PcieEndpointIP::mmio_write 独立; 测试 + UE dlopen ABI 入口)
+    bool SdmaEngineTLM::mmio_write(uint32_t bar, uint64_t offset, uint64_t data) {
+        if (!ring_mode_ || ring_buffer_ == nullptr) {
+            return true;  // 非 ring mode, 接受但 no-op (per spec non-doorbell 落入 BAR space)
+        }
+        // BAR1+0x10010000: doorbell → consume ring[RPTR..WPTR=data]
+        if (bar == 1 && offset == 0x10010000ULL) {
+            const uint32_t wptr_count = static_cast<uint32_t>(data);
+            const uint32_t cur_wptr = ring_buffer_->wptr().load();
+            // consume from current wptr to (cur_wptr + wptr_count)
+            for (uint32_t i = 0; i < wptr_count; ++i) {
+                const uint32_t idx = cur_wptr + i;
+                if (idx >= ring_buffer_->capacity_entries()) {
+                    break;  // 越界 (per spec WPTR 不应越界; 这里防御性)
+                }
+                auto buf = ring_buffer_->read_entry(idx);
+                DmaDescriptor d = SdmaPacket::deserialize_descriptor(buf.data(), buf.size());
+                // 处理 (H2D / D2H, 与既有 handle_desc_in 等价)
+                bundles::CompletionBundle done;
+                done.task_id.write(static_cast<uint32_t>(d.tag));
+                done.tag.write(static_cast<uint32_t>(d.tag));
+                int rc = 0;
+                if (d.dir == DmaDescriptor::Dir::H2D) {
+                    rc = process_h2d(d, done);
+                } else {
+                    rc = process_d2h(d, done);
+                }
+                // emit completion (KIND_DMA_DONE on done_out)
+                std::string err_msg;
+                int err_code_for_cb = rc;
+                emit_completion(done, err_code_for_cb, err_msg);
+            }
+            ring_buffer_->wptr().fetch_add(wptr_count, std::memory_order_acq_rel);
+            ring_consumed_count_ += wptr_count;
+            return true;
+        }
+        // 其他 BAR/offset: 接受但 no-op (PcieEndpointIP::bar_store_ 已独立处理)
+        return true;
     }
 
     // Stage 1.3d: 处理 fence_queue_ 内的所有 Fence descriptor
