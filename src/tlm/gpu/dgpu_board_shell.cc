@@ -2,6 +2,7 @@
 // Owner: CppTLM Team · Date: 2026-08-31
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
+#include "tlm/gpu/sdma_engine_tlm.hh"  // 1.3d M6: SdmaEngineTLM::kSdmaFenceVector 单点常量引用
 // #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
 #include <algorithm>
 #include <cerrno>
@@ -607,8 +608,8 @@ namespace tlm::gpu {
     //   SdmaEngineTLM::process_fence_queue → board->sdma_fence_complete(fence_id)
     //   → DGpuBoard::msix_update_pending(kSdmaFenceVector=0) → trigger_irq_async(0) → UE intr_cb
     void DGpuBoard::sdma_fence_complete(uint64_t /*fence_id*/) {
-        // 单点常量: kSdmaFenceVector = 0 (per Oracle R-D 修订)
-        msix_update_pending(0);
+        // 单点常量引用 (per Oracle R-D 修订); sdma_engine_tlm.hh 已 include
+        msix_update_pending(::tlm::gpu::SdmaEngineTLM::kSdmaFenceVector);
     }
 
     void DGpuBoard::trigger_irq_async(uint32_t vector_id) {

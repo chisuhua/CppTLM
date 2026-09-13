@@ -159,3 +159,37 @@ TEST_CASE("D2D NoC payload counter accumulates across multiple transfers",
 
     REQUIRE(noc.payload_bytes_forwarded() == 0x1000u + 0x2000u + 0x60000u);
 }
+
+// =============================================================================
+// 1.3b M6 回归测试: Dir::D2D 描述符经 desc_in 提交 → d2d_forward (不 emit host_out)
+//   修复前: Dir::D2D 被静默当 D2H 处理 → host_out_tx_count++ (违反 bypassing)
+//   修复后: Dir::D2D → d2d_forward + emit done_out (host_out 不增)
+// =============================================================================
+TEST_CASE("SDMA: Dir::D2D 描述符经 desc_in 提交 → d2d_forward + host_out 零事务 (1.3b M6)",
+          "[sdma][d2d][1.3b_m6][dispatch]") {
+    EventQueue eq;
+    GpuMeshNoC noc("d2d_noc_m6", &eq);
+    SdmaEngineTLM sdma("sdma_d2d_m6", &eq);
+    sdma.init();
+    sdma.set_translate_cb(fake_translate_identity);
+    sdma.set_vram_backdoor(g_vram.data(), g_vram.size());
+    sdma.set_d2d_noc(&noc);
+
+    REQUIRE(sdma.host_out_tx_count() == 0u);
+
+    // 推 Dir::D2D 描述符经 desc_in (M6 修复点)
+    DmaDescriptor d(DmaDescriptor::Dir::D2D,
+                     /*host_iova=*/0,                       // D2D 不需 host_iova
+                     /*vram_offset=*/0x20000,              // D2D: dst VA
+                     /*size=*/1024,
+                     /*tag=*/0xCAFE);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(d);
+    sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
+    sdma.tick();
+
+    // 验证: host_out_tx_count 不增 (M6 修复关键断言)
+    REQUIRE(sdma.host_out_tx_count() == 0u);
+    // done_out 已 emit (success)
+    REQUIRE(sdma.resp_out[SdmaEngineTLM::PORT_DONE_OUT].valid());
+    REQUIRE(sdma.completed_count() == 1u);
+}

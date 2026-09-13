@@ -38,14 +38,17 @@ namespace tlm {
         return latency;
     }
 
-    // Oracle O9 测量定义:
-    //   throughput = payload_bytes / (last_latency_cycles × cycle_period_s)
-    //   单位: bytes/s; 转换为 GB/s (×1e-9)
-    double GpuMeshNoC::simulated_throughput_GBps(double cycle_period_s) const {
-        if (last_transfer_latency_cycles_ == 0 || cycle_period_s <= 0.0) {
+// Oracle O9 测量定义:
+//   throughput = payload_bytes / (last_latency_cycles × cycle_period_s)
+//   单位: bytes/s; 转换为 GB/s (×1e-9)
+//   注 (per Oracle 1.3b 复审 M6): getter 默认用成员 cycle_period_s_ (set_cycle_period_s
+//   JSON 注入生效), 不再硬编码 1e-9 默认值; 参数保留作为 override 入口
+    double GpuMeshNoC::simulated_throughput_GBps(double cycle_period_s_override) const {
+        const double cps = (cycle_period_s_override > 0.0) ? cycle_period_s_override : cycle_period_s_;
+        if (last_transfer_latency_cycles_ == 0 || cps <= 0.0) {
             return 0.0;
         }
-        const double seconds = static_cast<double>(last_transfer_latency_cycles_) * cycle_period_s;
+        const double seconds = static_cast<double>(last_transfer_latency_cycles_) * cps;
         const double bytes_per_sec = static_cast<double>(payload_bytes_forwarded_) / seconds;
         return bytes_per_sec / 1e9;
     }

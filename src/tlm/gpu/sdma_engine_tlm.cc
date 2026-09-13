@@ -385,6 +385,13 @@ namespace tlm::gpu {
             return;
         }
 
+        // Stage 1.3b M6: Dir::D2D dispatch (per Oracle 1.3b 复审发现)
+        //   - 此前 Dir::D2D 枚举扩展但未兑现 dispatch: 描述符经 desc_in/ring 提交
+        //     时被静默当 D2H 处理, 触发 host_out, 违反 "bypassing host_out" 语义
+        //   - 修复: 识别 Dir::D2D → d2d_forward + emit done (status=0, 不 emit host_out)
+        // 注: 仅 legacy 非 ring 模式 + desc_in 直投路径生效; ring 模式 doorbell 触发时
+        //   ring_consume() 内部已走 d2d_forward 路径 (mmio_write doorbell handler)
+
         const auto& req = req_in[PORT_DESC_IN].data();
         if (req.kind.read() != KIND_DMA_DESC) {
             // 未知 kind 静默丢弃（与 PcieEndpointTLM 一致）
@@ -398,7 +405,13 @@ namespace tlm::gpu {
         done.tag.write(static_cast<uint32_t>(d.tag));
 
         int rc = 0;
-        if (d.dir == DmaDescriptor::Dir::H2D) {
+        if (d.dir == DmaDescriptor::Dir::D2D) {
+            // Stage 1.3b M6: Dir::D2D → d2d_forward (不 emit host_out)
+            //   done_out emit 由既有 fallback 路径统一处理 (emit_completion)
+            d2d_forward(d.vram_offset, d.vram_offset, d.size);
+            done.status.write(0);
+            rc = 0;  // success
+        } else if (d.dir == DmaDescriptor::Dir::H2D) {
             rc = process_h2d(d, done);
         } else {
             rc = process_d2h(d, done);
