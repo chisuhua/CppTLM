@@ -24,6 +24,11 @@
 #include <nlohmann/json.hpp>
 #include <string>
 
+namespace tlm {
+    // 前向声明 GpuMeshNoC (Stage 1.3b D2D NoC 注入)
+    class GpuMeshNoC;
+}  // namespace tlm
+
 namespace tlm::gpu {
 
     // 前向声明
@@ -185,32 +190,51 @@ namespace tlm::gpu {
             return error_cb_;
         }
 
-        // 数据面 backdoor 注入（per design.md §2 + spec.md R3-S1 "VRAM write visibility"）
-        //
-        // MVP 范围内：backdoor 路径仅在测试场景下使用，绕过 descriptor-only TLP
-        // （per ADR-SOC-07 Status Update Q3）的限制直接搬运数据，验证 spec 中
-        // "Completion implies VRAM write visibility" 语义。生产环境中由
-        // DGpuBoard backdoor ABI（cpptlm-dgpu-abi-export change 交付）替代。
-        //
-        // 调用规则：
-        //   - ptr != nullptr + size > 0：注入 fake memory，组件在 H2D/D2H 处理时
-        //     直接 memcpy（带越界检查）；无 TLP 数据字段修改（descriptor-only TLP
-        //     不变，向后兼容）
-        //   - ptr == nullptr：清空注入，组件降级为 descriptor-only TLP 模式
-        void set_host_backdoor(void* ptr, uint64_t size_bytes) {
-            host_backdoor_ = ptr;
-            host_backdoor_size_ = size_bytes;
-        }
-        void set_vram_backdoor(void* ptr, uint64_t size_bytes) {
-            vram_backdoor_ = ptr;
-            vram_backdoor_size_ = size_bytes;
-        }
-        bool has_host_backdoor() const {
-            return host_backdoor_ != nullptr;
-        }
-        bool has_vram_backdoor() const {
-            return vram_backdoor_ != nullptr;
-        }
+    // 数据面 backdoor 注入（per design.md §2 + spec.md R3-S1 "VRAM write visibility"）
+    //
+    // MVP 范围内：backdoor 路径仅在测试场景下使用，绕过 descriptor-only TLP
+    // （per ADR-SOC-07 Status Update Q3）的限制直接搬运数据，验证 spec 中
+    // "Completion implies VRAM write visibility" 语义。生产环境中由
+    // DGpuBoard backdoor ABI（cpptlm-dgpu-abi-export change 交付）替代。
+    //
+    // 调用规则：
+    //   - ptr != nullptr + size > 0：注入 fake memory，组件在 H2D/D2H 处理时
+    //     直接 memcpy（带越界检查）；无 TLP 数据字段修改（descriptor-only TLP
+    //     不变，向后兼容）
+    //   - ptr == nullptr：清空注入，组件降级为 descriptor-only TLP 模式
+    void set_host_backdoor(void* ptr, uint64_t size_bytes) {
+        host_backdoor_ = ptr;
+        host_backdoor_size_ = size_bytes;
+    }
+    void set_vram_backdoor(void* ptr, uint64_t size_bytes) {
+        vram_backdoor_ = ptr;
+        vram_backdoor_size_ = size_bytes;
+    }
+    bool has_host_backdoor() const {
+        return host_backdoor_ != nullptr;
+    }
+    bool has_vram_backdoor() const {
+        return vram_backdoor_ != nullptr;
+    }
+
+    // Stage 1.3b: 注入 D2D NoC 引用 (D2D forward 走 NoC payload 路径)
+    void set_d2d_noc(::tlm::GpuMeshNoC* noc) noexcept {
+        d2d_noc_ = noc;
+    }
+
+    // Stage 1.3b: D2D NoC payload forwarding (per openspec/.../2026-09-10-...)
+    //   VRAM→VRAM payload 转发, 不经 host_out (bypassing PCIe TLP)
+    //   - src_va: source VRAM offset
+    //   - dst_va: destination VRAM offset
+    //   - len: payload bytes
+    //   - 依赖 vram_backdoor 注入 (与 H2D/D2H 同)
+    //   - 不增加 host_out_tx_count_ (per spec "bypassing host_out")
+    void d2d_forward(uint64_t src_va, uint64_t dst_va, uint32_t len);
+
+    // host_out 事务计数 (Stage 1.3b: D2D 路径应不增此计数)
+    uint64_t host_out_tx_count() const noexcept {
+        return host_out_tx_count_;
+    }
 
         // Wire-format ↔ DmaDescriptor / CompletionBundle 转换（public for testability）
         static bundles::PcieTlpBundle to_pcie_tlp_descriptor(const DmaDescriptor& d);
@@ -247,6 +271,12 @@ namespace tlm::gpu {
         uint64_t host_backdoor_size_ = 0;
         void*    vram_backdoor_ = nullptr;
         uint64_t vram_backdoor_size_ = 0;
+
+        // Stage 1.3b: host_out emit 计数 (D2D 路径应不增此计数)
+        uint64_t host_out_tx_count_ = 0;
+
+        // Stage 1.3b: 可选 D2D NoC 引用 (注入后 D2D 转发走 NoC payload 路径)
+        ::tlm::GpuMeshNoC* d2d_noc_ = nullptr;
 
         // 内部：处理 desc_in 入口（每 tick 一次）
         void handle_desc_in();

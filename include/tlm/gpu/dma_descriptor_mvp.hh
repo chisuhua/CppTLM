@@ -37,6 +37,8 @@ struct DmaDescriptor {
     enum class Dir : uint8_t {
         H2D = 0,  // host→device：经 host_out 读 host，写 VRAM (mem_out)
         D2H = 1,  // device→host：经 mem_in 读 VRAM，写 host (host_out)
+        D2D = 2,  // device→device：VRAM→VRAM, 经内部 D2D NoC (bypassing host_out)
+                   // Stage 1.3b 扩展 (per openspec/.../2026-09-10-...)
     };
 
     Dir      dir = Dir::H2D;

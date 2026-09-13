@@ -6,6 +6,7 @@
 
 #include "bundles/dma_bundles_tlm.hh"
 #include "bundles/pcie_bundles_tlm.hh"
+#include "tlm/gpu/gpu_mesh_noc_tlm.hh"
 
 #include <cerrno>
 #include <cstring>
@@ -128,6 +129,7 @@ namespace tlm::gpu {
         inflight_.clear();
         completed_count_ = 0;
         error_count_ = 0;
+        host_out_tx_count_ = 0;  // Stage 1.3b
     }
 
     void SdmaEngineTLM::do_reset(const ResetConfig&) {
@@ -255,6 +257,7 @@ namespace tlm::gpu {
         host_tlp.requester_id.write(0);
         host_tlp.trans_id.write(static_cast<uint32_t>(d.tag));
         resp_out[PORT_HOST_OUT].write(host_tlp);
+        host_out_tx_count_++;  // Stage 1.3b: host_out emit 计数
 
         // 同步 emit mem_out MEM_WRITE TLP (数据写入 VRAM)
         bundles::PcieTlpBundle mem_tlp;
@@ -327,6 +330,7 @@ namespace tlm::gpu {
         host_tlp.requester_id.write(0);
         host_tlp.trans_id.write(static_cast<uint32_t>(d.tag));
         resp_out[PORT_HOST_OUT].write(host_tlp);
+        host_out_tx_count_++;  // Stage 1.3b: host_out emit 计数
 
         done.status.write(0); // success
         return 0;
@@ -415,6 +419,35 @@ namespace tlm::gpu {
         for (unsigned i = 0; i < NUM_PORTS; i++) {
             if (adapters_[i])
                 adapters_[i]->tick();
+        }
+    }
+
+    // Stage 1.3b D2D NoC payload forwarding (per openspec/.../2026-09-10-...):
+    //   VRAM→VRAM payload 转发, 不经 host_out (bypassing PCIe TLP).
+    //   - 依赖 vram_backdoor 注入 (与 H2D/D2H 同策略)
+    //   - 若 d2d_noc_ 已注入 → 走 NoC payload 路径 (累加 noc 统计)
+    //   - 否则 → 直 memcpy 路径 (MVP fallback)
+    //   - 不增加 host_out_tx_count_ (per spec "bypassing host_out")
+    void SdmaEngineTLM::d2d_forward(uint64_t src_va, uint64_t dst_va, uint32_t len) {
+        if (len == 0)
+            return;
+        if (vram_backdoor_ == nullptr)
+            return;  // MVP 容忍: 无 backdoor 不做事
+        // 越界检查
+        if (src_va + len > vram_backdoor_size_ || dst_va + len > vram_backdoor_size_) {
+            return;  // MVP 容忍: 越界静默 skip
+        }
+
+        // 走 D2D NoC payload 路径 (若已注入)
+        if (d2d_noc_ != nullptr) {
+            d2d_noc_->d2d_forward_payload(
+                static_cast<uint8_t*>(vram_backdoor_) + dst_va,
+                static_cast<uint8_t*>(vram_backdoor_) + src_va,
+                len);
+        } else {
+            // 直 memcpy fallback (测试场景下与 noc 路径等价)
+            std::memcpy(static_cast<uint8_t*>(vram_backdoor_) + dst_va,
+                        static_cast<uint8_t*>(vram_backdoor_) + src_va, len);
         }
     }
 

@@ -181,6 +181,11 @@ add_test(NAME test_sdma_ring_buffer_doorbell COMMAND cpptlm_tests "[sdma][ring][
 add_test(NAME test_sdma_packet_sg_chain COMMAND cpptlm_tests "[sdma][packet][sg][1.3a]" -r compact)
 add_test(NAME test_pcie_endpoint_ip_bar1_doorbell COMMAND cpptlm_tests "[pcie][endpoint][bar][doorbell][1.3a]" -r compact)
 
+# 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3b: D2D NoC payload forwarding + host_out zero)
+# (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §2)
+# D2D NoC ≥ 100 GB/s payload forward + memctl bypass
+add_test(NAME test_d2d_noc_path COMMAND cpptlm_tests "[sdma][d2d][1.3b]" -r compact)
+
 # 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3c: dma_translate_cb 真实化, 修复 #2)
 # (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §3)
 # 修复 #2: 移除 cpptlm_emulator.cc:449 (void)cb stub, 真实调用 cb 函数指针
