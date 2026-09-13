@@ -23,9 +23,14 @@ namespace tlm::gpu {
 
     namespace {
 
-        // 按 method_addr 高 8 bits 查表 (per design §2):
+        // 按 method_addr 高 8 bits 查表 (per design §2 + Stage 1.3c 扩展):
         //   0x40 → DISPATCH_DIRECT, 0x42 → EVENT_WRITE,
-        //   0x44 → RELEASE_MEM,     0x45 → ACQUIRE_MEM, 其他 → UNKNOWN
+        //   0x44 → RELEASE_MEM,     0x45 → ACQUIRE_MEM,
+        //   0x46 → DISPATCH_INDIRECT (SDMA copy),
+        //   0x47 → DISPATCH_DIRECT_SDMA (SDMA fill),
+        //   0x48 → DISPATCH_INDIRECT_SDMA (SDMA copy w/ SG),
+        //   0x49 → DISPATCH_FENCE_SDMA (SDMA Fence),
+        //   其他 → UNKNOWN
         //
         // 为何用查表而非常规 if-else:GCC -O2 下 if-else 链在 UNKNOWN 路径会执行
         //   "xor %edx, %edx" 清零 subchannel/data_count 占用的 ABI 寄存器,
@@ -38,6 +43,10 @@ namespace tlm::gpu {
             lut[0x42] = Pm4MethodType::EVENT_WRITE;
             lut[0x44] = Pm4MethodType::RELEASE_MEM;
             lut[0x45] = Pm4MethodType::ACQUIRE_MEM;
+            lut[0x46] = Pm4MethodType::DISPATCH_INDIRECT;       // Stage 1.3c SDMA copy
+            lut[0x47] = Pm4MethodType::DISPATCH_DIRECT_SDMA;    // Stage 1.3c SDMA fill
+            lut[0x48] = Pm4MethodType::DISPATCH_INDIRECT_SDMA; // Stage 1.3c SDMA SG chain
+            lut[0x49] = Pm4MethodType::DISPATCH_FENCE_SDMA;     // Stage 1.3c SDMA Fence
             return lut;
         }
 

@@ -162,14 +162,17 @@ TEST_CASE("Pm4Decoder: boundary 0x45FF (ACQUIRE_MEM upper bound)", "[pm4-decoder
     REQUIRE(result.type == Pm4MethodType::ACQUIRE_MEM);
 }
 
-// ── Boundary: 0x4600 just above ACQUIRE_MEM → UNKNOWN ──
-TEST_CASE("Pm4Decoder: boundary 0x4600 (just above ACQUIRE_MEM, UNKNOWN)", "[pm4-decoder][mvp]") {
+// ── Boundary: 0x4600 just above ACQUIRE_MEM → DISPATCH_INDIRECT (SDMA, 1.3c) ──
+// Stage 1.3c 变更: 0x4600 范围由 SDMA DISPATCH 占用 (DISPATCH_INDIRECT = 0x4600-0x46FF),
+//   不再是 UNKNOWN. 1.3c 实施前既有边界测试假定 0x4600 = UNKNOWN, 现已更新.
+TEST_CASE("Pm4Decoder: 0x4600 范围 (SDMA DISPATCH_INDIRECT, Stage 1.3c)", "[pm4-decoder][mvp]") {
     Pm4Decoder decoder;
     uint32_t packed = pack_header(0, 0x4600, 0, 0, 0);
     const uint32_t payload[16] = {0};
     Pm4MethodDispatch result = decoder.parse_method(packed, payload, 16);
 
-    REQUIRE(result.type == Pm4MethodType::UNKNOWN);
+    // Stage 1.3c: 0x4600 = DISPATCH_INDIRECT (SDMA copy 1D/2D/3D)
+    REQUIRE(result.type == Pm4MethodType::DISPATCH_INDIRECT);
 }
 
 // ── reserved bits: 0xFF should not affect classification ──

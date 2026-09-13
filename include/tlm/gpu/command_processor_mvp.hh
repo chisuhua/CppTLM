@@ -33,6 +33,9 @@ struct Pm4DispatchBundle {
     // 完整字段 deferred T-bs-2e
 };
 
+    // 前向声明 SdmaEngineTLM (Stage 1.3c PM4 DISPATCH dma_req 路径)
+    class SdmaEngineTLM;
+
     class CommandProcessorTLM : public ChStreamModuleBase {
     public:
         // 5-state FSM + degraded latch(退避窗口门控 deferred to s4)
@@ -102,6 +105,15 @@ struct Pm4DispatchBundle {
         void set_vram_reader(VramReadFn reader);
         void set_dispatch_target(DispatchFn fn);
 
+        // Stage 1.3c: SDMA dispatch target 注入 (PM4 opcode 0x46-0x49 分发)
+        //   - DISPATCH_INDIRECT/DISPATCH_INDIRECT_SDMA → sdma ring copy
+        //   - DISPATCH_DIRECT_SDMA → sdma ring fill
+        //   - DISPATCH_FENCE_SDMA → sdma ring fence
+        using SdmaDispatchFn = std::function<void(::tlm::gpu::SdmaEngineTLM&)>;
+        void set_sdma_dispatch_target(SdmaDispatchFn fn) noexcept {
+            sdma_dispatch_target_ = std::move(fn);
+        }
+
         // on_backpressure / on_submit_queue_rejected: 可选外部通知接口(per Oracle P1-a
         // 修复 2026-08-28)。CP 内部已自动从 dispatch_target 返回值退避,默认空实现;
         // 装配 stage 不调用这些 setter。测试断言通过 getter 直接读取状态。
@@ -121,6 +133,7 @@ struct Pm4DispatchBundle {
         std::unique_ptr<Pm4DecoderInterface> decoder_;
         VramReadFn vram_read_cb_;
         DispatchFn dispatch_target_;
+        SdmaDispatchFn sdma_dispatch_target_;
 
         uint64_t state_transitions_ = 0;
         uint64_t wake_count_ = 0;

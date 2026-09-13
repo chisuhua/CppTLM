@@ -16,11 +16,16 @@ namespace tlm::gpu {
     // 4 个 method_addr ranges 对应 4 种 method type
     // UNKNOWN 是 parse_method 错误通道(per Oracle P1-2)
     enum class Pm4MethodType {
-        DISPATCH_DIRECT,   // 0x4000-0x40FF — CTA 启动
-        EVENT_WRITE,       // 0x4200-0x42FF — 时间戳/事件
-        RELEASE_MEM,       // 0x4400-0x44FF — 显存释放
-        ACQUIRE_MEM,       // 0x4500-0x45FF — 显存获取
-        UNKNOWN,           // 不在 4 ranges 内 → parse_method 错误响应(不抛异常)
+        DISPATCH_DIRECT,        // 0x4000-0x40FF — CTA 启动
+        EVENT_WRITE,            // 0x4200-0x42FF — 时间戳/事件
+        RELEASE_MEM,            // 0x4400-0x44FF — 显存释放
+        ACQUIRE_MEM,            // 0x4500-0x45FF — 显存获取
+        // Stage 1.3c (per openspec/.../2026-09-10-... §1.3c):
+        DISPATCH_INDIRECT,      // 0x4600-0x46FF — SDMA copy (1D/2D/3D)
+        DISPATCH_DIRECT_SDMA,   // 0x4700-0x47FF — SDMA fill (constant fill)
+        DISPATCH_INDIRECT_SDMA,// 0x4800-0x48FF — SDMA copy with SG chain
+        DISPATCH_FENCE_SDMA,    // 0x4900-0x49FF — SDMA Fence (per spec PM4 opcode)
+        UNKNOWN,                // 不在 9 ranges 内 → parse_method 错误响应(不抛异常)
     };
 
     // NVIDIA PM4 method packet header

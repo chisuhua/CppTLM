@@ -201,6 +201,11 @@ add_test(NAME test_sdma_ring_engine_integration COMMAND cpptlm_tests "[sdma][rin
 # C++ 端暴露 mode 开关 + cb 转发; 真实 4 级 walk 在 UE 进程
 add_test(NAME test_pcie_iommu_translation COMMAND cpptlm_tests "[pcie][iommu][1.3c]" -r compact)
 
+# 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3c: PM4 DISPATCH dma_req)
+# (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §3, command_processor_mvp.cc DISPATCH dma_req PM4 0x4600-0x4900)
+# Pm4Decoder LUT 0x46-0x49 → 4 新 SDMA types
+add_test(NAME test_pm4_dispatch_dma_req COMMAND cpptlm_tests "[pm4][decoder][1.3c]" -r compact)
+
 # 2026-09-10 cpptlm-stage-1-3-sdma (Stage 1.3c: dma_translate_cb 真实化, 修复 #2)
 # (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma/tasks.md §3)
 # 修复 #2: 移除 cpptlm_emulator.cc:449 (void)cb stub, 真实调用 cb 函数指针
