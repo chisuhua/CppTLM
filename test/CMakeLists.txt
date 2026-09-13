@@ -222,6 +222,8 @@ add_test(NAME test_cpptlm_dma_translate_cb_real COMMAND cpptlm_tests "[abi][dma_
 add_test(NAME test_dgpu_board_doorbell_routing_p0 COMMAND cpptlm_tests "[dgpu-board][doorbell][1.3a][integration]" -r compact)
 # Task 4 (2026-09-13 ue-sdma-p0-unblock): DGpuBoard BAR1 doorbell → SdmaEngineTLM ring consume
 add_test(NAME test_sdma_ring_engine_integration_p0 COMMAND cpptlm_tests "[sdma][ring][integration][1.3a]" -r compact)
+# Task 7 (P0 unblock): SDMA Fence → DGpuBoard → trigger_irq_async(vector=0) 真实链路
+add_test(NAME test_sdma_fence_irq_integration_p0 COMMAND cpptlm_tests "[sdma][fence][1.3a][integration]" -r compact)
 
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
