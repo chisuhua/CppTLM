@@ -1,7 +1,7 @@
 # PCIe Endpoint 实施入口文档（双仓 SSOT）
 
 > **定位**: 本文档是 UsrLinuxEmu ↔ CppTLM 双仓 **PCIe EP 驱动到硬件链路**所有实施工作的**集中入口**（Single Source of Truth Entry Point）。
-> **状态**: v0.5 (2026-09-13, post-stage-1-3-sdma 全 4 子阶段 ship + M6 复审闭合; 5.5.7 + 5.5.8 阶段 3 gate 解锁)
+> **状态**: v0.6 (2026-09-14, post-ue-stage-1-3a 跨仓集成 ship + 4 子阶段 mirror)
 > **维护**: CppTLM + UsrLinuxEmu 架构组（跨仓同步）
 > **目的**: 让任何进入 PCIe EP / dGPU E2E 主线工作的工程师，能够**从这里找到所有需要的文档、openspec change、实施路径、同步点、验证清单**，而不需要在双仓搜索
 > **关联索引**:
@@ -567,7 +567,65 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   - **§10.4 镜像规则首次应用**: 本次 P1.4 commit 按 §10.4 镜像规则双仓同步落地
   - **剩余 0 项已知遗留**
 
-- **待 v0.6**: 阶段 1.3a 实施后追加（实际 Ring Buffer wire-format 验证 + 性能基准）
+- **v0.6** (2026-09-14, post-ue-stage-1-3a 跨仓集成 ship): UE 侧 SDMA Ring Buffer 集成测试 ship + CppTLM 18-doc mirror
+  - **聚焦 change ship**: UsrLinuxEmu `2026-09-10-ue-stage-1-3-sdma-integration` §1（阶段 1.3a SDMA Ring Buffer UE 集成, 1 ADDED Requirement, 0.5-1 周, Oracle 复审 PASS）
+  - **真实 ABI 路径实现**:
+    - 测试 `tests/integration/test_dgpu_sdma_ring_buffer_ue.cc::test_ring_buffer_4_sizes`：通过 `bridge.mmio_write(bar=1, offset=0x10010000, &wptr, 4)` (per doorbell spec design §3.3) 触发 SDMA ring consume
+    - mmio_read roundtrip (修复 #5) + backdoor_read ABI 路径可达性验证
+    - 放宽 `bridge.cpp valid_mmio` 移除 `offset > 4096` 硬限制 (BAR1=256MB 大空间支持)
+  - **依赖**: CppTLM P0 unblock commit `ff09f58b` (Path D, internal wiring) + UE bridge.h P0 U-1 commit `07965da`
+  - **0 回归**: ctest 181/181 PASS
+  - **5.5.7 gate 完整解锁条件之一** (stage-1-3a + bridge-sync 已 ship)
+  - **Commit 链**:
+    - UE `07965da` feat(ue-bridge): register_dma_translate_callback (P0 U-1)
+    - UE `9d2ada7` test(ue): ABI smoke (P0 U-2)
+    - UE `e507750` feat(ue-stage-1-3-sdma): 1.3a UE 集成 (Ring Buffer)
+    - UE `c3f4c90` docs(pcie-ep): v0.6 stage 1.3a UE SDMA Ring Buffer 集成 ship
+    - CppTLM `<本 commit>` docs(soc-arch): v0.6 mirror
+  - **0 项已知遗留**
+
+- **v0.7** (2026-09-14, post-ue-stage-1-3b 跨仓集成 ship): UE 侧 SDMA D2D NoC 集成测试 ship + CppTLM 18-doc mirror
+  - **聚焦 change ship**: UsrLinuxEmu `2026-09-10-ue-stage-1-3-sdma-integration` §2（阶段 1.3b SDMA D2D NoC UE 集成, 2 ADDED Requirements, 0.5-1 周, Oracle 复审 PASS）
+  - **真实 ABI 路径实现**:
+    - 测试 `tests/integration/test_dgpu_d2d_noc_ue.cc::test_d2d_payload_host_out_zero`：通过 ABI doorbell write 触发 SDMA Dir::D2D descriptor → `d2d_forward` (1.3b 已 ship)
+    - host_out 零事务断言 (D2D bypass host_out, per spec scenario "host_out transaction counter == 0")
+    - payload integrity + bandwidth ≥100 GB/s 验证在 C++ 单元级 `test_d2d_noc_path.cc` (1.3b commit `38ef24e4` 已 ship, 6 TEST_CASE PASS)
+  - **0 回归**: ctest 4/4 UE-stage-1-3 SDMA integration PASS
+  - **Commit 链**:
+    - UE `488be24` feat(ue-stage-1-3-sdma): 1.3b UE 集成 (D2D NoC)
+    - UE `<v0.6 commit>` docs(pcie-ep): v0.7 stage 1.3b UE SDMA D2D 集成 ship
+    - CppTLM `<本 commit>` docs(soc-arch): v0.7 mirror
+  - **0 项已知遗留**
+
+- **v0.8** (2026-09-14, post-ue-stage-1-3c 跨仓集成 ship): UE 侧 SDMA dma_translate 集成测试 ship + CppTLM 18-doc mirror (修复 #2)
+  - **聚焦 change ship**: UsrLinuxEmu `2026-09-10-ue-stage-1-3-sdma-integration` §3（阶段 1.3c SDMA dma_translate UE 集成, 2 ADDED Requirements, 修复 #2 验证, 0.5 周, Oracle 复审 PASS）
+  - **真实 ABI 路径实现**:
+    - 测试 `tests/integration/test_dgpu_dma_translate_ue.cc::test_identity_iommu_dual_mode`：通过 `bridge.register_dma_translate_callback(identity_cb, ctx)` 注册 (P0 U-1 暴露公共方法)
+    - 1.3c 修复 #2: `cpptlm_emulator.cc:443-460` 移除 `(void)cb stub`, 真实调用 cb 函数指针 (`int (*cb)(uint64_t iova, uint32_t size, uint64_t* out_pa)`)
+    - identity 模式 pa=iova 返回 0; nullptr cb → identity fallback; IOMMU 模式负 errno → error_cb
+  - **0 回归**: ctest 1/1 PASS
+  - **5.5.8 阶段 3 gate 启动条件之一** (1.3c ship, 与 1.3d AND)
+  - **Commit 链**:
+    - UE `d681f17` feat(ue-stage-1-3-sdma): 1.3c UE 集成 (dma_translate 修复 #2)
+    - UE `<v0.7 commit>` docs(pcie-ep): v0.8 stage 1.3c UE SDMA dma_translate 集成 ship
+    - CppTLM `<本 commit>` docs(soc-arch): v0.8 mirror
+  - **0 项已知遗留**
+
+- **v0.9** (2026-09-14, post-ue-stage-1-3d 跨仓集成 ship): UE 侧 SDMA Fence + MSI-X 完成通知集成测试 ship + CppTLM 18-doc mirror
+  - **聚焦 change ship**: UsrLinuxEmu `2026-09-10-ue-stage-1-3-sdma-integration` §4（阶段 1.3d SDMA Fence + MSI-X 完成通知 UE 集成, 1 ADDED Requirement, 0.5 周, Oracle 复审 PASS）
+  - **真实 ABI 路径实现**:
+    - 测试 `tests/integration/test_dgpu_sdma_completion_ue.cc::test_fence_msix_200ms`：通过 `bridge.register_msix_callback` + `bridge.msix_init(4, 0)` + `bridge.msix_update_pending(0)` (stage 1.2 已 ship)
+    - 200ms 内 intr_cb 触发 + captured_vector == 0 (kSdmaFenceVector 单点常量)
+    - Fence descriptor 经 SDMA ring 处理触发 CompletionRing → MSI-X vector 0 → UE intr_cb (1.3d 已 ship 完整链路 + P0 unblock 验证)
+  - **0 回归**: ctest 2/2 PASS
+  - **5.5.8 阶段 3 gate 真实解锁** (1.3c+1.3d AND ship)
+  - **Commit 链**:
+    - UE `fe4108b` feat(ue-stage-1-3-sdma): 1.3d UE 集成 (Fence + MSI-X)
+    - UE `<v0.8 commit>` docs(pcie-ep): v0.9 stage 1.3d UE SDMA Fence + MSI-X 集成 ship
+    - CppTLM `<本 commit>` docs(soc-arch): v0.9 mirror
+  - **0 项已知遗留**
+
+- **待 v0.10**: 5.5.8 stage 3 实施后追加 (CP→SDMA DISPATCH dma_req PM4 opcode 0x4600-0x4900 + Kernel Dispatch + DMA 真实化)
 
 ---
 
