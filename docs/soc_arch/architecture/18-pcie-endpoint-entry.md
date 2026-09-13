@@ -1,7 +1,7 @@
 # PCIe Endpoint 实施入口文档（双仓 SSOT）
 
 > **定位**: 本文档是 UsrLinuxEmu ↔ CppTLM 双仓 **PCIe EP 驱动到硬件链路**所有实施工作的**集中入口**（Single Source of Truth Entry Point）。
-> **状态**: Draft v0.1 (2026-09-09)
+> **状态**: v0.5 (2026-09-13, post-stage-1-3-sdma 全 4 子阶段 ship + M6 复审闭合; 5.5.7 + 5.5.8 阶段 3 gate 解锁)
 > **维护**: CppTLM + UsrLinuxEmu 架构组（跨仓同步）
 > **目的**: 让任何进入 PCIe EP / dGPU E2E 主线工作的工程师，能够**从这里找到所有需要的文档、openspec change、实施路径、同步点、验证清单**，而不需要在双仓搜索
 > **关联索引**:
@@ -98,10 +98,10 @@
 |------|------|:---:|------------------|----------------------|----------------------------------------|----------|
 | **阶段 1.1** | PCIe EP 基础 | 0.5-1 周 | CppTLM → UsrLinuxEmu | `2026-09-09-cpptlm-pcie-ep-foundation` §1.1 | config space + 4 data path + race 修复 | 🔄 Proposed |
 | **阶段 1.2** | MSI-X 中断 | 0.5 周 | CppTLM → UsrLinuxEmu | 同上 §1.2 | intr_cb 真实触发 + trigger_irq_async 接线 | 🔄 Proposed |
-| **阶段 1.3a** | PCIe SDMA 基础 | 1 周 | CppTLM → UsrLinuxEmu | 同上 §1.3 + `sdma-engine-design.md §2-§6` | Ring Buffer + RPTR/WPTR + Doorbell + SG | 🔄 Proposed |
-| **阶段 1.3b** | D2D SDMA 路径 | 0.5-1 周 | CppTLM → UsrLinuxEmu | 同上 §1.3 + `sdma-engine-design.md §10` | NoC 数据面 + 显存控制器 bypass | 🔄 Proposed |
-| **阶段 1.3c** | dma_translate_cb + GART/IOMMU + CP→SDMA | 0.5 周 | CppTLM → UsrLinuxEmu | 同上 §1.3 + `sdma-engine-design.md §8+§11` | 地址翻译链 + PM4 DMA opcode 0x4600-0x4900 | 🔄 Proposed |
-| **阶段 1.3d** | SDMA 完成通知 | 0.5 周 | CppTLM → UsrLinuxEmu | 同上 §1.3 + `sdma-engine-design.md §9` | Fence + MSI-X 接线（#4）| 🔄 Proposed |
+| **阶段 1.3a** | PCIe SDMA 基础 | 1 周 | CppTLM → UsrLinuxEmu | 同上 §1.3 + `sdma-engine-design.md §2-§6` | Ring Buffer + RPTR/WPTR + Doorbell + SG | ✅ Shipped (`344a7a5c`) |
+| **阶段 1.3b** | D2D SDMA 路径 | 0.5-1 周 | CppTLM → UsrLinuxEmu | 同上 §1.3 + `sdma-engine-design.md §10` | NoC 数据面 + 显存控制器 bypass | ✅ Shipped (`38ef24e4` + M6 `42d28d44`) |
+| **阶段 1.3c** | dma_translate_cb + GART/IOMMU + CP→SDMA | 0.5 周 | CppTLM → UsrLinuxEmu | 同上 §1.3 + `sdma-engine-design.md §8+§11` | 地址翻译链 + PM4 DMA opcode 0x4600-0x4900 | ✅ Shipped (`40d79bb7`/`434143bb`/`4c53b58f`) |
+| **阶段 1.3d** | SDMA 完成通知 | 0.5 周 | CppTLM → UsrLinuxEmu | 同上 §1.3 + `sdma-engine-design.md §9` | Fence + MSI-X 接线（#4）| ✅ Shipped (`4e158195`/`b2dca39c` + M6 `42d28d44`) |
 | **阶段 1.4** | 电源管理 | 0.5 周 | CppTLM → UsrLinuxEmu | 同上 §1.4 | D0/D3 + ASPM | 🔄 Proposed |
 | **阶段 2.1** | P2P + Resizable BAR | 1 周 | CppTLM → UsrLinuxEmu | 同上 §2.1 | ARI 路由 + Resizable BAR Cap | 🔄 Proposed |
 | **总计** | | **5.0-6.0 周** | | | |
@@ -283,6 +283,12 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
 ## §7 验证清单（用户必查）
 
 ### §7.1 阶段完成验证
+- [x] 阶段 1.1 完成：4 数据通路 roundtrip + config space 真实化 (历史 commit)
+- [x] 阶段 1.2 完成：msix_update_pending 触发 intr_cb（200ms 内 ≥1 次）(archive `2026-09-11-2026-09-10-cpptlm-stage-1-2-msix`)
+- [x] 阶段 1.3a 完成：Ring Buffer + RPTR/WPTR + SG + Doorbell 绑定 (commit `344a7a5c`)
+- [x] 阶段 1.3b 完成：D2D 路径不经过 PCIe（host_out 零事务断言） (commit `38ef24e4` + M6 `42d28d44`)
+- [x] 阶段 1.3c 完成：dma_translate_cb 真实调用（identity mapping） (commits `40d79bb7`/`434143bb`/`4c53b58f`)
+- [x] 阶段 1.3d 完成：Fence + MSI-X 接线（#4 修复） (commits `4e158195`/`b2dca39c` + M6 `42d28d44`)
 
 - [ ] 阶段 1.1 完成：4 数据通路 roundtrip + config space 真实化
 - [ ] 阶段 1.2 完成：msix_update_pending 触发 intr_cb（200ms 内 ≥1 次）
