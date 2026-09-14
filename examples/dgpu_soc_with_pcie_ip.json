@@ -27,37 +27,18 @@
           "retry_buffer_size": 4096
         },
         "phy_digital": {
-          "pipe_interface": "lightweight_4_signal",
-          "ltssm_initial_state": "detect",
-          "equalization_preset_p": 7,
-          "equalization_preset_np": 7,
-          "hot_plug_supported": true,
-          "perst_signal_initial": "asserted"
+          "preset_p": 7,
+          "preset_np": 7,
+          "preset_cpl": 7,
+          "hot_plug_supported": true
         },
         "sr_iov": {
-          "enabled": true,
-          "initial_vfs": 8,
-          "total_vfs": 16,
-          "num_vfs": 8,
-          "vf_bar0_size": 65536,
-          "vf_bar1_size": 268435456,
-          "vf_msix_vectors": 4,
           "ari_capable": true,
-          "vf_pool_stream_adapter": "shared"
+          "vf_msix_vectors": 4
         },
         "transaction_layer": {
           "config_size": 4096,
-          "msix_num_vectors": 16,
-          "bar_sizes": [65536, 268435456],
-          "bar0_registers": [
-            {
-              "offset": 20,
-              "name": "GPU_REG_DOORBELL",
-              "access": "WO",
-              "side_effect": "doorbell",
-              "stream_id": 0
-            }
-          ]
+          "msix_num_vectors": 16
         }
       }
     },
