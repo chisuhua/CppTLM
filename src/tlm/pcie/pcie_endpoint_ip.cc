@@ -62,6 +62,8 @@ namespace tlm::pcie {
     }
 
     void PcieEndpointIP::attach_composition(const nlohmann::json& params) {
+        // 重入清空, 避免重复 config load 累积陈旧 warning
+        config_warnings_.clear();
         // AXI Stream Adapter 独立挂接（per Phase 5 T-P5-6, 不依赖 link_layer 分支）
         if (params.contains("axi_adapter")) {
             auto* ax = PcieAxiAdapter::attach_to_endpoint(getName(), event_queue);
