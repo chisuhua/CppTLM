@@ -91,6 +91,21 @@ namespace tlm::gpu {
             return;
         }
         regs_[offset / 4] = value;
+
+        // Stage 1.4 §1.2: PMCSR 写拦截 (PM Cap id=0x01, PMCSR 在 cap offset+4)
+        // 仅在 PWS[1:0] bit 实际变化时回调, 避免 DSEL 等 bit 写入触发
+        if (pmcsr_write_cb_) {
+            for (const auto& c : capabilities_) {
+                if (c.id == 0x01 && offset == static_cast<uint16_t>(c.offset + 0x04)) {
+                    const uint16_t new_pws = static_cast<uint16_t>(value & 0x0003u);
+                    if (new_pws != last_pmcsr_pws_) {
+                        last_pmcsr_pws_ = new_pws;
+                        pmcsr_write_cb_(new_pws);
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     const PcieConfigSpace::Capability* PcieConfigSpace::get_capability(std::size_t index) const {

@@ -8,6 +8,7 @@
 #define CPPTLM_PCIE_CONFIG_SPACE_MVP_H
 
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 namespace tlm::gpu {
@@ -87,10 +88,18 @@ namespace tlm::gpu {
             }
         }
 
+        // Stage 1.4 §1.2: PMCSR 写回调 (INV-A MMIO gating 依赖此事件)
+        // driver 写 PMCSR[1:0] 触发 PcieEndpointIP 状态机切换 + MMIO gate
+        void set_pmcsr_write_cb(std::function<void(uint16_t new_pws)> cb) {
+            pmcsr_write_cb_ = std::move(cb);
+        }
+
     private:
         std::size_t config_size_;
         std::vector<uint32_t> regs_;       // 4-byte aligned register array
         std::vector<Capability> capabilities_;
+        std::function<void(uint16_t new_pws)> pmcsr_write_cb_;
+        uint16_t last_pmcsr_pws_ = 0xFFFFu;  // sentinel: never written
 
         // 内部 helper：检查 offset 是否 4-byte aligned
         static bool is_aligned(uint16_t offset) { return (offset & 0x3) == 0; }
