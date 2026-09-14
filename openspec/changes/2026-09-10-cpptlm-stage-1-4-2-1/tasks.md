@@ -7,12 +7,14 @@
 > **Oracle R-E 修订 2026-09-10**：1.1.5 LTSSM 与 1.4 ASPM 链路状态同域（PCIe Link 层 LTSSM 与 ASPM L0s/L1 共享状态机），并入本 change 实施更合理。
 
 ### 任务 0.1：PCIe Link 管理 LTSSM（基础任务 1.1.5）
-- [ ] **Modify**: `src/tlm/pcie/pcie_link_layer_tlm.cc` 补全状态机
-  - L0/L0s/L1/L2/L3 状态切换
-  - x16 Gen4/Gen5 速率/宽度协商
-- [ ] **Write test**: `test/test_dgpu_link_layer.cc::test_ltssm_l0_to_l1_to_l0_roundtrip`
-- [ ] **Verify fail → implement → Verify pass**: link_state_machine 单元测试全 PASS
-- [ ] **Commit (CppTLM)**: `feat(cpptlm): LTSSM L0/L0s/L1 + Gen4/5 协商 (基础 1.1.5)`
+- [x] **Status**: 设计就绪 (2027-02-09). 现有 LTSSM 11 态已实现在 `PciePhyDigitalCtrl` (`src/tlm/pcie/pcie_phy_digital_ctrl_tlm.cc:88-163`), L0s/L1/L2 enter/exit API 存在 (`enter_l0s/enter_l1/exit_low_power`).
+- [ ] **Modify**: `src/tlm/pcie/pcie_phy_digital_ctrl_tlm.{hh,cc}`
+  - 新增 `enable_aspm(AspmLevel level)` + `aspm_level_` 成员
+  - 新增 `last_traffic_time_` + `enter_state_time_` 计时字段
+  - `tick()` 内加 ASPM idle detection (L0 → L0s/L1 转换) + exit-latency countdown (L0s → L0)
+- [ ] **Write test**: `test/test_aspm.cc::test_l0s_entry_after_idle_threshold`
+- [ ] **Verify fail → implement → Verify pass**: aspm_test 全 PASS
+- [ ] **Commit (CppTLM)**: `feat(cpptlm): ASPM idle-timer L0s/L1 自动进出 (基础 1.1.5)`
 
 ## §1 阶段 1.4 电源管理（0.5 周）
 - [ ] **写失败测试**: `test_pm_capability` + `test_power_state_transition` + `test_aspm`
