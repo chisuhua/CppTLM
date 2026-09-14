@@ -58,11 +58,11 @@ void PcieEndpointIP::tick() {
                 bundles::Axi4Bundle wresp;
                 if (req.is_write_request()) {
                     wresp.bid.write(static_cast<uint16_t>(req.awid.read()));
-                    wresp.bresp.write(2u);  // AXI bresp = DECERR
+                    wresp.bresp.write(3u);  // AXI bresp = DECERR (11b; 勘误: 2 是 SLVERR)
                     axi.slave_resp(wresp);
                 } else {
                     wresp.rid.write(static_cast<uint16_t>(req.arid.read()));
-                    wresp.rresp.write(2u);  // AXI rresp = DECERR
+                    wresp.rresp.write(3u);  // AXI rresp = DECERR (11b)
                     wresp.rlast.write(1);
                     axi.slave_resp(wresp);
                 }
@@ -117,7 +117,9 @@ namespace tlm::pcie {
                                     const AcsPolicy* policy = nullptr) noexcept {
         if (src_bdf == 0 || dst_bdf == 0) return P2PResult(P2PResult::Code::NO_ROUTE);
         if (src_bdf == dst_bdf) return P2PResult(P2PResult::Code::NO_ROUTE);
-        if (policy && !policy->allow(src_bdf, dst_bdf)) {
+        // 勘误 (Oracle): null 逻辑反转修正 — nullptr → strict (BLOCKED),
+        // 保留既有 test_p2p_dma.cc 调用方向后兼容; SUCCESS 仅当显式 policy 放行
+        if (!policy || !policy->allow(src_bdf, dst_bdf)) {
             return P2PResult(P2PResult::Code::BLOCKED_BY_ACS);
         }
         return P2PResult(P2PResult::Code::SUCCESS);
@@ -161,18 +163,35 @@ private:
 // src/tlm/pcie/pcie_endpoint_ip.cc (扩展)
 void PcieEndpointIP::on_bar_resize(unsigned bar_idx) {
     const uint32_t size = resizable_bars_[bar_idx].size_bytes();
-    // INV-G: 校验 bar_store_ 中所有 key < base+size
-    for (auto& [key, _] : bar_store_) {
-        if (key >= size) {
+    // INV-G: 校验 bar_store_ 中所有 key < size
+    // 勘误 (Oracle): erase-during-iteration UB → erase-it 惯用法
+    // 注意: bar_store_ key 是全局裸地址 (pcie_endpoint_ip.cc:385 mmio_write
+    // 不含 BAR 号), 清 key >= size 会波及其他 BAR — MVP 接受此简化,
+    // 已知限制写入 spec Out of Scope; 跨 BAR 隔离留待后续 PR
+    for (auto it = bar_store_.begin(); it != bar_store_.end();) {
+        if (it->first >= size) {
             config_warnings_.push_back(
                 "BAR" + std::to_string(bar_idx) +
                 " resized to " + std::to_string(size) +
-                ", key " + std::to_string(key) + " out of bounds (cleared)");
-            bar_store_.erase(key);
+                ", key " + std::to_string(it->first) + " out of bounds (cleared)");
+            it = bar_store_.erase(it);
+        } else {
+            ++it;
         }
     }
 }
 ```
+
+**触发点 (勘误)**: `ResizableBar::enable()` 无回调机制。新增 wrapper:
+```cpp
+// PcieEndpointIP (扩展)
+bool enable_resizable_bar(unsigned bar_idx) noexcept {
+    if (!resizable_bars_[bar_idx].enable()) return false;
+    on_bar_resize(bar_idx);   // enable 成功后校验越界 (INV-G)
+    return true;
+}
+```
+测试/调用方走 `enable_resizable_bar(idx)` 而非直调 `resizable_bar(idx).enable()`。
 
 ### 3.3 测试设计
 
@@ -191,13 +210,15 @@ void PcieEndpointIP::on_bar_resize(unsigned bar_idx) {
 
 ### 4.2 决策 — JSON-driven
 
+**勘误 (Oracle)**: PM Cap 安装保留在**构造器**（`pcie_endpoint_ip.cc:24-31`，`init()/do_reset()` 调 `pool_.init_all()` 会 wipe，移入 attach_composition 会重复 add_capability）；JSON 应用走**已有** `update_capability_control()`（`pcie_config_space_mvp.cc:66-75`）。JSON 键位置定为顶层 `pm_cap_control`（proposal 的 `phy_digital.pm_cap_control` 弃用），并加入 warn_unconsumed 顶层白名单：
+
 ```cpp
-// attach_composition() line 24-30 (扩展)
-auto& cfg_pf = pool_.config_pool().config_of(0);
-const uint16_t pm_control = json.contains("pm_cap_control")
-    ? json.value("pm_cap_control", static_cast<uint16_t>(0x0013))
-    : 0x0013;
-cfg_pf.add_capability(0x01, 0x40, /*next=*/0x00, /*control=*/pm_control);
+// attach_composition() (扩展, 构造器已安装 cap)
+if (json.contains("pm_cap_control")) {
+    const auto ctrl = json.value("pm_cap_control", static_cast<uint16_t>(0x0013));
+    pool_.config_pool().config_of(0).update_capability_control(/*PM cap index=*/0, ctrl);
+}
+// warn_unconsumed 顶层 known list 加 "pm_cap_control"
 ```
 
 JSON:
@@ -206,7 +227,7 @@ JSON:
   "pm_cap_control": 5251
 }
 ```
-(5251 = 0x1483 = version 3 + D1 + D2 + D3hot support)
+(5251 = 0x1483; note: 0x1483 bit 布局按 PM Capabilities 寄存器语义, version bits[2:0]=3)
 
 ### 4.3 测试设计
 
@@ -243,24 +264,26 @@ PCIe Extended Cap (per spec §7.7):
 ```cpp
 // src/tlm/pcie/pcie_acs_extended_cap.cc (新文件)
 namespace tlm::pcie {
-    void install_acs_extended_cap(PcieConfigSpace& cfg, uint16_t offset = 0xE0);
+    void install_acs_extended_cap(PcieConfigSpace& cfg, uint16_t offset = 0x100);
 }
 ```
 
-`install_acs_extended_cap(cfg)`:
-- 写 offset+0: 0x000D0001 (id=0x000D, version=1, next=0x0001)
-- 写 offset+4: 0x00000000 (no ACS caps by default)
-- 写 offset+6: 0x0000 (all disable)
+`install_acs_extended_cap(cfg)` — **勘误 (Oracle)**: header 编码按 PCIe Ext Cap dword 布局 bits[15:0]=ID, [19:16]=version, [31:20]=next:
+- 写 offset+0: **`0x0001000D`** (id=0x000D, version=1, next=0；勘误: 原 0x000D0001 解码为 ID=0x0001/AER, 全错)
+- 写 offset+4: 0x00000000 (ACS Cap Reg: no caps by default; dword 含 Control Reg 高 16-bit)
+- **Control Reg 走 offset+4 dword RMW**（勘误: 原设计写 offset+6 为 16-bit 非 4 对齐，`PcieConfigSpace::write()` 对非对齐 offset 静默丢弃、`read()` 返回 0xFFFFFFFF，不可实现）
+- offset 默认 **0x100**（勘误: Extended Cap 规范上必须 ≥0x100 扩展空间; 原 0xE0 在 legacy 256B 区）
 
-`set_acs_v/be/re_enabled(cfg, bit_idx, enable)`:
-- 改 offset+6 对应 bit
+`set_acs_bit_enabled(cfg, bit_idx, enable)`:
+- RMW offset+4 dword: `val = cfg.read(offset+4); val = enable ? (val | (1u<<bit_idx)) : (val & ~(1u<<bit_idx)); cfg.write(offset+4, val);`
+- ACS Control Reg 语义在 dword 高 16-bit (offset+6 = offset+4 dword 的高半)
 
 ### 5.4 测试设计
 
 `test/test_acs_extended_cap.cc`:
-- 默认安装: read offset=0xE0 → 0x000D0001
-- 写 Control bit 0 (V): 读 offset+6 → 0x0001
-- ACS Extended Cap 与 PcieEndpointIP 集成（构造期调用 install）
+- 默认安装: read offset=0x100 → `0x0001000D`
+- 写 Control bit 0 (V): 读 offset+4 → 0x00010000 (高 16-bit bit0)
+- ACS Extended Cap 与 PcieEndpointIP 集成（构造期调用 install, 需 config_size=4096 默认）
 
 ---
 
@@ -325,7 +348,7 @@ cfg_pf.set_pmcsr_write_cb([this](uint16_t new_pws) {
 | 风险 | 等级 | 缓解 |
 |---|---|---|
 | INV-A 收窄后 cfg 路径可能有未测试用例 | 中 | 新增 cfg 路径测试 + 全 [pcie] 回归 |
-| ACS Extended Cap 写入影响既有 capability 链表 | 中 | 用 offset=0xE0 (4KB cap 区域尾部), 不与现有 0x01 冲突 |
+| ACS Extended Cap 写入影响既有 capability 链表 | 中 | 用 offset=0x100 (扩展空间起始, 勘误: 0xE0 在 legacy 256B 区), 不与现有 0x01 冲突; 需 config_size=4096 |
 | ResizableBar 集成触发 bar_store_ 清空可能丢数据 | 高 | 仅在 enable() 时清, 重 size 前有 disable 缓冲 |
 | PMCSR mask 改变触发回调语义 | 低 | sentinel 0xFFFFu + last_pmcsr_pws_ 保护幂等 |
 | P2P SUCCESS 路径可能误判 ACS | 中 | 默认 strict 保持向后兼容, 需显式 grant |

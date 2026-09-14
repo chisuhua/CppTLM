@@ -43,9 +43,9 @@
 
 ### 子任务 4: 🟢 PM Cap 控制域 JSON-driven（可选扩展，0.1d）
 
-当前 `attach_composition()` line 28 hardcode `control=0x0013`（version 3 + D3hot）。扩展:
-- `params.phy_digital.pm_cap_control` (default 0x0013) JSON-driven
-- 与 2027-02-09 JSON config 模式一致
+当前**构造器** `pcie_endpoint_ip.cc:28` hardcode `control=0x0013`（勘误: 不在 attach_composition）。扩展:
+- `params.pm_cap_control` (顶层键, default 0x0013) JSON-driven (勘误: 原 phy_digital 子键弃用)
+- 与 2027-02-09 JSON config 模式一致 (勘误: 顶层键 pm_cap_control, 走 update_capability_control, 构造器保留安装)
 
 ### 子任务 5: 🟢 ACS Extended Cap 完整实现（PCIe id=0x000D，0.2d）
 

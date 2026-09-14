@@ -30,8 +30,8 @@
 
 ## §2 任务 1.2：PMCSR PWS=1/2 mask
 
-- [ ] **Write test**: 扩展 `test/test_pm_capability.cc::Scenario PMCSR write callback`
-  - SECTION "writing PWS=1 (D1) keeps D0": callback fires 但 `power_state_` 不变
+- [ ] **Write test**: **EP 级测试**（勘误: mask 在 EP 构造器 lambda `pcie_endpoint_ip.cc:28-30`，`test_pm_capability.cc` 测独立 PcieConfigSpace 够不到）— 扩展 `test_power_state_transition.cc` 或新 `test_pcie_power_state_cfg_access.cc`:
+  - SECTION "writing PWS=1 (D1) keeps D0": `power_state_` 不变 (D0)
   - SECTION "writing PWS=2 (D2) keeps D0": 同上
   - SECTION "writing PWS=3 (D3hot) transitions": 现有逻辑保持
 - [ ] **Modify**: `src/tlm/pcie/pcie_endpoint_ip.cc:28`
