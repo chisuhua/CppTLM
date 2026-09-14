@@ -1,14 +1,9 @@
-# Spec: cpptlm-stage-1-4-2-1-followups — MODIFIED Requirements
+# cpptlm-stage-1-4-2-1 Specification
 
-> **状态**: 🔄 Proposed v1.0 (2027-02-09)
-> **Delta type**: MODIFIED Requirements（扩展 `cpptlm-stage-1-4-2-1` 已 archive spec）
-> **基础**: `openspec/specs/cpptlm-stage-1-4-2-1/spec.md`
-
----
-
-## MODIFIED Requirements
-
-### Requirement: PCIe PM Capability (Stage 1.4) — **MODIFIED** `cpptlm-stage-1-4-2-1#PCIe PM Capability`
+## Purpose
+TBD - created by archiving change 2026-09-10-cpptlm-stage-1-4-2-1. Update Purpose after archive.
+## Requirements
+### Requirement: PCIe PM Capability (Stage 1.4)
 
 The system MUST implement PCIe PM Capability (id=0x01) with INV-A gate narrowed to BAR path (cfg path preserves D3hot access per PCI PM spec), PMCSR PWS[1:0] mask for reserved values (D1/D2 ignored), and PM Cap control word JSON-driven. 修订范围: INV-A gate 收窄到 BAR 路径; PMCSR PWS=1/2 mask; PM Cap control word JSON-driven。系统 MUST 支持以下 5 个 Scenario:
 
@@ -37,7 +32,7 @@ The system MUST implement PCIe PM Capability (id=0x01) with INV-A gate narrowed 
 - **THEN** `pool_.config_pool().config_of(0).read(0x40) & 0xFFFF0000` == 0x14830000 (control 在 dword 0x40 高半; 勘误: read(0x42) 非 4 对齐返回 0xFFFFFFFF)
 - (default value 0x0013 if key absent)
 
-### Requirement: P2P DMA Routing + ACS (Stage 2.1) — **MODIFIED** `cpptlm-stage-1-4-2-1#P2P DMA Routing + ACS`
+### Requirement: P2P DMA Routing + ACS (Stage 2.1)
 
 The system MUST support P2P DMA with optional `AcsPolicy` admin API for explicit ACS grant (per BDF pair), preserving INV-D no-silent-fallback guarantee. 修改范围: AcsPolicy 引入 + SUCCESS 路径支持。系统 MUST 支持以下 2 个 Scenario:
 
@@ -51,7 +46,7 @@ The system MUST support P2P DMA with optional `AcsPolicy` admin API for explicit
 - **AND** `p2p_dma_route(src, dst, addr, len, &policy)` called
 - **THEN** returns `P2PResult{BLOCKED_BY_ACS}` (INV-D preserved)
 
-### Requirement: Resizable BAR Capability (Stage 2.1) — **MODIFIED** `cpptlm-stage-1-4-2-1#Resizable BAR Capability`
+### Requirement: Resizable BAR Capability (Stage 2.1)
 
 The system MUST integrate `ResizableBar` state machine into `PcieEndpointIP` as 6 independent BAR slots, with INV-G boundary validation: when `enable()` shrinks BAR size, any out-of-bounds `bar_store_` entries MUST be cleared with a warning recorded. 修改范围: 集成到 PcieEndpointIP + INV-G 越界校验。系统 MUST 支持以下 2 个 Scenario:
 
@@ -70,8 +65,6 @@ The system MUST integrate `ResizableBar` state machine into `PcieEndpointIP` as 
 
 ---
 
-## ADDED Requirements
-
 ### Requirement: ACS Extended Cap (Stage 2.1) — **NEW**
 
 The system MUST implement PCIe ACS Extended Capability (id=0x000D, version=1) per spec §7.7 with `install_acs_extended_cap()` helper.
@@ -87,11 +80,3 @@ The system MUST implement PCIe ACS Extended Capability (id=0x000D, version=1) pe
 
 ---
 
-## Cross-Reference
-
-- **基础 spec**: `openspec/specs/cpptlm-stage-1-4-2-1/spec.md` (3 ADDED requirements, archived 2026-09-14)
-- **proposal**: `openspec/changes/2027-02-09-cpptlm-stage-1-4-2-1-followups/proposal.md`
-- **design**: `openspec/changes/2027-02-09-cpptlm-stage-1-4-2-1-followups/design.md`
-- **tasks**: `openspec/changes/2027-02-09-cpptlm-stage-1-4-2-1-followups/tasks.md`
-- **上游**: 2026-09-10 archive (predecessor)
-- **下游**: UE `ue-stage-1-4-2-1-extensions`
