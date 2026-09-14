@@ -123,6 +123,12 @@ public:
         return state_ == LtState::Recovery || state_ == LtState::Hot_Reset;
     }
 
+    // Stage 1.4 §1.4 ASPM 控制 (INV-B exit latency)
+    enum class AspmLevel : uint8_t { Off = 0, L0s = 1, L1 = 2 };
+    void enable_aspm(AspmLevel level) noexcept;
+    [[nodiscard]] AspmLevel aspm_level() const noexcept { return aspm_level_; }
+    void on_traffic() noexcept;  // 通知 PHY 有 traffic, 重置 idle 计时
+
     // ========== Rate 管理 ==========
     void set_rate(PcieEncodingLatencyModel::Rate r) noexcept;
     [[nodiscard]] PcieEncodingLatencyModel::Rate rate() const noexcept { return rate_; }
@@ -214,6 +220,12 @@ private:
     // 均衡
     bool equalizing_ = false;
     uint8_t eq_preset_ = 0;
+
+    // Stage 1.4 §1.4 ASPM 状态 (INV-B exit latency)
+    AspmLevel aspm_level_ = AspmLevel::Off;
+    uint64_t last_traffic_cycle_ = 0;
+    uint64_t enter_lp_cycle_ = 0;
+    bool exit_pending_ = false;
     EqPhase eq_phase_ = EqPhase::Idle;
 
     // 速率切换

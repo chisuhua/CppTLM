@@ -198,6 +198,25 @@ namespace tlm::pcie {
         // L2: 不自动退出 (PERST# deassert 后由 set_link_up(true) 恢复)
     }
 
+    // Stage 1.4 §1.4 ASPM 入口
+    void PciePhyDigitalCtrl::enable_aspm(AspmLevel level) noexcept {
+        aspm_level_ = level;
+        if (level == AspmLevel::Off) {
+            exit_low_power();  // 关闭 ASPM 时强制回到 L0
+            exit_pending_ = false;
+        }
+        last_traffic_cycle_ = eq_ ? eq_->getCurrentCycle() : 0;
+    }
+
+    void PciePhyDigitalCtrl::on_traffic() noexcept {
+        last_traffic_cycle_ = eq_ ? eq_->getCurrentCycle() : 0;
+        if (state_ == LtState::L0s || state_ == LtState::L1) {
+            // 触发 exit with latency
+            exit_pending_ = true;
+            enter_lp_cycle_ = last_traffic_cycle_;
+        }
+    }
+
     // ========== Gen3+ 均衡协商 ==========
 
     void PciePhyDigitalCtrl::start_equalization() noexcept {
@@ -336,6 +355,24 @@ namespace tlm::pcie {
                 if (link_layer_) {
                     link_layer_->on_rate_switch_complete(rate_);
                 }
+            }
+        }
+
+        // Stage 1.4 §1.4 ASPM 自动转换 (INV-B)
+        const uint64_t now = eq_ ? eq_->getCurrentCycle() : 0u;
+        if (aspm_level_ != AspmLevel::Off && state_ == LtState::L0) {
+            const uint64_t threshold = (aspm_level_ == AspmLevel::L0s) ? 100ull : 4000ull;
+            if (now - last_traffic_cycle_ >= threshold) {
+                if (aspm_level_ == AspmLevel::L0s) enter_l0s();
+                else enter_l1();
+            }
+        }
+        // Exit latency countdown
+        if (exit_pending_) {
+            const uint64_t exit_lat = (state_ == LtState::L0s) ? 4ull : 32ull;
+            if (now - enter_lp_cycle_ >= exit_lat) {
+                exit_pending_ = false;
+                exit_low_power();
             }
         }
     }
