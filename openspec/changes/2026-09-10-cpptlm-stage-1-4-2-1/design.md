@@ -161,25 +161,19 @@ ACS Extended Capability (id=0x000D, per PCIe spec §7.7）：
 
 ## §3 JSON 配置消费（与已归档 change 协同）
 
-### 3.1 本 change 解锁的消费项
+### 3.1 本 change 解锁的消费项 — **deferred**
 
 | JSON 键 | 当前状态 | 本 change 消费方式 |
 |---------|----------|-------------------|
-| `transaction_layer.bar_sizes` | 2027-02-09 标记为 warning | **消费**：`bar_window_[6]` 数组从 config space BAR regs 解析 + JSON 可选覆盖 |
-| `sr_iov.vf_bar0_size` / `vf_bar1_size` | 2027-02-09 标记为 warning | **消费**：VF BAR size 写入对应 slot 的 config space BAR regs |
-| `sr_iov.num_vfs` | 2027-02-09 标记为 warning | **不消费**：runtime NUM_PORTS 重构不在本 change 范围 |
+| `transaction_layer.bar_sizes` | 2027-02-09 标记为 warning | **deferred** —— 属 BAR window 模型（`2026-09-10-cpptlm-stage-1-4-2-1/` §2.3 后续 PR） |
+| `sr_iov.vf_bar0_size` / `vf_bar1_size` | 2027-02-09 标记为 warning | **deferred** —— 同上 |
+| `sr_iov.num_vfs` | 2027-02-09 标记为 warning | **不消费** —— runtime NUM_PORTS 重构不在本 change 范围 |
 
-### 3.2 警告白名单更新
+> **修订 2027-02-09**: 原始 design §3.1 写"消费", tasks.md §6 #2 写"deliberately not consume" —— 已对齐为 **deferred**。Scenario 5 测试断言保留（warning 行为正确）。
 
-`attach_composition()` 中白名单需更新：
-```cpp
-// "transaction_layer" 子组从 {"config_size", "msix_num_vectors"}
-// 改为 {"config_size", "msix_num_vectors", "bar_sizes"}
-// "sr_iov" 子组从 {"ari_capable", "vf_msix_vectors"}
-// 改为 {"ari_capable", "vf_msix_vectors", "vf_bar0_size", "vf_bar1_size"}
-```
+### 3.2 警告白名单 —— 无变更
 
-**强制同步**: `test_pcie_endpoint_ip_json_config.cc` Scenario 5 子组断言须同步修改（Oracle F2）。
+`attach_composition()` 中白名单**不更新**（per §3.1 deferred 决定）。`transaction_layer.bar_sizes` / `sr_iov.vf_bar0_size` 等继续触发 warning，由下一 PR（BAR window 模型）消费时再同步更新 Scenario 5 断言。
 
 ---
 

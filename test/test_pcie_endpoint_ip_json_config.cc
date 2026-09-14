@@ -89,6 +89,8 @@ TEST_CASE("PcieEndpointIP JSON config: phy_digital presets take effect; max_spee
     f.apply(cfg);
 
     // Step 3: 断言 presets 已更新，且 max_speed 未被重置 (INV-2 read-modify-write)
+    // 注: attach_to_endpoint replace 分支会替换 registry 对象, 必须重新取 phy
+    phy = tlm::pcie::PciePhyDigitalCtrl::for_endpoint("pcie_ep_json_test");
     if (phy) {
         const auto& c = phy->config();
         REQUIRE(c.preset_P == 5);
