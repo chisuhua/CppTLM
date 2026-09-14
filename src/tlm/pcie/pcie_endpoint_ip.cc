@@ -416,4 +416,35 @@ namespace tlm::pcie {
         return true;
     }
 
+    // Stage 1.4-followups §3: ResizableBar 集成 (6 BAR slots + INV-G)
+    tlm::pcie::ResizableBar& PcieEndpointIP::resizable_bar(unsigned bar_idx) noexcept {
+        return resizable_bars_[bar_idx % 6];
+    }
+
+    bool PcieEndpointIP::enable_resizable_bar(unsigned bar_idx) noexcept {
+        if (!resizable_bars_[bar_idx % 6].enable()) {
+            return false;
+        }
+        on_bar_resize(bar_idx % 6);
+        return true;
+    }
+
+    void PcieEndpointIP::on_bar_resize(unsigned bar_idx) {
+        const uint32_t size = resizable_bars_[bar_idx].size_bytes();
+        // INV-G: 清 bar_store_ 中 key >= size 的越界 entry
+        // 勘误: erase-it 惯用法 (erase-during-iteration UB);
+        // 已知限制: bar_store_ key 为全局裸地址, 跨 BAR 隔离留待后续 PR
+        for (auto it = bar_store_.begin(); it != bar_store_.end();) {
+            if (it->first >= size) {
+                config_warnings_.push_back(
+                    "BAR" + std::to_string(bar_idx) +
+                    " resized to " + std::to_string(size) +
+                    ", key " + std::to_string(it->first) + " out of bounds (cleared)");
+                it = bar_store_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
 } // namespace tlm::pcie

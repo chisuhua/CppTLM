@@ -25,8 +25,10 @@
 #include "tlm/pcie/pcie_completion_tracker_tlm.hh"
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
 #include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
+#include "tlm/pcie/pcie_resizable_bar.hh"
 #include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
 
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -94,6 +96,11 @@ public:
 
     // Stage 1.4-followups §4: PM Cap 安装 (init_all 后重装, init() 会 wipe)
     void install_pm_capability();
+
+    // Stage 1.4-followups §3: ResizableBar 集成 (6 BAR slots)
+    tlm::pcie::ResizableBar& resizable_bar(unsigned bar_idx) noexcept;
+    // enable wrapper: enable 成功后触发 on_bar_resize (INV-G 越界校验)
+    bool enable_resizable_bar(unsigned bar_idx) noexcept;
 
     // Stage 1.4 §1.3: Power state machine (INV-A MMIO gating)
     enum class PciePowerState : uint8_t { D0 = 0, D3hot = 3 };
@@ -166,6 +173,9 @@ private:
     cpptlm::StreamAdapterBase* adapters_[NUM_PORTS] = {nullptr};
     // BAR 空间 backing store（Phase 8 M1: AXI slave 写经地址路由落写/读回真实值）
     std::unordered_map<uint64_t, uint64_t> bar_store_;
+    // Stage 1.4-followups §3: 6 个 ResizableBar (对应 6 个 BAR slots)
+    std::array<tlm::pcie::ResizableBar, 6> resizable_bars_;
+    void on_bar_resize(unsigned bar_idx);  // enable() 后触发, INV-G 越界校验
     // Stage 1.3a: SDMA ring 已处理的 entry 数 (累计 WPTR via doorbell writes)
     uint32_t sdma_ring_processed_count_ = 0;
     // Stage 1.3c: DMA 翻译模式 (identity / IOMMU)
