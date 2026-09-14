@@ -78,6 +78,15 @@ namespace tlm::gpu {
         // Get config_size
         std::size_t config_size() const { return config_size_; }
 
+        // PcieEndpointIP JSON 配置扩展 (Phase A1) — set_config_size
+        // 校验 {256, 4096}; 其它值静默忽略, 由调用方负责记录 warning
+        // (Oracle 选 a: 加 setter, 校验 + 17 slot 循环; design.md §2.2)
+        void set_config_size(std::size_t size) noexcept {
+            if (size == 256 || size == 4096) {
+                config_size_ = size;
+            }
+        }
+
     private:
         std::size_t config_size_;
         std::vector<uint32_t> regs_;       // 4-byte aligned register array

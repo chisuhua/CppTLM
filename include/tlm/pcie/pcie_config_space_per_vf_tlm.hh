@@ -69,6 +69,15 @@ public:
         }
     }
 
+    // PcieEndpointIP JSON 配置扩展 (Phase A1) — 17 slot 统一应用 config_size
+    // 每个 slot 内部 PcieConfigSpace 自行校验 {256, 4096}; 非法值被静默忽略
+    // (Oracle 选 a: 17 slot 循环 API; design.md §2.2 INV-4)
+    void set_config_size_all(std::size_t size) noexcept {
+        for (auto& s : slots_) {
+            s.set_config_size(size);
+        }
+    }
+
 private:
     // 固定 17 份（避免 PcieConfigSpace 不可拷贝导致 vector 无法 realloc）
     std::array<tlm::gpu::PcieConfigSpace, NUM_SLOTS> slots_;

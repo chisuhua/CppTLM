@@ -98,6 +98,13 @@ public:
 
     bool all_ports_have_adapter() const;
 
+    // PcieEndpointIP JSON 配置扩展 (Phase A1) — 未消费键 warning 列表
+    // 配合 attach_composition 内的 std::cerr 同步输出 (per design.md §4)
+    // 不抛异常, 不致命; 测试可通过 getter 断言 (Catch2 无法可移植捕获 stderr)
+    const std::vector<std::string>& config_warnings() const noexcept {
+        return config_warnings_;
+    }
+
     // 单 adapter 访问（测试断言）
     cpptlm::StreamAdapterBase* get_adapter(unsigned idx) const {
         return (idx < NUM_PORTS) ? adapters_[idx] : nullptr;
@@ -147,6 +154,15 @@ private:
     // Stage 1.3c: DMA 翻译模式 (identity / IOMMU)
     DmaTranslateMode dma_translate_mode_ = DmaTranslateMode::IDENTITY;
     void attach_composition(const nlohmann::json& params);
+
+    // PcieEndpointIP JSON 配置扩展 (Phase A1) — 未消费键 warning 收集
+    // 配合 std::cerr 同步输出 (per design.md §4.1 + LINT005 precedent)
+    std::vector<std::string> config_warnings_;
+    void warn_unconsumed(const nlohmann::json& params,
+                         const std::vector<std::string>& known);
+    void warn_unconsumed_subkeys(const nlohmann::json& group,
+                                 const std::string& group_name,
+                                 const std::vector<std::string>& known_subkeys);
 };
 
 } // namespace tlm::pcie

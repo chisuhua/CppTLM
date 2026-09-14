@@ -3,8 +3,18 @@
 // 作者 CppTLM Team / 日期 2026-10-13
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/gpu/pcie_config_space_mvp.hh"
+#include "tlm/pcie/pcie_config_space_per_vf_tlm.hh"
+#include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
+#include "tlm/pcie/pcie_msix_per_vf_tlm.hh"
+#include "tlm/pcie/pcie_ari_router_tlm.hh"
+#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 #include "tlm/pcie/pcie_axi_adapter_tlm.hh"
 #include <nlohmann/json.hpp>
+
+#include <iostream>
+#include <string>
+#include <unordered_set>
+#include <vector>
 
 namespace tlm::pcie {
 
@@ -57,8 +67,6 @@ namespace tlm::pcie {
             auto* ax = PcieAxiAdapter::attach_to_endpoint(getName(), event_queue);
             if (ax) {
                 ax->set_endpoint(this);
-                // Phase 6 T-P6-4: JSON axi4_mapper_inject: true → 注入 AXI4Mapper（缺省 false
-                // 不注入）
                 const auto& axi_json = params["axi_adapter"];
                 const bool mapper_inject = axi_json.value("axi4_mapper_inject", false);
                 ax->set_mapper_injected(mapper_inject);
@@ -66,39 +74,144 @@ namespace tlm::pcie {
         } else {
             PcieAxiAdapter::detach_from_endpoint(getName());
         }
-        if (!params.contains("link_layer")) {
-            return;
-        }
-        const auto& ll_json = params["link_layer"];
-        const bool enabled = ll_json.value("enabled", true);
-        if (!enabled) {
-            PcieLinkLayer::detach_from_endpoint(getName());
-            PciePhyDigitalCtrl::detach_from_endpoint(getName());
-            PcieBypassMux::detach_from_endpoint(getName());
-            return;
-        }
-        tlm::pcie::PcieLinkLayerConfig ll_cfg;
-        ll_cfg.enabled = enabled;
-        ll_cfg.fc_capacity = ll_json.value("fc_token_bucket_capacity", 256u);
-        ll_cfg.fc_init_p = ll_json.value("fc_initial_credit_p", 256u);
-        ll_cfg.fc_init_np = ll_json.value("fc_initial_credit_np", 256u);
-        ll_cfg.fc_init_cpl = ll_json.value("fc_initial_credit_cpl", 256u);
-        ll_cfg.retry_buffer_size = ll_json.value("retry_buffer_size", 4096u);
 
-        auto* ll = PcieLinkLayer::attach_to_endpoint(getName(), event_queue, ll_cfg);
-        auto* phy = PciePhyDigitalCtrl::attach_to_endpoint(getName(), event_queue);
-        if (phy) {
-            phy->link_layer(ll);
-            phy->set_link_up(true);
+        // link_layer 块: 决定 ll/phy/mux 是否 attach; 返回 phy 指针供后续块使用
+        tlm::pcie::PciePhyDigitalCtrl* phy = nullptr;
+        if (params.contains("link_layer")) {
+            const auto& ll_json = params["link_layer"];
+            const bool enabled = ll_json.value("enabled", true);
+            if (!enabled) {
+                PcieLinkLayer::detach_from_endpoint(getName());
+                PciePhyDigitalCtrl::detach_from_endpoint(getName());
+                PcieBypassMux::detach_from_endpoint(getName());
+            } else {
+                tlm::pcie::PcieLinkLayerConfig ll_cfg;
+                ll_cfg.enabled = enabled;
+                ll_cfg.fc_capacity = ll_json.value("fc_token_bucket_capacity", 256u);
+                ll_cfg.fc_init_p = ll_json.value("fc_initial_credit_p", 256u);
+                ll_cfg.fc_init_np = ll_json.value("fc_initial_credit_np", 256u);
+                ll_cfg.fc_init_cpl = ll_json.value("fc_initial_credit_cpl", 256u);
+                ll_cfg.retry_buffer_size = ll_json.value("retry_buffer_size", 4096u);
+
+                auto* ll = PcieLinkLayer::attach_to_endpoint(getName(), event_queue, ll_cfg);
+                phy = PciePhyDigitalCtrl::attach_to_endpoint(getName(), event_queue);
+                if (phy) {
+                    phy->link_layer(ll);
+                    phy->set_link_up(true);
+                }
+                auto* mux = PcieBypassMux::attach_to_endpoint(getName(), ll);
+                if (mux) {
+                    mux->set_phy_initialized(phy != nullptr);
+                    const std::string bypass_mode =
+                        ll_json.value("bypass_mode", std::string("Full"));
+                    if (bypass_mode == "Bypass") {
+                        mux->apply_mode(BypassMode::Bypass);
+                    } else if (bypass_mode == "Partial") {
+                        mux->apply_mode(BypassMode::Partial);
+                    }
+                }
+            }
         }
-        auto* mux = PcieBypassMux::attach_to_endpoint(getName(), ll);
-        if (mux) {
-            mux->set_phy_initialized(phy != nullptr);
-            const std::string bypass_mode = ll_json.value("bypass_mode", std::string("Full"));
-            if (bypass_mode == "Bypass") {
-                mux->apply_mode(BypassMode::Bypass);
-            } else if (bypass_mode == "Partial") {
-                mux->apply_mode(BypassMode::Partial);
+
+        // 不变量 INV-2: phy->set_config() 整结构覆盖, 必须 read-modify-write
+        // (保留现有 max_speed / max_lanes / sr_iov_vf_pool_size)
+        if (params.contains("phy_digital") && phy != nullptr) {
+            const auto& pj = params["phy_digital"];
+            auto cfg = phy->config();
+            if (pj.contains("preset_p")) {
+                cfg.preset_P = pj.value("preset_p", cfg.preset_P);
+            }
+            if (pj.contains("preset_np")) {
+                cfg.preset_NP = pj.value("preset_np", cfg.preset_NP);
+            }
+            if (pj.contains("preset_cpl")) {
+                cfg.preset_Cpl = pj.value("preset_cpl", cfg.preset_Cpl);
+            }
+            if (pj.contains("hot_plug_supported")) {
+                cfg.hot_plug_supported =
+                    pj.value("hot_plug_supported", cfg.hot_plug_supported);
+            }
+            phy->set_config(cfg);
+            warn_unconsumed_subkeys(pj, "phy_digital",
+                {"preset_p", "preset_np", "preset_cpl", "hot_plug_supported"});
+        }
+
+        // 不变量 INV-1: configure_vectors 用 placement-new 销毁 pending IRQ;
+        // 本函数仅 composition-time 可调用, 严禁在 tick 中重入
+        if (params.contains("sr_iov")) {
+            const auto& sio = params["sr_iov"];
+            if (sio.contains("ari_capable")) {
+                pool_.ari_router().set_ari_enabled(
+                    sio.value("ari_capable", false));
+            }
+            if (sio.contains("vf_msix_vectors")) {
+                const uint16_t n = sio.value("vf_msix_vectors", 4u);
+                for (uint16_t vf = 1; vf < PcieMsixTablePerVf::NUM_SLOTS; ++vf) {
+                    pool_.msix_pool().configure_vectors(vf, n);
+                }
+            }
+            warn_unconsumed_subkeys(sio, "sr_iov",
+                {"ari_capable", "vf_msix_vectors"});
+        }
+
+        if (params.contains("transaction_layer")) {
+            const auto& tl = params["transaction_layer"];
+            if (tl.contains("config_size")) {
+                const std::size_t sz = tl.value("config_size", 4096u);
+                const std::size_t applied = (sz == 256 || sz == 4096) ? sz : 4096;
+                if (applied != sz) {
+                    const std::string msg =
+                        "transaction_layer.config_size must be 256 or 4096; got " +
+                        std::to_string(sz) + ", falling back to 4096";
+                    config_warnings_.push_back(msg);
+                    std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: "
+                              << msg << "\n";
+                }
+                pool_.config_pool().set_config_size_all(applied);
+            }
+            if (tl.contains("msix_num_vectors")) {
+                const uint16_t n = tl.value("msix_num_vectors", 16u);
+                pool_.msix_pool().configure_vectors(0, n);
+            }
+            warn_unconsumed_subkeys(tl, "transaction_layer",
+                {"config_size", "msix_num_vectors"});
+        }
+
+        warn_unconsumed(params,
+            {"axi_adapter", "link_layer", "phy_digital",
+             "sr_iov", "transaction_layer", "bypass_mode"});
+    }
+
+    void PcieEndpointIP::warn_unconsumed(const nlohmann::json& params,
+                                         const std::vector<std::string>& known) {
+        std::unordered_set<std::string> known_set(known.begin(), known.end());
+        for (auto it = params.begin(); it != params.end(); ++it) {
+            if (known_set.count(it.key()) == 0) {
+                const std::string msg =
+                    "unrecognized JSON key '" + it.key() +
+                    "' (no consumer; deferred or out-of-scope)";
+                config_warnings_.push_back(msg);
+                std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: "
+                          << msg << "\n";
+            }
+        }
+    }
+
+    void PcieEndpointIP::warn_unconsumed_subkeys(
+            const nlohmann::json& group,
+            const std::string& group_name,
+            const std::vector<std::string>& known_subkeys) {
+        if (!group.is_object()) return;
+        std::unordered_set<std::string> known(known_subkeys.begin(),
+                                              known_subkeys.end());
+        for (auto it = group.begin(); it != group.end(); ++it) {
+            if (known.count(it.key()) == 0) {
+                const std::string msg =
+                    "unrecognized JSON subkey '" + it.key() +
+                    "' in " + group_name;
+                config_warnings_.push_back(msg);
+                std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: "
+                          << msg << "\n";
             }
         }
     }
