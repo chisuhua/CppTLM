@@ -21,6 +21,13 @@ namespace tlm::pcie {
     PcieEndpointIP::PcieEndpointIP(const std::string& name, EventQueue* eq)
         : ChStreamModuleBase(name, eq) {
         pool_.init_all();
+        // Stage 1.4 §1.1: 在 PF slot (0) 安装 PM Cap (id=0x01) + PMCSR 写回调
+        // 让 driver 通过 CFG_WRITE 触发 INV-A 状态机 + MMIO gating
+        auto& cfg_pf = pool_.config_pool().config_of(0);
+        cfg_pf.add_capability(0x01, 0x40, /*next=*/0x00, /*control=*/0x0013);
+        cfg_pf.set_pmcsr_write_cb([this](uint16_t new_pws) {
+            set_power_state(static_cast<PciePowerState>(new_pws));
+        });
     }
 
     void PcieEndpointIP::init() {
@@ -222,6 +229,10 @@ namespace tlm::pcie {
         // Phase 8 M1: 真实 AXI 数据路径接线 — PcieEndpointIP::tick() 驱动
         // PcieAxiAdapter 消费 slave_in 请求，EP 内部真实处理并产生真实响应。
         // HostBypass/RC (Host 侧 master) ↔ PcieAxiAdapter (EP 侧 slave) 双向闭环。
+        // Stage 1.4 §1.3 INV-A: D3hot 状态下 MMIO gate, 不消费 slave 请求
+        if (mmio_gated_) {
+            return;
+        }
         if (auto* ax = PcieAxiAdapter::for_endpoint(getName())) {
             cpptlm::Axi4StreamAdapter& axi = ax->axi();
 
@@ -330,6 +341,11 @@ namespace tlm::pcie {
         if (auto* ll = PcieLinkLayer::for_endpoint(getName())) {
             ll->tick();
         }
+    }
+
+    void PcieEndpointIP::set_power_state(PciePowerState s) noexcept {
+        power_state_ = s;
+        mmio_gated_ = (s == PciePowerState::D3hot);
     }
 
     void PcieEndpointIP::flr_pf() noexcept {

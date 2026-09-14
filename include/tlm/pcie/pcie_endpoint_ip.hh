@@ -92,6 +92,20 @@ public:
     void flr_pf() noexcept;
     void flr_vf(uint16_t vf_id) noexcept;
 
+    // Stage 1.4 §1.3: Power state machine (INV-A MMIO gating)
+    enum class PciePowerState : uint8_t { D0 = 0, D3hot = 3 };
+    void set_power_state(PciePowerState s) noexcept;
+    [[nodiscard]] PciePowerState power_state() const noexcept {
+        return power_state_;
+    }
+    [[nodiscard]] bool mmio_gated() const noexcept { return mmio_gated_; }
+
+    // 测试 helper: 读取 BAR backing store 验证 MMIO gate 是否阻止写入
+    [[nodiscard]] uint64_t bar_store_value(uint64_t key) const noexcept {
+        const auto it = bar_store_.find(key);
+        return (it != bar_store_.end()) ? it->second : 0;
+    }
+
     PcieLinkLayer* link_layer() const noexcept;
     PciePhyDigitalCtrl* phy() const noexcept;
     PcieBypassMux* bypass_mux() const noexcept;
@@ -153,6 +167,9 @@ private:
     uint32_t sdma_ring_processed_count_ = 0;
     // Stage 1.3c: DMA 翻译模式 (identity / IOMMU)
     DmaTranslateMode dma_translate_mode_ = DmaTranslateMode::IDENTITY;
+    // Stage 1.4 §1.3: Power state (D0/D3hot) + INV-A MMIO gate
+    PciePowerState power_state_ = PciePowerState::D0;
+    bool mmio_gated_ = false;
     void attach_composition(const nlohmann::json& params);
 
     // PcieEndpointIP JSON 配置扩展 (Phase A1) — 未消费键 warning 收集
