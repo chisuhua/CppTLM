@@ -23,9 +23,14 @@ namespace tlm::pcie {
         pool_.init_all();
         // Stage 1.4 §1.1: 在 PF slot (0) 安装 PM Cap (id=0x01) + PMCSR 写回调
         // 让 driver 通过 CFG_WRITE 触发 INV-A 状态机 + MMIO gating
+        // Stage 1.4-followups §6: PWS=1/2 (D1/D2 保留值) 忽略 — PCI PM spec
+        // 不支持状态写入应保持当前态, 避免非法枚举值
         auto& cfg_pf = pool_.config_pool().config_of(0);
         cfg_pf.add_capability(0x01, 0x40, /*next=*/0x00, /*control=*/0x0013);
         cfg_pf.set_pmcsr_write_cb([this](uint16_t new_pws) {
+            if (new_pws != 0 && new_pws != 3) {
+                return;  // D1/D2 保留值: 忽略, 保持当前状态
+            }
             set_power_state(static_cast<PciePowerState>(new_pws));
         });
     }
