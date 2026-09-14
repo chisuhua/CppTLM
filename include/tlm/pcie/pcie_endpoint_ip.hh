@@ -92,6 +92,9 @@ public:
     void flr_pf() noexcept;
     void flr_vf(uint16_t vf_id) noexcept;
 
+    // Stage 1.4-followups §4: PM Cap 安装 (init_all 后重装, init() 会 wipe)
+    void install_pm_capability();
+
     // Stage 1.4 §1.3: Power state machine (INV-A MMIO gating)
     enum class PciePowerState : uint8_t { D0 = 0, D3hot = 3 };
     void set_power_state(PciePowerState s) noexcept;

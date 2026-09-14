@@ -21,6 +21,23 @@ namespace tlm::pcie {
     PcieEndpointIP::PcieEndpointIP(const std::string& name, EventQueue* eq)
         : ChStreamModuleBase(name, eq) {
         pool_.init_all();
+        install_pm_capability();
+    }
+
+    void PcieEndpointIP::init() {
+        ChStreamModuleBase::init();
+        pool_.init_all();
+        // PcieConfigSpace::init() 会 capabilities_.clear() + memset —
+        // 构造器安装的 PM Cap 被 wipe, 必须在每次 init_all 后重装
+        install_pm_capability();
+    }
+
+    void PcieEndpointIP::do_reset(const ResetConfig&) {
+        pool_.init_all();
+        install_pm_capability();
+    }
+
+    void PcieEndpointIP::install_pm_capability() {
         // Stage 1.4 §1.1: 在 PF slot (0) 安装 PM Cap (id=0x01) + PMCSR 写回调
         // 让 driver 通过 CFG_WRITE 触发 INV-A 状态机 + MMIO gating
         // Stage 1.4-followups §6: PWS=1/2 (D1/D2 保留值) 忽略 — PCI PM spec
@@ -33,15 +50,6 @@ namespace tlm::pcie {
             }
             set_power_state(static_cast<PciePowerState>(new_pws));
         });
-    }
-
-    void PcieEndpointIP::init() {
-        ChStreamModuleBase::init();
-        pool_.init_all();
-    }
-
-    void PcieEndpointIP::do_reset(const ResetConfig&) {
-        pool_.init_all();
     }
 
     void PcieEndpointIP::set_stream_adapter(cpptlm::StreamAdapterBase* a) {
@@ -76,6 +84,13 @@ namespace tlm::pcie {
     void PcieEndpointIP::attach_composition(const nlohmann::json& params) {
         // 重入清空, 避免重复 config load 累积陈旧 warning
         config_warnings_.clear();
+        // Stage 1.4-followups §4: PM Cap control word JSON-driven
+        // 走已有 update_capability_control (构造器已安装 cap; 勘误:
+        // 不移入 attach_composition 避免 init_all wipe + 重复 add_capability)
+        if (params.contains("pm_cap_control")) {
+            const auto ctrl = params.value("pm_cap_control", static_cast<uint16_t>(0x0013));
+            pool_.config_pool().config_of(0).update_capability_control(0, ctrl);
+        }
         // AXI Stream Adapter 独立挂接（per Phase 5 T-P5-6, 不依赖 link_layer 分支）
         if (params.contains("axi_adapter")) {
             auto* ax = PcieAxiAdapter::attach_to_endpoint(getName(), event_queue);
@@ -193,7 +208,7 @@ namespace tlm::pcie {
 
         warn_unconsumed(params,
             {"axi_adapter", "link_layer", "phy_digital",
-             "sr_iov", "transaction_layer", "bypass_mode"});
+             "sr_iov", "transaction_layer", "bypass_mode", "pm_cap_control"});
     }
 
     void PcieEndpointIP::warn_unconsumed(const nlohmann::json& params,
