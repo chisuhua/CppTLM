@@ -229,10 +229,9 @@ namespace tlm::pcie {
         // Phase 8 M1: 真实 AXI 数据路径接线 — PcieEndpointIP::tick() 驱动
         // PcieAxiAdapter 消费 slave_in 请求，EP 内部真实处理并产生真实响应。
         // HostBypass/RC (Host 侧 master) ↔ PcieAxiAdapter (EP 侧 slave) 双向闭环。
-        // Stage 1.4 §1.3 INV-A: D3hot 状态下 MMIO gate, 不消费 slave 请求
-        if (mmio_gated_) {
-            return;
-        }
+        // Stage 1.4-followups §1 INV-A 收窄: gate 移到 cfg/BAR 判别后,
+        // 仅 BAR 路径 gate + DECERR 响应; cfg 路径保留 D3hot 访问 (PCIe spec,
+        // INV-E: driver 可经 cfg 写 PMCSR 回 D0)
         if (auto* ax = PcieAxiAdapter::for_endpoint(getName())) {
             cpptlm::Axi4StreamAdapter& axi = ax->axi();
 
@@ -259,6 +258,17 @@ namespace tlm::pcie {
                     const uint16_t bid = static_cast<uint16_t>(req.awid.read());
 
                     const bool is_cfg = awaddr < pool_.config_of(0).config_size();
+
+                    // INV-A 收窄: 仅 BAR 路径 gate; cfg 路径保留 D3hot 访问 (PCIe spec)
+                    // 响应 DECERR (bresp=3; 2=SLVERR) 而非静默丢弃 (避免 host 挂起)
+                    if (mmio_gated_ && !is_cfg) {
+                        bundles::Axi4Bundle err_resp;
+                        err_resp.bid.write(bid);
+                        err_resp.bresp.write(3u);  // DECERR
+                        axi.slave_resp(err_resp);
+                        axi.slave_req_consume();
+                        return;
+                    }
 
                     if (is_cfg) {
                         // cfg 路径: 屏蔽低 2 bit 后右移得到 byte offset
