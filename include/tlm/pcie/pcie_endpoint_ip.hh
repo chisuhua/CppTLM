@@ -116,8 +116,10 @@ public:
 
     // A-2b 选项 2: 当前 IP 不装 MSI-X Cap,此函数为 no-op
     // (host cfg 不可见 MSI-X Cap 是 A-2b option 2 的接受行为差)
+    // Known limitation: 后续独立 change (A-2b option 1) 将启用实际 MSI-X Cap 安装
+    // 并改写 config_of(0) 的 MSI-X Cap Message Control bits[31:16]。
     void sync_msix_cap_table_size(uint16_t /*table_size*/) noexcept {
-        // TODO(A-2b option 1): 启用时改写 config_of(0) 的 MSI-X Cap Message Control bits[31:16]
+        // no-op (A-2b option 2)
     }
 
     // BAR0 寄存器路由表 (data-driven, 从 JSON `bar0_registers` 字段填充)
