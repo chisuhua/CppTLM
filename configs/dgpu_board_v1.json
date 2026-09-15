@@ -1,6 +1,6 @@
 {
   "name": "dgpu_board_v1",
-  "description": "CppTLM dGPU board topology (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/design.md §4, ADR-SOC-07 D1/D2/D7). DGpuBoard C++ ABI shell owns a DGpuSoc SimModule container; SOC-internal PcieEndpointTLM (slave) handles BAR0/doorbell/MSI-X; MemoryTLM 'vram' holds BAR1 VRAM; SDMA/CP/TMU/SQ/CQ form command/data path. UsrLinuxEmuIoctlStub NOT in JSON (host-side, lives in test harness).",
+  "description": "CppTLM dGPU board topology (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/design.md §4, ADR-SOC-07 D1/D2/D7, 2026-09-15-cpptlm-stage-1-4-2-1-ue-extensions-unblock Path A v1.2). DGpuBoard C++ ABI shell owns a DGpuSoc SimModule container; SOC-internal PcieEndpointIP (17-port, PF + VF pool + composite LL/PHY/Mux) handles config space (PM Cap + PCIe Cap + ACS + ReBAR Ext Cap) + BAR0/doorbell + MSI-X; MemoryTLM 'vram' holds BAR1 VRAM; SDMA/CP/TMU/SQ/CQ form command/data path. UsrLinuxEmuIoctlStub NOT in JSON (host-side, lives in test harness).",
   "params": {
     "device_id": "0x1234",
     "quantum_cycles": 1000,
@@ -14,7 +14,7 @@
       "modules": [
         {
           "name": "pcie_ep",
-          "type": "PcieEndpointTLM",
+          "type": "PcieEndpointIP",
           "params": {
             "config_size": 4096,
             "num_msix_vectors": 16,
@@ -73,8 +73,6 @@
         }
       ],
       "connections": [
-        { "src": "pcie_ep.mmio_out", "dst": "cp.cmd_in" },
-        { "src": "pcie_ep.mem_out",  "dst": "vram.0" },
         { "src": "cp.fetch_out",     "dst": "vram.0" },
         { "src": "cp.dma_req",       "dst": "sdma.desc_in" },
         { "src": "cp.dispatch",      "dst": "tmu.dispatch_in" },
@@ -86,12 +84,9 @@
         { "src": "gpu.done",         "dst": "sq.done_in[0]" }
       ],
       "outputs": [
-        { "internal": "pcie_ep.irq_out", "external": "irq" },
         { "internal": "sdma.host_out",   "external": "host_dma" }
       ],
-      "inputs": [
-        { "internal": "pcie_ep.slave_in", "external": "host_tlp" }
-      ]
+      "inputs": []
     }
   ],
   "connections": []
