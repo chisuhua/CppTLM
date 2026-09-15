@@ -26,6 +26,7 @@
 | `REGISTER_CHSTREAM` | `include/chstream_register.hh` | `ChStreamModuleBase`（如 `CacheTLM`/`CrossbarTLM`/`MemoryTLM`） | `getObjectRegistry()` + `ChStreamAdapterFactory` | **Always ON**（推荐） |
 | `REGISTER_ALL` | `include/chstream_register.hh` | 复合宏 | `REGISTER_OBJECT; REGISTER_CHSTREAM` + 末尾 `modules_cluster.hh`（触发 9 个 SimModule 集中注册） | **Always ON** |
 | `modules_cluster.hh` | `include/modules_cluster.hh` | 集中注册 | `REGISTER_MODULE(CpuCluster/ComputeCluster/TpcCluster/GpcCluster/GpuCluster/CacheCluster/MemoryCluster/GpuNoC/ApuSoC)` 全 9 个 SimModule 派生类 | **Always ON**（P2-T2.4 引入, P5 扩展至 9） |
+| `PcieEndpointIP` | `include/tlm/pcie/pcie_endpoint_ip.hh` | `SimModule`（Phase 2 从 `REGISTER_CHSTREAM` 迁移, per openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor） | `getModuleRegistry()` | **Always ON**（`REGISTER_MODULE(PcieEndpointIP)` 集中于 modules_cluster.hh） |
 
 ### 设计意图
 

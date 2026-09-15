@@ -909,6 +909,100 @@ public:
 
 ---
 
+## 14.2 PcieLinkPhyMuxTLM Composite Architecture (Phase 2, 2026-09-16)
+
+> **来源**: `openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor/` (Phase 1 + Phase 2)
+> **决策**: Oracle R4 = C（不引入外层 JSON `pcie_ep.pf0`/`pcie_ep.vfN` 接线）
+
+### 14.2.1 类结构
+
+`PcieEndpointIP` 在 Phase 2 由 `ChStreamModuleBase` 切换为 **`SimModule`**；其 17 个 TLP 端口
+（1 PF + 16 VF）与 LL/PHY/Mux 三个强耦合子模块全部移入内部工厂持有的 composite child：
+
+```
+PcieEndpointIP : SimModule
+├── pool_ : PcieSriovVfPool                      (值成员, 不变 — Oracle 驳回拆分)
+├── bar_store_ / resizable_bars_ / power_state_  (值成员, 不变)
+├── internal_factory (ModuleFactory)
+│   └── PcieLinkPhyMuxTLM : ChStreamModuleBase   (17-port multiport adapter)
+│       ├── PcieLinkLayer        link_
+│       ├── PciePhyDigitalCtrl   phy_   (construct 后 phy_.link_layer(&link_))
+│       ├── PcieBypassMux        mux_   (construct 即持 &link_)
+│       ├── req_in[17] / resp_out[17]
+│       └── tick(): phy → link → 17 adapters
+└── tick() override: AXI slave 处理 → composite->tick()
+```
+
+| 不变量 | 落地 |
+|--------|------|
+| INV-1 | `phy_.link_layer(&link_)` + `set_link_up(true)` + `mux_.set_phy_initialized(true)` 全在 composite 构造函数内 |
+| INV-3 | `EP::tick()` override 显式定序；**不**依赖 `SimModule` 默认 `unordered_map` 迭代序 |
+| INV-4 | LL↔PHY↔Mux 保持直接指针 + `std::function` sink，**禁止** Bundle 化（rate switch / 10-step cleanup 是 0-cycle 同步调用） |
+| INV-6 | 4 子模块静态注册表 API 行为保留（composite-first → legacy-fallback） |
+
+### 14.2.2 Composite 单一所有权
+
+composite 由 EP 的 `internal_factory->instantiateAll(wrap)` 构造，`PcieEndpointIP::composite()`
+经 `internal_factory->getInstance(getName() + "_lpm")` 取得 —— **不**另持 raw 成员指针。
+
+- Phase 1 的静态注册表 `PcieLinkPhyMuxTLM::attach_to_endpoint/detach_from_endpoint` 标注
+  `[[deprecated("Phase 2 composite 迁 internal_factory; Phase 3 清理")]]`
+- `PcieLinkPhyMuxTLM::for_endpoint(name)` 改为 **composite-first** wrapper：
+  先调 `PcieEndpointIP::find_composite(name)`（扫描 EP 实例静态列表 + `internal_factory`），
+  未命中再回落 Phase 1 静态注册表（保 `PcieEndpointTLM` 冻结路径兼容）
+- EP ctor/dtor 维护 `instances_for_test()`（`std::vector<PcieEndpointIP*>`）供 `find_composite` 扫描
+
+### 14.2.3 Composite 17 端口内部可达性（R4 决策 C）
+
+17 个 TLP 端口**仅经程序化 API 可达**，**不**提供外层 JSON 声明式接线：
+
+```cpp
+// 程序化可达: 命中 EP internal_factory + Step 7 mirror (sim_module.hh:140-146)
+auto* master = ep.getInternalOutputPort("pcie_ep_lpm.resp_out[0]");   // 非 null
+auto* slave  = ep.getInternalInputPort("pcie_ep_lpm.req_in[0]");      // 非 null
+```
+
+**已知限制（R4 决策 C）**：`connection_resolver.cc` 对 `ep.<label>` → `<composite>.<port>`
+的**两层下钻无递归解析支持**（只查外层 `object_instances`）。因此
+`examples/dgpu_soc_with_pcie_ip.json` 中的 `pcie_ep.axi_slave_in` / `pcie_ep.axi_master_out`
+接线在 Phase 2 后被静默丢弃（EP 入 `module_instances`,
+`findInternalPath("axi_slave_in")==""`）并产生 `[WARN] Source/Destination port not found` ——
+**这是预期的**，由 `test_axislavein_bridge_path_intact` 锁定，避免未来误判为回归。
+
+Phase 8 真实数据路径**不**依赖该外层接线：靠 429327d 的
+`HostBypassTLM`/`PcieRootComplexTLM::tick()` **程序化桥接**
+（直接调 `PcieAxiAdapter::for_endpoint(ep_name)->axi()`），本 change 不破坏该路径。
+
+**未来扩展**：若需外层声明式 TLP 接线，需扩 `connection_resolver.cc` 支持
+`SimModule::getInternalOutputPort` 递归解析 —— 属 Phase 3（AxiAdapter 拆分）独立 change。
+
+### 14.2.4 Tick 顺序契约（Phase 1 休眠 → Phase 2 激活）
+
+| 阶段 | `EP::tick()` 行为 | PHY tick 驱动方 |
+|------|------------------|----------------|
+| Phase 1 | `adapters_[i]->tick()` + `for_endpoint(ll)->tick()` | 测试外部（如 `test_aspm.cc`） |
+| **Phase 2** | AXI slave 处理 → `composite()->tick()`（内含 `phy → link → 17 adapters`） | **EP::tick()**（composite 内定序） |
+
+Phase 2 审计结果：`grep -rn "phy.*->tick()" test/` 命中的
+`test_aspm.cc` / `test_pcie_phy_digital_hotplug.cc` / `test_pcie_phy_digital_rate_switch.cc`
+**均不创建 `PcieEndpointIP`**（走 PHY 独立静态注册表），故无双重驱动风险，**零修改**通过。
+`test_pcie_endpoint_ip_simmodule_refactor.cc::[phy-migration]` 断言方向已从
+"EP::tick 不推进 PHY" 翻转为 "EP::tick 推进 PHY LTSSM"。
+
+### 14.2.5 注册迁移（R2 双注册清理）
+
+| 项 | 变更 |
+|----|------|
+| `chstream_register.hh` | 删 `registerObject<PcieEndpointIP>` + `registerMultiPortAdapter<PcieEndpointIP,...,17>`；新增同等 `PcieLinkPhyMuxTLM` 两条 |
+| `modules_cluster.hh` | 新增 `REGISTER_MODULE(tlm::pcie::PcieEndpointIP)` |
+| `ModuleFactory::getRegisteredModuleTypes()` | 含 `"PcieEndpointIP"` |
+| `ModuleFactory::getRegisteredObjectTypes()` | **不含** `"PcieEndpointIP"`（R2 缓解） |
+
+**ABI 安全**：基类 `ChStreamModuleBase` → `SimModule` 是非虚、非 ABI 暴露成员变化；
+`CPPTLM_PCIE_ENDPOINT_ABI_VERSION=2` 保持；23 ABI header 零触碰（INV-5）。
+
+---
+
 ## 附录 A:与现有 PcieEndpointTLM 的迁移路径 (Oracle C4 修订)
 
 **本设计不删除** `include/tlm/gpu/pcie_endpoint_tlm.h` (Phase 1-3 期间保留作 reference)。
@@ -946,6 +1040,7 @@ public:
 |---|---|---|---|
 | v1.0 | 2027-02-09 | CppTLM Team | 从 `openspec/changes/2026-09-01-cpptlm-dgpu-pcie-ip-microarch/design.md` (931 行) 迁移,含 Phase 7 Oracle M2 标注 |
 | v1.1 | 2027-02-09 | CppTLM Team | 添加 Phase 7 Oracle M2 标注 (RC 枚举 PF0-only) |
+| v1.2 | 2026-09-16 | CppTLM Team | 新增 §14.2 PcieLinkPhyMuxTLM Composite Architecture (Phase 2, openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor) |
 
 **维护**: CppTLM Team (Sisyphus)
 **状态**: 📄 Architecture — Phase 8 整合交付完成

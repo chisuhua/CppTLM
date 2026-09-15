@@ -44,11 +44,13 @@ include/                 # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
     # [[deprecated]] 类 (Task 10): vector_regfile_tlm / minimal_warp_scheduler_tlm / wavefront_tlm (待 Task 16 删除)
   tlm/pcie/              # ★ 7 阶段 PCIe EP 微架构 (本项目主体,2026-2027)
     pcie_link_layer_tlm.{hh,cc}                # Phase 1: 链路层 + DLLP + FC Token Bucket
+    pcie_link_phy_mux_tlm.{hh,cc}              # ★ Phase 1/2: LL+PHY+Mux composite (17 端口, EP internal_factory 持有)
     pcie_encoding_latency_model.hh             # Phase 2: 128b/130b Encoding
     pcie_phy_digital_ctrl_tlm.{hh,cc}          # Phase 3: PHY 数字控制 (LTSSM 11 态)
     pcie_bypass_mux.{hh,cc}                    # Phase 3: 3 态模式切换 (Full/Bypass/Partial)
     pcie_sriov_vf_pool_tlm.{hh,cc}              # Phase 4: SR-IOV VF Pool (17 端口 PcieEndpointIP)
-    pcie_endpoint_ip.{hh,cc}                   # Phase 4: 整合模块 (1 PF + 16 VF)
+    pcie_endpoint_ip.{hh,cc}                   # Phase 4: 整合模块 (1 PF + 16 VF); Phase 2 基类 SimModule
+                                               #   (REGISTER_MODULE; composite 归 internal_factory)
     pcie_config_space_per_vf_tlm.hh            # Phase 4: per-VF Config Space
     pcie_msix_per_vf_tlm.hh                    # Phase 4: per-VF MSI-X
     pcie_completion_tracker_tlm.hh             # Phase 4: NP↔CplD trans_id 关联
