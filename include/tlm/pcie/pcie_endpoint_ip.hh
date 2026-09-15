@@ -24,6 +24,7 @@
 #include "tlm/pcie/pcie_bypass_mux.hh"
 #include "tlm/pcie/pcie_completion_tracker_tlm.hh"
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
+#include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
 #include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 #include "tlm/pcie/pcie_resizable_bar.hh"
 #include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
@@ -55,7 +56,8 @@ public:
     cpptlm::OutputStreamAdapter<bundles::PcieTlpBundle> resp_out[NUM_PORTS];
 
     PcieEndpointIP(const std::string& name, EventQueue* eq);
-    ~PcieEndpointIP() override = default;
+    // 显式 dtor: 清理 composite 静态注册表 (防 stale 指针跨 TEST_CASE / 多 EP 共存)
+    ~PcieEndpointIP() override;
 
     PcieEndpointIP(const PcieEndpointIP&) = delete;
     PcieEndpointIP& operator=(const PcieEndpointIP&) = delete;
@@ -116,6 +118,8 @@ public:
         return (it != bar_store_.end()) ? it->second : 0;
     }
 
+    // Phase 1: 访问器转发到 composite 成员 (composite-first, 无 composite 时返回 nullptr)
+    // 与原 PcieLinkLayer::for_endpoint 语义对齐 (attach 路径经静态注册表 shim)
     PcieLinkLayer* link_layer() const noexcept;
     PciePhyDigitalCtrl* phy() const noexcept;
     PcieBypassMux* bypass_mux() const noexcept;
@@ -183,6 +187,10 @@ private:
     // Stage 1.4 §1.3: Power state (D0/D3hot) + INV-A MMIO gate
     PciePowerState power_state_ = PciePowerState::D0;
     bool mmio_gated_ = false;
+    // Phase 1 composite: 单一所有权归 PcieLinkPhyMuxTLM 静态注册表
+    // (unique_ptr<unordered_map>), EP 仅持 raw observer (防 double-delete)。
+    // 惰性构造: 仅 link_layer.enabled=true 时非空 (design §1.5)。
+    tlm::pcie::PcieLinkPhyMuxTLM* composite_ = nullptr;
     void attach_composition(const nlohmann::json& params);
 
     // PcieEndpointIP JSON 配置扩展 (Phase A1) — 未消费键 warning 收集

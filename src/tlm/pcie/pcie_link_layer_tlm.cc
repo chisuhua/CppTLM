@@ -5,6 +5,8 @@
 
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
 
+#include "tlm/pcie/pcie_link_phy_mux_tlm_fwd.hh"
+
 #include <algorithm>
 #include <unordered_map>
 #include <utility>
@@ -36,6 +38,9 @@ namespace tlm::pcie {
     }
 
     PcieLinkLayer* PcieLinkLayer::for_endpoint(const std::string& endpoint_name) noexcept {
+        if (auto* ll_ptr = lpm_ll_for_endpoint(endpoint_name)) {
+            return ll_ptr;
+        }
         auto& reg = endpoint_registry();
         auto it = reg.find(endpoint_name);
         return (it != reg.end()) ? it->second.get() : nullptr;
@@ -48,6 +53,38 @@ namespace tlm::pcie {
 
     std::size_t PcieLinkLayer::endpoint_count() noexcept {
         return endpoint_registry().size();
+    }
+
+    // ========== simmodule-refactor Phase 1 (proposal §Impact 例外, 仅新增 setter) ==========
+
+    void PcieLinkLayer::set_fc_capacity(std::size_t cap) noexcept {
+        // FcTokenBucket::capacity_ 仅构造期可设 (PCIe InitFC 语义, update_fc 只改 credit),
+        // 故必须重建桶而非原地改 capacity。
+        cfg_.fc_capacity = static_cast<uint32_t>(cap);
+        reset_fc_buckets();
+    }
+
+    void PcieLinkLayer::set_fc_initial_credits(std::size_t p,
+                                              std::size_t np,
+                                              std::size_t cpl) noexcept {
+        cfg_.fc_init_p = static_cast<uint32_t>(p);
+        cfg_.fc_init_np = static_cast<uint32_t>(np);
+        cfg_.fc_init_cpl = static_cast<uint32_t>(cpl);
+        for (auto* fc : {&fc_upstream_, &fc_downstream_}) {
+            fc->bucket(0).init_fc(cfg_.fc_capacity, cfg_.fc_init_p,
+                                  cfg_.fc_init_np, cfg_.fc_init_cpl);
+        }
+    }
+
+    void PcieLinkLayer::set_retry_buffer_size(std::size_t sz) noexcept {
+        // retry_buf_ 为 std::map (深度上限恒 SEQ_WINDOW), 无独立深度字段;
+        // 此处仅同步 cfg_ 快照供消费方/断言观察。
+        cfg_.retry_buffer_size = static_cast<uint32_t>(sz);
+    }
+
+    void PcieLinkLayer::set_link_error_injection_enabled(bool on) noexcept {
+        cfg_.link_error_injection_enabled = on;
+        err_.enabled = on;
     }
 
     namespace {

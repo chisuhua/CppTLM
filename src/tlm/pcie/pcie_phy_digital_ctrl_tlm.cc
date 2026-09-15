@@ -8,6 +8,7 @@
 
 #include "tlm/pcie/pcie_bypass_mux.hh"
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
+#include "tlm/pcie/pcie_link_phy_mux_tlm_fwd.hh"
 
 #include <memory>
 #include <string>
@@ -74,6 +75,9 @@ namespace tlm::pcie {
 
     PciePhyDigitalCtrl*
     PciePhyDigitalCtrl::for_endpoint(const std::string& endpoint_name) noexcept {
+        if (auto* phy_ptr = lpm_phy_for_endpoint(endpoint_name)) {
+            return phy_ptr;
+        }
         auto& reg = phy_registry();
         auto it = reg.find(endpoint_name);
         return (it != reg.end()) ? it->second.get() : nullptr;

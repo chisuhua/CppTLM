@@ -9,6 +9,7 @@
 #include "tlm/pcie/pcie_ari_router_tlm.hh"
 #include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 #include "tlm/pcie/pcie_axi_adapter_tlm.hh"
+#include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
 #include <nlohmann/json.hpp>
 
 #include <iostream>
@@ -81,6 +82,13 @@ namespace tlm::pcie {
         attach_composition(params);
     }
 
+    PcieEndpointIP::~PcieEndpointIP() {
+        if (composite_) {
+            tlm::pcie::PcieLinkPhyMuxTLM::detach_from_endpoint(getName());
+            composite_ = nullptr;
+        }
+    }
+
     void PcieEndpointIP::attach_composition(const nlohmann::json& params) {
         // 重入清空, 避免重复 config load 累积陈旧 warning
         config_warnings_.clear();
@@ -104,49 +112,56 @@ namespace tlm::pcie {
             PcieAxiAdapter::detach_from_endpoint(getName());
         }
 
-        // link_layer 块: 决定 ll/phy/mux 是否 attach; 返回 phy 指针供后续块使用
-        tlm::pcie::PciePhyDigitalCtrl* phy = nullptr;
+        // link_layer 块: 决定 composite (LL+PHY+Mux) 是否构造 (Phase 1 单一所有权)
+        // 惰性构造: 仅 enabled=true 时构造, enabled=false 或无 link_layer 块时 detach
+        // (composite_=nullptr, 保持 for_endpoint→null 现状语义, Oracle 复审条件 2 + R-B)
         if (params.contains("link_layer")) {
             const auto& ll_json = params["link_layer"];
             const bool enabled = ll_json.value("enabled", true);
             if (!enabled) {
+                if (composite_) {
+                    tlm::pcie::PcieLinkPhyMuxTLM::detach_from_endpoint(getName());
+                    composite_ = nullptr;
+                }
                 PcieLinkLayer::detach_from_endpoint(getName());
                 PciePhyDigitalCtrl::detach_from_endpoint(getName());
                 PcieBypassMux::detach_from_endpoint(getName());
             } else {
-                tlm::pcie::PcieLinkLayerConfig ll_cfg;
-                ll_cfg.enabled = enabled;
-                ll_cfg.fc_capacity = ll_json.value("fc_token_bucket_capacity", 256u);
-                ll_cfg.fc_init_p = ll_json.value("fc_initial_credit_p", 256u);
-                ll_cfg.fc_init_np = ll_json.value("fc_initial_credit_np", 256u);
-                ll_cfg.fc_init_cpl = ll_json.value("fc_initial_credit_cpl", 256u);
-                ll_cfg.retry_buffer_size = ll_json.value("retry_buffer_size", 4096u);
-
-                auto* ll = PcieLinkLayer::attach_to_endpoint(getName(), event_queue, ll_cfg);
-                phy = PciePhyDigitalCtrl::attach_to_endpoint(getName(), event_queue);
-                if (phy) {
-                    phy->link_layer(ll);
-                    phy->set_link_up(true);
+                if (!composite_) {
+                    composite_ = tlm::pcie::PcieLinkPhyMuxTLM::attach_to_endpoint(
+                        getName(), event_queue);
                 }
-                auto* mux = PcieBypassMux::attach_to_endpoint(getName(), ll);
-                if (mux) {
-                    mux->set_phy_initialized(phy != nullptr);
-                    const std::string bypass_mode =
-                        ll_json.value("bypass_mode", std::string("Full"));
-                    if (bypass_mode == "Bypass") {
-                        mux->apply_mode(BypassMode::Bypass);
-                    } else if (bypass_mode == "Partial") {
-                        mux->apply_mode(BypassMode::Partial);
+                if (composite_) {
+                    composite_->link().set_fc_capacity(
+                        ll_json.value("fc_token_bucket_capacity", 256u));
+                    composite_->link().set_retry_buffer_size(
+                        ll_json.value("retry_buffer_size", 4096u));
+                    composite_->link().set_link_error_injection_enabled(
+                        ll_json.value("link_error_injection_enabled", false));
+                    if (ll_json.contains("bypass_mode")) {
+                        const std::string bypass_mode =
+                            ll_json["bypass_mode"].get<std::string>();
+                        if (bypass_mode == "Bypass") {
+                            composite_->mux().apply_mode(BypassMode::Bypass);
+                        } else if (bypass_mode == "Partial") {
+                            composite_->mux().apply_mode(BypassMode::Partial);
+                        } else {
+                            composite_->mux().apply_mode(BypassMode::Full);
+                        }
                     }
+                    composite_->link().set_fc_initial_credits(
+                        ll_json.value("fc_initial_credit_p", 256u),
+                        ll_json.value("fc_initial_credit_np", 256u),
+                        ll_json.value("fc_initial_credit_cpl", 256u));
                 }
             }
         }
 
         // 不变量 INV-2: phy->set_config() 整结构覆盖, 必须 read-modify-write
         // (保留现有 max_speed / max_lanes / sr_iov_vf_pool_size)
-        if (params.contains("phy_digital") && phy != nullptr) {
+        if (params.contains("phy_digital") && composite_ != nullptr) {
             const auto& pj = params["phy_digital"];
-            auto cfg = phy->config();
+            auto cfg = composite_->phy().config();
             if (pj.contains("preset_p")) {
                 cfg.preset_P = pj.value("preset_p", cfg.preset_P);
             }
@@ -160,7 +175,7 @@ namespace tlm::pcie {
                 cfg.hot_plug_supported =
                     pj.value("hot_plug_supported", cfg.hot_plug_supported);
             }
-            phy->set_config(cfg);
+            composite_->phy().set_config(cfg);
             warn_unconsumed_subkeys(pj, "phy_digital",
                 {"preset_p", "preset_np", "preset_cpl", "hot_plug_supported"});
         }
@@ -387,14 +402,25 @@ namespace tlm::pcie {
     }
 
     PcieLinkLayer* PcieEndpointIP::link_layer() const noexcept {
+        // Phase 1 composite 优先(composite 单一所有权); legacy fallback 经 shim
+        // 处理 PcieEndpointTLM 冻结路径(composite 名字不同, 自然 miss)
+        if (composite_) {
+            return &composite_->link();
+        }
         return PcieLinkLayer::for_endpoint(getName());
     }
 
     PciePhyDigitalCtrl* PcieEndpointIP::phy() const noexcept {
+        if (composite_) {
+            return &composite_->phy();
+        }
         return PciePhyDigitalCtrl::for_endpoint(getName());
     }
 
     PcieBypassMux* PcieEndpointIP::bypass_mux() const noexcept {
+        if (composite_) {
+            return &composite_->mux();
+        }
         return PcieBypassMux::for_endpoint(getName());
     }
 

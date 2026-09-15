@@ -227,15 +227,25 @@ public:
     }
 
     // ========== PcieEndpointTLM composition 注册表（冻结 .h 布局下的集成通道）==========
-    // PcieEndpointTLM 头文件类成员布局冻结（23 ABI），不能加成员 → 通过静态注册表
-    // 关联 EP（按模块名）↔ PcieLinkLayer 实例。定义并实现在 pcie_link_layer_tlm.{hh,cc}，
-    // 由 src/tlm/gpu/pcie_endpoint_tlm.cc 在 on_config_loaded() 时挂接。
+    // 定义并实现在 pcie_link_layer_tlm.{hh,cc}，由 src/tlm/gpu/pcie_endpoint_tlm.cc
+    // 在 on_config_loaded() 时挂接。
+    // simmodule-refactor Phase 1 (proposal §Impact 例外): **仅新增** public setter，
+    // 支持 composite 构造后逐字段注入 link_layer.* JSON；不修改任何现有成员签名/布局。
+    // 理由: FcTokenBucket::capacity_ 仅构造期可设 (pcie_flow_control_token_bucket.hh:100)，
+    // update_fc 按 PCIe 语义只改 credit 不改 capacity → 无 setter 则 JSON 字段被静默 drop。
+    void set_fc_capacity(std::size_t cap) noexcept;
+    void set_fc_initial_credits(std::size_t p, std::size_t np, std::size_t cpl) noexcept;
+    void set_retry_buffer_size(std::size_t sz) noexcept;
+    void set_link_error_injection_enabled(bool on) noexcept;
     static PcieLinkLayer* attach_to_endpoint(const std::string& endpoint_name,
                                              EventQueue* eq,
                                              const PcieLinkLayerConfig& cfg);
     static PcieLinkLayer* for_endpoint(const std::string& endpoint_name) noexcept;
     static void detach_from_endpoint(const std::string& endpoint_name) noexcept;
     static std::size_t endpoint_count() noexcept;
+
+    // 测试/诊断: 返回当前生效配置快照 (Phase 1 composite 消费 JSON 后可观察)
+    const PcieLinkLayerConfig& config() const noexcept { return cfg_; }
 
     // 诊断
     const std::string& name() const { return name_; }

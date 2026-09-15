@@ -7,6 +7,7 @@
 #include "tlm/pcie/pcie_bypass_mux.hh"
 
 #include "tlm/pcie/pcie_link_layer_tlm.hh"
+#include "tlm/pcie/pcie_link_phy_mux_tlm_fwd.hh"
 
 #include <memory>
 #include <string>
@@ -38,6 +39,9 @@ namespace tlm::pcie {
     }
 
     PcieBypassMux* PcieBypassMux::for_endpoint(const std::string& endpoint_name) noexcept {
+        if (auto* mux_ptr = lpm_mux_for_endpoint(endpoint_name)) {
+            return mux_ptr;
+        }
         auto& reg = mux_registry();
         auto it = reg.find(endpoint_name);
         return (it != reg.end()) ? it->second.get() : nullptr;

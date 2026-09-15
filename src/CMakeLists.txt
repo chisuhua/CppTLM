@@ -114,6 +114,8 @@ set(CORE_SOURCES
     tlm/pcie/pcie_completion_tracker_tlm.cc
     # pcie-ip-microarch Phase 4: PcieEndpointIP 新类 17 端口 (T-P4-7)
     tlm/pcie/pcie_endpoint_ip.cc
+    # cpptlm-pcie-endpoint-ip-simmodule-refactor Phase 1: composite (LL+PHY+Mux)
+    tlm/pcie/pcie_link_phy_mux_tlm.cc
     # pcie-ip-microarch Phase 5: AXI Stream Adapter (T-P5-2)
     framework/axi4_stream_adapter.cc
     # pcie-ip-microarch Phase 5: PcieAxiAdapter (T-P5-3)
