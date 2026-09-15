@@ -206,9 +206,30 @@ namespace tlm::pcie {
                 {"config_size", "msix_num_vectors"});
         }
 
+        if (params.contains("bar0_registers") && params["bar0_registers"].is_array()) {
+            bar_router_.init(1);
+            for (const auto& reg_json : params["bar0_registers"]) {
+                const uint32_t offset = reg_json.value("offset", 0u);
+                const std::string name = reg_json.value("name", std::string{});
+                const std::string access_str = reg_json.value("access", std::string{"rw"});
+                const std::string side_str = reg_json.value("side_effect", std::string{"none"});
+
+                tlm::gpu::PcieBarRouter::Access access = tlm::gpu::PcieBarRouter::Access::RW;
+                if (access_str == "ro" || access_str == "RO") access = tlm::gpu::PcieBarRouter::Access::RO;
+                else if (access_str == "wo" || access_str == "WO") access = tlm::gpu::PcieBarRouter::Access::WO;
+
+                tlm::gpu::PcieBarRouter::SideEffect side = tlm::gpu::PcieBarRouter::SideEffect::NONE;
+                if (side_str == "doorbell") side = tlm::gpu::PcieBarRouter::SideEffect::DOORBELL;
+
+                const uint32_t stream_id = reg_json.value("stream_id", 0u);
+                bar_router_.add_register(offset, name, access, side, stream_id);
+            }
+        }
+
         warn_unconsumed(params,
             {"axi_adapter", "link_layer", "phy_digital",
-             "sr_iov", "transaction_layer", "bypass_mode", "pm_cap_control"});
+             "sr_iov", "transaction_layer", "bypass_mode", "pm_cap_control",
+             "bar0_registers", "bar_sizes", "config_size", "num_msix_vectors"});
     }
 
     void PcieEndpointIP::warn_unconsumed(const nlohmann::json& params,

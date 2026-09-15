@@ -36,7 +36,7 @@ namespace {
                 "name": "soc",
                 "type": "DGpuSoc",
                 "modules": [
-                    { "name": "pcie_ep", "type": "PcieEndpointTLM",
+                    { "name": "pcie_ep", "type": "PcieEndpointIP",
                       "params": {
                           "config_size": 4096,
                           "num_msix_vectors": 16,

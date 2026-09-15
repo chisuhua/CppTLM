@@ -57,7 +57,7 @@ static json d15_mini_board_cfg() {
         "modules": [{
             "name": "soc", "type": "DGpuSoc",
             "modules": [{
-                "name": "pcie_ep", "type": "PcieEndpointTLM",
+                "name": "pcie_ep", "type": "PcieEndpointIP",
                 "params": {
                     "config_size": 4096, "num_msix_vectors": 16,
                     "bar_sizes": [65536, 268435456],

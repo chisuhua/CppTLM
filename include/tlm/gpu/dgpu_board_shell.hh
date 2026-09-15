@@ -6,7 +6,8 @@
 
 #include "event_queue.hh"
 #include "tlm/gpu/dgpu_soc.hh"  // DGpuSoc SimModule 容器
-#include "tlm/gpu/pcie_endpoint_tlm.h"  // PcieEndpointTLM (pcie_ep accessor 返回类型)
+#include "tlm/gpu/pcie_endpoint_tlm.h"  // PcieEndpointTLM (legacy, 仅 frozen ABI 兼容)
+#include "tlm/pcie/pcie_endpoint_ip.hh"  // PcieEndpointIP (A-2 Path A: pcie_ep accessor 返回类型)
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include "tlm/gpu/sdma_engine_tlm.hh"  // SdmaEngineTLM (P0 unblock Task 5+6: BAR1 doorbell wiring)
 #include <atomic>
@@ -87,13 +88,18 @@ public:
     // (name/access/side_effect). nullptr when SOC null / unaligned / > BAR0 / miss.
     const PcieBarRouter::RegisterEntry* lookup_register_entry(uint32_t offset);
 
-    // pcie_ep accessor: 返回 SOC 内 PcieEndpointTLM 实例 (nullptr 当 SOC 未实例化/ep 缺失)
-    // 只读, 供测试/工具直接访问底层 MsiXTable (如 unmask auto-deliver 验证)
-    PcieEndpointTLM* pcie_ep() const {
+    // pcie_ep accessor: 返回 SOC 内 PcieEndpointIP 实例 (nullptr 当 SOC 未实例化/ep 缺失)
+    // 只读, 供测试/工具直接访问底层 MSI-X / config space (如 unmask auto-deliver 验证)
+    // A-2 Path A: 从 PcieEndpointTLM* → PcieEndpointIP* (生产 profile 已切 IP)
+    tlm::pcie::PcieEndpointIP* pcie_ep() const {
         if (!soc_)
             return nullptr;
-        return dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        return dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
     }
+
+    // A-3: MMIO power-state gate — D3hot 时返 true (per INV-A MMIO gating)
+    // 委托 pcie_ep->mmio_gated(); 非 IP 类型返 false
+    [[nodiscard]] bool is_mmio_gated() const;
 
     // 3. 回调接线(non-blocking,per design §2.5 #4)
     using IrqCallback = std::function<void(uint32_t vector_id)>;

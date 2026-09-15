@@ -212,6 +212,10 @@ namespace tlm::gpu {
         if (buf == nullptr) {
             return -EINVAL;
         }
+        // A-3: INV-A MMIO power-state gate (D3hot → -EIO)
+        if (is_mmio_gated()) {
+            return -EIO;
+        }
         PendingReq req;
         req.bar = bar;
         req.offset = offset;
@@ -267,6 +271,12 @@ namespace tlm::gpu {
         }
         if (buf == nullptr) {
             return -EINVAL;
+        }
+        // A-3: INV-A MMIO power-state gate (D3hot → -EIO, doorbell 例外)
+        // doorbell 写保持兼容 (per v1.2 spec Scenario "MMIO write D3 doorbell is allowed")
+        const bool is_doorbell = (bar == 1 && offset == kBar1DoorbellOffset);
+        if (!is_doorbell && is_mmio_gated()) {
+            return -EIO;
         }
         // 修复 #5: 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
         std::vector<uint8_t> payload(static_cast<const uint8_t*>(buf),
@@ -331,7 +341,7 @@ namespace tlm::gpu {
             return -EINVAL;
         if (!soc_)
             return -ENOSYS;
-        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep || !ep->has_config_space())
             return -ENOSYS;
         *val = ep->config_space().read(offset);
@@ -342,11 +352,18 @@ namespace tlm::gpu {
         (void)width;
         if (!soc_)
             return -ENOSYS;
-        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep || !ep->has_config_space())
             return -ENOSYS;
         ep->config_space().write(offset, val);
         return 0;
+    }
+
+    bool DGpuBoard::is_mmio_gated() const {
+        if (!soc_)
+            return false;
+        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+        return ep && ep->mmio_gated();
     }
 
     // ── backdoor ABI(per design §2.5 #5 + ADR-SOC-07 Q3) ──
@@ -418,13 +435,9 @@ namespace tlm::gpu {
             return -22; // EINVAL: PCI-SIG MSI-X 11-bit cap
         if (!soc_)
             return -38; // ENOSYS: SOC not instantiated
-        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep)
             return -38;
-        // C2 (基础任务 1.2.2): resize 先于 init, 使 table_size 真正生效到 MsiXTable。
-        // resize(0) 拒绝 (保留 MsiXTable >0 不变式) → -EINVAL
-        // C3 (Oracle caveat ①): resize 前 force-flush 任何 armed 合并窗口 —
-        // 合并状态绝不跨 resize 悬空 (不缓存 pending_irq_out_ 指针, 仅释放累计计数)。
         coalesce_force_flush();
         if (!ep->msix().resize(static_cast<uint16_t>(table_size)))
             return -22;
@@ -434,8 +447,6 @@ namespace tlm::gpu {
                 ep->msix().set_mask(static_cast<uint16_t>(v), true);
             }
         }
-        // C2 修复 (Oracle MEDIUM-2): 运行时 resize 后同步 MSI-X Cap Table Size 字段,
-        // 使 host CFG_READ 的 Message Control (bits[31:16]) 跟随最新 vector 数。
         ep->sync_msix_cap_table_size(static_cast<uint16_t>(table_size));
         return 0;
     }
@@ -443,15 +454,11 @@ namespace tlm::gpu {
     int DGpuBoard::msix_update_pending(uint32_t vector) {
         if (!soc_)
             return -38;
-        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep)
             return -38;
         if (ep->msix().update_pending(static_cast<uint16_t>(vector))) {
-            // 修复 #4: 中断链接线 — 仅当 IRQ 真正投递 (unmasked, did_deliver) 才触发 host 侧
-            // intr_cb; masked vector 仅置 PBA 不入队 (per PCI-SIG MSI-X), 不得触发
             if (ep->msix().did_deliver_last_update()) {
-                // C3 (基础任务 1.2.3): 合并开关 — off 时直发 (保留 C1 语义);
-                // on 时进 threshold+timeout 合并器 (N 次投递 → 1 次 intr_cb)
                 if (msix_coalesce_enabled_.load()) {
                     coalesce_arm_or_drain(vector);
                 } else {
@@ -466,7 +473,7 @@ namespace tlm::gpu {
     int DGpuBoard::msix_clear_pending(uint32_t vector) {
         if (!soc_)
             return -38;
-        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep)
             return -38;
         return ep->msix().clear_pending(static_cast<uint16_t>(vector)) ? 0 : -22;
@@ -481,7 +488,7 @@ namespace tlm::gpu {
             return -22; // BAR0 only
         if (!soc_)
             return -38;
-        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep)
             return -38;
         const auto* entry = ep->bar_router().lookup(offset);
@@ -498,7 +505,7 @@ namespace tlm::gpu {
             return nullptr;
         if (!soc_)
             return nullptr;
-        auto* ep = dynamic_cast<PcieEndpointTLM*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
         if (!ep)
             return nullptr;
         return ep->bar_router().lookup(offset);

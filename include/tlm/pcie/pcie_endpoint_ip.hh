@@ -21,6 +21,7 @@
 
 #include "core/sim_module.hh"
 #include "core/sim_object.hh"
+#include "tlm/gpu/pcie_bar_router_mvp.hh"
 #include "tlm/pcie/pcie_completion_tracker_tlm.hh"
 #include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
 #include "tlm/pcie/pcie_resizable_bar.hh"
@@ -97,6 +98,32 @@ public:
         return pool_.msix_of(stream_id);
     }
 
+    // A-2 Path A: 5 IP accessors for board shell pass-through (替代 PcieEndpointTLM)
+    // 委托给 PF=0 (stream_id=0) 的内部资源,保证 ABI 路径兼容
+    [[nodiscard]] bool has_config_space() const noexcept { return true; }
+    tlm::gpu::PcieConfigSpace& config_space() noexcept {
+        return pool_.config_of(0);
+    }
+    const tlm::gpu::PcieConfigSpace& config_space() const noexcept {
+        return pool_.config_of(0);
+    }
+    tlm::gpu::MsiXTable& msix() noexcept {
+        return pool_.msix_of(0);
+    }
+    const tlm::gpu::MsiXTable& msix() const noexcept {
+        return pool_.msix_of(0);
+    }
+
+    // A-2b 选项 2: 当前 IP 不装 MSI-X Cap,此函数为 no-op
+    // (host cfg 不可见 MSI-X Cap 是 A-2b option 2 的接受行为差)
+    void sync_msix_cap_table_size(uint16_t /*table_size*/) noexcept {
+        // TODO(A-2b option 1): 启用时改写 config_of(0) 的 MSI-X Cap Message Control bits[31:16]
+    }
+
+    // BAR0 寄存器路由表 (data-driven, 从 JSON `bar0_registers` 字段填充)
+    tlm::gpu::PcieBarRouter& bar_router() noexcept { return bar_router_; }
+    const tlm::gpu::PcieBarRouter& bar_router() const noexcept { return bar_router_; }
+
     void flr_pf() noexcept;
     void flr_vf(uint16_t vf_id) noexcept;
 
@@ -170,6 +197,9 @@ public:
 
 private:
     PcieSriovVfPool pool_;
+    // A-2: BAR0 寄存器路由表（替代 PcieEndpointTLM 内的 PcieBarRouter 成员）
+    // 构造时 init() 默认空表; simulate_instantiate 从 params.bar0_registers 填充
+    tlm::gpu::PcieBarRouter bar_router_;
     // BAR 空间 backing store（Phase 8 M1: AXI slave 写经地址路由落写/读回真实值）
     std::unordered_map<uint64_t, uint64_t> bar_store_;
     // Stage 1.4-followups §3: 6 个 ResizableBar (对应 6 个 BAR slots)
