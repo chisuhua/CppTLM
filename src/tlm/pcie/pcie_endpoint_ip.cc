@@ -56,22 +56,19 @@ namespace tlm::pcie {
     }
 
     void PcieEndpointIP::simulate_instantiate(const json& cfg) {
-        if (!internal_factory || !internal_factory->getAllInstances().empty()) {
-            return;  // 幂等守卫 (design §3.3)
+        // 决策 3: 双格式 — Module entry {"name","type","params"} (Step 4.5) 或直接 params
+        const json params = cfg.contains("params") ? cfg["params"] : cfg;
+        if (internal_factory && internal_factory->getAllInstances().empty()) {
+            // 惰性构造 composite child (仅 enabled=true, 决策 4)
+            ensure_composite_instantiated(params);
         }
-        // R4 决策 C: 不调 addInputConfig/addOutputConfig (该 API 仅 CPPTLM_TESTING 暴露);
-        // composite 17 端口经 getInternalOutputPort/getInternalInputPort 程序化可达
-        const json params = cfg.contains("params") ? cfg["params"] : json::object();
-        ensure_composite_instantiated(params);
+        // 始终消费 (幂等): 支撑 reconfigure (R-B) 与 Step 2 双调 on_config_loaded
         attach_composition(params);
     }
 
     void PcieEndpointIP::on_config_loaded() {
-        // SimObject::set_config → on_config_loaded: 直接构造路径 (tests / demo)
-        // 经 ensure_composite_instantiated 惰性构造 composite (internal_factory 单一所有权)
-        const json& params = get_config(); // SimObject::get_config()
-        ensure_composite_instantiated(params);
-        attach_composition(params);
+        // 决策 2: 直接构造路径 (tests / demo ep.set_config(cfg)) 归一到 simulate_instantiate
+        simulate_instantiate(get_config()); // SimObject::get_config()
     }
 
     PcieEndpointIP::~PcieEndpointIP() {
@@ -462,6 +459,41 @@ namespace tlm::pcie {
             }
         }
         return nullptr;
+    }
+
+    // ========== Phase 2 非虚兼容方法: 17 端口 + adapter 转发到 composite (决策 1) ==========
+
+    void PcieEndpointIP::set_stream_adapter(cpptlm::StreamAdapterBase* a) {
+        if (auto* lpm = composite()) {
+            lpm->set_stream_adapter(a);
+        }
+    }
+
+    void PcieEndpointIP::set_stream_adapter(cpptlm::StreamAdapterBase* adapters[]) {
+        if (!adapters) {
+            return;
+        }
+        if (auto* lpm = composite()) {
+            lpm->set_stream_adapter(adapters);
+        }
+    }
+
+    bool PcieEndpointIP::all_ports_have_adapter() const {
+        auto* lpm = composite();
+        if (!lpm) {
+            return false;
+        }
+        for (unsigned i = 0; i < NUM_PORTS; ++i) {
+            if (!lpm->get_adapter(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    cpptlm::StreamAdapterBase* PcieEndpointIP::get_adapter(unsigned idx) const {
+        auto* lpm = composite();
+        return lpm ? lpm->get_adapter(idx) : nullptr;
     }
 
     // Stage 1.3a: UE ABI cpptlm_emulator_mmio_write 入口 (per spec.md Scenario

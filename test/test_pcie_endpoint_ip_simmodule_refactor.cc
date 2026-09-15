@@ -446,3 +446,71 @@ TEST_CASE("PcieEndpointIP: axislavein bridge path intact (Phase 2 R4=C5)",
     REQUIRE(hb.axi_master_resp_valid() == true);
     REQUIRE(hb.axi_master_resp_data().bid.read() == 0x10u);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task 2.1 (决策 1): EP 非虚兼容方法转发到 composite (14+ 测试零修改保证)
+// ─────────────────────────────────────────────────────────────────────────────
+TEST_CASE("PcieEndpointIP: non-virtual compat accessors forward to composite",
+          "[pcie-simmodule-refactor][compat-forward]") {
+    EventQueue eq;
+    PcieEndpointIP ep("pcie_ep_fwd", &eq);
+    ep.init();
+
+    // 无 composite (无 link_layer 块): 转发返回空/默认, 不崩溃
+    REQUIRE(ep.num_ports() == 17u);
+    REQUIRE(ep.all_ports_have_adapter() == false);
+    REQUIRE(ep.get_adapter(0) == nullptr);
+    ep.set_stream_adapter(static_cast<cpptlm::StreamAdapterBase*>(nullptr));
+
+    json cfg;
+    cfg["link_layer"]["enabled"] = true;
+    ep.set_config(cfg);
+
+    // composite 就绪后转发到 composite 持有的 adapter 数组
+    auto* composite = PcieEndpointIP::find_composite("pcie_ep_fwd");
+    REQUIRE(composite != nullptr);
+    REQUIRE(ep.num_ports() == PcieLinkPhyMuxTLM::NUM_TLP_PORTS);
+    for (unsigned i = 0; i < 17; ++i) {
+        REQUIRE(ep.get_adapter(i) == composite->get_adapter(i));
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task 2.1 (决策 3): simulate_instantiate 双格式 (Module entry / 直接 params)
+// ─────────────────────────────────────────────────────────────────────────────
+TEST_CASE("PcieEndpointIP: simulate_instantiate accepts both entry and params formats",
+          "[pcie-simmodule-refactor][dual-format]") {
+    SECTION("direct params format (on_config_loaded forwarding)") {
+        EventQueue eq;
+        PcieEndpointIP ep("pcie_ep_direct", &eq);
+        ep.init();
+        json params;
+        params["link_layer"]["enabled"] = true;
+        ep.set_config(params);
+        REQUIRE(PcieEndpointIP::find_composite("pcie_ep_direct") != nullptr);
+    }
+
+    SECTION("module entry format (ModuleFactory Step 4.5)") {
+        EventQueue eq;
+        PcieEndpointIP ep("pcie_ep_entry", &eq);
+        ep.init();
+        json entry;
+        entry["name"] = "pcie_ep_entry";
+        entry["type"] = "PcieEndpointIP";
+        entry["params"]["link_layer"]["enabled"] = true;
+        ep.simulate_instantiate(entry);
+        REQUIRE(PcieEndpointIP::find_composite("pcie_ep_entry") != nullptr);
+        REQUIRE(ep.link_layer() != nullptr);
+    }
+
+    SECTION("no link_layer block leaves composite inactive") {
+        EventQueue eq;
+        PcieEndpointIP ep("pcie_ep_no_ll_entry", &eq);
+        ep.init();
+        json entry;
+        entry["name"] = "pcie_ep_no_ll_entry";
+        entry["type"] = "PcieEndpointIP";
+        ep.simulate_instantiate(entry);
+        REQUIRE(PcieEndpointIP::find_composite("pcie_ep_no_ll_entry") == nullptr);
+    }
+}

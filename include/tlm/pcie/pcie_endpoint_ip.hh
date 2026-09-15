@@ -62,6 +62,14 @@ public:
         return "PcieEndpointIP";
     }
 
+    // Phase 2: 非 override 兼容方法 (SimModule 无对应虚函数, 14+ 测试零修改)。
+    // 17 端口 + adapter 归 composite 持有, 全部转发到 internal_factory 内 composite。
+    unsigned num_ports() const { return NUM_PORTS; }
+    void set_stream_adapter(cpptlm::StreamAdapterBase* a);
+    void set_stream_adapter(cpptlm::StreamAdapterBase* adapters[]);
+    bool all_ports_have_adapter() const;
+    cpptlm::StreamAdapterBase* get_adapter(unsigned idx) const;
+
     // Phase 2: 构造期入口 (R4 决策 C — 不做外层 JSON TLP 接线)
     void simulate_instantiate(const json& cfg) override;
 
