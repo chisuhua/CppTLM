@@ -622,6 +622,23 @@ UsrLinuxEmu (driver)                  CppTLM (hardware 仿真)
   - **Commit 链**:
     - UE `fe4108b` feat(ue-stage-1-3-sdma): 1.3d UE 集成 (Fence + MSI-X)
     - UE `<v0.8 commit>` docs(pcie-ep): v0.9 stage 1.3d UE SDMA Fence + MSI-X 集成 ship
+
+- **v0.11** (2026-09-15, post-Wave 5b cp-attach-and-ret-zero ship, mirror UsrLinuxEmu entry v0.11): UE 侧 CP attach helper + ret == 0 强约束升级 ship
+  - **聚焦 change ship**: UsrLinuxEmu `2026-09-15-5-5-8-stage-1-2-cp-attach-and-ret-zero` (Wave 5b 阶段 1+2, 12 checkbox, 1 周)
+  - **真实 ABI 路径实现**:
+    - UsrLinuxEmu `sim_hardware/src/cpptlm/cp_attach.cpp`: noop 防御性 cb 注册 (dlopen + dlsym cpptlm_emulator_register_backdoor_cb + register_dma_translate_cb)
+    - UsrLinuxEmu `bridge.cpp::init()` 在 `register_callbacks` 之后调 `cp_attach(emu)`
+    - 5 个 TEST_CASE (`test_cp_attach_standalone`) 全 PASS (8 assertions)
+    - `test_bridge_kcpptlm_profile_real_standalone` 5 TEST_CASE `CHECK(ret != -ENOSYS)` → `REQUIRE(ret == 0)` 强约束; 3 次稳定 PASS (11 assertions)
+  - **Oracle R6 因果链改写**: CP attach noop 注册是**防御性, 非根因修复**; 真实消除 -ETIMEDOUT 依赖 CppTLM `cpptlm-stage-1-1-pcie-ep-fixes §3` (mmio_read drain) ship.
+  - **CppTLM 端无代码改动**: 路径 A 上游已 archive + Wave 5b 全 UE 仓实施, CppTLM 端仅 18-doc mirror commit
+  - **5.5.8 Wave 6 启动前置**: Wave 5b archive 后 Wave 6 阶段 3 (CommandProcessor + DMA Engine) 可立即启动
+  - **Commit 链**:
+    - UE `<v0.11 commit>` feat(cp_attach): noop cb 注册 + 5 TEST_CASE test
+    - UE `<v0.11 commit>` feat(bridge): integrate cp_attach in init() flow
+    - UE `<v0.11 commit>` feat(ret==0): 强约束升级 5.5.7.1 既有测试
+    - UE `<v0.11 commit>` docs(pcie-ep): v0.11 wave-5b cp-attach ship
+    - CppTLM `<本 commit>` docs(soc-arch): v0.11 mirror
     - CppTLM `<本 commit>` docs(soc-arch): v0.9 mirror
   - **0 项已知遗留**
 
