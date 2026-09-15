@@ -80,3 +80,27 @@ TEST_CASE("dgpu_board_v1.json: bar_sizes is numeric array (not strings)",
         REQUIRE(bs.get<uint64_t>() > 0);
     }
 }
+
+// Spec Scenario 4 (A-2 Path A): grep dynamic_cast<PcieEndpointTLM*> 在 dgpu_board_shell 中应 0 hits
+// (7+1 处 cast 站点已全部替换为 PcieEndpointIP*)
+TEST_CASE("dgpu_board_shell: 0 dynamic_cast<PcieEndpointTLM*> remain (Scenario 4)",
+          "[dgpu][pcie][unblock][a2]") {
+    std::ifstream src_ifs("src/tlm/gpu/dgpu_board_shell.cc");
+    REQUIRE(src_ifs.is_open());
+    std::ifstream hdr_ifs("include/tlm/gpu/dgpu_board_shell.hh");
+    REQUIRE(hdr_ifs.is_open());
+
+    auto count_matches = [](std::ifstream& ifs) -> std::size_t {
+        std::string line;
+        std::size_t count = 0;
+        while (std::getline(ifs, line)) {
+            if (line.find("dynamic_cast<PcieEndpointTLM") != std::string::npos) {
+                ++count;
+            }
+        }
+        return count;
+    };
+
+    REQUIRE(count_matches(src_ifs) == 0);
+    REQUIRE(count_matches(hdr_ifs) == 0);
+}
