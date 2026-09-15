@@ -24,20 +24,21 @@ namespace tlm::pcie {
         : SimModule(name, eq) {
         pool_.init_all();
         install_pm_capability();
+        install_capabilities();
         instances_for_test().push_back(this);
     }
 
     void PcieEndpointIP::init() {
         SimObject::init();
         pool_.init_all();
-        // PcieConfigSpace::init() 会 capabilities_.clear() + memset —
-        // 构造器安装的 PM Cap 被 wipe, 必须在每次 init_all 后重装
         install_pm_capability();
+        install_capabilities();
     }
 
     void PcieEndpointIP::do_reset(const ResetConfig&) {
         pool_.init_all();
         install_pm_capability();
+        install_capabilities();
     }
 
     void PcieEndpointIP::install_pm_capability() {
@@ -53,6 +54,48 @@ namespace tlm::pcie {
             }
             set_power_state(static_cast<PciePowerState>(new_pws));
         });
+    }
+
+    void PcieEndpointIP::install_lnkctl_callback() {
+        auto& cfg_pf = pool_.config_pool().config_of(0);
+        cfg_pf.set_lnkctl_write_cb([this](uint16_t new_lnkctl) {
+            // PCI-SIG LNKCTL ASPM bits[1:0]: 01=L0s, 10=L1
+            if (new_lnkctl & 0x0001) {
+                if (auto* p = phy()) p->enable_aspm(::tlm::pcie::PciePhyDigitalCtrl::AspmLevel::L0s);
+            }
+            if (new_lnkctl & 0x0002) {
+                if (auto* p = phy()) p->enable_aspm(::tlm::pcie::PciePhyDigitalCtrl::AspmLevel::L1);
+            }
+        });
+    }
+
+    void PcieEndpointIP::install_capabilities() {
+        auto& cfg_pf = pool_.config_pool().config_of(0);
+
+        // A-4: PCIe Cap (0x10) @0x50, control = 0x0002 (PCIe Cap v2)
+        cfg_pf.add_capability(0x10, 0x50, /*next=*/0x00, /*control=*/0x0002);
+
+        // A-4: LNKCTL @0x60 (cap+0x10), LNKSTA @0x62 (cap+0x12)
+        // LNKCTL default = 0x0010 (per PCI-SIG spec; bit 4 = Link Active)
+        cfg_pf.add_extended_register(0x60, 2, 0x0010);
+        cfg_pf.add_extended_register(0x62, 2, 0x0000);
+
+        // A-5: ACS Ext Cap (id=0x000D) @0x100
+        cfg_pf.add_extended_capability(0x000D, 0x100, /*next=*/0x140);
+
+        // A-5: ReBAR Ext Cap (id=0x0015, per PCI-SIG) @0x140
+        cfg_pf.add_extended_capability(0x0015, 0x140, /*next=*/0x00);
+
+        // A-5: ReBAR Cap header @0x140 + Control @0x148
+        // Header per PCI-SIG: bits[15:0]=id(0x0015), bits[19:16]=version(1), bits[31:20]=next(0)
+        // → 0x00010015
+        cfg_pf.add_extended_register(0x140, 4, 0x00010015);
+        // Control: BAR index bits[3:0]=0, BAR Size bits[12:8]=8 (256MB, per log2(bytes)-20),
+        //          Number of Resizable BARs bits[7:4]=1
+        // → 0x00080810
+        cfg_pf.add_extended_register(0x148, 4, 0x00080810);
+
+        install_lnkctl_callback();
     }
 
     void PcieEndpointIP::simulate_instantiate(const json& cfg) {

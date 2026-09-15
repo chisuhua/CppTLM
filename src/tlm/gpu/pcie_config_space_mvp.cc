@@ -93,7 +93,6 @@ namespace tlm::gpu {
         regs_[offset / 4] = value;
 
         // Stage 1.4 §1.2: PMCSR 写拦截 (PM Cap id=0x01, PMCSR 在 cap offset+4)
-        // 仅在 PWS[1:0] bit 实际变化时回调, 避免 DSEL 等 bit 写入触发
         if (pmcsr_write_cb_) {
             for (const auto& c : capabilities_) {
                 if (c.id == 0x01 && offset == static_cast<uint16_t>(c.offset + 0x04)) {
@@ -106,6 +105,70 @@ namespace tlm::gpu {
                 }
             }
         }
+
+        // A-4: LNKCTL 写拦截 (PCIe Cap id=0x10, LNKCTL 在 cap+0x10)
+        // 仅在 ASPM bits[1:0] 实际变化时回调
+        if (lnkctl_write_cb_) {
+            for (const auto& c : capabilities_) {
+                if (c.id == 0x10 && offset == static_cast<uint16_t>(c.offset + 0x10)) {
+                    const uint16_t new_lnkctl = static_cast<uint16_t>(value & 0x0003u);
+                    if (new_lnkctl != last_lnkctl_) {
+                        last_lnkctl_ = new_lnkctl;
+                        lnkctl_write_cb_(new_lnkctl);
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    bool PcieConfigSpace::add_extended_capability(uint16_t id, uint16_t offset, uint16_t next) {
+        if (!is_aligned(offset))
+            return false;
+        if (offset >= config_size_)
+            return false;
+        if (next != 0x00 && next >= config_size_)
+            return false;
+        for (const auto& c : extended_caps_) {
+            if (c.offset == offset)
+                return false;
+        }
+        extended_caps_.push_back(ExtendedCapability{id, offset, next});
+
+        // PCIe-SIG Ext Cap Header layout (4-byte aligned):
+        //   bits[15:0]  = Cap ID
+        //   bits[19:16] = Cap Version
+        //   bits[31:20] = Next Cap Offset
+        // 这里写 (next << 20) | (version=1 << 16) | id (Caller 应随后调 add_extended_register 覆盖更高位)
+        write(offset, static_cast<uint32_t>(id) | (static_cast<uint32_t>(next) << 20));
+
+        // 更新 Extended Capabilities pointer (offset 0x100, byte-level)
+        // 当 first ext cap 位于 0x100 自身时, 写 pointer = 写 self, 跳过避免覆盖 header
+        if (extended_caps_.size() == 1 && offset != 0x100) {
+            uint32_t cp = regs_[0x100 / 4];
+            cp = (cp & 0xFFFFFF00u) | static_cast<uint32_t>(offset & 0xFFu);
+            regs_[0x100 / 4] = cp;
+        }
+        return true;
+    }
+
+    void PcieConfigSpace::add_extended_register(uint16_t offset, uint8_t width, uint32_t value) {
+        (void)width;  // width 仅作语义标注, 当前统一按 dword 写
+        write(offset, value);
+    }
+
+    const PcieConfigSpace::ExtendedCapability*
+    PcieConfigSpace::get_extended_capability(std::size_t index) const {
+        if (index >= extended_caps_.size())
+            return nullptr;
+        return &extended_caps_[index];
+    }
+
+    std::size_t PcieConfigSpace::pcie_cap_offset() const noexcept {
+        for (const auto& c : capabilities_) {
+            if (c.id == 0x10) return c.offset;
+        }
+        return 0;  // not installed
     }
 
     const PcieConfigSpace::Capability* PcieConfigSpace::get_capability(std::size_t index) const {

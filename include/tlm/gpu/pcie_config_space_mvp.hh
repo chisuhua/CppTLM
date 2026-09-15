@@ -61,6 +61,22 @@ namespace tlm::gpu {
         // 失败原因：offset 越界 / next 越界 / 与已有 capability 重叠
         bool add_capability(uint8_t id, uint8_t offset, uint8_t next, uint16_t control = 0);
 
+        // A-4/A-5: Extended Capability API (offset ≥ 256, ID 可达 16-bit per PCI-SIG)
+        // Extended Cap header layout (PCI-SIG): bits[15:0]=Cap ID, bits[19:16]=version,
+        // bits[31:20]=next offset (or 0 for end). cap_ptr @0x100+ 范围内。
+        struct ExtendedCapability {
+            uint16_t id;
+            uint16_t offset;
+            uint16_t next;
+        };
+        bool add_extended_capability(uint16_t id, uint16_t offset, uint16_t next = 0);
+        std::size_t extended_capability_count() const { return extended_caps_.size(); }
+        const ExtendedCapability* get_extended_capability(std::size_t index) const;
+
+        // A-5: 写 ext area register (e.g., ReBAR Control @0x148). 越过 0xFF 限制。
+        // width 仅作为注释/校验 (PCIe Cap registers 通常 4-byte aligned)
+        void add_extended_register(uint16_t offset, uint8_t width, uint32_t value);
+
         // Read/Write（4-byte 对齐 offset；越界 read 返回 0xFFFFFFFF）
         uint32_t read(uint16_t offset) const;
         void write(uint16_t offset, uint32_t value);
@@ -94,12 +110,25 @@ namespace tlm::gpu {
             pmcsr_write_cb_ = std::move(cb);
         }
 
+        // A-4: LNKCTL 写回调 (PCIe Cap id=0x10, LNKCTL 在 cap+0x10 = 0x60)
+        // driver 写 LNKCTL ASPM bits 触发 PciePhyDigitalCtrl::enable_aspm
+        // (per PCI-SIG: bits[1:0]=01 → L0s, =10 → L1)
+        void set_lnkctl_write_cb(std::function<void(uint16_t new_lnkctl)> cb) {
+            lnkctl_write_cb_ = std::move(cb);
+        }
+
+        // A-4: 查询 PCIe Cap (id=0x10) 的 offset 用于 LNKCTL/LNKSTA 路由
+        [[nodiscard]] std::size_t pcie_cap_offset() const noexcept;
+
     private:
         std::size_t config_size_;
         std::vector<uint32_t> regs_;       // 4-byte aligned register array
         std::vector<Capability> capabilities_;
+        std::vector<ExtendedCapability> extended_caps_;  // A-5: ext cap chain (offset >= 0x100)
         std::function<void(uint16_t new_pws)> pmcsr_write_cb_;
+        std::function<void(uint16_t new_lnkctl)> lnkctl_write_cb_;
         uint16_t last_pmcsr_pws_ = 0xFFFFu;  // sentinel: never written
+        uint16_t last_lnkctl_ = 0xFFFFu;    // A-4: sentinel for LNKCTL write dedup
 
         // 内部 helper：检查 offset 是否 4-byte aligned
         static bool is_aligned(uint16_t offset) { return (offset & 0x3) == 0; }

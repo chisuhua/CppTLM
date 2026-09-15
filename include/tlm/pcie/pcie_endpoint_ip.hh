@@ -130,6 +130,12 @@ public:
     // Stage 1.4-followups §4: PM Cap 安装 (init_all 后重装, init() 会 wipe)
     void install_pm_capability();
 
+    // A-4 + A-5: PCIe Cap (0x10) + LNKCTL@0x60 + ACS Ext Cap (0x0D) + ReBAR Ext Cap (0x0015) 安装
+    // 同样在 init() / do_reset() 后重装 (init_all wipe 不变量)
+    // PHY enable_aspm 转发通过 install_lnkctl_callback() 注入 (cfg_writes 触发)
+    void install_capabilities();
+    void install_lnkctl_callback();
+
     // Stage 1.4-followups §3: ResizableBar 集成 (6 BAR slots)
     tlm::pcie::ResizableBar& resizable_bar(unsigned bar_idx) noexcept;
     // enable wrapper: enable 成功后触发 on_bar_resize (INV-G 越界校验)
