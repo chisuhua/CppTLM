@@ -295,3 +295,25 @@ CppTLM **SHALL** 提供独立 `HostBypassTLM` 组件(允许 Host 通过 AXI 直�
 **维护**: CppTLM Team (Sisyphus)
 **状态**: 📋 Spec — 等待评审 + Phase 1 启动实施
 
+### Requirement: PcieSriovVfPool Stays as Value Member（新增）
+
+The system **MUST NOT** split `PcieSriovVfPool` into a separate `ChStreamModuleBase` child. `pool_` is a value member of `PcieEndpointIP` (`pcie_endpoint_ip.hh:172`), and its `config_of(uint16_t stream_id)`, `msix_of(uint16_t stream_id)`, `completions()`, and direct data-path access in `PcieEndpointIP::tick()` (`pcie_endpoint_ip.cc:280, 296, 336, 340`) **MUST** remain as direct C++ method calls.
+
+#### Scenario: VfPool hot-path preservation
+- **WHEN** `PcieEndpointIP::tick()` processes an AXI slave write request with `awaddr < pool_.config_of(0).config_size()`
+- **THEN** `pool_.config_of(0).write(cfg_byte_off, wdata32)` is invoked as a direct method call (per `pcie_endpoint_ip.cc:296-297`), without Bundle indirection
+- **AND** splitting VfPool into a separate ChStream child is explicitly **rejected** by this Requirement
+
+### Requirement: AxiAdapter Split Deferred to Phase 3（新增）
+
+The system **MUST** keep `PcieAxiAdapter` as a per-EP static-registry-owned object (NOT a ChStream child) in Phase 1 and Phase 2 of this refactor. Splitting AxiAdapter into a `ChStreamModuleBase` child is **explicitly deferred** to a future change (`cpptlm-pcie-endpoint-ip-axiadapter-split`) and **MUST** first migrate the AXI slave processing logic from `PcieEndpointIP::tick()` (`pcie_endpoint_ip.cc:248-364`) into the adapter itself.
+
+#### Scenario: AxiAdapter remains static-registry-only in Phase 1+2
+- **WHEN** `PcieEndpointIP::attach_composition()` processes `params.axi_adapter`
+- **THEN** it calls `PcieAxiAdapter::attach_to_endpoint(ep_name, event_queue)` (per `pcie_endpoint_ip.cc:96-105`) returning the per-EP adapter pointer
+- **AND** `PcieAxiAdapter::for_endpoint(ep_name)` continues to be invoked from `PcieEndpointIP::tick()` (`pcie_endpoint_ip.cc:255-364`) for AXI slave processing
+- **AND** `PcieAxiAdapter` is **NOT** registered via `REGISTER_CHSTREAM` and **NOT** added as an `internal_factory` child of `PcieEndpointIP`
+- **AND** the future change `cpptlm-pcie-endpoint-ip-axiadapter-split` is **explicitly out of scope** of this spec
+
+---
+
