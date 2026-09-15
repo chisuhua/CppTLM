@@ -92,10 +92,13 @@ public:
         return (idx < NUM_TLP_PORTS) ? adapters_[idx] : nullptr;
     }
 
-    // ========== 静态注册表 (Phase 1 单一所有权; EP 仅持 raw observer) ==========
+    // ========== 静态注册表 (Phase 1 单一所有权; Phase 2 弃用) ==========
     // Phase 2: attach/detach [[deprecated]],for_endpoint 改走 EP::find_composite
+    // (composite 迁 EP internal_factory; 本静态表仅 legacy attach 直调路径保留至 Phase 3 清理)
+    [[deprecated("Phase 2 composite 迁 internal_factory; Phase 3 清理")]]
     static PcieLinkPhyMuxTLM* attach_to_endpoint(const std::string& ep_name, EventQueue* eq);
     static PcieLinkPhyMuxTLM* for_endpoint(const std::string& ep_name) noexcept;
+    [[deprecated("Phase 2 composite 迁 internal_factory; Phase 3 清理")]]
     static void detach_from_endpoint(const std::string& ep_name) noexcept;
     static std::size_t endpoint_count() noexcept;
 

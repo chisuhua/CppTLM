@@ -1,20 +1,31 @@
 // test/test_pcie_endpoint_ip_simmodule_refactor.cc
 // PcieLinkPhyMuxTLM composite + EP attach_composition 重构测试
-// 功能：openspec 2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor Phase 1
+// 功能：openspec 2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor Phase 1+2
 //   - 任务 1.1: composite 构造顺序断言 (link→phy→mux + INV-1 成员绑定)
-//   - 任务 1.2: composite->tick() 顺序断言 + EP::tick PHY 休眠锁定 (Phase 1 行为零变化)
+//   - 任务 1.2: composite->tick() 顺序断言 + EP::tick PHY 驱动 (Phase 2 激活)
 //   - 任务 1.3: 静态注册表 shim (composite-first + legacy-fallback) + 7 字段 JSON 消费
+//   - 任务 2.1: EP 基类切换 SimModule + composite 单一所有权 (internal_factory)
+//   - 任务 2.2: composite 17 端口内部可达性 (R4 决策 C, getInternalOutputPort)
+//   - 任务 2.3: axislavein 桥接路径保留 (R4=C5 锁定)
 // 作者 CppTLM Team / 日期 2026-09-15
-// 参考: openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor/design.md §1
+// 参考: openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor/{design,tasks}.md
 #include "catch_amalgamated.hpp"
+#include "bundles/axi4_bundles_tlm.hh"
+#include "core/chstream_module.hh"
 #include "core/event_queue.hh"
+#include "core/module_factory.hh"
+#include "core/sim_module.hh"
+#include "framework/chstream_adapter_factory.hh"
+#include "tlm/pcie/host_bypass_tlm.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
 
+#include <algorithm>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 using namespace tlm::pcie;
+using namespace bundles;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Task 1.1: composite 构造顺序 + INV-1 (link_up 立即置位)
@@ -71,11 +82,11 @@ TEST_CASE("PcieLinkPhyMuxTLM: composite tick order (phy before link)",
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Task 1.2b: Phase 1 PHY 休眠锁定 (EP::tick 不驱动 PHY; Oracle 决策 a)
-//   Phase 2 翻转预期时仅需改本断言方向
+// Task 2.1.5: Phase 2 PHY 驱动迁移 (ep.tick() 驱动 composite → PHY 推进)
+//   Phase 1 断言方向已翻转 (Oracle 决策 a 落地)
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("PcieEndpointIP: ep.tick() does NOT drive PHY in Phase 1 (dormant)",
-          "[pcie-simmodule-refactor][phy-dormant]") {
+TEST_CASE("PcieEndpointIP: ep.tick() drives PHY in Phase 2 (composite activation)",
+          "[pcie-simmodule-refactor][phy-migration]") {
     EventQueue eq;
     PcieEndpointIP ep("pcie_ep_phy_dormant", &eq);
     ep.init();
@@ -84,8 +95,7 @@ TEST_CASE("PcieEndpointIP: ep.tick() does NOT drive PHY in Phase 1 (dormant)",
     cfg["link_layer"]["enabled"] = true;
     ep.set_config(cfg);
 
-    // composite 经 attach_composition 惰性构造
-    auto* composite = PcieLinkPhyMuxTLM::for_endpoint("pcie_ep_phy_dormant");
+    auto* composite = PcieEndpointIP::find_composite("pcie_ep_phy_dormant");
     REQUIRE(composite != nullptr);
     auto* phy = PciePhyDigitalCtrl::for_endpoint("pcie_ep_phy_dormant");
     REQUIRE(phy != nullptr);
@@ -95,15 +105,14 @@ TEST_CASE("PcieEndpointIP: ep.tick() does NOT drive PHY in Phase 1 (dormant)",
     phy->start_link_training();
     REQUIRE(phy->state() == LtState::Detect);
 
-    // Phase 1 断言: EP::tick 不调 PHY tick → LTSSM 保持 Detect
-    for (int i = 0; i < 4; ++i) {
-        ep.tick();
-    }
-    REQUIRE(phy->state() == LtState::Detect); // 未推进
-
-    // 对照组: composite->tick() 一次后推进到 Polling
-    composite->tick();
+    // Phase 2 断言 (方向翻转): ep.tick() 经 composite->tick() 驱动 PHY → LTSSM 推进
+    // (训练序列 Detect→Polling→Configuration→L0, 每 tick 一态)
+    ep.tick();
     REQUIRE(phy->state() == LtState::Polling);
+    ep.tick();
+    REQUIRE(phy->state() == LtState::Configuration);
+    ep.tick();
+    REQUIRE(phy->state() == LtState::L0);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -288,4 +297,152 @@ TEST_CASE("PcieEndpointIP: destructor detaches composite from registry",
         REQUIRE(PcieLinkPhyMuxTLM::for_endpoint(name) != nullptr);
     } // ep dtor → detach_from_endpoint
     REQUIRE(PcieLinkPhyMuxTLM::for_endpoint(name) == nullptr);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Phase 2 注册 (测试二进制不自动触发 REGISTER_CHSTREAM; 幂等)
+// ─────────────────────────────────────────────────────────────────────────────
+static const int s_pcie_simmodule_refactor_registered = []() {
+    ModuleFactory::registerObject<tlm::pcie::PcieLinkPhyMuxTLM>("PcieLinkPhyMuxTLM");
+    ModuleFactory::registerModule<tlm::pcie::PcieEndpointIP>("PcieEndpointIP");
+    ChStreamAdapterFactory::get()
+        .registerMultiPortAdapter<tlm::pcie::PcieLinkPhyMuxTLM,
+                                  bundles::PcieTlpBundle, bundles::PcieTlpBundle, 17>(
+            "PcieLinkPhyMuxTLM");
+    return 0;
+}();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task 2.1: EP 基类切换 (INV-3, R2 双注册清理)
+// ─────────────────────────────────────────────────────────────────────────────
+TEST_CASE("PcieEndpointIP: SimModule inheritance (Phase 2 base switch)",
+          "[pcie-simmodule-refactor][inheritance]") {
+    EventQueue eq;
+    PcieEndpointIP ep("pcie_ep_simmodule", &eq);
+    auto* as_sim = dynamic_cast<SimModule*>(&ep);
+    auto* as_chstrm = dynamic_cast<ChStreamModuleBase*>(&ep);
+    REQUIRE(as_sim != nullptr);     // Phase 2: EP 是 SimModule
+    REQUIRE(as_chstrm == nullptr);  // Phase 2: 不再是 ChStreamModuleBase
+
+    // R2 双注册清理: module registry 命中, object registry 不含
+    auto mods = ModuleFactory::getRegisteredModuleTypes();
+    REQUIRE(std::find(mods.begin(), mods.end(), "PcieEndpointIP") != mods.end());
+    auto objs = ModuleFactory::getRegisteredObjectTypes();
+    REQUIRE(std::find(objs.begin(), objs.end(), "PcieEndpointIP") == objs.end());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task 2.1: composite 单一所有权 (internal_factory, EP ctor/dtor 维护 instances_)
+// ─────────────────────────────────────────────────────────────────────────────
+TEST_CASE("PcieEndpointIP: composite owned by internal_factory (Phase 2)",
+          "[pcie-simmodule-refactor][composite-ownership-single]") {
+    EventQueue eq;
+    PcieEndpointIP ep("pcie_ep_own", &eq);
+    json cfg;
+    cfg["link_layer"]["enabled"] = true;
+    ep.set_config(cfg);
+
+    // composite 经 find_composite 扫描 EP instances_ + internal_factory 命中
+    auto* composite = PcieEndpointIP::find_composite("pcie_ep_own");
+    REQUIRE(composite != nullptr);
+
+    // EP 实例静态列表含 ep
+    bool found = false;
+    for (auto* p : PcieEndpointIP::instances_for_test()) {
+        if (p == &ep) { found = true; break; }
+    }
+    REQUIRE(found);
+
+    // for_endpoint 走 internal_factory 路径命中同一 composite
+    REQUIRE(PcieLinkPhyMuxTLM::for_endpoint("pcie_ep_own") == composite);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task 2.1.5: ep.tick() 驱动 composite tick (tick_counts 经 EP 推进)
+// ─────────────────────────────────────────────────────────────────────────────
+TEST_CASE("PcieEndpointIP: ep.tick() drives composite tick in Phase 2",
+          "[pcie-simmodule-refactor][phy-migration]") {
+    EventQueue eq;
+    PcieEndpointIP ep("pcie_ep_tick_phase2", &eq);
+    ep.init();
+
+    json cfg;
+    cfg["link_layer"]["enabled"] = true;
+    ep.set_config(cfg);
+
+    auto* composite = PcieEndpointIP::find_composite("pcie_ep_tick_phase2");
+    REQUIRE(composite != nullptr);
+    REQUIRE(composite->tick_counts(0) == 0u);
+
+    ep.tick();
+    REQUIRE(composite->tick_counts(0) == 1u);  // phy tick 经 EP::tick 推进
+    REQUIRE(composite->tick_counts(1) == 1u);  // link tick
+    REQUIRE(composite->tick_counts(2) == 1u);  // adapters tick
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task 2.2: composite 17 端口内部可达性 (R4 决策 C, getInternalOutputPort)
+// ─────────────────────────────────────────────────────────────────────────────
+TEST_CASE("PcieEndpointIP: composite 17-port internal reachability (Phase 2)",
+          "[pcie-simmodule-refactor][composite-reachability]") {
+    EventQueue eq;
+    PcieEndpointIP ep("pcie_ep_reach", &eq);
+    ep.init();
+
+    json cfg;
+    cfg["link_layer"]["enabled"] = true;
+    ep.set_config(cfg);
+
+    // 经 getInternalOutputPort/getInternalInputPort 命中 internal_factory + Step 7 mirror
+    for (unsigned i = 0; i < 17; ++i) {
+        const std::string idx = std::to_string(i);
+        auto* master = ep.getInternalOutputPort("pcie_ep_reach_lpm.resp_out[" + idx + "]");
+        auto* slave = ep.getInternalInputPort("pcie_ep_reach_lpm.req_in[" + idx + "]");
+        REQUIRE(master != nullptr);  // per design §3.3 + R4=C
+        REQUIRE(slave != nullptr);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Task 2.3: axislavein 桥接路径保留 (R4=C5 锁定: 429327d 程序化桥接不依赖 JSON connection)
+// ─────────────────────────────────────────────────────────────────────────────
+TEST_CASE("PcieEndpointIP: axislavein bridge path intact (Phase 2 R4=C5)",
+          "[pcie-simmodule-refactor][axislavein-bridge]") {
+    EventQueue eq;
+    PcieEndpointIP ep("pcie_ep_bridge", &eq);
+    HostBypassTLM hb("hb_bridge", &eq);
+    ep.init();
+
+    json cfg;
+    cfg["axi_adapter"] = json::object();
+    cfg["axi_adapter"]["axi4_mapper_inject"] = true;
+    cfg["link_layer"]["enabled"] = true;
+    cfg["link_layer"]["bypass_mode"] = "Bypass";
+    ep.set_config(cfg);
+    ep.on_config_loaded();
+    hb.init();
+    hb.attach_to_endpoint(&ep);
+
+    // 构造 AXI cfg write 经 HostBypass 程序化桥接 (非 JSON connection)
+    Axi4Bundle wreq;
+    wreq.awid.write(0x10);
+    wreq.awaddr.write(0x04);  // 配置空间偏移 (Command Register)
+    wreq.awlen.write(0);
+    wreq.awsize.write(2);
+    wreq.awburst.write(1);
+    wreq.wdata.write(0x0007);
+    wreq.wstrb.write(0xF);
+    wreq.wlast.write(1);
+    REQUIRE(hb.axi_master_req(wreq) == true);
+    hb.set_axi_master_ready(true);
+
+    for (int i = 0; i < 100 && (hb.axi_master_req_valid() || hb.axi_outstanding_wr() > 0); ++i) {
+        ep.tick();
+        hb.tick();
+    }
+
+    // 桥接路径完整 (R4=C 不依赖 JSON connection): EP 真实消费请求
+    REQUIRE(ep.vf_pool().config_of(0).read(0x04) == 0x0007u);
+    REQUIRE(hb.axi_master_resp_valid() == true);
+    REQUIRE(hb.axi_master_resp_data().bid.read() == 0x10u);
 }

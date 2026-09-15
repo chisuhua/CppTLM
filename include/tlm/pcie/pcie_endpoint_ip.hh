@@ -1,14 +1,15 @@
 // include/tlm/pcie/pcie_endpoint_ip.hh
 // PcieEndpointIP: SR-IOV PCIe Endpoint IP 模型 (17 端口 = 1 PF + 16 VF)
 // 功能描述：Phase 4 新类，独立于 PcieEndpointTLM (4 端口冻结布局)。
-//           - 17 端口: port[0]=PF, port[1..16]=VF0..VF15
+//           - 17 端口: port[0]=PF, port[1..16]=VF0..VF15 (Phase 2 起由 composite 持有)
 //           - 内置 PcieSriovVfPool (per-VF Config Space / MSI-X / FC / seq#)
 //           - 内置 CompletionTracker (NP↔CplD trans_id 关联, per Q12)
-//           - 通过静态注册表挂接 PcieLinkLayer / PciePhyDigitalCtrl / PcieBypassMux
+//           - Phase 2: 基类 SimModule; 17 端口 + LL/PHY/Mux 归 internal_factory 内的
+//             PcieLinkPhyMuxTLM composite 持有 (单一所有权), EP 不再持 adapter 数组
 //           - FLR: flr_pf() 全复位 / flr_vf(vfx) 仅对应 VF
-// 作者 CppTLM Team / 日期 2026-10-13
+// 作者 CppTLM Team / 日期 2026-10-13 (Phase 2 基类切换 2026-09-16)
 // 参考: openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/proposal.md T-P4-7
-//       design.md §8 (SR-IOV VF Pool) + §9.0 (23 ABI 边界)
+//       openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor/design.md §3
 // ⚠️ 不修改 include/abi/cpptlm_emulator.h（23 ABI 冻结边界，AD-088）
 // ⚠️ 不修改 include/tlm/gpu/pcie_endpoint_tlm.h（PcieEndpointTLM 4 端口冻结）
 #ifndef CPPTLM_PCIE_ENDPOINT_ABI_VERSION
@@ -18,22 +19,18 @@
 #ifndef TLM_PCIE_PCIE_ENDPOINT_IP_HH
 #define TLM_PCIE_PCIE_ENDPOINT_IP_HH
 
-#include "core/chstream_module.hh"
+#include "core/sim_module.hh"
 #include "core/sim_object.hh"
-#include "framework/stream_adapter.hh"
-#include "tlm/pcie/pcie_bypass_mux.hh"
 #include "tlm/pcie/pcie_completion_tracker_tlm.hh"
-#include "tlm/pcie/pcie_link_layer_tlm.hh"
 #include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
-#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 #include "tlm/pcie/pcie_resizable_bar.hh"
 #include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
 
 #include <array>
 #include <cstdint>
-#include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace tlm::pcie {
 
@@ -46,17 +43,14 @@ namespace tlm::pcie {
  *   - Completion tracking（trans_id 关联, per Q12）
  *   - FLR: flr_pf() 全复位 / flr_vf() 仅对应 VF
  *
- * ChStreamModuleBase 派生：set_stream_adapter(adapters[17]) 多端口注入。
+ * Phase 2 SimModule 派生：17 端口 + LL/PHY/Mux 由 internal_factory 内的
+ * PcieLinkPhyMuxTLM composite 持有（单一所有权），EP::tick() 显式定序调用。
  */
-class PcieEndpointIP : public ChStreamModuleBase {
+class PcieEndpointIP : public SimModule {
 public:
     static constexpr unsigned NUM_PORTS = 17;  // 0=PF, 1..16=VF0..VF15
 
-    cpptlm::InputStreamAdapter<bundles::PcieTlpBundle> req_in[NUM_PORTS];
-    cpptlm::OutputStreamAdapter<bundles::PcieTlpBundle> resp_out[NUM_PORTS];
-
     PcieEndpointIP(const std::string& name, EventQueue* eq);
-    // 显式 dtor: 清理 composite 静态注册表 (防 stale 指针跨 TEST_CASE / 多 EP 共存)
     ~PcieEndpointIP() override;
 
     PcieEndpointIP(const PcieEndpointIP&) = delete;
@@ -68,16 +62,18 @@ public:
         return "PcieEndpointIP";
     }
 
-    void set_stream_adapter(cpptlm::StreamAdapterBase* a) override;
-    void set_stream_adapter(cpptlm::StreamAdapterBase* adapters[]) override;
-    unsigned num_ports() const override {
-        return NUM_PORTS;
-    }
+    // Phase 2: 构造期入口 (R4 决策 C — 不做外层 JSON TLP 接线)
+    void simulate_instantiate(const json& cfg) override;
 
     void init() override;
+    // INV-3: 显式定序 (AXI slave → composite 子模块 tick), 禁依赖 SimModule 默认迭代
     void tick() override;
     void do_reset(const ResetConfig&) override;
     void on_config_loaded() override;
+
+    // Phase 2 static 辅助: EP 实例列表 (ctor/dtor 维护) + composite 查找
+    static std::vector<PcieEndpointIP*>& instances_for_test() noexcept;
+    static PcieLinkPhyMuxTLM* find_composite(const std::string& ep_name) noexcept;
 
     PcieSriovVfPool& vf_pool() noexcept { return pool_; }
     const PcieSriovVfPool& vf_pool() const noexcept { return pool_; }
@@ -118,24 +114,16 @@ public:
         return (it != bar_store_.end()) ? it->second : 0;
     }
 
-    // Phase 1: 访问器转发到 composite 成员 (composite-first, 无 composite 时返回 nullptr)
-    // 与原 PcieLinkLayer::for_endpoint 语义对齐 (attach 路径经静态注册表 shim)
+    // Phase 2: 访问器转发到 internal_factory 内的 composite (inactive 时返回 nullptr)
     PcieLinkLayer* link_layer() const noexcept;
     PciePhyDigitalCtrl* phy() const noexcept;
     PcieBypassMux* bypass_mux() const noexcept;
-
-    bool all_ports_have_adapter() const;
 
     // PcieEndpointIP JSON 配置扩展 (Phase A1) — 未消费键 warning 列表
     // 配合 attach_composition 内的 std::cerr 同步输出 (per design.md §4)
     // 不抛异常, 不致命; 测试可通过 getter 断言 (Catch2 无法可移植捕获 stderr)
     const std::vector<std::string>& config_warnings() const noexcept {
         return config_warnings_;
-    }
-
-    // 单 adapter 访问（测试断言）
-    cpptlm::StreamAdapterBase* get_adapter(unsigned idx) const {
-        return (idx < NUM_PORTS) ? adapters_[idx] : nullptr;
     }
 
     // Stage 1.3a: SDMA Ring Buffer Doorbell 路由 (per openspec/.../2026-09-10-...)
@@ -174,7 +162,6 @@ public:
 
 private:
     PcieSriovVfPool pool_;
-    cpptlm::StreamAdapterBase* adapters_[NUM_PORTS] = {nullptr};
     // BAR 空间 backing store（Phase 8 M1: AXI slave 写经地址路由落写/读回真实值）
     std::unordered_map<uint64_t, uint64_t> bar_store_;
     // Stage 1.4-followups §3: 6 个 ResizableBar (对应 6 个 BAR slots)
@@ -187,10 +174,12 @@ private:
     // Stage 1.4 §1.3: Power state (D0/D3hot) + INV-A MMIO gate
     PciePowerState power_state_ = PciePowerState::D0;
     bool mmio_gated_ = false;
-    // Phase 1 composite: 单一所有权归 PcieLinkPhyMuxTLM 静态注册表
-    // (unique_ptr<unordered_map>), EP 仅持 raw observer (防 double-delete)。
-    // 惰性构造: 仅 link_layer.enabled=true 时非空 (design §1.5)。
-    tlm::pcie::PcieLinkPhyMuxTLM* composite_ = nullptr;
+    // Phase 2: composite 单实例 owned by internal_factory; 本 flag 表达
+    // "link_layer.enabled" 的可见性语义 (disabled 时 for_endpoint→nullptr)
+    bool composite_active_ = false;
+    std::string composite_name() const;
+    PcieLinkPhyMuxTLM* composite() const noexcept;
+    void ensure_composite_instantiated(const nlohmann::json& params);
     void attach_composition(const nlohmann::json& params);
 
     // PcieEndpointIP JSON 配置扩展 (Phase A1) — 未消费键 warning 收集

@@ -1,14 +1,16 @@
 // test/test_pcie_endpoint_ip_basic.cc
 // PcieEndpointIP 基础测试 (T-P4-7)
 // 功能：创建 PcieEndpointIP(17 端口), 各 VF 独立 BAR/FC/MSI-X,
-//       num_ports=17, set_stream_adapter 17 适配器, on_config_loaded 挂接 LL/PHY/Mux
-// 作者 CppTLM Team / 日期 2026-10-13
+//       Phase 2: 17 端口 + set_stream_adapter 由 composite (PcieLinkPhyMuxTLM) 接管
+// 作者 CppTLM Team / 日期 2026-10-13 (Phase 2 迁移 2026-09-16)
 // 参考: openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/proposal.md T-P4-7
+//       openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor/design.md §3
 #include "bundles/pcie_bundles_tlm.hh"
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "framework/multi_port_stream_adapter.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
+#include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
 
 #include <memory>
 #include <nlohmann/json.hpp>
@@ -16,27 +18,32 @@
 using namespace tlm::pcie;
 using json = nlohmann::json;
 
-TEST_CASE("PcieEndpointIP: create 17 ports, num_ports=17", "[pcie][sriov][endpoint-ip][basic]") {
-    EventQueue eq;
-    PcieEndpointIP ep("pcie_ep_ip", &eq);
-    REQUIRE(ep.num_ports() == 17u);
-}
-
-TEST_CASE("PcieEndpointIP: set_stream_adapter accepts 17 adapters",
+TEST_CASE("PcieEndpointIP: composite owns 17 TLP ports (Phase 2)",
           "[pcie][sriov][endpoint-ip][basic]") {
     EventQueue eq;
     PcieEndpointIP ep("pcie_ep_ip", &eq);
-    ep.init();
+    // 17 TLP 端口归 composite (Phase 2 移除 EP 自身端口数组)
+    REQUIRE(PcieLinkPhyMuxTLM::NUM_TLP_PORTS == 17u);
+    REQUIRE(ep.get_module_type() == "PcieEndpointIP");
+}
 
-    using Adapter = cpptlm::MultiPortStreamAdapter<PcieEndpointIP, bundles::PcieTlpBundle,
+TEST_CASE("PcieLinkPhyMuxTLM: set_stream_adapter accepts 17 adapters (Phase 2 composite)",
+          "[pcie][sriov][endpoint-ip][basic]") {
+    EventQueue eq;
+    auto* composite = PcieLinkPhyMuxTLM::attach_to_endpoint("pcie_ep_ip", &eq);
+    REQUIRE(composite != nullptr);
+    composite->init();
+
+    using Adapter = cpptlm::MultiPortStreamAdapter<PcieLinkPhyMuxTLM, bundles::PcieTlpBundle,
                                                    bundles::PcieTlpBundle, 17>;
-    auto adapter = std::make_unique<Adapter>(&ep);
+    auto adapter = std::make_unique<Adapter>(composite);
     cpptlm::StreamAdapterBase* adapters[17] = {nullptr};
     adapters[0] = adapter.get(); // 第 0 个用作数组注入
     // set_stream_adapter(adapters) 应不崩溃
-    ep.set_stream_adapter(adapters);
+    composite->set_stream_adapter(adapters);
     // 单 adapter 注入也应工作
-    ep.set_stream_adapter(adapter.get());
+    composite->set_stream_adapter(adapter.get());
+    PcieLinkPhyMuxTLM::detach_from_endpoint("pcie_ep_ip");
 }
 
 TEST_CASE("PcieEndpointIP: on_config_loaded attaches link layer + phy + mux",
@@ -58,8 +65,10 @@ TEST_CASE("PcieEndpointIP: on_config_loaded attaches link layer + phy + mux",
     REQUIRE(PciePhyDigitalCtrl::for_endpoint("pcie_ep_ip_ll") != nullptr);
     REQUIRE(PcieBypassMux::for_endpoint("pcie_ep_ip_ll") != nullptr);
 
-    // num_ports 仍为 17（PcieEndpointTLM 冻结不受影响）
-    REQUIRE(ep.num_ports() == 17u);
+    // composite 经 internal_factory 命中 (Phase 2)
+    auto* composite = PcieEndpointIP::find_composite("pcie_ep_ip_ll");
+    REQUIRE(composite != nullptr);
+    REQUIRE(PcieLinkPhyMuxTLM::NUM_TLP_PORTS == 17u);
 }
 
 TEST_CASE("PcieEndpointIP: per-VF Config Space accessible via vf_pool",

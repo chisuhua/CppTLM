@@ -1,14 +1,18 @@
 // src/tlm/pcie/pcie_link_phy_mux_tlm.cc
-// PcieLinkPhyMuxTLM 实现：LL + PHY + Mux composite (Phase 1 休眠 tick)
+// PcieLinkPhyMuxTLM 实现：LL + PHY + Mux composite (Phase 2 激活 tick)
 // 作者 CppTLM Team / 日期 2026-09-15
 // 参考: openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor/design.md §1.2-1.3
 #include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
+
+#include "core/module_factory.hh"
+#include "framework/chstream_adapter_factory.hh"
 
 namespace tlm::pcie {
 
     namespace {
         // Phase 1 单一所有权: 注册表持有 unique_ptr; EP 仅持 raw observer (防 double-delete)
-        // Phase 2 迁移到 EP internal_factory (design §2.2); 本表届时弃用
+        // Phase 2 迁移到 EP internal_factory (design §2.2); 本表仅 legacy attach 直调路径保留
         std::unordered_map<std::string, std::unique_ptr<PcieLinkPhyMuxTLM>>& lpm_registry() {
             static std::unordered_map<std::string, std::unique_ptr<PcieLinkPhyMuxTLM>> reg;
             return reg;
@@ -96,6 +100,12 @@ namespace tlm::pcie {
     }
 
     PcieLinkPhyMuxTLM* PcieLinkPhyMuxTLM::for_endpoint(const std::string& ep_name) noexcept {
+        // Phase 2: composite-first 走 EP::find_composite (扫描 EP instances_ +
+        // internal_factory->getInstance); legacy-fallback 查 Phase 1 静态注册表
+        // (保留 PcieEndpointTLM 冻结路径兼容)
+        if (auto* composite = PcieEndpointIP::find_composite(ep_name)) {
+            return composite;
+        }
         auto& reg = registry();
         auto it = reg.find(ep_name);
         return (it != reg.end()) ? it->second.get() : nullptr;
@@ -133,5 +143,21 @@ namespace tlm::pcie {
     std::size_t PcieLinkPhyMuxTLM::endpoint_count() noexcept {
         return registry().size();
     }
+
+    namespace {
+        // 自注册: 保证 composite 类型在任意链接单元 (test binary / demo / 主应用) 可经
+        // internal_factory->instantiateAll 构造 (测试二进制不触发 chstream_register 宏)。
+        // 与 chstream_register.hh 的注册幂等 (registerObject 重复调用 early-return)。
+        struct PcieLinkPhyMuxTLMRegistrar {
+            PcieLinkPhyMuxTLMRegistrar() {
+                ModuleFactory::registerObject<PcieLinkPhyMuxTLM>("PcieLinkPhyMuxTLM");
+                ChStreamAdapterFactory::get()
+                    .registerMultiPortAdapter<PcieLinkPhyMuxTLM,
+                                              bundles::PcieTlpBundle,
+                                              bundles::PcieTlpBundle, 17>("PcieLinkPhyMuxTLM");
+            }
+        };
+        const PcieLinkPhyMuxTLMRegistrar s_pcie_link_phy_mux_registrar;
+    } // namespace
 
 } // namespace tlm::pcie

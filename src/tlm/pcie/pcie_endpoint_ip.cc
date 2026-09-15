@@ -12,6 +12,7 @@
 #include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <unordered_set>
@@ -20,13 +21,14 @@
 namespace tlm::pcie {
 
     PcieEndpointIP::PcieEndpointIP(const std::string& name, EventQueue* eq)
-        : ChStreamModuleBase(name, eq) {
+        : SimModule(name, eq) {
         pool_.init_all();
         install_pm_capability();
+        instances_for_test().push_back(this);
     }
 
     void PcieEndpointIP::init() {
-        ChStreamModuleBase::init();
+        SimObject::init();
         pool_.init_all();
         // PcieConfigSpace::init() 会 capabilities_.clear() + memset —
         // 构造器安装的 PM Cap 被 wipe, 必须在每次 init_all 后重装
@@ -53,40 +55,29 @@ namespace tlm::pcie {
         });
     }
 
-    void PcieEndpointIP::set_stream_adapter(cpptlm::StreamAdapterBase* a) {
-        if (a) {
-            adapters_[0] = a;
+    void PcieEndpointIP::simulate_instantiate(const json& cfg) {
+        if (!internal_factory || !internal_factory->getAllInstances().empty()) {
+            return;  // 幂等守卫 (design §3.3)
         }
-    }
-
-    void PcieEndpointIP::set_stream_adapter(cpptlm::StreamAdapterBase* adapters[]) {
-        if (!adapters) {
-            return;
-        }
-        for (unsigned i = 0; i < NUM_PORTS; ++i) {
-            adapters_[i] = adapters[i];
-        }
-    }
-
-    bool PcieEndpointIP::all_ports_have_adapter() const {
-        for (unsigned i = 0; i < NUM_PORTS; ++i) {
-            if (!adapters_[i]) {
-                return false;
-            }
-        }
-        return true;
+        // R4 决策 C: 不调 addInputConfig/addOutputConfig (该 API 仅 CPPTLM_TESTING 暴露);
+        // composite 17 端口经 getInternalOutputPort/getInternalInputPort 程序化可达
+        const json params = cfg.contains("params") ? cfg["params"] : json::object();
+        ensure_composite_instantiated(params);
+        attach_composition(params);
     }
 
     void PcieEndpointIP::on_config_loaded() {
-        const auto& params = get_config(); // SimObject::get_config()
+        // SimObject::set_config → on_config_loaded: 直接构造路径 (tests / demo)
+        // 经 ensure_composite_instantiated 惰性构造 composite (internal_factory 单一所有权)
+        const json& params = get_config(); // SimObject::get_config()
+        ensure_composite_instantiated(params);
         attach_composition(params);
     }
 
     PcieEndpointIP::~PcieEndpointIP() {
-        if (composite_) {
-            tlm::pcie::PcieLinkPhyMuxTLM::detach_from_endpoint(getName());
-            composite_ = nullptr;
-        }
+        composite_active_ = false;
+        auto& v = instances_for_test();
+        v.erase(std::remove(v.begin(), v.end(), this), v.end());
     }
 
     void PcieEndpointIP::attach_composition(const nlohmann::json& params) {
@@ -112,44 +103,39 @@ namespace tlm::pcie {
             PcieAxiAdapter::detach_from_endpoint(getName());
         }
 
-        // link_layer 块: 决定 composite (LL+PHY+Mux) 是否构造 (Phase 1 单一所有权)
-        // 惰性构造: 仅 enabled=true 时构造, enabled=false 或无 link_layer 块时 detach
-        // (composite_=nullptr, 保持 for_endpoint→null 现状语义, Oracle 复审条件 2 + R-B)
+        // link_layer 块: 决定 composite (LL+PHY+Mux) 是否构造 (Phase 2 单一所有权)
+        // 惰性构造: 仅 enabled=true 时经 internal_factory 构造, enabled=false 时
+        // composite_active_=false (for_endpoint→nullptr 语义保持, Oracle 复审条件 2 + R-B)
         if (params.contains("link_layer")) {
             const auto& ll_json = params["link_layer"];
             const bool enabled = ll_json.value("enabled", true);
             if (!enabled) {
-                if (composite_) {
-                    tlm::pcie::PcieLinkPhyMuxTLM::detach_from_endpoint(getName());
-                    composite_ = nullptr;
-                }
+                composite_active_ = false;
                 PcieLinkLayer::detach_from_endpoint(getName());
                 PciePhyDigitalCtrl::detach_from_endpoint(getName());
                 PcieBypassMux::detach_from_endpoint(getName());
             } else {
-                if (!composite_) {
-                    composite_ = tlm::pcie::PcieLinkPhyMuxTLM::attach_to_endpoint(
-                        getName(), event_queue);
-                }
-                if (composite_) {
-                    composite_->link().set_fc_capacity(
+                ensure_composite_instantiated(params);
+                composite_active_ = true;
+                if (auto* lpm = this->composite()) {
+                    lpm->link().set_fc_capacity(
                         ll_json.value("fc_token_bucket_capacity", 256u));
-                    composite_->link().set_retry_buffer_size(
+                    lpm->link().set_retry_buffer_size(
                         ll_json.value("retry_buffer_size", 4096u));
-                    composite_->link().set_link_error_injection_enabled(
+                    lpm->link().set_link_error_injection_enabled(
                         ll_json.value("link_error_injection_enabled", false));
                     if (ll_json.contains("bypass_mode")) {
                         const std::string bypass_mode =
                             ll_json["bypass_mode"].get<std::string>();
                         if (bypass_mode == "Bypass") {
-                            composite_->mux().apply_mode(BypassMode::Bypass);
+                            lpm->mux().apply_mode(BypassMode::Bypass);
                         } else if (bypass_mode == "Partial") {
-                            composite_->mux().apply_mode(BypassMode::Partial);
+                            lpm->mux().apply_mode(BypassMode::Partial);
                         } else {
-                            composite_->mux().apply_mode(BypassMode::Full);
+                            lpm->mux().apply_mode(BypassMode::Full);
                         }
                     }
-                    composite_->link().set_fc_initial_credits(
+                    lpm->link().set_fc_initial_credits(
                         ll_json.value("fc_initial_credit_p", 256u),
                         ll_json.value("fc_initial_credit_np", 256u),
                         ll_json.value("fc_initial_credit_cpl", 256u));
@@ -159,25 +145,27 @@ namespace tlm::pcie {
 
         // 不变量 INV-2: phy->set_config() 整结构覆盖, 必须 read-modify-write
         // (保留现有 max_speed / max_lanes / sr_iov_vf_pool_size)
-        if (params.contains("phy_digital") && composite_ != nullptr) {
-            const auto& pj = params["phy_digital"];
-            auto cfg = composite_->phy().config();
-            if (pj.contains("preset_p")) {
-                cfg.preset_P = pj.value("preset_p", cfg.preset_P);
+        if (params.contains("phy_digital")) {
+            if (auto* lpm = this->composite()) {
+                const auto& pj = params["phy_digital"];
+                auto cfg = lpm->phy().config();
+                if (pj.contains("preset_p")) {
+                    cfg.preset_P = pj.value("preset_p", cfg.preset_P);
+                }
+                if (pj.contains("preset_np")) {
+                    cfg.preset_NP = pj.value("preset_np", cfg.preset_NP);
+                }
+                if (pj.contains("preset_cpl")) {
+                    cfg.preset_Cpl = pj.value("preset_cpl", cfg.preset_Cpl);
+                }
+                if (pj.contains("hot_plug_supported")) {
+                    cfg.hot_plug_supported =
+                        pj.value("hot_plug_supported", cfg.hot_plug_supported);
+                }
+                lpm->phy().set_config(cfg);
+                warn_unconsumed_subkeys(pj, "phy_digital",
+                    {"preset_p", "preset_np", "preset_cpl", "hot_plug_supported"});
             }
-            if (pj.contains("preset_np")) {
-                cfg.preset_NP = pj.value("preset_np", cfg.preset_NP);
-            }
-            if (pj.contains("preset_cpl")) {
-                cfg.preset_Cpl = pj.value("preset_cpl", cfg.preset_Cpl);
-            }
-            if (pj.contains("hot_plug_supported")) {
-                cfg.hot_plug_supported =
-                    pj.value("hot_plug_supported", cfg.hot_plug_supported);
-            }
-            composite_->phy().set_config(cfg);
-            warn_unconsumed_subkeys(pj, "phy_digital",
-                {"preset_p", "preset_np", "preset_cpl", "hot_plug_supported"});
         }
 
         // 不变量 INV-1: configure_vectors 用 placement-new 销毁 pending IRQ;
@@ -378,12 +366,13 @@ namespace tlm::pcie {
             // 保证 HostBypass/RC tick 能读到 EP 产生的真实响应）。Phase 8 M1 修复。
         }
 
-        for (unsigned i = 0; i < NUM_PORTS; ++i) {
-            if (adapters_[i]) {
-                adapters_[i]->tick();
-            }
-        }
-        if (auto* ll = PcieLinkLayer::for_endpoint(getName())) {
+        // Phase 2 (INV-3 显式定序): AXI slave 处理 → composite 子模块 tick
+        // composite::tick() 内部定序 phy → link → 17 adapters (Oracle R3 顺序契约)
+        // [Phase 2 行为变更]: PHY tick 驱动权从测试外部迁移到 EP 此处 (tasks 2.1.5)
+        if (auto* lpm = this->composite()) {
+            lpm->tick();
+        } else if (auto* ll = PcieLinkLayer::for_endpoint(getName())) {
+            // legacy fallback: composite inactive 时保持 LL tick (frozen EP 路径兼容)
             ll->tick();
         }
     }
@@ -401,27 +390,78 @@ namespace tlm::pcie {
         pool_.flr_vf(vf_id);
     }
 
+    std::string PcieEndpointIP::composite_name() const {
+        return getName() + "_lpm";
+    }
+
+    PcieLinkPhyMuxTLM* PcieEndpointIP::composite() const noexcept {
+        if (!composite_active_ || !internal_factory) {
+            return nullptr;
+        }
+        return dynamic_cast<PcieLinkPhyMuxTLM*>(
+            internal_factory->getInstance(composite_name()));
+    }
+
+    void PcieEndpointIP::ensure_composite_instantiated(const nlohmann::json& params) {
+        if (!params.contains("link_layer") ||
+            !params["link_layer"].value("enabled", true)) {
+            return;  // 惰性构造: enabled=true 才建 (for_endpoint→nullptr 语义保持)
+        }
+        if (!internal_factory || !internal_factory->getAllInstances().empty()) {
+            composite_active_ = true;
+            return;
+        }
+        nlohmann::json wrap;
+        wrap["modules"] = nlohmann::json::array();
+        wrap["connections"] = nlohmann::json::array();
+        nlohmann::json composite_cfg;
+        // 17 端口 multiport adapter 由 ChStreamAdapterFactory 注册 (chstream_register.hh)
+        composite_cfg["name"] = composite_name();
+        composite_cfg["type"] = "PcieLinkPhyMuxTLM";
+        composite_cfg["params"] = params.value("params", nlohmann::json::object());
+        wrap["modules"].push_back(composite_cfg);
+        internal_factory->instantiateAll(wrap);
+        composite_active_ = true;
+    }
+
     PcieLinkLayer* PcieEndpointIP::link_layer() const noexcept {
-        // Phase 1 composite 优先(composite 单一所有权); legacy fallback 经 shim
+        // Phase 2 composite 优先 (internal_factory 单一所有权); legacy fallback 经 shim
         // 处理 PcieEndpointTLM 冻结路径(composite 名字不同, 自然 miss)
-        if (composite_) {
-            return &composite_->link();
+        if (auto* composite = this->composite()) {
+            return &composite->link();
         }
         return PcieLinkLayer::for_endpoint(getName());
     }
 
     PciePhyDigitalCtrl* PcieEndpointIP::phy() const noexcept {
-        if (composite_) {
-            return &composite_->phy();
+        if (auto* composite = this->composite()) {
+            return &composite->phy();
         }
         return PciePhyDigitalCtrl::for_endpoint(getName());
     }
 
     PcieBypassMux* PcieEndpointIP::bypass_mux() const noexcept {
-        if (composite_) {
-            return &composite_->mux();
+        if (auto* composite = this->composite()) {
+            return &composite->mux();
         }
         return PcieBypassMux::for_endpoint(getName());
+    }
+
+    std::vector<PcieEndpointIP*>& PcieEndpointIP::instances_for_test() noexcept {
+        static std::vector<PcieEndpointIP*> instances;
+        return instances;
+    }
+
+    PcieLinkPhyMuxTLM* PcieEndpointIP::find_composite(const std::string& ep_name) noexcept {
+        for (auto* ep : instances_for_test()) {
+            if (!ep || ep->getName() != ep_name) {
+                continue;
+            }
+            if (auto* composite = ep->composite()) {
+                return composite;
+            }
+        }
+        return nullptr;
     }
 
     // Stage 1.3a: UE ABI cpptlm_emulator_mmio_write 入口 (per spec.md Scenario

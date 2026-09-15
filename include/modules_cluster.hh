@@ -26,6 +26,7 @@
 #include "tlm/cluster/apu_soc.hh"
 #include "tlm/gpu/gpu_soc_tlm.hh"
 #include "tlm/gpu/dgpu_soc.hh"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "core/module_factory.hh"
 
 // ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC / ApuSoC 在 cpptlm::tlm 命名空间
@@ -44,5 +45,7 @@ const bool _reg_gpunoc = (REGISTER_MODULE(GpuNoC), true);
 const bool _reg_apusoc = (REGISTER_MODULE(ApuSoC), true);
 const bool _reg_gpusoc = (REGISTER_MODULE(GpuSocTLM), true);
 const bool _reg_dgpusoc = (REGISTER_MODULE(DGpuSoc), true);
+// Phase 2 (pcie-endpoint-ip-simmodule-refactor): EP 从 REGISTER_CHSTREAM 迁 REGISTER_MODULE
+const bool _reg_pcieendpointip = (REGISTER_MODULE(tlm::pcie::PcieEndpointIP), true);
 
 #endif  // MODULES_CLUSTER_HH

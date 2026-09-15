@@ -79,7 +79,7 @@
     ModuleFactory::registerObject<tlm::sm::WritebackUnit>("WritebackUnit");                         \
     ModuleFactory::registerObject<tlm::sm::HazardTracker>("HazardTracker");                         \
     ModuleFactory::registerObject<tlm::gpu::PcieEndpointTLM>("PcieEndpointTLM");                    \
-    ModuleFactory::registerObject<tlm::pcie::PcieEndpointIP>("PcieEndpointIP");                     \
+    ModuleFactory::registerObject<tlm::pcie::PcieLinkPhyMuxTLM>("PcieLinkPhyMuxTLM");               \
     ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM");                        \
     ModuleFactory::registerObject<tlm::gpu::SubmitQueueTLM>("SubmitQueueTLM");                      \
     ModuleFactory::registerObject<tlm::gpu::CompletionRingTLM>("CompletionRingTLM");                \
@@ -127,8 +127,8 @@
         .registerMultiPortAdapter<tlm::gpu::PcieEndpointTLM, bundles::PcieTlpBundle,                \
                                   bundles::PcieTlpBundle, 4>("PcieEndpointTLM");                    \
     ChStreamAdapterFactory::get()                                                                   \
-        .registerMultiPortAdapter<tlm::pcie::PcieEndpointIP, bundles::PcieTlpBundle,                \
-                                  bundles::PcieTlpBundle, 17>("PcieEndpointIP");                    \
+        .registerMultiPortAdapter<tlm::pcie::PcieLinkPhyMuxTLM, bundles::PcieTlpBundle,             \
+                                  bundles::PcieTlpBundle, 17>("PcieLinkPhyMuxTLM");                  \
     ChStreamAdapterFactory::get()                                                                   \
         .registerMultiPortAdapter<tlm::gpu::SdmaEngineTLM, bundles::PcieTlpBundle,                  \
                                   bundles::PcieTlpBundle, 5>("SdmaEngineTLM");                      \
