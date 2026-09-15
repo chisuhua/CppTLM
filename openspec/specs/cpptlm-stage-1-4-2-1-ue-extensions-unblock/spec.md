@@ -1,17 +1,8 @@
-# Spec: cpptlm-stage-1-4-2-1-ue-extensions-unblock
-
-> **Capability**: cpptlm-stage-1-4-2-1-ue-extensions-unblock
-> **Owner**: CppTLM Architecture Team
-> **状态**: 🔄 Proposed v1.2（2026-09-15，Oracle v1.1 复评 Quick 修订）
-> **Created**: 2026-09-15
-> **关联**: [proposal.md](../proposal.md) + [design.md](../design.md) + [tasks.md](../tasks.md)
+# cpptlm-stage-1-4-2-1-ue-extensions-unblock Specification
 
 ## Purpose
-
-Path A 上游接线：把 CppTLM ABI 路径从冻结的 `PcieEndpointTLM`（frozen legacy，仅 MSI-X Cap）切换到 `PcieEndpointIP`（已 ship PM Cap + PMCSR 拦截 + power state machine + ReBAR 集成；**ACS Ext Cap + PCIe Cap + LNKCTL 接线由本 change 新增**），并补全 24 ABI 不可观测的两条路径：mmio backdoor power-state check + LNKCTL→enable_aspm 接线。解锁 UE 仓 `ue-stage-1-4-2-1-extensions` 5/5 spec Scenario。
-
-## ADDED Requirements
-
+TBD - created by archiving change 2026-09-15-cpptlm-stage-1-4-2-1-ue-extensions-unblock. Update Purpose after archive.
+## Requirements
 ### Requirement: ABI Profile 切换 PcieEndpointIP（A-1）
 
 The system MUST instantiate `pcie_ep` as `PcieEndpointIP` in `configs/dgpu_board_v1.json` so that 24 ABI can reach PM Cap + PCIe Cap + ACS Ext Cap + ReBAR Ext Cap.
@@ -88,8 +79,3 @@ The system MUST install Resizable BAR Extended Capability (id=0x0015, per PCI-SI
 - **WHEN** `pcie_config_read(0x148, 4, &val)` (ReBAR Control @ 0x148)
 - **THEN** val & 0x1F00 == (8 << 8) (BAR0 size = 256MB, bits[12:8] == 8 per PCI-SIG)
 
-## Cross-References
-
-- 上游 `2026-09-10-cpptlm-stage-1-4-2-1`（archived，含 6 followups）+ `2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor`（archived）
-- 解锁 `2026-09-10-ue-stage-1-4-2-1-extensions`（UE 仓 0/8 → 16 checkbox，commit `42b08a6` 必修修订后）
-- 父 change `2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma`（5.5.8 阶段 3 ship 后排队）
