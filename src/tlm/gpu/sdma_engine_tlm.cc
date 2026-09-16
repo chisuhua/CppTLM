@@ -4,6 +4,11 @@
 
 #include "tlm/gpu/sdma_engine_tlm.hh"
 
+// T-P11-2: 在 CppTLM header 之前 include, 避免 cpptlm::tlm namespace 干扰
+// (modules_cluster.hh 的 using namespace cpptlm::tlm 导致 tlm::pcie 在
+//  namespace cpptlm::pcie 内被解析为 cpptlm::tlm::pcie, 而非全局 ::tlm::pcie)
+#include "tlm/pcie/pcie_requester_engine.hh"
+
 #include "bundles/dma_bundles_tlm.hh"
 #include "bundles/pcie_bundles_tlm.hh"
 #include "tlm/gpu/completion_ring_mvp.hh"
@@ -404,18 +409,31 @@ namespace tlm::gpu {
         done.task_id.write(static_cast<uint32_t>(d.tag)); // MVP: task_id == tag
         done.tag.write(static_cast<uint32_t>(d.tag));
 
-        int rc = 0;
-        if (d.dir == DmaDescriptor::Dir::D2D) {
-            // Stage 1.3b M6: Dir::D2D → d2d_forward (不 emit host_out)
-            //   done_out emit 由既有 fallback 路径统一处理 (emit_completion)
-            d2d_forward(d.vram_offset, d.vram_offset, d.size);
-            done.status.write(0);
-            rc = 0;  // success
-        } else if (d.dir == DmaDescriptor::Dir::H2D) {
-            rc = process_h2d(d, done);
-        } else {
-            rc = process_d2h(d, done);
-        }
+int rc = 0;
+    bool requester_path = false;
+    if (d.dir == DmaDescriptor::Dir::D2D) {
+        // Stage 1.3b M6: Dir::D2D → d2d_forward (不 emit host_out)
+        //   done_out emit 由既有 fallback 路径统一处理 (emit_completion)
+        d2d_forward(d.vram_offset, d.vram_offset, d.size);
+        done.status.write(0);
+        rc = 0;  // success
+    } else if (d.dir == DmaDescriptor::Dir::H2D && request_engine_) {
+        // T-P11-2: H2D 经 RequesterEngine 发起 MRd (EP→host TLP)
+        //   CplD callback 会异步回写 VRAM + 触发 completion
+        //   不再同步 emit host_out / mem_out / done_out
+        process_h2d_with_requester(d);
+        requester_path = true;
+    } else if (d.dir == DmaDescriptor::Dir::H2D) {
+        rc = process_h2d(d, done);
+    } else {
+        rc = process_d2h(d, done);
+    }
+
+    // T-P11-2: Requester 路径不在此 emit completion (CplD callback 处理)
+    if (requester_path) {
+        req_in[PORT_DESC_IN].consume();
+        return;
+    }
 
         // 错误消息（仅用于 board error callback）
         std::string err_msg;
@@ -542,6 +560,68 @@ namespace tlm::gpu {
         }
         // 其他 BAR/offset: 接受但 no-op (PcieEndpointIP::bar_store_ 已独立处理)
         return true;
+    }
+
+    // ========== T-P11-2: read_vram 实现 ==========
+
+    uint64_t SdmaEngineTLM::read_vram(uint64_t offset) const noexcept {
+        uint64_t val = 0;
+        for (size_t i = 0; i < 8; ++i) {
+            auto it = vram_simple_.find(offset + i);
+            if (it != vram_simple_.end()) {
+                val |= static_cast<uint64_t>(it->second) << (i * 8);
+            }
+        }
+        return val;
+    }
+
+    // ========== T-P11-2: process_h2d_with_requester 实现 ==========
+    // H2D 描述符经 RequesterEngine 发起 MRd (EP→host TLP), CplD 到达后回写 VRAM
+
+    void SdmaEngineTLM::process_h2d_with_requester(const DmaDescriptor& d) {
+        if (!request_engine_ || !dma_translate_cb_simple_) {
+            return;
+        }
+
+        // IOVA → PA (identity mapping 或 IOMMU 翻译)
+        uint64_t pa = dma_translate_cb_simple_(d.host_iova);
+
+        // 延迟注册 completion callback (仅在首次调用时注册一次)
+        if (!h2d_callback_registered_) {
+            request_engine_->register_completion_callback(
+                [this](uint16_t tag, const bundles::PcieTlpBundle& cpld) {
+                    auto it = h2d_pending_.find(tag);
+                    if (it == h2d_pending_.end()) {
+                        return; // 非 SDMA H2D tag, 忽略
+                    }
+
+                    // CplD payload 写 VRAM
+                    const auto& pending_desc = it->second;
+                    const uint64_t data = cpld.data.read();
+                    for (size_t i = 0; i < 8 && i < static_cast<size_t>(pending_desc.size);
+                         ++i) {
+                        vram_simple_[pending_desc.vram_offset + i] =
+                            static_cast<uint8_t>((data >> (i * 8)) & 0xFF);
+                    }
+
+                    // 递增 completion 计数
+                    h2d_completion_count_++;
+                    h2d_pending_.erase(it);
+                });
+            h2d_callback_registered_ = true;
+        }
+
+        // 经 RequesterEngine 发起 MRd TLP
+        bool sent = request_engine_->mrd_read(
+            /*bdf=*/0,
+            pa,            // addr (经 translate 后的 PA)
+            /*lower_addr=*/0, // reserved
+            static_cast<std::size_t>(d.size));
+
+        if (sent) {
+            uint16_t tag = request_engine_->last_allocated_tag();
+            h2d_pending_[tag] = d;
+        }
     }
 
     // Stage 1.3d: 处理 fence_queue_ 内的所有 Fence descriptor

@@ -25,11 +25,19 @@
 #include <memory>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <unordered_map>
 
 namespace tlm {
     // 前向声明 GpuMeshNoC (Stage 1.3b D2D NoC 注入)
     class GpuMeshNoC;
 }  // namespace tlm
+
+namespace cpptlm::pcie {
+
+// 前向声明 PcieRequesterEngine (T-P11-2: SDMA H2D → MRd 出口)
+class PcieRequesterEngine;
+
+} // namespace cpptlm::pcie
 
 namespace tlm::gpu {
 
@@ -305,6 +313,26 @@ namespace tlm::gpu {
         return host_out_tx_count_;
     }
 
+    // ========== T-P11-2: SDMA H2D → PcieRequesterEngine MRd 集成 ==========
+
+    /// 注入 RequesterEngine 引用 — H2D 描述符改经 RequesterEngine::mrd_read() 出口
+    void set_request_engine(cpptlm::pcie::PcieRequesterEngine* eng) noexcept {
+        request_engine_ = eng;
+    }
+
+    /// 简化 DMA translate callback (IOVA→PA, T-P11-2 测试用)
+    void register_dma_translate_callback(std::function<uint64_t(uint64_t iova)> cb) {
+        dma_translate_cb_simple_ = std::move(cb);
+    }
+
+    /// 测试用: 读取 T-P11-2 VRAM 存储 (vram_offset → 值)
+    uint64_t read_vram(uint64_t offset) const noexcept;
+
+    /// T-P11-2 H2D completion 计数 (CplD 到达后递增)
+    uint32_t h2d_completion_count() const noexcept {
+        return h2d_completion_count_;
+    }
+
         // Wire-format ↔ DmaDescriptor / CompletionBundle 转换（public for testability）
         static bundles::PcieTlpBundle to_pcie_tlp_descriptor(const DmaDescriptor& d);
         static DmaDescriptor from_pcie_tlp_descriptor(const bundles::PcieTlpBundle& p);
@@ -379,6 +407,20 @@ namespace tlm::gpu {
 
         // 内部：VRAM 范围检查（per design.md §6 + spec.md Scenario "Invalid descriptor rejected"）
         bool is_vram_window_valid(uint64_t vram_offset, uint32_t size) const;
+
+        // ========== T-P11-2: SDMA H2D → PcieRequesterEngine MRd ==========
+
+        /// 内部：经 RequesterEngine 处理 H2D 描述符（发起 MRd + 注册 CplD callback）
+        void process_h2d_with_requester(const DmaDescriptor& d);
+
+        cpptlm::pcie::PcieRequesterEngine* request_engine_ = nullptr;
+        std::function<uint64_t(uint64_t)> dma_translate_cb_simple_;
+        std::unordered_map<uint64_t, uint8_t> vram_simple_;
+        uint32_t h2d_completion_count_ = 0;
+
+        /// tag → DmaDescriptor (pending H2D 请求, 供 CplD 回写时 lookup)
+        std::unordered_map<uint16_t, DmaDescriptor> h2d_pending_;
+        bool h2d_callback_registered_ = false;
     };
 
 } // namespace tlm::gpu
