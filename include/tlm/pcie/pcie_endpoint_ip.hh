@@ -36,6 +36,36 @@
 namespace tlm::pcie {
 
 /**
+ * @brief 三维 key 用于 bar_store_ 跨 BAR/BDF 隔离 (T-P10-2)
+ */
+struct BarStoreKey {
+    uint16_t bdf;
+    uint8_t  bar;
+    uint64_t addr;
+
+    bool operator==(const BarStoreKey& o) const noexcept {
+        return bdf == o.bdf && bar == o.bar && addr == o.addr;
+    }
+};
+
+} // namespace tlm::pcie
+
+namespace std {
+    template<>
+    struct hash<tlm::pcie::BarStoreKey> {
+        uint64_t operator()(const tlm::pcie::BarStoreKey& k) const noexcept {
+            // boost::hash_combine 模式
+            uint64_t h = std::hash<uint64_t>{}(k.addr);
+            h ^= std::hash<uint8_t>{}(k.bar) + 0x9e3779b9U + (h << 6) + (h >> 2);
+            h ^= std::hash<uint16_t>{}(k.bdf) + 0x9e3779b9U + (h << 6) + (h >> 2);
+            return h;
+        }
+    };
+} // namespace std
+
+namespace tlm::pcie {
+
+/**
  * @brief PcieEndpointIP：SR-IOV PCIe Endpoint IP（17 端口）
  *
  * 与 PcieEndpointTLM 的差异：
@@ -151,10 +181,15 @@ public:
     }
     [[nodiscard]] bool mmio_gated() const noexcept { return mmio_gated_; }
 
-    // 测试 helper: 读取 BAR backing store 验证 MMIO gate 是否阻止写入
-    [[nodiscard]] uint64_t bar_store_value(uint64_t key) const noexcept {
-        const auto it = bar_store_.find(key);
+    // 测试 helper: 读取 BAR backing store (三维 key: BDF × BAR × addr)
+    [[nodiscard]] uint64_t bar_store_value(uint16_t bdf, uint8_t bar, uint64_t addr) const noexcept {
+        const auto it = bar_store_.find(BarStoreKey{bdf, bar, addr});
         return (it != bar_store_.end()) ? it->second : 0;
+    }
+
+    // 测试 helper: 直接写入 BAR backing store (绕开 AXI/mmio 路径, 供测试注入)
+    void bar_store_value_set(uint16_t bdf, uint8_t bar, uint64_t addr, uint64_t val) noexcept {
+        bar_store_[BarStoreKey{bdf, bar, addr}] = val;
     }
 
     // Phase 2: 访问器转发到 internal_factory 内的 composite (inactive 时返回 nullptr)
@@ -209,10 +244,13 @@ private:
     // 构造时 init() 默认空表; simulate_instantiate 从 params.bar0_registers 填充
     tlm::gpu::PcieBarRouter bar_router_;
     // BAR 空间 backing store（Phase 8 M1: AXI slave 写经地址路由落写/读回真实值）
-    std::unordered_map<uint64_t, uint64_t> bar_store_;
+    // 三维 key: (bdf, bar, addr) — 跨 BAR 隔离 (T-P10-2)
+    std::unordered_map<BarStoreKey, uint64_t> bar_store_;
     // Stage 1.4-followups §3: 6 个 ResizableBar (对应 6 个 BAR slots)
     std::array<tlm::pcie::ResizableBar, 6> resizable_bars_;
     void on_bar_resize(unsigned bar_idx);  // enable() 后触发, INV-G 越界校验
+    // 清除 (bdf, bar) 下 addr >= new_size 的越界 entry (T-P10-2)
+    void erase_all_for_bar(uint16_t bdf, uint8_t bar, uint64_t new_size) noexcept;
     // Stage 1.3a: SDMA ring 已处理的 entry 数 (累计 WPTR via doorbell writes)
     uint32_t sdma_ring_processed_count_ = 0;
     // Stage 1.3c: DMA 翻译模式 (identity / IOMMU)
@@ -220,6 +258,8 @@ private:
     // Stage 1.4 §1.3: Power state (D0/D3hot) + INV-A MMIO gate
     PciePowerState power_state_ = PciePowerState::D0;
     bool mmio_gated_ = false;
+    // T-P10-2: BDF (Bus:Device.Function) — 用于 bar_store_ 三维 key 的 BDF 维度
+    uint16_t bdf_ = 0;
     // Phase 2: composite 单实例 owned by internal_factory; 本 flag 表达
     // "link_layer.enabled" 的可见性语义 (disabled 时 for_endpoint→nullptr)
     bool composite_active_ = false;

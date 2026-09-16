@@ -123,7 +123,7 @@ TEST_CASE("PcieEndpointIP: D3hot tick() rejects CFG/BAR writes (INV-A)",
     // 步骤 1c: 验证 bar_store_ 在 gate 状态下不会被 EP 写入
     // (PMCSR 写拦截保证 D3hot 仅由 cfg 写触发, MMIO path 被 gate)
     const uint64_t key = 0x10000000ULL & ~0x3ULL;
-    REQUIRE(f.ep.bar_store_value(key) == 0u);
+    REQUIRE(f.ep.bar_store_value(0, 0, key) == 0u);
 
     // 步骤 2: 进入 D3hot
     f.ep.set_power_state(tlm::pcie::PcieEndpointIP::PciePowerState::D3hot);

@@ -381,9 +381,9 @@ namespace tlm::pcie {
                             }
                         }
                         const uint32_t old_val =
-                            static_cast<uint32_t>(bar_store_[key]); // 默认 0 if missing
+                            static_cast<uint32_t>(bar_store_[BarStoreKey{bdf_, 0, key}]); // 默认 0 if missing
                         const uint32_t new_val = (old_val & ~byte_mask) | (wdata32 & byte_mask);
-                        bar_store_[key] = new_val;
+                        bar_store_[BarStoreKey{bdf_, 0, key}] = new_val;
                     }
 
                     bundles::Axi4Bundle wresp;
@@ -405,7 +405,7 @@ namespace tlm::pcie {
                     } else {
                         // BAR 空间: 4B 粒度 key 读取
                         const uint64_t key = araddr & ~0x3ULL;
-                        const auto it = bar_store_.find(key);
+                        const auto it = bar_store_.find(BarStoreKey{bdf_, 0, key});
                         if (it != bar_store_.end()) {
                             // BAR slot 是 32-bit 寄存器,高 32 bit 总是 0
                             rdata = static_cast<uint32_t>(it->second);
@@ -573,8 +573,8 @@ namespace tlm::pcie {
             sdma_ring_processed_count_ += static_cast<uint32_t>(data);
             return true;
         }
-        // 其他 BAR 空间: 落 bar_store_ (与 AXI tick() 路径一致)
-        bar_store_[offset & ~0x3ULL] = data;
+        // 其他 BAR 空间: 落 bar_store_ (与 AXI tick() 路径一致, 带 bar 维度)
+        bar_store_[BarStoreKey{bdf_, static_cast<uint8_t>(bar), offset & ~0x3ULL}] = data;
         return true;
     }
 
@@ -593,15 +593,28 @@ namespace tlm::pcie {
 
     void PcieEndpointIP::on_bar_resize(unsigned bar_idx) {
         const uint32_t size = resizable_bars_[bar_idx].size_bytes();
-        // INV-G: 清 bar_store_ 中 key >= size 的越界 entry
-        // 勘误: erase-it 惯用法 (erase-during-iteration UB);
-        // 已知限制: bar_store_ key 为全局裸地址, 跨 BAR 隔离留待后续 PR
+        // 清 bar_store_ 中与 (bdf_, bar_idx) 匹配且 addr >= size 的越界 entry
+        // 使用 erase_all_for_bar 可复用, 但需推送警告, 因此内联循环
         for (auto it = bar_store_.begin(); it != bar_store_.end();) {
-            if (it->first >= size) {
+            const auto& [k_bdf, k_bar, k_addr] = it->first;
+            if (k_bdf == bdf_ && k_bar == bar_idx && k_addr >= size) {
                 config_warnings_.push_back(
                     "BAR" + std::to_string(bar_idx) +
                     " resized to " + std::to_string(size) +
-                    ", key " + std::to_string(it->first) + " out of bounds (cleared)");
+                    ", key " + std::to_string(k_addr) + " out of bounds (cleared)");
+                it = bar_store_.erase(it);
+            } else {
+                ++it;
+            }
+        }
+    }
+
+    void PcieEndpointIP::erase_all_for_bar(uint16_t bdf, uint8_t bar, uint64_t new_size) noexcept {
+        // 清除 (bdf, bar) 下 addr >= new_size 的越界 entry
+        // 本 helper 无 warning 侧效; on_bar_resize 调用时自行推送 config_warnings_
+        for (auto it = bar_store_.begin(); it != bar_store_.end();) {
+            const auto& [k_bdf, k_bar, k_addr] = it->first;
+            if (k_bdf == bdf && k_bar == bar && k_addr >= new_size) {
                 it = bar_store_.erase(it);
             } else {
                 ++it;

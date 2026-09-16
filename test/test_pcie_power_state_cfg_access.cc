@@ -152,12 +152,12 @@ TEST_CASE("PcieEndpointIP: D3hot BAR write returns DECERR (AXI encoding 3)",
 
     // bar_store_ 未被覆写
     const uint64_t key = 0x10000000ULL & ~0x3ULL;
-    REQUIRE(f.ep.bar_store_value(key) == 0xDEADBEEFu);
+    REQUIRE(f.ep.bar_store_value(0, 0, key) == 0xDEADBEEFu);
 
     // 回 D0 后 BAR 写恢复 OKAY
     f.ep.set_power_state(PcieEndpointIP::PciePowerState::D0);
     REQUIRE(f.bar_write(0x10000000ULL, 0x12345678) == 0u);
-    REQUIRE(f.ep.bar_store_value(key) == 0x12345678u);
+    REQUIRE(f.ep.bar_store_value(0, 0, key) == 0x12345678u);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
