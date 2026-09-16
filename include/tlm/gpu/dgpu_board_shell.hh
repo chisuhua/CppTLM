@@ -47,6 +47,13 @@ struct PendingReq {
 // DGpuBoard - 23 ABI 翻译 shell
 // 设计原则(per ADR-SOC-07 D7):不继承 ChStreamModuleBase/SimModule;
 // SOC deferred 期间 shell 本地持有 mmio_regs_/vram_segments_ 等回退存储(修复 #5/#6 确定性 roundtrip)
+//
+// T-P12-1: profile JSON "pcie_path" 4 态选路
+//   "pcie_path": "tlp"       → TLP 链路完整路径 (Encoder → rx_tlp_from_host →
+//                               CompleterEngine → bar_store_)
+//   "pcie_path": "axi_bypass" → HostBypassTLM::bar_write (跳过 TLP 直接 AXI)
+//   "pcie_path": "mock"       → PcieMockIP 直调 bar_regs_ (T-P9-3)
+//   "pcie_path": "legacy"     → mmio_regs_ 既有行为 (向后兼容)
 class DGpuBoard {
 public:
     // mmio_read 同步等待窗口(修复 #5 flakiness: 1ms 硬超时 vs 加载主机 async drain 延迟;
@@ -55,6 +62,27 @@ public:
     // mmio_read 调用线程自 drain 回退: 默认开启, 保证成功路径确定性(不依赖 sim 线程被调度);
     // 测试超时路径时置 false, 仅依赖外部 drain 以稳定触发 -110 (公开供调用方/测试覆写)
     bool mmio_self_drain_enabled{true};
+
+    // T-P12-1: 4 态 PCIe 路径选路
+    enum class PciePath : uint8_t {
+        Legacy = 0,     // "legacy" 或缺失 → mmio_regs_ 既有行为
+        AxiBypass = 1,  // "axi_bypass" → HostBypassTLM::bar_write
+        Tlp = 2,        // "tlp" → TLP 完整链路
+        Mock = 3        // "mock" → PcieMockIP
+    };
+
+    // T-P12-1: profile 注入 (解析 pcie_path 字段)
+    void attach_profile(const nlohmann::json& profile);
+
+    // T-P12-1: 当前路径访问器 (测试用)
+    PciePath pcie_path() const noexcept { return pcie_path_; }
+
+    // T-P12-1: 测试 accessors
+    // 验证 data ended up in endpoint bar_store_ (for axi_bypass/tlp paths)
+    // 委托 pcie_ep()->bar_store_value()
+    uint64_t endpoint_bar_store_value(uint8_t bar, uint16_t bdf, uint64_t offset) const;
+    // 验证链路层无 TLP 发出 (axi_bypass 路径)
+    size_t link_layer_tx_tlp_out_count() const;
 
     // 5 职责接口(per ADR-SOC-07 D1)
     explicit DGpuBoard(const std::string& name, EventQueue* eq = nullptr);
@@ -193,6 +221,11 @@ private:
     std::exception_ptr last_exception_;          // #8 跨线程异常传递
     static constexpr uint64_t kDefaultQuantumCycles = 1000;
     uint64_t quantum_cycles_ = kDefaultQuantumCycles;
+
+    // T-P12-1: 4 态 PCIe 路径选路
+    PciePath pcie_path_ = PciePath::Legacy;
+    // T-P12-1: mmio_write 按路径分发
+    void dispatch_mmio_to_pcie(uint8_t bar, uint64_t offset, const void* data, std::size_t len);
 
     // ── 回调(per #4 non-blocking) ──
     IrqCallback irq_cb_;

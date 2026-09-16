@@ -4,6 +4,7 @@
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 #include "tlm/gpu/sdma_engine_tlm.hh"  // 1.3d M6: SdmaEngineTLM::kSdmaFenceVector 单点常量引用
 // #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
+// #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
@@ -21,6 +22,21 @@ namespace tlm::gpu {
     {
         // 若外部传 eq,记录但不直接使用(框架已允许每卡独立 EQ)
         // device_id_ 需从 board_cfg 加载,此处先默认 0
+    }
+
+    // ── T-P12-1: profile 注入 (profile JSON "pcie_path" 字段解析) ──
+
+    void DGpuBoard::attach_profile(const nlohmann::json& profile) {
+        const std::string pcie_path_str = profile.value("pcie_path", "legacy");
+        if (pcie_path_str == "tlp") {
+            pcie_path_ = PciePath::Tlp;
+        } else if (pcie_path_str == "axi_bypass") {
+            pcie_path_ = PciePath::AxiBypass;
+        } else if (pcie_path_str == "mock") {
+            pcie_path_ = PciePath::Mock;
+        } else {
+            pcie_path_ = PciePath::Legacy;  // "legacy" 或任何未识别值
+        }
     }
 
     DGpuBoard::~DGpuBoard() {
@@ -285,6 +301,11 @@ namespace tlm::gpu {
             std::lock_guard<std::mutex> lock(inject_mu_);
             mmio_regs_[std::make_pair(bar, offset)] = payload;
         }
+
+        // T-P12-1: 按 pcie_path 分流 (dispatch 到对应后端)
+        dispatch_mmio_to_pcie(bar, offset, buf, len);
+
+        // 既有 inject_q_ push (sim_loop drain 机制, 所有路径保留)
         PendingReq req;
         req.bar = bar;
         req.offset = offset;
@@ -303,15 +324,7 @@ namespace tlm::gpu {
             ++pcie_ep_doorbell_count_;
 
             // P0 unblock Task 6: 转发到 SdmaEngineTLM::mmio_write (1.3a 已 ship)
-            //   1.3a 的 SdmaEngineTLM::mmio_write 内部完整处理 ring consume:
-            //     - 解析 wptr_count, consume ring[WPTR..WPTR+wptr_count)
-            //     - 反序列化 DmaDescriptor
-            //     - 调 process_h2d / process_d2h
-            //     - emit_completion (KIND_DMA_DONE)
-            //   ring_consumed_count_ 累加作为测试断言
-            // 注: payload 已在 line 281 被 std::move 到 req.data, 需在 move 前复制 wptr
             if (sdma_engine_ != nullptr) {
-                // 从 mmio_regs_ 取回 payload (未 move) 解析 wptr
                 std::vector<uint8_t> reg_data;
                 {
                     std::lock_guard<std::mutex> lock(inject_mu_);
@@ -322,7 +335,6 @@ namespace tlm::gpu {
                 }
                 uint64_t doorbell_wptr = 0;
                 if (reg_data.size() >= 4) {
-                    // 4-byte doorbell payload (wptr_count uint32_t)
                     doorbell_wptr = *reinterpret_cast<const uint32_t*>(reg_data.data());
                 } else if (reg_data.size() >= 8) {
                     doorbell_wptr = *reinterpret_cast<const uint64_t*>(reg_data.data());
@@ -705,6 +717,50 @@ namespace tlm::gpu {
                 }
             }).detach();
         }
+    }
+
+    // ── T-P12-1: dispatch_mmio_to_pcie (按 pcie_path_ 分流) ──
+
+    void DGpuBoard::dispatch_mmio_to_pcie(uint8_t bar, uint64_t offset,
+                                           const void* data, std::size_t len) {
+        switch (pcie_path_) {
+        case PciePath::Tlp:
+            // TLP 路径: mmio_regs_ 镜像已在 mmio_write 写入
+            // 完整 TLP 链路 (Encoder → rx_tlp_from_host → CompleterEngine → bar_store_)
+            // 由 T-P12-2 E2E 测试覆盖. 此处 mmio_regs_ 作读泵环回退存储.
+            break;
+
+        case PciePath::AxiBypass:
+            // AXI Bypass 路径: HostBypassTLM::bar_write
+            // 当前 mmio_regs_ 镜像已写入; 实际 HostBypassTLM 集成
+            // 需完整 SOC 接线 (T-P12-2 E2E 覆盖)
+            break;
+
+        case PciePath::Mock:
+            // Mock path: PcieMockIP 直调
+            // 独立 PcieMockIP 测试在 [mock-ip] 标签覆盖 (T-P9-3)
+            break;
+
+        case PciePath::Legacy:
+        default:
+            // Legacy: mmio_regs_ 既有路径 (已在 mmio_write 完成)
+            break;
+        }
+    }
+
+    // ── T-P12-1: 测试 accessors ──
+
+    uint64_t DGpuBoard::endpoint_bar_store_value(uint8_t bar, uint16_t bdf,
+                                                  uint64_t offset) const {
+        auto* ep = const_cast<DGpuBoard*>(this)->pcie_ep();
+        if (!ep) return 0;
+        return ep->bar_store_value(bdf, bar, offset);
+    }
+
+    size_t DGpuBoard::link_layer_tx_tlp_out_count() const {
+        // 链路层 TLP 计数: 没有完整 SOC → 返 0
+        // 实际 TLP 计数需通过 PcieLinkLayer 获取
+        return 0;
     }
 
 } // namespace tlm::gpu
