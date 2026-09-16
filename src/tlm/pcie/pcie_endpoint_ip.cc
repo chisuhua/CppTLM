@@ -654,7 +654,13 @@ namespace tlm::pcie {
         }
 
         // 同时转发到 CompleterEngine 做 CplD 生成 (读路径) 及其他处理
-        completer_engine_.handle_tlp(tlp);
+        // T-P12-2: 捕获 handle_tlp 返回的 CplD, 经 tx_tlp 发回 host
+        bundles::PcieTlpBundle cpld = completer_engine_.handle_tlp(tlp);
+        if (static_cast<uint8_t>(cpld.kind.read()) == bundles::PcieTlpBundle::CPLD) {
+            if (auto* ll = link_layer()) {
+                ll->tx_tlp(cpld, 0);
+            }
+        }
     }
 
     void PcieEndpointIP::inject_tlp_from_host_for_test(const bundles::PcieTlpBundle& tlp) {

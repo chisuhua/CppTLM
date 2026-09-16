@@ -19,6 +19,7 @@
 #include "tlm/pcie/pcie_encoding_latency_model.hh"
 #include "tlm/pcie/pcie_flow_control_token_bucket.hh"
 
+#include <atomic>
 #include <cstdint>
 #include <deque>
 #include <functional>
@@ -261,6 +262,9 @@ public:
     // Phase 3 评审 #1 观察钩子: rate switch ready 时刻
     uint64_t rate_switch_ready_ns_debug() const { return rate_switch_ready_ns_; }
 #endif
+    // T-P12-2: TLP 入方向计数器 (验证 ABI 路径真实产生 TLP, 无条件编译防 ODR)
+    std::atomic<uint64_t> tlp_rx_count_{0};
+    uint64_t tlp_rx_count() const { return tlp_rx_count_.load(); }
 
 private:
     static FcTokenBucket::Type fc_type_for_kind(uint8_t kind);

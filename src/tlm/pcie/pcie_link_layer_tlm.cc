@@ -467,6 +467,8 @@ namespace tlm::pcie {
         }
         fc_upstream_.consume(vf, fc_type);
 
+tlp_rx_count_.fetch_add(1, std::memory_order_relaxed);
+
         // 分配下行 seq（与上行独立，per Q17）
         const uint16_t rx_seq = next_rx_seq_;
         next_rx_seq_ = static_cast<uint16_t>((next_rx_seq_ + 1) & SEQ_MASK);
