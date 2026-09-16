@@ -11,6 +11,7 @@
 #define BUNDLES_PCIE_BUNDLES_TLM_HH
 
 #include "bundles/cpphdl_types.hh"
+#include <array>
 #include <cstdint>
 
 namespace bundles {
@@ -124,5 +125,132 @@ struct MsiXDeliveryBundle : public bundle_base {
 };
 
 } // namespace bundles
+
+// ===== PcieTlpWireBundle (Phase 9+ T-P9-2) =====
+// Wire-format TLP bundle with 4KB payload array (std::array<uint32_t, 1024>)
+//
+// 用于: (a) golden 快照测试, (b) CRC 校验, (c) 错误注入点位
+// **不** 用于替换既有 PcieTlpBundle descriptor, LL 接口签名 const PcieTlpBundle& 不变
+//
+// 设计决策:
+// - 使用 std::array<uint32_t, 1024> 绕开 ch_uint<512> = 64-bit 限制
+//   (per AGENTS.md KEY INVARIANTS: "ch_uint<512> 内部 uint64_t")
+// - CPLD=7 kind constant 为 T-P10-1 fc_type_for_kind 修复预留
+// - 置于 cpptlm::pcie 命名空间以对齐 PcieTlpCodec (wire-format 编解码)
+namespace cpptlm::pcie {
+
+struct PcieTlpWireBundle {
+    // ========== Kind 常量 (PCIe 事务类型, 与 bundles::PcieTlpBundle 0-6 对齐) ==========
+    static constexpr uint8_t CFG_READ   = 0;
+    static constexpr uint8_t CFG_WRITE  = 1;
+    static constexpr uint8_t MMIO_READ  = 2;
+    static constexpr uint8_t MMIO_WRITE = 3;
+    static constexpr uint8_t MEM_READ   = 4;
+    static constexpr uint8_t MEM_WRITE  = 5;
+    static constexpr uint8_t IRQ_DELIVERY = 6;
+    static constexpr uint8_t CPLD       = 7;  // 新增 (T-P10-1 fc_type 修复需要)
+
+    // ========== Wire-format header 字段 (PCIe Base Spec §2.2) ==========
+    uint8_t  fmt;              // 3 bits, 0=3DW/no-data 1=4DW/no-data 2=3DW/data 3=4DW/data
+    uint8_t  type;             // 5 bits
+    uint8_t  tc;               // 3 bits, Traffic Class
+    uint8_t  td;               // TLP Digest (ECRC present)
+    uint8_t  ep;               // Poisoned
+    uint8_t  attr;             // 3 bits, Attr[2:0]
+    uint16_t length;           // 10 bits, in DW (0 = 1024 DW)
+    uint16_t requester_id;     // BDF of requester
+    uint8_t  tag;              // 8 bits
+    uint8_t  last_be;          // 4 bits, Last DW Byte Enables
+    uint8_t  first_be;         // 4 bits, First DW Byte Enables
+    uint32_t address_lo;       // 32-bit address low (3DW header)
+    uint32_t address_hi;       // 32-bit address high (4DW header, 0 for 3DW)
+    // Completion-only fields (CplD)
+    uint16_t completer_id;     // CplD only
+    uint8_t  status;           // CplD only, 3 bits
+    uint16_t byte_count;       // CplD only, 12 bits
+    uint8_t  lower_address;    // CplD only, 8 bits
+
+    // ========== Payload 数组 ==========
+    // 1024 DW = 4096 字节 (PCIe TLP Length 10-bit 上限, Length=0 = 1024 DW)
+    // 绕开 ch_uint<512> = 64-bit 限制 (per AGENTS.md KEY INVARIANTS)
+    static constexpr std::size_t MAX_PAYLOAD_DW = 1024;
+    std::array<uint32_t, MAX_PAYLOAD_DW> payload{};
+
+    // ========== ECRC / LCRC ==========
+    uint32_t ecrc = 0;         // ECRC (TD=1 时有效)
+    uint32_t lcrc = 0;         // LCRC (末尾 4 字节)
+
+    // ========== Kind 字段 (与 bundles::PcieTlpBundle 7 种对齐 + CPLD) ==========
+    uint8_t kind = MMIO_READ;
+
+    // ========== 默认构造函数 ==========
+    PcieTlpWireBundle() = default;
+
+    // ========== 互转 helpers (Wire ↔ Descriptor) ==========
+    // 转换为既有 PcieTlpBundle descriptor (轻量级, 仅携带首 8 字节 data)
+    bundles::PcieTlpBundle to_descriptor() const {
+        // 确定 kind 映射
+        uint8_t desc_kind = kind;
+        // CPLD 在 PcieTlpBundle 中无对应 → 映射到 MMIO_READ
+        if (desc_kind == CPLD) desc_kind = bundles::PcieTlpBundle::MMIO_READ;
+
+        // size: length DW → bytes (length=0 means 1024 DW)
+        uint32_t length_dw = (length == 0) ? 1024u : static_cast<uint32_t>(length);
+        uint32_t size_bytes = length_dw * 4;
+
+        // data: 首 8 字节 payload (pairs of uint32 → uint64)
+        uint64_t data_val = (static_cast<uint64_t>(payload[1]) << 32)
+                            | payload[0];
+
+        return bundles::PcieTlpBundle(
+            desc_kind,                // kind
+            0,                         // bar_index (wire format 不携带)
+            address_lo,               // offset
+            size_bytes,               // size (bytes)
+            data_val,                 // data (首 8 字节)
+            requester_id,             // requester_id
+            static_cast<uint32_t>(tag) // trans_id
+        );
+    }
+
+    // 从既有 PcieTlpBundle descriptor 转换回 wire bundle
+    static PcieTlpWireBundle from_descriptor(const bundles::PcieTlpBundle& desc) {
+        PcieTlpWireBundle wb;
+        uint8_t dk = static_cast<uint8_t>(desc.kind.read());
+
+        // 映射 kind: PcieTlpBundle (0-6) → PcieTlpWireBundle (0-6, CPLD=7)
+        wb.kind = dk;
+
+        // Header 字段 (默认值, 仅填充 descriptor 可提供的)
+        wb.fmt = (dk == bundles::PcieTlpBundle::CFG_READ || dk == bundles::PcieTlpBundle::CFG_WRITE)
+                 ? 0b100 : 0b010;  // 4DW cfg or 3DW mem
+        wb.type = 0b00000;          // Memory (default)
+        wb.tc = 0;
+        wb.td = 0;
+        wb.ep = 0;
+        wb.attr = 0;
+
+        // length: size(bytes) → DW, 向上取整
+        uint32_t size_bytes = static_cast<uint32_t>(desc.size.read());
+        uint32_t length_dw = (size_bytes + 3) / 4;
+        wb.length = (length_dw >= 1024) ? 0 : static_cast<uint16_t>(length_dw);
+
+        wb.requester_id = static_cast<uint16_t>(desc.requester_id.read());
+        wb.tag = static_cast<uint8_t>(desc.trans_id.read() & 0xFF);
+        wb.last_be = 0;
+        wb.first_be = 0xF;
+        wb.address_lo = static_cast<uint32_t>(desc.offset.read() & 0xFFFFFFFF);
+        wb.address_hi = 0;
+
+        // payload: 从 desc.data 恢复首 8 字节
+        uint64_t data_val = desc.data.read();
+        wb.payload[0] = static_cast<uint32_t>(data_val & 0xFFFFFFFF);
+        wb.payload[1] = static_cast<uint32_t>((data_val >> 32) & 0xFFFFFFFF);
+
+        return wb;
+    }
+};
+
+} // namespace cpptlm::pcie
 
 #endif // BUNDLES_PCIE_BUNDLES_TLM_HH
