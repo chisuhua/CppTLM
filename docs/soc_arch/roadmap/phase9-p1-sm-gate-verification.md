@@ -1,7 +1,7 @@
 # phase9-p1-sm-gate-verification: SM 重构收尾(Gate 验证 + Archive)
 
 > **类别**: SoC Architecture > Roadmap · **阶段**: P1 · **优先级**: 🟡 短期高价值(单仓 Gate 验证)
-> **日期**: 2026-09-16 · **维护者**: Sisyphus · **跨仓**: ❌(PTX-EMU 公告 W40+)
+> **日期**: 2026-09-16 · **维护者**: Sisyphus · **跨仓**: 部分(HSK-9 公告 → PTX-EMU 仓 W40+ 延后)
 > **关联 ADR**: [ADR-SOC-16-sm-microarchitecture.md](../adr/ADR-SOC-16-sm-microarchitecture.md) (Task 1-20)
 > **关联 OpenSpec**: HSK-9 (跨仓公告,per PTX-EMU 协议)
 
@@ -9,12 +9,15 @@
 
 ## 1. 目标
 
-完成 ADR-SOC-16 SM 重构的 **Gate 验证** 全部 Task(Task 17-20),**正式归档 SM 重构 change**。这是继 Phase 8 之后的下一个"小里程碑"。
+完成 ADR-SOC-16 SM 重构的 **Gate 验证** 全部 Task(**Task 17-19;Task 20 G12 HSK-9 公告发布到 PTX-EMU 仓延后 W40+**),**正式归档 SM 重构 change**。这是继 Phase 8 之后的下一个"小里程碑"。
 
 **核心交付物**:
 - 8 Bundle 接线测试覆盖(G4 Gate)
-- L3 集成测试 + bit-exact Gate(G3/G5 Gate)
-- SM 重构 change OpenSpec 归档 + HSK-9 公告(PTX-EMU 端改造延期,本仓先 archive)
+- SFU 子管道单测(G7 Gate,P1-1 产出)
+- L3 集成测试 + bit-exact Gate(G3/G5/G13 Gate)
+- SM 重构 change OpenSpec 归档 + HSK-9 公告草稿(Task 20 发布到 PTX-EMU 仓 W40+)
+
+**注**:G9 Gate(Task 16 删除)由 P0-3 完成,不在本阶段验收范围。
 
 ---
 
@@ -22,18 +25,19 @@
 
 | ID | 任务 | 来源 | 成本 | 阻塞 |
 |----|------|------|------|------|
-| **P1-1** | SM Task 17:L2 Bundle 接线测试(20+ assertions)+ `test_sm_scalar_alu_tlm.cc` | ADR-SOC-16 §6 Task 17 | 3-5 d | P0-3(Task 16) |
-| **P1-2** | SM Task 18:L3 集成测试(30+ assertions)+ IComputeDevice 完整 + bit-exact Gate | ADR-SOC-16 §6 Task 18 | 5-7 d | P1-1 |
-| **P1-3** | SM Task 19:OpenSpec archive + HSK-9 公告发布 | ADR-SOC-16 §6 Task 19 | 1 d | P1-2 |
+| **P1-1** | SM Task 17:L2 Bundle 接线测试(20+ assertions)+ `test_sm_scalar_alu_tlm.cc`(G4 + G7) | ADR-SOC-16 §6 Task 17 | 3-5 d | **P0-3(Task 16) MUST** |
+| **P1-2** | SM Task 18:L3 集成测试(30+ assertions)+ IComputeDevice 完整 + bit-exact Gate(G3 + G5 + G13) | ADR-SOC-16 §6 Task 18 | 5-7 d | P1-1 |
+| **P1-3** | SM Task 19:OpenSpec archive + HSK-9 公告**草稿发布** | ADR-SOC-16 §6 Task 19 | 1 d | P1-2 |
 | **P1-4** | 修复 `completion_ring_mvp.cc:20` TODO(done_out 转发 + MSI-X delivery) | `src/tlm/gpu/completion_ring_mvp.cc:20` | 1 d | 无 |
 | **P1-5** | 修复 `tmu_types_mvp.hh:59` FUTURE 字段(PRIORITY/EVICT_OLDEST/LRU) | `include/tlm/gpu/tmu_types_mvp.hh:59` | 0.5 d | 无 |
+| ~~P1-6~~ | ~~SM Task 20:G12 HSK-9 公告发布到 PTX-EMU 仓~~ | ~~ADR-SOC-16 §6 Task 20~~ | — | **延后 W40+** |
 
-### P1-1:SM Task 17(L2 Bundle 接线测试)
+### P1-1:SM Task 17(L2 Bundle 接线测试 + SFU)
 
-**目标 Gate**:**G4** — 8 Bundle 全覆盖
+**目标 Gate**:**G4** — 8 Bundle 全覆盖 + **G7** — SFU 子管道单测
 **产出**:
 - `test_sm_l2_bundle_wiring.cc`(20+ assertions)
-- `test_sm_scalar_alu_tlm.cc` 单模块测试
+- `test_sm_scalar_alu_tlm.cc` 单模块测试(覆盖 G7 SFU)
 - 8 Bundle 端口连通性矩阵
 
 **测试覆盖**:

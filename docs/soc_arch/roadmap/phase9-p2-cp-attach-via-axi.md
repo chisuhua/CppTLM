@@ -29,14 +29,15 @@
 | ID | 任务 | 来源 | 成本 | 阻塞 |
 |----|------|------|------|------|
 | **P2-1** | CP 寄存器映射设计 spec(register map + doorbell 语义) | 设计任务 | 1 周 | 无 |
-| **P2-2** | EP 侧 BAR decode 扩展:CP 区域转发 | `dgpu_board_shell.cc` 模式 | 1 周 | P2-1 |
+| **P2-9** | OpenSpec change 提案 + Oracle 评审(在 P2-1 之后,P2-2 之前) | 跨仓 change | 0.5 周 | **P2-1** |
+| **P2-2** | EP 侧 BAR decode 扩展:CP 区域转发 | `dgpu_board_shell.cc` 模式 | 1 周 | P2-1 + P2-9 |
 | **P2-3** | `command_processor_mvp` 新增 reg file + doorbell→wake() 触发 | `command_processor_mvp.hh/cc` | 1 周 | P2-1 |
-| **P2-4** | Ring buffer 读取路径接入(fetch_out ↔ MemoryCluster / VramReadFn) | `command-processor.md` §3.5 | 1 周 | P2-3 |
-| **P2-5** | UE 端 ByPass 路径验证(`HostBypassTLM` 已具 API) | 跨仓验证 | 0.5 周 | P2-2 |
+| **P2-4** | Ring buffer 读取路径接入(fetch_out ↔ MemoryCluster / VramReadFn) | `command-processor.md` §2.1(FSM) + §4.2(fetch via mem_read_vram GPU_VA) | 1 周 | P2-3 |
+| **P2-4b** | `dgpu_board_v1.json` CP 接线修正(known minor #6:`CommandProcessorTLM` 引用但 `dgpu_board_shell` 无接线) | `configs/dgpu_board_v1.json` + `dgpu_board_shell.cc` | 0.5 周 | P2-3 |
+| **P2-5** | UE 端 ByPass 路径验证(`HostBypassTLM` 已具 API) | 跨仓验证 | 0.5 周 | P2-2 + P2-4b |
 | **P2-6** | UE 端 Real PCIe 路径验证(RC + EP 桥接) | 跨仓验证 | 0.5 周 | P2-5 |
 | **P2-7** | UE 双路径运行时 config 选路 | UE 仓 | 1 周 | P2-5/6 |
 | **P2-8** | UE 5.5.8 `cp_attach` 真实化 + 集成测试 | UE 仓活跃 change | 2 周 | P2-7 |
-| **P2-9** | OpenSpec change 提案 + Oracle 评审 | 跨仓 change | 0.5 周 | P2-4 |
 
 ### P2-1:CP 寄存器映射设计 Spec
 
@@ -121,38 +122,44 @@ if (bar == 0 && offset >= CP_DOORBELL_BASE && offset < CP_DOORBELL_END) {
 ## 3. 依赖关系
 
 ```
-[7-fix 收尾] (per cpptlm_pcie_init.hh 加固) ─┐
-P0 全部完成 ──────────────────────────────┐
-                                            │
-                                            ▼
-P2-1 (Spec) ──┬──> P2-2 (EP 转发) ──┬──> P2-5 (UE ByPass 验证)
-              │                      │
-              └──> P2-3 (CP reg) ───┼──> P2-6 (UE Real PCIe 验证)
-                                     │
-              ┌──> P2-4 (Ring 读取)─┘
-              │
-              └──> P2-7 (UE 双路径 config) ──> P2-8 (UE cp_attach 真实化) ──> P2-9 (Oracle 评审)
+[UE 端 7-fix 收尾] (per UE 仓加固 commit,非 CppTLM 文件) ─┐
+P0 全部完成 ──────────────────────────────────────────┐
+                                                       │
+                                                       ▼
+P2-1 (Spec) ──> P2-9 (OpenSpec 提案+评审) ──> P2-2 (EP 转发) ──┬──> P2-5 (UE ByPass 验证)
+              │                                          │           │
+              │                                          │           └──> P2-6 (UE Real PCIe 验证)
+              └──> P2-3 (CP reg) ──> P2-4 (Ring 读取)        │
+                                   └──> P2-4b (JSON 接线) ──┘
+                                                       │
+                                                       ▼
+                                  P2-7 (UE 双路径 config) ──> P2-8 (UE cp_attach 真实化)
 ```
 
 **关键依赖**:
 - P2-2 / P2-3 必须在 P2-1 之后(spec 冻结)
+- **P2-9(OpenSpec 提案+评审)在 P2-1 之后、P2-2 之前** — 严格遵循"先提案后实施"纪律,避免 UE Wave 6 stage-3 先行冲突
 - P2-5 / P2-6 必须有 P2-2 完成的 EP 转发路径才能验证
 - P2-8 (UE 真实化)依赖 P2-7 的 config 选路
-- P2-9 (Oracle 评审)是归档前置
+- **UE 端 stage-3 change MUST 先等 P2-9 (Oracle 评审 PASS) 才能启动实施**(见 §6.4)
 
 ---
 
 ## 4. 完成标准(DoD)
 
-- [ ] P2-1:`docs/soc_arch/modules/command-processor.md` 附录:CP 寄存器映射 spec 章节已加
-- [ ] P2-2:`dgpu_board_shell.cc` 新增 CP forwarding 规则,`test_dgpu_p2p_ue_standalone` PASS
+- [ ] P2-1:`docs/soc_arch/modules/command-processor.md` 附录:CP 寄存器映射 spec 章节已加(含 BAR0 子区域、doorbell 语义、WPTR/RPTR 决策)
+- [ ] **P2-9:OpenSpec change 提案 + Oracle 评审 PASS**(在 P2-2 实施前)
+- [ ] P2-2:`dgpu_board_shell.cc` 新增 CP forwarding 规则(伪代码见 §P2-2)
 - [ ] P2-3:`command_processor_mvp` reg file 实现 + `test_command_processor_regfile.cc` 30+ assertions PASS
-- [ ] P2-4:`fetch_out` ↔ MemoryCluster 接线,DGpuSoc JSON 配置已加
+- [ ] P2-4:`fetch_out[1]` ↔ MemoryCluster 接线,DGpuSoc JSON 配置已加
+- [ ] **P2-4b:`dgpu_board_v1.json` CP 接线修正完成**(known minor #6)
 - [ ] P2-5:UE ByPass 路径触发 CP doorbell,E2E 测试 PASS
 - [ ] P2-6:UE Real PCIe 路径触发 CP doorbell,完整 PCIe 协议栈验证 PASS
 - [ ] P2-7:UE config 双选路机制 + nightly/按需测试 PASS
 - [ ] P2-8:UE 5.5.8 cp_attach 真实化,提交已合入 main
-- [ ] P2-9:OpenSpec change 提案,Oracle 评审 PASS,归档至 `openspec/changes/archive/`
+- [ ] OpenSpec change 归档至 `openspec/changes/archive/`
+
+**注**:P2-2/P2-5/P2-6 DoD 引用的 UE 测试名(`test_dgpu_p2p_ue_standalone` / `test_dgpu_power_mgmt_ue_standalone`)需在 UE 仓核验存在性 — 当前为引用待验证项,实施前先 grep UE 仓确认。
 
 ---
 
@@ -182,6 +189,7 @@ P2-1 (Spec) ──┬──> P2-2 (EP 转发) ──┬──> P2-5 (UE ByPass �
 - **23 ABI 签名不变**(`18-pcie-endpoint-entry.md §7.3`)
 - **5 端口 wire-format 冻结**(HAL append-only)
 - **CP 寄存器地址分配** 一旦 P2-1 评审通过,双仓共同冻结
+- **双仓镜像文档**:CppTLM 侧 CP 寄存器 spec 写完后,**UE 端必须同步创建 `docs/02_architecture/cp-register-map.md`** 作为镜像(W34 前 stub,内容随 P2-1 演进)。commit 哈希双仓必须一致 — 防止 spec 版本漂移(参考 18-pcie-endpoint-entry.md v0.9 vs UE 端 v0.2.4 不同步的教训)。
 
 ### 6.3 Escalation 触发
 
@@ -191,6 +199,16 @@ P2-1 (Spec) ──┬──> P2-2 (EP 转发) ──┬──> P2-5 (UE ByPass �
 - CppTLM + UE 双仓对 BAR 窗口分配有冲突
 
 升级方案:引入独立 AXI-Lite slave + 简单 crossbar,严格按 P2-1 spec 重新评审。
+
+### 6.4 UE 端 stage-3 change 硬约束
+
+UsrLinuxEmu 仓活跃 change `2026-09-09-5-5-8-cpptlm-kernel-dispatch-dma`(Wave 6 stage-3)的 task definitions 必须遵守以下硬约束:
+
+- **stage-3 MUST NOT 在 P2-9 (Oracle 评审 PASS) 之前启动实施** — 添加 gate: `wait for CppTLM phase9-p2-cp-attach-via-axi.md P2-9 archive`
+- stage-3 任一 task 若涉及 CP 寄存器访问,必须在 commit message 中引用 `phase9-p2-cp-attach-via-axi.md P2-1 spec` 的 commit hash
+- 若 stage-3 已存在 task 定义与 P2-1 spec 冲突,优先修改 stage-3 task definitions 而非 P2-1 spec(防止双向漂移)
+
+具体落地位置:UsrLinuxEmu `docs/02_architecture/pcie-endpoint-entry.md §12`(跨仓实施 SSOT)需新增 "CppTLM P2 dependency gate" 小节。
 
 ---
 

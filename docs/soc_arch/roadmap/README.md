@@ -8,11 +8,13 @@
 | 文件 | 视角 | 状态 | 摘要 |
 |------|------|:----:|------|
 | [`roadmap-mvp-to-v05.md`](./roadmap-mvp-to-v05.md) | v0.5 (历史快照) | 🔒 冻结 | MVP 切片 4 阶段 6-10 周(per ADR-SOC-06) |
-| [`phase9-post-phase8-roadmap.md`](./phase9-post-phase8-roadmap.md) | v1.0 (W25+ 起步) | 🟢 活跃 | Phase 8 PCIe EP 整合收尾后的近期规划总览 |
+| [`phase9-post-phase8-roadmap.md`](./phase9-post-phase8-roadmap.md) | v1.0 (W25-W42 起步) | 🟢 活跃 | Phase 8 PCIe EP 整合收尾后的近期规划总览 |
 | [`phase9-p0-minor-fixes.md`](./phase9-p0-minor-fixes.md) | v1.0 P0 | 🟢 活跃 | 5 项 Minor 问题清理(纯文档/Minor 修复,零跨仓) |
-| [`phase9-p1-sm-gate-verification.md`](./phase9-p1-sm-gate-verification.md) | v1.0 P1 | 🟢 活跃 | SM 重构收尾(Task 17-20:Gate 验证 + archive) |
+| [`phase9-p1-sm-gate-verification.md`](./phase9-p1-sm-gate-verification.md) | v1.0 P1 | 🟢 活跃 | SM 重构收尾(Task 17-19:Gate 验证 + archive;Task 20 延后) |
 | [`phase9-p2-cp-attach-via-axi.md`](./phase9-p2-cp-attach-via-axi.md) | v1.0 P2 | 🟠 跨仓 | CP 寄存器接入 + UE 双路径(Oracle REFINE + YES 决策) |
 | [`phase9-p3-strategic.md`](./phase9-p3-strategic.md) | v1.0 P3 | 🟡 战略 | ADR 修订 + Phase 9 雏形 |
+
+> **W 编号基准**:`W1 = 2026-09-21 (Mon)`。所有阶段文件时间表均按此基准。本目录创建于 `2026-09-16` ≈ `W37 末`,故 W25-W36 属"追溯性基线",W37+ 才是真正未来时点。
 
 ## v0.5 → v1.0 演进关系
 

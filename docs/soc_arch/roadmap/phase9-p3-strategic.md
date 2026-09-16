@@ -2,16 +2,19 @@
 
 > **类别**: SoC Architecture > Roadmap · **阶段**: P3 · **优先级**: 🟢 长期战略(W40+ 启动)
 > **日期**: 2026-09-16 · **维护者**: Sisyphus · **跨仓**: 部分(ADR-SOC-09/10/14 涉及 UE 端)
-> **关联 ADR**: [revision-plan-v1.0.md](../adr/revision-plan-v1.0.md) (B3-B8) · [ADR-SOC-09-v1-nvidia-amd-dual-vendor.md](../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) · [ADR-SOC-10-module-factory-topology.md](../adr/ADR-SOC-10-module-factory-topology.md) · [ADR-SOC-14](../adr/)
+> **关联 ADR**: [revision-plan-v1.0.md](../adr/revision-plan-v1.0.md) (B3-B4 已对齐) · [ADR-SOC-09-v1-nvidia-amd-dual-vendor.md](../adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) · [ADR-SOC-10-module-factory-topology.md](../adr/ADR-SOC-10-module-factory-topology.md) · [ADR-SOC-14](../adr/)
 > **关联 OpenSpec**: 待启动(战略 change)
+
+**编号纪律**:本目录 P3-3 的 "**B5'-B8'**" 是**新定义**(避免与 [revision-plan-v1.0.md §6.1](../adr/revision-plan-v1.0.md) 的 B5=C1+C2 / B6=C4+C5+C6 / B7=A6+A7+README / B8=归档 撞号)。后者是 revision-plan 既定项,前者是本阶段独立 ADR 撰写项,**互不冲突**。
 
 ---
 
 ## 1. 目标
 
 在 P0/P1/P2 三个执行梯队完成后,**定义下一阶段 (Phase 9+) 的方向**,包括:
-- ADR 修订 B3-B8 收尾(状态升级 / Superseded 标注 / 新 ADR 撰写)
+- ADR 修订 B3-B4 收尾(状态升级 + Superseded 标注)
 - ADR-SOC-09/10/14 等 Proposed 状态的 ADR 评审升级
+- 本阶段独立新 ADR(B5'-B8')撰写(基于 P2 实施经验)
 - Phase 9 雏形文件起草(基于 P2 实施经验)
 
 **核心原则**:**战略阶段不直接动手实现,只产出决策文档**。
@@ -22,15 +25,15 @@
 
 | ID | 任务 | 来源 | 成本 | 阻塞 |
 |----|------|------|------|------|
-| **P3-1** | ADR revision-plan B3 状态升级 | `revision-plan-v1.0.md` §B3 | 0.5 d | 无 |
-| **P3-2** | ADR revision-plan B4 Superseded 标注 | `revision-plan-v1.0.md` §B4 | 0.5 d | 无 |
-| **P3-3** | ADR revision-plan B5-B8 新 ADR 撰写 + 评审 | `revision-plan-v1.0.md` §B5-B8 | 1 周 | P3-1/2 |
+| **P3-1** | ADR revision-plan **B3** 状态升级 | `revision-plan-v1.0.md` §B3 | 0.5 d | 无 |
+| **P3-2** | ADR revision-plan **B4** Superseded 标注 | `revision-plan-v1.0.md` §B4 | 0.5 d | 无 |
+| **P3-3** | **本阶段独立新 ADR(B5'-B8')**撰写 + 评审 | 基于 P2 实施经验 | 1 周 | P3-1/2 |
 | **P3-4** | ADR-SOC-09 v1.0 双 vendor 战略升级 | ADR-SOC-09 Proposed → Accepted | 1 周 + Oracle | P2 完成 |
 | **P3-5** | ADR-SOC-10 ModuleFactory 拓扑升级 | ADR-SOC-10 Proposed → Accepted | 1 周 + Oracle | P2 完成 |
 | **P3-6** | ADR-SOC-14 v5.5+ 集成战略 | ADR-SOC-14 Proposed → Accepted | 1 周 + Metis | UE 反馈 |
 | **P3-7** | Phase 9 启动文件:候选主题 + 范围 + 优先级 | 新建 `phase10-*.md` 雏形 | 1 周 | P3-3/4/5 |
 
-### P3-1 / P3-2 / P3-3:ADR Revision Plan B3-B8
+### P3-1 / P3-2 / P3-3:ADR Revision Plan B3-B4 + 本阶段新 ADR B5'-B8'
 
 **B3**(状态升级):已 Accepted 的 ADR 追加实施结果 Status Update(类似 B1 已做的)
 - 涉及:ADR-SOC-01/05/06/07/08(已 Accepted)+ 实施证据
@@ -38,13 +41,13 @@
 **B4**(Superseded 标注):v0.5 时代 ADR 与 v1.0 战略矛盾的明确标注
 - 涉及:ADR-SOC-02/03(CU 黑盒 → SM 重构后已 superseded)
 - ADR-SOC-04 标记 partial superseded(HSAPP 简化)
-- **决策依据**:ADR-SOC-16 完成后,这些 ADR 的设计决策已被 supersede
+- **superseded-by 链接统一指向 [ADR-SOC-16-sm-microarchitecture.md](../adr/ADR-SOC-16-sm-microarchitecture.md)**(per SM 重构的实际实施依据);同时保留 revision-plan 中"Superseded by ADR-SOC-06 D2" 的早期参考链接
 
-**B5-B8**(新 ADR + 评审):基于 P2 实施经验
-- B5:CP 寄存器架构(per P2-1 spec)
-- B6:UE 双路径模式(per P2-7)
-- B7:7-fix 闭环验收标准(per P2-9 Oracle 评审)
-- B8:Phase 9 总览
+**B5'-B8'**(本阶段新 ADR + 评审):基于 P2 实施经验
+- **B5'**:CP 寄存器架构(per P2-1 spec)
+- **B6'**:UE 双路径模式(per P2-7)
+- **B7'**:7-fix 闭环验收标准(per P2-9 Oracle 评审)
+- **B8'**:Phase 9 总览
 
 ### P3-4:ADR-SOC-09 v1.0 双 vendor 升级
 

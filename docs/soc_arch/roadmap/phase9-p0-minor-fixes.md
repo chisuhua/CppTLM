@@ -40,19 +40,24 @@
 ### P0-2:2 个 known fail 修复
 
 **位置**:`test/test_pcie_endpoint_ip_full_e2e.cc` 的 `_config` 和 `_bar` 测试用例
-**症状**:AXI↔PCIe Cfg 地址编码简化(直接用 `awaddr` 当 offset,应按 PCIe 规范 `bits[1:0]=0, bits[7:2]=offset`)
+**当前状态**(Oracle 报告修正):**代码已含低 2 bit 屏蔽**(`pcie_endpoint_ip.cc:359, 403` `awaddr & ~0x3ULL`,AGENTS.md KEY INVARIANT 亦称 v1.1 已实现)。真正的修复工作是**更新测试期望值**适配现有正确编码,不是加新屏蔽。
 **修复方向**:
-- 在 `pcie_endpoint_ip.cc:357-361` cfg 写路径 加低 2 bit 屏蔽
-- 内部偏移右移得到 byte offset
-- 对应更新测试期望值
+- 读取 `pcie_endpoint_ip.cc:355-410` cfg 写/读路径,确认实际行为
+- 对比 `test_pcie_endpoint_ip_full_e2e.cc` `_config` / `_bar` 期望值,定位差异
+- 更新测试期望值 + 必要时调整测试输入(若旧期望基于"无屏蔽"假设)
+- 若实测仍 fail,根因可能在 BAR 范围判定逻辑而非 cfg 屏蔽 — 报告后回退 P2-2 范围
 
-### P0-3:SM Task 16 物理删除
+### P0-3:SM Task 16 物理删除 [**MUST 先于 P1-1**]
 
 **删除范围**(per `ADR-SOC-16-sm-microarchitecture.md` §6 Task 16):
 - 3 个 deprecated 文件:
   - `include/tlm/gpu/vector_regfile_tlm.hh`
   - `include/tlm/gpu/minimal_warp_scheduler_tlm.hh`
   - `include/tlm/gpu/wavefront_tlm.hh`
+- **同步清理引用点**(build break 防御):
+  - `include/chstream_register.hh:21-23` 移除 3 个 deprecated header 的 include
+  - `modules_cluster.hh` 任何 RegisterAll 引用(grep 验证)
+  - UE 仓 `tests/integration/cpptlm_pcie_init.hh` 验证无引用(已 grep 确认无冲突,但 commit 前再 grep)
 - 15 个旧测试文件(`test/test_*.cc` 中依赖以上 deprecated 类的)
 - 4 个 JSON 配置
 - DOC HYGIENE:删除对应文档中的引用
@@ -76,12 +81,13 @@
 P0-1 ──┐
 P0-2 ──┤
 P0-3 ──┼──> [P0 全部完成] ──> P1 启动(G3/G4/G5 Gate 需要干净基线)
-P0-4 ──┤
-P0-5 ──┘
+P0-4 ──┤     ↑
+P0-5 ──┘     │ MUST
+             └─ P0-3 完成 ❌ P1-1 开始
 ```
 
 **关键依赖**:
-- P0-3(Task 16)必须在 P1-1(SM Task 17 L2 Bundle 接线测试)**之前**完成,否则新旧测试命名冲突
+- **P0-3 (Task 16) MUST 先于 P1-1 (SM Task 17 L2 Bundle 接线测试)** — **硬约束**(违反导致符号冲突 / 编译失败)。DoD 需 P0-3 commit hash 出现在 P1-1 commit 信息中。
 - P0-4 / P0-5 是 mmio/quantum 准确性,与 UE 集成测试的真实性相关(可选 P2 启动前置)
 
 ---
