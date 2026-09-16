@@ -21,7 +21,15 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <memory>
+#include <unordered_map>
+#include <vector>
+
+// 前向声明
+namespace tlm::pcie {
+    class PcieLinkLayer;
+}
 
 namespace tlm::pcie {
 
@@ -110,6 +118,26 @@ public:
     // ========== MSI-X pending 分发（按 stream_id 路由到对应 VF MSI-X）==========
     bool dispatch_msix(uint16_t stream_id, uint16_t vector);
 
+    // ========== MSI-X MWr 投递（T-P11-3: pending → MWr TLP → host）==========
+    // 注入 LinkLayer（供 tick() 调 tx_tlp 投递 MWr）
+    void set_link_layer(tlm::pcie::PcieLinkLayer* ll) noexcept {
+        link_layer_ = ll;
+    }
+
+    // MSI-X 投递完成回调（对应 cpptlm_intr_deliver_cb_t ABI）
+    using IntrDeliveredCallback = std::function<void(uint32_t vector)>;
+    void register_intr_delivered_callback(IntrDeliveredCallback cb) noexcept {
+        intr_delivered_cb_ = std::move(cb);
+    }
+
+    // 周期 tick: 投递 pending MSI-X MWr TLP
+    void tick(uint64_t elapsed_ns);
+
+    // 测试辅助: 手动配置 MSI-X vector table entry
+    bool msix_configure_vector(uint16_t stream_id, uint16_t vector,
+                                uint64_t msg_addr, uint32_t msg_data,
+                                uint32_t control = 0);
+
     // ========== Completion 跟踪（per Q12）==========
     CompletionTracker& completions() noexcept { return completions_; }
     const CompletionTracker& completions() const noexcept { return completions_; }
@@ -118,6 +146,21 @@ public:
                              const CompletionTracker::CplData& cpl);
 
 private:
+    // ========== MSI-X MWr 投递（T-P11-3）==========
+    struct MsixDelivery {
+        uint16_t stream_id;
+        uint32_t vector;
+        uint64_t msg_addr;
+        uint32_t msg_data;
+        bool delivered;
+    };
+
+    void emit_mwr_for_msix(const MsixDelivery& d);
+
+    tlm::pcie::PcieLinkLayer* link_layer_ = nullptr;
+    IntrDeliveredCallback intr_delivered_cb_;
+    std::vector<MsixDelivery> delivery_queue_;
+
     PcieConfigSpacePerVf config_pool_;
     PcieMsixTablePerVf msix_pool_;
     AriRouter ari_router_;
