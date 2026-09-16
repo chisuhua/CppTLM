@@ -135,6 +135,8 @@ set(CORE_SOURCES
     tlm/pcie/pcie_tlp_codec.cc
     # pcie-ip-microarch Phase 9: PcieMockIP independent mock IP (T-P9-3)
     tlm/pcie/pcie_mock_ip.cc
+    # pcie-ip-microarch T-P11-1: PcieRequesterEngine MRd 发起 + tag 关联 + completion timeout
+    tlm/pcie/pcie_requester_engine.cc
 )
 
 # ==============================================================================
