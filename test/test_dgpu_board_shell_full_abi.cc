@@ -41,12 +41,6 @@ TEST_CASE("Full ABI: mmio/backdoor return -ENOSYS via wrapper when SOC not insta
     REQUIRE((wr == 0 || wr == -110 || wr == -22));
     REQUIRE((rd == 0 || rd == -110 || rd == -22));
 
-    uint8_t buf[8] = {0};
-    int bw = cpptlm_emulator_backdoor_write(e, 1, 0x1000, buf, sizeof(buf));
-    int br = cpptlm_emulator_backdoor_read(e, 1, 0x1000, buf, sizeof(buf));
-    REQUIRE((bw == 0 || bw == -22));
-    REQUIRE((br >= 0 || br == -22));
-
     cpptlm_emulator_destroy(e);
 }
 

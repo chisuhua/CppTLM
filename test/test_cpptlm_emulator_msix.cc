@@ -36,20 +36,3 @@ TEST_CASE("cpptlm_emulator_msix_clear_pending forwards to wrapper", "[abi][msix]
     int rc = cpptlm_emulator_msix_clear_pending(emu.emu, 0);
     REQUIRE((rc == 0 || rc == -22));
 }
-
-TEST_CASE("cpptlm_emulator_lookup_register fills cpptlm_register_info_t via wrapper",
-          "[abi][lookup_register][t-w3-3]") {
-    cpptlm_register_info_t info{};
-    REQUIRE(cpptlm_emulator_lookup_register(nullptr, 0, &info) == -22);
-    EmulatorHandleGuard emu(0);
-    REQUIRE(emu.valid());
-    // ABI 直接调 board->lookup_register_entry (绕过 wrapper 的 EINVAL 检查),
-    // unaligned/>BAR0/miss 在 entry 层统一返 nullptr → ABI -38.
-    REQUIRE(cpptlm_emulator_lookup_register(emu.emu, 0x14, nullptr) ==
-            -22);                                                          // out_info null → EINVAL
-    REQUIRE(cpptlm_emulator_lookup_register(emu.emu, 0x15, &info) == -38); // unaligned
-    REQUIRE(cpptlm_emulator_lookup_register(emu.emu, 0x10000, &info) == -38); // > BAR0
-    REQUIRE(cpptlm_emulator_lookup_register(emu.emu, 0x100, &info) == -38);   // miss in BAR0
-    // D15 fix: SOC live → 0x14 hit fills info
-    REQUIRE(cpptlm_emulator_lookup_register(emu.emu, 0x14, &info) == 0);
-}

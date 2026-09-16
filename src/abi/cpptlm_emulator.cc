@@ -296,36 +296,6 @@ int cpptlm_emulator_pcie_config_read(cpptlm_emulator_t* emu, uint16_t offset, ui
 }
 
 CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_backdoor_read(cpptlm_emulator_t* emu, uint8_t bar, uint64_t offset, void* buf,
-                                  size_t len) {
-    try {
-        if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->backdoor_read(offset, buf, len);
-    } catch (const std::exception&) {
-        return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
-    }
-}
-
-CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_backdoor_write(cpptlm_emulator_t* emu, uint8_t bar, uint64_t offset,
-                                   const void* buf, size_t len) {
-    try {
-        if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->backdoor_write(offset, buf, len);
-    } catch (const std::exception&) {
-        return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
-    }
-}
-
-CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_msix_init(cpptlm_emulator_t* emu, uint32_t table_size, uint32_t mask) {
     try {
         if (emu == nullptr || emu->board == nullptr) {
@@ -360,31 +330,6 @@ int cpptlm_emulator_msix_clear_pending(cpptlm_emulator_t* emu, uint32_t vector) 
             return -EINVAL;
         }
         return emu->board->msix_clear_pending(vector);
-    } catch (const std::exception&) {
-        return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
-    }
-}
-
-CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_lookup_register(cpptlm_emulator_t* emu, uint32_t offset,
-                                    cpptlm_register_info_t* out_info) {
-    try {
-        if (emu == nullptr || emu->board == nullptr || out_info == nullptr) {
-            return -EINVAL;
-        }
-        const auto* entry = emu->board->lookup_register_entry(offset);
-        if (entry == nullptr) {
-            return -38; // ENOSYS: SOC null / unaligned / > BAR0 / not registered
-        }
-        out_info->offset = entry->offset;
-        std::strncpy(out_info->name, entry->name.c_str(), sizeof(out_info->name) - 1);
-        out_info->name[sizeof(out_info->name) - 1] = '\0';
-        out_info->access = static_cast<uint8_t>(entry->access);
-        out_info->side_effect = static_cast<uint8_t>(entry->side_effect);
-        out_info->stream_id = entry->doorbell_stream_id;
-        return 0;
     } catch (const std::exception&) {
         return -EINVAL;
     } catch (...) {
@@ -428,15 +373,6 @@ int cpptlm_emulator_register_callbacks(cpptlm_emulator_t* emu, cpptlm_intr_deliv
     } catch (...) {
         return -EFAULT;
     }
-}
-
-CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_register_backdoor_cb(cpptlm_emulator_t* emu, void* cb) {
-    (void)cb;
-    if (emu == nullptr || emu->board == nullptr) {
-        return -EINVAL;
-    }
-    return 0;
 }
 
 CPPTLM_EMULATOR_EXPORT
