@@ -23,13 +23,16 @@
 #include "core/sim_object.hh"
 #include "tlm/gpu/pcie_bar_router_mvp.hh"
 #include "tlm/pcie/pcie_completion_tracker_tlm.hh"
+#include "tlm/pcie/pcie_completer_engine.hh"
 #include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
 #include "tlm/pcie/pcie_resizable_bar.hh"
 #include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <string>
+#include <tuple>
 #include <unordered_map>
 #include <vector>
 
@@ -238,6 +241,23 @@ public:
         return sdma_ring_processed_count_;
     }
 
+    // ========== T-P10-3: TLP 入方向三态分派 ==========
+    // TLP sink 回调类型 (host → EP 入方向)
+    using TlpSink = std::function<void(const bundles::PcieTlpBundle&)>;
+
+    // 注册 TLP sink (在 attach_composition 调 set_tlp_sink)
+    void set_tlp_sink(TlpSink sink) noexcept { tlp_sink_ = std::move(sink); }
+
+    // T-P10-3 测试 helper: 注入 TLP 入方向 (调 tlp_sink_ 回调)
+    void inject_tlp_from_host_for_test(const bundles::PcieTlpBundle& tlp);
+
+    // T-P10-3 测试 helper: 设置 Bypass Mux 模式
+    void set_bypass_mux_mode_for_test(BypassMode mode);
+
+    // T-P10-3 测试 helper: FC 状态快照 (P, NP, Cpl token 数)
+    // 返回 std::tuple<uint32_t, uint32_t, uint32_t> (Posted, NonPosted, Completion)
+    std::tuple<uint32_t, uint32_t, uint32_t> link_layer_fc_snapshot_for_test() noexcept;
+
 private:
     PcieSriovVfPool pool_;
     // A-2: BAR0 寄存器路由表（替代 PcieEndpointTLM 内的 PcieBarRouter 成员）
@@ -276,6 +296,16 @@ private:
     void warn_unconsumed_subkeys(const nlohmann::json& group,
                                  const std::string& group_name,
                                  const std::vector<std::string>& known_subkeys);
+
+    // ========== T-P10-3: TLP 入方向分派 ==========
+    // Bypass Mux 模式 (默认 Full, 同步自 composite->mux() 状态)
+    BypassMode bypass_mux_mode_ = BypassMode::Full;
+    // TLP sink 回调 (由 attach_composition 注册, 经 set_tlp_sink 设置)
+    TlpSink tlp_sink_;
+    // Completer Engine (处理 TLP, 生成 CplD)
+    cpptlm::pcie::PcieCompleterEngine completer_engine_;
+    // 内部: tick() 入方向 TLP 分派 (按 bypass_mux_mode_ 三态)
+    void dispatch_tlp_entry(const bundles::PcieTlpBundle& tlp);
 };
 
 } // namespace tlm::pcie

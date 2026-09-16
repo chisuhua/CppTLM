@@ -179,6 +179,17 @@ namespace tlm::pcie {
                         ll_json.value("fc_initial_credit_p", 256u),
                         ll_json.value("fc_initial_credit_np", 256u),
                         ll_json.value("fc_initial_credit_cpl", 256u));
+                    // T-P10-3: 同步 bypass_mux_mode_ 到 EP
+                    bypass_mux_mode_ = lpm->mux().mode();
+                    // T-P10-3: 注册 TLP sink 回调 — 入方向 TLP 经 set_tlp_sink →
+                    // dispatch_tlp_entry → CompleterEngine::handle_tlp
+                    lpm->link().set_tlp_sink([this](const bundles::PcieTlpBundle& tlp) {
+                        this->dispatch_tlp_entry(tlp);
+                    });
+                    // 同时设 EP 自身的 tlp_sink_ (Bypass 模式直通路径)
+                    this->set_tlp_sink([this](const bundles::PcieTlpBundle& tlp) {
+                        this->dispatch_tlp_entry(tlp);
+                    });
                 }
             }
         }
@@ -620,6 +631,67 @@ namespace tlm::pcie {
                 ++it;
             }
         }
+    }
+
+    // ========== T-P10-3: TLP 入方向三态分派 ==========
+
+    void PcieEndpointIP::dispatch_tlp_entry(const bundles::PcieTlpBundle& tlp) {
+        // 按 Bypass Mux mode 三态分派:
+        //   Full/Partial: 经 LL FC check + ACK 生成 → tlp_sink 回调在此被调(LL 处理完)
+        //   Bypass: 跳过 LL FC, tlp_sink 被直接调
+        // EP 的 bar_store_/config_space 在此直接更新 (与 AXI tick() 路径一致)
+        const uint8_t kind = static_cast<uint8_t>(tlp.kind.read());
+
+        if (kind == bundles::PcieTlpBundle::MMIO_WRITE ||
+            kind == bundles::PcieTlpBundle::MEM_WRITE) {
+            const uint8_t bar = static_cast<uint8_t>(tlp.bar_index.read());
+            const uint64_t offset = tlp.offset.read() & ~0x3ULL;
+            const uint64_t data = tlp.data.read();
+            bar_store_[BarStoreKey{bdf_, bar, offset}] = data;
+        } else if (kind == bundles::PcieTlpBundle::CFG_WRITE) {
+            const uint16_t cfg_off = static_cast<uint16_t>(tlp.offset.read() & ~0x3ULL);
+            pool_.config_of(0).write(cfg_off, static_cast<uint32_t>(tlp.data.read()));
+        }
+
+        // 同时转发到 CompleterEngine 做 CplD 生成 (读路径) 及其他处理
+        completer_engine_.handle_tlp(tlp);
+    }
+
+    void PcieEndpointIP::inject_tlp_from_host_for_test(const bundles::PcieTlpBundle& tlp) {
+        // 按 bypass mux mode 决定注入路径:
+        //   Full/Partial: 经 LL rx_tlp_from_host (FC check + ACK 生成 + tlp_sink 回调)
+        //   Bypass: 直送 tlp_sink_ (无 FC 检查)
+        if (bypass_mux_mode_ == BypassMode::Bypass) {
+            if (tlp_sink_) {
+                tlp_sink_(tlp);
+            }
+        } else {
+            // Full/Partial: 经 LinkLayer FC 检查
+            if (auto* ll = link_layer()) {
+                ll->rx_tlp_from_host(tlp, 0);
+            }
+        }
+    }
+
+    void PcieEndpointIP::set_bypass_mux_mode_for_test(BypassMode mode) {
+        bypass_mux_mode_ = mode;
+        // 同步到 bypass_mux
+        if (auto* mux = bypass_mux()) {
+            mux->apply_mode(mode);
+        }
+    }
+
+    std::tuple<uint32_t, uint32_t, uint32_t>
+    PcieEndpointIP::link_layer_fc_snapshot_for_test() noexcept {
+        if (auto* ll = link_layer()) {
+            auto& fc = ll->fc();
+            return std::make_tuple(
+                fc.bucket(0).token_count(FcTokenBucket::Type::Posted),
+                fc.bucket(0).token_count(FcTokenBucket::Type::NonPosted),
+                fc.bucket(0).token_count(FcTokenBucket::Type::Completion)
+            );
+        }
+        return std::make_tuple(0u, 0u, 0u);
     }
 
 } // namespace tlm::pcie
