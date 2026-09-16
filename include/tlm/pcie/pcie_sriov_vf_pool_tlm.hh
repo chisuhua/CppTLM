@@ -13,6 +13,7 @@
 
 #include "bundles/pcie_bundles_tlm.hh"
 #include "tlm/pcie/pcie_ari_router_tlm.hh"
+#include "tlm/pcie/pcie_completer_engine.hh"
 #include "tlm/pcie/pcie_completion_tracker_tlm.hh"
 #include "tlm/pcie/pcie_config_space_per_vf_tlm.hh"
 #include "tlm/pcie/pcie_flow_control_token_bucket.hh"
@@ -123,6 +124,8 @@ private:
     FcEngine fc_engine_;
     CompletionTracker completions_;
     std::array<uint16_t, NUM_PORTS> tlp_seq_{};
+    // T-P10-1: PcieCompleterEngine 实例 (替换 dispatch_tlp default no-op)
+    cpptlm::pcie::PcieCompleterEngine completer_engine_;
 };
 
 } // namespace tlm::pcie

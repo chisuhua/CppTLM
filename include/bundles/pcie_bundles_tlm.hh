@@ -56,7 +56,11 @@ struct PcieTlpBundle : public bundle_base {
     // (per spec.md scenario "MSI-X delivery path")
     static constexpr uint8_t IRQ_DELIVERY = 6;
 
-    ch_uint<8>  kind;             // 事务类型（CFG_READ..MEM_WRITE + IRQ_DELIVERY）
+    // CPLD (Completion with Data) 常量, T-P10-1 新增
+    // fc_type_for_kind 修复: CPLD → Completion credit bucket（而非误消耗 Posted）
+    static constexpr uint8_t CPLD = 7;
+
+    ch_uint<8>  kind;             // 事务类型（CFG_READ..MEM_WRITE + IRQ_DELIVERY + CPLD）
     ch_uint<8>  bar_index;        // MMIO/MEM 时有效
     ch_uint<64> offset;           // config offset 或 BAR 内偏移
     ch_uint<32> size;             // 访问字节数

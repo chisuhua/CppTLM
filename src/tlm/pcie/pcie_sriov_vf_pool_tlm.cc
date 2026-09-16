@@ -2,6 +2,7 @@
 // PcieSriovVfPool 实现：dispatch_tlp / dispatch_msix / next_seq / FLR (T-P4-4/5)
 // 作者 CppTLM Team / 日期 2026-10-13
 #include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
+#include "tlm/pcie/pcie_completer_engine.hh"
 
 namespace tlm::pcie {
 
@@ -26,6 +27,11 @@ namespace tlm::pcie {
             cfg.write(cfg_offset, static_cast<uint32_t>(tlp.data.read()));
             return true;
         default:
+            // T-P10-1: 非 CFG 事务 → 委托 PcieCompleterEngine 处理
+            // (MMIO_READ/WRITE, MEM_READ/WRITE 等)
+            // 注意: completer_engine 当前持有自身 config space 副本,
+            // 实际 MMIO/MEM 路由需后续 T-P10-3 接入 dispatch_tlp_entry 三态分派
+            completer_engine_.handle_tlp(tlp);
             return true;
         }
     }

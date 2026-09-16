@@ -329,14 +329,13 @@ namespace tlm::pcie {
     // ========== Tx path ==========
 
     FcTokenBucket::Type PcieLinkLayer::fc_type_for_kind(uint8_t kind) {
-        // Completion credit bucket reserved for Phase 4 (Q12). CplD TLP kind not in
-        // PcieTlpBundle yet → fc_type_for_kind 暂不返回 Type::Completion，Completion
-        // 仅由 UpdateFC DLLP 单独更新（Cpl 类 TLP 落地后由事务层回发时再消耗）
         switch (kind) {
         case bundles::PcieTlpBundle::CFG_READ:
         case bundles::PcieTlpBundle::MMIO_READ:
         case bundles::PcieTlpBundle::MEM_READ:
             return FcTokenBucket::Type::NonPosted;
+        case bundles::PcieTlpBundle::CPLD:  // T-P10-1: CplD → Completion credit
+            return FcTokenBucket::Type::Completion;
         case bundles::PcieTlpBundle::IRQ_DELIVERY:
         default:
             return FcTokenBucket::Type::Posted; // 写 / MSI-X 中断投递视为 Posted
