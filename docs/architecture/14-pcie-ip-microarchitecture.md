@@ -18,6 +18,7 @@
 9. [23 ABI 兼容性边界](#9-23-abi-兼容性边界)
 10. [配置 Schema](#10-配置-schema)
 11. [附录 A: 与现有 PcieEndpointTLM 的迁移路径](#附录-a与现有-pcieendpointtlm-的迁移路径)
+12. [Phase 9+ 完整 TLP 链路 + profile 选路](#phase-9-完整-tlp-链路--profile-选路-2026-09-17)
 
 ---
 
@@ -1034,6 +1035,155 @@ Phase 2 审计结果：`grep -rn "phy.*->tick()" test/` 命中的
 
 ---
 
+## Phase 9+ 完整 TLP 链路 + profile 选路 (2026-09-17)
+
+> **状态**: ✅ 完成 (11 commits, 全量 66,564 assertions, 1,470 test cases)
+> **跨仓**: HSK-10 (UsrLinuxEmu ADR-088 §D5 Status Update 待 Hub ack)
+> **父 spec**: `openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/specs/pcie-tlp-wire-datapath/spec.md`
+> **proposal.md**: `openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/proposal.md`
+> **tasks.md**: `openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/tasks.md`
+
+### 12.1 概览
+
+Phase 9+ 完成 T-P9-1 到 T-P12-2 共 11 个 commit, 闭合完整 PCIe TLP 链路 (host↔EP):
+
+- **tlp-codec**: wire-format 编解码 (CRC-32/LCRC/DLLP CRC-16)
+- **completer-engine**: 替换 dispatch_tlp default no-op (full branches + CplD generation)
+- **requester-engine**: MRd 发起 + tag 关联 + CompletionTracker 超时
+- **bypass-tlp-data-path**: axi_bypass profile 路径
+- **pcie-mock-ip**: 独立组件 (gem5-style, 无 TLP/LL/PHY 依赖)
+- **profile-routing**: 4 态选路 (tlp/axi_bypass/mock/legacy)
+- **dispatch-tlp-tick**: tick() 三态分派 + set_tlp_sink 真正激活
+- **end-to-end-tlp**: UsrLinuxEmu ABI 路径真实产生 TLP → LL → bar_store_ → CplD
+
+### 12.2 架构图
+
+```
+[Host] <--tx_tlp/rx_tlp--> [PcieLinkLayer] <--set_tlp_sink--> [PcieEndpointIP::dispatch_tlp_entry]
+   |                              |                                    |
+   |                              v                                    v
+   |                       [CompleterEngine::handle_tlp] --(read)-->[CplD via tx_tlp]
+   |                                                                       |
+   v                                                                       v
+[tx_tlp_out_] <-----------------------------------------------------------/
+
+[RequesterEngine::mrd_read] --tx_tlp(MRd)--> [Host] --rx_tlp(CplD)--> [on_cpld_received]
+[SDMA H2D desc] --> [RequesterEngine] --> MRd --> host
+[MSI-X pending] --> [SriovVfPool::dispatch_msix] --> MWr --> host
+
+[DGpuBoard mmio_write] --"pcie_path"--> {Legacy: mmio_regs_ | AxiBypass: HostBypassTLM | Tlp: PcieTlpEncoder -> LL | Mock: PcieMockIP}
+[DGpuBoard mmio_read] --"pcie_path" tlp--> MRd + 读泵环(<=1000 cycle) + 超时降级 mmio_regs_
+
+[PcieMockIP] --独立 gem5 风格--> BAR space + MSI-X (直调 cpptlm_intr_deliver_cb_t) + D3hot gate (全 BAR DECERR)
+```
+
+### 12.3 关键模块清单
+
+| 模块 | 路径 | 状态 | 行数 |
+|------|------|------|------|
+| PcieTlpCodec | `include/tlm/pcie/pcie_tlp_codec.hh` `.cc` | T-P9-1 | hh 114 + cc 542 |
+| PcieTlpWireBundle | `include/bundles/pcie_bundles_tlm.hh` | T-P9-2 | +128 行 |
+| PcieMockIP | `include/tlm/pcie/pcie_mock_ip.hh` `.cc` | T-P9-3 | 144 + 224 (368 <=800) |
+| PcieCompleterEngine | `include/tlm/pcie/pcie_completer_engine.hh` `.cc` | T-P10-1 | 89 + 292 |
+| bar_store_ 三维 key | `include/tlm/pcie/pcie_endpoint_ip.hh` `.cc` | T-P10-2 | 5 处改点 |
+| dispatch_tlp_entry + set_tlp_sink | `include/tlm/pcie/pcie_endpoint_ip.hh` `.cc` | T-P10-3 | tick 三态 |
+| PcieRequesterEngine | `include/tlm/pcie/pcie_requester_engine.hh` `.cc` | T-P11-1 | 141 + 105 |
+| SDMA H2D 接 RequesterEngine | `src/tlm/gpu/sdma_engine_tlm.cc` | T-P11-2 | +104 行 |
+| MSI-X MWr 投递链 | `src/tlm/pcie/pcie_sriov_vf_pool_tlm.cc` | T-P11-3 | +74 行 |
+| DGpuBoard profile 4 态 | `include/tlm/gpu/dgpu_board_shell.hh` `.cc` | T-P12-1 | +33 +74 |
+| E2E 完整链路 | `test/test_pcie_endpoint_ip_tlp_path_e2e.cc` | T-P12-2 | 388 行 |
+
+### 12.4 关键设计决策
+
+#### 12.4.1 set_tlp_sink 真正激活 (T-P10-3 修复)
+
+- 此前 `set_tlp_sink` 在生产代码中零调用
+- T-P10-3: 在 `attach_composition` 内调 `link_layer_->set_tlp_sink(callback)` 注册 CompleterEngine 入口
+- `inject_tlp_from_host_for_test` -> `dispatch_tlp_entry` -> `completer_engine_.handle_tlp(tlp)` (注意: 返回的 CplD **必须**转发回 host)
+
+#### 12.4.2 CplD Forwarding (T-P12-2 修复)
+
+- T-P12-2 前: `dispatch_tlp_entry` 调用 `completer_engine_.handle_tlp(tlp)` 但 **丢弃返回的 CplD**
+- T-P12-2 后: `if (cpld.kind == CPLD) ll->tx_tlp(cpld, 0)` -> CplD 经 tx_tlp 发出 -> host -> 通过 `try_pop_tx_tlp()` 接收
+
+#### 12.4.3 读泵环 (spec.md §profile-pcie-path-routing)
+
+- tlp profile 下 `DGpuBoard::mmio_read` 是同步 C ABI
+- 调用线程在 `cpptlm_emulator_mmio_read` 内循环驱动 `eq_->run()` <= 1000 虚拟周期
+- 等待 CplD -> 写 `pending_data_[trans_id]` -> 回填 buf
+- 超时降级 `mmio_regs_` (per 修复 #5 既有语义)
+- 关键约束: `abi_call_mutex_` 保护 `pending_data_` (ABI 线程与 sim 线程并发访问)
+
+#### 12.4.4 bar_store_ 三维 key (T-P10-2 修复 P10 技术债)
+
+- 此前: `std::unordered_map<uint64_t, uint64_t>` (裸地址)
+- 现在: `std::unordered_map<BarStoreKey, uint64_t>` (BDF x BAR x addr)
+- 新增 `erase_all_for_bar(bdf, bar, new_size)` helper
+- 5 处读写点全部三维化 (AXI tick 3 处 + mmio_write 1 处 + on_bar_resize 1 处)
+
+#### 12.4.5 fc_type_for_kind CplD credit 桶修复 (T-P10-1 修潜伏 bug)
+
+- 此前: `case IRQ_DELIVERY: default: return Posted` (CplD 误消耗 Posted credit)
+- 现在: `case CPLD: return Completion` (正确路由)
+- 注释更新: 删除"CplD TLP kind not in PcieTlpBundle yet"
+
+### 12.5 测试统计
+
+| Phase | Commit | Assertions | TEST_CASE |
+|-------|--------|-----------|-----------|
+| T-P9-1 | ec9abf11 | +17.7K (codec) | 11 |
+| T-P9-2 | 082efcc9 | +38 (wire-bundle) | 3 |
+| T-P9-3 | 2847ab66 | +29 (mock-ip) | 6 |
+| T-P10-1 | d1a2239f | +20 (completer) | 6 |
+| T-P10-2 | c30261b9 | +28 (bar-isolation) | 5 |
+| T-P10-3 | c13fd669 | +6 (tick-dispatch) | 3 |
+| T-P11-1 | 26548df5 | +37 (requester) | 5 |
+| T-P11-2 | 41486360 | +12 (sdma-h2d) | 2 |
+| T-P11-3 | ac0930c0 | +20 (msix-mwr) | 3 |
+| T-P12-1 | 7e5a2d48 | +17 (bypass-tlp) | 3 |
+| T-P12-2 | 656c194f | +33 (tlp-e2e) | 3 |
+| **总计** | **11 commits** | **+18.2K 新断言** | **52 新测试** |
+| **全量 baseline** | | **66,564 assertions, 1,470 test cases** | |
+
+### 12.6 8 个 ADDED Requirements 映射
+
+| spec.md §Requirement | 文档章节 | 实现 |
+|----------------------|---------|------|
+| tlp-codec-wire-format | §12.1 | PcieTlpCodec + Golden Fixture |
+| completer-engine-full | §12.1 | PcieCompleterEngine + dispatch_tlp_entry 委派 |
+| requester-engine-outgoing | §12.1 | PcieRequesterEngine + SDMA/MSI-X 集成 |
+| bypass-tlp-data-path | §12.1 | DGpuBoard::mmio_write profile 分流 |
+| pcie-mock-ip | §12.2 | PcieMockIP (gem5-style) |
+| profile-pcie-path-routing | §12.2 | DGpuBoard 4 态选路 + 读泵环 |
+| pcie-endpoint-tick-tlp-dispatch | §12.1 | dispatch_tlp_entry 三态 + set_tlp_sink 激活 |
+| end-to-end-tlp-path | §12.5 | E2E test 验证完整链路 |
+
+### 12.7 跨仓协调 (HSK-10)
+
+参见 `docs/cross_repo/HSK-10-cpptlm-tlp-wire-datapath.md`:
+
+- Hub 侧 (UsrLinuxEmu ADR-088 §D5) Status Update 已提交 (T-P9-0-pre)
+- 10 工作日响应上限 (自 2027-02-10 -> 截止 2027-02-24)
+- 超时 fallback: T-P9-0 切出为 follow-up `cpptlm-abi-slimming`
+- 本仓 Day 12+ 才能执行 T-P9-0 (主线不受影响)
+- Hub 拒绝回退策略: 待协同确定 (HSK-10 §5.3)
+
+### 12.8 已知限制
+
+- **ch_uint<512> = 64-bit** (per AGENTS.md KEY INVARIANTS): wire bundle 强制 `std::array<uint32_t, 1024>` 绕开
+- **Read pump timeout**: 1000 虚拟周期硬上限 (per design.md §2.5 quantum 边界)
+- **PcieMockIP 行数约束**: ~500 行目标, 800 行上限 (per V-5 Fz-4)
+- **TLP cascade dep**: set_tlp_sink 必须先于 LLFC; dispatch_tlp_entry CplD 转发必须先于 tx_tlp
+
+### 12.9 后续工作 (Day 12+)
+
+| T-P | 内容 | 阻塞 |
+|-----|------|------|
+| T-P12-4 | CMake + 全量验证 | 无 |
+| T-P9-0 | ABI 精简 (22->18 函数) | Hub ADR-088 ack |
+
+---
+
 ## 维护记录
 
 | 版本 | 日期 | 作者 | 变更 |
@@ -1041,6 +1191,7 @@ Phase 2 审计结果：`grep -rn "phy.*->tick()" test/` 命中的
 | v1.0 | 2027-02-09 | CppTLM Team | 从 `openspec/changes/2026-09-01-cpptlm-dgpu-pcie-ip-microarch/design.md` (931 行) 迁移,含 Phase 7 Oracle M2 标注 |
 | v1.1 | 2027-02-09 | CppTLM Team | 添加 Phase 7 Oracle M2 标注 (RC 枚举 PF0-only) |
 | v1.2 | 2026-09-16 | CppTLM Team | 新增 §14.2 PcieLinkPhyMuxTLM Composite Architecture (Phase 2, openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor) |
+| v1.3 | 2026-09-17 | CppTLM Team | 新增 §12 Phase 9+ 完整 TLP 链路 + profile 选路章节 (openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath) |
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📄 Architecture — Phase 8 整合交付完成
+**状态**: 📄 Architecture — Phase 8 整合交付完成 · Phase 9+ TLP 链路完成

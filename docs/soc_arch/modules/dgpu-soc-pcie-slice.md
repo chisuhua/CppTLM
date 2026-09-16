@@ -213,6 +213,54 @@ OpenSpec change: [`openspec/changes/2026-08-28-cpptlm-dgpu-pcie-slice-prerequisi
 
 ---
 
+## 9. Phase 9+ 更新: PCIe Slice 边界扩展 (2026-09-17)
+
+> **关联 change**: `openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/`
+> **架构文档**: `docs/architecture/14-pcie-ip-microarchitecture.md §12` Phase 9+ 完整 TLP 链路 + profile 选路
+
+### 9.1 PCIe IP 类型 (Phase 9+ 引入)
+
+| 类型 | 路径 | 依赖 |
+|------|------|------|
+| **PcieEndpointIP** | `tlm/pcie/pcie_endpoint_ip` | LL + PHY + Bypass Mux + 17 端口 SR-IOV (完整 PCIe 端点, Phase 4 既有) |
+| **PcieMockIP** (新) | `tlm/pcie/pcie_mock_ip` | **独立**, 仅 BAR + MSI-X + D3hot + AXI payload (无 TLP/FC/LL/PHY) |
+| **PcieCompleterEngine** (新) | `tlm/pcie/pcie_completer_engine` | 被 PcieEndpointIP 持有, 替换 dispatch_tlp no-op 占位 |
+| **PcieRequesterEngine** (新) | `tlm/pcie/pcie_requester_engine` | 持有 PcieLinkLayer*, 用于 SDMA H2D + MSI-X MWr 投递 |
+| **HostBypassTLM** | `tlm/pcie/host_bypass_tlm` | Phase 7 既有, 用于 axi_bypass profile 路径 |
+
+### 9.2 profile 选路 (Phase 9+ 新增)
+
+`profile.pcie_path` 字段决定 mmio_write/read 路径:
+
+| 值 | 触发条件 | 路径分流 | 行为对齐 |
+|----|---------|---------|---------|
+| `"tlp"` | 非默认 | 完整 TLP 链路 (Encoder -> LL -> CompleterEngine -> bar_store_) | 最完整路径; 含 CSR 重定向 + 读泵环阻塞 |
+| `"axi_bypass"` | 显式设置 | HostBypassTLM::bar_write (跳过 TLP, 直接 AXI) | 无 TLP 延迟, 无 DWORD 编解码 |
+| `"mock"` | 显式设置 | PcieMockIP (独立组件, 无协议栈) | 极简响应; backdoor 行为通过 mock 路径实现 |
+| `"legacy"` | 默认 | mmio_regs_ 既有行为 | 兼容遗留测试 |
+
+### 9.3 ABI 表面 (Phase 9+ 状态)
+
+`include/abi/cpptlm_emulator.h` 22 函数 (T-P9-0 之前)。T-P9-0 后将精简至 18 函数 (删除 4 个 backdoor 辅助函数: `cpptlm_emulator_backdoor_read/write` + `cpptlm_emulator_register_backdoor_cb` + `cpptlm_emulator_lookup_register`), 需要 Hub side (UsrLinuxEmu) ADR-088 Status Update ack。详见 HSK-10 (`docs/cross_repo/HSK-10-cpptlm-tlp-wire-datapath.md`)。
+
+### 9.4 数据流 (Phase 9+)
+
+```
+mmio_write (C ABI)
+  |
+  +-- pcie_path="tlp"       -> PcieTlpEncoder -> PcieLinkLayer::rx_tlp_from_host -> CompleterEngine
+  |                              -> bar_store_  -> CplD (MWr: no Cpl | MRd: CplD via tx_tlp -> host)
+  +-- pcie_path="axi_bypass" -> HostBypassTLM::bar_write -> PcieAxiAdapter -> bar_store_
+  +-- pcie_path="mock"       -> PcieMockIP::mmio_write   -> bar_regs_
+  +-- pcie_path="legacy"     -> mmio_regs_ (既有)
+
+mmio_read (C ABI, tlp path)
+  -> RequesterEngine MRd -> tx_tlp -> host -> rx_tlp(CplD) -> pending_data_ -> buf
+     (读泵环: eq_->run() <= 1000 虚拟周期, 超时降级 mmio_regs_)
+```
+
+---
+
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 🔵 Implemented + Tier 2 前置测试待补 (per OpenSpec change 2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites)
-**最后更新**: 2026-08-28
+**状态**: 🔵 Implemented + Tier 2 前置测试待补 (per OpenSpec change 2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites) + Phase 9+ TLP 链路完成 (2026-09-17 open change)
+**最后更新**: 2026-09-17
