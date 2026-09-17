@@ -41,7 +41,7 @@ include/                 # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
     gpu_cluster_shared_interface.hh
     pcie_endpoint_tlm.h        # PcieEndpointTLM 4 端口冻结 (Phase 7.A, [[deprecated]])
     sdma_engine_tlm.hh / msix_table_mvp.hh / pcie_config_space_mvp.hh
-    # [[deprecated]] 类 (Task 10): vector_regfile_tlm / minimal_warp_scheduler_tlm / wavefront_tlm (待 Task 16 删除)
+    # [[deprecated]] 类 (Task 10): vector_regfile_tlm / minimal_warp_scheduler_tlm / wavefront_tlm (已删除, Task 16)
   tlm/pcie/              # ★ 7 阶段 PCIe EP 微架构 (本项目主体,2026-2027)
     pcie_link_layer_tlm.{hh,cc}                # Phase 1: 链路层 + DLLP + FC Token Bucket
     pcie_link_phy_mux_tlm.{hh,cc}              # ★ Phase 1/2: LL+PHY+Mux composite (17 端口, EP internal_factory 持有)
@@ -181,7 +181,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 |------|------|
 | GPGPU 多层容器 (CPU→CU→TPC→GPC→GPU) | `include/tlm/cluster/` (cpu/compute/tpc/gpc/gpu_cluster) |
 | 顶层 SoC 容器 (CPU侧 + GPU侧 + Crossbar) | `include/tlm/cluster/apu_soc.hh` (顶层,带 incorporate_parent 钩子) |
-| GPU CU / Warp / Register File | `include/tlm/gpu/` (gpu_compute_unit_tlm / wavefront / warp_scheduler / vector_regfile) |
+| GPU CU / Warp / Register File | `include/tlm/gpu/` (gpu_compute_unit_tlm / streaming_multiprocessor_tlm / sm/) |
 | DMA / Doorbell / Command Processor | `include/tlm/gpu/` (dma_descriptor_mvp / doorbell_mvp / command_processor_mvp) |
 | dGPU 板级整合 | `src/tlm/gpu/dgpu_board_shell.cc` |
 

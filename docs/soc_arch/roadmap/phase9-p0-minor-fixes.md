@@ -21,7 +21,7 @@
 |----|------|------|------|------|
 | **P0-1** | 执行 ADR-SOC revision-plan **B2** | `revision-plan-v1.0.md` §B2 | 2-3 h | 无 |
 | **P0-2** | 修复 `test_pcie_endpoint_ip_full_e2e.cc` 2 个 known fail(`_config` / `_bar`) | `test/test_pcie_endpoint_ip_full_e2e.cc` | 4-6 h | 无 |
-| **P0-3** | SM **Task 16**:物理删除 deprecated 类 + 15 旧测试 | `ADR-SOC-16-sm-microarchitecture.md` §6 Task 16 | 1 d | 无 |
+| **P0-3** | SM **Task 16**:物理删除 deprecated 类 + 15 旧测试 | `ADR-SOC-16-sm-microarchitecture.md` §6 Task 16 | 1 d | ✅ 已完成 |
 | **P0-4** | 修复 `dgpu_board_shell.cc:250` TODO T-bs-3c | `src/tlm/gpu/dgpu_board_shell.cc:250` | 2-4 h | 无 |
 | **P0-5** | 修复 `dgpu_board_shell.cc:562` TODO T-bs-3b | `src/tlm/gpu/dgpu_board_shell.cc:562` | 2-4 h | 无 |
 

@@ -18,9 +18,7 @@
 #include "tlm/router_tlm.hh"
 #include "tlm/traffic_gen_tlm.hh"
 // Task 12: kernel_launch_tlm.hh 已物理删除
-#include "tlm/gpu/minimal_warp_scheduler_tlm.hh"
-#include "tlm/gpu/vector_regfile_tlm.hh"
-#include "tlm/gpu/wavefront_tlm.hh"
+// Task 16: minimal_warp_scheduler_tlm.hh + vector_regfile_tlm.hh + wavefront_tlm.hh 已物理删除
 // Task 9: 删除 gpu_compute_unit_tlm.hh include (rename -> StreamingMultiprocessorTLM)
 #include "bundles/cache_bundles_tlm.hh"
 #include "bundles/compute_bundles_tlm.hh"

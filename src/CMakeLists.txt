@@ -38,7 +38,7 @@ set(CORE_SOURCES
     tlm/gpu/memory_cluster_tlm.cc
     tlm/gpu/gpu_mesh_noc_tlm.cc
     # Task 12: kernel_launch_tlm.cc + cuda_core_adapter_mvp.cc + ptx_emu_submodule_mvp.cc 删除
-    # Task 16 (扩展): wavefront_tlm.cc + vector_regfile_tlm.cc + minimal_warp_scheduler_tlm.cc 删除
+    # Task 16 (扩展): 3 个 deprecated header 已物理删除 (2027-09-17)
     # (.hh 保留为 [[deprecated]] typedef 桥接, .cc 已无引用)
     # Task 9: 删除 gpu_compute_unit_tlm.cc (rename -> streaming_multiprocessor_tlm.cc)
     tlm/gpu/gpu_soc_tlm.cc

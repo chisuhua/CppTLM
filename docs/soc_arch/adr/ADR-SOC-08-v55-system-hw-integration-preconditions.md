@@ -197,4 +197,12 @@ T-prereq-5: backdoor ABI 隔离测试 (P2-D)
   - **仓内实现**：✅ 19/19 函数 + 4 回调 typedef 契约（per `src/abi/cpptlm_emulator.cc` 433 行）
   - **UsrLinuxEmu 侧集成与完整 23 函数闭环**：❌ 待 UsrLinuxEmu v5.5+ 节奏（per UsrLinuxEmu ADR-089 v0.5）
 
+- **2027-09-17** (per P5 ABI 二级精简 [ADR-SOC-20](../soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md))：
+  - **ABI 演进**：23 → 22 (T-P9-0 超时拆分) → 18 (一级精简) → **15 函数 + 1 宏 + 4 callback typedef**（二级精简，修订版保留 open/close fd 风格 API）
+  - **头冻结更新**：`include/abi/cpptlm_emulator.h` 声明从 19 → 15 + 1 `CPPTLM_EMULATOR_VERSION_STRING` 宏
+  - **仓内实现**：✅ 15/15 函数 + 1 宏 + 4 callback typedef（`src/abi/cpptlm_emulator.cc`）
+  - **Hub 同步**：✅ UsrLinuxEmu ADR-088 §D5 已同步（HSK-12 + [UsrLinuxEmu #33](https://github.com/chisuhua/UsrLinuxEmu/issues/33) ack）
+  - **UsrLinuxEmu 侧集成**：✅ Hub 侧 3 个被删函数（`create_by_id` / `get_adapter_info` / `get_version`）已确认零残留使用
+  - **P0-3 (Task 16) deprecated 类清理完成**：`vector_regfile_tlm` / `minimal_warp_scheduler_tlm` / `wavefront_tlm` 已物理删除 (2027-09-17)
+
 - **2027-02-09**: v1.0 战略下双 vendor 跨仓依赖追加（per [`ADR-SOC-09-v1-nvidia-amd-dual-vendor.md`](./ADR-SOC-09-v1-nvidia-amd-dual-vendor.md) D3）：UsrLinuxEmu ADR-088 当前 NVIDIA-only，AMD KFD 路径需 UsrLinuxEmu owner 联签/分阶段实施
