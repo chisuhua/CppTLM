@@ -1,7 +1,7 @@
 # SoC Architecture Roadmap
 
 > **目录**: `docs/soc_arch/roadmap/` · **范围**: dGPU SoC 子项目的实施路线图与阶段规划
-> **维护**: CppTLM Team (Sisyphus) · **最后更新**: 2026-09-16
+> **维护**: CppTLM Team (Sisyphus) · **最后更新**: 2027-09-17（新增 phase9-p4 战略评估 + phase9-p5 ABI 二级精简 + ABI 18 / Mock IP / TLP 链路三归档同步）
 
 ## 目录索引
 
@@ -13,6 +13,7 @@
 | [`phase9-p1-sm-gate-verification.md`](./phase9-p1-sm-gate-verification.md) | v1.0 P1 | 🟢 活跃 | SM 重构收尾(Task 17-19:Gate 验证 + archive;Task 20 延后) |
 | [`phase9-p2-cp-attach-via-axi.md`](./phase9-p2-cp-attach-via-axi.md) | v1.0 P2 | 🟠 跨仓 | CP 寄存器接入 + UE 双路径(Oracle REFINE + YES 决策) |
 | [`phase9-p3-strategic.md`](./phase9-p3-strategic.md) | v1.0 P3 | 🟡 战略 | ADR 修订 + Phase 9 雏形 |
+| [`phase9-p4-axi-outbound-bridge.md`](./phase9-p4-axi-outbound-bridge.md) | v1.0 P4 | 🟡 战略评估 | 通用 SoC AXI Master→PCIe Outbound 桥接缺口评估(per ADR-SOC-19,**不在 v1.0 实施范围**) |
 
 > **W 编号基准**:`W1 = 2026-09-21 (Mon)`。所有阶段文件时间表均按此基准。本目录创建于 `2026-09-16` ≈ `W37 末`,故 W25-W36 属"追溯性基线",W37+ 才是真正未来时点。
 
@@ -24,9 +25,11 @@ v0.5 (2026-Q2)            v1.0 (2026-Q3+ 起步)
 ADR-SOC-06                Phase 1-8 完成
 MVP 切片 4 阶段           SM 重构 Task 1-15 完成
                           PCIe EP 整合 (commit 832b26f7)
+                          Phase 9+ TLP 链路 + PcieMockIP 完成 (commit e29defd..429327d)
+                          ABI 精简 22→18 完成 (cpptlm-abi-slimming)
                           ↓
                           W25+ 进入下一阶段
-                          (本目录 5 个 phase9-* 文件覆盖)
+                          (本目录 6 个 phase9-* 文件覆盖)
 ```
 
 **关键转折点**:
@@ -38,11 +41,13 @@ MVP 切片 4 阶段           SM 重构 Task 1-15 完成
 
 - **`roadmap-mvp-to-v05.md`**:历史快照(v0.5 视角,不再更新)
 - **`phase9-post-phase8-roadmap.md`**:W25+ 总览
-- **`phase9-p[0-3]-*.md`**:具体阶段文件
+- **`phase9-p[0-5]-*.md`**:具体阶段文件
   - `p0`:纯 Minor 修复(零跨仓)
   - `p1`:单仓 Gate 验证(SM 重构收尾)
   - `p2`:跨仓协调(CP 接入)
   - `p3`:战略规划(ADR 修订 + Phase 9)
+  - `p4`:战略评估(架构缺口 — 通用 SoC AXI→PCIe Outbound 桥接,**不在 v1.0 实施**)
+  - `p5`:跨仓精简(ABI 二级 18→14 + 宏化,**待 Hub ack 启动**)
 
 ## 文件结构(每阶段文件统一模板)
 

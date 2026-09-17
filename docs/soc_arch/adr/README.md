@@ -1,8 +1,8 @@
 # SoC Architecture Decision Records (ADR-SOC)
 
-> **版本**: 2.0
+> **版本**: 2.2
 > **创建日期**: 2026-06-14
-> **更新日期**: 2027-02-09（v1.0 dGPU SoC 战略 + 6 份新 ADR）
+> **更新日期**: 2027-09-17（新增 ADR-SOC-17/18/19/20：PcieMockIP + ABI 二级精简 + AXI Master/Slave 边界明确化 + ABI 二级精简 18→14+宏）
 > **范围**: CppTLM SoC 仿真架构决策（CPU/GPU/IO/Cache/NoC 集成层）
 > **与 `docs/adr/` 的关系**: 本目录存放**应用层（SoC 设计）**决策；`docs/adr/` 存放**框架层（仿真基础设施）**决策。两层分离，避免 SoC 决策与框架决策混淆。
 
@@ -34,6 +34,10 @@
 | [ADR-SOC-14-v55-integration-revision.md](./ADR-SOC-14-v55-integration-revision.md) | **v5.5+ 系统级硬件仿真集成修订**（Phase 8 后 23 ABI 状态 + 5 项前置测试已实施 + UsrLinuxEmu 集成未闭环） | 📋 Proposed | v1.0+ |
 | [ADR-SOC-15-cdna-real-isa-roadmap.md](./ADR-SOC-15-cdna-real-isa-roadmap.md) | **dGPU SoC v1.0 CDNA 真实物理 ISA 演进路线图**（双轨前端 + 统一 Timing 宿主，4 阶段 43-73 人天：InstrDescriptor 中立化 → IMemoryPort 异步内存 Seam → CDNA 引擎接入 → 双轨校准；完整方案设计见 [`architecture/11-cdna-real-isa-integration.md`](../architecture/11-cdna-real-isa-integration.md)） | 📋 Proposed | v1.0+ |
 | [ADR-SOC-16-sm-microarchitecture.md](./ADR-SOC-16-sm-microarchitecture.md) | **dGPU SoC v1.0 SM 微架构重构**（反转 ADR-SOC-02 黑盒优先；12 个 ChStream 子模块 + 8 种 Bundle + `IComputeDevice` 15 方法 + SM-owns-state 模式 + bit-exact Gate；实施见 OpenSpec change `cpptlm-dgpu-d1-cdna-isa-sm-rewrite`） | ✅ Accepted | v1.0 (2027-Q3+) |
+| [ADR-SOC-17-pcie-mock-ip.md](./ADR-SOC-17-pcie-mock-ip.md) | **独立 PcieMockIP（gem5 风格简化端点）**（无 TLP/LL/PHY/Mux/17-port SR-IOV；profile `pcie_path="mock"` 启用；目标 ~500 行/上限 800 行；per V-5 决议 Fz-4） | ✅ Accepted | Phase 9+ (2027-09-17) |
+| [ADR-SOC-18-cpptlm-abi-slimming.md](./ADR-SOC-18-cpptlm-abi-slimming.md) | **CppTLM ABI 表面精简 22→18 函数**（删除 4 个 backdoor/lookup ABI；Hub ack 超时切出为独立 change；保留 18 个驱动核心函数 + 4 callback typedef 零修改） | ✅ Accepted | Phase 9+ follow-up (2027-09-17) |
+| [ADR-SOC-19-axi-master-outbound-bridge.md](./ADR-SOC-19-axi-master-outbound-bridge.md) | **PcieEndpointIP AXI Master/Slave 角色边界明确化**（明确 `axi_slave_in` 不承担 AXI-to-PCIe bridge 角色；通用 SoC AXI Master→PCIe Outbound 桥接**当前未提供**；记录为 Phase 10+ 评估缺口，per [phase9-p4-axi-outbound-bridge.md](../roadmap/phase9-p4-axi-outbound-bridge.md)） | 📋 Proposed | Phase 10+ 评估 |
+| [ADR-SOC-20-cpptlm-abi-secondary-slimming.md](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md) | **CppTLM ABI 二级精简 18→14 + 宏化**（handle API 4 函数级联删除：`create_by_id` + `open` + `close` + `get_adapter_info`；`get_version` 改 `#define CPPTLM_VERSION_STRING` 宏；Hub 同步；per [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md)） | 📋 Proposed | Phase 9+ P5 (Hub ack 待收) |
 
 ## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference(已迁回本目录)
 
@@ -71,7 +75,7 @@
 | **示例议题** | 事务追踪、错误处理、端口类型 | 一致性协议、CU 建模粒度、Host-GPU 接口 |
 | **稳定性** | 极稳定，跨 SoC 共用 | 较不稳定，随 SoC 拓扑变化 |
 | **模板** | `docs/adr/ADR-P1-TEMPLATE.md` | 本目录 ADR 沿用 X.N 结构（Context/Decision/Implementation） |
-| **当前规模** | 13 个（X.1-X.13） | 8 个（SOC-01-SOC-08） |
+| **当前规模** | 13 个（X.1-X.13） | 20 个（SOC-01-SOC-20） |
 
 ---
 

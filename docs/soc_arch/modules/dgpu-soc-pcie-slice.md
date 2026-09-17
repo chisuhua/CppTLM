@@ -1,6 +1,6 @@
 # dgpu-soc-pcie-slice 微架构文档
 
-> **类别**: GPU > dGPU SOC PCIe Slice · **状态**: 🔵 Implemented (per ADR-SOC-07) + ⚠️ **Phase 4-8 演进**:PcieEndpointTLM (4 端口) → **PcieEndpointIP (17 端口)** per [`ADR-SOC-11`](../adr/ADR-SOC-11-pcie-endpoint-ip.md)
+> **类别**: GPU > dGPU SOC PCIe Slice · **状态**: 🔵 Implemented (per ADR-SOC-07) + ⚠️ **Phase 4-8 演进**:PcieEndpointTLM (4 端口) → **PcieEndpointIP (17 端口)** per [`ADR-SOC-11`](../adr/ADR-SOC-11-pcie-endpoint-ip.md) + **Phase 9+ 演进** per [`ADR-SOC-17`](../adr/ADR-SOC-17-pcie-mock-ip.md) / [`ADR-SOC-18`](../adr/ADR-SOC-18-cpptlm-abi-slimming.md) / [`ADR-SOC-19`](../adr/ADR-SOC-19-axi-master-outbound-bridge.md)
 > **Header**: ~~`include/tlm/gpu/pcie_endpoint_tlm.h`~~ (`[[deprecated("use PcieEndpointIP")]]` per commit `429327d`) + **`include/tlm/pcie/pcie_endpoint_ip.hh`** (active) + `include/tlm/gpu/sdma_engine_tlm.hh`
 > **注册**: `REGISTER_CHSTREAM` (`include/chstream_register.hh`, 保留 `PcieEndpointTLM` 注册以保证既有测试零回归;新代码统一用 `PcieEndpointIP`)
 > **蓝图来源**: AMD/NVIDIA PCIe Endpoint IP + AMD SDMA/copy engine IP (per gem5 `src/dev/amdgpu/amdgpu_device.py` + `src/dev/pci/pci_host.py`)
@@ -8,6 +8,10 @@
 > - [`ADR-SOC-07-dgpu-board-soc-layering.md`](../adr/ADR-SOC-07-dgpu-board-soc-layering.md) D2/D3 — **本仓 PCI slice 拆分决策**(原 4 端口 PcieEndpointTLM)
 > - [`ADR-SOC-11-pcie-endpoint-ip.md`](../adr/ADR-SOC-11-pcie-endpoint-ip.md) — **PcieEndpointIP 17 端口替代决策**(Phase 4-8 演进)
 > - [`ADR-SOC-12-host-bypass-and-rc.md`](../adr/ADR-SOC-12-host-bypass-and-rc.md) — Host Bypass 软件 bring-up + 自研 RC
+> - [`ADR-SOC-13-axi-stream-adapter-mapper.md`](../adr/ADR-SOC-13-axi-stream-adapter-mapper.md) — AXI Stream Adapter + AXI4Mapper
+> - [`ADR-SOC-17-pcie-mock-ip.md`](../adr/ADR-SOC-17-pcie-mock-ip.md) — **PcieMockIP**(Phase 9+ 独立组件)
+> - [`ADR-SOC-18-cpptlm-abi-slimming.md`](../adr/ADR-SOC-18-cpptlm-abi-slimming.md) — **ABI 22→18 精简**(Phase 9+ follow-up)
+> - [`ADR-SOC-19-axi-master-outbound-bridge.md`](../adr/ADR-SOC-19-axi-master-outbound-bridge.md) — **AXI Master/Slave 角色边界明确化**(Phase 9+ 评估缺口)
 > - [`ADR-SOC-06-cpptlm-v05-mvp.md`](../adr/ADR-SOC-06-cpptlm-v05-mvp.md) D5 — dGPU MVP 切片总纲
 > - UsrLinuxEmu [`ADR-088`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) §C2/§D3.8 — **23 ABI + `cpptlm_dma_translate_cb` 外部契约源**
 > - UsrLinuxEmu [`ADR-089`](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-089-v55-system-hw-simulation.md) v0.5 — **系统级硬件仿真扩展 (VFIO/IOMMUFD/vDPA/Migration)**
@@ -17,7 +21,9 @@
 > - [`openspec/changes/2026-08-26-cpptlm-dgpu-sdma-engine/`](../../../openspec/changes/2026-08-26-cpptlm-dgpu-sdma-engine/) — SdmaEngineTLM 实施
 > - [`openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/`](../../../openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/) — Phase 4 SR-IOV VF Pool(引入 17 端口 PcieEndpointIP)
 > - [`openspec/changes/2027-02-09-cpptlm-dgpu-pcie-ip-integration/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-pcie-ip-integration/) — Phase 8 整合交付(HEAD `429327d`)
-> **首版 commit**: `4380c20` T-sd-1 + `7fc9cce` T-sd-2 (2026-08-27) · **最近更新**: 2027-02-09 (Phase 8 + ADR-SOC-11 同步)
+> - [`openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/`](../../../openspec/changes/archive/2026-09-16-2026-09-16-cpptlm-pcie-tlp-wire-datapath/) — Phase 9+ 完整 TLP 链路(13 commits, 8 ADDED Requirements)
+> - [`openspec/changes/2026-09-16-cpptlm-abi-slimming/`](../../../openspec/changes/archive/2026-09-16-cpptlm-abi-slimming/) — ABI 精简 22→18(follow-up)
+> **首版 commit**: `4380c20` T-sd-1 + `7fc9cce` T-sd-2 (2026-08-27) · **最近更新**: 2027-09-17 (Phase 9+ + ADR-SOC-17/18/19 同步)
 > **维护者**: CppTLM Team (Sisyphus)
 
 > **关联文档**:
@@ -239,9 +245,24 @@ OpenSpec change: [`openspec/changes/2026-08-28-cpptlm-dgpu-pcie-slice-prerequisi
 | `"mock"` | 显式设置 | PcieMockIP (独立组件, 无协议栈) | 极简响应; backdoor 行为通过 mock 路径实现 |
 | `"legacy"` | 默认 | mmio_regs_ 既有行为 | 兼容遗留测试 |
 
-### 9.3 ABI 表面 (Phase 9+ 状态)
+### 9.3 ABI 表面 (Phase 9+ 状态, 修订版)
 
-`include/abi/cpptlm_emulator.h` 22 函数 (T-P9-0 之前)。T-P9-0 后将精简至 18 函数 (删除 4 个 backdoor 辅助函数: `cpptlm_emulator_backdoor_read/write` + `cpptlm_emulator_register_backdoor_cb` + `cpptlm_emulator_lookup_register`), 需要 Hub side (UsrLinuxEmu) ADR-088 Status Update ack。详见 HSK-10 (`docs/cross_repo/HSK-10-cpptlm-tlp-wire-datapath.md`)。
+`include/abi/cpptlm_emulator.h` 经过**两轮精简**:
+
+- **第一轮 (ADR-SOC-18, 2027-09-17 完成)**: 22 → 18 函数, 删除 4 个 backdoor 辅助函数 (`cpptlm_emulator_backdoor_read/write` + `cpptlm_emulator_register_backdoor_cb` + `cpptlm_emulator_lookup_register`)
+- **第二轮 (ADR-SOC-20, 2027-09-17 Proposed, 修订版, 待 Hub ack 启动)**: 18 → **15 函数 + 1 宏**, 删除真冗余 2 函数 (`create_by_id` + `get_adapter_info`) + `get_version` 改宏; **保留 `open/close`** (per 用户反馈 2027-09-17, fd 风格 + 生命周期分层语义价值)
+
+**当前状态**: 18 函数表 (等待 P5 启动后变 15 函数 + 1 宏)
+
+**修订前后对比** (per ADR-SOC-20 §1.2 修订理由):
+| 维度 | 初版 (18→14+宏) | 修订 (18→15+宏) |
+|------|:---------------:|:---------------:|
+| 删除函数数 | 5 (含 open/close) | **3** (真冗余 + 宏) |
+| `open/close` 决策 | 删除 | **保留** |
+| Hub ack 风险 | 🟡 中 | 🟢 低 |
+| Driver 功能影响 | 🟡 场景 3+6 | 🟢 **零** |
+
+详见 HSK-10/11/12 (`docs/cross_repo/HSK-1[012]-*.md`) + ADR-SOC-18 / ADR-SOC-20 + phase9-p5-secondary-slimming.md
 
 ### 9.4 数据流 (Phase 9+)
 
@@ -259,8 +280,76 @@ mmio_read (C ABI, tlp path)
      (读泵环: eq_->run() <= 1000 虚拟周期, 超时降级 mmio_regs_)
 ```
 
+### 9.5 AXI 接口语义矩阵 (Phase 9+ 明确化, per ADR-SOC-19)
+
+> **关键决策**:`PcieEndpointIP` 的 `axi_slave_in` / `cfg_slave_in` **不承担 "AXI-to-PCIe bridge" 角色**。详见 [`ADR-SOC-19`](../adr/ADR-SOC-19-axi-master-outbound-bridge.md)。
+
+#### 9.5.1 EP AXI 三端口角色定义
+
+`PcieAxiAdapter` 持有 `Axi4StreamAdapter` 三端口(per `include/framework/axi4_stream_adapter.hh:25-28` 官方文档):
+
+| 端口 | 角色 (AXI 标准) | 触发方 | 接收方 | 数据落点 | 用途 |
+|------|----------------|--------|--------|---------|------|
+| `axi_master_out` | **EP 是 Master** | EP | SoC(被读/写) | SoC interconnect → SoC memory | 接收 PCIe Rx 数据推 SoC(如 host MWr → bar_store_ 落地后副作用) |
+| `axi_slave_in` | **EP 是 Slave** | SoC(Master) | EP | EP 本地 `bar_store_` | Host 经 HostBypass 写 EP BAR(Phase 8 M1 桥接) |
+| `cfg_slave_in` | **EP 是 Slave** | SoC(Master) | EP | EP 本地 config space | Host 写 PMCSR / 其他 CFG 寄存器 |
+
+#### 9.5.2 dGPU 双路径 (用户视角)
+
+| 路径 | PCIe 事务 | 触发方 | EP 行为 | SoC 接口使用 |
+|------|----------|--------|---------|-------------|
+| **dGPU receive** (Host → Device) | PCIe MWr / MRd→CplD | Host driver | EP 是 PCIe Completer | 写本地 bar_store_,**EP 主动 `axi_master_out` 推 SoC** |
+| **dGPU send** (Device → Host) | PCIe MWr / MRd→CplD | SDMA / MSI-X | EP 是 PCIe Requester | **不走 `axi_slave_in`** — 直接 C++ API 调 `PcieRequesterEngine::mrd_read()` |
+
+#### 9.5.3 SoC → Host memory 三种实现方式 (Phase 9+ 现状)
+
+| 方式 | 状态 | 适用场景 | 路径 |
+|------|:----:|---------|------|
+| **C++ API 直调** | ✅ | SDMA / MSI-X 投递链等专用组件 | `SoC 组件` → `PcieRequesterEngine::mrd_read()` → `LL::tx_tlp()` |
+| **标准 AXI 桥接** | ❌ | 通用 SoC AXI Master(CUDA core / GPC core / Display) | **当前未提供** — 详见 [`ADR-SOC-19`](../adr/ADR-SOC-19-axi-master-outbound-bridge.md) + [`phase9-p4-axi-outbound-bridge.md`](../roadmap/phase9-p4-axi-outbound-bridge.md) |
+| **PcieMockIP device-side** | ✅ | Mock profile (`pcie_path="mock"`) | `PcieMockIP::device_axi_write()` → 内部 `Axi4StreamAdapter` |
+
+**SDMA 实际路径证据**(per `src/tlm/gpu/sdma_engine_tlm.cc:420-424`):
+```cpp
+} else if (d.dir == DmaDescriptor::Dir::H2D && request_engine_) {
+    // T-P10-2 (实为 T-P11-2): H2D 经 RequesterEngine 发起 MRd (EP→host TLP)
+    process_h2d_with_requester(d);  // ← 直接 C++ API, 不走 AXI
+    requester_path = true;
+}
+```
+
+**`RequesterEngine` 实际路径证据**(per `src/tlm/pcie/pcie_requester_engine.cc:32-60`):
+```cpp
+bool PcieRequesterEngine::mrd_read(...) {
+    // ...
+    if (!link_layer_->tx_tlp(tlp, bdf)) {  // ← 直接调 PCIe LL, 绕开 AXI
+        return false;
+    }
+    // ...
+}
+```
+
+#### 9.5.4 EP `axi_slave_in` 实际行为 (per `src/tlm/pcie/pcie_endpoint_ip.cc:333-433`)
+
+**EP 消费 `axi_slave_in` 的方式**:
+1. 接收 AW (写) / AR (读) 请求
+2. **仅写入本地 `bar_store_` / config space**(不转发为 PCIe Outbound TLP)
+3. 返回 AXI 响应(BRESP=0 OK / =3 DECERR 在 D3hot 下)
+
+**关键限制**:`axi_slave_in` 不充当 "AXI-to-PCIe bridge"。即使 SoC 侧 master 把 PCIe 地址空间的目标地址写到 `axi_slave_in`,**EP 不会自动发起 PCIe MRd/MWr**。
+
+#### 9.5.5 缺口与未来扩展 (per ADR-SOC-19)
+
+如果将来需要支持**通用 SoC AXI Master → host memory R/W**:
+- ❌ **当前无法支持**——缺少桥接组件
+- 📋 **待 Phase 10+ 评估**——见 [`phase9-p4-axi-outbound-bridge.md`](../roadmap/phase9-p4-axi-outbound-bridge.md) 三方案对比:
+  - 方案 A:新增 `axi_to_pcie_bridge` 通用组件(5-10 人天)
+  - 方案 B:`PcieRequesterEngine` 重构为标准 AXI4 Master 接口(3-5 人天)
+  - 方案 C:**维持现状 + 文档化**(**当前决策**, ROI 最高)
+- 🔍 **触发条件**:CUDA zero-copy / Display controller 拉 host buffer / GPU user-mode driver 等需求出现时再升级
+
 ---
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 🔵 Implemented + Tier 2 前置测试待补 (per OpenSpec change 2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites) + Phase 9+ TLP 链路完成 (2026-09-17 open change)
-**最后更新**: 2026-09-17
+**状态**: 🔵 Implemented + Tier 2 前置测试待补 (per OpenSpec change 2026-08-28-cpptlm-dgpu-pcie-slice-prerequisites) + Phase 9+ TLP 链路完成 (2026-09-17 archive) + ABI 18 精简完成 (2026-09-17 follow-up) + AXI Master/Slave 边界明确化 (2027-09-17 ADR-SOC-19)
+**最后更新**: 2027-09-17

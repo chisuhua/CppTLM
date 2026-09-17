@@ -99,4 +99,29 @@ Hub 侧 4 种响应 → 4 种回退:
 ## 维护
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📋 Proposed — 等待 `cpptlm-abi-slimming` change 推进 + Hub 异步 ack
+**状态**: ✅ Accepted (2027-09-17) — 父 change `cpptlm-abi-slimming` 已 archive @ 18 ABI 函数状态
+
+## Status Update
+
+### 2027-09-17 — 后续二级精简 (per [ADR-SOC-20](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md), 修订版)
+
+**新增决策**: 进一步精简 18 → **15 函数** + `get_version` 改宏 (**保留 open/close**).
+
+**关键发现**:
+- `cpptlm_emulator_open()` 内部调用 `cpptlm_emulator_create_by_id()` (per `src/abi/cpptlm_emulator.cc:433`)
+- 用户反馈 2027-09-17: open/close 有 fd 风格 + 生命周期分层语义价值, **不删除**
+
+**精简后状态**: **15 函数表** (设备管理 2 + 数据面 4 + MSI-X 3 + 回调 2 + DMA 1 + **handle 2**) + 1 宏 (`CPPTLM_VERSION_STRING`).
+
+**删除清单** (修订后, 仅 3 项):
+- ❌ `cpptlm_emulator_create_by_id` (与 create 重叠)
+- ❌ `cpptlm_emulator_get_adapter_info` (与 get_device_info 重叠)
+- 🔄 `cpptlm_emulator_get_version` → 宏
+
+**保留清单** (修订后, 11 项核心 + 2 handle):
+- ✅ 核心 13 函数 (设备管理 2 + 数据面 4 + MSI-X 3 + 回调 2 + DMA 1 + handle 2 open/close)
+- ✅ 4 callback typedef (零修改)
+
+**实施路径**: [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md) — P5 阶段待 Hub ack 启动.
+
+**关联**: [ADR-SOC-20](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md) · [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md)
