@@ -1,7 +1,8 @@
 // src/abi/cpptlm_emulator.cc
-// T-ae-2: 23 ABI 函数体 + 设备注册表 mutex (per design §3-§4 + ADR-088 §D5).
+// T-ae-2 + ABI-2-secondary: 15 ABI 函数体 + 1 宏 + 设备注册表 mutex
+// (per design §3-§4 + ADR-088 §D5, 修订版 18→15+宏 per ADR-SOC-20 §2.1).
 // Author: CppTLM Team
-// Date: 2026-08-29
+// Date: 2026-08-29 (修订版: 2027-09-17, per ADR-SOC-20 §2.1)
 //
 // 已知约束 (per T-bs-4 stage-1 deprecation):
 //   - DGpuBoard shell 当前不直接暴露 msix_*/lookup_register 方法
@@ -107,10 +108,8 @@ namespace {
 
 extern "C" {
 
-CPPTLM_EMULATOR_EXPORT
-const char* cpptlm_emulator_get_version(void) {
-    return "v1.0-dgpu-v0";
-}
+// 版本号: cpptlm_emulator_get_version 函数已删除, 改用 CPPTLM_EMULATOR_VERSION_STRING 宏
+// (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming, 修订版)
 
 CPPTLM_EMULATOR_EXPORT
 uint32_t cpptlm_emulator_get_device_count(void) {
@@ -178,42 +177,9 @@ cpptlm_emulator_t* cpptlm_emulator_create(const char* profile_path) {
 }
 
 CPPTLM_EMULATOR_EXPORT
-cpptlm_emulator_t* cpptlm_emulator_create_by_id(uint32_t dev_id) {
-    cpptlm_emulator_t* emu = nullptr;
-    try {
-        emu = new cpptlm_emulator_s();
-        auto path = resolve_profile_path(dev_id);
-        emu->board = std::make_unique<tlm::gpu::DGpuBoard>(
-            "board_" + std::to_string(dev_id != 0 ? dev_id : next_dev_id_.load()));
-        emu->board->load_soc_config(load_profile_json(path));
-        emu->board->init();
-        emu->profile_path = path;
-        std::unique_lock<std::mutex> lk(registry_mu_);
-        if (dev_id != 0 && registry_.count(dev_id)) {
-            cpptlm_emulator_t* existing = registry_[dev_id];
-            lk.unlock();
-            if (emu->board) {
-                emu->board->shutdown();
-            }
-            delete emu;
-            return existing;
-        }
-        uint32_t assigned = (dev_id != 0) ? dev_id : next_dev_id_.fetch_add(1);
-        emu->dev_id = assigned;
-        registry_[assigned] = emu;
-        return emu;
-    } catch (const std::exception&) {
-        if (emu)
-            delete emu;
-        return nullptr;
-    } catch (...) {
-        if (emu)
-            delete emu;
-        return nullptr;
-    }
-}
-
-CPPTLM_EMULATOR_EXPORT
+// cpptlm_emulator_create_by_id 已删除 (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming):
+// 与 cpptlm_emulator_create 重叠, 驱动可调 get_device_info + create 两步
+// open() 内部已调整: 调 create() + resolve_profile_path() 保持 dev_id 语义
 void cpptlm_emulator_destroy(cpptlm_emulator_t* emu) {
     if (emu == nullptr) {
         return;
@@ -430,7 +396,10 @@ int cpptlm_emulator_open(uint32_t dev_id, cpptlm_emulator_handle_t* out_handle) 
         return -EINVAL;
     }
     *out_handle = 0;
-    cpptlm_emulator_t* emu = cpptlm_emulator_create_by_id(dev_id);
+    // 修订版: open 内部从 create_by_id 改为 create + resolve_profile_path
+    // (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming)
+    std::string profile_path = resolve_profile_path(dev_id);
+    cpptlm_emulator_t* emu = cpptlm_emulator_create(profile_path.c_str());
     if (!emu) {
         return -ENODEV;
     }
@@ -464,22 +433,7 @@ int cpptlm_emulator_close(cpptlm_emulator_handle_t handle) {
     return 0;
 }
 
-CPPTLM_EMULATOR_EXPORT
-int cpptlm_emulator_get_adapter_info(cpptlm_emulator_handle_t handle,
-                                     cpptlm_device_info_t* out_info) {
-    if (handle == 0 || !out_info) {
-        return -EINVAL;
-    }
-    cpptlm_emulator_t* emu = nullptr;
-    {
-        std::lock_guard<std::mutex> lk(handle_mu_);
-        auto it = handle_map_.find(handle);
-        if (it == handle_map_.end()) {
-            return -EINVAL;
-        }
-        emu = it->second;
-    }
-    return cpptlm_emulator_get_device_info(emu->dev_id, out_info);
-}
+// cpptlm_emulator_get_adapter_info 已删除 (per ADR-SOC-20 §2.1):
+// 与 cpptlm_emulator_get_device_info 重叠, 改为按 dev_id 查询无句柄依赖
 
 } // extern "C"

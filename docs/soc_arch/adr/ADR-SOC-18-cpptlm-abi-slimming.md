@@ -111,7 +111,7 @@ Hub 侧 4 种响应 → 4 种回退:
 - `cpptlm_emulator_open()` 内部调用 `cpptlm_emulator_create_by_id()` (per `src/abi/cpptlm_emulator.cc:433`)
 - 用户反馈 2027-09-17: open/close 有 fd 风格 + 生命周期分层语义价值, **不删除**
 
-**精简后状态**: **15 函数表** (设备管理 2 + 数据面 4 + MSI-X 3 + 回调 2 + DMA 1 + **handle 2**) + 1 宏 (`CPPTLM_VERSION_STRING`).
+**精简后状态**: **15 函数表** (设备管理 2 + 数据面 4 + MSI-X 3 + 回调 2 + DMA 1 + **handle 2**) + 1 宏 (`CPPTLM_EMULATOR_VERSION_STRING`).
 
 **删除清单** (修订后, 仅 3 项):
 - ❌ `cpptlm_emulator_create_by_id` (与 create 重叠)
@@ -123,5 +123,35 @@ Hub 侧 4 种响应 → 4 种回退:
 - ✅ 4 callback typedef (零修改)
 
 **实施路径**: [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md) — P5 阶段待 Hub ack 启动.
+
+**关联**: [ADR-SOC-20](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md) · [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md)
+
+### 2027-09-17 — P5 二级精简完成 (per [ADR-SOC-20](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md), 修订版)
+
+**完成状态**: ✅ Accepted (P5 已 archive @ 15 函数 + 1 宏)
+
+**实施结果**:
+- ✅ 头文件 `include/abi/cpptlm_emulator.h`: 3 声明删除 (get_version + create_by_id + get_adapter_info)
+- ✅ 实现文件 `src/abi/cpptlm_emulator.cc`: 3 实现删除 + `open()` 内部调 create_by_id → create + resolve_profile_path
+- ✅ 测试文件 6 处迁移: test_cpptlm_emulator_abi.cc + handle_helpers.hh + registry.cc + abi_slimming.cc + dgpu_board_shell_full_abi.cc + dgpu_adapter_info.cc
+- ✅ examples/test_dlopen.cc 补做迁移 (Dry-Run 4 发现)
+
+**修订版 G8 acceptance gate 满足** (修订版合并实现):
+- `[abi-secondary-slimming]` tag: 7 assertions, 1 test case PASS
+- 修订版决策: 合并到 `test_cpptlm_emulator_abi_slimming.cc` (不创建独立文件), per HSK-12 §9.3
+
+**测试统计** (全量回归):
+- [pcie]: 36,454 assertions / 374 test cases ✅ 零回归
+- [abi]: 63 assertions / 20 test cases ✅ (含修订版合并 tag)
+- [dgpu][shell][full_abi]: 26 assertions / 5 test cases ✅ (修订版 open/close 保留)
+- ctest: 75/75 tests passed (100%) ✅
+
+**修订版关键**:
+- 🟢 **零 driver 功能影响**: 保留 open/close fd 风格 API
+- 🟢 **Hub ack 风险降低**: 2 函数级 vs 初版 5 函数级
+- 🟢 **可逆**: 未来如需删除 open/close, 仍可评估 (修订版策略)
+
+**实施路径**: [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md) ✅ 已完成
+**归档**: `openspec archive cpptlm-abi-secondary-slimming` ✅ (P5-8 完成)
 
 **关联**: [ADR-SOC-20](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md) · [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md)

@@ -1,8 +1,10 @@
 // include/abi/cpptlm_emulator.h
-// CppTLM Emulator C ABI (19 forward functions + 4 callback typedefs)
+// CppTLM Emulator C ABI (15 forward functions + 1 macro + 4 callback typedefs)
 // Author: CppTLM Team
-// Date: 2026-08-29
-// Reference: ADR-088 §D5, ADR-088 §D6.2, ADR-SOC-07 D5, HSK-6 369cf71
+// Date: 2026-08-29 (修订版: 2027-09-17, per ADR-SOC-20 §2.1)
+// Reference: ADR-088 §D5, ADR-088 §D6.2, ADR-SOC-07 D5, HSK-6 369cf71,
+//             ADR-SOC-18-cpptlm-abi-slimming (22→18, ✅ Accepted),
+//             ADR-SOC-20-cpptlm-abi-secondary-slimming (18→15+宏, Proposed 修订版)
 #ifndef CPPTLM_EMULATOR_H
 #define CPPTLM_EMULATOR_H
 
@@ -61,7 +63,8 @@ typedef void (*cpptlm_reset_complete_cb_t)(void* user_ctx, int reset_phase);
 
 typedef void (*cpptlm_power_cb_t)(void* user_ctx, int power_state);
 
-const char* cpptlm_emulator_get_version(void);
+// 版本号查询: get_version 函数已删除, 改用 CPPTLM_EMULATOR_VERSION_STRING 宏 (line 24)
+// (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming, 修订版)
 
 uint32_t cpptlm_emulator_get_device_count(void);
 
@@ -69,7 +72,9 @@ int cpptlm_emulator_get_device_info(uint32_t dev_id, cpptlm_device_info_t* out_i
 
 cpptlm_emulator_t* cpptlm_emulator_create(const char* profile_path);
 
-cpptlm_emulator_t* cpptlm_emulator_create_by_id(uint32_t dev_id);
+// cpptlm_emulator_create_by_id 已删除 (per ADR-SOC-20 §2.1):
+// 与 cpptlm_emulator_create 重叠, 驱动可调 get_device_info + create 两步
+// (修订版保留 open/close 句柄 API, fd 风格)
 
 void cpptlm_emulator_destroy(cpptlm_emulator_t* emu);
 
@@ -100,8 +105,8 @@ int cpptlm_emulator_register_dma_translate_cb(cpptlm_emulator_t* emu, void* cb);
 
 int cpptlm_emulator_open(uint32_t dev_id, cpptlm_emulator_handle_t* out_handle);
 int cpptlm_emulator_close(cpptlm_emulator_handle_t handle);
-int cpptlm_emulator_get_adapter_info(cpptlm_emulator_handle_t handle,
-                                     cpptlm_device_info_t* out_info);
+// cpptlm_emulator_get_adapter_info 已删除 (per ADR-SOC-20 §2.1):
+// 与 cpptlm_emulator_get_device_info 重叠, 改为按 dev_id 查询无句柄依赖
 
 #if defined(__cplusplus)
 } // extern "C"

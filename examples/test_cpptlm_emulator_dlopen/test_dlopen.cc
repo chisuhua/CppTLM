@@ -2,9 +2,13 @@
 // T-W3-2 (T-ae-4): dlopen usage template for UsrLinuxEmu integration
 // (per ADR-088 §D5 + ADR-SOC-07 D5)
 //
-// 演示: dlopen libcpptlm_emulator.so + dlsym 23 ABI 函数 + 调通关键路径
-// (get_version + create_by_id + mmio_read/write + destroy).
-// UsrLinuxEmu linux_compat 端可通过同样模式调用 23 ABI.
+// 演示: dlopen libcpptlm_emulator.so + dlsym 15 函数 + 1 宏 + 调通关键路径
+// (CPPTLM_EMULATOR_VERSION_STRING 宏 + create + mmio_read/write + destroy).
+// UsrLinuxEmu linux_compat 端可通过同样模式调用 15+宏 ABI.
+//
+// 修订版 (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming):
+//   - get_version 函数 → CPPTLM_EMULATOR_VERSION_STRING 宏 (零开销, 不需 dlsym)
+//   - create_by_id 函数 → cpptlm_emulator_create(nullptr)
 //
 // AE-G5: stdout 输出 "v1.0-dgpu-v0" + 成功 create/destroy + 退出码 0.
 
@@ -14,6 +18,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "abi/cpptlm_emulator.h"
+
 int main(void) {
     void* handle = dlopen("libcpptlm_emulator.so", RTLD_LAZY | RTLD_LOCAL);
     if (handle == nullptr) {
@@ -21,36 +27,27 @@ int main(void) {
         return 1;
     }
 
-    using FnGetVersion = const char* (*)();
-    using FnCreateById = void* (*)(uint32_t);
+    using FnCreate = void* (*)(const char*);
     using FnMmioWrite = int (*)(void*, uint8_t, uint64_t, const void*, size_t);
     using FnMmioRead = int (*)(void*, uint8_t, uint64_t, void*, size_t);
     using FnDestroy = void (*)(void*);
 
-    auto get_version = reinterpret_cast<FnGetVersion>(dlsym(handle, "cpptlm_emulator_get_version"));
-    auto create_by_id =
-        reinterpret_cast<FnCreateById>(dlsym(handle, "cpptlm_emulator_create_by_id"));
+    auto create = reinterpret_cast<FnCreate>(dlsym(handle, "cpptlm_emulator_create"));
     auto mmio_write = reinterpret_cast<FnMmioWrite>(dlsym(handle, "cpptlm_emulator_mmio_write"));
     auto mmio_read = reinterpret_cast<FnMmioRead>(dlsym(handle, "cpptlm_emulator_mmio_read"));
     auto destroy = reinterpret_cast<FnDestroy>(dlsym(handle, "cpptlm_emulator_destroy"));
 
-    if (!get_version || !create_by_id || !mmio_write || !mmio_read || !destroy) {
+    if (!create || !mmio_write || !mmio_read || !destroy) {
         std::fprintf(stderr, "test_dlopen: dlsym missing: %s\n", dlerror());
         dlclose(handle);
         return 1;
     }
 
-    const char* version = get_version();
-    if (version == nullptr) {
-        std::fprintf(stderr, "test_dlopen: get_version returned NULL\n");
-        dlclose(handle);
-        return 1;
-    }
-    std::printf("%s\n", version);
+    std::printf("%s\n", CPPTLM_EMULATOR_VERSION_STRING);
 
-    void* emu = create_by_id(0);
+    void* emu = create(nullptr);
     if (emu == nullptr) {
-        std::fprintf(stderr, "test_dlopen: create_by_id returned NULL (shell deferred)\n");
+        std::fprintf(stderr, "test_dlopen: create returned NULL (shell deferred)\n");
         dlclose(handle);
         return 0;
     }

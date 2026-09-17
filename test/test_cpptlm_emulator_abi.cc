@@ -23,8 +23,11 @@
 // Wrap ABI calls to swallow 23 函数符号 (避免头文件 extern "C" 重复声明).
 // 直接 #include 头文件即可 (头已带 extern "C"),无需重复声明.
 
-TEST_CASE("ABI: get_version returns v1.0-dgpu-v0", "[abi][get_version]") {
-    const char* v = cpptlm_emulator_get_version();
+TEST_CASE("ABI: get_version returns v1.0-dgpu-v0 (修订版: 改用宏)",
+          "[abi][version_macro]") {
+    // 修订版: cpptlm_emulator_get_version 函数已删除, 改用 CPPTLM_EMULATOR_VERSION_STRING 宏
+    // (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming, 修订版路径 18→15+宏)
+    constexpr const char* v = CPPTLM_EMULATOR_VERSION_STRING;
     REQUIRE(v != nullptr);
     REQUIRE(std::string(v) == "v1.0-dgpu-v0");
 }
@@ -82,10 +85,9 @@ TEST_CASE("ABI: msix_* return -ENOSYS (shell deferred)", "[abi][deferred][enotsy
     REQUIRE(cpptlm_emulator_msix_clear_pending(emu, 0) == -EINVAL);
 }
 
-TEST_CASE("ABI: 18 symbols are linked (link-time verification)", "[abi][link]") {
-    using FnGetVersion = const char* (*)();
+TEST_CASE("ABI: 18 symbols are linked (link-time verification, 修订版: 15 函数 + 1 宏)",
+          "[abi][link]") {
     using FnCreate = cpptlm_emulator_t* (*)(const char*);
-    using FnCreateById = cpptlm_emulator_t* (*)(uint32_t);
     using FnDestroy = void (*)(cpptlm_emulator_t*);
     using FnGetCount = uint32_t (*)();
     using FnGetInfo = int (*)(uint32_t, cpptlm_device_info_t*);
@@ -99,10 +101,16 @@ TEST_CASE("ABI: 18 symbols are linked (link-time verification)", "[abi][link]") 
     using FnRegCbs = int (*)(cpptlm_emulator_t*, cpptlm_intr_deliver_cb_t, cpptlm_error_cb_t,
                               cpptlm_reset_complete_cb_t, cpptlm_power_cb_t, void*);
     using FnRegDmaCb = int (*)(cpptlm_emulator_t*, void*);
+    using FnOpen = int (*)(uint32_t, cpptlm_emulator_handle_t*);
+    using FnClose = int (*)(cpptlm_emulator_handle_t);
 
-    FnGetVersion p1 = &cpptlm_emulator_get_version;
+    // 修订版 (per ADR-SOC-20 §2.1): 15 函数 + 1 宏, 删 2 函数 + 改 1 函数为宏
+    // 保留: create, destroy, get_device_count, get_device_info, mmio_*, pcie_config_*,
+    //       msix_*, register_*, open, close + CPPTLM_EMULATOR_VERSION_STRING 宏
+    // 删除: create_by_id, get_adapter_info, get_version (改宏)
+
+    constexpr const char* p_version = CPPTLM_EMULATOR_VERSION_STRING;
     FnCreate p2 = &cpptlm_emulator_create;
-    FnCreateById p3 = &cpptlm_emulator_create_by_id;
     FnDestroy p4 = &cpptlm_emulator_destroy;
     FnGetCount p5 = &cpptlm_emulator_get_device_count;
     FnGetInfo p6 = &cpptlm_emulator_get_device_info;
@@ -115,10 +123,11 @@ TEST_CASE("ABI: 18 symbols are linked (link-time verification)", "[abi][link]") 
     FnMsixClr p13 = &cpptlm_emulator_msix_clear_pending;
     FnRegCbs p14 = &cpptlm_emulator_register_callbacks;
     FnRegDmaCb p15 = &cpptlm_emulator_register_dma_translate_cb;
+    FnOpen p16 = &cpptlm_emulator_open;
+    FnClose p17 = &cpptlm_emulator_close;
 
-    REQUIRE(p1 != nullptr);
+    REQUIRE(p_version != nullptr);
     REQUIRE(p2 != nullptr);
-    REQUIRE(p3 != nullptr);
     REQUIRE(p4 != nullptr);
     REQUIRE(p5 != nullptr);
     REQUIRE(p6 != nullptr);
@@ -131,10 +140,11 @@ TEST_CASE("ABI: 18 symbols are linked (link-time verification)", "[abi][link]") 
     REQUIRE(p13 != nullptr);
     REQUIRE(p14 != nullptr);
     REQUIRE(p15 != nullptr);
+    REQUIRE(p16 != nullptr);
+    REQUIRE(p17 != nullptr);
 
-    (void)p1;
+    (void)p_version;
     (void)p2;
-    (void)p3;
     (void)p4;
     (void)p5;
     (void)p6;
@@ -147,4 +157,6 @@ TEST_CASE("ABI: 18 symbols are linked (link-time verification)", "[abi][link]") 
     (void)p13;
     (void)p14;
     (void)p15;
+    (void)p16;
+    (void)p17;
 }

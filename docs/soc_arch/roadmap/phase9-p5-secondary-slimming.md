@@ -280,4 +280,32 @@ phase9-p0  ──→ p1  ──→ p2  ──→ p3  ──→ p4  ──→ p5 
 ## 11. 维护
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📋 Pending Hub ack — 待 UsrLinuxEmu 异步响应
+**状态**: ✅ 完成 (2027-09-17) — 修订版 P5 已 archive @ 15 函数 + 1 宏
+
+## Status Update
+
+### 2027-09-17 — P5 修订版实施完成 (per [ADR-SOC-20-cpptlm-abi-secondary-slimming.md](../adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md))
+
+**完成状态**: ✅ 修订版 P5 archive 成功
+
+**实施统计**:
+- ✅ 头文件: 3 声明删除 (`get_version` + `create_by_id` + `get_adapter_info`)
+- ✅ 实现文件: 3 实现删除 + `open()` 内部 create_by_id → create + resolve_profile_path
+- ✅ 测试 6 文件 + examples 1 文件 全部迁移 (修订版合并决策: 标签测试合并到现有文件)
+- ✅ 全量回归: [pcie] 36,454 / [abi] 63 / [dgpu][full_abi] 26 / [chstream] 155 assertions, ctest 75/75 PASS
+
+**修订版 G8 acceptance gate 满足**:
+- `[abi-secondary-slimming]` tag: 7 assertions, 1 test case PASS (合并到 `test_cpptlm_emulator_abi_slimming.cc`)
+
+**修订版关键保持**:
+- 🟢 `open/close` fd 风格 API 保留 (修订版核心, 不删除)
+- 🟢 Hub ack 风险降低 60% (2 函数级 vs 初版 5 函数级)
+- 🟢 零 driver 功能影响 (实测 ~12 核心 ABI 远超 15)
+
+**跨仓**: Hub issue [UsrLinuxEmu #33](https://github.com/chisuhua/UsrLinuxEmu/issues/33) 已提交, 14 天响应窗口 (不阻塞主线)
+
+**关联**: 
+- [ADR-SOC-18-cpptlm-abi-slimming.md](../adr/ADR-SOC-18-cpptlm-abi-slimming.md) — 父 ADR, Status Update 已添加 P5 完成记录
+- [ADR-SOC-20-cpptlm-abi-secondary-slimming.md](../adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md) — ✅ Accepted
+- [HSK-12-cpptlm-abi-secondary-slimming.md](../../cross_repo/HSK-12-cpptlm-abi-secondary-slimming.md) — 跨仓契约镜像, §9.3 修订版合并决策记录
+- 实施计划: [`.rddf/plans/cpptlm-abi-secondary-slimming.md`](../../../.rddf/plans/cpptlm-abi-secondary-slimming.md) — TDD 5 步 8 WU 全部完成

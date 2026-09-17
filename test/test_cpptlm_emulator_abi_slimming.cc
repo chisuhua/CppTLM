@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
-// T-ABI-2: CppTLM Emulator ABI 表面精简验证测试
-// 验证 4 个 backdoor/lookup 函数已从 ABI 删除 + 18 函数仍可用
+// T-ABI-2 + ABI-2-secondary: CppTLM Emulator ABI 表面精简验证测试 (修订版)
+// 验证 22→18 (per cpptlm-abi-slimming) + 18→15+宏 (per cpptlm-abi-secondary-slimming 修订版)
+// 删除 4 个 backdoor/lookup + 2 真冗余 + 1 改宏, 保留 open/close (修订版 fd 风格)
 //
 // Per openspec/changes/cpptlm-abi-slimming/{proposal,spec}.md
-// Per HSK-11 §4 (fallback: 假定 Hub 侧已自行移除, 继续推进)
+// Per openspec/changes/cpptlm-abi-secondary-slimming/{proposal,spec}.md (修订版)
+// Per HSK-11 + HSK-12 (修订版)
 
 #include <cstdint>
 #include <cstring>
 
-// 确保 ABI 头文件可包含
 extern "C" {
 #include "abi/cpptlm_emulator.h"
 }
@@ -16,17 +17,16 @@ extern "C" {
 #include <catch_amalgamated.hpp>
 
 // ============================================================
-// 验证 1: 18 个驱动核心函数仍可调用 (签名零修改)
+// 验证 1: 18→15+1 宏 驱动核心函数仍可调用 (修订版, 签名零修改)
 // ============================================================
 
-TEST_CASE("cpptlm_emulator ABI slimming: 18 驱动核心函数签名零修改",
-          "[abi-slimming][pcie][t-p-9-0]") {
-    // 设备管理 6 个
-    SECTION("get_version 仍可用") {
-        // extern "C" 调用应编译通过
-        using FnGetVersion = const char* (*)();
-        constexpr FnGetVersion fn = &cpptlm_emulator_get_version;
-        REQUIRE(fn != nullptr);
+TEST_CASE("cpptlm_emulator ABI slimming: 18→15+1 宏 驱动核心函数签名零修改 (修订版)",
+          "[abi-slimming][abi-secondary-slimming][pcie]") {
+    // 设备管理 4 个 (含 1 宏)
+    SECTION("CPPTLM_EMULATOR_VERSION_STRING 宏可用 (修订版: 替代 get_version)") {
+        constexpr const char* v = CPPTLM_EMULATOR_VERSION_STRING;
+        REQUIRE(v != nullptr);
+        REQUIRE(std::string(v) == "v1.0-dgpu-v0");
     }
     SECTION("get_device_count 仍可用") {
         using FnGetDeviceCount = uint32_t (*)();
@@ -49,9 +49,9 @@ TEST_CASE("cpptlm_emulator ABI slimming: 18 驱动核心函数签名零修改",
         constexpr FnRegCb fn = &cpptlm_emulator_register_callbacks;
         REQUIRE(fn != nullptr);
     }
-    SECTION("get_adapter_info 仍可用") {
-        using FnGetAdapterInfo = int (*)(cpptlm_emulator_handle_t, cpptlm_device_info_t*);
-        constexpr FnGetAdapterInfo fn = &cpptlm_emulator_get_adapter_info;
+    SECTION("get_device_info 仍可用 (修订版: 替代 get_adapter_info)") {
+        using FnGetDeviceInfo = int (*)(uint32_t, cpptlm_device_info_t*);
+        constexpr FnGetDeviceInfo fn = &cpptlm_emulator_get_device_info;
         REQUIRE(fn != nullptr);
     }
 }

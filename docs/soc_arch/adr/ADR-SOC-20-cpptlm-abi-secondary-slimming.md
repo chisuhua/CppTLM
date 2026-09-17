@@ -1,8 +1,6 @@
-# ADR-SOC-20: CppTLM ABI 二级精简 (18 → 14 函数 + 宏化 get_version)
+# ADR-SOC-20: CppTLM ABI 二级精简 (18 → 15 函数 + 宏化 get_version, 修订版, 保留 open/close)
 
-# ADR-SOC-20: CppTLM ABI 二级精简 (18 → 15 函数 + 宏化 get_version)
-
-> **状态**: 📋 Proposed (修订自 2027-09-17 用户反馈)
+> **状态**: ✅ Accepted (2027-09-17) — 修订版 P5 已 archive @ 15 函数 + 1 宏
 > **日期**: 2027-09-17
 > **影响**: ABI 函数从 18 精简到 15, `get_version` 改 `#define` 宏; **保留** `open/close`(语义价值); Hub (UsrLinuxEmu) 需要同步删除 3 个调用点
 > **类别**: SoC 架构 / ABI 表面治理 / 跨仓协调
@@ -53,7 +51,7 @@ Phase 9+ 第一轮 ABI 精简 (`2026-09-16-cpptlm-abi-slimming`) 已完成, ABI 
 #### 候选 A: `cpptlm_emulator_get_version` → 宏
 
 - 当前: 函数调用返回 `const char*`
-- 替代: `#define CPPTLM_VERSION_STRING "v1.0-dgpu-v1"` (该宏已存在于 line 24, 仅被函数覆盖)
+- 替代: `#define CPPTLM_EMULATOR_VERSION_STRING "v1.0-dgpu-v0"` (该宏已存在于 line 24, 仅被函数覆盖)
 - 影响: **零跨仓风险**(无函数签名移除, 改为宏常量)
 - 实施成本: < 0.1 人天
 
@@ -123,7 +121,7 @@ Phase 9+ 第一轮 ABI 精简 (`2026-09-16-cpptlm-abi-slimming`) 已完成, ABI 
 - **保留 open/close**: fd 风格 + 生命周期分层语义价值
 - **Hub 协调**: 必须, 需 UsrLinuxEmu 同步删除 2 处调用点
 
-✅ **决策 2**: `cpptlm_emulator_get_version` 改 `#define CPPTLM_VERSION_STRING` 宏
+✅ **决策 2**: `cpptlm_emulator_get_version` 改 `#define CPPTLM_EMULATOR_VERSION_STRING` 宏
 - **理由**: 返回常量字符串, 改为预处理器宏零开销 + 零跨仓影响
 - **Hub 协调**: 不需要, 头文件宏 + ABI 函数兼容 (驱动仍能调函数, 仅调用方改成宏)
 
@@ -155,7 +153,7 @@ Phase 9+ 第一轮 ABI 精简 (`2026-09-16-cpptlm-abi-slimming`) 已完成, ABI 
 | ~~16~~ | ~~`cpptlm_emulator_get_adapter_info`~~ | ❌ 删除 | 与 `get_device_info` 重叠 |
 | ~~5~~ | ~~`cpptlm_emulator_create_by_id`~~ | ❌ 删除 | 与 `create` 重叠 |
 | ~~1~~ | ~~`cpptlm_emulator_get_version`~~ | 🔄 改宏 | 返回常量字符串 |
-| - | `CPPTLM_VERSION_STRING` (宏) | 🆕 新增 | 版本号常量 |
+| - | `CPPTLM_EMULATOR_VERSION_STRING` (宏) | 🆕 新增 | 版本号常量 |
 
 **核心 12 函数** = 设备管理(2) + 数据面(4) + MSI-X(3) + 回调(2) + DMA(1) — 接近实测 ~12 真实驱动需求。
 
@@ -165,7 +163,7 @@ Phase 9+ 第一轮 ABI 精简 (`2026-09-16-cpptlm-abi-slimming`) 已完成, ABI 
 |------|----------|---------|
 | `cpptlm_emulator_create_by_id` | `src/abi/cpptlm_emulator.cc:181` (定义) + 内部使用 (在 `cpptlm_emulator_open` 中) · `test_cpptlm_emulator_abi.cc:105` (签名测试) · `test_cpptlm_emulator_handle_helpers.hh:16` (RAII helper) · `test_cpptlm_emulator_registry.cc:30, 37, 108` · `test_dgpu_board_shell_full_abi.cc:15, 35, 50, 70` | **调用方**全部改 `cpptlm_emulator_create("profile_path")`; **内部实现**: `open()` 内部保留对 `create_by_id` 的调用(因 `open` 自身不删除) |
 | `cpptlm_emulator_get_adapter_info` | `test_cpptlm_emulator_abi_slimming.cc:54` (签名测试) · `test_dgpu_adapter_info.cc:11, 24, 38` (整个文件) | 全部改 `cpptlm_emulator_get_device_info(dev_id, ...)` |
-| `cpptlm_emulator_get_version` | `test_cpptlm_emulator_abi.cc:27, 103` · `test_cpptlm_emulator_abi_slimming.cc:28` · `test_dgpu_board_shell_full_abi.cc:61` | 全部改用 `CPPTLM_VERSION_STRING` 宏 |
+| `cpptlm_emulator_get_version` | `test_cpptlm_emulator_abi.cc:27, 103` · `test_cpptlm_emulator_abi_slimming.cc:28` · `test_dgpu_board_shell_full_abi.cc:61` | 全部改用 `CPPTLM_EMULATOR_VERSION_STRING` 宏 |
 
 **测试文件迁移总计**: ~9 处(4 个测试文件)
 - `test_cpptlm_emulator_abi.cc`: 2 处 (get_version + create_by_id 签名测试)
@@ -183,7 +181,7 @@ Phase 9+ 第一轮 ABI 精简 (`2026-09-16-cpptlm-abi-slimming`) 已完成, ABI 
 
 | 文件 | 变化 | 说明 |
 |------|------|------|
-| `include/abi/cpptlm_emulator.h` | 改 | 删除 3 个函数声明 (`create_by_id`, `get_adapter_info`, `get_version`);确认 `CPPTLM_VERSION_STRING` 宏; `open/close` **保留** |
+| `include/abi/cpptlm_emulator.h` | 改 | 删除 3 个函数声明 (`create_by_id`, `get_adapter_info`, `get_version`);确认 `CPPTLM_EMULATOR_VERSION_STRING` 宏; `open/close` **保留** |
 | `src/abi/cpptlm_emulator.cc` | 改 | 删除 3 个函数实现; 移除 `get_adapter_info` 句柄表逻辑; **保留 `open/close` 句柄表**;更新版本注释 "15 functions + 4 callbacks + 1 macro" |
 | `test/test_cpptlm_emulator_abi.cc` | 改 | 移除 `get_version` / `create_by_id` 签名测试; 仅保留 15 函数签名测试 |
 | `test/test_cpptlm_emulator_handle_helpers.hh` | 改 | RAII helper 改用 `cpptlm_emulator_create` 替代 `create_by_id` |
@@ -214,35 +212,38 @@ Phase 9+ 第一轮 ABI 精简 (`2026-09-16-cpptlm-abi-slimming`) 已完成, ABI 
 
 ## 4. 跨仓协调
 
-### 4.1 Hub (UsrLinuxEmu) 同步事项
+### 4.1 Hub (UsrLinuxEmu) 同步事项 (修订版, 2 函数级)
 
 | 同步项 | 实施方 | 时间窗 |
 |--------|-------|:------:|
 | 删除 `cpptlm_emulator_create_by_id` 调用 | Hub | Week 0-1 |
-| 删除 `cpptlm_emulator_open` 调用 | Hub | Week 0-1 |
-| 删除 `cpptlm_emulator_close` 调用 | Hub | Week 0-1 |
 | 删除 `cpptlm_emulator_get_adapter_info` 调用 | Hub | Week 0-1 |
-| `cpptlm_emulator_get_version()` → `CPPTLM_VERSION_STRING` 宏 | Hub(可选) | Week 0-2 |
+| `cpptlm_emulator_get_version()` → `CPPTLM_EMULATOR_VERSION_STRING` 宏 | Hub(可选) | Week 0-2 |
+| **`cpptlm_emulator_open` 调用** | **Hub(不动)** | **修订版保留 fd 风格 API** |
+| **`cpptlm_emulator_close` 调用** | **Hub(不动)** | **修订版保留 fd 风格 API** |
 
-### 4.2 协调策略 (per HSK-12 §5)
+**修订版关键**: 仅 2 函数级 vs 初版 5 函数级, Hub ack 风险降低 60%。
+
+### 4.2 协调策略 (per HSK-12 §5, 修订版)
 
 | Hub 响应 | 回退策略 |
 |----------|---------|
-| ack | 当前 plan 推进(删除 4 函数 + 改宏) |
-| 部分 ack | 调整保留部分函数 |
-| 拒绝 | 全保留 5 函数, ABI 不变 |
-| 无响应(当前 Phase 9+ 经验) | 假定 Hub 侧已自行移除, 继续推进 |
+| ack | 当前 plan 推进(删除 2 函数 + 改 1 宏, **修订版**) |
+| 部分 ack | 调整保留部分函数(仅 `create_by_id` + `get_adapter_info` 范围内调整) |
+| 拒绝 | 全保留 3 项(2 函数 + 1 宏), ABI 不变 |
+| 无响应(当前 Phase 9+ 经验) | 假定 Hub 侧已自行移除, 继续推进(driver 不可见) |
 
 ---
 
-## 5. 风险与缓解
+## 5. 风险与缓解 (修订版)
 
 | 风险 | 概率 | 影响 | 缓解 |
 |------|:----:|:----:|------|
-| Hub 集成断裂(如有未声明依赖) | 🟡 中 | 跨仓阻塞 | 提前 HSK-12 通知 + 10 工作日窗口 |
-| handle API 在某些场景必需 | 🟢 低 | 真实驱动用 `create/destroy` 即可 | 实测 ~12 核心 ABI 远超 14 |
+| Hub 集成断裂(如有未声明依赖) | 🟢 低 (修订版 2 函数级) | 跨仓阻塞 | 提前 HSK-12 通知 + 10 工作日窗口 |
+| handle API 在某些场景必需 | 🟢 低 (修订版保留 open/close) | driver 功能影响 | 实测 ~12 核心 ABI 远超 15, open/close 保留为零影响 |
 | `get_version` 改宏破坏 driver 编译 | 🟢 低 | 头文件宏兼容 | 同时保留函数实现作为 deprecated(可选) |
-| 4 个级联函数移除顺序错 | 🟢 低 | 编译失败 | 一次性 commit 删除全部 4 个 + 测试同步 |
+| 3 个删除项移除顺序错 | 🟢 低 (修订版 2 函数 + 1 宏) | 编译失败 | 一次性 commit 删除全部 3 项 + 测试同步 |
+| `open` 内部 `create_by_id` 调用未调整 | 🟡 中 | 编译失败 | WU-5 step 3 调整为调 `create` + 句柄封装 |
 | `register_dma_translate_cb` 与 `register_callbacks` 重叠未清理 | 🟢 低 | 长期 ABI 膨胀 | 留给未来轮次(本次不动) |
 
 ---
@@ -296,8 +297,25 @@ Phase 9+ 第一轮 ABI 精简 (`2026-09-16-cpptlm-abi-slimming`) 已完成, ABI 
 ## 维护
 
 **维护**: CppTLM Team (Sisyphus)
-**状态**: 📋 Proposed — 等待 Hub ack + 测试迁移
+**状态**: ✅ Accepted (2027-09-17) — 修订版 P5 已 archive @ 15 函数 + 1 宏
 
 ## Status Update
 
-No updates yet (initial version, 2027-09-17).
+### 2027-09-17 — 修订版 P5 已 archive (per [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md))
+
+**实施完成**:
+- ✅ 头文件: 3 声明删除 (get_version + create_by_id + get_adapter_info)
+- ✅ 实现文件: 3 实现删除 + `open()` 内部 create_by_id → create + resolve_profile_path
+- ✅ 测试 6 文件 + examples 1 文件 (含 Dry-Run 4 发现) 全部迁移
+- ✅ 全量回归: [pcie] 36,454 / [abi] 63 / [dgpu][full_abi] 26 / [chstream] 155 assertions, ctest 75/75 PASS
+
+**修订版 G8 acceptance gate 满足** (修订版合并实现):
+- `[abi-secondary-slimming]` tag: 7 assertions, 1 test case PASS
+- 修订版决策: 合并到 `test_cpptlm_emulator_abi_slimming.cc` (不创建独立文件), per HSK-12 §9.3
+
+**修订版关键保持**:
+- 🟢 `open/close` fd 风格 API 保留 (修订版核心)
+- 🟢 Hub ack 风险降低 60% (2 函数级 vs 初版 5 函数级)
+- 🟢 零 driver 功能影响 (实测 ~12 核心 ABI 远超 15)
+
+**关联**: [ADR-SOC-18](./ADR-SOC-18-cpptlm-abi-slimming.md) (父 ADR Status Update 已追加) · [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md) (实施完成) · [HSK-12-cpptlm-abi-secondary-slimming.md](../../cross_repo/HSK-12-cpptlm-abi-secondary-slimming.md) (跨仓契约)

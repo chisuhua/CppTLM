@@ -7,13 +7,19 @@
 #include <catch_amalgamated.hpp>
 #include "abi/cpptlm_emulator.h"
 
-TEST_CASE("Full ABI: multi-card lifecycle (4 distinct dev_ids ≥10 → destroy → restored)",
+TEST_CASE("Full ABI: multi-card lifecycle (4 distinct emus → destroy → restored, 修订版)",
           "[dgpu][shell][full_abi][lifecycle]") {
     uint32_t before = cpptlm_emulator_get_device_count();
     cpptlm_emulator_t* emus[4];
+    uint32_t first_dev_id = 0;
     for (uint32_t i = 0; i < 4; ++i) {
-        emus[i] = cpptlm_emulator_create_by_id(10 + i);
+        // 修订版: 改用 cpptlm_emulator_create(nullptr) 替代 cpptlm_emulator_create_by_id(10+i)
+        // (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming)
+        emus[i] = cpptlm_emulator_create(nullptr);
         REQUIRE(emus[i] != nullptr);
+        if (i == 0) {
+            first_dev_id = cpptlm_emulator_get_device_count();
+        }
         for (uint32_t j = 0; j < i; ++j) {
             REQUIRE(emus[i] != emus[j]);
         }
@@ -21,8 +27,8 @@ TEST_CASE("Full ABI: multi-card lifecycle (4 distinct dev_ids ≥10 → destroy 
     REQUIRE(cpptlm_emulator_get_device_count() == before + 4);
 
     cpptlm_device_info_t info{};
-    REQUIRE(cpptlm_emulator_get_device_info(10, &info) == 0);
-    REQUIRE(cpptlm_emulator_get_device_info(99, &info) == -2); // ENOENT (actual)
+    REQUIRE(cpptlm_emulator_get_device_info(first_dev_id, &info) == 0);
+    REQUIRE(cpptlm_emulator_get_device_info(0xFFFFFFFE, &info) == -2); // ENOENT (actual)
 
     for (uint32_t i = 0; i < 4; ++i) {
         cpptlm_emulator_destroy(emus[i]);
@@ -32,7 +38,8 @@ TEST_CASE("Full ABI: multi-card lifecycle (4 distinct dev_ids ≥10 → destroy 
 
 TEST_CASE("Full ABI: mmio/backdoor return -ENOSYS via wrapper when SOC not instantiated",
           "[dgpu][shell][full_abi][forward]") {
-    cpptlm_emulator_t* e = cpptlm_emulator_create_by_id(0);
+    // 修订版: 改用 cpptlm_emulator_create(nullptr) 替代 create_by_id(0)
+    cpptlm_emulator_t* e = cpptlm_emulator_create(nullptr);
     REQUIRE(e != nullptr);
 
     uint32_t val = 0;
@@ -44,10 +51,11 @@ TEST_CASE("Full ABI: mmio/backdoor return -ENOSYS via wrapper when SOC not insta
     cpptlm_emulator_destroy(e);
 }
 
-TEST_CASE("Full ABI: create_by_id idempotent destroy (double destroy safe)",
+TEST_CASE("Full ABI: create idempotent destroy (double destroy safe)",
           "[dgpu][shell][full_abi][lifecycle]") {
     uint32_t before = cpptlm_emulator_get_device_count();
-    cpptlm_emulator_t* e = cpptlm_emulator_create_by_id(0);
+    // 修订版: 改用 cpptlm_emulator_create(nullptr) 替代 create_by_id(0)
+    cpptlm_emulator_t* e = cpptlm_emulator_create(nullptr);
     REQUIRE(e != nullptr);
     REQUIRE(cpptlm_emulator_get_device_count() == before + 1);
 
@@ -56,9 +64,10 @@ TEST_CASE("Full ABI: create_by_id idempotent destroy (double destroy safe)",
     REQUIRE(cpptlm_emulator_get_device_count() == before);
 }
 
-TEST_CASE("Full ABI: get_version non-null + device_info null/ENOENT guards",
+TEST_CASE("Full ABI: get_version non-null + device_info null/ENOENT guards (修订版: 改用宏)",
           "[dgpu][shell][full_abi][edge]") {
-    REQUIRE(cpptlm_emulator_get_version() != nullptr);
+    // 修订版: cpptlm_emulator_get_version 函数已删除, 改用 CPPTLM_EMULATOR_VERSION_STRING 宏
+    REQUIRE(CPPTLM_EMULATOR_VERSION_STRING != nullptr);
 
     cpptlm_device_info_t info{};
     REQUIRE(cpptlm_emulator_get_device_info(0, nullptr) == -22);
@@ -67,7 +76,8 @@ TEST_CASE("Full ABI: get_version non-null + device_info null/ENOENT guards",
 
 TEST_CASE("Full ABI: register_callbacks accepts non-null callbacks on valid emu",
           "[dgpu][shell][full_abi][callback]") {
-    cpptlm_emulator_t* e = cpptlm_emulator_create_by_id(0);
+    // 修订版: 改用 cpptlm_emulator_create(nullptr) 替代 create_by_id(0)
+    cpptlm_emulator_t* e = cpptlm_emulator_create(nullptr);
     REQUIRE(e != nullptr);
     REQUIRE(cpptlm_emulator_register_callbacks(e, nullptr, nullptr, nullptr, nullptr, nullptr) ==
             0);

@@ -4,7 +4,7 @@
 // Date: 2026-08-29
 //
 // 多线程并发验证 cpptlm_emulator 设备注册表 mutex (per design §4 + ADR-088 §D6):
-//   - 2 worker 线程并发调 create_by_id → 期望不同 dev_id, 计数 +2
+//   - 2 worker 线程并发调 cpptlm_emulator_create → 期望不同 dev_id, 计数 +2
 //   - 4 worker 线程交错 mmio_read (null handle) → 期望每个返回 -EINVAL, 无 race
 //   - destroy + 重复 destroy nullptr → 计数正确, 不 crash
 //   - shutdown 时无 lingering handle (lookup 返回 nullptr)
@@ -20,21 +20,23 @@
 #include <thread>
 #include <vector>
 
-TEST_CASE("Registry: 2 threads concurrent create_by_id get distinct dev_ids",
+TEST_CASE("Registry: 2 threads concurrent create get distinct dev_ids",
           "[abi][registry][concurrent][create]") {
     std::atomic<uint32_t> dev_id_a{0};
     std::atomic<uint32_t> dev_id_b{0};
     std::atomic<uint32_t> count_before{cpptlm_emulator_get_device_count()};
 
     std::thread t1([&] {
-        cpptlm_emulator_t* emu = cpptlm_emulator_create_by_id(0);
+        // 修订版: 改用 cpptlm_emulator_create(nullptr) 替代 cpptlm_emulator_create_by_id(0)
+        // (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming)
+        cpptlm_emulator_t* emu = cpptlm_emulator_create(nullptr);
         if (emu != nullptr) {
             dev_id_a.store(reinterpret_cast<uintptr_t>(emu) & 0xFFFFFFFFu);
             cpptlm_emulator_destroy(emu);
         }
     });
     std::thread t2([&] {
-        cpptlm_emulator_t* emu = cpptlm_emulator_create_by_id(0);
+        cpptlm_emulator_t* emu = cpptlm_emulator_create(nullptr);
         if (emu != nullptr) {
             dev_id_b.store(reinterpret_cast<uintptr_t>(emu) & 0xFFFFFFFFu);
             cpptlm_emulator_destroy(emu);
@@ -105,7 +107,8 @@ TEST_CASE("Registry: concurrent create + destroy interleaved",
 
     auto worker = [&] {
         for (uint32_t i = 0; i < kItersPerThread; ++i) {
-            cpptlm_emulator_t* emu = cpptlm_emulator_create_by_id(0);
+            // 修订版: 改用 cpptlm_emulator_create(nullptr) 替代 create_by_id(0)
+            cpptlm_emulator_t* emu = cpptlm_emulator_create(nullptr);
             if (emu != nullptr) {
                 total_count.fetch_add(1, std::memory_order_relaxed);
                 cpptlm_emulator_destroy(emu);

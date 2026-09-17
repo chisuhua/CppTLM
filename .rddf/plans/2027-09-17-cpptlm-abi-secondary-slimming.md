@@ -1,13 +1,14 @@
 # cpptlm-abi-secondary-slimming: 实施计划 (TDD 5 步)
 
-> **配套**: [`openspec/changes/2027-09-17-cpptlm-abi-secondary-slimming/`](../openspec/changes/2027-09-17-cpptlm-abi-secondary-slimming/) (待创建)
+> **配套**: [`openspec/changes/cpptlm-abi-secondary-slimming/`](../openspec/changes/cpptlm-abi-secondary-slimming/) (待创建)
+> **Change name**: `cpptlm-abi-secondary-slimming` (slug, **不带日期前缀** per openspec 1.4.1 CLI 命名规则)
 > **关联阶段**: [`docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md`](../docs/soc_arch/roadmap/phase9-p5-secondary-slimming.md)
 > **主 ADR**: [`docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md`](../docs/soc_arch/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md) — **修订版 (保留 open/close)**
 > **父 ADR**: [`docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md`](../docs/soc_arch/adr/ADR-SOC-18-cpptlm-abi-slimming.md) — 第一轮精简 22→18 (✅ Accepted)
 > **关联 HSK**: `docs/cross_repo/HSK-12-cpptlm-abi-secondary-slimming.md` (待创建, 取代 HSK-11 §已删除函数清单)
 > **生成时间**: 2027-09-17 · **生成方式**: 修订自初版 (per 用户反馈保留 open/close)
-> **Worktree**: 待创建 `.rddf/wt/2027-09-17-cpptlm-abi-secondary-slimming/`
-> **分支**: `openspec/2027-09-17-cpptlm-abi-secondary-slimming`
+> **Worktree**: 待创建 `.rddf/wt/cpptlm-abi-secondary-slimming/`
+> **分支**: `openspec/cpptlm-abi-secondary-slimming`
 > **W 编号基准**: W1 = 2026-09-21(Mon) — 本 plan 时间表按此基准; 当前 W37+
 
 ---
@@ -18,7 +19,7 @@
 
 1. ❌ 删除 `cpptlm_emulator_create_by_id` (与 `create` 重叠)
 2. ❌ 删除 `cpptlm_emulator_get_adapter_info` (与 `get_device_info` 重叠)
-3. 🔄 `cpptlm_emulator_get_version` → `#define CPPTLM_VERSION_STRING` 宏
+3. 🔄 `cpptlm_emulator_get_version` → `#define CPPTLM_EMULATOR_VERSION_STRING` 宏
 4. ✅ 保留 `cpptlm_emulator_open` / `cpptlm_emulator_close` (fd 风格 API + 生命周期分层语义价值)
 
 **完成定义 (DoD, 修订版)**:
@@ -65,7 +66,7 @@
 |------|------|------|
 | **修订版路径 (18→15+宏)** | ADR-SOC-20 §2 决策 1 修订 | 删除 2 函数 + 改 1 宏; open/close 保留 |
 | **`open` 内部仍调 `create_by_id`** | `src/abi/cpptlm_emulator.cc:433` | `open()` 实现保留对 `create_by_id()` 的调用 (因为 `open` 自身不删除) |
-| **`CPPTLM_VERSION_STRING` 宏** | `include/abi/cpptlm_emulator.h:24` | 已存在; ABI 函数兼容 (驱动仍能调函数, 仅新代码改宏) |
+| **`CPPTLM_EMULATOR_VERSION_STRING` 宏** | `include/abi/cpptlm_emulator.h:24` | 已存在; ABI 函数兼容 (驱动仍能调函数, 仅新代码改宏) |
 | **4 callback typedef 零修改** | ADR-SOC-20 §2 决策 4 | `cpptlm_intr_deliver_cb_t` / `cpptlm_error_cb_t` / `cpptlm_reset_complete_cb_t` / `cpptlm_power_cb_t` |
 | **`cpptlm_emulator_t` 结构体零修改** | ADR-SOC-20 §2 决策 4 | opaque struct 字段不变 |
 | **15 函数签名零修改** | ADR-SOC-20 §3.2 G4 | 与父 ADR-SOC-18 §G7 字节比对 |
@@ -104,7 +105,7 @@
    写入 4 个文件:
    - `proposal.md` (per [`openspec/changes/archive/2026-09-16-cpptlm-abi-slimming/proposal.md`](../openspec/changes/archive/2026-09-16-cpptlm-abi-slimming/proposal.md) 模板)
    - `design.md` (per ADR-SOC-20 §3 Implementation 章节扩写)
-   - `specs/cpptlm-emulator-abi/spec.md` (**REMOVED Requirements 2**: `cpptlm_emulator_create_by_id` + `cpptlm_emulator_get_adapter_info`; **ADDED Requirement 1**: `CPPTLM_VERSION_STRING` 宏)
+   - `specs/cpptlm-emulator-abi/spec.md` (**REMOVED Requirements 2**: `cpptlm_emulator_create_by_id` + `cpptlm_emulator_get_adapter_info`; **ADDED Requirement 1**: `CPPTLM_EMULATOR_VERSION_STRING` 宏)
    - `tasks.md` (8 步对应 P5-1..P5-8)
 4. **Verify pass**:
    ```bash
@@ -132,7 +133,7 @@
    - §1 上下文 (per HSK-11 模板)
    - §2 **15 函数**完整清单 (设备管理 2 + 数据面 4 + MSI-X 3 + 回调 2 + DMA 1 + handle 2 open/close)
    - §3 **3 函数移除迁移指南** (`create_by_id` + `get_adapter_info` + `get_version` 改宏)
-   - §4 `CPPTLM_VERSION_STRING` 宏迁移 (per `src/abi/cpptlm_emulator.cc:24`)
+   - §4 `CPPTLM_EMULATOR_VERSION_STRING` 宏迁移 (per `src/abi/cpptlm_emulator.cc:24`)
    - §5 Hub 侧 4 种响应回退策略 (per HSK-11 §5 模板)
    - §6 修订版 vs 初版对比表 (per ADR-SOC-20 §1.3)
 4. **Verify pass**:
@@ -241,7 +242,7 @@
    -void cpptlm_emulator_close(cpptlm_handle_t handle);                                // KEEP
    -int cpptlm_emulator_get_adapter_info(cpptlm_handle_t handle, ...);                 // line 103 删除
    -const char* cpptlm_emulator_get_version(void);                                     // line 64 删除 (改宏)
-   +#define CPPTLM_VERSION_STRING "v1.0-dgpu-v1"  // line 24 已存在, 确认
+   +#define CPPTLM_EMULATOR_VERSION_STRING "v1.0-dgpu-v0"  // line 24 已存在, 确认
    ```
 
    **`src/abi/cpptlm_emulator.cc`**:
@@ -303,8 +304,8 @@
            cpptlm_emulator_open(0, nullptr);   // 修订版保留
            cpptlm_emulator_close(0);            // 修订版保留
        }
-       SECTION("CPPTLM_VERSION_STRING macro value correct") {
-           REQUIRE(std::string(CPPTLM_VERSION_STRING) == "v1.0-dgpu-v1");
+       SECTION("CPPTLM_EMULATOR_VERSION_STRING macro value correct") {
+           REQUIRE(std::string(CPPTLM_EMULATOR_VERSION_STRING) == "v1.0-dgpu-v0");
        }
    }
    ```
@@ -446,7 +447,7 @@
 - [ ] G2: grep call-site 0 命中被删函数 (排除 ABI 定义文件)
 - [ ] G3: `include/abi/cpptlm_emulator.h` 剩余 **15 函数 + 1 宏 + 4 callback typedef**
 - [ ] G4: 15 函数签名零修改
-- [ ] G5: `CPPTLM_VERSION_STRING` 宏值正确
+- [ ] G5: `CPPTLM_EMULATOR_VERSION_STRING` 宏值正确
 - [ ] G6: `cpptlm_emulator_t` 结构体零修改
 - [ ] G7: 既有 `[pcie]` 测试零回归
 - [ ] G8: `[abi-secondary-slimming]` 新增测试 PASS

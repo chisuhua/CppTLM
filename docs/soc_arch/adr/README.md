@@ -37,7 +37,7 @@
 | [ADR-SOC-17-pcie-mock-ip.md](./ADR-SOC-17-pcie-mock-ip.md) | **独立 PcieMockIP（gem5 风格简化端点）**（无 TLP/LL/PHY/Mux/17-port SR-IOV；profile `pcie_path="mock"` 启用；目标 ~500 行/上限 800 行；per V-5 决议 Fz-4） | ✅ Accepted | Phase 9+ (2027-09-17) |
 | [ADR-SOC-18-cpptlm-abi-slimming.md](./ADR-SOC-18-cpptlm-abi-slimming.md) | **CppTLM ABI 表面精简 22→18 函数**（删除 4 个 backdoor/lookup ABI；Hub ack 超时切出为独立 change；保留 18 个驱动核心函数 + 4 callback typedef 零修改） | ✅ Accepted | Phase 9+ follow-up (2027-09-17) |
 | [ADR-SOC-19-axi-master-outbound-bridge.md](./ADR-SOC-19-axi-master-outbound-bridge.md) | **PcieEndpointIP AXI Master/Slave 角色边界明确化**（明确 `axi_slave_in` 不承担 AXI-to-PCIe bridge 角色；通用 SoC AXI Master→PCIe Outbound 桥接**当前未提供**；记录为 Phase 10+ 评估缺口，per [phase9-p4-axi-outbound-bridge.md](../roadmap/phase9-p4-axi-outbound-bridge.md)） | 📋 Proposed | Phase 10+ 评估 |
-| [ADR-SOC-20-cpptlm-abi-secondary-slimming.md](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md) | **CppTLM ABI 二级精简 18→14 + 宏化**（handle API 4 函数级联删除：`create_by_id` + `open` + `close` + `get_adapter_info`；`get_version` 改 `#define CPPTLM_VERSION_STRING` 宏；Hub 同步；per [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md)） | 📋 Proposed | Phase 9+ P5 (Hub ack 待收) |
+| [ADR-SOC-20-cpptlm-abi-secondary-slimming.md](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md) | **CppTLM ABI 二级精简 18→15 函数 + 宏化**（修订版:删除 2 真冗余函数 `create_by_id` + `get_adapter_info`；`get_version` 改 `#define CPPTLM_EMULATOR_VERSION_STRING "v1.0-dgpu-v0"` 宏；**保留 `open/close` fd 风格 API**；Hub 同步 2 函数级 vs 初版 5 函数级；per [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md)） | 📋 Proposed | Phase 9+ P5 (Hub ack 待收) |
 
 ## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference(已迁回本目录)
 
