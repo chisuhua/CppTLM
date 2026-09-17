@@ -53,10 +53,12 @@ namespace tlm::gpu {
 
     // Pre-exit policy (per design.md §4 + Oracle P2-1 修复 2026-08-28)
     // s2 应有但漏了,s3 commit T-s3-3 补漏定义
-    // MVP 仅 NONE 档(无 pre-exit 优化);未来可扩展 PRIORITY/EVICT_OLDEST
+    // MVP 仅 NONE 档(无 pre-exit 优化);P1-5 扩展 PRIORITY/EVICT_OLDEST/LRU
     enum class PreExitPolicy {
-        NONE,   // MVP 唯一档:不退,不驱逐
-        // FUTURE: PRIORITY, EVICT_OLDEST, LRU, ...
+        NONE,           // MVP 唯一档:不退,不驱逐
+        PRIORITY,       // 优先级:高优 completion 优先发
+        EVICT_OLDEST,   // 驱逐最旧:full ring 时驱逐最旧 entry
+        LRU,            // LRU 替换:驱逐最近最少使用的 entry
     };
 
 } // namespace tlm::gpu
