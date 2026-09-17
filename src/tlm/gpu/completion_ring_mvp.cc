@@ -17,7 +17,9 @@ namespace tlm::gpu {
             return; // 满 → 丢包 (防御性)
         }
         ring_.push_back(entry);
-        // TODO: 触发 done_out 转发 + irq_out (MSI-X delivery)
+        if (host_notify_) {
+            host_notify_(entry.task_id, entry.status.read());
+        }
     }
 
     bool CompletionRingTLM::pop(bundles::CompletionEntry* out) {
