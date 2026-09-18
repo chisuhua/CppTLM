@@ -6,7 +6,7 @@
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)（已建立,作为本总架构蓝图及后续 01-10 子架构文档归口）
 > **关联文档**:
 > - 系统级设计 [`docs/soc_arch/specs/apu-soc-design.md`](../specs/apu-soc-design.md)（1056 行,Phase 7 APU 视角）
-> - PCIe EP 微架构 [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md)（950 行,PCIe IP 视角）
+> - PCIe EP 微架构 [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../architecture/19-pcie-ip-microarchitecture.md)（950 行,PCIe IP 视角）
 > - 9 类 SimModule 拓扑 [`include/tlm/cluster/`](../../../include/tlm/cluster/)（CpuCluster / ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC / ApuSoC）
 > - 研究综述 [`docs/research/SM/overview.md`](../../research/SM/overview.md)（NVIDIA Hopper→Blackwell SM 内部专利与微基准综述）
 > - 分发段综述 [`docs/research/WDUtoSM/overview.md`](../../research/WDUtoSM/overview.md)（NVIDIA WDU + AMD SPI/SQ 对照）
@@ -782,7 +782,7 @@ ComputeReqBundle v1.0 扩展:
 
 | 模块 | 微架构文档 | 关联 OpenSpec |
 |------|-----------|---------------|
-| **PcieEndpointIP** | [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../modules/dgpu-soc-pcie-slice.md) + [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md) | [`2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool`](../../../openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/) + [`2027-02-09-cpptlm-dgpu-pcie-ip-integration`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-pcie-ip-integration/) |
+| **PcieEndpointIP** | [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../modules/dgpu-soc-pcie-slice.md) + [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../architecture/19-pcie-ip-microarchitecture.md) | [`2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool`](../../../openspec/changes/2026-10-13-cpptlm-dgpu-pcie-sriov-vf-pool/) + [`2027-02-09-cpptlm-dgpu-pcie-ip-integration`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-pcie-ip-integration/) |
 | **SdmaEngineTLM** | [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../modules/dgpu-soc-pcie-slice.md) | (per `2026-08-26-cpptlm-dgpu-sdma-engine`,已归档 `archive/`) |
 | **[HostBypassTLM](../modules/host-bypass.md)** | ✅ 已交付 (429327d) | [`2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc`](../../../openspec/changes/2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc/) |
 | **[PcieRootComplexTLM](../modules/pcie-root-complex.md)** | ✅ 已交付 (429327d) | [`2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc`](../../../openspec/changes/2027-01-19-cpptlm-dgpu-pcie-host-bypass-and-rc/) |
@@ -816,7 +816,7 @@ ComputeReqBundle v1.0 扩展:
 | **范围** | Phase 7.A-F 6 子阶段 | v1.0 MVP + v1.1 完整版两阶段 |
 | **driver** | 单 driver stack | CUDA + ROCm 双 driver stack |
 
-### 7.4 与 `docs/architecture/14-pcie-ip-microarchitecture.md` 的差异
+### 7.4 与 `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` 的差异
 
 | 维度 | architecture/14 (PCIe IP 视角) | 00-overview.md (dGPU SoC v1.0 视角) |
 |------|--------------------------------|--------------------------------------|

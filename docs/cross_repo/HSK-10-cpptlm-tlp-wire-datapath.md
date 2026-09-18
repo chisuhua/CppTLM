@@ -129,7 +129,7 @@ backdoor 行为通过 `profile.pcie_path = "mock"` 切换 (驱动不可见 — �
 
 ---
 **关联 ADR / 文档**:
-- `docs/architecture/14-pcie-ip-microarchitecture.md` §P9-TLP-Wire-Datapath
+- `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` §P9-TLP-Wire-Datapath
 - `openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/specs/pcie-tlp-wire-datapath/spec.md`
 - `docs/adr/ADR-088-pcie-emulator-abi.md` §D5 (Hub 侧, 外部引用)
 - `docs/cross_repo/HSK-9-2027-02-09-cpptlm-sm-rewrite.md` (父 HSK 范本)

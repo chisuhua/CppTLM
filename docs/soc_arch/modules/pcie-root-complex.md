@@ -87,7 +87,7 @@ struct DiscoveredDevice {
 
 ## 4. PF0-only 简化说明
 
-**Oracle M2 标注** (`docs/architecture/14-pcie-ip-microarchitecture.md` L939):
+**Oracle M2 标注** (`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` L939):
 - **VF 经 `stream_id` 直访**,非枚举发现(简化假设,生产 RC 需遍历完整 PCIe 拓扑)
 - **PF0-only**: 假设 EP 仅暴露 1 个 PF + 16 个 VF,真实 RC 需支持 multi-PF(per PcieEndpointIP 17 ports 定义)
 - **BAR 分配**: v1.0 MVP 仅支持静态 BAR 分配,v1.1 完整需支持 dynamic BAR resize

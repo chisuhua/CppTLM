@@ -516,7 +516,7 @@ private:
 |------|-----------|
 | **CommandProcessor** | [`docs/soc_arch/modules/command-processor.md`](../modules/command-processor.md) |
 | **Pm4Decoder (旧)** | [`docs/soc_arch/modules/pm4-decoder.md`](../modules/pm4-decoder.md)(NVIDIA method packet 简化,v0.5 MVP) |
-| **PcieEndpointIP** | [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md) |
+| **PcieEndpointIP** | [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../architecture/19-pcie-ip-microarchitecture.md) |
 
 ### 11.3 关联 OpenSpec changes
 

@@ -197,3 +197,7 @@ dGPU SoC v1.0 需要在 PcieEndpointIP 与 SoC 内部模块之间建立：
 ## Status Update
 
 - **2027-02-09**: 📋 Proposed。Phase 5 + Phase 6 + Phase 8 M1 修复已落地（HEAD `429327d`）；Oracle 评审 PASS（含 M1/M2/M3 修复 + 复评）。
+
+### 2027-09-17 — 文档迁移（per Phase 9 P2 摸底， git mv 保留历史）
+
+**关联文档路径迁移**: `docs/architecture/14-pcie-ip-microarchitecture.md` → `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`（git mv 保留历史, PcieEndpointIP 内部微架构 SSOT 位置迁移）。正文链接保留旧路径以符合 ADR 不可变原则，新读者请移步新路径查阅。

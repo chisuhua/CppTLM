@@ -51,7 +51,7 @@
 
 - **NUM_PORTS = 17** = 1 PF + 16 VF(per `include/tlm/pcie/pcie_endpoint_ip.hh:48`)
 - **`req_in[NUM_PORTS]` + `resp_out[NUM_PORTS]` 数组**(per L50-53),非功能命名端口(避免 N×16 端口爆炸)
-- **内部 `stream_id` 路由**:用 `stream_id`(PCIe Requester ID 的 function 部分)区分 VF,避免端口按 VF 数量级展开(per `docs/architecture/14-pcie-ip-microarchitecture.md` §3 端口图)
+- **内部 `stream_id` 路由**:用 `stream_id`(PCIe Requester ID 的 function 部分)区分 VF,避免端口按 VF 数量级展开(per `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` §3 端口图)
 - **Q12 Completion 单一真源**:`PcieEndpointIP.completions()` 委托 `PcieSriovVfPool.completions()`(per L82-83),避免双份 outstanding 失配
 - **`PcieEndpointTLM` 已 deprecated**:头文件 `include/tlm/gpu/pcie_endpoint_tlm.h` 添加 `[[deprecated("use PcieEndpointIP")]]`(per commit `429327d`),**layout 完全不变**(仅加属性,23 ABI 冻结不变量)
 
@@ -222,7 +222,7 @@ OpenSpec change: [`openspec/changes/2026-08-28-cpptlm-dgpu-pcie-slice-prerequisi
 ## 9. Phase 9+ 更新: PCIe Slice 边界扩展 (2026-09-17)
 
 > **关联 change**: `openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/`
-> **架构文档**: `docs/architecture/14-pcie-ip-microarchitecture.md §12` Phase 9+ 完整 TLP 链路 + profile 选路
+> **架构文档**: `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md §12` Phase 9+ 完整 TLP 链路 + profile 选路
 
 ### 9.1 PCIe IP 类型 (Phase 9+ 引入)
 

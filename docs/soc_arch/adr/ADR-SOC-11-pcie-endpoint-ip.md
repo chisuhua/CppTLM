@@ -200,3 +200,7 @@ public:
 ## Status Update
 
 - **2027-02-09**: 📋 Proposed。本 ADR 在 ADR-SOC-07 D2 基础上补充 17 ports PcieEndpointIP 替代决策，与 Phase 8 整合交付对齐（HEAD `429327d`）。
+
+### 2027-09-17 — 文档迁移（per Phase 9 P2 摸底， git mv 保留历史）
+
+**关联文档路径迁移**: `docs/architecture/14-pcie-ip-microarchitecture.md` → `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`（git mv 保留历史, PcieEndpointIP 内部微架构 SSOT 位置迁移）。正文链接保留旧路径以符合 ADR 不可变原则，新读者请移步新路径查阅。

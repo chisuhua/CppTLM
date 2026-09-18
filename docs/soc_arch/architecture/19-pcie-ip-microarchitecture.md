@@ -1,9 +1,15 @@
-# docs/architecture/14-pcie-ip-microarchitecture.md
+# docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md
 # dGPU PCIe IP 微架构文档 (Phase 1-7 整合版)
 # 作者: CppTLM Team
-# 日期: 2027-02-09
+# 日期: 2027-02-09 (原始 14-pcie-ip-microarchitecture.md)
+# 迁移: 2027-09-17 从 `docs/architecture/14-pcie-ip-microarchitecture.md` → `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (git mv, 历史保留)
 # 来源: openspec/changes/2026-09-01-cpptlm-dgpu-pcie-ip-microarch/design.md (931 行迁移)
 # Phase 7 Oracle M2 标注: RC 枚举为 PF0-only 简化模型
+#
+# 同目录关联文档:
+# - `16-pcie-endpoint-architecture.md` — 跨仓架构 (Driver-to-Hardware)
+# - `18-pcie-endpoint-entry.md` — 实施入口 (双仓 SSOT)
+# - 本文档 (19) — PcieEndpointIP 内部微架构 (Phase 1-7 整合)
 
 ## 目录
 
@@ -1181,6 +1187,162 @@ Phase 9+ 完成 T-P9-1 到 T-P12-2 共 11 个 commit, 闭合完整 PCIe TLP 链�
 |-----|------|------|
 | T-P12-4 | CMake + 全量验证 | 无 |
 | T-P9-0 | ABI 精简 (22->18 函数) | Hub ADR-088 ack |
+
+---
+
+## 13. EP↔SoC 桥接 (Phase 9 P2 unblock 章节, 2027-09-17)
+
+> **状态**: 📋 **Planned** — 由 `openspec/changes/cpptlm-p2-integration-unblock/` 设计,实施 P0.5-1..9 后落地
+> **来源**: spec [`pcie-ep-soc-noc-axi-bridge`](../../openspec/changes/cpptlm-p2-integration-unblock/specs/pcie-ep-soc-noc-axi-bridge/spec.md) 7 ADDED Requirements
+> **Oracle 复评**: 2027-09-17 PASS-WITH-MINOR + 4/5 minor 修订完成
+
+### 13.1 4 集成断点总览
+
+| # | 断点 | 修复路径 | 现状 (P2 unblock 前) |
+|---|------|---------|:----:|
+| 1 | **Axi4Bundle ↔ CacheReqBundle 协议不兼容** | 新增 `Axi4CacheAdapter` (`include/framework/axi4_cache_adapter.hh/cc`) | ❌ 未实现 |
+| 2 | **MSI-X 中断路径无连接** | EP 新增 `msix_delivery_in`/`msix_delivery_out` 双端口 | ❌ 未实现 |
+| 3 | **SDMA 不在 `dgpu_soc_with_pcie_ip.json`** | EP `set_sdma_engine()` setter + tick 程序化桥接 | ❌ 未实现 |
+| 4 | **CompletionRing `irq_out[3]` 未接线** | EP `set_completion_ring()` setter + tick 程序化桥接 | ❌ 未实现 |
+
+### 13.2 Axi4CacheAdapter 桥接 (§6 AXI 边界的扩展)
+
+**问题**: `PcieAxiAdapter` 用 `Axi4Bundle` (16-bit ID, wstrb, OOO), `CrossbarTLM` 用 `CacheReqBundle`/`CacheRespBundle` (8-bit ID, 简单行协议)。EP→SoC 读响应路径 BROKEN。
+
+**方案**: 在 `include/framework/axi4_cache_adapter.hh/cc` 新增独立 `Axi4CacheAdapter` 类 (per design D1), 2 方向状态机:
+
+```
+AXI 写事务 (EP → SoC):
+  AW (awaddr, awid[16], awlen, awsize) + W (wdata, wstrb, wlast)
+    ↓ 状态机映射
+  CacheReq (src_id[8], addr, cmd=WR, data, byte_en)
+
+AXI 读事务 (EP → SoC):
+  AR (araddr, arid[16], arlen)
+    ↓ 状态机映射
+  CacheReq (src_id[8], addr, cmd=RD)
+
+Cache 响应 (SoC → EP):
+  CacheResp (dst_id[8], data, status)
+    ↓ 状态机反查
+  AXI R (rid[16], rdata, rresp, rlast)  -- 读响应
+  AXI B (bid[16], bresp)              -- 写响应
+```
+
+**ID 映射策略** (per design D2):
+- AXI 16-bit `awid`/`arid` → CacheReq 8-bit `src_id` (高 8 bit 压缩, 低 8 bit 作 `ax_id` 保留)
+- 双向映射表 `awid_to_src_id_` / `src_id_to_awid_` (capacity 256)
+- 8-bit `src_id` 冲突时拒绝新事务, 返回 AXI `bresp=SLVERR`
+
+**OOO 支持**: `Axi4CacheAdapter` 仅做协议转换, 不处理 OOO; OOO 由 PcieAxiAdapter + Axi4Mapper (Phase 6) 通过 16-bit `bid`/`rid` 字段完成。
+
+### 13.3 MSI-X 双端口路径 (§4 Config Space + MSI-X 的扩展)
+
+**问题**: EP 内部 `MsiXTable::irq_out` 无任何外部接线, MSI-X 投递 → Host 路径完全断。
+
+**方案** (per design D3 + spec `msix-delivery-ep-to-host`): EP 新增 2 个独立端口:
+
+| 端口 | 方向 | Bundle | 来源/目标 |
+|------|------|--------|----------|
+| `PcieEndpointIP::msix_delivery_in` | ingress | MsiXDeliveryBundle | 来自 SDMA `done_out[4]` / CompletionRing `irq_out[3]` |
+| `PcieEndpointIP::msix_delivery_out` | egress | MsiXDeliveryBundle | → HostBypassTLM `msix_delivery_in` (程序化) |
+| `HostBypassTLM::msix_delivery_in` | ingress | MsiXDeliveryBundle | ← EP 程序化推送 |
+
+**数据流**:
+```
+SDMA 完成 → done_out[4] (PcieTlpBundle kind=DMA_DONE)
+              ↓ EP.set_sdma_engine() 程序化桥接
+EP.msix_delivery_in (ingress)
+              ↓ EP.tick() 按 vector 编号聚合
+EP.msix_delivery_out (egress)
+              ↓ EP.set_host_bypass() 程序化桥接
+HostBypassTLM.msix_delivery_in (ingress)
+              ↓ HB.tick() 累加 msix_delivery_count_ + ABI cpptlm_emulator_msix_clear_pending()
+Host 端清除 pending
+```
+
+### 13.4 SDMA 程序化桥接 (§3 Transaction Layer 的扩展)
+
+**问题**: `SdmaEngineTLM` 不在 `examples/dgpu_soc_with_pcie_ip.json` 的 `modules` 列表中, 无法通过配置接线。当前仅依赖 `dgpu_board_shell.cc:305-330` 手动转发。
+
+**方案** (per design D4 + spec `sdma-engine-programmatic-bridge`): 程序化桥接 (替代 JSON 声明式, 因 19 §14.2.3 限制 JSON 声明式 `pcie_ep.*` 端口被静默丢弃):
+
+```
+SDMA 现有 5 端口 (per sdma_engine_tlm.hh L82-86, 全 PcieTlpBundle):
+  desc_in[0]    (ingress, PcieTlpBundle kind=DMA_DESC)   — descriptor ring
+  mem_in[1]     (ingress, PcieTlpBundle)                 — VRAM 读响应
+  mem_out[2]    (egress, PcieTlpBundle)                  — VRAM 读写
+  host_out[3]   (egress, PcieTlpBundle)                  — Host 完成通知
+  done_out[4]   (egress, PcieTlpBundle kind=DMA_DONE)    — MSI-X 中断源
+
+SDMA 新增 2 端口 (本 change 引入, 供未来 AXI 路径扩展):
+  axi_slave_in   (ingress, Axi4Bundle)
+  axi_master_out (egress, Axi4Bundle)
+
+EP 程序化桥接:
+  PcieEndpointIP::set_sdma_engine(SdmaEngineTLM*) setter
+  PcieEndpointIP::tick() 调用 sdma_->tick() (Phase 8 HB/RC tick 转发先例)
+  DGpuBoardShell 在 board 装配时 ep->set_sdma_engine(sdma)
+```
+
+**JSON 最小化**: `dgpu_soc_with_pcie_ip.json` 仅添加 sdma 模块声明 (name, type, params), **不添加**任何 sdma ↔ pcie_ep 端口连接 (会被 §14.2.3 静默丢弃)。
+
+### 13.5 CompletionRing 程序化桥接 (与 §13.4 共享 MSI-X 通道)
+
+**方案** (per design D5 + spec `completion-ring-irq-out-wiring`): 与 SDMA 同模式程序化桥接:
+
+```
+CompletionRing::irq_out[3] (egress, PcieTlpBundle kind=COMPLETION)
+              ↓ EP.set_completion_ring() 程序化桥接
+EP.msix_delivery_in (与 SDMA done_out[4] 共享 ingress)
+              ↓ EP 内部按 vector 编号聚合
+EP.msix_delivery_out → HostBypassTLM.msix_delivery_in
+```
+
+**header 注释同步**: `completion_ring_mvp.hh` L13 从 `"irq_out[3] → pcie_ep.irq_out 转发"` 改为 `"irq_out[3] → pcie_ep.msix_delivery_in (程序化桥接, per 19 §14.2.3 限制)"`。
+
+### 13.6 4 方向 AXI 闭环 (与 Phase 8 M1 关系)
+
+| 方向 | 路径 | 状态 (本 change 后) |
+|------|------|:----:|
+| **D1** Host→EP 写/读 | HB→EP.axi_slave_in (Phase 8 M1 程序化闭环) | ✅ 已闭环 |
+| **D2** EP→Host 响应 | EP.slave_resp→HB (Phase 8 M1 程序化闭环) | ✅ 已闭环 |
+| **D3** EP→SoC 写 | EP.axi_master_out→Axi4CacheAdapter→xbar (本 change §13.2) | 📋 P0.5-2..4 |
+| **D4** SoC→EP 读响应 | xbar→Axi4CacheAdapter→EP.axi_master_resp (本 change §13.2) | 📋 P0.5-2..4 |
+| **MSI-X** EP→Host | EP.msix_delivery_out→HB.msix_delivery_in (本 change §13.3) | 📋 P0.5-5..6 |
+| **SDMA** EP↔SDMA | EP.set_sdma_engine() 程序化桥接 (本 change §13.4) | 📋 P0.5-7 |
+| **CompletionRing** EP↔CR | EP.set_completion_ring() 程序化桥接 (本 change §13.5) | 📋 P0.5-7 |
+
+### 13.7 测试与验证 (新增 4 文件 + 双标签)
+
+**测试文件** (per design D6):
+- `test/test_axi4_cache_adapter.cc` — Axi4CacheAdapter 桥接单测 (2 方向 round-trip, OOO, error)
+- `test/test_pcie_endpoint_ip_msix_path.cc` — MSI-X E2E (EP→HB)
+- `test/test_pcie_endpoint_ip_sdma_wiring.cc` — SDMA 程序化桥接 E2E
+- `test/test_pcie_endpoint_ip_completion_ring_wiring.cc` — CompletionRing→EP 接线 E2E
+
+**标签策略** (per spec `pcie-ep-soc-bridge-test-tag` + G9):
+- 所有 4 文件**必须**双标签 `[pcie][pcie-ep-soc-bridge]` (Catch2 标签不嵌套)
+- `[pcie-ep-soc-bridge]` 精准过滤 (本 change 测试)
+- `[pcie]` 回归基线 (保证 G6 数学 ≥36,700)
+
+**验收 Gate (9 项)** (per tasks.md Acceptance Gate):
+- **G1**: `openspec validate cpptlm-p2-integration-unblock --strict` PASS ✅
+- **G2**: `[pcie-ep-soc-bridge]` 标签 ≥30 assertions PASS
+- **G3**: 4 方向 AXI + MSI-X + SDMA + CompletionRing 全部 ✅
+- **G4**: `Axi4CacheAdapter` 2 方向 round-trip PASS
+- **G5**: `dgpu_soc_with_pcie_ip.json` `validate_topology` PASS
+- **G6**: 既有 `[pcie]` 零回归 (实测基线 36,454, 双标签保证 ≥36,700)
+- **G7**: 既有 `[chstream]` 零回归 (实测基线 155)
+- **G8**: AGENTS.md + `dgpu-soc-pcie-slice.md` §9.4 + **本章节 (§13)** 文档落地 ✅
+- **G9**: 4 新测试文件**双标签**验证
+
+### 13.8 已知限制与未来扩展
+
+- **JSON 声明式 EP 外层端口接线** 当前禁用 (per §14.2.3), 未来如需扩展需先修订本节 + 解锁 `test_axislavein_bridge_path_intact` (独立 change)
+- **Axi4CacheAdapter burst 拆分**: 当前假设 Axi4StreamAdapter 已处理, 不在 Axic4 职责 (Open Q1)
+- **MSI-X sequence number**: 当前 fire-and-forget (Open Q2), 未来如需 ack 可加
+- **SDMA outstanding**: MVP 16, 未来可调整 (Open Q3)
 
 ---
 

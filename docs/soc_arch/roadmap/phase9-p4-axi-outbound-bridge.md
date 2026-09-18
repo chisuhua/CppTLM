@@ -225,7 +225,7 @@ phase9-p0  ──→ p1  ──→ p2  ──→ p3  ──→ p4 (本文件)
 - **ADR 主文档**: [ADR-SOC-19](../adr/ADR-SOC-19-axi-master-outbound-bridge.md)
 - **顶层总览**: [phase9-post-phase8-roadmap.md](./phase9-post-phase8-roadmap.md)
 - **模块文档**: [`dgpu-soc-pcie-slice.md`](../modules/dgpu-soc-pcie-slice.md) §"AXI 接口语义矩阵"
-- **PCIe EP 微架构**: [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md) §Phase 9+
+- **PCIe EP 微架构**: [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../architecture/19-pcie-ip-microarchitecture.md) §Phase 9+
 - **父 OpenSpec**: [archive/2026-09-16-cpptlm-pcie-tlp-wire-datapath/](../../../openspec/changes/archive/2026-09-16-2026-09-16-cpptlm-pcie-tlp-wire-datapath/)
 
 ---

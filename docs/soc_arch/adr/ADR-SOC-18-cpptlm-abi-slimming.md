@@ -155,3 +155,7 @@ Hub 侧 4 种响应 → 4 种回退:
 **归档**: `openspec archive cpptlm-abi-secondary-slimming` ✅ (P5-8 完成)
 
 **关联**: [ADR-SOC-20](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md) · [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md)
+
+### 2027-09-17 — 文档迁移（per Phase 9 P2 摸底， git mv 保留历史）
+
+**关联文档路径迁移**: `docs/architecture/14-pcie-ip-microarchitecture.md` → `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`（git mv 保留历史, PcieEndpointIP 内部微架构 SSOT 位置迁移）。正文链接保留旧路径以符合 ADR 不可变原则，新读者请移步新路径查阅。

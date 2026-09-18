@@ -8,7 +8,7 @@ TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**�
 
 **First read** for new agents: `docs/ONBOARDING.md` (knowledge-graph-generated ramp-up)。
 Architecture 必读:
-- `docs/architecture/14-pcie-ip-microarchitecture.md` (PCIe EP 整合文档,含 Phase 7 Oracle M2 标注)
+- `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (PCIe EP 整合文档,含 Phase 7 Oracle M2 标注)
 - `docs/architecture/01-hybrid-architecture-v2.1.md` (整体 NoC 架构)
 - `docs/architecture/多层次混合仿真.md` (GPGPU 多层 SimModule 拓扑)
 
@@ -116,7 +116,7 @@ configs/                 # JSON 拓扑配置
 docs/
   architecture/          # 架构文档（v2.1 混合架构 + Phase 8 PCIe EP 微架构）
     01-hybrid-architecture-v2.1.md      # ★ 整体 NoC 架构
-    14-pcie-ip-microarchitecture.md     # ★ PCIe EP 微架构 (从 umbrella design.md 迁移)
+    19-pcie-ip-microarchitecture.md     # ★ PCIe EP 微架构 (从 umbrella design.md 迁移)
     多层次混合仿真.md                   # ★ GPGPU 多层 SimModule 拓扑
     02-04 / 08-13 ...                   # 其他架构决策（事务/错误/复位/指标/拓扑/相干/仪表板）
   adr/                   # 通用不可变 ADR (12+ 份, 状态追加 ## Status Update 段)
@@ -194,7 +194,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 | 修改模块工厂 | `src/core/module_factory.cc` (instantiateAll + Step 7 StreamAdapter 注入) |
 | 修改 JSON 配置格式 | `configs/` + `include/utils/config_utils.hh` (group/connection/port_index) |
 | 添加 StreamAdapter | `include/framework/{stream,multi_port_stream,dual_port_stream,bidirectional_port}_adapter.hh` |
-| 7 阶段 roadmap | `docs/architecture/14-pcie-ip-microarchitecture.md` (主) + `openspec/changes/2026-09-01-.../roadmap.md` |
+| 7 阶段 roadmap | `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (主) + `openspec/changes/2026-09-01-.../roadmap.md` |
 | OpenSpec 提案 | `openspec/changes/<name>/` (proposal → design → specs → tasks) |
 | 调试 test fail | `.opencode/skills/cpptlm-debug/SKILL.md` (auto-loads) |
 | 贡献代码/PR | `docs/development/CONTRIBUTING.md` (pre-commit + clang-format + 测试规范) |
@@ -393,7 +393,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | **Phase 8** | **整合交付** | **`e29defd`..`429327d`** | **—** | **✅完成** |
 
 **Phase 8 整合交付 (W24 末)**：
-- `docs/architecture/14-pcie-ip-microarchitecture.md` (从 umbrella design.md 迁移,含 Phase 7 M2 标注)
+- `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (从 umbrella design.md 迁移,含 Phase 7 M2 标注)
 - `examples/dgpu_soc_with_pcie_ip.json` 完整 dGPU SoC + PCIe EP 配置
 - `test/test_pcie_endpoint_ip_full_e2e.cc` 全链路 E2E (3 TEST_CASE, solve Phase 7 M1)
 - `PcieEndpointTLM` 加 `[[deprecated]]` 标注（迁移提示, ABI 不动）

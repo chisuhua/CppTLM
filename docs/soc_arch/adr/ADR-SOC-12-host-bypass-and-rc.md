@@ -195,3 +195,7 @@ public:
 ## Status Update
 
 - **2027-02-09**: 📋 Proposed。Phase 7 + Phase 8 已完成（HEAD `429327d`）；Oracle M1/M2 条件已修复/文档化；测试 `test/test_pcie_endpoint_ip_full_e2e.cc` PASS。
+
+### 2027-09-17 — 文档迁移（per Phase 9 P2 摸底， git mv 保留历史）
+
+**关联文档路径迁移**: `docs/architecture/14-pcie-ip-microarchitecture.md` → `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`（git mv 保留历史, PcieEndpointIP 内部微架构 SSOT 位置迁移）。正文链接保留旧路径以符合 ADR 不可变原则，新读者请移步新路径查阅。

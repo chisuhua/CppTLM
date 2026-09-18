@@ -7,8 +7,8 @@
 > **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§3.2 L2.4 CompletionRing + §3.2 L2.5 MSI-X）
 > **关联现有模块微架构**:
 > - [`docs/soc_arch/modules/completion-ring.md`](../modules/completion-ring.md)
-> - [`docs/architecture/14-pcie-ip-microarchitecture.md §4 (MSI-X)`](../modules/msix_table_mvp.md)
-> - [`docs/architecture/14-pcie-ip-microarchitecture.md §4 (PCIe Config Space)`](../modules/pcie_config_space_mvp.md)（MSI-X 状态机）
+> - [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md §4 (MSI-X)`](../modules/msix_table_mvp.md)
+> - [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md §4 (PCIe Config Space)`](../modules/pcie_config_space_mvp.md)（MSI-X 状态机）
 > **关联研究综述**:
 > - [`docs/research/PCIe/PCIe_上的保序write.md`](../../research/PCIe/PCIe_上的保序write.md)（PCIe 强序 write 机制）
 > - [`docs/research/CP/amd/US20210191730A1_未映射队列聚合门铃_解析.md`](../../research/CP/amd/US20210191730A1_未映射队列聚合门铃_解析.md)（AMD 聚合 doorbell）
@@ -385,9 +385,9 @@ public:
 | 模块 | 微架构文档 |
 |------|-----------|
 | **CompletionRing** | [`docs/soc_arch/modules/completion-ring.md`](../modules/completion-ring.md) |
-| **MsiXTable** | [`docs/architecture/14-pcie-ip-microarchitecture.md §4 (MSI-X)`](../modules/msix_table_mvp.md) |
-| **PcieConfigSpace** | [`docs/architecture/14-pcie-ip-microarchitecture.md §4 (PCIe Config Space)`](../modules/pcie_config_space_mvp.md) |
-| **PcieEndpointIP** | [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md) |
+| **MsiXTable** | [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md §4 (MSI-X)`](../modules/msix_table_mvp.md) |
+| **PcieConfigSpace** | [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md §4 (PCIe Config Space)`](../modules/pcie_config_space_mvp.md) |
+| **PcieEndpointIP** | [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../architecture/19-pcie-ip-microarchitecture.md) |
 
 ### 10.3 关联研究综述
 

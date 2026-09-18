@@ -5,7 +5,7 @@
 > **日期**: 2027-02-09 · **作者**: CppTLM Team (Sisyphus)
 > **归属 OpenSpec**: [`openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/`](../../../openspec/changes/2027-02-09-cpptlm-dgpu-soc-v1-architecture/proposal.md)
 > **关联总架构蓝图**: [`docs/soc_arch/architecture/00-overview.md`](../architecture/00-overview.md) v3.1 PASS（§3.1 L1 Host Interface 层）
-> **关联 PCIe EP 微架构**: [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md)（950 行,Phase 1-7 PCIe EP 整合）
+> **关联 PCIe EP 微架构**: [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../architecture/19-pcie-ip-microarchitecture.md)（950 行,Phase 1-7 PCIe EP 整合）
 > **关联真实代码**:
 > - [`include/tlm/pcie/pcie_endpoint_ip.hh`](../../../include/tlm/pcie/pcie_endpoint_ip.hh)
 > - [`include/tlm/pcie/pcie_sriov_vf_pool_tlm.hh`](../../../include/tlm/pcie/pcie_sriov_vf_pool_tlm.hh)
@@ -659,7 +659,7 @@ int cpptlm_emulator_msix_clear_pending(...);
 
 | 模块 | 微架构文档 |
 |------|-----------|
-| **PcieEndpointIP** | [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../modules/dgpu-soc-pcie-slice.md)(旧版,4 端口) + [`docs/architecture/14-pcie-ip-microarchitecture.md`](../../architecture/14-pcie-ip-microarchitecture.md)(新版,17 端口整合) |
+| **PcieEndpointIP** | [`docs/soc_arch/modules/dgpu-soc-pcie-slice.md`](../modules/dgpu-soc-pcie-slice.md)(旧版,4 端口) + [`docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md`](../../architecture/19-pcie-ip-microarchitecture.md)(新版,17 端口整合) |
 | **PcieLinkLayerTLM** | (待新建 `pcie-link-layer.md`) |
 | **PciePhyDigitalCtrlTLM** | (待新建 `pcie-phy-digital-ctrl.md`) |
 | **PcieBypassMux** | (待新建 `pcie-bypass-mux.md`) |
