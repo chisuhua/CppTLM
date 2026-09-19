@@ -1,12 +1,31 @@
 # SDMA 引擎设计 (System DMA Engine)
 
+> ## ⚠️ 命名迁移说明 (2026-09-19)
+>
+> 本文档中 **`SdmaEngineTLM`** 正在重命名为 **`IoDmaTLM`**(per [`2026-09-19-cpptlm-dgpu-gmmu-mvp`](../../../openspec/changes/2026-09-19-cpptlm-dgpu-gmmu-mvp/proposal.md)),与 GMMU 提案(MAS-3.1 Rev2.0)概念对齐:
+> - **类名**: `SdmaEngineTLM` → `IoDmaTLM`
+> - **文件名**: `sdma_engine_tlm.{hh,cc}` → `io_dma_tlm.{hh,cc}`
+> - **Catch2 标签**: `[sdma]` → `[io_dma]`
+> - **过渡期**: 旧类保留并加 `[[deprecated("use IoDmaTLM")]]` 标注,新代码请使用 `IoDmaTLM`
+> - **跨仓 ABI**: `cpptlm_dma_translate_cb` 签名不变(per ADR-088 §D5)
+>
+> **关联设计**:
+> - GMMU v1.0 MVP 详细设计:[`docs/soc_arch/architecture/20-gmmu-mvp.md`](20-gmmu-mvp.md)
+> - 5 阶段演进路线图:[`docs/soc_arch/architecture/20-gmmu-evolution-roadmap.md`](20-gmmu-evolution-roadmap.md)
+> - OpenSpec change:[`openspec/changes/2026-09-19-cpptlm-dgpu-gmmu-mvp/`](../../../openspec/changes/2026-09-19-cpptlm-dgpu-gmmu-mvp/proposal.md)
+>
+> 本文档后续 v0.2 将同步更新命名。
+>
+> ---
+
 > **目的**: 补全 CppTLM dGPU SDMA 引擎的**内部设计**（Ring Buffer + RPTR/WPTR + Doorbell + Packet + 状态机 + 地址翻译 + 完成通知 + D2D 路径 + CmdProc 集成），解决现有 `sdma_engine_tlm.cc`（"descriptor 直投"）与 openspec/specs/sdma-engine-tlm/spec.md + pcie-ep-cpptlm-collaboration-roadmap.md §阶段 1.3（"Ring Buffer + RPTR/WPTR + Doorbell"）之间的 **架构 gap**
-> **状态**: Draft v0.1 (2026-09-09)
+> **状态**: Draft v0.1 (2026-09-09,IO-DMA 重命名进行中)
 > **审计**: Oracle 审查 CONDITIONAL (4.5/10) → 本文档完成后预期 7.5/10
 > **关联**:
 > - [`pcie-endpoint-architecture.md`](pcie-endpoint-architecture.md) — PCIe EP 跨仓架构 SSOT（§3 SDMA 摘要）
 > - [`openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/`](../../openspec/changes/2026-09-09-cpptlm-pcie-ep-foundation/) — 13 ADDED Requirements
 > - [`openspec/specs/sdma-engine-tlm/spec.md`](../../openspec/specs/sdma-engine-tlm/spec.md) — 组件 spec
+> - **GMMU v1.0 MVP 集成**:[`docs/soc_arch/architecture/20-gmmu-mvp.md`](20-gmmu-mvp.md) §10 IO-DMA 集成
 
 ---
 

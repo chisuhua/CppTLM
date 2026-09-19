@@ -45,7 +45,8 @@
 |------|--------|------|------|------|
 | **PcieEndpointIP** ⭐ 新 | `include/tlm/pcie/pcie_endpoint_ip.hh` | **17 ports** (`req_in[17]` + `resp_out[17]`,NUM_PORTS=17) | host↔device (PCIe slave+master) | 1 PF + 16 VF + 内部 `stream_id` 路由;per-VF Config Space / MSI-X / FC / seq# 独立 |
 | **PcieEndpointTLM** ⚠️ 旧 | `pcie_endpoint_tlm.h` | 4 | host→device (PCIe slave) | BAR0 MMIO 解码 + 门铃副作用 / BAR1 VRAM 转发 / MSI-X 中断投递(已 `[[deprecated]]` 标注 per `429327d`)|
-| **SdmaEngineTLM** | `sdma_engine_tlm.hh` | 5 | device→host (PCIe master) | 接收 DMA 描述符,发起 upstream DMA 经 IOMMU 翻译访问 host 内存 |
+| **IoDmaTLM** (原 SdmaEngineTLM,2026-09-19 重命名进行中) | `io_dma_tlm.hh` (从 `sdma_engine_tlm.hh` 复制重命名) | 5 | device→host (PCIe master) | 接收 DMA 描述符,发起 upstream DMA 经 **GMMU** 翻译访问 host 内存 |
+| **GmmuTLM** ⭐ 新 (2026-09-19) | `include/tlm/gpu/gmmu_tlm.hh` | (MMIO via PCIe EP) | — | GPU 内部 MMU;L1 TLB + 4 级 PTW walker + Context_ID 表;**0 个新 ABI 函数**(per ADR-088 §D5) |
 
 **⭐ PcieEndpointIP 17 端口替代决策**(per [`ADR-SOC-11`](../adr/ADR-SOC-11-pcie-endpoint-ip.md),Phase 4-8 演进):
 
@@ -61,6 +62,8 @@
 - **JSON 拓扑驱动**:两个组件均 `REGISTER_CHSTREAM` + `ModuleFactory::registerObject<>`,可通过 `DGpuSoc` JSON 嵌套注册
 - **跨仓契约冻结**:两组件共同实现 ADR-088 §D5 的 **23 ABI 外部契约**(由 Board shell 包装后,通过 `cpptlm_emulator_*` C 符号暴露)
 - **bulk data 走 backdoor**:PCIe TLP `data` 字段 descriptor-only,bulk data 通过 `set_vram_backdoor()` / `set_host_backdoor()` API(测试)/ `cpptlm_backdoor_read/write`(生产)直接搬运(per ADR-SOC-07 Status Update Q3 裁决)
+
+> **GMMU v1.0 MVP 集成说明 (2026-09-19)**: `IoDmaTLM` 经 `cpptlm_dma_translate_cb` 调用 `GmmuTLM::translate()` 完成 IO-DMA → GMMU → Host Memory 端到端数据通路。GMMU 是 GPU 内部 MMU 模块,不引入新 ABI 函数,完全遵循 ADR-088 §D5 23 ABI 冻结契约。详细设计见 [`docs/soc_arch/architecture/20-gmmu-mvp.md`](../architecture/20-gmmu-mvp.md),5 阶段演进路线图见 [`docs/soc_arch/architecture/20-gmmu-evolution-roadmap.md`](../architecture/20-gmmu-evolution-roadmap.md)。
 
 ## 2. PCIe 拓扑角色
 

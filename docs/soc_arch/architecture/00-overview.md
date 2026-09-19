@@ -264,6 +264,15 @@ ApuSoC (顶层)
 - IOMMU fault 错误路径(per ADR-SOC-08)
 - BAR0 doorbell + 23 ABI 通道(per `test_sdma_engine_*.cc`)
 
+> **迁移说明 (2026-09-19)**: `SdmaEngineTLM` 正在重命名为 **`IoDmaTLM`**(per [`2026-09-19-cpptlm-dgpu-gmmu-mvp`](../../../openspec/changes/2026-09-19-cpptlm-dgpu-gmmu-mvp/proposal.md)),与 GMMU 提案对齐。本文档后续版本将统一使用 `IoDmaTLM`。过渡期旧类保留并加 `[[deprecated]]` 标注。
+
+**L1.4 GMMU (GPU MMU) v1.0 MVP**(per [`20-gmmu-mvp.md`](20-gmmu-mvp.md)):
+- GPU 内部 MMU,接管 IO-DMA 的 `cpptlm_dma_translate_cb` 翻译路径
+- L1 TLB 64 entries 全关联 + 4 级 HW PTW walker + Context_ID 表
+- **0 个新 ABI 函数**(per ADR-088 §D5 严格遵守)
+- 端到端: IO-DMA → GMMU → PCIe EP → Host Memory(per [`20-gmmu-mvp.md` §2](20-gmmu-mvp.md))
+- 5 阶段演进路线图(v1.0/v1.1/v2.0/v2.1/v3.0)见 [`20-gmmu-evolution-roadmap.md`](20-gmmu-evolution-roadmap.md)
+
 ### 3.2 L2 命令流层 — PushBuffer / Ring Buffer / Doorbell
 
 **L2.1 PushBuffer(NVIDIA 风格)**:
