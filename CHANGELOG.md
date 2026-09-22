@@ -162,6 +162,14 @@
 
 ## [Unreleased]
 
+### Changed
+- **C++23 标准升级**（2026-09-22）: 根 `CMakeLists.txt` `CMAKE_CXX_STANDARD 17 → 23`。核心库与测试套件在 GCC 13.3 下编译通过，1496 test cases / 66567 assertions 与 C++17 基线零差异。编译器要求提升至 GCC 13+ / Clang 16+。
+- **CI 升级到 GCC 14**（2026-09-22）: `.github/workflows/ci.yml` 安装 `g++-14 libstdc++-14-dev`，CMake 调用显式使用 `/usr/bin/g++-14`。解锁 C++23 标准库完整 surface（`<print>`/`<format>`）。
+- **std::print/println 采纳**（2026-09-22）: `topology_dumper.hh` / `module_group.hh` / `module_factory.hh` 的 `std::cout << std::format(...)` 迁移至 `std::println`/`std::print`（C++23 原生 IO）。
+
+### Notes
+- `std::stacktrace` 待 GCC 14.3+ / libstdc++ 14.3+：当前 GCC 14.2 libstdc++ 缺 `std::__stacktrace_impl::_S_current` 运行时实现（链接 `undefined reference`）。头文件存在但运行时不可用，需升级到 GCC 14.3+ 或 GCC 15+ 后启用。
+
 ### Added
 - Phase 7.A GPU 基础设施落地（2026-06-11）
   - `include/bundles/compute_bundles_tlm.hh` — ComputeReqBundle / ComputeRespBundle 类型
