@@ -12,6 +12,24 @@
 > - [`21-fabric-switch-mvp.md`](21-fabric-switch-mvp.md) — Fabric + Switch MVP (协议层对端)
 > - [`21-soc-topology-mvp.md`](21-soc-topology-mvp.md) — SoC 顶层物理布局规范 (V3.1-Rev2.0 拓扑修正: TC-DMA 归属 GPC / IO-DMA 端口 / CXL 不在 GPU Die)
 > - [`16-pcie-endpoint-architecture.md`](16-pcie-endpoint-architecture.md) — PCIe EP 跨仓架构 SSOT
+
+> **NSA 命名含义澄清** (适用于所有 NSA 草案, 2026-09-19 决策):
+>
+> 本草案中 **NSA** 含义为 **"Network-System Architecture"** (多 Linux 节点 + 跨 Fabric 寻址架构), 与美国 **National Security Agency (国家安全局)** **无关**, 仅 CppTLM 内部使用。
+>
+> NSA 衍生术语对应关系:
+>
+> | NSA 衍生术语 | 含义 | 与 CXL 3.0 / NVLink / Infinity Fabric 对应 |
+> |---|---|---|
+> | NSA Switch | NSA Switch (跨 Fabric 路由器) | ≈ CXL Fabric Switch Tier 1 |
+> | NSA Fabric Address | 64-bit NSA-aware 地址 (16+48 bits) | ≈ CXL Fabric Address |
+> | NSA-aware MMU | 含 Fabric ID + Capability 的 MMU | ≈ CXL-aware IOMMU |
+> | NSA Stage 1/2/3 | 5 阶段演进阶段 | ≈ CXL 3.0 Fabric 量产节奏 |
+> | NSA-aware SoC | NSA-aware 分布式 SoC 终态 | ≈ CXL 3.0 Fabric-aware SoC |
+>
+> **替代命名参考** (若未来需替换): GFS (Global Fabric System) / FAS (Fabric Address Space) / UFA (Unified Fabric Address), **当前决策保持 NSA + 备注澄清**。
+>
+
 > **关联 ADR**:
 > - ADR-088 §D5 — 23 ABI 冻结 (MicroArch+IFC v1.0 不动 ABI)
 > - ADR-SOC-10 (待起草) — TEE/UDD/UBC 三层解耦 + 接口契约 (本模块边界)
@@ -379,7 +397,110 @@ private:
 | **GMMU L1 TLB Miss + PTW** | Lookup(5) + PTW 4-level(40) + Fill(5) | ~25.0 ns | ✅ Worst case (per `20-gmmu-mvp.md` §6.3) |
 | **HRT Atomic Swap** | Fence(1) + Drain(3) + Toggle(1) + Resume(3) | ~4.0 ns | ✅ ≤8 cycles @ clk_core |
 
-### §4.2 时钟域频率 (per MAS-3.1-Core §5)
+### §4.2 Host-to-GPU PCIe 互联拓扑与延时补充
+
+> **背景**: 本节补充 `21-soc-topology-mvp.md` 中 Host-to-GPU 物理互联细节（之前文档的显著遗漏）。NVIDIA HGX H100 实际方案参考。
+
+#### §4.2.1 Host-to-GPU PCIe 物理拓扑
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  Host Tray (双 Intel Xeon Platinum 8480+, PCIe Gen5)            │
+│                                                                  │
+│  CPU 0 (80 PCIe Gen5 Lanes)        CPU 1 (80 PCIe Gen5 Lanes)  │
+│  ├─ PCIe Root Complex 0            ├─ PCIe Root Complex 1      │
+│  ├─ PCIe Switch 桥接器 1 (100+ Lanes)                          │
+│  │  ├─ GPU 0 (PCIe Gen5 x16)    ├─ PCIe Switch 桥接器 3   │
+│  │  ├─ GPU 1 (PCIe Gen5 x16)    │  ├─ GPU 4 (PCIe Gen5 x16)  │
+│  │  ├─ GPU 2 (PCIe Gen5 x16)    │  ├─ GPU 5 (PCIe Gen5 x16)  │
+│  │  └─ GPU 3 (PCIe Gen5 x16)    │  ├─ GPU 6 (PCIe Gen5 x16)  │
+│  └─ PCIe Switch 桥接器 2          └─ PCIe Switch 桥接器 4   │
+│      ├─ GPU 4..7 路径                └─ GPU 7 (PCIe Gen5 x16)  │
+│      (备用)                                                          │
+│                                                                  │
+│  桥接深度: 1 级 (Host CPU → PCIe Switch → GPU)                  │
+│  单 GPU PCIe 带宽: 64 GB/s 单向 / 128 GB/s 双向                │
+└──────────────────────────────────────────────────────────────────┘
+
+关键事实:
+  - 8 GPU 全部在同一 PCIe Hierarchy (单一 Linux 节点, per §4.2 轮 9 讨论)
+  - 总 PCIe Lanes 需求: 8 × 16 = 128 Lanes
+  - 双 CPU 实际可用 PCIe Lanes: 160 Lanes (扣除 NVMe + NIC + BMC 等 ~40 Lanes)
+  - PCIe Switch 桥接器扩展 Lanes (Microchip / Astera Labs 桥接芯片)
+```
+
+#### §4.2.2 Host-to-GPU 4 KB Write 延时分解 (9 步)
+
+| 步骤 | 操作 | 时延 | 备注 |
+|------|------|------|------|
+| 1 | Host DRAM 准备 (DMA buffer 写入) | 100 ns | Host 软件填充 DMA 描述符 |
+| 2 | PCIe MMIO Write (Host → GPU 寄存器) | 100 ns | + PCIe RC 转发 50 ns |
+| 3 | PCIe Switch 桥接器转发 | +50 ns | 桥接器内部转发 |
+| 4 | GPU PCIe MAC 接收 + TLP 解码 | 50 ns | GPU 端处理 |
+| 5 | GPU DMA 引擎启动 + 描述符解析 | 50 ns | GPU 内部逻辑 |
+| 6 | PCIe MRd TLP (读 Host DRAM 4 KB) | 100 ns | + PCIe Switch 50 ns |
+| 7 | Host DRAM 读 (返回数据) | 100 ns | Host DRAM 访问 |
+| 8 | PCIe CplD TLP 返回 GPU | 150 ns | + PCIe Switch 50 ns |
+| 9 | GPU DMA 引擎写入 HBM | 150 ns | HBM3e 访问 |
+| **总计** | — | **~850 ns (~1 μs)** | 理论值 |
+
+**工程实测估算 (考虑协议开销 / Retry / Credit 流控)**:
+- Host-to-GPU 4 KB Write: **0.8-1.2 μs** (95 分位 ~1.2 μs, 99 分位 ~1.5 μs)
+- Host-to-GPU 4 KB Read: **1.0-1.5 μs** (含 CplD TLP 较 Write 高)
+
+#### §4.2.3 Host-to-GPU 带宽分析
+
+| 指标 | 数值 | 说明 |
+|------|------|------|
+| **单 PCIe Gen5 x16 单向带宽** | 64 GB/s | PCIe Gen5 spec (32 GT/s × 16 lanes / 8) |
+| **单 PCIe Gen5 x16 双向带宽** | 128 GB/s | PCIe Gen5 spec |
+| **单 PCIe TLP 单向延迟** | ~100 ns | PCIe Gen5 PHY 时延 |
+| **8 GPU 理论总 PCIe 带宽需求** | 512 GB/s 单向 | 8 × 64 GB/s |
+| **Host CPU 实际 PCIe Lanes (单 CPU)** | 80 Lanes | Xeon Platinum 8480+ |
+| **Host CPU 实际 PCIe Lanes (双 CPU)** | 160 Lanes | 2 × 80 |
+| **扣除系统占用 (NVMe + NIC + BMC)** | ~40 Lanes | 实际可用于 GPU |
+| **实际可用于 GPU 的 Lanes** | ~120 Lanes | ≈ 7.5 × x16 |
+| **PCIe Switch 内部带宽上限** | ~256 GB/s 单向 | Class I/L 上限 (桥接器内部) |
+| **总 Host↔GPU 带宽** | **~256 GB/s 单向** | 受 PCIe Switch 上限 |
+
+#### §4.2.4 Host↔GPU vs GPU↔GPU 对比
+
+| 维度 | Host↔GPU | 同 Compute Tray GPU↔GPU | 比率 |
+|------|----------|------------------------|------|
+| **延时 (4 KB)** | 1.0 μs | 0.6 μs | Host↔GPU 慢 **40%** |
+| **总带宽 (8 GPU)** | 256 GB/s | 3.6 TB/s | Host↔GPU 慢 **14×** |
+| **瓶颈点** | PCIe Switch 桥接器 | NVSwitch Crossbar | — |
+| **Host OS 介入** | 是 (Host 系统调用 + DMA buffer) | 否 (GPU P2P 直连) | — |
+| **Host 驱动代码** | KMD + DMA 引擎 | 无 (NVSwitch 硬件转发) | — |
+
+**关键洞察**:
+- **GPU↔GPU 比 Host↔GPU 快 40%** (同 Compute Tray, NVSwitch 直连)
+- **GPU↔GPU 比 Host↔GPU 带宽高 14 倍** (3.6 TB/s vs 256 GB/s)
+- **Host↔GPU 是 Scale-Up 的带宽瓶颈**, 8 GPU 总计算能力远超 Host CPU 喂数据能力
+- **NVIDIA 解决方案**: GPUDirect RDMA (绕过 Host CPU), GPUDirect Storage (GDS, 绕过 Host CPU)
+
+#### §4.2.5 v1.0 MVP 验证标准
+
+- [ ] **AG1**: Host-to-GPU 4 KB Write 延时 ≤ 1.2 μs (含 PCIe Switch 桥接)
+- [ ] **AG2**: Host-to-GPU 4 KB Read 延时 ≤ 1.5 μs
+- [ ] **AG3**: 单 PCIe Switch 端口带宽利用率 ≥ 70% (无 HOL Blocking)
+- [ ] **AG4**: 多 PCIe Switch 端口并发无瓶颈
+- [ ] **AG5**: 8 GPU 总 Host↔GPU 带宽 ≥ 200 GB/s (PCIe Switch 上限 80%)
+
+#### §4.2.6 与 V3.1-Rev2.0 关系
+
+- 本节补充 `21-soc-topology-mvp.md` §1.2 SoC 顶层互联拓扑 (Host Tray → Compute Tray PCIe 桥接细节)
+- 本节补充 `21-microarch-ifc-mvp.md` §4.1 性能延迟预算 (Host↔GPU 路径)
+- 与 §4.3 时钟域频率协同 (Host↔GPU 跨 clk_core / clk_fab 域需异步 FIFO)
+- 与 §4.4 AWT Trap 协同 (PCIe AER 中断路由到 Host FM)
+
+#### §4.2.7 开放问题
+
+1. **双 Host CPU 是否需要 PCIe P2P DMA 优化?** (类似 GPUDirect RDMA)
+2. **GPUDirect Storage (GDS) 是否在 v1.0 MVP 范围?** (v1.1+ 引入, per `21-dma-backends-evolution-roadmap.md` §4.1)
+3. **PCIe Switch Retry / ACK / NAK 协议开销实测影响?**
+
+### §4.3 时钟域频率 (per MAS-3.1-Core §5)
 
 ```
 v1.0 MVP 时钟域:
@@ -394,7 +515,7 @@ v1.0 MVP 时钟域:
 - clk_core → clk_cfg: 异步 FIFO (UDD Agent HRT Shadow 写入)
 ```
 
-### §4.3 AWT (Asynchronous Warp Trap) RAS 微架构 (per MAS-3.1-Core §4)
+### §4.4 AWT (Asynchronous Warp Trap) RAS 微架构 (per MAS-3.1-Core §4)
 
 ```
 v1.0 MVP AWT 处理:

@@ -14,9 +14,16 @@
 > **关联 ADR**:
 > - ADR-088 §D5（23 ABI 冻结）
 > - ADR-SOC-10（ModuleFactory 拓扑层）
-> - ADR-SOC-11（PcieEndpointIP，已被 PcieEndpointTLM 替代）
+> - ADR-SOC-11（PcieEndpointIP，**替代 PcieEndpointTLM**；PcieEndpointTLM 已 `[[deprecated]]` 标注保留向后兼容，per [ADR-SOC-11-pcie-endpoint-ip.md](./ADR-SOC-11-pcie-endpoint-ip.md) + AGENTS.md KEY INVARIANTS）
 > - ADR-SOC-13（AXI Stream Adapter Mapper）
 > - ADR-SOC-19（AXI Master Outbound Bridge）
+>
+> **ADR 编号追溯说明** (追溯至 [`openspec/changes/2026-09-19-cpptlm-mas-soc-topology-mvp/proposal.md`](../../../openspec/changes/2026-09-19-cpptlm-mas-soc-topology-mvp/proposal.md)):
+> - 本 ADR 原计划使用 **ADR-SOC-11** 编号（V3.1-Rev2.0 拓扑修正）
+> - **发现冲突**: ADR-SOC-11 已被 PcieEndpointIP 决策占用（签署日期 2027-02-09）
+> - **追溯决策**: 采用 **ADR-SOC-21** 编号（下一个空闲编号），9 份关联架构文档同步引用 ADR-SOC-21
+> - **追溯范围**: 8 份已 ship 子系统文档 + OpenSpec 4 份 + Oracle 评审报告 全部已替换
+> - **追溯验证**: 全部 9 份架构文档均引用 ADR-SOC-21，残留 ADR-SOC-11 仅指向 PcieEndpointIP（正确，未误用）
 > **关联 OpenSpec**: [`2026-09-19-cpptlm-mas-soc-topology-mvp/`](../../../openspec/changes/2026-09-19-cpptlm-mas-soc-topology-mvp/proposal.md)
 
 ---

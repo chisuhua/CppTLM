@@ -13,6 +13,24 @@
 > - [`21-soc-topology-mvp.md`](21-soc-topology-mvp.md) — SoC 顶层物理布局规范 (V3.1-Rev2.0 拓扑修正: CXL 不在 GPU Die / TC-DMA 归属 GPC / HRT 无 CXL_DIRECT)
 > - [`20-gmmu-mvp.md`](20-gmmu-mvp.md) — GMMU v1.0 MVP (GMMU = 翻译层, UDD = 路由层, 二者协同)
 > - [`16-pcie-endpoint-architecture.md`](16-pcie-endpoint-architecture.md) — PCIe EP 跨仓架构 SSOT
+
+> **NSA 命名含义澄清** (适用于所有 NSA 草案, 2026-09-19 决策):
+>
+> 本草案中 **NSA** 含义为 **"Network-System Architecture"** (多 Linux 节点 + 跨 Fabric 寻址架构), 与美国 **National Security Agency (国家安全局)** **无关**, 仅 CppTLM 内部使用。
+>
+> NSA 衍生术语对应关系:
+>
+> | NSA 衍生术语 | 含义 | 与 CXL 3.0 / NVLink / Infinity Fabric 对应 |
+> |---|---|---|
+> | NSA Switch | NSA Switch (跨 Fabric 路由器) | ≈ CXL Fabric Switch Tier 1 |
+> | NSA Fabric Address | 64-bit NSA-aware 地址 (16+48 bits) | ≈ CXL Fabric Address |
+> | NSA-aware MMU | 含 Fabric ID + Capability 的 MMU | ≈ CXL-aware IOMMU |
+> | NSA Stage 1/2/3 | 5 阶段演进阶段 | ≈ CXL 3.0 Fabric 量产节奏 |
+> | NSA-aware SoC | NSA-aware 分布式 SoC 终态 | ≈ CXL 3.0 Fabric-aware SoC |
+>
+> **替代命名参考** (若未来需替换): GFS (Global Fabric System) / FAS (Fabric Address Space) / UFA (Unified Fabric Address), **当前决策保持 NSA + 备注澄清**。
+>
+
 > **关联 ADR**:
 > - ADR-088 §D5 — 23 ABI 冻结 (TEE-UDD v1.0 不动 ABI)
 > - ADR-SOC-09 — v1.0 NVIDIA+AMD dual vendor 战略 (TEE/UDD 共享 vendor 路径)

@@ -1,8 +1,8 @@
 # SoC Architecture Decision Records (ADR-SOC)
 
-> **版本**: 2.2
+> **版本**: 2.3
 > **创建日期**: 2026-06-14
-> **更新日期**: 2027-09-17（新增 ADR-SOC-17/18/19/20：PcieMockIP + ABI 二级精简 + AXI Master/Slave 边界明确化 + ABI 二级精简 18→14+宏）
+> **更新日期**: 2026-09-20（新增 ADR-SOC-21/22/23/24：V3.1-Rev2.0 拓扑修正 + NSA-aware 64-bit Fabric Address + NSA vs Plan B 选型 + Capability 多租户）
 > **范围**: CppTLM SoC 仿真架构决策（CPU/GPU/IO/Cache/NoC 集成层）
 > **与 `docs/adr/` 的关系**: 本目录存放**应用层（SoC 设计）**决策；`docs/adr/` 存放**框架层（仿真基础设施）**决策。两层分离，避免 SoC 决策与框架决策混淆。
 
@@ -38,6 +38,10 @@
 | [ADR-SOC-18-cpptlm-abi-slimming.md](./ADR-SOC-18-cpptlm-abi-slimming.md) | **CppTLM ABI 表面精简 22→18 函数**（删除 4 个 backdoor/lookup ABI；Hub ack 超时切出为独立 change；保留 18 个驱动核心函数 + 4 callback typedef 零修改） | ✅ Accepted | Phase 9+ follow-up (2027-09-17) |
 | [ADR-SOC-19-axi-master-outbound-bridge.md](./ADR-SOC-19-axi-master-outbound-bridge.md) | **PcieEndpointIP AXI Master/Slave 角色边界明确化**（明确 `axi_slave_in` 不承担 AXI-to-PCIe bridge 角色；通用 SoC AXI Master→PCIe Outbound 桥接**当前未提供**；记录为 Phase 10+ 评估缺口，per [phase9-p4-axi-outbound-bridge.md](../roadmap/phase9-p4-axi-outbound-bridge.md)） | 📋 Proposed | Phase 10+ 评估 |
 | [ADR-SOC-20-cpptlm-abi-secondary-slimming.md](./ADR-SOC-20-cpptlm-abi-secondary-slimming.md) | **CppTLM ABI 二级精简 18→15 函数 + 宏化**（修订版:删除 2 真冗余函数 `create_by_id` + `get_adapter_info`；`get_version` 改 `#define CPPTLM_EMULATOR_VERSION_STRING "v1.0-dgpu-v0"` 宏；**保留 `open/close` fd 风格 API**；Hub 同步 2 函数级 vs 初版 5 函数级；per [phase9-p5-secondary-slimming.md](../roadmap/phase9-p5-secondary-slimming.md)） | 📋 Proposed | Phase 9+ P5 (Hub ack 待收) |
+| [ADR-SOC-21-v31-rev2-topology-correction.md](./ADR-SOC-21-v31-rev2-topology-correction.md) | **dGPU SoC V3.1-Rev2.0 拓扑修正**（MAS-3.1 顶层物理布局冻结:TC-DMA 归属 GPC 内紧耦合 + IO-DMA 与 NIC-DMA 平级 + GPU Die 上无 CXL PHY；per OpenSpec `2026-09-19-cpptlm-mas-soc-topology-mvp`） | 📋 Proposed | Phase 9+ MAS (2026-09-19) |
+| [ADR-SOC-22-nsa-fabric-address-format.md](./ADR-SOC-22-nsa-fabric-address-format.md) | **NSA-aware 64-bit Fabric Address 格式**（保留 NSA 族名 + 地址格式学名采用 CXL 3.0 Fabric Address 16+48 bits；HRT Entry 32-bit 字段位分配 per D3；per OpenSpec `2026-09-19-cpptlm-nsa-scale-up-umbrella`） | 📋 Proposed | NSA Stage 1 (2026-2027) |
+| [ADR-SOC-23-nsa-vs-plan-b-selection.md](./ADR-SOC-23-nsa-vs-plan-b-selection.md) | **NSA-aware 分布式 Scale-Up vs 方案 B 选型**（主选方案 C + 方案 B 降级；Stage 1 严格 TLM 功能模型层；per OpenSpec `2026-09-19-cpptlm-nsa-scale-up-umbrella`） | 📋 Proposed | NSA Stage 1-3 (2026-2029) |
+| [ADR-SOC-24-capability-based-multitenant-isolation.md](./ADR-SOC-24-capability-based-multitenant-isolation.md) | **Capability-Based 多租户隔离选型**（128 bits Token + HW 校验 + 5 阶段生命周期；Stage 1 推迟 HW 强制校验到 Stage 2；per OpenSpec `2026-09-19-cpptlm-nsa-scale-up-umbrella`） | 📋 Proposed | NSA Stage 1-3 (2026-2029) |
 
 ## 与 `docs/adr/ADR-X.17-cpptlm-v05-mvp.md` 的 cross-reference(已迁回本目录)
 
@@ -75,7 +79,7 @@
 | **示例议题** | 事务追踪、错误处理、端口类型 | 一致性协议、CU 建模粒度、Host-GPU 接口 |
 | **稳定性** | 极稳定，跨 SoC 共用 | 较不稳定，随 SoC 拓扑变化 |
 | **模板** | `docs/adr/ADR-P1-TEMPLATE.md` | 本目录 ADR 沿用 X.N 结构（Context/Decision/Implementation） |
-| **当前规模** | 13 个（X.1-X.13） | 20 个（SOC-01-SOC-20） |
+| **当前规模** | 13 个（X.1-X.13） | 24 个（SOC-01-SOC-24） |
 
 ---
 
