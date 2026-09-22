@@ -12,6 +12,13 @@ Architecture 必读:
 - `docs/architecture/01-hybrid-architecture-v2.1.md` (整体 NoC 架构)
 - `docs/architecture/多层次混合仿真.md` (GPGPU 多层 SimModule 拓扑)
 
+D1 PCIe Device 实现笔记:
+- `docs/pcie/display-device-mvp.md` (Display IO device MVP, **D1 v1.1 实施完成 2026-09-20**)
+  - PcieDisplayDevice (4KB MMIO + 32MB FB + VBLANK MSI-X)
+  - DGpuBoard BAR 0/1 fast-path 路由层
+  - 0 个新 ABI 函数 (per ADR-088 §D5)
+  - **后续**: D2 memory device MVP, D3 GMMU PoC
+
 ## STRUCTURE (verified @ 429327d)
 
 ```
