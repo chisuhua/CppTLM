@@ -33,7 +33,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake build-essential ccache ninja-build
+        sudo apt-get install -y cmake build-essential ccache ninja-build g++-14 libstdc++-14-dev
 
     - name: Configure ccache
       uses: hendrikmuhs/ccache-action@v1.2
@@ -45,6 +45,7 @@ jobs:
       run: |
         cmake -S . -B build \
           -G Ninja \
+          -DCMAKE_CXX_COMPILER=/usr/bin/g++-14 \
           -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} \
           -DUSE_ASAN=${{ matrix.use-asan }}
 
