@@ -21,7 +21,9 @@
 namespace tlm::pcie {
 
     PcieEndpointIP::PcieEndpointIP(const std::string& name, EventQueue* eq)
-        : SimModule(name, eq) {
+        : SimModule(name, eq)
+        // D1 display-io-mvp: 构造时实例化 display_device
+        , display_device_(std::make_unique<tlm::gpu::PcieDisplayDevice>()) {
         pool_.init_all();
         install_pm_capability();
         install_capabilities();
@@ -321,6 +323,11 @@ namespace tlm::pcie {
     }
 
     void PcieEndpointIP::tick() {
+        // D1 display-io-mvp: 推进 display_device VBLANK counter + 触发 MSI-X vector 0
+        if (display_device_) {
+            display_device_->tick(msix());
+        }
+
         // Phase 8 M1: 真实 AXI 数据路径接线 — PcieEndpointIP::tick() 驱动
         // PcieAxiAdapter 消费 slave_in 请求，EP 内部真实处理并产生真实响应。
         // HostBypass/RC (Host 侧 master) ↔ PcieAxiAdapter (EP 侧 slave) 双向闭环。
