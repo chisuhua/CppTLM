@@ -30,7 +30,7 @@
 | 5 | tid 保留 | `pending_tid_` 成员 | **`TransactionContextExt::transaction_id`** | ✅ 17/17 测试 |
 | 6 | Fragment 元数据 | `ActiveRequest` 结构体 | **`TransactionContextExt::parent_id/fragment_id/fragment_total`** | ✅ 17/17 测试 |
 | 7 | first/last 信号 | 自定义字段 | **`is_first_fragment()` / `is_last_fragment()`** 谓词 | ✅ 17/17 测试 |
-| 8 | FragmentMapper | 1-2 周 Mapper 设计 | **薄映射函数**(纯 C++17,无 CppHDL 依赖) | ✅ 17/17 测试 |
+| 8 | FragmentMapper | 1-2 周 Mapper 设计 | **薄映射函数**(纯 C++23,无 CppHDL 依赖) | ✅ 17/17 测试 |
 | 9 | CppHDL 集成时机 | Spike 全套 RTL | **Spike 仅保留编译验证** + FragmentMapper 单测独立 | ✅ 593/593 回归 |
 
 ### 0.3 v4 文档结构
@@ -79,7 +79,7 @@
   - 跨拍 tid 持有由 RTL 端 ch_reg<> 负责,不维护 adapter 状态
 
 原则 3: Spike 风险隔离
-  - FragmentMapper 纯 C++17,无 CppHDL 依赖 → 可独立单测
+  - FragmentMapper 纯 C++23,无 CppHDL 依赖 → 可独立单测
   - CppHDL 集成仅在 Spike 编译测试中验证 → 不进 CppTLM 主测试套件
   - 任何 Spike 失败不破坏 581 现有测试
 ```
@@ -329,7 +329,7 @@ static void write_resp(Packet* resp_pkt, const CacheRespBeatRTL& beat) {
 **关键设计决策**:`CacheReqBeatRTL` / `CacheRespBeatRTL` 是 POD 结构(`uint64_t`/`uint8_t`/`bool`),**不引用 CppHDL 类型**。
 
 这意味着:
-- FragmentMapper 编译用 C++17,无需 LLVM-22
+- FragmentMapper 编译用 C++23,无需 LLVM-22
 - FragmentMapper 单测可独立运行,不进 CppHDL 集成测试
 - **Spike 风险隔离**:CppHDL 集成失败不影响 FragmentMapper 测试
 
@@ -418,12 +418,12 @@ JSON 拓扑
 
 ### 6.1 为什么需要 PIMPL
 
-CppHDL 要求 C++20(`-std=c++20`),CppTLM 主项目 C++17。**PIMPL 把 C++20 依赖隔离在 .cc 文件**,头文件保持 C++17 兼容。
+CppHDL 要求 C++20(`-std=c++20`),CppTLM 主项目 C++23(2026-09-22 升级;此前 C++17)。**PIMPL 把 C++20 依赖隔离在 .cc 文件**,头文件保持主项目标准兼容。
 
 ### 6.2 PIMPL 类设计
 
 ```cpp
-// include/rtl/hybrid_cache_wrapper.hh — C++17 兼容,零 CppHDL include
+// include/rtl/hybrid_cache_wrapper.hh — 主项目标准兼容(C++23),零 CppHDL include
 #ifndef RTL_HYBRID_CACHE_WRAPPER_HH
 #define RTL_HYBRID_CACHE_WRAPPER_HH
 
@@ -720,7 +720,7 @@ public:
 ```
 
 **注意**:
-- `cpptlm::rtl::HybridCacheWrapper` 头文件 C++17 兼容(零 CppHDL include),不破坏现有 C++17 编译
+- `cpptlm::rtl::HybridCacheWrapper` 头文件主项目标准兼容(C++23,零 CppHDL include),不破坏现有 C++23 编译
 - `set_stream_adapter` 接收 `cpptlm::StreamAdapterBase*`,实际 `registerAdapter` 模板实例化为 `StreamAdapter<HybridCacheWrapper, CacheReqBundle, CacheRespBundle>`,基类指针足够
 - 若 Day 1 决定改用独立宏(避免污染主宏),可加 `REGISTER_HYBRID_CACHE(mod, req, resp)`(3 参数变体),但默认采用**编辑宏体**方案
 
@@ -735,7 +735,7 @@ public:
 | 条件 | 验证命令 | 期望输出 |
 |------|---------|---------|
 | Ubuntu 版本 | `cat /etc/lsb-release` | 22.04+ |
-| C++17 编译器 | `g++ --version` 或 `clang++ --version` | g++ 11+ 或 clang++ 14+ |
+| C++23 编译器 | `g++ --version` 或 `clang++ --version` | g++ 13+ 或 clang++ 16+ |
 | **LLVM-22 可用** | `clang++-22 --version` | clang version 22.x.x |
 | **LLVM-22 头文件** | `ls /usr/lib/llvm-22/include/llvm` | 存在 |
 | CppHDL 子模块 | `readlink -f external/CppHDL` | `/workspace/project/CppHDL` |

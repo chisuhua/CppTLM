@@ -802,3 +802,13 @@ ccache -s
 | `scripts/format.sh` | `scripts/build/format.sh` |
 
 设计决策本身（CCache + CMake + Ninja + 双构建模式 Release/Debug）保持不变，仅文件位置调整。
+
+## Status Update (2026-09-22)
+
+**C++ 标准升级至 C++23**: 根 `CMakeLists.txt` 将 `set(CMAKE_CXX_STANDARD 17)` 升级为 `set(CMAKE_CXX_STANDARD 23)`（commit 待定）。设计决策本身（CCache + CMake + Ninja + 双构建模式）保持不变。
+
+**验证结果** (GCC 13.3 / Clang 18.1):
+- 核心库 `cpptlm_core` C++23 编译通过
+- 测试套件 1496 test cases / 66567 assertions，与 C++17 基线**零差异**（25 个失败为既有配置路径问题，非 C++23 引入）
+- 编译器要求从 GCC 9+/Clang 10+ 提升至 **GCC 13+/Clang 16+**（对应 gotcha: C++23 需要 libstdc++ 14 才能获得 `<print>`/`<stacktrace>`；GCC 13 支持 `<expected>`/`<format>`/`<ranges>`）
+- 外部依赖（ANTLR4 / PTX-EMU / CppHDL / nlohmann-json / Catch2 v3.7.0）均不受影响

@@ -1517,3 +1517,8 @@ GIT_MASTER=1 git commit -m "chore(cross-repo): HSK-9 公告正式发布 + PTX-EM
 - **PTX-EMU 端改造 (Task 20 部分)**: 5-10 人天（外仓成本, 由 PTX-EMU 团队负责）
 
 **合计**: 25-30 工作日（CppTLM 侧） + 5-10 工作日（PTX-EMU 侧）
+---
+
+## Status Update (2026-09-22)
+
+**C++ 标准升级**: 本计划编写时 CppTLM 为 C++17（Tech Stack 一节）。2026-09-22 CppTLM 全局标准升级至 C++23（`CMAKE_CXX_STANDARD 23`，GCC 13+/Clang 16+），计划内容与代码产物不受影响。

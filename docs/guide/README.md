@@ -24,7 +24,7 @@
 ```bash
 # 必需
 - CMake >= 3.16
-- C++17 兼容编译器
+- C++23 兼容编译器（GCC 13+, Clang 16+）
 - Python 3.8+（用于验证工具链）
 - pydantic >= 2.0
 - ccache（推荐）

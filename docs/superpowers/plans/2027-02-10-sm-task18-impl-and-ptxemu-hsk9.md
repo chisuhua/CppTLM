@@ -2038,3 +2038,9 @@ cmake --build build -j$(nproc)
 **修订后**: APPROVE (Oracle + Metis 同步修订建议均落实 + Top 3 新增实现 Task).
 **HEAD 基线**: 34638d6 (历经 6b64841 v2 + 9cd2167 v3 + 34638d6 openspec 清理).
 **worktree**: feat/sm-mp-impl (CppTLM) + feat/hsk-9-impl (PTX-EMU). [v3.1 备注: Task 0.1 启动时创建, 当前尚未初始化]
+
+---
+
+## Status Update (2026-09-22)
+
+**C++ 标准升级**: 本计划编写时 CppTLM 为 C++17/20（Tech Stack 一节）。2026-09-22 CppTLM 全局标准升级至 C++23（`CMAKE_CXX_STANDARD 23`，GCC 13+/Clang 16+），计划内容与代码产物不受影响。

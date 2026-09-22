@@ -387,3 +387,8 @@ Refs:
 6. **Timeout preserved:** 1ms timeout retained in mmio_read
 7. **Exception propagation:** last_exception_ checked in mmio_read/write
 8. **Destroy idempotency:** Second destroy no-op verified in test
+---
+
+## Status Update (2026-09-22)
+
+**C++ 标准升级**: 本计划编写时 CppTLM 为 C++17（Tech Stack 一节）。2026-09-22 CppTLM 全局标准升级至 C++23（`CMAKE_CXX_STANDARD 23`，GCC 13+/Clang 16+），计划内容与代码产物不受影响。

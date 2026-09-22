@@ -24,7 +24,7 @@ CppTLM 是 C++ TLM 2.0 周期精确片上网络仿真框架，支持 JSON 驱动
 
 ```bash
 - CMake >= 3.16
-- C++17 兼容编译器（GCC 9+, Clang 10+）
+- C++23 兼容编译器（GCC 13+, Clang 16+）
 - Python 3.8+（用于验证工具链）
 - pydantic >= 2.0（pip install pydantic）
 ```
