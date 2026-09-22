@@ -8,7 +8,7 @@ TLM 2.0 周期精确片上网络 (NoC) 仿真框架，目标仿真 **dGPU SoC**�
 
 **First read** for new agents: `docs/ONBOARDING.md` (knowledge-graph-generated ramp-up)。
 Architecture 必读:
-- `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (PCIe EP 整合文档,含 Phase 7 Oracle M2 标注)
+- `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (PCIe EP 整合文档, **已迁 ArchForge**, 占位 README 见 `docs/soc_arch/README.md`)
 - `docs/architecture/01-hybrid-architecture-v2.1.md` (整体 NoC 架构)
 - `docs/architecture/多层次混合仿真.md` (GPGPU 多层 SimModule 拓扑)
 
@@ -120,17 +120,11 @@ docs/
     多层次混合仿真.md                   # ★ GPGPU 多层 SimModule 拓扑
     02-04 / 08-13 ...                   # 其他架构决策（事务/错误/复位/指标/拓扑/相干/仪表板）
   adr/                   # 通用不可变 ADR (12+ 份, 状态追加 ## Status Update 段)
-  soc_arch/              # ★ dGPU SoC 子项目文档（分层）
-    adr/                # ★ dGPU SoC 子项目 ADR (8 份: ADR-SOC-01..08, 覆盖 coherence/CU/wavefront/dispatch/directory/cpptlm-v05/dgpu-board/v55-hw-integration)
-    modules/            # ★ 25+ IP 模块微架构（每个 IP 一份设计文档）
-                        #   cache-{l1,l2,noncoherent,protocol,replacement,common}
-                        #   coherence-{bridge,domain,protocol}
-                        #   coherent_xbar / comm_monitor
-                        #   command-processor / completion-ring
-                        #   cpu-{cputlm,cpu-cpusim_legacy,cpu-traffic_gen}
-                        #   cuda-core-adapter / dgpu-board / dgpu-soc-pcie-slice
-                        #   gpu-compute-unit 等
-                        #   modules/README.md — IP 模块索引
+  soc_arch/              # ⚠️ dGPU SoC 子项目文档已迁至独立仓（占位 + VIRTUAL_PATHS）
+                        # 详见 ../ArchForge/ (新仓)
+                        # 旧文件 2026-09-20 全部迁出 (commit 4024b16e)
+                        # 当前目录仅保留 README.md 占位说明文件
+                        # 历史归档：曾含 24 ADR + 53 modules + 43 architecture docs
   guide/                 # GETTING_STARTED / DEVELOPER / PYTOOLING / TOPOLOGY_USER
   development/           # CONTRIBUTING (pre-commit + clang-format + 测试规范)
   roadmap/               # ★ 实施路线图 + 实时状态看板（README + current_status.md）
@@ -194,7 +188,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 | 修改模块工厂 | `src/core/module_factory.cc` (instantiateAll + Step 7 StreamAdapter 注入) |
 | 修改 JSON 配置格式 | `configs/` + `include/utils/config_utils.hh` (group/connection/port_index) |
 | 添加 StreamAdapter | `include/framework/{stream,multi_port_stream,dual_port_stream,bidirectional_port}_adapter.hh` |
-| 7 阶段 roadmap | `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (主) + `openspec/changes/2026-09-01-.../roadmap.md` |
+| 7 阶段 roadmap | `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (主, **已迁 ArchForge**) + `openspec/changes/2026-09-01-.../roadmap.md` |
 | OpenSpec 提案 | `openspec/changes/<name>/` (proposal → design → specs → tasks) |
 | 调试 test fail | `.opencode/skills/cpptlm-debug/SKILL.md` (auto-loads) |
 | 贡献代码/PR | `docs/development/CONTRIBUTING.md` (pre-commit + clang-format + 测试规范) |
@@ -335,6 +329,7 @@ openspec validate --changes --strict
 - **跳过本地 CI 验证**: 推送前必跑 `cmake --build build -j$(nproc)` + `ctest`
 - **修改 legacy**: `include/modules/legacy/` 仅修严重 bug，新功能走 `include/tlm/`
 - **架构性变更未走 OpenSpec**: 重大变更（影响 ≥2 模块 / 公共 API / 配置文件 schema）必须先在 `openspec/changes/` 提案
+- **docs/soc_arch 直接修改**: dGPU SoC 设计文档已迁至独立 ArchForge 仓（`/workspace/project/ArchForge/`）。CppTLM 中的 `docs/soc_arch/` 仅为占位 README。设计变更 → ArchForge 仓 PR；实现变更 → CppTLM 仓 PR。`scripts/test/docs_sync_check.sh` 的 VIRTUAL_PATHS 包含 `docs/soc_arch/<sub>/` 前缀。
 
 ## DEBUGGING DISCIPLINE (P0-5b, 6 独立根因)
 
@@ -393,7 +388,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | **Phase 8** | **整合交付** | **`e29defd`..`429327d`** | **—** | **✅完成** |
 
 **Phase 8 整合交付 (W24 末)**：
-- `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (从 umbrella design.md 迁移,含 Phase 7 M2 标注)
+- `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (从 umbrella design.md 迁移, **已迁 ArchForge**)
 - `examples/dgpu_soc_with_pcie_ip.json` 完整 dGPU SoC + PCIe EP 配置
 - `test/test_pcie_endpoint_ip_full_e2e.cc` 全链路 E2E (3 TEST_CASE, solve Phase 7 M1)
 - `PcieEndpointTLM` 加 `[[deprecated]]` 标注（迁移提示, ABI 不动）
