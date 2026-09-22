@@ -77,29 +77,10 @@ VIRTUAL_PATHS=(
     "ext/payload_to_packet.hh"
     "modules_v2.hh"
     "docs/superpowers/plans/2026-06-11-phase7a-gpu-infra.md"  # 2026-06-22 归档到 docs-archived/superpowers/plans/；docs/soc_arch/modules/*.md 引用旧路径
-    "docs/soc_arch/modules/gpu-kernellaunch.md"  # 2026-07-14 删除（旧版 pending doc），由 gpu-kernel-launch.md（Phase 8.A 已实施版）取代；docs/soc_arch/modules/README.md 等 6 个文件历史引用保留
     "docs/superpowers/specs/2026-07-03-ptxemu-modification-task.md"  # 2026-07-14 删除（被 comprehensive-plan.md §3 吸收）
     "docs/superpowers/specs/2026-06-30-f12-ptxemu-ldpreload-design.md"  # 2026-07-14 删除（设计被 comprehensive-plan.md §2.2/§3 吸收并扩展）
     "docs/superpowers/plans/f12-ptxemu-ldpreload-integration.md"  # 2026-07-14 删除（计划被 comprehensive-plan.md §4 取代）
     "include/cudart/cpptlm_bridge.h"  # PTX-EMU 端 ABI 真值源（CppTLM 通过 ExternalProject_Add 消费；物理文件在 PTX-EMU 仓库，commit 8dc000ec）
-    # Task 15 (SM 重构, 2027-02-09): 7 modules docs + 3 impl + 3 vendor 物理删除
-    "docs/soc_arch/modules/cuda-core-adapter.md"  # SM 重构 supersede by architecture/15 §15.7.2 (Task 12)
-    "docs/soc_arch/modules/dgpu-board.md"        # SM 重构: dgpu_soc_tlm 已合并到 SM 顶层 (Task 12)
-    "docs/soc_arch/modules/gpu-compute_unit.md"  # SM 重构: supersede by StreamingMultiprocessorTLM (Task 9)
-    "docs/soc_arch/modules/gpu-kernel-launch.md" # SM 重构: KernelLaunchTLM 物理删除 (Task 12)
-    "docs/soc_arch/modules/gpu-soc.md"           # SM 重构: gpu_soc_tlm 改接 IComputeDevice (Task 11)
-    "docs/soc_arch/modules/gpu.common.md"        # SM 重构: 共同基础模块 doc 已物理删除 (Task 15)
-    "docs/soc_arch/modules/ptx-emu-submodule-mvp.md"  # SM 重构: PtxEmuSubmoduleMVP 物理删除 (Task 12)
-    "include/tlm/gpu/kernel_launch_tlm.hh"       # Task 12 物理删除
-    "include/tlm/gpu/cuda_core_adapter_mvp.hh"   # Task 12 物理删除
-    "include/tlm/gpu/ptx_emu_submodule_mvp.hh"   # Task 12 物理删除
-    "include/tlm/gpu/pipeline_tlm.hh"            # Task 13 物理删除
-    "include/tlm/gpu/scoreboard_tlm.hh"          # Task 13 物理删除
-    "include/tlm/gpu/tensor_core_tlm.hh"         # Task 13 物理删除
-    "include/tlm/gpu/gpu_compute_unit_tlm.hh"    # Task 9 重命名为 streaming_multiprocessor_tlm.hh
-    "include/cudart/pipeline_interface.h"        # Task 13 物理删除 (vendor)
-    "include/cudart/scoreboard_interface.h"      # Task 13 物理删除 (vendor)
-    "include/cudart/tensor_core_interface.h"     # Task 13 物理删除 (vendor)
     "abi_guards.h"  # AGENTS.md 中 HSK-6 P0-1 commit fa2b3ec 短名引用, 完整路径在 include/cudart/abi_guards.h (物理存在, 但 docsync 匹配到短名误报)
     "include/tlm/gpu/memory_bridge.hh"  # HSK-8 Phase 2 Step 6+ 物理删除 (HSK-6 deprecate by 369cf71); AGENTS.md §CROSS-PROJECT 描述历史实施保留
     "src/tlm/gpu/memory_bridge.cc"  # 同上, 与 .hh 一同物理删除
@@ -131,6 +112,25 @@ VIRTUAL_PATHS=(
     "configs/example/apu_se.py"
     "configs/example/gpufs/Disjoint_VIPER.py"
     "src/dev/amdgpu/amdgpu_device.py"
+    # === ArchForge 拆仓 v2.1 (2026-09-20) ===
+    # docs/soc_arch/ 整体迁移至独立仓库 /workspace/project/ArchForge/。
+    # CppTLM 仅保留 docs/soc_arch/README.md 占位说明。
+    # 子串匹配规则：`docs/soc_arch/<sub>/` 前缀条目覆盖全部子目录。
+    # .md 引用不在 PATH_REGEX 扫描范围（line 54 已跳过），以下为文档化声明。
+    "docs/soc_arch/architecture/"
+    "docs/soc_arch/adr/"
+    "docs/soc_arch/modules/"
+    "docs/soc_arch/specs/"
+    "docs/soc_arch/roadmap/"
+    # 旧版特定文件条目（被上述前缀条目覆盖，保留作历史兼容）
+    "docs/soc_arch/modules/gpu-kernellaunch.md"
+    "docs/soc_arch/modules/cuda-core-adapter.md"
+    "docs/soc_arch/modules/dgpu-board.md"
+    "docs/soc_arch/modules/gpu-compute_unit.md"
+    "docs/soc_arch/modules/gpu-kernel-launch.md"
+    "docs/soc_arch/modules/gpu-soc.md"
+    "docs/soc_arch/modules/gpu.common.md"
+    "docs/soc_arch/modules/ptx-emu-submodule-mvp.md"
 )
 
 # CMake 添加的 include dir（无前缀写法也能找到文件）
