@@ -312,14 +312,14 @@ PcieEndpointIP::PcieEndpointIP(const std::string& name, EventQueue* eq)
 void PcieEndpointIP::tick() {
     // ... 既有 tick 逻辑 ...
 
-    // D1: 推进显示设备 VBLANK timer
+    // D1: 推进显示设备 VBLANK timer（传递 msix 引用，方案 A — 见 §6.3）
     if (display_device_) {
-        display_device_->tick();  // 内部按 1024 cycle 间隔触发 MSI-X
+        display_device_->tick(msix());
     }
 }
 
-// PcieDisplayDevice::tick() 内部（D1 设计）
-void PcieDisplayDevice::tick() {
+// PcieDisplayDevice::tick() 内部（D1 设计，方案 A：接受 MsiXTable& 参数）
+void PcieDisplayDevice::tick(MsiXTable& msix) {
     cycle_counter_++;
     if (cycle_counter_ >= kVblankInterval) {
         cycle_counter_ = 0;
@@ -328,9 +328,7 @@ void PcieDisplayDevice::tick() {
         registers_[kRegStatus / 4] |= 0x1u;
         // 触发 MSI-X vector 0 (如果 INT_MASK 未屏蔽)
         if (registers_[kRegInterruptMask / 4] & 0x1u) {
-            // 通过 PcieEndpointIP::msix() 访问
-            // 注: 实际实现需要在 tick 路径中持有 ep 引用 — 见 §6.3
-            msix_ref_->update_pending(0);
+            msix.update_pending(0);  // MSI-X vector 0 = VBLANK
         }
     }
 }
@@ -383,9 +381,9 @@ $ git diff HEAD -- include/abi/cpptlm_emulator.h
 # (空输出 = ABI 冻结)
 
 # 头文件函数签名
-$ grep -c "^int cpptlm_emulator_\|^void cpptlm_emulator_\|^cpptlm_emulator_t\* cpptlm_emulator_" \
+$ grep -c "^uint32_t cpptlm_emulator_\|^int cpptlm_emulator_\|^void cpptlm_emulator_\|^cpptlm_emulator_t\* cpptlm_emulator_" \
     include/abi/cpptlm_emulator.h
-# 期望: 15 (不变)
+# 期望: 15 (不变) — 必须包含 uint32_t 模式，因 cpptlm_emulator_get_device_count 是 uint32_t 返回类型 (line 69)
 
 # Callback typedef
 $ grep -c "typedef.*cpptlm_.*_cb_t" include/abi/cpptlm_emulator.h

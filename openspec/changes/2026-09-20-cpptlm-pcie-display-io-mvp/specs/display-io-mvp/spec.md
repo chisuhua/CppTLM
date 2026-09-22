@@ -191,8 +191,8 @@ The 15 C ABI functions + 4 callback typedef in `include/abi/cpptlm_emulator.h` S
 - **THEN**: 输出为空（**v1.1 修正**：替代 v1.0 "22 函数 + 4 typedef" 不可验证表述）
 
 #### Scenario: Function count = 15
-- **WHEN**: `grep -c "^int cpptlm_emulator_\|^void cpptlm_emulator_\|^cpptlm_emulator_t\* cpptlm_emulator_" include/abi/cpptlm_emulator.h`
-- **THEN**: 输出 15
+- **WHEN**: `grep -c "^uint32_t cpptlm_emulator_\|^int cpptlm_emulator_\|^void cpptlm_emulator_\|^cpptlm_emulator_t\* cpptlm_emulator_" include/abi/cpptlm_emulator.h`
+- **THEN**: 输出 15（必须包含 `uint32_t` 模式，因 `cpptlm_emulator_get_device_count` 是 `uint32_t` 返回类型，line 69）
 
 #### Scenario: Callback typedef count = 4
 - **WHEN**: `grep -c "typedef.*cpptlm_.*_cb_t" include/abi/cpptlm_emulator.h`
