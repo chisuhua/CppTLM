@@ -228,6 +228,16 @@ namespace tlm::gpu {
         if (buf == nullptr) {
             return -EINVAL;
         }
+        // D1 display-io-mvp fast-path: BAR 0 路由到 PcieDisplayDevice
+        // (device 优先; 否则 fallback 到原 mmio_regs_ + inject_q_ async 路径)
+        if (bar == 0 && soc_) {
+            if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
+                    soc_->getInternalInstance("pcie_ep"))) {
+                if (ep->has_display_device()) {
+                    return ep->display_device().mmio_read(offset, buf, len);
+                }
+            }
+        }
         // A-3: INV-A MMIO power-state gate (D3hot → -EIO)
         if (is_mmio_gated()) {
             return -EIO;
@@ -287,6 +297,16 @@ namespace tlm::gpu {
         }
         if (buf == nullptr) {
             return -EINVAL;
+        }
+        // D1 display-io-mvp fast-path: BAR 0 路由到 PcieDisplayDevice
+        // (device 优先; BAR 1 doorbell 仍走原 SDMA 路径)
+        if (bar == 0 && soc_) {
+            if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
+                    soc_->getInternalInstance("pcie_ep"))) {
+                if (ep->has_display_device()) {
+                    return ep->display_device().mmio_write(offset, buf, len);
+                }
+            }
         }
         // A-3: INV-A MMIO power-state gate (D3hot → -EIO, doorbell 例外)
         // doorbell 写保持兼容 (per v1.2 spec Scenario "MMIO write D3 doorbell is allowed")
@@ -384,6 +404,15 @@ namespace tlm::gpu {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // #8 异常传递
         }
+        // D1 display-io-mvp: 路由到 PcieDisplayDevice framebuffer (device 优先)
+        if (soc_) {
+            if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
+                    soc_->getInternalInstance("pcie_ep"))) {
+                if (ep->has_display_device()) {
+                    return ep->display_device().backdoor_read(vram_offset, buf, len);
+                }
+            }
+        }
         // null buf 无条件拒绝(未初始化 board 也返 -EINVAL, 避免 memcpy 到 nullptr)(修复 #6)
         if (buf == nullptr) {
             return -EINVAL;
@@ -413,6 +442,15 @@ namespace tlm::gpu {
     int DGpuBoard::backdoor_write(uint64_t vram_offset, const void* buf, size_t len) {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // #8 异常传递
+        }
+        // D1 display-io-mvp: 路由到 PcieDisplayDevice framebuffer (device 优先)
+        if (soc_) {
+            if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
+                    soc_->getInternalInstance("pcie_ep"))) {
+                if (ep->has_display_device()) {
+                    return ep->display_device().backdoor_write(vram_offset, buf, len);
+                }
+            }
         }
         // Bounds check仅当 device_info_ 已初始化时生效(bar_sizes[1] > 0)
         if (device_info_.bar_sizes[1] > 0 &&
