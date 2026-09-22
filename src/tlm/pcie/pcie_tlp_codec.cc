@@ -291,11 +291,11 @@ std::vector<uint8_t> PcieTlpCodec::encode_cpld(uint16_t completer_id, uint16_t r
 // TLP Decoder
 // ===========================================================================
 
-std::optional<PcieTlpCodec::DecodedTlp>
+std::expected<PcieTlpCodec::DecodedTlp, PcieTlpCodec::DecodeError>
 PcieTlpCodec::decode(const uint8_t* tlp_bytes, std::size_t len) {
     // Minimum TLP: 3DW header (12 bytes) + LCRC (4 bytes) = 16 bytes
     if (len < 16) {
-        return std::nullopt;
+        return std::unexpected(DecodeError::TooShort);
     }
 
     DecodedTlp result;
@@ -322,7 +322,7 @@ PcieTlpCodec::decode(const uint8_t* tlp_bytes, std::size_t len) {
     // We only handle 3DW headers (Fmt = 0b000 or 0b010, meaning bit 2 = 0)
     if (is_4dw) {
         // 4DW not yet supported
-        return std::nullopt;
+        return std::unexpected(DecodeError::Unsupported4Dw);
     }
 
     // DW1: varies by TLP type
@@ -402,7 +402,7 @@ PcieTlpCodec::decode(const uint8_t* tlp_bytes, std::size_t len) {
 
     if (len < header_bytes + payload_bytes + 4) {
         // Not enough bytes for TLP header + payload + LCRC
-        return std::nullopt;
+        return std::unexpected(DecodeError::IncompleteData);
     }
 
     // Extract payload (only when has_data)

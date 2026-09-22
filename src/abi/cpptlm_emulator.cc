@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <memory>
 #include <mutex>
@@ -70,20 +71,17 @@ namespace {
 
     std::string resolve_profile_path(uint32_t dev_id) {
         if (dev_id != 0) {
-            char buf[64];
-            std::snprintf(buf, sizeof(buf), "configs/dgpu_board_%u.json",
-                          static_cast<unsigned>(dev_id));
-            std::filesystem::path p(buf);
+            std::string p_str = std::format("configs/dgpu_board_{}.json", dev_id);
+            std::filesystem::path p(p_str);
             if (std::filesystem::exists(p)) {
-                return buf;
+                return p_str;
             }
         }
         for (uint32_t i = 1; i < 32; ++i) {
-            char buf[64];
-            std::snprintf(buf, sizeof(buf), "configs/dgpu_board_%u.json", static_cast<unsigned>(i));
-            std::filesystem::path p(buf);
+            std::string p_str = std::format("configs/dgpu_board_{}.json", i);
+            std::filesystem::path p(p_str);
             if (std::filesystem::exists(p)) {
-                return buf;
+                return p_str;
             }
         }
         return "configs/dgpu_board_v1.json";

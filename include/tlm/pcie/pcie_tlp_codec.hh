@@ -10,11 +10,13 @@
 // 作者 CppTLM Team / 日期 2026-09-17
 // 参考: PCIe Base Spec §2.2 (TLP header), §2.7 (CRC)
 //       openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/specs/wire-format/spec.md
+// C++23 迁移 (2026-09-22): decode() 返回类型 std::optional → std::expected,
+//       显式区分解码失败原因 (per Phase 3 C++23 采纳: std::expected 错误传播).
 #ifndef TLM_PCIE_PCIE_TLP_CODEC_HH
 #define TLM_PCIE_PCIE_TLP_CODEC_HH
 
 #include <cstdint>
-#include <optional>
+#include <expected>
 #include <vector>
 
 namespace cpptlm::pcie {
@@ -27,6 +29,12 @@ namespace cpptlm::pcie {
  */
 class PcieTlpCodec {
 public:
+    /// TLP 解码错误原因 (std::expected error type)
+    enum class DecodeError {
+        TooShort,       ///< 输入长度 < 最小 TLP (3DW header 12B + LCRC 4B = 16B)
+        Unsupported4Dw, ///< 4DW header (64-bit address) 尚未支持
+        IncompleteData, ///< 长度不足以容纳 header + payload + LCRC
+    };
     /// TLP 解码结果结构体
     struct DecodedTlp {
         uint8_t fmt = 0;       // Fmt[2:0]
@@ -95,8 +103,9 @@ public:
 
     // ========== TLP 解码 ==========
 
-    /** 解码 wire-format TLP → DecodedTlp. 返回 nullopt 当格式错误/长度不足. */
-    static std::optional<DecodedTlp> decode(const uint8_t* tlp_bytes, std::size_t len);
+    /** 解码 wire-format TLP → DecodedTlp. 返回 unexpected{DecodeError} 当格式错误/长度不足. */
+    static std::expected<DecodedTlp, DecodeError>
+    decode(const uint8_t* tlp_bytes, std::size_t len);
 
     /** 判定 TLP 是否 malformed (length 不匹配 / CRC 校验失败 / 保留字段非零等) */
     static bool is_malformed(const DecodedTlp& tlp);

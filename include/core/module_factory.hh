@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 #include <functional>
+#include <print>
 #include <vector>
 #include <memory>
 #include <fstream>
@@ -194,13 +195,13 @@ public:
     }
 
     static void listRegisteredTypes() {
-        printf("[ModuleFactory] Registered SimObjects:\n");
+        std::println("[ModuleFactory] Registered SimObjects:");
         for (const auto& name : getRegisteredObjectTypes()) {
-            printf("  - %s\n", name.c_str());
+            std::println("  - {}", name);
         }
-        printf("[ModuleFactory] Registered SimModules:\n");
+        std::println("[ModuleFactory] Registered SimModules:");
         for (const auto& name : getRegisteredModuleTypes()) {
-            printf("  - %s\n", name.c_str());
+            std::println("  - {}", name);
         }
     }
 

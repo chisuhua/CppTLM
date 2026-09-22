@@ -39,6 +39,7 @@
 
 #include "module_factory.hh"
 #include <algorithm>
+#include <format>
 #include <fstream>
 #include <set>
 #include "bundles/cache_bundles_tlm.hh"
@@ -645,8 +646,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
         resp_out_vec.resize(n_ports);
 
         for (unsigned i = 0; i < n_ports; i++) {
-            char suffix[16];
-            snprintf(suffix, sizeof(suffix), "[%u]", i);
+            std::string suffix = std::format("[{}]", i);
 
             req_out_vec[i] = new cpptlm::ChStreamInitiatorPort(
                 name + ".req_out" + (n_ports > 1 ? suffix : ""), event_queue);

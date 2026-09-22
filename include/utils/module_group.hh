@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include <string>
+#include <print>
 #include "core/sim_core.hh"
 #include "core/sim_object.hh"
 #include "utils/wildcard.hh"
@@ -143,11 +144,11 @@ public:
 
     // 列出所有组（调试用）
     static void listAllGroups() {
-        printf("[ModuleGroup] Defined groups:\n");
+        std::println("[ModuleGroup] Defined groups:");
         for (const auto& kv : getGroups()) {
-            printf("  %s: ", kv.first.c_str());
+            std::print("  {}: ", kv.first);
             for (size_t i = 0; i < kv.second.size(); ++i) {
-                printf("%s%s", kv.second[i].c_str(), i == kv.second.size()-1 ? "\n" : ", ");
+                std::print("{}{}", kv.second[i], i == kv.second.size()-1 ? "\n" : ", ");
             }
         }
     }

@@ -5,13 +5,14 @@
 #include "module_factory.hh"
 #include "force_directed_layout.hh"
 #include <fstream>
+#include <print>
 
 class TopologyDumper {
 public:
     static void dumpToDot(const ModuleFactory& factory, const json& config, const std::string& filename) {
         std::ofstream f(filename);
         if (!f.is_open()) {
-            printf("[TopologyDumper] Cannot open file: %s\n", filename.c_str());
+            std::println("[TopologyDumper] Cannot open file: {}", filename);
             return;
         }
 
@@ -178,7 +179,7 @@ public:
 
         f << "}\n";
         f.close();
-        printf("[TopologyDumper] Layout saved to %s (style=%s)\n", filename.c_str(), layout_style.c_str());
+        std::println("[TopologyDumper] Layout saved to {} (style={})", filename, layout_style);
     }
 
 private:
