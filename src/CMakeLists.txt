@@ -95,6 +95,8 @@ set(CORE_SOURCES
     tlm/gpu/pcie_config_space_mvp.cc  # pcie-endpoint T-pe-2: Config Space MVP
     tlm/gpu/pcie_bar_router_mvp.cc     # pcie-endpoint T-pe-2: BAR0 register routing (data-driven)
     tlm/gpu/msix_table_mvp.cc          # pcie-endpoint T-pe-2: MSI-X vector table + mask
+    # D1 display-io-mvp T1: PcieDisplayDevice (4KB 寄存器 + 32MB FB + VBLANK)
+    tlm/gpu/pcie_display_device.cc
     tlm/gpu/pcie_endpoint_tlm.cc       # pcie-endpoint T-pe-3: 4-port ChStream module
     tlm/gpu/sdma_engine_tlm.cc        # sdma-engine T-sd-2: 5-port ChStream SDMA/copy engine (PCIe master)
     # cpptlm-stage-1-3-sdma Stage 1.3a: SDMA Ring Buffer + SG descriptor chain (T-1.3a-1/2)
