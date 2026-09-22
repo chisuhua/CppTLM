@@ -1,8 +1,12 @@
 # 2026-09-20-cpptlm-pcie-display-io-mvp: Display IO 设备 MVP
 
-> **状态**: 📋 Proposed — 2026-09-20
+> **状态**: ⏸️ **BLOCKED awaiting rework** — 2026-09-20
+> **Oracle 审查 session**: `ses_f37ee373fffeFvaUmM12lCFZ0O`
+> **Metis 审查 session**: `ses_f37ee3587ffexJ089actUHbn4c`
+> **判定**: 🔴 **BLOCKING** — 提案前提过时 + 修复路径含事实错误
+> **下一步**: 详见本文末尾 §X 返工要点
 > **优先级**: 🟡 P1（驱动验证驱动链）
-> **工期**: 1 周
+> **工期**: 待返工后重估
 > **目标**: 在 CppTLM dGPU SoC 中实现**显示 IO 设备**（Display Engine MVP），让 UsrLinuxEmu 端 GPU 驱动（DRM/KFD 子集）**不依赖 ArchForge 仓**即可进行 BAR 枚举 + MMIO 读写 + 中断处理端到端验证。
 
 ## Why
@@ -35,6 +39,24 @@ CppTLM 当前 dGPU PCIe EP（Phase 1-8 全链路交付）已经能枚举 + 收�
 4. **不依赖 ArchForge 仓**（设计文档已迁；驱动验证逻辑上完全自洽于 CppTLM）
 
 ## What Changes
+
+> ⚠️ **§0 返工注意事项**（Oracle+Metis 2026-09-20 审查发现）
+>
+> **1. 提案前提过时**：D1 Why 表格中的 "7 个 NO-OP 错误"中至少 5 个（#2 dma_translate、#3 config、#4 msix、#5/#7 mmio、#6 backdoor）已被当前代码处理。
+> - `cpptlm_emulator_pcie_config_read/write` ABI 已经路由到 `DGpuBoard::pcie_config_read/write` → `ep->config_space().read/write`
+> - `cpptlm_emulator_mmio_read/write` ABI 已经路由到 `DGpuBoard::mmio_read/write`
+> - `DGpuBoard::backdoor_read` 错误返回 `-ENOENT` 而非 "返 len"（line 401-411）
+> - 真实剩余缺口是：**board 层修复是 shell-local 处理，未路由到真实设备**（注释自承 "shell 本地处理, SOC deferred"）。D1 应定位为"新增 PcieDisplayDevice 并把 shell-local 路径接到真实设备"，而非"修复 NO-OP ABI bug"。
+>
+> **2. ABI backdoor 函数不存在**：`cpptlm_emulator_backdoor_read/write` 不在 `include/abi/cpptlm_emulator.h`（15 个导出函数中）。D1 提案 "修复" 这些函数 = 新增 ABI 函数，**直接违反 "0 个新 ABI 函数" 约束**。backdoor 应走 board 内部接口，零 ABI 新增。
+>
+> **3. bar_router 文件路径错误**：`pcie_bar_router_mvp` 在 `include/tlm/gpu/`，不在 `include/tlm/pcie/`；其 API 是 `uint32_t mmio_read(uint32_t offset)` 而非 `dispatch_read(bar, offset, buf, len)`。D1 需要新增 `PcieBarDispatcher` 处理 BAR 0/1 → PcieDisplayDevice 转发。
+>
+> **4. PcieEndpointIP API 名错**：D1 写的 `PcieEndpointIP::pcie_config_read/write` 不存在，正确是 `config_space()` 访问器。
+>
+> **5. MSI-X 范围矛盾**：D1 提案 "§2 不修 (D2/D3)" 与 tasks.md Step 5 "完整中断链" 自相矛盾。
+>
+> **详细 issue 列表见 [GitHub commit](https://github.com/...) 或 Oracle session `ses_f37ee373fffeFvaUmM12lCFZ0O` 输出**。
 
 ### §1 D1 范围：显示 IO 设备 MVP
 
