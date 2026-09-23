@@ -1,17 +1,13 @@
-# Display IO 设备 MVP Spec（v1.1 返工版）
+# display-io-mvp Specification
 
-> **配套**: [proposal.md](../proposal.md) · [design.md](../design.md) · [tasks.md](../tasks.md)
-> **v1.0 → v1.1 修正**: Oracle+Metis 审查发现 v1.0 spec 假设错误：
-> - "22 ABI" → 实际 **15 ABI** 函数（`grep -c '^int cpptlm_emulator_'`）
-> - "backdoor_* 修复" → 这些函数**不在 ABI 中**（走 board 内部）
-> - `cpptlm_emulator_pcie_config_*` 路径 → ABI wrapper **已正确**（已修复）
-> - `bar_router` 路径错误 → `include/tlm/gpu/`，与 BAR 1 device 路由正交
-> - MSI-X intr_cb 范围矛盾 → D1 只在 device 触发 pending，intr_cb 链已存在（不动）
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change 2026-09-20-cpptlm-pcie-display-io-mvp. Update Purpose after archive.
+## Requirements
 ### Requirement: PcieDisplayDevice Class
-**Where**: `include/tlm/gpu/pcie_display_device.hh`（**v1.1 修正**：原 v1.0 写 `tlm/pcie/` 错）
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 CppTLM dGPU SoC SHALL 提供 `PcieDisplayDevice` 类作为**显示 IO 设备**（Display Engine MVP）。
 
@@ -53,7 +49,10 @@ The class SHALL NOT:
 - **THEN**: 返回 0，但寄存器不变（驱动误写 RO 寄存器不报错）
 
 ### Requirement: 寄存器布局
-**Where**: `PcieDisplayDevice::registers_[4096]`
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 The display device SHALL 暴露以下寄存器映射（精确偏移）：
 
@@ -84,7 +83,10 @@ The display device SHALL 暴露以下寄存器映射（精确偏移）：
 - **THEN**: pending 变为 0（write-1-to-clear 语义）
 
 ### Requirement: PcieEndpointIP 持有 display_device
-**Where**: `include/tlm/pcie/pcie_endpoint_ip.hh`
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 The PCIe endpoint SHALL 持有 `PcieDisplayDevice` 实例。
 
@@ -97,7 +99,10 @@ The PCIe endpoint SHALL 持有 `PcieDisplayDevice` 实例。
 - **THEN**: 返回对 `PcieDisplayDevice` 的有效引用（生命周期与 EP 绑定）
 
 ### Requirement: VBLANK timer 推进
-**Where**: `PcieEndpointIP::tick()` + `PcieDisplayDevice::tick(MsiXTable&)`
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 The PCIe endpoint SHALL 在 `tick()` 中推进显示设备的 VBLANK timer。
 
@@ -118,7 +123,10 @@ The PCIe endpoint SHALL 在 `tick()` 中推进显示设备的 VBLANK timer。
 - **THEN**: STATUS.VBLANK_PENDING 变为 0
 
 ### Requirement: DGpuBoard 路由 BAR 0 到 PcieDisplayDevice
-**Where**: `src/tlm/gpu/dgpu_board_shell.cc` 的 `mmio_read/write`
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 The DGpuBoard SHALL 在 device 存在时将 BAR 0 MMIO 路由到 `PcieDisplayDevice`。
 
@@ -139,7 +147,10 @@ The DGpuBoard SHALL 在 device 存在时将 BAR 0 MMIO 路由到 `PcieDisplayDev
 - **THEN**: 写入原 `mmio_regs_[map]`（**不**调用 device，向后兼容现有测试）
 
 ### Requirement: DGpuBoard 路由 backdoor 到 PcieDisplayDevice framebuffer
-**Where**: `src/tlm/gpu/dgpu_board_shell.cc` 的 `backdoor_read/write`（**board 内部方法**，**非 ABI**）
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 The DGpuBoard SHALL 在 device 存在时将 `backdoor_read/write`（board 内部方法）路由到 `PcieDisplayDevice::backdoor_read/write`。
 
@@ -156,7 +167,10 @@ The DGpuBoard SHALL 在 device 存在时将 `backdoor_read/write`（board 内部
 - **THEN**: 0 命中（**确认**: ABI 中**没有**此函数，v1.0 提议修复为假命题）
 
 ### Requirement: PcieConfigSpace 路由（已存在，**不修改**）
-**Where**: `DGpuBoard::pcie_config_read/write`（line 350-371，**v1.1 不修改**）
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 `PcieConfigSpace` 路由 SHALL 保持当前已修复的行为；D1 不修改此路径。
 
@@ -169,7 +183,10 @@ The DGpuBoard SHALL 在 device 存在时将 `backdoor_read/write`（board 内部
 - **THEN**: 返回 -ENOSYS（**v1.1 不修改**——保留原行为）
 
 ### Requirement: MSI-X 触发链（**D1 范围明确**）
-**Where**: `PcieDisplayDevice::tick(MsiXTable& msix)` → `MsiXTable::update_pending(0)`
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 The D1 SHALL 触发 `MsiXTable::update_pending(0)`（**仅此一步**）；`intr_cb` 派发 + `trigger_irq_async` 由**现有已修复代码**完成（per `dgpu_board_shell.cc:466-480`，v1.1 不修改）。
 
@@ -182,7 +199,10 @@ The D1 SHALL 触发 `MsiXTable::update_pending(0)`（**仅此一步**）；`intr
 - **THEN**: intr_cb 被现有代码派发（**不**是 D1 改动；`dgpu_board_shell.cc` 已修复）
 
 ### Requirement: 15 ABI Functions Unchanged（**v1.1 修正数字**）
-**Where**: `include/abi/cpptlm_emulator.h`
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 The 15 C ABI functions + 4 callback typedef in `include/abi/cpptlm_emulator.h` SHALL remain byte-for-byte identical (no signature changes, no additions, no removals).
 
@@ -203,7 +223,10 @@ The 15 C ABI functions + 4 callback typedef in `include/abi/cpptlm_emulator.h` S
 - **THEN**: 输出为空（**ABI wrapper 已正确，不修改**）
 
 ### Requirement: Freeze Surface Untouched
-**Where**: `include/tlm/gpu/pcie_endpoint_tlm.h` + `include/abi/cpptlm_emulator.h`
+
+This Requirement SHALL be implemented per design.md §12 v1.1.1.
+
+This Requirement SHALL be satisfied by the D1 v1.1.1 implementation.
 
 D1 SHALL NOT modify either `pcie_endpoint_tlm.h` (PcieEndpointTLM 4 端口冻结) or `cpptlm_emulator.h` (ABI 冻结)。
 
@@ -215,28 +238,3 @@ D1 SHALL NOT modify either `pcie_endpoint_tlm.h` (PcieEndpointTLM 4 端口冻结
 - **WHEN**: `git diff HEAD -- include/abi/cpptlm_emulator.h`
 - **THEN**: 输出为空
 
-## MODIFIED Requirements
-
-无（这是新功能，不修改既有 spec）
-
-## REMOVED Requirements
-
-无
-
-## Cross-Repository Independence
-
-本 spec 完全在 CppTLM 仓内可实现，**零依赖 ArchForge 仓**。
-- 设计参考可在 ArchForge 仓查阅（VIRTUAL_PATHS），但运行时不需要
-- UsrLinuxEmu 端构建 + 测试无需 clone ArchForge
-
-## v1.0 → v1.1 主要修正（spec 层面）
-
-| v1.0 声称 | v1.1 修正 | 验证方法 |
-|----------|----------|---------|
-| "Where: include/tlm/pcie/pcie_display_device.hh" | `include/tlm/gpu/pcie_display_device.hh` | `find include -name pcie_display_device*` |
-| "22 ABI functions + 4 callback typedef" | "15 ABI functions + 4 callback typedef" | `grep -c` 验证 |
-| "cpptlm_emulator_backdoor_read returns framebuffer data" | **Scenario 移除** —— 函数不在 ABI 中 | `grep cpptlm_emulator_backdoor include/abi/` = 0 |
-| "PcieEndpointIP::pcie_config_read/write" | "DGpuBoard::pcie_config_read/write"（line 350-371 已实现） | `grep pcie_config_read include/tlm/pcie/pcie_endpoint_ip.hh` = 0 |
-| "cpptlm_emulator_pcie_config_read returns DEVICE_ID" | **Scenario 重写** —— 验证已存在的实现而非"修复" | `git log --oneline src/tlm/gpu/dgpu_board_shell.cc` |
-| "BAR 0 routes to device"（无条件） | "BAR 0 routes to device **when device exists**, otherwise fallback" | **测试覆盖两种路径**（T3.3） |
-| "MSI-X triggers intr_cb"（D1 完整链路） | "D1 触发 update_pending(0); intr_cb 由现有代码派发"（D1 范围明确） | 任务 T2.3 + 设计 §6.3 |
