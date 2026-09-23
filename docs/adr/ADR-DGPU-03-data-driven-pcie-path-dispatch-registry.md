@@ -6,6 +6,19 @@
 > **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.3](../architecture/14-dgpu-board-ideal-arch.md)
 > **配套**: ADR-DGPU-01 (CallbackWorker), ADR-DGPU-02 (LifecycleProtocol)
 
+> **评审修订 (评审报告 R-R1 + R-R2 + R-C1-b, 2027-02-09)**:
+> - §2.2 BAR1 doorbell handler: `parse_wptr` 改为 `detail::parse_wptr_from_host` (来自 v1.0 dgpu_board_shell.cc 内部命名空间, 沿用字节序约定)
+> - §2.2 PciePath::Tlp handler: `*(uint64_t*)d` 强制转换改为 `len` 校验 + `std::memcpy` (避免 strict-aliasing UB / 越界读, 需要 `<cstring>` include)
+> - §2.2 BAR1 doorbell handler: 增加 `len` 校验 (`len != 4 && len != 8` 返 -EINVAL)
+> - §2.1 / §3 全文件 `struct Entry` → `struct DispatchEntry`, 与架构文档 §3.3 命名对齐 (13 处)
+
+> **Oracle v2.0.1 修订 (2027-02-09) — mmio_regs_ 镜像不再掩盖 dispatch 失败 (Oracle-4)**:
+> - §2.3 `mmio_write` 重构: 镜像写入 (`mmio_regs_[bar,offset]=payload`) 仅在 dispatch 成功 (`rc==0`) 时执行; 未映射 BAR 的写直接返 `-ENOSYS` 不镜像不 push
+> - §2.3 `mmio_read` 重构: 未映射 BAR 返 `0xFF...FF` (符合 PCI master abort 行为), 不再返 stale 镜像
+> - §3 Inv-4 (handler 返回语义) 强化: `rc == 0` = handled; `rc == -ENOSYS` = 未处理, **mmio_write 终止并返 -ENOSYS** (不再"吞掉"); 其他负值 = 错误, mmio_write 终止并返错
+> - §7 风险表新增 R6: 23 ABI guard -ENOSYS 路径会暴露 v1.0 隐藏的 test bug (legacy 测试假设 `mmio_write` 返 0 即使 BAR 未启用); 缓解: Phase A 第 0 天 grep 现存 44498 assertions 中假设返 0 的写用例, 逐个标注是否应改为期待 -ENOSYS
+> - 设计意图: 修复"spec 名实不符"根因 (M5); 未映射 BAR 不应静默成功, 否则 T-P12-2 之外的所有测试在真实路径未接线时依然全绿
+
 ---
 
 ## 1. 背景
@@ -104,43 +117,60 @@ public:
     };
 
     // dispatch entry
-    struct Entry {
+    // per Oracle v2.0.2 P0-1a: 拆 read/write 双 handler
+    //   原因: 旧统一签名 HandlerFn(uint8_t, uint64_t, const void*, size_t) 的 data 是 const,
+    //         handler 无法把读出数据写回 caller 的 buf, mmio_read 只能落 mmio_regs_ 镜像,
+    //         真实读路径无数据回路 (Oracle 二轮发现的设计空洞)
+    struct DispatchEntry {
         Scope       scope;
+        Kind        kind;             // per P0-1a: Read / Write, handler 不可混用
         uint8_t     bar;              // BarExact / BarRange
         uint64_t    offset_lo;        // BarRange (含)
         uint64_t    offset_hi;        // BarRange (含)
         uint64_t    offset;           // BarExact
         int          priority;          // 大数优先
         std::string  name;             // 诊断 (e.g., "PcieDisplayDevice BAR 0")
-        using HandlerFn = std::function<int(uint8_t, uint64_t, const void*, size_t)>;
-        HandlerFn    handler;          // 返回 0=handled, 非 0=未处理
+        using ReadHandler  = std::function<int(uint8_t, uint64_t, void* out_buf, size_t len)>;
+        using WriteHandler = std::function<int(uint8_t, uint64_t, const void* data, size_t len)>;
+        ReadHandler   read_handler;    // kind==Read 时使用, 必须写 *out_buf
+        WriteHandler  write_handler;   // kind==Write 时使用
     };
 
-    // 注册 handler (一般 API)
-    void register_entry(const Entry& e);
+    // 匹配范围
+    enum class Kind : uint8_t { Read, Write };   // per P0-1a
+
+    // 注册 handler (按 Kind 区分)
+    void register_read_handler(const DispatchEntry& e);    // e.kind == Read
+    void register_write_handler(const DispatchEntry& e);   // e.kind == Write
 
     // 便利 API (供 DGpuBoard::init() 中显式调用)
-    void register_bar0_display(Entry::HandlerFn fn);   // D1 v1.1.1
-    void register_bar1_doorbell(Entry::HandlerFn fn);   // Stage 1.3a
-    void register_pcie_path_legacy();                     // 默认 Legacy (no-op)
-    void register_pcie_path_tlp(Entry::HandlerFn fn);    // T-P12-2 真实 TLP
-    void register_pcie_path_axi_bypass(Entry::HandlerFn fn); // T-P12-2 AXI
-    void register_pcie_path_mock(Entry::HandlerFn fn);   // PcieMockIP
+    void register_bar0_display(DispatchEntry::WriteHandler fn);   // D1 v1.1.1 (写)
+    void register_bar0_display_read(DispatchEntry::ReadHandler fn); // D1 v1.1.1 (读, P0-1a 新增)
+    void register_bar1_doorbell(DispatchEntry::WriteHandler fn);   // Stage 1.3a (仅写)
+    void register_pcie_path_legacy();                              // 默认 Legacy (no-op)
+    void register_pcie_path_tlp_write(DispatchEntry::WriteHandler fn);    // T-P12-2 真实 TLP 写
+    void register_pcie_path_tlp_read(DispatchEntry::ReadHandler fn);      // T-P12-2 真实 TLP 读 (P0-1a)
+    void register_pcie_path_axi_bypass(DispatchEntry::WriteHandler fn);   // T-P12-2 AXI
+    void register_pcie_path_mock(DispatchEntry::WriteHandler fn);         // PcieMockIP
 
-    // dispatch (按 priority 降序, 首个匹配胜出)
-    int dispatch(uint8_t bar, uint64_t offset, const void* data, size_t len) const;
+    // dispatch (按 priority 降序, 首个匹配胜出; per P0-1a 拆读写)
+    int dispatch_read(uint8_t bar, uint64_t offset, void* out_buf, size_t len) const;
+    int dispatch_write(uint8_t bar, uint64_t offset, const void* data, size_t len) const;
 
     // 测试 accessors
     size_t entry_count() const noexcept;
-    std::vector<std::string> matched_handlers(uint8_t bar, uint64_t offset) const;
+    size_t read_entry_count() const noexcept;    // per P0-1a
+    size_t write_entry_count() const noexcept;   // per P0-1a
+    std::vector<std::string> matched_read_handlers(uint8_t bar, uint64_t offset) const;
+    std::vector<std::string> matched_write_handlers(uint8_t bar, uint64_t offset) const;
     void clear() noexcept;
 
 private:
     mutable std::mutex  mu_;
-    std::vector<Entry>  entries_;   // 按 priority 降序 (插入时排序)
+    std::vector<DispatchEntry>  entries_;   // 按 priority 降序 (插入时排序)
 
     // 内部: 匹配 entry
-    bool matches(const Entry& e, uint8_t bar, uint64_t offset) const;
+    bool matches(const DispatchEntry& e, uint8_t bar, uint64_t offset) const;
 };
 
 } // namespace tlm::gpu
@@ -157,6 +187,7 @@ void DGpuBoard::init() {
 
     // 1. D1 display routing (BAR 0, 整个范围 0x00-0xFFF, display_routing_enabled)
     if (display_routing_enabled_) {
+        // write 路径 (per P0-1a)
         dispatch_registry_.register_bar0_display(
             [this](uint8_t, uint64_t off, const void* d, size_t len) -> int {
                 auto* dev = ep_cache_->get()->display_device();
@@ -165,20 +196,32 @@ void DGpuBoard::init() {
                 }
                 return -ENOSYS;  // device 未装, 走 fallback
             });
+        // read 路径 (per P0-1a 新增, 修复 mmio_read 数据回路空洞)
+        dispatch_registry_.register_bar0_display_read(
+            [this](uint8_t, uint64_t off, void* out_buf, size_t len) -> int {
+                auto* dev = ep_cache_->get()->display_device();
+                if (dev) {
+                    return dev.mmio_read(off, out_buf, len);
+                }
+                return -ENOSYS;
+            });
     }
 
-    // 2. BAR1+0x10010000 doorbell (BAR 1, offset 0x10010000)
+    // 2. BAR1+0x10010000 doorbell (BAR 1, offset 0x10010000, 仅 write)
     dispatch_registry_.register_bar1_doorbell(
         [this](uint8_t, uint64_t, const void* d, size_t len) -> int {
             if (sdma_engine_) {
-                uint64_t wptr = parse_wptr(d, len);
+                // per 评审报告 R-R1 (2027-02-09): parse_wptr 来自 v1.0 helper
+                // dgpu_board_shell.cc 私有命名空间 detail::parse_wptr_from_host,
+                // 沿用 v1.0 字节序约定 (little-endian, 取 min(len, 8) 字节零扩展到 uint64_t)
+                uint64_t wptr = detail::parse_wptr_from_host(d, len);
                 sdma_engine_->mmio_write(1, kBar1DoorbellOffset, wptr);
                 ++pcie_ep_doorbell_count_;
             }
             return 0;
         });
 
-    // 3. PCIe path 4 态 (按 pcie_path_ 选择)
+    // 3. PCIe path 4 态 (按 pcie_path_ 选择, per P0-1a 拆 read/write)
     switch (pcie_path_) {
     case PciePath::Legacy:
         dispatch_registry_.register_pcie_path_legacy();   // no-op (mmio_regs_ 已有)
@@ -190,9 +233,23 @@ void DGpuBoard::init() {
             });
         break;
     case PciePath::Tlp:
-        dispatch_registry_.register_pcie_path_tlp(
+        // write 路径 (per P0-1a)
+        dispatch_registry_.register_pcie_path_tlp_write(
             [this](uint8_t bar, uint64_t off, const void* d, size_t len) -> int {
-                return ep_cache_->get()->mmio_write(bar, off, *(uint64_t*)d);
+                // per 评审报告 R-R2 (2027-02-09): 长度校验 + memcpy 替代强制转换
+                // 避免 *(uint64_t*)d 在 len != 8 时的 strict-aliasing UB / 越界读
+                if (len != 4 && len != 8) return -EINVAL;
+                uint64_t value = 0;
+                std::memcpy(&value, d, std::min(len, sizeof(value)));
+                return ep_cache_->get()->mmio_write(bar, off, value);
+            });
+        // read 路径 (per P0-1a 新增)
+        dispatch_registry_.register_pcie_path_tlp_read(
+            [this](uint8_t bar, uint64_t off, void* out_buf, size_t len) -> int {
+                if (len != 4 && len != 8) return -EINVAL;
+                uint64_t value = ep_cache_->get()->mmio_read(bar, off);
+                std::memcpy(out_buf, &value, std::min(len, sizeof(value)));
+                return 0;
             });
         break;
     case PciePath::Mock:
@@ -224,13 +281,24 @@ if (bar == 1 && offset == kBar1DoorbellOffset) { /* SDMA */ }
 dispatch_mmio_to_pcie(bar, offset, buf, len);
 ```
 
-**v2.0** (统一 dispatch):
+**v2.0** (统一 dispatch, per Oracle-4 v2.0.1 mmio_regs_ 不再掩盖失败 + Oracle v2.0.2 P0-1a 拆读写):
 
 ```cpp
 int DGpuBoard::mmio_write(uint8_t bar, uint64_t offset, const void* buf, size_t len) {
     if (!lifecycle_.is_at_least(BoardState::Configured)) return -ENOSYS;
+    if (lifecycle_.is_at_least(BoardState::ShuttingDown)) return -ESHUTDOWN;
 
-    // 1. 同步镜像 (用于 mmio_read fallback)
+    // 1. 单一 write dispatch (per registry 优先级, P0-1a: dispatch_write)
+    int rc = dispatch_registry_.dispatch_write(bar, offset, buf, len);
+    if (rc != 0) {
+        // per Oracle-4: 任何非零返回都终止, 不再"吞掉 -ENOSYS 静默成功"
+        // 未映射 BAR → -ENOSYS (无镜像, 不 push inject_q, driver 立即收到错误)
+        // dispatch 失败 → 错误码原样返回
+        metrics_.unmapped_mmio_count.fetch_add(1);   // per Oracle-4 观测性
+        return rc;
+    }
+
+    // 2. 仅在 dispatch 成功后写入镜像 (用于已确认 handled 的读 roundtrip, 不是 fallback)
     std::vector<uint8_t> payload(static_cast<const uint8_t*>(buf),
                                   static_cast<const uint8_t*>(buf) + len);
     {
@@ -238,16 +306,37 @@ int DGpuBoard::mmio_write(uint8_t bar, uint64_t offset, const void* buf, size_t 
         mmio_regs_[std::make_pair(bar, offset)] = payload;
     }
 
-    // 2. 单一 dispatch (per registry 优先级)
-    int rc = dispatch_registry_.dispatch(bar, offset, buf, len);
-    if (rc != 0 && rc != -ENOSYS) {
-        return rc;  // dispatch 失败, 不再 push inject_q
-    }
-
-    // 3. inject_q push (drain 路径)
+    // 3. inject_q push (drain 路径, 仅在 dispatch 成功后)
     PendingReq req;
     // ... (原有逻辑)
     return 0;
+}
+
+// mmio_read: 未映射 BAR 返 0xFF...FF (per Oracle-4 PCI master abort 行为)
+// per Oracle v2.0.2 P0-1b: 走 dispatch_read, read_handler 直接写回 out_buf
+int DGpuBoard::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len) {
+    if (!lifecycle_.is_at_least(BoardState::Configured)) return -ENOSYS;
+    if (lifecycle_.is_at_least(BoardState::ShuttingDown)) return -ESHUTDOWN;
+
+    // 1. read dispatch (同步响应, 模拟真实 BAR 读; P0-1a: dispatch_read)
+    //    read_handler 签名 int(uint8_t, uint64_t, void* out_buf, size_t len),
+    //    通过 out_buf 直接写回读出数据 — 修复 v2.0.1 "读只能镜像回读" 空洞
+    int rc = dispatch_registry_.dispatch_read(bar, offset, buf, len);
+    if (rc == 0) {
+        return 0;   // handler 已写满 buf, 真实读路径 (display / TLP)
+    }
+
+    // 2. rc == -ENOSYS (未映射) → 填 0xFF...FF 返 0 (PCI master abort 行为)
+    //    driver probe 时可据此判定 BAR 大小
+    if (rc == -ENOSYS) {
+        std::memset(buf, 0xFF, len);
+        metrics_.unmapped_mmio_count.fetch_add(1);
+        return 0;
+    }
+
+    // 3. 其他错误 (handler 真实错误如 -EINVAL) → 原样返回, 不吞错 (per Oracle-4 修订)
+    metrics_.unmapped_mmio_count.fetch_add(1);
+    return rc;
 }
 ```
 
@@ -269,27 +358,40 @@ const int kPriPciePathLegacy = 10;   // Legacy 默认 (no-op)
 
 ## 3. 关键不变性
 
-### Inv-1: dispatch 按 priority 降序匹配首个
+### Inv-1: dispatch 按 priority 降序匹配首个 (per P0-1a 拆 read/write)
 
 ```cpp
-int DispatchRegistry::dispatch(uint8_t bar, uint64_t offset,
-                                const void* data, size_t len) const {
+int DispatchRegistry::dispatch_read(uint8_t bar, uint64_t offset,
+                                     void* out_buf, size_t len) const {
     std::lock_guard<std::mutex> lock(mu_);
-    for (const auto& e : entries_) {  // 已按 priority 排序
+    // 仅扫描 kind==Read 的 entries (per P0-1a)
+    // 加速: 先按 bar 索引过滤 read_entries_by_bar_, 再按 priority 降序匹配
+    for (const auto& e : read_candidates(bar)) {   // 已按 priority 排序
         if (matches(e, bar, offset)) {
-            return e.handler(bar, offset, data, len);
+            return e.read_handler(bar, offset, out_buf, len);   // 写回 out_buf
+        }
+    }
+    return -ENOSYS;  // 未匹配
+}
+
+int DispatchRegistry::dispatch_write(uint8_t bar, uint64_t offset,
+                                      const void* data, size_t len) const {
+    std::lock_guard<std::mutex> lock(mu_);
+    for (const auto& e : write_candidates(bar)) {  // 已按 priority 排序
+        if (matches(e, bar, offset)) {
+            return e.write_handler(bar, offset, data, len);
         }
     }
     return -ENOSYS;  // 未匹配
 }
 ```
 
-**保证**: 单一调用只 dispatch 到首个匹配的 handler (类似责任链模式)。
+**保证**: 单一调用只 dispatch 到首个匹配的 handler (类似责任链模式); Read/Write 两类 entries 互不干扰 (per P0-1a)。
 
-### Inv-2: 匹配语义
+### Inv-2: 匹配语义 (同 v2.0.1, 无变化)
 
 ```cpp
-bool DispatchRegistry::matches(const Entry& e, uint8_t bar, uint64_t offset) const {
+bool DispatchRegistry::matches(const DispatchEntry& e, uint8_t bar, uint64_t offset) const {
     switch (e.scope) {
     case Scope::BarExact:
         return e.bar == bar && e.offset == offset;
@@ -302,26 +404,37 @@ bool DispatchRegistry::matches(const Entry& e, uint8_t bar, uint64_t offset) con
 }
 ```
 
-### Inv-3: 注册顺序保留 (priority 降序)
+### Inv-3: 注册顺序保留 (priority 降序, per P0-1a 按 kind 分桶)
 
 ```cpp
-void DispatchRegistry::register_entry(const Entry& e) {
+void DispatchRegistry::register_read_handler(const DispatchEntry& e) {
     std::lock_guard<std::mutex> lock(mu_);
-    entries_.push_back(e);
-    // 按 priority 降序排 (stable sort 保证 FIFO 同优先级)
-    std::stable_sort(entries_.begin(), entries_.end(),
-                     [](const Entry& a, const Entry& b) {
+    read_entries_.push_back(e);   // read_entries_ 独立容器 (P0-1a)
+    std::stable_sort(read_entries_.begin(), read_entries_.end(),
+                     [](const DispatchEntry& a, const DispatchEntry& b) {
                          return a.priority > b.priority;
                      });
+    read_entries_by_bar_[e.bar].push_back(read_entries_.size() - 1);  // bar 索引
+}
+
+void DispatchRegistry::register_write_handler(const DispatchEntry& e) {
+    std::lock_guard<std::mutex> lock(mu_);
+    write_entries_.push_back(e);  // write_entries_ 独立容器 (P0-1a)
+    std::stable_sort(write_entries_.begin(), write_entries_.end(),
+                     [](const DispatchEntry& a, const DispatchEntry& b) {
+                         return a.priority > b.priority;
+                     });
+    write_entries_by_bar_[e.bar].push_back(write_entries_.size() - 1);
 }
 ```
 
-### Inv-4: handler 返回 0=成功, 非 0=未处理/错误
+### Inv-4: handler 返回 0=成功, 非 0=未处理/错误 (per Oracle-4 v2.0.1 + P0-1a)
 
 ```cpp
-// handler 返回 0: 成功处理, dispatch 结束
-// handler 返回 -ENOSYS: 未处理, 继续下一个
-// handler 返回其他负值: 错误, dispatch 终止并返错
+// handler 返回 0: 成功处理, dispatch 结束 (read: out_buf 已写满; write: 数据已消费)
+// handler 返回 -ENOSYS: 未处理 (read: mmio_read 填 0xFF...FF; write: mmio_write 返 -ENOSYS)
+// handler 返回其他负值: 错误, dispatch 终止返错 (read: mmio_read 原样返回; write: mmio_write 原样返回)
+// 同一 entry 的 read_handler 与 write_handler 不可同时非空 (per P0-1a kind 校验)
 ```
 
 ---

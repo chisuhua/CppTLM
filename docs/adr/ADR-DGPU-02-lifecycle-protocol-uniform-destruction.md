@@ -6,6 +6,20 @@
 > **关联架构文档**: [docs/architecture/14-dgpu-board-ideal-arch.md §3.1](../architecture/14-dgpu-board-ideal-arch.md)
 > **配套**: ADR-DGPU-01 (CallbackWorker), ADR-DGPU-03 (DispatchRegistry)
 
+> **评审修订 (评审报告 R-R3, 2027-02-09)**:
+> - §2.1 补充 `DGpuBoard::lifecycle_is_at_least()` / `lifecycle_current()` 转发方法, 让 §5.2 集成测试代码可编译
+> - §3 Inv-4 ABI guard 表中所有 `set_*_callback` 加 "(可多次调, 但关闭中静默拒设)"
+
+> **Oracle v2.0.1 修订 (2027-02-09) — callback nullification 经由 worker (Oracle-1)**:
+> - §2.2 destroy Step 1 `callback nullification` 由"DGpuBoard 自持 callback 副本 + 直接 lock"改为"`worker_.clear_callbacks()` (经由 ADR-DGPU-01 §2.1 公开 API)"
+> - 原因: v2.0 起 CallbackWorker 是 callback 的唯一所有者 (per ADR-DGPU-01 §2.1 Oracle 修订);DGpuBoard 侧不再保留 `callback_mu_` / `irq_cb_` 等副本, Step 1 直接 `worker_.clear_callbacks()` 持 worker 的 callback_mu_ 完成 nullification
+
+> **Oracle v2.0.1 修订 (2027-02-09) — 禁止二次 load_soc_config (Oracle-3)**:
+> - §2.1 状态机 + §3 Inv-4 拒入规则 + §6 兼容性表: 显式声明 `load_soc_config` 只能调一次 (Constructed → Configured), 重复调用返 `-EINVAL` (CAS 失败)
+> - §2.1 状态机图加注: **无 reverse transition, 无 Running→Configured teardown, board 一次性使用**
+> - §5 测试 + Phase B 集成: 删除"load_soc_config 重复调用 + invalidate"相关测试 (per Oracle-3 决策 a: 禁二次, ADR-DGPU-04 §3 Inv-3 应删除 invalidate 死代码)
+> - 决策依据: Oracle-3 推荐路径 (a) — 禁二次调用 (符合"board 一次性使用"基调); 路径 (b) 加 Running→Configured teardown transition 留待 v2.1 (multi-config driver 测试需求)
+
 ---
 
 ## 1. 背景
@@ -135,9 +149,12 @@ enum class BoardState : uint8_t {
 //                                    └──────────────┘
 //
 // 反向转换 (Destructed → Constructed): ❌ 不允许 (board 一次性使用)
+// 二次 load_soc_config (Configured → Constructed, Initialized/Running → Configured): ❌ 不允许 (per Oracle-3 v2.0.1)
+//   重复调用 load_soc_config 返 -EINVAL (CAS 失败), 当前状态保持
+//   若 driver 需要"重配置 SOC", 必须 close 当前 board → open 新 board (per §5 ABI 集成测试)
 //
 // 拒入规则 (transition guard):
-//   load_soc_config:    Constructed → Configured
+//   load_soc_config:    Constructed → Configured (只能调一次, 重复调返 -EINVAL)
 //   init:               Configured  → Initialized
 //   tick (first):       Initialized → Running (auto)
 //   mmio_*/backdoor_*/config_*/msix_*/lookup_*: 需 ≥ Configured
@@ -175,7 +192,28 @@ private:
 };
 
 } // namespace tlm::gpu
+
+// ──────────────────────────────────────────────────────────────────────────
+// per 评审报告 R-R3 (2027-02-09):
+// §5.2 集成测试代码调用 `board.lifecycle_is_at_least()` / `board.lifecycle_current()`,
+// 但本节之前未列出这些 DGpuBoard public 转发方法。补充如下:
+// ──────────────────────────────────────────────────────────────────────────
+
+// in class DGpuBoard (public):
+//   // 转发到 lifecycle_ 成员, 让测试和外部代码可查询当前状态 (per 评审报告 R-R3)
+//   bool lifecycle_is_at_least(BoardState s) const noexcept {
+//       return lifecycle_.is_at_least(s);
+//   }
+//   BoardState lifecycle_current() const noexcept {
+//       return lifecycle_.current();
+//   }
+//   // 测试 accessor (历史快照)
+//   std::vector<LifecycleProtocol::HistoryEntry> lifecycle_history() const {
+//       return lifecycle_.history_snapshot();
+//   }
 ```
+
+### 2.2 统一析构协议 (callback nullification + 严格 join 顺序)
 
 ### 2.2 统一析构协议 (callback nullification + 严格 join 顺序)
 
@@ -187,17 +225,16 @@ void DGpuBoard::destroy() {
     // (如果当前是 Configured/Initialized/Constructed, 也允许 transition 到 ShuttingDown,
     //  用 is_at_least 守卫)
 
-    // ─── Step 1: callback nullification ───
+    // ─── Step 1: callback nullification (经由 worker, per Oracle-1 v2.0.1) ───
     // 关键: 在 join 任何 worker thread 之前, 先让 callback 指针 null,
     // 防止 in-flight task 触发 use-after-free。
     // (worker loop 在 dispatch_task 之前还会再校验 stop_, 但 nullification
     //  是双重保险)
-    {
-        std::lock_guard<std::mutex> lock(callback_mu_);
-        irq_cb_ = nullptr;
-        dma_translate_cb_ = nullptr;
-        error_cb_ = nullptr;
-    }
+    //
+    // v2.0 起 callback 单一所有权在 CallbackWorker 内 (per ADR-DGPU-01 §2.1),
+    // DGpuBoard 不再保留 callback_mu_ / irq_cb_ 等副本。
+    // Step 1 调用 worker_.clear_callbacks() — worker 持自身 callback_mu_ 置空 3 个 callback。
+    worker_.clear_callbacks();
 
     // ─── Step 2: CallbackWorker shutdown (per ADR-DGPU-01) ───
     worker_.shutdown_and_join();
@@ -255,8 +292,9 @@ void DGpuBoard::set_irq_callback(IrqCallback cb) {
     if (lifecycle_.current() == BoardState::ShuttingDown) {
         return;  // 关闭中拒设
     }
-    std::lock_guard<std::mutex> lock(callback_mu_);
-    irq_cb_ = std::move(cb);
+    // per Oracle v2.0.2 P0-2b: callback 单一所有权在 worker_ (per ADR-DGPU-01 §2.1),
+    // DGpuBoard 侧不再保留 callback_mu_ / irq_cb_ 副本, 转发到 worker_
+    worker_.set_irq_callback(std::move(cb));
 }
 ```
 
@@ -286,19 +324,16 @@ int LifecycleProtocol::transition(BoardState expected, BoardState next, const ch
 
 **保证**: 错序转换返 -EINVAL, 不破坏当前状态。
 
-### Inv-2: callback nullification 在 worker join 之前
+### Inv-2: callback nullification 在 worker join 之前 (per Oracle v2.0.2 P0-2a)
 
 ```cpp
 void DGpuBoard::destroy() {
-    lifecycle_.transition(...);  // Step 0
-    {
-        std::lock_guard<std::mutex> lock(callback_mu_);
-        irq_cb_ = nullptr;
-        dma_translate_cb_ = nullptr;
-        error_cb_ = nullptr;
-    }   // Step 1 (callback nullification)
-    worker_.shutdown_and_join();   // Step 2
-    // ... 后续
+    lifecycle_.transition(BoardState::Running, BoardState::ShuttingDown, "destroy()");  // Step 0
+    // per Oracle v2.0.2 P0-2a: callback 单一所有权在 worker_ (per ADR-DGPU-01 §2.1),
+    // DGpuBoard 侧无 callback_mu_ / irq_cb_ 副本; Step 1 直接转发到 worker_
+    worker_.clear_callbacks();   // Step 1 (worker 持自身 callback_mu_ 置空 3 个 callback)
+    worker_.shutdown_and_join(); // Step 2
+    // ... 后续 (coalesce_timer / sim_thread / soc / eq / lifecycle final)
 }
 ```
 
@@ -312,13 +347,15 @@ void CallbackWorker::dispatch_task(const Task& t) {
         return;  // 已停止, 不再 dispatch
     }
     // ...
+    // per Oracle v2.0.2 P0-2a: callback_mu_ / irq_cb_ 均为 **CallbackWorker 自身成员**
+    // (callback 单一所有权在 worker, per ADR-DGPU-01 §2.1);DGpuBoard 侧无副本
     std::lock_guard<std::mutex> lock(callback_mu_);
-    auto cb = irq_cb_;   // 即使调用前为非空, 已被 destroy Step 1 置 null
+    auto cb = irq_cb_;   // 即使调用前为非空, 已被 destroy Step 1 (worker_.clear_callbacks()) 置 null
     if (cb) cb(t.vector_id);
 }
 ```
 
-**保证**: 三重保险 — stop_ atomic + callback nullification + lock 内的指针拷贝。
+**保证**: 三重保险 — stop_ atomic + callback nullification (worker_.clear_callbacks()) + lock 内的指针拷贝。
 
 ### Inv-4: ABI 调用 guard 一致性
 

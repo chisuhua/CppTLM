@@ -34,6 +34,35 @@ DGpuBoard v1.0 (Phase 1-8 完整交付后版本, 44998 assertions 全绿) 在审
 - **NG3**: 不改变 SOC JSON schema (`dgpu_board_v1.json` 兼容)
 - **NG4**: 不引入第三方依赖 (仅 std + nlohmann)
 
+### 1.4 已知推迟项 (v2.1 backlog, per Oracle 二轮复审 §C)
+
+下列 driver 仿真场景**明确推迟到 v2.1**, 本轮 v2.0.2 不实施 (per Oracle 二轮报告: 无追踪锚点会被遗忘, 故在此登记):
+
+| 项 | driver 需求 | 推迟理由 | 追踪 |
+|----|-----------|---------|------|
+| **MSI-X PBA 读路径** | 中断 handler 读 Pending Bit Array | `msix_update_pending` 已有, PBA 经 BAR MMIO 读回路径未实现 | v2.1 |
+| **FLR / 热复位** | 测试 reset-while-DMA-in-flight、错误恢复 | LifecycleProtocol 仅 "一次性 teardown", 无 device-level reset 概念 | v2.1 |
+| **BAR sizing probe** | probe 时向 BAR 写全 1 读回 mask | 走 config 空间路径, 与本设计 (MMIO dispatch) 无关; 需 config space 模型扩展 | v2.1 |
+| **多进程 / 多 handle** | 两 driver 进程各开一个 handle | 当前 ABI 假设单 handle; 需单例/多例约束设计 | v2.1 |
+| **D0/D3 电源状态** | runtime PM 测试 | `mmio_gated()` (D3hot gating) 已有, 但无 `set_power_state` ABI 表面 | v2.1 |
+| **Config space 原子性** | 4-byte config 读写原子性与延迟模型 | Inv-4 表只给 guard, 未给语义 | v2.1 |
+| **IOMMU/ATC 失效通道** | DMA remap + invalidate | 当前仅一次性 translate 查询; v2.0.2 先补返回值回路 (ABI 24) | v2.1 |
+
+### 1.5 P1/P2 文档改进 backlog (per Oracle 二轮复审 §E)
+
+Oracle 二轮列出的 P1/P2 项, 本轮 v2.0.2 仅修 P0, 下列进 backlog:
+
+| 优先级 | 项 | 说明 | 计划 |
+|--------|----|----|------|
+| **P1** | 统一 metrics 落点 | `irq_dropped_total_` / `unmapped_mmio_count` 归属 `DGpuBoard::metrics_` struct, 决定是否接入 `include/metrics/` 框架 | v2.0.3 |
+| **P1** | ABI 冻结语义裁决 | 架构 §5.1/§8.1 DoD "git diff 必须为空" vs "末尾追加 24 号 ABI" 矛盾 — **本轮 P0-3e 已裁决** ✅ | 已完成 |
+| **P1** | `load_soc_config` 返回值对齐 | ADR-DGPU-02 写"返 -EINVAL"但签名是 `bool` — 需改为返 false + `last_error` 或改签名 | v2.0.3 |
+| **P2** | v2.1 推迟清单登记 | PBA/FLR/BAR probe/multi-process/PM — **本轮 §1.4 已登记** ✅ | 已完成 |
+| **P2** | ABI 24 测试用例 | poll/wait/cancel 的 timeout / cancel / cb 未注册 用例 — 需加入 Phase C 测试清单 | Phase C |
+| **P2** | callback 重入契约 | "callback 内禁止重入 close/destroy" (避免 `clear_callbacks` 自死锁) | v2.0.3 |
+| **P2** | 版本号 bump | 架构文档 header/footer "v2.0" → "v2.0.2"; 新增 delta summary | v2.0.3 |
+| **P2** | 文档债合并 | 60+ 修订标记散布 5 份文档, 需 "v2.0.2 delta summary" 合并 | v2.0.3 |
+
 ---
 
 ## 2. 5 层架构 (v2.0)
@@ -72,7 +101,8 @@ DGpuBoard v1.0 (Phase 1-8 完整交付后版本, 44998 assertions 全绿) 在审
 │  ┌────────────────────────────────────────────────────────────────┐         │
 │  │ EpCache (lazy ep 指针缓存) ← 避免重复 dynamic_cast (L8)        │         │
 │  │   · 首次 pcie_ep() 调用时缓存, 后续直接返回                    │         │
-│  │   · sim_thread 启动前 + SOC reconfigure 后 invalidate            │         │
+│  │   · 一次性 resolve (per Oracle-3 v2.0.1), 整生命周期不再失效    │         │
+│  │   · invalidate() [[deprecated]], 仅 shutdown clear() (P0-2e)  │         │
 │  └────────────────────────────────────────────────────────────────┘         │
 │                                                                             │
 │  ┌────────────────────────────────────────────────────────────────┐         │
@@ -125,12 +155,14 @@ enum class BoardState : uint8_t {
 //   *           → ShuttingDown   (shutdown/destroy)
 //   ShuttingDown → Destructed    (~DGpuBoard 析构)
 //
-// 拒入规则:
-//   mmio_read/write/backdoor_*: 需 ≥ Configured
-//   msix_*/lookup_register:      需 ≥ Configured
-//   set_*_callback:              需 ≥ Configured, ≤ ShuttingDown
-//   trigger_*_async:              需 ≥ Initialized
-//   shutdown/destroy:            任何非 Destructed 状态
+// 拒入规则 (对齐 ADR-DGPU-02 §3 Inv-4 ABI guard 表, 含上下限):
+//   mmio_read/write/backdoor_*/config_*: 需 ∈ [Configured, Running]
+//                                          (下限: 未配置返 -ENOSYS, 上限: ShuttingDown 返 -ESHUTDOWN)
+//   msix_*/lookup_register:              需 ∈ [Configured, Running]
+//   set_*_callback:                      需 ∈ [Configured, Running] (≤ ShuttingDown)
+//   trigger_*_async:                     需 ∈ [Initialized, Running]
+//   tick:                                需 ∈ [Initialized, ShuttingDown] (无 -ESHUTDOWN 检查)
+//   shutdown/destroy:                    任何非 Destructed 状态
 ```
 
 **测试策略**: `BoardStateTest` 验证 16 个 transition (4 状态 × 4 入口) 的合法/非法组合。
@@ -182,88 +214,133 @@ private:
 };
 ```
 
-**关键不变性**:
-1. `submit()` 在 `stop_ || draining_` 时返回 false (避免 submit 阶段 race)
-3. `worker_loop()` 中调用 callback 前再校验 stop_ 标志 (防止 in-flight task)
-4. `shutdown_and_join()` 严格顺序: `stop_=true` + `draining_=true` → 等待 queue 清空 → join worker
+**关键不变性** (对齐 ADR-DGPU-01 §3 Inv-1~Inv-4):
+1. `submit()` 在 `stop_ || draining_` 时返回 false, 或 `queue_.size() >= kMaxQueueSize` 时返回 false (避免 submit 阶段 race, 背压保护)
+2. `worker_loop()` 中调用 callback 前再校验 stop_ 标志 (防止 in-flight task 在锁外 dispatch 时访问已 shutdown 资源)
+3. `shutdown_and_join()` 严格顺序: `draining_=true` → `stop_=true` + `cv_.notify_all()` → join worker (确定性析构, 调用方可在返回后安全释放 callback 指针)
+4. `dispatch_task()` 用 `try { ... } catch (...) {}` 隔离 host 异常, 不影响 worker 处理后续任务 (per ADR-DGPU-01 §3 Inv-4, 仅 ADR 展开)
 
 **测试策略**:
 - `CallbackWorkerTest`: submit 1000 task, shutdown_and_join 后 pending=0
 - `CallbackWorkerLifecycleTest`: shutdown 后 submit 返 false
 - `CallbackWorkerUseAfterFreeTest`: shutdown 后 callback 不再被调 (mock 验证)
+- `CallbackWorkerBackpressureTest`: 队列满 (≥1024) 时 submit 返 false (per Inv-1 背压保护)
 - **性能对比**: burst 100 个 IRQ 比 v1.0 detached 路径快 10x+
 
 ### 3.3 DispatchRegistry (data-driven dispatch)
 
 **问题** (v1.0 M5): `dispatch_mmio_to_pcie` 4 态 switch 都是空 break (`dgpu_board_shell.cc:775-800`),spec 名实不符。T-P12-2 E2E 测试必失败。
 
-**方案**: data-driven DispatchRegistry (类比 `PcieBarRouter`):
+**方案**: data-driven DispatchRegistry (类比 `PcieBarRouter`, **per Oracle v2.0.2 P0-1a 拆 read/write 双签名**):
 
 ```cpp
 // 内部组件
+// per Oracle v2.0.2 P0-1: HandlerFn 拆分为 read_handler / write_handler,
+// 原因: read 路径需要把读出数据写回 caller 的 buf, write 路径只需 const data;
+//      旧统一签名 HandlerFn(uint8_t, uint64_t, const void*, size_t) data 是 const,
+//      handler 无法返 buf 内容, mmio_read 只能依赖镜像回读, 真实读路径无数据回路
 struct DispatchEntry {
     enum class Scope : uint8_t { BarExact, BarRange, Global };
+    enum class Kind : uint8_t { Read, Write };   // per Oracle-P0-1a: 区分读写
     Scope      scope;
-    uint8_t    bar;             // BarExact / BarRange
-    uint64_t   offset_lo;       // BarRange
-    uint64_t   offset_hi;       // BarRange
-    uint64_t   offset;          // BarExact
-    using HandlerFn = std::function<int(uint8_t, uint64_t, const void*, size_t)>;
-    HandlerFn  handler;
-    int        priority;        // 高优先级先匹配
-    std::string name;           // 诊断
+    Kind       kind;        // per Oracle-P0-1a: 区分 read/write, handler 不可混用
+    uint8_t    bar;         // BarExact / BarRange
+    uint64_t   offset_lo;   // BarRange
+    uint64_t   offset_hi;   // BarRange
+    uint64_t   offset;      // BarExact
+    int        priority;    // 高优先级先匹配
+
+    // per Oracle-P0-1a: 双 handler, write 是 const data, read 带 out_buf
+    using ReadHandler  = std::function<int(uint8_t, uint64_t, void* out_buf, size_t len)>;
+    using WriteHandler = std::function<int(uint8_t, uint64_t, const void* data, size_t len)>;
+    ReadHandler   read_handler;    // kind==Read 时使用, 必须填写 *out_buf
+    WriteHandler  write_handler;   // kind==Write 时使用
+
+    std::string name;       // 诊断
 };
 
 class DGpuBoard::DispatchRegistry {
 public:
-    // 注册 handler (重载支持 4 种 scope)
-    void register_handler(const DispatchEntry& e);
-    void register_bar0_display_routing(HandlerFn fn);    // D1 display device
-    void register_bar1_doorbell(HandlerFn fn);            // SdmaEngineTLM
-    void register_pcie_path(PciePath path, HandlerFn fn); // T-P12-1
+    // 注册 handler (按 Kind 区分, 不可混用)
+    void register_read_handler(const DispatchEntry& e);    // e.kind == Read
+    void register_write_handler(const DispatchEntry& e);   // e.kind == Write
 
-    // 匹配 + dispatch (按 priority 降序, 首个匹配胜出)
-    int dispatch(uint8_t bar, uint64_t offset, const void* data, size_t len) const;
+    // 便利 API (D1 / SDMA / PCIe path)
+    // per Oracle-P0-1a: display_routing 仅写 (mmio_write); BAR1 doorbell 仅写
+    void register_bar0_display_routing(DispatchEntry::WriteHandler fn);   // D1 v1.1.1
+    void register_bar1_doorbell(DispatchEntry::WriteHandler fn);          // Stage 1.3a
+    void register_pcie_path_write(PciePath path, DispatchEntry::WriteHandler fn);  // T-P12-1
+    void register_pcie_path_read(PciePath path, DispatchEntry::ReadHandler fn);   // T-P12-1 (新增)
+
+    // per Oracle-P0-1a: 拆分为 dispatch_read / dispatch_write
+    // 读路径: 找 Read entry, 调用 read_handler(out_buf) 写入数据
+    int dispatch_read(uint8_t bar, uint64_t offset, void* out_buf, size_t len) const;
+    // 写路径: 找 Write entry, 调用 write_handler(data) (旧 dispatch 接口)
+    int dispatch_write(uint8_t bar, uint64_t offset, const void* data, size_t len) const;
 
     // 测试 accessors
     size_t entry_count() const;
-    std::vector<std::string> matched_handlers(uint8_t bar, uint64_t offset) const;
+    size_t read_entry_count() const;   // 仅统计 Read entries
+    size_t write_entry_count() const;  // 仅统计 Write entries
+    std::vector<std::string> matched_read_handlers(uint8_t bar, uint64_t offset) const;
+    std::vector<std::string> matched_write_handlers(uint8_t bar, uint64_t offset) const;
 
 private:
     std::vector<DispatchEntry> entries_;  // 按 priority 排好序
+    // 索引加速查找 (避免每次 dispatch 扫描全表)
+    std::unordered_multimap<uint8_t, size_t> read_entries_by_bar_;
+    std::unordered_multimap<uint8_t, size_t> write_entries_by_bar_;
 };
 ```
 
-**注册顺序** (在 `init()` 后):
+**注册顺序** (在 `init()` 后, per Oracle-P0-1a 拆 read/write):
 
 ```cpp
-// 默认 Legacy 行为 (向后兼容)
-registry_.register_pcie_path(PciePath::Legacy,
+// 默认 Legacy 行为 (向后兼容, write 路径 no-op)
+registry_.register_pcie_path_write(PciePath::Legacy,
     [](uint8_t, uint64_t, const void*, size_t) { return 0; });
 
 // PcieDisplayDevice BAR 0 fast-path (D1 v1.1.1, display_routing_enabled)
+// write 路径: 写 display device
 registry_.register_bar0_display_routing(
     [this](uint8_t, uint64_t off, const void* d, size_t len) {
         auto* dev = ep_cache_->get()->display_device();
         return dev.mmio_write(off, d, len);
     });
+// per Oracle-P0-1a: read 路径 (v2.0.2 新增, 修复 v2.0.1 "读只能镜像回读" 空洞)
+registry_.register_read_handler(
+    {DispatchEntry::Scope::BarRange, DispatchEntry::Kind::Read,
+     /*bar=*/0, /*lo=*/0x00, /*hi=*/0xFFF, /*offset=*/0, /*priority=*/100,
+     /*read_handler=*/[this](uint8_t, uint64_t off, void* out_buf, size_t len) {
+         auto* dev = ep_cache_->get()->display_device();
+         return dev.mmio_read(off, out_buf, len);
+     }, /*write_handler=*/nullptr, "PcieDisplayDevice BAR0 read"});
 
-// SdmaEngineTLM BAR1+0x10010000 doorbell (Stage 1.3a)
+// SdmaEngineTLM BAR1+0x10010000 doorbell (Stage 1.3a, 仅 write)
 registry_.register_bar1_doorbell(
     [this](uint8_t, uint64_t, const void* d, size_t len) {
         if (sdma_engine_) {
-            uint64_t wptr = parse_wptr(d, len);
+            uint64_t wptr = detail::parse_wptr_from_host(d, len);
             sdma_engine_->mmio_write(/*bar=*/1, kBar1DoorbellOffset, wptr);
         }
         return 0;
     });
 
-// PciePath::Tlp (T-P12-2, 待实施)
-registry_.register_pcie_path(PciePath::Tlp,
+// PciePath::Tlp (T-P12-2, 待实施, write + read 双注册)
+registry_.register_pcie_path_write(PciePath::Tlp,
     [this](uint8_t bar, uint64_t off, const void* d, size_t len) {
-        return pcie_path_tlp_dispatch(bar, off, d, len);
+        return pcie_path_tlp_write(bar, off, d, len);
+    });
+registry_.register_pcie_path_read(PciePath::Tlp,
+    [this](uint8_t bar, uint64_t off, void* out_buf, size_t len) {
+        return pcie_path_tlp_read(bar, off, out_buf, len);  // per Oracle-P0-1a
     });
 ```
+
+**读路径说明 (per Oracle v2.0.2 P0-1)**:
+- v2.0.1 的 `mmio_read` 因 HandlerFn 签名限制 (`const void* data`), 无法让 handler 写回数据, 只能落 `mmio_regs_` 镜像 — 这是设计空洞
+- v2.0.2 拆 read/write 双签名后, `dispatch_read(bar, offset, out_buf, len)` 调用 `read_handler(bar, offset, out_buf, len)`, handler 通过 `out_buf` 写回读出数据
+- `mmio_regs_` 镜像降级为"write-then-read roundtrip 的调试旁路", 不再是唯一读路径
 
 **优点**:
 - ✅ 单一注册表, 避免 switch case 持续膨胀
@@ -283,8 +360,18 @@ public:
     // 返回 cached 指针 (init 后锁定)
     tlm::pcie::PcieEndpointIP* get();
 
-    // 显式失效 (load_soc_config 重复调用 / SOC reconfigure)
+    // 显式失效 (per Oracle-3 v2.0.1 + Oracle v2.0.2 P0-2e: deprecated)
+    // v2.0 起 board 一次性使用, init() 后整生命周期不再失效 (除 shutdown clear())
+    // 保留仅为测试 hook; 生产路径不再调用
+    [[deprecated("EpCache::invalidate() deprecated in v2.0.1; use clear() in shutdown path")]]
     void invalidate() noexcept;
+
+    // per Oracle v2.0.2 P0-2e: shutdown 时清空 cached_ (析构阶段)
+    void clear() noexcept {
+        std::lock_guard<std::mutex> lock(mu_);
+        cached_ = nullptr;
+        resolved_.store(false);
+    }
 
 private:
     std::mutex                  mu_;
@@ -296,10 +383,11 @@ private:
 };
 ```
 
-**关键不变性**:
-1. `cached_` 仅在 `init()` 完成后设置 (避免 race with `load_soc_config` 重复调用)
-2. `invalidate()` 必须在 SOC 重配置前调 (留给调用方保证)
+**关键不变性 (per Oracle-3 v2.0.1 + Oracle v2.0.2 P0-2e 修订)**:
+1. `cached_` 仅在 `init()` 完成后设置 (board 一次性使用, 不再有 load_soc_config 重复调用)
+2. `invalidate()` 已 `[[deprecated]]` — 生产路径不再调用 (per Oracle-3: 无 reverse transition)
 3. `get()` 自身线程安全 (cache 命中走 atomic fast path)
+4. `clear()` 在 `destroy()` 的 SOC reset 之前调用 (析构阶段清理)
 
 ### 3.5 PendingReqGuard (RAII 清理)
 
@@ -353,20 +441,50 @@ private:
 
 ## 5. 兼容性约束
 
-### 5.1 ABI 兼容性 (硬约束)
+### 5.1 ABI 兼容性 (硬约束, per Oracle v2.0.2 P0-3e DoD 仲裁)
 
-23 ABI 函数签名零修改,实现内部可重构:
+**23 ABI 函数签名零修改** (字节级冻结, per ADR-088 §D5):
 
 ```cpp
-// 23 ABI 函数 (字节级兼容)
+// 23 ABI 函数 (签名级字节级兼容)
 extern "C" {
     int cpptlm_emulator_open(uint32_t dev_id, cpptlm_emulator_handle_t** handle);
     void cpptlm_emulator_close(cpptlm_emulator_handle_t* handle);
     // ... 其余 21 个 (mmio_read/write, config_read/write, msix_*, lookup_register, etc.)
 }
+
+// 24 号 ABI (v2.0.2 新增, per Oracle-P0-3, 不属于 23 ABI 冻结范围)
+// 末尾追加于 include/abi/cpptlm_emulator.h, 不修改既有 23 签名
+extern "C" {
+    int cpptlm_emulator_dma_translate_poll(cpptlm_emulator_handle_t* handle,
+                                            uint64_t iova, uint64_t* out_paddr);
+    int cpptlm_emulator_dma_translate_wait(cpptlm_emulator_handle_t* handle,
+                                            uint64_t iova, uint64_t* out_paddr,
+                                            uint32_t timeout_ms);
+    int cpptlm_emulator_dma_translate_cancel(cpptlm_emulator_handle_t* handle,
+                                              uint64_t iova);
+    // 详见 ADR-DGPU-01 §5.4 (v2.0.2 完整规格)
+}
 ```
 
-**验证**: `git diff HEAD -- include/abi/cpptlm_emulator.h` 必须为空。
+**验证** (per Oracle v2.0.2 P0-3e):
+
+```bash
+# 1. 既有 23 ABI 签名 0 diff (签名级冻结)
+git diff HEAD -- include/abi/cpptlm_emulator.h | grep -E '^[+-]' \
+    | grep -v '^+++ \|^--- ' \
+    | grep -v 'cpptlm_emulator_dma_translate_poll\|_wait\|_cancel' \
+    | head
+# 必须为空 (排除 hunk 头与 24 号 ABI 行, 检查无其他改动)
+
+# 2. 23 ABI 函数签名 0 diff (二进制级兼容, 更严格)
+git diff HEAD -- include/abi/cpptlm_emulator.h | grep -E '^[+-]' \
+    | grep -E '^[-+]int cpptlm_emulator_(open|close|mmio|config|msix|lookup|pcie_config)' \
+    | head
+# 必须为空
+```
+
+**DoD 仲裁 (Oracle v2.0.2 P0-3e)**: "23 ABI 字节级冻结" 解释为**签名级冻结**而非文件级冻结;允许末尾追加 24 号 ABI, 不视为破坏 ABI 兼容。验证脚本见上, §8.1 DoD 检查项同步更新。
 
 ### 5.2 JSON 配置兼容性
 
@@ -431,6 +549,73 @@ extern "C" {
 | **R4**: 44998 assertions 回归 | 低 | 测试全红 | Phase B 增量迁移 + Phase C 全量回归 + Oracle 评审 |
 | **R5**: T-P12-2 真实数据路径接线延期 | 中 | DispatchRegistry 部分 handler 空 break | 保留 v1.0 stub 行为, 标 TODO 跟随 T-P12-2 |
 
+### 7.1 Oracle 评审重点关注 (per 评审报告 R-Oracle, 2027-02-09)
+
+下列 4 个安全/正确性关键点是 Oracle 评审 P0 门禁 (per ADR-0025) 的必查项,Phase A 实施完成后必须由 Oracle 复审确认:
+
+#### 🔴 Oracle-1: callback nullification 与 in-flight task race window
+
+**问题**: DGpuBoard::destroy() 中 Step 1 (callback nullification) → Step 2 (worker_.shutdown_and_join()) 顺序, 是否真能避免 in-flight task 访问已置 null 的 callback?
+
+**理论保证** (per ADR-DGPU-02 §3 Inv-2 + Inv-3):
+- Inv-2: `worker_loop()` 中调用 callback 前再校验 `stop_`
+- Inv-3: dispatch 时 `lock(callback_mu_)` + 指针拷贝 (`auto cb = irq_cb_`)
+
+**Oracle 评审输入**:
+- [ ] `test_dgpu_board_callback_worker_use_after_free.cc` (新增 3 case): shutdown 路径下的 callback 调用计数
+- [ ] `static FILE* trace = fopen("/tmp/cpptlm_destroy_race.log", "a")` 压测 10000 次 destroy+init 循环, 验证 zero UAF
+- [ ] TSan 报告 (per `scripts/build/run_tsan.sh`) 必须 0 race
+
+**回退方案**: 如 Inv-2/Inv-3 不足, 引入第四重保险: `worker_loop` dispatch 前对 `callback_mu_` 加读锁, 与 destroy Step 1 写锁互斥 (读写锁方案)。
+
+---
+
+#### 🔴 Oracle-2: EpCache 一次性 resolve 协议 (per Oracle-3 v2.0.1 + Oracle v2.0.2 P0-2e, 原 "失效协议 race" 已废止)
+
+**原问题** (v2.0.1): ADR-DGPU-04 §3 Inv-3 中 `load_soc_config()` 与 `init()` 都调 `ep_cache_.invalidate()`, 是否会出现两个调用方竞争 invalidate 本身的锁?
+
+**v2.0.2 决议 (Oracle-P0-2e)**: 该协议**已废止** — ADR-DGPU-02 状态机无 reverse transition, board 一次性使用, `load_soc_config` 只能调一次, `invalidate()` 已 `[[deprecated]]`。因此:
+- 原并发 invalidate + get 的 TSAN 验证用例**不再需要** (无生产调用方)
+- 新增验证: `test_dgpu_board_ep_cache_shutdown_clear.cc` (2 case): 验证 destroy 路径 `ep_cache_.clear()` 后 get() 返 nullptr, 且 resolved_=false
+- `EpCache::invalidate()` 虽 deprecated, 保留作测试 hook; CI 用 `-Wno-deprecated-declarations` 抑制警告 (per ADR-DGPU-04 §7 R2)
+
+**回退方案**: 若未来 v2.1 引入 in-place reconfigure, 恢复 invalidate 协议并重新评估 race (届时引入 RCU 风格 deferred-free)。
+
+---
+
+#### 🟡 Oracle-3: DispatchRegistry priority 排序性能
+
+**问题**: `register_*_handler()` 每次触发 `std::stable_sort(entries_.begin(), entries_.end(), priority 降序)`, O(n log n)。如高频 register 场景下(init 多次, 或测试中反复 register), 累积开销是否可接受?
+
+**理论分析**:
+- `entries_` 通常 ≤ 10 项 (Legacy/AxiBypass/Tlp/Mock + D1 + BAR1 doorbell + 扩展), n log₂ n ≈ 33 比较
+- 单次 register < 1μs (现代 CPU)
+- init() 通常调一次, register 频率极低
+- per Oracle-P0-1a: read/write 分别注册, 但**匹配时按 bar 索引过滤** (`read_entries_by_bar_` / `write_entries_by_bar_`), 实际扫描更少
+
+**Oracle 评审输入**:
+- [ ] 性能基准: 1000 次 register/destroy 循环总耗时 < 1ms (单核 Linux x86_64)
+- [ ] 如不满足: 改为 `insert in priority order` (O(n) 但常数小), 或预排序
+
+**回退方案**: 性能不达预期时, 改为 `std::map<int, std::vector<Entry>>` (priority → entries) 数据结构, register O(log k), dispatch O(log k) + O(matched_in_bucket)。
+
+---
+
+#### 🟡 Oracle-4: 23 ABI guard 引入 -ENOSYS/-ESHUTDOWN 后的兼容性
+
+**问题**: ADR-DGPU-02 §6 声明 "23 ABI 语义 0 修改", 但 Inv-4 显式新增 -ENOSYS (未配置) / -ESHUTDOWN (关闭中) 返回值。现有 44498 assertions 是否假设了不同返回值?
+
+**风险场景**:
+- 测试假设 `mmio_read()` 在 SOC null 时返 0 (v1.0 隐式行为), 但 v2.0 返 -ENOSYS
+- 测试假设多次 `shutdown()` 幂等, 但 v2.0 lifecycle CAS 失败返 -EINVAL
+
+**Oracle 评审输入**:
+- [ ] `grep -rn "mmio_read\|mmio_write" test/` 现有测试是否检查返回值范围 (any-negative vs specific)
+- [ ] Phase B 增量迁移第一步: 在 init() 早期加 guard, 跑全量测试, 统计 fail 数
+- [ ] 如有 fail: 区分 (a) 测试代码需更新 (合规) vs (b) guard 引入副作用 (需修)
+
+**回退方案**: 如 fail 数 > 100, 考虑把 -ENOSYS 降级为 silent no-op (返 0), 但记录 metric (`board.metrics.unconfigured_abi_count++`)。
+
 ---
 
 ## 8. 度量与验证
@@ -443,18 +628,24 @@ extern "C" {
 - [ ] 新增 50 case (Lifecycle 16 + CallbackWorker 10 + DispatchRegistry 12 + EpCache 6 + PendingReqGuard 8 + NamespaceMigration 4) 100% PASS
 - [ ] 现有 44498 assertions 100% PASS (0 regression)
 - [ ] `openspec validate --changes --strict` PASS
-- [ ] `git diff HEAD -- include/abi/cpptlm_emulator.h` 为空 (23 ABI 字节级兼容)
+- [ ] `git diff HEAD -- include/abi/cpptlm_emulator.h` **仅含末尾追加块** (per Oracle v2.0.2 P0-3e 仲裁: 23 ABI 签名 0 diff + 允许末尾追加 24 号 ABI; 验证脚本见 §5.1)
 - [ ] `scripts/test/docs_sync_check.sh --strict` PASS
 - [ ] Oracle 评审通过 (per ADR-0025 P0 门禁)
 
-### 8.2 性能目标
+### 8.2 性能目标 (per Oracle-5 v2.0.1, 指标重定义)
 
-| 指标 | v1.0 baseline | v2.0 target |
-|------|---------------|-------------|
-| MSI-X burst 100 IRQ 处理时间 | 100ms (100 detached 线程) | < 5ms (worker task queue) |
-| mmio_read 同步延迟 (p99) | 50ms (timeout 上限) | < 1ms (新 dispatch) |
-| BAR0 显示路由延迟 | < 5us | < 5us (持平) |
-| 多卡 (4 卡) 并发 mmio 吞吐 | 1000 ops/s | > 5000 ops/s |
+**修订原因**: v1.0 "MSI-X burst 100 IRQ 100ms → 5ms" 瞄准错误基准——真实 driver 不 burst IRQ,关注 (a) 单 IRQ 回调延迟 P99 (b) 无丢弃前提下最大持续 IRQ 率 (c) 内存占用。新指标对齐真实 driver 关注点 (per ADR-DGPU-01 §7 Oracle-5 修订)。
+
+| 指标 | v1.0 baseline | v2.0 target | 测试方法 |
+|------|---------------|-------------|---------|
+| **单 IRQ 回调延迟 P99** | ~10us (detached 线程唤醒 + 上下文切换) | < 5us (queue 推入 + notify_one) | `perf_test_p99_irq_latency`: 触发 10000 IRQ, P99 延迟 |
+| **无丢弃最大持续 IRQ 率** | ∞ (永不丢弃, 但 UAF 风险) | ≥ 10000 IRQ/s (worker drain 速率) | `perf_test_sustained_irq_rate`: 监控 `irq_dropped_total_` |
+| **mmio_read 同步延迟 (p99)** | 50ms (timeout 上限) | < 1ms (新 dispatch) | 现有测试, 删除 mmio_regs_ 镜像路径 (per Oracle-4) |
+| **DMA 翻译 poll 延迟 P99** (新增) | N/A (无回调回路) | < 10us (callback 完成 → host poll 立即可见) | per Oracle-2, ADR-DGPU-01 §5.4 |
+| **BAR0 显示路由延迟** | < 5us | < 5us (持平) | 现有 D1 测试 |
+| **多卡 (4 卡) 并发 mmio 吞吐** | 1000 ops/s | > 5000 ops/s | 现有 D1 v1.1.1 测试 |
+| **未映射 BAR 延迟** (新增 per Oracle-4) | N/A (静默成功) | < 1us (立即返 -ENOSYS / 0xFF...FF) | `test_unmapped_bar_returns_error` |
+| **背压丢弃观测性** (新增 per Oracle-5) | 无 (v1.0 永不丢弃) | `irq_dropped_total_` 计数 + ErrorCallback (可选) | `test_backpressure_drop_notification` |
 
 ### 8.3 安全审计
 
@@ -486,6 +677,36 @@ extern "C" {
 - **PcieBarRouter** (`include/tlm/gpu/pcie_bar_router_mvp.hh`): data-driven 注册表设计参考
 - **PcieSriovVfPool** (`include/tlm/pcie/pcie_sriov_vf_pool_tlm.hh`): 资源所有权模式参考
 - **D1 v1.1.1 修订总结** (`docs/pcie/display-device-mvp.md`): Oracle 复审模式参考
+
+---
+
+## 0. 评审修订记录 (评审报告 R-*, 2027-02-09)
+
+本节记录评审周期内的所有修订,便于追踪文档债与一致性修复。
+
+| 修订 | 位置 | 原内容 | 修订内容 | 评审项 |
+|------|------|-------|---------|--------|
+| R-C1 | §3.3 DispatchRegistry API | `HandlerFn` (无限定) | `DispatchEntry::HandlerFn` (限定) | 命名空间统一,与 ADR-DGPU-03 §2.2 一致 |
+| R-C2 | §3.2 CallbackWorker 不变性 | 编号 1/3/4 跳号 | 编号 1/2/3/4 连续 | 与 ADR-DGPU-01 §3 Inv-1~Inv-4 对齐 |
+| R-C3 | §3.1 ABI 拒入规则 | 仅"下限"(≥ Configured) | 含"上限"(∈ [Configured, Running], ShuttingDown 拒) | 与 ADR-DGPU-02 §3 Inv-4 表一致 |
+| R-E1 | (配套 ADR-DGPU-04) §1.2 + §4.2 B4 | dynamic_cast 11 处 | dynamic_cast 12 处 (新增 398 行 pcie_config_write) | grep 验证事实修正 |
+| R-E2 | (配套 ADR-DGPU-01) §1.1 | `748-753` detached 位置 | `741-755` (`trigger_dma_translate_async` 起始) | grep 验证事实修正 |
+| R-R3 | (配套 ADR-DGPU-02) §2.1 | 仅 LifecycleProtocol 直接接口 | 新增 `DGpuBoard::lifecycle_is_at_least/current()` 转发方法 | §5.2 集成测试编译可行性 |
+| R-R1+R-R2 | (配套 ADR-DGPU-03) §2.2 | `parse_wptr` 未声明 + `*(uint64_t*)d` UB | 显式声明 `parse_wptr` 来源 + `len` 校验 + `std::memcpy` 替代 | 隐式依赖澄清 + UB 修复 |
+
+### Oracle v2.0.2 修订记录 (2027-02-09, P0 三项)
+
+Oracle 第二轮复审发现 P0 三项必修问题, 本轮 v2.0.2 修复:
+
+| 修订 | 位置 | 原内容 | 修订内容 | Oracle 项 |
+|------|------|-------|---------|----------|
+| **P0-1a** | §3.3 DispatchRegistry | 单一 `HandlerFn(int, uint64_t, const void*, size_t)` (data 是 const, handler 无法返 buf) | 拆 `ReadHandler(int, uint64_t, void* out_buf, size_t)` + `WriteHandler(...const void* data...)`; `DispatchEntry::Kind::{Read,Write}`; `dispatch_read`/`dispatch_write` 分离 | Oracle-P0-1 (mmio_read 数据回路) |
+| **P0-1b** | §3.3 注册顺序示例 | 单一 register_pcie_path | read/write 双注册示例 (D1 BAR0 read + write, Tlp read + write) | Oracle-P0-1 |
+| **P0-2e** | §2 Layer1 图 + §3.4 EpCache | "SOC reconfigure 后 invalidate" | 移除 reconfigure 语义; `invalidate()` 标 `[[deprecated]]`; 新增 `clear()` (shutdown 路径) | Oracle-P0-2 (文档自相矛盾) |
+| **P0-2e** | §7.1 Oracle-2 | "EpCache 失效协议 race" | 重写为 "一次性 resolve 协议", 原 race 测试废止 | Oracle-P0-2 |
+| **P0-3e** | §5.1 + §8.1 DoD | "git diff 必须为空" | "既有 23 ABI 签名 0 diff + 允许末尾追加 24 号 ABI"; 附验证脚本 | Oracle-P0-3 (DoD 仲裁) |
+
+**说明**: §3.2 CallbackWorker API 的 Oracle-1/2/5 更新在 v2.0.1 已完成 (见 ADR-DGPU-01 §2.1); 本节 v2.0.2 仅记录架构文档层面的 P0 修复。
 
 ---
 
