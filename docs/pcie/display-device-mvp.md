@@ -1,6 +1,8 @@
 # D1 Display IO 设备 MVP — 实现笔记
 
-> **状态**: ✅ v1.1 实施完成（2026-09-20）
+> **状态**: ✅ v1.1.1 修订完成（2026-09-23）
+> **v1.1 实施**: 2026-09-20（5 commits cc64b9d8 → 69e7ac45）
+> **v1.1.1 修订**: 2026-09-23（Oracle 复审 ses_f3620ca4effe0HziEXTIIexKkP + Task 1-7 实施）
 > **配套 openspec**: `openspec/changes/2026-09-20-cpptlm-pcie-display-io-mvp/`
 > **配套 tasks**: `openspec/changes/2026-09-20-cpptlm-pcie-display-io-mvp/tasks.md`
 > **配套设计**: `openspec/changes/2026-09-20-cpptlm-pcie-display-io-mvp/design.md`
@@ -147,11 +149,28 @@ cmake -DCPPTLM_LIB=/workspace/project/CppTLM/build/lib/libcpptlm_emulator.so
 - [x] `git diff HEAD -- include/abi/cpptlm_emulator.h` 空
 - [x] `grep -c '^uint32_t cpptlm_emulator_\|^int cpptlm_emulator_\|^void cpptlm_emulator_\|^cpptlm_emulator_t\* cpptlm_emulator_'` = 15
 - [x] `git log --oneline main..origin/main` 空（本地领先）
-- [ ] 完整 build 验证（`./build/bin/cpptlm_tests --reporter compact`）—— 需构建环境支持
-- [ ] D1 测试套件 100% PASS（T0 + T4）—— 需构建环境支持
+- [x] 完整 build 验证：`./build/bin/cpptlm_tests` 1496 case，1495 PASS（v1.1.1 修订后仅剩 1 个 pre-existing FAIL：`test_dgpu_board_shell_full_abi.cc:30` 测试 fixture bug，与 D1 无关）
+- [x] D1 测试套件 100% PASS：`[pcie][display]` 16 + `[pcie][display][basic]` 13 + `[pcie][display][vblank]` 7 + `[pcie][display][abi-shell][routing]` 3 = **39 case 全绿**（v1.1.1 修订后）
+
+## v1.1.1 修订总结（2026-09-23）
+
+| Task | 修复 | 状态 |
+|------|------|------|
+| Task 1 | 统一返回 0 契约（device 4 方法改返 0） | ✅ 完成 |
+| Task 2 | DEVICE_IDENTITY ctor 初始化 0x1002/0x0001 | ✅ 完成 |
+| Task 3 | fast-path 移到 power gate 之后（INV-A 不变量） | ✅ 完成 |
+| Task 4 | 路由开关 `display_routing_enabled_` 防劫持（root cause 4） | ✅ 完成 |
+| Task 5 | 新建 `test_pcie_display_device_basic.cc` + `test_pcie_display_device_vblank.cc` 共 20 case | ✅ 完成 |
+| Task 6 | `test_dgpu_board_shell_abi.cc` 新增 3 个 D1 routing 回归 case | ✅ 完成 |
+| Task 7 | 文档同步 + spec 验证清单更新 | ✅ 完成 |
+
+**Task 4 关键设计决策**：原计划方案 B（offset 范围限定）经核实不可行——dGPU BAR0 `0x0000` (GPU_REG_GPFIFO_PUT) + `0x0014` (GPU_REG_DOORBELL) 与 PcieDisplayDevice `0x00` (DEVICE_IDENTITY) + `0x14` (PIXEL_FORMAT) **完全冲突**，BAR 0 无 display-only 安全区。改为方案 A（显式 flag）。
+
+**Oracle 复审 session**: `ses_f3620ca4effe0HziEXTIIexKkP`（2026-09-22）
 
 ## 维护记录
 
 | 日期 | 版本 | 修订 |
 |------|------|------|
-| 2026-09-20 | v1.0 | D1 实施完成（5 步 TDD：T0 characterization + T1 device + T2 EP + T3 board + T4 E2E）|
+| 2026-09-20 | v1.0 | D1 实施完成（5 步 TDD：T0 characterization + T1 device + T2 EP + T3 board + T4 E2E） |
+| 2026-09-23 | v1.1.1 | Oracle 复审触发修订：4 根因修复 + 7 任务完成（Task 1-7）+ 39 case D1 测试全绿 + 新增 20 case（basic + vblank）+ 新增 3 case（abi-shell routing）|

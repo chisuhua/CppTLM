@@ -15,6 +15,7 @@
 | [02-transaction-architecture.md](./02-transaction-architecture.md) | ✅ 已批准 | 交易处理架构 |
 | [03-error-debug-architecture.md](./03-error-debug-architecture.md) | ✅ 已批准 | 错误与调试架构 |
 | [04-reset-checkpoint-architecture.md](./04-reset-checkpoint-architecture.md) | 📋 待确认 | 复位与快照架构 |
+| [14-dgpu-board-ideal-arch.md](./14-dgpu-board-ideal-arch.md) | 📋 提案 | DGpuBoard 理想架构 v2.0 (解决 2 H + 9 M 问题, 配套 ADR-DGPU-01~04) |
 | [2026-05-12-unified-visualization-platform.md](./2026-05-12-unified-visualization-platform.md) | ✅ 已批准 | 统一可视化平台 |
 
 ### 决策汇总

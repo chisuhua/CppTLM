@@ -37,6 +37,10 @@
 | [ADR-INC-01-incorporate-parent-late-binding.md](./ADR-INC-01-incorporate-parent-late-binding.md) | ApuSoC::incorporate_parent 真实 late-binding 语义 (1A+2A+3A + 双层幂等 + 软失败 + 命名可配置) | ✅ 已实施 | P1 (`04399c8`) |
 | [ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md](./ADR-LIB-01-cpptlm-library-python-higher-cluster-factories.md) | cpptlm.library Python 高级复合 cluster 工厂 API (`cpu_nested_cluster` / `memory_cluster_hierarchical` / `gpu_topology`) | ✅ 已实施 | F5 (`140fffd`) |
 | [ADR-METRIC-01-cputlm-cache-memory-telemetry.md](./ADR-METRIC-01-cputlm-cache-memory-telemetry.md) | CPUTLM/CacheTLM/MemoryTLM Telemetry 统计收集框架 (`system.{cpu,cache,memory}` 命名空间) | ✅ 已实施 | F10 (`66d9674`) |
+| [ADR-DGPU-01-callback-worker-replaces-detached-threads.md](./ADR-DGPU-01-callback-worker-replaces-detached-threads.md) | DGpuBoard CallbackWorker 单线程替代 3 处 detached 线程 (H1 use-after-free 修复) | 📋 提案 | W25-27 |
+| [ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md](./ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md) | DGpuBoard LifecycleProtocol 5 态状态机 + callback nullification 统一析构协议 (H2 修复) | 📋 提案 | W25-27 |
+| [ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md](./ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md) | DispatchRegistry data-driven 替代 4 态 hardcoded switch (M5 spec 名实不符修复) | 📋 提案 | W25-27 |
+| [ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md](./ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md) | DGpuSoc 命名空间统一 + EpCache lazy cache + friend class 测试隔离 | 📋 提案 | W25-27 |
 
 ### NV 级决策（NVIDIA GPU 仿真）
 
