@@ -77,6 +77,16 @@ public:
     // T-P12-1: 当前路径访问器 (测试用)
     PciePath pcie_path() const noexcept { return pcie_path_; }
 
+    // D1 v1.1.1: 路由开关（防劫持）— 默认 false，向后兼容
+    // 仅当 SOC 配置显式启用（"display_routing_enabled": true）才路由到 PcieDisplayDevice
+    // 避免 dGPU 自身 BAR0 寄存器（doorbell/GPFIFO_PUT）被劫持（root cause 4）
+    void set_display_routing_enabled(bool en) noexcept {
+        display_routing_enabled_ = en;
+    }
+    [[nodiscard]] bool display_routing_enabled() const noexcept {
+        return display_routing_enabled_;
+    }
+
     // T-P12-1: 测试 accessors
     // 验证 data ended up in endpoint bar_store_ (for axi_bypass/tlp paths)
     // 委托 pcie_ep()->bar_store_value()
@@ -240,6 +250,10 @@ private:
     // Stage 1.3a integration (P0 unblock Task 5+6):
     //   SdmaEngineTLM 引用 (set_sdma_engine 注入), 转发 BAR1 doorbell 到 SDMA ring
     ::tlm::gpu::SdmaEngineTLM* sdma_engine_ = nullptr;
+
+    // D1 v1.1.1: 路由开关 — 默认 false，load_soc_config 从 JSON 顶层读取 display_routing_enabled
+    // 防劫持：dGPU BAR0 自身寄存器（doorbell 0x14, GPFIFO_PUT 0x00）不被 device 误接管
+    bool display_routing_enabled_ = false;
 
     // ── 内部方法 ──
     void sim_loop();                              // sim 线程主循环

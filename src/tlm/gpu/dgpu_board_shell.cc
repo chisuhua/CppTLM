@@ -98,6 +98,13 @@ namespace tlm::gpu {
             // 注: StatsManager::register_group 需要 StatGroup* 指针,这里只验证 get_stats_path 接口
             // 实际注册 deferred T-bs-4(JSON 装配)
 
+            // D1 v1.1.1: 路由开关从 JSON 顶层读取（防劫持 root cause 4）
+            // 默认 false；D1 配置（dgpu_soc_with_pcie_ip.json）显式启用
+            if (board_cfg.contains("display_routing_enabled") &&
+                board_cfg["display_routing_enabled"].is_boolean()) {
+                display_routing_enabled_ = board_cfg["display_routing_enabled"].get<bool>();
+            }
+
             return true;
         } catch (...) {
             last_exception_ = std::current_exception(); // #8 异常捕获
@@ -228,19 +235,21 @@ namespace tlm::gpu {
         if (buf == nullptr) {
             return -EINVAL;
         }
+        // A-3: INV-A MMIO power-state gate (D3hot → -EIO) — D1 v1.1.1 移到 fast-path 之前
+        if (is_mmio_gated()) {
+            return -EIO;
+        }
         // D1 display-io-mvp fast-path: BAR 0 路由到 PcieDisplayDevice
         // (device 优先; 否则 fallback 到原 mmio_regs_ + inject_q_ async 路径)
-        if (bar == 0 && soc_) {
+        // D1 v1.1.1: 路由位置在 power gate 之后，保持 INV-A D3 门禁不变量
+        // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
+        if (display_routing_enabled_ && bar == 0 && soc_) {
             if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
                     soc_->getInternalInstance("pcie_ep"))) {
                 if (ep->has_display_device()) {
                     return ep->display_device().mmio_read(offset, buf, len);
                 }
             }
-        }
-        // A-3: INV-A MMIO power-state gate (D3hot → -EIO)
-        if (is_mmio_gated()) {
-            return -EIO;
         }
         PendingReq req;
         req.bar = bar;
@@ -298,21 +307,23 @@ namespace tlm::gpu {
         if (buf == nullptr) {
             return -EINVAL;
         }
+        // A-3: INV-A MMIO power-state gate (D3hot → -EIO, doorbell 例外)
+        // doorbell 写保持兼容 (per v1.2 spec Scenario "MMIO write D3 doorbell is allowed")
+        // D1 v1.1.1: gate 检查移到 fast-path 之前，保持 INV-A D3 门禁不变量
+        const bool is_doorbell = (bar == 1 && offset == kBar1DoorbellOffset);
+        if (!is_doorbell && is_mmio_gated()) {
+            return -EIO;
+        }
         // D1 display-io-mvp fast-path: BAR 0 路由到 PcieDisplayDevice
         // (device 优先; BAR 1 doorbell 仍走原 SDMA 路径)
-        if (bar == 0 && soc_) {
+        // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
+        if (display_routing_enabled_ && bar == 0 && soc_) {
             if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
                     soc_->getInternalInstance("pcie_ep"))) {
                 if (ep->has_display_device()) {
                     return ep->display_device().mmio_write(offset, buf, len);
                 }
             }
-        }
-        // A-3: INV-A MMIO power-state gate (D3hot → -EIO, doorbell 例外)
-        // doorbell 写保持兼容 (per v1.2 spec Scenario "MMIO write D3 doorbell is allowed")
-        const bool is_doorbell = (bar == 1 && offset == kBar1DoorbellOffset);
-        if (!is_doorbell && is_mmio_gated()) {
-            return -EIO;
         }
         // 修复 #5: 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
         std::vector<uint8_t> payload(static_cast<const uint8_t*>(buf),
@@ -405,7 +416,8 @@ namespace tlm::gpu {
             std::rethrow_exception(last_exception_); // #8 异常传递
         }
         // D1 display-io-mvp: 路由到 PcieDisplayDevice framebuffer (device 优先)
-        if (soc_) {
+        // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
+        if (display_routing_enabled_ && soc_) {
             if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
                     soc_->getInternalInstance("pcie_ep"))) {
                 if (ep->has_display_device()) {
@@ -444,7 +456,8 @@ namespace tlm::gpu {
             std::rethrow_exception(last_exception_); // #8 异常传递
         }
         // D1 display-io-mvp: 路由到 PcieDisplayDevice framebuffer (device 优先)
-        if (soc_) {
+        // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
+        if (display_routing_enabled_ && soc_) {
             if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
                     soc_->getInternalInstance("pcie_ep"))) {
                 if (ep->has_display_device()) {
