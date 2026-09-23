@@ -13,6 +13,12 @@ namespace tlm::gpu {
     PcieDisplayDevice::PcieDisplayDevice() {
         // registers_ zero-initialized by std::array default constructor
         // framebuffer_ empty (lazy alloc)
+        // D1 v1.1.1: DEVICE_IDENTITY 默认初始化（spec "DEVICE_IDENTITY read"）
+        // registers_[0..1] = kVendorId (0x1002 LE), [2..3] = kDeviceId (0x0001 LE)
+        uint16_t vid = kVendorId;
+        uint16_t did = kDeviceId;
+        std::memcpy(&registers_[0], &vid, sizeof(vid));
+        std::memcpy(&registers_[2], &did, sizeof(did));
     }
 
     // ── MMIO read/write (BAR 0) ──
@@ -26,7 +32,8 @@ namespace tlm::gpu {
             return -EINVAL;
         }
         std::memcpy(buf, &registers_[offset], len);
-        return static_cast<int>(len);
+        // D1 v1.1.1: 统一返回 0 契约（Oracle R7 冻结裁决 + ABI/board 一致）
+        return 0;
     }
 
     int PcieDisplayDevice::mmio_write(uint64_t offset, const void* buf, size_t len) {
@@ -79,7 +86,8 @@ namespace tlm::gpu {
             return -EINVAL;
         }
         std::memcpy(buf, &framebuffer_[offset], len);
-        return static_cast<int>(len);
+        // D1 v1.1.1: 统一返回 0 契约（与 mmio_read 对齐；Oracle R7 冻结裁决）
+        return 0;
     }
 
     int PcieDisplayDevice::backdoor_write(uint64_t offset, const void* buf, size_t len) {
@@ -91,7 +99,8 @@ namespace tlm::gpu {
             return -EINVAL;
         }
         std::memcpy(&framebuffer_[offset], buf, len);
-        return static_cast<int>(len);
+        // D1 v1.1.1: 统一返回 0 契约（与 mmio_write 对齐）
+        return 0;
     }
 
     // ── Tick (VBLANK 推进) ──
