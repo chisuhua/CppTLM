@@ -1,6 +1,8 @@
 {
   "name": "dgpu_soc_with_pcie_ip",
   "description": "CppTLM dGPU SOC + PCIe Endpoint IP 完整示例配置 (Phase 8 整合交付)。含 PcieEndpointIP (17 端口: 1 PF + 16 VF, 带 AXI StreamAdapter + AXI4Mapper 可选注入) + HostBypassTLM (软件 bring-up) + PcieRootComplexTLM (PCIe 枚举, PF0-only 简化模型)。参考 configs/apu_soc_v1.json + design.md §10 配置 Schema。",
+  "display_routing_enabled": true,
+  "_display_routing_comment": "D1 v1.1.1: 显式启用 PcieDisplayDevice 路由。默认 false（防劫持 doorbell/GPFIFO_PUT）。仅 D1 配置启用；其他 dGPU 配置保持 false。",
   "modules": [
     {
       "name": "pcie_ep",

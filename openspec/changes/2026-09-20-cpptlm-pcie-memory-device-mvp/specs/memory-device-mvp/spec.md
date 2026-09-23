@@ -1,7 +1,9 @@
-# Memory 设备 MVP Spec
+# Memory 设备 MVP Spec（v1.1 修订版）
 
 > **配套**: [proposal.md](../proposal.md) · [design.md](../design.md) · [tasks.md](../tasks.md)
 > **D2**: Memory 设备 MVP（区别 D1 Display IO 设备）
+> **v1.0 → v1.1 修正**（2026-09-23 Oracle 复审触发）：D1 v1.1.1 实施后 Oracle 复审（ses_f342ea637ffeDWYBBEQDUUE63U）发现 D2 设计含 3 个与 D1 root cause 4 同型盲点。本 spec 在原 ADDED Requirements 基础上，**新增 MODIFIED Requirements 段**修订 D2 v1.1 实施细节。
+> **方法**: TDD 6-step（T0 characterization → T0.5 路由 flag → T1 device → T2 EP → T3 board → T3.5 flag → T4 测试 → T5 docs）
 
 ## ADDED Requirements
 
@@ -171,3 +173,124 @@ D2 SHALL NOT modify either `pcie_endpoint_tlm.h` (PcieEndpointTLM 4 端口冻结
 本 spec 完全在 CppTLM 仓内可实现，**零依赖 ArchForge 仓**。
 - 设计参考可在 ArchForge 仓查阅（VIRTUAL_PATHS），但运行时不需要
 - UsrLinuxEmu 端构建 + 测试无需 clone ArchForge
+
+---
+
+## MODIFIED Requirements（v1.1 修订，2026-09-23）
+
+> **MODIFIED 语义**：以下 5 个 Requirement 对上方 ADDED Requirements 中的对应条款进行修订。修订前请阅读"原 ADDED Requirement 段落 + 修订理由"。
+
+### MODIFIED Requirement: 路由条件显式开关 `memory_routing_enabled_`（防劫持）
+
+**原 ADDED Requirement 关联**: §"Requirement: DGpuBoard 路由 BAR 2 到 PcieMemoryDevice" + §"Requirement: BAR 0 routing priority (display > memory)"（spec.md:105-133）
+
+**修改来源**: Oracle 复审根因 4 类比（D1 root cause 4 同型盲点，session ses_f342ea637ffeDWYBBEQDUUE63U）
+
+**WHERE**: `include/tlm/gpu/dgpu_board_shell.hh` + `src/tlm/gpu/dgpu_board_shell.cc`
+
+The DGpuBoard SHALL require `memory_routing_enabled_ == true` in addition to `soc_ && has_memory_device()` before routing BAR 0/2/backdoor to PcieMemoryDevice.
+
+The flag SHALL default to `false`. SOC configuration `dgpu_soc_with_memory_device.json` SHALL explicitly set `"memory_routing_enabled": true` to enable D2 routing. Other dGPU configurations SHALL keep the default `false` to preserve dGPU BAR0 registers (doorbell/GPFIFO_PUT/DISPLAY_MODE).
+
+(替代原 ADDED §"DGpuBoard 路由 BAR 2" 中隐含的"soc_ && ep && has_memory_device()"——dGPU 自身 BAR0 寄存器可能被 memory device 误劫持)
+
+#### Scenario: 未启用时 BAR 0 不被劫持
+- **WHEN**: `memory_routing_enabled_=false && has_memory_device()=true`
+- **THEN**: 驱动 `board.mmio_write(0, 0x10, val, 4)`（MEM_SIZE_LO）走 dGPU 原 BAR0 寄存器路径，**不**写入 PcieMemoryDevice
+
+#### Scenario: 启用时 memory device 接管 BAR 0/2
+- **WHEN**: `memory_routing_enabled_=true && has_memory_device()=true && has_display_device()=false`
+- **THEN**: 驱动 `board.mmio_write(0, 0x10, val, 4)` 写入 PcieMemoryDevice
+
+#### Scenario: 双 flag 同时启用时 BAR 0 D1 优先
+- **WHEN**: `display_routing_enabled_=true && memory_routing_enabled_=true && has_display_device()=true && has_memory_device()=true`，BAR 0 mmio_write
+- **THEN**: 走 D1 PcieDisplayDevice 路径（D1 优先于 D2 memory）
+
+#### Scenario: JSON 配置显式启用
+- **WHEN**: `examples/dgpu_soc_with_memory_device.json` 顶层含 `"memory_routing_enabled": true`
+- **THEN**: `DGpuBoard::init()` 末尾读取 JSON 字段并调 `set_memory_routing_enabled(true)`
+
+### MODIFIED Requirement: 返回值契约统一为"0 成功 / -errno 失败"
+
+**原 ADDED Requirement 关联**: §"Requirement: PcieMemoryDevice Class"（spec.md:8-51）
+
+**修改来源**: D1 v1.1.1 修订统一契约（Oracle R7 冻结裁决）
+
+**WHERE**: `PcieMemoryDevice::mmio_read/write` + `memory_read/write` + `backdoor_read/write`
+
+The four API methods SHALL return `0` on success and negative errno (`-EINVAL`, etc.) on failure. The return value SHALL NOT indicate byte count transferred.
+
+#### Scenario: mmio_read 4 字节成功- **WHEN**: 驱动发起 `dev.mmio_read(0x10, buf, 4)`
+- **THEN**: 返回 `0`（不是 4），buf 填入 4 字节设备状态
+
+#### Scenario: memory_read 256 字节成功
+- **WHEN**: 驱动发起 `dev.memory_read(0x10000, buf, 256)`
+- **THEN**: 返回 `0`（不是 256），buf 填入 256 字节 memory backing 数据
+
+### MODIFIED Requirement: DEVICE_IDENTITY 默认初始化
+
+**原 ADDED Requirement 关联**: §"Requirement: PcieMemoryDevice Class" + §"Scenario: DEVICE_IDENTITY read"（spec.md:8-51）
+
+**修改来源**: D1 v1.1.1 修订根因 2（D1 同型问题）
+
+**WHERE**: `PcieMemoryDevice::PcieMemoryDevice()` 构造函数
+
+The memory device identity SHALL be initialized at construction time:
+- `registers_[0..1]` SHALL contain `kVendorId` (0x1002) in little-endian encoding
+- `registers_[2..3]` SHALL contain `kDeviceId` (0x0002, 区别 D1 的 0x0001) in little-endian encoding
+
+#### Scenario: 构造后立即读 identity
+- **WHEN**: `PcieMemoryDevice dev; dev.mmio_read(0x00, &vid, 2);`
+- **THEN**: 返回 `0`，`vid == 0x1002`
+
+### MODIFIED Requirement: fast-path 路由顺序——power gate 在前
+
+**原 ADDED Requirement 关联**: §"Requirement: DGpuBoard 路由 BAR 2 到 PcieMemoryDevice"
+
+**修改来源**: D1 v1.1.1 修订根因 3（D1 同型问题）
+
+**WHERE**: `src/tlm/gpu/dgpu_board_shell.cc::mmio_read` + `mmio_write` + `backdoor_read/write`
+
+The DGpuBoard fast-path routing to PcieMemoryDevice SHALL occur **after** the `is_mmio_gated()` power-state gate check. This preserves the INV-A invariant: D3 power state → BAR 0/2 mmio SHALL return `-EIO` regardless of memory device presence.
+
+#### Scenario: D3 power state 下 BAR 0/2 mmio_read 返 -EIO
+- **WHEN**: `memory_routing_enabled_=true && ep->power_state()==D3hot`
+- **THEN**: `board.mmio_read(0/2, 0x10, buf, 4)` 返回 `-EIO`（不路由 device）
+
+### MODIFIED Requirement: BAR 0 routing priority 明确化
+
+**原 ADDED Requirement 关联**: §"Requirement: BAR 0 routing priority (display > memory)"（spec.md:122-133）
+
+**修改来源**: v1.1 修订决策（与 D1 v1.1.1 对称）
+
+**WHERE**: `src/tlm/gpu/dgpu_board_shell.cc::mmio_read/write`
+
+The DGpuBoard BAR 0 routing priority SHALL be:
+1. **`display_routing_enabled_=true && has_display_device()=true`** → PcieDisplayDevice（**D1 优先**）
+2. **`memory_routing_enabled_=true && has_memory_device()=true`**（display 不可用或 routing 关闭）→ PcieMemoryDevice（D2 兜底）
+3. 其他 → shell-local `mmio_regs_` map fallback
+
+#### Scenario: 双 device 同时启用时 D1 优先（D1 root cause 4 防御）
+- **WHEN**: `display_routing_enabled_=true && memory_routing_enabled_=true && has_display_device()=true && has_memory_device()=true`，BAR 0 offset 0x10 mmio_write
+- **THEN**: 写入 PcieDisplayDevice::kRegDisplayMode（**不**写入 PcieMemoryDevice::kRegMemSizeLo）
+
+#### Scenario: 仅 D2 启用时 D2 接管 BAR 0
+- **WHEN**: `display_routing_enabled_=false && memory_routing_enabled_=true && has_display_device()=true && has_memory_device()=true`
+- **THEN**: 驱动 BAR 0 mmio_write 写入 PcieMemoryDevice（DISPLAY_DEVICE 即使存在也不路由）
+
+#### Scenario: 仅 D1 启用时 D1 接管 BAR 0
+- **WHEN**: `display_routing_enabled_=true && memory_routing_enabled_=false`，BAR 0 mmio_write
+- **THEN**: 走 D1 PcieDisplayDevice（与 v1.1.1 一致）
+
+---
+
+## v1.0 → v1.1 主要修正（spec 层面，2026-09-23 Oracle 复审触发）
+
+| v1.0 措辞 | v1.1 修正 | 修订来源 |
+|----------|------------|----------|
+| `mmio_read/write` 路由 BAR 0/2（条件：`soc_ && ep && has_memory_device()`） | + `memory_routing_enabled_` flag（默认 false） | D1 root cause 4 同型 |
+| 返回值隐含"返字节数" | 返 0 成功 / -errno 失败（与 D1 v1.1.1 统一） | D1 v1.1.1 修订 |
+| DEVICE_IDENTITY "设备自管身份"（运行时填充假设） | ctor 写 0x1002/0x0002 到 registers_[0..3] | D1 v1.1.1 同型 |
+| fast-path 路由（无条件优先） | 在 `is_mmio_gated()` 检查之后 | D1 v1.1.1 同型 |
+| "display 优先，memory 兜底"（模糊） | 显式三段 priority：display → memory → fallback | v1.1 决策 |
+| 5 个 ADDED Requirement | + 5 个 MODIFIED Requirement | 修订 |

@@ -373,6 +373,92 @@ D2 不新增 `cpptlm_emulator_*` 函数。所有 D2 路由变更在 `DGpuBoard` 
 
 ---
 
+## §10 v1.1 修订段（2026-09-23 Oracle D1 实施后复审触发）
+
+> **触发事件**：D1 v1.1.1 实施后 Oracle 复审（ses_f342ea637ffeDWYBBEQDUUE63U）发现 D2 设计含 3 个与 D1 root cause 4 同型盲点（无条件路由劫持）。
+> **修订理由**：D1 v1.1.1 已建立 `display_routing_enabled_` flag 模板；D2 必须对称实施 `memory_routing_enabled_` flag，避免重复踩劫持坑。
+
+### §10.1 路由开关设计（v1.1 新增）
+
+**`memory_routing_enabled_` flag 设计**（与 D1 v1.1.1 `display_routing_enabled_` 对称）：
+
+```cpp
+// include/tlm/gpu/dgpu_board_shell.hh 新增
+class DGpuBoard {
+public:
+    void set_memory_routing_enabled(bool en) noexcept {
+        memory_routing_enabled_ = en;
+    }
+    [[nodiscard]] bool memory_routing_enabled() const noexcept {
+        return memory_routing_enabled_;
+    }
+
+private:
+    bool memory_routing_enabled_ = false;  // 默认 false，向后兼容
+};
+
+// src/tlm/gpu/dgpu_board_shell.cc mmio_read fast-path
+if (memory_routing_enabled_ && bar == 0 && soc_) {  // D2 BAR 0 路由
+    if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
+            soc_->getInternalInstance("pcie_ep"))) {
+        if (ep->has_memory_device()) {
+            return ep->memory_device().mmio_read(offset, buf, len);
+        }
+    }
+}
+
+// BAR 2 路由同上 + bar == 2 条件
+
+// load_soc_config() 末尾读 JSON 顶层 memory_routing_enabled 字段
+if (board_cfg.contains("memory_routing_enabled") &&
+    board_cfg["memory_routing_enabled"].is_boolean()) {
+    memory_routing_enabled_ = board_cfg["memory_routing_enabled"].get<bool>();
+}
+
+// examples/dgpu_soc_with_memory_device.json 顶层加
+{
+  "memory_routing_enabled": true,
+  "_memory_routing_comment": "D2 v1.1: 显式启用 memory device 路由。默认 false（防劫持 doorbell/GPFIFO_PUT/DISPLAY_MODE）。仅 D2 配置启用。"
+}
+```
+
+### §10.2 BAR 0 路由 priority 明确（v1.1 修订）
+
+D2 与 D1 都用 BAR 0：
+- D1 BAR 0: 4KB MMIO (DEVICE_IDENTITY 0x00-0x0F, DISPLAY_MODE 0x10, PIXEL_FORMAT 0x14, ..., SCRATCH 0xF0-0xFF)
+- D2 BAR 0: 4KB MMIO (DEVICE_IDENTITY 0x00-0x0F, MEM_SIZE_LO 0x10, MEM_SIZE_HI 0x14, ..., SCRATCH 0xF0-0xFF)
+
+**offset 冲突表**（D1 v1.1.1 root cause 4 经验）：
+
+| Offset | D1 (display) | D2 (memory) |
+|-------|--------------|-------------|
+| 0x00-0x0F | DEVICE_IDENTITY R | DEVICE_IDENTITY R |
+| **0x10** | **DISPLAY_MODE RW** | **MEM_SIZE_LO RW** |
+| **0x14** | **PIXEL_FORMAT RW** | **MEM_SIZE_HI RW** |
+| 0x20-0x2C | fb_* | MEM_BASE_*/MEM_SIZE |
+| 0xF0-0xFF | SCRATCH | SCRATCH |
+
+**决策**：D1 device 优先（已有 `display_routing_enabled=true` 时不路由 D2）。D2 路由生效仅当 D1 display 不可用（无 device 或 routing 关闭）。这样保证 dGPU BAR 0 GPU 寄存器（GPFIFO_PUT/doorbell）不被 D2 memory device 误劫持。
+
+### §10.3 测试设计补充（v1.1）
+
+| 测试 | 标签 | 覆盖 |
+|------|------|------|
+| **T0.5 routing flag 组合**（v1.1 新增）| `[pcie][memory][routing][a3][display]` | `display_routing_enabled=true` + `memory_routing_enabled=true` + BAR 0 0x00/0x14 行为锁定（D1 优先） |
+
+### §10.4 v1.1 → v1.0 主要决策变化
+
+| 维度 | v1.0 提案 | v1.1 修订 |
+|------|----------|------------|
+| BAR 0 路由条件 | `soc_ && ep && has_memory_device()` | `memory_routing_enabled_ && soc_ && ep && has_memory_device()` |
+| `display_routing_enabled=true` + `memory_routing_enabled=true` 组合 | 未明确 | 明确：D1 device 优先（D1 fast-path 先执行） |
+| 测试覆盖 | T0 + T1 + T2 + T3 + T4 + T5 = 6 步 | T0 + **T0.5** + T1 + T2 + T3 + **T3.5** + T4 + T5 = **8 步** |
+| Risk R1（路由 priority 冲突） | 🟡 中（"display 优先"未指定机制） | 🔴 高（v1.1 flag 强制隔离） |
+
+---
+
 **D2 设计依据**:
 - D1 设计（`2026-09-20-cpptlm-pcie-display-io-mvp`）
+- D1 v1.1.1 实施经验（`openspec/specs/display-io-mvp/spec.md`）
 - 实测验证（`dgpu_board_shell.cc` line 223-440, `pcie_endpoint_ip.hh`）
+- Oracle 复审 session `ses_f342ea637ffeDWYBBEQDUUE63U`

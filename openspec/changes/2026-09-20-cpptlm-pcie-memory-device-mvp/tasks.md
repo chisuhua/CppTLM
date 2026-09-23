@@ -1,8 +1,10 @@
-# Tasks: Memory 设备 MVP
+# Tasks: Memory 设备 MVP（v1.1 修订版）
 
 > **配套**: [proposal.md](proposal.md) · [design.md](design.md) · [specs/memory-device-mvp/spec.md](specs/memory-device-mvp/spec.md)
-> **方法**: TDD 5-step（先写 regression characterization test，再 GREEN）
-> **工期**: 3-4 工作日（比 D1 短，因复用 D1 路由框架）
+> **v1.1 修订触发**: D1 v1.1.1 Oracle 复审（ses_f342ea637ffeDWYBBEQDUUE63U）发现 D2 设计含 3 个与 D1 root cause 4 同型盲点
+> **v1.1 修订**: 引入 `memory_routing_enabled_` flag（与 D1 v1.1.1 `display_routing_enabled_` 对称）+ T0.5 路由 flag 组合测试 + T3.5 flag 实施任务
+> **方法**: TDD 6-step（T0 characterization → T0.5 路由 flag → T1 device → T2 EP → T3 board → T3.5 flag → T4 测试 → T5 docs）
+> **工期**: 3.5 工作日（原 3-4 天 + v1.1 修订 +0.5 天）
 
 ## Step 0: Characterization Test（**先写**，防回归）
 
@@ -155,7 +157,7 @@ openspec validate --changes --strict
 - 内容:
   - 寄存器布局 + ABI 路由关系
   - D2 与 D1/D3 边界
-  - UsrLinuxEmu 端验证方法（启动命令 + 预期输出）
+  - **v1.1 标注**：`memory_routing_enabled_` flag 决策 + 与 D1 v1.1.1 对称
 
 ### T5.2 AGENTS.md 更新
 - "WHERE TO LOOK" 表: 添加 `[memory]` 标签
@@ -163,12 +165,14 @@ openspec validate --changes --strict
 
 ### T5.3 提交策略
 ```bash
-# 6 个独立 commit
+# 7 个独立 commit（v1.1 新增 1 个 T3.5）
 git commit -m "test(characterization): 锁定 DGpuBoard BAR 2 未映射行为防 D2 回归"
+git commit -m "test(routing): D2 v1.1 routing flag 组合测试（防劫持 root cause 4）"
 git commit -m "feat(pcie): 新增 PcieMemoryDevice 类（BAR 0 寄存器 + BAR 2 8GB backing）"
 git commit -m "feat(pcie): PcieEndpointIP 注入 memory_device + tick() 推进"
-git commit -m "refactor(board): DGpuBoard 路由 BAR 2 到 PcieMemoryDevice"
-git commit -m "test(pcie): D2 单元测试 + E2E（basic + backing + routing + e2e）"
+git commit -m "refactor(board): DGpuBoard 路由 BAR 0/2 到 PcieMemoryDevice"
+git commit -m "feat(board): memory_routing_enabled_ 路由开关（D1 v1.1.1 对称防劫持）"
+git commit -m "test(pcie): D2 单元测试 + E2E + ABI routing 回归"
 git commit -m "docs(pcie): 新增 memory-device-mvp.md + AGENTS.md 更新"
 ```
 
@@ -176,18 +180,21 @@ git commit -m "docs(pcie): 新增 memory-device-mvp.md + AGENTS.md 更新"
 
 | Task | 估时 | 累计 |
 |------|------|------|
-| T0 characterization | 2h | 2h |
-| T1 device 骨架 | 4h | 6h |
-| T2 EP 注入 | 3h | 9h |
-| T3 board 路由 | 3h | 12h |
-| T4 E2E + ABI 验证 | 3h | 15h |
-| T5 docs + commits | 2h | 17h |
-| **合计** | **~17h ≈ 3 工作日** | |
+| T0 characterization | 1h | 1h |
+| **T0.5 路由 flag 组合测试（v1.1 新增）** | 1h | 2h |
+| T1 device 骨架 | 3h | 5h |
+| T2 EP 注入 | 2h | 7h |
+| T3 board 路由 BAR 0/2 | 3h | 10h |
+| **T3.5 memory_routing_enabled_ flag（v1.1 新增）** | 2h | 12h |
+| T4 E2E + ABI 验证 | 2h | 14h |
+| T5 docs + commits | 1.5h | 15.5h |
+| **合计** | **~15.5h ≈ 3.5 工作日** | |
 
 ## 验证清单
 
-- [ ] 4 个新增 test cases 全绿
-- [ ] 现有 test cases 仍全绿
+- [ ] 4 个新增 test cases 全绿（basic + backing + e2e + characterization）
+- [ ] **v1.1 新增**：T0.5 路由 flag 组合测试全绿
+- [ ] 现有 test cases 仍全绿（含 D1 v1.1.1 39 case）
 - [ ] openspec validate --changes --strict PASS（6/6）
 - [ ] docs_sync_check --strict PASS
 - [ ] `git diff HEAD -- include/abi/cpptlm_emulator.h` 为空
@@ -195,11 +202,13 @@ git commit -m "docs(pcie): 新增 memory-device-mvp.md + AGENTS.md 更新"
 - [ ] 4 callback typedef 不变
 - [ ] `include/tlm/gpu/pcie_endpoint_tlm.h` 冻结头未触碰
 - [ ] `include/tlm/gpu/pcie_display_device.hh` 未修改（D1 保持不变）
+- [ ] **v1.1 新增**：`memory_routing_enabled_` 默认 false；`dgpu_soc_with_memory_device.json` 显式启用
+- [ ] **v1.1 新增**：BAR 0 routing 在 `display_routing_enabled=true` + `memory_routing_enabled=true` 组合下，D1 优先（D1 v1.1.1 路由测试 PASS）
 
 ## 不在 D2 范围（deferred）
 
 | 项 | 后置阶段 |
-|----|---------|
+|------|---------|
 | GPU 计算集成 | 不实现 |
 | MSI-X 中断 | 不实现 |
 | GMMU PoC | D3 |
@@ -216,5 +225,16 @@ git commit -m "docs(pcie): 新增 memory-device-mvp.md + AGENTS.md 更新"
 | VBLANK | 有 | 无 |
 | BAR 1 | 32MB framebuffer | N/A |
 | BAR 2 | N/A | 8GB memory backing |
-| 路由 priority | display_device 优先 | display 优先，memory 兜底 |
+| 路由开关 | `display_routing_enabled_`（D1 v1.1.1） | `memory_routing_enabled_`（D2 v1.1 对称） |
+| 路由 priority | display | D1 display 优先 → D2 memory 兜底 |
 | tick() 行为 | 推进 VBLANK + 触发 MSI-X | 仅推进 cycle_counter_ |
+
+## v1.1 → v1.0 主要修正（Oracle 复审触发）
+
+| v1.0 提案 | v1.1 修订 |
+|----------|------------|
+| "memory 其后"路由 priority（隐含无条件劫持） | 显式 `memory_routing_enabled_` flag，默认 false |
+| T0 仅测 BAR 2 未映射 | T0.5 新增：路由 flag 组合测试（display+memory 双启用时 BAR 0 行为） |
+| 6 个 commit | 7 个 commit（新增 T3.5 flag commit） |
+| 风险 R1 "display 优先" 中等 | R1 提升到 🔴 高 + flag 防劫持 |
+| 估算 17h (3 工作日) | 估算 15.5h (3.5 工作日，含 v1.1 修订 +0.5h flag）|
