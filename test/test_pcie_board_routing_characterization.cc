@@ -34,7 +34,7 @@ TEST_CASE("DGpuBoard mmio_read/write without SOC uses mmio_regs_ map (roundtrip)
     REQUIRE(board.mmio_write(0, 0x100, write_data.data(), write_data.size()) == 0);
 
     std::vector<uint8_t> read_data(16, 0x00);
-    REQUIRE(board.mmio_read(0, 0x100, read_data.data(), read_data.size()) == 16);
+    REQUIRE(board.mmio_read(0, 0x100, read_data.data(), read_data.size()) == 0);
     REQUIRE(read_data == write_data);
 
     board.shutdown();
@@ -119,9 +119,9 @@ TEST_CASE("DGpuBoard mmio_regs_ map survives across BAR/offset writes (no device
 
     // 分别读回, 互不干扰
     std::vector<uint8_t> ra(4), rb(4), rc(4);
-    REQUIRE(board.mmio_read(0, 0x10, ra.data(), 4) == 4);
-    REQUIRE(board.mmio_read(0, 0x20, rb.data(), 4) == 4);
-    REQUIRE(board.mmio_read(1, 0x10, rc.data(), 4) == 4);
+    REQUIRE(board.mmio_read(0, 0x10, ra.data(), 4) == 0);
+    REQUIRE(board.mmio_read(0, 0x20, rb.data(), 4) == 0);
+    REQUIRE(board.mmio_read(1, 0x10, rc.data(), 4) == 0);
     REQUIRE(ra == a);
     REQUIRE(rb == b);
     REQUIRE(rc == c);

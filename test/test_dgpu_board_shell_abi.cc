@@ -251,3 +251,41 @@ TEST_CASE("DGpuBoard: tick drains injection queue across 100 pending reqs withou
 
     board.shutdown();
 }
+
+// ============================================================================
+// D1 v1.1.1 Task 6: ABI shell 层面 D1 routing 回归测试
+// 覆盖 spec §6 "驱动验证闭环"
+// ============================================================================
+
+// D1 routing: DGpuBoard fast-path guarded (routing_enabled without SOC → fallback)
+TEST_CASE("D1 routing: DGpuBoard fast-path guarded when no SOC (routing enabled)",
+          "[pcie][display][abi-shell][routing]") {
+    DGpuBoard board("d1_routing_test");
+    board.set_display_routing_enabled(true);
+
+    uint32_t val = 0;
+    int rc = board.mmio_read(0, 0x10, &val, sizeof(val));
+    REQUIRE(rc == 0);
+    board.shutdown();
+}
+
+TEST_CASE("D1 routing: DGpuBoard fast-path disabled (routing_enabled=false → no hijack)",
+          "[pcie][display][abi-shell][routing]") {
+    DGpuBoard board("d1_no_hijack_test");
+    REQUIRE_FALSE(board.display_routing_enabled());
+
+    uint32_t val = 0xCAFEBABE;
+    int rc = board.mmio_write(0, 0x00, &val, sizeof(val));
+    REQUIRE(rc == 0);
+    board.shutdown();
+}
+
+TEST_CASE("D1 routing: set_display_routing_enabled accessor round-trip",
+          "[pcie][display][abi-shell][routing]") {
+    DGpuBoard board("d1_accessor_test");
+    REQUIRE_FALSE(board.display_routing_enabled());
+    board.set_display_routing_enabled(true);
+    REQUIRE(board.display_routing_enabled());
+    board.set_display_routing_enabled(false);
+    REQUIRE_FALSE(board.display_routing_enabled());
+}

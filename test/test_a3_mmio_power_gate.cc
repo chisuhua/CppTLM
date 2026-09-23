@@ -98,3 +98,40 @@ TEST_CASE("A-3: mmio_write D3 to doorbell is allowed (compatibility bypass)", "[
     REQUIRE(rc == 0);  // doorbell 例外
     board.shutdown();
 }
+
+// D1 v1.1.1 Task 2: power gate 优先于 display_routing_enabled fast-path
+// 防 root cause 3+4 交叉回归（Oracle 复审 ses_f342ea637ffeDWYBBEQDUUE63U）
+TEST_CASE("A-3: D3 power gate applies even with display_routing_enabled",
+          "[a3][pcie][unblock][display][routing]") {
+    DGpuBoard board("a3_d3_display_routing");
+    REQUIRE(board.load_soc_config(dgpu_mini_cfg()));
+    board.set_display_routing_enabled(true);
+    REQUIRE(board.init());
+
+    auto* ep = board.pcie_ep();
+    REQUIRE(ep != nullptr);
+    ep->set_power_state(tlm::pcie::PcieEndpointIP::PciePowerState::D3hot);
+    REQUIRE(board.is_mmio_gated());
+
+    uint32_t val = 0;
+    const int rc = board.mmio_write(0, 0, &val, 4);
+    REQUIRE(rc == -EIO);
+    board.shutdown();
+}
+
+TEST_CASE("A-3: D3 power gate applies to mmio_read with display_routing_enabled",
+          "[a3][pcie][unblock][display][routing]") {
+    DGpuBoard board("a3_d3_display_routing_read");
+    REQUIRE(board.load_soc_config(dgpu_mini_cfg()));
+    board.set_display_routing_enabled(true);
+    REQUIRE(board.init());
+
+    auto* ep = board.pcie_ep();
+    REQUIRE(ep != nullptr);
+    ep->set_power_state(tlm::pcie::PcieEndpointIP::PciePowerState::D3hot);
+
+    uint32_t val = 0;
+    const int rc = board.mmio_read(0, 0, &val, 4);
+    REQUIRE(rc == -EIO);
+    board.shutdown();
+}

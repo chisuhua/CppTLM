@@ -13,6 +13,7 @@
 
 #include <catch_amalgamated.hpp>
 #include "tlm/gpu/dgpu_board_shell.hh"
+#include "tlm/gpu/msix_table_mvp.hh"
 #include "tlm/gpu/pcie_display_device.hh"
 
 using namespace tlm::gpu;
@@ -29,7 +30,7 @@ TEST_CASE("PcieDisplayDevice standalone: BAR 0 mmio roundtrip",
     // Read back
     uint32_t read_val = 0;
     REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegDisplayMode,
-                           &read_val, sizeof(read_val)) == static_cast<int>(sizeof(read_val)));
+                           &read_val, sizeof(read_val)) == 0);
     REQUIRE(read_val == 2);
 }
 
@@ -45,32 +46,31 @@ TEST_CASE("PcieDisplayDevice standalone: BAR 0 RO registers reject writes",
     // VENDOR_ID still 0x1002
     uint16_t vendor = 0;
     REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegDeviceIdentity,
-                          &vendor, sizeof(vendor)) == sizeof(vendor));
+                          &vendor, sizeof(vendor)) == 0);
     REQUIRE(vendor == PcieDisplayDevice::kVendorId);
 }
 
 TEST_CASE("PcieDisplayDevice standalone: STATUS W1C semantics",
           "[pcie][display][e2e]") {
     PcieDisplayDevice dev;
-    // Force VBLANK pending via tick
+    MsiXTable msix(1);
+
     for (int i = 0; i < 1024; ++i) {
-        // We can't tick without msix, so manually set bit
-        // (skip VBLANK-trigger for this test; use msix dummy)
+        dev.tick(msix);
     }
-    // Manually set VBLANK pending for test
-    // (via direct register manipulation in real code path is via tick)
+
     uint8_t status = 0;
     REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegStatus,
-                          &status, sizeof(status)) == sizeof(status));
-    // pending bit may or may not be set (depends on tick state)
-    // Write 1 to STATUS_CLEAR
-    uint8_t clear_byte = 0xFF;  // set all bits
+                          &status, sizeof(status)) == 0);
+    REQUIRE((status & PcieDisplayDevice::kStatusVblankPending) ==
+            PcieDisplayDevice::kStatusVblankPending);
+
+    uint8_t clear_byte = 0xFF;
     REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegStatusClear,
                             &clear_byte, sizeof(clear_byte)) == 0);
-    // Read status again - pending should be cleared
     REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegStatus,
-                          &status, sizeof(status)) == sizeof(status));
-    REQUIRE((status & 0x01) == 0);  // VBLANK pending cleared
+                          &status, sizeof(status)) == 0);
+    REQUIRE((status & PcieDisplayDevice::kStatusVblankPending) == 0);
 }
 
 TEST_CASE("PcieDisplayDevice standalone: BAR 1 framebuffer roundtrip",
@@ -83,7 +83,7 @@ TEST_CASE("PcieDisplayDevice standalone: BAR 1 framebuffer roundtrip",
         write_data[i] = static_cast<uint8_t>(i * 7 + 13);
     }
     REQUIRE(dev.backdoor_write(0x10000, write_data.data(), write_data.size())
-            == static_cast<int>(write_data.size()));
+            == 0);
 
     // Read back
     std::vector<uint8_t> read_data(256, 0xFF);
@@ -122,7 +122,7 @@ TEST_CASE("DGpuBoard without SOC: still uses mmio_regs_ map (regression for T0)"
     REQUIRE(board.mmio_write(0, 0x100, write_data.data(), write_data.size()) == 0);
 
     std::vector<uint8_t> read_data(16, 0x00);
-    REQUIRE(board.mmio_read(0, 0x100, read_data.data(), read_data.size()) == 16);
+    REQUIRE(board.mmio_read(0, 0x100, read_data.data(), read_data.size()) == 0);
     REQUIRE(read_data == write_data);
 
     board.shutdown();
