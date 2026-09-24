@@ -1,14 +1,8 @@
-# minimal-dgpu-soc-test-coverage: v1.0 测试覆盖补全
+# minimal-dgpu-soc-test-coverage Specification
 
-> **所属 change**: [`cpptlm-minimal-dgpu-soc-v1-test-coverage`](../proposal.md)
-> **范围**: v1.0 主 change 推迟的测试任务 (C1.1/C1.2/C1.3 + C2.1/C2.3 E2E)
-> **关联 spec**: `minimal-dgpu-soc` (v1.0 主 spec,引用其 Scenario 作基线)
-> **不变量来源**: 沿用 v1.0 spec `minimal-dgpu-soc` 的 6 条不变量 + §8 Inv-1~6 verbatim
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change cpptlm-minimal-dgpu-soc-v1-test-coverage. Update Purpose after archive.
+## Requirements
 ### Requirement: tag-aggregation-summary
 
 聚合 v1.0 主 change 引入的全部标签 SHALL 同时跑通,确认所有模块单元测试齐绿。
@@ -71,15 +65,3 @@ PT_BASE LO/HI 写 race SHALL 锁定中间态可被 translate 接受的行为 (pe
 
 ---
 
-## MODIFIED Requirements
-
-> **MODIFIED 语义**: 本 change 仅扩展测试覆盖, 不修改 v1.0 spec 既有 behavior. 引用而非复制 v1.0 spec 的 6 个 Requirement (`gmmu-single-level-translation`, `gmmu-mmio-register-interface`, `memory-tlm-backing-store`, `framebuffer-single-backing`, `bar1-storage-routing`, `sdma-gmmu-translate-injection`) 作为基线, 通过新增 requirement 增补其边界覆盖.
-
----
-
-## 兼容性约束 (引用, 非 Requirement)
-
-- **15 ABI 字节级兼容** — `git diff HEAD -- include/abi/cpptlm_emulator.h` 必须为空
-- **既有 66805 assertions 零回归** (per v1.0 主 change AC9)
-- C2.1-C2.4 E2E 测试失败走 cpptlm-debug SKILL 6 步独立定位 (**Oracle 2027-02-10**: T-bs-4 已完成, 不再预设 SIGSEGV 前提; 真实根因优先级 (1) framebuffer 挂载, (2) SDMA/GMMU/PCIeEP 数据通路)
-- v1.0 主 change 的 tasks.md 推迟项 (C1.x/C2.x) 在本 change 完成并 archive 后标 `won't do` 并补一行理由
