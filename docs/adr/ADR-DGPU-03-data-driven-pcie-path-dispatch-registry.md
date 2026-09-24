@@ -608,3 +608,13 @@ TEST_CASE("DGpuBoard mmio_write routes via DispatchRegistry") {
 
 **维护**: CppTLM 开发团队
 **状态**: 📋 提案
+---
+
+## Status Update
+
+> 2027-02-10 前置清理已完成（per openspec/changes/cpptlm-dgpu-board-abi-hygiene change）
+
+- **B4 (移除 `dispatch_mmio_to_pcie` switch) 前置清理已落地**：v1.0 中的 `DGpuBoard::dispatch_mmio_to_pcie` 4 态空 switch 与上方的 `// ── T-P12-1: dispatch_mmio_to_pcie ──` 分区注释、`mmio_write` 中的调用行、以及 `dgpu_board_shell.hh:257` 公共声明，**均已在 change `cpptlm-dgpu-board-abi-hygiene` (Wave 3b) 中整体删除**（探针：`grep -rn "dispatch_mmio_to_pcie" src/ include/ test/` 返 0；零行为变更验证：`[pcie-bypass-tlp]` 17/3 PASS + 全量 66864/1553 零回归）。
+- **本 ADR 仍为 📋 提案**：B4 后续的"由 registry 替代"工作（DispatchEntry / ReadHandler / WriteHandler 双签名 / Scope 优先级）尚未实施。该工作将在 ADR 落地阶段（计划 W25-27）展开，前置清理为零冲突起点。
+- **不变性保留**：`PciePath` 枚举（4 态 `Legacy`/`AxiBypass`/`Tlp`/`Mock`）、`pcie_path_` 成员、`attach_profile()` 与 `pcie_path()` accessor 全部保留；`endpoint_bar_store_value` 保留；`PcieEndpointIP` 短名生产注册补回（Wave 3.0，已修复 `msix_*`/`pcie_config_*` 在短名 config 下静默 -ENOSYS 的 bug）。
+- **历史记录不可修改**：本 ADR §1-§8 内容未做任何文字修改（per AGENTS.md "ADR 不可变" 规则）。

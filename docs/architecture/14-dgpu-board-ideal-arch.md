@@ -229,7 +229,9 @@ private:
 
 ### 3.3 DispatchRegistry (data-driven dispatch)
 
-**问题** (v1.0 M5): `dispatch_mmio_to_pcie` 4 态 switch 都是空 break (`dgpu_board_shell.cc:775-800`),spec 名实不符。T-P12-2 E2E 测试必失败。
+> **2027-02-10 状态更新**: B4 前置清理已完成（per change `cpptlm-dgpu-board-abi-hygiene` Wave 3b）—— `DGpuBoard::dispatch_mmio_to_pcie` 4 态空 switch + 上方分区注释 + `mmio_write` 调用行 + `dgpu_board_shell.hh:257` 公共声明均已整体删除（`grep -rn "dispatch_mmio_to_pcie" src/ include/ test/` 返 0；零行为变更验证：`[pcie-bypass-tlp]` 17/3 PASS + 全量 66864/1553 零回归）。**M5 问题已消除**；`PciePath` 4 态枚举与 `attach_profile()`/`pcie_path()` accessor 仍保留以维持既有测试契约。
+
+**问题** (v1.0 M5, 已被前置清理): `dispatch_mmio_to_pcie` 4 态 switch 都是空 break (`dgpu_board_shell.cc:775-800`),spec 名实不符。T-P12-2 E2E 测试必失败。
 
 **方案**: data-driven DispatchRegistry (类比 `PcieBarRouter`, **per Oracle v2.0.2 P0-1a 拆 read/write 双签名**):
 
