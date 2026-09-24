@@ -1,0 +1,50 @@
+{
+  "name": "dgpu_soc_minimal_v1",
+  "description": "Minimal dGPU SoC v1.0 test config (per openspec/changes/cpptlm-minimal-dgpu-soc-v1 B1.3). 16MB framebuffer for test, both storage/gmmu routing flags enabled.",
+  "display_routing_enabled": false,
+  "storage_routing_enabled": true,
+  "gmmu_routing_enabled": true,
+  "framebuffer_size_bytes": 16777216,
+  "modules": [
+    {
+      "name": "soc",
+      "type": "DGpuSoc",
+      "modules": [
+        {
+          "name": "pcie_ep",
+          "type": "PcieEndpointIP",
+          "params": {
+            "config_size": 4096,
+            "num_msix_vectors": 16,
+            "bar_sizes": [4096, 16777216],
+            "bar0_registers": [
+              { "offset": 0,  "name": "GMMU_PT_BASE_LO", "access": "rw" },
+              { "offset": 4,  "name": "GMMU_PT_BASE_HI", "access": "rw" },
+              { "offset": 8,  "name": "GMMU_CTRL",      "access": "rw" },
+              { "offset": 16, "name": "SDMA_STATUS",    "access": "ro" }
+            ]
+          }
+        },
+        {
+          "name": "sdma",
+          "type": "SdmaEngineTLM",
+          "params": { "max_inflight": 4, "vram_size_bytes": 16777216 }
+        },
+        {
+          "name": "gmmu",
+          "type": "GmmuTLM",
+          "params": { "page_size_bytes": 4096 }
+        },
+        {
+          "name": "memory",
+          "type": "MemoryTLM",
+          "params": { "capacity_gb": 1 }
+        },
+        {
+          "name": "completion",
+          "type": "CompletionRingTLM"
+        }
+      ]
+    }
+  ]
+}

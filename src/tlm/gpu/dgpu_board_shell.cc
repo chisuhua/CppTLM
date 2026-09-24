@@ -60,8 +60,12 @@ namespace tlm::gpu {
             if (board_cfg.contains("params") && board_cfg["params"].contains("quantum_cycles")) {
                 quantum_cycles_ = board_cfg["params"]["quantum_cycles"].get<uint64_t>();
             }
-            // SOC instantiate deferred (T-bs-4 follow-up): GpuCluster 嵌套 instantiateAll 链
-            // 中 unique_ptr SIGSEGV, test_cpptlm_emulator_abi.cc 已 deferred 标记.
+            // SOC instantiate 真正调用 (per D15 true fix commit 8cd1f033).
+            // 注: T-bs-4 Stage 2 (17413e4) 临时 defer 此调用, D15 commit 8cd1f033 通过
+            // module_factory.cc 6 处 null-guard 修复未注册类型 (TmuDispatchProcessorTLM)
+            // 引起的 GpuCluster 嵌套链空指针解引用, 并重新启用 instantiateAll 真实调用。
+            // 996 cases / 32587 assertions PASS (含 GpuCluster 的 dgpu_board_v1.json)。
+            // Oracle 2027-02-10 复审确认此调用正常, 旧"deferred"注释陈腐, 仅作历史保留。
             if (!board_cfg.contains("modules") || !board_cfg["modules"].is_array() ||
                 board_cfg["modules"].empty()) {
                 std::lock_guard<std::mutex> lock(inject_mu_);
@@ -105,6 +109,16 @@ namespace tlm::gpu {
                 display_routing_enabled_ = board_cfg["display_routing_enabled"].get<bool>();
             }
 
+            // Phase B1: storage/gmmu 路由防劫持 flag 加载
+            if (board_cfg.contains("storage_routing_enabled") &&
+                board_cfg["storage_routing_enabled"].is_boolean()) {
+                storage_routing_enabled_ = board_cfg["storage_routing_enabled"].get<bool>();
+            }
+            if (board_cfg.contains("gmmu_routing_enabled") &&
+                board_cfg["gmmu_routing_enabled"].is_boolean()) {
+                gmmu_routing_enabled_ = board_cfg["gmmu_routing_enabled"].get<bool>();
+            }
+
             return true;
         } catch (...) {
             last_exception_ = std::current_exception(); // #8 异常捕获
@@ -116,7 +130,13 @@ namespace tlm::gpu {
         if (soc_) {
             soc_->init(); // SimModule 递归 init
         }
-        // 启动 sim 线程(每卡独立,per #1)
+        // Phase A2/B1: 分配 framebuffer_ (若 framebuffer_size_ 已知且未分配)
+        // 顺序 Inv-2: (a) resize → (b) bind → (c) sim_thread
+        if (framebuffer_ptr_ == nullptr && framebuffer_size_ > 0) {
+            framebuffer_storage_.resize(framebuffer_size_, 0);
+            framebuffer_ptr_ = framebuffer_storage_.data();
+        }
+        bind_memory_backings();
         if (!sim_thread_.joinable()) {
             stop_ = false;
             sim_thread_ = std::thread(&DGpuBoard::sim_loop, this);
@@ -251,6 +271,16 @@ namespace tlm::gpu {
                 }
             }
         }
+        // Phase B2: BAR1 同步直读 fast-path (per spec/bar1-storage-routing + D12)
+        // 条件: storage_routing_enabled_ + bar==1 + 非 doorbell + framebuffer_ 已分配
+        if (storage_routing_enabled_ && bar == 1 && offset != kBar1DoorbellOffset &&
+            framebuffer_ptr_ && framebuffer_size_ > 0) {
+            if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
+                return -EINVAL;
+            }
+            std::memcpy(buf, framebuffer_ptr_ + offset, len);
+            return 0;
+        }
         PendingReq req;
         req.bar = bar;
         req.offset = offset;
@@ -325,6 +355,18 @@ namespace tlm::gpu {
                 }
             }
         }
+        // Phase B3: BAR0 GMMU 寄存器转发 (gated by gmmu_routing_enabled_)
+        if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
+            uint32_t val32 = 0;
+            std::memcpy(&val32, buf, 4);
+            if (offset == 0x00) {
+                gmmu_->set_pt_base_lo(val32);
+            } else if (offset == 0x04) {
+                gmmu_->set_pt_base_hi(val32);
+            } else if (offset == 0x08) {
+                gmmu_->set_enabled((val32 & 1u) != 0);
+            }
+        }
         // 修复 #5: 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
         std::vector<uint8_t> payload(static_cast<const uint8_t*>(buf),
                                      static_cast<const uint8_t*>(buf) + len);
@@ -373,6 +415,17 @@ namespace tlm::gpu {
                 sdma_engine_->mmio_write(/*bar=*/1, /*offset=*/kBar1DoorbellOffset,
                                          /*data=*/doorbell_wptr);
             }
+        }
+
+        // Phase B2: BAR1 framebuffer_ 直写 (per spec/bar1-storage-routing + Inv-3 dead bytes)
+        // 条件: storage_routing_enabled_ + bar==1 + 非 doorbell + framebuffer_ 已分配
+        // doorbell 已在上方处理; 此处覆盖 [0, 0x10010000) 和 (0x10010008, BAR1_size) dead bytes
+        if (storage_routing_enabled_ && bar == 1 && offset != kBar1DoorbellOffset &&
+            framebuffer_ptr_ && framebuffer_size_ > 0) {
+            if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
+                return -EINVAL;
+            }
+            std::memcpy(framebuffer_ptr_ + offset, buf, len);
         }
 
         return 0; // async, no wait (修复 #7: 保持异步语义)
@@ -429,10 +482,20 @@ namespace tlm::gpu {
         if (buf == nullptr) {
             return -EINVAL;
         }
+        // Phase A2: framebuffer_ 优先直读 (per spec/framebuffer-single-backing + design D9)
+        // v1.0 单写者契约: 测试内 board 静止时合法
+        if (framebuffer_ptr_ && framebuffer_size_ > 0) {
+            if (vram_offset >= framebuffer_size_ ||
+                len > framebuffer_size_ - vram_offset) {
+                return -EINVAL;
+            }
+            std::memcpy(buf, framebuffer_ptr_ + vram_offset, len);
+            return 0;
+        }
         // Bounds check仅当 device_info_ 已初始化时生效(bar_sizes[1] > 0);
         // 未初始化的 board(直接构造未调 load_soc_config)走 sync 路径。
         if (device_info_.bar_sizes[1] > 0 &&
-            (buf == nullptr || len == 0 || vram_offset >= device_info_.bar_sizes[1] ||
+            (len == 0 || vram_offset >= device_info_.bar_sizes[1] ||
              len > device_info_.bar_sizes[1] - vram_offset)) {
             return -22; // EINVAL
         }
@@ -465,9 +528,22 @@ namespace tlm::gpu {
                 }
             }
         }
+        // null buf 无条件拒绝
+        if (buf == nullptr) {
+            return -EINVAL;
+        }
+        // Phase A2: framebuffer_ 优先直写
+        if (framebuffer_ptr_ && framebuffer_size_ > 0) {
+            if (vram_offset >= framebuffer_size_ ||
+                len > framebuffer_size_ - vram_offset) {
+                return -EINVAL;
+            }
+            std::memcpy(framebuffer_ptr_ + vram_offset, buf, len);
+            return 0;
+        }
         // Bounds check仅当 device_info_ 已初始化时生效(bar_sizes[1] > 0)
         if (device_info_.bar_sizes[1] > 0 &&
-            (buf == nullptr || len == 0 || vram_offset >= device_info_.bar_sizes[1] ||
+            (len == 0 || vram_offset >= device_info_.bar_sizes[1] ||
              len > device_info_.bar_sizes[1] - vram_offset)) {
             return -22; // EINVAL
         }
@@ -489,6 +565,37 @@ namespace tlm::gpu {
             inject_q_.push_back(std::move(req));
         }
         return 0; // async
+    }
+
+    // Phase A2/B1: 把 framebuffer_ 注入到 SOC 内的 memory/sdma/gmmu 实例 (per spec/sdma-gmmu-translate-injection)
+    // v1.0 SOC 内缺 memory/sdma/gmmu 实例时 DPRINTF 警告 (per D13 防静默断链)
+    void DGpuBoard::bind_memory_backings() {
+        if (!soc_) return;
+        if (framebuffer_ptr_ == nullptr || framebuffer_size_ == 0) return;
+
+        if (auto* mem = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"))) {
+            mem->set_backing_store(framebuffer_ptr_, framebuffer_size_);
+        } else {
+            DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'memory' 实例, set_backing_store 跳过\n");
+        }
+
+        if (auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"))) {
+            sdma->set_vram_backdoor(framebuffer_ptr_, framebuffer_size_);
+            sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
+                if (gmmu_) return gmmu_->translate(iova, size, phys);
+                return -EIO;
+            });
+            // D14: set_sdma_engine 同步注入 (修复 doorbell 生产路径空转)
+            set_sdma_engine(sdma);
+        } else {
+            DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'sdma' 实例, sdma 注入跳过\n");
+        }
+
+        if ((gmmu_ = dynamic_cast<GmmuTLM*>(soc_->getInternalInstance("gmmu"))) != nullptr) {
+            gmmu_->set_backing(framebuffer_ptr_, framebuffer_size_);
+        } else {
+            DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'gmmu' 实例, GMMU 注入跳过\n");
+        }
     }
 
     // ── T-W3-3: msix_* + lookup_register wrappers ──

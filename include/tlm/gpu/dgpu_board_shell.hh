@@ -1,15 +1,19 @@
 // DGpuBoard - C++ shell(非数据面组件),承担 23 ABI 接口 + 5 职责 + 线程模型
 // Per board-soc-split design §2 + §2.5 thread model + ADR-SOC-07 D1/D7
-// Owner: CppTLM Team · Date: 2026-08-31
+// v2.0.3: 新增 framebuffer_ 单一 backing + 两 routing flag (storage/gmmu)
+//         per openspec/changes/cpptlm-minimal-dgpu-soc-v1 A2
+// Owner: CppTLM Team · Date: 2026-08-31 (v2.0.3: 2027-02-09)
 #ifndef CPPTLM_DGPU_BOARD_SHELL_H
 #define CPPTLM_DGPU_BOARD_SHELL_H
 
 #include "event_queue.hh"
 #include "tlm/gpu/dgpu_soc.hh"  // DGpuSoc SimModule 容器
+#include "tlm/gpu/gmmu_tlm.hh"  // GmmuTLM (Phase A2: BAR0 GMMU forwarding)
 #include "tlm/gpu/pcie_endpoint_tlm.h"  // PcieEndpointTLM (legacy, 仅 frozen ABI 兼容)
 #include "tlm/pcie/pcie_endpoint_ip.hh"  // PcieEndpointIP (A-2 Path A: pcie_ep accessor 返回类型)
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include "tlm/gpu/sdma_engine_tlm.hh"  // SdmaEngineTLM (P0 unblock Task 5+6: BAR1 doorbell wiring)
+#include "tlm/memory_tlm.hh"  // MemoryTLM (Phase A1: backing-store API)
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -215,6 +219,17 @@ public:
     void set_msix_coalesce_timeout(std::chrono::microseconds timeout);
     std::chrono::microseconds msix_coalesce_timeout() const { return msix_coalesce_timeout_; }
 
+    // ── Phase A2/B1/B2/B3 framebuffer + 路由 flag ──
+    void bind_memory_backings();
+    void set_storage_routing_enabled(bool en) noexcept { storage_routing_enabled_ = en; }
+    [[nodiscard]] bool storage_routing_enabled() const noexcept { return storage_routing_enabled_; }
+    void set_gmmu_routing_enabled(bool en) noexcept { gmmu_routing_enabled_ = en; }
+    [[nodiscard]] bool gmmu_routing_enabled() const noexcept { return gmmu_routing_enabled_; }
+    void attach_framebuffer_for_testing(uint8_t* ptr, uint64_t size) noexcept {
+        framebuffer_ptr_ = ptr;
+        framebuffer_size_ = size;
+    }
+
 private:
     // ── 线程模型字段(per design §2.5) ──
     std::string name_;
@@ -254,6 +269,23 @@ private:
     // D1 v1.1.1: 路由开关 — 默认 false，load_soc_config 从 JSON 顶层读取 display_routing_enabled
     // 防劫持：dGPU BAR0 自身寄存器（doorbell 0x14, GPFIFO_PUT 0x00）不被 device 误接管
     bool display_routing_enabled_ = false;
+
+    // D13 (per spec): 路由防劫持 flags — 默认 false (向后兼容)
+    // storage_routing_enabled_: BAR1 非 doorbell 读写落 framebuffer_ 存储路由 (per B2)
+    // gmmu_routing_enabled_:   BAR0 off<0x100 转发到 GmmuTLM 寄存器 (per B3)
+    bool storage_routing_enabled_ = false;
+    bool gmmu_routing_enabled_ = false;
+
+    // Phase A2: framebuffer_ 单一 backing 真源 (per gem5 PhysicalMemory 模式)
+    // 初始化顺序 Inv-2: resize → bind_memory_backings → sim_thread_
+    uint8_t* framebuffer_ptr_ = nullptr;
+    uint64_t framebuffer_size_ = 0;
+    GmmuTLM* gmmu_ = nullptr;  // 解析自 soc_::getInternalInstance("gmmu"), bind 时缓存
+    std::vector<uint8_t> framebuffer_storage_;  // init() 自动分配时使用
+
+    // ── framebuffer + backdoor 改造 (per spec/framebuffer-single-backing) ──
+    // bind_memory_backings: 把 framebuffer_ 注入到 SOC 内的 memory/sdma/gmmu 实例
+    // (per design D14 + spec/sdma-gmmu-translate-injection)
 
     // ── 内部方法 ──
     void sim_loop();                              // sim 线程主循环

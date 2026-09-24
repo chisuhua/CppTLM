@@ -2,8 +2,10 @@
 // MemoryTLM：基于 ch_stream 语义的简化 Memory 模块（v2.1 新式模型）
 // 功能描述：作为 CacheTLM 下游模块，接收请求后返回模拟响应
 //           用于验证 StreamAdapter 完整数据通路
+//           v2.2: 新增 backing-store 注入 + 零时 memcpy 路径
+//           (per openspec/changes/cpptlm-minimal-dgpu-soc-v1 A1)
 // 作者 CppTLM Team
-// 日期 2026-04-12
+// 日期 2026-04-12 (v2.2: 2027-02-09)
 #ifndef TLM_MEMORY_TLM_HH
 #define TLM_MEMORY_TLM_HH
 
@@ -12,12 +14,19 @@
 #include "framework/stream_adapter.hh"
 #include "metrics/stats.hh"
 #include <cstdint>
+#include <cstring>
 
 class MemoryTLM : public ChStreamModuleBase {
 private:
     cpptlm::InputStreamAdapter<bundles::CacheReqBundle> req_in_;
     cpptlm::OutputStreamAdapter<bundles::CacheRespBundle> resp_out_;
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
+
+    // backing-store 注入 (v2.2, per spec/memory-tlm-backing-store)
+    // nullptr = legacy 路径 (0xDEADBEEF + latency 采样); 非空 = 零时 memcpy 路径
+    uint8_t* backing_ptr_ = nullptr;
+    uint64_t backing_size_ = 0;
+    uint64_t size_cap_ = 0;  // set_size_bytes 上限 (0 = 用 backing_size_)
 
     // 性能统计
     tlm_stats::StatGroup stats_;
@@ -67,37 +76,85 @@ public:
         return "system.memory";
     }
 
+    // v2.2: backing-store API (per spec/memory-tlm-backing-store)
+    // backing 已注入: tick() 走零时 memcpy 路径
+    // backing == nullptr: 保留 v2.1 legacy 行为 (0xDEADBEEF + latency 采样)
+    void set_backing_store(uint8_t* ptr, uint64_t size_bytes) noexcept {
+        backing_ptr_ = ptr;
+        backing_size_ = size_bytes;
+        if (size_cap_ == 0) size_cap_ = size_bytes;
+    }
+    void set_size_bytes(uint64_t sz) noexcept { size_cap_ = sz; }
+    uint8_t* host_addr(uint64_t offset) const noexcept {
+        return backing_ptr_ ? (backing_ptr_ + offset) : nullptr;
+    }
+    uint64_t backing_size() const noexcept { return backing_size_; }
+    bool has_backing() const noexcept { return backing_ptr_ != nullptr; }
+
+    // on_config_loaded: 从 cfg.params 读 capacity_gb 换算 → size_cap_
+    void on_config_loaded() override {
+        // capacity_gb 是 memory.params 的可选字段; 缺失时保持 size_cap_ (派生自 backing)
+        // 此接口留作 v1.1 扩展 (JSON params 显式约束)
+        // 当前实现: 不动 size_cap_, 由调用方在 set_backing_store 之前/之后调
+    }
+
     void tick() override {
         if (req_in_.valid() && req_in_.ready()) {
             const auto& req = req_in_.data();
             bool is_write = req.is_write.read();
-
-            // 统计：读/写请求
-            if (is_write) {
-                ++stats_requests_write_;
-                stats_latency_write_.sample(120); // 模拟写延迟
-            } else {
-                ++stats_requests_read_;
-                stats_latency_read_.sample(100); // 模拟读延迟
-            }
-
-            // 模拟行缓冲命中（基于地址位简单模拟）
             uint64_t addr = req.address.read();
-            bool row_hit = (addr & 0xF000) == 0; // 地址低 16KB 为行缓冲命中
-
-            if (row_hit) {
-                ++stats_row_hits_;
-            } else {
-                ++stats_row_misses_;
-            }
+            uint64_t tid = req.transaction_id.read();
 
             bundles::CacheRespBundle resp;
-            resp.transaction_id.write(req.transaction_id.read());
-            resp.data.write(0xDEADBEEF);
-            resp.is_hit.write(row_hit ? 1 : 0);
-            resp.error_code.write(0);
-            resp_out_.write(resp);
-            req_in_.consume();
+            resp.transaction_id.write(tid);
+
+            if (backing_ptr_ != nullptr) {
+                // ── v2.2 backing 零时路径 (per spec/memory-tlm-backing-store) ──
+                const uint64_t sz = req.size.read();
+                const uint64_t cap = size_cap_ ? size_cap_ : backing_size_;
+                if (addr + sz > cap) {
+                    resp.error_code.write(1);  // OUT_OF_RANGE
+                    resp.is_hit.write(0);
+                    resp.data.write(0);
+                } else if (is_write) {
+                    // 写: req.data 是 ch_uint<64> = 8 字节, sz > 8 截断
+                    uint64_t val = req.data.read();
+                    std::memcpy(backing_ptr_ + addr, &val, std::min<size_t>(sz, 8));
+                    resp.error_code.write(0);
+                    resp.is_hit.write(1);
+                    resp.data.write(0);
+                    ++stats_requests_write_;
+                } else {
+                    // 读: 直读 backing
+                    uint64_t val = 0;
+                    std::memcpy(&val, backing_ptr_ + addr, std::min<size_t>(sz, 8));
+                    resp.error_code.write(0);
+                    resp.is_hit.write(1);
+                    resp.data.write(val);
+                    ++stats_requests_read_;
+                }
+                resp_out_.write(resp);
+                req_in_.consume();
+            } else {
+                // ── v2.1 legacy 路径 (per D3 防回归硬约束, 逐字节保留) ──
+                if (is_write) {
+                    ++stats_requests_write_;
+                    stats_latency_write_.sample(120);
+                } else {
+                    ++stats_requests_read_;
+                    stats_latency_read_.sample(100);
+                }
+
+                bool row_hit = (addr & 0xF000) == 0;
+                if (row_hit) ++stats_row_hits_;
+                else ++stats_row_misses_;
+
+                resp.data.write(0xDEADBEEF);
+                resp.is_hit.write(row_hit ? 1 : 0);
+                resp.error_code.write(0);
+                resp_out_.write(resp);
+                req_in_.consume();
+            }
         }
         if (adapter_)
             adapter_->tick();
