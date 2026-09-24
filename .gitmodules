@@ -1,6 +1,3 @@
-[submodule "external/CppHDL"]
-	path = external/CppHDL
-	url = https://github.com/chisuhua/CppHDL.git
 [submodule "external/PTX-EMU"]
 	path = external/PTX-EMU
 	url = https://github.com/chisuhua/PTX-EMU.git
