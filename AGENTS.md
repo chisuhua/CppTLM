@@ -47,7 +47,7 @@ include/                 # 所有 .hh 头文件（src/ 仅放 .cc, 无混用）
     command_processor_mvp.hh / async_completion_adapter.hh
     gpu_cluster_shared_interface.hh
     pcie_endpoint_tlm.h        # PcieEndpointTLM 4 端口冻结 (Phase 7.A, [[deprecated]])
-    sdma_engine_tlm.hh / msix_table_mvp.hh / pcie_config_space_mvp.hh
+    sdma_engine_tlm.hh / msix_table_mvp.hh / pcie_config_space_mvp.hh / gmmu_tlm.hh
     # [[deprecated]] 类 (Task 10): vector_regfile_tlm / minimal_warp_scheduler_tlm / wavefront_tlm (已删除, Task 16)
   tlm/pcie/              # ★ 7 阶段 PCIe EP 微架构 (本项目主体,2026-2027)
     pcie_link_layer_tlm.{hh,cc}                # Phase 1: 链路层 + DLLP + FC Token Bucket

@@ -63,8 +63,8 @@ TEST_CASE("ABI: mmio_* / pcie_config_* return -ENOSYS or EINVAL on "
 }
 
 TEST_CASE("ABI: create / destroy / get_device_count lifecycle", "[abi][lifecycle]") {
-    // create 调用 load_soc_config (SIGSEGV 已修复 per D15 commit 17413e4).
-    // load_soc_config 已 defer SOC instantiate (T-bs-4 follow-up),返回 true.
+    // create 调用 load_soc_config (D15 true fix commit 8cd1f033, 996 cases 全绿).
+    // load_soc_config 真实调用 soc_->simulate_instantiate(soc_cfg), 17413e4 defer 已废止.
     // 实际: create 失败时 create 返回 nullptr, 注册表 size 仍为 0.
     // 期望: create 返回 nullptr 或非-null, registry size 跟踪.
     uint32_t before = cpptlm_emulator_get_device_count();
