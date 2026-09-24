@@ -95,8 +95,6 @@ public:
     // 验证 data ended up in endpoint bar_store_ (for axi_bypass/tlp paths)
     // 委托 pcie_ep()->bar_store_value()
     uint64_t endpoint_bar_store_value(uint8_t bar, uint16_t bdf, uint64_t offset) const;
-    // 验证链路层无 TLP 发出 (axi_bypass 路径)
-    size_t link_layer_tx_tlp_out_count() const;
 
     // 5 职责接口(per ADR-SOC-07 D1)
     explicit DGpuBoard(const std::string& name, EventQueue* eq = nullptr);
@@ -138,6 +136,10 @@ public:
             return nullptr;
         return dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
     }
+
+    // sdma_engine accessor: 返回 SOC 内 SdmaEngineTLM 实例 (bind_memory_backings 注入;
+    // init() 前/nullptr 当 SOC 未实例化或未注入)。只读, 供测试直达底层 SDMA 数据面。
+    ::tlm::gpu::SdmaEngineTLM* sdma_engine() const noexcept { return sdma_engine_; }
 
     // A-3: MMIO power-state gate — D3hot 时返 true (per INV-A MMIO gating)
     // 委托 pcie_ep->mmio_gated(); 非 IP 类型返 false
@@ -249,8 +251,6 @@ private:
 
     // T-P12-1: 4 态 PCIe 路径选路
     PciePath pcie_path_ = PciePath::Legacy;
-    // T-P12-1: mmio_write 按路径分发
-    void dispatch_mmio_to_pcie(uint8_t bar, uint64_t offset, const void* data, std::size_t len);
 
     // ── 回调(per #4 non-blocking) ──
     IrqCallback irq_cb_;

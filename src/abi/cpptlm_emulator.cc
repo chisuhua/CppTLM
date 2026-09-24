@@ -4,11 +4,8 @@
 // Author: CppTLM Team
 // Date: 2026-08-29 (修订版: 2027-09-17, per ADR-SOC-20 §2.1)
 //
-// 已知约束 (per T-bs-4 stage-1 deprecation):
-//   - DGpuBoard shell 当前不直接暴露 msix_*/lookup_register 方法
-//     (deferred T-bs-4 follow-up)
-//   - set_*_callback 使用 std::function + 不带 user_ctx, 与 ABI 函数指针
-//     签名不匹配, 这里用 lambda 捕获 user_ctx (per-handle storage)
+// 注: set_*_callback 使用 std::function + 不带 user_ctx, 与 ABI 函数指针
+// 签名不匹配, 这里用 lambda 捕获 user_ctx (per-handle storage)。
 
 #include "abi/cpptlm_emulator.h"
 
@@ -59,6 +56,18 @@ struct cpptlm_emulator_s {
 
 namespace {
 
+    // ABI 统一异常翻译: 保持既有语义 (std::exception → -EINVAL; ... → -EFAULT)。
+    // 仅适用于返回 int 的 ABI 函数; create() 返 nullptr 的语义除外。
+    template <typename Fn> int abi_guard(Fn&& fn) {
+        try {
+            return fn();
+        } catch (const std::exception&) {
+            return -EINVAL;
+        } catch (...) {
+            return -EFAULT;
+        }
+    }
+
     std::mutex registry_mu_;
     std::unordered_map<uint32_t, cpptlm_emulator_t*> registry_;
     std::atomic<uint32_t> next_dev_id_{1};
@@ -106,9 +115,6 @@ namespace {
 
 extern "C" {
 
-// 版本号: cpptlm_emulator_get_version 函数已删除, 改用 CPPTLM_EMULATOR_VERSION_STRING 宏
-// (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming, 修订版)
-
 CPPTLM_EMULATOR_EXPORT
 uint32_t cpptlm_emulator_get_device_count(void) {
     std::lock_guard<std::mutex> lk(registry_mu_);
@@ -121,7 +127,7 @@ int cpptlm_emulator_get_device_info(uint32_t dev_id, cpptlm_device_info_t* out_i
         return -EINVAL;
     }
     std::memset(out_info, 0, sizeof(*out_info));
-    try {
+    return abi_guard([&] {
         cpptlm_emulator_t* emu = lookup(dev_id);
         if (emu == nullptr) {
             return -ENOENT;
@@ -146,11 +152,7 @@ int cpptlm_emulator_get_device_info(uint32_t dev_id, cpptlm_device_info_t* out_i
             }
         }
         return 0;
-    } catch (const std::exception&) {
-        return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
-    }
+    });
 }
 
 CPPTLM_EMULATOR_EXPORT
@@ -175,9 +177,6 @@ cpptlm_emulator_t* cpptlm_emulator_create(const char* profile_path) {
 }
 
 CPPTLM_EMULATOR_EXPORT
-// cpptlm_emulator_create_by_id 已删除 (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming):
-// 与 cpptlm_emulator_create 重叠, 驱动可调 get_device_info + create 两步
-// open() 内部已调整: 调 create() + resolve_profile_path() 保持 dev_id 语义
 void cpptlm_emulator_destroy(cpptlm_emulator_t* emu) {
     if (emu == nullptr) {
         return;
@@ -202,103 +201,61 @@ void cpptlm_emulator_destroy(cpptlm_emulator_t* emu) {
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_mmio_write(cpptlm_emulator_t* emu, uint8_t bar, uint64_t offset,
                                const void* buf, size_t len) {
-    try {
-        if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->mmio_write(bar, offset, buf, len);
-    } catch (const std::exception&) {
+    if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
         return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
     }
+    return abi_guard([&] { return emu->board->mmio_write(bar, offset, buf, len); });
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_mmio_read(cpptlm_emulator_t* emu, uint8_t bar, uint64_t offset, void* buf,
                               size_t len) {
-    try {
-        if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->mmio_read(bar, offset, buf, len);
-    } catch (const std::exception&) {
+    if (emu == nullptr || emu->board == nullptr || buf == nullptr) {
         return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
     }
+    return abi_guard([&] { return emu->board->mmio_read(bar, offset, buf, len); });
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_pcie_config_write(cpptlm_emulator_t* emu, uint16_t offset, uint8_t width,
                                       uint32_t val) {
-    try {
-        if (emu == nullptr || emu->board == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->pcie_config_write(offset, width, val);
-    } catch (const std::exception&) {
+    if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
     }
+    return abi_guard([&] { return emu->board->pcie_config_write(offset, width, val); });
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_pcie_config_read(cpptlm_emulator_t* emu, uint16_t offset, uint8_t width,
                                      uint32_t* val) {
-    try {
-        if (emu == nullptr || emu->board == nullptr || val == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->pcie_config_read(offset, width, val);
-    } catch (const std::exception&) {
+    if (emu == nullptr || emu->board == nullptr || val == nullptr) {
         return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
     }
+    return abi_guard([&] { return emu->board->pcie_config_read(offset, width, val); });
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_msix_init(cpptlm_emulator_t* emu, uint32_t table_size, uint32_t mask) {
-    try {
-        if (emu == nullptr || emu->board == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->msix_init(table_size, mask);
-    } catch (const std::exception&) {
+    if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
     }
+    return abi_guard([&] { return emu->board->msix_init(table_size, mask); });
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_msix_update_pending(cpptlm_emulator_t* emu, uint32_t vector) {
-    try {
-        if (emu == nullptr || emu->board == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->msix_update_pending(vector);
-    } catch (const std::exception&) {
+    if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
     }
+    return abi_guard([&] { return emu->board->msix_update_pending(vector); });
 }
 
 CPPTLM_EMULATOR_EXPORT
 int cpptlm_emulator_msix_clear_pending(cpptlm_emulator_t* emu, uint32_t vector) {
-    try {
-        if (emu == nullptr || emu->board == nullptr) {
-            return -EINVAL;
-        }
-        return emu->board->msix_clear_pending(vector);
-    } catch (const std::exception&) {
+    if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
     }
+    return abi_guard([&] { return emu->board->msix_clear_pending(vector); });
 }
 
 CPPTLM_EMULATOR_EXPORT
@@ -306,12 +263,10 @@ int cpptlm_emulator_register_callbacks(cpptlm_emulator_t* emu, cpptlm_intr_deliv
                                        cpptlm_error_cb_t err_cb,
                                        cpptlm_reset_complete_cb_t reset_cb,
                                        cpptlm_power_cb_t power_cb, void* user_ctx) {
-    (void)reset_cb;
-    (void)power_cb;
     if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
     }
-    try {
+    return abi_guard([&] {
         emu->intr_cb = intr_cb;
         emu->err_cb = err_cb;
         emu->reset_cb = reset_cb;
@@ -332,11 +287,7 @@ int cpptlm_emulator_register_callbacks(cpptlm_emulator_t* emu, cpptlm_intr_deliv
             });
         }
         return 0;
-    } catch (const std::exception&) {
-        return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
-    }
+    });
 }
 
 CPPTLM_EMULATOR_EXPORT
@@ -344,10 +295,8 @@ int cpptlm_emulator_register_dma_translate_cb(cpptlm_emulator_t* emu, void* cb) 
     if (emu == nullptr || emu->board == nullptr) {
         return -EINVAL;
     }
-    // Stage 1.3c 修复 #2 (per openspec/changes/2026-09-10-cpptlm-stage-1-3-sdma §1.3c):
-    //   移除 (void)cb stub, 真实调用 cb 函数指针.
-    //   cb 签名 (per ADR-088 §D3.8):
-    //     int (*cb)(uint64_t iova, uint32_t size, uint64_t* out_pa)
+    // cb 签名 (per ADR-088 §D3.8):
+    //   int (*cb)(uint64_t iova, uint32_t size, uint64_t* out_pa)
     //   返回 0 = 成功 (out_pa = 翻译后 PA), < 0 = 负 errno (-ENOSYS/-EIO).
     //
     // 适配: board 内部 DmaTranslateCallback 签名是
@@ -357,7 +306,7 @@ int cpptlm_emulator_register_dma_translate_cb(cpptlm_emulator_t* emu, void* cb) 
     //   - cb != nullptr → reinterpret_cast<TranslateFn>(cb)(iova, size, &pa)
     //     返回 < 0 (负 errno) → lambda 返 (uint64_t)(int64_t)errno 编码为 64-bit 无符号,
     //       调用方 (SdmaEngineTLM 等) 通过 static_cast<int64_t>(...) 解码回 errno
-    try {
+    return abi_guard([&] {
         emu->board->set_dma_translate_callback([cb](uint64_t iova, size_t size) -> uint64_t {
             if (cb == nullptr) {
                 // Fallback identity: pa = iova (per spec "identity mode")
@@ -375,11 +324,7 @@ int cpptlm_emulator_register_dma_translate_cb(cpptlm_emulator_t* emu, void* cb) 
             return pa;
         });
         return 0;
-    } catch (const std::exception&) {
-        return -EINVAL;
-    } catch (...) {
-        return -EFAULT;
-    }
+    });
 }
 
 namespace {
@@ -430,8 +375,5 @@ int cpptlm_emulator_close(cpptlm_emulator_handle_t handle) {
     }
     return 0;
 }
-
-// cpptlm_emulator_get_adapter_info 已删除 (per ADR-SOC-20 §2.1):
-// 与 cpptlm_emulator_get_device_info 重叠, 改为按 dev_id 查询无句柄依赖
 
 } // extern "C"

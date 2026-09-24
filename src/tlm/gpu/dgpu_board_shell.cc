@@ -1,15 +1,13 @@
 // Per board-soc-split design §2 + §2.5 thread model (10 约束)
 // Owner: CppTLM Team · Date: 2026-08-31
 #include "tlm/gpu/dgpu_board_shell.hh"
-#include "tlm/gpu/pcie_endpoint_tlm.h"
-#include "tlm/gpu/sdma_engine_tlm.hh"  // 1.3d M6: SdmaEngineTLM::kSdmaFenceVector 单点常量引用
-// #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
-// #include "tlm/gpu/pcie_tlp_bundle.hh"  // for PcieTlpBundle construction (deferred T-bs-3b)
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
 #include <cstring>
 #include <iostream>
+#include "tlm/gpu/pcie_endpoint_tlm.h"
+#include "tlm/gpu/sdma_engine_tlm.hh" // 1.3d M6: SdmaEngineTLM::kSdmaFenceVector 单点常量引用
 
 namespace tlm::gpu {
 
@@ -35,7 +33,7 @@ namespace tlm::gpu {
         } else if (pcie_path_str == "mock") {
             pcie_path_ = PciePath::Mock;
         } else {
-            pcie_path_ = PciePath::Legacy;  // "legacy" 或任何未识别值
+            pcie_path_ = PciePath::Legacy; // "legacy" 或任何未识别值
         }
     }
 
@@ -60,12 +58,9 @@ namespace tlm::gpu {
             if (board_cfg.contains("params") && board_cfg["params"].contains("quantum_cycles")) {
                 quantum_cycles_ = board_cfg["params"]["quantum_cycles"].get<uint64_t>();
             }
-            // SOC instantiate 真正调用 (per D15 true fix commit 8cd1f033).
-            // 注: T-bs-4 Stage 2 (17413e4) 临时 defer 此调用, D15 commit 8cd1f033 通过
-            // module_factory.cc 6 处 null-guard 修复未注册类型 (TmuDispatchProcessorTLM)
-            // 引起的 GpuCluster 嵌套链空指针解引用, 并重新启用 instantiateAll 真实调用。
-            // 996 cases / 32587 assertions PASS (含 GpuCluster 的 dgpu_board_v1.json)。
-            // Oracle 2027-02-10 复审确认此调用正常, 旧"deferred"注释陈腐, 仅作历史保留。
+            // SOC instantiate 真实调用 (per D15 fix): 早期 Stage 2 曾临时 defer 此调用,
+            // D15 通过 module_factory.cc 6 处 null-guard 修复未注册类型 (TmuDispatchProcessorTLM)
+            // 引起的 GpuCluster 嵌套链空指针解引用后重新启用。
             if (!board_cfg.contains("modules") || !board_cfg["modules"].is_array() ||
                 board_cfg["modules"].empty()) {
                 std::lock_guard<std::mutex> lock(inject_mu_);
@@ -98,9 +93,8 @@ namespace tlm::gpu {
                 }
             }
 
-            // 多卡 StatsManager 前缀:为 SOC 内部组件注册(占位,deferred T-bs-4)
+            // 多卡 StatsManager 前缀:为 SOC 内部组件注册(占位)
             // 注: StatsManager::register_group 需要 StatGroup* 指针,这里只验证 get_stats_path 接口
-            // 实际注册 deferred T-bs-4(JSON 装配)
 
             // D1 v1.1.1: 路由开关从 JSON 顶层读取（防劫持 root cause 4）
             // 默认 false；D1 配置（dgpu_soc_with_pcie_ip.json）显式启用
@@ -121,7 +115,7 @@ namespace tlm::gpu {
 
             return true;
         } catch (...) {
-            last_exception_ = std::current_exception(); // #8 异常捕获
+            last_exception_ = std::current_exception(); // 异常捕获
             return false;
         }
     }
@@ -245,13 +239,13 @@ namespace tlm::gpu {
         }
     }
 
-    // ── ABI 翻译(占位实现,完整 deferred T-bs-3b) ──
+    // ── ABI 翻译 ──
 
     int DGpuBoard::mmio_read(uint8_t bar, uint64_t offset, void* buf, size_t len) {
         if (last_exception_) {
-            std::rethrow_exception(last_exception_); // #8 异常传递
+            std::rethrow_exception(last_exception_); // 异常传递
         }
-        // null buf 无条件拒绝(避免 memcpy nullptr)(修复 #5)
+        // null buf 无条件拒绝(避免 memcpy nullptr)
         if (buf == nullptr) {
             return -EINVAL;
         }
@@ -264,8 +258,7 @@ namespace tlm::gpu {
         // D1 v1.1.1: 路由位置在 power gate 之后，保持 INV-A D3 门禁不变量
         // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
         if (display_routing_enabled_ && bar == 0 && soc_) {
-            if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
-                    soc_->getInternalInstance("pcie_ep"))) {
+            if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
                     return ep->display_device().mmio_read(offset, buf, len);
                 }
@@ -286,21 +279,20 @@ namespace tlm::gpu {
         req.offset = offset;
         req.data.resize(len); // pre-allocate for response
         req.trans_id = next_trans_id_++;
-        req.is_mmio_read = true; // drain 时按读路径回填 pending_data_ (修复 #5)
+        req.is_mmio_read = true; // drain 时按读路径回填 pending_data_
         auto fut = req.resp.get_future();
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
             pending_resp_[req.trans_id] = std::move(fut);
             inject_q_.push_back(std::move(req));
         }
-        // 调用线程自 drain 回退(修复 #5 flakiness): 成功路径不依赖 sim 线程被调度 —
+        // 调用线程自 drain 回退: 成功路径不依赖 sim 线程被调度 —
         // 重载主机上外部 drain 线程可能 50ms 内未获调度, 由本线程确定性完成自身读请求.
         // 若另一 drain 线程已 swap 走本请求, 此处队列为空, wait 仍由该线程完成.
         if (mmio_self_drain_enabled) {
             drain_injection_queue();
         }
-        // #3 关键: kMmioWaitTimeout 超时(防 sim 线程死锁; 50ms 吸收一次 sim-tick 调度延迟, 修复 #5
-        // flakiness)
+        // 关键: kMmioWaitTimeout 超时(防 sim 线程死锁; 50ms 吸收一次 sim-tick 调度延迟)
         auto status = pending_resp_[req.trans_id].wait_for(kMmioWaitTimeout);
         if (status != std::future_status::ready) {
             std::lock_guard<std::mutex> lock(inject_mu_);
@@ -309,11 +301,10 @@ namespace tlm::gpu {
             // 回填该 trans_id 的 payload (其 future 共享状态仍被 promise 持有, set_value 不抛
             // future_error), 否则 vector 条目永久泄漏. 与下方成功路径的 erase 模式一致.
             pending_data_.erase(req.trans_id);
-            return -110; // ETIMEDOUT, buf 不变
+            return -ETIMEDOUT; // buf 不变
         }
         int32_t rc = pending_resp_[req.trans_id].get();
-        // 修复 #5: 从 drain 响应 payload 拷贝真实数据到调用方 buf (TODO T-bs-3c 占位 set_value(0)
-        // 已真实化)
+        // 从 drain 响应 payload 拷贝真实数据到调用方 buf (set_value(0) 占位已真实化)
         std::vector<uint8_t> payload;
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
@@ -332,7 +323,7 @@ namespace tlm::gpu {
 
     int DGpuBoard::mmio_write(uint8_t bar, uint64_t offset, const void* buf, size_t len) {
         if (last_exception_) {
-            std::rethrow_exception(last_exception_); // #8 异常传递
+            std::rethrow_exception(last_exception_); // 异常传递
         }
         if (buf == nullptr) {
             return -EINVAL;
@@ -348,8 +339,7 @@ namespace tlm::gpu {
         // (device 优先; BAR 1 doorbell 仍走原 SDMA 路径)
         // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
         if (display_routing_enabled_ && bar == 0 && soc_) {
-            if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
-                    soc_->getInternalInstance("pcie_ep"))) {
+            if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
                     return ep->display_device().mmio_write(offset, buf, len);
                 }
@@ -367,16 +357,13 @@ namespace tlm::gpu {
                 gmmu_->set_enabled((val32 & 1u) != 0);
             }
         }
-        // 修复 #5: 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
+        // 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
         std::vector<uint8_t> payload(static_cast<const uint8_t*>(buf),
                                      static_cast<const uint8_t*>(buf) + len);
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
             mmio_regs_[std::make_pair(bar, offset)] = payload;
         }
-
-        // T-P12-1: 按 pcie_path 分流 (dispatch 到对应后端)
-        dispatch_mmio_to_pcie(bar, offset, buf, len);
 
         // 既有 inject_q_ push (sim_loop drain 机制, 所有路径保留)
         PendingReq req;
@@ -428,7 +415,7 @@ namespace tlm::gpu {
             std::memcpy(framebuffer_ptr_ + offset, buf, len);
         }
 
-        return 0; // async, no wait (修复 #7: 保持异步语义)
+        return 0; // async, no wait (保持异步语义)
     }
 
     int DGpuBoard::pcie_config_read(uint16_t offset, uint8_t width, uint32_t* val) {
@@ -437,7 +424,7 @@ namespace tlm::gpu {
             return -EINVAL;
         if (!soc_)
             return -ENOSYS;
-        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = pcie_ep();
         if (!ep || !ep->has_config_space())
             return -ENOSYS;
         *val = ep->config_space().read(offset);
@@ -448,7 +435,7 @@ namespace tlm::gpu {
         (void)width;
         if (!soc_)
             return -ENOSYS;
-        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = pcie_ep();
         if (!ep || !ep->has_config_space())
             return -ENOSYS;
         ep->config_space().write(offset, val);
@@ -458,7 +445,7 @@ namespace tlm::gpu {
     bool DGpuBoard::is_mmio_gated() const {
         if (!soc_)
             return false;
-        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = pcie_ep();
         return ep && ep->mmio_gated();
     }
 
@@ -466,27 +453,25 @@ namespace tlm::gpu {
 
     int DGpuBoard::backdoor_read(uint64_t vram_offset, void* buf, size_t len) {
         if (last_exception_) {
-            std::rethrow_exception(last_exception_); // #8 异常传递
+            std::rethrow_exception(last_exception_); // 异常传递
         }
         // D1 display-io-mvp: 路由到 PcieDisplayDevice framebuffer (device 优先)
         // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
         if (display_routing_enabled_ && soc_) {
-            if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
-                    soc_->getInternalInstance("pcie_ep"))) {
+            if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
                     return ep->display_device().backdoor_read(vram_offset, buf, len);
                 }
             }
         }
-        // null buf 无条件拒绝(未初始化 board 也返 -EINVAL, 避免 memcpy 到 nullptr)(修复 #6)
+        // null buf 无条件拒绝(未初始化 board 也返 -EINVAL, 避免 memcpy 到 nullptr)
         if (buf == nullptr) {
             return -EINVAL;
         }
         // Phase A2: framebuffer_ 优先直读 (per spec/framebuffer-single-backing + design D9)
         // v1.0 单写者契约: 测试内 board 静止时合法
         if (framebuffer_ptr_ && framebuffer_size_ > 0) {
-            if (vram_offset >= framebuffer_size_ ||
-                len > framebuffer_size_ - vram_offset) {
+            if (vram_offset >= framebuffer_size_ || len > framebuffer_size_ - vram_offset) {
                 return -EINVAL;
             }
             std::memcpy(buf, framebuffer_ptr_ + vram_offset, len);
@@ -497,14 +482,14 @@ namespace tlm::gpu {
         if (device_info_.bar_sizes[1] > 0 &&
             (len == 0 || vram_offset >= device_info_.bar_sizes[1] ||
              len > device_info_.bar_sizes[1] - vram_offset)) {
-            return -22; // EINVAL
+            return -EINVAL;
         }
         // 同步从 vram_segments_ 读(SOC deferred,shell 本地处理,不依赖 sim_thread drain)
         {
             std::lock_guard<std::mutex> lock(inject_mu_);
             auto it = vram_segments_.find(vram_offset);
             if (it == vram_segments_.end()) {
-                return -ENOENT; // miss → -ENOENT, 不再伪装成功返 len (修复 #6)
+                return -ENOENT; // miss → -ENOENT, 不再伪装成功返 len
             }
             if (it->second.size() != len) {
                 return -EINVAL;
@@ -516,13 +501,12 @@ namespace tlm::gpu {
 
     int DGpuBoard::backdoor_write(uint64_t vram_offset, const void* buf, size_t len) {
         if (last_exception_) {
-            std::rethrow_exception(last_exception_); // #8 异常传递
+            std::rethrow_exception(last_exception_); // 异常传递
         }
         // D1 display-io-mvp: 路由到 PcieDisplayDevice framebuffer (device 优先)
         // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
         if (display_routing_enabled_ && soc_) {
-            if (auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(
-                    soc_->getInternalInstance("pcie_ep"))) {
+            if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
                     return ep->display_device().backdoor_write(vram_offset, buf, len);
                 }
@@ -534,8 +518,7 @@ namespace tlm::gpu {
         }
         // Phase A2: framebuffer_ 优先直写
         if (framebuffer_ptr_ && framebuffer_size_ > 0) {
-            if (vram_offset >= framebuffer_size_ ||
-                len > framebuffer_size_ - vram_offset) {
+            if (vram_offset >= framebuffer_size_ || len > framebuffer_size_ - vram_offset) {
                 return -EINVAL;
             }
             std::memcpy(framebuffer_ptr_ + vram_offset, buf, len);
@@ -545,7 +528,7 @@ namespace tlm::gpu {
         if (device_info_.bar_sizes[1] > 0 &&
             (len == 0 || vram_offset >= device_info_.bar_sizes[1] ||
              len > device_info_.bar_sizes[1] - vram_offset)) {
-            return -22; // EINVAL
+            return -EINVAL;
         }
         // 同步存储数据到 VRAM map(SOC deferred,shell 本地存储)
         {
@@ -567,11 +550,14 @@ namespace tlm::gpu {
         return 0; // async
     }
 
-    // Phase A2/B1: 把 framebuffer_ 注入到 SOC 内的 memory/sdma/gmmu 实例 (per spec/sdma-gmmu-translate-injection)
-    // v1.0 SOC 内缺 memory/sdma/gmmu 实例时 DPRINTF 警告 (per D13 防静默断链)
+    // Phase A2/B1: 把 framebuffer_ 注入到 SOC 内的 memory/sdma/gmmu 实例 (per
+    // spec/sdma-gmmu-translate-injection) v1.0 SOC 内缺 memory/sdma/gmmu 实例时 DPRINTF 警告 (per
+    // D13 防静默断链)
     void DGpuBoard::bind_memory_backings() {
-        if (!soc_) return;
-        if (framebuffer_ptr_ == nullptr || framebuffer_size_ == 0) return;
+        if (!soc_)
+            return;
+        if (framebuffer_ptr_ == nullptr || framebuffer_size_ == 0)
+            return;
 
         if (auto* mem = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"))) {
             mem->set_backing_store(framebuffer_ptr_, framebuffer_size_);
@@ -582,7 +568,8 @@ namespace tlm::gpu {
         if (auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"))) {
             sdma->set_vram_backdoor(framebuffer_ptr_, framebuffer_size_);
             sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
-                if (gmmu_) return gmmu_->translate(iova, size, phys);
+                if (gmmu_)
+                    return gmmu_->translate(iova, size, phys);
                 return -EIO;
             });
             // D14: set_sdma_engine 同步注入 (修复 doorbell 生产路径空转)
@@ -602,15 +589,15 @@ namespace tlm::gpu {
 
     int DGpuBoard::msix_init(uint32_t table_size, uint32_t mask) {
         if (table_size > 2048)
-            return -22; // EINVAL: PCI-SIG MSI-X 11-bit cap
+            return -EINVAL; // PCI-SIG MSI-X 11-bit cap
         if (!soc_)
-            return -38; // ENOSYS: SOC not instantiated
-        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+            return -ENOSYS; // SOC not instantiated
+        auto* ep = pcie_ep();
         if (!ep)
-            return -38;
+            return -ENOSYS;
         coalesce_force_flush();
         if (!ep->msix().resize(static_cast<uint16_t>(table_size)))
-            return -22;
+            return -EINVAL;
         ep->msix().init();
         for (uint32_t v = 0; v < table_size && v < ep->msix().num_vectors(); ++v) {
             if (mask & (1u << v)) {
@@ -623,10 +610,10 @@ namespace tlm::gpu {
 
     int DGpuBoard::msix_update_pending(uint32_t vector) {
         if (!soc_)
-            return -38;
-        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+            return -ENOSYS;
+        auto* ep = pcie_ep();
         if (!ep)
-            return -38;
+            return -ENOSYS;
         if (ep->msix().update_pending(static_cast<uint16_t>(vector))) {
             if (ep->msix().did_deliver_last_update()) {
                 if (msix_coalesce_enabled_.load()) {
@@ -637,33 +624,33 @@ namespace tlm::gpu {
             }
             return 0;
         }
-        return -22;
+        return -EINVAL;
     }
 
     int DGpuBoard::msix_clear_pending(uint32_t vector) {
         if (!soc_)
-            return -38;
-        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+            return -ENOSYS;
+        auto* ep = pcie_ep();
         if (!ep)
-            return -38;
-        return ep->msix().clear_pending(static_cast<uint16_t>(vector)) ? 0 : -22;
+            return -ENOSYS;
+        return ep->msix().clear_pending(static_cast<uint16_t>(vector)) ? 0 : -EINVAL;
     }
 
     int DGpuBoard::lookup_register(uint32_t offset, uint32_t* value) {
         if (!value)
-            return -22;
+            return -EINVAL;
         if ((offset & 0x3) != 0)
-            return -22; // 4-byte align
+            return -EINVAL; // 4-byte align
         if (offset >= 65536)
-            return -22; // BAR0 only
+            return -EINVAL; // BAR0 only
         if (!soc_)
-            return -38;
-        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+            return -ENOSYS;
+        auto* ep = pcie_ep();
         if (!ep)
-            return -38;
+            return -ENOSYS;
         const auto* entry = ep->bar_router().lookup(offset);
         if (!entry)
-            return -38;
+            return -ENOSYS;
         *value = entry->value;
         return 0;
     }
@@ -675,7 +662,7 @@ namespace tlm::gpu {
             return nullptr;
         if (!soc_)
             return nullptr;
-        auto* ep = dynamic_cast<tlm::pcie::PcieEndpointIP*>(soc_->getInternalInstance("pcie_ep"));
+        auto* ep = pcie_ep();
         if (!ep)
             return nullptr;
         return ep->bar_router().lookup(offset);
@@ -725,16 +712,15 @@ namespace tlm::gpu {
     // ── sim_loop(sim 线程主循环) ──
 
     void DGpuBoard::sim_loop() {
-        // #8 异常经 exception_ptr 跨线程
+        // 异常经 exception_ptr 跨线程
         try {
             while (!stop_.load()) {
-                // #9 idle 检测用 SQ/CQ 计数器,不是 event_queue.empty()
-                // TODO T-bs-3b: 真实 quantum 边界 + TickEvent 自续处理
+                // idle 检测用 SQ/CQ 计数器,不是 event_queue.empty()
                 eq_->run(quantum_cycles_); // per design §2.5 TickEvent 自续
                 drain_injection_queue();   // quantum 边界处理 host→sim 注入
             }
         } catch (...) {
-            // #8 sim 线程静默吞异常 = 卡死无诊断。必须捕获并存 exception_ptr
+            // sim 线程静默吞异常 = 卡死无诊断。必须捕获并存 exception_ptr
             last_exception_ = std::current_exception();
         }
     }
@@ -766,7 +752,7 @@ namespace tlm::gpu {
                     } else {
                         // offset 未写入或长度不匹配
                         try {
-                            req.resp.set_value(-22);
+                            req.resp.set_value(-EINVAL);
                         } // EINVAL
                         catch (const std::future_error&) {
                         }
@@ -779,7 +765,7 @@ namespace tlm::gpu {
                     }
                 }
             } else if (req.is_mmio_read) {
-                // mmio read (修复 #5): 从 mmio_regs_ 取数据存入 pending_data_, 再 set_value
+                // mmio read: 从 mmio_regs_ 取数据存入 pending_data_, 再 set_value
                 auto key = std::make_pair(req.bar, req.offset);
                 std::vector<uint8_t> payload;
                 int32_t rc = 0;
@@ -809,7 +795,7 @@ namespace tlm::gpu {
                     pending_data_.erase(req.trans_id);
                 }
             } else {
-                // mmio write (修复 #5): 数据已在 mmio_write 同步存入 mmio_regs_, 无 future 等待
+                // mmio write: 数据已在 mmio_write 同步存入 mmio_regs_, 无 future 等待
                 // (默认构造 promise 无 shared state, 不 set_value)
             }
             // 清理 pending_resp_
@@ -817,7 +803,7 @@ namespace tlm::gpu {
         }
     }
 
-    // ── 内部触发接口(供 SOC 组件调用,deferred T-bs-4 装配) ──
+    // ── 内部触发接口(供 SOC 组件调用) ──
 
     // Stage 1.3d: SDMA Fence → MSI-X vector 0 接线
     //   SdmaEngineTLM::process_fence_queue → board->sdma_fence_complete(fence_id)
@@ -877,48 +863,13 @@ namespace tlm::gpu {
         }
     }
 
-    // ── T-P12-1: dispatch_mmio_to_pcie (按 pcie_path_ 分流) ──
-
-    void DGpuBoard::dispatch_mmio_to_pcie(uint8_t bar, uint64_t offset,
-                                           const void* data, std::size_t len) {
-        switch (pcie_path_) {
-        case PciePath::Tlp:
-            // TLP 路径: mmio_regs_ 镜像已在 mmio_write 写入
-            // 完整 TLP 链路 (Encoder → rx_tlp_from_host → CompleterEngine → bar_store_)
-            // 由 T-P12-2 E2E 测试覆盖. 此处 mmio_regs_ 作读泵环回退存储.
-            break;
-
-        case PciePath::AxiBypass:
-            // AXI Bypass 路径: HostBypassTLM::bar_write
-            // 当前 mmio_regs_ 镜像已写入; 实际 HostBypassTLM 集成
-            // 需完整 SOC 接线 (T-P12-2 E2E 覆盖)
-            break;
-
-        case PciePath::Mock:
-            // Mock path: PcieMockIP 直调
-            // 独立 PcieMockIP 测试在 [mock-ip] 标签覆盖 (T-P9-3)
-            break;
-
-        case PciePath::Legacy:
-        default:
-            // Legacy: mmio_regs_ 既有路径 (已在 mmio_write 完成)
-            break;
-        }
-    }
-
     // ── T-P12-1: 测试 accessors ──
 
-    uint64_t DGpuBoard::endpoint_bar_store_value(uint8_t bar, uint16_t bdf,
-                                                  uint64_t offset) const {
-        auto* ep = const_cast<DGpuBoard*>(this)->pcie_ep();
-        if (!ep) return 0;
+    uint64_t DGpuBoard::endpoint_bar_store_value(uint8_t bar, uint16_t bdf, uint64_t offset) const {
+        auto* ep = pcie_ep();
+        if (!ep)
+            return 0;
         return ep->bar_store_value(bdf, bar, offset);
-    }
-
-    size_t DGpuBoard::link_layer_tx_tlp_out_count() const {
-        // 链路层 TLP 计数: 没有完整 SOC → 返 0
-        // 实际 TLP 计数需通过 PcieLinkLayer 获取
-        return 0;
     }
 
 } // namespace tlm::gpu

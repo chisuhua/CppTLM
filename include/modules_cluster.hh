@@ -47,8 +47,19 @@ const bool _reg_apusoc = (REGISTER_MODULE(ApuSoC), true);
 const bool _reg_gpusoc = (REGISTER_MODULE(GpuSocTLM), true);
 const bool _reg_dgpusoc = (REGISTER_MODULE(DGpuSoc), true);
 // Phase 2 (pcie-endpoint-ip-simmodule-refactor): EP 从 REGISTER_CHSTREAM 迁 REGISTER_MODULE
+// 双注册 (FQ + 短名): 配置 JSON "type": "PcieEndpointIP" 必须可解析 (per dgpu_soc
+// v1.0 配置文件 + examples/dgpu_soc_with_pcie_ip.json); FQ 路径仍兼容既有代码。
+// 短名原本只在 test/test_pcie_endpoint_ip_simmodule_refactor.cc 测试 TU 注册,
+// 跨 TU 掩蔽测试通过但生产环境 (libcpptlm_emulator.so / 主可执行) 静默失败
+// (pcie_ep nullptr → msix_*/pcie_config_* 返 -ENOSYS)。现统一在生产注册表登记。
 const bool _reg_pcieendpointip = (REGISTER_MODULE(tlm::pcie::PcieEndpointIP), true);
+const bool _reg_pcieendpointip_short =
+    (ModuleFactory::registerModule<tlm::pcie::PcieEndpointIP>("PcieEndpointIP"), true);
 // Phase 2 (minimal-dgpu-soc-v1 A3): GmmuTLM 一级页表翻译
+// 双注册 (short + 全限定): 配置 JSON "type": "GmmuTLM" 必须可解析 (per minimal-dgpu-soc
+// v1.0 配置文件 + docs/designs/2027-02-09-minimal-dgpu-soc.md 示例)。
 const bool _reg_gmmutlm = (REGISTER_MODULE(tlm::gpu::GmmuTLM), true);
+const bool _reg_gmmutlm_short =
+    (ModuleFactory::registerModule<tlm::gpu::GmmuTLM>("GmmuTLM"), true);
 
 #endif  // MODULES_CLUSTER_HH
