@@ -4,6 +4,20 @@
 # Build system: CMake 3.16+ with optional Ninja + ccache
 
 cmake_minimum_required(VERSION 3.16)
+
+# ==============================================================================
+# C++23 编译器预检 — GCC 14+ 的 <print> (P2302R3) 是必需依赖
+# 若默认编译器 < GCC 14 且 g++-14 存在，自动切换；否则留给用户显式指定。
+# ==============================================================================
+if(NOT DEFINED CMAKE_CXX_COMPILER)
+    find_program(_cpptlm_gpp14 g++-14)
+    if(_cpptlm_gpp14)
+        set(CMAKE_CXX_COMPILER "${_cpptlm_gpp14}"
+            CACHE FILEPATH "C++ compiler (auto-detected g++-14 for C++23 <print>)")
+        message(STATUS "Auto-detected g++-14 for C++23 <print> support")
+    endif()
+endif()
+
 project(CppTLM
     VERSION 2.1.0
     DESCRIPTION "C++ TLM Hybrid Simulation Framework"
