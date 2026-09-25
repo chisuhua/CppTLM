@@ -271,6 +271,51 @@ P0.5-9: 全量回归 + openspec validate --strict
 
 ---
 
+## 6.5 Axi4CacheAdapter P0.5-2 设计评审检查项 (GPGPU 侧复用)
+
+> **新增 (Phase 9 P0.5-cpptlm-minimal-dgpu-soc-v1-landing 隐藏建议)**: Axi4CacheAdapter 在 P0.5-2 实施前花 30 分钟做以下检查项, 零成本为未来 GPGPU/SoC 集成预留复用点.
+
+### 检查项清单
+
+| # | 检查项 | 当前设计 | GPGPU 复用影响 | 通过条件 |
+|---|--------|----------|----------------|----------|
+| 1 | **构造参数不烧死 PCIe 语义** | `Axi4CacheAdapter(src_id_base, ax_id_base, peer_is_pcie?)` | GPGPU SM/SoC 集成需传 `peer_is_pcie=false`, 不应假设 Endpoint 协议 | 构造函数接受 `peer_kind` enum, 不假设 PCIe TLP 转换 |
+| 2 | **ID 映射表大小参数化** | `awid_to_src_id_[256]` 固定 | GPGPU 可能需 1024+ outstanding | capacity 模板参数或 runtime config |
+| 3 | **错误码扩展点** | 仅 `rresp=DECERR` / `bresp=DECERR` | GPGPU NoC 可能需 SLVERR/DECERR/EXOKAY | 提供 error code 回调或 enum 映射 |
+| 4 | **Bundle 类型抽象** | `Axi4Bundle ↔ CacheReq/RespBundle` | GPGPU 可能需 AXI4StreamBundle 或自研 Bundle | 抽 `IBundle<>` 模板或 visitor pattern |
+| 5 | **MMIO/CSR 路径** | 无 MMIO 控制 (纯 passive) | GPGPU 可能需 debug CSR (容量、outstanding 计数) | 提供可选 CSR 注入点 |
+| 6 | **线程模型** | 单线程 tick() | GPGPU NoC 多主端口需 multi-thread 安全 | tick() 标注 thread-safety 注释 |
+
+### 实施检查 (在 P0.5-2 code review 时)
+
+```cpp
+class Axi4CacheAdapter : public ChStreamModuleBase {
+public:
+    enum class PeerKind { PcieEP, GpgpuSM, GenericSoC };  // 关键: 不烧死 PCIe
+    Axi4CacheAdapter(const std::string& n, EventQueue* eq,
+                     PeerKind peer = PeerKind::PcieEP,         // 默认 PCIe 兼容
+                     size_t id_table_capacity = 256);          // 可扩展
+    // ... 不假设 awlen/araddr 是 PCIe TLP 解码结果
+};
+```
+
+### 评审结论模板 (P0.5-2 PR 必含)
+
+```markdown
+## Axi4CacheAdapter GPGPU 复用检查 (per design §6.5)
+
+- [ ] 构造函数 PeerKind 参数化
+- [ ] ID 映射表 capacity 参数化 (默认 256 兼容 PCIe)
+- [ ] 错误码通过 enum/class 抽象 (非硬编码 PCI DECERR)
+- [ ] 不依赖 PcieEndpointIP/TLP 任何符号
+- [ ] tick() 线程安全注释清晰
+- [ ] 单元测试覆盖 non-PCIe peer_kind 路径
+```
+
+**通过条件**: 全部 [x] 才允许 P0.5-2 PR merge. 否则视为 GPGPU 复用点未预留, 回退到 D1 默认方案并记录 backlog.
+
+---
+
 ## 7. 关联
 
 - **P2 主计划**: `docs/soc_arch/roadmap/phase9-p2-cp-attach-via-axi.md`

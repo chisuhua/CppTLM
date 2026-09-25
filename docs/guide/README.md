@@ -14,6 +14,7 @@
 | [PYTHON_TOOLING_GUIDE.md](./PYTHON_TOOLING_GUIDE.md) | Python 验证工具链使用 | 用户/开发者 |
 | [CREDIT_FLOW_USER_GUIDE.md](./CREDIT_FLOW_USER_GUIDE.md) | Credit-based Flow Control | 用户/开发者 |
 | [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) | 开发者指南（模块开发、调试） | 开发者 |
+| [UE_DRIVER_MIGRATION_GUIDE.md](./UE_DRIVER_MIGRATION_GUIDE.md) | UE driver 移植指南（framebuffer_size 单一真源约定） | UE driver 作者 |
 
 ---
 

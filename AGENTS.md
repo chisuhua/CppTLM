@@ -365,6 +365,11 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **VIRTUAL_PATHS**: 文档中提及已删除/归档文件时，必须在 `docs_sync_check.sh` 的 `VIRTUAL_PATHS` 数组添加条目（而非删除段落）
 - **ADR 不可变**: `docs/adr/ADR-X.*.md` 签发后不改，状态变化追加 `## Status Update` 段
 - **AGENTS.md 层级**: 根 + 子目录 AGENTS.md (域内详细表，如 `include/AGENTS.md` 的注册宏体系)
+- **OpenSpec Proposed 存量 ≤3 (复审 KPI, P0.5-landing 新增)**: `openspec/changes/` 下 Proposed change 数量上限 3. 超出时:
+  - **季度复审**: 评估是否 archive, merge, 或明确 deprecate
+  - **新提案门槛**: 现有 ≥3 时新提案需先 archive 一个现有 change
+  - **当前基线 (2027-09-17)**: 4 个 Proposed (cpptlm-dgpu-gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella / pcie-memory-device-mvp / pcie-ep-integration) — 已超 KPI, 需在 Phase 10+ 季度复审中处理
+  - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
 ## KEY INVARIANTS
 
@@ -372,7 +377,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
-- **测试状态**: **66887 assertions 全绿**（含 Phase 1-8 + 7 阶段全链路 + dgpu_soc_minimal_v1 E2E `[minimal_dgpu_soc]` 41 assertions + ABI smoke `[abi][minimal_dgpu_soc]` 23 assertions / 1561 cases）；**openspec validate PASS**
+- **测试状态**: **66884 assertions 全绿**（含 Phase 1-8 + 7 阶段全链路 + dgpu_soc_minimal_v1 E2E `[minimal_dgpu_soc]` 41 assertions + ABI smoke `[abi][minimal_dgpu_soc]` 28 assertions / 1563 cases）；**openspec validate PASS**
 - **23 ABI 冻结**: `include/tlm/gpu/pcie_endpoint_tlm.h` 与 `include/abi/cpptlm_emulator.h` 零修改（仅可加 `[[deprecated]]` 属性）
 - **PcieEndpointTLM deprecated**: `[[deprecated("use PcieEndpointIP")]]`，chstream_register 仍注册（既有 Phase 4 测试依赖），新增 PcieEndpointIP 并存
 - **512-bit 数据限制**: `ch_uint<512>` 内部 `uint64_t`，`wdata/rdata` 真实宽度 64-bit（per `include/bundles/cpphdl_types.hh`）
