@@ -8,9 +8,9 @@
 // 作者: CppTLM Team · 日期: 2027-02-10
 //
 // 关键约束 (per spec + design.md):
-//   - load_soc_config 不消费 JSON 顶层 framebuffer_size_bytes → 测试必须显式
-//     attach_framebuffer_for_testing(buf, 16MB), 否则 framebuffer_size_=0 → 全返 OUT_OF_RANGE
-//   - 初始化顺序 Inv-2: load_soc_config → attach → init (bind_memory_backings 注入 backdoor)
+//   - P0.5-landing: load_soc_config 已消费 JSON 顶层 framebuffer_size_bytes 并从 bar_sizes[1]
+//     派生 → attach_framebuffer_for_testing 改为可选 override (test 仍保留作显式控制验证).
+//   - 初始化顺序 Inv-2: load_soc_config → [attach] → init (attach 可选, 由 load_soc_config 派生)
 //   - PTE 编码 (paddr & ~0xFFF) | 1 (禁 <<12 偏移错位)
 //   - ring_write_entry 提交 H2D 描述符 + doorbell wptr → GMMU translate → vram backdoor memcpy
 
