@@ -1,5 +1,4 @@
 # examples/test_cpptlm_emulator_dlopen/CMakeLists.txt
 # T-W3-2 (T-ae-4): dlopen usage example for UsrLinuxEmu integration.
-
-add_executable(test_cpptlm_emulator_dlopen test_dlopen.cc)
-target_link_libraries(test_cpptlm_emulator_dlopen PRIVATE cpptlm_core cpptlm_emulator)
+# T4 (Phase 9 P0.5): sibling dlopen-based minimal SoC ABI smoke.
+# 注意: 实际 target 注册在 examples/CMakeLists.txt (本目录 CMakeLists 为历史遗留).

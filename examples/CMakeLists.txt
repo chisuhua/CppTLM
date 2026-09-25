@@ -56,6 +56,20 @@ set_tests_properties(test_cpptlm_emulator_dlopen PROPERTIES
     ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}")
 
 # ==============================================================================
+# T4 (Phase 9 P0.5-cpptlm-minimal-dgpu-soc-v1-landing): sibling dlopen unit test
+# 验证 minimal SoC (configs/dgpu_soc_minimal_v1.json) ABI 闭环: cpptlm_emulator_create
+# + BAR1 framebuffer 自动分配 + mmio_write/read round-trip. 选 Oracle 推荐 (b):
+# 新建 sibling 文件而非修改既有模板.
+# ==============================================================================
+add_executable(test_cpptlm_emulator_dlopen_minimal_soc
+               test_cpptlm_emulator_dlopen/test_dlopen_minimal_soc.cc)
+target_link_libraries(test_cpptlm_emulator_dlopen_minimal_soc PRIVATE cpptlm_core cpptlm_emulator)
+add_test(NAME test_cpptlm_emulator_dlopen_minimal_soc
+         COMMAND test_cpptlm_emulator_dlopen_minimal_soc)
+set_tests_properties(test_cpptlm_emulator_dlopen_minimal_soc PROPERTIES
+    ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/lib:$ENV{LD_LIBRARY_PATH}")
+
+# ==============================================================================
 # 输出目录
 # ==============================================================================
 # ==============================================================================
