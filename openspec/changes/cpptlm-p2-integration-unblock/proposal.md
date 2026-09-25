@@ -148,4 +148,9 @@ Phase 9 P2（CP 跨仓接入）在 P2-1 写完 CP 寄存器映射 spec 后，需
 - **AXI Datapath Hardening spec**: `openspec/specs/pcie-axi-datapath-hardening/spec.md` (AXI 判别逻辑)
 - **SDMA spec**: `openspec/specs/sdma-engine-tlm/spec.md` (SDMA 引擎)
 - **HostBypass + RC spec**: `openspec/specs/host-bypass-and-rc/spec.md` (Host 桥接)
+- **P0.5-landing 前置**: `openspec/changes/2027-09-17-cpptlm-minimal-dgpu-soc-v1-landing/` (Phase 9 P0.5 unblock, **archived 2027-09-17**)
+  - 关键依赖: `DGpuBoard::load_soc_config` 已自动消费 JSON 顶层 `framebuffer_size_bytes` 并从 `pcie_ep.params.bar_sizes[1]` 派生 `framebuffer_size_`
+    (含 size cap 64GB, override warning, reverse-order guard)
+  - 本 change 的 4 断点修复 (Axi4CacheAdapter/MSI-X/SDMA/CompletionRing) 零文件重叠, 可并行推进
+  - 新增 BAR 接线 / SDMA ring entry 路径应**复用** P0.5-landing 的 framebuffer 单一真源 (不要直接 mmap 独立 backing)
 - **AGENTS.md**: 项目结构 + 测试命令基线
