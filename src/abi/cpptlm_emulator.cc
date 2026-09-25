@@ -162,7 +162,10 @@ cpptlm_emulator_t* cpptlm_emulator_create(const char* profile_path) {
         auto* emu = new cpptlm_emulator_s();
         emu->board =
             std::make_unique<tlm::gpu::DGpuBoard>("board_" + std::to_string(next_dev_id_.load()));
-        emu->board->load_soc_config(load_profile_json(path));
+        if (!emu->board->load_soc_config(load_profile_json(path))) {
+            delete emu;
+            return nullptr;
+        }
         emu->board->init();
         emu->profile_path = path;
         std::lock_guard<std::mutex> lk(registry_mu_);

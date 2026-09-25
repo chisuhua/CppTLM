@@ -71,6 +71,7 @@ namespace tlm::gpu {
             const auto& soc_cfg = board_cfg["modules"][0];
             soc_->simulate_instantiate(soc_cfg);
             // Pre-fill device_info_ from pcie_ep params
+            uint64_t derived_bar1_size = 0;
             for (const auto& mod : board_cfg["modules"][0].value("modules", json::array())) {
                 if (mod.value("name", "") == "pcie_ep") {
                     const auto& pcie_params = mod.value("params", json::object());
@@ -78,6 +79,9 @@ namespace tlm::gpu {
                         const auto& bars = pcie_params["bar_sizes"];
                         for (size_t i = 0; i < bars.size() && i < 6; ++i) {
                             device_info_.bar_sizes[i] = bars[i].get<uint64_t>();
+                        }
+                        if (bars.size() >= 2) {
+                            derived_bar1_size = bars[1].get<uint64_t>();
                         }
                     }
                     device_info_.visible_vram_size =
@@ -111,6 +115,33 @@ namespace tlm::gpu {
             if (board_cfg.contains("gmmu_routing_enabled") &&
                 board_cfg["gmmu_routing_enabled"].is_boolean()) {
                 gmmu_routing_enabled_ = board_cfg["gmmu_routing_enabled"].get<bool>();
+            }
+
+            // 顶层 framebuffer_size_bytes 覆盖默认派生值 (per design §1.3 #4).
+            if (framebuffer_ptr_ == nullptr) {
+                uint64_t final_size = derived_bar1_size;
+                if (board_cfg.contains("framebuffer_size_bytes")) {
+                    if (board_cfg["framebuffer_size_bytes"].is_number_unsigned()) {
+                        uint64_t override_size = board_cfg["framebuffer_size_bytes"].get<uint64_t>();
+                        if (derived_bar1_size > 0 && override_size != derived_bar1_size) {
+                            DPRINTF(MODULE, "[DGpuBoard] WARN: framebuffer_size_bytes=%llu != bar_sizes[1]=%llu; "
+                                   "BAR1 window and backdoor bounds may diverge.\n",
+                                   (unsigned long long)override_size,
+                                   (unsigned long long)derived_bar1_size);
+                        }
+                        constexpr uint64_t kMaxFramebufferSize = 64ULL << 30;
+                        if (override_size > kMaxFramebufferSize) {
+                            last_exception_ = std::make_exception_ptr(
+                                std::runtime_error("framebuffer_size_bytes > 64GB cap"));
+                            return false;
+                        }
+                        final_size = override_size;
+                    } else {
+                        DPRINTF(MODULE,
+                                "[DGpuBoard] WARN: framebuffer_size_bytes not unsigned, ignoring.\n");
+                    }
+                }
+                framebuffer_size_ = final_size;
             }
 
             return true;
