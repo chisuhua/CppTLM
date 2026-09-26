@@ -2,55 +2,69 @@
 
 > **配套**: [`proposal.md`](proposal.md) · [`specs/pcie-ep-soc-noc-axi-bridge/spec.md`](specs/pcie-ep-soc-noc-axi-bridge/spec.md) · [`tasks.md`](tasks.md)
 > **目标**: Phase 9 P2 (CP 跨仓接入) 启动的 4 个集成断点修复
-> **关联阶段**: `docs/soc_arch/roadmap/phase9-p2-unblock.md` (本 change 创建)
+> **关联阶段**: ArchForge 仓 `docs/roadmap/phase9-p2-unblock.md` (本 change 仅声明存在, 创建在 ArchForge)
+> **修订**: D2 ID 映射策略重写 (transaction_id 直通, 去 8-bit 压缩), D3 API 引用修正 (set_host_bypass → attach_to_endpoint), D8 framebuffer 契约新增, 文档仓路径修正 (ArchForge)
 
 ---
 
 ## 1. Context
 
-### 1.1 当前状态 (Phase 8 整合遗留)
+### 1.1 当前状态 (Phase 8 整合遗留,代码事实)
 
-Phase 8 M1 整合交付完成了 `PcieEndpointIP` 与 SoC 的基础接线 (4 方向 AXI 主从框架)，但实际数据流存在 4 个断点：
+Phase 8 M1 整合交付完成了 `PcieEndpointIP` 与 SoC 的基础接线 (4 方向 AXI 主从框架)，但实际数据流存在 4 个断点。代码事实核验 (`pcie_endpoint_ip.cc` grep 无 xbar/CrossbarTLM/CacheReq 引用, 桥接点在 HostBypassTLM 而非 EP):
 
 ```
 PcieEndpointIP
   │ internal PcieAxiAdapter + Axi4StreamAdapter
-  ├── axi_master_out  ────► xbar.0 (单方向, CacheReqBundle)
-  ├── axi_slave_in   ◄──── (HB/RC 端程序化)
-  ├── slave_resp     ────► (HB/RC 端程序化)
+  ├── axi_slave_in   ◄──── (HB/RC 端程序化, Phase 8 M1)
+  ├── slave_resp     ────► (HB/RC 端程序化, Phase 8 M1)
   ├── cfg_slave_in   ◄──── (未使用)
+  ├── axi_master_out ────► ❌ 无外部连接 (Phase 8 M1 实际未接 xbar, JSON 声明式被 19 §14.2.3 静默丢弃)
   └── MsiXTable::irq_out ──► ❌ 无任何外部连接
 
 SdmaEngineTLM    ────► ❌ 不在 dgpu_soc_with_pcie_ip.json
-CompletionRing   ────► ❌ irq_out[3] 未接线
+CompletionRing   ────► ❌ irq_out[3] 未接线 (per spec sdma-engine, 应 → pcie_ep.msix_delivery_in)
 ```
 
-### 1.2 协议不兼容核心问题
+**关键代码事实**:
+- `pcie_endpoint_ip.cc` grep 无 `xbar`/`CrossbarTLM`/`CacheReq`/`CacheResp` 引用 → EP→SoC 通路压根没接 (per Oracle 2027-09-17 fact-check)
+- `HostBypassTLM::tick()` 是 4 方向 AXI 桥接实现处 (Phase 8 M1)
+- DGpuBoardShell `bind_memory_backings()` (line 567) 是 SDMA/GMMU/MemTLM 注入 framebuffer backing 的程序化桥接点
+- `MsiXDeliveryBundle` 已在 `include/bundles/pcie_bundles_tlm.hh:119` 定义 (字段: `vector[16]`, `msg_data[32]`, `msg_addr[64]`, `trans_id[32]`) — **不是新文件依赖**
+
+### 1.2 协议不兼容核心问题 (Oracle + Metis 共识重写)
 
 `PcieAxiAdapter` 用 `Axi4Bundle` (Phase 5 标准化):
-- `awaddr`, `awid`, `awlen`, `awsize`, `awburst`, `wdata`, `wstrb`, `wlast`, `bid`, `bresp`, `araddr`, `arid`, `arlen`, `rdata`, `rresp`, `rlast`
+- 字段: `awaddr`, `awid[16]`, `awlen`, `awsize`, `awburst`, `wdata`, `wstrb`, `wlast`, `bid[16]`, `bresp[2]`, `araddr`, `arid[16]`, `arlen`, `rdata`, `rresp[2]`, `rlast`
 - **16-bit ID 空间** (`awid`/`arid`/`bid`/`rid`) 支持 OOO completion
 
-`CrossbarTLM` 用 `CacheReqBundle`/`CacheRespBundle`:
-- `req_out`: addr, cmd (RD/WR), data, byte_en, src_id
-- `resp_in`: data, status, dst_id
+`CrossbarTLM` 用 `CacheReqBundle`/`CacheRespBundle` (per `include/bundles/cache_bundles_tlm.hh` 实际字段):
+- `CacheReqBundle`: `transaction_id[64]`, `parent_id[64]`, `fragment_id[8]`, `fragment_total[8]`, `address[64]`, `size[8]`, `is_write`, `data[64]`
+- `CacheRespBundle`: `transaction_id[64]`, `parent_id[64]`, `fragment_id[8]`, `fragment_total[8]`, `data[64]`, `is_hit`, `error_code[8]`, `first`, `last`
+- **关键事实 (经代码核实)**: **无 `src_id`/`dst_id` 字段**. 响应路径用源端口 index 位置路由 (`resp_out[i] = req_in[i]`), 关联靠 `transaction_id` 直通
 
-**协议不兼容原因**:
-- CacheReqBundle 无 `awid`/`bid`/`rid` 等 OOO 字段
-- CacheRespBundle 无 `rresp` (AXI 错误码) / `rlast` (burst 终止)
-- 地址语义不同: AXI64 字节地址 vs Cache 行地址
+**协议"不兼容"真相 (Oracle 2027-09-17 修订)**:
+- ❌ **错误前提**: 旧 design 假设 `CacheReqBundle` 有 8-bit `src_id` (per `cpphdl_types.hh` 假定), 需要 16→8 压缩 + 双向映射表
+- ✅ **真实情况**: `CacheReqBundle.transaction_id` 是 **64-bit**, AXI 16-bit ID 完全能塞进 (1:1 映射), 无压缩、无冲突、无 SLVERR 需要
+- **错误码差异真实存在**: `CacheRespBundle` 无 `rresp`/`bresp` 字段, 错误码用 `error_code[8]` (0=OK, ≠0=err). Axi4CacheAdapter 需做 `AXI rresp/bresp → CacheRespBundle.error_code` 映射, **不是 ID 映射**
 
-### 1.3 4 方向 AXI 流量
+**修正后的 Axi4CacheAdapter 真实复杂度**: 
+- 1:1 字段映射 (`awid[16] → transaction_id[64]` 直接赋值, `address[64]`/`size[8]`/`is_write`/`data[64]` 直通)
+- `error_code → rresp/bresp` 反向映射 (rresp: 0=OK, 1/2/3=DECERR/SLVERR/EXOKAY)
+- `fragment_id/fragment_total` 处理多拍请求 (`awlen` > 0 时需拆分)
+- **复杂度大幅降低**: 旧设计 8-bit 冲突 + OOO 双向映射表全不需要
 
-| 方向 | 路径 | 当前状态 |
-|------|------|---------|
-| **D1**: Host→EP 写/读 | HB→`axi_slave_in` | ✅ 程序化闭环 |
-| **D2**: EP→Host 响应 | `slave_resp`→HB | ✅ 程序化闭环 |
-| **D3**: EP→SoC 写 | `axi_master_out`→xbar | ⚠️ 单向连通, 无响应 |
-| **D4**: EP→SoC 读响应 | xbar→`master_resp` | ❌ BROKEN |
-| **MSI-X**: EP→Host | MsiXTable::irq_out | ❌ 无连接 |
-| **SDMA**: EP→SDMA | BAR doorbell→SDMA | ❌ 不在 JSON |
-| **CompletionRing**: CR→EP | irq_out[3]→? | ❌ 未接线 |
+### 1.3 4 方向 AXI 流量 (代码事实修订)
+
+| 方向 | 路径 | 当前状态 | 修复路径 |
+|------|------|---------|----------|
+| **D1**: Host→EP 写/读 | HB→`axi_slave_in` | ✅ 程序化闭环 (Phase 8 M1) | 不动 |
+| **D2**: EP→Host 响应 | `slave_resp`→HB | ✅ 程序化闭环 (Phase 8 M1) | 不动 |
+| **D3**: EP→SoC 写 | `axi_master_out`→❌ 无接线 | ❌ **从未接,非"单向连通"** (旧 design 误诊) | 新增 `Axi4CacheAdapter` + `EP.set_xbar_master(adapter)` setter |
+| **D4**: EP→SoC 读响应 | xbar.resp_out→❌ 无接线 | ❌ BROKEN (与 D3 同根因) | `Axi4CacheAdapter` 的 `resp` 端推送 `PcieEndpointIP::tick()` 经 `slave_resp` 转 HB (借用既有路径) |
+| **MSI-X**: EP→Host | MsiXTable::irq_out | ❌ 无连接 | D3 修订 (EP 双端口 `msix_delivery_in/out`, HB 增 ingress) |
+| **SDMA**: EP↔SDMA | BAR doorbell↔SDMA | ❌ 不在 JSON | D4 (程序化桥接 `EP.set_sdma_engine()`) |
+| **CompletionRing**: CR→EP | irq_out[3]→? | ❌ 未接线 | D5 (`EP.set_completion_ring()` 桥接 → `msix_delivery_in`) |
 
 ---
 
@@ -91,44 +105,75 @@ CompletionRing   ────► ❌ irq_out[3] 未接线
 
 **考虑过的方案**:
 - ❌ 嵌入 PcieAxiAdapter: 破坏单一职责, 增加 PcieAxiAdapter 复杂度
-- ❌ 扩展 CrossbarTLM 支持 Axi4Bundle: 改动范围大, 影响其他 155 个 `[chstream]` 测试
+- ❌ 扩展 CrossbarTLM 支持 Axi4Bundle: 改动范围大, 影响其他 `[chstream]` 测试 (184 assertions / 46 cases)
 - ❌ 协议层统一为 CacheReq/Resp: 破坏 AXI 标准化, 影响 Phase 5-6 已交付接口
 
-### D2: Axi4CacheAdapter ID 映射策略 — **2 字节 → 1 字节压缩 + Tagging**
+### D2: Axi4CacheAdapter ID 映射策略 — **transaction_id 直通 (Oracle + Metis 2027-09-17 重写)**
 
-**决策**:
-- AXI 16-bit `awid`/`arid` → CacheReq 8-bit `src_id` (压缩高 8 bit, 低 8 bit 作为 `ax_id` 保留)
-- AXI 16-bit `bid`/`rid` → CacheResp 8-bit `dst_id` + 4-bit `ax_id` 用于 OOO 匹配
-- **Tagging 策略**: 维护 `awid_to_src_id_` 和 `src_id_to_awid_` 双向映射表, capacity 256
+**决策 (重写)**: Axi4 16-bit ID 与 CacheReq 64-bit `transaction_id` **1:1 直通**, **不压缩**、**无双映射表**、**无 SLVERR 冲突**:
 
-**理由**:
-- CacheReqBundle 限制 `src_id`/`dst_id` 为 8-bit (per `cpphdl_types.hh`)
-- AXI 16-bit ID 空间太大, 压缩不可避免
-- 8-bit `src_id` 足够 PCIe EP 使用 (单 EP 不会同时发出 >256 写请求)
+```cpp
+// 出站 (AW/AR → req): ID 直接打包
+CacheReqBundle req;
+req.transaction_id.write(aw.awid.read());  // 16-bit ID 直接装进 64-bit
+req.address.write(aw.awaddr.read());
+req.size.write(aw.awsize.read());
+req.is_write.write(true);  // AW 路径
+req.fragment_id.write(aw_beat_idx);  // 多拍
+req.fragment_total.write(aw.awlen.read() + 1);
+
+// 入站 (resp → R/B): transaction_id 直接拆分
+CacheRespBundle resp;
+const uint16_t bid = static_cast<uint16_t>(resp.transaction_id.read());  // 提取
+// resp → B 通道: bid, bresp = decode_error_code(resp.error_code)
+```
+
+**真实复杂度 (~80 行实现)**:
+- `awid[16]` ↔ `transaction_id[64]`: 直接赋值, 无损映射
+- `rresp[2]/bresp[2]` ↔ `error_code[8]`: 反向映射 (0=OK, 1=DECERR, 2=SLVERR)
+- `awlen[8]` ↔ `fragment_total-1[8]`: 多拍拆分
+- `arid[16]` ↔ `transaction_id[64]`: 同 awid 路径
+- `rlast` ↔ `fragment_id == fragment_total-1`: 多拍最后一拍
+
+**理由 (Oracle 修订版)**:
+- **代码事实 (已核验)**: `CacheReqBundle.transaction_id` 是 `ch_uint<64>`, 完全容纳 16-bit AXI ID (`include/bundles/cache_bundles_tlm.hh:30`)
+- **真实问题**: 旧 design 假设 `src_id`/`dst_id` 字段存在 (per `cpphdl_types.hh` 假定), 但 `CacheReqBundle`/`CacheRespBundle` **无这两个字段**
+- **响应路由**: `CrossbarTLM::tick()` (line 97-144) 按源端口 index 位置路由 (`resp_out[i] = req_in[i]`) + `transaction_id` 直通配对 (`resp.transaction_id = req.transaction_id`)
+- **OOO 天然支持**: AXI 16-bit ID 装入 64-bit `transaction_id`, OOO 匹配在 `PcieAxiAdapter` 内嵌的 `Axi4Mapper` (Phase 6) 处理, Axi4CacheAdapter 仅做字段级转换
 
 **考虑过的方案**:
-- ❌ 扩展 CacheReqBundle 为 16-bit: 破坏现有 `[chstream]` 测试
-- ❌ 完全 OOO 处理: Phase 6 `Axi4Mapper` 已实现, Axi4CacheAdapter 仅做协议转换不处理 OOO
+- ❌ 旧 design 的"8-bit src_id 压缩 + 双向映射表 capacity 256": **基于不存在前提**, Oracle 2027-09-17 fact-check 否定
+- ❌ 扩展 CacheReqBundle 为 16-bit ID: 破坏现有 `[chstream]` 测试
+- ❌ 完全 OOO 处理: Phase 6 `Axi4Mapper` 已实现 (per `axi4_mapper.hh` L27-28 N+1 拒绝语义), Axi4CacheAdapter 仅做字段转换
 
-### D3: MSI-X 投递路径 — **EP 双端口 + HB 单 ingress 端口**
+**Backpressure 策略 (Oracle 新增)**:
+- Axi4CacheAdapter 接受 AW/AR 前**预检** outstanding 容量 (默认 ≤16, Axi4Mapper 行为对齐)
+- 容量满时 **拒收** (`awready/arready = 0`), 不返错误 (避免 SDMA/EP 触发不存在 retry loop)
+- 与 Phase 6 `Axi4Mapper` 的 N+1 拒绝语义保持一致
 
-**决策 (Oracle 修订版)**:
+### D3: MSI-X 投递路径 — **EP 双端口 + HB 单 ingress 端口 (API 引用修正)**
+
+**决策 (Oracle 修订版 + API 修正)**:
 - `PcieEndpointIP` 新增 **2 个独立端口**:
   - `msix_delivery_in` (ingress, MsiXDeliveryBundle) — 接收来自 SDMA `done_out[4]` / CompletionRing `irq_out[3]` 的 MSI-X 事件
   - `msix_delivery_out` (egress, MsiXDeliveryBundle) — 主动 push 到 HostBypassTLM
-- `HostBypassTLM` 新增 1 个 ingress 端口 `msix_delivery_in` (MsiXDeliveryBundle), 由 PcieEndpointIP tick() 经程序化桥接推送
+- `HostBypassTLM` 新增 1 个 ingress 端口 `msix_delivery_in` (MsiXDeliveryBundle)
+- **API 修正 (Metis 2027-09-17)**: HB↔EP 关联**不是** `PcieEndpointIP::set_host_bypass()` setter, 而是既有 **`HostBypassTLM::attach_to_endpoint(EP*)`** (HB-side, 已有 API). EP tick() 内调用 `host_bypass_->trigger_msi(vector, ...)` 经此关联推送 MSI-X
+- **vector 命名空间 (Oracle 新增)**: MSI-X vector 分配**由 EP MsiXTable 统一管理**, SDMA/CR 不应硬编码 vector=3. 桥接代码需向 EP 注册 vector (类似 `ep->allocate_msix_vector(SDMA_FENCE_VECTOR)`)
 
 **理由 (修订版)**:
 - **数据流方向**: EP 内部聚合 (in) → EP 转发 (out) → HB 接收 (in), 严格单向
-- **协议简单**: MsiXDeliveryBundle {vector, msg_addr, msg_data} 无需握手
+- **协议简单**: MsiXDeliveryBundle {vector[16], msg_addr[64], msg_data[32], trans_id[32]} (per `pcie_bundles_tlm.hh:119-131`) 无需握手
 - **不污染 AXI 路径**: 单独端口避免与 AXI 流混淆
 - **EP 内部聚合**: SDMA done + CompletionRing irq 共用 EP→HB 通道, 减少端口爆炸
 - **可独立测试**: 单独 ingress 便于 `[pcie-ep-soc-bridge]` 标签测试
+- **API 一致性**: 使用既有 `attach_to_endpoint` 模式, 避免新增 setter (与 Phase 8 HB 设计语言一致)
 
 **考虑过的方案**:
 - ❌ 通过 `axi_slave_in` 复用: 协议不同 (MSI-X 是中断信号, AXI 是事务), 混淆语义
 - ❌ 新增专门 MSI-X 控制器模块: 过度设计, HostBypassTLM 已足够
 - ❌ 单一 EP 端口 (in 或 out 二选一): 无法聚合 SDMA + CompletionRing 两路来源
+- ❌ `EP::set_host_bypass()` setter: API 不存在, 误引用 (per Metis 2027-09-17 fact-check)
 
 ### D4: SDMA JSON 接线 — **程序化桥接 (Phase 8 先例)**
 
@@ -188,7 +233,7 @@ CompletionRing   ────► ❌ irq_out[3] 未接线
 
 ### D7: JSON 接线约束 (Oracle 新增) — **声明式接线范围限制 + 程序化桥接强制**
 
-**决策**: 本 change 内 SDMA + MSI-X + CompletionRing **全部走程序化桥接**, 不依赖 JSON 声明式 EP 外层端口接线
+**决策**: 本 change 内 SDMA + MSI-X + CompletionRing + **axi_master_out→xbar** **全部走程序化桥接**, 不依赖 JSON 声明式 EP 外层端口接线
 
 **理由 (per Oracle 2027-09-17)**:
 - **19 §14.2.3 已锁定**: `pcie_ep.axi_slave_in/axi_master_out` 声明式接线在 connection_resolver 两层下钻时**被静默丢弃** (test_axislavein_bridge_path_intact 锁定该行为), 且 19 明确"未来扩展属独立 change"
@@ -201,10 +246,32 @@ CompletionRing   ────► ❌ irq_out[3] 未接线
 - 添加 hb/ep/rc 顶层模块连接 (hb.axi_master ↔ ep.axi_slave_in 在 Phase 8 M1 已程序化闭环)
 - 添加 msix_delivery 程序化桥接的 metadata 注释 (便于阅读)
 
-**JSON 在本 change 内的禁用范围**:
-- `ep.axi_master_out[N]` 任何目标 (xbar, sdma, vram0) — 静默丢弃
+**JSON 在本 change 内的禁用范围 (扩展, Oracle 修订)**:
+- `ep.axi_master_out[N]` 任何目标 (xbar, sdma, vram0) — 静默丢弃 (per 19 §14.2.3)
 - `ep.axi_slave_in[N]` 任何源 (host_bypass 已程序化) — 同上
-- `ep.msix_delivery_in/out` 任何连接 — 走 EP.set_host_bypass() / EP.set_sdma_engine() setter
+- `ep.msix_delivery_in/out` 任何连接 — 走 EP.set_sdma_engine() / set_completion_ring() setter
+- **新增**: `xbar[N]` 任何目标 (sdma/vram/memory) — 19 §14.2.3 同样适用 (D3/D4 修复需经 Axi4CacheAdapter 程序化注入)
+
+### D8: framebuffer 单一真源契约 (P0.5-landing 集成, Oracle 新增)
+
+**决策**: Axi4CacheAdapter 出站 (`AW/AR → req`) 写目标 = `DGpuBoard::framebuffer_` backing (P0.5-landing 单一真源), **禁止**独立 mmap 任何 backing.
+
+**契约条目**:
+- **不变量 1**: `Axi4CacheAdapter` 不知道 framebuffer_ 存在; 写目标仅是 `CacheReqBundle.address` 字段, 由 `CrossbarTLM::tick()` 地址路由 (`route_address()` 函数) 决定下游
+- **不变量 2**: SDMA `set_vram_backdoor()` (P0.5-landing `bind_memory_backings()` line 580) 已注入 `framebuffer_.data()` — Axi4CacheAdapter 不应重复 mmap
+- **不变量 3**: `DGpuBoard::init()` 顺序 Inv-2 扩展: framebuffer 分配 → bind_memory_backings → set_xbar_master(Axi4CacheAdapter) → set_sdma_engine() → set_completion_ring() → 启动 sim_thread_. setter 必须在 framebuffer 分配之后, 否则 SDMA/GMMU 写错 backing
+- **不变量 4 (init order assert)**: 在 `DGpuBoard::init()` 末尾加 assert `framebuffer_ptr_ != nullptr` 否则 `runtime_error` ("framebuffer 未分配, Axi4CacheAdapter/SDMA 接线将被拒收")
+
+**理由**:
+- P0.5-landing 已 ship framebuffer 单一真源 (per `minimal-dgpu-soc-abi-landing` capability + AGENTS.md KEY INVARIANT)
+- 本 change 新增 4 断点修复**不能破坏**这一约定: 否则 SDMA/CP/CR 数据会写到独立 mmap, 与 framebuffer 路径**不同步**
+- 4 个断点中 3 个 (SDMA, CompletionRing, Axi4CacheAdapter) 都涉及 framebuffer 数据, **必须复用同一 backing**
+
+**spec 对应 Scenario (新增)**:
+- `axi4-cache-adapter-uses-framebuffer-single-source` (framebuffer_ 写入与 BAR1 写入数据一致)
+- `dgpu-board-init-order-assert` (framebuffer 未分配时 setter 接线拒收)
+
+---
 
 ---
 
@@ -212,114 +279,143 @@ CompletionRing   ────► ❌ irq_out[3] 未接线
 
 | Risk | 等级 | 缓解 |
 |------|:----:|------|
-| `Axi4CacheAdapter` 状态机设计缺陷 | 🟡 中 | TDD 5 步先写测试, 包含 OOO/error/timeout 场景 |
-| AXI 16-bit ID → 8-bit 压缩冲突 | 🟡 中 | D2 决策: 高 8 bit 进 src_id, 低 8 bit 保留, 双向映射表 capacity 256 |
-| EP tick() 扩展破坏 Phase 8 M1 既有 4 方向闭环 | 🟡 中 | `[pcie]` 回归测试覆盖, 36,454 assertions 基线 |
-| **JSON 接线被 19 §14.2.3 静默丢弃** (Oracle blocker) | 🔴 **高** | **D7 决策: 程序化桥接强制** (Phase 8 HB/RC 先例), 不依赖 JSON 声明式 EP 外层端口接线 |
-| **SDMA bundle 类型误标** (Oracle blocker) | 🔴 **高** | **D4 修订: 按真实 bundle 类型 (PcieTlpBundle) 重写接线描述, 新增 2 个 AXI 端口供未来扩展** |
-| **SDMA 端口索引错误** (design D4 host_out[0]/done_out[0]) | 🟡 中 | **D4 修订: 锁定 header 注释 host_out=3, done_out=4** |
-| **MSI-X 端口命名混乱** (tasks 5.1.1 out vs design in vs spec 方向) | 🟡 中 | **D3 修订: EP 双端口 msix_delivery_in (←SDMA/CR) + msix_delivery_out (→HB)** |
-| **Catch2 标签不嵌套导致 G6 失效** | 🟡 中 | **D6 修订: 4 新测试文件双标签 `[pcie][pcie-ep-soc-bridge]`, G9 验证** |
-| CompletionRing irq_out[3] header 注释说"→pcie_ep.irq_out" | 🟢 低 | D5 决策: 同步 header 注释改为"→pcie_ep.msix_delivery_in", P0.5-7 包含 |
-| `[pcie-ep-soc-bridge]` 标签 0 命中基线 | 🟢 低 | 4 个新测试文件, 至少 30 assertions, G9 双标签保 G6 数学 |
+| ~~`Axi4CacheAdapter` 状态机设计缺陷~~ | ~~🟡 中~~ | **已废 (Oracle 重写)**: transaction_id 直通消除 OOO/conflict/SLVERR 复杂度, 设计复杂度降至 ~80 行 |
+| ~~AXI 16-bit ID → 8-bit 压缩冲突~~ | ~~🟡 中~~ | **已废**: `CacheReqBundle.transaction_id` 是 64-bit, 直通无冲突, 不需要压缩 |
+| **`Axi4CacheAdapter` 实施错误**: transaction_id 直通错位 / fragment 拆分 bug | 🟡 中 | TDD 5 步先写测试, fragment 多拍 round-trip + 多 outstanding 并发 |
+| EP tick() 扩展破坏 Phase 8 M1 既有 4 方向闭环 | 🟡 中 | flag-gated 默认路径 (P0.5-5 setter 默认关闭), `[pcie]` 回归 + test_pcie_endpoint_ip_full_e2e 显式 gate |
+| **`D3` API 误引用 `set_host_bypass()`** (Metis 2027-09-17) | 🟡 中 | **已修 (D3 Oracle 修订)**: 用既有 `HostBypassTLM::attach_to_endpoint()` API |
+| **`D2` 旧前提 8-bit 压缩** (Metis + Oracle 共识) | 🔴 **高 (历史)** | **已废**: D2 Oracle 重写为 transaction_id 直通, 实施前 P0.5-2 code review 必须确认无压缩逻辑 |
+| **JSON 接线被 19 §14.2.3 静默丢弃** | 🔴 **高** | **D7 决策: 程序化桥接强制** (Phase 8 HB/RC 先例), D7 范围扩展含 xbar 下游 |
+| **SDMA bundle 类型误标** | 🔴 **高** | **D4 修订: 按真实 bundle 类型 (PcieTlpBundle) 重写接线描述, 新增 2 个 AXI 端口供未来扩展** |
+| **SDMA 端口索引错误** | 🟡 中 | **D4 修订: 锁定 header 注释 host_out=3, done_out=4** |
+| **MSI-X vector 命名空间冲突** (Oracle) | 🟡 中 | **D3 Oracle 修订: vector 由 EP MsiXTable 统一分配, 桥接代码调用 `ep->allocate_msix_vector()`** |
+| **framebuffer 单一真源破坏** (Oracle 新增) | 🔴 **高** | **D8 新增: Axi4CacheAdapter 出站写目标 = framebuffer_, DGpuBoardShell 加 init order assert** |
+| **Catch2 标签语义误解** (Metis 2027-09-17) | 🟢 低 | spec Scenario 3 重写: 双标签目的是 G6/G2 floor 数学, 不是"OR 逻辑" |
+| **测试基线陈旧** (Metis 2027-09-17) | 🟢 低 | 36,454/155 → 实际 36,598/184 (实测), G6/G7 重算 |
 
 ---
 
 ## 5. Migration Plan
 
-### 5.1 实施顺序 (TDD 5 步, 9 步对应 P0.5-1..P0.5-9)
+### 5.1 实施顺序 (Metis + Oracle 2027-09-17 重构: 9 步压缩到 4 commit)
 
 ```
-P0.5-1: 写 test_axi4_cache_adapter.cc (TDD 红)
-  ↓
-P0.5-2: 实现 include/framework/axi4_cache_adapter.hh + .cc
-  ↓
-P0.5-3: 验证 Axi4CacheAdapter 单测 PASS (TDD 绿)
-  ↓
-P0.5-4: 修改 Axi4StreamAdapter 暴露桥接点
-  ↓
-P0.5-5: 修改 PcieEndpointIP::tick() 补 D3/D4 + MSI-X 投递
-  ↓
-P0.5-6: 修改 HostBypassTLM 新增 msix_delivery_in 端口
-  ↓
-P0.5-7: 修改 dgpu_soc_with_pcie_ip.json (sdma + msix + completion_ring)
-  ↓
-P0.5-8: 写 3 个 E2E 测试 (msix + sdma + completion_ring)
-  ↓
-P0.5-9: 全量回归 + openspec validate --strict
+Commit 1 (Axi4CacheAdapter, 独立 P0.5-1..4):
+  - 实现 Axi4CacheAdapter (D2 重写: transaction_id 直通)
+  - chstream_register 注册
+  - axi4_stream_adapter 暴露桥接点
+  - test_axi4_cache_adapter.cc (transaction_id + fragment + OOO + backpressure)
+
+Commit 2 (EP/HB tick 扩展, P0.5-5..6):
+  - PcieEndpointIP: 新增 msix_delivery_in/out 端口, flag-gated 默认关闭
+  - HostBypassTLM: 新增 msix_delivery_in 端口, attach_to_endpoint 关联
+  - flag-gated: setter 默认关闭, Phase 8 M1 4 方向闭环回归零影响
+  - test_pcie_endpoint_ip_msix_path.cc
+
+Commit 3 (SDMA/CR/json, P0.5-7):
+  - SdmaEngineTLM: 端口扩展 (axi_slave_in/axi_master_out 占位)
+  - CompletionRingTLM: irq_out[3] 目标 EP.msix_delivery_in (vector 分配走 EP)
+  - DGpuBoardShell: bind_memory_backings + set_sdma_engine + set_completion_ring + init order assert (D8)
+  - dgpu_soc_with_pcie_ip.json: 添加 sdma 模块声明 (无接线声明, per D7)
+  - test_pcie_endpoint_ip_sdma_wiring.cc + test_pcie_endpoint_ip_completion_ring_wiring.cc
+
+Commit 4 (跨仓 doc + 验证, P0.5-9):
+  - ArchForge 仓: 19-pcie §13 + dgpu-soc-pcie-slice §9.4 (跨仓 PR, 不在本仓)
+  - CppTLM 仓: AGENTS.md + test/CMakeLists.txt (若需)
+  - 验证: openspec validate --strict + cpptlm_tests "[pcie]" ≥36,598 PASS
 ```
 
-### 5.2 回滚策略
+**为什么 4 commit 而非 9** (Metis + Oracle 共识):
+- P0.5-5..7 改同一文件 `pcie_endpoint_ip.cc` 多次, 无法独立回滚 (commit 2+3 合并)
+- 9 commit 增加 cherry-pick 复杂度, 降低 PR 可读性
+- 4 commit 粒度更合理: 桥(独立) + tick 扩展(独立) + SDMA/CR 集成(独立) + 验证
 
-每个 P0.5 步骤独立 commit, 出问题可单独回滚:
-- P0.5-1..3: 仅新增 Axi4CacheAdapter, 既有代码无影响
-- P0.5-4: 既有代码兼容性扩展, 可独立回滚
-- P0.5-5..6: EP/HB 扩展, 既有 `[pcie]` 回归测试保护
-- P0.5-7: JSON 配置, `validate_topology` 立即验证
-- P0.5-8..9: 测试和回归, 失败可整体跳过本 change
+### 5.2 回滚策略 (flag-gated 默认关闭, Oracle 新增)
+
+**关键纪律**: 所有 P0.5-5..7 新增分支**默认 disable** (编译期 flag 或 runtime config), 仅在 setter 被调时激活. 这样:
+- Phase 8 M1 4 方向闭环回归**零影响** (默认路径不变)
+- 出问题可单独 disable 一个 setter 验证影响范围
+
+**Flag 设计** (建议):
+- `ep.msix_delivery_in` port: 默认 disable (no consumer), 仅 `set_completion_ring()` 后激活
+- `Axi4CacheAdapter` setter: 默认 `nullptr` (EP 走旧路径), 仅 `set_xbar_master(adapter)` 后激活
+- SDMA setter: 默认 `nullptr` (SDMA 不参与 EP 通路), 仅 `set_sdma_engine()` 后激活
+
+### 5.3 时间线重估 (Metis 修订)
+
+旧估时 "1.5-2 周" **过度乐观**. 修正后:
+- Commit 1 (桥, ~80 行 + 测试): 2-3 天 (TDD 5 步严格)
+- Commit 2 (EP/HB tick, 最高风险): 3-4 天 (含 flag-gated 实施 + Phase 8 M1 回归)
+- Commit 3 (SDMA/CR 集成, 3 模块 + json + init order assert): 3-5 天
+- Commit 4 (跨仓 doc + 验证): 1 天 (跨仓 PR 异步)
+- **总计**: 9-13 天 ≈ **2-3 周单人**
 
 ---
 
 ## 6. Open Questions
 
 - **Q1**: `Axi4CacheAdapter` 是否需要支持 burst 拆分? (AXI 4KB burst vs CacheReq 64B 行)
-  - **当前答案**: 不需要, Axi4StreamAdapter 已处理 burst 拆分为 beat
+  - **当前答案 (修订)**: **需要 fragment 多拍拆分**. `CacheReqBundle.fragment_id/total[8]` 字段存在, Axi4CacheAdapter 必须把 `awlen[8]+1` 拆分为 `fragment_total` 个 req. Axi4StreamAdapter 的 beat 拆分在它上游, 这里再做一次 fragment 拆分 (per `cache_bundles_tlm.hh` line 67-72 fragment_id 字段)
 - **Q2**: MSI-X 端口在 HostBypassTLM 是否需要 sequence number?
-  - **当前答案**: 不需要, MSI-X 是 fire-and-forget 单向信号
+  - **当前答案**: 不需要, MSI-X 是 fire-and-forget 单向信号 (per `MsiXDeliveryBundle.trans_id[32]` 已含关联 ID)
 - **Q3**: SDMA 16 outstanding 是否足够? 实际驱动可能需要 64+
-  - **当前答案**: 16 是 MVP, 后续 P3+ 阶段可扩展
+  - **当前答案**: 16 是 MVP, 后续 P3+ 阶段可扩展. **静态守卫**: `sdma.max_outstanding` ≤ Axi4CacheAdapter capacity, 违反 init 失败
+- **Q4** (Metis 新增): 旧 8-bit 冲突用例 (test_axi4_cache_adapter.cc §7+test cases) 是否需删除?
+  - **当前答案**: **是**. 重写 D2 后冲突场景不存在, 删除避免锁定错误逻辑
+- **Q5** (Metis 新增): D7 范围扩展 (含 xbar 下游) 是否需 connection_resolver 修订配套?
+  - **当前答案**: 是, 列为后续 change ("connection_resolver strict 模式, 未解析连接 FAIL 而非 WARN"). 不阻塞本 change
 
 ---
 
-## 6.5 Axi4CacheAdapter P0.5-2 设计评审检查项 (GPGPU 侧复用)
+## 6.5 Axi4CacheAdapter P0.5-2 设计评审检查项 (GPGPU 侧复用, Oracle 精简版)
 
-> **新增 (Phase 9 P0.5-cpptlm-minimal-dgpu-soc-v1-landing 隐藏建议)**: Axi4CacheAdapter 在 P0.5-2 实施前花 30 分钟做以下检查项, 零成本为未来 GPGPU/SoC 集成预留复用点.
+> **新增 (Phase 9 P0.5-cpptlm-minimal-dgpu-soc-v1-landing 隐藏建议)**: Axi4CacheAdapter 在 P0.5-2 实施前花 30 分钟做以下检查项. **Oracle 修订**: 删去 YAGNI 项 (第 1/4 项), 仅保留"不依赖 PCIe + 容量参数化 + 错误码 enum"三条.
 
-### 检查项清单
+### 检查项清单 (精简)
 
-| # | 检查项 | 当前设计 | GPGPU 复用影响 | 通过条件 |
-|---|--------|----------|----------------|----------|
-| 1 | **构造参数不烧死 PCIe 语义** | `Axi4CacheAdapter(src_id_base, ax_id_base, peer_is_pcie?)` | GPGPU SM/SoC 集成需传 `peer_is_pcie=false`, 不应假设 Endpoint 协议 | 构造函数接受 `peer_kind` enum, 不假设 PCIe TLP 转换 |
-| 2 | **ID 映射表大小参数化** | `awid_to_src_id_[256]` 固定 | GPGPU 可能需 1024+ outstanding | capacity 模板参数或 runtime config |
-| 3 | **错误码扩展点** | 仅 `rresp=DECERR` / `bresp=DECERR` | GPGPU NoC 可能需 SLVERR/DECERR/EXOKAY | 提供 error code 回调或 enum 映射 |
-| 4 | **Bundle 类型抽象** | `Axi4Bundle ↔ CacheReq/RespBundle` | GPGPU 可能需 AXI4StreamBundle 或自研 Bundle | 抽 `IBundle<>` 模板或 visitor pattern |
-| 5 | **MMIO/CSR 路径** | 无 MMIO 控制 (纯 passive) | GPGPU 可能需 debug CSR (容量、outstanding 计数) | 提供可选 CSR 注入点 |
-| 6 | **线程模型** | 单线程 tick() | GPGPU NoC 多主端口需 multi-thread 安全 | tick() 标注 thread-safety 注释 |
+| # | 检查项 | 通过条件 |
+|---|--------|----------|
+| 1 | **不依赖 PCIe 符号** (PcieEndpointIP/TLP 任何符号) | 头文件 `git grep PcieEndpoint\|TLP` 无命中 |
+| 2 | **错误码映射通过 enum/class 抽象** (非硬编码 PCI DECERR) | 提供 `AxiErrorCode` enum, 含 OK/DECERR/SLVERR/EXOKAY/UNKNOWN 5 值 |
+| 3 | **fragment 拆分支持** (`awlen` → `fragment_total`) | unit test 覆盖 `awlen=3` (4 拍) round-trip |
 
 ### 实施检查 (在 P0.5-2 code review 时)
 
 ```cpp
 class Axi4CacheAdapter : public ChStreamModuleBase {
 public:
-    enum class PeerKind { PcieEP, GpgpuSM, GenericSoC };  // 关键: 不烧死 PCIe
+    enum class AxiErrorCode { OK, DECERR, SLVERR, EXOKAY, UNKNOWN };
     Axi4CacheAdapter(const std::string& n, EventQueue* eq,
-                     PeerKind peer = PeerKind::PcieEP,         // 默认 PCIe 兼容
-                     size_t id_table_capacity = 256);          // 可扩展
-    // ... 不假设 awlen/araddr 是 PCIe TLP 解码结果
+                     size_t max_outstanding = 16);  // 与 Axi4Mapper 对齐
+    // 不假设 PCIe: 头文件不 include pcie_endpoint_ip.hh / pcie_*.hh
 };
 ```
 
 ### 评审结论模板 (P0.5-2 PR 必含)
 
 ```markdown
-## Axi4CacheAdapter GPGPU 复用检查 (per design §6.5)
+## Axi4CacheAdapter 评审 (per design §6.5 精简版)
 
-- [ ] 构造函数 PeerKind 参数化
-- [ ] ID 映射表 capacity 参数化 (默认 256 兼容 PCIe)
-- [ ] 错误码通过 enum/class 抽象 (非硬编码 PCI DECERR)
-- [ ] 不依赖 PcieEndpointIP/TLP 任何符号
-- [ ] tick() 线程安全注释清晰
-- [ ] 单元测试覆盖 non-PCIe peer_kind 路径
+- [ ] 不依赖 PCIe 符号 (头文件 git grep 验证)
+- [ ] AxiErrorCode enum 抽象 5 值
+- [ ] fragment 拆分 unit test 覆盖 awlen=3
 ```
 
-**通过条件**: 全部 [x] 才允许 P0.5-2 PR merge. 否则视为 GPGPU 复用点未预留, 回退到 D1 默认方案并记录 backlog.
+**通过条件**: 全部 [x] 才允许 P0.5-2 PR merge. YAGNI 项 (PeerKind 参数化 / Bundle visitor) 列为未来 change 备选, 不阻塞当前 PR.
 
 ---
 
 ## 7. 关联
 
-- **P2 主计划**: `docs/soc_arch/roadmap/phase9-p2-cp-attach-via-axi.md`
-- **架构文档**: `docs/soc_arch/architecture/19-pcie-ip-microarchitecture.md` (EP 内部数据流)
-- **P2 unblock 阶段文件**: `docs/soc_arch/roadmap/phase9-p2-unblock.md` (P0.5-1 创建)
+- **P2 主计划** (ArchForge): `docs/roadmap/phase9-p2-cp-attach-via-axi.md`
+- **架构文档** (ArchForge): `docs/architecture/19-pcie-ip-microarchitecture.md` (EP 内部数据流)
+- **P2 unblock 阶段文件** (ArchForge): `docs/roadmap/phase9-p2-unblock.md` (本 change 异步创建)
+- **dgpu-soc-pcie-slice** (ArchForge): `docs/microarchitecture/dgpu-soc-pcie-slice.md` §9.4 (本 change 异步追加)
 - **specs**: [`specs/pcie-ep-soc-noc-axi-bridge/spec.md`](specs/pcie-ep-soc-noc-axi-bridge/spec.md)
 - **相关 spec**: `pcie-ip-integration`, `pcie-axi-datapath-hardening`, `sdma-engine-tlm`, `host-bypass-and-rc`
+- **P0.5-landing 前置** (archived 2027-09-17): `openspec/changes/archive/2026-09-25-2027-09-17-cpptlm-minimal-dgpu-soc-v1-landing/`
+  - 关键依赖: `DGpuBoard::load_soc_config` 自动消费 JSON `framebuffer_size_bytes` (size cap 64GB, override warning, reverse-order guard)
+  - **D8 契约**: 本 change 新增 4 断点修复**不能破坏** framebuffer 单一真源
+  - 零文件重叠, 可并行推进
+- **AGENTS.md**: KEY INVARIANTS (framebuffer 自动分配条目 + OpenSpec Proposed ≤3 KPI)
+- **AGENTS.md DOC HYGIENE**: `docs/soc_arch/` 已迁 ArchForge, 本仓禁直接修改. 设计文档变更 → ArchForge 仓 PR (per anti-patterns)
