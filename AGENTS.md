@@ -377,12 +377,13 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
-- **测试状态**: **66884 assertions 全绿**（含 Phase 1-8 + 7 阶段全链路 + dgpu_soc_minimal_v1 E2E `[minimal_dgpu_soc]` 41 assertions + ABI smoke `[abi][minimal_dgpu_soc]` 28 assertions / 1563 cases）；**openspec validate PASS**
+- **测试状态**: **66951 assertions 全绿**（含 Phase 1-8 + 7 阶段全链路 + dgpu_soc_minimal_v1 E2E `[minimal_dgpu_soc]` 41 assertions + ABI smoke `[abi][minimal_dgpu_soc]` 28 assertions + D2 memory `[pcie-memory]` 67 assertions / 1587 cases）；**openspec validate PASS**
 - **23 ABI 冻结**: `include/tlm/gpu/pcie_endpoint_tlm.h` 与 `include/abi/cpptlm_emulator.h` 零修改（仅可加 `[[deprecated]]` 属性）
 - **PcieEndpointTLM deprecated**: `[[deprecated("use PcieEndpointIP")]]`，chstream_register 仍注册（既有 Phase 4 测试依赖），新增 PcieEndpointIP 并存
 - **512-bit 数据限制**: `ch_uint<512>` 内部 `uint64_t`，`wdata/rdata` 真实宽度 64-bit（per `include/bundles/cpphdl_types.hh`）
 - **PCIe Cfg 地址编码** (v1.1 实现完成): `PcieEndpointIP::tick()` 按 PCIe 规范解码 AXI 配置请求 — 低 2 bit 对齐保留位，`awaddr` 直接用于 cfg/BAR 路径范围判定，cfg 内部屏蔽低 2 bit 后右移得到 byte offset；测试覆盖见 `[cfg-encoding]` 标签。
 - **framebuffer 自动分配** (P0.5-landing, 2027-09-17): `DGpuBoard::load_soc_config` 自动从 `pcie_ep.params.bar_sizes[1]` 派生 `framebuffer_size_`（顶层 `framebuffer_size_bytes` 可 override），`init()` 自动分配 backing → **UE 端 driver 通过 ABI 即可闭环 SoC 全能力**，无需 `attach_framebuffer_for_testing()` 兜底。测试覆盖：`[abi][minimal_dgpu_soc]` 8 cases / 23 assertions + Python demo `examples/demo_dgpu_soc_minimal_via_abi.py`。
+- **memory_routing_enabled_ 路由开关** (D2 v1.1 修订, 2027-09-26): DGpuBoard 新增 `memory_routing_enabled_` flag 防止无条件路由劫持 root cause 4（与 D1 `display_routing_enabled_` 对称）。默认 `false`，仅当 JSON 顶层 `memory_routing_enabled=true` 时启用 BAR 2 → PcieMemoryDevice 路由。测试覆盖：`[pcie-memory]` 24 cases / 67 assertions（4 文件双标签 `[pcie][pcie-memory]`）。
 
 ## PHASE STATE
 

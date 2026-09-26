@@ -91,6 +91,14 @@ public:
         return display_routing_enabled_;
     }
 
+    // D2 v1.1: memory_routing_enabled 路由开关（防劫持，与 D1 v1.1.1 对称）
+    void set_memory_routing_enabled(bool en) noexcept {
+        memory_routing_enabled_ = en;
+    }
+    [[nodiscard]] bool memory_routing_enabled() const noexcept {
+        return memory_routing_enabled_;
+    }
+
     // T-P12-1: 测试 accessors
     // 验证 data ended up in endpoint bar_store_ (for axi_bypass/tlp paths)
     // 委托 pcie_ep()->bar_store_value()
@@ -275,6 +283,8 @@ private:
     // gmmu_routing_enabled_:   BAR0 off<0x100 转发到 GmmuTLM 寄存器 (per B3)
     bool storage_routing_enabled_ = false;
     bool gmmu_routing_enabled_ = false;
+    // D2 v1.1: memory_routing_enabled 路由开关（与 D1 v1.1.1 对称）
+    bool memory_routing_enabled_ = false;
 
     // Phase A2: framebuffer_ 单一 backing 真源 (per gem5 PhysicalMemory 模式)
     // 初始化顺序 Inv-2: resize → bind_memory_backings → sim_thread_

@@ -107,6 +107,12 @@ namespace tlm::gpu {
                 display_routing_enabled_ = board_cfg["display_routing_enabled"].get<bool>();
             }
 
+            // D2 v1.1: memory_routing_enabled 路由开关（与 D1 v1.1.1 对称）
+            if (board_cfg.contains("memory_routing_enabled") &&
+                board_cfg["memory_routing_enabled"].is_boolean()) {
+                memory_routing_enabled_ = board_cfg["memory_routing_enabled"].get<bool>();
+            }
+
             // Phase B1: storage/gmmu 路由防劫持 flag 加载
             if (board_cfg.contains("storage_routing_enabled") &&
                 board_cfg["storage_routing_enabled"].is_boolean()) {
@@ -495,6 +501,14 @@ namespace tlm::gpu {
                 }
             }
         }
+        // D2 memory-device-mvp: BAR 2 (vram_offset) 路由到 PcieMemoryDevice
+        if (memory_routing_enabled_ && soc_) {
+            if (auto* ep = pcie_ep()) {
+                if (ep->has_memory_device()) {
+                    return ep->memory_device().memory_read(vram_offset, buf, len);
+                }
+            }
+        }
         // null buf 无条件拒绝(未初始化 board 也返 -EINVAL, 避免 memcpy 到 nullptr)
         if (buf == nullptr) {
             return -EINVAL;
@@ -540,6 +554,14 @@ namespace tlm::gpu {
             if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
                     return ep->display_device().backdoor_write(vram_offset, buf, len);
+                }
+            }
+        }
+        // D2 memory-device-mvp: BAR 2 (vram_offset) 路由到 PcieMemoryDevice
+        if (memory_routing_enabled_ && soc_) {
+            if (auto* ep = pcie_ep()) {
+                if (ep->has_memory_device()) {
+                    return ep->memory_device().memory_write(vram_offset, buf, len);
                 }
             }
         }

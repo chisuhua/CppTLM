@@ -23,6 +23,7 @@
 #include "core/sim_object.hh"
 #include "tlm/gpu/pcie_bar_router_mvp.hh"
 #include "tlm/gpu/pcie_display_device.hh"
+#include "tlm/gpu/pcie_memory_device.hh"
 #include "tlm/pcie/pcie_completion_tracker_tlm.hh"
 #include "tlm/pcie/pcie_completer_engine.hh"
 #include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
@@ -172,6 +173,17 @@ public:
         return *display_device_;
     }
 
+    // D2 memory-device-mvp: 持有 PcieMemoryDevice (4KB MMIO + 8GB backing, 无 MSI-X)
+    [[nodiscard]] bool has_memory_device() const noexcept {
+        return memory_device_ != nullptr;
+    }
+    tlm::gpu::PcieMemoryDevice& memory_device() noexcept {
+        return *memory_device_;
+    }
+    const tlm::gpu::PcieMemoryDevice& memory_device() const noexcept {
+        return *memory_device_;
+    }
+
     void flr_pf() noexcept;
     void flr_vf(uint16_t vf_id) noexcept;
 
@@ -278,6 +290,8 @@ private:
     tlm::gpu::PcieBarRouter bar_router_;
     // D1 display-io-mvp: 显示 IO 设备 (MMIO 寄存器 + framebuffer + VBLANK counter)
     std::unique_ptr<tlm::gpu::PcieDisplayDevice> display_device_;
+    // D2 memory-device-mvp: Memory 设备 (MMIO 寄存器 + 8GB backing, 无 MSI-X)
+    std::unique_ptr<tlm::gpu::PcieMemoryDevice> memory_device_;
     // BAR 空间 backing store（Phase 8 M1: AXI slave 写经地址路由落写/读回真实值）
     // 三维 key: (bdf, bar, addr) — 跨 BAR 隔离 (T-P10-2)
     std::unordered_map<BarStoreKey, uint64_t> bar_store_;
