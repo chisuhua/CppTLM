@@ -1,4 +1,4 @@
-# Driver-Visible Minimal SoC Spec (v1.4 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13))
+# Driver-Visible Minimal SoC Spec (v1.5 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28))
 
 > **配套**: [proposal.md](../proposal.md) · [design.md](../design.md) · [tasks.md](../tasks.md)
 > **目标**: 在 CppTLM dGPU SoC 中实现**完整最小设备**（driver 视角），让 UsrLinuxEmu 端驱动通过标准 PCIe BAR + 内部 chip-internal AXI 总线看到真实、可驱动验证的最小 dGPU SoC
@@ -409,6 +409,45 @@ D-AXI SHALL NOT modify any freeze surface file (pcie_endpoint_tlm.h / cpptlm_emu
 | 注册迁移 | — | — | registerAdapter 单注册 | **v1.3 B6: PcieMemoryDevice + GmmuTLM 双注册 (registerObject + registerMultiPortAdapter/registerAdapter)** | Oracle/Metis 三方 |
 | 既有测试 | 零改动 | 零改动 | + **N5: 机械迁移** | + 路径扩展 (真实文件名修正) | Oracle 二次 |
 | 工时 | 4-5d | 6d | 9d | **9.5-11d** (+v1.3 P0 修正 0.5-1d + buffer 1d) | 累计 |
+
+### Requirement: v1.5 P0 阻塞修正 SHALL 全部应用 (B14-B28 隐藏缺陷)
+
+v1.5 修订 SHALL 在 v1.3 P0 (B1-B6) + v1.4 P0 (B7-B13) 之上叠加 11 项隐藏缺陷修正（Oracle/Metis 三轮敌对审查发现）。
+
+The v1.5 corrections SHALL:
+- **B14 消灭 vram_segments_** (`dgpu_board_shell.cc:532-591, 796-814`): 删 `std::map<uint64_t, std::vector<uint8_t>> vram_segments_` 成员; backdoor_read/write 改走 `vram_storage_` 唯一路径
+- **B15 强制删 framebuffer_storage_**: `framebuffer_ptr_ = vram_storage_.get()`; 消除 P0.1 "或改名+语义保持" 二选一歧义
+- **B16 attach_framebuffer_for_testing 优先级规则**: vram_storage_ 已分配时拒绝 attach（防测试绕开单一真源）
+- **B17 新增 `Packet::payload_resize()` + `PacketPool::acquire_with_min_size()`**: N1 框架修复 (T0.2 必失败路径)
+- **B18 `on_config_loaded` 真实接线 capacity_gb**: 消除 MemoryTLM "1GB cap 不存在" 谎言
+- **B19 SDMA `vram_size_bytes` 由 board 注入**: 与 vram_size_ 同步; T4.1 JSON 删 sdma.params.vram_size_bytes
+- **B20 `set_translate_cb` + `set_sdma_engine` 无条件注入**: 防 SDMA 静默挂起
+- **B21 GMMU dummy `resp_out()` + `req_in()`**: 对齐 MemoryTLM 模板契约 (line 176-183)
+- **B22/B23 Fault Path 显式化**: SLVERR latch + translate 错误 emit done（防永久挂死）
+- **B25 SDMA ↔ PcieMemoryDevice 统一 PcieTlpBundle**: 放弃 v1.3 B2 切型（框架限制）
+- **B26/B27/B28 backdoor bound 统一 vram_size_**; **BAR0 简化**; **MemoryTLM capacity 三方矛盾消解**
+
+The class/spec SHALL NOT:
+- 保留 `vram_segments_` map（任何路径）
+- 保留 `framebuffer_storage_` vector（已合并到 vram_storage_）
+- 让 `attach_framebuffer_for_testing` 在 vram_storage_ 已分配时覆盖单一真源
+- 让 T0.2 在没有 `Packet::payload_resize()` 时静默失败
+- 让 MemoryTLM `on_config_loaded` no-op（必须真实接线 capacity_gb）
+- 让 SDMA `vram_size_bytes` 默认 256MB（必须由 board 注入）
+- 让 `set_translate_cb` 仅在 legacy 分支注入（必须无条件）
+- 让 GMMU `registerAdapter` 编译失败（必须添加 dummy）
+- 让 SDMA/GMMU 故障路径只是注释（必须显式 emit done / fault latch）
+- 让 SDMA ↔ PcieMemoryDevice 端口类型不匹配（统一 PcieTlpBundle）
+
+#### Scenario: 实施前 v1.5 P0 验证
+- **WHEN**: `grep -rn "vram_segments_\b" src/tlm/gpu/dgpu_board_shell.cc include/tlm/gpu/dgpu_board_shell.hh` 
+- **THEN**: 零匹配（B14 实施完成）
+- **WHEN**: `grep -rn "framebuffer_storage_" src/tlm/gpu/dgpu_board_shell.cc include/tlm/gpu/dgpu_board_shell.hh`
+- **THEN**: 零匹配（B15 实施完成）
+- **WHEN**: `grep -rn "ensure_payload_size" include/framework/stream_adapter.hh`
+- **THEN**: 匹配 `Packet::payload_resize` 或等价机制（B17 实施完成）
+- **WHEN**: `openspec validate cpptlm-driver-visible-minimal-soc --strict`
+- **THEN**: PASS（含 v1.3 P0 + v1.4 P0 + v1.5 P0 全部）
 
 ## 不在范围
 

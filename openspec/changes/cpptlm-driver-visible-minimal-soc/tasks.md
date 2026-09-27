@@ -1,4 +1,4 @@
-# Tasks: Driver-Visible Minimal SoC (v1.4 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13))
+# Tasks: Driver-Visible Minimal SoC (v1.5 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28))
 
 > **配套**: [proposal.md](proposal.md) · [design.md](design.md) · [specs/driver-visible-minimal-soc/spec.md](specs/driver-visible-minimal-soc/spec.md)
 > **方法**: v1.3 P0 修正（6 项 B1-B6）→ T0 表征/前置 → T1-T4 改造 → T5 文档
@@ -122,6 +122,113 @@
 ```bash
 openspec validate --changes --strict
 # 期望: PASS (3/3)
+```
+
+## v1.5 P0 修正清单 (在 v1.3 P0 + v1.4 P0 之上叠加, **实施前必须完成**)
+
+> Oracle 三轮 + Metis 三轮敌对评审 (2026-09-26) 发现 v1.4 在 "单一 VRAM 真源" 方向正确, 但仍残留**5 处隐藏的双存储/边界漂移/挂死风险**, 与 dual-VRAM 同构或更隐蔽。必须 P0 修正后才能进入 T1。
+
+| ID | 性质 | 位置 | 修正要点 |
+|----|------|------|----------|
+| **B14** | dual-storage 第三实例 | `dgpu_board_shell.cc:532-591, 796-814` | **消灭 `vram_segments_` MAP**: backdoor_read/write 改走 `vram_storage_` 唯一路径 (3 路由合并为 1) |
+| **B15** | dual-storage 矛盾 | `dgpu_board_shell.cc:166-169` (P0.1 二选一) | **强制删除 `framebuffer_storage_`**; `framebuffer_ptr_ = vram_storage_.get()` (消除 "或改名+语义保持" 二选一) |
+| **B16** | dual-storage 复活通道 | `dgpu_board_shell.hh:238-241` + 4 文件 | **`attach_framebuffer_for_testing()` 优先级规则**: vram_storage_ 已分配时 attach 失败并 log WARN (防止测试绕开单一真源) |
+| **B17** | 框架函数不存在 | `include/framework/stream_adapter.hh` | **新增 `Packet::payload_resize(uint64_t n_bytes)`** + `PacketPool::acquire_with_min_size(min_bytes)`; T0.2 必失败路径 |
+| **B18** | 虚假声明 | `memory_tlm.hh:95-99` + `dgpu_soc_minimal_v1.json:41` | **`on_config_loaded()` 实际读取 `capacity_gb`** 调 `set_size_bytes(gb<<30)` (消除 "1GB cap 不存在" 谎言) |
+| **B19** | 边界漂移 | `sdma_engine_tlm.cc:201-206` + `dgpu_soc_minimal_v1.json:31` | **SDMA `vram_size_bytes` 与 board `vram_size_` 同步**: T4.1 JSON 删除 sdma.params.vram_size_bytes, 由 `bind_memory_backings` 统一注入 `vram_size_` |
+| **B20** | 生产路径挂起 | `dgpu_board_shell.cc:623, 629` (line 621-632 旧块) | **`set_translate_cb` + `set_sdma_engine` 必须无条件注入**: 不在 pcie_memory 分支内 (无论 minimal_v1 / legacy 都需); 否则 SDMA 静默挂起 |
+| **B21** | 模板契约违反 | `include/tlm/gpu/gmmu_tlm.hh` | **GMMU 添加 dummy `resp_out()` + `req_in()`** (对齐 MemoryTLM 模式, line 176-183); `registerAdapter` 模板需要 |
+| **B22** | 永久挂死 | design.md §5 GMMU async | **GMMU async 路径加 `pte_addr+8 > backing_size_` bound check** + **SLVERR 加 retry_latch** (max_retry=16, 超过则置 fault_done) |
+| **B23** | 永久挂死 | design.md §6 SDMA retry driver | **translate 非 0/非 -EAGAIN 路径**: emit `done_out` with `status=-EIO` + 移除 inflight_; **不能留注释** "/* 错误处理 */" |
+| **B24** | 处置表漏 | tasks.md:86-97 (B13 表) | **补 `test_pcie_memory_device_basic.cc:118-125`**: EP tick 不再推进 memory_device cycle_counter → 必须删除该断言 (N8 副作用) |
+| **B25** | 框架限制 | design.md §6 SDMA ↔ PcieMemoryDevice | **明确 chip-internal 端口 wire-format 改造决策**: `MultiPortStreamAdapter<SdmaEngineTLM, PcieTlpBundle, 5>` 同构保持; mem_in/mem_out 经 helper `to_axi_mem_descriptor`/`from_axi_mem_completion` 在 SDMA 内部完成包内转换; PcieMemoryDevice::handle_slave_port 接收的仍是 PcieTlpBundle (而非 AxiMemBundle); **统一为 PcieTlpBundle, PcieMemoryDevice 改 PcieTlpBundle SlavePort** |
+| **B26** | backdoor bound 二义 | `dgpu_board_shell.cc:505-511` | **`backdoor_read/write` bound = `vram_size_`** (host 特权, 不受 BAR 窗口约束); 删 framebuffer 路径分支 |
+| **B27** | 装饰死代码 | `pcie_memory_device.hh:37-38` (kRegMemSizeLo/Hi) | **BAR0 不路由到 pcie_memory** → `kRegMemSizeLo/Hi` 改在 `mmio_regs_` (board 层) 而非 pcie_memory 内部; 简化 ctor |
+| **B28** | spec 三方矛盾 | spec.md 多处 | **`backdoor` + `BAR2 mmio` + `MemoryTLM` + `SDMA legacy` 4 消费者统一 bound = `vram_size_`** (排除 16MB / 1GB 异类); `capacity_gb` 在 minimal_v1 改为 8GB (与 vram 一致) 或显式 1GB 接线 |
+
+## v1.5 P0 修正任务 (前置, 0.5-1d, **必须在 v1.3 P0 + v1.4 P0 之后**)
+
+### P0.8 B14 - 消灭 vram_segments_ 双存储
+- `include/tlm/gpu/dgpu_board_shell.hh`: 删 `std::map<uint64_t, std::vector<uint8_t>> vram_segments_` 成员 (line 306); 改注释 "SOC deferred 期间 shell 本地持有..."
+- `src/tlm/gpu/dgpu_board_shell.cc::backdoor_read` (line 532-543): 删 vram_segments_ 分支; 改为直接读 `vram_storage_[offset]` (与 backdoor_write 同源)
+- `src/tlm/gpu/dgpu_board_shell.cc::backdoor_write` (line 589-591): 删 vram_segments_ 写入; 改为直接写 `vram_storage_[offset]`
+- `src/tlm/gpu/dgpu_board_shell.cc:796-814`: async backdoor 路径同样删 vram_segments_
+
+### P0.9 B15 - 强制删除 framebuffer_storage_
+- `include/tlm/gpu/dgpu_board_shell.hh`: 删 `std::vector<uint8_t> framebuffer_storage_` 成员; `framebuffer_ptr_` 改 `uint8_t* framebuffer_ptr_ = vram_storage_.get()` (在 init 中赋值)
+- `src/tlm/gpu/dgpu_board_shell.cc::init()` (line 166-169): 删 `framebuffer_storage_.resize(...)`; 删 P0.1 "或改名+语义保持" 二选一
+- **强制**: `framebuffer_storage_` 不存在; 所有 4 消费者 (backdoor/BAR1 fast-path/MemoryTLM/SDMA legacy) 通过 `vram_storage_` 唯一指针
+
+### P0.10 B16 - attach_framebuffer_for_testing 优先级规则
+- `include/tlm/gpu/dgpu_board_shell.hh::attach_framebuffer_for_testing()` (line 238-241): 加 guard — 若 `vram_storage_` 已分配 (framebuffer_ptr_ != nullptr), log WARN 并拒绝 (返回 false 或 no-op); 决定有效继承 vram_storage_ 路径
+- `test/test_dgpu_board_framebuffer.cc` + `test_dgpu_board_shell_*`: 加测试覆盖 attach-after-init 场景
+
+### P0.11 B17 - 新增 payload_resize 框架函数
+- `include/core/packet.hh` (或类似): 新增 `Packet::payload_resize(uint64_t n_bytes)` (保留 data ptr, 调整 capacity, 重新分配 data if needed)
+- `include/core/packet_pool.hh`: 新增 `PacketPool::acquire_with_min_size(uint64_t min_bytes)` (返回保证 ≥min_bytes 容量的 packet)
+- `include/framework/stream_adapter.hh::OutputStreamAdapter::send()`: 调用 `pkt->payload->set_data_length(sizeof(BundleT))` (在 serialize 前)
+- `include/framework/stream_adapter.hh::InputStreamAdapter::process()`: 调用 `ensure_payload_capacity(sizeof(BundleT))`
+
+### P0.12 B18 - MemoryTLM capacity_gb 真实接线
+- `include/tlm/memory_tlm.hh::on_config_loaded()` (line 95-99): 实际实现:
+  ```cpp
+  void on_config_loaded() override {
+      if (cfg_.contains("capacity_gb") && cfg_["capacity_gb"].is_number()) {
+          set_size_bytes(cfg_["capacity_gb"].get<uint64_t>() * (1ULL << 30));
+      }
+  }
+  ```
+  (需要构造时保存 cfg 引用或 on_config_loaded 接受 cfg 参数)
+- `configs/dgpu_soc_minimal_v1.json:41`: `capacity_gb` 改为 8 (与 vram 一致) — 显式声明 "minimal_v1 中 MemoryTLM 也用全部 vram"
+
+### P0.13 B19 - SDMA vram_size_bytes 同步
+- `src/tlm/gpu/sdma_engine_tlm.cc::on_config_loaded` (line 189-191): 删 `cfg.value("vram_size_bytes", ...)` 自动读取; 改为只由 `set_vram_size_bytes()` 注入 (board 在 `bind_memory_backings` 调)
+- `include/tlm/gpu/sdma_engine_tlm.hh:349`: `vram_size_bytes_` 默认值改为 0 (未注入时 SDMA 不接受 desc; flag 触达 `desc.vram_offset >= 0` → 不拦截)
+- `configs/dgpu_soc_minimal_v1.json:31`: sdma.params 删 `vram_size_bytes`; 由 board 注入
+
+### P0.14 B20 - set_translate_cb 无条件注入
+- `src/tlm/gpu/dgpu_board_shell.cc::bind_memory_backings()`: `set_translate_cb` + `set_sdma_engine` **从 pcie_memory 分支移到主函数顶部** (line 621-632 块移出 if-else); `set_vram_backdoor` 保持条件注入 (legacy path)
+
+### P0.15 B21 - GMMU dummy 方法
+- `include/tlm/gpu/gmmu_tlm.hh`: 仿 `memory_tlm.hh:176-183` 加:
+  ```cpp
+  cpptlm::OutputStreamAdapter<bundles::AxiMemBundle>& resp_out() {
+      static cpptlm::OutputStreamAdapter<bundles::AxiMemBundle> dummy;
+      return dummy;
+  }
+  cpptlm::InputStreamAdapter<bundles::AxiMemBundle>& req_in() {
+      static cpptlm::InputStreamAdapter<bundles::AxiMemBundle> dummy;
+      return dummy;
+  }
+  ```
+
+### P0.16 B22/B23 - Fault Path 显式化 (防永久挂死)
+- design.md §5 GMMU translate: 加 `if (pte_addr + 8 > backing_size_) return -EIO;` (在发 AXI 读前)
+- design.md §5 GMMU 状态机: 加 `retry_latch_` (uint8_t) 计数 SLVERR 重发, >16 置 `state_=FAULT` (后续 -EIO + 移除 inflight_)
+- design.md §6 SDMA `process_inflight_step`: 替换 `if (tr != 0) { /* 错误处理 */ return; }` 为:
+  ```cpp
+  if (tr != 0 && tr != -EAGAIN) {
+      // emit done_out with status = -EIO; remove from inflight_
+      // 否则永久挂死 FIFO 队头
+      e.state = State::DONE;
+      // emit done 立即
+      return;
+  }
+  ```
+
+### P0.17 B24/B25/B26/B27/B28 - 杂项修订
+- B24: tasks.md B13 表补 `basic.cc:118-125` (EP tick 不再推进 cycle_counter → 删该断言或改为 mock 设备直接 tick)
+- B25: design.md §6 明确 SDMA ↔ PcieMemoryDevice 端口**统一为 PcieTlpBundle** (PcieMemoryDevice SlavePort wire-format 改 PcieTlpBundle 而非 AxiMemBundle); `to_axi_mem_descriptor`/`from_axi_mem_completion` 在 SDMA 内部完成; 放弃 v1.3 B2 "mem_in/mem_out 切型" 路径
+- B26: `dgpu_board_shell.cc::backdoor_read/write`: bound 统一为 `vram_size_` (不受 BAR1 窗口约束); 删 framebuffer fast-path 分支
+- B27: 简 PcieMemoryDevice `kRegMemSizeLo/Hi` 实现: 改在 DGpuBoard::mmio_regs_ 烧录 (不动 pcie_memory.registers_); 或保留 + 加 board 不可达注释
+- B28: `configs/dgpu_soc_minimal_v1.json`: memory.params.capacity_gb 从 1 改 8 (B12 一致); 或显式 1 接线说明
+
+### P0.18 验证
+```bash
+openspec validate cpptlm-driver-visible-minimal-soc --strict
+# 期望: PASS
+grep -rn "vram_segments_\b" src/tlm/gpu/dgpu_board_shell.cc include/tlm/gpu/dgpu_board_shell.hh  # 应为零匹配
+grep -rn "framebuffer_storage_" src/tlm/gpu/dgpu_board_shell.cc include/tlm/gpu/dgpu_board_shell.hh  # 应为零匹配
 ```
 
 ## P1 修订 (前置, 0.5d)

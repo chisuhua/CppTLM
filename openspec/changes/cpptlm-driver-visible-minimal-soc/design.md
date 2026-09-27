@@ -1,4 +1,4 @@
-# D-AXI Design — Driver-Visible Minimal SoC 详细设计 (v1.4 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13))
+# D-AXI Design — Driver-Visible Minimal SoC 详细设计 (v1.5 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28))
 
 > **配套**: [proposal.md](proposal.md) · [tasks.md](tasks.md) · [specs/driver-visible-minimal-soc/spec.md](specs/driver-visible-minimal-soc/spec.md)
 > **基于**: D1 v1.1.1 + D2 v1.1 + v1.2 P1 + v1.3 第三方审查 (Metis/Oracle/Librarian) 6 P0 修正
@@ -9,12 +9,25 @@
 
 ## §1 系统拓扑（D-AXI v1.4 — 单一 VRAM backing 所有权归 DGpuBoard）
 
+> **v1.5 关键变化**（在 v1.4 之上叠加 11 项隐藏缺陷修正）：
+> - **B14 消灭 vram_segments_**（`dgpu_board_shell.cc:532-591, 796-814`）：第三个存储 → backdoor 改走 `vram_storage_` 唯一路径
+> - **B15 强制删除 framebuffer_storage_**：`framebuffer_ptr_ = vram_storage_.get()`（消除二选一歧义）
+> - **B16 attach_framebuffer_for_testing 优先级规则**：vram_storage_ 已分配时拒绝 attach（防测试绕开）
+> - **B17 新增 `Packet::payload_resize()`** + `PacketPool::acquire_with_min_size()`（N1 框架修复）
+> - **B18 `on_config_loaded` 真实接线 capacity_gb**（消除 1GB cap 谎言）
+> - **B19 SDMA vram_size_bytes 由 board 注入**（与 vram_size_ 同步）
+> - **B20 `set_translate_cb` + `set_sdma_engine` 无条件注入**（防 SDMA 静默挂起）
+> - **B21 GMMU dummy `resp_out()` + `req_in()`**（对齐 MemoryTLM 模板契约）
+> - **B22/B23 Fault Path 显式化**（SLVERR latch + translate 错误 emit done, 防永久挂死）
+> - **B25 SDMA ↔ PcieMemoryDevice 统一为 PcieTlpBundle**（放弃 v1.3 B2 切型，框架限制）
+> - **B26/B27/B28 backdoor bound + BAR0 简化 + MemoryTLM capacity 三方矛盾消解**
+
 > **v1.4 关键变化**: 单一 VRAM 真源在 `DGpuBoard::vram_storage_`（8GB，`std::unique_ptr<uint8_t[]>` default-init, Linux lazy commit）；PcieMemoryDevice 持有**注入指针**（不拥有 backing）；5 消费者共享同一 vector：
-> 1. DGpuBoard backdoor
+> 1. DGpuBoard backdoor（v1.5 改走 vram_storage_ 唯一路径, 删 vram_segments_）
 > 2. BAR1 fast-path（bound = `bar1_window_size_` = `bar_sizes[1]`，与 vram 解耦）
 > 3. BAR2 via `ep->memory_device().memory_read` → 转发到 vram
-> 4. MemoryTLM.backing_ptr_（CacheReqBundle 消费者）
-> 5. SDMA/GMMU legacy `set_vram_backdoor/set_backing`（注入 size = `vram_size_`）
+> 4. MemoryTLM.backing_ptr_（CacheReqBundle 消费者; **v1.5 B12 接线 capacity_gb**）
+> 5. SDMA/GMMU legacy `set_vram_backdoor/set_backing`（注入 size = `vram_size_`; **v1.5 B13 同步**）
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -28,9 +41,11 @@
 │                CppTLM (实现仓)                             │
 │            ▼                                                │
 │   DGpuBoard (顶层 board shell + host-side backdoor 特权)  │
-│      ├─ framebuffer_storage_ (16MB BAR1 backing)           │
-│      │     └─ backdoor_read/write 直持 framebuffer_ptr_   │
-│      │     └─ mmio_read/write BAR2 fast-path              │
+│      ├─ vram_storage_ (8GB, **v1.4 B7 单一 VRAM 真源**)    │
+│      │     ├─ framebuffer_ptr_ = vram_storage_.get() (**v1.5 B15 别名**, framebuffer_storage_ 删除) │
+│      │     ├─ vram_size_        (= bar_sizes[2] = 8GB) │
+│      │     ├─ bar1_window_size_ (= bar_sizes[1] = 16MB) │
+│      │     └─ mmio_read/write BAR2 fast-path (bound=vram_size_) │
 │      └─ soc_ (DGpuSoc)                                     │
 │            ├─ pcie_ep  (PcieEndpointIP)                     │
 │            │     ├─ memory_device_: PcieMemoryDevice*      │
@@ -106,6 +121,17 @@
 | **v1.4 B11** | Oracle 二轮 | **§1/§4 拆分 `bar1_window_size_` vs `vram_size_`**：BAR1 fast-path bound 用前者，5 消费者注入 size 用后者 |
 | **v1.4 B12** | Oracle 二轮 | **§4 新增 `-ENODEV` 错误码**（未注入 backing）；`kRegMemSizeLo/Hi` 读 injected `backing_size_`（非常量） |
 | **v1.4 B13** | Metis 二轮 | **tasks P0.7 24-case 处置表**：4 处语义反转（lazy alloc 测试删除，`has_memory_backing` 仍 false 但后续依赖注入）+ `[minimal_dgpu_soc]`/`[abi]` 添加 BAR2 |
+| **v1.5 B14** | Oracle 三轮 + Metis 三轮 | **§1 消灭 vram_segments_ 双存储**：backdoor 改走 `vram_storage_` 唯一路径 |
+| **v1.5 B15** | Oracle 三轮 + Metis 三轮 | **§1 强制删 framebuffer_storage_**：`framebuffer_ptr_ = vram_storage_.get()` |
+| **v1.5 B16** | Oracle 三轮 | **§1 attach_framebuffer_for_testing 优先级规则**：vram_storage_ 已分配时拒绝 |
+| **v1.5 B17** | Metis 三轮 | **§3 新增 `Packet::payload_resize()` + `PacketPool::acquire_with_min_size()`**：N1 框架修复 |
+| **v1.5 B18** | Oracle 三轮 + Metis 三轮 | **§1/§13 MemoryTLM `on_config_loaded` 真实接线 capacity_gb**：消除 1GB cap 谎言 |
+| **v1.5 B19** | Oracle 三轮 | **§4/§13 SDMA `vram_size_bytes` 由 board 注入**：与 vram_size_ 同步 |
+| **v1.5 B20** | Metis 三轮 | **§4 `set_translate_cb` + `set_sdma_engine` 无条件注入**：防 SDMA 静默挂起 |
+| **v1.5 B21** | Metis 三轮 | **§5 GMMU dummy `resp_out()` + `req_in()`**：对齐 MemoryTLM 模板契约 |
+| **v1.5 B22/B23** | Oracle 三轮 | **§5/§6 Fault Path 显式化**：SLVERR latch + translate 错误 emit done（防永久挂死） |
+| **v1.5 B25** | Metis 三轮 | **§6 SDMA ↔ PcieMemoryDevice 统一为 PcieTlpBundle**：放弃 v1.3 B2 切型（框架限制） |
+| **v1.5 B26/B27/B28** | Oracle 三轮 | **§1 backdoor bound 统一 vram_size_**；**§4 BAR0 简化**；**§13 MemoryTLM capacity 三方矛盾消解** |
 
 ## §3 `AxiMemBundle` 定义（v1.2 P1 — 需框架配合）
 
