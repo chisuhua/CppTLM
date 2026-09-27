@@ -19,6 +19,18 @@ D1 PCIe Device 实现笔记:
   - 0 个新 ABI 函数 (per ADR-088 §D5)
   - **后续**: D2 memory device MVP, D3 GMMU PoC
 
+D-AXI (cpptlm-driver-visible-minimal-soc) 实现笔记:
+- `docs/pcie/driver-visible-minimal-soc.md` (**D-AXI v1.4 完成 2026-09-26**, 跨仓镜像 ArchForge `docs/architecture/19a-driver-visible-minimal-soc.md`)
+  - **第一类 driver-visible SoC MVP**：6 模块 + chip-internal AXI + 单一 VRAM 真源
+  - **v1.4 架构根因**（B7-B13）：单一 backing 所有权归 DGpuBoard；PcieMemoryDevice 退化为 PCIe 外观层；`unique_ptr<uint8_t[]>` 8GB default-init (Linux lazy commit)
+  - **5 消费者共享 vram_storage_**：backdoor / BAR1 fast-path / BAR2 via memory_device / MemoryTLM backing / SDMA-GMMU legacy ptr
+  - **driver 视角闭环**：15 ABI + 3 BAR (BAR0 4KB MMIO + BAR1 16MB 窗口 + BAR2 8GB vram aperture, 64-bit 双 dword)
+  - **0 个新 ABI 函数**（per ADR-088 §D5）
+  - **冻结面零 diff**：pcie_endpoint_tlm.h / pcie_display_device.hh / pcie_bundles_tlm.hh / cpptlm_emulator.h
+  - **D3 seam 已预留**：`handle_slave_port ↔ backing_ptr_` 之间可插入 VramControllerTLM/MemoryClusterTLM
+  - **7 条实施铁律**：见 `docs/pcie/driver-visible-minimal-soc.md` §4
+  - **3 项遗留议题**：D1 Display FB (冻结面约束, D3 收编) / doorbell 0x10010000 (测试合成偏移) / MemoryTLM capacity_gb=1 (不静默)
+
 ## STRUCTURE (verified @ 429327d)
 
 ```
@@ -175,6 +187,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 | 链路层 + FC | `include/tlm/pcie/pcie_link_layer_tlm.{hh,cc}` (Phase 1) |
 | PHY 数字控制 | `include/tlm/pcie/pcie_phy_digital_ctrl_tlm.{hh,cc}` (Phase 3) |
 | SR-IOV VF Pool | `include/tlm/pcie/pcie_sriov_vf_pool_tlm.{hh,cc}` (Phase 4) |
+| **D-AXI (Driver-Visible Minimal SoC)** | `docs/pcie/driver-visible-minimal-soc.md` (v1.4 P0 修正 + 跨仓 ArchForge 镜像 `docs/architecture/19a-driver-visible-minimal-soc.md`); openspec `cpptlm-driver-visible-minimal-soc/` (tasks.md T0-T5); E2E `[minimal_dgpu_soc][driver_visible]` |
 | E2E 全链路 | `test/test_pcie_endpoint_ip_full_e2e.cc` + `examples/demo_pcie_full_e2e.{cc,py}` |
 
 ### ★ GPGPU / SoC 多层
@@ -384,6 +397,8 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **PCIe Cfg 地址编码** (v1.1 实现完成): `PcieEndpointIP::tick()` 按 PCIe 规范解码 AXI 配置请求 — 低 2 bit 对齐保留位，`awaddr` 直接用于 cfg/BAR 路径范围判定，cfg 内部屏蔽低 2 bit 后右移得到 byte offset；测试覆盖见 `[cfg-encoding]` 标签。
 - **framebuffer 自动分配** (P0.5-landing, 2027-09-17): `DGpuBoard::load_soc_config` 自动从 `pcie_ep.params.bar_sizes[1]` 派生 `framebuffer_size_`（顶层 `framebuffer_size_bytes` 可 override），`init()` 自动分配 backing → **UE 端 driver 通过 ABI 即可闭环 SoC 全能力**，无需 `attach_framebuffer_for_testing()` 兜底。测试覆盖：`[abi][minimal_dgpu_soc]` 8 cases / 23 assertions + Python demo `examples/demo_dgpu_soc_minimal_via_abi.py`。
 - **memory_routing_enabled_ 路由开关** (D2 v1.1 修订, 2027-09-26): DGpuBoard 新增 `memory_routing_enabled_` flag 防止无条件路由劫持 root cause 4（与 D1 `display_routing_enabled_` 对称）。默认 `false`，仅当 JSON 顶层 `memory_routing_enabled=true` 时启用 BAR 2 → PcieMemoryDevice 路由。测试覆盖：`[pcie-memory]` 24 cases / 67 assertions（4 文件双标签 `[pcie][pcie-memory]`）。
+- **D-AXI 单一 VRAM 真源在 DGpuBoard** (cpptlm-driver-visible-minimal-soc v1.4, 2027-09-26): `DGpuBoard::vram_storage_` (8GB, `std::unique_ptr<uint8_t[]>` default-init, Linux lazy commit, stable pointer) 是 5 消费者 (backdoor / BAR1 fast-path / BAR2 via memory_device / MemoryTLM backing / SDMA-GMMU legacy ptr) 共享的唯一 backing；`PcieMemoryDevice::memory_backing_` 已被 v1.4 B7 删除，改注入指针 (`set_backing_store(ptr, size)` 对齐 `MemoryTLM v2.2` 模式)。bound = injected `backing_size_`（非 `kDefaultMemSize` 常量）。dual size 字段：`bar1_window_size_` (BAR1 16MB 窗口) vs `vram_size_` (VRAM 8GB 真大小)。测试覆盖：`[minimal_dgpu_soc][driver_visible]` E2E + `[pcie-memory]` 24 cases (v1.4 B13 机械迁移后)。
+- **chip-internal AXI vs board-level PCIe 边界严格分离** (D-AXI v1.4): `AxiMemBundle` (新建, 4KB inline payload, chip-internal) **SHALL NOT** 出现在 host↔board 端口；`PcieTlpBundle` (冻结, board-level TLP) 保持不变。SDMA 5 端口混合 wire-format：mem_in/mem_out 切 AxiMemBundle (chip-internal), desc_in/done_out/host_out 保持 PcieTlpBundle (minimal_v1 不实际接线)。
 
 ## PHASE STATE
 
@@ -410,6 +425,26 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 **已知问题 (Minor, 不阻断)**:
 - `ch_uint<512>` 实际 64-bit 存储 (per Phase 5 M1 文档化限制)
+
+### ★ D-AXI Driver-Visible Minimal SoC（2026-2027, 跨 Phase 8 与 D-AXI change）
+
+| Phase | 内容 | commits | Oracle | 状态 |
+|------|------|---------|--------|------|
+| v1.0 | 初版提案（5 澄清 + R1-R7 + M1-M5） | — | — | ✅ 引导 |
+| v1.1 | P0 修订（5 澄清落点 + R1-R7 + M1-M5） | — | — | ✅ 完成 |
+| v1.2 | Oracle 二次审查 8 must-fix (N1-N12 全部落地) | — | ✅ PASS | ✅ 完成 |
+| **v1.4** | **Metis/Oracle 二轮 + 用户质疑 + 单一 VRAM 所有权上提** (B7-B13 + 7 实施铁律 + 3 遗留议题延期) | — | **✅ 2 轮 PASS** | **🔄 实施中** |
+
+**v1.4 P0 修正（B7-B13, 架构根因）**：
+- **B7**: 单一 VRAM backing 所有权归 DGpuBoard（`vram_storage_` = 8GB `unique_ptr<uint8_t[]>` default-init, Linux lazy commit, stable pointer）
+- **B8**: `memory_read/write` bound = injected `backing_size_`（非 `kDefaultMemSize` 常量）
+- **B9**: `handle_slave_port` 检查 `memory_read/write` 返回值；失败置 `resp.resp.write(1)` (SLVERR)
+- **B10**: 保留 `std::mutex backing_mutex_`（host/sim 并发保护；lazy 部分随所有权上提消失）
+- **B11**: 双 size 字段拆分 `bar1_window_size_` (BAR1 窗口 = `bar_sizes[1]`) vs `vram_size_` (VRAM = `bar_sizes[2]`)
+- **B12**: 未注入 backing 时 `memory_read/write` 返 `-ENODEV`（spec 新增错误码）；`kRegMemSizeLo/Hi` 读 injected `backing_size_`（非常量）
+- **B13**: 24-case `[pcie-memory]` 机械迁移 + `[minimal_dgpu_soc]` 添加 BAR2 + 4 处 lazy alloc 行为删除
+
+**D3 演进 seam (v1.4 已就位)**：`handle_slave_port ↔ backing_ptr_` 之间可插入真 VramControllerTLM/MemoryClusterTLM（接口零变更）。
 
 ### ★ GPGPU / SoC 既有交付（2026 之前，跨 Phase 1-7 与本项目同期）
 
