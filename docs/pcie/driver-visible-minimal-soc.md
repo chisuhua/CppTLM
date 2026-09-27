@@ -1,6 +1,7 @@
-# D-AXI Driver-Visible Minimal SoC — 实施笔记 (v1.4)
+# D-AXI Driver-Visible Minimal SoC — 实施笔记 (v1.5)
 
-> **状态**: ✅ v1.4 P0 阻塞修正完成（2026-09-26）
+> **状态**: ✅ v1.5 隐藏缺陷修正完成（2026-09-26）
+> **v1.5 在 v1.4 之上叠加**: Oracle + Metis 三轮敌对审查发现 11 项隐藏缺陷 (B14-B28) — 主要是 dual-VRAM 同构问题（vram_segments_ 第三存储）+ 永久挂死风险（fault path 缺失）。**实施 T1 前必须应用 v1.5 P0.8-P0.18 修正任务清单。**
 > **配套 openspec**: `openspec/changes/cpptlm-driver-visible-minimal-soc/`
 > **设计稿**: 4 文件（`proposal.md` / `design.md` / `tasks.md` / `specs/driver-visible-minimal-soc/spec.md`）
 > **配套 ADRs**: ADR-088 §D5（ABI 冻结）, ADR-SOC-21（V3.1-Rev2.0 拓扑）, ADR-SOC-18/14（PCIe EP / DMA）
@@ -296,6 +297,24 @@ Step 6 — driver backdoor 读 (host thread, host-side 特权)
 | **B12** | **v1.4 -ENODEV** | **未注入 → -ENODEV；`kRegMemSizeLo/Hi` 读 injected size** |
 | **B13** | **v1.4 24-case 处置** | **4 处语义反转 + `[minimal_dgpu_soc]` 添加 BAR2** |
 
+## 8.1 v1.5 隐藏缺陷修正索引（B14-B28，Oracle/Metis 三轮敌对审查）
+
+> **背景**：v1.4 在 "单一 VRAM 真源" 方向正确，但 Oracle/Metis 三轮独立命中 11 项**隐藏缺陷**——其中 4 项与 dual-VRAM 同构（多个独立存储/边界漂移），3 项是永久挂死风险（fault path 缺失）。
+
+| ID | 类别 | 位置 | 修正要点 |
+|----|------|------|----------|
+| **B14** | dual-storage 第三实例 | `dgpu_board_shell.cc:532-591, 796-814` | **消灭 `vram_segments_` MAP**：backdoor_read/write 改走 `vram_storage_` 唯一路径 |
+| **B15** | dual-storage 矛盾 | `dgpu_board_shell.cc:166-169` | **强制删除 `framebuffer_storage_`**；`framebuffer_ptr_ = vram_storage_.get()` |
+| **B16** | dual-storage 复活通道 | `dgpu_board_shell.hh:238-241` + 4 文件 | **`attach_framebuffer_for_testing` 优先级规则**：vram_storage_ 已分配时拒绝 |
+| **B17** | 框架函数不存在 | `include/framework/stream_adapter.hh` | **新增 `Packet::payload_resize()`** + `PacketPool::acquire_with_min_size()` |
+| **B18** | 虚假声明 | `memory_tlm.hh:95-99` + JSON | **`on_config_loaded` 真实接线 capacity_gb**：消除 1GB cap 谎言 |
+| **B19** | 边界漂移 | `sdma_engine_tlm.cc:201-206` + JSON | **SDMA `vram_size_bytes` 由 board 注入**：与 vram_size_ 同步 |
+| **B20** | 生产路径挂起 | `dgpu_board_shell.cc:621-632` | **`set_translate_cb` + `set_sdma_engine` 无条件注入**：防 SDMA 静默挂起 |
+| **B21** | 模板契约违反 | `include/tlm/gpu/gmmu_tlm.hh` | **GMMU dummy `resp_out()` + `req_in()`**：对齐 MemoryTLM 模式 |
+| **B22/B23** | 永久挂死 | design.md §5/§6 | **Fault Path 显式化**：SLVERR latch + translate 错误 emit done |
+| **B25** | 框架限制 | design.md §6 | **SDMA ↔ PcieMemoryDevice 统一 PcieTlpBundle**：放弃 v1.3 B2 切型（异构 multi-port adapter 框架不支持） |
+| **B26/B27/B28** | 多方矛盾 | `dgpu_board_shell.cc` + JSON + spec | **backdoor bound 统一 vram_size_**；**BAR0 简化**；**MemoryTLM capacity 三方矛盾消解** |
+
 ## 9. 验证清单
 
 ### 设计阶段（已完成）
@@ -382,6 +401,7 @@ Step 6 — driver backdoor 读 (host thread, host-side 特权)
 
 | 日期 | 版本 | 修订 |
 |------|------|------|
+| 2026-09-26 | v1.5 | Oracle/Metis 三轮**敌对**审查；P0 修正 B14-B28 全部应用（11 项隐藏缺陷）；**消灭 vram_segments_ 第三存储**（dual-VRAM 直系后代）；**Framebuffer_storage_ 强制删除**；**Fault Path 显式化**（SLVERR latch + translate 错误 emit done，防永久挂死）；**SDMA ↔ PcieMemoryDevice 统一 PcieTlpBundle**（放弃 v1.3 B2 切型）；7 条铁律扩展为 12 条（v1.5 P0.8-P0.18 任务清单） |
 | 2026-09-26 | v1.4 | Oracle/Metis 三轮交叉审查；P0 修正 B1-B13 全部应用；单一 VRAM 所有权归 DGpuBoard（PcieMemoryDevice 退化为 PCIe 外观层）；3 项遗留议题延期理由显式声明；7 条实施铁律锁定；D3 seam 已预留 |
 | 2026-09-26 | v1.3 | Oracle/Metis 二方审查；P0 修正 B1-B6（字段名/切型范围/双 adapter/64-bit BAR/双注册）；单 adapter 模型（事实：MultiPortStreamAdapter 内部遍历全端口） |
 | 2026-09-26 | v1.2 | 8 must-fix N1-N12 全部应用 |
