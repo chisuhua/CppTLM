@@ -98,6 +98,42 @@ public:
     // --- 便捷工厂方法已移除，因为返回 std::unique_ptr 会导致析构问题 ---
     // 使用 acquire() 和手动设置字段代替
 
+    // D-AXI v1.5 Phase 0.1 (B17): 支持 min_bytes 参数化 payload 容量
+    // 解决 AxiMemBundle (~4136B) > 默认 256B 上限的 N1 框架扩容需求
+    // 8GB BAR2 VRAM 也需要该路径
+    Packet* acquire_with_min_size(uint64_t min_bytes) {
+        std::lock_guard<std::mutex> lock(m_mutex);
+
+        Packet* pkt = nullptr;
+        if (!m_packet_freelist.empty()) {
+            pkt = m_packet_freelist.front();
+            m_packet_freelist.pop();
+        } else {
+            pkt = new_packet();
+        }
+
+        if (!m_payload_freelist.empty()) {
+            pkt->payload = m_payload_freelist.front();
+            m_payload_freelist.pop();
+            pkt->payload->reset();
+        } else {
+            pkt->payload = new_payload();
+        }
+
+        pkt->reset();
+
+        constexpr size_t kMinPayloadBytes = 256;
+        const size_t target_bytes =
+            (min_bytes > kMinPayloadBytes) ? static_cast<size_t>(min_bytes) : kMinPayloadBytes;
+        if (pkt->payload && pkt->payload->get_data_length() < target_bytes) {
+            pkt->payload->set_data_length(target_bytes);
+        }
+        m_current_usage++;
+        m_peak_usage = std::max(m_peak_usage, m_current_usage);
+
+        return pkt;
+    }
+
     // --- 释放资源 ---
     void release(Packet* pkt) {
         if (!pkt) return;

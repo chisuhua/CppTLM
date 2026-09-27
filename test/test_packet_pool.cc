@@ -170,3 +170,33 @@ TEST_CASE("Packet Pool Tests", "[packet][pool]") {
     //     REQUIRE(true); // 保持测试结构完整性
     // }
 }
+
+TEST_CASE("Packet Pool: acquire_with_min_size (D-AXI B17)", "[packet][pool][d-axi][B17]") {
+    EventQueue event_queue;
+    PacketPool& pool = PacketPool::get();
+
+    SECTION("acquire_with_min_size returns payload >= min_bytes") {
+        constexpr uint64_t kMinPayloadBytes = 4136;  // sizeof(AxiMemBundle)
+        Packet* pkt = pool.acquire_with_min_size(kMinPayloadBytes);
+        REQUIRE(pkt != nullptr);
+        REQUIRE(pkt->payload != nullptr);
+        REQUIRE(pkt->payload->get_data_length() >= kMinPayloadBytes);
+        pool.release(pkt);
+    }
+
+    SECTION("acquire_with_min_size with smaller min_bytes keeps default 256B floor") {
+        Packet* pkt = pool.acquire_with_min_size(64);
+        REQUIRE(pkt != nullptr);
+        REQUIRE(pkt->payload != nullptr);
+        REQUIRE(pkt->payload->get_data_length() >= 256);
+        pool.release(pkt);
+    }
+
+    SECTION("acquire_with_min_size with 8KB supports typical SDMA desc payload") {
+        constexpr uint64_t kTypicalSize = 8 * 1024;
+        Packet* pkt = pool.acquire_with_min_size(kTypicalSize);
+        REQUIRE(pkt != nullptr);
+        REQUIRE(pkt->payload->get_data_length() >= kTypicalSize);
+        pool.release(pkt);
+    }
+}
