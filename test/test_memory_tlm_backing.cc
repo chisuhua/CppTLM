@@ -129,3 +129,43 @@ TEST_CASE("memory_backing: set_size_bytes caps backing visible range", "[memory_
     REQUIRE(mem.resp_out().valid());
     REQUIRE(mem.resp_out().data().error_code.read() == 1);
 }
+
+// D-AXI v1.5 Phase 0.3 (B18): MemoryTLM::on_config_loaded wires capacity_gb
+// 消除 MemoryTLM "1GB cap 不存在" 谎言 (Oracle/Metis 三轮敌对审查发现).
+// 当前 on_config_loaded() 是 no-op (memory_tlm.hh:95-99); size_cap_ 不被 JSON 接线.
+TEST_CASE("memory_backing: on_config_loaded wires capacity_gb (D-AXI B18)",
+          "[memory_backing][chstream][d-axi][B18]") {
+    EventQueue eq;
+    MemoryTLM mem("mem", &eq);
+
+    std::vector<uint8_t> backing(2 * 1024 * 1024, 0);
+    mem.set_backing_store(backing.data(), backing.size());
+
+    nlohmann::json cfg = {{"capacity_gb", 1}};
+    mem.set_config(cfg);
+
+    // backing 应可访问; OUT_OF_RANGE 路径由 B12 实施 (当前 v2.2 路径无 bound check)
+    inject_req(&mem, 1, 0x1000, false);
+    mem.tick();
+    REQUIRE(mem.resp_out().valid());
+    mem.resp_out().clear_valid();
+
+    REQUIRE(mem.backing_size() == backing.size());
+}
+
+TEST_CASE("memory_backing: on_config_loaded absent capacity_gb leaves size_cap untouched",
+          "[memory_backing][chstream][d-axi][B18]") {
+    EventQueue eq;
+    MemoryTLM mem("mem", &eq);
+
+    std::vector<uint8_t> backing(4096, 0);
+    mem.set_backing_store(backing.data(), backing.size());
+
+    nlohmann::json cfg = {{"other_param", 42}};
+    mem.set_config(cfg);
+
+    inject_req(&mem, 1, 0x100, false);
+    mem.tick();
+    REQUIRE(mem.resp_out().valid());
+    REQUIRE(mem.resp_out().data().error_code.read() == 0);
+}

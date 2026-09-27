@@ -91,11 +91,14 @@ public:
     uint64_t backing_size() const noexcept { return backing_size_; }
     bool has_backing() const noexcept { return backing_ptr_ != nullptr; }
 
-    // on_config_loaded: 从 cfg.params 读 capacity_gb 换算 → size_cap_
+    // D-AXI v1.5 Phase 0.3 (B18): 真实接线 cfg 中的 capacity_gb
+    // 消除 v1.4 §13 "1GB cap 不存在" 谎言 (Oracle/Metis 三轮敌对审查发现)
     void on_config_loaded() override {
-        // capacity_gb 是 memory.params 的可选字段; 缺失时保持 size_cap_ (派生自 backing)
-        // 此接口留作 v1.1 扩展 (JSON params 显式约束)
-        // 当前实现: 不动 size_cap_, 由调用方在 set_backing_store 之前/之后调
+        const auto& cfg = get_config();
+        if (cfg.contains("capacity_gb") && cfg["capacity_gb"].is_number()) {
+            const uint64_t gb = cfg["capacity_gb"].get<uint64_t>();
+            set_size_bytes(gb * (1ULL << 30));
+        }
     }
 
     void tick() override {
