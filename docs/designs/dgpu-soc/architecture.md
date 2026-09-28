@@ -733,7 +733,7 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
 
 ## 15. 参考
 
-- **DGpuBoard 架构文档**: `docs/architecture/14-dgpu-board-ideal-arch.md` (v2.0.2)
+- **DGpuBoard 架构文档**: [`../dgpu-board/architecture.md`](../dgpu-board/architecture.md) (v2.0.2, 2026-09-26 迁移)
 - **ADR-DGPU-01~04**: callback 单一所有权、LifecycleProtocol、DispatchRegistry、命名空间统一
 - **ADR-088**: 23 ABI 字节级冻结(`include/abi/cpptlm_emulator.h`)
 - **gem5 `AbstractMemory` / `PhysicalMemory`**: 单一 backing 源 + 注入模式
