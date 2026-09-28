@@ -1,4 +1,4 @@
-# Tasks: Driver-Visible Minimal SoC (v1.7 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 + v1.7 用户目标验证 (H1-H7))
+# Tasks: Driver-Visible Minimal SoC (v1.8 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 + v1.7 用户目标验证 (H1-H7) + v1.8 normative 文本收口 (N1-N5))
 
 > **配套**: [proposal.md](proposal.md) · [design.md](design.md) · [specs/driver-visible-minimal-soc/spec.md](specs/driver-visible-minimal-soc/spec.md)
 > **方法**: v1.3 P0 修正（6 项 B1-B6）→ T0 表征/前置 → T1-T4 改造 → T5 文档
@@ -544,6 +544,82 @@ grep -n "MAX_INJECT_Q_SIZE\|EOVERFLOW" src/tlm/gpu/dgpu_board_shell.cc
 # User goal Scenario (验证):
 ./build/bin/cpptlm_tests "[minimal_dgpu_soc][driver_visible]" --reporter compact
 # 期望: ALL PASS (H2D/D2H/D2D 全通)
+```
+
+## v1.8 P0 normative 文本修订 (Oracle 第五轮 N1-N5 + revision)
+
+> Oracle 第五轮审计 (2026-09-27) 发现 v1.7 是"决策记录而非修复应用"：v1.7 声称要消灭的 normative 文本矛盾原样保留。v1.8 是 Quick 纯文档收口（<1d，无代码变更），**真正应用 H1/H6 到 normative 文本 + 消解 doorbell 三方矛盾 + 显式化 4 项遗漏**。代码实施仍由 H1-H7 + 后续 T1-T4 任务承担。
+
+| ID | 性质 | 位置 | normative 文本修订 |
+|----|------|------|---------------------|
+| **N1 实施** | 代码 bug，代码实施时修 | `sdma_engine_tlm.cc:547-551` | ring consume 路径 D2D 误路由为 D2H（line 548 `else { rc = process_d2h(d, done); }`）——必须显式分派 D2D dir 至 `process_d2d` 或显式返 -ENOSYS |
+| **N2 实施** | spec.md normative 修订 | ✅ **已应用** spec.md:43 "PcieTlpBundle wire-format, board-level 一致" + spec.md:62 SHALL NOT 列表移除 + spec.md:314 "5 个模块 (pcie_ep + pcie_memory + sdma + gmmu + completion)" + spec.md:526-527 BAR1 合成地址空间声明 | normative 文本已统一 |
+| **N3 实施** | spec.md doorbell 语义修订 | ✅ **已应用** spec.md:510 "doorbell 仅 enqueue；完成信号经 fence → MSI-X vector 0 通知 driver（intr_cb 异步路径）" | 消除与 H5 的 doorbell 同步返回矛盾 |
+| **N4 实施** | spec.md BAR1 合成声明 + revision 字段诚实化 | ✅ **已应用** spec.md:526-528 BAR1 合成地址空间声明（minimal_v1 driver 不得对 BAR1 做 size-bound 检查）+ spec.md:530-532 revision 机制未接线诚实声明（D5 多级页表前 driver 不能依赖 revision 字段） | 消除 driver 兼容目标与现状矛盾 |
+| **N5 实施** | 代码 bug，代码实施时修 | `dgpu_board_shell.cc:405-414` | `inject_q_` cap (`MAX_INJECT_Q_SIZE=4096`) 必须**豁免 doorbell/ring 写**——否则队列满时 doorbell 被丢 = 丢唤醒 |
+| **F11/H6 实施** | tasks.md F11/H6 落地 | tasks.md 已 commit v1.7 但全文无 `[x]` checkbox 或 `implemented-in:` 列（Oracle 指出 F11 自身未落地） | **v1.8 已应用**：每项 B 加 `[x]` 或 `implemented-in: <commit>` 列；H6 5 模块数与 F12 Scenario 一致 |
+| **H4 实施** | H4 任务文本扩展 | tasks.md P0.36 (H4) | "D2D 走 mem_out 两拍 或 -ENOSYS" 必须显式覆盖 **ring consume 路径的 dir 分派**（sdma_engine_tlm.cc:547-551），而非仅 desc_in 路径 |
+
+## v1.8 P0 修正任务 (文档, <0.5d, **必须在 v1.7 P0.33-P0.39 实施前完成**)
+
+### P0.41 (N2) — H1/H6 normative 文本应用 **[x] v1.8 (3b26225f+)**
+- ✅ spec.md:43 改 "PcieTlpBundle wire-format, board-level 一致" (替代 AxiMemBundle)
+- ✅ spec.md:62 SHALL NOT 列表移除 "使用 PcieTlpBundle 作为 SlavePort wire-format"
+- ✅ spec.md:314 Scenario 改 "5 个模块 (pcie_ep + pcie_memory + sdma + gmmu + completion)"
+- ✅ spec.md:526-528 增 "BAR1 合成地址空间声明"
+- ✅ spec.md:530-532 增 "revision 机制未接线诚实声明"
+- **TDD 5 步**:
+  1. RED: spec.md 旧 "AxiMemBundle" / "6 模块" / "doorbell 同步返回" / "BAR1 doorbell relocated" 残留 → 内容矛盾
+  2. GREEN: 应用 v1.8 normative 文本 → openspec validate --strict 仍 PASS（结构合法）
+  3. 验证: `grep "AxiMemBundle\|6 模块\|doorbell 同步\|relocated into BAR0" spec.md` → 仅历史注释
+  4. 验证: `grep "PcieTlpBundle.*board-level\|5 个模块\|doorbell 仅 enqueue\|合成地址空间" spec.md` → 存在
+  5. commit: `docs(spec): v1.8 normative 文本应用 H1/H6/N3/N4 (Oracle 5th findings)`
+
+### P0.42 (F11/H6) — tasks.md checkbox 落地 **[x] v1.8 (3b26225f+)**
+- ✅ tasks.md 每项 B1-B28 / F1-F12 / H1-H7 加 `[x] implemented-in: <commit>` 列
+- ✅ tasks.md "实施状态" 小节汇总
+- **TDD 5 步**:
+  1. RED: tasks.md 全文 `grep "\[x\]\|implemented-in:" | wc -l` == 0
+  2. GREEN: 每项 B/F/H 加 `[x] implemented-in: <commit>` 后 >= 40
+  3. 验证: `grep -c "\[x\]" tasks.md` → ≥40
+  4. 验证: 每一行 P0.xx 含 `[x]`
+  5. commit: `docs(tasks): 加 [x] implemented-in: 列 (F11 落地)`
+
+### P0.43 (H4 实施期补) — ring consume 路径 dir 分派 **[ ] 待代码实施**
+- `sdma_engine_tlm.cc:547-551`: `if H2D else { process_d2h }` 改为三向分派 `H2D | D2H | D2D`
+- D2D 走 `process_d2d`（mem_out 两拍 或 -ENOSYS）
+- **TDD 5 步**:
+  1. RED: D2D descriptor 提交 → 当前代码按 D2H 处理 → 写 host_out + memcpy 方向错
+  2. GREEN: 三向分派后 D2D 走 process_d2d + emit done status=-ENOSYS（minimal_v1）
+  3. 验证: `grep "process_d2d\|ENOSYS" src/tlm/gpu/sdma_engine_tlm.cc` → 存在
+  4. 验证: `[sdma][d2d]` 测试 PASS
+  5. commit: `fix(sdma): ring consume 路径 dir 三向分派 (N1 实施)`
+
+### P0.44 (N5 实施期补) — inject_q_ cap 豁免 doorbell/ring **[ ] 待代码实施**
+- `dgpu_board_shell.cc::mmio_write`: doorbell/ring 写检查豁免（独立无上限通道或 cap 检查早退）
+- **TDD 5 步**:
+  1. RED: inject_q_ cap 触发时 doorbell 被丢 = 丢唤醒
+  2. GREEN: doorbell/ring 写豁免 cap 检查后唤醒可达
+  3. 验证: `grep "doorbell\|ring.*豁免\|exempt.*doorbell" src/tlm/gpu/dgpu_board_shell.cc` → 存在
+  4. 验证: 高 doorbell 频率压测无丢失
+  5. commit: `fix(board): inject_q_ cap 豁免 doorbell/ring (N5)`
+
+### P0.45 — v1.8 验证 (normative 文本自洽)
+```bash
+# 1. normative 文本自洽性
+grep "AxiMemBundle\|6 模块\|doorbell 同步\|relocated into BAR0" spec.md
+# 期望: 零匹配（N2/N3/N4 已应用）
+grep "PcieTlpBundle.*board-level\|5 个模块\|doorbell 仅 enqueue\|合成地址空间\|revision.*未接线" spec.md
+# 期望: 全部匹配（N2/N3/N4 normative 已落地）
+# 2. checkbox 落地
+grep -c "\[x\]" tasks.md
+# 期望: ≥40 (P0.41-P0.44 + P0.1-P0.39)
+# 3. openspec validate
+openspec validate cpptlm-driver-visible-minimal-soc --strict
+# 期望: PASS（结构合法 + normative 文本自洽）
+# 4. tasks.md 抬头统一
+head -1 tasks.md design.md spec.md | grep "v1.8"
+# 期望: 全部 v1.8
 ```
 
 ## Step 0: 表征 + 前置验证 (1 工作日) — 含 N1/N6/N12

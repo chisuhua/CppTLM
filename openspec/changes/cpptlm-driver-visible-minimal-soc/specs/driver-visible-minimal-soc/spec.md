@@ -1,4 +1,4 @@
-# Driver-Visible Minimal SoC Spec (v1.7 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 + 用户目标验证 H1-H7)
+# Driver-Visible Minimal SoC Spec (v1.8 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 + 用户目标验证 H1-H7 + v1.8 normative 文本收口)
 
 > **配套**: [proposal.md](../proposal.md) · [design.md](../design.md) · [tasks.md](../tasks.md)
 > **目标**: 在 CppTLM dGPU SoC 中实现**完整最小设备**（driver 视角），让 UsrLinuxEmu 端驱动通过标准 PCIe BAR + 内部 chip-internal AXI 总线看到真实、可驱动验证的最小 dGPU SoC
@@ -40,9 +40,9 @@ The PcieMemoryDevice SHALL be a **soc 顶层独立组件** (ChStreamModuleBase �
 
 The class SHALL:
 - 派生自 `cpptlm::ChStreamModuleBase`
-- 暴露 **2 个** ChStream SlavePort 接受 chip-internal AXI MEM_READ/WRITE 请求 (AxiMemBundle wire-format)
+- **v1.8 H1 写死**: 暴露 **2 个** ChStream SlavePort 接受 chip-internal 请求 (PcieTlpBundle wire-format, **board-level 一致**); AxiMemBundle 标 D3+ VramController 内部专用
 - **v1.3 B3 撤销 N4 双 adapter**: 存单 `cpptlm::MultiPortStreamAdapter<...>* adapter_`（非 `adapters_[2]` 数组），`tick()` **单 tick 一次** (`if (adapter_) adapter_->tick();`); MultiPortStreamAdapter 内部 `tick()` 已遍历全 N 端口（per `multi_port_stream_adapter.hh:56-66`）；事实：`module_factory.cc:695-705` 对 multi-port 只注入**单个** MultiPortStreamAdapter
-- 暴露 4KB MMIO 寄存器空间 (`registers_[kRegSize]`)
+- **v1.4 F4 撤销**: 不暴露 MMIO 寄存器空间 (无 `registers_` / `mmio_read` / `mmio_write`); BAR0 路径已由 board 处理
 - **v1.4 B7**: **不**持有 backing (`uint8_t* backing_ptr_` + `uint64_t backing_size_` 由 `set_backing_store()` 注入; backing 归 `DGpuBoard::vram_storage_` 所有)
 - **v1.4 B8**: `memory_read/write(offset, buf, len)` bound = injected `backing_size_`（**非** `kDefaultMemSize`; 小测试 backing 越界返 `-EINVAL` 不越界写）
 - **v1.4 B9**: `handle_slave_port` 检查 `memory_read/write` 返回值; 失败置 `resp.resp.write(1)` (SLVERR); 不静默 OKAY
@@ -59,7 +59,7 @@ The class SHALL NOT:
 - 在 PcieEndpointIP 构造时构造 (由 soc::internal_factory 负责)
 - 触发任何中断 (无 MSI-X)
 - 集成 GPU 计算
-- 使用 PcieTlpBundle 作为 SlavePort wire-format (board-level 边界)
+- **v1.8 H1 撤销**: 使用 AxiMemBundle 作为 SlavePort wire-format（已锁 PcieTlpBundle — H1 normative 已应用 spec.md:43）
 - **v1.3 B3 撤销**: 存 `adapters_[2]` 数组或 `tick()` 遍历双 adapter
 - **v1.4 B7 撤销**: 拥有 `memory_backing_` (vector owned) 或构造时分配
 - **v1.4 B8 撤销**: `memory_read/write` bound 用 `kDefaultMemSize` (常量) 做边界
@@ -94,7 +94,9 @@ The class SHALL NOT:
 - **WHEN**: DGpuSoc 销毁 (unordered_map 析构顺序不可强制)
 - **THEN**: `~PcieEndpointIP` 不解引用 `memory_device_`; `~PcieMemoryDevice` 不触碰 `PcieEndpointIP`; `DGpuBoard::shutdown()` 先 `set_memory_device(nullptr)` 防御性保护
 
-### Requirement: AxiMemBundle wire-format (chip-internal AXI) + N1 框架配合
+### Requirement: AxiMemBundle wire-format (v1.8 H1 标 D3+ chip-internal 专用)
+
+> **v1.8 H1 normative 文本修订**: 本节为 AxiMemBundle 历史定义；v1.8 H1 已锁 PcieTlpBundle 为 minimal_v1 范围唯一 wire-format（见 PcieMemoryDevice Requirement §1 修订）。AxiMemBundle 仅作 "D3+ VramController chip-internal 专用" 类型保留在此。
 
 The AxiMemBundle SHALL be a new bundle type for **chip-internal AXI 存储事务** (GMMU/SDMA ↔ PcieMemoryDevice), 严格分离于 board-level PcieTlpBundle (host↔EP 协议层)。**Where**: `include/bundles/axi_mem_bundles_tlm.hh` (新) + `include/framework/stream_adapter.hh` (N1 修改)
 
@@ -181,7 +183,7 @@ The GmmuTLM SHALL 从 SimModule 改为 ChStreamModuleBase 派生, 添加 1 个 C
 
 The class SHALL:
 - 派生自 `cpptlm::ChStreamModuleBase`
-- 添加 1 个 ChStream MasterPort (`req_out_`, `resp_in_`, AxiMemBundle wire-format) + **访问器方法** `req_out()` / `resp_in()` (单端口模板要求)
+- 添加 1 个 ChStream MasterPort (`req_out_`, `resp_in_`, **v1.8 H1: PcieTlpBundle wire-format in minimal_v1**, AxiMemBundle 仅作 D3+ chip-internal 备用) + **访问器方法** `req_out()` / `resp_in()` (单端口模板要求)
 - `translate()` 异步状态机实现 (per design.md §5):
   - `IDLE` → 校验失败返 `-EIO`; 否则发 AxiMemBundle MEM_READ(PTE), 转 WAIT, 返 `-EAGAIN`
   - `WAIT` → **N2 关键**: `iova != pending_iova_ || size != pending_size_` 返 `-EAGAIN` (不消费); 否则返 `-EAGAIN` (等 resp_in)
@@ -311,7 +313,7 @@ The config SHALL:
 
 #### Scenario: minimal_v1 JSON 加载后 soc 拓扑包含 pcie_memory
 - **WHEN**: `ModuleFactory::instantiateAll("configs/dgpu_soc_minimal_v1.json")`
-- **THEN**: soc 内有 6 个模块
+- **THEN**: soc 内有 **5** 个模块 (pcie_ep + pcie_memory + sdma + gmmu + completion) — v1.6 F12 MemoryTLM 移除后
 
 #### Scenario: minimal_v1 JSON 加载后 chip-internal AXI connections 自动绑定
 - **WHEN**: soc connections 处理
@@ -465,7 +467,7 @@ The v1.6 corrections SHALL:
 - **F9 消费者计数统一**: design.md §1 + AGENTS.md 统一为 "4 注入点 (memory/sdma/gmmu/pcie_memory) + 1 host backdoor (非注入)"
 - **F10 legacy fail-fast**: `bind_memory_backings` legacy 分支 (无 pcie_memory 且 vram 未分配) 加 WARN + fail-fast
 - **F11 tasks.md 实施状态标记**: 每项 B (B1-B28) + F (F1-F12) 加 `[x]` checkbox 或 "implemented-in: <commit>" 列
-- **F12 MemoryTLM 移除**: 从 `configs/dgpu_soc_minimal_v1.json` 删除 `memory` 模块; spec "soc 内有 6 个模块" 改为 "5 个模块"; B18/B28 minimal_v1 部分标 N/A
+- **F12 MemoryTLM 移除**: 从 `configs/dgpu_soc_minimal_v1.json` 删除 `memory` 模块; spec "soc 内有 6 个模块" 改为 "5 个模块 (pcie_ep + pcie_memory + sdma + gmmu + completion)"（normative 已应用 spec.md:314）; B18/B28 minimal_v1 部分标 N/A
 
 The class/spec SHALL NOT:
 - 保留 GMMU async 路径本地 bound check (在 minimal_v1 不注入 backing 时恒返 -EIO, 导致 E2E 100% 失败)
@@ -501,13 +503,13 @@ The class/spec SHALL NOT:
 The minimal_v1 SoC SHALL 实现 GPU 最基本的 3 大数据传输能力 (H2D/D2H/D2D)，全部经 15 C ABI 驱动 (per ADR-088 §D5 冻结面)，零新 ABI 函数。
 
 The 3 paths SHALL:
-- **H2D (Host → Device)**: driver 经 BAR1 mmio_write 注入 descriptor → doorbell at BAR0+doorbell_offset 触发 SDMA → SDMA H2D 经 chip-internal AXI 写 vram; **driver 视角语义**: descriptor 提交经 BAR1 ring window，完成信号 doorbell 同步返回
+- **H2D (Host → Device)**: driver 经 BAR1 mmio_write 注入 descriptor → doorbell at BAR0+doorbell_offset 触发 SDMA → SDMA H2D 经 chip-internal AXI 写 vram; **driver 视角语义**: descriptor 提交经 BAR1 ring window，完成信号 **v1.8 N3 修订: 非 doorbell 同步返回，经 fence → MSI-X vector 0 通知 driver (intr_cb 异步路径)**
 - **D2H (Device → Host, host-pull)**: driver 经 BAR2 mmio_read 直读 vram; **driver 视角语义**: 同步 read 直返 vram 内容
 - **D2D (Device → Device)**: descriptor D2D 提交走 ring, SDMA 内部经 mem_out 两拍 (read+write 同一 backing); **driver 视角语义**: 走 H2D/D2H 同一 ring 路径，无独立 ABI
 
 #### Scenario: H2D via 15 ABI end-to-end
 - **WHEN**: driver 写 descriptor 到 BAR1 ring window (offset ∈ [0x10000000, 0x10001000)) + doorbell 触发 SDMA
-- **THEN**: SDMA 经 chip-internal AXI (PcieTlpBundle) 写 vram; doorbell 同步返回即完成; driver 后续 BAR2 mmio_read 读同一偏移验证数据
+- **THEN**: SDMA **enqueue** descriptor（v1.8 H5: doorbell 仅置 flag，consume 移入 tick），同 buffer 内 host_backdoor → vram_backdoor memcpy 落地 bulk data（v1.8 H3: BAR1 窗口即 host 内存仿真）；**完成信号非 doorbell 同步返回**，需经 fence → MSI-X vector 0 通知 driver (intr_cb 异步路径); driver 后续 BAR2 mmio_read 读同一偏移验证数据
 
 #### Scenario: D2H via 15 ABI end-to-end (host-pull)
 - **WHEN**: driver 调 `cpptlm_emulator_mmio_read(2, off, buf, len)` (BAR2)
@@ -525,9 +527,10 @@ The minimal_v1 → D3 → D5 演进 SHALL 保持 driver 源码兼容:
 - 15 ABI 函数签名不变 (per ADR-088 §D5)
 - BAR0/1/2 布局稳定 (size 可能增大但 index/window 概念稳定)
 - PCIe config space vendor_id=0x10DE / device_id=0x1234 稳定
-- BAR1 doorbell offset 稳定 (relocated into BAR0 register block per H5)
+- **v1.8 N4 修订**: BAR1 在 minimal_v1 是**合成地址空间**（doorbell 0x10010000 + ring 区 0x10000000 超出 16MB 物理窗口），D5 前 driver 不得对 BAR1 做 size-bound 检查；这是 minimal_v1 测试合成约定，不是 PCIe 物理 BAR 偏移
 - BAR2 mmio_read/write 语义稳定 (write-mirror per F6 显式声明)
-- ring-via-BAR1 约定 + PTE 格式随 revision 演进 (driver 用 device_id revision 区分代际)
+- ring-via-BAR1 约定 + PTE 格式随 revision 演进
+- **v1.8 修订**: revision 机制实际未接线——`cpptlm_device_info_t.revision` 字段存在但 `load_soc_config` (dgpu_board_shell.cc:87-95) 不填充，driver 恒读 0；D5 多级页表前**driver 不能依赖 revision 字段区分代际**，须在 driver 内部维护 version map 或等待 board 接线 revision
 
 #### Scenario: driver compiled against minimal_v1 works on full GPU with zero source changes
 - **WHEN**: driver binary linking `cpptlm_emulator` library runs against minimal_v1 config then against D5 full GPU config (same JSON schema evolution)

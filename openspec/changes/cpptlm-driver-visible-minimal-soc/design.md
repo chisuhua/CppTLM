@@ -1,4 +1,4 @@
-# D-AXI Design — Driver-Visible Minimal SoC 详细设计 (v1.7 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 §X + 用户目标验证 §Y)
+# D-AXI Design — Driver-Visible Minimal SoC 详细设计 (v1.8 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 §X + 用户目标验证 §Y + v1.8 normative 文本收口)
 
 > **配套**: [proposal.md](proposal.md) · [tasks.md](tasks.md) · [specs/driver-visible-minimal-soc/spec.md](specs/driver-visible-minimal-soc/spec.md)
 > **基于**: D1 v1.1.1 + D2 v1.1 + v1.2 P1 + v1.3 第三方审查 (Metis/Oracle/Librarian) 6 P0 修正
@@ -816,12 +816,12 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
 - minimal_v1 范围所有端口（EP ↔ board）都是 PcieTlpBundle
 - GMMU MasterPort 在 minimal_v1 经 PcieTlpBundle 连接 pcie_memory
 
-**修改范围**:
-- `spec.md:43/62`: 删 AxiMemBundle 路由描述，改为"PcieTlpBundle 统一 board-level wire-format"
-- `design.md §1`: PcieMemoryDevice port0/port1 wire-format 改为 PcieTlpBundle
-- `design.md §5 GMMU`: MasterPort 改为 PcieTlpBundle（minimal_v1 范围）
-- `docs/pcie/driver-visible-minimal-soc.md §2.1`: 对应修订
-- `include/bundles/axi_mem_bundles_tlm.hh`: 保留，标注"D3+ VramController chip-internal 专用"
+**修改范围**(**v1.8 已应用 normative 文本**):
+- ✅ `spec.md:43`: "暴露 2 个 ChStream SlavePort... (PcieTlpBundle wire-format, board-level 一致)"
+- ✅ `spec.md:62`: SHALL NOT 列表移除 "使用 PcieTlpBundle 作为 SlavePort wire-format"
+- ✅ `design.md §1/§4/§5`: 对应修订（GMMU MasterPort 在 minimal_v1 范围用 PcieTlpBundle）
+- ✅ `docs/pcie/driver-visible-minimal-soc.md §2.1`: 对应修订
+- ✅ `include/bundles/axi_mem_bundles_tlm.hh`: 保留，标注"D3+ VramController chip-internal 专用"
 
 #### H2: descriptor 不可驱动
 
@@ -849,6 +849,10 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
 **问题**: `mmio_write` 中 doorbell 路径既 enqueue 到 `inject_q_` 又同步调用 `sdma_engine_->mmio_write()`，跨线程并发时可能竞态。
 
 **修复**: doorbell handler 仅负责 enqueue + 置 flag（`doorbell_pending_flag_.store(true)`），实际 ring consume 移入 `sdma.tick()`（与 N3 retry-driver 天然同构）。spec 显式声明: "SDMA 状态仅 sim 线程触碰，doorbell handler 仅负责 enqueue"。
+
+**v1.8 N3 修订**: spec.md:510 原写"doorbell 同步返回即完成"与 H5 矛盾（同步返回 vs 仅 enqueue）——**v1.8 已改为** "doorbell 仅 enqueue；完成信号经 fence → MSI-X vector 0 通知 driver（intr_cb 异步路径）"。driver 必须用异步路径，不能 poll doorbell。
+
+**v1.8 N5 修订**: H7 的 `inject_q_` cap（`MAX_INJECT_Q_SIZE=4096`）必须豁免 doorbell/ring 写——否则队列满时 doorbell 被丢 = 丢唤醒 = 丢完成通知。修复: doorbell/ring 走独立无上限通道或 cap 检查豁免。
 
 #### H6: spec 数字漂移
 
