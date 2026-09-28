@@ -143,7 +143,6 @@ docs/
     dgpu-board/architecture.md          #   Board 内部架构 (5 层 + 5 组件 + 析构协议)
     dgpu-soc/architecture.md            #   SoC 业务架构 (6 模块拓扑 + GMMU + SDMA + 存储子系统)
     dgpu-driver/architecture.md         #   Driver 接口架构 (15 ABI + 4 BAR + driver 闭环)
-    adr/                               #   (注: ADR 在 docs/adr/, 这里仅引用)
   adr/                   # 通用不可变 ADR (12+ 份, 状态追加 ## Status Update 段)
     ADR-DGPU-01~04-callback-worker-replaces-detached-threads.md  # DGpuBoard v2.0 重构期基础架构 ADR
     ADR-DGPU-05-vram-storage-ownership.md                         # D-AXI B7 单一 VRAM 所有权（P0 根因）
