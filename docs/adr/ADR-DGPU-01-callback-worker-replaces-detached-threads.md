@@ -616,3 +616,12 @@ REQUIRE(paddr == mock_paddr_for(0x1000, 4096));
 
 **维护**: CppTLM 开发团队
 **状态**: 📋 提案
+---
+
+## Status Update
+
+> 2026-09-26 架构文档迁移（per PR 1 `docs/designs-migration-dgpu-arch-v2.2`）
+
+- **关联架构文档已迁**：`docs/architecture/14-dgpu-board-ideal-arch.md` → `docs/designs/dgpu-board/architecture.md`（per 4 层文档模型重组，dGPU 应用架构独立子目录）。
+- **本 ADR 文本未修改**：§1-§9 保持原貌（per AGENTS.md "ADR 不可变" 规则）；头部 + §9 的旧路径引用仍指向原路径作为历史记录，新读者请直接访问新位置 [docs/designs/dgpu-board/architecture.md §3.2](../../designs/dgpu-board/architecture.md)。
+- **不变性保留**：CallbackWorker 单一所有权范式 (Oracle-1 v2.0.1 强化)、3 类 callback (irq/dma/err) 唯一所有权、§3 Inv-3 destroy 顺序 (callback nullification) 全部不变。

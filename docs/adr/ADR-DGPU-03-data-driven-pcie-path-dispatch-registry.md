@@ -618,3 +618,12 @@ TEST_CASE("DGpuBoard mmio_write routes via DispatchRegistry") {
 - **本 ADR 仍为 📋 提案**：B4 后续的"由 registry 替代"工作（DispatchEntry / ReadHandler / WriteHandler 双签名 / Scope 优先级）尚未实施。该工作将在 ADR 落地阶段（计划 W25-27）展开，前置清理为零冲突起点。
 - **不变性保留**：`PciePath` 枚举（4 态 `Legacy`/`AxiBypass`/`Tlp`/`Mock`）、`pcie_path_` 成员、`attach_profile()` 与 `pcie_path()` accessor 全部保留；`endpoint_bar_store_value` 保留；`PcieEndpointIP` 短名生产注册补回（Wave 3.0，已修复 `msix_*`/`pcie_config_*` 在短名 config 下静默 -ENOSYS 的 bug）。
 - **历史记录不可修改**：本 ADR §1-§8 内容未做任何文字修改（per AGENTS.md "ADR 不可变" 规则）。
+
+
+## Status Update (2026-09-26 迁移补充)
+
+> 此节为附加说明，**不替代** 2027-02-10 既有 Status Update 内容
+
+- **关联架构文档已迁**：`docs/architecture/14-dgpu-board-ideal-arch.md` → `docs/designs/dgpu-board/architecture.md`（per 4 层文档模型重组，dGPU 应用架构独立子目录）。
+- **本 ADR 文本未修改**：§1-§8 保持原貌（per AGENTS.md "ADR 不可变" 规则）；头部 + §8 的旧路径引用仍指向原路径作为历史记录，新读者请直接访问新位置 [docs/designs/dgpu-board/architecture.md §3.3](../../designs/dgpu-board/architecture.md)。
+- **不变性保留**：PciePath 4 态枚举、`attach_profile()` 接口、Scope 优先级双签名契约全部不变。

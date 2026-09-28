@@ -512,3 +512,12 @@ TEST_CASE("bar_store_value is private (compile-fail test)") {
 
 **维护**: CppTLM 开发团队
 **状态**: 📋 提案
+---
+
+## Status Update
+
+> 2026-09-26 架构文档迁移（per PR 1 `docs/designs-migration-dgpu-arch-v2.2`）
+
+- **关联架构文档已迁**：`docs/architecture/14-dgpu-board-ideal-arch.md` → `docs/designs/dgpu-board/architecture.md`（per 4 层文档模型重组，dGPU 应用架构独立子目录）。
+- **本 ADR 文本未修改**：§1-§8 保持原貌（per AGENTS.md "ADR 不可变" 规则）；头部 + §8 的旧路径引用仍指向原路径作为历史记录，新读者请直接访问新位置 [docs/designs/dgpu-board/architecture.md §3.4](../../designs/dgpu-board/architecture.md)。
+- **不变性保留**：DGpuSoc 命名空间统一、EpCache lazy cache、friend class 测试隔离（DGpuBoardTestPeer）、§3 Inv 全部不变。
