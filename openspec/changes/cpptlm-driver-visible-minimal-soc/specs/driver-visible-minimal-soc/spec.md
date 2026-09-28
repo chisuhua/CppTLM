@@ -1,4 +1,4 @@
-# Driver-Visible Minimal SoC Spec (v1.6 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图)
+# Driver-Visible Minimal SoC Spec (v1.7 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 + 用户目标验证 H1-H7)
 
 > **配套**: [proposal.md](../proposal.md) · [design.md](../design.md) · [tasks.md](../tasks.md)
 > **目标**: 在 CppTLM dGPU SoC 中实现**完整最小设备**（driver 视角），让 UsrLinuxEmu 端驱动通过标准 PCIe BAR + 内部 chip-internal AXI 总线看到真实、可驱动验证的最小 dGPU SoC
@@ -495,6 +495,66 @@ The class/spec SHALL NOT:
 #### Scenario: bind_memory_backings legacy fail-fast (F10)
 - **WHEN**: legacy 配置 (无 pcie_memory) + `bar_sizes[2]==0` (vram 未分配) 时 `bind_memory_backings` 执行
 - **THEN**: DPRINTF ERROR log 输出 + fail-fast return; 非静默跳过
+
+### Requirement: Driver H2D/D2H/D2D SHALL be implementable via 15 ABI (minimal_v1)
+
+The minimal_v1 SoC SHALL 实现 GPU 最基本的 3 大数据传输能力 (H2D/D2H/D2D)，全部经 15 C ABI 驱动 (per ADR-088 §D5 冻结面)，零新 ABI 函数。
+
+The 3 paths SHALL:
+- **H2D (Host → Device)**: driver 经 BAR1 mmio_write 注入 descriptor → doorbell at BAR0+doorbell_offset 触发 SDMA → SDMA H2D 经 chip-internal AXI 写 vram; **driver 视角语义**: descriptor 提交经 BAR1 ring window，完成信号 doorbell 同步返回
+- **D2H (Device → Host, host-pull)**: driver 经 BAR2 mmio_read 直读 vram; **driver 视角语义**: 同步 read 直返 vram 内容
+- **D2D (Device → Device)**: descriptor D2D 提交走 ring, SDMA 内部经 mem_out 两拍 (read+write 同一 backing); **driver 视角语义**: 走 H2D/D2H 同一 ring 路径，无独立 ABI
+
+#### Scenario: H2D via 15 ABI end-to-end
+- **WHEN**: driver 写 descriptor 到 BAR1 ring window (offset ∈ [0x10000000, 0x10001000)) + doorbell 触发 SDMA
+- **THEN**: SDMA 经 chip-internal AXI (PcieTlpBundle) 写 vram; doorbell 同步返回即完成; driver 后续 BAR2 mmio_read 读同一偏移验证数据
+
+#### Scenario: D2H via 15 ABI end-to-end (host-pull)
+- **WHEN**: driver 调 `cpptlm_emulator_mmio_read(2, off, buf, len)` (BAR2)
+- **THEN**: 同步返 vram[off..off+len] 内容; 无 MSI-X / err_cb 触发
+
+#### Scenario: D2D via 15 ABI end-to-end
+- **WHEN**: driver 提交 D2D descriptor (src + dst IOVA) 到 BAR1 ring 区间
+- **THEN**: SDMA 经 mem_out 两拍搬运同一 backing; done emit `status=0` (搬运成功) 或 `status=-ENOSYS` (minimal_v1 不支持) — **禁止静默 status=0 零搬运**
+
+---
+
+### Requirement: Driver Code Compatibility SHALL be preserved across minimal_v1 → full GPU
+
+The minimal_v1 → D3 → D5 演进 SHALL 保持 driver 源码兼容:
+- 15 ABI 函数签名不变 (per ADR-088 §D5)
+- BAR0/1/2 布局稳定 (size 可能增大但 index/window 概念稳定)
+- PCIe config space vendor_id=0x10DE / device_id=0x1234 稳定
+- BAR1 doorbell offset 稳定 (relocated into BAR0 register block per H5)
+- BAR2 mmio_read/write 语义稳定 (write-mirror per F6 显式声明)
+- ring-via-BAR1 约定 + PTE 格式随 revision 演进 (driver 用 device_id revision 区分代际)
+
+#### Scenario: driver compiled against minimal_v1 works on full GPU with zero source changes
+- **WHEN**: driver binary linking `cpptlm_emulator` library runs against minimal_v1 config then against D5 full GPU config (same JSON schema evolution)
+- **THEN**: 所有 ABI 调用行为兼容; 仅 driver 代码读的 config space revision 字段可能变化以区分代际
+
+---
+
+### Requirement: SoC 架构 SHALL 支持 minimal → full GPU 无重大重构
+
+Per design §X, the 5 seams SHALL 支持 D3-D5 演进:
+- Seam 1: `handle_slave_port ↔ backing_ptr_` (D3 VramController 插入, 接口零变更)
+- Seam 2: 5 端口切型范围 (H1 写死后, D3 加 GPU readback 端口)
+- Seam 3: `bind_memory_backings` 注入点 (D5 多 cache 一致性)
+- Seam 4: 4 端口 PcieEndpointIP (D5 SR-IOV VF 端口, 内部扩展不改 4 端口契约)
+- Seam 5: `bind_memory_backings` (D4 替换 vram_storage_ 为 VramController/MemoryClusterTLM, 5 消费者保持注入接口; **H1 写死后** vram_backdoor 注入路径明确)
+
+#### Scenario: D3 VramController insertion 不改邻居
+- **WHEN**: D3 phase 插入 `VramControllerTLM` 在 `handle_slave_port` 与 `backing_ptr_` 之间
+- **THEN**: PcieMemoryDevice / SDMA / GMMU 接口零变更; driver ABI 零变更; 仅 backing 路径多一层 controller
+
+#### Scenario: D4 MemoryCluster 替换 vram_storage_ 不破 consumer
+- **WHEN**: D4 phase 用 `MemoryClusterTLM` 替换 `vram_storage_` (单 buffer → 多 channel + timing)
+- **THEN**: 5 消费者 (backdoor / BAR1 / MemoryTLM / sdma / gmmu / pcie_memory) 经 `vram_read/vram_write` 抽象访问 (H7 提前改造); driver BAR ABI 零变更
+
+#### Scenario: D5 SR-IOV VF 端口扩展不改 EP 4 端口契约
+- **WHEN**: D5 phase 每个 VF 独立 vram + SmmuTLM，EP 内部加 VF 路由
+- **THEN**: PcieEndpointIP 4 端口外部契约不变; VF 路由在 EP 内部处理
 
 ## 不在范围 (续)
 

@@ -1,4 +1,4 @@
-# Tasks: Driver-Visible Minimal SoC (v1.6 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图)
+# Tasks: Driver-Visible Minimal SoC (v1.7 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 + v1.7 用户目标验证 (H1-H7))
 
 > **配套**: [proposal.md](proposal.md) · [design.md](design.md) · [specs/driver-visible-minimal-soc/spec.md](specs/driver-visible-minimal-soc/spec.md)
 > **方法**: v1.3 P0 修正（6 项 B1-B6）→ T0 表征/前置 → T1-T4 改造 → T5 文档
@@ -422,6 +422,128 @@ grep "capacity_gb" configs/dgpu_soc_minimal_v1.json
 # 期望: memory 模块已删除 或 capacity_gb=8 (F2/F12)
 grep "memory" configs/dgpu_soc_minimal_v1.json
 # 期望: 零匹配 (F12)
+```
+
+## v1.7 P0 阻塞清单 (Oracle 第四轮 H1-H7)
+
+> Oracle 第四轮审计 (2026-09-27) 发现 7 项 P0/P1 缺陷，必须在 v1.7 实施前全部完成。v1.7 最终满足用户目标："实现GPU里最基本的 H2D/D2H/D2D 能力，在最大化保存驱动代码兼容性同时，soc架构可以支持演进成完整的GPU架构"。
+
+| ID | 性质 | 位置 | 修正要点 |
+|----|------|------|----------|
+| **H1** | P0 wire-format 矛盾 | spec.md:43/62 + design.md §1/§4/§5 + 实施笔记 §2.1 | **二选一写死 wire-format**: 采纳 B25 全 PcieTlpBundle（推荐）；同步 spec.md:43/62 + design §1/§4/§5 + 实施笔记 §2.1 改为 PcieTlpBundle；GMMU MasterPort 一并切 PcieTlpBundle；AxiMemBundle 标记"D3+ VramController 内部用" |
+| **H2** | P0 descriptor 不可驱动 | sdma_engine_tlm.cc:527 + spec B2 | **ring-via-BAR1 约定**: BAR1 窗口内固定偏移区间为 descriptor ring 存储；board `mmio_write` 对该区间路由 `ring_write_entry`；`enable_ring_mode` 由 JSON params 或 board init 自动调用 |
+| **H3** | P0 host 内存无注入者 | N9 + slimming 后 ABI | **host 内存约定**: spec 文档化"emulator 即 host: BAR1 窗口区域即 host 内存仿真"；board `bind_memory_backings` 无条件 `sdma->set_host_backdoor(vram_storage_.get(), bar1_window_size_)` |
+| **H4** | P1 D2D false-success | sdma_engine_tlm.cc:489-490 | **D2D 诚实语义**: minimal_v1 D2D 走 mem_out 两拍 (read+write 同一 backing)，或 emit done `status=-ENOSYS`；**禁止** `status=0` + 零搬运 |
+| **H5** | P1 doorbell 竞态 | dgpu_board_shell.cc:419-441 + sdma_engine_tlm.cc:466-478 | **doorbell handler 改造**: 仅 enqueue + 置 flag，实际 consume 挪入 `tick()`（与 N3 retry-driver 天然同构）；spec 显式声明"SDMA 状态仅 sim 线程触碰" |
+| **H6** | P1 spec 数字漂移 | spec.md:314 vs F12 Scenario | **spec 一致化**: F12 Scenario "5 模块" + 旧 Scenario "6 模块" 矛盾消解；tasks.md 加 `[x]` checkbox / `implemented-in:` 列 (F11 落地) |
+| **H7** | P2 资源 + 文档陈旧 | dgpu_board_shell.cc:405-414 + design §8 Step 7 | **资源上限 + 陈旧引用清理**: `inject_q_` 加 max size 限制 + DPRINTF WARN on overflow；design §8 Step 7 + spec Scenario 引用 `cpptlm_emulator_backdoor_write/read` 改写为 BAR1 mmio 语义 |
+
+## v1.7 P0 修正任务 (前置, 1-2d, **必须在 v1.3+v1.4+v1.5+v1.6 P0 之后**)
+
+### P0.33 (H1) — wire-format 写死为全 PcieTlpBundle
+
+- spec.md:43/62 删 AxiMemBundle 路由描述，改为"PcieTlpBundle 统一 wire-format"
+- design.md §1/§4/§5 全部改 PcieTlpBundle；AxiMemBundle 标注"D3+ VramController chip-internal 专用"
+- docs/pcie/driver-visible-minimal-soc.md §2.1 对应修订
+- `include/bundles/axi_mem_bundles_tlm.hh` 保留（给 VramController D3+ 用）
+
+**TDD 5 步**:
+1. RED: `[pcie-memory][axi]` 测试因 PcieTlpBundle resp 字段不匹配 FAIL
+2. GREEN: 统一 wire-format 后同一测试 PASS
+3. 验证: `grep "AxiMemBundle" spec.md design.md` → 仅限 VramController 相关章节
+4. 验证: `[pcie-memory][axi]` 测试全 PASS
+5. commit: `fix(spec/design): wire-format 写死为 PcieTlpBundle, AxiMemBundle 标 D3+ chip-internal (H1)`
+
+### P0.34 (H2) — ring-via-BAR1 约定 + 自动 enable_ring_mode
+
+- `dgpu_board_shell.cc::mmio_write`: BAR1 窗口内 ring descriptor 区间（固定偏移）路由到 `sdma->ring_write_entry(index, data, len)`
+- `bind_memory_backings` 或 JSON params 自动调用 `sdma->enable_ring_mode(RingSize::KB_64, EntrySize::B_64)`
+- spec.md 新增 Scenario: "ring-via-BAR1: driver 写 descriptor 到 BAR1 ring 区间 → SDMA 消费"
+
+**TDD 5 步**:
+1. RED: `[sdma][ring]` 测试因 ring-via-BAR1 路由缺失 FAIL
+2. GREEN: mmio_write BAR1 ring 区间路由 + auto enable_ring_mode 后 PASS
+3. 验证: `grep "ring_write_entry\|enable_ring_mode" src/tlm/gpu/dgpu_board_shell.cc src/tlm/gpu/sdma_engine_tlm.cc` → 存在
+4. 验证: `[sdma][ring]` 测试 PASS
+5. commit: `feat(board): ring-via-BAR1 路由 + auto enable_ring_mode (H2)`
+
+### P0.35 (H3) — host backdoor 无条件注入
+
+- `bind_memory_backings` 无条件调用 `sdma->set_host_backdoor(vram_storage_.get(), bar1_window_size_)`
+- spec.md 文档化"emulator 即 host: BAR1 窗口区域即 host 内存仿真"
+- H2 + H3 联动: host_backdoor 注入了 BAR1 窗口同一 backing
+
+**TDD 5 步**:
+1. RED: `[sdma][h2d]` 测试因 host backdoor 未注入 FAIL
+2. GREEN: `bind_memory_backings` 无条件 set_host_backdoor 后 PASS
+3. 验证: `grep "set_host_backdoor" src/tlm/gpu/dgpu_board_shell.cc` → 存在且无条件调用
+4. 验证: `[sdma][h2d]` 测试 PASS
+5. commit: `fix(board): 无条件 set_host_backdoor (H3)`
+
+### P0.36 (H4) — D2D 诚实语义
+
+- `sdma_engine_tlm.cc::process_d2d` 或对应路径: D2D 走 mem_out 两拍 (read+write 同一 backing)，或 emit done status=-ENOSYS
+- **禁止** `status=0` + 零搬运（静默 false-success）
+
+**TDD 5 步**:
+1. RED: D2D descriptor 提交后 `status=0` 但数据未搬运
+2. GREEN: D2D 走 mem_out 两拍或返 -ENOSYS 后行为诚实
+3. 验证: `grep "ENOSYS\|D2D.*mem_out\|两拍" src/tlm/gpu/sdma_engine_tlm.cc` → 存在
+4. 验证: D2D 测试 status 值非零或数据真实搬运
+5. commit: `fix(sdma): D2D 诚实语义, 禁 status=0 零搬运 (H4)`
+
+### P0.37 (H5) — doorbell handler 线程安全改造
+
+- `dgpu_board_shell.cc:419-441`: doorbell 路径仅 enqueue + 置 flag，不同步 consume
+- `sdma_engine_tlm.cc::tick()`: 实际 ring consume 移入 tick（与 N3 retry-driver 同构）
+- spec 显式声明"SDMA 状态仅 sim 线程触碰，doorbell handler 仅负责 enqueue"
+
+**TDD 5 步**:
+1. RED: doorbell handler 并发调用导致状态不一致
+2. GREEN: doorbell 仅 enqueue + tick() 内 consume 后 PASS
+3. 验证: `grep "enqueue\|tick\|doorbell" src/tlm/gpu/dgpu_board_shell.cc src/tlm/gpu/sdma_engine_tlm.cc` → 分离逻辑存在
+4. 验证: `[sdma][doorbell]` 并发测试 PASS
+5. commit: `fix(board/sdma): doorbell 仅 enqueue, 实际 consume 移入 tick() (H5)`
+
+### P0.38 (H6) — spec 数字一致化
+
+- spec.md:314 F12 Scenario "5 模块" vs 旧 Scenario "6 模块" 矛盾消解
+- tasks.md 每项 H 加 `[x]` checkbox 或 `implemented-in:` 列
+
+**TDD 5 步**:
+1. RED: spec.md 模块数前后矛盾 → openspec validate 报错
+2. GREEN: 统一为"5 模块" + tasks.md 有 checkbox 后 PASS
+3. 验证: `grep "5 模块\|6 模块" spec.md` → 仅"5 模块"
+4. 验证: `grep "\[x\]\|implemented-in:" tasks.md | wc -l` → ≥35
+5. commit: `docs(spec/tasks): spec 模块数一致化 + tasks.md checkbox (H6)`
+
+### P0.39 (H7) — inject_q_ 资源上限 + 陈旧引用清理
+
+- `dgpu_board_shell.cc::mmio_write`: `inject_q_` 加 `if (inject_q_.size() > MAX_INJECT_Q_SIZE) { DPRINTF WARN; return -EOVERFLOW; }`
+- design §8 Step 7: `cpptlm_emulator_backdoor_write/read` 引用改 BAR1 mmio 语义
+
+**TDD 5 步**:
+1. RED: inject_q_ 无限增长导致内存耗尽
+2. GREEN: 加 max size 限制 + WARN + 旧引用更新后 PASS
+3. 验证: `grep "MAX_INJECT_Q_SIZE\|EOVERFLOW" src/tlm/gpu/dgpu_board_shell.cc` → 存在
+4. 验证: `grep "backdoor_write\|backdoor_read" design.md` → 无陈旧引用
+5. commit: `fix(board): inject_q_ 加资源上限 + 陈旧引用清理 (H7)`
+
+### P0.40 — v1.7 验证 (用户目标验证)
+```bash
+openspec validate cpptlm-driver-visible-minimal-soc --strict
+# 期望: PASS
+grep -n "enable_ring_mode\|set_host_backdoor" src/tlm/gpu/sdma_engine_tlm.cc
+# 期望: 自动调用点存在 (H2+H3)
+grep -n "bar1_window_size_.*ring\|ring.*bar1_window" src/tlm/gpu/dgpu_board_shell.cc
+# 期望: 路由逻辑存在 (H2)
+grep "ENOSYS\|D2D.*mem_out" src/tlm/gpu/sdma_engine_tlm.cc
+# 期望: D2D 诚实语义存在 (H4)
+grep -n "MAX_INJECT_Q_SIZE\|EOVERFLOW" src/tlm/gpu/dgpu_board_shell.cc
+# 期望: 资源上限存在 (H7)
+# User goal Scenario (验证):
+./build/bin/cpptlm_tests "[minimal_dgpu_soc][driver_visible]" --reporter compact
+# 期望: ALL PASS (H2D/D2H/D2D 全通)
 ```
 
 ## Step 0: 表征 + 前置验证 (1 工作日) — 含 N1/N6/N12

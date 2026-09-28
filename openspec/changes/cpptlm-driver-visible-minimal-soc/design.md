@@ -1,4 +1,4 @@
-# D-AXI Design — Driver-Visible Minimal SoC 详细设计 (v1.6 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 §X)
+# D-AXI Design — Driver-Visible Minimal SoC 详细设计 (v1.7 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 §X + 用户目标验证 §Y)
 
 > **配套**: [proposal.md](proposal.md) · [tasks.md](tasks.md) · [specs/driver-visible-minimal-soc/spec.md](specs/driver-visible-minimal-soc/spec.md)
 > **基于**: D1 v1.1.1 + D2 v1.1 + v1.2 P1 + v1.3 第三方审查 (Metis/Oracle/Librarian) 6 P0 修正
@@ -788,6 +788,91 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
 | **D5** 启动 | 多 device 共存 + GPU L2 | 多 PcieMemoryDevice 实例 + SmmuTLM (System MMU, 多 device 隔离) + GPU L2 cache | SR-IOV 1 PF + N VF, 每个 VF 独立 vram + SmmuTLM, EP 4 端口契约不变 |
 
 > **v1.6 锁定**: 所有 5 个 seam 接口在 v1.4/v1.5 已预留或清理债务, v1.6 不引入新 seam, 仅文档化锁定。D3-D5 触发条件由 user 决策, CppTLM 侧实现不阻塞。
+
+---
+
+## §Y 用户目标验证与 H1-H7 修复路线 (v1.7)
+
+> **目标**: v1.7 最终满足用户原始目标 — "实现GPU里最基本的 H2D/D2H/D2D 能力，在最大化保存驱动代码兼容性同时，soc架构可以支持演进成完整的GPU架构"。H1-H7 是 Oracle 第四轮审计发现的 7 项 P0/P1 缺陷，必须全部修复后才能声称满足用户目标。
+
+### Y.1 用户目标 vs v1.7 能力映射
+
+| 用户目标 | minimal_v1 实现方式 | 验证场景 |
+|---------|-------------------|---------|
+| **H2D (Host → Device)** | BAR1 ring window 写 descriptor → doorbell 触发 SDMA → chip-internal AXI 写 vram | Scenario H2D-1: driver 经 BAR1 ring + doorbell → vram 数据可见 |
+| **D2H (Device → Host, host-pull)** | driver 经 BAR2 mmio_read 直读 vram | Scenario D2H-1: BAR2 mmio_read 返回 vram 内容 |
+| **D2D (Device → Device)** | descriptor D2D 提交走 ring, SDMA mem_out 两拍 (read+write 同一 backing) | Scenario D2D-1: D2D status=-ENOSYS 或真实两拍搬运 |
+| **driver 源码兼容** | 15 ABI 零变更 + BAR0/1/2 布局稳定 | Scenario compat-1: driver 二进制兼容 minimal → D5 |
+| **SoC 可演进** | 5 seams 接口零变更 | Scenario evol-1: D3 VramController 插入无影响 |
+
+### Y.2 H1-H7 修复路线详述
+
+#### H1: wire-format 矛盾
+
+**问题**: spec.md 既说 AxiMemBundle 又说 PcieTlpBundle，design §4 说 PcieMemoryDevice SlavePort wire-format，§5 GMMU MasterPort 用 AxiMemBundle，矛盾无法实施。
+
+**修复决策**: 采纳 **B25 全 PcieTlpBundle**（推荐），理由:
+- `AxiMemBundle` 是 D3 VramController chip-internal 专用
+- minimal_v1 范围所有端口（EP ↔ board）都是 PcieTlpBundle
+- GMMU MasterPort 在 minimal_v1 经 PcieTlpBundle 连接 pcie_memory
+
+**修改范围**:
+- `spec.md:43/62`: 删 AxiMemBundle 路由描述，改为"PcieTlpBundle 统一 board-level wire-format"
+- `design.md §1`: PcieMemoryDevice port0/port1 wire-format 改为 PcieTlpBundle
+- `design.md §5 GMMU`: MasterPort 改为 PcieTlpBundle（minimal_v1 范围）
+- `docs/pcie/driver-visible-minimal-soc.md §2.1`: 对应修订
+- `include/bundles/axi_mem_bundles_tlm.hh`: 保留，标注"D3+ VramController chip-internal 专用"
+
+#### H2: descriptor 不可驱动
+
+**问题**: SDMA 有 `enable_ring_mode` + `ring_write_entry` API，但 board `mmio_write` 对 BAR1 ring 区间无路由，driver 无法注入 descriptor。
+
+**修复**: `DGpuBoard::mmio_write` 增加 BAR1 ring 区间检测（kRingDescriptorBase=0x10000000, kRingDescriptorSize=4KB），路由到 `sdma->ring_write_entry(index, data, len)`。`bind_memory_backings` 自动调用 `sdma->enable_ring_mode(RingSize::KB_64, EntrySize::B_64)`。
+
+#### H3: host 内存无注入者
+
+**问题**: H2 ring-via-BAR1 需要 host 侧数据注入 backing，但 `set_host_backdoor` 从未在 `bind_memory_backings` 调用，H2/H3 形成死锁。
+
+**修复**: `bind_memory_backings` 无条件调用 `sdma->set_host_backdoor(vram_storage_.get(), bar1_window_size_)`。spec.md 文档化: "emulator 即 host: BAR1 窗口区域即 host 内存仿真 (per N9)"。
+
+#### H4: D2D false-success
+
+**问题**: D2D descriptor 处理路径（`process_d2d` 或 `d2d_forward`）在 `vram_backdoor_ == nullptr` 时直接 return（无 done emit），但调用方误以为成功。
+
+**修复**: D2D 诚实语义二选一：
+- **选项A（推荐）**: D2D 走 `mem_out` 两拍（同一 backing 先 read 再 write），emit done status=0
+- **选项B**: D2D minimal_v1 不支持，emit done status=-ENOSYS
+- **禁止**: status=0 + 零搬运（静默 false-success）
+
+#### H5: doorbell handler 竞态
+
+**问题**: `mmio_write` 中 doorbell 路径既 enqueue 到 `inject_q_` 又同步调用 `sdma_engine_->mmio_write()`，跨线程并发时可能竞态。
+
+**修复**: doorbell handler 仅负责 enqueue + 置 flag（`doorbell_pending_flag_.store(true)`），实际 ring consume 移入 `sdma.tick()`（与 N3 retry-driver 天然同构）。spec 显式声明: "SDMA 状态仅 sim 线程触碰，doorbell handler 仅负责 enqueue"。
+
+#### H6: spec 数字漂移
+
+**问题**: spec.md Scenario "soc 内有 6 模块"（旧）与 F12 Scenario "5 模块"（MemoryTLM 移除后）矛盾。
+
+**修复**: 统一为"5 模块"（pcie_ep + pcie_memory + sdma + gmmu + completion）；spec.md 删所有"6 模块"引用。tasks.md 每项 H 加 `[x]` checkbox 或 `implemented-in:` 列（F11 落地）。
+
+#### H7: inject_q_ 无限增长 + design §8 陈旧引用
+
+**问题**: `inject_q_` 无 max size 限制，可能导致内存耗尽；design §8 Step 7 引用 `cpptlm_emulator_backdoor_write/read`（旧 ABI），与当前 BAR1 mmio 语义不符。
+
+**修复**: `mmio_write` 加 `MAX_INJECT_Q_SIZE=4096` 限制 + DPRINTF WARN on overflow + `return -EOVERFLOW`。design §8 Step 7 + spec Scenario 引用 `cpptlm_emulator_backdoor_write/read` 改写为"driver 经 BAR1 mmio_write 写 descriptor ring 区间（经 H2 ring-via-BAR1 路由）"。
+
+### Y.3 H1-H7 与 §X 演进路线图关系
+
+| H项 | 影响 seam | 与 D3-D5 关系 |
+|-----|---------|---------------|
+| H1 | Seam 2（5 端口切型） | D3 加 GPU readback 端口仍用 PcieTlpBundle（H1 写死后不变） |
+| H2 | BAR1 ring 路由 | D3 SM 新增 submit queue 映射到同一 ring 区间（接口兼容） |
+| H3 | host_backdoor 注入 | D5 多 VF 时每个 VF 独立 host_backdoor 注入（接口不变） |
+| H4 | D2D 语义 | D5 D2D 走 NoC 多跳（H4 诚实语义延续） |
+| H5 | doorbell handler | D5 doorbell 路由扩展到多个 VF（H5 线程安全模式不变） |
+| H6 | spec 数字 | D3 模块数变为 6（+ VramController），spec 需同步更新 |
+| H7 | inject_q_ 上限 | D5 多通道时每个通道独立 inject_q_（接口不变） |
 
 ---
 
