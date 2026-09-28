@@ -122,6 +122,13 @@ VIRTUAL_PATHS=(
     "docs/soc_arch/modules/"
     "docs/soc_arch/specs/"
     "docs/soc_arch/roadmap/"
+    # === dGPU 文档重组 v2.2 (2026-09-26) ===
+    # 14-dgpu-board-ideal-arch.md 与 2027-02-09-minimal-dgpu-soc.md 迁移至 docs/designs/{dgpu-board,dgpu-soc}/architecture.md
+    # 新建 docs/designs/dgpu-driver/architecture.md (Driver 视角)
+    # 旧路径保留作历史兼容（AGENTS.md/roadmap.md 中可能仍有引用）
+    "docs/architecture/14-dgpu-board-ideal-arch.md"  # 已迁 docs/designs/dgpu-board/architecture.md
+    "docs/designs/2027-02-09-minimal-dgpu-soc.md"   # 已迁 docs/designs/dgpu-soc/architecture.md
+    "examples/demo_dgpu_soc_minimal_via_abi.py"     # 预录于 AGENTS.md §KEY INVARIANTS (2027-09-17 P0.5-landing), 实际 Python demo 文件未提交 (per AGENTS.md 描述, 引用作示例)
     # 旧版特定文件条目（被上述前缀条目覆盖，保留作历史兼容）
     "docs/soc_arch/modules/gpu-kernellaunch.md"
     "docs/soc_arch/modules/cuda-core-adapter.md"
