@@ -1,4 +1,4 @@
-# Driver-Visible Minimal SoC Spec (v1.5 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28))
+# Driver-Visible Minimal SoC Spec (v1.6 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图)
 
 > **配套**: [proposal.md](../proposal.md) · [design.md](../design.md) · [tasks.md](../tasks.md)
 > **目标**: 在 CppTLM dGPU SoC 中实现**完整最小设备**（driver 视角），让 UsrLinuxEmu 端驱动通过标准 PCIe BAR + 内部 chip-internal AXI 总线看到真实、可驱动验证的最小 dGPU SoC
@@ -448,6 +448,65 @@ The class/spec SHALL NOT:
 - **THEN**: 匹配 `Packet::payload_resize` 或等价机制（B17 实施完成）
 - **WHEN**: `openspec validate cpptlm-driver-visible-minimal-soc --strict`
 - **THEN**: PASS（含 v1.3 P0 + v1.4 P0 + v1.5 P0 全部）
+
+### Requirement: v1.6 P0 修正 SHALL 应用 (F1-F12)
+
+v1.6 修订 SHALL 在 v1.5 P0 (B14-B28) 之上叠加 12 项修正 (F1-F11 架构修复 + F12 MemoryTLM 移除), **实施演进路线图前必须全部完成**。
+
+The v1.6 corrections SHALL:
+- **F1 GMMU bound check 移除**: GMMU async translate 路径删除 `pte_addr+8 > backing_size_` 本地检查, SLVERR 归 PcieMemoryDevice `handle_slave_port` 负责 (B8/B9 已覆盖); GMMU 只保留 retry_latch (max_retry=16)
+- **F2 capacity_gb 矛盾消解**: 若采纳 F12 (MemoryTLM 移除), spec × tasks `capacity_gb` 矛盾随 MemoryTLM 一起消失; 若保留, 统一 `capacity_gb=8`
+- **F3 T1.7 伪码违例**: `memory_->set_backing_store(framebuffer_ptr_, framebuffer_size_)` 随 F12 删除或参数改为 `vram_size_`
+- **F4 PcieMemoryDevice zombie 装饰移除**: 删除 `registers_`/`mmio_read`/`mmio_write` + `kVendorId=0x1002`/`kDeviceId=0x0002` 双身份常量; B27 二选一改为强制删除
+- **F5 B14 死代码残留补删**: 补删 backdoor_write push `is_backdoor=true` 分支 + drain `is_backdoor_read=true` 分支 + `last_backdoor_reads_` map + PendingReq 两个 flag 字段
+- **F6 BAR0 write-mirror 显式声明**: spec 显式声明 "BAR0 = write-mirror, SDMA_STATUS 不反映真设备状态"; JSON SDMA_STATUS 声明加注释或删除
+- **F7 done_out 悬空 + fault path board callback**: spec 显式声明 "done_out 在 minimal_v1 悬空 + write-to-unconnected 静默丢弃"; B23 fault path 同步触发 `trigger_error_async(status=-EIO)`
+- **F8 CompletionRingTLM dormant**: 标 CompletionRingTLM 在 minimal_v1 为 dormant (零连接); spec 新增对应 Scenario
+- **F9 消费者计数统一**: design.md §1 + AGENTS.md 统一为 "4 注入点 (memory/sdma/gmmu/pcie_memory) + 1 host backdoor (非注入)"
+- **F10 legacy fail-fast**: `bind_memory_backings` legacy 分支 (无 pcie_memory 且 vram 未分配) 加 WARN + fail-fast
+- **F11 tasks.md 实施状态标记**: 每项 B (B1-B28) + F (F1-F12) 加 `[x]` checkbox 或 "implemented-in: <commit>" 列
+- **F12 MemoryTLM 移除**: 从 `configs/dgpu_soc_minimal_v1.json` 删除 `memory` 模块; spec "soc 内有 6 个模块" 改为 "5 个模块"; B18/B28 minimal_v1 部分标 N/A
+
+The class/spec SHALL NOT:
+- 保留 GMMU async 路径本地 bound check (在 minimal_v1 不注入 backing 时恒返 -EIO, 导致 E2E 100% 失败)
+- 保留 PcieMemoryDevice `registers_` / `mmio_read` / `mmio_write` (架构 zombie, B27 已要求删除)
+- 保留 backdoor push/drain 残留 flag (`is_backdoor`/`is_backdoor_read`/`last_backdoor_reads_`)
+- 声称 BAR0 MMIO 读能反映真设备状态
+- 声称 done_out 写到未连接端口有确定行为 (spec 必须显式声明 "悬空 + 静默丢弃")
+- 在 minimal_v1 保留 MemoryTLM (零消费者冗余, 引入 bound 漂移面)
+- 让 `bind_memory_backings` 在 legacy 配置 + vram 未分配时静默跳过 (无 WARN)
+
+#### Scenario: GMMU async 无 backing 注入时 SDMA H2D 不挂死 (F1)
+- **WHEN**: minimal_v1 配置 (无 GMMU backing 注入) + SDMA H2D descriptor
+- **THEN**: GMMU translate 经 AXI 路径, 不做本地 bound check; PcieMemoryDevice `handle_slave_port` 负责 SLVERR (B8/B9); `[gmmu][async]` 测试 PASS
+
+#### Scenario: PcieMemoryDevice 无 registers_/MMIO (F4)
+- **WHEN**: `grep "registers_\|mmio_read\|mmio_write" include/tlm/gpu/pcie_memory_device.hh`
+- **THEN**: 零匹配; PcieMemoryDevice 仅为 AXI slave (chip-internal), 无独立 MMIO 空间
+
+#### Scenario: done_out 悬空静默丢弃 + board error callback 触发 (F7)
+- **WHEN**: SDMA fault path (B23) 在 minimal_v1 执行 (done_out 未接线)
+- **THEN**: `emit done_out` 静默丢弃; `trigger_error_async(status=-EIO)` 同步触发; spec 显式声明悬空语义
+
+#### Scenario: minimal_v1 5 模块拓扑 (F12)
+- **WHEN**: `configs/dgpu_soc_minimal_v1.json` 加载后 `ModuleFactory::instantiateAll`
+- **THEN**: soc 内有 5 个模块 (pcie_ep + pcie_memory + sdma + gmmu + completion); MemoryTLM 已删除; spec "6 模块" Scenario 更新为 "5 模块"
+
+#### Scenario: bind_memory_backings legacy fail-fast (F10)
+- **WHEN**: legacy 配置 (无 pcie_memory) + `bar_sizes[2]==0` (vram 未分配) 时 `bind_memory_backings` 执行
+- **THEN**: DPRINTF ERROR log 输出 + fail-fast return; 非静默跳过
+
+## 不在范围 (续)
+
+| 项 | 后置阶段 | 备注 |
+|----|---------|------|
+| MemoryTLM (minimal_v1 移除, D3+ 重新引入) | D3 | F12 移除; D3 VramController 引入后作为 cache 下游重新加入 |
+| CompletionRingTLM (minimal_v1 dormant, D3+ 重新引入) | D3 | F8 标 dormant; D3 GPU fence 语义引入后重新加入 |
+| StreamingMultiprocessor | D3 | v1.6 不实现 |
+| VramControllerTLM | D3 | D3 seam 插入点已就位 (handle_slave_port ↔ backing_ptr_) |
+| MemoryClusterTLM (多通道 HBM) | D4 | D4 seam 插入点已就位 (bind_memory_backings 替换 vram_storage_) |
+| GPU L2 cache | D5 | D5 seam 插入点已就位 |
+| SmmuTLM (System MMU, 多 VF) | D5 | EP 4 端口契约不变 |
 
 ## 不在范围
 

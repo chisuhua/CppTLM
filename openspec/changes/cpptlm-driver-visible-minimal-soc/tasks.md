@@ -1,4 +1,4 @@
-# Tasks: Driver-Visible Minimal SoC (v1.5 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28))
+# Tasks: Driver-Visible Minimal SoC (v1.6 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图)
 
 > **配套**: [proposal.md](proposal.md) · [design.md](design.md) · [specs/driver-visible-minimal-soc/spec.md](specs/driver-visible-minimal-soc/spec.md)
 > **方法**: v1.3 P0 修正（6 项 B1-B6）→ T0 表征/前置 → T1-T4 改造 → T5 文档
@@ -244,6 +244,184 @@ grep -rn "framebuffer_storage_" src/tlm/gpu/dgpu_board_shell.cc include/tlm/gpu/
 ```bash
 openspec validate --changes --strict
 # 期望: PASS (3/3) — 与 P0.4 合并为一次校验
+```
+
+## v1.6 P0 修正清单 (在 v1.5 P0.8-P0.18 之上叠加, **实施前必须完成**)
+
+> Oracle 第三轮严格审计 (2026-09-27) 在 v1.5 基础上发现 **11 项新隐藏缺陷 (F1-F11)** + **MemoryTLM 移除决策 (F12)**。叠加 v1.5 B14-B28 构成完整 P0 集合。**演进路线图** (X.1-X.6) 同步写入 design.md §X。
+
+| ID | 性质 | 位置 | 修正要点 |
+|----|------|------|----------|
+| **F1** | 致命 100% 失败 | `gmmu_tlm.hh` (async translate) | **GMMU 本地删除 bound check**: `pte_addr+8 > backing_size_` 检查在 minimal_v1 N12 不注入 backing 时 backing_size_=0 → 恒返 -EIO → 所有 SDMA fault → E2E 100% 失败。**修复**: GMMU 本地删除该 bound check, SLVERR 归 PcieMemoryDevice `handle_slave_port` 的 SLVERR 负责 (B8/B9 已覆盖); GMMU 只保留 retry_latch |
+| **F2** | spec × tasks 硬矛盾 | spec.md:465/474/484-486 vs tasks.md B28/P0.12 | spec 写 `capacity_gb=1`, tasks 写 `capacity_gb` 改 8。**若采纳 F12 (MemoryTLM 移除)**: 矛盾蒸发, 无需修改; **若保留 MemoryTLM**: 统一 `capacity_gb=8` 并改 Scenario |
+| **F3** | T1.7 伪码违例 | tasks.md:374 | `memory_->set_backing_store(framebuffer_ptr_, framebuffer_size_)` 传 16MB, spec 要求"同一 vram_size_"。**修复**: 随 F12 删除该行; 或改传 `vram_size_` |
+| **F4** | 架构 zombie | `pcie_memory_device.hh:37-38,45-46` | `registers_` 不可达 + kVendorId=0x1002/kDeviceId=0x0002 与 EP config space 0x10DE:0x1234 矛盾双身份。**修复**: 删除 `registers_`/`mmio_read`/`mmio_write`/双身份常量; B27 二选一改强制删除; [pcie-memory] mmio 测试并入 B13 处置表 |
+| **F5** | B14 死代码残留 | `dgpu_board_shell.cc:592-602, 794-819` | backdoor_write 仍 push `is_backdoor=true` PendingReq; drain `is_backdoor_read=true` 无人 enqueue。**修复**: B14 补删 push + drain 两分支 + `last_backdoor_reads_` + PendingReq 两个 flag 字段 |
+| **F6** | driver-visible 语义谎言 | spec.md + JSON | BAR0 mmio_read 是 write-mirror; JSON `SDMA_STATUS @16 ro` 永远读不出真设备状态。**修复**: spec 显式声明 "BAR0 = write-mirror, SDMA_STATUS 不反映真设备状态"; 或删 JSON SDMA_STATUS 声明 |
+| **F7** | fault path 挂死 | `sdma_engine_tlm.cc` done_out 路径 | SDMA `done_out` 在 minimal_v1 无 connections (未接线); B23 fault path `emit done_out with status=-EIO` 写到未连接端口。**修复**: spec 显式声明 "done_out 悬空 + write-to-unconnected 静默丢弃"; B23 fault path 同步触发 board error callback (复用 `trigger_error_async`) |
+| **F8** | CompletionRingTLM dormant | `completion_ring_mvp.hh` | completion 模块在 minimal_v1 同 dormant (零连接)。**修复**: 与 F12 同步移除或标 dormant; spec 声明 "dormant in minimal_v1" |
+| **F9** | 文档一致性 | design.md §1 + AGENTS.md | design §1 数 5 消费者 (含 backdoor), user 视角 4 (不含)。**修复**: 统一为 "4 注入点 (memory/sdma/gmmu/pcie_memory) + 1 host backdoor (非注入)" |
+| **F10** | legacy 静默退化 | `dgpu_board_shell.cc:609-613` | `bind_memory_backings` 起始早退 (`framebuffer_ptr_==nullptr` 即返); v1.5 后 `framebuffer_ptr_=vram_storage_.get()`, 若 legacy 配置 `bar_sizes[2]==0` → vram 不分配 → **legacy 注入也静默跳过**, fail-fast 只覆盖 `memory_routing_enabled=true`。**修复**: legacy 分支 (无 pcie_memory 且 vram 未分配) 加 WARN/fail-fast |
+| **F11** | 文档实施状态标记 | tasks.md 全文件 | v1.5 文档与代码两版本错位, 无单一 "implemented-through" 标记; B 项实施状态混杂。**修复**: tasks.md 每项 B 加 `[x]` checkbox 或 "implemented-in: <commit>" 列 |
+| **F12** | MemoryTLM 移除决策 | `configs/dgpu_soc_minimal_v1.json:38-42` + spec | MemoryTLM 在 minimal_v1 部署冗余 (零连接零消费者, pre-D2 时代遗留); 保留只引入 bound 漂移面 (B18/B28 三方矛盾源头)。**修复**: 从 `configs/dgpu_soc_minimal_v1.json` 移除 `memory` 模块; spec scenario "soc 内有 6 个模块" 改 5; B18/B28 的 minimal_v1 部分标 N/A (B18 框架修复仍保留给其他 config) |
+
+## v1.6 P0 修正任务 (前置, 0.5-1d, **必须在 v1.5 P0.8-P0.18 之后**)
+
+### P0.19 (F1) — GMMU 删除本地 bound check, SLVERR 归 PcieMemoryDevice
+- `include/tlm/gpu/gmmu_tlm.hh`: 删 `if (pte_addr + 8 > backing_size_) return -EIO;` (在 async translate 路径, 该检查在 minimal_v1 N12 不注入 backing 时恒触发)
+- design.md §5 GMMU 状态机: 删该 bound check; `handle_slave_port` 的 SLVERR (B8/B9) 已覆盖 bound 违规场景
+- `gmmu_tlm.hh` 仍保留 `retry_latch_` (max_retry=16, 超过则置 fault_done)
+- **TDD 5 步**:
+  1. RED: `[gmmu][async]` 测试在 minimal_v1 (无 backing 注入) SDMA H2D → 100% fault → FAIL
+  2. GREEN: GMMU 删 bound check 后同一测试 PASS
+  3. 验证: `grep -n "pte_addr + 8 > backing_size_" include/tlm/gpu/gmmu_tlm.hh` → 零匹配
+  4. 验证: `[gmmu][async]` 测试 PASS
+  5. commit: `fix(gmmu): 删除 async 路径本地 bound check, SLVERR 归 PcieMemoryDevice (F1)`
+
+### P0.20 (F2) — spec × tasks capacity_gb 矛盾消解
+- **若采纳 F12 (MemoryTLM 移除)**: 无需修改, 矛盾随 MemoryTLM 一起消失
+- **若保留 MemoryTLM**: `configs/dgpu_soc_minimal_v1.json` 的 `memory.params.capacity_gb` 改为 8 (与 vram 一致); spec.md Scenario 修订为 8GB; tasks.md P0.12 同步修订
+- **TDD 5 步**:
+  1. RED: spec.md Scenario "MemoryTLM 1GB" 与 tasks "capacity_gb 改 8" 并存 → openspec validate 报矛盾
+  2. GREEN: F12 采纳或 capacity_gb 统一为 8 后矛盾消解
+  3. 验证: `grep "capacity_gb" configs/dgpu_soc_minimal_v1.json` → 8 或 memory 模块已删除
+  4. 验证: `openspec validate cpptlm-driver-visible-minimal-soc --strict` → PASS
+  5. commit: `fix(spec): 统一 capacity_gb=8 或移除 MemoryTLM 消解矛盾 (F2)`
+
+### P0.21 (F3) — T1.7 伪码 `set_backing_store` 参数违例
+- `tasks.md:374`: 删 `memory_->set_backing_store(framebuffer_ptr_, framebuffer_size_)` (随 F12 MemoryTLM 移除一起删除); 或改为 `memory_->set_backing_store(framebuffer_ptr_, vram_size_)` (若保留 MemoryTLM)
+- **TDD 5 步**:
+  1. RED: T1.7 伪码传 16MB 而 spec 要求 "同一 vram_size_"
+  2. GREEN: 该行删除 (F12) 或参数改为 vram_size_ 后违例消失
+  3. 验证: `grep -n "set_backing_store.*framebuffer_size_" tasks.md` → 零匹配
+  4. 验证: `[minimal_dgpu_soc][driver_visible]` E2E 测试 PASS
+  5. commit: `fix(tasks): 修正 T1.7 set_backing_store 参数为 vram_size_ (F3)`
+
+### P0.22 (F4) — PcieMemoryDevice zombie 装饰 (registers_ + 双身份)
+- `include/tlm/gpu/pcie_memory_device.hh`: 删 `registers_` 数组 + `mmio_read`/`mmio_write` 方法 + `kVendorId=0x1002`/`kDeviceId=0x0002` 常量 + `registers_{}` 初始化
+- `src/tlm/gpu/pcie_memory_device.cc`: 删 `mmio_read`/`mmio_write` 实现
+- B27 处置: `kRegMemSizeLo/Hi` 已在 DGpuBoard::mmio_regs_ 烧录, pcie_memory 内部不再需要
+- [pcie-memory] mmio 测试并入 B13 处置表: `test_pcie_memory_device_mmio.cc` 系列标记 N/A (minimal_v1 无 MMIO 路由)
+- **TDD 5 步**:
+  1. RED: `[pcie-memory][mmio]` 测试因 registers_ 不可达/双身份矛盾 FAIL
+  2. GREEN: 删除 registers_ + MMIO 方法 + 双身份常量后编译通过
+  3. 验证: `grep -n "registers_\|kVendorId\|kDeviceId\|mmio_read\|mmio_write" include/tlm/gpu/pcie_memory_device.hh` → 零匹配
+  4. 验证: `[pcie-memory]` 非 mmio 测试 PASS
+  5. commit: `refactor(pcie-memory): 删除 zombie registers_ + MMIO + 双身份常量 (F4/B27)`
+
+### P0.23 (F5) — B14 死代码残留补删
+- `src/tlm/gpu/dgpu_board_shell.cc::backdoor_write` (line 592-602): 删 `is_backdoor=true` PendingReq push 分支 (B14 已删 vram_segments_ 写入, 但 push 仍残留)
+- `src/tlm/gpu/dgpu_board_shell.cc::drain_inject_q` (line 794-819): 删 `is_backdoor_read=true` drain 分支 + `last_backdoor_reads_` map + PendingReq `is_backdoor`/`is_backdoor_read` 两个 flag 字段
+- `dgpu_board_shell.hh`: 删 `std::map<uint64_t, std::vector<uint8_t>> vram_segments_` (已在 B14 删除, 本次确认) + 删 `is_backdoor`/`is_backdoor_read` flag 定义
+- **TDD 5 步**:
+  1. RED: backdoor_write push + drain 残留 is_backdoor flag → `[board][backdoor]` 测试行为不确定
+  2. GREEN: 补删 push + drain 分支 + flag 字段后编译通过
+  3. 验证: `grep -n "is_backdoor\|is_backdoor_read\|last_backdoor_reads_" src/tlm/gpu/dgpu_board_shell.cc include/tlm/gpu/dgpu_board_shell.hh` → 零匹配
+  4. 验证: `[board][backdoor]` 测试 PASS
+  5. commit: `fix(board): 补删 backdoor push/drain 残留 flag + last_backdoor_reads_ (F5/B14)`
+
+### P0.24 (F6) — BAR0 write-mirror 语义显式声明
+- spec.md: 新增 Scenario "BAR0 = write-mirror, SDMA_STATUS 不反映真设备状态"
+- `configs/dgpu_soc_minimal_v1.json`: 删 `SDMA_STATUS @16 ro` 声明 (或加注释 "write-mirror, 读不出真值")
+- design.md §4 PcieMemoryDevice: 加注释 "BAR0 MMIO 寄存器为 write-mirror, 不反映真实硬件状态"
+- **TDD 5 步**:
+  1. RED: JSON SDMA_STATUS 声明与实际行为 (write-mirror) 不符 → driver 期望读出真值 FAIL
+  2. GREEN: spec 显式声明 write-mirror 语义 + JSON 加注释后 driver 期望调整
+  3. 验证: `grep "SDMA_STATUS" configs/dgpu_soc_minimal_v1.json` → 有 "write-mirror" 注释
+  4. 验证: spec.md 含 "BAR0 = write-mirror" 场景
+  5. commit: `docs(spec): 显式声明 BAR0 write-mirror 语义 (F6)`
+
+### P0.25 (F7) — done_out 悬空 + fault path board error callback
+- spec.md: 新增 Scenario "done_out 悬空 + write-to-unconnected 静默丢弃"
+- `sdma_engine_tlm.cc` B23 fault path: `emit done_out` 同步加 `trigger_error_async(status=-EIO)` (board 级别 error callback)
+- design.md §6: 显式声明 "done_out 在 minimal_v1 未接线, 写到未连接端口静默丢弃"
+- **TDD 5 步**:
+  1. RED: done_out 写到未连接端口行为未定义 → E2E fault path 可能静默失败
+  2. GREEN: spec 显式声明 + board error callback 触发后行为可预期
+  3. 验证: `grep "done_out.*悬空\|write-to-unconnected" spec.md design.md` → 有声明
+  4. 验证: fault path 注入后 `trigger_error_async` 被调用
+  5. commit: `fix(sdma): done_out 悬空声明 + fault path 触发 board error callback (F7/B23)`
+
+### P0.26 (F8) — CompletionRingTLM dormant 标记
+- spec.md: 新增 Scenario "CompletionRingTLM 在 minimal_v1 为 dormant (零连接)"
+- `configs/dgpu_soc_minimal_v1.json`: 删 `completion` 模块 (随 F12 MemoryTLM 移除一起处理, 或单独标记)
+- design.md §1: completion 模块标注 "(dormant in minimal_v1)"
+- **TDD 5 步**:
+  1. RED: completion 模块在 minimal_v1 零连接但仍实例化 → 资源浪费
+  2. GREEN: spec 显式声明 dormant + JSON 删除该模块后拓扑清晰
+  3. 验证: `grep "completion" configs/dgpu_soc_minimal_v1.json` → 零匹配
+  4. 验证: spec.md 含 "CompletionRingTLM dormant in minimal_v1" 场景
+  5. commit: `refactor(spec): CompletionRingTLM 标 dormant 或移除 (F8)`
+
+### P0.27 (F9) — 消费者计数统一
+- design.md §1: 统一为 "4 注入点 (memory/sdma/gmmu/pcie_memory) + 1 host backdoor (非注入)"
+- AGENTS.md: 同步更新 "KEY INVARIANTS" 或对应段落
+- spec.md: BAR0 write-mirror 场景补充说明
+- **TDD 5 步**:
+  1. RED: design §1 说 5 消费者, user 视角文档说 4 → 计数不一致
+  2. GREEN: 统一为 4 injection points + 1 backdoor 后文档自洽
+  3. 验证: `grep -c "消费者\|injection\|backdoor" design.md AGENTS.md` → 计数一致
+  4. 验证: openspec validate --strict PASS
+  5. commit: `docs: 统一消费者计数为 4 injection + 1 backdoor (F9)`
+
+### P0.28 (F10) — legacy 注入 fail-fast
+- `src/tlm/gpu/dgpu_board_shell.cc::bind_memory_backings` (line 609-613): legacy 分支 (无 pcie_memory 且 vram 未分配) 加 `WARN` log + fail-fast return 或 exception
+- spec.md: 新增 Scenario "legacy 配置 vram 未分配 → fail-fast"
+- **TDD 5 步**:
+  1. RED: legacy 配置 (无 pcie_memory) + bar_sizes[2]==0 时 bind_memory_backings 静默跳过 → 调试困难
+  2. GREEN: 加 WARN + fail-fast 后 legacy 配置错误可定位
+  3. 验证: legacy 配置加载时 WARN 输出
+  4. 验证: spec.md 含 fail-fast Scenario
+  5. commit: `fix(board): bind_memory_backings legacy 分支加 WARN/fail-fast (F10)`
+
+### P0.29 (F11) — tasks.md 实施状态标记
+- tasks.md: 每项 B (B1-B28) 加 `[x]` checkbox (已实施) 或 "implemented-in: <commit>" 列
+- tasks.md: 新增 "实施状态" 小节, 汇总 B1-B28 + F1-F12 状态
+- v1.5 tasks.md 标注 "implemented-in: <v1.5 commit>" (需追溯)
+- **TDD 5 步**:
+  1. RED: tasks.md 无统一实施状态标记 → 无法快速确认哪些 B 项已实施
+  2. GREEN: 每项 B 加 checkbox 或 implemented-in 列后状态透明
+  3. 验证: `grep -c "\[x\]\|implemented-in:" tasks.md` → ≥28 (B1-B28) + ≥12 (F1-F12)
+  4. 验证: 所有 P0 任务有 checkbox 或 implemented-in 标记
+  5. commit: `docs(tasks): 添加 B1-B28 + F1-F12 实施状态标记 (F11)`
+
+### P0.30 (F12) — MemoryTLM 移除决策
+- `configs/dgpu_soc_minimal_v1.json`: 删除 `memory` 模块 (line 38-42 区域)
+- `tasks.md:374`: 删除 `memory_->set_backing_store(framebuffer_ptr_, framebuffer_size_)` 行
+- spec.md: "soc 内有 6 个模块" Scenario 改为 "soc 内有 5 个模块 (pcie_ep + pcie_memory + sdma + gmmu + completion)"
+- spec.md: B18/B28 的 minimal_v1 部分标 N/A (B18 框架修复保留给其他 config)
+- design.md §1: 5 消费者 (删 memory 后变为 4 injection points)
+- B18/B28 关于 MemoryTLM capacity 的部分在 minimal_v1 范围内标 N/A, 但 B18 `on_config_loaded` 框架修复保留 (其他 config 仍需要)
+- **TDD 5 步**:
+  1. RED: `[minimal_dgpu_soc][driver_visible]` E2E 因 MemoryTLM 零消费者仍实例化可能行为不一致
+  2. GREEN: 删除 memory 模块 + 更新所有文档后 5 模块拓扑清晰
+  3. 验证: `grep -c "memory" configs/dgpu_soc_minimal_v1.json` → 零匹配 (memory 模块删除)
+  4. 验证: spec.md "soc 内有 5 个模块" Scenario PASS
+  5. commit: `refactor(minimal-v1): 移除 MemoryTLM (F12), 5 模块拓扑`
+
+### P0.31 — 演进路线图落地 (design.md §X)
+- design.md: 在 §13 后加 `## §X 演进路线图 (minimal → 完整 GPU)` 含 X.1-X.6
+- spec.md: 新增 Requirement "演进路线图 SHALL 支持 minimal → 完整 GPU"
+- tasks.md: 本任务为纯文档, 无代码变更
+- **TDD 5 步**:
+  1. RED: design.md 无演进路线图章节, user "架构可以支持演进" 无法验证
+  2. GREEN: §X 演进路线图写入后 user 意图可追溯
+  3. 验证: `grep "演进路线图\|## §X" design.md` → 有章节
+  4. 验证: spec.md 含 "演进路线图 SHALL 支持 minimal → 完整 GPU" Requirement
+  5. commit: `docs(design): 添加演进路线图 §X (minimal → 完整 GPU) (F12 演进)`
+
+### P0.32 — v1.6 验证
+```bash
+openspec validate cpptlm-driver-visible-minimal-soc --strict
+# 期望: PASS
+grep -rn "registers_\|kVendorId\|kDeviceId\|mmio_read\|mmio_write" include/tlm/gpu/pcie_memory_device.hh
+# 期望: 零匹配 (F4)
+grep -rn "is_backdoor\|is_backdoor_read\|last_backdoor_reads_" src/tlm/gpu/dgpu_board_shell.cc include/tlm/gpu/dgpu_board_shell.hh
+# 期望: 零匹配 (F5)
+grep "capacity_gb" configs/dgpu_soc_minimal_v1.json
+# 期望: memory 模块已删除 或 capacity_gb=8 (F2/F12)
+grep "memory" configs/dgpu_soc_minimal_v1.json
+# 期望: 零匹配 (F12)
 ```
 
 ## Step 0: 表征 + 前置验证 (1 工作日) — 含 N1/N6/N12

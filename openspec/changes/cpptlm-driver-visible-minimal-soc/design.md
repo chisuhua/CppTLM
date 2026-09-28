@@ -1,4 +1,4 @@
-# D-AXI Design — Driver-Visible Minimal SoC 详细设计 (v1.5 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28))
+# D-AXI Design — Driver-Visible Minimal SoC 详细设计 (v1.6 — v1.3 P0 (B1-B6) + v1.4 架构根因 (B7-B13) + v1.5 隐藏缺陷 (B14-B28) + v1.6 架构锁定 (F1-F12) + 演进路线图 §X)
 
 > **配套**: [proposal.md](proposal.md) · [tasks.md](tasks.md) · [specs/driver-visible-minimal-soc/spec.md](specs/driver-visible-minimal-soc/spec.md)
 > **基于**: D1 v1.1.1 + D2 v1.1 + v1.2 P1 + v1.3 第三方审查 (Metis/Oracle/Librarian) 6 P0 修正
@@ -721,6 +721,75 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
 | **D1 PcieDisplayDevice 32MB FB 同构问题** | **D3 一并收编（不阻塞 v1.4）** | **理由**：`pcie_display_device.hh` 是冻结面（per v1.3 spec "Freeze Surface Untouched" + ADR-088 §D5），v1.4 不得修改；minimal_v1 `display_routing_enabled=false` 不触发；D3 按 Option D 模式（`set_backing_store(ptr, size)`）将 D1 FB 也归 board 持有 |
 | **BAR1 doorbell offset 0x10010000 > BAR1 16MB 实窗** | **测试专用合成偏移（不修复）** | **理由**：现行 `dgpu_board_shell.cc:306-447` 在 BAR1 fast-path bound 检查**之前**先匹配 doorbell 路径（不依赖 BAR1 实窗大小），实际不触发越窗；该常量（`kBar1DoorbellOffset`，`dgpu_board_shell.hh:171`）是 driver 测试的虚拟地址合成，非 PCIe 物理 BAR 内偏移；v1.4 拆分 `bar1_window_size_` 后该语义更清晰但**不修**——避免改常量弄断既有 `[sdma][doorbell]` 测试 |
 | **MemoryTLM `capacity_gb=1` vs `vram_size_=8GB` 交互** | **v1.4 不修改 capacity_gb，保持 1GB（不静默）** | **理由**：minimal_v1 JSON `memory.params.capacity_gb=1` 是 CPU 侧 cache 路径的合理容量（GMMU 单级 4KB 页表 × 64MB PT = 16K PTE × 8B = 128KB，远小于 1GB）；CPU 侧 cache 经 MemoryTLM 访问 ≥ 1GB 仍按现 v2.2 行为返 `error_code=1` (OUT_OF_RANGE)；BAR2 路径不受影响（独立经 PcieMemoryDevice 转发到 vram）；spec Requirement 显式声明 "single VRAM 对 MemoryTLM 消费者为 `min(vram_size_, MemoryTLM.size_cap_)`"，即 memory 视角最大 1GB、driver 视角最大 8GB；D3 引入真 VramController 时一并评估 capacity 同步策略 |
+
+## §X 演进路线图 (minimal → 完整 GPU)
+
+> **设计原则**: 架构支持 minimal → 完整 GPU 演进而不引起重大重构 (user 确认, 2026-09-27)。本节定义 D3-D5 演进阶段, 锁定 5 大 seam 接口, 确保每个阶段的 module 插入不破坏邻居接口。
+
+### X.1 演进阶段
+
+| 阶段 | 目标 | 关键 Module 变化 |
+|------|------|----------------|
+| **Phase minimal (当前)** | driver-visible + H2D + D2H + D2D 基础路径 | 6 模块 (v1.5) → 5 模块 (v1.6, 移除 MemoryTLM) |
+| **Phase D3** (streaming_multiprocessor) | + GPU 计算单元 (StreamingMultiprocessor) | + SM + VramController seam 就位 |
+| **Phase D4** (HBM controller) | + 真 memory controller + timing | + MemoryClusterTLM, vram_storage_ 替换为多 channel |
+| **Phase D5+** (完整 GPU) | + GMMU 多级页表 + 多设备共存 + SR-IOV | + 多 VF + System MMU + GPU L2 cache |
+
+### X.2 演进原则 (5 条)
+
+1. **抽象稳定**: module 边界 + adapter wire-format 不变
+2. **接口契约**: PcieEndpointIP 4 端口冻结 + 15 ABI 函数签名不变
+3. **可插拔**: 每个 module 可替换/增强不破坏邻居 (e.g., MemoryTLM → VramControllerTLM 不改邻居接口)
+4. **向后兼容**: driver 看到的 BAR 接口稳定, 新增 GPU 能力通过 BAR 内部寄存器扩展
+5. **单一真源**: 每条数据只有一条路径 (v1.4 B7 教训: dual-VRAM 是 bug 根源)
+
+### X.3 5 大能力扩展路径 (minimal → 完整 GPU)
+
+| 路径 | minimal (当前) | D3 (GPU compute) | D5 (完整 GPU) |
+|------|----------------|-------------------|----------------|
+| **H2D** | minimal 已通 (SDMA → PcieMemoryDevice → vram) | + GPU compute writeback (SM → VramController → vram) | + GPU L2 cache 一致性 (multi-cache coherent) |
+| **D2H** | minimal 已通 (PcieMemoryDevice read) | + GPU completion notify (completion_ring → host) | + P2P via NoC (D2D) |
+| **D2D** | minimal stub (vram_storage_ 单一 buffer) | + GPU compute writeback (SM result → vram) | + 多 device P2P (multi-SOC NoC) |
+| **GMMU** | 1 级 4KB 固定页 (v1.4) | 1 级不变 | + 多级 2MB/1GB 大页 (PTE walk) |
+| **多 device** | 1 PF (minimal_v1) | 1 PF 不变 | + SR-IOV: 1 PF + N VF (每个 VF 独立 vram) |
+
+### X.4 Module 演进定位表
+
+| Module | 阶段定位 | v1.6 状态 | 演进预期 |
+|--------|---------|----------|---------|
+| PcieEndpointIP | 长期核心 (D1-D5+) | 已冻结 (4 端口) | 4 端口冻结, 不变 |
+| PcieMemoryDevice | 长期核心 (D3-D5+) | v1.4 降级为 PCIe 外观层 | minimal 纯门面 → D3+ 加 VramController seam |
+| SdmaEngineTLM | 长期核心 (D3-D5+) | 5 端口 (minimal_v1 切型) | 5 端口切型范围扩展 (D3 加 GPU readback) |
+| GmmuTLM | 长期核心 (D3-D5+) | 1 MasterPort, async | 1 级 → 多级 (D5) |
+| **MemoryTLM** | **v1.6 移除** → D3+ 重新引入 | **F12 删除** | minimal_v1 零消费者冗余 → D3+ 作 cache 下游 |
+| **CompletionRingTLM** | **v1.6 dormant** → D3+ 重新引入 | **F8 dormant** | minimal 零连接 → D3+ 作 GPU fence 语义 |
+| (D3) StreamingMultiprocessor | D3 引入 | — | 1 SM/SoC → D5 多 SM/SOC |
+| (D3) VramControllerTLM | D3 引入 | — | 插 `handle_slave_port ↔ backing_ptr_` 之间, 接口零变更 |
+| (D4) MemoryClusterTLM | D4 引入 | — | 多通道 HBM (取代 vram_storage_ 单一通道) |
+| (D5) GPU L2 cache | D5 引入 | — | 插 SM ↔ sdma/gmmu 之间 |
+| (D5) SmmuTLM (System MMU) | D5 引入 | — | 多 device 隔离 (每个 VF 独立 SmmuTLM) |
+
+### X.5 D3-D5 Seams (v1.4 已预留, v1.5 已清理债务, v1.6 锁定)
+
+| Seam | 插入点 | v1.4 状态 | v1.5 清理 | v1.6 锁定 |
+|------|--------|----------|----------|---------|
+| **1. handle_slave_port ↔ backing_ptr_** | `pcie_memory_device.cc::handle_slave_port()` 与 `backing_ptr_` 之间 | B7 已预留 (backing 归 board) | B14/B15 删 vram_segments_/framebuffer_storage_ | D3 VramController 插入点, 接口零变更 |
+| **2. 5 端口切型范围** | `SdmaEngineTLM` 的 5 端口 | B2 已限定 minimal_v1 范围 | B25 统一 PcieTlpBundle | D3 增加 GPU readback port, B2 已限定 minimal_v1 范围 |
+| **3. sdma/gmmu/MemoryTLM 注入点** | `bind_memory_backings` 注入调用 | B7/B19/B20 已统一注入 | B14/B15/B26 删 dual-storage + 统一 bound | D5 多 cache 一致性 (Coherence 边界, U1 已显式 UE 端) |
+| **4. 4 端口 PcieEndpointIP** | EP 4 端口 | N8 已删 tick 转发 | B14/B27 清理装饰 | D5 SR-IOV 加 VF 端口 (EP 内部扩展, 不改 4 端口契约) |
+| **5. bind_memory_backings** | `DGpuBoard::bind_memory_backings()` 注入函数 | B7 已设单一 vram_storage_ | B19 统一 vram_size_ 注入 | D4 替换 vram_storage_ 为 VramController/MemoryClusterTLM (5 消费者保持注入接口) |
+
+### X.6 重构触发条件 (何时触发 seam 插入)
+
+| D 阶段 | 启动条件 | 触发动作 | 预期影响 |
+|--------|---------|---------|---------|
+| **D3** 启动 | driver 端需要 kernel launch (GPU 计算) + 真实 DMA timing | PcieMemoryDevice 重构 (Phase 10) + VramController 引入 + StreamingMultiprocessor 引入 | minimal_v1 BAR2 路径不变, 新增 SM ↔ VramController ↔ vram 路径 |
+| **D4** 启动 | 多通道 HBM 仿真需要 | vram_storage_ 替换为 MemoryClusterTLM (单一 buffer → 多 channel + timing) | BAR2 映射到 MemoryClusterTLM 多通道, driver 视角 BAR 接口不变 |
+| **D5** 启动 | 多 device 共存 + GPU L2 | 多 PcieMemoryDevice 实例 + SmmuTLM (System MMU, 多 device 隔离) + GPU L2 cache | SR-IOV 1 PF + N VF, 每个 VF 独立 vram + SmmuTLM, EP 4 端口契约不变 |
+
+> **v1.6 锁定**: 所有 5 个 seam 接口在 v1.4/v1.5 已预留或清理债务, v1.6 不引入新 seam, 仅文档化锁定。D3-D5 触发条件由 user 决策, CppTLM 侧实现不阻塞。
+
+---
 
 ## §14 D-AXI v1.2 vs D2 v1.1 主要差异
 
