@@ -378,7 +378,7 @@ UE driver 应在以下场景验证:
 
 ## 7. 关联文档
 
-- **架构设计**: `docs/designs/2027-02-09-minimal-dgpu-soc.md` (Phase 9 minimal SoC)
+- **架构设计**: `docs/designs/dgpu-soc/architecture.md` (Phase 9 minimal SoC, 2026-09-26 迁移)
 - **ABI 表面**: `openspec/specs/cpptlm-emulator-abi/spec.md` (15 + 1 ABI 定义)
 - **测试覆盖**: `openspec/specs/minimal-dgpu-soc-abi-landing/spec.md` (P0.5-landing ADDED Requirements)
 - **dlopen 示例**: `examples/test_cpptlm_emulator_dlopen/` (C 实现模板)
