@@ -41,6 +41,11 @@
 | [ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md](./ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md) | DGpuBoard LifecycleProtocol 5 态状态机 + callback nullification 统一析构协议 (H2 修复) | 📋 提案 | W25-27 |
 | [ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md](./ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md) | DispatchRegistry data-driven 替代 4 态 hardcoded switch (M5 spec 名实不符修复) | 📋 提案 | W25-27 |
 | [ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md](./ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md) | DGpuSoc 命名空间统一 + EpCache lazy cache + friend class 测试隔离 | 📋 提案 | W25-27 |
+| [ADR-DGPU-05-vram-storage-ownership.md](./ADR-DGPU-05-vram-storage-ownership.md) | DGpuBoard 单一 VRAM 所有权 vram_storage_（D-AXI v1.4 B7 根因 — 5 消费者共享） | 📋 提案 | D-AXI v1.4 |
+| [ADR-DGPU-06-axi-mem-bundle-boundary.md](./ADR-DGPU-06-axi-mem-bundle-boundary.md) | AxiMemBundle vs PcieTlpBundle 边界严格分离（D-AXI v1.3 B2 + v1.7 H1 wire-format） | 📋 提案 | D-AXI v1.3-v1.8 |
+| [ADR-DGPU-07-minimal-soc-evolution-seam.md](./ADR-DGPU-07-minimal-soc-evolution-seam.md) | Minimal SoC → 完整 GPU 演进 Seam（D3-D5 接口零变更 + 5 消费者注入点固定） | 📋 提案 | D-AXI §X |
+| [ADR-DGPU-08-abi-freeze-policy.md](./ADR-DGPU-08-abi-freeze-policy.md) | 23 ABI 签名级 + 二进制级 0 diff + 0 新增（ADR-088 §D5 + Oracle v2.0.2 P0-3e DoD 仲裁） | 📋 提案 | ADR-088 §D5 |
+| [ADR-DGPU-09-driver-visible-minimal-soc-scope.md](./ADR-DGPU-09-driver-visible-minimal-soc-scope.md) | Driver-Visible Minimal SoC 范围定义（4 BAR + 15 ABI + 0 新增 + In/Out Scope 边界） | 📋 提案 | D-AXI proposal §1 |
 
 ### NV 级决策（NVIDIA GPU 仿真）
 
