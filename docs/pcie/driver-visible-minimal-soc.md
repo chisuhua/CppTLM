@@ -1,13 +1,19 @@
-# D-AXI Driver-Visible Minimal SoC — 实施笔记 (v1.5)
+# D-AXI Driver-Visible Minimal SoC — 实施笔记 (v1.8)
 
-> **状态**: ✅ v1.5 隐藏缺陷修正完成（2026-09-26）
-> **v1.5 在 v1.4 之上叠加**: Oracle + Metis 三轮敌对审查发现 11 项隐藏缺陷 (B14-B28) — 主要是 dual-VRAM 同构问题（vram_segments_ 第三存储）+ 永久挂死风险（fault path 缺失）。**实施 T1 前必须应用 v1.5 P0.8-P0.18 修正任务清单。**
-> **配套 openspec**: `openspec/changes/cpptlm-driver-visible-minimal-soc/`
-> **设计稿**: 4 文件（`proposal.md` / `design.md` / `tasks.md` / `specs/driver-visible-minimal-soc/spec.md`）
-> **配套 ADRs**: ADR-088 §D5（ABI 冻结）, ADR-SOC-21（V3.1-Rev2.0 拓扑）, ADR-SOC-18/14（PCIe EP / DMA）
-> **配套设备笔记**: `docs/pcie/display-device-mvp.md`（D1） — 同为 PCIe 设备 MVP 链
+> **状态**: ✅ v1.8 normative 文本收口完成（2026-09-26）
+> **v1.7 → v1.8**: Oracle 第五轮发现 v1.7 是"决策记录而非修复应用"——v1.8 把 H1/H6/N3/N4 normative 文本真正应用，消解 doorbell 三方矛盾 + BAR1 合成地址空间声明 + revision 机制未接线诚实声明
+> **配套 openspec**: `openspec/changes/cpptlm-driver-visible-minimal-soc/` (v1.8 P0 N1-N5)
+> **配套 D1 笔记**: `docs/pcie/display-device-mvp.md` (PCIe 设备 MVP 链)
 > **跨仓镜像**: ArchForge `docs/architecture/19a-driver-visible-minimal-soc.md`
-> **Oracle 复审 session**: `ses_f21e9e147ffeeuTmILtLvnBvTb` (P0), `ses_f21924eb3ffeb8SMW0SPMGLVf1` (P1), `ses_f21351631ffew5Q5lHy9D0AC4q` (P2 v1.3 Option D), `ses_f212cf80cffeK93MaMjNxfjvjJ` + `ses_f212cfac0ffePU5YScA9PyW0ld` (Metis 二轮 v1.4)
+> **Oracle 复审 sessions**:
+> - `ses_f21e9e147ffeeuTmILtLvnBvTb` (P0 v1.3),
+> - `ses_f21924eb3ffeb8SMW0SPMGLVf1` (P1 v1.4),
+> - `ses_f21351631ffew5Q5lHy9D0AC4q` (P2 v1.5 Option D),
+> - `ses_f212cf80cffeK93MaMjNxfjvjJ` + `ses_f212cfac0ffePU5YScA9PyW0ld` (Metis 二轮 v1.5),
+> - `ses_f1c03dee0ffeMMyYsoogva5e2l` (Oracle 三轮 v1.6 MemoryTLM 冗余审查),
+> - `ses_f1a4f7a4affef8s0YKD9oRul40` (writing v1.7 增量),
+> - `ses_f1a3e1198ffeYRx4yqasXz7OP4` (writing v1.8 增量),
+> - `ses_f1a37d049ffeH5XH0vXrTgAGRm` (Oracle 五轮 v1.7 验证 + v1.8 必要性发现)
 
 ## 1. 范围
 
@@ -402,6 +408,9 @@ Step 6 — driver backdoor 读 (host thread, host-side 特权)
 | 日期 | 版本 | 修订 |
 |------|------|------|
 | 2026-09-26 | v1.5 | Oracle/Metis 三轮**敌对**审查；P0 修正 B14-B28 全部应用（11 项隐藏缺陷）；**消灭 vram_segments_ 第三存储**（dual-VRAM 直系后代）；**Framebuffer_storage_ 强制删除**；**Fault Path 显式化**（SLVERR latch + translate 错误 emit done，防永久挂死）；**SDMA ↔ PcieMemoryDevice 统一 PcieTlpBundle**（放弃 v1.3 B2 切型）；7 条铁律扩展为 12 条（v1.5 P0.8-P0.18 任务清单） |
+| 2026-09-26 | v1.6 | Oracle + Metis 三轮敌对审查发现 v1.5 隐藏缺陷 (F1-F12 架构锁定)：GMMU bound check 删除（致命 100% 失败修复）/ PcieMemoryDevice zombie 装饰清理 / B14 死代码残留 / BAR0 write-mirror / done_out 悬空 / CompletionRingTLM dormant / 消费者计数统一 / legacy fail-fast / tasks.md 状态标记 / **MemoryTLM 移除**（F12，pre-D2 时代遗留）；新增 §X 演进路线图（minimal → D3 SM → D4 MemoryCluster → D5 SR-IOV，5 大 seam 接口锁定） |
+| 2026-09-26 | v1.7 | Oracle 第四轮敌对审查发现 v1.6 未满足 user 原始目标（H2D/D2H/D2D + 驱动兼容 + SoC 演进）；新增 H1-H7 修复路线（wire-format 写死 / ring-via-BAR1 / host 内存约定 / D2D 诚实语义 / doorbell 线程安全 / spec 数字一致化 / inject_q_ 资源上限）；3 条 user-目标验证 Requirement + 9 Scenario |
+| 2026-09-26 | v1.8 | **Oracle 第五轮发现 v1.7 是"决策记录而非修复应用"**；v1.8 把 H1/H6/N3/N4 normative 文本真正应用（H1 wire-format 全 PcieTlpBundle / H6 5 模块数 / N3 doorbell 改 fence/MSI-X 异步 / N4 BAR1 合成地址空间声明 + revision 未接线诚实声明）；新增 P0.41-P0.45 normative 收口任务（5 项 Quick） |
 | 2026-09-26 | v1.4 | Oracle/Metis 三轮交叉审查；P0 修正 B1-B13 全部应用；单一 VRAM 所有权归 DGpuBoard（PcieMemoryDevice 退化为 PCIe 外观层）；3 项遗留议题延期理由显式声明；7 条实施铁律锁定；D3 seam 已预留 |
 | 2026-09-26 | v1.3 | Oracle/Metis 二方审查；P0 修正 B1-B6（字段名/切型范围/双 adapter/64-bit BAR/双注册）；单 adapter 模型（事实：MultiPortStreamAdapter 内部遍历全端口） |
 | 2026-09-26 | v1.2 | 8 must-fix N1-N12 全部应用 |
