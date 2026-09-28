@@ -3,11 +3,18 @@
 > **版本**: v1.0
 > **日期**: 2027-02-09
 > **状态**: 📋 提案(已通过 Oracle 二轮复审,等正式 OpenSpec 提案)
-> **前置**: `DGpuBoard v2.0.2`(架构文档 `docs/architecture/14-dgpu-board-ideal-arch.md` + 4 个 ADR)+ gem5 `AbstractMemory`/`PhysicalMemory`/`MemBackdoor` 参考模式
+> **前置**: `DGpuBoard v2.0.2`(架构文档 [../dgpu-board/architecture.md](../dgpu-board/architecture.md) + 4 个 ADR)+ gem5 `AbstractMemory`/`PhysicalMemory`/`MemBackdoor` 参考模式
 > **配套 ADR**: 无(本设计自身是 ADR-DGPU 系列后续工作的起点,需要时可独立发 ADR)
 > **Owner**: CppTLM Team
 > **影响**: 新增 `GmmuTLM` 模块;扩展 `MemoryTLM`(增加 `set_backing_store` + `on_config_loaded`);扩展 `DGpuBoard`(新增 `framebuffer_` + backdoor 路径);BAR1 存储路由改造
-> **目标存档**: `docs/designs/2027-02-09-minimal-dgpu-soc.md`(本仓实现侧,本仓不与外部 ArchForge 仓同步;Oracle 二轮列出的 ArchForge 选项是设计存档可选去向,本设计仅落在本仓)
+> **目标存档**: 本目录 `architecture.md`(原 `docs/designs/2027-02-09-minimal-dgpu-soc.md`，2026-09-26 迁移至此；本仓不与外部 ArchForge 仓同步)
+
+## 关联 OpenSpec changes
+
+- [cpptlm-driver-visible-minimal-soc](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前, 2026-09-26；6 模块拓扑 + 单一 VRAM 真源 + chip-internal AXI 边界 + 7 实施铁律)
+- [2026-09-20-cpptlm-pcie-memory-device-mvp](../../../openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp/) (D2 v1.1, archived；本设计扩展自 D2 PcieMemoryDevice MVP)
+
+**同步规则**：本架构文档代表 SoC 业务层长期设计意图（why）；具体实施指导与 5 轮 Oracle/Metis 评审补丁见上述 OpenSpec change 的 design.md（how）。修改 OpenSpec design.md 时若涉及设计意图变化，应同步更新本文档；反之不强制。
 
 ---
 
