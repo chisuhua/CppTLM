@@ -133,12 +133,24 @@ configs/                 # JSON 拓扑配置
   dgpu_soc_with_pcie_ip.json  # ★ Phase 8 完整 dGPU SoC + PCIe EP 配置
 
 docs/
-  architecture/          # 架构文档（v2.1 混合架构 + Phase 8 PCIe EP 微架构）
+  architecture/          # 通用基础架构文档（事务/错误/复位/拓扑/可视化）
     01-hybrid-architecture-v2.1.md      # ★ 整体 NoC 架构
-    19-pcie-ip-microarchitecture.md     # ★ PCIe EP 微架构 (从 umbrella design.md 迁移)
+    19-pcie-ip-microarchitecture.md     # ★ PCIe EP 微架构 (从 umbrella design.md 迁移, **已迁 ArchForge**)
     多层次混合仿真.md                   # ★ GPGPU 多层 SimModule 拓扑
     02-04 / 08-13 ...                   # 其他架构决策（事务/错误/复位/指标/拓扑/相干/仪表板）
+  designs/               # ★ dGPU 应用架构 (Board 内部 + SoC 业务 + Driver 接口 三视角, 2026-09-26 重组)
+    README.md                           #   总入口（与 docs/architecture/ 分工说明）
+    dgpu-board/architecture.md          #   Board 内部架构 (5 层 + 5 组件 + 析构协议)
+    dgpu-soc/architecture.md            #   SoC 业务架构 (6 模块拓扑 + GMMU + SDMA + 存储子系统)
+    dgpu-driver/architecture.md         #   Driver 接口架构 (15 ABI + 4 BAR + driver 闭环)
+    adr/                               #   (注: ADR 在 docs/adr/, 这里仅引用)
   adr/                   # 通用不可变 ADR (12+ 份, 状态追加 ## Status Update 段)
+    ADR-DGPU-01~04-callback-worker-replaces-detached-threads.md  # DGpuBoard v2.0 重构期基础架构 ADR
+    ADR-DGPU-05-vram-storage-ownership.md                         # D-AXI B7 单一 VRAM 所有权（P0 根因）
+    ADR-DGPU-06-axi-mem-bundle-boundary.md                        # D-AXI B2 chip-internal vs board-level 边界（P0）
+    ADR-DGPU-07-minimal-soc-evolution-seam.md                     # D-AXI §X D3-D5 演进 seam（接口零变更）
+    ADR-DGPU-08-abi-freeze-policy.md                              # D-AXI 23 ABI 冻结 + 0 新增（P0）
+    ADR-DGPU-09-driver-visible-minimal-soc-scope.md               # D-AXI 范围定义（4 BAR + 15 ABI + 0 新增）
   soc_arch/              # ⚠️ dGPU SoC 子项目文档已迁至独立仓（占位 + VIRTUAL_PATHS）
                         # 详见 ../ArchForge/ (新仓)
                         # 旧文件 2026-09-20 全部迁出 (commit 4024b16e)
@@ -147,6 +159,7 @@ docs/
   guide/                 # GETTING_STARTED / DEVELOPER / PYTOOLING / TOPOLOGY_USER
   development/           # CONTRIBUTING (pre-commit + clang-format + 测试规范)
   roadmap/               # ★ 实施路线图 + 实时状态看板（README + current_status.md）
+  superpowers/plans/     # 实施计划 + 进度跟踪归档层（与 openspec/tasks.md 互补）
   requirements/          # 需求规格
   research/              # 研究材料 + cpptlm-gpu-fused-soc-survey
   skills/                # 技能文档
@@ -187,7 +200,8 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 | 链路层 + FC | `include/tlm/pcie/pcie_link_layer_tlm.{hh,cc}` (Phase 1) |
 | PHY 数字控制 | `include/tlm/pcie/pcie_phy_digital_ctrl_tlm.{hh,cc}` (Phase 3) |
 | SR-IOV VF Pool | `include/tlm/pcie/pcie_sriov_vf_pool_tlm.{hh,cc}` (Phase 4) |
-| **D-AXI (Driver-Visible Minimal SoC)** | `docs/pcie/driver-visible-minimal-soc.md` (v1.4 P0 修正 + 跨仓 ArchForge 镜像 `docs/architecture/19a-driver-visible-minimal-soc.md`); openspec `cpptlm-driver-visible-minimal-soc/` (tasks.md T0-T5); E2E `[minimal_dgpu_soc][driver_visible]` |
+| **D-AXI (Driver-Visible Minimal SoC)** | 实施笔记 `docs/pcie/driver-visible-minimal-soc.md` (v1.8)；三视角架构 `docs/designs/dgpu-{board,soc,driver}/architecture.md` (Board 内部 + SoC 业务 + Driver 接口)；5 个业务 ADR `docs/adr/ADR-DGPU-05~09-*.md`；OpenSpec `openspec/changes/cpptlm-driver-visible-minimal-soc/` (v1.8 tasks.md T0-T5)；E2E `[minimal_dgpu_soc][driver_visible]` |
+| **dGPU 文档分层（4 层模型）** | `docs/designs/README.md` 总入口 + 三视角索引；详见 §DOC HYGIENE "4 层文档模型" 小节 |
 | E2E 全链路 | `test/test_pcie_endpoint_ip_full_e2e.cc` + `examples/demo_pcie_full_e2e.{cc,py}` |
 
 ### ★ GPGPU / SoC 多层
@@ -383,6 +397,32 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
   - **新提案门槛**: 现有 ≥3 时新提案需先 archive 一个现有 change
   - **当前基线 (2027-09-17)**: 4 个 Proposed (cpptlm-dgpu-gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella / pcie-memory-device-mvp / pcie-ep-integration) — 已超 KPI, 需在 Phase 10+ 季度复审中处理
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
+
+### 4 层文档模型 (2026-09-26 重组)
+
+| 层 | 职责 | 路径 | 数量控制 | 修改门槛 |
+|----|------|------|---------|---------|
+| **第 1 层 长期维护架构文档** | 设计意图 + 现状真相 | `docs/architecture/` (通用基础) + `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` (dGPU 应用三视角) | 每主题 1-2 篇 | Oracle 评审 or ADR 触发 |
+| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-{X,DGPU}-*.md` | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
+| **第 3 层 OpenSpec change** | 实施变更提案 | `openspec/changes/<name>/{proposal,design,spec,tasks}.md` | 每个独立变更 1 个 | 标准 OpenSpec 工作流 |
+| **第 4 层 实施跟踪** | TDD 5 步 + 进度报告 | `docs/superpowers/plans/<name>.md` + `archive/` | 每个大 Phase 1 个 | 实施期短期，archive 后归档 |
+
+**dGPU 应用架构三视角** (`docs/designs/`):
+- `dgpu-board/architecture.md` — Board 内部架构（5 层 + 5 组件 + 析构协议）
+- `dgpu-soc/architecture.md` — SoC 业务架构（6 模块拓扑 + GMMU + SDMA + 存储子系统）
+- `dgpu-driver/architecture.md` — Driver 接口架构（15 ABI + 4 BAR + driver 闭环数据流）
+
+**dGPU 关键 ADR** (`docs/adr/ADR-DGPU-05~09-*.md`):
+- `ADR-DGPU-05` — 单一 VRAM 所有权归 DGpuBoard（D-AXI v1.4 B7 根因）
+- `ADR-DGPU-06` — AxiMemBundle vs PcieTlpBundle 边界严格分离（v1.3 B2）
+- `ADR-DGPU-07` — Minimal → 完整 GPU 演进 seam（D3-D5 接口零变更）
+- `ADR-DGPU-08` — 23 ABI 冻结 + 0 新增约束（v1.4 ADR-088 §D5）
+- `ADR-DGPU-09` — Driver-Visible Minimal SoC 范围定义（4 BAR + 15 ABI + 0 新增）
+
+**同步规则（单向，OpenSpec → 架构文档）**：
+- 修改 OpenSpec change 的 design.md 时，若涉及设计意图变化，应同步更新 `docs/designs/<topic>/architecture.md` 顶部 `## 关联 OpenSpec changes` 段
+- 架构文档代表长期设计意图（why）；OpenSpec design.md 代表实施指导（how）
+- 反向同步不强制（架构文档可以领先于实施）
 
 ## KEY INVARIANTS
 
