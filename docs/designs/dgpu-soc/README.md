@@ -2,7 +2,7 @@
 
 > **状态**:
 > - ✅ functional-mode (LT) v1.0 设计已通过 Oracle 二轮复审（[./architecture.md](./architecture.md)）
-> - ✅ timing-mode (AT) v0.2 终稿（[./timing-mode.md](./timing-mode.md)，Oracle 八轮复评 PASS, [ADR-DGPU-11-timing-mode-soc-scope.md](../adr/ADR-DGPU-11-timing-mode-soc-scope.md) 已签发, T0 启动, 与 functional-mode **并列共存**）
+> - ✅ timing-mode (AT) v0.2 终稿 + **T1-T8 实施完成 (2027-02-11, 37 cases + 0 regressions)**（[./timing-mode.md](./timing-mode.md)，Oracle 八轮复评 PASS, [ADR-DGPU-11-timing-mode-soc-scope.md](../adr/ADR-DGPU-11-timing-mode-soc-scope.md) 已签发 + Status Update, 与 functional-mode **并列共存**）
 > **对应架构文档**:
 > - 主文档（functional-mode, LT, zero-delay）: [architecture.md](./architecture.md)（原 `docs/designs/2027-02-09-minimal-dgpu-soc.md`，2026-09-26 迁移）
 > - 并列文档（timing-mode, AT, cycle-approximate）: [timing-mode.md](./timing-mode.md)（v0.2 终稿, 2027-02-09, Oracle 八轮复评 PASS, ADR-DGPU-11 签发）

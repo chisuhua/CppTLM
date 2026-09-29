@@ -101,6 +101,8 @@ set(CORE_SOURCES
     tlm/gpu/pcie_memory_device.cc
     tlm/gpu/pcie_endpoint_tlm.cc       # pcie-endpoint T-pe-3: 4-port ChStream module
     tlm/gpu/sdma_engine_tlm.cc        # sdma-engine T-sd-2: 5-port ChStream SDMA/copy engine (PCIe master)
+    # Phase 4 T4 (cpptlm-dgpu-soc-timing-mvp): VramControllerTLM (继承 MemoryTLM + 行缓冲 + bandwidth)
+    tlm/vram_controller_tlm.cc
     # cpptlm-stage-1-3-sdma Stage 1.3a: SDMA Ring Buffer + SG descriptor chain (T-1.3a-1/2)
     tlm/gpu/sdma_ring_buffer.cc
     tlm/gpu/sdma_packet.cc

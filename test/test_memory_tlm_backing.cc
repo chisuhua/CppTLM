@@ -26,7 +26,7 @@ TEST_CASE("memory_backing: write then read roundtrip + out-of-range", "[memory_b
     MemoryTLM mem("mem", &eq);
 
     std::vector<uint8_t> backing(4096, 0);
-    mem.set_backing_store(backing.data(), backing.size());
+    mem.set_backing_view(backing.data(), backing.size());
 
     inject_req(&mem, 1, 0x10, true, 0xDEADBEEFCAFE1234ULL);
     mem.tick();
@@ -62,7 +62,7 @@ TEST_CASE("memory_backing: write size > 8 truncated to 8 bytes", "[memory_backin
     MemoryTLM mem("mem", &eq);
 
     std::vector<uint8_t> backing(64, 0);
-    mem.set_backing_store(backing.data(), backing.size());
+    mem.set_backing_view(backing.data(), backing.size());
 
     inject_req(&mem, 1, 0x10, true, 0xAABBCCDD11223344ULL, 16);
     mem.tick();
@@ -93,7 +93,7 @@ TEST_CASE("memory_backing: stats_requests counters track reads/writes", "[memory
     MemoryTLM mem("mem", &eq);
 
     std::vector<uint8_t> backing(4096, 0);
-    mem.set_backing_store(backing.data(), backing.size());
+    mem.set_backing_view(backing.data(), backing.size());
 
     inject_req(&mem, 1, 0x10, true, 0x1111);
     mem.tick();
@@ -115,7 +115,7 @@ TEST_CASE("memory_backing: set_size_bytes caps backing visible range", "[memory_
     MemoryTLM mem("mem", &eq);
 
     std::vector<uint8_t> backing(8192, 0);
-    mem.set_backing_store(backing.data(), backing.size());
+    mem.set_backing_view(backing.data(), backing.size());
     mem.set_size_bytes(2048);
 
     inject_req(&mem, 1, 0x100, false);
@@ -139,7 +139,7 @@ TEST_CASE("memory_backing: on_config_loaded wires capacity_gb (D-AXI B18)",
     MemoryTLM mem("mem", &eq);
 
     std::vector<uint8_t> backing(2 * 1024 * 1024, 0);
-    mem.set_backing_store(backing.data(), backing.size());
+    mem.set_backing_view(backing.data(), backing.size());
 
     nlohmann::json cfg = {{"capacity_gb", 1}};
     mem.set_config(cfg);
@@ -159,7 +159,7 @@ TEST_CASE("memory_backing: on_config_loaded absent capacity_gb leaves size_cap u
     MemoryTLM mem("mem", &eq);
 
     std::vector<uint8_t> backing(4096, 0);
-    mem.set_backing_store(backing.data(), backing.size());
+    mem.set_backing_view(backing.data(), backing.size());
 
     nlohmann::json cfg = {{"other_param", 42}};
     mem.set_config(cfg);

@@ -287,4 +287,18 @@ per D-AXI tasks.md **v1.3 P0.2 B2 + v1.7 P0.33 H1 + v1.8 P0.41 N2**:
 
 ## Status Update
 
-_(本节将在 D-AXI v1.4 实施通过 Oracle 评审后追加，记录签发时间与实施 commit hashes)_
+### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
+
+**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+
+**v1.8 H1 不变性验证**:
+
+| Invariant | 状态 | 验证 |
+|-----------|------|------|
+| SDMA 5 端口全部 PcieTlpBundle (desc_in/mem_in/mem_out/host_out/done_out) | ✅ | `sdma_engine_tlm.hh` 5 端口 `InputStreamAdapter<PcieTlpBundle>` / `OutputStreamAdapter<PcieTlpBundle>` 同构 |
+| `AxiMemBundle` SHALL NOT 出现在 minimal_v1 任何实际线路 | ✅ | SDMA↔PcieMemoryDevice、GMMU↔PcieMemoryDevice 均走 PcieTlpBundle (MEM_READ/MEM_WRITE/CPLD) |
+| PcieMemoryDevice 2 SlavePorts + 单 adapter (v1.3 B3) | ✅ | `pcie_memory_device.hh` NUM_PORTS=2, `MultiPortStreamAdapter` 单注入 |
+| GMMU translate MasterPort PcieTlpBundle (H1) | ✅ | GMMU req_out → pcie_memory.1 经 PcieTlpBundle MEM_READ |
+
+**验证结果**: `[sdma]` 56 cases / 12884 assertions + `[pcie-memory]` 24 cases + `[driver_visible]` 2 cases (29 assertions) + ctest 76/76 PASS, 0 regression; ABI 冻结面 0 diff。
+

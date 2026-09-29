@@ -5,6 +5,7 @@
 #include <memory>
 #include <vector>
 #include "event_queue.hh"
+#include "core/module_factory.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include <catch2/catch_all.hpp>
 
@@ -16,7 +17,7 @@ TEST_CASE("gmmu: valid PTE translates to paddr", "[gmmu]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     std::vector<uint8_t> backing(128 * 1024, 0);
-    g->set_backing(backing.data(), backing.size());
+    g->set_mem_view(backing.data(), backing.size());
 
     g->set_pt_base_lo(0x00010000);
     g->set_pt_base_hi(0x00000000);
@@ -35,7 +36,7 @@ TEST_CASE("gmmu: disabled returns -EIO", "[gmmu]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     std::vector<uint8_t> backing(128 * 1024, 0);
-    g->set_backing(backing.data(), backing.size());
+    g->set_mem_view(backing.data(), backing.size());
     g->set_pt_base_lo(0x10000);
 
     uint64_t pa = 0;
@@ -47,7 +48,7 @@ TEST_CASE("gmmu: pt_base zero returns -EIO", "[gmmu]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     std::vector<uint8_t> backing(128 * 1024, 0);
-    g->set_backing(backing.data(), backing.size());
+    g->set_mem_view(backing.data(), backing.size());
     g->set_enabled(true);
 
     uint64_t pa = 0;
@@ -55,7 +56,7 @@ TEST_CASE("gmmu: pt_base zero returns -EIO", "[gmmu]") {
     REQUIRE(rc == -EIO);
 }
 
-TEST_CASE("gmmu: backing null returns -EIO", "[gmmu]") {
+TEST_CASE("gmmu: no backing → async -EAGAIN (v1.8 async PTE walk)", "[gmmu]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     g->set_pt_base_lo(0x10000);
@@ -63,14 +64,17 @@ TEST_CASE("gmmu: backing null returns -EIO", "[gmmu]") {
 
     uint64_t pa = 0;
     int rc = g->translate(0x1000, kPageSize, pa);
-    REQUIRE(rc == -EIO);
+    // v1.8 H1: 无 mem_view_ → 异步 MasterPort MEM_READ → -EAGAIN
+    REQUIRE(rc == -EAGAIN);
+    REQUIRE(g->is_async_pending() == true);
+    REQUIRE(g->req_out().valid() == true);
 }
 
 TEST_CASE("gmmu: invalid PTE returns -EIO", "[gmmu]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     std::vector<uint8_t> backing(128 * 1024, 0);
-    g->set_backing(backing.data(), backing.size());
+    g->set_mem_view(backing.data(), backing.size());
     g->set_pt_base_lo(0x10000);
     g->set_enabled(true);
 
@@ -86,7 +90,7 @@ TEST_CASE("gmmu: PTE out-of-range returns -EIO", "[gmmu]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     std::vector<uint8_t> backing(8 * 1024, 0);
-    g->set_backing(backing.data(), backing.size());
+    g->set_mem_view(backing.data(), backing.size());
     g->set_pt_base_lo(0x1000);
     g->set_enabled(true);
 
@@ -99,7 +103,7 @@ TEST_CASE("gmmu: cross-page DMA returns -EIO", "[gmmu]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     std::vector<uint8_t> backing(64 * 1024, 0);
-    g->set_backing(backing.data(), backing.size());
+    g->set_mem_view(backing.data(), backing.size());
     g->set_pt_base_lo(0x10000);
     g->set_enabled(true);
 
@@ -124,7 +128,7 @@ TEST_CASE("gmmu: LO-only state after set_pt_base_lo (Inv-4 race lock)", "[gmmu][
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     std::vector<uint8_t> backing(128 * 1024, 0);
-    g->set_backing(backing.data(), backing.size());
+    g->set_mem_view(backing.data(), backing.size());
 
     g->set_pt_base_lo(0x10000);
     g->set_enabled(true);

@@ -24,11 +24,12 @@ namespace tlm::pcie {
         : SimModule(name, eq)
         // D1 display-io-mvp: 构造时实例化 display_device
         , display_device_(std::make_unique<tlm::gpu::PcieDisplayDevice>())
-        // D2 memory-device-mvp: 构造时实例化 memory_device
-        , memory_device_(std::make_unique<tlm::gpu::PcieMemoryDevice>()) {
+        // D2 memory-device-mvp: Phase 3 T1.2 raw ptr (non-owning), 由 DGpuBoard 注入
+        , memory_device_(nullptr) {
         pool_.init_all();
         install_pm_capability();
         install_capabilities();
+        install_bar_registers();  // v1.3 B5: 从 bar_sizes_ 写 64-bit BAR 双 dword
         instances_for_test().push_back(this);
     }
 
@@ -76,7 +77,6 @@ namespace tlm::pcie {
     void PcieEndpointIP::install_capabilities() {
         auto& cfg_pf = pool_.config_pool().config_of(0);
 
-        // A-4: PCIe Cap (0x10) @0x50, control = 0x0002 (PCIe Cap v2)
         cfg_pf.add_capability(0x10, 0x50, /*next=*/0x00, /*control=*/0x0002);
 
         // A-4: LNKCTL @0x60 (cap+0x10), LNKSTA @0x62 (cap+0x12)
@@ -100,6 +100,22 @@ namespace tlm::pcie {
         cfg_pf.add_extended_register(0x148, 4, 0x00080810);
 
         install_lnkctl_callback();
+    }
+
+    // Phase 3 T1.3 (N6): 从 bar_sizes_ 写 config space 64-bit BAR 双 dword 寄存器
+    // v1.3 B5: 64-bit BAR 占两个连续 32-bit dword (0x10/0x14, 0x18/0x1C, 0x20/0x24, ...)
+    //   低 dword = bar_sizes[i] & 0xFFFFFFFF; 高 dword = bar_sizes[i] >> 32
+    //   e.g. BAR2 size=8GB (0x2_0000_0000) → read(0x20)==0, read(0x24)==2
+    void PcieEndpointIP::install_bar_registers() {
+        auto& cfg_pf = pool_.config_pool().config_of(0);
+        for (int i = 0; i < 6; ++i) {
+            const uint16_t lo_off = static_cast<uint16_t>(0x10 + i * 8);
+            const uint16_t hi_off = static_cast<uint16_t>(lo_off + 4);
+            if (lo_off + 8 > cfg_pf.config_size()) break;
+            const uint64_t sz = bar_sizes_[i];
+            cfg_pf.write(lo_off, static_cast<uint32_t>(sz & 0xFFFFFFFFu));
+            cfg_pf.write(hi_off, static_cast<uint32_t>((sz >> 32) & 0xFFFFFFFFu));
+        }
     }
 
     void PcieEndpointIP::simulate_instantiate(const json& cfg) {
@@ -284,6 +300,14 @@ namespace tlm::pcie {
             }
         }
 
+        // Phase 3 T1.3 (N6): 读 bar_sizes 参数并写 config space BAR 寄存器
+        if (params.contains("bar_sizes") && params["bar_sizes"].is_array()) {
+            for (size_t i = 0; i < bar_sizes_.size() && i < params["bar_sizes"].size(); ++i) {
+                bar_sizes_[i] = params["bar_sizes"][i].get<uint64_t>();
+            }
+            install_bar_registers();
+        }
+
         warn_unconsumed(params,
             {"axi_adapter", "link_layer", "phy_digital",
              "sr_iov", "transaction_layer", "bypass_mode", "pm_cap_control",
@@ -330,10 +354,10 @@ namespace tlm::pcie {
             display_device_->tick(msix());
         }
 
-        // D2 memory-device-mvp: 推进 memory_device cycle counter（无 MSI-X）
-        if (memory_device_) {
-            memory_device_->tick();
-        }
+        // Phase 3 T1.6 (N8): 不再转发 memory_device_->tick()
+        // PcieMemoryDevice 已 ChStreamModuleBase 化, 由 ModuleFactory 统一 tick 调度
+        // (SimModule::tick 递归 → internal_factory 内 ChStream 模块各自 tick)。
+        // 若此处仍调 memory_device_->tick() 将双 tick (cycle_counter_ 2N 错误)。
 
         // Phase 8 M1: 真实 AXI 数据路径接线 — PcieEndpointIP::tick() 驱动
         // PcieAxiAdapter 消费 slave_in 请求，EP 内部真实处理并产生真实响应。

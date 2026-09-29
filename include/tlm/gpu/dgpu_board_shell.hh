@@ -14,6 +14,8 @@
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include "tlm/gpu/sdma_engine_tlm.hh"  // SdmaEngineTLM (P0 unblock Task 5+6: BAR1 doorbell wiring)
 #include "tlm/memory_tlm.hh"  // MemoryTLM (Phase A1: backing-store API)
+#include "tlm/vram_controller_tlm.hh"  // VramControllerTLM (Phase 4 T4: timing-mode VRAM 控制器)
+#include "tlm/crossbar_tlm.hh"  // CrossbarTLM (Phase 4 T5: timing-mode cycle advance)
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -149,6 +151,17 @@ public:
     // init() 前/nullptr 当 SOC 未实例化或未注入)。只读, 供测试直达底层 SDMA 数据面。
     ::tlm::gpu::SdmaEngineTLM* sdma_engine() const noexcept { return sdma_engine_; }
 
+    // ── Phase 4 T5/T6: timing-mode 内部模块 accessors (测试 + E2E) ──
+    // memory / vram_ctrl / gmmu 实例 (bind_memory_backings 或 init_timing_mode 注入后可用)
+    MemoryTLM* memory_module() const noexcept {
+        return soc_ ? dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory")) : nullptr;
+    }
+    VramControllerTLM* vram_ctrl_module() const noexcept {
+        return soc_ ? dynamic_cast<VramControllerTLM*>(soc_->getInternalInstance("vram_ctrl"))
+                    : nullptr;
+    }
+    GmmuTLM* gmmu_module() const noexcept { return gmmu_; }
+
     // A-3: MMIO power-state gate — D3hot 时返 true (per INV-A MMIO gating)
     // 委托 pcie_ep->mmio_gated(); 非 IP 类型返 false
     [[nodiscard]] bool is_mmio_gated() const;
@@ -200,6 +213,13 @@ public:
 
     // 5. 生命周期
     void tick();  // 转发到 soc_->tick()(SimModule 递归)
+
+    // ── Phase 4 T5 (cpptlm-dgpu-soc-timing-mvp): timing-mode 仿真模式 ──
+    // per design.md §6.2: simulation_mode 字段 (functional 默认, timing 可选)
+    enum class SimulationMode { Functional, Timing };
+    SimulationMode simulation_mode() const noexcept { return simulation_mode_; }
+    // 全局 cycle 计数器 (timing-mode 由 tick() 推进; TInv-3 集中 advance)
+    uint64_t current_cycle() const noexcept { return current_cycle_; }
     
     // StatsManager 多卡前缀(per design §2.5 #6)
     std::string get_stats_path(const std::string& module_name) const {
@@ -229,15 +249,20 @@ public:
     void set_msix_coalesce_timeout(std::chrono::microseconds timeout);
     std::chrono::microseconds msix_coalesce_timeout() const { return msix_coalesce_timeout_; }
 
-    // ── Phase A2/B1/B2/B3 framebuffer + 路由 flag (rename per ADR-DGPU-10 §4 — pending Migration Step 1) ──
+    // ── Phase A2/B1/B2/B3 framebuffer + 路由 flag (rename per ADR-DGPU-10 §4) ──
     void bind_memory_backings();
     void set_storage_routing_enabled(bool en) noexcept { storage_routing_enabled_ = en; }
     [[nodiscard]] bool storage_routing_enabled() const noexcept { return storage_routing_enabled_; }
     void set_gmmu_routing_enabled(bool en) noexcept { gmmu_routing_enabled_ = en; }
     [[nodiscard]] bool gmmu_routing_enabled() const noexcept { return gmmu_routing_enabled_; }
-    void attach_framebuffer_for_testing(uint8_t* ptr, uint64_t size) noexcept {
+    // ADR-DGPU-10: vram_storage_ 新命名, attach_vram_for_testing 替代
+    void attach_vram_for_testing(uint8_t* ptr, uint64_t size) noexcept {
         framebuffer_ptr_ = ptr;
         framebuffer_size_ = size;
+    }
+    [[deprecated("use attach_vram_for_testing / vram_storage_")]]
+    void attach_framebuffer_for_testing(uint8_t* ptr, uint64_t size) noexcept {
+        attach_vram_for_testing(ptr, size);
     }
 
 private:
@@ -288,10 +313,13 @@ private:
 
     // Phase A2: framebuffer_ 单一 backing 真源 (per gem5 PhysicalMemory 模式)
     // 初始化顺序 Inv-2: resize → bind_memory_backings → sim_thread_
+    // ADR-DGPU-10: 新字段 vram_storage_, 旧 framebuffer_storage_ 标 deprecated
     uint8_t* framebuffer_ptr_ = nullptr;
     uint64_t framebuffer_size_ = 0;
     GmmuTLM* gmmu_ = nullptr;  // 解析自 soc_::getInternalInstance("gmmu"), bind 时缓存
-    std::vector<uint8_t> framebuffer_storage_;  // init() 自动分配时使用
+    std::unique_ptr<uint8_t[]> vram_storage_;   // 8GB default-init (D-AXI v1.4 B7)
+    uint64_t vram_size_ = 0;                     // framebuffer 总大小
+    [[deprecated("use vram_storage_")]] std::vector<uint8_t> framebuffer_storage_;  // compat alias
 
     // ── framebuffer + backdoor 改造 (per spec/framebuffer-single-backing) ──
     // bind_memory_backings: 把 framebuffer_ 注入到 SOC 内的 memory/sdma/gmmu 实例
@@ -301,6 +329,16 @@ private:
     void sim_loop();                              // sim 线程主循环
     void drain_injection_queue();                 // #2/#5 inject_q 服务
     void destroy();                               // #10 严格顺序
+    void init_timing_mode();                      // Phase 4 T5: timing-mode init 分支
+
+    // ── Phase 4 T5: timing-mode 状态 (per design.md §6.2) ──
+    SimulationMode simulation_mode_ = SimulationMode::Functional;
+    uint64_t current_cycle_ = 0;
+    // cycle advance 目标: 仅 MemoryTLM + VramControllerTLM (剔除 GmmuTLM 同步 per M14,
+    // 剔除 SdmaEngineTLM 无 advance_cycle 方法 per R10)
+    std::vector<ChStreamModuleBase*> cycle_advance_modules_;
+    // 原始 board 配置 (Phase 4 T5: init_timing_mode 读取 simulation_mode + 时序参数)
+    nlohmann::json cfg_;  // load_soc_config 保存
 
     // backdoor VRAM 存储(SOC deferred 时 shell 本地处理 backdoor_read/write)
     std::map<uint64_t, std::vector<uint8_t>> vram_segments_;

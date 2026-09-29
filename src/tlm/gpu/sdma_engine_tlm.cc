@@ -230,18 +230,51 @@ namespace tlm::gpu {
         }
 
         // translate callback 检查（per spec.md Scenario "IOMMU translation fault"）
-        if (!translate_cb_) {
+        // Phase 4 T3: timing-mode 可仅注入 translate_timing_cb_ (无 translate_cb_)
+        if (!translate_cb_ && !translate_timing_cb_) {
             // 未注册 callback → 模拟 fault
             done.status.write(static_cast<uint32_t>(-EIO));
             return -EIO;
         }
 
         // 调用 translate callback
+        // Phase 4 T3 (v0.2): cycle accounting 包装层 — 优先使用 translate_timing_cb_
+        // (由 DGpuBoard::init_timing_mode 注入), 单次调 gmmu->translate_timing 记录 latency,
+        // 避免二次调 translate() 导致 TLB hit 误读 (per design §4.2)
         uint64_t phys = 0;
-        int rc = translate_cb_(d.host_iova, d.size, phys);
+        int rc = 0;
+        if (cycle_accounting_enabled_ && translate_timing_cb_) {
+            uint64_t lat = 0;
+            rc = translate_timing_cb_(d.host_iova, d.size, phys, lat);
+            last_tlb_latency_ = lat;  // 记录供 fence cycle 计算 (H2D 路径)
+            // functional 兼容: 无 translate_timing_cb_ 时回退 translate_cb_
+        } else if (translate_cb_) {
+            rc = translate_cb_(d.host_iova, d.size, phys);
+        } else {
+            rc = -EIO;  // 未注册 callback → fault
+        }
+        if (rc == -EAGAIN) {
+            // Phase 3 T3.1 (N3): 异步 GMMU translate pending — 保留 inflight_,
+            // 由 retry_inflight() 下 tick 重试 (保 in-order)。不 emit done。
+            return -EAGAIN;
+        }
         if (rc != 0) {
             done.status.write(static_cast<uint32_t>(-EIO)); // RequesterCompleterAbort
+            // T3 (v0.2): translate 失败 → fence err + lat 丢弃 (不记录 cycle)
+            last_tlb_latency_ = 0;
             return -EIO;
+        }
+
+        // ── Phase 4 T3 (v0.2 简化): cycle accounting (仅 H2D 路径) ──
+        // per design §4.2 + TInv-3: SDMA 不自增 cycle;
+        //   last_descriptor_complete_cycle_ = 当前仿真 cycle + TLB latency + 描述符处理固定开销
+        //   (4 cyc = desc decode + translate + memcpy + done emit pipeline)
+        //   board 可经 sdma_fence_complete 覆盖 (= board.current_cycle_, T5 注入)
+        if (cycle_accounting_enabled_) {
+            constexpr uint64_t kDescriptorBaseCycles = 4;
+            last_descriptor_complete_cycle_ =
+                getCurrentCycle() + last_tlb_latency_ + kDescriptorBaseCycles;
+            last_tlb_latency_ = 0;  // 单次消费 (避免重复累加)
         }
 
         // 数据搬运（per spec.md R3-S1 "VRAM write visibility"）
@@ -450,20 +483,29 @@ int rc = 0;
             }
         }
 
-        // emit done_out completion
-        emit_completion(done, err_code_for_cb, err_msg);
+        // N3: -EAGAIN 时不 emit done_out（描述符保留在 inflight_ 等下 tick 重试）
+        if (rc != -EAGAIN) {
+            // emit done_out completion
+            emit_completion(done, err_code_for_cb, err_msg);
+        }
 
         // 消费 desc_in
         req_in[PORT_DESC_IN].consume();
 
-        // 记录到 inflight_ 队列（用于 done 释放后窗口计数）
-        // MVP: 所有 desc 都在同 tick 处理 + emit done, inflight_ 队列仅用于占位计数
+        // Phase 3 T3.1 (N3): 记录到 inflight_ 队列
+        //   - rc == -EAGAIN (异步 GMMU translate pending): 保留 inflight_, 由 retry_inflight()
+        //     下 tick 重试 (保 in-order)
+        //   - 其他 (同步完成/错误): 立即弹出 (无异步语义)
         inflight_.push_back({d, getCurrentCycle()});
-        // 立即弹出（无异步语义）
-        inflight_.pop_back();
+        if (rc != -EAGAIN) {
+            inflight_.pop_back();
+        }
     }
 
     void SdmaEngineTLM::tick() {
+        // Phase 3 T3.1 (N3): 先 FIFO 重试 inflight_ 再收新 desc (保 in-order)
+        retry_inflight();
+
         // 1. 处理 desc_in 入口（带反压）
         handle_desc_in();
 
@@ -475,6 +517,54 @@ int rc = 0;
             if (adapters_[i])
                 adapters_[i]->tick();
         }
+    }
+
+    // Phase 3 T3.1 (N3): 重试 inflight_ 中处于 PENDING_TRANSLATE 的描述符
+    //   - 同步 backdoor 路径 (vram_backdoor_ 注入): translate_cb 同步返回 0 → 立即 emit
+    //   - 异步 MasterPort 路径 (vram_backdoor_==nullptr): translate 返 -EAGAIN → 保留下 tick
+    //   - 非 0/-EAGAIN (如 -EIO fault) → 立即 emit done_out status=err + 移除 (B23)
+    void SdmaEngineTLM::retry_inflight() {
+        auto it = inflight_.begin();
+        while (it != inflight_.end()) {
+            bundles::CompletionBundle done;
+            done.task_id.write(static_cast<uint32_t>(it->desc.tag));
+            done.tag.write(static_cast<uint32_t>(it->desc.tag));
+
+            int rc = 0;
+            if (it->desc.dir == DmaDescriptor::Dir::D2D) {
+                // D2D 走 d2d_forward (mem_out 两拍或 -ENOSYS)
+                d2d_forward(it->desc.vram_offset, it->desc.vram_offset, it->desc.size);
+                done.status.write(0);
+            } else if (it->desc.dir == DmaDescriptor::Dir::H2D) {
+                rc = process_h2d(it->desc, done);
+            } else {
+                rc = process_d2h(it->desc, done);
+            }
+
+            if (rc == -EAGAIN) {
+                // 异步 pending: 保留下 tick 重试 (N3 不消耗)
+                ++it;
+                continue;
+            }
+            if (rc != 0) {
+                // B23: 非 EAGAIN 错误 → emit done_out status=err + 移除 inflight
+                done.status.write(static_cast<uint32_t>(-EIO));
+                std::string err_msg = "SDMA: retry inflight fault";
+                emit_completion(done, -EIO, err_msg);
+            } else {
+                emit_completion(done, 0, "");
+            }
+            it = inflight_.erase(it);
+        }
+    }
+
+    // Phase 3 T3.2 (N7): 从 slot 2 (PORT_MEM_OUT 的 req_in) 消费 pcie_memory resp
+    bool SdmaEngineTLM::consume_mem_resp() {
+        if (!req_in[PORT_MEM_OUT].valid())
+            return false;
+        const auto& resp = req_in[PORT_MEM_OUT].data();
+        req_in[PORT_MEM_OUT].consume();
+        return resp.kind.read() == bundles::PcieTlpBundle::CPLD;
     }
 
     // Stage 1.3b D2D NoC payload forwarding (per openspec/.../2026-09-10-...):

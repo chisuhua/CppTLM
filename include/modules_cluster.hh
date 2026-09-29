@@ -55,11 +55,5 @@ const bool _reg_dgpusoc = (REGISTER_MODULE(DGpuSoc), true);
 const bool _reg_pcieendpointip = (REGISTER_MODULE(tlm::pcie::PcieEndpointIP), true);
 const bool _reg_pcieendpointip_short =
     (ModuleFactory::registerModule<tlm::pcie::PcieEndpointIP>("PcieEndpointIP"), true);
-// Phase 2 (minimal-dgpu-soc-v1 A3): GmmuTLM 一级页表翻译
-// 双注册 (short + 全限定): 配置 JSON "type": "GmmuTLM" 必须可解析 (per minimal-dgpu-soc
-// v1.0 配置文件 + docs/designs/dgpu-soc/architecture.md 示例)。
-const bool _reg_gmmutlm = (REGISTER_MODULE(tlm::gpu::GmmuTLM), true);
-const bool _reg_gmmutlm_short =
-    (ModuleFactory::registerModule<tlm::gpu::GmmuTLM>("GmmuTLM"), true);
 
 #endif  // MODULES_CLUSTER_HH

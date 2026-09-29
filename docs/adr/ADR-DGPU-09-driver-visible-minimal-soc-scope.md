@@ -284,4 +284,20 @@ grep -rn "coherence\|cache_coherent\|dma_coherent" include/tlm/ src/tlm/ 2>/dev/
 
 ## Status Update
 
-_(本节将在 D-AXI v1.4 实施通过 Oracle 评审后追加，记录签发时间与实施 commit hashes)_
+### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
+
+**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+
+**范围不变性验证 (4 BAR + 15 ABI + 0 新增)**:
+
+| Invariant | 状态 | 验证 |
+|-----------|------|------|
+| 4 BAR (BAR0 4KB MMIO + BAR1 16MB 窗口 + BAR2 8GB aperture 64-bit 双 dword) | ✅ | `bar_sizes: [4096, 16777216, 8589934592]`; config_space.read(0x20)==0 / read(0x24)==2 |
+| 15 ABI 闭环 | ✅ | `[abi][minimal_dgpu_soc]` 28 assertions PASS |
+| `memory_routing_enabled` 路由开关 (D2 v1.1) | ✅ | JSON 顶层 true → BAR2 fast-path 生效 |
+| F12 MemoryTLM 移除 | ✅ | `configs/dgpu_soc_minimal_v1.json` 删除 `memory`, 新增 `pcie_memory` |
+| 单一 VRAM 真源 (v1.4 B7) | ✅ | `bind_memory_backings()` N12 条件注入 pcie_memory + B20 无条件 sdma/gmmu |
+| SDMA `vram_size_bytes` 由 board 注入 (B19) | ✅ | JSON 删除 sdma.params.vram_size_bytes |
+
+**验证结果**: `[driver_visible]` 2 cases / 29 assertions (BAR2 fast-path round-trip + BAR1 alias + config BAR 双 dword) + `[minimal_dgpu_soc]` 12 cases + `[pcie-memory]` 24 cases + ctest 76/76 PASS, 0 regression。
+

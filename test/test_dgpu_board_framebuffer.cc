@@ -13,7 +13,7 @@ TEST_CASE("dgpu_framebuffer: backdoor read/write roundtrip", "[dgpu_framebuffer]
     DGpuBoard board("test_board");
     constexpr uint64_t fb_size = 64 * 1024;
     std::vector<uint8_t> fb(fb_size, 0);
-    board.attach_framebuffer_for_testing(fb.data(), fb_size);
+    board.attach_vram_for_testing(fb.data(), fb_size);
 
     std::vector<uint8_t> data(64);
     for (size_t i = 0; i < data.size(); ++i) data[i] = static_cast<uint8_t>(i & 0xFF);
@@ -30,7 +30,7 @@ TEST_CASE("dgpu_framebuffer: backdoor out-of-range returns -EINVAL", "[dgpu_fram
     DGpuBoard board("test_board");
     constexpr uint64_t fb_size = 64 * 1024;
     std::vector<uint8_t> fb(fb_size, 0);
-    board.attach_framebuffer_for_testing(fb.data(), fb_size);
+    board.attach_vram_for_testing(fb.data(), fb_size);
 
     std::vector<uint8_t> data(16);
     REQUIRE(board.backdoor_write(fb_size - 8, data.data(), data.size()) == -EINVAL);
@@ -58,7 +58,7 @@ TEST_CASE("dgpu_framebuffer: BAR1 mmio_write routes to framebuffer when flag on"
     DGpuBoard board("test_board");
     constexpr uint64_t fb_size = 64 * 1024;
     std::vector<uint8_t> fb(fb_size, 0);
-    board.attach_framebuffer_for_testing(fb.data(), fb_size);
+    board.attach_vram_for_testing(fb.data(), fb_size);
     board.set_storage_routing_enabled(true);
 
     constexpr uint64_t off = 0x800;
@@ -79,7 +79,7 @@ TEST_CASE("dgpu_framebuffer: BAR1 mmio_write routes to framebuffer when flag on"
 TEST_CASE("dgpu_framebuffer: framebuffer_size_=0 falls back to vram_segments_", "[dgpu_framebuffer][boundary]") {
     DGpuBoard board("test_board");
     board.set_storage_routing_enabled(true);
-    board.attach_framebuffer_for_testing(nullptr, 0);
+    board.attach_vram_for_testing(nullptr, 0);
 
     std::vector<uint8_t> data(32, 0xAB);
     REQUIRE(board.backdoor_write(0x100, data.data(), data.size()) == 0);
@@ -93,7 +93,7 @@ TEST_CASE("dgpu_framebuffer: BAR1 non-4/8-byte len passes through", "[dgpu_frame
     DGpuBoard board("test_board");
     constexpr uint64_t fb_size = 64 * 1024;
     std::vector<uint8_t> fb(fb_size, 0);
-    board.attach_framebuffer_for_testing(fb.data(), fb_size);
+    board.attach_vram_for_testing(fb.data(), fb_size);
     board.set_storage_routing_enabled(true);
 
     constexpr uint64_t off = 0x200;

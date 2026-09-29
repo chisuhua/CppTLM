@@ -218,6 +218,26 @@ public:
         return get_error_code() != ErrorCode::SUCCESS;
     }
 
+    // ========== Payload 扩容（D-AXI v1.5 B17, N1 框架修复）==========
+
+    /**
+     * @brief 扩容 payload 数据缓冲区（供 D3+ VramController 大 Bundle 使用）
+     *
+     * AxiMemBundle (~4136B) > PacketPool kMinPayloadBytes (256B)，StreamAdapter
+     * 序列化时 `serialize_bundle` 检查 `len < sizeof(BundleT)` 会失败。
+     * 本方法扩容 payload 的 data buffer，配合 PacketPool::acquire_with_min_size()
+     * 使用（后者已存在）。
+     *
+     * v1.8 H1 注: minimal_v1 统一 PcieTlpBundle wire-format（sizeof ≈ 30B << 256B），
+     * 本方法保留作为 D3+ VramController 演进 seam。
+     */
+    void payload_resize(uint64_t min_bytes) {
+        if (!payload) return;
+        if (payload->get_data_length() < min_bytes) {
+            payload->set_data_length(static_cast<unsigned>(min_bytes));
+        }
+    }
+
 private:
     // 引用计数 (P0.2: 改为原子类型以支持多线程)
     std::atomic<uint32_t> ref_count{0};

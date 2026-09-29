@@ -46,6 +46,7 @@ namespace tlm::gpu {
     bool DGpuBoard::load_soc_config(const nlohmann::json& board_cfg) {
         // #3 SOC 装配:实例化 DGpuSoc SimModule 容器
         try {
+            cfg_ = board_cfg;  // Phase 4 T5: 保存原始配置供 init_timing_mode 读取
             if (!soc_) {
                 soc_ = std::make_unique<DGpuSoc>(name_ + ".soc", eq_.get());
             }
@@ -148,6 +149,7 @@ namespace tlm::gpu {
                     }
                 }
                 framebuffer_size_ = final_size;
+                vram_size_ = final_size;
             }
 
             return true;
@@ -163,11 +165,19 @@ namespace tlm::gpu {
         }
         // Phase A2/B1: 分配 framebuffer_ (若 framebuffer_size_ 已知且未分配)
         // 顺序 Inv-2: (a) resize → (b) bind → (c) sim_thread
+        // ADR-DGPU-10: framebuffer_storage_ → vram_storage_ (unique_ptr)
         if (framebuffer_ptr_ == nullptr && framebuffer_size_ > 0) {
-            framebuffer_storage_.resize(framebuffer_size_, 0);
-            framebuffer_ptr_ = framebuffer_storage_.data();
+            vram_storage_ = std::make_unique<uint8_t[]>(framebuffer_size_);
+            framebuffer_ptr_ = vram_storage_.get();
         }
         bind_memory_backings();
+        // Phase 4 T5: 读 simulation_mode 字段 (functional 默认零 diff)
+        if (cfg_.contains("simulation_mode") && cfg_["simulation_mode"] == "timing") {
+            simulation_mode_ = SimulationMode::Timing;
+            init_timing_mode();
+        } else {
+            simulation_mode_ = SimulationMode::Functional;
+        }
         if (!sim_thread_.joinable()) {
             stop_ = false;
             sim_thread_ = std::thread(&DGpuBoard::sim_loop, this);
@@ -311,6 +321,12 @@ namespace tlm::gpu {
             std::memcpy(buf, framebuffer_ptr_ + offset, len);
             return 0;
         }
+        // Phase 3 T4.2 (N12): BAR2 fast-path → PcieMemoryDevice (per design §8 数据流 2/3)
+        if (memory_routing_enabled_ && bar == 2 && soc_) {
+            if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
+                return ep->memory_device().memory_read(offset, buf, len);
+            }
+        }
         PendingReq req;
         req.bar = bar;
         req.offset = offset;
@@ -392,6 +408,12 @@ namespace tlm::gpu {
                 gmmu_->set_pt_base_hi(val32);
             } else if (offset == 0x08) {
                 gmmu_->set_enabled((val32 & 1u) != 0);
+            }
+        }
+        // Phase 3 T4.2 (N12): BAR2 fast-path → PcieMemoryDevice (write 对称)
+        if (memory_routing_enabled_ && bar == 2 && soc_) {
+            if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
+                return ep->memory_device().memory_write(offset, buf, len);
             }
         }
         // 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
@@ -612,27 +634,36 @@ namespace tlm::gpu {
         if (framebuffer_ptr_ == nullptr || framebuffer_size_ == 0)
             return;
 
-        if (auto* mem = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"))) {
-            mem->set_backing_store(framebuffer_ptr_, framebuffer_size_);
+        // Phase 3 T4.2 (N12): 条件注入 pcie_memory (minimal_v1 路径) vs legacy memory (MemoryTLM)
+        if (auto* pcie_mem =
+                dynamic_cast<tlm::gpu::PcieMemoryDevice*>(soc_->getInternalInstance("pcie_memory"))) {
+            // v1.4 B7: 单一 VRAM backing 注入 PcieMemoryDevice (board 派生 vram_size_)
+            pcie_mem->set_backing_view(framebuffer_ptr_, framebuffer_size_);
+            // T1.2 (N12): EP 注入 pcie_memory 引用 (BAR2 fast-path 依赖 has_memory_device)
+            if (auto* ep = pcie_ep()) {
+                ep->set_memory_device(pcie_mem);
+            }
+        } else if (auto* mem = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"))) {
+            mem->set_backing_view(framebuffer_ptr_, framebuffer_size_);
         } else {
-            DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'memory' 实例, set_backing_store 跳过\n");
+            DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'pcie_memory'/'memory' 实例, backing 注入跳过\n");
         }
 
         if (auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"))) {
             sdma->set_vram_backdoor(framebuffer_ptr_, framebuffer_size_);
+            // B20/D14: set_translate_cb + set_sdma_engine 无条件注入 (不在 pcie_memory 分支内)
             sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
                 if (gmmu_)
                     return gmmu_->translate(iova, size, phys);
                 return -EIO;
             });
-            // D14: set_sdma_engine 同步注入 (修复 doorbell 生产路径空转)
             set_sdma_engine(sdma);
         } else {
             DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'sdma' 实例, sdma 注入跳过\n");
         }
 
         if ((gmmu_ = dynamic_cast<GmmuTLM*>(soc_->getInternalInstance("gmmu"))) != nullptr) {
-            gmmu_->set_backing(framebuffer_ptr_, framebuffer_size_);
+            gmmu_->set_mem_view(framebuffer_ptr_, framebuffer_size_);
         } else {
             DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'gmmu' 实例, GMMU 注入跳过\n");
         }
@@ -722,9 +753,76 @@ namespace tlm::gpu {
     }
 
     void DGpuBoard::tick() {
+        // Phase 4 T5 (per design.md §6.2 + TInv-3): timing-mode 集中推进 cycle
+        //   board 统一 ++current_cycle_ + 广播 advance_cycle() 到 cycle_advance_modules_
+        if (simulation_mode_ == SimulationMode::Timing) {
+            ++current_cycle_;
+            for (auto* mod : cycle_advance_modules_) {
+                mod->advance_cycle();
+            }
+        }
         if (soc_)
             soc_->tick();        // 转发到 SimModule 递归 tick
         drain_injection_queue(); // drain pending backdoor/mmio requests
+    }
+
+    // ── Phase 4 T5: timing-mode init 分支 (per design.md §6.2) ──
+    void DGpuBoard::init_timing_mode() {
+        // 1. 找 internal modules (memory / vram_ctrl / sdma / gmmu; 均非必全)
+        auto* mem  = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"));
+        auto* vram = dynamic_cast<VramControllerTLM*>(soc_->getInternalInstance("vram_ctrl"));
+        auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"));
+        auto* gmmu = dynamic_cast<GmmuTLM*>(soc_->getInternalInstance("gmmu"));
+
+        // 2. MemoryTLM 或 VramControllerTLM 二选一 (per H2 互斥实例化)
+        if ((!mem && !vram) || !sdma) {
+            throw std::runtime_error(
+                "timing-mode requires (MemoryTLM or VramControllerTLM) + SdmaEngineTLM");
+        }
+
+        // 3. 注入时序参数 (从 JSON 读; 无参数字段则跳过)
+        const auto& soc_cfg = cfg_["modules"][0];
+        const auto& mods = soc_cfg.value("modules", json::array());
+        for (const auto& m : mods) {
+            const std::string& mname = m.value("name", "");
+            const auto& params = m.value("params", json::object());
+            if (mname == "memory" && mem) {
+                mem->set_timing_params(
+                    params.value("read_latency_hit_cycles", 100),
+                    params.value("read_latency_miss_cycles", 200),
+                    params.value("write_latency_cycles", 120),
+                    params.value("use_zero_delay_for_test", false));
+            } else if (mname == "vram_ctrl" && vram) {
+                vram->set_timing_params(
+                    params.value("read_latency_hit_cycles", 100),
+                    params.value("read_latency_miss_cycles", 200),
+                    params.value("write_latency_cycles", 120),
+                    params.value("use_zero_delay_for_test", false));
+                vram->set_vram_params(
+                    params.value("row_hit_cycles", 30),
+                    params.value("row_miss_cycles", 80),
+                    params.value("bandwidth_gbps", 32));
+            } else if (mname == "gmmu" && gmmu) {
+                gmmu->set_timing_params(params.value("tlb_miss_latency_cycles", 50));
+                gmmu->set_tlb_size(params.value("tlb_size", 32));
+            }
+        }
+
+        // 4. SDMA cycle accounting (v0.2 简化: 注入 timing translate cb + enable flag)
+        if (sdma) {
+            // timing wrapper: 单次调 gmmu->translate_timing 记录 latency (per design §4.2)
+            if (gmmu) {
+                sdma->set_translate_timing_cb(
+                    [gmmu](uint64_t iova, uint32_t size, uint64_t& phys, uint64_t& lat) {
+                        return gmmu->translate_timing(iova, size, phys, lat);
+                    });
+            }
+            sdma->set_cycle_accounting_enabled(true);
+        }
+
+        // 5. cycle advance 目标: [memory, vram_ctrl] (剔除 gmmu per M14, sdma per R10)
+        if (mem) cycle_advance_modules_.push_back(mem);
+        if (vram) cycle_advance_modules_.push_back(vram);
     }
 
     // ── 线程模型 #10 destroy 顺序(严格) ──

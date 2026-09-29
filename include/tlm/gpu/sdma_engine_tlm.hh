@@ -214,6 +214,37 @@ namespace tlm::gpu {
             return translate_cb_;
         }
 
+        // ── Phase 4 T3 (v0.2 简化, per design.md §4): cycle accounting ──
+        // 无新端口/无 outstanding/无 rid (per H2/H3 Oracle 反馈)
+        //   - cycle accounting 仅在 translate_cb_ 内累加 GMMU TLB miss latency
+        //   - last_descriptor_complete_cycle_ 由 DGpuBoard::sdma_fence_complete 注入 (= board.current_cycle_)
+        //   - 仅 H2D 路径 (design §4.2 process_descriptor)
+        uint64_t last_descriptor_complete_cycle() const noexcept {
+            return last_descriptor_complete_cycle_;
+        }
+        void set_cycle_accounting_enabled(bool en) noexcept {
+            cycle_accounting_enabled_ = en;
+        }
+        bool cycle_accounting_enabled() const noexcept {
+            return cycle_accounting_enabled_;
+        }
+
+        // timing-mode translate callback: 包装 gmmu->translate_timing 记录 latency
+        // (由 DGpuBoard::init_timing_mode 注入, per design §4.2)
+        using DmaTranslateTimingCb =
+            std::function<int(uint64_t iova, uint32_t size, uint64_t& phys, uint64_t& lat)>;
+        void set_translate_timing_cb(DmaTranslateTimingCb cb) {
+            translate_timing_cb_ = std::move(cb);
+        }
+        DmaTranslateTimingCb get_translate_timing_cb() const {
+            return translate_timing_cb_;
+        }
+
+        // 测试/统计 helper: 最近一次 TLB 延迟观察值
+        uint64_t last_tlb_latency() const noexcept {
+            return last_tlb_latency_;
+        }
+
         // Board error callback 注入（错误路径上报）
         void set_error_cb(SdmaErrorCb cb) {
             error_cb_ = std::move(cb);
@@ -352,6 +383,15 @@ namespace tlm::gpu {
         DmaTranslateCb translate_cb_;
         SdmaErrorCb    error_cb_;
 
+        // ── Phase 4 T3 (v0.2 简化): cycle accounting 状态 ──
+        // per design.md §4.2: SDMA 无 current_cycle_ 成员;
+        //   last_descriptor_complete_cycle_ 由 DGpuBoard::sdma_fence_complete 注入 (= board.current_cycle_)
+        //   last_tlb_latency_ 由 translate_timing_cb_ 包装层写入 (单次调 translate_timing)
+        uint64_t last_descriptor_complete_cycle_ = 0;
+        uint64_t last_tlb_latency_ = 0;
+        bool cycle_accounting_enabled_ = false;
+        DmaTranslateTimingCb translate_timing_cb_;  // timing-mode wrapper (functional 时为空)
+
         // inflight 描述符队列（per spec.md R3 + sdma-completion-ordering in-order 语义）
         //   - 仅保存 desc + age counter；完成时按 tag 顺序出队
         //   - 在 MVP 实现中,所有 desc 都按 FIFO 处理（无 in-order 跨 desc 调度）
@@ -390,6 +430,19 @@ namespace tlm::gpu {
 
         // 内部：处理 desc_in 入口（每 tick 一次）
         void handle_desc_in();
+
+        // Phase 3 T3.1 (N3): retry driver — 先重试 inflight_ 再收新 desc (保 in-order)
+        //   遍历 inflight_ FIFO, 对 PENDING_TRANSLATE 重调 translate_cb
+        //   (translate 可能 -EAGAIN 异步 pending); 就绪后 emit mem_out
+        void retry_inflight();
+
+        // Phase 3 T3.2 (N7): 从 req_in[PORT_MEM_OUT] (slot 2) 消费 pcie_memory resp
+        //   PcieMemoryDevice::handle_slave_port → resp_out[0] → sdma.req_in[PORT_MEM_OUT]
+        //   收到 CPLD 即视为 WAITING_AXI_RESP 完成
+        // (public for test access — test_sdma_retry_driver.cc)
+    public:
+        bool consume_mem_resp();
+    private:
 
         // Stage 1.3d: 处理 fence_queue_ (Fence → CompletionRing + MSI-X handler)
         void process_fence_queue();

@@ -35,9 +35,9 @@
 
 ### 1.1 目标
 
-构建一个**最小可演示**的 dGPU SoC 示例,采用**零时延功能仿真模式 (functional-mode DMA, zero-delay memcpy)**,端到端贯通 **host ABI → PCIe BAR fast-path / SDMA functional DMA → GMMU translate → framebuffer_storage_** 路径(per §1.4 仿真模式声明):
+构建一个**最小可演示**的 dGPU SoC 示例,采用**零时延功能仿真模式 (functional-mode DMA, zero-delay memcpy)**,端到端贯通 **host ABI → PCIe BAR fast-path / SDMA functional DMA → GMMU translate → vram_storage_** 路径(per §1.4 仿真模式声明):
 
-- **存储 (host)**: host 通过 BAR1 fast-path (`storage_routing_enabled_=true`) 直接读写 framebuffer_storage_,**零延迟直读直写**(不走 ChStream)
+- **存储 (host)**: host 通过 BAR1 fast-path (`storage_routing_enabled_=true`) 直接读写 vram_storage_,**零延迟直读直写**(不走 ChStream)
 - **SDMA**: functional-mode DMA — `memcpy(host_backdoor_+phys, vram_backdoor_+vram_offset, size)`,经 GMMU 同步翻译 host_iova → backing offset
 - **GMMU**: 同步一级页表翻译服务 (functional translation service),PT_BASE 寄存器(MMIO 配置),无 TLB,每次 DMA 即时返回 paddr
 - **(后续)** CP 模块:本期不做,留接口
@@ -52,7 +52,7 @@
 
 ### 1.3 关键设计原则
 
-1. **单一 backing 源**: `DGpuBoard::framebuffer_storage_` 是 SoC 全部访存的**真源**,镜像 gem5 `PhysicalMemory::backingStore[].pmem` 角色。MemoryTLM/GMMU/SDMA/host backdoor 都直读直写同一份 `std::vector<uint8_t>`,天然 coherence,无需 flush。
+1. **单一 backing 源**: `DGpuBoard::vram_storage_` 是 SoC 全部访存的**真源**,镜像 gem5 `PhysicalMemory::backingStore[].pmem` 角色。MemoryTLM/GMMU/SDMA/host backdoor 都直读直写同一份 `std::vector<uint8_t>`,天然 coherence,无需 flush。
 2. **零时路径**: SoC 内部 ChStream 访存走 `MemoryTLM::tick()` 零时 memcpy(镜像 gem5 `SimpleMemory::recvFunctional()` + `AbstractMemory::functionalAccess()`),无 stats 延迟,host 与 device 同时间访问同一份 backing。
 3. **callback 单一所有权**: callback 完全在 `CallbackWorker` 内(DGPU v2.0.2),本期不增加 callback 类型。
 4. **配置注入**: `framebuffer_size_bytes` 从 `pcie_ep.params.bar_sizes[1]` 派生,避免双真相源;顶层 `framebuffer_size_bytes` 仅作 override。
@@ -74,9 +74,9 @@
    - **不模拟**: TLB miss 延迟、page walk cycle 数、fault 中断、多级页表
 
 3. **MemoryTLM 在 v1.0 是 seam holder,不在数据路径上**
-   - 真实数据路径: `BAR1 fast-path → framebuffer_storage_` (`dgpu_board_shell.cc:447-448`,per D-AXI v1.4 B11)
+   - 真实数据路径: `BAR1 fast-path → vram_storage_` (`dgpu_board_shell.cc:447-448`,per D-AXI v1.4 B11)
    - `MemoryTLM::tick()` 在 v1.0 仿真循环中**无任何 caller 触发**(见 §3.3 注释 "保留 v2.1 legacy 路径")
-   - 保留 `MemoryTLM` 是为了 D3 演进 seam(per ADR-DGPU-07: `handle_slave_port ↔ backing_ptr_` 之间可插 VramController)
+   - 保留 `MemoryTLM` 是为了 D3 演进 seam(per ADR-DGPU-07: `handle_slave_port ↔ backing_view_` 之间可插 VramController)
 
 4. **SoC 内部无 AXI Crossbar**
    - EP / SDMA / GMMU / Memory 之间的通信 = **同步函数回调 + 直 memcpy**
@@ -112,30 +112,34 @@
 DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
 └── DGpuSoc (SimModule 容器)
     ├── PcieEndpointIP          (SimModule, 1 PF + 16 VF;BAR0 4KB MMIO + BAR1 16MB fast-path 窗口 + BAR2 8GB vram aperture via PcieMemoryDevice)
-    │   └── PcieBarRouter       (BAR0 寄存器表: GMMU_PT_BASE_LO/HI / GMMU_CTRL / SDMA_STATUS)
-    ├── SdmaEngineTLM           (5-port, ring mode + fence, translate_cb → GmmuTLM)
-    ├── GmmuTLM                 (新建: 一级页表翻译, 无 TLB)
-    ├── MemoryTLM               (扩展: 加 set_backing_store + on_config_loaded + 零时路径)
+    │   ├── PcieBarRouter       (BAR0 寄存器表: GMMU_PT_BASE_LO/HI / GMMU_CTRL / SDMA_STATUS)
+    │   └── memory_device_      (raw ptr → PcieMemoryDevice, Phase 3 T1.2/T4.2 N12 注入)
+    ├── PcieMemoryDevice        (ChStreamModuleBase, 2 SlavePorts;SDMA mem_out + GMMU req_out;backing_view_ 注入式)
+    ├── SdmaEngineTLM           (5-port, ring mode + fence, translate_cb → GmmuTLM, N3 retry driver + N7 slot-2 resp)
+    ├── GmmuTLM                 (新建: 一级页表翻译, 无 TLB, 异步 translate -EAGAIN)
     └── CompletionRingTLM       (fence 完成 → MSI-X)
 ```
+
+> **Phase 3 T4 (v1.8 F12)**: `MemoryTLM` 已从 `dgpu_soc_minimal_v1.json` 移除,`PcieMemoryDevice` 取代其 minimal_v1 存储职责 (零连接零消费者冗余);`bind_memory_backings()` N12 条件注入:有 `pcie_memory` → 注入 PcieMemoryDevice + `ep->set_memory_device()`,否则 legacy `memory` fallback。
+
 
 ### 2.2 模块清单(7 个,3 个新建)
 
 | 组件 | 类型 | 来源 | 职责 |
 |------|------|------|------|
-| `PcieEndpointIP` | 17-port SimModule | ✅ 复用 | BAR 存储 + config space + MSI-X |
-| `SdmaEngineTLM` | 5-port ChStreamModule | ✅ 复用 | DMA 搬运 (H2D/D2H), ring mode, fence |
+| `PcieEndpointIP` | 17-port SimModule | ✅ 复用 | BAR 存储 + config space + MSI-X;`set_memory_device` 注入 (T1.2) |
+| `PcieMemoryDevice` | 2-port ChStreamModule | ✅ D2 复用 | BAR2 8GB vram aperture 外观层;backing_view_ 注入式 (v1.4 B7) |
+| `SdmaEngineTLM` | 5-port ChStreamModule | ✅ 复用 | DMA 搬运 (H2D/D2H), ring mode, fence, N3 retry driver |
 | `CompletionRingTLM` | 4-port ChStreamModule | ✅ 复用 | fence 完成汇聚 → MSI-X vector 0 |
 | `PcieBarRouter` | 工具 | ✅ 复用 | BAR0 寄存器表 (PT_BASE_LO/HI 等) |
-| **`GmmuTLM`** | **新建** SimModule | 🆕 | 一级页表翻译 (PT_BASE 寄存器, 无 TLB) |
-| `MemoryTLM` | ChStreamModule(扩展) | 🔧 改 | 加 `set_backing_store` + 零时 tick + `on_config_loaded` |
-| `DGpuBoard` + `DGpuSoc` | shell + 容器 | ✅ 复用(v2.0.2) | 23 ABI 入口 + 路由 + 新 framebuffer_storage_ |
+| **`GmmuTLM`** | **新建** SimModule | 🆕 | 一级页表翻译 (PT_BASE 寄存器, 无 TLB, 异步 -EAGAIN) |
+| `DGpuBoard` + `DGpuSoc` | shell + 容器 | ✅ 复用(v2.0.2) | 23 ABI 入口 + 路由 + 新 vram_storage_ + BAR2 fast-path |
 
 ### 2.3 不在 v1.0 范围的组件(后续工作)
 
 - **CP** (Compute Pipeline): v2.0 后续
 - **Display IO device** (D1): 已交付 v1.1.1,本期 `display_routing_enabled=false` 不启用
-- **Memory Device** (D2): `openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp` 提案;本期通过 framebuffer_storage_ 简化实现其能力
+- **Memory Device** (D2): `openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp` 提案;本期通过 vram_storage_ 简化实现其能力
 - **Host Bypass / Root Complex**: Phase 8 已交付,本期测试用 host 直连模式(经 `DGpuBoard::mmio_*`)
 
 ---
@@ -147,18 +151,18 @@ DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
 镜像 gem5 `PhysicalMemory::backingStore` + `AbstractMemory::pmemAddr` 分层:
 
 - **gem5 模式**: `PhysicalMemory` 拥有 backing(系统范围),通过 `setBackingStore(uint8_t*)` 注入每个 `AbstractMemory`;`pmemAddr` 是单一真源,设备端口和 host backdoor 都直读直写同一份内存。
-- **CppTLM v1.0 映射**: `DGpuBoard::framebuffer_storage_` 是 `PhysicalMemory` 角色;`MemoryTLM::backingPtr_` 是 `AbstractMemory::pmemAddr` 角色,由 board 注入。
+- **CppTLM v1.0 映射**: `DGpuBoard::vram_storage_` 是 `PhysicalMemory` 角色;`MemoryTLM::backing_view_` 是 `AbstractMemory::pmemAddr` 角色,由 board 注入。
 
 ### 3.2 模块映射表
 
 | gem5 角色 | CppTLM v1.0 对应 |
 |----------|-----------------|
-| `PhysicalMemory::backingStore[].pmem` | `DGpuBoard::framebuffer_storage_` (std::vector<uint8_t>, lazy alloc) |
-| `AbstractMemory::pmemAddr` | `MemoryTLM::backingPtr_` (uint8_t*, board-injected) |
-| `AbstractMemory::setBackingStore()` | `MemoryTLM::set_backing_store(uint8_t*, size)` (新增) |
-| `AbstractMemory::toHostAddr()` | `MemoryTLM::host_addr(off) = backingPtr_ + off` |
+| `PhysicalMemory::backingStore[].pmem` | `DGpuBoard::vram_storage_` (std::vector<uint8_t>, lazy alloc) |
+| `AbstractMemory::pmemAddr` | `MemoryTLM::backing_view_` (uint8_t*, board-injected) |
+| `AbstractMemory::setBackingStore()` | `MemoryTLM::set_backing_view(uint8_t*, size)` (新增) |
+| `AbstractMemory::toHostAddr()` | `MemoryTLM::host_addr(off) = backing_view_ + off` |
 | `SimpleMemory::recvFunctional()` | `MemoryTLM::tick()` (ChStream req_in, 零时 memcpy) |
-| `MemBackdoor::ptr()` | `DGpuBoard::backdoor_read/write(framebuffer_storage_.data())` |
+| `MemBackdoor::ptr()` | `DGpuBoard::backdoor_read/write(vram_storage_.data())` |
 
 ### 3.3 MemoryTLM 扩展
 
@@ -170,8 +174,8 @@ public:
     // 既有 API 不变 (req_in / resp_out / stats_*)
 
     // ── 新增: backing 注入 (镜像 SdmaEngineTLM::set_host_backdoor 模式) ──
-    void set_backing_store(uint8_t* ptr, uint64_t size_bytes) noexcept {
-        backingPtr_  = ptr;
+    void set_backing_view(uint8_t* ptr, uint64_t size_bytes) noexcept {
+        backing_view_  = ptr;
         backingSize_ = size_bytes;
         if (size_ == 0) size_ = size_bytes;  // 默认 size 跟随 backing
     }
@@ -187,12 +191,12 @@ public:
 
     // 新增: 访问 helper (供 SDMA / GMMU 直接用, 走非 ChStream 路径)
     uint8_t* host_addr(uint64_t offset) const noexcept {
-        return backingPtr_ ? (backingPtr_ + offset) : nullptr;
+        return backing_view_ ? (backing_view_ + offset) : nullptr;
     }
     uint64_t backing_size() const noexcept { return backingSize_; }
 
 private:
-    uint8_t*  backingPtr_  = nullptr;
+    uint8_t*  backing_view_  = nullptr;
     uint64_t  backingSize_ = 0;
     uint64_t  size_        = 0;
     bool      writeable_   = true;
@@ -208,19 +212,19 @@ void MemoryTLM::tick() override {
     bundles::CacheRespBundle resp;
     resp.transaction_id.write(req.transaction_id.read());
     resp.error_code.write(0);
-    resp.is_hit.write(1);   // 命中 framebuffer_storage_ 即 hit
+    resp.is_hit.write(1);   // 命中 vram_storage_ 即 hit
 
-    if (!backingPtr_ || addr + sz > backingSize_) {
+    if (!backing_view_ || addr + sz > backingSize_) {
         resp.error_code.write(1);   // OUT_OF_RANGE
         resp.is_hit.write(0);
     } else if (req.is_write.read()) {
         // 写: req.data 是 ch_uint<64> = 8 字节, 超 8 字节需上游分片 (per CacheReqBundle fragment)
-        std::memcpy(backingPtr_ + addr, &req.data.read(), std::min<size_t>(sz, 8));
+        std::memcpy(backing_view_ + addr, &req.data.read(), std::min<size_t>(sz, 8));
         ++stats_requests_write_;
     } else {
         // 读: 直接 memcpy backing 到 resp.data
         uint64_t val = 0;
-        std::memcpy(&val, backingPtr_ + addr, std::min<size_t>(sz, 8));
+        std::memcpy(&val, backing_view_ + addr, std::min<size_t>(sz, 8));
         resp.data.write(val);
         ++stats_requests_read_;
     }
@@ -239,11 +243,11 @@ void MemoryTLM::tick() override {
 class DGpuBoard {
     // ... 既有 v2.0.2 API 不变 ...
 
-    // 新增: framebuffer_storage_ (单一 backing 源, gem5 PhysicalMemory 角色)
-    std::vector<uint8_t> framebuffer_storage_;
+    // 新增: vram_storage_ (单一 backing 源, gem5 PhysicalMemory 角色)
+    std::vector<uint8_t> vram_storage_;
     uint64_t framebuffer_size_ = 0;
 
-    // 新增: backdoor_read / backdoor_write 直接读写 framebuffer_storage_ (替代 vram_segments_ 主路径)
+    // 新增: backdoor_read / backdoor_write 直接读写 vram_storage_ (替代 vram_segments_ 主路径)
     int backdoor_read(uint64_t offset, void* buf, size_t len);
     int backdoor_write(uint64_t offset, const void* buf, size_t len);
 
@@ -256,8 +260,8 @@ void DGpuBoard::init() {
     // ... 既有 init 逻辑 (load_soc_config 已派 framebuffer_size_ from bar_sizes[1]) ...
 
     // 1. 分配 framebuffer (必须在所有 set_backing_* 之前, 保证指针稳定)
-    if (framebuffer_storage_.empty()) {
-        framebuffer_storage_.resize(framebuffer_size_, 0);
+    if (vram_storage_.empty()) {
+        vram_storage_.resize(framebuffer_size_, 0);
     }
 
     // 2. 绑定 backing 到访存者
@@ -268,37 +272,38 @@ void DGpuBoard::init() {
 
 void DGpuBoard::bind_memory_backings() {
     if (!soc_) return;
-    if (auto* mem = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"))) {
-        if (mem) mem->set_backing_store(framebuffer_storage_.data(), framebuffer_size_);
+    // Phase 3 T4.2 (N12): pcie_memory 优先, legacy MemoryTLM fallback
+    if (auto* pcie_mem = dynamic_cast<PcieMemoryDevice*>(soc_->getInternalInstance("pcie_memory"))) {
+        pcie_mem->set_backing_view(vram_storage_.get(), framebuffer_size_);  // v1.4 B7
+        if (auto* ep = pcie_ep()) ep->set_memory_device(pcie_mem);           // T1.2 BAR2 fast-path
+    } else if (auto* mem = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"))) {
+        mem->set_backing_view(vram_storage_.get(), framebuffer_size_);        // legacy fallback
     }
+    // B20: sdma/gmmu 无条件注入 (不在 pcie_memory 分支内)
     if (auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"))) {
-        constexpr uint64_t kSdmaVramOffset = 0;  // v1.0 简化: SDMA VRAM 起点 = BAR1 起点
-        if (sdma) {
-            sdma->set_vram_backdoor(framebuffer_storage_.data() + kSdmaVramOffset,
-                                     framebuffer_size_ - kSdmaVramOffset);
-            sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
-                return gmmu_->translate(iova, size, phys);
-            });
-        }
+        sdma->set_vram_backdoor(vram_storage_.get(), framebuffer_size_);
+        sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
+            return gmmu_ ? gmmu_->translate(iova, size, phys) : -EIO;
+        });
     }
     if (auto* gmmu = dynamic_cast<GmmuTLM*>(soc_->getInternalInstance("gmmu"))) {
-        if (gmmu) gmmu->set_backing(framebuffer_storage_.data(), framebuffer_size_);
+        gmmu->set_mem_view(vram_storage_.get(), framebuffer_size_);
     }
 }
 ```
 
 ### 3.5 `vram_segments_` 兼容策略
 
-`DGpuBoard::vram_segments_` (稀疏 map) 保留作为**fallback**——D2 PcieMemoryDevice 提案之外没有竞争场景。新 `backdoor_read/write` **优先**走 `framebuffer_storage_` 连续路径,失败才回落到 segments map。`vram_segments_` 数据迁移在 v2.1 评估。
+`DGpuBoard::vram_segments_` (稀疏 map) 保留作为**fallback**——D2 PcieMemoryDevice 提案之外没有竞争场景。新 `backdoor_read/write` **优先**走 `vram_storage_` 连续路径,失败才回落到 segments map。`vram_segments_` 数据迁移在 v2.1 评估。
 
 ### 3.6 Coherence 保证
 
 **单一真源** + **零时路径** + **不缓存** = 天然 coherence:
 
-- device ChStream 写 → `MemoryTLM::tick()` → memcpy 到 `framebuffer_storage_`(同一份)
+- device ChStream 写 → `MemoryTLM::tick()` → memcpy 到 `vram_storage_`(同一份)
 - host BAR1 写 → `DGpuBoard::mmio_write` → PcieStorage route → `MemoryTLM::backing` 直写
-- host backdoor_read → `DGpuBoard::backdoor_read` → `framebuffer_storage_.data()` 直读
-- GMMU 页表读 → `framebuffer_storage_.data() + PT_BASE + idx*8` 直读
+- host backdoor_read → `DGpuBoard::backdoor_read` → `vram_storage_.data()` 直读
+- GMMU 页表读 → `vram_storage_.data() + PT_BASE + idx*8` 直读
 
 无 cache、无 flush、无锁(同一线程访问无需 lock)。如未来加多线程访问,需补 mutex。
 
@@ -308,8 +313,8 @@ void DGpuBoard::bind_memory_backings() {
 
 ### 4.1 BAR 布局
 
-> **来源**: `dgpu_soc_minimal_v1.json:19` (示例) `bar_sizes: [4096, 268435464]` (BAR1 = 256MB+64KB+8B, per §4.1 doorbell hardcoded 约束)
-> **约束**: BAR0 = 4 KB MMIO;BAR1 = ≥256MB+64KB+8B (含 doorbell carve-out,对应 `bar1_window_size_`);BAR2 = 8 GB vram aperture(对应 `vram_size_`,经 `memory_routing_enabled=true` 路由到 PcieMemoryDevice)
+> **来源**: `dgpu_soc_minimal_v1.json` (Phase 3 T4.1) `bar_sizes: [4096, 16777216, 8589934592]` (BAR0=4KB + BAR1=16MB 窗口 + BAR2=8GB aperture, per ADR-DGPU-09)
+> **约束**: BAR0 = 4 KB MMIO;BAR1 = 16MB 窗口 (Phase 3 改为 16MB,`bar1_window_size_`);BAR2 = 8 GB vram aperture(对应 `vram_size_`,经 `memory_routing_enabled=true` 路由到 PcieMemoryDevice)
 
 | BAR | 大小 | 偏移 | 路由目标 | 备注 |
 |-----|------|------|---------|------|
@@ -317,18 +322,17 @@ void DGpuBoard::bind_memory_backings() {
 | | | 0x04 | GMMU_PT_BASE_HI (RW) | 高 32 位(64-bit PT_BASE) |
 | | | 0x08 | GMMU_CTRL (RW) | bit0: enable |
 | | | 0x10 | SDMA_STATUS (RO) | doorbell 计数 |
-| **BAR1** | ≥256 MB + 64 KB | [0x0, 0x10010000) | framebuffer_storage_ 直读直写(`storage_routing_enabled=true`) | 存储主区域 |
+| **BAR1** | ≥256 MB + 64 KB | [0x0, 0x10010000) | vram_storage_ 直读直写(`storage_routing_enabled=true`) | 存储主区域 |
 | | | [0x10010000, 0x10010008) | SdmaEngineTLM (doorbell wptr) | 门铃 8 字节窗口(`kBar1DoorbellOffset` hardcoded) |
-| | | (0x10010008, BAR1_size] | framebuffer_storage_ 直读直写 | doorbell 页 dead bytes |
+| | | (0x10010008, BAR1_size] | vram_storage_ 直读直写 | doorbell 页 dead bytes |
 | **BAR2** | 8 GB | [0, 8GB) | PcieMemoryDevice::memory_read/write | vram aperture(需 `memory_routing_enabled=true`) |
 
 > **doorbell offset hardcoded 约束**: `kBar1DoorbellOffset = 0x10010000ULL` 在两处 hardcoded:
-> - `dgpu_board_shell.hh:171`(DGpuBoard 路由)
-> - `pcie_endpoint_ip.hh:238`(PcieEndpointIP 路由)
+> - `dgpu_board_shell.hh`(DGpuBoard 路由)
+> - `pcie_endpoint_ip.hh`(PcieEndpointIP 路由)
 >
-> 这意味着 **BAR1 必须 ≥ 256 MB + 64 KB** 才能让 doorbell 路由可命中。`bar_sizes[1] = 16MB` 的配置(如 `dgpu_soc_minimal_v1.json:19`)会让 doorbell 访问越界 — **这是 config bug,不是架构 bug**。
-> **测试配置修正**: 见 §7.1 JSON 示例 bar_sizes[1] = `268435456` (256 MB + 64 KB),保证所有 5+ 测试用例的 doorbell offset 断言可命中(per `test_dgpu_board_doorbell_routing.cc:25`、`test_minimal_dgpu_soc_e2e.cc:131` 等)。
-> **D-AXI v1.4 B11 双 size 字段**: `bar1_window_size_` (BAR1) ≥ 256MB+64KB;`vram_size_` (BAR2) 默认 8GB,避免单一字段双语义导致的边界漂移。
+> **Phase 3 修订**: `bar_sizes[1] = 16MB` 配置下 doorbell offset (0x10010000 > 16MB) 是**测试合成偏移** (per AGENTS.md 已知遗留议题);实际路由经 `mmio_write(bar==1 && offset==kBar1DoorbellOffset)` 显式判定,不依赖 BAR1 大小。BAR1 窗口数据区为 `[0, 16MB)`。
+> **D-AXI v1.4 B11 双 size 字段**: `bar1_window_size_` (BAR1 = `bar_sizes[1]`);`vram_size_` (BAR2 = `bar_sizes[2]`, 默认 8GB),避免单一字段双语义导致的边界漂移。
 
 ### 4.2 BAR 路由表
 
@@ -336,22 +340,22 @@ void DGpuBoard::bind_memory_backings() {
 |----------|---------------------|------|-----------|
 | `mmio_write(BAR0, off)` | PcieBarRouter → DGpuBoard BAR0 hook → GmmuTLM::mmio_write | GMMU 寄存器 | `gmmu_routing_enabled_=true` |
 | `mmio_read(BAR0, off)` | PcieBarRouter → DGpuBoard BAR0 hook → GmmuTLM::mmio_read | GMMU / SDMA_STATUS | `gmmu_routing_enabled_=true` |
-| `mmio_write(BAR1, off ∈ [0, 0x10010000))` | **PcieStorage route** → framebuffer_storage_ 直写(`dgpu_board_shell.cc:306`) | 存储空间 | `storage_routing_enabled_=true` |
-| `mmio_read(BAR1, off ∈ [0, 0x10010000))` | **PcieStorage route** → framebuffer_storage_ 直读 | 存储空间 | `storage_routing_enabled_=true` |
+| `mmio_write(BAR1, off ∈ [0, 0x10010000))` | **PcieStorage route** → vram_storage_ 直写(`dgpu_board_shell.cc:306`) | 存储空间 | `storage_routing_enabled_=true` |
+| `mmio_read(BAR1, off ∈ [0, 0x10010000))` | **PcieStorage route** → vram_storage_ 直读 | 存储空间 | `storage_routing_enabled_=true` |
 | `mmio_write(BAR1, off == 0x10010000)` | doorbell 路径 → `sdma_engine_->mmio_write(1, kBar1DoorbellOffset, data)` (`dgpu_board_shell.cc:439`) | SDMA ring consume | (always on) |
 | `mmio_read(BAR1, off == 0x10010000)` | doorbell 路径 → 返回 last wptr | SDMA 状态 | (always on) |
-| `mmio_write(BAR2, off ∈ [0, 8GB))` | **PcieMemoryDevice route** → `ep->memory_device().memory_write(vram_offset, ...)`(`dgpu_board_shell.cc:561-565`) | vram aperture | `memory_routing_enabled_=true` |
+| `mmio_write(BAR2, off ∈ [0, 8GB))` | **PcieMemoryDevice route** → `ep->memory_device().memory_write(vram_offset, ...)`(`dgpu_board_shell.cc` BAR2 fast-path) | vram aperture | `memory_routing_enabled_=true` |
 | `mmio_read(BAR2, off ∈ [0, 8GB))` | **PcieMemoryDevice route** → `memory_read(...)` | vram aperture | `memory_routing_enabled_=true` |
-| `host backdoor_read/write` | `DGpuBoard::backdoor_*` 直读直写 framebuffer_storage_ | 旁路 ChStream | (always on) |
+| `host backdoor_read/write` | `DGpuBoard::backdoor_*` 直读直写 vram_storage_ | 旁路 ChStream | (always on) |
 
-> **路由 flag 重要性**: 5 个 routing flag (`display_routing_enabled_` / `storage_routing_enabled_` / `gmmu_routing_enabled_` / `memory_routing_enabled_`) **默认全 false**,需在 JSON 顶层显式启用。`dgpu_soc_minimal_v1.json:5-6` 启用 storage+gmmu。详见 `dgpu_board_shell.hh:281-287`。
+> **路由 flag 重要性**: 4 个 routing flag (`display_routing_enabled_` / `storage_routing_enabled_` / `gmmu_routing_enabled_` / `memory_routing_enabled_`) **默认全 false**,需在 JSON 顶层显式启用。`dgpu_soc_minimal_v1.json` (Phase 3 T4.1) 启用 storage+gmmu+memory (display=false)。详见 `dgpu_board_shell.hh` 路由 flag 字段。
 
 ### 4.3 双 ingress 路径钩点
 
 BAR1 写入有两条 ingress,需**两条都改造**:
 
 1. **ABI 路径** (`DGpuBoard::mmio_write`,shell:313,353):既有 doorbell 检测,新增 PcieStorage 检测补全
-2. **TLP/AXI 路径** (`PcieEndpointIP::mmio_write` + `tick()` AXI slave, pcie_endpoint_ip.cc:584-598):当前 BAR1 非 doorbell 写落入 `bar_store_` 稀疏 map,本期须改造为转发到 framebuffer_storage_
+2. **TLP/AXI 路径** (`PcieEndpointIP::mmio_write` + `tick()` AXI slave, pcie_endpoint_ip.cc:584-598):当前 BAR1 非 doorbell 写落入 `bar_store_` 稀疏 map,本期须改造为转发到 vram_storage_
 
 v1.0 优先实现 ABI 路径(测试驱动 host 直连),TLP/AXI 路径在 v1.1 跟进。
 
@@ -474,11 +478,11 @@ private:
 host mmio_write(BAR0, GMMU_PT_BASE_LO, lo32)  → DGpuBoard::mmio_write → gmmu_->set_pt_base_lo()
 host mmio_write(BAR0, GMMU_PT_BASE_HI, hi32)  → gmmu_->set_pt_base_hi()
 host mmio_write(BAR0, GMMU_CTRL, enable=1)    → gmmu_->set_enabled(true)
-host mmio_write(BAR1, PTE_array_addr, pte[])  → framebuffer_storage_[PTE_array_addr..] 落页表
+host mmio_write(BAR1, PTE_array_addr, pte[])  → vram_storage_[PTE_array_addr..] 落页表
 SDMA H2D/D2H DMA 请求
   → translate_cb(iova, size, &phys) → GmmuTLM::translate()
     idx = iova >> 12
-    pte = *(framebuffer_storage_.data() + PT_BASE + idx * 8)   // 直读 backing
+    pte = *(vram_storage_.data() + PT_BASE + idx * 8)   // 直读 backing
     校验 valid
     pa = pte.paddr | (iova & 0xFFF)
     返回 phys
@@ -514,7 +518,7 @@ host mmio_write(BAR1, 0x10010000, wptr)        ← hardcoded doorbell offset (pe
           → DmaDescriptor 解析
             → translate_cb_(iova, size, &phys)
               → GmmuTLM::translate(iova, size, phys)  // v1.0 注入点 (同步翻译)
-            → memcpy(vram_backdoor_+vram_offset, host_backdoor_+phys, size)  // framebuffer_storage_ 上搬运 (functional-mode DMA)
+            → memcpy(vram_backdoor_+vram_offset, host_backdoor_+phys, size)  // vram_storage_ 上搬运 (functional-mode DMA)
             → fence → submit_fence() → process_fence_queue()
               → completion_ring_->push(entry)
                 → DGpuBoard::sdma_fence_complete()  (dgpu_board_shell.cc:864)
@@ -527,7 +531,7 @@ host mmio_write(BAR1, 0x10010000, wptr)        ← hardcoded doorbell offset (pe
 ### 6.2 SDMA 接线(详见 §3.4 bind_memory_backings)
 
 ```cpp
-sdma->set_vram_backdoor(framebuffer_storage_.data() + kSdmaVramOffset,
+sdma->set_vram_backdoor(vram_storage_.data() + kSdmaVramOffset,
                          framebuffer_size_ - kSdmaVramOffset);
 sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
     return gmmu_->translate(iova, size, phys);
@@ -539,7 +543,7 @@ sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
 | 项 | 来源 | v1.0 改动 |
 |----|------|----------|
 | `set_translate_cb` | 既有(ADR-DGPU-01 §2.1/§2.4) | 仅注入 GmmuTLM::translate(无 API 变化) |
-| `set_vram_backdoor` | 既有(SdmaEngineTLM §5.4) | 仅指向 framebuffer_storage_(无 API 变化) |
+| `set_vram_backdoor` | 既有(SdmaEngineTLM §5.4) | 仅指向 vram_storage_(无 API 变化) |
 | `submit_fence` / `set_completion_ring` | 既有 | 不变 |
 | DGpuBoard::sdma_fence_complete | 既有(dgpu_board_shell.cc:718-721) | 不变 |
 
@@ -549,18 +553,18 @@ sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
 
 ### 7.1 最小 SoC 配置示例
 
-> **与 `configs/dgpu_soc_minimal_v1.json` 对齐**(D-AXI v1.4 实施真相):
+> **与 `configs/dgpu_soc_minimal_v1.json` 对齐**(D-AXI v1.8 Phase 3 T4.1 实施真相, F12 MemoryTLM 移除):
 
 ```json
 {
   "name": "dgpu_soc_minimal_v1",
-  "description": "Minimal dGPU SoC v1.0 (per D-AXI v1.4 B11 + B13)",
+  "description": "Minimal dGPU SoC v1.0 (per D-AXI v1.8 B11 + F12 + N12)",
   "display_routing_enabled": false,
   "storage_routing_enabled": true,
   "gmmu_routing_enabled": true,
-  "memory_routing_enabled": false,
+  "memory_routing_enabled": true,
   "framebuffer_size_bytes": 16777216,
-  "_comment_framebuffer_size": "顶层 framebuffer_size_bytes (16MB) < bar_sizes[1] (256MB+64KB); BAR1 末 240MB+ 是 dead bytes (per §4.1 doorbell carve-out)",
+  "_comment_framebuffer_size": "顶层 framebuffer_size_bytes (16MB) = bar_sizes[1] (16MB 窗口); BAR2 = 8GB vram aperture (bar_sizes[2])",
   "modules": [
     {
       "name": "soc",
@@ -572,7 +576,7 @@ sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
           "params": {
             "config_size": 4096,
             "num_msix_vectors": 16,
-            "bar_sizes": [4096, 268435464],
+            "bar_sizes": [4096, 16777216, 8589934592],
             "bar0_registers": [
               { "offset": 0,  "name": "GMMU_PT_BASE_LO", "access": "rw" },
               { "offset": 4,  "name": "GMMU_PT_BASE_HI", "access": "rw" },
@@ -582,9 +586,14 @@ sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
           }
         },
         {
+          "name": "pcie_memory",
+          "type": "PcieMemoryDevice",
+          "params": { "capacity_gb": 8 }
+        },
+        {
           "name": "sdma",
           "type": "SdmaEngineTLM",
-          "params": { "max_inflight": 4, "vram_size_bytes": 16777216 }  // 与顶层 framebuffer_size_bytes 一致
+          "params": { "max_inflight": 4 }  // vram_size_bytes 由 board 注入 (B19)
         },
         {
           "name": "gmmu",
@@ -592,14 +601,13 @@ sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
           "params": { "page_size_bytes": 4096 }
         },
         {
-          "name": "memory",
-          "type": "MemoryTLM",
-          "params": { "capacity_gb": 1 }
-        },
-        {
           "name": "completion",
           "type": "CompletionRingTLM"
         }
+      ],
+      "connections": [
+        { "src": "sdma.2", "dst": "pcie_memory.0", "latency": 1 },
+        { "src": "gmmu.0", "dst": "pcie_memory.1", "latency": 1 }
       ]
     }
   ]
@@ -612,7 +620,8 @@ sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
 |------|------|------|
 | `display_routing_enabled` | 顶层 | D1 显示路由开关,v1.0 设为 false |
 | `framebuffer_size_bytes` | 顶层 | 可选 override,默认从 `bar_sizes[1]` 派生 |
-| `bar_sizes` | pcie_ep.params | `[BAR0字节数, BAR1字节数]`,BAR1 ≥ 256MB+64KB+8 (per §4.1 doorbell hardcoded) |
+| `bar_sizes` | pcie_ep.params | `[BAR0=4096, BAR1=16777216, BAR2=8589934592]` (4KB MMIO + 16MB 窗口 + 8GB vram aperture) |
+| `memory_routing_enabled` | 顶层 | BAR2 fast-path 路由开关 (Phase 3 T4.1) |
 | `bar0_registers` | pcie_ep.params | BAR0 MMIO 寄存器表(offset/name/access) |
 | `capacity_gb` | memory.params | MemoryTLM 容量(MemoryTLM::on_config_loaded 读) |
 | `vram_size_bytes` | sdma.params | SDMA VRAM 窗口大小(必须 ≥ framebuffer_size_) |
@@ -636,20 +645,20 @@ const bool _reg_gmmutlm = (REGISTER_MODULE(GmmuTLM), true);
 
 ### Inv-1: 单一 backing 真源
 
-framebuffer_storage_ 是唯一存储真源。device(ChStream)、host backdoor、GMMU 页表读、SDMA VRAM 搬运都直读直写同一份 `std::vector<uint8_t>`。无 cache、无 flush、无 lock(单线程访问)。
+vram_storage_ 是唯一存储真源。device(ChStream)、host backdoor、GMMU 页表读、SDMA VRAM 搬运都直读直写同一份 `std::vector<uint8_t>`。无 cache、无 flush、无 lock(单线程访问)。
 
 ### Inv-2: 指针稳定性
 
-`framebuffer_storage_.resize()` 必须在所有 `set_backing_*` 调用之前。resize 后 `data()` 失效;因此:
+`vram_storage_.resize()` 必须在所有 `set_backing_*` 调用之前。resize 后 `data()` 失效;因此:
 - init 顺序: (a) resize → (b) bind_memory_backings() → (c) start sim_thread_
 
 ### Inv-3: BAR1 路由优先级
 
 `mmio_write(BAR1, off)`:
 - `off == kBar1DoorbellOffset` (8 字节窗口) → sdma_engine_
-- 否则 → PcieStorage route → framebuffer_storage_
+- 否则 → PcieStorage route → vram_storage_
 
-`off > kBar1DoorbellOffset + 8` 范围在 framebuffer_storage_ 中为 dead bytes(可接受,设计明确)。
+`off > kBar1DoorbellOffset + 8` 范围在 vram_storage_ 中为 dead bytes(可接受,设计明确)。
 
 ### Inv-4: GMMU PT_BASE 原子性
 
@@ -673,14 +682,14 @@ GmmuTLM::translate 必须严格匹配此签名(`uint32_t size`, `uint64_t& phys`
 
 | 阶段 | 任务 | 估时 |
 |------|------|------|
-| **A1** | `MemoryTLM::set_backing_store` + `on_config_loaded` + 零时 tick | 1d |
-| **A2** | `DGpuBoard::framebuffer_storage_` + `backdoor_read/write` 走 framebuffer_storage_ 路径(替代 vram_segments_ 主路径) | 1d |
+| **A1** | `MemoryTLM::set_backing_view` + `on_config_loaded` + 零时 tick | 1d |
+| **A2** | `DGpuBoard::vram_storage_` + `backdoor_read/write` 走 vram_storage_ 路径(替代 vram_segments_ 主路径) | 1d |
 | **A3** | `GmmuTLM` 骨架 + 一级页表 translate() + 模块注册 | 1d |
-| **B1** | DGpuBoard init 注入 framebuffer_storage_ → MemoryTLM + SDMA + GmmuTLM | 1d |
+| **B1** | DGpuBoard init 注入 vram_storage_ → MemoryTLM + SDMA + GmmuTLM | 1d |
 | **B2** | BAR1 PcieStorage 路由(ABI 路径) + 既有 doorbell 路径保留 | 0.5d |
 | **B3** | BAR0 GMMU 寄存器写 → GmmuTLM::mmio_write 转发 | 0.5d |
 | **C1** | 单元测试: MemoryTLM backdoor 隔离、GMMU 页表遍历、SDMA translate_cb 注入 | 1d |
-| **C2** | E2E 测试: host 写 PT_BASE → SDMA H2D → framebuffer_storage_ 数据校验 + BAR1 直读直写 | 1d |
+| **C2** | E2E 测试: host 写 PT_BASE → SDMA H2D → vram_storage_ 数据校验 + BAR1 直读直写 | 1d |
 | **C3** | (可选) TLP/AXI 路径 PcieStorage 路由(v1.1 跟进项) | 0d(本期不实施) |
 
 **总计**: 7 人日 ≈ 1.5 周(单 dev)/3 周(含评审与 buffer)
@@ -695,8 +704,8 @@ GmmuTLM::translate 必须严格匹配此签名(`uint32_t size`, `uint64_t& phys`
 |------|---------|
 | `MemoryTLM` | (1) backing=nullptr 时返 OUT_OF_RANGE (2) tick 写入后 backdoor 读出相同字节 (3) tick 读 → resp.data 等于 backing 内容 (4) stats_requests_read_/write_ 计数正确 |
 | `GmmuTLM` | (1) disabled → -EIO (2) pt_base=0 → -EIO (3) valid PTE → 正确 paddr (4) invalid PTE → -EIO (5) PTE 越界 → -EIO (6) set_pt_base_lo/hi 正确组装 |
-| `DGpuBoard::backdoor` | (1) 直读 framebuffer_storage_ (2) 直写 framebuffer_storage_ (3) 越界返 -EINVAL |
-| BAR1 路由 | (1) mmio_write 非 doorbell → framebuffer_storage_ 字节相同 (2) mmio_write doorbell → sdma ring consume (3) mmio_read 非 doorbell → framebuffer_storage_ 字节 |
+| `DGpuBoard::backdoor` | (1) 直读 vram_storage_ (2) 直写 vram_storage_ (3) 越界返 -EINVAL |
+| BAR1 路由 | (1) mmio_write 非 doorbell → vram_storage_ 字节相同 (2) mmio_write doorbell → sdma ring consume (3) mmio_read 非 doorbell → vram_storage_ 字节 |
 
 ### 10.2 E2E 测试
 
@@ -715,7 +724,7 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
     sdma->set_host_backdoor(host_buf.data(), host_buf.size());  // 功能模式 DMA backdoor
     
     // 3. 写入 PT_BASE + CTRL (host 侧页表准备;经 BAR0 → gmmu_routing_enabled_ 路由)
-    uint64_t pt_base = 0x10000;  // page table 放在 framebuffer_storage_ 偏移 0x10000
+    uint64_t pt_base = 0x10000;  // page table 放在 vram_storage_ 偏移 0x10000
     uint32_t pt_base_lo = static_cast<uint32_t>(pt_base & 0xFFFFFFFF);
     uint32_t pt_base_hi = static_cast<uint32_t>(pt_base >> 32);
     REQUIRE(board.mmio_write(0, 0,   &pt_base_lo, 4) == 0);  // LO (端序独立)
@@ -723,7 +732,7 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
     uint32_t ctrl = 1;
     REQUIRE(board.mmio_write(0, 8,   &ctrl, 4) == 0);  // enable
     
-    // 4. 写 PTE 到 framebuffer_storage_ 的 pt_base 位置 (host 经 BAR1 fast-path → framebuffer_storage_)
+    // 4. 写 PTE 到 vram_storage_ 的 pt_base 位置 (host 经 BAR1 fast-path → vram_storage_)
     struct { uint64_t pte; } __attribute__((packed)) pte = { 1ULL | (0x20000ULL << 12) };  // valid + paddr=0x20000
     REQUIRE(board.mmio_write(1, pt_base, &pte, sizeof(pte)) == 0);  // 第 0 页 (iova=0)
     
@@ -742,7 +751,7 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
     REQUIRE(board.mmio_read(1, 0, readback.data(), 4096) == 0);
     REQUIRE(readback == host_buf);
     
-    // 8. 验证: backdoor 读 framebuffer_storage_ 也等于 host_buf
+    // 8. 验证: backdoor 读 vram_storage_ 也等于 host_buf
     std::vector<uint8_t> backdoor_buf(4096);
     REQUIRE(board.backdoor_read(0, backdoor_buf.data(), 4096) == 0);
     REQUIRE(backdoor_buf == host_buf);
@@ -768,7 +777,7 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
 |----|------|
 | 23 ABI 签名 | 0 修改(冻结) |
 | 23 ABI 语义 | 0 修改(BAR0 寄存器新增为扩展语义,不破坏既有 PcieBarRouter 用法) |
-| DGpuBoard v2.0.2 API | 0 修改(仅新增 framebuffer_storage_ + bind_memory_backings + backdoor_*) |
+| DGpuBoard v2.0.2 API | 0 修改(仅新增 vram_storage_ + bind_memory_backings + backdoor_*) |
 | SdmaEngineTLM API | 0 修改(仅 set_translate_cb/set_vram_backdoor 注入) |
 | MemoryTLM 公共 API | 0 修改(REGISTER_CHSTREAM 不变,仅扩展实现) |
 | JSON schema | 扩展(顶层 framebuffer_size_bytes, modules 内新增 GmmuTLM type) |
@@ -780,14 +789,14 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
 
 ### 12.1 完成定义(DoD)
 
-- [ ] `MemoryTLM::set_backing_store()` + `on_config_loaded()` + 零时 tick 实现
-- [ ] `DGpuBoard::framebuffer_storage_` + `backdoor_read/write` 走 framebuffer_storage_ 路径
+- [ ] `MemoryTLM::set_backing_view()` + `on_config_loaded()` + 零时 tick 实现
+- [ ] `DGpuBoard::vram_storage_` + `backdoor_read/write` 走 vram_storage_ 路径
 - [ ] `GmmuTLM` 完整实现 + `REGISTER_MODULE` 注册
 - [ ] BAR1 PcieStorage 路由 + doorbell 8 字节窗口保留
 - [ ] BAR0 GMMU 寄存器写 → GmmuTLM 转发(PT_BASE_LO/HI + CTRL)
-- [ ] SDMA `set_translate_cb` + `set_vram_backdoor` 接线到 framebuffer_storage_
+- [ ] SDMA `set_translate_cb` + `set_vram_backdoor` 接线到 vram_storage_
 - [ ] 单元测试 100% PASS(MemoryTLM + GmmuTLM + DGpuBoard backdoor + BAR1 路由)
-- [ ] E2E 测试 100% PASS(host → PT_BASE → SDMA → framebuffer_storage_ 回路)
+- [ ] E2E 测试 100% PASS(host → PT_BASE → SDMA → vram_storage_ 回路)
 - [ ] 既有 44498 assertions 100% PASS(0 regression)
 - [ ] 23 ABI 字节级兼容(`git diff HEAD -- include/abi/cpptlm_emulator.h` 仅含 24 号 ABI 末尾追加块)
 
@@ -798,7 +807,7 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
 | BAR1 直读直写延迟 | < 1us(零时 memcpy) |
 | SDMA H2D 4KB 翻译开销 | < 5us(GMMU 一级页表 1 次 PTE 读) |
 | host backdoor_read 吞吐 | > 1 GB/s(vector 直接 memcpy) |
-| framebuffer_storage_ 内存开销 | 默认 1GB(可配置,v2.1 评估 mmap 大页优化) |
+| vram_storage_ 内存开销 | 默认 1GB(可配置,v2.1 评估 mmap 大页优化) |
 
 ---
 
@@ -807,12 +816,12 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
 | 风险 | 概率 | 影响 | 缓解 |
 |------|------|------|------|
 | **R1**: PT_BASE LO/HI 写 race(中间态被 translate) | 低 | 偶发翻译错误 | 接受(v1.0);v2.1 加写锁 |
-| **R2**: 1GB framebuffer_storage_ 内存占用大 | 低 | 测试慢 | 默认 256MB,v1.1 评估 mmap |
+| **R2**: 1GB vram_storage_ 内存占用大 | 低 | 测试慢 | 默认 256MB,v1.1 评估 mmap |
 | **R3**: doorbell 页 dead bytes 浪费 8 字节 | 低 | 无 | 接受(对齐 8 字节,小) |
-| **R4**: TLP/AXI 路径 BAR1 写入未钩到 framebuffer_storage_ | 中 | E2E 测试覆盖不全 | v1.0 仅 ABI 路径,v1.1 补 |
+| **R4**: TLP/AXI 路径 BAR1 写入未钩到 vram_storage_ | 中 | E2E 测试覆盖不全 | v1.0 仅 ABI 路径,v1.1 补 |
 | **R5**: GMMU 单线程访问,加多线程需补锁 | 低 | race | v1.0 单线程,v2.1 加 mutex |
-| **R6**: framebuffer_storage_.resize() 后续指针失效 | 中 | 静默 UAF | Inv-2 强制 resize→set_backing 顺序 |
-| **R7**: 完成性 vram_segments_ → framebuffer_storage_ 迁移路径 | 低 | 数据丢失 | 保留 vram_segments_ 作 fallback |
+| **R6**: vram_storage_.resize() 后续指针失效 | 中 | 静默 UAF | Inv-2 强制 resize→set_backing 顺序 |
+| **R7**: 完成性 vram_segments_ → vram_storage_ 迁移路径 | 低 | 数据丢失 | 保留 vram_segments_ 作 fallback |
 
 ---
 
@@ -823,10 +832,11 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
 | **GMMU 多级页表 + TLB** | Oracle 一轮报告 | 当前仅一级,详见 `openspec/changes/2026-09-19-cpptlm-dgpu-gmmu-mvp/` |
 | **PcieStorage TLP/AXI 路径钩** | Oracle 二轮 §1c | v1.0 仅 ABI 路径 |
 | **BAR1 routing doorbell carve-out 完整化** | Oracle 二轮 §1c | 当前 8 字节 dead bytes,v2.1 优化 |
-| **D2 PcieMemoryDevice 提案** | OpenSpec | 替代/互补 framebuffer_storage_ 路线 |
+| **D2 PcieMemoryDevice 提案** | OpenSpec | 替代/互补 vram_storage_ 路线 |
 | **CP 模块** | 用户要求 | 本期不做 |
-| **framebuffer_storage_ mmap 大页** | R2 | 1GB 内存优化 |
+| **vram_storage_ mmap 大页** | R2 | 1GB 内存优化 |
 | **FrameBuffer → vram_segments_ 数据迁移** | R7 | 兼容性收尾 |
+| **Timing-mode SoC** | Phase 4 cpptlm-dgpu-soc-timing-mvp | ✅ **已实施 (T1-T8 完成 2027-02-11)**: 见 [timing-mode.md](./timing-mode.md) (v0.5 active, 与本功能模式并列) |
 
 ---
 
@@ -842,7 +852,7 @@ TEST_CASE("minimal-dgpu-soc: host write PT_BASE + SDMA H2D + BAR1 backdoor readb
   - `https://github.com/gem5/gem5/blob/stable/src/mem/simple_mem.{hh,cc}`
 - **GMMU MVP Proposal**: `openspec/changes/2026-09-19-cpptlm-dgpu-gmmu-mvp/`(完整版多级页表 + TLB 路线)
 - **D2 PcieMemoryDevice Proposal**: `openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp/`
-- **D1 PcieDisplayDevice**: `include/tlm/gpu/pcie_display_device.{hh,cc}`(framebuffer_storage_ 模板)
+- **D1 PcieDisplayDevice**: `include/tlm/gpu/pcie_display_device.{hh,cc}`(vram_storage_ 模板)
 - **SdmaEngineTLM**: `include/tlm/gpu/sdma_engine_tlm.{hh,cc}`(translate_cb + vram_backdoor API)
 - **MemoryTLM 现有实现**: `include/tlm/memory_tlm.hh`(144 行,纯头文件)
 - **DGpuBoard v2.0.2**:`include/tlm/gpu/dgpu_board_shell.{hh,cc}`

@@ -247,4 +247,18 @@ TEST_CASE("ABI signature freeze", "[abi][minimal_dgpu_soc]") {
 
 ## Status Update
 
-_(本节将在 D-AXI v1.4 实施通过 Oracle 评审后追加，记录签发时间与实施 commit hashes)_
+### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
+
+**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+
+**ABI 冻结不变性验证**:
+
+| Invariant | 状态 | 验证 |
+|-----------|------|------|
+| 23 ABI C extern "C" 头冻结 | ✅ | `include/abi/cpptlm_emulator.h` 0 diff (`git diff HEAD --` 空) |
+| 冻结面零 diff (pcie_endpoint_tlm.h / pcie_display_device.hh / pcie_bundles_tlm.hh) | ✅ | Phase 3 未触碰 |
+| 0 个新 ABI 函数 | ✅ | 新增能力全走 DGpuBoard 私有方法路径 (BAR2 fast-path / pcie_memory 注入) |
+| `[[deprecated]]` 属性可加 (PcieEndpointTLM) | ✅ | 不违反冻结 |
+
+**验证结果**: `[abi][minimal_dgpu_soc]` 10 cases / 28 assertions + ctest 76/76 PASS, 0 regression。
+

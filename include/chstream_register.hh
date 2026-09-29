@@ -28,10 +28,13 @@
 #include "tlm/gpu/command_processor_mvp.hh" // CommandProcessorTLM
 #include "tlm/gpu/completion_ring_mvp.hh"
 #include "tlm/gpu/pcie_endpoint_tlm.h"
+#include "tlm/gpu/pcie_memory_device.hh"
+#include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh" // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
+#include "tlm/vram_controller_tlm.hh" // Phase 4 T4: VramControllerTLM (继承 MemoryTLM)
 
 // NOTE: Legacy modules (REGISTER_OBJECT) are in modules.hh
 // Usage: include modules.hh first, then chstream_register.hh for full registration
@@ -46,6 +49,9 @@
 #define REGISTER_CHSTREAM                                                                           \
     ModuleFactory::registerObject<CacheTLM>("CacheTLM");                                            \
     ModuleFactory::registerObject<MemoryTLM>("MemoryTLM");                                          \
+    /* Phase 4 T4 (per H1 + M10): VramControllerTLM 继承 MemoryTLM (ChStreamModuleBase 系),        \
+       走 registerObject (非 REGISTER_MODULE: is_base_of<SimModule> 静态断言失败) */                  \
+    ModuleFactory::registerObject<VramControllerTLM>("VramControllerTLM");                          \
     ModuleFactory::registerObject<CrossbarTLM>("CrossbarTLM");                                      \
     ModuleFactory::registerObject<cpptlm::tlm::CoherentXBarTLM>("CoherentXBarTLM");                 \
     ModuleFactory::registerObject<CPUTLM>("CPUTLM");                                                \
@@ -88,6 +94,9 @@
         .registerAdapter<MemoryTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(             \
             "MemoryTLM");                                                                           \
     ChStreamAdapterFactory::get()                                                                   \
+        .registerAdapter<VramControllerTLM, bundles::CacheReqBundle, bundles::CacheRespBundle>(     \
+            "VramControllerTLM");                                                                    \
+    ChStreamAdapterFactory::get()                                                                   \
         .registerMultiPortAdapter<CrossbarTLM, bundles::CacheReqBundle, bundles::CacheRespBundle,   \
                                   4>("CrossbarTLM");                                                \
     ChStreamAdapterFactory::get()                                                                   \
@@ -124,6 +133,14 @@
     ChStreamAdapterFactory::get()                                                                   \
         .registerMultiPortAdapter<tlm::gpu::PcieEndpointTLM, bundles::PcieTlpBundle,                \
                                   bundles::PcieTlpBundle, 4>("PcieEndpointTLM");                    \
+    ModuleFactory::registerObject<tlm::gpu::PcieMemoryDevice>("PcieMemoryDevice");                   \
+    ChStreamAdapterFactory::get()                                                                   \
+        .registerMultiPortAdapter<tlm::gpu::PcieMemoryDevice, bundles::PcieTlpBundle,               \
+                                  bundles::PcieTlpBundle, 2>("PcieMemoryDevice");                   \
+    ModuleFactory::registerObject<tlm::gpu::GmmuTLM>("GmmuTLM");                                     \
+    ChStreamAdapterFactory::get()                                                                   \
+        .registerAdapter<tlm::gpu::GmmuTLM, bundles::PcieTlpBundle, bundles::PcieTlpBundle>(        \
+            "GmmuTLM");                                                                             \
     ChStreamAdapterFactory::get()                                                                   \
         .registerMultiPortAdapter<tlm::pcie::PcieLinkPhyMuxTLM, bundles::PcieTlpBundle,             \
                                   bundles::PcieTlpBundle, 17>("PcieLinkPhyMuxTLM");                  \

@@ -9,7 +9,7 @@
 //
 // 关键约束 (per spec + design.md):
 //   - P0.5-landing: load_soc_config 已消费 JSON 顶层 framebuffer_size_bytes 并从 bar_sizes[1]
-//     派生 → attach_framebuffer_for_testing 改为可选 override (test 仍保留作显式控制验证).
+//     派生 → attach_vram_for_testing 改为可选 override (test 仍保留作显式控制验证).
 //   - 初始化顺序 Inv-2: load_soc_config → [attach] → init (attach 可选, 由 load_soc_config 派生)
 //   - PTE 编码 (paddr & ~0xFFF) | 1 (禁 <<12 偏移错位)
 //   - ring_write_entry 提交 H2D 描述符 + doorbell wptr → GMMU translate → vram backdoor memcpy
@@ -149,7 +149,7 @@ TEST_CASE("minimal dgpu soc E2E: 全链路 H2D + 双读回一致", "[minimal_dgp
     REQUIRE_FALSE(board.display_routing_enabled());
 
     std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
-    board.attach_framebuffer_for_testing(framebuffer.data(), framebuffer.size());
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
     REQUIRE(board.init());
 
     // SOC-internal SDMA (bind_memory_backings 在 init() 中注入)
@@ -199,7 +199,7 @@ TEST_CASE("minimal dgpu soc E2E: fence 完成触发 MSI-X vector 0", "[minimal_d
 
     REQUIRE(board.load_soc_config(load_minimal_soc_config()));
     std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
-    board.attach_framebuffer_for_testing(framebuffer.data(), framebuffer.size());
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
     REQUIRE(board.init());
 
     SdmaEngineTLM* sdma = board.sdma_engine();

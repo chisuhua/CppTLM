@@ -1,16 +1,11 @@
-# DELTA SPEC: minimal-dgpu-soc-architecture
-
-> **来源**: docs/designs/dgpu-soc/architecture.md (Oracle 5 步解锁链修订后) + ADR-DGPU-10
+# minimal-dgpu-soc-architecture Specification
 
 ## Purpose
-
-规范 Minimal DGpu SoC v1.0 架构视图 + Backing 命名约定的代码实施边界。
-
+TBD - created by archiving change cpptlm-minimal-dgpu-soc-v1-architecture. Update Purpose after archive.
 ## Requirements
-
 ### Requirement: 单一 VRAM backing 真源(per ADR-DGPU-05 v1.4 B7)
 
-`DGpuBoard` 必须是 SoC 全部访存的唯一 backing owner,其他组件通过 raw pointer 注入访问,**不持有分配权**。
+`DGpuBoard` SHALL be SoC 全部访存的唯一 backing owner,其他组件通过 raw pointer 注入访问,**不持有分配权**。
 
 #### Scenario: backing 注入 5 消费者共享
 - **GIVEN** `DGpuBoard::vram_storage_` 已分配 (8GB default-init, Linux lazy commit)
@@ -21,7 +16,7 @@
 
 ### Requirement: Backing 字段命名约定(per ADR-DGPU-10)
 
-三类后缀语义严格分离,违反即不通过代码审查。
+三类后缀语义严格分离。模块 SHALL NOT 违反命名约定,否则不通过代码审查。
 
 #### Scenario: owner 后缀唯一性
 - **GIVEN** SoC 内任意模块声明 backing 字段
@@ -46,7 +41,7 @@
 
 ### Requirement: 仿真模式声明(per §1.4)
 
-Minimal SoC v1.0 是 **Functional Mode (LT, zero-delay)**,5 条简化是设计意图而非技术债。
+Minimal SoC v1.0 SHALL be **Functional Mode (LT, zero-delay)**,5 条简化是设计意图而非技术债。
 
 #### Scenario: 仿真模式识别
 - **WHEN** 新评审者阅读 architecture.md §1.4
@@ -56,7 +51,7 @@ Minimal SoC v1.0 是 **Functional Mode (LT, zero-delay)**,5 条简化是设计�
 
 ### Requirement: BAR 布局与代码真相对齐(per §4.1)
 
-`kBar1DoorbellOffset = 0x10010000ULL` 是 hardcoded 常量(7 阶段 PCIe EP 共识),`bar_sizes[1]` 必须 ≥ 256MB+64KB。
+`kBar1DoorbellOffset = 0x10010000ULL` SHALL be hardcoded 常量(7 阶段 PCIe EP 共识),`bar_sizes[1]` 必须 ≥ 256MB+64KB。
 
 #### Scenario: doorbell 配置命中
 - **GIVEN** `pcie_ep.params.bar_sizes[1] = 268435464` (256MB+64KB+8 字节)
@@ -72,7 +67,7 @@ Minimal SoC v1.0 是 **Functional Mode (LT, zero-delay)**,5 条简化是设计�
 
 ### Requirement: GMMU 是 Functional Translation Service(per §5)
 
-GmmuTLM 在 v1.0 是同步翻译函数,不是 SoC 模块(无 ChStream 端口)。
+GmmuTLM 在 v1.0 SHALL be 同步翻译函数,不是 SoC 模块(无 ChStream 端口)。
 
 #### Scenario: 翻译 API 调用
 - **GIVEN** `GmmuTLM::set_pt_base_lo/hi/enabled` 已配置,`set_mem_view` 已注入 backing
@@ -83,7 +78,7 @@ GmmuTLM 在 v1.0 是同步翻译函数,不是 SoC 模块(无 ChStream 端口)。
 
 ### Requirement: 5 消费者路径数据流(per §6.1)
 
-SDMA H2D 完整路径走 functional-mode memcpy,**不**经 MemoryTLM::tick()。
+SDMA H2D 完整路径 SHALL 走 functional-mode memcpy,**不**经 MemoryTLM::tick()。
 
 #### Scenario: H2D 数据搬运
 - **GIVEN** host_iova = 0, vram_offset = 0, size = 4096
@@ -95,7 +90,7 @@ SDMA H2D 完整路径走 functional-mode memcpy,**不**经 MemoryTLM::tick()。
 
 ### Requirement: Architecture.md 关联文档(per §0 同步规则)
 
-架构视图必须引用关联 ADR + OpenSpec changes,逆向同步不强制。
+架构视图 SHALL 引用关联 ADR + OpenSpec changes,逆向同步不强制。
 
 #### Scenario: 文档同步审计
 - **GIVEN** architecture.md 顶部 ## 关联 OpenSpec changes 段
@@ -105,7 +100,7 @@ SDMA H2D 完整路径走 functional-mode memcpy,**不**经 MemoryTLM::tick()。
 
 ### Requirement: doorbell 配置 vs 代码 hardcoded 不一致(per §13 R4)
 
-config 错误(`bar_sizes[1] < 256MB+64KB`)与代码 hardcoded (`kBar1DoorbellOffset = 0x10010000`) 的不一致是**已知推迟项**,需在 §13 风险表中显式记录。
+config 错误(`bar_sizes[1] < 256MB+64KB`)与代码 hardcoded (`kBar1DoorbellOffset = 0x10010000`) 的不一致 SHALL be **已知推迟项**,需在 §13 风险表中显式记录。
 
 #### Scenario: 风险追踪
 - **GIVEN** §13 风险表行 "TLP/AXI 路径 BAR1 写入未钩到 framebuffer_"
@@ -113,6 +108,3 @@ config 错误(`bar_sizes[1] < 256MB+64KB`)与代码 hardcoded (`kBar1DoorbellOff
 - **THEN** 必须显式记录"v1.0 仅 ABI 路径,v1.1 补"
 - **AND** 有具体可执行的解决路径描述
 
-## Status
-
-_(本节将在 change 实施 + Oracle 评审后追加)_

@@ -314,4 +314,45 @@ per D-AXI tasks.md **B7-B15 + B19** (v1.4 架构根因 + v1.5 隐藏缺陷):
 
 **审查范围**: Oracle 5 步解锁链实施日期 2027-02-09;关联 commit 待签发后追加。
 
-_(本节将在 D-AXI v1.4 实施通过 Oracle 评审后追加，记录签发时间与实施 commit hashes)_
+### 2027-09-29 — ADR-DGPU-10 §4 Migration 8 步实施完成 (Phase 2)
+
+**实施 change**: `openspec/changes/cpptlm-minimal-dgpu-soc-v1-architecture` (T0-T6 全部完成)
+
+**§3 不变性验证**:
+
+| Invariant | 状态 | 验证 |
+|-----------|------|------|
+| Inv-3: PcieMemoryDevice 无 `memory_backing_` 字段 | ✅ | 已删除; 使用 `backing_view_` (uint8_t*) 注入 |
+| Inv-5: bound = injected backing_size_ | ✅ | memory_read/write 使用 `backing_view_size_` 而非 `kDefaultMemSize` |
+
+**5 消费者共享 vram_storage_ 验证** (全部指向同一地址):
+- DGpuBoard::backdoor_read/write — `vram_storage_.get()` ✅
+- BAR1 fast-path (mmio_read/write(1,...)) — `framebuffer_ptr_` (= vram_storage_.get()) ✅
+- BAR2 via PcieMemoryDevice — `set_backing_view(vram_storage_.get(), ...)` ✅
+- MemoryTLM backing — `set_backing_view(vram_storage_.get(), ...)` ✅
+- SDMA/GMMU — `set_vram_backdoor` / `set_mem_view(vram_storage_.get(), ...)` ✅
+
+**字段命名对齐** (per ADR-DGPU-10):
+- `framebuffer_storage_` → `vram_storage_` (owner, unique_ptr)
+- `MemoryTLM::backing_ptr_` → `backing_view_` (injected-ChStream)
+- `PcieMemoryDevice::memory_backing_` → 删除; `backing_view_` (injected-ChStream)
+- `GmmuTLM::backing_` → `mem_view_` (injected-functional)
+
+**验证结果**: ctest 76/76 PASS, 0 regression; grep audit 旧名 0 匹配 (除 deprecation wrapper)
+
+### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
+
+**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+
+**§3 不变性验证 (Phase 3 增量)**:
+
+| Invariant | 状态 | 验证 |
+|-----------|------|------|
+| N12 条件注入: soc 有 pcie_memory → 注入 PcieMemoryDevice; 否则 legacy MemoryTLM | ✅ | `bind_memory_backings()` pcie_memory 分支 + legacy fallback 保留 |
+| EP `set_memory_device` 注入 (BAR2 fast-path 依赖 has_memory_device) | ✅ | `pcie_ep()->set_memory_device(pcie_mem)` 在 pcie_memory 分支内 |
+| B20: `set_translate_cb` + `set_sdma_engine` 无条件注入 (不在 pcie_memory 分支内) | ✅ | 主函数顶部统一注入 |
+| B19: SDMA `vram_size_bytes` 由 board 注入 (JSON 删除 sdma.params.vram_size_bytes) | ✅ | `configs/dgpu_soc_minimal_v1.json` 无该字段 |
+| BAR2 fast-path (mmio_read/write(2,...)) → `ep->memory_device().memory_read/write` | ✅ | `memory_routing_enabled_` 门控 + `has_memory_device()` 检查 |
+
+**验证结果**: `[driver_visible]` 2 cases / 29 assertions + `[pcie-memory]` 24 cases + `[minimal_dgpu_soc]` 12 cases + ctest 76/76 PASS, 0 regression。
+

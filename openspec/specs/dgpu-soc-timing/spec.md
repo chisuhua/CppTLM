@@ -1,17 +1,8 @@
-# DELTA SPEC: dgpu-soc-timing
-
-> **来源**: [`docs/designs/dgpu-soc/timing-mode.md`](../../../docs/designs/dgpu-soc/timing-mode.md) (第 1 层架构视图, v0.1) + [`proposal.md`](../../cpptlm-dgpu-soc-timing-mvp/proposal.md) + [`design.md`](../../cpptlm-dgpu-soc-timing-mvp/design.md)
-> **配套 ADR**: [ADR-DGPU-11-timing-mode-soc-scope.md](../../../docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md) (✅ 已签发 2027-02-09, Oracle 八轮复评 PASS, v0.2 终稿)
-> **关联 spec**: `minimal-dgpu-soc-architecture` (functional-mode, 已 archive)
+# dgpu-soc-timing Specification
 
 ## Purpose
-
-规范 **Timing-Mode (AT) DGpu SoC MVP** 的范围、行为与不变性。本 spec 与 functional-mode minimal_v1 spec **并列共存**,通过 JSON `simulation_mode` 字段切换。**不**修改 functional-mode spec 任何要求。
-
----
-
-## ADDED Requirements
-
+TBD - created by archiving change cpptlm-dgpu-soc-timing-mvp. Update Purpose after archive.
+## Requirements
 ### Requirement: 仿真模式切换 (per §1.4 仿真模式声明)
 
 DGpuBoard SHALL 通过 JSON 顶层 `simulation_mode` 字段在 functional-mode 与 timing-mode 间切换,默认 functional-mode,**不**破坏既有 functional-mode 行为。
@@ -557,14 +548,3 @@ timing-mode SHALL 提供 ≥ 30 unit cases + ≥ 5 E2E cases,新增 `[dgpu_soc_t
 
 ---
 
-## Acceptance (DoD)
-
-实施完成 SHALL 通过以下验证:
-
-- [ ] **功能性**: T1-T5 全部完成,`./build/bin/cpptlm_tests "[dgpu_soc_timing]"` ≥ 30 unit cases PASS
-- [ ] **E2E**: T7 完成,≥ 5 E2E cases PASS (H2D/D2H/TLB hit rate/concurrent/Inv)
-- [ ] **零回归**: minimal_v1 functional-mode 66951 assertions (per AGENTS.md baseline; 含 [minimal_dgpu_soc] 41 + [pcie-memory] 24 + [abi][minimal_dgpu_soc] 28 + D2 memory 67 + Phase 1-8 全链路) 全绿,无任何 `[minimal_dgpu_soc]` / `[pcie-memory]` / `[abi][minimal_dgpu_soc]` regression
-- [ ] **23 ABI**: `git diff HEAD -- include/abi/cpptlm_emulator.h` 仅有 deprecation marker,**无** signature 改动
-- [x] ✅ **ADR-DGPU-11-timing-mode-soc-scope.md**: 已签发 (2027-02-09, Oracle 八轮复评 PASS, v0.2 终稿)
-- [ ] **文档同步**: `docs/designs/dgpu-soc/timing-mode.md` + `docs/designs/dgpu-soc/README.md` + `docs/designs/README.md` + `AGENTS.md` 状态看板 全部同步
-- [ ] **OpenSpec validate**: `openspec validate cpptlm-dgpu-soc-timing-mvp --strict` PASS

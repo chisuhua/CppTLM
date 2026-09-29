@@ -1,10 +1,10 @@
 {
-  "name": "dgpu_soc_minimal_v1",
-  "description": "Minimal dGPU SoC v1.0 test config (per openspec/changes/cpptlm-minimal-dgpu-soc-v1 B1.3). 16MB framebuffer for test, storage/gmmu/memory routing flags enabled, PcieMemoryDevice BAR2 fast-path (per D-AXI v1.8 T4).",
-  "display_routing_enabled": false,
+  "name": "dgpu_soc_timing_v1",
+  "description": "Timing-mode dGPU SoC v0.5 test config (per openspec/changes/cpptlm-dgpu-soc-timing-mvp design.md §7). 6 modules + 0 new connections (沿用 minimal_v1 functional 拓扑, per H2). VramControllerTLM 替代 MemoryTLM (H2 互斥), GMMU 不在 Crossbar 数据路径 (per M9).",
+  "simulation_mode": "timing",
+  "memory_routing_enabled": true,
   "storage_routing_enabled": true,
   "gmmu_routing_enabled": true,
-  "memory_routing_enabled": true,
   "framebuffer_size_bytes": 16777216,
   "modules": [
     {
@@ -32,6 +32,19 @@
           "params": { "capacity_gb": 8 }
         },
         {
+          "name": "vram_ctrl",
+          "type": "VramControllerTLM",
+          "params": {
+            "row_hit_cycles": 30,
+            "row_miss_cycles": 80,
+            "bandwidth_gbps": 32,
+            "read_latency_hit_cycles": 30,
+            "read_latency_miss_cycles": 80,
+            "write_latency_cycles": 120,
+            "use_zero_delay_for_test": false
+          }
+        },
+        {
           "name": "sdma",
           "type": "SdmaEngineTLM",
           "params": { "max_inflight": 4 }
@@ -39,7 +52,7 @@
         {
           "name": "gmmu",
           "type": "GmmuTLM",
-          "params": { "page_size_bytes": 4096 }
+          "params": { "page_size_bytes": 4096, "tlb_miss_latency_cycles": 50, "tlb_size": 32 }
         },
         {
           "name": "completion",

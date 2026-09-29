@@ -294,4 +294,18 @@ TEST_CASE("driver compiled against minimal_v1 works on full GPU", "[driver-compa
 
 ## Status Update
 
-_(本节将在 D-AXI v1.4 实施通过 Oracle 评审后追加，记录签发时间与实施 commit hashes)_
+### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
+
+**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+
+**D3-D5 演进 seam 不变性验证**:
+
+| Seam | 状态 | 验证 |
+|------|------|------|
+| `handle_slave_port ↔ backing_view_` 之间可插入 VramControllerTLM/MemoryClusterTLM | ✅ | PcieMemoryDevice `backing_view_` (uint8_t*) 注入式, 接口零变更 |
+| `AxiMemBundle` 定义保留供 D3+ VramController chip-internal 使用 | ✅ | `bundles/axi_mem_bundles_tlm.hh` 存在, minimal_v1 不实例化 |
+| SDMA `mem_in/mem_out` wire-format 升级路径 (PcieTlpBundle → AxiMemBundle) | ✅ | 内部转换函数 + ChStreamAdapterFactory 注册为 seam, 外部 API 向后兼容 |
+| 5 消费者注入点固定 (memory/sdma/gmmu/pcie_memory + backdoor) | ✅ | `bind_memory_backings()` N12 条件注入 + B20 无条件 translate_cb |
+
+**验证结果**: `[minimal_dgpu_soc]` 12 cases + `[driver_visible]` 2 cases (29 assertions) + ctest 76/76 PASS, 0 regression。
+

@@ -64,6 +64,13 @@ public:
      * @return 路径字符串，默认返回模块名
      */
     virtual std::string get_stats_path() const { return getName(); }
+
+    /**
+     * @brief 推进一个仿真 cycle (Phase 4 T5, per design.md §6.2 P2-R10)
+     * DGpuBoard::tick 集中推进 timing-mode 模块 (TInv-3: 模块不可自行 ++cycle)。
+     * 默认空实现 — 仅 timing-mode 模块 (MemoryTLM/VramControllerTLM) 覆盖。
+     */
+    virtual void advance_cycle() noexcept {}
 };
 
 #endif // CORE_CHSTREAM_MODULE_HH

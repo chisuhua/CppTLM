@@ -263,3 +263,20 @@ openspec validate cpptlm-dgpu-soc-timing-mvp --strict   # PASS (v0.2 终稿)
 **Owner**: CppTLM Team
 **版本**: v0.2 终稿 (八轮 PASS)
 **最后更新**: 2027-02-09
+
+---
+
+## Status Update 2027-02-11
+
+**实施完成 (Phase 4 cpptlm-dgpu-soc-timing-mvp T1-T8)**:
+
+- MemoryTLM cycle-approximate defer_response (priority_queue by ready_cycle, per M1)
+- GmmuTLM 32-entry 直接映射 TLB + translate_timing (lat=0 hit / 50 miss)
+- SdmaEngineTLM cycle accounting (v0.2 简化: 无新端口/无 outstanding, per H2/H3)
+- VramControllerTLM 新建 (继承 MemoryTLM + 行缓冲 + bandwidth 上限, per M10)
+- DGpuBoard::init_timing_mode + simulation_mode_ + cycle advance (TInv-3 集中推进)
+- `configs/dgpu_soc_timing_v1.json` + `[dgpu_soc_timing]` 37 测试用例全绿
+- **0 regressions**: 79046 assertions / 1634 test cases + ctest 76/76 全 PASS
+- 6 条新 Invariants (Inv-1~6) 全部验证
+
+引用: openspec/changes/cpptlm-dgpu-soc-timing-mvp/ (T1-T8), commit `b034ad23..` (branch phase4/timing-mvp-arch)

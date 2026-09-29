@@ -325,4 +325,35 @@ TEST_CASE("vram_storage_ single owner + 4 injected views") {
 
 ## Status Update
 
-_(本节将在 ADR 签发后追加,记录实施 commit hashes 与实际 rename 影响范围)_
+### 2027-02-09 — ADR 签发 (Oracle 5 步解锁链 Step 5)
+
+本 ADR 随 Oracle 5 步解锁链 Step 5 签发。关联 OpenSpec change [cpptlm-minimal-dgpu-soc-v1-architecture](../../openspec/changes/cpptlm-minimal-dgpu-soc-v1-architecture/) 提案管理。
+
+### 2027-09-29 — §4 Migration 8 步代码 rename 实施完成 (PASS)
+
+**实施 change**: `openspec/changes/cpptlm-minimal-dgpu-soc-v1-architecture` (Phase 2, T0-T6 全部完成)
+
+**§4 Migration 8 步实施状态**:
+
+| 步骤 | 任务 | 状态 |
+|------|------|------|
+| 1 | `DGpuBoard::framebuffer_storage_` → `vram_storage_`: 新增 `vram_storage_` (unique_ptr) + `vram_size_`; 旧字段标 `[[deprecated]]` 兼容层 | ✅ T4 |
+| 2 | `DGpuBoard::framebuffer_ptr_` → 保留为别名指向 `vram_storage_.get()` | ✅ T4 |
+| 3 | `MemoryTLM::backing_ptr_` → `backing_view_`; `set_backing_store` → `set_backing_view` | ✅ T1 |
+| 4 | `PcieMemoryDevice::memory_backing_` 删除; 注入 `backing_view_` (ADR-DGPU-05 B7 落地) | ✅ T3 |
+| 5 | `GmmuTLM::backing_` → `mem_view_`; `set_backing` → `set_mem_view` | ✅ T2 |
+| 6 | `DGpuBoard::bind_memory_backings()` 注入方法同步 | ✅ T4 |
+| 7 | 全量调用方同步 + grep audit (旧名 0 匹配, 除 deprecation wrapper) | ✅ T5 |
+| 8 | ADR-DGPU-05 Status Update 追加 | ✅ T6 |
+
+**验证结果**:
+- grep audit: 旧名 `set_backing_store` / `memory_backing_` / `framebuffer_storage_` (非兼容层) 0 匹配
+- ctest: 76/76 PASS, 0 regression
+- 基线断言: 13,039 (未变, 纯 rename)
+- `openspec validate --strict` PASS
+
+**关键不变性验证** (ADR-DGPU-10 §3):
+- Inv-1: `_storage_` 仅在 `DGpuBoard` — ✅
+- Inv-2: `_backing_view_` 字段类型 `uint8_t*` — ✅ (MemoryTLM / PcieMemoryDevice)
+- Inv-3: `_backdoor_` 字段类型 `void*` — ✅ (SdmaEngineTLM, 未变更)
+- Inv-4: `_mem_view_` 字段类型 `uint8_t*` — ✅ (GmmuTLM)

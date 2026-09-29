@@ -28,7 +28,7 @@ D-AXI (cpptlm-driver-visible-minimal-soc) 实现笔记:
   - **0 个新 ABI 函数**（per ADR-088 §D5）
   - **冻结面零 diff**：pcie_endpoint_tlm.h / pcie_display_device.hh / pcie_bundles_tlm.hh / cpptlm_emulator.h
   - **D3 seam 已预留**：`handle_slave_port ↔ backing_ptr_` 之间可插入 VramControllerTLM/MemoryClusterTLM
-  - **✅ 配套 timing-mode SoC (v0.2 终稿, Oracle 八轮复评 PASS, 21/21 硬伤落盘, T0 已签发 ADR-DGPU-11)**：`docs/designs/dgpu-soc/timing-mode.md` + `openspec/changes/cpptlm-dgpu-soc-timing-mvp/` (18 ADDED Requirements + 52 scenarios) + [ADR-DGPU-11-timing-mode-soc-scope.md](docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md) (T0 已完成, 11-12d 工程量, 等待 T1-T8 实施启动)
+  - **✅ 配套 timing-mode SoC (v0.2 终稿, Oracle 八轮复评 PASS, 21/21 硬伤落盘, T0 已签发 ADR-DGPU-11)**：`docs/designs/dgpu-soc/timing-mode.md` + `openspec/changes/cpptlm-dgpu-soc-timing-mvp/` (18 ADDED Requirements + 52 scenarios) + [ADR-DGPU-11-timing-mode-soc-scope.md](docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md) (T0 已完成, 11-12d 工程量, **T1-T8 实施完成 2027-02-11, 37 cases + 0 regressions**)
   - **7 条实施铁律**：见 `docs/pcie/driver-visible-minimal-soc.md` §4
   - **3 项遗留议题**：D1 Display FB (冻结面约束, D3 收编) / doorbell 0x10010000 (测试合成偏移) / MemoryTLM capacity_gb=1 (不静默)
 
@@ -474,6 +474,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | v1.1 | P0 修订（5 澄清落点 + R1-R7 + M1-M5） | — | — | ✅ 完成 |
 | v1.2 | Oracle 二次审查 8 must-fix (N1-N12 全部落地) | — | ✅ PASS | ✅ 完成 |
 | **v1.4** | **Metis/Oracle 二轮 + 用户质疑 + 单一 VRAM 所有权上提** (B7-B13 + 7 实施铁律 + 3 遗留议题延期) | — | **✅ 2 轮 PASS** | **🔄 实施中** |
+| **v0.5 timing-mode (AT) SoC MVP** | **Phase 4 cpptlm-dgpu-soc-timing-mvp T1-T8 完成** (MemoryTLM cycle-approximate + GmmuTLM TLB + SDMA cycle accounting + VramControllerTLM + DGpuBoard::init_timing_mode + dgpu_soc_timing_v1.json + 37 E2E cases) | `b034ad23..` | **ADR-DGPU-11 八轮 PASS** | ✅ **实施完成 (2027-02-11)** |
 
 **v1.4 P0 修正（B7-B13, 架构根因）**：
 - **B7**: 单一 VRAM backing 所有权归 DGpuBoard（`vram_storage_` = 8GB `unique_ptr<uint8_t[]>` default-init, Linux lazy commit, stable pointer）
@@ -484,7 +485,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **B12**: 未注入 backing 时 `memory_read/write` 返 `-ENODEV`（spec 新增错误码）；`kRegMemSizeLo/Hi` 读 injected `backing_size_`（非常量）
 - **B13**: 24-case `[pcie-memory]` 机械迁移 + `[minimal_dgpu_soc]` 添加 BAR2 + 4 处 lazy alloc 行为删除
 
-**D3 演进 seam (v1.4 已就位)**：`handle_slave_port ↔ backing_ptr_` 之间可插入真 VramControllerTLM/MemoryClusterTLM（接口零变更）。
+**D3 演进 seam (v1.4 已就位, Phase 4 T4 实施完成)**：`handle_slave_port ↔ backing_ptr_` 之间已插入 VramControllerTLM (继承 MemoryTLM + 行缓冲 + bandwidth 上限, per cpptlm-dgpu-soc-timing-mvp T4)。
 
 ### ★ GPGPU / SoC 既有交付（2026 之前，跨 Phase 1-7 与本项目同期）
 

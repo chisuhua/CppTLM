@@ -174,6 +174,9 @@ public:
     }
 
     // D2 memory-device-mvp: 持有 PcieMemoryDevice (4KB MMIO + 8GB backing, 无 MSI-X)
+    // Phase 3 (driver-visible-minimal-soc v1.8 T1.2): 从 unique_ptr → raw ptr (non-owning)
+    //   PcieMemoryDevice 已 ChStreamModuleBase 化, 由 DGpuBoard::bind_memory_backings
+    //   从 soc_ 内部实例注入 (set_memory_device); EP 不再构造/拥有/析构它。
     [[nodiscard]] bool has_memory_device() const noexcept {
         return memory_device_ != nullptr;
     }
@@ -182,6 +185,10 @@ public:
     }
     const tlm::gpu::PcieMemoryDevice& memory_device() const noexcept {
         return *memory_device_;
+    }
+    // Phase 3 T1.2 (N12): 注入 PcieMemoryDevice 引用 (non-owning)
+    void set_memory_device(tlm::gpu::PcieMemoryDevice* dev) noexcept {
+        memory_device_ = dev;
     }
 
     void flr_pf() noexcept;
@@ -291,7 +298,8 @@ private:
     // D1 display-io-mvp: 显示 IO 设备 (MMIO 寄存器 + framebuffer + VBLANK counter)
     std::unique_ptr<tlm::gpu::PcieDisplayDevice> display_device_;
     // D2 memory-device-mvp: Memory 设备 (MMIO 寄存器 + 8GB backing, 无 MSI-X)
-    std::unique_ptr<tlm::gpu::PcieMemoryDevice> memory_device_;
+    // Phase 3 T1.2: raw ptr (non-owning), 由 DGpuBoard 注入 soc 内 pcie_memory 实例
+    tlm::gpu::PcieMemoryDevice* memory_device_ = nullptr;
     // BAR 空间 backing store（Phase 8 M1: AXI slave 写经地址路由落写/读回真实值）
     // 三维 key: (bdf, bar, addr) — 跨 BAR 隔离 (T-P10-2)
     std::unordered_map<BarStoreKey, uint64_t> bar_store_;
@@ -309,6 +317,10 @@ private:
     bool mmio_gated_ = false;
     // T-P10-2: BDF (Bus:Device.Function) — 用于 bar_store_ 三维 key 的 BDF 维度
     uint16_t bdf_ = 0;
+    // Phase 3 T1.3 (N6): BAR sizes 来源 (JSON bar_sizes 字段), 用于 config space BAR 寄存器生成
+    std::array<uint64_t, 6> bar_sizes_{};
+    // Phase 3 T1.3 (N6): 从 bar_sizes_ 写 config space 64-bit BAR 双 dword 寄存器
+    void install_bar_registers();
     // Phase 2: composite 单实例 owned by internal_factory; 本 flag 表达
     // "link_layer.enabled" 的可见性语义 (disabled 时 for_endpoint→nullptr)
     bool composite_active_ = false;
