@@ -59,13 +59,13 @@
 │            │     **单 adapter_ + tick 一次 (v1.3 B3 撤销 N4)**) │
 │            │     port0 ← sdma.mem_out (PORT_MEM_OUT)      │
 │            │     port1 ← gmmu.req_out                      │
-│            │     wire-format: AxiMemBundle (chip-internal)│
+│            │     wire-format: PcieTlpBundle (per v1.8 H1, 整体一致)│
 │            │     ├─ backing_ptr_ (注入式, 指向 board vram_storage_, **v1.4 B7**)│
 │            │     │   └─ std::mutex backing_mutex_ (保留, **v1.4 B10**) │
 │            │     └─ BAR2 暴露 (需 T0.4 EP BAR 64-bit 双 dword 实现)│
 │            │     └─ BAR2 暴露 (需 T0.4 EP BAR 64-bit 双 dword 实现)│
 │            │                                               │
-│            ├─ sdma  (SdmaEngineTLM, 5 ports, AxiMemBundle)│
+│            ├─ sdma  (SdmaEngineTLM, 5 ports, PcieTlpBundle per H1)│
 │            │     ├─ mem_out → pcie_memory.0               │
 │            │     ├─ **resp 从 req_in[2] 消费 (N7)**       │
 │            │     ├─ **tick 先 FIFO 重试 inflight_ (N3)** │
@@ -79,7 +79,7 @@
 │            ├─ memory  (MemoryTLM, 不变)                    │
 │            └─ completion (CompletionRingTLM, 不变)        │
 │                                                             │
-│   chip-internal AXI Connections (AxiMemBundle):            │
+│   PcieTlpBundle 同构 (chip-internal 共用 host↔board wire-format, per v1.8 H1):            │
 │     sdma.mem_out  → pcie_memory.req_in[0]                  │
 │     gmmu.master   → pcie_memory.req_in[1]                  │
 │     sdma.mem_in[2] (slot 2, PORT_MEM_OUT resp) ← pcie_memory.resp_out[0]
@@ -133,17 +133,20 @@
 | **v1.5 B25** | Metis 三轮 | **§6 SDMA ↔ PcieMemoryDevice 统一为 PcieTlpBundle**：放弃 v1.3 B2 切型（框架限制） |
 | **v1.5 B26/B27/B28** | Oracle 三轮 | **§1 backdoor bound 统一 vram_size_**；**§4 BAR0 简化**；**§13 MemoryTLM capacity 三方矛盾消解** |
 
-## §3 `AxiMemBundle` 定义（v1.2 P1 — 需框架配合）
+## §3 `AxiMemBundle` 定义（v1.2 P1 — **演进 seam, v1.8 H1 锁定为 D3+ 专用**）
+
+> **演进 seam (D3+)**: AxiMemBundle 定义保留供未来 VramController chip-internal 使用，**minimal_v1 范围不实例化此 wire-format** (per v1.8 H1)。minimal_v1 所有端口（包括 chip-internal SDMA↔PcieMemoryDevice、GMMU↔PcieMemoryDevice）使用 **PcieTlpBundle 统一 wire-format**。本节定义仅作类型参考和 D3+ seam 预留。
 
 ```cpp
 // include/bundles/axi_mem_bundles_tlm.hh
-// AxiMemBundle: chip-internal AXI 存储事务载体（GMMU/SDMA ↔ PcieMemoryDevice）
+// AxiMemBundle: chip-internal AXI 存储事务载体（未来 D3+ VramController 内部用）
+// **v1.8 H1**: minimal_v1 范围不实例化此 wire-format；所有端口用 PcieTlpBundle。
 // 严格分离于 board-level PcieTlpBundle。
 //
-// **N1 必须配合**: sizeof(AxiMemBundle)≈4136B > PacketPool kMinPayloadBytes=256B。
+// **N1 必须配合**（仅供 D3+ 参考）: sizeof(AxiMemBundle)≈4136B > PacketPool kMinPayloadBytes=256B。
 // 框架侧 OutputStreamAdapter::send / InputStreamAdapter::process 须按 sizeof(BundleT)
 // 扩容 payload (2 行改动)，否则序列化失败 → 请求静默滞留。
-// T0.2 经真实 StreamAdapter round-trip 测试锁定。
+// minimal_v1 范围**不**测试 AxiMemBundle round-trip (per v1.8 H1); N1 框架修复保留作为 D3+ seam。
 #ifndef BUNDLES_AXI_MEM_BUNDLES_TLM_HH
 #define BUNDLES_AXI_MEM_BUNDLES_TLM_HH
 
@@ -203,14 +206,14 @@ int InputStreamAdapter<BundleT>::process(...) {
 }
 ```
 
-**T0.2 测试** (N1 关键验证): 经真实 StreamAdapter (PcieMemoryDevice SlavePort 接 SDMA MasterPort) 收发 AxiMemBundle，**不**做裸 serialize round-trip。
+**T0.2 测试** (N1, **v1.8 H1 demoted 至 D3 backlog**): minimal_v1 范围不测试 AxiMemBundle round-trip（per H1 wire-format 统一为 PcieTlpBundle）；框架 N1 修复（`payload_resize`、`acquire_with_min_size`）保留供 D3+ VramController 引入时启用。D3 启动时补 `[axi_mem][stream]` round-trip 测试。
 
 ## §4 PcieMemoryDevice 改造骨架（2 端口 + **单 adapter + v1.3 B3/B4/B6 修正**）
 
 ```cpp
 // include/tlm/gpu/pcie_memory_device.hh 修订后 (v1.3: 单 adapter + lazy alloc + mutex + 双注册)
 #include "core/chstream_module.hh"
-#include "bundles/axi_mem_bundles_tlm.hh"
+#include "bundles/pcie_bundles_tlm.hh"
 #include <mutex>
 
 namespace tlm::gpu {
@@ -233,8 +236,8 @@ public:
     unsigned num_ports() const override { return NUM_PORTS; }
 
     // ── ChStream SlavePort（多端口适配器要求 public）──
-    cpptlm::InputStreamAdapter<bundles::AxiMemBundle>  req_in[NUM_PORTS];
-    cpptlm::OutputStreamAdapter<bundles::AxiMemBundle> resp_out[NUM_PORTS];
+    cpptlm::InputStreamAdapter<bundles::PcieTlpBundle>  req_in[NUM_PORTS];
+    cpptlm::OutputStreamAdapter<bundles::PcieTlpBundle> resp_out[NUM_PORTS];
 
     // **v1.3 B3 撤销 N4**: 存单 MultiPortStreamAdapter* 而非 adapters_[2]
     // 事实 (per module_factory.cc:695-705): multi-port 模块 framework 只注入单个
@@ -275,30 +278,33 @@ private:
         if (!req_in[p].valid() || !req_in[p].ready()) return;
         const auto& req = req_in[p].data();
 
-        bundles::AxiMemBundle resp;
-        // resp.id = req.id;  // ch_uint copy-assignment OK (POD-to-POD)
-        resp.id.write(req.id.read());               // **ch_uint .read()/.write() 习惯用法**
-        const uint64_t off = req.addr.read();
-        const uint32_t len = req.len.read();
+        bundles::PcieTlpBundle resp;
+        resp.trans_id.write(req.trans_id.read());           // **PcieTlpBundle**: trans_id 替代 id
+        const uint64_t off = req.offset.read();             // offset 替代 addr
+        const uint32_t len = req.size.read();               // size 替代 len
 
-        // **v1.4 B9**: 检查 memory_read/write 返回值, 失败置 SLVERR (resp=1)
+        // **v1.4 B9**: 检查 memory_read/write 返回值
         // **v1.4 B8**: bound 检查用 backing_size_ (非 kDefaultMemSize)
-        // **v1.4 B12**: backing_ptr_==nullptr 返 -ENODEV, 路径置 SLVERR
+        // **v1.4 B12**: backing_ptr_==nullptr 返 -ENODEV
+        // **v1.8 H1**: PcieTlpBundle inline data ≤8B; >8B 走 BAR2 backdoor
         const bool null_backing = (backing_ptr_ == nullptr);
-        const bool oob = (len == 0 || len > bundles::AxiMemBundle::MAX_DATA_BYTES ||
+        const bool oob = (len > 8 ||  // PcieTlpBundle inline data max 8B
                           off >= backing_size_ || len > backing_size_ - off);
         if (null_backing || oob) {
-            resp.resp.write(1);                    // SLVERR
+            resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 错误: CPLD + data=0xDEAD
+            resp.data.write(0xDEAD);
         } else if (req.is_read()) {
-            int r = memory_read(off, resp.data_buf.data(), len);
-            resp.kind.write(bundles::AxiMemBundle::MEM_READ_RESP);
-            resp.resp.write(r == 0 ? 0 : 1);       // **B9**: 传播错误
+            uint64_t val = 0;
+            int r = memory_read(off, &val, len);
+            resp.data.write(val);
+            resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 读完成: CPLD 带 data
         } else if (req.is_write()) {
-            int r = memory_write(off, req.data_buf.data(), len);
-            resp.kind.write(bundles::AxiMemBundle::MEM_WRITE_RESP);
-            resp.resp.write(r == 0 ? 0 : 1);       // **B9**: 传播错误
+            uint64_t val = req.data.read();
+            int r = memory_write(off, &val, len);
+            resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 写完成: CPLD
+            // minimal_v1 CPLD 无额外状态; D3+ 可通过扩展 resp kind 加 ACK/NACK
         } else {
-            resp.resp.write(1);
+            resp.kind.write(bundles::PcieTlpBundle::CPLD);
         }
         resp_out[p].write(resp);
         req_in[p].consume();
@@ -319,10 +325,11 @@ private:
 **v1.3 B6 双注册** (`chstream_register.hh`):
 ```cpp
 // **B6 关键**: 必须同时 registerObject + registerMultiPortAdapter
+// **v1.8 H1**: wire-format 统一为 PcieTlpBundle (port bundle 类型对齐)
 ModuleFactory::registerObject<tlm::gpu::PcieMemoryDevice>("PcieMemoryDevice");
 ChStreamAdapterFactory::get()
     .registerMultiPortAdapter<tlm::gpu::PcieMemoryDevice,
-                             bundles::AxiMemBundle, bundles::AxiMemBundle, 2>("PcieMemoryDevice");
+                             bundles::PcieTlpBundle, bundles::PcieTlpBundle, 2>("PcieMemoryDevice");
 ```
 
 ## §5 GMMU 异步状态机（iova 匹配 + 访问器）
@@ -330,7 +337,7 @@ ChStreamAdapterFactory::get()
 ```cpp
 // include/tlm/gpu/gmmu_tlm.hh 修订后 (N2 + 访问器适配 + ch_uint API)
 #include "core/chstream_module.hh"
-#include "bundles/axi_mem_bundles_tlm.hh"
+#include "bundles/pcie_bundles_tlm.hh"
 
 namespace tlm::gpu {
 
@@ -342,8 +349,8 @@ public:
     std::string get_module_type() const override { return "GmmuTLM"; }
 
     // ── ChStream MasterPort 访问器 (单端口模板要求) ──
-    cpptlm::OutputStreamAdapter<bundles::AxiMemBundle>& req_out() { return req_out_; }
-    cpptlm::InputStreamAdapter<bundles::AxiMemBundle>&  resp_in() { return resp_in_; }
+    cpptlm::OutputStreamAdapter<bundles::PcieTlpBundle>& req_out() { return req_out_; }
+    cpptlm::InputStreamAdapter<bundles::PcieTlpBundle>&  resp_in() { return resp_in_; }
 
     void set_stream_adapter(cpptlm::StreamAdapterBase* a) override { adapter_ = a; }
 
@@ -371,11 +378,11 @@ public:
         const uint64_t pte_addr = pt_base() + (iova >> 12) * 8;
 
         if (state_ == State::IDLE) {
-            bundles::AxiMemBundle req;
-            req.kind.write(bundles::AxiMemBundle::MEM_READ);  // ch_uint .write()
-            req.addr.write(pte_addr);
-            req.len.write(8);
-            req.id.write(next_req_id_++);
+            bundles::PcieTlpBundle req;
+            req.kind.write(bundles::PcieTlpBundle::MEM_READ);  // **v1.8 H1**: PcieTlpBundle 统一
+            req.offset.write(pte_addr);
+            req.size.write(8);
+            req.trans_id.write(next_req_id_++);
             req_out_.write(req);
             state_ = State::WAIT;
             pending_iova_ = iova;
@@ -403,11 +410,13 @@ public:
     void tick() override {
         if (state_ == State::WAIT && resp_in_.valid()) {
             const auto& r = resp_in_.data();
-            if (r.resp.read() == 0) {
-                std::memcpy(pte_buf_.data(), r.data_buf.data(), 8);
+            // PcieTlpBundle: CPLD (kind=7) 带 data=8 字节 PTE
+            if (r.kind.read() == bundles::PcieTlpBundle::CPLD) {
+                uint64_t pte = r.data.read();
+                std::memcpy(pte_buf_.data(), &pte, 8);
                 state_ = State::COMPLETE;
             } else {
-                state_ = State::IDLE;
+                state_ = State::IDLE;  // 非 CPLD = 错误
             }
             resp_in_.consume();
         }
@@ -426,8 +435,9 @@ private:
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
 
     // **关键**: req_out_/resp_in_ 必须作为数据成员存在, 但访问器方法提供接口
-    cpptlm::OutputStreamAdapter<bundles::AxiMemBundle> req_out_;
-    cpptlm::InputStreamAdapter<bundles::AxiMemBundle>  resp_in_;
+    // **v1.8 H1**: PcieTlpBundle 统一 wire-format (替代 AxiMemBundle)
+    cpptlm::OutputStreamAdapter<bundles::PcieTlpBundle> req_out_;
+    cpptlm::InputStreamAdapter<bundles::PcieTlpBundle>  resp_in_;
 
     uint8_t* backing_ = nullptr;
     uint64_t backing_size_ = 0;
@@ -444,17 +454,17 @@ private:
 
 ## §6 SDMA 5 端口换型 + retry driver + slot-2 resp (N3/N7) — **v1.3 B1+B2 修正：字段名 + 切型范围**
 
-**v1.3 B2 切型范围（minimal_v1 限定）**：
+**v1.3 B2 切型范围（minimal_v1 限定）— v1.8 H1 统一为 PcieTlpBundle**:
 
-| 端口 | wire-format (v1.2) | wire-format (v1.3) | 理由 |
-|------|---------------------|---------------------|------|
-| `mem_in[PORT_MEM_IN]` | PcieTlpBundle | **AxiMemBundle** | chip-internal (pcie_memory resp → sdma) |
-| `mem_out[PORT_MEM_OUT]` | PcieTlpBundle | **AxiMemBundle** | chip-internal (sdma → pcie_memory req) |
-| `desc_in[PORT_DESC_IN]` | PcieTlpBundle | **PcieTlpBundle** (不变) | board-level, minimal_v1 不接线 (经 BAR1 ring doorbell) |
-| `done_out[PORT_DONE_OUT]` | PcieTlpBundle | **PcieTlpBundle** (不变) | board-level, minimal_v1 不接线 |
-| `host_out[PORT_HOST_OUT]` | PcieTlpBundle | **PcieTlpBundle** (不变) | board-level, minimal_v1 不接线 (host 侧数据由 N9 host_backdoor 注入) |
+| 端口 | wire-format (v1.2→v1.3 切型) | wire-format (v1.8 H1 统一) | 理由 |
+|------|-------------------------------|---------------------------|------|
+| `mem_in[PORT_MEM_IN]` | AxiMemBundle (chip-internal) | **PcieTlpBundle** (统一) | H1 写死：chip-internal 同 host↔board wire-format |
+| `mem_out[PORT_MEM_OUT]` | AxiMemBundle (chip-internal) | **PcieTlpBundle** (统一) | H1 写死：chip-internal 同 host↔board wire-format |
+| `desc_in[PORT_DESC_IN]` | PcieTlpBundle (不变) | **PcieTlpBundle** (不变) | board-level, minimal_v1 不接线 (经 BAR1 ring doorbell) |
+| `done_out[PORT_DONE_OUT]` | PcieTlpBundle (不变) | **PcieTlpBundle** (不变) | board-level, minimal_v1 不接线 |
+| `host_out[PORT_HOST_OUT]` | PcieTlpBundle (不变) | **PcieTlpBundle** (不变) | board-level, minimal_v1 不接线 (host 侧数据由 N9 host_backdoor 注入) |
 
-→ 实际接入是**混合端口**：`mem_in`/`mem_out` 切型 + `desc_in`/`done_out`/`host_out` 保持。混合端口模板在 minimal_v1 范围外（spec "不在范围"）。同构 `MultiPortStreamAdapter<SdmaEngineTLM, PcieTlpBundle, PcieTlpBundle, 5>` 整体保留 (desc_in/done_out/host_out 仍为 PcieTlpBundle)；mem_in/mem_out 的 AxiMemBundle 转换通过 `to_axi_mem_descriptor` / `from_axi_mem_completion` helper 在 chip-internal 路径完成（不通过 StreamAdapter 跨类型）。
+→ **v1.8 H1** 放弃混合端口：所有 5 端口统一为 **PcieTlpBundle**。`MultiPortStreamAdapter<SdmaEngineTLM, PcieTlpBundle, PcieTlpBundle, 5>` 同构保持。`to_axi_mem_descriptor` / `from_axi_mem_completion` helper 降级为 D3+ VramController 演进 seam，minimal_v1 **不实例化**。chip-internal 路径直接通过 PcieTlpBundle MEM_WRITE/MEM_READ 通信（inline data ≤8B；≥8B 数据走 backdoor 或分段多请求，由实现层细化）。
 
 **v1.3 B1 字段名修正**（per `dma_descriptor_mvp.hh:44-48`）:
 
@@ -521,13 +531,20 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
                         e.host_buf, e.desc.size);  // **v1.3 B1**: size 而非 len
             e.state = State::DONE;
         } else {
-            // chip-internal path: emit mem_out AxiMemBundle
-            bundles::AxiMemBundle req;
-            req.kind.write(bundles::AxiMemBundle::MEM_WRITE);
-            req.addr.write(e.phys_offset);
-            req.len.write(e.desc.size);          // **v1.3 B1**
-            req.id.write(e.tx_id);
-            std::memcpy(req.data_buf.data(), e.host_buf, e.desc.size);  // **v1.3 B1**
+            // chip-internal path: emit mem_out PcieTlpBundle MEM_WRITE (≤8B inline; >8B 经 backdoor)
+            // **v1.8 H1**: PcieTlpBundle 统一 wire-format, 无 AxiMemBundle 4KB payload
+            // >8B 大块: D3+ 通过 BAR2 backdoor 路径或 PcieTlpWireBundle (Phase 9+)
+            bundles::PcieTlpBundle req;
+            req.kind.write(bundles::PcieTlpBundle::MEM_WRITE);
+            req.offset.write(e.phys_offset);
+            req.size.write(e.desc.size);
+            req.trans_id.write(e.tx_id);
+            // inline: ≤8B data 直写; >8B 设 data=0 (backdoor 已处理)
+            if (e.desc.size <= 8) {
+                uint64_t val = 0;
+                std::memcpy(&val, e.host_buf, e.desc.size);
+                req.data.write(val);
+            }
             resp_out_[PORT_MEM_OUT].write(req);  // emit to pcie_memory
             e.state = State::WAITING_AXI_RESP;
         }
@@ -539,7 +556,7 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
         if (req_in_[PORT_MEM_OUT].valid()) {
             auto resp = req_in_[PORT_MEM_OUT].data();
             req_in_[PORT_MEM_OUT].consume();
-            if (resp.resp.read() == 0) e.state = State::DONE;
+            if (resp.kind.read() == bundles::PcieTlpBundle::CPLD) e.state = State::DONE;
         }
     }
     if (e.state == State::DONE) {
@@ -627,7 +644,7 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
    → sdma 留 inflight_ 在 PENDING_TRANSLATE
    → 多 tick 后 gmmu 收 resp → state_=COMPLETE
    → 下 tick sdma.retry_inflight() → translate 返 0 → READY_TO_EMIT
-   → emit mem_out[2] AxiMemBundle MEM_WRITE
+   → emit mem_out[2] PcieTlpBundle MEM_WRITE (per v1.8 H1 统一)
    → pcie_memory.handle_slave_port(0) → memory_write
    → pcie_memory.resp_out[0] → sdma.req_in[2] (slot 2, PORT_MEM_OUT) (N7)
    → sdma.retry_inflight() → WAITING_AXI_RESP → DONE
@@ -644,12 +661,12 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
 
 ### 9.1 现有测试保持 (N5 需迁移)
 - `[pcie-memory]` — basic/backing/routing_characterization/routing_flag (N5 改: 适配 EP 默认 nullptr + 2-port)
-- `[sdma]` — 6+ 文件 (N5 改: PcieTlpBundle → AxiMemBundle)
+- `[sdma]` — 6+ 文件 (N5 改: v1.8 H1 统一 PcieTlpBundle, 保留既有 [sdma] 测试)
 
 ### 9.2 新增测试 (v1.2)
 | 测试 | 标签 | 来源 |
 |------|------|------|
-| `test_axi_mem_bundle_stream_adapter_roundtrip.cc` | `[axi_mem][stream]` | **N1** 经 StreamAdapter 真实 round-trip |
+| `test_axi_mem_bundle_stream_adapter_roundtrip.cc` | `[axi_mem][stream]` | **N1** (**v1.8 H1 demoted 至 D3 backlog**: minimal_v1 不测 AxiMemBundle round-trip) |
 | `test_pcie_endpoint_ip_three_bar.cc` | `[pcie-ep][bar]` | **N6** EP BAR 寄存器生成 |
 | `test_pcie_endpoint_ip_tick_nesting.cc` | `[pcie-ep][tick]` | **N8** EP 不双 tick |
 | `test_gmmu_iova_match.cc` | `[gmmu][iova]` | **N2** iova 匹配检查 |
@@ -657,15 +674,15 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
 | `test_sdma_slot2_response.cc` | `[sdma][slot2]` | **N7** resp slot-2 |
 | `test_dgpu_board_legacy_dual_mode.cc` | `[board][legacy]` | **N12** 无 pcie_memory 保留 legacy |
 | `test_pcie_memory_device_preallocate.cc` | `[pcie-memory][prealloc]` | **N10** 预分配防 race |
-| `test_pcie_memory_device_axi_gmmu.cc` | `[pcie-memory][axi][gmmu]` | GMMU AXI 路径 |
-| `test_pcie_memory_device_axi_sdma.cc` | `[pcie-memory][axi][sdma]` | SDMA AXI 路径 |
+| `test_pcie_memory_device_pcie_gmmu.cc` | `[pcie-memory][gmmu]` | GMMU PcieTlpBundle 路径 (per v1.8 H1) |
+| `test_pcie_memory_device_pcie_sdma.cc` | `[pcie-memory][sdma]` | SDMA PcieTlpBundle 路径 (per v1.8 H1) |
 | `test_minimal_soc_driver_visible_e2e.cc` | `[minimal_dgpu_soc][driver_visible]` | 端到端 |
 | `test_pcie_memory_device_topology_lifecycle.cc` | `[pcie-memory][topology][lifecycle]` | **N11** 改 "互不解引用" 断言 |
 | `test_pcie_memory_device_pte_unified.cc` | `[pcie-memory][pte][unified]` | PTE 经 BAR2 |
 
 ### 9.3 验证清单
 
-- [ ] N1 经 StreamAdapter round-trip 通过
+- [ ] N1 AxiMemBundle round-trip (**v1.8 H1 demoted 至 D3 backlog**; minimal_v1 用 PcieTlpBundle E2E 替代验证)
 - [ ] N2 iova 匹配检查通过
 - [ ] N3 retry driver 多 tick 完成 in-order
 - [ ] **v1.3 B3 撤销 N4** adapters_[2] 双 tick 测试（不可能）→ **新增 v1.3 B3**: 单 adapter tick 后两端口 resp_out 都出
@@ -701,7 +718,7 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
 | Task | 估时 | 累计 | 来源 |
 |------|------|------|------|
 | **P1 修订** | 0.5d | 0.5d | — |
-| **T0** 表征 + AxiMemBundle StreamAdapter round-trip + EP 3-BAR + baseline | 1d | 1.5d | N1/N6/N12 |
+| **T0** 表征 + PcieTlpBundle StreamAdapter E2E + EP 3-BAR + baseline (**v1.8 H1**: AxiMemBundle D3 backlog) | 1d | 1.5d | N1/N6/N12 |
 | **T1** PcieMemoryDevice 2-port + **单 adapter** (v1.3 B3 撤 N4 双 adapter) + EP raw ptr + 删 tick 转发 + EP BAR 实现 (v1.3 B5 64-bit 双 dword) + 既有 [pcie-memory] 测试迁移 | 2d | 3.5d | **v1.3 B3/B4/B5/B6**/N8/N5/N6 |
 | **T2** GMMU 异步 + iova 匹配 + 访问器 + 注册迁移 | 1.5d | 5d | N2 |
 | **T3** SDMA 5 端口换型 + retry driver + slot-2 resp + D2H 异步 + 既有 [sdma] 测试迁移 | 2.5d | 7.5d | N3/N7/N5/N9 |
@@ -716,7 +733,7 @@ void SdmaEngineTLM::process_inflight_step(InflightEntry& e) {
 | GMMU 多级页表（v1.1） | 不实现 | v1.4 仅一级 4KB 固定页 |
 | GPU 计算设备 | D3 | **D3 seam 已预留**（`handle_slave_port` ↔ `backing_ptr_` 之间可插入 VramControllerTLM/MemoryClusterTLM，无 API 变更） |
 | Coherent/Non-coherent 在 CppTLM 建模 | **不建模** (UE 端职责) | spec Requirement "Coherence 域边界" 显式 |
-| 混合端口模板（desc_in PcieTlpBundle） | 后续单独立项 | v1.3 B2 临时以"端口混合切型"应对；D3 立项异构 adapter |
+| 混合端口模板（desc_in PcieTlpBundle） | 后续单独立项 | v1.3 B2 临时以"端口混合切型"应对；**v1.8 H1 统一为 PcieTlpBundle 后此议题已锁定**；D3 若需芯片内不同 bundle 类型，按异构 adapter 单独立项 |
 | ArchForge 跨仓引用 | 零依赖 | |
 | **D1 PcieDisplayDevice 32MB FB 同构问题** | **D3 一并收编（不阻塞 v1.4）** | **理由**：`pcie_display_device.hh` 是冻结面（per v1.3 spec "Freeze Surface Untouched" + ADR-088 §D5），v1.4 不得修改；minimal_v1 `display_routing_enabled=false` 不触发；D3 按 Option D 模式（`set_backing_store(ptr, size)`）将 D1 FB 也归 board 持有 |
 | **BAR1 doorbell offset 0x10010000 > BAR1 16MB 实窗** | **测试专用合成偏移（不修复）** | **理由**：现行 `dgpu_board_shell.cc:306-447` 在 BAR1 fast-path bound 检查**之前**先匹配 doorbell 路径（不依赖 BAR1 实窗大小），实际不触发越窗；该常量（`kBar1DoorbellOffset`，`dgpu_board_shell.hh:171`）是 driver 测试的虚拟地址合成，非 PCIe 物理 BAR 内偏移；v1.4 拆分 `bar1_window_size_` 后该语义更清晰但**不修**——避免改常量弄断既有 `[sdma][doorbell]` 测试 |

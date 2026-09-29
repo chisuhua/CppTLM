@@ -636,15 +636,19 @@ head -1 tasks.md design.md spec.md | grep "v1.8"
   - `~PcieMemoryDevice` 不触碰 `PcieEndpointIP`
   - `DGpuBoard::shutdown()` 先 `set_memory_device(nullptr)`
 
-### T0.2 RED — AxiMemBundle 经真实 StreamAdapter round-trip (N1)
+### T0.2 RED — PcieTlpBundle StreamAdapter E2E (N1, **v1.8 H1 demoted: AxiMemBundle round-trip → D3 backlog**)
 
-**测试文件**: `test/test_axi_mem_bundle_stream_adapter_roundtrip.cc`
-- **不**做裸 serialize round-trip
+> **v1.8 H1 修订**: T0.2 原为 AxiMemBundle round-trip (`test_axi_mem_bundle_stream_adapter_roundtrip.cc`)。
+> H1 统一 wire-format 为 PcieTlpBundle 后，AxiMemBundle round-trip 降级为 D3+ VramController seam 验证。
+> 优先验证 PcieTlpBundle E2E（含 PcieMemoryDevice + GMMU + SDMA 全路径，见 T4.3）。
+> 框架 N1 payload 修复（`Packet::payload_resize`、`PacketPool::acquire_with_min_size`）保留供 D3+ 启用。
+
+**测试文件**: `test/test_pcie_memory_device_chstream_port.cc` (PcieTlpBundle 版本，替代旧 AxiMemBundle round-trip)
 - 实例化 PcieMemoryDevice (2-port) + mock Master 适配器
-- 经 `req_in_[0]` 发 AxiMemBundle MEM_WRITE → `resp_out_[0]` 收 MEM_WRITE_RESP
-- 经 `req_in_[1]` 发 AxiMemBundle MEM_READ → resp 含 data_buf
+- 经 `req_in_[0]` 发 PcieTlpBundle MEM_WRITE → `resp_out_[0]` 收 CPLD
+- 经 `req_in_[1]` 发 PcieTlpBundle MEM_READ → resp 含 data
 
-**前置**: 框架侧已应用 N1 payload 扩容 (2 行)。如未应用此测试**必失败**。
+**前置**: 框架侧已应用 N1 payload 扩容 (2 行)。如未应用 PcieTlpBundle 测试仍可通行 (payload 小于 kMinPayloadBytes=256B)。
 
 ### T0.3 RED — PcieEndpointIP 3-BAR 支持 (N6) — **v1.3 B5 修正：64-bit 双 dword**
 
@@ -692,18 +696,18 @@ head -1 tasks.md design.md spec.md | grep "v1.8"
 
 **测试文件**: `test/test_pcie_memory_device_chstream_port.cc`
 - `PcieMemoryDevice dev; dev.req_in_size() == 2; dev.resp_out_size() == 2;`
-- 通过 port0/port1 发/收 AxiMemBundle
+- 通过 port0/port1 发/收 PcieTlpBundle (**v1.8 H1**: 替代 v1.3 的 AxiMemBundle)
 - **v1.3 B3 撤销 N4 双 adapter 测试**：改为验证**单 adapter tick 后两端口都工作**：
-  - 经 port0 发 AxiMemBundle MEM_WRITE → 1 tick 后 port0 resp_out 收到 MEM_WRITE_RESP
-  - 经 port1 发 AxiMemBundle MEM_READ → 1 tick 后 port1 resp_out 收到 MEM_READ_RESP
+  - 经 port0 发 PcieTlpBundle MEM_WRITE → 1 tick 后 port0 resp_out 收到 CPLD
+  - 经 port1 发 PcieTlpBundle MEM_READ → 1 tick 后 port1 resp_out 收到 CPLD (data=PTE)
   - **不**再断言"双 tick"或"adapters_[2] 数组"——module_factory 对 multi-port 只注入单个 MultiPortStreamAdapter（其内部 tick 已遍历全端口）
 
-### T1.2 GREEN — PcieMemoryDevice 改造 — **v1.3 B3 + B6 修正**
-- `include/bundles/axi_mem_bundles_tlm.hh`: 新建 (per design §3)
+### T1.2 GREEN — PcieMemoryDevice 改造 — **v1.3 B3 + B6 修正 + v1.8 H1 PcieTlpBundle**
+- `include/bundles/axi_mem_bundles_tlm.hh`: 新建并标记 "D3+ VramController chip-internal 专用" (per v1.8 H1, minimal_v1 不实例化此 wire-format)
 - `include/tlm/gpu/pcie_memory_device.hh`: 派生从独立类 → ChStreamModuleBase; **存单 `MultiPortStreamAdapter* adapter_`**（非 `adapters_[2]`）
 - `src/tlm/gpu/pcie_memory_device.cc::tick()`: **单 tick 一次** (`if (adapter_) adapter_->tick();`)，由 `MultiPortStreamAdapter` 内部遍历全端口
 - `handle_slave_port(p)`: ch_uint API 用 `.write()` (修正 v1.1 skeleton 错误)
-- **v1.3 B6**: `include/chstream_register.hh` 补 `registerObject<PcieMemoryDevice>("PcieMemoryDevice")`（与 `registerMultiPortAdapter` 配对）
+- **v1.3 B6**: `include/chstream_register.hh` 补 `registerObject<PcieMemoryDevice>("PcieMemoryDevice")` + `registerMultiPortAdapter<PcieMemoryDevice, PcieTlpBundle, PcieTlpBundle, 2>` (PcieTlpBundle per H1)
 
 ### T1.3 RED — 既有 [pcie-memory] 测试机械迁移 (N5)
 
@@ -780,11 +784,11 @@ void DGpuBoard::bind_memory_backings() {
 - ch_uint API 用 `.write()` (修正 v1.1 skeleton)
 - `translate_sync()` 保留 v1.0 实现
 
-### T2.4 注册迁移 — **v1.3 B6 修正：双注册 (object + adapter)**
+### T2.4 注册迁移 — **v1.3 B6 修正：双注册 (object + adapter) + v1.8 H1 PcieTlpBundle**
 - `include/modules_cluster.hh`: 删 GmmuTLM 双 REGISTER_MODULE 行（GmmuTLM 从 SimModule 派生切到 ChStreamModuleBase 派生后必须移除，否则 static_assert 失败）
 - `include/chstream_register.hh`: **双注册**（v1.3 B6 关键）：
   - `ModuleFactory::registerObject<GmmuTLM>("GmmuTLM")` — **必须**（否则 JSON `"type": "GmmuTLM"` 实例化失败）
-  - `ChStreamAdapterFactory::get().registerAdapter<GmmuTLM, AxiMemBundle, AxiMemBundle>("GmmuTLM")` — adapter 注册
+  - `ChStreamAdapterFactory::get().registerAdapter<GmmuTLM, PcieTlpBundle, PcieTlpBundle>("GmmuTLM")` — adapter 注册 (PcieTlpBundle per v1.8 H1)
 
 ### T2.5 VALIDATE
 ```bash
@@ -802,11 +806,12 @@ void DGpuBoard::bind_memory_backings() {
 
 ### T3.2 GREEN — SDMA 改造 (含 N3 retry driver + N7 slot-2) — **v1.3 B1+B2 修正**
 
-**v1.3 B2 切型范围限定（minimal_v1）**：
-- **chip-internal 端口（必须切）**: `mem_in[PORT_MEM_IN]` + `mem_out[PORT_MEM_OUT]` → **AxiMemBundle**
-- **board-level 端口（minimal_v1 不切）**: `desc_in[PORT_DESC_IN]` + `done_out[PORT_DONE_OUT]` + `host_out[PORT_HOST_OUT]` → **保持 PcieTlpBundle**（因 minimal_v1 生产路径经 BAR1 ring doorbell，host_out/desc_in/done_out 端口**不实际接线**；仅 chip-internal mem_in/mem_out 经 soc connections 连通 pcie_memory）
-- **理由**: AxiMemBundle SHALL NOT 出现在 host↔board 端口（spec.md:60-62）；混合端口模板在 minimal_v1 范围外
-- 4 个 helper 重定向 AxiMemBundle（kind 用 DMA_DESC=8/DMA_DONE=9，仅 `to_axi_mem_descriptor`/`from_axi_mem_completion`；`desc_in`/`done_out`/`host_out` helper 保持 `to_pcie_tlp_*`）
+**v1.8 H1 修订 (替代 v1.3 B2 切型)**：所有 5 端口统一为 **PcieTlpBundle** (放弃混合端口切型)。
+- `mem_in[PORT_MEM_IN]` + `mem_out[PORT_MEM_OUT]` → **PcieTlpBundle** (同 `desc_in`/`done_out`/`host_out`)
+- `MultiPortStreamAdapter<SdmaEngineTLM, PcieTlpBundle, PcieTlpBundle, 5>` 同构保持
+- chip-internal 路径通过 PcieTlpBundle MEM_WRITE/MEM_READ 通信 (inline data ≤8B; ≥8B 大块经 backdoor 或分段)
+- `to_axi_mem_descriptor`/`from_axi_mem_completion` helper 降级为 **D3+ VramController 演进 seam**，minimal_v1 **不实例化**
+- **理由** (H1): AxiMemBundle SHALL NOT 出现在 minimal_v1 的任何实际线路上 (设计简化, 框架限制, 节省 D3 适配成本)
 
 **v1.3 B1 字段名修正**:
 - 真实字段名（per `dma_descriptor_mvp.hh:44-48`）: `dir / host_iova / vram_offset / size / tag`
@@ -834,10 +839,9 @@ void DGpuBoard::bind_memory_backings() {
 - 其他 sdma 相关测试
 
 **修改内容**:
-- `PcieTlpBundle desc_pkt = ...` → `AxiMemBundle desc_pkt = ...`
-- `sdma.req_in[PORT_DESC_IN].data() = to_pcie_tlp_descriptor(...)` → `to_axi_mem_descriptor(...)` (kind=DMA_DESC)
-- `from_pcie_tlp_completion(...)` → `from_axi_mem_completion(...)` (kind=DMA_DONE)
-- 字段名适配
+- **v1.8 H1**: 放弃切型, 保留 PcieTlpBundle 不变。既有 [sdma] 测试已使用 PcieTlpBundle wire-format, **零机械迁移**。
+- 验证: 既有 `test_sdma_h2d.cc` 等使用 PcieTlpBundle 的测试在 PcieMemoryDevice ChStream 化后仍正常运行。
+- 场名适配同 design §6 方案 (PcieTlpBundle field: offset/size/trans_id/GPLD vs 旧 AxiMemBundle addr/len/id/data_buf).
 
 ### T3.4 GREEN — 既有 [sdma] 测试迁移完成
 
@@ -888,7 +892,7 @@ void DGpuBoard::bind_memory_backings() {
   1. `pcie_config_read(0x00, 4)` 返 0x123410DE (N6 + R4 验证)
   2. `mmio_write(2, 0x1000, data, 8)` + `mmio_read(2, 0x1000, buf, 8)` 返 data
   3. `backdoor_write(0, 0x1000, data, 8)` + `backdoor_read(0, 0x1000, buf, 8)` 返 data
-  4. 写 PTE: `mmio_write(2, pte_off, pte, 8)` → GMMU translate 经 AxiMemBundle MEM_READ 读同一 PTE
+  4. 写 PTE: `mmio_write(2, pte_off, pte, 8)` → GMMU translate 经 PcieTlpBundle MEM_READ 读同一 PTE (per v1.8 H1)
   5. SDMA H2D → mem_out (slot 2 resp) → pcie_memory 收到 → done emit
 
 ### T4.4 ABI 冻结验证
@@ -913,29 +917,28 @@ openspec validate --changes --strict
 
 ### T5.1 CppTLM 仓内 docs
 - 新文件: `docs/pcie/driver-visible-minimal-soc.md`
-- 内容: 拓扑 + driver 视角路径 + AxiMemBundle vs PcieTlpBundle 边界 + Coherence 域边界声明 + **N1-N12 修订要点索引**
+- 内容: 拓扑 + driver 视角路径 + **v1.8 H1**: PcieTlpBundle 统一 wire-format (AxiMemBundle 标 D3+ VramController 专用) + Coherence 域边界声明 + **N1-N12 修订要点索引**
 
 ### T5.2 AGENTS.md 更新
-- "WHERE TO LOOK" 表: 添加 `[driver-visible]` `[axi_mem]` 标签
+- "WHERE TO LOOK" 表: 添加 `[driver-visible]` 标签
 - "PHASE STATE": 添加 D-AXI phase 行 (v1.2 P1 修订完成 / T0-T4 实施计划)
-- "KEY INVARIANTS": 添加 AxiMemBundle vs PcieTlpBundle 边界 + Coherence 边界声明
-- bundle 章节: "board-level (PcieTlpBundle) vs chip-internal (AxiMemBundle)" 边界说明
-- 测试章节: 标注 N5 既有测试机械迁移清单
+- "KEY INVARIANTS": 添加 v1.8 H1 wire-format 统一 (PcieTlpBundle / AxiMemBundle D3+ 专用) + Coherence 边界声明
+- bundle 章节: "board-level (PcieTlpBundle) vs chip-internal (AxiMemBundle, D3+ seam)" 边界说明
+- 测试章节: 标注 N5 既有测试机械迁移清单 (H1 后 SDMA 测试零迁移)
 
-### T5.3 提交策略 (10 commits)
+### T5.3 提交策略 (10 commits, v1.8 H1 修订)
 ```bash
-git commit -m "test(stream): AxiMemBundle 经 StreamAdapter round-trip (N1 前置验证)"
-git commit -m "feat(framework): payload 按 sizeof(BundleT) 扩容 (N1 框架 2 行)"
-git commit -m "feat(bundle): 新建 AxiMemBundle (chip-internal AXI 4KB inline payload)"
+git commit -m "test(stream): PcieTlpBundle StreamAdapter E2E (替代旧 AxiMemBundle round-trip, H1)"
+git commit -m "feat(framework): payload 按 sizeof(BundleT) 扩容 (N1 框架 2 行, D3+ seam)"
+git commit -m "feat(bundle): 新建 AxiMemBundle 并标注 D3+ VramController chip-internal 专用 (H1)"
 git commit -m "feat(pcie-memory): PcieMemoryDevice ChStreamModuleBase 化 + 2 SlavePorts + **单 adapter_** (v1.3 B3 撤销 N4 双 adapter)"
 git commit -m "refactor(pcie): PcieEndpointIP raw pointer 化 + 删 memory_device_->tick() (N8)"
 git commit -m "feat(pcie-cfg): PcieConfigSpace BAR 寄存器从 bar_sizes 生成 (N6)"
-git commit -m "feat(gmmu): GMMU 异步状态机 + iova 匹配 (N2) + 访问器 + AxiMemBundle MasterPort"
-git commit -m "refactor(sdma): SDMA 5 端口 AxiMemBundle + retry driver (N3) + slot-2 resp (N7)"
+git commit -m "feat(gmmu): GMMU 异步状态机 + iova 匹配 (N2) + 访问器 + PcieTlpBundle MasterPort (H1)"
+git commit -m "refactor(sdma): SDMA 5 端口 retry driver (N3) + slot-2 resp (N7), PcieTlpBundle 统一 (H1)"
 git commit -m "feat(board): BAR2 fast-path + bind_memory_backings 条件化 (N12)"
-git commit -m "test(pcie): 既有 [sdma]/[pcie-memory] 测试机械迁移 (N5)"
-git commit -m "test(minimal-soc): driver-visible E2E + N1-N12 must-fix 测试套件"
-git commit -m "docs(pcie): driver-visible-minimal-soc.md + AGENTS.md 同步 (含 N1-N12 must-fix 索引)"
+git commit -m "test(pcie): 既有 [sdma]/[pcie-memory] 测试迁移 (N5) + driver-visible E2E"
+git commit -m "docs(pcie): driver-visible-minimal-soc.md + AGENTS.md 同步 (含 H1 H1-N12 索引)"
 ```
 
 ## 工时统计 (v1.2 修订)
@@ -943,18 +946,18 @@ git commit -m "docs(pcie): driver-visible-minimal-soc.md + AGENTS.md 同步 (含
 | Task | 估时 | 累计 |
 |------|------|------|
 | **P1** 修订文档 | 0.5d | 0.5d |
-| **T0** 表征 + AxiMemBundle StreamAdapter + EP 3-BAR + baseline | 1d | 1.5d |
+| **T0** 表征 + PcieTlpBundle StreamAdapter E2E (**v1.8 H1**: AxiMemBundle D3 backlog) + EP 3-BAR + baseline | 1d | 1.5d |
 | **T0.4** PcieConfigSpace BAR 寄存器生成 (N6 子任务) | +0.5d (含 T0 内) | — |
 | **T1** PcieMemoryDevice 2-port + **单 adapter_** (v1.3 B3 撤 N4) + EP raw ptr + 删双 tick + EP BAR (v1.3 B5 64-bit 双 dword) + 既有测试迁移 | 2d | 3.5d |
 | **T2** GMMU 异步 + iova 匹配 + 访问器 + 注册迁移 | 1.5d | 5d |
-| **T3** SDMA 5 端口换型 + retry driver + slot-2 resp + 既有测试迁移 | 2.5d | 7.5d |
+| **T3** SDMA 5 端口统一 PcieTlpBundle (v1.8 H1) + retry driver + slot-2 resp + 既有测试验证 | 2.5d | 7.5d |
 | **T4** JSON + BAR2 fast-path + bind_memory_backings 条件化 + E2E | 1.5d | 9d |
 | **合计** | **~9d ≈ 1.8 周** | |
 
 ## 验证清单 (v1.2 P1 修订后)
 
 - [ ] P1 修订完成, openspec validate --changes --strict PASS
-- [ ] **N1** AxiMemBundle 经真实 StreamAdapter round-trip 通过
+- [ ] **N1** AxiMemBundle round-trip (**v1.8 H1 demoted 至 D3 backlog**; 用 PcieTlpBundle E2E 替代验证, 见 T4.3)
 - [ ] **N2** GMMU iova 匹配检查通过
 - [ ] **N3** SDMA inflight retry driver 多 tick in-order 完成
 - [ ] **v1.3 B3 撤销 N4** PcieMemoryDevice adapters_[2] 双 tick 测试（不可能, 基于错误前提）→ **新增 v1.3 B3 验证**: 单 adapter tick 后两个 resp_out 都出
@@ -990,9 +993,9 @@ git commit -m "docs(pcie): driver-visible-minimal-soc.md + AGENTS.md 同步 (含
 | 项目 | D2 v1.1 | D-AXI (v1.2) |
 |------|---------|-----------------|
 | PcieMemoryDevice 派生 | 独立类 | ChStreamModuleBase, 2 SlavePorts, **单 adapter_ (v1.3 B3 撤销 N4 adapters_[2])** |
-| Wire-format | N/A | **AxiMemBundle** (新建, **需框架 payload 扩容**) |
+| Wire-format | N/A | **AxiMemBundle** (新建, **需框架 payload 扩容**) — **v1.8 H1 locked to PcieTlpBundle**; AxiMemBundle D3+ 专用 |
 | GMMU 派生 | SimModule | ChStreamModuleBase, **COMPLETE/WAIT iova 匹配** |
-| SDMA wire-format | PcieTlpBundle | AxiMemBundle, **retry driver**, **slot-2 resp** |
+| SDMA wire-format | PcieTlpBundle | AxiMemBundle, **retry driver**, **slot-2 resp** — **v1.8 H1 统一为 PcieTlpBundle** |
 | EP BAR | 2-BAR | **3-BAR (T0.4 显式立项)** |
 | EP 双 tick | 双 tick | **删除转发** |
 | bind_memory_backings | 全局注入 | **条件注入 (N12)** |
