@@ -229,7 +229,7 @@ public:
     void set_msix_coalesce_timeout(std::chrono::microseconds timeout);
     std::chrono::microseconds msix_coalesce_timeout() const { return msix_coalesce_timeout_; }
 
-    // ── Phase A2/B1/B2/B3 framebuffer + 路由 flag ──
+    // ── Phase A2/B1/B2/B3 framebuffer + 路由 flag (rename per ADR-DGPU-10 §4 — pending Migration Step 1) ──
     void bind_memory_backings();
     void set_storage_routing_enabled(bool en) noexcept { storage_routing_enabled_ = en; }
     [[nodiscard]] bool storage_routing_enabled() const noexcept { return storage_routing_enabled_; }
