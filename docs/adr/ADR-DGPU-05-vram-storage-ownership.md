@@ -282,4 +282,36 @@ per D-AXI tasks.md **B7-B15 + B19** (v1.4 架构根因 + v1.5 隐藏缺陷):
 
 ## Status Update
 
+### 2027-02-09 — ADR-DGPU-10 配套补充 (Oracle 5 步解锁链 Step 5)
+
+本 ADR 已签发"单一 VRAM 真源"架构决策(章节 2),但**字段命名未统一**(5 个组件使用 4 种不同术语)。Oracle 评审 5 步解锁链 Step 5 触发配套 ADR:
+
+**配套 ADR**: [ADR-DGPU-10 backing 命名约定 (owner / injected 两级)](ADR-DGPU-10-backing-naming-convention.md)
+
+**关键映射**(本 ADR 决策 → ADR-DGPU-10 命名约定):
+
+| 本 ADR §2 提到的字段 | ADR-DGPU-10 决策命名 | 角色 |
+|---------------------|----------------------|------|
+| `DGpuBoard::vram_storage_` | `*_storage_` (owner) | 保持(已是合规命名) |
+| `PcieMemoryDevice::backing_ptr_` | `backing_view_` (injected-ChStream) | v1.4 B7 已部分实施,需完成 setter 重命名 |
+| `MemoryTLM::backingPtr_` | `backing_view_` (injected-ChStream) | v1.1 rename |
+| `GmmuTLM::backing_` | `mem_view_` (injected-functional) | v1.1 rename |
+| `SdmaEngineTLM::vram_backdoor_` | `vram_backdoor_` (injected-functional) | ✅ 已合规 |
+| `SdmaEngineTLM::host_backdoor_` | `host_backdoor_` (injected-functional) | ✅ 已合规 |
+
+**关联文档修订**:
+- [../designs/dgpu-soc/architecture.md](../designs/dgpu-soc/architecture.md) — §1.4 仿真模式声明 + 全文 `framebuffer_` → `framebuffer_storage_` 清理 (Oracle 5 步解锁链 Step 1-4 + 后续 cleanup)
+- §4.1 BAR 布局: 1GB → 16MB (与 `dgpu_soc_minimal_v1.json` 对齐)
+- §5 GMMU: 改为 "Functional Translation Service" (同步翻译服务,等价 gem5 atomic mode)
+- §7.1 JSON 示例: 同步真实配置文件
+
+**后续工作** (per ADR-DGPU-10 §4 Migration 8 步,工时 0.5-1 工作日):
+1. 代码字段机械 rename: `framebuffer_storage_` → `vram_storage_` (DGpuBoard)
+2. `MemoryTLM::backing_ptr_` → `backing_view_`
+3. `GmmuTLM::backing_` → `mem_view_`
+4. `set_backing_store` → `set_backing_view` (MemoryTLM)
+5. 全量 grep audit + ctest 回归
+
+**审查范围**: Oracle 5 步解锁链实施日期 2027-02-09;关联 commit 待签发后追加。
+
 _(本节将在 D-AXI v1.4 实施通过 Oracle 评审后追加，记录签发时间与实施 commit hashes)_
