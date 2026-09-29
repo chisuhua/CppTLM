@@ -28,6 +28,7 @@ D-AXI (cpptlm-driver-visible-minimal-soc) 实现笔记:
   - **0 个新 ABI 函数**（per ADR-088 §D5）
   - **冻结面零 diff**：pcie_endpoint_tlm.h / pcie_display_device.hh / pcie_bundles_tlm.hh / cpptlm_emulator.h
   - **D3 seam 已预留**：`handle_slave_port ↔ backing_ptr_` 之间可插入 VramControllerTLM/MemoryClusterTLM
+  - **✅ 配套 timing-mode SoC (v0.2 终稿, Oracle 八轮复评 PASS, 21/21 硬伤落盘, T0 已签发 ADR-DGPU-11)**：`docs/designs/dgpu-soc/timing-mode.md` + `openspec/changes/cpptlm-dgpu-soc-timing-mvp/` (18 ADDED Requirements + 52 scenarios) + [ADR-DGPU-11-timing-mode-soc-scope.md](docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md) (T0 已完成, 11-12d 工程量, 等待 T1-T8 实施启动)
   - **7 条实施铁律**：见 `docs/pcie/driver-visible-minimal-soc.md` §4
   - **3 项遗留议题**：D1 Display FB (冻结面约束, D3 收编) / doorbell 0x10010000 (测试合成偏移) / MemoryTLM capacity_gb=1 (不静默)
 

@@ -25,7 +25,7 @@
 | 子目录 | 视角 | 核心问题 | 入口文档 |
 |--------|------|---------|---------|
 | **[dgpu-board/](./dgpu-board/)** | Board 内部架构 | DGpuBoard 5 层 + 5 关键组件（LifecycleProtocol / CallbackWorker / DispatchRegistry / EpCache / PendingReqGuard）如何协作？ | [dgpu-board/architecture.md](./dgpu-board/architecture.md) |
-| **[dgpu-soc/](./dgpu-soc/)** | SoC 业务架构 | 6 模块（DGpuBoard + PcieEndpointIP + PcieMemoryDevice + GMMU + SDMA + PcieConfigSpace）如何组合成最小 SoC？ | [dgpu-soc/architecture.md](./dgpu-soc/architecture.md) |
+| **[dgpu-soc/](./dgpu-soc/)** | SoC 业务架构 | 6 模块（DGpuBoard + PcieEndpointIP + PcieMemoryDevice + GMMU + SDMA + PcieConfigSpace）如何组合成最小 SoC？两种仿真模式并列：functional-mode (LT, zero-delay) + timing-mode (AT, cycle-approximate)？ | [dgpu-soc/architecture.md](./dgpu-soc/architecture.md) (functional-mode)<br/>[dgpu-soc/timing-mode.md](./dgpu-soc/timing-mode.md) (timing-mode 🆕) |
 | **[dgpu-driver/](./dgpu-driver/)** | Driver 接口架构 | Linux driver 通过 15 ABI + 4 BAR 看到什么？怎么闭环（H2D / D2H / D2D）？ | [dgpu-driver/architecture.md](./dgpu-driver/architecture.md) |
 
 ---
@@ -65,18 +65,19 @@
 
 ### 5 分钟快速理解
 1. [dgpu-driver/architecture.md §1](./dgpu-driver/architecture.md) — 15 ABI + 4 BAR 一图概览
-2. [dgpu-soc/architecture.md §1-§2](./dgpu-soc/architecture.md) — 6 模块拓扑
+2. [dgpu-soc/architecture.md §1-§2](./dgpu-soc/architecture.md) — 6 模块拓扑（functional-mode 默认）
 
 ### 1 小时深度理解（推荐起点）
 1. [dgpu-driver/README.md](./dgpu-driver/README.md) → [architecture.md](./dgpu-driver/architecture.md)（driver 接口视角）
-2. [dgpu-soc/README.md](./dgpu-soc/README.md) → [architecture.md](./dgpu-soc/architecture.md)（SoC 业务视角）
+2. [dgpu-soc/README.md](./dgpu-soc/README.md) → [architecture.md](./dgpu-soc/architecture.md)（SoC functional-mode 业务视角）→ [timing-mode.md](./dgpu-soc/timing-mode.md)（SoC timing-mode 业务视角 🆕）
 3. [dgpu-board/README.md](./dgpu-board/README.md) → [architecture.md](./dgpu-board/architecture.md)（Board 内部视角）
 
 ### 2 小时全链路理解
 1. 上述 1 小时路径
-2. 对应 [OpenSpec change](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) 的 design.md（实施指导）
-3. 对应 4 篇基础架构 ADR（ADR-DGPU-01 ~ 04）
-4. [../pcie/driver-visible-minimal-soc.md](../../pcie/driver-visible-minimal-soc.md) — 实施笔记（图文并茂入口）
+2. 对应 [OpenSpec change](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) 的 design.md（functional-mode 实施指导）
+3. 对应 [OpenSpec change](../../../openspec/changes/cpptlm-dgpu-soc-timing-mvp/) 的 design.md（timing-mode 实施指导 🆕）
+4. 对应 4 篇基础架构 ADR（ADR-DGPU-01 ~ 04）
+5. [../pcie/driver-visible-minimal-soc.md](../../pcie/driver-visible-minimal-soc.md) — 实施笔记（图文并茂入口）
 
 ---
 
@@ -88,6 +89,8 @@
 | 2026-09-26 | 从 `docs/designs/2027-02-09-minimal-dgpu-soc.md` 迁移 Minimal SoC 业务设计 → `dgpu-soc/architecture.md` |
 | 2026-09-26 | 新建 `dgpu-driver/architecture.md`（Driver 接口视角，原 driver-visible-minimal-soc.md 实施笔记的长期化） |
 | 2026-09-26 | 新建本 README.md + 3 个子目录 README.md（三视角索引） |
+| 2027-02-09 | 🆕 新增 timing-mode 提案 [dgpu-soc/timing-mode.md](./dgpu-soc/timing-mode.md)（与 functional-mode 并列共存）+ OpenSpec change `cpptlm-dgpu-soc-timing-mvp` |
+| 2027-02-09 | ✅ timing-mode v0.2 终稿 (Oracle 八轮复评 PASS, 21/21 硬伤落盘) + [ADR-DGPU-11-timing-mode-soc-scope.md](../adr/ADR-DGPU-11-timing-mode-soc-scope.md) 签发 (T0 阶段) + 18 ADDED Requirements + 52 scenarios |
 
 ---
 
