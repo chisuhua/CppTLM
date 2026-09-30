@@ -395,7 +395,9 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **OpenSpec Proposed 存量 ≤3 (复审 KPI, P0.5-landing 新增)**: `openspec/changes/` 下 Proposed change 数量上限 3. 超出时:
   - **季度复审**: 评估是否 archive, merge, 或明确 deprecate
   - **新提案门槛**: 现有 ≥3 时新提案需先 archive 一个现有 change
-  - **当前基线 (2027-09-17)**: 4 个 Proposed (cpptlm-dgpu-gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella / pcie-memory-device-mvp / pcie-ep-integration) — 已超 KPI, 需在 Phase 10+ 季度复审中处理
+  - **范围判定 (2026-09-30 季度复审后)**: CppTLM=建模框架 + 基本 SoC 验证；SoC 架构建模在 ArchForge。任何 SoC 架构组件/拓扑/演进类提案应直接在 ArchForge openspec 创建，不进 CppTLM 计数
+  - **当前基线 (2026-09-30 季度复审后)**: 1 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证) — 合规 (1/3)
+  - **历史复审**: 2026-09-30 季度复审 archive 3 个 (gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella)，理由: SoC 架构建模属 ArchForge 范围
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
 ### 4 层文档模型 (2026-09-26 重组)
@@ -430,7 +432,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
-- **测试状态**: **66951 assertions 全绿**（含 Phase 1-8 + 7 阶段全链路 + dgpu_soc_minimal_v1 E2E `[minimal_dgpu_soc]` 41 assertions + ABI smoke `[abi][minimal_dgpu_soc]` 28 assertions + D2 memory `[pcie-memory]` 67 assertions / 1587 cases）；**openspec validate PASS**
+- **测试状态**: **79046 assertions in 1634 test cases 全绿**（含 Phase 1-8 + 7 阶段全链路 + dgpu_soc_minimal_v1 E2E `[minimal_dgpu_soc]` + ABI smoke `[abi][minimal_dgpu_soc]` + D2 memory `[pcie-memory]`）；**openspec validate PASS**
 - **23 ABI 冻结**: `include/tlm/gpu/pcie_endpoint_tlm.h` 与 `include/abi/cpptlm_emulator.h` 零修改（仅可加 `[[deprecated]]` 属性）
 - **PcieEndpointTLM deprecated**: `[[deprecated("use PcieEndpointIP")]]`，chstream_register 仍注册（既有 Phase 4 测试依赖），新增 PcieEndpointIP 并存
 - **512-bit 数据限制**: `ch_uint<512>` 内部 `uint64_t`，`wdata/rdata` 真实宽度 64-bit（per `include/bundles/cpphdl_types.hh`）
