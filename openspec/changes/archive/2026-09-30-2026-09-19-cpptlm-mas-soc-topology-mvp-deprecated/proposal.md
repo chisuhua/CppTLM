@@ -1,6 +1,10 @@
 # 2026-09-19-cpptlm-mas-soc-topology-mvp: MAS-3.1 dGPU SoC V3.1-Rev2.0 拓扑修正
 
-> **状态**: 📋 Proposed — 2026-09-19
+> **状态**: 🔴 Deprecated — 2026-09-30 (Quarterly Review)
+> **归档原因**: MAS-3.1 V3.1-Rev2.0 拓扑修正是 SoC 架构工作，CppTLM 不做 SoC 架构建模（per 项目愿景：CppTLM = 建模框架 + 基本 SoC 验证；ArchForge = SoC 架构建模）。SSOT 已在 ArchForge `docs/architecture/21-soc-topology-mvp.md`。
+> **进度**: 16/49 tasks done (33%) — 季度复审时搁置
+> **后续**: 若需重启拓扑修正实施，在 ArchForge 仓 openspec/changes/ 创建新 change 并链接 ADR-SOC-21
+> **原状态**: 📋 Proposed — 2026-09-19
 > **目标**: 在 CppTLM dGPU 仓内实施 **MAS-3.1 V3.1-Rev2.0 拓扑修正**，解决"模块归属错误 + 接口缺失"问题。具体包括 3 项关键修正：① TC-DMA 物理归属 GPC 内紧耦合（不再与 HBM-DMA 平级）；② IO-DMA / PCIe 端口补全到 Fabric & Edge IO Subsystem；③ 移除片上 CXL PHY/Controller，明确 CXL Memory Pool 是外部 Scale-Up Switch 下挂设备。同时**新增 SoC 顶层物理布局规范文档** + **修正 HRT Route_Tag 分配** + **细化 AWT Trap Type**。
 >
 > **关联设计**: `docs/soc_arch/architecture/21-soc-topology-mvp.md`（SoC 顶层物理布局规范 SSOT）

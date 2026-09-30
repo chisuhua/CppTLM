@@ -1,6 +1,10 @@
 # 2026-09-19-cpptlm-nsa-scale-up-umbrella: MAS-3.1 NSA-aware Scale-Up 演进 (Umbrella Proposal)
 
-> **状态**: 📋 Proposed — 2026-09-19
+> **状态**: 🔴 Deprecated — 2026-09-30 (Quarterly Review)
+> **归档原因**: NSA-aware Scale-Up 是 SoC 架构演进工作，CppTLM 不做 SoC 架构建模（per 项目愿景：CppTLM = 建模框架 + 基本 SoC 验证；ArchForge = SoC 架构建模）。全部 9 份草案 + 3 份 ADR 的 SSOT 已在 ArchForge `docs/architecture/22-29-*.md`。
+> **进度**: umbrella 提案（无 tasks.md，by design）
+> **后续**: 若需重启 NSA-aware Scale-Up 实施，在 ArchForge 仓 openspec/changes/ 创建新 umbrella change
+> **原状态**: 📋 Proposed — 2026-09-19
 > **目的**: 在 CppTLM dGPU 仓内建立 **NSA-aware Scale-Up 演进体系**, 作为 9 份 NSA 草案 + 3 份 ADR 的 **umbrella 提案**。NSA-aware Scale-Up 是 V3.1-Rev2.0 的下一阶段 (v1.x / v3.x), 借鉴 NVIDIA NVL72 / AMD MI300X / Intel Xe-HPC + CXL 3.0 业界方向。
 >
 > **关联设计**: 

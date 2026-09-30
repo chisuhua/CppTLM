@@ -1,6 +1,10 @@
 # 2026-09-19-cpptlm-dgpu-gmmu-mvp: dGPU GMMU v1.0 MVP 实现
 
-> **状态**: 📋 Proposed — 2026-09-19
+> **状态**: 🔴 Deprecated — 2026-09-30 (Quarterly Review)
+> **归档原因**: GMMU 是 SoC 架构组件，CppTLM 不做 SoC 架构建模（per 项目愿景：CppTLM = 建模框架 + 基本 SoC 验证；ArchForge = SoC 架构建模）。SSOT 已在 ArchForge `docs/architecture/20-gmmu-*.md`。
+> **进度**: 0/123 tasks done (14 天 Proposed 无 review 状态变更)
+> **后续**: 若需实施 GMMU v1.0 MVP，在 ArchForge 仓 openspec/changes/ 创建新 change
+> **原状态**: 📋 Proposed — 2026-09-19
 > **目标**: 在 CppTLM dGPU 仓内实现 GMMU v1.0 MVP(7 个最小能力),替代未 ship 的 GART v0.1 设计,达成"IO-DMA → GMMU → PCIe EP → Host Memory"端到端数据通路。同时**重命名 SDMA → IO-DMA** 与 GMMU 提案概念对齐。
 > **关联 P1 计划**: `docs/soc_arch/architecture/20-gmmu-evolution-roadmap.md`(v1.0 MVP 阶段 SSOT)
 > **关联 P1 详细设计**: `docs/soc_arch/architecture/20-gmmu-mvp.md`(模块 SSOT)
