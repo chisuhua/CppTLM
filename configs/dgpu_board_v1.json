@@ -1,6 +1,6 @@
 {
   "name": "dgpu_board_v1",
-  "description": "CppTLM dGPU board topology (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/design.md §4, ADR-SOC-07 D1/D2/D7, 2026-09-15-cpptlm-stage-1-4-2-1-ue-extensions-unblock Path A v1.2). DGpuBoard C++ ABI shell owns a DGpuSoc SimModule container; SOC-internal PcieEndpointIP (17-port, PF + VF pool + composite LL/PHY/Mux) handles config space (PM Cap + PCIe Cap + ACS + ReBAR Ext Cap) + BAR0/doorbell + MSI-X; MemoryTLM 'vram' holds BAR1 VRAM; SDMA/CP/TMU/SQ/CQ form command/data path. UsrLinuxEmuIoctlStub NOT in JSON (host-side, lives in test harness).",
+  "description": "CppTLM dGPU board topology (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/design.md §4, ADR-SOC-07 D1/D2/D7, 2026-09-15-cpptlm-stage-1-4-2-1-ue-extensions-unblock Path A v1.2). DGpuBoard C++ ABI shell owns a DGpuSoc SimModule container; SOC-internal PcieEndpointIP (17-port, PF + VF pool + composite LL/PHY/Mux) handles config space (PM Cap + PCIe Cap + ACS + ReBAR Ext Cap) + BAR0/doorbell + MSI-X; MemoryTLM 'vram' holds BAR1 VRAM; SDMA/CP/TMU/SQ/CQ form command/data path. UsrLinuxEmuIoctlStub NOT in JSON (host-side, lives in test harness). 早期代次 (Stage 1.4-2.1, 2026-09-15) Board 视角 config, 9 TLM connections 表达完整 GPGPU compute path. 不在 D-AXI 当前代次 SoC 内部 wiring 设计目标 (R-WIRE-* 5 条规则, 详见 docs/designs/dgpu-soc/soc-internal-tlm-design-target.md §5.3) 范围——该目标适用于当前 minimal_v1/timing_v1 代次.",
   "params": {
     "device_id": "0x1234",
     "quantum_cycles": 1000,

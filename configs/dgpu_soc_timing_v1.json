@@ -1,6 +1,6 @@
 {
   "name": "dgpu_soc_timing_v1",
-  "description": "Timing-mode dGPU SoC v0.5 test config (per openspec/changes/cpptlm-dgpu-soc-timing-mvp design.md §7). 6 modules + 0 new connections (沿用 minimal_v1 functional 拓扑, per H2). VramControllerTLM 替代 MemoryTLM (H2 互斥), GMMU 不在 Crossbar 数据路径 (per M9).",
+  "description": "Timing-mode dGPU SoC v0.5 test config (per openspec/changes/cpptlm-dgpu-soc-timing-mvp design.md §7). 6 modules + 0 new connections (沿用 minimal_v1 functional 拓扑, per H2). VramControllerTLM 替代 MemoryTLM (H2 互斥), GMMU 不在 Crossbar 数据路径 (per M9). 当前 JSON 仅表达 TLM StreamAdapter 连接 (R-WIRE-1), 0 新增连接 (per H2 沿用 minimal_v1 wiring). SoC 内部方法注入 (R-WIRE-4 当前违反) 发生在 C++ code 层, Oracle N8 spec 决策故意妥协 (避免双 tick). D-AXI v2.0 目标: SoC 内部全 TLM 化. 详见 docs/designs/dgpu-soc/soc-internal-tlm-design-target.md §4 v2.0 触发条件.",
   "simulation_mode": "timing",
   "memory_routing_enabled": true,
   "storage_routing_enabled": true,

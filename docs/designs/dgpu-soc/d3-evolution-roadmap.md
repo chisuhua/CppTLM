@@ -158,6 +158,7 @@ D3a-1 完成        └─→ D3a-2 (MemoryTLM capacity) [1d]
 2. **D3a-2 选项**: capacity 同步走选项 1 (不变) / 选项 2 (auto-derive) / 选项 3 (VramController)？
 3. **D3b 工期**: 5-7 工作日估算是否合理？(Oracle 评审后可调整)
 4. **D3 change 在哪仓?** D3a + D3b 都在 CppTLM 仓 (per 项目愿景: CppTLM = 框架 + 集成验证), 还是 D3b (GMMU/SM) 拆到 ArchForge?
+5. **v2.0 全 TLM 化**: D-AXI v2.0 是否作为远期目标立项？详见 [soc-internal-tlm-design-target.md](soc-internal-tlm-design-target.md)（季度复审 2026-09-30 产物）
 
 ---
 

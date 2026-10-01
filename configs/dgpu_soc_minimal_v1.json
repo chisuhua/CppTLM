@@ -1,6 +1,6 @@
 {
   "name": "dgpu_soc_minimal_v1",
-  "description": "Minimal dGPU SoC v1.0 test config (per openspec/changes/cpptlm-minimal-dgpu-soc-v1 B1.3). 16MB framebuffer for test, storage/gmmu/memory routing flags enabled, PcieMemoryDevice BAR2 fast-path (per D-AXI v1.8 T4).",
+  "description": "Minimal dGPU SoC v1.0 test config (per openspec/changes/cpptlm-minimal-dgpu-soc-v1 B1.3). 16MB framebuffer for test, storage/gmmu/memory routing flags enabled, PcieMemoryDevice BAR2 fast-path (per D-AXI v1.8 T4). 当前 JSON 仅表达 TLM StreamAdapter 连接 (SoC 内部 wiring 设计目标 R-WIRE-1, 详见 docs/designs/dgpu-soc/soc-internal-tlm-design-target.md §1.2). SoC 内部方法注入 (如 pcie_ep↔pcie_memory set_memory_device) 发生在 C++ code 层, 是 Oracle N8 spec 决策的故意妥协 (避免双 tick, R-WIRE-4 当前违反, 详见 openspec/specs/driver-visible-minimal-soc/spec.md:126). D-AXI v2.0 目标: SoC 内部全 TLM 化 (用 b_transport / transport_dbg 接口).",
   "display_routing_enabled": false,
   "storage_routing_enabled": true,
   "gmmu_routing_enabled": true,
