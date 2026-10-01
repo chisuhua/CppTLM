@@ -426,6 +426,59 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - 架构文档代表长期设计意图（why）；OpenSpec design.md 代表实施指导（how）
 - 反向同步不强制（架构文档可以领先于实施）
 
+### 仿真框架 vs 应用设计 — 文档路径区分（2026-09-30 季度复审产物）
+
+**项目愿景分层**:
+- **CppTLM** = **仿真框架** + 基本 SoC 验证（本仓范围）
+- **ArchForge** = SoC 架构建模（跨仓镜像 `ArchForge/docs/architecture/`，不属于本仓）
+
+**路径映射表**:
+
+| 设计层次 | 路径 | 职责 | 典型文档 |
+|---------|------|------|----------|
+| **仿真框架** (TLM 基础设施) | `docs/architecture/` | 跨 SoC 复用的 TLM 框架 + 通用架构 + 拓扑/错误/复位 | `01-hybrid-architecture-v2.1.md`、`多层次混合仿真.md`、`02-04-transaction-architecture.md` |
+| **应用设计** (基于框架的 SoC 业务) | `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` | dGPU 应用架构三视角：Board 内部 + SoC 业务 + Driver 接口 | `dgpu-soc/architecture.md`、`dgpu-soc/timing-mode.md`、`dgpu-board/architecture.md` |
+| **设计目标声明** (🟡 DRAFT 愿景) | `docs/designs/<topic>/<name>-design-target.md` 或 `<name>-roadmap.md` | 长期愿景 / 演进路径 / 治理杠杆（未实施但定义清楚） | `dgpu-soc/soc-internal-tlm-design-target.md`、`dgpu-soc/d3-evolution-roadmap.md` |
+
+**新文档路径决策树**:
+
+```
+我写的文档是关于什么？
+├─ TLM 框架本身（模块、基础设施、通用拓扑）
+│   └─ → docs/architecture/<NN>-<topic>.md
+├─ dGPU 应用设计（在框架上跑的具体业务）
+│   └─ → docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/
+│       ├─ 已实施的设计意图 → <topic>/architecture.md 或 <topic>/<aspect>.md
+│       ├─ 多 config 对比 → <topic>/data-flow-and-topology-comparison.md
+│       └─ 未实施的愿景/roadmap → <topic>/<name>-design-target.md 或 -roadmap.md (🟡 DRAFT)
+├─ 不可变决策记录
+│   └─ → docs/adr/ADR-{X,DGPU}-<NN>-<topic>.md
+├─ 实施提案（TDD 5 步 + Oracle 评审）
+│   └─ → openspec/changes/<name>/{proposal,design,spec,tasks}.md
+└─ 实施跟踪 + 进度报告
+    └─ → docs/superpowers/plans/<name>.md（完成后 archive/）
+```
+
+**判定对照表**（典型例子）:
+
+| 文档 | 路径 | 判定 | 理由 |
+|------|------|------|------|
+| `01-hybrid-architecture-v2.1.md` | `docs/architecture/` | ✅ 仿真框架 | TLM 框架通用架构（事务/错误/复位） |
+| `dgpu-soc/architecture.md` | `docs/designs/dgpu-soc/` | ✅ 应用设计 | 6 模块拓扑是 dGPU SoC 业务设计 |
+| `dgpu-soc/timing-mode.md` | `docs/designs/dgpu-soc/` | ✅ 应用设计 | timing-mode SoC 业务（与 functional-mode 并列） |
+| `dgpu-soc/data-flow-and-topology-comparison.md` | `docs/designs/dgpu-soc/` | ✅ 应用设计 | minimal_v1 vs timing_v1 config 对比（业务侧） |
+| `dgpu-soc/soc-internal-tlm-design-target.md` | `docs/designs/dgpu-soc/` | ✅ 设计目标 | SoC 内部 wiring 设计目标（v2.0 愿景） |
+| `dgpu-soc/d3-evolution-roadmap.md` | `docs/designs/dgpu-soc/` | ✅ 设计目标 | D3 演进路径（roadmap） |
+| `D-AXI v1.4 实施笔记` | `docs/pcie/driver-visible-minimal-soc.md` | ⚠️ 混合 | 框架侧（含 spec/scenario）+ 设计侧（含 6 模块业务）；因 D-AXI 跨边界，保留混合 |
+
+**禁止**:
+- ❌ 把通用 TLM 框架文档放到 `docs/designs/`（应用设计专用）
+- ❌ 把 dGPU SoC 业务设计放到 `docs/architecture/`（仿真框架专用）
+- ❌ 把 SoC 架构组件/拓扑/演进类文档放到 CppTLM 仓（应去 ArchForge）
+- ❌ 把 SoC 架构类 OpenSpec change 放到 `openspec/changes/`（应去 ArchForge openspec/changes/）
+
+**迁移历史**: 2026-09-26 把 dGPU 应用架构三视角（Board + SoC + Driver）从 `docs/architecture/` 迁移至 `docs/designs/` 子目录，明确"仿真框架 vs 应用设计"分工。
+
 ## KEY INVARIANTS
 
 - **TLM stub 默认**: `USE_SYSTEMC_STUB=ON`（根 CMakeLists.txt），无外部 SystemC 依赖
