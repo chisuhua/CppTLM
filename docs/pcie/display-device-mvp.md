@@ -1,9 +1,11 @@
 # D1 Display IO 设备 MVP — 实现笔记
 
-> **状态**: ✅ v1.1.1 修订完成（2026-09-23）
-> **v1.1 实施**: 2026-09-20（5 commits cc64b9d8 → 69e7ac45）
+> **状态**: ✅ v1.2 注入式重构完成（2026-10-03,D3a-1 Path A 实施）
+> **v1.0 实施**: 2026-09-20（5 commits cc64b9d8 → 69e7ac45）
 > **v1.1.1 修订**: 2026-09-23（Oracle 复审 ses_f3620ca4effe0HziEXTIIexKkP + Task 1-7 实施）
+> **v1.2 重构**: 2026-10-03（D3a-1 Path A — 彻底同构 PcieMemoryDevice）
 > **配套 openspec**: `openspec/changes/2026-09-20-cpptlm-pcie-display-io-mvp/`
+> **配套重构**: `openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/` (Path A supersede 原 D3a-1 浅层方案)
 > **配套 tasks**: `openspec/changes/2026-09-20-cpptlm-pcie-display-io-mvp/tasks.md`
 > **配套设计**: `openspec/changes/2026-09-20-cpptlm-pcie-display-io-mvp/design.md`
 
@@ -174,3 +176,128 @@ cmake -DCPPTLM_LIB=/workspace/project/CppTLM/build/lib/libcpptlm_emulator.so
 |------|------|------|
 | 2026-09-20 | v1.0 | D1 实施完成（5 步 TDD：T0 characterization + T1 device + T2 EP + T3 board + T4 E2E） |
 | 2026-09-23 | v1.1.1 | Oracle 复审触发修订：4 根因修复 + 7 任务完成（Task 1-7）+ 39 case D1 测试全绿 + 新增 20 case（basic + vblank）+ 新增 3 case（abi-shell routing）|
+| 2026-10-03 | v1.2 | **D3a-1 Path A 注入式重构**：删除 PcieDisplayDevice 自有 `framebuffer_` backing（32MB lazy alloc）+ `kFbSize` 常量 + `ensure_framebuffer_allocated()` 方法，改为 non-owning + `set_backing_view(ptr, size)` 注入视图（per ADR-DGPU-10）。PcieEndpointIP::display_device_ 由 `unique_ptr` 改为 raw ptr（对称 `memory_device_`）+ 新增 `set_display_device()` 注入 API。DGpuBoard 新增 `display_fb_storage_` owner 端 + `bind_display_backings()` init 期调用（镜像 `bind_memory_backings`）。RTL 等价：display controller 与 memory controller 都成为非自有 backing 的 PCI device personality，backing 真源唯一在 DGpuBoard。9 文件改动（166 行新增 / 37 行删除）+ 1 新测试文件（6 cases，24 assertions）+ ADR-DGPU-12 配套。**全量回归 79071 assertions / 1640 cases 全绿**（基线 79046 / 1634 + 新增 25 / 6）。详见 [`openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/`](../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/proposal.md)。 |
+
+---
+
+## v1.2 注入式重构（Path A）— 2026-10-03
+
+> **supersede**: 原 D3a-1 (cpptlm-dgpu-d3a1-display-fb-homogenization) 浅层方案经 Oracle + Metis 评审 BLOCK（8 项 P0 Must-Fix）。本 v1.2 是其正确实施的彻底重构。
+
+### 核心变更
+
+#### 1. PcieDisplayDevice：non-owning + injected view
+
+**删除**（D1 v1.0/v1.1.1 自有 backing）：
+- 字段 `std::vector<uint8_t> framebuffer_`
+- 常量 `static constexpr size_t kFbSize = 32MB`
+- 方法 `void ensure_framebuffer_allocated()`
+
+**新增**（v1.2 注入式 API，per ADR-DGPU-10，与 PcieMemoryDevice 精确镜像）：
+```cpp
+void set_backing_view(uint8_t* ptr, uint64_t size) noexcept;  // DGpuBoard 注入入口
+[[nodiscard]] bool has_backing_view() const noexcept;           // backing 注入状态
+[[nodiscard]] uint64_t backing_size() const noexcept;          // backing 字节数（从注入派生，非常量）
+```
+
+**backdoor_read/write 改 view-only**：
+- 未注入 → `-ENODEV`（无 silent lazy alloc 兜底）
+- 已注入 → 从 `backing_view_` 直接 memcpy，bounds check 用 `backing_size()`
+
+**保留 API**（冻结面兼容）：
+- `mmio_read/write` (BAR 0 4KB 寄存器) — 不变
+- `vendor_id()` / `device_id()` — 不变
+- `tick(MsiXTable&)` (VBLANK 推进) — 不变
+- `framebuffer_size_bytes()` — 返回值从 `framebuffer_.size()` 改为 `backing_size()`（兼容现有测试，语义等价）
+
+#### 2. PcieEndpointIP：持有模式对称化
+
+**修改**（line 299）：
+```cpp
+// 旧: std::unique_ptr<tlm::gpu::PcieDisplayDevice> display_device_;
+// 新: tlm::gpu::PcieDisplayDevice* display_device_ = nullptr;  // 对称 memory_device_
+```
+
+**新增 API**（对称 `set_memory_device()` D2 v1.1 已有模式）：
+```cpp
+void set_display_device(tlm::gpu::PcieDisplayDevice* dev) noexcept {
+    display_device_ = dev;
+}
+```
+
+**构造期**：`PcieEndpointIP` 不再 `make_unique<PcieDisplayDevice>()`,改为 `display_device_(nullptr)`。EP 成为纯 coordinator。
+
+#### 3. DGpuBoard：bind_display_backings 镜像 bind_memory_backings
+
+**新增字段**（per ADR-DGPU-10 owner 端）：
+```cpp
+std::unique_ptr<uint8_t[]> display_fb_storage_;     // 真源（owner 端）
+uint64_t display_fb_size_override_ = 0;              // 顶层 JSON override
+```
+
+**新增方法**：
+```cpp
+void set_display_fb_size(uint64_t bytes) noexcept;
+[[nodiscard]] uint64_t display_fb_size() const noexcept;
+[[nodiscard]] uint8_t* display_fb_ptr() noexcept;
+void bind_display_backings();                         // init() 期调用
+```
+
+**bind_display_backings() 实现**（src/tlm/gpu/dgpu_board_shell.cc）：
+```cpp
+void DGpuBoard::bind_display_backings() {
+    if (!soc_) return;
+    if (display_fb_storage_) return;  // 重入 guard
+    auto derived_size = display_fb_size();
+    if (derived_size == 0) return;    // 未配置 → 跳过
+    display_fb_storage_ = std::make_unique<uint8_t[]>(derived_size);
+    if (auto* display_dev = soc_->getInternalInstance<PcieDisplayDevice>("pcie_display")) {
+        display_dev->set_backing_view(display_fb_storage_.get(), derived_size);
+        if (auto* ep = pcie_ep()) {
+            ep->set_display_device(display_dev);
+        }
+    }
+}
+```
+
+**init() 调用顺序**（镜像 `bind_memory_backings`）：
+```cpp
+void DGpuBoard::init() {
+    // ... 既有 init 逻辑 ...
+    bind_memory_backings();    // 已有 (PcieMemoryDevice backing, D-AXI v1.4 B7)
+    bind_display_backings();   // 🆕 v1.2 (PcieDisplayDevice backing)
+}
+```
+
+### RTL 等价收益
+
+v1.2 后 `PcieDisplayDevice` 与 `PcieMemoryDevice` 零差异地遵循 ADR-DGPU-10 owner/injected 两级：
+- **删除自有 backing** → 与真实 RTL PCIe EP IP 行为一致（display/memory controller 都不持有 storage）
+- **PcieEndpointIP 退化为纯 coordinator** → 无 unique_ptr 持有任何子设备
+- **DGpuBoard 是所有 backing 唯一真源**（per ADR-DGPU-05）
+
+### 验证结果（v1.2 实施完成）
+
+| 验证项 | 结果 |
+|--------|------|
+| `[d3a2]` 新增测试家族 | ✅ 6/6 cases (24 assertions) |
+| `[pcie]` 全量 | ✅ 423/423 cases (36622 assertions) |
+| `[pcie][display]` | ✅ 41/41 cases (144 assertions) |
+| `[pcie-display]` | ✅ 3/3 cases (11 assertions) |
+| `[minimal_dgpu_soc]` | ✅ 12/12 cases (69 assertions) |
+| `[dgpu_soc_timing]` | ✅ 37/37 cases (12024 assertions) |
+| `[pcie-memory]` | ✅ 24/24 cases (69 assertions) |
+| **全量回归** | ✅ **1640 cases / 79071 assertions**（基线 1634/79046,新增 25/6） |
+| `openspec validate --changes --strict` | ✅ 3/3 PASS |
+| `./scripts/test/docs_sync_check.sh --strict` | ✅ 370 paths valid |
+
+### 冻结面保护（关键不变量）
+
+- ✅ `cpptlm_emulator.h` 零修改（23 ABI 冻结）
+- ✅ `pcie_endpoint_tlm.h` 零修改（PcieEndpointTLM 4 端口冻结）
+- ✅ `pcie_display_device.hh` 仅删字段 + 新增方法，签名级兼容（`framebuffer_size_bytes()` 等保留）
+
+### 同期配套
+
+- ADR-DGPU-12 签发（SoC 内部 TLM wiring 原则）— Path A 是其首个验证用例
+- D3a-1 原浅层方案标记 ⛔ SUPERSEDED（`openspec/changes/cpptlm-dgpu-d3a1-display-fb-homogenization/proposal.md` 顶部）

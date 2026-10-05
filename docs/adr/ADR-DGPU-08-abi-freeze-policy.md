@@ -262,3 +262,35 @@ TEST_CASE("ABI signature freeze", "[abi][minimal_dgpu_soc]") {
 
 **验证结果**: `[abi][minimal_dgpu_soc]` 10 cases / 28 assertions + ctest 76/76 PASS, 0 regression。
 
+
+
+### v1.1 — 2026-10-05 冻结面例外增补 (per D3a-2 实施)
+
+**关联 change**: [cpptlm-dgpu-d3a1-display-injection-refactor](../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/) (D3a-2, 已实施)
+
+**例外条目**: `include/tlm/gpu/pcie_display_device.hh` (D1 Display IO 头) 突破 §2.4 表 "仅可追加 `[[deprecated]]`" 约束, 实施删除:
+
+- **删除字段**: `std::vector<uint8_t> framebuffer_;` (private, lazy alloc 32MB)
+- **删除常量**: `static constexpr size_t kFbSize = 32 * 1024 * 1024;`
+- **删除方法**: `void ensure_framebuffer_allocated();` (private)
+- **行为语义变化**: `backdoor_read/write` 从 "lazy alloc + 成功" 改为 "无注入返 -ENODEV" (-ENODEV 守卫, 无 silent lazy alloc)
+
+**例外依据**:
+
+1. **公有 API 零签名 diff** (本 ADR Inv-3 关键不变量):
+   - `mmio_read(uint64_t, void*, size_t) → int` 签名不变
+   - `mmio_write(uint64_t, const void*, size_t) → int` 签名不变
+   - `tick(MsiXTable&) → void` 签名不变
+   - `vendor_id() / device_id() / framebuffer_size_bytes() / vblank_count() / cycle_counter()` 签名不变
+
+2. **23 ABI 零 diff**:
+   - `include/abi/cpptlm_emulator.h` 未触碰 (`git diff HEAD` 空)
+   - `include/tlm/gpu/pcie_endpoint_tlm.h` 未触碰
+   - `include/bundles/pcie_bundles_tlm.hh` 未触碰
+
+3. **先例一致**: 同模式(D-AXI v1.4 B7, commit `429327d`) 删除 `PcieMemoryDevice::memory_backing_` 字段 (per ADR-DGPU-05), 当时 Oracle v2.0.2 P0-3e 仲裁通过作为"统一持有模式"必要重构。本例外延续相同设计意图。
+
+4. **driver 视角零变化**: `framebuffer_size_bytes()` 保留, 返回值绑定到注入的 `backing_view_size_`, 行为等价 (`size_t` → `size_t`)。现有 `[pcie][pcie-display]` 测试零回归 (实测 21/21 PASS)。
+
+**配套 ADR**: [ADR-DGPU-10](ADR-DGPU-10-backing-naming-convention.md) (命名约定统一) + [ADR-DGPU-05](ADR-DGPU-05-vram-storage-ownership.md) (单一真源 vram_storage_ 沿用) + [ADR-DGPU-07](ADR-DGPU-07-minimal-soc-evolution-seam.md) (D3 演进 seam 维持)
+

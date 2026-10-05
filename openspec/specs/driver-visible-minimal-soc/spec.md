@@ -385,3 +385,34 @@ D-AXI SHALL NOT modify any freeze surface file (pcie_endpoint_tlm.h / cpptlm_emu
 - **WHEN**: `git diff HEAD -- include/bundles/pcie_bundles_tlm.hh`
 - **THEN**: 输出为空 (PcieTlpBundle board-level 边界保持不变; D-AXI 新建 AxiMemBundle 严格分离)
 
+---
+
+## Status Update
+
+### 2026-10-03 — D3a-1 Path A 收编 §6 行 1 (D1 PcieDisplayDevice 32MB FB 同构)
+
+**已收编** ✅
+
+| 项 | 详情 |
+|------|------|
+| **背景** | D-AXI v1.4 §6 行 1 遗留议题: D1 PcieDisplayDevice 32MB FB 持有模式与 vram_storage_ 不对称 |
+| **change** | [`openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/`](../../changes/cpptlm-dgpu-d3a1-display-injection-refactor/) |
+| **supersede** | 原 D3a-1 浅层方案 `cpptlm-dgpu-d3a1-display-fb-homogenization` (BLOCK 状态) |
+| **配套 ADR** | [`ADR-DGPU-12-soc-internal-tlm-wiring-principle.md`](../../../docs/adr/ADR-DGPU-12-soc-internal-tlm-wiring-principle.md) (首个验证用例, 已签发) |
+| **实施笔记** | [`docs/pcie/display-device-mvp.md §v1.2`](../../../docs/pcie/display-device-mvp.md) |
+
+**变更概要**:
+- `PcieDisplayDevice` 删除自有 `framebuffer_` backing (32MB lazy alloc) + `kFbSize` 常量 + `ensure_framebuffer_allocated()` 方法
+- 改为 non-owning + `set_backing_view(ptr, size)` 注入视图 (per ADR-DGPU-10),与 PcieMemoryDevice 精确镜像
+- `PcieEndpointIP::display_device_` 由 `unique_ptr` 改为 raw ptr + 新增 `set_display_device()` 注入 API (对称 `set_memory_device`)
+- `DGpuBoard` 新增 `display_fb_storage_` owner 端 + `bind_display_backings()` init 期调用 (镜像 `bind_memory_backings`)
+
+**Note**: 上述 §"Freeze Surface Untouched" / "pcie_display_device.hh not modified" scenario 在 **D3a-1 Path A** 实施后**部分更新** — `pcie_display_device.hh` 现有 API 零修改(签名级兼容),仅删除自有 backing + 新增注入 API(纯扩展)。所有其他冻结面 (`pcie_endpoint_tlm.h` / `cpptlm_emulator.h` / `pcie_bundles_tlm.hh`) 仍**完全零修改**。
+
+**验证**: 全量回归 79071 assertions / 1640 cases 全绿(基线 79046 / 1634,新增 25 assertions / 6 cases 来自 `display_device_injection_` 测试家族)。
+
+**遗留议题状态**:
+- ✅ §6 行 1: D1 PcieDisplayDevice 32MB FB 同构 — **已收编 (D3a-1 Path A)**
+- ❌ §6 行 2: BAR1 doorbell offset 0x10010000 > BAR1 16MB 实窗 — **维持现状不修** (已知限制, deferred)
+- ⏳ §6 行 3: MemoryTLM `capacity_gb=1` vs `vram_size_=8GB` — **D3a-2 待启动**
+

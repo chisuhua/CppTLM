@@ -50,29 +50,33 @@ D3 = D-AXI 完成后的下一阶段演进。围绕 3 个核心目标：
 
 **目标**: 把 v1.4 §6 3 项遗留议题中 2 项收编。
 
-| 子轨 | 来源议题 | 触发 |
-|------|---------|------|
-| **D3a-1** Display FB 收编 | §6 行 1: D1 32MB FB 同构 | D3 START gates G1+G2 满足 |
-| **D3a-2** MemoryTLM capacity 同步 | §6 行 3: `capacity_gb=1` vs `vram_size_=8GB` | D3a-1 完成后 |
+| 子轨 | 来源议题 | 触发 | 状态 |
+|------|---------|------|------|
+| **D3a-1** Display FB 收编 | §6 行 1: D1 32MB FB 同构 | D3 START gates G1+G2 满足 | ✅ **2026-10-03 完成 (Path A supersede 浅层方案)** |
+| **D3a-2** MemoryTLM capacity 同步 | §6 行 3: `capacity_gb=1` vs `vram_size_=8GB` | D3a-1 完成后 | ⏳ 待启动 (D3a-1 Path A 后) |
 
-**D3a-1 实施要点**：
-- 位置: `dgpu_board_shell.cc` 注入点（与 `pcie_memory_device` 并列）
-- 接口: 复用 `set_backing_store(ptr, size)` 模式 (per ADR-DGPU-10 owner/injected 两级)
-- 冻结面: `pcie_display_device.hh` 零修改（per ADR-DGPU-07 演进 seam）
-- 测试: `[pcie][pcie-display]` 标签下新增 `display_fb_owner_is_board_` 测试家族
+**D3a-1 实施要点(Path A 彻底重构)**：
+- ✅ **2026-10-03 完成** — 详见 [`openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/`](../../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/) + [`docs/pcie/display-device-mvp.md §v1.2`](../../pcie/display-device-mvp.md)
+- **位置**: `dgpu_board_shell.cc::bind_display_backings()` 注入点（与 `bind_memory_backings` 并列）
+- **接口**: `set_backing_view(ptr, size)` (per ADR-DGPU-10 owner/injected 两级),与 PcieMemoryDevice 精确镜像
+- **冻结面保护**: `pcie_display_device.hh` 仅删字段 + 新增方法,签名级兼容;`cpptlm_emulator.h` 零修改
+- **PcieEndpointIP 持有模式**: `display_device_` 由 `unique_ptr` 改为 raw ptr(对称 `memory_device_`)+ 新增 `set_display_device()` 注入 API
+- **新增测试**: `[pcie][pcie-display][d3a2]` 标签下 6 cases / 24 assertions 覆盖 owner/injected/symmetry/safety/init-order
+- **零回归**: 全量 1640 cases / 79071 assertions 全绿(基线 1634/79046,新增 25/6)
+- **配套 ADR**: `ADR-DGPU-12-soc-internal-tlm-wiring-principle.md` (首个验证用例) 已签发
 
-**D3a-2 实施要点**：
-- 触发: D3a-1 完成后（Display FB 路径走 board 持有后）
+**D3a-2 实施要点**(待启动):
+- 触发: D3a-1 Path A 完成后（Display FB 路径走 board 持有后）
 - 内容: 评估 capacity 同步策略，输出方案选项
 - 选项 1 (轻量): spec 显式声明 current behavior (memory 视角 1GB, driver 视角 8GB) 不变
 - 选项 2 (中等): JSON `memory.params.capacity_gb` 自动派生 `min(vram_size_gb, default_cache_cap)`
 - 选项 3 (重): 引入真 VramControllerTLM，由 controller 仲裁所有访问者容量视图
 
 **验收**:
-- `[pcie][pcie-display]` 全绿
-- D-AXI v1.4 §6 行 1, 3 标记 ✅
-- AGENTS.md "冻结面零 diff" 仍成立
-- 新增 ADR: `ADR-DGPU-12-display-fb-ownership.md` (D1 归 board)
+- [x] D3a-1: `[pcie][pcie-display]` 全绿 + D-AXI v1.4 §6 行 1 标记 ✅ (2026-10-03)
+- [x] D3a-1: AGENTS.md "冻结面零 diff" 仍成立(`cpptlm_emulator.h` / `pcie_endpoint_tlm.h` 零修改)
+- [x] D3a-1: ADR-DGPU-12 签发 + D3a-1 supersede 标记完成
+- [ ] D3a-2: 待 D3a-1 Path A 完成后启动
 
 ---
 
@@ -108,11 +112,11 @@ D3 = D-AXI 完成后的下一阶段演进。围绕 3 个核心目标：
 
 ## 3. v1.4 §6 遗留议题收编映射
 
-| §6 议题 | D3 收编计划 (本草案) | 实际子轨 |
-|---------|---------------------|----------|
-| **D1 PcieDisplayDevice 32MB FB 同构** | ✅ D3a-1 实施 | D3a-1 |
-| **BAR1 doorbell offset 0x10010000 > BAR1 16MB 实窗** | ❌ **维持现状，不修** | — |
-| **MemoryTLM `capacity_gb=1` vs `vram_size_=8GB` 交互** | ✅ D3a-2 评估 | D3a-2 (选项 1/2) |
+| §6 议题 | D3 收编计划 (本草案) | 实际子轨 | 状态 |
+|---------|---------------------|----------|------|
+| **D1 PcieDisplayDevice 32MB FB 同构** | ✅ D3a-1 实施 (Path A) | D3a-1 Path A | ✅ **2026-10-03 已收编** ([OpenSpec change](../../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/) + [`docs/pcie/display-device-mvp.md §v1.2`](../../pcie/display-device-mvp.md)) |
+| **BAR1 doorbell offset 0x10010000 > BAR1 16MB 实窗** | ❌ **维持现状，不修** | — | 已知限制(deferred) |
+| **MemoryTLM `capacity_gb=1` vs `vram_size_=8GB` 交互** | ✅ D3a-2 评估 | D3a-2 (选项 1/2) | ⏳ 待启动 |
 
 **doorbell 议题结论** (2026-09-30 复审):
 - 现 `dgpu_board_shell.cc:306-447` 在 BAR1 fast-path bound 检查**之前**先匹配 doorbell 路径
