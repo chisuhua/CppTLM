@@ -265,6 +265,23 @@ public:
         attach_vram_for_testing(ptr, size);
     }
 
+    // ── D3a-2 (cpptlm-dgpu-d3a1-display-injection-refactor): display FB owner 端 ──
+    // per ADR-DGPU-10 owner 端 + ADR-DGPU-05 单一真源; 镜像 bind_memory_backings/vram_storage_
+    // display_fb_storage_ 是 PcieDisplayDevice backing 唯一真源 (32MB/派生 size, default-init)
+    // bind_display_backings 在 init() 期调用 (bind_memory_backings 之后), 经 soc_ 注入:
+    //   soc_->display_device().set_backing_view(ptr, size) + ep->set_display_device(&dev)
+    void set_display_fb_size(uint64_t bytes) noexcept {
+        display_fb_size_override_ = bytes;
+    }
+    [[nodiscard]] uint64_t display_fb_size() const noexcept {
+        if (display_fb_size_override_ > 0) return display_fb_size_override_;
+        return framebuffer_size_;
+    }
+    [[nodiscard]] uint8_t* display_fb_ptr() noexcept {
+        return display_fb_storage_.get();
+    }
+    void bind_display_backings();
+
 private:
     // ── 线程模型字段(per design §2.5) ──
     std::string name_;
@@ -320,6 +337,12 @@ private:
     std::unique_ptr<uint8_t[]> vram_storage_;   // 8GB default-init (D-AXI v1.4 B7)
     uint64_t vram_size_ = 0;                     // framebuffer 总大小
     [[deprecated("use vram_storage_")]] std::vector<uint8_t> framebuffer_storage_;  // compat alias
+
+    // ── D3a-2: display FB owner 端 (per ADR-DGPU-10, 镜像 vram_storage_) ──
+    // PcieDisplayDevice backing 唯一真源 (per ADR-DGPU-05); default-init, lazy commit
+    // display_fb_size_override_: 顶层 JSON override (set_display_fb_size), 默认从 framebuffer_size_ 派生
+    std::unique_ptr<uint8_t[]> display_fb_storage_;
+    uint64_t display_fb_size_override_ = 0;
 
     // ── framebuffer + backdoor 改造 (per spec/framebuffer-single-backing) ──
     // bind_memory_backings: 把 framebuffer_ 注入到 SOC 内的 memory/sdma/gmmu 实例

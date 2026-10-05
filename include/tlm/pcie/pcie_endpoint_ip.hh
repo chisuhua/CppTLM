@@ -161,8 +161,11 @@ public:
     tlm::gpu::PcieBarRouter& bar_router() noexcept { return bar_router_; }
     const tlm::gpu::PcieBarRouter& bar_router() const noexcept { return bar_router_; }
 
-    // D1 display-io-mvp: 持有 PcieDisplayDevice (4KB MMIO + 32MB FB + VBLANK MSI-X)
+    // D1 display-io-mvp: 持有 PcieDisplayDevice (4KB MMIO + FB + VBLANK MSI-X)
     // 驱动验证用 display_device, 通过 DGpuBoard 路由 BAR 0/1 到此设备
+    // D3a-2 (cpptlm-dgpu-d3a1-display-injection-refactor): unique_ptr → raw ptr
+    //   (non-owning, 对称 memory_device_); PcieDisplayDevice 由 DGpuSoc 持有 value 对象,
+    //   DGpuBoard::bind_display_backings 经 soc_ 注入 (set_display_device + set_backing_view)。
     [[nodiscard]] bool has_display_device() const noexcept {
         return display_device_ != nullptr;
     }
@@ -171,6 +174,10 @@ public:
     }
     const tlm::gpu::PcieDisplayDevice& display_device() const noexcept {
         return *display_device_;
+    }
+    // D3a-2: 注入 PcieDisplayDevice 引用 (non-owning, 对称 set_memory_device)
+    void set_display_device(tlm::gpu::PcieDisplayDevice* dev) noexcept {
+        display_device_ = dev;
     }
 
     // D2 memory-device-mvp: 持有 PcieMemoryDevice (4KB MMIO + 8GB backing, 无 MSI-X)
@@ -296,7 +303,8 @@ private:
     // 构造时 init() 默认空表; simulate_instantiate 从 params.bar0_registers 填充
     tlm::gpu::PcieBarRouter bar_router_;
     // D1 display-io-mvp: 显示 IO 设备 (MMIO 寄存器 + framebuffer + VBLANK counter)
-    std::unique_ptr<tlm::gpu::PcieDisplayDevice> display_device_;
+    // D3a-2: raw ptr (non-owning, 对称 memory_device_); DGpuBoard 经 soc_ 注入
+    tlm::gpu::PcieDisplayDevice* display_device_ = nullptr;
     // D2 memory-device-mvp: Memory 设备 (MMIO 寄存器 + 8GB backing, 无 MSI-X)
     // Phase 3 T1.2: raw ptr (non-owning), 由 DGpuBoard 注入 soc 内 pcie_memory 实例
     tlm::gpu::PcieMemoryDevice* memory_device_ = nullptr;

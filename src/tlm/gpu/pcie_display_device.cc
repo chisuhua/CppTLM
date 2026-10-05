@@ -1,8 +1,9 @@
 // src/tlm/gpu/pcie_display_device.cc
-// PcieDisplayDevice 实现
+// PcieDisplayDevice 实现 (D3a-2 注入式重构)
 //
-// 作者: CppTLM Team / 日期: 2026-09-20
+// 作者: CppTLM Team / 日期: 2026-09-20 (D3a-2: 2026-10-04)
 // 参考: openspec/changes/2026-09-20-cpptlm-pcie-display-io-mvp/design.md §2-§6
+//       openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/design.md §3.2.2
 #include "tlm/gpu/pcie_display_device.hh"
 
 #include <cerrno>
@@ -12,7 +13,7 @@ namespace tlm::gpu {
 
     PcieDisplayDevice::PcieDisplayDevice() {
         // registers_ zero-initialized by std::array default constructor
-        // framebuffer_ empty (lazy alloc)
+        // backing_view_ = nullptr / backing_view_size_ = 0 (non-owning, per D3a-2)
         // D1 v1.1.1: DEVICE_IDENTITY 默认初始化（spec "DEVICE_IDENTITY read"）
         // registers_[0..1] = kVendorId (0x1002 LE), [2..3] = kDeviceId (0x0001 LE)
         uint16_t vid = kVendorId;
@@ -76,16 +77,20 @@ namespace tlm::gpu {
     }
 
     // ── Backdoor read/write (BAR 1 framebuffer) ──
+    // D3a-2: view-only —— 无注入 backing 时返 -ENODEV (无 silent lazy alloc)
+    // bounds check 使用 backing_view_size_ (从注入 size 派生, 非常量)
 
     int PcieDisplayDevice::backdoor_read(uint64_t offset, void* buf, size_t len) {
         if (buf == nullptr || len == 0) {
             return -EINVAL;
         }
-        ensure_framebuffer_allocated();
-        if (offset >= framebuffer_.size() || len > framebuffer_.size() - offset) {
+        if (!backing_view_) {
+            return -ENODEV;
+        }
+        if (offset >= backing_view_size_ || len > backing_view_size_ - offset) {
             return -EINVAL;
         }
-        std::memcpy(buf, &framebuffer_[offset], len);
+        std::memcpy(buf, backing_view_ + offset, len);
         // D1 v1.1.1: 统一返回 0 契约（与 mmio_read 对齐；Oracle R7 冻结裁决）
         return 0;
     }
@@ -94,11 +99,13 @@ namespace tlm::gpu {
         if (buf == nullptr || len == 0) {
             return -EINVAL;
         }
-        ensure_framebuffer_allocated();
-        if (offset >= framebuffer_.size() || len > framebuffer_.size() - offset) {
+        if (!backing_view_) {
+            return -ENODEV;
+        }
+        if (offset >= backing_view_size_ || len > backing_view_size_ - offset) {
             return -EINVAL;
         }
-        std::memcpy(&framebuffer_[offset], buf, len);
+        std::memcpy(backing_view_ + offset, buf, len);
         // D1 v1.1.1: 统一返回 0 契约（与 mmio_write 对齐）
         return 0;
     }
@@ -124,11 +131,5 @@ namespace tlm::gpu {
     }
 
     // ── Helpers ──
-
-    void PcieDisplayDevice::ensure_framebuffer_allocated() {
-        if (framebuffer_.empty()) {
-            framebuffer_.resize(kFbSize, 0);
-        }
-    }
 
 }  // namespace tlm::gpu

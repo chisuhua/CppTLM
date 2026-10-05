@@ -171,6 +171,8 @@ namespace tlm::gpu {
             framebuffer_ptr_ = vram_storage_.get();
         }
         bind_memory_backings();
+        // D3a-2: display FB backing 注入 (bind_memory_backings 之后, 对称)
+        bind_display_backings();
         // Phase 4 T5: 读 simulation_mode 字段 (functional 默认零 diff)
         if (cfg_.contains("simulation_mode") && cfg_["simulation_mode"] == "timing") {
             simulation_mode_ = SimulationMode::Timing;
@@ -666,6 +668,41 @@ namespace tlm::gpu {
             gmmu_->set_mem_view(framebuffer_ptr_, framebuffer_size_);
         } else {
             DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'gmmu' 实例, GMMU 注入跳过\n");
+        }
+    }
+
+    // ── D3a-2: display FB backing 注入 (镜像 bind_memory_backings, per ADR-DGPU-10) ──
+    // owner 端: display_fb_storage_ 分配 (default-init, lazy commit)
+    // injected 端: soc_->display_device().set_backing_view() + ep->set_display_device()
+    // PcieDisplayDevice 由 DGpuSoc 直接持有 value 对象 (方案 B, design.md §3.3),
+    // 非 SimObject 无法经 getInternalInstance 查找, 故走 soc_->display_device() accessor。
+    //
+    // P1.1 修复: 分配 guard 仅包裹 make_unique, 注入路径每次 init 都执行
+    // (shutdown→load_soc_config→init cycle 后 soc_ 重建, 新 display_device
+    //  value 对象 backing_view_=nullptr, 需重新注入)
+    void DGpuBoard::bind_display_backings() {
+        if (!soc_)
+            return;
+
+        auto derived_size = display_fb_size();
+        if (derived_size == 0) {
+            DPRINTF(MODULE, "[DGpuBoard] D3a-2: display_fb_size=0, skip backing allocation\n");
+            return;
+        }
+
+        if (!display_fb_storage_) {
+            display_fb_storage_ = std::make_unique<uint8_t[]>(derived_size);
+            DPRINTF(MODULE, "[DGpuBoard] D3a-2: display FB backing allocated (%llu bytes)\n",
+                    (unsigned long long)derived_size);
+        }
+
+        // 经 soc 内 PcieDisplayDevice value 对象注入 backing (方案 B, 每次 init 重新注入)
+        auto& display_dev = soc_->display_device();
+        display_dev.set_backing_view(display_fb_storage_.get(), derived_size);
+
+        // EP 注册 display device (对称 set_memory_device, 每次 init 重新注册)
+        if (auto* ep = pcie_ep()) {
+            ep->set_display_device(&display_dev);
         }
     }
 

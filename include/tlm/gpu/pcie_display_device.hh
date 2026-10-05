@@ -1,10 +1,19 @@
 // include/tlm/gpu/pcie_display_device.hh
-// PcieDisplayDevice: D1 显示 IO 设备 MVP
+// PcieDisplayDevice: D1 显示 IO 设备 MVP (D3a-2 注入式重构)
 //
-// 功能描述：4KB MMIO 寄存器（BAR 0）+ 32MB Framebuffer（BAR 1）
+// 功能描述：4KB MMIO 寄存器（BAR 0）+ Framebuffer（BAR 1, non-owning injected view）
 //           + VBLANK MSI-X 中断触发（每 1024 cycle 一次）
-// 作者: CppTLM Team / 日期: 2026-09-20
+//
+// D3a-2 (cpptlm-dgpu-d3a1-display-injection-refactor, per ADR-DGPU-10):
+//   - 删除自有 framebuffer_ backing (32MB lazy alloc) + kFbSize 常量 + ensure_framebuffer_allocated()
+//   - 改为 non-owning + set_backing_view(ptr, size) 注入视图 (与 PcieMemoryDevice 精确镜像)
+//   - backing 唯一真源在 DGpuBoard::display_fb_storage_ (per ADR-DGPU-05)
+//   - backdoor_read/write 改 view-only: 无注入时返 -ENODEV (无 silent lazy alloc)
+//   - framebuffer_size_bytes() 保留 (返回 backing_view_size_, 兼容现有测试)
+//
+// 作者: CppTLM Team / 日期: 2026-09-20 (D3a-2: 2026-10-04)
 // 参考: openspec/changes/2026-09-20-cpptlm-pcie-display-io-mvp/design.md §2
+//       openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/design.md §2.1
 //       spec.md §PcieDisplayDevice Class
 #ifndef CPPTLM_PCIE_DISPLAY_DEVICE_H
 #define CPPTLM_PCIE_DISPLAY_DEVICE_H
@@ -13,16 +22,15 @@
 
 #include <array>
 #include <cstdint>
-#include <vector>
 
 namespace tlm::gpu {
 
     /**
      * @brief D1 显示 IO 设备（Display Engine MVP）
      *
-     * 设计原则（per design.md §2）：
+     * 设计原则（per design.md §2 + D3a-2 design.md §2.1）：
      *   - BAR 0: 4KB MMIO 寄存器空间（kRegSize=4096）
-     *   - BAR 1: 32MB Framebuffer backing（kFbSize=32MB，lazy alloc）
+     *   - BAR 1: Framebuffer backing（non-owning injected view, per ADR-DGPU-10）
      *   - VBLANK: 每 1024 cycle（kVblankInterval）触发一次 MSI-X vector 0
      *   - tick(MsiXTable&): 由 PcieEndpointIP::tick() 调用注入
      *   - 不集成 SDMA / SM / Power Management（D2/D3 范围）
@@ -33,7 +41,6 @@ namespace tlm::gpu {
     public:
         // ── 尺寸常量 ──
         static constexpr size_t kRegSize = 4096;                  // BAR 0 寄存器空间
-        static constexpr size_t kFbSize = 32 * 1024 * 1024;       // BAR 1 framebuffer
         static constexpr uint64_t kVblankInterval = 1024;         // VBLANK 周期 (cycle)
 
         // ── 寄存器偏移 ──
@@ -69,8 +76,22 @@ namespace tlm::gpu {
         int mmio_write(uint64_t offset, const void* buf, size_t len);
 
         // ── Backdoor read/write (BAR 1 framebuffer, byte-level) ──
+        // D3a-2: view-only —— 无注入 backing 时返 -ENODEV (无 silent lazy alloc)
         int backdoor_read(uint64_t offset, void* buf, size_t len);
         int backdoor_write(uint64_t offset, const void* buf, size_t len);
+
+        // ── D3a-2 注入式 API (per ADR-DGPU-10, 与 PcieMemoryDevice 精确镜像) ──
+        void set_backing_view(uint8_t* ptr, uint64_t size) noexcept {
+            backing_view_ = ptr;
+            backing_view_size_ = size;
+        }
+        [[nodiscard]] bool has_backing_view() const noexcept {
+            return backing_view_ != nullptr;
+        }
+        // 镜像 PcieMemoryDevice::backing_size() (line 124 of pcie_memory_device.hh)
+        [[nodiscard]] uint64_t backing_size() const noexcept {
+            return backing_view_size_;
+        }
 
         // ── Tick (由 PcieEndpointIP::tick() 调用) ──
         // 推进 VBLANK counter，每 kVblankInterval 触发一次 MSI-X vector 0
@@ -79,8 +100,9 @@ namespace tlm::gpu {
         // ── 状态查询 ──
         uint32_t vblank_count() const noexcept { return vblank_count_; }
         uint64_t cycle_counter() const noexcept { return cycle_counter_; }
+        // D3a-2: 保留 (返回 backing_view_size_, 兼容现有测试; 语义与旧 framebuffer_.size() 等价)
         size_t framebuffer_size_bytes() const noexcept {
-            return framebuffer_.size();
+            return static_cast<size_t>(backing_view_size_);
         }
 
         // ── 设备身份 (供 DGpuBoard::pcie_config_read 路径使用) ──
@@ -91,8 +113,10 @@ namespace tlm::gpu {
         // BAR 0 寄存器空间
         std::array<uint8_t, kRegSize> registers_{};
 
-        // BAR 1 framebuffer (lazy alloc - 首次 write/read 时分配)
-        std::vector<uint8_t> framebuffer_;
+        // BAR 1 framebuffer (non-owning injected view, per ADR-DGPU-05/10)
+        // 删除: std::vector<uint8_t> framebuffer_ ← D3a-2 关键删除
+        uint8_t* backing_view_      = nullptr;  // injected from DGpuBoard
+        uint64_t backing_view_size_ = 0;
 
         // VBLANK timer
         uint64_t cycle_counter_ = 0;
@@ -101,8 +125,7 @@ namespace tlm::gpu {
         // VBLANK 触发 helper (写 STATUS bit0 + 调 msix.update_pending(0))
         void trigger_vblank(MsiXTable& msix);
 
-        // Framebuffer lazy alloc helper
-        void ensure_framebuffer_allocated();
+        // 删除: void ensure_framebuffer_allocated(); ← D3a-2 关键删除
     };
 
 }  // namespace tlm::gpu

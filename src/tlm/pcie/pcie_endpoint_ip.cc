@@ -22,8 +22,8 @@ namespace tlm::pcie {
 
     PcieEndpointIP::PcieEndpointIP(const std::string& name, EventQueue* eq)
         : SimModule(name, eq)
-        // D1 display-io-mvp: 构造时实例化 display_device
-        , display_device_(std::make_unique<tlm::gpu::PcieDisplayDevice>())
+        // D1 display-io-mvp: D3a-2 raw ptr (non-owning), 由 DGpuBoard::bind_display_backings 注入
+        , display_device_(nullptr)
         // D2 memory-device-mvp: Phase 3 T1.2 raw ptr (non-owning), 由 DGpuBoard 注入
         , memory_device_(nullptr) {
         pool_.init_all();
