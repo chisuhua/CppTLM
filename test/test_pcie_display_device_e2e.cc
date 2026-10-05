@@ -77,6 +77,11 @@ TEST_CASE("PcieDisplayDevice standalone: BAR 1 framebuffer roundtrip",
           "[pcie][display][e2e]") {
     PcieDisplayDevice dev;
 
+    // D3a-2: 注入 backing view (32MB)
+    constexpr uint64_t kFbSize = 32ULL * 1024 * 1024;
+    std::vector<uint8_t> backing(kFbSize, 0);
+    dev.set_backing_view(backing.data(), backing.size());
+
     // Write 256 bytes to framebuffer
     std::vector<uint8_t> write_data(256);
     for (size_t i = 0; i < write_data.size(); ++i) {
@@ -94,6 +99,11 @@ TEST_CASE("PcieDisplayDevice standalone: BAR 1 framebuffer roundtrip",
 TEST_CASE("PcieDisplayDevice standalone: framebuffer bounds check",
           "[pcie][display][e2e]") {
     PcieDisplayDevice dev;
+
+    // D3a-2: 注入 backing view (32MB)
+    constexpr uint64_t kFbSize = 32ULL * 1024 * 1024;
+    std::vector<uint8_t> backing(kFbSize, 0);
+    dev.set_backing_view(backing.data(), backing.size());
 
     // Out-of-range offset → -EINVAL
     std::vector<uint8_t> buf(64, 0xCD);

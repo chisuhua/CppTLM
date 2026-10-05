@@ -192,6 +192,11 @@ TEST_CASE("PcieDisplayDevice BAR 1: backdoor_read/write round-trip",
           "[pcie][display][basic]") {
     PcieDisplayDevice dev;
 
+    // D3a-2: 注入 backing view (32MB, 与 kFbSize 等价)
+    constexpr uint64_t kFbSize = 32ULL * 1024 * 1024;
+    std::vector<uint8_t> backing(kFbSize, 0);
+    dev.set_backing_view(backing.data(), backing.size());
+
     // Write 256 bytes to framebuffer
     std::vector<uint8_t> write_data(256);
     for (size_t i = 0; i < write_data.size(); ++i) {
@@ -212,13 +217,18 @@ TEST_CASE("PcieDisplayDevice BAR 1: backdoor bounds check",
           "[pcie][display][basic]") {
     PcieDisplayDevice dev;
 
+    // D3a-2: 注入 backing view (32MB)
+    constexpr uint64_t kFbSize = 32ULL * 1024 * 1024;
+    std::vector<uint8_t> backing(kFbSize, 0);
+    dev.set_backing_view(backing.data(), backing.size());
+
     // Out-of-range offset → -EINVAL (32MB framebuffer)
     std::vector<uint8_t> buf(64, 0xCD);
     REQUIRE(dev.backdoor_read(0x80000000ULL, buf.data(), buf.size()) == -EINVAL);
     REQUIRE(dev.backdoor_write(0x80000000ULL, buf.data(), buf.size()) == -EINVAL);
 
     // offset + len > 32MB
-    REQUIRE(dev.backdoor_read(PcieDisplayDevice::kFbSize - 32, buf.data(), 64) == -EINVAL);
+    REQUIRE(dev.backdoor_read(kFbSize - 32, buf.data(), 64) == -EINVAL);
 
     // null buf → -EINVAL
     REQUIRE(dev.backdoor_read(0x1000, nullptr, 64) == -EINVAL);
@@ -230,16 +240,22 @@ TEST_CASE("PcieDisplayDevice BAR 1: backdoor bounds check",
 }
 
 // ============================================================================
-// 12. framebuffer_size_bytes accessor (lazy alloc)
+// 12. framebuffer_size_bytes accessor (D3a-2: backing_view_size 派生)
 // ============================================================================
-TEST_CASE("PcieDisplayDevice framebuffer lazy allocation",
+TEST_CASE("PcieDisplayDevice framebuffer_size_bytes backing_view_derived",
           "[pcie][display][basic]") {
     PcieDisplayDevice dev;
-    REQUIRE(dev.framebuffer_size_bytes() == 0);  // not allocated yet
+    REQUIRE(dev.framebuffer_size_bytes() == 0);  // 未注入
+
+    constexpr uint64_t kFbSize = 32ULL * 1024 * 1024;
+    std::vector<uint8_t> backing(kFbSize, 0);
+    dev.set_backing_view(backing.data(), backing.size());
+
+    REQUIRE(dev.framebuffer_size_bytes() == kFbSize);  // 注入后派生
 
     std::vector<uint8_t> buf(64, 0);
     REQUIRE(dev.backdoor_write(0x1000, buf.data(), buf.size()) == 0);
-    REQUIRE(dev.framebuffer_size_bytes() == PcieDisplayDevice::kFbSize);  // 32MB allocated
+    REQUIRE(dev.framebuffer_size_bytes() == kFbSize);  // 派生不变
 }
 
 // ============================================================================
