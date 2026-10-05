@@ -110,7 +110,7 @@ graph TB
 
 | # | 位置 | 类型 | 注入内容 | 违反规则 | 当前理由 |
 |---|------|------|----------|---------|----------|
-| 1 | `pcie_endpoint_ip.hh:190` | `set_memory_device()` | EP ↔ pcie_memory raw pointer | **R-WIRE-4** | N8 避免双 tick |
+| 1 | `pcie_endpoint_ip.hh:197` | `set_memory_device()` | EP ↔ pcie_memory raw pointer | **R-WIRE-4** | N8 避免双 tick |
 
 ### 2.3 N8 决策的事实记录
 

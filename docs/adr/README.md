@@ -44,8 +44,11 @@
 | [ADR-DGPU-05-vram-storage-ownership.md](./ADR-DGPU-05-vram-storage-ownership.md) | DGpuBoard 单一 VRAM 所有权 vram_storage_（D-AXI v1.4 B7 根因 — 5 消费者共享） | 📋 提案 | D-AXI v1.4 |
 | [ADR-DGPU-06-axi-mem-bundle-boundary.md](./ADR-DGPU-06-axi-mem-bundle-boundary.md) | AxiMemBundle vs PcieTlpBundle 边界严格分离（D-AXI v1.3 B2 + v1.7 H1 wire-format） | 📋 提案 | D-AXI v1.3-v1.8 |
 | [ADR-DGPU-07-minimal-soc-evolution-seam.md](./ADR-DGPU-07-minimal-soc-evolution-seam.md) | Minimal SoC → 完整 GPU 演进 Seam（D3-D5 接口零变更 + 5 消费者注入点固定） | 📋 提案 | D-AXI §X |
-| [ADR-DGPU-08-abi-freeze-policy.md](./ADR-DGPU-08-abi-freeze-policy.md) | 23 ABI 签名级 + 二进制级 0 diff + 0 新增（ADR-088 §D5 + Oracle v2.0.2 P0-3e DoD 仲裁） | 📋 提案 | ADR-088 §D5 |
+| [ADR-DGPU-08-abi-freeze-policy.md](./ADR-DGPU-08-abi-freeze-policy.md) | 23 ABI 签名级 + 二进制级 0 diff + 0 新增（ADR-088 §D5 + Oracle v2.0.2 P0-3e DoD 仲裁） | ✅ 已签发 (v1.1 冻结面例外增补 2026-10-05) | ADR-088 §D5 |
 | [ADR-DGPU-09-driver-visible-minimal-soc-scope.md](./ADR-DGPU-09-driver-visible-minimal-soc-scope.md) | Driver-Visible Minimal SoC 范围定义（4 BAR + 15 ABI + 0 新增 + In/Out Scope 边界） | 📋 提案 | D-AXI proposal §1 |
+| [ADR-DGPU-10-backing-naming-convention.md](./ADR-DGPU-10-backing-naming-convention.md) | Backing Storage 命名约定 (owner / injected 两级, per Oracle 5 步解锁链 Step 5) | ✅ 已签发 (Status Update 2027-09-29 §4 Migration 8 步完成) | D-AXI v1.0 |
+| [ADR-DGPU-11-timing-mode-soc-scope.md](./ADR-DGPU-11-timing-mode-soc-scope.md) | Timing-Mode SoC 范围定义（cycle-approximate MemoryTLM + VramControllerTLM + SDMA cycle accounting） | ✅ 已签发 (cpptlm-dgpu-soc-timing-mvp T1-T8 实施完成 2027-02-11) | D-AXI v0.5 timing-mvp |
+| [ADR-DGPU-12-soc-internal-tlm-wiring-principle.md](./ADR-DGPU-12-soc-internal-tlm-wiring-principle.md) | SoC 内部 wiring 原则（SoC 内部 = TLM, SoC ↔ Board = 方法注入; 5 R-WIRE-* + N8 baseline） | ✅ **已签发 (v1.0, 2026-10-05 Oracle 评审 Revise 修订后通过)** | D-AXI v1.4 + D3a-1 Path A |
 
 ### NV 级决策（NVIDIA GPU 仿真）
 

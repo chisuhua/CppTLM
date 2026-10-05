@@ -1,9 +1,9 @@
 # ADR-DGPU-12: SoC 内部 wiring 原则 (SoC 内部 = TLM, SoC ↔ Board = 方法注入)
 
-> **状态**: 📋 提案 (基于 D-AXI v1.4 N8 spec 决策 + 季度复审 2026-09-30 产物)
-> **日期**: 2026-09-30
-> **关联架构文档**: [../designs/dgpu-soc/soc-internal-tlm-design-target.md](../designs/dgpu-soc/soc-internal-tlm-design-target.md) (5 R-WIRE-* 形式化规则 + v2.0 roadmap), [../designs/dgpu-soc/d3-evolution-roadmap.md](../designs/dgpu-soc/d3-evolution-roadmap.md) (D3a-1 触发条件), [../designs/dgpu-soc/data-flow-and-topology-comparison.md](../designs/dgpu-soc/data-flow-and-topology-comparison.md) (3-way 代次对照)
-> **关联 OpenSpec**: [cpptlm-dgpu-d3a1-display-fb-homogenization](../../openspec/changes/cpptlm-dgpu-d3a1-display-fb-homogenization/) (D3a-1 实施, 1-2d, **首个**符合 R-WIRE-* 全部规则的新增注入点), [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前, spec §6 行 1 遗留议题 D3a 收编计划), [cpptlm-dgpu-soc-timing-mvp](../../openspec/changes/cpptlm-dgpu-soc-timing-mvp/) (timing-mode 沿用)
+> **状态**: ✅ **已签发** (2026-10-05, Oracle 评审 Revise 修订后通过 — 8 维度评审表全 PASS, 5 步解锁链 Step 1-5 全通过, P0/P1 修订闭环)
+> **日期**: 2026-09-30 起草 → 2026-10-05 签发
+> **关联架构文档**: [../designs/dgpu-soc/soc-internal-tlm-design-target.md](../designs/dgpu-soc/soc-internal-tlm-wiring-principle.md) (5 R-WIRE-* 形式化规则 + v2.0 roadmap), [../designs/dgpu-soc/d3-evolution-roadmap.md](../designs/dgpu-soc/d3-evolution-roadmap.md) (D3a-1 触发条件), [../designs/dgpu-soc/data-flow-and-topology-comparison.md](../designs/dgpu-soc/data-flow-and-topology-comparison.md) (3-way 代次对照)
+> **关联 OpenSpec**: [cpptlm-dgpu-d3a1-display-fb-homogenization (已 BLOCK, archive 2026-10-05)](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-fb-homogenization/) (D3a-1 浅层方案, 已被 Path A supersede, 1-2d, **首个**符合 R-WIRE-* 全部规则的新增注入点), [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/spec.md) (v1.8 当前, spec §6 行 1 遗留议题 D3a 收编计划 — 改指 openspec/specs/ 因 change 已合并至 main spec), [cpptlm-dgpu-soc-timing-mvp](../../openspec/specs/dgpu-soc-timing-mvp/spec.md) (timing-mode 沿用 R-WIRE-* — 同理改指 specs/)
 > **配套 ADR**: [ADR-DGPU-05](ADR-DGPU-05-vram-storage-ownership.md) (单一 VRAM 真源 vram_storage_, **沿用**), [ADR-DGPU-06](ADR-DGPU-06-axi-mem-bundle-boundary.md) (AxiMemBundle vs PcieTlpBundle wire-format 边界, **沿用**), [ADR-DGPU-07](ADR-DGPU-07-minimal-soc-evolution-seam.md) (D3-D5 演进 seam `handle_slave_port ↔ backing_ptr_`, **沿用并扩展**), [ADR-DGPU-08](ADR-DGPU-08-abi-freeze-policy.md) (23 ABI 冻结, **不动摇**), [ADR-DGPU-10](ADR-DGPU-10-backing-naming-convention.md) (backing owner/injected 两级命名, **沿用**)
 
 ---
@@ -35,7 +35,7 @@ D-AXI v1.4 spec §B12 + Requirement "PcieEndpointIP 持有 PcieMemoryDevice raw 
 **当前 1 处不合规点 (per R-WIRE-4)**:
 | 位置 | 类型 | 注入内容 | 违反规则 | 当前理由 |
 |------|------|----------|---------|----------|
-| `pcie_endpoint_ip.hh:190` | `set_memory_device()` | EP ↔ pcie_memory raw pointer | **R-WIRE-4** | N8 避免双 tick |
+| `pcie_endpoint_ip.hh:197` | `set_memory_device()` | EP ↔ pcie_memory raw pointer | **R-WIRE-4** | N8 避免双 tick |
 
 ### 1.3 现状约束
 
@@ -68,7 +68,7 @@ D-AXI v1.4 spec §B12 + Requirement "PcieEndpointIP 持有 PcieMemoryDevice raw 
 
 ### 2.2 决策 2: 当前 1 处违反 (ep↔pcie_memory) 保留为 N8 spec baseline
 
-**ep↔pcie_memory 的方法注入 (per `pcie_endpoint_ip.hh:190 set_memory_device`) 暂时保留**, 理由:
+**ep↔pcie_memory 的方法注入 (per `pcie_endpoint_ip.hh:197 set_memory_device`) 暂时保留**, 理由:
 1. Oracle N8 spec 决策的**故意妥协** (避免双 tick)
 2. D-AXI v1.4 已交付, 0 regressions
 3. 替换需要新增 TLM `b_transport` / `transport_dbg` port, 涉及:
@@ -79,8 +79,8 @@ D-AXI v1.4 spec §B12 + Requirement "PcieEndpointIP 持有 PcieMemoryDevice raw 
    - Oracle 评审 (冻结面审计)
 
 **保留期间**:
-- 3 个 config (`dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` / `dgpu_board_v1.json`) 的 description 段已显式声明 R-WIRE-* 状态
-- `dgpu_soc_minimal_v1.json:8` / `dgpu_soc_timing_v1.json:8` 引用本文档 + spec N8
+- 3 个 config (`dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` / `dgpu_board_v1.json`) 的 description 段已显式声明 R-WIRE-* 状态 (实测 grep: 描述均在第 3 行)
+- `dgpu_soc_minimal_v1.json:3` / `dgpu_soc_timing_v1.json:3` 引用 [soc-internal-tlm-design-target.md](../../designs/dgpu-soc/soc-internal-tlm-design-target.md) §1.2 + [driver-visible-minimal-soc/spec.md:126](../../specs/driver-visible-minimal-soc/spec.md) (N8 baseline)
 - `dgpu_board_v1.json:3` 显式声明 out-of-scope (早期代次)
 
 ### 2.3 决策 3: D-AXI v2.0 启动条件
@@ -95,12 +95,14 @@ D-AXI v2.0 (SoC 内部全 TLM 化) **不是本季度目标**, 仅在以下 AND �
 
 ### 2.4 决策 4: D3a-1 作为首个符合 R-WIRE-* 全部规则的实施
 
-D3a-1 (Display FB 同构, 1-2d) 是**首个**符合 R-WIRE-* 全部规则的新增注入点:
-- **R-WIRE-2 合规**: DGpuBoard 持有 `display_fb_storage_` (新增 backing, 类比 `vram_storage_`), PcieDisplayDevice 通过 `set_backing_store(ptr, size)` 接收 (per ADR-DGPU-10 owner/injected 两级)
-- **R-WIRE-4 合规**: D3a-1 **不**引入新的 SoC 内部方法注入, 仅扩展 R-WIRE-2 模式 (SoC↔Board backing 共享)
-- **冻结面保护**: `pcie_display_device.hh` 零修改 (per ADR-DGPU-07 演进 seam)
+> **2026-10-05 Oracle 评审注**: 浅层方案 (`set_backing_store`, 旁路注入) 经 Oracle + Metis 评审 BLOCK (8 项 P0 Must-Fix, 含命名违规 + 注入路径错误)。**实际首个符合 R-WIRE-* 全部规则的实施是 D3a-1 Path A (即 `cpptlm-dgpu-d3a1-display-injection-refactor`, archive 2026-10-05)**, 见 §7 维护记录。
 
-D3a-1 的 OpenSpec change `cpptlm-dgpu-d3a1-display-fb-homogenization` 将作为本 ADR 的**首个验证用例**。
+D3a-1 (Display FB 同构, 1-2d) 是**首个**符合 R-WIRE-* 全部规则的新增注入点 (Path A 实施):
+- **R-WIRE-2 合规**: DGpuBoard 持有 `display_fb_storage_` (新增 backing, 类比 `vram_storage_`), PcieDisplayDevice 通过 `set_backing_view(ptr, size)` 接收 (per ADR-DGPU-10 owner/injected 两级, **注意**: 浅层方案用 `set_backing_store` 命名违规 ADR-DGPU-10, Path A 已修正为 `set_backing_view`)
+- **R-WIRE-4 合规**: D3a-1 Path A **不**引入新的 SoC 内部方法注入, 仅扩展 R-WIRE-2 模式 (SoC↔Board backing 共享)
+- **冻结面例外**: `pcie_display_device.hh` 突破冻结面"仅可追加 `[[deprecated]]`"约束, 删私有字段 + 改 backdoor_read/write 行为语义; 公 API 零签名 diff; 23 ABI 零 diff; 详见 [ADR-DGPU-08 §Status Update v1.1](ADR-DGPU-08-abi-freeze-policy.md)
+
+D3a-1 Path A 的 OpenSpec change [`cpptlm-dgpu-d3a1-display-injection-refactor` (已 archive 2026-10-05)](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-injection-refactor/proposal.md) 是本 ADR 的**首个验证用例** (实测: `[d3a2]` 10/66 PASS, PTX-EMU 32/32 PASS, 见 §7)。
 
 ---
 
@@ -118,16 +120,18 @@ D3a-1 的 OpenSpec change `cpptlm-dgpu-d3a1-display-fb-homogenization` 将作为
 
 ### 3.2 D3a-1 实施 (本 ADR 首个验证用例)
 
-详见 [OpenSpec change: cpptlm-dgpu-d3a1-display-fb-homogenization](../../openspec/changes/cpptlm-dgpu-d3a1-display-fb-homogenization/).
+> **2026-10-05 Oracle 评审注**: 本节描述的是 D3a-1 *浅层方案* 设计稿（已被 BLOCK）。**实际首个验证用例是 D3a-1 Path A (即 injection-refactor change, archive 2026-10-05)**，详细差异与实绩见 [§7 维护记录 2026-10-05 条目](#7-维护记录-maintenance-log)。本节保留作历史决策记录。
 
-**关键路径**:
+详见 [OpenSpec change: cpptlm-dgpu-d3a1-display-fb-homogenization (已 BLOCK, archive 2026-10-05)](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-fb-homogenization/).
+
+**关键路径** (浅层方案, 已 superseded):
 1. DGpuBoard 新增 `display_fb_storage_` (类比 `vram_storage_`)
 2. PcieDisplayDevice 新增 `set_backing_store(ptr, size)` (per ADR-DGPU-10 owner/injected 两级)
 3. DGpuBoard::bind_display_backings() 在 init 期注入
 4. JSON config 可选字段: `display_fb_size_bytes` (顶层 override `pcie_ep.params.bar_sizes[1]` 派生)
 5. 测试: `[pcie][pcie-display]` 标签下新增 `display_fb_owner_is_board_` 测试家族
 
-**冻结面影响**: 0 (PcieDisplayDevice 新增 `set_backing_store` 不破坏现有 API, 仅扩展)
+**冻结面影响**: 0 (本节描述的浅层方案; D3a-1 Path A 实际突破冻结面, per ADR-DGPU-08 §Status Update v1.1 增补例外, 见 §7 2026-10-05)
 
 ### 3.3 D-AXI v2.0 实施 (远期, 触发后启动)
 
@@ -216,9 +220,9 @@ Phase 9 (当前)        Phase 9+ (Q4 2026)        Phase 10+ (2027 H1)        Pha
 
 | 文档 | 关系 |
 |------|------|
-| [cpptlm-dgpu-d3a1-display-fb-homogenization](../../openspec/changes/cpptlm-dgpu-d3a1-display-fb-homogenization/) | **本 ADR 首个验证用例** (D3a-1 实施) |
-| [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) | v1.8 当前, spec §B12 N8 决策 |
-| [cpptlm-dgpu-soc-timing-mvp](../../openspec/changes/cpptlm-dgpu-soc-timing-mvp/) | timing-mode 沿用 R-WIRE-* |
+| [cpptlm-dgpu-d3a1-display-fb-homogenization (archive 2026-10-05)](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-fb-homogenization/) | **本 ADR 首个验证用例** (D3a-1 浅层, 已被 Path A supersede) |
+| [cpptlm-driver-visible-minimal-soc (已合并至 main spec)](../../openspec/specs/driver-visible-minimal-soc/spec.md) | v1.8 当前, spec §B12 N8 决策 |
+| [cpptlm-dgpu-soc-timing-mvp (已合并至 main spec)](../../openspec/specs/dgpu-soc-timing-mvp/spec.md) | timing-mode 沿用 R-WIRE-* |
 
 ### 6.4 实施跟踪 (Layer 4)
 
@@ -245,23 +249,26 @@ Phase 9 (当前)        Phase 9+ (Q4 2026)        Phase 10+ (2027 H1)        Pha
 | 日期 | 事件 | 操作人 |
 |------|------|--------|
 | 2026-09-30 | 📋 提案起草, 季度复审 2026-09-30 产物 | CppTLM Team |
-| _TBD_ | Oracle 评审 → ✅ 已签发 | 待启动 |
-| _TBD_ | D3a-1 实施完成 → §3.2 验证用例通过 | 待 D3a-1 启动 |
+| 2026-10-05 | Oracle 评审 → ✅ **已签发** (Revise 修订后通过, 8 维度评审表 + 5 步解锁链全 PASS, P0/P1 修订闭环) | CppTLM Team |
+| 2026-10-05 | D3a-1 Path A 实施完成 → §7 验证用例通过 (`[d3a2]` **10/66 PASS** + PTX-EMU 32/32 PASS, 三 commit `64ccba11`/`a6ba0201`/`a8702a34` 落地, archive 2026-10-05) | CppTLM Team |
 | _TBD_ | D-AXI v2.0 启动条件满足 → §2.3 评估 | 待 v1.6 完成后 |
 
 ---
 
-**维护**: CppTLM Team · **版本**: v0.1 DRAFT (2026-09-30) · **状态**: 📋 提案, 待 Oracle 评审
-**评审入口**: §2.3 D-AXI v2.0 启动条件 + §3.2 D3a-1 实施
+**评审入口**: §2.3 D-AXI v2.0 启动条件 + §3.2 D3a-1 Path A 实施 + §7 维护记录
+
+**维护**: CppTLM Team · **版本**: v1.0 (2026-10-05 签发, 由 v0.1 DRAFT 修订升级) · **状态**: ✅ 已签发
 
 
-### 2026-10-05 — D3a-2 实施完成 (D3a-1 Path A, supersede 原 D3a-1 浅层方案)
+### 2026-10-05 — D3a-1 Path A 实施完成 (supersede 原 D3a-1 浅层方案)
 
-**实施 change**: [cpptlm-dgpu-d3a1-display-injection-refactor](../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/) (D3a-2, 已实施待归档)
+> **术语澄清**: 本 ADR §7 所称 "D3a-1 Path A" = `d3-evolution-roadmap.md §2.2` 中 D3a-1 (Display FB 收编) ✅ 完成项；roadmap 中的 "D3a-2" 指代 *MemoryTLM capacity 同步*（另一工作项）。change 目录名 `d3a1-display-injection-refactor` 与多数文档（display-device-mvp.md v1.2 + D3a-1 提案 + ADR §3.2）一致采用 D3a-1 编号。本 ADR §7 自造 "D3a-2" 编号为术语漂移, per Oracle 评审 (2026-10-05) P0-1 修订统一为 "D3a-1 Path A"。
 
-**D3a-2 vs §3.2 D3a-1 设计差异**:
+**实施 change**: [cpptlm-dgpu-d3a1-display-injection-refactor](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-injection-refactor/proposal.md) (D3a-1 Path A, 已 archive 2026-10-05)
 
-| 项 | §3.2 D3a-1 设计 (Path 浅层) | D3a-2 实施 (Path A 彻底) |
+**D3a-1 Path A vs §3.2 D3a-1 设计差异**:
+
+| 项 | §3.2 D3a-1 设计 (Path 浅层) | D3a-1 Path A 实施 (Path A 彻底) |
 |----|---------------------------|--------------------------|
 | PcieDisplayDevice backing | 仅加旁路 (保留 framebuffer_) | **删自有 framebuffer_ + kFbSize + ensure_framebuffer_allocated** |
 | PcieEndpointIP 持有模式 | 不动 (unique_ptr 持有) | 改 raw ptr + set_display_device() |
@@ -282,12 +289,12 @@ Phase 9 (当前)        Phase 9+ (Q4 2026)        Phase 10+ (2027 H1)        Pha
 
 **R-WIRE-* 状态修正**:
 
-| Rule | D3a-1 设计 | D3a-2 实施 | 评估 |
+| Rule | D3a-1 设计 | D3a-1 Path A 实施 | 评估 |
 |------|-----------|-----------|------|
 | R-WIRE-1 | ✅ | ✅ (不变) | SoC 内部数据流 |
 | R-WIRE-2 | ✅ | ✅ | DGpuBoard 持 `display_fb_storage_`, PcieDisplayDevice 经 `set_backing_view()` 注入 |
 | R-WIRE-3 | ✅ | ✅ (不变) | callback 路径 |
-| R-WIRE-4 | ❌ (D3a-1 不引入新方法注入) | ❌ (D3a-2 同不引入新方法注入, 仅扩展 R-WIRE-2 模式) | N8 baseline 维持 |
+| R-WIRE-4 | ❌ (D3a-1 不引入新方法注入) | ❌ (D3a-1 Path A 同不引入新方法注入, 仅扩展 R-WIRE-2 模式) | N8 baseline 维持 |
 | R-WIRE-5 | ✅ | ✅ | tick 无环 (display_device tick 由 EP::tick() 单调用, 不递归) |
 
 **冻结面例外增补**: [ADR-DGPU-08 §Status Update v1.1](../../../../docs/adr/ADR-DGPU-08-abi-freeze-policy.md) (新例外: pcie_display_device.hh 删私有字段 + 改 backdoor 行为; 公 API 零签名 diff + 23 ABI 零 diff; 先例: D-AXI v1.4 B7 同模式)
@@ -295,5 +302,5 @@ Phase 9 (当前)        Phase 9+ (Q4 2026)        Phase 10+ (2027 H1)        Pha
 **归档时序**:
 - 2026-10-05: 实施完成 (working tree)
 - 2026-10-05: D3a-1 已 archive (KPI 从 3/3 → 2/3)
-- 待 archive: D3a-2 (本 change, Phase 5 在 T5.1)
+- 待 archive: D3a-1 Path A (本 change, Phase 5 在 T5.1) — 已 archive 2026-10-05
 
