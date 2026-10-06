@@ -58,6 +58,7 @@ struct ch_uint
 
     // ── Wide path only operations ──
     uint64_t low() const noexcept {
+        static_assert(W > 64, "low() requires W > 64");
         return static_cast<const base*>(this)->words_[0];
     }
 
@@ -65,6 +66,7 @@ struct ch_uint
     uint64_t slice() const noexcept {
         static_assert(W > 64, "slice() requires W > 64");
         static_assert(Hi >= Lo && Hi < W, "slice range out of bounds");
+        static_assert(Hi - Lo < 64, "slice() returns uint64_t; width must be < 64 (per Oracle P0 review)");
         constexpr unsigned word_hi = Hi / 64;
         constexpr unsigned bit_hi  = Hi % 64;
         constexpr unsigned word_lo = Lo / 64;
