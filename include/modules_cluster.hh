@@ -24,6 +24,7 @@
 #include "tlm/cluster/memory_cluster.hh"
 #include "tlm/cluster/gpu_noc_cluster.hh"
 #include "tlm/cluster/apu_soc.hh"
+#include "tlm/cluster/gpu_internal_fabric.hh"  // P3 Task 22 (GpuInternalFabric wrapper)
 #include "tlm/gpu/gpu_soc_tlm.hh"
 #include "tlm/gpu/dgpu_soc.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -45,6 +46,11 @@ const bool _reg_cachecluster = (REGISTER_MODULE(CacheCluster), true);
 const bool _reg_memorycluster = (REGISTER_MODULE(MemoryCluster), true);
 const bool _reg_gpunoc = (REGISTER_MODULE(GpuNoC), true);
 const bool _reg_apusoc = (REGISTER_MODULE(ApuSoC), true);
+
+// dgpu-realip-refactor P3 Task 22: GpuInternalFabric (SimModule wrapper
+// around CrossbarTLM, inner crossbar non-owning per Oracle bg_c60653e0 §3.4
+// — must be instantiated via ModuleFactory JSON child-modules pipeline).
+const bool _reg_gpuinternalfabric = (REGISTER_MODULE(tlm::cluster::GpuInternalFabric), true);
 const bool _reg_gpusoc = (REGISTER_MODULE(GpuSocTLM), true);
 const bool _reg_dgpusoc = (REGISTER_MODULE(DGpuSoc), true);
 // Phase 2 (pcie-endpoint-ip-simmodule-refactor): EP 从 REGISTER_CHSTREAM 迁 REGISTER_MODULE
