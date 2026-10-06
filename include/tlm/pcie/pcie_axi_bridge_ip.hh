@@ -15,10 +15,20 @@
 
 #include "core/sim_module.hh"
 
+#include "framework/axi4_mapper.hh"
+#include "tlm/pcie/pcie_axi_adapter_tlm.hh"
+
+#include <memory>
 #include <string>
 
 namespace tlm::pcie {
 
+class PcieEndpointIP;
+
+// P2 PR-B Stage B (c) per Oracle bg_c60653e0 §4(c): EP-internal composite
+// (internal_factory pattern like PcieLinkPhyMux). Kills PcieAxiAdapter
+// (PcieEndpointIP*) ordering problem: bridge constructed AFTER EP body
+// init via lazy_init; first mmio use triggers deferred PcieAxiAdapter ctor.
 class PcieAxiBridgeIP : public SimModule {
 public:
     PcieAxiBridgeIP(const std::string& name, EventQueue* eq);
@@ -26,7 +36,16 @@ public:
 
     std::string get_module_type() const override { return "PcieAxiBridgeIP"; }
 
-    // PR-B will add: wire_up(PcieEndpointIP*) + member PcieAxiAdapter + AXI4Mapper
+    void lazy_init(PcieEndpointIP* parent) noexcept;
+
+    PcieAxiAdapter* adapter() noexcept { return adapter_.get(); }
+    cpptlm::Axi4Mapper* mapper() noexcept { return mapper_.get(); }
+
+private:
+    std::unique_ptr<PcieAxiAdapter> adapter_;
+    std::unique_ptr<cpptlm::Axi4Mapper> mapper_;
+    PcieEndpointIP* parent_ep_ = nullptr;
+    bool wired_ = false;
 };
 
 } // namespace tlm::pcie
