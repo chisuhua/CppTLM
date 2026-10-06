@@ -48,3 +48,16 @@ TEST_CASE("ch_uint_wide W=128 layout + bit-slice round-trip", "[ch_uint][p0][wid
     y.template set_slice<127, 64>(0x123456789ABCDEF0ULL);
     REQUIRE(y.template slice<127, 64>() == 0x123456789ABCDEF0ULL);
 }
+
+// ch_uint_wide<W> for 256 / 512 must also satisfy layout constraints
+// (used by axi4_*/pcie_axi_adapter_tlm/pcie_endpoint_ip in production)
+TEST_CASE("ch_uint_wide W=256/512 layout", "[ch_uint][p0][wide]") {
+    using W256 = ch_uint_wide<256>;
+    using W512 = ch_uint_wide<512>;
+    STATIC_REQUIRE(std::is_standard_layout_v<W256>);
+    STATIC_REQUIRE(std::is_trivially_copyable_v<W256>);
+    STATIC_REQUIRE(sizeof(W256) == 4 * sizeof(uint64_t));
+    STATIC_REQUIRE(std::is_standard_layout_v<W512>);
+    STATIC_REQUIRE(std::is_trivially_copyable_v<W512>);
+    STATIC_REQUIRE(sizeof(W512) == 8 * sizeof(uint64_t));
+}

@@ -70,15 +70,22 @@ struct ch_uint
         constexpr unsigned word_lo = Lo / 64;
         constexpr unsigned bit_lo  = Lo % 64;
         if constexpr (word_hi == word_lo) {
-            const uint64_t mask = ((1ULL << (bit_hi - bit_lo + 1)) - 1ULL) << bit_lo;
-            return (static_cast<const base*>(this)->words_[word_hi] & mask) >> bit_lo;
+            constexpr unsigned width = bit_hi - bit_lo + 1;
+            if constexpr (width == 64) {
+                return static_cast<const base*>(this)->words_[word_hi];
+            } else {
+                const uint64_t mask = ((1ULL << width) - 1ULL) << bit_lo;
+                return (static_cast<const base*>(this)->words_[word_hi] & mask) >> bit_lo;
+            }
         } else {
             uint64_t result = 0;
             constexpr unsigned low_bits_in_hi_word = 64 - bit_lo;
             const uint64_t hi_mask = (bit_hi == 63)
                 ? 0xFFFFFFFFFFFFFFFFULL
                 : ((1ULL << (bit_hi + 1)) - 1ULL);
-            const uint64_t lo_mask = ((1ULL << low_bits_in_hi_word) - 1ULL) << bit_lo;
+            const uint64_t lo_mask = (low_bits_in_hi_word == 64)
+                ? 0xFFFFFFFFFFFFFFFFULL
+                : ((1ULL << low_bits_in_hi_word) - 1ULL);
             result |= (static_cast<const base*>(this)->words_[word_hi] & hi_mask)
                       << low_bits_in_hi_word;
             result |= (static_cast<const base*>(this)->words_[word_lo] & lo_mask)
@@ -97,15 +104,22 @@ struct ch_uint
         constexpr unsigned word_lo = Lo / 64;
         constexpr unsigned bit_lo  = Lo % 64;
         if constexpr (word_hi == word_lo) {
-            const uint64_t mask = ((1ULL << (Hi - Lo + 1)) - 1ULL) << bit_lo;
-            auto& w = static_cast<base*>(this)->words_[word_hi];
-            w = (w & ~mask) | ((val << bit_lo) & mask);
+            constexpr unsigned width = Hi - Lo + 1;
+            if constexpr (width == 64) {
+                static_cast<base*>(this)->words_[word_hi] = val;
+            } else {
+                const uint64_t mask = ((1ULL << width) - 1ULL) << bit_lo;
+                auto& w = static_cast<base*>(this)->words_[word_hi];
+                w = (w & ~mask) | ((val << bit_lo) & mask);
+            }
         } else {
             constexpr unsigned low_bits_in_hi_word = 64 - bit_lo;
             const uint64_t hi_mask = (bit_hi == 63)
                 ? 0xFFFFFFFFFFFFFFFFULL
                 : ((1ULL << (bit_hi + 1)) - 1ULL);
-            const uint64_t lo_mask = ((1ULL << low_bits_in_hi_word) - 1ULL) << bit_lo;
+            const uint64_t lo_mask = (low_bits_in_hi_word == 64)
+                ? 0xFFFFFFFFFFFFFFFFULL
+                : ((1ULL << low_bits_in_hi_word) - 1ULL);
             auto& wh = static_cast<base*>(this)->words_[word_hi];
             auto& wl = static_cast<base*>(this)->words_[word_lo];
             wh = (wh & ~hi_mask) | ((val >> low_bits_in_hi_word) & hi_mask);
