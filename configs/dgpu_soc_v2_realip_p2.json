@@ -1,0 +1,28 @@
+{
+  "name": "dgpu_soc_v2_realip_p2",
+  "description": "dGPU SoC using PcieControllerIP + PcieAxiBridgeIP facades (P2 PR-A sample)",
+  "version": "2-realip-p2-a",
+  "_note": "Per T2 (Oracle bg_fb84a648): MUST NOT contain 'axi_adapter' or 'axi4_mapper_inject' keys in PcieControllerIP params — would double-attach via PcieEndpointIP::attach_composition auto-flow. grep-gate check_pcie_ip_facade.sh enforces this.",
+  "modules": [
+    {
+      "type": "PcieControllerIP",
+      "name": "pcie_ep",
+      "params": {
+        "bar_bases": [0, 1048576, 2097152, 0, 0, 0],
+        "bar_sizes": [4096, 16777216, 8589934592, 0, 0, 0],
+        "link_speed_gts": 8
+      }
+    },
+    {
+      "type": "PcieAxiBridgeIP",
+      "name": "axi_bridge",
+      "params": {"axi_data_width_bits": 256}
+    },
+    {
+      "type": "MemoryTLM",
+      "name": "memory",
+      "params": {"capacity_gb": 1}
+    }
+  ],
+  "connections": []
+}

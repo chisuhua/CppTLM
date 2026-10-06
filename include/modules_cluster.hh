@@ -56,4 +56,11 @@ const bool _reg_pcieendpointip = (REGISTER_MODULE(tlm::pcie::PcieEndpointIP), tr
 const bool _reg_pcieendpointip_short =
     (ModuleFactory::registerModule<tlm::pcie::PcieEndpointIP>("PcieEndpointIP"), true);
 
+// dgpu-realip-refactor P2 PR-A (Tasks 13-16):
+// PcieControllerIP facade over PcieEndpointIP + PcieAxiBridgeIP facade over
+// PcieAxiAdapterTLM+AXI4Mapper pair. Both extend SimModule (per H1 Oracle
+// bg_fb84a648 review: REGISTER_MODULE static_assert requires SimModule base).
+const bool _reg_pciecontrollerip = (REGISTER_MODULE(tlm::pcie::PcieControllerIP), true);
+const bool _reg_pcieaxibridge_ip = (REGISTER_MODULE(tlm::pcie::PcieAxiBridgeIP), true);
+
 #endif  // MODULES_CLUSTER_HH

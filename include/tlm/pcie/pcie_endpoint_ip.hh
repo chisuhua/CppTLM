@@ -234,6 +234,13 @@ public:
         bar_store_[BarStoreKey{bdf, bar, addr}] = val;
     }
 
+    // (P2 PR-A) Accessor for PcieControllerIP facade: returns current bar_sizes_[idx].
+    // Reads the private member so derived facade can do BAR-window size checks
+    // without breaking encapsulation. idx is 0..5; out-of-range returns 0.
+    [[nodiscard]] uint64_t bar_size(unsigned idx) const noexcept {
+        return (idx < 6) ? bar_sizes_[idx] : 0;
+    }
+
     // Phase 2: 访问器转发到 internal_factory 内的 composite (inactive 时返回 nullptr)
     PcieLinkLayer* link_layer() const noexcept;
     PciePhyDigitalCtrl* phy() const noexcept;

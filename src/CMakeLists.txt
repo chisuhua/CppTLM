@@ -122,6 +122,10 @@ set(CORE_SOURCES
     tlm/pcie/pcie_endpoint_ip.cc
     # dgpu-realip-refactor P1: PcieTlpWireBundle ↔ PcieTlpCodec bridge
     bundles/pcie_tlp_wire_bundle.cc
+    # dgpu-realip-refactor P2 PR-A: PcieControllerIP facade + PcieAxiBridgeIP facade
+    # (Tasks 13-15; zero behavior change at PR-A, only adds facades)
+    tlm/pcie/pcie_controller_ip.cc
+    tlm/pcie/pcie_axi_bridge_ip.cc
     # pcie-ip-microarch T-P10-1: PcieCompleterEngine (替换 dispatch_tlp no-op)
     tlm/pcie/pcie_completer_engine.cc
     # cpptlm-pcie-endpoint-ip-simmodule-refactor Phase 1: composite (LL+PHY+Mux)
