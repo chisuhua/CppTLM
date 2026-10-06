@@ -1947,3 +1947,74 @@ Replace DGpuBoard's flag-based BAR routing with `PcieControllerIP::match_bar` di
 
 PR-B verification (Task 21 phase gate) requires full test suite green. Per Metis bg_4051aad9, environment constraint: system load avg was 8-12 during PR-A — full `cpptlm_tests` build repeatedly hung. **PR-B phase gate MUST be deferred until system load drops below ~4** (single-test-build workflow).
 
+---
+
+## Status Update (2026-10-06, P3 freeze + PR-B Phase Gate BLOCKER 修复启动)
+
+Per Oracle `bg_9c11d0e8` + Metis `bg_fe773aed` 双评审结果 (评审于 commit `95a68889` 后),P3 Tasks 23-28 暂停实施,PR-B Phase Gate 优先解决 3 个 BLOCKER。
+
+### 边界对齐评分卡(评审总分 4.8/10)
+
+| 模块 | 分 | 关键证据 | 备注 |
+|------|---|---------|------|
+| **PcieControllerIP** | 5/10 | `pcie_controller_ip.hh:20` 继承整个 `PcieEndpointIP` | facade 名义化 |
+| **PcieAxiBridgeIP** | 4/10 | `pcie_endpoint_ip.cc` tick() 走静态注册表绕开 bridge |
+| **GpuInternalFabric** | 3/10 | 无 ports/tick/JSON 子模块接线 | 仅 scaffold |
+| **VramControllerTLM** | 6/10 | row buffer hit/miss 真实,但 bandwidth 单位错 | 最佳 |
+| **DGpuBoard** | 3/10 | 1085 行 .cc + 30 个 flag-gated fast-path | 仍 god-class glue |
+| **PcieBarRouter** | 8/10 | JSON `bar0_registers` 直接对应寄存器文件 | 最优映射 |
+
+### 3 个 BLOCKER(本轮修复目标)
+
+#### BLOCKER B1: PcieControllerIP 继承 EP 而非组合
+
+- **现状**:`class PcieControllerIP : public PcieEndpointIP` (`include/tlm/pcie/pcie_controller_ip.hh:20`)
+- **问题**:RTL 不能 100% 区分 controller vs EP 的实现边界
+- **修复方向**:PcieControllerIP 改为持有 PcieEndpointIP 组合(`PcieEndpointIP* ep_`,不再继承),`match_bar()` 走自己的 BAR decode 表(从 ep 注入 cfg_pf 引用)
+- **风险**:破坏 P2 PR-A 测试 + PR-B 的 Stage C dual-path consult 验证
+- **预估**:1.5-2d,需先写 equivalence test 锁定现有行为
+
+#### BLOCKER B2: Stage C `(void)` 丢弃 facade verdict(Strangler 退化)
+
+- **现状**:`(void)controller_ip_->match_bar(...)`  (`include/tlm/gpu/dgpu_board_shell.cc:311-315, 414-418`)
+- **问题**:facade 语义未验证即风险,且无 CI 双态门禁
+- **修复方向**:加 `CHECK(target == legacy_target_)` 断言对比 facade vs legacy 决策;失败即 `abort()` 触发 CI 红
+- **预估**:0.5d(单文件,~20 行)
+
+#### BLOCKER B3: bar_size 非标准 BAR probe 语义
+
+- **现状**:`bar_size()` 读 BAR 寄存器原始内容当作 size (`src/tlm/pcie/pcie_endpoint_ip.cc:139-147`);`install_bar_registers()` 把 size 写进 BAR register (`src/tlm/pcie/pcie_endpoint_ip.cc:106-116`)
+- **问题**:违背 PCIe 规范 — BAR 存 base address,size 经 write-all-1s probe 得出
+- **修复方向**:维护 `bar_sizes_[i]` 独立字段(`bar_size()` 从此字段读);`install_bar_registers()` 写 base = 0 占位(size 写回原 JSON 配置或经过 `MAX(effective_addr) - BASE + 1` 推算)
+- **预估**:0.5d(单文件,~30 行)
+
+### P3 暂停 — Tasks 23-28 重启条件
+
+P3 Tasks 23-28 (VramControllerTLM 注册、4-IP JSON、equivalence test、demo、doc、phase gate) **暂停实施**,待 3 个 BLOCKER 全部修复后重启。
+
+#### 已发现的 P3 实施陷阱(Metis 提供)
+
+1. **Task 23 实质 no-op**:`VramControllerTLM` 注册已在 `include/chstream_register.hh:54`(Phase 4 T4),`GpuInternalFabric` 注册已在 `include/modules_cluster.hh:53`(commit `95a68889`)。WIP 写错宏(零参 `REGISTER_CHSTREAM` 传 2 参)→ 编译错,**已 revert**(本轮 Step 1)
+2. **Task 24 含死引用**:`configs/dgpu_soc_v2_realip_p2.json:17` 顶层仍引用已注销的 `PcieAxiBridgeIP`,`cp` 会拷贝死模块 → 3-IP + 死 entry,**修复前先删**
+3. **Task 25 当前是假 scaffold**:plan 字面写常量断言 `REQUIRE(expected[0]==0xDE)`,不加载任何拓扑,**违反 spec §11.4 验收**
+4. **Task 26 缺 CMakeLists**:`--target demo_dgpu_soc_realip` 计划引用但无 CMakeLists.txt 修改
+5. **Task 28 phase gate 标签真空**:仓库无 `[pcie-realip]` 标签测试,0 用例 vacuous pass
+
+#### P3 跨任务风险(必前置 BLOCKER 解)
+
+- **Strangler 并发读重叠**:legacy flags + facade 双响应 BAR0 → Task 25 等价 harness 是唯一定位器
+- **VramControllerTLM 双源所有权**:JSON 顶层提升后脱离 DGpuBoard init,backing 注入不跑即 `kill -ENODEV` (B12)
+- **Registry churn**:REGISTER_CHSTREAM (registerObject) vs REGISTER_MODULE (registerModule) 双注册表新增条目
+
+### 本轮已执行动作(2026-10-06)
+
+- [x] **Step 1 Revert WIP**:`git checkout HEAD -- include/tlm/vram_controller_tlm.hh`,`cpptlm_core [100%] Built target` 绿灯
+- [x] **Step 2 冻结 P3**:本 Status Update 段(替代 P3 计划,待 BLOCKER 解后重写 P3 Tasks 23-28 详细步骤)
+- [ ] **Step 3 PR-B Phase Gate 修复**(优先级:B2 → B3 → B1):
+  - [ ] B2 加 facade vs legacy 断言 (`dgpu_board_shell.cc:311-315, 414-418`)
+  - [ ] B3 修 `bar_size()` 用独立字段 + `install_bar_registers()` 写 base=0 (`pcie_endpoint_ip.cc:139-147, 106-116`)
+  - [ ] B1 PcieControllerIP 改组合 (`pcie_controller_ip.hh:20` 改为持有 PcieEndpointIP*)
+  - [ ] 验证:`./test.sh --mode off` 全量 + `[pcie-memory][sdma]` 零回归 + facade vs legacy 100% 决策一致
+  - [ ] 新增 tag: `pr-b-phase-gate-fix`
+  - [ ] 重启 P3 Tasks 23-28(以本 BLOCKER 解后的代码基线为输入)
+

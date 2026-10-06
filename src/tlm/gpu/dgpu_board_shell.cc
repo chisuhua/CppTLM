@@ -6,6 +6,7 @@
 #include <cerrno>
 #include <chrono>
 #include <cstring>
+#include <cassert>
 #include <iostream>
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 #include "tlm/gpu/sdma_engine_tlm.hh" // 1.3d M6: SdmaEngineTLM::kSdmaFenceVector 单点常量引用
@@ -308,11 +309,24 @@ namespace tlm::gpu {
         // Legacy flag-based paths below remain authoritative until CI dual-state
         // gate (per Oracle §3.1) verifies facade agrees. PT-PR-C: replace
         // legacy branches with facade verdict when gate stabilizes.
+        //
+        // PR-B Phase Gate BLOCKER B2 (per Oracle bg_9c11d0e8):
+        //   facade verdict MUST classify (bar, offset) consistently. Strangler
+        //   pattern sanity check: target enum must reflect bar index. Any
+        //   divergence fires Phase Gate (Debug default; #define NDEBUG for
+        //   production). Without this, facade semantics are unvalidated and
+        //   PR-C flip would promote unverified code to authoritative.
         if (controller_ip_) {
             tlm::pcie::PcieControllerIP::BarTarget target;
             uint64_t sub_offset = 0;
-            (void)controller_ip_->match_bar(bar, offset, target, sub_offset);
-            // (target/sub_offset retained for PR-C dispatch wiring)
+            controller_ip_->match_bar(bar, offset, target, sub_offset);
+            const auto expected =
+                (bar == 0) ? tlm::pcie::PcieControllerIP::BarTarget::Bar0Mmio
+                : (bar == 1) ? tlm::pcie::PcieControllerIP::BarTarget::Bar1FbFastPath
+                : (bar == 2) ? tlm::pcie::PcieControllerIP::BarTarget::Bar2VramAperture
+                             : tlm::pcie::PcieControllerIP::BarTarget::Unknown;
+            assert(target == expected &&
+                   "DGpuBoard B2: facade verdict divergence (Strangler gate)");
         }
         // D1 display-io-mvp fast-path: BAR 0 路由到 PcieDisplayDevice
         // (device 优先; 否则 fallback 到原 mmio_regs_ + inject_q_ async 路径)
@@ -411,11 +425,21 @@ namespace tlm::gpu {
             // legacy path below remains authoritative until CI dual-state gate
             // verifies facade agrees. Sub-dispatch (GMMU vs Display) stays here
             // per Oracle §2.1 target-side decode principle.
+            //
+            // PR-B Phase Gate BLOCKER B2 (per Oracle bg_9c11d0e8):
+            //   See mmio_read counterpart for rationale. Same Strangler
+            //   pattern sanity check fires Phase Gate on facade divergence.
             if (controller_ip_) {
                 tlm::pcie::PcieControllerIP::BarTarget target;
                 uint64_t sub_offset = 0;
-                (void)controller_ip_->match_bar(bar, offset, target, sub_offset);
-                // (target/sub_offset retained for PR-C dispatch wiring)
+                controller_ip_->match_bar(bar, offset, target, sub_offset);
+                const auto expected =
+                    (bar == 0) ? tlm::pcie::PcieControllerIP::BarTarget::Bar0Mmio
+                    : (bar == 1) ? tlm::pcie::PcieControllerIP::BarTarget::Bar1FbFastPath
+                    : (bar == 2) ? tlm::pcie::PcieControllerIP::BarTarget::Bar2VramAperture
+                                 : tlm::pcie::PcieControllerIP::BarTarget::Unknown;
+                assert(target == expected &&
+                       "DGpuBoard B2: facade verdict divergence (Strangler gate)");
             }
             if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {

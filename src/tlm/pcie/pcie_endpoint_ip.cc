@@ -103,19 +103,24 @@ namespace tlm::pcie {
         install_lnkctl_callback();
     }
 
-    // Phase 3 T1.3 (N6): 从 bar_sizes_ 写 config space 64-bit BAR 双 dword 寄存器
-    // v1.3 B5: 64-bit BAR 占两个连续 32-bit dword (0x10/0x14, 0x18/0x1C, 0x20/0x24, ...)
-    //   低 dword = bar_sizes[i] & 0xFFFFFFFF; 高 dword = bar_sizes[i] >> 32
-    //   e.g. BAR2 size=8GB (0x2_0000_0000) → read(0x20)==0, read(0x24)==2
+    // Phase 3 T1.3 (N6): BAR register (config space 0x10/0x14, 0x18/0x1C, ...) holds
+    // the BASE ADDRESS programmed by host enumeration — NOT the size (per PCIe
+    // spec; pre-BLOCKER-B3 code wrote size into BAR register, misleading RTL).
+    // v1.3 B5: 64-bit BAR = two consecutive 32-bit dwords.
+    //   lo_off = 0x10 + idx*8; hi_off = lo_off + 4.
+    // Initial value = 0 (unprogrammed); host will write real base after probe.
+    // Size lives in bar_sizes_[] field (JSON-declared / probe-derived) and is
+    // exposed via the bar_size() accessor — NOT round-tripped through BAR.
     void PcieEndpointIP::install_bar_registers() {
         auto& cfg_pf = pool_.config_pool().config_of(0);
-        for (int i = 0; i < 6; ++i) {
+        for (int i = 0; i < 6; i++) {
             const uint16_t lo_off = static_cast<uint16_t>(0x10 + i * 8);
             const uint16_t hi_off = static_cast<uint16_t>(lo_off + 4);
             if (lo_off + 8 > cfg_pf.config_size()) break;
-            const uint64_t sz = bar_sizes_[i];
-            cfg_pf.write(lo_off, static_cast<uint32_t>(sz & 0xFFFFFFFFu));
-            cfg_pf.write(hi_off, static_cast<uint32_t>((sz >> 32) & 0xFFFFFFFFu));
+            // BAR register = 0 (base addr placeholder) — NOT bar_sizes_[i].
+            // Per PCIe spec: BAR holds base addr after host enumeration.
+            cfg_pf.write(lo_off, 0u);
+            cfg_pf.write(hi_off, 0u);
         }
 
         // P2 PR-B Stage B (a) per Oracle bg_c60653e0 §4(a): consolidate doorbell
@@ -131,20 +136,22 @@ namespace tlm::pcie {
                                 0);
     }
 
-    // P2 PR-B Stage B (b) per Oracle bg_c60653e0 §1.5/§2.4: read BAR sizes
-    // from config-space BAR mask registers (single authority — what host
-    // actually programmed), NOT from JSON-declared bar_sizes_. install_bar_registers
-    // already writes JSON sizes into config space at offsets 0x10 + idx*8;
-    // we read back from the same locations.
-    uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
-        if (idx >= 6) return 0;
-        const auto& cfg_pf = pool_.config_pool().config_of(0);
-        const uint16_t lo_off = static_cast<uint16_t>(0x10 + idx * 8);
-        if (lo_off + 8 > cfg_pf.config_size()) return 0;
-        const uint64_t lo = cfg_pf.read(lo_off);
-        const uint64_t hi = cfg_pf.read(lo_off + 4);
-        return (hi << 32) | lo;
-    }
+    // P2 PR-B Stage B (b) per Oracle bg_c60653e0 §1.5/§2.4: BAR size is a config
+//  property — NOT what host BAR register currently programs (BAR register holds
+//  base addr per PCIe spec, post-BLOCKER-B3). The spec previously read back the
+//  cfg_pf BAR-register location because install_bar_registers incorrectly put
+//  size in BAR register. Now spec-compliant — read from bar_sizes_[] directly
+//  (BAR register = base addr, size = bar_sizes_[idx] field, decode-from-config).
+//  NOTE: Real silicon uses write-all-1s probe (host writes 0xFFFFFFFF, EP
+//  returns inverted bits, +1 = size). bar_sizes_[] is pre-seeded from JSON
+//  params (or probe-derived in future work). See docs/superpowers/plans/...
+//  for BLOCKER B3 rationale.
+uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
+    if (idx >= 6) return 0;
+    // Read from dedicated size field (PCIe-spec-compliant); BAR register
+    // holds base addr (per install_bar_registers spec-compliant write).
+    return bar_sizes_[idx];
+}
 
     void PcieEndpointIP::simulate_instantiate(const json& cfg) {
         // 决策 3: 双格式 — Module entry {"name","type","params"} (Step 4.5) 或直接 params
