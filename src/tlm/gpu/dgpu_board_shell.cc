@@ -394,6 +394,11 @@ namespace tlm::gpu {
         // (device 优先; BAR 1 doorbell 仍走原 SDMA 路径)
         // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
         if (display_routing_enabled_ && bar == 0 && soc_) {
+            // P2 PR-B dual-path (per Oracle bg_c60653e0 §3.1): when controller_ip_
+            // is injected, match_bar serves as facade-consult; legacy legacy
+            // path below runs unchanged for back-compat. Sub-dispatch (GMMU vs
+            // Display) stays here per Oracle §2.1 target-side decode principle.
+            (void)controller_ip_;  // PR-B Stage A: pointer present, dispatch wired PR-C
             if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
                     return ep->display_device().mmio_write(offset, buf, len);
