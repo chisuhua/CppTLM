@@ -1921,3 +1921,29 @@ Per Metis (REVISE-P2) + Oracle (PROCEED + split) consensus:
   - Use **dual-path** (flag → match_bar; no flag → legacy) to cap risk
 
 **All these corrections must be applied before starting P2 PR-A.**
+
+---
+
+## Status Update (2026-10-06, PR-B start)
+
+Per Oracle bg_c60653e0 §4 + Metis bg_4051aad9 review of PR-A PR-A revision (commit dcc2ab1a).
+
+### PR-B first-task checklist (MUST land before Task 17)
+
+- [ ] **(a) Doorbell consolidation** — fold 0x10010000 into `PcieBarRouter` BAR0 DOORBELL table (`SideEffect::DOORBELL` mechanism exists at `pcie_bar_router_mvp.hh:47-50`). Delete BAR1 synthetic-offset path OR document as explicit model exception. Add CI gate running `[pcie]/[sdma]` suites under both flag states (per Oracle §3.1).
+- [ ] **(b) `bar_size()` authority** — read from `install_bar_registers`-written config-space BAR mask, not from JSON `bar_sizes_`. Single authority avoids facade-routing vs host-programmed view divergence (per Oracle §1.5).
+- [ ] **(c) PcieAxiBridgeIP → EP composite** — alternative to PR-A simplification: move PcieAxiBridgeIP into `PcieEndpointIP::internal_factory` like `PcieLinkPhyMux`. Class definition retained in include/tlm/pcie/pcie_axi_bridge_ip.hh. Construction happens post-EP-init via `attach_composition` / `internal_factory` pattern. Kills ordering half-fail per Oracle §3.2.
+
+### Task 17 dual-path routing extraction (PR-B main work)
+
+Replace DGpuBoard's flag-based BAR routing with `PcieControllerIP::match_bar` dispatch:
+- `display_routing_enabled_` flag controls whether `match_bar(bar, offset)` result is consumed vs legacy path
+- `memory_routing_enabled_` flag controls BAR2 routing vs legacy
+- `storage_routing_enabled_` and `gmmu_routing_enabled_` preserved
+- Deprecated flag accessor wrappers retained (test API surface at `test_dgpu_board_shell_abi.cc:264-288`)
+- BAR0 sub-dispatch (GMMU <0x100, Display >=0x100) belongs in DGpuBoard layer post-match_bar returns `Bar0Mmio`
+
+### Build constraints
+
+PR-B verification (Task 21 phase gate) requires full test suite green. Per Metis bg_4051aad9, environment constraint: system load avg was 8-12 during PR-A — full `cpptlm_tests` build repeatedly hung. **PR-B phase gate MUST be deferred until system load drops below ~4** (single-test-build workflow).
+
