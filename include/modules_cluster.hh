@@ -28,6 +28,7 @@
 #include "tlm/gpu/dgpu_soc.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
+#include "tlm/pcie/pcie_controller_ip.hh"  // P2 PR-A facade (register_module needs full type)
 #include "core/module_factory.hh"
 
 // ComputeCluster / TpcCluster / GpcCluster / GpuCluster / CacheCluster / MemoryCluster / GpuNoC / ApuSoC 在 cpptlm::tlm 命名空间
