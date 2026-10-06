@@ -12,7 +12,7 @@ PcieControllerIP::PcieControllerIP(const std::string& name, EventQueue* eq)
 
 bool PcieControllerIP::match_bar(uint8_t bar, uint64_t offset,
                                   BarTarget& out_target,
-                                  uint64_t& out_sub_offset) const {
+                                  uint64_t& out_sub_offset) noexcept {
     out_sub_offset = offset;
 
     // BAR3 is upper dword of BAR2 64-bit pair (per H2) — never matches.

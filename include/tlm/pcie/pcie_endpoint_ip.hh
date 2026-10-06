@@ -234,12 +234,13 @@ public:
         bar_store_[BarStoreKey{bdf, bar, addr}] = val;
     }
 
-    // (P2 PR-A) Accessor for PcieControllerIP facade: returns current bar_sizes_[idx].
-    // Reads the private member so derived facade can do BAR-window size checks
-    // without breaking encapsulation. idx is 0..5; out-of-range returns 0.
-    [[nodiscard]] uint64_t bar_size(unsigned idx) const noexcept {
-        return (idx < 6) ? bar_sizes_[idx] : 0;
-    }
+    // (P2 PR-A + PR-B Stage B (b)) Accessor for PcieControllerIP facade.
+// PR-B (b) per Oracle bg_c60653e0 §1.5/§2.4: reads from config-space BAR
+// mask registers (single authority — what host actually programmed), NOT
+// from JSON-declared bar_sizes_. idx is 0..5; out-of-range returns 0.
+    // PR-B Stage B (b) reads config_pool.config_of(0) which is non-const;
+    // bar_size is therefore non-const (per Oracle §1.5/§2.4 single authority).
+    [[nodiscard]] uint64_t bar_size(unsigned idx) noexcept;
 
     // Phase 2: 访问器转发到 internal_factory 内的 composite (inactive 时返回 nullptr)
     PcieLinkLayer* link_layer() const noexcept;

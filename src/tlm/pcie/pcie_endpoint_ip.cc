@@ -131,6 +131,21 @@ namespace tlm::pcie {
                                 0);
     }
 
+    // P2 PR-B Stage B (b) per Oracle bg_c60653e0 §1.5/§2.4: read BAR sizes
+    // from config-space BAR mask registers (single authority — what host
+    // actually programmed), NOT from JSON-declared bar_sizes_. install_bar_registers
+    // already writes JSON sizes into config space at offsets 0x10 + idx*8;
+    // we read back from the same locations.
+    uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
+        if (idx >= 6) return 0;
+        const auto& cfg_pf = pool_.config_pool().config_of(0);
+        const uint16_t lo_off = static_cast<uint16_t>(0x10 + idx * 8);
+        if (lo_off + 8 > cfg_pf.config_size()) return 0;
+        const uint64_t lo = cfg_pf.read(lo_off);
+        const uint64_t hi = cfg_pf.read(lo_off + 4);
+        return (hi << 32) | lo;
+    }
+
     void PcieEndpointIP::simulate_instantiate(const json& cfg) {
         // 决策 3: 双格式 — Module entry {"name","type","params"} (Step 4.5) 或直接 params
         const json params = cfg.contains("params") ? cfg["params"] : cfg;

@@ -38,7 +38,7 @@ public:
     // Reads sizes dynamically from PcieEndpointIP::bar_sizes_ (no static snapshot).
     // ResizableBar changes are reflected on next call (per Metis hidden req #2).
     bool match_bar(uint8_t bar, uint64_t offset,
-                 BarTarget& out_target, uint64_t& out_sub_offset) const;
+                 BarTarget& out_target, uint64_t& out_sub_offset) noexcept;
 
     std::string get_module_type() const override { return "PcieControllerIP"; }
 };
