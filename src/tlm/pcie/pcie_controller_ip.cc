@@ -22,13 +22,10 @@ bool PcieControllerIP::match_bar(uint8_t bar, uint64_t offset,
     }
 
     if (bar == 0) {
-        // Per T3: sub-dispatch BAR0Mmio by offset (<0x100 GMMU else Display)
-        // GMMU register space covers offset < 0x100 (per existing DGpuBoard code).
-        if (offset < 0x100) {
-            out_target = BarTarget::Bar0GmmuReg;
-        } else {
-            out_target = BarTarget::Bar0DisplayMmio;
-        }
+        // Per Oracle bg_c60653e0 §2.1: BAR0 0x100 sub-dispatch REMOVED.
+        // Controller facade returns Bar0Mmio for whole 4KB aperture;
+        // GMMU/Display split belongs to target-side (DGpuBoard / P3 fabric).
+        out_target = BarTarget::Bar0Mmio;
         return true;
     }
 

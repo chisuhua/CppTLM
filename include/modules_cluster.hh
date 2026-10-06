@@ -57,10 +57,14 @@ const bool _reg_pcieendpointip_short =
     (ModuleFactory::registerModule<tlm::pcie::PcieEndpointIP>("PcieEndpointIP"), true);
 
 // dgpu-realip-refactor P2 PR-A (Tasks 13-16):
-// PcieControllerIP facade over PcieEndpointIP + PcieAxiBridgeIP facade over
-// PcieAxiAdapterTLM+AXI4Mapper pair. Both extend SimModule (per H1 Oracle
-// bg_fb84a648 review: REGISTER_MODULE static_assert requires SimModule base).
+// PcieControllerIP facade over PcieEndpointIP. Extends SimModule (per H1
+// Oracle bg_fb84a648 review: REGISTER_MODULE static_assert requires SimModule base).
+// PcieAxiBridgeIP REMOVED from REGISTER_MODULE per Oracle bg_c60653e0 §4:
+// bridge will be EP-internal composite (internal_factory pattern like
+// PcieLinkPhyMux) in PR-B to kill the PcieAxiAdapter(PcieEndpointIP*) ordering
+// problem by construction-order guarantee. JSON-instantiable top-level form
+// is invalid (half-constructed state representable). Class definition retained
+// in include/tlm/pcie/pcie_axi_bridge_ip.hh for use as EP composite member.
 const bool _reg_pciecontrollerip = (REGISTER_MODULE(tlm::pcie::PcieControllerIP), true);
-const bool _reg_pcieaxibridge_ip = (REGISTER_MODULE(tlm::pcie::PcieAxiBridgeIP), true);
 
 #endif  // MODULES_CLUSTER_HH

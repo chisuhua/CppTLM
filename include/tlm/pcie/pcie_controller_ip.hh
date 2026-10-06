@@ -21,15 +21,17 @@ class PcieControllerIP : public PcieEndpointIP {
 public:
     PcieControllerIP(const std::string& name, EventQueue* eq);
 
-    // Per H3: explicit doorbell carve-out (synthetic 0x10010000 outside BAR1 16MB)
-    // Per T3: BAR0Mmio sub-dispatch (offset<0x100 → GMMU, else Display)
-    // BAR3 is upper dword of BAR2 64-bit pair — never matches
+    // Per Oracle bg_c60653e0 §2.1: BAR0 0x100 GMMU/Display sub-dispatch REMOVED.
+    // Real PCIe EP controllers do NOT sub-split a BAR by offset — controller
+    // forwards the whole BAR0 window to internal bus; decode happens on
+    // target side (GMMU block, display block each claim their own range).
+    // Sub-dispatch belongs in target-side / GpuInternalFabric (P3), not here.
+    // Per Oracle on-card: BAR3 is upper dword of BAR2 64-bit pair — never matches.
     enum class BarTarget : uint8_t {
         Unknown          = 0,
-        Bar0GmmuReg      = 1,   // BAR0 offset < 0x100 (GMMU register space)
-        Bar0DisplayMmio  = 2,   // BAR0 offset >= 0x100 (display device MMIO)
-        Bar1FbFastPath   = 3,   // BAR1 offset < bar1_window_size_ (framebuffer window)
-        Bar2VramAperture = 4,   // BAR2 (any offset) → PcieMemoryDevice
+        Bar0Mmio         = 1,   // BAR0 — whole 4KB aperture (target-side decodes)
+        Bar1FbFastPath   = 2,   // BAR1 offset < bar_size(1) (framebuffer window)
+        Bar2VramAperture = 3,   // BAR2 (any offset) → PcieMemoryDevice
     };
 
     // Match (bar, offset) → BarTarget + sub_offset (within-BAR offset)
