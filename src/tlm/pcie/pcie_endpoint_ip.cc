@@ -3,6 +3,7 @@
 // 作者 CppTLM Team / 日期 2026-10-13
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/gpu/pcie_config_space_mvp.hh"
+#include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter Access/SideEffect enums (P2 PR-B Stage B)
 #include "tlm/pcie/pcie_config_space_per_vf_tlm.hh"
 #include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
 #include "tlm/pcie/pcie_msix_per_vf_tlm.hh"
@@ -116,6 +117,18 @@ namespace tlm::pcie {
             cfg_pf.write(lo_off, static_cast<uint32_t>(sz & 0xFFFFFFFFu));
             cfg_pf.write(hi_off, static_cast<uint32_t>((sz >> 32) & 0xFFFFFFFFu));
         }
+
+        // P2 PR-B Stage B (a) per Oracle bg_c60653e0 §4(a): consolidate doorbell
+        // into PcieBarRouter's DOORBELL table. Real silicon has doorbell in SDMA
+        // engine MMIO register space; here we model the synthetic test offset
+        // (kBar1DoorbellOffset = 0x10010000) as a router entry so consumers can
+        // query via lookup_register_entry(0x10010000) instead of hardcoded
+        // offset checks. PcieEndpointIP::tick() doorbell path uses this entry's
+        // stream_id for doorbell dispatch.
+        bar_router_.add_register(kBar1DoorbellOffset, "DOORBELL",
+                                tlm::gpu::PcieBarRouter::Access::WO,
+                                tlm::gpu::PcieBarRouter::SideEffect::DOORBELL,
+                                0);
     }
 
     void PcieEndpointIP::simulate_instantiate(const json& cfg) {
