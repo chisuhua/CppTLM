@@ -488,7 +488,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **测试状态**: **79046 assertions in 1634 test cases 全绿**（含 Phase 1-8 + 7 阶段全链路 + dgpu_soc_minimal_v1 E2E `[minimal_dgpu_soc]` + ABI smoke `[abi][minimal_dgpu_soc]` + D2 memory `[pcie-memory]`）；**openspec validate PASS**
 - **23 ABI 冻结**: `include/tlm/gpu/pcie_endpoint_tlm.h` 与 `include/abi/cpptlm_emulator.h` 零修改（仅可加 `[[deprecated]]` 属性）
 - **PcieEndpointTLM deprecated**: `[[deprecated("use PcieEndpointIP")]]`，chstream_register 仍注册（既有 Phase 4 测试依赖），新增 PcieEndpointIP 并存
-- **512-bit 数据限制**: `ch_uint<512>` 内部 `uint64_t`，`wdata/rdata` 真实宽度 64-bit（per `include/bundles/cpphdl_types.hh`）
+- **ch_uint 宽类型支持** (P0 fix, 2026-10-06, dgpu-realip-refactor §5.1): `ch_uint<W≤64>` 保留原 `uint64_t value_` 存储(零行为变化,is_trivially_copyable + is_standard_layout 编译期断言);`ch_uint<W>64>` 改用 `std::array<uint64_t, N>` 多字存储 (`ch_uint_wide`)。`ch_uint<W>` 通过 `std::conditional_t` + `using base::base` 分派,保留 100+ 既有 `ch_uint<W>(k)` 调用点。Wide 路径提供 `low()` / `slice<>` / `set_slice<>` 显式操作;**`read()` / `write()` / `operator uint64_t()` 在 W>64 时退化为低 64-bit 截断**(保留 axi4_*/pcie_axi_adapter_tlm/pcie_endpoint_ip 既有行为,P1/P2 迁移到 slice/set_slice 后可移除)。详细规格见 `docs/superpowers/specs/2026-10-06-dgpu-realip-refactor-design.md §5.1`。
 - **PCIe Cfg 地址编码** (v1.1 实现完成): `PcieEndpointIP::tick()` 按 PCIe 规范解码 AXI 配置请求 — 低 2 bit 对齐保留位，`awaddr` 直接用于 cfg/BAR 路径范围判定，cfg 内部屏蔽低 2 bit 后右移得到 byte offset；测试覆盖见 `[cfg-encoding]` 标签。
 - **framebuffer 自动分配** (P0.5-landing, 2027-09-17): `DGpuBoard::load_soc_config` 自动从 `pcie_ep.params.bar_sizes[1]` 派生 `framebuffer_size_`（顶层 `framebuffer_size_bytes` 可 override），`init()` 自动分配 backing → **UE 端 driver 通过 ABI 即可闭环 SoC 全能力**，无需 `attach_framebuffer_for_testing()` 兜底。测试覆盖：`[abi][minimal_dgpu_soc]` 8 cases / 23 assertions + Python demo `examples/demo_dgpu_soc_minimal_via_abi.py`。
 - **memory_routing_enabled_ 路由开关** (D2 v1.1 修订, 2027-09-26): DGpuBoard 新增 `memory_routing_enabled_` flag 防止无条件路由劫持 root cause 4（与 D1 `display_routing_enabled_` 对称）。默认 `false`，仅当 JSON 顶层 `memory_routing_enabled=true` 时启用 BAR 2 → PcieMemoryDevice 路由。测试覆盖：`[pcie-memory]` 24 cases / 67 assertions（4 文件双标签 `[pcie][pcie-memory]`）。
@@ -519,7 +519,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - 桥接修复 (429327d): HostBypassTLM/RC::tick() 自动转发 4 方向 AXI 通道, 让 EP 真实消费请求
 
 **已知问题 (Minor, 不阻断)**:
-- `ch_uint<512>` 实际 64-bit 存储 (per Phase 5 M1 文档化限制)
+- `ch_uint<512>` 既有 `.read()/.write()` 调用仍走低 64-bit 截断(向后兼容 shim,per P0 fix 2026-10-06);P1/P2 迁移到 `slice<>/set_slice<>` 后可移除 shim
 
 ### ★ D-AXI Driver-Visible Minimal SoC（2026-2027, 跨 Phase 8 与 D-AXI change）
 
