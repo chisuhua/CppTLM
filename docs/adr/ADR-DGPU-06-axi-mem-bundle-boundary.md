@@ -302,3 +302,36 @@ per D-AXI tasks.md **v1.3 P0.2 B2 + v1.7 P0.33 H1 + v1.8 P0.41 N2**:
 
 **验证结果**: `[sdma]` 56 cases / 12884 assertions + `[pcie-memory]` 24 cases + `[driver_visible]` 2 cases (29 assertions) + ctest 76/76 PASS, 0 regression; ABI 冻结面 0 diff。
 
+
+## Status Update (2026-10-06, P1 — dgpu-realip-refactor)
+
+Per `docs/superpowers/specs/2026-10-06-dgpu-realip-refactor-design.md` §5.2 + `docs/superpowers/plans/2026-10-06-dgpu-realip-refactor.md` Tasks 6-11 (REVISED plan per Oracle bg_ae8d4f14).
+
+**Canonical wire format v1**: `PcieTlpWireBundle` (in `cpptlm::pcie` namespace) is promoted to canonical byte-accurate wire format for PCIe TLP. Original definition migrated from `include/bundles/pcie_bundles_tlm.hh:130-258` to new non-frozen file `include/bundles/pcie_tlp_wire_bundle.hh` (commit ed5b3194). Frozen header `pcie_bundles_tlm.hh` re-exports via `#include` for backward compatibility (zero behavior diff for existing `#include "pcie_bundles_tlm.hh"` callers).
+
+**P1 NEW surface** (in `cpptlm::pcie::PcieTlpWireBundle`, all bridge to existing `PcieTlpCodec` per Oracle REVISED plan — no parallel codec implementation):
+
+- `tlp_pack_to_bytes(out, out_len)` — dispatches `PcieTlpCodec::encode_{mrd,mwr,cpld}` by `kind`
+- `tlp_unpack_from_bytes(in, in_len)` — `PcieTlpCodec::decode` + `classify` → wire bundle enum
+- `crc32_compute()` — pack then `PcieTlpCodec::crc32_pcie` (single source of truth)
+- Supported kinds (PcieTlpCodec coverage): MEM_READ, MEM_WRITE, CPLD
+- Unsupported kinds (CFG_*/MMIO_*/IRQ_DELIVERY): `pack` returns `out_len=0`; `decode` leaves fields unchanged. Follow-up change `cpptlm-tlp-descriptor-fmt-fix` extends PcieTlpCodec for these kinds.
+
+**LOSSY fields documented as `LOSSY:` markers** in `docs/architecture/14-pcie-tlp-wire-format.md`:
+
+- `from_descriptor fmt`: CFG→0b100 (invalid; CfgRd is 0b000), MRd→0b010 (should be 0b000 no-data)
+- `from_descriptor type`: always 0 (loses MRd=00000 vs CfgRd=00100 distinction)
+- `from_descriptor first_be`: hardcoded 0xF
+- `from_descriptor tag`: truncated to 8 bits
+- `from_descriptor bar_index`: dropped (BAR 0 only)
+- `to_descriptor CPLD`: collapsed to MMIO_READ
+
+These pre-existing losses are preserved for backward compatibility with snapshot tests; byte-level packing via `tlp_pack_to_bytes`/`tlp_unpack_from_bytes` is **lossless** for covered kinds.
+
+**Marked `[[deprecated]]`** on `to_descriptor()` and `from_descriptor()` (compile-time warnings, no behavior change).
+
+**CDC declarations** (P1 §5.3): 3 clock domains declared (`PCIE_DOMAIN`, `GPU_DOMAIN`, `HBM_DOMAIN`); named crossings `pcie_ep→bar_decoder`, `bar_decoder→fabric`, `fabric→vram_ctrl`. JSON schema extension in `config_utils`; parsed-but-unmodeled.
+
+**No change to frozen `PcieTlpBundle` semantics**; this Status Update only declares a sibling canonical wire type and its byte-canonical bridge to `PcieTlpCodec`.
+
+---
