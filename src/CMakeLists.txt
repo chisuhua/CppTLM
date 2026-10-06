@@ -120,6 +120,8 @@ set(CORE_SOURCES
     tlm/pcie/pcie_completion_tracker_tlm.cc
     # pcie-ip-microarch Phase 4: PcieEndpointIP 新类 17 端口 (T-P4-7)
     tlm/pcie/pcie_endpoint_ip.cc
+    # dgpu-realip-refactor P1: PcieTlpWireBundle ↔ PcieTlpCodec bridge
+    bundles/pcie_tlp_wire_bundle.cc
     # pcie-ip-microarch T-P10-1: PcieCompleterEngine (替换 dispatch_tlp no-op)
     tlm/pcie/pcie_completer_engine.cc
     # cpptlm-pcie-endpoint-ip-simmodule-refactor Phase 1: composite (LL+PHY+Mux)
