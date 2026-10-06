@@ -1776,3 +1776,148 @@ Plan complete and saved to `docs/superpowers/plans/2026-10-06-dgpu-realip-refact
 2. **Inline Execution** — Execute tasks sequentially in this session, with batch checkpoints at each phase gate. Simpler, but risks context window exhaustion over 22-32 days of work.
 
 **Recommendation**: Subagent-Driven, with phase-level reviews between P0/P1, P1/P2, and P2/P3 transitions. Each subagent gets the relevant task slice + the design spec reference.
+---
+
+## Status Update (2026-10-06, post-Metis/Oracle review of P0+P1)
+
+Per Metis review `bg_899dfdcc` + Oracle review `bg_fb84a648` of P0+P1 completion, **6 critical corrections** apply to P2 tasks 14-18. These OVERRIDE earlier task descriptions.
+
+### H1: PcieAxiBridgeIP base class + namespace (Plan Task 15)
+
+**Before (plan v1.1)**:
+```cpp
+class PcieAxiBridgeIP : public cpptlm::SimObject { ... };
+// Registered via REGISTER_MODULE (Task 16)
+```
+
+**Corrected**:
+```cpp
+// include/tlm/pcie/pcie_axi_bridge_ip.hh
+namespace tlm::pcie {  // (NOT cpptlm::)
+class PcieAxiBridgeIP : public cpptlm::SimModule {  // MUST extend SimModule
+    // ...
+};
+}
+```
+
+**Why**: `REGISTER_MODULE<T>` has `static_assert(std::is_base_of_v<SimModule, T>)` (per `include/AGENTS.md` macro table). `cpptlm::SimObject` does not satisfy this — build fails at static_assert. Also `cpptlm::` is wrong prefix; `SimObject` lives in global namespace per AGENTS.md. JSON topology instantiation (`ModuleFactory::instantiateAll`) requires the module registry → must be `SimModule`.
+
+### H2: PcieControllerIP consumes PcieBarRouter (Plan Task 14)
+
+**Before (plan v1.1)**:
+```cpp
+class PcieControllerIP : public PcieEndpointIP {
+    bool match_bar(uint64_t addr, BarTarget& out_target, uint64_t& out_offset) const;
+    void load_bar_config(const uint64_t bar_bases[6], const uint64_t bar_sizes[6]);
+};
+```
+
+**Corrected**: `PcieControllerIP` is a **thin facade** that consumes existing `PcieEndpointIP::bar_router()` (which already has `PcieBarRouter` + `bar_sizes_` + `resizable_bar()` + `bar_store_`). It does NOT reimplement BAR matching.
+
+```cpp
+class PcieControllerIP : public PcieEndpointIP {
+public:
+    // Consume existing router — single source of truth for BAR bases/sizes
+    bool match_bar(uint64_t addr, BarTarget& out_target, uint64_t& out_offset) const {
+        return bar_router().match(addr, out_target, out_offset);
+    }
+    // Dynamic source: read sizes/bases live from config_space + resizable_bar
+    // (NOT one-shot load)
+};
+```
+
+**Why**: `PcieEndpointIP` already implements BAR match + 64-bit BAR pair BAR2/BAR3 + ResizableBar changes. Two implementations = two sources of truth → architectural debt (the goal of dgpu-realip-refactor is to ELIMINATE this kind of debt).
+
+### H3: Doorbell carve-out before match_bar (Plan Task 14)
+
+**Problem**: Doorbell offset `0x10010000` is **outside** BAR1's 16MB window (`0x1000000`). Per AGENTS.md, this is a "synthetic test offset" used for SDMA WPTR. A size-checked `match_bar` will **REJECT** the doorbell, breaking SDMA WPTR + `[minimal_dgpu_soc]` assertions.
+
+**Corrected**: Explicit doorbell carve-out checked **before** `match_bar`:
+
+```cpp
+// In DGpuBoard (board shell, NOT facade):
+if (abmend_bar == 1 && abmend_offset == kBar1DoorbellOffset) {  // 0x10010000
+    route_to_sdma_doorbell();
+    return;
+}
+// Existing fast-path preserved for BAR1 non-doorbell
+if (abmend_bar == 1 && abmend_offset < bar1_window_size_) {
+    route_via_bar1_fast_path(abmend_offset);
+    return;
+}
+// New facade path
+PcieControllerIP::BarTarget target;
+uint64_t offset = 0;
+if (controller_ip_->match_bar(absolute_addr, target, offset)) {
+    // ...
+}
+```
+
+### T1: Keep test accessor methods (Plan Task 17)
+
+**Problem**: 3 test files directly call `set_display_routing_enabled()` / `display_routing_enabled()`:
+- `test/test_dgpu_board_shell_abi.cc:264-288`
+- `test/test_a3_mmio_power_gate.cc:108,126`
+- `test/test_display_device_injection.cc` (JSON keys)
+
+Removing accessors = compile errors in tests.
+
+**Corrected**: **Keep accessors as deprecated forwarding wrappers** (Task 17):
+```cpp
+class DGpuBoard {
+public:
+    [[deprecated("Use PcieControllerIP match_bar; flag retained as gate")]]
+    bool display_routing_enabled() const { return display_routing_enabled_; }
+    
+    [[deprecated("Same")]]
+    void set_display_routing_enabled(bool en) { display_routing_enabled_ = en; }
+    // memory_routing_enabled_, storage_routing_enabled_, gmmu_routing_enabled_ same treatment
+};
+```
+
+### T2: v2 JSON must NOT have axi_adapter (Plan Task 19)
+
+**Problem**: `PcieEndpointIP::attach_composition` auto-calls `PcieAxiAdapter::attach_to_endpoint` when JSON contains `axi_adapter`. If the v2 topology instantiates `PcieAxiBridgeIP` (member adapter) AND the EP JSON still has `axi_adapter`, you get **two adapters** on the same EP → duplicated AXI traffic.
+
+**Corrected**: `dgpu_soc_v2_realip_p2.json` **MUST OMIT**:
+- `axi_adapter` key from PcieControllerIP params
+- `axi4_mapper_inject` key from any module
+
+**grep-gate (Task 18) MUST detect** these JSON keys in `*realip*.json` configs.
+
+### T3: BAR0Mmio sub-dispatch by offset (Plan Task 14)
+
+**Problem**: BAR0 simultaneously hosts GMMU registers (`offset < 0x100`) and Display device. `BarTarget::Bar0Mmio` does not distinguish.
+
+**Corrected**: Keep `offset < 0x100` check in board code **after** `match_bar` returns `Bar0Mmio`:
+
+```cpp
+PcieControllerIP::BarTarget target;
+uint64_t offset = 0;
+if (controller_ip_->match_bar(absolute_addr, target, offset)) {
+    if (target == PcieControllerIP::BarTarget::Bar0Mmio) {
+        if (offset < 0x100) {
+            route_to_gmmu(offset);
+        } else {
+            route_to_display_device(offset);
+        }
+    }
+    // ...
+}
+```
+
+**Alternative**: Add `BarTarget::GMMU` enum value (requires `PcieControllerIP` enum + `PcieBarRouter` update). **Out of scope for P2** (deferred to P3 or follow-up change).
+
+### P2 Split Recommendation (from Metis + Oracle)
+
+Per Metis (REVISE-P2) + Oracle (PROCEED + split) consensus:
+
+- **PR-A (P2a)**: Tasks 13-16 + 18 + 19 + 20 (short, ~1-4h, build-only verifiable)
+  - Zero behavioral change at PR-A
+  - ABI deprecation = 0 (conservative; defer to follow-up if any candidate emerges)
+- **PR-B (P2b)**: Tasks 14 + 17 + 21 (medium, 1-2d, full-suite required)
+  - Behavior change → 91-assertion blast radius
+  - Wait for system load to drop (current load avg 8-12 makes full test suite build unreliable)
+  - Use **dual-path** (flag → match_bar; no flag → legacy) to cap risk
+
+**All these corrections must be applied before starting P2 PR-A.**
