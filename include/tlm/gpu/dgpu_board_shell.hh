@@ -11,6 +11,8 @@
 #include "tlm/gpu/gmmu_tlm.hh"  // GmmuTLM (Phase A2: BAR0 GMMU forwarding)
 #include "tlm/gpu/pcie_endpoint_tlm.h"  // PcieEndpointTLM (legacy, 仅 frozen ABI 兼容)
 #include "tlm/pcie/pcie_endpoint_ip.hh"  // PcieEndpointIP (A-2 Path A: pcie_ep accessor 返回类型)
+
+namespace tlm::pcie { class PcieControllerIP; }  // forward decl for facade (P2 PR-A)
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include "tlm/gpu/sdma_engine_tlm.hh"  // SdmaEngineTLM (P0 unblock Task 5+6: BAR1 doorbell wiring)
 #include "tlm/memory_tlm.hh"  // MemoryTLM (Phase A1: backing-store API)
@@ -82,6 +84,18 @@ public:
 
     // T-P12-1: 当前路径访问器 (测试用)
     PciePath pcie_path() const noexcept { return pcie_path_; }
+
+    // P2 PR-B Task 17 (per Oracle bg_c60653e0 §3): inject PcieControllerIP facade
+    // to enable match_bar-based dispatch. When controller_ip_ != nullptr, mmio_read/
+    // mmio_write paths consult PcieControllerIP::match_bar in addition to legacy
+    // flag-based dispatch. Legacy paths unchanged; dual-path gives PR-B regression
+    // coverage. PR-C removes legacy once CI dual-state gate stabilizes.
+    void set_pcie_controller_ip(tlm::pcie::PcieControllerIP* ctrl) noexcept {
+        controller_ip_ = ctrl;
+    }
+    [[nodiscard]] tlm::pcie::PcieControllerIP* controller_ip() const noexcept {
+        return controller_ip_;
+    }
 
     // D1 v1.1.1: 路由开关（防劫持）— 默认 false，向后兼容
     // 仅当 SOC 配置显式启用（"display_routing_enabled": true）才路由到 PcieDisplayDevice
@@ -315,6 +329,11 @@ private:
     // Stage 1.3a integration (P0 unblock Task 5+6):
     //   SdmaEngineTLM 引用 (set_sdma_engine 注入), 转发 BAR1 doorbell 到 SDMA ring
     ::tlm::gpu::SdmaEngineTLM* sdma_engine_ = nullptr;
+
+    // P2 PR-B Task 17: optional PcieControllerIP facade (consumes PcieBarRouter
+    // per Oracle bg_c60653e0 §2.3). When set, mmio paths consult match_bar in
+    // parallel with legacy flag-based dispatch. nullptr = legacy-only (zero change).
+    tlm::pcie::PcieControllerIP* controller_ip_ = nullptr;
 
     // D1 v1.1.1: 路由开关 — 默认 false，load_soc_config 从 JSON 顶层读取 display_routing_enabled
     // 防劫持：dGPU BAR0 自身寄存器（doorbell 0x14, GPFIFO_PUT 0x00）不被 device 误接管
