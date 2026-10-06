@@ -1,6 +1,7 @@
 // Per board-soc-split design §2 + §2.5 thread model (10 约束)
 // Owner: CppTLM Team · Date: 2026-08-31
 #include "tlm/gpu/dgpu_board_shell.hh"
+#include "tlm/pcie/pcie_controller_ip.hh"  // P2 PR-B Stage C: facade match_bar in mmio paths
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
@@ -302,6 +303,17 @@ namespace tlm::gpu {
         if (is_mmio_gated()) {
             return -EIO;
         }
+        // P2 PR-B Stage C dual-path facade consult (per Oracle bg_c60653e0 §3.1):
+        // when controller_ip_ is injected, match_bar provides facade verdict.
+        // Legacy flag-based paths below remain authoritative until CI dual-state
+        // gate (per Oracle §3.1) verifies facade agrees. PT-PR-C: replace
+        // legacy branches with facade verdict when gate stabilizes.
+        if (controller_ip_) {
+            tlm::pcie::PcieControllerIP::BarTarget target;
+            uint64_t sub_offset = 0;
+            (void)controller_ip_->match_bar(bar, offset, target, sub_offset);
+            // (target/sub_offset retained for PR-C dispatch wiring)
+        }
         // D1 display-io-mvp fast-path: BAR 0 路由到 PcieDisplayDevice
         // (device 优先; 否则 fallback 到原 mmio_regs_ + inject_q_ async 路径)
         // D1 v1.1.1: 路由位置在 power gate 之后，保持 INV-A D3 门禁不变量
@@ -394,11 +406,17 @@ namespace tlm::gpu {
         // (device 优先; BAR 1 doorbell 仍走原 SDMA 路径)
         // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
         if (display_routing_enabled_ && bar == 0 && soc_) {
-            // P2 PR-B dual-path (per Oracle bg_c60653e0 §3.1): when controller_ip_
-            // is injected, match_bar serves as facade-consult; legacy legacy
-            // path below runs unchanged for back-compat. Sub-dispatch (GMMU vs
-            // Display) stays here per Oracle §2.1 target-side decode principle.
-            (void)controller_ip_;  // PR-B Stage A: pointer present, dispatch wired PR-C
+            // P2 PR-B Stage C: dual-path facade consult per Oracle §3.1.
+            // When controller_ip_ is injected, match_bar provides facade verdict;
+            // legacy path below remains authoritative until CI dual-state gate
+            // verifies facade agrees. Sub-dispatch (GMMU vs Display) stays here
+            // per Oracle §2.1 target-side decode principle.
+            if (controller_ip_) {
+                tlm::pcie::PcieControllerIP::BarTarget target;
+                uint64_t sub_offset = 0;
+                (void)controller_ip_->match_bar(bar, offset, target, sub_offset);
+                // (target/sub_offset retained for PR-C dispatch wiring)
+            }
             if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
                     return ep->display_device().mmio_write(offset, buf, len);
