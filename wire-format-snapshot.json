@@ -57,6 +57,34 @@
         {"name": "msg_addr", "offset": 16, "width_bits": 64, "type": "ch_uint<64>"},
         {"name": "trans_id", "offset": 24, "width_bits": 32, "type": "ch_uint<32>"}
       ]
+    },
+    "PcieTlpWireBundle": {
+      "_file": "include/bundles/pcie_tlp_wire_bundle.hh",
+      "_namespace": "cpptlm::pcie",
+      "_note": "Migrated from pcie_bundles_tlm.hh (P1 Task 6, commit ed5b3194). New non-frozen file per ADR-DGPU-06 Status Update. Field offsets marked TBD; regenerate via scripts/test/gen_wire_format_snapshot.sh after running the gen script for accurate values. Payload array bypasses ch_uint<512> 64-bit limit per P0 fix (commit bf646162).",
+      "fields": [
+        {"name": "fmt",            "type": "uint8_t"},
+        {"name": "type",           "type": "uint8_t"},
+        {"name": "tc",             "type": "uint8_t"},
+        {"name": "td",             "type": "uint8_t"},
+        {"name": "ep",             "type": "uint8_t"},
+        {"name": "attr",           "type": "uint8_t"},
+        {"name": "length",         "type": "uint16_t"},
+        {"name": "requester_id",   "type": "uint16_t"},
+        {"name": "tag",            "type": "uint8_t"},
+        {"name": "last_be",        "type": "uint8_t"},
+        {"name": "first_be",       "type": "uint8_t"},
+        {"name": "address_lo",     "type": "uint32_t"},
+        {"name": "address_hi",     "type": "uint32_t"},
+        {"name": "completer_id",   "type": "uint16_t"},
+        {"name": "status",         "type": "uint8_t"},
+        {"name": "byte_count",     "type": "uint16_t"},
+        {"name": "lower_address",  "type": "uint8_t"},
+        {"name": "payload",        "type": "std::array<uint32_t, 1024>", "note": "4096 B; bypasses ch_uint<512> limit (P0 fix)"},
+        {"name": "ecrc",           "type": "uint32_t"},
+        {"name": "lcrc",           "type": "uint32_t"},
+        {"name": "kind",           "type": "uint8_t"}
+      ]
     }
   },
   "invariants": {
