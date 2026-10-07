@@ -2142,3 +2142,111 @@ Per Oracle `bg_9c11d0e8` B1 BLOCKER 修复 (commit `ad13991d`) + TDD 5 步完成
   - T28: `--mode off` 全量 + `[controller_ip][p2][equivalence][p3][pcie-realip]`
 - ⏭️: 最终 tag `dgpu-realip-refactor-completion` + PR handoff
 
+---
+
+## Status Update (2026-10-07, P3 Amendment — Oracle bg_49146b46 + Metis bg_0cb04e652 双独立评审收敛)
+
+Per Oracle + Metis pre-planning 双独立评审收敛 (P3 启动前修订)。原 P3 重启条件 6 任务 (T23-T28) 改为 **8 子任务 + 3 MUST NOT + 标签规范 + 工时重估**。
+
+### 修订动机 (为什么需要)
+
+| 评审项 | Oracle 编号 | Metis 编号 | 严重性 |
+|--------|-------------|------------|--------|
+| T23/T24 边界重叠 (JSON 死引用 vs VramControllerTLM 注入) | AM-1,SD-1 | AM-1,HI-1 | **P0** |
+| "真 harness" 措辞陷阱 (spec §10.4 明确 scaffold) | AM-4 | HI-2,SD-2,AM-4 | **P0** |
+| JSON 平铺结构 cp 后静默丢弃 (architecture.md §7.3 硬约束) | AI-FP-5 | AM-2 | **P0** |
+| PcieAxiBridgeIP 三态混淆 (类保留 + REGISTER 移除 + JSON 死引用) | AI-FP-2 | AM-3 | **P0** |
+| attach_endpoint JSON 路径下 dormant (B1 测试 C++ 路径) | AI-FP-1 | AM-5 | **P0** |
+| VramControllerTLM backing 注入静默跳过 (-ENODEV false-pass) | AI-FP-1,FP-4 | HI-1 | **P0** |
+| T28 `[pcie-realip]` 标签在仓库 0 命中 (vacuous pass) | AM-6 | AM-6,HI-3 | **P0** |
+
+### 8 子任务重排(替代原 T23-T28)
+
+**依赖序**: T23A → T23B → T23C → T25A → T25B → T26 → T27 → T28。每步可独立验收。
+
+| 子任务 | 工时 | 内容 | 验收 |
+|--------|------|------|------|
+| **T23A** 删死引用 | 0.5d | 删 `configs/dgpu_soc_v2_realip_p2.json:17` 死 `PcieAxiBridgeIP` | `python3 -c "json.load"` PASS + grep `pcie_axi_bridge_ip.{hh,cc}` 仍存在 + grep `modules_cluster.hh:69` 注释保留 |
+| **T23B** JSON 嵌套重建 | 0.5d | 把 p2 平铺结构改为 DGpuSoc 嵌套 (`{"modules":[{"type":"DGpuSoc","modules":[4 IP...]}]}`) — per architecture.md §7.3 硬约束 | `ModuleFactory::instantiate("dgpu_soc_v2_realip.json")` 4 模块全可见 |
+| **T23C** backing 注入 | 0.5d | `DGpuBoard::bind_memory_backings()` 加 VramControllerTLM 分支(从 `vram_storage_.get()` 注入) | 注入后 `vram_ctrl->read()` 返回 `vram_storage_` 数据;未注入返 `-ENODEV` (B12 语义适用) |
+| **T25A** topology 装配 | 0.5d | `test_realip_equivalence.cc` 装配测试: 4 模块 `getInternalInstance` 非空 + attach 完成 | 装配独立测试先绿(失败先修 T23,不进 T25B) |
+| **T25B** dual-path equivalence smoke | 1d | legacy flags 路径 vs `controller_ip_` facade 路径 byte-identical 5-10 真实刺激(BAR0 GMMU 读写 / BAR1 fast-path 写读 / BAR1 doorbell / BAR2 aperture 写读) | 双轨 byte-identical + 单轨 gate 不 abort;禁止任何 `REQUIRE(constant)` |
+| **T26** demo + CMake | 0.5d | `examples/demo_dgpu_soc_realip.cpp` + `examples/CMakeLists.txt` 显式 `add_executable` + `target_link_libraries(cpptlm_core)` | `cmake --build build --target demo_dgpu_soc_realip` 成功 + demo 输出 4 模块实例化证据 |
+| **T27** 文档同步 3 文件 | 0.5d | (1) `architecture.md` 4-IP 边界表 (2) `AGENTS.md` STRUCTURE 节同步 4-IP 文件 (3) `scripts/test/docs_sync_check.sh` VIRTUAL_PATHS | `./scripts/test/docs_sync_check.sh --strict` PASS |
+| **T28** 全量 gate | 1d + 0.5d buffer | 6 条可执行命令(见下) | 全部 PASS |
+
+**总工时重估**: 原预期 2.5d → **实际 5-6d**(B1 单点重构 vs P3 集成装配)。
+
+### T23C + T25B **3 个 MUST NOT**(per 修订 §0 + §1)
+
+1. **不修改 VramControllerTLM 类定义/参数/行为**(仅 JSON 引用 + backing 注入)。验证: `[dgpu_soc_timing]` 37 cases 零回归(ADR-DGPU-11 决策 4 VramControllerTLM 与 MemoryTLM 二选一)。
+2. **不删除 `pcie_axi_bridge_ip.{hh,cc}`**(EP composite lazy_init 依赖) 且**不重新注册**(modules_cluster.hh:69 已 REMOVED)。
+3. **不改任何注册宏**: VramControllerTLM 已注册于 `chstream_register.hh:54` (registerObject), GpuInternalFabric/PcieControllerIP 已注册于 `modules_cluster.hh:53/75`。
+
+### 标签规范 (修订 §6)
+
+| 标签 | 用例 |
+|------|------|
+| `[realip][p3]` | T23B/T23C 装配测试 |
+| `[equivalence][p3]` | T25B dual-path 双轨 diff(交集 = 恰好 T25) |
+| `[fabric]` | T22b GpuInternalFabric pin-contract |
+| T26 demo + 不打标签 | (可执行文件,非 test) |
+| T28 删 `[pcie-realip]` | 仓库 0 命中,vacuous pass |
+
+### T28 gate 命令清单(修订 §8 — 删 vacuous `[pcie-realip]`)
+
+```bash
+./build/bin/cpptlm_tests "[controller_ip][p2]"        # 6/31 期望产出 (B1 已绿)
+./build/bin/cpptlm_tests "[realip][p3]"              # T23B 装配 + T23C backing 注入
+./build/bin/cpptlm_tests "[equivalence][p3]"         # T25B 5-10 刺激双轨 diff
+./build/bin/cpptlm_tests "[minimal_dgpu_soc]"        # 12/69 零回归
+./build/bin/cpptlm_tests "[pcie-memory]"             # 24/69 零回归
+./build/bin/cpptlm_tests "[sdma]"                    # 61/12906 零回归
+./test.sh --mode off                                 # OFF 路径全量
+./test.sh --mode ptx-emu                             # PTX-EMU 路径(若 submodule 已初始化)
+```
+
+注: T28 全量回归已知系统 load 约束 (handoff §9 #2: load 8-12 时 build hang, 需 `-j1` + 避开高峰段),折算 0.5d buffer。
+
+### 三条 P3 共享铁律(每子任务头部引用)
+
+1. **4 frozen header 零触碰** (per AGENTS.md §9 #4): `include/tlm/gpu/pcie_endpoint_tlm.h`, `include/tlm/pcie/pcie_display_device.hh`, `include/bundles/pcie_bundles_tlm.hh`, `include/abi/cpptlm_emulator.h`
+2. **23 ABI 零新增** (per ADR-DGPU-08 + AGENTS.md §9 #4)
+3. **Strangler gate 不得回退 `assert()`** (per B2 v2 + AGENTS.md §4 B2a): binary `strings | grep -c "Strangler gate"` 应 = 2
+
+### 跨 ADR 引用(防 agent 从 plan 直接开跑漏读 ADR)
+
+| 引用 | 位置 |
+|------|------|
+| architecture.md §7.3 JSON 层级约束 | T23B |
+| architecture.md §8 Inv-1~5 | T23C |
+| ADR-DGPU-05 决策 2 (vram_storage_ 唯一所有权归 DGpuBoard) | T23C |
+| ADR-DGPU-07 D3 evolution seam | T23C |
+| ADR-DGPU-08 23 ABI 冻结 | T25B (15 ABI 行为不变) |
+| ADR-DGPU-11 决策 4 (VramControllerTLM 与 MemoryTLM 二选一同 | 第 1 段 §3 TIMINGM) | T23C (MUST NOT 1) |
+| design spec §6.4 (VramControllerTLM promotion) | T23B / T23C |
+| design spec §10.4 (equivalence scaffold 5-10 刺激 smoke-only) | T25B |
+| design spec §11.4 (P3 acceptance: 5 条) | T23A-T28 |
+
+### Spec drift 修复(Amendment 自带)
+
+- spec §6.4 VramControllerTLM 路径 `include/tlm/gpu/vram_controller_tlm.hh` → 修正为 `include/tlm/vram_controller_tlm.hh` (实际位置,与 handoff §7 一致)
+
+### 修订决策依据
+
+Oracle verdict: **SPLIT — 轻量修订(~1.5-2h 纯文档) + 立即并行启动无歧义子任务 (T23A 死引用删除 + T27 文档同步)**
+
+本Amendment 即 Phase A 产出。Phase B 并行启动见下一段(P3 重启条件更新)。
+
+### P3 重启条件(修订后)
+
+- ✅ B1 RESOLVED
+- ✅ 5 regression tag 全绿
+- ✅ Amendment 落地 (本段,即 Phase A 完成)
+- ⏭️: Phase B 并行(无歧义子任务):
+  - T23A 死引用删除(0.5d)
+  - T22b GpuInternalFabric pin-contract 测试补全(0.5d, T22 commit `95a68889` 漏做)
+  - T27 文档同步 3 文件(0.5d)
+- ⏭️: Phase C 依修订后顺序启动剩余: T23B → T23C → T25A → T25B → T26 → T28
+- ⏭️: 最终 tag `dgpu-realip-refactor-completion` + PR handoff
+

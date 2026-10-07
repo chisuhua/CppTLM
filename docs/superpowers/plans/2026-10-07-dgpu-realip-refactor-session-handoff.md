@@ -63,17 +63,24 @@ CppTLM dGPU SoC 从 TLM 抽象 god-class(`DGpuBoard` + `PcieMemoryDevice`)重构
 
 ---
 
-## 5. P3 Tasks 24-28 — **暂停**
+## 5. P3 Tasks 24-28 — **暂停 → 已 Amendment 修订**
 
-`docs/superpowers/plans/2026-10-06-dgpu-realip-refactor.md` Status Update 段已冻结。重启条件:BLOCKER B1 解后。
+`docs/superpowers/plans/2026-10-06-dgpu-realip-refactor.md` Status Update 段已 Amendment(双独立体评审收敛)。原 T23-T28 6 任务改为 **8 子任务 + 3 MUST NOT + 标签规范 + 工时重估 5-6d**。详细 Amendment 见 plan 文件末尾 `## Status Update (2026-10-07, P3 Amendment ...)` 段。
 
-| Task | 工时 | 状态 |
-|------|------|------|
-| T24 | 0.5d | ⏸️ 待 B1 后:删 `dgpu_soc_v2_realip_p2.json:17` 死 `PcieAxiBridgeIP` + 加 VramController |
-| T25 | (MERGE B1a) | ⏸️ 待 B1 后:真 equivalence harness (替换常量 REQUIRE scaffold) |
-| T26 | 0.5d | ⏸️ 待 B1 后:`examples/CMakeLists.txt` 加 `demo_dgpu_soc_realip` target |
-| T27 | 0.5d | ⏸️ 待 B1 后:`docs/designs/dgpu-soc/architecture.md` 4-IP 边界表 |
-| T28 | 0.5d | ⏸️ 待 B1 后:`--mode off` 全量 + `[controller_ip][p2][equivalence][p3][pcie-realip]` |
+**关键修订点 (Phase A 产出)**:
+
+| Task | 原描述 | 修订后 | 备注 |
+|------|--------|--------|------|
+| T24 | "VramControllerTLM 桥接 seam (D3 evolution)" | 拆 T23A/B/C 3 段:死引用删除 / JSON 嵌套重建 / backing 注入 | ORACLE AM-1 / METIS AM-1,HI-1 |
+| T25 | "真 equivalence harness (替换常量 REQUIRE scaffold)" | "dual-path equivalence smoke (per spec §10.4)" | ORACLE AM-4 / METIS HI-2/SD-2 |
+| T28 | "`[pcie-realip]` 标签真空" | 删 vacuous `[pcie-realip]`,改为 7 条可执行命令清单 | ORACLE AM-6 / METIS AM-6,HI-3 |
+| (新)T22b | 漏做:`test_pin_contract_gpu_internal_fabric.cc` | T22 commit `95a68889` 只落了 scaffold,test 文件需补 | METIS AM-6 |
+| (新)T25A/T25B | 单步 equivalence | 拆装配测试 + 行为测试(失败先修 T23) | METIS AI-FP-6 |
+| (新)T27 三文件 | 单文件 architecture.md | + AGENTS.md STRUCTURE + docs_sync_check.sh VIRTUAL_PATHS | METIS HI-4,SD-5 |
+
+**启动顺序 (修订后)**: Phase B 并行 T23A + T22b + T27 → Phase C 依序 T23B → T23C → T25A → T25B → T26 → T28。
+
+**禁用措辞替换**: "真 harness" / "真 equivalence" → 统一 "dual-path equivalence smoke (per spec §10.4 scaffold)"。"promote" / "promoted via JSON reference" → 显式拆 JSON promotion + C++ attach。
 
 ---
 
