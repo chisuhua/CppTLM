@@ -29,7 +29,7 @@
 
 ---
 
-## 当前 6 个 plan 状态（2026-09-26 snapshot）
+## 当前 8 个 plan 状态（2026-10-07 snapshot）
 
 | 文件 | 关联 OpenSpec change | 状态 | 归档优先级 |
 |------|---------------------|------|-----------|
@@ -37,6 +37,8 @@
 | `2026-08-29-v05-ga-roadmap.md` | v0.5.0-MVP → v0.5.0-GA → v3.0.0 dGPU Board | ✅ 已完成 | 待归档 |
 | `2026-09-27-cpptlm-driver-visible-minimal-soc-phase0-progress.md` | cpptlm-driver-visible-minimal-soc (D-AXI v1.8) | 🟡 进行中（Phase 0 完成） | 暂不归档（待 Phase 0+ 全部完成） |
 | `2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md` | cpptlm-driver-visible-minimal-soc (D-AXI v1.8) | 🟡 进行中（T1 实施计划, 14 Phase × 83 子任务） | 暂不归档 |
+| `2026-10-06-dgpu-realip-refactor.md` | cpptlm-dgpu-realip-refactor（7 阶段 PCIe EP + D-AXI 整合） | 🟡 BLOCKED-on-B1（B2/B3 已修 @ 385c7c35） | 暂不归档（待 P3 完成） |
+| `2026-10-07-dgpu-realip-refactor-session-handoff.md` | （handoff，无 OpenSpec 关联） | 🟡 活跃 Session 入口 | 完成后归档（handoff footer 约定） |
 | `2027-02-09-sm-microarchitecture-rewrite.md` | dGPU SoC v1.0 SM Microarchitecture 重写 | ✅ 已完成（per `## Status Update` 段） | 待归档 |
 | `2027-02-10-sm-task18-impl-and-ptxemu-hsk9.md` | SM Task 18 完整实施 + PTX-EMU HSK-9 | 🟡 进行中 | 暂不归档 |
 
@@ -79,6 +81,7 @@
 | 日期 | 事件 |
 |------|------|
 | 2026-09-26 | 新建本 README.md（4 层文档模型重组时建立职责说明） |
+| 2026-10-07 | M4 README refresh — table 6→8 行, snapshot 2026-09-26 → 2026-10-07,新增 2026-10-06/07 dgpu-realip-refactor 两行 |
 
 ---
 

@@ -2018,3 +2018,65 @@ P3 Tasks 23-28 (VramControllerTLM 注册、4-IP JSON、equivalence test、demo�
   - [ ] 新增 tag: `pr-b-phase-gate-fix`
   - [ ] 重启 P3 Tasks 23-28(以本 BLOCKER 解后的代码基线为输入)
 
+---
+
+## Status Update (2026-10-07, PR-B Phase Gate B2+B3 resolved + B1 deferred)
+
+Per Oracle `bg_9f2fd8de` re-review (after commit `e59004b9`) + Option A execution.
+
+### Re-scored boundary alignment (post B2 v2 fix)
+
+| 模块 | 旧分 (P3 freeze) | 新分 (B2 v2) | 关键变更 |
+|------|------------------|--------------|----------|
+| PcieControllerIP | 5 | 6 | match_bar 验证改善;B1 继承仍存 |
+| PcieAxiBridgeIP | 4 | 5 | 无 |
+| GpuInternalFabric | 3 | 4 | scaffold only |
+| VramControllerTLM | 6 | 6 | 无 |
+| DGpuBoard | 3 | 5 | B2 v2 闸门(Release-active) |
+| PcieBarRouter | 8 | 5 | B3 改 BAR 语义 |
+| **平均** | **4.8/10** | **5.2/10** | +0.4 (B2 v2 释放 0.4) |
+
+### B2+B3 修复状态(均 RESOLVED)
+
+- ✅ **B3** 已在 `e59004b9` 修复:tag `pr-b-phase-gate-fix-b2-b3`
+  - `install_bar_registers()` 写 0 (`pcie_endpoint_ip.cc:106-122`)
+  - `bar_size(idx)` 返 `bar_sizes_[idx]` 字段 (`pcie_endpoint_ip.cc:138-156`)
+- ✅ **B2 v2** 已在 `385c7c35` 修复(本轮 HEAD):tag `pr-b-phase-gate-fix-b2-v2`
+  - B2a: `std::abort()` 替换 `assert()` (Release-active)
+  - B2c: mmio_write facade consult 移到函数顶部,无条件
+  - B2d: expected 镜像 controller bounds(doorbell/OOB BAR1 误报消除)
+  - B2e: fprintf 诊断信息(mmio_read + mmio_write 区分)
+  - 详细 4 缺陷记录见 `plans/2026-10-07-dgpu-realip-refactor-session-handoff.md` §4
+- ⏸️ **B1** DEFERRED (~2-2.5d):详细 B1a/bc 实施计划见 handoff §6
+
+### P3 重启条件(本轮收窄)
+
+**Before (P3 freeze Status Update, L1993)**:"待 3 个 BLOCKER 全部修复后重启 P3 Tasks 23-28" —— 因 B2/B3 已修,此条件**实际上变成纯 B1 即可**。
+
+**Now (canonical)**:**待 B1 修复后重启 P3 Tasks 24-28**。B2/B3 不再阻塞 P3,但 P3 实施仍依赖 B1 后的代码基线(组合重构会影响 `PcieControllerIP` 在 JSON 中的声明方式)。
+
+### 下一步 tag 计划(已修正)
+
+- ❌ ~~`pr-b-phase-gate-fix`~~ (旧名,作废)
+- ✅ 已存在:`pr-b-phase-gate-fix-b2-b3` (v1, superseded)
+- ✅ 已存在:`pr-b-phase-gate-fix-b2-v2` (live, 385c7c35)
+- ⏳ 待创建:`pr-b-phase-gate-fix-b1` (B1 实施完成后)
+
+### 验证证据(本轮)
+
+- `cpptlm_core [100%] Built target` (B2 v2 后)
+- `cpptlm_tests [100%] Built target` (B2 v2 后)
+- `strings build/bin/cpptlm_tests | grep -c "Strangler gate"` = **2** (B2a Release-active 验证)
+- `[pcie-memory]` 24 cases / 69 assertions PASS
+- `[pcie]` 433 cases / 36682 assertions PASS
+- 4 冻结头文件零修改 (per AGENTS.md §冻)
+
+### 相关 Session Handoff
+
+下一轮 Session 必读:**`docs/superpowers/plans/2026-10-07-dgpu-realip-refactor-session-handoff.md`** (新文件,2026-10-07)。包含 B1 实施详细计划 / P3 重启路径 / 5 项风险清单 / 启动命令。
+
+### Cross-Doc 修订备注
+
+- 本 Status Update 替代 `本轮已执行动作` 段(上方原 Step 1-3 checkbox)。Step 3 checkbox 历史未实际完成("[ ]")已被本 status 取代 — 仅作为审计追踪保留。
+- handoff §3 BLOCKER 表 + §4 B2 修复 4 缺陷表为 single source of truth,本 plan 引用而非复制。
+
