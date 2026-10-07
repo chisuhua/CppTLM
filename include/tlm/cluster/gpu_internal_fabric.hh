@@ -17,6 +17,7 @@
 #include "core/sim_module.hh"
 #include "tlm/crossbar_tlm.hh"
 
+#include <nlohmann/json.hpp>
 #include <string>
 
 namespace tlm::cluster {
@@ -49,6 +50,19 @@ public:
     // Routing port count (default 4 matches CrossbarTLM::NUM_PORTS).
     void set_num_ports(unsigned n) noexcept { num_ports_ = n; }
     unsigned num_ports() const noexcept { return num_ports_; }
+
+    // T25A.1 (Phase C 2026-10-07): JSON 装配路径自动 attach inner crossbar.
+    // 覆写 SimModule::simulate_instantiate — 调基类 instantiateAll + 递归子 SimModule
+    // 后, 遍历 cfg.modules 找名为 "crossbar" 的 CrossbarTLM child instance,
+    // 调 attach_crossbar 激活 dormant gate (per handoff §9.2 #8 AI-fail-point).
+    //
+    // Per Oracle bg_c60653e0 §3.4: inner crossbar MUST instantiate via
+    // ModuleFactory JSON child path (NOT raw `new`), 保证 Step 7 StreamAdapter
+    // 注入不会跳过。
+    //
+    // idempotent: 若 crossbar_ 已非空 (T22b 直接 C++ attach_crossbar 已调),
+    // 不覆盖 (T22b 测试兼容性)。
+    void simulate_instantiate(const nlohmann::json& cfg) override;
 
 private:
     CrossbarTLM* crossbar_ = nullptr;  // non-owning (ModuleFactory owns)

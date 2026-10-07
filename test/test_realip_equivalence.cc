@@ -177,7 +177,7 @@ TEST_CASE("P3 topology + attach: PcieControllerIP 5 BAR decode stimuli after EP 
 // 也调 attach_crossbar。本测试锁当前 dormant 行为, T25A.1 后测试需更新。
 //
 // ─────────────────────────────────────────────────────────────────────────
-TEST_CASE("P3 topology: GpuInternalFabric.crossbar() dormant (T25A.1 待 wire JSON children)",
+TEST_CASE("P3 topology: GpuInternalFabric JSON path auto-attaches inner crossbar (post-T25A.1)",
           "[realip][p3]") {
     auto cfg = load_realip_p2_config();
 
@@ -192,9 +192,11 @@ TEST_CASE("P3 topology: GpuInternalFabric.crossbar() dormant (T25A.1 待 wire JS
     auto* fabric = dynamic_cast<GpuInternalFabric*>(soc_sim->getInternalInstance("fabric"));
     REQUIRE(fabric != nullptr);
 
-    // T22b 直接 C++ attach_crossbar 锁 dormant gate (null until activated)
-    // T25A.1 之前: JSON 装配路径未触发 attach → crossbar() == nullptr
-    // T25A.1 之后: 期望 crossbar() != nullptr (由 simulate_instantiate 注入)
-    // 当前 (T25A): 锁 dormant 行为, 测试名标注 "T25A.1 待 wire"
-    REQUIRE(fabric->crossbar() == nullptr);
+    // T22b 直接 C++ attach_crossbar 锁 dormant gate (null until activated)。
+    // T25A.1 (Phase C 2026-10-07) 修订: GpuInternalFabric::simulate_instantiate 覆写
+    // 遍历 cfg.modules 找名为 "crossbar" 的 child, 从 internal_factory 拿实例并
+    // 调 attach_crossbar. JSON 装配路径现在自动 wire inner CrossbarTLM,
+    // crossbar() == nullptr 是 dormant 锁, T25A.1 后应 non-null。
+    REQUIRE(fabric->crossbar() != nullptr);
+    REQUIRE(fabric->crossbar()->get_module_type() == "CrossbarTLM");
 }

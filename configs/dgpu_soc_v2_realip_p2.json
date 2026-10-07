@@ -2,7 +2,7 @@
   "name": "dgpu_soc_v2_realip_p2",
   "description": "dGPU SoC using PcieControllerIP facade + DGpuSoc 4-IP nested topology (T23B: per P3 Amendment + MUST NOT 1/2 lock; PcieAxiBridgeIP NOT instantiated here — it's PcieEndpointIP::lazy_init composite, NOT JSON-top-level). Per docs/designs/dgpu-soc/architecture.md §7.3: 顶层 modules[0] 必须是 DGpuSoc, 否则 modules[1+] 被静默丢弃.",
   "version": "2-realip-p2-b",
-  "_note": "Per T2 (Oracle bg_fb84a648): MUST NOT contain 'axi_adapter' or 'axi4_mapper_inject' keys in PcieControllerIP params — would double-attach via PcieEndpointIP::attach_composition auto-flow. grep-gate check_pcie_ip_facade.sh enforces this. Per T23A (Phase B P3 Amendment 2026-10-07): PcieAxiBridgeIP module entry REMOVED from JSON (PcieAxiBridgeIP REMOVED from REGISTER_MODULE per Oracle bg_c60653e0 §4 — JSON 顶层不可实例化; class 仍保留为 EP composite lazy_init 依赖). Per T23B (Phase C 2026-10-07): JSON 重建为 DGpuSoc 嵌套, 4-IP topology: PcieControllerIP + GpuInternalFabric + VramControllerTLM (3 direct children under DGpuSoc). VramControllerTLM params 镜像 timing-mode 模板 (per cpptlm-dgpu-soc-timing-mvp), MUST NOT 1 lock: VramControllerTLM 类不动, 仅 JSON 引用 + 后续 T23C backing 注入. PcieAxiBridgeIP 不在 children 中 (MUST NOT 2 lock).",
+  "_note": "Per T2 (Oracle bg_fb84a648): MUST NOT contain 'axi_adapter' or 'axi4_mapper_inject' keys in PcieControllerIP params — would double-attach via PcieEndpointIP::attach_composition auto-flow. grep-gate check_pcie_ip_facade.sh enforces this. Per T23A (Phase B P3 Amendment 2026-10-07): PcieAxiBridgeIP module entry REMOVED from JSON (PcieAxiBridgeIP REMOVED from REGISTER_MODULE per Oracle bg_c60653e0 §4 — JSON 顶层不可实例化; class 仍保留为 EP composite lazy_init 依赖). Per T23B (Phase C 2026-10-07): JSON 重建为 DGpuSoc 嵌套, 4-IP topology: PcieControllerIP + GpuInternalFabric + VramControllerTLM (3 direct children under DGpuSoc). VramControllerTLM params 镜像 timing-mode 模板 (per cpptlm-dgpu-soc-timing-mvp), MUST NOT 1 lock: VramControllerTLM 类不动, 仅 JSON 引用 + 后续 T23C backing 注入. PcieAxiBridgeIP 不在 children 中 (MUST NOT 2 lock). Per T25A.1 (Phase C 2026-10-07): GpuInternalFabric 节点加 inner CrossbarTLM child (modules/name=crossbar), GpuInternalFabric::simulate_instantiate 覆写遍历 children 调 attach_crossbar. Per Oracle bg_c60653e0 §3.4: inner crossbar MUST instantiate via ModuleFactory JSON child path (NOT raw `new`), 保证 Step 7 StreamAdapter 注入不会跳过.",
   "modules": [
     {
       "type": "DGpuSoc",
@@ -19,7 +19,14 @@
         },
         {
           "type": "GpuInternalFabric",
-          "name": "fabric"
+          "name": "fabric",
+          "modules": [
+            {
+              "type": "CrossbarTLM",
+              "name": "crossbar"
+            }
+          ],
+          "connections": []
         },
         {
           "type": "VramControllerTLM",
