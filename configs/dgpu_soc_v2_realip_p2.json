@@ -1,22 +1,41 @@
 {
   "name": "dgpu_soc_v2_realip_p2",
-  "description": "dGPU SoC using PcieControllerIP facade (P2 PR-A sample; post-T23A PcieAxiBridgeIP module entry removed per P3 Amendment, class file retained as EP composite)",
-  "version": "2-realip-p2-a",
-  "_note": "Per T2 (Oracle bg_fb84a648): MUST NOT contain 'axi_adapter' or 'axi4_mapper_inject' keys in PcieControllerIP params — would double-attach via PcieEndpointIP::attach_composition auto-flow. grep-gate check_pcie_ip_facade.sh enforces this. Per T23A (Phase B P3 Amendment 2026-10-07): PcieAxiBridgeIP module entry removed from JSON (PcieAxiBridgeIP REMOVED from REGISTER_MODULE per Oracle bg_c60653e0 §4 — JSON 顶层不可实例化; class 仍保留为 EP composite lazy_init 依赖). Final 4-IP topology (T23B) will wrap these as DGpuSoc nested per architecture.md §7.3.",
+  "description": "dGPU SoC using PcieControllerIP facade + DGpuSoc 4-IP nested topology (T23B: per P3 Amendment + MUST NOT 1/2 lock; PcieAxiBridgeIP NOT instantiated here — it's PcieEndpointIP::lazy_init composite, NOT JSON-top-level). Per docs/designs/dgpu-soc/architecture.md §7.3: 顶层 modules[0] 必须是 DGpuSoc, 否则 modules[1+] 被静默丢弃.",
+  "version": "2-realip-p2-b",
+  "_note": "Per T2 (Oracle bg_fb84a648): MUST NOT contain 'axi_adapter' or 'axi4_mapper_inject' keys in PcieControllerIP params — would double-attach via PcieEndpointIP::attach_composition auto-flow. grep-gate check_pcie_ip_facade.sh enforces this. Per T23A (Phase B P3 Amendment 2026-10-07): PcieAxiBridgeIP module entry REMOVED from JSON (PcieAxiBridgeIP REMOVED from REGISTER_MODULE per Oracle bg_c60653e0 §4 — JSON 顶层不可实例化; class 仍保留为 EP composite lazy_init 依赖). Per T23B (Phase C 2026-10-07): JSON 重建为 DGpuSoc 嵌套, 4-IP topology: PcieControllerIP + GpuInternalFabric + VramControllerTLM (3 direct children under DGpuSoc). VramControllerTLM params 镜像 timing-mode 模板 (per cpptlm-dgpu-soc-timing-mvp), MUST NOT 1 lock: VramControllerTLM 类不动, 仅 JSON 引用 + 后续 T23C backing 注入. PcieAxiBridgeIP 不在 children 中 (MUST NOT 2 lock).",
   "modules": [
     {
-      "type": "PcieControllerIP",
-      "name": "pcie_ep",
-      "params": {
-        "bar_bases": [0, 1048576, 2097152, 0, 0, 0],
-        "bar_sizes": [4096, 16777216, 8589934592, 0, 0, 0],
-        "link_speed_gts": 8
-      }
-    },
-    {
-      "type": "MemoryTLM",
-      "name": "memory",
-      "params": {"capacity_gb": 1}
+      "type": "DGpuSoc",
+      "name": "soc",
+      "modules": [
+        {
+          "type": "PcieControllerIP",
+          "name": "pcie_ctrl",
+          "params": {
+            "bar_bases": [0, 1048576, 2097152, 0, 0, 0],
+            "bar_sizes": [4096, 16777216, 8589934592, 0, 0, 0],
+            "link_speed_gts": 8
+          }
+        },
+        {
+          "type": "GpuInternalFabric",
+          "name": "fabric"
+        },
+        {
+          "type": "VramControllerTLM",
+          "name": "vram_ctrl",
+          "params": {
+            "row_hit_cycles": 30,
+            "row_miss_cycles": 80,
+            "bandwidth_gbps": 32,
+            "read_latency_hit_cycles": 30,
+            "read_latency_miss_cycles": 80,
+            "write_latency_cycles": 120,
+            "use_zero_delay_for_test": false
+          }
+        }
+      ],
+      "connections": []
     }
   ],
   "connections": []
