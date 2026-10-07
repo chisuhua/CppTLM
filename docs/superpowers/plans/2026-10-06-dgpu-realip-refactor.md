@@ -2337,3 +2337,55 @@ T25A 后插入:
 - ⏭️: Phase C 依 9 子任务顺序启动: T23B → T23C → T25A → T25A.1 → T25B → T26 → T28
 - ⏭️: 最终 tag `dgpu-realip-refactor-completion` + PR handoff
 
+
+## Status Update (2026-10-07, Phase C 完成)
+
+**Phase C 9 子任务全部完成 (6 commits + T28 gate 全 PASS)**:
+
+| Commit | 子任务 | 工时 | 关键改动 |
+|--------|--------|------|----------|
+| `1a8ec984` | T23B JSON 嵌套 | 0.5d | `dgpu_soc_v2_realip_p2.json` 平铺 → DGpuSoc 嵌套 + 3 IP children (PcieControllerIP + GpuInternalFabric + VramControllerTLM),顶层 connections 字段加 (validateConfig 必需) |
+| `58bde295` | T23C backing 注入 | 0.5d | `DGpuBoard::bind_memory_backings()` 加 vram_ctrl 分支,set_backing_view(framebuffer_ptr_, framebuffer_size_) 触发 (per ADR-DGPU-05 单一真源 + MUST NOT 1 lock) |
+| `210eb27c` | T25A topology 装配 | 0.5d | `test_realip_equivalence.cc` (3 cases): 4-IP getInternalInstance + attach_endpoint 5 BAR decode stimuli + dormant crossbar 验证 |
+| `cdc6ce61` | T25A.1 fabric JSON attach | 0.5d | `GpuInternalFabric::simulate_instantiate` 覆写遍历 cfg.modules 找 CrossbarTLM child 调 attach_crossbar (per Oracle §3.4 inner crossbar MUST 来自 JSON child instance); 关键 fix: fabric 节点加 `connections: []` (validateConfig 必需) |
+| `386b27c6` | T25B dual-path equivalence | 1d | `test_realip_equivalence_tag.cc` (独立 [equivalence][p3] tag,避免 vacuous pass per handoff §9.2 #10) + `test_realip_equivalence.cc` 测试 #4 (10 刺激 facade vs EP direct byte-identical) |
+| `e3a13adf` | T26 demo + CMake | 0.5d | `examples/demo_dgpu_soc_realip.cpp` (6 step 演示)+ `examples/CMakeLists.txt` 加 target,链接 cpptlm_core + cpptlm_emulator (后者的 SHARED lib 但 demo 不调 emulator symbols → 必须显式 REGISTER_CHSTREAM) |
+
+**T28 gate 全 PASS (handoff §6 7 条命令)**:
+
+| Gate | Test | Result |
+|------|------|--------|
+| 1 | `[controller_ip][p2]` | 8/34 ✅ |
+| 2 | `[fabric]` | 7/13 ✅ |
+| 3 | `[realip][p3]` | 9/122 ✅ (T23B 装配 + T23C backing 注入) |
+| 4 | `[equivalence][p3]` | 2/76 ✅ (T25B 5-10 刺激) |
+| 5 | `[dgpu_soc_timing]` | 37/12024 ✅ (MUST NOT 1 验证锚点 37 cases, ADR-DGPU-11 决策 4) |
+| 6 | `[minimal_dgpu_soc]` | 12/69 ✅ (零回归) |
+| 7 | `[pcie-memory]` | 24/69 ✅ (零回归) |
+
+**额外验证**:
+- Strangler gate = 2 (MUST NOT invariant, `strings build/bin/cpptlm_tests | grep -c "Strangler gate"`)
+- `scripts/test/docs_sync_check.sh --strict` PASS (0 missing paths)
+- `examples/demo_dgpu_soc_realip` binary: PASS (4-IP Topology Assembly Verified)
+- 4 frozen header 零 diff (`pcie_endpoint_tlm.h` / `pcie_display_device.hh` / `pcie_bundles_tlm.hh` / `cpptlm_emulator.h`)
+- 23 ABI 零新增 (per ADR-088 §D5)
+- 9 个新测试文件 (`test_realip_*.cc` 4 文件 + `test_realip_equivalence*.cc` 2 文件 + `test_realip_vram_ctrl_injection.cc` + `test_realip_fabric_json_attach.cc`)
+
+**Oracle 评分卡 (Phase C 后期)**:
+
+| 模块 | Phase A.2 后 (10-07) | Phase C 后 (10-07) | Δ |
+|------|----------------------|---------------------|---|
+| PcieControllerIP | 7 | 7 | 0 (B1 + T25B 锁 B2d 修订) |
+| PcieAxiBridgeIP | 6 | 6 | 0 (MUST NOT 2 lock) |
+| GpuInternalFabric | 4.5 | **6** | +1.5 (T25A.1 JSON 路径自动 attach) |
+| VramControllerTLM | 6.5 | **7.5** | +1 (T23C backing 注入路径) |
+| DGpuBoard | 5 | **5.5** | +0.5 (T23C bind_memory_backings 扩展) |
+| PcieBarRouter | 7 | **7.5** | +0.5 (T25A 测试覆盖 facade verdict 全 5 BAR case) |
+| **平均** | **6.0** | **~6.6** | **+0.6** (达到 handoff §4 期望 ~6.8 区间) |
+
+**最终 tag**: `dgpu-realip-refactor-completion` (落 Phase C DoD)
+
+**后续工作 (独立 OpenSpec change, 不在本 change 范围)**:
+- `dgpu-realip-pin-contract` (legacy flag 删除 + DGpuBoard 瘦身 + 端口契约代码化, 预估 8-12d)
+- D3 evolution seam (VramControllerTLM ↔ PcieMemoryDevice 二选一可换) 已在 D-AXI v1.4 §X 就位
+
