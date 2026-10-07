@@ -744,6 +744,23 @@ namespace tlm::gpu {
         } else {
             DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'gmmu' 实例, GMMU 注入跳过\n");
         }
+
+        // T23C (Phase C 2026-10-07): 注入 vram_ctrl (per ADR-DGPU-05 单一真源)
+        // VramControllerTLM 继承 MemoryTLM, set_backing_view 是 v2.2 backing-store
+        // API 公有方法 (memory_tlm.hh:115), MUST NOT 1 lock: VramControllerTLM
+        // 类不动 (per ADR-DGPU-11 决策 4), 仅调继承的 set_backing_view 注入
+        // framebuffer_view (与 pcie_memory 共享 vram_storage_)。
+        if (auto* vram_ctrl =
+                dynamic_cast<VramControllerTLM*>(soc_->getInternalInstance("vram_ctrl"))) {
+            vram_ctrl->set_backing_view(framebuffer_ptr_, framebuffer_size_);
+            DPRINTF(MODULE,
+                    "[DGpuBoard] T23C: vram_ctrl backing injected (ptr=%p, size=%llu)\n",
+                    static_cast<void*>(framebuffer_ptr_),
+                    static_cast<unsigned long long>(framebuffer_size_));
+        } else {
+            DPRINTF(MODULE,
+                    "[DGpuBoard] T23C: SOC 缺 'vram_ctrl' 实例, backing 注入跳过\n");
+        }
     }
 
     // ── D3a-2: display FB backing 注入 (镜像 bind_memory_backings, per ADR-DGPU-10) ──
