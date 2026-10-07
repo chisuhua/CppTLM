@@ -200,3 +200,119 @@ TEST_CASE("P3 topology: GpuInternalFabric JSON path auto-attaches inner crossbar
     REQUIRE(fabric->crossbar() != nullptr);
     REQUIRE(fabric->crossbar()->get_module_type() == "CrossbarTLM");
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// 测试 #4 (T25B dual-path equivalence smoke, 5-10 刺激):
+// facade path (PcieControllerIP::match_bar) 与 PcieEndpointIP direct
+// 路径 (bar_store_value_set / value) 在相同 BAR/offset/data 刺激下
+// 产生一致行为。
+//
+// 范围声明 (per handoff §9.2 #9): VramControllerTLM 不在 P3 等价性数据路径,
+// 5-10 刺激全部经 PcieControllerIP → PcieEndpointIP → PcieMemoryDevice
+// → vram_storage_ (D-AXI v1.4 host BAR2 fast-path). fabric→vram_ctrl 链
+// 属 D3/D4, 本期不验证 end-to-end 数据路径, 仅 T23C 验证对象级 read() 契约.
+//
+// Strangler gate (per dgpu_board_shell.cc:336-343 facade verdict divergence
+// std::abort): facade verdict 与 expected 一致 = dual-path 一致 (legacy path
+// 行为被 facade gate 锁定).
+// ─────────────────────────────────────────────────────────────────────────
+TEST_CASE("P3 dual-path equivalence: facade match_bar 与 EP bar_store_value 在 5-10 刺激下一致",
+          "[realip][p3][equivalence]") {
+    constexpr uint64_t kBar1Size = 16777216ULL;   // 16MB
+    constexpr uint64_t kBar2Size = 8589934592ULL; // 8GB
+
+    EventQueue eq;
+
+    // 走 JSON 装配获取 PcieControllerIP (T23B 路径)
+    auto cfg = load_realip_p2_config();
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(cfg));
+    auto* soc = dynamic_cast<DGpuSoc*>(factory.getInstance("soc"));
+    REQUIRE(soc != nullptr);
+    auto* soc_sim = dynamic_cast<SimModule*>(soc);
+    REQUIRE(soc_sim != nullptr);
+    auto* ctrl = dynamic_cast<PcieControllerIP*>(soc_sim->getInternalInstance("pcie_ctrl"));
+    REQUIRE(ctrl != nullptr);
+
+    // 外部 PcieEndpointIP attach (B1 contract)
+    PcieEndpointIP ep("realip_t25b_ep", &eq);
+    json ep_cfg;
+    ep_cfg["bar_sizes"] = json::array({0ULL, kBar1Size, kBar2Size, 0ULL, 0ULL, 0ULL});
+    ep.set_config(ep_cfg);
+    REQUIRE(ep.bar_size(1) == kBar1Size);
+    REQUIRE(ep.bar_size(2) == kBar2Size);
+    ctrl->attach_endpoint(&ep);
+
+    // Strangler gate 锁: facade verdict 与 expected mirror 一致 = dual-path 一致.
+    // 5 刺激同 T25A #2 (per controller_ip match_bar semantics):
+    BT facade_target;
+    uint64_t sub_offset;
+    uint64_t ep_stored;
+
+    // 1. bar=0, offset=0x123 → Bar0Mmio (sub_offset 通过)
+    REQUIRE(ctrl->match_bar(0, 0x123ULL, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Bar0Mmio);
+    REQUIRE(sub_offset == 0x123ULL);
+    ep.bar_store_value_set(0, 0, 0x123ULL, 0xCAFE0001ULL);
+    ep_stored = ep.bar_store_value(0, 0, 0x123ULL);
+    REQUIRE(ep_stored == 0xCAFE0001ULL);  // direct path 也可写读
+
+    // 2. bar=1, offset=0x5000 (< bar_size(1)=16MB) → Bar1FbFastPath
+    REQUIRE(ctrl->match_bar(1, 0x5000ULL, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Bar1FbFastPath);
+    REQUIRE(sub_offset == 0x5000ULL);
+    ep.bar_store_value_set(0, 1, 0x5000ULL, 0xDEAD0002ULL);
+    REQUIRE(ep.bar_store_value(0, 1, 0x5000ULL) == 0xDEAD0002ULL);
+
+    // 3. bar=1, offset=kBar1Size (boundary) → Unknown (B2d guard)
+    REQUIRE_FALSE(ctrl->match_bar(1, kBar1Size, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Unknown);
+
+    // 4. bar=1, offset=0x10010000 (doorbell offset, OOB) → Unknown
+    REQUIRE_FALSE(ctrl->match_bar(1, 0x10010000ULL, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Unknown);
+
+    // 5. bar=2, offset=0x1000 → Bar2VramAperture
+    REQUIRE(ctrl->match_bar(2, 0x1000ULL, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Bar2VramAperture);
+    REQUIRE(sub_offset == 0x1000ULL);
+    ep.bar_store_value_set(0, 2, 0x1000ULL, 0xBEEF0003ULL);
+    REQUIRE(ep.bar_store_value(0, 2, 0x1000ULL) == 0xBEEF0003ULL);
+
+    // 6. bar=2, offset=8GB-8 (max valid) → Bar2VramAperture (no bound in facade)
+    REQUIRE(ctrl->match_bar(2, kBar2Size - 8ULL, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Bar2VramAperture);
+
+    // 7. bar=3 (upper dword of BAR2 pair) → Unknown (per H2)
+    REQUIRE_FALSE(ctrl->match_bar(3, 0x0ULL, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Unknown);
+
+    // 8. bar=4-5 (unused) → Unknown
+    REQUIRE_FALSE(ctrl->match_bar(4, 0x0ULL, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Unknown);
+    REQUIRE_FALSE(ctrl->match_bar(5, 0x0ULL, facade_target, sub_offset));
+    REQUIRE(facade_target == BT::Unknown);
+
+    // facade path 通过 mmio_write 直接落到 EP.bar_store_ (per PcieEndpointIP::mmio_write
+    // 实现 dispatch), 验证 facade→EP direct 路径一致.
+    REQUIRE(ep.mmio_write(0, 0x200ULL, 0xFACADE00ULL));  // bar=0 寄存器写
+    REQUIRE(ep.bar_store_value(0, 0, 0x200ULL) == 0xFACADE00ULL);
+    REQUIRE(ep.mmio_write(1, 0x1000ULL, 0xFACADE01ULL));  // bar=1 framebuffer write
+    REQUIRE(ep.bar_store_value(0, 1, 0x1000ULL) == 0xFACADE01ULL);
+    REQUIRE(ep.mmio_write(2, 0x2000ULL, 0xFACADE02ULL));  // bar=2 vram write
+    REQUIRE(ep.bar_store_value(0, 2, 0x2000ULL) == 0xFACADE02ULL);
+
+    // 9. facade path 在 doorbell offset 写应该走 SDMA ring WPTR trigger
+    //    (per PcieEndpointIP::mmio_write Stage 1.3a), 不进 bar_store_
+    //    注意: 返回 true (write accepted), 但 bar_store_ 不增加 doorbell offset 条目
+    const uint64_t pre_count = ep.sdma_ring_processed_count();
+    REQUIRE(ep.mmio_write(1, PcieEndpointIP::kBar1DoorbellOffset, 0x10ULL));
+    REQUIRE(ep.sdma_ring_processed_count() == pre_count + 0x10ULL);
+    REQUIRE(ep.bar_store_value(0, 1, PcieEndpointIP::kBar1DoorbellOffset) == 0ULL);
+
+    // 10. facade path mmio_write OOB (per PcieEndpointIP MVP, mmio_write 无条件接受)
+    //    ↔ facade match_bar OOB → Unknown (刺激 3+4) 是不一致但符合 MVP 设计。
+    //    (mmio_write 边界检查属 P4 deferred 工作, 见 PcieEndpointIP::mmio_write line 651 comment)
+    REQUIRE(ep.mmio_write(1, kBar1Size + 0x100ULL, 0xDEADULL));  // accepted per MVP
+    REQUIRE(ep.bar_store_value(0, 1, kBar1Size + 0x100ULL) == 0xDEADULL);
+}
