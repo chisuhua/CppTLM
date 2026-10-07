@@ -142,6 +142,38 @@ DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
 - **Memory Device** (D2): `openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp` 提案;本期通过 vram_storage_ 简化实现其能力
 - **Host Bypass / Root Complex**: Phase 8 已交付,本期测试用 host 直连模式(经 `DGpuBoard::mmio_*`)
 
+### 2.4 4-IP Real-IP Boundary (dgpu-realip-refactor P3, 进行中)
+
+> **状态**: 🟡 进行中。Per plan `2026-10-06-dgpu-realip-refactor.md` Status Update (2026-10-07, P3 Amendment)。当前 SoC 是 6 模块 god-class (D-AXI v1.4 minimal_v1); P3 阶段将抽象层提升为 4 个**真实物理 IP 边界**对齐的 TLM 模块(可对照 RTL 实现硅片)。完成 PR-B Phase Gate (B1/B2/B3 全收, `ad139909d` + `385c7c35` + `e59004b9`)。
+
+| IP 边界 | 真实芯片对应 | CppTLM 类 (现状) | 端口契约 | State ownership |
+|---------|--------------|---------------------|------------|------------------|
+| **`PcieControllerIP`** (顶层 facade) | DWC i5122 / Cadence PCIe Controller | `include/tlm/pcie/pcie_controller_ip.hh` (B1 组合 refactor: `SimModule` + `PcieEndpointIP* ep_` non-owning) | 4 BAR decode (`Bar0Mmio` / `Bar1FbFastPath` / `Bar2VramAperture` / `Unknown`) | **stateless facade** — 所有 state 经 `ep_->...` 委托 |
+| **`PcieAxiBridgeIP`** (EP composite, NOT 顶层) | Synopsys AXI↔PCIe bridge / ChipLink | `include/tlm/pcie/pcie_axi_bridge_ip.hh` (类保留, `REGISTER_MODULE` REMOVED per Oracle bg_c60653e0 §4) | AXI4-slave → EP-internal composite (lazy_init) | EP-internal, JSON 顶层不可实例化 |
+| **`GpuInternalFabric`** (新增, P3 T22) | Custom mesh / Arteris NoC IP | `include/tlm/cluster/gpu_internal_fabric.hh` (scaffold commit `95a68889`; T22b pin-contract test commit `pending`) | 4 端口 (默认 = CrossbarTLM::NUM_PORTS) | non-owning `crossbar_` raw ptr (ModuleFactory owns) |
+| **`VramControllerTLM`** (timing-mode 已有, P3 promote) | NVIDIA FB / AMD MC (HBM PHY, DFI interface) | `include/tlm/vram_controller_tlm.hh` (Phase 4 T4 timing-mvp 已实现; P3 promote via JSON top-level per spec §6.4 E5) | AXI4-slave (from GpuInternalFabric) + DRAM command abstraction (DFI-lite) internal | Backing ptr (injected from DGpuBoard `vram_storage_` per ADR-DGPU-05) + row buffer + bandwidth counters |
+
+**保留模块 (P3 promote 后)**:
+- `PcieEndpointIP` — 保留为 EP-internal composite (PcieAxiBridgeIP 与 PcieControllerIP facade 都依赖其 bar_router/bar_store/bar_sizes)
+- `PcieMemoryDevice` — 保留 (D2 v1.1, 退化 PCIe 外观层; backing 来自 DGpuBoard `vram_storage_`)
+- `GmmuTLM` — 维持 + 服务 timing-controller (上层)
+- `SdmaEngineTLM` — 5-port 复用 (mem_in/mem_out 切 AxiMemBundle, desc_in/done_out/host_out 保持 PcieTlpBundle)
+- `CompletionRingTLM` — 维持 + fence → MSI-X
+
+**P3 实施约束 (per Amendment 修订)**:
+- T23C backing 注入走 `DGpuBoard::bind_memory_backings()` (per ADR-DGPU-05 决策 2, vram_storage_ 所有权归 DGpuBoard)
+- T23B JSON 顶层嵌套 DGpuSoc 容器 (per architecture.md §7.3 硬约束)
+- T23A 删 `dgpu_soc_v2_realip_p2.json:17` 死 PcieAxiBridgeIP, **保留类文件 + REGISTER 注释** (本次 Phase B 已落地)
+- T22b GpuInternalFabric pin-contract test (本次 Phase B 已落地, 含 forward-decl bug 修复)
+- 3 MUST NOT: 不修改 VramControllerTLM 类定义 / 不删 PcieAxiBridgeIP 类 / 不改任何注册宏
+
+**进度同步**:
+- 2026-10-02 Phase 1-7 PCIe EP 微架构 (链路层 / 编码 / PHY / SR-IOV / AXI Adapter / Mapper / Host Bypass + RC) **已交付**
+- 2026-10-02 PR-B Phase Gate B2 v2 (dgpu_board_shell.cc:319-353 / :433-467 闸门) **已交付**
+- 2026-10-07 PR-B Phase Gate B1 (组合 refactor commit `ad13991d`, tag `pr-b-phase-gate-fix-b1`) **已交付**
+- 🟡 Phase B 并行任务 (本次提交): T23A 死引用删除 + T22b fabric pin-contract + T27 文档同步 3 文件
+- ⏭ Phase C 剩余: T23B / T23C / T25A / T25B / T26 / T28
+
 ---
 
 ## 3. 存储子系统(gem5 模式)

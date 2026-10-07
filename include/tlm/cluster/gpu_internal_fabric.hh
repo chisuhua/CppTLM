@@ -15,13 +15,19 @@
 #define CPPTLM_GPU_INTERNAL_FABRIC_H
 
 #include "core/sim_module.hh"
+#include "tlm/crossbar_tlm.hh"
 
 #include <string>
 
 namespace tlm::cluster {
 
-class CrossbarTLM;
-
+// T22b Phase B 修订 — forward-decl `class CrossbarTLM;` 在 tlm::cluster 命名
+// 空间内创建了一个不存在的新符号 (tlm::cluster::CrossbarTLM),与真实的
+// 全局命名空间 CrossbarTLM 类型不一致,导致 attach_crossbar() 永远无法被调用
+// (T22 commit 95a68889 scaffold-only 漏修此 bug,被 T22b pin-contract test 暴露).
+//
+// Fix: 直接 #include "tlm/crossbar_tlm.hh",引用真实全局命名空间 CrossbarTLM。
+// 代价: 增加 include cost ~10KB,但对 SimModule composite 头文件可接受。
 class GpuInternalFabric : public SimModule {
 public:
     GpuInternalFabric(const std::string& name, EventQueue* eq);
