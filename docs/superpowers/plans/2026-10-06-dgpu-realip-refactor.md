@@ -2250,3 +2250,90 @@ Oracle verdict: **SPLIT — 轻量修订(~1.5-2h 纯文档) + 立即并行启动
 - ⏭️: Phase C 依修订后顺序启动剩余: T23B → T23C → T25A → T25B → T26 → T28
 - ⏭️: 最终 tag `dgpu-realip-refactor-completion` + PR handoff
 
+---
+
+## Status Update (2026-10-07, P3 Amendment Phase A.2 — Oracle bg_1deb23a0 + Metis bg_06a27d8b pre-Phase-C 评审)
+
+Per Oracle 重新打分 + Metis Phase A+B 实施评审,双独立体独立命中 **2 个 P0 阻塞** + 4 个 P1 修订 + 3 个 P2 漂移。Phase C 启动前必须先消解 P0。
+
+### P0 双阻塞 (Phase C 启动前提)
+
+| P0 | 问题 | Phase A.2 修复 |
+|----|------|----------------|
+| **#1** | `PcieControllerIP` + `GpuInternalFabric` 只注册 FQ 键 (`tlm::pcie::PcieControllerIP` / `tlm::cluster::GpuInternalFabric`)。JSON 配置 (per PcieEndpointIP precedent) 用短名 → ModuleFactory 精确匹配 → 静默丢模块。T23B 验收 "4 模块全可见" 会失败,失败模式"少模块"非报错 | `include/modules_cluster.hh` 末尾新增 2 行短名注册 (照 `_reg_pcieendpointip_short` precedent)。新增 `test/test_pin_contract_short_name_registration.cc` 验证: `[controller_ip][p2]` 8 cases/34 assertions + `[fabric]` 7 cases/13 assertions 全绿 (Phase A.2 commit pending) |
+| **#2** | MUST NOT #3 字面执行("不改任何注册宏")会阻止 P0 #1 修复。新增短名注册行不是"改任何已存在注册宏的语义",但措辞歧义 | MUST NOT #3 措辞修订,见下 §修订 1 |
+
+### 修订列表 (Phase A.2 落地)
+
+#### 修订 1: MUST NOT #3 措辞 (P0 #2)
+
+原: "3. **不改任何注册宏**: VramControllerTLM 已注册于 `chstream_register.hh:54` (registerObject), GpuInternalFabric/PcieControllerIP 已注册于 `modules_cluster.hh:53/75`"
+
+改为: "3. **不改任何已存在注册宏的语义;允许按 `_reg_pcieendpointip_short` precedent 新增短名注册行**:
+   - VramControllerTLM 已注册于 `chstream_register.hh:54` (registerObject)
+   - GpuInternalFabric/PcieControllerIP 已注册于 `modules_cluster.hh:53/75`(FQ 键)
+   - **Phase A.2 新增**: `modules_cluster.hh` 末尾 `_reg_pciecontrollerip_short` + `_reg_gpuinternalfabric_short` 两行(双注册,照 PcieEndpointIP precedent)——**这是新增一行,不是改已存在宏的语义**"
+
+#### 修订 2: T25B 加范围声明 (P1 #2)
+
+原 T25B 描述末尾追加: "**MUST NOT 范围声明**: VramControllerTLM **不在 P3 等价性数据路径**。T25B 的 5-10 刺激 (BAR0/BAR1/BAR2 aperture 写读) 全部经 `PcieControllerIP → PcieEndpointIP → PcieMemoryDevice → vram_storage_` (D-AXI v1.4 host BAR2 fast-path); fabric→vram_ctrl 链属 D3/D4, 本期不验证 end-to-end 数据路径,仅 T23C 验证对象级 read() 契约。误以为 T25B 覆盖 4-IP 全链将构成 silent-scope drift。"
+
+#### 修订 3: T28 gate 清单补两行 (P1 #3)
+
+原 8 条 gate 命令后追加:
+```
+./build/bin/cpptlm_tests "[dgpu_soc_timing]"      # MUST NOT 1 验证锚点 (37 cases 零回归, ADR-DGPU-11 决策 4)
+./build/bin/cpptlm_tests "[fabric]"                # T22b/T23B.0 新标签 (6 cases,Phase A.2 commit 后应非零)
+```
+
+注: `./test.sh --mode off` 会传递覆盖两者,但显式清单是验收锚点。
+
+#### 修订 4: 三条铁律 #1 冻结面路径修正 (P1 #4)
+
+原: `include/tlm/gpu/pcie_endpoint_tlm.h`, `include/tlm/pcie/pcie_display_device.hh`, ...
+
+改为: `include/tlm/gpu/pcie_endpoint_tlm.h`, **`include/tlm/gpu/pcie_display_device.hh`** (真身路径,由 `dgpu_soc.hh:13` 的 include 证实)。
+
+注: AGENTS.md §9 #4 列路径未带目录前缀 (裸文件名),实际两文件都在 `include/tlm/gpu/` 下。
+
+#### 修订 5: 8 子任务重排 → 9 子任务 (P1 #5 加 T23B.0 + T25A.1)
+
+新表(在原 8 子任务表前插入 T23B.0, T25A 后追加 T25A.1):
+
+| 子任务 | 工时 | 内容 | 验收 |
+|--------|------|------|------|
+| **T23B.0** 短名注册 (前置) | 0.1d | `modules_cluster.hh` 新增 2 行短名注册 (照 `_reg_pcieendpointip_short` precedent) | `getRegisteredModuleTypes()` 同时含短名 + FQ, `[controller_ip][p2]` + `[fabric]` tag 全绿 |
+
+T25A 后插入:
+
+| 子任务 | 工时 | 内容 | 验收 |
+|--------|------|------|------|
+| **T25A.1** JSON 装配实现 | 0.5d | `GpuInternalFabric` 覆写 `simulate_instantiate` 或实现 `attach_composition()`,读取 JSON children 模块并 `attach_crossbar(inner)` (per Oracle bg_c60653e0 §3.4 + gpu_internal_fabric.hh:6-8 注释) | 走 ModuleFactory 路径的 JSON 装配测试绿 (非 T22b 的直接 C++ attach) |
+
+**依赖序更新**: T23A → **T23B.0** → T23B → T23C → T25A → **T25A.1** → T25B → T26 → T28
+**工时调整**: 5-6d → **5.2-6.2d** (T23B.0 +0.1d, T25A.1 +0.5d 部分含在原 T25A 工时)
+
+#### 修订 6: 跨 ADR 表乱码行清理 (P2 #3)
+
+原: "| ADR-DGPU-11 决策 4 (VramControllerTLM 与 MemoryTLM 二选一同 | 第 1 段 §3 TIMINGM) | T23C (MUST NOT 1) |"
+
+改为: "| ADR-DGPU-11 决策 4 (VramControllerTLM 与 MemoryTLM 二选一,同位置替换) | T23C (MUST NOT 1) | T27 §2.4 (4-IP 边界表) |"
+
+### Phase A.2 实施进度
+
+- [x] P0 #1 短名注册(`modules_cluster.hh` 2 行)
+- [x] P0 #1 验证(`test/test_pin_contract_short_name_registration.cc` 3 cases/5 assertions PASS)
+- [x] P1 #1 MUST NOT #3 措辞修订 (本段 §修订 1)
+- [x] P1 #2 T25B 范围声明 (本段 §修订 2)
+- [x] P1 #3 T28 gate 补 2 行 (本段 §修订 3)
+- [x] P1 #4 冻结面路径修正 (本段 §修订 4)
+- [x] P1 #5 T23B.0/T25A.1 子任务表 (本段 §修订 5)
+- [x] P2 #3 跨 ADR 表乱码行清理 (本段 §修订 6)
+
+### Phase C 重启条件(修订后)
+
+- ✅ P0 双阻塞已解 (本段 §P0)
+- ✅ P1 修订已落 (本段 §修订 1-5)
+- ⏭️: Phase C 依 9 子任务顺序启动: T23B → T23C → T25A → T25A.1 → T25B → T26 → T28
+- ⏭️: 最终 tag `dgpu-realip-refactor-completion` + PR handoff
+

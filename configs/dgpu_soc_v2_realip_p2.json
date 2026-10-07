@@ -1,6 +1,6 @@
 {
   "name": "dgpu_soc_v2_realip_p2",
-  "description": "dGPU SoC using PcieControllerIP + PcieAxiBridgeIP facades (P2 PR-A sample)",
+  "description": "dGPU SoC using PcieControllerIP facade (P2 PR-A sample; post-T23A PcieAxiBridgeIP module entry removed per P3 Amendment, class file retained as EP composite)",
   "version": "2-realip-p2-a",
   "_note": "Per T2 (Oracle bg_fb84a648): MUST NOT contain 'axi_adapter' or 'axi4_mapper_inject' keys in PcieControllerIP params — would double-attach via PcieEndpointIP::attach_composition auto-flow. grep-gate check_pcie_ip_facade.sh enforces this. Per T23A (Phase B P3 Amendment 2026-10-07): PcieAxiBridgeIP module entry removed from JSON (PcieAxiBridgeIP REMOVED from REGISTER_MODULE per Oracle bg_c60653e0 §4 — JSON 顶层不可实例化; class 仍保留为 EP composite lazy_init 依赖). Final 4-IP topology (T23B) will wrap these as DGpuSoc nested per architecture.md §7.3.",
   "modules": [

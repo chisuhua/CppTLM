@@ -144,13 +144,13 @@ DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
 
 ### 2.4 4-IP Real-IP Boundary (dgpu-realip-refactor P3, 进行中)
 
-> **状态**: 🟡 进行中。Per plan `2026-10-06-dgpu-realip-refactor.md` Status Update (2026-10-07, P3 Amendment)。当前 SoC 是 6 模块 god-class (D-AXI v1.4 minimal_v1); P3 阶段将抽象层提升为 4 个**真实物理 IP 边界**对齐的 TLM 模块(可对照 RTL 实现硅片)。完成 PR-B Phase Gate (B1/B2/B3 全收, `ad139909d` + `385c7c35` + `e59004b9`)。
+> **状态**: 🟡 进行中。Per plan `2026-10-06-dgpu-realip-refactor.md` Status Update (2026-10-07, P3 Amendment + Phase A.2)。当前 SoC 是 6 模块 god-class (D-AXI v1.4 minimal_v1); P3 阶段将抽象层提升为 4 个**真实物理 IP 边界**对齐的 TLM 模块(可对照 RTL 实现硅片)。完成 PR-B Phase Gate (B1/B2/B3 全收, `ad13991d` + `385c7c35` + `e59004b9`)。Phase A.2 已修 P0 双阻塞(短名注册 + MUST NOT #3 措辞) + P1 5 项修订。
 
 | IP 边界 | 真实芯片对应 | CppTLM 类 (现状) | 端口契约 | State ownership |
 |---------|--------------|---------------------|------------|------------------|
 | **`PcieControllerIP`** (顶层 facade) | DWC i5122 / Cadence PCIe Controller | `include/tlm/pcie/pcie_controller_ip.hh` (B1 组合 refactor: `SimModule` + `PcieEndpointIP* ep_` non-owning) | 4 BAR decode (`Bar0Mmio` / `Bar1FbFastPath` / `Bar2VramAperture` / `Unknown`) | **stateless facade** — 所有 state 经 `ep_->...` 委托 |
 | **`PcieAxiBridgeIP`** (EP composite, NOT 顶层) | Synopsys AXI↔PCIe bridge / ChipLink | `include/tlm/pcie/pcie_axi_bridge_ip.hh` (类保留, `REGISTER_MODULE` REMOVED per Oracle bg_c60653e0 §4) | AXI4-slave → EP-internal composite (lazy_init) | EP-internal, JSON 顶层不可实例化 |
-| **`GpuInternalFabric`** (新增, P3 T22) | Custom mesh / Arteris NoC IP | `include/tlm/cluster/gpu_internal_fabric.hh` (scaffold commit `95a68889`; T22b pin-contract test commit `pending`) | 4 端口 (默认 = CrossbarTLM::NUM_PORTS) | non-owning `crossbar_` raw ptr (ModuleFactory owns) |
+| **`GpuInternalFabric`** (新增, P3 T22) | Custom mesh / Arteris NoC IP | `include/tlm/cluster/gpu_internal_fabric.hh` (scaffold commit `95a68889`; T22b pin-contract test commit `139534ac` + Phase A.2 短名注册 commit pending) | 4 端口 (默认 = CrossbarTLM::NUM_PORTS) | non-owning `crossbar_` raw ptr (ModuleFactory owns) |
 | **`VramControllerTLM`** (timing-mode 已有, P3 promote) | NVIDIA FB / AMD MC (HBM PHY, DFI interface) | `include/tlm/vram_controller_tlm.hh` (Phase 4 T4 timing-mvp 已实现; P3 promote via JSON top-level per spec §6.4 E5) | AXI4-slave (from GpuInternalFabric) + DRAM command abstraction (DFI-lite) internal | Backing ptr (injected from DGpuBoard `vram_storage_` per ADR-DGPU-05) + row buffer + bandwidth counters |
 
 **保留模块 (P3 promote 后)**:

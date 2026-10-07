@@ -74,4 +74,25 @@ const bool _reg_pcieendpointip_short =
 // in include/tlm/pcie/pcie_axi_bridge_ip.hh for use as EP composite member.
 const bool _reg_pciecontrollerip = (REGISTER_MODULE(tlm::pcie::PcieControllerIP), true);
 
+// dgpu-realip-refactor P3 T23B.0 (per Oracle bg_49146b46 + Metis bg_06a27d8b
+// pre-Phase-C 评审, commit 8919afa3 P3 Amendment §0 P0 #1/#2):
+// 双注册 (FQ + 短名) — 同 PcieEndpointIP precedent (line 62-64)。FQ 键由
+// `REGISTER_MODULE` 的 `#T` 字符串化产生 (e.g. "tlm::pcie::PcieControllerIP");
+// 但 JSON 配置 (configs/dgpu_soc_v2_realip_p2.json) 用短名 "PcieControllerIP"
+// (符合 PcieEndpointIP precedent)。ModuleFactory::instantiateAll (module_factory.cc:264)
+// 精确匹配 → 短名 miss → 静默丢模块。T23B 验收 "4 模块全可见" 会失败,
+// 失败模式是"少模块"而非报错,与 PcieEndpointIP P0 fix 前的 same pattern。
+//
+// MUST NOT #3 (P3 Amendment §0) 允许此新增:它是新增短名注册行(仿 _reg_pcieendpointip_short),
+// 不是改任何**已存在**注册宏的语义。
+const bool _reg_pciecontrollerip_short =
+    (ModuleFactory::registerModule<tlm::pcie::PcieControllerIP>("PcieControllerIP"), true);
+
+// dgpu-realip-refactor P3 T23B.0 (per Oracle bg_49146b46 + Metis bg_06a27d8b
+// pre-Phase-C 评审): GpuInternalFabric 短名注册 — 同上理由。
+// T22b pin-contract test (commit 139534ac) 仅锁 C++ API; T23B JSON 装配路径
+// 必须能通过 ModuleFactory 按 "GpuInternalFabric" 短名查表。
+const bool _reg_gpuinternalfabric_short =
+    (ModuleFactory::registerModule<tlm::cluster::GpuInternalFabric>("GpuInternalFabric"), true);
+
 #endif  // MODULES_CLUSTER_HH
