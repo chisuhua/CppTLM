@@ -40,6 +40,19 @@ target_link_libraries(demo_pcie_full_e2e PRIVATE cpptlm_core)
 target_include_directories(demo_pcie_full_e2e PRIVATE ${EXAMPLES_INCLUDE_DIRS})
 
 # ==============================================================================
+# T26 (Phase C cpptlm-dgpu-realip-refactor): 4-IP Topology Assembly Demo
+# 装载 configs/dgpu_soc_v2_realip_p2.json (T23B 重建后的嵌套 DGpuSoc) +
+# 实例化 DGpuSoc + PcieControllerIP + GpuInternalFabric + VramControllerTLM.
+# 验证 4 IP accessible + T25A.1 crossbar auto-attach + T23C backing null
+# + T25B facade 5 BAR decode stimuli.
+# 链接 cpptlm_emulator 让 VramControllerTLM (REGISTER_CHSTREAM) 在 cpptlm_emulator.so
+# 静态初始化时注册 (per src/abi/cpptlm_emulator.cc:31-40)。
+# ==============================================================================
+add_executable(demo_dgpu_soc_realip demo_dgpu_soc_realip.cpp)
+target_link_libraries(demo_dgpu_soc_realip PRIVATE cpptlm_core cpptlm_emulator)
+target_include_directories(demo_dgpu_soc_realip PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+
+# ==============================================================================
 # T-W3-2 (T-ae-4): dlopen usage template for UsrLinuxEmu integration
 # (per ADR-088 §D5 + ADR-SOC-07 D5). 演示 dlopen libcpptlm_emulator.so +
 # dlsym 19 forward ABI + 调通关键路径 (get_version/create_by_id/mmio_/destroy).
