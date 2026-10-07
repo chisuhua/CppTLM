@@ -8,7 +8,7 @@
 namespace tlm::pcie {
 
 PcieControllerIP::PcieControllerIP(const std::string& name, EventQueue* eq)
-    : PcieEndpointIP(name, eq) {}
+    : SimModule(name, eq) {}
 
 bool PcieControllerIP::match_bar(uint8_t bar, uint64_t offset,
                                   BarTarget& out_target,
@@ -32,7 +32,10 @@ bool PcieControllerIP::match_bar(uint8_t bar, uint64_t offset,
     if (bar == 1) {
         // BAR1 = framebuffer window. Per H3 + existing logic, sub-dispatch by
         // size relative to bar1 window (read live via PcieEndpointIP::bar_size).
-        if (offset < bar_size(1)) {
+        // B1 PR-B Phase Gate: composition — read via ep_ not inherited member.
+        // If ep_ is null (attach_endpoint skipped), collapse to 0 → Bar1FbFastPath
+        // impossible — explicit guard against dormant-gate regression.
+        if (offset < (ep_ ? ep_->bar_size(1) : 0)) {
             out_target = BarTarget::Bar1FbFastPath;
             return true;
         }
