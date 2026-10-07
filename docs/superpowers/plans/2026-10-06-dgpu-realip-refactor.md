@@ -2080,3 +2080,65 @@ Per Oracle `bg_9f2fd8de` re-review (after commit `e59004b9`) + Option A executio
 - 本 Status Update 替代 `本轮已执行动作` 段(上方原 Step 1-3 checkbox)。Step 3 checkbox 历史未实际完成("[ ]")已被本 status 取代 — 仅作为审计追踪保留。
 - handoff §3 BLOCKER 表 + §4 B2 修复 4 缺陷表为 single source of truth,本 plan 引用而非复制。
 
+---
+
+## Status Update (2026-10-07, PR-B Phase Gate B1 resolved — P3 重启就绪)
+
+Per Oracle `bg_9c11d0e8` B1 BLOCKER 修复 (commit `ad13991d`) + TDD 5 步完成.
+
+### B1 修复 (RESOLVED)
+
+`PcieControllerIP` 继承 → 组合 refactor (per Oracle `bg_9c11d0e8`):
+
+- ✅ `class PcieControllerIP : public PcieEndpointIP` → `: public ::SimModule`
+- ✅ `PcieEndpointIP* ep_ = nullptr` (non-owning) + `void attach_endpoint(PcieEndpointIP*)`
+- ✅ ctor init `: PcieEndpointIP(name, eq)` → `: SimModule(name, eq)`
+- ✅ `bar_size(1)` (继承) → `ep_ ? ep_->bar_size(1) : 0` (composition)
+- ✅ `REGISTER_MODULE(PcieControllerIP)` 保持 (SimModule 注册路径)
+
+新文件 `test/test_pin_contract_pcie_controller_ip.cc` (6 TEST_CASE / 31 assertions):
+1. `bar=0` → `Bar0Mmio`
+2. `bar=1, offset < bar_size(1)` → `Bar1FbFastPath` (需 `attach_endpoint`,否则退化)
+3. `bar=1, offset >= bar_size(1)` → `Unknown` (B2d regression guard)
+4. `bar=2` → `Bar2VramAperture`
+5. `bar=3` → `Unknown` (BAR3 = upper dword of BAR2 pair)
+6. dormant B2 闸门激活 (`controller_ip() != nullptr`)
+
+### B1c 验证证据 (5 REGRESSION 标签全绿)
+
+| Tag | Cases / Assertions | 状态 |
+|-----|---------------------|------|
+| `[controller_ip][p2]` | 6 / 31 | ✅ |
+| `[minimal_dgpu_soc]` | 12 / 69 | ✅ |
+| `[pcie-memory]` | 24 / 69 | ✅ |
+| `[sdma]` | 61 / 12906 | ✅ |
+| `[pcie]` (Phase 4-8 全链路) | 433 / 36682 | ✅ |
+
+### BLOCKER 状态全收
+
+| BLOCKER | 状态 | Commit | Tag |
+|---------|------|--------|-----|
+| B1 PcieControllerIP 继承→组合 | ✅ **RESOLVED** | `ad13991d` | `pr-b-phase-gate-fix-b1` |
+| B2 facade verdict 未验证 | ✅ RESOLVED | `385c7c35` | `pr-b-phase-gate-fix-b2-v2` |
+| B3 BAR 寄存器非规范语义 | ✅ RESOLVED | `e59004b9` | `pr-b-phase-gate-fix-b2-b3` |
+
+### 不可变性 + 风险点
+
+- **本 round (`d0f2a5fc..ad13991d`)**: 4 frozen header 零触碰 (grep 确认)
+- **dgpu_board_shell.cc `controller_ip_->match_bar()` 调用签名不变** (0 消费者回归)
+- **B2 v2 Strangler gate 保留** (binary strings 出现 2 次,Release mode 有效)
+- **D-AXI v1.4 `pcie_endpoint_ip.h` ABI 零修改** (per ADR-DGPU-08 23 ABI 冻结)
+
+### P3 重启条件 (全部满足)
+
+- ✅ B1 RESOLVED
+- ✅ 5 regression tag 全绿
+- ⏭️: 重启 P3 Tasks 23-28 (per handoff §5 详细子任务)
+  - T23: PcieAxiBridgeIP `configs/dgpu_soc_v2_realip_p2.json:17` 死引用 + 加 VramController
+  - T24: VramControllerTLM 桥接 seam (D3 evolution)
+  - T25: equivalence harness (替换常量 REQUIRE scaffold)
+  - T26: examples/CMakeLists.txt `demo_dgpu_soc_realip` target
+  - T27: docs/designs/dgpu-soc/architecture.md 4-IP 边界表
+  - T28: `--mode off` 全量 + `[controller_ip][p2][equivalence][p3][pcie-realip]`
+- ⏭️: 最终 tag `dgpu-realip-refactor-completion` + PR handoff
+

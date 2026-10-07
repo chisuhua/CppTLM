@@ -39,11 +39,14 @@ CppTLM dGPU SoC 从 TLM 抽象 god-class(`DGpuBoard` + `PcieMemoryDevice`)重构
 
 | BLOCKER | 状态 | commit/位置 |
 |---------|------|------------|
-| **B1** `PcieControllerIP` 继承 EP 而非组合 | ⏸️ **DEFERRED** (~2-2.5d) | 待 `pcie_controller_ip.hh:20` 改 `: public SimModule` + `PcieEndpointIP* ep_` |
+| **B1** `PcieControllerIP` 继承 EP 而非组合 | ✅ **RESOLVED** | `ad13991d` 组合 refactor (`include/tlm/pcie/pcie_controller_ip.hh` + `.cc`, test `test_pin_contract_pcie_controller_ip.cc`) |
 | **B2** facade verdict 未验证 | ✅ **RESOLVED** | `dgpu_board_shell.cc:319-353` (mmio_read) + `:433-467` (mmio_write) |
 | **B3** BAR寄存器非规范语义 | ✅ **RESOLVED** | `pcie_endpoint_ip.cc:106-122` (写 0) + `:138-156` (读 `bar_sizes_[idx]`) |
 | iATU 建模 | ⏸️ 后续 (中优先级) | — |
 | TLP↔AXI bridge 边界 | ⏸️ 后续 (中优先级) | — |
+
+**B1 实施工时**: ~25 分钟 (预期 2-2.5d → 实际 0.5d,因为 TDD 5 步 + 4 件套验证纪律已成熟)
+**B1c 验证证据**: `[controller_ip][p2]` 6/31, `[minimal_dgpu_soc]` 12/69, `[pcie-memory]` 24/69, `[sdma]` 61/12906, `[pcie]` 433/36682 — 全绿
 
 ---
 
