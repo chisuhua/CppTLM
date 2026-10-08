@@ -117,3 +117,85 @@ TEST_CASE("DGpuBoard destroy→init cycle re-wires facade without dangling point
     REQUIRE(second_ctrl != nullptr);
     REQUIRE_NOTHROW(board.mmio_read(0, 0x00, &val, 4));
 }
+
+TEST_CASE("Dormant-guard: pcie_ctrl without pcie_ep collapses BAR1 match_bar to Unknown gracefully",
+          "[realip][facade-wiring]") {
+    auto eq = std::make_unique<EventQueue>();
+    tlm::pcie::PcieControllerIP ctrl("ctrl", eq.get());
+
+    using BarTarget = tlm::pcie::PcieControllerIP::BarTarget;
+    BarTarget out_target = BarTarget::Bar0Mmio;
+    uint64_t out_sub_offset = 0;
+
+    const bool matched = ctrl.match_bar(1, 0, out_target, out_sub_offset);
+    REQUIRE(matched == false);
+    REQUIRE(out_target == BarTarget::Unknown);
+
+    out_target = BarTarget::Bar0Mmio;
+    const bool matched_oor = ctrl.match_bar(1, 0x10000000, out_target, out_sub_offset);
+    REQUIRE(matched_oor == false);
+    REQUIRE(out_target == BarTarget::Unknown);
+}
+
+constexpr uint32_t kBaselineBar0GmmUOffset0 = 0x00000000u;
+constexpr uint32_t kBaselineBar2VramOffset0 = 0x00000000u;
+
+TEST_CASE("Characterization: minimal_v1 BAR0 GMMU read roundtrip unchanged with facade active",
+          "[realip][facade-wiring]") {
+    auto board_cfg = load_minimal_v1_config();
+
+    EventQueue eq;
+    DGpuBoard board("facade_wiring_char_bar0", &eq);
+    REQUIRE(board.load_soc_config(board_cfg));
+    REQUIRE(board.init());
+
+    uint32_t val = 0;
+    uint32_t write_val = 0xCAFEBABEu;
+    REQUIRE_NOTHROW(board.mmio_write(0, 0x00, &write_val, 4));
+    REQUIRE_NOTHROW(board.mmio_read(0, 0x00, &val, 4));
+    REQUIRE(val == 0xCAFEBABEu);
+}
+
+TEST_CASE("Characterization: doorbell synthetic offset 0x10010000 → Unknown, dispatch unchanged",
+          "[realip][facade-wiring]") {
+    auto board_cfg = load_minimal_v1_config();
+
+    EventQueue eq;
+    DGpuBoard board("facade_wiring_char_doorbell", &eq);
+    REQUIRE(board.load_soc_config(board_cfg));
+    REQUIRE(board.init());
+
+    uint32_t write_val = 0x12345678u;
+    REQUIRE_NOTHROW(board.mmio_write(1, 0x10010000, &write_val, 4));
+}
+
+TEST_CASE("Characterization: BAR2 VRAM aperture read unchanged with facade active",
+          "[realip][facade-wiring]") {
+    auto board_cfg = load_minimal_v1_config();
+
+    EventQueue eq;
+    DGpuBoard board("facade_wiring_char_bar2", &eq);
+    REQUIRE(board.load_soc_config(board_cfg));
+    REQUIRE(board.init());
+
+    uint32_t val = 0;
+    REQUIRE_NOTHROW(board.mmio_read(2, 0x00, &val, 4));
+    REQUIRE(val == kBaselineBar2VramOffset0);
+}
+
+TEST_CASE("A.5 bridge: DGpuBoard + realip_p2.json + init() wires fabric↔vram_ctrl",
+          "[realip][facade-wiring]") {
+    std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
+    REQUIRE(f.is_open());
+    nlohmann::json board_cfg;
+    f >> board_cfg;
+
+    EventQueue eq;
+    DGpuBoard board("facade_wiring_a5_bridge", &eq);
+    REQUIRE(board.load_soc_config(board_cfg));
+    REQUIRE(board.init());
+
+    auto* vram_ctrl = board.vram_ctrl_module();
+    REQUIRE(vram_ctrl != nullptr);
+    REQUIRE(vram_ctrl->fabric() != nullptr);
+}
