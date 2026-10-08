@@ -18,6 +18,21 @@
           }
         },
         {
+          "type": "PcieEndpointIP",
+          "name": "pcie_ep",
+          "params": {
+            "config_size": 4096,
+            "num_msix_vectors": 16,
+            "bar_sizes": [4096, 16777216, 8589934592],
+            "bar0_registers": [
+              { "offset": 0,  "name": "GMMU_PT_BASE_LO", "access": "rw" },
+              { "offset": 4,  "name": "GMMU_PT_BASE_HI", "access": "rw" },
+              { "offset": 8,  "name": "GMMU_CTRL",      "access": "rw" },
+              { "offset": 16, "name": "SDMA_STATUS",    "access": "ro" }
+            ]
+          }
+        },
+        {
           "type": "GpuInternalFabric",
           "name": "fabric",
           "modules": [

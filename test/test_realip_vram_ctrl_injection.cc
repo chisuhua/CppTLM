@@ -85,15 +85,52 @@ TEST_CASE("DGpuBoard::bind_memory_backings: vram_ctrl backing injected when fram
 //   如果 bind_memory_backings() 加 vram_ctrl 分支但 framebuffer_ptr_==nullptr,
 //   分支必须静默跳过 (DPRINTF WARN) 而不是 crash 或写错 backing。测试 #1
 //   (注入) 验证注入路径生效,本测试验证 framing null 时 backing 仍 null。
+//
+// ⚠ P0.5-landing 行为变化 (2027-09-17): 当 JSON 含 pcie_ep 时, load_soc_config
+//   从 `pcie_ep.params.bar_sizes[1]` 派生 framebuffer_size_, init() 自动分配
+//   backing — 不再是 backing null。test 改测 ENODEV-style ENODEV semantics:
+//   用一个不含 pcie_ep 的 inline config (仅 fabric + vram_ctrl) 模拟 dormant 状态。
 // ─────────────────────────────────────────────────────────────────────────
-TEST_CASE("DGpuBoard::bind_memory_backings: vram_ctrl backing null when framebuffer not attached",
+TEST_CASE("DGpuBoard::bind_memory_backings: vram_ctrl backing null when framebuffer not attached (no pcie_ep)",
           "[realip][p3]") {
-    auto board_cfg = load_realip_p2_config();
+    nlohmann::json inline_cfg = {
+        {"modules", nlohmann::json::array({
+            {
+                {"type", "DGpuSoc"},
+                {"name", "soc"},
+                {"modules", nlohmann::json::array({
+                    {
+                        {"type", "GpuInternalFabric"},
+                        {"name", "fabric"},
+                        {"modules", nlohmann::json::array({
+                            {{"type", "CrossbarTLM"}, {"name", "crossbar"}}
+                        })},
+                        {"connections", nlohmann::json::array()}
+                    },
+                    {
+                        {"type", "VramControllerTLM"},
+                        {"name", "vram_ctrl"},
+                        {"params", {
+                            {"row_hit_cycles", 30},
+                            {"row_miss_cycles", 80},
+                            {"bandwidth_gbps", 32},
+                            {"read_latency_hit_cycles", 30},
+                            {"read_latency_miss_cycles", 80},
+                            {"write_latency_cycles", 120},
+                            {"use_zero_delay_for_test", true}
+                        }}
+                    }
+                })},
+                {"connections", nlohmann::json::array()}
+            }
+        })},
+        {"connections", nlohmann::json::array()}
+    };
 
     EventQueue eq;
     DGpuBoard board("realip_vram_null", &eq);
 
-    REQUIRE(board.load_soc_config(board_cfg));
+    REQUIRE(board.load_soc_config(inline_cfg));
     // Deliberately NOT 调用 attach_vram_for_testing — framebuffer_ptr_ 保持 nullptr
     REQUIRE(board.init());
 

@@ -47,6 +47,15 @@
       }
     },
     {
+      "name": "pcie_ctrl",
+      "type": "PcieControllerIP",
+      "params": {
+        "bar_bases": [0, 16777216, 8589934592],
+        "bar_sizes": [4096, 16777216, 8589934592],
+        "link_speed_gts": 8
+      }
+    },
+    {
       "name": "host_bypass",
       "type": "HostBypassTLM",
       "params": {
