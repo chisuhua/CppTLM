@@ -22,6 +22,7 @@ namespace bundles {
 template<unsigned W>
 struct ch_uint_storage {
     static_assert(W > 0 && W <= 64, "ch_uint_storage: 0 < W <= 64");
+    static constexpr unsigned width = W;  // A.2 (cpptlm-driver-visible-minimal-soc 2026-10-08): compile-time width for BUNDLE_FIELD_WIDTH static_assert
     uint64_t value_ = 0;
     ch_uint_storage() = default;
     explicit ch_uint_storage(uint64_t v) : value_(v) {}
@@ -35,6 +36,7 @@ template<unsigned W>
 struct ch_uint_wide {
     static_assert(W > 64, "ch_uint_wide: W > 64");
     static constexpr unsigned N = (W + 63) / 64;
+    static constexpr unsigned width = W;  // A.2 (cpptlm-driver-visible-minimal-soc 2026-10-08): compile-time width for BUNDLE_FIELD_WIDTH static_assert
     std::array<uint64_t, N> words_{};   // little-endian: words_[0] = low 64 bits
 
     // Backward-compat shims: pre-change ch_uint had read/write/operator uint64_t

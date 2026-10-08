@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include <type_traits>
+
 #include "bundles/cpphdl_types.hh"
 
 namespace bundles {
@@ -48,7 +50,7 @@ struct Fabric2VramCtrlBundle {
 }  // namespace bundles
 
 // Compile-time invariants (auto-checked at every TU including this header)
-static_assert(sizeof(Fabric2VramCtrlBundle) > 0,
+static_assert(sizeof(bundles::Fabric2VramCtrlBundle) > 0,
               "Fabric2VramCtrlBundle must be a complete aggregate type");
-static_assert(std::is_standard_layout_v<Fabric2VramCtrlBundle>,
+static_assert(std::is_standard_layout_v<bundles::Fabric2VramCtrlBundle>,
               "Fabric2VramCtrlBundle must be standard-layout for zero-copy TLM payload");
