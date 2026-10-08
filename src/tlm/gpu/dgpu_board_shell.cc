@@ -442,22 +442,21 @@ namespace tlm::gpu {
         //     bar==1 + offset >= bar_size(1) → Unknown (not Bar1FbFastPath) —
         //     was B2d false positive on doorbell/OOB BAR1 writes.
         //   - std::abort (NOT assert) keeps gate live in Release builds — was B2a.
+        using BT = tlm::pcie::PcieControllerIP::BarTarget;
+        auto classify_naive = [&](uint8_t b, uint64_t off) -> BT {
+            if (b == 0) return BT::Bar0Mmio;
+            if (b == 1) {
+                const uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
+                return off < sz ? BT::Bar1FbFastPath : BT::Unknown;
+            }
+            if (b == 2) return BT::Bar2VramAperture;
+            return BT::Unknown;
+        };
         if (controller_ip_) {
-            tlm::pcie::PcieControllerIP::BarTarget target;
+            BT target;
             uint64_t sub_offset = 0;
             controller_ip_->match_bar(bar, offset, target, sub_offset);
-            using BT = tlm::pcie::PcieControllerIP::BarTarget;
-            BT expected;
-            if (bar == 0) {
-                expected = BT::Bar0Mmio;
-            } else if (bar == 1) {
-                const uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
-                expected = (offset < sz) ? BT::Bar1FbFastPath : BT::Unknown;
-            } else if (bar == 2) {
-                expected = BT::Bar2VramAperture;
-            } else {
-                expected = BT::Unknown;
-            }
+            const BT expected = classify_naive(bar, offset);
             if (target != expected) {
                 std::fprintf(stderr,
                     "[DGpuBoard B2 write] facade verdict divergence: bar=%u "
@@ -474,36 +473,51 @@ namespace tlm::gpu {
         if (!is_doorbell && is_mmio_gated()) {
             return -EIO;
         }
-        // D1 display-io-mvp fast-path: BAR 0 路由到 PcieDisplayDevice
-        // (device 优先; BAR 1 doorbell 仍走原 SDMA 路径)
-        // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
-        if (display_routing_enabled_ && bar == 0 && soc_) {
-            // P2 PR-B Stage C: legacy display fast-path. Per Oracle §2.1
-            // target-side decode principle, sub-dispatch (GMMU vs Display)
-            // stays here; facade consult was moved to function head (B2c).
-            if (auto* ep = pcie_ep()) {
-                if (ep->has_display_device()) {
-                    return ep->display_device().mmio_write(offset, buf, len);
+        BT verdict;
+        uint64_t sub_offset_unused = 0;
+        if (controller_ip_ && controller_ip_->endpoint() != nullptr) {
+            controller_ip_->match_bar(bar, offset, verdict, sub_offset_unused);
+        } else {
+            verdict = classify_naive(bar, offset);
+        }
+        switch (verdict) {
+            case BT::Bar0Mmio: {
+                if (display_routing_enabled_ && bar == 0 && soc_) {
+                    if (auto* ep = pcie_ep(); ep && ep->has_display_device()) {
+                        return ep->display_device().mmio_write(offset, buf, len);
+                    }
                 }
+                if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
+                    uint32_t val32 = 0;
+                    std::memcpy(&val32, buf, 4);
+                    if (offset == 0x00) {
+                        gmmu_->set_pt_base_lo(val32);
+                    } else if (offset == 0x04) {
+                        gmmu_->set_pt_base_hi(val32);
+                    } else if (offset == 0x08) {
+                        gmmu_->set_enabled((val32 & 1u) != 0);
+                    }
+                }
+                break;
             }
-        }
-        // Phase B3: BAR0 GMMU 寄存器转发 (gated by gmmu_routing_enabled_)
-        if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
-            uint32_t val32 = 0;
-            std::memcpy(&val32, buf, 4);
-            if (offset == 0x00) {
-                gmmu_->set_pt_base_lo(val32);
-            } else if (offset == 0x04) {
-                gmmu_->set_pt_base_hi(val32);
-            } else if (offset == 0x08) {
-                gmmu_->set_enabled((val32 & 1u) != 0);
-            }
-        }
-        // Phase 3 T4.2 (N12): BAR2 fast-path → PcieMemoryDevice (write 对称)
-        if (memory_routing_enabled_ && bar == 2 && soc_) {
-            if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
-                return ep->memory_device().memory_write(offset, buf, len);
-            }
+            case BT::Bar1FbFastPath:
+                if (offset != kBar1DoorbellOffset && storage_routing_enabled_ &&
+                    framebuffer_ptr_ && framebuffer_size_ > 0) {
+                    if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
+                        return -EINVAL;
+                    }
+                    std::memcpy(framebuffer_ptr_ + offset, buf, len);
+                }
+                break;
+            case BT::Bar2VramAperture:
+                if (memory_routing_enabled_ && bar == 2 && soc_) {
+                    if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
+                        return ep->memory_device().memory_write(offset, buf, len);
+                    }
+                }
+                break;
+            default:
+                break;
         }
         // 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
         std::vector<uint8_t> payload(static_cast<const uint8_t*>(buf),
@@ -550,17 +564,6 @@ namespace tlm::gpu {
                 sdma_engine_->mmio_write(/*bar=*/1, /*offset=*/kBar1DoorbellOffset,
                                          /*data=*/doorbell_wptr);
             }
-        }
-
-        // Phase B2: BAR1 framebuffer_ 直写 (per spec/bar1-storage-routing + Inv-3 dead bytes)
-        // 条件: storage_routing_enabled_ + bar==1 + 非 doorbell + framebuffer_ 已分配
-        // doorbell 已在上方处理; 此处覆盖 [0, 0x10010000) 和 (0x10010008, BAR1_size) dead bytes
-        if (storage_routing_enabled_ && bar == 1 && offset != kBar1DoorbellOffset &&
-            framebuffer_ptr_ && framebuffer_size_ > 0) {
-            if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
-                return -EINVAL;
-            }
-            std::memcpy(framebuffer_ptr_ + offset, buf, len);
         }
 
         return 0; // async, no wait (保持异步语义)
