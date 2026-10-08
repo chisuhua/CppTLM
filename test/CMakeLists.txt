@@ -237,3 +237,12 @@ target_compile_definitions(cpptlm_tests PRIVATE CPPTLM_SOURCE_DIR="${CMAKE_SOURC
 
 # P1 测试辅助: 启用 CPPTLM_TESTING 守卫的方法 (addInternalInstance / addOutputConfig / setName / addInstanceForTesting)
 target_compile_definitions(cpptlm_tests PRIVATE CPPTLM_TESTING)
+
+# C.5 (Change C): try_compile negative-compile probe — 验证 legacy public API 已删
+# probe 引用 set_display_routing_enabled 等 (C.3.1 已删) → 编译失败 = WILL_FAIL PASS
+add_executable(try_compile_legacy_flags_removed EXCLUDE_FROM_ALL
+    ${CMAKE_CURRENT_SOURCE_DIR}/../scripts/test/try_compile_legacy_flags_removed.cc)
+target_include_directories(try_compile_legacy_flags_removed PRIVATE ${CMAKE_SOURCE_DIR}/include)
+add_test(NAME try_compile_legacy_flags_removed
+         COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target try_compile_legacy_flags_removed)
+set_tests_properties(try_compile_legacy_flags_removed PROPERTIES WILL_FAIL TRUE)

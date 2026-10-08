@@ -19,3 +19,10 @@ void probe() {
     board.set_gmmu_routing_enabled(true);       // Should fail to compile after Change C
     (void)board.pcie_path();                   // Should fail to compile after Change C
 }
+
+void probe_attach_profile() {
+    tlm::gpu::DGpuBoard board2("probe2");
+    nlohmann::json p;
+    p["pcie_path"] = "legacy";
+    board2.attach_profile(p);  // Should fail to compile after Change C
+}
