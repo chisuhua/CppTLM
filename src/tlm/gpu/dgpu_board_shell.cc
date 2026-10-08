@@ -321,35 +321,21 @@ namespace tlm::gpu {
         if (is_mmio_gated()) {
             return -EIO;
         }
-        // P2 PR-B Stage C dual-path facade consult (per Oracle bg_c60653e0 §3.1):
-        // when controller_ip_ is injected, match_bar provides facade verdict.
-        // Legacy flag-based paths below remain authoritative until CI dual-state
-        // gate (per Oracle §3.1) verifies facade agrees. PT-PR-C: replace
-        // legacy branches with facade verdict when gate stabilizes.
-        //
-        // PR-B Phase Gate BLOCKER B2 (per Oracle bg_9c11d0e8 + re-review e59004b9):
-        //   Strangler pattern sanity check fires Phase Gate on facade divergence.
-        //   - Unconditional (was nested in mmio_write's display branch — B2c).
-        //   - expected mirrors controller semantics (pcie_controller_ip.cc):
-        //     bar==1 + offset >= bar_size(1) → Unknown (not Bar1FbFastPath) —
-        //     was B2d false positive on doorbell/OOB BAR1 reads.
-        //   - std::abort (NOT assert) keeps gate live in Release builds — was B2a.
+        using BT = tlm::pcie::PcieControllerIP::BarTarget;
+        auto classify_naive = [&](uint8_t b, uint64_t off) -> BT {
+            if (b == 0) return BT::Bar0Mmio;
+            if (b == 1) {
+                const uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
+                return off < sz ? BT::Bar1FbFastPath : BT::Unknown;
+            }
+            if (b == 2) return BT::Bar2VramAperture;
+            return BT::Unknown;
+        };
         if (controller_ip_) {
-            tlm::pcie::PcieControllerIP::BarTarget target;
+            BT target;
             uint64_t sub_offset = 0;
             controller_ip_->match_bar(bar, offset, target, sub_offset);
-            using BT = tlm::pcie::PcieControllerIP::BarTarget;
-            BT expected;
-            if (bar == 0) {
-                expected = BT::Bar0Mmio;
-            } else if (bar == 1) {
-                const uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
-                expected = (offset < sz) ? BT::Bar1FbFastPath : BT::Unknown;
-            } else if (bar == 2) {
-                expected = BT::Bar2VramAperture;
-            } else {
-                expected = BT::Unknown;
-            }
+            const BT expected = classify_naive(bar, offset);
             if (target != expected) {
                 std::fprintf(stderr,
                     "[DGpuBoard B2] facade verdict divergence: bar=%u "
@@ -359,32 +345,41 @@ namespace tlm::gpu {
                 std::abort();
             }
         }
-        // D1 display-io-mvp fast-path: BAR 0 路由到 PcieDisplayDevice
-        // (device 优先; 否则 fallback 到原 mmio_regs_ + inject_q_ async 路径)
-        // D1 v1.1.1: 路由位置在 power gate 之后，保持 INV-A D3 门禁不变量
-        // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
-        if (display_routing_enabled_ && bar == 0 && soc_) {
-            if (auto* ep = pcie_ep()) {
-                if (ep->has_display_device()) {
-                    return ep->display_device().mmio_read(offset, buf, len);
+        BT verdict;
+        uint64_t sub_offset_unused = 0;
+        if (controller_ip_ && controller_ip_->endpoint() != nullptr) {
+            controller_ip_->match_bar(bar, offset, verdict, sub_offset_unused);
+        } else {
+            verdict = classify_naive(bar, offset);
+        }
+        switch (verdict) {
+            case BT::Bar0Mmio: {
+                if (display_routing_enabled_ && bar == 0 && soc_) {
+                    if (auto* ep = pcie_ep(); ep && ep->has_display_device()) {
+                        return ep->display_device().mmio_read(offset, buf, len);
+                    }
                 }
+                break;
             }
-        }
-        // Phase B2: BAR1 同步直读 fast-path (per spec/bar1-storage-routing + D12)
-        // 条件: storage_routing_enabled_ + bar==1 + 非 doorbell + framebuffer_ 已分配
-        if (storage_routing_enabled_ && bar == 1 && offset != kBar1DoorbellOffset &&
-            framebuffer_ptr_ && framebuffer_size_ > 0) {
-            if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
-                return -EINVAL;
-            }
-            std::memcpy(buf, framebuffer_ptr_ + offset, len);
-            return 0;
-        }
-        // Phase 3 T4.2 (N12): BAR2 fast-path → PcieMemoryDevice (per design §8 数据流 2/3)
-        if (memory_routing_enabled_ && bar == 2 && soc_) {
-            if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
-                return ep->memory_device().memory_read(offset, buf, len);
-            }
+            case BT::Bar1FbFastPath:
+                if (offset != kBar1DoorbellOffset && storage_routing_enabled_ &&
+                    framebuffer_ptr_ && framebuffer_size_ > 0) {
+                    if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
+                        return -EINVAL;
+                    }
+                    std::memcpy(buf, framebuffer_ptr_ + offset, len);
+                    return 0;
+                }
+                break;
+            case BT::Bar2VramAperture:
+                if (memory_routing_enabled_ && bar == 2 && soc_) {
+                    if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
+                        return ep->memory_device().memory_read(offset, buf, len);
+                    }
+                }
+                break;
+            default:
+                break;
         }
         PendingReq req;
         req.bar = bar;
