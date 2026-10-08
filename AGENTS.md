@@ -401,7 +401,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
   - **季度复审**: 评估是否 archive, merge, 或明确 deprecate
   - **新提案门槛**: 现有 ≥3 时新提案需先 archive 一个现有 change
   - **范围判定 (2026-09-30 季度复审后)**: CppTLM=建模框架 + 基本 SoC 验证；SoC 架构建模在 ArchForge。任何 SoC 架构组件/拓扑/演进类提案应直接在 ArchForge openspec 创建，不进 CppTLM 计数
-  - **当前基线 (2026-10-08 季度复审后)**: 2 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证; `dgpu-realip-pin-contract` Change A — 端口契约代码化, 2026-10-08 Oracle REJECT 修订后通过 Momus 复评落地) — 合规 (2/3)
+  - **当前基线 (2026-10-08 季度复审后)**: 2 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证; `dgpu-realip-pin-contract` — 端口契约代码化, Change A/B/C 已完成 + Change D 实施中, 2026-10-08 Step 0 P0 SIGSEGV 修复落地) — 合规 (2/3)
   - **历史复审**: 2026-09-30 季度复审 archive 3 个 (gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella)，理由: SoC 架构建模属 ArchForge 范围
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
@@ -490,7 +490,9 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
-- **测试状态**: **实测** (Change C 完成后, 2026-10-08, tag `dgpu-realip-pin-contract-change-c-completion`) — `[driver_visible]` 2/2 / 29 assertions, `[realip][facade-wiring]` 8/8 / 42 assertions, `[pcie-bypass-tlp]` 3/3 / 15 assertions, `[realip][pin-contract]` 5/5 / 21 assertions 绿; G-B4 六标签 0 回归 ([pcie] 430 / [pcie-memory] 17, C.3.0 删 2 flag 专测文件后实测); **openspec validate PASS**; 8 AC gates G-C1~G-C8 全绿
+- **测试状态**: **实测** (Step 0 P0 SIGSEGV 修复后, 2026-10-08) — `[realip]` 22 cases / **193 assertions** (Step 0 后 +9: cycle 3× 加强), `[pcie]` 430 / 36672 assertions, `[pcie-memory]` 17 / 48, `[minimal_dgpu_soc]` 12 / 66, `[dgpu_soc_timing]` 37 / 12024, `[driver_visible]` 2 / 29 全绿; **0 已知 flaky** (Step 0 前 5-6/50 SIGSEGV 概率根除); 6 标签 0 回归
+- **DGpuBoard destroy→init cycle re-entrancy** (Step 0 P0 fix, 2026-10-08, commit `4d35faee`): `DGpuBoard::destroy()` Step 5 调 `eq_.reset()` (dgpu_board_shell.cc:997) → 第二轮 `load_soc_config` 入口加 `if (!eq_) eq_ = std::make_unique<EventQueue>()` 重建, 符合 ctor "每卡独立 EQ" 政策 (dgpu_board_shell.cc:23) 与 ADR-DGPU-02 uniform destruction 语义 (destroy 仍清空, load 重建)。否则 `sim_loop()` 第一行 `eq_->run(quantum_cycles_)` 空指针解引用 → SIGSEGV (1/6 flaky 由 sim 线程调度决定)。回归测试 cycle 1→3 轮 + 每轮 `ctrl->endpoint() != nullptr` (Change B B.2b attach_endpoint 重装配验证)
+- **VramControllerTLM 1 GHz 操作频率假设** (Change D D.4, 2026-10-08, commit `6b1f46c4`): `tlm::vram::kOperatingFrequencyHz = 1'000'000'000ULL` (1 GHz) + `kSimCycleNs = 1` 常量, 仅文档化锚点不参与仿真逻辑。`bandwidth_gbps_` 字段语义实为 **bytes/cycle** (命名沿用 design.md §5.2 历史用法避免破坏 ABI); 真实带宽换算 `bandwidth_GBps = bandwidth_gbps_ × 1 GHz = bandwidth_gbps_ GB/s` (例: 默认 32 → 32 GB/s 上限, 注入 128 → 128 GB/s)。仿真时间到 wall-clock: `1 sim_cycle = 1 ns @ 1 GHz`。变更此处必须同步更新 `docs/designs/dgpu-soc/timing-mode.md §2.4` + dgpu-realip-pin-contract D.4 docs; 实际芯片 HBM PHY 频率由 platform config 注入 (D3 seam)
 - **23 ABI 冻结**: `include/tlm/gpu/pcie_endpoint_tlm.h` 与 `include/abi/cpptlm_emulator.h` 零修改（仅可加 `[[deprecated]]` 属性）
 - **PcieEndpointTLM deprecated**: `[[deprecated("use PcieEndpointIP")]]`，chstream_register 仍注册（既有 Phase 4 测试依赖），新增 PcieEndpointIP 并存
 - **ch_uint 宽类型支持** (P0 fix, 2026-10-06, dgpu-realip-refactor §5.1): `ch_uint<W≤64>` 保留原 `uint64_t value_` 存储(零行为变化,is_trivially_copyable + is_standard_layout 编译期断言);`ch_uint<W>64>` 改用 `std::array<uint64_t, N>` 多字存储 (`ch_uint_wide`)。`ch_uint<W>` 通过 `std::conditional_t` + `using base::base` 分派,保留 100+ 既有 `ch_uint<W>(k)` 调用点。Wide 路径提供 `low()` / `slice<>` / `set_slice<>` 显式操作;**`read()` / `write()` / `operator uint64_t()` 在 W>64 时退化为低 64-bit 截断**(保留 axi4_*/pcie_axi_adapter_tlm/pcie_endpoint_ip 既有行为,P1/P2 迁移到 slice/set_slice 后可移除)。详细规格见 `docs/superpowers/specs/2026-10-06-dgpu-realip-refactor-design.md §5.1`。
