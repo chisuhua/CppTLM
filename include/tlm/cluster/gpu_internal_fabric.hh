@@ -16,6 +16,7 @@
 
 #include "core/sim_module.hh"
 #include "tlm/crossbar_tlm.hh"
+#include "tlm/vram_controller_tlm.hh"  // A.3: VramControllerTLM programmatic bridge target (Momus 修订: 全局命名空间)
 
 #include <nlohmann/json.hpp>
 #include <string>
@@ -51,6 +52,15 @@ public:
     void set_num_ports(unsigned n) noexcept { num_ports_ = n; }
     unsigned num_ports() const noexcept { return num_ports_; }
 
+    // A.3 (cpptlm-driver-visible-minimal-soc 2026-10-08): programmatic bridge target
+    // (per Phase 8 HB/RC tick-forwarding precedent + cpptlm-p2-integration-unblock D7).
+    // NOT declared in JSON to avoid §14.2.3 silent-drop of misconfigured port specs.
+    //
+    // Momus 修订: 不加 ChStreamInitiatorPort<Bundle> 成员(类型不存在),改 setter-only 模式;
+    //             VramControllerTLM 是全局命名空间(非 tlm::vram::)。
+    void set_vram_target(VramControllerTLM* target) noexcept { vram_ctrl_ = target; }
+    VramControllerTLM* vram_ctrl() const noexcept { return vram_ctrl_; }
+
     // T25A.1 (Phase C 2026-10-07): JSON 装配路径自动 attach inner crossbar.
     // 覆写 SimModule::simulate_instantiate — 调基类 instantiateAll + 递归子 SimModule
     // 后, 遍历 cfg.modules 找名为 "crossbar" 的 CrossbarTLM child instance,
@@ -67,6 +77,7 @@ public:
 private:
     CrossbarTLM* crossbar_ = nullptr;  // non-owning (ModuleFactory owns)
     unsigned num_ports_ = 4;
+    VramControllerTLM* vram_ctrl_ = nullptr;  // A.3: cached programmatic bridge target (non-owning)
 };
 
 } // namespace tlm::cluster
