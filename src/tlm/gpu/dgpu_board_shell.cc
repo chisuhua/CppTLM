@@ -175,6 +175,21 @@ namespace tlm::gpu {
             framebuffer_ptr_ = vram_storage_.get();
         }
         bind_memory_backings();
+        // Oracle bg_14b6dd83 AD-B1/AD-B2: ctrl->attach_endpoint + set_pcie_controller_ip.
+        // soc_ null-guard: init() may be called before load_soc_config (eg. tests).
+        if (soc_) {
+            if (auto* ctrl = dynamic_cast<tlm::pcie::PcieControllerIP*>(
+                    soc_->getInternalInstance("pcie_ctrl"))) {
+                if (auto* ep = pcie_ep()) {
+                    ctrl->attach_endpoint(ep);
+                }
+                set_pcie_controller_ip(ctrl);
+                DPRINTF(MODULE, "[DGpuBoard] facade wired (ep=%p, ctrl=%p)\n",
+                        static_cast<void*>(pcie_ep()), static_cast<void*>(ctrl));
+            } else {
+                DPRINTF(MODULE, "[DGpuBoard] SOC 缺 'pcie_ctrl' 实例, facade 装配跳过\n");
+            }
+        }
         // D3a-2: display FB backing 注入 (bind_memory_backings 之后, 对称)
         bind_display_backings();
         // Phase 4 T5: 读 simulation_mode 字段 (functional 默认零 diff)
@@ -924,6 +939,9 @@ namespace tlm::gpu {
 
     // ── Phase 4 T5: timing-mode init 分支 (per design.md §6.2) ──
     void DGpuBoard::init_timing_mode() {
+        // Metis bg_03094fec: defensive clear — prevent stale-pointer accumulation on re-init.
+        cycle_advance_modules_.clear();
+
         // 1. 找 internal modules (memory / vram_ctrl / sdma / gmmu; 均非必全)
         auto* mem  = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"));
         auto* vram = dynamic_cast<VramControllerTLM*>(soc_->getInternalInstance("vram_ctrl"));
@@ -1011,6 +1029,12 @@ namespace tlm::gpu {
 
         // Step 4: 析构 SOC
         soc_.reset();
+
+        // AD-B4 / Metis bg_03094fec: clear non-owning ptrs (防 mmio_read/write UAF).
+        controller_ip_ = nullptr;
+        gmmu_ = nullptr;
+        sdma_engine_ = nullptr;
+        cycle_advance_modules_.clear();
 
         // Step 5: 析构 EventQueue
         eq_.reset();
