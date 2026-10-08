@@ -490,7 +490,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）
 - **构建产物**: `build/bin/` 可执行 + `build/lib/cpptlm_core.a` 静态库
-- **测试状态**: **实测** (Change C 0 完成后, 2026-10-08) — `[driver_visible]` 2/2 cases / 32 assertions, `[realip][facade-wiring]` 8/8 / 42 assertions, `[pcie-bypass-tlp]` 3/3 / 15 assertions 绿; **openspec validate PASS**; Change C 完成后会再次实测更新
+- **测试状态**: **实测** (Change C 完成后, 2026-10-08, tag `dgpu-realip-pin-contract-change-c-completion`) — `[driver_visible]` 2/2 / 29 assertions, `[realip][facade-wiring]` 8/8 / 42 assertions, `[pcie-bypass-tlp]` 3/3 / 15 assertions, `[realip][pin-contract]` 5/5 / 21 assertions 绿; G-B4 六标签 0 回归 ([pcie] 430 / [pcie-memory] 17, C.3.0 删 2 flag 专测文件后实测); **openspec validate PASS**; 8 AC gates G-C1~G-C8 全绿
 - **23 ABI 冻结**: `include/tlm/gpu/pcie_endpoint_tlm.h` 与 `include/abi/cpptlm_emulator.h` 零修改（仅可加 `[[deprecated]]` 属性）
 - **PcieEndpointTLM deprecated**: `[[deprecated("use PcieEndpointIP")]]`，chstream_register 仍注册（既有 Phase 4 测试依赖），新增 PcieEndpointIP 并存
 - **ch_uint 宽类型支持** (P0 fix, 2026-10-06, dgpu-realip-refactor §5.1): `ch_uint<W≤64>` 保留原 `uint64_t value_` 存储(零行为变化,is_trivially_copyable + is_standard_layout 编译期断言);`ch_uint<W>64>` 改用 `std::array<uint64_t, N>` 多字存储 (`ch_uint_wide`)。`ch_uint<W>` 通过 `std::conditional_t` + `using base::base` 分派,保留 100+ 既有 `ch_uint<W>(k)` 调用点。Wide 路径提供 `low()` / `slice<>` / `set_slice<>` 显式操作;**`read()` / `write()` / `operator uint64_t()` 在 W>64 时退化为低 64-bit 截断**(保留 axi4_*/pcie_axi_adapter_tlm/pcie_endpoint_ip 既有行为,P1/P2 迁移到 slice/set_slice 后可移除)。详细规格见 `docs/superpowers/specs/2026-10-06-dgpu-realip-refactor-design.md §5.1`。
