@@ -246,3 +246,8 @@ target_include_directories(try_compile_legacy_flags_removed PRIVATE ${CMAKE_SOUR
 add_test(NAME try_compile_legacy_flags_removed
          COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target try_compile_legacy_flags_removed)
 set_tests_properties(try_compile_legacy_flags_removed PROPERTIES WILL_FAIL TRUE)
+
+# C.6 (Change C): grep gate — 验证 legacy PUBLIC API 已删 (setter/accessor/attach_profile/PciePath)
+# 内部 routing_enabled_*_ 成员保留 (anti-hijack barrier, per C.3.1 修订), 不在此 gate 范围.
+add_test(NAME grep_no_legacy_public_api_in_board_header
+         COMMAND sh -c "! grep -E 'set_display_routing_enabled|set_memory_routing_enabled|set_storage_routing_enabled|set_gmmu_routing_enabled|display_routing_enabled\\\\(\\\\)|memory_routing_enabled\\\\(\\\\)|storage_routing_enabled\\\\(\\\\)|gmmu_routing_enabled\\\\(\\\\)|attach_profile|pcie_path\\\\(\\\\)|PciePath' ${CMAKE_SOURCE_DIR}/include/tlm/gpu/dgpu_board_shell.hh")
