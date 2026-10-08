@@ -209,10 +209,41 @@ vram_ctrl->set_fabric_source(fabric);
 **运行时契约**: `test/test_realip_pin_contract.cc` TEST_CASE #3 round-trip — 19 assertions in 3 test cases PASS per `[realip][pin-contract]` tag。
 
 **Out of Change A scope** (deferred to Change B/C):
-- `match_bar` BAR0 offset-aware sub-window (Oracle C2 修复)
-- Legacy flag 删除 (5 routing_enabled + PciePath enum)
-- `mmio_read/write` 简化 (Strangler gate 保留)
-- JSON 顶层 `routing_enabled` 字段退役
+- `match_bar` BAR0 offset-aware sub-window (Oracle C2 修复) — **REJECTED in Change B by Oracle `bg_14b6dd83`** (0x800000 物理不可能 in 4KB BAR0; 改 target-side decode characterization + regression lock,per §2.4.2)
+- Legacy flag 删除 (5 routing_enabled + PciePath enum) — Change C,门控于 Change B 完成
+- `mmio_read/write` 简化 (Strangler gate 保留) — Change C,门控于 Change B 完成
+- JSON 顶层 `routing_enabled` 字段退役 — Change C,门控于 Change B 完成
+
+### 2.4.2 Facade Production Wiring (Change B, 2026-10-08)
+
+Per `openspec/changes/dgpu-realip-pin-contract/specs/dgpu-4ip-port-contract/spec.md` (Change B scope, per Oracle `bg_14b6dd83` APPROVE-WITH-CHANGES):
+
+| Source | Dst | Action |
+|--------|-----|--------|
+| `DGpuBoard::init()` 公共路径(早于 timing/functional 分支) | `PcieControllerIP::attach_endpoint(ep)` | 程序化注入 EP 引用 |
+| `DGpuBoard::init()` | `DGpuBoard::set_pcie_controller_ip(ctrl)` | 激活 Strangler gate |
+
+**Architecture Decisions (per Oracle `bg_14b6dd83`)**:
+- **AD-B1 最小接线**: `ctrl->attach_endpoint(ep)` + `set_pcie_controller_ip(ctrl)`;不用 `set_endpoint_attachment(this)` (全仓不存在,YAGNI)
+- **AD-B2 接线点**: `init()` 公共路径(早于 timing/functional 分支,timing 模式也覆盖消除盲区)
+- **AD-B3 match_bar whole-BAR 锁定**: 4 枚举 (Bar0Mmio / Bar1FbFastPath / Bar2VramAperture / Unknown),签名零变化,不做 controller-side offset 子分发
+- **AD-B4 4 raw pointer clear**: destroy() 清 `controller_ip_` + `gmmu_` + `sdma_engine_` + `cycle_advance_modules_` 防悬空 UAF
+
+**Target-side decode 实际实现** (per Metis `bg_03094fec` 修订 — 收敛描述, 不夸大):
+- `DGpuBoard::mmio_write`: GMMU 寄存器窗 (BAR0 offset<0x100) 走 `gmmu_->set_*` (write-only), display 整窗走 `ep->display_device().mmio_write` (whole-BAR fast path)
+- `DGpuBoard::mmio_read`: **无 GMMU 读路径** — GMMU 寄存器读回走 `mmio_regs_` roundtrip (mmio_write 时 write-through 写入 mmio_regs_); display 整窗走 `ep->display_device().mmio_read`
+- 后续 D3 GpuInternalFabric target decode 是 **future scope**, 不在 Change B 内承诺
+
+**Strangler gate 是 observation-only** (per Metis `bg_03094fec` 修订):
+- gate 仅在 `match_bar` verdict ≠ mirror 期望时调 `std::abort` (`dgpu_board_shell.cc:344,457`)
+- gate 不路由分发 — 分发仍走 legacy routing flag (`display_routing_enabled_` / `gmmu_routing_enabled_` / `memory_routing_enabled_` 等)
+- Change C 删除 legacy flag 时, **不可**把 gate verdict 当作分发依据 — 必须先把分发路径从 legacy flag 迁到 facade verdict, 再删 flag
+
+**4KB BAR0 子窗口 GMMU vs display 不可 offset 区分**:
+- GMMU 寄存器 (0x00-0x1F, write-only via mmio_write, read via mmio_regs_ roundtrip)
+- Display 寄存器 (0x00-0xF0, 整窗走 display_device)
+- 在任何单一 config 中**从不共存** (`gmmu_routing_enabled_` 与 `display_routing_enabled_` 互斥门控)
+- 因此 offset-level 子分发**物理上不可区分**, controller 端必须 whole-BAR 锁定
 
 ---
 

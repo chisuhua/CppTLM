@@ -159,35 +159,19 @@ mmio_read(bar, offset, buf, len):
 
 ### D2: port_contract_asserts.hh static_assert 框架 — **基于 std::is_base_of_v + sizeof 检测**
 
-**决策**: 新建 `include/utils/port_contract_asserts.hh` (~80 行),提供 4 个 `static_assert` 宏:
+**决策**: 新建 `include/utils/port_contract_asserts.hh` (~80 行),提供 `BUNDLE_FIELD_WIDTH` macro (Momus 修订后):
 
 ```cpp
-// 1. 端口类型契约 (egress = ChInitiatorPort, ingress = ChTargetPort)
-#define PORT_IS_INITIATOR(port, bundle) \
-    static_assert(std::is_base_of_v<ChStreamInitiatorPort<bundle>, decltype(port)> || \
-                  (std::is_same_v<ChStreamInitiatorPort<bundle>, decltype(port)>), \
-                  "port must be ChStreamInitiatorPort (egress)")
-
-#define PORT_IS_TARGET(port, bundle) \
-    static_assert(std::is_base_of_v<ChStreamTargetPort<bundle>, decltype(port)> || \
-                  (std::is_same_v<ChStreamTargetPort<bundle>, decltype(port)>), \
-                  "port must be ChStreamTargetPort (ingress)")
-
-// 2. bundle 类型契约 (字段宽对齐)
+// 1. bundle 字段宽契约 (编译期校验, 唯一保留 macro)
 #define BUNDLE_FIELD_WIDTH(bundle, field, expected_width) \
     static_assert(decltype(std::declval<bundle>().field)::width == expected_width, \
                   "bundle field width mismatch")
-
-// 3. 模块类型契约 (避免重复声明)
-#define MODULE_HAS_TYPE(module, type_str) \
-    static_assert(std::is_same_v<decltype(std::declval<module>().get_module_type()), \
-                                  std::string> && \
-                  module::get_module_type() == type_str, \
-                  "module get_module_type() must return string")
 ```
 
+> **Momus 修订 (2026-10-08)**: 原计划设计 4 个 macro 含 `PORT_IS_INITIATOR` / `PORT_IS_TARGET` (基于 `chstream::ChStreamInitiatorPort<Bundle>` / `ChStreamTargetPort<Bundle>` 模板类型),经实证全仓**不存在**该模板 — 实际 `cpptlm::ChStreamInitiatorPort` 是非模板类(继承 `SimObject`),无 `<Bundle>` 模板参数。原 macro 编译失败,已删除。改用 `BUNDLE_FIELD_WIDTH` 单 macro + setter-only 桥接 + 运行时 round-trip 测试 (`test_realip_pin_contract.cc` TEST_CASE #3) 组合,达相同契约保证效果。
+
 **理由**:
-- **编译期检查**: `static_assert` 在编译时强制 4-IP 端口契约,RTL team 改字段时编译失败暴露
+- **编译期检查**: `BUNDLE_FIELD_WIDTH` 在编译时强制 bundle 字段宽对齐,RTL team 改字段时编译失败暴露
 - **零运行时开销**: 全部编译期 `static_assert`,无运行时分支
 - **可复用**: 未来 GPGPU/SoC 集成需要同样契约时,直接 include 即可
 

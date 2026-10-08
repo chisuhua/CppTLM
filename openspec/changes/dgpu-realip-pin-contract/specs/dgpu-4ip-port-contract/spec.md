@@ -1,20 +1,22 @@
 # dgpu-4ip-port-contract: 4-IP Topology 端口契约 (chip-internal wire-protocol 静态检查)
 
 > **所属 change**: [`dgpu-realip-pin-contract`](../proposal.md)
-> **范围**: 4-IP topology chip-internal 端口契约代码化 (`Fabric2VramCtrlBundle` + `static_assert` 编译期检查 + DGpuBoard legacy flag 删除)
+> **范围**: 4-IP topology chip-internal 端口契约代码化 (`Fabric2VramCtrlBundle` + `BUNDLE_FIELD_WIDTH` 编译期检查 + programmatic bridge) — Change A + Change B
 > **关联 spec**: `pcie-ip-integration`, `pcie-axi-datapath-hardening`, `sdma-engine-tlm`, `host-bypass-and-rc`, `dgpu-driver-visible-minimal-soc`
-> **前置**: `cpptlm-dgpu-realip-refactor` ✅ (Phase C, tag `dgpu-realip-refactor-completion` 落 2026-10-07)
+> **前置**: `cpptlm-dgpu-realip-refactor` ✅ (Phase C, tag `dgpu-realip-refactor-completion` 落 2026-10-07) + Change A ✅ (tag `dgpu-realip-pin-contract-change-a-completion` 落 2026-10-08)
 
 ---
 
 ## Purpose
 
 4-IP topology (`PcieControllerIP` / `GpuInternalFabric` / `VramControllerTLM` / `DGpuSoc`) 完成 chip-internal 端口契约代码化:
-1. **`Fabric2VramCtrlBundle`** chip-internal wire-protocol (fabric→vram_ctrl 数据路径, 之前 handoff §9.2 #9 列为 D3/D4 deferred work)
-2. **`port_contract_asserts.hh` `static_assert`** 编译期检查 4-IP 端口名 + 类型 + 方向 (`ChInitiatorPort`/`ChTargetPort`/`MasterPort`/`SlavePort`)
-3. **`DGpuBoard` 7 个 legacy routing flag 删除** (`PciePath` enum + 5 routing_enabled flags + `mmio_self_drain_enabled`),JSON schema 顶层 4 个 `routing_enabled` 字段同步退役
 
-让 RTL team 1:1 对照 chip-internal 连线 (Fabric2VramCtrlBundle 字段 1:1 → 硅片 wire),DGpuBoard 瘦身 (mmio_read/write 从 ~120 行 → ~40 行),Strangler gate 保留 (per dgpu_board_shell.cc:336-343 facade verdict 与 expected mirror)。
+1. **`Fabric2VramCtrlBundle`** chip-internal wire-protocol (fabric→vram_ctrl 数据路径, 之前 handoff §9.2 #9 列为 D3/D4 deferred work)
+2. **`port_contract_asserts.hh` `BUNDLE_FIELD_WIDTH` macro** 编译期检查字段宽度 (per Momus 2026-10-08 修订: 删 `PORT_IS_INITIATOR`/`PORT_IS_TARGET` 因 chstream 端口非模板类)
+3. **programmatic bridge** via `GpuInternalFabric::set_vram_target(VramControllerTLM*)` + `VramControllerTLM::set_fabric_source(GpuInternalFabric*)` setter (per Phase 8 HB/RC tick 转发先例)
+4. **(Change B) Facade Production Wiring** — `DGpuBoard::init()` 公共路径接 `ctrl->attach_endpoint(ep)` + `set_pcie_controller_ip(ctrl)`,激活 Strangler gate;`match_bar` whole-BAR 签名锁定
+
+让 RTL team 1:1 对照 chip-internal 连线 (`Fabric2VramCtrlBundle` 字段 1:1 → 硅片 wire),DGpuBoard facade 接管数据路径,Strangler gate 保留作 facade verdict 与 expected mirror 一致性的 std::abort 保护。
 
 ---
 
@@ -22,113 +24,55 @@
 
 ### Requirement: fabric-vram-ctrl-port-contract
 
-`GpuInternalFabric::vram_ctrl_out` (egress ChInitiatorPort) 与 `VramControllerTLM::fabric_in` (ingress ChTargetPort) SHALL 通过 `Fabric2VramCtrlBundle` 严格匹配:
-- **字段对齐**: `Fabric2VramCtrlBundle` 8 字段 (`address[64]` / `size[8]` / `is_write` / `data[64]` / `transaction_id[32]` / `resp_data[64]` / `error_code[8]` / `chip_select[8]`) 必须 `static_assert` 与 chip-internal wire-protocol 1:1 对应
-- **方向约束**: `GpuInternalFabric::vram_ctrl_out` 是 `ChInitiatorPort<Fabric2VramCtrlBundle>` (egress),`VramControllerTLM::fabric_in` 是 `ChTargetPort<Fabric2VramCtrlBundle>` (ingress)
+`GpuInternalFabric` 与 `VramControllerTLM` SHALL 通过 `Fabric2VramCtrlBundle` 严格匹配 (per Change A 2026-10-08 resplit):
+- **字段对齐**: `Fabric2VramCtrlBundle` 8 字段 (`address[64]` / `size[8]` / `is_write` / `data[64]` / `transaction_id[32]` / `resp_data[64]` / `error_code[8]` / `chip_select[8]`) 必须 `BUNDLE_FIELD_WIDTH` 编译期校验与 chip-internal wire-protocol 1:1 对应
 - **程序化桥接**: 不依赖 JSON 声明式端口接线 (per Phase 8 HB/RC tick 转发先例 + cpptlm-p2-integration-unblock design D7),`GpuInternalFabric::set_vram_target(VramControllerTLM*)` setter 在 JSON 装配后程序化桥接
+- **Momus 2026-10-08 修订**: 删除原 `PORT_IS_INITIATOR` / `PORT_IS_TARGET` macro (基于不存在的 `chstream::ChStreamInitiatorPort<Bundle>` 模板 — 实际 `cpptlm::ChStreamInitiatorPort` 是非模板类);改用 `BUNDLE_FIELD_WIDTH` 编译期字段宽度校验 + setter-only 桥接 + 运行时 round-trip 测试
 
-#### Scenario: GpuInternalFabric.vram_ctrl_out 端口契约静态检查
-
-- **WHEN** 编译 `include/tlm/cluster/gpu_internal_fabric.hh`
-- **THEN** `static_assert` 验证 `vram_ctrl_out` 是 `ChStreamInitiatorPort<Fabric2VramCtrlBundle>` (egress)
-- **AND** 编译期字段对齐 `Fabric2VramCtrlBundle::address[64]` 与 `VramControllerTLM::tick()` 期望输入
-- **AND** 编译期 `chip_select[8]` 字段宽匹配 VramControllerTLM::row_address 路由 (per `vram_controller_tlm.hh:47-52` 4K row buffer)
-
-#### Scenario: VramControllerTLM.fabric_in 端口契约静态检查
-
-- **WHEN** 编译 `include/tlm/vram_controller_tlm.hh`
-- **THEN** `static_assert` 验证 `fabric_in` 是 `ChStreamTargetPort<Fabric2VramCtrlBundle>` (ingress)
-- **AND** `tick()` flag-gated 检查: 仅 `fabric_in` valid 时消费 (per flag-gated 默认 disable 纪律)
-- **AND** 响应经 `Fabric2VramCtrlBundle::resp_data/error_code/transaction_id` 回填到 `fabric_in::resp_out` 端口
-
-#### Scenario: Fabric2VramCtrlBundle 字段定义编译期锁定
-
-- **WHEN** 编译 `include/bundles/dgpu_fabric_bundles_tlm.hh`
-- **THEN** 8 字段 (`address[64]`/`size[8]`/`is_write`/`data[64]`/`transaction_id[32]`/`resp_data[64]`/`error_code[8]`/`chip_select[8]`) `static_assert` 宽对齐
-- **AND** `chip_select[8]` 字段对齐 VramControllerTLM `row_hit(addr) noexcept override` 计算 (per vram_controller_tlm.hh:47-52 4K row buffer)
-- **AND** `error_code[8]` 0=OK, 1=DECERR, 2=SLVERR, 3=EXOKAY 字段语义文档化
-
-#### Scenario: set_vram_target 程序化桥接
+#### Scenario: GpuInternalFabric.set_vram_target setter 桥接
 
 - **WHEN** `GpuInternalFabric::set_vram_target(VramControllerTLM*)` 在 JSON 装配后被调
 - **THEN** `vram_ctrl_` 指针被缓存,`tick()` 时如果 `vram_ctrl_out.valid()`,转发到 `vram_ctrl_->fabric_in.req_in`
 - **AND** 不依赖 JSON 声明式 `fabric.vram_ctrl_out → vram_ctrl.fabric_in` 端口连接 (避免 19 §14.2.3 静默丢弃)
 - **AND** 当 `vram_ctrl_ == nullptr` (未桥接) 时,`tick()` 静默跳过 fabric_out 转发 (deferred D3/D4, 无 silent failure)
 
----
+#### Scenario: VramControllerTLM.set_fabric_source setter 桥接
 
-### Requirement: dgpu-board-legacy-flag-retirement
+- **WHEN** `VramControllerTLM::set_fabric_source(GpuInternalFabric*)` 在 JSON 装配后被调
+- **THEN** `fabric_` 指针被缓存,响应经 `Fabric2VramCtrlBundle::resp_data/error_code/transaction_id` 回填到 `fabric_in::resp_out` 端口
+- **AND** 与 `GpuInternalFabric::set_vram_target` 双向配对 (`DGpuBoard::bind_memory_backings()` 中通过 `soc_->getInternalInstance("fabric")` + `"vram_ctrl"` 装配)
 
-`DGpuBoard` SHALL 删除 7 个 legacy routing flag + setter + accessor + enum,Strangler gate 保留:
+#### Scenario: Fabric2VramCtrlBundle 字段定义编译期锁定
 
-**删除清单** (per `dgpu_board_shell.hh:75-117,317-348`):
-1. `PciePath` enum (Legacy/Tlp/AxiBypass/Mock, 4 values)
-2. `pcie_path_` 成员 (`PciePath` 类型, default=Legacy)
-3. `pcie_path()` accessor
-4. `display_routing_enabled_` 成员 (`bool`, default=false)
-5. `set_display_routing_enabled(bool)` setter + `display_routing_enabled()` accessor
-6. `memory_routing_enabled_` 成员 + `set_memory_routing_enabled(bool)` setter + `memory_routing_enabled()` accessor
-7. `storage_routing_enabled_` 成员 + `set_storage_routing_enabled(bool)` setter + `storage_routing_enabled()` accessor
-8. `gmmu_routing_enabled_` 成员 + `set_gmmu_routing_enabled(bool)` setter + `gmmu_routing_enabled()` accessor
-9. `mmio_self_drain_enabled` 成员 (`bool{true}`) — **保留** (drain 优化,不接 legacy path)
-
-**保留**:
-- `controller_ip_` 成员 + `set_pcie_controller_ip(PcieControllerIP*)` setter + `controller_ip()` accessor (P2 PR-A facade 必要)
-- `mmio_self_drain_enabled` 成员 (drain 优化,不属 legacy routing)
-
-**Strangler gate 保留**:
-- `dgpu_board_shell.cc:336-343` (mmio_read) + `:433-466` (mmio_write) facade verdict divergence 检查保留
-- `controller_ip_->match_bar()` 与 expected mirror 保留 (P2 PR-A facade 锁定)
-
-#### Scenario: DGpuBoard public API 编译期不含已删除 flag
-
-- **WHEN** 编译 `include/tlm/gpu/dgpu_board_shell.hh` 与 `test/test_dgpu_board_no_legacy_flags.cc`
-- **THEN** `static_assert(sizeof(DGpuBoard) < X)` (X 由 PostDelete sizeof 估算, ~600 bytes vs 当前 ~750 bytes)
-- **AND** `static_assert` 验证 `DGpuBoard` 类不含 `pcie_path_` / `display_routing_enabled_` / `memory_routing_enabled_` / `storage_routing_enabled_` / `gmmu_routing_enabled_` 5 个成员 (编译期 SFINAE 探测)
-- **AND** `static_assert` 验证 `DGpuBoard` 不含 `set_pcie_path_*` / `set_display_routing_enabled` / `set_memory_routing_enabled` / `set_storage_routing_enabled` / `set_gmmu_routing_enabled` 5 个 setter
-
-#### Scenario: DGpuBoard::mmio_read 简化回归
-
-- **WHEN** `mmio_read(bar=0, offset=0x123, buf, len=4)` 被调
-- **THEN** 走 `controller_ip_->match_bar()` Strangler gate (per dgpu_board_shell.cc:336-343)
-- **AND** 走 `pcie_ep()->display_device().mmio_read()` (per D1 v1.1.1 fast-path, **不依赖** `display_routing_enabled_` flag)
-- **AND** 走 `pcie_ep()->memory_device().memory_read()` (per D2 v1.1 fast-path, **不依赖** `memory_routing_enabled_` flag)
-- **AND** 走 BAR1 framebuffer window 直接 memcpy (per Phase 8 B2 fast-path, **不依赖** `storage_routing_enabled_` flag)
-- **AND** **不再走** `mmio_regs_` legacy path (`std::map<pair<bar, offset>, vector<uint8_t>>`, 后续 pin-contract 二次清理)
-
-#### Scenario: DGpuBoard::mmio_self_drain_enabled 保留
-
-- **WHEN** `mmio_read/write` 在 `inject_q_` 有 pending req
-- **THEN** `mmio_self_drain_enabled` flag 保留 (per `dgpu_board_shell.cc:387`),`drain_injection_queue()` 在调用线程自 drain
-- **AND** flag 保留是 drain 性能优化,不是 legacy path 选择,**不属本 change 删除范围**
-- **AND** 默认值 `true` 保留 (向后兼容)
+- **WHEN** 编译 `include/bundles/dgpu_fabric_bundles_tlm.hh`
+- **THEN** 8 字段 (`address[64]`/`size[8]`/`is_write`/`data[64]`/`transaction_id[32]`/`resp_data[64]`/`error_code[8]`/`chip_select[8]`) `BUNDLE_FIELD_WIDTH` 宽对齐
+- **AND** `chip_select[8]` 字段对齐 VramControllerTLM `row_hit(addr) noexcept override` 计算 (per vram_controller_tlm.hh:47-52 4K row buffer)
+- **AND** `error_code[8]` 0=OK, 1=DECERR, 2=SLVERR, 3=EXOKAY 字段语义文档化
 
 ---
 
-### Requirement: dgpu-4ip-port-contract-test-coverage
+### Requirement: dgpu-4ip-port-contract-test-coverage (Change A, 双标签 `[realip][pin-contract]`)
 
-2 个新测试文件**双标签** `[realip][pin-contract]` SHALL 覆盖 4-IP 端口契约 + legacy flag 删除回归:
-
-- `test/test_realip_pin_contract.cc` — `Fabric2VramCtrlBundle` 字段定义 + `static_assert` 编译期检查 + `set_vram_target` 程序化桥接 round-trip
-- `test/test_dgpu_board_no_legacy_flags.cc` — DGpuBoard public API 编译期不含已删除 5 routing flag + Strangler gate 字符串保留 (`strings build/bin/cpptlm_tests | grep -c "Strangler gate" == 2`)
+2 个测试文件**双标签** `[realip][pin-contract]` SHALL 覆盖 4-IP 端口契约 (Change A scope):
+- `test/test_realip_pin_contract.cc` — `Fabric2VramCtrlBundle` 字段定义 + `BUNDLE_FIELD_WIDTH` 编译期检查 + `set_vram_target` / `set_fabric_source` 程序化桥接 round-trip (3 TEST_CASEs)
+- `test/test_dgpu_board_no_legacy_flags.cc` — DGpuBoard public API 编译期不含已删除 5 routing flag + Strangler gate 字符串保留 (2 TEST_CASEs)
 
 **双标签**: `[realip][pin-contract]` (per handoff §9.2 #10 vacuous tag 风险, 空格 = AND, 逗号 = OR, per cpptlm-p2-integration-unblock proposal G9)
 
 #### Scenario: 双标签 + T28 gate 防 vacuous pass
 
 - **WHEN** 跑 `./build/bin/cpptlm_tests "[realip][pin-contract]"`
-- **THEN** 至少 2 个 test cases PASS (1 文件 ≥1 case, 共 ≥2)
-- **AND** 跑 `./build/bin/cpptlm_tests "[pin-contract]"` → 同样 ≥2 cases PASS (确保 `[pin-contract]` 独立 tag 有命中)
+- **THEN** 至少 5 个 test cases PASS (Change A 3 cases + Change A XFAIL-probe 2 cases, 共 ≥5)
+- **AND** 跑 `./build/bin/cpptlm_tests "[pin-contract]"` → 同样 ≥5 cases PASS (确保 `[pin-contract]` 独立 tag 有命中)
 - **AND** 跑 `./build/bin/cpptlm_tests "[realip]"` → **零回归** (Phase C 后基线 433/36682 cases PASS)
 - **AND** Strangler gate 字符串仍存在 (`strings build/bin/cpptlm_tests | grep -c "Strangler gate" == 2`)
 
-#### Scenario: test_realip_pin_contract 端口契约覆盖
+#### Scenario: test_realip_pin_contract 端口契约覆盖 (3 TEST_CASEs)
 
 - **WHEN** 跑 `test/test_realip_pin_contract.cc`
-- **THEN** TEST_CASE #1: `Fabric2VramCtrlBundle` 8 字段宽对齐 (`static_assert` 编译期通过)
-- **AND** TEST_CASE #2: `GpuInternalFabric::vram_ctrl_out` 是 ChInitiatorPort
-- **AND** TEST_CASE #3: `VramControllerTLM::fabric_in` 是 ChTargetPort
-- **AND** TEST_CASE #4: `set_vram_target` 程序化桥接: 经 JSON 装配 + set_vram_target + tick, fabric→vram_ctrl 数据路径 round-trip
+- **THEN** TEST_CASE #1: `Fabric2VramCtrlBundle` 8 字段宽对齐 (`BUNDLE_FIELD_WIDTH` 编译期通过)
+- **AND** TEST_CASE #2: `GpuInternalFabric::set_vram_target` setter 缓存 `vram_ctrl_` 指针 + `vram_ctrl()` accessor 返回缓存指针
+- **AND** TEST_CASE #3: `VramControllerTLM::set_fabric_source` setter 缓存 `fabric_` 指针 + `fabric()` accessor 返回缓存指针 + 手动 setter round-trip
 
 #### Scenario: test_dgpu_board_no_legacy_flags 编译期保护
 
@@ -140,29 +84,56 @@
 
 ---
 
-### Requirement: json-routing-enabled-retirement
+### Requirement: dgpu-board-facade-production-wiring (Change B, 2026-10-08)
 
-`configs/dgpu_soc_v2_realip_p2.json` 顶层 4 个 `routing_enabled` 字段 SHALL 退役:
-- `display_routing_enabled`
-- `memory_routing_enabled`
-- `storage_routing_enabled`
-- `gmmu_routing_enabled`
+`DGpuBoard::init()` 公共路径 SHALL 装配 `PcieControllerIP` facade,激活 Strangler gate 接管数据路径 (Change B scope, per Oracle `bg_14b6dd83` APPROVE-WITH-CHANGES):
 
-#### Scenario: JSON 顶层 routing_enabled 字段移除
+- **最小接线** (per Oracle AD-B1): `ctrl->attach_endpoint(ep)` + `set_pcie_controller_ip(ctrl)`;**不**用 `set_endpoint_attachment(this)` (全仓不存在,无消费者,YAGNI)
+- **接线点** (per Oracle AD-B2): 入 `DGpuBoard::init()` 公共路径,早于 `simulation_mode` timing/functional 分支 (timing 模式也覆盖,消除原 `init_timing_mode` 不接 facade 的盲区)
+- **`match_bar` 签名零变化** (per Oracle AD-B3 + 前序 Oracle bg_c60653e0 §2.1): 保持 4 枚举 (`Bar0Mmio` / `Bar1FbFastPath` / `Bar2VramAperture` / `Unknown`),whole-BAR 锁定,不做 controller-side offset 子分发
+- **空 guard 模式** (per Oracle AD-B4): null-guards + DPRINTF + `~DGpuBoard()` 清 `controller_ip_` + `gmmu_` + `sdma_engine_` + `cycle_advance_modules_` 4 个 raw pointer 防悬空
 
-- **WHEN** 读 `configs/dgpu_soc_v2_realip_p2.json` (Phase C 后基线)
-- **THEN** 顶层 `routing_enabled` 字段全部不存在
-- **AND** `validateConfig` 通过 (无 routing_enabled 校验,因为 DGpuBoard 不再消费)
-- **AND** `_note` 字段说明字段退役 + 引用 ADR-DGPU-05/06 边界契约
-- **AND** `dgpu_soc_v2_realip_p2.json` `version` 字段从 `"2-realip-p2-b"` → `"2-realip-p3-pin"` (per Phase C → Phase D 版本递增)
+**前置 (硬约束)**: cfg/admin-visible configs (`dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` / `dgpu_soc_with_pcie_ip.json` / `dgpu_soc_v2_realip_p2.json`) 必须同时含 `pcie_ctrl` + `pcie_ep` 节点 (per Change B.0 config 前置)
 
-#### Scenario: Strangler gate 保留 (per ADR-DGPU-10)
+#### Scenario: DGpuBoard::init wires PcieControllerIP facade in production path
 
-- **WHEN** `DGpuBoard::mmio_read/write` 被调
-- **THEN** Strangler gate (`dgpu_board_shell.cc:336-343` / `:433-466`) 保留
-- **AND** `controller_ip_->match_bar()` 与 expected mirror 比对 (P2 PR-A facade 锁定)
-- **AND** **不依赖**任何 routing_enabled flag
-- **AND** 编译期字符串 `"Strangler gate"` 仍存在于 `dgpu_board_shell.cc` (per `strings build/bin/cpptlm_tests | grep -c "Strangler gate" == 2`)
+- **WHEN** `DGpuBoard::init()` runs after `bind_memory_backings()`
+- **AND** `soc_->getInternalInstance("pcie_ctrl")` returns non-null `PcieControllerIP*`
+- **AND** `pcie_ep()` returns non-null `PcieEndpointIP*`
+- **THEN** `ctrl->attach_endpoint(ep)` is called
+- **AND** `set_pcie_controller_ip(ctrl)` is called (Strangler gate activated)
+- **AND** mirror verdict in `mmio_read/write` matches `match_bar` verdict (no `std::abort`)
+
+#### Scenario: Dormant-guard: pcie_ctrl without pcie_ep collapses match_bar to Unknown gracefully
+
+- **WHEN** `pcie_ctrl` 在 JSON 中存在但 `pcie_ep()` 返回 nullptr (eg. DGpuSoc 只有 pcie_ctrl 模块)
+- **THEN** `attach_endpoint()` skipped
+- **AND** `match_bar(bar, offset, out_target, out_sub_offset)` collapses to `out_target=Unknown + matched=false` (不 abort)
+- **AND** 此 case regression-lock 静默塌陷路径 — Change C 改 mmio_read/write 时不会突然 abort
+
+#### Scenario: Strangler gate 保留作 facade verdict 与 expected mirror 一致性的 std::abort 保护
+
+- **WHEN** `DGpuBoard::mmio_read/write` is called with `controller_ip_ != nullptr`
+- **THEN** facade verdict `match_bar(bar, offset, ...)` 与 expected mirror 比对 (`dgpu_board_shell.cc:344,457`)
+- **AND** 一致时正常返回,不一致时调 `std::abort`
+- **AND** **Strangler gate 是 observation-only** (per Metis bg_03094fec 修订): gate 不分发也不路由,仅观测 — 分发仍走 legacy routing flag (`display_routing_enabled_` / `gmmu_routing_enabled_` / `memory_routing_enabled_` 等);Change C 删除 legacy flag 时, **不可**把 gate verdict 当作分发依据,必须先把分发路径从 legacy flag 迁到 facade verdict,再删 flag
+
+#### Scenario: 4 raw pointer clear in destroy() 防悬空 (per Metis bg_03094fec 修订)
+
+- **WHEN** `DGpuBoard::destroy()` is called (or `~DGpuBoard()` triggers destroy)
+- **AND** `soc_.reset()` 已执行
+- **THEN** `controller_ip_ = nullptr;` (P2 PR-A facade non-owning ptr)
+- **AND** `gmmu_ = nullptr;` (bind_memory_backings 缓存)
+- **AND** `sdma_engine_ = nullptr;` (bind_memory_backings 缓存)
+- **AND** `cycle_advance_modules_.clear();` (init_timing_mode 累积 vector,防止 re-init 悬空解引用)
+- **AND** 4 个 raw pointer 同时清零,保证 destroy() 后 mmio_read/write UAF-safe
+
+#### Scenario: Characterization tests pin facade 激活前后 BAR0/1/2 行为逐位一致 (regression lock)
+
+- **WHEN** `mmio_read(0, 0, 4)` (BAR0 GMMU register window), `mmio_read(1, 0x10, 4)` (BAR1 FB fast-path), `mmio_read(2, 0x0, 4)` (BAR2 VRAM aperture) 调用前后
+- **THEN** facade 激活前后 BAR0/1/2 行为逐位一致 (regression lock, byte-baseline constant 记录已验证行为)
+- **AND** **不引入** controller-side offset 子分发 (whole-BAR 锁定)
+- **AND** 4KB BAR0 子窗口: GMMU regs (0x00-0x1F) vs display regs (0x00-0xF0) 不可 offset 区分,在任何单一 config 中从不共存
 
 ---
 
@@ -171,7 +142,7 @@
 - **proposal**: [`../proposal.md`](../proposal.md)
 - **design**: [`../design.md`](../design.md)
 - **tasks**: [`../tasks.md`](../tasks.md)
-- **前置**: `cpptlm-dgpu-realip-refactor` (archived, Phase C 完成 2026-10-07)
+- **前置**: `cpptlm-dgpu-realip-refactor` (archived, Phase C 完成 2026-10-07) + Change A ✅ (2026-10-08)
 - **并行**: `cpptlm-p2-integration-unblock` (已 Proposed, 异步推进)
 - **ADR**:
   - `ADR-DGPU-05-vram-storage-ownership.md` (framebuffer_ 单一真源)
@@ -179,4 +150,4 @@
   - `ADR-DGPU-07-minimal-soc-evolution-seam.md` (D3 seam 插入点)
   - `ADR-DGPU-08-abi-freeze-policy.md` (23 ABI 冻结)
   - `ADR-DGPU-10` (legacy flag 防劫持 root cause 4 锁定)
-- **架构文档**: `docs/designs/dgpu-soc/architecture.md` §2.4 (4-IP 边界表) + §7.3 (JSON 层级约束)
+- **架构文档**: `docs/designs/dgpu-soc/architecture.md` §2.4 (4-IP 边界表) + §2.4.2 (Change B facade wiring, 待新增) + §7.3 (JSON 层级约束)

@@ -7,7 +7,7 @@
 // Width: 8 fields, max width 64-bit (avoids ch_uint<W>64 wide-path truncation shim per Oracle B.6)
 // Direction: chip-internal (NOT board-level TLP / NOT chip-internal AXI)
 // Consumers: GpuInternalFabric (Initiator) ↔ VramControllerTLM (Target)
-// Registered: compile-time include via chstream_register.hh
+// Registered: NOT registered via chstream_register.hh (plain struct, no adapter factory needed); compile-time include from `dgpu_board_shell.cc` + `test_realip_pin_contract.cc` + `test_realip_facade_wiring.cc`
 //
 // ## FIELD TABLE
 // ┌────────────────┬───────┬─────────────────────────────────────────────────────┐
