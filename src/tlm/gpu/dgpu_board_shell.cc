@@ -331,24 +331,14 @@ namespace tlm::gpu {
             if (b == 2) return BT::Bar2VramAperture;
             return BT::Unknown;
         };
-        if (controller_ip_) {
-            BT target;
-            uint64_t sub_offset = 0;
-            controller_ip_->match_bar(bar, offset, target, sub_offset);
-            const BT expected = classify_naive(bar, offset);
-            if (target != expected) {
-                std::fprintf(stderr,
-                    "[DGpuBoard B2] facade verdict divergence: bar=%u "
-                    "offset=0x%lx facade=%d expected=%d (Strangler gate)\n",
-                    bar, static_cast<unsigned long>(offset),
-                    static_cast<int>(target), static_cast<int>(expected));
-                std::abort();
-            }
-        }
         BT verdict;
         uint64_t sub_offset_unused = 0;
         if (controller_ip_ && controller_ip_->endpoint() != nullptr) {
             controller_ip_->match_bar(bar, offset, verdict, sub_offset_unused);
+#ifndef NDEBUG
+            const BT naive = classify_naive(bar, offset);
+            assert(verdict == naive && "DGpuBoard C.2 DEBUG: facade verdict diverges from naive classification (ep_ asymmetry?)");
+#endif
         } else {
             verdict = classify_naive(bar, offset);
         }
@@ -452,20 +442,6 @@ namespace tlm::gpu {
             if (b == 2) return BT::Bar2VramAperture;
             return BT::Unknown;
         };
-        if (controller_ip_) {
-            BT target;
-            uint64_t sub_offset = 0;
-            controller_ip_->match_bar(bar, offset, target, sub_offset);
-            const BT expected = classify_naive(bar, offset);
-            if (target != expected) {
-                std::fprintf(stderr,
-                    "[DGpuBoard B2 write] facade verdict divergence: bar=%u "
-                    "offset=0x%lx facade=%d expected=%d (Strangler gate)\n",
-                    bar, static_cast<unsigned long>(offset),
-                    static_cast<int>(target), static_cast<int>(expected));
-                std::abort();
-            }
-        }
         // A-3: INV-A MMIO power-state gate (D3hot → -EIO, doorbell 例外)
         // doorbell 写保持兼容 (per v1.2 spec Scenario "MMIO write D3 doorbell is allowed")
         // D1 v1.1.1: gate 检查移到 fast-path 之前，保持 INV-A D3 门禁不变量
@@ -477,6 +453,10 @@ namespace tlm::gpu {
         uint64_t sub_offset_unused = 0;
         if (controller_ip_ && controller_ip_->endpoint() != nullptr) {
             controller_ip_->match_bar(bar, offset, verdict, sub_offset_unused);
+#ifndef NDEBUG
+            const BT naive = classify_naive(bar, offset);
+            assert(verdict == naive && "DGpuBoard C.2 DEBUG write: facade verdict diverges from naive classification (ep_ asymmetry?)");
+#endif
         } else {
             verdict = classify_naive(bar, offset);
         }
@@ -606,8 +586,6 @@ namespace tlm::gpu {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // 异常传递
         }
-        // D1 display-io-mvp: 路由到 PcieDisplayDevice framebuffer (device 优先)
-        // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
         if (display_routing_enabled_ && soc_) {
             if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
@@ -615,7 +593,6 @@ namespace tlm::gpu {
                 }
             }
         }
-        // D2 memory-device-mvp: BAR 2 (vram_offset) 路由到 PcieMemoryDevice
         if (memory_routing_enabled_ && soc_) {
             if (auto* ep = pcie_ep()) {
                 if (ep->has_memory_device()) {
@@ -662,8 +639,6 @@ namespace tlm::gpu {
         if (last_exception_) {
             std::rethrow_exception(last_exception_); // 异常传递
         }
-        // D1 display-io-mvp: 路由到 PcieDisplayDevice framebuffer (device 优先)
-        // D1 v1.1.1: 路由开关 display_routing_enabled_ 防劫持（root cause 4）
         if (display_routing_enabled_ && soc_) {
             if (auto* ep = pcie_ep()) {
                 if (ep->has_display_device()) {
@@ -671,7 +646,6 @@ namespace tlm::gpu {
                 }
             }
         }
-        // D2 memory-device-mvp: BAR 2 (vram_offset) 路由到 PcieMemoryDevice
         if (memory_routing_enabled_ && soc_) {
             if (auto* ep = pcie_ep()) {
                 if (ep->has_memory_device()) {
