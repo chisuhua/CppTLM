@@ -35,6 +35,13 @@ namespace tlm::gpu {
     bool DGpuBoard::load_soc_config(const nlohmann::json& board_cfg) {
         // #3 SOC 装配:实例化 DGpuSoc SimModule 容器
         try {
+            // P0 SIGSEGV fix (2026-10-08): destroy() 步骤 5 析构 eq_,
+            // 但 destroy→init cycle (test_realip_facade_wiring.cc:118) 需 eq_ 可重入。
+            // 在消费点重建,符合 ctor "每卡独立 EQ" 政策 (dgpu_board_shell.cc:23)
+            // 与 ADR-DGPU-02 uniform destruction 语义 (destroy 仍清空, load 重建)。
+            if (!eq_) {
+                eq_ = std::make_unique<EventQueue>();
+            }
             cfg_ = board_cfg;  // Phase 4 T5: 保存原始配置供 init_timing_mode 读取
             if (!soc_) {
                 soc_ = std::make_unique<DGpuSoc>(name_ + ".soc", eq_.get());

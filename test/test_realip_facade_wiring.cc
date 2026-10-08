@@ -101,21 +101,21 @@ TEST_CASE("DGpuBoard destroy→init cycle re-wires facade without dangling point
     EventQueue eq;
     DGpuBoard board("facade_wiring_cycle", &eq);
 
-    REQUIRE(board.load_soc_config(board_cfg));
-    REQUIRE(board.init());
-    auto* first_ctrl = board.controller_ip();
-    REQUIRE(first_ctrl != nullptr);
-    uint32_t val = 0;
-    REQUIRE_NOTHROW(board.mmio_read(0, 0x00, &val, 4));
+    // 强化回归测试 (P0 SIGSEGV fix 2026-10-08): 跑 3 轮 destroy→init cycle
+    // 暴露调度敏感的 flaky bug (destroy() reset eq_ 后第二/三轮 init 必须重建)
+    for (int cycle = 1; cycle <= 3; ++cycle) {
+        REQUIRE(board.load_soc_config(board_cfg));
+        REQUIRE(board.init());
+        auto* ctrl = board.controller_ip();
+        REQUIRE(ctrl != nullptr);
+        // 验证 facade 真正激活: endpoint 非 null (per Change B B.2b attach_endpoint)
+        REQUIRE(ctrl->endpoint() != nullptr);
+        uint32_t val = 0;
+        REQUIRE_NOTHROW(board.mmio_read(0, 0x00, &val, 4));
 
-    board.shutdown();
-    REQUIRE(board.controller_ip() == nullptr);
-
-    REQUIRE(board.load_soc_config(board_cfg));
-    REQUIRE(board.init());
-    auto* second_ctrl = board.controller_ip();
-    REQUIRE(second_ctrl != nullptr);
-    REQUIRE_NOTHROW(board.mmio_read(0, 0x00, &val, 4));
+        board.shutdown();
+        REQUIRE(board.controller_ip() == nullptr);
+    }
 }
 
 TEST_CASE("Dormant-guard: pcie_ctrl without pcie_ep collapses BAR1 match_bar to Unknown gracefully",
