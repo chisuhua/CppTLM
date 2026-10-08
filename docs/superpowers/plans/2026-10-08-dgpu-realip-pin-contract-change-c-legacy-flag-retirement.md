@@ -687,40 +687,24 @@ git commit -m "refactor(facade): delete 4 routing flags + PciePath + attach_prof
 
 ---
 
-### Phase C.4: JSON 字段退役 (原 C.3, 与 C.3 同序列) + with_pcie_ip memory device attach 验证 (AC-C4 行为反转风险)
+### Phase C.4: JSON 字段退役 — **REVISED: 文档-only (JSON 保留, 防劫持屏障)**
 
-**Refs:** Oracle `bg_a3f78cd9` Part 3 C.4 + Metis `bg_fd20b1ed` A4 (with_pcie_ip memory=false 行为反转) + AC-C5
+**Refs:** Oracle `bg_a3f78cd9` Part 3 C.4 + Metis `bg_fd20b1ed` A4 (presence 不等价实证)
 
-**Files:**
-- Modify: `configs/dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` / `examples/dgpu_soc_with_pcie_ip.json`
-- Modify: `src/tlm/gpu/dgpu_board_shell.cc` (loader deprecation WARN)
+**2026-10-08 修订决策 (基于 C.3.1 实测 regression 根因)**:
+- C.3.1 修订后保留内部 `routing_enabled_*_` 成员 (从 JSON 读) — JSON 字段是 **anti-hijack 屏障** (ADR-DGPU-10 root cause 4)
+- `bind_display_backings()` (`src/:783`) 无条件 `ep->set_display_device()`, `has_display_device()` 恒 true
+- **删 JSON 字段 = 删防劫持屏障** = BAR0 劫持回归 (Metis A4 实证: flag=false + device-present 配置 presence 语义不等价)
+- **决议**: JSON `*_routing_enabled` 字段**保留**, 内部 flag 继续消费; D.6 `routing_profile` 替代 (Change D)
 
-#### Task 4.0 (🆕 Metis A4): 验证 with_pcie_ip 不 attach memory device (防 hijack 风险回归)
+**C.4 实际改动**: 无代码改动 (C.3.1 已含 attach_profile 删 + setter 删; JSON 加载保留)。仅文档:
+- AGENTS.md KEY INVARIANTS 更新 (framebuffer 条目加 C.3.1 保留注释)
+- plan 本段记录修订决策
 
-- [ ] **Step 1: grep 验证 with_pcie_ip.json 不实例化 PcieMemoryDevice**
-
-```bash
-grep -i "pcie_memory\|PcieMemoryDevice" examples/dgpu_soc_with_pcie_ip.json
-# 期望: 0 hits (with_pcie_ip 无 PcieMemoryDevice 实例, presence-based memory 路由不会开启 → hijack 风险 0)
-# 若命中 → 风险: C.1/C.3 实施后 BAR2 → PcieMemoryDevice 自动路由,撕开 ADR-DGPU-10 root cause 4
-# 解决: 移除 PcieMemoryDevice 节点 或 引入 config-level routing_profile gate
-```
-
-- [ ] **Step 2: 记录结论到 commit message**
-
-#### Task 4.1: 删 JSON 字段 + loader WARN
-
-- [ ] **Step 1: 删 3 个 JSON 顶层 `*_routing_enabled` 字段** (minimal_v1: display/storage/gmmu/memory; timing_v1: memory/storage/gmmu; with_pcie_ip: display/memory + comment 字段)
-
-- [ ] **Step 2: loader 加一次性 deprecation WARN** (field 存在时 DPRINTF 非静默)
-
-- [ ] **Step 3: 编译 + validateConfig + G-B4 回归 + description 文本更新**
-
-- [ ] **Step 4: Commit** (与 C.3 同提交序列或紧随)
-
-```bash
-git commit -m "refactor(config): retire routing_enabled JSON fields + deprecation WARN (C.4)"
-```
+**Task 4.0 with_pcie_ip memory device 验证结果 (2026-10-08 实测)**:
+- `examples/dgpu_soc_with_pcie_ip.json`: 0 hits PcieMemoryDevice → presence-based memory 路由安全 ✅
+- `configs/dgpu_soc_minimal_v1.json` (5) / `timing_v1` (4): 有 PcieMemoryDevice + `memory_routing_enabled=true` → flag 语义保持 ✅
+- `configs/dgpu_soc_v2_realip_p2.json`: 0 hits
 
 ---
 
