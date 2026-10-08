@@ -5,6 +5,17 @@
 //   - 覆盖 row_hit(): 真实行缓冲 (4K row) vs MemoryTLM 简化模型
 //   - bandwidth 上限: 128B req → 累加 wait cycles
 //   - on_config_loaded(): 读 vram_size_bytes
+//
+// ── 时序模型 (Change D D.4 文档化, 2026-10-08) ──────────────────────────
+//   - 假定操作频率: 1 GHz (per dgpu-realip-pin-contract Change D D.4)
+//   - `bandwidth_gbps_` 字段语义实为 bytes/cycle (而非 Gbps) — 命名沿用
+//     design.md §5.2 历史用法避免破坏 ABI
+//   - 真实带宽换算: bandwidth_GBps = bandwidth_gbps_ * 1 GHz = bandwidth_gbps_ GB/s
+//     (例: 默认 32 → 32 GB/s 上限, 注入 128 → 128 GB/s 上限)
+//   - row_hit_cycles_ / row_miss_cycles_ 字段语义为 cycle 数 (latency),
+//     直接作为父类 MemoryTLM read_latency_{hit,miss}_cycles_ 注入 (per M1)
+//   - 仿真时间到 wall-clock 换算: 1 sim_cycle = 1 ns @ 1 GHz 假设
+//   - 假定变更触发点: DGpuBoard::init() 注入 vram_params (per bind_memory_backings)
 // 作者: CppTLM Team · 日期: 2027-02-11
 #ifndef TLM_VRAM_CONTROLLER_TLM_HH
 #define TLM_VRAM_CONTROLLER_TLM_HH
@@ -12,7 +23,7 @@
 #include "tlm/memory_tlm.hh"
 #include <cstdint>
 
-// A.4 (cpptlm-driver-visible-minimal-soc 2026-10-08): forward-declare
+// A.4 (cpptlm-driver-visible-minimal-soc 2026-10-08): forward-decl
 // tlm::cluster::GpuInternalFabric instead of #include to avoid circular
 // include with tlm/cluster/gpu_internal_fabric.hh which itself needs
 // VramControllerTLM pointer. Forward-decl in the outer tlm::cluster
@@ -21,6 +32,14 @@
 namespace tlm::cluster {
 class GpuInternalFabric;
 }
+
+// ── Change D D.4: 操作频率常量 (2026-10-08 文档化) ─────────────────────────
+namespace tlm::vram {
+// 假定操作频率 (1 GHz)。变更此处必须同步更新 dgpu-realip-pin-contract D.4 docs
+// 与 timing-mode.md §2.4;实际芯片 HBM PHY 频率由 platform config 注入 (D3 seam)。
+constexpr uint64_t kOperatingFrequencyHz = 1'000'000'000ULL;  // 1 GHz
+constexpr uint64_t kSimCycleNs = 1;                            // 1 sim_cycle = 1 ns @ 1 GHz
+} // namespace tlm::vram
 
 class VramControllerTLM : public MemoryTLM {
 public:
