@@ -1191,17 +1191,69 @@ Change A 完成, Change B (Facade 真正接管数据路径) 现在可以无锁�
 
 **启动前置**: `dgpu-realip-pin-contract-change-a-completion` tag (2026-10-08)
 
-### Change C: Legacy Flag Deletion (gated on Change B)
+### Change C: Legacy Flag Retirement (gated on Change B) — **REVISED 2026-10-08 per Oracle `bg_a3f78cd9` + Metis `bg_fd20b1ed`**
 
-**Estimated: 3-4 days. 启动前置 = Change B 全绿 + acceptance test 0 回归.**
+**Estimated: 6 天单人 (Metis 修订后, 4-5d→6d). Plan file: [`2026-10-08-dgpu-realip-pin-contract-change-c-legacy-flag-retirement.md`](2026-10-08-dgpu-realip-pin-contract-change-c-legacy-flag-retirement.md) (1004 行, 详尽 TDD + 13 commit 序列 + 8 AC gates)**
 
-Tasks outline:
-- C.1: 顺序删除 5 routing_enabled flag + PciePath enum (per Oracle Risk #1)
-- C.2: 简化 `mmio_read/write` (Strangler gate 保留)
-- C.3: JSON 顶层 `routing_enabled` 字段退役 (minimal_v1/timing_v1/with_pcie_ip/v2_realip_p2 同步退役)
-- C.4: try_compile EXPECT-FAIL 激活 (Oracle C3 完成)
-- C.5: test_dgpu_board_no_legacy_flags XFAIL → ACTIVE
-- C.6: Strangler gate 字符串验证 (Oracle C4 + AC-A11)
+**启动前置 = Change B G-B4 全绿 (✅ 已验证, tag `dgpu-realip-pin-contract-change-b-completion`)**
+
+**Oracle `bg_a3f78cd9` Verdict** (2026-10-08, 4m 复评): ⚠️ **PASS-WITH-NOTES + C.2 顺序必须反转**
+
+**Metis `bg_fd20b1ed` Verdict** (2026-10-08, 9m 跨 Oracle 复核): ⛔ **halt-pending-revision (3 硬伤 + 4 次要项)** — 全部落地在本 revision
+
+### 核心发现 (3 硬伤, Metis 跨 Oracle 复核)
+
+1. **分支 taxonomy 错数 (9→11)**: 当前分发 **11 处** flag-keyed 分支 (Plan 原写 "9 处" 错数):
+   - `mmio_read` 3 处: 366 (display) / 375 (storage) / 384 (memory)
+   - `mmio_write` **4** 处 (不是 3): 485 (display) / 496 (gmmu) / 508 (memory) / 563 (storage)
+   - `backdoor_read` 2 处: 613 (display) / 621 (memory) — 634 storage 已 presence-based (迁移模板)
+   - `backdoor_write` 2 处: 669 (display) / 677 (memory) — 689 storage 已 presence-based
+2. **测试文件冲击清单缺失 (Plan 列 2, 实际 9)**: C.3 删 flag API 后断编译至少 7 个未列文件 (test_a3 / test_dgpu_board_framebuffer / test_dgpu_pcie_device_perspective / test_minimal_dgpu_soc_characterization / test_minimal_dgpu_soc_e2e / test_pcie_memory_device_routing_characterization / test_pcie_memory_device_routing_flag)
+3. **null-controller fallback 未定义 + spec.md vs G-C6 矛盾**: 无 controller 时路由全部丢失; spec.md:62-68 写 "==2" 与 G-C6 "==0" 直接矛盾; spec.md 修改挪到 C.2 同 commit 修
+
+### 修订任务清单 (C.0~C.7, 详尽 TDD 见独立 plan 文件 1004 行)
+
+- **C.0 (新增, Quick)**: Pre-flight — 修 `test_minimal_soc_driver_visible_e2e.cc:143+148+154` 3 处 BAR 断言 (per `pcie_endpoint_ip.cc:116-124` `install_bar_registers` 全 0 写) 对齐 spec-compliant `lo==0,hi==0`, size 走 `PcieEndpointIP::bar_size()` accessor; AGENTS.md baseline **实测** (不是估的 79401/1694)
+- **C.1 (新增, 核心)**: 分发迁移 — mmio_read/write + backdoor **11 处** 从 `if (flag && bar==N)` 改 `switch (match_bar verdict)`; **必须保留 5 条非 facade 语义**: INV-A D3 power gate 最前 / kBar1DoorbellOffset 排除 / target-presence 谓词 / GMMU write 子窗+display-first 优先级 / **🆕 null-controller fallback** via `classify_naive()` helper (mirror 逻辑抽出)
+- **C.2 (终态, 含 spec.md 同 commit 同步)**: 删除 Strangler gate + expected mirror; 保留 **DEBUG-only assert** 防止 controller `ep_` vs board `pcie_ep()` 不对称静默漂移; spec.md + architecture.md §2.4.2 **同 commit 同步** (修 ==2/==0 矛盾 + facade wiring 终态描述)
+- **C.3 (含 C.3.0 9 文件重写 pre-C.3.1)**: **C.3.0** 整文件重写 9 个测试文件 (per-file 或聚合 1 commit) 防 C.3.1 删 API 后断编译; **C.3.1** 删 **4** `routing_enabled_*_` + 4 setter + 4 accessor + `PciePath` enum + `pcie_path_` + `pcie_path()` + `attach_profile()` (attach_profile 是**死代码**, grep 全仓零调用方, 必同步删); `grep -rE "routing_enabled|pcie_path_|PciePath|attach_profile"` = 0 门禁
+- **C.4 (原 C.3, 与 C.3 同序列, 含 with_pcie_ip 行为反转风险验证)**: JSON 顶层 routing_enabled 字段退役; loader 一次性 deprecation WARN; **Task 4.0 验证 with_pcie_ip 不 attach PcieMemoryDevice** (否则 presence-based memory 路由撕开 ADR-DGPU-10 root cause 4 hijack 锁)
+- **C.5 (原 C.4)**: try_compile EXPECT-FAIL 接入 CTest WILL_FAIL (扩到 **4 routing + PciePath + attach_profile**); Phase A/B 两阶段验证 (先 well-formed, 后 WILL_FAIL)
+- **C.6 (原 C.5, 整文件重写非 "activate")**: `test_dgpu_board_no_legacy_flags` 整文件重写覆盖 **5-API** (4 routing + PciePath); 配 `ctest add_test` 跑 `grep -E "routing_enabled_|pcie_path_|attach_profile|PciePath" dgpu_board_shell.hh` = 0 (Catch2 无 grep 能力, 必须 ctest)
+- **C.7 (新增, 决策式 defer 非 "条件性")**: doorbell handler (`dgpu_board_shell.cc:544`) 依赖 `mmio_regs_` 读回转发 SDMA, 4+ 测试文件依赖; **mmio_regs_ 物理清理 defer 到 Change D** (C.7 改为"决策式 defer 记录", 不在 Change C 硬删)
+
+### 新增 AC gates (G-C1~G-C8, 详见独立 plan)
+
+- G-C1 openspec validate strict (含 spec.md 重写消除矛盾) / G-C2 grep `routing_enabled|pcie_path_|PciePath|attach_profile` = 0
+- G-C3 G-B4 六标签 0 回归复跑 — **实测数** (C.3.0 重写 9 文件后 case 数会变, 不锁硬值)
+- G-C4 try_compile WILL_FAIL PASS (Phase A/B 两阶段) / G-C5 no_legacy_flags ACTIVE + ctest grep gate
+- G-C6 Release `strings | grep -c "Strangler gate"` = 0 + characterization 8/8 绿 + DEBUG-only assert 保留
+- G-C7 `[driver_visible]` 2/2 PASS (e2e 3 处 BAR 全修) + AGENTS.md 实测 baseline
+- G-C8 4 frozen header 0 diff + 23 ABI 0 new + `controller_ip_`/setter/accessor 三件套保留 (P2 PR-A facade 命脉)
+
+### 边界
+
+- **in-scope**: 删 4 flag + PciePath + attach_profile + Strangler gate (Release) + JSON 字段 + 9 测试文件重写 + spec.md/architecture.md/AGENTS.md 同步
+- **out-of-scope (→Change D)**: mmio_regs_ 物理清理 (D.5) + bandwidth 字段正名 (D.4) + ModuleFactory strict_types (D.1) + ConnectionResolver WARN (D.2) + ParamResolver hook (D.3) + (条件性 D.6) routing_profile 替代 flag 语义 (若 with_pcie_ip 验证失败触发)
+
+### D-AXI v1.4 遗留议题 (Change C 不动)
+
+- D1 Display FB: with_pcie_ip.json display=true → presence-based routing = `has_display_device()` (bind_display_backings attach 后 true) → 行为保持
+- doorbell 0x10010000: 保持 Unknown + board handler (535-558 独立于 flag), Change C 不修
+- MemoryTLM capacity_gb=1: 与 Change C 无关, 不动
+
+### ArchForge 跨仓 review 触发
+
+- **Change C 不触发** (§2.4 4-IP 边界表在 Change C 只是文字更新, 无新 IP 边界)
+- **触发时机**: Change E (D3 seam VramController 插入) 或 P3 RTL team pin-contract 对照实现启动时
+
+**TLM↔真实 IP 对齐差距摘要** (per Oracle bg_a3f78cd9 §2, 供后续 P3 参照):
+- PcieControllerIP: whole-BAR 锁定与真实 iATU 一致 ✅; 缺口 = 多 region 可编程 / VF BAR 分流 / TLP type 区分 (升级触发: SR-IOV VF 路由或 Resizable BAR)
+- PcieAxiBridgeIP: lazy_init composite 与硅片内嵌 bridge 一致 ✅; 缺口 = CDC / AXI outstanding 反压 (TLM 层可接受)
+- GpuInternalFabric: 4-port Crossbar 对 4-IP 拓扑恰好准确 ✅; 缺口 = 宽度/VC/credit/QoS/多跳 (升级触发: master>4 或性能研究 → 复用 RouterTLM)
+- VramControllerTLM: 单 4KB row buffer 简化 (真实 HBM3 32ch × 多 bank); bandwidth 字段名误导 (32 GB/s@1GHz 实为 32 B/cyc); 升级触发: memory-bound 研究 → MemoryCluster
+- Strangler gate: 纯仿真验证装置, 不属于 IP 行为模型, Change C 终态删除
+- 4 frozen header 是 driver ABI 面, 不阻碍 P3 对齐 (Change B 已实证 0 ABI diff)
 
 ### Change D: P2 Cleanup (parallel, independent)
 
