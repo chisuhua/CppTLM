@@ -17,11 +17,6 @@
       }
     },
     {
-      "name": "usrlxemu_ioctl_0",
-      "type": "UsrLinuxEmuIoctlStub",
-      "params": {}
-    },
-    {
       "name": "pcie_ep",
       "type": "PcieEndpointTLM",
       "params": {

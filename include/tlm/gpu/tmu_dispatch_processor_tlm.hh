@@ -65,6 +65,16 @@ namespace tlm::gpu {
         std::unordered_map<uint32_t, TmuDispatchRecord> scheduler_cache_;
     };
 
+    // D.5 (cpptlm-dgpu-realip-pin-contract Change D, 2026-10-08):
+    // 命名对齐: 头文件命名约定 *_tlm.hh, JSON 配置文件 (dgpu_board_v1.json) 也用
+    // TmuDispatchProcessorTLM 作为 type 字符串 (per naming convention in
+    // SdmaEngineTLM / SubmitQueueTLM / CommandProcessorTLM / CompletionRingTLM)。
+    // 但类本身命名滞后, 沿用 TmuDispatchProcessor (per 2026-08-29 T-bs-2c-TMU 命名
+    // 升级 范围仅头文件, 类名未跟进)。添加 alias 让 JSON 字符串 + 既有 C++ 测试
+    // (test_tmu_dispatch_processor_tlm.cc) 都可工作, 避免 breaking change。
+    // 后续 D.x 若全量 rename, 移除此 alias + 更新 test/JSON 即可。
+    using TmuDispatchProcessorTLM = TmuDispatchProcessor;
+
 } // namespace tlm::gpu
 
 #endif // CPPTLM_TMU_DISPATCH_PROCESSOR_TLM_H
