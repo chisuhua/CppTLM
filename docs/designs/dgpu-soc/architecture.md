@@ -214,20 +214,30 @@ vram_ctrl->set_fabric_source(fabric);
 - `mmio_read/write` 简化 (Strangler gate 保留) — Change C,门控于 Change B 完成
 - JSON 顶层 `routing_enabled` 字段退役 — Change C,门控于 Change B 完成
 
-### 2.4.2 Facade Production Wiring (Change B, 2026-10-08)
+### 2.4.2 Facade Production Wiring (Change B + Change C, 2026-10-08)
 
-Per `openspec/changes/dgpu-realip-pin-contract/specs/dgpu-4ip-port-contract/spec.md` (Change B scope, per Oracle `bg_14b6dd83` APPROVE-WITH-CHANGES):
+Per `openspec/changes/dgpu-realip-pin-contract/specs/dgpu-4ip-port-contract/spec.md`:
 
 | Source | Dst | Action |
 |--------|-----|--------|
 | `DGpuBoard::init()` 公共路径(早于 timing/functional 分支) | `PcieControllerIP::attach_endpoint(ep)` | 程序化注入 EP 引用 |
-| `DGpuBoard::init()` | `DGpuBoard::set_pcie_controller_ip(ctrl)` | 激活 Strangler gate |
+| `DGpuBoard::init()` | `DGpuBoard::set_pcie_controller_ip(ctrl)` | 激活 facade |
 
-**Architecture Decisions (per Oracle `bg_14b6dd83`)**:
-- **AD-B1 最小接线**: `ctrl->attach_endpoint(ep)` + `set_pcie_controller_ip(ctrl)`;不用 `set_endpoint_attachment(this)` (全仓不存在,YAGNI)
-- **AD-B2 接线点**: `init()` 公共路径(早于 timing/functional 分支,timing 模式也覆盖消除盲区)
-- **AD-B3 match_bar whole-BAR 锁定**: 4 枚举 (Bar0Mmio / Bar1FbFastPath / Bar2VramAperture / Unknown),签名零变化,不做 controller-side offset 子分发
-- **AD-B4 4 raw pointer clear**: destroy() 清 `controller_ip_` + `gmmu_` + `sdma_engine_` + `cycle_advance_modules_` 防悬空 UAF
+**Dispatch (Change C)**: mmio_read/write + backdoor 共 **11 处** flag-keyed 分支 (mmio_read 3 + mmio_write 4 + backdoor 4) key 到 `match_bar` verdict + presence 谓词 (per Metis `bg_fd20b1ed` A1 校正: Plan 原 "9 处" 错数)。
+- mmio_read/write: `switch (verdict)` 4 cases (Bar0Mmio / Bar1FbFastPath / Bar2VramAperture / default Unknown)
+  - Bar0Mmio: display first (gmmu/display 互斥, per AGENTS.md) → return; GMMU sub-window (offset<0x100, len>=4, fall-through)
+  - Bar1FbFastPath: doorbell exclusion (offset != kBar1DoorbellOffset) + storage_routing_enabled_ + framebuffer_ptr_ presence
+  - Bar2VramAperture: memory_routing_enabled_ + has_memory_device() presence
+  - default (Unknown): falls through to mmio_regs_ + inject_q_ + doorbell handler
+- backdoor: display → memory → framebuffer → vram_segments_ (4 处, 复用 632/687 framebuffer 模板)
+- 保留 4 条非 facade 语义: INV-A D3 power gate 最前 / kBar1DoorbellOffset 排除 / target-presence 谓词 / GMMU sub-window + display-first 优先级
+
+**Null-controller fallback (per Metis `bg_fd20b1ed` A3)**: `controller_ip_ == nullptr || controller_ip_->endpoint() == nullptr` 时,用 `classify_naive()` helper (mirror 抽出) 替代 `match_bar`,防止无 controller 场景所有路由丢失 (无 controller 单测如 `[a3] dgpu_mini_cfg()` / `[pcie-bypass-tlp]` 验证)。
+
+**Strangler gate (Change C 终态)**:
+- **Release build**: `std::abort` 路径删除,`expected` mirror 计算删除 (无字符串 + 无运行时开销); `strings | grep -c "Strangler gate"` = 0 (G-C6)
+- **DEBUG build**: 保留 `assert(verdict == naive && ...)` 防止 `controller->ep_` vs `board->pcie_ep()` 不对称静默漂移 (per AC-C3 Metis A6/B5 修订;原 "mirror 与 match_bar 同源" 事实错误 — mirror 是独立朴素计算)
+- 回归锁: B.3' `[realip][facade-wiring]` characterization suite 8/8 (行为逐位一致)
 
 **Target-side decode 实际实现** (per Metis `bg_03094fec` 修订 — 收敛描述, 不夸大):
 - `DGpuBoard::mmio_write`: GMMU 寄存器窗 (BAR0 offset<0x100) 走 `gmmu_->set_*` (write-only), display 整窗走 `ep->display_device().mmio_write` (whole-BAR fast path)

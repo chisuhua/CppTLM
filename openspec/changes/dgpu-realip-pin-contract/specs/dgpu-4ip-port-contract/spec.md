@@ -55,7 +55,7 @@
 
 2 个测试文件**双标签** `[realip][pin-contract]` SHALL 覆盖 4-IP 端口契约 (Change A scope):
 - `test/test_realip_pin_contract.cc` — `Fabric2VramCtrlBundle` 字段定义 + `BUNDLE_FIELD_WIDTH` 编译期检查 + `set_vram_target` / `set_fabric_source` 程序化桥接 round-trip (3 TEST_CASEs)
-- `test/test_dgpu_board_no_legacy_flags.cc` — DGpuBoard public API 编译期不含已删除 5 routing flag + Strangler gate 字符串保留 (2 TEST_CASEs)
+- `test/test_dgpu_board_no_legacy_flags.cc` — DGpuBoard public API 编译期不含已删除 4 routing flag + PciePath + attach_profile (Change C 终态 ACTIVE 验证, ctest grep gate 补充)
 
 **双标签**: `[realip][pin-contract]` (per handoff §9.2 #10 vacuous tag 风险, 空格 = AND, 逗号 = OR, per cpptlm-p2-integration-unblock proposal G9)
 
@@ -65,7 +65,7 @@
 - **THEN** 至少 5 个 test cases PASS (Change A 3 cases + Change A XFAIL-probe 2 cases, 共 ≥5)
 - **AND** 跑 `./build/bin/cpptlm_tests "[pin-contract]"` → 同样 ≥5 cases PASS (确保 `[pin-contract]` 独立 tag 有命中)
 - **AND** 跑 `./build/bin/cpptlm_tests "[realip]"` → **零回归** (Phase C 后基线 433/36682 cases PASS)
-- **AND** Strangler gate 字符串仍存在 (`strings build/bin/cpptlm_tests | grep -c "Strangler gate" == 2`)
+- **AND** Strangler gate 字符串在 Release build = 0 (Change C 终态, per AC-C3); DEBUG build 保留 assert 字符串
 
 #### Scenario: test_realip_pin_contract 端口契约覆盖 (3 TEST_CASEs)
 
@@ -79,7 +79,7 @@
 - **WHEN** 编译 `test/test_dgpu_board_no_legacy_flags.cc`
 - **THEN** `static_assert` 检测 `DGpuBoard` 不含 `pcie_path_*` 5 字段 (编译期 SFINAE)
 - **AND** `static_assert` 检测 `DGpuBoard` 不含 5 个 setter 方法
-- **AND** 编译期 Strangler gate 字符串存在 (per `dgpu_board_shell.cc:336-343` source grep)
+- **AND** Release build `std::abort` 路径已删,DEBUG-only assert 保留 (防止 `controller->ep_` vs `board->pcie_ep()` 不对称静默漂移)
 - **AND** **零运行时开销**: 全部 `static_assert` 编译期完成,无运行时分支
 
 ---
@@ -111,7 +111,7 @@
 - **AND** `match_bar(bar, offset, out_target, out_sub_offset)` collapses to `out_target=Unknown + matched=false` (不 abort)
 - **AND** 此 case regression-lock 静默塌陷路径 — Change C 改 mmio_read/write 时不会突然 abort
 
-#### Scenario: Strangler gate 保留作 facade verdict 与 expected mirror 一致性的 std::abort 保护
+#### Scenario: Strangler gate 终态 (Change C 删 + DEBUG-only assert 保留)
 
 - **WHEN** `DGpuBoard::mmio_read/write` is called with `controller_ip_ != nullptr`
 - **THEN** facade verdict `match_bar(bar, offset, ...)` 与 expected mirror 比对 (`dgpu_board_shell.cc:344,457`)
