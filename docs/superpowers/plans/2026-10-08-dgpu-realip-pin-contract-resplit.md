@@ -1162,17 +1162,34 @@ Change A 完成, Change B (Facade 真正接管数据路径) 现在可以无锁�
 
 ## Out-of-Scope (deferred — 各自独立 plan 文件)
 
-### Change B: Facade Production Wiring (Oracle C1 + C2 + C5 修复)
+### Change B: Facade Production Wiring (Oracle C1 + C2 + C5 修复) — **REVISED 2026-10-08**
 
-**Estimated: 4-5 days. Plan file: `plans/2026-10-XX-dgpu-realip-facade-wiring.md` (待 Change A 完成后启动)**
+**Estimated: 1-1.5 天单人 (Oracle 修订后). Plan file: [`2026-10-08-dgpu-realip-pin-contract-change-b-facade-wiring.md`](2026-10-08-dgpu-realip-pin-contract-change-b-facade-wiring.md) (已起草, 详尽 TDD 5 步 + 11 AC gates)**
 
-Tasks outline (不计划级文件):
-- B.1: RED test — `DGpuBoard::init` 装配后 `controller_ip_ != nullptr` (新增 `[realip][facade-wiring]` Integration test)
-- B.2: 在 `DGpuBoard::init` 中调 `pcie_ep->set_endpoint_attachment(this)` + `set_pcie_controller_ip(pcie_ctrl)` (复用 `init_timing_mode` cast helper)
-- B.3: RED test — `match_bar` 对 BAR0 offset 0-16 (GMMU 寄存器窗) 返回 BarTarget::Bar0Mmio,对 offset >= 0x800000 (display FB) 返回 BarTarget::Bar0Display
-- B.4: 扩展 `BarTarget` enum (PcieControllerIP) 加 `Bar0Display` 变体 + 扩展 `match_bar` signature 加 `offset_in_bar` 参数
-- B.5: 重写 `test/test_pcie_bypass_tlp_data_path.cc` — 把 `board.pcie_path()` 断言改为 `board.controller_ip()` + `controller_ip->match_bar(bar, offset)`
-- B.6: 全回归 — `[realip][p3]` + `[minimal_dgpu_soc]` + `[pcie-memory]` + `[pcie]` 必须 0 回归 (这是 Change C 启动的硬前置)
+**Oracle Verdict** (per `bg_14b6dd83` 2026-10-08): **APPROVE-WITH-CHANGES**
+- ✅ 放行: B.1 (修订) / B.2 (修订) / B.5 / B.6 + 5 个新任务 (B.0 / B.2b / B.2c / B.3' / B.7 / B.8)
+- 🔴 REJECT: 原 B.3 + B.4 — 0x800000 偏移在 4KB BAR0 内物理不可能, 且 controller 侧 BAR 子分发违背 `pcie_controller_ip.hh:45-49` 锁定设计 (前序 Oracle bg_c60653e0 §2.1)
+
+**任务 outline** (10 task, 详尽 TDD 见独立 plan 文件):
+- B.0: config 前置 — 4 个 driver-visible config 加 `pcie_ctrl` / `pcie_ep` 节点
+- B.1: RED test `[realip][facade-wiring]` (init 后 `controller_ip_ != nullptr` + 优雅 skip)
+- B.2: 生产接线 (Oracle 修订: 删 `set_endpoint_attachment`; 最小 = `ctrl->attach_endpoint(ep)` + `set_pcie_controller_ip(ctrl)`; 入 `init()` 公共路径)
+- B.2b: 生命周期 — `~DGpuBoard()` 加 `controller_ip_ = nullptr` 修悬空
+- B.2c: dormant-guard — `pcie_ctrl` 存在但 `pcie_ep` 缺失场景的塌陷行为 pin
+- B.3' (替换 B.3): characterization 测试 — facade 激活前后 BAR0/1/2 行为逐位一致 (regression lock, 不引入新逻辑)
+- B.5: 重写 `test_pcie_bypass_tlp_data_path.cc` (保留行为断言, 替换 `pcie_path()` 机制)
+- B.6: 11 AC gates (G-B1 ~ G-B11, 含 `[realip][facade-wiring]` tag + doorbell 合成偏移 + Strangler gate=2 + frozen header 0 diff)
+- B.7: A.5 桥接执行验证 (Change A 遗留债: TEST_CASE #3 真实路径覆盖)
+- B.8: spec 漂移修复 (Change A 文档债: 删 Change C 残留 + 已否决方案 + bundle header 注释假陈述)
+
+**Architecture Decisions** (4 件套, 详见独立 plan):
+- AD-B1: 删 `set_endpoint_attachment`, 最小接线
+- AD-B2: 接线点入 `init()` 公共路径(早于 timing/functional 分支)
+- AD-B3: `match_bar` 签名零变化 (whole-BAR 锁定, 前序 Oracle bg_c60653e0 §2.1 回归锁)
+- AD-B4: 接线空 guard 模式 (无 facade 静默问题)
+- AD-B5: 顺路修 Change A 文档债 (B.7 + B.8 in Change B scope)
+
+**启动前置**: `dgpu-realip-pin-contract-change-a-completion` tag (2026-10-08)
 
 ### Change C: Legacy Flag Deletion (gated on Change B)
 
