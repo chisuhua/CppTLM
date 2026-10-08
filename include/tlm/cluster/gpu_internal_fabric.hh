@@ -16,10 +16,14 @@
 
 #include "core/sim_module.hh"
 #include "tlm/crossbar_tlm.hh"
-#include "tlm/vram_controller_tlm.hh"  // A.3: VramControllerTLM programmatic bridge target (Momus 修订: 全局命名空间)
 
 #include <nlohmann/json.hpp>
 #include <string>
+
+// A.3 (cpptlm-driver-visible-minimal-soc 2026-10-08): forward-declare VramControllerTLM
+// (in global namespace) instead of #include to avoid circular include with
+// tlm/vram_controller_tlm.hh which itself needs tlm::cluster::GpuInternalFabric pointer.
+class VramControllerTLM;
 
 namespace tlm::cluster {
 

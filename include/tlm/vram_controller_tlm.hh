@@ -12,6 +12,16 @@
 #include "tlm/memory_tlm.hh"
 #include <cstdint>
 
+// A.4 (cpptlm-driver-visible-minimal-soc 2026-10-08): forward-declare
+// tlm::cluster::GpuInternalFabric instead of #include to avoid circular
+// include with tlm/cluster/gpu_internal_fabric.hh which itself needs
+// VramControllerTLM pointer. Forward-decl in the outer tlm::cluster
+// namespace keeps the qualifier tlm::cluster::GpuInternalFabric usable
+// for the setter signature below.
+namespace tlm::cluster {
+class GpuInternalFabric;
+}
+
 class VramControllerTLM : public MemoryTLM {
 public:
     explicit VramControllerTLM(const std::string& name, EventQueue* eq)
@@ -36,6 +46,12 @@ public:
         read_latency_hit_cycles_ = row_hit_cycles;
         read_latency_miss_cycles_ = row_miss_cycles;
     }
+
+    // ── A.4 (cpptlm-driver-visible-minimal-soc 2026-10-08): programmatic bridge source ──
+    // per Phase 8 HB/RC precedent + cpptlm-p2-integration-unblock D7.
+    // Momus 修订: 不加 ChStreamTargetPort<Bundle> 成员(类型不存在),改 setter-only 模式。
+    void set_fabric_source(tlm::cluster::GpuInternalFabric* src) noexcept { fabric_ = src; }
+    tlm::cluster::GpuInternalFabric* fabric() const noexcept { return fabric_; }
 
     // ── 行缓冲 (per design.md §5.2): 单 row buffer, 4K row ──
     void invalidate_row_buffer() noexcept { row_buffer_valid_ = false; }
@@ -123,6 +139,9 @@ private:
     uint64_t row_hit_cycles_ = 30;     // per tasks.md T4 (design 默认 100, T5 JSON 注入 30)
     uint64_t row_miss_cycles_ = 80;    // per tasks.md T4
     uint64_t bandwidth_gbps_ = 32;     // 32 GB/s 默认上限
+
+    // A.4: cached programmatic bridge source (non-owning)
+    tlm::cluster::GpuInternalFabric* fabric_ = nullptr;
 
     // 额外 stats (继承自 MemoryTLM::stats_, 附加标量)
     tlm_stats::Scalar& stats_row_hits_;
