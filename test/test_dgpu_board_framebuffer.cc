@@ -48,18 +48,11 @@ TEST_CASE("dgpu_framebuffer: vram_segments_ fallback when framebuffer empty", "[
     REQUIRE(out == data);
 }
 
-TEST_CASE("dgpu_framebuffer: storage_routing_enabled_ default false", "[dgpu_framebuffer]") {
-    DGpuBoard board("test_board");
-    REQUIRE_FALSE(board.storage_routing_enabled());
-    REQUIRE_FALSE(board.gmmu_routing_enabled());
-}
-
-TEST_CASE("dgpu_framebuffer: BAR1 mmio_write routes to framebuffer when flag on", "[dgpu_framebuffer][bar1_routing]") {
+TEST_CASE("dgpu_framebuffer: BAR1 mmio_write routes to framebuffer via presence", "[dgpu_framebuffer][bar1_routing]") {
     DGpuBoard board("test_board");
     constexpr uint64_t fb_size = 64 * 1024;
     std::vector<uint8_t> fb(fb_size, 0);
     board.attach_vram_for_testing(fb.data(), fb_size);
-    board.set_storage_routing_enabled(true);
 
     constexpr uint64_t off = 0x800;
     uint32_t val = 0xDEADBEEF;
@@ -78,7 +71,6 @@ TEST_CASE("dgpu_framebuffer: BAR1 mmio_write routes to framebuffer when flag on"
 
 TEST_CASE("dgpu_framebuffer: framebuffer_size_=0 falls back to vram_segments_", "[dgpu_framebuffer][boundary]") {
     DGpuBoard board("test_board");
-    board.set_storage_routing_enabled(true);
     board.attach_vram_for_testing(nullptr, 0);
 
     std::vector<uint8_t> data(32, 0xAB);
@@ -94,7 +86,6 @@ TEST_CASE("dgpu_framebuffer: BAR1 non-4/8-byte len passes through", "[dgpu_frame
     constexpr uint64_t fb_size = 64 * 1024;
     std::vector<uint8_t> fb(fb_size, 0);
     board.attach_vram_for_testing(fb.data(), fb_size);
-    board.set_storage_routing_enabled(true);
 
     constexpr uint64_t off = 0x200;
     uint8_t val1 = 0xA1;

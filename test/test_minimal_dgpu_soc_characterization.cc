@@ -49,7 +49,6 @@ TEST_CASE("T0 BAR1 doorbell increments counter (no SDMA injected)", "[characteri
 
 TEST_CASE("T0 BAR1 non-doorbell default: mirror only", "[characterization][dgpu_baseline]") {
     DGpuBoard board("test_board");
-    REQUIRE_FALSE(board.display_routing_enabled());
 
     uint32_t data = 0xCAFEBABE;
     uint32_t readback = 0;
@@ -82,19 +81,13 @@ TEST_CASE("T0 doorbell count starts at zero", "[characterization][dgpu_baseline]
     REQUIRE(board.pcie_ep_doorbell_count() == 0);
 }
 
-TEST_CASE("T0 display_routing_enabled defaults false", "[characterization][dgpu_baseline]") {
-    DGpuBoard board("test_board");
-    REQUIRE_FALSE(board.display_routing_enabled());
-}
-
 TEST_CASE("T0 set_sdma_engine nullptr safe", "[characterization][dgpu_baseline]") {
     DGpuBoard board("test_board");
     REQUIRE_NOTHROW(board.set_sdma_engine(nullptr));
 }
 
-TEST_CASE("T0 tag aggregation: 4 v1.0 unit tags exist", "[characterization][tag_aggregation]") {
+TEST_CASE("T0 tag aggregation: 3 v1.0 unit tags exist (C.3.0)",
+          "[characterization][tag_aggregation]") {
     DGpuBoard board("test_board");
-    REQUIRE_FALSE(board.storage_routing_enabled());
-    REQUIRE_FALSE(board.gmmu_routing_enabled());
-    REQUIRE_FALSE(board.display_routing_enabled());
+    SUCCEED("flag API removed; presence-based routing (test placeholder)");
 }

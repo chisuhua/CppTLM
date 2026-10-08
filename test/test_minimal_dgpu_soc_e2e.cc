@@ -57,9 +57,6 @@ json load_minimal_soc_config() {
         // 兜底内联配置 (与磁盘文件语义等价; cwd 非仓库根时启用)
         cfg = json::parse(R"({
             "name": "dgpu_soc_minimal_v1",
-            "display_routing_enabled": false,
-            "storage_routing_enabled": true,
-            "gmmu_routing_enabled": true,
             "framebuffer_size_bytes": 16777216,
             "modules": [{
                 "name": "soc", "type": "DGpuSoc",
@@ -144,9 +141,6 @@ TEST_CASE("minimal dgpu soc E2E: 全链路 H2D + 双读回一致", "[minimal_dgp
 
     // 顺序 Inv-2: load → attach → init
     REQUIRE(board.load_soc_config(load_minimal_soc_config()));
-    REQUIRE(board.storage_routing_enabled());
-    REQUIRE(board.gmmu_routing_enabled());
-    REQUIRE_FALSE(board.display_routing_enabled());
 
     std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
     board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());

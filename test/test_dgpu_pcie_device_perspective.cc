@@ -89,8 +89,6 @@ TEST_CASE("PCIe driver perspective: BAR0 doorbell write (shell path)",
     tlm::gpu::DGpuBoard board("pcie_dgpu", &eq);
     auto cfg = load_board_config();
     REQUIRE(board.load_soc_config(cfg));
-    // D1 v1.1.1: GPU 路径测试显式关闭 display routing（防劫持 root cause 4）
-    board.set_display_routing_enabled(false);
 
     uint32_t val = 0x00000001;
     REQUIRE(board.mmio_write(0, GPU_REG_DOORBELL, &val, sizeof(val)) == 0);
@@ -103,8 +101,6 @@ TEST_CASE("PCIe driver perspective: BAR1 VRAM write/read round trip (shell backd
     tlm::gpu::DGpuBoard board("pcie_dgpu", &eq);
     auto cfg = load_board_config();
     REQUIRE(board.load_soc_config(cfg));
-    // D1 v1.1.1: VRAM backdoor 测试关闭 display routing（防劫持）
-    board.set_display_routing_enabled(false);
 
     REQUIRE(board.device_info().bar_sizes[1] == 256ULL * 1024ULL * 1024ULL);
 
@@ -139,8 +135,6 @@ TEST_CASE("PCIe driver perspective: GPFIFO PUT register is an MMIO address",
     tlm::gpu::DGpuBoard board("pcie_dgpu", &eq);
     auto cfg = load_board_config();
     REQUIRE(board.load_soc_config(cfg));
-    // D1 v1.1.1: GPFIFO PUT 路径测试关闭 display routing（防劫持 root cause 4）
-    board.set_display_routing_enabled(false);
 
     uint32_t val = 4;
     REQUIRE(board.mmio_write(0, GPU_REG_GPFIFO_PUT, &val, sizeof(val)) == 0);

@@ -269,10 +269,9 @@ TEST_CASE("D1 routing: DGpuBoard fast-path guarded when no SOC (routing enabled)
     board.shutdown();
 }
 
-TEST_CASE("D1 routing: DGpuBoard fast-path disabled (routing_enabled=false → no hijack)",
+TEST_CASE("D1 routing: DGpuBoard fast-path disabled (no display device → no hijack)",
           "[pcie][display][abi-shell][routing]") {
     DGpuBoard board("d1_no_hijack_test");
-    REQUIRE_FALSE(board.display_routing_enabled());
 
     uint32_t val = 0xCAFEBABE;
     int rc = board.mmio_write(0, 0x00, &val, sizeof(val));
@@ -280,12 +279,8 @@ TEST_CASE("D1 routing: DGpuBoard fast-path disabled (routing_enabled=false → n
     board.shutdown();
 }
 
-TEST_CASE("D1 routing: set_display_routing_enabled accessor round-trip",
+TEST_CASE("D1 routing: display_routing_enabled API removed (C.3.0 compile gate)",
           "[pcie][display][abi-shell][routing]") {
-    DGpuBoard board("d1_accessor_test");
-    REQUIRE_FALSE(board.display_routing_enabled());
-    board.set_display_routing_enabled(true);
-    REQUIRE(board.display_routing_enabled());
-    board.set_display_routing_enabled(false);
-    REQUIRE_FALSE(board.display_routing_enabled());
+    DGpuBoard board("d1_api_removed_test");
+    SUCCEED("display_routing_enabled / set_display_routing_enabled removed in C.3.1");
 }

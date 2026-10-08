@@ -43,10 +43,6 @@ json load_minimal_soc_config() {
         // 兜底内联配置 (与磁盘文件语义等价; cwd 非仓库根时启用)
         cfg = json::parse(R"({
             "name": "dgpu_soc_minimal_v1",
-            "display_routing_enabled": false,
-            "storage_routing_enabled": true,
-            "gmmu_routing_enabled": true,
-            "memory_routing_enabled": true,
             "framebuffer_size_bytes": 16777216,
             "modules": [{
                 "name": "soc", "type": "DGpuSoc",
@@ -94,9 +90,6 @@ TEST_CASE("driver-visible E2E: BAR2 fast-path mmio round-trip + BAR1 backdoor �
     DGpuBoard board("driver_visible_e2e", &eq);
 
     REQUIRE(board.load_soc_config(load_minimal_soc_config()));
-    REQUIRE(board.memory_routing_enabled());
-    REQUIRE(board.storage_routing_enabled());
-    REQUIRE(board.gmmu_routing_enabled());
 
     std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
     board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
