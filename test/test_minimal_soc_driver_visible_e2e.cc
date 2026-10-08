@@ -140,18 +140,23 @@ TEST_CASE("driver-visible E2E: config BAR 双 dword 编码 + bar_sizes 派生", 
     uint32_t lo = 0, hi = 0;
     REQUIRE(board.pcie_config_read(0x10, 4, &lo) == 0);
     REQUIRE(board.pcie_config_read(0x14, 4, &hi) == 0);
-    REQUIRE(lo == 4096u);
+    REQUIRE(lo == 0u);
     REQUIRE(hi == 0u);
+    REQUIRE(board.pcie_ep()->bar_size(0) == 4096u);
+
     // BAR1 @0x18/0x1C (16MB)
     REQUIRE(board.pcie_config_read(0x18, 4, &lo) == 0);
     REQUIRE(board.pcie_config_read(0x1C, 4, &hi) == 0);
-    REQUIRE(lo == 16777216u);
+    REQUIRE(lo == 0u);
     REQUIRE(hi == 0u);
-    // BAR2 @0x20/0x24 (8GB) → 64-bit 双 dword 编码 (per v1.3 B5)
+    REQUIRE(board.pcie_ep()->bar_size(1) == 16777216u);
+
+    // BAR2 @0x20/0x24 (8GB)
     REQUIRE(board.pcie_config_read(0x20, 4, &lo) == 0);
     REQUIRE(board.pcie_config_read(0x24, 4, &hi) == 0);
     REQUIRE(lo == 0u);
-    REQUIRE(hi == 2u);  // 8GB >> 32 == 2 (0x2_0000_0000)
+    REQUIRE(hi == 0u);
+    REQUIRE(board.pcie_ep()->bar_size(2) == 8589934592ULL);
 
     // device_id / vendor_id 枚举 (N6 + R4 验证)
     uint32_t did = 0;
