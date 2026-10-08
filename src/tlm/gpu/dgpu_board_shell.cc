@@ -2,6 +2,8 @@
 // Owner: CppTLM Team · Date: 2026-08-31
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/pcie/pcie_controller_ip.hh"  // P2 PR-B Stage C: facade match_bar in mmio paths
+#include "tlm/vram_controller_tlm.hh"      // A.5 (cpptlm-driver-visible-minimal-soc 2026-10-08): complete type for dynamic_cast<VramControllerTLM*>
+#include "tlm/cluster/gpu_internal_fabric.hh"  // A.5: complete type for dynamic_cast<tlm::cluster::GpuInternalFabric*>
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
@@ -750,9 +752,11 @@ namespace tlm::gpu {
         // API 公有方法 (memory_tlm.hh:115), MUST NOT 1 lock: VramControllerTLM
         // 类不动 (per ADR-DGPU-11 决策 4), 仅调继承的 set_backing_view 注入
         // framebuffer_view (与 pcie_memory 共享 vram_storage_)。
+        VramControllerTLM* vram_ctrl_seen = nullptr;
         if (auto* vram_ctrl =
                 dynamic_cast<VramControllerTLM*>(soc_->getInternalInstance("vram_ctrl"))) {
             vram_ctrl->set_backing_view(framebuffer_ptr_, framebuffer_size_);
+            vram_ctrl_seen = vram_ctrl;
             DPRINTF(MODULE,
                     "[DGpuBoard] T23C: vram_ctrl backing injected (ptr=%p, size=%llu)\n",
                     static_cast<void*>(framebuffer_ptr_),
@@ -760,6 +764,29 @@ namespace tlm::gpu {
         } else {
             DPRINTF(MODULE,
                     "[DGpuBoard] T23C: SOC 缺 'vram_ctrl' 实例, backing 注入跳过\n");
+        }
+
+        // A.5 (cpptlm-driver-visible-minimal-soc 2026-10-08): programmatic bridge
+        // fabric <-> vram_ctrl (per AD-4 + Phase 8 HB/RC tick-forwarding precedent +
+        // cpptlm-p2-integration-unblock D7). Momus 修订: 用 soc_->getInternalInstance(name)
+        // 而非 modules_by_name(name); 模块名 "fabric" 而非 "gpu_internal_fabric"
+        // (per configs/dgpu_soc_v2_realip_p2.json:22); VramControllerTLM 在全局命名空间.
+        // 双向桥接 (set_vram_target + set_fabric_source) 保证两端都持有对方指针,
+        // 与 Change A 编译期契约 BUNDLE_FIELD_WIDTH 互不依赖运行时验证.
+        if (auto* fabric = dynamic_cast<tlm::cluster::GpuInternalFabric*>(
+                soc_->getInternalInstance("fabric"))) {
+            if (vram_ctrl_seen != nullptr) {
+                fabric->set_vram_target(vram_ctrl_seen);
+                vram_ctrl_seen->set_fabric_source(fabric);
+                DPRINTF(MODULE,
+                        "[DGpuBoard] A.5: fabric <-> vram_ctrl programmatic bridge wired\n");
+            } else {
+                DPRINTF(MODULE,
+                        "[DGpuBoard] A.5: fabric 存在但 vram_ctrl 缺, 单向 set 跳过\n");
+            }
+        } else {
+            DPRINTF(MODULE,
+                    "[DGpuBoard] A.5: SOC 缺 'fabric' 实例, programmatic bridge 跳过\n");
         }
     }
 
