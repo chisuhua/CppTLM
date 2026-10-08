@@ -401,7 +401,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
   - **季度复审**: 评估是否 archive, merge, 或明确 deprecate
   - **新提案门槛**: 现有 ≥3 时新提案需先 archive 一个现有 change
   - **范围判定 (2026-09-30 季度复审后)**: CppTLM=建模框架 + 基本 SoC 验证；SoC 架构建模在 ArchForge。任何 SoC 架构组件/拓扑/演进类提案应直接在 ArchForge openspec 创建，不进 CppTLM 计数
-  - **当前基线 (2026-09-30 季度复审后)**: 1 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证) — 合规 (1/3)
+  - **当前基线 (2026-10-08 季度复审后)**: 2 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证; `dgpu-realip-pin-contract` Change A — 端口契约代码化, 2026-10-08 Oracle REJECT 修订后通过 Momus 复评落地) — 合规 (2/3)
   - **历史复审**: 2026-09-30 季度复审 archive 3 个 (gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella)，理由: SoC 架构建模属 ArchForge 范围
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
@@ -499,6 +499,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **memory_routing_enabled_ 路由开关** (D2 v1.1 修订, 2027-09-26): DGpuBoard 新增 `memory_routing_enabled_` flag 防止无条件路由劫持 root cause 4（与 D1 `display_routing_enabled_` 对称）。默认 `false`，仅当 JSON 顶层 `memory_routing_enabled=true` 时启用 BAR 2 → PcieMemoryDevice 路由。测试覆盖：`[pcie-memory]` 24 cases / 67 assertions（4 文件双标签 `[pcie][pcie-memory]`）。
 - **D-AXI 单一 VRAM 真源在 DGpuBoard** (cpptlm-driver-visible-minimal-soc v1.4, 2027-09-26): `DGpuBoard::vram_storage_` (8GB, `std::unique_ptr<uint8_t[]>` default-init, Linux lazy commit, stable pointer) 是 5 消费者 (backdoor / BAR1 fast-path / BAR2 via memory_device / MemoryTLM backing / SDMA-GMMU legacy ptr) 共享的唯一 backing；`PcieMemoryDevice::memory_backing_` 已被 v1.4 B7 删除，改注入指针 (`set_backing_store(ptr, size)` 对齐 `MemoryTLM v2.2` 模式)。bound = injected `backing_size_`（非 `kDefaultMemSize` 常量）。dual size 字段：`bar1_window_size_` (BAR1 16MB 窗口) vs `vram_size_` (VRAM 8GB 真大小)。测试覆盖：`[minimal_dgpu_soc][driver_visible]` E2E + `[pcie-memory]` 24 cases (v1.4 B13 机械迁移后)。
 - **chip-internal AXI vs board-level PCIe 边界严格分离** (D-AXI v1.4): `AxiMemBundle` (新建, 4KB inline payload, chip-internal) **SHALL NOT** 出现在 host↔board 端口；`PcieTlpBundle` (冻结, board-level TLP) 保持不变。SDMA 5 端口混合 wire-format：mem_in/mem_out 切 AxiMemBundle (chip-internal), desc_in/done_out/host_out 保持 PcieTlpBundle (minimal_v1 不实际接线)。
+- **Fabric2VramCtrlBundle chip-internal port contract** (cpptlm-driver-visible-minimal-soc Change A, 2026-10-08): `Fabric2VramCtrlBundle` 8 字段, max width 64-bit (avoids ch_uint<W>64 wide-path shim per P0 fix 2026-10-06); 编译期 `static_assert` 通过 `include/utils/port_contract_asserts.hh` 启用 (`BUNDLE_FIELD_WIDTH` macro — `PORT_IS_INITIATOR`/`PORT_IS_TARGET` 因 chstream 端口非模板已删除, per Momus REJECT 修复); programmatic bridge via `GpuInternalFabric::set_vram_target(VramControllerTLM*)` + `VramControllerTLM::set_fabric_source(GpuInternalFabric*)` 在 `DGpuBoard::bind_memory_backings()` 中通过 `soc_->getInternalInstance("fabric")` + `"vram_ctrl"` 装配 (per Phase 8 HB/RC precedent + cpptlm-p2-integration-unblock D7)。`ch_uint<W>` 加 `static constexpr unsigned width = W;` (per include/bundles/cpphdl_types.hh A.2 修订)。测试覆盖: `[realip][pin-contract]` 3 cases / 21 assertions。
 
 ## PHASE STATE
 

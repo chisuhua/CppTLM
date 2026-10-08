@@ -97,31 +97,35 @@ mmio_read(bar, offset, buf, len):
 
 ---
 
-## 2. Goals / Non-Goals
+## 2. Goals / Non-Goals (Change A scope, 2026-10-08 resplit)
 
-### 2.1 Goals
+### 2.1 Goals (Change A in-scope)
 
-- **G1**: `Fabric2VramCtrlBundle` chip-internal wire-protocol 代码化,字段对齐 chip-internal 数据路径
-- **G2**: `port_contract_asserts.hh` `static_assert` 编译期验证 4-IP 端口名 + 类型 + 方向
-- **G3**: `GpuInternalFabric::vram_ctrl_out` + `VramControllerTLM::fabric_in` 端口扩展 + `set_vram_target` 程序化桥接
-- **G4**: DGpuBoard 7 个 legacy flag 删除 (PciePath + 5 routing_enabled + mmio_self_drain 保留 + controller_ip 保留)
-- **G5**: JSON 顶层 4 个 `routing_enabled` 字段退役
-- **G6**: Strangler gate 保留 (per dgpu_board_shell.cc:336-343 facade verdict 与 expected mirror)
-- **G7**: 2 个新测试文件**双标签** `[realip][pin-contract]` (per handoff §9.2 #10 防 vacuous pass)
-- **G8**: 4 frozen header 零 diff + 23 ABI 零新增 (per AGENTS.md 冻结面)
+- **G1**: `Fabric2VramCtrlBundle` chip-internal wire-protocol 代码化,字段对齐 chip-internal 数据路径 (8 字段, max width 64-bit)
+- **G2**: `port_contract_asserts.hh` 提供 `BUNDLE_FIELD_WIDTH` macro (Momus 修订: 删 PORT_IS_INITIATOR/TARGET,基于不存在的 `chstream::ChStreamInitiatorPort<Bundle>` 模板 — 实际 `cpptlm::ChStreamInitiatorPort` 是非模板类)
+- **G3**: `GpuInternalFabric::set_vram_target(VramControllerTLM*)` + `VramControllerTLM::set_fabric_source(GpuInternalFabric*)` 双向 setter 桥接 (Momus 修订: 不加 `ChStreamInitiatorPort<Bundle>` 成员,改 setter-only 模式,运行时 round-trip 验证)
+- **G4**: `DGpuBoard::bind_memory_backings()` 末尾追加 programmatic bridge,通过 `soc_->getInternalInstance("fabric")` + `"vram_ctrl"` 装配 (Momus 修订: 实际 API 而非 `modules_by_name`;fabric 模块名 `"fabric"` 而非 `"gpu_internal_fabric"`, per `configs/dgpu_soc_v2_realip_p2.json:22`)
+- **G5**: `ch_uint<W>` 加 `static constexpr unsigned width = W;` (per `include/bundles/cpphdl_types.hh` A.2 修订) — 让 `BUNDLE_FIELD_WIDTH` macro 可用 `decltype(&BundleType::Member)::width`
+- **G6**: 3 个新测试用例 (TEST_CASE #1 字段宽度 + #2 accessors + #3 round-trip) **双标签** `[realip][pin-contract]` (per handoff §9.2 #10 防 vacuous pass)
+- **G7**: 4 frozen header 零 diff + 23 ABI 零新增 (per AGENTS.md 冻结面, Change A 不动)
+- **G8**: 编译期契约生效 (BUNDLE_FIELD_WIDTH static_assert 触发 + 测试 #1 8 字段宽度 PASS)
 
-### 2.2 Non-Goals
+### 2.2 Out of Change A scope (deferred to Change B/C/D)
 
-- **NG1**: DGpuBoard::mmio_regs_ (`std::map<pair<bar, offset>, vector<uint8_t>>`) 物理清理 — 后续 pin-contract 二次清理,本次只删 routing flag
-- **NG2**: `mmio_self_drain_enabled` flag 退役 (drain 优化保留)
-- **NG3**: DGpuBoard::controller_ip_ + set_pcie_controller_ip 移除 (P2 PR-A facade 必要)
-- **NG4**: DGpuBoard::init() 重构 — 本 change 只删 flag, init() 流程不动
-- **NG5**: 真实 RTL 桥接 (CppHDL/HybridCache) — P13 单独 change
-- **NG6**: PcieAxiAdapter/Axi4CacheAdapter 实施 — cpptlm-p2-integration-unblock 异步推进
-- **NG7**: DGpuBoard 其他 setter (set_display_fb_size / set_dma_translate_callback / set_irq_callback 等) — 业务保留,不在本 change 范围
-- **NG8**: legacy `framebuffer_size_bytes` 顶层 override — P0.5-landing 保留
-- **NG9**: 4 frozen header (cpptlm_emulator.h / pcie_endpoint_tlm.h / pcie_display_device.hh / pcie_bundles_tlm.hh) — 0 修改 (per AGENTS.md 冻结面)
-- **NG10**: 23 ABI 新增 — P5 冻结 (per ADR-088 §D5)
+- **NG1**: DGpuBoard 7 个 legacy flag 删除 (PciePath + 5 routing_enabled + mmio_self_drain 保留) — **Change C** (Oracle C6 修复,前置 = Change B 完成且 acceptance 0 回归)
+- **NG2**: JSON 顶层 4 个 `routing_enabled` 字段退役 — **Change C**
+- **NG3**: `mmio_read/write` 简化 (Strangler gate 保留) — **Change C**
+- **NG4**: DGpuBoard::init() 重构 — Change A 仅加 programmatic bridge, init() 流程不动
+- **NG5**: `match_bar` BAR0 offset-aware 子窗口修复 (GMMU/display 区分) — **Change B** (Oracle C2 修复)
+- **NG6**: `DGpuBoard::init` 装配 `attach_endpoint` + `set_pcie_controller_ip` (facade 接管数据路径) — **Change B** (Oracle C1 修复)
+- **NG7**: `test_pcie_bypass_tlp_data_path.cc` 编译失败修复 — **Change B** (Oracle C5 修复)
+- **NG8**: 真实 RTL 桥接 (CppHDL/HybridCache) — P13 单独 change
+- **NG9**: PcieAxiAdapter/Axi4CacheAdapter 实施 — cpptlm-p2-integration-unblock 异步推进
+- **NG10**: DGpuBoard 其他 setter (set_display_fb_size / set_dma_translate_callback / set_irq_callback 等) — 业务保留
+- **NG11**: legacy `framebuffer_size_bytes` 顶层 override — P0.5-landing 保留
+- **NG12**: 4 frozen header (cpptlm_emulator.h / pcie_endpoint_tlm.h / pcie_display_device.hh / pcie_bundles_tlm.hh) — 0 修改 (per AGENTS.md 冻结面)
+- **NG13**: 23 ABI 新增 — P5 冻结 (per ADR-088 §D5)
+- **NG14**: ModuleFactory strict_types + ConnectionResolver WARN + ParamResolver hook — **Change D** (Oracle A1/A2/A3/A4 修复)
 
 ---
 

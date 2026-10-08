@@ -1,10 +1,16 @@
-# dgpu-realip-pin-contract: Legacy Flag 删除 + 端口契约代码化 (Phase D 边界收紧)
+# dgpu-realip-pin-contract: Change A — Port-Contract 代码化 (chip-internal wire-protocol)
 
-> **状态**: 📋 Proposed — 2026-10-07
-> **目标**: 删除 `DGpuBoard` 7 个 legacy routing flag + 端口契约代码化 (chip-internal wire-protocol 静态检查), 让 4-IP topology (PcieControllerIP / GpuInternalFabric / VramControllerTLM / DGpuSoc) 从"行规 flag 拼装"切到"端口契约 + compile-time port map"
+> **状态**: 📋 Proposed (resplit) — 2026-10-08
+> **Oracle 反馈**: 原 monolith (`/openspec/changes/dgpu-realip-pin-contract/{proposal,design,tasks}.md` 2026-10-07 版) REJECT (4 CRITICAL + 7 MAJOR + 5 MINOR, per Oracle `bg_<session>` 报告). 拆分为 4 Change:
+> - **Change A (本提案)**: Port-Contract 代码化 (`Fabric2VramCtrlBundle` + `BUNDLE_FIELD_WIDTH` macro + 3 单元测试)
+> - Change B (并行, 独立 plan): Facade 真正接管数据路径 (`DGpuBoard::init` 装配 `attach_endpoint` + `set_pcie_controller_ip`, `match_bar` BAR0 offset-aware 子窗口修复) — Oracle C1/C2 修复
+> - Change C (门控于 B 完成 + acceptance 0 回归): Legacy flag 删除 (5 routing_enabled + PciePath enum + mmio_read/write 简化 + JSON 退役) — Oracle C6 修复
+> - Change D (独立 P2 清理): ModuleFactory strict_types + ConnectionResolver WARN + ParamResolver hook + AGENTS.md baseline — Oracle A1/A2/A3/A4 修复
+>
+> **目标**: 落地 `Fabric2VramCtrlBundle` chip-internal wire-protocol, 4-IP topology (PcieControllerIP / GpuInternalFabric / VramControllerTLM / DGpuSoc) 端口契约编译期可验证
 > **前置**: `cpptlm-dgpu-realip-refactor` ✅ archived 2026-10-07 (Phase C tag `dgpu-realip-refactor-completion` 落)
-> **Oracle 评分卡起点**: Phase C 后平均 ~6.6/10 (GpuInternalFabric 6, VramControllerTLM 7.5, PcieControllerIP 7, DGpuBoard 5.5, PcieBarRouter 7.5)
-> **预期跃升**: 平均 ~7.5/10 (DGpuBoard 5.5→7.5 [+2.0], PcieControllerIP 7→7.5 [+0.5], 端口契约解锁 RTL team 1:1 对照)
+> **不动 routing flag**: Change A 仅代码化端口契约;DGpuBoard 7 legacy flag 删除留 Change C (前置 = Change B 完成)
+> **不动 match_bar / mmio_read**: facade 真正接管数据路径留 Change B;legacy path simplification 留 Change C
 
 ---
 

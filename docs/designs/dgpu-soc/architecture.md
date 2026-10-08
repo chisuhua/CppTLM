@@ -174,6 +174,46 @@ DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
 - 🟡 Phase B 并行任务 (本次提交): T23A 死引用删除 + T22b fabric pin-contract + T27 文档同步 3 文件
 - ⏭ Phase C 剩余: T23B / T23C / T25A / T25B / T26 / T28
 
+### 2.4.1 Chip-Internal Port Contract — fabric ↔ vram_ctrl (Change A, 2026-10-08)
+
+Per `openspec/changes/dgpu-realip-pin-contract/` (Change A scope, 2026-10-08, **Momus 修订**):
+
+| Src Port | → | Dst Port | Bundle | Direction |
+|----------|---|------------|--------|-----------|
+| `GpuInternalFabric::vram_ctrl_` | → | `VramControllerTLM::fabric_` | `Fabric2VramCtrlBundle` | Programmatic (setter-only, per Phase 8 HB/RC precedent + cpptlm-p2-integration-unblock D7) |
+
+**Fabric2VramCtrlBundle 字段表** (8 字段, max width 64-bit, per `include/bundles/dgpu_fabric_bundles_tlm.hh`):
+
+| field | width | semantic |
+|------|:-----:|----------|
+| `address` | 64 | DRAM byte address |
+| `size` | 8 | transaction size in bytes |
+| `is_write` | 1 | 1=write, 0=read |
+| `data` | 64 | write data (≤64-bit avoids ch_uint wide-path shim) |
+| `transaction_id` | 32 | request id (changed from CacheReqBundle 64→32) |
+| `resp_data` | 64 | read response data |
+| `error_code` | 8 | 0=OK, 1=DECERR, 2=SLVERR |
+| `chip_select` | 8 | chip-select (multi-chip HCS topology) |
+
+**Programmatic bridge** (per Oracle AD-4): `DGpuBoard::bind_memory_backings()` 末尾调
+```cpp
+fabric->set_vram_target(vram_ctrl);
+vram_ctrl->set_fabric_source(fabric);
+```
+通过 `soc_->getInternalInstance("fabric")` / `"vram_ctrl"` 取真实指针 (模块名见 `configs/dgpu_soc_v2_realip_p2.json:22,33`)。JSON 不声明此端口 (避免 §14.2.3 静默丢弃)。
+
+**Compile-time contract**: `include/utils/port_contract_asserts.hh` 提供 1 macro (Momus 修订版):
+- `BUNDLE_FIELD_WIDTH(BundleType, Member, ExpectedWidth)` — width check via `decltype(&BundleType::Member)::width == ExpectedWidth` (依赖 `cpphdl_types.hh` 加的 `static constexpr unsigned width = W;`)
+- **已删除** (Momus REJECT 修复): `PORT_IS_INITIATOR` / `PORT_IS_TARGET` (基于不存在的 `chstream::ChStreamInitiatorPort<Bundle>` 模板 — 实际 `cpptlm::ChStreamInitiatorPort` 是非模板类)
+
+**运行时契约**: `test/test_realip_pin_contract.cc` TEST_CASE #3 round-trip — 19 assertions in 3 test cases PASS per `[realip][pin-contract]` tag。
+
+**Out of Change A scope** (deferred to Change B/C):
+- `match_bar` BAR0 offset-aware sub-window (Oracle C2 修复)
+- Legacy flag 删除 (5 routing_enabled + PciePath enum)
+- `mmio_read/write` 简化 (Strangler gate 保留)
+- JSON 顶层 `routing_enabled` 字段退役
+
 ---
 
 ## 3. 存储子系统(gem5 模式)
