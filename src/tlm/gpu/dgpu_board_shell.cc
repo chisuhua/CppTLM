@@ -26,21 +26,6 @@ namespace tlm::gpu {
         // device_id_ 需从 board_cfg 加载,此处先默认 0
     }
 
-    // ── T-P12-1: profile 注入 (profile JSON "pcie_path" 字段解析) ──
-
-    void DGpuBoard::attach_profile(const nlohmann::json& profile) {
-        const std::string pcie_path_str = profile.value("pcie_path", "legacy");
-        if (pcie_path_str == "tlp") {
-            pcie_path_ = PciePath::Tlp;
-        } else if (pcie_path_str == "axi_bypass") {
-            pcie_path_ = PciePath::AxiBypass;
-        } else if (pcie_path_str == "mock") {
-            pcie_path_ = PciePath::Mock;
-        } else {
-            pcie_path_ = PciePath::Legacy; // "legacy" 或任何未识别值
-        }
-    }
-
     DGpuBoard::~DGpuBoard() {
         if (!stop_.load()) {
             destroy();

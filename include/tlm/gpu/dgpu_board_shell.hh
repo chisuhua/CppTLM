@@ -71,20 +71,6 @@ public:
     // 测试超时路径时置 false, 仅依赖外部 drain 以稳定触发 -110 (公开供调用方/测试覆写)
     bool mmio_self_drain_enabled{true};
 
-    // T-P12-1: 4 态 PCIe 路径选路
-    enum class PciePath : uint8_t {
-        Legacy = 0,     // "legacy" 或缺失 → mmio_regs_ 既有行为
-        AxiBypass = 1,  // "axi_bypass" → HostBypassTLM::bar_write
-        Tlp = 2,        // "tlp" → TLP 完整链路
-        Mock = 3        // "mock" → PcieMockIP
-    };
-
-    // T-P12-1: profile 注入 (解析 pcie_path 字段)
-    void attach_profile(const nlohmann::json& profile);
-
-    // T-P12-1: 当前路径访问器 (测试用)
-    PciePath pcie_path() const noexcept { return pcie_path_; }
-
     // P2 PR-B Task 17 (per Oracle bg_c60653e0 §3): inject PcieControllerIP facade
     // to enable match_bar-based dispatch. When controller_ip_ != nullptr, mmio_read/
     // mmio_write paths consult PcieControllerIP::match_bar in addition to legacy
@@ -95,24 +81,6 @@ public:
     }
     [[nodiscard]] tlm::pcie::PcieControllerIP* controller_ip() const noexcept {
         return controller_ip_;
-    }
-
-    // D1 v1.1.1: 路由开关（防劫持）— 默认 false，向后兼容
-    // 仅当 SOC 配置显式启用（"display_routing_enabled": true）才路由到 PcieDisplayDevice
-    // 避免 dGPU 自身 BAR0 寄存器（doorbell/GPFIFO_PUT）被劫持（root cause 4）
-    void set_display_routing_enabled(bool en) noexcept {
-        display_routing_enabled_ = en;
-    }
-    [[nodiscard]] bool display_routing_enabled() const noexcept {
-        return display_routing_enabled_;
-    }
-
-    // D2 v1.1: memory_routing_enabled 路由开关（防劫持，与 D1 v1.1.1 对称）
-    void set_memory_routing_enabled(bool en) noexcept {
-        memory_routing_enabled_ = en;
-    }
-    [[nodiscard]] bool memory_routing_enabled() const noexcept {
-        return memory_routing_enabled_;
     }
 
     // T-P12-1: 测试 accessors
@@ -265,10 +233,6 @@ public:
 
     // ── Phase A2/B1/B2/B3 framebuffer + 路由 flag (rename per ADR-DGPU-10 §4) ──
     void bind_memory_backings();
-    void set_storage_routing_enabled(bool en) noexcept { storage_routing_enabled_ = en; }
-    [[nodiscard]] bool storage_routing_enabled() const noexcept { return storage_routing_enabled_; }
-    void set_gmmu_routing_enabled(bool en) noexcept { gmmu_routing_enabled_ = en; }
-    [[nodiscard]] bool gmmu_routing_enabled() const noexcept { return gmmu_routing_enabled_; }
     // ADR-DGPU-10: vram_storage_ 新命名, attach_vram_for_testing 替代
     void attach_vram_for_testing(uint8_t* ptr, uint64_t size) noexcept {
         framebuffer_ptr_ = ptr;
@@ -312,9 +276,6 @@ private:
     std::exception_ptr last_exception_;          // #8 跨线程异常传递
     static constexpr uint64_t kDefaultQuantumCycles = 1000;
     uint64_t quantum_cycles_ = kDefaultQuantumCycles;
-
-    // T-P12-1: 4 态 PCIe 路径选路
-    PciePath pcie_path_ = PciePath::Legacy;
 
     // ── 回调(per #4 non-blocking) ──
     IrqCallback irq_cb_;
