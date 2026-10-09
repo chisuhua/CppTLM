@@ -36,6 +36,18 @@
 #define REGISTER_MODULE(T) \
     ModuleFactory::registerModule<T>(#T), true
 
+// D.1 (Change D): composite-only 变体宏 — 注册时同时标 kCompositeOnly 作用域
+// 用于 EP-internal composite 成员 (per Oracle bg_c60653e0 §4 PcieAxiBridgeIP
+// precedent)。当前 PcieAxiBridgeIP 已不 REGISTER (本宏为未来 composite
+// 类型预留)。kCompositeOnly 类型在 JSON 顶层实例化会立即 return false +
+// DPRINTF ERROR (per module_factory.cc Step 2 检查)。
+// 用法: REGISTER_MODULE_COMPOSITE_ONLY(MyComposite);
+//   注意: `, true` 保持与 REGISTER_MODULE 一致的 expression statement
+//   兼容 (全局作用域可作为变量初始化器)。
+#define REGISTER_MODULE_COMPOSITE_ONLY(T) \
+    (ModuleFactory::registerModule<T>(#T), \
+     ModuleFactory::registerModuleScope(#T, ModuleFactory::ModuleInstScope::kCompositeOnly), true)
+
 // REGISTER_CHSTREAM moved to chstream_register.hh
 
 // v2.2 (P2-T2.4): 集中注册 5 个 SimModule 派生类 (CpuCluster + 4 GPU 端核心类)

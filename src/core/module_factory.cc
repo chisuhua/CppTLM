@@ -276,6 +276,20 @@ bool ModuleFactory::instantiateAll(const json& config) {
         auto& module_registry = ModuleFactory::getModuleRegistry();
         auto module_it = module_registry.find(type);
         if (module_it != module_registry.end()) {
+            // D.1 (Change D): strict_types 检查 — 若该 type 标 kCompositeOnly
+            // (per Oracle bg_c60653e0 §4 PcieAxiBridgeIP precedent), JSON 顶层
+            // 实例化视为配置错误, fail-fast (return false + DPRINTF ERROR)。
+            // 防止 composite-only 类被误用为顶层模块, 进入半构造状态。
+            auto& scope_registry = ModuleFactory::getModuleScopeRegistry();
+            auto scope_it = scope_registry.find(type);
+            if (scope_it != scope_registry.end() &&
+                scope_it->second == ModuleFactory::ModuleInstScope::kCompositeOnly) {
+                DPRINTF(MODULE,
+                        "[STRICT_TYPES] Type '%s' is composite-only; "
+                        "JSON 顶层实例化禁止 (kCompositeOnly, per Oracle bg_c60653e0 §4)\n",
+                        type.c_str());
+                return false;
+            }
             // 这是一个 SimModule。RAII: unique_ptr 持有所有权, module_instances
             // 保存 raw 视图 (非所有权, 用于 Step 4.5/incorporate_parent 迭代)。
             auto new_module =

@@ -93,6 +93,24 @@ public:
         registry[type] = std::move(fn);
     }
 
+    // D.1 (Change D): 实例化作用域 — kTopLevel 默认 (JSON 顶层可实例化);
+    // kCompositeOnly 标记仅作为复合组件成员 (JSON 顶层实例化视为配置错误)。
+    // 动机: PcieAxiBridgeIP 等类仅作为 EP-internal composite 成员使用 (per
+    // Oracle bg_c60653e0 §4), JSON 顶层实例化会进入半构造状态。
+    // PcieAxiBridgeIP 当前已不 REGISTER (跳过即可), 但 ModuleInstScope 机制
+    // 为未来 composite 类型 + strict_types 模式提供基础设施 (ODR-safe)。
+    enum class ModuleInstScope : uint8_t {
+        kTopLevel = 0,       // 默认 — JSON 顶层可实例化
+        kCompositeOnly = 1,  // 仅作为复合组件成员 (e.g. EP-internal bridge)
+    };
+    static std::unordered_map<std::string, ModuleInstScope>& getModuleScopeRegistry() {
+        static std::unordered_map<std::string, ModuleInstScope> registry;
+        return registry;
+    }
+    static void registerModuleScope(const std::string& type, ModuleInstScope scope) {
+        getModuleScopeRegistry()[type] = scope;  // 覆盖 (允许后注册者重定义)
+    }
+
     explicit ModuleFactory(EventQueue* eq) : event_queue(eq) {}
     ~ModuleFactory();
 
