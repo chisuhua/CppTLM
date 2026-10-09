@@ -183,18 +183,27 @@ bool ModuleFactory::instantiateAll(const json& config) {
 
     for (auto& mod : final_config["modules"]) {
         std::string type = mod["type"];
-        if (mod.contains("params") && type == "RouterTLM") {
-            auto rules = tlm::RouterTLM::get_param_rules();
-            for (const auto& [name, rule] : rules) {
-                if (!mod["params"].contains(name.c_str())) {
-                    if (rule.required) {
-                        DPRINTF(MODULE,
-                                "[PARAM ERROR] Required parameter '%s' missing for module '%s'\n",
-                                name.c_str(), type.c_str());
-                        return false;
-                    }
-                    if (rule.default_int.has_value()) {
-                        mod["params"][name] = rule.default_int.value();
+        if (mod.contains("params")) {
+            // D.3 (cpptlm-dgpu-realip-pin-contract Change D, 2026-10-08):
+            // 泛化 RouterTLM 硬编码特例为 ParamRules 注册表查询。
+            // 行为与原代码逐字一致 (required → return false; default_int → 注入);
+            // RouterTLM 通过 src/tlm/router_tlm.cc 静态自注册。
+            // 未注册 type 直接跳过 (原代码等效: `if type == "RouterTLM"` 否则整段跳过)。
+            auto& rules_registry = ModuleFactory::getParamRulesRegistry();
+            auto it = rules_registry.find(type);
+            if (it != rules_registry.end()) {
+                auto rules = it->second();
+                for (const auto& [name, rule] : rules) {
+                    if (!mod["params"].contains(name.c_str())) {
+                        if (rule.required) {
+                            DPRINTF(MODULE,
+                                    "[PARAM ERROR] Required parameter '%s' missing for module '%s'\n",
+                                    name.c_str(), type.c_str());
+                            return false;
+                        }
+                        if (rule.default_int.has_value()) {
+                            mod["params"][name] = rule.default_int.value();
+                        }
                     }
                 }
             }

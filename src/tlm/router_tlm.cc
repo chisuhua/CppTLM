@@ -558,4 +558,15 @@ namespace tlm {
         };
     }
 
+    // D.3 (cpptlm-dgpu-realip-pin-contract Change D, 2026-10-08):
+    // 静态自注册 RouterTLM ParamRules 到 ModuleFactory 注册表。
+    // ODR-safe: cpptlm_core 多次链接时 (cpptlm_tests + libcpptlm_emulator.so)
+    // ModuleFactory::registerParamRules 内部 early-return on duplicate。
+    namespace {
+        const bool _router_param_rules_registered = []() {
+            ModuleFactory::registerParamRules("RouterTLM", &RouterTLM::get_param_rules);
+            return true;
+        }();
+    } // namespace
+
 } // namespace tlm
