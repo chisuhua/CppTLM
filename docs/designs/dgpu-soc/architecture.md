@@ -142,15 +142,16 @@ DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
 - **Memory Device** (D2): `openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp` 提案;本期通过 vram_storage_ 简化实现其能力
 - **Host Bypass / Root Complex**: Phase 8 已交付,本期测试用 host 直连模式(经 `DGpuBoard::mmio_*`)
 
-### 2.4 4-IP Real-IP Boundary (dgpu-realip-refactor P3, 进行中)
+### 2.4 5-IP Real-IP Boundary (dgpu-realip-refactor P3 + soc-internal-noc-minimal, 进行中)
 
-> **状态**: 🟡 进行中。Per plan `2026-10-06-dgpu-realip-refactor.md` Status Update (2026-10-07, P3 Amendment + Phase A.2)。当前 SoC 是 6 模块 god-class (D-AXI v1.4 minimal_v1); P3 阶段将抽象层提升为 4 个**真实物理 IP 边界**对齐的 TLM 模块(可对照 RTL 实现硅片)。完成 PR-B Phase Gate (B1/B2/B3 全收, `ad13991d` + `385c7c35` + `e59004b9`)。Phase A.2 已修 P0 双阻塞(短名注册 + MUST NOT #3 措辞) + P1 5 项修订。
+> **状态**: 🟡 进行中。Per plan `2026-10-06-dgpu-realip-refactor.md` Status Update (2026-10-07, P3 Amendment + Phase A.2)。当前 SoC 是 6 模块 god-class (D-AXI v1.4 minimal_v1); P3 阶段将抽象层提升为 5 个**真实物理 IP 边界**对齐的 TLM 模块(可对照 RTL 实现硅片)。完成 PR-B Phase Gate (B1/B2/B3 全收, `ad13991d` + `385c7c35` + `e59004b9`)。Phase A.2 已修 P0 双阻塞(短名注册 + MUST NOT #3 措辞) + P1 5 项修订。2026-10-08 新增 `SocInternalNoc` (per openspec/changes/cpptlm-dgpu-soc-internal-noc-minimal), SoC 范围 4 target 路由骨架 (PcieControllerIP / SdmaEngineTLM / GmmuTLM / VramControllerTLM), 端口契约对齐 Arteris FlexNoC / Custom Mesh IP。
 
 | IP 边界 | 真实芯片对应 | CppTLM 类 (现状) | 端口契约 | State ownership |
 |---------|--------------|---------------------|------------|------------------|
 | **`PcieControllerIP`** (顶层 facade) | DWC i5122 / Cadence PCIe Controller | `include/tlm/pcie/pcie_controller_ip.hh` (B1 组合 refactor: `SimModule` + `PcieEndpointIP* ep_` non-owning) | 4 BAR decode (`Bar0Mmio` / `Bar1FbFastPath` / `Bar2VramAperture` / `Unknown`) | **stateless facade** — 所有 state 经 `ep_->...` 委托 |
 | **`PcieAxiBridgeIP`** (EP composite, NOT 顶层) | Synopsys AXI↔PCIe bridge / ChipLink | `include/tlm/pcie/pcie_axi_bridge_ip.hh` (类保留, `REGISTER_MODULE` REMOVED per Oracle bg_c60653e0 §4) | AXI4-slave → EP-internal composite (lazy_init) | EP-internal, JSON 顶层不可实例化 |
 | **`GpuInternalFabric`** (新增, P3 T22) | Custom mesh / Arteris NoC IP | `include/tlm/cluster/gpu_internal_fabric.hh` (scaffold commit `95a68889`; T22b pin-contract test commit `139534ac` + Phase A.2 短名注册 commit pending) | 4 端口 (默认 = CrossbarTLM::NUM_PORTS) | non-owning `crossbar_` raw ptr (ModuleFactory owns) |
+| **`SocInternalNoc`** (新增, 2026-10-08, soc-internal-noc-minimal) | Arteris FlexNoC / Custom Mesh IP (per Driver 视角 driver 路径闭环) | `include/tlm/cluster/soc_internal_noc.hh` (新) | `NoCFlitBundle` 18 字段 (mesh XY + VC + flit_type, per #4 commit 3fba7a61 BUNDLE_FIELD_WIDTH 锁) | stateless 路由骨架: 4 raw target ptr (PcieControllerIP / SdmaEngineTLM / GmmuTLM / VramControllerTLM) + 2 计数器 (flits_routed + unknown_dst) |
 | **`VramControllerTLM`** (timing-mode 已有, P3 promote) | NVIDIA FB / AMD MC (HBM PHY, DFI interface) | `include/tlm/vram_controller_tlm.hh` (Phase 4 T4 timing-mvp 已实现; P3 promote via JSON top-level per spec §6.4 E5) | AXI4-slave (from GpuInternalFabric) + DRAM command abstraction (DFI-lite) internal | Backing ptr (injected from DGpuBoard `vram_storage_` per ADR-DGPU-05) + row buffer + bandwidth counters |
 
 **保留模块 (P3 promote 后)**:
