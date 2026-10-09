@@ -1,12 +1,8 @@
-# Spec: SocInternalNoc (Functional Routing)
+# soc-internal-noc Specification
 
-> **状态**: 📋 Draft (per tasks.md Phase 1)
-> **配套**: [`proposal.md`](../proposal.md) · [`design.md`](../design.md)
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change cpptlm-dgpu-soc-internal-noc-minimal. Update Purpose after archive.
+## Requirements
 ### Requirement: soc-internal-noc-module-identity SocInternalNoc SimModule 定义
 
 `SocInternalNoc` SHALL be a `SimModule` 派生类, 命名空间 `tlm::cluster`, 提供 4 target 程序化桥接 + 路由功能。
@@ -218,3 +214,4 @@
 - **WHEN** `./scripts/test/docs_sync_check.sh --strict`
 - **THEN** 退出码 0, 输出 "所有路径引用都有效"
 - **NOTE**: 新 design doc `soc-internal-noc-design.md` 路径在 AGENTS.md / architecture.md 引用, 必须可解析
+
