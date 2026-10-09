@@ -1,8 +1,20 @@
 {
   "name": "dgpu_soc_v2_realip_p2",
-  "description": "dGPU SoC using PcieControllerIP facade + DGpuSoc 4-IP nested topology (T23B: per P3 Amendment + MUST NOT 1/2 lock; PcieAxiBridgeIP NOT instantiated here — it's PcieEndpointIP::lazy_init composite, NOT JSON-top-level). Per docs/designs/dgpu-soc/architecture.md §7.3: 顶层 modules[0] 必须是 DGpuSoc, 否则 modules[1+] 被静默丢弃.",
+  "description": "dGPU SoC Phase C 4-IP nested topology (per openspec/changes/dgpu-realip-pin-contract archived 2026-10-09: T23B + T25A.1 + T25B + T26 facade dormant-guard). 4-IP topology: PcieControllerIP + GpuInternalFabric + VramControllerTLM + PcieEndpointIP (3 direct children under DGpuSoc, 4th via PcieEndpointIP composite). 4 routing_enabled 字段保留 (per ADR-DGPU-10 anti-hijack root cause 4 + Change C.4 REVISED `f66070a8` 终态) — 与 minimal_v1/timing_v1 字段对齐. 嵌套结构: GpuInternalFabric 节点内含 CrossbarTLM child (T25A.1: simulate_instantiate 覆写遍历调 attach_crossbar). VramControllerTLM params 镜像 timing-mode 模板 (per cpptlm-dgpu-soc-timing-mvp), MUST NOT 1 lock. PcieAxiBridgeIP 不在 children (MUST NOT 2 lock, per Oracle bg_c60653e0 §4). MUST NOT 1/2/3 grep-gate check_pcie_ip_facade.sh enforces. 23 ABI 签名零 diff (per ADR-DGPU-08 frozen). 4 frozen headers 零 diff (per E.1 AC-E1-1.5). **v1.1 修订**: + `flr_enabled: true` + `resizable_bars_enabled: true` 顶层配置开关 (per cpptlm-pcie-host-test-flr-rebar v1.1 Phase 5.3). + `soc_noc.data_flow: true` 节点占位 (per cpptlm-dgpu-soc-internal-noc-e1 v1.1 DataNoC, but 实际装配由 DGpuBoard::bind_memory_backings() 动态注入, 不在此 JSON). 0 改动 PcieAxiBridgeIP 锁定 (MUST NOT 2 lock 保留).",
   "version": "2-realip-p2-b",
-  "_note": "Per T2 (Oracle bg_fb84a648): MUST NOT contain 'axi_adapter' or 'axi4_mapper_inject' keys in PcieControllerIP params — would double-attach via PcieEndpointIP::attach_composition auto-flow. grep-gate check_pcie_ip_facade.sh enforces this. Per T23A (Phase B P3 Amendment 2026-10-07): PcieAxiBridgeIP module entry REMOVED from JSON (PcieAxiBridgeIP REMOVED from REGISTER_MODULE per Oracle bg_c60653e0 §4 — JSON 顶层不可实例化; class 仍保留为 EP composite lazy_init 依赖). Per T23B (Phase C 2026-10-07): JSON 重建为 DGpuSoc 嵌套, 4-IP topology: PcieControllerIP + GpuInternalFabric + VramControllerTLM (3 direct children under DGpuSoc). VramControllerTLM params 镜像 timing-mode 模板 (per cpptlm-dgpu-soc-timing-mvp), MUST NOT 1 lock: VramControllerTLM 类不动, 仅 JSON 引用 + 后续 T23C backing 注入. PcieAxiBridgeIP 不在 children 中 (MUST NOT 2 lock). Per T25A.1 (Phase C 2026-10-07): GpuInternalFabric 节点加 inner CrossbarTLM child (modules/name=crossbar), GpuInternalFabric::simulate_instantiate 覆写遍历 children 调 attach_crossbar. Per Oracle bg_c60653e0 §3.4: inner crossbar MUST instantiate via ModuleFactory JSON child path (NOT raw `new`), 保证 Step 7 StreamAdapter 注入不会跳过.",
+  "display_routing_enabled": false,
+  "storage_routing_enabled": true,
+  "gmmu_routing_enabled": true,
+  "memory_routing_enabled": true,
+  "framebuffer_size_bytes": 16777216,
+  "flr_enabled": true,
+  "resizable_bars_enabled": true,
+  "soc_noc": {
+    "data_flow": true,
+    "vc_counters_enabled": true,
+    "_note": "Per e1 v1.1 DataNoC only: soc_noc 节点作为配置开关占位, SocInternalNoc 实际装配由 DGpuBoard::bind_memory_backings() 动态注入 (per E0 precedent). DataNoC only 承载 SDMA bulk DMA 流量 (per Real-IP 调研 + Oracle 复审); PT_BASE / doorbell / page walk 走独立通道 deferred to E.2 (ArchForge)."
+  },
+  "_note": "Per T2 (Oracle bg_fb84a648): MUST NOT contain 'axi_adapter' or 'axi4_mapper_inject' keys in PcieControllerIP params — would double-attach via PcieEndpointIP::attach_composition auto-flow. grep-gate check_pcie_ip_facade.sh enforces this. Per T23A (Phase B P3 Amendment 2026-10-07): PcieAxiBridgeIP module entry REMOVED from JSON (PcieAxiBridgeIP REMOVED from REGISTER_MODULE per Oracle bg_c60653e0 §4 — JSON 顶层不可实例化; class 仍保留为 EP composite lazy_init 依赖). Per T23B (Phase C 2026-10-07): JSON 重建为 DGpuSoc 嵌套, 4-IP topology: PcieControllerIP + GpuInternalFabric + VramControllerTLM (3 direct children under DGpuSoc). VramControllerTLM params 镜像 timing-mode 模板 (per cpptlm-dgpu-soc-timing-mvp), MUST NOT 1 lock: VramControllerTLM 类不动, 仅 JSON 引用 + 后续 T23C backing 注入. PcieAxiBridgeIP 不在 children 中 (MUST NOT 2 lock). Per T25A.1 (Phase C 2026-10-07): GpuInternalFabric 节点加 inner CrossbarTLM child (modules/name=crossbar), GpuInternalFabric::simulate_instantiate 覆写遍历 children 调 attach_crossbar. Per Oracle bg_c60653e0 §3.4: inner crossbar MUST instantiate via ModuleFactory JSON child path (NOT raw `new`), 保证 Step 7 StreamAdapter 注入不会跳过. **v1.1 修订新增**: `flr_enabled: true` 触发 HostPcieTestStub::trigger_flr() → 既有 `PcieEndpointIP::flr_pf()` (per pcie_endpoint_ip.hh:201-202); `resizable_bars_enabled: true` 触发 HostPcieTestStub::trigger_resize_bar() → 既有 `enable_resizable_bar() + on_bar_resize()` (per pcie_endpoint_ip.cc:670-694). 0 新增 ABI 函数族 (per ADR-DGPU-08 §2.3). 0 新增 `cpptlm_emulator_flr.h` / `cpptlm_emulator_resizable_bar.h` 头文件.",
   "modules": [
     {
       "type": "DGpuSoc",
@@ -29,7 +41,13 @@
               { "offset": 4,  "name": "GMMU_PT_BASE_HI", "access": "rw" },
               { "offset": 8,  "name": "GMMU_CTRL",      "access": "rw" },
               { "offset": 16, "name": "SDMA_STATUS",    "access": "ro" }
-            ]
+            ],
+            "resizable_bars": {
+              "_note": "v1.1 修订: 复用既有 ResizableBar 数据结构 (per pcie_endpoint_ip.hh:321 resizable_bars_[6] array). new_size_bytes_ 字段类型 uint32→uint64 (per CRITICAL C3: 4GB 溢出). 启用 runtime resize 协议 (per flr-rebar v1.1 ResizableBarRuntime::commit()).",
+              "supported_bar_indices": [2],
+              "supported_sizes_bytes": [1073741824, 2147483648, 4294967296, 8589934592],
+              "_spec_4gb_64bit_encoding": "low_dword=0, high_dword=1 (per PCIe Base Spec §7.8.6)"
+            }
           }
         },
         {

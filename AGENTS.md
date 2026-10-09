@@ -127,11 +127,14 @@ test/                   # Catch2 v3.7.0 测试套件 (≥100 个 test_*.cc)
 
 configs/                 # JSON 拓扑配置
   common/ param_rules/ test/ examples/ templates/         # 共享 + 测试 + 示例模板
-  apu_soc_v1.json         # 顶层 SoC 配置 (CPU + GPU + Crossbar)
-  apu_soc_full.json / apu_soc_phase7a.json / apu_soc_phase7b.json  # 阶段性
-  dgpu_board_v1.json     # dGPU 板级
-  dgpu_soc_v1.json.in     # dGPU SoC 配置 (Phase 4+ 模板)
-  dgpu_soc_with_pcie_ip.json  # ★ Phase 8 完整 dGPU SoC + PCIe EP 配置
+   apu_soc_v1.json         # 顶层 SoC 配置 (CPU + GPU + Crossbar)
+   apu_soc_full.json / apu_soc_phase7a.json / apu_soc_phase7b.json  # 阶段性
+   dgpu_board_v1.json     # dGPU 板级 (23 ABI driver-visible 入口)
+   dgpu_soc_minimal_v1.json  # Minimal dGPU SoC v1.8 (D-AXI 终态, functional)
+   dgpu_soc_timing_v1.json  # Timing-mode dGPU SoC v0.5 (timing)
+   dgpu_soc_v2_realip_p2.json  # 4-IP nested topology (Phase C 终态, pin-contract archived)
+   dgpu_soc_with_pcie_ip.json  # ★ Phase 8 完整 dGPU SoC + PCIe EP 配置
+   dgpu_soc_v1.json.in.disabled  # ⚠️ Deprecated 2026-10-09 (PcieEndpointTLM deprecated)
 
 docs/
   architecture/          # 通用基础架构文档（事务/错误/复位/拓扑/可视化）
@@ -401,8 +404,10 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
   - **季度复审**: 评估是否 archive, merge, 或明确 deprecate
   - **新提案门槛**: 现有 ≥3 时新提案需先 archive 一个现有 change
   - **范围判定 (2026-09-30 季度复审后)**: CppTLM=建模框架 + 基本 SoC 验证；SoC 架构建模在 ArchForge。任何 SoC 架构组件/拓扑/演进类提案应直接在 ArchForge openspec 创建，不进 CppTLM 计数
-  - **当前基线 (2026-10-09 季度复审后, post soc-internal-noc-minimal 归档)**: 2 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证; `dgpu-realip-pin-contract` — 端口契约代码化, Change A/B/C 已完成 + Change D 实施中, 2026-10-08 Step 0 P0 SIGSEGV 修复落地) — 合规 (2/3)
-  - **历史归档 (2026-10-09)**: `cpptlm-dgpu-soc-internal-noc-minimal` → `openspec/specs/soc-internal-noc/` (5-IP 边界 + 4 NODE_ID 路由骨架 + 8 ADDED Requirements 永久保留). AGENTS.md KEY INVARIANTS 已加 'SocInternalNoc 4-target 路由骨架' 条目.
+  - **当前基线 (2026-10-09, post v1.1 修订)**: 2 个 Proposed Draft (e1 v1.1 + flr-rebar v1.1 状态都是 Proposed Draft) + 1 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证) — **注意 v1.1 修订**: e1 v1.1 从 Suspended → Proposed Draft v1.1 (4 P0 + 3 CRITICAL + 3 MAJOR 已修复); flr-rebar v1.1 (3 CRITICAL 已修复) — 合规 (2 Draft + 1 Proposed = 3/3, 上限触发, 需在归档 e1 v1.1 或 flr-rebar v1.1 后才回 2/3 KPI 空间)
+  - **Draft (2026-10-09, v1.1 修订后)**:
+    - `cpptlm-dgpu-soc-internal-noc-e1` v1.1 (proposal 267 + design 541 + tasks 321 + spec 313 + README 161 = 1603 lines): DataNoC only 范围缩减 (per Oracle/Metis/RTL 调研三轮 + 真实 dGPU IP 调研); 修复 4 P0 (P0-1: AC-E1-4 vs scope 不可达 / P0-2: GMMU TLB 已存在 functional-mode / P0-3: fence→MSI-X 已闭环 + `trigger_msix` 全仓零匹配 / P0-4: GMMU PTE fetch 三处矛盾) + 3 CRITICAL (C1 PCIe 边界混淆 / C2 GMMU 独立 memory client bypass mesh NoC / C3 PCIe EP 硬件 MSI-X Generator 无软件 API) + 3 MAJOR (M1 通道分离 / M2 REQ/RESP dual bundle 漏 DAT/SNP / M4 VramControllerTLM 协议错配). 删 PcieNocAdapter/GMMUNocAdapter + Task 4.2 GMMU TLB cache + Task 4.3 CompletionRing fence→MSI-X 新增 + PcieControllerIP::emit_noc_request. 保留并扩展 2 adapter (SDMANocAdapter + VramNocAdapter 内部 NoC→Fabric2VramCtrlBundle 字段映射 + AXI4-like multi-beat split); 新增 `vc_counts_[4]` 计数器按 `flit_category` 分桶. 0 frozen headers 改动 (per AC-E1-1.4 + AC-E1-1.5). 估时 16d → 10d (-37%). 详见 [docs/designs/dgpu-soc/architecture.md §2.4.3](../../docs/designs/dgpu-soc/architecture.md).
+    - `cpptlm-pcie-host-test-flr-rebar` v1.1 (proposal 247 + design 432 + tasks 329 + 4 spec files 541 = 1549 lines): HostPcieTestStub in-process C++ 仿真测试桩 + **复用既有** `flr_pf()/flr_vf()` + `enable_resizable_bar()/on_bar_resize()` (per `pcie_endpoint_ip.hh:201-202` + `pcie_endpoint_ip.cc:670-694`). 修复 3 CRITICAL (C2 违反 ADR-DGPU-08 §2.3 0 新增约束 / C3 3 处 PCIe spec 错误: Device Control Register offset 0x04→0x08 bit 15 + 4GB BAR 64-bit 编码 low dword=0/high dword=1 + ResizableBar::new_size_bytes_ uint32→uint64 修复 4GB 溢出 / C4 2 spec 矛盾: FLR 后 MSI-X PBA 全清统一). 删 2 个新 ABI 头文件 (`cpptlm_emulator_flr.h` + `cpptlm_emulator_resizable_bar.h`) + PcieFlrHandler + ResizableBarRuntime 新类 + DGpuBoard::reset_23_abi_state/update_routing 新方法. HostPcieTestStub 直接调既有 `DGpuBoard::trigger_flr/resize_bar` C++ 入口 (0 新增 ABI). 统一构造签名 `(DGpuBoard* board, const std::string& config_path)` (修 v1.0 三处不一致). 路由统一 `PcieEndpointIP::handle_resize_bar()` (修 v1.0 三处归属不一致). 估时 11d → 7d (-36%). 详见 [docs/designs/dgpu-soc/architecture.md §2.5 + §2.6](../../docs/designs/dgpu-soc/architecture.md).
   - **历史复审**: 2026-09-30 季度复审 archive 3 个 (gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella)，理由: SoC 架构建模属 ArchForge 范围
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
@@ -494,7 +499,10 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - **测试状态**: **实测** (Step 0 P0 SIGSEGV 修复后, 2026-10-08) — `[realip]` 22 cases / **193 assertions** (Step 0 后 +9: cycle 3× 加强), `[pcie]` 430 / 36672 assertions, `[pcie-memory]` 17 / 48, `[minimal_dgpu_soc]` 12 / 66, `[dgpu_soc_timing]` 37 / 12024, `[driver_visible]` 2 / 29 全绿; **0 已知 flaky** (Step 0 前 5-6/50 SIGSEGV 概率根除); 6 标签 0 回归
 - **DGpuBoard destroy→init cycle re-entrancy** (Step 0 P0 fix, 2026-10-08, commit `4d35faee`): `DGpuBoard::destroy()` Step 5 调 `eq_.reset()` (dgpu_board_shell.cc:997) → 第二轮 `load_soc_config` 入口加 `if (!eq_) eq_ = std::make_unique<EventQueue>()` 重建, 符合 ctor "每卡独立 EQ" 政策 (dgpu_board_shell.cc:23) 与 ADR-DGPU-02 uniform destruction 语义 (destroy 仍清空, load 重建)。否则 `sim_loop()` 第一行 `eq_->run(quantum_cycles_)` 空指针解引用 → SIGSEGV (1/6 flaky 由 sim 线程调度决定)。回归测试 cycle 1→3 轮 + 每轮 `ctrl->endpoint() != nullptr` (Change B B.2b attach_endpoint 重装配验证)
 - **VramControllerTLM 1 GHz 操作频率假设** (Change D D.4, 2026-10-08, commit `6b1f46c4`): `tlm::vram::kOperatingFrequencyHz = 1'000'000'000ULL` (1 GHz) + `kSimCycleNs = 1` 常量, 仅文档化锚点不参与仿真逻辑。`bandwidth_gbps_` 字段语义实为 **bytes/cycle** (命名沿用 design.md §5.2 历史用法避免破坏 ABI); 真实带宽换算 `bandwidth_GBps = bandwidth_gbps_ × 1 GHz = bandwidth_gbps_ GB/s` (例: 默认 32 → 32 GB/s 上限, 注入 128 → 128 GB/s)。仿真时间到 wall-clock: `1 sim_cycle = 1 ns @ 1 GHz`。变更此处必须同步更新 `docs/designs/dgpu-soc/timing-mode.md §2.4` + dgpu-realip-pin-contract D.4 docs; 实际芯片 HBM PHY 频率由 platform config 注入 (D3 seam)
-- **SocInternalNoc 4-target 路由骨架** (cpptlm-dgpu-soc-internal-noc-minimal, 2026-10-08, commit pending): `tlm::cluster::SocInternalNoc` SimModule, 4 程序化桥接 (`set_pcie_target` / `set_sdma_target` / `set_gmmu_target` / `set_vram_target`) + 4 `static constexpr uint32_t NODE_ID_{PCIE=0,SDMA=1,GMMU=2,VRAM=3}` (per architecture.md §2.4 IP 表格顺序) + `route_flit(NoCFlitBundle&)` 按 `flit.dst_node` 路由。`DGpuBoard::bind_memory_backings()` 通过 `soc_->getInternalInstance("soc_noc")` 装配 4 桥接 (per Change B B.2b precedent + cpptlm-p2-integration-unblock D7)。本期为路由骨架 (per design §5.3 决议: 不切 4 target 模块现有 wire format, 留 E.1 续作)。端口契约: `NoCFlitBundle` 18 字段 (per #4 commit 3fba7a61 BUNDLE_FIELD_WIDTH 编译期锁)。0 behavior 副作用: 缺 `soc_noc` 节点时 dynamic_cast 返 nullptr, 4 setter 全部跳过 (graceful degradation)。测试: `[realip][pin-contract][noc]` 5 cases / 31 assertions 全绿; `[realip]` 涨到 29 cases / 254 assertions。0 回归: `[pcie]` 430/430 + `[pcie-memory]` 17/17 + `[minimal_dgpu_soc]` 12/12 + `[dgpu_soc_timing]` 37/37 + `[driver_visible]` 2/2 全绿。Full SoC internal NoC 物理行为 (multi-VC / mesh / QoS) 属 ArchForge scope (per AGENTS.md 季度复审产物 "SoC 架构建模在 ArchForge 仓"), 本 change 仅做"功能路由 + 接口兼容"。
+- **SocInternalNoc DataNoC only (E.1 v1.1, 2026-10-09)** (per [cpptlm-dgpu-soc-internal-noc-e1 v1.1 design.md](../../openspec/changes/cpptlm-dgpu-soc-internal-noc-e1/design.md)): `tlm::cluster::SocInternalNoc` SimModule, **E.1 v1.1 范围缩减**: 仅承载 **SDMA bulk DMA 流量** (SDMA→VramControllerTLM); PT_BASE / doorbell / GMMU page walk 走**独立通道** deferred to E.2 (ArchForge)。**E.1 v1.1 修复 4 P0 + 3 CRITICAL + 3 MAJOR**: 删 PcieControllerIP/GMMU adapter (per CRITICAL C1/C2), 删 Task 4.2 GMMU TLB cache (P0-2 已存在), 删 Task 4.3 fence→MSI-X (P0-3 已闭环), 删 `PcieEndpointIP::trigger_msix` 引用 (P0-3 全仓零匹配), 删 design §2.2 GMMU→NoC 边 (P0-4 三处矛盾), 不创建 NoCReqFlitBundle/NoCRespFlitBundle dual type (与 `noc_bundles_tlm.hh:14-25` v2.1 决策矛盾)。**E.1 v1.1 新增**: 2 adapter (`SDMANocAdapter` + `VramNocAdapter`, 含内部 NoC→Fabric2VramCtrlBundle 字段映射 + AXI4-like multi-beat split), `vc_counts_[4]` 计数器按 `flit_category` 分桶 (REQ=VC0/RSP=VC1/DAT=VC2/SNP/VC3), `flits_dispatched_` 计数, `send_request/response` API。`route_flit()` stub 升级到实际推 `target->accept(flit)` (per 既有 `SocInternalNoc::route_flit()` 实现)。**`NoCFlitBundle` 16 字段** (per `include/bundles/noc_bundles_tlm.hh:26-50`, v2.1 决策: 统一类型 + `flit_category` 区分 REQ/RESP, AGENTS.md 旧版"18 字段"系笔误 2026-10-09 由 dual-agent review 修正); 编译期 `BUNDLE_FIELD_WIDTH` 锁 16 字段宽度。**真实物理 IP 对应** (per Oracle RTL 调研): NVIDIA H100 GMMU 专用 memory client bypass mesh NoC, ARM CMN-700 + SMMUv3 DVM 独立通道, ARM CHI 4 通道 + 4 VC, HBM3 Controller AXI4 5 通道, PCIe EP 硬件 MSI-X Generator。**估时**: v1.0 16d → v1.1 10d (-37%)。测试: `[realip]` 29 → ≥32 cases + `[driver_visible]` 2 → ≥6 cases + `[noc][deadlock-fuzz]` 3 cases。0 回归 (per 设计)。详细架构见 [docs/designs/dgpu-soc/architecture.md §2.4.3](../../docs/designs/dgpu-soc/architecture.md)。
+- **PcieEndpointIP::flr_pf()/flr_vf() 既有实现** (per `include/tlm/pcie/pcie_endpoint_ip.hh:201-202` + `pcie_sriov_vf_pool_tlm.hh:110` `pool_.flr_pf()`): **17 端口** config space + per-VF MSI-X + FC + seq# + CompletionTracker 全部 reset (per SR-IOV VF pool FLR 协议实现, per PCIe Base Spec §6.6.2)。FLR 后 **MSI-X PBA 全清** (per spec §6.6.2: "Function 回到初始状态, 含 MSI-X PBA bits"; MSI-X vector table 在 BAR 指向的 memory 保留 — FLR 不清 BAR 空间)。测试: `test_pcie_endpoint_ip_basic.cc:102-108` 覆盖。**v1.1 复审结论** (per [cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.2](../../openspec/changes/cpptlm-pcie-host-test-flr-rebar/design.md)): X1 v1.0 提议"FLR 仓内零实施"陈述失实; X1 v1.1 **复用既有 flr_pf()/flr_vf()**, **不新建 PcieFlrHandler 4-state 状态机**; config space **Device Control Register offset 0x08 bit 15** = 1 during reset (per PCIe Base Spec §7.5.1.2: Initiate FLR; **修 X1 v1.0 offset 0x04 错误**)。
+- **ResizableBar INV-C disable/reprogram/enable + new_size_bytes_ uint64** (per `include/tlm/pcie/pcie_resizable_bar.hh` + `pcie_endpoint_ip.cc:670-694` `enable_resizable_bar()` + `on_bar_resize()`): 既有数据结构 `ResizableBar` 类 + `PcieEndpointIP::resizable_bars_[6]` array + INV-C 状态机 (Disabled → Programming → Enabled)。**v1.1 修复**: `new_size_bytes_` 字段类型 `uint32_t` → **`uint64_t`** (per CRITICAL C3: 4GB = 0x100000000 溢出 uint32)。**Resizable BAR 4GB 64-bit 编码** (per PCIe Base Spec §7.8.6: 64-bit BAR pair): 0x18 (BAR2 register) low dword = 0, 0x1C (BAR3 upper dword) high dword = 1 (4GB = 0x100000000 >> 32 = 1)。测试: `test_resizable_bar_integration.cc` + `test_pcie_endpoint_bar_store_3d_key.cc:122-138`。**v1.1 复审结论** (per X1 v1.1 design.md §3.3): X1 v1.1 复用既有 `enable_resizable_bar() + on_bar_resize()`, **不新建 ResizableBarRuntime 类**; 路由统一为 `PcieEndpointIP::handle_resize_bar()` (修 X1 v1.0 三处归属不一致)。
+- **HostPcieTestStub in-process C++ fixture** (per [cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.1](../../openspec/changes/cpptlm-pcie-host-test-flr-rebar/design.md)): `include/tlm/pcie/host_pcie_test_stub.hh` 新增, **in-process 仿真测试桩** (统一构造签名 `HostPcieTestStub(DGpuBoard* board, const std::string& config_path)`, 修 X1 v1.0 三处不一致)。API: `send_config_read/write` + `send_mmio_read/write` + `inject_error` + `trigger_flr()` + `trigger_resize_bar(uint8_t, uint64_t)` + `register_msix_handler`。**0 新增 23 ABI 函数** (per CRITICAL C2 + ADR-DGPU-08 §2.3 0 新增约束); 直接调既有 `DGpuBoard::trigger_flr/resize_bar/mmio_read/write/config_read/write` C++ 入口; **删除** X1 v1.0 提议的 `cpptlm_emulator_flr.h` + `cpptlm_emulator_resizable_bar.h` (per 23 ABI 冻结 + UsrLinuxEmu 已排除 Non-Goal #4, 无 ABI 消费者)。详细架构见 [docs/designs/dgpu-soc/architecture.md §2.5 + §2.6](../../docs/designs/dgpu-soc/architecture.md)。
 - **23 ABI 冻结**: `include/tlm/gpu/pcie_endpoint_tlm.h` 与 `include/abi/cpptlm_emulator.h` 零修改（仅可加 `[[deprecated]]` 属性）
 - **PcieEndpointTLM deprecated**: `[[deprecated("use PcieEndpointIP")]]`，chstream_register 仍注册（既有 Phase 4 测试依赖），新增 PcieEndpointIP 并存
 - **ch_uint 宽类型支持** (P0 fix, 2026-10-06, dgpu-realip-refactor §5.1): `ch_uint<W≤64>` 保留原 `uint64_t value_` 存储(零行为变化,is_trivially_copyable + is_standard_layout 编译期断言);`ch_uint<W>64>` 改用 `std::array<uint64_t, N>` 多字存储 (`ch_uint_wide`)。`ch_uint<W>` 通过 `std::conditional_t` + `using base::base` 分派,保留 100+ 既有 `ch_uint<W>(k)` 调用点。Wide 路径提供 `low()` / `slice<>` / `set_slice<>` 显式操作;**`read()` / `write()` / `operator uint64_t()` 在 W>64 时退化为低 64-bit 截断**(保留 axi4_*/pcie_axi_adapter_tlm/pcie_endpoint_ip 既有行为,P1/P2 迁移到 slice/set_slice 后可移除)。详细规格见 `docs/superpowers/specs/2026-10-06-dgpu-realip-refactor-design.md §5.1`。
@@ -553,6 +561,51 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 **D3 演进 seam (v1.4 已就位, Phase 4 T4 实施完成)**：`handle_slave_port ↔ backing_ptr_` 之间已插入 VramControllerTLM (继承 MemoryTLM + 行缓冲 + bandwidth 上限, per cpptlm-dgpu-soc-timing-mvp T4)。
 
+### ★ e1 + flr-rebar v1.1 修订 (2026-10-09, Suspended→Proposed Draft, 双向 Oracle/Metis + RTL 复审)
+
+| Change | 版本 | commits | 复审 | 状态 |
+|------|------|---------|------|------|
+| **cpptlm-dgpu-soc-internal-noc-e1** v1.1 (2026-10-09) | proposal 267 + design 541 + tasks 321 + spec 313 + README 161 = **1,603 行** | — | **Oracle 三轮 + Metis 一轮 + RTL/真实 IP 调研** (NVIDIA H100 GMMU 专用 memory client / ARM CMN-700 + SMMUv3 DVM / Synopsys DW PCIe AXI Bridge / HBM3 Controller AXI4 5 通道) | 🟡 **Proposed Draft v1.1** (修复 4 P0 + 3 CRITICAL + 3 MAJOR; DataNoC only 重定位) |
+| **cpptlm-pcie-host-test-flr-rebar** v1.1 (2026-10-09) | proposal 247 + design 432 + tasks 329 + 4 spec files 541 = **1,549 行** | — | **Oracle 一轮 + Metis 一轮 + RTL 调研** (PCIe Base Spec §6.6.2/§7.5.1.2/§7.8.6) | 🟡 **Proposed Draft v1.1** (修复 3 CRITICAL: ADR-DGPU-08 §2.3 0 新增 + 3 处 PCIe spec 错误 + 2 spec 矛盾) |
+
+**e1 v1.1 核心变更** (相对 v1.0):
+1. **范围重定位**: 4 target wire format 全迁移 → **DataNoC only** (SDMA bulk DMA 路径)
+2. **删除 5 项重复/错误实现**:
+   - `PcieNocAdapter` (CRITICAL C1: PCIe Controller 边界混淆)
+   - Task 4.2 GMMU TLB cache (P0-2: `gmmu_tlm.hh:147-193` `translate_timing()` 已实现)
+   - Task 4.3 CompletionRing fence→MSI-X (P0-3 + CRITICAL C3: `sdma_engine_tlm.cc:738` 链路已闭环 + `trigger_msix` 全仓零匹配)
+   - `PcieControllerIP::emit_noc_request` (CRITICAL C1)
+   - `PcieEndpointIP::trigger_msix` 引用 (CRITICAL C3: 全仓零匹配, **不实现**)
+3. **不创建** `NoCReqFlitBundle/NoCRespFlitBundle` dual type (与 `noc_bundles_tlm.hh:14-25` v2.1 决策矛盾)
+4. **新增** 2 adapter (SDMANocAdapter + VramNocAdapter 内部 NoC→Fabric2VramCtrlBundle 字段映射 + AXI4-like multi-beat split) + `vc_counts_[4]` 计数器按 `flit_category` 分桶
+5. **估时**: v1.0 16d → **v1.1 10d** (-37%)
+
+**flr-rebar v1.1 核心变更** (相对 v1.0):
+1. **不重建** PcieFlrHandler 4-state 状态机 + ResizableBarRuntime 类 — **复用既有** `flr_pf()/flr_vf()` + `enable_resizable_bar()/on_bar_resize()` (per `pcie_endpoint_ip.hh:201-202` + `pcie_endpoint_ip.cc:670-694`)
+2. **删除 2 个新 ABI 头文件**: `cpptlm_emulator_flr.h` + `cpptlm_emulator_resizable_bar.h` (CRITICAL C2: 违反 ADR-DGPU-08 §2.3 0 新增约束)
+3. **不实现** `DGpuBoard::reset_23_abi_state()` + `update_routing()` + `PcieControllerIP::resize_bar()` (后两者不存在方法)
+4. **修复 3 处 PCIe spec 错误**:
+   - Device Control Register offset 0x04 → **0x08 bit 15** (per PCIe Base Spec §7.5.1.2: Initiate FLR)
+   - 4GB 64-bit BAR 编码 "low dword = 4GB, high dword = 0" → **"low dword = 0, high dword = 1"** (per PCIe Base Spec §7.8.6: 64-bit BAR pair)
+   - `ResizableBar::new_size_bytes_` `uint32_t` → **`uint64_t`** (4GB = 0x100000000 溢出修复)
+5. **统一 2 spec 矛盾**: FLR 后 MSI-X pending 不清零 + FLR 后 MSI-X PBA 全清 → **统一为"MSI-X PBA 全清"** (per PCIe Base Spec §6.6.2)
+6. **统一构造签名**: 3 处不一致 (DGpuBoard* / (emu, config) / DGpuBoard 句柄注入) → **`HostPcieTestStub(DGpuBoard* board, const std::string& config_path)`**
+7. **统一路由归属**: 3 处不一致 (PcieControllerIP::resize_bar / DGpuBoard::handle_resize_bar / PcieEndpointIP::set_resizable_bar_size) → **`PcieEndpointIP::handle_resize_bar(bar_idx, new_size)`**
+8. **估时**: v1.0 11d → **v1.1 7d** (-36%)
+
+**config 修订**:
+- `configs/dgpu_soc_v2_realip_p2.json` (2026-10-09): + `flr_enabled: true` + `resizable_bars_enabled: true` + `soc_noc.data_flow: true` 节点 (per e1 v1.1 + flr-rebar v1.1 Phase 5.3). 4-IP 拓扑保持 (PcieControllerIP + PcieEndpointIP + GpuInternalFabric + VramControllerTLM); SocInternalNoc 由 `bind_memory_backings()` 动态装配 (per e1 v1.1 §3.4), 不在 JSON 顶层。
+- `configs/dgpu_soc_minimal_v1.json` + `dgpu_soc_timing_v1.json`: **0 改动** (e1 v1.1 DataNoC only 不涉及; flr-rebar v1.1 复用既有 + bar_sizes 已是 uint64 数组)
+
+**OpenSpec KPI 状态** (per 2026-10-09):
+- 当前 baseline: **2 Draft + 1 Proposed = 3/3** (上限触发, 需在归档 e1 v1.1 或 flr-rebar v1.1 后才回 2/3 KPI 空间)
+- 修订前 baseline (2026-09-30): 2/3 (e1 Draft + p2-integration-unblock Proposed + flr-rebar 不存在)
+- 修订后 baseline (2026-10-09): 3/3 (e1 v1.1 Draft + flr-rebar v1.1 Draft + p2-integration-unblock Proposed)
+
+**后续动作**:
+- 用户接受 v1.1 修订后, 归档 2 个 change → baseline 回 2/3
+- 实施 v1.1 tasks.md (e1 10d + flr-rebar 7d = **17d 总**)
+
 ### ★ GPGPU / SoC 既有交付（2026 之前，跨 Phase 1-7 与本项目同期）
 
 | 组件 | 内容 | 状态 |
@@ -563,7 +616,8 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | DMA / Doorbell / CommandProcessor / CompletionRing MVP | 端到端 SoC 集成路径 | ✅ 完成 |
 | 顶层 ApuSoC | CPU侧 + GPGPU侧 + Crossbar 互联, `incorporate_parent` 钩子(借鉴 gem5 late-binding) | ✅ 完成 |
 | dGPU Board Shell | `src/tlm/gpu/dgpu_board_shell.cc` 端到端板级集成 | ✅ 完成 |
-| 配置文件 | `apu_soc_v1.json` / `apu_soc_full.json` / `dgpu_soc_v1.json.in` / `dgpu_soc_with_pcie_ip.json` | ✅ 完成 |
+| 配置文件 | `apu_soc_v1.json` / `apu_soc_full.json` / `dgpu_board_v1.json` / `dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` / `dgpu_soc_v2_realip_p2.json` / `dgpu_soc_with_pcie_ip.json` | ✅ 完成 |
+| 退役配置 | `dgpu_soc_v1.json.in.disabled` (per 2026-10-09 季度复审, PcieEndpointTLM deprecated) | ⚠️ Deprecated |
 
 ## ARCHIVES & HISTORY
 

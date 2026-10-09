@@ -15,6 +15,7 @@
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
+#include "tlm/pcie/host_pcie_test_stub.hh"
 
 #include <nlohmann/json.hpp>
 
@@ -157,4 +158,40 @@ TEST_CASE("driver-visible E2E: config BAR 双 dword 编码 + bar_sizes 派生", 
     REQUIRE(did == 0x123410DEu);
 
     board.shutdown();
+}
+
+TEST_CASE("driver-visible: HostPcieTestStub trigger_flr 集成 (X1 v1.1)",
+          "[driver_visible][e2e][v1.1][host-test-stub][trigger-flr]") {
+    EventQueue eq;
+    tlm::gpu::DGpuBoard board("soc", &eq);
+    auto cfg = load_minimal_soc_config();
+    REQUIRE(board.load_soc_config(cfg));
+
+    tlm::pcie::HostPcieTestStub stub(&board, "configs/dgpu_soc_v2_realip_p2.json");
+    CHECK(stub.board_attached() == true);
+    CHECK(stub.flr_trigger_count() == 0);
+
+    stub.trigger_flr();
+    CHECK(stub.flr_trigger_count() == 1);
+    stub.trigger_flr();
+    CHECK(stub.flr_trigger_count() == 2);
+}
+
+TEST_CASE("driver-visible: HostPcieTestStub trigger_resize_bar 4GB uint64 集成 (X1 v1.1)",
+          "[driver_visible][e2e][v1.1][host-test-stub][trigger-resize-bar]") {
+    EventQueue eq;
+    tlm::gpu::DGpuBoard board("soc", &eq);
+    auto cfg = load_minimal_soc_config();
+    REQUIRE(board.load_soc_config(cfg));
+
+    tlm::pcie::HostPcieTestStub stub(&board, "configs/dgpu_soc_v2_realip_p2.json");
+
+    stub.trigger_resize_bar(2, 0x100000000ULL);  // 4GB (修 v1.0 uint32 溢出)
+    CHECK(stub.resize_trigger_count() == 1);
+    CHECK(stub.last_resize_bar_idx() == 2);
+    CHECK(stub.last_resize_new_size() == 0x100000000ULL);
+
+    stub.trigger_resize_bar(2, 0x200000000ULL);  // 8GB
+    CHECK(stub.resize_trigger_count() == 2);
+    CHECK(stub.last_resize_new_size() == 0x200000000ULL);
 }

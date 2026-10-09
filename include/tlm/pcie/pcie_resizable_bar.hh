@@ -18,38 +18,41 @@ namespace tlm::pcie {
         // Initial state: Disabled (default per spec)
         ResizableBar() = default;
 
-        // INV-C sequence: disable → reprogram → enable
-        // 任何 enable 请求必须经 disable, 否则拒绝
-        bool reprogram_size(uint32_t new_size_bytes) noexcept {
-            if (state_ == State::Enabled) {
-                // 必须先 disable (INV-C)
-                return false;
-            }
-            new_size_bytes_ = new_size_bytes;
-            state_ = State::Programming;
-            return true;
+    // INV-C sequence: disable → reprogram → enable
+    // 任何 enable 请求必须经 disable, 否则拒绝
+    //
+    // v1.1 (per cpptlm-pcie-host-test-flr-rebar v1.1 design §3.3 + CRITICAL C3):
+    //   new_size_bytes 参数类型 uint32 → uint64 (4GB = 0x100000000 溢出修复)
+    bool reprogram_size(uint64_t new_size_bytes) noexcept {
+        if (state_ == State::Enabled) {
+            // 必须先 disable (INV-C)
+            return false;
         }
+        new_size_bytes_ = new_size_bytes;
+        state_ = State::Programming;
+        return true;
+    }
 
-        bool enable() noexcept {
-            // 必须先经 Programming (reprogram 后) 才可 enable
-            if (state_ != State::Programming) {
-                return false;
-            }
-            state_ = State::Enabled;
-            return true;
+    bool enable() noexcept {
+        // 必须先经 Programming (reprogram 后) 才可 enable
+        if (state_ != State::Programming) {
+            return false;
         }
+        state_ = State::Enabled;
+        return true;
+    }
 
-        void disable() noexcept {
-            state_ = State::Disabled;
-        }
+    void disable() noexcept {
+        state_ = State::Disabled;
+    }
 
-        [[nodiscard]] State state() const noexcept { return state_; }
-        [[nodiscard]] uint32_t size_bytes() const noexcept { return new_size_bytes_; }
-        [[nodiscard]] bool enabled() const noexcept { return state_ == State::Enabled; }
+    [[nodiscard]] State state() const noexcept { return state_; }
+    [[nodiscard]] uint64_t size_bytes() const noexcept { return new_size_bytes_; }
+    [[nodiscard]] bool enabled() const noexcept { return state_ == State::Enabled; }
 
-    private:
-        State state_ = State::Disabled;
-        uint32_t new_size_bytes_ = 0;
+private:
+    State state_ = State::Disabled;
+    uint64_t new_size_bytes_ = 0;
     };
 
 } // namespace tlm::pcie

@@ -16,6 +16,7 @@
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
+#include "tlm/pcie/host_pcie_test_stub.hh"
 #include <nlohmann/json.hpp>
 
 namespace {
@@ -147,3 +148,42 @@ TEST_CASE("PCIe driver perspective: GPFIFO PUT register is an MMIO address",
 //   - "PUSHBUFFER submit then MMIO doorbell" (depends on UsrLinuxEmuIoctlStub IOCTL stub)
 // Both depend on UsrLinuxEmuIoctlStub being refactored to attach DGpuBoard shell,
 // which is sequenced into T-bs-4 follow-up + subsequent adapter iteration.
+// ── v1.1 HostPcieTestStub 集成 (per X1 v1.1 spec AC G5) ──
+// 验证: HostPcieTestStub in-process 仿真测试桩 (v1.1 统一构造签名) 与 DGpuBoard 集成
+// per cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.1
+TEST_CASE("PCIe driver perspective: HostPcieTestStub send_config_read (X1 v1.1 集成)",
+          "[pcie][dGPU][soc][stage-1][host-test-stub][v1.1]") {
+    EventQueue eq;
+    tlm::gpu::DGpuBoard board("pcie_dgpu", &eq);
+    auto cfg = load_board_config();
+    REQUIRE(board.load_soc_config(cfg));
+
+    tlm::pcie::HostPcieTestStub stub(&board, "configs/dgpu_soc_v2_realip_p2.json");
+    CHECK(stub.board_attached() == true);
+    CHECK(stub.config_path() == "configs/dgpu_soc_v2_realip_p2.json");
+
+    stub.send_config_read(0, 0, 0, GPU_REG_GPFIFO_PUT, 4);
+    CHECK(stub.tlp_send_count() == 1);
+    CHECK(stub.last_tlp_kind() == 0);  // CFG_READ
+
+    stub.send_config_read(0, 0, 0, GPU_REG_DOORBELL, 4);
+    CHECK(stub.tlp_send_count() == 2);
+}
+
+TEST_CASE("PCIe driver perspective: HostPcieTestStub send_mmio_read/write (X1 v1.1 集成)",
+          "[pcie][dGPU][soc][stage-1][host-test-stub][v1.1]") {
+    EventQueue eq;
+    tlm::gpu::DGpuBoard board("pcie_dgpu", &eq);
+    auto cfg = load_board_config();
+    REQUIRE(board.load_soc_config(cfg));
+
+    tlm::pcie::HostPcieTestStub stub(&board, "configs/dgpu_soc_v2_realip_p2.json");
+
+    stub.send_mmio_read(0, GPU_REG_GPFIFO_PUT, 4);
+    CHECK(stub.tlp_send_count() == 1);
+    CHECK(stub.last_tlp_kind() == 2);  // MMIO_READ
+
+    stub.send_mmio_write(0, GPU_REG_DOORBELL, 4, nullptr);
+    CHECK(stub.tlp_send_count() == 2);
+    CHECK(stub.last_tlp_kind() == 3);  // MMIO_WRITE
+}
