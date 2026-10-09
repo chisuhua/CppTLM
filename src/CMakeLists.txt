@@ -36,6 +36,9 @@ set(CORE_SOURCES
     # dgpu-realip-refactor P3 Task 22: GpuInternalFabric wrapper (SimModule
     # facade over CrossbarTLM per Oracle bg_c60653e0 §3.4 — non-owning inner).
     tlm/cluster/gpu_internal_fabric.cc
+    # cpptlm-dgpu-soc-internal-noc-minimal (2026-10-08): SoC 内部 NoC
+    # (functional routing + interface compat, 对齐 Arteris FlexNoC)
+    tlm/cluster/soc_internal_noc.cc
     # gpu_soc Phase 8.A: 基础设施层 (Task 1-4 独立模块, 不依赖 F12)
     tlm/gpu/shared_memory_tlm.cc
     tlm/gpu/memory_cluster_tlm.cc
