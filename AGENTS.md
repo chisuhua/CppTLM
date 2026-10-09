@@ -401,7 +401,8 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
   - **季度复审**: 评估是否 archive, merge, 或明确 deprecate
   - **新提案门槛**: 现有 ≥3 时新提案需先 archive 一个现有 change
   - **范围判定 (2026-09-30 季度复审后)**: CppTLM=建模框架 + 基本 SoC 验证；SoC 架构建模在 ArchForge。任何 SoC 架构组件/拓扑/演进类提案应直接在 ArchForge openspec 创建，不进 CppTLM 计数
-  - **当前基线 (2026-10-08 季度复审后, post soc-internal-noc-minimal 新增)**: 3 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证; `dgpu-realip-pin-contract` — 端口契约代码化, Change A/B/C 已完成 + Change D 实施中, 2026-10-08 Step 0 P0 SIGSEGV 修复落地; `cpptlm-dgpu-soc-internal-noc-minimal` — SoC 内部 NoC functional routing + interface compat, 2026-10-08 新增) — 合规 (3/3)
+  - **当前基线 (2026-10-09 季度复审后, post soc-internal-noc-minimal 归档)**: 2 个 Proposed (`cpptlm-p2-integration-unblock` — CP 跨仓接入 unblock, 框架 + 集成验证; `dgpu-realip-pin-contract` — 端口契约代码化, Change A/B/C 已完成 + Change D 实施中, 2026-10-08 Step 0 P0 SIGSEGV 修复落地) — 合规 (2/3)
+  - **历史归档 (2026-10-09)**: `cpptlm-dgpu-soc-internal-noc-minimal` → `openspec/specs/soc-internal-noc/` (5-IP 边界 + 4 NODE_ID 路由骨架 + 8 ADDED Requirements 永久保留). AGENTS.md KEY INVARIANTS 已加 'SocInternalNoc 4-target 路由骨架' 条目.
   - **历史复审**: 2026-09-30 季度复审 archive 3 个 (gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella)，理由: SoC 架构建模属 ArchForge 范围
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
