@@ -53,6 +53,13 @@ public:
         std::function<bool(const std::string&, const std::string&, size_t, bool)>
     ) const;
 
+    // D.2 (Change D): 暴露警告收集器 (per Metis bg_03094fec)
+    // mutable 因为 resolveConnections 是 const 方法; 收集 WARN 级诊断,
+    // 不影响 return 路径 (向后兼容)。测试断言用 `warnings()` 访问。
+    // 注: warnings_ 不属于 stateful behaviour, mutable 仅作技术性需求。
+    const std::vector<std::string>& warnings() const { return warnings_; }
+    void clear_warnings() { warnings_.clear(); }
+
 private:
     /**
      * @brief Find internal path for exposed port
@@ -61,4 +68,7 @@ private:
      * @return Internal path string or empty if not found
      */
     std::string findInternalPath(SimModule* module, const std::string& port_name) const;
+
+    // D.2 (Change D): WARN 收集 (mutable, see warnings() above)
+    mutable std::vector<std::string> warnings_;
 };
