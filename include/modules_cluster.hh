@@ -25,6 +25,7 @@
 #include "tlm/cluster/gpu_noc_cluster.hh"
 #include "tlm/cluster/apu_soc.hh"
 #include "tlm/cluster/gpu_internal_fabric.hh"  // P3 Task 22 (GpuInternalFabric wrapper)
+#include "tlm/cluster/soc_internal_noc.hh"      // cpptlm-dgpu-soc-internal-noc-minimal (2026-10-08, SoC 内部 NoC functional routing)
 #include "tlm/gpu/gpu_soc_tlm.hh"
 #include "tlm/gpu/dgpu_soc.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -73,6 +74,14 @@ const bool _reg_pcieendpointip_short =
 // is invalid (half-constructed state representable). Class definition retained
 // in include/tlm/pcie/pcie_axi_bridge_ip.hh for use as EP composite member.
 const bool _reg_pciecontrollerip = (REGISTER_MODULE(tlm::pcie::PcieControllerIP), true);
+
+// cpptlm-dgpu-soc-internal-noc-minimal (2026-10-08): SoC 内部 NoC functional routing
+// (per Arteris FlexNoC / Custom Mesh IP). 仿 PcieControllerIP precedent: 双注册
+// (FQ + 短名) 让 JSON 短名 "SocInternalNoc" 与 FQ 均 resolve 到 create lambda。
+// 路由逻辑在 route_flit(), 4 NODE_ID 唯一 (per architecture.md §2.4)。
+const bool _reg_socinternalnoc = (REGISTER_MODULE(tlm::cluster::SocInternalNoc), true);
+const bool _reg_socinternalnoc_short =
+    (ModuleFactory::registerModule<tlm::cluster::SocInternalNoc>("SocInternalNoc"), true);
 
 // dgpu-realip-refactor P3 T23B.0 (per Oracle bg_49146b46 + Metis bg_06a27d8b
 // pre-Phase-C 评审, commit 8919afa3 P3 Amendment §0 P0 #1/#2):

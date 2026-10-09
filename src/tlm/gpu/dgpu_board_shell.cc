@@ -4,6 +4,7 @@
 #include "tlm/pcie/pcie_controller_ip.hh"  // P2 PR-B Stage C: facade match_bar in mmio paths
 #include "tlm/vram_controller_tlm.hh"      // A.5 (cpptlm-driver-visible-minimal-soc 2026-10-08): complete type for dynamic_cast<VramControllerTLM*>
 #include "tlm/cluster/gpu_internal_fabric.hh"  // A.5: complete type for dynamic_cast<tlm::cluster::GpuInternalFabric*>
+#include "tlm/cluster/soc_internal_noc.hh"      // soc-internal-noc-minimal: complete type for dynamic_cast<tlm::cluster::SocInternalNoc*>
 #include <algorithm>
 #include <cerrno>
 #include <chrono>
@@ -766,6 +767,24 @@ namespace tlm::gpu {
         } else {
             DPRINTF(MODULE,
                     "[DGpuBoard] A.5: SOC 缺 'fabric' 实例, programmatic bridge 跳过\n");
+        }
+
+        // cpptlm-dgpu-soc-internal-noc-minimal (2026-10-08): SoC 内部 NoC
+        // 4 target 桥接 (PcieControllerIP / SdmaEngineTLM / GmmuTLM / VramControllerTLM)
+        // 通过 soc_noc->set_*_target() 装配, 与 fabric↔vram 桥接并列.
+        // 路由逻辑在 SocInternalNoc::route_flit() 按 flit.dst_node 路由.
+        // 注: 4 target 若未 inject (nullptr), set_target 跳过 — graceful degradation.
+        if (auto* soc_noc = dynamic_cast<tlm::cluster::SocInternalNoc*>(
+                soc_->getInternalInstance("soc_noc"))) {
+            if (controller_ip_) soc_noc->set_pcie_target(controller_ip_);
+            if (sdma_engine_)   soc_noc->set_sdma_target(sdma_engine_);
+            if (gmmu_)          soc_noc->set_gmmu_target(gmmu_);
+            if (vram_ctrl_seen) soc_noc->set_vram_target(vram_ctrl_seen);
+            DPRINTF(MODULE,
+                    "[DGpuBoard] soc-internal-noc: 4-target programmatic bridge wired\n");
+        } else {
+            DPRINTF(MODULE,
+                    "[DGpuBoard] soc-internal-noc: SOC 缺 'soc_noc' 实例, 桥接跳过\n");
         }
     }
 
