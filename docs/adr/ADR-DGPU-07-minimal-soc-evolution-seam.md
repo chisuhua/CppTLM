@@ -3,7 +3,7 @@
 > **状态**: 📋 提案 (基于 D-AXI design.md §X 演进路线图, v1.4 已就位 + v1.6 锁定)
 > **日期**: 2026-09-26
 > **关联架构文档**: [../designs/dgpu-soc/architecture.md §3.5 vram_segments_ 兼容策略 + §X 演进路线图](../designs/dgpu-soc/architecture.md), [../designs/dgpu-driver/architecture.md §5 演进路径](../designs/dgpu-driver/architecture.md)
-> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前, design.md §X + §Y)
+> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8 当前, design.md §X + §Y)
 > **配套 ADR**: [ADR-DGPU-05](ADR-DGPU-05-vram-storage-ownership.md) (vram_storage_ 所有权), [ADR-DGPU-09](ADR-DGPU-09-driver-visible-minimal-soc-scope.md) (Driver-Visible 范围)
 
 ---
@@ -282,7 +282,7 @@ TEST_CASE("driver compiled against minimal_v1 works on full GPU", "[driver-compa
 
 ## 8. 参考
 
-- D-AXI OpenSpec change: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8)
+- D-AXI OpenSpec change: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8)
 - D-AXI design.md §X 演进路线图
 - D-AXI design.md §X.5 D3-D5 Seams 表
 - D-AXI design.md §X.6 重构触发条件
@@ -296,7 +296,7 @@ TEST_CASE("driver compiled against minimal_v1 works on full GPU", "[driver-compa
 
 ### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
 
-**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+**实施 change**: `openspec/specs/driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
 
 **D3-D5 演进 seam 不变性验证**:
 

@@ -3,7 +3,7 @@
 > **状态**: 📋 提案 (基于 D-AXI proposal.md §1 + design.md §13 不在范围, v1.2 P1 修订)
 > **日期**: 2026-09-26
 > **关联架构文档**: [../designs/dgpu-driver/architecture.md](../designs/dgpu-driver/architecture.md), [../designs/dgpu-soc/architecture.md §X 演进路线图](../designs/dgpu-soc/architecture.md)
-> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前, proposal.md §1 + design.md §13)
+> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8 当前, proposal.md §1 + design.md §13)
 > **配套 ADR**: [ADR-DGPU-05](ADR-DGPU-05-vram-storage-ownership.md) (B7 单一 VRAM 所有权), [ADR-DGPU-06](ADR-DGPU-06-axi-mem-bundle-boundary.md) (B2 wire-format 边界), [ADR-DGPU-07](ADR-DGPU-07-minimal-soc-evolution-seam.md) (D3-D5 演进 seam), [ADR-DGPU-08](ADR-DGPU-08-abi-freeze-policy.md) (ABI 冻结)
 
 ---
@@ -272,7 +272,7 @@ grep -rn "coherence\|cache_coherent\|dma_coherent" include/tlm/ src/tlm/ 2>/dev/
 
 ## 8. 参考
 
-- D-AXI OpenSpec change: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8)
+- D-AXI OpenSpec change: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8)
 - D-AXI proposal.md §1 范围 + §7 不在范围
 - D-AXI design.md §1 系统拓扑 + §13 不在范围
 - D-AXI spec.md Requirement "驱动视角完整最小设备" + "15 ABI Functions Unchanged" + "Coherence 域边界"
@@ -286,7 +286,7 @@ grep -rn "coherence\|cache_coherent\|dma_coherent" include/tlm/ src/tlm/ 2>/dev/
 
 ### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
 
-**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+**实施 change**: `openspec/specs/driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
 
 **范围不变性验证 (4 BAR + 15 ABI + 0 新增)**:
 

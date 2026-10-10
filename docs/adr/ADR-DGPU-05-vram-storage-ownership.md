@@ -4,7 +4,7 @@
 > **日期**: 2026-09-26
 > **对应 D-AXI 修正**: **B7** (v1.4 架构根因) + **B8** (bound 语义) + **B10** (mutex 保留) + **B15** (强制删除 framebuffer_storage_)
 > **关联架构文档**: [../designs/dgpu-board/architecture.md §DGpuBoard 新增 framebuffer_](../designs/dgpu-board/architecture.md), [../designs/dgpu-soc/architecture.md §3 存储子系统](../designs/dgpu-soc/architecture.md)
-> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前, B7-B15 落地)
+> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8 当前, B7-B15 落地)
 > **配套 ADR**: [ADR-DGPU-01](ADR-DGPU-01-callback-worker-replaces-detached-threads.md) (CallbackWorker 单一所有权范式)
 
 ---
@@ -270,7 +270,7 @@ per D-AXI tasks.md **B7-B15 + B19** (v1.4 架构根因 + v1.5 隐藏缺陷):
 
 ## 8. 参考
 
-- D-AXI OpenSpec change: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8)
+- D-AXI OpenSpec change: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8)
 - D-AXI design.md §1: 系统拓扑（v1.4 单一 VRAM 所有权）
 - D-AXI design.md §X: 演进路线图（D3 VramController 替换 vram_storage_）
 - D-AXI tasks.md §v1.4 P0: B7-B13 任务清单
@@ -342,7 +342,7 @@ per D-AXI tasks.md **B7-B15 + B19** (v1.4 架构根因 + v1.5 隐藏缺陷):
 
 ### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
 
-**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+**实施 change**: `openspec/specs/driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
 
 **§3 不变性验证 (Phase 3 增量)**:
 

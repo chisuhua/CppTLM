@@ -28,7 +28,7 @@ D-AXI (cpptlm-driver-visible-minimal-soc) 实现笔记:
   - **0 个新 ABI 函数**（per ADR-088 §D5）
   - **冻结面零 diff**：pcie_endpoint_tlm.h / pcie_display_device.hh / pcie_bundles_tlm.hh / cpptlm_emulator.h
   - **D3 seam 已预留**：`handle_slave_port ↔ backing_ptr_` 之间可插入 VramControllerTLM/MemoryClusterTLM
-  - **✅ 配套 timing-mode SoC (v0.2 终稿, Oracle 八轮复评 PASS, 21/21 硬伤落盘, T0 已签发 ADR-DGPU-11)**：`docs/designs/dgpu-soc/timing-mode.md` + `openspec/changes/cpptlm-dgpu-soc-timing-mvp/` (18 ADDED Requirements + 52 scenarios) + [ADR-DGPU-11-timing-mode-soc-scope.md](docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md) (T0 已完成, 11-12d 工程量, **T1-T8 实施完成 2027-02-11, 37 cases + 0 regressions**)
+  - **✅ 配套 timing-mode SoC (v0.2 终稿, Oracle 八轮复评 PASS, 21/21 硬伤落盘, T0 已签发 ADR-DGPU-11)**：`docs/designs/dgpu-soc/timing-mode.md` + `openspec/specs/dgpu-soc-timing/` (18 ADDED Requirements + 52 scenarios) + [ADR-DGPU-11-timing-mode-soc-scope.md](docs/adr/ADR-DGPU-11-timing-mode-soc-scope.md) (T0 已完成, 11-12d 工程量, **T1-T8 实施完成 2027-02-11, 37 cases + 0 regressions**)
   - **7 条实施铁律**：见 `docs/pcie/driver-visible-minimal-soc.md` §4
   - **3 项遗留议题**：D1 Display FB (冻结面约束, D3 收编) / doorbell 0x10010000 (测试合成偏移) / MemoryTLM capacity_gb=1 (不静默)
 
@@ -207,7 +207,7 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 | **`PcieAxiBridgeIP` EP composite (非顶层)** | `include/tlm/pcie/pcie_axi_bridge_ip.{hh,cc}` (类保留 + `REGISTER_MODULE` REMOVED per Oracle `bg_c60653e0 §4`; JSON 顶层不可实例化) |
 | **`GpuInternalFabric` 4-IP fabric** | `include/tlm/cluster/gpu_internal_fabric.{hh,cc}` + `src/tlm/cluster/gpu_internal_fabric.cc` (P3 T22 scaffold; T22b pin-contract test `[fabric]` 已就位) |
 | **`VramControllerTLM` 4-IP VRAM 控制器** | `include/tlm/vram_controller_tlm.{hh,cc}` (Phase 4 T4 timing-mvp 已实现; P3 promote via JSON top-level per spec §6.4; backing 注入走 `DGpuBoard::bind_memory_backings()`) |
-| **D-AXI (Driver-Visible Minimal SoC)** | 实施笔记 `docs/pcie/driver-visible-minimal-soc.md` (v1.8)；三视角架构 `docs/designs/dgpu-{board,soc,driver}/architecture.md` (Board 内部 + SoC 业务 + Driver 接口)；5 个业务 ADR `docs/adr/ADR-DGPU-05~09-*.md`；OpenSpec `openspec/changes/cpptlm-driver-visible-minimal-soc/` (v1.8 tasks.md T0-T5)；E2E `[minimal_dgpu_soc][driver_visible]` |
+| **D-AXI (Driver-Visible Minimal SoC)** | 实施笔记 `docs/pcie/driver-visible-minimal-soc.md` (v1.8)；三视角架构 `docs/designs/dgpu-{board,soc,driver}/architecture.md` (Board 内部 + SoC 业务 + Driver 接口)；5 个业务 ADR `docs/adr/ADR-DGPU-05~09-*.md`；OpenSpec `openspec/specs/driver-visible-minimal-soc/` (v1.8 tasks.md T0-T5)；E2E `[minimal_dgpu_soc][driver_visible]` |
 | **dGPU 文档分层（4 层模型）** | `docs/designs/README.md` 总入口 + 三视角索引；详见 §DOC HYGIENE "4 层文档模型" 小节 |
 | **4-IP 边界表** | `docs/designs/dgpu-soc/architecture.md §2.4` (P3 4-IP 边界映射, RTL team 对照实现) |
 | E2E 全链路 | `test/test_pcie_endpoint_ip_full_e2e.cc` + `examples/demo_pcie_full_e2e.{cc,py}` |

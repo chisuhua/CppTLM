@@ -1,7 +1,7 @@
 # D-AXI T1 实施进度 (Phase 0)
 
 > **状态**: ⏳ Phase 0 进行中（2/3 完成, 1 项需 Phase 10 收编）
-> **关联**: `openspec/changes/cpptlm-driver-visible-minimal-soc/` (v1.5)
+> **关联**: `openspec/specs/driver-visible-minimal-soc/` (v1.5)
 > **总计划**: `docs/superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md`
 
 ## Phase 0 完成度

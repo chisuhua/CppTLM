@@ -3,7 +3,7 @@
 > **版本**: v1.8
 > **日期**: 2026-09-26
 > **状态**: ✅ v1.8 normative 文本收口完成
-> **配套 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 P0 N1-N5)
+> **配套 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../../openspec/specs/driver-visible-minimal-soc/) (v1.8 P0 N1-N5)
 > **业务视角**: [../dgpu-soc/architecture.md](../dgpu-soc/architecture.md) | **基础架构**: [../dgpu-board/architecture.md](../dgpu-board/architecture.md)
 
 ## 0. 文档定位
@@ -112,11 +112,11 @@ ABI 集合定义于 [include/abi/cpptlm_emulator.h](../../../include/abi/cpptlm_
 
 ## 6. 与 OpenSpec / ADR 关系
 
-- **OpenSpec change**: [cpptlm-driver-visible-minimal-soc](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前) — 实施指导与 5 轮 Oracle/Metis 评审补丁
+- **OpenSpec change**: [cpptlm-driver-visible-minimal-soc](../../../openspec/specs/driver-visible-minimal-soc/) (v1.8 当前) — 实施指导与 5 轮 Oracle/Metis 评审补丁
 - **ADR 候选**: ADR-DGPU-08 (abi-freeze-policy) + ADR-DGPU-09 (driver-visible-minimal-soc-scope) 待签发
 
 ## 关联 OpenSpec changes
 
-- [cpptlm-driver-visible-minimal-soc](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前)
+- [cpptlm-driver-visible-minimal-soc](../../../openspec/specs/driver-visible-minimal-soc/) (v1.8 当前)
 
 **同步规则**：本架构文档代表 driver 接口长期契约；具体实施指导与评审补丁见 OpenSpec change 的 design.md。

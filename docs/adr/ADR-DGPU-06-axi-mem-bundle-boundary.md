@@ -4,7 +4,7 @@
 > **日期**: 2026-09-26
 > **对应 D-AXI 修正**: **B1** (SDMA 字段名) + **B2** (SDMA 切型范围限定) + **H1** (v1.8 wire-format 写死全 PcieTlpBundle)
 > **关联架构文档**: [../designs/dgpu-soc/architecture.md §3 AxiMemBundle 定义](../designs/dgpu-soc/architecture.md), [../designs/dgpu-driver/architecture.md §2 BAR 视角](../designs/dgpu-driver/architecture.md)
-> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前, spec Requirement "AxiMemBundle wire-format (v1.8 H1 标 D3+ chip-internal 专用)")
+> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8 当前, spec Requirement "AxiMemBundle wire-format (v1.8 H1 标 D3+ chip-internal 专用)")
 > **配套**: D-AXI tasks.md v1.3 B1+B2, v1.7 P0.33 (H1), v1.8 N2 (H1 normative)
 
 ---
@@ -274,7 +274,7 @@ per D-AXI tasks.md **v1.3 P0.2 B2 + v1.7 P0.33 H1 + v1.8 P0.41 N2**:
 
 ## 8. 参考
 
-- D-AXI OpenSpec change: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8)
+- D-AXI OpenSpec change: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8)
 - D-AXI spec.md Requirement "AxiMemBundle wire-format"
 - D-AXI design.md §3 AxiMemBundle 定义 + §6 SDMA 5 端口换型
 - D-AXI tasks.md v1.3 P0.2 B2 + v1.7 P0.33 H1 + v1.8 P0.41 N2
@@ -289,7 +289,7 @@ per D-AXI tasks.md **v1.3 P0.2 B2 + v1.7 P0.33 H1 + v1.8 P0.41 N2**:
 
 ### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
 
-**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+**实施 change**: `openspec/specs/driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
 
 **v1.8 H1 不变性验证**:
 

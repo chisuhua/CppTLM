@@ -2,7 +2,7 @@
 
 > **状态**: ✅ v1.8 设计已通过 Oracle 五轮评审
 > **对应架构文档**: [architecture.md](./architecture.md)（新建, 2026-09-26）
-> **配套 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前)
+> **配套 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../../openspec/specs/driver-visible-minimal-soc/) (v1.8 当前)
 > **基础架构**: [../dgpu-board/architecture.md](../dgpu-board/architecture.md) | **业务视角**: [../dgpu-soc/architecture.md](../dgpu-soc/architecture.md)
 
 ## 范围

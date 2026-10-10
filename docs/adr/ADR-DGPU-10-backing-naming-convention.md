@@ -4,7 +4,7 @@
 > **日期**: 2027-02-09 (基于 Oracle 5 步解锁链 Step 5 输出)
 > **配套 ADR**: [ADR-DGPU-05](ADR-DGPU-05-vram-storage-ownership.md) (单一 VRAM 所有权,架构决策已完成) + [ADR-DGPU-07](ADR-DGPU-07-minimal-soc-evolution-seam.md) (D3 演进 seam)
 > **关联架构文档**: [../designs/dgpu-soc/architecture.md §1.4](../designs/dgpu-soc/architecture.md) (仿真模式声明) + [../designs/dgpu-soc/architecture.md §3](../designs/dgpu-soc/architecture.md) (存储子系统)
-> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (D-AXI v1.4, B7 已确立单一所有权)
+> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (D-AXI v1.4, B7 已确立单一所有权)
 > **Owner**: CppTLM Team
 
 ---
@@ -315,7 +315,7 @@ TEST_CASE("vram_storage_ single owner + 4 injected views") {
 
 - ADR-DGPU-05: [VRAM backing 单一所有权归 DGpuBoard](ADR-DGPU-05-vram-storage-ownership.md)
 - ADR-DGPU-07: [Minimal SoC → 完整 GPU 演进 Seam](ADR-DGPU-07-minimal-soc-evolution-seam.md)
-- D-AXI OpenSpec: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.4)
+- D-AXI OpenSpec: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.4)
 - 实施笔记: [../../pcie/driver-visible-minimal-soc.md](../../pcie/driver-visible-minimal-soc.md)
 - gem5 参考: `src/mem/abstract_mem.hh` (`backingStore`), `src/mem/physical.{hh,cc}` (`PhysicalMemory`), `src/mem/backdoor.hh` (`MemBackdoor`)
 - 关联架构文档: [../designs/dgpu-soc/architecture.md §1.4 仿真模式声明](../designs/dgpu-soc/architecture.md)

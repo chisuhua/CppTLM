@@ -3,7 +3,7 @@
 > **状态**: 📋 提案 (基于 ADR-088 §D5 + DGpuBoard v2.0.2 P0-3e DoD 仲裁)
 > **日期**: 2026-09-26
 > **关联架构文档**: [../designs/dgpu-board/architecture.md §5.1 ABI 兼容性](../designs/dgpu-board/architecture.md), [../designs/dgpu-driver/architecture.md §3 冻结面](../designs/dgpu-driver/architecture.md)
-> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前, 15 ABI + 0 新增)
+> **关联 OpenSpec**: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.8 当前, 15 ABI + 0 新增)
 > **配套 ADR**: [ADR-DGPU-09](ADR-DGPU-09-driver-visible-minimal-soc-scope.md) (Driver-Visible 范围定义)
 > **仲裁引用**: Oracle v2.0.2 P0-3e DoD 仲裁 + ADR-088 §D5 + DGpuBoard 14 §5.1
 
@@ -249,7 +249,7 @@ TEST_CASE("ABI signature freeze", "[abi][minimal_dgpu_soc]") {
 
 ### 2027-02-09 — Phase 3 实施完成 (driver-visible-minimal-soc v1.8)
 
-**实施 change**: `openspec/changes/cpptlm-driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
+**实施 change**: `openspec/specs/driver-visible-minimal-soc` (Phase 3: T3-FIX + T4)
 
 **ABI 冻结不变性验证**:
 

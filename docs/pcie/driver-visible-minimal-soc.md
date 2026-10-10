@@ -2,7 +2,7 @@
 
 > **状态**: ✅ v1.8 normative 文本收口完成（2026-09-26）
 > **v1.7 → v1.8**: Oracle 第五轮发现 v1.7 是"决策记录而非修复应用"——v1.8 把 H1/H6/N3/N4 normative 文本真正应用，消解 doorbell 三方矛盾 + BAR1 合成地址空间声明 + revision 机制未接线诚实声明
-> **配套 openspec**: `openspec/changes/cpptlm-driver-visible-minimal-soc/` (v1.8 P0 N1-N5)
+> **配套 openspec**: `openspec/specs/driver-visible-minimal-soc/` (v1.8 P0 N1-N5)
 > **配套 D1 笔记**: `docs/pcie/display-device-mvp.md` (PCIe 设备 MVP 链)
 > **跨仓镜像**: ArchForge `docs/architecture/19a-driver-visible-minimal-soc.md`
 > **Oracle 复审 sessions**:
@@ -386,7 +386,7 @@ Step 6 — driver backdoor 读 (host thread, host-side 特权)
 - `docs/guide/UE_DRIVER_MIGRATION_GUIDE.md` — UE driver 移植指南（framebuffer_size 单一真源约定）
 
 ### CppTLM 仓内 openspec
-- `openspec/changes/cpptlm-driver-visible-minimal-soc/` — 本设计 change
+- `openspec/specs/driver-visible-minimal-soc/` — 本设计 change
   - `proposal.md` — Why / What Changes
   - `design.md` — 详细设计（629 行, 含 v1.3 B1-B6 + v1.4 B7-B13）
   - `tasks.md` — T0-T5 任务分解（371 行）

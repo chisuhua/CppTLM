@@ -2,7 +2,7 @@
 
 > **状态**: ✅ **已签发** (T0 阶段, 2027-02-09, per Oracle 八轮复评 PASS)
 > **日期**: 2027-02-09
-> **关联 OpenSpec**: [cpptlm-dgpu-soc-timing-mvp](../../openspec/changes/cpptlm-dgpu-soc-timing-mvp/) (v0.2 终稿, 18 ADDED Requirements + 52 scenarios, **PASS**)
+> **关联 OpenSpec**: [cpptlm-dgpu-soc-timing-mvp](../../openspec/specs/dgpu-soc-timing/) (v0.2 终稿, 18 ADDED Requirements + 52 scenarios, **PASS**)
 > **关联架构文档**: [../designs/dgpu-soc/architecture.md](../designs/dgpu-soc/architecture.md) (functional-mode minimal_v1) + [../designs/dgpu-soc/timing-mode.md](../designs/dgpu-soc/timing-mode.md) (timing-mode 业务架构视图, v0.2 终稿)
 > **配套 ADR**: [ADR-DGPU-05](ADR-DGPU-05-vram-storage-ownership.md) (单一 VRAM 所有权, **沿用**) + [ADR-DGPU-06](ADR-DGPU-06-axi-mem-bundle-boundary.md) (AxiMemBundle 边界, 沿用模式) + [ADR-DGPU-07](ADR-DGPU-07-minimal-soc-evolution-seam.md) (演进 seam, VramControllerTLM 是 D3 占用) + [ADR-DGPU-10](ADR-DGPU-10-backing-naming-convention.md) (backing 命名, 沿用)
 
@@ -230,7 +230,7 @@ openspec validate cpptlm-dgpu-soc-timing-mvp --strict   # PASS (v0.2 终稿)
 
 ### 8.3 第 3 层 (OpenSpec change)
 
-- [`openspec/changes/cpptlm-dgpu-soc-timing-mvp/`](../../openspec/changes/cpptlm-dgpu-soc-timing-mvp/) — v0.2 终稿, 18 ADDED Requirements + 52 scenarios, 八轮 PASS
+- [`openspec/specs/dgpu-soc-timing/`](../../openspec/specs/dgpu-soc-timing/) — v0.2 终稿, 18 ADDED Requirements + 52 scenarios, 八轮 PASS
   - `proposal.md` — Why + What Changes + 5 关键架构决策
   - `design.md` — 实施指导 (11 节, 含 §4.2 包装层 + §6.2 互斥逻辑)
   - `specs/dgpu-soc-timing/spec.md` — 18 ADDED Requirements (SHALL/MUST 规范化)
@@ -239,7 +239,7 @@ openspec validate cpptlm-dgpu-soc-timing-mvp --strict   # PASS (v0.2 终稿)
 ### 8.4 第 4 层 (实施跟踪)
 
 - `docs/superpowers/plans/cpptlm-dgpu-soc-timing-mvp.md` (待 T0 启动时创建)
-- `openspec/changes/cpptlm-dgpu-soc-timing-mvp/tasks.md` (TDD 5-step 跟踪)
+- `openspec/specs/dgpu-soc-timing/tasks.md` (TDD 5-step 跟踪)
 
 ---
 
@@ -255,7 +255,7 @@ openspec validate cpptlm-dgpu-soc-timing-mvp --strict   # PASS (v0.2 终稿)
 1. 同步 `docs/designs/dgpu-soc/README.md` 入口（加 timing-mode.md 链接）
 2. 同步 `docs/designs/README.md` 三视角表 (timing-mode 与 functional-mode 并列)
 3. 同步 `AGENTS.md` D-AXI 看板（追加 "timing-mode v0.2 完成，待 T0 启动"）
-4. 同步 `openspec/changes/cpptlm-dgpu-soc-timing-mvp/proposal.md:9` (从 "待签发" → "已签发", 链 ADR-DGPU-11 路径)
+4. 同步 `openspec/specs/dgpu-soc-timing/proposal.md:9` (从 "待签发" → "已签发", 链 ADR-DGPU-11 路径)
 5. 创建 `docs/superpowers/plans/cpptlm-dgpu-soc-timing-mvp.md` (T0 实施跟踪)
 
 ---
@@ -279,4 +279,4 @@ openspec validate cpptlm-dgpu-soc-timing-mvp --strict   # PASS (v0.2 终稿)
 - **0 regressions**: 79046 assertions / 1634 test cases + ctest 76/76 全 PASS
 - 6 条新 Invariants (Inv-1~6) 全部验证
 
-引用: openspec/changes/cpptlm-dgpu-soc-timing-mvp/ (T1-T8), commit `b034ad23..` (branch phase4/timing-mvp-arch)
+引用: openspec/specs/dgpu-soc-timing/ (T1-T8), commit `b034ad23..` (branch phase4/timing-mvp-arch)

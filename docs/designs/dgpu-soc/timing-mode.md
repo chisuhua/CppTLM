@@ -1067,7 +1067,7 @@ TEST_CASE("dgpu-soc-timing: H2D throughput regression", "[dgpu_soc_timing]") {
   - T1-T5 任一阶段完成后 (实施层偏差校验)
   - ADR-DGPU-11 签发后 (设计意图正式记录)
 - **下游依赖**:
-  - OpenSpec change `cpptlm-dgpu-soc-timing-mvp/` (proposal + design + spec + tasks)
+  - OpenSpec spec `openspec/specs/dgpu-soc-timing/` (spec.md 真源; change 已实施并并入 specs)
   - ADR-DGPU-11 (timing-mode SoC 范围)
   - 测试用例 (`test/test_dgpu_soc_timing_*.cc` 待开)
   - JSON 配置 (`configs/dgpu_soc_timing_v1.json` 待开)

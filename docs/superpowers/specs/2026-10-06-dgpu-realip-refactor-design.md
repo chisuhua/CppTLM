@@ -445,8 +445,8 @@ For each deprecated function:
 - docs/adr/ADR-DGPU-06-axi-mem-bundle-boundary.md (chip-internal vs board-level bundle boundary)
 - docs/adr/ADR-DGPU-08-abi-freeze-policy.md (14 ABI freeze)
 - include/AGENTS.md macro table (REGISTER_MODULE vs REGISTER_CHSTREAM, SimModule vs SimObject)
-- openspec/changes/cpptlm-driver-visible-minimal-soc/ (D-AXI change)
-- openspec/changes/cpptlm-dgpu-soc-timing-mvp/ (D3 timing-mode, VramControllerTLM origin)
+- openspec/specs/driver-visible-minimal-soc/ (D-AXI change)
+- openspec/specs/dgpu-soc-timing/ (D3 timing-mode, VramControllerTLM origin)
 
 ## 13. Governance & Tooling (New in v1.1)
 

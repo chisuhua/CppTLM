@@ -1,6 +1,6 @@
 # T1 Implementation Sub-Plan: cpptlm-driver-visible-minimal-soc (D-AXI v1.5)
 
-> **关联**: `openspec/changes/cpptlm-driver-visible-minimal-soc/` (v1.5)
+> **关联**: `openspec/specs/driver-visible-minimal-soc/` (v1.5)
 > **文档**: `tasks.md` P0.8-P0.18 + `design.md` §1/§4/§5/§6 + `spec.md` 全 Requirement
 > **12 铁律**: `docs/pcie/driver-visible-minimal-soc.md` §4
 > **总预估**: ~10-11 工作日（v1.3 P0 + v1.4 P0 + v1.5 P0 + 主体 T0-T4）
@@ -699,7 +699,7 @@ git commit -m "fix(fault): GMMU pte_addr bound + retry_latch; SDMA fault emit do
 - 验证: SDMA 的 `mem_in`/`mem_out` 仍使用 `PcieTlpBundle`（非 AxiMemBundle）
 
 **7.2: Update design.md §6 明确统一 PcieTlpBundle (5 min)**
-- 文件: `openspec/changes/cpptlm-driver-visible-minimal-soc/design.md` (line 447-458)
+- 文件: `openspec/specs/driver-visible-minimal-soc/design.md` (line 447-458)
 - 注释掉 v1.3 B2 切型路径，改为:
 ```cpp
 // v1.5 B25: SDMA ↔ PcieMemoryDevice 统一 PcieTlpBundle
