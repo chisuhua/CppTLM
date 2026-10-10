@@ -2,14 +2,14 @@
 
 > **状态**: 🟡 Proposed (Phase 1, Change D, 2026-10-09 lock)
 > **作者**: CppTLM Team
-> **版本**: v1.0 (初版, 协同 flr-rebar v1.1 + p2-integration-unblock 落地)
+> **版本**: v0.5.2 (Tranche 1 修订: serializer 边界复用既有 `include/utils/pcie_tlp_serializer.hh`, 避免 design duplication debt; 初版 v1.0 协同 flr-rebar v1.1 + p2-integration-unblock 落地)
 > **关联 OpenSpec**:
 >   - ✅ `cpptlm-pcie-host-test-flr-rebar` v1.1 archived (HostPcieTestStub in-process C++ 仿真测试桩 + FLR/ReBAR 接口)
 >   - ✅ `cpptlm-p2-integration-unblock` (Proposed — CP 跨仓接入 unblock, 23 ABI 冻结 + 0 新增)
 >   - **业务定位锁定**: `docs/designs/dgpu-soc/architecture.md` §0.1 Gap 矩阵 + §0.2 总体实施计划 (Change D)
 >
 > **🔗 Cross-Reference (per `cpptlm-dgpu-soc-arch-truth-cleanup` v1.3, 2026-10-10)**:
-> 本 Change D PcieTlpSerializer 与 `cpptlm-pcie-host-test-flr-rebar` v1.1 HostPcieTestStub 关系: HostPcieTestStub 直接调既有 `PcieEndpointIP::flr_pf()/flr_vf() + enable_resizable_bar()/on_bar_resize()` API (per `pcie_endpoint_ip.hh:201-202` + `pcie_endpoint_ip.cc:670-694`), **未定义 PcieTlpSerializer 关系** (per Metis M-8);本 change v0.5.2 修订时应**明确定义** PcieTlpSerializer 是 HostPcieTestStub 与 PcieEndpointIP 之间的串行化/解串行化层 (经 `cpptlm-p2-integration-unblock` 跨仓接入), **不绕过既有 EP API**。详见 [cpptlm-dgpu-soc-arch-truth-cleanup/proposal.md §M-8](../../cpptlm-dgpu-soc-arch-truth-cleanup/proposal.md)。Change D PCIe Base Spec Cfg TLP Fmt/Type 错误不在本 change 范围,需 Change D author 另起 v0.5.2 返工。
+> 本 Change D PcieTlpSerializer 与 `cpptlm-pcie-host-test-flr-rebar` v1.1 HostPcieTestStub 关系: HostPcieTestStub 直接调既有 `PcieEndpointIP::flr_pf()/flr_vf() + enable_resizable_bar()/on_bar_resize()` API (per `pcie_endpoint_ip.hh:201-202` + `pcie_endpoint_ip.cc:670-694`), **未定义 PcieTlpSerializer 关系** (per Metis M-8);**v0.5.2 已落地**: PcieTlpSerializer **复用既有** `include/utils/pcie_tlp_serializer.hh` (HostPcieTestStub 已在用, 5596B, per `host_pcie_test_stub.hh:26,202`), 本 change **不新建** tlm/pcie 域重复类 (避免 design duplication debt); 仅**扩展**既有类新增 `encode_trigger_flr() + encode_resize_bar()` (~80 行) — 作为 HostPcieTestStub 与 PcieEndpointIP 之间的串行化/解串行化层 (经 `cpptlm-p2-integration-unblock` 跨仓接入), **不绕过既有 EP API**。详见 [cpptlm-dgpu-soc-arch-truth-cleanup/proposal.md §M-8](../../cpptlm-dgpu-soc-arch-truth-cleanup/proposal.md)。Change D PCIe Base Spec Cfg TLP Fmt/Type 错误不在本 change 范围,需 Change D author 另起 v0.5.2 返工。
 > **修复 Gap**: **M** (MED) — §0.1 Gap 矩阵 16 行中 1 行
 > **优先级**: **P2** (Phase 1, 与 Change C 并行)
 > **估时**: **7-10d** (含框架扩展 + 23 ABI 零 diff + 与 flr-rebar 协同)
@@ -37,7 +37,7 @@
   - PCIe Controller 收 TLP, 解码 (TC, attr, length, req_id, 等等)
   - decode 后路由到 BAR / Cfg / DMA / etc.
   - Read 返回 CplD TLP (completion with data)
-- **本 change 修复路径**: 在 DGpuBoard 之上加 **`PcieTlpSerializer`** (host-side TLP encode) + PcieEndpointIP 接收端**TLP decode**, DGpuBoard::mmio_* 内部改为先生成 TLP.
+- **本 change 修复路径 (v0.5.2)**: 在 DGpuBoard 之上扩展既有 **`PcieTlpSerializer`** (`include/utils/pcie_tlp_serializer.hh`, host_pcie_test_stub 已在用) 新增 `encode_trigger_flr()/encode_resize_bar()` (host-side TLP encode) + PcieEndpointIP 接收端**TLP decode**, DGpuBoard::mmio_* 内部改为先生成 TLP.
 
 ### 协同关系
 
@@ -52,12 +52,11 @@
 
 ## What Changes
 
-### 新增文件 (4 个, ~700 行)
+### 扩展现有文件 + 新增文件 (4 个, ~580 行)
 
 | 文件 | 行数 | 内容 |
 |------|:----:|------|
-| `include/tlm/pcie/pcie_tlp_serializer.hh` | **~150** | `PcieTlpSerializer` 工具类: encode `mmio_read/write/config_read/write/trigger_flr/resize_bar` 为 `PcieTlpBundle` |
-| `include/tlm/pcie/pcie_tlp_serializer.cc` | **~200** | TLP encode 实现 (按 PCIe Base Spec §2 TLP 格式: 4DW header + data + ECRC) |
+| `include/utils/pcie_tlp_serializer.hh` (扩展) | **+~80** | **新增方法**: `encode_trigger_flr()` (per FLR protocol) + `encode_resize_bar()` (per Resizable BAR §7.8.6 64-bit encoding)；复用既有 `PcieTlpSerializer` 类（host_pcie_test_stub.hh 已在用） |
 | `include/tlm/pcie/pcie_tlp_decoder.hh` | **~100** | `PcieTlpDecoder` 在 PcieEndpointIP 内: decode PcieTlpBundle → dispatch 到 BAR / Cfg / DMA |
 | `include/tlm/pcie/pcie_tlp_decoder.cc` | **~150** | TLP decode + dispatch 实现 (PCIe Base Spec §2.4~§2.6 decode) |
 | `test/test_pcie_tlp_entry_layer.cc` | **~250** | 10 cases: encode/decode roundtrip + host→board→ep→bar 端到端 + `[pcie][tlp-entry]` |
@@ -76,7 +75,7 @@
 1. **23 ABI 签名零变更 (Hard Invariant)**: `cpptlm_emulator.h` 0 修改 (per ADR-088 §D5 + flr-rebar v1.1 §X)
 2. **TLP encode 严格按 PCIe Base Spec §2**: 4DW header fields (Fmt/Type + TC + attr + TH + EP + TD + length + ReqId + Tag + LastDWBE + FirstDWBE + Address) 等
 3. **TLP decode 严格按 PCIe Base Spec §2.4**: Decode Fmt + Type, 路由到 MRd→Memory Read / MWr→Memory Write / CfgRd→Config Read / CfgWr→Config Write
-4. **`pcie_tlp_serializer` 协同 Change B**: PcieTlpSerializer 跟 LWC 不冲突 (LWC 是 chip-internal, TLP 是 host↔chip 边界)
+4. **`pcie_tlp_serializer` 协同 Change B (v0.5.2 边界锁定)**: **复用既有** `include/utils/pcie_tlp_serializer.hh` (host_pcie_test_stub.hh 已在用, 5596B), 仅扩展新增 `encode_trigger_flr()/encode_resize_bar()`; **不新建** tlm/pcie 域重复类 (避免 design duplication debt). PcieTlpSerializer 跟 LWC 不冲突 (LWC 是 chip-internal, TLP 是 host↔chip 边界)
 5. **协同 HostPcieTestStub**: TLP entry layer 让 HostPcieTestStub::send_mmio_read() 通过 TLP 序列化 → PcieEndpointIP::submit_tlp (真实路径), 而非绕过 TLP 直调 DGpuBoard
 6. **completion 流程**: Read TLP 返回 CplD (Completion with Data TLP), 沿 PCIe spec §3.2
 7. **时序兼容**: TLP entry 与 timing-mode 独立 (functional/timing mode 都能工作)
@@ -134,7 +133,7 @@
 
 ```
 1.  test(pcie-tlp): RED 10 cases (Phase 1.1)
-2.  feat(tlp): PcieTlpSerializer encode 实现 (Phase 2.1)
+2.  feat(tlp): 扩展 `include/utils/pcie_tlp_serializer.hh` encode_trigger_flr/encode_resize_bar (Phase 2.1)
 3.  feat(tlp): PcieTlpDecoder decode + dispatch (Phase 2.2)
 4.  feat(pcie-ep): PcieEndpointIP::submit_tlp() API (Phase 2.3)
 5.  feat(board): DGpuBoard::mmio_* 走 PcieTlpSerializer (Phase 3.1)
