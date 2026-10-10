@@ -1,83 +1,56 @@
 # DGpu SoC 业务架构 (Minimal SoC Business Architecture)
 
-> **状态**:
-> - ✅ functional-mode (LT) v1.0 设计已通过 Oracle 二轮复审（[./architecture.md](./architecture.md)）
-> - ✅ timing-mode (AT) v0.2 终稿 + **T1-T8 实施完成 (2027-02-11, 37 cases + 0 regressions)**（[./timing-mode.md](./timing-mode.md)，Oracle 八轮复评 PASS, [ADR-DGPU-11-timing-mode-soc-scope.md](../adr/ADR-DGPU-11-timing-mode-soc-scope.md) 已签发 + Status Update, 与 functional-mode **并列共存**）
-> **对应架构文档**:
-> - 主文档（functional-mode, LT, zero-delay）: [architecture.md](./architecture.md)（原 `docs/designs/2027-02-09-minimal-dgpu-soc.md`，2026-09-26 迁移）
-> - 并列文档（timing-mode, AT, cycle-approximate）: [timing-mode.md](./timing-mode.md)（v0.2 终稿, 2027-02-09, Oracle 八轮复评 PASS, ADR-DGPU-11 签发）
-> **配套 OpenSpec**:
-> - functional-mode: [cpptlm-driver-visible-minimal-soc](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.8 当前)
-> - timing-mode: [cpptlm-dgpu-soc-timing-mvp](../../../openspec/changes/cpptlm-dgpu-soc-timing-mvp/) (✅ v0.2 终稿, Oracle 八轮 PASS, ADR-DGPU-11 签发)
-> **基础架构**: [../dgpu-board/architecture.md](../dgpu-board/architecture.md) | **Driver 视角**: [../dgpu-driver/architecture.md](../dgpu-driver/architecture.md)
+> **状态 v0.5.1 (2026-10-09 修订, per Metis/Oracle 第 2 轮复审 + Phase E 修复)**:
+> - ✅ §0.1 业务定位已 lock (4 原则 + 16 行 Gap 矩阵 + 同步规则), **禁止 silent 偏离**
+> - ✅ §0.2 总体实施计划已 lock (4 Phases / 6 Changes / 修复 11 Gap)
+> - ✅ §1.4 仿真模式声明经用户评审重写: **VramControllerTLM 是 minimal_v1 唯一 functional-mode 模块**, 不是 SoC 整体 zero-delay
+> - ✅ 当前进行中: **Phase 0 + Phase 1 全部 4 change (A/B/C/D) 起草完毕 + Oracle 复审修订完成, 4 changes openspec validate PASS**
+> - ✅ KPI 现状: 5/3 (临时超限, 因 4 change 全 Proposed), 用户决策 archive A/B → 释放 slot
+> - ⏳ 后续 Phase 2-3 Change E (MSI-X Generator, Gap L) + Change F (Error/CDC, Gap N+O) 起草需等 A/B/C/D archive 释放 slot
+
+> **业务架构视图分层 (per AGENTS.md §DOC HYGIENE 4 层文档模型)**:
+> | 层 | 文档 | 作用 |
+> |----|------|------|
+> | 1 (架构视图) | `[./architecture.md](./architecture.md) — mixed-mode SoC per §1.4` | 业务架构 + 仿真模式 + Gap 修复路线 |
+> | 2 (ADR) | [`../adr/ADR-DGPU-{05,06,07,08,09,10,11}-*.md`](../adr/) | 不可变决策 |
+> | 3 (OpenSpec change) | [`../../../openspec/changes/`](../../../openspec/changes/) | 实施变更提案 (A-F 6 个, 其中 4 个已 Proposed Draft) |
+> | 4 (实施跟踪) | [`../../../docs/superpowers/plans/`](../../../docs/superpowers/plans/) | 短周期实施跟踪 |
+
+> **配套文档**:
+> - 主文档 (mixed-mode SoC, v0.5.1 修订): [./architecture.md](./architecture.md)
+> - timing-mode (并列视图, v0.2 终稿): [./timing-mode.md](./timing-mode.md)
+> - Driver 视角 (15 ABI + 4 BAR): [../dgpu-driver/architecture.md](../dgpu-driver/architecture.md)
+> - Board 视角 (DGpuBoard v2.0.2): [../dgpu-board/architecture.md](../dgpu-board/architecture.md)
 
 ## 范围
 
-本目录是 **DGpu SoC 业务架构** 文档，聚焦：
+本目录是 **DGpu SoC 业务架构** 文档, 聚焦 **(per §0.1 + Gap 矩阵)**:
 
-- 6 模块拓扑（DGpuBoard + PcieEndpointIP + PcieMemoryDevice + GMMU + SDMA + PcieConfigSpace）
-- 存储子系统（镜像 gem5 `PhysicalMemory` + `AbstractMemory` 模式）
-- BAR 路由与读写路径（BAR0 MMIO + BAR1 16MB 存储窗口 + BAR2 8GB vram aperture）
-- GMMU 一级页表设计
-- SDMA / Fence / MSI-X 链路
-- 关键不变性（6 条 Invariants,functional-mode）
-- ✅ timing-mode 并列视图（8 注册类型 / 7 实例化, VramControllerTLM 或 MemoryTLM 二选一, cycle accounting, per ADR-DGPU-11 H2 互斥）
-
-## 仿真模式对照
-
-| 模式 | 文档 | 仿真模式 | 用途 | 测试目标 |
-|------|------|----------|------|----------|
-| **functional-mode (LT)** | [architecture.md](./architecture.md) | 零时延 memcpy | driver 正确性验证 | `[minimal_dgpu_soc]` 41 assertions |
-| **timing-mode (AT)** 🆕 | [timing-mode.md](./timing-mode.md) | 周期近似 | 性能回归 + 带宽分析 | `[dgpu_soc_timing]` 新增套件 |
-
-**两模式并列共存**:
-- 通过 `simulation_mode: "functional" | "timing"` JSON 字段切换
-- 同一 DGpuBoard 框架,不同 DGpuSoc 实例化分支
-- 23 ABI 入口 + vram_storage_ 共享 owner (per ADR-DGPU-05)
-- **不替换**: functional-mode minimal_v1 v1.0 设计与 6 条 Invariants **完全保留**
-
-## 与其他视角的关系
-
-| 视角 | 文档 | 关注点 |
-|------|------|--------|
-| Board 内部 | [../dgpu-board/architecture.md](../dgpu-board/architecture.md) | DGpuBoard 5 层 + 5 组件 + 析构协议 |
-| **SoC 业务 functional** | [architecture.md](./architecture.md) | 6 模块拓扑 + GMMU + SDMA + 存储子系统 (zero-delay) |
-| **SoC 业务 timing** 🆕 | [timing-mode.md](./timing-mode.md) | 8 模块拓扑 + CrossbarTLM + VramControllerTLM + cycle accounting |
-| Driver 接口 | [../dgpu-driver/architecture.md](../dgpu-driver/architecture.md) | 15 ABI + 4 BAR + driver 闭环数据流 |
+- **SoC 拓扑** (`GmmuTLM` + `SdmaEngineTLM` + `VramControllerTLM` + `PcieControllerIP` + `PcieEndpointIP` + `GpuInternalFabric` per `dgpu-realip-pin-contract` 6-IP 边界;**双重计数说明**: §0.1 列 6 个含 GMMU/SDMA 引擎; §2.4 表格列 5 个 IP 边界模块不含 GMMU/SDMA)
+- **仿真模式**: mixed-mode (VramControllerTLM 单独 functional-mode, 其他模块 cycle-approximate)
+- **数据流**: SDMA → ChStream + SocInternalNoc mesh → VramController functional-mode → backing
+- **关键不变式**: 单一 VRAM 真源 + chip-internal vs board-level 边界 + 双重无注入约束 + 23 ABI 零 diff
+- **Gap 修复**: §0.1 矩阵 16 行 + §0.2 总体计划 (Phase 0-3 / Change A-F)
 
 ## 阅读路径
 
-### functional-mode (默认,driver 闭环)
-1. **快速理解**: architecture.md §1（设计目标）+ §2（模块清单与拓扑）
-2. **存储子系统**: architecture.md §3（镜像 gem5 模式 + DGpuBoard 新增）
-3. **BAR 路由**: architecture.md §4（BAR 布局 + 路由表 + 读写路径）
-4. **GMMU 设计**: architecture.md §5（API 骨架 + 翻译流程 + PTE 格式）
-5. **关键不变性**: architecture.md §8（6 条 Invariants）
-6. **演进路径**: 设计意图由 OpenSpec change [§X 演进路线图](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/design.md) 维护
+### functional-mode (v0.4)
+1. **[./architecture.md §0.1 业务定位](./architecture.md)** (4 原则 + Gap 矩阵) — 必读
+2. **[./architecture.md §1.4 仿真模式声明](./architecture.md)** (修订版, 7 子段) — 必读
+3. **[./architecture.md §2 模块清单与拓扑](./architecture.md)** — IP 边界 + 接线
 
-### timing-mode (性能建模)
-1. **动机与边界**: timing-mode.md §0（为什么需要独立 timing-mode SoC）+ §1（设计目标与边界）
-2. **模块清单**: timing-mode.md §2（8 模块拓扑 + 2 新建 + 3 扩展）
-3. **时序子系统**: timing-mode.md §3（cycle accounting 模型 + 5 模块时序表）
-4. **BAR 路径**: timing-mode.md §4（与 minimal_v1 的关键差异表）
-5. **GMMU 异步**: timing-mode.md §5（TLB 模型 + page walk 延迟）
-6. **SDMA outstanding**: timing-mode.md §6（AXI master port + rid 关联）
-7. **关键不变性**: timing-mode.md §8（6 条 Invariants,与 functional-mode 兼容）
-8. **演进路径**: timing-mode.md §14（D3/D4 backlog:多通道 HBM + 多级页表）
+### timing-mode (并列)
+- **[./timing-mode.md §0 关联与背景](./timing-mode.md)** + ADR-DGPU-11
 
-## 维护记录
+### 实施跟踪
+- **Phase 0 + Phase 1 已起草完毕 (v0.5)**: `cpptlm-vram-controller-functional-integration` (P0) + `cpptlm-lwc-bus-hub-mvp` (P1) + `cpptlm-gmmu-pte-bus-correction` (P2, Gap I+G2+G1) + `cpptlm-pcie-tlp-entry-layer` (P2, Gap M)
+- **Phase 0-1 实施状态**: 待用户决策 archive A → activate C/D; 当前 4 change 已 validate PASS, 4 件套正文已修订 (per Oracle/Metis v0.5 复审)
+- **Phase 2 起草需等 C archive**: `cpptlm-msix-generator-ip` (P2, Gap L) — 用户决策 archive C 后激活
+- **Phase 3 起草需等 D archive**: `cpptlm-soc-error-cdc-bus` (P3, Gap N+O) — 用户决策 archive D 后激活
 
-| 日期 | 事件 |
-|------|------|
-| 2026-09-26 | 从 `docs/designs/2027-02-09-minimal-dgpu-soc.md` 迁移 functional-mode 至 [architecture.md](./architecture.md) |
-| 2027-02-09 | functional-mode v1.0 设计 + Oracle 二轮复审 |
-| 2027-02-09 | 🆕 新增 timing-mode 提案 [timing-mode.md](./timing-mode.md) + OpenSpec [cpptlm-dgpu-soc-timing-mvp](../../../openspec/changes/cpptlm-dgpu-soc-timing-mvp/) |
+## 维护规则
 
-## 同步规则
-
-本目录文档代表 SoC **业务层** 长期设计意图。具体修改应通过 OpenSpec change 提案；如涉及基础架构变更（新增模块、变更拓扑），需同步更新 dgpu-board 与 dgpu-driver 视角。
-
-**两模式文档独立性**:
-- 修改 functional-mode `architecture.md` **不影响** timing-mode `timing-mode.md`
-- 修改 timing-mode `timing-mode.md` **不影响** functional-mode `architecture.md` 与 6 条 Invariants
-- 共用基线更新（AGENTS.md / ADR 索引）应同步两文档顶部 `## 关联文档与变更` 段
+1. **修改前必读 §0.1 业务定位**: 任何修改文档/新增 OpenSpec change 必须先对照 §0.1 4 原则 + Gap 矩阵 16 行
+2. **新增 OpenSpec change**: §0.2 同步规则要求显式引用本文档 + Gap 矩阵
+3. **文档同步**: 业务架构代表 why, OpenSpec change design.md 代表 how; 反向同步不强制
+4. **仿真模式定位锁 v0.4**: 后续 change 不再标 "minimal_v1 是 zero-delay functional-mode SoC", 改用 "mixed-mode SoC (VramControllerTLM 单独 functional-mode)"
