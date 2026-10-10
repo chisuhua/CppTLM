@@ -41,7 +41,7 @@ public:
 
     // ── Request 方向 (SDMA → SocInternalNoc → VRAM) ──
     // 输入: SDMA bulk DMA 操作 (op, addr, size, tag)
-    // 输出: NoCReqFlitBundle (per E.1 v1.1 spec `e1-noc-req-resp-bundle-types` 字段)
+    // 输出: NoCFlitBundle (REQ) (per `noc_bundles_tlm.hh:26-50` 16 字段统一类型 + `flit_category=REQ` 区分)
     //   - src_node = NODE_ID_SDMA (1) (SDMA 是请求源)
     //   - dst_node = NODE_ID_VRAM (3) (VRAM 是目标, e1 v1.1 唯一入向 + 出向)
     //   - flit_category = CATEGORY_REQUEST (0)
@@ -72,7 +72,7 @@ public:
     }
 
     // ── Response 方向 (VRAM → SocInternalNoc → SDMA) ──
-    // 输入: NoCRespFlitBundle (transaction_id, data, is_ok, error_code)
+    // 输入: NoCFlitBundle (RSP) (transaction_id, data, is_ok, error_code, per `noc_bundles_tlm.hh:26-50`)
     // 输出: 解析为 SDMA task_complete 所需信息 (tag, status)
     //   - 成功: SDMA::task_complete(tag, OK) (但 v1.1 不嵌入 SDMA, 仅记录)
     //   - 失败: 记录 error_code

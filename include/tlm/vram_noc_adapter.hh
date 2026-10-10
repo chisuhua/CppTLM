@@ -5,7 +5,7 @@
 //   - 真实 HBM3 Controller 使用 AXI4 协议 (5 通道 AW/W/AR/R/B), 不是 NoC bundle
 //   - VramNocAdapter 内部把 NoCFlitBundle 转 Fabric2VramCtrlBundle (8 字段, Change A frozen)
 //   - 支持 multi-beat split: flit_count > 1 时拆为多个 Fabric2VramCtrlBundle 提交
-//   - wrap_response 反向把 Fabric2VramCtrlBundle 转回 NoCRespFlitBundle
+//   - wrap_response 反向把 Fabric2VramCtrlBundle 转回 NoCFlitBundle (per `noc_bundles_tlm.hh:26-50` 16 字段统一类型 + `flit_category` 区分 REQ/RESP, per e1 v1.1 CRITICAL C1 不创建 dual bundle 决策)
 //
 // 字段映射表 (per design §3.3):
 //   NoCFlitBundle                  → Fabric2VramCtrlBundle
