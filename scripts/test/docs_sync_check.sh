@@ -138,6 +138,16 @@ VIRTUAL_PATHS=(
     "docs/soc_arch/modules/gpu-soc.md"
     "docs/soc_arch/modules/gpu.common.md"
     "docs/soc_arch/modules/ptx-emu-submodule-mvp.md"
+    # === dGPU SoC 文档真相清理 v1.3 (2026-10-10, per cpptlm-dgpu-soc-arch-truth-cleanup) ===
+    # e1 v1.1 + flr-rebar v1.1 已 archived 2026-10-09, 文档历史链接保留, 实际路径不存在 (设计意图源保留)
+    "openspec/changes/cpptlm-dgpu-soc-internal-noc-e1/proposal.md"
+    "openspec/changes/cpptlm-dgpu-soc-internal-noc-e1/design.md"
+    "openspec/changes/cpptlm-dgpu-soc-internal-noc-e1/tasks.md"
+    "openspec/changes/cpptlm-pcie-host-test-flr-rebar/proposal.md"
+    "openspec/changes/cpptlm-pcie-host-test-flr-rebar/design.md"
+    # flr-rebar v1.1 删除的 2 个新 ABI 头文件 (per v1.1 CRITICAL C2 + ADR-DGPU-08 §2.3 0 新增约束)
+    "cpptlm_emulator_flr.h"
+    "cpptlm_emulator_resizable_bar.h"
 )
 
 # CMake 添加的 include dir（无前缀写法也能找到文件）
