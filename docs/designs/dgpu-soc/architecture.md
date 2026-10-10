@@ -13,7 +13,7 @@
 
 ## 关联 OpenSpec changes
 
-- [cpptlm-driver-visible-minimal-soc](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (**v1.4** 当前,2026-09-26;6 模块拓扑 + 单一 VRAM 真源 + chip-internal AXI 边界 + 7 实施铁律)
+- [cpptlm-driver-visible-minimal-soc](../../../openspec/specs/driver-visible-minimal-soc/) (**v1.4** 当前,2026-09-26;6 模块拓扑 + 单一 VRAM 真源 + chip-internal AXI 边界 + 7 实施铁律)
 - [2026-09-20-cpptlm-pcie-memory-device-mvp](../../../openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp/) (D2 v1.1, archived;本设计扩展自 D2 PcieMemoryDevice MVP)
 - **[cpptlm-dgpu-soc-internal-noc-e1](../../../openspec/changes/cpptlm-dgpu-soc-internal-noc-e1/) (v1.1, 2026-10-09, ✅ archived 2026-10-09; 设计意图源保留; 代码已落地 per `soc_internal_noc.hh:114-151`)**: SocInternalNoc **DataNoC only** 物理保真 (SDMA bulk DMA 路径) + 2 adapter (SDMA + VRAM) + VC 计数器 (REQ/VC0, RSP/VC1, DAT/VC2, SNP/VC3) + VramNocAdapter 内部 NoC→AXI4 字段映射。**修复 4 P0 + 3 CRITICAL + 3 MAJOR** (per Oracle/Metis/RTL 调研三轮 + 真实 dGPU IP 调研)。PT_BASE / doorbell / page walk 走独立通道 deferred to E.2 (ArchForge)。详见 §2.4.3。
 - **[cpptlm-pcie-host-test-flr-rebar](../../../openspec/changes/cpptlm-pcie-host-test-flr-rebar/) (v1.1, 2026-10-09, ✅ archived 2026-10-09; 设计意图源保留; 代码已落地 per Phase 8 桥接 + HostBypassTLM)**: HostPcieTestStub in-process C++ 仿真测试桩 + **复用既有** `flr_pf()/flr_vf()` + `enable_resizable_bar()/on_bar_resize()` (per `pcie_endpoint_ip.hh:201-202` + `pcie_endpoint_ip.cc:670-694`)。**修复 3 CRITICAL** (ADR-DGPU-08 §2.3 0 新增约束 + 3 处 PCIe spec 错误 + 2 spec 矛盾)。`ResizableBar::new_size_bytes_` 拓宽 uint32→**uint64** (4GB 溢出修复)。详见 §2.5 + §2.6。
@@ -93,7 +93,7 @@
 | 3-模块名贴近 IP | ✅ 已重命名 `PcieControllerIP` / `PcieEndpointIP` / `GmmuTLM` / `SdmaEngineTLM` (D-AXI v1.5+) | 已达 | 0 |
 | 3-Gmmu 一级页表 | ✅ 已达 (`gmmu_tlm.hh:45-71`) | 已达 | 0 |
 | 3-SDMA↔GMMU 协调 | ⚠️ lambda `set_translate_cb` 注入 | 经 NOC / chip-internal AXI | **D3+ 须废弃 lambda** |
-| 3-chip-internal NOC | ⚠️ 2 条 AxiMemBundle 直连 (`sdma.2`/`gmmu.0`→`pcie_memory`) | 经 `SocInternalNoc` mesh NoC (per e1 v1.1 DataNoC) | **D3 演进中** (e1 v1.1 Proposed Draft) |
+| 3-chip-internal NOC | ⚠️ 2 条 AxiMemBundle 直连 (`sdma.2`/`gmmu.0`→`pcie_memory`) | 经 `SocInternalNoc` mesh NoC (per e1 v1.1 DataNoC) | **D3 演进中** (e1 v1.1 archived 2026-10-09 + 代码已落地 commit 13af5d51) |
 | 3-无 host data bypass | ✅ 已达 (`vram_segments_` 第三实例已删, per D-AXI v1.5 B14) | 已达 | 0 |
 | **3-CR-Bus 寄存器访问** | ⚠️ BAR0 mmio 直调 `gmmu_->set_pt_base_lo/hi/enabled()` 4 处成员函数 (per `src/tlm/gpu/dgpu_board_shell.cc:463-472`);违反 §0.1 原则 3.1 "无 callback 注入" | 经 **CR-Bus (APB-lite)** transaction → IP register file (real RTL: PCIe Controller 收 TLP cfg/MMIO → 解码 → CR-Bus → RegFile R/W) | **HIGH (Gap H)**, D3 优先修; 修复路径见 §0.1.1 LightweightInterconnect + CrBundle |
 | **3-GMMU page-walk wire-format** | ⚠️ **病因 = ADR-DGPU-06 §2.3 + AGENTS.md KEY INVARIANT line 513 (SDMA mem_in/mem_out → AxiMemBundle 切型决策) 与代码 (sdma_engine_tlm.hh:82-86, gmmu_tlm.hh:50-51, pcie_memory_device.hh:94-95 — 全部 PcieTlpBundle) 不一致** (D-AXI v1.5 B25 撤回 v1.3 B2 切型决策, 但 ADR-DGPU-06 §2.3 + AGENTS.md KEY INVARIANT 未同步) — 详见 ADR-DGPU-06 Status Update 2026-10-10 | **GMMU PTE fetch 改走 VramControllerTLM 专用 functional port** (NVIDIA H100 GMMU dedicated memory client 模式): `gmmu.req_out (AxMemBundle-like) → VramControllerTLM::handle_functional_request` 直连, **不经 pcie_memory, 不经 NOC mesh**, 不冲突 §1.4.3 强约束 (GMMU 是 dedicated client 而非 generic module);**Gap I 真矛盾诊断 — 待 Change C author 在 v0.5.2 修订时收敛 GMMU PTE fetch 路径** | **HIGH (Gap I)**, 与 Gap G2 (SocInternalNoc e1 v1.1) 同步修; GMMU PTE fetch 走 dedicated memory client, bypass mesh NoC |
@@ -121,12 +121,12 @@
 
 | Bundle | 文件 | 拓扑/语义 | 修复 Gap |
 |--------|------|----------|----------|
-| **`CrBundle`** | `include/bundles/cr_bundles_tlm.hh` | APB-lite 风格 (addr + wdata/rdata + write + ready/valid) | Gap H + Gap K (CR-Bus 寄存器访问 + MMIO Read Response) |
-| **`DoorbellBundle`** | `include/bundles/doorbell_bundles_tlm.hh` | 4B wdata + ring_id + posted bit | Gap J (SDMA ring 提交) |
-| **`MsixBundle`** | `include/bundles/msix_bundles_tlm.hh` | vector + addr_lo/hi + data + masked | Gap L (MSI-X 中断交付, D3+) |
+| **`CrBundle`** | **将新增于** `include/bundles/` (per Change B) | APB-lite 风格 (addr + wdata/rdata + write + ready/valid) | Gap H + Gap K (CR-Bus 寄存器访问 + MMIO Read Response) |
+| **`DoorbellBundle`** | **将新增于** `include/bundles/` (per Change B) | 4B wdata + ring_id + posted bit | Gap J (SDMA ring 提交) |
+| **`MsixBundle`** | **将新增于** `include/bundles/` (per Change B) | vector + addr_lo/hi + data + masked | Gap L (MSI-X 中断交付, D3+) |
 | **(复用)** `ErrBundle` | (future) | err_pin + severity + ext_data | Gap O (Error Aggregation, D3+ long-term) |
 
-**`LightweightInterconnect` LWC Bus Hub** (per `include/tlm/lwc/lwc_bus_hub.hh`):
+**`LightweightInterconnect` LWC Bus Hub** (**将新增于** `include/tlm/lwc/` (per Change B)):
 - **非 mesh 结构** (与 `SocInternalNoc` 区别, 树形/星形 / 单一 Hub + N IP port)
 - 1 个 Hub + N 个 IP port (每个 IP 添加 1 个 ChStream SlavePort 接 LWC)
 - LWC Bundle 可配置为 CR/Doorbell/Msix 三种语义 (决定 ready/valid 握手时序与 posted 标志)

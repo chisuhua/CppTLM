@@ -1,11 +1,11 @@
 # Minimal DGpu SoC — Timing Mode (AT) 架构视图
 
-> **版本**: v0.2 (H1-H6 + 12 处残余 + 7 处新识别硬伤全部落地, **Oracle 五轮 FAIL 已清理, 待六轮复评 PASS**)
+> **版本**: v0.2 (H1-H6 + 12 处残余 + 7 处新识别硬伤全部落地, **Oracle 八轮复评 PASS + T1-T8 实施完成 2027-02-11**)
 > **日期**: 2027-02-09
 > **状态**: 🆕 **提案草案** — 独立 timing-mode SoC(与 minimal_v1 functional-mode **并列共存**,不替换)
 > **前置**: `docs/designs/dgpu-soc/architecture.md` v1.0 (functional-mode minimal_v1, ✅ 已交付) + ADR-DGPU-05~10 + D-AXI v1.4 实施真相
-> **配套 OpenSpec**: `openspec/changes/cpptlm-dgpu-soc-timing-mvp/` (本 change 同步创建)
-> **配套 ADR** (待签发): ADR-DGPU-11-timing-mode-soc-scope.md
+> **配套 OpenSpec**: `openspec/specs/dgpu-soc-timing/` (本 change 同步创建)
+> **配套 ADR**: ADR-DGPU-11-timing-mode-soc-scope.md (**已签发 T0**) — 详见 AGENTS.md §PHASE STATE
 > **Owner**: CppTLM Team
 > **权威源**: 本文档为 **timing-mode 业务架构视图**(why);代码权威源待 OpenSpec change 实施后归档为 `dgpu_soc_timing_v1.json` 配置 + 对应模块 .cc 实现
 
@@ -20,7 +20,7 @@
   - ADR-DGPU-07 (演进 seam) — **触发**: D3/VramController 提前到 v1.0
   - **ADR-DGPU-11 (新增)**: timing-mode SoC 范围与 functional-mode 共存边界
 - **第 3 层 (OpenSpec changes)**:
-  - [`cpptlm-driver-visible-minimal-soc`](../../../openspec/changes/cpptlm-driver-visible-minimal-soc/) (v1.4 active) — functional-mode 实施真相
+  - [`cpptlm-driver-visible-minimal-soc`](../../../openspec/specs/driver-visible-minimal-soc/) (v1.4 active) — functional-mode 实施真相
   - [`cpptlm-minimal-dgpu-soc-v1-architecture`](../../../openspec/changes/cpptlm-minimal-dgpu-soc-v1-architecture/) (✅ archived) — 命名约定落地
   - **`cpptlm-dgpu-soc-timing-mvp`** (🆕 本 change) — timing-mode SoC 实施提案
 - **第 4 层 (实施跟踪)**: 待 `docs/superpowers/plans/cpptlm-dgpu-soc-timing-mvp.md` 创建
@@ -1040,7 +1040,7 @@ TEST_CASE("dgpu-soc-timing: H2D throughput regression", "[dgpu_soc_timing]") {
 - **[ADR-DGPU-11-timing-mode-soc-scope.md](../adr/ADR-DGPU-11-timing-mode-soc-scope.md) (✅ 已签发 2027-02-09, Oracle 八轮复评 PASS)**: timing-mode SoC 范围与 functional-mode 共存边界
 - **Phase 6 AXI4Mapper**: `include/framework/axi4_mapper.{hh,cc}` (pattern 借鉴,v0.2 已删除 outstanding, per H3)
 - **Phase 5 PcieAxiAdapter**: `include/tlm/pcie/pcie_axi_adapter_tlm.{hh,cc}` (PCIe TLP 时序已建模)
-- **D-AXI v1.4**: `openspec/changes/cpptlm-driver-visible-minimal-soc/` (functional-mode 实施真相)
+- **D-AXI v1.4**: `openspec/specs/driver-visible-minimal-soc/` (functional-mode 实施真相)
 - **D2 PcieMemoryDevice**: `openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp/` (archived, BAR2 路由基础)
 - **GMMU MVP Proposal**: `openspec/changes/2026-09-19-cpptlm-dgpu-gmmu-mvp/` (D3/D4 完整版路线)
 
