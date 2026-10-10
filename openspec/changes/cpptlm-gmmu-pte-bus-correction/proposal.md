@@ -4,13 +4,13 @@
 > **作者**: CppTLM Team
 > **版本**: v0.5.2 (Tranche 1 修订: 范围缩减 — NOC 路由已实现 (e1 v1.1 commit 13af5d51), 本 change 仅做 GMMU dedicated client 接线 + 删 `translate_cb_` 旧路径; 初版 v1.0 承接 e1 v1.1 + 协同 Change B 的 LWC 设施)
 > **关联 OpenSpec**:
->   - ✅ `cpptlm-dgpu-soc-internal-noc-e1` v1.1 archived (SocInternalNoc 4 NODE_ID + 16 字段 + vc_counts_[4] — 路由已实现, commit 13af5d51, `soc_internal_noc.hh:114-168`)
+>   - ✅ `cpptlm-dgpu-soc-internal-noc-e1` v1.1 archived (SocInternalNoc 4 NODE_ID + 16 字段 + vc_counts_[4] — **代码已落地**（commit 13af5d51，本 change 仅做接线层工作）)
 >   - ✅ `cpptlm-lwc-bus-hub-mvp` Phase 0 (上游, 提供 LWC 设施 + 异构 Bundle infrastructure)
 >   - ✅ `cpptlm-vram-controller-functional-integration` Phase 0 (上游, VramController functional-mode 数据路径; Change C **依赖** Change A 的 `handle_functional_request` API + GMMU programmatic bridge `set_vram_target()` 注入接口)
 >   - **业务定位锁定**: `docs/designs/dgpu-soc/architecture.md` §0.1 业务定位 + §0.1 Gap 矩阵 + §0.2 总体实施计划 (Change C)
 >
 > **🔗 Cross-Reference (per `cpptlm-dgpu-soc-arch-truth-cleanup` v1.3, 2026-10-10)**:
-> 本 Change C 立项时误诊 Gap I 病因 ("JSON vs 头文件" 假矛盾, per Oracle §4 #3 / Metis M-3)。**真实病因** = ADR-DGPU-06 §2.3 + AGENTS.md KEY INVARIANT line 513 (SDMA 切型决策) 与代码 (`sdma_engine_tlm.hh:82-86` + `gmmu_tlm.hh:50-51` + `pcie_memory_device.hh:94-95` — 全部 PcieTlpBundle) 不一致 (D-AXI v1.5 B25 撤回 v1.3 B2 切型决策, 但 ADR §2.3 + AGENTS.md 未同步, 详见 ADR-DGPU-06 Status Update 2026-10-10)。**v0.5.2 已落地**: 范围缩减 — **NOC 路由已实现** (`include/tlm/cluster/soc_internal_noc.hh:114-168`, e1 v1.1 commit `13af5d51`: `route_flit()` 实际推送 + `vc_counts_[4]` + `send_request/response` 均已落地), 本 change **不重写 NoC**, 仅做 GMMU dedicated client 接线 (绕过 mesh NoC, 直连 VramControllerTLM) + 删 `translate_cb_` 旧路径。与 Gap I 真矛盾诊断对齐。详见 [cpptlm-dgpu-soc-arch-truth-cleanup/proposal.md §O-3](../../cpptlm-dgpu-soc-arch-truth-cleanup/proposal.md)。
+> 本 Change C 立项时误诊 Gap I 病因 ("JSON vs 头文件" 假矛盾, per Oracle §4 #3 / Metis M-3)。**真实病因** = ADR-DGPU-06 §2.3 + AGENTS.md KEY INVARIANT line 513 (SDMA 切型决策) 与代码 (`sdma_engine_tlm.hh:82-86` + `gmmu_tlm.hh:50-51` + `pcie_memory_device.hh:94-95` — 全部 PcieTlpBundle) 不一致 (D-AXI v1.5 B25 撤回 v1.3 B2 切型决策, 但 ADR §2.3 + AGENTS.md 未同步, 详见 ADR-DGPU-06 Status Update 2026-10-10)。**v0.5.2 已落地**: 范围缩减 — **NOC 路由已实现** (`include/tlm/cluster/soc_internal_noc.hh:114-168`, e1 v1.1 commit `13af5d51`: `route_flit()` 实际推送 + `vc_counts_[4]` + `send_request/response` 均已落地), 本 change **不重写 NoC**, 仅做 GMMU dedicated client 接线 (绕过 mesh NoC, 直连 VramControllerTLM) + 删 `translate_cb_` 旧路径。与 Gap I 真矛盾诊断对齐。详见 [cpptlm-dgpu-soc-arch-truth-cleanup/proposal.md §O-3](../../archive/2026-10-10-cpptlm-dgpu-soc-arch-truth-cleanup/proposal.md)。
 > **修复 Gap**: **I** (HIGH) + **G2** (MED) + **G1** (D3+ 待废弃 lambda), §0.1 Gap 矩阵 16 行中 3 行
 > **优先级**: **P2** (Phase 1, 紧随 Phase 0 完成后启动)
 > **估时**: **5-7d** (含与 e1 v1.1 设计合并实施)
