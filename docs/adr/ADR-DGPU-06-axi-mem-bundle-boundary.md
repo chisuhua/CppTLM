@@ -334,4 +334,35 @@ These pre-existing losses are preserved for backward compatibility with snapshot
 
 **No change to frozen `PcieTlpBundle` semantics**; this Status Update only declares a sibling canonical wire type and its byte-canonical bridge to `PcieTlpCodec`.
 
+
+## Status Update (2026-10-10, per Oracle O-4 + Metis Drift)
+
+Per `openspec/changes/cpptlm-dgpu-soc-arch-truth-cleanup` v1.3 触发 (Oracle §4 + Metis Drift 表格 review):
+
+**D-AXI v1.5 B25 撤回原因 (per AGENTS.md KEY INVARIANT L513 与代码漂移)**:
+
+§2.3 描述 "SDMA 5 端口混合 wire-format: mem_in/mem_out 切 AxiMemBundle (chip-internal), desc_in/done_out/host_out 保持 PcieTlpBundle (minimal_v1 不实际接线)" 在 v1.5 B25 撤回后**与代码不一致** (`sdma_engine_tlm.hh:82-86` 实际 SDMA 5 端口全部 PcieTlpBundle)。本 ADR §2.3 文字层是"最小化 patch 范围内" — 撤销 §2.3 文字修订需 D-AXI author 在 v1.9 修订时另行处理（**不在本 change 范围**）。
+
+**代码现状 (per AGENTS.md KEY INVARIANT L513 v1.3 修订)**:
+
+- ✅ SDMA 5 端口全部 `PcieTlpBundle` (per `sdma_engine_tlm.hh:82-86`)
+- ✅ `AxiMemBundle` 仅作为类型定义存在 (per `include/tlm/bundles/axi_mem_bundle.hh`), 但**无 actual wiring** 在 minimal_v1
+- ✅ `PcieTlpBundle` 边界维持 board-level + chip-internal 双用法 (per minimal_v1 实际接线)
+- ✅ Frozen header `pcie_bundles_tlm.hh` 零变更 (per ADR-DGPU-08 冻结面约束)
+
+**Gap I 病因真矛盾 (per Oracle §4 #3)**:
+
+Gap I 真实病因 = `AGENTS.md KEY INVARIANT line 513` SDMA wire-format 描述与代码漂移 + **本 ADR §2.3 文字层矛盾** (per D-AXI v1.5 B25 撤回)。 不是 "JSON vs 头文件" (此为假矛盾, Change C author 误诊)。
+
+**验证**:
+
+```bash
+# 修订后验证 (per tasks.md T18.2)
+grep -n "mem_in/mem_out 切 AxiMemBundle" AGENTS.md  # 期望 0 命中
+grep -n "mem_in/mem_out 切 AxiMemBundle" docs/designs/dgpu-soc/architecture.md  # 期望 0 命中 (per T5)
+grep -n "AxiMemBundle" include/tlm/gpu/sdma_engine_tlm.hh  # 期望 0 命中 (类型定义不在该文件)
+```
+
+**变更摘要**: 本 Status Update 不修改 §1-§3, 仅记录代码现状与 Gap I 真矛盾诊断。 AGENTS.md KEY INVARIANT L513 与 `docs/designs/dgpu-soc/architecture.md §0.1:99 + §0.2:208` 同步修订 (per tasks.md T3 + T5) 以消除文档与代码漂移。
+
 ---
