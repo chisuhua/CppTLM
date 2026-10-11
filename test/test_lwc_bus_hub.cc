@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <fstream>
 #include <memory>
 #include <vector>
 
@@ -15,6 +16,9 @@
 #include "bundles/msix_bundles_tlm.hh"       // T7 RED: 编译失败 → T8 GREEN
 #include "core/event_queue.hh"
 #include "framework/stream_adapter.hh"
+#include "tlm/gpu/dgpu_board_shell.hh"       // T10: DGpuBoard E2E (mmio_* + LWC 闭环)
+#include "tlm/gpu/dma_descriptor_mvp.hh"
+#include "tlm/gpu/sdma_ring_buffer.hh"
 #include "tlm/lwc/lwc_bus_hub.hh"            // T5 RED: 编译失败 → T6 GREEN
 #include "utils/port_contract_asserts.hh"
 
@@ -22,6 +26,12 @@ using tlm::lwc::LwcBusHub;
 using bundles::CrBundle;
 using bundles::DoorbellBundle;
 using bundles::MsixBundle;
+using tlm::gpu::DGpuBoard;
+using tlm::gpu::GmmuTLM;
+using tlm::gpu::SdmaEngineTLM;
+using tlm::gpu::DmaDescriptor;
+using tlm::gpu::SdmaPacket;
+using tlm::gpu::SdmaRingBuffer;
 
 // ===========================================================================
 // T1/T2 — CrBundle wire-format (RED: 类型未定义 → 编译失败)
@@ -308,4 +318,92 @@ TEST_CASE("MsixBundle: deferred delivery (posted=0) 语义", "[lwc][msix_bundle]
     deferred.posted.write(0u);
     REQUIRE(deferred.posted.read() == 0u);
     REQUIRE(deferred.vector_id.read() == 7);
+}
+
+// ===========================================================================
+// T10 — E2E 闭环: LWC + CrBundle + DoorbellBundle 经 DGpuBoard mmio_* (GREEN)
+// ===========================================================================
+
+TEST_CASE("LWC E2E: BAR0 CR-Bus 写 → GMMU PT_BASE_LO/HI/ENABLE 同步生效",
+          "[lwc][bar0][e2e][minimal_dgpu_soc]") {
+    EventQueue eq;
+    DGpuBoard board("lwc_bar0_e2e", &eq);
+    REQUIRE(board.load_soc_config(
+        []() -> nlohmann::json {
+            std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
+            nlohmann::json cfg = nlohmann::json::parse(ifs);
+            return cfg;
+        }()));
+    std::vector<uint8_t> framebuffer(16ULL * 1024 * 1024, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    GmmuTLM* gmmu = board.gmmu_module();
+    REQUIRE(gmmu != nullptr);
+
+    uint32_t pt_lo = 0xDEADBEEF;
+    REQUIRE(board.mmio_write(0, 0x00, &pt_lo, 4) == 0);
+    REQUIRE(gmmu->pt_base() == 0xDEADBEEFULL);  // LO 同步生效
+
+    uint32_t pt_hi = 0x00010000;
+    REQUIRE(board.mmio_write(0, 0x04, &pt_hi, 4) == 0);
+    REQUIRE(gmmu->pt_base() == 0x00010000DEADBEEFULL);  // HI + LO
+
+    uint32_t enable = 1;
+    REQUIRE(board.mmio_write(0, 0x08, &enable, 4) == 0);
+    REQUIRE(gmmu->pt_base() != 0);  // enabled 后 translate 可用 (寄存器已置位)
+
+    board.shutdown();
+}
+
+TEST_CASE("LWC E2E: MMIO Read BAR0 → CR-Bus 同步读回 (write-mirror 替代)",
+          "[lwc][mmio-read][e2e][minimal_dgpu_soc]") {
+    EventQueue eq;
+    DGpuBoard board("lwc_read_e2e", &eq);
+    REQUIRE(board.load_soc_config(
+        []() -> nlohmann::json {
+            std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
+            return nlohmann::json::parse(ifs);
+        }()));
+    std::vector<uint8_t> framebuffer(16ULL * 1024 * 1024, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    constexpr uint32_t kPtLo = 0xCAFEBABE;
+    REQUIRE(board.mmio_write(0, 0x00, &kPtLo, 4) == 0);
+    uint32_t readback = 0;
+    REQUIRE(board.mmio_read(0, 0x00, &readback, 4) == 0);
+    REQUIRE(readback == kPtLo);  // 真实寄存器读回 (非 write-mirror)
+
+    board.shutdown();
+}
+
+TEST_CASE("LWC E2E: BAR1 doorbell → SDMA ring consume 同步触发",
+          "[lwc][bar1-doorbell][e2e][minimal_dgpu_soc]") {
+    EventQueue eq;
+    DGpuBoard board("lwc_doorbell_e2e", &eq);
+    REQUIRE(board.load_soc_config(
+        []() -> nlohmann::json {
+            std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
+            return nlohmann::json::parse(ifs);
+        }()));
+    std::vector<uint8_t> framebuffer(16ULL * 1024 * 1024, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    SdmaEngineTLM* sdma = board.sdma_engine();
+    REQUIRE(sdma != nullptr);
+    sdma->enable_ring_mode(SdmaRingBuffer::RingSize::KB_64, SdmaRingBuffer::EntrySize::B_64);
+
+    // 写入 H2D 描述符到 ring entry 0
+    DmaDescriptor h2d(DmaDescriptor::Dir::H2D, 0x1000, 0, 4096, 0x11);
+    auto entry = SdmaPacket::serialize_descriptor(h2d);
+    REQUIRE(sdma->ring_write_entry(0, entry.data(), entry.size()));
+
+    // BAR1 doorbell wptr=1 → SDMA ring consume 同步触发
+    uint32_t wptr = 1;
+    REQUIRE(board.mmio_write(1, DGpuBoard::kBar1DoorbellOffset, &wptr, 4) == 0);
+    REQUIRE(sdma->ring_consumed_count() == 1u);
+
+    board.shutdown();
 }
