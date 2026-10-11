@@ -265,3 +265,47 @@ TEST_CASE("LwcBusHub: routed_count 计数器精度 (100 tx: 90 routed + 10 dropp
     REQUIRE(hub.routed_count() == 90);
     REQUIRE(hub.dropped_count() == 10);
 }
+
+// ===========================================================================
+// T7/T8 — MsixBundle wire-format (RED: 类型未定义 → 编译失败)
+// ===========================================================================
+
+TEST_CASE("MsixBundle: interrupt delivery wire-format 编译期契约", "[lwc][msix_bundle][unit]") {
+    BUNDLE_FIELD_WIDTH(MsixBundle, vector_id, 32);
+    BUNDLE_FIELD_WIDTH(MsixBundle, payload, 32);
+    BUNDLE_FIELD_WIDTH(MsixBundle, posted, 1);
+
+    MsixBundle msix;
+    msix.vector_id.write(3);
+    msix.payload.write(0xCAFEBABE);
+    msix.posted.write(1u);
+
+    REQUIRE(msix.vector_id.read() == 3);
+    REQUIRE(msix.payload.read() == 0xCAFEBABE);
+    REQUIRE(msix.posted.read() == 1u);
+}
+
+TEST_CASE("MsixBundle: 序列化 roundtrip (MSI-X 报文语义)", "[lwc][msix_bundle][unit]") {
+    MsixBundle msix;
+    msix.vector_id.write(0);
+    msix.payload.write(42);
+    msix.posted.write(1u);
+
+    std::vector<uint8_t> raw(sizeof(MsixBundle));
+    REQUIRE(bundles::serialize_bundle(msix, raw.data(), raw.size()));
+    MsixBundle out;
+    REQUIRE(bundles::deserialize_bundle(raw.data(), raw.size(), out));
+    REQUIRE(out.vector_id.read() == 0);
+    REQUIRE(out.payload.read() == 42);
+    REQUIRE(out.posted.read() == 1u);
+}
+
+TEST_CASE("MsixBundle: deferred delivery (posted=0) 语义", "[lwc][msix_bundle][unit]") {
+    // per Change E 预留: posted=1 直接投递, posted=0 deferred (软件 pending 位)
+    MsixBundle deferred;
+    deferred.vector_id.write(7);
+    deferred.payload.write(0);
+    deferred.posted.write(0u);
+    REQUIRE(deferred.posted.read() == 0u);
+    REQUIRE(deferred.vector_id.read() == 7);
+}
