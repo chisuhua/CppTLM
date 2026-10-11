@@ -39,6 +39,18 @@ namespace tlm::vram {
 // 与 timing-mode.md §2.4;实际芯片 HBM PHY 频率由 platform config 注入 (D3 seam)。
 constexpr uint64_t kOperatingFrequencyHz = 1'000'000'000ULL;  // 1 GHz
 constexpr uint64_t kSimCycleNs = 1;                            // 1 sim_cycle = 1 ns @ 1 GHz
+
+// ── Change A (cpptlm-vram-controller-functional-integration, 2026-10-09) ──
+// VramController 工作模式 (per docs/designs/dgpu-soc/architecture.md §0.1 原则 4 +
+// ADR-DGPU-11 H2 互斥约束):
+//   FunctionalZeroDelay     — functional-mode: zero-delay, 协议真实; 同步
+//                             handle_functional_request() 走控制器协议路径, latency=0
+//   TimingCycleApproximate  — timing-mode: cycle-approximate + bandwidth accounting;
+//                             既有 ChStream tick() 路径 (默认, backward compat)
+enum class VramControllerMode : uint8_t {
+    FunctionalZeroDelay    = 0,  // functional-mode (minimal_v1)
+    TimingCycleApproximate = 1,  // timing-mode (dgpu_soc_timing_v1)
+};
 } // namespace tlm::vram
 
 class VramControllerTLM : public MemoryTLM {
@@ -53,6 +65,12 @@ public:
     ~VramControllerTLM() override = default;
 
     std::string get_module_type() const override { return "VramControllerTLM"; }
+
+    // ── Change A (cpptlm-vram-controller-functional-integration, 2026-10-09): 工作模式 API ──
+    // 默认 TimingCycleApproximate 保证 backward compat (既有 timing-mode 行为 100% 不变).
+    // functional-mode 由 DGpuBoard::bind_memory_backings() 依 simulation_mode 自动设置.
+    void set_mode(tlm::vram::VramControllerMode m) noexcept { mode_ = m; }
+    tlm::vram::VramControllerMode mode() const noexcept { return mode_; }
 
     // ── Phase 4 T4: 行缓冲 + bandwidth 参数 setter (per design.md §5.1) ──
     void set_vram_params(uint64_t row_hit_cycles, uint64_t row_miss_cycles,
@@ -161,6 +179,9 @@ private:
 
     // A.4: cached programmatic bridge source (non-owning)
     tlm::cluster::GpuInternalFabric* fabric_ = nullptr;
+
+    // Change A: 工作模式 (默认 timing-mode, backward compat per H-B2)
+    tlm::vram::VramControllerMode mode_ = tlm::vram::VramControllerMode::TimingCycleApproximate;
 
     // 额外 stats (继承自 MemoryTLM::stats_, 附加标量)
     tlm_stats::Scalar& stats_row_hits_;
