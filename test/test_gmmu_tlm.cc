@@ -7,9 +7,11 @@
 #include "event_queue.hh"
 #include "core/module_factory.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
+#include "tlm/vram_controller_tlm.hh"
 #include <catch2/catch_all.hpp>
 
 using tlm::gpu::GmmuTLM;
+using ::VramControllerTLM;
 
 static constexpr uint64_t kPageSize = 4096;
 
@@ -154,4 +156,89 @@ TEST_CASE("gmmu: addInstanceForTesting path", "[gmmu][module_factory]") {
     REQUIRE(obj->get_module_type() == "GmmuTLM");
     auto* g = dynamic_cast<GmmuTLM*>(obj);
     REQUIRE(g != nullptr);
+}
+
+// ── Change C (cpptlm-gmmu-pte-bus-correction, Gap I): GMMU dedicated client ──
+// GMMU PTE fetch 走 VramControllerTLM 专用 functional port (programmatic bridge),
+// 不经 pcie_memory / 不经 mesh NoC (per NVIDIA H100 GMMU dedicated memory client 模式)
+
+TEST_CASE("gmmu: set_vram_target 装配 programmatic bridge (Gap I)", "[gmmu][noc-gmmu-bypass]") {
+    EventQueue eq;
+    auto g = std::make_unique<GmmuTLM>("g", &eq);
+    auto vram = std::make_unique<VramControllerTLM>("vram", &eq);
+    std::vector<uint8_t> backing(128 * 1024, 0);
+    vram->set_backing_view(backing.data(), backing.size());
+    vram->set_mode(tlm::vram::VramControllerMode::FunctionalZeroDelay);
+
+    // PER-C spec: GMMU 无 backing 注入时 (mem_view_ == nullptr) 走 vram_ctrl_ functional port
+    // (不注入 mem_view_, 模拟 async PTE walk 经 VramControllerTLM 专用通道)
+    g->set_vram_target(vram.get());
+    g->set_pt_base_lo(0x10000);
+    g->set_enabled(true);
+
+    // PTE[1] 写入 vram backing (pt_base=0x10000, idx=1 → pte_addr=0x10008)
+    constexpr uint64_t pte = (0x2000ULL & ~0xFFFULL) | 1ULL;
+    std::memcpy(backing.data() + 0x10000 + 1 * 8, &pte, 8);
+
+    uint64_t pa = 0;
+    int rc = g->translate(0x1000, kPageSize, pa);
+    // PER-C: 有 vram_ctrl_ 注入 → 同步走 handle_functional_request, 直接返回 paddr (不 -EAGAIN)
+    REQUIRE(rc == 0);
+    REQUIRE(pa == 0x2000);
+}
+
+TEST_CASE("gmmu: vram_ctrl 缺 backing → translate -ENODEV 语义 (Gap I)", "[gmmu][noc-gmmu-bypass]") {
+    EventQueue eq;
+    auto g = std::make_unique<GmmuTLM>("g", &eq);
+    auto vram = std::make_unique<VramControllerTLM>("vram", &eq);
+    // 不注入 backing → handle_functional_request 返 -ENODEV
+    vram->set_mode(tlm::vram::VramControllerMode::FunctionalZeroDelay);
+
+    g->set_vram_target(vram.get());
+    g->set_pt_base_lo(0x10000);
+    g->set_enabled(true);
+
+    uint64_t pa = 0;
+    int rc = g->translate(0x1000, kPageSize, pa);
+    // vram_ctrl backing 缺失 → 翻译失败 -EIO (与 sync path 语义一致)
+    REQUIRE(rc == -EIO);
+    REQUIRE(g->is_async_pending() == false);
+}
+
+TEST_CASE("gmmu: vram_ctrl 无效 PTE → -EIO (Gap I)", "[gmmu][noc-gmmu-bypass]") {
+    EventQueue eq;
+    auto g = std::make_unique<GmmuTLM>("g", &eq);
+    auto vram = std::make_unique<VramControllerTLM>("vram", &eq);
+    std::vector<uint8_t> backing(128 * 1024, 0);
+    vram->set_backing_view(backing.data(), backing.size());
+    vram->set_mode(tlm::vram::VramControllerMode::FunctionalZeroDelay);
+
+    g->set_vram_target(vram.get());
+    g->set_pt_base_lo(0x10000);
+    g->set_enabled(true);
+
+    // PTE[1] = 0 (invalid, bit0=0)
+    uint64_t pte = 0;
+    std::memcpy(backing.data() + 0x10000 + 1 * 8, &pte, 8);
+
+    uint64_t pa = 0;
+    int rc = g->translate(0x1000, kPageSize, pa);
+    REQUIRE(rc == -EIO);
+}
+
+TEST_CASE("gmmu: translate 经 vram_ctrl 跨页检查仍生效 (Gap I)", "[gmmu][noc-gmmu-bypass]") {
+    EventQueue eq;
+    auto g = std::make_unique<GmmuTLM>("g", &eq);
+    auto vram = std::make_unique<VramControllerTLM>("vram", &eq);
+    std::vector<uint8_t> backing(128 * 1024, 0);
+    vram->set_backing_view(backing.data(), backing.size());
+    vram->set_mode(tlm::vram::VramControllerMode::FunctionalZeroDelay);
+
+    g->set_vram_target(vram.get());
+    g->set_pt_base_lo(0x10000);
+    g->set_enabled(true);
+
+    uint64_t pa = 0;
+    int rc = g->translate(0xFF0, 4096, pa);  // 跨页
+    REQUIRE(rc == -EIO);
 }
