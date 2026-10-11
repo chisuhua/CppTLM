@@ -35,3 +35,27 @@ TEST_CASE("[vram_controller] functional: set_mode switches to FunctionalZeroDela
     vc.set_mode(VramControllerMode::TimingCycleApproximate);
     REQUIRE(vc.mode() == VramControllerMode::TimingCycleApproximate);
 }
+
+// ── T3 (RED): handle_functional_request() 同步入口 ──
+// per Requirement vc-functional-mode-data-path Scenario "SDMA H2D 经 VramController functional-mode
+// 路径" + design.md A-B1 (模仿 gem5 AbstractMemory::functionalAccess() 同步 API):
+//   FunctionalZeroDelay → latency=0, 字节级 memcpy 到 backing
+TEST_CASE("[vram_controller] functional: handle_functional_request byte-level rw + latency 0",
+          "[vram_controller][functional][request][minimal_dgpu_soc]") {
+    EventQueue eq;
+    VramControllerTLM vc("vram", &eq);
+    std::vector<uint8_t> backing(8192, 0);
+    vc.set_backing_view(backing.data(), backing.size());
+    vc.set_mode(VramControllerMode::FunctionalZeroDelay);
+
+    const uint64_t payload = 0x1122334455667788ULL;
+    auto wr = vc.handle_functional_request(0x100, 8, /*is_write=*/true, &payload);
+    REQUIRE(wr.rc == 0);
+    REQUIRE(wr.latency_cycles == 0);  // functional-mode zero-delay
+    REQUIRE(backing[0x100] == 0x88);  // byte-level memcpy 落 backing (LE)
+
+    uint64_t back = 0;
+    auto rd = vc.handle_functional_request(0x100, 8, /*is_write=*/false, &back);
+    REQUIRE(rd.rc == 0);
+    REQUIRE(back == payload);
+}
