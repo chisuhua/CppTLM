@@ -6,6 +6,7 @@
 #include "tlm/gpu/pcie_memory_device.hh"
 
 #include "bundles/pcie_bundles_tlm.hh"
+#include "tlm/vram_controller_tlm.hh"  // Change A: handle_functional_request 完整类型
 
 #include <cerrno>
 #include <cstring>
@@ -113,6 +114,33 @@ namespace tlm::gpu {
         resp.trans_id.write(req.trans_id.read());
         const uint64_t off = req.offset.read();
         const uint32_t len = req.size.read();
+
+        // Change A (cpptlm-vram-controller-functional-integration): port=0 (SDMA) 在
+        // vram_controller_ 注入时委托 functional-mode 接口 (per vc-functional-mode-data-path).
+        //   - inline data (len<=8): 控制器做字节级 memcpy (data_ptr 指向 req.data)
+        //   - descriptor-only bulk (len>8, data=0): 大数据由 SDMA 经共享 backing 搬运,
+        //     data_ptr=nullptr → 控制器仅范围/协议确认, 不覆盖 backing (防零覆盖 E2E 数据)
+        // port=1 (GMMU) 保留既有直 memcpy 路径 (per H-B6 + tasks.md Task 3.2 Step 4)
+        if (p == PORT_SDMA && vram_controller_ != nullptr) {
+            const bool is_write = req.is_write();
+            uint64_t val = req.data.read();
+            void* data_ptr = (len > 0 && len <= 8) ? static_cast<void*>(&val) : nullptr;
+            const auto res =
+                vram_controller_->handle_functional_request(off, len, is_write, data_ptr);
+            if (res.rc != 0) {
+                resp.kind.write(bundles::PcieTlpBundle::CPLD);  // SLVERR (per D-AXI v1.4 B9)
+                resp.data.write(0xDEAD);
+            } else if (is_write) {
+                resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 写完成
+                resp.data.write(0);
+            } else {
+                resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 读完成
+                resp.data.write(val);
+            }
+            resp_out[p].write(resp);
+            req_in[p].consume();
+            return;
+        }
 
         // v1.4 B9: 检查 memory_read/write 返回值; 失败置 SLVERR
         //   null_backing → -ENODEV, oob → -EINVAL

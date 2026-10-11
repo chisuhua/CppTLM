@@ -27,6 +27,9 @@
 #include <mutex>
 #include <vector>
 
+// Change A: VramControllerTLM 完整类型在 .cc (全局作用域 forward-decl, 避免头文件耦合)
+class VramControllerTLM;
+
 namespace tlm::gpu {
 
     /**
@@ -132,6 +135,16 @@ namespace tlm::gpu {
         // ── 状态查询 ──
         uint64_t cycle_counter() const noexcept { return cycle_counter_; }
 
+        // ── Change A (cpptlm-vram-controller-functional-integration): VramController 注入 ──
+        // functional-mode 数据路径: handle_slave_port(port=0) 委托给 vram_controller_ 的
+        // handle_functional_request(); nullptr → legacy 直 memcpy fallback (backward compat).
+        void set_vram_controller(VramControllerTLM* vc) noexcept {
+            vram_controller_ = vc;
+        }
+        [[nodiscard]] VramControllerTLM* vram_controller() const noexcept {
+            return vram_controller_;
+        }
+
         // ── 设备身份 (供 DGpuBoard::pcie_config_read 路径使用) ──
         uint16_t vendor_id() const noexcept { return kVendorId; }
         uint16_t device_id() const noexcept { return kDeviceId; }
@@ -149,6 +162,8 @@ namespace tlm::gpu {
         // BAR 2 memory backing (injected by DGpuBoard, per ADR-DGPU-05 v1.4 B7)
         uint8_t* backing_view_ = nullptr;
         uint64_t backing_view_size_ = 0;
+        // Change A: VramController functional-mode 委托目标 (non-owning; nullptr=legacy fallback)
+        VramControllerTLM* vram_controller_ = nullptr;
         // v1.4 B10: 保留 mutex (保护 host mmio + sim_thread 并发访问)
         mutable std::mutex backing_mutex_;
 

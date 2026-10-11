@@ -21,7 +21,9 @@
 #define TLM_VRAM_CONTROLLER_TLM_HH
 
 #include "tlm/memory_tlm.hh"
+#include <cerrno>
 #include <cstdint>
+#include <cstring>
 
 // A.4 (cpptlm-driver-visible-minimal-soc 2026-10-08): forward-decl
 // tlm::cluster::GpuInternalFabric instead of #include to avoid circular
@@ -71,6 +73,39 @@ public:
     // functional-mode 由 DGpuBoard::bind_memory_backings() 依 simulation_mode 自动设置.
     void set_mode(tlm::vram::VramControllerMode m) noexcept { mode_ = m; }
     tlm::vram::VramControllerMode mode() const noexcept { return mode_; }
+
+    // ── Change A T4 (2026-10-09): functional-mode 同步入口 ──
+    // per design.md A-B1 (模仿 gem5 AbstractMemory::functionalAccess()):
+    // 同步服务 API, 仅 functional-mode 走; timing-mode 仍走既有 ChStream tick() 路径.
+    // 范围检查 + 字节级 memcpy 到 backing (zero-delay latency=0).
+    struct FunctionalResult {
+        int rc;                  // 0=OK, -EINVAL/-ENODEV=SLVERR 源
+        uint64_t latency_cycles; // functional=0; timing 计算字段 (保留)
+    };
+    FunctionalResult handle_functional_request(uint64_t addr, uint32_t size,
+                                               bool is_write,
+                                               const void* data_ptr) noexcept {
+        // functional-mode zero-delay; timing-mode 也走此同步入口时返回计算 latency
+        const uint64_t latency =
+            (mode_ == tlm::vram::VramControllerMode::FunctionalZeroDelay)
+                ? 0
+                : (size + bandwidth_gbps_ - 1) / bandwidth_gbps_;
+        if (backing_view_ == nullptr || backing_view_size_ == 0) {
+            return {-ENODEV, latency};
+        }
+        if (size == 0 || addr >= backing_view_size_ ||
+            static_cast<uint64_t>(size) > backing_view_size_ - addr) {
+            return {-EINVAL, latency};
+        }
+        if (data_ptr != nullptr) {
+            if (is_write) {
+                std::memcpy(backing_view_ + addr, data_ptr, size);
+            } else {
+                std::memcpy(const_cast<void*>(data_ptr), backing_view_ + addr, size);
+            }
+        }
+        return {0, latency};
+    }
 
     // ── Phase 4 T4: 行缓冲 + bandwidth 参数 setter (per design.md §5.1) ──
     void set_vram_params(uint64_t row_hit_cycles, uint64_t row_miss_cycles,
