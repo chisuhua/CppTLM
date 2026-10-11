@@ -1,16 +1,25 @@
 {
   "name": "dgpu_soc_minimal_v1",
-  "description": "Minimal dGPU SoC v1.0 test config (per openspec/changes/cpptlm-minimal-dgpu-soc-v1 B1.3). 16MB framebuffer for test, storage/gmmu/memory routing flags enabled, PcieMemoryDevice BAR2 fast-path (per D-AXI v1.8 T4). 当前 JSON 仅表达 TLM StreamAdapter 连接 (SoC 内部 wiring 设计目标 R-WIRE-1, 详见 docs/designs/dgpu-soc/soc-internal-tlm-design-target.md §1.2). SoC 内部方法注入 (如 pcie_ep↔pcie_memory set_memory_device) 发生在 C++ code 层, 是 Oracle N8 spec 决策的故意妥协 (避免双 tick, R-WIRE-4 当前违反, 详见 openspec/specs/driver-visible-minimal-soc/spec.md:126). D-AXI v2.0 目标: SoC 内部全 TLM 化 (用 b_transport / transport_dbg 接口).",
+  "description": "Minimal dGPU SoC v1.8 终态配置 (per openspec/changes/cpptlm-driver-visible-minimal-soc v1.8 P0 N1-N5 + ADR-DGPU-09 scope). 4 routing_enabled 字段保留 (per ADR-DGPU-10 anti-hijack root cause 4 + Change C.4 REVISED `f66070a8` 终态). DGpuBoard::load_soc_config (`dgpu_board_shell.cc:103-121`) 加载 4 flag 到 internal flag; JSON 字段删除 = BAR0 劫持 (per Metis `bg_fd20b1ed` A4 实证). framebuffer_size_bytes 顶层 (P0.5-landing) 派生 BAR1=16MB. 23 ABI 入口闭环测试 (per test_cpptlm_emulator_minimal_soc_smoke.cc 7 cases). TLM StreamAdapter 连接 R-WIRE-1 (per docs/designs/dgpu-soc/soc-internal-tlm-design-target.md §1.2). D-AXI v2.0 目标: SoC 内部全 TLM 化 (transport_dbg 接口).",
   "display_routing_enabled": false,
   "storage_routing_enabled": true,
   "gmmu_routing_enabled": true,
   "memory_routing_enabled": true,
   "framebuffer_size_bytes": 16777216,
+  "simulation_mode": "functional",
   "modules": [
     {
       "name": "soc",
       "type": "DGpuSoc",
       "modules": [
+        {
+          "name": "vram_ctrl",
+          "type": "VramControllerTLM",
+          "params": {
+            "operating_frequency_hz": 1000000000,
+            "bandwidth_gbps": 32
+          }
+        },
         {
           "name": "pcie_ep",
           "type": "PcieEndpointIP",
