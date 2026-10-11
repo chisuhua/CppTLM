@@ -171,7 +171,7 @@
 | Change | 名称 | Scope | 修 Gap | 优先级 | 估时 |
 |--------|------|-------|--------|--------|------|
 | **A** | `cpptlm-vram-controller-functional-integration` | minimal_v1 数据路径经 VramControllerTLM functional-mode (zero-delay, 协议真实); VramControllerTLM 暴露 `backdoor_read/write` 供 host 特权 + 内部 IP 直访 (per §1.4.1 + §1.4.2); SDMA 必须实现 ChStream 接口经 chip-internal NOC 接入 VramController (per §1.4.3) **[✅ archived 2026-10-11 per Tranche 2, commit `353f8aa8`; spec merged to `openspec/specs/vram-controller-functional-mode/`]** | **G3** | **P0** | 3-5d |
-| **B** | `cpptlm-lwc-bus-hub-mvp` | 引入 LightweightInterconnect + **CrBundle** (BAR0 mmio + MMIO Read) + **DoorbellBundle** (BAR1 0x10010000 SDMA ring 提交) | **H + J + K** | **P1** | 7-10d |
+| **B** | `cpptlm-lwc-bus-hub-mvp` | 引入 LightweightInterconnect + **CrBundle** (BAR0 mmio + MMIO Read) + **DoorbellBundle** (BAR1 0x10010000 SDMA ring 提交) **[✅ archived 2026-10-11 per Tranche 3, 12 commits HEAD `1eb51d27`; spec merged to `openspec/specs/lwc-bus-hub-mvp/`]** | **H + J + K** | **P1** | 7-10d |
 
 **并行可行性**: A 改数据路径 (`pcie_memory.handle_slave_port ↔ backing_view_` seam); B 改基础设施 (BAR 路由 + Doorbell 路径); **不同模块 + 不同路径**, 可 100% 并行实施 + 独立 review.
 
@@ -201,9 +201,9 @@
 | Gap | 来源 (现行实现偏离处) | Phase | Change |
 |-----|----------------------|-------|--------|
 | **G3** ✅ VramController functional-mode + backdoor | `dgpu_board_shell.cc::bind_memory_backings()` 数据路径直 memcpy 绕过 VramController; SDMA 不经 VramController 协议层; `VramControllerTLM::set_backing_view` 缺失, host 特权无 backdoor 入口 | Phase 0 | **A** ✅ archived 2026-10-11 (Tranche 2, commit `353f8aa8`; `[minimal_dgpu_soc]` 12→18 cases / 66→125 assertions, +50%; `[dgpu_soc_timing]` 37/12024 0 回归; `[pcie-memory]` 17/48 0 回归) |
-| **H** CR-Bus 寄存器访问缺失 | `dgpu_board_shell.cc:463-472` 4 处 `gmmu_->set_pt_base_*()` 直调 | Phase 0 | B (CrBundle) |
-| **J** Doorbell 直调 | `dgpu_board_shell.cc:537-538` `sdma_engine_->mmio_write()` 直调 | Phase 0 | B (DoorbellBundle) |
-| **K** MMIO Read write-mirror | `dgpu_board_shell.cc:495-501, 526-529, 367-388` `mmio_regs_` + `inject_q_` 异步 drain | Phase 0 | B (CrBundle AR/R) |
+| **H** ✅ CR-Bus 寄存器访问缺失 | `dgpu_board_shell.cc:463-472` 4 处 `gmmu_->set_pt_base_*()` 直调 | Phase 0 | **B** ✅ archived 2026-10-11 (Tranche 3, commit `1eb51d27`; 改写为 `gmmu_tlm.cc::handle_cr_transaction()` 走 CrBundle) |
+| **J** ✅ Doorbell 直调 | `dgpu_board_shell.cc:537-538` `sdma_engine_->mmio_write()` 直调 | Phase 0 | **B** ✅ archived 2026-10-11 (Tranche 3, commit `1eb51d27`; 改写为 `sdma_engine_tlm.cc::handle_doorbell_transaction()` 走 DoorbellBundle) |
+| **K** ✅ MMIO Read write-mirror | `dgpu_board_shell.cc:495-501, 526-529, 367-388` `mmio_regs_` + `inject_q_` 异步 drain | Phase 0 | **B** ✅ archived 2026-10-11 (Tranche 3, commit `1eb51d27`; mmio_read 走同步 CR-Bus, `mmio_regs_` 保留作无-hub fallback 给 `[pcie]` characterization tests) |
 | **I** GMMU page-walk wire-format 错配 | **真矛盾 = ADR-DGPU-06 §2.3 + AGENTS.md KEY INVARIANT line 513 切型决策与代码漂移** (per ADR-DGPU-06 Status Update 2026-10-10);`gmmu_tlm.hh:12,86` PcieTlpBundle vs JSON "AxiMemBundle" 为假矛盾 (Change C author 误诊) | Phase 1 | **C (e1 v1.1 ✅ archived 2026-10-09; GMMU PTE fetch 改走 VramControllerTLM 专用 functional port 程序化 binding)** |
 | **G2** chip-internal NOC 2 条 AxiMemBundle 直连 | `dgpu_soc_minimal_v1.json:58-61` `sdma.2`/`gmmu.0`→`pcie_memory` 直连 | Phase 1 | C (e1 v1.1) |
 | **G1** SDMA↔GMMU lambda 注入 | `dgpu_board_shell.cc:714-718` `sdma->set_translate_cb(λ)` | Phase 1 | C (随 NOC 接入废弃) |
@@ -236,7 +236,7 @@
 |------|--------|-----|------|
 | Step 0 | (2026-10-09 起草后现态) | **5/3 (临时超限)** | e1 v1.1 ✅ archived 2026-10-09 + flr-rebar v1.1 ✅ archived + p2-integration-unblock (3/3 baseline) + **4 个新起草 change 全 Proposed**: A (P0) + B (P1) + C (P2) + D (P2) |
 | ✅ Step 1 | A archive (Phase 0 实施完成) → 释放 1 KPI slot | **4/3 (2026-10-11 完成, 仍超 1)** | Change A 实施 (Tranche 2, commit `353f8aa8`) + archive → `archive/2026-10-11-cpptlm-vram-controller-functional-integration/`; spec merged to `openspec/specs/vram-controller-functional-mode/spec.md` (7 ADDED Requirements); frozen headers 零改动 + 23 ABI 零变更 |
-| Step 2 | B archive (Phase 0 实施完成) → 释放 1 KPI slot | 3/3 | 回到 KPI 上限 |
+| ✅ Step 2 | B archive (Phase 0 实施完成) → 释放 1 KPI slot | **3/3 (2026-10-11 完成, 回到 KPI 上限)** | Change B 实施 (Tranche 3, 12 commits HEAD `1eb51d27`) + archive → `archive/2026-10-11-cpptlm-lwc-bus-hub-mvp/`; spec merged to `openspec/specs/lwc-bus-hub-mvp/spec.md` (9 ADDED Requirements); Gap H/J/K 修复 (`set_pt_base`/`sdma mmio_write`/异步 write-mirror 直调 → 0 处); `[lwc]` 19 cases / 118 assertions + `[minimal_dgpu_soc]` 18→21 cases / 145 assertions (0 回归); frozen headers 零改动 + 23 ABI 零变更 |
 | Step 3 | C archive (Phase 1 完成) → Proposed Change E (P2) | 3/3 | Phase 2 启动 (Gap L fix) |
 | Step 4 | D archive (Phase 1 完成) → Proposed Change F (P3) | 3/3 | Phase 3 启动 (Gap N+O fix) |
 | Step 5 | E archive → Phase 2 完成; F archive → **Phase 3 完成** | - | **100% Gap 修复** (11/11) |
