@@ -13,6 +13,8 @@
 #include <iostream>
 #include "tlm/gpu/pcie_endpoint_tlm.h"
 #include "tlm/gpu/sdma_engine_tlm.hh" // 1.3d M6: SdmaEngineTLM::kSdmaFenceVector 单点常量引用
+#include "bundles/cr_bundles_tlm.hh"
+#include "bundles/doorbell_bundles_tlm.hh"
 
 namespace tlm::gpu {
 
@@ -342,6 +344,25 @@ namespace tlm::gpu {
                         return ep->display_device().mmio_read(offset, buf, len);
                     }
                 }
+// Change B (Gap K): GMMU 寄存器读走 CR-Bus (mmio_regs_ write-mirror 替代)
+                //   offset < 0x100 + gmmu_routing_enabled_ + gmmu_ → CR-Bus 读
+                //   (未知寄存器 → DECERR → -EIO; per B-B4)
+                //   同步语义: hub 记录 (wire 层, cr_write 计数) + GMMU CR 处理器同步取 rdata
+                //   (既有同步契约; 避免 cr_read future 无 fulfill 泄漏)
+                if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
+                    auto cr_tx = bundles::CrBundle::make_read(
+                        static_cast<uint32_t>(offset));
+                    if (lwc_hub_ != nullptr) {
+                        lwc_hub_->cr_write(cr_tx);  // wire 层记录 (routed++)
+                    }
+                    gmmu_->handle_cr_transaction(cr_tx);
+                    if (cr_tx.error.read() != bundles::CrBundle::ERR_OK) {
+                        return -EIO;
+                    }
+                    uint32_t rdata = cr_tx.rdata.read();
+                    std::memcpy(buf, &rdata, std::min(len, sizeof(rdata)));
+                    return 0;
+                }
                 break;
             }
             case BT::Bar1FbFastPath:
@@ -463,13 +484,15 @@ namespace tlm::gpu {
                 if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
                     uint32_t val32 = 0;
                     std::memcpy(&val32, buf, 4);
-                    if (offset == 0x00) {
-                        gmmu_->set_pt_base_lo(val32);
-                    } else if (offset == 0x04) {
-                        gmmu_->set_pt_base_hi(val32);
-                    } else if (offset == 0x08) {
-                        gmmu_->set_enabled((val32 & 1u) != 0);
+                    // Change B (Gap H): 4 处 set_pt_base_* 直调 → CrBundle (CR-Bus)
+                    //   hub 存在 → 经 hub 记录 (wire 层) + GMMU CR 处理器同步生效 (既有同步契约)
+                    //   hub 缺   → 直调 GMMU CR 处理器 (fallback 兼容)
+                    auto cr_tx = bundles::CrBundle::make_write(
+                        static_cast<uint32_t>(offset), val32);
+                    if (lwc_hub_ != nullptr) {
+                        lwc_hub_->cr_write(cr_tx);
                     }
+                    gmmu_->handle_cr_transaction(cr_tx);
                 }
                 break;
             }
@@ -534,8 +557,14 @@ namespace tlm::gpu {
                 } else if (reg_data.size() >= 8) {
                     doorbell_wptr = *reinterpret_cast<const uint64_t*>(reg_data.data());
                 }
-                sdma_engine_->mmio_write(/*bar=*/1, /*offset=*/kBar1DoorbellOffset,
-                                         /*data=*/doorbell_wptr);
+                // Change B (Gap J): sdma_engine_->mmio_write() 直调 → DoorbellBundle (DoorbellBus)
+                //   hub 存在 → 经 hub 记录 (wire 层) + SDMA doorbell 处理器同步 consume (既有同步契约)
+                auto db_tx = bundles::DoorbellBundle::make_doorbell(
+                    static_cast<uint32_t>(doorbell_wptr), 0);
+                if (lwc_hub_ != nullptr) {
+                    lwc_hub_->doorbell_write(db_tx);
+                }
+                sdma_engine_->handle_doorbell_transaction(db_tx);
             }
         }
 
@@ -803,6 +832,25 @@ namespace tlm::gpu {
             DPRINTF(MODULE,
                     "[DGpuBoard] soc-internal-noc: SOC 缺 'soc_noc' 实例, 桥接跳过\n");
         }
+
+        // Change B (cpptlm-lwc-bus-hub-mvp): LWC Bus Hub 装配 (per design §4)
+        //   lwc_hub_ 从 soc_ 解析 + 注册 GMMU cr target + SDMA doorbell target
+        //   (per v1.0.1 B-B2 修订: hub 同步路由, DGpuBoard::mmio_* host 线程直调)
+        if (auto* lwc_hub = dynamic_cast<tlm::lwc::LwcBusHub*>(
+                soc_->getInternalInstance("lwc_hub"))) {
+            lwc_hub_ = lwc_hub;
+            if (gmmu_) {
+                lwc_hub->register_cr_target("gmmu", &gmmu_->cr_in());
+                DPRINTF(MODULE, "[DGpuBoard] LWC: cr target 'gmmu' registered\n");
+            }
+            if (sdma_engine_) {
+                lwc_hub->register_doorbell_target("sdma", &sdma_engine_->doorbell_in());
+                DPRINTF(MODULE, "[DGpuBoard] LWC: doorbell target 'sdma' registered\n");
+            }
+        } else {
+            DPRINTF(MODULE,
+                    "[DGpuBoard] LWC: SOC 缺 'lwc_hub' 实例, mmio CR-Bus 路径 fallback\n");
+        }
     }
 
     // ── D3a-2: display FB backing 注入 (镜像 bind_memory_backings, per ADR-DGPU-10) ──
@@ -1034,6 +1082,7 @@ namespace tlm::gpu {
         controller_ip_ = nullptr;
         gmmu_ = nullptr;
         sdma_engine_ = nullptr;
+        lwc_hub_ = nullptr;
         cycle_advance_modules_.clear();
 
         // Step 5: 析构 EventQueue

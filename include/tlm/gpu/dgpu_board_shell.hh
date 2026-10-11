@@ -15,6 +15,7 @@
 namespace tlm::pcie { class PcieControllerIP; }  // forward decl for facade (P2 PR-A)
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include "tlm/gpu/sdma_engine_tlm.hh"  // SdmaEngineTLM (P0 unblock Task 5+6: BAR1 doorbell wiring)
+#include "tlm/lwc/lwc_bus_hub.hh"      // LwcBusHub (Change B: CR-Bus/DoorbellBus 轻量级总线)
 #include "tlm/memory_tlm.hh"  // MemoryTLM (Phase A1: backing-store API)
 #include "tlm/vram_controller_tlm.hh"  // VramControllerTLM (Phase 4 T4: timing-mode VRAM 控制器)
 #include "tlm/crossbar_tlm.hh"  // CrossbarTLM (Phase 4 T5: timing-mode cycle advance)
@@ -290,6 +291,11 @@ private:
     // Stage 1.3a integration (P0 unblock Task 5+6):
     //   SdmaEngineTLM 引用 (set_sdma_engine 注入), 转发 BAR1 doorbell 到 SDMA ring
     ::tlm::gpu::SdmaEngineTLM* sdma_engine_ = nullptr;
+
+    // Change B (cpptlm-lwc-bus-hub-mvp): LWC Bus Hub 引用 (bind_memory_backings 注入)
+    //   mmio_write BAR0 → lwc_hub_->cr_write; BAR1 doorbell → lwc_hub_->doorbell_write;
+    //   mmio_read BAR0 → lwc_hub_->cr_read. nullptr = legacy fallback (无 hub SoC).
+    ::tlm::lwc::LwcBusHub* lwc_hub_ = nullptr;
 
     // P2 PR-B Task 17: optional PcieControllerIP facade (consumes PcieBarRouter
     // per Oracle bg_c60653e0 §2.3). When set, mmio paths consult match_bar in

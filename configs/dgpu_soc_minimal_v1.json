@@ -62,6 +62,11 @@
         {
           "name": "completion",
           "type": "CompletionRingTLM"
+        },
+        {
+          "name": "lwc_hub",
+          "type": "LwcBusHub",
+          "params": { "max_ip_ports": 8 }
         }
       ],
       "connections": [

@@ -31,6 +31,7 @@
 #include "tlm/gpu/pcie_memory_device.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
+#include "tlm/lwc/lwc_bus_hub.hh" // Change B: LwcBusHub (REGISTER_CHSTREAM 注册, ChStreamModuleBase 派生)
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh" // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
@@ -85,6 +86,7 @@
     ModuleFactory::registerObject<tlm::gpu::PcieEndpointTLM>("PcieEndpointTLM");                    \
     ModuleFactory::registerObject<tlm::pcie::PcieLinkPhyMuxTLM>("PcieLinkPhyMuxTLM");               \
     ModuleFactory::registerObject<tlm::gpu::SdmaEngineTLM>("SdmaEngineTLM");                        \
+    ModuleFactory::registerObject<tlm::lwc::LwcBusHub>("LwcBusHub");                                \
     ModuleFactory::registerObject<tlm::gpu::SubmitQueueTLM>("SubmitQueueTLM");                      \
     ModuleFactory::registerObject<tlm::gpu::CompletionRingTLM>("CompletionRingTLM");                \
     ModuleFactory::registerObject<tlm::gpu::CommandProcessorTLM>("CommandProcessorTLM");            \

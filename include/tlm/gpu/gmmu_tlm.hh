@@ -22,6 +22,7 @@
 #ifndef CPPTLM_GMMU_TLM_H
 #define CPPTLM_GMMU_TLM_H
 
+#include "bundles/cr_bundles_tlm.hh"
 #include "bundles/pcie_bundles_tlm.hh"
 #include "core/chstream_module.hh"
 #include "core/sim_object.hh"
@@ -62,12 +63,55 @@ public:
     }
 
     // ── 寄存器接口 (DGpuBoard BAR0 hook 调用) ──
+    // Change B (cpptlm-lwc-bus-hub-mvp): 4 处 set_pt_base_* 直调改为经 CR-Bus
+    // (CrBundle → cr_in_ → handle_cr_transaction); setter 保留 0.5d 兼容窗口 (H-B3)
+    [[deprecated("use CrBundle via cr_in() / handle_cr_transaction()")]]
     void set_pt_base_lo(uint32_t lo) noexcept { pt_base_lo_ = lo; }
+    [[deprecated("use CrBundle via cr_in() / handle_cr_transaction()")]]
     void set_pt_base_hi(uint32_t hi) noexcept { pt_base_hi_ = hi; }
+    [[deprecated("use CrBundle via cr_in() / handle_cr_transaction()")]]
     void set_enabled(bool en) noexcept { enabled_ = en; }
     uint64_t pt_base() const noexcept {
         return (static_cast<uint64_t>(pt_base_hi_) << 32) |
                static_cast<uint64_t>(pt_base_lo_);
+    }
+
+    // ── Change B (Gap H): CR-Bus SlavePort (per spec gmmu-cr-in-handling) ──
+    cpptlm::InputStreamAdapter<bundles::CrBundle>& cr_in() { return cr_in_; }
+
+    // 同步处理 1 个 CR transaction (board 直调 + LWC hub handler 共用)
+    //   write=1: address dispatch → set pt_base_lo/hi/enabled
+    //   write=0: rdata 读回 (mmio read path), error=OK
+    //   未知寄存器 → error=DECERR (per B-B4: BAR0 offset<0x100 非 GMMU reg)
+    void handle_cr_transaction(bundles::CrBundle& tx) {
+        const uint32_t addr = tx.address.read();
+        if (tx.write.read() == 1u) {
+            const uint32_t val = tx.wdata.read();
+            if (addr == 0x00) {
+                pt_base_lo_ = val;
+            } else if (addr == 0x04) {
+                pt_base_hi_ = val;
+            } else if (addr == 0x08) {
+                enabled_ = (val & 1u) != 0;
+            } else {
+                tx.error.write(bundles::CrBundle::ERR_DECERR);
+                return;
+            }
+            tx.error.write(bundles::CrBundle::ERR_OK);
+        } else {
+            if (addr == 0x00) {
+                tx.rdata.write(pt_base_lo_);
+            } else if (addr == 0x04) {
+                tx.rdata.write(pt_base_hi_);
+            } else if (addr == 0x08) {
+                tx.rdata.write(enabled_ ? 1u : 0u);
+            } else {
+                tx.error.write(bundles::CrBundle::ERR_DECERR);
+                return;
+            }
+            tx.error.write(bundles::CrBundle::ERR_OK);
+        }
+        tx.ready.write(1u);
     }
 
     // ── backing 注入 (DGpuBoard::bind_memory_backings 调用)
@@ -232,6 +276,12 @@ public:
     }
 
     void tick() override {
+        // Change B (Gap H): LWC hub adapter 路径 — cr_in_ valid 时同步处理
+        if (cr_in_.valid()) {
+            bundles::CrBundle& tx = cr_in_.data();
+            handle_cr_transaction(tx);
+            cr_in_.consume();
+        }
         if (state_ == State::WAIT && resp_in_.valid()) {
             const auto& r = resp_in_.data();
             if (r.kind.read() == bundles::PcieTlpBundle::CPLD) {
@@ -300,6 +350,8 @@ private:
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
     cpptlm::OutputStreamAdapter<bundles::PcieTlpBundle> req_out_;
     cpptlm::InputStreamAdapter<bundles::PcieTlpBundle>  resp_in_;
+    // Change B (Gap H): CR-Bus SlavePort (LWC hub handler 注入)
+    cpptlm::InputStreamAdapter<bundles::CrBundle> cr_in_;
 };
 
 } // namespace tlm::gpu

@@ -604,6 +604,48 @@ int rc = 0;
         ring_consumed_count_ = 0;
     }
 
+    // Change B (Gap J): DoorbellBus 处理 (per spec sdma-doorbell-in-handling)
+    //   ring_id==0 && posted==1 → wdata (wptr count) 触发 ring consume
+    //   与 mmio_write(1, kBar1DoorbellOffset, data) 语义逐字节一致 (既有测试兼容)
+    void SdmaEngineTLM::handle_doorbell_transaction(const bundles::DoorbellBundle& tx) {
+        if (!ring_mode_ || ring_buffer_ == nullptr) {
+            return;  // 非 ring mode: 接受但 no-op
+        }
+        if (!tx.posted.read()) {
+            return;  // non-posted doorbell (本 MVP 仅支持 posted write)
+        }
+        if (tx.ring_id.read() != 0) {
+            return;  // 仅 ring 0 (BAR1 doorbell)
+        }
+        const uint32_t wptr_count = tx.wdata.read();
+        if (wptr_count == 0) {
+            return;  // wptr=0 → no-op (spec: ring 0 stop 由 wptr 语义表达)
+        }
+        const uint32_t cur_wptr = ring_buffer_->wptr().load();
+        for (uint32_t i = 0; i < wptr_count; ++i) {
+            const uint32_t idx = cur_wptr + i;
+            if (idx >= ring_buffer_->capacity_entries()) {
+                break;  // 越界 (per spec WPTR 不应越界; 这里防御性)
+            }
+            auto buf = ring_buffer_->read_entry(idx);
+            DmaDescriptor d = SdmaPacket::deserialize_descriptor(buf.data(), buf.size());
+            bundles::CompletionBundle done;
+            done.task_id.write(static_cast<uint32_t>(d.tag));
+            done.tag.write(static_cast<uint32_t>(d.tag));
+            int rc = 0;
+            if (d.dir == DmaDescriptor::Dir::H2D) {
+                rc = process_h2d(d, done);
+            } else {
+                rc = process_d2h(d, done);
+            }
+            std::string err_msg;
+            int err_code_for_cb = rc;
+            emit_completion(done, err_code_for_cb, err_msg);
+        }
+        ring_buffer_->wptr().fetch_add(wptr_count, std::memory_order_acq_rel);
+        ring_consumed_count_ += wptr_count;
+    }
+
     // UE 经 BAR1 窗口写 entry (测试 + 真实路径)
     bool SdmaEngineTLM::ring_write_entry(uint32_t index, const uint8_t* data, size_t len) {
         if (!ring_mode_ || ring_buffer_ == nullptr || data == nullptr) {

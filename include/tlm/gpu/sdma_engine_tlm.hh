@@ -12,6 +12,7 @@
 #define CPPTLM_TLM_GPU_SDMA_ENGINE_TLM_HH
 
 #include "bundles/dma_bundles_tlm.hh"
+#include "bundles/doorbell_bundles_tlm.hh"
 #include "bundles/pcie_bundles_tlm.hh"
 #include "core/chstream_module.hh"
 #include "core/sim_object.hh"
@@ -299,6 +300,13 @@ namespace tlm::gpu {
     }
     bool mmio_write(uint32_t bar, uint64_t offset, uint64_t data);
     bool ring_write_entry(uint32_t index, const uint8_t* data, size_t len);
+
+    // ── Change B (Gap J): DoorbellBus SlavePort (per spec sdma-doorbell-in-handling) ──
+    cpptlm::InputStreamAdapter<bundles::DoorbellBundle>& doorbell_in() { return doorbell_in_; }
+    // 同步处理 1 个 Doorbell transaction (board 直调 + LWC hub handler 共用)
+    //   ring_id==0 && posted==1 → wdata 触发 ring consume (wptr 提交)
+    void handle_doorbell_transaction(const bundles::DoorbellBundle& tx);
+
     uint64_t ring_consumed_count() const noexcept {
         return ring_consumed_count_;
     }
@@ -373,6 +381,8 @@ namespace tlm::gpu {
     private:
         // 5 端口 Bundle 适配器（per MultiPortStreamAdapter 模板要求）
         cpptlm::StreamAdapterBase* adapters_[NUM_PORTS] = {nullptr};
+        // Change B (Gap J): DoorbellBus SlavePort (LWC hub handler 注入)
+        cpptlm::InputStreamAdapter<bundles::DoorbellBundle> doorbell_in_;
 
         // JSON 参数 / 默认值（per design.md §5）
         uint32_t max_inflight_ = 4;
