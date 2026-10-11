@@ -59,6 +59,7 @@ public:
         if (cr_in == nullptr) return false;
         if (cr_targets_.size() + db_targets_.size() >= kMaxIpPorts) return false;
         cr_targets_[ip_name] = cr_in;
+        if (first_cr_target_ == nullptr) first_cr_target_ = cr_in;
         return true;
     }
 
@@ -68,52 +69,40 @@ public:
         if (db_in == nullptr) return false;
         if (cr_targets_.size() + db_targets_.size() >= kMaxIpPorts) return false;
         db_targets_[ip_name] = db_in;
+        if (first_db_target_ == nullptr) first_db_target_ = db_in;
         return true;
     }
 
     // ── Hub 主入口: CR-Bus write (host 线程, 同步路由) ──
     void cr_write(const bundles::CrBundle& tx) {
         std::lock_guard<std::mutex> lock(route_mu_);
-        // 默认 target: 第一个注册的 CR target (本 SoC = gmmu)
-        auto it = cr_targets_.begin();
-        if (it == cr_targets_.end()) {
+        if (first_cr_target_ == nullptr) {
             ++dropped_count_;
             return;
         }
-        cpptlm::InputStreamAdapter<bundles::CrBundle>* target = it->second;
-        if (!target->valid()) {
-            target->data() = tx;
-            target->set_valid(true);
-            ++routed_count_;
-        } else {
-            ++dropped_count_;  // target 忙 (上一 tx 未 consume)
-        }
+        // posted write 覆盖语义: 无条件覆盖 data + set_valid (不检旧 valid)
+        first_cr_target_->data() = tx;
+        first_cr_target_->set_valid(true);
+        ++routed_count_;
     }
 
     // ── Hub 主入口: DoorbellBus write (host 线程, 同步路由) ──
     void doorbell_write(const bundles::DoorbellBundle& tx) {
         std::lock_guard<std::mutex> lock(route_mu_);
-        auto it = db_targets_.begin();
-        if (it == db_targets_.end()) {
+        if (first_db_target_ == nullptr) {
             ++dropped_count_;
             return;
         }
-        cpptlm::InputStreamAdapter<bundles::DoorbellBundle>* target = it->second;
-        if (!target->valid()) {
-            target->data() = tx;
-            target->set_valid(true);
-            ++routed_count_;
-        } else {
-            ++dropped_count_;
-        }
+        first_db_target_->data() = tx;
+        first_db_target_->set_valid(true);
+        ++routed_count_;
     }
 
     // ── CR-Bus 同步读 (mmio_read 路径, per B-H3 + design §3) ──
     /** @brief 发起同步 CR read, 返回 future (sim 侧 complete_cr_read fulfill) */
     std::future<bundles::CrBundle> cr_read(const bundles::CrBundle& tx) {
         std::lock_guard<std::mutex> lock(route_mu_);
-        auto it = cr_targets_.begin();
-        if (it == cr_targets_.end()) {
+        if (first_cr_target_ == nullptr) {
             // 无 target: 立即返 error (DECERR)
             std::promise<bundles::CrBundle> failed;
             bundles::CrBundle resp = tx;
@@ -122,8 +111,7 @@ public:
             ++dropped_count_;
             return failed.get_future();
         }
-        cpptlm::InputStreamAdapter<bundles::CrBundle>* target = it->second;
-        if (target->valid()) {
+        if (first_cr_target_->valid()) {
             // target 忙: 立即返 error (SLVERR)
             std::promise<bundles::CrBundle> busy;
             bundles::CrBundle resp = tx;
@@ -132,8 +120,8 @@ public:
             ++dropped_count_;
             return busy.get_future();
         }
-        target->data() = tx;
-        target->set_valid(true);
+        first_cr_target_->data() = tx;
+        first_cr_target_->set_valid(true);
         ++routed_count_;
         pending_cr_reads_[tx.transaction_id.read()] = std::promise<bundles::CrBundle>();
         return pending_cr_reads_[tx.transaction_id.read()].get_future();
@@ -164,6 +152,8 @@ private:
     std::unordered_map<std::string, cpptlm::InputStreamAdapter<bundles::CrBundle>*> cr_targets_;
     std::unordered_map<std::string, cpptlm::InputStreamAdapter<bundles::DoorbellBundle>*>
         db_targets_;
+    cpptlm::InputStreamAdapter<bundles::CrBundle>* first_cr_target_ = nullptr;
+    cpptlm::InputStreamAdapter<bundles::DoorbellBundle>* first_db_target_ = nullptr;
     std::unordered_map<uint8_t, std::promise<bundles::CrBundle>> pending_cr_reads_;
     uint64_t routed_count_ = 0;
     uint64_t dropped_count_ = 0;
