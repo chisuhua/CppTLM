@@ -736,9 +736,26 @@ namespace tlm::gpu {
         if (auto* vram_ctrl =
                 dynamic_cast<VramControllerTLM*>(soc_->getInternalInstance("vram_ctrl"))) {
             vram_ctrl->set_backing_view(framebuffer_ptr_, framebuffer_size_);
+            // Change A T6 (cpptlm-vram-controller-functional-integration): functional-mode 装配
+            // per ADR-DGPU-11 H2 互斥 — 仅 functional (simulation_mode != "timing") 时:
+            //   1. vram_ctrl mode = FunctionalZeroDelay
+            //   2. PcieMemoryDevice 注入 vram_controller_ (port0 SDMA 委托)
+            // timing 配置保持默认 TimingCycleApproximate + 不 wire pcie_memory → 100% 零回归
+            const bool is_functional = !(cfg_.contains("simulation_mode") &&
+                                         cfg_["simulation_mode"] == "timing");
+            if (is_functional) {
+                vram_ctrl->set_mode(tlm::vram::VramControllerMode::FunctionalZeroDelay);
+                if (auto* pcie_mem = dynamic_cast<tlm::gpu::PcieMemoryDevice*>(
+                        soc_->getInternalInstance("pcie_memory"))) {
+                    pcie_mem->set_vram_controller(vram_ctrl);
+                }
+            }
             vram_ctrl_seen = vram_ctrl;
             DPRINTF(MODULE,
-                    "[DGpuBoard] T23C: vram_ctrl backing injected (ptr=%p, size=%llu)\n",
+                    "[DGpuBoard] T23C+A: vram_ctrl backing injected + mode=%s (ptr=%p, size=%llu)\n",
+                    vram_ctrl->mode() == tlm::vram::VramControllerMode::FunctionalZeroDelay
+                        ? "FunctionalZeroDelay"
+                        : "TimingCycleApproximate",
                     static_cast<void*>(framebuffer_ptr_),
                     static_cast<unsigned long long>(framebuffer_size_));
         } else {
