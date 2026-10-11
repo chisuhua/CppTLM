@@ -246,3 +246,129 @@ TEST_CASE("minimal dgpu soc E2E: fence 完成触发 MSI-X vector 0", "[minimal_d
 
     board.shutdown();
 }
+
+// ── Change A (cpptlm-vram-controller-functional-integration): functional-mode E2E 闭环 ──
+// per spec vc-functional-mode-data-path + vc-fallback-compat (T7 GREEN)
+
+// 派生 legacy config: 从磁盘 minimal config 剥掉 simulation_mode + vram_ctrl 节点,
+// 保证 schema 其余部分与生产配置完全一致 (backward-compat fallback 测试用)
+json derive_legacy_config() {
+    json cfg = load_minimal_soc_config();
+    cfg.erase("simulation_mode");
+    auto& mods = cfg["modules"][0]["modules"];
+    mods.erase(std::remove_if(mods.begin(), mods.end(), [](const json& m) {
+                   return m.value("name", "") == "vram_ctrl";
+               }),
+               mods.end());
+    return cfg;
+}
+
+// Case A: functional-mode 装配 + H2D 经 VramController 委托仍字节一致
+TEST_CASE("minimal dgpu soc functional-mode E2E: vram_ctrl wired + FunctionalZeroDelay + H2D 字节一致",
+          "[minimal_dgpu_soc][vram_controller][e2e]") {
+    EventQueue eq;
+    DGpuBoard board("minimal_dgpu_soc_func_e2e", &eq);
+
+    REQUIRE(board.load_soc_config(load_minimal_soc_config()));
+    std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    // Change A: vram_ctrl 已装配 (bind_memory_backings T6) + mode = FunctionalZeroDelay
+    VramControllerTLM* vram = board.vram_ctrl_module();
+    REQUIRE(vram != nullptr);
+    REQUIRE(vram->mode() == tlm::vram::VramControllerMode::FunctionalZeroDelay);
+
+    SdmaEngineTLM* sdma = board.sdma_engine();
+    REQUIRE(sdma != nullptr);
+
+    std::vector<uint8_t> host_buf = drive_full_h2d_link(board, sdma);
+    board.tick();
+
+    REQUIRE(sdma->ring_consumed_count() == 1u);
+    REQUIRE(sdma->completed_count() == 1u);
+    REQUIRE(sdma->error_count() == 0u);
+
+    // H2D 数据经 functional-mode 路径 (descriptor-only bulk 经控制器协议确认,
+    // 不零覆盖) → 字节级一致
+    std::vector<uint8_t> expected(host_buf.begin() + kPhys, host_buf.begin() + kPhys + kH2dSize);
+    std::vector<uint8_t> out(kH2dSize, 0xEE);
+    REQUIRE(board.mmio_read(1, 0, out.data(), out.size()) == 0);
+    REQUIRE(out == expected);
+
+    board.shutdown();
+}
+
+// Case B: legacy JSON (无 vram_ctrl + 无 simulation_mode) → vram_controller_==nullptr
+//         fallback 直 memcpy 路径 (per vc-fallback-compat)
+TEST_CASE("minimal dgpu soc backward-compat: legacy JSON (no vram_ctrl) fallback memcpy",
+          "[minimal_dgpu_soc][vram_controller][backward-compat][e2e]") {
+    EventQueue eq;
+    DGpuBoard board("minimal_dgpu_soc_legacy_e2e", &eq);
+
+    REQUIRE(board.load_soc_config(derive_legacy_config()));
+    std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    // Change A: 无 vram_ctrl → PcieMemoryDevice::vram_controller_==nullptr → legacy memcpy
+    REQUIRE(board.vram_ctrl_module() == nullptr);
+
+    SdmaEngineTLM* sdma = board.sdma_engine();
+    REQUIRE(sdma != nullptr);
+
+    std::vector<uint8_t> host_buf = drive_full_h2d_link(board, sdma);
+    board.tick();
+
+    REQUIRE(sdma->ring_consumed_count() == 1u);
+    REQUIRE(sdma->completed_count() == 1u);
+    REQUIRE(sdma->error_count() == 0u);
+
+    std::vector<uint8_t> expected(host_buf.begin() + kPhys, host_buf.begin() + kPhys + kH2dSize);
+    std::vector<uint8_t> out(kH2dSize, 0xEE);
+    REQUIRE(board.mmio_read(1, 0, out.data(), out.size()) == 0);
+    REQUIRE(out == expected);
+
+    board.shutdown();
+}
+
+// Case C: functional-mode H2D → D2H roundtrip (经 controller-wired 路径双向闭环)
+TEST_CASE("minimal dgpu soc functional-mode E2E: H2D → D2H roundtrip 字节闭环",
+          "[minimal_dgpu_soc][vram_controller][e2e]") {
+    EventQueue eq;
+    DGpuBoard board("minimal_dgpu_soc_func_rt_e2e", &eq);
+
+    REQUIRE(board.load_soc_config(load_minimal_soc_config()));
+    std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    VramControllerTLM* vram = board.vram_ctrl_module();
+    REQUIRE(vram != nullptr);
+    REQUIRE(vram->mode() == tlm::vram::VramControllerMode::FunctionalZeroDelay);
+
+    SdmaEngineTLM* sdma = board.sdma_engine();
+    REQUIRE(sdma != nullptr);
+
+    std::vector<uint8_t> host_buf = drive_full_h2d_link(board, sdma);
+    board.tick();
+    REQUIRE(sdma->completed_count() == 1u);
+
+    // D2H 描述符 (entry 1): vram_offset=0 → host_iova=0x3000, size=4096
+    DmaDescriptor d2h(DmaDescriptor::Dir::D2H, /*host_iova=*/0x3000, /*vram_offset=*/0,
+                      kH2dSize, /*tag=*/0x22);
+    auto entry = SdmaPacket::serialize_descriptor(d2h);
+    REQUIRE(sdma->ring_write_entry(1, entry.data(), entry.size()));
+    uint32_t wptr = 1;
+    REQUIRE(board.mmio_write(1, DGpuBoard::kBar1DoorbellOffset, &wptr, 4) == 0);
+    board.tick();
+    REQUIRE(sdma->completed_count() == 2u);
+    REQUIRE(sdma->error_count() == 0u);
+
+    // host_buf[0x3000..0x4000) == pattern[0x2000..0x3000) (H2D 时 phys=0x2000 的落点)
+    std::vector<uint8_t> expected(host_buf.begin() + kPhys, host_buf.begin() + kPhys + kH2dSize);
+    std::vector<uint8_t> rt(host_buf.begin() + 0x3000, host_buf.begin() + 0x3000 + kH2dSize);
+    REQUIRE(rt == expected);
+
+    board.shutdown();
+}
