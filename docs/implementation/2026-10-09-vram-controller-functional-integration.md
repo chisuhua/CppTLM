@@ -47,3 +47,28 @@
 - **functional / timing 互斥**: `vram_ctrl` mode 由顶层 `simulation_mode` 字段决定; timing JSON 保持默认 `TimingCycleApproximate` 且**不** wire `pcie_memory`, 保证 `[dgpu_soc_timing]` 100% 零回归.
 - **descriptor-only bulk TLP** (SDMA H2D `len>8`, data=0, 大数据由 SDMA 经共享 backing 搬运): 委托时传 `data=nullptr` → 控制器仅做范围/协议确认, **不**覆盖数据, 保证 minimal E2E 字节一致.
 - GMMU `pcie_memory` port 1 **保持不变** (per H-B6 + tasks.md Task 3.2 Step 4).
+
+---
+
+## Commits 索引 (全部 atomic, per tasks.md DoD 7-commit 策略)
+
+| T | commit | 内容 | 验证 |
+|---|--------|------|------|
+| T0 | `a82807a8` | 实施笔记 + 所有权验证 | setup |
+| T1 | `613a2a5d` | RED: set_mode/mode cases (2) | build exit=1 (23 errors: VramControllerMode 未声明) |
+| T2 | `c2c3d00b` | VramControllerMode enum + set_mode()/mode() | GREEN: [vram_controller] 2/3 |
+| T3 | `9f633f84` | RED: handle_functional_request() 入口 case | build exit=1 (2 errors: no member) |
+| T4 | `51582b70` | handle_functional_request() + PcieMemoryDevice port0 委托 | GREEN: [vram_controller][functional] 3/8 |
+| T5 | `0fa5486b` | JSON simulation_mode + vram_ctrl 节点 | minimal 15/74 + timing 37/12024 |
+| T6 | `5d3482c6` | bind_memory_backings() 装配 (functional only) | 4 套件全绿 |
+| T7 | `1b0ad83b` | functional-mode E2E 闭环 (3 board + 3 unit) | minimal 12→18 cases, 66→125 assertions |
+
+## Post-flight (2026-10-11)
+
+- 构建: exit=0, 0 errors
+- `[minimal_dgpu_soc]`: **18 cases / 125 assertions** (12→18, 66→125, +50%)
+- `[pcie-memory]`: 17 cases / 48 assertions — **0 回归**
+- `[dgpu_soc_timing]`: 37 cases / 12024 assertions — **0 回归** (timing 独立, ADR-DGPU-11 H2)
+- `[driver_visible]`: 4 cases / 40 assertions — **0 回归**
+- 4 frozen headers: 0 diff; 23 ABI: 0 新增
+- KPI: 5/3 (Change A 未 archive, 用户决策后 archive → 4/3)
