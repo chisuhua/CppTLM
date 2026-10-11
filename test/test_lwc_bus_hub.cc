@@ -145,3 +145,123 @@ TEST_CASE("DoorbellBundle: producer 写 valid, consumer (SDMA) 写 ready 反馈"
     consumed.valid.write(0u);
     REQUIRE(consumed.valid.read() == 0u);
 }
+
+// ===========================================================================
+// T5/T6 — LightweightInterconnect 路由 (RED: LwcBusHub 未定义 → 编译失败)
+// ===========================================================================
+
+TEST_CASE("LwcBusHub: 空注册状态 (routed=0, dropped=0)", "[lwc][unit]") {
+    EventQueue eq;
+    LwcBusHub hub("lwc", &eq);
+    REQUIRE(hub.routed_count() == 0);
+    REQUIRE(hub.dropped_count() == 0);
+    REQUIRE(hub.cr_target_count() == 0);
+    REQUIRE(hub.db_target_count() == 0);
+}
+
+TEST_CASE("LwcBusHub: cr_write 路由到正确 CR target (不串扰)", "[lwc][unit]") {
+    EventQueue eq;
+    LwcBusHub hub("lwc", &eq);
+    cpptlm::InputStreamAdapter<CrBundle> gmmu_cr;
+    cpptlm::InputStreamAdapter<CrBundle> msi_cr;
+    cpptlm::InputStreamAdapter<DoorbellBundle> sdma_db;
+
+    REQUIRE(hub.register_cr_target("gmmu", &gmmu_cr));
+    REQUIRE(hub.register_cr_target("msi_x", &msi_cr));
+    REQUIRE(hub.register_doorbell_target("sdma", &sdma_db));
+
+    hub.cr_write(CrBundle::make_write(0x00, 0xDEADBEEF, 1));
+
+    REQUIRE(hub.routed_count() == 1);
+    REQUIRE(gmmu_cr.valid());
+    REQUIRE(gmmu_cr.data().address.read() == 0x00);
+    REQUIRE(gmmu_cr.data().wdata.read() == 0xDEADBEEF);
+    REQUIRE_FALSE(msi_cr.valid());   // 不串扰
+    REQUIRE_FALSE(sdma_db.valid());  // Doorbell target 不收 CR
+}
+
+TEST_CASE("LwcBusHub: doorbell_write 路由到正确 Doorbell target", "[lwc][unit]") {
+    EventQueue eq;
+    LwcBusHub hub("lwc", &eq);
+    cpptlm::InputStreamAdapter<CrBundle> gmmu_cr;
+    cpptlm::InputStreamAdapter<DoorbellBundle> sdma_db;
+    REQUIRE(hub.register_cr_target("gmmu", &gmmu_cr));
+    REQUIRE(hub.register_doorbell_target("sdma", &sdma_db));
+
+    hub.doorbell_write(DoorbellBundle::make_doorbell(42, 0));
+
+    REQUIRE(hub.routed_count() == 1);
+    REQUIRE(sdma_db.valid());
+    REQUIRE(sdma_db.data().wdata.read() == 42);
+    REQUIRE(sdma_db.data().ring_id.read() == 0);
+    REQUIRE_FALSE(gmmu_cr.valid());  // CR target 不收 Doorbell
+}
+
+TEST_CASE("LwcBusHub: unknown target → dropped_count 增, 0 crash", "[lwc][unit]") {
+    EventQueue eq;
+    LwcBusHub hub("lwc", &eq);
+    cpptlm::InputStreamAdapter<CrBundle> gmmu_cr;
+    hub.register_cr_target("gmmu", &gmmu_cr);
+
+    hub.cr_write(CrBundle::make_write(0x00, 1, 1));
+    REQUIRE(hub.routed_count() == 1);
+
+    hub.cr_write(CrBundle::make_write(0x00, 2, 2));  // 无 target 名 → 仍默认路由 "gmmu"
+    REQUIRE(hub.routed_count() == 2);
+
+    hub.doorbell_write(DoorbellBundle::make_doorbell(1, 0));  // 无 Doorbell target → dropped
+    REQUIRE(hub.dropped_count() == 1);
+    REQUIRE(hub.routed_count() == 2);
+}
+
+TEST_CASE("LwcBusHub: 32-port 上限 + 拒绝 33 注册 (fail soft)", "[lwc][unit]") {
+    EventQueue eq;
+    LwcBusHub hub("lwc", &eq);
+    cpptlm::InputStreamAdapter<CrBundle> targets[33];
+    bool ok = true;
+    for (unsigned i = 0; i < 32; ++i) {
+        ok = hub.register_cr_target("ip" + std::to_string(i), &targets[i]);
+        REQUIRE(ok);
+    }
+    // 第 33 个 → fail soft (返回 false, 不抛)
+    REQUIRE_FALSE(hub.register_cr_target("ip32", &targets[32]));
+    REQUIRE(hub.cr_target_count() == 32);
+}
+
+TEST_CASE("LwcBusHub: cr_read 同步 AR/R 返回 rdata (ready/valid handshake)", "[lwc][unit]") {
+    EventQueue eq;
+    LwcBusHub hub("lwc", &eq);
+    cpptlm::InputStreamAdapter<CrBundle> gmmu_cr;
+    hub.register_cr_target("gmmu", &gmmu_cr);
+
+    // host 侧发起同步 CR 读
+    auto fut = hub.cr_read(CrBundle::make_read(0x00, 5));
+    // sim 侧: GMMU tick 处理 → 回填 rdata + ready
+    REQUIRE(gmmu_cr.valid());
+    CrBundle resp = gmmu_cr.data();
+    resp.rdata.write(0xCAFEBABE);
+    resp.ready.write(1u);
+    gmmu_cr.set_valid(false);
+    hub.complete_cr_read(resp);
+
+    REQUIRE(fut.wait_for(std::chrono::milliseconds(100)) == std::future_status::ready);
+    CrBundle out = fut.get();
+    REQUIRE(out.rdata.read() == 0xCAFEBABE);
+    REQUIRE(out.ready.read() == 1u);
+}
+
+TEST_CASE("LwcBusHub: routed_count 计数器精度 (100 tx: 90 routed + 10 dropped)", "[lwc][unit]") {
+    EventQueue eq;
+    LwcBusHub hub("lwc", &eq);
+    cpptlm::InputStreamAdapter<CrBundle> gmmu_cr;
+    hub.register_cr_target("gmmu", &gmmu_cr);
+
+    for (unsigned i = 0; i < 90; ++i) {
+        hub.cr_write(CrBundle::make_write(0x00, i, i));
+    }
+    for (unsigned i = 0; i < 10; ++i) {
+        hub.doorbell_write(DoorbellBundle::make_doorbell(i, 0));  // 无 doorbell target
+    }
+    REQUIRE(hub.routed_count() == 90);
+    REQUIRE(hub.dropped_count() == 10);
+}
