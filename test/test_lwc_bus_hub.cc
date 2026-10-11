@@ -89,3 +89,59 @@ TEST_CASE("CrBundle: read transaction 语义 (write=0 → rdata 回填)",
     REQUIRE(resp.rdata.read() == 0xCAFEBABE);
     REQUIRE(resp.ready.read() == 1u);
 }
+
+// ===========================================================================
+// T3/T4 — DoorbellBundle wire-format (RED: 类型未定义 → 编译失败)
+// ===========================================================================
+
+TEST_CASE("DoorbellBundle: 4-field posted-write wire-format 编译期契约",
+          "[lwc][doorbell_bundle][unit]") {
+    BUNDLE_FIELD_WIDTH(DoorbellBundle, wdata, 32);
+    BUNDLE_FIELD_WIDTH(DoorbellBundle, ring_id, 8);
+    BUNDLE_FIELD_WIDTH(DoorbellBundle, posted, 1);
+    BUNDLE_FIELD_WIDTH(DoorbellBundle, valid, 1);
+
+    DoorbellBundle db;
+    db.wdata.write(42);
+    db.ring_id.write(0);
+    db.posted.write(1u);
+    db.valid.write(1u);
+
+    REQUIRE(db.wdata.read() == 42);
+    REQUIRE(db.ring_id.read() == 0);
+    REQUIRE(db.posted.read() == 1u);
+    REQUIRE(db.valid.read() == 1u);
+}
+
+TEST_CASE("DoorbellBundle: 序列化 roundtrip + ring 提交语义",
+          "[lwc][doorbell_bundle][unit]") {
+    DoorbellBundle db;
+    db.wdata.write(0x100);
+    db.ring_id.write(0);
+    db.posted.write(1u);
+    db.valid.write(1u);
+
+    std::vector<uint8_t> raw(sizeof(DoorbellBundle));
+    REQUIRE(bundles::serialize_bundle(db, raw.data(), raw.size()));
+    DoorbellBundle out;
+    REQUIRE(bundles::deserialize_bundle(raw.data(), raw.size(), out));
+    REQUIRE(out.wdata.read() == 0x100);
+    REQUIRE(out.ring_id.read() == 0);
+    REQUIRE(out.posted.read() == 1u);
+}
+
+TEST_CASE("DoorbellBundle: producer 写 valid, consumer (SDMA) 写 ready 反馈",
+          "[lwc][doorbell_bundle][unit]") {
+    // per v1.0.1 B-H4 修订: ready 是 consumer 驱动 (SDMA tick 写回), producer 不写 ready
+    DoorbellBundle producer_tx;
+    producer_tx.wdata.write(16);
+    producer_tx.ring_id.write(0);
+    producer_tx.posted.write(1u);
+    producer_tx.valid.write(1u);
+    REQUIRE(producer_tx.valid.read() == 1u);
+
+    // SDMA consumer 消费后: valid 清除 (consume), ready 反馈
+    DoorbellBundle consumed = producer_tx;
+    consumed.valid.write(0u);
+    REQUIRE(consumed.valid.read() == 0u);
+}
