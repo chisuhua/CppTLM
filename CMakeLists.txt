@@ -95,12 +95,19 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 # s2 单体退役 → DGpuBoard C++ shell + DGpuSoc SimModule 容器 (per ADR-SOC-07 D1/D7)
 # ==============================================================================
 set(PTX_EMU_ROOT "${CMAKE_SOURCE_DIR}/external/PTX-EMU" CACHE PATH "PTX-EMU source root")
+
 # pcie-endpoint T-pe-5: SOC topology with PcieEndpointTLM (per ADR-SOC-07 D2)
-configure_file(
-    "${CMAKE_SOURCE_DIR}/configs/dgpu_soc_v1.json.in"
-    "${CMAKE_BINARY_DIR}/configs/dgpu_soc_v1.json"
-    @ONLY
-)
+# ⚠️ 2026-10-09 退役: configs/dgpu_soc_v1.json.in → configs/dgpu_soc_v1.json.in.disabled
+#   退役原因: PcieEndpointTLM 已 deprecated (`[[deprecated("use PcieEndpointIP")]]`),
+#             字段错误 (msix_num_vectors → num_msix_vectors, WO → wo),
+#             0 测试/示例引用 (per grep 验证).
+#   替代配置: dgpu_soc_minimal_v1.json / dgpu_soc_timing_v1.json / dgpu_soc_v2_realip_p2.json
+#   build 输出 build/configs/dgpu_soc_v1.json 同步退役 (本段已 disabled)
+# configure_file(
+#     "${CMAKE_SOURCE_DIR}/configs/dgpu_soc_v1.json.in"
+#     "${CMAKE_BINARY_DIR}/configs/dgpu_soc_v1.json"
+#     @ONLY
+# )
 
 # ==============================================================================
 # 输出目录

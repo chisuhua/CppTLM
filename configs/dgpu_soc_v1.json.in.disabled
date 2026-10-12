@@ -1,0 +1,57 @@
+# ⚠️ DEPRECATED 2026-10-09 (per AGENTS.md 季度复审)
+#
+# 退役原因:
+#   1. 无任何测试/示例引用 (per grep -r 'dgpu_soc_v1\.json\.in' test/ examples/ cpptlm/ scripts/ = 0 引用)
+#   2. 使用 PcieEndpointTLM (deprecated, [[deprecated("use PcieEndpointIP")]])
+#   3. 字段错误: "msix_num_vectors" 应为 "num_msix_vectors", "WO" 大写应为 "wo" 小写
+#   4. 早期代次产物, Stage 1.4-2.1 之前
+#
+# 替代配置:
+#   - configs/dgpu_soc_minimal_v1.json      (functional, D-AXI v1.8 终态)
+#   - configs/dgpu_soc_timing_v1.json      (timing, v0.5 终态)
+#   - configs/dgpu_soc_v2_realip_p2.json   (pin-contract 4-Change 终态, 4-IP topology)
+#   - configs/dgpu_board_v1.json           (23 ABI driver-visible 入口)
+#
+# 取消引用验证: AGENTS.md / test/ / examples/ / cpptlm/ / scripts/ 全部 0 引用
+# 重启用: cp 改名 `dgpu_soc_v1.json.in` + 修字段错误 (msix_num_vectors → num_msix_vectors, WO → wo) + 迁 PcieEndpointIP
+#
+# ===== 原始内容保留 (供参考) =====
+#
+# {
+#   "name": "dgpu_soc_v1",
+#   "description": "CppTLM dGPU SOC topology with PCIe Endpoint (per openspec/changes/2026-08-26-cpptlm-dgpu-pcie-endpoint/tasks.md T-pe-5). Integrates SOC-internal PcieEndpointTLM (slave) with the DGpuBoard C++ ABI shell + DGpuSoc SimModule container (per ADR-SOC-07 D1/D2/D7).",
+#   "modules": [
+#     {
+#       "name": "dgpu_soc",
+#       "type": "DGpuSoc",
+#       "params": {
+#         "ptx_emu_root": "@PTX_EMU_ROOT@"
+#       }
+#     },
+#     {
+#       "name": "vram0",
+#       "type": "MemoryTLM",
+#       "params": {
+#         "capacity_gb": 1
+#       }
+#     },
+#     {
+#       "name": "pcie_ep",
+#       "type": "PcieEndpointTLM",  // ← deprecated, 改 PcieEndpointIP
+#       "params": {
+#         "config_size": 4096,
+#         "msix_num_vectors": 16,    // ← 应为 num_msix_vectors
+#         "bar0_registers": [
+#           {
+#             "offset": 20,
+#             "name": "GPU_REG_DOORBELL",
+#             "access": "WO",          // ← 应为 "wo" 小写
+#             "side_effect": "doorbell",
+#             "stream_id": 0
+#           }
+#         ]
+#       }
+#     }
+#   ],
+#   "connections": []
+# }

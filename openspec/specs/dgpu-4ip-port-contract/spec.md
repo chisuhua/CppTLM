@@ -1,27 +1,8 @@
-# dgpu-4ip-port-contract: 4-IP Topology 端口契约 (chip-internal wire-protocol 静态检查)
-
-> **所属 change**: [`dgpu-realip-pin-contract`](../proposal.md)
-> **范围**: 4-IP topology chip-internal 端口契约代码化 (`Fabric2VramCtrlBundle` + `BUNDLE_FIELD_WIDTH` 编译期检查 + programmatic bridge) — Change A + Change B
-> **关联 spec**: `pcie-ip-integration`, `pcie-axi-datapath-hardening`, `sdma-engine-tlm`, `host-bypass-and-rc`, `dgpu-driver-visible-minimal-soc`
-> **前置**: `cpptlm-dgpu-realip-refactor` ✅ (Phase C, tag `dgpu-realip-refactor-completion` 落 2026-10-07) + Change A ✅ (tag `dgpu-realip-pin-contract-change-a-completion` 落 2026-10-08)
-
----
+# dgpu-4ip-port-contract Specification
 
 ## Purpose
-
-4-IP topology (`PcieControllerIP` / `GpuInternalFabric` / `VramControllerTLM` / `DGpuSoc`) 完成 chip-internal 端口契约代码化:
-
-1. **`Fabric2VramCtrlBundle`** chip-internal wire-protocol (fabric→vram_ctrl 数据路径, 之前 handoff §9.2 #9 列为 D3/D4 deferred work)
-2. **`port_contract_asserts.hh` `BUNDLE_FIELD_WIDTH` macro** 编译期检查字段宽度 (per Momus 2026-10-08 修订: 删 `PORT_IS_INITIATOR`/`PORT_IS_TARGET` 因 chstream 端口非模板类)
-3. **programmatic bridge** via `GpuInternalFabric::set_vram_target(VramControllerTLM*)` + `VramControllerTLM::set_fabric_source(GpuInternalFabric*)` setter (per Phase 8 HB/RC tick 转发先例)
-4. **(Change B) Facade Production Wiring** — `DGpuBoard::init()` 公共路径接 `ctrl->attach_endpoint(ep)` + `set_pcie_controller_ip(ctrl)`,激活 Strangler gate;`match_bar` whole-BAR 签名锁定
-
-让 RTL team 1:1 对照 chip-internal 连线 (`Fabric2VramCtrlBundle` 字段 1:1 → 硅片 wire),DGpuBoard facade 接管数据路径,Strangler gate 保留作 facade verdict 与 expected mirror 一致性的 std::abort 保护。
-
----
-
-## ADDED Requirements
-
+TBD - created by archiving change dgpu-realip-pin-contract. Update Purpose after archive.
+## Requirements
 ### Requirement: fabric-vram-ctrl-port-contract
 
 `GpuInternalFabric` 与 `VramControllerTLM` SHALL 通过 `Fabric2VramCtrlBundle` 严格匹配 (per Change A 2026-10-08 resplit):
@@ -137,17 +118,3 @@
 
 ---
 
-## 关联
-
-- **proposal**: [`../proposal.md`](../proposal.md)
-- **design**: [`../design.md`](../design.md)
-- **tasks**: [`../tasks.md`](../tasks.md)
-- **前置**: `cpptlm-dgpu-realip-refactor` (archived, Phase C 完成 2026-10-07) + Change A ✅ (2026-10-08)
-- **并行**: `cpptlm-p2-integration-unblock` (已 Proposed, 异步推进)
-- **ADR**:
-  - `ADR-DGPU-05-vram-storage-ownership.md` (framebuffer_ 单一真源)
-  - `ADR-DGPU-06-axi-mem-bundle-boundary.md` (AxiMemBundle vs PcieTlpBundle 边界)
-  - `ADR-DGPU-07-minimal-soc-evolution-seam.md` (D3 seam 插入点)
-  - `ADR-DGPU-08-abi-freeze-policy.md` (23 ABI 冻结)
-  - `ADR-DGPU-10` (legacy flag 防劫持 root cause 4 锁定)
-- **架构文档**: `docs/designs/dgpu-soc/architecture.md` §2.4 (4-IP 边界表) + §2.4.2 (Change B facade wiring, 待新增) + §7.3 (JSON 层级约束)
