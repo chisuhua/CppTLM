@@ -238,6 +238,11 @@ public:
     void attach_vram_for_testing(uint8_t* ptr, uint64_t size) noexcept {
         framebuffer_ptr_ = ptr;
         framebuffer_size_ = size;
+        // 测试 seam: 显式 attach backing 即建立 presence → 启用 BAR1 存储路由
+        // ("via presence" 语义, 对齐防劫持 presence-based 迁移方向)。
+        // 生产路径不受影响: 本方法 0 生产调用点; 全仓调用点 load→attach 顺序
+        // 保证 JSON 显式 false 的权威性 (若未来需要 attach 后仍禁用, 走 reset 路径)。
+        if (size > 0) storage_routing_enabled_ = true;
     }
     [[deprecated("use attach_vram_for_testing / vram_storage_")]]
     void attach_framebuffer_for_testing(uint8_t* ptr, uint64_t size) noexcept {

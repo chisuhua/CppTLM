@@ -320,7 +320,11 @@ namespace tlm::gpu {
         auto classify_naive = [&](uint8_t b, uint64_t off) -> BT {
             if (b == 0) return BT::Bar0Mmio;
             if (b == 1) {
-                const uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
+                // Production: 取 pcie_ep 报告的 BAR1 size (来自 JSON bar_sizes[1])。
+                // 测试 seam (pcie_ep 未实例化): 回退到 attach_vram_for_testing 注入的
+                // framebuffer_size_, 以让未调 init() 的单元测试走 Bar1FbFastPath 路径。
+                uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
+                if (sz == 0) sz = framebuffer_size_;
                 return off < sz ? BT::Bar1FbFastPath : BT::Unknown;
             }
             if (b == 2) return BT::Bar2VramAperture;
@@ -450,7 +454,11 @@ namespace tlm::gpu {
         auto classify_naive = [&](uint8_t b, uint64_t off) -> BT {
             if (b == 0) return BT::Bar0Mmio;
             if (b == 1) {
-                const uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
+                // Production: 取 pcie_ep 报告的 BAR1 size (来自 JSON bar_sizes[1])。
+                // 测试 seam (pcie_ep 未实例化): 回退到 attach_vram_for_testing 注入的
+                // framebuffer_size_, 以让未调 init() 的单元测试走 Bar1FbFastPath 路径。
+                uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
+                if (sz == 0) sz = framebuffer_size_;
                 return off < sz ? BT::Bar1FbFastPath : BT::Unknown;
             }
             if (b == 2) return BT::Bar2VramAperture;
