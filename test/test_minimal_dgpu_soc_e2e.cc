@@ -398,3 +398,22 @@ TEST_CASE("minimal dgpu soc Change C: GMMU dedicated client + soc_noc 装配 (Ga
 
     board.shutdown();
 }
+
+// ── Change C T5 (Gap G1): board 不再注入 SDMA translate_cb_ lambda ──
+TEST_CASE("minimal dgpu soc Change C: SDMA translate_cb_ lambda 已删 (Gap G1)",
+          "[minimal_dgpu_soc][sdma][g1]") {
+    EventQueue eq;
+    DGpuBoard board("minimal_dgpu_soc_gap_g1", &eq);
+
+    REQUIRE(board.load_soc_config(load_minimal_soc_config()));
+    std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    SdmaEngineTLM* sdma = board.sdma_engine();
+    REQUIRE(sdma != nullptr);
+    // Gap G1: board 不再注入 lambda callback → get_translate_cb() nullptr
+    REQUIRE(sdma->get_translate_cb() == nullptr);
+
+    board.shutdown();
+}
