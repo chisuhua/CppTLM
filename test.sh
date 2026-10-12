@@ -1,8 +1,24 @@
 #!/usr/bin/env bash
-# CppTLM 统一构建与测试入口。
-# 支持 OFF、PTX-EMU、双构建及后续迁移中的模式专用测试脚本。
+# CppTLM 测试入口 (根目录便捷路径).
+#
+# 设计动机: 用户从仓库根目录起步时, 期望 ./test.sh 可立即使用.
+# 本脚本默认只跑测试 (假设 ./build.sh 已构建); 需先构建时显式 --build.
+# 实际测试逻辑仍在 scripts/test/test_*.sh (OFF/PTX-EMU 分模式).
+#
+# 用法:
+#   ./test.sh                          # 默认: 跑测试 (binary 须已构建, 否则报错)
+#   ./test.sh --build                  # 先 build 后 test (旧默认行为, 一次性)
+#   ./test.sh --build-only             # 只 build, 不跑测试
+#   ./test.sh --verify-fix             # 跑 verify_test_seam_fix.sh (Oracle Option C + classify_naive fallback 验证)
+#   ./test.sh --mode off|ptx-emu|both  选择测试模式 (默认 auto)
+#   ./test.sh --quick / --python-only / --e2e / --ctest
+#
+# 配合 ./build.sh:
+#   ./build.sh && ./test.sh             # 推荐流程: 先 build 再 test
+#   ./build.sh --rebuild && ./test.sh  # 干净重建 + 跑测试
 
 set -euo pipefail
+set +m  # 关闭 job control 消息 (Killed 噪音抑制)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$SCRIPT_DIR"
@@ -16,7 +32,10 @@ BUILD_EXAMPLES="${BUILD_EXAMPLES:-ON}"
 BUILD_DIR_ENV_SET="${BUILD_DIR+x}"
 BUILD_DIR="${BUILD_DIR:-build}"
 MODE="auto"
-ACTION="run"
+# 默认行为改为 "test" (而非 "run"), 显式构建用 --build
+ACTION="test"
+BUILD_FIRST=0
+VERIFY_FIX=0
 QUICK=0
 PYTHON_ONLY=0
 E2E=0
@@ -28,14 +47,17 @@ usage() {
 用法: ./test.sh [选项] [额外 CMake 参数]
 
 选项:
-  --mode auto|off|ptx-emu|both  选择构建/测试模式（默认 auto）
-  --build-only                 仅配置并构建
-  --test-only                  仅测试；缺少测试二进制时失败
-  --quick                      运行迁移后的快速测试模式
-  --python-only                仅运行 Python 测试
-  --e2e                        运行端到端测试
-  --ctest                      运行当前构建目录的 ctest（替代旧 scripts/test/test.sh）
-  --help                       显示帮助
+  --build                     先构建后测试 (一次性, 旧默认行为; 显式触发)
+  --build-only                仅配置并构建, 不跑测试
+  --mode auto|off|ptx-emu|both  选择构建/测试模式 (默认 auto)
+  --test-only                 仅测试; 缺少测试二进制时失败 (默认)
+  --verify-fix                跑 verify_test_seam_fix.sh
+                             ([dgpu_framebuffer] 修复 + 4 commit 回归验证)
+  --quick                     运行迁移后的快速测试模式
+  --python-only               仅运行 Python 测试
+  --e2e                       运行端到端测试
+  --ctest                     运行当前构建目录的 ctest (替代旧 scripts/test/test.sh)
+  --help                      显示帮助
 
 环境变量:
   BUILD_DIR BUILD_TYPE BUILD_TESTS BUILD_EXAMPLES
@@ -87,22 +109,34 @@ parse_args() {
             --mode)
                 (($# >= 2)) || error "--mode 需要参数"
                 MODE="$2"; shift 2 ;;
-            --build-only) ACTION=build; shift ;;
-            --test-only) ACTION=test; shift ;;
-            --quick) QUICK=1; shift ;;
+            --build)       BUILD_FIRST=1; shift ;;
+            --build-only)  ACTION=build; shift ;;
+            --test-only)   ACTION=test; shift ;;
+            --verify-fix)  VERIFY_FIX=1; shift ;;
+            --quick)       QUICK=1; shift ;;
             --python-only) PYTHON_ONLY=1; shift ;;
-            --e2e) E2E=1; shift ;;
-            --ctest) CTEST=1; shift ;;
-            --help|-h) usage; exit 0 ;;
+            --e2e)         E2E=1; shift ;;
+            --ctest)       CTEST=1; shift ;;
+            --help|-h)     usage; exit 0 ;;
             --) shift; EXTRA_ARGS+=("$@"); break ;;
             *) EXTRA_ARGS+=("$1"); shift ;;
         esac
     done
-    if (( CTEST )) && [[ "$ACTION" != run ]]; then
-        error "--ctest 不能与 --build-only/--test-only 同时使用"
+    # --build 隐式转 ACTION=run (build + test 一次完成)
+    if (( BUILD_FIRST )); then
+        if [[ "$ACTION" == "build" ]]; then
+            error "--build 与 --build-only 互斥 (--build 含 build+test; --build-only 仅 build)"
+        fi
+        if [[ "$ACTION" == "test" ]]; then
+            error "--build 与 --test-only 互斥 (--build 含 build+test; --test-only 仅 test)"
+        fi
+        ACTION=run
     fi
-    if (( PYTHON_ONLY )) && [[ "$ACTION" != run ]]; then
-        error "--python-only 不能与构建/测试专用模式同时使用"
+    if (( CTEST )) && [[ "$ACTION" == "build" ]]; then
+        error "--ctest 不能与 --build-only 同时使用 (ctest 跑测试, --build-only 仅构建)"
+    fi
+    if (( PYTHON_ONLY )) && [[ "$ACTION" == "build" ]]; then
+        error "--python-only 不能与 --build-only 同时使用 (Python 跑测试, --build-only 仅构建)"
     fi
 }
 
@@ -144,6 +178,26 @@ run_mode() {
 }
 
 parse_args "$@"
+
+# --verify-fix 短路: 转 verify_test_seam_fix.sh 后退出 (替代 export 形式, 避免 main 顶层污染)
+dispatch_verify_fix() {
+    local verify_script="$ROOT_DIR/scripts/test/verify_test_seam_fix.sh"
+    local verify_args=()
+    local arg
+    if [[ ! -x "$verify_script" ]]; then
+        error "verify 脚本不存在或不可执行: $verify_script"
+    fi
+    for arg in "$@"; do
+        [[ "$arg" == "--verify-fix" ]] && continue
+        verify_args+=("$arg")
+    done
+    exec "$verify_script" "${verify_args[@]}"
+}
+
+if (( VERIFY_FIX )); then
+    dispatch_verify_fix "$@"
+fi
+
 # 显式 PTX-EMU 模式未指定 BUILD_DIR 时，采用其专用默认目录。
 if [[ "$MODE" == ptx-emu && -z "$BUILD_DIR_ENV_SET" && "$BUILD_DIR" == build ]]; then
     BUILD_DIR=build-on

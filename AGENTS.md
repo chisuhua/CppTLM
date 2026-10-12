@@ -110,7 +110,8 @@ src/                    # .cc 实现 + main.cpp
   utils/                 # dynamic_loader 实现
   main.cpp               # 主仿真入口
 
-test.sh                 # 统一构建与测试入口（auto/off/ptx-emu/both）
+build.sh                # 独立构建入口（OFF/PTX-EMU，薄包装转 scripts/build/build.sh）
+test.sh                 # 统一测试入口（默认只 test；--build 显式 build+test；--verify-fix 一键回归）
 
 test/                   # Catch2 v3.7.0 测试套件 (≥100 个 test_*.cc)
   catch_amalgamated.hpp  # Catch2 预编译 (非 FetchContent)
@@ -254,7 +255,10 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 ### 统一构建与测试入口
 
 ```bash
-# 默认模式（auto-detect OFF/PTX-EMU，执行完整回归）
+# 推荐流程: 先构建再测试
+./build.sh && ./test.sh
+
+# 默认模式（auto-detect OFF/PTX-EMU，仅测试，binary 须已构建）
 ./test.sh
 
 # 显式模式
@@ -266,10 +270,23 @@ external/                # git submodule (CppHDL, json, PTX-EMU 等)
 ./test.sh --quick                            # OFF: Python + phase6 Catch2; PTX-EMU: 核心 6 项
 ./test.sh --mode ptx-emu --quick             # PTX-EMU 快速子集
 
-# 仅构建/仅测试
+# 构建 + 测试一次性
+./test.sh --build                            # 等价于 ./build.sh && ./test.sh
 ./test.sh --build-only                       # 配置并构建，不测试
-./test.sh --test-only                        # 仅测试（需已有构建产物）
+
+# 仅测试（需已有构建产物）
+./test.sh --test-only                        # 默认行为（已无需 --test-only）
 ./test.sh --mode ptx-emu --test-only         # 仅 PTX-EMU 测试
+
+# 一键回归验证（[dgpu_framebuffer] 修复 + 4 commit 7 步验证）
+./test.sh --verify-fix                       # 委托 scripts/test/verify_test_seam_fix.sh
+
+# 构建选项（根 build.sh，薄包装转 scripts/build/build.sh）
+./build.sh                                   # OFF 路径增量构建
+./build.sh --rebuild                         # 干净构建
+./build.sh --ptx-emu                         # PTX-EMU 集成（需 git submodule init）
+./build.sh --debug                           # Debug 模式
+./build.sh --jobs 4                          # 自定义并行度（默认 -j2 OOM-safe）
 
 # 专项测试
 ./test.sh --python-only                      # 仅 Python（不要求构建产物）

@@ -2,12 +2,19 @@
 
 按用途分 5 个子目录组织：
 
+## 根目录便捷入口（推荐用法）
+
+| 命令 | 用途 |
+|------|------|
+| `./build.sh` | 独立构建入口（薄包装转 `scripts/build/build.sh`）。`--rebuild` 干净构建；`--ptx-emu` 启用 PTX-EMU 集成；`--debug` Debug 模式；默认 `-j2` OOM-safe |
+| `./test.sh` | 测试入口。**默认只跑测试**（binary 须已构建），显式 `./test.sh --build` 一次性 build+test。`--verify-fix` 跑 `verify_test_seam_fix.sh` 一键回归（Oracle Option C + classify_naive fallback 验证）|
+
 ## 子目录结构
 
 | 目录 | 内容 | 用途 |
 |------|------|------|
-| `build/` | `build.sh`, `format.sh`, `build_ptx_emu.sh` | 构建与代码格式化（`build_ptx_emu.sh` 启用 PTX-EMU 集成，dGPU/APU SoC 默认路径） |
-| `test/` | `test_off.sh`, `test_ptx_emu.sh`, `run_all_tests.sh`, `ci_e2e_test.sh` | 分模式测试与兼容入口；统一入口为根目录 `test.sh` |
+| `build/` | `build.sh`, `format.sh`, `build_ptx_emu.sh` | 构建与代码格式化（`build_ptx_emu.sh` 启用 PTX-EMU 集成，dGPU/APU SoC 默认路径）。根 `build.sh` 是薄包装，委托此目录 |
+| `test/` | `test_off.sh`, `test_ptx_emu.sh`, `verify_test_seam_fix.sh`, `run_all_tests.sh`, `ci_e2e_test.sh` | 分模式测试与兼容入口。根 `test.sh --verify-fix` 委托 `verify_test_seam_fix.sh`；其他仍按模式分派 |
 | `pipeline/` | `run_full_pipeline.sh` | 完整仿真流程（生成→仿真→可视化） |
 | `topology/` | `topology_validator.py`, `topology_generator.py`, `analyzer.py`, `path_tracer.py`, `credit_flow.py` | 拓扑生成/分析/验证 |
 | `stats/` | `stats_annotator.py`, `stats_watcher.py`, `layout_manager.py`, `derive_expr.py` | 性能统计与可视化 |
@@ -21,13 +28,22 @@
 ## 验证
 
 ```bash
-# CMake target 应仍工作
-cmake --build build --target validate_topology
+# 推荐流程: 先构建再测试
+./build.sh && ./test.sh
 
-# 统一测试入口
+# 干净重建 + 跑测试
+./build.sh --rebuild && ./test.sh
+
+# 一键回归验证 ([dgpu_framebuffer] 修复 + 4 commit)
+./test.sh --verify-fix
+
+# 其他用法
 ./test.sh --e2e
 ./test.sh --quick
 ./test.sh --mode ptx-emu  # 仅 PTXIR image H2D DMA，不执行 kernel/CuTe
+
+# CMake target 应仍工作
+cmake --build build --target validate_topology
 
 # 文档路径同步检查（pre-commit hook 也会自动运行）
 ./scripts/test/docs_sync_check.sh --strict
@@ -43,7 +59,9 @@ cmake --build build --target validate_topology
 
 ## 测试入口与范围
 
-- 根目录 `test.sh` 是统一构建/测试入口，支持 `--mode auto|off|ptx-emu|both`、`--build-only`、`--test-only`、`--quick`、`--python-only`、`--e2e` 和 `--ctest`。
+- 根目录 `test.sh` 是统一测试入口（默认只 test），支持 `--build`、`--mode auto|off|ptx-emu|both`、`--build-only`、`--test-only`、`--verify-fix`、`--quick`、`--python-only`、`--e2e` 和 `--ctest`。
+- 根目录 `build.sh` 是独立构建入口（薄包装转 `scripts/build/build.sh`），支持 `--rebuild`、`--ptx-emu`、`--debug`、`--no-tests`、`--no-examples`、`--jobs N`。
 - `scripts/test/test_off.sh` 承担 OFF 路径回归；`scripts/test/test_ptx_emu.sh` 承担 PTX-EMU 路径验证。
 - PTX-EMU 验证范围严格限于 PTXIR image H2D DMA；kernel 执行与 CuTe 程序执行均明确排除。
 - `run_all_tests.sh` 和 `ci_e2e_test.sh` 保留为兼容包装，不是新的 CI 主入口。
+- `verify_test_seam_fix.sh` 是 `[dgpu_framebuffer]` 修复（commit `ba32fe97`）+ 4 commit 回归一键验证（7 步：git 状态/构建/fix target/9 核心标签/全量/稳定性/cpptlm-debug 4 件套）。可通过 `test.sh --verify-fix` 或 `scripts/test/verify_test_seam_fix.sh` 直接调用。
