@@ -417,3 +417,36 @@ TEST_CASE("minimal dgpu soc Change C: SDMA translate_cb_ lambda 已删 (Gap G1)"
 
     board.shutdown();
 }
+
+// ── Change C T7 (Gap I + G2 E2E): GMMU bypass NOC + SDMA 经新路径闭环 ──
+TEST_CASE("minimal dgpu soc Change C E2E: GMMU bypass NOC + SDMA 数据闭环",
+          "[minimal_dgpu_soc][noc][gmmu-bypass][e2e]") {
+    EventQueue eq;
+    DGpuBoard board("minimal_dgpu_soc_change_c_e2e", &eq);
+
+    REQUIRE(board.load_soc_config(load_minimal_soc_config()));
+    std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    SdmaEngineTLM* sdma = board.sdma_engine();
+    REQUIRE(sdma != nullptr);
+
+    // 全链路 H2D 经 Change C 新路径 (SDMA translate_target_ -> GMMU -> vram_ctrl functional port)
+    std::vector<uint8_t> host_buf = drive_full_h2d_link(board, sdma);
+    board.tick();
+    REQUIRE(sdma->completed_count() == 1u);
+    REQUIRE(sdma->error_count() == 0u);
+
+    // Gap I+G2: GMMU 不经 mesh NOC (dedicated memory client)
+    tlm::cluster::SocInternalNoc* noc = board.soc_noc_module();
+    REQUIRE(noc != nullptr);
+    REQUIRE(noc->flits_dispatched() == 0u);
+
+    // 字节级一致: host_buf[0x2000..0x3000) 经 PTE 译出 → framebuffer[0..4096) (vram_offset=0)
+    std::vector<uint8_t> expected(host_buf.begin() + kPhys, host_buf.begin() + kPhys + kH2dSize);
+    std::vector<uint8_t> actual(framebuffer.begin(), framebuffer.begin() + kH2dSize);
+    REQUIRE(actual == expected);
+
+    board.shutdown();
+}
