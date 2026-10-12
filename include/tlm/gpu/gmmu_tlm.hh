@@ -27,6 +27,7 @@
 #include "core/chstream_module.hh"
 #include "core/sim_object.hh"
 #include "framework/stream_adapter.hh"
+#include "tlm/vram_controller_tlm.hh"  // Change C (Gap I): VramControllerTLM 完整类型 (handle_functional_request)
 
 #include <array>
 #include <cstdint>
@@ -125,6 +126,17 @@ public:
         set_mem_view(ptr, sz);
     }
 
+    // ── Change C (cpptlm-gmmu-pte-bus-correction, Gap I): GMMU dedicated memory client ──
+    // programmatic bridge: DGpuBoard::bind_memory_backings 注入 VramControllerTLM 引用
+    // (per Gap I 裁决 + NVIDIA H100 GMMU dedicated memory client 模式).
+    // GMMU PTE fetch 经 vram_ctrl_->handle_functional_request() (chip-internal 直连),
+    // 不经 PcieMemoryDevice / 不经 mesh SocInternalNoc.
+    void set_vram_target(::VramControllerTLM* vram) noexcept { vram_ctrl_ = vram; }
+    ::VramControllerTLM* vram_target() const noexcept { return vram_ctrl_; }
+
+    // 测试断言 helper: vram_ctrl 注入时 translate 是否走 functional port
+    bool uses_vram_dedicated_client() const noexcept { return vram_ctrl_ != nullptr; }
+
     // ── 翻译 API (DmaTranslateCb 签名严格匹配) ──
     // 返回 0 成功, -EIO 失败, -EAGAIN 异步 pending; out_paddr 仅在成功时写入
     // v1.8 H1: wire-format 统一 PcieTlpBundle (替代 v1.3 AxiMemBundle)
@@ -142,6 +154,28 @@ public:
         constexpr uint64_t page_mask = 4095;
         if ((iova & ~page_mask) != ((iova + size - 1) & ~page_mask)) return -EIO;
         const uint64_t pte_addr = pt_base() + (iova >> 12) * 8;
+
+        // ── Change C (Gap I): GMMU dedicated memory client → VramControllerTLM functional port ──
+        // per NVIDIA H100 GMMU 模式 (dedicated memory client bypass mesh NoC):
+        //   vram_ctrl_ 注入时 PTE fetch 走 handle_functional_request() 同步直读
+        //   (chip-internal AXI 语义, latency=0 in functional mode), 不经 req_out_ 异步
+        //   PcieTlpBundle / 不经 PcieMemoryDevice port 1 / 不经 mesh SocInternalNoc.
+        //   保持既有 async req_out_ 路径仅当 vram_ctrl_ 未注入 (back-compat 测试).
+        if (vram_ctrl_) {
+            // 同步 PTE fetch: handle_functional_request(pte_addr, 8, read, &pte_buf_)
+            // VramControllerTLM functional-mode zero-delay → 直接填充 pte_buf_
+            auto res = vram_ctrl_->handle_functional_request(pte_addr, 8, false,
+                                                             pte_buf_.data());
+            if (res.rc != 0) return -EIO;  // -ENODEV/-EINVAL → SLVERR 语义
+            uint64_t pte = 0;
+            std::memcpy(&pte, pte_buf_.data(), 8);
+            if (!(pte & 1ULL)) return -EIO;  // invalid PTE
+            out_paddr = (pte & ~page_mask) | (iova & page_mask);
+            state_ = State::IDLE;
+            pending_iova_ = 0;
+            pending_size_ = 0;
+            return 0;
+        }
 
         // 异步路径: IDLE → 发 PTE MEM_READ → WAIT
         // B22 注: 越界检查由下游 PcieMemoryDevice handle_slave_port 负责
@@ -339,6 +373,8 @@ private:
     bool enabled_ = false;
     uint8_t* mem_view_ = nullptr;
     uint64_t mem_view_size_ = 0;
+    // Change C (Gap I): GMMU dedicated memory client → VramControllerTLM (programmatic bridge)
+    ::VramControllerTLM* vram_ctrl_ = nullptr;
 
     // 异步状态机
     State state_ = State::IDLE;
