@@ -788,6 +788,17 @@ namespace tlm::gpu {
                 }
             }
             vram_ctrl_seen = vram_ctrl;
+            // Change C T4 (Gap I): GMMU dedicated memory client → VramControllerTLM functional port
+            // programmatic bridge (per design.md §"JSON 修订": GMMU 不走 JSON ChStream connection —
+            // GMMU req_out_ 是 PcieTlpBundle, VramControllerTLM 端口是 CacheReqBundle, 类型不兼容;
+            // 走 set_vram_target 先例, 仿 fabric↔vram 装配模式). GMMU PTE fetch 直连 VramController,
+            // 不经 PcieMemoryDevice port 1 / 不经 mesh SocInternalNoc (per NVIDIA H100 GMMU 模式).
+            // 仅 functional: timing-mode 保持 mem_view_ → translate_timing TLB path (H-C6)。
+            if (is_functional && gmmu_) {
+                gmmu_->set_vram_target(vram_ctrl);
+                DPRINTF(MODULE,
+                        "[DGpuBoard] Change C: gmmu -> vram_ctrl dedicated client wired (Gap I)\n");
+            }
             DPRINTF(MODULE,
                     "[DGpuBoard] T23C+A: vram_ctrl backing injected + mode=%s (ptr=%p, size=%llu)\n",
                     vram_ctrl->mode() == tlm::vram::VramControllerMode::FunctionalZeroDelay
@@ -830,6 +841,7 @@ namespace tlm::gpu {
         // 注: 4 target 若未 inject (nullptr), set_target 跳过 — graceful degradation.
         if (auto* soc_noc = dynamic_cast<tlm::cluster::SocInternalNoc*>(
                 soc_->getInternalInstance("soc_noc"))) {
+            soc_noc_ = soc_noc;  // Change C T4: 缓存供 E2E 观测 (Gap G2)
             if (controller_ip_) soc_noc->set_pcie_target(controller_ip_);
             if (sdma_engine_)   soc_noc->set_sdma_target(sdma_engine_);
             if (gmmu_)          soc_noc->set_gmmu_target(gmmu_);

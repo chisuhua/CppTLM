@@ -67,11 +67,18 @@
           "name": "lwc_hub",
           "type": "LwcBusHub",
           "params": { "max_ip_ports": 8 }
+        },
+        {
+          "name": "soc_noc",
+          "type": "SocInternalNoc",
+          "params": {
+            "vc_counts_enabled": true,
+            "data_flow": true
+          }
         }
       ],
       "connections": [
-        { "src": "sdma.2", "dst": "pcie_memory.0", "latency": 1 },
-        { "src": "gmmu.0", "dst": "pcie_memory.1", "latency": 1 }
+        { "src": "sdma.2", "dst": "pcie_memory.0", "latency": 1 }
       ]
     }
   ]

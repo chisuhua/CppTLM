@@ -143,13 +143,6 @@ public:
     int translate(uint64_t iova, uint32_t size, uint64_t& out_paddr) {
         if (!enabled_ || pt_base() == 0) return -EIO;
 
-        // legacy 同步路径 (mem_view_ 注入 → 直读页表项)
-        // Phase 4 T2: 转调 translate_timing (TLB + page walk), 丢弃 latency (零 functional 回归)
-        if (mem_view_) {
-            uint64_t lat = 0;
-            return translate_timing(iova, size, out_paddr, lat);
-        }
-
         // 跨页检查 (v1.0 不支持跨页描述符, per design D7)
         constexpr uint64_t page_mask = 4095;
         if ((iova & ~page_mask) != ((iova + size - 1) & ~page_mask)) return -EIO;
@@ -160,7 +153,7 @@ public:
         //   vram_ctrl_ 注入时 PTE fetch 走 handle_functional_request() 同步直读
         //   (chip-internal AXI 语义, latency=0 in functional mode), 不经 req_out_ 异步
         //   PcieTlpBundle / 不经 PcieMemoryDevice port 1 / 不经 mesh SocInternalNoc.
-        //   保持既有 async req_out_ 路径仅当 vram_ctrl_ 未注入 (back-compat 测试).
+        //   vram_ctrl_ 优先级高于 mem_view_ (functional-mode 二者并存时走 dedicated client).
         if (vram_ctrl_) {
             // 同步 PTE fetch: handle_functional_request(pte_addr, 8, read, &pte_buf_)
             // VramControllerTLM functional-mode zero-delay → 直接填充 pte_buf_
@@ -175,6 +168,13 @@ public:
             pending_iova_ = 0;
             pending_size_ = 0;
             return 0;
+        }
+
+        // legacy 同步路径 (mem_view_ 注入 → 直读页表项)
+        // Phase 4 T2: 转调 translate_timing (TLB + page walk), 丢弃 latency (零 functional 回归)
+        if (mem_view_) {
+            uint64_t lat = 0;
+            return translate_timing(iova, size, out_paddr, lat);
         }
 
         // 异步路径: IDLE → 发 PTE MEM_READ → WAIT
