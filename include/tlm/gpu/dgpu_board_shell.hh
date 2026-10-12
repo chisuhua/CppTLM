@@ -13,6 +13,7 @@
 #include "tlm/pcie/pcie_endpoint_ip.hh"  // PcieEndpointIP (A-2 Path A: pcie_ep accessor 返回类型)
 
 namespace tlm::pcie { class PcieControllerIP; }  // forward decl for facade (P2 PR-A)
+namespace tlm::cluster { class SocInternalNoc; }  // forward decl (Change C T3: soc_noc accessor)
 #include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter::RegisterEntry (lookup_register_entry)
 #include "tlm/gpu/sdma_engine_tlm.hh"  // SdmaEngineTLM (P0 unblock Task 5+6: BAR1 doorbell wiring)
 #include "tlm/lwc/lwc_bus_hub.hh"      // LwcBusHub (Change B: CR-Bus/DoorbellBus 轻量级总线)
@@ -144,6 +145,10 @@ public:
                     : nullptr;
     }
     GmmuTLM* gmmu_module() const noexcept { return gmmu_; }
+
+    // Change C (cpptlmm-gmmu-pte-bus-correction, Gap G2): SoC 内部 NoC 实例 accessor
+    // (bind_memory_backings 装配; 供 E2E 测试观测 SDMA→VRAM 经 NOC 流量)
+    tlm::cluster::SocInternalNoc* soc_noc_module() const noexcept { return soc_noc_; }
 
     // A-3: MMIO power-state gate — D3hot 时返 true (per INV-A MMIO gating)
     // 委托 pcie_ep->mmio_gated(); 非 IP 类型返 false
@@ -325,6 +330,7 @@ private:
     uint8_t* framebuffer_ptr_ = nullptr;
     uint64_t framebuffer_size_ = 0;
     GmmuTLM* gmmu_ = nullptr;  // 解析自 soc_::getInternalInstance("gmmu"), bind 时缓存
+    tlm::cluster::SocInternalNoc* soc_noc_ = nullptr;  // Change C: soc_noc 实例缓存 (Gap G2)
     std::unique_ptr<uint8_t[]> vram_storage_;   // 8GB default-init (D-AXI v1.4 B7)
     uint64_t vram_size_ = 0;                     // framebuffer 总大小
     [[deprecated("use vram_storage_")]] std::vector<uint8_t> framebuffer_storage_;  // compat alias

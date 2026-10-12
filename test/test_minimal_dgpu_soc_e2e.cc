@@ -20,6 +20,7 @@
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
+#include "tlm/cluster/soc_internal_noc.hh"  // Change C T3: SocInternalNoc (Gap G2 观测)
 #include "tlm/gpu/sdma_packet.hh"
 
 #include <nlohmann/json.hpp>
@@ -369,6 +370,31 @@ TEST_CASE("minimal dgpu soc functional-mode E2E: H2D → D2H roundtrip 字节闭
     std::vector<uint8_t> expected(host_buf.begin() + kPhys, host_buf.begin() + kPhys + kH2dSize);
     std::vector<uint8_t> rt(host_buf.begin() + 0x3000, host_buf.begin() + 0x3000 + kH2dSize);
     REQUIRE(rt == expected);
+
+    board.shutdown();
+}
+
+// ── Change C T3 (Gap I + G2): board-level 装配观测 ──
+// Gap I: GMMU 走 dedicated memory client (VramControllerTLM functional port), 不经 mesh NoC
+// Gap G2: SDMA bulk DMA 经 SocInternalNoc 到 VRAM
+TEST_CASE("minimal dgpu soc Change C: GMMU dedicated client + soc_noc 装配 (Gap I/G2)",
+          "[minimal_dgpu_soc][noc][gmmu-bypass]") {
+    EventQueue eq;
+    DGpuBoard board("minimal_dgpu_soc_change_c", &eq);
+
+    REQUIRE(board.load_soc_config(load_minimal_soc_config()));
+    std::vector<uint8_t> framebuffer(kFramebufferSize, 0);
+    board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
+    REQUIRE(board.init());
+
+    // Gap I: GMMU 注入 VramControllerTLM dedicated client (programmatic bridge)
+    GmmuTLM* gmmu = board.gmmu_module();
+    REQUIRE(gmmu != nullptr);
+    REQUIRE(gmmu->vram_target() != nullptr);  // GMMU 直连 VramController functional port
+    REQUIRE(gmmu->uses_vram_dedicated_client());
+
+    // Gap G2: soc_noc 装配 (SDMA→VRAM DataNoC)
+    REQUIRE(board.soc_noc_module() != nullptr);
 
     board.shutdown();
 }
