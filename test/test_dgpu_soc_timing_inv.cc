@@ -181,7 +181,8 @@ TEST_CASE("timing-soc Inv-5: BAR 路由优先级 (BAR1 storage 路由)", "[dgpu_
     board.shutdown();
 }
 
-// Inv-6: translate_cb 签名兼容 — DmaTranslateCb (3 参) 严格保持, timing wrapper 是附加 API
+// Inv-6: translate 签名兼容 — DmaTranslateCb (3 参) API 冻结 + Change C G1 直连 GMMU
+// (board 不再注入 lambda, 走 translate_target_ programmatic bridge; timing wrapper 附加注入)
 TEST_CASE("timing-soc Inv-6: translate_cb 签名兼容 (DmaTranslateCb 3 参冻结)",
           "[dgpu_soc_timing][timing_soc][inv]") {
     EventQueue eq;
@@ -196,8 +197,8 @@ TEST_CASE("timing-soc Inv-6: translate_cb 签名兼容 (DmaTranslateCb 3 参冻�
     SdmaEngineTLM* sdma = board.sdma_engine();
     REQUIRE(sdma != nullptr);
 
-    // SDMA 的 translate_cb_ (functional 3 参) 存在 (bind_memory_backings 注入)
-    REQUIRE(sdma->get_translate_cb() != nullptr);
+    // Change C G1: functional translate 走 translate_target_ (GmmuTLM 直连, 无 lambda 注入)
+    REQUIRE(sdma->translate_target() == gmmu);
     // timing wrapper (4 参) 附加注入 (init_timing_mode) → 签名不冲突
     REQUIRE(sdma->get_translate_timing_cb() != nullptr);
     board.shutdown();
