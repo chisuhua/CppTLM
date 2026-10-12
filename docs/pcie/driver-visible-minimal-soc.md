@@ -25,6 +25,40 @@ D-AXI（Driver-Visible AXI Minimal SoC）在 CppTLM 中提供**第一类 driver-
 - **单一 VRAM 真源**：5 消费者共享同一 backing，所有路径在物理地址层一致（driver 视角"single VRAM"语义）
 - **可扩展性**：D3 GPU 计算 / 真 HBM timing 可在 `handle_slave_port ↔ backing_ptr_` seam 插入
 
+> **业务定位同步 (2026-10-09 lock, 含本轮深入 gap 调研)**: 本文档必须与 [`docs/designs/dgpu-soc/architecture.md` §0.1 业务定位 + §0.1.1 修复路线图方向](../designs/dgpu-soc/architecture.md) **保持一致**;本文档作最小回放,完整约束以架构文档为准:
+>
+> | 原则 | 摘要 |
+> |------|------|
+> | **1. driver-visible SoC 拓扑** | 23 ABI + 4 BAR + chip-internal AXI |
+> | **2. chip-level VRAM by DGpuBoard 持有** | 单一 backing 真源 (per ADR-DGPU-05) + gem5 backdoor 模式 + mmio 正路 |
+> | **3. SoC 内部贴近真实 IP 边界; 双重无注入** | SDMA→GMMU 必走真实 wire (NOC/AXI),数据必走 PCIe TLP/NOC |
+> | **4. VramControllerTLM 在 functional-mode 数据路径上** | 本期即时落地 (本更新触发) |
+>
+> **当前 Gap (2026-10-09 16 行矩阵, 详见架构文档 §0.1)**:
+> - [3-SDMA↔GMMU] lambda `set_translate_cb` 注入 → **D3+ 须废弃**
+> - [3-chip-internal NOC] 当前 2 条 AxiMemBundle 直连 → **D3 演进中** (e1 v1.1 Proposed Draft)
+> - **[Gap H] [HIGH] CR-Bus 寄存器访问**: BAR0 mmio 直调 `gmmu_->set_pt_base_lo/hi/enabled()` 4 处 (`dgpu_board_shell.cc:463-472`); 修复路径 = `LightweightInterconnect` (LWC) Bus Hub + `CrBundle` (per §0.1.1)
+> - **[Gap I] [HIGH] GMMU page-walk wire-format 错配**: 头文件"PcieTlpBundle" (v1.8 H1) vs JSON "AxiMemBundle" 自相矛盾; 语义错配; 修复路径 = 恢复 AxiMemBundle 或 D3 演进使用 CHI REQ channel (bypass mesh NoC)
+> - **[Gap J] [MEDIUM] Doorbell 直调**: BAR1 0x10010000 → `sdma_engine_->mmio_write()` 直调 (`dgpu_board_shell.cc:537-538`); 修复路径 = `DoorbellBundle` (per §0.1.1)
+> - **[Gap K] [MEDIUM] MMIO Read 走 write-mirror + 异步 drain**: `mmio_regs_` write-mirror + `inject_q_` async (`dgpu_board_shell.cc:367-388, 495-501`); 修复路径 = `CrBundle` 同条总线 (per §0.1.1)
+> - **[Gap L] [MEDIUM] MSI-X 中断交付直调 + CompletionRing dormant**: `trigger_irq_async()` 直调 (`dgpu_board_shell.cc:1122-1127`), 0 个真实 MSI-X TLP 报文; 修复路径 = `MsixBundle` + MSI-X Generator IP (per §0.1.1, D3+)
+> - **[Gap M] [MEDIUM] PCIe 入口 TLP 序列化层缺失**: `DGpuBoard::mmio_*/config_*` 直调绕开 TLP; 修复路径 = `HostPcieTestStub` (per flr-rebar v1.1) + p2-integration-unblock
+> - **[Gap N] [LOW long-issue] CDC / Power Gate 缺失**: 全局 sim 时钟, 0 个 CDC FIFO; long-term D3+ backlog
+> - **[Gap O] [LOW long-issue] Error Aggregation Bus 缺失**: `error_code` 仅在 bundle 字段; long-term D3+ backlog
+> - [4 VramController functional-mode 集成] 当前 minimal_v1 数据路径**绕过 VramController** 直 memcpy → **本期落地** (P0)
+>
+> **修复基础设施 (§0.1.1)**:
+>
+> ```
+> LWC Bus Hub + 3+1 Bundle
+> ├── CrBundle      → Gap H + K (CR-Bus 寄存器 + MMIO Read)
+> ├── DoorbellBundle → Gap J (SDMA ring 提交)
+> ├── MsixBundle    → Gap L (MSI-X Generator, D3+)
+> └── ErrBundle     → Gap O (Error Aggregation, long-term)
+> ```
+>
+> **后续会话 Hard Constraint**: 任何修改本文档涉及业务定位, **必须**同步更新架构文档 §0.1; 任何修正 Gap H/J/K/L 等违反 Hard Invariant 行为必须引入 LWC 基础设施, **禁止 silent 偏离**.
+
 ## 2. 设计成果
 
 ### 2.1 6 模块拓扑（v1.4 实施后）

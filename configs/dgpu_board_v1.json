@@ -1,11 +1,16 @@
 {
   "name": "dgpu_board_v1",
-  "description": "CppTLM dGPU board topology (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/design.md §4, ADR-SOC-07 D1/D2/D7, 2026-09-15-cpptlm-stage-1-4-2-1-ue-extensions-unblock Path A v1.2). DGpuBoard C++ ABI shell owns a DGpuSoc SimModule container; SOC-internal PcieEndpointIP (17-port, PF + VF pool + composite LL/PHY/Mux) handles config space (PM Cap + PCIe Cap + ACS + ReBAR Ext Cap) + BAR0/doorbell + MSI-X; MemoryTLM 'vram' holds BAR1 VRAM; SDMA/CP/TMU/SQ/CQ form command/data path. UsrLinuxEmuIoctlStub NOT in JSON (host-side, lives in test harness). 早期代次 (Stage 1.4-2.1, 2026-09-15) Board 视角 config, 9 TLM connections 表达完整 GPGPU compute path. 不在 D-AXI 当前代次 SoC 内部 wiring 设计目标 (R-WIRE-* 5 条规则, 详见 docs/designs/dgpu-soc/soc-internal-tlm-design-target.md §5.3) 范围——该目标适用于当前 minimal_v1/timing_v1 代次.",
+  "description": "CppTLM dGPU board topology — 23 ABI 默认入口配置 (per cpptlm_emulator_create(dev_id=0) implicit fallback, per test/CMakeLists.txt:71 + test_dgpu_adapter_info.cc:18). 含完整 GPGPU compute path (PcieEndpointIP 1 PF + 16 VF + composite LL/PHY/Mux) + SDMA/CP/TMU/SQ/CQ + MemoryTLM 'vram' (BAR1 fast-path) + D-AXI 4 routing_enabled 字段 (per ADR-DGPU-10 anti-hijack root cause 4 + Change C.4 REVISED 终态). 4 routing_enabled 字段保留作 JSON anti-hijack barrier (per `f66070a8` C.4 REVISED 决策), 内部 flag 消费; 删 flag = BAR0 劫持 (per Metis `bg_fd20b1ed` A4 实证). NOT in D-AXI v1.8 4-IP topology scope (minimal_v1/timing_v1) — different role: 23 ABI driver-visible test config. Frozen public API: 23 ABI 签名零 diff (per ADR-DGPU-08).",
   "params": {
     "device_id": "0x1234",
     "quantum_cycles": 1000,
     "ptx_emu_root": "@PTX_EMU_ROOT@"
   },
+  "display_routing_enabled": false,
+  "storage_routing_enabled": true,
+  "gmmu_routing_enabled": true,
+  "memory_routing_enabled": true,
+  "framebuffer_size_bytes": 268435456,
   "modules": [
     {
       "name": "soc",

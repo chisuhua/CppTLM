@@ -1,7 +1,8 @@
 {
   "name": "dgpu_soc_timing_v1",
-  "description": "Timing-mode dGPU SoC v0.5 test config (per openspec/changes/cpptlm-dgpu-soc-timing-mvp design.md §7). 6 modules + 0 new connections (沿用 minimal_v1 functional 拓扑, per H2). VramControllerTLM 替代 MemoryTLM (H2 互斥), GMMU 不在 Crossbar 数据路径 (per M9). 当前 JSON 仅表达 TLM StreamAdapter 连接 (R-WIRE-1), 0 新增连接 (per H2 沿用 minimal_v1 wiring). SoC 内部方法注入 (R-WIRE-4 当前违反) 发生在 C++ code 层, Oracle N8 spec 决策故意妥协 (避免双 tick). D-AXI v2.0 目标: SoC 内部全 TLM 化. 详见 docs/designs/dgpu-soc/soc-internal-tlm-design-target.md §4 v2.0 触发条件.",
+  "description": "Timing-mode dGPU SoC v0.5 终态配置 (per openspec/changes/cpptlm-dgpu-soc-timing-mvp design.md §7 + ADR-DGPU-11 H2 互斥约束). 4 routing_enabled 字段保留 (per ADR-DGPU-10 anti-hijack root cause 4 + Change C.4 REVISED `f66070a8` 终态). simulation_mode=timing 字段保留 (timing-mode 必备). VramControllerTLM 替代 MemoryTLM (per H2 互斥, 沿用 minimal_v1 functional 拓扑 + 0 新增 connections). GMMU 不在 Crossbar 数据路径 (per M9). 5+ 套件 timing-mode E2E 闭环 (per test_dgpu_soc_timing_*.cc: init/inv/concurrent/d2h/h2d). 23 ABI 入口与 minimal_v1 共享. TLM StreamAdapter 连接 R-WIRE-1. D-AXI v2.0 目标: SoC 内部全 TLM 化.",
   "simulation_mode": "timing",
+  "display_routing_enabled": false,
   "memory_routing_enabled": true,
   "storage_routing_enabled": true,
   "gmmu_routing_enabled": true,
