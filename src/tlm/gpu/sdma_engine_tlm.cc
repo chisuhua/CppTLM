@@ -13,6 +13,7 @@
 #include "bundles/pcie_bundles_tlm.hh"
 #include "tlm/gpu/completion_ring_mvp.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
+#include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/gpu_mesh_noc_tlm.hh"
 
 #include <cerrno>
@@ -231,7 +232,8 @@ namespace tlm::gpu {
 
         // translate callback 检查（per spec.md Scenario "IOMMU translation fault"）
         // Phase 4 T3: timing-mode 可仅注入 translate_timing_cb_ (无 translate_cb_)
-        if (!translate_cb_ && !translate_timing_cb_) {
+        // Change C G1: functional 可仅注入 translate_target_ (GmmuTLM 直连, 无 lambda)
+        if (!translate_cb_ && !translate_timing_cb_ && !translate_target_) {
             // 未注册 callback → 模拟 fault
             done.status.write(static_cast<uint32_t>(-EIO));
             return -EIO;
@@ -241,13 +243,16 @@ namespace tlm::gpu {
         // Phase 4 T3 (v0.2): cycle accounting 包装层 — 优先使用 translate_timing_cb_
         // (由 DGpuBoard::init_timing_mode 注入), 单次调 gmmu->translate_timing 记录 latency,
         // 避免二次调 translate() 导致 TLB hit 误读 (per design §4.2)
+        // Change C G1: functional 优先 translate_target_ (GmmuTLM 直连, Gap G1 无 lambda 注入)
         uint64_t phys = 0;
         int rc = 0;
         if (cycle_accounting_enabled_ && translate_timing_cb_) {
             uint64_t lat = 0;
             rc = translate_timing_cb_(d.host_iova, d.size, phys, lat);
             last_tlb_latency_ = lat;  // 记录供 fence cycle 计算 (H2D 路径)
-            // functional 兼容: 无 translate_timing_cb_ 时回退 translate_cb_
+            // functional 兼容: 无 translate_timing_cb_ 时回退 translate_target_/translate_cb_
+        } else if (translate_target_) {
+            rc = translate_target_->translate(d.host_iova, d.size, phys);
         } else if (translate_cb_) {
             rc = translate_cb_(d.host_iova, d.size, phys);
         } else {
@@ -338,7 +343,7 @@ namespace tlm::gpu {
             return -EINVAL;
         }
 
-        if (!translate_cb_) {
+        if (!translate_cb_ && !translate_target_) {
             done.status.write(static_cast<uint32_t>(-EIO));
             return -EIO;
         }

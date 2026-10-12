@@ -745,23 +745,21 @@ namespace tlm::gpu {
             DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'pcie_memory'/'memory' 实例, backing 注入跳过\n");
         }
 
-        if (auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"))) {
-            sdma->set_vram_backdoor(framebuffer_ptr_, framebuffer_size_);
-            // B20/D14: set_translate_cb + set_sdma_engine 无条件注入 (不在 pcie_memory 分支内)
-            sdma->set_translate_cb([this](uint64_t iova, uint32_t size, uint64_t& phys) {
-                if (gmmu_)
-                    return gmmu_->translate(iova, size, phys);
-                return -EIO;
-            });
-            set_sdma_engine(sdma);
-        } else {
-            DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'sdma' 实例, sdma 注入跳过\n");
-        }
-
+        // Change C T6: GMMU 先解析 (SDMA translate_target 装配依赖 gmmu_)
         if ((gmmu_ = dynamic_cast<GmmuTLM*>(soc_->getInternalInstance("gmmu"))) != nullptr) {
             gmmu_->set_mem_view(framebuffer_ptr_, framebuffer_size_);
         } else {
             DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'gmmu' 实例, GMMU 注入跳过\n");
+        }
+
+        if (auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"))) {
+            sdma->set_vram_backdoor(framebuffer_ptr_, framebuffer_size_);
+            // Change C T6 (Gap G1): 删 set_translate_cb(lambda), 改 programmatic bridge 直连 GMMU
+            // (per §0.1 原则 3.1 "无 callback 注入"; SDMA translate 走 translate_target_->translate())
+            sdma->set_translate_target(gmmu_);
+            set_sdma_engine(sdma);
+        } else {
+            DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'sdma' 实例, sdma 注入跳过\n");
         }
 
         // T23C (Phase C 2026-10-07): 注入 vram_ctrl (per ADR-DGPU-05 单一真源)

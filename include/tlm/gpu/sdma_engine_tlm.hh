@@ -45,6 +45,9 @@ namespace tlm::gpu {
     // 前向声明 DGpuBoard (Stage 1.3d: 真实 MSI-X 接线, fence → board)
     class DGpuBoard;
 
+    // 前向声明 GmmuTLM (Change C Gap G1: SDMA translate 直连 GMMU, 替代 lambda)
+    class GmmuTLM;
+
     // 前向声明 CompletionRingTLM (Stage 1.3d Fence → CompletionRing 接线)
     class CompletionRingTLM;
 
@@ -214,6 +217,12 @@ namespace tlm::gpu {
         DmaTranslateCb get_translate_cb() const {
             return translate_cb_;
         }
+
+        // Change C (Gap G1): SDMA translate 直连 GMMU (programmatic bridge, 替代 lambda callback)
+        // board 装配注入 GmmuTLM 引用; translate 优先走 translate_target_->translate().
+        // 保留 set_translate_cb (既有 [sdma] 单元测试用 fake translate_cb).
+        void set_translate_target(GmmuTLM* gmmu) noexcept { translate_target_ = gmmu; }
+        GmmuTLM* translate_target() const noexcept { return translate_target_; }
 
         // ── Phase 4 T3 (v0.2 简化, per design.md §4): cycle accounting ──
         // 无新端口/无 outstanding/无 rid (per H2/H3 Oracle 反馈)
@@ -392,6 +401,9 @@ namespace tlm::gpu {
         // translate callback + error callback（DGpuBoard 注入）
         DmaTranslateCb translate_cb_;
         SdmaErrorCb    error_cb_;
+
+        // Change C (Gap G1): SDMA translate 直连 GMMU (programmatic bridge)
+        GmmuTLM* translate_target_ = nullptr;
 
         // ── Phase 4 T3 (v0.2 简化): cycle accounting 状态 ──
         // per design.md §4.2: SDMA 无 current_cycle_ 成员;
