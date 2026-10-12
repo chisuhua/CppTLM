@@ -87,8 +87,37 @@ configs/dgpu_soc_minimal_v1.json:73-74
 
 ## 5. Post-flight 验证
 
-(T8 填写)
+```
+# 构建: exit 0 (cmake --build build -j)
+
+# 套件 (Change C 后)
+[gmmu]              25 / 5273      (baseline 21/5267, +4 cases = T1/T2 4 cases)
+[noc]               64 / 304       (baseline 62/283, +2 cases = T3 + T7)
+[minimal_dgpu_soc]  24 / 170       (baseline 21/145, +3 cases = T3/T5/T7)
+[pcie-memory]       17 / 48        (0 回归)
+[dgpu_soc_timing]   37 / 12024     (0 回归, Inv-6 契约重联见 Deviation)
+[driver_visible]    4 / 40         (0 回归)
+[realip]            51 / 366       (0 回归)
+[sdma]              68 / 12945     (baseline 67/12941 +1 case, 0 回归)
+
+# docs_sync_check --strict: exit 0
+# frozen headers (pcie_endpoint_tlm.h / pcie_display_device.hh / pcie_bundles_tlm.hh / cpptlm_emulator.h): 0 diff
+# 23 ABI (include/abi/): 0 diff
+# KPI: 3 (Change C 未 archive)
+
+# Gap grep 对比
+Gap I — configs/dgpu_soc_minimal_v1.json "gmmu.*pcie_memory": 0 处 (baseline 1 处)
+Gap I — gmmu->set_vram_target(vram_ctrl) 装配: dgpu_board_shell.cc:796 (functional-only)
+Gap G2 — configs/dgpu_soc_minimal_v1.json soc_noc 节点 (SocInternalNoc): 存在
+Gap G1 — src/tlm/gpu/dgpu_board_shell.cc "set_translate_cb": 0 处 (baseline 1 处)
+```
 
 ## 6. Deviation
 
-(T8 填写)
+1. **`T3/T4 接线为 programmatic 而非 JSON ChStream connection`**: 设计文档 v0.5.2 的 JSON 片段示意 `gmmu.0 → vram_ctrl.0`，但 `GMMU req_out_` 是 `PcieTlpBundle`，而 `VramControllerTLM`（继承 `MemoryTLM`）端口是 `CacheReqBundle`，类型不兼容，JSON ChStream 连接会被 StreamAdapter 层拒绝。实际采用 design.md v0.5.1 明确的 **programmatic bridge**（`set_vram_target`），与 `fabric↔vram_ctrl` 既有装配模式一致。`soc_noc` 同理（SimModule，accept_fn callback 机制，无 ChStream 端口）。
+
+2. **`translate()` 优先级调整**: board 无条件注入 `gmmu_->set_mem_view()`，原 `translate()` 先查 `mem_view_`，会使 `vram_ctrl_` dedicated-client 路径永不触发。已将 `vram_ctrl_` 检查前置于 `mem_view_`（functional-only 装配，timing-mode 不注入 vram_ctrl_，保持 `mem_view_`/`translate_timing` TLB 路径 → H-C6）。
+
+3. **`Inv-6` timing 测试重联** (`test_dgpu_soc_timing_inv.cc`): 原断言 `sdma->get_translate_cb() != nullptr` 验证旧 lambda 注入契约。Gap G1 后 board 改注入 `translate_target_`，该断言 stale。更新为 `sdma->translate_target() == gmmu`（spec 授权的 "既有测试重联"）。此为 Phase 4 timing-mvp 测试，非 Phase 0 产物。
+
+4. **`set_translate_cb` API 保留**: 未删除 `SdmaEngineTLM::set_translate_cb`（8 个既有 `[sdma]` 单元测试依赖 fake translate_cb）。Gap G1 仅移除 **board 的 lambda 注入**，改走 `translate_target_`（Gap G1 = 消除 board 侧 callback 注入，符合 §0.1 原则 3.1）。

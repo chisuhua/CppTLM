@@ -754,7 +754,7 @@ namespace tlm::gpu {
 
         if (auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"))) {
             sdma->set_vram_backdoor(framebuffer_ptr_, framebuffer_size_);
-            // Change C T6 (Gap G1): 删 set_translate_cb(lambda), 改 programmatic bridge 直连 GMMU
+            // Change C T6 (Gap G1): 删旧 lambda callback, 改 programmatic bridge 直连 GMMU
             // (per §0.1 原则 3.1 "无 callback 注入"; SDMA translate 走 translate_target_->translate())
             sdma->set_translate_target(gmmu_);
             set_sdma_engine(sdma);
