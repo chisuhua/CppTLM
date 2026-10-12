@@ -510,6 +510,23 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 
 ## KEY INVARIANTS
 
+- **SimModule ChStream 端口能力** (P0-revision 2026-10-12, 修正旧版"SimModule 无 ChStream 端口"误归纳):
+  SimModule 基类**完全支持** ChStream 端口,通过 `outputs/inputs` 字段 + `getInternalInputPort/getInternalOutputPort` API 把内部子模块的 ChStream 端口暴露到父命名空间。
+  实证: `configs/dgpu_board_v1.json` 80-94 (`soc.connections[]` 走内部 ChStream wire + `outputs[].internal/external` 暴露端口) + `test/test_simmodule_nested.cc` case 5b (验证 exposed 端口被外部 JSON 引用)。
+  9 个 SimModule 派生类默认走 ChStream 端口 (CpuCluster / TpcCluster / GpcCluster / GpuCluster / ApuSoC / CacheCluster / MemoryCluster / GpuNoC + ComputeCluster)。
+  **特定 SimModule 派生类**当前**未声明 ChStream 端口字段**,走 callback (set_*_target / accept_fn) —— 这是**该类实现选择**,不是 SimModule 类型限制:
+  - `SocInternalNoc` (per e1 v1.1, archived 2026-10-09) — 走 `set_*_target` programmatic bridge
+  - `GpuInternalFabric` — 走 `set_vram_target/set_fabric_source` programmatic bridge
+  - 改造为 ChStream 化 SimModule 是工程改动,需在该类中加 ChStreamPort 字段 + `set_stream_adapter()` override + `outputs/inputs` 暴露 (per Gap I 推进路径)
+  详见 `include/tlm/AGENTS.md` "SimModule vs SimObject 端口能力对照表" + `include/tlm/cluster/AGENTS.md` "端口连接 vs 装配桥接" 段
+- **SoC 内部 Bundle 类型分层 (P0-revision 2026-10-12, 对齐真实 dGPU 物理 IP 边界)**:
+  **PcieTlpBundle 只存在于 PCIe Controller ↔ 板级(host)边界**(`pcie_ep` ↔ `pcie_ctrl` ↔ `pcie_memory` 三件内部对接 + `pcie_ep` 出口给 host)。
+  SoC 内部 IP 接口分层:
+  - **NoC 接口** (SDMA → SocInternalNoc → VramController, GMMU ↔ VramController, fabric ↔ VRAM): **NoCFlitBundle** (`include/bundles/noc_bundles_tlm.hh:26-50`, v2.1 决策 16 字段)
+  - **AXI 接口** (其他 SoC 内部 IP 互连,寄存器访问,non-NoC bulk): AxiBundle / AxiStreamBundle 系列 (per `include/bundles/`)
+  - **PCIe 板级接口** (host ↔ chip): PcieTlpBundle
+  当前 MVP 临时方案: `SdmaEngineTLM` 5 端口 + `VramControllerTLM` 端口 + `GpuInternalFabric` 内部 wire **全 PcieTlpBundle**,违背该分层。推进路径见 `openspec/changes/cpptlm-dgpu-soc-physical-ip-port-boundary` (待起草, doc-only 类不计 KPI 上限 per `cpptlm-dgpu-soc-arch-truth-cleanup` §6 先例)
+  实证: ADR-DGPU-06 "chip-internal AXI vs board-level PCIe 边界严格分离" + D-AXI v1.5 B25 撤回 v1.3 B2 切型决策史
 - **TLM stub 默认**: `USE_SYSTEMC_STUB=ON`（根 CMakeLists.txt），无外部 SystemC 依赖
 - **ccache**: 自动检测，未安装降级（非 fatal）
 - **ASan**: `USE_ASAN=ON` 仅 Debug 有效（CI 矩阵排除 Release+ASan）

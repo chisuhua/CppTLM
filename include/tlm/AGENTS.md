@@ -31,6 +31,37 @@
 - 通过 `set_stream_adapter(MultiPortAdapter*[])` 注入
 - `num_ports() const override { return N; }`
 
+### SimModule vs SimObject 端口能力对照表 (P0-revision 2026-10-12)
+
+| 类 | ChStream 端口(默认) | outputs/inputs 暴露 | 实例 | JSON `connections[]` 可写? |
+|---|:---:|:---:|------|:---:|
+| `SimObject` (基类) | ❌ | ❌ | — | ❌ |
+| `ChStreamModuleBase` (基类) | ✅ | ❌ (顶层直接) | `CacheTLM` / `CrossbarTLM` / `MemoryTLM` / `CPUTLM` / `SdmaEngineTLM` / `LwcBusHub` | ✅ |
+| `SimModule` (基类) | ⚠️ **通过 outputs/inputs 暴露内部子模块端口** | ✅ | 所有 SimModule 派生类 | ✅ (嵌套 + 内部 `connections[]`) |
+| `SimModule` 派生类 — ChStream 化 | ✅ (内部子模块走 ChStream) | ✅ | `CpuCluster` / `TpcCluster` / `GpcCluster` / `GpuCluster` / `ApuSoC` / `CacheCluster` / `MemoryCluster` / `GpuNoC` / `ComputeCluster` | ✅ |
+| `SimModule` 派生类 — callback 化 | ❌ (走 set_*_target / accept_fn) | N/A | **`SocInternalNoc`** / **`GpuInternalFabric`** | ❌ (需 programmatic 装配) |
+
+**关键 API** (`include/core/sim_module.hh:132-161`):
+- `SlavePort* getInternalInputPort(const std::string& internal_path)` — 获取内部子模块 SlavePort
+- `MasterPort* getInternalOutputPort(const std::string& internal_path)` — 获取内部子模块 MasterPort
+- `std::string findInternalPath(const std::string& external_label) const` — 跨层递归下钻 (P1 修复 D.4)
+
+**常见错误 (历史)**: 把"具体类(如 `SocInternalNoc`)未声明 ChStream 端口字段"误推广为"SimModule 类型不能走 ChStream"。实际是**类实现选择**,基类能力完整。
+**修正证据** (2026-10-12 dual-agent review):
+- `configs/dgpu_board_v1.json:80-94` — `soc` (SimModule 派生 DGpuSoc) 内部 `connections[]` 走 ChStream wire
+- `configs/example_simmodule_nested_2level.json` / `3level_static.json` — 多层 SimModule 嵌套 + outputs/inputs 暴露
+- `test/test_simmodule_nested.cc:5-12` — case 5b "CpuCluster outputs 暴露端口 E2E - 验证外部连接能解析 cluster.cpu0_to_bus"
+
+### 端口连接 vs 装配桥接决策表 (新增 2026-10-12)
+
+| 场景 | 走 JSON `connections[]`? | 走 programmatic 装配? | 决策依据 |
+|------|:---:|:---:|------|
+| 子模块 A (ChStream 化) → 子模块 B (ChStream 化) | ✅ | ❌ | `dgpu_board_v1.json:80-94` 实证 |
+| 跨 SimModule 边界,通过 outputs/inputs 暴露 | ✅ | ❌ | `findInternalPath` 跨层下钻 + case 5b 实证 |
+| **SimModule (callback 化,如 `SocInternalNoc`) ↔ ChStream 模块** | ❌ (类型不兼容或无端口) | ✅ (`set_*_target` programmatic bridge) | `dgpu_board_shell.cc:840-852` 4 target 桥接 |
+| **Bundle 类型不兼容 (PcieTlpBundle ↔ NoCFlitBundle)** | ❌ (StreamAdapter 层拒绝) | ✅ (需加 wire-format 转换 adapter) | `docs/implementation/2026-10-09-gmmu-pte-bus-correction.md` §6 Deviation 1 |
+| LWC 逻辑名注册 (GMMU / SDMA) | ❌ (无 JSON schema) | ✅ (`lwc_hub->register_cr_target("gmmu", ...)`) | `dgpu_board_shell.cc:857-867` |
+
 ## StreamAdapter 流程
 
 ```
