@@ -701,3 +701,24 @@ driver ←── 23 ABI ──→ DGpuBoard
 - Change F (Error/CDC Bus): 独立 change, 本 change 准备接口 (Chub.err_out)
 - LwcBusHub programmatic `register_*_target`: 保留 (本 change 不强求 JSON 化 LWC 总线)
 - PcieControllerIP facade 角色: 保留 (4 BAR decode 验证 facade)
+
+### 11.1 Non-Goal 备注 (2026-10-13 追加, per Oracle 审查): 仿真模式命名空间评估
+
+> **本节是 v0.6 重写窗口的命名评估 Non-Goal 备注,不是 v0.7 修订任务。**
+
+**触发**: 2026-10-13 用户提议"移除 `docs/designs/dgpu-soc/timing-mode.md` + 其他文档不再提及 functional-mode / timing-mode 命名",意图 α 完全推翻 architecture.md §1.4 v0.4 lock。Oracle 审查 (`oracle` subagent) 返回 4 个 HIGH critical issues:
+
+1. **Active spec 权威源孤儿化**: `openspec/specs/dgpu-soc-timing/spec.md:252,514` 的 cycle 数字断言直接引用 "per timing-mode.md §6.2 时序累加表",真删文档需先内联时序表(走 OpenSpec change,KPI 4/3 触顶无 slot)。
+2. **Chub change 实施期冲突**: 5 份文档 v0.6 Lock Note (commit `9b67d4ac`) 明确 "Chub change 仅动 wire-format, 不动仿真模式" + 本 change proposal §"不在范围内" 也写 "timing-mode: 不动"。21-30d 实施窗口内推翻命名 = 冻结假设中途失效。
+3. **ADR 永久双词汇并存**: `ADR-DGPU-11-timing-mode-soc-scope.md` 标题 + 30+ 正文处使用旧命名且不可改(per AGENTS.md "ADR 签发后不改, 只追加 Status Update")。任何推翻命名都产生 ADR 旧词 + 新文档新词 永久并存。
+4. **半推翻(方案 F)比不推翻更糟**: 删 timing-mode.md 但保留 `dgpu_soc_timing_v1.json` + `[dgpu_soc_timing]` 标签 + `openspec/specs/dgpu-soc-timing/` + ADR-DGPU-11, "timing" 词在活体资产中依然主导, 删文档反而砍掉定义来源。
+
+**决议**: 采纳 Oracle 方案 G(暂缓),**本 change 不动仿真模式命名**。
+
+**未来命名评估窗口**(v0.6 重写 / Chub 实施完成后):
+- 候选命名方案 α1: `functional-mode` → `zero-delay 模式` / `timing-mode` → `cycle-approximate 模式` (与 `VramControllerMode::FunctionalZeroDelay` / `TimingCycleApproximate` enum 字面桥接, 零翻译成本)
+- 评估维度: `simulation_mode="functional"|"timing"` JSON 字段值是否改 / `VramControllerMode` enum 值是否改 / `[dgpu_soc_timing]` 测试标签是否改 / `ADR-DGPU-11` Status Update 追加 / 6 份文档 + AGENTS.md 74 处替换 / `openspec/specs/dgpu-soc-timing/spec.md` 60-100 处重写 / 6 测试文件 ~20 处 enum 改名
+- 评估前置依赖: Chub change 实施完成 + v0.6 Lock Note 段被替换为完整重写 (per `docs/designs/dgpu-soc/README.md` 维护规则第 5 条) + 4 frozen headers 0 diff 仍成立 + `[dgpu_soc_timing]` 37/12024 0 回归基线
+- 评估成本预估: 5-8d(若评估后采纳改名) / 0.5d(若评估后维持现状)
+
+**保守策略**: 若 v0.6 重写时评估认定"现状最优"(functional/timing mode 命名与 `VramControllerMode` enum + JSON schema + 测试标签 + ADR 命名天然一致,改名收益 < 改名成本), 则维持现状, 本 Non-Goal 备注作为历史决策记录保留。
