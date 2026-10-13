@@ -6,6 +6,16 @@
 > **Owner**: CppTLM Team
 > **配套**: [D-AXI v1.4 §6 遗留议题表](#6-v14-遗留议题与-d3-收编)
 
+## ⚠️ v0.6 Lock Note (2026-10-13) — Chub change 影响 D3b 路径
+
+> 本节不是新内容，是对当前 D3 路线图与未来 OpenSpec 变化关系的指针声明。
+
+D3b-1 (VramControllerTLM 集成) 当前描述路径 `pcie_memory_device.cc::handle_slave_port() ↔ backing_ptr_` (L95) 在 Chub change 实施后将**过时**——Chub change 提议**完全移除 `PcieMemoryDevice`**,driver BAR2 路径改走 `Chub.noc_master_out → SocInternalNoc → VramControllerTLM.req_in_` (per [cpptlm-dgpu-soc-control-hub design.md §6.2](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))。
+
+**预期 D3b 修订时点**: Chub change 实施完成后 (估时 21-30d), 本路线图 D3b 章节会从"插 VramControllerTLM 于 PcieMemoryDevice 与 backing_ptr_ 之间"修订为"插 VramControllerTLM 于 Chub 之后 + SocInternalNoc 之后",D3b-1 路径描述整体改写。
+
+**当前 (本 Lock Note) 范围内不动**: D3a-1 ✅ (Display FB 同构) + D3a-2 (capacity 评估) + D3b-3 (GMMU PoC) + D3b-4 (SM 完整) — 这 4 项与 Chub change 正交。
+
 ---
 
 ## 0. 摘要

@@ -9,6 +9,22 @@
 > - timing-mode: [`./timing-mode.md`](./timing-mode.md) (平行视图, cycle-approximate 全设计)
 > - 配套: [D-AXI v1.4](../pcie/driver-visible-minimal-soc.md) + [ADR-DGPU-11](../adr/ADR-DGPU-11-timing-mode-soc-scope.md)
 
+## ⚠️ v0.5 Lock Note (2026-10-13) — Chub change supersedes minimal_v1 拓扑图
+
+> 本节不是新内容，是对当前拓扑图与未来 OpenSpec 变化关系的指针声明。
+
+**本表 §1 / §2.1 minimal_v1 拓扑**(L14-48) 在 Chub change 实施后**将过时**——Chub change 提议:
+- 移除 `PcieMemoryDevice` 模块 (per [cpptlm-dgpu-soc-control-hub proposal.md §"提议 5"](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/proposal.md))
+- 新建 `ControlHub (Chub)` 模块 (per 同上 design.md §2)
+- JSON `connections[]` 从 1 条扩展到 13 条 (per design.md §7.1)
+- driver BAR2 路径从 `sdma.2 → pcie_memory.0` 改为 `chub.noc_master_out → soc_noc.0` (per design.md §6.2)
+
+**本表 §2.2 timing_v1 拓扑** 不动 (Chub change 当前只动 functional-mode, timing-mode 保留当前实现)。
+
+**预期重写时点**: Chub change 实施完成后 (估时 21-30d), 本表会重画 minimal_v1 拓扑为 7 业务模块 (+Chub, -PcieMemoryDevice, 净 +1) + 13 条 JSON connection, 同步 §1 描述更新。
+
+**当前 (本 Lock Note) 范围内不动**: timing_v1 拓扑 (§2.2 + §3.2) + minimal_v1 数据流节点 (§3.1) 描述本身 — 仅在 §1 / §2.1 拓扑图加 supersedes 标记, 避免读者误解为"未实施"。
+
 ## 1. 一图概览 (TL;DR, v0.4 修订)
 
 | 维度 | **`dgpu_soc_minimal_v1.json`** (mixed-mode SoC) | **`dgpu_soc_timing_v1.json`** (timing-mode) |

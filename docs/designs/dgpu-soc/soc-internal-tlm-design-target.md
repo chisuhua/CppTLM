@@ -12,6 +12,25 @@
 > - [D3 evolution roadmap](d3-evolution-roadmap.md) — D3a-2 capacity 同步 + D3b VramController 入口
 > - [data-flow-and-topology-comparison.md](data-flow-and-topology-comparison.md) — 当前拓扑 + 数据流对照
 
+## ⚠️ v0.2 Lock Note (2026-10-13) — Chub change 与 D-AXI v2.0 目标一致
+
+> 本节不是新内容，是对当前设计目标声明与未来 OpenSpec 变化关系的指针声明。
+
+本设计目标 §1.1 原则分层 + §0 摘要主张"SoC 内部 SHALL 使用 TLM 连接；SoC↔Board 边界 MUST 使用方法注入"——**与 [cpptlm-dgpu-soc-control-hub](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/) (Proposed Draft 2026-10-13) 提议完全一致**:
+
+- Chub change §0.1 原则 3 "SoC 内部模块接口贴近真实物理 IP 边界" — 与本设计目标声明"TLM 化"方向完全对齐
+- Chub change 提议 6 "完全 JSON 声明拓扑" — 即本设计目标声明"TLM 连接"的具体落地 (JSON `connections[]` 13 条)
+- Chub change 提议 5 "移除 PcieMemoryDevice" — 即本设计目标声明"消除 1 处方法注入 `ep->set_memory_device(pcie_mem)`" (per [cpptlm-dgpu-soc-control-hub proposal.md §3 后果 4](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/proposal.md))
+- Chub change §1.1 L2 SoC 内部 ControlHub — 替代当前 0 处 Interconnect, 推进本设计目标"引入 CrossbarTLM" (D3b 路径)
+
+**本设计目标声明仍然准确 (D3 演进)**, 但 Chub change 推动的进度**比 D3b 提前** (per D3b-1 估时 5-7d vs Chub change 估时 21-30d 包含 ControlHub 6 端口 + 5 模块切型 + PcieMemoryDevice 移除)——这是 Chub change "范围超集" + "D3 提前" 的关系, 不矛盾。
+
+**预期修订时点**: Chub change 实施完成后, 本设计目标声明会从"v0.1 DRAFT"升级到"v0.2 实现对齐", §0 摘要会改写为"D3b 实施完成 (per Chub change); D-AXI v2.0 远期目标"。
+
+**当前 (本 Lock Note) 范围内不动**: 本设计目标全部内容 (主张方向与 Chub 一致, 仅实施时间表不同) — 仅在顶部加本 Lock Note 显式标记"与 Chub change 方向一致"。
+
+## 0. 摘要（TL;DR）
+
 ---
 
 ## 0. 摘要（TL;DR）
