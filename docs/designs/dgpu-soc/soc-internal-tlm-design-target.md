@@ -7,7 +7,7 @@
 > **配套文档**:
 > - [D-AXI v1.4 §7 D3 演进 seam](../pcie/driver-visible-minimal-soc.md#7-d3-演进-seamv14-已就位) — 当前 injection 设计的事实依据
 > - [ADR-DGPU-06 AxiMemBundle 边界](../../adr/ADR-DGPU-06-axi-mem-bundle-boundary.md) — wire-format 级别边界（已签发）
-> - [ADR-DGPU-07 演进 seam](../../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) — `handle_slave_port ↔ backing_ptr_` 注入点（D3-D5 演进依赖）
+> - [ADR-DGPU-07 演进 seam](../../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) — `handle_slave_port ↔ backing_ptr_` 注入点（D3-D5 演进依赖） *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, 该 seam 不再适用, per [control-hub design.md §3.4](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*
 > - [ADR-DGPU-10 backing 字段命名](../../adr/ADR-DGPU-10-backing-naming-convention.md) — owner/injected 两级
 > - [D3 evolution roadmap](d3-evolution-roadmap.md) — D3a-2 capacity 同步 + D3b VramController 入口
 > - [data-flow-and-topology-comparison.md](data-flow-and-topology-comparison.md) — 当前拓扑 + 数据流对照
@@ -44,7 +44,7 @@
 
 **演进路径**:
 - **D3a (1-2d)**: Display FB 同构（仅 board-level injection，**符合目标**）
-- **D3b (5-7d)**: VramControllerTLM 插入（**符合目标**，seam `handle_slave_port ↔ backing_ptr_` 保留）
+- **D3b (5-7d)**: VramControllerTLM 插入（**符合目标**，seam `handle_slave_port ↔ backing_ptr_` 保留） *(v0.6 supersede: Chub change 实施后, seam 随 PcieMemoryDevice 一起移除)*
 - **D-AXI v2.0 (远期)**: SoC 内部全 TLM 化（用 `b_transport` 或 `transport_dbg` 接口，避免双 tick）
 
 ---
@@ -100,6 +100,8 @@
 
 ### 2.1 As-Is wiring 全景
 
+> **⚠️ v0.6 supersede**: 本 mermaid 图含 `pcie_memory` (PcieMemoryDevice) 节点, Chub change 实施后 (per [cpptlm-dgpu-soc-control-hub design.md §6](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md)) 整个 PcieMemoryDevice 模块移除, 节点 `PMem0` / `PMem1` / `Pmem` 全部消失, `sdma.2` 与 `gmmu.0` 改走 JSON `soc_noc.0`/`soc_noc.1`/`soc_noc.2` (NoCFlitBundle), 拓扑图整体重画。
+
 ```mermaid
 graph TB
     subgraph TLM_OK["✅ TLM 连接（合规）"]
@@ -109,7 +111,7 @@ graph TB
 
     subgraph INJECT_BAD["❌ SoC 内部方法注入（不合规，N8 妥协）"]
         Ep["pcie_ep<br/>PcieEndpointIP"]
-        Pmem["pcie_memory<br/>PcieMemoryDevice"]
+        Pmem["pcie_memory<br/>PcieMemoryDevice *(v0.6 supersede: Chub change 实施后整节点移除)*"]
         Ep -.->|"set_memory_device()<br/>⭐ R-WIRE-4 违反"| Pmem
     end
 

@@ -68,7 +68,7 @@ D3 = D-AXI 完成后的下一阶段演进。围绕 3 个核心目标：
 **D3a-1 实施要点(Path A 彻底重构)**：
 - ✅ **2026-10-03 完成** — 详见 [`openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/`](../../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/) + [`docs/pcie/display-device-mvp.md §v1.2`](../../pcie/display-device-mvp.md)
 - **位置**: `dgpu_board_shell.cc::bind_display_backings()` 注入点（与 `bind_memory_backings` 并列）
-- **接口**: `set_backing_view(ptr, size)` (per ADR-DGPU-10 owner/injected 两级),与 PcieMemoryDevice 精确镜像
+- **接口**: `set_backing_view(ptr, size)` (per ADR-DGPU-10 owner/injected 两级),与 PcieMemoryDevice 精确镜像 *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, 此镜像描述不再适用)*
 - **冻结面保护**: `pcie_display_device.hh` 仅删字段 + 新增方法,签名级兼容;`cpptlm_emulator.h` 零修改
 - **PcieEndpointIP 持有模式**: `display_device_` 由 `unique_ptr` 改为 raw ptr(对称 `memory_device_`)+ 新增 `set_display_device()` 注入 API
 - **新增测试**: `[pcie][pcie-display][d3a2]` 标签下 6 cases / 24 assertions 覆盖 owner/injected/symmetry/safety/init-order
@@ -96,7 +96,7 @@ D3 = D-AXI 完成后的下一阶段演进。围绕 3 个核心目标：
 
 | 子轨 | 模块 | 依赖 |
 |------|------|------|
-| **D3b-1** VramControllerTLM | 继承 `MemoryTLM`, 加行缓冲 + bandwidth 上限 | D-AXI v1.4 seam (`handle_slave_port ↔ backing_ptr_`) |
+| **D3b-1** VramControllerTLM | 继承 `MemoryTLM`, 加行缓冲 + bandwidth 上限 | D-AXI v1.4 seam (`handle_slave_port ↔ backing_ptr_`) *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, 该 seam 不再适用, per [control-hub design.md §6.2](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))* |
 | **D3b-2** MemoryClusterTLM | 多通道 HBM 控制器 | D3b-1 |
 | **D3b-3** GMMU PoC | 7 能力最小实现 (per ArchForge GMMU SSOT) | G3 gate 通过 |
 | **D3b-4** StreamingMultiprocessor | SM 完整实现 (supersede 当前 stub) | D3b-3 (GMMU 提供地址翻译) |

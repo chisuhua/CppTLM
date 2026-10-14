@@ -112,7 +112,7 @@ GMMU PTE fetch (per Gap I, dedicated memory client):
         │
         │ Gap I: GMMU dedicated memory client, BYPASS mesh NoC
         ▼
-    gmmu.0 → pcie_memory.handle_slave_port(port=1) (直连, 不经 NOC)
+    gmmu.0 → pcie_memory.handle_slave_port(port=1) (直连, 不经 NOC) *(v0.6 supersede: Chub change 实施后, GMMU 切 5 端口, gmmu.req_out (NoCFlitBundle) → SocInternalNoc → VramControllerTLM.req_in_, PcieMemoryDevice 移除, per [control-hub design.md §6.2](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*
 
 Host backdoor 特权 (per §1.4.2):
     DGpuBoard::backdoor_read/write → vram_storage_[off..off+len] (直访, 类比 MemBackdoor)
@@ -131,7 +131,7 @@ SDMA H2D/D2H:
 
 GMMU PTE walk:
     gmmu.translate_timing(iova, ...) → TLB hit (lat=0) 或 TLB miss → page walk (lat=tlb_miss_cycles=50)
-    gmmu.0 → pcie_memory.handle_slave_port(port=1) (dedicated)
+    gmmu.0 → pcie_memory.handle_slave_port(port=1) (dedicated) *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, GMMU PTE fetch 走 SocInternalNoc 直连 VramController, per [control-hub design.md §6.2](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*
 ```
 
 ### 3.3 数据流关键节点对比
