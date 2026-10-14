@@ -12,7 +12,7 @@
 
 ### Requirement: dgpu-soc-control-hub-module
 
-**ControlHub (Chub) 模块必须新建**, 集中承担 4 BAR decode + MSI-X 聚合 + Error 聚合, 替代当前 LwcBusHub + PcieControllerIP 分裂承担的职责。
+**ControlHub (Chub) 模块 SHALL 新建**, 集中承担 4 BAR decode + MSI-X 聚合 + Error 聚合, 替代当前 LwcBusHub + PcieControllerIP 分裂承担的职责。
 
 **位置**: `include/tlm/cluster/control_hub.{hh,cc}` + `src/tlm/cluster/control_hub.cc`
 
@@ -69,7 +69,7 @@
 
 ### Requirement: dgpu-soc-sdma-translate-port
 
-**SdmaEngineTLM 必须新增独立 translate_req/resp 端口**, 替代 programmatic `set_translate_cb` 桥接。
+**SdmaEngineTLM SHALL 新增独立 translate_req/resp 端口**, 替代 programmatic `set_translate_cb` 桥接。
 
 **端口数**: 5 → 8 (新增 axi_master_out + translate_req/resp + doorbell_in, 删除 desc_in/host_out/done_out)
 
@@ -105,7 +105,7 @@
 
 ### Requirement: dgpu-soc-pcie-memory-device-removal
 
-**PcieMemoryDevice 模块必须完全移除**, driver BAR2 路径改走 Chub→NoC→VramController, 与 SDMA bulk DMA 路径完全统一。
+**PcieMemoryDevice 模块 SHALL 完全移除**, driver BAR2 路径改走 Chub→NoC→VramController, 与 SDMA bulk DMA 路径完全统一。
 
 **移除的 2 件事** (per design.md §6.1):
 1. BAR2 8GB vram aperture 外观层 → 改走 Chub BAR2 decode → NoC → VramController
@@ -142,7 +142,7 @@
 
 ### Requirement: dgpu-soc-full-json-topology
 
-**`configs/dgpu_soc_minimal_v1.json` 顶层 `soc.connections[]` 必须从 1 条扩展到 13 条**, 完全 JSON 声明, 0 处 programmatic bridge。
+**`configs/dgpu_soc_minimal_v1.json` 顶层 `soc.connections[]` SHALL 从 1 条扩展到 13 条**, 完全 JSON 声明, 0 处 programmatic bridge。
 
 **13 条 connection** (per design.md §7.1):
 
@@ -204,7 +204,10 @@
 
 ### Requirement: dgpu-soc-physical-ip-boundary-deferred
 
-**明确 NOT in scope** (per proposal.md "What Changes" 末 + design.md §11):
+本 change SHALL 明确锁定以下 11 项 **NOT in scope** 项 (per proposal.md "What Changes" 末 + design.md §11):
+
+- **timing-mode** (`dgpu_soc_timing_v1.json`): SHALL 不动 (per H-C6 + ADR-DGPU-11, 范围锁定 minimal_v1 functional-mode, timing-mode 走 dgpu_soc_timing_v1 独立 SoC 拓扑, 与本 change 正交)
+- **23 ABI 函数** (`include/abi/cpptlm_emulator.h`): 零 diff (frozen)
 
 - **23 ABI 函数** (`include/abi/cpptlm_emulator.h`): 零 diff (frozen)
 - **4 frozen headers** (`pcie_endpoint_tlm.h` / `pcie_display_device.hh` / `pcie_bundles_tlm.hh` / `cpptlm_emulator.h`): 零 diff

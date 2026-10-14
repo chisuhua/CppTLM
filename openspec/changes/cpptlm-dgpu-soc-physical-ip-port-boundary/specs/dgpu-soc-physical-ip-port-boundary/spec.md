@@ -11,7 +11,7 @@
 
 ### Requirement: dgpu-soc-port-typing-physical-ip-boundary
 
-SoC 内部 IP 端口类型**必须**按真实 dGPU 物理 IP 边界切型,不可继续使用 MVP 临时方案的"全 PcieTlpBundle"。PcieTlpBundle 只存在于 PCIe Controller ↔ 板级(host)边界。
+SoC 内部 IP 端口类型**SHALL**按真实 dGPU 物理 IP 边界切型,不可继续使用 MVP 临时方案的"全 PcieTlpBundle"。PcieTlpBundle 只存在于 PCIe Controller ↔ 板级(host)边界。
 
 **Bundle 类型分层**:
 - **PCIe 板级接口** (host ↔ chip): `PcieTlpBundle` (frozen by PcieEndpointIP 17 端口)
@@ -68,7 +68,7 @@ SoC 内部 IP 端口类型**必须**按真实 dGPU 物理 IP 边界切型,不可
 
 ### Requirement: dgpu-soc-simmodule-chstream-ization
 
-`SocInternalNoc` + `GpuInternalFabric` **必须** ChStream 化,允许 JSON `connections[]` 声明,取消 programmatic bridge。
+`SocInternalNoc` + `GpuInternalFabric` **SHALL** ChStream 化,允许 JSON `connections[]` 声明,取消 programmatic bridge。
 
 **关键实现** (per `include/core/sim_module.hh:132-161` + `include/tlm/AGENTS.md` "SimModule vs SimObject 端口能力对照表"):
 
@@ -103,7 +103,13 @@ SoC 内部 IP 端口类型**必须**按真实 dGPU 物理 IP 边界切型,不可
 
 ### Requirement: dgpu-soc-wire-format-adapter
 
-新增 4 个 wire-format adapter,处理 SoC 内部 NoC 化过程中的 Bundle 类型转换:
+本 change SHALL 新增 4 个 wire-format adapter,处理 SoC 内部 NoC 化过程中的 Bundle 类型转换:
+- `SDMA_PcieTlp_To_NocAdapter` (PcieTlpBundle → NoCFlitBundle, SdmaEngineTLM `mem_out` 出口侧)
+- `SDMA_Noc_To_PcieTlpAdapter` (NoCFlitBundle → PcieTlpBundle, SdmaEngineTLM `mem_in` 入口侧, **deprecated** by 后续 [cpptlm-dgpu-soc-control-hub](../../../cpptlm-dgpu-soc-control-hub/) change — 该 change 提议 SDMA 8 端口切型, PcieTlpBundle 端口删除)
+- `VramCtrl_Noc_To_AxiAdapter` (NoCFlitBundle → CacheReqBundle, VramControllerTLM 入口侧)
+- `VramCtrl_Axi_To_NocAdapter` (CacheRespBundle → NoCFlitBundle, VramControllerTLM 出口侧)
+
+**超集关系** (per [cpptlm-dgpu-soc-control-hub/proposal.md §6](../proposal.md)): 本 change (5 模块端口切型 + 4 wire-format adapter + 2 SimModule ChStream 化) **SHALL 被 superset by** `cpptlm-dgpu-soc-control-hub` (新增 ControlHub + 移除 PcieMemoryDevice + SDMA 独立 translate + 8 端口切型, 含本 change 全部内容 + 3 个新 Bundle + 13 条 JSON connection)。实施前建议合并 (per [control-hub design.md §10.3](../design.md))。
 
 - **`SDMA_PcieTlp_To_NocAdapter`**: PcieTlpBundle → NoCFlitBundle (SDMA mem_out 出口侧)
 - **`SDMA_Noc_To_PcieTlpAdapter`**: NoCFlitBundle → PcieTlpBundle (SDMA mem_in 入口侧)
@@ -159,7 +165,9 @@ SoC 内部 IP 端口类型**必须**按真实 dGPU 物理 IP 边界切型,不可
 
 ### Requirement: dgpu-soc-json-topology-direct-connect
 
-`configs/dgpu_soc_minimal_v1.json` 顶层 `soc.connections[]` **必须**从 1 条扩展到 4-5 条,真正反映完整 wire 拓扑,符合 `dgpu_board_v1.json:80-94` 模式。
+`configs/dgpu_soc_minimal_v1.json` 顶层 `soc.connections[]` **SHALL**从 1 条扩展到 4-5 条,真正反映完整 wire 拓扑,符合 `dgpu_board_v1.json:80-94` 模式。
+
+**超集关系** (per [cpptlm-dgpu-soc-control-hub/proposal.md §6](../proposal.md)): 本 change 提议 4-5 条 connection, **SHALL 被 superset by** `cpptlm-dgpu-soc-control-hub` 提议 13 条 connection (1 条 → 4-5 条 → 13 条 superset 关系)。
 
 **目标 JSON 拓扑** (per `design.md` §4.2):
 
@@ -210,7 +218,10 @@ SoC 内部 IP 端口类型**必须**按真实 dGPU 物理 IP 边界切型,不可
 
 ### Requirement: dgpu-soc-physical-ip-port-boundary-deferred
 
-**明确 NOT in scope** (per proposal.md "What Changes" 末 + design.md §8):
+本 change SHALL 明确锁定以下 NOT in scope 项 (per proposal.md "What Changes" 末 + design.md §8):
+
+- **timing-mode** (`dgpu_soc_timing_v1.json`): SHALL 不动 (per H-C6 + ADR-DGPU-11, 范围锁定 minimal_v1 functional-mode, timing-mode 走 dgpu_soc_timing_v1 独立 SoC 拓扑, 与本 change 正交)
+- **23 ABI 函数** (`include/abi/cpptlm_emulator.h`): 零 diff (frozen)
 
 - **23 ABI 函数** (`include/abi/cpptlm_emulator.h`): 零 diff (frozen)
 - **4 frozen headers** (`pcie_endpoint_tlm.h` / `pcie_display_device.hh` / `pcie_bundles_tlm.hh` / `cpptlm_emulator.h`): 零 diff

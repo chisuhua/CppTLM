@@ -102,13 +102,15 @@
 - **双重无注入约束 (Hard Invariant)**:
   1. **无 callback 注入**: SDMA 调用 GMMU 必须经**真实 wire 接口**(NOC message 或 chip-internal AXI),**禁用** `set_translate_cb(λ)` lambda 注入。当前 minimal_v1 用了 lambda,**D3+ 须废弃**
   2. **无 host-side data bypass 注入**: 真实数据必须走 PCIe TLP / NOC,**禁** host 旁路注入 bypass 芯片路径。**保留**: host backdoor **特权只读** access 用于 driver 视角验证 (只读不写不构成"数据注入")
+- **GmmuTLM backing 注入命名** (per ADR-DGPU-10 命名约定): GmmuTLM 通过 `set_mem_view(uint8_t*, uint64_t)` 暴露 backing 注入接口 (新名); 旧名 `set_backing` 保留为 `[[deprecated("use set_mem_view / mem_view_")]]` wrapper (per `gmmu_tlm.hh:120-126`); `set_vram_target(::VramControllerTLM*)` 是 PTE fetch 专用 programmatic binding (per Change C T4, Gap I),**不** 算 callback 注入, 而是 dedicated memory client wire 协议边界 (per NVIDIA H100 GMMU 模式)
+
 
 ### 原则 4 — VramControllerTLM 单独支持 functional-mode + backdoor 接口
 
 > **2026-10-09 修订注**: 措辞经 §1.4 v0.4 lock 后精炼,强调 **"只有 VramControllerTLM 单独 functional-mode"** 而非 "SoC 整体 zero-delay".
 
 - **VramControllerTLM 是 minimal_v1 唯一 functional-mode 模块**: 通过 `set_mode(VramControllerMode::FunctionalZeroDelay)` 切到 zero-delay 但协议真实接口;与 timing-mode (`dgpu_soc_timing_v1.json`) **共用同一 `VramControllerTLM` 类**,仅配置差异 (functional 零时延迟 vs timing cycle accounting, per ADR-DGPU-11 H2 互斥)
-- **VramControllerTLM backdoor 接口**: 通过 `set_backing_view(uint8_t*, uint64_t)` 暴露 (继承自 MemoryTLM, per ADR-DGPU-10 新名约定; deprecated wrapper `set_backing_store(deprecated)` 仍可调用), host 特权 (`DGpuBoard::backdoor_*`) 与内部 IP 都可经此接口直读 board-level 内存模块;类比 gem5 `MemBackdoor::ptr()`
+- **VramControllerTLM backdoor 接口**: 通过 **继承自 `MemoryTLM` 的** `set_backing_view(uint8_t*, uint64_t)` 暴露 (per ADR-DGPU-10 新名约定; `MemoryTLM` 父类有 deprecated wrapper `set_backing_store(deprecated)` 仍可调用; `VramControllerTLM` 自身**不重写**这两个方法), backing 注入走 `DGpuBoard::bind_memory_backings()` 调 `vram_ctrl->set_backing_view(framebuffer_ptr_, framebuffer_size_)` (per `dgpu_board_shell.cc:773` per ADR-DGPU-11 决策 4), host 特权 (`DGpuBoard::backdoor_*`) 与内部 IP 都可经 `VramControllerTLM::handle_functional_request()` C++ API (per Change A T4) 直读 board-level 内存模块;类比 gem5 `MemBackdoor::ptr()`
 - **SDMA 经 ChStream + NOC 接入**: SDMA 必须实现 `cpptlm::OutputStreamAdapter<bundles::AxiMemBundle>& mem_out()` 才能经 `SocInternalNoc` mesh (chip-internal) 接入 VramController functional-mode (per §1.4.3 修订)
 - **本期 minimal_v1 即时落地**: VramControllerTLM 在 minimal_v1 数据路径主入口激活. **Phase 0 (Change A) 阶段**: `sdma.mem_out → pcie_memory.handle_slave_port(port=0) → vram_controller->handle_functional_request` (pcie_memory 作为桥接, 内部委托给 VramController). **Phase 1 (Change C) 阶段**: `sdma.mem_out → soc_internal_noc mesh → vram_noc_adapter → vram_controller->handle_functional_request` (NOC 直连, pcie_memory 不参与). 两阶段路径演进, D-AXI §7 D3 seam 已激活. **不是 v0.4 之前描述的 "直接 sdma.mem_out → vram_ctrl 绕过 pcie_memory"** (v0.5.1 修订 per Oracle C17)
 
@@ -343,7 +345,7 @@ LWC Bus Hub + 3+1 Bundle:
 
 1. **单一 backing 源**: `DGpuBoard::vram_storage_` 是 SoC 全部访存的**真源**,镜像 gem5 `PhysicalMemory::backingStore[].pmem` 角色。MemoryTLM/GMMU/SDMA/host backdoor/VramControllerTLM 都直读直写同一份 `std::vector<uint8_t>`,天然 coherence,无需 flush。
 2. **VramControllerTLM 单独支持 functional-mode (zero-delay, 协议真实)**: `VramControllerTLM` 通过 `set_mode(VramControllerMode::FunctionalZeroDelay)` 切到 functional-mode,主数据路径 zero-delay 但经真实控制器协议 (类比 gem5 `AbstractMemory::functionalAccess` + HBM Controller 字段映射)。Phase 0 实际: `sdma.mem_out → pcie_memory.handle_slave_port → vram_controller->handle_functional_request` (pcie_memory 桥接);Phase 1 演进: `sdma.mem_out → soc_internal_noc → vram_noc_adapter → vram_controller->handle_functional_request` (NOC 直连, per v0.5.1 C17 修订). **其他模块** (GMMU/MemoryTLM/SDMA) 仍可走各自 cycle-approximate 行为,SoC 不是统一 zero-delay 仿真。
-3. **VramControllerTLM backdoor 接口**: `VramControllerTLM` 通过 `set_backing_view(uint8_t*, uint64_t)` 暴露 backdoor (per ADR-DGPU-10 新名, 继承自 MemoryTLM; `set_backing_store(deprecated)` 为 deprecated wrapper), host 特权 (`DGpuBoard::backdoor_read/write`) 与内部 IP 都可经此接口直读直写 board-level 内存模块 (per `DGpuSoc::sim_terminate` 时验证)。
+3. **VramControllerTLM backdoor 接口**: `VramControllerTLM` 通过**继承自 `MemoryTLM`** 的 `set_backing_view(uint8_t*, uint64_t)` 暴露 backdoor (per ADR-DGPU-10 新名; `MemoryTLM` 父类有 `set_backing_store(deprecated)` 为 deprecated wrapper, `VramControllerTLM` 自身不重写), backing 注入由 `DGpuBoard::bind_memory_backings()` 调 `vram_ctrl->set_backing_view(...)` (per `dgpu_board_shell.cc:773`); backdoor 实际访问走 `VramControllerTLM::handle_functional_request()` C++ API (per Change A T4), host 特权 (`DGpuBoard::backdoor_read/write`) 与内部 IP 都可经此接口直读直写 board-level 内存模块 (per `DGpuSoc::sim_terminate` 时验证)。
 4. **callback 单一所有权**: callback 完全在 `CallbackWorker` 内(DGPU v2.0.2),本期不增加 callback 类型。
 5. **配置注入**: `framebuffer_size_bytes` 从 `pcie_ep.params.bar_sizes[1]` 派生,避免双真相源;顶层 `framebuffer_size_bytes` 仅作 override。
 
@@ -411,7 +413,7 @@ SDMA H2D/D2H 数据 path (实施后):
 | `functional-mode` (形容词) | **限定模块级**:描述某个 IP 模块是否支持 zero-delay functional 接口 (如 "VramController functional-mode").**不** 用于描述 SoC 整体仿真模式 |
 | `VramControllerMode::FunctionalZeroDelay` | VramControllerTLM 内部 mode enum 值,zero-delay 时序 + 协议真实,仅 VramController 用 |
 | `VramControllerMode::TimingCycleApproximate` | VramControllerTLM 内部 mode enum 值,cycle-approximate + 时序统计,timing-mode SoC 用 |
-| `backdoor` (名词) | VramControllerTLM 提供的 board-level 内存模块直访接口 (`set_backing_view(void*, size_t)` per ADR-DGPU-10 新名; `set_backing_store(deprecated)` 为 deprecated wrapper);可由 host/IP/任何具备特权的 consumer 使用 |
+| `backdoor` (名词) | VramControllerTLM 提供的 board-level 内存模块直访接口 (**继承自** `MemoryTLM` 的 `set_backing_view(void*, size_t)` per ADR-DGPU-10 新名; `set_backing_store(deprecated)` 为 `MemoryTLM` 父类的 deprecated wrapper, `VramControllerTLM` 自身**不重写**); backing 注入由 `DGpuBoard::bind_memory_backings()` 调 `vram_ctrl->set_backing_view(...)` 完成; backdoor 实际访问走 `VramControllerTLM::handle_functional_request()` C++ API; 可由 host/IP/任何具备特权的 consumer 使用 |
 | `混合仿真模式 SoC` (mixed-mode SoC) | minimal_v1 当前定位: 内部不同 IP 模块采用不同仿真模式 (functional / cycle-approximate / cycle-accurate),**不** 强行统一 |
 
 #### 1.4.6 强化: GMMU 仍同步翻译 (per §5 + Q9)
