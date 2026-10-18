@@ -429,12 +429,50 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
   - **历史复审**: 2026-09-30 季度复审 archive 3 个 (gmmu-mvp / mas-soc-topology-mvp / nsa-scale-up-umbrella)，理由: SoC 架构建模属 ArchForge 范围
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
+### 真源原则 (Single Source of Truth, 2026-10-19 确立)
+
+**核心立场**: 文档维护有真源 (canonical) 与附属 (subsidiary) 之别。冲突时**真源优先**, 附属文档必须**对齐真源**, 不重发明。
+
+**真源分级** (从高到低):
+
+| 级别 | 目录 | 角色 | 修改门槛 |
+|------|------|------|---------|
+| **真源 1 (通用基础架构)** | [`docs/architecture/`](docs/architecture/) | **通用基础架构唯一真源** (TLM 框架 + 事务/错误/复位/拓扑/Metrics/可视化/协议中立基线). 任何通用基础架构变更**必须先改这里** | Oracle 评审 or ADR 触发 |
+| **真源 2 (dGPU 应用架构)** | [`docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/`](docs/designs/) | **dGPU 应用架构唯一真源** (Board + SoC + Driver 三视角). dGPU 业务架构变更**必须先改这里** | Oracle 评审 or ADR 触发 |
+| **真源 3 (不可变决策)** | [`docs/adr/ADR-{X,DGPU}-*.md`](docs/adr/) | **不可变决策真源** (per ADR 不可变 + Status Update 先例, line 418) | 签发后不改, 只追加 Status Update |
+| **附属 1 (调研)** | [`docs/research/`](docs/research/) | **调研附属** (Gem5 / PCIe / Protocol 等). 引用真源, **不重发明** | 不进架构评审; 仅作 reference |
+| **附属 2 (业务实施笔记)** | [`docs/pcie/`](docs/pcie/) + [`docs/superpowers/`](docs/superpowers/) | **业务实施笔记 + 计划跟踪** (跨边界混合). 引用真源 + OpenSpec, 不重发明架构决策 | 实施期短期, archive 后归档 |
+| **附属 3 (早期方案)** | [`docs/archive/architecture/`](docs/archive/architecture/) + [`docs/archive/designs/`](docs/archive/designs/) + `docs/adr/ADR-*.md` 顶部 `## Status Update` 段 | **历史保留** (调研价值 + superseded 标注). 不重写, 仅追加归档说明或 Status Update | 仅 admin (归档 + Status Update) |
+
+**冲突解决规则**:
+1. **真源 vs 附属冲突** → 改附属, 保持真源 (例如: docs/designs/dgpu-soc/architecture.md 引用 docs/architecture/06-inter-module-network.md, 不在 docs/designs/ 重述)
+2. **真源 1 (通用基础) vs 真源 2 (dGPU 应用) 冲突** → 真源 1 优先 (因为 dGPU 应用依赖通用基础, 后者变更面更窄 + 影响面更广)
+3. **真源 3 (ADR) vs 真源 1/2 冲突** → ADR 不可变 (per line 418), 真源 1/2 顶部加 `## Status Update` 段对齐
+4. **OpenSpec change vs 真源 1/2 冲突** → OpenSpec change design.md 描述**未来**, 真源代表**当前**, 实施完成后同步更新真源
+
+**真源 vs 4 层文档模型**:
+- 第 1 层 (长期维护架构) ≈ 真源 1 + 真源 2 (per line 436, 4 层模型不区分通用 vs 应用)
+- 第 2 层 (ADR) = 真源 3
+- 第 3 层 (OpenSpec) = 实施期临时变更 (优先级 < 真源)
+- 第 4 层 (实施跟踪) = 短期状态 (优先级最低)
+
+**真源建立历史**:
+- 2026-09-26: 4 层文档模型 + 仿真框架 vs 应用设计分工 (per line 458-509)
+- 2026-10-19: 本次显式声明**真源原则**, 区分通用基础真源 (docs/architecture/) vs dGPU 应用真源 (docs/designs/), 明确附属文档不重发明真源 (per `06-inter-module-network.md` v0.4 重新规划 + 4 归档 + 2 迁出执行)
+
+**真源声明执行案例 (2026-10-19, per 06 v0.4 修订)**:
+- ✅ `docs/architecture/06-inter-module-network.md` v0.4 §2.1 L1-L6 严格对齐 `docs/architecture/01-hybrid-architecture-v2.1.md` §1.1 v2.1.10
+- ✅ `docs/designs/dgpu-soc/architecture.md` §0.1 + §1.4 引用真源, 不在 `docs/designs/` 重述通用基础架构
+- ✅ 4 个早期方案 (`05-packet-semantic-network` / `10-tgms-specifications` / `2026-05-12-unified-visualization-platform` / `fastapi-migration-plan`) 归档至 `docs/archive/architecture/`, 调研价值被真源继承
+- ✅ PNN v0.1 早期方案归档至 `docs/archive/designs/dgpu-soc/`, 命名沿用到 `docs/architecture/06-inter-module-network.md` §4.4 P3+ 模板
+- ✅ 2 个 dGPU 应用架构文档 (`14-pcie-tlp-wire-format` / `多层次混合仿真.md`) 迁出至 `docs/designs/dgpu-soc/`, 严格区分通用 vs 应用
+
 ### 4 层文档模型 (2026-09-26 重组)
 
 | 层 | 职责 | 路径 | 数量控制 | 修改门槛 |
 |----|------|------|---------|---------|
-| **第 1 层 长期维护架构文档** | 设计意图 + 现状真相 | `docs/architecture/` (通用基础) + `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` (dGPU 应用三视角) | 每主题 1-2 篇 | Oracle 评审 or ADR 触发 |
-| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-{X,DGPU}-*.md` | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
+| **第 1 层 长期维护架构文档** | 设计意图 + 现状真相 | `docs/architecture/` (通用基础, 真源 1) + `docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/` (dGPU 应用, 真源 2) | 每主题 1-2 篇 | Oracle 评审 or ADR 触发 |
+| **第 2 层 架构决策记录** | 不可变决策 + Status Update | `docs/adr/ADR-{X,DGPU}-*.md` (真源 3) | 每个不可逆决策 1 篇 | 签发后不改，只追加 Status Update |
 | **第 3 层 OpenSpec change** | 实施变更提案 | `openspec/changes/<name>/{proposal,design,spec,tasks}.md` | 每个独立变更 1 个 | 标准 OpenSpec 工作流 |
 | **第 4 层 实施跟踪** | TDD 5 步 + 进度报告 | `docs/superpowers/plans/<name>.md` + `archive/` | 每个大 Phase 1 个 | 实施期短期，archive 后归档 |
 
