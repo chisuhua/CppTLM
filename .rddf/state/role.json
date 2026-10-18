@@ -1,0 +1,19 @@
+{
+  "schema_version": "role-v1",
+  "current_role": "architect",
+  "updated_at": "2026-10-16T06:08:30Z",
+  "updated_by": "user",
+  "session_id": "ses_ebcad3339ffe4gnzV520KGmUTh",
+  "history": [
+    {
+      "role": "general",
+      "at": "2026-10-16T06:07:52Z",
+      "by": "role-init"
+    },
+    {
+      "role": "architect",
+      "at": "2026-10-16T06:08:30Z",
+      "by": "user"
+    }
+  ]
+}

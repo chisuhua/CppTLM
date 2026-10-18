@@ -26,11 +26,12 @@
 
 | 文档 | 状态 | 说明 |
 |------|------|------|
-| [01-hybrid-architecture-v2.1.md](./01-hybrid-architecture-v2.1.md) | ✅ 已批准 | 混合仿真架构 v2.1 |
+| [01-hybrid-architecture-v2.1.md](./01-hybrid-architecture-v2.1.md) | ✅ v2.1.10 已批准 | 混合仿真架构 v2.1 (L1-L6 6 层框架真源, per [06 §2.1](./06-inter-module-network.md) 严格对齐) |
 | [02-transaction-architecture.md](./02-transaction-architecture.md) | ✅ 已批准 | 交易处理架构 |
 | [03-error-debug-architecture.md](./03-error-debug-architecture.md) | ✅ 已批准 | 错误与调试架构 |
 | [04-reset-checkpoint-architecture.md](./04-reset-checkpoint-architecture.md) | 📋 待确认 | 复位与快照架构 |
-| [2026-05-12-unified-visualization-platform.md](./2026-05-12-unified-visualization-platform.md) | ✅ 已批准 | 统一可视化平台 |
+| [06-inter-module-network.md](./06-inter-module-network.md) | 🟡 **v0.4 修订中** (2026-10-18) | 模块互联网络协议中立基线 + Bundle 二分类 + Python 拓扑契约 (详化 01 §1.1 6 层 + §1.2 Bundle 命名 + §4.7 simulation_mode, 双向 cross-ref) |
+| [06-bis-coherence-as-network-extension.md](./06-bis-coherence-as-network-extension.md) | 🟡 **v0.3 修订中** (2026-10-18) | Coherence 演进 seam 详化 (与 06 §15 + ArchForge coherence-protocol.md 跨仓引用, 不重发明) |
 
 ### 决策汇总
 
@@ -55,6 +56,22 @@
 | 原路径 | 新路径 | 原因 |
 |--------|--------|------|
 | ~~`14-dgpu-board-ideal-arch.md`~~ | [`../designs/dgpu-board/architecture.md`](../designs/dgpu-board/architecture.md) | DGpuBoard 是 dGPU 专用模块，迁至 `docs/designs/dgpu-board/` |
+
+## 已归档文档（2026-10-18 docs/architecture/ 重新规划）
+
+| 原路径 | 归档路径 | 原因 |
+|--------|---------|------|
+| ~~[./05-packet-semantic-network.md](./05-packet-semantic-network.md)~~ | [../archive/architecture/05-packet-semantic-network-archived-2026-10.md](../archive/architecture/05-packet-semantic-network-archived-2026-10.md) | Packet 语义早期方案, 立场与 01 §1.1 + [06 §2.5](./06-inter-module-network.md) 对立; 调研价值 (Packet 字段分类 + Gem5 MessageBuffer 锚点) 被 06 §2.5 + 01 §1.1 继承 |
+| ~~[./10-tgms-specifications.md](./10-tgms-specifications.md)~~ | [../archive/architecture/10-tgms-specifications-archived-2026-10.md](../archive/architecture/10-tgms-specifications-archived-2026-10.md) | 与 [10-topology-generation-management-system.md](./10-topology-generation-management-system.md) v3.0 范围重复, 后者是统一真源; ARCH-010 §8.2 已修正引用至归档路径 |
+| ~~[./2026-05-12-unified-visualization-platform.md](./2026-05-12-unified-visualization-platform.md)~~ | [../archive/architecture/unified-visualization-platform-2026-05-12-archived-2026-10.md](../archive/architecture/unified-visualization-platform-2026-05-12-archived-2026-10.md) | 发布次日被 [13-dashboard-integration.md](./13-dashboard-integration.md) v2.0 已批准覆盖 |
+| ~~[./fastapi-migration-plan.md](./fastapi-migration-plan.md)~~ | [../archive/architecture/fastapi-migration-plan-archived-2026-10.md](../archive/architecture/fastapi-migration-plan-archived-2026-10.md) | FastAPI 迁移已实施完成, 当前 Python 工具链已迁至 `cpptlm/visualization/` (FastAPI) + `cpptlm/config/` (Pydantic) |
+
+## 已迁出文档（2026-10-18 按 docs/architecture/README.md 分工迁出至 docs/designs/）
+
+| 原路径 | 迁出路径 | 原因 |
+|--------|---------|------|
+| ~~[./14-pcie-tlp-wire-format.md](./14-pcie-tlp-wire-format.md)~~ | [../designs/dgpu-soc/14-pcie-tlp-wire-format.md](../designs/dgpu-soc/14-pcie-tlp-wire-format.md) | 主题是 PCIe Controller 板级接口 (dGPU 应用架构), 不在通用基础架构 (per README.md 分工) |
+| ~~[./多层次混合仿真.md](./多层次混合仿真.md)~~ | [../designs/dgpu-soc/multi-level-hybrid-simulation.md](../designs/dgpu-soc/multi-level-hybrid-simulation.md) | 主题是 GPGPU 多层 SimModule 容器 (dGPU 应用架构), 不在通用基础架构 |
 
 ---
 

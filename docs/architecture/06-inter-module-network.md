@@ -19,10 +19,10 @@
 ## ⚠️ 修订说明(reviewer 请读)
 
 v0.3 修 v0.2 的 8 项 BLOCKER + 1 项 KPI 口径修正:
-- **B-α**: §2.1 ASCII 图层号 L0-L8 canonical 编号
+- **B-α**: §2.1 ASCII 图层号 L1-L6 canonical 编号 (v0.4 X-1 修订: 与 01-hybrid §1.1 v2.1.10 严格对齐)
 - **B-β**: §11.2 P1 stats `addScalar` 真 API(不是 `add_scalar`)
 - **B-γ**: 整文档无 "沿用 v1" 占位, 内嵌全部内容
-- **B-δ-KPI**: §7.7 KPI 口径修正("累计 6-7 slots" → "串行激活, 并发占用 ≤1")
+- **B-δ-KPI**: §11.5 KPI 口径修正("累计 6-7 slots" → "串行激活, 并发占用 ≤1")
 - **B-ε**: §11.2 P1 真实消费者路径明确(详见 06-bis v0.3)
 
 与 06-bis v0.3 同步修订(API 名 / struct 命名 / P3.5 选项 C / §3.4 候选 D)。
@@ -54,15 +54,19 @@ CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生�
 6. **不破 frozen 边界**: 不破 frozen headers / 23 ABI / Packet::reset() / Packet 既有 14 字段
 7. **仿真精度 2 模式**: functional × abstract + timing × <具体协议>; 但**不暴露 network.mode 4 组合**,只暴露 functional/timing 1 维度(per 用户最新要求)
 
-### 0.3 与现有 5 份前置文档的关系
+### 0.3 与现有 10 份前置/关联文档的关系 (v0.4 X-6/X-7/X-8 增 6 行边界标注)
 
 | 前置文档 | 状态 | 关系 |
 |----------|------|------|
-| `01-hybrid-architecture-v2.1.md` §1.1(v2.1.10 "通信框架层 vs 总线层") | ✅ 已落地 | §2 详化其 6 层结构,新增 Bundle 二分类 + Python 拓扑契约 |
-| `docs/designs/dgpu-soc/communication-network.md` v1.0 | ✅ v1.0 已落地 | §2 + §6 引用其 6 层 + 8 架构债务;§3-§5 是 §1.1 的落地;§9 引用其 ModuleFactory 9 步装配 |
-| `docs/designs/dgpu-soc/pnn-protocol-neutral-network.md` v0.1 | 🟡 待评审 | **superseded by 06 v0.3**: PNN 蓝图(§2.2 `ProtocolBridge<InB, OutB>`)命名沿用,5 阶段 P0-P4 时序与 §11 大致对齐;调研参考保留 |
-| `docs/architecture/05-packet-semantic-network.md` v0.1 | 🟡 待评审 | **superseded by 06 v0.3**: 05 提议改 `Packet` 字段(`flit_category`/`protocol_id`/`bridge_id`) + L4.5 抽象 + `reset()` 重置 3 字段 — **与本方案"不动 Packet"矛盾**,不必;其 Packet 字段分类调研(7 个死字段)部分被 §2.5 继承 |
-| ArchForge `09-coherence-protocol.md` + `microarchitecture/coherence-*.md` | 🟡 接口草案(markdown,无 C++ 实现) | 保留(不废,**0 改**);§15 + 06-bis §1 跨仓引用,**不重发明** |
+| `01-hybrid-architecture-v2.1.md` §1.1 (v2.1.10 "通信框架层 vs 总线层") | ✅ v2.1.10 已批准 | §2 严格对齐其 6 层 (L1-L6, per C-1 X-1 修订); §3 详化其 §1.2 Bundle 命名保守现状; §5 详化其 §4.7 simulation_mode |
+| `docs/designs/dgpu-soc/communication-network.md` v1.0 | ✅ v1.0 已落地 (dGPU 应用架构, 独立保留 per 2026-10-18 重新规划) | §2 + §6 引用其 6 层 + 8 架构债务; §3-§5 是 §1.1 的落地; §9 引用其 ModuleFactory 9 步装配 |
+| [`docs/archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) v0.1 | ⚠️ 已归档 2026-10-18 (per C-5 X-3) | **命名沿用**: PNN §2.2 `ProtocolBridge<InB, OutB, Ordered>` 沿用到 §4.4 (P3+ 模板); **调研参考**: 5 阶段 P0-P4 时序与 §11 大致对齐; PNN §5 提议 network.mode 被 §5.2 拒绝 |
+| [`docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../archive/architecture/05-packet-semantic-network-archived-2026-10.md) v0.1 | ⚠️ 已归档 2026-10-18 (per C-5 X-2) | **立场对立**: 05 提议改 Packet 字段 + L4.5 ProtocolAdapter, 06 0 改 Packet + 不引入 L4.5; **调研价值保留**: Packet 字段分类 (7 个死字段) 被 §2.5 继承, Gem5 MessageBuffer 锚点被 01 §1.1 继承 |
+| [`docs/architecture/02-complex-topology-architecture.md`](02-complex-topology-architecture.md) v2.2 (2026-04-23) | ✅ 架构设计 | **范围正交 (X-6)**: 本文讲 TLM 仿真层模块互联, 02 讲 RTL 桥接; 共用 ModuleFactory Step 7 (per §9) |
+| [`docs/architecture/09-topology-visualization-pipeline.md`](09-topology-visualization-pipeline.md) v2.0 + [`10-topology-generation-management-system.md`](10-topology-generation-management-system.md) v3.0 + [`12-topology-gap-analysis.md`](12-topology-gap-analysis.md) v1.1 | ✅ 09 草案 / 10 v3.0 已批准 / 12 v1.1 已批准 | **视角不同 (X-7)**: 09/10/12 是 Python `cpptlm.topo` 工具链视角 (如何生成 topology JSON), 06 §7 是 C++ ModuleFactory 契约视角 (怎么消费 JSON); §6.3 引用 10 §4 mesh_cluster / ring_cluster 契约 |
+| [`docs/architecture/11-coherence-domain-readiness.md`](11-coherence-domain-readiness.md) v1.0 (2026-04-26) | 草案 | **深度不同 (X-8)**: 11 是 readiness 评估 (做不做), 06-bis §0 阅读引导加 cross-ref 到 11 (per D-3) |
+| [`docs/architecture/P0_P1_P2_DECISIONS.md`](P0_P1_P2_DECISIONS.md) | ✅ 已全部确认 (2026-04-07) | **范围正交**: P0_P1_P2 汇总早 Phase 0-2 决策, 06 §11 P0-P6 是后续演进分阶段; §18 修订记录引用其 P0 任务格式 |
+| ArchForge `09-coherence-protocol.md` + `microarchitecture/coherence-*.md` | 🟡 接口草案 (markdown, 无 C++ 实现) | **不重发明**: §15 + 06-bis §1 跨仓引用, C++ 实施由 CppTLM 仓 (per 06-bis §2.1 实施切分) |
 
 ---
 
@@ -103,56 +107,52 @@ CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生�
 
 ## 2. 已有资产:60-70% Gem5 化协议中立基线
 
-### 2.1 6 层结构(对齐 `communication-network.md` canonical 编号)— **v0.3.1 修订**
+### 2.1 6 层结构 (L1-L6, 对齐 `01-hybrid-architecture-v2.1.md` §1.1 v2.1.10 canonical 编号) — **v0.4 X-1 修订**
 
-**v0.3 H1 bug**: §2.1 ASCII 图层号 +1 位移且 L0 = tlm_generic_payload(新造层),与 `communication-network.md` canonical 编号冲突。
+**v0.4 X-1 修订**: §2.1 ASCII 图从 v0.3 的 L0-L7 (8 层) 重画为 L1-L6 (6 层), 严格对齐 `01-hybrid-architecture-v2.1.md` §1.1 v2.1.10 (L1 `tlm_generic_payload + PacketPool` / L2 `MasterPort/SlavePort/PortPair` / L3 `ChStream 抽象` / L4 `StreamAdapter 适配层` / L5 `Bundle 数据格式` / L6 `具体协议字段`).
 
-**v0.3.1 canonical 编号**(per `docs/designs/dgpu-soc/communication-network.md:22-48`):
+**v0.3 H1 bug 修复**: v0.3 §2.1 ASCII 图层号 +1 位移且 L0 = tlm_generic_payload (新造层), L7 = driver/ABI (新造边界), L1 = SimplePort (独立层), 与 01 §1.1 canonical 编号 (L1 = tlm_generic_payload + PacketPool, 无 L7 边界层, SimplePort 不独立) 不一致. v0.4 严格对齐 01 §1.1.
+
+**v0.4 canonical 编号 (L1-L6, per 01-hybrid §1.1 v2.1.10)**:
 
 ```
-┌── HOST (UE 进程) ─────────────────────────────────────────────────────┐
-│ L7 用户态 driver / 23 ABI (cpptlm_emulator.h) ──── 冻结边界 [ABI]   │
-└──┬──────────────────────────────────────────────────────────────────┘
-   │ C ABI(跨进程/SO, 0 变更)
-┌──▼────────── DGpuBoard (shell, src/tlm/gpu/dgpu_board_shell.cc) ──────┐
-│ L6 板级门面: BAR0 MMIO / BAR1 FB fast-path / BAR2 VRAM aperture      │
-│ simulation_mode → set_mode(Functional|Timing) [MODE SWITCH]          │
-└──┬──────────────────────────────────────────────────────────────────┘
-   │
-┌──▼────────── L5 Bundle 类型 (协议特化 typed POD, 16 个) ─────────────┐
-│   PcieTlpBundle / NoCFlitBundle / CacheReqBundle / CrBundle /       │
-│   DoorbellBundle / MsixBundle / ...                                  │
-│   ↑─[BUNDLE_FIELD_WIDTH 编译期锁 + is_trivially_copyable 断言]──↑   │
-└──┬──────────────────────────────────────────────────────────────────┘
-   │
-┌──▼────────── L4 StreamAdapter 5 子类 (协议中立, 模板只绑 BundleT) ──┐
+┌── L6 具体协议字段 (后期固化, per 01-hybrid §1.1) ────────────────────┐
+│  FC token bucket (PcieFlowControlTokenBucket)                      │
+│  ACK/NAK 12-bit seq wrap (pcie_link_layer_tlm.cc 手写)             │
+│  posted-write / credit-based / single-outstanding 协议语义          │
+├────────────────────────────────────────────────────────────────────┤
+│  L5 Bundle 数据格式 (协议特化 typed POD, 17 个 .hh, per §1.3.1)    │
+│   PcieTlpBundle / NoCFlitBundle / CacheReqBundle / CrBundle /      │
+│   DoorbellBundle / MsixBundle / ...                                 │
+│   ↑─[BUNDLE_FIELD_WIDTH 编译期锁 + is_trivially_copyable 断言]──↑  │
+├────────────────────────────────────────────────────────────────────┤
+│  L4 StreamAdapter 适配层 (协议中立, 模板只绑 BundleT, 5 子类)      │
 │   ├─ StreamAdapter<Module, ReqB, RespB>                            │
 │   ├─ MultiPortStreamAdapter<M, Rq, Rp, N>                         │
 │   ├─ DualPortStreamAdapter<M, PE_r, PE_p, Net_r, Net_p>  ★         │
 │   ├─ BidirectionalPortAdapter<M, B, N>                             │
 │   └─ Axi4StreamAdapter (3 通道) + Axi4Mapper (OOO)                 │
-└──┬──────────────────────────────────────────────────────────────────┘
-   │
-┌──▼────────── L3 ChStream 抽象 (Gem5 MessageBuffer 级别) ────────────┐
+├────────────────────────────────────────────────────────────────────┤
+│  L3 ChStream 抽象 (Gem5 MessageBuffer 级别)                       │
 │   InputStreamAdapter<BundleT> + OutputStreamAdapter<BundleT>      │
 │   + ChStreamInitiatorPort / ChStreamTargetPort                       │
-└──┬──────────────────────────────────────────────────────────────────┘
-   │
-┌──▼────────── L2 MasterPort / SlavePort (继承 SimplePort, +PortStats)┐
-└──┬──────────────────────────────────────────────────────────────────┘
-   │
-┌──▼────────── L1 SimplePort + PortPair (同步直调, 见 §2.2) ──────────┘
-└──┬──────────────────────────────────────────────────────────────────┘
-   │
-┌──▼────────── L0 Packet (tlm_generic_payload* payload + 14 字段) ─────┘
-└─────────────────────────────────────────────────────────────────────────┘
+├────────────────────────────────────────────────────────────────────┤
+│  L2 MasterPort / SlavePort / PortPair (TLM 标准传输)             │
+├────────────────────────────────────────────────────────────────────┤
+│  L1 tlm_generic_payload + PacketPool (per 01-hybrid §1.1)        │
+│   Packet 14 字段 (per §2.5) + PacketPool 引用计数池复用             │
+└────────────────────────────────────────────────────────────────────┘
 ```
 
-**注**: `tlm_generic_payload` 是 `Packet::payload` 字段类型, **不是独立层** (per `packet.hh:39` + canonical `communication-network.md:46-48`)
+**注** (v0.4 X-1):
+- `tlm_generic_payload` 是 `Packet::payload` 字段类型 (per `packet.hh:39`), 与 PacketPool 共同构成 L1
+- SimplePort **不是**独立层 (per 01 §1.1), 是 L2 MasterPort/SlavePort 的基类 (在 §2.2 同步直调约束中详述)
+- DGpuBoard 板级门面 (BAR0/BAR1/BAR2) 在 L6 范围内 (per 01-hybrid §1.1 "板级协议字段" 范畴)
+- HOST 进程 + 23 ABI 是 L7 边界 (per 01-hybrid §1.1 v2.1.10 不展开), 本文聚焦 L1-L6 模块互联
 
 **seam 位置**: §4.1 锁定在 **L5 Bundle ↔ L4 StreamAdapter 之间**
 
-**L1 同步直调约束**(`include/core/simple_port.hh:52-58`): CppTLM 跨模块数据传输是同步函数调用,不是 SystemC TLM event-driven 调度。→ 协议特化不能放在 L1。
+**L1/L2 同步直调约束**(`include/core/simple_port.hh:52-58`, `MasterPort`/`SlavePort` 继承 `SimplePort`): CppTLM 跨模块数据传输是同步函数调用, 不是 SystemC TLM event-driven 调度. → 协议特化不能放在 L1 (Packet) 或 L2 (MasterPort/SlavePort).
 
 ### 2.2 L2 同步直调的工程约束
 
@@ -798,32 +798,34 @@ per `01-hybrid-architecture-v2.1.md` §1.5 + `apu_soc.cc:84-103`:
 
 ## 10. supersede 关系
 
-### 10.1 矩阵 — **v0.3 BLOCKER B-4 修订**
+### 10.1 矩阵 — **v0.4 X-13 修订 (按归档动作重排)**
 
 | 前置文档 | 类型/版本 | 状态 (本方案后) | supersede 关系 | 处置 |
 |----------|--------|----------------|----------------|------|
-| `01-hybrid-architecture-v2.1.md` §1.1 | ✅ v2.1.10 已落地 | 保留(不废) | §2 详化其 6 层 | 互为补充 |
-| `docs/designs/dgpu-soc/communication-network.md` | ✅ v1.0 已落地 | 保留(不废) | §2 + §6 引用其 6 层 + 8 架构债务 | 互为补充 |
-| `docs/designs/dgpu-soc/pnn-protocol-neutral-network.md` | 🟡 v0.1 草稿 | **superseded by 06 v0.3** | v0.3 收纳 PNN 蓝图 §4.4 `ProtocolBridge<InB, OutB, Ordered>` 命名沿用 + 拒绝 §5 network.mode | 草稿,顶部加 `## Status Update: superseded by 06 v0.3` 段 |
-| `docs/architecture/05-packet-semantic-network.md` | 🟡 v0.1 草稿 | **superseded by 06 v0.3** | v0.3 拒绝 §4 改 Packet 路线 + 拒绝 §4 L4.5 | 草稿,加 Status Update 段 |
-| **`docs/adr/ADR-DGPU-13-pnn-protocol-neutral-network.md`** | 🟡 ADR 起草中 | **superseded by 06 v0.3** | ADR-DGPU-13 是 PNN 范围定义 ADR, 内容被 06 §15 演进 seam 收纳 | **真 ADR 格式, 加 `## Status Update 2026-10` 段**(per AGENTS.md "ADR 不可变 + Status Update" 先例) |
-| **`docs/adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`** | 🟡 ADR 起草中 | **superseded by 06 v0.3** | ADR-DGPU-14 §2.1 决策 seam 位置 vs 06 §4 是同一块领地 | 真 ADR,加 Status Update 段 |
-| ArchForge `09-coherence-protocol.md` + `microarchitecture/coherence-*.md` | 🟡 接口草案(markdown, 无 C++ 实现) | 保留(不废, **0 改**)| §15 + 06-bis §1 跨仓引用, **不重发明** | 仅引用 + 在 CppTLM 实施 |
+| `01-hybrid-architecture-v2.1.md` §1.1 | ✅ v2.1.10 已批准 | 保留(不废) | §2 严格对齐其 6 层 (L1-L6, per C-1 X-1) + §3 详化 §1.2 + §5 详化 §4.7 | 互为补充 + 双向 cross-ref (per D-1/D-2 X-11) |
+| `docs/designs/dgpu-soc/communication-network.md` v1.0 | ✅ v1.0 已落地 (dGPU 应用架构, 独立保留 per 2026-10-18 重新规划) | 保留(不废) | §2 + §6 引用其 6 层 + 8 架构债务 | 互为补充 |
+| [`docs/archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) v0.1 | 🟡 v0.1 草稿 → **⚠️ 已归档 2026-10-18** (per A-1) | 保留调研参考 | v0.4 沿用其 §2.2 `ProtocolBridge<InB, OutB, Ordered>` 命名 (06 §4.4 P3+ 模板) + 拒绝 §5 network.mode (06 §5.2) | **归档至 `docs/archive/`** + 顶部加归档说明段 — **已落地 2026-10-18** |
+| [`docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../archive/architecture/05-packet-semantic-network-archived-2026-10.md) v0.1 | 🟡 v0.1 草稿 → **⚠️ 已归档 2026-10-18** (per A-1) | 保留调研参考 | v0.4 调研价值 (Packet 字段分类 + Gem5 MessageBuffer 锚点) 被 §2.5 + 01 §1.1 继承 | **归档至 `docs/archive/`** + 顶部加归档说明段 — **已落地 2026-10-18** |
+| [`docs/adr/ADR-DGPU-13-pnn-protocol-neutral-network.md`](../adr/ADR-DGPU-13-pnn-protocol-neutral-network.md) | 🟡 ADR **未签发** (v0.1 起草中) → **⚠️ superseded by 06 v0.4** (永不签发 per D-5) | 不动正文 (per AGENTS.md "ADR 不可变 + Status Update" 先例) | ADR-DGPU-13 是 PNN 范围定义 ADR, 内容被 06 §15 演进 seam 完整收纳 | **真 ADR 格式, 顶部加 `## Status Update 2026-10-18: superseded by 06 v0.4 (未签发 ADR, 永不签发)` 段** — **已落地 2026-10-18** |
+| [`docs/adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`](../adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md) | 🟡 ADR **未签发** (v0.1 起草中) → **⚠️ superseded by 06 v0.4** (永不签发 per D-5) | 不动正文 (per AGENTS.md "ADR 不可变 + Status Update" 先例) | ADR-DGPU-14 §2.1 seam 位置 vs 06 §4 是同一块领地, 内容被 06 §4.1 + §9.2 收纳 | **真 ADR 格式, 顶部加 Status Update 段** — **已落地 2026-10-18** |
+| ArchForge `09-coherence-protocol.md` + `microarchitecture/coherence-*.md` | 🟡 接口草案 (markdown, 无 C++ 实现) | 保留(不废, **0 改**) | §15 + 06-bis §1 跨仓引用, **不重发明** | 仅引用 + 在 CppTLM 实施 (per 06-bis §2.1 实施切分) |
 
-**v0.3 B-4 修订要点**:
-1. **ADR-DGPU-13/14 是真 ADR 格式**, 按 AGENTS.md "ADR 不可变 + Status Update" 惯例处理
-2. PNN / 05-doc 是 v0.1 草稿, **非 ADR**, 处置手段随意(直接覆盖标题或加 Status Update 都行)
-3. **ArchForge 状态**: 从 v1 写 "🔵 Implemented" 改正为 "🟡 接口草案(markdown, 无 C++ 实现)" — 反映真实状态
+**v0.4 X-13 修订要点** (vs v0.3 B-4):
+1. **ADR-DGPU-13/14 是未签发 ADR**, 按 AGENTS.md "ADR 不可变 + Status Update" 惯例 + "未签发永不签发" 标注 (per D-5)
+2. **PNN / 05-doc 已物理归档至 `docs/archive/`** (per A-1, 2026-10-18), 不在真相源目录, 顶部加归档说明段 (不修改正文)
+3. **ArchForge 状态保持 🟡 草案**, C++ 实施由 CppTLM 仓负责 (per 06-bis §2.1)
+4. **新增** 4 行边界标注 (per §0.3 C-2): 02 / 09-12 / 11 / P0_P1_P2 — 与 06 范围正交或视角不同, 互为补充
 
-### 10.2 supersede 处置动作(P0 阶段)
+### 10.2 supersede 处置动作 (P0 阶段, v0.4 X-13 已落地)
 
-**P0 阶段建议动作**(仅 admin, 6 标签 0 回归):
-1. 在 `pnn-protocol-neutral-network.md` 顶部加 `## Status Update 2026-10: superseded by docs/architecture/06-inter-module-network.md v0.3` 段
-2. 在 `05-packet-semantic-network.md` 顶部同理段
-3. **在 ADR-DGPU-13 + ADR-DGPU-14 顶部加 `## Status Update 2026-10: superseded by 06 v0.3` 段**(真 ADR 格式)
-4. 在 `06-inter-module-network.md` §10.1 矩阵说明 supersede 关系
+**P0 阶段已执行动作** (2026-10-18, per A-1 + D-5):
+1. ✅ `docs/designs/dgpu-soc/pnn-protocol-neutral-network.md` → `docs/archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md` (git mv) + 顶部加归档说明段
+2. ✅ `docs/architecture/05-packet-semantic-network.md` → `docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md` (git mv) + 顶部加归档说明段
+3. ✅ `docs/adr/ADR-DGPU-13-pnn-protocol-neutral-network.md` 顶部加 `## Status Update 2026-10-18: superseded by 06 v0.4 (未签发 ADR, 永不签发)` 段 (per AGENTS.md "ADR 不可变 + Status Update" 先例)
+4. ✅ `docs/adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md` 顶部同理
+5. ✅ `06-inter-module-network.md` §10.1 矩阵说明 supersede 关系 (本节)
 
-**不修改既有文档正文**(per ADR-X.13 ADR 不可变先例 + `cpptlm-dgpu-soc-arch-truth-cleanup §6` doc-only 豁免先例)
+**不修改 ADR / 归档文档正文** (per AGENTS.md "ADR 不可变 + Status Update" 先例 + `cpptlm-dgpu-soc-arch-truth-cleanup §6` doc-only 豁免先例)
 
 ### 10.3 早期调研保留价值
 
@@ -870,76 +872,58 @@ per `01-hybrid-architecture-v2.1.md` §1.5 + `apu_soc.cc:84-103`:
 
 **触发条件**: 用户 + Oracle/Metis/Critic 评审通过
 
-### 11.2 P1(实施期, 单 KPI slot — 等 KPI 释放后) — **v0.3 BLOCKER B-2 修订**
+### 11.2 P1 (实施期, 单 KPI slot) — **v0.4 BLOCKER B-1-A 修订 (方案 A: 收窄 P1 范围)**
 
-**目标**: 协议元数据 per-bridge 注入(per Q6 + §4.5),**不引入 network.mode / 不动 Packet**
+**目标**: 协议元数据 seam **文档化** + Bundle 二分类 **测试契约**, **不引入代码** (与 §9.2 一致)
 
-**v0.3 B-2 修订关键点**:
-- v0.2 §11.2 写 `sg->add_scalar("protocol_id", id)` 错(critic BLOCKER 2)— 真 API 是 `tlm_stats::addScalar(name, desc, unit)` (`stats.hh:337`)
-- v0.2 §11.2 写"`get_stats_group()` 默认 nullptr" 正确(`chstream_module.hh:60`)— 但 v0.2 没明示"绝大多数模块触发不到"
+**v0.4 B-1-A 修订关键点 (vs v0.3 BLOCKER)**:
+- v0.3 §11.2 把 P1 写成 "ChStreamModuleBase 增 `set_protocol_id/set_bridge_id` + ModuleFactory Step 7c 注入" — 与 §9.2:762/767 "P1 不引入 Step 7c / P3+ 再加静态字段" **直接矛盾**, 经 oracle + build agent 联合审稿判定为 P0 BLOCKER (B-1)
+- v0.4 采纳方案 A: **P1 推迟所有代码改动到 P3+**, P1 仅做测试 + 文档 (per §15.3 per-packet tlm_extension 演进 seam 模板)
+- v0.3 §11.2 line 885-905 的 `ChStreamModuleBase` 代码示例 **整段删除**, 移到 §15.3 作为 P3+ 实施模板
+- v0.3 §11.2 line 909-913 的 `NetworkProtocolExt` 新增任务 **删除**, 移到 §15.3
+- v0.3 §11.2 line 919-921 的 Step 7c 增量 **删除**, 与 §9.2 一致: 不引入 Step 7c
 
-**v0.3 修订路径**:
+**v0.4 P1 任务清单 (5-8d, 仅测试 + 文档)**:
 
-**真实消费者**: `tlm_stats::Scalar` 钩子 + 显式 override `get_stats_group()`
+1. **新增** `test/test_bundle_classification_contract.cc` (~120 行, ≥10 cases / ≥40 assertions):
+   - 验证 §3.2 归类表的 17 个 .hh (per `ls include/bundles/*.hh`) 全部正确标注 (业务 / 网络 / 基础设施)
+   - 验证每个业务 Bundle 有 default initializer (per §3.4 演进规则)
+   - 验证每个网络 Bundle 通过 `BUNDLE_FIELD_WIDTH` 编译期锁
+   - 标签: `[bundle-classification]`
 
-```cpp
-// include/core/chstream_module.hh (P1 增量, +20 行)
-class ChStreamModuleBase {
-    // ...
-    // P1 v0.3 真实消费者:protocol_id 立即写 stats 报告(P1 addScalar 走 stats_group)
-    virtual void set_protocol_id(uint8_t id) {
-        protocol_id_ = id;
-        // v0.3.1 修订 (Oracle 评审): Scalar::value() 返回 Counter 拷贝, 非左值引用
-        // 必须用 += 累加写入 (per include/metrics/stats.hh:79-82 operator+=)
-        if (auto* sg = get_stats_group()) {
-            sg->addScalar("protocol_id",
-                          /*desc=*/"ChStreamModuleBase protocol_id",
-                          /*unit=*/"count") += id;
-        }
-    }
-    uint8_t protocol_id() const { return protocol_id_; }
-    // ...
-    uint8_t protocol_id_ = 0;
-    uint16_t bridge_id_ = 0;
-};
-```
+2. **新增** `test/test_simulation_mode_schema.cc` (~80 行, ≥5 cases / ≥20 assertions):
+   - 验证 JSON 顶层 `simulation_mode` 字段只有 `functional|timing` 2 值
+   - 验证 `network.mode` 字段在所有 `configs/*.json` 0 匹配 (per §8.2 不引入承诺)
+   - 验证 `VramControllerTLM::set_mode()` 在 functional/timing 2 模式正确 set
+   - 标签: `[simulation-mode]`
 
-**P1 任务清单**(诚实包含 build 改动 — 不是 doc-only):
+3. **新增** `test/test_seam_documentation_locator.cc` (~60 行, ≥5 cases / ≥15 assertions):
+   - 验证 §4.1 seam L5↔L4 位置在文档 + 注释 + openspec change 3 处一致引用
+   - 验证 §15.3 per-packet tlm_extension 演进 seam 在 06 + 06-bis 2 文档 cross-ref 存在
+   - 标签: `[seam-locator]`
 
-1. **新增** `include/ext/network_protocol_ext.hh` (~80 行):
-   - `struct NetworkProtocolExt : public tlm::tlm_extension<NetworkProtocolExt>`
-   - 字段: `protocol_id` (uint8) + `bridge_id` (uint16) + `flit_category` (uint8)
-   - `clone()` / `copy_from()` 实现
-   - 自由函数 `get_network_protocol(pkt)` / `set_network_protocol(pkt, ext)`
-2. **`ChStreamModuleBase` 增量**(per `set_protocol_id` 上 v0.3 修订):
-   - `virtual void set_protocol_id(uint8_t)` + getter(默认空实现,P1 真实消费者见上)
-   - `virtual void set_bridge_id(uint16_t)` + getter
-   - 默认空实现(向后兼容 75+ 既有模块)
-   - **override `get_stats_group()` 的 P1 任务**: 不强求所有 module 改; P1 加 NICTLM + 1-2 个 demo module override,作为"真实消费者"实证
-3. **`ModuleFactory` Step 7c 增量**(per §9.2 拒绝 ProtocolBridgeFactory 注入, 仅 per-bridge 静态分配):
-   - 在 Step 7a 之后遍历 ch_mod, 按 type 分配 `protocol_id`(从全局 counter) + `bridge_id` (per-instance counter)
-   - 仅写 `ch_mod->set_protocol_id(...)` / `set_bridge_id(...)`, **不写 payload 字段**
-4. **`Packet` 0 改动**(per §2.5 + §10.1 supersede 05-doc):
-   - 不删死字段
-   - 不增字段
-   - 不改 reset()
-5. **Step 2.5 / Step 5.5 per-packet tlm_extension 写入钩子**(per §15.3 演进 seam, P3+ 才落 — P1 仅预留虚接口声明,无实现)
-6. **新增测试**:
-   - `test/test_network_protocol_ext.cc` (~150 行, ≥10 cases / ≥50 assertions)
-   - `test/test_module_factory_bridge_id_assignment.cc` (~100 行, ≥5 cases / ≥30 assertions)
-7. **CMakeLists.txt** 增量:
-   - `src/framework/CMakeLists.txt` 加 `network_protocol_ext.cc`
-   - `test/CMakeLists.txt` 加新测试文件
-8. **不引入 `ProtocolBridge<InB, OutB, Ordered>`**(P1 仅 per-bridge 静态字段, 不引入新模板类)
+4. **CMakeLists.txt 增量**:
+   - `test/CMakeLists.txt` 加 3 个新测试文件 (per test/AGENTS.md GLOB 例外)
 
-**KPI**:
+5. **06-bis v0.3 §11 cross-ref 补完**:
+   - 06-bis §11 关联文档段加指向 06 §15.3 + §4.4
+   - 06 §15.3 加指向 06-bis §11
+
+**KPI** (v0.4 N-3 加注):
 - P1 消耗 1 slot
-- 启动前提: KPI slot 释放 — 当前 `openspec/changes/` 5/3 超限(per AGENTS.md 看板 + Q8 K-D 路径)
-- 释放候选: archive `cpptlm-pcie-tlp-entry-layer` (Proposed, 部分实施 per Phase 8) 或等季度复审
+- 启动前提: KPI slot 释放 — 当前 `openspec/changes/` Proposed 并发 2/3, 有 1 个空 slot (per §11.5 KPI 基线修订)
+- **v0.3 旧版 "5/3 超限" 是 raw active 总数口径错误** (2 Proposed + 3 Draft), 实际 KPI 上限按 Proposed 并发口径 (per AGENTS.md)
+- 释放候选: **无需释放** (有空 slot), 如需并行 activate 多个 change 再 archive
 
-**估时**: 10-15d
+**估时**: **5-8d** (v0.3 旧版 10-15d 偏宽, v0.4 收窄 ~50%)
 
-**触发条件**: P0 完成 + KPI slot 释放
+**触发条件**: P0 完成 (2026-10-18 已落地) + KPI slot 释放 (当前有空 slot, 可立即 activate)
+
+**P3+ 推迟任务** (替代 v0.3 §11.2 原 line 907-933 的代码增量, 估时待 P3 立项时重估):
+- P3.0: `NetworkProtocolExt` 文件框架 (per §15.3 演进 seam)
+- P3.1: `ChStreamModuleBase` 增 `set_protocol_id/set_bridge_id` + override `get_stats_group()` (默认空实现)
+- P3.2: ModuleFactory Step 7c 精简版 (per-bridge 静态分配, 拒绝 ProtocolBridgeFactory 模式)
+- P3 估时: 20-30d 占位 (per §15.3 现状)
 
 ### 11.3 P2 (实施期, 单 KPI slot — 等 P1 后)
 
@@ -972,30 +956,34 @@ class ChStreamModuleBase {
 
 ### 11.5 KPI 现状基线 — **v0.3 BLOCKER B-δ 修订**
 
-**真约束是排队治理(slot 释放顺序) 不是 slot 总数**
+**真约束是排队治理 (slot 释放顺序) 不是 slot 总数** — **v0.4 N-3 口径加注**
 
-| 状态 | 计数 | 备注 |
-|------|------|------|
-| 当前 OpenSpec active | **5** | control-hub / physical-ip-port-boundary / msix-generator-ip / p2-integration-unblock / pcie-tlp-entry-layer |
-| Proposed(计入 KPI) | **2** | p2-integration-unblock + pcie-tlp-entry-layer |
-| Proposed Draft(不计 KPI, per §6 doc-only 豁免) | 3 | control-hub / physical-ip-port-boundary / msix-generator-ip |
-| 上限 | 3 (Proposed 并发) | per AGENTS.md |
-| **当前 Proposed 并发占用** | **2** | **有 1 个空 slot** |
-| Draft(待激活为 Proposed) | 3 | 等 1 个空 slot 释放即可激活一个 |
-| 06 P0 (06 v0.3) | 0 slot | doc-only |
-| 06 P1 | 1 slot | 需 slot 释放 |
-| 06 P2 | 1 slot | 串行(不与 06 P1 并发) |
-| 06-bis P2.0 | 1 slot | 串行 |
-| 06-bis P2.1 | 1 slot | 串行 |
-| 06-bis P3 | 1 slot | 串行 |
-| 06-bis P3.5 | 1 slot | 串行 |
-| 06-bis P4 | 1 slot | 串行 |
-| 06-bis P5 | 1-2 slot | 串行 |
+**口径说明** (v0.4 N-3 修订):
+- **"Proposed 并发口径"**: 计入 KPI 上限 (per AGENTS.md "OpenSpec Proposed ≤ 3" 政策)
+- **"active 总数口径"**: 含 Proposed + Proposed Draft, **不计入 KPI** (per `cpptlm-dgpu-soc-arch-truth-cleanup §6` doc-only 豁免先例)
 
-**结论**:
-- **P0 doc-only 立即可启动**(不消耗 KPI)
-- **P1+ 需等 slot 释放**(提议 archive `cpptlm-pcie-tlp-entry-layer`, per §11.2 估时)
-- **任何时刻并发占用 Proposed ≤ 3**(06 1 + 06-bis 1 + 现有 2 = 4 ? → 这就是阻塞点; 实际 06 与 06-bis 在不同时间点激活, 任何 1 时刻最多占 1 slot)
+| 状态 | 计数 (Proposed 并发) | 计数 (active 总数) | 备注 |
+|------|---------------------|-------------------|------|
+| 当前 OpenSpec active | 2 | 5 | Draft: control-hub / physical-ip-port-boundary / msix-generator-ip; Proposed: p2-integration-unblock / pcie-tlp-entry-layer |
+| Proposed (计入 KPI) | **2** | 2 | p2-integration-unblock + pcie-tlp-entry-layer |
+| Proposed Draft (不计 KPI, per §6 doc-only 豁免) | 0 | 3 | control-hub / physical-ip-port-boundary / msix-generator-ip |
+| 上限 | **3 (Proposed 并发)** | 不限 (Draft 不计 KPI) | per AGENTS.md |
+| **当前 Proposed 并发占用** | **2** | — | **有 1 个空 slot** |
+| Draft (待激活为 Proposed) | 0 | 3 | 等 1 个空 slot 释放即可激活一个 |
+| 06 P0 (06 v0.4) | 0 slot | 0 slot | doc-only, **已落地 2026-10-18** |
+| 06 P1 | 1 slot | 1 slot | 需 slot 释放 — 但**当前有空 slot**, 可直接 activate |
+| 06 P2 | 1 slot | 1 slot | 串行 (不与 06 P1 并发) |
+| 06-bis P2.0 | 1 slot | 1 slot | 串行 |
+| 06-bis P2.1 | 1 slot | 1 slot | 串行 |
+| 06-bis P3 | 1 slot | 1 slot | 串行 |
+| 06-bis P3.5 | 1 slot | 1 slot | 串行 |
+| 06-bis P4 | 1 slot | 1 slot | 串行 |
+| 06-bis P5 | 1-2 slot | 1-2 slot | 串行 |
+
+**结论** (v0.4 N-3 修订):
+- **P0 doc-only 已落地** (2026-10-18, 0 消耗 KPI)
+- **P1 启动无需等 slot 释放** (当前有空 slot, per C-7 §11.2 v0.4 收窄方案 A 5-8d 估时)
+- **任何时刻并发占用 Proposed ≤ 3** (06 1 + 06-bis 1 + 现有 2 = 4 ? → 这就是阻塞点; 实际 06 与 06-bis 在不同时间点激活, 任何 1 时刻最多占 1 slot)
 - **真约束**: 排队治理, 不是 slot 总数 (per oracle Q-δ)
 
 ---
@@ -1374,7 +1362,8 @@ soc.connect("group:gpu", "noc_cdc_bridge.dst", latency=2)
 |------|------|------|------|
 | 2026-10-16 | v1 (replaced) | build agent (architect) | 初版, 8 BLOCKER + 10 SHOULD_FIX + NIT |
 | 2026-10-17 | v0.2 (replaced) | build agent (architect) | 修 v1 BLOCKER, 引入新问题, Metis 6 BLOCKER 未触 |
-| 2026-10-18 | **v0.3 (本版)** | build agent (architect) | **3 轮评审 22 项修订** + **KPI 口径修正** + **6-bis 同步** |
+| 2026-10-18 | v0.3 (replaced) | build agent (architect) | 3 轮评审 22 项修订 + KPI 口径修正 + 6-bis 同步 |
+| 2026-10-18 | **v0.4 (本版)** | build agent (architect) | **修 v0.3 BLOCKER B-1 (Oracle + build agent 联合审稿) + 2 SHOULD_FIX + 5 NITS + docs/architecture/ 重新规划 (4 归档 + 2 迁出) + 收窄 P1 范围方案 A** |
 
 ### 18.1 v0.3 修订明细 (vs v0.2)
 

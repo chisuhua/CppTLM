@@ -1,4 +1,20 @@
+> **⚠️ [已归档 2026-10-18]**
+> 
+> **归档原因**: FastAPI 迁移计划已实施完成, 当前 Python 工具链 = `cpptlm/visualization/dashboard_server.py` (FastAPI 实现, per 13-dashboard-integration §五) + `cpptlm/config/` (Pydantic BaseModel). 端点数 > 10 阈值已满足, Phase 2 触发条件已成过去. 本文档作为早期迁移蓝图保留作历史.
+> 
+> **当前真源**:
+> - Dashboard 架构: [`docs/architecture/13-dashboard-integration.md`](../13-dashboard-integration.md) v2.0 已批准
+> - Python 工具链: [`cpptlm/AGENTS.md`](../../../cpptlm/AGENTS.md) 包结构 + 核心抽象
+> - 拓扑生成: [`docs/architecture/10-topology-generation-management-system.md`](../10-topology-generation-management-system.md) v3.0 已批准 §9
+> 
+> **归档执行**: 2026-10-18, per docs/architecture/ 重新规划.
+
+---
+
 # FastAPI 迁移规划
+
+**状态**: ⚠️ 已归档 2026-10-18 (见顶部归档说明)
+**归档路径**: 本文件 git mv 至 `docs/archive/architecture/fastapi-migration-plan-archived-2026-10.md`
 
 ## 1. 迁移时机
 

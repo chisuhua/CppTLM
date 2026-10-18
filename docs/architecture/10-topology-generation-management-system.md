@@ -1353,7 +1353,7 @@ Phase 1 实现的 Step 2.5 在 ModuleFactory 中的位置：
 | Step 3 | 创建端口 | factory.createPorts(instance, type) |
 | ... | ... | ... |
 
-详见 SPEC-010 §6.1 "ModuleFactory Instantiation Flow"。
+详见 [`SPEC-010 §6.1 "ModuleFactory Instantiation Flow"`](../../archive/architecture/10-tgms-specifications-archived-2026-10.md)（2026-10-18 已归档至 docs/archive/architecture/, 跨目录引用）。
 
 ### 8.3 ModuleFactory Step 2.5 实现
 

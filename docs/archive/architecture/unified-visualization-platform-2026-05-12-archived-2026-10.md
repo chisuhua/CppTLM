@@ -1,9 +1,24 @@
+> **⚠️ [已归档 2026-10-18]**
+> 
+> **归档原因**: 本文档为统一可视化平台早期设计 (v1.0 待评审, 2026-05-12). 发布**次日** (2026-05-13) 被 [`docs/architecture/13-dashboard-integration.md`](13-dashboard-integration.md) v2.0 (已批准) **完整覆盖**. 后者是统一真源.
+> 
+> **不损失**:
+> - §1 背景与目标 4 个痛点 → 13 §一 架构原则保留扩充
+> - §2 RunContext 抽象设计意图 → 13 §四 §4.1 RunContext 规格详细化
+> - §3 模块拆分 (dashboard_server/ui/css/js) → 13 §四 组件规格接口与职责
+> - §5 验证策略 → 13 §六 阶段规划里程碑
+> 
+> **归档执行**: 2026-10-18, per docs/architecture/ 重新规划.
+
+---
+
 # CppTLM 统一可视化平台设计文档
 
 **版本**: v1.0
 **日期**: 2026-05-12
-**状态**: 待评审
+**状态**: ⚠️ 已归档 2026-10-18 (见顶部归档说明)
 **负责人**: CppTLM Team
+**归档路径**: 本文件 git mv 至 `docs/archive/architecture/unified-visualization-platform-2026-05-12-archived-2026-10.md`
 
 ---
 

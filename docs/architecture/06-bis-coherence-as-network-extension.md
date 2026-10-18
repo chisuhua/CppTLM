@@ -54,6 +54,8 @@ v0.3 对 v0.2 做了 **9 大类事实校正 + 6 个跨仓 sync 契约**,基于 O
 - 想理解 Python 端 Coherence → §6
 - 想理解推进时序 → §7 + §8
 - 想理解 reviewer 问题 → §9
+- 想理解 coherence readiness 评估 (做不做, 2026-04 早期分析) → [`docs/architecture/11-coherence-domain-readiness.md`](11-coherence-domain-readiness.md) v1.0 (草案) (per D-3 X-14 cross-ref, 06 §0.3)
+- 想理解模块互联网络协议中立基线 → [`docs/architecture/06-inter-module-network.md`](06-inter-module-network.md) v0.4 §2 + §15 (per 06-bis 是 06 §15 的详化)
 
 ---
 

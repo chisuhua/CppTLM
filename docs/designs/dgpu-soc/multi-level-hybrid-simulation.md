@@ -1,8 +1,16 @@
+> **📦 [2026-10-18 迁出]**: 本文档原位于 `docs/architecture/多层次混合仿真.md`, 因主题是 GPGPU 多层 SimModule 容器 (CPU→CU→TPC→GPC→GPU Cluster, per `include/tlm/cluster/`) (dGPU 应用架构), 不在通用基础架构 (per [`docs/architecture/README.md`](../README.md) 2026-09-26 v1.1 分工: 通用基础架构 vs dGPU 应用架构), 迁至 `docs/designs/dgpu-soc/` 目录.
+> 
+> **原 README 引用**: 本文档原在 docs/architecture/ 目录但 README.md v1.1 未列入"核心架构"清单 (2026-09-26 重构时漏列, 现一并修正).
+
+---
+
 # CppTLM 多层次混合仿真平台
 
 ## 架构设计文档 — 关键问题与解决方案
 
 **版本 1.0 | 2026-04-03**
+**原路径**: `docs/architecture/多层次混合仿真.md`
+**新路径**: `docs/designs/dgpu-soc/multi-level-hybrid-simulation.md` (2026-10-18 迁出, 英文文件名 per docs/designs/dgpu-soc/ 既有命名约定)
 
 ---
 

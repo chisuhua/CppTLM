@@ -107,6 +107,12 @@
 | 文件 | 主题 |
 |------|------|
 | `gem5-soc-survey.md` | gem5 标准库 + AMD MI300X dGPU + ComputeUnit patterns 综述 |
+| `gem5-ruby-protocol-bridge-survey.md` | **Gem5 Ruby/Garnet 协议中立通信网络调研**（PNN 借鉴主文档）|
+| `gem5-slicc-chi-survey.md` | SLICC 协议描述语言编译链 + AMBA CHI 协议族实现（299 行）|
+| `gem5-garnet-network-survey.md` | Garnet 3.0 router pipeline + credit + NI + 拓扑 + routing 三模式（256 行）|
+| `gem5-coherence-protocols-survey.md` | 11 类 coherence 协议族 + Directory 状态转换 + Token 持票 + GPU_VIPER（499 行）|
+| `gem5-messagebuffer-network-interface.md` | MessageBuffer + NetworkInterface + vnet 协议消息流转详解（457 行）|
+| `gem5-coherence-network-evolution.md` | Gem5 一致性网络 20+ 年演进史 + 学术/工业对照 + PNN 借鉴矩阵（291 行）|
 
 **v0.5 应用**: ComputeUnitTLM v2 字段参考(`cu_id` / `WarpContext state machine` / `outstandingReqs`)借鉴 gem5 APU/dGPU 实现。
 
@@ -128,7 +134,7 @@
 | `TMU/` | 16 | ✅ tracked |
 | `PCIe/` | 1 | ✅ tracked |
 | `SM/` | 16 | ✅ tracked (per ADR-SOC-06 v3.0 / Blackwell 调研) |
-| **顶层** | 1 (gem5-soc-survey.md) | ✅ tracked |
+| **顶层** | 7 (gem5-soc-survey.md + 6 个 gem5-ruby 调研) | ✅ tracked（2026-10-16 新增 6 个）|
 
 **注**: v0.5 redo 已 archive（2026-08-28）；新 SM/ 区段于 2026-08-29 跟踪入仓（v3.0 dGPU Board W4+ 候选 reference）。
 
@@ -164,7 +170,7 @@ class Pm4Decoder {
 
 ## 7. 跨仓同步
 
-- `git add docs/research/CP/ docs/research/WDU/ docs/research/TMU/ docs/research/PCIe/ docs/research/gem5-soc-survey.md` 入仓跟踪(per `tasks.md` T-P3'-2)
+- `git add docs/research/CP/ docs/research/WDU/ docs/research/TMU/ docs/research/PCIe/ docs/research/gem5-soc-survey.md docs/research/gem5-*.md` 入仓跟踪(per `tasks.md` T-P3'-2 + 2026-10 6 份 PNN 调研)
 - 与 `docs_sync_check.sh --strict` 同步(per `tasks.md` T-P3'-3 验证)
 
 ---

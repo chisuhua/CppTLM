@@ -1,9 +1,30 @@
 # CppTLM 混合仿真架构 v2.1 — 分层融合方案
 
 > **文档状态**: ✅ Phase 6 完成，端到端验证通过
-> **v2.1 版本**: 2.1.9
-> **更新日期**: 2026-04-22
+> **v2.1 版本**: 2.1.10 (v2.1.9 → v2.1.10: 2026-10 状态对齐)
+> **更新日期**: 2026-10
 > **变更摘要**: Phase 6 端到端验证完成，CI/CD 集成，测试覆盖率 367 用例
+
+---
+
+> **v2.1.10 状态追加（2026-10）**:
+>
+> 文档锁定 2026-04-22 后 10 个月演进（Phase 7-8 PCIe EP 全链路交付完成），本版本做以下**追加修订**（不破坏原 §1-§8 内容，符合 ADR 不可变先例）：
+>
+> 1. **§1 设计原则** 增"原则 7：框架与总线分层"（v2.1.10 增）
+> 2. **§1.1** 新增"通信框架层 vs 具体总线层"分层（含 6 层 ASCII 图 + Gem5 MessageBuffer 类比 + 关键差异警告）
+> 3. **§1.2** 新增"Bundle 命名重塑：未来选项而非必须"（含触发条件 4 条 + 4 项不推荐理由）
+> 4. **§4.7 ImplMode 段** 修订——删除不存在的 `impl_mode.hh` 实现引用，改为指向 `simulation_mode` JSON 字段 + `VramControllerTLM::set_mode()` 实际承载
+> 5. **新增 `docs/designs/dgpu-soc/communication-network.md`**——通信网络专题蓝图，含 6 层全貌 + 5-hop 数据流拆解 + 5 适配器表 + ModuleFactory 9 步装配 + 8 项关键真相 + 8 项架构债务清单
+> 6. **修订 `docs/guide/CREDIT_FLOW_USER_GUIDE.md`**——顶部加"⚠️ 文档漂移警告"状态头，指向 `FcTokenBucket` + `BidirectionalPortAdapter` 为权威 credit 实现
+>
+> 修订依据：`openspec/changes/cpptlm-dgpu-soc-arch-truth-cleanup` §6 先例（doc-only 类变更不消耗 KPI slot）+ `docs/adr/ADR-DGPU-06` Status Update 2026-10 + `docs/adr/ADR-DGPU-11` timing-mode scope
+>
+> 通信基础设施当前实况:
+> - L3 ChStream + L4 StreamAdapter 5 子类已 Gem5 化（协议中立）
+> - L5 Bundle 命名保守（18 个全协议绑定，frozen headers 零修改）
+> - Phase 7-8 PCIe EP 端到端贯通（commit `429327d`）
+> - 5 标签 0 回归（`[pcie]` 36672 / `[realip]` 193 / `[pcie-memory]` 48 / `[minimal_dgpu_soc]` 66 / `[dgpu_soc_timing]` 12024）
 
 ---
 
@@ -20,6 +41,103 @@
 4. **StreamAdapter 桥梁**: Port ↔ ch_stream 转换由框架自动处理，模块设计者无感知
 5. **业务纯净**: 新业务模块只关心 ch_stream 业务逻辑，不感知外部 Port 适配复杂度
 6. **向后兼容**: 现有 Port 回调模块（Legacy）继续工作，逐步迁移
+7. **框架与总线分层** (v2.1.10 增): 通信框架设施（L3 ChStream + L4 StreamAdapter，5 子类：Standalone / MultiPort / DualPort / Bidirectional / AXI4+Mapper）与具体通信总线（L5 Bundle 类型 + L6 协议字段）严格分层。模块设计只依赖 L3+L4；具体总线在后期通过 StreamAdapter 的模板参数 `BundleT` 注入，避免在架构阶段过早固化某种协议（详见 §1.1）
+
+### 1.1 通信框架层 vs 具体总线层（v2.1.10 新增）
+
+**核心立场**: CppTLM 通信体系按"框架设施"和"具体总线"两层组织，前者 Gem5 化（协议中立），后者允许特化。
+
+```
+┌────────────────────────────────────────────────────────────┐
+│  L6 具体协议字段 (后期固化)                                  │
+│  FC token bucket (PcieFlowControlTokenBucket)              │
+│  ACK/NAK 12-bit seq wrap (pcie_link_layer_tlm.cc 手写)     │
+│  posted-write / credit-based / single-outstanding 协议语义 │
+├────────────────────────────────────────────────────────────┤
+│  L5 Bundle 数据格式 (命名带协议前缀)                          │
+│  PcieTlpBundle / CrBundle / DoorbellBundle / MsixBundle    │
+│  CacheReqBundle / NoCFlitBundle / Axi4Bundle / Fabric2Vram │
+│  ⚠️ 当前命名直接包含协议名,详见 §1.2 未来选项                  │
+├────────────────────────────────────────────────────────────┤
+│  L4 StreamAdapter 适配层 (协议中立, 模板只绑 BundleT)        │
+│  StreamAdapter / MultiPortStreamAdapter / DualPortStream   │
+│  BidirectionalPortAdapter / Axi4StreamAdapter + Axi4Mapper │
+│  → 模块只与 L4 交互, 不直接依赖 L5 具体 Bundle 字段语义      │
+├────────────────────────────────────────────────────────────┤
+│  L3 ChStream 抽象 (Gem5 MessageBuffer 级别)                 │
+│  InputStreamAdapter<BundleT> + OutputStreamAdapter<BundleT> │
+│  → valid/ready 握手 + Bundle 序列化, 完全协议中立            │
+├────────────────────────────────────────────────────────────┤
+│  L2 MasterPort / SlavePort / PortPair (TLM 标准传输)        │
+├────────────────────────────────────────────────────────────┤
+│  L1 tlm_generic_payload + PacketPool                       │
+└────────────────────────────────────────────────────────────┘
+```
+
+**类比 Gem5 Ruby MessageBuffer（参考坐标系, 非照搬）**:
+
+| 维度 | Gem5 Ruby | CppTLM L3+L4 |
+|------|-----------|---------------|
+| 抽象层 | MessageBuffer（opaque bytes FIFO） | InputStreamAdapter/OutputStreamAdapter（valid/ready 握手） |
+| 协议绑定点 | SLICC 编译期烧进 protocol controller | StreamAdapter\<M, Req, Resp\> 模板参数编译期绑定 |
+| 协议切换 | 改 SLICC 文件重新生成 | 改 StreamAdapter 模板参数重新实例化 |
+| 拓扑灵活性 | Ruby Topology 参数化（mesh/ring/butterfly） | MultiPortStreamAdapter\<M, Rq, Rp, N\> + BidirectionalPortAdapter |
+| 协议字段表达 | MessageBuffer 装 opaque bytes, 字段由 controller 解释 | Bundle 字段命名即字段语义, 协议特定字段放 L5 Bundle 内 |
+
+**关键差异（避免类比误导）**:
+- Gem5 MessageBuffer 是真正不透明（opaque bytes），controller 自己解释字段；CppTLM Bundle 是 typed POD，模块能直接 `req.address.read()`——这是 60% Gem5 化而非 100%
+- 副作用：Bundle 字段命名一旦确定，**改字段名 = 改模块代码**，无法在运行时透明切换协议
+- 这是有意取舍：60% Gem5 化换 100% 编译期类型安全（`BUNDLE_FIELD_WIDTH` 编译期锁 + `is_trivially_copyable` 断言）
+
+**演进路径**:
+- 当前 L3+L4 已达 Gem5 MessageBuffer 水准，**不需新增抽象层**
+- L5 Bundle 命名直接含协议（PcieTlp / Cr）**是 over-spec 但非阻塞**——只在出现第二个 chip-internal 协议特化需求时才有重塑价值（详见 §1.2）
+
+### 1.2 Bundle 命名重塑：未来选项而非必须
+
+> **⚠️ v0.4 X-11 cross-ref**: 本节定义 Bundle 命名的"现状保守 + 重塑触发条件"真源. [`docs/architecture/06-inter-module-network.md`](06-inter-module-network.md) §3 (Bundle 二分类: 业务 vs 网络) 在本节基础上提议"业务 Bundle 可演进 + 网络 Bundle 后期协议特化时再定"的演进方案, **不破坏本节现状保守立场**. 06 §3.1 业务 Bundle = 本节"命名直接带协议前缀"现状, 06 §3.1 网络 Bundle = 本节"未来重塑触发条件"满足时的演进方向.
+
+**当前现状**: 17 个 Bundle .hh 文件中（`include/bundles/`, per `ls include/bundles/*.hh`），命名直接带协议前缀（PcieTlp / Cr / Doorbell / Msix），这一选择**在编译期类型安全**与**协议中立**之间取了前者。
+
+**未来可选的重塑方案**（**仅在出现第二个 chip-internal 协议时启动，不在当前阶段实施**）:
+
+```cpp
+// 当前（已实施）
+struct PcieTlpBundle : public bundle_base {
+    ch_uint<8>  kind;          // CFG_READ..MEM_WRITE + IRQ_DELIVERY + CPLD
+    ch_uint<8>  bar_index;
+    ch_uint<64> offset;
+    ch_uint<32> size;
+    ch_uint<64> data;
+    ch_uint<16> requester_id;
+    ch_uint<32> trans_id;
+    // ...
+};
+
+// 假设的 TransportReqBase<> 模板（未实施, 仅示意）
+template<typename ProtocolTag>  // PcieTlpTag, Axi4Tag, ChipInternalTag, ...
+struct TransportReqBundle : public bundle_base {
+    ch_uint<8>  cmd;           // 协议无关命令码
+    ch_uint<64> addr;
+    ch_uint<64> data;
+    ch_uint<32> trans_id;
+    // 协议特定字段通过 ProtocolTag trait 注入, 不污染通用字段
+};
+```
+
+**为什么是未来选项而非必须**:
+- 当前 18 个 Bundle 中, 真正需要 chip-internal 中立抽象的只有 SDMA 5 端口（`sdma_engine_tlm.hh:82-86`）——但这是**唯一**的 chip-internal 协议特化, **抽象出基类只有 1 个用户**, 不符合"≥2 用户"重构原则
+- 18 Bundle 中其余 17 个都是 board-level（host↔chip）或 chip-internal 通用 cache/NOC, **命名已合理**
+- 任何重塑都会触碰 frozen headers（`pcie_bundles_tlm.hh`）+ 23 ABI 冻结面, **风险高于收益**
+- **`port_contract_asserts.hh:4` 已记录历史教训**: 早期计划 `ChStreamInitiatorPort<Bundle>` 模板化被 Momus REJECT, 因为"协议中立"带来的类型擦除成本 > 收益
+
+**触发条件**（**全部满足时才启动重塑**）:
+1. 出现 ≥2 个 chip-internal 协议特化需求（当前仅 SDMA 1 个）
+2. KPI < 2（当前 3/3 满, 需先 archive 一个 change）
+3. frozen headers 修改范围被约束在 ≤2 个文件
+4. `port_contract_asserts.hh` 提供编译期断言保证"不破坏既有契约"
+
+**当前行动**: 维持现状；L3+L4 已足够支撑"模块只与框架交互、后期注入具体总线"的设计目标；L5 命名是工程取舍而非架构问题。
 
 ---
 
@@ -413,20 +531,15 @@ public:
 
 ### 4.7 实现模式枚举（未来扩展）
 
+> **⚠️ v0.4 X-11 cross-ref**: 本节 (v2.1.10 修订) 是 `simulation_mode` JSON 字段的真源. [`docs/architecture/06-inter-module-network.md`](06-inter-module-network.md) §5 (仿真精度 2 模式) 在本节基础上详化 "不引入 `network.mode` 字段" + "P1 仅 per-bridge 静态" 的演进约束, **不重复声明 simulation_mode 字段定义**.
+
+> **v2.1.10 修订（2026-10）**: 上述 `impl_mode.hh` **未实施**——`include/framework/impl_mode.hh` 不存在，意图由 `simulation_mode` JSON 字段 + `VramControllerTLM::set_mode()`（functional/timing 双模式，per ADR-DGPU-11）承载。**COMPARE / SHADOW 模式无实施计划**。详见 `docs/designs/dgpu-soc/communication-network.md` §3.4 "功能/时序双模式"。
+
 ```cpp
-// include/framework/impl_mode.hh (待实现)
-#ifndef IMPL_MODE_HH
-#define IMPL_MODE_HH
-
-enum class ImplMode : uint8_t {
-    TLM,           // 纯 TLM 仿真（快速）
-    RTL,           // 纯 RTL 仿真（CppHDL，周期精确）
-    HYBRID,        // TLM+RTL 混合（当前主力模式）
-    COMPARE,       // 双模并行对比输出
-    SHADOW         // TLM 主导，RTL 影子记录
-};
-
-#endif // IMPL_MODE_HH
+// 实际承担 ImplMode 等效能力的实现（v2.1.10 修订, 非 impl_mode.hh 风格 enum）
+// 1) JSON config 字段: "simulation_mode": "functional" | "timing"（per dgpu_soc_minimal_v1.json）
+// 2) C++ API: VramControllerTLM::set_mode(VramControllerMode) 在 DGpuBoard::bind_memory_backings() 调用
+// 3) COMPARE/SHADOW: 文档不承诺, 实施路径待定
 ```
 
 ---

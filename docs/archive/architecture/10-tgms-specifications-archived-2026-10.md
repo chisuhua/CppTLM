@@ -1,9 +1,23 @@
+> **⚠️ [已归档 2026-10-18]**
+> 
+> **归档原因**: 本文档 (SPEC-010 v3.0) 是早期 TGMS 规格详细附件, 与 [`docs/architecture/10-topology-generation-management-system.md`](10-topology-generation-management-system.md) (ARCH-010 v3.0) 范围重叠, 后者是统一真源. ARCH-010 §6 JSON Schema + §7 端口索引 + §8 ModuleFactory + §9 Python 工具链已完整吸收 SPEC-010 §1-§8 核心内容.
+> 
+> **依赖修正**: ARCH-010 v3.0 §8.2 原引用 "详见 SPEC-010 §6.1 ModuleFactory Instantiation Flow", 归档后该引用更新为指向本归档文件 (跨目录引用).
+> 
+> **不损失**: SPEC-010 §0 Version Compatibility / §1 JSON Schema 字段约束 / §2 端口索引 / §3 Credit Flow 配置规范 / §4 ModuleFactory 双重验证 / §5 配置继承 / §6 Pydantic Models / §7 Python 配置生成器集成 / §8 SemVer 版本管理 — 全部被 ARCH-010 v3.0 §6-§9 覆盖或重述.
+> 
+> **归档执行**: 2026-10-18, per docs/architecture/ 重新规划 (architect 视角, 单一真源原则).
+
+---
+
 # TGMS Configuration Specifications
 
 **Document ID**: SPEC-010  
 **Version**: 3.0  
 **Date**: 2026-05-05  
+**状态**: ⚠️ 已归档 2026-10-18 (见顶部归档说明)
 **关联 ADR**: ADR-X.9 v3.0 (端口类型系统), ADR-X.10 v3.0 (参数框架), ADR-X.11 v3.0 (配置继承), ADR-X.12 v2.0 (Python 配置生成器)
+**归档路径**: 本文件 git mv 至 `docs/archive/architecture/10-tgms-specifications-archived-2026-10.md`
 
 ## 变更日志 (v3.0)
 

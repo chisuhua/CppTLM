@@ -1,3 +1,20 @@
+## Status Update 2026-10-18: superseded by 06 v0.4 (未签发 ADR, 永不签发)
+
+**本 ADR 自始未签发** (🟡 起草中 v0.1), 2026-10-18 经 [`docs/architecture/06-inter-module-network.md` v0.4 §15](../architecture/06-inter-module-network.md) 演进 seam + [`docs/architecture/06-bis-coherence-as-network-extension.md`](../architecture/06-bis-coherence-as-network-extension.md) v0.3 详化后, 内容已被完全收纳, **永不签发**.
+
+**差异** (vs ADR-DGPU-13 v0.1 起草内容):
+- ADR §2 "P1 引入 ProtocolBridge 模板" → 06 §11.2 v0.4 收窄方案 A 推迟到 P3+ (per 06 §15.3 演进 seam)
+- ADR §3 "Step 7c 注入" → 06 §9.2 显式不引入
+- ADR §4 "改 Packet 字段" → 06 §2.5 + §4.2 显式拒绝 (与 [`docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../architecture/05-packet-semantic-network-archived-2026-10.md) 早期方案同款证据被驳)
+
+**不动 ADR-DGPU-13 正文** (per AGENTS.md "ADR 不可变 + Status Update" 先例), 正文保留作为调研历史.
+
+**关联归档文档**:
+- [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) (评审对象, 已于 2026-10-18 归档至 [`../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md))
+- [`../archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../architecture/05-packet-semantic-network-archived-2026-10.md) (立场对立, 早期方案已归档)
+
+---
+
 # ADR-DGPU-13: PNN 协议中立通信网络范围定义
 
 > **状态**: 🟡 **起草中** (v0.1 草案, 待 Oracle/Metis 复审, 预计 1-2 轮 Revise 后签发)

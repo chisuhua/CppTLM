@@ -1,5 +1,19 @@
 # Credit Flow Control User Guide
 
+> **⚠️ 文档漂移警告（v2.1.10 状态追加, 2026-10）**:
+>
+> 本指南描述的 `CreditStream` 抽象（`include/ext/credit_stream.hh`）**当前是 36 行 stub，0 生产代码引用**——主路径上**未启用**。完整失败记录见 [`docs-archived/DESIGN_creditstream.md`](../../docs-archived/DESIGN_creditstream.md)（5 个设计缺陷：CreditPort 角色混乱、bind() 缺管理、StreamConsumer 不完整等）。
+>
+> **当前 CppTLM 实际承载 credit-based flow control 的代码路径**:
+>
+> 1. **PCIe 链路层 FC**: `include/tlm/pcie/pcie_flow_control_token_bucket.hh`（`FcTokenBucket` 类）+ `pcie_link_layer_tlm.cc`（posted/non-posted/completion 3 桶）
+> 2. **NoC Router credit**: `include/framework/bidirectional_port_adapter.hh:172-209`（`pending_credits_` 队列，1 周期链路延迟建模）+ `router_tlm.hh` 完整 5 API（`has_credit/consume_credit/receive_credit/return_credit_to_upstream/send_credit_to_upstream`）
+> 3. **PCIe DLLP credit 字段**: `include/bundles/pcie_dllp_bundles_tlm.hh:46-48`（`credit_P / credit_NP / credit_Cpl` 3 字段）
+>
+> 建议: 跟随本指南的"概念/配置"部分学习原理，但实施层面以 `FcTokenBucket` 和 `BidirectionalPortAdapter` 为权威实现。新代码不应直接 `new CreditStream()`，它已被标记为废弃路径（见 `docs-archived/DESIGN_creditstream.md`）。
+>
+> **正确性审核计划**: 本指南 §3/§4 的"配置 JSON 示例"和"NoC 链路流控参数"在 `[realip]` Phase 5/6 测试中部分仍有效（`configs/dgpu_*.json` 内 `noc` 节点），但 §5 的 `CreditStream` API 章节已与代码脱节；修订 PR 待定。
+
 ## 1. 概念
 
 Credit-based Flow Control（基于信用的流量控制）是一种背压机制，用于协调 NoC（Network-on-Chip）中上下游路由器的数据流。
