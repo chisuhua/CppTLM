@@ -3,71 +3,81 @@ id: phase-9
 kind: phase
 status: active
 phase_refs: []
-主题: dGPU-first track (per ADR-088 v3 + ADR-NV-01/02)
+主题: dGPU Phase 2/3: ControlHub + 06 v0.4 + 06-bis + 5 active changes
 ---
 
-## Phase 9: dGPU-first Track（与 Phase 7 APU 并行）
+## phase-9: dGPU Phase 2/3 (ControlHub + 06 v0.4 + 06-bis + 5 active changes)
 
-> **来源**: 架构 handoff 声明 `Phase 9 (dGPU-first, per ADR-088 v3)` 与 Phase 7 APU 并行
-> **核心 ADR**:
->   - [ADR-NV-01](docs/adr/ADR-NV-01-gpu-soc-architecture-target.md) — gpu_soc 独立 SoC 仿真目标（13 周 / ~5100 LOC / 14 新模块）
->   - [ADR-NV-02](docs/adr/ADR-NV-02-phase8b-d1-strategy.md) — Phase 8.B D1-Lite 渐进策略
->   - [ADR-SOC-06](docs/soc_arch/adr/ADR-SOC-06-cpptlm-v05-mvp.md) — cpptlm-v0.5 MVP：dGPU Board (CP→TMU→Cuda Core→PTX-EMU warp)
-> **外部参考**: UsrLinuxEmu [ADR-088](https://github.com/chisuhua/UsrLinuxEmu/blob/main/docs/00_adr/adr-088-dgpu-complete-simulation.md) ✅ Accepted 2026-08-16
-> **关联 Change**: [`openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/`](openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/) (active, 0/45 tasks)
-> **目标形态**: dGPU 板卡（PCIe device semantics），由 PTX-EMU (Phase 7 集成 S1) 作为 warp-level functional backend
-> **范围约束**: 与 APU-first (Phase 7) 共享 GPU 子模块（`GpuCluster`/`GpcCluster`/`TpcCluster`/`ComputeCluster` 单一实现，引入 `GpuClusterSharedInterface`）
+> **真源 1 (基础)**: [`docs/architecture/06-inter-module-network.md`](../../docs/architecture/06-inter-module-network.md) v0.4 (主文档)
+> **真源 1 (基础)**: [`docs/architecture/06-bis-coherence-as-network-extension.md`](../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3
+> **真源 2 (dGPU 应用)**: [`docs/designs/dgpu-soc/architecture.md`](../../docs/designs/dgpu-soc/architecture.md) §0.1 原则 3 (SoC 内部模块接口贴近真实物理 IP 边界)
+> **关键 ADR**: [`docs/adr/ADR-DGPU-10~14-*.md`](../../docs/adr/)
+> **OpenSpec KPI**: per AGENTS.md §DOC HYGIENE line 420, 当前 baseline 5/3 (active changes / Proposed 上限), 临时超限 2 slot
 
-### 已采纳的架构决策（D1-D8，来自 ADR-NV-01 §2.1）
+### 当前活跃 (Active) — 5 open changes (tasks 0% 共 499 tasks)
 
-| 决策 | 采纳方案 | 影响 |
-|------|----------|------|
-| **D1** 与 apu_soc 关系 | 共享 GPU 子模块（`GpuClusterSharedInterface`） | 顶层代码可复用 |
-| **D2** 核心定位 | 工业性能建模（phase-accurate，sub-core 内部 black-box） | 不做 cycle-accurate 5 管线 |
-| **D3** SKU 范围 | 参数化 + 预置库（`cpptlm.nvidia` 子包） | `gb203_consumer` / `gb200_datacenter` / `gh100_hopper` / `ga100_ampere` |
-| **D4** 工作负载 | `WorkloadGenerator` + `TraceReplay`（`cpptlm.gpu_workload` 子包） | 5 类 pattern：GEMM / FlashAttn / vector_add / stencil / sparse |
-| **D5** 验证 | gpgpu-sim 区间对照（带宽 ±15%, 延迟 ±20%） | 5 类场景 |
-| **D6** 时间线 | 独立 Phase 8 路径（与 apu_soc 并行） | 13 周（4 + 6 + 3） |
-| **D7** 实施策略 | 3 阶段渐进 | Phase 8.A / 8.B / 8.C |
-| **D8** 抽象层级 | Phase-accurate（sub-core 内部 black-box 化，5+V 管线不分开建模） | 分数 cycle 输出 |
+| OpenSpec change | 状态 | 范围 | tasks | 估时 | 关联 phase-9 子任务 |
+|-----------------|------|------|------|------|---------------------|
+| **cpptlm-dgpu-soc-control-hub** | 🟡 Proposed Draft v0.5.0 | 新建 ControlHub(Chub) + 移除 PcieMemoryDevice + 5 模块端口切型 + 4 adapter + JSON 完整拓扑 | 170 | 21-30d | **9.A ControlHub 落地** |
+| **cpptlm-dgpu-soc-physical-ip-port-boundary** | 🟡 Proposed Draft v0.5.0 | SoC 内部 IP 端口按物理 IP 类型切型 (修复物理 IP 边界漂移) | 127 | — | **9.B 物理 IP 边界切型** |
+| **cpptlm-msix-generator-ip** | 🟡 Proposed Draft | MSI-X Generator IP + `trigger_msix` API (修复 Gap L) | 44 | — | **9.C MSI-X Generator** |
+| **cpptlm-pcie-tlp-entry-layer** | 🟡 Proposed | PcieTlpSerializer + TLP 解码层 (修复 Gap M) | 56 | — | **9.D TLP 解码层** |
+| **cpptlm-p2-integration-unblock** | 📋 Proposed (2027-09-17 修订) | P2 (CP 接入) 集成阻塞修复 (Metis + Oracle 2027-09-17 修订版) | 102 | — | **9.E P2 EP↔SoC 4 方向 AXI 桥接** |
 
-### Phase 9 子任务（与 Phase 8.A-C 对齐）
+**总 tasks 待 execute**: 499 个 (0% 完成)
 
-| 子任务 | ADR-NV 章节 | 状态 | 范围 | 验收 |
-|--------|:-----------:|:----:|------|------|
-| **9.A gpu_soc 基础设施** | ADR-NV-01 §2.1 / Phase 8.A | 🟡 Pending | `cpptlm.nvidia` 子包 + `GpuClusterSharedInterface` + `WorkloadGenerator` 5 类 pattern | 子包加载 + WorkloadGenerator demo |
-| **9.B D1-Lite 集成** | ADR-NV-02 / Phase 8.B | 🟡 Pending | 6 模块接口设计 + 与 PTX-EMU 真实 API 集成（WarpScheduler / Scoreboard / Pipeline / TensorCore / L2Partition / SubCore） | cpptlm_d1_full 模块联动 |
-| **9.C dGPU Board MVP** | ADR-SOC-06 / v0.5 | 🟡 Pending | PCIe device semantics（`DGpuBar` + Doorbell + SubmitQueue + CQ）+ CP→TMU→Cuda Core→PTX-EMU warp pipeline + H2D DMA | `cpptlm_dgpu_board` 端到端；`s2-dgpu-board` change 完成 |
-| **9.D gpgpu-sim 验证** | ADR-NV-01 §2.1 D5 | 🟡 Pending | 5 类 microbenchmark vs gpgpu-sim ±15% 带宽 / ±20% 延迟 | `test/python/test_gpgpu_sim_comparison.py` |
+### 历史归档 (Archived) — 关键 4 个 change (Tranche 0/1 实施完成)
 
-### 与 Phase 7 APU-first 的并行关系
+| OpenSpec change | 状态 | 完成日期 |
+|-----------------|------|---------|
+| **cpptlm-vram-controller-functional-integration** (Change A) | ✅ archived (Tranche 2) | 2026-10-11 |
+| **cpptlm-lwc-bus-hub-mvp** (Change B) | ✅ archived (Tranche 3) | 2026-10-11 |
+| **cpptlm-gmmu-pte-bus-correction** (Change C) | 🟡 P2 (待 Activate) | — |
+| **cpptlm-pcie-host-test-flr-rebar** v1.1 | ✅ archived | 2026-10-09 |
+| **cpptlm-dgpu-soc-internal-noc-e1** v1.1 | ✅ archived | 2026-10-09 |
 
-| 维度 | Phase 7 (APU) | Phase 9 (dGPU) |
-|------|----------------|----------------|
-| **目标硬件** | APU 融合 CPU+GPU（gem5 apu_se.py 形态） | 独立 dGPU 板卡（PCIe device） |
-| **首要用户** | APU 融合验证 | 工业性能建模 / SoC 选型 |
-| **GPU 模块来源** | 自建 `ComputeUnitTLM`（黑盒优先 per D2） | 共享 `GpuCluster` 子模块 + PTX-EMU 作为 warp-level backend |
-| **验证基线** | gem5 apu_se.py 行为 | gpgpu-sim 数值 |
-| **当前活跃工作** | Phase 7.A ✅ Done; 7.B-F 🟡 Pending | Phase 9.C（dGPU Board MVP, s2 change 0/45） |
+### 当前 Draft (待完成变更)
 
-### 依赖关系
+- **cpptlm-dgpu-soc-arch-truth-cleanup** v1.3 (2026-10-10) — ✅ doc-only 修复 19 项 finding (Oracle + Metis 双轮复评), **不计入 Proposed KPI 上限** (per Proposal §6 显式声明, doc-only 类)
+- **e1 v1.1 双向 Oracle/Metis + RTL 复审** — ✅ 实施完成, 待办 v0.2.0 收尾
+
+### 关键变更背景 (per `docs/designs/dgpu-soc/architecture.md` §2.4)
+
+- **MVP 临时方案**: `SdmaEngineTLM` 5 端口 + `VramControllerTLM` 端口 + `GpuInternalFabric` 内部 wire **全 PcieTlpBundle**, 违背真源 1 §L4-L5 分层
+- **目标**: SoC 内部 NoC 接口走 `NoCFlitBundle` (16 字段, per `include/bundles/noc_bundles_tlm.hh:26-50` v2.1 决策), AXI 接口走 AxiBundle/AxiStreamBundle 系列, PCIe 板级接口保持 PcieTlpBundle
+- **真实 IP 对应 (per Oracle RTL 调研)**: NVIDIA H100 GMMU 专用 memory client bypass mesh NoC, ARM CMN-700 + SMMUv3 DVM 独立通道, ARM CHI 4 通道 + 4 VC, HBM3 Controller AXI4 5 通道, PCIe EP 硬件 MSI-X Generator
+
+### KPI slot 节流路径 (per AGENTS.md §DOC HYGIENE line 682)
+
+- 当前 5/3, 临时超限 2 slot
+- **路径 A**: archive `cpptlm-dgpu-soc-control-hub` (170 tasks) → 4/3
+- **路径 B**: archive `cpptlm-dgpu-soc-physical-ip-port-boundary` (127 tasks) → 3/3
+- **路径 C**: archive Change C (GMMU PTE bus) → activate 后续 Change E (MSI-X Generator 已在 ~5 plans)
+- **路径 D**: archive Change D (TLP Entry Layer) → activate 后续 Change F (Error/CDC)
+
+### 子任务依赖图
 
 ```
-Phase 7.A (GPU 基础设施, ✅ Done)
-   ↓ 提供 GPU 子模块骨架
-Phase 9.A (gpu_soc 基础设施)
-   ↓ 共享 GPU 子模块 + 引入 GpuClusterSharedInterface
-Phase 9.B (D1-Lite 集成)
-   ↓ 替换 PTX-EMU 内部组件
-Phase 9.C (dGPU Board MVP) ← 当前 s2-dgpu-board change
-   ↓ 依赖 Phase 9.A + 9.B
-Phase 9.D (gpgpu-sim 验证)
-   ↓ 真实 dGPU 链路 + 对照基线
+phase-7 D-AXI Driver-Visible ✅ ──→ phase-8 timing-mode SoC ✅
+                                            ↓
+                                   phase-9 dGPU Phase 2/3 (current)
+                                            ↓
+                    ┌──────────────────────┼──────────────────────┐
+                    ↓                      ↓                      ↓
+            9.A ControlHub         9.C MSI-X Generator    9.E P2 桥接
+                    ↓                      ↓                      ↓
+            9.B 物理 IP 边界       9.D TLP 解码层
+                    ↓
+            (后续 Change E/F)
 ```
 
-### 当前状态（2026-08-26）
+### 配套测试标签
 
-- **openspec change** `2026-08-21-cpptlm-v05-mvp-s2-dgpu-board` 已提交（proposal + design + 45 tasks），未开始 execute（0/45）
-- **依赖的前置**: Phase 7.A GPU 基础设施 ✅ Done; PtxEmuSubmoduleMVP (s1) 已落地
-- **阻塞因素**: 无 — 等待用户启动 execute
-- **D1-Full 升级路径**: s1 plan T-s1-1..T-s1-4 + commit `d909407` cuda-core-adapter activate 已推进
+- `[realip]` 22 cases / 193 assertions (Step 0 后 +9: cycle 3× 加强)
+- `[pcie]` 430 / 36672 assertions
+- `[pcie-memory]` 17 / 48
+- `[minimal_dgpu_soc]` 12 / 66
+- `[dgpu_soc_timing]` 37 / 12024
+- `[driver_visible]` 2 / 29
+
+**总 baseline**: 1241 cases / 47634 assertions / 2 known fail (Phase 8 e2e `_config` + `_bar` Minor, per AGENTS.md)
