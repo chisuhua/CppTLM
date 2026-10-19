@@ -3,16 +3,16 @@ id: phase-9
 kind: phase
 status: active
 phase_refs: []
-主题: dGPU Phase 2/3: ControlHub + 06 v0.4 + 06-bis + 5 active changes
+主题: dGPU Phase 2/3: 06 v0.4 + 06-bis + 3 active changes (ControlHub / physical-ip-port-boundary 已 archived)
 ---
 
-## phase-9: dGPU Phase 2/3 (ControlHub + 06 v0.4 + 06-bis + 5 active changes)
+## phase-9: dGPU Phase 2/3 (06 v0.4 + 06-bis + 3 active changes)
 
 > **真源 1 (基础)**: [`docs/architecture/06-inter-module-network.md`](../../docs/architecture/06-inter-module-network.md) v0.4 (主文档)
 > **真源 1 (基础)**: [`docs/architecture/06-bis-coherence-as-network-extension.md`](../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3
 > **真源 2 (dGPU 应用)**: [`docs/designs/dgpu-soc/architecture.md`](../../docs/designs/dgpu-soc/architecture.md) §0.1 原则 3 (SoC 内部模块接口贴近真实物理 IP 边界)
 > **关键 ADR**: [`docs/adr/ADR-DGPU-10~14-*.md`](../../docs/adr/)
-> **OpenSpec KPI**: per AGENTS.md §DOC HYGIENE line 420, 当前 baseline 5/3 (active changes / Proposed 上限), 临时超限 2 slot
+> **OpenSpec KPI**: per AGENTS.md §DOC HYGIENE line 420, **2026-10-19 baseline 3/3 合规** (per archive A+B 后, 控制 hub + physical-ip-port-boundary 已 archived with sync)
 
 ### 当前活跃 (Active) — 3 open changes (per 2026-10-19 KPI 释放)
 
