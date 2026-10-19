@@ -1,15 +1,8 @@
-# Spec — cpptlm-dgpu-soc-control-hub
+# dgpu-soc-control-hub Specification
 
-> **Change**: `cpptlm-dgpu-soc-control-hub` (P0 架构级, 真实物理 RTL 对齐)
-> **配套**: [`../../proposal.md`](../../proposal.md) · [`../../design.md`](../../design.md) · [`../../tasks.md`](../../tasks.md)
-> **修复**: 新建 ControlHub (Chub) + 移除 PcieMemoryDevice + SDMA 独立 translate 接口 + 完全 JSON 拓扑化
-> **估时**: 21-30d
-> **范围超集**: 包含 `cpptlm-dgpu-soc-physical-ip-port-boundary` 全部内容
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change cpptlm-dgpu-soc-control-hub. Update Purpose after archive.
+## Requirements
 ### Requirement: dgpu-soc-control-hub-module
 
 **ControlHub (Chub) 模块 SHALL 新建**, 集中承担 4 BAR decode + MSI-X 聚合 + Error 聚合, 替代当前 LwcBusHub + PcieControllerIP 分裂承担的职责。
@@ -232,28 +225,3 @@
 
 ---
 
-## 修改的现有 Specs
-
-- `openspec/specs/sdma-engine-tlm/spec.md`: 端口切型 (5 → 8 端口, 上游 AXI + 下游 NoC + 独立 translate)
-- `openspec/specs/gmmu-pte-wf/spec.md`: 端口切型 (2 → 5 端口, translate slave + NoC + CrBundle)
-- `openspec/specs/vram-controller-functional-mode/spec.md`: 上游 NoC 化 (per physical-ip-port-boundary 起草)
-- `openspec/specs/soc-internal-noc/spec.md`: ChStream 化 (per e1 v1.1 archived + physical-ip-port-boundary 起草)
-- `openspec/specs/lwc-bus-hub-mvp/spec.md`: 保留 (per Change B 既有, Chub 接入 LWC hub)
-- `openspec/specs/dgpu-soc-physical-ip-port-boundary/spec.md`: **合并 superset** (本 change 范围更大, 实施前决定合并策略)
-- `openspec/specs/pcie-controller-ip/spec.md`: 保留 (PcieControllerIP facade 角色不动)
-- `openspec/specs/pcie-memory-device/spec.md`: **删除** (PcieMemoryDevice 移除)
-
-## 修改的现有 ADRs
-
-- **ADR-DGPU-05** (vram-storage-ownership): Status Update 2026-10-13 追加, 标记"PcieMemoryDevice 移除, BAR2 路径改走 Chub→NoC→VRAM"
-- **ADR-DGPU-06** (axi-mem-bundle-boundary): Status Update 2026-10-13 追加, 标记"已落地" (per physical-ip-port-boundary + Chub)
-- **ADR-DGPU-09** (driver-visible-minimal-soc-scope): Status Update 2026-10-13 追加, 标记"BAR2 路径改走 Chub→NoC"
-- **ADR-DGPU-08** (abi-freeze-policy): 不动 (23 ABI 0 diff)
-- **ADR-DGPU-10** (backing-naming-convention): 不动
-- **ADR-DGPU-11** (timing-mode-soc-scope): 不动 (timing-mode H-C6)
-
-## 新增 Bundle
-
-- `TranslateReqBundle` (5 字段, 128-bit total, per ARM SMMUv3 翻译请求规范)
-- `TranslateRespBundle` (4 字段, 96-bit total)
-- 编译期 `BUNDLE_FIELD_WIDTH` 锁 (per `include/utils/port_contract_asserts.hh`)

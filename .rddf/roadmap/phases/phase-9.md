@@ -14,19 +14,35 @@ phase_refs: []
 > **关键 ADR**: [`docs/adr/ADR-DGPU-10~14-*.md`](../../docs/adr/)
 > **OpenSpec KPI**: per AGENTS.md §DOC HYGIENE line 420, 当前 baseline 5/3 (active changes / Proposed 上限), 临时超限 2 slot
 
-### 当前活跃 (Active) — 5 open changes (tasks 0% 共 499 tasks)
+### 当前活跃 (Active) — 3 open changes (per 2026-10-19 KPI 释放)
 
 | OpenSpec change | 状态 | 范围 | tasks | 估时 | 关联 phase-9 子任务 |
 |-----------------|------|------|------|------|---------------------|
-| **cpptlm-dgpu-soc-control-hub** | 🟡 Proposed Draft v0.5.0 | 新建 ControlHub(Chub) + 移除 PcieMemoryDevice + 5 模块端口切型 + 4 adapter + JSON 完整拓扑 | 170 | 21-30d | **9.A ControlHub 落地** |
-| **cpptlm-dgpu-soc-physical-ip-port-boundary** | 🟡 Proposed Draft v0.5.0 | SoC 内部 IP 端口按物理 IP 类型切型 (修复物理 IP 边界漂移) | 127 | — | **9.B 物理 IP 边界切型** |
 | **cpptlm-msix-generator-ip** | 🟡 Proposed Draft | MSI-X Generator IP + `trigger_msix` API (修复 Gap L) | 44 | — | **9.C MSI-X Generator** |
 | **cpptlm-pcie-tlp-entry-layer** | 🟡 Proposed | PcieTlpSerializer + TLP 解码层 (修复 Gap M) | 56 | — | **9.D TLP 解码层** |
 | **cpptlm-p2-integration-unblock** | 📋 Proposed (2027-09-17 修订) | P2 (CP 接入) 集成阻塞修复 (Metis + Oracle 2027-09-17 修订版) | 102 | — | **9.E P2 EP↔SoC 4 方向 AXI 桥接** |
 
-**总 tasks 待 execute**: 499 个 (0% 完成)
+**总 tasks 待 execute**: 202 个 (0% 完成)
+**KPI**: 3/3 合规 (per AGENTS.md §DOC HYGIENE line 420, 2026-10-19 archive A+B 后)
 
 ### 历史归档 (Archived) — 关键 4 个 change (Tranche 0/1 实施完成)
+
+| OpenSpec change | 状态 | 完成日期 |
+|-----------------|------|---------|
+| **cpptlm-vram-controller-functional-integration** (Change A) | ✅ archived (Tranche 2) | 2026-10-11 |
+| **cpptlm-lwc-bus-hub-mvp** (Change B) | ✅ archived (Tranche 3) | 2026-10-11 |
+| **cpptlm-gmmu-pte-bus-correction** (Change C) | 🟡 P2 (待 Activate) | — |
+| **cpptlm-pcie-host-test-flr-rebar** v1.1 | ✅ archived | 2026-10-09 |
+| **cpptlm-dgpu-soc-internal-noc-e1** v1.1 | ✅ archived | 2026-10-09 |
+
+### 2026-10-19 KPI 释放 (per user 决策)
+
+| Archive 路径 | 状态 | 释放 slot |
+|--------------|------|----------|
+| [`openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/`](../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/) | ✅ archived with sync (5 ADDED 主 spec 创建 `openspec/specs/dgpu-soc-control-hub/spec.md`) | 5/3 → 4/3 |
+| [`openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-physical-ip-port-boundary/`](../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-physical-ip-port-boundary/) | ✅ archived with sync (5 ADDED 主 spec 创建 `openspec/specs/dgpu-soc-physical-ip-port-boundary/spec.md`) | 4/3 → 3/3 ✅ 合规 |
+
+### 历史归档 (Archived) — 关键 5 个 change (Tranche 0/1 实施完成)
 
 | OpenSpec change | 状态 | 完成日期 |
 |-----------------|------|---------|
@@ -47,13 +63,13 @@ phase_refs: []
 - **目标**: SoC 内部 NoC 接口走 `NoCFlitBundle` (16 字段, per `include/bundles/noc_bundles_tlm.hh:26-50` v2.1 决策), AXI 接口走 AxiBundle/AxiStreamBundle 系列, PCIe 板级接口保持 PcieTlpBundle
 - **真实 IP 对应 (per Oracle RTL 调研)**: NVIDIA H100 GMMU 专用 memory client bypass mesh NoC, ARM CMN-700 + SMMUv3 DVM 独立通道, ARM CHI 4 通道 + 4 VC, HBM3 Controller AXI4 5 通道, PCIe EP 硬件 MSI-X Generator
 
-### KPI slot 节流路径 (per AGENTS.md §DOC HYGIENE line 682)
+### KPI slot 节流路径 (per AGENTS.md §DOC HYGIENE line 682) — 2026-10-19 已执行 ✅
 
-- 当前 5/3, 临时超限 2 slot
-- **路径 A**: archive `cpptlm-dgpu-soc-control-hub` (170 tasks) → 4/3
-- **路径 B**: archive `cpptlm-dgpu-soc-physical-ip-port-boundary` (127 tasks) → 3/3
-- **路径 C**: archive Change C (GMMU PTE bus) → activate 后续 Change E (MSI-X Generator 已在 ~5 plans)
-- **路径 D**: archive Change D (TLP Entry Layer) → activate 后续 Change F (Error/CDC)
+- 状态: **3/3 合规** (per 2026-10-19 archive A+B 后)
+- **路径 A ✅ 已执行**: archive `cpptlm-dgpu-soc-control-hub` (170 tasks) → 4/3
+- **路径 B ✅ 已执行**: archive `cpptlm-dgpu-soc-physical-ip-port-boundary` (127 tasks) → 3/3 合规
+- **路径 C** (后续): archive Change C (GMMU PTE bus) → activate 后续 Change E (MSI-X Generator, **按 user 决策暂不activate**)
+- **路径 D** (后续): archive Change D (TLP Entry Layer) → activate 后续 Change F (Error/CDC)
 
 ### 子任务依赖图
 

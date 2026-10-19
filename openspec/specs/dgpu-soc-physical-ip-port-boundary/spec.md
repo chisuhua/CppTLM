@@ -1,14 +1,8 @@
-# Spec — cpptlm-dgpu-soc-physical-ip-port-boundary
+# dgpu-soc-physical-ip-port-boundary Specification
 
-> **Change**: `cpptlm-dgpu-soc-physical-ip-port-boundary` (Phase 0+, P0 架构级)
-> **配套**: [`../../proposal.md`](../../proposal.md) · [`../../design.md`](../../design.md) · [`../../tasks.md`](../../tasks.md)
-> **修复**: SoC 内部 IP 端口按真实 dGPU 物理 IP 边界切型 (PcieTlpBundle ↔ NoCFlitBundle ↔ CacheReqBundle)
-> **估时**: 14-22d
-
----
-
-## ADDED Requirements
-
+## Purpose
+TBD - created by archiving change cpptlm-dgpu-soc-physical-ip-port-boundary. Update Purpose after archive.
+## Requirements
 ### Requirement: dgpu-soc-port-typing-physical-ip-boundary
 
 SoC 内部 IP 端口类型**SHALL**按真实 dGPU 物理 IP 边界切型,不可继续使用 MVP 临时方案的"全 PcieTlpBundle"。PcieTlpBundle 只存在于 PCIe Controller ↔ 板级(host)边界。
@@ -242,14 +236,3 @@ SoC 内部 IP 端口类型**SHALL**按真实 dGPU 物理 IP 边界切型,不可�
 
 ---
 
-## 修改的现有 Specs
-
-- `openspec/specs/sdma-engine-tlm/spec.md`: 端口类型约束 (3 端口 NoC + 2 端口 PCIe)
-- `openspec/specs/vram-controller-functional-mode/spec.md`: 上游 NoC 化 (per Change A 既有 + 本 change 扩展)
-- `openspec/specs/gmmu-pte-wf/spec.md`: 端口切型 (per Change C 既有 + 本 change 扩展)
-- `openspec/specs/soc-internal-noc/spec.md`: ChStream 化 (per e1 v1.1 archived + 本 change 扩展)
-
-## 修改的现有 ADRs
-
-- ADR-DGPU-06 (axi-mem-bundle-boundary): Status Update 2026-10-12 追加, 标记"已落地"
-- 其他 ADR: 不动
