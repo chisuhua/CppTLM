@@ -4,6 +4,8 @@
 > **作者**: CppTLM build agent
 > **范围**: 仿真框架层通信基础设施，类比 Gem5 Ruby network
 > **对齐对象**: `01-hybrid-architecture-v2.1.md` §1.1-1.2（v2.1.10 修订）+ Phase 1-8 PCIe EP 全链路交付实况
+>
+> **⚠️ v0.4 cross-ref (2026-10-19, per `06-inter-module-network.md` v0.4 §0.3 显式边界)**: 本文档独立保留 (per 2026-10-19 重新规划), 与真源 1 ([`docs/architecture/06-inter-module-network.md`](../../architecture/06-inter-module-network.md) v0.4 §0.3) 和真源 2 ([`docs/architecture/06-bis-coherence-as-network-extension.md`](../../architecture/06-bis-coherence-as-network-extension.md) v0.3) 同领域但不冲突. **本文档为 dGPU 应用架构真源 2** (per AGENTS.md §DOC HYGIENE 真源原则), 引用真源 1 不重发明.
 
 ---
 
