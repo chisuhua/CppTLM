@@ -2,8 +2,10 @@
 
 **版本**: v2.2 (Phase 7 完成)
 **作者**: CppTLM Team
-**日期**: 2026-04-23
-**状态**: 架构设计文档
+**日期**: 2026-04-23 (初稿) / **2026-10-19 (状态对齐)**
+**状态**: ✅ **已批准** (2026-10-19 状态对齐, per `docs/architecture/` 重新规划)
+
+> **⚠️ v0.4 cross-ref (2026-10-19, per `06-inter-module-network.md` v0.4 §0.3 显式边界)**: 本文档是**复杂拓扑实现** (RT 桥接), 与 [`06-inter-module-network.md`](../architecture/06-inter-module-network.md) v0.4 (TLM 仿真层模块互联) **范围正交**. 共用 ModuleFactory Step 7 装配链. 调研价值保留作 RT 桥接真源.
 
 ---
 

@@ -1,8 +1,14 @@
 # CppTLM 一致性域准备状态专题分析
 
-**文档编号**: ARCH-011  
-**版本**: v1.0  
-**日期**: 2026-04-26  
+> **文档状态**: 🟡 **早期 readiness 评估** (v1.0, 2026-04-26) — 06-bis v0.3 是实施蓝图
+> **版本**: v1.0
+> **日期**: 2026-04-26 (初稿) / **2026-10-19 (状态加 cross-ref, per `06-inter-module-network.md` v0.4 §0.3 边界标注 + 06-bis §0 阅读引导)**
+>
+> **⚠️ v0.4 cross-ref (2026-10-19, per 06 §0.3 显式边界 + 06-bis §0)**: 本文档是**早期 readiness 评估** (做不做, ARCH-011 编号), 与 [`06-bis-coherence-as-network-extension.md`](../architecture/06-bis-coherence-as-network-extension.md) v0.3 (实施蓝图, 怎么做) **范围正交**. 06-bis §0 阅读引导已加 cross-ref 到本文档. 调研价值保留: §3.1 已实现基础设施 + §3.2 未实现组件清单 + §6.1 阻塞项 + §6.2 设计待决项.
+
+**文档编号**: ARCH-011
+**版本**: v1.0
+**日期**: 2026-04-26
 **状态**: 草案  
 **依赖**: ARCH-001 (混合架构 v2.1), ARCH-003 (错误与调试架构), ARCH-010 v2.0 (拓扑生成管理系统), ARCH-012 (拓扑差距分析)  
 **作者**: CppTLM Architecture Team

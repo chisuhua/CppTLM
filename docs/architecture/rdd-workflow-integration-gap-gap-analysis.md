@@ -1,10 +1,12 @@
 # 架构差距分析: rdd-workflow-integration-gap
 
-> **生成日期**: 2026-08-15
-> **状态**: 草案
+> **生成日期**: 2026-08-15 (草案) / **2026-10-19 (状态对齐)**
+> **状态**: 🟡 **草案** (关联 ADR-XXXX-rdd-workflow-integration 待起草, 2026-10-19 状态对齐)
 > **关联 ADR**: (待补充 — 建议新建 ADR-XXXX-rdd-workflow-integration)
 > **关联 change**: (待补充)
 > **生成工具**: rdd-workflow `guide-arch` Phase 3 `arch_gap_analysis.sh::generate_gap_analysis`
+
+> **⚠️ v0.4 cross-ref (2026-10-19)**: 本文档是 `rdd-workflow` 流程与 CppTLM 项目集成的差距分析 (生成工具驱动, 关联 ADR 待起草). 当前状态: 草案未签发. 调研价值保留作 rdd-workflow 集成起点.
 
 ---
 

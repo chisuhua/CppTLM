@@ -1,5 +1,10 @@
 # 拓扑编辑器前端框架决策
 
+> **文档状态**: ✅ **已决策** (决策类文档, 等于已批准)
+> **生成日期**: (per rdd-workflow `guide-arch`)
+> **关联 TD**: TD-004 (Alpine.js 用于拓扑编辑器, 能力不足)
+> **生成工具**: rdd-workflow `guide-arch` Phase 3
+
 ## 1. 背景
 
 TD-004: Alpine.js 用于拓扑编辑器（能力不足）

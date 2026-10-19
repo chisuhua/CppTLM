@@ -1,10 +1,20 @@
 # CppTLM 混合仿真架构 v2.0
 
-> **版本**: 2.0
-> **日期**: 2026-04-09
-> **状态**: ⚠️ 已归档（v2.1 的前身）
-> **替代**: v2.1 (`01-hybrid-architecture-v2.1.md`)
-> **说明**: v2.0 描述的 `cache_bundles.hh` 等文件名已被 v2.1 中的轻量级 `_tlm.hh` 后缀版本替代
+> **⚠️ [已归档 2026-10-19]**
+>
+> **归档原因**: 本文档 (v2.0) 已被 [`docs/architecture/01-hybrid-architecture-v2.1.md`](01-hybrid-architecture-v2.1.md) v2.1.10 (2026-10) 完全替代. v2.0 → v2.1 演进 + v2.1.10 修订 (新增 §1.1 通信框架层 vs 总线层 + §1.2 Bundle 命名 + §4.7 ImplMode) 是 docs/architecture/ 真源 1 通用基础架构唯一真源 (per AGENTS.md §DOC HYGIENE 真源原则).
+>
+> **不损失调研价值**: v2.0 描述的 `cache_bundles.hh` 等文件名已被 v2.1 中的轻量级 `_tlm.hh` 后缀版本替代 (per v2.1 §0.1 备注), v2.1.10 修订保留所有 v2.0 设计意图.
+>
+> **归档执行**: 2026-10-19, per docs/architecture/ 重新规划 (architect 视角, 单一真源原则). 本文件 git mv 至 `docs/archive/architecture/01-hybrid-architecture-v2-archived-2026-10.md`.
+>
+> ---
+
+**版本**: 2.0
+**日期**: 2026-04-09
+**状态**: ⚠️ 已归档（v2.1 的前身, 2026-10-19 迁至 docs/archive/architecture/）
+**替代**: v2.1 (`01-hybrid-architecture-v2.1.md`) v2.1.10 已批准
+**说明**: v2.0 描述的 `cache_bundles.hh` 等文件名已被 v2.1 中的轻量级 `_tlm.hh` 后缀版本替代
 
 ---
 
