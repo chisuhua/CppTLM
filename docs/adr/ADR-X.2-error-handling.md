@@ -223,7 +223,7 @@ std::string replay = DebugTracker::instance().replay_transaction(100);
 |------|------|
 | 错误与调试架构 | `02-architecture/03-error-debug-architecture.md` |
 | 交易处理架构 | `02-architecture/02-transaction-architecture.md` |
-| 架构 v2.0 | `02-architecture/01-hybrid-architecture-v2.md` |
+| 架构 v2.0 | `../archive/architecture/01-hybrid-architecture-v2-archived-2026-10.md` (v2.0, 2026-10-19 归档, supersede by v2.1.10) |
 
 ---
 

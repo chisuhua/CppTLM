@@ -210,7 +210,7 @@ struct TransactionContextExt {
 
 | 文档 | 位置 |
 |------|------|
-| 架构 v2.0 | `02-architecture/01-hybrid-architecture-v2.md` |
+| 架构 v2.0 | `../archive/architecture/01-hybrid-architecture-v2-archived-2026-10.md` (v2.0, 2026-10-19 归档, supersede by v2.1.10) |
 | 交易处理架构 | `02-architecture/02-transaction-architecture.md` |
 | 错误调试架构 | `02-architecture/03-error-debug-architecture.md` |
 | 复位检查点架构 | `02-architecture/04-reset-checkpoint-architecture.md` |
@@ -229,7 +229,7 @@ struct TransactionContextExt {
 
 ```
 docs/architecture/
-├── 01-hybrid-architecture-v2.md         # 架构 v2.0 ✅
+├── 01-hybrid-architecture-v2.md         # 架构 v2.0 ✅ (2026-10-19 归档至 archive/, supersede by v2.1.10)
 ├── 02-transaction-architecture.md       # 交易处理架构 ✅
 ├── 03-error-debug-architecture.md       # 错误调试架构 ✅
 ├── 04-reset-checkpoint-architecture.md  # 复位检查点架构 ✅

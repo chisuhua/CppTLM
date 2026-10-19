@@ -2,7 +2,7 @@
 
 > **⚠️ [已归档 2026-10-19]**
 >
-> **归档原因**: 本文档 (v2.0) 已被 [`docs/architecture/01-hybrid-architecture-v2.1.md`](01-hybrid-architecture-v2.1.md) v2.1.10 (2026-10) 完全替代. v2.0 → v2.1 演进 + v2.1.10 修订 (新增 §1.1 通信框架层 vs 总线层 + §1.2 Bundle 命名 + §4.7 ImplMode) 是 docs/architecture/ 真源 1 通用基础架构唯一真源 (per AGENTS.md §DOC HYGIENE 真源原则).
+> **归档原因**: 本文档 (v2.0) 已被 [`docs/architecture/01-hybrid-architecture-v2.1.md`](../architecture/01-hybrid-architecture-v2.1.md) v2.1.10 (2026-10) 完全替代. v2.0 → v2.1 演进 + v2.1.10 修订 (新增 §1.1 通信框架层 vs 总线层 + §1.2 Bundle 命名 + §4.7 ImplMode) 是 docs/architecture/ 真源 1 通用基础架构唯一真源 (per AGENTS.md §DOC HYGIENE 真源原则).
 >
 > **不损失调研价值**: v2.0 描述的 `cache_bundles.hh` 等文件名已被 v2.1 中的轻量级 `_tlm.hh` 后缀版本替代 (per v2.1 §0.1 备注), v2.1.10 修订保留所有 v2.0 设计意图.
 >

@@ -586,7 +586,7 @@ transaction_id,parent_id,source_module,type,create_time,complete_time,hop_log
 
 | 文档 | 位置 |
 |------|------|
-| 架构 v2.0 | `01-hybrid-architecture-v2.md` |
+| 架构 v2.0 | `../archive/architecture/01-hybrid-architecture-v2-archived-2026-10.md` (v2.0, 2026-10-19 归档, supersede by v2.1.10) |
 | ADR-X.6 整合方案 | `../adr/ADR-X.6-transaction-integration.md` |
 | ADR-X.7 交易处理 | `../adr/ADR-X.7-transaction-handling.md` |
 | ADR-X.8 分片处理 | `../adr/ADR-X.8-fragment-handling.md` |

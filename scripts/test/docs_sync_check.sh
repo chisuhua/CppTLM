@@ -148,6 +148,22 @@ VIRTUAL_PATHS=(
     # flr-rebar v1.1 删除的 2 个新 ABI 头文件 (per v1.1 CRITICAL C2 + ADR-DGPU-08 §2.3 0 新增约束)
     "cpptlm_emulator_flr.h"
     "cpptlm_emulator_resizable_bar.h"
+    # === docs/architecture/ 重新规划 v0.4 (2026-10-19, per AGENTS.md §DOC HYGIENE 真源原则) ===
+    # 01-hybrid-architecture-v2.md v2.0 已归档至 docs/archive/architecture/01-hybrid-architecture-v2-archived-2026-10.md (2026-10-19 git mv).
+    # .md 引用不在 PATH_REGEX 扫描范围 (line 54), 但作为文档化声明保留 (per ADR 不可变先例).
+    "docs/architecture/01-hybrid-architecture-v2.md"
+    # 5 个早期方案归档 (per 06 v0.4 §10.1 + 2026-10-19 真源原则治理):
+    # 05-packet-semantic-network.md / 10-tgms-specifications.md / 2026-05-12-unified-visualization-platform.md / fastapi-migration-plan.md → docs/archive/architecture/<name>-archived-2026-10.md
+    # docs/designs/dgpu-soc/pnn-protocol-neutral-network.md → docs/archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md
+    "docs/architecture/05-packet-semantic-network.md"
+    "docs/architecture/10-tgms-specifications.md"
+    "docs/architecture/2026-05-12-unified-visualization-platform.md"
+    "docs/architecture/fastapi-migration-plan.md"
+    "docs/designs/dgpu-soc/pnn-protocol-neutral-network.md"
+    # 2 个 dGPU 应用文档迁出 (per docs/architecture/README.md 分工, 2026-10-19):
+    # 14-pcie-tlp-wire-format.md / 多层次混合仿真.md → docs/designs/dgpu-soc/<english-name>.md
+    "docs/architecture/14-pcie-tlp-wire-format.md"
+    "docs/architecture/多层次混合仿真.md"
 )
 
 # CMake 添加的 include dir（无前缀写法也能找到文件）

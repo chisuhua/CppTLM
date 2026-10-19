@@ -30,7 +30,7 @@
 
 ### 架构设计
 
-1. [混合架构 v2.0](./architecture/01-hybrid-architecture-v2.md) - 核心架构
+1. [混合架构 v2.1.10](./architecture/01-hybrid-architecture-v2.1.md) - 核心架构 (v2.0 已归档至 [archive](../archive/architecture/01-hybrid-architecture-v2-archived-2026-10.md), 2026-10-19 真源原则治理)
 2. [交易处理架构](./architecture/02-transaction-architecture.md) - 交易追踪
 3. [错误处理架构](./architecture/03-error-debug-architecture.md) - 错误与调试
 
@@ -61,7 +61,7 @@ docs/
 │   ├── PRD-002-final.md
 │   └── PRD-DRAFT-issues.md
 ├── architecture/                # 架构设计
-│   ├── 01-hybrid-architecture-v2.md
+│   ├── 01-hybrid-architecture-v2.md (v2.0, 2026-10-19 归档至 archive/)
 │   ├── 02-transaction-architecture.md
 │   ├── 03-error-debug-architecture.md
 │   ├── 04-reset-checkpoint-architecture.md
@@ -95,7 +95,7 @@ docs/
 | 类型 | 命名格式 | 示例 |
 |------|---------|------|
 | **需求** | PRD-XXX-*.md | PRD-002-final.md |
-| **架构** | XX-topic-name.md | 01-hybrid-architecture-v2.md |
+| **架构** | XX-topic-name.md | 01-hybrid-architecture-v2.md (v2.0, 已归档) / 01-hybrid-architecture-v2.1.md (v2.1.10, 当前真源) |
 | **ADR** | ADR-X.Y-topic.md | ADR-X.2-error-handling.md |
 | **计划** | XX-plan-name.md | 01-implementation-plan.md |
 

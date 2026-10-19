@@ -1,6 +1,6 @@
-# CppTLM 模块互联网络 v0.3 — 主文档(无 v1 占位)
+# CppTLM 模块互联网络 v0.4 — 主文档 (无 v1 占位)
 
-> **文档状态**: 🟡 v0.3 Revision, 基于 Oracle + Metis + Critic 3 轮评审修订
+> **文档状态**: 🟡 **v0.4 Revision** (基于 Oracle + Metis + Critic 3 轮评审修订, 2026-10-19)
 > **目标存档**: `docs/architecture/06-inter-module-network.md`
 > **作者**: CppTLM build agent (architect mode)
 > **关联前置文档**:
@@ -1412,8 +1412,8 @@ soc.connect("group:gpu", "noc_cdc_bridge.dst", latency=2)
 
 ---
 
-**版本**: v0.3 Revision
-**最后更新**: 2026-10-18
+**版本**: v0.4 Revision
+**最后更新**: 2026-10-19 (v0.4 修订, per critic 评审 B3 BLOCKER 修复)
 **批准状态**: 🟡 待逐项评审 (Oracle + Metis + Critic 3 轮已给修订判断, 等你最终 B 路径)
 **维护者**: CppTLM build agent (architect mode)
 **下次更新**: 你最终 B 路径反馈后 → v1.0 PASS

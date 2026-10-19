@@ -1,11 +1,13 @@
 # 配置生成与性能可视化架构
 
 **文档类型**: 架构设计
-**状态**: ✅ **v2.0 已批准** (2026-10-19 状态对齐, per `docs/research/AGENTS.md` v0.5 显式声明跟踪)
+**状态**: 🟡 **草案** (2026-10-19 状态复核, per critic 评审 B4 BLOCKER: 关联 ADR-X.12 仍是 📝 提案, 未签发, 9 文档不能升 ✅. 待 ADR-X.12 实施完成后升 ✅)
 **创建日期**: 2026-04-22
-**更新日期**: 2026-05-05 / **2026-10-19 (状态升 ✅)**
-**版本**: v2.0
-**关联 ADR**: ADR-X.12 (Python 配置生成器 v2.0), ADR-X.9 (端口类型系统 v3.0)
+**更新日期**: 2026-05-05 / **2026-10-19 (状态复核回退, per critic 评审 B4)**
+**版本**: v2.0 (草案)
+**关联 ADR**: ADR-X.12 (Python 配置生成器 v2.0, 📝 提案 Phase 3.2), ADR-X.9 (端口类型系统 v3.0)
+
+> **⚠️ v0.4 cross-ref (2026-10-19, per critic 评审 B4 修正)**: 本文档原状态在 2026-10-19 治理中升 ✅ (per commit `ffcb7d3a` S5), 但经 critic 验证发现关联 ADR-X.12 仍是 📝 提案, 无代码实施证据. 状态回退为 🟡 草案, 待 ADR-X.12 实施完成后重新评估. 调研价值保留: Python 配置生成器 + dashboard 设计意图被 [`docs/designs/dgpu-soc/communication-network.md` §3.4](../designs/dgpu-soc/communication-network.md) 详化 (per 06 v0.4 §0.3 边界标注).
 
 ## 变更日志 (v2.0)
 
