@@ -42,7 +42,7 @@ pass() { echo -e "  ${GREEN}✓${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 
-echo -e "${BLUE}[1/6] ADR 清单与关键节${NC}"
+echo -e "${BLUE}[1/7] ADR 清单与关键节${NC}"
 ADR_LIST=(
   "ADR-CEP-00-platform-charter-and-governance.md"
   "ADR-CEP-00A-real-source-anchor-map.md"
@@ -83,7 +83,7 @@ done
 [ "$NO_SECTION" -eq 0 ] && pass "每份 ADR 均有「不变量」或「决策」节"
 
 echo ""
-echo -e "${BLUE}[2/6] invariant 计数与 07 号总表一致性${NC}"
+echo -e "${BLUE}[2/7] invariant 计数与 07 号总表一致性${NC}"
 python3 - <<'PYEOF'
 import glob, re, os, sys
 
@@ -366,7 +366,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[3/6] 06 §15.4 P 编号口径(禁 P6)${NC}"
+echo -e "${BLUE}[3/7] 06 §15.4 P 编号口径(禁 P6)${NC}"
 python3 - <<'PYEOF'
 import glob, os, re, sys
 
@@ -494,7 +494,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[4/6] ADR 交叉引用可达性${NC}"
+echo -e "${BLUE}[4/7] ADR 交叉引用可达性${NC}"
 BROKEN=0
 for f in "${ADR_LIST[@]}"; do
   [ -f "docs/adr/$f" ] || continue
@@ -508,7 +508,7 @@ done
 [ "$BROKEN" -eq 0 ] && pass "ADR 之间的相对链接无断裂(全量 .md 链接)"
 
 echo ""
-echo -e "${BLUE}[5/6] Stage 0 umbrella change 4 件套${NC}"
+echo -e "${BLUE}[5/7] Stage 0 umbrella change 4 件套${NC}"
 CH="openspec/changes/cpptlm-cep-umbrella"
 MISS=0
 for f in "proposal.md" "design.md" "tasks.md" "specs/cep-core-contracts/spec.md"; do
@@ -517,10 +517,15 @@ done
 [ "$MISS" -eq 0 ] && pass "umbrella change 4 件套齐备"
 
 echo ""
-echo -e "${BLUE}[6/6] Stage 0 契约产物${NC}"
+echo -e "${BLUE}[6/7] Stage 0 契约产物${NC}"
 for f in "include/tlm/cep/protocol_instance.schema.json" "experimental/metrics.schema.json" "experimental/.gitkeep"; do
   [ -f "$f" ] && pass "$f 存在" || fail "$f 缺失"
 done
+
+echo ""
+echo -e "${BLUE}[7/7] M1 产物冻结校验(冻结后不可改)${NC}"
+bash scripts/test/cep_freeze_check.sh
+if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
 
 echo ""
 echo "════════════════════════════════════════"

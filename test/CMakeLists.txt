@@ -240,6 +240,12 @@ add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
 add_test(NAME cep_docs_sync_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_docs_sync_check.sh --strict)
 
+# M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
+# —— 独立于 lint,便于单独定位"冻结产物被改动"
+add_test(NAME cep_freeze_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_freeze_check.sh)
+set_tests_properties(cep_freeze_check PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ⚠️ WORKING_DIRECTORY:ctest 默认在 build/test 下运行 —— git pathspec 与相对
 #    路径会解析到 build/test/... → 冻结面守门空转(2026-10-21 代码复审 B1)。
 #    与 test_cpptlm_emulator_msix(:73-75)的既有做法一致。

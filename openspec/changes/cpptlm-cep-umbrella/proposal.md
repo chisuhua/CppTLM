@@ -1,13 +1,23 @@
 # cpptlm-cep-umbrella: Coherence Exploration Platform(CEP)核心契约与实验床骨架
 
-> **状态**: 🟡 Proposed(Stage 0 umbrella,per `ADR-CEP-00 §2 Decision 3`)
+> **状态**: 🟡 **Proposed Draft** —— Stage 0 umbrella;**跨仓准入门(M2)未放行**,故**不得**升 Proposed(per `ADR-CEP-00 §2 Decision 3`)
 > **作者**: CppTLM Team(builder mode)
 > **版本**: v1.0(2026-10-21)
 > **关联路线图**: [`phase-10`](../../../.rddf/roadmap/phases/phase-10.md)(planning)+ [`objective-cep-platform`](../../../.rddf/roadmap/objectives/obj-cep-platform.md)(P1 active)
 > **关联真源 1**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1(657 行,✅ 2026-10-21 完成)+ [`06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4 + [`06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3(将被 supersede)
 > **关联真源 3**: `docs/adr/ADR-CEP-*.md` **共 21 份**(2026-10-21 architect 阶段两批:新增 `ADR-CEP-08/09/12/13/18` + `ADR-CEP-11/14/15/16/07A`,修订 8 份)
 > **KPI**: Stage 0 = **1 slot**(计 KPI,per `ADR-CEP-00 §2 Decision 3`;**不符** `cpptlm-dgpu-soc-arch-truth-cleanup §6` doc-only 豁免先例,因本 change 含测试契约骨架)
-> **前置 gate**: ✅ 全部解除 —— ① 签发仓 = CppTLM(2026-10-20 拍板)② 真源路径 = `07-*.md`(已创建)③ KPI slot 腾出(3 个 active 已 ⏸ 暂存归档,baseline **0/3**)
+> **前置 gate**: ① 签发仓 = CppTLM(2026-10-20 拍板)✅ ② 真源路径 = `07-*.md`(已创建)✅ ③ KPI slot 腾出(3 个 active 已 ⏸ 暂存归档,baseline **0/3**)✅ ④ **跨仓准入门(M2)⛔ 未放行**
+>
+> **⛔ gate ④ 跨仓准入门(M2)—— 2026-10-21 Task 8.4 Step 4 取证结论**
+>
+> | 项 | 取证 | 结论 |
+> |----|------|------|
+> | 准入门条款 | `ADR-CEP-00 §2 Decision 3`「ArchForge 协议接口 PR 未合入前,CppTLM 对应 OpenSpec change 不得从 Proposed Draft 转 Proposed」 | — |
+> | ArchForge 侧 coherence 接口 PR | `/workspace/main/ArchForge` git 历史 **6 commit,无 PR / merge 痕迹**;coherence 相关产物**只有设计文档**(`docs/architecture/09-coherence-protocol.md` 514 行 / `docs/adr/ADR-SOC-01-coherence-protocol-strategy.md` 66 行 / `docs/microarchitecture/coherence-{bridge,domain,protocol}.md` 1017 行)—— **无「接口 PR 已合入」证据** | ⛔ **未合入** |
+> | 结论 | 准入门**未放行** | **本 change 停留 Proposed Draft**;Proposed 并发 **0/3** |
+>
+> **放行条件**:ArchForge 侧 coherence 接口 PR 合入(需与 `09-coherence-protocol.md §5.2 关键 API` 对齐 —— 本 change 的 `protocol_instance.schema.json` 的 `ordering_assumption` / `vc_binding` / `sharer_tracker` 属**接口形状**,存在与 ArchForge 侧冲突的可能)→ 由 DRI 人工 gate 放行并记 §11 台账 entry。
 > **✅ 残留 gate 已解除(2026-10-21)**: `objective-cep-platform §9.2` 三项角色(验收方 / 结论消费者 / 平台维护方)已**正式指定** —— 形式 gate 解除,Stage 0 验收的"角色缺失 No-Go"条件消除
 > **⚠️ 独立性未闭合(已登记 R10)**:三项角色在当前仓形态下**指向同一人**(ArchForge 6/6 commit + CppTLM 1007 commit 同一作者)→ 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制**部分**替代;M4 已有实证先例(2026-10-21 Oracle 独立复审抓出 9 项作者 4 轮自审全漏的问题)。**真外部真人评审待建立**
 

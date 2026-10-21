@@ -171,7 +171,7 @@ P6 禁引检查最初扫全仓 → 命中 `06-inter-module-network.md` 自身的
 2. **`named_network` → `vc_id` 解析**的真实强制在 Stage 1 装配期检查器;Stage 0 的解析规则以 test 内部 helper 实现并以 fixture 钉死(per `ADR-CEP-12 IC2`)。
 3. **`verification_mode` 的"不构成已证明"措辞**目前靠 lint + 测试**字符串存在性**校验,**不**是语义校验。
 4. **`trace.h5` 是 stub** —— `render_report` **从不解析**它(既不 import `h5py` 也不读内容),只校验其**存在**。契约上诚实:4 件套里 `trace.h5` 目前是**占位**,真正解析在 Stage 1。(v0.1 曾误称"依赖 h5py / 缺失时降级提示",该说法与代码不符,已订正。)
-5. **Stage 0 验收的独立性未闭合**(R10):三项角色指向同一人,以 M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / **M4 独立 AI 复审** 四条机制部分替代 —— M4 有 2026-10-21 独立复审的实证先例(见 §7)。
+5. **Stage 0 验收的独立性未闭合**(R10):三项角色指向同一人,以 M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / **M4 独立 AI 复审** 四条机制部分替代。**2026-10-21 Task 8.4 结论**:验收等级 = **「部分独立」**(M1 ✅ 已冻结 / M2 ⛔ 未放行 / M3 ⏳ 待 Stage 1 / M4 ✅ 2 轮已执行)—— **不得表述为「完全独立验收」**;M4 不可替代真人外部评审(见 §7.4)。
 6. **`include/core/coherence_domain.hh` 的 `enum class Protocol { MESI, MOESI }` 仍在**(per `ADR-CEP-07A` 决策 1 产物 1 / 决策 4 显式排除「不删」)。Stage 0 已按 `INV-CEP-07A-IC1` 加 `[[deprecated]]` + 顶部注释;**协议标识符本体**待 Stage 1 迁移到 Protocol Engine 侧(per `ADR-CEP-05` / `ADR-CEP-07A` 决策 3)。
 
 ---
@@ -257,7 +257,23 @@ tools 端到端冒烟          render_report / run_sweep(+--render-report
 | ADR-CEP-16 注入「本 ADR 承接 `06 §15.4` 的 **P7** 条目」 | lint P 编号白名单红 | ✅ 红(`--strict exit=1`) |
 | `07 号 §5.1.1` 加第 7 个工业实例行 | adapter 计数锚点红 | ✅ 红(报「§5.1.1 行数=7 §5.1.2 行数=8」) |
 
-### 7.4 复审的独立性说明
+### 7.4 Task 8.4 验收前置结论(2026-10-21,§11 台账 Entry #7)
+
+| Step | 机制 | 结论 |
+|------|------|------|
+| 2 | **M4 独立 AI 复审** | ✅ **2 轮**(`general` 架构 + `explore` 代码对抗式)—— 6 BLOCKER + 15 SHOULD_FIX + 架构复审关键项**全部处置**;10 组反向验证有牙。⚠️ `oracle`/`critic` 已从 agent 注册表消失 → 通道强度弱于原生 oracle,已如实登记 |
+| 3 | **M1 产物冻结** | ✅ **28 个产物** SHA-256 冻结(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`)+ 校验器 `scripts/test/cep_freeze_check.sh` + lint 第 7 组 + ctest。**反向验证**:改冻结 ADR → 红;恢复 → 绿 |
+| 4 | **M2 跨仓准入门** | ⛔ **未放行** —— ArchForge 侧 coherence 接口 PR **未合入**(6 commit 无 PR 痕迹,只有设计文档)。`cpptlm-cep-umbrella` 降级为 **Proposed Draft**,baseline **1/3 → 0/3** |
+| 5 | **R10 独立性残余** | ✅ Stage 0 验收等级 **「部分独立」** —— M1 ✅ / M2 ⛔ / M3 ⏳ / M4 ✅;**不得表述为「完全独立验收」** |
+| 6 | **台账 entry** | ✅ `objective-cep-platform §11` **Entry #7**(append-only) |
+
+> **⛔ 结论**:Stage 0 **不 archive** —— M2 准入门未放行 + R10 独立验收未闭合。
+
+**M1 冻结范围的设计取舍**:冻结 **规范性契约产物**(21 ADR + `07 号` + 2 schema + 3 tools + umbrella `spec.md` = 28 件);
+**两个 checker 脚本自身不冻结** —— checker 必须可修,否则一次 checker bug 就锁死整个体系;
+且 checker 不承载契约语义,承载语义的是**被它检查的产物**。
+
+### 7.5 复审的独立性说明
 
 `oracle` / `critic` 两个专用 agent 在本环境**从注册表消失**(`Agent not found`),改用
 `general`(架构复审)+ `explore`(代码对抗式复审)。两轮复审共抓出 **6 个 BLOCKER**

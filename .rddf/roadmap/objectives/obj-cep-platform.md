@@ -220,7 +220,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 1/3**(2026-10-21:builder 创建 `cpptlm-cep-umbrella`,`openspec validate --strict` PASS)
+→ **当前 Proposed 并发 = 0/3**(2026-10-21 Task 8.4 Step 4 修正:builder 创建的 `cpptlm-cep-umbrella` 因**跨仓准入门(M2)未放行**(ArchForge 侧 coherence 接口 PR 未合入)停留 **Proposed Draft**,**不占用 Proposed slot**;该 change 仍在 10-change 串行队列内,准入门放行后才计入)
 
 ### 5.3 CEP 启动的前置条件(per AGENTS.md §DOC HYGIENE line 422 新提案门槛)
 
@@ -228,7 +228,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 **✅ 前置条件已满足(2026-10-20)**:3 个 active 全部 **⏸ 暂存归档**(`--skip-specs`),baseline **0/3** → `cpptlm-cep-umbrella` **可立即创建**。
 
-**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**,`openspec validate cpptlm-cep-umbrella --strict` **PASS**;baseline **0/3 → 1/3**。
+**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**,`openspec validate cpptlm-cep-umbrella --strict` **PASS**;baseline **0/3 → 1/3**。**⚠️ 2026-10-21 Task 8.4 Step 4 修正**:因**跨仓准入门未放行**,该 change 停留 **Proposed Draft** → baseline 回到 **0/3**(Proposed slot 只统计已达 Proposed 的 change)。
 
 ⚠️ **原候选路径已过期**:"路径 C: archive `cpptlm-gmmu-pte-bus-correction`" —— 该 change **已于 2026-10-12 实际归档**,不再是 active,不能再作为 archive 对象。真实候选是上列 3 个(均已暂存归档)。
 
@@ -290,7 +290,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **R6** | 与 phase-9 资源竞争(共用 builder 队列 + 执行容量)| 🟡 中 | §8.2 优先级仲裁规则 |
 | **R7** | 探索平台结论不可信(无对拍验证)| 🟡 中 | **Stage 1 前须定义对拍手段**(gem5 Ruby / ArchForge 参考模型 / RTL benchmark 三选一) |
 | **R8** | ArchForge 单边依赖(准入门把阻塞全转嫁 CppTLM 侧)| 🟡 中 | 需 ArchForge 侧排期承诺;缺承诺时 §9 假设降级为"仅 CppTLM 内部对比" |
-| **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟡 中 | 纳入 Stage 0 验收清单的 M4(独立 AI 复审);真外部真人评审待建立;**不在本轮闭合** |
+| **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟡 中 | 纳入 Stage 0 验收清单的 M4(独立 AI 复审);真外部真人评审待建立;**不在本轮闭合**。**2026-10-21 Task 8.4 结论**:Stage 0 验收等级**降级为「部分独立」**(partial independence)—— M1 冻结 ✅ / M2 准入门 ⛔未放行 / M3 对拍基准 ⏳Stage 1 前定义 / M4 独立 AI 复审 ✅(2 轮,6 BLOCKER 全处置);**不得表述为「完全独立验收」**,且 M4 **不可**替代真人外部评审 |
 | **R9** | **单 change 体积上升**(2026-10-21 新增)—— `cpptlm-cep-directory-ordering-plane` 8→12 周(ADR-CEP-08 + 09 Decision A 并入)| 🟡 中 | 同平面合并是模型自洽而非将就;若该 change 延期 >2 季度,走 §8.2 `Replan` 拆 `phase-11`(并评估建 feature fragment)|
 
 ### 8.2 Kill / Pivot / Replan 判据(per metis G4 盲点补充)
@@ -481,6 +481,52 @@ Stage 4+ 进入维护态后,objective 归档条件:
 **影响范围**:本文件 §9.2(新增 4 条替代机制表)/ §8.1(R5 状态 + 新增 R10)/ §8.2 无需改;`cpptlm-cep-umbrella/proposal.md` 的 ⛔ 残留 gate / `spec.md` 组合承诺边界场景 / `tasks.md` Task 8.4 同步
 
 **未闭合**:真外部真人评审机制待建立(不在本轮范围)
+
+### Entry #7 — 2026-10-21 [sprint-review]
+
+**主题**: Task 8.4 的 **5 项验收前置**执行结论 —— M4 独立 AI 复审(Step 2)/ M1 产物冻结(Step 3)/ M2 跨仓准入门(Step 4)/ R10 独立性残余缺口(Step 5)
+
+**决策**: ⚠️ **Stage 0 验收等级 = 「部分独立」(partial independence)**;**⛔ 不得 archive** —— M2 准入门**未放行** + R10 独立验收**未闭合**
+
+**理由**:
+
+**Step 2 — M4 独立 AI 复审:✅ 已执行(2 轮)**
+
+| 轮次 | 通道 | 覆盖 | 结论 |
+|------|------|------|------|
+| 第 1 轮 | `general`(架构) | 6 个架构问题(契约层边界 / 解析器可靠性 / 15 组划分 / schema 完备性 / 生态类比与 R10 / 架构级缺口) | 抓出解析器形态盲区(注入 `**不变量 \`INV-CEP-04-IC8\`**:` → 7 case 全绿)、字段组口径 4 处不一致、C10 零覆盖、`ADR-CEP-05` 数字与枚举自相矛盾等 |
+| 第 2 轮 | `explore`(代码对抗式,默认立场 REJECT) | 6 个代码审查问题(假阴性 / lint 假阴性面 / 解析器边界形态 / owner 前缀歧义 / 工具行为边界 / 断言强度 vs spec) | 抓出 **6 个 BLOCKER**(B1 冻结面 CI 恒绿 / B2 一致性闸门三工具全不生效 / B3「全仓」名不副实 / B4 07 号第 3 列未校验 / B5 tools 从不执行 / B6 `ab_compare` 缺 `import html`)+ 约 15 项 SHOULD_FIX |
+
+- **通道说明**:`oracle` / `critic` 已从 agent 注册表消失(`Agent not found`)→ 改用文档保证可用的 `general` / `explore` 承担;**独立性强度**因此**弱于**原生 `oracle`,已如实登记。
+- **处置**:6 个 BLOCKER **全部**修复 + 15 项 SHOULD_FIX 中 15 项修复 + 4 项实质弱断言(S3/S12/S13/S16)实质化;**10 组反向验证**(故意破坏 → 必须红)全部有牙;处置台账落 `docs/implementation/2026-10-21-cep-stage0-contracts.md §7`。
+- **M4 实证强度再次验证**:两轮复审共抓出 **21 项**作者 4 轮自审全漏的问题(其中 6 项 BLOCKER)→ 通道**确能发现作者盲区**,非形式性第二意见。
+
+**Step 3 — M1 产物冻结:✅ 已落地(机器可执行)**
+
+- Stage 0 尚无实验 4 件套(那要 Stage 1)→ M1 在 Stage 0 的对应物 = **规范性契约产物**冻结:**28 个产物**(21 ADR + `07 号` + 2 schema + 3 tools + umbrella `spec.md`)。
+- 产物:`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(逐件 SHA-256 + 冻结基线 commit)
+- 校验器:`scripts/test/cep_freeze_check.sh`(`--update` 重新生成);已接入 `cep_docs_sync_check.sh` **第 7 组检查** + 独立 ctest `cep_freeze_check`
+- **反向验证**:改一份冻结 ADR → freeze checker 红 + lint `--strict` exit=1;恢复 → 绿 ✅
+- ⚠️ **两个 checker 脚本自身不冻结**(checker 必须可修,且不承载契约语义 —— 承载语义的是被它检查的产物)
+
+**Step 4 — M2 跨仓准入门:⛔ 未放行(取证)**
+
+- 条款:`ADR-CEP-00 §2 Decision 3`「ArchForge 协议接口 PR 未合入前,CppTLM 对应 OpenSpec change 不得从 Proposed Draft 转 Proposed」
+- 取证:`/workspace/main/ArchForge` git 历史 **6 commit、无 PR / merge 痕迹**;coherence 相关产物**只有设计文档**(`09-coherence-protocol.md` 514 行 / `ADR-SOC-01` 66 行 / `coherence-{bridge,domain,protocol}.md` 1017 行)→ **无「接口 PR 已合入」证据**
+- **连带纠正**:`cpptlm-cep-umbrella` 状态由「🟡 Proposed」**降级为「🟡 Proposed Draft」**;`tasks.md` 同步;objective §5.2 baseline **1/3 → 0/3**(Proposed slot 只统计已达 Proposed 的 change;该 change 仍在 10-change 串行队列内)
+- **放行条件**:ArchForge 侧 coherence 接口 PR 合入,且与 `09-coherence-protocol.md §5.2 关键 API` 对齐 —— 本 change 的 `protocol_instance.schema.json` 的 `ordering_assumption` / `vc_binding` / `sharer_tracker` 属**接口形状**,存在与 ArchForge 侧冲突的可能 → 由 DRI 人工 gate 放行并记本台账 entry
+
+**Step 5 — R10 独立性残余缺口:✅ 已显式登记**
+
+- Stage 0 验收等级**降级为「部分独立」** —— M1 冻结 ✅ / M2 准入门 ⛔ / M3 对拍基准 ⏳(Stage 1 前定义)/ M4 独立 AI 复审 ✅
+- **不得表述为「完全独立验收」**;M4(AI 复审)**不可**替代真人外部评审
+- 形式 gate(§9.2 三项角色已指定)✅ 解除,实质 gate(独立验收)**未解除**
+
+**影响范围**:`openspec/changes/cpptlm-cep-umbrella/{proposal.md,tasks.md}`(状态 + gate ④)/ 本文件 §5.2(baseline)+ §8.1(R10 缓解栏)/ `docs/implementation/2026-10-21-cep-stage0-contracts.md` §7(处置台账)/ `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(新)/ `scripts/test/cep_freeze_check.sh`(新)/ `scripts/test/cep_docs_sync_check.sh`(第 7 组)/ `test/CMakeLists.txt`(ctest 注册)
+
+**未闭合**:① M2 准入门(等 ArchForge 接口 PR)② R10 真人外部评审机制 ③ M3 对拍基准(Stage 1 前定义)④ Stage 0 **不 archive**
+
+**关联**:Task 8.4 Step 2~6;`docs/implementation/2026-10-21-cep-stage0-contracts.md §7`(6 BLOCKER + 架构复审关键项 + 10 组反向验证)
 
 ---
 

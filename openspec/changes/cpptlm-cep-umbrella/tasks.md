@@ -1,6 +1,6 @@
 # Tasks — cpptlm-cep-umbrella v1.0(Stage 0,TDD 5-step)
 
-> **状态**: 📋 Draft(2026-10-21)
+> **状态**: 📋 **Proposed Draft**(2026-10-21)—— 跨仓准入门(M2)未放行,**不得**升 Proposed(per `ADR-CEP-00 §2 Decision 3`,取证见 `proposal.md` 前置 gate ④)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-core-contracts/spec.md`](specs/cep-core-contracts/spec.md)
 > **上游**: `phase-10.md` Stage 0 子任务 10.B~10.G + `objective-cep-platform §4.1`
 > **估时**: 28 人日(Stage 0 剩余;已消耗 13 人日 = 10.A 8 + 10.E 5)
@@ -20,10 +20,11 @@
 | 5 seam 契约 + 冻结面守门 | ✅ 完成 | 7 cases;冻结面用 `git diff --name-only HEAD` 实测 |
 | 6 实验输出契约 | ✅ 完成 | 8 cases / 54 assertions;`network.mode` 否定语境判定(否定词常在出现点**之前**) |
 | 7 tools + lint | ✅ 完成 | 6 cases + lint 8/8;lint 的**范围**比规则更易出错(收窄到 38 个 CEP 专属文档) |
-| 8 收敛 + 回归 + 文档 | 🟡 部分 | GREEN 收敛 ✅ / 全量 **0 回归**(80437 assertions / 1827 cases)✅ / 实施笔记 ✅ / **⛔ 独立 AI 复审待外部通道** |
+| 8 收敛 + 回归 + 文档 | ✅ 完成(验收前置留 1 项) | GREEN 收敛 ✅ / 全量 **0 回归**(81145 assertions / 1856 cases)✅ / 实施笔记 ✅ / **独立 AI 复审 2 轮已完成**(6 BLOCKER 全处置)✅ / **⛔ 跨仓准入门(M2)未放行** → Stage 0 不 archive |
 
-> **未做(明确留给后续)**:Task 8.4 Step 2 的**独立 AI 复审** —— 2026-10-21 的 Oracle/critic 调用因模型不可用连续 8 次失败,`oracle` 通道已恢复但本轮未再发起;Stage 0 验收的独立性缺口登记为 `objective-cep-platform §8.1 R10`。
-> **Commit 未做**:按惯例提交前先确认。
+> **Task 8.4 全部 6 步已完成(2026-10-21)**:独立 AI 复审 2 轮(`general` + `explore`,替代失效的 `oracle` / `critic`)、M1 产物冻结(28 产物 SHA-256 + 机器校验)、M2 跨仓准入门**取证未放行**、R10 登记为「部分独立」、台账 Entry #7。
+> **⛔ Stage 0 不 archive**:M2 准入门未放行(ArchForge 侧 coherence 接口 PR 未合入)+ R10 独立验收未闭合。`cpptlm-cep-umbrella` 状态 🟡 **Proposed Draft**(baseline 0/3)。
+> **Commit**:见下方 `git log`(2026-10-21 三次提交:`7195f7f7` / `e1d706a5` / `824bd26e` + 本轮)。
 
 ---
 
@@ -370,19 +371,19 @@
 
 ### Task 8.4: Stage 0 验收前置确认 + 独立复审(不实施)
 
-**Files**: 无
+**Files**: `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(新)· `scripts/test/cep_freeze_check.sh`(新)· `scripts/test/cep_docs_sync_check.sh`(+第 7 组)· `test/CMakeLists.txt`(+ctest)· `openspec/changes/cpptlm-cep-umbrella/{proposal.md,tasks.md}`(状态)· `.rddf/roadmap/objectives/obj-cep-platform.md`(§5.2 + §8.1 + §11 Entry #7)
 
 **步骤**:
 - [x] Step 1: 确认 `objective-cep-platform §9.2` 三项角色**已指定**(✅ 2026-10-21 已完成,形式 gate 解除)
-- [ ] Step 2: **执行独立 AI 复审**(机制 M4)—— `oracle` / `critic` subagent 对本 change 的 4 件套 + 50 条 invariant 契约做对抗式审稿;**发现清单须逐条处置**(先例:2026-10-21 复审抓出 9 项作者 4 轮自审全漏的问题)
-- [ ] Step 3: 确认**产物冻结先于解读**(机制 M1)—— 4 件套由 CI 产出并记录 hash,冻结后不改
-- [ ] Step 4: 确认**跨仓准入门**满足(机制 M2)—— ArchForge 侧 coherence 接口 PR 已合入
-- [ ] Step 5: 记录**独立性残余缺口**(R10)—— 真外部真人评审待建立,Stage 0 验收**降级为"部分独立"**,不得表述为"完全独立验收"
-- [ ] Step 6: 在 `§11 决策台账` 追加 `sprint-review` entry 记录 Stage 0 结论
+- [x] Step 2: **执行独立 AI 复审**(机制 M4)—— ✅ 2026-10-21 **2 轮**:`general`(架构 6 问)+ `explore`(代码对抗式 6 问,立场 REJECT)。**发现清单**:6 个 BLOCKER(B1 冻结面 CI 恒绿 / B2 一致性闸门三工具全不生效 / B3「全仓」名不副实 / B4 07 号第 3 列未校验 / B5 tools 从不执行 / B6 `ab_compare` 缺 `import html`)+ 15 项 SHOULD_FIX + 架构复审抓出的解析器形态盲区 / 编号重号 / 文件名拼写 / 字段组口径 4 处不一致 / C10 零覆盖等 —— **全部逐条处置**,台账见 `docs/implementation/2026-10-21-cep-stage0-contracts.md §7`。**10 组反向验证**(故意破坏 → 必须红)全部有牙。⚠️ `oracle` / `critic` 已从 agent 注册表消失 → 通道强度弱于原生 oracle,已如实登记
+- [x] Step 3: 确认**产物冻结先于解读**(机制 M1)—— ✅ Stage 0 尚无实验 4 件套 → M1 对应物 = **规范性契约产物**冻结:**28 个产物**(21 ADR + `07 号` + 2 schema + 3 tools + umbrella `spec.md`)。清单 `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(逐件 SHA-256 + 冻结基线 commit);校验器 `scripts/test/cep_freeze_check.sh`(`--update` 重新生成),已接入 `cep_docs_sync_check.sh` **第 7 组** + 独立 ctest `cep_freeze_check`。**反向验证**:改一份冻结 ADR → freeze checker 红 + lint `--strict` exit=1;恢复 → 绿 ✅。⚠️ 两个 checker 脚本自身**不冻结**(checker 必须可修)
+- [x] Step 4: 确认**跨仓准入门**满足(机制 M2)—— ⛔ **未满足**(2026-10-21 取证):`/workspace/main/ArchForge` git 历史 **6 commit、无 PR / merge 痕迹**,coherence 相关产物**只有设计文档**(`09-coherence-protocol.md` 514 行 / `ADR-SOC-01` 66 行 / `coherence-{bridge,domain,protocol}.md` 1017 行)→ **无「接口 PR 已合入」证据**。**连带纠正**:本 change 状态 🟡 Proposed → 🟡 **Proposed Draft**(`proposal.md` + `tasks.md` 同步);objective §5.2 baseline **1/3 → 0/3**;**放行条件**与 `09-coherence-protocol.md §5.2 关键 API` 对齐后由 DRI 人工 gate 放行
+- [x] Step 5: 记录**独立性残余缺口**(R10)—— ✅ Stage 0 验收等级**降级为「部分独立」**(M1 ✅ / M2 ⛔ / M3 ⏳ / M4 ✅);objective §8.1 R10 缓解栏已写明**不得表述为「完全独立验收」**,M4 不可替代真人外部评审
+- [x] Step 6: 在 `§11 决策台账` 追加 `sprint-review` entry 记录 Stage 0 结论 —— ✅ **Entry #7**(append-only,置于 Entry #6 之后)
 
-**验证**: 台账新增 entry
+**验证**: 台账新增 entry ✅(`objective-cep-platform §11 Entry #7`)
 
-**Commit**: `docs(roadmap): Stage 0 结论入台账(Phase 8.4)`
+**⛔ 结论**:Stage 0 **不 archive** —— M2 准入门未放行 + R10 独立验收未闭合。台账 Entry #7 已记录全部结论与放行条件。
 
 ---
 
@@ -403,6 +404,10 @@
 | `openspec validate --strict` PASS | Task 8.2 |
 | 文档同步 | Task 2.1 / 2.2 / 8.3 |
 | ⛔ §9.2 三项角色已指定 | Task 8.4 |
+| ⛔ M1 产物冻结(28 产物 hash + 机器校验) | Task 8.4 Step 3 |
+| ⛔ M4 独立 AI 复审(2 轮 / 6 BLOCKER 全处置) | Task 8.4 Step 2 |
+| ⛔ M2 跨仓准入门(⛔ 未放行 → Proposed Draft) | Task 8.4 Step 4 |
+| ⛔ R10 登记为「部分独立」 | Task 8.4 Step 5 |
 
 ---
 
