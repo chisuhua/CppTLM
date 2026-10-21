@@ -121,6 +121,10 @@ ArchForge 侧承载(G6/G7/G8/G12)。
 ## 5. 需 DRI 向 ArchForge 澄清的 6 问
 
 > 这 6 问**两仓无法自行裁决** —— 它们决定 §4 的 PR 范围与 §6 的放行判据。
+>
+> **📨 提问单已提交 ArchForge**(2026-10-21):`/workspace/main/ArchForge/docs/roadmap/cep-interface-alignment.md`
+> (ArchForge commit `901cf19`)—— 含 §5 全文 + 答复表 + 引用本清单。
+> 该文件**已纳入本清单的漂移锚点**(ArchForge 侧 1 项)—— 若被移动或删除,CppTLM 侧会红。
 
 | # | 问题 | 为何必须问 ArchForge | 影响 |
 |---|------|----------------------|------|
@@ -188,16 +192,6 @@ ArchForge 侧承载(G6/G7/G8/G12)。
   "_comment": "机器可读锚点块 —— 供 scripts/test/cep_archforge_alignment_check.sh 校验引用漂移。改动本清单的 §2 / §3 引用时,必须同步本块。",
   "archforge": [
     {
-      "file": "docs/microarchitecture/coherence-domain.md",
-      "line": 68,
-      "symbol": "enum class Protocol"
-    },
-    {
-      "file": "docs/microarchitecture/coherence-domain.md",
-      "line": 94,
-      "symbol": "class DomainRegistry"
-    },
-    {
       "file": "docs/architecture/09-coherence-protocol.md",
       "line": 242,
       "symbol": "enum class State"
@@ -221,6 +215,21 @@ ArchForge 侧承载(G6/G7/G8/G12)。
       "file": "docs/architecture/09-coherence-protocol.md",
       "line": 314,
       "symbol": "struct SnoopEntry"
+    },
+    {
+      "file": "docs/microarchitecture/coherence-bridge.md",
+      "line": 135,
+      "symbol": "class CoherenceBridge"
+    },
+    {
+      "file": "docs/microarchitecture/coherence-domain.md",
+      "line": 68,
+      "symbol": "enum class Protocol"
+    },
+    {
+      "file": "docs/microarchitecture/coherence-domain.md",
+      "line": 94,
+      "symbol": "class DomainRegistry"
     },
     {
       "file": "docs/microarchitecture/coherence-protocol.md",
@@ -283,9 +292,9 @@ ArchForge 侧承载(G6/G7/G8/G12)。
       "symbol": "requestor_cache_id"
     },
     {
-      "file": "docs/microarchitecture/coherence-bridge.md",
-      "line": 135,
-      "symbol": "class CoherenceBridge"
+      "file": "docs/roadmap/cep-interface-alignment.md",
+      "line": 1,
+      "symbol": "cep-interface-alignment"
     }
   ],
   "cpptlm": [
