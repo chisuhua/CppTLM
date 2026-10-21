@@ -273,6 +273,27 @@ tools 端到端冒烟          render_report / run_sweep(+--render-report
 **两个 checker 脚本自身不冻结** —— checker 必须可修,否则一次 checker bug 就锁死整个体系;
 且 checker 不承载契约语义,承载语义的是**被它检查的产物**。
 
+### 7.4.1 M2 准入门:ArchForge 侧接口对齐清单(2026-10-21)
+
+Task 8.4 Step 4 取证到「准入门未放行」后,进一步产出了**可执行前置**:
+`docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`
+
+| 段 | 内容 |
+|----|------|
+| §2 | **两侧接口面清单** —— ArchForge 11 项(A1~A11,带 file:line)+ CEP 9 项(C1~C9) |
+| §3 | **Gap 矩阵 13 项** —— G1~G13,每项带两侧 file:line + 性质(冲突/缺失/口径)+ 级别(P0 6 / P1 4 / P2 4) |
+| §4 | **ArchForge 侧 PR 范围** —— P0 5 项(放行 M2 的最小集)/ P1 4 项 / P2 4 项 |
+| §5 | **需 DRI 向 ArchForge 澄清的 6 问** —— 两仓无法自行裁决者(Q1 状态归属 / Q2 抽象基类归属 / Q3 snoop callback 路径 / Q4 VC 权威方 / Q5 族边界 / Q6 perm 词表) |
+| §6 | **M2 的 5 条可检查放行判据** —— C-1~C-5(其中 C-4/C-5 可自动化,C-1~C-3 依赖外部人工核对 = R10 的具体形态) |
+| §7 | **漂移检测** —— `scripts/test/cep_archforge_alignment_check.sh`,32 个锚点(ArchForge 20 / CppTLM 12);已接入 lint **第 8 组** + ctest `cep_archforge_alignment_check`。ArchForge 仓缺席时**优雅跳过** |
+
+**最重的 3 项 P0 冲突**:
+- **G1** ArchForge 的 `CoherenceState { I,S,E,M,O,T }` 是**顶层协议特化枚举**,而 CEP 要求协议状态住 Plugin 内(`INV-CEP-05-IC1`)
+- **G2** ArchForge 侧 `enum class Protocol { MESI, MOESI }` 仍是**配置入口**(`set_protocol`)—— 正是 CppTLM 侧已 `[[deprecated]]` 的同一形态(`INV-CEP-07A-IC1`)
+- **G11** ArchForge 的 `register_cache_callback(CacheTLM*)` **直连** CacheTLM,而 `INV-CEP-15-IC3` 只允许经 adapter 交互
+
+**反向验证**:ArchForge 侧符号改名 → 红;CppTLM 侧 invariant 改名 → 红;恢复 → 绿 ✅
+
 ### 7.5 复审的独立性说明
 
 `oracle` / `critic` 两个专用 agent 在本环境**从注册表消失**(`Agent not found`),改用

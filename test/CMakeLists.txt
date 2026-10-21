@@ -240,6 +240,13 @@ add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
 add_test(NAME cep_docs_sync_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_docs_sync_check.sh --strict)
 
+# CEP ↔ ArchForge 接口对齐清单的漂移检测(跨仓引用完整性)
+# —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败)
+add_test(NAME cep_archforge_alignment_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_archforge_alignment_check.sh)
+set_tests_properties(cep_archforge_alignment_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check

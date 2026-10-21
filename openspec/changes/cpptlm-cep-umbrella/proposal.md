@@ -18,6 +18,12 @@
 > | 结论 | 准入门**未放行** | **本 change 停留 Proposed Draft**;Proposed 并发 **0/3** |
 >
 > **放行条件**:ArchForge 侧 coherence 接口 PR 合入(需与 `09-coherence-protocol.md §5.2 关键 API` 对齐 —— 本 change 的 `protocol_instance.schema.json` 的 `ordering_assumption` / `vc_binding` / `sharer_tracker` 属**接口形状**,存在与 ArchForge 侧冲突的可能)→ 由 DRI 人工 gate 放行并记 §11 台账 entry。
+>
+> **📋 对齐清单**:`docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`
+> —— 13 项 gap 矩阵(带两侧 file:line)+ ArchForge 侧 PR 范围(P0 5 项 / P1 4 项 / P2 4 项)
+> + 需 DRI 澄清的 **6 问** + M2 的 **5 条可检查放行判据**。
+> 清单的引用漂移由 `scripts/test/cep_archforge_alignment_check.sh` 机器检测(32 个锚点;
+> ArchForge 仓不在本环境时优雅跳过)。
 > **✅ 残留 gate 已解除(2026-10-21)**: `objective-cep-platform §9.2` 三项角色(验收方 / 结论消费者 / 平台维护方)已**正式指定** —— 形式 gate 解除,Stage 0 验收的"角色缺失 No-Go"条件消除
 > **⚠️ 独立性未闭合(已登记 R10)**:三项角色在当前仓形态下**指向同一人**(ArchForge 6/6 commit + CppTLM 1007 commit 同一作者)→ 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制**部分**替代;M4 已有实证先例(2026-10-21 Oracle 独立复审抓出 9 项作者 4 轮自审全漏的问题)。**真外部真人评审待建立**
 

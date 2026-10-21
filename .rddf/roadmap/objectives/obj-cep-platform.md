@@ -350,7 +350,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | # | 机制 | 独立性的来源 | 落点 |
 |---|------|-------------|------|
 | **M1** | **产物冻结先于解读** | 4 件套由 CI 产出并带 **hash**;冻结后**不可改**;解读与冻结分离 —— 即使同一人,也不能改已冻结的产物 | `ADR-CEP-06 §2` 的 4 件套契约 + `scripts/test/cep_docs_sync_check.sh` |
-| **M2** | **跨仓准入门(既有)** | ArchForge 侧 coherence 接口 PR **未合入** → CppTLM change **不升 Proposed** —— 制度化的跨仓 checkpoint | `ADR-CEP-00 §2 Decision 3`(已有,本轮确认其**就是**验收方的独立性依据) |
+| **M2** | **跨仓准入门(既有)** | ArchForge 侧 coherence 接口 PR **未合入** → CppTLM change **不升 Proposed** —— 制度化的跨仓 checkpoint | `ADR-CEP-00 §2 Decision 3`(已有,本轮确认其**就是**验收方的独立性依据)。**可执行前置**:接口对齐清单 `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`(13 项 gap 矩阵 + ArchForge 侧 PR 范围 + 6 问 + 5 条放行判据),漂移由 `scripts/test/cep_archforge_alignment_check.sh` 机器检测 |
 | **M3** | **对拍基准外置** | H7 的对拍基准(gem5 Ruby / RTL benchmark)是**第三方既有资产**,不依赖本仓维护者的实现 | `objective §9.1` H7 + `§8.1` R7 |
 | **M4** | **独立 AI 复审** | `oracle` / `critic` subagent 通道**已被实证可用且有效** —— 2026-10-21 的 Oracle 独立架构复审**实际抓出 9 项作者 4 轮自查均漏掉的问题**(N1~N9),其中 3 项为高 severity | `docs/research/cep-coherence-protocol-space-survey.md §9.9` 为先例 |
 
