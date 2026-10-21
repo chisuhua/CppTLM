@@ -1,5 +1,22 @@
 # cpptlm-pcie-tlp-entry-layer: PcieTlpSerializer + TLP 解码层 (修复 Gap M)
 
+> **⏸ 暂存归档 (2026-10-20)**
+>
+> **归档语义**: **暂存归档**,**非**"已完成归档"。per `AGENTS.md` §DOC HYGIENE「⏸ 两种归档语义必须区分」。
+>
+> | 项 | 值 |
+> |----|----|
+> | **归档命令** | `openspec archive cpptlm-pcie-tlp-entry-layer --skip-specs -y` |
+> | **delta spec** | **未合并**进 `openspec/specs/` —— 能力 `pcie-tlp-entry` **不在** main specs 中,系统契约未被污染 |
+> | **tasks 完成度** | **0/56 (0%)** —— 实现**未启动** |
+> | **实现核查 (2026-10-20)** | 既有 `include/utils/pcie_tlp_serializer.hh` 在(5596B),但本 change 增量 `encode_trigger_flr` / `encode_resize_bar` **不存在** |
+> | **关联 phase-9 子任务** | **9.D TLP 解码层(Gap M)** —— 暂存后**失去 active 载体**,已标 deferred(per `phase-9.md`) |
+> | **重建路径** | `cp -r openspec/changes/archive/2026-10-20-cpptlm-pcie-tlp-entry-layer/ openspec/changes/cpptlm-pcie-tlp-entry-layer/` → 修订 proposal 的状态头 → 重新激活 |
+> | **可复用的价值** | proposal / design / tasks / delta spec **四件套完整保留**:范围界定、缺口分析、判据、TDD 5 步分解、跨仓 gate 机制先例 |
+> | **重建前须做** | ① 复核实现现状(可能已有部分落地,需重新划界)② 复核依赖 change 的状态 ③ 复核 `docs/designs/dgpu-soc/architecture.md` 的 Gap 定位是否仍成立 |
+>
+> **⚠️ 不得**在暂存状态下把该能力写进任何 Stage 的 DoD / 验收条款(per `AGENTS.md` 硬约束 4)。
+
 > **状态**: 🟡 Proposed (Phase 1, Change D, 2026-10-09 lock)
 > **作者**: CppTLM Team
 > **版本**: v0.5.2 (Tranche 1 修订: serializer 边界复用既有 `include/utils/pcie_tlp_serializer.hh`, 避免 design duplication debt; 初版 v1.0 协同 flr-rebar v1.1 + p2-integration-unblock 落地)

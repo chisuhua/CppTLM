@@ -5,13 +5,13 @@
 **差异** (vs ADR-DGPU-13 v0.1 起草内容):
 - ADR §2 "P1 引入 ProtocolBridge 模板" → 06 §11.2 v0.4 收窄方案 A 推迟到 P3+ (per 06 §15.3 演进 seam)
 - ADR §3 "Step 7c 注入" → 06 §9.2 显式不引入
-- ADR §4 "改 Packet 字段" → 06 §2.5 + §4.2 显式拒绝 (与 [`docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../architecture/05-packet-semantic-network-archived-2026-10.md) 早期方案同款证据被驳)
+- ADR §4 "改 Packet 字段" → 06 §2.5 + §4.2 显式拒绝 (与 [`docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../archive/architecture/05-packet-semantic-network-archived-2026-10.md) 早期方案同款证据被驳)
 
 **不动 ADR-DGPU-13 正文** (per AGENTS.md "ADR 不可变 + Status Update" 先例), 正文保留作为调研历史.
 
 **关联归档文档**:
-- [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) (评审对象, 已于 2026-10-18 归档至 [`../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md))
-- [`../archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../architecture/05-packet-semantic-network-archived-2026-10.md) (立场对立, 早期方案已归档)
+- [`../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) (评审对象, 已于 2026-10-18 归档至 [`../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md))
+- [`../archive/architecture/05-packet-semantic-network-archived-2026-10.md`](../archive/architecture/05-packet-semantic-network-archived-2026-10.md) (立场对立, 早期方案已归档)
 
 ---
 
@@ -19,8 +19,8 @@
 
 > **状态**: 🟡 **起草中** (v0.1 草案, 待 Oracle/Metis 复审, 预计 1-2 轮 Revise 后签发)
 > **日期**: 2026-10-12 起草
-> **关联架构文档**: [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) (v0.1, 评审对象)
-> **关联调研**: [`../../research/gem5-ruby-protocol-bridge-survey.md`](../../research/gem5-ruby-protocol-bridge-survey.md) (v0.1, 评审对象)
+> **关联架构文档**: [`../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) (v0.1, 评审对象)
+> **关联调研**: [`../research/gem5-ruby-protocol-bridge-survey.md`](../research/gem5-ruby-protocol-bridge-survey.md) (v0.1, 评审对象)
 > **配套 ADR**: [ADR-DGPU-14](ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md) (StreamAdapter↔ProtocolBridge seam 决策, 同 cycle 起草)
 > **关联 OpenSpec**: 待起草 `cpptlm-pnn-protocol-network` (P0 doc-only) / `cpptlm-pnn-protocol-bridge` (P1) / `cpptlm-pnn-axi-chi` (P2) / `cpptlm-pnn-multi-protocol` (P3) / `cpptlm-pnn-cxl` (P4)
 > **关联现有 ADR**: [ADR-DGPU-06](ADR-DGPU-06-axi-mem-bundle-boundary.md) (沿用, PNN 兼容) / [ADR-DGPU-11](ADR-DGPU-11-timing-mode-soc-scope.md) (沿用, PNN 与 simulation_mode 正交) / [ADR-DGPU-12](ADR-DGPU-12-soc-internal-tlm-wiring-principle.md) (沿用, PNN 不破既有 JSON 拓扑) / [ADR-DGPU-08](ADR-DGPU-08-abi-freeze-policy.md) (沿用, PNN 0 改 23 ABI)
@@ -42,7 +42,7 @@ dGPU SoC 仿真场景下, 性能评估阶段(早期架构探索)与协议实现�
 
 ### 1.2 业界锚点 (Gem5 Ruby 20+ 年经验)
 
-> 调研证据见 [`../../research/gem5-ruby-protocol-bridge-survey.md`](../../research/gem5-ruby-protocol-bridge-survey.md)
+> 调研证据见 [`../research/gem5-ruby-protocol-bridge-survey.md`](../research/gem5-ruby-protocol-bridge-survey.md)
 
 **Gem5 Ruby 通过 3 个核心机制解耦"协议中立网络层"与"具体协议"**:
 
@@ -310,8 +310,8 @@ public:
 
 ### 7.1 关联 (起草对象)
 
-- [`../designs/dgpu-soc/pnn-protocol-neutral-network.md`](../designs/dgpu-soc/pnn-protocol-neutral-network.md) — PNN 架构蓝图 v0.1 (评审对象)
-- [`../../research/gem5-ruby-protocol-bridge-survey.md`](../../research/gem5-ruby-protocol-bridge-survey.md) — Gem5 Ruby 调研 v0.1 (评审对象)
+- [`../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md`](../archive/designs/dgpu-soc/pnn-protocol-neutral-network-archived-2026-10.md) — PNN 架构蓝图 v0.1 (评审对象)
+- [`../research/gem5-ruby-protocol-bridge-survey.md`](../research/gem5-ruby-protocol-bridge-survey.md) — Gem5 Ruby 调研 v0.1 (评审对象)
 - [`ADR-DGPU-14`](ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md) — StreamAdapter↔ProtocolBridge seam 决策 (同 cycle 起草)
 
 ### 7.2 现有 ADR 关联 (沿用)
@@ -336,6 +336,8 @@ public:
 
 > **2026-10-12 起草 (v0.1)**: build agent 起草, 待 Oracle/Metis 复审
 > 预期 1-2 轮 Revise 后签发
+>
+> **2026-10-20 (KPI 现状变更,正文不改)**: §1 正文记载的 "KPI 3/3 已满 (2026-10-09 修订后)" 已过期。2026-10-20,3 个 active change(`cpptlm-msix-generator-ip` 0/44 / `cpptlm-pcie-tlp-entry-layer` 0/56 / `cpptlm-p2-integration-unblock` 0/45,均 0% 未实施)全部 **⏸ 暂存归档**(`openspec archive --skip-specs`,delta spec 未合并进 `openspec/specs/`)→ **当前 baseline 0/3**。per `AGENTS.md`「⏸ 两种归档语义必须区分」。本 ADR 正文按不可变原则保留为调研历史。
 
 ---
 

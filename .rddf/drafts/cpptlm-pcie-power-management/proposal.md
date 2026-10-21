@@ -5,7 +5,7 @@
 > **关联**:
 > - 前置: `cpptlm-pcie-host-test-flr-rebar` (X1) — 依赖 X1 完成的 host-side FLR/state trigger 基础设施
 > - 后续: `cpptlm-pcie-aer-ats-pri` (X3) — 依赖 X2 完成的 power state 状态机
-> **平行**: `cpptlm-dgpu-soc-internal-noc-e1` (Draft, 暂停), `cpptlm-p2-integration-unblock` (Proposed, 异步)
+> **平行**: `cpptlm-dgpu-soc-internal-noc-e1` (Draft, 暂停), `cpptlm-p2-integration-unblock` (⏸ 2026-10-20 暂存归档, 未实施)
 > **冻结面**: 23 ABI 签名零 diff (per ADR-DGPU-08) + 4 frozen headers 零 diff
 
 ---
@@ -122,4 +122,4 @@ X1 (FLR + Resizable BAR + HostPcieTestStub) 完成后,**PCIe 电源管理 (PM) �
 - 起点 tag: X1 completion (`cpptlm-pcie-host-test-flr-rebar-completion`)
 - 已有 hook: `cpptlm_power_cb_t` in `include/abi/cpptlm_emulator.h`
 - 后续 change: X3 (cpptlm-pcie-aer-ats-pri)
-- 平行 change: `cpptlm-dgpu-soc-internal-noc-e1` (Draft, 暂停), `cpptlm-p2-integration-unblock` (Proposed, 异步)
+- 平行 change: `cpptlm-dgpu-soc-internal-noc-e1` (Draft, 暂停), `cpptlm-p2-integration-unblock` (⏸ 2026-10-20 暂存归档, 未实施)

@@ -62,10 +62,10 @@
 - **[./timing-mode.md §0 关联与背景](./timing-mode.md)** + ADR-DGPU-11
 
 ### 实施跟踪
-- **Phase 0 + Phase 1 已起草完毕 (v0.5)**: `cpptlm-vram-controller-functional-integration` (P0) + `cpptlm-lwc-bus-hub-mvp` (P1) + `cpptlm-gmmu-pte-bus-correction` (P2, Gap I+G2+G1) + `cpptlm-pcie-tlp-entry-layer` (P2, Gap M)
-- **Phase 0-1 实施状态**: 待用户决策 archive A → activate C/D; 当前 4 change 已 validate PASS, 4 件套正文已修订 (per Oracle/Metis v0.5 复审)
-- **Phase 2 起草需等 C archive**: `cpptlm-msix-generator-ip` (P2, Gap L) — 用户决策 archive C 后激活
-- **Phase 3 起草需等 D archive**: `cpptlm-soc-error-cdc-bus` (P3, Gap N+O) — 用户决策 archive D 后激活
+- **Phase 0 + Phase 1 已起草完毕 (v0.5)**: `cpptlm-vram-controller-functional-integration` (P0) + `cpptlm-lwc-bus-hub-mvp` (P1) + `cpptlm-gmmu-pte-bus-correction` (P2, Gap I+G2+G1) + `cpptlm-pcie-tlp-entry-layer` (P2, Gap M) — 前三者 ✅ **已完成归档**;Change D **⏸ 2026-10-20 暂存归档**(未实施 0/56)
+- **Phase 0-1 实施状态 (2026-10-20 更新)**: A/B/C ✅ 已完成归档(2026-10-11~12);D/E + `cpptlm-p2-integration-unblock` **⏸ 暂存归档**(未实施,0/56 / 0/44 / 0/45)—— 四件套完整保留于 `openspec/changes/archive/2026-10-20-*/`,以后重建时拷回即可。**当前 OpenSpec active = 0,KPI 0/3**
+- **Phase 2 起草需等 C archive**: `cpptlm-msix-generator-ip` (P2, Gap L) — C 已于 2026-10-12 归档;E 本身 **⏸ 2026-10-20 暂存归档**(未实施),重建时拷回 `openspec/changes/cpptlm-msix-generator-ip/` 即可激活
+- **Phase 3 起草需等 D archive**: `cpptlm-soc-error-cdc-bus` (P3, Gap N+O) — D 已于 2026-10-20 暂存归档(**未实施**);D 未真正落地前,F 起草需先重建 D
 
 ## 维护规则
 

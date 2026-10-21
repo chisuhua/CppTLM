@@ -43,7 +43,7 @@
 | **M-3** Change C GMMU PTE fetch 5 处矛盾 | arch.md:99 + arch.md:208 | T5.1-T5.2 |
 | **M-4** arch §0.1.1 LWC 路径 `cluster/` → `lwc/` | arch.md:129 | T4.1 |
 | **M-5/M-6/M-7** | 与 O-9/O-3 重叠 | (随 T9 + T5 完成) |
-| **M-8** host_pcie_test_stub 已存在 + Change D serializer 关系未定义 | openspec/changes/cpptlm-pcie-tlp-entry-layer/proposal.md 顶部 | T14.4 |
+| **M-8** host_pcie_test_stub 已存在 + Change D serializer 关系未定义 | openspec/changes/archive/2026-10-20-cpptlm-pcie-tlp-entry-layer/proposal.md 顶部 | T14.4 |
 | **M-9** Change B DoorbellBundle 字段数残留 | openspec/changes/cpptlm-lwc-bus-hub-mvp/design.md 顶部 | T14.2 |
 | **M-10** NOC adapter 注释引用已裁定不存在的 dual bundle | include/tlm/vram_noc_adapter.hh:8 + include/tlm/gpu/sdma_noc_adapter.hh:44/:75 | T13.1-T13.2 |
 
@@ -60,7 +60,7 @@
 5. `openspec/changes/cpptlm-vram-controller-functional-integration/design.md` — 顶部 cross-reference 注解 (T14.1)
 6. `openspec/changes/cpptlm-lwc-bus-hub-mvp/design.md` — 顶部 cross-reference 注解 (T14.2)
 7. `openspec/changes/cpptlm-gmmu-pte-bus-correction/proposal.md` — 顶部 cross-reference 注解 (T14.3)
-8. `openspec/changes/cpptlm-pcie-tlp-entry-layer/proposal.md` — 顶部 cross-reference 注解 (T14.4)
+8. `openspec/changes/archive/2026-10-20-cpptlm-pcie-tlp-entry-layer/proposal.md` — 顶部 cross-reference 注解 (T14.4)
 9. `include/tlm/vram_noc_adapter.hh` — 仅注释修订 L8 (T13.1)
 10. `include/tlm/gpu/sdma_noc_adapter.hh` — 仅注释修订 L44/:75 (T13.2)
 11. `scripts/test/docs_sync_check.sh` — VIRTUAL_PATHS +5 (e1 v1.1 + flr-rebar v1.1) + cpptlm_emulator_*.h (T1)

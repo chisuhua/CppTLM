@@ -5,9 +5,9 @@
 > **承接**: 季度复审（2026-09-30）SoC 内部 wiring 治理讨论
 > **Owner**: CppTLM Team
 > **配套文档**:
-> - [D-AXI v1.4 §7 D3 演进 seam](../pcie/driver-visible-minimal-soc.md#7-d3-演进-seamv14-已就位) — 当前 injection 设计的事实依据
+> - [D-AXI v1.4 §7 D3 演进 seam](../../pcie/driver-visible-minimal-soc.md#7-d3-演进-seamv14-已就位) — 当前 injection 设计的事实依据
 > - [ADR-DGPU-06 AxiMemBundle 边界](../../adr/ADR-DGPU-06-axi-mem-bundle-boundary.md) — wire-format 级别边界（已签发）
-> - [ADR-DGPU-07 演进 seam](../../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) — `handle_slave_port ↔ backing_ptr_` 注入点（D3-D5 演进依赖） *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, 该 seam 不再适用, per [control-hub design.md §3.4](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*
+> - [ADR-DGPU-07 演进 seam](../../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) — `handle_slave_port ↔ backing_ptr_` 注入点（D3-D5 演进依赖） *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, 该 seam 不再适用, per [control-hub design.md §3.4](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))*
 > - [ADR-DGPU-10 backing 字段命名](../../adr/ADR-DGPU-10-backing-naming-convention.md) — owner/injected 两级
 > - [D3 evolution roadmap](d3-evolution-roadmap.md) — D3a-2 capacity 同步 + D3b VramController 入口
 > - [data-flow-and-topology-comparison.md](data-flow-and-topology-comparison.md) — 当前拓扑 + 数据流对照
@@ -20,7 +20,7 @@
 
 - Chub change §0.1 原则 3 "SoC 内部模块接口贴近真实物理 IP 边界" — 与本设计目标声明"TLM 化"方向完全对齐
 - Chub change 提议 6 "完全 JSON 声明拓扑" — 即本设计目标声明"TLM 连接"的具体落地 (JSON `connections[]` 13 条)
-- Chub change 提议 5 "移除 PcieMemoryDevice" — 即本设计目标声明"消除 1 处方法注入 `ep->set_memory_device(pcie_mem)`" (per [cpptlm-dgpu-soc-control-hub proposal.md §3 后果 4](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/proposal.md))
+- Chub change 提议 5 "移除 PcieMemoryDevice" — 即本设计目标声明"消除 1 处方法注入 `ep->set_memory_device(pcie_mem)`" (per [cpptlm-dgpu-soc-control-hub proposal.md §3 后果 4](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/proposal.md))
 - Chub change §1.1 L2 SoC 内部 ControlHub — 替代当前 0 处 Interconnect, 推进本设计目标"引入 CrossbarTLM" (D3b 路径)
 
 **本设计目标声明仍然准确 (D3 演进)**, 但 Chub change 推动的进度**比 D3b 提前** (per D3b-1 估时 5-7d vs Chub change 估时 21-30d 包含 ControlHub 6 端口 + 5 模块切型 + PcieMemoryDevice 移除)——这是 Chub change "范围超集" + "D3 提前" 的关系, 不矛盾。
@@ -100,7 +100,7 @@
 
 ### 2.1 As-Is wiring 全景
 
-> **⚠️ v0.6 supersede**: 本 mermaid 图含 `pcie_memory` (PcieMemoryDevice) 节点, Chub change 实施后 (per [cpptlm-dgpu-soc-control-hub design.md §6](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md)) 整个 PcieMemoryDevice 模块移除, 节点 `PMem0` / `PMem1` / `Pmem` 全部消失, `sdma.2` 与 `gmmu.0` 改走 JSON `soc_noc.0`/`soc_noc.1`/`soc_noc.2` (NoCFlitBundle), 拓扑图整体重画。
+> **⚠️ v0.6 supersede**: 本 mermaid 图含 `pcie_memory` (PcieMemoryDevice) 节点, Chub change 实施后 (per [cpptlm-dgpu-soc-control-hub design.md §6](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md)) 整个 PcieMemoryDevice 模块移除, 节点 `PMem0` / `PMem1` / `Pmem` 全部消失, `sdma.2` 与 `gmmu.0` 改走 JSON `soc_noc.0`/`soc_noc.1`/`soc_noc.2` (NoCFlitBundle), 拓扑图整体重画。
 
 ```mermaid
 graph TB
@@ -224,7 +224,7 @@ graph TB
 | TLM 化导致 BAR2 fast-path 性能不达标 | 中 | 高（破坏 driver 集成验证时效） | 必须先 benchmark 再 commit；预留 revert 路径 |
 | 冻结面审计失败 | 低 | 极高（违反 ADR-DGPU-08） | 提前 Oracle 评审 + 增 ADR-DGPU-12 解释"加 socket ≠ 新增 ABI" |
 | 现有 51 cases 全部需要回归 | 高 | 中 | TDD 5 步分批实施，每批 verify pass 才进下一批 |
-| D-AXI v2.0 与 P2 (CP attach) 时序冲突 | 中 | 高 | P2 (cpptlm-p2-integration-unblock) 优先；v2.0 推到 P2 后 |
+| D-AXI v2.0 与 P2 (CP attach) 时序冲突 | 中 | 高 | P2 (cpptlm-p2-integration-unblock, ⏸ 2026-10-20 暂存归档未实施) 优先；v2.0 推到 P2 后 |
 
 ---
 
@@ -240,7 +240,7 @@ graph TB
 | [ADR-DGPU-10](../../adr/ADR-DGPU-10-backing-naming-convention.md) | 引用 | owner/injected 两级命名 |
 | [ADR-DGPU-11](../../adr/ADR-DGPU-11-timing-mode-soc-scope.md) | 引用 | timing-mode 范围 |
 | `openspec/specs/driver-visible-minimal-soc/spec.md:126` | **依赖** | N8 raw pointer 决策（v1.4 baseline） |
-| [D-AXI v1.4 §7](../pcie/driver-visible-minimal-soc.md#7-d3-演进-seamv14-已就位) | **依赖** | D3 演进 seam 列表 |
+| [D-AXI v1.4 §7](../../pcie/driver-visible-minimal-soc.md#7-d3-演进-seamv14-已就位) | **依赖** | D3 演进 seam 列表 |
 
 ### 5.2 与 AGENTS.md §STRUCTURE 一致性
 

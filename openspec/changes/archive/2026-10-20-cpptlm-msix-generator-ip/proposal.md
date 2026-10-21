@@ -1,5 +1,22 @@
 # cpptlm-msix-generator-ip: MSI-X Generator IP + trigger_msix API (修复 Gap L)
 
+> **⏸ 暂存归档 (2026-10-20)**
+>
+> **归档语义**: **暂存归档**,**非**"已完成归档"。per `AGENTS.md` §DOC HYGIENE「⏸ 两种归档语义必须区分」。
+>
+> | 项 | 值 |
+> |----|----|
+> | **归档命令** | `openspec archive cpptlm-msix-generator-ip --skip-specs -y` |
+> | **delta spec** | **未合并**进 `openspec/specs/` —— 能力 `msix-generator` **不在** main specs 中,系统契约未被污染 |
+> | **tasks 完成度** | **0/44 (0%)** —— 实现**未启动** |
+> | **实现核查 (2026-10-20)** | `trigger_msix` / `MsixGeneratorIP` 全仓零匹配 |
+> | **关联 phase-9 子任务** | **9.C MSI-X Generator(Gap L)** —— 暂存后**失去 active 载体**,已标 deferred(per `phase-9.md`) |
+> | **重建路径** | `cp -r openspec/changes/archive/2026-10-20-cpptlm-msix-generator-ip/ openspec/changes/cpptlm-msix-generator-ip/` → 修订 proposal 的状态头 → 重新激活 |
+> | **可复用的价值** | proposal / design / tasks / delta spec **四件套完整保留**:范围界定、缺口分析、判据、TDD 5 步分解、跨仓 gate 机制先例 |
+> | **重建前须做** | ① 复核实现现状(可能已有部分落地,需重新划界)② 复核依赖 change 的状态 ③ 复核 `docs/designs/dgpu-soc/architecture.md` 的 Gap 定位是否仍成立 |
+>
+> **⚠️ 不得**在暂存状态下把该能力写进任何 Stage 的 DoD / 验收条款(per `AGENTS.md` 硬约束 4)。
+
 > **状态**: 🟡 Proposed Draft (Phase 2, Change E, 2026-10-12 lock)
 > **作者**: CppTLM Team
 > **版本**: v0.5.0 (初始草稿, Phase 2 Change E 启动)

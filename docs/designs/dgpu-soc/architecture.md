@@ -6,7 +6,7 @@
 > **修订记录 v0.4 (2026-10-09)**: 用户评审指出仿真模式段错误,本版本重写 §1.1 / §1.3 / §1.4 + 同步 §0.1 原则 4 / §0.2 Gap 矩阵 G3 / §0.2 Change A 措辞
 > **前置**: `DGpuBoard v2.0.2`(架构文档 [../dgpu-board/architecture.md](../dgpu-board/architecture.md) + 4 个 ADR DGPU-01~04)+ gem5 `AbstractMemory`/`PhysicalMemory`/`MemBackdoor` 参考模式
 > **前置**: `DGpuBoard v2.0.2`(架构文档 [../dgpu-board/architecture.md](../dgpu-board/architecture.md) + 4 个 ADR DGPU-01~04)+ gem5 `AbstractMemory`/`PhysicalMemory`/`MemBackdoor` 参考模式
-> **配套 ADR**: [ADR-DGPU-05](../adr/ADR-DGPU-05-vram-storage-ownership.md) (单一 VRAM 所有权) + [ADR-DGPU-06](../adr/ADR-DGPU-06-axi-mem-bundle-boundary.md) (AxiMemBundle 边界) + [ADR-DGPU-07](../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) (演进 seam) + [ADR-DGPU-10](../adr/ADR-DGPU-10-backing-naming-convention.md) (backing 字段命名约定 owner/injected 两级)
+> **配套 ADR**: [ADR-DGPU-05](../../adr/ADR-DGPU-05-vram-storage-ownership.md) (单一 VRAM 所有权) + [ADR-DGPU-06](../../adr/ADR-DGPU-06-axi-mem-bundle-boundary.md) (AxiMemBundle 边界) + [ADR-DGPU-07](../../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) (演进 seam) + [ADR-DGPU-10](../../adr/ADR-DGPU-10-backing-naming-convention.md) (backing 字段命名约定 owner/injected 两级)
 > **Owner**: CppTLM Team
 > **权威源**: 本文档为 **业务架构视图**,代码权威源是 D-AXI v1.4(commit `429327d`)+ `dgpu_soc_minimal_v1.json` 配置(见 §1.4 末尾)。
 > **目标存档**: 本目录 `architecture.md`(原 `docs/designs/2027-02-09-minimal-dgpu-soc.md`,2026-09-26 迁移至此;本仓不与外部 ArchForge 仓同步)
@@ -86,11 +86,11 @@
 ### 原则 2 — chip-level main memory by DGpuBoard 持有
 
 - **soc 芯片外接**一个 Functional Mode 抽象内存 (类比 HBM 物理内存)
-- **所有权归 `DGpuBoard`**,不是 SoC 内部模块 (per [ADR-DGPU-05](../adr/ADR-DGPU-05-vram-storage-ownership.md) + D-AXI v1.4 B7 single VRAM 真源决策)
+- **所有权归 `DGpuBoard`**,不是 SoC 内部模块 (per [ADR-DGPU-05](../../adr/ADR-DGPU-05-vram-storage-ownership.md) + D-AXI v1.4 B7 single VRAM 真源决策)
 - 借鉴 gem5 `PhysicalMemory::backingStore` + `AbstractMemory::pmemAddr` + `MemBackdoor::ptr()` 模式
 - 两种入口:
   - **backdoor 旁路**: host 特权直访 (`DGpuBoard::backdoor_read/write`),不经 PCIe TLP
-  - **mmio 正路** *(v0.6 supersede: Chub change 实施后, 改为 `driver → 23 ABI → DGpuBoard::mmio_write(bar=2) → Chub.axi_slave_in (Axi4Bundle) → Chub.noc_master_out (NoCFlitBundle) → SocInternalNoc → VramControllerTLM.req_in_`; PcieMemoryDevice 移除, per [cpptlm-dgpu-soc-control-hub design.md §6.2](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*: driver 视角经 BAR2 → `PcieMemoryDevice::memory_read/write`
+  - **mmio 正路** *(v0.6 supersede: Chub change 实施后, 改为 `driver → 23 ABI → DGpuBoard::mmio_write(bar=2) → Chub.axi_slave_in (Axi4Bundle) → Chub.noc_master_out (NoCFlitBundle) → SocInternalNoc → VramControllerTLM.req_in_`; PcieMemoryDevice 移除, per [cpptlm-dgpu-soc-control-hub design.md §6.2](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))*: driver 视角经 BAR2 → `PcieMemoryDevice::memory_read/write`
 
 ### 原则 3 — SoC 内部模块接口贴近真实物理 IP 边界;双重无注入约束
 
@@ -113,7 +113,7 @@
 - **VramControllerTLM backdoor 接口**: 通过 **继承自 `MemoryTLM` 的** `set_backing_view(uint8_t*, uint64_t)` 暴露 (per ADR-DGPU-10 新名约定; `MemoryTLM` 父类有 deprecated wrapper `set_backing_store(deprecated)` 仍可调用; `VramControllerTLM` 自身**不重写**这两个方法), backing 注入走 `DGpuBoard::bind_memory_backings()` 调 `vram_ctrl->set_backing_view(framebuffer_ptr_, framebuffer_size_)` (per `dgpu_board_shell.cc:773` per ADR-DGPU-11 决策 4), host 特权 (`DGpuBoard::backdoor_*`) 与内部 IP 都可经 `VramControllerTLM::handle_functional_request()` C++ API (per Change A T4) 直读 board-level 内存模块;类比 gem5 `MemBackdoor::ptr()`
 - **SDMA 经 ChStream + NOC 接入**: SDMA 必须实现 `cpptlm::OutputStreamAdapter<bundles::AxiMemBundle>& mem_out()` 才能经 `SocInternalNoc` mesh (chip-internal) 接入 VramController functional-mode (per §1.4.3 修订)
 - **本期 minimal_v1 即时落地**: VramControllerTLM 在 minimal_v1 数据路径主入口激活. **Phase 0 (Change A) 阶段**: `sdma.mem_out → pcie_memory.handle_slave_port(port=0) → vram_controller->handle_functional_request` (pcie_memory 作为桥接, 内部委托给 VramController). **Phase 1 (Change C) 阶段**: `sdma.mem_out → soc_internal_noc mesh → vram_noc_adapter → vram_controller->handle_functional_request` (NOC 直连, pcie_memory 不参与). 两阶段路径演进, D-AXI §7 D3 seam 已激活. **不是 v0.4 之前描述的 "直接 sdma.mem_out → vram_ctrl 绕过 pcie_memory"** (v0.5.1 修订 per Oracle C17)
-  - **⚠️ v0.6 supersede**: Chub change 实施后 (per [cpptlm-dgpu-soc-control-hub design.md §3.1 + §6.2](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md)), driver BAR2 路径 = `driver → 23 ABI → DGpuBoard::mmio_write(bar=2) → Chub.axi_slave_in (Axi4Bundle) → Chub.route_bar2_vram() 内部 Axi4→NoCFlitBundle 转换 → Chub.noc_master_out → SocInternalNoc.mesh → VramControllerTLM.req_in_ (NoCFlitBundle 上游) → handle_functional_request() → vram_storage_`; SDMA bulk DMA 路径 = `sdma.mem_out (NoCFlitBundle, port 2) → SocInternalNoc → VramControllerTLM.req_in_`; 两条路径**完全统一**走 SocInternalNoc + VramController, PcieMemoryDevice 移除
+  - **⚠️ v0.6 supersede**: Chub change 实施后 (per [cpptlm-dgpu-soc-control-hub design.md §3.1 + §6.2](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md)), driver BAR2 路径 = `driver → 23 ABI → DGpuBoard::mmio_write(bar=2) → Chub.axi_slave_in (Axi4Bundle) → Chub.route_bar2_vram() 内部 Axi4→NoCFlitBundle 转换 → Chub.noc_master_out → SocInternalNoc.mesh → VramControllerTLM.req_in_ (NoCFlitBundle 上游) → handle_functional_request() → vram_storage_`; SDMA bulk DMA 路径 = `sdma.mem_out (NoCFlitBundle, port 2) → SocInternalNoc → VramControllerTLM.req_in_`; 两条路径**完全统一**走 SocInternalNoc + VramController, PcieMemoryDevice 移除
 
 ### 当前状态 vs 目标态 Gap 矩阵 (2026-10-09 lock)
 
@@ -132,7 +132,7 @@
 | **3-MMIO Read Response** | ⚠️ write-mirror (`mmio_regs_[bar,offset]=payload` + read roundtrip `dgpu_board_shell.cc:495-501, 526-529`) + 异步 `inject_q_` drain + 50ms wait timeout (`dgpu_board_shell.cc:367-388`);违反 §0.1 原则 3.1 + 3 (无真实 AR/R 握手) | 经 **CR-Bus AR/R** 同步 ready/valid handshake → CplD TLP 报文回 Host | **MEDIUM (Gap K)**, 与 Gap H 同步修 (同一条 CrBundle) |
 | **3-MSI-X 中断交付** | ⚠️ SDMA fence → `msix_update_pending()` 同步直调 → `trigger_irq_async()` (`dgpu_board_shell.cc:1122-1127, 849-874`); CompletionRingTLM 在 dormant 状态 (per §1.4 注 3);违反 §0.1 原则 3.1 + 3 (0 个真实 MSI-X TLP 报文生成路径) | 经 **MSI-X Generator IP** → PBA → MSI-X table address lookup → MSI-X TLP 报文 (Msg/MsgD) → Host RC (PCIe Base Spec §6.8) | **MEDIUM (Gap L)**, D3 阶段实现; 复用 §0.1.1 LightweightInterconnect + MsixBundle |
 | **3-PCIe 入口 TLP 序列化层** | ⚠️ `DGpuBoard::mmio_read/write/config_read/write` 直调 (host API 直达 chip-internal, 0 个 TLP 编解码层) | 经 **PcieTlpSerializer** (host) → `PcieEndpointIP` TLP 解码 (Per PCIe Base Spec §2) → 路由 | **MEDIUM (Gap M)**, 由 `cpptlm-pcie-host-test-flr-rebar v1.1` HostPcieTestStub + `cpptlm-p2-integration-unblock` 一并修 |
-| 4 VramController 数据路径 | ⚠️ 当前数据路径直 memcpy 绕过 VramController (`pcie_memory.handle_slave_port ↔ vram_storage_` 直连); SDMA 不经 VramController 协议层直接 memcpy *(v0.6 supersede: Chub change 实施后 `pcie_memory.handle_slave_port` 移除, 走 Chub→SocInternalNoc→VramController, per [control-hub design.md §3.4](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))* | **VramControllerTLM functional-mode 接口** (zero-delay 时序, 控制器协议真实; 类比 gem5 `AbstractMemory::functionalAccess` + HBM Controller); **VramControllerTLM backdoor 接口** 通过 `set_backing_view(ptr, sz)` 暴露 board-level 内存模块直访 (类比 gem5 `MemBackdoor::ptr()`, per ADR-DGPU-10 新名); 与 timing-mode (`dgpu_soc_timing_v1.json`) 共用同一类, 仅配置 `VramControllerMode` 差异 (per ADR-DGPU-11 H2 互斥) | **本期落地 (Gap G3)** per Change A, 本更新触发 |
+| 4 VramController 数据路径 | ⚠️ 当前数据路径直 memcpy 绕过 VramController (`pcie_memory.handle_slave_port ↔ vram_storage_` 直连); SDMA 不经 VramController 协议层直接 memcpy *(v0.6 supersede: Chub change 实施后 `pcie_memory.handle_slave_port` 移除, 走 Chub→SocInternalNoc→VramController, per [control-hub design.md §3.4](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))* | **VramControllerTLM functional-mode 接口** (zero-delay 时序, 控制器协议真实; 类比 gem5 `AbstractMemory::functionalAccess` + HBM Controller); **VramControllerTLM backdoor 接口** 通过 `set_backing_view(ptr, sz)` 暴露 board-level 内存模块直访 (类比 gem5 `MemBackdoor::ptr()`, per ADR-DGPU-10 新名); 与 timing-mode (`dgpu_soc_timing_v1.json`) 共用同一类, 仅配置 `VramControllerMode` 差异 (per ADR-DGPU-11 H2 互斥) | **本期落地 (Gap G3)** per Change A, 本更新触发 |
 | **Long issue: CDC / Power Gate** | ❌ 全局 sim 时钟, 0 个 CDC FIFO + 0 个 IP-level power gate; PCIe (100/250 MHz) / NoC (1 GHz) / HBM 各频率间无跨域建模 | 异步 cross-domain sample FIFO + per-IP clock gating + power domain 仿真 | **LOW (Gap N)**, long-term D3+ backlog, 不阻塞本期 |
 | **Long issue: Error Aggregation Bus** | ❌ `error_code` 仅在 ChStream bundle 字段, 0 个 SoC-level error collector; per-IP `err` pin 未聚合 | 经 **ErrBus** → `ErrorCollectorIP` → PCIe AER 上报 Host (PCIe Base Spec §6.2) | **LOW (Gap O)**, long-term D3+ backlog, 不阻塞本期 |
 
@@ -204,14 +204,14 @@
 | **A** | `cpptlm-vram-controller-functional-integration` | minimal_v1 数据路径经 VramControllerTLM functional-mode (zero-delay, 协议真实); VramControllerTLM 暴露 `backdoor_read/write` 供 host 特权 + 内部 IP 直访 (per §1.4.1 + §1.4.2); SDMA 必须实现 ChStream 接口经 chip-internal NOC 接入 VramController (per §1.4.3) **[✅ archived 2026-10-11 per Tranche 2, commit `353f8aa8`; spec merged to `openspec/specs/vram-controller-functional-mode/`]** | **G3** | **P0** | 3-5d |
 | **B** | `cpptlm-lwc-bus-hub-mvp` | 引入 LightweightInterconnect + **CrBundle** (BAR0 mmio + MMIO Read) + **DoorbellBundle** (BAR1 0x10010000 SDMA ring 提交) **[✅ archived 2026-10-11 per Tranche 3, 12 commits HEAD `1eb51d27`; spec merged to `openspec/specs/lwc-bus-hub-mvp/`]** | **H + J + K** | **P1** | 7-10d |
 
-**并行可行性**: A 改数据路径 (`pcie_memory.handle_slave_port ↔ backing_view_` seam, *v0.6 supersede: Chub change 实施后该 seam 随 PcieMemoryDevice 一起移除, per [control-hub design.md §3.4](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md)*); B 改基础设施 (BAR 路由 + Doorbell 路径); **不同模块 + 不同路径**, 可 100% 并行实施 + 独立 review.
+**并行可行性**: A 改数据路径 (`pcie_memory.handle_slave_port ↔ backing_view_` seam, *v0.6 supersede: Chub change 实施后该 seam 随 PcieMemoryDevice 一起移除, per [control-hub design.md §3.4](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md)*); B 改基础设施 (BAR 路由 + Doorbell 路径); **不同模块 + 不同路径**, 可 100% 并行实施 + 独立 review.
 
 #### Phase 1: D3 同步期 (2026-11 ~ 2026-12)
 
 | Change | 名称 | Scope | 修 Gap | 优先级 | 估时 | 依赖 |
 |--------|------|-------|--------|--------|------|------|
 | **C** | `cpptlm-gmmu-pte-bus-correction` | 修复 GMMU page-walk wire-format 错配 (恢复 AxiMemBundle 或 CHI REQ channel); 接入 SocInternalNoc DataNoC (协同 e1 v1.1 落地) | **I + G2 + G1** | **P2** | 5-7d | B + e1 v1.1 上线 |
-| **D** | `cpptlm-pcie-tlp-entry-layer` | 引入 PcieTlpSerializer + TLP 解码层 (协同 flr-rebar v1.1 + p2-integration-unblock 落地) | **M** | **P2** | 7-10d | flr-rebar 上线 + p2-integration-unblock |
+| **D** | `cpptlm-pcie-tlp-entry-layer` **⏸ 2026-10-20 暂存归档**(未实施, 0/56) | 引入 PcieTlpSerializer + TLP 解码层 (协同 flr-rebar v1.1 + p2-integration-unblock 落地) | **M** | **P2** | 7-10d | flr-rebar 上线 + p2-integration-unblock |
 
 **并行可行性**: C 改 GMMU + NOC 路径; D 改 PCIe 入口; **不同模块**, 可并行实施.
 
@@ -219,7 +219,7 @@
 
 | Change | 名称 | Scope | 修 Gap | 优先级 | 估时 | 依赖 |
 |--------|------|-------|--------|--------|------|------|
-| **E** | `cpptlm-msix-generator-ip` | 引入 MSI-X Generator IP + **MsixBundle** (复用 Change B LWC 基础设施) | **L** | **P2** | 5-7d | B 完成 |
+| **E** | `cpptlm-msix-generator-ip` **⏸ 2026-10-20 暂存归档**(未实施, 0/44) | 引入 MSI-X Generator IP + **MsixBundle** (复用 Change B LWC 基础设施) | **L** | **P2** | 5-7d | B 完成 |
 
 #### Phase 3: 长期 backlog (2027-Q2+)
 
@@ -251,9 +251,9 @@
 |-------------------|------|----------------------|
 | `cpptlm-dgpu-soc-internal-noc-e1` v1.1 | ✅ archived 2026-10-09 (设计意图源保留; 代码已落地) | **协同**: 由 Change C 推动落地 (修复 GMMU PTE fetch + DataNoC 骨架一起实施) |
 | `cpptlm-pcie-host-test-flr-rebar` v1.1 | ✅ archived 2026-10-09 (设计意图源保留; 代码已落地 per Phase 8 桥接 + HostBypassTLM) | **协同**: 由 Change D 推动落地 (HostPcieTestStub 调用路径不变, 底层加 TLP 序列化层) |
-| `cpptlm-p2-integration-unblock` | 🟢 Proposed | **协同**: 与 Change D 并行 (CP 跨仓接入 unblock) |
+| `cpptlm-p2-integration-unblock` | ⏸ **2026-10-20 暂存归档**(未实施) | **协同**: 与 Change D 并行 (CP 跨仓接入 unblock) |
 | `cpptlm-dgpu-soc-timing-mvp` | ✅ 完成 | **独立**: 与本计划无冲突 (timing-mode 走 dgpu_soc_timing_v1, 与 minimal_v1 是不同 SoC 拓扑) |
-| `cpptlm-driver-visible-minimal-soc` | ✅ 完成 v1.8 | **基础**: 本计划 Change A 基于其 D3 seam (`handle_slave_port ↔ backing_view_`) *(v0.6 supersede: Chub change 实施后该 seam 随 PcieMemoryDevice 一起移除, per [control-hub design.md §3.4](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))* |
+| `cpptlm-driver-visible-minimal-soc` | ✅ 完成 v1.8 | **基础**: 本计划 Change A 基于其 D3 seam (`handle_slave_port ↔ backing_view_`) *(v0.6 supersede: Chub change 实施后该 seam 随 PcieMemoryDevice 一起移除, per [control-hub design.md §3.4](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))* |
 
 #### OpenSpec KPI 释放节奏 (KPI ≤3 限制)
 
@@ -458,7 +458,7 @@ DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
     │   ├── PcieBarRouter       (BAR0 寄存器表: GMMU_PT_BASE_LO/HI / GMMU_CTRL / SDMA_STATUS)
     │   └── memory_device_      (raw ptr → PcieMemoryDevice, Phase 3 T1.2/T4.2 N12 注入)
     ├── PcieMemoryDevice        (ChStreamModuleBase, 2 SlavePorts;SDMA mem_out + GMMU req_out;backing_view_ 注入式)
-    ├── SdmaEngineTLM           (5-port, ring mode + fence, translate_cb → GmmuTLM, N3 retry driver + N7 slot-2 resp) *(v0.6 supersede: Chub change 实施后, SDMA 切 8 端口 (上游 AXI master + 下游 NoC + 独立 translate_req/resp + doorbell_in), per [control-hub design.md §3.3](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*
+    ├── SdmaEngineTLM           (5-port, ring mode + fence, translate_cb → GmmuTLM, N3 retry driver + N7 slot-2 resp) *(v0.6 supersede: Chub change 实施后, SDMA 切 8 端口 (上游 AXI master + 下游 NoC + 独立 translate_req/resp + doorbell_in), per [control-hub design.md §3.3](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))*
     ├── GmmuTLM                 (新建: 一级页表翻译, 无 TLB, 异步 translate -EAGAIN)
     └── CompletionRingTLM       (fence 完成 → MSI-X)
 ```
@@ -471,7 +471,7 @@ DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
 | 组件 | 类型 | 来源 | 职责 |
 |------|------|------|------|
 | `PcieEndpointIP` | 17-port SimModule | ✅ 复用 | BAR 存储 + config space + MSI-X;`set_memory_device` 注入 (T1.2) |
-| `PcieMemoryDevice` | 2-port ChStreamModule | ✅ D2 复用 | BAR2 8GB vram aperture 外观层;backing_view_ 注入式 (v1.4 B7) *(v0.6 supersede: Chub change 提议 5 移除整个 PcieMemoryDevice 模块, driver BAR2 路径改走 Chub→SocInternalNoc→VramController, per [control-hub design.md §6](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))* |
+| `PcieMemoryDevice` | 2-port ChStreamModule | ✅ D2 复用 | BAR2 8GB vram aperture 外观层;backing_view_ 注入式 (v1.4 B7) *(v0.6 supersede: Chub change 提议 5 移除整个 PcieMemoryDevice 模块, driver BAR2 路径改走 Chub→SocInternalNoc→VramController, per [control-hub design.md §6](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))* |
 | `SdmaEngineTLM` | 5-port ChStreamModule | ✅ 复用 | DMA 搬运 (H2D/D2H), ring mode, fence, N3 retry driver *(v0.6 supersede: Chub change 实施后切 8 端口)* |
 | `CompletionRingTLM` | 4-port ChStreamModule | ✅ 复用 | fence 完成汇聚 → MSI-X vector 0 |
 | `PcieBarRouter` | 工具 | ✅ 复用 | BAR0 寄存器表 (PT_BASE_LO/HI 等) |
@@ -499,9 +499,9 @@ DGpuBoard (shell, 23 ABI 冻结, v2.0.2)
 
 **保留模块 (P3 promote 后)**:
 - `PcieEndpointIP` — 保留为 EP-internal composite (PcieAxiBridgeIP 与 PcieControllerIP facade 都依赖其 bar_router/bar_store/bar_sizes)
-- `PcieMemoryDevice` — 保留 (D2 v1.1, 退化 PCIe 外观层; backing 来自 DGpuBoard `vram_storage_`) *(v0.6 supersede: Chub change 提议 5 移除整个 PcieMemoryDevice 模块, per [control-hub design.md §6](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*
-- `GmmuTLM` — 维持 + 服务 timing-controller (上层) *(v0.6 supersede: Chub change 实施后切 5 端口 + translate slave, per [control-hub design.md §4](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*
-- `SdmaEngineTLM` — 5-port 复用 (mem_in/mem_out 切 AxiMemBundle, desc_in/done_out/host_out 保持 PcieTlpBundle) *(v0.6 supersede: Chub change 实施后切 8 端口 + mem 改 NoCFlitBundle, per [control-hub design.md §3.3](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))*
+- `PcieMemoryDevice` — 保留 (D2 v1.1, 退化 PCIe 外观层; backing 来自 DGpuBoard `vram_storage_`) *(v0.6 supersede: Chub change 提议 5 移除整个 PcieMemoryDevice 模块, per [control-hub design.md §6](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))*
+- `GmmuTLM` — 维持 + 服务 timing-controller (上层) *(v0.6 supersede: Chub change 实施后切 5 端口 + translate slave, per [control-hub design.md §4](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))*
+- `SdmaEngineTLM` — 5-port 复用 (mem_in/mem_out 切 AxiMemBundle, desc_in/done_out/host_out 保持 PcieTlpBundle) *(v0.6 supersede: Chub change 实施后切 8 端口 + mem 改 NoCFlitBundle, per [control-hub design.md §3.3](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))*
 - `CompletionRingTLM` — 维持 + fence → MSI-X
 
 **P3 实施约束 (per Amendment 修订)**:
@@ -603,7 +603,7 @@ Per `openspec/changes/dgpu-realip-pin-contract/specs/dgpu-4ip-port-contract/spec
 
 ### 2.4.3 DataNoC Only 范围声明 (E.1 v1.1, 2026-10-09)
 
-Per [cpptlm-dgpu-soc-internal-noc-e1 v1.1 design.md §3.5](../../openspec/changes/cpptlm-dgpu-soc-internal-noc-e1/design.md), **E.1 v1.1 将 SocInternalNoc 范围从"全 SoC 4 target 路由"重定位为 DataNoC only**:
+Per [cpptlm-dgpu-soc-internal-noc-e1 v1.1 design.md §3.5](../../../openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-e1/design.md), **E.1 v1.1 将 SocInternalNoc 范围从"全 SoC 4 target 路由"重定位为 DataNoC only**:
 
 **E.1 v1.1 承载范围**:
 - ✅ **SDMA bulk DMA 流量** (SDMA→VramControllerTLM, 经 SDMANocAdapter + VramNocAdapter)
@@ -643,7 +643,7 @@ Per [cpptlm-dgpu-soc-internal-noc-e1 v1.1 design.md §3.5](../../openspec/change
 
 ## 2.5 HostPcieTestStub 仿真测试桩 (cpptlm-pcie-host-test-flr-rebar v1.1, 2026-10-09)
 
-Per [cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.1](../../openspec/changes/cpptlm-pcie-host-test-flr-rebar/design.md), HostPcieTestStub 是 **in-process C++ 仿真测试桩**, **不依赖 UsrLinuxEmu 跨仓 driver**。
+Per [cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.1](../../../openspec/changes/archive/2026-10-09-cpptlm-pcie-host-test-flr-rebar/design.md), HostPcieTestStub 是 **in-process C++ 仿真测试桩**, **不依赖 UsrLinuxEmu 跨仓 driver**。
 
 **统一构造签名** (v1.1 修复 v1.0 三处不一致):
 ```cpp
@@ -702,7 +702,7 @@ private:
 
 ### 2.6.1 FLR 协议层测试 (v1.1 复用既有)
 
-Per [cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.2](../../openspec/changes/cpptlm-pcie-host-test-flr-rebar/design.md), **E.1 v1.1 不重建 PcieFlrHandler 4-state 状态机**, **复用既有** `PcieEndpointIP::flr_pf()/flr_vf()` (per `pcie_endpoint_ip.hh:201-202`) + `pool_.flr_pf()` 全状态复位 (per `pcie_sriov_vf_pool_tlm.hh:110`).
+Per [cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.2](../../../openspec/changes/archive/2026-10-09-cpptlm-pcie-host-test-flr-rebar/design.md), **E.1 v1.1 不重建 PcieFlrHandler 4-state 状态机**, **复用既有** `PcieEndpointIP::flr_pf()/flr_vf()` (per `pcie_endpoint_ip.hh:201-202`) + `pool_.flr_pf()` 全状态复位 (per `pcie_sriov_vf_pool_tlm.hh:110`).
 
 **真实 FLR 链路** (per PCIe Base Spec §6.6.2):
 ```
@@ -728,7 +728,7 @@ Host → HostPcieTestStub::trigger_flr()
 
 ### 2.6.2 Resizable BAR Runtime 测试 (v1.1 复用既有 + uint64)
 
-Per [cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.3](../../openspec/changes/cpptlm-pcie-host-test-flr-rebar/design.md), **v1.1 不新建 ResizableBarRuntime 类**, **复用既有** `enable_resizable_bar()/on_bar_resize()` API (per `pcie_endpoint_ip.cc:670-694`) + `ResizableBar` INV-C 状态机 (per `pcie_resizable_bar.hh`).
+Per [cpptlm-pcie-host-test-flr-rebar v1.1 design.md §3.3](../../../openspec/changes/archive/2026-10-09-cpptlm-pcie-host-test-flr-rebar/design.md), **v1.1 不新建 ResizableBarRuntime 类**, **复用既有** `enable_resizable_bar()/on_bar_resize()` API (per `pcie_endpoint_ip.cc:670-694`) + `ResizableBar` INV-C 状态机 (per `pcie_resizable_bar.hh`).
 
 **关键修复**: `ResizableBar::new_size_bytes_` 字段类型 `uint32_t` → **`uint64_t`** (per CRITICAL C3: 4GB resize 溢出修复):
 ```cpp
@@ -779,7 +779,7 @@ Host → HostPcieTestStub::trigger_resize_bar(2, 0x100000000ULL)  // 4GB, uint64
 | §3 存储子系统 + §3.1-§3.6 | 已合并到 §0.1 原则 2 + D-AXI v1.4 §7 + ADR-DGPU-05 单一 VRAM 真源 |
 | §4 BAR 路由与读写路径 + §4.1-§4.4 | 已合并到 §0.1 原则 4 + Change B 集成 BAR0/1/2 (修复 Gap H + K) |
 | §5 GMMU 设计 + §5.1 API 骨架 + §5.2 翻译流程 | 已由 Phase 1 Change C `cpptlm-gmmu-pte-bus-correction` 接管 (修复 Gap I + G2 + G1) |
-| §6 SDMA / Fence / MSI-X 链路 | 已由 Phase 0 Change B 接管 Doorbell (Gap J) + Phase 2 Change E `cpptlm-msix-generator-ip` 接管 MSI-X (Gap L) |
+| §6 SDMA / Fence / MSI-X 链路 | 已由 Phase 0 Change B 接管 Doorbell (Gap J) + Phase 2 Change E `cpptlm-msix-generator-ip`(**⏸ 2026-10-20 暂存归档,未实施**)接管 MSI-X (Gap L) |
 | §7 JSON 配置 + §7.1-§7.4 | `configs/dgpu_soc_minimal_v1.json` + `configs/dgpu_soc_timing_v1.json` 实际配置 + §0.2 总体实施计划 4 Phases / 6 Changes |
 | §8 关键不变性 (Inv-1~Inv-6) | Inv-1/2 已合并到 §0.1 原则 2; Inv-3-6 与 §0.1 原则 1/3 (driver-visible + 双重无注入约束) 合并 |
 | §9 实施路径 (4 阶段 3 周) | 已被 §0.2 总体实施计划 (4 Phases 6 Changes) 替代 |

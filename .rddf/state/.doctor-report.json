@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-08-25T16:39:48.516962+00:00",
+  "timestamp": "2026-10-19T07:31:04.214286+00:00",
   "categories_checked": [
     "state",
     "plan-tdd",
@@ -9,37 +9,507 @@
     "tasks-checkbox",
     "migration-residue",
     "orphan-gates",
-    "roadmap-refs"
+    "roadmap-refs",
+    "roadmap-feature",
+    "roadmap-md-integrity",
+    "roadmap-phases",
+    "docs-consistency",
+    "ai-context-bootstrap",
+    "gitignore",
+    "bypass-audit",
+    "improvement-frontmatter-consistency",
+    "objective-lifecycle",
+    "objective-structure",
+    "arch-audit",
+    "review-debt",
+    "roadmap-backup",
+    "baseline-freshness"
   ],
   "findings": [
     {
       "severity": "INFO",
       "category": "tasks-checkbox",
-      "file": "/workspace/project/CppTLM/openspec/changes/2026-08-21-cpptlm-v05-mvp-s2-dgpu-board/tasks.md",
+      "file": "/workspace/project/CppTLM/openspec/changes/cpptlm-dgpu-soc-control-hub/tasks.md",
       "line": null,
-      "snippet": "2026-08-21-cpptlm-v05-mvp-s2-dgpu-board: tasks 0/45 (0%)",
-      "fix_hint": "complete tasks checkboxes; ratio is 0/45"
+      "snippet": "cpptlm-dgpu-soc-control-hub: tasks 0/170 (0%)",
+      "fix_hint": "complete tasks checkboxes; ratio is 0/170"
     },
     {
       "severity": "INFO",
       "category": "tasks-checkbox",
-      "file": "/workspace/project/CppTLM/openspec/changes/2026-08-21-cpptlm-v05-mvp-s3-command-pipeline/tasks.md",
+      "file": "/workspace/project/CppTLM/openspec/changes/cpptlm-dgpu-soc-physical-ip-port-boundary/tasks.md",
       "line": null,
-      "snippet": "2026-08-21-cpptlm-v05-mvp-s3-command-pipeline: tasks 0/38 (0%)",
-      "fix_hint": "complete tasks checkboxes; ratio is 0/38"
+      "snippet": "cpptlm-dgpu-soc-physical-ip-port-boundary: tasks 0/127 (0%)",
+      "fix_hint": "complete tasks checkboxes; ratio is 0/127"
+    },
+    {
+      "severity": "INFO",
+      "category": "tasks-checkbox",
+      "file": "/workspace/project/CppTLM/openspec/changes/cpptlm-msix-generator-ip/tasks.md",
+      "line": null,
+      "snippet": "cpptlm-msix-generator-ip: tasks 0/44 (0%)",
+      "fix_hint": "complete tasks checkboxes; ratio is 0/44"
+    },
+    {
+      "severity": "INFO",
+      "category": "tasks-checkbox",
+      "file": "/workspace/project/CppTLM/openspec/changes/cpptlm-p2-integration-unblock/tasks.md",
+      "line": null,
+      "snippet": "cpptlm-p2-integration-unblock: tasks 0/102 (0%)",
+      "fix_hint": "complete tasks checkboxes; ratio is 0/102"
+    },
+    {
+      "severity": "INFO",
+      "category": "tasks-checkbox",
+      "file": "/workspace/project/CppTLM/openspec/changes/cpptlm-pcie-tlp-entry-layer/tasks.md",
+      "line": null,
+      "snippet": "cpptlm-pcie-tlp-entry-layer: tasks 0/56 (0%)",
+      "fix_hint": "complete tasks checkboxes; ratio is 0/56"
     },
     {
       "severity": "WARNING",
-      "category": "tasks-checkbox",
-      "file": "/workspace/project/CppTLM/openspec/changes/cpptlm-d1-p1-pipeline-scoreboard/tasks.md",
+      "category": "roadmap-md-integrity.table-schema",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
       "line": null,
-      "snippet": "cpptlm-d1-p1-pipeline-scoreboard: tasks 53/60 (88%)",
-      "fix_hint": "complete remaining 7 of 60 tasks before archive (set SKIP_TASKS_GATE=yes to bypass archive gate)"
+      "snippet": "phase-4: invalid status 'done' (expected: active|deferred|completed|archived)",
+      "fix_hint": "set Status to a valid value"
+    },
+    {
+      "severity": "WARNING",
+      "category": "roadmap-md-integrity.index-segment",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "AUTO-INDEX missing required `### Features` segment",
+      "fix_hint": "add `### Features` segment under AUTO-INDEX"
+    },
+    {
+      "severity": "WARNING",
+      "category": "roadmap-md-integrity.index-segment",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "AUTO-INDEX missing required `### Objectives` segment",
+      "fix_hint": "add `### Objectives` segment under AUTO-INDEX"
+    },
+    {
+      "severity": "WARNING",
+      "category": "roadmap-md-integrity.index-segment",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "AUTO-INDEX missing required `### Phases` segment",
+      "fix_hint": "add `### Phases` segment under AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-md-integrity.index-sync",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-4: disk phase file exists but missing from AUTO-INDEX Phases segment",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-md-integrity.index-sync",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-5: disk phase file exists but missing from AUTO-INDEX Phases segment",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-md-integrity.index-sync",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-6: disk phase file exists but missing from AUTO-INDEX Phases segment",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-md-integrity.index-sync",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-7: disk phase file exists but missing from AUTO-INDEX Phases segment",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-md-integrity.index-sync",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-9: disk phase file exists but missing from AUTO-INDEX Phases segment",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-phases.index-drift",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-4: disk phase exists but missing from .rddf/roadmap.md AUTO-INDEX Phases",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-phases.index-drift",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-5: disk phase exists but missing from .rddf/roadmap.md AUTO-INDEX Phases",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-phases.index-drift",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-7: disk phase exists but missing from .rddf/roadmap.md AUTO-INDEX Phases",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-phases.index-drift",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-9: disk phase exists but missing from .rddf/roadmap.md AUTO-INDEX Phases",
+      "fix_hint": "rddf roadmap --reindex or manually add to AUTO-INDEX"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "roadmap-phases.main-doc-missing",
+      "file": "/workspace/project/CppTLM/.rddf/roadmap.md",
+      "line": null,
+      "snippet": "phase-6: referenced in main doc Phase Skeleton but no phase file",
+      "fix_hint": "create .rddf/roadmap/phases/phase-6.md or remove from main doc"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "docs-consistency",
+      "file": "(repo-wide)",
+      "line": null,
+      "snippet": "[skill-count-package-vs-disk] package.json skills[]=27, disk */SKILL.md=28",
+      "fix_hint": "see sync-package-skills-to-disk proposal"
+    },
+    {
+      "severity": "CRITICAL",
+      "category": "docs-consistency",
+      "file": "(repo-wide)",
+      "line": null,
+      "snippet": "[skill-count-install-vs-disk] INSTALL.md table rows=27, disk */SKILL.md=28",
+      "fix_hint": "sync INSTALL.md sub-skill table to match disk"
+    },
+    {
+      "severity": "WARNING",
+      "category": "ai-context-bootstrap",
+      "file": "(repo-wide)",
+      "line": null,
+      "snippet": "\u627e\u5230 2 \u4e2a AI \u914d\u7f6e\u6587\u4ef6\u4f46\u5747\u65e0 Layer 0 \u5757: AGENTS.md, CLAUDE.md",
+      "fix_hint": "\u8fd0\u884c `rddf setup ai-context` \u90e8\u7f72 Layer 0 \u534f\u8bae\u5757\u3002"
+    },
+    {
+      "severity": "INFO",
+      "category": "arch-audit",
+      "file": "/workspace/project/CppTLM/docs/architecture",
+      "line": null,
+      "snippet": "18 theme docs (01-hybrid-architecture-v2.1, 02-complex-topology-architecture, 02-transaction-architecture, 03-error-debug-architecture, 04-reset-checkpoint-architecture \u2026)",
+      "fix_hint": "no action required; informational summary"
+    },
+    {
+      "severity": "INFO",
+      "category": "arch-audit",
+      "file": "/workspace/project/CppTLM/docs/adr",
+      "line": null,
+      "snippet": "35 ADRs (latest: ADR-0000, superseded: 0)",
+      "fix_hint": "no action required; informational summary"
+    },
+    {
+      "severity": "INFO",
+      "category": "arch-audit",
+      "file": "/workspace/project/CppTLM/.rddf/state/.arch-handoff.json",
+      "line": null,
+      "snippet": "arch-handoff v2 valid (adr_count=21, arch_complete_at=2026-08-15T04:31:24.735111+00:00)",
+      "fix_hint": "no action required; informational summary"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/setup.py",
+      "line": 39,
+      "snippet": "new TODO marker at line 39 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/bench_fft.py",
+      "line": 72,
+      "snippet": "new TODO marker at line 72 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/bench_layer_norm.py",
+      "line": 29,
+      "snippet": "new FIXME marker at line 29 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/conftest.py",
+      "line": 62,
+      "snippet": "new TODO marker at line 62 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/conftest.py",
+      "line": 119,
+      "snippet": "new TODO marker at line 119 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/test_binary_elementwise.py",
+      "line": 437,
+      "snippet": "new TODO marker at line 437 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/test_binary_elementwise.py",
+      "line": 482,
+      "snippet": "new TODO marker at line 482 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/test_constant.py",
+      "line": 20,
+      "snippet": "new TODO marker at line 20 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/test_control_flow.py",
+      "line": 840,
+      "snippet": "new TODO marker at line 840 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/test_print.py",
+      "line": 16,
+      "snippet": "new FIXME marker at line 16 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/test/test_typeinfer.py",
+      "line": 75,
+      "snippet": "new TODO marker at line 75 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir2bytecode.py",
+      "line": 759,
+      "snippet": "new FIXME marker at line 759 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_memory_model.py",
+      "line": 45,
+      "snippet": "new TODO marker at line 45 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_mutex.py",
+      "line": 74,
+      "snippet": "new TODO marker at line 74 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_stub.py",
+      "line": 1517,
+      "snippet": "new TODO marker at line 1517 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/ir.py",
+      "line": 566,
+      "snippet": "new TODO marker at line 566 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/ops.py",
+      "line": 219,
+      "snippet": "new TODO marker at line 219 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/ops.py",
+      "line": 350,
+      "snippet": "new TODO marker at line 350 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/ops.py",
+      "line": 420,
+      "snippet": "new TODO marker at line 420 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/ops.py",
+      "line": 565,
+      "snippet": "new TODO marker at line 565 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/ops.py",
+      "line": 601,
+      "snippet": "new FIXME marker at line 601 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/ops.py",
+      "line": 1752,
+      "snippet": "new FIXME marker at line 1752 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/ops_utils.py",
+      "line": 330,
+      "snippet": "new FIXME marker at line 330 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/typing_support.py",
+      "line": 149,
+      "snippet": "new FIXME marker at line 149 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_ir/typing_support.py",
+      "line": 204,
+      "snippet": "new TODO marker at line 204 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/alias_analysis.py",
+      "line": 102,
+      "snippet": "new TODO marker at line 102 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/rewrite_patterns.py",
+      "line": 33,
+      "snippet": "new FIXME marker at line 33 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/rewrite_patterns.py",
+      "line": 113,
+      "snippet": "new FIXME marker at line 113 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. FIXME(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/token_order.py",
+      "line": 98,
+      "snippet": "new TODO marker at line 98 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/token_order.py",
+      "line": 561,
+      "snippet": "new TODO marker at line 561 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/token_order.py",
+      "line": 566,
+      "snippet": "new TODO marker at line 566 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/token_order.py",
+      "line": 574,
+      "snippet": "new TODO marker at line 574 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/token_order.py",
+      "line": 576,
+      "snippet": "new TODO marker at line 576 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "review-debt.unticketed-marker",
+      "file": "external/PTX-EMU/cutile-python/src/cuda/tile/_passes/typeinfer.py",
+      "line": 118,
+      "snippet": "new TODO marker at line 118 (no ticket id)",
+      "fix_hint": "add ticket id (e.g. TODO(RDDF-1234)) or remove marker"
+    },
+    {
+      "severity": "WARNING",
+      "category": "baseline-freshness.missing-file",
+      "file": "/workspace/project/CppTLM/tests/KNOWN_FAILURES.txt",
+      "line": null,
+      "snippet": "KNOWN_FAILURES.txt does not exist; no baseline to compare against",
+      "fix_hint": "run bash tests/scripts/refresh_known_failures.sh to bootstrap"
     }
   ],
   "summary": {
-    "critical": 0,
-    "warning": 1,
-    "info": 2
+    "critical": 12,
+    "warning": 40,
+    "info": 8
   }
 }

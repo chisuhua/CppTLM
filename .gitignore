@@ -50,6 +50,17 @@ configs/soc_cluster_b_annotated.*
 
 # Editor dependencies
 cpptlm/visualization/editor/node_modules/
+
+# OpenSpec 归档目录 —— 默认**不入库**(归档是历史噪音,避免 main specs 之外再增体积)
+#
+# ⚠️ **例外**:`⏸ 暂存归档` 的 change **必须** `git add -f` 入库。
+#    理由(per AGENTS.md §DOC HYGIENE「⏸ 暂存归档」硬约束 3):
+#      ① 暂存归档的语义是「**保留供以后重建**」—— 不入库 = 换个 clone / git clean 就丢;
+#      ② 硬约束 3 要求**同步所有指向该 change 的活文档引用**,而引用路径正是
+#         `openspec/changes/archive/<date>-<name>/` —— 不入库则那些引用必然断链;
+#      ③ 「已完成归档」合并进 main specs,产物不依赖归档目录;而暂存归档**不**合并
+#         (硬约束 1:`--skip-specs`),故它是**唯一**的设计载体。
+#    历史先例:3 次 commit 对 openspec archive 内容做过 force-add(96 个文件已跟踪)。
 openspec/changes/archive/
 
 # Sisyphus planning files

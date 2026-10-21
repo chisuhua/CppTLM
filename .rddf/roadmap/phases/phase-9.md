@@ -8,9 +8,9 @@ phase_refs: []
 
 ## phase-9: dGPU Phase 2/3 (06 v0.4 + 06-bis + 3 active changes)
 
-> **真源 1 (基础)**: [`docs/architecture/06-inter-module-network.md`](../../docs/architecture/06-inter-module-network.md) v0.4 (主文档)
-> **真源 1 (基础)**: [`docs/architecture/06-bis-coherence-as-network-extension.md`](../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3
-> **真源 2 (dGPU 应用)**: [`docs/designs/dgpu-soc/architecture.md`](../../docs/designs/dgpu-soc/architecture.md) §0.1 原则 3 (SoC 内部模块接口贴近真实物理 IP 边界)
+> **真源 1 (基础)**: [`docs/architecture/06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4 (主文档)
+> **真源 1 (基础)**: [`docs/architecture/06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3
+> **真源 2 (dGPU 应用)**: [`docs/designs/dgpu-soc/architecture.md`](../../../docs/designs/dgpu-soc/architecture.md) §0.1 原则 3 (SoC 内部模块接口贴近真实物理 IP 边界)
 > **关键 ADR**: [`docs/adr/ADR-DGPU-10~14-*.md`](../../docs/adr/)
 > **OpenSpec KPI**: per AGENTS.md §DOC HYGIENE line 420, **2026-10-19 baseline 3/3 合规** (per archive A+B 后, 控制 hub + physical-ip-port-boundary 已 archived with sync)
 
@@ -18,12 +18,16 @@ phase_refs: []
 
 | OpenSpec change | 状态 | 范围 | tasks | 估时 | 关联 phase-9 子任务 |
 |-----------------|------|------|------|------|---------------------|
-| **cpptlm-msix-generator-ip** | 🟡 Proposed Draft | MSI-X Generator IP + `trigger_msix` API (修复 Gap L) | 44 | — | **9.C MSI-X Generator** |
-| **cpptlm-pcie-tlp-entry-layer** | 🟡 Proposed | PcieTlpSerializer + TLP 解码层 (修复 Gap M) | 56 | — | **9.D TLP 解码层** |
-| **cpptlm-p2-integration-unblock** | 📋 Proposed (2027-09-17 修订) | P2 (CP 接入) 集成阻塞修复 (Metis + Oracle 2027-09-17 修订版) | 102 | — | **9.E P2 EP↔SoC 4 方向 AXI 桥接** |
+| ~~`cpptlm-msix-generator-ip`~~ | ⏸ **2026-10-20 暂存归档** (未实施) | MSI-X Generator IP + `trigger_msix` API (修复 Gap L) | 0/44 | — | **9.C MSI-X Generator → deferred** |
+| ~~`cpptlm-pcie-tlp-entry-layer`~~ | ⏸ **2026-10-20 暂存归档** (未实施) | PcieTlpSerializer + TLP 解码层 (修复 Gap M) | 0/56 | — | **9.D TLP 解码层 → deferred** |
+| ~~`cpptlm-p2-integration-unblock`~~ | ⏸ **2026-10-20 暂存归档** (未实施) | P2 (CP 接入) 集成阻塞修复 (Metis + Oracle 2027-09-17 修订版) | 0/45 | — | **9.E P2 EP↔SoC 4 方向 AXI 桥接 → deferred** |
 
-**总 tasks 待 execute**: 202 个 (0% 完成)
-**KPI**: 3/3 合规 (per AGENTS.md §DOC HYGIENE line 420, 2026-10-19 archive A+B 后)
+**当前 active = 0**(3 个全部 ⏸ 暂存归档,`--skip-specs`,delta spec 未合并,proposal 已加 ⏸ 标记)
+
+**9.C / 9.D / 9.E 状态**: **deferred** —— 暂存归档后失去 active 载体;设计四件套完整保留于 `openspec/changes/archive/2026-10-20-*/`,**以后重建**:`cp -r` 回 `openspec/changes/<name>/` → 复核实现现状与依赖 → 重新激活。
+
+**总 tasks 待 execute**: 0 个 active(原 202 个全部随 3 个 change 暂存)
+**KPI**: **0/3**(per AGENTS.md §DOC HYGIENE「⏸ 两种归档语义必须区分」, 2026-10-20)
 
 ### 历史归档 (Archived) — 关键 4 个 change (Tranche 0/1 实施完成)
 
@@ -31,7 +35,7 @@ phase_refs: []
 |-----------------|------|---------|
 | **cpptlm-vram-controller-functional-integration** (Change A) | ✅ archived (Tranche 2) | 2026-10-11 |
 | **cpptlm-lwc-bus-hub-mvp** (Change B) | ✅ archived (Tranche 3) | 2026-10-11 |
-| **cpptlm-gmmu-pte-bus-correction** (Change C) | 🟡 P2 (待 Activate) | — |
+| **cpptlm-gmmu-pte-bus-correction** (Change C) | ✅ **archived 2026-10-12**(spec merged → `openspec/specs/gmmu-pte-wf/`) | 2026-10-12 |
 | **cpptlm-pcie-host-test-flr-rebar** v1.1 | ✅ archived | 2026-10-09 |
 | **cpptlm-dgpu-soc-internal-noc-e1** v1.1 | ✅ archived | 2026-10-09 |
 
@@ -48,7 +52,7 @@ phase_refs: []
 |-----------------|------|---------|
 | **cpptlm-vram-controller-functional-integration** (Change A) | ✅ archived (Tranche 2) | 2026-10-11 |
 | **cpptlm-lwc-bus-hub-mvp** (Change B) | ✅ archived (Tranche 3) | 2026-10-11 |
-| **cpptlm-gmmu-pte-bus-correction** (Change C) | 🟡 P2 (待 Activate) | — |
+| **cpptlm-gmmu-pte-bus-correction** (Change C) | ✅ **archived 2026-10-12**(spec merged → `openspec/specs/gmmu-pte-wf/`) | 2026-10-12 |
 | **cpptlm-pcie-host-test-flr-rebar** v1.1 | ✅ archived | 2026-10-09 |
 | **cpptlm-dgpu-soc-internal-noc-e1** v1.1 | ✅ archived | 2026-10-09 |
 

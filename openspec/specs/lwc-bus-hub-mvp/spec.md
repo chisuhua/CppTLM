@@ -91,7 +91,7 @@ TBD - created by archiving change cpptlm-lwc-bus-hub-mvp. Update Purpose after a
 
 > **[v1.0.1 B-H1 修订]**: 原 `pcie-ep-cr-emission (新增)` requirement **整段删除**. `PcieEndpointIP` 在本 change 中**0 修改** (既无新增 API 也无删除). DGpuBoard `mmio_write` 直调 `lwc_hub_->cr_write(tx)`, 经 `pending_cr_queue_` mutex-queue 跨 host↔sim 线程 (per v1.0.1 B-B2). 替代原 design §5 的 `emit_cr_write()` 描述.
 
-**替代 Requirement**: 见 `cpptlm-pcie-tlp-entry-layer` Change D Phase 1.3 (PcieEndpointIP::submit_tlp() 整合 LWC 总线入口, defer to Phase 1).
+**替代 Requirement**: 见 `cpptlm-pcie-tlp-entry-layer` Change D Phase 1.3 (PcieEndpointIP::submit_tlp() 整合 LWC 总线入口, defer to Phase 1). ⚠️ **2026-10-20 更新**:Change D 已 **⏸ 暂存归档**(未实施 0/56,见 `openspec/changes/archive/2026-10-20-cpptlm-pcie-tlp-entry-layer/`),本 Requirement 仍**未生效**。
 
 **冻结面要求 (per v1.0.1 B-H1 + B-H5)**: 本 SHALL 锁定:
 - `include/tlm/pcie/pcie_endpoint_ip.hh` 在本 change 实施前后必须 `git diff HEAD -- ...` **输出为空** (0 改动, frozen surface diff 0, 既有 17 端口 signature 全保留)

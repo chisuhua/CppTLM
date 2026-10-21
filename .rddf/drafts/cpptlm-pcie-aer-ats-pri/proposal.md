@@ -5,7 +5,7 @@
 > **关联**:
 > - 前置: X1 (HostPcieTestStub + error_inject API) + X2 (PM power state)
 > - 后续: 无 (本 change 为 PCIe host 视角 5 项特性收尾)
-> **平行**: `cpptlm-dgpu-soc-internal-noc-e1` (Draft, 暂停), `cpptlm-p2-integration-unblock` (Proposed, 异步)
+> **平行**: `cpptlm-dgpu-soc-internal-noc-e1` (Draft, 暂停), `cpptlm-p2-integration-unblock` (⏸ 2026-10-20 暂存归档, 未实施)
 > **冻结面**: 23 ABI 签名零 diff (per ADR-DGPU-08) + 4 frozen headers 零 diff
 
 ---
@@ -135,7 +135,7 @@ X1 (FLR + Resizable BAR) + X2 (PM) 完成后,dGPU SoC 已具备 PCIe 设备基�
 - 既有 hook: `cpptlm_dma_translate_cb` 同步签名 in `include/abi/cpptlm_emulator.h`
 - X1 依赖: `HostPcieTestStub::error_inject()` API (per X1 spec `pcie-host-test-infrastructure`)
 - 后续 change: 无 (本 change 收尾 PCIe 5 项特性 host 视角闭环)
-- 平行 change: `cpptlm-dgpu-soc-internal-noc-e1` (Draft, 暂停), `cpptlm-p2-integration-unblock` (Proposed, 异步)
+- 平行 change: `cpptlm-dgpu-soc-internal-noc-e1` (Draft, 暂停), `cpptlm-p2-integration-unblock` (⏸ 2026-10-20 暂存归档, 未实施)
 
 ---
 
