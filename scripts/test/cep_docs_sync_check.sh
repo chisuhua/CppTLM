@@ -375,13 +375,22 @@ ROOT = os.getcwd()
 # 只扫 **CEP 专属**文档 —— 06 原文 / 历史 archive / 调研附录里的 P6 是合法的
 FILES = []
 for pat in ("docs/adr/ADR-CEP-*.md", "docs/architecture/07-*.md",
+            "docs/research/cep-*.md",
+            # 注:docs/implementation/** **不**扫描 —— 实施笔记是「附属 2」层,
+            #    其内容是关于 P 编号检查本身的**元讨论**(必然含 P6 字样),
+            #    纳入会造假阳性。契约载体 = ADR + 07 号 + openspec + roadmap。
+            "docs/designs/**/*.md",
             ".rddf/roadmap/*.md", ".rddf/roadmap/**/*.md",
-            ".rddf/improvements/*.md", "openspec/changes/cpptlm-cep-umbrella/**/*.md",
-            "openspec/changes/cpptlm-cep-umbrella/*.md"):
+            ".rddf/improvements/*.md", ".rddf/drafts/*.md",
+            "openspec/changes/cpptlm-cep-umbrella/**/*.md",
+            "openspec/changes/cpptlm-cep-umbrella/*.md",
+            "openspec/changes/*/specs/**/*.md",
+            "openspec/changes/*/*.md"):
     import glob
     FILES += glob.glob(os.path.join(ROOT, pat), recursive=True)
 FILES = sorted(set(FILES))
 
+# ── 规则 B:P6 全禁 ───────────────────────────────────────────────
 # 否定 / 排除语境标记(必须落在 P6 出现点前后 100 字符内)
 #
 # ⚠️ 「排除」单独作标记会漏放**反向语义**:「**不**排除 P6」命中「排除」→
@@ -394,31 +403,93 @@ NEG = ["不存在", "非 P", "排除", "不引入", "不得", "无 P6", "不含"
 # 反向语义:「不排除 / 未排除 / 不能排除 / 未必排除」= **仍可能引用 P6** → 违规
 REV = ["不排除", "未排除", "不能排除", "未必排除", "非不排除"]
 
+# ── 规则 A:06 §15.4 P 编号**白名单** ──────────────────────────────
+# per spec「P 编号口径唯一(IC1)」:CEP 文档引用的 `06` P 编号
+# **必须**落在 06 §15.4 口径内(P2.0 / P2.1 / P3 / P3.5 / P4 / P5)。
+#
+# ⚠️ **不能**对全仓所有 `P<数字>` 套白名单 —— `P0` / `P1` / `P2` 在本仓是
+#    **优先级 / rdd-planner 阶段**用法(rdd-workflow 词汇),与 06 §15.4 无关:
+#    实测 P0(12) / P1(24) / P2(23) 中,落在「§15.4 语境行」的只有 **1** 处。
+#    故「06 §15.4 引用」判定为:
+#      · 形如 P2.0 / P2.1 / P3.5 的**小数**形式(优先级永不为小数)→ 必是 §15.4 条目;
+#      · 或**同一行**出现 `15.4` → 该行的整数 P 编号是 §15.4 条目。
+ALLOWED_P = {"P2.0", "P2.1", "P3", "P3.5", "P4", "P5"}
+# 明确声明「不引用该 P 编号」的排除语境(同一行内)
+# 合并了规则 B 的 NEG 词表 + 元讨论标记(讨论「禁引/口径」本身的行)。
+EXCL_P = ["无 ", "不引入", "禁 ", "排除", "不得", "不含", "不存在", "不在",
+          "不引用", "禁止", "剔除", "口径", "非 ", "未 ", "P6 不",
+          "不存在", "非 P", "无 P6", "冻结", "P3-P6", "禁 P6", "不出现",
+          "不一致", "= fail", "非 P3-P6", "不得引用",
+          "禁引", "白名单", "违规", "假阳性", "反向语义", "检查项",
+          "为准", "不引用"]
+
+
+def is_exclusion(line):
+    return any(e in line for e in EXCL_P)
+
+
 violations = []
 occurrences = 0
+ref_count = 0
 for f in FILES:
     if not os.path.exists(f):
         continue
     text = open(f, encoding="utf-8").read()
-    for m in re.finditer(r"\bP6\b", text):
-        occurrences += 1
-        start = max(0, m.start() - 100)
-        ctx = text[start:m.end() + 60].replace("\n", " ")
-        # 反向语义优先:命中 REV 即违规(即便邻近有 NEG 词)
-        if any(r in ctx for r in REV):
-            violations.append((os.path.relpath(f, ROOT), ctx))
+    rel = os.path.relpath(f, ROOT)
+
+    # ── 规则 B:P6 全禁 ─────────────────────────────────────────
+    # 行级判定(与规则 A 同口径):P6 所在行必须含排除语境标记。
+    # ⚠️ 原实现是「±100 字符窗口」—— 邻近的无关句可充当否定证据。
+    for line in text.splitlines():
+        if not re.search(r"\bP6\b", line):
             continue
-        if not any(n in ctx for n in NEG):
-            violations.append((os.path.relpath(f, ROOT), ctx))
+        occurrences += 1
+        # 反向语义(「不排除 P6」等)对**任何** P6 出现都成立 → 全局判违规
+        if any(r in line for r in REV):
+            violations.append((rel, f"[反向语义] {line.strip()[:110]}"))
+            continue
+        # ⚠️ 本仓 `P<数字>` 有**三种**互不相干的词汇:
+        #    ① 06 §15.4 阶段编号(P2.0/P2.1/P3/P3.5/P4/P5)—— 契约管制的对象
+        #    ② 优先级 / rdd-planner 阶段(P0/P1/P2)
+        #    ③ 调研文档的**发现编号**(P1..P28)
+        #    故「P6 是否违规」取决于它**是不是 06 编号引用** —— 以 06 引用标记
+        #    (该行提到 06 的 §11.4 / §15.4 / inter-module-network)为准。
+        is_06_ref = any(mk in line for mk in ("§11.4", "§15.4", "inter-module-network"))
+        if not is_06_ref:
+            continue
+        if is_exclusion(line):
+            continue
+        violations.append((rel, f"[P6 违规] {line.strip()[:110]}"))
+
+    # ── 规则 A:06 §15.4 P 编号白名单(行级) ───────────────────────
+    for line in text.splitlines():
+        in_154 = "15.4" in line
+        for m in re.finditer(r"\bP(\d+(?:\.\d+)*)\b", line):
+            num = m.group(1)
+            tok = "P" + num
+            is_decimal = "." in num
+            if not (is_decimal or in_154):
+                continue          # 非 06 §15.4 引用(如优先级 P0 / P1 / P2)
+            # 区间简写(如 "P2-P5" / "P2.0-P5"):两端单独判,中间不判
+            after = line[m.end():m.end() + 2]
+            before = line[max(0, m.start() - 2):m.start()]
+            if after.startswith("-P") or before.endswith("P-"):
+                continue
+            ref_count += 1
+            if tok in ALLOWED_P:
+                continue
+            if is_exclusion(line):
+                continue          # 明确声明不引用该编号(如「无 P6」)
+            violations.append((rel, f"[口径外 P 编号 {tok}] {line.strip()[:100]}"))
 
 if violations:
-    print(f"  \033[0;31m✗\033[0m P6 出现在 {len(violations)} 处非排除语境(扫 {len(FILES)} 个 CEP 文档):")
-    for path, ctx in violations[:8]:
-        print(f"      {path}: ...{ctx}...")
-else:
-    print(f"  \033[0;32m✓\033[0m P6 共 {occurrences} 处(扫 {len(FILES)} 个 CEP 文档),全部处于排除/否定语境")
+    print(f"  \033[0;31m✗\033[0m P 编号口径违规 {len(violations)} 处(扫 {len(FILES)} 个 CEP 文档):")
+    for path, ctx in violations[:10]:
+        print(f"      {path}: {ctx}")
+    sys.exit(1)
+print(f"  \033[0;32m✓\033[0m P6 共 {occurrences} 处(扫 {len(FILES)} 个 CEP 文档),全部处于排除/否定语境")
+print(f"  \033[0;32m✓\033[0m 06 §15.4 P 编号引用 {ref_count} 处,全部落在白名单 {sorted(ALLOWED_P)} 内")
 
-sys.exit(1 if violations else 0)
 PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 

@@ -46,8 +46,14 @@ namespace {
         std::string reason;
     };
 
-    ResolutionResult resolve_named_networks(const json& instance,
-                                            const std::set<int>& known_vc_ids) {
+    // fabric 配置的 **network → vc_id** 映射(Stage 1 装配期检查器的输入形态)。
+    // ⚠️ 2026-10-21 代码复审 S12:此前 resolver 对 named_network **写死 resolved=false**
+    //    → 「能解析到唯一 vc_id」这条**从未被正向验证**,成功分支不可达。
+    //    现补上该映射,named_network 成功路径真实可走并被断言。
+    using NetworkMap = std::map<std::string, std::set<int>>;
+
+    ResolutionResult resolve_named_networks(const json& instance, const std::set<int>& known_vc_ids,
+                                            const NetworkMap& fabric_networks = {}) {
         ResolutionResult r;
         if (!instance.contains("ordering_assumption")) {
             r.reason = "缺少 ordering_assumption";
@@ -67,9 +73,16 @@ namespace {
                 const int vc = std::stoi(key);
                 resolved = (known_vc_ids.count(vc) > 0);
             } else {
-                // named_network:须经 fabric config 解析到唯一 vc_id;本测试的
-                // fixture 里,named_network 形如 "net_fwd" → 解析到 vc_id。
-                resolved = false;
+                // named_network:须经 fabric config 解析到**唯一** vc_id。
+                // 解析不到 → fail;解析到**多个** → 同样 fail(唯一性是契约的一部分)。
+                const auto found = fabric_networks.find(key);
+                if (found != fabric_networks.end() && found->second.size() == 1) {
+                    const int vc = *found->second.begin();
+                    resolved = (known_vc_ids.count(vc) > 0);
+                } else if (found != fabric_networks.end()) {
+                    r.reason = "ordering_assumption 的 named_network 解析到多个 vc_id: " + key;
+                    return r;
+                }
             }
             if (!resolved) {
                 r.reason = "ordering_assumption 的 key 无法解析到唯一 vc_id: " + key;
@@ -361,34 +374,177 @@ TEST_CASE("[cep][schema][negative] schema 不得出现协议标识符(C9 负向�
     }
 }
 
+TEST_CASE("[cep][schema] named_network 解析到唯一 vc_id 时必须 pass(IC2 正向路径)",
+          "[cep][schema]") {
+    // ⚠️ 2026-10-21 代码复审 S12:此前 named_network 的成功分支**不可达**
+    //    (resolver 写死 resolved=false)→ 「能解析到唯一 vc_id」从未被正向验证。
+    const std::set<int> known = {0, 1, 2, 3};
+    const NetworkMap fabric = {{"net_fwd", {1}}, {"net_bwd", {2}}};
+
+    json inst = minimal_valid_instance();
+    inst["ordering_assumption"] = {{"net_fwd", "p2p_ordered"}};
+    const auto ok = resolve_named_networks(inst, known, fabric);
+    INFO("named_network 正向路径应通过: " << ok.reason);
+    REQUIRE(ok.ok);
+
+    // 数字 key 仍可直接用作 vc_id
+    json numeric = minimal_valid_instance();
+    numeric["ordering_assumption"] = {{"0", "p2p_ordered"}};
+    REQUIRE(resolve_named_networks(numeric, known, fabric).ok);
+}
+
 TEST_CASE("[cep][schema] named_network 不可解析到唯一 vc_id 时必须 fail", "[cep][schema]") {
     const std::set<int> known = {0, 1, 2, 3};
+    const NetworkMap fabric = {{"net_fwd", {1}}, {"net_bwd", {2}}};
 
     json ok = minimal_valid_instance();
-    REQUIRE(resolve_named_networks(ok, known).ok);
+    REQUIRE(resolve_named_networks(ok, known, fabric).ok);
 
     json bad = minimal_valid_instance();
-    bad["ordering_assumption"] = {{"net_fwd", "p2p_ordered"}}; // 未注册的 named_network
-    const auto r = resolve_named_networks(bad, known);
+    bad["ordering_assumption"] = {{"net_unknown", "p2p_ordered"}}; // 未注册的 named_network
+    const auto r = resolve_named_networks(bad, known, fabric);
     REQUIRE_FALSE(r.ok);
     REQUIRE_FALSE(r.reason.empty());
 
     json bad2 = minimal_valid_instance();
     bad2["ordering_assumption"] = {{"9", "p2p_ordered"}}; // 越界 vc_id
-    REQUIRE_FALSE(resolve_named_networks(bad2, known).ok);
+    REQUIRE_FALSE(resolve_named_networks(bad2, known, fabric).ok);
+
+    // 解析到**多个** vc_id → 同样 fail(「唯一」是契约的一部分)
+    json bad3 = minimal_valid_instance();
+    bad3["ordering_assumption"] = {{"net_ambiguous", "p2p_ordered"}};
+    const NetworkMap ambiguous = {{"net_ambiguous", {1, 2}}};
+    const auto r3 = resolve_named_networks(bad3, known, ambiguous);
+    REQUIRE_FALSE(r3.ok);
+    REQUIRE(r3.reason.find("多个") != std::string::npos);
+
+    // 未提供 fabric 映射时, named_network 一律 fail(不得静默放过)
+    json bad4 = minimal_valid_instance();
+    bad4["ordering_assumption"] = {{"net_fwd", "p2p_ordered"}};
+    REQUIRE_FALSE(resolve_named_networks(bad4, known).ok);
 }
 
-TEST_CASE("[cep][schema] status 只有 implemented 计入 adapter 计数", "[cep][schema]") {
+// 计数口径(per ADR-CEP-12 决策 9):**仅** `implemented` 计入。
+// ⚠️ 2026-10-21 代码复审 S13:原断言是「枚举里 'implemented' 出现 1 次」
+//    —— **恒真**,与 ADR 声称的计数口径毫无关系。现改为可测的规则实现。
+std::size_t count_implemented(const std::vector<std::string>& statuses) {
+    std::size_t n = 0;
+    for (const auto& st : statuses) {
+        if (st == "implemented")
+            ++n;
+    }
+    return n;
+}
+
+TEST_CASE("[cep][schema] status 只有 implemented 计入 adapter 计数(IC3)", "[cep][schema]") {
     const json s = load_schema();
     const std::set<std::string> st(s.at("properties").at("status").at("enum").begin(),
                                    s.at("properties").at("status").at("enum").end());
-    // 计数口径(per ADR-CEP-12 决策 9):仅 implemented 计入
-    int counted = 0;
-    for (const auto& v : st) {
-        if (v == "implemented")
-            ++counted;
-    }
-    REQUIRE(counted == 1);
+    // 枚举取值锁定(3 值,缺一即口径漂移)
+    REQUIRE(st.size() == 3);
     REQUIRE(st.count("planned") == 1);
+    REQUIRE(st.count("implemented") == 1);
     REQUIRE(st.count("excluded") == 1);
+
+    // 计数规则的**行为**:混合状态 → 只有 implemented 计入
+    const std::vector<std::string> mixed = {"implemented", "planned",     "implemented",
+                                            "excluded",    "implemented", "planned"};
+    REQUIRE(count_implemented(mixed) == 3);
+    REQUIRE(count_implemented({}) == 0);
+    REQUIRE(count_implemented({"planned", "excluded"}) == 0);
+    REQUIRE(count_implemented({"implemented"}) == 1);
+    // 规则只能统计枚举内的取值(否则拼写错误会被静默漏计)
+    for (const auto& stt : mixed) {
+        INFO("非枚举 status 值: " << stt);
+        REQUIRE(st.count(stt) == 1);
+    }
+
+    // ADR 侧的口径文字必须被钉住(决策 9 是计数口径的**唯一依据**)
+    const auto adr12 = read_file(
+        (repo_root() / "docs" / "adr" / "ADR-CEP-12-protocol-engine-capability-map.md").string());
+    INFO("ADR-CEP-12 决策 9 的计数口径文字缺失");
+    REQUIRE(adr12.find("implemented") != std::string::npos);
+    REQUIRE(adr12.find("计数口径") != std::string::npos);
+    REQUIRE(adr12.find("MESI_Three_Level_HTM") != std::string::npos);
+}
+
+TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致(IC3 口径锚点)",
+          "[cep][schema]") {
+    // ⚠️ S13 的第二半:「统计结果与 07 号 §5.1 的口径表述**一致**」(spec:257)
+    //    —— 原测试**完全没查 07 号**。
+    //    计数规则的**下界**来自 07 号 §5.1 的表格;若表格行数与声明数漂移,
+    //    「已实现 adapter 实例数」的下界就失真 → 必须机器核对。
+    const auto truth = read_file(
+        (repo_root() / "docs" / "architecture" / "07-coherence-exploration-platform.md").string());
+
+    // §5.1.1 工业硬件协议族: | **族** | 实例 | `Adapter` | 状态 | ... |
+    const auto i511 = truth.find("#### 5.1.1");
+    const auto i512 = truth.find("#### 5.1.2");
+    const auto i513 = truth.find("#### 5.1.3");
+    REQUIRE(i511 != std::string::npos);
+    REQUIRE(i512 != std::string::npos);
+    REQUIRE(i513 != std::string::npos);
+
+    int rows511 = 0;
+    {
+        const std::string sec = truth.substr(i511, i512 - i511);
+        std::size_t pos = 0;
+        while ((pos = sec.find("| **", pos)) != std::string::npos) {
+            const std::size_t eol = sec.find('\n', pos);
+            const std::string line =
+                sec.substr(pos, (eol == std::string::npos ? sec.size() : eol) - pos);
+            // 只数**数据行**(表头以 `| 协议族 |` 开头,不带 `**`)
+            if (line.find("`") != std::string::npos && line.find("Adapter") != std::string::npos) {
+                ++rows511;
+            }
+            pos = (eol == std::string::npos) ? sec.size() : eol + 1;
+        }
+    }
+    int rows512 = 0;
+    {
+        const std::string sec = truth.substr(i512, i513 - i512);
+        std::size_t pos = 0;
+        while ((pos = sec.find("| ", pos)) != std::string::npos) {
+            const std::size_t eol = sec.find('\n', pos);
+            const std::string line =
+                sec.substr(pos, (eol == std::string::npos ? sec.size() : eol) - pos);
+            // §5.1.2 数据行形如 | MESI_Two_Level | ✅ 直接支持 | ... |
+            // 取**第 1 格**(协议实例名):第 1 个 "|" 与第 2 个 "|" 之间
+            const std::size_t c2 = line.find('|', 1);
+            if (c2 != std::string::npos && c2 > 2) {
+                std::string cell = line.substr(2, c2 - 2);
+                // 去掉首尾空白
+                const auto b = cell.find_first_not_of(" \t");
+                const auto e = cell.find_last_not_of(" \t");
+                if (b != std::string::npos && e != std::string::npos) {
+                    cell = cell.substr(b, e - b + 1);
+                }
+                if (!cell.empty() &&
+                    (std::isalpha(static_cast<unsigned char>(cell[0])) || cell[0] == '*')) {
+                    ++rows512;
+                }
+            }
+            pos = (eol == std::string::npos) ? sec.size() : eol + 1;
+        }
+    }
+    INFO("§5.1.1 行数=" << rows511 << " §5.1.2 行数=" << rows512);
+    REQUIRE(rows511 == 6); // 工业 5 族 / 6 实例
+    REQUIRE(rows512 == 8); // Ruby 1 族 / 8 实例
+    REQUIRE(rows511 + rows512 == 14);
+
+    // §5.1 的声明必须与表格一致,且必须声明 14 是**下界** + 语义索引不重复计 adapter
+    INFO("07 号 §5.1 未声明 14 个 adapter 实例");
+    REQUIRE(truth.find("14 个 adapter 实例") != std::string::npos);
+    INFO("07 号 §5.1 未声明 §5.1.4 的语义索引不重复计 adapter");
+    REQUIRE(truth.find("不重复计 adapter") != std::string::npos);
+    INFO("07 号 §5.1 未声明 5 个一致性模型语义索引");
+    REQUIRE(truth.find("5 个一致性模型语义索引") != std::string::npos);
+    // §5.1.1 / §5.1.2 各自的族/实例声明
+    REQUIRE(truth.find("5 族 / 6 实例") != std::string::npos);
+    REQUIRE(truth.find("1 族 / 8 实例") != std::string::npos);
+
+    // 交叉一致性:`excluded` 的用法(MESI_Three_Level_HTM)在 07 号侧标「明确排除」
+    INFO("07 号 §5.1.2 未把 MESI_Three_Level_HTM 标为明确排除");
+    REQUIRE(truth.find("MESI_Three_Level_HTM") != std::string::npos);
+    REQUIRE(truth.find("明确排除") != std::string::npos);
 }

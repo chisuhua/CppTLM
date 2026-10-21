@@ -143,19 +143,32 @@ TEST_CASE("[cep][simulation-mode] simulation_mode 是唯一模式维度,无 netw
     REQUIRE(text.find("simulation_mode") != std::string::npos);
 
     // `network.mode` 的**每一处**出现都必须在否定语境。
-    // 判定窗口同时覆盖出现点**前后**(否定词常在之前,如「不引入 network.mode 4 组合」)。
-    const char* kNegations[] = {"不得", "禁止", "拒绝", "不引入", "不存在", "不共存", "无 "};
+    //
+    // ⚠️ 2026-10-21 代码复审 S3:原判定是「±200/+120 **字符窗口**内出现任一否定词」
+    //    —— 两个缺陷:
+    //      · **反向语义可骗过**:「network.mode 与 simulation_mode 并列,均可使用
+    //        (不得混淆二者)」含「不得」→ 判为合规,但契约已破;
+    //      · **正向误报**:距否定词 >200 字的合法否决提及 → 判违规。
+    //    现改为**行级**判定:否定词必须与 `network.mode` 在**同一行**
+    //    (表格行算同一单元)—— 无关联的邻近句不再能充当否定证据。
+    const char* kNegations[] = {"不得", "禁止", "拒绝", "不引入", "不存在", "不共存",
+                                "无 ",  "不再", "不会", "非",     "剔除"};
+    auto line_of = [&text](std::size_t pos) {
+        const std::size_t b = text.rfind('\n', pos);
+        const std::size_t e = text.find('\n', pos);
+        return text.substr(b == std::string::npos ? 0 : b + 1,
+                           (e == std::string::npos ? text.size() : e) -
+                               (b == std::string::npos ? 0 : b + 1));
+    };
     std::size_t pos = 0;
     int occurrences = 0;
     while ((pos = text.find("network.mode", pos)) != std::string::npos) {
         ++occurrences;
-        const std::size_t from = (pos > 200) ? pos - 200 : 0;
-        const std::size_t to = (pos + 120 < text.size()) ? pos + 120 : text.size();
-        const std::string ctx = text.substr(from, to - from);
-        INFO("network.mode 第 " << occurrences << " 处出现但语境可疑: " << ctx);
+        const std::string line = line_of(pos);
+        INFO("network.mode 第 " << occurrences << " 处出现但同行无否定词: " << line);
         bool negated = false;
         for (const char* neg : kNegations) {
-            if (ctx.find(neg) != std::string::npos) {
+            if (line.find(neg) != std::string::npos) {
                 negated = true;
                 break;
             }
@@ -165,6 +178,49 @@ TEST_CASE("[cep][simulation-mode] simulation_mode 是唯一模式维度,无 netw
     }
     REQUIRE(occurrences > 0);
     REQUIRE(text.find("INV-CEP-07-IC1") != std::string::npos);
+
+    // ⚠️ spec:143「协议插件**不引入** `network.mode`(机器 grep 可查)」——
+    //    断言面必须覆盖**代码与配置**,不只是 ADR 文字。
+    int code_hits = 0;
+    for (const char* root : {"include", "src", "configs", "tools"}) {
+        const auto dir = repo_root() / root;
+        if (!std::filesystem::exists(dir))
+            continue;
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(dir)) {
+            if (!entry.is_regular_file())
+                continue;
+            const auto ext = entry.path().extension().string();
+            if (ext != ".cc" && ext != ".hh" && ext != ".h" && ext != ".json" && ext != ".py") {
+                continue;
+            }
+            const auto body = read_file(entry.path().string());
+            if (body.find("network.mode") == std::string::npos)
+                continue;
+            ++code_hits;
+            INFO("代码/配置里出现 network.mode: " << entry.path().string());
+            // 该行必须含否定词(与 ADR 同口径)
+            std::size_t p2 = 0;
+            while ((p2 = body.find("network.mode", p2)) != std::string::npos) {
+                const auto b = body.rfind('\n', p2);
+                const auto e = body.find('\n', p2);
+                const std::string ln = body.substr(b == std::string::npos ? 0 : b + 1,
+                                                   (e == std::string::npos ? body.size() : e) -
+                                                       (b == std::string::npos ? 0 : b + 1));
+                bool neg = false;
+                for (const char* n : kNegations) {
+                    if (ln.find(n) != std::string::npos) {
+                        neg = true;
+                        break;
+                    }
+                }
+                INFO("代码里 network.mode 同行无否定词: " << ln);
+                REQUIRE(neg);
+                p2 += 11;
+            }
+        }
+    }
+    INFO("代码/配置中 network.mode 命中数: " << code_hits);
+    REQUIRE(code_hits == 0);
 }
 
 TEST_CASE("[cep][simulation-mode] functional 模式 avg_latency_cycles == 0 为硬约束",

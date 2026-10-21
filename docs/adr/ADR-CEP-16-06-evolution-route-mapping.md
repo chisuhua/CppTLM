@@ -13,7 +13,7 @@
 >
 > **一手锚点**:
 > - `docs/architecture/06-inter-module-network.md` §15.4 表(逐行):P2.0 / P2.1 / P3 / P3.5 / P4 / P5 —— **无 P6**
-> - `docs/architecture/06-inter-module-network.md` §11.4 的另一张表**含 P6** → **以 §15.4 为准**(per `ADR-CEP-NUMBER-MAP §2 Decision 3` 冻结)
+> - `docs/architecture/06-inter-module-network.md` §11.4 的另一张表**含 P6** → **以 §15.4 为准**,**不引用** P6(per `ADR-CEP-NUMBER-MAP §2 Decision 3` 冻结)
 
 ---
 
