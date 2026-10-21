@@ -83,3 +83,9 @@ Testing/
 #   Each backup dir is timestamped (.rddf/.roadmap-migrate-backup-<TS>/)
 .rddf/.roadmap-migrate-backup-*/
 plugin.log
+
+# CEP 实验产物(per openspec/changes/cpptlm-cep-umbrella/design.md D6)
+# 仅目录约定与 schema 入库;各实验的 4 件套产物默认不入库
+experimental/*
+!experimental/.gitkeep
+!experimental/*.schema.json

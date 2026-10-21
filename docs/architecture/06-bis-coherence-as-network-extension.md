@@ -6,6 +6,35 @@
 
 ---
 
+## Status Update (2026-10-21) — superseded by CEP
+
+> **本文档正文**保持不变(per AGENTS.md「ADR / 真源不可变 + Status Update 段」先例);**仅**顶部加本段。
+> **归属**:本文档讨论的 Coherence 演进路线,其**框架层**由 **CEP (Coherence Exploration Platform)** 承接。
+
+**继任真源**:
+- 顶层真源 1:[`07-coherence-exploration-platform.md`](07-coherence-exploration-platform.md) v0.1(CEP 6 层 + canonical 10 流 + 15 组守门 invariant)
+- 真源 3:`docs/adr/ADR-CEP-*.md` **共 21 份**(含 `ADR-CEP-16` 的 `06 §15.4` 逐项映射 + `ADR-CEP-07A` 的本文档既有产物处置)
+
+**本文档各项的处置**(per `ADR-CEP-16 §2` 决策 1):
+
+| 06-bis 阶段 | CEP 处置 |
+|-------------|---------|
+| §3.4 / P2.0 programmatic bridge 路径 | **supersede** → CEP 的 ProtocolEngine 插件 + canonical 10 流;**不做**单一 `CoherenceProtocol` C++ 类 |
+| §3.4 / P2.1 `CoherenceBridge` C++ 实施 | **supersede** → 跨域组合由 `ADR-CEP-13` 承接,走**人工声明 + 实验证伪**路线 |
+| §4.2 `coherence_domains` C++ stub | **保留字段 + 语义重定义** → 消费在 Stage 2(per `ADR-CEP-07A` 决策 1 产物 4) |
+| §4 `CoherenceDomain` / `CoherentXBarTLM` C++ stub | **废弃 / 保留重定位** → per `ADR-CEP-07A` 决策 1 产物 1、2 |
+| §7 P3 `SnoopFilter` | **部分承接** → SharerTracker 5 实现(per `ADR-CEP-04`) |
+| §7 P3 `MesiGpuProtocol` / `MesiThreeLevelProtocol` / `translate_snoop` | **归 ArchForge**(协议语义建模,per AGENTS.md:423;CEP 侧只提供 adapter 载体 + 能力声明 schema) |
+| §7 P3.5 JSON 路径 + Python 工厂 | **改判** → capability schema(JSON)+ `tools/` 3 脚本 |
+| §7 P4 CHI 完整协议 | **改判 + 拆分** → Stage 1.4 只做 RN-F subset;完整 CHI → Stage 4+ |
+| §7 P5 IOMMU + 跨 vendor coherence | **明确排除** → IOMMU 已由 `ADR-CEP-00 §3` scope reduction 排除;跨 vendor 归 ArchForge |
+
+**编号口径**:本文档的 P 编号以 **`06-inter-module-network.md §15.4`** 为准(P2.0 / P2.1 / P3 / P3.5 / P4 / P5,**无 P6**);`06 §11.4` 的 P6 口径**不得**被 CEP 文档引用(per `ADR-CEP-NUMBER-MAP §2 Decision 3` 冻结 + `ADR-CEP-16 IC1`)。
+
+**未结**:本文档的 7 项 C++ / JSON / Python 既有产物的**逐项处置**见 [`ADR-CEP-07A`](../adr/ADR-CEP-07A-06bis-artifact-disposition.md);其"协议泄漏通用禁令"(`INV-CEP-07A-IC2`)同时覆盖 `CoherenceDomain` 的 `enum Protocol` 与拓扑层的 `protocol=` 参数两处既有违规。
+
+---
+
 ## ⚠️ v0.3 修订说明(reviewer 请读)
 
 v0.3 对 v0.2 做了 **9 大类事实校正 + 6 个跨仓 sync 契约**,基于 Oracle + Metis 3 轮评审:

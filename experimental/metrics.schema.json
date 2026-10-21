@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cpptlm.local/schemas/metrics.schema.json",
+  "title": "CEP 实验输出 metrics.json",
+  "description": "per ADR-CEP-06 §2(4 件套 + 13 必纳 metric + 4 可选 metric)+ §3(verification_mode 契约 + INV-CEP-06-IC5 双不变量判定)",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "total_cycles",
+    "total_transactions",
+    "transactions_per_cycle",
+    "avg_latency_cycles",
+    "p50_latency_cycles",
+    "p95_latency_cycles",
+    "p99_latency_cycles",
+    "max_latency_cycles",
+    "coherence_stalls",
+    "collective_stalls",
+    "directory_misses",
+    "deadlock_violations",
+    "memory_violations"
+  ],
+  "properties": {
+    "total_cycles": { "type": "integer", "minimum": 0 },
+    "total_transactions": { "type": "integer", "minimum": 0 },
+    "transactions_per_cycle": { "type": "number", "minimum": 0 },
+    "avg_latency_cycles": { "type": "number", "minimum": 0 },
+    "p50_latency_cycles": { "type": "number", "minimum": 0 },
+    "p95_latency_cycles": { "type": "number", "minimum": 0 },
+    "p99_latency_cycles": { "type": "number", "minimum": 0 },
+    "max_latency_cycles": { "type": "number", "minimum": 0 },
+    "coherence_stalls": { "type": "integer", "minimum": 0 },
+    "collective_stalls": { "type": "integer", "minimum": 0 },
+    "directory_misses": { "type": "integer", "minimum": 0 },
+    "deadlock_violations": { "type": "integer", "minimum": 0 },
+    "memory_violations": { "type": "integer", "minimum": 0 },
+
+    "_not_collected_reason": {
+      "description": "不可观测 metric 的原因标注(per ADR-CEP-06 §2 兜底契约)",
+      "type": "string",
+      "minLength": 1
+    },
+    "verification_mode": {
+      "description": "验证深度(per ADR-CEP-06 §3):bounded_random / sampled 的结果**不得**表述为「已证明无死锁 / 无违例」",
+      "enum": ["exhaustive", "bounded_random", "sampled"]
+    },
+    "verification_scope": {
+      "description": "验证规模上限的可读描述(如「2 节点 × 3 协议实例 × 10000 事务;未穷尽 4 节点配置」)",
+      "type": "string",
+      "minLength": 1
+    },
+    "memory_violation_kinds": {
+      "description": "违例类型细分(per ADR-CEP-06 IC5:memory_violations 须覆盖 SWMR + data-value 双不变量,且报告须能区分违例类型)",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "swmr": { "type": "integer", "minimum": 0 },
+        "data_value": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "link_utilization_per_link": { "type": "object" },
+    "vc_stall_per_vc": { "type": "object" },
+    "snoop_fanout_per_request": { "type": "object" },
+    "directory_size_distribution": { "type": "object" }
+  }
+}

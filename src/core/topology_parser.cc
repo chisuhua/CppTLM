@@ -109,8 +109,9 @@ namespace cpptlm {
                                          const nlohmann::json& coherence_json) {
         if (!coherence_json.is_null() && !coherence_json.empty()) {
             DPRINTF(PARSER,
-                    "[STUB] coherence_domains field accepted but not consumed; see ADR-X.14 "
-                    "(members=%zu)\n",
+                    "[STUB] coherence_domains field accepted but not consumed; "
+                    "see ADR-CEP-13 (consumption planned in Stage 2) and ADR-CEP-07A "
+                    "(artifact disposition; superseded ADR-X.14) (members=%zu)\n",
                     coherence_json.is_array() ? coherence_json.size() : 0);
         }
         auto root = parse_hierarchy_tree(hierarchy_json);

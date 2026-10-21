@@ -1,0 +1,464 @@
+#!/bin/bash
+# CppTLM CEP 文档同步检查脚本
+# 用途：校验 CEP (Coherence Exploration Platform) 系列的**契约一致性**：
+#       1. 21 份 CEP ADR 存在，且各自含「不变量」或「决策」节
+#       2. `07 号 §4` 的 invariant 总表 ↔ 各 owner ADR 实际**定义**的条数一致
+#       3. invariant 计数口径：区分「提及」与「定义」（跳空 ID 只被提及，从未定义）
+#       4. `06 §15.4` 的 P 编号口径：CEP 文档不得引用 P6
+#       5. ADR-CEP-00A 的 §4 映射行 ↔ `07 号 §4` 口径一致
+#       6. Stage 0 umbrella change 4 件套 + 契约产物存在
+#
+# 用法：
+#   ./scripts/test/cep_docs_sync_check.sh            # 检查并打印报告
+#   ./scripts/test/cep_docs_sync_check.sh --strict   # 发现问题返回非零退出码
+#
+# 设计依据：per openspec/changes/cpptlm-cep-umbrella/design.md D5
+#   —— 与既有 docs_sync_check.sh 分工不重叠（本脚本只管 CEP 专属）。
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+STRICT=false
+if [ "$1" == "--strict" ]; then
+    STRICT=true
+fi
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$PROJECT_ROOT"
+
+echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║   CppTLM CEP 契约同步检查 v1.0         ║${NC}"
+echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
+echo ""
+
+FAILED=0
+pass() { echo -e "  ${GREEN}✓${NC} $1"; }
+fail() { echo -e "  ${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
+warn() { echo -e "  ${YELLOW}!${NC} $1"; }
+
+echo -e "${BLUE}[1/6] ADR 清单与关键节${NC}"
+ADR_LIST=(
+  "ADR-CEP-00-platform-charter-and-governance.md"
+  "ADR-CEP-00A-real-source-anchor-map.md"
+  "ADR-CEP-01-fabric-collective-plane.md"
+  "ADR-CEP-02-coherence-barrier-semantics-clarification.md"
+  "ADR-CEP-03-fabric-collective-plane-internals.md"
+  "ADR-CEP-04-sharer-tracker-abstraction-redesign.md"
+  "ADR-CEP-05-stub-cache-core-interface.md"
+  "ADR-CEP-06-experiment-protocol.md"
+  "ADR-CEP-07-simulation-and-integration-semantics.md"
+  "ADR-CEP-07A-06bis-artifact-disposition.md"
+  "ADR-CEP-08-ordering-point-portability.md"
+  "ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md"
+  "ADR-CEP-11-protocol-version-locking.md"
+  "ADR-CEP-12-protocol-engine-capability-map.md"
+  "ADR-CEP-13-coherence-domain-ownership.md"
+  "ADR-CEP-14-stub-contract-tests.md"
+  "ADR-CEP-15-cachetlm-alignment.md"
+  "ADR-CEP-16-06-evolution-route-mapping.md"
+  "ADR-CEP-17-ruby-slicc-protocol-family.md"
+  "ADR-CEP-18-protocol-generation-scope.md"
+  "ADR-CEP-NUMBER-MAP.md"
+)
+MISSING=0
+for f in "${ADR_LIST[@]}"; do
+  if [ ! -f "docs/adr/$f" ]; then fail "缺 ADR: docs/adr/$f"; MISSING=$((MISSING + 1)); fi
+done
+[ "$MISSING" -eq 0 ] && pass "${#ADR_LIST[@]} 份 CEP ADR 全部存在"
+
+NO_SECTION=0
+for f in "${ADR_LIST[@]}"; do
+  [ -f "docs/adr/$f" ] || continue
+  if ! grep -qE "^##+ .*不变量" "docs/adr/$f" && ! grep -qE "^##+ .*决策" "docs/adr/$f"; then
+    fail "$f 既无「不变量」节也无「决策」节"
+    NO_SECTION=$((NO_SECTION + 1))
+  fi
+done
+[ "$NO_SECTION" -eq 0 ] && pass "每份 ADR 均有「不变量」或「决策」节"
+
+echo ""
+echo -e "${BLUE}[2/6] invariant 计数与 07 号总表一致性${NC}"
+python3 - <<'PYEOF'
+import glob, re, os, sys
+
+ROOT = os.getcwd()
+ADR = os.path.join(ROOT, "docs", "adr")
+TRUTH = os.path.join(ROOT, "docs", "architecture", "07-coherence-exploration-platform.md")
+
+OWNERS = [
+    ("ADR-CEP-02-coherence-barrier-semantics-clarification.md", ["CEN-Ib"]),
+    ("ADR-CEP-05-stub-cache-core-interface.md", ["INV-SC", "INV-CEP-05-IC"]),
+    ("ADR-CEP-04-sharer-tracker-abstraction-redesign.md", ["INV-CEP-04-IC"]),
+    ("ADR-CEP-06-experiment-protocol.md", ["INV-CEP-06-IC"]),
+    ("ADR-CEP-07-simulation-and-integration-semantics.md", ["INV-CEP-07-IC"]),
+    ("ADR-CEP-NUMBER-MAP.md", ["INV-CEP-NUM-IC"]),
+    ("ADR-CEP-08-ordering-point-portability.md", ["INV-CEP-08-IC"]),
+    ("ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md", ["INV-CEP-09-IC"]),
+    ("ADR-CEP-11-protocol-version-locking.md", ["INV-CEP-11-IC"]),
+    ("ADR-CEP-12-protocol-engine-capability-map.md", ["INV-CEP-12-IC"]),
+    ("ADR-CEP-13-coherence-domain-ownership.md", ["INV-CEP-13-IC"]),
+    ("ADR-CEP-14-stub-contract-tests.md", ["INV-CEP-14-IC"]),
+    ("ADR-CEP-15-cachetlm-alignment.md", ["INV-CEP-15-IC"]),
+    ("ADR-CEP-16-06-evolution-route-mapping.md", ["INV-CEP-16-IC"]),
+    ("ADR-CEP-07A-06bis-artifact-disposition.md", ["INV-CEP-07A-IC"]),
+]
+
+# 本就不定义 invariant 的 ADR(治理 / 真源映射 / 旁路内部 / 协议族 / 生成范围)
+NO_INV = {
+    "ADR-CEP-00-platform-charter-and-governance.md",     # 归口 / KPI / 边界
+    "ADR-CEP-00A-real-source-anchor-map.md",             # 真源章节映射
+    "ADR-CEP-01-fabric-collective-plane.md",             # 旁路平面
+    "ADR-CEP-03-fabric-collective-plane-internals.md",   # 旁路内部接口
+    "ADR-CEP-17-ruby-slicc-protocol-family.md",          # 协议族接入(引用他方 invariant)
+    "ADR-CEP-18-protocol-generation-scope.md",           # 路线范围(纯 trade-off)
+}
+
+CAND = r"(?:CEN-Ib\d+|INV-SC\d+|INV-CEP-(?:\d+[A-Z]?|07A|NUM)-IC\d+)"
+FULL = r"(?:CEN-Ib|INV-SC|INV-CEP-(?:\d+[A-Z]?|07A|NUM)-IC)"
+
+
+def defined_ids(text):
+    """只认**定义位**;跨 ADR 引用(反引号 / 普通文本)不算。
+
+    五种定义形态(与 test/cep_adr_parser.hh 保持一致 —— 两处规则重复,
+    修一处必须记得改另一处,否则守门出现盲区):
+      P1 **ID**                        加粗
+      P2 - ID: / - **ID**:             列表项
+      P3 **标签**(ID):                 行内括号
+      P4 **标签 ID** / **标签 `ID`**:  加粗 span 内含 ID
+      P5 ### 决策 N:`ID` —— …          决策标题
+    """
+    out = set()
+    for m in re.finditer(CAND, text):
+        b, e = m.start(), m.end()
+        if b >= 2 and text[b - 2:b] == "**" and text[e:e + 2] == "**":
+            out.add(m.group(0))
+    for m in re.finditer(r"^[\t ]*-\s+\*{0,2}(" + CAND + r")\*{0,2}\s*[:：]", text, re.M):
+        out.add(m.group(1))
+    for m in re.finditer(r"\*\*[^*\n]{1,40}\*\*\((" + CAND + r")\)\s*[:：]", text):
+        out.add(m.group(1))
+    for m in re.finditer(r"\*\*[^*\n]{0,60}?\b(" + CAND + r")\b[^*\n]{0,20}?\*\*\s*[:：]", text):
+        out.add(m.group(1))
+    for m in re.finditer(r"^#{2,6}\s*决策\s*\d+\s*[:：]\s*`?\b(" + CAND + r")\b", text, re.M):
+        out.add(m.group(1))
+    return out
+
+
+def id_prefix(tok):
+    return re.sub(r"\d+$", "", tok)
+
+
+def expand_id_cell(cell):
+    """展开 07 号 §4 第 3 列的 ID 区间表达 → ID 集合(与 C++ 侧同规则)。"""
+    t = cell.replace("`", "")
+    out = set()
+    # A1:两端全名 "X ~ Y"
+    rest = t
+    cursor = 0
+    pieces = []
+    for m in re.finditer(r"(" + FULL + r")?(\d+)\s*~\s*(" + FULL + r")?(\d+)", rest):
+        pieces.append((m.start(), m.end()))
+    for m in re.finditer(r"(" + FULL + r")?(\d+)\s*~\s*(" + FULL + r")?(\d+)", rest):
+        lp, ln, rp, rn = m.group(1), int(m.group(2)), m.group(3), int(m.group(4))
+        if not rp:
+            rp = lp
+        if rp and 1 <= ln <= rn and rn - ln < 1000:
+            for k in range(ln, rn + 1):
+                out.add(rp + str(k))
+    # A2:右端裸后缀 "X ~ ICn"
+    for m in re.finditer(r"(" + FULL + r")?(\d+)\s*~\s*(?:IC)(\d+)", rest):
+        lp, ln, rn = m.group(1), int(m.group(2)), int(m.group(3))
+        if lp and 1 <= ln <= rn and rn - ln < 1000:
+            for k in range(ln, rn + 1):
+                out.add(lp + str(k))
+    # B:斜杠紧凑式 "PREFIX-n/m/k"
+    for m in re.finditer(r"(" + FULL + r")(\d+)((?:/\d+)+)", rest):
+        prefix = m.group(1)
+        out.add(prefix + m.group(2))
+        for t2 in re.findall(r"/(\d+)", m.group(3)):
+            out.add(prefix + t2)
+    # C:独立全名 ID
+    for m in re.finditer(r"(" + FULL + r")(\d+)", rest):
+        out.add(m.group(1) + m.group(2))
+    return out
+
+
+group_defined = {}   # owner file -> set(ids)
+owner_defined = {}   # id -> owner file
+OWNERS_GAP = False
+errors = []
+
+# 完备性:目录里的 ADR 要么被 OWNERS 覆盖,要么在 NO_INV 白名单里
+# (白名单 = 本就不定义 invariant 的 ADR:治理 / 真源映射 / 旁路内部 / 协议族 / 生成范围)
+# 否则其 invariant **不被计数** —— 静默漏检,正是 Oracle N1/N2 的形态。
+covered = {f for f, _ in OWNERS} | NO_INV
+ondisk = {os.path.basename(p) for p in glob.glob(os.path.join(ADR, "ADR-CEP-*.md"))}
+uncovered = sorted(ondisk - covered)
+if uncovered:
+    print(f"  \033[0;31m✗\033[0m 以下 ADR 既未纳入 OWNERS 也不在 NO_INV 白名单(其 invariant 不会被计数):")
+    for u in uncovered:
+        print(f"      {u}")
+    OWNERS_GAP = True
+else:
+    print(f"  \033[0;32m✓\033[0m 目录内 {len(ondisk)} 份 ADR 全部纳入 OWNERS({len(OWNERS)}) 或 NO_INV 白名单({len(NO_INV)})")
+
+# owner 前缀唯一性 + 两两不互为前缀
+prefix_owner = {}
+for fname, prefixes in OWNERS:
+    for op in prefixes:
+        if op in prefix_owner:
+            errors.append(f"owner 前缀重复登记: {op}({prefix_owner[op]} / {fname})")
+        prefix_owner[op] = fname
+for a in prefix_owner:
+    for b in prefix_owner:
+        if a != b and b.startswith(a):
+            errors.append(f"owner 前缀互为前缀(有歧义): {a} / {b}")
+
+for fname, prefixes in OWNERS:
+    p = os.path.join(ADR, fname)
+    if not os.path.exists(p):
+        continue
+    ids = defined_ids(open(p, encoding="utf-8").read())
+    group_defined[fname] = ids
+    for i in ids:
+        owner_defined.setdefault(i, fname)
+
+# no-inv 反向检查:白名单里的 ADR 一旦**拥有** invariant 即违反契约
+# (跨 ADR 引用不算 —— 例如 ADR-CEP-17 的引用表里 `**INV-CEP-04-IC7**` 是引用)
+for fname in sorted(NO_INV):
+    p = os.path.join(ADR, fname)
+    if not os.path.exists(p):
+        continue
+    for i in defined_ids(open(p, encoding="utf-8").read()):
+        owner = None
+        for op, of in prefix_owner.items():
+            if i.startswith(op):
+                owner = of
+                break
+        if owner == fname:
+            errors.append(f"NO_INV 白名单 ADR「{fname}」开始定义 invariant: {i}"
+                          f"(须先迁进 OWNERS 并更新 07 号总表)")
+
+# 孤儿检查:全仓扫描,前缀**无 owner** 的定义形态 ID = 未登记的 invariant
+# (同时覆盖「在任一 ADR 新增 INV-CEP-NN-ICx」与「在 no-inv ADR 新增自己的 invariant」)
+for fname in sorted(ondisk):
+    p = os.path.join(ADR, fname)
+    if not os.path.exists(p):
+        continue
+    for i in defined_ids(open(p, encoding="utf-8").read()):
+        if not any(i.startswith(op) for op in prefix_owner):
+            errors.append(f"孤儿 invariant(前缀无 owner): {i} —— 出现在 {fname}")
+
+truth_text = open(TRUTH, encoding="utf-8").read()
+m = re.search(r"^##\s*4\.\s*(.+)$", truth_text, re.M)
+if not m:
+    print("  \033[0;31m✗\033[0m 找不到 07 号 §4 节")
+    sys.exit(1)
+rest = truth_text[m.end():]
+m2 = re.search(r"^##\s", rest, re.M)
+sec = rest[:m2.start()] if m2 else rest
+
+rows = []
+for line in sec.splitlines():
+    mm = re.match(r"^\|\s*\*\*([^*]+?)\*\*\s*\|\s*(\d+)\s*\|\s*([^|]*?)\s*\|", line)
+    if mm:
+        rows.append((mm.group(1), int(mm.group(2)), mm.group(3)))
+
+# 逐组:第 3 列展开的 ID 集合 **必须** 与 owner 的实际定义集合相等
+# (此前只比「条数」→ 区间写错 / 组间互换 owner 不可见)
+union_truth = set()
+total_refs = 0
+for name, n, col3 in rows:
+    if name == "合计":
+        continue
+    truth_ids = expand_id_cell(col3)
+    total_refs += len(truth_ids)
+    prefixes = set()
+    for t2 in re.findall(r"(" + FULL + r")\d+", col3.replace("`", "")):
+        prefixes.add(t2)
+    owners = set()
+    for fname, owner_prefixes in OWNERS:
+        for op in owner_prefixes:
+            if any(pfx == op or pfx.startswith(op) for pfx in prefixes):
+                owners.add(fname)
+    if not owners:
+        errors.append(f"07 号 §4 组「{name}」的行内 ID 无法映射到 owner ADR")
+        continue
+    ids = set()
+    for fname in owners:
+        ids |= group_defined.get(fname, set())
+    if len(ids) != n:
+        errors.append(f"07 号 §4 组「{name}」写 {n} 条,owner ADR({', '.join(sorted(owners))})实际定义 {len(ids)} 条")
+    missing = ids - truth_ids
+    surplus = truth_ids - ids
+    for i in sorted(missing):
+        errors.append(f"07 号 §4 组「{name}」的 ID 区间**漏写**: {i}")
+    for i in sorted(surplus):
+        errors.append(f"07 号 §4 组「{name}」的 ID 区间**多写**: {i}")
+    union_truth |= truth_ids
+
+# 独立锚点:全部组引用的 ID 并集必须 == 实际定义总数,且每个 ID **恰好被引用一次**。
+#
+# ⚠️ 缺这条时,「组间互换 owner」**查不出来** —— 逐组校验里 owner 是从
+#    真源单元格**反推**的(interpolated),互换后两边仍自洽。
+#    实测:把 Ordering Point 行的 ID 区间改成 INV-CEP-09-IC1 ~ IC3 →
+#    逐组集合相等仍成立,但 ADR-CEP-08 的 3 条 invariant **无人引用**。
+#    本检查(并集 + 引用次数)提供与真源单元格**无关**的锚点。
+all_defined = set(owner_defined)
+if union_truth != all_defined:
+    _miss = sorted(all_defined - union_truth)
+    _sur = sorted(union_truth - all_defined)
+    errors.append(f"07 号 §4 引用的 invariant 并集与实际定义不一致:缺 {_miss},多 {_sur}")
+if total_refs != len(all_defined):
+    errors.append(f"07 号 §4 引用的 invariant 总数 {total_refs} != 实际定义 {len(all_defined)}"
+                  f"(存在重复引用 —— 组间互换 owner 的典型形态)")
+
+if errors:
+    for e in errors:
+        print(f"  \033[0;31m✗\033[0m {e}")
+else:
+    print(f"  \033[0;32m✓\033[0m 07 号 §4 的 {len(rows)} 个分组条数与 owner ADR 实际定义数一致"
+          f"(且第 3 列 ID 区间**集合相等**)")
+    print(f"  \033[0;32m✓\033[0m 07 号 §4 引用的 invariant 总数 {total_refs} 条 == 实际定义总数")
+
+actual = len(owner_defined)
+skipped = 1
+numbered = actual + skipped
+print(f"  \033[0;32m✓\033[0m 实际定义 {actual} 条,编号位 {numbered} 条(含 1 条永久跳空)")
+
+if "INV-CEP-04-IC4" in owner_defined:
+    print("  \033[0;31m✗\033[0m INV-CEP-04-IC4 应为永久跳空,却出现在 owner ADR 的定义位")
+    OWNERS_GAP = True
+else:
+    print("  \033[0;32m✓\033[0m INV-CEP-04-IC4 确为永久跳空(仅被提及,从未定义)")
+
+mm = re.search(r"实际定义数\*\*:\*\*(\d+)", truth_text)
+if mm and int(mm.group(1)) != actual:
+    errors.append(f"07 号声明「实际定义数 = {mm.group(1)}」,实测 {actual}")
+else:
+    print(f"  \033[0;32m✓\033[0m 07 号声明的「实际定义数」与实测一致")
+
+# ADR-CEP-00A §4 映射行口径(另一处声明总数的地方,必须同步)
+_a00a_path = os.path.join(ADR, "ADR-CEP-00A-real-source-anchor-map.md")
+_a00a_row = None
+if os.path.exists(_a00a_path):
+    for _line in open(_a00a_path, encoding="utf-8").read().splitlines():
+        if _line.startswith("| §4 |") and ("编号位" in _line or "守门 invariant 总表" in _line):
+            _a00a_row = _line
+            break
+if _a00a_row is None:
+    errors.append("ADR-CEP-00A §4 找不到 invariant 总表映射行")
+else:
+    _nums = [int(x) for x in re.findall(r"\d+", _a00a_row)]
+    if numbered not in _nums or actual not in _nums or 15 not in _nums:
+        errors.append(f"ADR-CEP-00A §4 映射行含 {_nums},缺 编号位 {numbered} 或 实际 {actual} 或 组数 15")
+    else:
+        print(f"  \033[0;32m✓\033[0m ADR-CEP-00A §4 映射行口径与实测一致")
+
+sys.exit(1 if (errors or OWNERS_GAP) else 0)
+PYEOF
+[ $? -ne 0 ] && FAILED=$((FAILED + 1))
+
+echo ""
+echo -e "${BLUE}[3/6] 06 §15.4 P 编号口径(禁 P6)${NC}"
+python3 - <<'PYEOF'
+import glob, os, re, sys
+
+ROOT = os.getcwd()
+
+# 只扫 **CEP 专属**文档 —— 06 原文 / 历史 archive / 调研附录里的 P6 是合法的
+FILES = []
+for pat in ("docs/adr/ADR-CEP-*.md", "docs/architecture/07-*.md",
+            ".rddf/roadmap/*.md", ".rddf/roadmap/**/*.md",
+            ".rddf/improvements/*.md", "openspec/changes/cpptlm-cep-umbrella/**/*.md",
+            "openspec/changes/cpptlm-cep-umbrella/*.md"):
+    import glob
+    FILES += glob.glob(os.path.join(ROOT, pat), recursive=True)
+FILES = sorted(set(FILES))
+
+# 否定 / 排除语境标记(必须落在 P6 出现点前后 100 字符内)
+#
+# ⚠️ 「排除」单独作标记会漏放**反向语义**:「**不**排除 P6」命中「排除」→
+#    被判为合规 → 假阴性。解法:**不**收紧 NEG(词序有「排除 P6」/「P6 排除」/
+#    「排除** P6」等多种形态,收紧会造假阳性),而是加 REV(反向语义)词表 ——
+#    命中即**判违规**,优先于 NEG。
+NEG = ["不存在", "非 P", "排除", "不引入", "不得", "无 P6", "不含", "禁止",
+       "冻结", "P3-P6", "禁 P6", "不引用", "不出现", "不在", "不一致", "= fail",
+       "P6 口径", "非 P3-P6", "不得引用"]
+# 反向语义:「不排除 / 未排除 / 不能排除 / 未必排除」= **仍可能引用 P6** → 违规
+REV = ["不排除", "未排除", "不能排除", "未必排除", "非不排除"]
+
+violations = []
+occurrences = 0
+for f in FILES:
+    if not os.path.exists(f):
+        continue
+    text = open(f, encoding="utf-8").read()
+    for m in re.finditer(r"\bP6\b", text):
+        occurrences += 1
+        start = max(0, m.start() - 100)
+        ctx = text[start:m.end() + 60].replace("\n", " ")
+        # 反向语义优先:命中 REV 即违规(即便邻近有 NEG 词)
+        if any(r in ctx for r in REV):
+            violations.append((os.path.relpath(f, ROOT), ctx))
+            continue
+        if not any(n in ctx for n in NEG):
+            violations.append((os.path.relpath(f, ROOT), ctx))
+
+if violations:
+    print(f"  \033[0;31m✗\033[0m P6 出现在 {len(violations)} 处非排除语境(扫 {len(FILES)} 个 CEP 文档):")
+    for path, ctx in violations[:8]:
+        print(f"      {path}: ...{ctx}...")
+else:
+    print(f"  \033[0;32m✓\033[0m P6 共 {occurrences} 处(扫 {len(FILES)} 个 CEP 文档),全部处于排除/否定语境")
+
+sys.exit(1 if violations else 0)
+PYEOF
+[ $? -ne 0 ] && FAILED=$((FAILED + 1))
+
+echo ""
+echo -e "${BLUE}[4/6] ADR 交叉引用可达性${NC}"
+BROKEN=0
+for f in "${ADR_LIST[@]}"; do
+  [ -f "docs/adr/$f" ] || continue
+  # 全量相对 md 链接(不限 ../adr/ —— 也覆盖指向 docs/architecture/ 等)
+  for link in $(grep -oE '\]\((\.\./)?[A-Za-z0-9_./-]+\.md\)' "docs/adr/$f" | sed -E 's/.*\((.*)\)/\1/' | sort -u); do
+    case "$link" in http*) continue ;; esac
+    target="docs/adr/$link"
+    if [ ! -f "$target" ]; then fail "$f → 断链 $link"; BROKEN=$((BROKEN + 1)); fi
+  done
+done
+[ "$BROKEN" -eq 0 ] && pass "ADR 之间的相对链接无断裂(全量 .md 链接)"
+
+echo ""
+echo -e "${BLUE}[5/6] Stage 0 umbrella change 4 件套${NC}"
+CH="openspec/changes/cpptlm-cep-umbrella"
+MISS=0
+for f in "proposal.md" "design.md" "tasks.md" "specs/cep-core-contracts/spec.md"; do
+  [ -f "$CH/$f" ] || { fail "缺 $CH/$f"; MISS=$((MISS + 1)); }
+done
+[ "$MISS" -eq 0 ] && pass "umbrella change 4 件套齐备"
+
+echo ""
+echo -e "${BLUE}[6/6] Stage 0 契约产物${NC}"
+for f in "include/tlm/cep/protocol_instance.schema.json" "experimental/metrics.schema.json" "experimental/.gitkeep"; do
+  [ -f "$f" ] && pass "$f 存在" || fail "$f 缺失"
+done
+
+echo ""
+echo "════════════════════════════════════════"
+if [ "$FAILED" -eq 0 ]; then
+  echo -e "${GREEN}✅ CEP 契约同步检查全部通过${NC}"
+  [ "$STRICT" = true ] && exit 0
+  exit 0
+else
+  echo -e "${RED}❌ CEP 契约同步检查发现 $FAILED 处问题${NC}"
+  [ "$STRICT" = true ] && exit 1
+  exit 0
+fi

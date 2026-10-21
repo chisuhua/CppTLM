@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cpptlm.local/schemas/protocol_instance.schema.json",
+  "title": "CEP 协议实例能力声明",
+  "description": "Coherence Exploration Platform 的协议实例声明 schema —— per ADR-CEP-12 §2 决策 1(8 字段组)+ ADR-CEP-11 §3(规范版本锁定表)+ ADR-CEP-14 §2(负向断言的载体)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "family",
+    "adapter",
+    "status",
+    "protocol_version",
+    "flow_support",
+    "perm",
+    "atomic",
+    "consistency_labels",
+    "ordering_assumption",
+    "vc_binding",
+    "sharer_tracker",
+    "combination_capabilities"
+  ],
+  "properties": {
+    "id": {
+      "description": "协议实例的稳定身份(计数与交叉引用依赖)",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9][a-z0-9_-]*$"
+    },
+    "family": {
+      "description": "来源族(per 07 号 §5.1 口径:族 = 来源集合)",
+      "enum": ["industrial", "ruby-slicc", "academic"]
+    },
+    "adapter": {
+      "description": "1 协议实例 = 1 adapter",
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "description": "计数口径的唯一依据:仅 implemented 计入 adapter 实例数",
+      "enum": ["planned", "implemented", "excluded"]
+    },
+    "protocol_version": {
+      "description": "规范版本(per ADR-CEP-11 §3 锁定表);adapter 实现版本由 git 承载,不入本 schema",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9.]+)*$"
+    },
+    "flow_support": {
+      "description": "canonical 10 流覆盖矩阵(per ADR-CEP-02 §2)",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request",
+        "completion",
+        "snoop",
+        "snoop_resp",
+        "writeback",
+        "forward_data",
+        "back_invalidate",
+        "address_resolve",
+        "barrier",
+        "snoop_completion_ack"
+      ],
+      "properties": {
+        "request": { "type": "boolean" },
+        "completion": { "type": "boolean" },
+        "snoop": { "type": "boolean" },
+        "snoop_resp": { "type": "boolean" },
+        "writeback": { "type": "boolean" },
+        "forward_data": { "type": "boolean" },
+        "back_invalidate": { "type": "boolean" },
+        "address_resolve": { "type": "boolean" },
+        "barrier": { "type": "boolean" },
+        "snoop_completion_ack": { "type": "boolean" }
+      }
+    },
+    "perm": {
+      "description": "Stub Cache 权限枚举 —— 4 值锁(per ADR-CEP-02 CEN-Ib11);不新增 ATOMIC 值",
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "enum": ["NONE", "READ", "UNIQUE", "WRITEBACK"] }
+    },
+    "atomic": {
+      "description": "atomic 意图的承载(per ADR-CEP-17 决策 6):语义归插件,意图经 request 流独立属性传递",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supported"],
+      "properties": {
+        "supported": { "type": "boolean" },
+        "intent_field": {
+          "description": "request 流中承载 atomic 意图的属性名",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "consistency_labels": {
+      "description": "一致性标签(per HeteroGen §II-B / 博士论文 §7.6.6)",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read", "write"],
+      "properties": {
+        "read": {
+          "enum": ["SC", "TSO", "RC-acquire", "RC-data", "PLO"]
+        },
+        "write": {
+          "enum": ["SC", "TSO", "RC-release", "RC-data", "PLO"]
+        },
+        "request_level": {
+          "description": "请求级标签映射 —— 同一 wire 请求在不同标签下语义不同(如 RCC 的 GetV_R / GetV_A)",
+          "type": "object",
+          "additionalProperties": {
+            "enum": ["SC", "TSO", "RC-acquire", "RC-data", "RC-release", "PLO"]
+          }
+        }
+      }
+    },
+    "ordering_assumption": {
+      "description": "逐网络的排序假设(per ADR-CEP-12 决策 5):key 必须能解析到唯一 vc_id;排序是 VC 的静态属性,flit 不带 ordering 字段",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "enum": ["p2p_ordered", "unordered"] }
+    },
+    "vc_binding": {
+      "description": "消息类 → vc_id 的映射(per ProtoGen 局限 L4:VC 绑定不由协议生成器负责);不自动生成",
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 3 }
+    },
+    "sharer_tracker": {
+      "description": "逐实例 Sharer Tracker 选型(per ADR-CEP-04 §2 5 实现 + caps descriptor)",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["impl", "caps"],
+      "properties": {
+        "impl": {
+          "description": "5 实现之一,或字面值「不参与」(由副本携带权限的协议 / 自失效类协议)",
+          "enum": [
+            "FullMapDirectory",
+            "SparseSnoopFilter",
+            "DcohSymmetric",
+            "TreeManager",
+            "BroadcastNull",
+            "不参与"
+          ]
+        },
+        "caps": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["scope", "completeness", "authority", "aggregation_at"],
+          "properties": {
+            "scope": {
+              "enum": ["SYSTEM", "LOCAL_MEMORY_REGION", "SUBTREE", "NONE"]
+            },
+            "completeness": { "enum": ["EXACT", "CONSERVATIVE"] },
+            "authority": { "enum": ["GLOBAL", "LOCAL_HINT", "LOCAL", "NONE"] },
+            "aggregation_at": { "enum": ["HOME", "REQUESTER", "TREE_PARENT", "NONE"] }
+          }
+        }
+      }
+    },
+    "combination_capabilities": {
+      "description": "组合能力(per 调研 F16):三维正交,且正交于 family",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["concurrent", "hierarchical", "heterogeneous"],
+      "properties": {
+        "concurrent": { "type": "boolean" },
+        "hierarchical": { "type": "boolean" },
+        "heterogeneous": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -34,6 +34,7 @@
 | [04-reset-checkpoint-architecture.md](./04-reset-checkpoint-architecture.md) | ✅ v1.0 已实施 | 复位与快照架构 (ResetConfig + save_snapshot, 2026-10-19 状态对齐) |
 | [06-inter-module-network.md](./06-inter-module-network.md) | 🟡 **v0.4 修订中** (2026-10-19) | 模块互联网络协议中立基线 + Bundle 二分类 + Python 拓扑契约 (详化 01 §1.1 6 层 + §1.2 Bundle 命名 + §4.7 simulation_mode, 双向 cross-ref) |
 | [06-bis-coherence-as-network-extension.md](./06-bis-coherence-as-network-extension.md) | 🟡 **v0.3 修订中** (2026-10-19) | Coherence 演进 seam 详化 (与 06 §15 + ArchForge coherence-protocol.md 跨仓引用, 不重发明) |
+| [07-coherence-exploration-platform.md](./07-coherence-exploration-platform.md) | 🟡 **v0.1 起草中** (2026-10-20) | Coherence Exploration Platform (CEP) 一致性互联仿真平台 — 6 层架构 + canonical 10 流 + 66 条守门 invariant(编号位 67 / 15 组)+ 2 来源族 / 14 adapter 实例(+ 5 一致性模型语义索引)适配 + 实验输出协议 (per `ADR-CEP-00` 10 份 ADR v0.6 整合, **与 01 §1.1 L1-L6 正交**) |
 | [08-metrics-collection-framework-v2.2.md](./08-metrics-collection-framework-v2.2.md) | ✅ v2.2.0 已实施 | 性能指标收集框架 (histogram + stats + streaming_reporter, 2026-10-19 状态对齐) |
 | [09-topology-visualization-pipeline.md](./09-topology-visualization-pipeline.md) | ✅ v2.0 已批准 | 配置生成 + 可视化架构 (Python `cpptlm/visualization/` + dashboard, 2026-10-19 状态对齐) |
 | [10-topology-generation-management-system.md](./10-topology-generation-management-system.md) | ✅ v3.0 已批准 | 拓扑生成管理系统 (mesh_cluster / ring_cluster + JSON Schema) |
@@ -96,7 +97,8 @@
 1. 01-hybrid-architecture-v2.1 - 整体架构 (真源 1 基线)
 2. 06-inter-module-network - 模块互联网络 (协议中立基线, 2026 修订主线)
 3. 06-bis-coherence-as-network-extension - Coherence 演进 seam (06 §15 详化)
-4. 02-transaction-architecture / 03-error-debug / 04-reset-checkpoint - 基础子架构
+4. **07-coherence-exploration-platform - CEP 一致性互联仿真平台 (06-bis successor, 2026-10-20 新增)**
+5. 02-transaction-architecture / 03-error-debug / 04-reset-checkpoint - 基础子架构
 
 ---
 

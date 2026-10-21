@@ -1,4 +1,9 @@
 // src/core/coherence_domain.cc
+//
+// ⚠️ [[deprecated]] —— per ADR-CEP-07A(IC1 / 决策 2 Stage 0 ①)
+//    本实现**废弃**,不删(per ADR-CEP-07A 决策 4 显式排除)。
+//    协议泄漏点见 include/core/coherence_domain.hh 的 enum class Protocol。
+//
 // Phase 4.2: CoherenceDomain Implementation
 
 #include "core/coherence_domain.hh"

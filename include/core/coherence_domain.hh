@@ -1,4 +1,13 @@
 // include/core/coherence_domain.hh
+//
+// ⚠️ [[deprecated]] —— per ADR-CEP-07A(IC1 / 决策 1 产物 1 / 决策 2 Stage 0 ①)
+//    本文件**废弃**:它把 `enum class Protocol { MESI, MOESI }` 写进了通用层,
+//    属**协议泄漏**(per ADR-CEP-07A 决策 3 通用禁令 / ADR-CEP-14 C9 负向断言)。
+//    CEP 侧改用 **Stub Cache Core**(per ADR-CEP-05),二者职责不同(per ADR-CEP-15 决策 1)。
+//    文件**保留**以免破坏既有引用(per ADR-CEP-07A 决策 4 显式排除);
+//    实体删除待 Stage 4+ 视引用数而定(per ADR-CEP-07A 决策 2)。
+//    原 Phase 4.2/4.3 TDD Red stub 出身说明保留于下。
+//
 // Phase 4.2: CoherenceDomain C++ Module with Phase 4.3 Extensions
 // TDD Red Phase: Stub for compilation
 
@@ -11,12 +20,14 @@
 #include <memory>
 #include <unordered_map>
 
+// ⚠️ 协议标识符泄漏点(per ADR-CEP-07A 决策 3 通用禁令)—— 保留仅为不破坏既有引用;
+//    新代码**不得**使用(per INV-CEP-07A-IC1:不得被新代码引用)。
 enum class Protocol {
     MESI,
     MOESI
 };
 
-class CoherenceDomain : public SimObject {
+[[deprecated("per ADR-CEP-07A IC1")]] class CoherenceDomain : public SimObject {
 private:
     Protocol protocol_ = Protocol::MESI;
     std::vector<std::string> members_;
@@ -41,7 +52,7 @@ public:
     const std::string& get_bridge(const std::string& target_domain) const;
 };
 
-class DomainRegistry {
+[[deprecated("per ADR-CEP-07A IC1")]] class DomainRegistry {
 private:
     static std::unordered_map<std::string, std::shared_ptr<CoherenceDomain>>& get_domains() {
         static std::unordered_map<std::string, std::shared_ptr<CoherenceDomain>> domains;

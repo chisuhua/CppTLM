@@ -225,6 +225,45 @@ add_test(NAME test_sdma_ring_engine_integration_p0 COMMAND cpptlm_tests "[sdma][
 # Task 7 (P0 unblock): SDMA Fence → DGpuBoard → trigger_irq_async(vector=0) 真实链路
 add_test(NAME test_sdma_fence_irq_integration_p0 COMMAND cpptlm_tests "[sdma][fence][1.3a][integration]" -r compact)
 
+# 2026-10-21 cpptlm-cep-umbrella (Stage 0) — CEP 契约层测试注册
+# (per openspec/changes/cpptlm-cep-umbrella/tasks.md Phase 1/3/6/7)
+# 5 个 test 文件由 file(GLOB TEST_SOURCES ...) 自动收录,此处只注册 ctest 标签
+add_test(NAME cep_canonical_invariant COMMAND cpptlm_tests "[cep][canonical-invariant]" -r compact)
+add_test(NAME cep_schema COMMAND cpptlm_tests "[cep][schema]" -r compact)
+add_test(NAME cep_simulation_mode COMMAND cpptlm_tests "[cep][simulation-mode]" -r compact)
+add_test(NAME cep_tools_contract COMMAND cpptlm_tests "[cep][tools]" -r compact)
+add_test(NAME cep_dummy_signals COMMAND cpptlm_tests "[cep][dummy-signals]" -r compact)
+add_test(NAME cep_module_factory_seam COMMAND cpptlm_tests "[cep][module-factory-seam]" -r compact)
+add_test(NAME cep_contracts_crosscheck COMMAND cpptlm_tests "[cep][contract]" -r compact)
+add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
+# CEP 契约同步 lint(ADR 存在性 / invariant 计数单一真源 / P 编号口径 / 4 件套)
+add_test(NAME cep_docs_sync_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_docs_sync_check.sh --strict)
+
+# ⚠️ WORKING_DIRECTORY:ctest 默认在 build/test 下运行 —— git pathspec 与相对
+#    路径会解析到 build/test/... → 冻结面守门空转(2026-10-21 代码复审 B1)。
+#    与 test_cpptlm_emulator_msix(:73-75)的既有做法一致。
+set_tests_properties(cep_canonical_invariant cep_schema cep_simulation_mode
+                     cep_tools_contract cep_dummy_signals cep_module_factory_seam
+                     cep_contracts_crosscheck cep_all
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# tools 语法检查 —— 独立于 Catch2,CI 可单独跑
+add_test(NAME cep_tools_syntax
+         COMMAND python3 -m py_compile
+                 ${CMAKE_SOURCE_DIR}/tools/render_report.py
+                 ${CMAKE_SOURCE_DIR}/tools/run_sweep.py
+                 ${CMAKE_SOURCE_DIR}/tools/ab_compare.py)
+set_tests_properties(cep_tools_syntax PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# tools --help 冒烟(每个 tool 独立一条,便于定位)
+foreach(_cep_tool render_report run_sweep ab_compare)
+    add_test(NAME cep_tool_help_${_cep_tool}
+             COMMAND python3 ${CMAKE_SOURCE_DIR}/tools/${_cep_tool}.py --help)
+    set_tests_properties(cep_tool_help_${_cep_tool}
+                         PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endforeach()
+
 if(ENABLE_COVERAGE)
     target_compile_options(cpptlm_tests PRIVATE --coverage)
     target_link_options(cpptlm_tests PRIVATE --coverage)

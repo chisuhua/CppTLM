@@ -1,0 +1,181 @@
+# cpptlm-cep-umbrella: Coherence Exploration Platform(CEP)核心契约与实验床骨架
+
+> **状态**: 🟡 Proposed(Stage 0 umbrella,per `ADR-CEP-00 §2 Decision 3`)
+> **作者**: CppTLM Team(builder mode)
+> **版本**: v1.0(2026-10-21)
+> **关联路线图**: [`phase-10`](../../../.rddf/roadmap/phases/phase-10.md)(planning)+ [`objective-cep-platform`](../../../.rddf/roadmap/objectives/obj-cep-platform.md)(P1 active)
+> **关联真源 1**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1(657 行,✅ 2026-10-21 完成)+ [`06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4 + [`06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3(将被 supersede)
+> **关联真源 3**: `docs/adr/ADR-CEP-*.md` **共 21 份**(2026-10-21 architect 阶段两批:新增 `ADR-CEP-08/09/12/13/18` + `ADR-CEP-11/14/15/16/07A`,修订 8 份)
+> **KPI**: Stage 0 = **1 slot**(计 KPI,per `ADR-CEP-00 §2 Decision 3`;**不符** `cpptlm-dgpu-soc-arch-truth-cleanup §6` doc-only 豁免先例,因本 change 含测试契约骨架)
+> **前置 gate**: ✅ 全部解除 —— ① 签发仓 = CppTLM(2026-10-20 拍板)② 真源路径 = `07-*.md`(已创建)③ KPI slot 腾出(3 个 active 已 ⏸ 暂存归档,baseline **0/3**)
+> **✅ 残留 gate 已解除(2026-10-21)**: `objective-cep-platform §9.2` 三项角色(验收方 / 结论消费者 / 平台维护方)已**正式指定** —— 形式 gate 解除,Stage 0 验收的"角色缺失 No-Go"条件消除
+> **⚠️ 独立性未闭合(已登记 R10)**:三项角色在当前仓形态下**指向同一人**(ArchForge 6/6 commit + CppTLM 1007 commit 同一作者)→ 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制**部分**替代;M4 已有实证先例(2026-10-21 Oracle 独立复审抓出 9 项作者 4 轮自审全漏的问题)。**真外部真人评审待建立**
+
+---
+
+## Why
+
+phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与 PCIe EP 7 阶段微架构交付,但**一致性互联网络层面仍是"协议特化"层** —— `06 v0.4 §1.1` 的 L1-L6 仿真层层模型虽已落地 60-70%,却**不覆盖 coherence 协议**:没有协议中立的仿真骨架,跨协议 / 目录策略 / 拓扑的取舍**只能靠人脑推演**,无法出可比较数据。
+
+三个具体缺口(per `objective-cep-platform §1.2`):
+
+| 缺口 | 现状 | 后果 |
+|------|------|------|
+| **协议中立基线缺位** | `06-bis §7.3-§7.7` 的 CoherenceBridge / CoherenceProtocol / SnoopFilter 等**90% 是 markdown 草案**,无 C++ 实现 | 所有 CEP 契约都标"本 ADR 首次定义",实质 0 复用 |
+| **探索平台无实验产物** | phase-9 有 D-AXI minimal / timing-mode,但无 metric / sweep / A-B 对比格式 | 交付工具 ≠ 产出洞见(per metis G1) |
+| **契约不可机器检查** | 21 份 ADR 的 **66 条守门 invariant** 目前只存在于 Markdown | 契约漂移无感知;ADR 引用无锚点校验 |
+
+**为什么现在**:16 份 ADR 已达可签发水准(3 轮 oracle REJECT 关闭 + 2026-10-21 首次**独立** Oracle 架构复审判定"CEP 骨架成立,无需改层"),再不动手,契约与实现之间的**语义漂移**会随 Stage 1 实现加速而放大。
+
+**为什么是 umbrella**:Stage 0 不交付任何协议实现,只交付**契约层 + 实验床骨架** —— 让后续 9 个 change 全部基于同一套机器可执行的契约,而不是各自解读 Markdown。
+
+---
+
+## What Changes
+
+### 新增文件(Stage 0,~12 文件,~2720 行)
+
+| 文件 | 行数 | 内容 |
+|------|:----:|------|
+| `test/test_cep_canonical_invariants.cc` | ~340 | **66 条实际守门 invariant(编号位 67,按 15 组分解)** + 10 条流清单契约 + capability schema 契约 + **协议泄漏负向断言**(per `ADR-CEP-14` C9)|
+| `test/test_cep_dummy_signals.cc` | ~140 | `NullProtocolEngine` / `NullCollectivePlane` 的 10 流覆盖矩阵 |
+| `test/test_cep_module_factory_seam.cc` | ~220 | ModuleFactory 注册契约 + 23 ABI / frozen headers **0 diff** 守门 |
+| `test/test_cep_simulation_mode_lock.cc` | ~90 | `simulation_mode` 单一维度 + 4 件套契约 + `verification_mode` 契约 |
+| `include/tlm/cep/protocol_instance.schema.json` | ~120 | **协议实例能力声明 schema**(per `ADR-CEP-12` 决策 1,8 字段组) |
+| `tools/render_report.py` | ~200 | `metrics.json` + `trace.h5` → `report.html` |
+| `tools/run_sweep.py` | ~150 | 维度组合 sweep → N 个 4 件套 + `sweep_summary.csv` |
+| `tools/ab_compare.py` | ~150 | A/B 对比 → `delta_metrics.json` + CDF overlay |
+| `scripts/test/cep_docs_sync_check.sh` | ~220 | 真源章节号机器检查(覆盖 **21 份** ADR)+ invariant 计数单一真源校验(区分「提及」与「定义」)+ P 编号口径校验 |
+| `experimental/.gitkeep` + `experimental/metrics.schema.json` | ~60 | 实验目录约定 + schema |
+| `include/tlm/cep/.gitkeep` | ~1 | CEP 头文件目录占位(Stage 0 仅 schema + Null 实现雏形) |
+| `docs/implementation/2026-10-21-cep-stage0-contracts.md` | ~120 | 实施笔记(TDD 5-step + commits 索引) |
+
+> **路径修正**(per oracle B7 + metis G3-1):测试文件用 **`test/test_cep_*.cc`**(仓内真实路径,`test/CMakeLists.txt` 的 `file(GLOB test_*.cc)` 平铺收编,非递归);**不**用 `tests/openspec/`(目录不存在,会逃逸构建导致 acceptance 假绿)
+
+### 修改文件(2 个)
+
+| 文件 | 改动 | 说明 |
+|------|------|------|
+| `docs/architecture/06-bis-coherence-as-network-extension.md` | 顶部加 `## Status Update` 段 | supersede by CEP(per `ADR-CEP-00 §3`);**正文不动**(per AGENTS.md「ADR 不可变 + Status Update」先例) |
+| `docs/architecture/README.md` | Doc Map 行同步 | invariant 计数(66 实际 / 67 编号位)+ adapter 计数(2 来源族 / 14 实例)—— **本次已由 architect 阶段同步,本 change 仅复核** |
+
+### 冻结面(0 修改)
+
+- `include/abi/cpptlm_emulator.h`:**0 diff**(23 ABI,per `ADR-DGPU-08 §2.0`)
+- `include/tlm/pcie/pcie_endpoint_tlm.h`:**0 diff**(`[[deprecated]]` 保留)
+- `include/tlm/cache_tlm.hh`:**0 diff**(A13 议题 `ADR-CEP-15` 评估,待 architect 起草)
+- `src/tlm/gpu/dgpu_board_shell.cc`:**0 diff**(CEP 是独立探索平台,不接管 dGPU 集成)
+- `include/bundles/*`:**0 diff**(Stage 1 才新增)
+- `include/tlm/cep/*.hh`:**Stage 0 仅 `.gitkeep`** + `NullCollectivePlane` 接口雏形
+
+---
+
+## Capabilities
+
+### New Capabilities
+
+- `cep-core-contracts`:CEP Stage 0 核心契约层 —— canonical 10 条 Coherence Interface 流清单(11 条 `CEN-Ib`)、Stub Cache 契约(7 条)、Sharer Tracker 契约(6 条)、实验输出契约(5 条 + 4 件套 + 13 metric + `verification_mode`)、集成 seam 契约(7 条)、编号契约(3 条)、Ordering Point 可迁移性契约(3 条)、多 VC 死锁自由性契约(3 条)、协议实例能力声明 schema 契约(3 条)、一致性域归属契约(3 条)
+
+### Modified Capabilities
+
+(无 —— `openspec/specs/` 现有 85 个 capability 中**无 coherence / cep / 协议抽象**相关项,本次全部为新建,零 delta 冲突)
+
+---
+
+## Impact
+
+### 影响范围
+
+| 受影响模块 / 文件 | 影响范围 | 兼容性策略 |
+|------------------|---------|-----------|
+| `test/` 平铺收编 4 个新测试 | 新增 `[cep]` / `[cep][canonical-invariant]` 等标签 | `file(GLOB test_*.cc)` 已平铺收编,`test/CMakeLists.txt` **无需改** |
+| `include/tlm/cep/` | 新增 1 个目录 + schema JSON + `.gitkeep` | 纯新增,无既有文件改动 |
+| `tools/` | 新增 3 个 Python 脚本 | 纯新增;不依赖 `cpptlm/` 包的私有 API(可独立运行) |
+| `scripts/test/` | 新增 1 个 lint 脚本 | 纯新增;接入 pre-commit 时**须**与 `docs_sync_check.sh --strict` 协同,避免重复扫描 |
+| `experimental/` | 新增目录约定 + schema | 纯新增;.gitignore 需放行 `.gitkeep` |
+| 全部既有测试 | **0 回归** | 新测试用独立标签 `[cep]`,不改任何既有 case |
+
+### 受影响测试
+
+| 测试 | 当前状态 | 实施后 |
+|------|---------|--------|
+| 既有全量(`~1241 cases`) | ✅ Pass | ✅ **保持 Pass,0 回归** |
+| **`[cep][canonical-invariant]`** | 0 cases | ✅ ~50 cases(10 组 × 每组 2~6 断言) |
+| **`[cep][dummy-signals]`** | 0 cases | ✅ ~10 cases(10 流覆盖矩阵) |
+| **`[cep][module-factory-seam]`** | 0 cases | ✅ ~8 cases(注册机制 + 冻结面 0 diff) |
+| **`[cep][simulation-mode]`** | 0 cases | ✅ ~6 cases(`simulation_mode` + `verification_mode` 锁定) |
+| **`[cep][schema]`** | 0 cases | ✅ ~6 cases(capability schema 8 字段组) |
+| **`[cep][docs-lint]`**(shell) | 0 | ✅ 16 份 ADR 锚点 + invariant 计数单一真源 |
+
+### 风险与缓解(per `objective-cep-platform §8.1`)
+
+| 风险 | 等级 | 缓解 |
+|------|-----|------|
+| **R5 无外部验收方** | 🟡 中 | `objective §9.2` 三项角色**仍未指定**;Stage 0 验收按 §8.2 判 **No-Go**。**本 change 可实施,但验收须先解除该 gate** |
+| 契约测试与 ADR 漂移 | 🟡 中 | `scripts/test/cep_docs_sync_check.sh` 把 invariant 计数 + ADR 锚点做成**机器检查**,进 pre-commit |
+| `verification_mode` 被误读为"已证明" | 🟡 中 | `INV-CEP-06` 契约明确禁止 bounded/sampled 结果表述为"已证明无死锁 / 无违例" |
+| 单 change 体积(umbrella 含 12 文件) | 🟢 低 | Stage 0 总估时 41 人日(已消耗 13),tasks 按 6 个 Phase 切分,每 Phase 独立可验证 |
+| schema 与 ADR 后续修订脱节 | 🟢 低 | `ADR-CEP-12` 为 schema 唯一真源;lint 脚本校验 ADR 引用存在性 |
+
+---
+
+## Acceptance
+
+- [ ] **TDD 5-step 全部 GREEN**(red → green → refactor → regress → doc)
+- [ ] **66 条实际守门 invariant 机器检查 100% 覆盖**(编号位 67;`INV-CEP-04-IC4` **唯一跳空**)—— 按 `objective-cep-platform §0 DoD 7` 的 **15 组**逐组断言
+- [ ] `[cep][canonical-invariant]` ~50 cases / PASS
+- [ ] `[cep][dummy-signals]` ~10 cases / PASS(10 流覆盖矩阵全覆盖)
+- [ ] `[cep][module-factory-seam]` ~8 cases / PASS
+- [ ] `[cep][simulation-mode]` ~6 cases / PASS(含 `verification_mode` 三值)
+- [ ] `[cep][schema]` ~6 cases / PASS(capability schema 8 字段组 + `named_network` → `vc_id` 解析失败即 fail)
+- [ ] `scripts/test/cep_docs_sync_check.sh` PASS(16 份 ADR 锚点 + invariant 计数单一真源)
+- [ ] **23 ABI 签名 0 变更**(`git diff HEAD -- include/abi/` 为空,per `ADR-DGPU-08`)
+- [ ] **4 frozen headers 0 diff**(per `ADR-DGPU-08` / `ADR-DGPU-09`)
+- [ ] 既有全量测试 **0 回归**(`ctest --test-dir build` 全绿)
+- [ ] `openspec validate cpptlm-cep-umbrella --strict` PASS
+- [ ] 文档同步:`docs/implementation/2026-10-21-cep-stage0-contracts.md` + `06-bis` Status Update 段 + `07 号` §11 Gap 映射复核
+- [ ] **⛔ `objective-cep-platform §9.2` 三项角色已指定**(验收方 / 结论消费者 / 平台维护方)—— 否则 Stage 0 验收判 **No-Go**
+
+### Commit 策略(TDD 5-step,预计 12~14 commits)
+
+```
+1.  test(cep): RED stub — 50 条 invariant 契约测试骨架 (Phase 1)
+2.  docs(cep): 07 号真源复核 + 06-bis Status Update (Phase 2)
+3.  feat(cep): capability schema JSON + INV-CEP-12-IC1~3 契约 (Phase 3)
+4.  test(cep): GREEN — schema 契约断言 (Phase 3)
+5.  feat(cep): NullProtocolEngine / NullCollectivePlane 覆盖矩阵 + test_cep_dummy_signals (Phase 4)
+6.  test(cep): GREEN — 10 流覆盖矩阵 (Phase 4)
+7.  feat(cep): ModuleFactory seam 契约 + test_cep_module_factory_seam (Phase 5)
+8.  test(cep): GREEN — seam + 冻结面 0 diff 守门 (Phase 5)
+9.  feat(cep): simulation_mode + verification_mode 锁 + test_cep_simulation_mode_lock (Phase 6)
+10. test(cep): GREEN — 4 件套契约 (Phase 6)
+11. feat(tools): render_report / run_sweep / ab_compare + experimental/ schema (Phase 7)
+12. feat(ci): scripts/test/cep_docs_sync_check.sh (16 ADR 锚点 + invariant 计数) (Phase 7)
+13. test(cep): GREEN — 50 条 invariant 全绿 + 全量 0 回归 (Phase 8)
+14. docs(implementation): 实施笔记 + README Doc Map 复核 (Phase 8)
+```
+
+---
+
+## 相关变更
+
+| Change | 关系 |
+|--------|------|
+| `cpptlm-msix-generator-ip` ⏸ 暂存归档 | KPI 前置(已解除) |
+| `cpptlm-p2-integration-unblock` ⏸ 暂存归档 | KPI 前置(已解除) |
+| `cpptlm-pcie-tlp-entry-layer` ⏸ 暂存归档 | KPI 前置(已解除) |
+| `cpptlm-cep-stub-cache-core`(Stage 1.1) | **后续** —— 本 change 提供其依赖的契约层 |
+| `cpptlm-cep-directory-ordering-plane`(Stage 1.2) | **后续** —— 由 `sharer-tracker-base` 扩容而来(per `objective §4.2`),承载 `ADR-CEP-08` / `ADR-CEP-09 Decision A` 的实现 |
+
+---
+
+## OpenSpec KPI 状态
+
+- **实施前**: baseline **0/3**(3 个 active 已 ⏸ 暂存归档)
+- **本 change 期间**:**1/3**
+- **本 change archive 后**:**0/3**(归位)
+
+---
+
+**Owner**: CppTLM Team
+**最后更新**: 2026-10-21(v1.0 起草,planner 阶段 P1 三项完成后交 builder)
