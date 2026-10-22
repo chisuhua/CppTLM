@@ -107,7 +107,10 @@
 
 ## 3. T2 · A4 批 2（R-13 锁表 + 族/实例计数口径）
 
-### 3.1 落点清单（14 项 = 11 处文本落在 7 份冻结产物 + 3 处非冻结,含 1 条 CI 锚点）
+### 3.1 落点清单（**15 项** = 12 处文本落在 7 份冻结产物 + 4 处非冻结,含 1 条 CI 锚点）
+
+> ⚠️ **2026-10-22 复审后修订**:原列 14 项 → 补 3 处(落点 12b / 12c / 15)——
+> 复审的 S7「旧口径残留面大于台账声称」暴露了 `ADR-CEP-12:39`、`tasks.md:107`、`research:1394` 三处漏网。
 
 | # | 文件:行 | 改什么 | 冻结 |
 |---|---------|--------|:----:|
@@ -123,8 +126,11 @@
 | 10 | `docs/adr/ADR-CEP-18-...md:68` | 「§5.1 现为 **2 来源族 / 14 adapter 实例**(…18)」→「16」(…20) | 🔴 |
 | 11 | `docs/adr/ADR-CEP-05-...md:227` | **见 §3.3 耦合** —— 必须加限定注记,否则当场变假 | 🔴 |
 | 12 | `docs/architecture/README.md:37` | 索引行 14 → 16 | 🟢 |
+| 12b | `docs/adr/ADR-CEP-12-...md:39` | 「计数会漂移」风险行内的「14 adapter 实例」→ 16 | 🔴 |
+| 12c | `openspec/changes/cpptlm-cep-umbrella/tasks.md:107` | 「复核 §5.1 adapter 计数口径(2 来源族 / 14 实例…)」→ 16 | 🟢 |
 | 13 | `test/test_cep_schema.cc:417` | 硬编码的 6 个锁表取值 → **补 2 个** | 🟢 |
 | 14 | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` 锚点块 | `07 号:310` 的 symbol `'14 个 adapter 实例'` → `'16 个 adapter 实例'` | 🟢 |
+| 15 | `docs/research/cep-coherence-protocol-space-survey.md:1394`(N3 条) | 附属/历史层 → 加「计数已于 2026-10-22 改为 16」的注记,**不改写历史结论** | 🟢 |
 
 > **🔴 CI 锚点冲击(本轮新发现)**:第 14 项 —— `cep_archforge_alignment_check.sh` 的
 > **CppTLM 侧 12 个锚点**里有一条指向 `07 号:310`、symbol = `14 个 adapter 实例`。
@@ -253,14 +259,19 @@
 - [ ] **AC-2** T2 落点 14 处**逐条**落地(表 §3.1 可逐行勾)
 - [ ] **AC-3** T2 后 `cep_archforge_alignment_check.sh` 33/33 绿(**锚点 symbol 已同步**)
 - [ ] **AC-4** T2 后 `ctest -R cep` 16/16 绿(表行数 ⇔ 计数一致性由 `:564` 强制)
-- [ ] **AC-5** T2 后 `grep -rn "14 个 adapter 实例" docs/ .rddf/` 仅剩历史/Status 引述
+- [ ] **AC-4b** T2 后 `cep_decl_alignment_check.sh` 5 项子校验全绿 + `cep_freeze_check.sh` **29/29** + provenance 自检通过
+- [ ] **AC-5** T2 后 `grep -rn "14 个 adapter 实例\|14 adapter 实例" docs/ .rddf/ openspec/` 仅剩历史/Status 引述
+      (覆盖面含 `ADR-CEP-12:39` 与 `tasks.md:107` —— 2026-10-22 复审 S7 的漏网处)
 - [ ] **AC-6** T2 后 `ADR-CEP-05` 的「当前不触发」陈述**与 §5.1.1 登记表一致**(路线 B 的限定注记在位)
 - [ ] **AC-7** T2 后 `openspec validate cpptlm-cep-umbrella --strict` PASS
-- [ ] **AC-8** T2 台账 Entry #11 + 冻结清单重生成;`frozen_at_commit` 与 HEAD 一致
+- [ ] **AC-8** T2 台账 Entry #11 + 冻结清单重生成(`--authorized-by "Entry #11"`);`frozen_at_commit` 须指向**产物所在**的 commit
+      —— **两步 commit 流程**:先 commit 产物 → `--update` → 再 commit 清单(2026-10-22 复审 B4 的教训:
+      清单的 `frozen_at_commit` 若指向**变更前** HEAD,provenance 即为假,自检会报出)
 - [ ] **AC-9** T3 后 `ADR-CEP-05` §10 与 `ADR-CEP-12` §8 的 R-2 口径**一致**(无「已触发/未触发」矛盾)
 - [ ] **AC-10** T4 后 33/33 绿,且失效锚点可追溯到 D-9 返工
 - [ ] **AC-11** T5:两个 commit 均**不**含冻结清单与产物 hash 不一致的中间态(commit 后重跑 `--update`)
-- [ ] **AC-12** 全量回归 `ctest --test-dir build` **94/94**(每批结束时)
+- [ ] **AC-12** 全量回归 `ctest --test-dir build` **94/94**(每批结束时);声明对齐检查的**反向验证 12/12** 仍全绿
+      (`bash scripts/test/cep_decl_reverse_verify.sh`)
 
 ---
 
@@ -297,3 +308,61 @@
 `22-nsa §0.5.4.1` · `ADR-SOC-25` D9 / D11
 
 **机制**: `.rddf/roadmap/objectives/obj-cep-platform.md` §9.2(M1/M2/M4)· §11 台账 · `obj-cep-platform` DoD 7 · `improvement A2` · `phase-10`
+
+---
+
+## 10. 建议新增:从 ArchForge 使用场景抽象 PoC 用例(验证关键概念/架构/设计)
+
+> **来源**:DRI 2026-10-22 提议 —— 「是否根据 ArchForge 端的使用场景抽象出 PoC 的用例,用于验证关键概念,架构或设计」。
+> **本节结论**:✅ **强烈支持** —— 且它恰好能**解开当前两个死结**(Q-3 的 (b) 争议、R10 的独立验收缺口)。
+> 但须加一条硬边界:**PoC ≠ 提前实现**,否则会把仍标 provisional 的形态焊死。
+
+### 10.1 为什么 PoC 的价值高于它看起来
+
+| 现在的死结 | 纸面状态 | PoC 能做什么 |
+|-----------|---------|------------|
+| **Q-3**:R-2 的 (b) 争议(E→M 静默升级是否构成跨域可见写) | 2 轮未答;ArchForge 双方各执一词 | **跑一遍就知道**:D-GPU 的 E 态静默升级后,D-FABRIC 读同一行 → 读到旧值 = (b) 成立 → R-2 命中;读到新值 = (b) 不成立 → R-2 降级。**这是 `ADR-CEP-06 §3` 的 `verification_mode` 提供的「声明 + 实验证伪」路径**(RK-2 的降级方案) |
+| **R10**:独立验收缺口(真人外部评审缺) | 21 份 ADR + 66 invariant 纸面自洽,但**没有任何可执行物** | 外部 reviewer 面对「一个可跑的 slice + 契约差异」,而非 21 份 ADR → 评审**成本**与**门槛**同时下降 |
+| **R-3 / R-1 / R-6**:scope 分级 / 分级目录 / 消息类映射 | 纸面都合理,**组合起来才会崩** | PoC 是「组合」的最小载体 —— 单独看每条都过,跑起来才暴露表达力缺口 |
+| **D7 provisional 债** | 嵌套形态是**跨仓单方提案**,Stage 1 零实例 | PoC 若实现它,**就是第一次真正执行**该形态 → provisional 有了执行证据 |
+
+### 10.2 从 ArchForge 使用场景抽的最小切片
+
+> ArchForge 侧的三类场景(09 号 SoC 内 snoop / 25 号 NSA 跨卡目录 / 30 号 按 fabric scope 分级的跨节点模型)
+> + 我方 3 域划分(D-CPU / D-GPU / D-FABRIC,per `ADR-SOC-25` D6)。
+
+| 层 | PoC 最小实现 | 要验证的关键概念 |
+|----|--------------|----------------|
+| Stub Cache Core | 1 个 L1(4 值 `perm` 投影) | `INV-CEP-05-IC1`:6 态 → 4 值投影;瞬态态 `T` 不泄漏 |
+| Protocol Engine | `moesi_gpu` 插件(6 态 × 6 事件) | 协议逻辑住插件;**无 `translate`**;请求携带 consistency label(D3-a/b/c) |
+| Coherence Interface | canonical 10 流的最小子集(request / completion / snoop / snoop_resp / writeback) | 流口径与配对(CEN-Ib1 / Ib3 / Ib4 / Ib10) |
+| Directory & Ordering | 1 个 SharerTracker(`SparseSnoopFilter`) | `ADR-CEP-04` 的 caps 语义 |
+| Fabric & Transport | **2 网络 × 4 VC**(`compute_noc` + `ualink_fabric`),**per-network** 绑定 | **本次契约演进的核心** —— per-network VC 绑定在真实路径上跑不跑得通 |
+| 跨域桥接 | D-GPU ↔ D-FABRIC 一条边 | `ADR-CEP-13` 域可见写判据 (a)(b) —— **Q-3 的答案** |
+
+### 10.3 三个判定场景
+
+| # | 场景 | 判定 |
+|---|------|------|
+| **S1** | 单域基线:GPU L1 读(命中/缺失)→ 写回 | `perm` 投影与 6 态状态机的不变量成立 |
+| **S2** | 跨域可见写:D-GPU E 态静默升级 → D-FABRIC 读同一行 | **观测读到旧值还是新值** → 直接给出 (b) 的答案 → 解锁 A6 |
+| **S3** | 死锁自由:通道依赖图在 `(协议实例, network, vc_id)` 顶点上无环 | 验证 `ADR-CEP-09` 顶点升级后判据仍成立(而非退化为全局图) |
+
+### 10.4 硬边界(不可省略)
+
+1. **PoC ≠ 提前实现** —— 必须做成**可丢弃的 spike**(单文件 / 不进 `ModuleFactory` / 不注册 ABI / 无公共 API),
+   否则会把仍标 **provisional** 的 per-network 形态**焊死进框架**(与 D7 冲突);
+2. **PoC 不验证「正确性」** —— 只验证「**可组合性 + 契约自洽**」;**不是** conformance test,不得对外宣称协议合规;
+3. **实现顺序**:PoC **设计**(用例抽取 + 骨架)可现在做(不依赖未闭合项);
+   **实现**排在 **A4(锁表,否则 `protocol_version` 装配期 fail)+ A6(R-2 判据,否则 `perm` 表达力未定)** 之后;
+4. **成本**:Stage 1 的 6 个 change 中,本 PoC 约对应 3 个(`stub-cache-core` / 一个 protocol subset / fabric per-network);
+5. **R10 不会被 PoC 关闭** —— PoC 让真人评审**可执行**,但**评审本身仍要做**(D5 的最小动作:1 页摘要 + 1 条回执)。
+
+### 10.5 建议的动作
+
+| # | 动作 | 时机 |
+|---|------|------|
+| **P-1** | 把本节作为 **Stage 1 的第 7 个 change**(`cpptlm-cep-poc-spike`)登记进 `ADR-CEP-00 §2 决策 3` 的 KPI 排队(10 → 11 change) | ⏸ 需 DRI 拍板(排队口径变更,与 A4 的 D2 同类) |
+| **P-2** | 起草 PoC 的**用例规格**(S1/S2/S3 的输入 / 期望 / 判定),**不写实现** | ✅ 可立即(不依赖任何未闭合项) |
+| **P-3** | 在 **A15 催问 Q-3** 时**加一问**:「贵方是否接受以 PoC 的 S2 场景**实验判定**替代 (b) 的纸面评估?」——若接受,则 Q-3 不再阻塞 A6 | ✅ 可立即(随 T1 一并发出) |
+| **P-4** | PoC 实现 | ⏸ 待 A4 + A6 |
