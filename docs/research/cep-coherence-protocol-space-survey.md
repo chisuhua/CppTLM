@@ -1396,7 +1396,8 @@ ordering_assumption:
 | **N5** | 🟡 中高 | 07 号 §5.1.4 四行 "Sharer Tracker 选型 = `SparseSnoopFilter`" 与**同行**协议特征自相矛盾(TSO-CC "主动放弃 sharer tracking";GPU 源自 Spandex 不做中心目录)。**snoop filter 本身即一种 sharer tracker** | ✅ **已修**:该列改 `BroadcastNull` 或"不参与"(与 `ADR-CEP-17` 决策 3 token 同原则),并加修正说明 |
 | **N6** | 🟡 中高 | 死锁自由性论证的**责任边界放错层**:F18 原文主语是"**assign messages to virtual networks**"(协议侧),不是"路由器仲裁";且 ①排序假设 ②VC 绑定 ③仲裁一致性 是**三方联合** | ✅ **已修**:07 号 §2.2 **Protocol Engine 行**补"声明排序假设 + 消息→VC 绑定";**Fabric 行**改为"**执行**(而非单边承担)",并把 QoS 降为次要用途 |
 | **N7** | 🟡 中高 | `ADR-CEP-05 §7` α 失效判据**只有 1 条**,只覆盖"协议信息泄漏给 stub"单向;缺"stub 可见信息不足以支撑组合"这一侧 → α 方案**单向可证伪** | ✅ **已修**:补**α 失效判据 2(E 态静默升级)**,α 方案变双向可证伪 |
-| **N8** | 🟡 中 | `ordering_assumption` 的 key 必须**绑定 `vc_id`** —— `NoCFlitBundle` 不带 ordering 字段(排序是 **VC 的静态属性**),不绑定则与 `flit.vc_id` 无法关联,死锁自由论证拿不到可计算输入 | ✅ **已修**:`ADR-CEP-17` 决策 8 的 schema 改为 `<vc_id \| named_network>`,并要求 `named_network` 解析到唯一 `vc_id`,否则配置 fail |
+| **N8** | 🟡 中 | ⚠️ **2026-10-22 起本条已被 `ADR-CEP-12 §8` 取代**:key 改为 **network**(其下显式给出 `vc_id`),
+| | | 扁平形态的「绑定 `vc_id`」谓词整体消失。原表述:`ordering_assumption` 的 key 必须**绑定 `vc_id`** —— `NoCFlitBundle` 不带 ordering 字段(排序是 **VC 的静态属性**),不绑定则与 `flit.vc_id` 无法关联,死锁自由论证拿不到可计算输入 | ✅ **已修**:`ADR-CEP-17` 决策 8 的 schema 改为 `<vc_id \| named_network>`,并要求 `named_network` 解析到唯一 `vc_id`,否则配置 fail |
 | **N9** | ⚪ 低 | 2 处**证据页码错**:ProtoGen "18-20 states / 46-60 transitions" 在 **p.12** 非 p.11;HeteroGen "reads, writes, and fences" 在 **p.3** 非 p.2。07 号 §10 调研引用写 "F1~F23" 实为 F1~F28 | ✅ **已修**:4 处页码/条数更正 |
 
 **Oracle 额外指出的、本批一并落地的架构级修订**:

@@ -68,6 +68,12 @@ Plugin 内、Stub 只暴露 4 值 `perm`、能力以**数据**声明)。本清�
 > **性质**:`冲突` = 两侧对同一概念有**互斥**的约定;`缺失` = CEP 有该维度而 ArchForge 侧**无对应物**;
 > `口径` = 两侧都有但**粒度/词表**不同。
 
+> ✅ **答复已到(2026-10-21)** —— ArchForge 已就 §5 的 6 问给出书面结论,
+> 载体 = `docs/roadmap/cep-interface-alignment.md`(v0.2 已填答复)+ `ADR-SOC-25` + `32 号`。
+> **逐条回执**见 [`2026-10-21-cep-archforge-response-receipt.md`](./2026-10-21-cep-archforge-response-receipt.md)
+> (R-1 ~ R-13 **13 项逐条裁定** + P0-1 ~ P0-5 逐项签收 + 3 处勘误 + 1 处论证缺口)。
+> 本表**保留原始 gap 记录与 `file:line` 锚点**(锚点块依赖它们),答复后的收敛状态以回执为准。
+
 | # | CEP 侧 | ArchForge 侧 | 性质 | 级别 | 处置 |
 |---|--------|-------------|------|------|------|
 | **G1** | 协议状态**住 Plugin 内**;Stub 只暴露 4 值 `perm`(`ADR-CEP-05:170` IC1) | `CoherenceState { I,S,E,M,O,T }` 是**顶层枚举**(`coherence-protocol.md:112`);`CoherenceDomain::State`(`09:242`) | **冲突** | **P0** | 状态枚举**下沉到协议插件**;或 ArchForge 侧出 ADR 豁免 `INV-CEP-05-IC1`(需 DRI 裁决) |
@@ -142,13 +148,13 @@ ArchForge 侧承载(G6/G7/G8/G12)。
 `ADR-CEP-00 §2 Decision 3` 的准入门在**当前只有文字条款**。建议把放行条件固化为
 **下列 5 条**(**全部**满足才算放行):
 
-| # | 判据 | 检查方式 |
-|---|------|----------|
-| **C-1** | ArchForge 侧**存在**一个已合入的 coherence 接口 PR(有 commit hash) | `git log` 在 ArchForge 仓可见 |
-| **C-2** | 该 PR 含 **§4 P0-1 ~ P0-5** 的结论(逐项可追溯到 ArchForge 文档行) | 人工核对 + 本清单 §3 状态更新 |
-| **C-3** | §5 的 **6 问**各有**书面结论**(ArchForge ADR 或 issue) | 人工核对 |
-| **C-4** | CppTLM 侧 `protocol_instance.schema.json` 与 ArchForge 侧声明**能双向映射**(每个 schema 字段在 ArchForge 侧有承载物,或显式标注「CppTLM 侧独占」) | **新增机器检查**(见 §7) |
-| **C-5** | 复审:`docs/implementation/2026-10-21-cep-stage0-contracts.md §7` 的 **10 组反向验证** 仍全绿(M1 冻结校验 + lint --strict + ctest) | 已自动化 |
+| # | 判据 | 检查方式 | 答复轮状态(2026-10-21) |
+|---|------|----------|---------------------|
+| **C-1** | ArchForge 侧**存在**一个已合入的 coherence **接口规约文档**(有 commit hash)<br>—— 措辞由「接口 PR」修订为「接口规约 PR」(per `ADR-CEP-00 §8` Status Update 2026-10-21) | `git log` 在 ArchForge 仓可见 | ✅ **已闭合** —— commit **`6020f42`**(8 文件 / +1415 行);三份规约文档(`roadmap` v0.2 / `ADR-SOC-25` / `32 号`)+ 4 份索引已合入 |
+| **C-2** | 该规约含 **§4 P0-1 ~ P0-5** 的结论(逐项可追溯到 ArchForge 文档行) | 人工核对 + 本清单 §3 状态更新 | ✅ **已满足** —— 回执 §3 逐项签收 |
+| **C-3** | §5 的 **6 问**各有**书面结论**(ArchForge ADR 或 issue) | 人工核对 | ✅ **已满足** —— 回执 §4/§5 逐条签收 |
+| **C-4** | CppTLM 侧 `protocol_instance.schema.json` 与 ArchForge 侧声明**能双向映射**(每个 schema 字段在 ArchForge 侧有承载物,或显式标注「CppTLM 侧独占」) | **机器检查已落地**(见 §7):`scripts/test/cep_decl_alignment_check.sh`(5 项子校验,反向验证 12/12) | ✅ **已满足(机器层)** ——<br>① 声明 ↔ schema **全 13 个 required 属性**(jsonschema)② `vc_id` < 槽位上界 + 键对称 ③ `ordering ⊆ vc_binding` ④ 消息类 ∈ 6 类词表 ⑤ network ⊆ fabric **= ArchForge 已锁定集** + `vc_count` **双向**一致<br>2 份声明校验通过;台账 Entry #9 ② 存有 **RUN 证据**、③ 存有反向验证 12/12 |
+| **C-5** | 复审:`docs/implementation/2026-10-21-cep-stage0-contracts.md §7` 的 **10 组反向验证** 仍全绿 + 声明对齐检查 **12 条**(M1 冻结校验 + lint --strict + ctest) | 已自动化 | ✅ **已复跑全绿**(28/28 hash + 8/8 lint 组 + 33/33 锚点) |
 
 > **判据的诚实边界**:C-1 ~ C-3 依赖**外部仓的人工核对**,无法在本仓自动化 —— 这正是
 > R10(独立性缺口)的具体形态。**C-4 / C-5 可自动化**,已在本清单 §7 落地。
@@ -166,6 +172,19 @@ ArchForge 侧承载(G6/G7/G8/G12)。
 > **ArchForge 仓不在本仓 CI 环境时**:检查**优雅跳过**(打印「跳过」而非红)——
 > 跨仓路径是外部条件,缺失不是本仓的缺陷。
 
+> ### 7.1 声明 ↔ schema/fabric 对齐检查(C-4 的机器化)
+>
+> `scripts/test/cep_decl_alignment_check.sh` —— 5 项子校验:
+> ① 声明 ↔ 本仓 schema **全 13 个 required 属性**(jsonschema,缺依赖则**报错退出**不降级)
+> ② `vc_id` < 槽位上界 + 逐网络键对称 + `ordering` 内层 key 的 `int()` 解析
+> ③ `ordering_assumption[n]` 的每个 `vc_id` ∈ `vc_binding[n].values()`
+> ④ `vc_binding[n]` 的每个消息类 ∈ 6 类规范词表
+> ⑤ 声明的 network ⊆ 本仓 fabric **= ArchForge 已锁定集** + `vc_count` **双向**一致
+> **反向验证 12/12**(破坏 → 红 → 恢复 → 绿)见 `scripts/test/cep_decl_reverse_verify.sh`。
+> ⚠️ 「跳过」与「跑过」**可区分**:脚本首行标 `[RUN]` / `[SKIP]`;ctest 用 `SKIP_RETURN_CODE`
+> + `SKIP_REGULAR_EXPRESSION` 把跳过显示为 **Skipped** 而非 **Passed** —— 一个恒跳过的闸门
+> 不能看起来像「验过了」。
+
 ---
 
 ## 8. 诚实边界
@@ -176,8 +195,16 @@ ArchForge 侧承载(G6/G7/G8/G12)。
 2. **ArchForge 侧的 3 份 microarchitecture 文档自述为「规划」**
    (`coherence-protocol.md:20`、`coherence-bridge.md:21` 标题含「(蓝图 → 实施)」)——
    即它们**尚未落地**。故本清单对齐的是**设计意图**,不是已实现代码。
-3. **§4 的 PR 范围是初稿**,§5 的 6 问未答前不可当作排期依据。
-4. **本清单不构成 M2 放行** —— 放行判据见 §6,且 C-1 ~ C-3 **无法在本仓自动化**。
+3. **§4 的 PR 范围是初稿**;§5 的 6 问**已于 2026-10-21 得到书面答复**,但答复的**执行侧**
+   (ArchForge `ADR-SOC-25 §3.1` 的 **9 份文档返工清单**,含 **D-9**)尚未落地 →
+   §4 仍**不可当作排期依据**。
+4. **本清单不构成 M2 放行** —— 放行判据见 §6;**C-1 ~ C-3 依赖外部仓人工核对**,
+   C-1 另受「ArchForge 须先提交规约文档」的前置约束(见回执 §1 / §8 Q-1)。
+5. ⚠️ **锚点漂移风险(与 ArchForge D-9 强耦合)** —— 本清单 §9 的 **21 个 ArchForge 锚点**中
+   **20 个**指向 `ADR-SOC-25 §3.1` 返工清单所触及的位置(D-9 删/改 `09-coherence-protocol.md` 8 处 +
+   `coherence-{protocol,domain,bridge}.md` 的重写)→ **D-9 落地必使锚点失效**。
+   → **D-9 与本清单锚点重生成必须同批进行**;风险逐项判定见
+   [`2026-10-21-cep-archforge-response-receipt.md §7`](./2026-10-21-cep-archforge-response-receipt.md#7-d-9-返工对本仓-ci-的影响独立复核)。
 5. **本清单不在 M1 冻结集内** —— 它是**工作清单**,随 gap 关闭而演进;M1 冻结的是
    **规范性契约产物**(ADR / `07 号` / schema / tools / spec)。本清单的**引用**由
    §7 的机器校验守护(锚点漂移即红),这是与「冻结」不同的一种守护形态。

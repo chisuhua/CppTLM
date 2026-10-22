@@ -1,31 +1,44 @@
 # cpptlm-cep-umbrella: Coherence Exploration Platform(CEP)核心契约与实验床骨架
 
-> **状态**: 🟡 **Proposed Draft** —— Stage 0 umbrella;**跨仓准入门(M2)未放行**,故**不得**升 Proposed(per `ADR-CEP-00 §2 Decision 3`)
+> **状态**: 🟡 **Proposed** —— Stage 0 umbrella;**跨仓准入门(M2)已放行**(2026-10-22,per `ADR-CEP-00 §8` + 台账 Entry #9/#10)
 > **作者**: CppTLM Team(builder mode)
-> **版本**: v1.0(2026-10-21)
+> **版本**: v1.1(2026-10-22 · M2 放行)
 > **关联路线图**: [`phase-10`](../../../.rddf/roadmap/phases/phase-10.md)(planning)+ [`objective-cep-platform`](../../../.rddf/roadmap/objectives/obj-cep-platform.md)(P1 active)
 > **关联真源 1**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1(657 行,✅ 2026-10-21 完成)+ [`06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4 + [`06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3(将被 supersede)
 > **关联真源 3**: `docs/adr/ADR-CEP-*.md` **共 21 份**(2026-10-21 architect 阶段两批:新增 `ADR-CEP-08/09/12/13/18` + `ADR-CEP-11/14/15/16/07A`,修订 8 份)
 > **KPI**: Stage 0 = **1 slot**(计 KPI,per `ADR-CEP-00 §2 Decision 3`;**不符** `cpptlm-dgpu-soc-arch-truth-cleanup §6` doc-only 豁免先例,因本 change 含测试契约骨架)
-> **前置 gate**: ① 签发仓 = CppTLM(2026-10-20 拍板)✅ ② 真源路径 = `07-*.md`(已创建)✅ ③ KPI slot 腾出(3 个 active 已 ⏸ 暂存归档,baseline **0/3**)✅ ④ **跨仓准入门(M2)⛔ 未放行**
+> **前置 gate**: ① 签发仓 = CppTLM(2026-10-20 拍板)✅ ② 真源路径 = `07-*.md`(已创建)✅ ③ KPI slot 腾出(3 个 active 已 ⏸ 暂存归档,baseline **0/3**)✅ ④ **跨仓准入门(M2)✅ 已放行**(2026-10-22)
 >
-> **⛔ gate ④ 跨仓准入门(M2)—— 2026-10-21 Task 8.4 Step 4 取证结论**
+> **✅ gate ④ 跨仓准入门(M2)—— 2026-10-22 放行结论**
 >
-> | 项 | 取证 | 结论 |
-> |----|------|------|
-> | 准入门条款 | `ADR-CEP-00 §2 Decision 3`「ArchForge 协议接口 PR 未合入前,CppTLM 对应 OpenSpec change 不得从 Proposed Draft 转 Proposed」 | — |
-> | ArchForge 侧 coherence 接口 PR | `/workspace/main/ArchForge` git 历史 **6 commit,无 PR / merge 痕迹**;coherence 相关产物**只有设计文档**(`docs/architecture/09-coherence-protocol.md` 514 行 / `docs/adr/ADR-SOC-01-coherence-protocol-strategy.md` 66 行 / `docs/microarchitecture/coherence-{bridge,domain,protocol}.md` 1017 行)—— **无「接口 PR 已合入」证据** | ⛔ **未合入** |
-> | 结论 | 准入门**未放行** | **本 change 停留 Proposed Draft**;Proposed 并发 **0/3** |
+> | 判据 | 取证 | 结论 |
+> |------|------|------|
+> | **C-1** | ArchForge 侧**接口规约文档已合入**:commits `6020f42`(8 文件 / +1415 行)+ `8290b4c`(ADR-SOC-25 → Accepted + N-1~N-4 裁决)+ `ac956b8`(D-9 批 1) | ✅ **已闭合**(措辞按 `ADR-CEP-00 §8` 修订为「接口**规约文档**」) |
+> | **C-2** | P0-1 ~ P0-5 逐项结论:载体 = ArchForge `ADR-SOC-25` + `32 号`;我方逐项签收见 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md §3` | ✅ **已满足** |
+> | **C-3** | §5 的 6 问各有书面结论(ArchForge `roadmap/cep-interface-alignment.md §5` 答复表 + `32 号 §10`) | ✅ **已满足** |
+> | **C-4** | schema ↔ 声明双向映射:**机器化** —— `scripts/test/cep_decl_alignment_check.sh`(依赖 `jsonschema` 做**全 13 个 required 属性**校验(刻意不降级运行),5 项子校验)+ `include/tlm/cep/{protocol_instance.schema.json,fabric.schema.json,fabric.json}`;**反向验证 12/12 全绿**;RUN 证据见台账 Entry #9 | ✅ **已满足**(声明 2/2 份校验通过) |
+> | **C-5** | 反向验证 **12 条** + lint + ctest 全绿(2026-10-22 实测:`ctest` **94/94**、`ctest -R cep` **16/16**、CEP lint **9/9 组**、M1 冻结 **29/29**、锚点 **33/33**) | ✅ **已满足** |
+> | 结论 | 准入门**放行** | **本 change 升 Proposed**;Proposed 并发 **1/3** |
 >
-> **放行条件**:ArchForge 侧 coherence 接口 PR 合入(需与 `09-coherence-protocol.md §5.2 关键 API` 对齐 —— 本 change 的 `protocol_instance.schema.json` 的 `ordering_assumption` / `vc_binding` / `sharer_tracker` 属**接口形状**,存在与 ArchForge 侧冲突的可能)→ 由 DRI 人工 gate 放行并记 §11 台账 entry。
+> **放行依据**:ArchForge 侧 coherence 接口**规约文档**已合入 + 本仓侧判据 C-4 的**机器化**已落地
+> (`ADR-CEP-12` §8 / `ADR-CEP-08` §8 / `ADR-CEP-09` §8 三个 Status Update + umbrella spec IC2 scenario 改写
+> + `protocol_instance.schema.json` 采纳 per-network 嵌套形态 + `fabric.{schema.json,json}` 载体 + 第 9 组检查器)。
+> → 由 DRI 人工 gate 放行并记 §11 台账 **Entry #10**。
+>
+> ⚠️ **Stage 1 必须承接的 4 项 provisional 债**(per 台账 Entry #9 ④):
+> ① `ADR-CEP-09` 的图顶点按 `(协议实例, network, vc_id)` 建立**之前**,不得用其无环判据放行任何协议实例;
+> ② N-1/N-2 的实现侧复核;③ SLICC 式「vnet + 装配期绑定」备选的重评触发条件(第 3 网 / 第 3 实例);
+> ④ `fabric.*` 在首个 `implemented` 实例跑过后**再纳 M1 冻结集**。
+> ⚠️ **R10 未闭合** —— 本次放行是 **AI 三方评审(见回执 §8)+ M1 冻结 + M4 复审** 的组合,**真外部真人评审仍缺**。
 >
 > **📋 对齐清单**:`docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`
 > —— 13 项 gap 矩阵(带两侧 file:line)+ ArchForge 侧 PR 范围(P0 5 项 / P1 4 项 / P2 4 项)
 > + 需 DRI 澄清的 **6 问** + M2 的 **5 条可检查放行判据**。
-> 清单的引用漂移由 `scripts/test/cep_archforge_alignment_check.sh` 机器检测(32 个锚点;
-> ArchForge 仓不在本环境时优雅跳过)。
+> 清单的引用漂移由 `scripts/test/cep_archforge_alignment_check.sh` 机器检测(33 个锚点;
+> ArchForge 仓不在本环境时优雅跳过);
+> **声明 ↔ schema/fabric 的对齐**由 `scripts/test/cep_decl_alignment_check.sh` 机器检测(5 项子校验,反向验证 12/12)。
 > **✅ 残留 gate 已解除(2026-10-21)**: `objective-cep-platform §9.2` 三项角色(验收方 / 结论消费者 / 平台维护方)已**正式指定** —— 形式 gate 解除,Stage 0 验收的"角色缺失 No-Go"条件消除
-> **⚠️ 独立性未闭合(已登记 R10)**:三项角色在当前仓形态下**指向同一人**(ArchForge 6/6 commit + CppTLM 1007 commit 同一作者)→ 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制**部分**替代;M4 已有实证先例(2026-10-21 Oracle 独立复审抓出 9 项作者 4 轮自审全漏的问题)。**真外部真人评审待建立**
+> **⚠️ 独立性未闭合(已登记 R10)**:三项角色在当前仓形态下**指向同一人**(ArchForge 与 CppTLM commit 同一作者)→ 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制**部分**替代;M4 已有实证先例(2026-10-21 Oracle 独立复审抓出 9 项作者 4 轮自审全漏的问题;2026-10-22 批 1 再经 oracle + metis + explore 三方评审修订 12 处)。**真外部真人评审待建立**
 
 ---
 
@@ -57,7 +70,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | `test/test_cep_dummy_signals.cc` | ~140 | `NullProtocolEngine` / `NullCollectivePlane` 的 10 流覆盖矩阵 |
 | `test/test_cep_module_factory_seam.cc` | ~220 | ModuleFactory 注册契约 + 23 ABI / frozen headers **0 diff** 守门 |
 | `test/test_cep_simulation_mode_lock.cc` | ~90 | `simulation_mode` 单一维度 + 4 件套契约 + `verification_mode` 契约 |
-| `include/tlm/cep/protocol_instance.schema.json` | ~120 | **协议实例能力声明 schema**(per `ADR-CEP-12` 决策 1,8 字段组) |
+| `include/tlm/cep/protocol_instance.schema.json` | ~150 | **协议实例能力声明 schema**(per `ADR-CEP-12` 决策 1,**7 字段组 / 13 顶层属性**;2026-10-22 起 `ordering_assumption` / `vc_binding` 为 **per-network 嵌套形态**,per `ADR-CEP-12 §8`) |
 | `tools/render_report.py` | ~200 | `metrics.json` + `trace.h5` → `report.html` |
 | `tools/run_sweep.py` | ~150 | 维度组合 sweep → N 个 4 件套 + `sweep_summary.csv` |
 | `tools/ab_compare.py` | ~150 | A/B 对比 → `delta_metrics.json` + CDF overlay |
@@ -120,7 +133,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | **`[cep][dummy-signals]`** | 0 cases | ✅ ~10 cases(10 流覆盖矩阵) |
 | **`[cep][module-factory-seam]`** | 0 cases | ✅ ~8 cases(注册机制 + 冻结面 0 diff) |
 | **`[cep][simulation-mode]`** | 0 cases | ✅ ~6 cases(`simulation_mode` + `verification_mode` 锁定) |
-| **`[cep][schema]`** | 0 cases | ✅ ~6 cases(capability schema 8 字段组) |
+| **`[cep][schema]`** | 0 cases | ✅ ~9 cases(capability schema **7 字段组 / 13 属性** + per-network 形态 + fabric 载体) |
 | **`[cep][docs-lint]`**(shell) | 0 | ✅ 16 份 ADR 锚点 + invariant 计数单一真源 |
 
 ### 风险与缓解(per `objective-cep-platform §8.1`)
@@ -143,7 +156,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 - [ ] `[cep][dummy-signals]` ~10 cases / PASS(10 流覆盖矩阵全覆盖)
 - [ ] `[cep][module-factory-seam]` ~8 cases / PASS
 - [ ] `[cep][simulation-mode]` ~6 cases / PASS(含 `verification_mode` 三值)
-- [ ] `[cep][schema]` ~6 cases / PASS(capability schema 8 字段组 + `named_network` → `vc_id` 解析失败即 fail)
+- [ ] `[cep][schema]` ~9 cases / PASS(capability schema **7 字段组 / 13 属性** + **per-network** `ordering_assumption` / `vc_binding` 校验:network 须登记、其下 `vc_id` 须落在槽位上界内且 ∈ 同网络 `vc_binding` 值域、消息类 ∈ 6 类词表)—— per `ADR-CEP-12 §8` 的 `INV-CEP-12-IC2` ①②③
 - [ ] `scripts/test/cep_docs_sync_check.sh` PASS(16 份 ADR 锚点 + invariant 计数单一真源)
 - [ ] **23 ABI 签名 0 变更**(`git diff HEAD -- include/abi/` 为空,per `ADR-DGPU-08`)
 - [ ] **4 frozen headers 0 diff**(per `ADR-DGPU-08` / `ADR-DGPU-09`)

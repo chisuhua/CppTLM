@@ -64,7 +64,7 @@ Stage 0 交付**契约层**:让 50 条 invariant 变成**可执行断言**,并�
 
 | 层 | 断言内容 | 落点 |
 |----|---------|------|
-| **契约层(Stage 0)** | 清单完整(10 流 / 6 接口 / 5 实现 / 8 字段组 / 4 件套 / 13 metric / 3 判据 / 4 档 `verification_mode`);字段值域收敛;不变量的**存在性 + 语义文本**与 ADR 一致;schema 的**结构约束**(key 解析失败即 fail) | 本 change 的 4 个测试 + 1 个 schema + 1 个 lint |
+| **契约层(Stage 0)** | 清单完整(10 流 / 6 接口 / 5 实现 / **7 字段组 / 13 属性** / 4 件套 / 13 metric / 3 判据 / 4 档 `verification_mode`);字段值域收敛;不变量的**存在性 + 语义文本**与 ADR 一致;schema 的**结构约束**(key 解析失败即 fail) | 本 change 的 4 个测试 + 1 个 schema + 1 个 lint |
 | **实现层(Stage 1+)** | 实现**行为**满足契约(如 `INV-SC1` 的 outstanding 上限在真实并发下成立) | 各 change 的 OpenSpec AC |
 
 **理由**:若 Stage 0 就断言实现行为,必须先实现 StubCacheCore 等实体 —— 那就把 Stage 0 变成了 Stage 1,违反 `ADR-CEP-00 §2 Decision 3` 的串行排队与 KPI 约束。

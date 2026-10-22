@@ -1,6 +1,6 @@
 # Tasks — cpptlm-cep-umbrella v1.0(Stage 0,TDD 5-step)
 
-> **状态**: 📋 **Proposed Draft**(2026-10-21)—— 跨仓准入门(M2)未放行,**不得**升 Proposed(per `ADR-CEP-00 §2 Decision 3`,取证见 `proposal.md` 前置 gate ④)
+> **状态**: 📋 **Proposed**(2026-10-22)—— 跨仓准入门(M2)**已放行**(per `ADR-CEP-00 §8` + 台账 Entry #9/#10;取证见 `proposal.md` 前置 gate ④)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-core-contracts/spec.md`](specs/cep-core-contracts/spec.md)
 > **上游**: `phase-10.md` Stage 0 子任务 10.B~10.G + `objective-cep-platform §4.1`
 > **估时**: 28 人日(Stage 0 剩余;已消耗 13 人日 = 10.A 8 + 10.E 5)
@@ -20,10 +20,11 @@
 | 5 seam 契约 + 冻结面守门 | ✅ 完成 | 7 cases;冻结面用 `git diff --name-only HEAD` 实测 |
 | 6 实验输出契约 | ✅ 完成 | 8 cases / 54 assertions;`network.mode` 否定语境判定(否定词常在出现点**之前**) |
 | 7 tools + lint | ✅ 完成 | 6 cases + lint 8/8;lint 的**范围**比规则更易出错(收窄到 38 个 CEP 专属文档) |
-| 8 收敛 + 回归 + 文档 | ✅ 完成(验收前置留 1 项) | GREEN 收敛 ✅ / 全量 **0 回归**(81145 assertions / 1856 cases)✅ / 实施笔记 ✅ / **独立 AI 复审 2 轮已完成**(6 BLOCKER 全处置)✅ / **⛔ 跨仓准入门(M2)未放行** → Stage 0 不 archive |
+| 8 收敛 + 回归 + 文档 | ✅ 完成(验收前置留 1 项) | GREEN 收敛 ✅ / 全量 **0 回归**(81145 assertions / 1856 cases)✅ / 实施笔记 ✅ / **独立 AI 复审 2 轮已完成**(6 BLOCKER 全处置)✅ / ✅ **跨仓准入门(M2)已放行**(2026-10-22,台账 Entry #9/#10)→ 但 Stage 0 仍不 archive(R10 未闭合) |
 
 > **Task 8.4 全部 6 步已完成(2026-10-21)**:独立 AI 复审 2 轮(`general` + `explore`,替代失效的 `oracle` / `critic`)、M1 产物冻结(28 产物 SHA-256 + 机器校验)、M2 跨仓准入门**取证未放行**、R10 登记为「部分独立」、台账 Entry #7。
-> **⛔ Stage 0 不 archive**:M2 准入门未放行(ArchForge 侧 coherence 接口 PR 未合入)+ R10 独立验收未闭合。`cpptlm-cep-umbrella` 状态 🟡 **Proposed Draft**(baseline 0/3)。
+> **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧接口**规约文档**已合入(`6020f42` + `8290b4c` + `ac956b8`);本仓侧完成**契约收敛批 1**(per-network schema delta + 4 份 ADR 的 Status Update + umbrella spec IC2 改写 + fabric 载体 + **第 9 组检查器**,反向验证 **12/12 全绿**)—— 台账 Entry #9(含 RUN 证据)/ Entry #10(放行裁决)。
+> **⛔ Stage 0 仍不 archive**:**仅**因 R10 独立验收未闭合(M2 已放行)。`cpptlm-cep-umbrella` 状态 🟡 **Proposed**(baseline **1/3**)。
 > **Commit**:见下方 `git log`(2026-10-21 三次提交:`7195f7f7` / `e1d706a5` / `824bd26e` + 本轮)。
 
 ---
@@ -129,6 +130,13 @@
 - [x] Step 6: 写 RED 测试:`consistency_labels` 必含 `read`/`write` 两级 **+** `request_level`
 - [x] Step 7: 写 RED 测试:含 `named_network` key 的配置解析不到唯一 `vc_id` ⇒ **fail**(装配期 fail 语义)
 - [x] Step 8: 写 RED 测试:`status` 只有 `implemented` 计入 adapter 计数
+
+> ⚠️ **口径取代(2026-10-22,per `ADR-CEP-12 §8` Status Update)** —— 本节 Step 2 的「**8 个字段组**」
+> 与 Step 7 的「`named_network` → `vc_id` 解析」**已被取代**:
+> 字段组口径为 **7 组 / 13 属性**(per `INV-CEP-12-IC1`);`ordering_assumption` / `vc_binding`
+> 改为 **per-network 嵌套形态** —— 「`named_network` 解析到唯一 `vc_id`」这一谓词**整体消失**。
+> 上述步骤保留为**当时的 TDD 记录**,不改写;现行判据见 `specs/cep-core-contracts/spec.md` 的 IC2 scenario
+> 与 `ADR-CEP-12 §8.3`。
 
 **验证**: `./build/bin/cpptlm_tests "[cep][schema]"` 全 RED
 
@@ -377,13 +385,27 @@
 - [x] Step 1: 确认 `objective-cep-platform §9.2` 三项角色**已指定**(✅ 2026-10-21 已完成,形式 gate 解除)
 - [x] Step 2: **执行独立 AI 复审**(机制 M4)—— ✅ 2026-10-21 **2 轮**:`general`(架构 6 问)+ `explore`(代码对抗式 6 问,立场 REJECT)。**发现清单**:6 个 BLOCKER(B1 冻结面 CI 恒绿 / B2 一致性闸门三工具全不生效 / B3「全仓」名不副实 / B4 07 号第 3 列未校验 / B5 tools 从不执行 / B6 `ab_compare` 缺 `import html`)+ 15 项 SHOULD_FIX + 架构复审抓出的解析器形态盲区 / 编号重号 / 文件名拼写 / 字段组口径 4 处不一致 / C10 零覆盖等 —— **全部逐条处置**,台账见 `docs/implementation/2026-10-21-cep-stage0-contracts.md §7`。**10 组反向验证**(故意破坏 → 必须红)全部有牙。⚠️ `oracle` / `critic` 已从 agent 注册表消失 → 通道强度弱于原生 oracle,已如实登记
 - [x] Step 3: 确认**产物冻结先于解读**(机制 M1)—— ✅ Stage 0 尚无实验 4 件套 → M1 对应物 = **规范性契约产物**冻结:**28 个产物**(21 ADR + `07 号` + 2 schema + 3 tools + umbrella `spec.md`)。清单 `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(逐件 SHA-256 + 冻结基线 commit);校验器 `scripts/test/cep_freeze_check.sh`(`--update` 重新生成),已接入 `cep_docs_sync_check.sh` **第 7 组** + 独立 ctest `cep_freeze_check`。**反向验证**:改一份冻结 ADR → freeze checker 红 + lint `--strict` exit=1;恢复 → 绿 ✅。⚠️ 两个 checker 脚本自身**不冻结**(checker 必须可修)
-- [x] Step 4: 确认**跨仓准入门**满足(机制 M2)—— ⛔ **未满足**(2026-10-21 取证):`/workspace/main/ArchForge` git 历史 **6 commit、无 PR / merge 痕迹**,coherence 相关产物**只有设计文档**(`09-coherence-protocol.md` 514 行 / `ADR-SOC-01` 66 行 / `coherence-{bridge,domain,protocol}.md` 1017 行)→ **无「接口 PR 已合入」证据**。**连带纠正**:本 change 状态 🟡 Proposed → 🟡 **Proposed Draft**(`proposal.md` + `tasks.md` 同步);objective §5.2 baseline **1/3 → 0/3**;**放行条件**与 `09-coherence-protocol.md §5.2 关键 API` 对齐后由 DRI 人工 gate 放行
+- [x] Step 4: 确认**跨仓准入门**满足(机制 M2)—— ✅ **已满足**(2026-10-22):**C-1** ArchForge 侧接口**规约文档**已合入(`6020f42` + `8290b4c` + `ac956b8`;措辞按 `ADR-CEP-00 §8` 修订为「接口规约文档」);**C-2/C-3** P0-1~P0-5 与 6 问结论已由我方逐条签收(回执 §3/§4);**C-4** 已**机器化** —— `scripts/test/cep_decl_alignment_check.sh`(5 项子校验(① `jsonschema` 全量 + ②~⑤ 手写语义),**反向验证 12/12 全绿**,RUN 证据见台账 Entry #9);**C-5** 全量回归 `ctest` **94/94**、`ctest -R cep` **16/16**、CEP lint **9/9 组**、M1 冻结 **29/29**、锚点 **33/33**。**连带**:本 change 状态 🟡 **Proposed Draft** → 🟡 **Proposed**(`proposal.md` + `tasks.md` 同步);objective §5.2 baseline **0/3 → 1/3**;台账 Entry #10 记录放行裁决。⚠️ **Stage 0 仍不 archive**(R10 未闭合,与 M2 无关)
 - [x] Step 5: 记录**独立性残余缺口**(R10)—— ✅ Stage 0 验收等级**降级为「部分独立」**(M1 ✅ / M2 ⛔ / M3 ⏳ / M4 ✅);objective §8.1 R10 缓解栏已写明**不得表述为「完全独立验收」**,M4 不可替代真人外部评审
 - [x] Step 6: 在 `§11 决策台账` 追加 `sprint-review` entry 记录 Stage 0 结论 —— ✅ **Entry #7**(append-only,置于 Entry #6 之后)
 
 **验证**: 台账新增 entry ✅(`objective-cep-platform §11 Entry #7`)
 
-**⛔ 结论**:Stage 0 **不 archive** —— M2 准入门未放行 + R10 独立验收未闭合。台账 Entry #7 已记录全部结论与放行条件。
+**⛔ 结论**:Stage 0 **仍不 archive** —— M2 准入门**已于 2026-10-22 放行**(台账 Entry #9/#10),**唯一**未闭合项是 R10 独立验收(真人外部评审仍缺)。台账 Entry #7 记录了当时的未放行结论,Entry #9/#10 记录放行依据。
+
+---
+
+## Stage 1 准入前置(2026-10-22 契约收敛批 1 遗留的 provisional 债)
+
+> 以下 4 项由 `ADR-CEP-12 §8` 的 **provisional 标注**引入 —— 嵌套形态是 **Stage 0 跨仓对齐形态**,
+> 采纳自 ArchForge `32 号 §6.4`(其 2 份声明 `status` 均为 `planned`、版本不在锁表)。
+> **Stage 1 必须承接**,否则 provisional 变成无声的永久债。
+
+- [ ] **S1-1**:`ADR-CEP-09` 的通道依赖图顶点按 **`(协议实例, network, vc_id)`** 建立 —— **在此之前不得用其无环判据放行任何协议实例**(两张网共享 vc_id 值域 0-3,顶点不带 network ⇒ 跨网依赖边被合并 ⇒ 可能给错误 verdict)
+- [ ] **S1-2**:N-1 / N-2 的**实现侧复核** —— 首个 `implemented` 实例装配后复核 per-network 嵌套形态
+- [ ] **S1-3**:**SLICC 式「协议本地 vnet + 装配期绑定」**备选的重评 —— 触发条件:出现**第 3 张网**或**第 3 个协议实例**(`ADR-CEP-12 §8.4` 已登记,别让它无声死掉)
+- [ ] **S1-4**:`include/tlm/cep/fabric.{schema.json,json}` 在首个 `implemented` 实例跑过后**再纳 M1 冻结集**(零实例新产物不诞生即冻结)
+- [ ] **S1-5**:**adapter 消息类 → `CATEGORY_*` 的显式映射表(非恒等)** —— 6 类一致性消息类落在 Coherence Interface 层,`CATEGORY_*` 保持**链路层 3 类**不变;映射表由 adapter 承担。**验收**:映射表存在且经 contract test 断言(per `ADR-CEP-12 §8.3` IC2 ③ 的分层纪律)
 
 ---
 

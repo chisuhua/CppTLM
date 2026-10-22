@@ -235,7 +235,59 @@ CEP-01/03/04/05 头部引用本 ADR 作为"真源 3",但本 ADR v0.1 未签发 �
 
 ---
 
-**版本**: v0.2 草案
-**最后更新**: 2026-10-20
-**批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板)
+## 8. Status Update(2026-10-21)—— §2 决策 3 准入门措辞修订(接口 PR → 接口规约 PR)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
+> §2 决策 3 的**正文不改**,仅登记准入门判据 **C-1** 的措辞变更。
+> **触发**: ArchForge 侧答复 `ADR-SOC-25` D11(治理级协商请求)+ `32 号 §2 F8`。
+> **回执载体**: [`docs/implementation/2026-10-21-cep-archforge-response-receipt.md`](../implementation/2026-10-21-cep-archforge-response-receipt.md)
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` Entry #8(`adr-amendment`)
+
+### 8.1 修订内容
+
+§2 决策 3 的**准入门条款**中,判据 **C-1** 的措辞:
+
+| | 措辞 | 载体 |
+|---|------|------|
+| **修订前** | ArchForge 侧存在**已合入**的 coherence 接口 **PR**(有 commit hash) | 本清单 §6 C-1 / `ADR-CEP-00 §2 决策 3` |
+| **修订后** | ArchForge 侧存在**已合入**的 coherence **接口规约文档**(有 commit hash)—— 即**纯设计仓**形态的规约交付物<br>(形态 = `ADR-SOC-25` + `32 号` + roadmap 答复表) | 同上 |
+
+**实现型 PR 归 CppTLM 仓**(per §2 决策 1 的代码归口:全部 C++ 实现归 CppTLM)——
+准入门**只管「接口形状已定稿」**,不管「实现已落地」。
+
+### 8.2 理由
+
+ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、无 `include/`)→
+**结构上无法**产出「接口 PR」→ 修订前措辞下 C-1 **永远无法闭合** → M2 准入门**永久阻塞**。
+这是本轮唯一的**治理级**阻塞,优先于一切技术结论。
+
+### 8.3 效力范围与边界(重要 —— 措辞变更**不放行** M2)
+
+1. **效力载体**: 判据 C-1 的**定义载体**是本仓
+   `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md §6`(工作清单,非冻结集)——
+   §6 的 C-1 行已按本段修订。§2 决策 3 的**正文句子**按不可变约定**保持原文**
+   (「ArchForge 协议接口 PR 未合入前…」),**其判据口径以本段为准**;
+2. 本次修订**只解决「判据的可闭合性」**,**不解决「判据的闭合」**;
+3. 截至本 Status Update,C-1 **仍为红** —— ArchForge 侧三份答复文档
+   (`roadmap/cep-interface-alignment.md` v0.2 / `ADR-SOC-25` / `32 号`)**尚未提交进 git**
+   (2026-10-21 实测:`M` + `??` × 2)→ **无 commit hash 可查**;
+   > ✅ **Status Update 2026-10-21(提交后追记)**:ArchForge 已于 commit **`6020f42`**
+   > 合入上述三份规约文档(8 文件 / +1415 行)→ **C-1 已闭合**。
+   > 本段正文保留 2026-10-21 首次登记时的状态快照,不回改。
+4. M2 放行仍需 **C-1 ~ C-5 全部满足** + DRI 人工 gate(per §2 决策 3 执行机制);
+5. `cpptlm-cep-umbrella` 维持 **🟡 Proposed Draft**,Stage 0 **不 archive**。
+
+### 8.4 连带影响
+
+| 项 | 影响 |
+|----|------|
+| `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` §6 | C-1 措辞同步 + 状态列更新 |
+| `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` | 新增(本轮回执) |
+| M1 冻结集 | 本文件属冻结集 → 冻结清单**已重生成**(`cep_freeze_check.sh --update`) |
+
+---
+
+**版本**: v0.2 草案 + Status Update 2026-10-21
+**最后更新**: 2026-10-21
+**批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)

@@ -168,7 +168,10 @@ P6 禁引检查最初扫全仓 → 命中 `06-inter-module-network.md` 自身的
 ## 5. 已知局限(诚实边界)
 
 1. **Stage 0 不交付实现** —— 全部测试断言的是「**契约存在且自洽**」,**不**断言「实现满足契约」(per `ADR-CEP-14` 决策 1)。实现验证在 Stage 1+ 各 change 的 AC。
-2. **`named_network` → `vc_id` 解析**的真实强制在 Stage 1 装配期检查器;Stage 0 的解析规则以 test 内部 helper 实现并以 fixture 钉死(per `ADR-CEP-12 IC2`)。
+2. **~~`named_network` → `vc_id` 解析~~ 的真实强制在 Stage 1 装配期检查器** —— ⚠️ **该谓词已于 2026-10-22 整体消失**
+   (per `ADR-CEP-12 §8`:`ordering_assumption` / `vc_binding` 改 **per-network 嵌套形态**,key = network,
+   其下 `vc_id` 显式给出)。现行形态的真实强制同样在 Stage 1 装配期检查器;Stage 0 的解析规则
+   以 test 内部 helper 实现(`resolve_ordering_assumptions`)并以 fixture 钉死(per `ADR-CEP-12 IC2`)。
 3. **`verification_mode` 的"不构成已证明"措辞**目前靠 lint + 测试**字符串存在性**校验,**不**是语义校验。
 4. **`trace.h5` 是 stub** —— `render_report` **从不解析**它(既不 import `h5py` 也不读内容),只校验其**存在**。契约上诚实:4 件套里 `trace.h5` 目前是**占位**,真正解析在 Stage 1。(v0.1 曾误称"依赖 h5py / 缺失时降级提示",该说法与代码不符,已订正。)
 5. **Stage 0 验收的独立性未闭合**(R10):三项角色指向同一人,以 M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / **M4 独立 AI 复审** 四条机制部分替代。**2026-10-21 Task 8.4 结论**:验收等级 = **「部分独立」**(M1 ✅ 已冻结 / M2 ⛔ 未放行 / M3 ⏳ 待 Stage 1 / M4 ✅ 2 轮已执行)—— **不得表述为「完全独立验收」**;M4 不可替代真人外部评审(见 §7.4)。

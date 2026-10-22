@@ -61,7 +61,7 @@ created: 2026-10-20
 | 编号 + 锚点 | `ADR-CEP-NUMBER-MAP` §2 + §3 / `ADR-CEP-00A` §3 + §4 | CEP-08~18 编号分配;INV-CEP-NUM-IC1~3;真源章节行号实证 |
 | Ordering Point 可迁移性 | `ADR-CEP-08` §2 | 定义 + 可迁移性三判据(J1 单点性 / J2 全序可观测性 / J3 唯一性保持);E 态静默升级必查项;INV-CEP-08-IC1~3 |
 | 多 VC 仲裁 + 死锁自由 | `ADR-CEP-09` §2 | **两段式**:Decision A 通道依赖图无环判据(装配期)/ Decision B 仲裁策略;INV-CEP-09-IC1~3 |
-| 能力映射表 schema | `ADR-CEP-12` §2 | 协议实例 8 字段组 + `ordering_assumption` 逐 `vc_id` + `vc_binding` + `sharer_tracker` + `combination_capabilities`;INV-CEP-12-IC1~3 |
+| 能力映射表 schema | `ADR-CEP-12` §2 + §8 | 协议实例 **7 字段组 / 13 属性** + `ordering_assumption` **逐网络 × 逐 `vc_id`** + `vc_binding` **逐网络** + `sharer_tracker` + `combination_capabilities`;INV-CEP-12-IC1~3 |
 | 一致性域归属 | `ADR-CEP-13` §2 | 复合一致性公理 + 域可见写 (a)(b) 判据 + 桥接并发粒度;**组合承诺边界**;INV-CEP-13-IC1~3 |
 | 协议族接入 + 组合边界 | `ADR-CEP-17` §2 | Ruby-SLICC 族 + 学术协议族 + 协议私有状态边界 + **组合承诺边界**(可做但不承诺自动化) |
 | 协议生成路线范围 | `ADR-CEP-18` §2 | **纯手写插件路线**;竞合定位(互补非替代);引入生成路线的 T1~T4 判据 |
@@ -120,7 +120,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | `tools/ab_compare.py` | ~150 | A/B 对比 → `delta_metrics.json` + CDF overlay |
 | `scripts/test/cep_docs_sync_check.sh` | ~220 | 真源章节号机器检查(覆盖 **21 份** ADR,per `ADR-CEP-00A §5.1`)+ invariant 计数单一真源校验(**区分「提及」与「定义」**)+ P 编号口径校验(per `ADR-CEP-16 IC1`) |
 | `experimental/.gitkeep` + `experimental/metrics.schema.json` | ~60 | 实验目录约定 + schema |
-| `include/tlm/cep/protocol_instance.schema.json` | ~120 | **协议实例能力声明 schema**(per `ADR-CEP-12` 决策 1,8 字段组)+ `INV-CEP-12-IC1~3` 契约 |
+| `include/tlm/cep/protocol_instance.schema.json` | ~150 | **协议实例能力声明 schema**(per `ADR-CEP-12` 决策 1,**7 字段组 / 13 属性**;2026-10-22 起 per-network 嵌套形态)+ `INV-CEP-12-IC1~3` 契约 |
 | `docs/architecture/07-coherence-exploration-platform.md` | ~657 | CEP 顶层真源(整合 **16 份** ADR;✅ **已完成 2026-10-21**)|
 | `openspec/changes/cpptlm-cep-umbrella/{proposal,design,specs/*,tasks}.md` | — | rdd-builder 阶段起草 |
 

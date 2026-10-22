@@ -220,7 +220,12 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 0/3**(2026-10-21 Task 8.4 Step 4 修正:builder 创建的 `cpptlm-cep-umbrella` 因**跨仓准入门(M2)未放行**(ArchForge 侧 coherence 接口 PR 未合入)停留 **Proposed Draft**,**不占用 Proposed slot**;该 change 仍在 10-change 串行队列内,准入门放行后才计入)
+→ **当前 Proposed 并发 = 1/3**(2026-10-22 修正:`cpptlm-cep-umbrella` 因**跨仓准入门(M2)已放行**升为 **Proposed**,占用 1 个 KPI slot;baseline 0/3 → 1/3。放行依据见 §11 **Entry #10**)
+
+> **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
+> (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
+> **判据 C-4 的机器化**(检查器 + schema delta + fabric 载体,反向验证 12/12 全绿,见 Entry #9)。
+> ⚠️ **Stage 0 仍不 archive** —— R10(独立性缺口)未闭合,与 M2 无关。
 
 ### 5.3 CEP 启动的前置条件(per AGENTS.md §DOC HYGIENE line 422 新提案门槛)
 
@@ -527,6 +532,226 @@ Stage 4+ 进入维护态后,objective 归档条件:
 **未闭合**:① M2 准入门(等 ArchForge 接口 PR)② R10 真人外部评审机制 ③ M3 对拍基准(Stage 1 前定义)④ Stage 0 **不 archive**
 
 **关联**:Task 8.4 Step 2~6;`docs/implementation/2026-10-21-cep-stage0-contracts.md §7`(6 BLOCKER + 架构复审关键项 + 10 组反向验证)
+
+### Entry #8 — 2026-10-21 [adr-amendment]
+
+**主题**: M2 准入门判据 **C-1 措辞**修订(「接口 PR」→「接口规约 PR」)+ ArchForge 答复回执(R-1 ~ R-13 逐条裁定)
+
+**决策**: ✅ **采纳**(Entry #7 正文不改,本条追加说明 + `ADR-CEP-00` 追加 `## §8 Status Update`)
+
+**理由**:
+
+**C-1 措辞修订(治理级,阻塞 M2 永久化)**
+
+- ArchForge 侧答复 `ADR-SOC-25` D11 + `32 号 §2 F8` 的取证:ArchForge 是**纯设计仓**
+  (`git log` 全为 `docs(...)` 提交,无 `src/`、无 `include/`)→ **结构上产不出「接口 PR」**
+  → 现行措辞下 C-1 **永远无法闭合** → M2 准入门**永久阻塞**
+- 修订:C-1 由「ArchForge 侧存在**已合入的** coherence 接口 **PR**(有 commit hash)」
+  改为「ArchForge 侧存在**已合入的** coherence **接口规约文档**(有 commit hash)」
+  (形态 = `ADR-SOC-25` + `32 号` + roadmap 答复表);**实现型 PR 归 CppTLM 仓**(per §2 决策 1 代码归口)
+- ⚠️ **措辞变更不放行 M2** —— 截至 2026-10-21 实测,ArchForge 三份答复文档**尚未提交**
+  (`M docs/roadmap/cep-interface-alignment.md` + `?? ADR-SOC-25` + `?? 32 号`)→ C-1 **仍红**
+
+**ArchForge 答复回执(A1)**
+
+- ArchForge 已就提问单 6 问给出书面结论(`roadmap` v0.2 + `ADR-SOC-25` + `32 号`);
+  我方**独立复核**:代码级断言 **6/6 属实**(`CoherenceProtocol`/`CoherenceBridge`/`register_cache_callback` 全 0 命中;
+  `cache_tlm.hh` 的 `snoop|coherence` 计数 = 0)、契约级引用 **14/14 可追**、
+  2 份协议实例声明**经复跑 schema 校验通过**(2/2)
+- R-1 ~ R-13 **13 项逐条裁定**:无一项被拒;11 项可直接进执行,2 项需先补一轮
+  (R-2 的判据 (b) 论证 / R-3 的 scope 形态)
+- 落点修正 **2 处**:R-2 的「`perm` 改对象数组」会击穿 `test_cep_schema.cc:190-198` 的 4 值锁结构断言
+  → 改为「`perm` 保持纯枚举数组 + 旁增顶层字段」;R-13 的锁表增行**连带 2 个冻结产物 + 计数 14→16**
+- 附带登记 **D-9 → 本仓 CI 风险**:21 个 ArchForge 锚点中 **20 个**指向 `ADR-SOC-25 §3.1` 返工位置
+  → D-9 与本仓锚点重生成**必须同批**
+
+**影响范围**: `docs/adr/ADR-CEP-00-platform-charter-and-governance.md`(§8 Status Update)/
+`docs/implementation/2026-10-21-cep-archforge-response-receipt.md`(新增)/
+`docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`(§3 答复注 + §6 判据状态 + §8 风险)/
+`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(重生成,因 `ADR-CEP-00` 属 M1 冻结集)
+
+**未闭合**: ① C-1 仍红(等 ArchForge 提交三份规约文档)② C-4 仍部分(R-5 network 清单归 ArchForge /
+R-6 消息类词表 / R-3 scope 形态)③ R-2 判据 (b) 待 ArchForge 补 ④ A4 的 4 产物 adr-amendment 待 DRI 拍板
+⑤ D-9 未落地,锚点风险未消 ⑥ Stage 0 **不 archive**
+⑦ **独立复审通道不可用** —— 本环境 subagent(`oracle`/`critic`/`context-builder`)全部返回 `Invalid token`
+(与 Entry #7 记录的通道掉线一致)→ 本轮回执为**自审 + 23 组可复现取证**,**R10 残余未闭合**,
+不得表述为「已独立验收」
+
+**追记 2026-10-21(ArchForge 提交 `6020f42` 后复核)**:
+
+- ✅ **C-1 已闭合** —— commit `6020f42`(8 文件 / +1415 行 / 工作区干净);
+  提交内容与回执复核对象**逐字一致**;**D-9 未落地**(9 份返工文件一份未动)→ 本仓 33 锚点仍全绿
+- ✅ **C-4 判据文本已满足** —— 13/13 顶层属性在 ArchForge 侧有承载物 + 2 份声明 schema 校验通过(2/2)
+  → **5 条判据全部满足** → M2 阻塞解除,`cpptlm-cep-umbrella` 可由 DRI gate 放行
+  (Proposed Draft → Proposed);**Stage 0 仍不 archive**(R10 未闭合,与 M2 无关)
+- 🔴 **提交复核新发现 2 个 P0**:N-1 Compute NoC 的 VC 分配两套互斥(`08 §4.3` vs `ADR-SOC-25` D8,
+  VC1/VC2/VC3 全冲突)· N-2 `vc_binding` 无 network 维度而 VC 分配是 per-network 的
+  → `INV-CEP-12-IC2` 在协议实例声明内**无解析面**;两者**不得随 M2 放行一并放过去**,须挂 Stage 1 准入前置
+- 🟡 **新发现 2 个 P1**:N-3 R-6 词表(5 类)漏列 `snoop_resp`(声明实用 6 类)· N-4 `ADR-SOC-25` 仍为「📋 Proposed」
+- **行动**: A7 M2 放行裁决(DRI)· A8 发第二轮请求 N-1~N-4 · A9 发 D-9 锚点对照表
+
+**追记 2026-10-22(ArchForge `8290b4c` + `ac956b8` 后复核)**:
+
+- ✅ **N-1 ~ N-4 全部裁决完毕并回写** —— 本方 2 个 P0 **被采纳**:
+  N-1 根因 = D8 把两个 fabric 压成扁平表 → 改 **per-network 矩阵**(`32 号 §6.0.2`,
+  `08 §4.3` 四槽不变、`25-nsa` 补 VC3);N-2 裁决 **选项 A(加 network 维度)** + 给出 diff 级 **schema delta**(`32 号 §6.4`)
+- ✅ **Q-2 已交付** —— `22-nsa §0.5.4` 网络命名空间(5 网络 + 每网络 `vc_count` + NS-R1/NS-R2);
+  升级为 **R-5'**(fabric config 提供 `networks`)+ **R-5''**(`ordering_assumption` 升 per-(network, vc_id))
+- ✅ **D-9 批 1 已落地** —— 只动**不含锚点**的 2 份(22-nsa + snoop_filter)→ 本仓 **33 锚点仍全绿**;
+  批 2(09 + coherence-{protocol,domain,bridge},含**全部 20 锚点**)留待与本仓锚点重生成同批
+- 🔴 **新发现 3 项**:M-2 **C-4 声称「可自动化」但检查器从未实现** → 对方已切嵌套声明、我方 schema 仍扁平,
+  实测**各 4 处失配且无 CI 报红** · M-3 **我方无 fabric config 载体**(R-5' 无消费端) ·
+  M-1 **R-6' 附带项「扩 `CATEGORY_*` 到 6 类」不可接受**(词表混层,本方裁定不扩)
+- 🔶 **Q-3 仍未交付**(R-2 判据 (b),2 轮未答)→ A6 继续阻塞
+- ⚠️ **M2 放行建议收紧**:由「放行」改为「**先 A10(schema delta)+ A12(检查器),再放行**」——
+  C-4 是 5 条判据中唯一声称可自动化的一条,在检查器缺失 + schema 与声明已失配时放行 = 用人工核验给
+  未实现的自动化结案(per R10 防护意图);若仍决定立即放行,须把 A10/A11/A12/M-1 显式写成 Stage 1 准入前置
+- **行动**: A10 采纳 schema delta · A11 新增 fabric config 载体 · A12 新增第 9 组检查器 ·
+  A13 提交本回执(闭合 ArchForge V-8)· A14 答复 R-6' 附带项 · A15 催 Q-3
+
+**冻结清单说明**: `cep_freeze_check.sh --update` 已重生成(`ADR-CEP-00` 的 SHA-256 变化);
+清单的 `frozen_at_commit` 字段当前指向**变更前** HEAD(本次改动尚未 commit)→ **commit 时需再跑一次 `--update`** 校正该字段;
+`--update` 的合法前提是**本条台账 entry**(即「授权记录」),hash 校验本身不区分授权与未授权修改。
+
+**关联**: ArchForge `ADR-SOC-25`(D11)/ `32 号 §2 F8` / `roadmap/cep-interface-alignment.md §5,§6` ·
+回执 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md`
+
+### Entry #9 — 2026-10-22 [adr-amendment]
+
+**主题**: 契约收敛批 1 —— 采纳 ArchForge 的 per-network schema delta,让放行判据 **C-4 从「人工满足」变成「机器满足」**
+
+**决策**: ✅ **采纳**(形态采纳 + 范围按 oracle「最小充分集」收窄 + 按 metis 边界补齐)
+
+**理由**:
+
+**触发**: ArchForge `8290b4c`(N-1~N-4 裁决 + `32 号 §6.4` schema delta)+ `ac956b8`(D-9 批 1)。
+我方 N-1/N-2 两条 P0 被采纳(N-1 = per-network 矩阵;N-2 = 选项 A「加 network 维度」)。
+C-4 的**判据文本**已满足(13/13 字段有承载物),但**机器层红** —— 对方声明已切嵌套形态、我方 schema 仍扁平,
+实测每份 4 处失配,而**无任何 CI 会报红**(检查器从未实现)。
+
+**① 变更的冻结产物(6 件 + 1 件新增冻结,逐个 + 为什么)**
+
+| 产物 | 改动 | 为什么 |
+|------|------|--------|
+| `include/tlm/cep/protocol_instance.schema.json` | `ordering_assumption` / `vc_binding` 各嵌一层 network 维度 | 采纳 ArchForge `32 号 §6.4.1` 的 diff 原文(N-2 选项 A) |
+| `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | 追加 `## 8 Status Update`:决策 5 / 决策 6 / `INV-CEP-12-IC2` **取代** + provisional 标注 + SLICC 备选登记 | 形态变更 + 理由措辞修正(oracle §2.3) |
+| `docs/adr/ADR-CEP-08-ordering-point-portability.md` | 追加 `## 8 Status Update`:决策 6「key 粒度」+ 抓取点 4 **取代** | 旧文「解析到**唯一** vc_id」这一谓词在嵌套形态下**整体消失** —— 不改则两份 ADR 对同一字段给出两个 fail 判据 |
+| `docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md` | 追加 `## 8 Status Update`:图顶点 `(协议实例, vc_id)` → **`(协议实例, network, vc_id)`** | **数学对象变更**(非措辞):两张网共享 vc_id 值域 0-3,顶点不带 network ⇒ 跨网依赖边被合并 ⇒ 无环判据可能给错误 verdict |
+| `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | IC2 scenario **直接改写**为逐网络校验(spec 是机器校验面,非 ADR) | spec 是判据 C-4 的机器可断言面 |
+| `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` | 追加 `## 8 Status Update`:决策 8 的 schema 草图 / §4 模板 / §6 invariant 建议 **取代** | **2026-10-22 代码复审 B6**:该 ADR 仍持「`named_network` 必须解析到唯一 `vc_id`」旧谓词 → 冻结集内 `ADR-CEP-12`(新)与 `ADR-CEP-17`(旧)给出**两个不同 fail 判据** |
+| `include/tlm/cep/fabric.schema.json` | **新增并纳入 M1 冻结** | **2026-10-22 复审 S4**:fabric 载体按「**契约面 / 数据面**」拆分 —— `fabric.schema.json`(**类型描述** = 契约)必须冻结,否则 `vc_count.maximum: 4` 可被静默放宽;`fabric.json`(**实例数据** = 派生副本,权威在 ArchForge)**不冻结**,Stage 1 首个 implemented 实例跑过后再纳 |
+
+**新增产物(5 件)**: `include/tlm/cep/fabric.schema.json`(类型 —— **已纳入 M1 冻结**,见上)·
+`include/tlm/cep/fabric.json`(实例 —— **不冻结**,标注 `derived_from` = ArchForge `22-nsa §0.5.4.1`,**非独立权威** per NS-R2)·
+`scripts/test/cep_decl_alignment_check.sh`(5 项子校验)· `scripts/test/cep_decl_reverse_verify.sh`(反向验证,**入库以便复现**)·
+`.github/workflows/ci.yml` 增 pip 行(**前置到 ctest 之前**且覆盖所有 matrix 腿,per 复审 NB3)。
+
+**② RUN 证据(非 skip,2026-10-22 实测)**
+
+```
+  ✓ [RUN] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查
+    · 声明源: /workspace/main/ArchForge/docs/architecture/32-cep-based-coherence-architecture.md §6.1 / §6.2
+    · 声明份数: 2 份 —— moesi_gpu, mesif
+    · ① 声明 ↔ schema 嵌套结构: ✓      ② vc_id < vc_count + 键对称 + key 解析: ✓
+    · ③ ordering ⊆ vc_binding(逐网络): ✓  ④ 消息类 ∈ 6 类规范词表: ✓
+    · ⑤ network ⊆ fabric ⊆ 已锁定集 + vc_count 一致: ✓
+  ✓ [RUN] 声明对齐检查通过:5 项子校验全绿(2 份声明,2 个网络)
+```
+跳过态(供对照,证明「跳过」与「跑过」可区分):
+```
+  · [SKIP] ArchForge 仓不在本环境(/nonexistent)—— 跨仓声明对齐无法在本仓校验
+```
+
+**③ 反向验证(12 条,全绿 —— 证明检查器有牙,per M-2 教训)**
+**脚本已入库**:`scripts/test/cep_decl_reverse_verify.sh`(可复现)
+
+| # | 破坏动作 | 结果 |
+|---|---------|:----:|
+| 1 | `fabric.json` 的 `compute_noc.vc_count` 4→2 | ✅ RED(槽位上界) |
+| 2 | `fabric.json` 增 ArchForge 清单外的网络 `nsa_switch` | ✅ RED(反向比对) |
+| 3 | 声明的 `vc_binding` `vc_id` 3→9 | ✅ RED(schema `maximum:3`) |
+| 4 | 声明的 `ordering_assumption` 删掉 `ualink_fabric` | ✅ RED(网络键对称) |
+| 5 | 声明的 `vc_binding` 消息类写成 `forward_data` | ✅ RED(6 类词表) |
+| 6 | 声明的 `ordering_assumption[n]` 内层 key 写成 `high_pri` | ✅ RED(`int()` 解析失败不崩栈) |
+| 7 | 声明的 `family` 改成非法枚举值 | ✅ RED(**13 个 required 属性的枚举校验**) |
+| 8 | 声明的 JSON 非法 | ✅ RED(**解析失败不得静默丢弃**) |
+| 9 | ArchForge 权威网络清单文件缺失 | ✅ RED(**反向守卫不得静默关闭**) |
+| 10 | 基线(未破坏) | ✅ GREEN |
+| 11 | 全部恢复(本仓 + 真仓) | ✅ GREEN |
+| 12 | 副本恢复 | ✅ GREEN |
+
+> 破坏 3~9 作用于 **ArchForge 文档副本**(`ARCHFORGE_DIR` 指向临时副本),**真仓零改动**。
+> 第 7~9 条是 **2026-10-22 代码复审**新增的 —— 它们分别钉住「11 个 required 属性零校验」
+> 「解析失败静默丢弃」「反向守卫静默关闭」三个**闸门可被绕过**的缺口。
+
+**④ 遗留声明**
+
+- **白名单**:本批**无任何白名单** —— `protocol_version` ∈ `ADR-CEP-11 §3` 锁表的校验**整项不做**
+  (属 A4 批次;校验器内嵌白名单 = M-2 假阴性家族的同款结构,故不做而非「写好白名单」)
+- **`07 号` 零 diff** ✅ —— 6 类消息类词表**并入 `INV-CEP-12-IC2` 条件 ③**,**不另立 `INV-CEP-12-IC4`**:
+  另立编号会连带触发 **4 处 invariant 计数同步**(`07 号 §4` 总表 + `objective-cep-platform` DoD 7 的
+  15 组分解 + `improvement A2` + `phase-10` 交付预期)+ canonical invariant 用例数 —— 超出本批范围。
+  invariant 总数维持 **66 实际 / 67 编号位**。
+  ⚠️ 该决策在实施中被 lint 第 2 组**实测抓出**(若另立 IC4,lint 会红),已按「最小足迹」裁决。
+- **`fabric.*` 不进 M1 冻结集**(零实例新产物不诞生即冻结;Stage 1 首个 implemented 实例跑过后再纳冻)
+- **provisional 债**(Stage 1 必须承接):N-1/N-2 的实现侧复核 · SLICC vnet 备选重评触发条件
+  (第 3 网/第 3 实例)· `fabric.*` 进冻结集 · `ADR-CEP-09` 图顶点按 `(network, vc_id)` 建图
+  **之前不得用其无环判据放行任何协议实例**
+- **本条 entry 的 `adr-amendment` 授权范围** = 上表 ① 的 6 件冻结产物 + ②~④ 的新增/变更
+- **2026-10-22 代码复审后新增的 3 项机制**(均为「让 M1 的授权与 provenance 可核验」):
+  ① `cep_freeze_check.sh --update` **须带 `--authorized-by <台账 entry id>`** 并核对该 id 确实存在于台账 §11 ——
+     台账 entry 即**授权记录**,不再靠「自觉」;
+  ② 冻结清单新增 `authorized_by` 字段 + `frozen_at` 改为**取自 git**而非硬编码;
+  ③ 冻结校验新增 **provenance 自检**:逐个比对「清单 hash」与「`frozen_at_commit` 处该产物的内容」,
+     不一致即**响亮报出**(警告不阻断 —— 「先 commit 再 --update」的两步流程会让它天然落后 HEAD 一个 commit)
+
+**影响范围**: `include/tlm/cep/{protocol_instance.schema.json,fabric.schema.json,fabric.json}` ·
+`docs/adr/ADR-CEP-{08,09,12}-*.md` · `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` ·
+`scripts/test/cep_decl_alignment_check.sh` · `scripts/test/cep_docs_sync_check.sh`(新增第 9 组) ·
+`test/CMakeLists.txt`(新增 ctest `cep_decl_alignment_check`) · `test/test_cep_schema.cc` ·
+`docs/implementation/2026-10-21-cep-archforge-response-receipt.md` · 本文件 §11
+
+**未闭合**: ① C-1 仍红(等 ArchForge 提交三份规约文档)② C-4 机器层现已满足,待 M2 gate ④ 采信本条 RUN 证据
+③ Q-3(R-2 判据 (b))仍未交付 → A6 阻塞 ④ A4(R-13 锁表 + 计数 14→16)待批 ⑤ D-9 批 2 的 20 个锚点待同批重生成
+⑥ 独立复审通道本轮**可用**(oracle + metis + explore 三方评审已执行),但**真人外部评审仍缺**(R10 未闭合)
+⑦ **构建环境**:本机 `/usr/bin/g++-14` 缺失(工具链迁至 `~/.bashrc` 的 `/workspace/main/opt/bin`),
+已恢复软链 → `build/` 可用
+
+**关联**: 计划 `.opencode/plan/20261022-cep-contract-convergence-batch1.md`(v2,经三方评审修订) ·
+回执 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` §6/§8.3 ·
+ArchForge `8290b4c` / `ac956b8` / `32 号 §6.0.2` / `32 号 §6.4` / `22-nsa §0.5.4.1`
+
+### Entry #10 — 2026-10-22 [go-decision]
+
+**主题**: M2 跨仓准入门**放行** —— `cpptlm-cep-umbrella` 由 🟡 Proposed Draft 升 🟡 **Proposed**
+
+**决策**: ✅ **GO**(DRI 人工 gate;判据 C-1 ~ C-5 全部满足)
+
+**理由**:
+
+| 判据 | 证据 | 结论 |
+|------|------|:----:|
+| **C-1** | ArchForge 侧接口**规约文档**已合入:`6020f42`(8 文件 / +1415 行)+ `8290b4c`(ADR-SOC-25 → **Accepted** + N-1~N-4 裁决)+ `ac956b8`(D-9 批 1);工作区干净 | ✅ |
+| **C-2** | P0-1 ~ P0-5 逐项结论 —— 载体 = `ADR-SOC-25` + `32 号`;我方逐项签收见回执 §3 | ✅ |
+| **C-3** | 6 问各有书面结论 —— ArchForge `roadmap/cep-interface-alignment.md §5` 答复表 + `32 号 §10`;我方逐条签收见回执 §4/§5 | ✅ |
+| **C-4** | schema ↔ 声明双向映射**已机器化** —— `cep_decl_alignment_check.sh` 5 项子校验全绿(2/2 份声明)+ **反向验证 12/12**;RUN 证据见 Entry #9 ② | ✅ |
+| **C-5** | 全量回归 2026-10-22 实测:`ctest` **94/94** · `ctest -R cep` **16/16** · CEP lint **9/9 组** · M1 冻结 **29/29** · 锚点 **33/33** · 全仓路径 **0 缺失** · 失效链接 **115**(= 基线) | ✅ |
+
+**连带变更**: `openspec/changes/cpptlm-cep-umbrella/{proposal.md,tasks.md}` 状态 🟡 Proposed Draft → 🟡 **Proposed**;
+objective §5.2 baseline **0/3 → 1/3**(升 Proposed 占 1 个 KPI slot)。
+
+> ⚠️ **risk-accept(显式记录,非默认放行)**:
+> 本次放行的独立复审由 **oracle + metis + explore 三方 AI agent** 完成(批 1 修订 12 处),
+> **不等于真人外部评审** —— **R10(独立性缺口)未闭合**。
+> 本仓三项角色(验收方 / 结论消费者 / 平台维护方)仍**指向同一人**。
+> → 故 **Stage 0 仍不 archive**,且 `tasks.md` 已把 5 项 **Stage 1 准入前置**(S1-1 ~ S1-5)落成可勾选条目。
+
+**未闭合**: ① **R10** 真人外部评审(→ Stage 0 不 archive)② **Q-3**(R-2 判据 (b))→ A6 阻塞
+③ **A4**(R-13 锁表 + 计数 14→16)待批 ④ **D-9 批 2** 的 20 个锚点待同批重生成
+⑤ `fabric.*` 待 Stage 1 首个 implemented 实例跑过后再纳冻结集
+
+**关联**: Entry #9(批 1 的授权记录 + RUN 证据 + 反向验证)· 回执 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` ·
+`openspec/changes/cpptlm-cep-umbrella/proposal.md` 前置 gate ④
 
 ---
 

@@ -1,7 +1,7 @@
 {
-  "artifact_count": 28,
+  "artifact_count": 29,
   "artifacts": {
-    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "3353c71fcae0c096f5e505cdc7338a5891881673afe8e773ca37d8e1746e9313",
+    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "e35c2ccd711252bab0b14aae5f6aa7e7ab5684bfe4642ec642bf7b3a64be0547",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "d7f2bee4c1b770cf17f906674c036324e6abc76e776572dbbe630876db6ffd38",
     "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "ebe2e9515a366a66d58698dbde4d9c8f2020b7be26704f5a182f84987197aea4",
     "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "9569805abd50389c2141f79b84bead720e57c6e47be48b5291e90ed9d37bdcd4",
@@ -11,31 +11,34 @@
     "docs/adr/ADR-CEP-06-experiment-protocol.md": "c878bcb55bd03d00b419082896e6fe1fe319620740bd67d6334073957d8e5f23",
     "docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md": "7e8b0c60b7ce8d46edb021d95c55c2de959e157174115a899a8ff28bc0dd8e58",
     "docs/adr/ADR-CEP-07A-06bis-artifact-disposition.md": "58b7297a6397003fa210ea9cb5665e50edd71eb8c950cf9b68e288c5b2f29386",
-    "docs/adr/ADR-CEP-08-ordering-point-portability.md": "3fd0c7249cd7e932c0936598cc2979114f2dc569da85faa763fd16999b3ce587",
-    "docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md": "2355053df77f30ee3e24575e2d06dc692e9ef17d8e8b95fa97e9010420f81d9f",
+    "docs/adr/ADR-CEP-08-ordering-point-portability.md": "f35ba13e655346f381480ce6bb23d679f5fff39462b152c3092329b19a4529e1",
+    "docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md": "83372f3e1c8d0a7fb37bb0197c35e54b5994bb812876106bbb7e40050790ce87",
     "docs/adr/ADR-CEP-11-protocol-version-locking.md": "2e029ee6b6f13cf1e034cf9e623269ec2fe418174f7455b7e547d8c361e47041",
-    "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md": "97210abdedc898a9ee98924adfef926a2155b81fe24831d7d0c85ed2bf02e783",
+    "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md": "1d0c501cdf6bc1af4d324620af375dd93af7185b41f78761700186d3ddfb69eb",
     "docs/adr/ADR-CEP-13-coherence-domain-ownership.md": "11932ff521e77936cc52e1ba1a62e30a7f3b9becd108eef999f7bf7bcf748492",
     "docs/adr/ADR-CEP-14-stub-contract-tests.md": "666dffa65f38f086ddc62e06048e8a66fce468e26ae7f8fec9777d3fe182bac4",
     "docs/adr/ADR-CEP-15-cachetlm-alignment.md": "8f19aad39c2530bfda88d577e7c9d74210bfd12ddc62fd99841c37ef979d576a",
     "docs/adr/ADR-CEP-16-06-evolution-route-mapping.md": "27e197c53f9b49b0cbca7b4001a33318f525951d25c22c782db42f654a964c3e",
-    "docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md": "4af6b3424e34b32417cf88a5432ce4503d1fd9676ca6a0f85ae5154dacdf3ba3",
+    "docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md": "66cbfeb297330563464caabb7962ef4d4665b2853a44c7ea228e2d2058d11dd7",
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "e48363b2353590d0fcf5fcd27d56f01d18f44a5de77c26642a7f6309d70b95fb",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "877d509f717c53d574a0de23671fa1f9d0c70345637b6b1980ded64d0862472a",
     "docs/architecture/07-coherence-exploration-platform.md": "0ec1b6a25de7d6275c9efe90ab779b1a3ec8ec2a1a0e67b8ecc8fea1b090b55a",
     "experimental/metrics.schema.json": "be6aa118ca85010ac7d701fabcb74fffbbc3318a8c6a924a07a5f31f455a3d54",
-    "include/tlm/cep/protocol_instance.schema.json": "fb08c245c0a29806ae4c233bbbe63c24227a42a5267aecc33230043d81f8df42",
-    "openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md": "dfbe0f5699b375cc46b2d4207ca15505801a28da7fbef513177d2e050da466a2",
+    "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
+    "include/tlm/cep/protocol_instance.schema.json": "285f87678a01fcdcfa1b83a929575ad9b5c02117fc75dfad0a1ee8bebfc02feb",
+    "openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md": "4bb40194d755307a2c851cb299939109e2541fcd0ee592c0697c7bbcc8ddb7ab",
     "tools/ab_compare.py": "9e2e04430ac15bf07cdbf99ae8d09ddb8a54fe60c6fb357cf37272e052434bd6",
     "tools/render_report.py": "7b8fac7faf6eaeb070951c3272fc0bfaccf36666017c0f7760fed9946f02e7ad",
     "tools/run_sweep.py": "624b9da16e53911dde8e68fdeecbe1d07a9377d28f8a775708814c93493f35bc"
   },
+  "authorized_by": "Entry #9",
   "frozen_at": "2026-10-21",
-  "frozen_at_commit": "824bd26e1135d65a61f3ed4a5eccd164d36cdff0",
+  "frozen_at_commit": "b808881982f2f1eee3c18eaf6fef13202949ec02",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
     "include/tlm/cep/protocol_instance.schema.json",
+    "include/tlm/cep/fabric.schema.json",
     "experimental/metrics.schema.json",
     "tools/render_report.py",
     "tools/run_sweep.py",
@@ -43,5 +46,5 @@
     "openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md"
   ],
   "mechanism": "M1 产物冻结先于解读(per obj-cep-platform §9.2)",
-  "note": "Stage 0 冻结的是**规范性契约产物**(ADR + 07 号 + schema + tools + spec);两个 checker 脚本自身不冻结(checker 必须可修,且不承载契约语义)。冻结后若需修改,须走 §11 台账 scope-change / adr-amendment entry。"
+  "note": "Stage 0 冻结的是**规范性契约产物**(ADR + 07 号 + schema + tools + spec);两个 checker 脚本自身不冻结(checker 必须可修,且不承载契约语义)。**fabric 载体按「契约面 / 数据面」拆分**:`fabric.schema.json`(**类型描述** = 契约,故冻结 —— 否则 `vc_count.maximum` 可被静默放宽);`fabric.json`(**实例数据** = 派生副本,权威在 ArchForge,故**不冻结**,Stage 1 首个 implemented 实例跑过后再纳)。冻结后若需修改,须走 §11 台账 scope-change / adr-amendment entry;`--update` 需带 `--authorized-by <台账 entry id>` 才有授权记录。"
 }
