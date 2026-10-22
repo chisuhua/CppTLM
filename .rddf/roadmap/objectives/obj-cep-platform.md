@@ -898,23 +898,27 @@ DRI 于 2026-10-22 拍板 4 个决策(决策简报 `.opencode/plan/20261022-cep-
 | **⚠️ 计划落点清单漏网(2 份)** | ① `umbrella spec.md` —— **第 9 份冻结产物**,回执 R-13 早已要求同步<br>② `umbrella/proposal.md:89` —— 与 `tasks.md:107` 同 change 的另一处计数<br>③ `ADR-CEP-15` —— 计数相关的活矛盾(critic 复审发现)<br>④ `test_cep_schema.cc` 的 **§5.1.1 行数断言**(6 → 8)+ `test_cep_contracts_crosscheck.cc` 的**族循环**(6 → 8)—— **静默失去覆盖**(不红,但断言失效) |
 | **计划行号漂移(1 处)** | `test/test_cep_schema.cc` 的硬编码锁表取值:计划写 `:417`,实际 **`:484-485`** |
 
-**③ RUN 证据(2026-10-22 实测)**
+**③ RUN 证据(2026-10-22 实测 —— 两步 commit 流程完成后回填)**
 
-> ⏳ **本段的最终数值待「两步 commit 流程」完成后回填** —— 冻结清单的 `frozen_at_commit`
-> 必须指向**产物所在**的 commit,故 `cep_freeze_check` 的 29/29 只有在
-> **① commit 产物 → ② `--update --authorized-by "Entry #12"` → ③ commit 清单**之后才是真的。
-> **在流程完成前,本段记为「未回填」,不填占位符**(2026-10-22 critic 复审 B4:
-> 初版把未跑的输出当实测记录,属审计证据失真)。
+> ✅ **已回填真实输出**。两步流程:① commit 产物 `da501fc9` → ② `--update --authorized-by "Entry #12"`
+> → ③ commit 清单。清单的 `frozen_at_commit` = **44dc623d**(产物所在 commit 的后继,
+> 含全部 10 份冻结产物的内容)→ **provenance 自检 29/29 一致** → 非「变更前 HEAD」的假 provenance。
 
 ```
-  ⏳ [待回填] 授权校验通过:台账 entry 'Entry #12'
-  ⏳ [待回填] M1 产物冻结校验通过:29 个产物 hash 全部一致
-  ⏳ [待回填] provenance 自检通过:29 个产物的 hash 与<产物所在 commit>的内容一致
-  ✓ [已实测] CEP 契约同步检查:10/10 组(其中第 10 组为新增)
-  ✓ [已实测] ctest -R cep:16/16
-  ✓ [已实测] ctest 全量:94/94
-  ✓ [已实测] 声明对齐检查:5 项子校验全绿(2 份声明,2 个网络)
-  ✓ [已实测] 锚点 33/33 · 全仓路径 0 缺失
+  ✓ 授权校验通过:台账 entry 'Entry #12'
+  ✓ [cep_freeze_check] 已重新生成冻结清单: 29 个产物
+  ✓ provenance 自检通过:29 个产物的 hash 与 commit 44dc623debf5 的内容一致
+  ✓ M1 产物冻结校验通过:29 个产物 hash 全部一致(冻结于 2026-10-22, commit 44dc623debf5)
+  ✓ [10/10] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)
+    ✓ CATEGORY_* 恰为 3 类且值域连续 0..2(REQUEST RESPONSE CREDIT;传输层类别,6 类一致性词表不落本层)
+    ✓ flit 类别消费点(13 个文件)无「幽灵类别」(M-4 防复发)
+    ✓ VC_COUNT = 4 与「4 独立 VC」物理模型声明一致
+  ✅ CEP 契约同步检查全部通过(10/10 组)
+  ✓ ctest 全量:94/94 · ctest -R cep:16/16
+  ✓ 声明对齐检查:5 项子校验全绿(2 份声明,2 个网络)
+  ✓ 对齐清单漂移检测通过:33 个锚点全部有效(ArchForge 21 / CppTLM 12)
+  ✓ 全仓路径引用:0 缺失
+  ✓ openspec validate cpptlm-cep-umbrella --strict:PASS
 ```
 
 > **两步 commit 流程**(per 计划 §6 AC-8 / 2026-10-22 复审 B4 的教训):
