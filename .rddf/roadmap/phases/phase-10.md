@@ -39,10 +39,10 @@ phase_refs:
 **KPI 预算**(per `ADR-CEP-00 §2 Decision 3` + oracle v0.4 B8 三处口径对齐):
 
 - Stage 0 = 1 slot(`cpptlm-cep-umbrella`,计 KPI,**不符 doc-only 豁免先例**)
-- Stage 1 = 6 串行 × 1 slot = 6 季度
+- Stage 1 = 7 串行 × 1 slot = 7 季度(含 `cpptlm-cep-poc-spike`,**2026-10-22 P-1 增补**)
 - Stage 2 = 2 串行 × 1 slot = 2 季度
 - Stage 3 = 1 slot = 1 季度
-- **总计**:10 个 OpenSpec change,串行 10 季度,任一时刻 Proposed 并发 ≤ 1
+- **总计**:11 个 OpenSpec change,串行 11 季度,任一时刻 Proposed 并发 ≤ 1
 
 ### 子任务依赖图(Stage 0)
 
@@ -63,7 +63,9 @@ phase_refs:
 ### 子任务依赖图(Stage 1~3 远期)
 
 ```
-Stage 0 完成 ──→ Stage 1 (6 change 串行 6 季度,**KPI 总数不变 = 10**):
+Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2026-10-22 P-1 增补):
+                 ├─ cpptlm-cep-poc-spike              ← 2026-10-22 新增,置首位
+                 │    (可丢弃 spike:解阻 A6 → 解阻全部协议插件 change)
                  ├─ cpptlm-cep-stub-cache-core
                  ├─ cpptlm-cep-directory-ordering-plane   ← 2026-10-21 重排
                  │    (原 sharer-tracker-base 扩容:Address Resolver +

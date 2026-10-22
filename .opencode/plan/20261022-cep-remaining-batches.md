@@ -9,13 +9,14 @@
 
 ## 0. 一句话
 
-批 1 之后剩 **6 组任务**:其中 **1 组可立即做且零决策成本**（对外答复 + 催 Q-3）、
+批 1 之后剩 **6 组任务**:其中 **2 组可立即做且零决策成本**（T1 对外答复 + 催 Q-3;**P-2** 起草 PoC 用例规格）、
 **1 组是本季度第二次 adr-amendment**（A4 锁表 + 计数口径,**带 1 条 CI 锚点冲击 + 1 处 A6 耦合**）、
 **1 组被跨仓阻塞**（A6 等 Q-3）、
 **1 组被 ArchForge 阻塞**（A5 锚点重生成等 D-9 批 2）、
-**1 组是流程动作**（批 1 的 commit）、
+**1 组是流程动作**（批 1 的 commit —— ✅ **已完成**,4 个 commit）、
 **1 组本仓无法闭合**（R10 真人外部评审）。
 **关键结论**:对外动作（T1）能**顺带解锁**批 2 与批 3 —— 一次发函同时问 Q-3 与 A4 的排期口径。
+**第 1 步可一次做完 3 件事**:对外答复 + 催问（含 PoC 提议）+ 闭合 V-8。
 
 ---
 
@@ -59,7 +60,7 @@
 | **T2** | A4 批 2:锁表 + §5.1 + 计数口径(**14 落点**,见 §3.1) | DRI 拍板(Q-3 到达与否) | 🟡 需决策 |
 | **T3** | A6 批 3:`ADR-CEP-05 §10` 判据 2 状态收敛 | **Q-3** | 🏳 阻塞 |
 | **T4** | A5:21 锚点重生成 | **ArchForge D-9 批 2** | 🏳 阻塞 |
-| **T5** | 批 1 commit(A13) | 你确认 | ⏸ 待确认 |
+| **T5** | 批 1 commit(A13) | — | ✅ **已完成**(4 commits:`964455e8` 契约面 / `97ecbf9d` 治理面 / `8d3d86f7` 清单 provenance / `5b3f2ecd` 本计划) |
 | **T6** | R10 真人外部评审 → Stage 0 archive | 外部人 | 🔴 本仓不可闭合 |
 
 ---
@@ -92,7 +93,7 @@
 > **Q-3 原文问题**:`ADR-CEP-13` `INV-CEP-12-IC2` 的域可见写判据是 **(a) ∧ (b)** 合取,
 > 而 ArchForge 只评估了 (a) 就断言「已命中 `ADR-CEP-05 §10` 触发条件」。
 
-**建议发出的 4 问**(具体到可直接回答):
+**建议发出的 5 问**(Q-3a~Q-3d + **Q-3e** = P-3 的 PoC 一问,具体到可直接回答):
 
 | # | 问 | 为什么必须问 |
 |---|-----|------------|
@@ -100,37 +101,59 @@
 | **Q-3b** | 若 (b) 不成立,ArchForge 是否**仍**要求 `perm` 加「可静默升级」判别位?<br>(即:需求本体是否**独立于**「已命中」这一论证) | 决定 R-2 是「需求仍成立但论证需改写」,还是「需求与论证一并重估」 |
 | **Q-3c** | `ADR-CEP-05 §10` 判据 2 的状态由**哪一侧**标注?(ArchForge 侧写进 `ADR-SOC-25`,还是 CEP 侧写进 `ADR-CEP-05` 的 Status Update) | 避免两侧各写一份 → 又一处双真源 |
 | **Q-3d** | ArchForge 贡献的 2 个协议实例(`moesi_gpu` / `mesif`)进入 `ADR-CEP-11 §3` 锁表与 `07 号 §5.1` 的**时点**,是否需要与判据 2 的收敛**同步**? | 直接决定 T2 的路线(见 §3 D1) |
+| **Q-3e** | 贵方是否接受以 **PoC 的 S2 场景实验判定**替代 (b) 的纸面评估?<br>(即:「D-GPU 的 E 态静默升级后,D-FABRIC 读同一行 → 读到旧值还是新值」—— **观测值**即 (b) 的答案) | **若接受 → Q-3 不再阻塞 A6**:判据由**可执行证据**裁定,而非纸面辩论<br>(`ADR-CEP-06 §3` 的 `verification_mode` 本就提供「声明 + 实验证伪」路径) |
 
 > **Q-3d 是本批的关键一问** —— 它把「催 Q-3」从单纯的催办,升级为**一次能同时解锁 T2 与 T3 的问询**。
+> **Q-3e 是第 3 轮催问的破局一问** —— 前 2 轮之所以悬空,是因为 (b) 被当成**纸面论证题**;
+> 实际上它是一个**可执行的观测题**。见 §10.5 P-3 与 PoC 用例规格
+> `docs/implementation/2026-10-22-cep-poc-spike-spec.md` §3.2。
 
 ---
 
 ## 3. T2 · A4 批 2（R-13 锁表 + 族/实例计数口径）
 
-### 3.1 落点清单（**15 项** = 12 处文本落在 7 份冻结产物 + 4 处非冻结,含 1 条 CI 锚点）
+### 3.1 落点清单（**17 份文件** = 10 份冻结 + 7 份非冻结,含 1 条 CI 锚点）
 
-> ⚠️ **2026-10-22 复审后修订**:原列 14 项 → 补 3 处(落点 12b / 12c / 15)——
-> 复审的 S7「旧口径残留面大于台账声称」暴露了 `ADR-CEP-12:39`、`tasks.md:107`、`research:1394` 三处漏网。
+> ⚠️ **2026-10-22 三轮复核后的最终口径** —— 本清单经 **3 轮**修订,每轮都发现「旧口径残留面 > 清单声称」:
+>
+> | 轮次 | 触发 | 新增 | 累计 |
+> |------|------|------|------|
+> | 初版 | — | 14 项 | 14 |
+> | 第 1 轮 | 复审 S7「旧口径残留面大于台账声称」 | +3(`ADR-CEP-12:39` / `tasks.md:107` / `research:1394`) | 17 |
+> | 第 2 轮 | 全量 grep 复核 | +5(`07 号:323` / `:364` / `ADR-CEP-17:338` / `interface-alignment.md:88` / `research:1140`) | 22 |
+> | **第 3 轮** | **critic 对抗式复审(2026-10-22)** | **+4 份文件**(`umbrella spec.md` · `umbrella proposal.md` · `ADR-CEP-15` · `test_cep_contracts_crosscheck.cc`)+ `test_cep_schema.cc` 的**行数断言** | **17 份文件** |
+>
+> **教训(登记为方法论)**:落点清单**不得**按「已知的 3~5 处」外推,必须
+> ① 对**每个**受影响文件做**全文件 grep**;② **把冻结 globs 逐条比对**(`FROZEN_GLOBS` 里的每个文件都要问「它是否含旧口径?」);
+> ③ **测试文件里的断言**与文档里的字面量是**两套**独立的残留面(改了字面量不改断言 → **静默失去覆盖**)。
+>
+> ⚠️ **第 3 轮的具体漏网**:
+> - `umbrella spec.md` —— **第 9 份 M1 冻结产物**(`FROZEN_GLOBS` 内),回执 R-13 早已要求「umbrella `spec.md` 同步」;
+>   它与 `ADR-CEP-11 §3`(增至 8 族)直接矛盾,而 `cep_freeze_check` **只比 hash 不比语义** → **无 checker 能发现**
+> - `umbrella proposal.md:89` —— 与 `tasks.md:107` 同 change 的另一处计数
+> - `ADR-CEP-15` —— 「adapter 数 ≤ 14」是 `ADR-CEP-05:227` **同款活矛盾**
+> - `test_cep_schema.cc` 的 **§5.1.1 行数断言**(`6` → `8`)+ `test_cep_contracts_crosscheck.cc` 的**族循环**(`6` → `8`)
+>   → **不红,但断言失效** = 静默失去覆盖
 
-| # | 文件:行 | 改什么 | 冻结 |
-|---|---------|--------|:----:|
-| 1 | `docs/adr/ADR-CEP-11-protocol-version-locking.md` §3 表 | **+2 行**:`moesi_gpu` → `moesi-gpu-1.0`;`mesif` → `mesif-1.0` | 🔴 |
-| 2 | `docs/architecture/07-coherence-exploration-platform.md` §5.1.1 表 | **+2 行**(`moesi_gpu`/`MoesiGpuAdapter`、`mesif`/`MesifAdapter`,状态 = 未排期) | 🔴 |
-| 3 | 同上 §5.1.1 标题 | 「(5 族 / 6 实例)」→「(**6 族 / 8 实例**)」 | 🔴 |
-| 4 | 同上 `:310` | 「2 族 = **14** 个 adapter 实例」→「**16** 个」 | 🔴 |
-| 5 | 同上 `:74` | 头部对照表 14 → 16 | 🔴 |
-| 6 | 同上 `:659` | 「**14** adapter 实例(工业 6 + Ruby 8;…落地后为 18)」→「**16**(工业 8 + Ruby 8;…**20**)」 | 🔴 |
-| 7 | `docs/adr/ADR-CEP-00-...md:153` | 「2 来源族 / **14** adapter 实例(工业 **5 族 6 实例** + Ruby 1 族 8 实例)」→「16 / 工业 **6 族 8 实例**」 | 🔴 |
-| 8 | `docs/adr/ADR-CEP-00A-...md:169` | 「**14** adapter 实例映射(工业 6 + Ruby 8;…18)」→「16(工业 8 + Ruby 8;…20)」 | 🔴 |
-| 9 | `docs/adr/ADR-CEP-12-...md:147` | 决策 9 理由句「`07 号 §5.1` 的"**14** adapter 实例"是**下界**…落地后变 **18**」→「16」/「20」 | 🔴 |
-| 10 | `docs/adr/ADR-CEP-18-...md:68` | 「§5.1 现为 **2 来源族 / 14 adapter 实例**(…18)」→「16」(…20) | 🔴 |
-| 11 | `docs/adr/ADR-CEP-05-...md:227` | **见 §3.3 耦合** —— 必须加限定注记,否则当场变假 | 🔴 |
-| 12 | `docs/architecture/README.md:37` | 索引行 14 → 16 | 🟢 |
-| 12b | `docs/adr/ADR-CEP-12-...md:39` | 「计数会漂移」风险行内的「14 adapter 实例」→ 16 | 🔴 |
-| 12c | `openspec/changes/cpptlm-cep-umbrella/tasks.md:107` | 「复核 §5.1 adapter 计数口径(2 来源族 / 14 实例…)」→ 16 | 🟢 |
-| 13 | `test/test_cep_schema.cc:417` | 硬编码的 6 个锁表取值 → **补 2 个** | 🟢 |
-| 14 | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` 锚点块 | `07 号:310` 的 symbol `'14 个 adapter 实例'` → `'16 个 adapter 实例'` | 🟢 |
-| 15 | `docs/research/cep-coherence-protocol-space-survey.md:1394`(N3 条) | 附属/历史层 → 加「计数已于 2026-10-22 改为 16」的注记,**不改写历史结论** | 🟢 |
+| # | 文件 | 改什么 | 冻结 |
+|---|------|--------|:----:|
+| 1 | `docs/adr/ADR-CEP-11-protocol-version-locking.md` | **决策 2 表 + §3 表各 +2 行**(`moesi-gpu-1.0` / `mesif-1.0`)+ 补记「两表须同步」+ §7 计数 6 → 8 + §8 修订记录 | 🔴 |
+| 2 | `docs/architecture/07-coherence-exploration-platform.md` | §5.1.1 表 **+2 行** + 标题「6 族 / 8 实例」+ `:74`/`:310`/`:323`/`:364`/`:659` 五处计数 + 族计数口径补记 | 🔴 |
+| 3 | `docs/adr/ADR-CEP-05-stub-cache-core-interface.md` | **正文不改**;§7 判据 2 下加限定注记 + 追加 **§13 Status Update** | 🔴 |
+| 4 | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | `:165` 计数 + **§2 决策 3 排队 10 → 11** + §5 决策汇总 `:142` + Stage 1 队列名对齐 | 🔴 |
+| 5 | `docs/adr/ADR-CEP-00A-real-source-anchor-map.md` | `:169` 计数 | 🔴 |
+| 6 | `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | `:39` + `:147` 两处计数 | 🔴 |
+| 7 | `docs/adr/ADR-CEP-15-cachetlm-alignment.md` | **正文不改**;决策 4 末条加限定注记 + 追加 **§8 Status Update** | 🔴 |
+| 8 | `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` | `:338`「14 adapter」→「16 adapter」 | 🔴 |
+| 9 | `docs/adr/ADR-CEP-18-protocol-generation-scope.md` | `:68` 计数(含「为 14~18 个实例」→「为 16~20 个实例」) | 🔴 |
+| 10 | `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | `:310`「恰好 6 个协议族」→「**恰好 8 个**」+ 补 2 个族名 | 🔴 |
+| 11 | `docs/architecture/README.md` | `:37` 索引行 14 → 16 | 🟢 |
+| 12 | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` | G10 行计数 + **CI 锚点块** symbol `'14 个 adapter 实例'` → `'16 个 adapter 实例'` | 🟢 |
+| 13 | `docs/research/cep-coherence-protocol-space-survey.md` | `:1140` / `:1394` 两处加「计数已于 2026-10-22 改为 16」注记,**不改写历史结论** | 🟢 |
+| 14 | `openspec/changes/cpptlm-cep-umbrella/proposal.md` | `:89` 计数 | 🟢 |
+| 15 | `openspec/changes/cpptlm-cep-umbrella/tasks.md` | `:107` 计数 + **新增 Stage 1 前置 S1-6**(A6) | 🟢 |
+| 16 | `test/test_cep_schema.cc` | 锁表取值 6 → 8(`:484-485`)+ **§5.1.1 行数断言** `6` → `8` / `14` → `16` + 族声明断言 | 🟢 |
+| 17 | `test/test_cep_contracts_crosscheck.cc` | 锁定表**族循环** 6 → 8 + 版本号循环 +2 | 🟢 |
 
 > **🔴 CI 锚点冲击(本轮新发现)**:第 14 项 —— `cep_archforge_alignment_check.sh` 的
 > **CppTLM 侧 12 个锚点**里有一条指向 `07 号:310`、symbol = `14 个 adapter 实例`。
@@ -178,6 +201,10 @@
 
 ## 4. 决策点（需 DRI 拍板）
 
+> 📋 **详细展开见决策简报** [`20261022-cep-decision-brief.md`](./20261022-cep-decision-brief.md)
+> (每个选项的内容 / 后果 / 代价 / 风险 + 推荐理由 + 采纳后的执行动作)。
+> 下表为摘要。
+
 | # | 决策 | 选项 | 我的推荐 |
 |---|------|------|---------|
 | **D1** | **A4 的路线** | A:等 Q-3 再做(A4+A6 同批)<br>**B:A4 + `ADR-CEP-05:227` 限定注记 + A6 登记为 Stage 1 前置**<br>C:只改锁表(不可行) | **B** —— 立刻解锁 ArchForge 声明的装配期校验;债以「限定注记 + Stage 1 前置」**显式**留在契约里,而不是靠「不登记」来回避 |
@@ -194,39 +221,56 @@
 ### Step 1 — T1 对外动作（无编译依赖,立即可做）
 
 1. 回执新增 **§8.4「对 ArchForge 的正式答复」**（A14 的 4 条已定 + 4 条待确认,见 §2.1）
-2. 回执新增 **§8.5「催问 Q-3」**（Q-3a~Q-3d 四问,见 §2.2）
-3. 随 **T5** 的 commit 一并交付（`回执` 本身就是对外载体 → A13 闭合 ArchForge `V-8`）
-4. 台账 Entry #9 ④ 追加一行:「A14 答复与 A15 催问已随本轮回执交付,待 ArchForge 回复」
+2. 回执新增 **§8.5「催问 Q-3」**（Q-3a~Q-3d 四问 + **Q-3e**「以 PoC S2 实验判定替代 (b) 纸面评估」= **P-3**,见 §2.2）
+3. **T5 已完成** → 本批是**第二轮补充交付**(回执 v1.1),**不是**首轮:
+   - **A13 已闭合** —— 回执已随 `97ecbf9d` 提交 → ArchForge `V-8`(「CEP 侧逐条回执仍待」)**已满足**
+   - 本批的 §8.4 / §8.5 是**在已提交的 v1.0 之上追加**的对外动作,**同样随本批 commit 交付**
+4. 台账 Entry #9 ④ 追加一行:「A14 答复与 A15 催问已随本轮回执 v1.1 交付,待 ArchForge 回复」
+5. **P-2**:PoC 用例规格(S1/S2/S3 的输入/期望/判定)独立成文 `docs/implementation/2026-10-22-cep-poc-spike-spec.md`
 
-**验收**:`grep -c "Q-3a\|Q-3b\|Q-3c\|Q-3d" 回执` == 4;回执 lint 绿。
+**验收**:`grep -cE '^\| \*\*Q-3[abcde]\*\* \|' 回执` == **5**;`grep -cE '^\| \*\*A14-[0-9C]' 回执` == **8**;回执 lint 绿(**10/10** —— 第 2 轮新增第 10 组,见 §10.2)。
+> ⚠️ **不要**用 `grep -c "Q-3a"` 之类的裸字符串计数 —— 「Q-3a~e」这种**合写**形式会让计数虚高
+>(本轮实测:裸 `grep -c "Q-3[abcd]"` 得 **8** 而非 4)。**必须**锚定表格行首 `| **Q-3x** |`。
 
-### Step 2 — T5 批 1 commit（D2 决策后执行）
+### Step 2 — T5 批 1 commit ✅ 已完成(2026-10-22)
+
+> **实际落地**:4 个 commit —— `964455e8`(契约面)· `97ecbf9d`(治理面)· `8d3d86f7`(清单 provenance 归位)· `5b3f2ecd`(本计划 v1)。
 
 | commit | 内容 |
 |--------|------|
 | **① 契约面** | `protocol_instance.schema.json` · `fabric.{schema.json,json}` · `ADR-CEP-{08,09,12}-*.md` · umbrella `spec.md` · `cep_decl_alignment_check.sh` · `cep_docs_sync_check.sh` · `test/CMakeLists.txt` · `test/test_cep_schema.cc` |
 | **② 治理面** | `obj-cep-platform.md`(Entry #9/#10) · 回执 · 计划 v2 · 冻结清单 · `ADR-CEP-00`(§8 Status Update) · `interface-alignment.md`(§6 判据状态) |
 
-> ⚠️ commit 后**必须再跑一次** `cep_freeze_check.sh --update` —— 清单的 `frozen_at_commit` 取运行时 HEAD
-> (批 1 的清单当前指向**变更前** HEAD `b8088819`)。
+> ✅ **冻结清单 provenance 已归位** —— `8d3d86f7` 后清单的 `frozen_at_commit` = `97ecbf9d`(**产物所在**的 commit),
+> provenance 自检 **29/29** 一致。`cep_freeze_check.sh` 仍会提示「≠ 当前 HEAD」——
+> 该提示在此**为伪阳性**:`97ecbf9d` 之后无任何**冻结产物**被改动(`8d3d86f7` 只改清单 + 检查器脚本,`5b3f2ecd` 只加本计划)。
 > ⚠️ `.opencode/plan/` **不在任何 .gitignore 里** → 需决定:随仓入库(决策记录)还是加进 `.opencode/.gitignore`(本地私有)。
 
 ### Step 3 — T2 A4 批 2（D1/D2 拍板后执行）
 
-1. `ADR-CEP-11 §3` 锁表 +2 行
-2. `07 号 §5.1.1` 表格 +2 行 + 标题「6 族 / 8 实例」+ `:310`/`:74`/`:659` 三处计数
-3. `ADR-CEP-00:153` · `ADR-CEP-00A:169` · `ADR-CEP-12:147` · `ADR-CEP-18:68` 四处计数同步
-4. `docs/architecture/README.md:37` 索引行
-5. **`ADR-CEP-05:227` 限定注记**（路线 B）—— 正文不改,追加 `## Status Update` 或在同段加限定
-6. `test/test_cep_schema.cc:417` 硬编码取值 +2
-7. **锚点块**:`07 号:310` 的 symbol `'14 个 adapter 实例'` → `'16 个 adapter 实例'`
-8. 台账 **Entry #11 [adr-amendment]** + `cep_freeze_check.sh --update`
+> **执行以 §3.1 的 17 份文件落点清单为准**(逐行勾)。分组执行顺序:
+
+1. **锁表 + 登记表**(落点 **1 / 2**)—— `ADR-CEP-11` 决策 2 表 + §3 表各 +2 行;`07 号 §5.1.1` 表格 +2 行
+2. **计数口径同步**(落点 **2 / 4 / 5 / 6 / 8 / 9 / 11 / 13 / 14**)——
+   `07 号` 的标题 + `:74` + `:310` + `:323` + `:364` + `:659` **六处**;
+   `ADR-CEP-00`(`:165` + §5 决策汇总)· `ADR-CEP-00A:169` · `ADR-CEP-12:39`/`:147` ·
+   `ADR-CEP-17:338` · `ADR-CEP-18:68` · `docs/architecture/README.md:37` ·
+   `interface-alignment.md:88` · `research:1140`/`:1394` · `umbrella/proposal.md:89` · `umbrella/tasks.md:107`
+3. **限定注记**(落点 **3 / 7**)—— `ADR-CEP-05:227` 与 `ADR-CEP-15` 决策 4 末条:
+   **正文均不改**,各加一处限定注记 + 追加 `## Status Update`(路线 B)
+4. **P-1 排队登记**(落点 **4**)—— `ADR-CEP-00 §2 决策 3`:10 → 11 change;Stage 1 **+1** 且**置首位**
+5. **测试断言**(落点 **16 / 17**)—— `test_cep_schema.cc`:锁表取值 6 → 8(`:484-485`)+ **§5.1.1 行数断言** `6` → `8`;
+   `test_cep_contracts_crosscheck.cc`:族循环 6 → 8 + 版本号循环 +2
+6. **CI 锚点同步**(落点 **12**)—— `interface-alignment.md` 锚点块 symbol `'14 个 adapter 实例'` → `'16 个 adapter 实例'`
+7. **A6 登记为 Stage 1 前置**(落点 **15**)—— `umbrella/tasks.md` 新增 **S1-6**
+8. **台账 + 冻结清单** —— **Entry #12 [adr-amendment]** + `cep_freeze_check.sh --update --authorized-by "Entry #12"`
+   (**两步 commit**:先 commit 产物 → `--update` → 再 commit 清单)
 
 **验收**:
 - `bash scripts/test/cep_archforge_alignment_check.sh` → 33/33 绿（锚点已同步）
-- `ctest --test-dir build -R cep` → 16/16 绿（`test_cep_schema.cc:564` 的表行数 ⇔ 计数一致性绿）
-- `bash scripts/test/cep_docs_sync_check.sh --strict` → 9/9 绿
-- `grep -rn "14 个 adapter 实例\|14 adapter 实例" docs/ .rddf/` → **仅**历史/Status 引述
+- `ctest --test-dir build -R cep` → 16/16 绿（`test_cep_schema.cc` 的 **§5.1.1 表行数断言** ⇔ 计数一致性绿）
+- `bash scripts/test/cep_docs_sync_check.sh --strict` → 10/10 绿
+- `grep -rn "14 个 adapter 实例\|14 adapter 实例" docs/ .rddf/` → 剩余命中**仅限 4 处历史/Status 引述**(清单见 §6 AC-5)
 - `openspec validate cpptlm-cep-umbrella --strict` → PASS
 
 ### Step 4 — T3 A6 批 3（Q-3 到达后执行）
@@ -241,7 +285,7 @@
 
 ### Step 5 — T4 A5（ArchForge D-9 批 2 合入后执行）
 
-1. 重新生成 **21 个 ArchForge 锚点**(按对方返工后的新行号)
+1. 重新生成 **20 个受影响的 ArchForge 锚点**(按对方返工后的新行号) —— 21 个锚点中第 21 个(`roadmap/cep-interface-alignment.md:1`)经回执 §7.1 判定为 🟢 **安全**,**无需**重生成
 2. 重跑 `cep_archforge_alignment_check.sh` → 33/33
 3. **必须与 D-9 批 2 同批** —— 对方已把 D-9 拆成「不含锚点的批 1」+「含全部 20 锚点的批 2」,节奏已对齐
 
@@ -255,18 +299,23 @@
 
 ## 6. 验收标准
 
-- [ ] **AC-1** T1 交付:回执含 §8.4(A14 答复 4+4 条)+ §8.5(Q-3a~d 四问);随 commit ② 交付
-- [ ] **AC-2** T2 落点 14 处**逐条**落地(表 §3.1 可逐行勾)
+- [ ] **AC-1** T1 交付:回执含 §8.4(A14 答复 4+4 条)+ §8.5(Q-3a~d 四问 + **Q-3e** PoC 一问 = **5 问**);随本批 commit 交付
+- [ ] **AC-2** T2 落点 **17 份文件**（表 §3.1 可逐行勾;**含 critic 第 3 轮补的 4 份**:`umbrella spec.md` / `umbrella proposal.md` / `ADR-CEP-15` / `test_cep_contracts_crosscheck.cc`,及 `test_cep_schema.cc` 的**行数断言**）**逐条**落地
 - [ ] **AC-3** T2 后 `cep_archforge_alignment_check.sh` 33/33 绿(**锚点 symbol 已同步**)
 - [ ] **AC-4** T2 后 `ctest -R cep` 16/16 绿(表行数 ⇔ 计数一致性由 `:564` 强制)
 - [ ] **AC-4b** T2 后 `cep_decl_alignment_check.sh` 5 项子校验全绿 + `cep_freeze_check.sh` **29/29** + provenance 自检通过
-- [ ] **AC-5** T2 后 `grep -rn "14 个 adapter 实例\|14 adapter 实例" docs/ .rddf/ openspec/` 仅剩历史/Status 引述
-      (覆盖面含 `ADR-CEP-12:39` 与 `tasks.md:107` —— 2026-10-22 复审 S7 的漏网处)
+- [ ] **AC-5** T2 后 `grep -rn "14 个 adapter 实例\|14 adapter 实例" docs/ .rddf/ openspec/` 的**剩余命中仅限 4 处**:
+      `docs/adr/ADR-CEP-05-stub-cache-core-interface.md:227`(受 §13 限定注记保护的**历史陈述**,正文不改)
+      + `docs/implementation/2026-10-21-cep-archforge-response-receipt.md:192`(R-13 的「总数 14 → 16」变更描述)
+      + `docs/research/cep-coherence-protocol-space-survey.md:1140` 与 `:1394`(附属/历史层,已加「计数已于 2026-10-22 改为 16」注记)
+      —— **零处**落在「当前口径」语境的冻结产物里
+      (覆盖面含 `ADR-CEP-12:39` · `ADR-CEP-17:338` · `07 号:323/:364` · `interface-alignment.md:88` · `research:1140` —— 2026-10-22 第 2 轮复核的漏网处)
 - [ ] **AC-6** T2 后 `ADR-CEP-05` 的「当前不触发」陈述**与 §5.1.1 登记表一致**(路线 B 的限定注记在位)
 - [ ] **AC-7** T2 后 `openspec validate cpptlm-cep-umbrella --strict` PASS
-- [ ] **AC-8** T2 台账 Entry #11 + 冻结清单重生成(`--authorized-by "Entry #11"`);`frozen_at_commit` 须指向**产物所在**的 commit
+- [ ] **AC-8** T2 台账 **Entry #12** + 冻结清单重生成(`--authorized-by "Entry #12"`);`frozen_at_commit` 须指向**产物所在**的 commit
       —— **两步 commit 流程**:先 commit 产物 → `--update` → 再 commit 清单(2026-10-22 复审 B4 的教训:
       清单的 `frozen_at_commit` 若指向**变更前** HEAD,provenance 即为假,自检会报出)
+      —— ⚠️ **Entry #11 已被 2026-10-22 第 2 轮(对外动作 + M-4)占用** → T2 的 adr-amendment 顺延为 **Entry #12**
 - [ ] **AC-9** T3 后 `ADR-CEP-05` §10 与 `ADR-CEP-12` §8 的 R-2 口径**一致**(无「已触发/未触发」矛盾)
 - [ ] **AC-10** T4 后 33/33 绿,且失效锚点可追溯到 D-9 返工
 - [ ] **AC-11** T5:两个 commit 均**不**含冻结清单与产物 hash 不一致的中间态(commit 后重跑 `--update`)
@@ -279,9 +328,9 @@
 
 | # | 风险 | 等级 | 缓解 / 回滚 |
 |---|------|:----:|------------|
-| **RK-1** | **A4 改计数却漏改锚点 symbol** → `cep_archforge_alignment_check` 红 | 🔴 | AC-3 + 锚点同步列入落点第 14 项;**A4 与锚点更新必须同批** |
-| **RK-2** | **A4 制造 `ADR-CEP-05:227` 新活矛盾** | 🔴 | 路线 B 的限定注记是**必做项**(落点第 11 项),非可选 |
-| **RK-3** | `test_cep_schema.cc:417` 忘补 2 个锁表取值 → **不红但静默失去覆盖** | 🔴 | 落点第 13 项;验收用 `grep` 核对(AC-5 同源) |
+| **RK-1** | **A4 改计数却漏改锚点 symbol** → `cep_archforge_alignment_check` 红 | 🔴 | AC-3 + 锚点同步列入**落点 12**;**A4 与锚点更新必须同批** |
+| **RK-2** | **A4 制造 `ADR-CEP-05:227` 新活矛盾** | 🔴 | 路线 B 的限定注记是**必做项**(**落点 3**),非可选;**同款活矛盾另见落点 7**(`ADR-CEP-15` 的「≤ 14」阈值) |
+| **RK-3** | `test_cep_schema.cc:484-485` 忘补 2 个锁表取值 → **不红但静默失去覆盖** | 🔴 | **落点 16**;验收用 `grep` 核对(AC-5 同源)。<br>⚠️ **同类**:§5.1.1 **行数断言**与 `test_cep_contracts_crosscheck.cc` 的**族循环**同属「改了字面量不改断言 → 静默失效」(**落点 16 / 17**) |
 | **RK-4** | A4 顺带改了 KPI 排期口径 → 10 季度变 12 季度,治理文件 3 处失配 | 🟡 | D2 默认**仅改注册表**;排期另起决策 |
 | **RK-5** | Q-3 第三轮仍只答一半 → T3 再次悬空 | 🟡 | A15 把 4 问**一次问完**且**具体化**;并把 Q-3d 与 T2 路线绑定,提高对方答的动力 |
 | **RK-6** | ArchForge D-9 批 2 与 T4 时序错位 → 本仓 CI 中途红 | 🟡 | 对方已按「不含锚点的批 1 / 含 20 锚点的批 2」拆分,节奏已对齐;台账登记触发条件 |
@@ -364,5 +413,5 @@
 |---|------|------|
 | **P-1** | 把本节作为 **Stage 1 的第 7 个 change**(`cpptlm-cep-poc-spike`)登记进 `ADR-CEP-00 §2 决策 3` 的 KPI 排队(10 → 11 change) | ⏸ 需 DRI 拍板(排队口径变更,与 A4 的 D2 同类) |
 | **P-2** | 起草 PoC 的**用例规格**(S1/S2/S3 的输入 / 期望 / 判定),**不写实现** | ✅ 可立即(不依赖任何未闭合项) |
-| **P-3** | 在 **A15 催问 Q-3** 时**加一问**:「贵方是否接受以 PoC 的 S2 场景**实验判定**替代 (b) 的纸面评估?」——若接受,则 Q-3 不再阻塞 A6 | ✅ 可立即(随 T1 一并发出) |
+| **P-3** | 在 **A15 催问 Q-3** 时**加一问**(= 回执 §8.5 的 **Q-3e**):「贵方是否接受以 PoC 的 S2 场景**实验判定**替代 (b) 的纸面评估?」——若接受,则 Q-3 不再阻塞 A6 | ✅ 可立即(随 T1 一并发出) |
 | **P-4** | PoC 实现 | ⏸ 待 A4 + A6 |

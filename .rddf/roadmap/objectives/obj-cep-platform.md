@@ -166,14 +166,22 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 | 顺序 | Change | 季度 | 关联 ADR | 估时 |
 |------|--------|------|----------|------|
-| 1 | `cpptlm-cep-stub-cache-core` | 2026-Q4 | ADR-CEP-05 + ADR-CEP-04 stub | 8 周 |
-| 2 | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | 2026-Q4 ~ 2027-Q1 | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周) |
-| 3 | `cpptlm-cep-collective-plane-base` | 2027-Q1 | ADR-CEP-03 + ADR-CEP-01 | 8 周 |
-| 4 | `cpptlm-cep-chi-rnf-subset` | 2027-Q1 ~ 2027-Q2 | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 |
-| 5 | `cpptlm-cep-cxl-nonsymmetric` | 2027-Q2 | ADR-CEP-04 + ADR-CEP-03 | 8 周 |
-| 6 | `cpptlm-cep-tilelink-tree-manager` | 2027-Q2 ~ 2027-Q3 | ADR-CEP-04 + ADR-CEP-08 + ADR-CEP-12 | 8 周 |
+| 1 | **`cpptlm-cep-poc-spike`** ← 2026-10-22 新增(P-1,置首位) | 2026-Q4 | `ADR-CEP-13`(判据 (b) 的**可执行**判定 = Q-3e)+ `ADR-CEP-09`(顶点升级)+ `ADR-CEP-12`(per-network VC) | **3 周**(spike,非实现) |
+| 2 | `cpptlm-cep-stub-cache-core` | 2026-Q4 | ADR-CEP-05 + ADR-CEP-04 stub | 8 周 |
+| 3 | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | 2026-Q4 ~ 2027-Q1 | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周) |
+| 4 | `cpptlm-cep-collective-plane-base` | 2027-Q1 | ADR-CEP-03 + ADR-CEP-01 | 8 周 |
+| 5 | `cpptlm-cep-chi-rnf-subset` | 2027-Q1 ~ 2027-Q2 | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 |
+| 6 | `cpptlm-cep-cxl-nonsymmetric` | 2027-Q2 | ADR-CEP-04 + ADR-CEP-03 | 8 周 |
+| 7 | `cpptlm-cep-tilelink-tree-manager` | 2027-Q2 ~ 2027-Q3 | ADR-CEP-04 + ADR-CEP-08 + ADR-CEP-12 | 8 周 |
 
-**Stage 1 跨度**:2026-Q4 ~ 2027-Q3(6 个 change 串行)
+**Stage 1 跨度**:2026-Q4 ~ 2027-Q3(**7** 个 change 串行)
+
+> **P-1 增补说明(2026-10-22,per 台账 Entry #12)**:`cpptlm-cep-poc-spike` 是**可丢弃的 spike**
+> (单文件 / 不进 `ModuleFactory` / 不注册 ABI / 无公共 API),**不是**实现 —— 只验证「可组合性 + 契约自洽」。
+> **置首位**的理由:其 S2 场景是 `ADR-CEP-13` 判据 (b) 的**可执行**判定 → **解阻 A6** →
+> A6 是全部协议插件 change 的前置(`perm` 表达力未定)→ 它是唯一能**加速**其余 Stage 1 change 的项。
+> 用例规格:`docs/implementation/2026-10-22-cep-poc-spike-spec.md`。
+> **排队长度 +1,并发不变**(仍守「任一时刻 Proposed ≤ 1」)。
 
 ### 4.3 Stage 2: CXL 对称 + NVLink SHARP(2027-Q3 ~ 2028-Q1)
 
@@ -243,7 +251,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 - 任一时刻 **Proposed 并发 ≤ 1**(CEP 系列内部)
 - 全仓 Proposed 并发 ≤ 3(AGENTS.md 硬上限)
-- 10 个 change 串行 10 季度(per §5.1 真源)
+- 11 个 change 串行 11 季度(per §5.1 真源;2026-10-22 per Entry #12 由 10 → 11)
 
 ---
 
@@ -310,7 +318,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 ### 8.3 退出 / 归档判据(per metis G4 盲点 2)
 
 Stage 4+ 进入维护态后,objective 归档条件:
-- 全部 10 个 change archived with sync
+- 全部 11 个 change archived with sync
 - §9 假设全部有结论
 - §8.2 未触发 Kill / Pivot
 - 交接文档完成(CEP 使用手册 → `docs/architecture/07-coherence-exploration-platform.md` 扩充)
@@ -717,6 +725,8 @@ C-4 的**判据文本**已满足(13/13 字段有承载物),但**机器层红** �
 ⑦ **构建环境**:本机 `/usr/bin/g++-14` 缺失(工具链迁至 `~/.bashrc` 的 `/workspace/main/opt/bin`),
 已恢复软链 → `build/` 可用
 
+> 📌 **第 2 轮(2026-10-22)的对外动作与 M-4 修复**见 **Entry #11**(独立成条 —— 含代码改动 + 机器契约)。
+
 **关联**: 计划 `.opencode/plan/20261022-cep-contract-convergence-batch1.md`(v2,经三方评审修订) ·
 回执 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` §6/§8.3 ·
 ArchForge `8290b4c` / `ac956b8` / `32 号 §6.0.2` / `32 号 §6.4` / `22-nsa §0.5.4.1`
@@ -752,6 +762,196 @@ objective §5.2 baseline **0/3 → 1/3**(升 Proposed 占 1 个 KPI slot)。
 
 **关联**: Entry #9(批 1 的授权记录 + RUN 证据 + 反向验证)· 回执 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` ·
 `openspec/changes/cpptlm-cep-umbrella/proposal.md` 前置 gate ④
+
+### Entry #11 — 2026-10-22 [go-decision]
+
+**主题**: 第 2 轮**对外动作批** —— A14 正式答复 + A15 催 Q-3 + P-2 PoC 用例规格 + **M-4 修复及其机器化**
+
+**决策**: ✅ **GO**(DRI 批准零决策成本批;含 1 处代码注释修正 + 1 组新 lint)
+
+**理由**:
+
+> 本批的定位:**不碰任何冻结产物**的对外动作 —— 只把「已定的裁定」变成「可交付的答复」,
+> 把「已写的规格」变成「可评审的文档」,把「已发现的缺陷」变成「已修 + 机器强制」。
+
+**① 对外交付(载体 = 回执 v1.1)**
+
+| 产出 | 位置 | 说明 |
+|------|------|------|
+| **A14 正式答复** | 回执 **§8.4** | 4 条**已定**(A14-1~4)+ 4 条**待确认**(A14-C1~C4)+ **M-4 互斥论证**(§8.4.3) |
+| **A15 催 Q-3** | 回执 **§8.5** | **Q-3a~e 五问**;含 **Q-3e**(= P-3)「以 PoC 的 S2 场景**实验判定**替代 (b) 纸面评估」 |
+| **P-2 PoC 用例规格** | `docs/implementation/2026-10-22-cep-poc-spike-spec.md` | S1/S2/S3 的输入 / 期望 / 判定 + 4 条硬边界;**不含实现** |
+
+> **Q-3e 是破局设计**:前 2 轮 Q-3 悬空,因 (b) 被当成**纸面论证题**;
+> S2 把它变成**可执行的观测题** —— 观测值(读到旧值/新值)即 (b) 的答案。
+> 贵方接受 → Q-3 不再阻塞 A6;不接受 → 仍请答 Q-3a。
+
+**② M-4 修复(2026-10-16 critic 已记载但未修 → 本轮重发现 + 修 + 机器化)**
+
+**缺陷**:`include/tlm/cluster/soc_internal_noc.hh:68-71` 的 `flit_category → VC` 注释块描述了一个
+**不存在的 4 类** `CATEGORY_` 集(引用 `CATEGORY_DAT`,全仓 **0 命中**),且称 `CATEGORY_CREDIT → VC_SNP`;
+而实际按**索引对齐**落到 **`VC_DAT`**。**代码与测试一致**(`test/test_soc_internal_noc_data_flow.cc:107`
+断言 `vc_counts_[2]` 增)→ **注释是错的**。该注释正是 R-6' 附带项设想形态的「**幽灵实现**」。
+
+| 项 | 处置 |
+|----|------|
+| **注释** | ✅ **已修正** —— 改为描述真实映射(`VC_DAT` 标注为「索引对齐的副产物」;`VC_SNP` 标注「当前无类别落入」)+ 显式写出**索引对齐约束**与其失效模式 |
+| **行为** | ⚠️ **不变** —— 改行为会改变计数语义并击穿既有断言;`vc_dat_count()` 实际统计的是 **credit 流量** —— 作为**遗留项**登记(见下) |
+| **防复发** | ✅ **新增 lint 第 10 组**「传输层 `CATEGORY_*` 分层纪律」(`scripts/test/cep_docs_sync_check.sh`):<br>① `CATEGORY_*` 恰为 3 个声明,且值**可静态求值**且为 0/1/2 连续 —— **不可求值即判红**(堵住表达式绕过)<br>② flit 类别消费点(13 文件)引用的常量**必须真实存在** → **封死「幽灵类别」**<br>③ `VC_COUNT` 与「4 独立 VC」物理模型声明一致 |
+
+**反向验证(4 条,均实测 RED → 恢复 GREEN)**:
+① 把 `CATEGORY_*` 扩到 4 类 → ① 红(「实测 4 类,值域 [0 1 2 3]」);
+② 在 `soc_internal_noc.hh` 注释里引用不存在的 `CATEGORY_DAT` → ② 红(「幽灵类别」);
+③ 写 `CATEGORY_DAT{3};`(花括号初始化)→ ① 红(旧版只认十进制 `= N`,**会漏检**);
+④ 写 `CATEGORY_DAT = CATEGORY_CREDIT + 1;`(表达式初始化)→ ① 红(「不可静态求值 → 判红」,旧版**静默漏检**);
+⑤ `using namespace bundles;` + 裸 `CATEGORY_GHOST`(新消费点)→ ② 红(旧版作用域启发式**漏检**)。
+
+> ③~⑤ 是 **2026-10-22 critic 复审实测的 3 个绕过点**,已全部堵死并复验。
+> 残留局限(明示):② 覆盖**注释与代码**(M-4 的幽灵类别正在注释里)→ 解释性注释若提及不存在的类别会**误报**;
+> 作用域为「flit 类别消费点」启发式(非全仓)—— 刻意收窄,因 `CATEGORY_*` 在本仓另有命名空间
+> (`include/core/error_category.hh` 的 `CATEGORY_HH`)。
+
+> **这使 A14-1 / A14-2 从「承诺」变成「契约」** —— 「6 类词表不落传输层」现在有机器强制,
+> 而不只是一句对外答复。(per M-2 教训:口径无机器强制 → 静默失真)
+
+**③ RUN 证据(2026-10-22 实测)**
+
+```
+  ✓ [10/10] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)
+    ✓ CATEGORY_* 恰为 3 类且值域连续 0..2(传输层类别;6 类一致性词表不落本层)
+    ✓ flit 类别消费点(12 个文件)无「幽灵类别」(M-4 防复发)
+    ✓ VC_COUNT = 4 与「4 独立 VC」物理模型声明一致
+  ✅ CEP 契约同步检查全部通过(10/10)     · ctest 94/94     · ctest -R cep 16/16
+  ✅ 冻结 29/29                            · 全仓路径 0 缺失 · 锚点 33/33
+```
+
+> ⚠️ **lint 9/9 → 10/10** —— 上表 9/9 是 **M2 gate 当日(第 1 轮)**的实测值(Entry #10 C-5 保持原值不改);
+> 本轮新增第 10 组。`ctest -R cep` 仍为 **16/16**(本轮未新增 ctest)。
+
+**④ 遗留声明**
+
+- **M-4 的行为侧**:`CATEGORY_CREDIT` 按索引落入 `VC_DAT` 桶 → `vc_dat_count()` 实际统计 credit 流量。
+  改它需要**单独决策**(credit 是否该独占 VC / 映射是否应改为显式表而非索引对齐)→ **登记为 Stage 1 前置**,不在本批。
+- **`Q-3` 仍未交付** → A6 继续阻塞;`Q-3e` 的答复决定 A6 是否能由实验裁定。
+- **`P-1`**(PoC 登记为 Stage 1 第 7 个 change)、**D1 / D2**(A4 路线与是否同时排期)、**D5**(R10 最小动作)—— **待 DRI 拍板**
+  (决策简报:`.opencode/plan/20261022-cep-decision-brief.md`)。
+- **计划落点修正**:T2(A4)的落点清单经第 2 轮全量 grep 复核,由 17 项修正为 **22 项**(15 🔴 冻结 + 7 🟢 非冻结;
+  冻结产物 7 → **8** 份)—— 详见计划 §3.1 的「第 2 轮实测复核」表。
+- **两个预存文档缺陷**(与本批无关,顺手修):`docs/implementation/README.md` 的 2 处失效链接 +
+  `docs/README.md` 的 `implementation/` 文档数(3 → 11)与 3 处失效链接(含 `archived/` → `archive/` 目录名错)。
+
+**影响范围**: `include/tlm/cluster/soc_internal_noc.hh`(注释)· `scripts/test/cep_docs_sync_check.sh`(新增第 10 组)·
+`docs/implementation/2026-10-21-cep-archforge-response-receipt.md`(§8.4 / §8.5 / §10.2,版本 v1.0 → v1.1)·
+`docs/implementation/2026-10-22-cep-poc-spike-spec.md`(新增)· `docs/implementation/README.md` ·
+`docs/README.md` · `.opencode/plan/20261022-cep-remaining-batches.md` · 本文件 §11
+
+**未闭合**: ① **R10** 真人外部评审(→ Stage 0 不 archive)② **Q-3**(R-2 判据 (b))→ A6 阻塞
+③ **A4**(R-13 锁表 + 计数 14→16)待 DRI 拍板(D1 / D2)④ D-9 批 2 的 20 个锚点待同批重生成
+⑤ `fabric.*` 待 Stage 1 首个 implemented 实例跑过后再纳冻结集
+⑥ M-4 的**行为侧**(credit 计入 `VC_DAT` 桶)待 Stage 1 前置决策
+⑦ **本批冻结产物零改动** → 无需 `adr-amendment`、冻结清单未重生成(`frozen_at_commit` 仍指向 `97ecbf9d`,provenance 自检 29/29 一致)
+
+**关联**: 回执 §8.4 / §8.5 / §10.2 · PoC 规格 `docs/implementation/2026-10-22-cep-poc-spike-spec.md` ·
+计划 `.opencode/plan/20261022-cep-remaining-batches.md` · 决策简报 `.opencode/plan/20261022-cep-decision-brief.md`
+
+---
+
+### Entry #12 — 2026-10-22 [adr-amendment]
+
+**主题**: A4 批 2 —— R-13 锁表 + 族/实例计数口径(14 → 16)+ **P-1**(PoC 登记)+ **D5**(R10 最小动作)
+
+**决策**: ✅ **采纳**(D1 = **路线 B** · D2 = **仅改注册表** · D5 = **选项 3** · P-1 = **登记**)
+
+**理由**:
+
+**触发**:台账 **Entry #9** 遗留的「③ A4(R-13 锁表 + 计数 14→16)待批」;
+DRI 于 2026-10-22 拍板 4 个决策(决策简报 `.opencode/plan/20261022-cep-decision-brief.md`),
+执行本条。**D1 = 路线 B** 的含义:A4 先行 + `ADR-CEP-05` 判据 2 **限定注记** + A6 登记为 **Stage 1 前置**
+—— 债**显式化**而非消除,以换取**立刻解锁** ArchForge 侧的装配期校验(`INV-CEP-11-IC1`)。
+
+**① 变更的冻结产物(8 份,逐个 + 为什么)**
+
+| 产物 | 改动 | 为什么 |
+|------|------|--------|
+| `docs/adr/ADR-CEP-11-protocol-version-locking.md` | **决策 2 表 + §3 表各 +2 行**(`moesi-gpu-1.0` / `mesif-1.0`)+ 补记「两表须同步」+ §7 计数 6 → 8 | `INV-CEP-11-IC1` 要求每个协议实例的 `protocol_version` 落在锁表内 —— `moesi_gpu` / `mesif` 登记进 §5.1 后**必须**入表,否则**装配期 fail** |
+| `docs/architecture/07-coherence-exploration-platform.md` | §5.1.1 表 **+2 行** + 标题「6 族 / 8 实例」+ `:74`/`:310`/`:323`/`:364`/`:659` 五处计数 + 族计数口径补记 | 锁表使用规则 2:表中不得含未列入 §5.1 的协议族 → **必须**同批登记 |
+| `docs/adr/ADR-CEP-05-stub-cache-core-interface.md` | **正文不改**;追加 **§13 Status Update**(判据 2 的限定 + 状态 + 未变更项明示)+ §7 判据 2 下加限定注记 | 路线 B 的**核心**:`moesi_gpu` 恰有静默 E→M → 原「当前不触发」陈述的**适用范围收窄**;判据 2 的**状态**仍待 (b) |
+| `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | `:165` 计数同步 + **§2 决策 3 排队 10 → 11**(Stage 1: 6 → 7,新增 `cpptlm-cep-poc-spike` **置首位**)+ 增补段 | 计数同步 + **P-1** 的排队登记 |
+| `docs/adr/ADR-CEP-00A-real-source-anchor-map.md` | `:169` 计数同步 | 真源映射表 |
+| `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | `:39`(计数漂移风险行)+ `:147`(决策 9 理由句)两处计数同步 | 计数口径的 2 个落点 |
+| `docs/adr/ADR-CEP-18-protocol-generation-scope.md` | `:68` 计数同步(含「为 14~18 个实例」→「为 16~20 个实例」) | 生成路线的投入产出论证依赖该数 |
+| `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` | `:338`「14 adapter」→「16 adapter」 | 协议族接入的 schema 字段理由句 |
+| `docs/adr/ADR-CEP-15-cachetlm-alignment.md` | **正文不改**;追加 **§8 Status Update**(「adapter 数 ≤ 14」阈值已越过的限定)+ 决策 4 末条下加限定注记 | 2026-10-22 **critic 复审发现**:该句是 `ADR-CEP-05:227` **同款活矛盾**(计数相关且已被越过),若不同等处置则口径不一致 |
+| `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | `:310`「锁定表**恰好 6 个协议族**」→「**恰好 8 个**」+ 补 2 个族名 | 2026-10-22 **critic 复审发现(漏网)**:该文件在 `cep_freeze_check.sh` 的 `FROZEN_GLOBS` 内 —— 是**第 9 份**冻结产物;回执 R-13 早已要求「umbrella `spec.md` 同步」,本批初版漏做。它与 `ADR-CEP-11 §3`(增至 8 族)直接矛盾,且 freeze 校验**只比 hash 不比语义** → 无 checker 能发现 |
+
+> **「表可增,论断不改」原则(本条确立)** —— **表/登记类**(`ADR-CEP-11 §3` 锁表、`07 号 §5.1.1` 实例表)
+> **正文直接增行**(表的可增长性即其契约的一部分);**表内计数的一致性陈述**(如 §7「6 个协议族」)**同批机械同步**;
+> **独立论断**(如 `ADR-CEP-05:227` 的「当前不触发」)**正文不改**,追加 `## Status Update` 限定。
+> 判据:该句**是否随表机械变化**。
+
+**② 落点清单(17 份文件 = 10 份冻结 + 7 份非冻结;关键处数 40)**
+
+| 范围 | 文件 |
+|------|------|
+| **🔴 冻结产物(10 份)** | `ADR-CEP-00` · `ADR-CEP-00A` · `ADR-CEP-05` · `ADR-CEP-11` · `ADR-CEP-12` · `ADR-CEP-15` · `ADR-CEP-17` · `ADR-CEP-18` · `07 号` · **`umbrella spec.md`** |
+| **🟢 非冻结(7 份)** | `docs/architecture/README.md` · `interface-alignment.md`(G10 行 + CI 锚点块)· `research/cep-coherence-protocol-space-survey.md`(2 处注记)· `umbrella/proposal.md` · `umbrella/tasks.md`(计数 + S1-6)· `test/test_cep_schema.cc` · `test/test_cep_contracts_crosscheck.cc` |
+| **⚠️ 计划落点清单漏网(2 份)** | ① `umbrella spec.md` —— **第 9 份冻结产物**,回执 R-13 早已要求同步<br>② `umbrella/proposal.md:89` —— 与 `tasks.md:107` 同 change 的另一处计数<br>③ `ADR-CEP-15` —— 计数相关的活矛盾(critic 复审发现)<br>④ `test_cep_schema.cc` 的 **§5.1.1 行数断言**(6 → 8)+ `test_cep_contracts_crosscheck.cc` 的**族循环**(6 → 8)—— **静默失去覆盖**(不红,但断言失效) |
+| **计划行号漂移(1 处)** | `test/test_cep_schema.cc` 的硬编码锁表取值:计划写 `:417`,实际 **`:484-485`** |
+
+**③ RUN 证据(2026-10-22 实测)**
+
+> ⏳ **本段的最终数值待「两步 commit 流程」完成后回填** —— 冻结清单的 `frozen_at_commit`
+> 必须指向**产物所在**的 commit,故 `cep_freeze_check` 的 29/29 只有在
+> **① commit 产物 → ② `--update --authorized-by "Entry #12"` → ③ commit 清单**之后才是真的。
+> **在流程完成前,本段记为「未回填」,不填占位符**(2026-10-22 critic 复审 B4:
+> 初版把未跑的输出当实测记录,属审计证据失真)。
+
+```
+  ⏳ [待回填] 授权校验通过:台账 entry 'Entry #12'
+  ⏳ [待回填] M1 产物冻结校验通过:29 个产物 hash 全部一致
+  ⏳ [待回填] provenance 自检通过:29 个产物的 hash 与<产物所在 commit>的内容一致
+  ✓ [已实测] CEP 契约同步检查:10/10 组(其中第 10 组为新增)
+  ✓ [已实测] ctest -R cep:16/16
+  ✓ [已实测] ctest 全量:94/94
+  ✓ [已实测] 声明对齐检查:5 项子校验全绿(2 份声明,2 个网络)
+  ✓ [已实测] 锚点 33/33 · 全仓路径 0 缺失
+```
+
+> **两步 commit 流程**(per 计划 §6 AC-8 / 2026-10-22 复审 B4 的教训):
+> **先 commit 产物** → `--update --authorized-by "Entry #12"` → **再 commit 清单**。
+> 否则清单的 `frozen_at_commit` 指向**变更前** HEAD → provenance 为假 → 自检报出。
+
+**④ 遗留声明**
+
+- **A6 仍是未闭合项** —— 判据 2 的状态(已触发 / 仍未触发)取决于 `INV-CEP-13-IC2` 的 (b);
+  已登记为 **Stage 1 前置 S1-6**;输入 = ArchForge **Q-3**(第 3 轮催问含 **Q-3e**:以 PoC S2 实验判定替代纸面评估)
+  **或** `cpptlm-cep-poc-spike` 的 S2 观测值 —— **二者取其一即可闭合**
+- **`ADR-CEP-05:227` 的正文保留原样**(14 个 / 当前不触发)—— 这是**受限定注记保护的历史陈述**,不是残留;
+  grep 会命中它属**预期**(per 计划 §6 AC-5 的「仅剩历史/Status 引述」口径)
+- **D5 的摘要已产出**(`docs/implementation/2026-10-22-cep-stage0-external-review-summary.md`,1 页),
+  但 **R10 仍未闭合** —— 缺**外部真人**的「无阻断项」回执 → **Stage 0 仍不 archive**
+- **PoC 规格已先行,实现未启动** —— `docs/implementation/2026-10-22-cep-poc-spike-spec.md`;
+  **循环依赖已澄清**(per 规格 §1.2 item 3):**S2 必须可先行**(它产出 A6 所需的 (b) 观测值),
+  故该 change 置于 Stage 1 **首位**
+- **排队长度 +1,并发不变** —— 11 个 change 串行 11 季度;「任一时刻 Proposed 并发 ≤ 1」不变
+- **本条 entry 的 `adr-amendment` 授权范围** = 上表 ① 的 8 份冻结产物 + ② 的非冻结落点 + P-1 的排队变更
+
+**影响范围**: 上表 8 份冻结产物 · `docs/architecture/README.md` ·
+`docs/implementation/{2026-10-21-cep-archforge-interface-alignment.md,2026-10-22-cep-stage0-external-review-summary.md}` ·
+`docs/research/cep-coherence-protocol-space-survey.md` ·
+`openspec/changes/cpptlm-cep-umbrella/{proposal.md,tasks.md}` · `test/test_cep_schema.cc` ·
+`docs/implementation/2026-10-22-cep-poc-spike-spec.md` ·
+`.rddf/roadmap/objectives/obj-cep-platform.md` §4.2 / §11 · `.rddf/roadmap/phases/phase-10.md` ·
+`docs/implementation/2026-10-21-cep-archforge-response-receipt.md` · 本文件 §11
+
+**未闭合**: ① **R10** 真人外部评审(→ Stage 0 不 archive)② **Q-3**(R-2 判据 (b))→ A6 阻塞
+③ D-9 批 2 的 20 个锚点待同批重生成 ④ `fabric.*` 待 Stage 1 首个 implemented 实例跑过后再纳冻结集
+⑤ **M-4 行为侧**(credit 计入 `VC_DAT` 桶)待 Stage 1 前置决策 ⑥ **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期,D2 决策)
+
+**关联**: Entry #9(批 1 授权记录)· Entry #11(第 1 轮对外动作 + M-4)·
+计划 `.opencode/plan/20261022-cep-remaining-batches.md` §3.1 / §5 Step 3 ·
+决策简报 `.opencode/plan/20261022-cep-decision-brief.md` ·
+回执 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` §8.4 / §8.5
 
 ---
 

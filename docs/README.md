@@ -1,7 +1,7 @@
 # CppTLM 文档中心
 
-> **版本**: 2.0.3  
-> **最后更新**: 2026-04-10  
+> **版本**: 2.0.4  
+> **最后更新**: 2026-10-22  
 > **状态**: ✅ 整理完成
 
 ---
@@ -15,8 +15,8 @@
 | **[requirements/](./requirements/)** | 产品需求 | 3 |
 | **[architecture/](./architecture/)** | 架构设计 | 8+ |
 | **[adr/](./adr/)** | 架构决策记录 | 10+ |
-| **[implementation/](./implementation/)** | 实施计划 | 3 |
-| **[archived/](./archived/)** | 归档文档 | - |
+| **[implementation/](./implementation/)** | 实施计划 | 12 |
+| **[archive/](./archive/)** | 归档文档 | - |
 
 ---
 
@@ -30,7 +30,7 @@
 
 ### 架构设计
 
-1. [混合架构 v2.1.10](./architecture/01-hybrid-architecture-v2.1.md) - 核心架构 (v2.0 已归档至 [archive](../archive/architecture/01-hybrid-architecture-v2-archived-2026-10.md), 2026-10-19 真源原则治理)
+1. [混合架构 v2.1.10](./architecture/01-hybrid-architecture-v2.1.md) - 核心架构 (v2.0 已归档至 [archive](./archive/architecture/01-hybrid-architecture-v2-archived-2026-10.md), 2026-10-19 真源原则治理)
 2. [交易处理架构](./architecture/02-transaction-architecture.md) - 交易追踪
 3. [错误处理架构](./architecture/03-error-debug-architecture.md) - 错误与调试
 
@@ -42,8 +42,9 @@
 
 ### 实施计划
 
-1. [未来工作 Roadmap (P2+)](../docs/superpowers/plans/2026-06-20-future-work-roadmap.md) - **当前唯一 active planning doc**
-2. [TGMS 实施计划](./implementation/10-tgms-implementation-plan.md) - TGMS Phase 1-3 实现
+1. [项目路线图(协调真源)](../.rddf/roadmap.md) - **当前权威路线图**(per 真源原则)
+2. [未来工作 Roadmap (P2+)](../docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md) - **已归档**(2026-06-22)
+3. [TGMS 实施计划](./archive/10-tgms-implementation-plan.md) - TGMS Phase 1-3 实现（**已归档**至 `docs/archive/`）
 
 ---
 
@@ -73,10 +74,13 @@ docs/
 │   ├── ADR-P1-TEMPLATE.md
 │   ├── ADR-X.1 ~ ADR-X.8
 │   └── ADR-X-SUMMARY.md
-├── implementation/              # 实施计划
+├── implementation/              # 实施计划（12 份 + README）
 │   ├── README.md
-│   └── 10-tgms-implementation-plan.md
-└── archived/                    # 归档文档
+│   ├── 11-tgms-v4-implementation-plan.md
+│   ├── 13-dashboard-implementation-plan.md
+│   ├── 14-boundary-hardening-stage0.md
+│   └── 2026-10-21~22-cep-*.md
+└── archive/                    # 归档文档（docs-archived/ = 更早的归档层）
 ```
 
 ---
@@ -111,7 +115,7 @@ docs/
 
 | 资源 | 位置 |
 |------|------|
-| 未来工作规划 | `docs/superpowers/plans/2026-06-20-future-work-roadmap.md` |
+| 未来工作规划（已归档） | `docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md` · **当前权威路线图**:`.rddf/roadmap.md` |
 | 技能文档 | `docs/skills/SKILLS_SUMMARY.md` |
 | 开发者指南 | `docs/guide/DEVELOPER_GUIDE.md` |
 | 贡献者指南 | `docs/development/CONTRIBUTING.md` (含 pre-commit + clang-format + 测试规范) |
@@ -119,5 +123,5 @@ docs/
 ---
 
 **维护**: CppTLM 开发团队  
-**版本**: 2.0.3  
-**最后更新**: 2026-05-01
+**版本**: 2.0.4  
+**最后更新**: 2026-10-22
