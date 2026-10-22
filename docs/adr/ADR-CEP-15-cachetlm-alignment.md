@@ -13,9 +13,9 @@
 > - 调研:`docs/research/cep-coherence-protocol-space-survey.md` v0.4 §5.4 F12(Stub 是协议状态投影,非缓存模型)
 >
 > **一手锚点(代码实证)**:
-> - `include/tlm/cache_tlm.hh:35` — `class CacheTLM : public ChStreamModuleBase`(174 行)
+> - `include/tlm/cache_tlm.hh:35` — `class CacheTLM: public ChStreamModuleBase`(174 行)
 > - `include/tlm/cache_tlm.hh:42` — `std::map<uint64_t, uint64_t> cache_lines_`
-> - `include/tlm/cache_tlm.hh:89` — `uint64_t access_latency = hit ? 5 : 50;`
+> - `include/tlm/cache_tlm.hh:89` — `uint64_t access_latency = hit ? 5: 50;`
 > - `include/tlm/cache_tlm.hh` — **全文 0 匹配** `snoop|coheren|mesi|moesi|directory`
 
 ---
@@ -165,12 +165,7 @@ CacheTLM(性能模型) ──adapter──> Coherence Interface(10 流)
 
 ## 7. 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | 代码实证(`cache_tlm.hh` 174 行 / 0 协议关键词)+ 调研 F12 + `ADR-CEP-05 §9` A13 议题 | 对齐边界 + 冻结面 + 未来路径 |
-
----
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 8. Status Update(2026-10-22,per 台账 Entry #12 [adr-amendment])
 
 > **授权**:台账 `objective-cep-platform §11` **Entry #12**;触发 = R-13(`moesi_gpu` / `mesif` 登记进

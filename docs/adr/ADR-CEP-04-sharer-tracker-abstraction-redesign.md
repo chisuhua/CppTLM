@@ -14,13 +14,13 @@
 
 ## 1. 背景
 
-### 1.1 关于"06-bis §2.3 D-5 接口"伪引的修订(per oracle B5)
+### 1.1 关于"06-bis §2.3 D-5 接口"伪引的修订
 
 **经 oracle 评审实证**:`06-bis-coherence-as-network-extension.md` v0.3 全文 grep "sharer" / "D-5" 零匹配;`§2.3` 是"命名空间一致性",**不存在** Sharer Tracker 接口雏形。
 
-**结论**:Sharer Tracker 抽象(`SharerTrackerIf` / `lookup` / `snoop_begin` / `snoop_fold` 等)**由本 ADR 首次定义**(per oracle B5 修复方向)。06-bis v0.3 §7.5 P3 SnoopFilter 范围被本 ADR 完整继承(per ADR-CEP-00 §3 supersede 范围映射表 + `ADR-CEP-00A §3.2` 实证)。
+**结论**:Sharer Tracker 抽象(`SharerTrackerIf` / `lookup` / `snoop_begin` / `snoop_fold` 等)**由本 ADR 首次定义**。06-bis v0.3 §7.5 P3 SnoopFilter 范围被本 ADR 完整继承(per ADR-CEP-00 §3 supersede 范围映射表 + `ADR-CEP-00A §3.2` 实证)。
 
-### 1.2 根因(per oracle A4)
+### 1.2 根因
 
 如上所述,Sharer Tracker 接口 D-5 雏形不存在,但事实上接口语义**隐式假设了"全局权威答案"**:
 
@@ -50,8 +50,8 @@ DCOH 条目和目录条目**结构上是同构的**(都是 per-line → per-node
 |------|------|------|
 | **α** | 单抽象接口 + N 实现(N 种具体协议策略) | oracle A4 |
 | **α**' | α + 命名复用(本 ADR §4 lookup 签名)+ 三明治挂载(per `ADR-CEP-05`)| oracle A4 / A7 |
-| **β** | 拆 Central/Distributed interface tree | **明确否决**(per oracle A4)|
-| **γ** | bool `is_distributed` flag | **明确否决**(per oracle A4)|
+| **β** | 拆 Central/Distributed interface tree | **明确否决**|
+| **γ** | bool `is_distributed` flag | **明确否决**|
 | **γ**' | caps descriptor struct 替代 bool | oracle A4 |
 | **α**′ | **本 ADR 决策** = α(单接口 + N 实现)+ γ'(caps descriptor) + D-5 重构(三件套)| oracle A4 |
 
@@ -67,7 +67,7 @@ DCOH 条目和目录条目**结构上是同构的**(都是 per-line → per-node
 - `PARTIAL` 必须声明 broadcast fallback(否则 = 失效实例,禁止使用)
 - 禁止无 fallback 的 PARTIAL
 
-**理由**:CXL 对称模式下 hint 若可能漏真实持有者,则"R 归零即 complete"不健全(per oracle A4 抓取点 1)。
+**理由**:CXL 对称模式下 hint 若可能漏真实持有者,则"R 归零即 complete"不健全。
 
 ### 决策 3:caps descriptor struct(替代 bool,第一天就位)
 
@@ -88,7 +88,7 @@ struct SharerTrackerCaps {
 
 **禁止**:协议插件代码中出现任何 `is_distributed` / `is_central` / `is_global` bool flag(立法禁止,第一天就位)。
 
-**5 × 4 × 4 × 4 mapping 表 enum 字面值收敛**(per oracle B9 修订):
+**5 × 4 × 4 × 4 mapping 表 enum 字面值收敛**:
 
 | 实现 | scope | completeness | authority | aggregation_at |
 |------|-------|--------------|-----------|----------------|
@@ -175,7 +175,7 @@ interface SharerTrackerIf {
 };
 ```
 
-**禁止加 `subscribe_remote_snoop()`**:传输通道概念泄进 tracker 平面(per oracle A4 明确否决)。
+**禁止加 `subscribe_remote_snoop()`**:传输通道概念泄进 tracker 平面。
 
 ### 3.5 CXL 对称模式 aggregation_at 二元(P2P vs HDM home,per oracle A4 抓取点 3)
 
@@ -195,7 +195,7 @@ interface SharerTrackerIf {
 - ❌ 任何 `is_distributed` / `is_central` bool flag — 立法禁止
 - ❌ `subscribe_remote_snoop()`(把传输通道概念泄进 tracker)
 
-**关于 supersede 标注**(per oracle 评审 B5 自检项 6 + v0.4 B1 实证修订):**06-bis §7.8 = KPI 串行约束,非阶段范围**(per `ADR-CEP-00A §3.2` 实证);06-bis P3 SnoopFilter 范围在 §7.4,非 §7.8。supersede 实施只针对 06-bis §7.4 P3 SnoopFilter 范围(per ADR-CEP-00 §3 supersede 范围映射表),不针对 §7.8(KPI)。本 ADR 顶部不引用 ADR-DGPU-13/14(已 superseded by 06 v0.4,与本 ADR 平行不冲突)。
+**关于 supersede 标注**:**06-bis §7.8 = KPI 串行约束,非阶段范围**(per `ADR-CEP-00A §3.2` 实证);06-bis P3 SnoopFilter 范围在 §7.4,非 §7.8。supersede 实施只针对 06-bis §7.4 P3 SnoopFilter 范围(per ADR-CEP-00 §3 supersede 范围映射表),不针对 §7.8(KPI)。本 ADR 顶部不引用 ADR-DGPU-13/14(已 superseded by 06 v0.4,与本 ADR 平行不冲突)。
 
 ---
 
@@ -217,17 +217,17 @@ interface SharerTrackerIf {
 
 ---
 
-## 5. lookup 的同步性假设(per oracle A4 抓取点 5)
+## 5. lookup 的同步性假设
 
 **关键问题**:TileLink `ESCALATE_UP` 意味着 lookup 可能异步重入。Ordering Point 平面是否假设 lookup 同步幂等?
 
-**决策**:lookup 是**同步调用**,但 `ESCALATE_UP` 时返回 `LookupResult_ESCALATE_UP + tree_parent`,由 caller(ProtocolEngine 或 ProtocolEngine + Ordering Point)负责向上发起后续 lookup 调用。**Sharer Tracker 不持有异步重入状态**(per oracle A4 抓取点 5)。
+**决策**:lookup 是**同步调用**,但 `ESCALATE_UP` 时返回 `LookupResult_ESCALATE_UP + tree_parent`,由 caller(ProtocolEngine 或 ProtocolEngine + Ordering Point)负责向上发起后续 lookup 调用。**Sharer Tracker 不持有异步重入状态**。
 
 **契约**(INV-CEP-04-IC2):Sharer Tracker 内部所有 `lookup` / `snoop_begin` / `snoop_fold` 调用幂等(同一 addr + 同一 intent + 同一外部状态 = 同一返回)。
 
 ---
 
-## 6. 条目生命周期事件(per oracle A4 抓取点 6)
+## 6. 条目生命周期事件
 
 **统一契约**(防止分布式 peer 之间对 expected_responders 的认知漂移):
 
@@ -296,37 +296,26 @@ interface SharerTrackerIf {
 
 ## 10. v0.2 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| §1.1 新增 | oracle B5 | 明确"06-bis §2.3 D-5"是**伪引**,SharerTrackerIf 由本 ADR 首次定义 |
-| §2 Decision 1 符号定义 | oracle S2 | α/α'/β/γ/γ'/α′ 符号体系首次定义 |
-| §2 Decision 3 enum | oracle B9 | Authority 补 LOCAL/NONE;AggregationAt 补 NONE;表值全部收敛 |
-| §3.1 签名统一 | oracle S6 | lookup 签名合并两版,加入 hazard 输出参数,定义 canonical 签名 |
-| §3.5 新增 | oracle A4 抓取点 3 | CXL aggregation 二元 spec 写死裁决 |
-| §3.6 修订 | oracle B5 自检项 6 | 06-bis §2.3 supersede 语义落空,改为"本 ADR 首次定义,无 supersede" |
-| §4 修订 | oracle S5 + v0.3 S4 | 5/5 实现 hazard 契约覆盖(SparseSnoopFilter 补 `Hazard_STALL`);决策汇总表统一 `Hazard_*` 字面值 |
-| §1.1 修订 | oracle S10 | 真源分级标注一致(ADR 一律真源 3,本系列 CEP ADR 全列)|
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+## 11. v0.5 补齐不变量
 
----
+**INV-CEP-04-IC5**(新增):`fabric_ingress_classify` 中 "table 命中 + epoch invalid" 窗口 = 正常服务放行(per R4 正常服务),非 fail-stop。
 
-**版本**: v0.2 草案
-**最后更新**: 2026-10-20
-**批准状态**: 🟡 待 Oracle v0.5 二次复审
-**维护者**: CppTLM build agent(architect mode)
----
-
-## 11. v0.5 补齐不变量(per oracle v0.4 B5 修订)
-
-**INV-CEP-04-IC5**(新增):`fabric_ingress_classify` 中 "table 命中 + epoch invalid" 窗口 = 正常服务放行(per R4 正常服务),非 fail-stop(per oracle v0.2 B2-7 修订)。
-
-**INV-CEP-04-IC6**(新增):5 种实现 hazard 行为契约 `Hazard_NONE` / `Hazard_STALL` / `Hazard_CHAIN` 全字面值收敛(per oracle v0.4 S4 + B5)。
+**INV-CEP-04-IC6**(新增):5 种实现 hazard 行为契约 `Hazard_NONE` / `Hazard_STALL` / `Hazard_CHAIN` 全字面值收敛。
 
 **INV-CEP-04-IC7**(新增,2026-10-20 落位):**token 类协议下,Sharer Tracker 不跟踪 sharer set**(token 由数据副本携带权限);实现上等价 `BroadcastNull` 或 tracker 不参与。
 - **来源**:`ADR-CEP-17 §2 Decision 3`;一手依据 gem5 Ruby `MOESI_CMP_token` 的 token 语义 + HeteroGen "GPU"(Spandex)协议同样不做 sharer tracking 式中心目录(per 调研 v0.3 §3.5)
-- **落位说明**:此前该条仅在 `ADR-CEP-17 §3.1` 声明,未落 owner ADR —— 导致 `07 号 §4` 的"36 条单一真源"名存实亡(per oracle 全面架构审查 N1)。本条为**补落**,非新增。
+- **落位说明**:此前该条仅在 `ADR-CEP-17 §3.1` 声明,未落 owner ADR —— 导致 `07 号 §4` 的"36 条单一真源"名存实亡。本条为**补落**,非新增。
 
-**命名空间统一**(per oracle v0.4 B5 修订):
+**命名空间统一**:
 - 跨 ADR 引用:**统一加 `INV-` 前缀**(`INV-CEP-04-IC1` 而非 `CEP-04-IC1`)
 - 本地定义:可裸名,但建议统一加 `INV-`
 - `CEN-Ib1~10` / `INV-SC1~6` 保留原命名(分别属 ADR-CEP-02 / ADR-CEP-05)
 - `INV-CEP-NN-ICx`:跨 ADR 引用 canonical 形式(per `NUMBER-MAP §2 Decision 2`)
+
+---
+
+**版本**: v0.3 草案
+**最后更新**: 2026-10-20
+**批准状态**: 🟡 待 Oracle v0.5 二次复审
+**维护者**: CppTLM build agent(architect mode)

@@ -19,7 +19,7 @@
 
 ## 1. 背景
 
-### 1.1 CEP 6 层架构首次定义(per oracle B3 修订)
+### 1.1 CEP 6 层架构首次定义
 
 `06-inter-module-network.md` v0.4 §2.1 锁定的 L1-L6 是**仿真层 payload/port 层模型**:
 
@@ -55,7 +55,7 @@ Fabric & Transport Plane  ←──  Fabric Collective / Sync Plane
 
 两套层模型**正交共存**,不可混淆。
 
-### 1.2 为什么需要独立 Collective Plane(per oracle A2)
+### 1.2 为什么需要独立 Collective Plane
 
 NVLink SHARP(可聚合原语)和 UALink In-Network Compute(ReadReduce / WriteMulticast / Broadcast / AllReduce)不是传统缓存一致性事务,而是**集合通信原语**:
 
@@ -108,7 +108,7 @@ group-scoped completion     → Fabric Collective Plane
 
 ### 3.1 barrier 分类 litmus test(写进 ADR 正文)
 
-**判断标准**(per oracle A2):
+**判断标准**:
 1. **barrier 的 key 是地址还是参与者组?**
    - 地址 → Ordering(per-address 串行化)
    - 组 → Collective(group rendezvous)
@@ -166,23 +166,7 @@ group-scoped completion     → Fabric Collective Plane
 
 ## 6. v0.2 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| §1.1 新增 | oracle B3 | 明确 CEP 6 层是**首次定义**,非 06 v0.4 §2.1 L1-L6 既有层模型(两者正交共存)|
-| §3.3 抓取点 3 修订 | oracle B7 | 删除虚构 `vc_counts_[4]` 引用,改为真实 `flit_category` 2 类现状 + 多 VC 扩展标"待 CEP-09 起草" |
-| 头部关联真源 | oracle S10 | 真源分级标注保持一致(ADR 一律真源 3,`docs/architecture/` 一律真源 1) |
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 7. v0.3 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 头部关联真源 | oracle B2-2 + metis G3 | 加 `ADR-CEP-00A` / `06` / `07` / `NUM` 真源 3 标注 |
-| §3.3 抓取点 3 | oracle B2-4 | 通道隔离 = `vc_id`(per `noc_bundles_tlm.hh:38` 0-3 已存在),非 `flit_category`;flit_category "2 类" 改 "3 类"(REQUEST=0 / RESPONSE=1 / CREDIT=2,per `:60-62` 实证)|
-| 头部关联真源 | oracle S10 | ADR 一律真源 3;`docs/architecture/` 一律真源 1 |
-
----
-
-**版本**: v0.3 草案
-**最后更新**: 2026-10-20
-**批准状态**: 🟡 待 Oracle v0.5 二次复审
-**维护者**: CppTLM build agent(architect mode)
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

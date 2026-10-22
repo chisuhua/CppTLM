@@ -205,17 +205,7 @@ acyclic( ppo_com ∪ rfe ∪ fr ∪ ws )
 
 ## 7. 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | 调研 v0.4 §4.3.3~§4.3.7 + §5.3 F8/F9/F10/F13 + Oracle 独立复审 Q7 | 域定义 + 3 条判据 invariant + 承诺边界 |
-| 决策 2 | HeteroGen §V-B(E1) | 复合一致性公理;拒绝"所有域模型相同"的过严形式 |
-| 决策 3 | HeteroGen §VI-D-1(E1) | 域可见写 (a)(b) 双条件;记录 RC 反例 |
-| 决策 5 | `ADR-CEP-17` 决策 9 精化 + HeteroGen §VI-E(E1) | 承诺 3 件 / 不承诺 4 件;"实验证伪"而非"实验保证" |
-| §1.3 | 调研 F19 修正(per oracle 复审 R5) | **工具集成负担不继承;语义组合负担完全继承** —— 两层分开 |
-| **§8 Status Update**(2026-10-22,台账 **Entry #13**) | ArchForge 应答(`4ff2fa6`):判据 (b) **首次被评估且成立** | **§8**(新增 Status Update 节):`INV-CEP-13-IC2` 的**应用口径**注记 3 条((b) 是**析取** / (b) 落在**响应语义**上 / 须**逐协议实例**评估)+ 落点与层级声明 + 未变更项。**§2 决策 3 与 §3 的判据定义零改动** |
-
----
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 8. Status Update(2026-10-22):`INV-CEP-13-IC2` 的**应用口径**注记
 
 > **授权**:台账 `objective-cep-platform §11` **Entry #13** [adr-amendment]。

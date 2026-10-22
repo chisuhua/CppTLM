@@ -197,16 +197,7 @@ Sharer Tracker 决定**谁**要参与,Ordering Point 决定**序**从哪来。�
 
 ## 7. 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | 调研 v0.4 §4.2 + §5.3 F3/F4/F5/F17 + Oracle 独立复审 | Ordering Point 定义 + 可迁移性三判据 + E 态检查 + 排序假设面 |
-| 决策 2 | HieraGen p.2(E1) | 唯一序列化点不变量 + 树结构证明 |
-| 决策 4 | HieraGen §V-D(E1) | E 态静默升级检查项 + 两条解法 |
-| 决策 5 | 博士论文 §9.3.4(**E2**) | 不绑定物理实体;**明确标注 Future Work** |
-| 决策 6 | ProtoGen L3(E1)+ `.pcc`(E1) | 排序假设面的归属与粒度 |
-
----
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 8. Status Update(2026-10-22):排序假设面的 key 粒度改为逐网络 × 逐 `vc_id`
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——

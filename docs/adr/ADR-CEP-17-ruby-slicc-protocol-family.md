@@ -184,6 +184,7 @@
 
 **决策**:`ADR-CEP-12` 的能力映射表 schema **必须**为每个协议实例承载两项声明:
 
+```yaml
 ordering_assumption:   # 逐网络(per-network)映射,非逐协议单值
   # ⚠️ key 必须能解析到唯一 vc_id(per oracle 全面架构审查 N8)
   <vc_id | named_network>: p2p_ordered | unordered
@@ -290,9 +291,24 @@ Table 1.3 佐证:已发布的 3 个工具**各缺一段算法阶段**(HeteroGen 
 - **adapter 数量 = 协议实例数**,不是族数
 - 引用 gem5 Ruby 协议清单时**必须标注"8 个独立协议"**,不写"Ruby 族 1 个"
 
+### 3.3 抓取点
+
+1. **`07 号 §5.1` 表格语义**须含 Ruby-SLICC 族 + 8 个协议实例 + HTM 排除标注 + **学术协议族 5 实例(§5.1.4,per 决策 7)**
+2. **`perm` 枚举边界**:Stub Cache 4 值锁(决策 4 选 C);**atomic 意图作为 `request` 流独立属性,不扩 `perm`**(决策 6 v0.2 闭合)
+3. **协议实例数与 adapter 数一致性**:`07 号 §5.1` 表格内 adapter 数 == 协议实例数
+4. **守门 invariant 36 条**在 4 份文档一致
+5. **gem5 Ruby 协议清单**引用处标注"8 独立协议" + HTM 排除
+6. **`ADR-CEP-12` schema 必含 `consistency_labels`**(per 决策 7 硬前置条件),否则 §5.1.4 族不可落地
+7. **Stub Cache 定位措辞**:`ADR-CEP-05` 须写明"Stub Cache 是客户端侧协议状态投影,**不是缓存性能模型**"(per 调研 §5.4 F12;参考量级:ProtoGen 生成的 non-stalling MSI 为 18-20 状态)
+8. **协议实例前提声明**(per 决策 8):`ADR-CEP-12` schema 必含 `ordering_assumption` + `consistency_labels`(含请求级标签)
+9. **组合能力二维化**(per 调研 F16):`ADR-CEP-12` 必含 `combination_capabilities`(concurrent / hierarchical / heterogeneous)
+10. **VC 分配职责**(per 决策 8 附注):`ADR-CEP-08` / `ADR-CEP-09` 须承载"VC 分配须论证死锁自由性"的要求(依据 博士论文 §9.3.1)
+11. **组合承诺边界**(per 决策 9):`ADR-CEP-13` 须显式声明"分层 + 异构组合**可做**但走人工声明 + 实验验证、**不承诺自动化**";`ADR-CEP-07` 须为组合预留接缝
+12. **插件接口可组合性**(per 调研 F20):`ADR-CEP-07` 须要求插件接口从第一版为组合维度留扩展点
+
 ### 3.4 schema 草案 → 已由 `ADR-CEP-12` 承接
 
-> **2026-10-21 状态**:本节原为 schema 草案先行落地(per oracle 全面架构审查 Q5/Q6/Q7);**`ADR-CEP-12` 已于 2026-10-21 正式起草并采纳该草案**。
+> **2026-10-21 状态**:本节原为 schema 草案先行落地;**`ADR-CEP-12` 已于 2026-10-21 正式起草并采纳该草案**。
 > → **schema 的单一真源现为 [`ADR-CEP-12 §2 决策 1`](ADR-CEP-12-protocol-engine-capability-map.md)**。本节保留为草案留痕,**不再作为引用来源**。
 > → 同理,§3.5 的 `ADR-CEP-09` 两段式建议**已由 [`ADR-CEP-09`](ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md) 正式承接**。
 
@@ -354,7 +370,7 @@ protocol_instance:
 
 **理由**:`ADR-CEP-06` 的 `deadlock_violations` 是**运行时计数器**,只能**发现**死锁,不能**证明**无死锁。**无环性证明必须发生在配置/装配期**。
 
-**三方联合契约**(per oracle Q6):
+**三方联合契约**:
 
 | 段 | 谁提供 | 产物 | 落点 |
 |----|--------|------|------|
@@ -363,21 +379,6 @@ protocol_instance:
 | ③ 仲裁一致性 | Fabric & Transport 执行 | 仲裁策略与依赖图一致 → 图无环 | `ADR-CEP-09` Decision B |
 
 > **耦合契约**:任一协议实例的 `ordering_assumption` 变更 ⇒ 依赖图重算 ⇒ 无环性检查重跑。
-
-### 3.3 抓取点
-
-1. **`07 号 §5.1` 表格语义**须含 Ruby-SLICC 族 + 8 个协议实例 + HTM 排除标注 + **学术协议族 5 实例(§5.1.4,per 决策 7)**
-2. **`perm` 枚举边界**:Stub Cache 4 值锁(决策 4 选 C);**atomic 意图作为 `request` 流独立属性,不扩 `perm`**(决策 6 v0.2 闭合)
-3. **协议实例数与 adapter 数一致性**:`07 号 §5.1` 表格内 adapter 数 == 协议实例数
-4. **守门 invariant 36 条**在 4 份文档一致
-5. **gem5 Ruby 协议清单**引用处标注"8 独立协议" + HTM 排除
-6. **`ADR-CEP-12` schema 必含 `consistency_labels`**(per 决策 7 硬前置条件),否则 §5.1.4 族不可落地
-7. **Stub Cache 定位措辞**:`ADR-CEP-05` 须写明"Stub Cache 是客户端侧协议状态投影,**不是缓存性能模型**"(per 调研 §5.4 F12;参考量级:ProtoGen 生成的 non-stalling MSI 为 18-20 状态)
-8. **协议实例前提声明**(per 决策 8):`ADR-CEP-12` schema 必含 `ordering_assumption` + `consistency_labels`(含请求级标签)
-9. **组合能力二维化**(per 调研 F16):`ADR-CEP-12` 必含 `combination_capabilities`(concurrent / hierarchical / heterogeneous)
-10. **VC 分配职责**(per 决策 8 附注):`ADR-CEP-08` / `ADR-CEP-09` 须承载"VC 分配须论证死锁自由性"的要求(依据 博士论文 §9.3.1)
-11. **组合承诺边界**(per 决策 9):`ADR-CEP-13` 须显式声明"分层 + 异构组合**可做**但走人工声明 + 实验验证、**不承诺自动化**";`ADR-CEP-07` 须为组合预留接缝
-12. **插件接口可组合性**(per 调研 F20):`ADR-CEP-07` 须要求插件接口从第一版为组合维度留扩展点
 
 ---
 
@@ -423,45 +424,7 @@ protocol_instance:
 
 ## 6. 修订记录
 
-### 6.1 v0.3 修订记录(2026-10-20)
-
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 调研源升级 | 调研 v0.3 §1.1 | 源 = **3 篇论文 PDF 原文 + 178 页博士论文 PDF 原文**;36 条引文已逐条回溯 PDF |
-| **决策 6 证据再坐实** | 调研 v0.3 §0.3 发现 2 | ProtoGen 局限 L2 在 **PDF 原文 p.7** 逐字复核 |
-| **决策 7 细化** | 调研 v0.3 §4.5.4 | `consistency_labels` 需支持**请求级标签**(RCC 的 `GetV` 无法区分 read vs acquire) |
-| **决策 8 新增** | 调研 v0.3 F3/F6/F7 + 论文 §7.6.6 | 每个协议实例必声明 `ordering_assumption` + `consistency_labels`;**记录 VC 分配 = 死锁自由性载体**(论文 §9.3.1) |
-| **决策 9 新增** | 调研 v0.3 F19 + 论文 §9.2 / §1.3 / Table 1.3 + 源码预留点 | **诚实边界**:分层 + 异构组合**可做**,但不承诺自动化;须人工声明 + 实验验证;接口预留组合接缝 |
-| **决策 10 新增** | 调研 v0.3 F23 + 论文 §9.2 | 竞合判断:ProtoGen+ 正在做 SLICC/Rumur 后端;CEP 定位 = 统一实验床,非生成器 |
-| §3.3 抓取点 | 调研 v0.3 §7.2 | 抓取点扩至 12 条(新增 F16/F17/F18/F19/F20 落点) |
-| §4 关联 ADR | 调研 v0.3 §7.2 | 新增 `ADR-CEP-09` 行;`ADR-CEP-12/13/06/07/08` 补具体判据 |
-
-### 6.2 v0.2 修订记录(2026-10-20)
-
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 调研源升级 | 调研 v0.2 §1.1 | 调研源从 153 行摘要 → **3 篇论文全文 + 12 wiki 条目**;本 ADR 全部结论补一手依据 |
-| **决策 6 闭合** | 调研 §4.1.6 / §5.2 F2 | ProtoGen 局限 L2 → atomic 归插件内**有据**;**`perm` 枚举维持 4 值锁**,atomic 意图作为 `request` 流独立属性 |
-| **决策 6 附证据** | 调研 §4.1.6 L4 | ProtoGen 局限 L4 → **协议/互连分离**获得第二个独立一手来源 |
-| **决策 7 新增** | 调研 §4.3.1 / §4.3.2 / §5.3 F6 | 纳入学术协议族 1 族 5 实例;`ADR-CEP-12` 必含 `consistency_labels`;barrier 一致性效果归标签(不新增流) |
-| **决策 7 范围纪律** | 调研 §5.4 F10 | 不承诺自动兼容性判定(依 HeteroGen 明确列为 future work) |
-| §3.3 抓取点 | 调研 §7.2 | 抓取点 1/2/6/7 更新(§5.1.4 + perm 口径 + consistency_labels + Stub 定位澄清) |
-| §4 关联 ADR | 调研 §7.2 | CEP-08 / CEP-12 / CEP-13 补具体可判定判据;新增 CEP-06 规模上限 + CEP-18(可选) |
-
-### 6.3 v0.1 修订记录(本 ADR 初版)
-
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | 调研 v0.1 §1.4 / §2.4-§2.8 | Ruby-SLICC 族接入 + 4 处扩展 + 2 状态缺口 |
-| 决策 1 | 调研 v0.1 §2.7 | §5.1 表格语义改"族 → 实例列表" |
-| 决策 3 | 调研 v0.1 §2.5 | token 归属 + `INV-CEP-04-IC7` |
-| 决策 4 | 调研 v0.1 §1.4 + §3.1 | 协议私有状态边界 + `INV-CEP-05-IC1` + `O` 选 C |
-| 决策 5 | 调研 v0.1 §2.6 | HTM 排除 |
-| 决策 6 | 调研 v0.1 §2.8 | atomic 语义选 C(v0.2 已补一手证据并闭合) |
-| §3.1 | 调研 v0.1 §5.3 | invariant 34 → 36 + 4 文档同步清单 |
-
----
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 8. Status Update(2026-10-22):`ordering_assumption` / `vc_binding` 的 key 形态随 per-network 化修订
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——

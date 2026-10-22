@@ -21,11 +21,11 @@ Coherence Exploration Platform(CEP)是一个支持 CHI / CXL 3.0 / TileLink-C / 
 
 - **6 层框架**(per `ADR-CEP-01` 首次定义;非 06 v0.4 既有):
   Stub Cache / Coherence Interface / Protocol Engine / Directory & Ordering Plane / Fabric Collective Plane / Fabric & Transport Plane
-- **19 个 CEP-NN ADR 编号 + 1 份 NUMBER-MAP = 20 份文件(per oracle v0.4 B4 修订)**(per `ADR-CEP-NUMBER-MAP §2 Decision 1` 预分配:CEP-00/00A/01/02/03/04/05/06/07/07A/08/09/10/11/12/13/14/15/16 + NUM;CEP-00 ~ CEP-05 在第 1 回合起草,其余为本批 / 第 3 回合起草)
+- **19 个 CEP-NN ADR 编号 + 1 份 NUMBER-MAP = 20 份文件**(per `ADR-CEP-NUMBER-MAP §2 Decision 1` 预分配:CEP-00/00A/01/02/03/04/05/06/07/07A/08/09/10/11/12/13/14/15/16 + NUM;CEP-00 ~ CEP-05 在第 1 回合起草,其余为本批 / 第 3 回合起草)
 
 核心矛盾:CEP 的范围与 `06-bis-coherence-as-network-extension.md` v0.3 §7.3-§7.7 阶段范围(P2.0-P5,per `ADR-CEP-00A §3.2` 实证修订;§7.8 实为 KPI 串行约束)严重重叠。**双计划并存 = 漂移风险**。
 
-### 1.1 关于 06/06-bis 章节引用的修订(per oracle 评审 B3/B5)
+### 1.1 关于 06/06-bis 章节引用的修订
 
 06 v0.4 §2.1 锁定的是 L1-L6 payload/port 层模型(`tlm_generic_payload`/`MasterPort`/`ChStream`/`StreamAdapter`/`Bundle`/协议字段),与 CEP 6 层是完全不同的层模型。**CEP 6 层是 CEP 首次定义**(per `ADR-CEP-01`),非 06 v0.4 锁定。
 
@@ -96,7 +96,7 @@ AGENTS.md:423 边界条款("SoC 架构**组件/拓扑/演进**类提案" → Arc
 
 ---
 
-## 3. 06-bis supersede 范围映射表(per oracle B2-2 + v0.4 B1 + B2 实证修订)
+## 3. 06-bis supersede 范围映射表
 
 **校准**(per `ADR-CEP-00A §3.2` 行号实证 + oracle v0.4 B2 修订 P5 语义):
 
@@ -109,7 +109,7 @@ AGENTS.md:423 边界条款("SoC 架构**组件/拓扑/演进**类提案" → Arc
 | **P4** CHI 完整协议支持(`06-bis §7.6`)| CEP ProtocolEngine `ChiRnfAdapter` 完整实现(从 subset 到 full)| 当前 CHI RN-F subset 在 CEP ProtocolEngine 雏形 |
 | **P5** IOMMU 集成 + 跨 vendor coherence(`06-bis §7.7`,**scope reduction 待签发决策 ADR**,per oracle B2 注:NVLink/UALink 非历史 IOMMU)| **🟡 待签发独立 ADR**(非 CEP ADR 涵盖,需 scope reduction 决策)| 当前:仅文档化,无实施承接 |
 
-**注 1**:`06-bis §7.8`(行 653) = "v0.3 总 KPI 调整 — 串行激活,并发 ≤ 1",**非阶段范围**(per oracle B2-2 修订)。
+**注 1**:`06-bis §7.8`(行 653) = "v0.3 总 KPI 调整 — 串行激活,并发 ≤ 1",**非阶段范围**。
 
 **注 2**:`06 §15.4` 演化阶段编号(P2.0/P2.1/P3/P3.5/P4/P5,**无 P6**)是 CEP 系列 ADR 的唯一口径;`06 §11.4` 主 roadmap 表 P6 不引入(per `ADR-CEP-NUMBER-MAP §2 Decision 3` 冻结)。
 
@@ -117,7 +117,7 @@ AGENTS.md:423 边界条款("SoC 架构**组件/拓扑/演进**类提案" → Arc
 
 ---
 
-## 4. 跨仓同步机制(per oracle A1 评估)
+## 4. 跨仓同步机制
 
 沿用既有先例,不新造机制:
 
@@ -197,7 +197,7 @@ CEP 框架级文档(**6 层**骨架 + Stub Cache 接口 + Coherence Interface �
 
 **落地**:`docs/architecture/07-coherence-exploration-platform.md` 已创建(525 行),并注册到 `docs/architecture/README.md` Doc Map(per ADR-0057 theme doc sync)。
 
-### 5.3 循环依赖解除(per oracle 评审 S3)
+### 5.3 循环依赖解除
 
 CEP-01/03/04/05 头部引用本 ADR 作为"真源 3",但本 ADR v0.1 未签发 → 形成循环依赖。**解除方法**:
 
@@ -226,27 +226,7 @@ CEP-01/03/04/05 头部引用本 ADR 作为"真源 3",但本 ADR v0.1 未签发 �
 
 ## 7. v0.3 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| §1.1 新增 | oracle B3/B5 | 明确 CEP 6 层是 CEP 首次定义,非 06 v0.4 锁定 |
-| §2 决策 3 扩写 | oracle S9 | KPI 排队 10 change / 10 季度 + 准入门执行机制(DRI 人工 gate + tasks.md checklist)|
-| §2 决策 4 新增 | oracle S9 | 归"建模框架(CppTLM)"豁免论证(per AGENTS.md:423 边界条款对照) |
-| §3 修订 | oracle B5 | 06-bis §7.8 范围明确"CEP 首次定义"(per ADR-CEP-04 承接) |
-| §5 合并 | oracle S3 | §5 待决项 + §7 决策汇总合并,加 §5.3 循环依赖解除 |
-| §6 扩写 | oracle S4 | 加 `ADR-X.1(transaction-id)` 沿用 cross-ref |
-| 头部真源分级 | oracle S10 | 保持 ADR 标为真源 3;关联真源标注不再混用真源 1/2/3 误标 |
-
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 头部关联真源 | oracle B2-2 + metis G3 | 加 `ADR-CEP-00A` / `ADR-CEP-NUMBER-MAP` / `ADR-DGPU-XX` 系列(真源 3 一律标注)|
-| §2 决策 3 KPI 算术 | oracle B2-1 | Phase 0 计入 KPI(umbrella 不符 doc-only 豁免"0 函数签名/逻辑/构建改动"先例);10 = 1 + 6 + 2 + 1 算术闭环 |
-| §3 supersede 表 | oracle B2-2 | 06-bis 章节锚点校准:§7.3-§7.7 = 阶段范围,§7.8 = KPI 串行约束;每行加行号锚点 |
-| §3 supersede 表 | oracle S5 + ADR-CEP-NUMBER-MAP §2 Decision 3 | 加"06 §15.4 编号口径冻结,无 P6"注 |
-| §3 supersede 表 | oracle B2-2 §7.8 注 1 | 显式声明 §7.8 非阶段范围 |
-| §6 关联 ADR | oracle S10 + metis G3 | ADR 一律真源 3;CEP-00A / 06 / 07 / NUM 列入 |
-
----
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 8. Status Update(2026-10-21)—— §2 决策 3 准入门措辞修订(接口 PR → 接口规约 PR)
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——

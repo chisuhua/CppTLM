@@ -30,7 +30,7 @@ CEP 系列 ADR(CEP-00 ~ CEP-05)定义了 6 层骨架、canonical 10 流清单、
 - **实验输出契约**(每次实验必产出什么文件)
 - **metric 集合**(可观测指标的统一命名)
 - **A/B 对比格式**(协议/拓扑/目录策略对比的输出 schema)
-- **不可观测项的兜底**(per oracle "未达成 = 标注 not-collected")
+- **不可观测项的兜底**
 
 ---
 
@@ -141,16 +141,12 @@ per oracle 评审建议,任何必纳 metric 不可获得时(`experimental/` 工�
 
 ## 4. sweep / A-B 对比模式
 
-#**INV-CEP-06-IC5**(新增,2026-10-20):`memory_violations` 的判定**必须**覆盖 **SWMR + data-value 双不变量**;报告须能区分违例类型(SWMR 违例 / data-value 违例)。
-
 ## 4.1 sweep 模式(per `tools/run_sweep.py`)
 
 - **输入**:sweep 维度(protocol ∈ {CHI, CXL, TileLink, NVLink, UALink} / topology ∈ {mesh, ring, crossbar} / directory ∈ {full-map, sparse, broadcast} ...)
 - **执行**:对每个维度组合跑 1 个 run,产出 N 个 4 件套
 - **聚合**:`tools/aggregate.py` 生成 `experimental/<sweep_id>/sweep_summary.csv`(每行 = 1 个 run,每列 = 13 必纳 metric)
 - **可视化**:`tools/plot.py` 生成 `protocol_rank.png` / `topology_rank.png` / `directory_rank.png`
-
-#**INV-CEP-06-IC5**(新增,2026-10-20):`memory_violations` 的判定**必须**覆盖 **SWMR + data-value 双不变量**;报告须能区分违例类型(SWMR 违例 / data-value 违例)。
 
 ## 4.2 A/B 对比模式(per `tools/ab_compare.py`)
 
@@ -210,18 +206,4 @@ per oracle 评审建议,任何必纳 metric 不可获得时(`experimental/` 工�
 
 ## 9. v0.1 修订记录(本 ADR 初版)
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | metis G1 | 解战略盲点"探索平台没有探索" |
-| §2.1 13 必纳 metric | oracle GEP 评审建议 + metis G4 | 涵盖吞吐 / 延迟 / stall / 违例 |
-| §2.2 4 可选 metric | metis G1 sweep 需求 | link utilization / VC stall / snoop fanout / directory size |
-| §2.4 兜底契约 | oracle 评审建议 | not-collected + 禁止省略/0/-1 |
-| §3 4 条不变量 | 综合 | 与 §2.1-§2.4 一一对应 |
-| §4 sweep / A-B | metis G1 | 工具链与产出格式 |
-
----
-
-**版本**: v0.1 草案
-**最后更新**: 2026-10-20(v0.5 修订)
-**批准状态**: 🟡 待 Oracle v0.5 二次复审
-**维护者**: CppTLM build agent(architect mode)
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

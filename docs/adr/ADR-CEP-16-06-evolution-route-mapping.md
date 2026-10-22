@@ -138,13 +138,4 @@
 
 ## 7. 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | `06 v0.4 §15.4` 逐行 + `ADR-CEP-NUMBER-MAP Decision 3` 冻结口径 + `ADR-CEP-00 §3` | 逐项映射 + 处置词 + 归属 + P6 排除 |
-
----
-
-**版本**: v0.1 草案
-**最后更新**: 2026-10-21
-**批准状态**: 🟡 待 Oracle 复审
-**维护者**: CppTLM build agent(architect mode)
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

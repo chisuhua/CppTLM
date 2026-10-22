@@ -16,7 +16,7 @@
 >
 > **一手锚点**:
 > - ProtoGen ISCA 2018 **p.1 / p.12**:真实 non-stalling MSI controller 约 **18-20 状态 / 46-60 转换**(E1)→ Stub 的 4 个稳定态是**刻意简化**,不是缓存模型
-> - 源码 `include/tlm/cache_tlm.hh`:既有 `CacheTLM : public ChStreamModuleBase`(174 行)→ CEP Stub 与它是**不同物**(per `ADR-CEP-15`)
+> - 源码 `include/tlm/cache_tlm.hh`:既有 `CacheTLM: public ChStreamModuleBase`(174 行)→ CEP Stub 与它是**不同物**(per `ADR-CEP-15`)
 
 ---
 
@@ -170,13 +170,4 @@
 
 ## 7. 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | `ADR-CEP-07 IC7` + `ADR-CEP-08 IC2` 的"须被合同测试覆盖"要求 + `ADR-CEP-05 §7` 两条 α 失效判据 | 合同测试边界 + 10 条清单 + 双向性 + 两阶段落地 |
-
----
-
-**版本**: v0.1 草案
-**最后更新**: 2026-10-21
-**批准状态**: 🟡 待 Oracle 复审
-**维护者**: CppTLM build agent(architect mode)
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

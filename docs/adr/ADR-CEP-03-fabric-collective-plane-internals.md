@@ -11,13 +11,13 @@
 > - 真源 3:`ADR-CEP-06-experiment-protocol.md`(实验输出,本批起草)
 > - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(仿真语义,本批起草)
 > - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配,本批起草)
-> - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3 §5.2 `SnoopProbe`/`SnoopRespBundle`/`CoherenceMsg`(per `ADR-CEP-00A §3.2` 实证行号)— **沿用**,无 non-cacheable 概念(per oracle B10 修订)
+> - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3 §5.2 `SnoopProbe`/`SnoopRespBundle`/`CoherenceMsg`(per `ADR-CEP-00A §3.2` 实证行号)— **沿用**,无 non-cacheable 概念
 
 ---
 
 ## 1. 背景
 
-`ADR-CEP-01` 锁定 Fabric Collective Plane 作为旁路平面 + 完成域判别规则。本 ADR 锁定该平面的**内部接口 + 跨平面契约 + SHARP/UALink 防误分类规则**,作为 SHARP / UALink 插件实施的前置门(per oracle A6 "3 个生效条件" 之 1)。
+`ADR-CEP-01` 锁定 Fabric Collective Plane 作为旁路平面 + 完成域判别规则。本 ADR 锁定该平面的**内部接口 + 跨平面契约 + SHARP/UALink 防误分类规则**,作为 SHARP / UALink 插件实施的前置门。
 
 **核心问题**:集合通信的完成域是 group-scoped,与 coherence 的 pairwise 纪律不同。两个平面之间的 ordering/visibility 必须另有契约,否则:
 - 同一 endpoint 既发 coherent atomic 又发 SHARP reduce 到重叠地址时,两个 plane 之间的可见性/顺序无定义
@@ -34,7 +34,7 @@
 2. **集合 plane guardrail**:操作只允许作用于 registered collective region(per ADR-CEP-01 §3.1 抓取点 1 派生)
 3. **coherence `barrier` 流重钉为 Ordering Point**(per `ADR-CEP-02` Decision 3)
 
-### 决策 2:Fabric Collective Plane 抽象接口(per oracle A6 雏形)
+### 决策 2:Fabric Collective Plane 抽象接口
 
 ```systemverilog
 // Fabric Collective Plane —— 与 Coherence Interface 平行的独立抽象
@@ -83,9 +83,9 @@ endinterface
 
 ---
 
-## 3. 跨平面 ordering/visibility 契约(per oracle A6 §2)
+## 3. 跨平面 ordering/visibility 契约
 
-### 3.1 SHARP atomic vs cache-coherent atomic 区分(per oracle A6 §2 5 条规则)
+### 3.1 SHARP atomic vs cache-coherent atomic 区分
 
 **关键事实**:NVLink 线上是同一个 TL 请求,**区分点不在 opcode**。硬件真相是 NVSwitch 依据**fabric 侧状态**(该地址是否落在已注册的 SHARP reduction context / group table 内)决定是在 switch 内终结还是继续路由到 home node。
 
@@ -99,7 +99,7 @@ endinterface
 | **R4:epoch 纪律** | group_destroy 后区域回归 coherence 域,回归动作 = 完成事件触发 stale copy 无效化。epoch 未 commit 前,对该区域的 coherence atomic = **正常服务**;commit 后 = divert | `group_destroy` + Fabric ingress divert 表 |
 | **R5:可观测性** | divert 计数器 + fail-stop 断言("epoch commit 后仍有 coherence atomic 命中已注册区域 = error") | observability plane / testbench |
 
-### 3.2 R3 "non-cacheable 降级" 语义首次定义(per oracle B10 修订)
+### 3.2 R3 "non-cacheable 降级" 语义首次定义
 
 **修订**:06-bis §5 coherence_bundles 全文无 non-cacheable 概念(grep 零匹配)。**non-cacheable 降级语义由本 ADR 首次定义**,作为 `group_register_region` 内部 drain 流程的一个选项:
 
@@ -136,7 +136,7 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 
 ### 3.4 guardrail:registered collective region
 
-**强制规则**(per oracle A6 抓取点 + oracle B2-8 修订):
+**强制规则**:
 - 集合 plane 操作只允许作用于 registered collective region
 - 未注册区域的 reduce/broadcast/multicast 操作 = `group_register_error` (立即报错,不静默)
 - 注册时执行 R3 区域互斥 drain(**由发起注册的 node 端经自身 Coherence Interface 端口发出 `request(invalidate)`,plane 间零直接调用边**,per oracle B2-8 修订 + `ADR-CEP-01 §3.3 抓取点 1`),注销时执行 R4 epoch 失效化
@@ -145,7 +145,7 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 
 ## 4. SHARP 插件状态机雏形(per ADR-CEP-03 后续 OpenSpec 展开)
 
-**说明**:以下占位符为架构师勾勒状态机雏形,**类型未细化**(per oracle N1)。builder 阶段实施时按 C++ 实施细节展开。
+**说明**:以下占位符为架构师勾勒状态机雏形,**类型未细化**。builder 阶段实施时按 C++ 实施细节展开。
 
 ```cpp
 // 类型为占位符,builder 阶段细化
@@ -221,17 +221,4 @@ divert_t fabric_ingress_classify(ck_req_t req) {
 
 ## 8. v0.2 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| §3.2 新增 | oracle B10 | non-cacheable 语义首次定义 CEP-13(06-bis §5 全文无此概念,初版伪引) |
-| §3.3 编号修订 | oracle N2 | 场景编号补 C(SHARP reduce → SHARP reduce 同 group) |
-| §4 SHARP 状态机 | oracle N1 | 类型改为 C++ 伪代码 + 加占位符注释;移除初版 SV typo |
-| §7 决策汇总 | oracle S7 | CHI 插件能力 `{multicast_sync}` 与 ADR-CEP-01 统一(非"全空") |
-| §6 关联 ADR | oracle B6 | 加 ADR-CEP-02 canonical 10 流清单引用 |
-
----
-
-**版本**: v0.2 草案
-**最后更新**: 2026-10-20
-**批准状态**: 🟡 待 Oracle v0.5 二次复审
-**维护者**: CppTLM build agent(architect mode)
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

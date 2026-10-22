@@ -135,6 +135,7 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 > 1. 本表是**唯一真源**;schema / 代码 / 文档**只引用**,不复制
 > 2. 表中**不含**任何未列入 §5.1 的协议族
 > 3. 变更本表 = 触发决策 4 的路径判定
+> 4. **「协议族」此处按 `protocol_version` 行计**(本表 **8 行**)—— 与 `07 号 §5.1.1` 的「**6 族 / 8 实例**」是**两种粒度**(CXL 2.0 / 3.0 同族、`moesi_gpu` / `mesif` 同族,各族含 2 实例;per `07 号 §5.1.1` 族计数补记)。**本表不复制实例计数**
 
 ---
 
@@ -185,18 +186,7 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 
 ## 8. 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | `objective-cep-platform §8.1 R2` + `ADR-CEP-12` 的 `protocol_version` 字段 | 版本分离 + 锁定表 + 校验 + 升级路径 |
-| 决策 2 锁定表 | 各协议族规范的**可实现**版本选型(非"最新版") | 6 族版本号 + 关注语义子集(**初稿 6 族;2026-10-22 增至 8 族**,见下一行) |
-| 2026-10-22 增补(台账 **Entry #12** [adr-amendment]) | R-13:`moesi_gpu` / `mesif` 登记进 `07 号 §5.1.1` 后,`INV-CEP-11-IC1` 要求其 `protocol_version` 落在本表内 | 决策 2 表 + §3 表**各 +2 行**(`moesi-gpu-1.0` / `mesif-1.0`)+ 补记「两表须同步」+ §7 计数 6 → 8 |
-
----
-
-| 2026-10-22 增补(台账 **Entry #13** [adr-amendment]) | ArchForge 应答我方「待回应清单」10 条(`4ff2fa6`):判据 (b) **成立** → `moesi_gpu` 的 E→M 静默升级**已裁定为域可见写** | **§3 表行「争点」表述已失效**(该争点已裁定);本表**不**复制状态值 → 状态以 `ADR-CEP-05 §13.1` 为**唯一权威**。**`protocol_version` 不升版**(`moesi-gpu-1.0` 保持)—— 详见 §9 Status Update |
-
----
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 9. Status Update(2026-10-22,per 台账 Entry #13)
 
 > **授权**:台账 `objective-cep-platform §11` **Entry #13** [adr-amendment]。

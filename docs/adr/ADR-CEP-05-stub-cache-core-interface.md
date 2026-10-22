@@ -18,7 +18,7 @@
 
 ## 1. 背景
 
-### 1.1 关于"06 v0.4 §15.4 P3 Stub Cache 5 接口"伪引的修订(per oracle B4)
+### 1.1 关于"06 v0.4 §15.4 P3 Stub Cache 5 接口"伪引的修订
 
 **经 oracle 评审实证**:`06-inter-module-network.md` v0.4 §15.4(行 1168-1222)P3 阶段范围是 "SnoopFilter directory-based + MesiGpuProtocol + MesiThreeLevelProtocol + translate_snoop 协议转换",**全文无 "Stub Cache" / "request_line"**;P3 阶段范围被 `ADR-CEP-04` 完整继承(per ADR-CEP-00 §3 supersede 范围映射表)。
 
@@ -103,7 +103,7 @@ Traffic Generator ──(cpu_side: read/write/evict)──> Stub Cache
 | 流 8 `address_resolve` | 在 ProtocolEngine 内终结 | 不泄漏到 stub 任何接口 |
 | 流 10 `snoop_completion_ack` | 由 ProtocolEngine 内部消化,与 stub `snoop_resp` 配对 | stub 不知道 snoop ack 单独流存在 |
 
-**关键简化**(per oracle 验证建议 V1):forward_data 不可分辨性是 α 方案最关键简化 — stub 收到的 completion 无论从 memory 还是 peer 转发,stub 状态迁移与数据落位逐位一致。**契约测试 1 必须钉死**。
+**关键简化**:forward_data 不可分辨性是 α 方案最关键简化 — stub 收到的 completion 无论从 memory 还是 peer 转发,stub 状态迁移与数据落位逐位一致。**契约测试 1 必须钉死**。
 
 ### 决策 4:bypass 模式作为 testbench 配置选项
 
@@ -115,7 +115,7 @@ Traffic Generator ──(cpu_side: read/write/evict)──> Stub Cache
 
 ## 3. 10 条契约测试清单(per oracle A7 §5 + oracle S8 修订:优先级统一)
 
-**优先级统一**(per oracle S8 修订):本节"必做前 2 条"+ 决策汇总"优先 1+8"**冲突**,按本节为准 — "必做前 2 条"为 v0.1 首版强调;**v0.2 统一为"必做前 2 条 + 高优先级次轮 8"**,总优先级 1→2→8→others。
+**优先级统一**:本节"必做前 2 条"+ 决策汇总"优先 1+8"**冲突**,按本节为准 — "必做前 2 条"为 v0.1 首版强调;**v0.2 统一为"必做前 2 条 + 高优先级次轮 8"**,总优先级 1→2→8→others。
 
 按"折叠表"组织,每条不暴露的流一个折叠断言:
 
@@ -169,7 +169,7 @@ NONE → I → S → E → M(per MESI)
 
 **INV-CEP-05-IC1**(新增,2026-10-20 落位):**Stub Cache Core 只暴露稳定状态**;协议的**瞬态状态**(per ProtoGen 的 transient states,如 ArchForge 09 MOESI/GPU 的 `T`)与**协议私有状态**(token 等)一律住在 **Protocol Engine 插件内部**,不泄漏到 Stub 的 4 值 `perm` 枚举。
 - **来源**:`ADR-CEP-17 §2 Decision 4`;一手依据 ProtoGen ISCA 2018 p.1(真实 non-stalling MSI 约 18-20 状态 / 46-60 转换,per p.12)
-- **落位说明**:此前仅在 `ADR-CEP-17 §3.1` 声明,未落 owner ADR(per oracle 全面架构审查 N1)。本条为**补落**,非新增。
+- **落位说明**:此前仅在 `ADR-CEP-17 §3.1` 声明,未落 owner ADR。本条为**补落**,非新增。
 
 ---
 
@@ -206,7 +206,7 @@ endinterface
 
 ---
 
-## 7. α 失效判据(per oracle A7)
+## 7. α 失效判据
 
 两条判据**方向相反**(1 = 协议 → stub 泄漏;2 = stub → 协议信息不足);缺任一,α 方案只是**单向**可证伪。
 **当前状态:判据 1 不触发 · 判据 2 已触发**(见 **§13.1**)。
@@ -241,7 +241,7 @@ endinterface
 
 ## 9. 与 CppTLM 现有 CacheTLM 对齐(待 A13 决议 — per oracle S1 修订)
 
-**当前状态**(per oracle S1):A1 归口已在 `ADR-CEP-00` §5 拍板;但 A13 与现有 CacheTLM 对齐**仍待决议**(不依赖 A1)。
+**当前状态**:A1 归口已在 `ADR-CEP-00` §5 拍板;但 A13 与现有 CacheTLM 对齐**仍待决议**(不依赖 A1)。
 
 **当前默认**:沿用 06 §15.4 P3 stub 精神(per oracle B2-9 修订:06 §15.4 P3 实际是 SnoopFilter,**非 Stub Cache 雏形**);A13 拍板后展开。
 
@@ -288,19 +288,7 @@ endinterface
 
 ## 12. v0.2 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| §1.1 新增 | oracle B4 | 明确"06 v0.4 §15.4 P3 Stub Cache"是**伪引**,Stub Cache 接口由本 ADR 首次定义 |
-| §2 Decision 1 表格 | oracle B8 + v0.4 B2-10 | 6 接口命名逐字对齐 ADR-CEP-02 canonical 10 流清单;接口总数 5 → 6(补 `snoop_resp` 显式)|
-| §2 Decision 1 命名表 | oracle A7 | 沿用命名修订(`complete → completion` 等) |
-| §3.1 修订 | oracle S8 | "必做前 2 条" + 决策汇总"优先 1+8" 冲突统一为"必做前 2 条 + 高优先级次轮 8" |
-| §4.3 INV-SC4 | oracle S4 | `txn_id` 命名沿用 `ADR-X.1-transaction-id.md`,不独立定义 |
-| §6 折叠表审计 | oracle N5 | `adapter` / `ProtocolEngine` 术语统一为 `ProtocolEngine` |
-| §9 修订 | oracle S1 | A13 状态改为"待 A13 拍板"(非"待 A1 归口决议后展开");"沿用 06 §15.4 P3 5 接口" 改为"未来 A13 拍板后展开" |
-| §10 关联 ADR | oracle B8 | 加 ADR-CEP-02 canonical 10 流清单引用 |
-
----
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 13. Status Update(2026-10-22,per 台账 Entry #12 → #18)
 
 > **授权**:Entry #12(R-13 登记 `moesi_gpu` / `mesif`)→ #13(判据 (b) 成立)→ **#18(§7 正文刷新)**。

@@ -6,7 +6,8 @@
 > **作用域**: **CEP 仿真语义(functional/timing 推进)+ 集成 seam(ModuleFactory 注册方式)+ NullProtocolEngine**,解 metis G4 战略盲点
 > **关联真源**:
 > - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4 §5.1 simulation_mode 字段(per oracle B3-5 实证 — 06 §4.7 不存在,真源在 06 §5.1 + 01-hybrid §4.7)
-> - 真源 1:`docs/architecture/01-hybrid-architecture-v2.1.md` v2.1.10 §4.7(per oracle B3-5 实证)
+> - 真源 1:`docs/architecture/01-hybrid-architecture-v2.1.md` v2.1.10 §1.1(6 层)+ §4.7
+> - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3 §5(SnoopProbe / SnoopRespBundle 沿用)
 > - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口,草案)
 > - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射,本批起草)
 > - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流清单)
@@ -21,12 +22,6 @@
 > - 真源 3:`ADR-DGPU-09-driver-visible-minimal-soc-scope.md`(driver-visible 入口)
 > - 真源 1:`01-hybrid-architecture-v2.1.md` v2.1.10 §1.1(6 层)
 > - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3 §5(SnoopProbe / SnoopRespBundle 沿用)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口)
-> - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射)
-> - 真源 3:`ADR-CEP-06-experiment-protocol.md`(实验输出)
-> - 真源 3:`ADR-DGPU-12-soc-internal-tlm-wiring-principle.md`(ModuleFactory 装配)
-> - 真源 3:`ADR-DGPU-08-abi-freeze-policy.md`(23 ABI 冻结)
-> - 真源 3:`ADR-DGPU-09-driver-visible-minimal-soc-scope.md`(driver-visible 入口)
 
 ---
 
@@ -43,7 +38,7 @@ CEP 系列 ADR 长期断言"CEP 与 simulation_mode 正交"(per `ADR-CEP-00 §6`
 
 ### 1.2 本 ADR 的定位
 
-本 ADR 解 G4 **仿真语义 + 集成 seam**;06-bis 既有产物处置另起 ADR(per metis G6.8)。
+本 ADR 解 G4 **仿真语义 + 集成 seam**;06-bis 既有产物处置另起 ADR。
 
 ---
 
@@ -71,7 +66,7 @@ CEP 系列 ADR 长期断言"CEP 与 simulation_mode 正交"(per `ADR-CEP-00 §6`
 - functional:no-op
 - timing:cycle accumulation,flush 时钟
 
-### 决策 3:ModuleFactory 集成 seam(per oracle v0.4 B7 实证修订)
+### 决策 3:ModuleFactory 集成 seam
 
 **重要**:既有宏形式 `REGISTER_CHSTREAM(T)` / `REGISTER_OBJECT(T)` **不存在**(per oracle B7 + grep 实证:`include/chstream_register.hh:50` `REGISTER_CHSTREAM` 无参,`include/modules.hh:30` `REGISTER_OBJECT` 无参 no-op)。CEP 模块采用**真实注册机制**:
 
@@ -86,9 +81,9 @@ CEP 系列 ADR 长期断言"CEP 与 simulation_mode 正交"(per `ADR-CEP-00 §6`
 - CEP 模块**不**作为 23 ABI 入口(per `ADR-DGPU-08 §2.3` 0 新增约束)
 - CEP 模块**不**进 `cpptlm_emulator.h`(per `ADR-DGPU-08` 冻结面)
 - CEP 模块**不**改 `include/tlm/pcie/pcie_endpoint_tlm.h` `[[deprecated]]` 状态(per `ADR-DGPU-09` driver-visible 入口)
-- **新增约束**:CEP 模块注册走**真实注册机制**,不发明宏形式(per oracle v0.4 B7 修订)
+- **新增约束**:CEP 模块注册走**真实注册机制**,不发明宏形式
 
-### 决策 4:`NullProtocolEngine` 作为 ProtocolEngine 默认实现(per metis G4)
+### 决策 4:`NullProtocolEngine` 作为 ProtocolEngine 默认实现
 
 ```cpp
 // include/tlm/cep/null_protocol_engine.hh
@@ -110,7 +105,7 @@ public:
 };
 ```
 
-**用途**(per metis G4 "NullProtocolEngine"):
+**用途**:
 - Stub Cache Core 单独测试(无网络) — 用于 A12 stub 可验证性
 - ProtocolEngine 接入对端(per A10 插件能力映射表) — 用于 stub ↔ ProtocolEngine 解耦测试
 - 平台 boot/shutdown 路径测试
@@ -134,7 +129,7 @@ public:
 `simulation_mode` 是 JSON 字段,ProtocolEngine 通过 `INIT_CONFIG` 读入后决策:
 - functional:disable timing-specific counters,enable correctness checks
 
-### 决策 8:06-bis 既有产物处置(per metis G6.8)
+### 决策 8:06-bis 既有产物处置
 
 **本 ADR 不处置**;独立 ADR `ADR-CEP-07A-06bis-artifact-disposition.md`(后续起草)处理:
 - `include/bundles/coherence_bundles_tlm.hh`(不存在,待创建 — per ADR-CEP-00A §3.6)
@@ -218,7 +213,7 @@ tick():
 
 ## 6. 抓取点
 
-1. **NullProtocolEngine 与 NullCollectivePlane 双 null 实现必须存在**(per metis G4 兜底)
+1. **NullProtocolEngine 与 NullCollectivePlane 双 null 实现必须存在**
 2. **`simulation_mode` 与 `network.mode` 不共存**(per 06 v0.4 §5.2)
 3. **CEP 模块不破 23 ABI / frozen headers**(machine grep 检查)
 4. **`simulation_mode` 字段在 CEP JSON 必含**(per ADR-CEP-06 §6 抓取点 1)
@@ -251,7 +246,7 @@ tick():
 | `simulation_mode` 单一维度 | functional / timing 1 维度,无 network.mode | ✅ 已拍板 |
 | functional / timing 推进 | functional = 同步直调;timing = cycle-accurate | ✅ 已拍板 |
 | ModuleFactory 集成 | `REGISTER_CHSTREAM` / `REGISTER_MODULE` / `REGISTER_OBJECT` 沿用 | ✅ 已拍板 |
-| NullProtocolEngine | 新建(per metis G4)| ✅ 已拍板 |
+| NullProtocolEngine | 新建| ✅ 已拍板 |
 | NullCollectivePlane | 沿用 `ADR-CEP-03 §2 Decision 3` | ✅ 已拍板 |
 | CEP 不破 23 ABI / frozen headers | 严格沿用 ADR-DGPU-08/09 | ✅ 已拍板 |
 | 06-bis 既有产物处置 | 独立 ADR `ADR-CEP-07A` 处理(本 ADR 不展开)| ✅ 已拍板 |
@@ -261,29 +256,4 @@ tick():
 
 ## 9. 修订记录
 
-### 9.1 v0.7 修订记录(2026-10-21)
-
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| **决策 9 新增** | 调研 F20(E1:博士论文 §9.2)+ Oracle 独立复审 | **插件接口可组合性**要求:声明排序假设 + VC 绑定,预留组合接缝;**接口预留 ≠ 组合落地** |
-| **INV-CEP-07-IC7 新增** | 决策 9 | 插件接口组合接缝的可机器检查契约 |
-| §6 抓取点 6 | 决策 9 | 插件接口可组合性检查项 |
-| 关联 ADR 扩充 | 本批起草 | 补 08 / 09 / 12 / 13 交叉引用 |
-
-### 9.2 v0.1 修订记录(本 ADR 初版)
-
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | metis G4 | 解战略盲点"无仿真语义 + 无集成 seam" |
-| §2.2 functional/timing 推进 | 06 §5.1 + `chstream_module.hh:73` advance_cycle() | 仿真语义首次定义 |
-| §2.3 ModuleFactory 集成 | 06 v0.4 §10 + ADR-DGPU-12 | 注册宏体系沿用 |
-| §2.4 NullProtocolEngine | metis G4 | A12 解耦测试兜底 |
-| §2.8 06-bis 产物 | metis G6.8 | 独立 ADR 处理,不展开 |
-| §3 6 条不变量 | 综合 | 与 §2 一一对应 |
-
----
-
-**版本**: v0.7 草案
-**最后更新**: 2026-10-21(v0.7 修订)
-**批准状态**: 🟡 待 Oracle v0.5 二次复审
-**维护者**: CppTLM build agent(architect mode)
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

@@ -219,17 +219,7 @@ protocol_instance:
 
 ## 7. 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| 全文起草 | 调研 v0.4 §5.6 F16/F24/F25 + §5.7 证据类型归类 + Oracle 独立复审 Q5/Q6/Q7 | schema 全量 + 8 项决策 + 3 条 invariant |
-| 决策 1 的 5 个新增维度 | Oracle 独立复审 Q7 | `id`/`status`/`protocol_version`、`vc_binding`、`sharer_tracker`、`flow_support`、`atomic` |
-| 决策 5 | Oracle 独立复审 N8 + 一手 `noc_bundles_tlm.hh:38` | key 绑定 `vc_id`;`named_network` 解析失败即 config fail |
-| 决策 7 | Oracle 独立复审 N5 | 自失效类协议的 Sharer Tracker 选型修正 |
-| 决策 8 | 调研 F16(E3,形似非同构) | `combination_capabilities` 正交于 `family` |
-| **§9 Status Update**(2026-10-22,台账 **Entry #13**) | ArchForge 应答(`4ff2fa6`):判据 (b) **成立** → **R-2 已触发** | **§9**(新增**独立** Status Update 节):R-2 状态 + `perm` 形态约束(Q-3b 补充)+ 路径标签澄清(决策 4 **不适用**)+ 未变更项。**§8 主体(per-network 嵌套形态)零改动** |
-
----
-
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## 8. Status Update(2026-10-22):`ordering_assumption` / `vc_binding` 升 per-network 嵌套形态
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——

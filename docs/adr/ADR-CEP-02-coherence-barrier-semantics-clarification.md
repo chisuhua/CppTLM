@@ -17,7 +17,7 @@
 
 ## 1. 背景
 
-### 1.1 Coherence Interface 抽象事务流 — CEP 首次定义(per oracle B1/B8 修订)
+### 1.1 Coherence Interface 抽象事务流 — CEP 首次定义
 
 之前讨论中提及的"ADR-I01 / 06 §15.1 / 06-bis §11.5"中 10 条抽象事务流的描述,**经 oracle 评审实证**:
 - `06-inter-module-network.md` §15.1 行 1170-1179 内容为引用 ArchForge 文档清单,无 10 条流清单
@@ -47,7 +47,7 @@ CEP 抽象事务流必须避免歧义 — `barrier` 流存在混入两种 barrie
 | 4 | `snoop_resp` | node → center | requester-scoped | snoop 响应:hit + state + dirty + data + txn_id |
 | 5 | `writeback` | node → center | requester-scoped | 驱逐/写回:addr + data + dirty |
 | 6 | `forward_data` | node ↔ node(经中心调度)| requester-scoped | 数据转发:src_addr + dst_addr + data + perm(per `ADR-CEP-05` §2 折叠映射表 不可分辨性)|
-| 7 | `back_invalidate` | **center → node**(per oracle B2-6 修订)| requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 BISnp 走这里,host→device 方向)|
+| 7 | `back_invalidate` | **center → node**| requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 BISnp 走这里,host→device 方向)|
 | 8 | `address_resolve` | node ↔ center | requester-scoped | 地址归属解析:pa + node_id → home_node + coherent_flag |
 | 9 | `barrier` | center → node ↔ center(双向)| **requester-scoped**(per Decision 3) | 单请求者排空 / 可见性点;**不携带 group_id / participant_count / epoch_id** |
 | 10 | `snoop_completion_ack` | node → center | requester-scoped | snoop 完成后 ack(CHI CompAck 类);不与 `completion` 流重叠 |
@@ -66,7 +66,7 @@ CEP 抽象事务流必须避免歧义 — `barrier` 流存在混入两种 barrie
 - **CEN-Ib11**(2026-10-20 新增):atomic 意图作为 `request` 流的**独立属性**承载;`perm` 枚举**维持 4 值锁**(`NONE`/`READ`/`UNIQUE`/`WRITEBACK`),**不新增 "ATOMIC" perm 值**
 
 **跨 ADR 一致性要求**:
-- `ADR-CEP-05` §2 必须逐字对齐本表 10 条流(per oracle B8 修订)
+- `ADR-CEP-05` §2 必须逐字对齐本表 10 条流
 - `ADR-CEP-03` / `ADR-CEP-04` / `ADR-CEP-01` 引用本表时使用本 ADR canonical 名
 
 ### 决策 3:barrier 流钉死为 Ordering Point 语义
@@ -113,14 +113,6 @@ CXL Fence 的语义 = requester-scoped("我之前的写对 X 可见后再前进"
 
 ## 3. 关键约束
 
-#> **⚠️ v0.3 补充(per `ADR-CEP-17 §2 Decision 6` + oracle 全面架构审查 Q7)**:新增 **CEN-Ib11** —— atomic 意图的承载方式。
->
-> **一手依据**:ProtoGen ISCA 2018 p.7 局限 L2:"ProtoGen **cannot generate new protocol actions not explicitly specified in the SSP**. For example, **it cannot infer how atomic read-modify-writes must be implemented without it being specified in the SSP**" —— atomic RMW 是**协议动作**,须由协议规格显式给出,不能由框架推导。
->
-> **结论**:atomic 的**语义**归 Protocol Engine 插件;atomic 的**意图**通过流 1 `request` 的**独立属性**(与 `perm` 正交)传递。**canonical 10 流不变**;**`perm` 枚举不变**。
->
-> **配套**:一致性标签(SC / TSO / RC / PLO)对同一 `barrier` 的效果差异归 `ADR-CEP-12` 的 `consistency_labels`,**不改本 ADR 的流语义**(per `ADR-CEP-17` 决策 7 / F7)。
-
 ## 3.1 barrier 分类 litmus test(per ADR-CEP-01 §3.1)
 
 ```text
@@ -135,15 +127,7 @@ CXL Fence 的语义 = requester-scoped("我之前的写对 X 可见后再前进"
 
 **复合流**:`release-drain → rendezvous` = Ordering drain + Collective rendezvous 的复合,由 Core / Traffic Generator 层编排。
 
-#> **⚠️ v0.3 补充(per `ADR-CEP-17 §2 Decision 6` + oracle 全面架构审查 Q7)**:新增 **CEN-Ib11** —— atomic 意图的承载方式。
->
-> **一手依据**:ProtoGen ISCA 2018 p.7 局限 L2:"ProtoGen **cannot generate new protocol actions not explicitly specified in the SSP**. For example, **it cannot infer how atomic read-modify-writes must be implemented without it being specified in the SSP**" —— atomic RMW 是**协议动作**,须由协议规格显式给出,不能由框架推导。
->
-> **结论**:atomic 的**语义**归 Protocol Engine 插件;atomic 的**意图**通过流 1 `request` 的**独立属性**(与 `perm` 正交)传递。**canonical 10 流不变**;**`perm` 枚举不变**。
->
-> **配套**:一致性标签(SC / TSO / RC / PLO)对同一 `barrier` 的效果差异归 `ADR-CEP-12` 的 `consistency_labels`,**不改本 ADR 的流语义**(per `ADR-CEP-17` 决策 7 / F7)。
-
-## 3.2 barrier 流的契约规范(per oracle S4 修订)
+## 3.2 barrier 流的契约规范
 
 ```text
 barrier 流接口信号(per ADR-CEP-02 锁定语义):
@@ -158,14 +142,6 @@ barrier 流接口信号(per ADR-CEP-02 锁定语义):
 - barrier 流**不携带** `group_id` 字段(per ADR-CEP-01 完成域判别规则 + CEN-Ib9)
 - barrier 流**不携带** `participant_count` 字段(同上)
 - barrier 流**不携带** `epoch_id` 字段(同上,group lifecycle 属 Collective Plane)
-
-#> **⚠️ v0.3 补充(per `ADR-CEP-17 §2 Decision 6` + oracle 全面架构审查 Q7)**:新增 **CEN-Ib11** —— atomic 意图的承载方式。
->
-> **一手依据**:ProtoGen ISCA 2018 p.7 局限 L2:"ProtoGen **cannot generate new protocol actions not explicitly specified in the SSP**. For example, **it cannot infer how atomic read-modify-writes must be implemented without it being specified in the SSP**" —— atomic RMW 是**协议动作**,须由协议规格显式给出,不能由框架推导。
->
-> **结论**:atomic 的**语义**归 Protocol Engine 插件;atomic 的**意图**通过流 1 `request` 的**独立属性**(与 `perm` 正交)传递。**canonical 10 流不变**;**`perm` 枚举不变**。
->
-> **配套**:一致性标签(SC / TSO / RC / PLO)对同一 `barrier` 的效果差异归 `ADR-CEP-12` 的 `consistency_labels`,**不改本 ADR 的流语义**(per `ADR-CEP-17` 决策 7 / F7)。
 
 ## 3.3 关于 `barrier_direction` 字段说明
 
@@ -214,19 +190,4 @@ barrier 流接口信号(per ADR-CEP-02 锁定语义):
 
 ## 7. v0.2 修订记录
 
-| 修订 | 来源 | 内容 |
-|------|------|------|
-| §1.1 新增 | oracle B1 | 明确 Coherence Interface 10 条流是**本 ADR 首次定义**(非 ADR-I01 / 06 §15.1 / 06-bis §11.5 既有) |
-| §2 决策 0 新增 | oracle B8 | 首次定义 canonical 10 条流清单 + 不变量集合 CEN-Ib1~CEN-Ib10 |
-| **v0.3 新增 CEN-Ib11** | `ADR-CEP-17` 决策 6 + oracle 全面架构审查 Q7 | **atomic 意图承载方式**:`request` 流独立属性 + `perm` 4 值锁(一手:ProtoGen p.7 局限 L2)。**canonical 10 流不变** |
-| §2 第 10 条 | oracle B8 | 决定 `snoop_completion_ack` 而非初版含糊的 `(back_invalidate_resp)` 或 `barrier_resp` |
-| §3.2 修订 | oracle S4 | `barrier_txn_id` 沿用 `ADR-X.1-transaction-id.md` snake_case 命名 |
-| §3.3 新增 | oracle B6 | `barrier_direction` 字段**首次定义**(06-bis 全文无 barrier 章节,初版引用是伪引) |
-| §4 修订 | oracle B6 + v0.3 B3-7 | 06 §15.4 P2.0-P5 表格保留(无 P6),删除 06-bis §11.5 引用 |
-
----
-
-**版本**: v0.2 草案
-**最后更新**: 2026-10-20
-**批准状态**: 🟡 待 Oracle v0.5 二次复审
-**维护者**: CppTLM build agent(architect mode)
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
