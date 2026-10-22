@@ -951,6 +951,11 @@ DRI 于 2026-10-22 拍板 4 个决策(决策简报 `.opencode/plan/20261022-cep-
 **未闭合**: ① **R10** 真人外部评审(→ Stage 0 不 archive)② **Q-3**(R-2 判据 (b))→ A6 阻塞
 ③ D-9 批 2 的 20 个锚点待同批重生成 ④ `fabric.*` 待 Stage 1 首个 implemented 实例跑过后再纳冻结集
 ⑤ **M-4 行为侧**(credit 计入 `VC_DAT` 桶)待 Stage 1 前置决策 ⑥ **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期,D2 决策)
+⑦ ⚠️ **`openspec validate cpptlm-cep-umbrella --strict` = rc 1 —— 批次前即如此**,2 个预存 WARNING:
+「spec.md 头部元数据块不被 archive 携带」「`## ADDED Requirements` 与首个 Requirement 之间有文本」。
+**已实测排除本批责任**:在批次前的 commit(`5b3f2ecd`)上跑同样命令 → **rc=1 + 同样 2 个 warning**;
+把本批改过的 `spec.md` 换回去再跑 → **仍 rc=1 + 同样 2 个 warning**。
+修复需改 **spec 结构**(冻结产物)→ **另起决策**,不在本批。**AC-7 因此为「预存不满足」而非本批回归**
 
 **关联**: Entry #9(批 1 授权记录)· Entry #11(第 1 轮对外动作 + M-4)·
 计划 `.opencode/plan/20261022-cep-remaining-batches.md` §3.1 / §5 Step 3 ·

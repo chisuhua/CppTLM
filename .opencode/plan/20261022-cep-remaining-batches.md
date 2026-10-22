@@ -311,7 +311,9 @@
       —— **零处**落在「当前口径」语境的冻结产物里
       (覆盖面含 `ADR-CEP-12:39` · `ADR-CEP-17:338` · `07 号:323/:364` · `interface-alignment.md:88` · `research:1140` —— 2026-10-22 第 2 轮复核的漏网处)
 - [ ] **AC-6** T2 后 `ADR-CEP-05` 的「当前不触发」陈述**与 §5.1.1 登记表一致**(路线 B 的限定注记在位)
-- [ ] **AC-7** T2 后 `openspec validate cpptlm-cep-umbrella --strict` PASS
+- [ ] **AC-7** T2 后 `openspec validate cpptlm-cep-umbrella --strict` ⚠️ **预存不满足**(rc=1,2 个 WARNING:spec.md 头部元数据块不被 archive 携带)。
+      **已实测排除本批责任**:批次前 commit(`5b3f2ecd`)同样 rc=1 + 同样 2 个 warning;把本批的 `spec.md` 换回去再测仍 rc=1。
+      修复需改 **spec 结构**(冻结产物)→ **另起决策**
 - [ ] **AC-8** T2 台账 **Entry #12** + 冻结清单重生成(`--authorized-by "Entry #12"`);`frozen_at_commit` 须指向**产物所在**的 commit
       —— **两步 commit 流程**:先 commit 产物 → `--update` → 再 commit 清单(2026-10-22 复审 B4 的教训:
       清单的 `frozen_at_commit` 若指向**变更前** HEAD,provenance 即为假,自检会报出)
