@@ -1,7 +1,8 @@
 # CEP PoC Spike 用例规格（S1 / S2 / S3）
 
 > **日期**: 2026-10-22 · **作者**: CppTLM CEP DRI（build agent）
-> **状态**: 📋 **规格草案（不含实现）** · 登记为 Stage 1 change 待 DRI 拍板（P-1）
+> **状态**: 📋 **规格** · S2 **实跑通过**（2026-10-22 —— 初版 RUN 被本仓 critic 证伪 3 BLOCKERS 后修正重跑,
+> 证据以台账 **Entry #16** 为准;spike 已注册 ctest 作回归门）· S1 / S3 待实现
 > **来源**: [`20261022-cep-remaining-batches.md`](../../.opencode/plan/20261022-cep-remaining-batches.md) §10（P-2）
 > **上游计划**: [`20261022-cep-contract-convergence-batch1.md`](../../.opencode/plan/20261022-cep-contract-convergence-batch1.md)（批 1）
 > **对外载体**: [`2026-10-21-cep-archforge-response-receipt.md`](./2026-10-21-cep-archforge-response-receipt.md) §8.5.1（Q-3e）

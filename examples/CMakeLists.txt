@@ -91,6 +91,18 @@ set_tests_properties(test_cpptlm_emulator_dlopen_minimal_soc PROPERTIES
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/examples)
 
 # ==============================================================================
+# CEP PoC Spike S2(可丢弃单文件 spike,per docs/implementation/2026-10-22-cep-poc-spike-spec.md §3.2)
+# 硬边界(规格 §1.2):不进 ModuleFactory / 不注册 ABI / 无公共 API / 零冻结产物改动
+# 注册 ctest 为「确认 + 回归门」落地(S2 定位 per 台账 Entry #13 ④ / Entry #16);
+# WORKING_DIRECTORY = 仓库根 —— spike 按相对路径读声明 JSON。
+# ==============================================================================
+add_executable(cep_poc_spike_s2 cep_poc_spike_s2.cc)
+target_link_libraries(cep_poc_spike_s2 PRIVATE cpptlm_core)
+target_include_directories(cep_poc_spike_s2 PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+add_test(NAME cep_poc_spike_s2 COMMAND cep_poc_spike_s2)
+set_tests_properties(cep_poc_spike_s2 PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# ==============================================================================
 # HSK-8 Phase 2 Step 6: examples 同样需要 PTX-EMU shared libs
 # ==============================================================================
 if(CPPTLM_WITH_PTX_EMU)

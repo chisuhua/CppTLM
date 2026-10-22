@@ -1152,6 +1152,149 @@ ArchForge 回答单 `docs/roadmap/cep-interface-alignment-response-2026-10-22.md
 
 ---
 
+### Entry #15 — 2026-10-22 [go-decision]
+
+**主题**: DRI 拍板「推送 + 开 S2 spike」并**当轮完成实测** —— S2 = 确认 + 回归门正位
+
+**触发**: Entry #14 对账闭环后,A 矩阵待办即问「三条待办里唯一零外部依赖的活」;
+DRI 选「推送 + 开 S2 spike」。S2 的两个前置(A4 / A6)均已于 2026-10-22 闭合
+(per 规格 §4.1),无循环依赖。
+
+**① 变更范围(硬边界逐条自证)**
+
+| 项 | 内容 |
+|----|------|
+| 新文件 | `examples/cep_poc_spike_s2.cc`(单文件 spike;不进 ModuleFactory / 不注册 ABI / 无公共 API) |
+| 构建接线 | `examples/CMakeLists.txt` +3 行(cep_poc_spike_s2 三行模式);**零 add_test**(spike 不进 CI,按需手跑) |
+| 状态头 | 规格 `:4` 📋 草案 → S2 已实跑通过 |
+| **零冻结产物** | fabric.json / protocol_instance.schema.json 只**读**(runtime 加载比对,无写入) |
+
+**② 语义判位(5 条,先对齐再实现)**
+
+1. 判据 (a)(b) 原文照收:`s1=E`(store 命中静默升 `s2=M`,零外部通信)+ (b) 析取逐态评估
+   (`ADR-CEP-13:99-103`)。
+2. 主路径表义 = `E` 行第 `Wr` 列 = 3(09 号 `:152` —— **与 Q-3a 同一引用点**)。
+3. s1 支语义 = E+probe → **ACK 无数据**(ArchForge microarch/coherence-protocol.md`::255-263`)——
+   域内实证「E 支不成立」,与 Q-3a 论证体一致。
+4. 降级语义 = M+READ_SHARED → **O** + data 转发(同一文件 `:224`)——
+   **刻意避开** `:226` 的 M+INVALIDATE→I(D-9 批 2 待裁定单元格,spike 不依赖未裁定语义,
+   per Entry #14 ②)。
+5. 转发形态 = 流 3 snoop(center→node)↔ 流 4 snoop_resp(node→center)DATA_AND_ACK,
+   数据经流 6 forward_data 同槽(32 号 §6.0.1)。
+
+**③ RUN 证据(2026-10-22 实测)**
+
+```
+g++ -std=c++17 -I include -I external/json 边编译 = 退出 0
+cmake --build build --target cep_poc_spike_s2 = 2/2 OK → bin/cep_poc_spike_s2
+./build/bin/cep_poc_spike_s2 → exit=0,断言 22/22 全绿
+```
+
+**主场景观测记录(3 项,规格 §3.2 修订版)**:
+
+| # | 项 | 实测值 |
+|---|----|--------|
+| ① | 观测值 | **新值**(0x2222,DATA_AND_ACK) |
+| ② | 数据来源 | **D-GPU M 态 cache 数据响应**(经流 6 forward_data 同槽;内存仍为旧值 0x1111 → 来源唯一定位 = 判据 (b) 的**直接证据**) |
+| ③ | 跨域传播路径可达性 | **true**(compute_noc/VC1 snoop → D-GPU → DATA_AND_ACK 回环) |
+
+**④ S2b 对照(Q-3b 实测)**: 静默升级 = **0 条流出线**;显式升级(S→M,他 sharer 在场)=
+**1 条 snoop(INVALIDATE)→others** → D-FABRIC S→I 回 ACK。
+两路径**终点相同**(perm=WRITEBACK)但**通信成本不可互换** → 直接喂给 S1-7 的
+schema 演进设计约束(「perm 形态须承载静默/显式区分」)。
+
+**⑤ 判位留痕(防误读 2 条)**:
+- 主场景输入 = 「持有 E」**直接起步**(不模拟读分配路径): 09 号 6×6 的 `I+Rd→S`
+  与「载入得 E」的表义张力**不属** S2 观测域(判据 (b) 评估对象是 E→M 的 store 命中,
+  非 E 的进入方式);**若批 2 修订该语义,另行核对,不依赖**。
+- M 态被 probe 后降级为 **O**(非 S)—— 忠实对齐 `:224`(脏共享保留所有权),
+  初稿 S 版表义在判位核对时已纠正。
+
+**⑥ 遗留声明**
+
+- **S1(期望 perm)/ S3(死锁自由)**: 规格在,实现未启动(前置: S1 需 4 值表达力边界 =
+  Stage 1;S3 需 vc_binding 真实声明)。
+- **`cpptlm-cep-poc-spike` change 目录未建**(排队口径不变,Stage 1 顺位暂不变;
+  KPI 维持 1/3)。
+- ⚠️ **S2 实测确认 ≠ A6 闭合证明、更 ≠ R10 闭合**: A6 已于 Entry #13 以声明层裁定闭合
+  (S2 = 其确认);R10 仍需**真人**「无阻断项」回执(硬边界 §1.2 item 4 未变)。
+
+**关联**: Entry #13①(判据 (b) 声明层裁定)/ Entry #14(D-9 批 2 事实基线)/
+规格 §3.2(权威判定定义)/ survey §2(`09 号` 镜像)/ ArchForge 回答单 §1.1(Q-3a 论证体)
+
+---
+
+### Entry #16 — 2026-10-22 [sprint-review]
+
+**主题**: S2 RUN 证据**作废并取代**(critic 3 BLOCKERS)—— 修正重跑 + ctest 回归门落地
+
+**触发**: 提交前 critic(4 项触发件命中:新增文件 + 治理面台账)对 Entry #15 批次
+对抗审稿 → **REJECT**:3 BLOCKERS(均涉证据完整性)+ 8 SHOULD_FIX。
+⚠️ **Entry #15 ③「RUN 证据」与 ②⑤ 引用中 3 处事实被证伪** —— 按 append-only 纪律
+**不可改写** Entry #15 主体(**对齐 user B2 裁决先例:不回滚台账历史改写**),
+本条以**修正重跑的新证据**取代其 RUN 部分;#15 的**语义判位 ② 与判位留痕 ⑤ 仍是
+有效工作记录**(判位过程真),唯 **③ 实测列为作废值**。
+
+**① 3 BLOCKERS(critic 实测证伪 → 修正)**
+
+| # | 缺陷 | 证伪 | 措置 |
+|---|------|------|------|
+| B1 | **VC 绑定与权威相反**: spike 自造 `snoop=1`/`snoop_resp=1`,且对 ArchForge 32 号 §6.0.2 矩阵(:367-370)+ `moesi_gpu` 实例声明(:434-442)`snoop:2 / snoop_resp:3`;`vc_slot_valid` 只比上界(0-3 全放行)——「per-network 绑定」名不副实 | 突变 `route_binding()` 仍全绿 | 绑定改 **权威逐字镜像**(32 号 `:434-442`);校验改为 **逐(消息类,槽位)比对**(forward_data 走 snoop 同槽例外);**突变测试(有牙验证)**:`vc = 2→1` 后 **6 处断言即红** |
+| B2 | **观测 ②③ 硬编码/自述**: ③ `path_reachable = true` 为常量(注释「已真的下发」失实 —— 无任何转发对象);② 数据来源 = 生产者自写 note;`mem_value` 无写入 → 「来源唯一定位」断言恒真 | grep 证据 n/a | **转发路径对象化**: `Bridge::fabric_read()` 以 tracker 指路 → probe 流真实发出 → `ReadResult` 由**实际选择**生成(值/来源枚举/可达/成链流计数);来源 = 流 6 forward_data 的对象级判决;NEG 侧 fallback **真实读内存** → 「主场景内存未被写」断言获得信息量 |
+| B3 | **NEG 反向变体是同义反复**: 断言自己刚写下的字面量(违背「只跑正向等于没跑」的仓内反向验证文化,规格 :135) | 结构性识别 | 与 B2 合并处置:NEG = **同一 Bridge 代码路径** `fwd_enabled=false` → 真实 fallback 读内存旧值 |
+
+**② 8 SHOULD_FIX 处置(逐条)**
+
+1. 断言计数 22 实为 **21**(把函数定义计入)→ 门数改为**动态打印**(断言 N/N);
+2. 头注释运行路径 `bin/examples/`(实际 `bin/`/`bin/examples/`)→ 经 CMake 输出目录对齐,统一 **`build/bin/examples/`**;
+3. 引用 `:229` 错(是 O+write 的 INVALIDATE→others)→ S+side-effect 更正为 **INVALIDATE→all(microarch :212)**、S+INVALIDATE→I = **:213**;
+4. 「32 号 §6.0.1 转发形态」→ 实为 **§5.2.1 转发表(:297-305)**/词表 §6.0.1;
+5. CWD 依赖 → 从仓库外运行 exit 134(terminate)→ `read_file` **守开失败** → exit 2 明示(实测复证);
+6. 「+3 行」实为 **+17 行**(numstat 实证:横幅+注释+target+add_test 4 号新增);
+7. **回归门 ≥ 名实相符**: **注册 ctest**(`add_test` + `WORKING_DIRECTORY=${CMAKE_SOURCE_DIR}`)→ `ctest -R cep_poc_spike_s2` 已入 18/18 组;
+8. `:333` 弱断言 → 收紧为直接比对 `*proj == Perm::READ`(带 `has_value` 前置)。
+
+**③ 修正后 RUN 证据(2026-10-22 实测,取代 Entry #15 ③)**
+
+```
+g++/CMake 双路径编译 0 warning;
+./build/bin/examples/cep_poc_spike_s2 → exit=0;
+ctest --test-dir build -R cep → **18/18**(新注册 cep_poc_spike_s2 = Test #96);全绿
+```
+
+主场景 3 项观测(语义不变,证据形态升级):
+
+| # | 项 | 实测值(取代 #15 同列) |
+|---|----|------------------------|
+| ① | 观测值 | 新值 0x2222(流 6 forward_data,VC2) |
+| ② | 数据来源 | **D-GPU M 态 cache**(对象级枚举;fallback 路径真实读内存时得旧值 → 主场景内存未读/未写断言非恒真) |
+| ③ | 跨域传播路径可达性 | **true** —— probe真实成链 3 条流(compute_noc/VC2 snoop → D-GPU → VC3 snoop_resp + VC2 forward_data → D-FABRIC) |
+
+**④ 权威对齐的新增判位(修订 #15 ②)**
+
+- **VC 绑定不再是 spike 内 provisional 声明** —— 32 号 `:434-442` 已有 `moesi_gpu`
+  实例声明,**逐字镜像**权威值;⏸ **不依赖**未落库状态 —— 声明本体仍在 ArchForge,
+  本仓镜像纯只读(approver 侧无回执要求;如对方行号漂移,按内容核对)。
+- **双语自洽的调和注记**(ArchForge 自身张力,非本仓缺陷): 转发表(:303)称
+  snoop_resp `DATA_AND_ACK` **携带数据值**;VC-R2(:391)要求 `snoop_resp` **不携带**
+  数据、数据一律 forward_data 同槽(VC2)。spike 以 **流 4(VC3,状态 DATA_AND_ACK 语义)
+  + 流 6(VC2,数据值)** 双消息建模两侧同成立 —— VC-R2 得守,与 Q-3a 转发形态一致。
+  ⚠️ 该张力本条**显式登记**(非漏网)—— 若对方下轮修订忽略,须回该文件补「如何两可」的裁定。
+
+**⑤ 遗留声明(增补)**
+
+- Entry #15 ⑥ 的三项(前置不变)仍全部生效;此时新增:验证以 **ctest 回归**为准
+  (不再依赖手跑);**S1 / S3** 及 `cpptlm-cep-poc-spike` change 目录仍待 Stage 1。
+- 门数动态化 → **「21/21」不是固定契约值**(增删断言即漂移);
+  对外引用一律写「全部断言通过」而非具体计数。
+- `examples/CMakeLists.txt` 的 `RUNTIME_OUTPUT_DIRECTORY` **位置性陷阱**(set() 之后的 target 才生效,该文件先前 target 均落在 `bin/` 根)—— spike 排序在 `set()` 之后借此生效;⚠️ **不另行 refactor**(scope 纪律),留 Stage 1 顺带处理。
+
+**关联**: Entry #15(其 RUN 证据部分作废/取代 + 语义判位与判位留痕维持)·
+critic ses_e9caf3ac6ffecU3Mf288D96rpx · 32 号 §6.0.2/:434-442/§5.2.1/VC-R2(权威) ·
+microarch coherence-protocol.md :212/:213/:221/:224 · `examples/cep_poc_spike_s2.cc`(修正版)
+
+---
+
 ## §12 Review Schedule
 
 - **2027-01-18**(review_by 默认 = created + 90 天):第一次 sprint-review
