@@ -307,7 +307,8 @@ CEP SHALL 以**锁定表**为规范版本的**唯一真源**,并要求每个协�
 #### Scenario: 版本取值必须落在锁定表内(IC1)
 
 - **WHEN** 契约测试校验 `ADR-CEP-11 §3` 的锁定表与 schema 的 `protocol_version`
-- **THEN** 锁定表**恰好 6 个协议族**:CHI / CXL 2.0 非对称 / CXL 3.0 对称 / TileLink-C / NVLink / UALink
+- **THEN** 锁定表**恰好 8 个协议族**:CHI / CXL 2.0 非对称 / CXL 3.0 对称 / TileLink-C / NVLink / UALink / MOESI/GPU / MESIF
+  (2026-10-22 per 台账 Entry #12 —— 增 `moesi_gpu` / `mesif`,二者均为 ArchForge 贡献且 `family` 落 `industrial`)
 - **AND** 每个协议实例的 `protocol_version` **必须**落在锁定表内
 - **AND** 表外取值 ⇒ **装配期 fail**(不得静默降级)
 

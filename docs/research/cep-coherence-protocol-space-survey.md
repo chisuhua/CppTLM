@@ -1137,7 +1137,7 @@ ordering_assumption:
 | 维度 | ArchForge 09 | gem5 Ruby SLICC | *Gen 族(PDF 原文级) | **CEP 现状** |
 |------|--------------|------------------|-------------------|---------------|
 | **协议来源** | dGPU SoC 内部设计 | gem5 学术/教学 | 自动生成 | — |
-| **协议实例数** | 1(MOESI/GPU 6×6)| 8 独立 `.slicc` | 6 类输入协议(论文 §2.2)| 2 来源族 / **14 adapter 实例** + 5 一致性模型语义索引 |
+| **协议实例数** | 1(MOESI/GPU 6×6)| 8 独立 `.slicc` | 6 类输入协议(论文 §2.2)| 2 来源族 / **14 adapter 实例** + 5 一致性模型语义索引<br>⚠️ **计数已于 2026-10-22 改为 16**(`moesi_gpu` / `mesif` 登记进 `07 号 §5.1.1`,per 台账 Entry #12);本行为调研快照,**不改写** |
 | **状态模型** | 6 状态(4 稳定 + O + **T 瞬态**) | 各 `.sm` 自带 SM | **SSP → 非原子 + 瞬态**(MSI **18** 瞬态)| Stub = `I/S/E/M` 4 稳定 |
 | **目录机制** | SnoopFilter + CoherenceDomain | directory / token / probeFilter | FullMap / 不完整知识 / **null dir(Dir1B)**| 5 实现 + caps descriptor |
 | **跨域** | CoherenceBridge | Region / CorePair | **合并目录 + proxy-cache + 一致性翻译** | 流 7 + `barrier_domain` |
@@ -1391,7 +1391,7 @@ ordering_assumption:
 |---|-------|------|------|
 | **N1** | 🔴 高 | "36 条守门 invariant"单一真源**不成立** —— `INV-CEP-04-IC7` / `INV-CEP-05-IC1` 只在 `ADR-CEP-17 §3.1` 声明,**未落 owner ADR**(实测 `ADR-CEP-04 §11` 无 IC7、`ADR-CEP-05 §4.3` 无 IC1)。这正是 07 号 §4 声称根除的"19/35/48 三套口径"以新形态回归 | ✅ **已落**:两条 invariant 补进 `ADR-CEP-04 §11` / `ADR-CEP-05 §4.3`;07 号 §4 改**三段式口径**(编号位 / 实际 / 已落 owner ADR) |
 | **N2** | 🔴 高 | 07 号 §3.2 写"**6** 条不变量"vs §4 写"**7**";`improvement A2` 写"覆盖 **35** 条 invariant ID(逐条断言,数量 == 36)"—— 自相矛盾且**机器检查必然失败** | ✅ **已修**:§3.2 标题改 7 + 表内补 `INV-CEP-05-IC1` 行;A2 断言改为"覆盖 **36** 条实际 ID(编号位 37)" |
-| **N3** | 🔴 高 | adapter 计数 6 vs 14 在 07 号**内部漂移**(§1.4 / §11 未随 §5.1 同步),`ADR-CEP-00A:169` 同 | ✅ **已修**:三处统一为"2 来源族 / 14 adapter 实例" |
+| **N3** | 🔴 高 | adapter 计数 6 vs 14 在 07 号**内部漂移**(§1.4 / §11 未随 §5.1 同步),`ADR-CEP-00A:169` 同 | ✅ **已修**:三处统一为"2 来源族 / 14 adapter 实例"<br>⚠️ **该计数已于 2026-10-22 再次改为 16**(per 台账 Entry #12);本条为**历史修复合并记录**,不改写 |
 | **N4** | 🟡 中高 | "**正确性由实验保证**"是**过度声称**,且与本批刚加的 `ADR-CEP-06 §3` `verification_mode` 契约**直接矛盾**(后者已写"禁止把 bounded/sampled 表述为已证明无死锁") | ✅ **已修**:改为"**实验证伪** —— 在声明的 `verification_scope` 内尝试证伪;**平台不提供无违例保证**";并补口径澄清:**工具集成负担不继承;语义组合负担完全继承** |
 | **N5** | 🟡 中高 | 07 号 §5.1.4 四行 "Sharer Tracker 选型 = `SparseSnoopFilter`" 与**同行**协议特征自相矛盾(TSO-CC "主动放弃 sharer tracking";GPU 源自 Spandex 不做中心目录)。**snoop filter 本身即一种 sharer tracker** | ✅ **已修**:该列改 `BroadcastNull` 或"不参与"(与 `ADR-CEP-17` 决策 3 token 同原则),并加修正说明 |
 | **N6** | 🟡 中高 | 死锁自由性论证的**责任边界放错层**:F18 原文主语是"**assign messages to virtual networks**"(协议侧),不是"路由器仲裁";且 ①排序假设 ②VC 绑定 ③仲裁一致性 是**三方联合** | ✅ **已修**:07 号 §2.2 **Protocol Engine 行**补"声明排序假设 + 消息→VC 绑定";**Fabric 行**改为"**执行**(而非单边承担)",并把 QoS 降为次要用途 |

@@ -85,7 +85,7 @@ Plugin 内、Stub 只暴露 4 值 `perm`、能力以**数据**声明)。本清�
 | **G7** | `atomic.supported` + `intent_field`(意图经 request 流**独立属性**) | 无 atomic 概念 | **缺失** | **P2** | 需确认 ArchForge 的 `CacheReqBundle` 能否承载 atomic 意图位 |
 | **G8** | `combination_capabilities` 三维正交 | 无跨协议组合概念 | **缺失** | **P2** | Stage 2+ |
 | **G9** | 协议逻辑住 **Plugin**,能力以**数据**声明 | 协议逻辑 = ArchForge 侧 C++ 抽象基类 `CoherenceProtocol`(`coherence-protocol.md:133`) | **冲突**(分层) | **P0** | 明确**分工**:声明在 CppTLM(schema)/ 逻辑在 ArchForge(插件实现)?—— 这决定 `CoherenceProtocol` 是否需**下沉为 CppTLM 侧 Plugin 接口** |
-| **G10** | `family` ∈ {`industrial`,`ruby-slicc`,`academic`};`07 号 §5.1` 口径 = 2 族 / 14 实例 | 只有 **MOESI/GPU 一族**(`09 §3` 6×6 状态机) | **口径** | **P1** | ArchForge 侧 `family` 落 `industrial`;Ruby 族由 CppTLM 侧插件提供 —— 需明确**族边界的权威方** |
+| **G10** | `family` ∈ {`industrial`,`ruby-slicc`,`academic`};`07 号 §5.1` 口径 = 2 族 / 16 实例 | 只有 **MOESI/GPU 一族**(`09 §3` 6×6 状态机) | **口径** | **P1** | ArchForge 侧 `family` 落 `industrial`;Ruby 族由 CppTLM 侧插件提供 —— 需明确**族边界的权威方** |
 | **G11** | `CacheTLM` **不得**实现 canonical 10 流;只允许经 **adapter** 交互(`ADR-CEP-15:115` IC3) | `register_cache_callback(CacheTLM*)`(`09:250`)**直连** CacheTLM;`cache_tlm_integration = "snoop_callback"`(配置) | **冲突**(边界) | **P0** | 明确 `snoop_callback` 落在**哪一侧**:若 ArchForge 侧直连 CacheTLM → 违反 IC3;须改走 adapter |
 | **G12** | `status` 三值(`planned`/`implemented`/`excluded`)= 计数口径唯一依据(`ADR-CEP-12` 决策 9) | 无 status 概念 | **缺失**(小) | **P2** | 随 capability 声明一并引入 |
 | **G13** | `perm` **4 值**(`NONE`/`READ`/`UNIQUE`/`WRITEBACK`) | `CoherenceState` **6 值**(`I,S,E,M,O,T`) | **口径** | **P1** | 产出 **6 态 → 4 值 perm 的投影表**;`O`(Owned)/`T`(Transient) **无投影**(瞬态态住插件内) |
@@ -352,7 +352,7 @@ ArchForge 侧承载(G6/G7/G8/G12)。
     },
     {
       "file": "docs/adr/ADR-CEP-15-cachetlm-alignment.md",
-      "line": 115,
+      "line": 121,
       "symbol": "INV-CEP-15-IC3"
     },
     {
@@ -380,7 +380,7 @@ ArchForge 侧承载(G6/G7/G8/G12)。
     {
       "file": "docs/architecture/07-coherence-exploration-platform.md",
       "line": 310,
-      "symbol": "14 个 adapter 实例"
+      "symbol": "16 个 adapter 实例"
     }
   ]
 }

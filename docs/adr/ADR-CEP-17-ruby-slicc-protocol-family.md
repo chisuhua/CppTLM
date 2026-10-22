@@ -335,7 +335,7 @@ protocol_instance:
 
 | 缺什么 | 为什么必须 |
 |--------|-----------|
-| `id` / `status` / `protocol_version` | 否则「14 adapter」随 §5.1.4 候选语义落地即失真;版本锁是 `ADR-CEP-11` 职责 |
+| `id` / `status` / `protocol_version` | 否则「16 adapter」随 §5.1.4 候选语义落地即失真;版本锁是 `ADR-CEP-11` 职责 |
 | `vc_binding` | F18 原文主语是「assign messages to virtual networks」;只声明序假设不声明绑定,**死锁自由论证拿不到输入** |
 | `sharer_tracker` | §5.1.1 / §5.1.2 / §5.1.4 三张表全在做逐实例选型,schema 却漏了 |
 | `flow_support` | `ADR-CEP-07` IC2 要求 `NullProtocolEngine` 有 10 流覆盖矩阵;能力表不承载它则无处可查 |

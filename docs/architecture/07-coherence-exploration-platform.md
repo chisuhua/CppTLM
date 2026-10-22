@@ -71,7 +71,7 @@
 | 宿主框架 | gem5 | CppTLM |
 | 仓归属 | **gem5 仓内** `src/mem/ruby/` | **CppTLM 仓内** `docs/adr/` + `docs/architecture/` + `src/tlm/cep/` |
 | 协议可插拔机制 | SLICC `.slicc` 文件 | ProtocolEngine 插件 + 能力映射表 |
-| 协议实现数 | 6+ 协议族(MESI_Two_Level / MESI_Three_Level / MOESI_CMP_directory / MOESI_hammer / MOESI_AMD_Base / GPU_VIPER)| **2 来源族 / 14 adapter 实例**(工业 5 族 6 实例 + Ruby 1 族 8 实例,per §5.1)|
+| 协议实现数 | 6+ 协议族(MESI_Two_Level / MESI_Three_Level / MOESI_CMP_directory / MOESI_hammer / MOESI_AMD_Base / GPU_VIPER)| **2 来源族 / 16 adapter 实例**(工业 6 族 8 实例 + Ruby 1 族 8 实例,per §5.1)|
 | 目录 / 探测结构多样性 | 不同协议各自实现不同 `.sm` 组件(`-dir.sm` / `-probeFilter.sm` / token 机制),**非**同一 `.slicc` 内变体 | SharerTracker 5 实现 + caps descriptor(§5.2)|
 | 探索产出 | 协议 / 拓扑 / 目录对比实验 | 同左(per `ADR-CEP-06` 4 件套)|
 
@@ -307,9 +307,9 @@ group-scoped completion     → Fabric Collective Plane
 
 > **表述纪律**(per `ADR-CEP-17 §3.2`):"协议族" = **协议实例的来源集合**;"协议实例" = 一个具体可实现协议(1 个 `.slicc` / 1 个 adapter)。**adapter 数量 = 协议实例数**,不是族数。
 >
-> **当前口径**:**2 个来源族(工业 5 族 / Ruby 1 族)= 14 个 adapter 实例** + §5.1.4 的 **5 个一致性模型语义索引**(交叉视图,不重复计 adapter)。
+> **当前口径**:**2 个来源族(工业 6 族 / Ruby 1 族)= 16 个 adapter 实例** + §5.1.4 的 **5 个一致性模型语义索引**(交叉视图,不重复计 adapter)。
 
-#### 5.1.1 工业硬件协议族(5 族 / 6 实例)
+#### 5.1.1 工业硬件协议族(6 族 / 8 实例)
 
 | 协议族 | 协议实例 | adapter | 状态 | 通道模型 | 关键差异 |
 |--------|---------|---------|------|----------|---------|
@@ -319,8 +319,15 @@ group-scoped completion     → Fabric Collective Plane
 | **TileLink-C** | TileLink-C | `TileLinkCAdapter` | Stage 1 | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
 | **NVLink** | NVLink | `NvlinkAdapter` | Stage 2 | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
 | **UALink** | UALink | `UalinkAdapter` | Stage 3 | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
+| **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **未排期** | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的争点所在 |
+| **MESIF** | `mesif` | `MesifAdapter` | **未排期** | 分级目录型(跨卡);目录查询 / 定向 snoop | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1) |
 
-> **协议数 5 族 / 6 实例**(CXL 2.0 与 3.0 对称是同一 adapter 的两种模式,但实现阶段是 2 个 change)
+> **协议数 6 族 / 8 实例**(CXL 2.0 与 3.0 对称是同一 adapter 的两种模式,但实现阶段是 2 个 change)
+>
+> **族计数的口径**(2026-10-22 补记,per 台账 **Entry #12**):`moesi_gpu` / `mesif` 计为**同一来源族**
+> (ArchForge 声明族,含 2 套互不承认的一致性架构,per `32 号` C1)→ **+1 族 / +2 实例**,
+> 镜像 CXL「1 族 / 2 实例」的先例。两者 `family` 字段均为 `industrial`(per `32 号` 声明)。
+> **状态 = 未排期** —— 登记 ≠ 排期(per `ADR-CEP-00 §2 决策 3`,本季度队列未变)。
 
 #### 5.1.2 Ruby-SLICC 协议族(1 族 / 8 实例,per `ADR-CEP-17 §2 Decision 2`)
 
@@ -361,7 +368,7 @@ group-scoped completion     → Fabric Collective Plane
 > **来源**:Oswald *Gen 算法族*(ProtoGen ISCA 2018 / HieraGen ISCA 2020 / HeteroGen HPCA 2022)论文 case study 集(per `HeteroGen_HPCA2022-draft.md:1266-1276` Table I)
 
 > **⚠️ 分类维度澄清(v0.3 复审 R8)**:本小节**不是**与 §5.1.1 / §5.1.2 并列的"第三个族",而是**协议语义的索引视图**:
-> - **"族"= 协议实例的来源集合** —— §5.1.1(工业硬件标准,5 族 / 6 实例)+ §5.1.2(gem5 Ruby 实现,1 族 / 8 实例)
+> - **"族"= 协议实例的来源集合** —— §5.1.1(工业硬件标准,6 族 / 8 实例)+ §5.1.2(gem5 Ruby 实现,1 族 / 8 实例)
 > - **"一致性模型"= 协议实例的语义属性**,用于**索引语义**,**不是**来源分类
 > - ⚠️ **两者交叉**:**MSI / MESI** 既是 §5.1.2 gem5 Ruby 族的实例,又是本表的 SC 语义 —— **同一协议语义的不同实现**,adapter 按 §5.1.1/§5.1.2 计,**不重复计数**
 > - **落地口径**:本表列出的是**协议语义**;其 adapter 是否实现、归哪一族,由 §5.1.1 / §5.1.2 决定
@@ -656,7 +663,7 @@ experimental/<run_id>/
 | Stub Cache Core | §3.2 | 📐 契约已定义,🛠️ 未实现 | `cpptlm-cep-stub-cache-core` |
 | SharerTracker 5 实现 | §5.2 | 📐 契约已定义,🛠️ 未实现 | `cpptlm-cep-sharer-tracker-base` + `-cxl-dcoh-symmetric` + `-tilelink-tree-manager` |
 | Collective Plane | §5.3 | 📐 契约已定义,🛠️ 未实现 | `cpptlm-cep-collective-plane-base` |
-| ProtocolEngine **14 adapter 实例**(工业 6 + Ruby 8;§5.1.4 候选语义落地后为 18) | §5.1 | 📐 契约已定义,🛠️ 未实现 | Stage 1~3 |
+| ProtocolEngine **16 adapter 实例**(工业 8 + Ruby 8;§5.1.4 候选语义落地后为 20) | §5.1 | 📐 契约已定义,🛠️ 未实现 | Stage 1~3 |
 | ModuleFactory seam | §6.3 | 📐 契约已定义,🛠️ 未实现 | Stage 0 契约测试 + Stage 1 |
 | 实验输出 4 件套 | §7 | 📐 契约已定义,🛠️ 未实现 | Stage 0(`cpptlm-cep-umbrella`)|
 | simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |

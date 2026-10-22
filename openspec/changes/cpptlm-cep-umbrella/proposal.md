@@ -86,7 +86,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | 文件 | 改动 | 说明 |
 |------|------|------|
 | `docs/architecture/06-bis-coherence-as-network-extension.md` | 顶部加 `## Status Update` 段 | supersede by CEP(per `ADR-CEP-00 §3`);**正文不动**(per AGENTS.md「ADR 不可变 + Status Update」先例) |
-| `docs/architecture/README.md` | Doc Map 行同步 | invariant 计数(66 实际 / 67 编号位)+ adapter 计数(2 来源族 / 14 实例)—— **本次已由 architect 阶段同步,本 change 仅复核** |
+| `docs/architecture/README.md` | Doc Map 行同步 | invariant 计数(66 实际 / 67 编号位)+ adapter 计数(2 来源族 / **16** 实例)—— **本次已由 architect 阶段同步,本 change 仅复核**(计数于 2026-10-22 per 台账 Entry #12 由 14 → 16) |
 
 ### 冻结面(0 修改)
 

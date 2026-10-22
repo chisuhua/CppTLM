@@ -54,10 +54,22 @@ Coherence Exploration Platform(CEP)是一个支持 CHI / CXL 3.0 / TileLink-C / 
   - **审计**:每季度跨仓审计(per `06-bis §7.8` KPI 串行约束)由 DRI 执行,产出对齐报告
 - **KPI 排队**(per AGENTS.md "OpenSpec Proposed ≤ 3" 政策 + 当前基线 3/3 上限触发,**v0.3 算术闭环**):
   - **Stage 0**: 1 个 umbrella change `cpptlm-cep-umbrella`(1 KPI slot,30 人日,doc-only + 测试契约骨架 — **计入 KPI**,per oracle B2-1 修订:umbrella 不符 doc-only 豁免"0 函数签名/逻辑/构建改动"先例)
-  - **Stage 1**: 6 个串行 `cpptlm-cep-stub-cache-core` / `-sharer-tracker-base` / `-collective-plane-base` / `-chi-rnf-subset` / `-cxl-nonsymmetric` / `-tilelink-tree-manager`(每次 1 KPI slot,KPI ≤3 → 排 6 季度)
+  - **Stage 1**: 7 个串行 `cpptlm-cep-poc-spike` / `cpptlm-cep-stub-cache-core` / `-directory-ordering-plane` / `-collective-plane-base` / `-chi-rnf-subset` / `-cxl-nonsymmetric` / `-tilelink-tree-manager`(每次 1 KPI slot,KPI ≤3 → 排 7 季度)
   - **Stage 2**: 2 个串行 `-cxl-dcoh-symmetric` / `-nvlink-sharp`(KPI 排队同上)
   - **Stage 3**: 1 个 `-ualink-inc`
-  - **总计**:10 个 change(1 + 6 + 2 + 1 = 10),串行 10 季度;**任一时刻 Proposed 并发 ≤ 1**(守 KPI 上限)
+  - **总计**:11 个 change(1 + 7 + 2 + 1 = 11),串行 11 季度;**任一时刻 Proposed 并发 ≤ 1**(守 KPI 上限)
+
+> **2026-10-22 增补(台账 Entry #12 [adr-amendment])** —— `cpptlm-cep-poc-spike`:
+> - **性质**:**可丢弃的 spike**(单文件 / 不进 `ModuleFactory` / 不注册 ABI / 无公共 API)——
+>   **不是** Stage 1 的实现,只验证「可组合性 + 契约自洽」,**不是** conformance test
+> - **用例规格**:`docs/implementation/2026-10-22-cep-poc-spike-spec.md`(S1/S2/S3 的输入 / 期望 / 判定)
+> - **置首位的理由**:其 **S2 场景**(D-GPU 的 E 态静默升级 → D-FABRIC 读同一行 → 读到旧值还是新值)
+>   是 `ADR-CEP-13` `INV-CEP-13-IC2` 判据 **(b)** 的**可执行**判定 —— 而 (b) 是 **A6** 的唯一输入,
+>   A6 又是**全部协议插件 change** 的前置(`perm` 表达力未定)→ **它是唯一能加速其余 Stage 1 change 的项**;
+>   若排在末位,则「解阻 Q-3」的用途失效(见 PoC 规格 §1.2 item 3 的循环依赖澄清)
+> - **不改变**「任一时刻 Proposed 并发 ≤ 1」的 KPI 约束 —— 排队**长度** +1,并发不变
+> - **登记 ≠ 立刻实现**:其**实现**排在 **A4**(本批已完成)+ **A6** 的相关输入齐备之后;规格已先行
+>   (per P-2,`docs/implementation/2026-10-22-cep-poc-spike-spec.md`)
 
 ### 决策 4:归"建模框架(CppTLM)"豁免论证(per S9 + 2026-10-20 gem5 Ruby 类比强化)
 
@@ -127,7 +139,7 @@ AGENTS.md:423 边界条款("SoC 架构**组件/拓扑/演进**类提案" → Arc
 | 06-bis supersede | 顶部加 Status Update 段,内容继承 | ✅ 已拍板 |
 | DRI | 架构师本人 | ✅ 已拍板 |
 | 准入门 | ArchForge PR 合入前 CppTLM change 不升 Proposed | ✅ 已拍板 |
-| KPI 排队 | 10 个 change 串行 10 季度(per §2 决策 3) | ✅ 已拍板 |
+| KPI 排队 | 11 个 change 串行 11 季度(per §2 决策 3;2026-10-22 per Entry #12 由 10 → 11) | ✅ 已拍板 |
 | AGENTS.md:423 边界 | 不触发(CEP 框架级不属 SoC 业务架构) | ✅ 已拍板 |
 | **ADR 签发仓** | ✅ **已拍板 = CppTLM 仓** — 定性:"支持做互相协议探索的"归入框架级,类比 gem5 Ruby network(per §5.1)| ✅ 已拍板 |
 | **真源文档路径** | ✅ **已拍板 α** = `docs/architecture/07-coherence-exploration-platform.md`(2026-10-20 创建 v0.1 草案) — 见 §5.2 | ✅ 已拍板 |
@@ -150,7 +162,7 @@ AGENTS.md:423 边界条款("SoC 架构**组件/拓扑/演进**类提案" → Arc
 |------|-----------|-------------|
 | 宿主框架 | gem5 | CppTLM |
 | 协议可插拔机制 | SLICC `.slicc` 文件 | ProtocolEngine 插件 + 能力映射表 |
-| 协议实现数 | 6+ 协议族 | **2 来源族 / 14 adapter 实例**(工业 5 族 6 实例 + Ruby-SLICC 1 族 8 实例)+ **5 个一致性模型语义索引**(交叉视图,per `07 号 §5.1`)|
+| 协议实现数 | 6+ 协议族 | **2 来源族 / 16 adapter 实例**(工业 6 族 8 实例 + Ruby-SLICC 1 族 8 实例)+ **5 个一致性模型语义索引**(交叉视图,per `07 号 §5.1`)|
 | 目录策略可插拔 | `.slicc` 变体 | SharerTracker 5 实现 + caps descriptor |
 | 探索产出 | 协议 / 拓扑 / 目录对比实验 | 同左(per `ADR-CEP-06` 4 件套)|
 | **仓归属** | **gem5 仓内(`gem5/src/mem/ruby/`)** | **CppTLM 仓内(`docs/adr/` + `docs/architecture/` + `src/tlm/cep/`)** |

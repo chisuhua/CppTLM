@@ -16,6 +16,7 @@
 #include <fstream>
 #include <regex>
 #include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -480,15 +481,56 @@ TEST_CASE("[cep][schema] protocol_version 值域必须容纳 ADR-CEP-11 锁定�
         (repo_root() / "docs" / "adr" / "ADR-CEP-11-protocol-version-locking.md").string());
     REQUIRE_FALSE(lock.empty());
 
-    // 锁定表的 6 个取值(per ADR-CEP-11 §3)
-    const std::vector<std::string> locked = {"chi-r2",         "cxl-2.0",    "cxl-3.0",
-                                             "tilelink-c-1.3", "nvlink-4.0", "ualink-2.0"};
+    // 锁定表的 8 个取值(per ADR-CEP-11 §3;2026-10-22 per 台账 Entry #12 增补
+    // moesi-gpu-1.0 / mesif-1.0 —— 登记 moesi_gpu / mesif 进 07 号 §5.1.1 后,
+    // INV-CEP-11-IC1 要求其 protocol_version 必须落在锁表内)
+    const std::vector<std::string> locked = {
+        "chi-r2",         "cxl-2.0",          "cxl-3.0",         "tilelink-c-1.3",
+        "nvlink-4.0",     "ualink-2.0",       "moesi-gpu-1.0",   "mesif-1.0"};
     const std::regex re(pattern);
     for (const auto& v : locked) {
         INFO("锁定表取值未出现在 ADR-CEP-11: " << v);
         REQUIRE(lock.find(v) != std::string::npos);
         INFO("schema pattern 拒绝锁定表合法取值: " << v);
         REQUIRE(std::regex_match(v, re));
+    }
+
+    // 锁表**恰好** N 项 —— 防「表里加了第 9 个值、但本测试的硬编码列表没跟上」这类
+    // **静默失去覆盖**(2026-10-22 critic NIT:hardcode 6 → 8 只保证了「旧值仍在表里」,
+    // 保证不了「表里没有新值」)。做法:解析 §3 表的第 2 列,断言其 backtick 取值集合
+    // 与硬编码列表**完全相等**(个数 + 逐项双向)。
+    const size_t sec3 = lock.find("## 3. 规范版本锁定表");
+    REQUIRE(sec3 != std::string::npos);
+    const size_t sec3_end = lock.find("\n## ", sec3 + 1);
+    const std::string sec3_body = lock.substr(
+        sec3, (sec3_end == std::string::npos ? lock.size() : sec3_end) - sec3);
+
+    std::set<std::string> table_vals;
+    {
+        std::istringstream ss(sec3_body);
+        std::string line;
+        while (std::getline(ss, line)) {
+            if (line.empty() || line[0] != '|') continue;      // 只看表格行
+            if (line.find("---") != std::string::npos) continue;  // 跳分隔行
+            if (line.find("协议族") != std::string::npos) continue;  // 跳表头
+            const size_t c1 = line.find('|', 1);
+            if (c1 == std::string::npos) continue;
+            const size_t c2 = line.find('|', c1 + 1);
+            if (c2 == std::string::npos) continue;
+            const std::string col = line.substr(c1 + 1, c2 - c1 - 1);
+            const size_t b = col.find('`');
+            if (b == std::string::npos) continue;
+            const size_t e = col.find('`', b + 1);
+            if (e == std::string::npos) continue;
+            table_vals.insert(col.substr(b + 1, e - b - 1));
+        }
+    }
+    INFO("§3 锁表解析出的 protocol_version 取值数: " << table_vals.size()
+         << " (硬编码列表 " << locked.size() << ")");
+    REQUIRE(table_vals.size() == locked.size());
+    for (const auto& v : locked) {
+        INFO("§3 锁表缺取值: " << v);
+        REQUIRE(table_vals.count(v) == 1);
     }
 }
 
@@ -691,19 +733,19 @@ TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致
         }
     }
     INFO("§5.1.1 行数=" << rows511 << " §5.1.2 行数=" << rows512);
-    REQUIRE(rows511 == 6); // 工业 5 族 / 6 实例
+    REQUIRE(rows511 == 8); // 工业 6 族 / 8 实例(2026-10-22 per Entry #12:moesi_gpu / mesif 登记)
     REQUIRE(rows512 == 8); // Ruby 1 族 / 8 实例
-    REQUIRE(rows511 + rows512 == 14);
+    REQUIRE(rows511 + rows512 == 16);
 
-    // §5.1 的声明必须与表格一致,且必须声明 14 是**下界** + 语义索引不重复计 adapter
-    INFO("07 号 §5.1 未声明 14 个 adapter 实例");
-    REQUIRE(truth.find("14 个 adapter 实例") != std::string::npos);
+    // §5.1 的声明必须与表格一致,且必须声明 16 是**下界** + 语义索引不重复计 adapter
+    INFO("07 号 §5.1 未声明 16 个 adapter 实例");
+    REQUIRE(truth.find("16 个 adapter 实例") != std::string::npos);
     INFO("07 号 §5.1 未声明 §5.1.4 的语义索引不重复计 adapter");
     REQUIRE(truth.find("不重复计 adapter") != std::string::npos);
     INFO("07 号 §5.1 未声明 5 个一致性模型语义索引");
     REQUIRE(truth.find("5 个一致性模型语义索引") != std::string::npos);
     // §5.1.1 / §5.1.2 各自的族/实例声明
-    REQUIRE(truth.find("5 族 / 6 实例") != std::string::npos);
+    REQUIRE(truth.find("6 族 / 8 实例") != std::string::npos);
     REQUIRE(truth.find("1 族 / 8 实例") != std::string::npos);
 
     // 交叉一致性:`excluded` 的用法(MESI_Three_Level_HTM)在 07 号侧标「明确排除」

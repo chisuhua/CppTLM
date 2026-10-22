@@ -166,7 +166,7 @@ CEN-00A-IC1: CEP 系列 ADR 引用的所有真源文档章节号,必须在 ADR-C
 | §2 | 6 层 CEP 架构 | CEP 6 层 + Fabric Collective 旁路平面 |
 | §3 | canonical 10 条 Coherence Interface 流 | 流清单 + 完成纪律 + CEN-Ib1~10 |
 | §4 | 67 编号位 / 66 条守门 invariant 总表 | 单一真源表(15 组;`INV-CEP-04-IC4` **唯一跳空**)|
-| §5 | Bundle 与协议适配 | **2 来源族 / 14 adapter 实例**映射(工业 6 + Ruby 8;§5.1.4 候选语义落地后 18)|
+| §5 | Bundle 与协议适配 | **2 来源族 / 16 adapter 实例**映射(工业 8 + Ruby 8;§5.1.4 候选语义落地后 20)|
 | §6 | 仿真语义与集成 seam | simulation_mode + ModuleFactory 真实注册 |
 | §7 | 实验输出协议 | 4 件套 + 13 必纳 metric |
 | §8 | 演进路线与阶段边界 | Stage 0~3 + 阶段划分 + supersede 映射 |

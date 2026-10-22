@@ -107,8 +107,9 @@ TEST_CASE("[cep][contract] 锁定表是规范版本唯一真源(IC2)", "[cep][co
     REQUIRE(lock.find("唯一真源") != std::string::npos);
     REQUIRE(lock.find("只引用不复制") != std::string::npos);
 
-    // 锁定表 6 个协议族
-    for (const char* fam : {"CHI", "CXL 2.0", "CXL 3.0", "TileLink-C", "NVLink", "UALink"}) {
+    // 锁定表 8 个协议族(2026-10-22 per 台账 Entry #12:增 moesi_gpu / mesif)
+    for (const char* fam : {"CHI", "CXL 2.0", "CXL 3.0", "TileLink-C", "NVLink", "UALink",
+                            "MOESI/GPU", "MESIF"}) {
         INFO("锁定表缺协议族: " << fam);
         REQUIRE(lock.find(fam) != std::string::npos);
     }
@@ -116,7 +117,8 @@ TEST_CASE("[cep][contract] 锁定表是规范版本唯一真源(IC2)", "[cep][co
     const auto schema = read_file(
         (repo_root() / "include" / "tlm" / "cep" / "protocol_instance.schema.json").string());
     for (const char* v :
-         {"chi-r2", "cxl-2.0", "cxl-3.0", "tilelink-c-1.3", "nvlink-4.0", "ualink-2.0"}) {
+         {"chi-r2", "cxl-2.0", "cxl-3.0", "tilelink-c-1.3", "nvlink-4.0", "ualink-2.0",
+          "moesi-gpu-1.0", "mesif-1.0"}) {
         INFO("schema 重复了锁定表的规范版本号: " << v);
         REQUIRE(schema.find(v) == std::string::npos);
     }

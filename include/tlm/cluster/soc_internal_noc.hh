@@ -64,11 +64,20 @@ public:
     static constexpr uint32_t NODE_ID_VRAM = 3;  // VramControllerTLM (v1.1 唯一入向 + 出向)
 
     // ── 4 Virtual Channel IDs (per ARM CHI 4 VC 物理对应, e1 v1.1 design §3.4) ──
-    // 按 flit_category 分桶 (per noc_bundles_tlm.hh:60-62):
+    // 按 flit_category **索引对齐**分桶 (per noc_bundles_tlm.hh:60-62):
     //   - VC_REQ = 0 (CATEGORY_REQUEST, e.g. SDMA bulk DMA write/read req)
     //   - VC_RSP = 1 (CATEGORY_RESPONSE, e.g. VRAM response to SDMA)
-    //   - VC_DAT = 2 (CATEGORY_DAT, e.g. multi-beat data)
-    //   - VC_SNP = 3 (CATEGORY_CREDIT, e.g. snoop/credit)
+    //   - VC_DAT = 2 (CATEGORY_CREDIT —— **索引对齐**的副产物;当前 CATEGORY_* 无 data 类)
+    //   - VC_SNP = 3 (当前无 CATEGORY_* 落入此桶 —— 为 snoop 类扩展预留)
+    //
+    // ⚠️ **索引对齐约束**(M-4,per docs/implementation/2026-10-21-cep-archforge-response-receipt.md §8.4.3):
+    //    route_flit() 以 `cat = flit_category` **直接**做 vc_counts_ 的桶下标,
+    //    故 CATEGORY_* 的值域必须 ⊆ [0, VC_COUNT) —— 否则越界的 cat 会被
+    //    `(cat < VC_COUNT) ? cat : VC_SNP` 守卫**静默折叠**进 VC_SNP(无报错、无计数)。
+    //    → CATEGORY_* 保持**传输层 3 类**;6 类一致性消息词表落在 **Coherence Interface 层**
+    //      (per ADR-CEP-12 §8 IC2 ③ 分层纪律),**不**扩本层。
+    //    → 本注释块与 noc_bundles_tlm.hh 的 CATEGORY_* 集合由 lint 第 10 组机器校验
+    //      (scripts/test/cep_docs_sync_check.sh),防止再出现「幽灵类别」。
     static constexpr unsigned VC_REQ = 0;
     static constexpr unsigned VC_RSP = 1;
     static constexpr unsigned VC_DAT = 2;
@@ -167,6 +176,9 @@ public:
     uint64_t vc_req_count() const noexcept { return vc_counts_[VC_REQ]; }
     uint64_t vc_rsp_count() const noexcept { return vc_counts_[VC_RSP]; }
     uint64_t vc_dat_count() const noexcept { return vc_counts_[VC_DAT]; }
+    // ⚠️ **语义遗留**:VC_DAT 桶当前由 CATEGORY_CREDIT 占据(索引对齐的副产物),
+    //    故 vc_dat_count() 实际统计的是 **credit 流量**,不是数据流量。
+    //    改映射需单独决策(per 台账 Entry #11 ④ 的遗留声明)。
     uint64_t vc_snp_count() const noexcept { return vc_counts_[VC_SNP]; }
 
     void do_reset(const ResetConfig& config) override {

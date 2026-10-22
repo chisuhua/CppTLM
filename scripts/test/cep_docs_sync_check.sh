@@ -10,6 +10,7 @@
 #       7. M1 产物冻结校验(28 产物 SHA-256,冻结后不可改)
 #       8. CEP ↔ ArchForge 接口对齐清单漂移检测(21 个 ArchForge 锚点)
 #       9. ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查(判据 C-4 的机器化)
+#      10. 传输层 CATEGORY_* 分层纪律(6 类一致性词表**不**落传输层;A14-1 / A14-2 的机器化)
 #
 # 用法：
 #   ./scripts/test/cep_docs_sync_check.sh            # 检查并打印报告
@@ -45,7 +46,7 @@ pass() { echo -e "  ${GREEN}✓${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 
-echo -e "${BLUE}[1/9] ADR 清单与关键节${NC}"
+echo -e "${BLUE}[1/10] ADR 清单与关键节${NC}"
 ADR_LIST=(
   "ADR-CEP-00-platform-charter-and-governance.md"
   "ADR-CEP-00A-real-source-anchor-map.md"
@@ -86,7 +87,7 @@ done
 [ "$NO_SECTION" -eq 0 ] && pass "每份 ADR 均有「不变量」或「决策」节"
 
 echo ""
-echo -e "${BLUE}[2/9] invariant 计数与 07 号总表一致性${NC}"
+echo -e "${BLUE}[2/10] invariant 计数与 07 号总表一致性${NC}"
 python3 - <<'PYEOF'
 import glob, re, os, sys
 
@@ -369,7 +370,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[3/9] 06 §15.4 P 编号口径(禁 P6)${NC}"
+echo -e "${BLUE}[3/10] 06 §15.4 P 编号口径(禁 P6)${NC}"
 python3 - <<'PYEOF'
 import glob, os, re, sys
 
@@ -497,7 +498,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[4/9] ADR 交叉引用可达性${NC}"
+echo -e "${BLUE}[4/10] ADR 交叉引用可达性${NC}"
 BROKEN=0
 for f in "${ADR_LIST[@]}"; do
   [ -f "docs/adr/$f" ] || continue
@@ -511,7 +512,7 @@ done
 [ "$BROKEN" -eq 0 ] && pass "ADR 之间的相对链接无断裂(全量 .md 链接)"
 
 echo ""
-echo -e "${BLUE}[5/9] Stage 0 umbrella change 4 件套${NC}"
+echo -e "${BLUE}[5/10] Stage 0 umbrella change 4 件套${NC}"
 CH="openspec/changes/cpptlm-cep-umbrella"
 MISS=0
 for f in "proposal.md" "design.md" "tasks.md" "specs/cep-core-contracts/spec.md"; do
@@ -520,23 +521,23 @@ done
 [ "$MISS" -eq 0 ] && pass "umbrella change 4 件套齐备"
 
 echo ""
-echo -e "${BLUE}[6/9] Stage 0 契约产物${NC}"
+echo -e "${BLUE}[6/10] Stage 0 契约产物${NC}"
 for f in "include/tlm/cep/protocol_instance.schema.json" "experimental/metrics.schema.json" "experimental/.gitkeep"; do
   [ -f "$f" ] && pass "$f 存在" || fail "$f 缺失"
 done
 
 echo ""
-echo -e "${BLUE}[7/9] M1 产物冻结校验(冻结后不可改)${NC}"
+echo -e "${BLUE}[7/10] M1 产物冻结校验(冻结后不可改)${NC}"
 # ⚠️ 不可裸调用:本脚本 `set -e`,裸调用的失败会**立即中止**整个脚本
 #    → 后续组与汇总永不打印,且下面的 `if [ $? -ne 0 ]` 是死代码(2026-10-22 代码复审 S3)
 if ! bash scripts/test/cep_freeze_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[8/9] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
+echo -e "${BLUE}[8/10] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
 if ! bash scripts/test/cep_archforge_alignment_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[9/9] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
+echo -e "${BLUE}[9/10] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
 # ⚠️ 「跳过」与「跑过」必须可区分:脚本首行标 [RUN] / [SKIP],退出码都是 0。
 #    跳过时**不算通过**(跨仓外部条件缺失不是「声明对齐已被验证」)。
 if DECL_OUT="$(bash scripts/test/cep_decl_alignment_check.sh 2>&1)"; then
@@ -552,6 +553,87 @@ elif echo "$DECL_OUT" | grep -q "\[SKIP\]"; then
     warn "ArchForge 仓缺席 → 本组跳过(跨仓外部条件缺失,非本仓缺陷;判据 C-4 的机器化未被本环境验证)"
 else
     pass "ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查通过"
+fi
+
+echo -e "${BLUE}[10/10] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)${NC}"
+# 契约:6 类一致性消息词表落在 **Coherence Interface 层**(per ADR-CEP-12 §8 IC2 ③),
+#       CATEGORY_* 保持**传输层 3 类** —— 不得为承载该词表而扩成 6 类(词表混层)。
+# 机器强制 3 项:
+#   ① CATEGORY_* 恰为 3 个声明,且值可**静态求值**且为 0/1/2 连续
+#      → 保证 soc_internal_noc.hh 的「索引对齐」分桶不会静默折叠任何类别
+#         (route_flit: `vc = (cat < VC_COUNT) ? cat : VC_SNP`,VC_COUNT=4)
+#      ⚠️ **不可静态求值即判红**(不是跳过)—— 堵住「写成表达式/花括号初始化」绕过
+#   ② flit 类别消费点引用的常量**必须真实存在**
+#      → 封死 M-4 的「幽灵类别」(注释描述了从未实现的 4 类 CATEGORY_ 集)
+#      ⚠️ 覆盖**注释与代码**(M-4 的幽灵类别正在注释里);误报时改写措辞即可
+#   ③ VC_COUNT 与「4 独立 VC」物理模型声明一致
+CATEGORY_FILE="include/bundles/noc_bundles_tlm.hh"
+
+# ① 静态求值(C++ 语义:十进制 / 十六进制 / 引用先前常量)
+if CAT_EVAL="$(python3 - "$CATEGORY_FILE" << 'PYEOF'
+import re, sys
+src = open(sys.argv[1], encoding="utf-8").read()
+decl = re.compile(r"CATEGORY_([A-Z_]+)\s*(?:=|\{)\s*([^;}\n]+)")
+vals, names, bad = {}, [], []
+for m in decl.finditer(src):
+    name, expr = m.group(1), m.group(2).strip()
+    if name in vals:
+        continue
+    expr = expr.rstrip(",")
+    try:
+        v = int(expr, 0)
+    except ValueError:
+        if re.fullmatch(r"CATEGORY_[A-Z_]+", expr):
+            ref = expr[len("CATEGORY_"):]
+            if ref in vals:
+                v = vals[ref]
+            else:
+                bad.append(f"{name} = {expr}(引用未定义)"); continue
+        else:
+            bad.append(f"{name} = {expr}(不可静态求值)"); continue
+    vals[name] = v; names.append((name, v))
+if bad:
+    print("UNPARSEABLE:" + "; ".join(bad)); sys.exit(0)
+print("N=%d" % len(names))
+print("VALS=" + " ".join(str(v) for _, v in sorted(names, key=lambda kv: kv[1])))
+print("NAMES=" + " ".join("CATEGORY_" + n for n, _ in names))
+PYEOF
+)"; then :; else CAT_EVAL="UNPARSEABLE:python 失败"; fi
+
+if printf '%s' "$CAT_EVAL" | grep -q '^UNPARSEABLE:'; then
+    fail "CATEGORY_* 声明不可静态求值 → **判红**(不跳过):$(printf '%s' "$CAT_EVAL" | sed 's/^UNPARSEABLE://')"
+else
+    CAT_N="$(printf '%s\n' "$CAT_EVAL" | sed -n 's/^N=//p')"
+    CAT_VALS="$(printf '%s\n' "$CAT_EVAL" | sed -n 's/^VALS=//p')"
+    CAT_NAMES="$(printf '%s\n' "$CAT_EVAL" | sed -n 's/^NAMES=//p')"
+    if [ "$CAT_N" -eq 3 ] && [ "$CAT_VALS" = "0 1 2" ]; then
+        pass "CATEGORY_* 恰为 3 类且值域连续 0..2($(printf '%s' "$CAT_NAMES" | sed 's/CATEGORY_//g');传输层类别,6 类一致性词表不落本层)"
+    else
+        fail "CATEGORY_* 应恰为 3 类且值域 0..2 —— 实测 $CAT_N 类,值域 [$CAT_VALS](A14-2:扩类会静默折叠越界类别)"
+    fi
+    CATEGORY_DEFS="$(printf '%s' "$CAT_NAMES" | tr ' ' '\n' | sed 's/$/ = 0/' | sort -u)"
+fi
+
+GHOST=0
+# 作用域收窄:只检查**确实消费 flit 类别**的文件 —— `CATEGORY_*` 在本仓另有命名空间
+# (如 include/core/error_category.hh 的 CATEGORY_HH),不可全仓按名字一刀切。
+# 覆盖 `using namespace bundles;` + 裸类别名的写法(否则该路径 100% 漏检)。
+CATEGORY_REF_FILES="$(grep -rlE 'flit_category|NoCFlitBundle|noc_bundles_tlm|using namespace bundles' include/ src/ --include='*.hh' --include='*.cc' 2>/dev/null || true)"
+for ref_file in $CATEGORY_REF_FILES; do
+    for tok in $(grep -oE 'CATEGORY_[A-Z_]{2,}' "$ref_file" 2>/dev/null | sort -u || true); do
+        if ! printf '%s' "$CATEGORY_DEFS" | grep -q "^$tok "; then
+            fail "幽灵类别: $ref_file 引用了不存在的 $tok(M-4:引用了未定义的 CATEGORY_*;注释提及亦计)"
+            GHOST=$((GHOST + 1))
+        fi
+    done
+done
+[ "$GHOST" -eq 0 ] && pass "flit 类别消费点($(printf '%s' "$CATEGORY_REF_FILES" | wc -w | tr -d ' ') 个文件)无「幽灵类别」(M-4 防复发)"
+
+VC_COUNT_DECL="$(grep -oE 'static constexpr unsigned VC_COUNT = [0-9]+' include/tlm/cluster/soc_internal_noc.hh 2>/dev/null | grep -oE '[0-9]+$' || true)"
+if [ "$VC_COUNT_DECL" = "4" ] && grep -q '4 独立 VC' include/tlm/cluster/soc_internal_noc.hh 2>/dev/null; then
+    pass "VC_COUNT = 4 与「4 独立 VC」物理模型声明一致"
+else
+    fail "VC_COUNT($VC_COUNT_DECL) 与 soc_internal_noc.hh 的「4 独立 VC」声明不一致"
 fi
 
 echo ""

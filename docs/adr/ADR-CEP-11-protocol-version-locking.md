@@ -73,6 +73,13 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 | **TileLink-C** | **TileLink-C 1.3** | Tree Tip 权限模型 |
 | **NVLink** | **NVLink 4.0** | TL Read / Write / Atomic / Probe;NVSwitch SHARP |
 | **UALink** | **UALink Common 2.0** | Station / Port / Lane;INC 原语 |
+| **MOESI/GPU** | **MOESI/GPU 1.0** | ArchForge `09 号` §3 的 6 态 × 6 事件;snoop 型(SoC 内) |
+| **MESIF** | **MESIF 1.0** | ArchForge `09 号` §3 的分级目录型(跨卡) |
+
+> ⚠️ **本表与 §3 是同一内容的两种表述** —— 决策 2 表给**规范版本**(`AMBA CHI r2`),
+> §3 表给 **`protocol_version` 取值**(`chi-r2`)。**§3 是唯一真源**(per `INV-CEP-11-IC2`),
+> 但决策 3 的判据文字指向**本表** → **变更必须同步两表**,否则表外取值 = 装配期 fail。
+> (2026-10-22 补记:加 `moesi-gpu-1.0` / `mesif-1.0` 时发现该双表述 —— 已同步,未改判据文字。)
 
 > ⚠️ **本表的版本号是"本 ADR 起草时的选型",不是"外部规范的最新版本"** —— CEP 锁定的是**可实现的那一版**,而非追最新版。升级走决策 4 的流程。
 
@@ -121,6 +128,8 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 | TileLink-C | `tilelink-c-1.3` | A/B/C/D/E 通道;Tree Tip 权限;Probe / Acquire / Grant | TileLink-C 1.3 |
 | NVLink | `nvlink-4.0` | TL Read / Write / Atomic / Probe;NVSwitch SHARP / atomic / barrier | NVLink 4.0 |
 | UALink | `ualink-2.0` | Station / Port / Lane;TL Load / Store / Atomic;INC 原语 | UALink Common 2.0 |
+| MOESI/GPU | `moesi-gpu-1.0` | 6 态 × 6 事件;snoop 型(SoC 内);E→M 静默升级是跨域可见写判据的争点(per `ADR-CEP-13`) | ArchForge `09 号` §3 + `ADR-SOC-25` |
+| MESIF | `mesif-1.0` | 分级目录型(跨卡);目录查询 / 定向 snoop | ArchForge `09 号` §3 + `ADR-SOC-25` |
 
 > **表的使用规则**:
 > 1. 本表是**唯一真源**;schema / 代码 / 文档**只引用**,不复制
@@ -166,7 +175,7 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 | 决策项 | 决策 | 状态 |
 |--------|------|------|
 | 两版本分离 | `protocol_version` 只记规范版本;adapter 版本由 git 承载 | ✅ 已拍板 |
-| 锁定表 | §3,6 个协议族的规范版本;**唯一真源** | ✅ 已拍板 |
+| 锁定表 | §3,8 个协议族的规范版本;**唯一真源** | ✅ 已拍板 |
 | 装配期校验 | 表外取值 = fail,不静默降级 | ✅ 已拍板 |
 | 升级路径 | A 仅锁表更新 / B 语义适配 + adapter 变更;C 并行版本**不支持** | ✅ 已拍板 |
 | 显式排除 | 多版本并存 / 追最新版 / adapter 版本入 schema / 表外取值 | ✅ 已拍板 |
@@ -179,11 +188,12 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 | 修订 | 来源 | 内容 |
 |------|------|------|
 | 全文起草 | `objective-cep-platform §8.1 R2` + `ADR-CEP-12` 的 `protocol_version` 字段 | 版本分离 + 锁定表 + 校验 + 升级路径 |
-| 决策 2 锁定表 | 各协议族规范的**可实现**版本选型(非"最新版") | 6 族版本号 + 关注语义子集 |
+| 决策 2 锁定表 | 各协议族规范的**可实现**版本选型(非"最新版") | 6 族版本号 + 关注语义子集(**初稿 6 族;2026-10-22 增至 8 族**,见下一行) |
+| 2026-10-22 增补(台账 **Entry #12** [adr-amendment]) | R-13:`moesi_gpu` / `mesif` 登记进 `07 号 §5.1.1` 后,`INV-CEP-11-IC1` 要求其 `protocol_version` 落在本表内 | 决策 2 表 + §3 表**各 +2 行**(`moesi-gpu-1.0` / `mesif-1.0`)+ 补记「两表须同步」+ §7 计数 6 → 8 |
 
 ---
 
-**版本**: v0.1 草案
-**最后更新**: 2026-10-21
+**版本**: v0.2 草案
+**最后更新**: 2026-10-22
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)
