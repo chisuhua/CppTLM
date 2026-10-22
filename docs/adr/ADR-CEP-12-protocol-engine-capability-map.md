@@ -226,6 +226,7 @@ protocol_instance:
 | 决策 5 | Oracle 独立复审 N8 + 一手 `noc_bundles_tlm.hh:38` | key 绑定 `vc_id`;`named_network` 解析失败即 config fail |
 | 决策 7 | Oracle 独立复审 N5 | 自失效类协议的 Sharer Tracker 选型修正 |
 | 决策 8 | 调研 F16(E3,形似非同构) | `combination_capabilities` 正交于 `family` |
+| **§9 Status Update**(2026-10-22,台账 **Entry #13**) | ArchForge 应答(`4ff2fa6`):判据 (b) **成立** → **R-2 已触发** | **§9**(新增**独立** Status Update 节):R-2 状态 + `perm` 形态约束(Q-3b 补充)+ 路径标签澄清(决策 4 **不适用**)+ 未变更项。**§8 主体(per-network 嵌套形态)零改动** |
 
 ---
 
@@ -356,7 +357,63 @@ protocol_instance:
 
 ---
 
-**版本**: v0.1 草案 + Status Update 2026-10-22
+## 9. Status Update(2026-10-22):R-2 已触发 + `perm` 形态约束(per 台账 Entry #13)
+
+> **授权**:台账 `objective-cep-platform §11` **Entry #13** [adr-amendment];
+> 触发 = ArchForge 答复回执(2026-10-22)§1.1 Q-3a(判据 (b) **成立**)→ R-2 **升格为「已触发」**。
+> **本节不改 §2 决策 2 的 4 值锁** —— `perm` 的**值域**(`NONE`/`READ`/`UNIQUE`/`WRITEBACK`)
+> 与 `ADR-CEP-02 CEN-Ib11` 的禁扩展不变量**零改动**;变的是**字段形态**,落 **Stage 1**。
+
+### 9.1 R-2 状态
+
+| 项 | 内容 |
+|----|------|
+| **R-2 需求本体** | `perm` 增「可静默升级」判别位 —— **不撤回** |
+| **旧状态** | 「潜在表达力缺口,尚未证实触发」(R-2 采纳需求 / 论证待补) |
+| **新状态** | ✅ **已触发** —— 判据 (b) 成立 → `moesi_gpu` 的静默 `E→M` 是域可见写 → 4 值 `perm` 确实无法表达「这是静默升级」 |
+| **论证来源** | ArchForge 答复回执(2026-10-22)§1.1 Q-3a + Q-3b;宿主 ADR 状态见 `ADR-CEP-05 §13.1` |
+| **本批处置** | **不改** `protocol_instance.schema.json`(`perm` 仍为 4 值枚举数组)。形态变更 = **Stage 1** 的 CEP 侧 schema 演进,登记为 `S1-7` |
+
+### 9.2 `perm` 形态约束(per 对方 Q-3b 补充,本仓采纳)
+
+新字段**必须**表达「**本行的 `UNIQUE` 投影可静默升为 `WRITEBACK`**」这一**具体**语义,
+**不是**一个泛化的「可升级」布尔。理由:
+
+| 转换 | 性质 | 对跨域传播的触发条件 |
+|------|------|-------------------|
+| `E → M` | **静默**升级(无需通知目录) | 写**跨域可见而未被传播** → 正是 (b) 成立的那一类 |
+| `O → M` | **显式**升级(需 `INVALIDATE→others`,**发外部通信**) | 传播路径**已存在** → 不需要靠判别位补救 |
+
+⇒ 泛化布尔会把二者混同 → 丢掉的正是判据 (b) 所依赖的那个区分。
+
+### 9.3 路径标签澄清(本仓独立判定,与 ArchForge 的**可观测后果一致**)
+
+ArchForge 在答复回执 `cep-interface-alignment-response-2026-10-22.md` §1.4 判定为 `ADR-CEP-11 决策 4` **路径 A**(不升版本号 / adapter 代码不动),
+并请本仓确认。本仓**独立**核对后:
+
+- **✅ 接受实质结论**:`protocol_version` **不升版**(`moesi-gpu-1.0` 保持)。
+  `perm` 是 **CEP 侧** Crossbar Interface 投影词汇表(`ADR-CEP-02 CEN-Ib11`),
+  **不是**协议规范的一部分;`protocol_version` 按 `ADR-CEP-11 决策 1` **只承载规范版本**;
+  `moesi-gpu-1.0` 声明的协议语义(6 态 × 6 事件 / snoop 型)**完全未变**。
+- **⚠️ 但不采用「路径 A」标签**:`ADR-CEP-11 决策 4` 的三条路径是「**规范版本升级**的处置路径」;
+  R-2 落地**不构成规范版本升级** → **决策 4 不适用**(既非 A 也非 B),其「决策登记」义务**不触发**。
+  若强行套用路径 A 的**动作**判据(「adapter 代码不动」)则**不成立** ——
+  `perm` 产出方**必须**能区分静默/显式升级 → adapter/plugin 侧**必然有代码变更**
+  (现状:`perm` **仅在 schema 中定义,无任何 C++ 实现** → 该变更整体属 Stage 1)。
+- **净结论**:**可观测后果与对方完全一致**(版本号不动 / adapter 语义子集不动 / 不占 adapter change slot),
+  差异**仅在标签与登记方式** → 记为「**决策 4 不适用;R-2 归 CEP 侧 schema 演进,落 Stage 1**」。
+  详细论证见台账 `Entry #13 ②`。
+
+### 9.4 未变更项(明示)
+
+- **§2 决策 2** 的 `perm` **4 值锁** —— **零改动**(禁 `ATOMIC` 第 5 值;`CEN-Ib12` 仍不存在)
+- **§2 决策 1** 的 schema 全量结构 —— **零改动**
+- **`protocol_instance.schema.json`** —— **零改动**(本批)
+- 本 ADR 的其余全部正文 —— **零改动**
+
+---
+
+**版本**: v0.2 草案 + Status Update 2026-10-22(§8 / §9)
 **最后更新**: 2026-10-22
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

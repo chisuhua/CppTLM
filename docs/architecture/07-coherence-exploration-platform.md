@@ -319,7 +319,7 @@ group-scoped completion     → Fabric Collective Plane
 | **TileLink-C** | TileLink-C | `TileLinkCAdapter` | Stage 1 | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
 | **NVLink** | NVLink | `NvlinkAdapter` | Stage 2 | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
 | **UALink** | UALink | `UalinkAdapter` | Stage 3 | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
-| **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **未排期** | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的争点所在 |
+| **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **未排期** | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
 | **MESIF** | `mesif` | `MesifAdapter` | **未排期** | 分级目录型(跨卡);目录查询 / 定向 snoop | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1) |
 
 > **协议数 6 族 / 8 实例**(CXL 2.0 与 3.0 对称是同一 adapter 的两种模式,但实现阶段是 2 个 change)
@@ -328,6 +328,11 @@ group-scoped completion     → Fabric Collective Plane
 > (ArchForge 声明族,含 2 套互不承认的一致性架构,per `32 号` C1)→ **+1 族 / +2 实例**,
 > 镜像 CXL「1 族 / 2 实例」的先例。两者 `family` 字段均为 `industrial`(per `32 号` 声明)。
 > **状态 = 未排期** —— 登记 ≠ 排期(per `ADR-CEP-00 §2 决策 3`,本季度队列未变)。
+>
+> **2026-10-22 补记**(per 台账 **Entry #13** [adr-amendment]):`moesi_gpu` 行的「**争点所在**」表述
+> **已失效** —— ArchForge 已裁定判据 (b) **成立**(`4ff2fa6`,Q-3a = 是)→ 该静默 `E→M` **是域可见写**。
+> **状态值以 `ADR-CEP-05 §13.1` 为唯一权威**(本表**不复制**状态值,per 防双真源立场);
+> 本行的「未排期」状态**不受影响**(登记 ≠ 排期)。
 
 #### 5.1.2 Ruby-SLICC 协议族(1 族 / 8 实例,per `ADR-CEP-17 §2 Decision 2`)
 

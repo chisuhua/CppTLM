@@ -128,7 +128,7 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 | TileLink-C | `tilelink-c-1.3` | A/B/C/D/E 通道;Tree Tip 权限;Probe / Acquire / Grant | TileLink-C 1.3 |
 | NVLink | `nvlink-4.0` | TL Read / Write / Atomic / Probe;NVSwitch SHARP / atomic / barrier | NVLink 4.0 |
 | UALink | `ualink-2.0` | Station / Port / Lane;TL Load / Store / Atomic;INC 原语 | UALink Common 2.0 |
-| MOESI/GPU | `moesi-gpu-1.0` | 6 态 × 6 事件;snoop 型(SoC 内);E→M 静默升级是跨域可见写判据的争点(per `ADR-CEP-13`) | ArchForge `09 号` §3 + `ADR-SOC-25` |
+| MOESI/GPU | `moesi-gpu-1.0` | 6 态 × 6 事件;snoop 型(SoC 内);E→M 静默升级是跨域可见写判据的争点(per `ADR-CEP-13`;**该争点已裁定,见 §9 Status Update**) | ArchForge `09 号` §3 + `ADR-SOC-25` |
 | MESIF | `mesif-1.0` | 分级目录型(跨卡);目录查询 / 定向 snoop | ArchForge `09 号` §3 + `ADR-SOC-25` |
 
 > **表的使用规则**:
@@ -193,7 +193,54 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 
 ---
 
-**版本**: v0.2 草案
+| 2026-10-22 增补(台账 **Entry #13** [adr-amendment]) | ArchForge 应答我方「待回应清单」10 条(`4ff2fa6`):判据 (b) **成立** → `moesi_gpu` 的 E→M 静默升级**已裁定为域可见写** | **§3 表行「争点」表述已失效**(该争点已裁定);本表**不**复制状态值 → 状态以 `ADR-CEP-05 §13.1` 为**唯一权威**。**`protocol_version` 不升版**(`moesi-gpu-1.0` 保持)—— 详见 §9 Status Update |
+
+---
+
+## 9. Status Update(2026-10-22,per 台账 Entry #13)
+
+> **授权**:台账 `objective-cep-platform §11` **Entry #13** [adr-amendment]。
+> **触发**:ArchForge 答复回执(2026-10-22)§1.1 **Q-3a = 是** —— 判据 (b) **成立**。
+> **本节不改本表任何行** —— 按「表的使用规则 1:本表是唯一真源,**只引用**,不复制」,
+> 判据 2 的**状态值**归 `ADR-CEP-05 §13.1`(宿主 ADR)所有,本节**只引用**。
+
+### 9.1 `moesi-gpu-1.0` 条目的「争点」表述已失效
+
+- **§3 表行原文**:`E→M 静默升级是跨域可见写判据的争点(per ADR-CEP-13)`
+- **现状**:该**争点已裁定** —— 判据 (b) **成立** → `moesi_gpu` 的静默 `E→M` **是域可见写**。
+- **状态值权威**:`ADR-CEP-05 §13.1`(判据 2 状态 = **已触发**)。
+  **本表不复制状态值**,仅在表行内以「已裁定,见 §9」指引 —— 避免双真源(per Q-3c 立场)。
+
+### 9.2 `protocol_version` **不升版** + 「表的使用规则 3」的适用性澄清
+
+- **结论**:`moesi-gpu-1.0` **保持不变**(不引入 `moesi-gpu-1.1`)。
+  依据:`ADR-CEP-11 决策 1` —— `protocol_version` **只承载规范版本**;
+  `perm` 是 **CEP 侧** Crossbar Interface 投影词汇表(`ADR-CEP-02 CEN-Ib11`),**不是**协议规范的一部分;
+  `moesi-gpu-1.0` 声明的协议语义(6 态 × 6 事件 / snoop 型)**完全未变**。
+- **⚠️ 「表的使用规则 3」的适用性**:规则 3 原文「**变更本表 = 触发决策 4 的路径判定**」。
+  本次**本表的行集 / 版本号 / 协议实例数 / 语义子集均零变更**(仅表内一格的**状态描述**更新)
+  → **决策 4 的路径判定**经本节 §9.2 论证为**不适用**。
+  - 决策 4 的三条路径是「**规范版本升级**的处置路径」;R-2(`perm` 形态变更)是 **CEP 侧 schema 演进**,
+    **不构成规范版本升级** → 决策 4 **不适用**(既非 A 也非 B),其「决策登记」义务**不触发**。
+  - 若强行套用路径 A 的**动作**判据(「adapter 代码不动」)则**不成立** ——
+    `perm` 产出方**必须**能区分静默/显式升级 → adapter/plugin 侧**必然有代码变更**
+    (现状:`perm` **仅在 schema 中定义,无任何 C++ 实现** → 该变更整体属 **Stage 1**)。
+  - **净结论**:**可观测后果**与 ArchForge 的判定(路径 A)**完全一致**
+    (版本号不动 / adapter 语义子集不动 / 不占 adapter change slot),差异**仅在标签与登记方式**。
+  - 登记见台账 `Entry #13 ②`;R-2 的实现落 **Stage 1**(`S1-7`)。
+- **ArchForge 侧判定**:其答复回执 §1.4 判为**路径 A**并请本仓确认。
+  本仓**接受其实质结论**、**不采用「路径 A」标签** —— 已在本节与台账双向留痕,**不构成对对方的反驳**。
+
+### 9.3 未变更项(明示)
+
+- **§3 锁定表的行集 / 版本号 / 协议实例数(8 族 / 8 实例)** —— **零改动**
+- **决策 1**(版本分离)/ **决策 2**(锁定表唯一真源)/ **决策 3**(装配期校验)/ **决策 4**(三条路径)/ **决策 5** —— **零改动**
+- **`protocol_version` 字段格式** —— **零改动**
+- 本 ADR 的其余全部正文 —— **零改动**
+
+---
+
+**版本**: v0.3 草案 + Status Update 2026-10-22
 **最后更新**: 2026-10-22
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)
