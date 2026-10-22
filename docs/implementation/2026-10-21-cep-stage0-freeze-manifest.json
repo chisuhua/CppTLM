@@ -32,8 +32,8 @@
     "tools/run_sweep.py": "624b9da16e53911dde8e68fdeecbe1d07a9377d28f8a775708814c93493f35bc"
   },
   "authorized_by": "Entry #9",
-  "frozen_at": "2026-10-21",
-  "frozen_at_commit": "b808881982f2f1eee3c18eaf6fef13202949ec02",
+  "frozen_at": "2026-10-22",
+  "frozen_at_commit": "97ecbf9d99e48ce11a4ef9e0fb43a3471f225641",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",

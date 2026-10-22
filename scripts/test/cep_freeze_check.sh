@@ -204,7 +204,7 @@ if fc:
             print(f"      - {r}")
         print("    · 含义:清单描述的不是该 commit 的内容(通常因 --update 在 commit 之前跑)")
     else:
-        print(f"  \033[0;32m✓\033[0m provenance 自检通过:28 个产物的 hash 与 commit {fc[:12]} 的内容一致")
+        print(f"  \033[0;32m✓\033[0m provenance 自检通过:{len(arts)} 个产物的 hash 与 commit {fc[:12]} 的内容一致")
 
 # ⚠️ 变量名必须与上面 provenance 块内的 `_bad` 一致(2026-10-22 复审 S5 修)
 #    —— 初版写成 `_prov_bad`,NameError 被吞 → 误走「✓ 全通过」分支
