@@ -75,3 +75,28 @@ archforge	docs/architecture/22-nsa-fabric-address-spec.md	0.5.4	网络命名空�
 # 回执若升版 / 清单若自行改写论证,检查会红 → 提醒同步,而非静默过期。
 local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	2.3	论证缺口	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	回执为准,本清单为从
 local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	8.4	对 ArchForge 的正式答复	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	是**逐字引用**回执 §8.4.3
+
+# —— 2026-10-22 第 3 轮(Entry #13)新增的断言 ——
+# 本批把「判据 2 = 已触发」写进多处。**钉住方式有两层**:
+#   · 第 4 列 `lit` = 目标节**标题字面量**仍存在(防节号漂移);
+#   · 第 7 列 `forbid` = **负向断言** —— 钉住「已触发」这个**状态值本身**。
+# ⚠️ 只钉标题 = 只保证「节还在」,**不保证「状态没回退」** —— 后者靠 `forbid`。
+local	docs/adr/ADR-CEP-13-coherence-domain-ownership.md	8	应用口径	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	应用口径注记记于 `ADR-CEP-13` 的 **Status Update**
+local	docs/adr/ADR-CEP-13-coherence-domain-ownership.md	8.2	三条应用口径	docs/adr/ADR-CEP-13-coherence-domain-ownership.md	### 8.2 三条应用口径
+local	docs/adr/ADR-CEP-12-protocol-engine-capability-map.md	9	R-2 已触发	docs/adr/ADR-CEP-12-protocol-engine-capability-map.md	## 9. Status Update(2026-10-22):R-2 已触发
+local	docs/adr/ADR-CEP-12-protocol-engine-capability-map.md	9.2	形态约束	docs/adr/ADR-CEP-12-protocol-engine-capability-map.md	### 9.2 `perm` 形态约束
+local	docs/adr/ADR-CEP-12-protocol-engine-capability-map.md	9.3	路径标签澄清	docs/adr/ADR-CEP-12-protocol-engine-capability-map.md	### 9.3 路径标签澄清
+local	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	13.1	限定 → 状态收敛	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	### 13.1 §7 α 失效判据 2 的「当前不触发」陈述 —— **限定 → 状态收敛(已触发)**
+local	docs/adr/ADR-CEP-11-protocol-version-locking.md	3	规范版本锁定表	docs/adr/ADR-CEP-11-protocol-version-locking.md	## 3. 规范版本锁定表(**唯一真源**)
+local	docs/architecture/07-coherence-exploration-platform.md	5.1.1	工业硬件协议族	docs/architecture/07-coherence-exploration-platform.md	#### 5.1.1 工业硬件协议族
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	10.3	第 3 轮	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	### 10.3 ✅ 第 3 轮
+local	docs/implementation/2026-10-22-cep-poc-spike-spec.md	3.2	S2	docs/implementation/2026-10-22-cep-poc-spike-spec.md	### 3.2 S2 —— 跨域可见写
+local	.rddf/roadmap/objectives/obj-cep-platform.md	11	决策台账	.rddf/roadmap/objectives/obj-cep-platform.md	### Entry #13 — 2026-10-22 [adr-amendment]
+
+# —— 负向断言(第 7 列 forbid):防「状态回退」——
+# 钉住:判据 2 的状态一旦被写回旧的「未定/未交付」表述,立即红。
+# ⚠️ 只用于**明确过时**的字面量 —— 含「曾 / 已失效 / 已补齐」等限定语的**历史留痕**不适用。
+local	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	7	α 失效判据	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	### α 失效判据 2(E 态静默升级	**仍未定**
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	8	开口项	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	## 8. 需 ArchForge 回应的开口项	当前 **Q-3(R-2 的判据 (b))** 仍是唯一未交付的对外开口
+local	docs/implementation/2026-10-22-cep-stage0-external-review-summary.md	2	摘要	docs/implementation/2026-10-22-cep-stage0-external-review-summary.md	### 2.3 域可见写判据	🟡 **未收敛** —— 判据 (b) 的评估**待 ArchForge 答复(Q-3)**
+local	docs/implementation/2026-10-22-cep-poc-spike-spec.md	3	判定场景	docs/implementation/2026-10-22-cep-poc-spike-spec.md	## 3. 三个判定场景	⏳ 阻塞于 Q-3

@@ -52,13 +52,28 @@ pass() { echo -e "  ${GREEN}✓${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 
-# 受检的对外文档（新增对外文档时在此登记）
+# 受检的文档（新增时在此登记）
+# ① 对外文档（发给 ArchForge 的）—— 引用错误会**直接**误导对方
+# ② 契约面（ADR / 架构 / tasks / 台账）—— 状态不一致会**内部矛盾**
+#    ② 的加入源于 2026-10-22 复审:AC-9 要求「无『已触发 / 未触发』矛盾」,
+#    但当时的门禁只覆盖 ① → 契约面的矛盾**无人能自动发现**。
 DOCS=(
   "docs/implementation/2026-10-22-cep-archforge-response-checklist.md"
   "docs/implementation/2026-10-21-cep-archforge-response-receipt.md"
   "docs/implementation/2026-10-22-cep-stage0-external-review-summary.md"
   "docs/implementation/2026-10-22-cep-poc-spike-spec.md"
+  "docs/adr/ADR-CEP-05-stub-cache-core-interface.md"
+  "docs/adr/ADR-CEP-11-protocol-version-locking.md"
+  "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md"
+  "docs/adr/ADR-CEP-13-coherence-domain-ownership.md"
+  "docs/architecture/07-coherence-exploration-platform.md"
+  "openspec/changes/cpptlm-cep-umbrella/tasks.md"
+  ".rddf/roadmap/objectives/obj-cep-platform.md"
 )
+
+# grep -P 支持性探测(用于 CJK 前边界;BSD grep 无 -P → 降级 + warn)
+GREP_P_OK=0
+if echo "x" | grep -qP "x" 2>/dev/null; then GREP_P_OK=1; fi
 
 ALIASES="$SCRIPT_DIR/cep_doc_ref_aliases.tsv"
 REGISTRY="$SCRIPT_DIR/cep_doc_ref_registry.tsv"
@@ -79,6 +94,22 @@ VIRTUAL_PATHS=(
   "include/core/coherence_protocol.hh"              # 设计示意:Stage 1 才新建(本仓 0 命中,per 回执 §5)
   "include/ src/"                                   # 多路径合写(非单一路径)
   "include/ src/ test/"                             # 同上
+  # —— 通配 / 省略号 / 目录列表:不是「可判存在的单一路径」——
+  "docs/adr/ADR-CEP-*.md"                           # 通配(族名)
+  "docs/adr/ADR-DGPU-06/08/09/11/12"                # 多编号合写
+  "docs/adr/ADR-CEP-05-...md"                       # 省略号(散文引用)
+  "docs/adr/ADR-CEP-11-...md"                       # 同上
+  "docs/adr/ADR-CEP-12-...md"                       # 同上
+  "docs/adr/ADR-CEP-13-...md"                       # 同上
+  "docs/adr/ADR-CEP-00-...md"                       # 同上
+  "docs/architecture/07-*.md"                        # 通配
+  "include/tlm/cep/.gitkeep"                        # 占位文件
+  "include/tlm/pcie/pcie_endpoint_tlm.h"            # 冻结/待迁路径
+  "tools/aggregate.py"                              # 设计示意
+  "tools/recommend.py"                              # 设计示意
+  "docs/architecture/07-...md"                      # 省略号(散文引用)
+  "openspec/changes/<name>/"                        # 占位写法
+  "openspec/changes/archive/2026-10-20-*/"          # 通配
 )
 
 is_virtual_path() {
@@ -140,6 +171,9 @@ done
 
 echo ""
 echo -e "${BLUE}[3/4] 自动检测:「<别名> §N」的目标节必须存在（文档自身派生,无漏登记）${NC}"
+if [ "$GREP_P_OK" != "1" ]; then
+  warn "[DEGRADED] 本环境 grep 不支持 -P → 已降级为「无 CJK 前边界」匹配（可能对「答复回执」产生假阳性）"
+fi
 # 别名表:root<TAB>file<TAB>alias。别名按长度降序,避免短名吃掉长名（如 `22 号` 吃掉 `22-nsa`）。
 DETECTED=()          # 元素: root|file|sec|doc|alias|lineno
 BAD_DETECT=0
@@ -153,15 +187,27 @@ while IFS=$'\t' read -r a_root a_file a_alias; do
   case "$a_root" in archforge) a_base="$ARCHFORGE" ;; *) a_base="$ROOT" ;; esac
   [ -e "$a_base/$a_file" ] || continue
   # 别名内的正则特殊字符转义（`.` 常见于 `remaining-batches.md`）
+  # ⚠️ 匹配要求别名后为**非字母数字**边界 —— 否则 `ADR-CEP-00` 会吃掉 `ADR-CEP-00A`
+  #    （截断匹配 → 解析到**错文件** → 假阴性/假阳性）
   a_esc="$(printf '%s' "$a_alias" | sed 's/[.[\*^$()+?{}|]/\\&/g')"
   for d in "${DOCS[@]}"; do
     [ -f "$d" ] || continue
+    # 边界规则:
+    #   后边界 → `ADR-CEP-00` 不会吃掉 `ADR-CEP-00A`
+    #   前边界 → `回执` 不会匹配到「**答复**回执」的尾部(那是对方文件)
+    # 前边界需排除**汉字** → 用 Perl 字符类 \p{Han}(仅 GNU grep -P 支持)
+    if [ "$GREP_P_OK" = "1" ]; then
+      _m="$(grep -oP "(?<![\p{Han}A-Za-z0-9])${a_esc}(?![A-Za-z0-9])(?:[^§\`|]{0,3})§[0-9]+(?:\.[0-9]+)*" "$d" 2>/dev/null || true)"
+    else
+      # 降级:无 CJK 前边界 → 「答复回执」会被当成本仓「回执」(可能假阳性)
+      _m="$(grep -oE "${a_esc}([^A-Za-z0-9§\`|][^§\`|]{0,3})§[0-9]+(\.[0-9]+)*" "$d" 2>/dev/null || true)"
+    fi
     while IFS= read -r m; do
       [ -z "$m" ] && continue
       sec="$(printf '%s' "$m" | grep -oE '§[0-9]+(\.[0-9]+)*$' | tr -d '§')"
       [ -z "$sec" ] && continue
       DETECTED+=("$a_root|$a_file|$sec|$d|$a_alias|")
-    done < <(grep -oE "${a_esc}[^§\`|]{0,4}§[0-9]+(\.[0-9]+)*" "$d" 2>/dev/null || true)
+    done <<< "$_m"
   done
 done < "$ALIASES"
 
@@ -190,20 +236,21 @@ REG_TOTAL=$(grep -vcE '^[[:space:]]*(#|$)' "$REGISTRY" || true)
 # 列数预检:注册表是**手工维护**的 TSV,少打一个 tab 会让 `lit` 读成空
 # → `[ -n "$lit" ]` 为假 → 该行的防漂移校验**静默消失**（无任何报错）。
 # 故在循环前对**原始行**做一次列数校验（在循环内用 read 拆完再数是数不出来的）。
-BADCOL="$(awk -F'\t' '!/^[[:space:]]*#/ && NF>0 && NF!=6 {printf "  行 %d: %d 列\n", NR, NF}' "$REGISTRY" || true)"
+BADCOL="$(awk -F'\t' '!/^[[:space:]]*#/ && NF>0 && (NF<6 || NF>7) {printf "  行 %d: %d 列\n", NR, NF}' "$REGISTRY" || true)"
 if [ -n "$BADCOL" ]; then
-  fail "注册表存在列数非 6 的行（应为 root/file/sec/kw/doc/lit）:"
+  fail "注册表存在列数非 6/7 的行（应为 root/file/sec/kw/doc/lit[/forbid]）:"
   printf '%s\n' "$BADCOL"
   BAD_SEC_ABORT=1
 fi
-BAD_SEC=0; DRIFT=0; N_DRIFT_REG=0; SKIPPED_X=0
-while IFS=$'\t' read -r root file sec kw doc lit; do
+BAD_SEC=0; DRIFT=0; N_DRIFT_REG=0; N_FORBID_REG=0; SKIPPED_X=0
+while IFS=$'\t' read -r root file sec kw doc lit forbid; do
   case "$root" in \#*|"") continue ;; esac
   # 归一化:仅压缩空白,不用 xargs（xargs 遇未配对引号会 rc!=0,在 set -e 下直接崩）
   norm() { printf '%s' "$1" | tr -s '[:space:]' ' ' | sed 's/^ //; s/ $//'; }
   root="$(norm "$root")"; file="$(norm "$file")"; sec="$(norm "$sec")"
   kw="$(norm "$kw")"; doc="$(norm "$doc")"; lit="$(norm "$lit")"
-  [ "$doc" = "-" ] && doc=""; [ "$lit" = "-" ] && lit=""
+  forbid="$(norm "$forbid")"
+  [ "$doc" = "-" ] && doc=""; [ "$lit" = "-" ] && lit=""; [ "$forbid" = "-" ] && forbid=""
 
   case "$root" in archforge) base="$ARCHFORGE" ;; *) base="$ROOT" ;; esac
   full="$base/$file"
@@ -231,9 +278,22 @@ while IFS=$'\t' read -r root file sec kw doc lit; do
       DRIFT=$((DRIFT + 1))
     fi
   fi
+  # (c) 负向断言:该文档中**不得**出现的过时字面量（防**状态回退**）
+  #    ⚠️ 只对**明确过时**的字面量用负向断言 —— 含「曾 / 已失效 / 已补齐」等限定语的
+  #       **历史留痕**不适用（它们是合法的）。
+  if [ -n "$forbid" ] && [ -n "$doc" ]; then
+    N_FORBID_REG=$((N_FORBID_REG + 1))
+    if [ ! -f "$doc" ]; then
+      fail "负向断言的文档不存在: $doc"; DRIFT=$((DRIFT + 1))
+    elif grep -qF -- "$forbid" "$doc"; then
+      fail "$(basename "$doc") 仍含过时字面量「$forbid」—— 状态可能已回退"
+      DRIFT=$((DRIFT + 1))
+    fi
+  fi
 done < "$REGISTRY"
 [ "$BAD_SEC" -eq 0 ] && pass "全部语义断言成立（$((REG_TOTAL - SKIPPED_X)) 条生效 / ${REG_TOTAL} 条登记）"
 [ "$DRIFT" -eq 0 ] && pass "全部登记项在文档侧的字面量仍存在（防漂移 $N_DRIFT_REG 条）"
+[ "$DRIFT" -eq 0 ] && pass "负向断言全部成立（$N_FORBID_REG 条:过时字面量未复现）"
 
 echo ""
 echo -e "${BLUE}[4b] 覆盖度自检 —— 自动检测到的引用中,哪些尚无语义断言${NC}"

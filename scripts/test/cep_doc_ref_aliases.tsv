@@ -23,7 +23,6 @@ archforge	docs/architecture/22-nsa-fabric-address-spec.md	22-nsa
 archforge	docs/architecture/25-nsa-hardware.md	25-nsa
 archforge	docs/architecture/22-nsa-fabric-address-spec.md	22-nsa-hardware
 archforge	docs/architecture/25-nsa-hardware.md	25-nsa-hardware.md
-local	docs/adr/ADR-CEP-00-platform-charter-and-governance.md	ADR-CEP-00
 local	docs/adr/ADR-CEP-01-fabric-collective-plane.md	ADR-CEP-01
 local	docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md	ADR-CEP-02
 local	docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md	ADR-CEP-03
@@ -41,7 +40,6 @@ local	docs/adr/ADR-CEP-15-cachetlm-alignment.md	ADR-CEP-15
 local	docs/adr/ADR-CEP-16-06-evolution-route-mapping.md	ADR-CEP-16
 local	docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md	ADR-CEP-17
 local	docs/adr/ADR-CEP-18-protocol-generation-scope.md	ADR-CEP-18
-archforge	docs/adr/ADR-SOC-01-coherence-protocol-strategy.md	ADR-SOC-01
 archforge	docs/adr/ADR-SOC-02-cu-granularity.md	ADR-SOC-02
 archforge	docs/adr/ADR-SOC-03-wavefront-coalescing-abstraction.md	ADR-SOC-03
 archforge	docs/adr/ADR-SOC-04-hsapp-cp-dispatcher-simplification.md	ADR-SOC-04
@@ -70,3 +68,13 @@ local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	回执
 local	docs/implementation/2026-10-22-cep-poc-spike-spec.md	PoC 规格
 local	.rddf/roadmap/objectives/obj-cep-platform.md	obj-cep-platform
 local	.opencode/plan/20261022-cep-remaining-batches.md	remaining-batches.md
+
+# —— 2026-10-22 扩充:解决自动检测的 2 类误报 ——
+# ① `ADR-CEP-00A` 被截成 `ADR-CEP-00`(正则 `ADR-CEP-(\d+)` 遇字母即止)→ 解析到**错文件**
+#    → 显式登记带字母后缀的变体
+archforge	docs/adr/ADR-SOC-01-coherence-protocol-strategy.md	ADR-SOC-01
+local	docs/adr/ADR-CEP-00-platform-charter-and-governance.md	ADR-CEP-00
+# ② 「答复回执」= **对方**(ArchForge)的回执,与本仓「回执」是两个文件 → 必须分列
+archforge	docs/roadmap/cep-interface-alignment-response-2026-10-22.md	答复回执
+archforge	docs/roadmap/cep-interface-alignment-response-2026-10-22.md	ArchForge 答复回执
+local	docs/adr/ADR-CEP-00A-real-source-anchor-map.md	ADR-CEP-00A
