@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cpptlm.local/schemas/fabric.schema.json",
+  "title": "CEP fabric config —— 网络命名空间与每网络 VC 槽位上界",
+  "description": "Fabric & Transport Plane 的**网络命名空间**与每网络 VC 槽位上界(per ADR-CEP-12 决策 5 修订)。VC 分配是 per-network 的 —— 同一协议实例可横跨多张网,各网的槽位语义不同(per ArchForge 32 号 §6.0.2),故槽位上界必须由 fabric 侧给出,而非由协议实例声明给出。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["networks"],
+  "properties": {
+    "networks": {
+      "description": "network_id → 每网络 VC 槽位信息。network_id 的**单点权威在 ArchForge**(22-nsa §0.5.4.1 / NS-R2),本仓只持派生副本(include/tlm/cep/fabric.json)。",
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9_]*$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["vc_count"],
+        "properties": {
+          "vc_count": {
+            "description": "该网络的 VC 槽位总数(槽位上界)。⚠️ 与 protocol_instance.schema.json 的 vc_id 上界(0-3)对齐 —— 若将来某网络的 vc_count > 4,**两处须同步改**。",
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          }
+        }
+      }
+    },
+    "derived_from": {
+      "description": "**派生来源**(provenance)—— 本文件不是独立权威,而是 ArchForge 单点权威的派生副本。改动本文件前必须先确认 ArchForge 侧已更新 22-nsa §0.5.4.1。",
+      "type": "string"
+    },
+    "authority_note": {
+      "description": "权威归属声明(人类可读的治理注记)。",
+      "type": "string"
+    },
+    "vc_allocation_note": {
+      "description": "承载范围声明 —— 本文件只承载网络命名空间与槽位上界,**不**承载消息类 → vc_id 的分配表。",
+      "type": "string"
+    }
+  }
+}

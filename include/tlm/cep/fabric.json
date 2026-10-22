@@ -1,0 +1,9 @@
+{
+  "networks": {
+    "compute_noc": { "vc_count": 4 },
+    "ualink_fabric": { "vc_count": 4 }
+  },
+  "derived_from": "ArchForge 22-nsa-fabric-address-spec.md §0.5.4.1(网络清单 + 每网络 vc_count)+ 32-cep-based-coherence-architecture.md §6.0.2(per-network VC 分配矩阵)",
+  "authority_note": "本文件是 ArchForge 单点权威的**派生副本**,不是独立权威(per ADR-CEP-12 决策 5 修订 / ArchForge 22-nsa §0.5.4.1 NS-R2:network_id 由该节单点权威,增删必须走 ADR)。改动本文件前必须先确认 ArchForge 侧已更新 §0.5.4.1 —— `scripts/test/cep_decl_alignment_check.sh` 第 ⑤ 项会做双向比对。",
+  "vc_allocation_note": "本文件只承载**网络命名空间与槽位上界**,不承载消息类 → vc_id 的分配表(那是协议实例声明的 vc_binding 的职责,per ArchForge 32 号 §6.0.2「槽位语义的两层归属」)。"
+}

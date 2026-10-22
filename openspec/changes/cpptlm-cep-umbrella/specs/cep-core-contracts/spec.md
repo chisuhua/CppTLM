@@ -246,12 +246,21 @@ CEP SHALL 定义 **协议实例能力声明 schema**(`include/tlm/cep/protocol_i
 - **AND** `combination_capabilities` **恰好 3 维**(`concurrent` / `hierarchical` / `heterogeneous`),且**正交于** `family`
 - **AND** `consistency_labels` 必含 `read` / `write` 两级 **+** `request_level` 映射(承载"同一 wire 请求在不同标签下语义不同")
 
-#### Scenario: named_network 必须解析到唯一 vc_id(IC2)
+#### Scenario: 逐网络校验 ordering_assumption / vc_binding(IC2,2026-10-22 修订)
 
-- **WHEN** 契约测试加载一份含 `named_network` key 的 `ordering_assumption` 配置
-- **THEN** 该 key **必须**解析到唯一 `vc_id`
-- **AND** 解析失败 / 解析到多个 ⇒ **配置加载 fail**
+- **WHEN** 契约测试加载一份 `ordering_assumption` / `vc_binding` 为 **per-network 嵌套形态**的协议实例声明
+- **THEN** 对每个 network `n` ∈ `ordering_assumption` ∪ `vc_binding`:
+  - `ordering_assumption[n]` 的每个 `vc_id` ∈ `vc_binding[n].values()`
+  - `vc_binding[n].values()` 中每个 `vc_id` **<** `fabric_config.networks[n].vc_count`(槽位上界)
+  - `vc_binding[n]` 的每个消息类 ∈ **6 类规范词表** `{request,response,snoop,snoop_resp,atomic,query}`
+- **AND** network 须在 fabric 网络命名空间中登记(per `22-nsa §0.5.4.1` NS-R1);未登记 ⇒ **配置加载 fail**
 - **AND** `vc_id` 取值 ∈ 已声明域(per `noc_bundles_tlm.hh:38` 的 0-3)
+- **AND** `ordering_assumption` 与 `vc_binding` 的 network 键集**必须相等**(逐网络对称,per ArchForge `32 号 §6.2`)
+
+> ⚠️ **取代说明(2026-10-22,per ADR-CEP-12 §8 Status Update)**:本 scenario 原为
+> 「named_network 必须解析到唯一 `vc_id`」——**「唯一性」这一谓词在 per-network 嵌套形态下整体消失**
+> (network 即 key,其下 `vc_id` 是**显式**给出的,不存在多义)。
+> **机器校验**:`scripts/test/cep_decl_alignment_check.sh` 第 ②/③/④/⑤ 项。
 
 #### Scenario: status 是计数口径的唯一依据(IC3)
 

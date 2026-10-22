@@ -229,7 +229,134 @@ protocol_instance:
 
 ---
 
-**版本**: v0.1 草案
-**最后更新**: 2026-10-21
+## 8. Status Update(2026-10-22):`ordering_assumption` / `vc_binding` 升 per-network 嵌套形态
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
+> §2 决策 5 / 决策 6 与 §3 `INV-CEP-12-IC2` 的**正文不改**,**自本段起以本段文本为准**。
+> **触发**: ArchForge 侧 coherence 接口规约合入(commit `8290b4c`)后的跨仓对齐 ——
+> 其 N-1/N-2 裁决把 VC 分配从**扁平**改为 **per-network 矩阵**,并给出 diff 级 schema delta(`32 号 §6.4`)。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` Entry #9(`adr-amendment`)
+> **落地载体**: `include/tlm/cep/protocol_instance.schema.json` + `include/tlm/cep/fabric.{schema.json,json}`
+> + `scripts/test/cep_decl_alignment_check.sh`(判据 C-4 的机器化)
+
+### 8.1 取代范围
+
+| 项 | 位置 | 处置 |
+|----|------|------|
+| **决策 5** | §2 `:118-124` | **取代** —— 见 §8.2 |
+| **决策 6** | §2 `:126-130` | **取代** —— 见 §8.2 |
+| **§2 前置 schema 草图** | §2 `:82` | **取代**(草图里的 `<vc_id \| named_network>` 旧 key 形态) |
+| **§4 抓取点 2** | §4 `:178` | **取代**(「`named_network` 解析不到唯一 `vc_id` ⇒ 配置加载 fail」旧判据) |
+| **§6 决策汇总行** | §6 `:211` | **取代**(「`ordering_assumption` 逐 `vc_id` / key 必须解析到唯一 `vc_id`」旧判据) |
+| **§7 修订记录行** | §7 `:226` | **取代**(「key 绑定 `vc_id`;`named_network` 解析失败即 config fail」旧判据) |
+| **`INV-CEP-12-IC2`** | §3 `:168` | **取代** —— 见 §8.3 |
+| `INV-CEP-12-IC1` / `IC3` | §3 `:163` / `:169` | **不变** |
+
+> **兜底声明**:本 ADR 的 **§2 / §3 / §4 / §6 / §7 全文**中,凡出现「`<vc_id | named_network>`」
+> 「解析到唯一 `vc_id`」「解析失败即 config fail」「key 绑定 `vc_id`」等**扁平形态旧谓词**者,
+> **一律以本段为准** —— 该谓词在 per-network 嵌套形态下**整体消失**。
+> (2026-10-22 复审修正:初版兜底只写 §2 / §3,漏了 §4 抓取点 / §6 决策汇总 / §7 修订记录三处)
+
+> **旧文留痕说明**:正文保留 2026-10-21 的原始表述(不可变约定)。
+> 旧文与本段冲突时,**以本段为准** —— 旧文中的「`named_network` 解析到**唯一** `vc_id`」这一
+> **谓词在嵌套形态下整体消失**(network 即 key,其下 vc_id 是**显式**给出的,不存在多义)。
+
+### 8.2 取代后文本(规范)
+
+**决策 5(取代后)**:`ordering_assumption` 逐网络 × 逐 `vc_id`
+
+- **粒度**:逐网络 × 逐 `vc_id` —— **key = network**,其下每个 key 是一个 `vc_id`
+- **key 语义**:network 必须在 **fabric config 的网络命名空间**中登记
+  (per `INV-CEP-12-IC2` 条件 ② 与 ArchForge `22-nsa §0.5.4.1` NS-R1)
+- **值的语义**:`{vc_id → ordering}`;每个 `vc_id` 必须落在该网络的**槽位上界**内
+  (`vc_id < fabric_config.networks[n].vc_count`)
+- **理由**:排序是**协议对所用 `(network, vc_id)` 的保序需求 + fabric 侧担保**,一致性由**装配期校验**承担
+  —— 不绑定 `vc_id` ⇒ `ordering_assumption` 与 `flit.vc_id` 无法关联 ⇒ `ADR-CEP-09` 的死锁自由论证拿不到可计算输入
+  > ⚠️ **措辞修订(2026-10-22,per oracle 独立架构复审)**:原措辞「排序是 **VC 的静态属性**」易被误读为
+  > 「排序归属 Fabric 层」。该论证的**实质**是「key 应是 `vc_id`、flit 不带 ordering 字段」
+  > (`NoCFlitBundle` 无 ordering 字段);而**归属**的一手依据是 `.pcc` 的
+  > `Network { Ordered fwd; Unordered resp; Unordered req; }` —— 排序假设写在**协议规格文件**里,
+  > 是协议生成器的**输入** ⇒ 归**协议侧声明**(per `07 号:145`)。
+- **依据**:`MSI_Proto.pcc:3-6`(同上);ProtoGen 局限 L3(同上)
+- **单网络协议**:可退化为单 network(简化,不强制逐条列举)
+- **⚠️ provisional 标注**:本形态是 **Stage 0 跨仓对齐形态(provisional)** —— 采纳自 ArchForge `32 号 §6.4`
+  的 schema delta,而其 2 份声明 `status` 均为 `planned`、规范版本**不在** `ADR-CEP-11 §3` 锁表内、
+  `32 号 §6.0.3` 明说死锁自由性「归 CEP 侧机器校验(ArchForge 侧不背书)」。
+  **首个 `implemented` 实例装配后,Stage 1 必须复核本形态**。
+  **provisional ≠ 免台账** —— 每次演进照常走 §11 台账 `adr-amendment` + 冻结清单重生成。
+
+**决策 6(取代后)**:`vc_binding` 是**逐网络**的消息类 → `vc_id` 的映射
+
+- **粒度**:逐网络 —— **key = network**,其下每个 key 是一个消息类
+- **一手依据**:ProtoGen 局限 L4(同上)→ 消息→VC 绑定**不由协议生成器负责**,是**协议侧声明**
+- **消费方**:`ADR-CEP-09` Decision A(通道依赖图无环判据)——
+  ⚠️ **图顶点已同步升为 `(协议实例, network, vc_id)`**,见 `ADR-CEP-09 §8 Status Update`
+  (这是**数学对象的变更**,不是措辞:两张网共享 `vc_id` 值域 0-3,顶点不带 network ⇒ 跨网依赖边被合并)
+- **不承诺**:CEP **不自动生成** `vc_binding`
+- **同一 `vc_id` 可绑定多个消息类**(per ArchForge `32 号 §6.0.2` ualink VC3 = `response` + `snoop_resp` + `forward_data`)
+  → **不做唯一性约束**
+
+### 8.3 不变量(取代后 + 新增)
+
+- **`INV-CEP-12-IC2`(取代后)**: **逐网络**校验,对每个 network `n` ∈ `ordering_assumption` ∪ `vc_binding`:
+  ① `ordering_assumption[n]` 的每个 `vc_id` ∈ `vc_binding[n].values()`;
+  ② `vc_binding[n].values()` 中每个 `vc_id` **<** `fabric_config.networks[n].vc_count`(槽位上界);
+  ③ `vc_binding[n]` 的每个消息类 ∈ **6 类规范词表** `{request,response,snoop,snoop_resp,atomic,query}`;
+  否则 → **装配期 fail**(沿用 `ADR-CEP-11` 决策 3 的「不静默降级」处置)
+
+  > ⚠️ **指针修正(2026-10-22)**:ArchForge `32 号 §6.4.2` 末句写「沿用 `ADR-CEP-12` **决策 3** 的『不静默降级』处置」
+  > 是**错误指针** —— 「不得静默降级」出在 **`ADR-CEP-11:134/106`**;`ADR-CEP-12` 决策 3 是 `consistency_labels`。
+  > 本仓引用一律以 `ADR-CEP-11` 为准。
+
+  > ⚠️ **旧文(已被取代)**:`ordering_assumption` 的 `named_network` key 必须解析到唯一 `vc_id`,否则配置加载 fail
+  > —— 嵌套形态下 network 即 key、vc_id 显式给出,**「唯一性」这一谓词整体消失**。
+
+  > **6 类词表的补充约定**(IC2 条件 ③ 的展开,**不另立编号**):
+  > - **明确排除**:`CATEGORY_CREDIT`(流控类别,非一致性消息类)/
+  >   `forward_data`(canonical 流 6,是 `snoop` 槽的**承载实例**)/
+  >   `snoop_completion_ack`(canonical 流 10,是 `snoop_resp` 槽的**承载实例**)
+  >   → 一手依据:ArchForge `32 号 §6.0.1`
+  > - **分层纪律**:6 类词表落在 **Coherence Interface 层**。
+  >   `CATEGORY_*`(`include/bundles/noc_bundles_tlm.hh:60-62`)是**链路层 flit 类别**,
+  >   **不得**为承载本词表而扩成 6 类 —— 那会把一致性语义搬进传输层(词表混层),
+  >   且 `soc_internal_noc.hh:118` 的 `++vc_counts_[vc]` 分桶下标与「VC 0-3」值域语义会冲突。
+  >   两者关系由 **adapter 处的显式映射表**承担(**非恒等**,Stage 1 交付)。
+  > - **为何不另立新编号**:6 类词表是 IC2 条件 ③ 的**判据内容**,不是独立的判据族;
+  >   若单列为 `INV-CEP-12-IC4`,会连带触发 **4 处 invariant 计数同步**
+  >   (`07 号 §4` 总表 + `objective-cep-platform` DoD 7 的 15 组分解 + `improvement A2` + `phase-10` 交付预期)
+  >   + canonical invariant 用例数 —— 超出本批「让判据 C-4 机器可验收」的范围,且会污染 A4/A6 批次的 diff。
+  >   词表约束**照样机器可验收**:`scripts/test/cep_decl_alignment_check.sh` 第 ④ 项。
+
+> **编号位说明**:`INV-CEP-12-IC1` ~ `IC3` 共 **3** 条(**IC2 文本已修订,数量不变**)。
+
+
+### 8.4 登记备选(不实施):SLICC 式「协议本地虚拟网络 + 装配期绑定」
+
+- **形态**:协议声明只携带**协议本地虚拟网络**(如 `fwd`/`resp`/`req`,各带 ordering 属性 ——
+  正是 `.pcc` 的 `Network {}` 块);另设**装配绑定产物**承载 `(协议, vnet) → (network, vc_id)`
+- **优点**:排序只声明一次(协议本地)、跨协议实例零重复、`ADR-CEP-09` 前提 3 从弱校验变强校验、
+  C-4 的双向映射判据更干净(声明 vnet 集 ↔ 绑定表 ↔ fabric 网络集,**三段各管一段**)
+- **代价**:推翻 ArchForge N-2 已交付的嵌套形态 → 跨仓谈判重开
+- **触发条件**:Stage 1 出现**第 3 张网**或**第 3 个协议实例**时重评
+- **为何现在登记**:当前为 **0 个 `implemented` 实例** —— 这是将来最便宜的改点,
+  别让这个选项**无声死掉**
+
+### 8.5 跨仓依据
+
+| 项 | 值 |
+|----|-----|
+| 触发提交 | ArchForge `8290b4c`(N-1~N-4 裁决)+ `ac956b8`(D-9 批 1) |
+| schema delta | ArchForge `32 号 §6.4.1`(:844-871 diff 原文) |
+| 判据伪码 | ArchForge `32 号 §6.4.2`(:875-883) |
+| per-network 矩阵 | ArchForge `32 号 §6.0.2`(:322) |
+| 6 类词表 + 排除项 | ArchForge `32 号 §6.0.1`(:299) |
+| 网络清单 + `vc_count` | ArchForge `22-nsa §0.5.4.1`(:144-152)+ NS-R1(:156)/ NS-R2(:157) |
+| 本仓落地载体 | `include/tlm/cep/protocol_instance.schema.json` + `include/tlm/cep/fabric.{schema.json,json}` |
+| 机器校验 | `scripts/test/cep_decl_alignment_check.sh` —— 5 项子校验:① 声明 ↔ schema **全 13 个 required 属性**(依赖 `jsonschema` 做全量校验;**刻意不降级运行** —— 缺依赖即报错退出,不静默跳过)②~⑤ per-network 语义规则(手写);**反向验证 12/12** |
+
+---
+
+**版本**: v0.1 草案 + Status Update 2026-10-22
+**最后更新**: 2026-10-22
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

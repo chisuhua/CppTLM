@@ -462,7 +462,68 @@ protocol_instance:
 
 ---
 
-**版本**: v0.3 草案
-**最后更新**: 2026-10-20
+## 8. Status Update(2026-10-22):`ordering_assumption` / `vc_binding` 的 key 形态随 per-network 化修订
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
+> §3 决策 8 的 schema 草图(:185-195)、§4 的模板(:318-325)、§6 的 invariant 建议(:344)
+> 的**正文不改**,**自本段起以本段文本为准**。
+> **触发**: `ADR-CEP-12 §8` Status Update(per-network 嵌套形态,采纳自 ArchForge `32 号 §6.4`)。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` Entry #9(`adr-amendment`)
+
+### 8.1 取代范围
+
+| 项 | 位置 | 处置 |
+|----|------|------|
+| **决策 8 的 schema 草图** | §3 `:185-195` | **取代** —— 见 §8.2 |
+| **§4 的 schema 模板** | §4 `:318-325` | **取代** —— 见 §8.2 |
+| **§6 的 invariant 建议** | §6 `:344` | **取代** —— 见 §8.2 |
+
+### 8.2 取代后文本(规范)
+
+**schema 草图(取代后)**:
+
+```
+ordering_assumption:   # 逐网络 × 逐 vc_id(per ADR-CEP-12 决策 5 修订)
+  <network_id>:                  # key = network(须在 fabric 网络命名空间登记)
+    <vc_id>: p2p_ordered | unordered   # 其下每个 key 是一个**显式**的 vc_id
+consistency_labels:
+  read:  SC | TSO | RC-acquire | RC-data | PLO
+  write: SC | TSO | RC-release | RC-data | PLO
+  request_level: <协议可声明的请求级标签映射>
+```
+
+**schema 模板(取代后)**:
+
+```
+  ordering_assumption:                  # 决策 8,逐网络 × 逐 vc_id
+    <network_id>:
+      <vc_id>: p2p_ordered|unordered
+
+  vc_binding:                           # 逐网络:消息类 → vc_id(F18 主语)
+    <network_id>:
+      <flow_or_message_class>: <vc_id>   # 消息类词表 = 6 类(per ADR-CEP-12 IC2 ③)
+```
+
+**invariant 建议(取代后)**:
+
+> **必落 invariant(建议)**:schema 必含上述 **7 个字段组(13 个顶层属性)**
+> (per `ADR-CEP-12` IC1 口径修订,2026-10-21);`ordering_assumption` / `vc_binding` 均为
+> **逐网络 × 逐 `vc_id`** 形态 —— network 须在 fabric 网络命名空间登记、
+> 其下每个 `vc_id` 须落在该网络的槽位上界(`vc_id < vc_count`)内、
+> 且须出现在**同网络** `vc_binding` 的值域中;`vc_binding` 的消息类须 ∈ 6 类规范词表
+> (per `ADR-CEP-12` §8.3 `INV-CEP-12-IC2` 的 ①②③);`status` 变更时 adapter 计数口径同步。
+
+### 8.3 为何必须改(不只是措辞)
+
+旧文「`named_network` 必须**解析到唯一** `vc_id`」这一**谓词在 per-network 嵌套形态下整体消失**:
+network 本身就是 key,其下每个 `vc_id` 是**显式**给出的 —— 不存在「解析到多个 vc_id」的多义情形。
+不修订则冻结集内 `ADR-CEP-17`(旧)与 `ADR-CEP-12 §8`(新)会对同一字段给出**两个不同的 fail 判据**。
+
+**机器校验**: `scripts/test/cep_decl_alignment_check.sh` 第 ②/③/④ 项。
+
+---
+
+**版本**: v0.3 草案 + Status Update 2026-10-22
+**最后更新**: 2026-10-22
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

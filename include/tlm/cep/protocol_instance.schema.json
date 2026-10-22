@@ -117,16 +117,28 @@
       }
     },
     "ordering_assumption": {
-      "description": "逐网络的排序假设(per ADR-CEP-12 决策 5):key 必须能解析到唯一 vc_id;排序是 VC 的静态属性,flit 不带 ordering 字段",
+      "description": "逐网络 × 逐 VC 的排序假设(per ADR-CEP-12 决策 5 修订 + ArchForge 32 号 N-2 裁决选项 A):key = network,值 = { vc_id: ordering };排序是协议对所用 (network, vc_id) 的保序需求 + fabric 侧担保,一致性由装配期校验承担(per INV-CEP-12-IC2);排序是 VC 的静态属性,flit 不带 ordering 字段",
       "type": "object",
       "minProperties": 1,
-      "additionalProperties": { "enum": ["p2p_ordered", "unordered"] }
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": { "pattern": "^[0-9]+$" },
+        "additionalProperties": { "enum": ["p2p_ordered", "unordered"] }
+      }
     },
     "vc_binding": {
-      "description": "消息类 → vc_id 的映射(per ProtoGen 局限 L4:VC 绑定不由协议生成器负责);不自动生成",
+      "description": "逐网络的消息类 → vc_id 映射(per ADR-CEP-12 决策 6 修订 + ArchForge 32 号 N-2 裁决选项 A:VC 分配是 per-network 的,死锁自由论证的图节点必须是 (network, vc_id));消息类词表 = 6 类 {request,response,snoop,snoop_resp,atomic,query}(per ArchForge 32 号 §6.0.1;排除 CATEGORY_CREDIT 流控类别 / forward_data 流 6 / snoop_completion_ack 流 10 —— 后两者是已有槽位的承载实例,不单列);不自动生成",
       "type": "object",
       "minProperties": 1,
-      "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 3 }
+      "additionalProperties": {
+        "type": "object",
+        "minProperties": 1,
+        "propertyNames": {
+          "enum": ["request", "response", "snoop", "snoop_resp", "atomic", "query"]
+        },
+        "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 3 }
+      }
     },
     "sharer_tracker": {
       "description": "逐实例 Sharer Tracker 选型(per ADR-CEP-04 §2 5 实现 + caps descriptor)",

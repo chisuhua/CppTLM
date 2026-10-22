@@ -41,6 +41,15 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.build-type }}-${{ matrix.use-asan }}
         max-size: 200M
 
+    # ⚠️ 必须**在 ctest 之前**且**覆盖所有 matrix 腿**:
+    #   `cep_decl_alignment_check`(ctest #85)用 `jsonschema` 做「声明 ↔ schema 全 13 个
+    #   required 属性」的全量校验,**刻意不降级运行**(缺依赖 → exit 2 报错,不静默跳过)。
+    #   2026-10-22 复审 NB3:pip 行原在 ctest **之后**且仅 Release 腿 → Debug 腿必红。
+    - name: Install Python test dependencies
+      run: |
+        python3 -m pip install --quiet networkx pydot pydantic pytest jsonschema
+        python3 -c "import jsonschema; print('jsonschema', jsonschema.__version__)"
+
     - name: Configure CMake
       run: |
         cmake -S . -B build \
@@ -67,9 +76,7 @@ jobs:
 
     - name: Run quick test suite (Python + key C++)
       if: matrix.build-type == 'Release'
-      run: |
-        python3 -m pip install --quiet networkx pydot pydantic pytest
-        ./test.sh --quick
+      run: ./test.sh --quick
 
   # PTX-EMU 集成验证：仅覆盖 PTXIR image H2D DMA；不执行 kernel/CuTe 程序。
   # 必须装 CUDA toolkit: PTX-EMU 子模块 CMakeLists.txt 强制 enable_language(CUDA)

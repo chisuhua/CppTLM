@@ -247,6 +247,19 @@ add_test(NAME cep_archforge_alignment_check
 set_tests_properties(cep_archforge_alignment_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# ArchForge 协议实例声明 ↔ 本仓 schema/fabric 的**对齐检查**(放行判据 C-4 的机器化)
+# —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败;但输出标 [SKIP],
+#    与「跑过」可区分 —— 判据 C-4 的机器化不应被一个跳过态当作已验证)
+# ⚠️ SKIP_REGULAR_EXPRESSION:让 ctest 把「跳过」显示为 **Skipped** 而不是 **Passed** ——
+#    否则 CI 上一个恒跳过的闸门看起来像「验过了」(2026-10-22 代码复审 S2)。
+#    ⚠️ **不可**设 SKIP_RETURN_CODE 0 —— 那等于「退出码 0 即跳过」,会把**正常通过**也标成 Skipped。
+#    脚本的 SKIP 路径打印 `[SKIP]` 并 exit 0;RUN 路径打印 `[RUN]` 并按结果 exit 0/1。
+add_test(NAME cep_decl_alignment_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_decl_alignment_check.sh)
+set_tests_properties(cep_decl_alignment_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                                SKIP_REGULAR_EXPRESSION "\\[SKIP\\]")
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check

@@ -4,7 +4,8 @@
 //     Requirement: cep-capability-map-contract
 //     + ADR-CEP-12 §2 决策 1/2/3/4/5/6/7/8/9
 //     + ADR-CEP-14 §2 决策 3(C9 负向断言)
-// 作者: CppTLM Team / 日期: 2026-10-21
+// 作者: CppTLM Team / 日期: 2026-10-21(2026-10-22 契约演进:ordering_assumption /
+//       vc_binding 改 per-network 嵌套形态,per ADR-CEP-12 决策 5 修订 + ArchForge N-2 裁决)
 #include "catch_amalgamated.hpp"
 
 #include "cep_adr_parser.hh"
@@ -39,6 +40,22 @@ namespace {
         return json::parse(text);
     }
 
+    // fabric config 的**类型描述**(per ADR-CEP-12 决策 5 修订)
+    json load_fabric_schema() {
+        const auto path = repo_root() / "include" / "tlm" / "cep" / "fabric.schema.json";
+        const std::string text = read_file(path.string());
+        REQUIRE_FALSE(text.empty());
+        return json::parse(text);
+    }
+
+    // fabric config 的**实例数据**(派生自 ArchForge 22-nsa §0.5.4.1)
+    json load_fabric_instance() {
+        const auto path = repo_root() / "include" / "tlm" / "cep" / "fabric.json";
+        const std::string text = read_file(path.string());
+        REQUIRE_FALSE(text.empty());
+        return json::parse(text);
+    }
+
     // ADR-CEP-12 IC2 的解析规则(Stage 0 契约层:test 内部实现,
     // Stage 1 的装配期检查器须实现同一规则)
     struct ResolutionResult {
@@ -46,47 +63,113 @@ namespace {
         std::string reason;
     };
 
-    // fabric 配置的 **network → vc_id** 映射(Stage 1 装配期检查器的输入形态)。
-    // ⚠️ 2026-10-21 代码复审 S12:此前 resolver 对 named_network **写死 resolved=false**
-    //    → 「能解析到唯一 vc_id」这条**从未被正向验证**,成功分支不可达。
-    //    现补上该映射,named_network 成功路径真实可走并被断言。
-    using NetworkMap = std::map<std::string, std::set<int>>;
+    // fabric 配置的 **network → vc_count** 映射(Stage 1 装配期检查器的输入形态;
+    // 本仓实例 = include/tlm/cep/fabric.json —— 派生自 ArchForge 22-nsa §0.5.4.1)。
+    //
+    // ⚠️ 2026-10-22 契约演进(per ADR-CEP-12 决策 5 修订 + ArchForge 32 号 N-2 裁决选项 A):
+    //    `ordering_assumption` 由「key = <vc_id | named_network> 的**扁平** map」
+    //    改为「key = **network**,值 = {vc_id → ordering} 的**嵌套** map」。
+    //    → 「named_network 解析到**唯一** vc_id」这个谓词**整体消失**:
+    //      network 本身就是 key,其下每个 key 直接就是该网络的槽位标识。
+    //    → 槽位上界由 fabric 侧的 `vc_count` 给出(不再由 schema 的硬编码上界兜)。
+    using NetworkMap = std::map<std::string, int>;  // network → vc_count
 
-    ResolutionResult resolve_named_networks(const json& instance, const std::set<int>& known_vc_ids,
-                                            const NetworkMap& fabric_networks = {}) {
+    // 规范消息类词表(per ADR-CEP-12 §8.3 IC2 ③;ArchForge 32 号 §6.0.1 的 6 类)
+    const std::set<std::string>& canonical_msg_classes() {
+        static const std::set<std::string> cls = {"request", "response", "snoop", "snoop_resp",
+                                                  "atomic", "query"};
+        return cls;
+    }
+
+    ResolutionResult resolve_ordering_assumptions(const json& instance,
+                                                  const std::set<int>& known_vc_ids,
+                                                  const NetworkMap& fabric_networks) {
         ResolutionResult r;
         if (!instance.contains("ordering_assumption")) {
             r.reason = "缺少 ordering_assumption";
             return r;
         }
+        if (!instance.contains("vc_binding")) {
+            r.reason = "缺少 vc_binding";
+            return r;
+        }
         const auto& oa = instance.at("ordering_assumption");
+        const auto& vb = instance.at("vc_binding");
         if (!oa.is_object()) {
             r.reason = "ordering_assumption 必须是对象";
             return r;
         }
-        for (auto it = oa.begin(); it != oa.end(); ++it) {
-            const std::string key = it.key();
-            bool resolved = false;
-            // 纯数字 key 视为已是 vc_id
-            if (!key.empty() && std::all_of(key.begin(), key.end(),
-                                            [](unsigned char c) { return std::isdigit(c); })) {
-                const int vc = std::stoi(key);
-                resolved = (known_vc_ids.count(vc) > 0);
-            } else {
-                // named_network:须经 fabric config 解析到**唯一** vc_id。
-                // 解析不到 → fail;解析到**多个** → 同样 fail(唯一性是契约的一部分)。
-                const auto found = fabric_networks.find(key);
-                if (found != fabric_networks.end() && found->second.size() == 1) {
-                    const int vc = *found->second.begin();
-                    resolved = (known_vc_ids.count(vc) > 0);
-                } else if (found != fabric_networks.end()) {
-                    r.reason = "ordering_assumption 的 named_network 解析到多个 vc_id: " + key;
+        if (!vb.is_object()) {
+            r.reason = "vc_binding 必须是对象";
+            return r;
+        }
+        // IC2 ③:消息类 ∈ 6 类规范词表
+        for (auto vit = vb.begin(); vit != vb.end(); ++vit) {
+            if (!vit.value().is_object()) {
+                r.reason = "vc_binding." + vit.key() + " 必须是对象(network→{消息类→vc_id})";
+                return r;
+            }
+            for (auto mit = vit.value().begin(); mit != vit.value().end(); ++mit) {
+                if (canonical_msg_classes().count(mit.key()) == 0) {
+                    r.reason = "vc_binding." + vit.key() + "." + mit.key() + ": 消息类不在 6 类规范词表";
                     return r;
                 }
             }
-            if (!resolved) {
-                r.reason = "ordering_assumption 的 key 无法解析到唯一 vc_id: " + key;
+        }
+        for (auto nit = oa.begin(); nit != oa.end(); ++nit) {
+            const std::string network = nit.key();
+            const auto& per_net = nit.value();
+            if (!per_net.is_object()) {
+                r.reason = "ordering_assumption." + network + " 必须是对象(network→{vc_id→ordering})";
                 return r;
+            }
+            const auto fit = fabric_networks.find(network);
+            if (fit == fabric_networks.end()) {
+                r.reason = "ordering_assumption 的网络未在 fabric 命名空间登记: " + network;
+                return r;
+            }
+            const int vc_count = fit->second;
+            // IC2 ①:该网络的 vc_binding 值域(用于 ⊆ 判定)
+            std::set<int> bound;
+            if (vb.contains(network) && vb.at(network).is_object()) {
+                for (auto vit = vb.at(network).begin(); vit != vb.at(network).end(); ++vit) {
+                    if (vit.value().is_number_integer())
+                        bound.insert(vit.value().get<int>());
+                }
+            }
+            for (auto vit = per_net.begin(); vit != per_net.end(); ++vit) {
+                const std::string key = vit.key();
+                if (key.empty() ||
+                    !std::all_of(key.begin(), key.end(),
+                                 [](unsigned char c) { return std::isdigit(c); })) {
+                    r.reason = "ordering_assumption." + network + " 的 key 非 vc_id: " + key;
+                    return r;
+                }
+                const int vc = std::stoi(key);
+                if (known_vc_ids.count(vc) == 0) {
+                    r.reason = "ordering_assumption." + network + " 的 vc_id 不在已声明域: " + key;
+                    return r;
+                }
+                if (vc >= vc_count) {
+                    r.reason =
+                        "ordering_assumption." + network + " 的 vc_id 超出该网络槽位上界: " + key;
+                    return r;
+                }
+                // IC2 ①:ordering 的每个 vc_id 必须出现在**同网络**的 vc_binding 值域中
+                if (bound.count(vc) == 0) {
+                    r.reason = "ordering_assumption." + network + "." + key +
+                               ": vc_id 不在同网络 vc_binding 的值域中(IC2 ①)";
+                    return r;
+                }
+                if (!vit.value().is_string()) {
+                    r.reason = "ordering_assumption." + network + "." + key + " 的取值必须是字符串";
+                    return r;
+                }
+                const std::string ordering = vit.value().get<std::string>();
+                if (ordering != "p2p_ordered" && ordering != "unordered") {
+                    r.reason = "ordering_assumption." + network + "." + key + " 的取值非法: " + ordering;
+                    return r;
+                }
             }
         }
         r.ok = true;
@@ -129,8 +212,9 @@ namespace {
         j["atomic"] = {{"supported", false}};
         j["consistency_labels"] = {
             {"read", "SC"}, {"write", "SC"}, {"request_level", json::object()}};
-        j["ordering_assumption"] = {{"0", "p2p_ordered"}};
-        j["vc_binding"] = {{"request", 0}, {"completion", 1}};
+        // ⚠️ 2026-10-22:改为 **per-network 嵌套形态**(per ADR-CEP-12 决策 5 修订)
+        j["ordering_assumption"] = {{"net_fwd", {{"0", "p2p_ordered"}}}};
+        j["vc_binding"] = {{"net_fwd", {{"request", 0}, {"response", 1}}}};
         j["sharer_tracker"] = {{"impl", "FullMapDirectory"},
                                {"caps",
                                 {{"scope", "SYSTEM"},
@@ -144,7 +228,8 @@ namespace {
 
 } // namespace
 
-TEST_CASE("[cep][schema] schema 必含 8 个字段组", "[cep][schema]") {
+TEST_CASE("[cep][schema] schema 必含 13 个顶层属性(7 字段组的划分见下一用例)",
+          "[cep][schema]") {
     const json s = load_schema();
     REQUIRE(s.contains("properties"));
     const auto& props = s.at("properties");
@@ -217,19 +302,71 @@ TEST_CASE("[cep][schema] consistency_labels 含 read/write 两级 + 请求级", 
     REQUIRE(writes == std::set<std::string>({"SC", "TSO", "RC-release", "RC-data", "PLO"}));
 }
 
-TEST_CASE("[cep][schema] ordering_assumption 逐网络 + 值域封闭;vc_binding 值域 0-3",
+TEST_CASE("[cep][schema] ordering_assumption / vc_binding 为 per-network 嵌套形态(IC2 结构)",
           "[cep][schema]") {
     const json s = load_schema();
+
+    // ordering_assumption: network → {vc_id → ordering}
+    // ⚠️ 2026-10-22 契约演进(per ADR-CEP-12 决策 5 修订 + ArchForge N-2 裁决选项 A):
+    //    形态由扁平(key = <vc_id | named_network>)改为嵌套(key = network)。
     const auto& oa = s.at("properties").at("ordering_assumption");
     REQUIRE(oa.at("minProperties") == 1);
-    const std::set<std::string> vals(oa.at("additionalProperties").at("enum").begin(),
-                                     oa.at("additionalProperties").at("enum").end());
+    REQUIRE(oa.at("additionalProperties").at("type") == "object");
+    const auto& oa_inner = oa.at("additionalProperties");
+    REQUIRE(oa_inner.at("minProperties") == 1);
+    const std::set<std::string> vals(oa_inner.at("additionalProperties").at("enum").begin(),
+                                     oa_inner.at("additionalProperties").at("enum").end());
     REQUIRE(vals == std::set<std::string>({"p2p_ordered", "unordered"}));
 
+    // vc_binding: network → {消息类 → vc_id}
     const auto& vb = s.at("properties").at("vc_binding");
-    REQUIRE(vb.at("additionalProperties").at("type") == "integer");
-    REQUIRE(vb.at("additionalProperties").at("minimum") == 0);
-    REQUIRE(vb.at("additionalProperties").at("maximum") == 3);
+    REQUIRE(vb.at("minProperties") == 1);
+    REQUIRE(vb.at("additionalProperties").at("type") == "object");
+    const auto& vb_inner = vb.at("additionalProperties");
+    REQUIRE(vb_inner.at("minProperties") == 1);
+    REQUIRE(vb_inner.at("additionalProperties").at("type") == "integer");
+    REQUIRE(vb_inner.at("additionalProperties").at("minimum") == 0);
+    REQUIRE(vb_inner.at("additionalProperties").at("maximum") == 3);
+}
+
+TEST_CASE("[cep][schema][fabric] fabric config schema 含 networks + vc_count,实例符合该 schema",
+          "[cep][schema]") {
+    const json fs = load_fabric_schema();
+    REQUIRE(fs.contains("properties"));
+    const auto& nets = fs.at("properties").at("networks");
+    REQUIRE(nets.at("minProperties") == 1);
+    REQUIRE(nets.at("additionalProperties").at("type") == "object");
+    const auto& net_spec = nets.at("additionalProperties");
+    REQUIRE(net_spec.at("required").size() == 1);
+    REQUIRE(net_spec.at("required").at(0) == "vc_count");
+    const auto& vc_count = net_spec.at("properties").at("vc_count");
+    REQUIRE(vc_count.at("type") == "integer");
+    REQUIRE(vc_count.at("minimum") == 1);
+    // 与 protocol_instance.schema.json 的 vc_id 上界(0-3)对齐 → vc_count 上界取 4
+    // (若将来某网络的 vc_count > 4,**两处须同步改**)
+    REQUIRE(vc_count.at("maximum") == 4);
+
+    // **实例的键必须全在 schema 声明的 properties 内** —— 否则「schema 声明的约束」
+    // 与「实例实际形态」会分叉(2026-10-22 代码复审 B1:实例曾带 3 个 schema 未声明的注记字段)。
+    // 注:完整的 JSON Schema 校验由 `scripts/test/cep_decl_alignment_check.sh`
+    //     (jsonschema)承担;此处做**不依赖外部库**的键集包含断言。
+    const json fi = load_fabric_instance();
+    const auto& declared = fs.at("properties");
+    for (auto it = fi.begin(); it != fi.end(); ++it) {
+        INFO("fabric 实例含 schema 未声明的字段: " << it.key());
+        REQUIRE(declared.contains(it.key()));
+    }
+
+    REQUIRE(fi.contains("networks"));
+    const auto& inst_nets = fi.at("networks");
+    REQUIRE(inst_nets.size() >= 1);
+    for (auto it = inst_nets.begin(); it != inst_nets.end(); ++it) {
+        INFO("fabric 实例缺 vc_count: " << it.key());
+        REQUIRE(it.value().contains("vc_count"));
+        REQUIRE(it.value().at("vc_count").get<int>() <= vc_count.at("maximum").get<int>());
+    }
+    // 本仓 fabric 实例是 ArchForge 单点权威的**派生副本**,非独立权威(per NS-R2)
+    REQUIRE(fi.contains("derived_from"));
 }
 
 TEST_CASE("[cep][schema] sharer_tracker 含 5 实现 + 「不参与」+ caps 四属性", "[cep][schema]") {
@@ -374,54 +511,80 @@ TEST_CASE("[cep][schema][negative] schema 不得出现协议标识符(C9 负向�
     }
 }
 
-TEST_CASE("[cep][schema] named_network 解析到唯一 vc_id 时必须 pass(IC2 正向路径)",
+TEST_CASE("[cep][schema] per-network 形态下每个 vc_id 落在该网络槽位上界内(IC2 正向路径)",
           "[cep][schema]") {
-    // ⚠️ 2026-10-21 代码复审 S12:此前 named_network 的成功分支**不可达**
-    //    (resolver 写死 resolved=false)→ 「能解析到唯一 vc_id」从未被正向验证。
+    // ⚠️ 2026-10-22 契约演进:正向路径从「named_network 解析到唯一 vc_id」改为
+    //    「network 已在 fabric 命名空间登记 + 其下每个 vc_id 落在该网络的槽位上界内」。
+    //    「唯一性」不再是判据 —— 嵌套形态下 vc_id 是**显式**给出的,不存在多义。
     const std::set<int> known = {0, 1, 2, 3};
-    const NetworkMap fabric = {{"net_fwd", {1}}, {"net_bwd", {2}}};
+    const NetworkMap fabric = {{"net_fwd", 4}, {"net_bwd", 2}};
 
     json inst = minimal_valid_instance();
-    inst["ordering_assumption"] = {{"net_fwd", "p2p_ordered"}};
-    const auto ok = resolve_named_networks(inst, known, fabric);
-    INFO("named_network 正向路径应通过: " << ok.reason);
+    inst["ordering_assumption"] = {{"net_fwd", {{"0", "p2p_ordered"}, {"1", "unordered"}}}};
+    const auto ok = resolve_ordering_assumptions(inst, known, fabric);
+    INFO("per-network 正向路径应通过: " << ok.reason);
     REQUIRE(ok.ok);
 
-    // 数字 key 仍可直接用作 vc_id
-    json numeric = minimal_valid_instance();
-    numeric["ordering_assumption"] = {{"0", "p2p_ordered"}};
-    REQUIRE(resolve_named_networks(numeric, known, fabric).ok);
+    // 同一协议实例可横跨多张网(per ArchForge 32 号 §6.1:moesi_gpu 横跨 compute_noc + ualink_fabric)
+    json multi = minimal_valid_instance();
+    multi["ordering_assumption"] = {
+        {"net_fwd", {{"0", "p2p_ordered"}}}, {"net_bwd", {{"1", "unordered"}}}};
+    multi["vc_binding"] = {{"net_fwd", {{"request", 0}}},
+                           {"net_bwd", {{"request", 1}}}};
+    REQUIRE(resolve_ordering_assumptions(multi, known, fabric).ok);
 }
 
-TEST_CASE("[cep][schema] named_network 不可解析到唯一 vc_id 时必须 fail", "[cep][schema]") {
+TEST_CASE("[cep][schema] per-network 形态下的 5 类非法输入必须 fail(IC2 反向路径)",
+          "[cep][schema]") {
     const std::set<int> known = {0, 1, 2, 3};
-    const NetworkMap fabric = {{"net_fwd", {1}}, {"net_bwd", {2}}};
+    const NetworkMap fabric = {{"net_fwd", 4}, {"net_bwd", 2}};
 
     json ok = minimal_valid_instance();
-    REQUIRE(resolve_named_networks(ok, known, fabric).ok);
+    REQUIRE(resolve_ordering_assumptions(ok, known, fabric).ok);
 
+    // ① 网络未在 fabric 命名空间登记(NS-R1)
     json bad = minimal_valid_instance();
-    bad["ordering_assumption"] = {{"net_unknown", "p2p_ordered"}}; // 未注册的 named_network
-    const auto r = resolve_named_networks(bad, known, fabric);
+    bad["ordering_assumption"] = {{"net_unknown", {{"0", "p2p_ordered"}}}};
+    const auto r = resolve_ordering_assumptions(bad, known, fabric);
     REQUIRE_FALSE(r.ok);
     REQUIRE_FALSE(r.reason.empty());
 
+    // ② 内层 key 越界(不在已声明域)
     json bad2 = minimal_valid_instance();
-    bad2["ordering_assumption"] = {{"9", "p2p_ordered"}}; // 越界 vc_id
-    REQUIRE_FALSE(resolve_named_networks(bad2, known, fabric).ok);
+    bad2["ordering_assumption"] = {{"net_fwd", {{"9", "p2p_ordered"}}}};
+    REQUIRE_FALSE(resolve_ordering_assumptions(bad2, known, fabric).ok);
 
-    // 解析到**多个** vc_id → 同样 fail(「唯一」是契约的一部分)
+    // ③ 内层 key 非 vc_id(不可解析为整数)
     json bad3 = minimal_valid_instance();
-    bad3["ordering_assumption"] = {{"net_ambiguous", "p2p_ordered"}};
-    const NetworkMap ambiguous = {{"net_ambiguous", {1, 2}}};
-    const auto r3 = resolve_named_networks(bad3, known, ambiguous);
-    REQUIRE_FALSE(r3.ok);
-    REQUIRE(r3.reason.find("多个") != std::string::npos);
+    bad3["ordering_assumption"] = {{"net_fwd", {{"high_pri", "p2p_ordered"}}}};
+    REQUIRE_FALSE(resolve_ordering_assumptions(bad3, known, fabric).ok);
 
-    // 未提供 fabric 映射时, named_network 一律 fail(不得静默放过)
+    // ④ vc_id 超出该网络的槽位上界(net_bwd 只有 2 个槽)
     json bad4 = minimal_valid_instance();
-    bad4["ordering_assumption"] = {{"net_fwd", "p2p_ordered"}};
-    REQUIRE_FALSE(resolve_named_networks(bad4, known).ok);
+    bad4["ordering_assumption"] = {{"net_bwd", {{"3", "p2p_ordered"}}}};
+    const auto r4 = resolve_ordering_assumptions(bad4, known, fabric);
+    REQUIRE_FALSE(r4.ok);
+    REQUIRE(r4.reason.find("槽位上界") != std::string::npos);
+
+    // ⑤ 未提供 fabric 映射时, 任何网络一律 fail(不得静默放过)
+    json bad5 = minimal_valid_instance();
+    bad5["ordering_assumption"] = {{"net_fwd", {{"0", "p2p_ordered"}}}};
+    REQUIRE_FALSE(resolve_ordering_assumptions(bad5, known, {}).ok);
+
+    // ⑥ IC2 ①:ordering 的 vc_id 必须出现在**同网络** vc_binding 的值域中
+    json bad6 = minimal_valid_instance();
+    bad6["ordering_assumption"] = {{"net_fwd", {{"3", "p2p_ordered"}}}};
+    bad6["vc_binding"] = {{"net_fwd", {{"request", 0}, {"response", 1}}}};
+    const auto r6 = resolve_ordering_assumptions(bad6, known, fabric);
+    REQUIRE_FALSE(r6.ok);
+    REQUIRE(r6.reason.find("值域") != std::string::npos);
+
+    // ⑦ IC2 ③:消息类必须 ∈ 6 类规范词表(CATEGORY_CREDIT / forward_data / snoop_completion_ack 均排除)
+    json bad7 = minimal_valid_instance();
+    bad7["vc_binding"] = {{"net_fwd", {{"request", 0}, {"forward_data", 1}}}};
+    const auto r7 = resolve_ordering_assumptions(bad7, known, fabric);
+    REQUIRE_FALSE(r7.ok);
+    REQUIRE(r7.reason.find("6 类规范词表") != std::string::npos);
 }
 
 // 计数口径(per ADR-CEP-12 决策 9):**仅** `implemented` 计入。

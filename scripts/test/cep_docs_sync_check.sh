@@ -7,6 +7,9 @@
 #       4. `06 §15.4` 的 P 编号口径：CEP 文档不得引用 P6
 #       5. ADR-CEP-00A 的 §4 映射行 ↔ `07 号 §4` 口径一致
 #       6. Stage 0 umbrella change 4 件套 + 契约产物存在
+#       7. M1 产物冻结校验(28 产物 SHA-256,冻结后不可改)
+#       8. CEP ↔ ArchForge 接口对齐清单漂移检测(21 个 ArchForge 锚点)
+#       9. ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查(判据 C-4 的机器化)
 #
 # 用法：
 #   ./scripts/test/cep_docs_sync_check.sh            # 检查并打印报告
@@ -42,7 +45,7 @@ pass() { echo -e "  ${GREEN}✓${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 
-echo -e "${BLUE}[1/8] ADR 清单与关键节${NC}"
+echo -e "${BLUE}[1/9] ADR 清单与关键节${NC}"
 ADR_LIST=(
   "ADR-CEP-00-platform-charter-and-governance.md"
   "ADR-CEP-00A-real-source-anchor-map.md"
@@ -83,7 +86,7 @@ done
 [ "$NO_SECTION" -eq 0 ] && pass "每份 ADR 均有「不变量」或「决策」节"
 
 echo ""
-echo -e "${BLUE}[2/8] invariant 计数与 07 号总表一致性${NC}"
+echo -e "${BLUE}[2/9] invariant 计数与 07 号总表一致性${NC}"
 python3 - <<'PYEOF'
 import glob, re, os, sys
 
@@ -366,7 +369,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[3/8] 06 §15.4 P 编号口径(禁 P6)${NC}"
+echo -e "${BLUE}[3/9] 06 §15.4 P 编号口径(禁 P6)${NC}"
 python3 - <<'PYEOF'
 import glob, os, re, sys
 
@@ -494,7 +497,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[4/8] ADR 交叉引用可达性${NC}"
+echo -e "${BLUE}[4/9] ADR 交叉引用可达性${NC}"
 BROKEN=0
 for f in "${ADR_LIST[@]}"; do
   [ -f "docs/adr/$f" ] || continue
@@ -508,7 +511,7 @@ done
 [ "$BROKEN" -eq 0 ] && pass "ADR 之间的相对链接无断裂(全量 .md 链接)"
 
 echo ""
-echo -e "${BLUE}[5/8] Stage 0 umbrella change 4 件套${NC}"
+echo -e "${BLUE}[5/9] Stage 0 umbrella change 4 件套${NC}"
 CH="openspec/changes/cpptlm-cep-umbrella"
 MISS=0
 for f in "proposal.md" "design.md" "tasks.md" "specs/cep-core-contracts/spec.md"; do
@@ -517,20 +520,39 @@ done
 [ "$MISS" -eq 0 ] && pass "umbrella change 4 件套齐备"
 
 echo ""
-echo -e "${BLUE}[6/8] Stage 0 契约产物${NC}"
+echo -e "${BLUE}[6/9] Stage 0 契约产物${NC}"
 for f in "include/tlm/cep/protocol_instance.schema.json" "experimental/metrics.schema.json" "experimental/.gitkeep"; do
   [ -f "$f" ] && pass "$f 存在" || fail "$f 缺失"
 done
 
 echo ""
-echo -e "${BLUE}[7/8] M1 产物冻结校验(冻结后不可改)${NC}"
-bash scripts/test/cep_freeze_check.sh
-if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
+echo -e "${BLUE}[7/9] M1 产物冻结校验(冻结后不可改)${NC}"
+# ⚠️ 不可裸调用:本脚本 `set -e`,裸调用的失败会**立即中止**整个脚本
+#    → 后续组与汇总永不打印,且下面的 `if [ $? -ne 0 ]` 是死代码(2026-10-22 代码复审 S3)
+if ! bash scripts/test/cep_freeze_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[8/8] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
-bash scripts/test/cep_archforge_alignment_check.sh
-if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
+echo -e "${BLUE}[8/9] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
+if ! bash scripts/test/cep_archforge_alignment_check.sh; then FAILED=$((FAILED + 1)); fi
+
+echo ""
+echo -e "${BLUE}[9/9] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
+# ⚠️ 「跳过」与「跑过」必须可区分:脚本首行标 [RUN] / [SKIP],退出码都是 0。
+#    跳过时**不算通过**(跨仓外部条件缺失不是「声明对齐已被验证」)。
+if DECL_OUT="$(bash scripts/test/cep_decl_alignment_check.sh 2>&1)"; then
+    DECL_RC=0
+else
+    DECL_RC=$?
+fi
+echo "$DECL_OUT"
+if [ "$DECL_RC" -ne 0 ]; then
+    fail "ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查失败(见上)"
+    FAILED=$((FAILED + 1))
+elif echo "$DECL_OUT" | grep -q "\[SKIP\]"; then
+    warn "ArchForge 仓缺席 → 本组跳过(跨仓外部条件缺失,非本仓缺陷;判据 C-4 的机器化未被本环境验证)"
+else
+    pass "ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查通过"
+fi
 
 echo ""
 echo "════════════════════════════════════════"
