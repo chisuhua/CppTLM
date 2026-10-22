@@ -7,16 +7,7 @@
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §2.2(Directory & Ordering Plane)+ §5.1.4(协议语义索引)+ §8.1(Stage 划分)
 > - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口)
-> - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流 + `barrier` 语义)
-> - 真源 3:`ADR-CEP-04-sharer-tracker-abstraction-redesign.md`(Sharer Tracker caps + `INV-CEP-04-IC7` token 不跟踪 sharer set)
-> - 真源 3:`ADR-CEP-06-experiment-protocol.md`(`verification_mode` 契约 —— 实验**证伪**而非保证)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(决策 9:插件接口可组合性)
-> - 真源 3:`ADR-CEP-08-ordering-point-portability.md`(Ordering Point + J1/J2/J3 判据,本批起草)
-> - 真源 3:`ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md`(多 VC 仲裁 + 死锁自由性,本批起草)
-> - 真源 3:`ADR-CEP-12-protocol-engine-capability-map.md`(`consistency_labels` + `combination_capabilities`,本批起草)
-> - 真源 3:`ADR-CEP-17-ruby-slicc-protocol-family.md`(决策 7 / 决策 9 —— 组合承诺边界)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 调研:`docs/research/cep-coherence-protocol-space-survey.md` v0.4 §4.3.3 / §4.3.4 / §4.3.5 / §4.3.6 / §4.3.7 + §5.3 F8/F9/F10/F13
 >
 > **一手锚点**:
@@ -239,16 +230,5 @@ ArchForge 的评估过程(答复回执 `cep-interface-alignment-response-2026-10
 
 ### 8.4 未变更项(明示)
 
-- **§2 决策 3** 的判据原文 —— **零改动**
-- **§3 `INV-CEP-13-IC2`** 的 (a)(b) 定义 —— **零改动**
-- **§4 抓取点第 2 项**(「(a)(b) 两条件必须同时评估」)—— **零改动**
-  (本轮是**按它执行**,不是改它)
-- **§6 决策汇总** —— **零改动**
-- 本 ADR 的其余全部正文 —— **零改动**
-
----
-
-**版本**: v0.2 草案 + Status Update 2026-10-22
-**最后更新**: 2026-10-22
-**批准状态**: 🟡 待 Oracle 复审
-**维护者**: CppTLM build agent(architect mode)
+> §2 决策 3 的判据原文 · §3 `INV-CEP-13-IC2` 的 (a)(b) 定义 · §4 抓取点第 2 项(本轮是**按它执行**,不是改它)·
+> §6 决策汇总 · 本 ADR 其余全部正文 —— **全部零改动**。

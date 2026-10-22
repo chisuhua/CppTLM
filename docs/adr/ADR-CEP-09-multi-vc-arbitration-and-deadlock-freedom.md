@@ -7,15 +7,7 @@
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §2.2(Fabric & Transport Plane)+ §5.1 + §8.3
 > - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4 §5.1(`simulation_mode`)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口)
-> - 真源 3:`ADR-CEP-01-fabric-collective-plane.md`(跨平面 VC 隔离,§3.3 抓取点 3)
-> - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流)
-> - 真源 3:`ADR-CEP-04-sharer-tracker-abstraction-redesign.md`(Sharer Tracker caps)
-> - 真源 3:`ADR-CEP-06-experiment-protocol.md`(`deadlock_violations` 是运行时**发现**手段)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(决策 9:插件声明 `ordering_assumption` + `vc_binding`)
-> - 真源 3:`ADR-CEP-08-ordering-point-portability.md`(排序假设面,本批起草)
-> - 真源 3:`ADR-CEP-12-protocol-engine-capability-map.md`(能力映射表 schema,本批起草;提供 `ordering_assumption` / `vc_binding`)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 调研:`docs/research/cep-coherence-protocol-space-survey.md` v0.4 §4.1.6(ProtoGen 局限 L4)+ §4.5.3(论文 §9.3.1)+ §5.6 F18/F26
 >
 > **一手锚点**:
@@ -196,13 +188,7 @@
 
 ### 8.1 取代范围
 
-| 项 | 位置 | 处置 |
-|----|------|------|
-| **决策 2 · 「顶点」行** | §2 `:75` | **取代** —— 见 §8.2 |
-| **决策 2 · 「来源」行** | §2 `:77` | **取代** —— 见 §8.2 |
-| **决策 2 · 论证前提 3** | §2 `:84` | **取代**(粒度细化)—— 见 §8.2 |
-| **决策 3 表 · 「① 排序假设」行** | §2 `:92` | **取代** —— 见 §8.2 |
-
+> **取代范围**:§2 决策 2「顶点 / 来源 / 论证前提 3」行、§2 决策 3 表「① 排序假设」行 —— **取代后文本**见 §8.2。
 ### 8.2 取代后文本(规范)
 
 **决策 2 · 顶点(取代后)**:
@@ -230,24 +216,13 @@
 
 ### 8.3 为何这是**数学对象**的变更(不是措辞)
 
-两张网(`compute_noc` / `ualink_fabric`)**共享同一 `vc_id` 值域 0-3**。
-若图顶点只带 `(协议实例, vc_id)` ⇒ **跨网依赖边被合并** ⇒ 无环判据可能给出**错误 verdict**
-(false negative 与 false positive 均可能)。
-
-> ⚠️ **对 Stage 1 的硬前置**:在 `ADR-CEP-09` 的图顶点按 `(协议实例, network, vc_id)` 建立之前,
-> **不得**用本 ADR 的无环判据放行任何协议实例。
+两张网(`compute_noc` / `ualink_fabric`)**共享同一 `vc_id` 值域 0-3**;图顶点若只带 `(协议实例, vc_id)`
+⇒ **跨网依赖边被合并** ⇒ 无环判据可能给出**错误 verdict**(false negative 与 false positive 均可能)。
+> ⚠️ **对 Stage 1 的硬前置**:在图顶点按 `(协议实例, network, vc_id)` 建立之前,**不得**用本 ADR 的无环判据放行任何协议实例。
 >
-> **已知局限不变**:§2 前提 2 的「状态相关的依赖关系 → 静态图过近似」这一局限**依然成立**;
-> 但在多网场景下,**过近似方向不再单一** —— 合并边既可能制造假环,也可能掩盖真环
-> ⇒ 报出的 verdict 必须**逐 (network, vc) 标注**,不得只给全局结论。
+> **已知局限不变**:§2 前提 2 的「状态相关依赖 → 静态图过近似」依然成立;但多网场景下**过近似方向不再单一**
+> (合并边既可能制造假环,也可能掩盖真环)⇒ verdict 必须**逐 (network, vc) 标注**,不得只给全局结论。
 
-**机器校验**: `scripts/test/cep_decl_alignment_check.sh` 第 ② 项的**网络键对称性**
-(每个 network 必须**同时**出现在 `ordering_assumption` 与 `vc_binding`,per ArchForge `32 号 §6.2` 纪律)
+**机器校验**:`scripts/test/cep_decl_alignment_check.sh` 第 ② 项**网络键对称性**
+(每 network 必须**同时**出现在 `ordering_assumption` 与 `vc_binding`,per ArchForge `32 号 §6.2`)
 + 第 ③ 项(`ordering ⊆ vc_binding`,逐网络)。
-
----
-
-**版本**: v0.1 草案 + Status Update 2026-10-22
-**最后更新**: 2026-10-22
-**批准状态**: 🟡 待 Oracle 复审
-**维护者**: CppTLM build agent(architect mode)

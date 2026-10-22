@@ -6,9 +6,7 @@
 > **作用域**: **CEP 引用的外部协议规范版本锁定 + 版本漂移的处置路径**
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §5.1(协议族 → 实例 → adapter)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md` §3(supersede 表)+ §5(gem5 类比)
-> - 真源 3:`ADR-CEP-12-protocol-engine-capability-map.md`(`protocol_version` 字段)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 路线图:`.rddf/roadmap/objectives/obj-cep-platform.md` §8.1 R2(规范演进返工)
 >
 > **一手锚点**:
@@ -223,14 +221,5 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 
 ### 9.3 未变更项(明示)
 
-- **§3 锁定表的行集 / 版本号 / 协议实例数(8 族 / 8 实例)** —— **零改动**
-- **决策 1**(版本分离)/ **决策 2**(锁定表唯一真源)/ **决策 3**(装配期校验)/ **决策 4**(三条路径)/ **决策 5** —— **零改动**
-- **`protocol_version` 字段格式** —— **零改动**
-- 本 ADR 的其余全部正文 —— **零改动**
-
----
-
-**版本**: v0.3 草案 + Status Update 2026-10-22
-**最后更新**: 2026-10-22
-**批准状态**: 🟡 待 Oracle 复审
-**维护者**: CppTLM build agent(architect mode)
+> §3 锁定表的行集 / 版本号 / 协议实例数(8 族 / 8 实例)· 决策 1~5 · `protocol_version` 字段格式 ·
+> 本 ADR 其余全部正文 —— **全部零改动**。

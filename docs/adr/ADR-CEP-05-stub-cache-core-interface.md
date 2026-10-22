@@ -6,13 +6,7 @@
 > **关联真源**:
 > - 真源 1:`06-inter-module-network.md` v0.4 §2.1 L1-L6 仿真层(正交,非 Stub Cache 真源)
 > - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3(锚点 per `ADR-CEP-00A §3.2` — **§11.5 是"相关测试",非 P3-P6 演进路线,全文 grep "barrier" 0 匹配,per oracle 评审 B2-3 实证修订**)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口,草案)
-> - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射,本批起草)
-> - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流清单,本 ADR 折叠映射表逐字引用)
-> - 真源 3:`ADR-CEP-04-sharer-tracker-abstraction-redesign.md`(lookup/snoop 接口 contract 联动)
-> - 真源 3:`ADR-CEP-06-experiment-protocol.md`(实验输出,本批起草)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(仿真语义 + NullProtocolEngine,本批起草)
-> - 真源 3:`ADR-X.1-transaction-id.md`(txn_id 命名空间,per oracle S4 修订)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 
 ---
 
@@ -308,17 +302,10 @@ endinterface
 
 ### 13.2 未变更项(明示)
 
-- **§4.3 的 6 条 `INV-SC1` ~ `INV-SC6`** · **§3 的 10 条契约测试清单** · **本 ADR 其余正文** —— **零改动**
-- **§7 两条判据的定义句** —— **逐字保留**(本批只刷新**状态陈述**与**结构表述**)
-- **`ADR-CEP-13` `INV-CEP-13-IC2` 的 (a)(b) 判据定义** · **`protocol_instance.schema.json` 的 `perm` 4 值锁** —— **零改动**
-  (应用口径注记记于 `ADR-CEP-13` 的 **Status Update**,不在本 ADR 复制)
-
-> **变更史**(判据 2 原文逐字引用见上表「原文」行;本条 §7 刷新授权与理由见台账 **Entry #18**)
-> —— 本节为 2026-10-22 三次 adr-amendment(#12 / #13 / #18)的**收敛结果**,过程记录归台账,不在本 ADR 内累积。
-
----
-
-**版本**: v0.4 草案
-**最后更新**: 2026-10-22
-**批准状态**: 🟡 待 Oracle v0.5 二次复审
-**维护者**: CppTLM build agent(architect mode)
+> §4.3 的 6 条 `INV-SC1` ~ `INV-SC6` · §3 的 10 条契约测试清单 · 本 ADR 其余正文 —— **零改动**;
+> §7 两条判据的**定义句** —— **逐字保留**(本批只刷新**状态陈述**与**结构表述**);
+> `ADR-CEP-13` `INV-CEP-13-IC2` 的 (a)(b) 判据定义 · `protocol_instance.schema.json` 的 `perm` 4 值锁 —— **零改动**
+> (应用口径注记记于 `ADR-CEP-13` 的 **Status Update**,不在本 ADR 复制)
+>
+> **变更史**:判据 2 原文逐字引用见上表「原文」行;本条 §7 刷新授权与理由见台账 **Entry #18** ——
+> 本节为三次 adr-amendment(#12 / #13 / #18)的**收敛结果**,过程记录归台账,不在本 ADR 内累积。

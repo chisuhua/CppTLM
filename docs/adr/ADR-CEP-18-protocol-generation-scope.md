@@ -6,12 +6,7 @@
 > **作用域**: **CEP 的协议生产方式(手写插件 vs 描述生成)的边界 + 引入生成路线的判据 + 竞合定位**
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §5.1(协议族 → 实例 → adapter)+ §8.3(演进 seam)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口 + gem5 生态类比)
-> - 真源 3:`ADR-CEP-12-protocol-engine-capability-map.md`(能力映射表 = "什么协议存在"的真源,本批起草)
-> - 真源 3:`ADR-CEP-13-coherence-domain-ownership.md`(一致性域归属,本批起草)
-> - 真源 3:`ADR-CEP-14-stub-contract-tests.md`(Stub 可验证性合同测试,待起草)
-> - 真源 3:`ADR-CEP-17-ruby-slicc-protocol-family.md`(决策 10 竞合定位 + §3.4 schema 草案的来源)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配 —— CEP-18 编号已预留)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 调研:`docs/research/cep-coherence-protocol-space-survey.md` v0.4 §4.5.1(SSP Pre-Processing)+ §4.5.2(§9.2 工具工程)+ §5.5 F15/F21/F23 + §5.6 F28
 >
 > **一手锚点**:

@@ -6,15 +6,7 @@
 > **作用域**: **协议实例的能力 / 前提假设 / 组合能力的结构化声明 schema**
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §5.1(协议族 → 实例 → adapter 映射)+ §5.1.4(协议语义索引)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口)
-> - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流 + `CEN-Ib11` atomic 承载)
-> - 真源 3:`ADR-CEP-04-sharer-tracker-abstraction-redesign.md`(Sharer Tracker 5 实现 + caps descriptor)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(插件接口可组合性,决策 9)
-> - 真源 3:`ADR-CEP-08-ordering-point-portability.md`(Ordering Point 可迁移性 + 排序假设面,本批起草)
-> - 真源 3:`ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md`(多 VC 仲裁 + 死锁自由性,本批起草)
-> - 真源 3:`ADR-CEP-11-protocol-version-locking.md`(协议版本锁定,待起草)
-> - 真源 3:`ADR-CEP-13-coherence-domain-ownership.md`(一致性域归属,本批起草)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 调研:`docs/research/cep-coherence-protocol-space-survey.md` v0.4 §5.7(证据类型归类)+ §5.6 F16/F24/F25
 >
 > **一手锚点**:
@@ -232,26 +224,14 @@ protocol_instance:
 
 ### 8.1 取代范围
 
-| 项 | 位置 | 处置 |
-|----|------|------|
-| **决策 5** | §2 `:118-124` | **取代** —— 见 §8.2 |
-| **决策 6** | §2 `:126-130` | **取代** —— 见 §8.2 |
-| **§2 前置 schema 草图** | §2 `:82` | **取代**(草图里的 `<vc_id \| named_network>` 旧 key 形态) |
-| **§4 抓取点 2** | §4 `:178` | **取代**(「`named_network` 解析不到唯一 `vc_id` ⇒ 配置加载 fail」旧判据) |
-| **§6 决策汇总行** | §6 `:211` | **取代**(「`ordering_assumption` 逐 `vc_id` / key 必须解析到唯一 `vc_id`」旧判据) |
-| **§7 修订记录行** | §7 `:226` | **取代**(「key 绑定 `vc_id`;`named_network` 解析失败即 config fail」旧判据) |
-| **`INV-CEP-12-IC2`** | §3 `:168` | **取代** —— 见 §8.3 |
-| `INV-CEP-12-IC1` / `IC3` | §3 `:163` / `:169` | **不变** |
-
-> **兜底声明**:本 ADR 的 **§2 / §3 / §4 / §6 / §7 全文**中,凡出现「`<vc_id | named_network>`」
+> **取代范围**:§2 决策 5 / 决策 6 / 前置 schema 草图、§4 抓取点 2、§6 决策汇总行、§7 修订记录行、
+> §3 `INV-CEP-12-IC2` —— **取代后文本**见 §8.2 / §8.3;`IC1` / `IC3` **不变**。
+>
+> **兜底声明**:本 ADR 的 §2 / §3 / §4 / §6 / §7 全文中,凡出现「`<vc_id | named_network>`」
 > 「解析到唯一 `vc_id`」「解析失败即 config fail」「key 绑定 `vc_id`」等**扁平形态旧谓词**者,
 > **一律以本段为准** —— 该谓词在 per-network 嵌套形态下**整体消失**。
-> (2026-10-22 复审修正:初版兜底只写 §2 / §3,漏了 §4 抓取点 / §6 决策汇总 / §7 修订记录三处)
-
-> **旧文留痕说明**:正文保留 2026-10-21 的原始表述(不可变约定)。
-> 旧文与本段冲突时,**以本段为准** —— 旧文中的「`named_network` 解析到**唯一** `vc_id`」这一
-> **谓词在嵌套形态下整体消失**(network 即 key,其下 vc_id 是**显式**给出的,不存在多义)。
-
+>
+> **旧文留痕说明**:正文保留 2026-10-21 的原始表述(不可变约定);旧文与本段冲突时**以本段为准**。
 ### 8.2 取代后文本(规范)
 
 **决策 5(取代后)**:`ordering_assumption` 逐网络 × 逐 `vc_id`
@@ -396,14 +376,5 @@ ArchForge 在答复回执 `cep-interface-alignment-response-2026-10-22.md` §1.4
 
 ### 9.4 未变更项(明示)
 
-- **§2 决策 2** 的 `perm` **4 值锁** —— **零改动**(禁 `ATOMIC` 第 5 值;`CEN-Ib12` 仍不存在)
-- **§2 决策 1** 的 schema 全量结构 —— **零改动**
-- **`protocol_instance.schema.json`** —— **零改动**(本批)
-- 本 ADR 的其余全部正文 —— **零改动**
-
----
-
-**版本**: v0.2 草案 + Status Update 2026-10-22(§8 / §9)
-**最后更新**: 2026-10-22
-**批准状态**: 🟡 待 Oracle 复审
-**维护者**: CppTLM build agent(architect mode)
+> §2 决策 2 的 `perm` **4 值锁**(禁 `ATOMIC` 第 5 值;`CEN-Ib12` 仍不存在)· §2 决策 1 的 schema 全量结构 ·
+> `protocol_instance.schema.json` · 本 ADR 其余全部正文 —— **全部零改动**。

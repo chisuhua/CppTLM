@@ -4,13 +4,7 @@
 > **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订)
 > **作者**: CppTLM build agent(architect mode)
 > **关联真源**:
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口,草案,循环引用待签发解除)
-> - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射,本批起草,per oracle v0.3 B3-2/3/4/5/6/7 修订)
-> - 真源 3:`ADR-CEP-01-fabric-collective-plane.md`(旁路平面决策)
-> - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流清单 + barrier 流附注)
-> - 真源 3:`ADR-CEP-06-experiment-protocol.md`(实验输出,本批起草)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(仿真语义,本批起草)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配,本批起草)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3 §5.2 `SnoopProbe`/`SnoopRespBundle`/`CoherenceMsg`(per `ADR-CEP-00A §3.2` 实证行号)— **沿用**,无 non-cacheable 概念
 
 ---

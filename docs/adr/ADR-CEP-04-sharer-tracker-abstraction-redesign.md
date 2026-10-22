@@ -7,8 +7,7 @@
 > - 真源 1:`06-inter-module-network.md` v0.4 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**,per oracle v0.3 B3-7 修订)Coherence 演进 seam
 > - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3 §7.3-§7.7 阶段范围(per `ADR-CEP-00A §3.2` 实证 — §7.8 实为 KPI 串行约束,非阶段范围,per oracle v0.3 B2-2 修订);**`§2.3` "D-5" 接口不存在**,全文 grep "sharer" / "D-5" 零匹配,per oracle 评审 B5
 > - 真源 1:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流清单)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口,草案)
-> - 真源 3:`ADR-CEP-01-fabric-collective-plane.md`(旁路平面)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 
 ---
 

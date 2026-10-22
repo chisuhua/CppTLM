@@ -308,80 +308,20 @@ Table 1.3 佐证:已发布的 3 个工具**各缺一段算法阶段**(HeteroGen 
 
 ### 3.4 schema 草案 → 已由 `ADR-CEP-12` 承接
 
-> **2026-10-21 状态**:本节原为 schema 草案先行落地;**`ADR-CEP-12` 已于 2026-10-21 正式起草并采纳该草案**。
-> → **schema 的单一真源现为 [`ADR-CEP-12 §2 决策 1`](ADR-CEP-12-protocol-engine-capability-map.md)**。本节保留为草案留痕,**不再作为引用来源**。
-> → 同理,§3.5 的 `ADR-CEP-09` 两段式建议**已由 [`ADR-CEP-09`](ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md) 正式承接**。
-
-```yaml
-protocol_instance:
-  id: <stable id>                       # 稳定身份(计数口径依赖)
-  family: <来源族>                       # 工业 | ruby-slicc | academic
-  adapter: <adapter 名>
-  status: planned|implemented|excluded  # 计数口径:仅 implemented 计入
-  protocol_version: <ver>               # 版本锁(per ADR-CEP-11)
-
-  flow_support:                         # canonical 10 流覆盖矩阵
-    request: yes|no; completion: …; snoop: …; snoop_resp: …
-    writeback: …; forward_data: …; back_invalidate: …
-    address_resolve: …; barrier: …; snoop_completion_ack: …
-
-  perm: [NONE, READ, UNIQUE, WRITEBACK]      # 4 值锁(per ADR-CEP-02 / CEN-Ib11)
-  atomic: { supported: yes|no, intent_field: <name> }   # 承载 atomic 意图
-
-  consistency_labels:                   # 决策 7 + v0.3 请求级
-    read:  SC|TSO|RC-acquire|RC-data|PLO
-    write: SC|TSO|RC-release|RC-data|PLO
-    request_level: { <request_class>: <label> }   # per 论文 §7.6.6 的 GetV_R / GetV_A
-
-  ordering_assumption:                  # 决策 8,逐网络 → 必须解析到 vc_id
-    <vc_id | named_network>: p2p_ordered|unordered
-
-  vc_binding:                           # 消息类 → vc_id(F18 主语)
-    <flow_or_message_class>: <vc_id>
-
-  sharer_tracker:                       # 逐实例选型(per ADR-CEP-04 caps)
-    impl: <FullMapDirectory|SparseSnoopFilter|DcohSymmetric|TreeManager|BroadcastNull|不参与>
-    caps: { scope, completeness, authority, aggregation_at }
-
-  combination_capabilities:             # F16 二维化
-    concurrent: yes|no; hierarchical: yes|no; heterogeneous: yes|no
-```
-
-**新增 5 个维度的理由**(原草案缺,per oracle 审查):
-
-| 缺什么 | 为什么必须 |
-|--------|-----------|
-| `id` / `status` / `protocol_version` | 否则「16 adapter」随 §5.1.4 候选语义落地即失真;版本锁是 `ADR-CEP-11` 职责 |
-| `vc_binding` | F18 原文主语是「assign messages to virtual networks」;只声明序假设不声明绑定,**死锁自由论证拿不到输入** |
-| `sharer_tracker` | §5.1.1 / §5.1.2 / §5.1.4 三张表全在做逐实例选型,schema 却漏了 |
-| `flow_support` | `ADR-CEP-07` IC2 要求 `NullProtocolEngine` 有 10 流覆盖矩阵;能力表不承载它则无处可查 |
-| `atomic` | 决策 6 定了「atomic 意图作为 `request` 流独立属性」,schema 里原本没有这个字段 |
-
-**必落 invariant(建议)**:schema 必含上述 **7 个字段组(13 个顶层属性)**(per `ADR-CEP-12` IC1 口径修订,2026-10-21);`named_network` 必须解析到唯一 `vc_id`,否则配置 fail;`status` 变更时 adapter 计数口径同步。
-
-**显式排除**:**不提供**自动协议兼容性判定器(per F10);**不承诺**自动生成 `vc_binding`。
-
+> **状态**:schema 草案已于 2026-10-20 先行落地,**`ADR-CEP-12` 已于 2026-10-21 正式起草并采纳该草案**。
+> → **schema 的单一真源现为 [`ADR-CEP-12 §2 决策 1`](ADR-CEP-12-protocol-engine-capability-map.md)**;
+> 本节**不再作为引用来源**(草案原文见 git 历史)。
+>
+> **新增 5 个维度的理由**(原草案缺):`id` / `status` / `protocol_version` —— 否则「16 adapter」随 §5.1.4 候选语义落地即失真;
+> `vc_binding` —— F18 原文主语是「assign messages to virtual networks」,只声明序假设不声明绑定则**死锁自由论证拿不到输入**;
+> `sharer_tracker` —— §5.1.1 / §5.1.2 / §5.1.4 三张表全在做逐实例选型,schema 却漏了;
+> `flow_support` —— `ADR-CEP-07` IC2 要求 `NullProtocolEngine` 有 10 流覆盖矩阵;
+> `atomic` —— 决策 6 定了「atomic 意图作为 `request` 流独立属性」,schema 里原本没有该字段。
 ### 3.5 `ADR-CEP-09` 两段式建议 → 已由 `ADR-CEP-09` 承接
 
-按 F18 原文(VC 分配主语 = 消息→VC 绑定)+ F26 源码预留位,`ADR-CEP-09` 建议分两段:
-
-- **Decision A(配置期静态检查)**:由各协议实例的 `ordering_assumption` + `vc_binding` 构成**通道依赖图**,给出**无环性判据**。**这是「死锁自由性论证载体」的真实含义** —— 论证发生在装配期,而非运行时
-- **Decision B(运行时仲裁策略)**:多 VC 仲裁策略须与 A 的判据一致(不得在依赖图上引入新环)
-
-**理由**:`ADR-CEP-06` 的 `deadlock_violations` 是**运行时计数器**,只能**发现**死锁,不能**证明**无死锁。**无环性证明必须发生在配置/装配期**。
-
-**三方联合契约**:
-
-| 段 | 谁提供 | 产物 | 落点 |
-|----|--------|------|------|
-| ① 排序假设 | Protocol Engine 声明 | `ordering_assumption`(per-VC) | `ADR-CEP-12` schema |
-| ② 消息→VC 绑定 | Protocol Engine 声明 | `vc_binding` + 通道依赖图 | `ADR-CEP-09` Decision A |
-| ③ 仲裁一致性 | Fabric & Transport 执行 | 仲裁策略与依赖图一致 → 图无环 | `ADR-CEP-09` Decision B |
-
-> **耦合契约**:任一协议实例的 `ordering_assumption` 变更 ⇒ 依赖图重算 ⇒ 无环性检查重跑。
-
----
-
+> **状态**:两段式建议(Decision A 装配期无环论证 / Decision B 运行时仲裁)**已由
+> [`ADR-CEP-09`](ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md) 正式承接**,本节不再作为引用来源。
+> 三方联合契约(① 排序假设 ② 消息→VC 绑定 ③ 仲裁一致性)见 `ADR-CEP-09` 决策 3。
 ## 4. 关联 ADR / 后续
 
 | 项 | 状态 |

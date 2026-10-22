@@ -7,11 +7,7 @@
 > **关联真源**:
 > - 真源 1:`docs/architecture/06-bis-coherence-as-network-extension.md` v0.3 §3.4 / §4(候选 D / 产物清单)
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §3.2(Stub Cache RN 投影)+ §5.4(Bundle 约束)
-> - 真源 3:`ADR-CEP-05-stub-cache-core-interface.md`(Stub 定位澄清)
-> - 真源 3:`ADR-CEP-12-protocol-engine-capability-map.md`(capability schema)
-> - 真源 3:`ADR-CEP-14-stub-contract-tests.md`(C9 负向断言:Stub 不泄漏协议信息)
-> - 真源 3:`ADR-CEP-15-cachetlm-alignment.md`(与 `CacheTLM` 的边界)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 >
 > **一手锚点(代码实证,2026-10-21)**:
 > - `include/core/coherence_domain.hh`(69 行)**存在** —— TDD Red stub,含 `enum class Protocol { MESI, MOESI }`(:19-22)

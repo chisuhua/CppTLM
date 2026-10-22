@@ -7,11 +7,7 @@
 > **关联真源**:
 > - 真源 1:[`../architecture/06-inter-module-network.md`](../architecture/06-inter-module-network.md) v0.4(锚点 per `ADR-CEP-00A §3.1`)
 > - 真源 1:[`../architecture/06-bis-coherence-as-network-extension.md`](../architecture/06-bis-coherence-as-network-extension.md) v0.3(将被 supersede;锚点 per `ADR-CEP-00A §3.2`)
-> - 真源 3:[`ADR-CEP-00A-real-source-anchor-map.md`](ADR-CEP-00A-real-source-anchor-map.md)(本批起草,真源章节映射)
-> - 真源 3:[`ADR-CEP-NUMBER-MAP.md`](ADR-CEP-NUMBER-MAP.md)(本批起草,编号预分配)
-> - 真源 3:[`ADR-DGPU-13-pnn-protocol-neutral-network.md`](ADR-DGPU-13-pnn-protocol-neutral-network.md)(已 superseded by 06 v0.4)
-> - 真源 3:[`ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`](ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md)(已 superseded by 06 v0.4)
-> - 真源 3:既有 [`ADR-X.1-transaction-id.md`](ADR-X.1-transaction-id.md)(txn_id 命名空间沿用)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 
 ---
 

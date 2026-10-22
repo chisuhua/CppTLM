@@ -6,12 +6,7 @@
 > **作用域**: **Stub Cache Core 的合同测试边界 + 10 条合同测试 + 组合接缝检查项的落地位置**
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §3.2(Stub Cache 的 RN 侧投影)+ §11(Gap → 实现状态映射)
-> - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流 + `CEN-Ib6` 不可分辨性)
-> - 真源 3:`ADR-CEP-05-stub-cache-core-interface.md`(6 接口 + 折叠映射表 + `INV-SC1~6` + `INV-CEP-05-IC1` + §7 α 失效判据)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(`INV-CEP-07-IC7` 组合接缝须被合同测试覆盖)
-> - 真源 3:`ADR-CEP-08-ordering-point-portability.md`(`INV-CEP-08-IC2` E 态静默升级检查项)
-> - 真源 3:`ADR-CEP-12-protocol-engine-capability-map.md`(schema 的机器可检查约束)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 调研:`docs/research/cep-coherence-protocol-space-survey.md` v0.4 §4.2.4 / §5.4 F12
 >
 > **一手锚点**:

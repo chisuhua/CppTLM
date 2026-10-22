@@ -7,9 +7,7 @@
 > **关联真源**:
 > - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4 §15.4(Coherence 演进推进路径)
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §8.2(06-bis P2.0-P5 → CEP 承接映射)+ §8.3(演进 seam)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md` §2 Decision 3(P 编号口径冻结)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md` §3(supersede 表 + IOMMU scope reduction)
-> - 真源 3:`ADR-CEP-13-coherence-domain-ownership.md`(跨域组合承诺边界)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 >
 > **一手锚点**:
 > - `docs/architecture/06-inter-module-network.md` §15.4 表(逐行):P2.0 / P2.1 / P3 / P3.5 / P4 / P5 —— **无 P6**

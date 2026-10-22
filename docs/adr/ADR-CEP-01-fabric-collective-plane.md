@@ -6,13 +6,7 @@
 > **关联真源**:
 > - 真源 1:[`../architecture/06-inter-module-network.md`](../architecture/06-inter-module-network.md) v0.4(锚点 per `ADR-CEP-00A §3.1`;06 §2.1 是 L1-L6 payload/port 层模型,与 CEP 6 层正交共存)
 > - 真源 1:[`../architecture/06-bis-coherence-as-network-extension.md`](../architecture/06-bis-coherence-as-network-extension.md) v0.3(锚点 per `ADR-CEP-00A §3.2`;本 ADR supersede 其 P3.5 路径)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口,草案,循环引用待签发解除)
-> - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射,本批起草)
-> - 真源 3:`ADR-CEP-06-experiment-protocol.md`(实验输出,本批起草)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(仿真语义,本批起草)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配,本批起草)
-> - 真源 3:`ADR-DGPU-13-pnn-protocol-neutral-network.md`(已 superseded by 06 v0.4)
-> - 真源 3:`ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`(已 superseded by 06 v0.4)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 配套 ADR:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流清单)+ `ADR-CEP-03-fabric-collective-plane-internals.md`(内部接口)
 
 ---

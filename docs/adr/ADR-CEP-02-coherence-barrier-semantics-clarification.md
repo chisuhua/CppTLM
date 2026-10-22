@@ -6,11 +6,7 @@
 > **关联真源**:
 > - 真源 1:`06-inter-module-network.md` v0.4 §2.1 L1-L6 仿真层层模型(正交,非 CEP 6 层架构)
 > - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3(锚点 per `ADR-CEP-00A §3.2`;**§11.5 非 P3-P6 演进路线**,§11.5 = "相关测试",全文 grep "barrier" 0 匹配 — per oracle 评审 B6)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口,草案,循环引用待签发解除)
-> - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射,本批起草)
-> - 真源 3:`ADR-CEP-01-fabric-collective-plane.md`(旁路平面决策)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配,本批起草)
-> - 真源 3:`ADR-X.1-transaction-id.md`(txn_id 命名空间,per oracle S4 修订)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 配套:`ADR-CEP-05-stub-cache-core-interface.md`(折叠映射表引用本 ADR canonical 10 流)
 
 ---

@@ -327,17 +327,17 @@ ArchForge 侧承载(G6/G7/G8/G12)。
   "cpptlm": [
     {
       "file": "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md",
-      "line": 55,
+      "line": 51,
       "symbol": "CEN-Ib1"
     },
     {
       "file": "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md",
-      "line": 66,
+      "line": 62,
       "symbol": "4 值锁"
     },
     {
       "file": "docs/adr/ADR-CEP-05-stub-cache-core-interface.md",
-      "line": 170,
+      "line": 164,
       "symbol": "INV-CEP-05-IC1"
     },
     {
@@ -347,12 +347,12 @@ ArchForge 侧承载(G6/G7/G8/G12)。
     },
     {
       "file": "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md",
-      "line": 168,
+      "line": 160,
       "symbol": "INV-CEP-12-IC2"
     },
     {
       "file": "docs/adr/ADR-CEP-15-cachetlm-alignment.md",
-      "line": 121,
+      "line": 118,
       "symbol": "INV-CEP-15-IC3"
     },
     {
@@ -362,7 +362,7 @@ ArchForge 侧承载(G6/G7/G8/G12)。
     },
     {
       "file": "docs/adr/ADR-CEP-07A-06bis-artifact-disposition.md",
-      "line": 99,
+      "line": 95,
       "symbol": "INV-CEP-07A-IC2"
     },
     {

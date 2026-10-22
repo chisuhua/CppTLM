@@ -6,10 +6,7 @@
 > **作用域**: **CEP 实验输出 / metric / sweep / A-B 对比报表**,解 metis G1 "探索平台没有探索"盲点
 > **关联真源**:
 > - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4 §15(演进 seam)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口)
-> - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(仿真语义)
-> - 真源 3:本系列 CEP ADR
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 
 ---
 

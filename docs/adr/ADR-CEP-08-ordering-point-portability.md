@@ -7,12 +7,7 @@
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §2.2(Directory & Ordering Plane 三子平面)+ §5.2(Sharer Tracker)
 > - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口)
-> - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流 + `barrier` 语义)
-> - 真源 3:`ADR-CEP-04-sharer-tracker-abstraction-redesign.md`(Sharer Tracker caps)
-> - 真源 3:`ADR-CEP-12-protocol-engine-capability-map.md`(能力映射表 schema,本批起草;提供 `ordering_assumption` 字段)
-> - 真源 3:`ADR-CEP-13-coherence-domain-ownership.md`(一致性域归属,本批起草)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 调研:`docs/research/cep-coherence-protocol-space-survey.md` v0.4 §4.2(HieraGen 深度)+ §5.3 F3/F4/F5/F17
 >
 > **一手锚点**:
@@ -208,11 +203,7 @@ Sharer Tracker 决定**谁**要参与,Ordering Point 决定**序**从哪来。�
 
 ### 8.1 取代范围
 
-| 项 | 位置 | 处置 |
-|----|------|------|
-| **决策 6 · 「key 粒度」行** | §2 `:131` | **取代** —— 见 §8.2 |
-| **抓取点 4** | §4 `:164` | **取代** —— 见 §8.2 |
-
+> **取代范围**:§2 决策 6「key 粒度」行、§4 抓取点 4 —— **取代后文本**见 §8.2。
 ### 8.2 取代后文本(规范)
 
 **决策 6 · key 粒度(取代后)**:
@@ -230,16 +221,6 @@ Sharer Tracker 决定**谁**要参与,Ordering Point 决定**序**从哪来。�
 
 ### 8.3 为何必须改(不只是措辞)
 
-旧文「必须能解析到**唯一** `vc_id`」这一**谓词在嵌套形态下整体消失**:
-network 本身就是 key,其下每个 `vc_id` 是**显式**给出的 —— 不存在「解析到多个 vc_id」的多义情形。
-若不修订,冻结集内两份 ADR 会对同一字段给出**两个不同的 fail 判据**。
-
-**机器校验**: `scripts/test/cep_decl_alignment_check.sh` 第 ②/③ 项
-(键对称性 + `ordering ⊆ vc_binding` + `vc_id < vc_count`)。
-
----
-
-**版本**: v0.1 草案 + Status Update 2026-10-22
-**最后更新**: 2026-10-22
-**批准状态**: 🟡 待 Oracle 复审
-**维护者**: CppTLM build agent(architect mode)
+旧文「必须能解析到**唯一** `vc_id`」这一**谓词在嵌套形态下整体消失** —— network 即 key,
+其下 `vc_id` 显式给出,不存在多义;不修订则冻结集内两份 ADR 会对同一字段给出**两个不同的 fail 判据**。
+**机器校验**:`scripts/test/cep_decl_alignment_check.sh` 第 ②/③ 项(键对称性 + `ordering ⊆ vc_binding` + `vc_id < vc_count`)。

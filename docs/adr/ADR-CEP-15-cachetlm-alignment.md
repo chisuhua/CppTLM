@@ -6,10 +6,7 @@
 > **作用域**: **既有 `CacheTLM` 与 CEP Stub Cache Core 的关系 / 冻结面 / 未来"真实缓存 + CEP 协议"的路径**
 > **关联真源**:
 > - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §3.2(Stub Cache RN 侧投影)+ §5.4(Bundle 约束)
-> - 真源 3:`ADR-CEP-05-stub-cache-core-interface.md`(Stub 的 6 接口 + 定位澄清)
-> - 真源 3:`ADR-CEP-14-stub-contract-tests.md`(合同测试边界)
-> - 真源 3:`ADR-CEP-17-ruby-slicc-protocol-family.md`(协议族接入)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 调研:`docs/research/cep-coherence-protocol-space-survey.md` v0.4 §5.4 F12(Stub 是协议状态投影,非缓存模型)
 >
 > **一手锚点(代码实证)**:
@@ -183,14 +180,4 @@ CacheTLM(性能模型) ──adapter──> Coherence Interface(10 流)
 
 ### 8.2 未变更项(明示)
 
-- **§2 决策 1~5 的全部结论** —— **零改动**
-- **§3 的 3 条不变量** —— **零改动**
-- **§4 的抓取点** —— **零改动**
-- **`CacheTLM` 的 0 diff 冻结面**(`INV-CEP-15-IC3`)—— **零改动**
-
----
-
-**版本**: v0.2 草案
-**最后更新**: 2026-10-22
-**批准状态**: 🟡 待 Oracle 复审
-**维护者**: CppTLM build agent(architect mode)
+> §2 决策 1~5 的全部结论 · §3 的 3 条不变量 · §4 的抓取点 · `CacheTLM` 的 0 diff 冻结面 —— **全部零改动**。

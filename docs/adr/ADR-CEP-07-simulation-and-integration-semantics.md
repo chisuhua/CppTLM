@@ -8,18 +8,7 @@
 > - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4 §5.1 simulation_mode 字段(per oracle B3-5 实证 — 06 §4.7 不存在,真源在 06 §5.1 + 01-hybrid §4.7)
 > - 真源 1:`docs/architecture/01-hybrid-architecture-v2.1.md` v2.1.10 §1.1(6 层)+ §4.7
 > - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3 §5(SnoopProbe / SnoopRespBundle 沿用)
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口,草案)
-> - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射,本批起草)
-> - 真源 3:`ADR-CEP-02-coherence-barrier-semantics-clarification.md`(canonical 10 流清单)
-> - 真源 3:`ADR-CEP-06-experiment-protocol.md`(实验输出,本批起草)
-> - 真源 3:`ADR-CEP-NUMBER-MAP.md`(编号预分配,本批起草)
-> - 真源 3:`ADR-CEP-08-ordering-point-portability.md`(Ordering Point 可迁移性,本批起草)
-> - 真源 3:`ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md`(多 VC 仲裁 + 死锁自由性论证,本批起草)
-> - 真源 3:`ADR-CEP-12-protocol-engine-capability-map.md`(ProtocolEngine 能力映射表 schema,本批起草)
-> - 真源 3:`ADR-CEP-13-coherence-domain-ownership.md`(一致性域归属,本批起草)
-> - 真源 3:`ADR-DGPU-12-soc-internal-tlm-wiring-principle.md`(ModuleFactory 装配)
-> - 真源 3:`ADR-DGPU-08-abi-freeze-policy.md`(23 ABI 冻结)
-> - 真源 3:`ADR-DGPU-09-driver-visible-minimal-soc-scope.md`(driver-visible 入口)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 > - 真源 1:`01-hybrid-architecture-v2.1.md` v2.1.10 §1.1(6 层)
 > - 真源 1:`06-bis-coherence-as-network-extension.md` v0.3 §5(SnoopProbe / SnoopRespBundle 沿用)
 

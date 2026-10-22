@@ -8,9 +8,7 @@
 > - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4
 > - 真源 1:`docs/architecture/06-bis-coherence-as-network-extension.md` v0.3
 > - 真源 1:`docs/architecture/01-hybrid-architecture-v2.1.md` v2.1.10
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口 ADR)
-> - 真源 3:`ADR-X.1-transaction-id.md`(txn_id 命名空间)
-> - 真源 3:本系列 CEP ADR(CEP-01 ~ CEP-05 + 00A + 06 + 07 + NUM)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 
 ---
 
@@ -175,25 +173,10 @@ CEN-00A-IC1: CEP 系列 ADR 引用的所有真源文档章节号,必须在 ADR-C
 
 ## 4. 伪引清单(起草时禁止引用,per oracle v0.3 B3-6 + B3-7 修订)
 
-| 伪引标识 | 状态 |
-|---------|------|
-| "ADR-I01" | 不存在(全仓 grep 仅 CEP ADR 自引用);被 CEP-02 v0.2 修订为"本 ADR 首次定义" — **v0.5 已修:CEP-01:75 改描述性引用** |
-| "ADR-G04" | 不存在;被 CEP-04 v0.3 修订为描述性陈述"协议无关性" — **v0.5 已修:CEP-04 §3.2 沿用描述性原则** |
-| "ADR-DGPU-13 §2 P1 引入 ProtocolBridge" | ADR-DGPU-13 已 superseded 正文保留,§2 不引用 |
-| "06 §15.1 10 条流清单" | §15.1 是 ArchForge 文档清单引用,无 10 条流;被 CEP-02 v0.2 修订 |
-| "06-bis §2.3 D-5 Sharer Tracker" | §2.3 是命名空间一致性,非 D-5;被 CEP-04 v0.3 修订 |
-| "06-bis §11.5 P3-P6" | §11.5 是相关测试,06-bis 无 P6;被 CEP-02 + CEP-05 v0.3 修订 — **v0.5 已修:CEP-05:8 头部已删除 §11.5 引用** |
-| "06 §15.4 P3 Stub Cache 5 接口" | §15.4 P3 是 SnoopFilter,非 Stub Cache;被 CEP-05 v0.3 修订 — **v0.5 已修:CEP-05 §9 line 226 改"沿用 stub 精神"** |
-| "06 §4.7 simulation_mode" | 06 §4 仅至 §4.5;**真源在 06 §5.1 + 01-hybrid §4.7**;**v0.5 已修:CEP-07:8/39/220 三处改 06 §5.1 + 01-hybrid §4.7** |
-| "06 §15.4 P2-P6" / "P3-P6" | §15.4 实为 P2.0-P5,**无 P6**;**v0.5 已修:NUMBER-MAP + CEP-02 + CEP-04 全部删 P6** |
-| "06-bis §7.8 P2-P5" | §7.8 实为"v0.3 总 KPI 调整"(行 ~653),**非阶段范围**;**v0.5 已修:CEP-00 §3 + CEP-04:198/265 + CEP-02:162 全部改 §7.3-§7.7** |
-| "ADR-CEP-11" | 未起草(CEP-13 一致性域归属议题预分配为 CEP-13,per NUMBER-MAP §2 Decision 1);**v0.5 已修:CEP-02:127 改 ADR-CEP-13** |
-| "ADR-CEP-09" | 未起草(多 VC 仲裁 + TileLink Tree Tip 映射预分配) |
-| "07-coherence-exploration-platform.md" | **已创建 2026-10-20**(per `ADR-CEP-00 §5.2` 候选 α 拍板)— 见 §3.9 章节映射;CEP 顶层真源 1,整合 10 份 ADR v0.6 |
-| "REGISTER_CHSTREAM(T)" / "REGISTER_OBJECT(T)" | **不存在**(per oracle v0.4 B7 实证 — `REGISTER_CHSTREAM` 无参,`REGISTER_OBJECT` 无参);v0.5 已改 CEP-07 §3 决策 3 真实注册机制 |
-
----
-
+> **本表曾登记 14 条伪引**(`ADR-I01` / `ADR-G04` / `06 §15.1` / `06-bis §2.3` / `06-bis §11.5` /
+> `06 §15.4 P3` / `06 §4.7` / `06-bis §7.8` / `ADR-CEP-11` / `ADR-CEP-09` 等)——
+> **截至 2026-10-20 已全部修复**(逐条修订位置见 git 历史与台账 `obj-cep-platform §11`)。
+> 现行规则:**引用真源章节前必须先查本表 §3;章节不存在 = 伪引,禁止引用。**
 ## 5. 实施与维护
 
 ### 5.1 ADR 锚点 lint

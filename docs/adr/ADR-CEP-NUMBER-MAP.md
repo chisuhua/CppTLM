@@ -5,11 +5,7 @@
 > **作者**: CppTLM build agent(architect mode)
 > **作用域**: **CEP-08 ~ CEP-16 编号预分配 + 议题映射**,解 metis G5 隐式依赖环
 > **关联真源**:
-> - 真源 3:`ADR-CEP-00-platform-charter-and-governance.md`(归口)
-> - 真源 3:`ADR-CEP-00A-real-source-anchor-map.md`(章节映射)
-> - 真源 3:`ADR-CEP-06-experiment-protocol.md`(实验输出)
-> - 真源 3:`ADR-CEP-07-simulation-and-integration-semantics.md`(仿真语义)
-> - 真源 3:`ADR-CEP-07A-06bis-artifact-disposition.md`(06-bis 产物处置,后续起草)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## N. 关联 ADR / 后续」节
 
 ---
 
