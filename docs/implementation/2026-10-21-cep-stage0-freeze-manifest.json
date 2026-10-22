@@ -7,7 +7,7 @@
     "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "9569805abd50389c2141f79b84bead720e57c6e47be48b5291e90ed9d37bdcd4",
     "docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md": "e90544c2e914c337100a1d79459a688064d9a4d73684fd8b705704d83a0b59fe",
     "docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md": "8f9f7884fc6a9b35b8dc4d25e0d3fa4ce67802ab325e361d15d17fedaacf634e",
-    "docs/adr/ADR-CEP-05-stub-cache-core-interface.md": "29cf78f1677ecc41af257a8fb277f64fe5e7c89c1a3d5a52d5eb75d51a11a43c",
+    "docs/adr/ADR-CEP-05-stub-cache-core-interface.md": "369306477c293636bf24e62189b170bb6e4e8cf2ee5a5e432fa36a654756612f",
     "docs/adr/ADR-CEP-06-experiment-protocol.md": "c878bcb55bd03d00b419082896e6fe1fe319620740bd67d6334073957d8e5f23",
     "docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md": "7e8b0c60b7ce8d46edb021d95c55c2de959e157174115a899a8ff28bc0dd8e58",
     "docs/adr/ADR-CEP-07A-06bis-artifact-disposition.md": "58b7297a6397003fa210ea9cb5665e50edd71eb8c950cf9b68e288c5b2f29386",
@@ -31,9 +31,9 @@
     "tools/render_report.py": "7b8fac7faf6eaeb070951c3272fc0bfaccf36666017c0f7760fed9946f02e7ad",
     "tools/run_sweep.py": "624b9da16e53911dde8e68fdeecbe1d07a9377d28f8a775708814c93493f35bc"
   },
-  "authorized_by": "Entry #13",
+  "authorized_by": "Entry #18",
   "frozen_at": "2026-10-22",
-  "frozen_at_commit": "6bd53f761a733be64f257c27f776d3e718235b37",
+  "frozen_at_commit": "3de7b5b5e9be2aa7fcc8e3a04942ad5eba6f76ec",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
