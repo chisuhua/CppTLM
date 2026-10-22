@@ -329,7 +329,7 @@ endinterface
 | **判据 2 的状态** | 🟡 **仍未定** —— 「**已触发**」还是「**仍未触发**」取决于 `ADR-CEP-13` `INV-CEP-13-IC2` 判据 **(b)** 的评估结果 |
 | **(b) 的状态** | ⏳ **ArchForge Q-3**,已 **2 轮未交付**;第 3 轮催问已随回执 v1.1 §8.5 发出(**Q-3a~e**,含 **Q-3e**「是否接受以 PoC 的 S2 场景**实验判定**替代 (b) 的纸面评估」) |
 | **本仓的处置** | **不**下调 R-2 的优先级(需求本体成立:`perm` 4 值确实无法表达「静默 vs 显式升级」);**不**接受「已命中触发条件」的表述,直到 (b) 补齐 |
-| **落地责任** | **A6**(`ADR-CEP-05 §10` 判据 2 状态收敛)—— **登记为 Stage 1 前置**(见 umbrella `openspec/changes/cpptlm-cep-umbrella/tasks.md`);不在本批执行 |
+| **落地责任** | **A6**(`ADR-CEP-05 §7` 判据 2 状态收敛)—— **登记为 Stage 1 前置**(见 umbrella `openspec/changes/cpptlm-cep-umbrella/tasks.md`);不在本批执行 |
 
 ### 13.2 未变更项(明示)
 
