@@ -1,0 +1,77 @@
+# CEP 对外文档「节号引用」语义断言注册表
+#
+# 被 scripts/test/cep_doc_ref_check.sh 消费。**制表符分隔** 6 列：
+#
+#   root    目标文件所在仓:  `local` = 本仓 / `archforge` = ArchForge 仓
+#   file    目标文件路径（相对该仓根）
+#   sec     节号（`7` / `5.1.1` / `D7` 均可；`.` 按字面匹配，非通配）
+#   kw      该节标题**必须包含**的关键词（防「节号指到别的节」）
+#   doc     引用它的文档（相对本仓根）；留 `-` 表示不做漂移校验
+#   lit     该文档里引用此节号的**字面量**（`grep -F` 必须命中）；留 `-` 表示跳过
+#
+# ─────────────────────────────────────────────────────────────────────────
+# ⚠️ 本表存在的唯一理由:**节号存在 ≠ 节号指对**。
+#    自动检测（脚本 [3/4]）只能验证「目标节存在」——
+#    `ADR-CEP-05 §10` 也「存在」（它是「关联 ADR / OpenSpec」）,自动检测抓不到。
+#    只有**人工断言「§7 才是判据 2」**才能抓住 2026-10-22 那类原始事故。
+# ─────────────────────────────────────────────────────────────────────────
+#
+# ⚠️⚠️ 作者纪律（违反 = 精确复刻原始事故,务必先读）:
+#   **`kw` 必须写「该节**应当**讲什么」（以目标文件的真实标题为准）,
+#     绝不可照抄文档字面量。**
+#   反例:原始事故中若照抄笔误文档登记 `ADR-CEP-05 §10 / 关联 ADR`,
+#         则 (a)(b) 双双全绿 —— 校验沦为事故的复制品。
+#   正确:去目标文件读 `### α 失效判据 2` 的真实标题,按其语义写 `kw = α 失效判据`。
+#
+# ⚠️ 覆盖度:未登记 = **只有存在性保障,无语义正确保障**（差额见脚本 [4b] 段）。
+#    补断言是增量工作,不阻断 CI —— 但**对外文档的关键引用应当登记**。
+# ⚠️ 本表**不能**代替人工通读。
+#
+# 已知边界:
+#   · `lit` 是**存在性**校验,非**计数性** —— 同节号在文档出现 N 次、只改 M<N 次时不红。
+#     但**统一**写错（原始事故的形态）必然红。
+#   · `kw` 用 `grep -F` 字面匹配,不做 glob。
+#
+# 格式示例（制表符分隔,勿用空格）:
+#   local<TAB>docs/adr/ADR-CEP-05-x.md<TAB>7<TAB>α 失效判据<TAB>docs/implementation/y.md<TAB>ADR-CEP-05 §7
+
+# —— 契约层 ADR ——
+local	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	7	α 失效判据	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	ADR-CEP-05 §7
+local	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	10	关联 ADR	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	ADR-CEP-05 §10
+local	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	13	Status Update	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	§13 Status Update
+local	docs/adr/ADR-CEP-06-experiment-protocol.md	3	不变量	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	ADR-CEP-06 §3
+local	docs/adr/ADR-CEP-11-protocol-version-locking.md	3	规范版本锁定表	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	ADR-CEP-11 §3
+local	docs/adr/ADR-CEP-12-protocol-engine-capability-map.md	8	Status Update	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	**§8** IC2 ③
+local	docs/adr/ADR-CEP-13-coherence-domain-ownership.md	2	决策	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	**§2 决策 3**(`:97
+local	docs/adr/ADR-CEP-13-coherence-domain-ownership.md	3	不变量	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	**§3 
+local	docs/adr/ADR-CEP-13-coherence-domain-ownership.md	4	抓取点	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	**§4 抓取点第 2 项**
+
+# —— 架构文档 ——
+local	docs/architecture/07-coherence-exploration-platform.md	5	Bundle 与协议适配	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	07 号 §5.1
+local	docs/architecture/07-coherence-exploration-platform.md	5.1.1	工业硬件协议族	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	07 号 §5.1.1
+
+# —— 对外文档（清单/回执/摘要/规格）自身的被引节 ——
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	2.3	论证缺口	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	回执 §2.3
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	4	逐条回执	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	回执 §4
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	7	D-9	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	回执 **§7.1**
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	8	开口项	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	回执 §8.4
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	10.2	第 2 轮对外交付	docs/implementation/2026-10-22-cep-stage0-external-review-summary.md	回执 §8.1 / §8.3 / §10.2
+local	docs/implementation/2026-10-22-cep-poc-spike-spec.md	3	判定场景	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	PoC 规格 **§3.2 S2**
+local	docs/implementation/2026-10-22-cep-stage0-external-review-summary.md	2	摘要	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	**§2.3**(`:55
+
+# —— 治理台账 + 计划 ——
+local	.rddf/roadmap/objectives/obj-cep-platform.md	9.2	消费者与验收方	docs/implementation/2026-10-22-cep-poc-spike-spec.md	§9.2
+local	.rddf/roadmap/objectives/obj-cep-platform.md	11	决策台账	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	obj-cep-platform.md §11
+local	.opencode/plan/20261022-cep-remaining-batches.md	10	建议新增	docs/implementation/2026-10-22-cep-poc-spike-spec.md	remaining-batches.md) §10
+
+# —— 跨仓（ArchForge 侧）——
+archforge	docs/architecture/32-cep-based-coherence-architecture.md	5.2	跨域写传播	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	32 号 §5.2
+archforge	docs/architecture/32-cep-based-coherence-architecture.md	6.0.1	消息类词表	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	32 号 §6.0.1
+archforge	docs/adr/ADR-SOC-25-cep-aligned-coherence-architecture.md	D7	4 值	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	**D7**(`:169
+archforge	docs/architecture/22-nsa-fabric-address-spec.md	0.5.4	网络命名空间	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	22-nsa §0.5.4.1
+
+# —— 「清单 ⇄ 回执」单一真源约束（防双真源静默漂移）——
+# 清单是回执的**派生摘要**。以下 2 条把「权威方向」与「逐字引用」也钉住:
+# 回执若升版 / 清单若自行改写论证,检查会红 → 提醒同步,而非静默过期。
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	2.3	论证缺口	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	回执为准,本清单为从
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	8.4	对 ArchForge 的正式答复	docs/implementation/2026-10-22-cep-archforge-response-checklist.md	是**逐字引用**回执 §8.4.3

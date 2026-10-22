@@ -970,6 +970,25 @@ DRI 于 2026-10-22 拍板 4 个决策(决策简报 `.opencode/plan/20261022-cep-
 > 但**节号**无任何机器校验(24 处错了 3 个 commit 都没红)。
 > 修复在同批(`Entry #12` 授权范围内);**建议**:Stage 1 起为对外文档加「节号引用 ⇔ 目标节标题」的 lint。
 
+**⑥ 上述「建议」的落地:节号引用 lint 已实施(2026-10-22,不等 Stage 1)**
+
+> **工具**:`scripts/test/cep_doc_ref_check.sh` + `cep_doc_ref_aliases.tsv` + `cep_doc_ref_registry.tsv`
+> (ctest 名 `cep_doc_ref_check`;`--strict` 有问题返非零)。
+> **两层互补设计**(经 critic 复审重构,原单层设计有 1 个 BLOCKER —— 覆盖度断言被证伪):
+> - **[3] 自动检测** —— 「`<别名> §N`」的**目标节必须存在**。来源 = 文档自身派生,
+>   **无漏登记**问题;抓得住节号错别字 / 别名解析错文件 / 目标删节。
+>   ⚠️ 抓不住「`§10` 存在但语义指错」—— 那正是原始 bug 的形态。
+> - **[4] 语义断言** —— 目标节**标题必须含人工写定的关键词** + 文档侧**字面量仍在**(防漂移)。
+>   **只有这一层能抓住原始 bug 类**。
+>   ⚠️ 作者纪律:`kw` **必须以目标文件的真实标题为准**,绝不可照抄文档字面量 ——
+>   照抄笔误文档登记 = 精确复刻原始事故(已在 TSV 头写死该警告)。
+> **已知边界(如实记录,勿高估)**:`lit` 是**存在性**而非**计数性**校验 ——
+> 同一节号出现 N 次、只改 M<N 次时不红;但**统一**写错(原始事故形态)必红。
+> **别名表必须显式登记**:实测 glob `NN-*.md` 会把 `07 号` 错解成 ArchForge `07-memory-system.md`
+> (文档实指本仓 `07-coherence-exploration-platform.md`)——**错解比不解更危险**。
+> **同批交付**:`docs/implementation/2026-10-22-cep-archforge-response-checklist.md`
+> (给 ArchForge 的「待回应清单」,10 条开口项 + 最小阅读路径 + 回执格式)。
+
 **关联**: Entry #9(批 1 授权记录)· Entry #11(第 1 轮对外动作 + M-4)·
 计划 `.opencode/plan/20261022-cep-remaining-batches.md` §3.1 / §5 Step 3 ·
 决策简报 `.opencode/plan/20261022-cep-decision-brief.md` ·

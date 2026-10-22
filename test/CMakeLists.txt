@@ -266,6 +266,15 @@ add_test(NAME cep_freeze_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_freeze_check.sh)
 set_tests_properties(cep_freeze_check PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# 对外文档「节号引用」校验(2026-10-22)
+# —— 补 `docs_sync_check.sh`(管路径) 与 `cep_archforge_alignment_check.sh`(管锚点行号) 的缺口:
+#    这两者都**不校验节号**。起因 = `ADR-CEP-05 §10` 笔误(判据 2 实际在 §7)扩散 24 处、
+#    跨 3 个 commit 无人发现,且出现在**发给 ArchForge 的对外文档**里。
+# —— 注册表外置:scripts/test/cep_doc_ref_registry.tsv（新增节号引用须在此登记）
+add_test(NAME cep_doc_ref_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_doc_ref_check.sh --strict)
+set_tests_properties(cep_doc_ref_check PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ⚠️ WORKING_DIRECTORY:ctest 默认在 build/test 下运行 —— git pathspec 与相对
 #    路径会解析到 build/test/... → 冻结面守门空转(2026-10-21 代码复审 B1)。
 #    与 test_cpptlm_emulator_msix(:73-75)的既有做法一致。

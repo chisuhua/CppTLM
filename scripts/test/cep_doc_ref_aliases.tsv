@@ -1,0 +1,72 @@
+# CEP 对外文档「节号引用」别名表
+#
+# 被 scripts/test/cep_doc_ref_check.sh 消费。**制表符分隔** 3 列:
+#   root    `local` = 本仓 / `archforge` = ArchForge 仓
+#   file    目标文件（相对该仓根）
+#   alias   文档中使用的**短名**（如 `32 号` / `ADR-CEP-05` / `回执`）
+#
+# 用途:自动检测器据此把「<别名> §N」解析成「<文件> §N」,从而验证目标节真实存在。
+# ⚠️ 别名到文件的映射**必须显式登记** —— 实测用 glob `NN-*.md` 会把 `07 号`
+#    错解成 ArchForge `07-memory-system.md`(而文档指的是本仓 07-coherence-exploration-platform.md)。
+#    错解比不解更危险,故不使用自动推断。
+archforge	docs/architecture/32-cep-based-coherence-architecture.md	32 号
+archforge	docs/architecture/09-coherence-protocol.md	09 号
+archforge	docs/architecture/25-nsa-hardware.md	25 号
+archforge	docs/architecture/30-nsa-comprehensive-supplement.md	30 号
+archforge	docs/architecture/22-nsa-fabric-address-spec.md	22 号
+archforge	docs/architecture/08-noc-interconnect.md	08 号
+archforge	docs/architecture/06-tensor-core.md	06 号
+archforge	docs/architecture/05-sm-compute-unit.md	05 号
+archforge	docs/architecture/01-host-interface.md	01 号
+local	docs/architecture/07-coherence-exploration-platform.md	07 号
+archforge	docs/architecture/22-nsa-fabric-address-spec.md	22-nsa
+archforge	docs/architecture/25-nsa-hardware.md	25-nsa
+archforge	docs/architecture/22-nsa-fabric-address-spec.md	22-nsa-hardware
+archforge	docs/architecture/25-nsa-hardware.md	25-nsa-hardware.md
+local	docs/adr/ADR-CEP-00-platform-charter-and-governance.md	ADR-CEP-00
+local	docs/adr/ADR-CEP-01-fabric-collective-plane.md	ADR-CEP-01
+local	docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md	ADR-CEP-02
+local	docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md	ADR-CEP-03
+local	docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md	ADR-CEP-04
+local	docs/adr/ADR-CEP-05-stub-cache-core-interface.md	ADR-CEP-05
+local	docs/adr/ADR-CEP-06-experiment-protocol.md	ADR-CEP-06
+local	docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md	ADR-CEP-07
+local	docs/adr/ADR-CEP-08-ordering-point-portability.md	ADR-CEP-08
+local	docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md	ADR-CEP-09
+local	docs/adr/ADR-CEP-11-protocol-version-locking.md	ADR-CEP-11
+local	docs/adr/ADR-CEP-12-protocol-engine-capability-map.md	ADR-CEP-12
+local	docs/adr/ADR-CEP-13-coherence-domain-ownership.md	ADR-CEP-13
+local	docs/adr/ADR-CEP-14-stub-contract-tests.md	ADR-CEP-14
+local	docs/adr/ADR-CEP-15-cachetlm-alignment.md	ADR-CEP-15
+local	docs/adr/ADR-CEP-16-06-evolution-route-mapping.md	ADR-CEP-16
+local	docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md	ADR-CEP-17
+local	docs/adr/ADR-CEP-18-protocol-generation-scope.md	ADR-CEP-18
+archforge	docs/adr/ADR-SOC-01-coherence-protocol-strategy.md	ADR-SOC-01
+archforge	docs/adr/ADR-SOC-02-cu-granularity.md	ADR-SOC-02
+archforge	docs/adr/ADR-SOC-03-wavefront-coalescing-abstraction.md	ADR-SOC-03
+archforge	docs/adr/ADR-SOC-04-hsapp-cp-dispatcher-simplification.md	ADR-SOC-04
+archforge	docs/adr/ADR-SOC-05-gpu-directory-structure.md	ADR-SOC-05
+archforge	docs/adr/ADR-SOC-06-cpptlm-v05-mvp.md	ADR-SOC-06
+archforge	docs/adr/ADR-SOC-07-dgpu-board-soc-layering.md	ADR-SOC-07
+archforge	docs/adr/ADR-SOC-08-v55-system-hw-integration-preconditions.md	ADR-SOC-08
+archforge	docs/adr/ADR-SOC-09-v1-nvidia-amd-dual-vendor.md	ADR-SOC-09
+archforge	docs/adr/ADR-SOC-10-module-factory-topology.md	ADR-SOC-10
+archforge	docs/adr/ADR-SOC-11-pcie-endpoint-ip.md	ADR-SOC-11
+archforge	docs/adr/ADR-SOC-12-host-bypass-and-rc.md	ADR-SOC-12
+archforge	docs/adr/ADR-SOC-13-axi-stream-adapter-mapper.md	ADR-SOC-13
+archforge	docs/adr/ADR-SOC-14-v55-integration-revision.md	ADR-SOC-14
+archforge	docs/adr/ADR-SOC-15-cdna-real-isa-roadmap.md	ADR-SOC-15
+archforge	docs/adr/ADR-SOC-16-sm-microarchitecture.md	ADR-SOC-16
+archforge	docs/adr/ADR-SOC-17-pcie-mock-ip.md	ADR-SOC-17
+archforge	docs/adr/ADR-SOC-18-cpptlm-abi-slimming.md	ADR-SOC-18
+archforge	docs/adr/ADR-SOC-19-axi-master-outbound-bridge.md	ADR-SOC-19
+archforge	docs/adr/ADR-SOC-20-cpptlm-abi-secondary-slimming.md	ADR-SOC-20
+archforge	docs/adr/ADR-SOC-21-v31-rev2-topology-correction.md	ADR-SOC-21
+archforge	docs/adr/ADR-SOC-22-nsa-fabric-address-format.md	ADR-SOC-22
+archforge	docs/adr/ADR-SOC-23-nsa-vs-plan-b-selection.md	ADR-SOC-23
+archforge	docs/adr/ADR-SOC-24-capability-based-multitenant-isolation.md	ADR-SOC-24
+archforge	docs/adr/ADR-SOC-25-cep-aligned-coherence-architecture.md	ADR-SOC-25
+local	docs/implementation/2026-10-21-cep-archforge-response-receipt.md	回执
+local	docs/implementation/2026-10-22-cep-poc-spike-spec.md	PoC 规格
+local	.rddf/roadmap/objectives/obj-cep-platform.md	obj-cep-platform
+local	.opencode/plan/20261022-cep-remaining-batches.md	remaining-batches.md
