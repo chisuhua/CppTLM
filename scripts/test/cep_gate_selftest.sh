@@ -109,6 +109,39 @@ p = Path(os.environ["RT"] + "/scripts/README.md")
 t = p.read_text(encoding="utf-8").replace("M1 冻结面 **30 成员**", "M1 冻结面 **29 成员**", 1)
 p.write_text(t, encoding="utf-8")'
 
+# ── critic 第 12 轮新增:句首「当前」不得被当条件句跳过 ─────────────
+run_case "句首「当前 Stage 0 尚未归档」→ ② 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("## §2 范围", "## §2 范围\n\n当前 Stage 0 尚未归档。", 1)
+p.write_text(t, encoding="utf-8")'
+
+run_case "行尾贴「旧值」+ 当前态限定词 → ① 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("### 9.3 R10 处置(2026-10-23)", "### 9.3 R10 处置(2026-10-23)\n\n**当前 baseline = 1/3**(旧值)", 1)
+p.write_text(t, encoding="utf-8")'
+
+# ── 断言④:旧任务计数 ────────────────────────────────────────────
+run_case "旧任务计数形态(105 / 99)→ ④ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("## §2 范围", "## §2 范围\n\ntasks.md 105 / 99 已完成", 1)
+p.write_text(t, encoding="utf-8")'
+
+# ── 断言⑥:glob 覆盖(归档件被移走 → 命中数 < 4)────────────────────
+run_case "归档件被移走 → ⑥ 必须 fire" 1 '
+import os, shutil
+src = os.path.join(os.environ["RT"], "openspec")
+dst = os.path.join(os.environ["RT"], "openspec_copy")
+if os.path.islink(src):
+    os.unlink(src)
+    shutil.copytree(os.path.join(os.environ["RT"].rsplit("/", 1)[0], "openspec"), dst)
+    os.rename(dst, src)'
+
 echo ""
 if [ "$FAIL" -eq 0 ]; then
   echo -e "\033[0;32m✅ 闸的回归 fixture 全部通过\033[0m ($PASS 项)"

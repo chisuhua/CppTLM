@@ -242,6 +242,9 @@ add_test(NAME cep_docs_sync_check
 
 # CEP ↔ ArchForge 接口对齐清单的漂移检测(跨仓引用完整性)
 # —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败)
+# 状态一致性闸的**回归 fixture 集**(10+ 场景,变异 → 期望 rc)
+add_test(NAME cep_gate_selftest
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_gate_selftest.sh)
 add_test(NAME cep_archforge_alignment_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_archforge_alignment_check.sh)
 set_tests_properties(cep_archforge_alignment_check
