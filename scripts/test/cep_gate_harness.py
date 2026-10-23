@@ -71,11 +71,25 @@ def main():
     build_root()
     if "--mutate" in sys.argv:
         code = sys.argv[sys.argv.index("--mutate") + 1]
-        subprocess.run(["python3", "-c", "import os\n" + code],
-                       env={**os.environ, "RT": RT}, check=False)
+        # prelude:变异代码统一可用 `sub()`(锚点唯一性断言 → 漂移即响亮失败)
+        prelude = (
+            "import os\n"
+            "def sub(text, old, new):\n"
+            "    assert text.count(old) == 1, '锚点漂移:变异未生效 → 本用例会**假绿**'\n"
+            "    return text.replace(old, new, 1)\n"
+        )
+        p = subprocess.run(["python3", "-c", prelude + code],
+                           env={**os.environ, "RT": RT, "CEP_GATE_SRC": R})
+        # ⚠️ 变异失败必须**响亮失败**:否则「变异没生效」会被读成「期望 GREEN」→ **假绿**
+        if p.returncode != 0:
+            print(f"❌ 变异脚本失败 rc={p.returncode} —— 变异未生效,本次结果**不可信**")
+            return 2
     elif "--mutate-file" in sys.argv:
         mf = sys.argv[sys.argv.index("--mutate-file") + 1]
-        subprocess.run(["python3", mf], env={**os.environ, "RT": RT}, check=False)
+        p = subprocess.run(["python3", mf], env={**os.environ, "RT": RT, "CEP_GATE_SRC": R})
+        if p.returncode != 0:
+            print(f"❌ 变异脚本失败 rc={p.returncode} —— 变异未生效,本次结果**不可信**")
+            return 2
     blk = os.path.join(RT, "_gate_block.py")
     open(blk, "w", encoding="utf-8").write(extract_block())
     p = subprocess.run(["python3", blk, RT], capture_output=True, text=True)

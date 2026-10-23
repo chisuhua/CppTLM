@@ -706,24 +706,26 @@ def exempt_block(head, body, h2=""):
 #    规则:条件标记必须出现在**分句开头**(切句后 ^ 锚定),或成对出现「若…则」。
 # ⚠️ `当` **不得**裸用:「当前」「当时」「当然」「当务之急」都会命中 → 句首「当前 Stage 0
 #    尚未归档」这类**最自然的陈旧投影句式**会被永久跳过。必须成对:`当…时`。
-CONDITIONAL = re.compile(r"^\s*(若|假如|如若|一旦)|若[^。;]{0,20}则|^\s*当[^。;]{0,20}时")
+# ⚠️ **不得**含 `当` 分支:`当…时` 的中段可为空 ⇒ 「当时…」「当前时段…」被吞。
+#    条件词只保留「若/假如/如若/一旦」+ 成对「若…则…」。
+CONDITIONAL = re.compile(r"^\s*(若|假如|如若|一旦)")
 # 历史标记:该行在陈述**过去**的状态 → ① 的当前态数值判定应跳过该行。
 # ⚠️ **不得**用行级贴词白名单:行尾贴一个「旧值」即可让 ① 静默失守
-#    (这正是闸立项时否决过的设计)。故:带 CUR 限定词(当前/现行/真实/…)的行**不豁免** ——
-#    「**当前 baseline = 1/3**(旧值)」是**当前态断言**,不是历史叙述。
+#    (这正是闸立项时否决过的设计)。故:该行**含当前态强限定词**时**不豁免** ——
+#    「**当前 baseline = <数值>**(旧值)」是**当前态断言**,不是历史叙述。
 HIST_MARK = re.compile(r"历史|沿革|原口径|旧值|旧口径|快照|已改写|已被取代|曾为|当时")
+# 当前态**强**限定词(不含「截至」:「截至 <日期>」通常是**日期锚定的历史叙述」)
+CUR_STRONG = re.compile(r"当前|现行|真实|现在|目前")
 CUR_LIMIT = re.compile(r"当前|现行|真实|现在|目前|截至")
-# 句内同时出现「历史标记」与「当前态限定词」时 → 以**先出现者**决定该句性质:
-#   「**历史**:截至 2026-10-20,并发 3/3」 → 历史先 → 豁免(合法历史叙述)
-#   「**当前 baseline = 1/3**(旧值)」      → 当前先 → **不豁免**(当前态断言)
-def hist_first(sent):
-    h = HIST_MARK.search(sent)
-    if not h:
-        return False
-    c = CUR_LIMIT.search(sent)
-    if not c:
-        return True
-    return h.start() < c.start()
+# 该行是否在陈述**当前**状态:任一句含**当前态强限定词**(当前/现行/真实/现在/目前)即为当前。
+#   「**历史**:截至 2026-10-20,并发 3/3」 → 无强限定词 → 历史 → 豁免
+#   「历史遗留:当前 baseline = <数值>」    → 含「当前」 → 当前 → **不豁免**
+#   「**当前 baseline = <数值>**(旧值)」   → 含「当前」 → 当前 → **不豁免**
+def line_is_current(ln):
+    for sent in re.split(r"[。；，、\n;!?！？,]", ln):
+        if CUR_STRONG.search(sent):
+            return True
+    return False
 # 实体(状态归属的主体)
 ENTITY = re.compile(r"umbrella|cpptlm-cep-umbrella|Stage 0|\bR10\b")
 # 旧状态词(表示「尚未归档 / 仍占用」)
@@ -808,18 +810,19 @@ else:
                 # 豁免块:逐行看 —— 带**历史标记**的行放行(合法历史叙述),
                 # 不带历史标记的行仍查(否则 obj 豁免块里的当前态数值会失守)
                 for ln in body:
-                    for sent in re.split(r"[。；，、\n;!?！？,]", ln):
-                        if hist_first(sent):
-                            continue      # 合法历史叙述 → 放行
-                        for m in CUR.finditer(sent):
-                            vals.setdefault(p, set()).add(f"{m.group(2)}/3")
+                    if not line_is_current(ln):
+                        continue          # 合法历史叙述 → 放行
+                    for m in CUR.finditer(ln):
+                        vals.setdefault(p, set()).add(f"{m.group(2)}/3")
                 continue
             for ln in body:
-                for sent in re.split(r"[。；，、\n;!?！？,]", ln):
-                    if hist_first(sent):
-                        continue          # 合法历史叙述 → 放行
-                    for m in CUR.finditer(sent):
-                        vals.setdefault(p, set()).add(f"{m.group(2)}/3")
+                if not line_is_current(ln):
+                    continue              # 合法历史叙述 → 放行
+                # ⚠️ 匹配在**整行**上做:限定词与 N/3 常被标点隔开
+                #    (如「现行基线 (…): **0 个 active** → **0/3**」)——
+                #    切句后限定词与数值分居两句 → **D1 头号目标行会掉出覆盖**。
+                for m in CUR.finditer(ln):
+                    vals.setdefault(p, set()).add(f"{m.group(2)}/3")
     bad = {p: sorted(v) for p, v in vals.items() if v != {expect}}
     if bad:
         failed.append(f"KPI baseline 与实测({expect})不一致:{bad}")
