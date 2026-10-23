@@ -671,19 +671,33 @@ LIVE = [
 #   归档日及之后的块(如 Status Update 2026-10-23)→ **不豁免**(必须写当前态)。
 ARCHIVE_DAY = "2026-10-23"
 # 区块级豁免:**标题**含下列词 → 该区块整体豁免(改标题会留痕;行尾贴词不能绕过)
-EXEMPT_HEAD = re.compile(r"历史|沿革|误读|处置|单源纪律|自检|遗留|机器兜底|Status Update")
+EXEMPT_HEAD = re.compile(r"历史|沿革|误读|处置|单源纪律|自检|遗留|Status Update")
 _DATE = re.compile(r"20\d{2}-\d{2}-\d{2}")
 
 
+def own_date(head, h2):
+    """块的**自身日期**(不取正文里的引用!):标题日期 → 否则所属 h2 的日期 → 否则 None。
+    ⚠️ 不能用「正文里出现过的最大日期」:历史块正文里**引用**一个近期日期
+    (如「后续见 2026-10-23 Entry #33」)会把整块误判为「最新」→ 对正确文档报红。"""
+    d = _DATE.findall(head)
+    if d:
+        return max(d)
+    d = _DATE.findall(h2)
+    if d:
+        return max(d)
+    return None
+
+
 def exempt_block(head, body, h2=""):
-    """区块级豁免:标题(或所属 h2)命中即豁免;但 **Status Update** 按块内日期判定 ——
-    归档日之前的块豁免(历史),归档日及之后的块**不豁免**(必须写当前态)。"""
+    """区块级豁免:标题(或所属 h2)命中即豁免;但 **Status Update** 按**块自身日期**判定 ——
+    归档日之前的块豁免(历史),归档日及之后的块**不豁免**(必须写当前态);
+    **无日期**的 Status Update 块视为最新(不豁免)—— 宁可多报,不可漏报。"""
     scope = head + "\n" + h2
     if not EXEMPT_HEAD.search(scope):
         return False
     if "Status Update" in scope:
-        days = _DATE.findall("\n".join(body))   # ⚠️ re.Pattern 没有 .find(只有 findall/finditer/search)
-        if days and max(days) >= ARCHIVE_DAY:
+        d = own_date(head, h2)
+        if d is None or d >= ARCHIVE_DAY:
             return False
     return True
 # 实体(状态归属的主体)
@@ -754,14 +768,22 @@ else:
     # 只抓「当前/现行/真实 … N/3」的**当前态**表述(历史叙述"0/3 → 1/3"不含这些限定词)
     CUR = re.compile(r"(当前|现行|真实|现在|目前|截至)[^|\n]{0,80}?([0-9])/3")
     vals = {}
-    # ⚠️ 断言① 只扫**可变活文档**:ADR 正文不可变(只能追加 Status Update),
-    #    其中的历史数值(如 ADR-CEP-00 §2 的「当前基线 3/3 上限触发」)是合法叙述。
-    for p in [x for x in LIVE if not x.startswith("docs/adr/")]:
+    # ⚠️ 断言① 与断言② **同一块级豁免规则**:ADR 的**归档日之前的块**跳过
+    #    (正文不可变,历史数值是合法叙述),但**归档日及之后的 Status Update 块**
+    #    必须写当前态 → **不跳过**(整文件排除会让新追加的段失守)。
+    for p in LIVE:
         t = live_text(p)
         if not t:
             continue
-        for m in CUR.finditer(t):
-            vals.setdefault(p, set()).add(f"{m.group(2)}/3")
+        is_adr = p.startswith("docs/adr/")
+        for head, body, h2 in blocks(t):
+            if exempt_block(head, body, h2):
+                continue
+            if is_adr and "Status Update" not in (head + h2):
+                continue   # ADR 的**正文块**(不可变)里的历史基线叙述不参与本断言;
+                           # 只有 Status Update 块(可追加)里的当前态数值被检查
+            for m in CUR.finditer("\n".join(body)):
+                vals.setdefault(p, set()).add(f"{m.group(2)}/3")
     bad = {p: sorted(v) for p, v in vals.items() if v != {expect}}
     if bad:
         failed.append(f"KPI baseline 与实测({expect})不一致:{bad}")
@@ -780,7 +802,7 @@ for p in LIVE:
         for ln in body:
             # 句级判定:同一**句**内同时出现「实体」与「旧状态词」才算冲突
             # (行级判定会误报:条件句/协议说明句常在同一行内先后出现两者)
-            for sent in re.split(r"[。；\n;!?！？]", ln):   # 全角+半角+换行(中文文本主力是全角)
+            for sent in re.split(r"[。；，、\n;!?！？,]", ln):   # 全角+半角+换行+逗号顿号(中文主力是全角标点)
                 if ENTITY.search(sent) and STALE_STATE.search(sent) and not CURRENT_STATE.search(sent):
                     hits.append(f"{p}: {sent.strip()[:110]}")
                     break
@@ -835,6 +857,37 @@ if c_hits:
         failed.append("      · " + h)
 else:
     print("  \033[0;32m✓\033[0m 无旧任务计数形态(105 / 99 等)")
+
+# ── 断言 ⑥:ADR 的「必须追加 Status Update」回归锁 ──────────────────
+# 规则:若某 ADR 的**非豁免块**仍写着旧状态(实体 + 旧状态词),则该 ADR **必须**
+#       存在一个「自身日期 ≥ 归档日」的 Status Update 块登记其失效。
+#       —— 这条把「B1 的修复路径 = 追加 Status Update」变成**可回归验证**的,
+#       而不只是「追加后的内容被检查」。
+adrs = [x for x in LIVE if x.startswith("docs/adr/")]
+a_fail = []
+for p in adrs:
+    t = live_text(p)
+    if not t:
+        continue
+    has_new_su = False
+    stale_in_adr = False
+    for head, body, h2 in blocks(t):
+        d = own_date(head, h2)
+        if "Status Update" in (head + h2) and d is not None and d >= ARCHIVE_DAY:
+            has_new_su = True
+        if exempt_block(head, body, h2):
+            continue
+        for sent in re.split(r"[。；，、\n;!?！？,]", "\n".join(body)):
+            if ENTITY.search(sent) and STALE_STATE.search(sent) and not CURRENT_STATE.search(sent):
+                stale_in_adr = True
+    if stale_in_adr and not has_new_su:
+        a_fail.append(f"{p}: 非豁免块仍写旧状态,但**没有** ≥ {ARCHIVE_DAY} 的 Status Update 块登记失效")
+if a_fail:
+    failed.append("ADR 的「必须追加 Status Update」回归锁未满足:")
+    for x in a_fail:
+        failed.append("      · " + x)
+else:
+    print("  \033[0;32m✓\033[0m ADR 的「必须追加 Status Update」回归锁满足")
 
 # ── 断言 ④:glob 覆盖(归档件在 P6 扫描集内)─────────────────────────
 import glob as _g
