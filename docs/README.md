@@ -15,7 +15,7 @@
 | **[requirements/](./requirements/)** | 产品需求 | 3 |
 | **[architecture/](./architecture/)** | 架构设计 | 8+ |
 | **[adr/](./adr/)** | 架构决策记录 | 10+ |
-| **[implementation/](./implementation/)** | 实施计划 | 12 |
+| **[implementation/](./implementation/)** | 实施计划 | 15(.md,含 README;另有 1 份 freeze manifest JSON)|
 | **[archive/](./archive/)** | 归档文档 | - |
 
 ---
@@ -74,7 +74,7 @@ docs/
 │   ├── ADR-P1-TEMPLATE.md
 │   ├── ADR-X.1 ~ ADR-X.8
 │   └── ADR-X-SUMMARY.md
-├── implementation/              # 实施计划（12 份 + README）
+├── implementation/              # 实施计划（14 份 + README + 1 份 freeze manifest;.md 共 15）
 │   ├── README.md
 │   ├── 11-tgms-v4-implementation-plan.md
 │   ├── 13-dashboard-implementation-plan.md

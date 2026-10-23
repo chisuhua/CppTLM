@@ -305,6 +305,11 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 | 测试 | `scripts/test/test_off.sh` | OFF 路径回归 |
 | 测试 | `scripts/test/test_ptx_emu.sh` | PTX-EMU 路径（仅 PTXIR image H2D DMA） |
 | 测试 | `scripts/test/run_all_tests.sh` | 兼容包装入口 |
+| CEP 守门 | `scripts/test/cep_docs_sync_check.sh` | CEP 契约面同步检查（21 份 ADR 锚点 + invariant 计数单一真源 + P 编号口径 + `CATEGORY_*` 分层纪律，10 组） |
+| CEP 守门 | `scripts/test/cep_doc_ref_check.sh` | 对外文档节号引用可达性 + 语义断言 + 负向断言 |
+| CEP 守门 | `scripts/test/cep_freeze_check.sh` | M1 冻结面 29 成员授权闸 |
+| CEP 守门 | `scripts/test/cep_archforge_alignment_check.sh` | 跨仓（ArchForge）对齐锚点守门（33 锚点） |
+| CEP 守门 | `scripts/test/cep_decl_alignment_check.sh` + `cep_decl_reverse_verify.sh` | 协议实例声明 ↔ schema 双向映射 + 反向验证 |
 | 流水线 | `scripts/pipeline/run_full_pipeline.sh` | 仿真 → 统计 → 可视化 |
 | 拓扑 | `scripts/topology/topology_validator.py` | 拓扑校验 |
 | 拓扑 | `scripts/topology/topology_generator.py` | 拓扑生成 |

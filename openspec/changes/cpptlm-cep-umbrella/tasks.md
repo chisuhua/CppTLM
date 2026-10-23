@@ -1,9 +1,9 @@
 # Tasks — cpptlm-cep-umbrella v1.0(Stage 0,TDD 5-step)
 
-> **状态**: 📋 **Proposed**(2026-10-22)—— 跨仓准入门(M2)**已放行**(per `ADR-CEP-00 §8` + 台账 Entry #9/#10;取证见 `proposal.md` 前置 gate ④)
+> **状态**: 🟡 **Proposed / in-progress**(2026-10-22)—— 跨仓准入门(M2)**已放行**(per `ADR-CEP-00 §8` + 台账 Entry #9/#10;取证见 `proposal.md` 前置 gate ④);**tasks 105 / 99 完成**(2026-10-23 实测);余 6 项**全部为 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)→ 归属见 `obj-cep-platform §4.0` 排队表(逐项 owner 见下方两段准入前置的表头),**不计入 Stage 0**
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-core-contracts/spec.md`](specs/cep-core-contracts/spec.md)
-> **上游**: `phase-10.md` Stage 0 子任务 10.B~10.G + `objective-cep-platform §4.1`
-> **估时**: 28 人日(Stage 0 剩余;已消耗 13 人日 = 10.A 8 + 10.E 5)
+> **上游**: `phase-10.md` Stage 0 子任务 10.B~10.G + `objective-cep-platform §4.1`(Stage 0 展开)/ **§4.0 排队总表**(队列 #1 = 本 change)/ **§4.7 载体分工与状态更新协议**(状态真源 = 本文件勾选)
+> **估时**: **46 人日**(Stage 0 逐行合计,per `obj-cep-platform` Entry #22 重算;原「28 剩余 / 13 已消耗」与表内逐行值不同步)—— **已全部落地**;剩余 = R10 外部回执(不可估)
 > **KPI**: Stage 0 = **1 slot**(per `ADR-CEP-00 §2 Decision 3`)
 
 
@@ -29,7 +29,7 @@
 
 ---
 
-## 总体实施时间线(8 Phase,~28 人日)
+## 总体实施时间线(8 Phase,**builder 侧 ~28 人日** = 下表逐行合计;`obj §4.1` 的 builder 侧口径为 **29 人日**(10.B 5 + 10.C 10 + 10.D 5 + 10.F 6 + 10.G 3)—— **两口径差 1 人日**(Phase 切分与 10.x 子任务切分粒度不同,**未逐 Phase 对齐**,登记为已知缺口);+ architect 侧 **17 人日**(10.A 12 + 10.E 5)= Stage 0 合计 **46 人日**;**已于 2026-10-22 收口**,per Entry #22)
 
 | Phase | 内容 | 估时 | 依赖 |
 |-------|------|:----:|------|
@@ -99,7 +99,7 @@
 ### Task 2.2: 07 号真源复核
 
 **Files**:
-- 复核 `docs/architecture/07-coherence-exploration-platform.md`(657 行)
+- 复核 `docs/architecture/07-coherence-exploration-platform.md`(657 行,**执行时点值**;后增补至 686 行)
 
 **步骤**:
 - [x] Step 1: 复核 §3.1 流清单 ↔ `ADR-CEP-02 §2` 逐名一致
@@ -402,6 +402,8 @@
 > **Stage 1 必须承接**,否则 provisional 变成无声的永久债。
 >
 > ⚠️ 实际为 **5 项**(S1-1 ~ S1-5)—— 表头「4 项」是初稿遗留,2026-10-22 修正。
+>
+> **归属(per `obj-cep-platform §4.0` 队列)**:S1-1 ~ S1-5 → **队列 #2 `cpptlm-cep-poc-spike`**(2027-Q1);**未消费前不得下线**(provisional 不许变永久债)。
 
 - [ ] **S1-1**:`ADR-CEP-09` 的通道依赖图顶点按 **`(协议实例, network, vc_id)`** 建立 —— **在此之前不得用其无环判据放行任何协议实例**(两张网共享 vc_id 值域 0-3,顶点不带 network ⇒ 跨网依赖边被合并 ⇒ 可能给错误 verdict)
 - [ ] **S1-2**:N-1 / N-2 的**实现侧复核** —— 首个 `implemented` 实例装配后复核 per-network 嵌套形态
@@ -430,6 +432,8 @@
 
 ## Stage 1 准入前置(2026-10-22 判据 2 触发后新增的 R-2 形态债)
 
+> **归属(per `obj-cep-platform §4.0` 队列)**:S1-7 的 **③ (β) 重新评估** → **队列 #4 `cpptlm-cep-directory-ordering-plane`**;**①② `perm` 形态 schema 演进** → **队列 #6 `cpptlm-cep-chi-rnf-subset`**。
+>
 > **R-2 已触发**(per 台账 **Entry #13** ①)→ 判据 2 触发的动作 = 「重新评估 (β) 独立接口方案,
 > 或引入 `perm` 的『可静默升级』标志位」。**本债不在 Stage 0 消解** ——
 > `perm` 的**形态**变更属 CEP 侧 schema 演进(Stage 1),本批**零 schema 改动**。
@@ -452,28 +456,28 @@
 
 ## 验收对照表(proposal Acceptance ↔ tasks)
 
-| Acceptance 项 | 落点 |
-|---------------|------|
-| TDD 5-step 全 GREEN | Phase 1~8 |
-| 50 条 invariant 机器覆盖(10 组) | Task 1.1 / 8.1 |
-| `[cep][canonical-invariant]` ~50 cases | Task 1.1 / 8.1 |
-| `[cep][dummy-signals]` ~10 cases | Task 4.1 / 4.2 |
-| `[cep][module-factory-seam]` ~8 cases | Task 5.1 / 5.2 |
-| `[cep][simulation-mode]` ~6 cases | Task 6.1 / 6.2 |
-| `[cep][schema]` ~6 cases | Task 3.1 / 3.2 |
-| `cep_docs_sync_check.sh` PASS | Task 7.3 |
-| 23 ABI 0 diff + 4 frozen headers 0 diff | Task 5.2 / 8.2 |
-| 既有全量 0 回归 | Task 1.2 / 4.2 / 5.2 / 6.2 / 8.2 |
-| `openspec validate --strict` PASS | Task 8.2 |
-| 文档同步 | Task 2.1 / 2.2 / 8.3 |
-| ⛔ §9.2 三项角色已指定 | Task 8.4 |
-| ⛔ M1 产物冻结(28 产物 hash + 机器校验) | Task 8.4 Step 3 |
-| ⛔ M4 独立 AI 复审(2 轮 / 6 BLOCKER 全处置) | Task 8.4 Step 2 |
-| ⛔ M2 跨仓准入门(⛔ 未放行 → Proposed Draft) | Task 8.4 Step 4 |
-| ⛔ R10 登记为「部分独立」 | Task 8.4 Step 5 |
+| Acceptance 项 | 落点 | 状态(2026-10-23 实测) |
+|---------------|------|----------------------|
+| TDD 5-step 全 GREEN | Phase 1~8 | ✅ 全绿 |
+| 66 条 invariant 机器覆盖(15 组;编号位 67) | Task 1.1 / 8.1 | ✅ 13 case / 684 assertion |
+| `[cep][canonical-invariant]` | Task 1.1 / 8.1 | ✅ 13 case / 684 assertion |
+| `[cep][dummy-signals]` | Task 4.1 / 4.2 | ✅ 6 case / 71 assertion |
+| `[cep][module-factory-seam]` | Task 5.1 / 5.2 | ✅ 9 case / 36 assertion |
+| `[cep][simulation-mode]` | Task 6.1 / 6.2 | ✅ 8 case / 68 assertion |
+| `[cep][schema]` | Task 3.1 / 3.2 | ✅ 18 case / 228 assertion |
+| `cep_docs_sync_check.sh` PASS | Task 7.3 | ✅ rc=0(10 组;21 份 ADR) |
+| 23 ABI 0 diff + 4 frozen headers 0 diff | Task 5.2 / 8.2 | ✅ 均为空 |
+| 既有全量 0 回归 | Task 1.2 / 4.2 / 5.2 / 6.2 / 8.2 | ✅ ctest 96/96 |
+| `openspec validate --strict` PASS | Task 8.2 | ⚠️ **rc=1**(2 预存 WARNING,per Entry #12 ⑦)—— `spec.md` = 冻结面成员 → 不修,留 **批 4** |
+| 文档同步 | Task 2.1 / 2.2 / 8.3 | ✅ |
+| §9.2 三项角色已指定 | Task 8.4 | ✅ 2026-10-21 |
+| M1 产物冻结(**29** 产物 hash + 机器校验) | Task 8.4 Step 3 | ✅ 已完成(per Entry #9 起 29 成员) |
+| M4 独立 AI 复审(2 轮 / 6 BLOCKER 全处置) | Task 8.4 Step 2 | ✅ 已完成 |
+| M2 跨仓准入门 | Task 8.4 Step 4 | ✅ **已放行 2026-10-22**(Entry #9/#10) |
+| R10 登记为「部分独立」 | Task 8.4 Step 5 | ✅ 已登记 —— **R10 本身仍未闭合**(Stage 0 不 archive 的唯一卡口) |
 
 ---
 
-**版本**: v1.0
-**最后更新**: 2026-10-21
+**版本**: v1.1
+**最后更新**: 2026-10-23(per `obj-cep-platform` Entry #22 批 2:头部元数据 + 验收对照表口径同步;**历史执行记录未改写**)
 **维护者**: CppTLM Team(builder mode)

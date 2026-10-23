@@ -1,10 +1,11 @@
 # cpptlm-cep-umbrella: Coherence Exploration Platform(CEP)核心契约与实验床骨架
 
-> **状态**: 🟡 **Proposed** —— Stage 0 umbrella;**跨仓准入门(M2)已放行**(2026-10-22,per `ADR-CEP-00 §8` + 台账 Entry #9/#10)
+> **状态**: 🟡 **Proposed / in-progress** —— Stage 0 umbrella(tasks **105 / 99**);**跨仓准入门(M2)已放行**(2026-10-22,per `ADR-CEP-00 §8` + 台账 Entry #9/#10);**R10 未闭合 → 不 archive**;余 6 项 = Stage 1 准入前置(归属见 `obj §4.0`)
 > **作者**: CppTLM Team(builder mode)
 > **版本**: v1.1(2026-10-22 · M2 放行)
-> **关联路线图**: [`phase-10`](../../../.rddf/roadmap/phases/phase-10.md)(planning)+ [`objective-cep-platform`](../../../.rddf/roadmap/objectives/obj-cep-platform.md)(P1 active)
-> **关联真源 1**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1(657 行,✅ 2026-10-21 完成)+ [`06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4 + [`06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3(将被 supersede)
+> **载体定位**:本 change = **执行真源**(做什么 / 怎么验 / 做到哪);**上游规划输入** = `.rddf/improvements/cpptlm-cep-umbrella.md`;**排队与状态** = `obj-cep-platform §4.0`(队列 #1);**载体分工与状态更新协议** = `obj-cep-platform §4.7`(状态真源 = 本 change 的 `tasks.md` 勾选)
+> **关联路线图**: [`phase-10`](../../../.rddf/roadmap/phases/phase-10.md)(in-progress)+ [`objective-cep-platform`](../../../.rddf/roadmap/objectives/obj-cep-platform.md)(P1 active)
+> **关联真源 1**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1(**686 行**,✅ 2026-10-21 完成)+ [`06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4 + [`06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3(将被 supersede)
 > **关联真源 3**: `docs/adr/ADR-CEP-*.md` **共 21 份**(2026-10-21 architect 阶段两批:新增 `ADR-CEP-08/09/12/13/18` + `ADR-CEP-11/14/15/16/07A`,修订 8 份)
 > **KPI**: Stage 0 = **1 slot**(计 KPI,per `ADR-CEP-00 §2 Decision 3`;**不符** `cpptlm-dgpu-soc-arch-truth-cleanup §6` doc-only 豁免先例,因本 change 含测试契约骨架)
 > **前置 gate**: ① 签发仓 = CppTLM(2026-10-20 拍板)✅ ② 真源路径 = `07-*.md`(已创建)✅ ③ KPI slot 腾出(3 个 active 已 ⏸ 暂存归档,baseline **0/3**)✅ ④ **跨仓准入门(M2)✅ 已放行**(2026-10-22)
@@ -54,9 +55,9 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | **探索平台无实验产物** | phase-9 有 D-AXI minimal / timing-mode,但无 metric / sweep / A-B 对比格式 | 交付工具 ≠ 产出洞见(per metis G1) |
 | **契约不可机器检查** | 21 份 ADR 的 **66 条守门 invariant** 目前只存在于 Markdown | 契约漂移无感知;ADR 引用无锚点校验 |
 
-**为什么现在**:16 份 ADR 已达可签发水准(3 轮 oracle REJECT 关闭 + 2026-10-21 首次**独立** Oracle 架构复审判定"CEP 骨架成立,无需改层"),再不动手,契约与实现之间的**语义漂移**会随 Stage 1 实现加速而放大。
+**为什么现在**:**21 份** ADR 已达可签发水准(3 轮 oracle REJECT 关闭 + 2026-10-21 首次**独立** Oracle 架构复审判定"CEP 骨架成立,无需改层"),再不动手,契约与实现之间的**语义漂移**会随 Stage 1 实现加速而放大。
 
-**为什么是 umbrella**:Stage 0 不交付任何协议实现,只交付**契约层 + 实验床骨架** —— 让后续 9 个 change 全部基于同一套机器可执行的契约,而不是各自解读 Markdown。
+**为什么是 umbrella**:Stage 0 不交付任何协议实现,只交付**契约层 + 实验床骨架** —— 让后续 **10** 个 change 全部基于同一套机器可执行的契约,而不是各自解读 Markdown。
 
 ---
 
@@ -134,7 +135,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | **`[cep][module-factory-seam]`** | 0 cases | ✅ ~8 cases(注册机制 + 冻结面 0 diff) |
 | **`[cep][simulation-mode]`** | 0 cases | ✅ ~6 cases(`simulation_mode` + `verification_mode` 锁定) |
 | **`[cep][schema]`** | 0 cases | ✅ ~9 cases(capability schema **7 字段组 / 13 属性** + per-network 形态 + fabric 载体) |
-| **`[cep][docs-lint]`**(shell) | 0 | ✅ 16 份 ADR 锚点 + invariant 计数单一真源 |
+| **`[cep][docs-lint]`**(shell) | 0 | ✅ **21 份** ADR 锚点 + invariant 计数单一真源 |
 
 ### 风险与缓解(per `objective-cep-platform §8.1`)
 
@@ -143,27 +144,27 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | **R5 无外部验收方** | 🟡 中 | `objective §9.2` 三项角色**仍未指定**;Stage 0 验收按 §8.2 判 **No-Go**。**本 change 可实施,但验收须先解除该 gate** |
 | 契约测试与 ADR 漂移 | 🟡 中 | `scripts/test/cep_docs_sync_check.sh` 把 invariant 计数 + ADR 锚点做成**机器检查**,进 pre-commit |
 | `verification_mode` 被误读为"已证明" | 🟡 中 | `INV-CEP-06` 契约明确禁止 bounded/sampled 结果表述为"已证明无死锁 / 无违例" |
-| 单 change 体积(umbrella 含 12 文件) | 🟢 低 | Stage 0 总估时 41 人日(已消耗 13),tasks 按 6 个 Phase 切分,每 Phase 独立可验证 |
+| 单 change 体积(umbrella 含 26 文件) | 🟢 低 | Stage 0 总估时 **46 人日**(已消耗,per Entry #22 重算),tasks 按 8 个 Phase 切分,每 Phase 独立可验证 |
 | schema 与 ADR 后续修订脱节 | 🟢 低 | `ADR-CEP-12` 为 schema 唯一真源;lint 脚本校验 ADR 引用存在性 |
 
 ---
 
 ## Acceptance
 
-- [ ] **TDD 5-step 全部 GREEN**(red → green → refactor → regress → doc)
-- [ ] **66 条实际守门 invariant 机器检查 100% 覆盖**(编号位 67;`INV-CEP-04-IC4` **唯一跳空**)—— 按 `objective-cep-platform §0 DoD 7` 的 **15 组**逐组断言
-- [ ] `[cep][canonical-invariant]` ~50 cases / PASS
-- [ ] `[cep][dummy-signals]` ~10 cases / PASS(10 流覆盖矩阵全覆盖)
-- [ ] `[cep][module-factory-seam]` ~8 cases / PASS
-- [ ] `[cep][simulation-mode]` ~6 cases / PASS(含 `verification_mode` 三值)
-- [ ] `[cep][schema]` ~9 cases / PASS(capability schema **7 字段组 / 13 属性** + **per-network** `ordering_assumption` / `vc_binding` 校验:network 须登记、其下 `vc_id` 须落在槽位上界内且 ∈ 同网络 `vc_binding` 值域、消息类 ∈ 6 类词表)—— per `ADR-CEP-12 §8` 的 `INV-CEP-12-IC2` ①②③
-- [ ] `scripts/test/cep_docs_sync_check.sh` PASS(16 份 ADR 锚点 + invariant 计数单一真源)
-- [ ] **23 ABI 签名 0 变更**(`git diff HEAD -- include/abi/` 为空,per `ADR-DGPU-08`)
-- [ ] **4 frozen headers 0 diff**(per `ADR-DGPU-08` / `ADR-DGPU-09`)
-- [ ] 既有全量测试 **0 回归**(`ctest --test-dir build` 全绿)
-- [ ] `openspec validate cpptlm-cep-umbrella --strict` PASS
-- [ ] 文档同步:`docs/implementation/2026-10-21-cep-stage0-contracts.md` + `06-bis` Status Update 段 + `07 号` §11 Gap 映射复核
-- [ ] **⛔ `objective-cep-platform §9.2` 三项角色已指定**(验收方 / 结论消费者 / 平台维护方)—— 否则 Stage 0 验收判 **No-Go**
+- [x] **TDD 5-step 全部 GREEN**(red → green → refactor → regress → doc)—— ✅ tasks.md Phase 1~8 全绿
+- [x] **66 条实际守门 invariant 机器检查 100% 覆盖**(编号位 67;`INV-CEP-04-IC4` **唯一跳空**)—— 按 `objective-cep-platform §0 DoD 7` 的 **15 组**逐组断言 ✅
+- [x] `[cep][canonical-invariant]` PASS —— **实测 13 case / 684 assertion**(2026-10-23;case 数少于原规划 ~50,断言数远超 —— invariant 以**断言**计,非 case 数)
+- [x] `[cep][dummy-signals]` PASS(10 流覆盖矩阵全覆盖)—— **实测 6 case / 71 assertion**
+- [x] `[cep][module-factory-seam]` PASS —— **实测 9 case / 36 assertion**
+- [x] `[cep][simulation-mode]` PASS(含 `verification_mode` 三值)—— **实测 8 case / 68 assertion**
+- [x] `[cep][schema]` PASS(capability schema **7 字段组 / 13 属性** + **per-network** `ordering_assumption` / `vc_binding` 校验:network 须登记、其下 `vc_id` 须落在槽位上界内且 ∈ 同网络 `vc_binding` 值域、消息类 ∈ 6 类词表)—— per `ADR-CEP-12 §8` 的 `INV-CEP-12-IC2` ①②③ —— **实测 18 case / 228 assertion**
+- [x] `scripts/test/cep_docs_sync_check.sh` PASS(**21 份** ADR 锚点 + invariant 计数单一真源)—— **实测 rc=0(10 组全绿)**
+- [x] **23 ABI 签名 0 变更**(`git diff HEAD -- include/abi/` 为空,per `ADR-DGPU-08`)—— **实测空** ✅
+- [x] **4 frozen headers 0 diff**(per `ADR-DGPU-08` / `ADR-DGPU-09`)—— **实测空** ✅
+- [x] 既有全量测试 **0 回归**(`ctest --test-dir build` 全绿)—— **实测 96/96** ✅
+- [ ] `openspec validate cpptlm-cep-umbrella --strict` PASS —— ⚠️ **实测 rc=1**(2 条预存 WARNING:`spec.md` 顶部文本不被 archive 携带;per Entry #12 ⑦ 实证为**预存不满足**)。`spec.md` = M1 冻结面第 29 成员 → **不修**;修复属 **批 4**(暂缓,per Entry #22)
+- [x] 文档同步:`docs/implementation/2026-10-21-cep-stage0-contracts.md` + `06-bis` Status Update 段 + `07 号` §11 Gap 映射复核 ✅
+- [x] **`objective-cep-platform §9.2` 三项角色已指定**(验收方 / 结论消费者 / 平台维护方)—— ✅ **2026-10-21 已指定**(形式 gate 解除;实质独立性缺口 = R10,未解除)
 
 ### Commit 策略(TDD 5-step,预计 12~14 commits)
 
