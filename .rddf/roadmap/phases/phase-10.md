@@ -30,7 +30,7 @@ phase_refs:
 | 子任务 | 状态 | 范围 | 估时 | 关联 ADR | KPI slot |
 |--------|------|------|------|----------|----------|
 | **10.A 真源 ADR 起草与评审** | ✅ 完成(2026-10-19~21) | **21 份 ADR**(原 10 份 + 2026-10-21 两批新增 08/09/12/13/18 + 11/14/15/16/07A,修订 02/04/05/06/07/17) | 12 人日(architect,已消耗) | ADR-CEP-00~18 全族 + NUM | 0(doc-only 起草)|
-| **10.B OpenSpec `cpptlm-cep-umbrella` 起草** | 🟡 **Proposed / in-progress(2026-10-21 创建;4 件套已落;tasks **105 / 99 完成**;`openspec validate --strict` **rc=1** = 2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**;**R10 未闭合 → 不 archive**)** | proposal + design + specs + tasks **4 件套已落** | 5 人日(builder,已消耗) | improvement `cpptlm-cep-umbrella.md` | **1**(Stage 0 计 KPI,per oracle v0.4 B2-1 修订)|
+| **10.B OpenSpec `cpptlm-cep-umbrella` 起草** | ✅ **完成 + 已归档(2026-10-23)** —— 4 件套已落;tasks **99 / 99** 全勾;`openspec validate --strict` **rc=0**(2 条预存 WARNING 已随批 4 消除,per Entry #27);**R10 已闭合**(按 `obj §9.3` 判据,per Entry #28);**完成归档**(delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`,per Entry #29) | proposal + design + specs + tasks **4 件套已落 + 已归档** | 5 人日(builder,已消耗) | improvement `cpptlm-cep-umbrella.md` | **1**(Stage 0 计 KPI,per oracle v0.4 B2-1 修订)|
 | **10.C 实验输出 4 件套契约测试** | ✅ **完成(2026-10-21~22)** | `test_cep_canonical_invariants.cc` + `test_cep_dummy_signals.cc` + `test_cep_module_factory_seam.cc` + `test_cep_simulation_mode_lock.cc`(+ 后期补充 `test_cep_schema.cc` / `test_cep_contracts_crosscheck.cc` / `test_cep_tools_contract.cc`) | 10 人日(builder,已消耗) | ADR-CEP-06 §2 + ADR-CEP-07 §2 | 0(沿用 10.B)|
 | **10.D `experimental/` 目录 + tools** | ✅ **完成(2026-10-22)** | `tools/render_report.py` + `run_sweep.py` + `ab_compare.py` + `experimental/metrics.schema.json` | 5 人日(builder,已消耗) | ADR-CEP-06 §4 | 0(沿用 10.B)|
 | **10.E `07-coherence-exploration-platform.md` 顶层真源** | ✅ **完成(2026-10-20~21;后增补至 686 行)** | 整合 **21 份** ADR 为可读真源 1(**686 行**) | 5 人日(architect,已消耗) | ADR-CEP-00 §5.2 | 0 |
@@ -41,7 +41,7 @@ phase_refs:
 > **口径修正**:原「41 人日 / 已消耗 13 / 剩余 28」与表内逐行值不同步(10.A 由 8 → 12 人日后未回填算式)→ 以表内合计为准。
 
 - **实施侧**:10.A ~ 10.G **全部已落地**(tasks.md **105 task / 99 完成**)→ **Stage 0 工程量视为已消耗**。
-- **剩余工程量**:**0**。umbrella `tasks.md` 6 项未勾 **全部是 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)→ 按 `obj-cep-platform §4.0` 排队表归属 Stage 1(队列 #2 / #4 / #6),**不计入 Stage 0**。
+- **剩余工程量**:**0**。umbrella `tasks.md` 的 6 项 Stage 1 准入前置(S1-1 ~ S1-5 + S1-7)已**移出该 change 的任务表**(条目与判据保留)→ 按 `obj-cep-platform §4.0` 排队表归属 Stage 1(队列 #2 / #4 / #6),**不计入 Stage 0**。
 - **唯一卡口(外部依赖,不可估)**:**R10 真人外部评审回执** → Stage 0 **不 archive**。
 
 **KPI 预算**(per `ADR-CEP-00 §2 Decision 3` + oracle v0.4 B8 三处口径对齐):

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tools/run_sweep.py — CEP sweep 驱动
 
-per openspec/changes/cpptlm-cep-umbrella/design.md D4:纯标准库,零项目内依赖。
+per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/design.md D4:纯标准库,零项目内依赖。
 输入是一个 sweep 规格(JSON),对每个参数组合调用一个**外部** runner 命令,
 把每次运行的 4 件套收进输出目录,并产出 sweep_summary.csv。
 

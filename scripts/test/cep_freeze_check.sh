@@ -36,7 +36,10 @@ FROZEN_GLOBS=(
   "tools/render_report.py"
   "tools/run_sweep.py"
   "tools/ab_compare.py"
-  "openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md"
+  # 2026-10-23(Entry #29):umbrella 已归档 → delta spec 路径随迁;改用 glob 兼容两态
+  "openspec/changes/**/specs/cep-core-contracts/spec.md"
+  # 归档后**系统契约**落在 main spec —— 同样纳入冻结(否则契约面可被静默改写)
+  "openspec/specs/cep-core-contracts/spec.md"
 )
 
 if [ "${1:-}" = "--update" ]; then

@@ -31,8 +31,8 @@ created: 2026-10-20
 
 # cpptlm-cep-umbrella: Coherence Exploration Platform 顶层治理与 umbrella 启动
 
-> **状态**: 🟡 **Proposed / in-progress**(2026-10-21 创建)—— planner 阶段 P1 三项完成(Stage 重排 + DoD 7 分解 + change 清单更新)→ builder 起草完成:`openspec/changes/cpptlm-cep-umbrella/` **4 件套已落**,tasks **105 / 99 完成**;`openspec validate --strict` **rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**);KPI baseline **0/3 → 1/3**;**R10 真人外部评审未闭合 → Stage 0 不 archive**。**2026-10-23 口径同步**:per `obj-cep-platform` Entry #22(批 1)—— 21 份 ADR / 11 change / 11 季度 / 66 实际 invariant 统一,Stage 1 准入前置 S1-1 ~ S1-7 已在 `obj §4.0` 排队表可寻址(逐项 owner → 队列 #2 / #4 / #6)
-> **载体定位**:本文是 **5 段规划输入**(为什么做);**执行契约**在 `openspec/changes/cpptlm-cep-umbrella/`(做什么/怎么验),**排队与状态**在 `obj-cep-platform §4.0`,**载体分工与状态更新协议**在 `obj-cep-platform §4.7`。
+> **状态**: 🟡 **Proposed / in-progress**(2026-10-21 创建)—— planner 阶段 P1 三项完成(Stage 重排 + DoD 7 分解 + change 清单更新)→ builder 起草完成:`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/` **4 件套已落**,tasks **105 / 99 完成**;`openspec validate --strict` **rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**);KPI baseline **0/3 → 1/3**;**R10 真人外部评审未闭合 → Stage 0 不 archive**。**2026-10-23 口径同步**:per `obj-cep-platform` Entry #22(批 1)—— 21 份 ADR / 11 change / 11 季度 / 66 实际 invariant 统一,Stage 1 准入前置 S1-1 ~ S1-7 已在 `obj §4.0` 排队表可寻址(逐项 owner → 队列 #2 / #4 / #6)
+> **载体定位**:本文是 **5 段规划输入**(为什么做);**执行契约**在 `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/`(做什么/怎么验),**排队与状态**在 `obj-cep-platform §4.0`,**载体分工与状态更新协议**在 `obj-cep-platform §4.7`。
 > **关联路线图**: [`phase-10`](../roadmap/phases/phase-10.md)(in-progress)+ [`objective-cep-platform`](../roadmap/objectives/obj-cep-platform.md)(P1 active)
 > **关联真源 1**:
 > - [`docs/architecture/06-inter-module-network.md`](../../docs/architecture/06-inter-module-network.md) v0.4
@@ -131,7 +131,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | `include/tlm/cep/protocol_instance.schema.json` | ~187 | **协议实例能力声明 schema**(per `ADR-CEP-12` 决策 1,**7 字段组 / 13 属性**;2026-10-22 起 per-network 嵌套形态)+ `INV-CEP-12-IC1~3` 契约 |
 | `include/tlm/cep/fabric.schema.json` + `fabric.json` | ~51 | fabric 载体(per Entry #12)|
 | `docs/architecture/07-coherence-exploration-platform.md` | **686** | CEP 顶层真源(整合 **21 份** ADR;✅ **已完成 2026-10-21**,后增补至 686 行)|
-| `openspec/changes/cpptlm-cep-umbrella/{proposal,design,specs/*,tasks}.md` | — | rdd-builder 阶段起草 |
+| `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/{proposal,design,specs/*,tasks}.md` | — | rdd-builder 阶段起草 |
 
 > **路径修正**(per oracle B7 + metis G3-1):测试文件用 **`test/test_cep_*.cc`**(仓内真实路径,per `test/CMakeLists.txt` `file(GLOB test_*.cc)` 平铺收编,非递归);**不**用 `tests/openspec/`(目录不存在,会逃逸构建导致 acceptance 假绿)
 

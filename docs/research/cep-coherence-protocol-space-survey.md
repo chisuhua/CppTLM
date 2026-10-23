@@ -1438,7 +1438,7 @@ ordering_assumption:
 - **计数口径教训**:`INV-CEP-04-IC4`(唯一跳空)被多处**提及**但**从未定义** —— 计数脚本**必须区分「提及」与「定义」**,否则多算 1 条。已写入 `07 号 §4` 的口径纪律段
 - `ADR-CEP-07A` 的**协议泄漏通用禁令**(`INV-CEP-07A-IC2`)把 `coherence_domain.hh` 的 `enum Protocol{MESI,MOESI}` 与 `layer.py` 的 `protocol="MESI"` 两个既有违规**归为同一类**,处置口径统一
 
-**未做(留给 planner / builder)**:`.rddf/roadmap/**` 与 `.rddf/improvements/**` 的计数口径同步与阶段重排;`openspec/changes/cpptlm-cep-umbrella/` 起草。
+**未做(留给 planner / builder)**:`.rddf/roadmap/**` 与 `.rddf/improvements/**` 的计数口径同步与阶段重排;`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/` 起草。
 
 ---
 

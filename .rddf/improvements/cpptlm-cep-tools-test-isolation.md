@@ -119,7 +119,7 @@ std::filesystem::remove_all(base);          // ← 进程 A 清掉进程 B 正�
 
 ### A3. 冻结面与契约面零改动
 
-- [ ] `git diff --name-only` 输出**不含** `docs/adr/ADR-CEP-*.md` · `docs/architecture/07-coherence-exploration-platform.md` · `include/tlm/cep/` · `experimental/metrics.schema.json` · `tools/` · `openspec/changes/cpptlm-cep-umbrella/specs/`
+- [ ] `git diff --name-only` 输出**不含** `docs/adr/ADR-CEP-*.md` · `docs/architecture/07-coherence-exploration-platform.md` · `include/tlm/cep/` · `experimental/metrics.schema.json` · `tools/` · `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/`
 - [ ] `bash scripts/test/cep_freeze_check.sh --strict` 退出码 == **0**
 - [ ] `bash scripts/test/cep_docs_sync_check.sh --strict` 退出码 == **0**
 

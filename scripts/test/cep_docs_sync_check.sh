@@ -386,8 +386,13 @@ for pat in ("docs/adr/ADR-CEP-*.md", "docs/architecture/07-*.md",
             "docs/designs/**/*.md",
             ".rddf/roadmap/*.md", ".rddf/roadmap/**/*.md",
             ".rddf/improvements/*.md", ".rddf/drafts/*.md",
-            "openspec/changes/cpptlm-cep-umbrella/**/*.md",
-            "openspec/changes/cpptlm-cep-umbrella/*.md",
+            # 2026-10-23(Entry #29):umbrella 已归档 → 必须扫归档区,否则其 4 件套
+            # 脱离 P6 全禁规则的扫描范围(守门覆盖度静默下降 = 更危险)。
+            # ⚠️ 只扫 **umbrella 自己的**归档目录:仓内另有 22 个历史归档 change,
+            #    其文档合法地提及旧 06 §15.4 的 P6 编号(实测 92 处假阳性)。
+            "openspec/changes/archive/*/cpptlm-cep-umbrella/**/*.md",
+            # 归档产出的**系统契约**(main spec)同样纳入 P6 全禁规则
+            "openspec/specs/cep-core-contracts/*.md",
             "openspec/changes/*/specs/**/*.md",
             "openspec/changes/*/*.md"):
     import glob
@@ -513,7 +518,9 @@ done
 
 echo ""
 echo -e "${BLUE}[5/10] Stage 0 umbrella change 4 件套${NC}"
-CH="openspec/changes/cpptlm-cep-umbrella"
+# 2026-10-23(Entry #29):umbrella 归档后路径带日期前缀 → 动态解析两态
+CH="$(ls -d openspec/changes/cpptlm-cep-umbrella openspec/changes/archive/*cpptlm-cep-umbrella 2>/dev/null | head -1)"
+[ -n "$CH" ] || { echo "  ✗ 找不到 umbrella change(active 或 archive 均未命中)"; exit 1; }
 MISS=0
 for f in "proposal.md" "design.md" "tasks.md" "specs/cep-core-contracts/spec.md"; do
   [ -f "$CH/$f" ] || { fail "缺 $CH/$f"; MISS=$((MISS + 1)); }

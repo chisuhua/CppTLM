@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tools/render_report.py — CEP 4 件套 → report.html
 
-per openspec/changes/cpptlm-cep-umbrella/design.md D4:
+per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/design.md D4:
   纯 Python 标准库,零项目内依赖;输入是 4 件套目录,输出是 report.html。
 
 用法:

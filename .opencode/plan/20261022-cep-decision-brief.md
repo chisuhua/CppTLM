@@ -76,7 +76,7 @@ A4 = 把 ArchForge 贡献的 2 个协议实例(`moesi_gpu` / `mesif`)落进
 | 2 | `07 号 §5.1.1` 表格 +2 行(`moesi_gpu`/`MoesiGpuAdapter`、`mesif`/`MesifAdapter`,状态 = **未排期**) | 落点 2 |
 | 3 | **计数口径 22 处同步**(15 🔴 冻结 + 7 🟢 非冻结,含 1 条 CI 锚点) | 落点 3~10 / 12 / 12b~14 / 16~20 |
 | 4 | **`ADR-CEP-05:227` 限定注记** —— 正文不改,追加 `## Status Update` 或在同段加限定:<br>「除 `moesi_gpu` 外,当前已登记实例均无静默 E→M 需求」 | 落点 11 |
-| 5 | umbrella `tasks.md` 新增 **Stage 1 前置**:「A6 收敛 `ADR-CEP-05 §7` 判据 2」 | `openspec/changes/cpptlm-cep-umbrella/tasks.md` |
+| 5 | umbrella `tasks.md` 新增 **Stage 1 前置**:「A6 收敛 `ADR-CEP-05 §7` 判据 2」 | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/tasks.md` |
 | 6 | `test/test_cep_schema.cc:417` 硬编码锁表取值 +2 | 落点 13 |
 | 7 | **CI 锚点 symbol** `'14 个 adapter 实例'` → `'16 个 adapter 实例'`(漏改则 alignment check 红) | 落点 14 |
 | 8 | 台账 **Entry #12 [adr-amendment]** + `cep_freeze_check.sh --update --authorized-by "Entry #12"`(两步 commit 流程) | — |
@@ -238,7 +238,7 @@ P-1 = 是否把它登记为 `ADR-CEP-00 §2 决策 3` 队列的**第 11 个 chan
 
 **本仓**: `docs/adr/ADR-CEP-{00,05,11,12,13}-*.md` ·
 `docs/architecture/07-coherence-exploration-platform.md` §5.1 ·
-`openspec/changes/cpptlm-cep-umbrella/tasks.md` ·
+`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/tasks.md` ·
 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` §2.3 / §8.4 / §8.5 ·
 `docs/implementation/2026-10-22-cep-poc-spike-spec.md` ·
 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 Entry #9 / #10 / #11

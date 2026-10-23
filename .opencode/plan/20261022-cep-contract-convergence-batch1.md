@@ -369,8 +369,8 @@ vc_binding:
 
 | 文件 | 改动 |
 |------|------|
-| `openspec/changes/cpptlm-cep-umbrella/proposal.md` | 状态行 🟡 Proposed Draft → 🟡 **Proposed**；`前置 gate` ④ ⛔ → ✅；gate ④ 结论块换成 **ArchForge 侧** `6020f42` / `8290b4c` / `ac956b8` + **本仓** `<BATCH1_COMMIT>`（A13 后回填）+ **台账 Entry #9 的 RUN 证据引用** |
-| `openspec/changes/cpptlm-cep-umbrella/tasks.md` | Step 4 的 ⛔ 文本更新；结论行改为「Stage 0 **仍不 archive** —— R10 未闭合」；**新增 Stage 1 任务**「adapter 消息类 → `CATEGORY_*` 显式映射表（非恒等），验收：映射表存在且经 contract test 断言」（挂住 A14 裁定，metis 隐藏意图 4） |
+| `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/proposal.md` | 状态行 🟡 Proposed Draft → 🟡 **Proposed**；`前置 gate` ④ ⛔ → ✅；gate ④ 结论块换成 **ArchForge 侧** `6020f42` / `8290b4c` / `ac956b8` + **本仓** `<BATCH1_COMMIT>`（A13 后回填）+ **台账 Entry #9 的 RUN 证据引用** |
+| `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/tasks.md` | Step 4 的 ⛔ 文本更新；结论行改为「Stage 0 **仍不 archive** —— R10 未闭合」；**新增 Stage 1 任务**「adapter 消息类 → `CATEGORY_*` 显式映射表（非恒等），验收：映射表存在且经 contract test 断言」（挂住 A14 裁定，metis 隐藏意图 4） |
 | `.rddf/roadmap/objectives/obj-cep-platform.md` | §5.2 baseline **0/3 → 1/3**（升 Proposed 占 1 个 KPI slot）；§11 追加 `Entry #10 [go-decision]`，其中**必须显式 risk-accept**：「未经独立复审（R10 未闭合）」—— **不存在默认放行** |
 
 > ⚠️ **Stage 0 仍不 archive** —— R10 独立性缺口未闭合，与 M2 无关，措辞不得混。
@@ -394,7 +394,7 @@ vc_binding:
 | **AC-4** | 冻结校验 | `bash scripts/test/cep_freeze_check.sh` → 绿；**产物数仍为 28**（v2：`fabric.*` **不进**冻结集） |
 | **AC-5** | 声明 ↔ schema 失配归零 | 检查器 ① 全绿；ArchForge 2 份声明不再有失配（实现按**字段级**报告 = 2 处/份，见 §9.2） |
 | **AC-6** | IC2 落位（**不另立 IC4**，见 §9.1） | `grep -c "INV-CEP-12-IC2" docs/adr/ADR-CEP-12-*.md` ≥ 1；IC2 原文含 `vc_count` 与 6 类词表；invariant 总数仍 **66 实际 / 67 编号位** |
-| **AC-7** | 旧扁平语义**无残留** | `grep -rn "named_network" docs/adr/ADR-CEP-08*.md docs/adr/ADR-CEP-09*.md openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` → **仅** 历史引述/Status Update 段命中（人工确认） |
+| **AC-7** | 旧扁平语义**无残留** | `grep -rn "named_network" docs/adr/ADR-CEP-08*.md docs/adr/ADR-CEP-09*.md openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` → **仅** 历史引述/Status Update 段命中（人工确认） |
 | **AC-8** | schema 逐字对齐 delta | `protocol_instance.schema.json` 的 `ordering_assumption`/`vc_binding` 子树与 ArchForge `32 号 §6.4.1` diff 原文**逐字 diff**（除显式叠加项：无） |
 | **AC-9** | **反向验证 7 条全部有牙** | Step 7 表格逐条「破坏 → 红 → 恢复 → 绿」，结果贴进台账 Entry #9 |
 | **AC-10** | **没破坏别的：测试改写面受限** | `git diff test/test_cep_schema.cc` 改动的 TEST_CASE **仅限** Step 2 清单（含新增 fabric 用例）；`[negative] C9` 用例**零改动**且绿 |
@@ -467,7 +467,7 @@ obj-cep-platform.md, 回执, 清单, ADR-CEP-00}`。
 - `docs/adr/ADR-CEP-11-protocol-version-locking.md`（§3 锁表 6 族 `:116-123` + `INV-CEP-11-IC1` `:134`）
 - `docs/adr/ADR-CEP-14-stub-contract-tests.md`（C9 负向断言按**字段名**做 → 嵌套化不击穿）
 - `docs/architecture/07-coherence-exploration-platform.md`（`:148` Fabric & Transport Plane 职责 / `:588` 已预见嵌套形态 —— **零 diff**）
-- `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md`（IC2 scenario `:249-254`；按名引用 `:163 :223 :239 :331`）
+- `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md`（IC2 scenario `:249-254`；按名引用 `:163 :223 :239 :331`）
 
 **代码依据（M-1 裁定，v2 已修行号）**:
 `include/bundles/noc_bundles_tlm.hh:60-62`（`CATEGORY_*` 3 类 + 「Credit 信号专用类别」）、

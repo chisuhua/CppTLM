@@ -146,12 +146,12 @@
 | 7 | `docs/adr/ADR-CEP-15-cachetlm-alignment.md` | **正文不改**;决策 4 末条加限定注记 + 追加 **§8 Status Update** | 🔴 |
 | 8 | `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` | `:338`「14 adapter」→「16 adapter」 | 🔴 |
 | 9 | `docs/adr/ADR-CEP-18-protocol-generation-scope.md` | `:68` 计数(含「为 14~18 个实例」→「为 16~20 个实例」) | 🔴 |
-| 10 | `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | `:310`「恰好 6 个协议族」→「**恰好 8 个**」+ 补 2 个族名 | 🔴 |
+| 10 | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | `:310`「恰好 6 个协议族」→「**恰好 8 个**」+ 补 2 个族名 | 🔴 |
 | 11 | `docs/architecture/README.md` | `:37` 索引行 14 → 16 | 🟢 |
 | 12 | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` | G10 行计数 + **CI 锚点块** symbol `'14 个 adapter 实例'` → `'16 个 adapter 实例'` | 🟢 |
 | 13 | `docs/research/cep-coherence-protocol-space-survey.md` | `:1140` / `:1394` 两处加「计数已于 2026-10-22 改为 16」注记,**不改写历史结论** | 🟢 |
-| 14 | `openspec/changes/cpptlm-cep-umbrella/proposal.md` | `:89` 计数 | 🟢 |
-| 15 | `openspec/changes/cpptlm-cep-umbrella/tasks.md` | `:107` 计数 + **新增 Stage 1 前置 S1-6**(A6) | 🟢 |
+| 14 | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/proposal.md` | `:89` 计数 | 🟢 |
+| 15 | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/tasks.md` | `:107` 计数 + **新增 Stage 1 前置 S1-6**(A6) | 🟢 |
 | 16 | `test/test_cep_schema.cc` | 锁表取值 6 → 8(`:484-485`)+ **§5.1.1 行数断言** `6` → `8` / `14` → `16` + 族声明断言 | 🟢 |
 | 17 | `test/test_cep_contracts_crosscheck.cc` | 锁定表**族循环** 6 → 8 + 版本号循环 +2 | 🟢 |
 

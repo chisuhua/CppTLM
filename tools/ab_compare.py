@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tools/ab_compare.py — CEP A/B 对比
 
-per openspec/changes/cpptlm-cep-umbrella/design.md D4:纯标准库,零项目内依赖。
+per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/design.md D4:纯标准库,零项目内依赖。
 输入两个实验目录(A / B),输出 delta_metrics.json + CDF overlay 的 HTML 片段。
 
 用法:

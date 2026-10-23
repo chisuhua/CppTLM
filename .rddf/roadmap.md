@@ -2,7 +2,7 @@
 
 > **最后更新**: 2026-10-23 (v1.4-planner 增量, **CEP 载体分工协议落地**;per `obj-cep-platform` **Entry #25 → #26** —— obj §4.7 五类载体分工 + 状态机 + 两种归档语义 + 六步同步清单;入口见 §4.7.4)
 > **真源原则**: 本文件代表项目长期路线图 (rdd-workflow 主文档), **真源 1 (docs/architecture/)** 与 **真源 2 (docs/designs/)** 是技术真源, 本文件是协调真源
-> **OpenSpec KPI 政策**: per AGENTS.md §DOC HYGIENE line 420, **当前真实 baseline = 1/3**(2026-10-21:builder 创建 `cpptlm-cep-umbrella` Stage 0 umbrella;2026-10-22 M2 跨仓准入门放行后升为 **Proposed**,per `obj-cep-platform` Entry #10;`openspec validate --strict` **rc=1** = 2 条预存 WARNING,per Entry #12 ⑦)。此前 2026-10-20 的 3 个 active 已全部 **⏸ 暂存归档** `--skip-specs`(实现均 0%,保留供以后重建,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`(per oracle v0.4 路线图评审 B1 修订)
+> **OpenSpec KPI 政策**: per AGENTS.md §DOC HYGIENE line 420, **当前真实 baseline = 0/3**(2026-10-23:`cpptlm-cep-umbrella` Stage 0 umbrella **已完成归档**,释放 1 个 slot,per `obj-cep-platform` Entry #28/#29;`openspec validate --strict` **rc=0**,2 条预存 WARNING 已随批 4 消除,per Entry #27)。此前 2026-10-20 的 3 个 active 已全部 **⏸ 暂存归档** `--skip-specs`(实现均 0%,保留供以后重建,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`(per oracle v0.4 路线图评审 B1 修订)
 > **rdd-planner owns**: `.rddf/roadmap/{objectives,features,phases}/*.md` + `.rddf/improvements/*.md`(唯一写入方, per ADR-0028 + ADR-0054 D5)
 > **CEP 载体分工 / 状态更新协议**: 见 `obj-cep-platform §4.7`(objective / phase / improvement / OpenSpec change / 实施笔记 五类载体 + 状态机 + 六步同步清单);**实施路径排队真源** = 同文件 §4.0
 

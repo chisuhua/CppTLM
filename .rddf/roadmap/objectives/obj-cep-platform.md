@@ -68,7 +68,7 @@ phase_refs:
 12. ✅ §8 Kill / Replan 判据未触发(或已按判据处置)
 
 > **验收层级委托**(per oracle S1 修订 / 2026-10-23 指针修正):本 DoD 是**终态判定**。
-> - **逐条 assertion 的执行真源** = `openspec/changes/cpptlm-cep-umbrella/proposal.md` §Acceptance(**实测值在此回填**);
+> - **逐条 assertion 的执行真源** = `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/proposal.md` §Acceptance(**实测值在此回填**);
 > - **上游规划输入** = `.rddf/improvements/cpptlm-cep-umbrella.md` §Acceptance **A1 ~ A7**(A7 = **前置 gate 汇总**,不是 assertion);
 > - Stage 1~3 各 change 的条款落**各自** OpenSpec change 的 AC。
 >
@@ -174,7 +174,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 | 顺序 | Change | Stage | 季度 | 状态 | 承接的 Stage 1 准入前置 |
 |------|--------|-------|------|------|----------------------|
-| **1** | `cpptlm-cep-umbrella` | Stage 0 | **2026-Q4** | 🟡 **in-progress**(tasks **105 / 99**;**R10 未闭合 → 不 archive**) | — |
+| **1** | `cpptlm-cep-umbrella` | Stage 0 | **2026-Q4** | ✅ **archived**(2026-10-23;**完成归档**语义 —— tasks **99/99** 全勾 + delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;R10 已按 `§9.3` 闭合,per 台账 Entry #28/#29) | — |
 | **2** | `cpptlm-cep-poc-spike` | Stage 1 | **2027-Q1** | ⏸ **队列位保留** · S2 已实跑 + ctest 回归门 · change 目录未建(per Entry #22) | **S1-1 ~ S1-5** |
 | **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | 📋 Planned | — |
 | **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | 📋 Planned | **S1-7 的 (β) 重评估** |
@@ -396,7 +396,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 1/3**(2026-10-22 修正:`cpptlm-cep-umbrella` 因**跨仓准入门(M2)已放行**升为 **Proposed**,占用 1 个 KPI slot;baseline 0/3 → 1/3。放行依据见 §11 **Entry #10**)
+→ **当前 Proposed 并发 = 0/3**(2026-10-23 修正:`cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**。归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #2 `cpptlm-cep-poc-spike`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -429,7 +429,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 | 来源 | 位置 | 性质 |
 |------|------|------|
-| `openspec/changes/cpptlm-cep-umbrella/proposal.md` | §Acceptance | ✅ **执行真源**(实测值已回填) |
+| `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/proposal.md` | §Acceptance | ✅ **执行真源**(实测值已回填) |
 | `.rddf/improvements/cpptlm-cep-umbrella.md` | §Acceptance **A1 ~ A7** | 📥 上游规划输入(**A7 = 前置 gate 汇总**,非 assertion) |
 | Stage 1~3 各 change | 各自 OpenSpec AC | 各自的执行真源 |
 
@@ -735,7 +735,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 - **不得表述为「完全独立验收」**;M4(AI 复审)**不可**替代真人外部评审
 - 形式 gate(§9.2 三项角色已指定)✅ 解除,实质 gate(独立验收)**未解除**
 
-**影响范围**:`openspec/changes/cpptlm-cep-umbrella/{proposal.md,tasks.md}`(状态 + gate ④)/ 本文件 §5.2(baseline)+ §8.1(R10 缓解栏)/ `docs/implementation/2026-10-21-cep-stage0-contracts.md` §7(处置台账)/ `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(新)/ `scripts/test/cep_freeze_check.sh`(新)/ `scripts/test/cep_docs_sync_check.sh`(第 7 组)/ `test/CMakeLists.txt`(ctest 注册)
+**影响范围**:`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/{proposal.md,tasks.md}`(状态 + gate ④)/ 本文件 §5.2(baseline)+ §8.1(R10 缓解栏)/ `docs/implementation/2026-10-21-cep-stage0-contracts.md` §7(处置台账)/ `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`(新)/ `scripts/test/cep_freeze_check.sh`(新)/ `scripts/test/cep_docs_sync_check.sh`(第 7 组)/ `test/CMakeLists.txt`(ctest 注册)
 
 **未闭合**:① M2 准入门(等 ArchForge 接口 PR)② R10 真人外部评审机制 ③ M3 对拍基准(Stage 1 前定义)④ Stage 0 **不 archive**
 
@@ -845,7 +845,7 @@ C-4 的**判据文本**已满足(13/13 字段有承载物),但**机器层红** �
 | `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | 追加 `## 8 Status Update`:决策 5 / 决策 6 / `INV-CEP-12-IC2` **取代** + provisional 标注 + SLICC 备选登记 | 形态变更 + 理由措辞修正(oracle §2.3) |
 | `docs/adr/ADR-CEP-08-ordering-point-portability.md` | 追加 `## 8 Status Update`:决策 6「key 粒度」+ 抓取点 4 **取代** | 旧文「解析到**唯一** vc_id」这一谓词在嵌套形态下**整体消失** —— 不改则两份 ADR 对同一字段给出两个 fail 判据 |
 | `docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md` | 追加 `## 8 Status Update`:图顶点 `(协议实例, vc_id)` → **`(协议实例, network, vc_id)`** | **数学对象变更**(非措辞):两张网共享 vc_id 值域 0-3,顶点不带 network ⇒ 跨网依赖边被合并 ⇒ 无环判据可能给错误 verdict |
-| `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | IC2 scenario **直接改写**为逐网络校验(spec 是机器校验面,非 ADR) | spec 是判据 C-4 的机器可断言面 |
+| `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | IC2 scenario **直接改写**为逐网络校验(spec 是机器校验面,非 ADR) | spec 是判据 C-4 的机器可断言面 |
 | `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` | 追加 `## 8 Status Update`:决策 8 的 schema 草图 / §4 模板 / §6 invariant 建议 **取代** | **2026-10-22 代码复审 B6**:该 ADR 仍持「`named_network` 必须解析到唯一 `vc_id`」旧谓词 → 冻结集内 `ADR-CEP-12`(新)与 `ADR-CEP-17`(旧)给出**两个不同 fail 判据** |
 | `include/tlm/cep/fabric.schema.json` | **新增并纳入 M1 冻结** | **2026-10-22 复审 S4**:fabric 载体按「**契约面 / 数据面**」拆分 —— `fabric.schema.json`(**类型描述** = 契约)必须冻结,否则 `vc_count.maximum: 4` 可被静默放宽;`fabric.json`(**实例数据** = 派生副本,权威在 ArchForge)**不冻结**,Stage 1 首个 implemented 实例跑过后再纳 |
 
@@ -914,7 +914,7 @@ C-4 的**判据文本**已满足(13/13 字段有承载物),但**机器层红** �
      不一致即**响亮报出**(警告不阻断 —— 「先 commit 再 --update」的两步流程会让它天然落后 HEAD 一个 commit)
 
 **影响范围**: `include/tlm/cep/{protocol_instance.schema.json,fabric.schema.json,fabric.json}` ·
-`docs/adr/ADR-CEP-{08,09,12}-*.md` · `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` ·
+`docs/adr/ADR-CEP-{08,09,12}-*.md` · `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` ·
 `scripts/test/cep_decl_alignment_check.sh` · `scripts/test/cep_docs_sync_check.sh`(新增第 9 组) ·
 `test/CMakeLists.txt`(新增 ctest `cep_decl_alignment_check`) · `test/test_cep_schema.cc` ·
 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` · 本文件 §11
@@ -947,7 +947,7 @@ ArchForge `8290b4c` / `ac956b8` / `32 号 §6.0.2` / `32 号 §6.4` / `22-nsa §
 | **C-4** | schema ↔ 声明双向映射**已机器化** —— `cep_decl_alignment_check.sh` 5 项子校验全绿(2/2 份声明)+ **反向验证 12/12**;RUN 证据见 Entry #9 ② | ✅ |
 | **C-5** | 全量回归 2026-10-22 实测:`ctest` **94/94** · `ctest -R cep` **16/16** · CEP lint **9/9 组** · M1 冻结 **29/29** · 锚点 **33/33** · 全仓路径 **0 缺失** · 失效链接 **115**(= 基线) | ✅ |
 
-**连带变更**: `openspec/changes/cpptlm-cep-umbrella/{proposal.md,tasks.md}` 状态 🟡 Proposed Draft → 🟡 **Proposed**;
+**连带变更**: `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/{proposal.md,tasks.md}` 状态 🟡 Proposed Draft → 🟡 **Proposed**;
 objective §5.2 baseline **0/3 → 1/3**(升 Proposed 占 1 个 KPI slot)。
 
 > ⚠️ **risk-accept(显式记录,非默认放行)**:
@@ -961,7 +961,7 @@ objective §5.2 baseline **0/3 → 1/3**(升 Proposed 占 1 个 KPI slot)。
 ⑤ `fabric.*` 待 Stage 1 首个 implemented 实例跑过后再纳冻结集
 
 **关联**: Entry #9(批 1 的授权记录 + RUN 证据 + 反向验证)· 回执 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` ·
-`openspec/changes/cpptlm-cep-umbrella/proposal.md` 前置 gate ④
+`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/proposal.md` 前置 gate ④
 
 ### Entry #11 — 2026-10-22 [go-decision]
 
@@ -1082,7 +1082,7 @@ DRI 于 2026-10-22 拍板 4 个决策(决策简报 `.opencode/plan/20261022-cep-
 | `docs/adr/ADR-CEP-18-protocol-generation-scope.md` | `:68` 计数同步(含「为 14~18 个实例」→「为 16~20 个实例」) | 生成路线的投入产出论证依赖该数 |
 | `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` | `:338`「14 adapter」→「16 adapter」 | 协议族接入的 schema 字段理由句 |
 | `docs/adr/ADR-CEP-15-cachetlm-alignment.md` | **正文不改**;追加 **§8 Status Update**(「adapter 数 ≤ 14」阈值已越过的限定)+ 决策 4 末条下加限定注记 | 2026-10-22 **critic 复审发现**:该句是 `ADR-CEP-05:227` **同款活矛盾**(计数相关且已被越过),若不同等处置则口径不一致 |
-| `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | `:310`「锁定表**恰好 6 个协议族**」→「**恰好 8 个**」+ 补 2 个族名 | 2026-10-22 **critic 复审发现(漏网)**:该文件在 `cep_freeze_check.sh` 的 `FROZEN_GLOBS` 内 —— 是**第 9 份**冻结产物;回执 R-13 早已要求「umbrella `spec.md` 同步」,本批初版漏做。它与 `ADR-CEP-11 §3`(增至 8 族)直接矛盾,且 freeze 校验**只比 hash 不比语义** → 无 checker 能发现 |
+| `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` | `:310`「锁定表**恰好 6 个协议族**」→「**恰好 8 个**」+ 补 2 个族名 | 2026-10-22 **critic 复审发现(漏网)**:该文件在 `cep_freeze_check.sh` 的 `FROZEN_GLOBS` 内 —— 是**第 9 份**冻结产物;回执 R-13 早已要求「umbrella `spec.md` 同步」,本批初版漏做。它与 `ADR-CEP-11 §3`(增至 8 族)直接矛盾,且 freeze 校验**只比 hash 不比语义** → 无 checker 能发现 |
 
 > **「表可增,论断不改」原则(本条确立)** —— **表/登记类**(`ADR-CEP-11 §3` 锁表、`07 号 §5.1.1` 实例表)
 > **正文直接增行**(表的可增长性即其契约的一部分);**表内计数的一致性陈述**(如 §7「6 个协议族」)**同批机械同步**;
@@ -1143,7 +1143,7 @@ DRI 于 2026-10-22 拍板 4 个决策(决策简报 `.opencode/plan/20261022-cep-
 **影响范围**: 上表 8 份冻结产物 · `docs/architecture/README.md` ·
 `docs/implementation/{2026-10-21-cep-archforge-interface-alignment.md,2026-10-22-cep-stage0-external-review-summary.md}` ·
 `docs/research/cep-coherence-protocol-space-survey.md` ·
-`openspec/changes/cpptlm-cep-umbrella/{proposal.md,tasks.md}` · `test/test_cep_schema.cc` ·
+`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/{proposal.md,tasks.md}` · `test/test_cep_schema.cc` ·
 `docs/implementation/2026-10-22-cep-poc-spike-spec.md` ·
 `.rddf/roadmap/objectives/obj-cep-platform.md` §4.2 / §11 · `.rddf/roadmap/phases/phase-10.md` ·
 `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` · 本文件 §11
@@ -1288,7 +1288,7 @@ S2 观测记录由「观测值 + 传播路径可达性」扩为**三件**:
 | 5 | `docs/architecture/07-...md` **§5.1.1 表行** | `moesi_gpu` 行:「争点所在」→「已裁定 (b) 成立」 | **表类**正文 |
 | 6 | `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` | 升 **v1.2**:Q-3 闭合 / A14 已确认 / 行号更正(`:117`→`:126-127`)/ §10.3 执行记录 | 实施笔记 |
 | 7 | `docs/implementation/2026-10-22-cep-poc-spike-spec.md` **§3.2** | S2 观测记录增第 ② 项「数据来源」 | 实施笔记 |
-| 8 | `openspec/changes/cpptlm-cep-umbrella/tasks.md` | **S1-6 勾选**(A6 闭合)+ 新增 **S1-7**(R-2 形态变更 + β 评估) | OpenSpec change |
+| 8 | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/tasks.md` | **S1-6 勾选**(A6 闭合)+ 新增 **S1-7**(R-2 形态变更 + β 评估) | OpenSpec change |
 | 9 | `scripts/test/cep_doc_ref_registry.tsv` | 登记本批新增的节号引用 + **负向断言**(第 7 列 `forbid`:防状态回退) | 校验数据 |
 | 10 | `docs/adr/ADR-CEP-14-stub-contract-tests.md` | **有意保留,零改动** —— 其 `:86` 的「Stub 暴露的 4 值 `perm` 可能**不足以**让协议侧区分『静默 E→M』与『显式请求升级』」是**对判据 2 是什么的描述**(判据的固有属性),**非状态断言** → 该表述在 (b) 成立后**仍准确**(且由「可能不足」强化为「确已不足」),故不改写。<br>⚠️ 显式记录此判断,避免后续复审误判为**漏网** | **零改动**(仅台账登记) |
 
@@ -1848,8 +1848,8 @@ git diff --name-only  → 不含 21 份 ADR / 07 号真源 /
 | 2 | `.rddf/roadmap/phases/phase-10.md` | 状态 `planning → in-progress` + 10.B~10.G 状态 + 估时 + 依赖图 + KPI baseline + 测试标签 + 签发前置决策 | 17 处替换 |
 | 3 | `.rddf/improvements/cpptlm-cep-umbrella.md` | 头部状态 / 前置 gate #3 / Capabilities #1·#9·#10 / What Changes / Acceptance A1~A7 / Impact A~D | 24 处替换 |
 | 4 | `.rddf/roadmap.md` | 最后更新 + KPI baseline 口径 + phase-10 状态(表 + AUTO-INDEX)+ Objectives 段 | 5 处替换 |
-| 5 | `openspec/changes/cpptlm-cep-umbrella/proposal.md` | 真源行数 / ADR 份数 / change 数 / 风险表估时 / Acceptance 实测回填 | 6 处替换 |
-| 6 | `openspec/changes/cpptlm-cep-umbrella/tasks.md` | 头部状态 + 估时 + 时间线标题 + 验收对照表(实测列) | 5 处替换 |
+| 5 | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/proposal.md` | 真源行数 / ADR 份数 / change 数 / 风险表估时 / Acceptance 实测回填 | 6 处替换 |
+| 6 | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/tasks.md` | 头部状态 + 估时 + 时间线标题 + 验收对照表(实测列) | 5 处替换 |
 | 7 | `scripts/README.md` | `test/` 子目录表补 10 个脚本(6 个 `cep_*` + 4 个历史未登记)+ 新增 §CEP 契约守门脚本 章节 | 2 处替换 |
 | 8 | `docs/ONBOARDING.md` | §5.5 脚本表新增 5 行 CEP 守门脚本 | 1 处替换 |
 | 9 | `docs/README.md` | `implementation/` 计数 12 → **14**(.md 实测)+ 目录树注释 | 2 处替换 |
@@ -2033,7 +2033,7 @@ git diff --name-only → 冻结面成员集合 = 0 行
 | # | 缝隙 | 修法 |
 |---|------|------|
 | **M1** | obj §6.1 委托范围写「§Acceptance **A1~A6**」,草稿实为 **A1~A7** | §6.1 改 3 行来源表,明确 **A1~A7**(A7 = 前置 gate 汇总,非 assertion) |
-| **M2** | 验收指针指向 **improvement 草稿**,但实测回填在 **change 的 `proposal.md`** | §0 + §6.1 分源标注:**执行真源 = `openspec/changes/cpptlm-cep-umbrella/proposal.md` §Acceptance**;草稿 = 上游规划输入 |
+| **M2** | 验收指针指向 **improvement 草稿**,但实测回填在 **change 的 `proposal.md`** | §0 + §6.1 分源标注:**执行真源 = `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/proposal.md` §Acceptance**;草稿 = 上游规划输入 |
 | **M3** | 准入前置的**归属**只在 §4.0,umbrella 侧不可寻址 | `tasks.md` 两段准入前置加**归属行**;`tasks.md:3` / `phase-10.md:43` / obj §0 的「§4.2」引用统一改 **§4.0** |
 
 **④ 顺带清理**
@@ -2225,6 +2225,83 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 **⑥ 验收**:`openspec validate cpptlm-cep-umbrella --strict` rc=0 · 7 项守门 rc=0 · `ctest` 96/96 · `[cep]` 76 case / 1284 assertion · 冻结面 29 成员 diff=0。
 
 **关联**: Entry #9/#10(M2 放行)/ #13(判据 2 触发)/ #23(排队真源 §4.0)/ #27(批 4 冻结面授权)· `ADR-CEP-00 §8.1`(判据改写先例)· `obj §9.2` M1~M4
+
+### Entry #29 — 2026-10-23 [scope-change]
+
+**主题**: **`cpptlm-cep-umbrella` 完成归档(Stage 0 收尾)** —— delta spec 合并进 main specs + 全仓路径迁移 + 3 个门禁脚本的路径绑定适配 + 冻结面成员迁移(29 → 30)
+
+> **前置**:Entry #28(R10 闭合判据 + 残余风险登记 + 6 项准入前置移交)—— 归档判据由本条执行。
+> **归档语义**:**✅ 已完成归档**(非「⏸ 暂存归档」)—— 实现已落地 + 契约已在系统内(delta spec **已合并**进 `openspec/specs/cep-core-contracts/spec.md`)。
+
+**① 归档动作**
+
+| 项 | 结果 |
+|---|---|
+| 命令 | `openspec archive cpptlm-cep-umbrella --yes` |
+| 归档目录 | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/`(4 件套 + `.openspec.yaml`) |
+| main spec | **新建** `openspec/specs/cep-core-contracts/spec.md` —— **15 个 requirement 合并**(+ 15 / ~ 0 / - 0) |
+| Purpose | 归档生成的 `TBD - created by archiving change ...` 占位 → **改为真 Purpose**(契约真源 / 编号位口径 / 演进方式 / 归档前形态) |
+| 判据核对 | `openspec validate cpptlm-cep-umbrella --strict` **rc=0**;`openspec validate cep-core-contracts --strict` **is valid** |
+
+**② 路径迁移(活文档 7 份 / 27 处)**
+
+| 文件 | 处数 |
+|------|-----:|
+| `.rddf/roadmap/objectives/obj-cep-platform.md` | 13 |
+| `.opencode/plan/20261022-cep-contract-convergence-batch1.md` | 4 |
+| `.rddf/improvements/cpptlm-cep-umbrella.md` | 3 |
+| `.opencode/plan/20261022-cep-remaining-batches.md` | 3 |
+| `.opencode/plan/20261022-cep-decision-brief.md` | 2 |
+| `.rddf/improvements/cpptlm-cep-tools-test-isolation.md` | 1 |
+| `docs/research/cep-coherence-protocol-space-survey.md` | 1 |
+
+- **不迁移**(有意):`docs/implementation/*`(历史快照,**append-only**)+ `.rddf/drafts/*`(architect 草稿)。它们指向归档**前**位置,属**时点证据**。
+- **兜底**:历史快照中的旧路径由 `cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` 登记(理由:已归档 change 的原路径)→ 不产生断链误报。
+
+**③ 门禁脚本的路径绑定适配(3 个 checker;checker 自身**不冻结**,但必须可修)**
+
+| 脚本 | 改动 | 为什么必须改 |
+|------|------|------------|
+| `cep_freeze_check.sh` | 冻结 glob:`openspec/changes/cpptlm-cep-umbrella/specs/.../spec.md` → **`openspec/changes/**/specs/cep-core-contracts/spec.md`**(兼容 active / archived 两态) | 归档后原路径消失 → 冻结面报「缺失」 |
+| `cep_docs_sync_check.sh` | ① 扫描 glob 加 **`openspec/changes/archive/*/cpptlm-cep-umbrella/**/*.md`**(否则 umbrella 4 件套脱离 P6 全禁规则 = 守门覆盖度**静默下降**)② 加 `openspec/specs/cep-core-contracts/*.md`(新系统契约纳入 P6 规则)③ `CH` 路径改**动态解析**(active / archive 两态) | 归档使路径带日期前缀,硬编码必失效 |
+| `cep_doc_ref_check.sh` | ① `DOCS` 里的 `tasks.md` 指向归档路径(否则 umbrella tasks 脱离「契约面矛盾」检查)② `VIRTUAL_PATHS` 登记旧路径 | 同上 |
+
+> **⚠️ 一次被实测否掉的方案**:归档区**全扫**(`openspec/changes/archive/**/*.md`)→ 引入 **92 处 P6 假阳性** —— 仓内另有 **22 个**历史归档 change,其文档合法地提及旧 `06 §15.4` 的 P6 编号。故收窄为**只扫 umbrella 自己的**归档目录(**保持原覆盖度**,不扩大)。
+
+**④ 冻结面成员迁移(29 → 30)**
+
+| 成员 | 变化 |
+|------|------|
+| umbrella delta spec | 路径随归档迁移 → glob 化(两态兼容) |
+| **`openspec/specs/cep-core-contracts/spec.md`** | **新增冻结** —— 归档后**系统契约**落在 main spec;不冻结它 = 契约面可被静默改写(**M1 失效**) |
+| `tools/*.py`(3) | 头注释的 change 路径随迁(注释级,不改行为) |
+
+**⑤ 状态回填**
+
+| 位置 | 变更 |
+|------|------|
+| `obj §4.0` 队列 #1 | 🟡 in-progress → **✅ archived** |
+| `obj §5.2` | Proposed 并发 **1/3 → 0/3**;**下一个可启动 = 队列 #2 `cpptlm-cep-poc-spike`** |
+| `.rddf/roadmap.md` | KPI baseline **1/3 → 0/3** |
+| `phase-10.md` 10.B | 🟡 Proposed → **✅ 完成 + 已归档** |
+| `AGENTS.md` | KPI 基线行已在同日更新为「现行 1/3」→ **本条归档后需再更新为 0/3** |
+
+**⑥ 遗留(非本条引入)**
+
+- **`openspec validate --specs --strict` rc=1** —— **80 个 main spec** 因归档遗留的 `Purpose` 占位符告警(与 CEP 无关,pre-existing);`cep-core-contracts` 自身 **is valid**。
+- `.gitignore` 忽略 `openspec/changes/archive/` → 归档目录**需 force-add 入库**(仓内既有 **23 个**归档目录、**109 个**文件已跟踪,含 20 个「已完成归档」先例);否则归档 change 的 design/tasks 在 git 中**消失**。
+
+**⑦ 验收**
+
+```
+openspec validate cpptlm-cep-umbrella --strict   == 0
+openspec validate cep-core-contracts --strict    == is valid
+5 个 cep_* --strict == 0 · docs_sync_check --strict == 0 · markdown_link_check == 0
+ctest 96/96 · [cep] 76 case / 1284 assertion
+冻结面 30 成员 diff == 0(--update --authorized-by "Entry #28" 授权闸)
+```
+
+**关联**: Entry #27(批 4 冻结面修订)/ #28(R10 闭合 + 移交)· `ADR-CEP-00 §2 Decision 3`· `obj §4.0`(队列真源)/ `§4.7.3`(收尾 7 落点)/ `§9.3`(R10 判据)
 
 ---
 
