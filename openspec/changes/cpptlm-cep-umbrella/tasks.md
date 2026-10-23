@@ -1,9 +1,9 @@
 # Tasks — cpptlm-cep-umbrella v1.0(Stage 0,TDD 5-step)
 
-> **状态**: 🟡 **Proposed / in-progress**(2026-10-22)—— 跨仓准入门(M2)**已放行**(per `ADR-CEP-00 §8` + 台账 Entry #9/#10;取证见 `proposal.md` 前置 gate ④);**tasks 105 / 99 完成**(2026-10-23 实测);余 6 项**全部为 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)→ 归属见 `obj-cep-platform §4.0` 排队表(逐项 owner 见下方两段准入前置的表头),**不计入 Stage 0**
+> **状态**: 🟡 **Proposed / in-progress**(2026-10-23)—— 跨仓准入门(M2)**已放行**(per `ADR-CEP-00 §8` + 台账 Entry #9/#10);**R10 已闭合**(按 `obj-cep-platform §9.3` 判据:残余风险已登记 + DRI 书面接受,per 台账 Entry #28);**tasks 99 / 99 完成**(2026-10-23 实测)—— 原 105 项中 **6 项 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)已**移出本 change 的任务表**(条目与判据保留,归属见 `obj §4.0` 排队表:队列 #2 / #4 / #6)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-core-contracts/spec.md`](specs/cep-core-contracts/spec.md)
 > **上游**: `phase-10.md` Stage 0 子任务 10.B~10.G + `objective-cep-platform §4.1`(Stage 0 展开)/ **§4.0 排队总表**(队列 #1 = 本 change)/ **§4.7 载体分工与状态更新协议**(状态真源 = 本文件勾选)
-> **估时**: **46 人日**(Stage 0 逐行合计,per `obj-cep-platform` Entry #22 重算;原「28 剩余 / 13 已消耗」与表内逐行值不同步)—— **已全部落地**;剩余 = R10 外部回执(不可估)
+> **估时**: **46 人日**(Stage 0 逐行合计,per `obj-cep-platform` Entry #22 重算;原「28 剩余 / 13 已消耗」与表内逐行值不同步)—— **已全部落地**;**剩余 = 0**(R10 已按 `obj §9.3` 闭合,2026-10-23)
 > **KPI**: Stage 0 = **1 slot**(per `ADR-CEP-00 §2 Decision 3`)
 
 
@@ -24,7 +24,7 @@
 
 > **Task 8.4 全部 6 步已完成(2026-10-21)**:独立 AI 复审 2 轮(`general` + `explore`,替代失效的 `oracle` / `critic`)、M1 产物冻结(28 产物 SHA-256 + 机器校验)、M2 跨仓准入门**取证未放行**、R10 登记为「部分独立」、台账 Entry #7。
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧接口**规约文档**已合入(`6020f42` + `8290b4c` + `ac956b8`);本仓侧完成**契约收敛批 1**(per-network schema delta + 4 份 ADR 的 Status Update + umbrella spec IC2 改写 + fabric 载体 + **第 9 组检查器**,反向验证 **12/12 全绿**)—— 台账 Entry #9(含 RUN 证据)/ Entry #10(放行裁决)。
-> **⛔ Stage 0 仍不 archive**:**仅**因 R10 独立验收未闭合(M2 已放行)。`cpptlm-cep-umbrella` 状态 🟡 **Proposed**(baseline **1/3**)。
+> **✅ Stage 0 归档判据已满足**(2026-10-23,per 台账 Entry #28):M2 已放行 · R10 已按 `obj §9.3` 闭合(残余风险已登记)· tasks **99 / 99** 全勾(原 105 项;6 项 Stage 1 准入前置已移出本 change 的任务表)。归档动作本身见台账 Entry #29。
 > **Commit**:见下方 `git log`(2026-10-21 三次提交:`7195f7f7` / `e1d706a5` / `824bd26e` + 本轮)。
 
 ---
@@ -391,7 +391,7 @@
 
 **验证**: 台账新增 entry ✅(`objective-cep-platform §11 Entry #7`)
 
-**⛔ 结论**:Stage 0 **仍不 archive** —— M2 准入门**已于 2026-10-22 放行**(台账 Entry #9/#10),**唯一**未闭合项是 R10 独立验收(真人外部评审仍缺)。台账 Entry #7 记录了当时的未放行结论,Entry #9/#10 记录放行依据。
+**✅ 结论(2026-10-23 更新)**:Stage 0 **满足归档判据** —— M2 准入门已于 2026-10-22 放行(台账 Entry #9/#10);R10 已按 `obj §9.3` 的闭合判据处置(台账 Entry #28:残余风险登记 + DRI 书面接受);tasks **99 / 99** 全勾(原 105 项;6 项 Stage 1 准入前置已移出本 change 的任务表)。台账 Entry #7 记录了当时的未放行结论,Entry #9/#10 记录放行依据,Entry #28 记录 R10 处置。
 
 ---
 
@@ -404,12 +404,14 @@
 > ⚠️ 实际为 **5 项**(S1-1 ~ S1-5)—— 表头「4 项」是初稿遗留,2026-10-22 修正。
 >
 > **归属(per `obj-cep-platform §4.0` 队列)**:S1-1 ~ S1-5 → **队列 #2 `cpptlm-cep-poc-spike`**(2027-Q1);**未消费前不得下线**(provisional 不许变永久债)。
+>
+> **⏭ 移出 Stage 0 归档判据(2026-10-23,per 台账 Entry #28)** —— 本节 5 项本就属 **Stage 1**,此前以未勾 checkbox 留在 Stage 0 任务表里,导致 `openspec archive` 判「6 incomplete task(s)」拒绝归档。条目文本 / 判据 / 归属**全部保留**,仅去掉 checkbox。
 
-- [ ] **S1-1**:`ADR-CEP-09` 的通道依赖图顶点按 **`(协议实例, network, vc_id)`** 建立 —— **在此之前不得用其无环判据放行任何协议实例**(两张网共享 vc_id 值域 0-3,顶点不带 network ⇒ 跨网依赖边被合并 ⇒ 可能给错误 verdict)
-- [ ] **S1-2**:N-1 / N-2 的**实现侧复核** —— 首个 `implemented` 实例装配后复核 per-network 嵌套形态
-- [ ] **S1-3**:**SLICC 式「协议本地 vnet + 装配期绑定」**备选的重评 —— 触发条件:出现**第 3 张网**或**第 3 个协议实例**(`ADR-CEP-12 §8.4` 已登记,别让它无声死掉)
-- [ ] **S1-4**:`include/tlm/cep/fabric.{schema.json,json}` 在首个 `implemented` 实例跑过后**再纳 M1 冻结集**(零实例新产物不诞生即冻结)
-- [ ] **S1-5**:**adapter 消息类 → `CATEGORY_*` 的显式映射表(非恒等)** —— 6 类一致性消息类落在 Coherence Interface 层,`CATEGORY_*` 保持**链路层 3 类**不变;映射表由 adapter 承担。**验收**:映射表存在且经 contract test 断言(per `ADR-CEP-12 §8.3` IC2 ③ 的分层纪律)
+- ⏭(移交) **S1-1**:`ADR-CEP-09` 的通道依赖图顶点按 **`(协议实例, network, vc_id)`** 建立 —— **在此之前不得用其无环判据放行任何协议实例**(两张网共享 vc_id 值域 0-3,顶点不带 network ⇒ 跨网依赖边被合并 ⇒ 可能给错误 verdict)
+- ⏭(移交) **S1-2**:N-1 / N-2 的**实现侧复核** —— 首个 `implemented` 实例装配后复核 per-network 嵌套形态
+- ⏭(移交) **S1-3**:**SLICC 式「协议本地 vnet + 装配期绑定」**备选的重评 —— 触发条件:出现**第 3 张网**或**第 3 个协议实例**(`ADR-CEP-12 §8.4` 已登记,别让它无声死掉)
+- ⏭(移交) **S1-4**:`include/tlm/cep/fabric.{schema.json,json}` 在首个 `implemented` 实例跑过后**再纳 M1 冻结集**(零实例新产物不诞生即冻结)
+- ⏭(移交) **S1-5**:**adapter 消息类 → `CATEGORY_*` 的显式映射表(非恒等)** —— 6 类一致性消息类落在 Coherence Interface 层,`CATEGORY_*` 保持**链路层 3 类**不变;映射表由 adapter 承担。**验收**:映射表存在且经 contract test 断言(per `ADR-CEP-12 §8.3` IC2 ③ 的分层纪律)
 
 ## Stage 1 准入前置(2026-10-22 A4 批 2 引入的限定债)
 
@@ -434,11 +436,13 @@
 
 > **归属(per `obj-cep-platform §4.0` 队列)**:S1-7 的 **③ (β) 重新评估** → **队列 #4 `cpptlm-cep-directory-ordering-plane`**;**①② `perm` 形态 schema 演进** → **队列 #6 `cpptlm-cep-chi-rnf-subset`**。
 >
+> **⏭ 移出 Stage 0 归档判据(2026-10-23,per 台账 Entry #28)** —— 同上:本项属 Stage 1(`perm` 形态 schema 演进 + (β) 重评估),条目与归属保留。
+>
 > **R-2 已触发**(per 台账 **Entry #13** ①)→ 判据 2 触发的动作 = 「重新评估 (β) 独立接口方案,
 > 或引入 `perm` 的『可静默升级』标志位」。**本债不在 Stage 0 消解** ——
 > `perm` 的**形态**变更属 CEP 侧 schema 演进(Stage 1),本批**零 schema 改动**。
 
-- [ ] **S1-7**:**R-2 的 `perm` 形态变更 + (β) 重新评估** ——
+- ⏭(移交) **S1-7**:**R-2 的 `perm` 形态变更 + (β) 重新评估** ——
   ① **`perm` 形态**:新增「可静默升级」判别位(**值域 4 值锁不变**;`CEN-Ib12` 仍不存在);
   ② **形态约束**(per ArchForge Q-3b 补充,本仓采纳):新字段**必须**表达
   「本行的 `UNIQUE` 投影可静默升为 `WRITEBACK`」这一**具体**语义,
@@ -474,7 +478,7 @@
 | M1 产物冻结(**29** 产物 hash + 机器校验) | Task 8.4 Step 3 | ✅ 已完成(per Entry #9 起 29 成员) |
 | M4 独立 AI 复审(2 轮 / 6 BLOCKER 全处置) | Task 8.4 Step 2 | ✅ 已完成 |
 | M2 跨仓准入门 | Task 8.4 Step 4 | ✅ **已放行 2026-10-22**(Entry #9/#10) |
-| R10 登记为「部分独立」 | Task 8.4 Step 5 | ✅ 已登记 —— **R10 本身仍未闭合**(Stage 0 不 archive 的唯一卡口) |
+| R10 登记为「部分独立」 | Task 8.4 Step 5 | ✅ 已登记 → **2026-10-23 已闭合**(按 `obj §9.3` 判据,per 台账 Entry #28);残余风险已登记并由 DRI 书面接受 |
 
 ---
 

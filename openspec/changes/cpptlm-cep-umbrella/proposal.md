@@ -1,6 +1,6 @@
 # cpptlm-cep-umbrella: Coherence Exploration Platform(CEP)核心契约与实验床骨架
 
-> **状态**: 🟡 **Proposed / in-progress** —— Stage 0 umbrella(tasks **105 / 99**);**跨仓准入门(M2)已放行**(2026-10-22,per `ADR-CEP-00 §8` + 台账 Entry #9/#10);**R10 未闭合 → 不 archive**;余 6 项 = Stage 1 准入前置(归属见 `obj §4.0`)
+> **状态**: 🟡 **Proposed / in-progress** —— Stage 0 umbrella(tasks **99 / 99** 全勾;原 105 项中 6 项 Stage 1 准入前置已移出本 change 的任务表);**跨仓准入门(M2)已放行**(2026-10-22,per `ADR-CEP-00 §8` + 台账 Entry #9/#10);**R10 已闭合**(2026-10-23,按 `obj-cep-platform §9.3` 判据:残余风险已登记 + DRI 书面接受,per 台账 Entry #28)
 > **作者**: CppTLM Team(builder mode)
 > **版本**: v1.1(2026-10-22 · M2 放行)
 > **载体定位**:本 change = **执行真源**(做什么 / 怎么验 / 做到哪);**上游规划输入** = `.rddf/improvements/cpptlm-cep-umbrella.md`;**排队与状态** = `obj-cep-platform §4.0`(队列 #1);**载体分工与状态更新协议** = `obj-cep-platform §4.7`(状态真源 = 本 change 的 `tasks.md` 勾选)
@@ -31,7 +31,7 @@
 > ① `ADR-CEP-09` 的图顶点按 `(协议实例, network, vc_id)` 建立**之前**,不得用其无环判据放行任何协议实例;
 > ② N-1/N-2 的实现侧复核;③ SLICC 式「vnet + 装配期绑定」备选的重评触发条件(第 3 网 / 第 3 实例);
 > ④ `fabric.*` 在首个 `implemented` 实例跑过后**再纳 M1 冻结集**。
-> ⚠️ **R10 未闭合** —— 本次放行是 **AI 三方评审(见回执 §8)+ M1 冻结 + M4 复审** 的组合,**真外部真人评审仍缺**。
+> ✅ **R10 已闭合(2026-10-23)** —— 放行依据 = **AI 三方评审(见回执 §8)+ M1 冻结 + M4 复审** 的组合;闭合判据与残余风险登记见 `obj-cep-platform §9.3` + 台账 Entry #28。**「真外部真人评审仍缺」这一残余风险未被掩盖** —— 已登记并由 DRI 书面接受。
 >
 > **📋 对齐清单**:`docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`
 > —— 13 项 gap 矩阵(带两侧 file:line)+ ArchForge 侧 PR 范围(P0 5 项 / P1 4 项 / P2 4 项)
@@ -40,7 +40,7 @@
 > ArchForge 仓不在本环境时优雅跳过);
 > **声明 ↔ schema/fabric 的对齐**由 `scripts/test/cep_decl_alignment_check.sh` 机器检测(5 项子校验,反向验证 12/12)。
 > **✅ 残留 gate 已解除(2026-10-21)**: `objective-cep-platform §9.2` 三项角色(验收方 / 结论消费者 / 平台维护方)已**正式指定** —— 形式 gate 解除,Stage 0 验收的"角色缺失 No-Go"条件消除
-> **⚠️ 独立性未闭合(已登记 R10)**:三项角色在当前仓形态下**指向同一人**(ArchForge 与 CppTLM commit 同一作者)→ 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制**部分**替代;M4 已有实证先例(2026-10-21 Oracle 独立复审抓出 9 项作者 4 轮自审全漏的问题;2026-10-22 批 1 再经 oracle + metis + explore 三方评审修订 12 处)。**真外部真人评审待建立**
+> **⚠️ 独立性残余(已登记 R10,2026-10-23 按 `obj §9.3` 闭合判据处置)**:三项角色在当前仓形态下**指向同一人**(ArchForge 与 CppTLM commit 同一作者)→ 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制**部分**替代;M4 已有实证先例(2026-10-21 Oracle 独立复审抓出 9 项作者 4 轮自审全漏的问题;2026-10-22 批 1 再经 oracle + metis + explore 三方评审修订 12 处)。**真外部真人评审待建立**
 
 ---
 
@@ -165,7 +165,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 - [x] 既有全量测试 **0 回归**(`ctest --test-dir build` 全绿)—— **实测 96/96** ✅
 - [ ] `openspec validate cpptlm-cep-umbrella --strict` PASS —— ⚠️ **实测 rc=1**(2 条预存 WARNING:`spec.md` 顶部文本不被 archive 携带;per Entry #12 ⑦ 实证为**预存不满足**)。`spec.md` = M1 冻结面第 29 成员 → **不修**;修复属 **批 4**(暂缓,per Entry #22)
 - [x] 文档同步:`docs/implementation/2026-10-21-cep-stage0-contracts.md` + `06-bis` Status Update 段 + `07 号` §11 Gap 映射复核 ✅
-- [x] **`objective-cep-platform §9.2` 三项角色已指定**(验收方 / 结论消费者 / 平台维护方)—— ✅ **2026-10-21 已指定**(形式 gate 解除;实质独立性缺口 = R10,未解除)
+- [x] **`objective-cep-platform §9.2` 三项角色已指定**(验收方 / 结论消费者 / 平台维护方)—— ✅ **2026-10-21 已指定**(形式 gate 解除;实质独立性缺口 = R10 → **2026-10-23 已按 §9.3 闭合判据处置**,残余风险已登记)
 
 ### Commit 策略(TDD 5-step,预计 12~14 commits)
 
