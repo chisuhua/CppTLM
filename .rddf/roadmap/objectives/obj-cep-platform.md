@@ -2871,6 +2871,56 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 
 **关联**: Entry #30 ~ #38· `obj §4.7.3`(17 落点 + 6 断言)
 
+### Entry #40 — 2026-10-24 [scope-change]
+
+**主题**: **CI 三个红源的定位与修复** —— 「本地全绿 / CI 全红」拆解为 3 个独立根因(2 修 1 诊断待决)
+
+**背景**: `git status` 显示 20 个 commit 早已 push(`origin/main == HEAD`);`gh run list` 实测 CI **自 2026-10-19 起连续多次全红**(5 个 job 全 failure)。此前台账/总结里「守门全绿」是**纯本地**结论,与远端状态无关 —— 这是记录口径的缺口。
+
+**① 红源 A —— `cep_module_factory_seam` 4 个断言(已修)**
+
+| 项 | 事实 |
+|---|---|
+| 症状 | CI 上 `26 assertions / 22 passed / 4 failed`,报 "unexpected exception";本地 `26/26` 全绿 |
+| 根因 | CI 用 `actions/checkout@v4` **默认浅克隆(depth=1)**;该测试的冻结面守门要比对**钉死的基线 commit** `4ae6bfc4…` + `HEAD~1`/`HEAD~2` → ref 不可达 → `run_git` 抛异常 → 守门按设计 **fail-loud** |
+| 决定性证据 | `git clone --depth 1` 下 `cat-file -e 4ae6bfc4^{commit}` **不可达**、`HEAD~2` 不可达;完整 clone 下**均可达**;干净 clone(完整历史)`ctest -R cep_module_factory_seam` → **Passed 0.39s** |
+| 修复 | `ci.yml` 的 `build-and-test` + `ptx-emu-release` checkout 加 **`fetch-depth: 0`** |
+
+**② 红源 C —— PTX-EMU job(已修)**
+
+| 项 | 事实 |
+|---|---|
+| 症状 | step「Build and run PTX-EMU H2D DMA tests」exit 2 |
+| 根因 | CI **从不构建** PTX-EMU:直接 `./test.sh --mode ptx-emu`,而 `test.sh` 默认**只跑测试**(脚本头:「假设 `./build.sh` 已构建」)→ `build-on/bin/cpptlm_tests 不存在`。该 job **自始至终必红** |
+| 修复 | `run: ./test.sh --mode ptx-emu --build` |
+
+**③ 红源 B —— `code-format`(127 文件;已诊断,**未修,待决**)**
+
+| 项 | 事实 |
+|---|---|
+| 症状 | 127 个 C++ 文件「需要格式化」;**本地同样 rc=1** → 不是 CI 版本差异(本地 clang-format **22.1.6** == CI pin 的 **22**) |
+| 起源 | `.clang-format` 于 `ea13ea6f`(2026-09-08,同 commit 曾一次重排 **173** 文件)收紧规则后,后续文件未跟进 |
+| **关键障碍** | 实测「一键格式化」**破坏编译**:`SortIncludes: true` 重排 include → `include/tlm/pcie/pcie_mock_ip.hh:122` 报 `'gpu' in namespace 'cpptlm::tlm' does not name a type` → 根因是 `include/tlm/gpu/pcie_bar_router_mvp.hh` 用 **`namespace tlm::gpu {` 且无 `cpptlm` 外层包裹**,其归属**取决于被谁先 include**;排序改变了谁先打开命名空间 |
+| 反证 | 临时把 `SortIncludes` 置 `false` 后重新格式化 → **构建通过** + `ctest 97/97` → 障碍确为 include 排序,而非格式化本身 |
+| 为何未修 | 该障碍触及 **ODR 风险**(同一符号可能同时落在 `::tlm::gpu` 与 `cpptlm::tlm::gpu`);已超出「机械格式化」范畴,按**改动最小化**原则**不与管理/CI 修复捆绑** |
+| **建议路径(择一)** | **(i) 推荐**:给 `pcie_bar_router_mvp.hh` 加 `namespace cpptlm { … }` 外层包裹(2 行)→ 头文件自洽 → 再一键格式化(130 文件,独立 commit)→ 保留 `SortIncludes: true`;**(ii)** `SortIncludes: false` + 格式化 → 但这是**全仓 lint 降级** |
+
+**④ 顺带修复(脚本卫生)**
+
+`scripts/test/cep_gate_harness.py` 的临时根去掉 `/tmp/opencode` 硬编码(那是 **agent 会话**目录约定;该脚本已注册进 `ctest`,CI 三条 matrix 腿都会跑)→ 改 `tempfile.mkdtemp(prefix=…)` + 退出清理(`CEP_GATE_TMP` 仍可显式指定);删 `cep_gate_selftest.sh` 的**死变量** `TMP`。
+
+**⑤ 验收(local)**
+
+```
+构建 ✅ · ctest 97/97 · [cep] 76/1284 · 5 个 cep_* --strict rc=0
+docs_sync_check rc=0 · markdown_link_check rc=0 · validate --changes rc=0 · cep-core-contracts rc=0
+闸 fixture 14/14 · 冻结面 30 成员 diff=0
+```
+
+> **口径修正**:本仓「守门全绿」必须区分 **local** 与 **CI**。Entry #30 ~ #39 的验收记录**均为 local**;CI 侧自 2026-10-19 起为红(红源 A/B/C 与 CEP 文档线**无因果**)。**新会话一律以 `gh run list` 实测 CI 状态为准**。
+
+**关联**: Entry #30 ~ #39· `docs/implementation/2026-10-22-cep-poc-spike-spec.md`(poc-spike 的 S2 规格)
+
 ---
 
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)

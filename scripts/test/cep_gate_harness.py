@@ -28,7 +28,16 @@ import subprocess
 import sys
 
 R = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RT = os.environ.get("CEP_GATE_TMP", "/tmp/opencode/cep_gate_root")
+# 临时根:默认用 `tempfile.mkdtemp()`(尊重 TMPDIR;**不**用 /tmp/opencode ——
+#        那是 agent 会话目录约定,本脚本已在 CI 的 ctest 里跑)。
+#        `CEP_GATE_TMP` 可显式指定(调试取证用),此时不自动清理。
+_EXPLICIT_TMP = os.environ.get("CEP_GATE_TMP")
+if _EXPLICIT_TMP:
+    RT = _EXPLICIT_TMP
+else:
+    import tempfile
+
+    RT = tempfile.mkdtemp(prefix="cep_gate_root_")
 
 FILES = [
     ".rddf/roadmap/objectives/obj-cep-platform.md",
@@ -44,6 +53,12 @@ FILES = [
 ]
 
 CHECKER = "scripts/test/cep_docs_sync_check.sh"
+
+
+def cleanup_root():
+    """退出时清理临时根(仅当它是自动创建的)。"""
+    if not _EXPLICIT_TMP:
+        shutil.rmtree(RT, ignore_errors=True)
 
 
 def build_root():
@@ -101,4 +116,7 @@ def main():
 
 
 if __name__ == "__main__":
+    import atexit
+
+    atexit.register(cleanup_root)
     sys.exit(main())

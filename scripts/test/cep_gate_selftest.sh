@@ -17,8 +17,6 @@ cd "$ROOT" || exit 2
 HARNESS="scripts/test/cep_gate_harness.py"
 PASS=0
 FAIL=0
-TMP="$(mktemp -d /tmp/cep_gate_selftest.XXXXXX)"
-trap 'rm -rf "$TMP"' EXIT
 
 run_case() {   # $1=名字 $2=期望(0=绿 / 1=红) $3=变异 python 代码
   local name="$1" want="$2" code="$3"

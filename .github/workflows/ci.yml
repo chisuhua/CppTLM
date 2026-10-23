@@ -29,6 +29,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        # ⚠️ 必须**完整历史**(非浅克隆):`cep_module_factory_seam` 的冻结面守门
+        #   要比对**钉死的基线 commit** + `HEAD~1`/`HEAD~2`。浅克隆(depth=1)下
+        #   这些 ref 不可达 → `run_git` 抛异常 → 守门以「fail-loud」方式变红
+        #   (2026-10-23 CI 红:本地 26/26 全绿,CI 4 个断言异常失败)。
+        fetch-depth: 0
 
     - name: Install dependencies
       run: |
@@ -92,6 +98,8 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        # 同 build-and-test:完整历史(跑 [cep] 标签的冻结面守门需要钉死的基线 commit + HEAD~N)
+        fetch-depth: 0
 
     - name: Install CUDA 12.8 (manual, Jimver action only ships 12.6.1)
       # Jimver/cuda-toolkit@v0.2.20 hardcodes cuda 12.6.1, doesn't accept 12.8
@@ -120,7 +128,10 @@ jobs:
       env:
         CUDA_PATH: /usr/local/cuda
         CUDA_HOME: /usr/local/cuda
-      run: ./test.sh --mode ptx-emu
+      # ⚠️ 必须 `--build`:`test.sh` 默认**只跑测试**(脚本头:「假设 ./build.sh 已构建」),
+      #    本 job 此前从不构建 → 直接报 `build-on/bin/cpptlm_tests 不存在` → exit 2
+      #    (2026-10-23 实测:PTX-EMU job 自始至终必红)。
+      run: ./test.sh --mode ptx-emu --build
 
     - name: Upload test results
       if: always()
