@@ -1,18 +1,6 @@
 # Spec: CEP 核心契约层(Stage 0)
 
-> **状态**: 📋 Draft v1.0(per tasks.md Phase 1~8)
-> **配套**: [`../../proposal.md`](../../proposal.md) · [`../../design.md`](../../design.md) · [`../../tasks.md`](../../tasks.md)
-> **版本**: v1.0(2026-10-21,planner 阶段 P1 三项完成后交 builder)
-> **上游真源**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../../../docs/architecture/07-coherence-exploration-platform.md) v0.1 §3~§7 + `docs/adr/ADR-CEP-*.md` 共 16 份
-> **验收归属**: 本 spec 的**契约存在性与自洽性**由 Stage 0 机器检查;**实现满足性**由 Stage 1~3 各自 change 的 AC 落地
-
----
-
 ## ADDED Requirements
-
-> **编号位口径**:**67 个编号位 / 66 条实际守门 invariant**(`INV-CEP-04-IC4` **唯一跳空**)。
-> 15 个 requirement 与 `objective-cep-platform §0 DoD 7` 的 **15 组**一一对应,合计 67 编号位 / 66 实际。
-> ⚠️ **计数口径纪律**:跳空 ID 被多处**提及**(说明为何跳空)但**从未定义** —— 校验脚本**必须区分「提及」与「定义」**。
 
 ### Requirement: cep-coherence-interface-contract
 

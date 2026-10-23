@@ -200,11 +200,10 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 > grep -rn "2029-Q1" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
 > grep -rn "串行 10 季度\|10 个 change" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
 > ```
-> **已知例外(实测 3 处,命中是预期的)**:
-> ① `docs/architecture/07-coherence-exploration-platform.md §8.1`(:551)→ 冻结面成员 = **§11 L6**;
-> ② `docs/adr/ADR-CEP-NUMBER-MAP.md §2`(:118)→ 冻结 ADR = **§11 L2**;
-> ③ `.rddf/drafts/cep-architecture-decision-log.md`(:28)→ architect 阶段**草稿**,**除本条登记外零入向引用**(不参与路线图口径)。
-> ①② 改它需 `--update --authorized-by` + 两步 commit。**除这 3 处外出现新命中 = 旧数复活,必须改回。**
+> **已知例外(实测 1 处,命中是预期的)**:
+> ① `.rddf/drafts/cep-architecture-decision-log.md`(:28)→ architect 阶段**草稿**,**除本条登记外零入向引用**(不参与路线图口径)。
+> **除这 1 处外出现新命中 = 旧数复活,必须改回。**
+> (2026-10-23 更新:原 3 处例外中的 ① `07 号 §8.1` 与 ② `ADR-CEP-NUMBER-MAP §2` **已随 Entry #27 闭合** —— 旧值已不存在,不再需要例外)
 
 ### 4.1 Stage 0: Umbrella 启动(队列 #1 = `cpptlm-cep-umbrella`,2026-Q4)
 
@@ -377,7 +376,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 > - **不要**从 improvement 草稿读验收判据 —— 它是**规划输入**;实测回填在 change 的 `proposal.md` §Acceptance。
 > - **不要**直接信 `AGENTS.md` 的 KPI 基线数字 —— 那是**带日期快照**(`2026-10-20 实证 = 0 active`),早于本轮变更。当前并发**以 `openspec list --json` 实测 + §5.2 为准**。
 > - **不要**直接信任何「N 条 entry」的转述计数 —— 台账是 append-only,计数会持续增长;实测命令 `grep -c "^### Entry #" .rddf/roadmap/objectives/obj-cep-platform.md`。
-> - **不要**把 `07 号 §8.1` 的 Stage 表当排期依据 —— 它是**冻结面成员**(M1),仍写「合计 10 / 串行 10 季度」(旧值,per §11 **L6**)。真源优先规则下:**Stage 划分与 change 数一律以 §4.0 / `ADR-CEP-00 §2 Decision 3` 为准**,07 号该节不得据以改路线图。
+> - **不要**把 `07 号 §8.1` 的 Stage 表当**排期**依据 —— 该表**只承载「Stage 划分 + change 数」**(11 = 1+7+2+1),**不含**时间跨度与估时(per Entry #27 精简)。**排期只认 §4.0**;Stage 划分与 change 数以 §4.0 / `ADR-CEP-00 §2 Decision 3` 为准。
 
 ---
 
@@ -1843,6 +1842,8 @@ git diff --name-only  → 不含 21 份 ADR / 07 号真源 /
 | L5 | ctest 全量曾**偶发失败 1 次**(未能捕获失败用例名 —— ctest 日志已被后续运行覆盖) | **已定位**(per Entry #24 → #25):`cep_tools_contract`(#78)与 `cep_all`(#82)在 `-j4` 下并行跑同一组 `[cep][tools]` 用例 + **固定名临时目录**,竞态 | **已交付 builder** —— improvement 草稿 `cpptlm-cep-tools-test-isolation.md`;修复前 `-j4` 下不可信 |
 | L6 | `docs/architecture/07-coherence-exploration-platform.md §8.1`(**:543-553**)仍写「Stage 1 = **6** change / 合计 **10** 个 / **串行 10 季度**」 | **冻结面成员**(M1 29 成员)与 `ADR-CEP-00 §2 Decision 3` 的 **11** 冲突 —— 真源 1 vs 真源 3 的已知矛盾 | **批 4 暂缓** —— 改它需 `--update --authorized-by` + 两步 commit;**本批只登记**:路线图侧一律按 **11**(§4.0 / §4.6 为真源),新会话读 07 号 §8.1 时以本条为准(见 §4.7.4 误读 #5) |
 
+> **✅ L2 / L6 已闭合(2026-10-23,per 本条 Entry #27)** —— 上表两行的「批 4 暂缓」是**历史状态**,**以本条为准**:两处冻结产物已按 `ADR-CEP-00 §2 Decision 3` 的 **11**(1+7+2+1)更正,并已走 `--update --authorized-by "Entry #27"` 授权闸。**本表正文保持历史原样**(append-only 纪律)。
+
 **⑪ critic 复审修正轮次(2026-10-23,per critic REJECT)**
 
 改动触发 critic 对抗审稿(默认立场 REJECT)→ **2 BLOCKERS + 6 SHOULD_FIX + 5 NITS**,逐条核实后**全部属实**,已修正:
@@ -2080,6 +2081,73 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 **review_by 触发仪式**(per `rdd-planner/SKILL.md:159`):
 - `bash skills/rdd-planner/scripts/planner_objective_revise.sh objective-cep-platform --kind sprint-review --content "..." --decision "..." --reason "..."`
 - kind ∈ {deferral-rationale, go-decision, sprint-review, scope-change, adr-amendment}
+
+### Entry #27 — 2026-10-23 [adr-amendment]
+
+**主题**: **批 4 —— 冻结面授权修订**:①**L2 闭合**(`ADR-CEP-NUMBER-MAP §2` 的 10 → 11)②**L6 闭合**(`07 号 §8.1` 的 6/10 → 7/11 + 移除复制的季度值)③**umbrella spec.md 的 2 条 openspec WARNING 消除**(#5)④ **tools 测试隔离修复落地**(#4,Entry #24 根因关闭)
+
+> **本条即冻结面授权记录** —— `scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #27"` 的授权依据。
+> **冻结面 29 成员**中本条触及 **3 个**:`ADR-CEP-NUMBER-MAP.md` / `07-coherence-exploration-platform.md` / `umbrella specs/cep-core-contracts/spec.md`。
+
+**① L2 闭合 —— `ADR-CEP-NUMBER-MAP §2 决策 4` 的 KPI 预算块**
+
+| | 原值 | 现值 | 权威依据 |
+|---|---|---|---|
+| Stage 1 | 6 串行 × 1 slot | **7** 串行 × 1 slot | `ADR-CEP-00 §2 Decision 3`(Stage 0=1 + Stage 1=**7** + Stage 2=2 + Stage 3=1) |
+| 总计 | 10 个 change,串行 10 季度 | **11** 个 change,串行 **11** 季度 | 同上 |
+
+- **性质**:事实性更正(旧值**从未**是权威值)—— 真源 3 内部矛盾。**写法沿用** `ADR-CEP-00 §2 决策 3` 的「2026-10-22 增补」同款:**原地更正 + 标注增补块 + 台账 entry**。
+- **ADR 不可变原则的处理**:AGENTS.md 要求 ADR「签发后不改,状态变化追加 `## Status Update` 段」。本条走的是**第三种形态** —— 原值是**事实错误**而非状态变化,若只追加 Status Update 则错误正文留存、真源 3 内部矛盾继续;故**原地更正 + 增补块留痕**,并在本台账登记授权。
+
+**② L6 闭合 —— `07 号 §8.1` Stage 表**
+
+| | 原值 | 现值 |
+|---|---|---|
+| Stage 1 change 数 | 6 | **7** |
+| 合计 | **10** | **11** |
+| 串行季度 | 串行 10 季度 | **串行 11 季度**(并入 KPI 约束行) |
+| 时间跨度列 | 5 处季度值(2026-Q4 ~ 2028-Q2) | **整列移除** |
+| 估时列 | 30 人日 / 8 周 / 10 周 / 10 周 | **整列移除** |
+
+- **为什么删列而不只是改数**:单源纪律(§4.0「单源纪律」)要求**具体季度值只出现在 objective 内**;07 号复制的 5 处季度值 + 4 处估时是**漂移源**(Stage 0 估时已从 30 人日漂到 46 人日)。现 07 号 **§8.1 只承载「Stage 划分 + change 数」**(ADR-00 派生的稳定事实),排期指 §4.0、估时指 §4.1~§4.4。
+- **代价**:真源 1 文档指向路线图层(`.rddf/`)—— 可接受,因为 Stage 划分本身**派生自** `ADR-CEP-00 §2 Decision 3`,且 §4.0 是其实施路径投影。
+
+**③ #5 闭合 —— umbrella `spec.md` 的 2 条 `openspec validate --strict` WARNING**
+
+| WARNING | 根因 | 处置 |
+|---|---|---|
+| `Text above the first "## " section is not carried into the main spec by archive` | spec.md 头部 5 行元信息(状态/配套/版本/上游真源/验收归属)写在首个 `##` 之前 | **迁出到 `proposal.md` 头部**(元信息本就属 change 层) |
+| `Text before the first requirement in "## ADDED Requirements" is not carried into the main spec by archive` | spec.md 的「编号位口径」块(67 编号位 / 66 实际 / 跳空 ID 纪律)写在首个 `### Requirement:` 之前 | **迁出到 `design.md` 头部**(计数纪律属实施/校验侧) |
+
+- **实测**:`openspec validate cpptlm-cep-umbrella --strict` 由 **rc=1(2 WARNING)** → **rc=0(is valid)**。
+- **未改**:15 个 requirement、15 个 `#### Scenario:`、任何规范条文 —— **0 条契约语义变更**。
+- **这不是「藏起来」**:迁出内容**有去处**且在 proposal/design 中**原文保留**;留在 spec.md 的后果是归档时被**静默丢弃**(比 WARNING 更坏)。
+
+**④ #4 闭合 —— tools 测试隔离(Entry #24 根因 → 修复)**
+
+- **根因**:`ctest` 注册了两个跑同一组 `[cep][tools]` 用例的测试项(`cep_tools_contract` → `[cep][tools]`、`cep_all` → `[cep]`),`-j4` 下并行;而 `test/test_cep_tools_contract.cc` 用**固定名**临时目录(`/tmp/cep_tools_<tag>`)→ 进程 A 的 `remove_all` 与进程 B 的读写**竞态**。
+- **修复**:3 处固定名路径全部加 **PID 唯一化 token**(跨进程必异、进程内稳定);判定脚本用完即删。**仅改测试代码**,零冻结面 / 零 ABI。
+- **对照实验(修复前 → 修复后)**:同一命令 `ctest -j4 --repeat until-fail:20 -R "cep_(all|tools_contract)"` —— 修复前**第 1 轮即 Failed**,修复后 **20 轮全绿**。命令具备鉴别力,不是碰巧绿。
+
+**⑤ 验收**
+
+```
+openspec validate cpptlm-cep-umbrella --strict      == 0(原 rc=1 / 2 WARNING)
+cep_docs_sync_check / cep_doc_ref_check / cep_freeze_check /
+cep_archforge_alignment_check / cep_decl_alignment_check  --strict  == 0 (5/5)
+docs_sync_check --strict == 0 · markdown_link_check == 0
+ctest 96/96 · [cep] 76 case / 1284 assertion
+冻结面 29 成员 diff == 0(本条改动已走 --update --authorized-by "Entry #27" 授权闸并重生成清单)
+双边自检:新值 grep 空 · 旧值 grep 仅 1 处(drafts 草稿)
+```
+
+**⑥ 本条之外的遗留状态**
+
+- **L1**(`openspec validate --strict` rc=1)—— **本条已闭合**(见 ③)。
+- **L2 / L6** —— **本条已闭合**(见 ① ②);§11 L 表正文保留历史原样,状态以本条为准。
+- **L3**(Entry #20 表列数错位)/ **L4**(`ONBOARDING.md` 管道符未转义)/ **L5**(ctest 偶发)—— L5 **本条已闭合**(见 ④);L3 / L4 仍为**历史遗留,不改**。
+
+**关联**: Entry #24(ctest 根因)/ #25(载体分工协议)/ #26(协议增补)· `ADR-CEP-00 §2 Decision 3`(治理口径真源 = 11)· `openspec/changes/cpptlm-cep-tools-test-isolation.md`(improvement 草稿)
 
 ---
 

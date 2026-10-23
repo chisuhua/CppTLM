@@ -7,6 +7,7 @@
 > **关联路线图**: [`phase-10`](../../../.rddf/roadmap/phases/phase-10.md)(in-progress)+ [`objective-cep-platform`](../../../.rddf/roadmap/objectives/obj-cep-platform.md)(P1 active)
 > **关联真源 1**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1(**686 行**,✅ 2026-10-21 完成)+ [`06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4 + [`06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3(将被 supersede)
 > **关联真源 3**: `docs/adr/ADR-CEP-*.md` **共 21 份**(2026-10-21 architect 阶段两批:新增 `ADR-CEP-08/09/12/13/18` + `ADR-CEP-11/14/15/16/07A`,修订 8 份)
+> **spec 元信息**(2026-10-23 自 `specs/cep-core-contracts/spec.md` 头部迁入,per 台账 Entry #27):**上游真源** = [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1;**验收归属** = 本 change spec 的**契约存在性与自洽性**由 Stage 0 机器检查,**实现满足性**由 Stage 1~3 各自 change 的 AC 落地;**配套** = `specs/cep-core-contracts/spec.md` · [`design.md`](design.md) · [`tasks.md`](tasks.md)
 > **KPI**: Stage 0 = **1 slot**(计 KPI,per `ADR-CEP-00 §2 Decision 3`;**不符** `cpptlm-dgpu-soc-arch-truth-cleanup §6` doc-only 豁免先例,因本 change 含测试契约骨架)
 > **前置 gate**: ① 签发仓 = CppTLM(2026-10-20 拍板)✅ ② 真源路径 = `07-*.md`(已创建)✅ ③ KPI slot 腾出(3 个 active 已 ⏸ 暂存归档,baseline **0/3**)✅ ④ **跨仓准入门(M2)✅ 已放行**(2026-10-22)
 >

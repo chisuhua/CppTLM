@@ -2,6 +2,7 @@
 
 > **状态**: 📋 Draft v1.0(2026-10-21)
 > **配套**: [`proposal.md`](proposal.md) · [`specs/cep-core-contracts/spec.md`](specs/cep-core-contracts/spec.md) · [`tasks.md`](tasks.md)
+> **编号位口径**(2026-10-23 自 `specs/cep-core-contracts/spec.md` 迁入,per 台账 Entry #27):**67 个编号位 / 66 条实际守门 invariant**(`INV-CEP-04-IC4` **唯一跳空**);15 个 requirement 与 `objective-cep-platform §0 DoD 7` 的 **15 组**一一对应。⚠️ **计数口径纪律**:跳空 ID 被多处**提及**(说明为何跳空)但**从未定义** —— 校验脚本**必须区分「提及」与「定义」**,不得计入实际条数。
 > **上游真源**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1 + `docs/adr/ADR-CEP-*.md` 共 16 份
 
 ---

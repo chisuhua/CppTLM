@@ -542,15 +542,20 @@ experimental/<run_id>/
 
 ### 8.1 Stage 划分(per `ADR-CEP-00 §2 Decision 3` KPI 排队)
 
-| Stage | 内容 | change 数 | 估时 | 时间跨度 |
-|-------|------|-----------|------|---------|
-| **Stage 0** | Umbrella 启动(契约测试 + experimental + tools + 顶层真源 + lint)| 1 | 30 人日 | 2026-Q4 |
-| **Stage 1** | Stub Cache + Sharer Tracker + Collective Plane + 3 协议 RN-F subset | 6 | 8 周/change | 2026-Q4 ~ 2027-Q3 |
-| **Stage 2** | CXL 对称 DCOH + NVLink SHARP | 2 | 10 周/change | 2027-Q3 ~ 2028-Q1 |
-| **Stage 3** | UALink In-Network Compute | 1 | 10 周 | 2028-Q1 ~ 2028-Q2 |
-| **合计** | | **10** | | **串行 10 季度** |
+| Stage | 内容 | change 数 |
+|-------|------|-----------|
+| **Stage 0** | Umbrella 启动(契约测试 + experimental + tools + 顶层真源 + lint)| 1 |
+| **Stage 1** | Stub Cache + Sharer Tracker + Collective Plane + 3 协议 RN-F subset | **7** |
+| **Stage 2** | CXL 对称 DCOH + NVLink SHARP | 2 |
+| **Stage 3** | UALink In-Network Compute | 1 |
+| **合计** | | **11** |
 
 **KPI 约束**:任一时刻 Proposed 并发 ≤ 1(CEP 内部);全仓 ≤ 3(AGENTS.md 硬上限)。**单一时钟真源**:`ADR-CEP-00 §2 Decision 3`。
+
+> **本表只承载「Stage 划分 + change 数」**(2026-10-23 精简,per 台账 Entry #27):
+> - **时间跨度(排期)不在本表** —— 排期真源 = `.rddf/roadmap/objectives/obj-cep-platform.md` **§4.0 排队总表**。单源纪律:具体季度值只在该处出现;本文件此前复制的 5 处季度值**已移除**。
+> - **估时不在本表** —— 各 Stage 估时见同一文件 **§4.1 ~ §4.4**(Stage 0 的 **46 人日**是逐行重算值;`ADR-CEP-00 §2 Decision 3` 记的 30 人日为**初始估**)。
+> - 原表写「Stage 1 = 6 / 合计 10 / 串行 10 季度」,与 `ADR-CEP-00 §2 Decision 3` 的 **11**(1+7+2+1)冲突 —— **已更正**。
 
 **创建 umbrella 前须先 archive ≥1 个既有 active change**(per AGENTS.md line 422 新提案门槛)。**✅ 前置已满足(2026-10-20)**:3 个既有 active 全部 **⏸ 暂存归档**(`--skip-specs`,0% 未实施),当前 baseline **0/3** → `cpptlm-cep-umbrella` **可立即创建**(per AGENTS.md「⏸ 两种归档语义必须区分」)。
 
