@@ -648,67 +648,180 @@ else
 fi
 
 echo ""
-echo -e "${BLUE}[11/11] 归档后状态投影一致性 + 冻结面 glob 展开自检${NC}"
-# ⚠️ 2026-10-23(Entry #30):critic 判 REJECT 的 4 个 BLOCKER 中,B1(状态投影只回填
-#    3/7 落点)与 B2(冻结成员 29 vs 30)本质是**「没有机器闸」**——本组补上兜底。
-# (a) 同一 change 的 4 处状态投影必须一致(§4.7.3 收尾 7 落点的可测子集)
-# ⚠️ 本组的设计原则(2026-10-23 critic 第 6 轮):断言必须抓**语义类**而非**字面串**,
-#    否则「注入一条与正则同形的串」只能自证循环(第 5 轮的错误)。
-#    → 反向:旧口径的**同义变体**一律命中;正向:归档事实必须被引用。
-_STALE_RE='不[[:space:]]*archive|仍未闭合|未闭合 →|待达|现为[[:space:]]*\*{0,2}Proposed|105[[:space:]]*task|6[[:space:]]*项未勾|真人(外部评审)?回执'
-# 历史/已更正语境(合法):台账 append-only、引述旧判据、显式标注的历史结论
-# ⚠️ 豁免词必须**窄**:critic 第 6 轮实测「加一个『已被取代』即可绕过」→ 豁免只认
-#    **明确的历史标注符**,不认泛化措辞(否则豁免词本身成为绕过面)。
-_HIST_RE='\(历史\)|历史表述|原判据|以 §9\.3 为准|措辞保留|旧值|旧口径|原口径|不可作验收证据'
-_LIVE_DOCS=(
-  "$PROJECT_ROOT/.rddf/roadmap/objectives/obj-cep-platform.md"
-  "$PROJECT_ROOT/.rddf/roadmap/phases/phase-10.md"
-  "$PROJECT_ROOT/.rddf/improvements/cpptlm-cep-umbrella.md"
-  "$PROJECT_ROOT/.rddf/roadmap.md"
-)
-_proj_ok=1
-for _f in "${_LIVE_DOCS[@]}"; do
-  [ -f "$_f" ] || continue
-  # ⚠️ 只扫**活文档区段**:objective 的 §11 决策台账是 append-only 历史,
-  #    其中的旧口径是**当时**的合法历史表述,不算冲突。
-  _live="$(sed '/^## §11 决策台账/,$d' "$_f" 2>/dev/null)"
-  _stale="$(printf '%s\n' "$_live" | grep -nE "$_STALE_RE" | grep -vE "$_HIST_RE" || true)"
-  if [ -n "$_stale" ]; then
-    fail "$_f 活文档区段仍有旧口径(同义变体同样命中):"
-    printf '%s\n' "$_stale" | head -3 | sed 's/^/      · /'
-    _proj_ok=0
-  fi
-  # 正向断言:归档事实必须被引用(防「全部删光」式的假绿)
-  if ! printf '%s\n' "$_live" | grep -qE '已归档|已完成归档'; then
-    fail "$_f 活文档区段未引用归档事实(正向断言失败 —— 状态投影缺失)"
-    _proj_ok=0
-  fi
-done
-[ "$_proj_ok" -eq 1 ] && pass "活文档区段:无旧口径残留(语义类) + 均引用归档事实(反向 + 正向双断言)"
-# (b) 冻结成员数:机器真值 vs 活文档声明(取**数字集合**,可抓部分回退)
-_FZ_N=$(python3 -c "import json;print(json.load(open('$PROJECT_ROOT/docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json'))['artifact_count'])" 2>/dev/null || echo "?")
-_FZ_SET=$(for _g in "$PROJECT_ROOT/docs/ONBOARDING.md" "$PROJECT_ROOT/scripts/README.md" \
-                    "$PROJECT_ROOT/docs/adr/ADR-CEP-NUMBER-MAP.md" \
-                    "$PROJECT_ROOT/.rddf/improvements/cpptlm-cep-umbrella.md" \
-                    "$PROJECT_ROOT/.rddf/roadmap/objectives/obj-cep-platform.md"; do
-  # 只取活文档区段(obj 的 §11 台账含历史值「29 成员」,属合法历史)
-  [ -f "$_g" ] || continue
-  sed '/^## §11 决策台账/,$d' "$_g" 2>/dev/null
-done | grep -ohE '冻结面[^0-9]{0,12}[0-9]{2} 成员|[0-9]{2} 冻结成员' | grep -oE '[0-9]{2}' | sort -u | tr '\n' ' ' || true)
-if [ "$_FZ_N" = "30" ] && [ "$_FZ_SET" = "30 " ]; then
-  pass "冻结面成员数一致(机器真值 30 = 活文档数字集合 {30})"
-else
-  fail "冻结面成员数分裂:机器真值 = ${_FZ_N},活文档数字集合 = [${_FZ_SET:-空}](应恰为 {30})"
-fi
-# (c) 归档 4 件套必须在 P6 扫描集内(防 glob 再写错 —— 本轮 B3 的根因)
-_P6_N=$(python3 -c "
-import glob
-print(len(glob.glob('$PROJECT_ROOT/openspec/changes/archive/*cpptlm-cep-umbrella/**/*.md', recursive=True)))" 2>/dev/null || echo 0)
-if [ "$_P6_N" -ge 4 ] 2>/dev/null; then
-  pass "归档区 P6 扫描 glob 命中 ${_P6_N} 个文件(umbrella 4 件套在扫描集内)"
-else
-  fail "归档区 P6 扫描 glob 只命中 ${_P6_N} 个文件 —— umbrella 4 件套脱离扫描范围(守门覆盖度静默回退)"
-fi
+echo -e "${BLUE}[11/11] 归档后状态一致性(4 类客观断言)${NC}"
+# ⚠️ 2026-10-23(Entry #32)重新设计:前两版的「散文语义正则」被 critic 实测出
+#    10/13 同义改述绕过 + 行尾贴白名单词即可绕过 → 属 overclaim。
+#    本版只做**客观可判定**的断言(数字 / 同行关联 / glob 覆盖),不再声称「理解语义」。
+python3 - "$PROJECT_ROOT" << 'PYEOF'
+import json, os, re, subprocess, sys
+root = sys.argv[1]
+failed = []
+
+LIVE = [
+    ".rddf/roadmap/objectives/obj-cep-platform.md",
+    ".rddf/roadmap/phases/phase-10.md",
+    ".rddf/improvements/cpptlm-cep-umbrella.md",
+    ".rddf/roadmap.md",
+    "AGENTS.md",
+]
+# 区块级豁免:**标题**含下列词 → 该区块整体豁免(改标题会留痕;行尾贴词不能绕过)
+EXEMPT_HEAD = re.compile(r"历史|沿革|误读|处置|单源纪律|自检|遗留|Status Update")
+# 实体(状态归属的主体)
+ENTITY = re.compile(r"umbrella|cpptlm-cep-umbrella|Stage 0|\bR10\b")
+# 旧状态词(表示「尚未归档 / 仍占用」)
+# 旧状态词的**词形清单**(穷举可枚举的形态,不做语义解析):
+#   归档类:未/尚未/待/不/无法/方可 + 归档|archive
+#   回执类:真人回执 / 回执缺失 / 未收到真人 / 意见未回 / 需回执
+#   计数类:尚余 / 未勾选 / 105 / 99 / 105 task
+#   并发类:仍 active / 未释放 / pending / in-progress / 处于 Proposed / Proposed 状态 / 升为 Proposed
+STALE_STATE = re.compile(
+    r"(未|尚未|待|不|无法|需[^。;]{0,15}方可)\s*归档|"
+    r"(未|尚未|待|不|无法|not)\s*archive|not archived|pending|"
+    r"真人回执|回执缺失|未收到真人|意见未回|外部评审[^。;]{0,8}未回|需回执|"
+    r"尚余|未勾选|105\s*/\s*99|99\s*/\s*105|105\s*task|"
+    r"仍 active|未释放|in-progress|处于 Proposed|Proposed 状态|未闭合|"
+    r"升为 \*{0,2}Proposed|仍为 \*{0,2}Proposed")
+# 当前状态词(表示「已归档 / 已释放」)
+CURRENT_STATE = re.compile(r"已归档|已完成归档|已释放|已闭合|归档前|曾占用|已被归档|已改写|曾 = |已计入历史|历史描述|措辞为历史|以本节为准")
+
+
+def live_text(path):
+    """取活文档区段:objective 截断到 §11 台账之前(台账是 append-only 历史)。"""
+    try:
+        t = open(os.path.join(root, path), encoding="utf-8").read()
+    except OSError:
+        return None
+    if "obj-cep-platform.md" in path:
+        i = t.find("## §11 决策台账")
+        if i > 0:
+            t = t[:i]
+    return t
+
+
+def blocks(text):
+    """按标题切块:(标题行, 块内容)。无标题的散文归入块标题 ''。"""
+    out, cur, in_code = [], ["", []], False
+    for line in text.splitlines():
+        if line.strip().startswith("```"):
+            in_code = not in_code
+        if not in_code and re.match(r"^#{2,4} ", line):
+            out.append((cur[0] if cur else "", cur[1]))
+            cur = [line, []]
+        else:
+            cur[1].append(line)
+    out.append((cur[0] if cur else "", cur[1]))
+    return out
+
+
+# ── 断言 ①:KPI baseline 数字 == 实测 ────────────────────────────────
+try:
+    raw = subprocess.run(["openspec", "list", "--json"], cwd=root, capture_output=True,
+                         text=True, timeout=120).stdout
+    data = json.loads(raw) if raw.strip() else []
+    changes = data if isinstance(data, list) else data.get("changes", [])
+    active = len(changes)
+except Exception:
+    active = None
+if active is None:
+    failed.append("无法实测 openspec list --json(KPI baseline 断言无法执行)")
+else:
+    expect = f"{active}/3"
+    # 只抓「当前/现行/真实 … N/3」的**当前态**表述(历史叙述"0/3 → 1/3"不含这些限定词)
+    CUR = re.compile(r"(当前|现行|真实)[^|\n]{0,80}?([0-9])/3")
+    vals = {}
+    for p in LIVE:
+        t = live_text(p)
+        if not t:
+            continue
+        for m in CUR.finditer(t):
+            vals.setdefault(p, set()).add(f"{m.group(2)}/3")
+    bad = {p: sorted(v) for p, v in vals.items() if v != {expect}}
+    if bad:
+        failed.append(f"KPI baseline 与实测({expect})不一致:{bad}")
+    else:
+        print(f"  \033[0;32m✓\033[0m KPI baseline 数字一致(实测 {expect} = 所有活文档的当前态表述)")
+
+# ── 断言 ②:归档状态互斥(实体 + 旧状态词 同行,区块级豁免)────────────
+hits = []
+for p in LIVE:
+    t = live_text(p)
+    if not t:
+        continue
+    for head, body in blocks(t):
+        if EXEMPT_HEAD.search(head):
+            continue          # 区块级豁免
+        for ln in body:
+            # 句级判定:同一**句**内同时出现「实体」与「旧状态词」才算冲突
+            # (行级判定会误报:条件句/协议说明句常在同一行内先后出现两者)
+            for sent in re.split(r"[。;!?]", ln):
+                if ENTITY.search(sent) and STALE_STATE.search(sent) and not CURRENT_STATE.search(sent):
+                    hits.append(f"{p}: {sent.strip()[:110]}")
+                    break
+if hits:
+    failed.append("活文档仍有「实体 + 旧状态词」同行出现(共 %d 处):" % len(hits))
+    for h in hits[:5]:
+        failed.append("      · " + h)
+else:
+    print("  \033[0;32m✓\033[0m 无「实体 + 旧状态词」同行出现(区块级豁免)")
+
+# ── 断言 ③:冻结成员数字集合 == {30} ───────────────────────────────
+FZ = [".rddf/roadmap/objectives/obj-cep-platform.md", ".rddf/roadmap/phases/phase-10.md",
+      ".rddf/improvements/cpptlm-cep-umbrella.md", ".rddf/roadmap.md",
+      "docs/ONBOARDING.md", "scripts/README.md", "docs/adr/ADR-CEP-NUMBER-MAP.md"]
+try:
+    n = json.load(open(os.path.join(root, "docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json"),
+                       encoding="utf-8"))["artifact_count"]
+except Exception:
+    n = None
+NUM = re.compile(r"冻结面[^0-9]{0,12}([0-9]{2})[^0-9]{0,4}成员|([0-9]{2})[^0-9]{0,4}冻结成员|冻结成员[^0-9]{0,6}([0-9]{2})")
+setn = set()
+for p in FZ:
+    t = live_text(p)
+    if not t:
+        continue
+    for m in NUM.finditer(t):
+        setn.add(next(g for g in m.groups() if g))
+if n is None:
+    failed.append("无法读取冻结清单 artifact_count")
+elif setn != {str(n)}:
+    failed.append(f"冻结成员数字集合 {sorted(setn)} != {{{n}}}")
+else:
+    print(f"  \033[0;32m✓\033[0m 冻结成员数字集合一致 {{{n}}}")
+
+# ── 断言 ⑤:旧任务计数(客观数字形态,不依赖实体锚点)───────────────
+OLDCOUNT = re.compile(r"\b105\s*/\s*99\b|\b99\s*/\s*105\b|105\s*task|6\s*项未勾|尚余[^。;]{0,6}项未勾")
+c_hits = []
+for p in LIVE:
+    t = live_text(p)
+    if not t:
+        continue
+    for head, body in blocks(t):
+        if EXEMPT_HEAD.search(head):
+            continue
+        for ln in body:
+            if OLDCOUNT.search(ln):
+                c_hits.append(f"{p}: {ln.strip()[:100]}")
+if c_hits:
+    failed.append("活文档仍有旧任务计数形态(共 %d 处):" % len(c_hits))
+    for h in c_hits[:4]:
+        failed.append("      · " + h)
+else:
+    print("  \033[0;32m✓\033[0m 无旧任务计数形态(105 / 99 等)")
+
+# ── 断言 ④:glob 覆盖(归档件在 P6 扫描集内)─────────────────────────
+import glob as _g
+n_hit = len(_g.glob(os.path.join(root, "openspec/changes/archive/*cpptlm-cep-umbrella/**/*.md"), recursive=True))
+if n_hit < 4:
+    failed.append(f"归档区 P6 扫描 glob 只命中 {n_hit} 个文件(应 >= 4)")
+else:
+    print(f"  \033[0;32m✓\033[0m 归档区 P6 扫描 glob 命中 {n_hit} 个文件")
+
+if failed:
+    for f in failed:
+        print("  \033[0;31m✗\033[0m " + f)
+    sys.exit(1)
+PYEOF
+if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
 
 echo ""
 echo "════════════════════════════════════════"
