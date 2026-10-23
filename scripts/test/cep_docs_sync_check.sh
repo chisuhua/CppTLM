@@ -648,7 +648,7 @@ else
 fi
 
 echo ""
-echo -e "${BLUE}[11/11] 归档后状态一致性(5 类客观断言)${NC}"
+echo -e "${BLUE}[11/11] 归档后状态一致性(6 类客观断言)${NC}"
 # ⚠️ 2026-10-23(Entry #32)重新设计:前两版的「散文语义正则」被 critic 实测出
 #    10/13 同义改述绕过 + 行尾贴白名单词即可绕过 → 属 overclaim。
 #    本版只做**客观可判定**的断言(数字 / 同行关联 / glob 覆盖),不再声称「理解语义」。
@@ -700,6 +700,8 @@ def exempt_block(head, body, h2=""):
         if d is None or d >= ARCHIVE_DAY:
             return False
     return True
+# 条件句不是状态断言(「若…则…」「当…时」)→ 跳过,避免对**正确文档**报红
+CONDITIONAL = re.compile(r"若|假如|如若|一旦|当[^。;]{0,20}时|则")
 # 实体(状态归属的主体)
 ENTITY = re.compile(r"umbrella|cpptlm-cep-umbrella|Stage 0|\bR10\b")
 # 旧状态词(表示「尚未归档 / 仍占用」)
@@ -776,12 +778,19 @@ else:
         if not t:
             continue
         is_adr = p.startswith("docs/adr/")
+        if not is_adr:
+            # ⚠️ 非 ADR 活文档:**整文件扫**。块级豁免只对 ADR 生效 ——
+            #    否则 obj 的「误读 / 处置 / 单源纪律」等**说明性区块**里若出现
+            #    当前态数值,会因豁免而失守(2026-10-24 critic 实测)。
+            for m in CUR.finditer(t):
+                vals.setdefault(p, set()).add(f"{m.group(2)}/3")
+            continue
         for head, body, h2 in blocks(t):
-            if exempt_block(head, body, h2):
-                continue
-            if is_adr and "Status Update" not in (head + h2):
+            if "Status Update" not in (head + h2):
                 continue   # ADR 的**正文块**(不可变)里的历史基线叙述不参与本断言;
                            # 只有 Status Update 块(可追加)里的当前态数值被检查
+            if exempt_block(head, body, h2):
+                continue
             for m in CUR.finditer("\n".join(body)):
                 vals.setdefault(p, set()).add(f"{m.group(2)}/3")
     bad = {p: sorted(v) for p, v in vals.items() if v != {expect}}
@@ -803,6 +812,8 @@ for p in LIVE:
             # 句级判定:同一**句**内同时出现「实体」与「旧状态词」才算冲突
             # (行级判定会误报:条件句/协议说明句常在同一行内先后出现两者)
             for sent in re.split(r"[。；，、\n;!?！？,]", ln):   # 全角+半角+换行+逗号顿号(中文主力是全角标点)
+                if CONDITIONAL.search(sent):
+                    continue      # 条件句不是状态断言
                 if ENTITY.search(sent) and STALE_STATE.search(sent) and not CURRENT_STATE.search(sent):
                     hits.append(f"{p}: {sent.strip()[:110]}")
                     break
@@ -875,13 +886,16 @@ for p in adrs:
         d = own_date(head, h2)
         if "Status Update" in (head + h2) and d is not None and d >= ARCHIVE_DAY:
             has_new_su = True
-        if exempt_block(head, body, h2):
-            continue
+        # ⚠️ 这里**必须扫全部块(含豁免块)**:B1 的陈旧句位于 `### 8.3`
+        #    (继承 2026-10-21 的 h2 → 豁免)→ 只扫非豁免块时 stale_in_adr 恒 False,
+        #    ⑥ 永不触发(2026-10-24 实测:删掉 SU 段闸仍全绿)。
         for sent in re.split(r"[。；，、\n;!?！？,]", "\n".join(body)):
+            if CONDITIONAL.search(sent):
+                continue          # 条件句不是状态断言
             if ENTITY.search(sent) and STALE_STATE.search(sent) and not CURRENT_STATE.search(sent):
                 stale_in_adr = True
     if stale_in_adr and not has_new_su:
-        a_fail.append(f"{p}: 非豁免块仍写旧状态,但**没有** ≥ {ARCHIVE_DAY} 的 Status Update 块登记失效")
+        a_fail.append(f"{p}: ADR 内仍写旧状态(任意块,含历史块),但**没有** ≥ {ARCHIVE_DAY} 的 Status Update 块登记其失效")
 if a_fail:
     failed.append("ADR 的「必须追加 Status Update」回归锁未满足:")
     for x in a_fail:
