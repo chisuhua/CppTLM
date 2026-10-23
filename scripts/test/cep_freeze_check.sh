@@ -79,7 +79,7 @@ globs = sys.argv[4:]
 
 files = []
 for g in globs:
-    files += glob.glob(os.path.join(root, g))
+    files += glob.glob(os.path.join(root, g), recursive=True)
 files = sorted(set(os.path.relpath(f, root) for f in files))
 
 def sha256(rel):
@@ -161,7 +161,7 @@ for rel, want in sorted(arts.items()):
 import glob
 globs = man.get("globs", [])
 for g in globs:
-    for p in glob.glob(os.path.join(root, g)):
+    for p in glob.glob(os.path.join(root, g), recursive=True):
         rel = os.path.relpath(p, root)
         if rel not in arts:
             drift.append(rel)

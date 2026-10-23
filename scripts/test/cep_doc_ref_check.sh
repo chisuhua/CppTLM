@@ -111,6 +111,13 @@ VIRTUAL_PATHS=(
   "openspec/changes/<name>/"                        # 占位写法
   "openspec/changes/archive/2026-10-20-*/"          # 通配
   "openspec/changes/cpptlm-cep-umbrella"            # 已归档 change 的**原路径**(2026-10-23 归档)—— 历史快照指向归档前位置;现址见 openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella
+  # —— 通配 / 族名(2026-10-23 Entry #29 引入):不是「可判存在的单一路径」——
+  "docs/implementation/*"                           # 历史快照族通配(台账 Entry #29 ② 引述)
+  "openspec/changes/**/specs/cep-core-contracts/spec.md"  # 冻结清单 glob(兼容 active/archived 两态)
+  "openspec/changes/archive/**/*.md"                # 归档区通配(台账 Entry #29 ③ 引述)
+  "openspec/changes/archive/*/cpptlm-cep-umbrella/**/*.md"  # 归档区定向通配(同上)
+  "openspec/specs/cep-core-contracts/*.md"          # main spec 通配(同上)
+  "tools/*.py"                                      # 工具族通配(台账 Entry #29 ④ 引述)
 )
 
 is_virtual_path() {
