@@ -700,8 +700,13 @@ def exempt_block(head, body, h2=""):
         if d is None or d >= ARCHIVE_DAY:
             return False
     return True
-# 条件句不是状态断言(「若…则…」「当…时」)→ 跳过,避免对**正确文档**报红
-CONDITIONAL = re.compile(r"若|假如|如若|一旦|当[^。;]{0,20}时|则")
+# 条件句不是状态断言(「若…则…」「当…时」)→ 跳过,避免对**正确文档**报红。
+# ⚠️ **不得用裸字符子串**(2026-10-24 critic 实测):`则` 会命中 规则/原则/准则/否则/
+#    法则/守则/细则 → 一个词就能让 ② 与 ⑤ 同时静默失守。
+#    规则:条件标记必须出现在**分句开头**(切句后 ^ 锚定),或成对出现「若…则」。
+CONDITIONAL = re.compile(r"^\s*(若|假如|如若|一旦|当)|若[^。;]{0,20}则")
+# 历史标记:该行在陈述**过去**的状态 → ① 的当前态数值判定应跳过该行
+HIST_MARK = re.compile(r"历史|沿革|原口径|旧值|旧口径|快照|已改写|已被取代|曾为|当时")
 # 实体(状态归属的主体)
 ENTITY = re.compile(r"umbrella|cpptlm-cep-umbrella|Stage 0|\bR10\b")
 # 旧状态词(表示「尚未归档 / 仍占用」)
@@ -778,21 +783,24 @@ else:
         if not t:
             continue
         is_adr = p.startswith("docs/adr/")
-        if not is_adr:
-            # ⚠️ 非 ADR 活文档:**整文件扫**。块级豁免只对 ADR 生效 ——
-            #    否则 obj 的「误读 / 处置 / 单源纪律」等**说明性区块**里若出现
-            #    当前态数值,会因豁免而失守(2026-10-24 critic 实测)。
-            for m in CUR.finditer(t):
-                vals.setdefault(p, set()).add(f"{m.group(2)}/3")
-            continue
         for head, body, h2 in blocks(t):
-            if "Status Update" not in (head + h2):
+            if is_adr and "Status Update" not in (head + h2):
                 continue   # ADR 的**正文块**(不可变)里的历史基线叙述不参与本断言;
                            # 只有 Status Update 块(可追加)里的当前态数值被检查
             if exempt_block(head, body, h2):
+                # 豁免块:逐行看 —— 带**历史标记**的行放行(合法历史叙述),
+                # 不带历史标记的行仍查(否则 obj 豁免块里的当前态数值会失守)
+                for ln in body:
+                    if HIST_MARK.search(ln):
+                        continue
+                    for m in CUR.finditer(ln):
+                        vals.setdefault(p, set()).add(f"{m.group(2)}/3")
                 continue
-            for m in CUR.finditer("\n".join(body)):
-                vals.setdefault(p, set()).add(f"{m.group(2)}/3")
+            for ln in body:
+                if HIST_MARK.search(ln):
+                    continue
+                for m in CUR.finditer(ln):
+                    vals.setdefault(p, set()).add(f"{m.group(2)}/3")
     bad = {p: sorted(v) for p, v in vals.items() if v != {expect}}
     if bad:
         failed.append(f"KPI baseline 与实测({expect})不一致:{bad}")
@@ -849,7 +857,7 @@ elif setn != {str(n)}:
 else:
     print(f"  \033[0;32m✓\033[0m 冻结成员数字集合一致 {{{n}}}")
 
-# ── 断言 ⑤:旧任务计数(客观数字形态,不依赖实体锚点)───────────────
+# ── 断言 ④:旧任务计数(客观数字形态,不依赖实体锚点)───────────────
 OLDCOUNT = re.compile(r"\b105\s*[/／:：]\s*99\b|\b99\s*[/／:：]\s*105\b|105\s*task|6\s*项未勾|尚余[^。;]{0,6}项未勾")
 c_hits = []
 for p in LIVE:
@@ -869,11 +877,13 @@ if c_hits:
 else:
     print("  \033[0;32m✓\033[0m 无旧任务计数形态(105 / 99 等)")
 
-# ── 断言 ⑥:ADR 的「必须追加 Status Update」回归锁 ──────────────────
+# ── 断言 ⑤:ADR 的「必须追加 Status Update」回归锁 ──────────────────
 # 规则:若某 ADR 的**非豁免块**仍写着旧状态(实体 + 旧状态词),则该 ADR **必须**
 #       存在一个「自身日期 ≥ 归档日」的 Status Update 块登记其失效。
 #       —— 这条把「B1 的修复路径 = 追加 Status Update」变成**可回归验证**的,
 #       而不只是「追加后的内容被检查」。
+# ⚠️ 作用域 = LIVE 里的 ADR(**硬编码**):新增「状态入口」ADR 时必须同步加入 LIVE,
+#    否则 ⑤ 静默不覆盖该 ADR(与本仓其它硬编码列表同类的脆弱点)。
 adrs = [x for x in LIVE if x.startswith("docs/adr/")]
 a_fail = []
 for p in adrs:
@@ -889,9 +899,9 @@ for p in adrs:
         # ⚠️ 这里**必须扫全部块(含豁免块)**:B1 的陈旧句位于 `### 8.3`
         #    (继承 2026-10-21 的 h2 → 豁免)→ 只扫非豁免块时 stale_in_adr 恒 False,
         #    ⑥ 永不触发(2026-10-24 实测:删掉 SU 段闸仍全绿)。
+        # ⚠️ ⑤ **不使用**条件句跳过:条件式表述的旧结论**仍算**旧结论
+        #    (宁可要求追加 SU,也不让「若…则…」把 ⑤ 静默失守)
         for sent in re.split(r"[。；，、\n;!?！？,]", "\n".join(body)):
-            if CONDITIONAL.search(sent):
-                continue          # 条件句不是状态断言
             if ENTITY.search(sent) and STALE_STATE.search(sent) and not CURRENT_STATE.search(sent):
                 stale_in_adr = True
     if stale_in_adr and not has_new_su:
@@ -903,7 +913,7 @@ if a_fail:
 else:
     print("  \033[0;32m✓\033[0m ADR 的「必须追加 Status Update」回归锁满足")
 
-# ── 断言 ④:glob 覆盖(归档件在 P6 扫描集内)─────────────────────────
+# ── 断言 ⑥:glob 覆盖(归档件在 P6 扫描集内)─────────────────────────
 import glob as _g
 n_hit = len(_g.glob(os.path.join(root, "openspec/changes/archive/*cpptlm-cep-umbrella/**/*.md"), recursive=True))
 if n_hit < 4:

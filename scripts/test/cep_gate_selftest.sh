@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# scripts/test/cep_gate_selftest.sh —— 状态一致性闸(第 11 组)的**回归 fixture 集**
+#
+# 为什么需要:闸本身原先**没有任何回归样本** → 「断言声称能 fire」与「断言真能 fire」
+# 只能靠人肉记忆(2026-10-24 因此连续两轮误判)。本脚本把关键场景固化成
+# **可执行断言**:每个 fixture 声明「变异 → 期望 rc」。
+#
+# 关键:一律用 `cep_gate_harness.py`(跑在**真拷贝**临时根上)——
+# 改冻结面 ADR 会让整脚本 rc=1(第 7 组冻结校验),与第 11 组无关,不可据此判断。
+#
+# 用法:bash scripts/test/cep_gate_selftest.sh
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$ROOT" || exit 2
+
+HARNESS="scripts/test/cep_gate_harness.py"
+PASS=0
+FAIL=0
+TMP="$(mktemp -d /tmp/cep_gate_selftest.XXXXXX)"
+trap 'rm -rf "$TMP"' EXIT
+
+run_case() {   # $1=名字 $2=期望(0=绿 / 1=红) $3=变异 python 代码
+  local name="$1" want="$2" code="$3"
+  local out rc
+  out="$(python3 "$HARNESS" --mutate "$code" 2>&1)"
+  rc="$(printf '%s\n' "$out" | sed -n 's/.*第 11 组 rc = \([0-9]\).*/\1/p' | tail -1)"
+  [ -z "$rc" ] && rc="?"
+  if [ "$rc" = "$want" ]; then
+    printf "  \033[0;32m✓\033[0m %-52s rc=%s (期望 %s)\n" "$name" "$rc" "$want"
+    PASS=$((PASS + 1))
+  else
+    printf "  \033[0;31m✗\033[0m %-52s rc=%s (期望 %s)\n" "$name" "$rc" "$want"
+    printf '%s\n' "$out" | grep -E "✗" | head -3 | sed 's/^/      · /'
+    FAIL=$((FAIL + 1))
+  fi
+}
+
+echo -e "\033[1mCEP 状态一致性闸 —— 回归 fixture\033[0m"
+
+# ── 基线:无变异 → 必须全绿 ──────────────────────────────────────
+run_case "基线(无变异)" 0 'pass'
+
+# ── 断言⑤:ADR 回归锁 ───────────────────────────────────────────
+run_case "删掉真 Status Update 段 → ⑤ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/docs/adr/ADR-CEP-00-platform-charter-and-governance.md")
+t = p.read_text(encoding="utf-8")
+i = t.find("## Status Update 2026-10-23"); j = t.find("\n---", i)
+p.write_text(t[:i] + t[j:], encoding="utf-8")'
+
+run_case "回填日期 SU 顶替真段 → ⑤ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/docs/adr/ADR-CEP-00-platform-charter-and-governance.md")
+t = p.read_text(encoding="utf-8")
+i = t.find("## Status Update 2026-10-23"); j = t.find("\n---", i)
+t = t[:i] + "## Status Update 2026-10-22 —— 追加登记\n\n> 本条登记:umbrella 仍为 Proposed,Stage 0 未归档。\n" + t[j:]
+p.write_text(t, encoding="utf-8")'
+
+# ── 断言②:旧状态投影(同义变体 / 裸字符陷阱)────────────────────
+run_case "旧状态投影(违反准入规则)→ ② 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("## §2 范围", "## §2 范围\n\nStage 0 尚未归档违反准入规则。", 1)
+p.write_text(t, encoding="utf-8")'
+
+run_case "旧状态投影(不符合单源纪律原则)→ ② 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("## §2 范围", "## §2 范围\n\numbrella 尚未归档不符合单源纪律原则。", 1)
+p.write_text(t, encoding="utf-8")'
+
+run_case "旧状态投影(全角逗号连接)→ ② 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("## §2 范围", "## §2 范围\n\nStage 0 尚未归档，slot 已释放。", 1)
+p.write_text(t, encoding="utf-8")'
+
+# ── 断言② 的误报防护:条件句(正确文档)必须放行 ──────────────────
+run_case "条件句(规则陈述)→ 必须 GREEN" 0 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("## §2 范围", "## §2 范围\n\n若 `cpptlm-cep-umbrella` 未归档,则该 Stage 0 不启动。", 1)
+p.write_text(t, encoding="utf-8")'
+
+# ── 断言①:当前态数值漂移 + 合法历史叙述 ─────────────────────────
+run_case "obj 豁免块写当前 baseline=1/3 → ① 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("### 9.3 R10 处置(2026-10-23)", "### 9.3 R10 处置(2026-10-23)\n\n**当前 baseline = 1/3**", 1)
+p.write_text(t, encoding="utf-8")'
+
+run_case "obj 豁免块的合法历史叙述 → 必须 GREEN" 0 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+t = t.replace("### 9.3 R10 处置(2026-10-23)", "### 9.3 R10 处置(2026-10-23)\n\n> **历史**:截至 2026-10-20,KPI 并发 **3/3**(上限触发);现已释放。", 1)
+p.write_text(t, encoding="utf-8")'
+
+# ── 断言③:冻结成员数回退 ───────────────────────────────────────
+run_case "冻结成员数部分回退(README=29)→ ③ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/scripts/README.md")
+t = p.read_text(encoding="utf-8").replace("M1 冻结面 **30 成员**", "M1 冻结面 **29 成员**", 1)
+p.write_text(t, encoding="utf-8")'
+
+echo ""
+if [ "$FAIL" -eq 0 ]; then
+  echo -e "\033[0;32m✅ 闸的回归 fixture 全部通过\033[0m ($PASS 项)"
+  exit 0
+fi
+echo -e "\033[0;31m❌ 闸的回归 fixture 有 $FAIL 项失败\033[0m (通过 $PASS 项)"
+exit 1
