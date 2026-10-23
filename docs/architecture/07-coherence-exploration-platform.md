@@ -555,7 +555,7 @@ experimental/<run_id>/
 > **本表只承载「Stage 划分 + change 数」**(2026-10-23 精简,per 台账 Entry #27):
 > - **时间跨度(排期)不在本表** —— 排期真源 = `.rddf/roadmap/objectives/obj-cep-platform.md` **§4.0 排队总表**。单源纪律:具体季度值只在该处出现;本文件此前复制的 5 处季度值**已移除**。
 > - **估时不在本表** —— 各 Stage 估时见同一文件 **§4.1 ~ §4.4**(Stage 0 的 **46 人日**是逐行重算值;`ADR-CEP-00 §2 Decision 3` 记的 30 人日为**初始估**)。
-> - 原表写「Stage 1 = 6 / 合计 10 / 串行 10 季度」,与 `ADR-CEP-00 §2 Decision 3` 的 **11**(1+7+2+1)冲突 —— **已更正**。
+> - 原表用的是**变更前**的 change 数与季度数(与 `ADR-CEP-00 §2 Decision 3` 冲突)—— **已按权威口径更正**,对照见台账 Entry #27。
 
 **创建 umbrella 前须先 archive ≥1 个既有 active change**(per AGENTS.md line 422 新提案门槛)。**✅ 前置已满足(2026-10-20)**:3 个既有 active 全部 **⏸ 暂存归档**(`--skip-specs`,0% 未实施),当前 baseline **0/3** → `cpptlm-cep-umbrella` **可立即创建**(per AGENTS.md「⏸ 两种归档语义必须区分」)。
 

@@ -193,6 +193,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 > **单源纪律(比"同改"更强)**:具体**季度值**只允许出现在 **objective 内**(本表 / §4.6 / 小节标题 / 表头,同一文档内自洽);`phase-10.md` / `.rddf/roadmap.md` / `.rddf/improvements/*.md` **一律只写「见 §4.6」,不复制数值**。台账 §11 entry 内的历史快照**不算副本**(append-only)。
 >
 > **改完自检 = 双边化**(新值 **和** 旧值都要查,只查新值会漏掉「旧数复活」):
+> **语义规则**:「**引述旧值的历史说明段**」(增补块 / 变更说明 / 新旧对照表)**不算副本** —— grep 只是粗筛,最终以语义判定;真实缺陷是**旧值被当作现行口径复活**。
 > ```bash
 > # ① 新值:季度值在 objective 之外应零命中(台账 / implementation 快照除外)
 > grep -rn "2029-Q2\|2028-Q4" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
@@ -2147,7 +2148,7 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 - **L2 / L6** —— **本条已闭合**(见 ① ②);§11 L 表正文保留历史原样,状态以本条为准。
 - **L3**(Entry #20 表列数错位)/ **L4**(`ONBOARDING.md` 管道符未转义)/ **L5**(ctest 偶发)—— L5 **本条已闭合**(见 ④);L3 / L4 仍为**历史遗留,不改**。
 
-**关联**: Entry #24(ctest 根因)/ #25(载体分工协议)/ #26(协议增补)· `ADR-CEP-00 §2 Decision 3`(治理口径真源 = 11)· `openspec/changes/cpptlm-cep-tools-test-isolation.md`(improvement 草稿)
+**关联**: Entry #24(ctest 根因)/ #25(载体分工协议)/ #26(协议增补)· `ADR-CEP-00 §2 Decision 3`(治理口径真源 = 11)· improvement 草稿 `.rddf/improvements/cpptlm-cep-tools-test-isolation.md`
 
 ---
 
