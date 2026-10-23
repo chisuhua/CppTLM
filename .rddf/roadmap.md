@@ -2,7 +2,7 @@
 
 > **最后更新**: 2026-10-23 (v1.4-planner 增量, **CEP 载体分工协议落地**;per `obj-cep-platform` **Entry #25 → #26** —— obj §4.7 五类载体分工 + 状态机 + 两种归档语义 + 六步同步清单;入口见 §4.7.4)
 > **真源原则**: 本文件代表项目长期路线图 (rdd-workflow 主文档), **真源 1 (docs/architecture/)** 与 **真源 2 (docs/designs/)** 是技术真源, 本文件是协调真源
-> **OpenSpec KPI 政策**: per AGENTS.md §DOC HYGIENE line 420, **当前真实 baseline = 0/3**(2026-10-23:`cpptlm-cep-umbrella` Stage 0 umbrella **已完成归档**,释放 1 个 slot,per `obj-cep-platform` Entry #28/#29;`openspec validate --strict` **rc=0**,2 条预存 WARNING 已随批 4 消除,per Entry #27)。此前 2026-10-20 的 3 个 active 已全部 **⏸ 暂存归档** `--skip-specs`(实现均 0%,保留供以后重建,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`(per oracle v0.4 路线图评审 B1 修订)
+> **OpenSpec KPI 政策**: per AGENTS.md §DOC HYGIENE line 420, **当前真实 baseline = 0/3**(2026-10-23:`cpptlm-cep-umbrella` Stage 0 umbrella **已完成归档**,释放 1 个 slot,per `obj-cep-platform` Entry #28/#29;`openspec validate cep-core-contracts --strict` **rc=0**,2 条预存 WARNING 已随批 4 消除,per Entry #27;裸 `openspec validate --strict` 恒 rc=1,不可作验收证据)。此前 2026-10-20 的 3 个 active 已全部 **⏸ 暂存归档** `--skip-specs`(实现均 0%,保留供以后重建,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`(per oracle v0.4 路线图评审 B1 修订)
 > **rdd-planner owns**: `.rddf/roadmap/{objectives,features,phases}/*.md` + `.rddf/improvements/*.md`(唯一写入方, per ADR-0028 + ADR-0054 D5)
 > **CEP 载体分工 / 状态更新协议**: 见 `obj-cep-platform §4.7`(objective / phase / improvement / OpenSpec change / 实施笔记 五类载体 + 状态机 + 六步同步清单);**实施路径排队真源** = 同文件 §4.0
 
@@ -42,6 +42,6 @@
 
 ### Objectives
 
-> **2026-10-20 已建**: [`objective-cep-platform`](roadmap/objectives/obj-cep-platform.md) — CEP 跨 **11** 季度治理叙事(季度跨度**见 `obj §4.6`**)。触发依据:`rdd-planner/SKILL.md:150` 决策表「跨 sprint 目标叙事 + 复盘台账 + deferral rationale → objective」三项全命中(per oracle v0.4 路线图评审 B5 修订:删除不存在的「预埋触发条件」表述)。§11 决策台账**持续追加**(条目数会增长 —— 实测 `grep -c "^### Entry #" .rddf/roadmap/objectives/obj-cep-platform.md`,**不要**引用转述值)。**2026-10-23 口径同步**(per Entry #22 → #25 → #26):Stage 0 实施态归位(105 task / 99 完成,唯一卡口 = R10)· Stage 1 准入前置 S1-1 ~ S1-7 在 **`obj §4.0` 排队表**可寻址 · change / 季度数统一 11 / 11 · **载体分工与状态更新协议 = `obj §4.7`**。**后续 objective 触发**: 出现第二个跨 sprint 复杂目标时按 rdd-planner SKILL.md:150 流程评估。
+> **2026-10-20 已建**: [`objective-cep-platform`](roadmap/objectives/obj-cep-platform.md) — CEP 跨 **11** 季度治理叙事(季度跨度**见 `obj §4.6`**)。触发依据:`rdd-planner/SKILL.md:150` 决策表「跨 sprint 目标叙事 + 复盘台账 + deferral rationale → objective」三项全命中(per oracle v0.4 路线图评审 B5 修订:删除不存在的「预埋触发条件」表述)。§11 决策台账**持续追加**(条目数会增长 —— 实测 `grep -c "^### Entry #" .rddf/roadmap/objectives/obj-cep-platform.md`,**不要**引用转述值)。**2026-10-23 口径同步**(per Entry #22 → #25 → #26):Stage 0 已归档(2026-10-23,tasks 99/99,R10 已按 `obj §9.3` 处置)· Stage 1 准入前置 S1-1 ~ S1-7 在 **`obj §4.0` 排队表**可寻址 · change / 季度数统一 11 / 11 · **载体分工与状态更新协议 = `obj §4.7`**。**后续 objective 触发**: 出现第二个跨 sprint 复杂目标时按 rdd-planner SKILL.md:150 流程评估。
 
 <!-- AUTO-SPRINT -->

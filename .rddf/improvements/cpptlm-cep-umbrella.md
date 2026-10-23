@@ -31,7 +31,7 @@ created: 2026-10-20
 
 # cpptlm-cep-umbrella: Coherence Exploration Platform 顶层治理与 umbrella 启动
 
-> **状态**: ✅ **已完成并归档**(2026-10-23)—— planner 阶段 P1 三项完成(Stage 重排 + DoD 7 分解 + change 清单更新)→ builder 起草完成:`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/` **4 件套已落并归档**,tasks **99 / 99** 全勾;`openspec validate --strict` **rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**);KPI baseline **0/3 → 1/3**;**R10 真人外部评审未闭合 → Stage 0 不 archive**。**2026-10-23 口径同步**:per `obj-cep-platform` Entry #22(批 1)—— 21 份 ADR / 11 change / 11 季度 / 66 实际 invariant 统一,Stage 1 准入前置 S1-1 ~ S1-7 已在 `obj §4.0` 排队表可寻址(逐项 owner → 队列 #2 / #4 / #6)
+> **状态**: ✅ **已完成并归档**(2026-10-23)—— planner 阶段 P1 三项完成(Stage 重排 + DoD 7 分解 + change 清单更新)→ builder 起草完成:`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/` **4 件套已落并归档**,tasks **99 / 99** 全勾;`openspec validate cep-core-contracts --strict` **rc=0**(2 条预存 WARNING 已随批 4 消除,per Entry #27;归档前的 `openspec validate cpptlm-cep-umbrella --strict` 对已归档 change 返回 rc=1,属预期);KPI baseline **0/3 → 1/3 → 0/3**(归档释放 slot);**R10 已按 `obj §9.3` 闭合判据处置**(残余风险已登记 + DRI 书面接受,per 台账 Entry #28)。**2026-10-23 口径同步**:per `obj-cep-platform` Entry #22(批 1)—— 21 份 ADR / 11 change / 11 季度 / 66 实际 invariant 统一,Stage 1 准入前置 S1-1 ~ S1-7 已在 `obj §4.0` 排队表可寻址(逐项 owner → 队列 #2 / #4 / #6)
 > **载体定位**:本文是 **5 段规划输入**(为什么做);**执行契约**在 `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/`(做什么/怎么验),**排队与状态**在 `obj-cep-platform §4.0`,**载体分工与状态更新协议**在 `obj-cep-platform §4.7`。
 > **关联路线图**: [`phase-10`](../roadmap/phases/phase-10.md)(in-progress)+ [`objective-cep-platform`](../roadmap/objectives/obj-cep-platform.md)(P1 active)
 > **关联真源 1**:

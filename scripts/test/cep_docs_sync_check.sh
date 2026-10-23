@@ -651,32 +651,54 @@ echo ""
 echo -e "${BLUE}[11/11] 归档后状态投影一致性 + 冻结面 glob 展开自检${NC}"
 # ⚠️ 2026-10-23(Entry #30):critic 判 REJECT 的 4 个 BLOCKER 中,B1(状态投影只回填
 #    3/7 落点)与 B2(冻结成员 29 vs 30)本质是**「没有机器闸」**——本组补上兜底。
-PY_STATE=0
 # (a) 同一 change 的 4 处状态投影必须一致(§4.7.3 收尾 7 落点的可测子集)
+# ⚠️ 本组的设计原则(2026-10-23 critic 第 6 轮):断言必须抓**语义类**而非**字面串**,
+#    否则「注入一条与正则同形的串」只能自证循环(第 5 轮的错误)。
+#    → 反向:旧口径的**同义变体**一律命中;正向:归档事实必须被引用。
+_STALE_RE='不[[:space:]]*archive|仍未闭合|未闭合 →|待达|现为[[:space:]]*\*{0,2}Proposed|105[[:space:]]*task|6[[:space:]]*项未勾|真人(外部评审)?回执'
+# 历史/已更正语境(合法):台账 append-only、引述旧判据、显式标注的历史结论
+# ⚠️ 豁免词必须**窄**:critic 第 6 轮实测「加一个『已被取代』即可绕过」→ 豁免只认
+#    **明确的历史标注符**,不认泛化措辞(否则豁免词本身成为绕过面)。
+_HIST_RE='\(历史\)|历史表述|原判据|以 §9\.3 为准|措辞保留|旧值|旧口径|原口径|不可作验收证据'
+_LIVE_DOCS=(
+  "$PROJECT_ROOT/.rddf/roadmap/objectives/obj-cep-platform.md"
+  "$PROJECT_ROOT/.rddf/roadmap/phases/phase-10.md"
+  "$PROJECT_ROOT/.rddf/improvements/cpptlm-cep-umbrella.md"
+  "$PROJECT_ROOT/.rddf/roadmap.md"
+)
 _proj_ok=1
-for _f in "$PROJECT_ROOT/.rddf/roadmap/objectives/obj-cep-platform.md" \
-          "$PROJECT_ROOT/.rddf/roadmap/phases/phase-10.md" \
-          "$PROJECT_ROOT/.rddf/improvements/cpptlm-cep-umbrella.md"; do
+for _f in "${_LIVE_DOCS[@]}"; do
   [ -f "$_f" ] || continue
   # ⚠️ 只扫**活文档区段**:objective 的 §11 决策台账是 append-only 历史,
-  #    其中的「不 archive / 未闭合」是**当时**的合法历史表述,不算冲突。
-  if sed '/^## §11 决策台账/,$d' "$_f" 2>/dev/null | \
-     grep -qE 'R10 未闭合 → 不 archive|Stage 0 \*\*不 archive\*\*|R10 真人外部评审回执|仍写「合计 10'; then
-    fail "$_f 的活文档区段仍写「umbrella 尚未归档」旧口径(与 §4.0 队列 #1 状态冲突)"
+  #    其中的旧口径是**当时**的合法历史表述,不算冲突。
+  _live="$(sed '/^## §11 决策台账/,$d' "$_f" 2>/dev/null)"
+  _stale="$(printf '%s\n' "$_live" | grep -nE "$_STALE_RE" | grep -vE "$_HIST_RE" || true)"
+  if [ -n "$_stale" ]; then
+    fail "$_f 活文档区段仍有旧口径(同义变体同样命中):"
+    printf '%s\n' "$_stale" | head -3 | sed 's/^/      · /'
+    _proj_ok=0
+  fi
+  # 正向断言:归档事实必须被引用(防「全部删光」式的假绿)
+  if ! printf '%s\n' "$_live" | grep -qE '已归档|已完成归档'; then
+    fail "$_f 活文档区段未引用归档事实(正向断言失败 —— 状态投影缺失)"
     _proj_ok=0
   fi
 done
-[ "$_proj_ok" -eq 1 ] && pass "umbrella 的活文档状态投影无「尚未归档」旧口径残留"
-# (b) 冻结成员数:机器真值 vs 活文档声明
+[ "$_proj_ok" -eq 1 ] && pass "活文档区段:无旧口径残留(语义类) + 均引用归档事实(反向 + 正向双断言)"
+# (b) 冻结成员数:机器真值 vs 活文档声明(取**数字集合**,可抓部分回退)
 _FZ_N=$(python3 -c "import json;print(json.load(open('$PROJECT_ROOT/docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json'))['artifact_count'])" 2>/dev/null || echo "?")
-_FZ_DOC=$(grep -ohE '冻结面 \*?\*?3[0-9] \*?\*? 成员|冻结面 3[0-9] 成员|M1 冻结面 \*?\*?3[0-9] 成员|M1 冻结面 3[0-9] 成员' \
-           "$PROJECT_ROOT/docs/ONBOARDING.md" "$PROJECT_ROOT/scripts/README.md" "$PROJECT_ROOT/docs/adr/ADR-CEP-NUMBER-MAP.md" 2>/dev/null \
-           | grep -oE '3[0-9]' | sort -u | tr '\n' ' ')
-if [ "$_FZ_N" = "30" ] && [ "$_FZ_DOC" = "30 " ]; then
-  pass "冻结面成员数一致(机器真值 30 = 活文档声明 30)"
+_FZ_SET=$(for _g in "$PROJECT_ROOT/docs/ONBOARDING.md" "$PROJECT_ROOT/scripts/README.md" \
+                    "$PROJECT_ROOT/docs/adr/ADR-CEP-NUMBER-MAP.md" \
+                    "$PROJECT_ROOT/.rddf/improvements/cpptlm-cep-umbrella.md" \
+                    "$PROJECT_ROOT/.rddf/roadmap/objectives/obj-cep-platform.md"; do
+  # 只取活文档区段(obj 的 §11 台账含历史值「29 成员」,属合法历史)
+  [ -f "$_g" ] || continue
+  sed '/^## §11 决策台账/,$d' "$_g" 2>/dev/null
+done | grep -ohE '冻结面[^0-9]{0,12}[0-9]{2} 成员|[0-9]{2} 冻结成员' | grep -oE '[0-9]{2}' | sort -u | tr '\n' ' ' || true)
+if [ "$_FZ_N" = "30" ] && [ "$_FZ_SET" = "30 " ]; then
+  pass "冻结面成员数一致(机器真值 30 = 活文档数字集合 {30})"
 else
-  fail "冻结面成员数分裂:机器真值 = ${_FZ_N},活文档声明 = [${_FZ_DOC:-空}]"
-  PY_STATE=1
+  fail "冻结面成员数分裂:机器真值 = ${_FZ_N},活文档数字集合 = [${_FZ_SET:-空}](应恰为 {30})"
 fi
 # (c) 归档 4 件套必须在 P6 扫描集内(防 glob 再写错 —— 本轮 B3 的根因)
 _P6_N=$(python3 -c "
@@ -686,7 +708,6 @@ if [ "$_P6_N" -ge 4 ] 2>/dev/null; then
   pass "归档区 P6 扫描 glob 命中 ${_P6_N} 个文件(umbrella 4 件套在扫描集内)"
 else
   fail "归档区 P6 扫描 glob 只命中 ${_P6_N} 个文件 —— umbrella 4 件套脱离扫描范围(守门覆盖度静默回退)"
-  PY_STATE=1
 fi
 
 echo ""
