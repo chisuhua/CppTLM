@@ -22,7 +22,7 @@
     "docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md": "568b3bebd2d3a1667321743e546f80714b6a6997e721938b7413c348ebfab149",
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "fd0c6808ab944ae7d0d059d9486ba5d731bd5389869066f63cb9ee20c1409372",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "106e64b4a2892bf4c876095485ecaaf96ef7c452abf4630d6dc1371237d76918",
-    "docs/architecture/07-coherence-exploration-platform.md": "3090576cc276a668e1600e5123ea4e85612e4fd2ef8da236dac519e34e9c9e80",
+    "docs/architecture/07-coherence-exploration-platform.md": "26596450e345f3c56d1c93f762cbe41ad2b6bed6db8af1836ca83fff21023fb1",
     "experimental/metrics.schema.json": "be6aa118ca85010ac7d701fabcb74fffbbc3318a8c6a924a07a5f31f455a3d54",
     "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
     "include/tlm/cep/protocol_instance.schema.json": "285f87678a01fcdcfa1b83a929575ad9b5c02117fc75dfad0a1ee8bebfc02feb",
@@ -33,7 +33,7 @@
   },
   "authorized_by": "Entry #27",
   "frozen_at": "2026-10-23",
-  "frozen_at_commit": "c57fb80cf9c3ce9972528718802791c02911b7d4",
+  "frozen_at_commit": "2ae02c35be4f0c769161a9903376dea634179f87",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
