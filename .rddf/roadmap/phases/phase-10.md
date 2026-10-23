@@ -42,7 +42,7 @@ phase_refs:
 
 - **实施侧**:10.A ~ 10.G **全部已落地**(tasks.md **105 task / 99 完成**)→ **Stage 0 工程量视为已消耗**。
 - **剩余工程量**:**0**。umbrella `tasks.md` 的 6 项 Stage 1 准入前置(S1-1 ~ S1-5 + S1-7)已**移出该 change 的任务表**(条目与判据保留)→ 按 `obj-cep-platform §4.0` 排队表归属 Stage 1(队列 #2 / #4 / #6),**不计入 Stage 0**。
-- **唯一卡口(外部依赖,不可估)**:**R10 真人外部评审回执** → Stage 0 **不 archive**。
+- **卡口已闭合(2026-10-23)**:R10 已按 `obj §9.3` 闭合判据处置(残余风险已登记 + DRI 书面接受,per 台账 Entry #28);Stage 0 **已完成归档**(per Entry #29)。
 
 **KPI 预算**(per `ADR-CEP-00 §2 Decision 3` + oracle v0.4 B8 三处口径对齐):
 

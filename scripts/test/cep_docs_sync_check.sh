@@ -46,7 +46,7 @@ pass() { echo -e "  ${GREEN}✓${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 
-echo -e "${BLUE}[1/10] ADR 清单与关键节${NC}"
+echo -e "${BLUE}[1/11] ADR 清单与关键节${NC}"
 ADR_LIST=(
   "ADR-CEP-00-platform-charter-and-governance.md"
   "ADR-CEP-00A-real-source-anchor-map.md"
@@ -87,7 +87,7 @@ done
 [ "$NO_SECTION" -eq 0 ] && pass "每份 ADR 均有「不变量」或「决策」节"
 
 echo ""
-echo -e "${BLUE}[2/10] invariant 计数与 07 号总表一致性${NC}"
+echo -e "${BLUE}[2/11] invariant 计数与 07 号总表一致性${NC}"
 python3 - <<'PYEOF'
 import glob, re, os, sys
 
@@ -370,7 +370,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[3/10] 06 §15.4 P 编号口径(禁 P6)${NC}"
+echo -e "${BLUE}[3/11] 06 §15.4 P 编号口径(禁 P6)${NC}"
 python3 - <<'PYEOF'
 import glob, os, re, sys
 
@@ -386,11 +386,15 @@ for pat in ("docs/adr/ADR-CEP-*.md", "docs/architecture/07-*.md",
             "docs/designs/**/*.md",
             ".rddf/roadmap/*.md", ".rddf/roadmap/**/*.md",
             ".rddf/improvements/*.md", ".rddf/drafts/*.md",
-            # 2026-10-23(Entry #29):umbrella 已归档 → 必须扫归档区,否则其 4 件套
+            # 2026-10-23(Entry #30 修正):umbrella 已归档 → 必须扫归档区,否则其 4 件套
             # 脱离 P6 全禁规则的扫描范围(守门覆盖度静默下降 = 更危险)。
-            # ⚠️ 只扫 **umbrella 自己的**归档目录:仓内另有 22 个历史归档 change,
-            #    其文档合法地提及旧 06 §15.4 的 P6 编号(实测 92 处假阳性)。
-            "openspec/changes/archive/*/cpptlm-cep-umbrella/**/*.md",
+            # ⚠️ glob 写法:**归档目录名带日期前缀**(archive/<date>-<name>/)→ 必须用
+            #    `*cpptlm-cep-umbrella` 而**不是** `*/cpptlm-cep-umbrella`(后者匹配 0)。
+            #    下方 [11/11] 组有断言「归档 4 件套必须在扫描集内」兜底此类错误。
+            # ⚠️ 只扫 **umbrella 自己的**归档目录(保持归档前的覆盖度):仓内另有大量
+            #    历史归档 change,其文档合法地提及**项目优先级标记** `P0.5` 与旧
+            #    `06 §15.4` 的 `P6` → 触发规则 A/B 大量假阳性;不写死条数(会漂移)。
+            "openspec/changes/archive/*cpptlm-cep-umbrella/**/*.md",
             # 归档产出的**系统契约**(main spec)同样纳入 P6 全禁规则
             "openspec/specs/cep-core-contracts/*.md",
             "openspec/changes/*/specs/**/*.md",
@@ -503,7 +507,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[4/10] ADR 交叉引用可达性${NC}"
+echo -e "${BLUE}[4/11] ADR 交叉引用可达性${NC}"
 BROKEN=0
 for f in "${ADR_LIST[@]}"; do
   [ -f "docs/adr/$f" ] || continue
@@ -517,7 +521,7 @@ done
 [ "$BROKEN" -eq 0 ] && pass "ADR 之间的相对链接无断裂(全量 .md 链接)"
 
 echo ""
-echo -e "${BLUE}[5/10] Stage 0 umbrella change 4 件套${NC}"
+echo -e "${BLUE}[5/11] Stage 0 umbrella change 4 件套${NC}"
 # 2026-10-23(Entry #29):umbrella 归档后路径带日期前缀 → 动态解析两态
 CH="$(ls -d openspec/changes/cpptlm-cep-umbrella openspec/changes/archive/*cpptlm-cep-umbrella 2>/dev/null | head -1)"
 [ -n "$CH" ] || { echo "  ✗ 找不到 umbrella change(active 或 archive 均未命中)"; exit 1; }
@@ -528,23 +532,23 @@ done
 [ "$MISS" -eq 0 ] && pass "umbrella change 4 件套齐备"
 
 echo ""
-echo -e "${BLUE}[6/10] Stage 0 契约产物${NC}"
+echo -e "${BLUE}[6/11] Stage 0 契约产物${NC}"
 for f in "include/tlm/cep/protocol_instance.schema.json" "experimental/metrics.schema.json" "experimental/.gitkeep"; do
   [ -f "$f" ] && pass "$f 存在" || fail "$f 缺失"
 done
 
 echo ""
-echo -e "${BLUE}[7/10] M1 产物冻结校验(冻结后不可改)${NC}"
+echo -e "${BLUE}[7/11] M1 产物冻结校验(冻结后不可改)${NC}"
 # ⚠️ 不可裸调用:本脚本 `set -e`,裸调用的失败会**立即中止**整个脚本
 #    → 后续组与汇总永不打印,且下面的 `if [ $? -ne 0 ]` 是死代码(2026-10-22 代码复审 S3)
 if ! bash scripts/test/cep_freeze_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[8/10] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
+echo -e "${BLUE}[8/11] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
 if ! bash scripts/test/cep_archforge_alignment_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[9/10] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
+echo -e "${BLUE}[9/11] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
 # ⚠️ 「跳过」与「跑过」必须可区分:脚本首行标 [RUN] / [SKIP],退出码都是 0。
 #    跳过时**不算通过**(跨仓外部条件缺失不是「声明对齐已被验证」)。
 if DECL_OUT="$(bash scripts/test/cep_decl_alignment_check.sh 2>&1)"; then
@@ -562,7 +566,7 @@ else
     pass "ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查通过"
 fi
 
-echo -e "${BLUE}[10/10] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)${NC}"
+echo -e "${BLUE}[10/11] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)${NC}"
 # 契约:6 类一致性消息词表落在 **Coherence Interface 层**(per ADR-CEP-12 §8 IC2 ③),
 #       CATEGORY_* 保持**传输层 3 类** —— 不得为承载该词表而扩成 6 类(词表混层)。
 # 机器强制 3 项:
@@ -641,6 +645,48 @@ if [ "$VC_COUNT_DECL" = "4" ] && grep -q '4 独立 VC' include/tlm/cluster/soc_i
     pass "VC_COUNT = 4 与「4 独立 VC」物理模型声明一致"
 else
     fail "VC_COUNT($VC_COUNT_DECL) 与 soc_internal_noc.hh 的「4 独立 VC」声明不一致"
+fi
+
+echo ""
+echo -e "${BLUE}[11/11] 归档后状态投影一致性 + 冻结面 glob 展开自检${NC}"
+# ⚠️ 2026-10-23(Entry #30):critic 判 REJECT 的 4 个 BLOCKER 中,B1(状态投影只回填
+#    3/7 落点)与 B2(冻结成员 29 vs 30)本质是**「没有机器闸」**——本组补上兜底。
+PY_STATE=0
+# (a) 同一 change 的 4 处状态投影必须一致(§4.7.3 收尾 7 落点的可测子集)
+_proj_ok=1
+for _f in "$PROJECT_ROOT/.rddf/roadmap/objectives/obj-cep-platform.md" \
+          "$PROJECT_ROOT/.rddf/roadmap/phases/phase-10.md" \
+          "$PROJECT_ROOT/.rddf/improvements/cpptlm-cep-umbrella.md"; do
+  [ -f "$_f" ] || continue
+  # ⚠️ 只扫**活文档区段**:objective 的 §11 决策台账是 append-only 历史,
+  #    其中的「不 archive / 未闭合」是**当时**的合法历史表述,不算冲突。
+  if sed '/^## §11 决策台账/,$d' "$_f" 2>/dev/null | \
+     grep -qE 'R10 未闭合 → 不 archive|Stage 0 \*\*不 archive\*\*|R10 真人外部评审回执|仍写「合计 10'; then
+    fail "$_f 的活文档区段仍写「umbrella 尚未归档」旧口径(与 §4.0 队列 #1 状态冲突)"
+    _proj_ok=0
+  fi
+done
+[ "$_proj_ok" -eq 1 ] && pass "umbrella 的活文档状态投影无「尚未归档」旧口径残留"
+# (b) 冻结成员数:机器真值 vs 活文档声明
+_FZ_N=$(python3 -c "import json;print(json.load(open('$PROJECT_ROOT/docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json'))['artifact_count'])" 2>/dev/null || echo "?")
+_FZ_DOC=$(grep -ohE '冻结面 \*?\*?3[0-9] \*?\*? 成员|冻结面 3[0-9] 成员|M1 冻结面 \*?\*?3[0-9] 成员|M1 冻结面 3[0-9] 成员' \
+           "$PROJECT_ROOT/docs/ONBOARDING.md" "$PROJECT_ROOT/scripts/README.md" "$PROJECT_ROOT/docs/adr/ADR-CEP-NUMBER-MAP.md" 2>/dev/null \
+           | grep -oE '3[0-9]' | sort -u | tr '\n' ' ')
+if [ "$_FZ_N" = "30" ] && [ "$_FZ_DOC" = "30 " ]; then
+  pass "冻结面成员数一致(机器真值 30 = 活文档声明 30)"
+else
+  fail "冻结面成员数分裂:机器真值 = ${_FZ_N},活文档声明 = [${_FZ_DOC:-空}]"
+  PY_STATE=1
+fi
+# (c) 归档 4 件套必须在 P6 扫描集内(防 glob 再写错 —— 本轮 B3 的根因)
+_P6_N=$(python3 -c "
+import glob
+print(len(glob.glob('$PROJECT_ROOT/openspec/changes/archive/*cpptlm-cep-umbrella/**/*.md', recursive=True)))" 2>/dev/null || echo 0)
+if [ "$_P6_N" -ge 4 ] 2>/dev/null; then
+  pass "归档区 P6 扫描 glob 命中 ${_P6_N} 个文件(umbrella 4 件套在扫描集内)"
+else
+  fail "归档区 P6 扫描 glob 只命中 ${_P6_N} 个文件 —— umbrella 4 件套脱离扫描范围(守门覆盖度静默回退)"
+  PY_STATE=1
 fi
 
 echo ""

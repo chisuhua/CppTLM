@@ -27,7 +27,7 @@ phase_refs:
 ## §0 Goal
 
 > **⚠️ architect 阶段同步(2026-10-21,两批)**:invariant 计数已同步为 **67 编号位 / 66 实际 / 15 组**(第一批新增 `ADR-CEP-08`/`09`/`12`/`13` + `ADR-CEP-07-IC7` + `ADR-CEP-06-IC5`;第二批新增 `ADR-CEP-11`/`14`/`15`/`16`/`07A`)。**阶段重排、DoD 7 分解(10 → 15 组)、change 清单**等非机械部分已由 planner 阶段完成。计数单一真源 = `docs/architecture/07-coherence-exploration-platform.md §4`。
-> **⚠️ planner 阶段同步(2026-10-23,per Entry #22)**:①**队列口径** —— `ADR-CEP-00 §2 Decision 3` 为 **11 个 change / 串行 11 季度**(2026-10-22 per Entry #12 由 10 → 11),终态验收顺延至 **2029-Q2**;②**Stage 0 实施态** —— umbrella **105 task / 99 完成**,计划产物全落地,**唯一卡口 = R10 真人回执**(→ 仍不 archive);③**ADR-CEP 族两轮精简已完成**(契约面零改动,per Entry #20/#21);④**Stage 1 准入前置 S1-1 ~ S1-7 已在 §4.0 排队表可寻址**(逐项 owner → 队列 #2 / #4 / #6)。计数单一真源 = `07 号 §4`;change / 季度单一真源 = `ADR-CEP-00 §2 Decision 3`。
+> **⚠️ planner 阶段同步(2026-10-23,per Entry #22)**:①**队列口径** —— `ADR-CEP-00 §2 Decision 3` 为 **11 个 change / 串行 11 季度**(2026-10-22 per Entry #12 由 10 → 11),终态验收顺延至 **2029-Q2**;②**Stage 0 实施态** —— umbrella **已完成归档**(2026-10-23;tasks **99/99** 全勾,delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;R10 已按 **§9.3** 闭合判据处置,per 台账 Entry #28/#29/#30);③**ADR-CEP 族两轮精简已完成**(契约面零改动,per Entry #20/#21);④**Stage 1 准入前置 S1-1 ~ S1-7 已在 §4.0 排队表可寻址**(逐项 owner → 队列 #2 / #4 / #6)。计数单一真源 = `07 号 §4`;change / 季度单一真源 = `ADR-CEP-00 §2 Decision 3`。
 
 跨 11 季度(2026-Q4 ~ 2029-Q2)推进 Coherence Exploration Platform(CEP)从"协议中立基线"(06 §1.1 v2.1.10 已落地 60-70%)走向"5 协议族(CHI / CXL 2.0+3.0 对称 / TileLink-C / NVLink / UALink;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」**)可插拔 + 实验产物可比较"的完整探索平台,期间守 11 个 change 串行 KPI 排队 + **66 条守门 invariant**(编号位 67,per `ADR-CEP-06/07` + oracle v0.4 B5 命名空间统一)。
 
@@ -212,7 +212,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | 子任务 | 状态 | 范围 | 估时 | 关联 ADR | KPI slot |
 |--------|------|------|------|----------|----------|
 | 10.A 真源 ADR 起草 | ✅ 完成(2026-10-19~21) | **21 份 ADR**(两批新增 08/09/12/13/18 + 11/14/15/16/07A,修订 8 份) | 12 人日(architect) | ADR-CEP-00~18 全族 + NUM | 0(doc-only)|
-| **10.B OpenSpec umbrella** | 🟡 **Proposed / in-progress(2026-10-21 创建;4 件套已落;tasks **105 / 99 完成**;`openspec validate --strict` **rc=1** = 2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**;**R10 未闭合 → 不 archive**)** | `cpptlm-cep-umbrella/` proposal + design + specs + tasks | 5 人日(builder,已消耗) | umbrella improvement | **1**(计 KPI)|
+| **10.B OpenSpec umbrella** | ✅ **完成 + 已归档(2026-10-23)** —— 4 件套已落;tasks **99 / 99** 全勾(原 105 项中 6 项 Stage 1 准入前置已移出本 change 的任务表);**R10 已闭合**(按 `§9.3` 判据:残余风险已登记 + DRI 书面接受,per 台账 Entry #28);**完成归档** —— delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;`openspec validate cep-core-contracts --strict` **rc=0** | `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/` proposal + design + specs + tasks | 5 人日(builder,已消耗) | umbrella improvement | **1**(计 KPI,已释放)|
 | 10.C 契约测试 | ✅ **完成(2026-10-21~22)** | `test/test_cep_canonical_invariants.cc` + `test_cep_dummy_signals.cc` + `test_cep_module_factory_seam.cc` + `test_cep_simulation_mode_lock.cc`(+ 后期补充 `test_cep_schema.cc` / `test_cep_contracts_crosscheck.cc` / `test_cep_tools_contract.cc`) | 10 人日(builder,已消耗) | ADR-CEP-06 + ADR-CEP-07 | 0 |
 | 10.D experimental + tools | ✅ **完成(2026-10-22)** | `tools/render_report.py` + `run_sweep.py` + `ab_compare.py` + `experimental/metrics.schema.json` | 5 人日(builder,已消耗) | ADR-CEP-06 §4 | 0 |
 | 10.E 顶层真源 | ✅ **完成(2026-10-20~21;后增补至 686 行)** | `docs/architecture/07-coherence-exploration-platform.md` 整合 **21 份** ADR(**686 行**) | 5 人日(architect,已消耗) | ADR-CEP-00 §5.2 | 0 |
@@ -224,7 +224,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 - **实施侧**:10.A ~ 10.G **全部已落地**(tasks.md **105 task / 99 完成**)→ **Stage 0 工程量视为已消耗**。
 - **剩余工程量**:**0**。umbrella `tasks.md` 6 项未勾 **全部是 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)→ 按 **§4.0 排队表**归属 Stage 1(队列 #2 / #4 / #6),**不计入 Stage 0**。
-- **唯一卡口(外部依赖,不可估)**:**R10 真人外部评审回执**(per Entry #17 / §8.1 R10)→ Stage 0 **不 archive**。
+- **卡口已闭合(2026-10-23)**:R10 已按 **§9.3** 的闭合判据处置(残余风险已登记 + DRI 书面接受,per 台账 Entry #28);Stage 0 **已完成归档**(per Entry #29)。**残余风险**:契约层结论未经独立第二方(人类)复核 —— 详见 §9.3,不被「闭合」二字掩盖。
 
 ### 4.2 Stage 1: Stub Cache + Tracker + Plane + 3 协议 RN-F Subset(队列 #2 ~ #8,2027-Q1 ~ 2028-Q3)
 
@@ -307,7 +307,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 **三条硬规则**:
 
 1. **状态唯一权威 = OpenSpec change 的 `tasks.md` 勾选 + `proposal.md` 状态行**。**§4.0 的状态列、`phase-10.md` 的子任务表、`.rddf/improvements/*.md` 的 front-matter `状态:` 三者都是它的投影** —— 任一投影与 change 不一致时**以 change 为准**,并立刻回填该投影。
-2. **数量口径只在 ADR 写**(11 change / 11 季度 / 21 份 ADR / 66 条 invariant / 29 冻结成员)。objective / phase / improvement / change **一律引用,不复算**。
+2. **数量口径只在 ADR 写**(11 change / 11 季度 / 21 份 ADR / 66 条 invariant / **30 冻结成员**)。objective / phase / improvement / change **一律引用,不复算**。
 3. **实施笔记 append-only** —— 过期快照不改写,由新记录覆盖(不「改历史」)。
 
 #### 4.7.2 change 状态机
@@ -352,17 +352,50 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **⑤ 有实施 / 评审事件** | 写一份时点快照(版本行注明依据) | `docs/implementation/` |
 | **⑥ 收尾** | **全勾 → 完成归档**(`openspec archive`);**未全勾只为让 slot → 暂存归档**(`--skip-specs` + proposal 顶部 ⏸ 段)。随后按下方**收尾同步清单**逐项改 | change + objective + phase + roadmap |
 
-**收尾同步清单(归档时 7 个落点,一处都不能漏)**:
+**收尾同步清单(归档时 16 个落点,一处都不能漏)**:
+
+> ⚠️ **2026-10-23 补全(critic 第 5 轮 B1 的真根因)**:原清单只有 **7** 个落点,**漏了 6 类** ——
+> `obj §4.1` 各 Stage 展开行 / `obj §8.1` 风险行 / `obj` 头部同步注 / improvement 草稿 front-matter /
+> `AGENTS.md` 全仓 KPI 基线行 / 门禁脚本的路径绑定。按不完整的清单执行 = **必然漏回填**。
+> **清单不全 = 协议缺陷**,不是执行疏忽。
+
+**A. change 自身(3)**
 
 | # | 位置 | 改什么 |
 |---|------|--------|
-| 1 | change 的 `tasks.md` | 勾满(**完成归档**);或保留未勾 + 标注档理由(**暂存归档**) |
-| 1b | change 的 `proposal.md` **顶部** | **仅暂存归档**:加「⏸ 暂存归档」段(日期 + tasks 完成度 + 重建路径)。**完成归档不加**(实现可自证) |
-| 2 | `obj §4.0` 对应行 | 状态列 → ✅(暂存归档另注 `--skip-specs`) |
-| 3 | `obj` §11 | **追加** entry(完成结论 / 暂存理由 + 重建路径) |
-| 4 | `obj` §5.2 | KPI 并发计数回填(以 `openspec list --json` 实测为准) |
-| 5 | `phase-10.md` 对应子任务行 | 状态 → ✅(或 ⏸ 暂存) |
-| 6 | `.rddf/roadmap.md` | Phase Skeleton 的 phase status(仅整 phase 变化时)+ 顶部「最后更新」引用最新 entry 号 |
+| A1 | change 的 `tasks.md` | 勾满(**完成归档**);或把**不属于本 change** 的条目**移交**(去 checkbox + 标注归属队列) |
+| A2 | change 的 `proposal.md` | 状态行(阶段 + task 计数 + 卡口)+ §Acceptance 勾选 + **顶部**「⏸ 暂存归档」段(**仅暂存归档**;完成归档不加) |
+| A3 | change 的 `design.md` | 若有内容被迁出(归档不携带的文本)→ 在此留去处 |
+
+**B. objective(`obj-cep-platform.md`)(7)**
+
+| # | 位置 | 改什么 |
+|---|------|--------|
+| B1 | **§4.0** 排队表对应行 | 状态列 → ✅(暂存归档另注 `--skip-specs`) |
+| B2 | **§4.1 ~ §4.4** 各 Stage 展开行 | 该 Stage 的实施态 / 卡口 / 剩余工程量 |
+| B3 | **§5.2** | KPI 并发计数回填(以 `openspec list --json` 实测为准) |
+| B4 | **§8.1** 风险表相关行 | 等级 / 缓解 / 结论(若该风险正是本次卡口) |
+| B5 | **§9.x** 处置段 | 若本次变更改动了某条判据 → 追加处置段(**不改正文**) |
+| B6 | **头部同步注**(§0 下的 planner 同步块) | Stage 实施态 / 卡口描述 |
+| B7 | **§11** 台账 | **追加** entry(完成结论 / 暂存理由 + 重建路径) |
+
+**C. 路线图 / 计划(3)**
+
+| # | 位置 | 改什么 |
+|---|------|--------|
+| C1 | `phase-10.md` 对应子任务行 | 状态 → ✅(或 ⏸ 暂存)+ 剩余工程量 |
+| C2 | `.rddf/roadmap.md` | Phase Skeleton 的 phase status(仅整 phase 变化时)+ 顶部「最后更新」引用最新 entry 号 + KPI baseline |
+| C3 | `.rddf/improvements/<change>.md` | front-matter `状态:` + 「最后」行 |
+
+**D. 仓级与门禁(3)**
+
+| # | 位置 | 改什么 |
+|---|------|--------|
+| D1 | `AGENTS.md` | 全仓 KPI 基线行(并发数)—— **新会话的第一入口**,错则满盘皆错 |
+| D2 | 门禁脚本的**路径绑定** | 路径随迁时:`cep_freeze_check` 冻结 glob / `cep_docs_sync_check` 扫描 glob + 4 件套路径 / `cep_doc_ref_check` DOCS 列表 + VIRTUAL_PATHS。**门禁自改须逐个 glob 验证匹配数**(glob 写错 → 覆盖度静默回退) |
+| D3 | `docs/implementation/` 快照 | **只新建,不改历史**(append-only);旧证据失效时在 §11 台账补注 |
+
+> **机器兜底**:`cep_docs_sync_check.sh` **第 11 组**断言 ① 活文档区段无「尚未归档」旧口径 ② 冻结成员数(机器真值 == 活文档声明)③ 归档件在 P6 扫描集内。**清单靠人记 = 迟早漏**,故必须有机器断言兜住易漏的三类。
 
 > **同步红线**:改 §4.0 任一行 ⇒ **五处同改** —— 详见 §4.0「排期调整规则」(含单源纪律与双边 grep 自检)。
 
@@ -401,7 +434,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
 > **判据 C-4 的机器化**(检查器 + schema delta + fabric 载体,反向验证 12/12 全绿,见 Entry #9)。
-> ⚠️ **Stage 0 仍不 archive** —— R10(独立性缺口)未闭合,与 M2 无关。
+> ✅ **Stage 0 已完成归档(2026-10-23)** —— M2 已放行 · R10 已按 **§9.3** 闭合判据处置(per 台账 Entry #28)· tasks **99/99** 全勾;delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`(per Entry #29)。
 
 ### 5.3 CEP 启动的前置条件(per AGENTS.md §DOC HYGIENE line 422 新提案门槛)
 
@@ -477,7 +510,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **R6** | 与 phase-9 资源竞争(共用 builder 队列 + 执行容量)| 🟡 中 | §8.2 优先级仲裁规则 |
 | **R7** | 探索平台结论不可信(无对拍验证)| 🟡 中 | **Stage 1 前须定义对拍手段**(gem5 Ruby / ArchForge 参考模型 / RTL benchmark 三选一) |
 | **R8** | ArchForge 单边依赖(准入门把阻塞全转嫁 CppTLM 侧)| 🟡 中 | 需 ArchForge 侧排期承诺;缺承诺时 §9 假设降级为"仅 CppTLM 内部对比" |
-| **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟢 低(**已接受残余风险**,2026-10-23 per **§9.3**) | **闭合判据已改写** = 「就 **Stage 0 交付范围**(契约层 + 契约测试 + 冻结产物)而言,**M1 / M2 / M4 三项补偿机制均有落地证据 + 残余风险已登记**」—— M1 冻结清单 29 成员 + 授权闸 · M2 ArchForge 合入回执 · M4 独立 AI 复审(实证抓出 9 项 + 4 轮 critic 审稿抓 3 BLOCKER)。**M3(对拍基准外置)不适用**:它服务**实现期**对拍,Stage 0 无实现交付物 → 保留为 **Stage 1 的 P0 前置**(见 §10)。**残余风险见 §9.3**(结论性独立缺失,由 DRI 书面接受) |**2026-10-21 Task 8.4 结论**:Stage 0 验收等级**降级为「部分独立」**(partial independence)—— M1 冻结 ✅ / M2 准入门 ✅ **已放行**(2026-10-22,per Entry #10)/ M3 对拍基准 ⏳Stage 1 前定义 / M4 独立 AI 复审 ✅(2 轮,6 BLOCKER 全处置);**不得表述为「完全独立验收」**,且 M4 **不可**替代真人外部评审。**2026-10-23 复核(per Entry #22)**:M2 已消解,**R10 本身仍未闭合** → Stage 0 **仍不 archive**。**2026-10-23 自审(per Entry #23)**:已出具**自审**回执(评审包 §5 **变体 B**,`docs/implementation/2026-10-23-cep-stage0-self-review-receipt.md`)—— 结论「**无阻断项(自审)**」,但**独立性未满足** → **R10 仍未闭合**、Stage 0 **仍不 archive**;解锁条件 = 一份**真正未参与** Stage 0 契约层撰写者的**外部真人**回执(评审包 §5 变体 A) |
+| **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟢 低(**已接受残余风险**,2026-10-23 per **§9.3**) | **闭合判据已改写** = 「就 **Stage 0 交付范围**(契约层 + 契约测试 + 冻结产物)而言,**M1 / M2 / M4 三项补偿机制均有落地证据 + 残余风险已登记**」—— M1 冻结清单 **30 成员** + 授权闸 · M2 ArchForge 合入回执 · M4 独立 AI 复审(实证抓出 9 项 + 4 轮 critic 审稿抓 3 BLOCKER)。**M3(对拍基准外置)不适用**:它服务**实现期**对拍,Stage 0 无实现交付物 → 保留为 **Stage 1 的 P0 前置**(见 §10)。**残余风险见 §9.3**(结论性独立缺失,由 DRI 书面接受)。**Stage 0 已于 2026-10-23 完成归档**(per 台账 Entry #29) |**2026-10-21 Task 8.4 结论**:Stage 0 验收等级**降级为「部分独立」**(partial independence)—— M1 冻结 ✅ / M2 准入门 ✅ **已放行**(2026-10-22,per Entry #10)/ M3 对拍基准 ⏳Stage 1 前定义 / M4 独立 AI 复审 ✅(2 轮,6 BLOCKER 全处置);**不得表述为「完全独立验收」**,且 M4 **不可**替代真人外部评审。**2026-10-23 复核(per Entry #22)**:M2 已消解,**R10 本身仍未闭合** → Stage 0 **仍不 archive**。**2026-10-23 自审(per Entry #23)**:已出具**自审**回执(评审包 §5 **变体 B**,`docs/implementation/2026-10-23-cep-stage0-self-review-receipt.md`)—— 结论「**无阻断项(自审)**」,但**独立性未满足** → **R10 仍未闭合**、Stage 0 **仍不 archive**;解锁条件 = 一份**真正未参与** Stage 0 契约层撰写者的**外部真人**回执(评审包 §5 变体 A) |
 | **R9** | **单 change 体积上升**(2026-10-21 新增)—— `cpptlm-cep-directory-ordering-plane` 8→12 周(ADR-CEP-08 + 09 Decision A 并入)| 🟡 中 | 同平面合并是模型自洽而非将就;若该 change 延期 >2 季度,走 §8.2 `Replan` 拆 `phase-11`(并评估建 feature fragment)|
 
 ### 8.2 Kill / Pivot / Replan 判据(per metis G4 盲点补充)
@@ -551,15 +584,15 @@ Stage 4+ 进入维护态后,objective 归档条件:
 >
 > **性质**:这是**治理判据**的修订,**不是**对独立性缺口的否认 —— 缺口由「⛔ 阻塞」转为「🟢 已接受的残余风险」。
 
-**闭合判据(新)**:R10 闭合 ⇔ 就 **Stage 0 的交付范围**(契约层 + 契约测试 + 冻结产物)**而言**,下列全部成立:
+**闭合判据(新)**:R10 闭合 ⇔ 就 **Stage 0 的交付范围**(契约层 + 契约测试 + 冻结产物)**而言**,下列 **①~④ 全部成立**;**⑤ 是「不适用」项**(单列,不参与判据):
 
 | # | 条件 | 证据 | 状态 |
 |---|------|------|:---:|
-| ① | **M1 产物冻结先于解读**已落地 | 冻结清单 **29 成员** + SHA-256 + 授权闸(`--update --authorized-by "Entry #N"`)+ provenance 自检 | ✅ |
+| ① | **M1 产物冻结先于解读**已落地 | 冻结清单 **30 成员**(2026-10-23 起 = 29 + 归档后的 main spec)+ SHA-256 + 授权闸(`--update --authorized-by "Entry #N"`)+ provenance 自检 | ✅ |
 | ② | **M2 跨仓准入门**已放行 | ArchForge 侧 coherence 接口**规约文档**已合入(`6020f42` + `8290b4c` + `ac956b8`);准入门措辞修订 per `ADR-CEP-00 §8` | ✅ |
 | ③ | **M4 独立 AI 复审**已产出**实质发现**(非走过场) | 2026-10-21 Oracle 独立复审抓出 **9 项**(作者 4 轮自审全漏);2026-10-23 载体分工协议经 **4 轮**对抗审稿(REJECT → APPROVE),抓出 **3 个 BLOCKER**(全闭) | ✅ |
 | ④ | **残余风险已登记并由 DRI 书面接受** | 本节 + 台账 **Entry #28** | ✅ |
-| ⑤ | **M3 对拍基准外置** | 服务**实现期**对拍(Stage 1+);Stage 0 **无实现交付物** → **不适用**,保留为 **Stage 1 的 P0 前置**(见 §10) | ⏳ 不阻塞 |
+| ⑤ | **M3 对拍基准外置**(**不适用项,不参与上述判据**) | 服务**实现期**对拍(Stage 1+);Stage 0 **无实现交付物** → 保留为 **Stage 1 的 P0 前置**(见 §10) | ⏳ 不适用 |
 
 **残余风险登记(不被「闭合」二字掩盖)**:
 
@@ -2302,6 +2335,82 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 ```
 
 **关联**: Entry #27(批 4 冻结面修订)/ #28(R10 闭合 + 移交)· `ADR-CEP-00 §2 Decision 3`· `obj §4.0`(队列真源)/ `§4.7.3`(收尾 7 落点)/ `§9.3`(R10 判据)
+
+### Entry #30 — 2026-10-23 [scope-change]
+
+**主题**: **critic 第 5 轮 REJECT 的 4 BLOCKER + 8 SHOULD_FIX 全修**;并**补全 §4.7.3 收尾同步清单**(7 → 16 落点)
+
+> **本条即冻结面授权依据**(`cep_freeze_check.sh --update --authorized-by "Entry #30"`)。
+
+**① 为什么会有这轮 REJECT —— 根因不是执行疏忽,是协议缺陷**
+
+critic 判 REJECT 的 B1 = 「归档后状态投影只回填了 §4.7.3 清单里的 3/7 落点」。追下去:**§4.7.3 的清单本身只有 7 项,漏了 6 类**(§4.1 各 Stage 展开行 / §8.1 风险行 / 头部同步注 / improvement front-matter / AGENTS.md 全仓 KPI 基线 / 门禁脚本路径绑定)。**按不完整的清单执行,必然漏回填** → 本轮把清单补到 **16 个落点**并分 A/B/C/D 四组。
+
+**② B1 — 归档后状态投影全量回填(逐条)**
+
+| 落点 | 修正前 | 修正后 |
+|------|--------|--------|
+| `obj` 头部同步注 | 「唯一卡口 = R10 真人回执(→ 仍不 archive)」 | 「umbrella **已完成归档**(tasks 99/99,R10 已按 §9.3 闭合)」 |
+| `obj §4.1` 10.B 行 | 🟡 Proposed / in-progress | ✅ 完成 + 已归档 |
+| `obj §4.1` 小结 | 「唯一卡口 R10 真人回执 → 不 archive」 | 卡口已闭合 + 残余风险指向 §9.3 |
+| `obj §5.2` M2 框 | 「⚠️ Stage 0 仍不 archive」 | 「✅ Stage 0 已完成归档」 |
+| `obj §8.1` R10 行 | 同格并存互斥结论(S5) | 清理为单一结论 + 指向 §9.3 |
+| `phase-10.md` 卡口行 | 「R10 真人外部评审回执 → 不 archive」 | 卡口已闭合 + 已归档 |
+| `improvement` front-matter + 「最后」行 | 🟡 Proposed / in-progress / 「R10 真人回执待达」 | ✅ 已完成并归档 + 下一个 = 队列 #2 |
+| 归档 `proposal.md` / `tasks.md` 状态行 | 🟡 Proposed / in-progress | ✅ archived |
+
+> **§11 台账内的历史表述不动**(append-only):那里的「不 archive / 未闭合」是**当时**的合法历史记录;**活文档区段**(§11 之前)必须与 §4.0 一致 —— 已加机器断言(见 ⑤)。
+
+**③ B2 — 冻结成员数 29 → 30 全量回填(机器真值 = manifest)**
+
+`obj §4.7.1` 规则 2 · `obj §9.3` ① · `docs/ONBOARDING.md` · `scripts/README.md` · `.rddf/improvements/cpptlm-cep-umbrella.md` · **冻结件 `docs/adr/ADR-CEP-NUMBER-MAP.md`**(其增补块自述「29 成员」)· 归档 `tasks.md` 的 M1 产物数。
+
+> **30 = 29 + 归档后的 main spec**(`openspec/specs/cep-core-contracts/spec.md`)—— 归档后**系统契约**落在 main spec,不冻结它 = M1 失效。
+
+**④ B3 / B4 / S1~S8 — 逐条**
+
+| # | 问题 | 修法 |
+|---|------|------|
+| **B3** | P6 扫描 glob `archive/*/cpptlm-cep-umbrella/**/*.md` **匹配 0 文件**(归档目录名带**日期前缀**)→ umbrella 4 件套脱离扫描范围 = 守门覆盖度**静默回退** | 改为 `archive/*cpptlm-cep-umbrella/**/*.md`(实测命中 **4**);并加机器断言(见 ⑤) |
+| **B4** | `openspec validate cpptlm-cep-umbrella --strict` 在归档后 **rc=1**(`Unknown item`),却被活文档与台账当作 rc=0 的证据 | 活文档改指 `openspec validate cep-core-contracts --strict`(rc=0 / is valid);台账 Entry #27/#28/#29 正文**不改写**(append-only),由本条覆盖声明 |
+| **S1** | 冻结 glob `openspec/changes/**/specs/cep-core-contracts/spec.md` 的 `**` 可跨 0 层 → 未来任何 change 复用该 capability 名即被误报「新增未登记的冻结产物」(**前向陷阱**) | 收窄为 `openspec/changes/archive/*cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md` —— 只匹配**已归档的** umbrella |
+| **S2** | 归档 `tasks.md` 的 S1-4 说「`fabric.{schema.json,json}` 再纳 M1 冻结集」,但 `fabric.schema.json` **早已**在冻结集内 | 加口径澄清:本条实际待纳的是 `fabric.json`(**实例数据**,不冻结),不是 schema |
+| **S3** | 归档 `proposal.md` / `tasks.md` 内的验收结论仍写「rc=1 … 批 4 暂缓」 | 更新为「批 4 已闭合」+ 归档后的有效命令 |
+| **S4** | §9.3「下列**全部成立**」含一个**不适用**项(⑤ M3) | 判据改为「**①~④ 全部成立**」,⑤ 单列为「不适用项,不参与判据」 |
+| **S5** | §8.1 R10 行同一单元格内并存互斥结论 | 清理为单一结论 + 指向 §9.3 + 已归档事实 |
+| **S6** | 自审回执以 `grep -c "^- \[ \]"` = **6** 作证据,移交后实测 **0** | **不改回执**(append-only),由本条声明:该证据**随 Entry #28 的移交而失效**,复现得 0 属预期,**不是**「丢了 6 项」 |
+| **S7** | 注释把归档区全扫的假阳性归因为「92 处 P6 假阳性 / 22 个历史归档 change」—— 实测**归因错误**(P6 与 P0.5 混杂、条数随口径漂移) | 注释**不写死条数**,只写**决策**(只扫 umbrella 自己的归档目录 = 保持归档前覆盖度)与**理由**;归因更正见本条 |
+| **S8** | 6 项移交后**无任何机器闸**保证队列 #2/#4/#6 承接 | 归属已写进 §4.0 排队表的「承接的 Stage 1 准入前置」列(人工可见);**机器兜底**见 ⑤ 的 ①②(状态投影一致性) |
+
+**⑤ 机器兜底 —— 新增 `cep_docs_sync_check.sh` 第 11 组(3 条断言)**
+
+| 断言 | 防的是 |
+|------|--------|
+| ① 活文档区段(§11 之前)无「umbrella 尚未归档」旧口径 | B1 重演(§4.0 说已归档、§4.1 说未归档)**且无机器闸** |
+| ② 冻结成员数:manifest 真值 == 活文档声明 | B2 重演(29 vs 30 分裂) |
+| ③ 归档件在 P6 扫描集内(glob 命中数 ≥ 4) | B3 重演(glob 写错 → 覆盖度静默回退) |
+
+> **鉴别力实测**:人为向 `phase-10.md` 注入一行旧口径 → 第 11 组**立即报红**(rc=1)并指出文件;还原后恢复绿。**断言不是摆设**。
+
+**⑥ 覆盖声明(append-only 纪律)**
+
+> | 旧描述 | 本条修正 |
+> |---|---|
+> | Entry #29 ③ 的「92 处 P6 假阳性 / 22 个历史归档 change」 | **归因错误**,条数随口径漂移 → 不引用具体数字;以本条 ④ 的 S7 为准 |
+> | Entry #27 ⑤ / #28 ⑥ / #29 ①⑦ 的 `openspec validate cpptlm-cep-umbrella --strict` == 0 | 该命令对**已归档** change 返回 rc=1;**现行为** `openspec validate cep-core-contracts --strict` rc=0 |
+> | §4.7.3「收尾同步清单 7 个落点」 | **补全为 16 个落点**(A/B/C/D 四组),见 ① |
+
+**⑦ 验收**
+
+```
+5 个 cep_* --strict == 0(含新增第 11 组)· docs_sync_check --strict == 0 · markdown_link_check == 0
+openspec validate --changes --strict == 0 · openspec validate cep-core-contracts --strict == 0
+ctest 96/96 · [cep] 76 case / 1284 assertion
+冻结面 30 成员 diff == 0(--update --authorized-by "Entry #30" 授权闸)
+新断言鉴别力:注入旧口径 → rc=1;还原 → rc=0
+```
+
+**关联**: Entry #27(批 4 冻结面修订)/ #28(R10 闭合 + 移交)/ #29(归档 + 路径迁移)· `ADR-CEP-00 §2 Decision 3`· `obj §4.0` / `§4.7.3` / `§9.3`
 
 ---
 

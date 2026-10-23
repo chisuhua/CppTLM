@@ -31,7 +31,7 @@ created: 2026-10-20
 
 # cpptlm-cep-umbrella: Coherence Exploration Platform 顶层治理与 umbrella 启动
 
-> **状态**: 🟡 **Proposed / in-progress**(2026-10-21 创建)—— planner 阶段 P1 三项完成(Stage 重排 + DoD 7 分解 + change 清单更新)→ builder 起草完成:`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/` **4 件套已落**,tasks **105 / 99 完成**;`openspec validate --strict` **rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**);KPI baseline **0/3 → 1/3**;**R10 真人外部评审未闭合 → Stage 0 不 archive**。**2026-10-23 口径同步**:per `obj-cep-platform` Entry #22(批 1)—— 21 份 ADR / 11 change / 11 季度 / 66 实际 invariant 统一,Stage 1 准入前置 S1-1 ~ S1-7 已在 `obj §4.0` 排队表可寻址(逐项 owner → 队列 #2 / #4 / #6)
+> **状态**: ✅ **已完成并归档**(2026-10-23)—— planner 阶段 P1 三项完成(Stage 重排 + DoD 7 分解 + change 清单更新)→ builder 起草完成:`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/` **4 件套已落并归档**,tasks **99 / 99** 全勾;`openspec validate --strict` **rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**);KPI baseline **0/3 → 1/3**;**R10 真人外部评审未闭合 → Stage 0 不 archive**。**2026-10-23 口径同步**:per `obj-cep-platform` Entry #22(批 1)—— 21 份 ADR / 11 change / 11 季度 / 66 实际 invariant 统一,Stage 1 准入前置 S1-1 ~ S1-7 已在 `obj §4.0` 排队表可寻址(逐项 owner → 队列 #2 / #4 / #6)
 > **载体定位**:本文是 **5 段规划输入**(为什么做);**执行契约**在 `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/`(做什么/怎么验),**排队与状态**在 `obj-cep-platform §4.0`,**载体分工与状态更新协议**在 `obj-cep-platform §4.7`。
 > **关联路线图**: [`phase-10`](../roadmap/phases/phase-10.md)(in-progress)+ [`objective-cep-platform`](../roadmap/objectives/obj-cep-platform.md)(P1 active)
 > **关联真源 1**:
@@ -124,7 +124,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | `tools/ab_compare.py` | ~150 | A/B 对比 → `delta_metrics.json` + CDF overlay |
 | `scripts/test/cep_docs_sync_check.sh` | ~650 | 真源章节号机器检查(覆盖 **21 份** ADR,per `ADR-CEP-00A §5.1`)+ invariant 计数单一真源校验(**区分「提及」与「定义」**)+ P 编号口径校验(per `ADR-CEP-16 IC1`)+ **第 10 组「传输层 `CATEGORY_*` 分层纪律」**(per Entry #11)|
 | `scripts/test/cep_doc_ref_check.sh` | ~400 | 节号引用可达性 + 语义断言 + 负向断言(per Entry #11)|
-| `scripts/test/cep_freeze_check.sh` | ~200 | M1 冻结面 29 成员授权闸(`--update --authorized-by`)|
+| `scripts/test/cep_freeze_check.sh` | ~200 | M1 冻结面 30 成员授权闸(`--update --authorized-by`)|
 | `scripts/test/cep_archforge_alignment_check.sh` | ~200 | 跨仓锚点守门(33 锚点)|
 | `scripts/test/cep_decl_alignment_check.sh` + `cep_decl_reverse_verify.sh` | ~300 | 声明 ↔ schema 双向映射(判据 C-4,per Entry #9)|
 | `experimental/.gitkeep` + `experimental/metrics.schema.json` | ~60 | 实验目录约定 + schema |
@@ -320,5 +320,5 @@ canonical 10 条流 + **CEN-Ib1~11**(11 条,per `ADR-CEP-02`;`CEN-Ib11` 为 2026
 ---
 
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + Entry #22 批 1)
-**最后**: Stage 0 实施完成(105 / 99)· **R10 真人回执待达** → 闭合后方可 archive
+**最后**: Stage 0 实施完成并**已归档**(2026-10-23,tasks 99/99)· R10 已按 `obj §9.3` 闭合判据处置(残余风险已登记)· **下一个 change = 队列 #2 `cpptlm-cep-poc-spike`**
 **作者**: CppTLM build agent(planner mode)

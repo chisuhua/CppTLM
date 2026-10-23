@@ -1,6 +1,6 @@
 # Tasks — cpptlm-cep-umbrella v1.0(Stage 0,TDD 5-step)
 
-> **状态**: 🟡 **Proposed / in-progress**(2026-10-23)—— 跨仓准入门(M2)**已放行**(per `ADR-CEP-00 §8` + 台账 Entry #9/#10);**R10 已闭合**(按 `obj-cep-platform §9.3` 判据:残余风险已登记 + DRI 书面接受,per 台账 Entry #28);**tasks 99 / 99 完成**(2026-10-23 实测)—— 原 105 项中 **6 项 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)已**移出本 change 的任务表**(条目与判据保留,归属见 `obj §4.0` 排队表:队列 #2 / #4 / #6)
+> **状态**: ✅ **archived(2026-10-23)** —— 跨仓准入门(M2)**已放行**(per `ADR-CEP-00 §8` + 台账 Entry #9/#10);**R10 已闭合**(按 `obj-cep-platform §9.3` 判据:残余风险已登记 + DRI 书面接受,per 台账 Entry #28);**tasks 99 / 99 完成**(2026-10-23 实测)—— 原 105 项中 **6 项 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)已**移出本 change 的任务表**(条目与判据保留,归属见 `obj §4.0` 排队表:队列 #2 / #4 / #6)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-core-contracts/spec.md`](specs/cep-core-contracts/spec.md)
 > **上游**: `phase-10.md` Stage 0 子任务 10.B~10.G + `objective-cep-platform §4.1`(Stage 0 展开)/ **§4.0 排队总表**(队列 #1 = 本 change)/ **§4.7 载体分工与状态更新协议**(状态真源 = 本文件勾选)
 > **估时**: **46 人日**(Stage 0 逐行合计,per `obj-cep-platform` Entry #22 重算;原「28 剩余 / 13 已消耗」与表内逐行值不同步)—— **已全部落地**;**剩余 = 0**(R10 已按 `obj §9.3` 闭合,2026-10-23)
@@ -410,7 +410,7 @@
 - ⏭(移交) **S1-1**:`ADR-CEP-09` 的通道依赖图顶点按 **`(协议实例, network, vc_id)`** 建立 —— **在此之前不得用其无环判据放行任何协议实例**(两张网共享 vc_id 值域 0-3,顶点不带 network ⇒ 跨网依赖边被合并 ⇒ 可能给错误 verdict)
 - ⏭(移交) **S1-2**:N-1 / N-2 的**实现侧复核** —— 首个 `implemented` 实例装配后复核 per-network 嵌套形态
 - ⏭(移交) **S1-3**:**SLICC 式「协议本地 vnet + 装配期绑定」**备选的重评 —— 触发条件:出现**第 3 张网**或**第 3 个协议实例**(`ADR-CEP-12 §8.4` 已登记,别让它无声死掉)
-- ⏭(移交) **S1-4**:`include/tlm/cep/fabric.{schema.json,json}` 在首个 `implemented` 实例跑过后**再纳 M1 冻结集**(零实例新产物不诞生即冻结)
+- ⏭(移交) **S1-4**:`include/tlm/cep/fabric.{schema.json,json}` 在首个 `implemented` 实例跑过后**再纳 M1 冻结集**(零实例新产物不诞生即冻结)—— ⚠️ **口径澄清(2026-10-23)**:其中 `fabric.schema.json`(**类型描述** = 契约)**早已在冻结集内**;本条实际待纳的是 `fabric.json`(**实例数据** = 派生副本,权威在 ArchForge → **不冻结**)。「再纳」指**实例数据**那一侧,不是 schema
 - ⏭(移交) **S1-5**:**adapter 消息类 → `CATEGORY_*` 的显式映射表(非恒等)** —— 6 类一致性消息类落在 Coherence Interface 层,`CATEGORY_*` 保持**链路层 3 类**不变;映射表由 adapter 承担。**验收**:映射表存在且经 contract test 断言(per `ADR-CEP-12 §8.3` IC2 ③ 的分层纪律)
 
 ## Stage 1 准入前置(2026-10-22 A4 批 2 引入的限定债)
@@ -472,10 +472,10 @@
 | `cep_docs_sync_check.sh` PASS | Task 7.3 | ✅ rc=0(10 组;21 份 ADR) |
 | 23 ABI 0 diff + 4 frozen headers 0 diff | Task 5.2 / 8.2 | ✅ 均为空 |
 | 既有全量 0 回归 | Task 1.2 / 4.2 / 5.2 / 6.2 / 8.2 | ✅ ctest 96/96 |
-| `openspec validate --strict` PASS | Task 8.2 | ⚠️ **rc=1**(2 预存 WARNING,per Entry #12 ⑦)—— `spec.md` = 冻结面成员 → 不修,留 **批 4** |
+| `openspec validate --strict` PASS | Task 8.2 | ✅ **批 4 已闭合(2026-10-23)** —— 2 条预存 WARNING 消除;归档后的有效命令 = `openspec validate cep-core-contracts --strict`(rc=0) |
 | 文档同步 | Task 2.1 / 2.2 / 8.3 | ✅ |
 | §9.2 三项角色已指定 | Task 8.4 | ✅ 2026-10-21 |
-| M1 产物冻结(**29** 产物 hash + 机器校验) | Task 8.4 Step 3 | ✅ 已完成(per Entry #9 起 29 成员) |
+| M1 产物冻结(hash + 机器校验) | Task 8.4 Step 3 | ✅ 已完成(per Entry #9 起;**2026-10-23 归档后为 30 成员**,含归档后的 main spec) |
 | M4 独立 AI 复审(2 轮 / 6 BLOCKER 全处置) | Task 8.4 Step 2 | ✅ 已完成 |
 | M2 跨仓准入门 | Task 8.4 Step 4 | ✅ **已放行 2026-10-22**(Entry #9/#10) |
 | R10 登记为「部分独立」 | Task 8.4 Step 5 | ✅ 已登记 → **2026-10-23 已闭合**(按 `obj §9.3` 判据,per 台账 Entry #28);残余风险已登记并由 DRI 书面接受 |

@@ -25,7 +25,7 @@
 |------|------|------|
 | `cep_docs_sync_check.sh` | CEP 契约面同步检查（21 份 ADR 锚点 + invariant 计数单一真源 + P 编号口径 + 传输层 `CATEGORY_*` 分层纪律），共 **10 组** | ✅ 生效 |
 | `cep_doc_ref_check.sh` | 对外文档引用可达性（节号引用目标节存在 + 语义断言 + 负向断言 + 跨仓 `path:line` 锚点） | ✅ 生效（ctest 注册 `--strict`） |
-| `cep_freeze_check.sh` | M1 冻结面 **29 成员**授权闸（`--update --authorized-by "Entry #N"` + 两步 commit） | ✅ 生效 |
+| `cep_freeze_check.sh` | M1 冻结面 **30 成员**授权闸（`--update --authorized-by "Entry #N"` + 两步 commit） | ✅ 生效 |
 | `cep_archforge_alignment_check.sh` | 跨仓（ArchForge）对齐锚点守门，33 锚点 | ✅ 生效 |
 | `cep_decl_alignment_check.sh` | 协议实例声明 ↔ schema 双向映射（判据 C-4） | ✅ 生效 |
 | `cep_decl_reverse_verify.sh` | 上者的**反向验证**（防自证） | ✅ 生效 |

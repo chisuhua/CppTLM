@@ -1,6 +1,6 @@
 # cpptlm-cep-umbrella: Coherence Exploration Platform(CEP)核心契约与实验床骨架
 
-> **状态**: 🟡 **Proposed / in-progress** —— Stage 0 umbrella(tasks **99 / 99** 全勾;原 105 项中 6 项 Stage 1 准入前置已移出本 change 的任务表);**跨仓准入门(M2)已放行**(2026-10-22,per `ADR-CEP-00 §8` + 台账 Entry #9/#10);**R10 已闭合**(2026-10-23,按 `obj-cep-platform §9.3` 判据:残余风险已登记 + DRI 书面接受,per 台账 Entry #28)
+> **状态**: ✅ **archived(2026-10-23)** —— Stage 0 umbrella(tasks **99 / 99** 全勾;原 105 项中 6 项 Stage 1 准入前置已移出本 change 的任务表);**跨仓准入门(M2)已放行**(2026-10-22,per `ADR-CEP-00 §8` + 台账 Entry #9/#10);**R10 已闭合**(2026-10-23,按 `obj-cep-platform §9.3` 判据:残余风险已登记 + DRI 书面接受,per 台账 Entry #28)
 > **作者**: CppTLM Team(builder mode)
 > **版本**: v1.1(2026-10-22 · M2 放行)
 > **载体定位**:本 change = **执行真源**(做什么 / 怎么验 / 做到哪);**上游规划输入** = `.rddf/improvements/cpptlm-cep-umbrella.md`;**排队与状态** = `obj-cep-platform §4.0`(队列 #1);**载体分工与状态更新协议** = `obj-cep-platform §4.7`(状态真源 = 本 change 的 `tasks.md` 勾选)
@@ -163,7 +163,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 - [x] **23 ABI 签名 0 变更**(`git diff HEAD -- include/abi/` 为空,per `ADR-DGPU-08`)—— **实测空** ✅
 - [x] **4 frozen headers 0 diff**(per `ADR-DGPU-08` / `ADR-DGPU-09`)—— **实测空** ✅
 - [x] 既有全量测试 **0 回归**(`ctest --test-dir build` 全绿)—— **实测 96/96** ✅
-- [ ] `openspec validate cpptlm-cep-umbrella --strict` PASS —— ⚠️ **实测 rc=1**(2 条预存 WARNING:`spec.md` 顶部文本不被 archive 携带;per Entry #12 ⑦ 实证为**预存不满足**)。`spec.md` = M1 冻结面第 29 成员 → **不修**;修复属 **批 4**(暂缓,per Entry #22)
+- [x] `openspec validate --strict` PASS —— ✅ **批 4 已闭合(2026-10-23)**:2 条预存 WARNING(`spec.md` 顶部文本不被 archive 携带)的根因已消除(头部元信息 + 编号位口径迁至 proposal/design);**归档后**的有效命令 = `openspec validate cep-core-contracts --strict`(rc=0 / is valid)—— `openspec validate cpptlm-cep-umbrella --strict` 对**已归档** change 返回 rc=1(Unknown item),不是回归
 - [x] 文档同步:`docs/implementation/2026-10-21-cep-stage0-contracts.md` + `06-bis` Status Update 段 + `07 号` §11 Gap 映射复核 ✅
 - [x] **`objective-cep-platform §9.2` 三项角色已指定**(验收方 / 结论消费者 / 平台维护方)—— ✅ **2026-10-21 已指定**(形式 gate 解除;实质独立性缺口 = R10 → **2026-10-23 已按 §9.3 闭合判据处置**,残余风险已登记)
 

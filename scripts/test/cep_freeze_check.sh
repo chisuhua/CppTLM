@@ -36,8 +36,11 @@ FROZEN_GLOBS=(
   "tools/render_report.py"
   "tools/run_sweep.py"
   "tools/ab_compare.py"
-  # 2026-10-23(Entry #29):umbrella 已归档 → delta spec 路径随迁;改用 glob 兼容两态
-  "openspec/changes/**/specs/cep-core-contracts/spec.md"
+  # 2026-10-23(Entry #30 修正):umbrella 已归档 → delta spec 路径随迁。
+  # ⚠️ **不得**用 `openspec/changes/**/specs/cep-core-contracts/spec.md`:
+  #    `**` 可跨 0 层 → 未来任何 change 复用本 capability 名即被当作「新增未登记的
+  #    冻结产物」而误报冻结漂移(前向陷阱)。故**只**匹配已归档的 umbrella。
+  "openspec/changes/archive/*cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md"
   # 归档后**系统契约**落在 main spec —— 同样纳入冻结(否则契约面可被静默改写)
   "openspec/specs/cep-core-contracts/spec.md"
 )
