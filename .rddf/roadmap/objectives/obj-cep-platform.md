@@ -2,37 +2,38 @@
 id: objective-cep-platform
 status: active
 created: 2026-10-20
-last_revised: 2026-10-20
+last_revised: 2026-10-23
 review_by: 2027-01-18
 owner: rdd-planner
 priority: P1
 manual_deps:
   - phase-10
-theme: Coherence Exploration Platform(CEP)— 跨 10 季度协议中立一致性互联仿真平台治理
+theme: Coherence Exploration Platform(CEP)— 跨 11 季度协议中立一致性互联仿真平台治理
 kind: objective
 phase_refs:
   - phase-10
 ---
 
-# objective-cep-platform: CEP 跨 10 季度治理叙事
+# objective-cep-platform: CEP 跨 11 季度治理叙事
 
 > **写入权**: rdd-planner(per `rdd-planner/SKILL.md:156` + ADR-0028 + ADR-0054 D5 唯一写入方)
 > **schema**: `_lib/schemas/objective_schema.json` v1(9 必填字段齐;`kind` / `phase_refs` 为扩展字段)
 > **关联**: `.rddf/roadmap/phases/phase-10.md`(CEP 实施 phase)+ `.rddf/improvements/cpptlm-cep-umbrella.md`(5-segment 草稿)
-> **关联真源**: 10 份 ADR v0.6 `docs/adr/ADR-CEP-{00,00A,01,02,03,04,05,06,07} + NUMBER-MAP.md`
-> **关联变更**: `cpptlm-cep-umbrella`(Stage 0)+ Stage 1~3 9 个串行 change(2026-Q4 ~ 2029-Q1)
+> **关联真源**: **21 份** ADR `docs/adr/ADR-CEP-*.md`(per `ADR-CEP-NUMBER-MAP §2 Decision 1`;基座 00/00A/01~07 + NUMBER-MAP,实例/排序/版本/契约/演进 08/09/11~18/07A)
+> **关联变更**: `cpptlm-cep-umbrella`(Stage 0)+ Stage 1~3 **10** 个串行 change(2026-Q4 ~ **2029-Q2**)
 
 ---
 
 ## §0 Goal
 
 > **⚠️ architect 阶段同步(2026-10-21,两批)**:invariant 计数已同步为 **67 编号位 / 66 实际 / 15 组**(第一批新增 `ADR-CEP-08`/`09`/`12`/`13` + `ADR-CEP-07-IC7` + `ADR-CEP-06-IC5`;第二批新增 `ADR-CEP-11`/`14`/`15`/`16`/`07A`)。**阶段重排、DoD 7 分解(10 → 15 组)、change 清单**等非机械部分已由 planner 阶段完成。计数单一真源 = `docs/architecture/07-coherence-exploration-platform.md §4`。
+> **⚠️ planner 阶段同步(2026-10-23,per Entry #22)**:①**队列口径** —— `ADR-CEP-00 §2 Decision 3` 为 **11 个 change / 串行 11 季度**(2026-10-22 per Entry #12 由 10 → 11),终态验收顺延至 **2029-Q2**;②**Stage 0 实施态** —— umbrella **105 task / 99 完成**,计划产物全落地,**唯一卡口 = R10 真人回执**(→ 仍不 archive);③**ADR-CEP 族两轮精简已完成**(契约面零改动,per Entry #20/#21);④**Stage 1 准入前置 S1-1 ~ S1-7 已在 §4.0 排队表可寻址**(逐项 owner → 队列 #2 / #4 / #6)。计数单一真源 = `07 号 §4`;change / 季度单一真源 = `ADR-CEP-00 §2 Decision 3`。
 
-跨 10 季度(2026-Q4 ~ 2029-Q1)推进 Coherence Exploration Platform(CEP)从"协议中立基线"(06 §1.1 v2.1.10 已落地 60-70%)走向"5 协议族(CHI / CXL 2.0+3.0 对称 / TileLink-C / NVLink / UALink)可插拔 + 实验产物可比较"的完整探索平台,期间守 10 个 change 串行 KPI 排队 + **66 条守门 invariant**(编号位 67,per `ADR-CEP-06/07` + oracle v0.4 B5 命名空间统一)。
+跨 11 季度(2026-Q4 ~ 2029-Q2)推进 Coherence Exploration Platform(CEP)从"协议中立基线"(06 §1.1 v2.1.10 已落地 60-70%)走向"5 协议族(CHI / CXL 2.0+3.0 对称 / TileLink-C / NVLink / UALink;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」**)可插拔 + 实验产物可比较"的完整探索平台,期间守 11 个 change 串行 KPI 排队 + **66 条守门 invariant**(编号位 67,per `ADR-CEP-06/07` + oracle v0.4 B5 命名空间统一)。
 
-**完成定义 (DoD, 2029-Q1 终)**:
+**完成定义 (DoD, 2029-Q2 终)**:
 
-1. ✅ 10 个 OpenSpec change 全部 archived with sync
+1. ✅ **11** 个 OpenSpec change 全部 archived with sync
 2. ✅ Stage 0 umbrella change `cpptlm-cep-umbrella` 落地(2026-Q4)
 3. ✅ Stage 1 实施完成(Stub Cache + Sharer Tracker + Collective Plane + 3 协议 RN-F subset)
 4. ✅ Stage 2 实施完成(CXL 对称 DCOH + NVLink SHARP)
@@ -58,14 +59,20 @@ phase_refs:
 | 14 | 06 Evolution Mapping | 3 | `scripts/test/cep_docs_sync_check.sh`(P 编号口径) |
 | 15 | 06-bis Artifact Disposition | 3 | 同上(协议泄漏通用禁令扫描) |
 
-> **验收层级**:本 DoD 是**终态判定**;逐条 assertion 在 `cpptlm-cep-umbrella.md` §Acceptance(Stage 0)与各 change 的 OpenSpec AC 落地。本文件**不重复**逐条 assertion,避免三处复述漂移(per oracle S1 修订)。
+> **落点口径(per Entry #22)**:本表「机器检查落点」= **口径校验**所在位置;**66 条 invariant 的逐条断言统一落 `test/test_cep_canonical_invariants.cc`**(组 6/14/15 另有脚本层口径校验,**不替代**逐条断言)。15 组分解本身**不复述** —— 真源在 `07 号 §4`。
+
 8. ✅ ModuleFactory 集成 0 发明宏形式(per oracle v0.4 B7)
 9. ✅ simulation_mode 单一维度(functional / timing),不引入 network.mode
 10. ✅ **§9 研究问题清单 8 个假设全部有实验结论**(per §9.1)
 11. ✅ §11 决策台账记录所有 KPI 让位决策 + Go 节点地址 + Sprint 复盘
 12. ✅ §8 Kill / Replan 判据未触发(或已按判据处置)
 
-> **验收层级委托**(per oracle S1 修订):本 DoD 是**终态判定**;具体条款的机器验证在 `cpptlm-cep-umbrella.md` §Acceptance(Stage 0)与各 change 的 OpenSpec AC 落地。本文件**不重复**逐条 assertion,避免三处复述漂移。
+> **验收层级委托**(per oracle S1 修订 / 2026-10-23 指针修正):本 DoD 是**终态判定**。
+> - **逐条 assertion 的执行真源** = `openspec/changes/cpptlm-cep-umbrella/proposal.md` §Acceptance(**实测值在此回填**);
+> - **上游规划输入** = `.rddf/improvements/cpptlm-cep-umbrella.md` §Acceptance **A1 ~ A7**(A7 = **前置 gate 汇总**,不是 assertion);
+> - Stage 1~3 各 change 的条款落**各自** OpenSpec change 的 AC。
+>
+> 本文件**不重复**逐条 assertion,避免三处复述漂移。
 
 ---
 
@@ -90,7 +97,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 本 objective 由 planner 于 2026-10-20 **新建**,触发判断依据:
 - `rdd-planner/SKILL.md:150` 决策表:"跨 sprint 目标叙事 + 复盘台账 + deferral rationale → objective"
-- CEP 三项全命中:跨 10 季度叙事 / §11 append-only 台账刚需(KPI 并发 ≤1 + 季度让位可追溯)/ Stage 晋级复盘仪式
+- CEP 三项全命中:跨 11 季度叙事 / §11 append-only 台账刚需(KPI 并发 ≤1 + 季度让位可追溯)/ Stage 晋级复盘仪式
 
 > **说明**:本 objective **不**基于任何"预埋触发条件"文本。`.rddf/roadmap.md` 的 Features / Objectives 占位段由 planner 本回合同步改写,不存在 CEP 之前的历史预埋声明。
 
@@ -121,7 +128,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - ❌ **完整 UsrLinuxEmu driver 集成** — 不在 CEP scope
 - ❌ **IOMMU 完整协议** — Stage 5 范围 reduction 待签发独立 ADR(per `ADR-CEP-00 §3` supersede 表 P5 行 scope reduction 声明)
 - ❌ **Multi-VC 路由器全仲裁** — Stage 0 仅 `vc_id` 字段 0-3 沿用;多 VC 仲裁推迟到 CEP-09(per `ADR-CEP-NUMBER-MAP §2 Decision 1`)
-- ❌ **6 协议平行** — Stage 0~3 串行排队(per `ADR-CEP-00 §2 Decision 3` 10 季度)
+- ❌ **6 协议平行** — Stage 0~3 串行排队(per `ADR-CEP-00 §2 Decision 3` 11 季度)
 
 ---
 
@@ -131,7 +138,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 |------|-----|---------|
 | 归口 + 边界豁免 | `ADR-CEP-00` §2 Decision 1/3/4 | 代码全归 CppTLM;单 DRI;AGENTS.md:423 不触发 |
 | 6 层 + 完成域 | `ADR-CEP-01` §2 Decision 1/2 | Fabric Collective 旁路平面;requester-scoped vs group-scoped |
-| canonical 10 流 | `ADR-CEP-02` §2 | 10 条流 + CEN-Ib1~10 不变量 |
+| canonical 10 流 | `ADR-CEP-02` §2 | 10 条流 + **CEN-Ib1~11** 不变量(11 条,per Entry #19 §3 交叉引用) |
 | SHARP 内部 | `ADR-CEP-03` §2 + §3 | CollectivePlaneIf;R1-R5 防误分类;CEP-13 non-cacheable 语义 |
 | D-5 重构 | `ADR-CEP-04` §2 + §3 | caps descriptor 替代 bool;LookupResult 枚举;snoop_begin/fold |
 | Stub Cache | `ADR-CEP-05` §2 + §3 | RN 投影 6 接口;折叠映射表;10 条契约测试 |
@@ -140,41 +147,104 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | 编号 + 真源锚点 | `ADR-CEP-NUMBER-MAP` §2 + §3 | CEP-08~16 预分配;INV-CEP-NUM-IC1~3 |
 | 真源章节映射 | `ADR-CEP-00A` §3 + §4 | 章节行号实证;14 条伪引清单 |
 
+> **完整 21 份 ADR 清单**: `docs/adr/ADR-CEP-*.md`(per `ADR-CEP-NUMBER-MAP §2 Decision 1`)。本表仅列**基座**决策依据;实例 / 排序 / 版本 / 契约 / 演进映射类(08/09/11~16/17/18/07A)见 `phase-10.md` §真源 3 与 `07 号 §4`。
+
 ---
 
 ## §4 Phases & Changes
 
 > **术语约定**(per metis G2-A 歧义消解):本文件用 **Stage 0/1/2/3** 指 CEP 内部实施段;**roadmap phase-10** 指路线图 phase;**dGPU Phase 2/3**(phase-9)与 **PCIe EP Phase 1-8** 是其它命名空间,勿混。
+>
+> **🔑 两条真源分工(per Entry #23 —— 排队是 change 维度的治理,须由路线图承载实施路径)**
+>
+> | 维度 | 唯一真源 | 本文件的角色 |
+> |------|---------|-------------|
+> | **治理口径**(change 总数 / 串行规则 / 并发上限 / 变更名) | `ADR-CEP-00 §2 Decision 3` | **只引用,不重算** |
+> | **实施路径**(顺序 / 季度 / 状态 / 准入前置归属) | **本文件 §4.0 排队总表** | **权威承载** —— 路线图 = 实施路径真相源 |
+>
+> ⚠️ 二者**不是**同一件事:ADR 决定「能排几个、怎么串」,路线图决定「**先做哪个、落在哪个季度、当前什么状态、前置挂在谁身上**」。
+> **任何排期调整只改本文件 §4.0 + §11 台账**;若触及 change 总数 / 串行规则,则须走 ADR 修订(冻结面成员)。
 
-### 4.1 Stage 0: Umbrella 启动(2026-Q4,5 周)
+### 4.0 实施路径总排队表(权威 —— 11 个 change × 1 季度,串行)
+
+> **口径**:每个 change 独占 1 KPI slot、独占 1 个季度(per `ADR-CEP-00 §2 Decision 3`「11 个 change,串行 11 季度」+ §5.4 并发 ≤ 1)。
+> **本表是实施路径的唯一权威视图** —— §4.2 ~ §4.4 是各 Stage 的**细节展开**(估时 / 关联 ADR / 语义),其**顺序号与季度以本表为准**;`phase-10.md` 的依赖图是**示意**,不作排期承诺。
+> **状态口径**:🟡 in-progress(已建、待 archive)· ✅ 完成 · 📋 Planned(未建)· ⏸ 队列位保留(待裁决)。
+> **状态怎么改、改哪几处** ⇒ 见 **§4.7 载体分工与状态更新协议**(本表的状态列是 `tasks.md` 勾选的**投影**,不是第二真源)。
+
+| 顺序 | Change | Stage | 季度 | 状态 | 承接的 Stage 1 准入前置 |
+|------|--------|-------|------|------|----------------------|
+| **1** | `cpptlm-cep-umbrella` | Stage 0 | **2026-Q4** | 🟡 **in-progress**(tasks **105 / 99**;**R10 未闭合 → 不 archive**) | — |
+| **2** | `cpptlm-cep-poc-spike` | Stage 1 | **2027-Q1** | ⏸ **队列位保留** · S2 已实跑 + ctest 回归门 · change 目录未建(per Entry #22) | **S1-1 ~ S1-5** |
+| **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | 📋 Planned | — |
+| **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | 📋 Planned | **S1-7 的 (β) 重评估** |
+| **5** | `cpptlm-cep-collective-plane-base` | Stage 1 | **2027-Q4** | 📋 Planned | — |
+| **6** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q1** | 📋 Planned | **S1-7 的 `perm` 形态 schema 演进** |
+| **7** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2028-Q2** | 📋 Planned | — |
+| **8** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2028-Q3** | 📋 Planned | — |
+| **9** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2028-Q4** | 📋 Planned | — |
+| **10** | `cpptlm-cep-nvlink-sharp` | Stage 2 | **2029-Q1** | 📋 Planned | — |
+| **11** | `cpptlm-cep-ualink-inc` | Stage 3 | **2029-Q2** | 📋 Planned | — |
+
+> **终态**:Stage 0~3 实施完成 = **2029-Q2**(per §4.6);Stage 4+ 进入维护态(per §4.5)。
+> **排期调整规则**:本表任一行的**顺序 / 季度**变化 ⇒ **必须**在 §11 追加台账 entry(kind ∈ `scope-change` / `deferral-rationale`),并**五处同改**(本表是触发源,不算在内):
+> ① §4.2 ~ §4.4 的顺序号 ② **§4.6 终态口径** ③ `phase-10.md` 依赖图 + KPI 预算行 ④ §10「Stage 1~3 远期候选」的顺序指针 ⑤ `.rddf/roadmap.md` Objectives 段的 `Entry` 号引用。
+>
+> **单源纪律(比"同改"更强)**:具体**季度值**只允许出现在 **objective 内**(本表 / §4.6 / 小节标题 / 表头,同一文档内自洽);`phase-10.md` / `.rddf/roadmap.md` / `.rddf/improvements/*.md` **一律只写「见 §4.6」,不复制数值**。台账 §11 entry 内的历史快照**不算副本**(append-only)。
+>
+> **改完自检 = 双边化**(新值 **和** 旧值都要查,只查新值会漏掉「旧数复活」):
+> ```bash
+> # ① 新值:季度值在 objective 之外应零命中(台账 / implementation 快照除外)
+> grep -rn "2029-Q2\|2028-Q4" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
+> # ② 旧值:已被取代的旧终态 / 旧串行数,不应在新文本里复活
+> grep -rn "2029-Q1" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
+> grep -rn "串行 10 季度\|10 个 change" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
+> ```
+> **已知例外(实测 3 处,命中是预期的)**:
+> ① `docs/architecture/07-coherence-exploration-platform.md §8.1`(:551)→ 冻结面成员 = **§11 L6**;
+> ② `docs/adr/ADR-CEP-NUMBER-MAP.md §2`(:118)→ 冻结 ADR = **§11 L2**;
+> ③ `.rddf/drafts/cep-architecture-decision-log.md`(:28)→ architect 阶段**草稿**,**除本条登记外零入向引用**(不参与路线图口径)。
+> ①② 改它需 `--update --authorized-by` + 两步 commit。**除这 3 处外出现新命中 = 旧数复活,必须改回。**
+
+### 4.1 Stage 0: Umbrella 启动(队列 #1 = `cpptlm-cep-umbrella`,2026-Q4)
+
 
 | 子任务 | 状态 | 范围 | 估时 | 关联 ADR | KPI slot |
 |--------|------|------|------|----------|----------|
 | 10.A 真源 ADR 起草 | ✅ 完成(2026-10-19~21) | **21 份 ADR**(两批新增 08/09/12/13/18 + 11/14/15/16/07A,修订 8 份) | 12 人日(architect) | ADR-CEP-00~18 全族 + NUM | 0(doc-only)|
-| **10.B OpenSpec umbrella** | 🟡 **Proposed(2026-10-21 已创建;`openspec validate --strict` PASS;4 件套已落 / 95 task)** | `cpptlm-cep-umbrella/` proposal + design + specs + tasks | 5 人日(builder) | umbrella improvement | **1**(计 KPI)|
-| 10.C 契约测试 | 📋 Planned | `test/test_cep_canonical_invariants.cc` + `test/test_cep_dummy_signals.cc` + `test/test_cep_module_factory_seam.cc` + `test/test_cep_simulation_mode_lock.cc` | 10 人日(builder) | ADR-CEP-06 + ADR-CEP-07 | 0 |
-| 10.D experimental + tools | 📋 Planned | `tools/render_report.py` + `run_sweep.py` + `ab_compare.py` + `metrics.json` schema | 5 人日(builder) | ADR-CEP-06 §4 | 0 |
-| 10.E 顶层真源 | ✅ **完成(2026-10-20~21)** | `docs/architecture/07-coherence-exploration-platform.md` 整合 **21 份** ADR(657 行) | 5 人日(architect,已消耗) | ADR-CEP-00 §5.2 | 0 |
-| 10.F ADR 锚点 lint | 📋 Planned | `scripts/test/cep_docs_sync_check.sh` 机器检查(覆盖 **16 份** ADR) | 6 人日 | ADR-CEP-00A §5.1 | 0 |
-| **10.G capability schema** | 📋 Planned | `include/tlm/cep/protocol_instance.schema.json` + `INV-CEP-12-IC1~3` 断言 | 3 人日 | ADR-CEP-12 §2 + §3 | 0(沿用 10.B)|
+| **10.B OpenSpec umbrella** | 🟡 **Proposed / in-progress(2026-10-21 创建;4 件套已落;tasks **105 / 99 完成**;`openspec validate --strict` **rc=1** = 2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**;**R10 未闭合 → 不 archive**)** | `cpptlm-cep-umbrella/` proposal + design + specs + tasks | 5 人日(builder,已消耗) | umbrella improvement | **1**(计 KPI)|
+| 10.C 契约测试 | ✅ **完成(2026-10-21~22)** | `test/test_cep_canonical_invariants.cc` + `test_cep_dummy_signals.cc` + `test_cep_module_factory_seam.cc` + `test_cep_simulation_mode_lock.cc`(+ 后期补充 `test_cep_schema.cc` / `test_cep_contracts_crosscheck.cc` / `test_cep_tools_contract.cc`) | 10 人日(builder,已消耗) | ADR-CEP-06 + ADR-CEP-07 | 0 |
+| 10.D experimental + tools | ✅ **完成(2026-10-22)** | `tools/render_report.py` + `run_sweep.py` + `ab_compare.py` + `experimental/metrics.schema.json` | 5 人日(builder,已消耗) | ADR-CEP-06 §4 | 0 |
+| 10.E 顶层真源 | ✅ **完成(2026-10-20~21;后增补至 686 行)** | `docs/architecture/07-coherence-exploration-platform.md` 整合 **21 份** ADR(**686 行**) | 5 人日(architect,已消耗) | ADR-CEP-00 §5.2 | 0 |
+| 10.F ADR 锚点 lint | ✅ **完成(2026-10-22;后扩至 **10 组**)** | `scripts/test/cep_docs_sync_check.sh` 机器检查(覆盖 **21 份** ADR;第 10 组 = 传输层 `CATEGORY_*` 分层纪律,per Entry #11) | 6 人日(已消耗) | ADR-CEP-00A §5.1 | 0 |
+| **10.G capability schema** | ✅ **完成(2026-10-22)** | `include/tlm/cep/protocol_instance.schema.json` + `INV-CEP-12-IC1~3` 断言(+ `fabric.schema.json` / `fabric.json`) | 3 人日(已消耗) | ADR-CEP-12 §2 + §3 | 0(沿用 10.B)|
 
-**Stage 0 总估时**:**41 人日**(builder + architect 混合;**已消耗 13 人日** = 10.A 8 + 10.E 5;**剩余 28 人日** = 10.B 5 + 10.C 10 + 10.D 5 + 10.F 6 + 10.G 3 —— per oracle S5 人日口径 + 2026-10-21 architect 阶段修订)
+**Stage 0 估时(2026-10-23 重算,per Entry #22)**:§4.1 表逐行合计 = **46 人日**(10.A 12 + 10.B 5 + 10.C 10 + 10.D 5 + 10.E 5 + 10.F 6 + 10.G 3)。
+> **口径修正**:原「41 人日 / 已消耗 13 / 剩余 28」与表内逐行值**不同步**(10.A 由 8 → 12 人日后未回填算式)→ 本条以表内合计为准。
 
-### 4.2 Stage 1: Stub Cache + Tracker + Plane + 3 协议 RN-F Subset(2026-Q4 ~ 2027-Q2)
+- **实施侧**:10.A ~ 10.G **全部已落地**(tasks.md **105 task / 99 完成**)→ **Stage 0 工程量视为已消耗**。
+- **剩余工程量**:**0**。umbrella `tasks.md` 6 项未勾 **全部是 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)→ 按 **§4.0 排队表**归属 Stage 1(队列 #2 / #4 / #6),**不计入 Stage 0**。
+- **唯一卡口(外部依赖,不可估)**:**R10 真人外部评审回执**(per Entry #17 / §8.1 R10)→ Stage 0 **不 archive**。
 
-**串行约束**:每 change 独占 1 KPI slot,任一时刻仅 1 个 active(per §5.4)。
+### 4.2 Stage 1: Stub Cache + Tracker + Plane + 3 协议 RN-F Subset(队列 #2 ~ #8,2027-Q1 ~ 2028-Q3)
 
-| 顺序 | Change | 季度 | 关联 ADR | 估时 |
-|------|--------|------|----------|------|
-| 1 | **`cpptlm-cep-poc-spike`** ← 2026-10-22 新增(P-1,置首位) | 2026-Q4 | `ADR-CEP-13`(判据 (b) 的**可执行**判定 = Q-3e)+ `ADR-CEP-09`(顶点升级)+ `ADR-CEP-12`(per-network VC) | **3 周**(spike,非实现) |
-| 2 | `cpptlm-cep-stub-cache-core` | 2026-Q4 | ADR-CEP-05 + ADR-CEP-04 stub | 8 周 |
-| 3 | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | 2026-Q4 ~ 2027-Q1 | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周) |
-| 4 | `cpptlm-cep-collective-plane-base` | 2027-Q1 | ADR-CEP-03 + ADR-CEP-01 | 8 周 |
-| 5 | `cpptlm-cep-chi-rnf-subset` | 2027-Q1 ~ 2027-Q2 | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 |
-| 6 | `cpptlm-cep-cxl-nonsymmetric` | 2027-Q2 | ADR-CEP-04 + ADR-CEP-03 | 8 周 |
-| 7 | `cpptlm-cep-tilelink-tree-manager` | 2027-Q2 ~ 2027-Q3 | ADR-CEP-04 + ADR-CEP-08 + ADR-CEP-12 | 8 周 |
+**串行约束**:每 change 独占 1 KPI slot、独占 1 个季度,任一时刻仅 1 个 active(per §5.4)。**顺序 / 季度 / 「承接的 Stage 1 准入前置」归属三者一律以 §4.0 排队总表为准**;本表只承载**估时 + 关联 ADR + 语义**(末列是 §4.0 的同义复述,漂移时以 §4.0 为准)。
 
-**Stage 1 跨度**:2026-Q4 ~ 2027-Q3(**7** 个 change 串行)
+| 顺序 | Change | 关联 ADR | 估时 | 承接的 Stage 1 准入前置 |
+|------|--------|----------|------|----------------------|
+| **2** | **`cpptlm-cep-poc-spike`** ← 2026-10-22 新增(P-1,置首位)· ⏸ **队列位保留 · S2 已实跑并注册 ctest 回归门(per Entry #15/#16)· change 目录未建(per Entry #15 ⑥)· 落地形态待 DRI 裁决(per Entry #22)** | `ADR-CEP-13`(判据 (b) 的**可执行**判定 = Q-3e)+ `ADR-CEP-09`(顶点升级)+ `ADR-CEP-12`(per-network VC) | **3 周**(spike,非实现) | **S1-1 ~ S1-5**(装配期前置,`tasks.md:406-410`) |
+| **3** | `cpptlm-cep-stub-cache-core` | ADR-CEP-05 + ADR-CEP-04 stub | 8 周 | — |
+| **4** | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周) | **S1-7 的 (β) 重评估**(与 `ADR-CEP-08 决策 4` 组合检查器**同批**,per `ADR-CEP-05 §13.1` 排期约束) |
+| **5** | `cpptlm-cep-collective-plane-base` | ADR-CEP-03 + ADR-CEP-01 | 8 周 | — |
+| **6** | `cpptlm-cep-chi-rnf-subset` | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **S1-7 的 `perm` 形态 schema 演进**(`ADR-CEP-12` 为 schema owner;首个真实使用 schema 的协议 change) |
+| **7** | `cpptlm-cep-cxl-nonsymmetric` | ADR-CEP-04 + ADR-CEP-03 | 8 周 | — |
+| **8** | `cpptlm-cep-tilelink-tree-manager` | ADR-CEP-04 + ADR-CEP-08 + ADR-CEP-12 | 8 周 | — |
+
+**Stage 1 跨度**:2027-Q1 ~ 2028-Q3(**7** 个 change × 1 季度,per §4.0)
+
+> **季度口径(per Entry #23 修订)**:原表内「乐观并行估计」季度列**已撤除** —— 它与 §4.0 的串行季度**并存即两个数**,且表内估时逐行合计 55 周 > 1 年,无法自洽。**排期承诺唯一口径 = §4.0 排队总表**(1 change / 1 季度)。本表的「估时」是**工作量参考**,不是排期。
+>
+> **Stage 1 准入前置归属(per Entry #22)**:上表末列把 `tasks.md` 的 **S1-1 ~ S1-5 + S1-7** 七项落到具体 change —— **不新增 change、不新增 KPI slot**。边界:`perm` **维持 4 值锁**(per `ADR-CEP-02 CEN-Ib11`);R-2 落地形态是**新增字段**而非扩枚举;schema 变更属 **Stage 1**,Stage 0 冻结面不动。
 
 > **P-1 增补说明(2026-10-22,per 台账 Entry #12)**:`cpptlm-cep-poc-spike` 是**可丢弃的 spike**
 > (单文件 / 不进 `ModuleFactory` / 不注册 ABI / 无公共 API),**不是**实现 —— 只验证「可组合性 + 契约自洽」。
@@ -182,36 +252,132 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 > A6 是全部协议插件 change 的前置(`perm` 表达力未定)→ 它是唯一能**加速**其余 Stage 1 change 的项。
 > 用例规格:`docs/implementation/2026-10-22-cep-poc-spike-spec.md`。
 > **排队长度 +1,并发不变**(仍守「任一时刻 Proposed ≤ 1」)。
+>
+> **P-1 后续事实登记(2026-10-23,per Entry #22)**:①**S2 已实跑通过**(首次 RUN 证据被 critic 3 BLOCKERS 证伪 → 修正重跑,per Entry #16)→ 实测 `ctest -R cep` **18/18**、`[cep]` **76 case / 1284 assertion**;②**change 目录仍未建**(`openspec/changes/` 下无 poc-spike change 目录)—— 因 R10 未闭合 → umbrella 不 archive → 唯一 KPI slot 不可让渡;③**S1 / S3 未实现**(S1 需 4 值表达力边界 = Stage 1;S3 需 `vc_binding` 真实声明);④**落地形态待 DRI 裁决** —— 保留队列位(保住 11 change 算术),不建 change、不动 ADR。
 
-### 4.3 Stage 2: CXL 对称 + NVLink SHARP(2027-Q3 ~ 2028-Q1)
+### 4.3 Stage 2: CXL 对称 + NVLink SHARP(队列 #9 ~ #10,2028-Q4 ~ 2029-Q1)
 
-| 顺序 | Change | 季度 | 关联 ADR | 估时 |
-|------|--------|------|----------|------|
-| 7 | `cpptlm-cep-cxl-dcoh-symmetric` | 2027-Q3 ~ 2027-Q4 | ADR-CEP-04 §3.5 | 10 周 |
-| 8 | `cpptlm-cep-nvlink-sharp` | 2027-Q4 ~ 2028-Q1 | ADR-CEP-03 + ADR-CEP-01 | 10 周 |
+| 顺序 | Change | 关联 ADR | 估时 |
+|------|--------|----------|------|
+| **9** | `cpptlm-cep-cxl-dcoh-symmetric` | ADR-CEP-04 §3.5 | 10 周 |
+| **10** | `cpptlm-cep-nvlink-sharp` | ADR-CEP-03 + ADR-CEP-01 | 10 周 |
 
-### 4.4 Stage 3: UALink INC(2028-Q1 ~ 2028-Q2)
+### 4.4 Stage 3: UALink INC(队列 #11,2029-Q2)
 
-| 顺序 | Change | 季度 | 关联 ADR | 估时 |
-|------|--------|------|----------|------|
-| 9 | `cpptlm-cep-ualink-inc` | 2028-Q1 ~ 2028-Q2 | ADR-CEP-03 | 10 周 |
+| 顺序 | Change | 关联 ADR | 估时 |
+|------|--------|----------|------|
+| **11** | `cpptlm-cep-ualink-inc` | ADR-CEP-03 | 10 周 |
 
-### 4.5 Stage 4+ 远期(2028-Q2 ~ 2029-Q1)
+### 4.5 Stage 4+ 远期(2029-Q2 起 —— 队列 #11 完成之后)
 
 - `CEP-08` / `CEP-09` / `CEP-12` / `CEP-13` —— ✅ **已起草 v0.1(2026-10-21)**,实现按 §4.2~§4.4 分 Stage 落地
-- `CEP-11` 协议版本锁定(待 architect 起草,Stage 1 前)
-- `CEP-14` Stub 可验证性合同测试(待 architect 起草)
-- `CEP-15` CacheTLM 对齐(待 architect 起草)
-- `CEP-16` 06 §15.4 演进对应(待 architect 起草)
-- `CEP-07A` 06-bis 既有产物处置(待 architect 起草)
+- `CEP-17` 协议族接入 + 组合承诺边界 —— ✅ **已起草**(Ruby-SLICC 族;边界声明 per `ADR-CEP-17` 决策 9)
+- `CEP-11` 协议版本锁定 —— ✅ **已起草**(Stage 1 前签发,承 R2 缓解)
+- `CEP-14` Stub 可验证性合同测试 —— ✅ **已起草**
+- `CEP-15` CacheTLM 对齐 —— ✅ **已起草**
+- `CEP-16` 06 §15.4 演进对应 —— ✅ **已起草**
+- `CEP-07A` 06-bis 既有产物处置 —— ✅ **已起草**
 - `CEP-18` 协议生成路线范围 —— ✅ 已起草 v0.1;**Stage 1~3 不依赖任何生成器**(per `ADR-CEP-18` 决策 1)
+- **完整 21 份清单**: `docs/adr/ADR-CEP-*.md`(per `ADR-CEP-NUMBER-MAP §2 Decision 1`)
 - **维护模式**:Stage 4+ 进入维护态(新协议接入走 add-feature + 单 change,不再串行排队)
 
-### 4.6 终态时间口径(per oracle B6 + metis G2-G 修订)
+### 4.6 终态时间口径(per oracle B6 + metis G2-G 修订 + 2026-10-23 季度算术修正)
 
-- **Stage 0~3 实施完成**:2028-Q2
-- **Stage 4+ 维护期**:2028-Q2 ~ 2029-Q1
-- **objective 终态验收**:2029-Q1(与 §12 review 节奏对齐)
+- **Stage 0~3 实施完成**:**2029-Q2**(队列 #11 = `cpptlm-cep-ualink-inc` 完成;per §4.0)
+- **Stage 4+ 维护期**:**2029-Q2 起**(无固定上界;新协议接入走 add-feature + 单 change)
+- **objective 终态验收**:**2029-Q2**(与实施完成同点;此后转 90 天复审节奏,per §12)
+- **季度口径(per Entry #23 修订)**:**串行 11 季度** —— 2026-Q4 起算,1 change / 1 季度 → 2029-Q2(per `ADR-CEP-00 §2 Decision 3`;2026-10-22 per Entry #12 由 10 → 11)。**§4.2~§4.4 表内「估时」是工作量参考,不是排期**;排期承诺唯一口径 = **§4.0 排队总表**。
+
+---
+
+### 4.7 载体分工与状态更新协议(新会话起点 —— 推进实施只读这一节)
+
+> **为什么单列一节**:CEP 的**一个 change 有 5 类载体**。若新会话不知道「谁写入、谁是真源、改哪几处」,必然出现「同一个数字写在 3 处、改 1 处漏 2 处」。**本节是分工的唯一声明** —— 其余文档只放指针,不复述。
+
+#### 4.7.1 五类载体:谁写、答什么、何时更新
+
+| 载体 | 唯一职责(回答什么问题) | 写入方 | 状态写在哪 | 何时更新 |
+|------|----------------------|--------|-----------|---------|
+| **objective** `obj-cep-platform.md` | **为什么做 / 终态 DoD / 排队(§4.0) / 决策台账(§11)** | planner | §4.0 行的**状态列**(投影) | change 增删或重排 · 阶段完成 · 决策发生 |
+| **phase** `phase-10.md` | 本 phase 的**子任务拆解 + 执行态** | planner | front-matter `status` + 子任务表 | 子任务完成 · 卡口变化 |
+| **improvement** `.rddf/improvements/<name>.md` | 这个 change **为什么值得做**(5 段规划输入) | planner | front-matter `状态:` | 立项时写一次;范围变更时改 |
+| **OpenSpec change** **openspec/changes/&lt;name&gt;/** | **做什么 / 怎么验 / 做到哪** ← **执行真源** | builder | `proposal.md` 状态行 + `tasks.md` 勾选 | **每完成一个 task** |
+| **实施笔记** `docs/implementation/` | 某次实施 / 评审的**时点快照证据** | 任何角色 | 版本行 | 事件发生时 append,**不回改** |
+
+**三条硬规则**:
+
+1. **状态唯一权威 = OpenSpec change 的 `tasks.md` 勾选 + `proposal.md` 状态行**。**§4.0 的状态列、`phase-10.md` 的子任务表、`.rddf/improvements/*.md` 的 front-matter `状态:` 三者都是它的投影** —— 任一投影与 change 不一致时**以 change 为准**,并立刻回填该投影。
+2. **数量口径只在 ADR 写**(11 change / 11 季度 / 21 份 ADR / 66 条 invariant / 29 冻结成员)。objective / phase / improvement / change **一律引用,不复算**。
+3. **实施笔记 append-only** —— 过期快照不改写,由新记录覆盖(不「改历史」)。
+
+#### 4.7.2 change 状态机
+
+```
+📋 Planned ─────→ 🟡 Proposed / in-progress ─────→ ✅ archived
+      │                        │
+      └──→ ⏸ 队列位保留 ────────┘     (占 KPI slot,但 change 目录**故意**未建)
+```
+
+| 状态 | 含义 | 判据 |
+|------|------|------|
+| **📋 Planned** | 已排队,未建 change 目录 | §4.0 有行;`openspec/changes/` 下无同名目录 |
+| **🟡 Proposed / in-progress** | change 目录已建,任务未全勾 | `openspec validate <name>` **可执行**(rc 不限 —— `--strict` 的预存 WARNING 见 L1);`tasks.md` 有未勾 `- [ ]` |
+| **✅ archived** | 归档完成(见下方**两种语义**) | 目录移入 `archive/`;§4.0 状态列已改 |
+| **⏸ 队列位保留** | 有实测 / 有设计,change 目录**故意**未建 | §11 有 entry 写明**裁决理由 + 三条出路**(文档审计项,非机器判据) |
+
+> ⚠️ **`✅ archived` 有两种语义,必须区分**(per `AGENTS.md` §DOC HYGIENE「两种归档语义必须区分」)—— **默认 `openspec archive` 会把未实现的 delta spec 合进 main specs,污染系统契约**,AGENTS.md 明文禁止。
+
+| 语义 | 触发条件 | 命令 | delta spec | proposal 标记 |
+|------|---------|------|-----------|--------------|
+| **✅ 已完成归档** | 实现已落地,契约已在系统内 | `openspec archive <name>` | **合并**进 `openspec/specs/` | 无需特殊标记(实现可自证) |
+| **⏸ 暂存归档** | 实现**未启动 / 0%**,但设计与判据仍有价值 | `openspec archive --skip-specs <name>` | **不合并**(保持 main specs 干净) | **必须**在 `proposal.md` 顶部加「⏸ 暂存归档」段(日期 + tasks 完成度 + 重建路径) |
+
+> **判据**:`tasks.md` **全勾** → 完成归档;**未全勾(或 0% 实施)却要让出 KPI slot** → 暂存归档。二者**不可混用**。
+
+**⏸ → 🟡 转正路径(队列位保留项必经,协议内唯一的"出口")**:
+
+0. 🔴 **先确认 KPI slot 可用(硬前置,跳过此步必违规)** —— `openspec list --json` 实测 CEP 内部 Proposed 并发 **< 1**(per §5.4 并发 ≤ 1)。若已有 1 个 active(如当前 `cpptlm-cep-umbrella`),**必须**先按 §4.7.3 ⑥ 让出 slot,**再**建 change;否则一建就是 2 个 Proposed,直接违反 §5.4;
+1. DRI 对 §11 该条 entry 写明的**三条出路**(① 建 change ② 移出队列 ③ 降级为设计草案)作出裁决,并**追加** §11 entry 记录裁决 —— 裁决本身不改写原 entry(append-only);
+2. 裁决 = ① 建 change ⇒ 取出 §11 该条已登记的设计 / 实测材料,按 ADR-0025 D1/D2 生成 `proposal.md` + `design.md` + `specs/` + `tasks.md`;**若尚无 improvement 草稿,先补草稿**(planner 写);
+3. §4.0 状态列 ⏸ → 🟡;`phase-10.md` 对应子任务行同步;§5.2 KPI 并发回填。
+
+#### 4.7.3 一个 change 走完一轮要动哪些文件(实施者照做)
+
+| 时点 | 动作 | 文件 |
+|------|------|------|
+| **① 起步** | 读自己那一行 → **有 improvement 则读**(无则读 §11 该条 entry —— ⏸ 项常无草稿) → 相关 ADR | §4.0 · `.rddf/improvements/<name>.md`(可能不存在)· `docs/adr/ADR-CEP-*.md` |
+| **② 建 change** | 从 improvement 5 段生成 `proposal.md`(per ADR-0025 D1/D2)→ `design.md` → `specs/` → `tasks.md` | **openspec/changes/&lt;name&gt;/** |
+| **③ 每完成一个 task** | 勾 `tasks.md`(**唯一状态真源**) | **openspec/changes/&lt;name&gt;/tasks.md** |
+| **④ 阶段 / 卡口变化** | 改 §4.0 状态列 + 追加 §11 entry | `obj-cep-platform.md` §4.0 / §11 |
+| **⑤ 有实施 / 评审事件** | 写一份时点快照(版本行注明依据) | `docs/implementation/` |
+| **⑥ 收尾** | **全勾 → 完成归档**(`openspec archive`);**未全勾只为让 slot → 暂存归档**(`--skip-specs` + proposal 顶部 ⏸ 段)。随后按下方**收尾同步清单**逐项改 | change + objective + phase + roadmap |
+
+**收尾同步清单(归档时 7 个落点,一处都不能漏)**:
+
+| # | 位置 | 改什么 |
+|---|------|--------|
+| 1 | change 的 `tasks.md` | 勾满(**完成归档**);或保留未勾 + 标注档理由(**暂存归档**) |
+| 1b | change 的 `proposal.md` **顶部** | **仅暂存归档**:加「⏸ 暂存归档」段(日期 + tasks 完成度 + 重建路径)。**完成归档不加**(实现可自证) |
+| 2 | `obj §4.0` 对应行 | 状态列 → ✅(暂存归档另注 `--skip-specs`) |
+| 3 | `obj` §11 | **追加** entry(完成结论 / 暂存理由 + 重建路径) |
+| 4 | `obj` §5.2 | KPI 并发计数回填(以 `openspec list --json` 实测为准) |
+| 5 | `phase-10.md` 对应子任务行 | 状态 → ✅(或 ⏸ 暂存) |
+| 6 | `.rddf/roadmap.md` | Phase Skeleton 的 phase status(仅整 phase 变化时)+ 顶部「最后更新」引用最新 entry 号 |
+
+> **同步红线**:改 §4.0 任一行 ⇒ **五处同改** —— 详见 §4.0「排期调整规则」(含单源纪律与双边 grep 自检)。
+
+#### 4.7.4 新会话 3 步文档地图
+
+1. **`obj-cep-platform §4.0`** → 我在队列哪一行、什么状态、前置挂在谁身上
+2. **`openspec/changes/<name>/tasks.md`** → 还剩哪些 task(**执行真源**)
+3. **`docs/adr/ADR-CEP-*.md`** → 为什么这么设计(**不可变**,只追加 Status Update)
+
+> ⛔ **五个常见误读**:
+> - **不要**从 `phase-10.md` 的依赖图推断排期 —— 它是**示意**,排期只认 §4.0。
+> - **不要**从 improvement 草稿读验收判据 —— 它是**规划输入**;实测回填在 change 的 `proposal.md` §Acceptance。
+> - **不要**直接信 `AGENTS.md` 的 KPI 基线数字 —— 那是**带日期快照**(`2026-10-20 实证 = 0 active`),早于本轮变更。当前并发**以 `openspec list --json` 实测 + §5.2 为准**。
+> - **不要**直接信任何「N 条 entry」的转述计数 —— 台账是 append-only,计数会持续增长;实测命令 `grep -c "^### Entry #" .rddf/roadmap/objectives/obj-cep-platform.md`。
+> - **不要**把 `07 号 §8.1` 的 Stage 表当排期依据 —— 它是**冻结面成员**(M1),仍写「合计 10 / 串行 10 季度」(旧值,per §11 **L6**)。真源优先规则下:**Stage 划分与 change 数一律以 §4.0 / `ADR-CEP-00 §2 Decision 3` 为准**,07 号该节不得据以改路线图。
 
 ---
 
@@ -219,7 +385,9 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.1 KPI 单一真源(per oracle B1 修订)
 
-**唯一真源**: `ADR-CEP-00 §2 Decision 3` — 本文件 / `phase-10.md` / `cpptlm-cep-umbrella.md` / `roadmap.md` **只引用,不自行重算**。
+**治理口径唯一真源**: `ADR-CEP-00 §2 Decision 3` — 本文件 / `phase-10.md` / `cpptlm-cep-umbrella.md` / `roadmap.md` **只引用,不自行重算**(change 总数 / 串行规则 / 并发上限)。
+
+**实施路径唯一真源**: **本文件 §4.0 排队总表** —— 顺序 / 季度 / 状态 / 准入前置归属**只在这里写**(per Entry #23)。`phase-10.md` 的依赖图是**示意**,不承载排期承诺。
 
 ### 5.2 当前真实 baseline(2026-10-20 实证,per oracle B1)
 
@@ -241,7 +409,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 **✅ 前置条件已满足(2026-10-20)**:3 个 active 全部 **⏸ 暂存归档**(`--skip-specs`),baseline **0/3** → `cpptlm-cep-umbrella` **可立即创建**。
 
-**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**,`openspec validate cpptlm-cep-umbrella --strict` **PASS**;baseline **0/3 → 1/3**。**⚠️ 2026-10-21 Task 8.4 Step 4 修正**:因**跨仓准入门未放行**,该 change 停留 **Proposed Draft** → baseline 回到 **0/3**(Proposed slot 只统计已达 Proposed 的 change)。
+**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → **该状态已被 2026-10-22 M2 放行(Entry #10)取代**,现为 **Proposed**(per §11 台账最后一条 entry 为准)。
 
 ⚠️ **原候选路径已过期**:"路径 C: archive `cpptlm-gmmu-pte-bus-correction`" —— 该 change **已于 2026-10-12 实际归档**,不再是 active,不能再作为 archive 对象。真实候选是上列 3 个(均已暂存归档)。
 
@@ -259,13 +427,19 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 6.1 Stage 0 验收(2026-Q4)
 
-委托 `cpptlm-cep-umbrella.md` §Acceptance A1~A6(不重复复述,per oracle S1 修订)。
+| 来源 | 位置 | 性质 |
+|------|------|------|
+| `openspec/changes/cpptlm-cep-umbrella/proposal.md` | §Acceptance | ✅ **执行真源**(实测值已回填) |
+| `.rddf/improvements/cpptlm-cep-umbrella.md` | §Acceptance **A1 ~ A7** | 📥 上游规划输入(**A7 = 前置 gate 汇总**,非 assertion) |
+| Stage 1~3 各 change | 各自 OpenSpec AC | 各自的执行真源 |
 
-### 6.2 Stage 1~3 验收(2028-Q2)
+本文件**不重复复述**逐条 assertion(per oracle S1 修订);分工见 **§4.7**。
 
-- B1. 10 个 OpenSpec change 全部 archived with sync
+### 6.2 Stage 1~3 验收(2029-Q2)
+
+- B1. **11** 个 OpenSpec change 全部 archived with sync
 - B2. **66 条守门 invariant 机器检查 100% 覆盖**(编号位 67,按 §0 DoD 7 的 **15 组**分解)(per §0 DoD 7)
-- B3. **6 个 ProtocolEngine 实施完成**:CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
+- B3. **6 个 ProtocolEngine 实施完成**:CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」与 `ADR-CEP-11 §3` 锁表「按 `protocol_version` 行计 8 行」—— 两种粒度非矛盾,per Entry #19 §2**);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
 - B8. **Directory & Ordering Plane 三子平面实施完成**:Address Resolver + Sharer Tracker 5 实现 + Ordering Point 三判据 + **装配期通道依赖图无环检查**(per `ADR-CEP-08` + `ADR-CEP-09 Decision A`)
 - B4. 4 件套实验输出契约落地 + 13 必纳 metric 全绿
 - B5. ModuleFactory 集成 seam + 0 发明宏形式
@@ -275,7 +449,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 ### 6.3 KPI 平衡验收
 
 - D1. 任一时刻 CEP 系列 Proposed 并发 ≤ 1
-- D2. §11 决策台账完整记录 10 季度 KPI 让位
+- D2. §11 决策台账完整记录 **11 季度** KPI 让位
 - D3. AGENTS.md KPI baseline 全程 ≤ 3
 
 ---
@@ -303,7 +477,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **R6** | 与 phase-9 资源竞争(共用 builder 队列 + 执行容量)| 🟡 中 | §8.2 优先级仲裁规则 |
 | **R7** | 探索平台结论不可信(无对拍验证)| 🟡 中 | **Stage 1 前须定义对拍手段**(gem5 Ruby / ArchForge 参考模型 / RTL benchmark 三选一) |
 | **R8** | ArchForge 单边依赖(准入门把阻塞全转嫁 CppTLM 侧)| 🟡 中 | 需 ArchForge 侧排期承诺;缺承诺时 §9 假设降级为"仅 CppTLM 内部对比" |
-| **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟡 中 | 纳入 Stage 0 验收清单的 M4(独立 AI 复审);真外部真人评审待建立;**不在本轮闭合**。**2026-10-21 Task 8.4 结论**:Stage 0 验收等级**降级为「部分独立」**(partial independence)—— M1 冻结 ✅ / M2 准入门 ⛔未放行 / M3 对拍基准 ⏳Stage 1 前定义 / M4 独立 AI 复审 ✅(2 轮,6 BLOCKER 全处置);**不得表述为「完全独立验收」**,且 M4 **不可**替代真人外部评审 |
+| **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟡 中 | 纳入 Stage 0 验收清单的 M4(独立 AI 复审);真外部真人评审待建立;**不在本轮闭合**。**2026-10-21 Task 8.4 结论**:Stage 0 验收等级**降级为「部分独立」**(partial independence)—— M1 冻结 ✅ / M2 准入门 ✅ **已放行**(2026-10-22,per Entry #10)/ M3 对拍基准 ⏳Stage 1 前定义 / M4 独立 AI 复审 ✅(2 轮,6 BLOCKER 全处置);**不得表述为「完全独立验收」**,且 M4 **不可**替代真人外部评审。**2026-10-23 复核(per Entry #22)**:M2 已消解,**R10 本身仍未闭合** → Stage 0 **仍不 archive**。**2026-10-23 自审(per Entry #23)**:已出具**自审**回执(评审包 §5 **变体 B**,`docs/implementation/2026-10-23-cep-stage0-self-review-receipt.md`)—— 结论「**无阻断项(自审)**」,但**独立性未满足** → **R10 仍未闭合**、Stage 0 **仍不 archive**;解锁条件 = 一份**真正未参与** Stage 0 契约层撰写者的**外部真人**回执(评审包 §5 变体 A) |
 | **R9** | **单 change 体积上升**(2026-10-21 新增)—— `cpptlm-cep-directory-ordering-plane` 8→12 周(ADR-CEP-08 + 09 Decision A 并入)| 🟡 中 | 同平面合并是模型自洽而非将就;若该 change 延期 >2 季度,走 §8.2 `Replan` 拆 `phase-11`(并评估建 feature fragment)|
 
 ### 8.2 Kill / Pivot / Replan 判据(per metis G4 盲点补充)
@@ -312,7 +486,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 |---------|------|
 | **Kill**:Stage 0 完成后(2026-Q4)验收发现 4 件套实验输出无法产出可比较数据(即 §9 假设无法被验证)| 终止 CEP,归档 objective,回退到 `06-bis` 路线 |
 | **Pivot**:Stage 1 中期发现协议族选型需变(如放弃 TileLink,改 UALink 优先)| 走 §11 `scope-change` entry + 重排 §4 表 |
-| **Replan**:任一 Stage 延期 >2 季度,或全仓 Proposed 并发连续 2 季度无法为 CEP 腾 slot | 触发 §11 `deferral-rationale` entry + 重排 §4 季度列 + 评估是否拆分 roadmap phase(phase-11) |
+| **Replan**:任一 Stage 延期 >2 季度,或全仓 Proposed 并发连续 2 季度无法为 CEP 腾 slot | 触发 §11 `deferral-rationale` entry + 重排 **§4.0 排队总表**的顺序 / 季度 + 评估是否拆分 roadmap phase(phase-11) |
 | **Priority 仲裁**(R6):CEP 与 phase-9 同时需要唯一 slot | 默认 **phase-9 优先**(业务交付 > 探索平台),CEP 让位并登记 §11 deferral-rationale |
 
 ### 8.3 退出 / 归档判据(per metis G4 盲点 2)
@@ -333,7 +507,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 | # | 假设 | 验证手段 | 关联 Stage | 成功判据 |
 |---|------|---------|------------|---------|
-| **H1** | 协议抽象层(seam 在 L5↔L4)确实让缓存核心免于协议改动 | Stub Cache 0 协议知识 + 5 adapter 共用同一 stub | Stage 1 | 5 adapter 全部只改 adapter,stub 0 diff |
+| **H1** | 协议抽象层(seam 在 L5↔L4)确实让缓存核心免于协议改动 | Stub Cache 0 协议知识 + 全部 adapter 共用同一 stub | Stage 1 | 全部 adapter 只改 adapter,stub 0 diff(**adapter 实例计数口径见 `07 号 §5.1.1`;本表不复述具体数**,per Entry #22)|
 | **H2** | 集中目录(CHI HN-F)vs 分布(DCOH)vs 广播的 latency 差异可量化 | `avg_latency_cycles` + `directory_misses` 对比 | Stage 2 | 3 策略延迟差异 > 20% |
 | **H3** | Sharer Tracker caps 的 `CONSERVATIVE` 完备性契约在 CXL 对称下无漏 snoop | `deadlock_violations == 0` + `memory_violations == 0` | Stage 2 | 0 违例(1000+ 事务) |
 | **H4** | 完成域判别规则(requester-scoped vs group-scoped)足以同时容纳 coherence + collective | 同一实验跑 coherence 流 + collective 原语 | Stage 1~2 | 两类流同实验内无死锁 |
@@ -381,25 +555,26 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 | 优先级 | 候选 | 推进建议 | 前置 |
 |--------|------|---------|------|
-| **P0** | 起草 `cpptlm-cep-umbrella/` proposal + design + specs + tasks | 走 rdd-builder P0;5 人日 | ⛔ `ADR-CEP-00 §5.1/§5.2` 两决策拍板 + KPI slot 腾出(per §5.3)|
-| **P0** | 指定 §9.2 三项角色(验收方 / 结论消费者 / 维护方) | planner 协调;2 人日 | ⛔ Stage 0 验收 No-Go 风险 |
-| **P0** | 指定 §9.1 H7 对拍基准(gem5 Ruby / ArchForge / RTL benchmark) | 调研 3 人日 | ⛔ R7 |
-| P1 | 起草 Stage 1 六个 change 的 improvement 草稿 | 走 add-improve HARD-GATE;每 change 5 人日 | Stage 0 acceptance 全绿 |
-| ~~起草 `docs/architecture/07-coherence-exploration-platform.md` 顶层真源~~ | ✅ **已完成 2026-10-21**(architect;657 行) | — |
-| P1 | 起草 `ADR-CEP-11` / `ADR-CEP-14` / `ADR-CEP-15` / `ADR-CEP-07A` / `ADR-CEP-16` | 走 architect;每份 3~5 人日 | `ADR-CEP-11` 须 Stage 1 前签发(R2 缓解) |
-| P1 | 起草 `scripts/test/cep_docs_sync_check.sh` ADR 锚点 lint | 走 builder;5 人日 | Stage 0 |
-| P2 | 实验目录 + tools 3 个(render_report / run_sweep / ab_compare)| 走 builder;5 人日 | Stage 0 |
+| ~~P0~~ | 起草 `cpptlm-cep-umbrella/` proposal + design + specs + tasks | ✅ **已完成 2026-10-21**(builder;105 task / 99 完成) | — |
+| ~~P0~~ | 指定 §9.2 三项角色(验收方 / 结论消费者 / 维护方) | ✅ **已完成 2026-10-21**(三项均已指定;形式 gate 解除,实质独立性缺口登记为 R10) | — |
+| **P0** | 指定 §9.1 H7 对拍基准(gem5 Ruby / ArchForge / RTL benchmark) | 调研 3 人日 | ⛔ R7 —— **唯一仍未完成的 P0**(per Entry #22 复核)|
+| P1 | 起草 Stage 1 **七个** change 的 improvement 草稿 | 走 add-improve HARD-GATE;每 change 5 人日 | Stage 0 archive(R10 回执)|
+| ~~P1~~ | 起草 `docs/architecture/07-coherence-exploration-platform.md` 顶层真源 | ✅ **已完成 2026-10-21**(architect;**686 行**) | — |
+| ~~P1~~ | 起草 `ADR-CEP-11` / `ADR-CEP-14` / `ADR-CEP-15` / `ADR-CEP-07A` / `ADR-CEP-16` | ✅ **已完成 2026-10-21**(architect;**21 份 ADR 全族**) | — |
+| ~~P1~~ | 起草 `scripts/test/cep_docs_sync_check.sh` ADR 锚点 lint | ✅ **已完成 2026-10-22**(10 组检查) | — |
+| ~~P2~~ | 实验目录 + tools 3 个(render_report / run_sweep / ab_compare) | ✅ **已完成 2026-10-22** | — |
 
-### Stage 1~3 远期候选(2027-Q1 ~ 2028-Q2)
+### Stage 1~3 远期候选(2027-Q1 ~ 2029-Q2)
 
 | 优先级 | 候选 | 推进建议 |
 |--------|------|---------|
-| P1 | `cpptlm-cep-stub-cache-core` improvement | 走 add-improve;Stage 1.1 启动 |
-| P1 | `cpptlm-cep-sharer-tracker-base` improvement | 走 add-improve;Stage 1.2 启动 |
-| P1 | `cpptlm-cep-collective-plane-base` improvement | 走 add-improve;Stage 1.3 启动 |
-| P1 | `cpptlm-cep-chi-rnf-subset` improvement | 走 add-improve;Stage 1.4 启动 |
-| P2 | `cpptlm-cep-cxl-nonsymmetric` improvement | 走 add-improve;Stage 1.5 启动 |
-| P2 | `cpptlm-cep-tilelink-tree-manager` improvement | 走 add-improve;Stage 1.6 启动 |
+| P1 | `cpptlm-cep-poc-spike` improvement | ⏸ **队列位保留 · 落地形态待裁决**(S2 已实跑 / change 未建,per Entry #22);§4.0 顺序 #2 |
+| P1 | `cpptlm-cep-stub-cache-core` improvement | 走 add-improve;§4.0 顺序 #3 |
+| P1 | `cpptlm-cep-directory-ordering-plane` improvement | 走 add-improve;§4.0 顺序 #4(原 `sharer-tracker-base`,已重排) |
+| P1 | `cpptlm-cep-collective-plane-base` improvement | 走 add-improve;§4.0 顺序 #5 |
+| P1 | `cpptlm-cep-chi-rnf-subset` improvement | 走 add-improve;§4.0 顺序 #6 |
+| P2 | `cpptlm-cep-cxl-nonsymmetric` improvement | 走 add-improve;§4.0 顺序 #7 |
+| P2 | `cpptlm-cep-tilelink-tree-manager` improvement | 走 add-improve;§4.0 顺序 #8 |
 | P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | 走 add-improve;Stage 2.1 启动 |
 | P1 | `cpptlm-cep-nvlink-sharp` improvement | 走 add-improve;Stage 2.2 启动 |
 | P1 | `cpptlm-cep-ualink-inc` improvement | 走 add-improve;Stage 3 启动 |
@@ -412,6 +587,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 > **append-only**:每次新增 entry 追加到段尾;**不可删除 / 不可改写**早期 entry。
 > **kind ∈ {deferral-rationale, go-decision, sprint-review, scope-change, adr-amendment}**
+> **⚠️ 枚举外标注(per Entry #22)**:Entry #14 的 kind 记为 `[cross-check]`,**不在上述 5 值域内** —— 早期 entry 不可改写(append-only),故就地保留;**Entry #15 起一律用 5 值域**。
 
 ### Entry #1 — 2026-10-20 [go-decision]
 
@@ -1559,6 +1735,343 @@ Entry #17(R10 评审包 v1.1)· `ADR-CEP-05 §7 / §13` · 决策简报 `:67`(�
 
 ---
 
+### Entry #22 — 2026-10-23 [scope-change]
+
+**主题**: Stage 0 实施态归位 + Stage 1 准入前置(S1-1 ~ S1-7)**可寻址化** + 季度算术修正(10 → 11)+ 路线图四文档口径统一
+
+**触发**: 2026-10-22 ~ 10-23 的密集提交(Entry #13 ~ #21)后,planner 对 `obj-cep-platform` / `phase-10` / `cpptlm-cep-umbrella` / `roadmap.md` 四文档做**漂移复核**(逐条实测 + `metis` 对抗性交叉检查)→ 发现 4 类问题:**① 状态漂移**(Stage 0 产物已落地但仍标 Planned)· **② 口径漂移**(ADR 份数 / task 数 / change 数 / validate 结论 / 族计数多副本不一致)· **③ 结构性缺口**(S1-1 ~ S1-7 七项 Stage 1 准入前置在路线图上不可寻址;`cpptlm-cep-poc-spike` 队列位与实际脱节)· **④ 季度算术错**(真源 11 季度 vs 路线图 10 季度 → 终态 2029-Q1 应为 2029-Q2)。
+
+**决策**: ✅ **采纳** —— DRI 拍板 **批 1 + 批 2 + 批 3**;`poc-spike` 取**第三态**(保留队列位 + 登记已实跑事实);S1-x 取**双落点**(directory-ordering-plane + chi-rnf-subset)。**批 4 暂缓**(动冻结面第 29 成员)。
+
+**① `cpptlm-cep-poc-spike` 队列位 = 第三态(新增)**
+
+| 方案 | 可执行性 | 判定 |
+|------|---------|------|
+| 补建 OpenSpec change | ❌ `cpptlm-cep-umbrella` 占**唯一** KPI slot 且 R10 未闭合 → 不 archive → 建新 change 令 CEP 内部 Proposed 并发 = 2,违反 §5.4 + `ADR-CEP-00 §2 Decision 3` | 不可执行 |
+| 移出 Stage 1 队列 | ❌ `ADR-CEP-00 §2 Decision 3`(真源 3 · 冻结面成员)明列其为 Stage 1 首个 change → 删行 = 10 change,需改 ADR → 触碰冻结面 | 不可执行 |
+| **保留队列位 + 登记已实跑事实** | ✅ 保住 11 change 算术;不改 ADR;不新增 KPI slot | **采纳** |
+
+**落地**: §4.2 顺序 #1 状态列 →「⏸ 队列位保留 · S2 已实跑并注册 ctest 回归门(per Entry #15/#16)· change 目录未建(per Entry #15 ⑥)· 落地形态待裁决」;§4.2 P-1 说明**追加**事实登记段。
+
+**② S1-1 ~ S1-7 归属 = 双落点(新增)**
+
+§4.2 表**新增 1 列**「承接的 Stage 1 准入前置」(**不新增 change、不新增 KPI slot**):
+
+| 归属 change | 承接项 | 依据 |
+|------------|--------|------|
+| 顺序 #1 `cpptlm-cep-poc-spike` | **S1-1 ~ S1-5**(装配期前置,`tasks.md:406-410`) | 均为**首个 `implemented` 实例装配前**的门槛 |
+| 顺序 #3 `cpptlm-cep-directory-ordering-plane` | **S1-7 的 (β) 重评估** | `ADR-CEP-05 §13.1` 排期约束:与 `ADR-CEP-08 决策 4` 组合检查器**同批**落地 |
+| 顺序 #5 `cpptlm-cep-chi-rnf-subset` | **S1-7 的 `perm` 形态 schema 演进** | `ADR-CEP-12` 为 schema owner;该 change 是**首个真实使用 schema** 的协议 change |
+
+**边界**:`perm` **维持 4 值锁**(per `ADR-CEP-02 CEN-Ib11`);R-2 的落地形态是**新增字段**而非扩枚举;schema 变更属 **Stage 1**,Stage 0 冻结面不动。
+
+**③ 季度算术修正**
+
+- 真源 `ADR-CEP-00 §2 Decision 3` = **11 个 change(1 + 7 + 2 + 1)/ 串行 11 季度**(2026-10-22 per Entry #12 由 10 → 11)→ 路线图**终态验收 2029-Q1 → 2029-Q2**(§4.6)。
+- §4.2 表季度列是**乐观并行估计**;**串行下界 = 11 季度** —— 两者不可相加,已加口径脚注(§4.2)。
+- ⚠️ **已知缺陷(本批不改)**:`ADR-CEP-NUMBER-MAP §2 决策` 仍写「Stage 1 = 6 串行 / 总 10 个 OpenSpec change」→ **真源 3 内部与 `ADR-CEP-00` 不一致**。改它 = 改冻结面成员 → 需 `--update --authorized-by` + 两步 commit → **登记为已知缺陷,留待单独批次(批 4)**。
+
+**④ 口径统一(机械同步)**
+
+| 量纲 | 统一值 | 落点 |
+|------|-------|------|
+| ADR 份数 | **21 份**(`docs/adr/ADR-CEP-*.md`) | obj §0/§3/§4.1/§4.5 · phase-10 · improvement · roadmap.md |
+| task 数 | **105 / 99 完成** | obj §4.1 · phase-10 · improvement |
+| `openspec validate --strict` | **rc=1**(2 预存 WARNING,per Entry #12 ⑦) | obj §4.1/§5.3 · phase-10 · improvement(原 3 处写 "PASS") |
+| change / 季度 | **11 / 11** | obj §0/§4.2/§4.6/§5.4/§6.2/§6.3 · improvement · roadmap.md |
+| invariant | **66 实际 / 67 编号位 / 15 组** | obj §0 DoD 7(**只加落点口径注,不复述分解**)· improvement(原表合计写 34 实为 35 且缺 `CEN-Ib11` → 改为引用 `07 号 §4`) |
+| 冻结成员 | **29** | 不改(真源 = freeze manifest) |
+
+**⑤ 批次切分**
+
+| 批 | 范围 | 冻结面影响 |
+|---|------|-----------|
+| **批 1** | 4 个路线图文档(obj / phase-10 / improvement / roadmap.md) | 无(均不在 M1 冻结集;objective 受 `cep_doc_ref_check.sh` §N 锚点约束 → 保留全部 `## §N` 节号与标题) |
+| **批 2** | umbrella change 侧 `proposal.md` / `tasks.md`(6 处 stale) | 无(`specs/cep-core-contracts/spec.md` = 冻结面第 29 成员,**不动**) |
+| **批 3** | `scripts/README.md` + `docs/ONBOARDING.md §5.5` + `docs/README.md` 计数(6 个 `cep_*` 守门脚本未进索引) | 无 |
+| **批 4** | `openspec validate --strict` rc=1 根因 + `ADR-CEP-NUMBER-MAP` 10 vs 11 | **动冻结面 → 暂缓**,仅登记 |
+
+**⑥ 契约面零改动(红线)**
+
+- **零 ADR 改动**(21 份零 diff)· **零 `07 号` 改动** · **零 `include/tlm/cep/` 下 3 个 schema / `experimental/metrics.schema.json` / `tools/` 下 3 个 py / umbrella `spec.md` 改动**。
+- **§11 Entry #1 ~ #21 正文零改写**(append-only;过期项一律由本条覆盖)。
+- **零 `protocol_version` 取值改动 / 零 invariant 定义改动 / 零 ABI 改动**。
+- **未新建** `openspec/changes/` 下的 poc-spike change 目录。
+
+**⑦ 验收(可执行)**
+
+```
+bash scripts/test/cep_docs_sync_check.sh --strict   == 0
+bash scripts/test/cep_doc_ref_check.sh --strict      == 0
+bash scripts/test/cep_freeze_check.sh                == 0
+bash scripts/test/cep_archforge_alignment_check.sh  == 0
+ctest --test-dir build -R cep                        == 18/18
+./build/bin/cpptlm_tests "[cep]"                     == 0(76 case / 1284 assertion)
+git diff --name-only  → 不含 21 份 ADR / 07 号真源 /
+                         include/tlm/cep/ 下 3 个 schema / experimental/metrics.schema.json /
+                         tools/ 下 3 个 py / umbrella spec.md
+```
+
+**⑧ 明确不改**
+
+§11 历史 entry · ADR 族正文 · `07 号 §4` 的 15 组分解 · `ADR-CEP-17:315` 的「16 adapter」(**adapter 实例数 ≠ ADR 份数**,不同量纲,不可混为一谈)· Stage 0「已完成」表述(**R10 未闭合 → 不 archive**)· 不把 ADR 精简两轮(−10.4%)包装为 objective 成果(仅一行指针)· 不新建「漂移矩阵 / 状态仪表盘 / revision log」文档(避免第 5 处口径源)。
+
+**⑨ 改动清单(本条授权范围内的实际改动 —— 9 份文档,0 冻结面成员)**
+
+| # | 文件 | 改动性质 | 规模 |
+|---|------|---------|------|
+| 1 | `.rddf/roadmap/objectives/obj-cep-platform.md` | 本文件:元数据 / §0 / §3 / §4.1 / §4.2 / §4.5 / §4.6 / §5.3 / §6 / §8.1 / §9.1 / §10 / §11 头 + 本条 Entry | 40 处替换 + Entry #22 |
+| 2 | `.rddf/roadmap/phases/phase-10.md` | 状态 `planning → in-progress` + 10.B~10.G 状态 + 估时 + 依赖图 + KPI baseline + 测试标签 + 签发前置决策 | 17 处替换 |
+| 3 | `.rddf/improvements/cpptlm-cep-umbrella.md` | 头部状态 / 前置 gate #3 / Capabilities #1·#9·#10 / What Changes / Acceptance A1~A7 / Impact A~D | 24 处替换 |
+| 4 | `.rddf/roadmap.md` | 最后更新 + KPI baseline 口径 + phase-10 状态(表 + AUTO-INDEX)+ Objectives 段 | 5 处替换 |
+| 5 | `openspec/changes/cpptlm-cep-umbrella/proposal.md` | 真源行数 / ADR 份数 / change 数 / 风险表估时 / Acceptance 实测回填 | 6 处替换 |
+| 6 | `openspec/changes/cpptlm-cep-umbrella/tasks.md` | 头部状态 + 估时 + 时间线标题 + 验收对照表(实测列) | 5 处替换 |
+| 7 | `scripts/README.md` | `test/` 子目录表补 10 个脚本(6 个 `cep_*` + 4 个历史未登记)+ 新增 §CEP 契约守门脚本 章节 | 2 处替换 |
+| 8 | `docs/ONBOARDING.md` | §5.5 脚本表新增 5 行 CEP 守门脚本 | 1 处替换 |
+| 9 | `docs/README.md` | `implementation/` 计数 12 → **14**(.md 实测)+ 目录树注释 | 2 处替换 |
+
+> **纪律说明**:①`tasks.md` 的**历史执行记录**(Step 1~8 逐步记录)**零改写** —— 只改「当前状态元数据」与「验收对照表」;②`ADR-CEP-05` 等 **21 份 ADR 零 diff**;③`07 号` / `include/tlm/cep/` 下 3 个 schema / `experimental/metrics.schema.json` / `tools/` 下 3 个 py / umbrella `spec.md` **零 diff**(M1 冻结面 29 成员,实测 `git diff --name-only` 对该集合 = **0**)。
+
+**⑩ 遗留登记(本批未处置 —— 逐条给处置)**
+
+| # | 遗留 | 性质 | 处置 |
+|---|------|------|------|
+| L1 | `openspec validate cpptlm-cep-umbrella --strict` **rc=1**(2 条预存 WARNING) | **预存不满足**(per Entry #12 ⑦);根因在 umbrella `spec.md` 顶部文本不被 archive 携带 | **批 4 暂缓** —— `spec.md` = M1 冻结面第 29 成员,修它需 `--update --authorized-by` + 两步 commit |
+| L2 | `ADR-CEP-NUMBER-MAP §2 决策` 仍写「Stage 1 = 6 串行 / 总 10 个 change」 | **真源 3 内部矛盾**(与 `ADR-CEP-00 §2 Decision 3` 的 11 冲突) | **批 4 暂缓** —— 改它 = 改冻结面成员;本批只登记,路线图侧一律按 `ADR-CEP-00` 的 **11** |
+| L3 | Entry #20 的变更清单表 rows 6/7 **列数错位**(3 列 vs 表头 4 列) | **历史遗留**(HEAD 版即存在) | **不改** —— append-only 纪律;与 Entry #21 ④ 对 `ADR-CEP-17` 节号空缺的处理先例一致(登记为 cosmetic 缺口) |
+| L4 | `docs/ONBOARDING.md §5.5` 的 `--mode auto\|off\|ptx-emu\|both` 管道符未转义 | **历史遗留**(HEAD 版即存在) | **不改** —— 与本批 CEP 无关,避免 scope 膨胀 |
+| L5 | ctest 全量曾**偶发失败 1 次**(未能捕获失败用例名 —— ctest 日志已被后续运行覆盖) | **已定位**(per Entry #24 → #25):`cep_tools_contract`(#78)与 `cep_all`(#82)在 `-j4` 下并行跑同一组 `[cep][tools]` 用例 + **固定名临时目录**,竞态 | **已交付 builder** —— improvement 草稿 `cpptlm-cep-tools-test-isolation.md`;修复前 `-j4` 下不可信 |
+| L6 | `docs/architecture/07-coherence-exploration-platform.md §8.1`(**:543-553**)仍写「Stage 1 = **6** change / 合计 **10** 个 / **串行 10 季度**」 | **冻结面成员**(M1 29 成员)与 `ADR-CEP-00 §2 Decision 3` 的 **11** 冲突 —— 真源 1 vs 真源 3 的已知矛盾 | **批 4 暂缓** —— 改它需 `--update --authorized-by` + 两步 commit;**本批只登记**:路线图侧一律按 **11**(§4.0 / §4.6 为真源),新会话读 07 号 §8.1 时以本条为准(见 §4.7.4 误读 #5) |
+
+**⑪ critic 复审修正轮次(2026-10-23,per critic REJECT)**
+
+改动触发 critic 对抗审稿(默认立场 REJECT)→ **2 BLOCKERS + 6 SHOULD_FIX + 5 NITS**,逐条核实后**全部属实**,已修正:
+
+| # | critic 判定 | 类别 | 处置 |
+|---|-----------|------|------|
+| B1 | 写入「1856 cases / 81145 assertions(**实测**)」→ 实测为 **1857 / 81202** | **BLOCKER** —— 虚假「实测」声明(把 `tasks.md` 的历史快照当当前实测) | ✅ phase-10 / improvement 两处改实测值 + 注明 `tasks.md` 的 1856 / 81145 是**该批执行时点快照**(append-only 不改) |
+| B2 | obj §0 标题行 `DoD, 2029-Q1 终` 未随 §4.6 改 | **BLOCKER** —— 同文件两套终态日期 | ✅ → `2029-Q2` |
+| S1 | roadmap.md 写「21 条 entry」但实测 **22** 条 | SHOULD_FIX | ✅ → 22 条 |
+| S2 | improvement Non-Goals 残留「10 季度」 | SHOULD_FIX | ✅ → 11 季度 |
+| S3 | phase-10 文件头残留「657 行」(同文件 10.E 表已改 686) | SHOULD_FIX | ✅ → 686 行 |
+| S4 | phase-10 同一行「单一时钟真源」**重复 2 次** + 错字形 `⏔`(全仓惯例 `⏸`) | SHOULD_FIX | ✅ 去重 + 改 `⏸` |
+| S5 | tasks.md 时间线标题「46 人日」vs 8 Phase 表内合计 **28** 人日 | SHOULD_FIX | ✅ 标题改「**builder 侧 ~28 人日** + architect 侧 17 人日 = Stage 0 合计 46 人日」 |
+| S6 | improvement + proposal 的 phase-10 指针仍写 `(planning)` | SHOULD_FIX | ✅ → `(in-progress)` |
+| N1/N2 | improvement「fabric **载体载体**」叠字 + 行数 `~30` vs 实测 **51** | NIT | ✅ 去叠字 + → `~51` |
+| N3 | docs/README.md `implementation/` 计数口径不一(表 14 vs 树「14 份 + README」) | NIT | ✅ 表 = 14(.md 含 README + 1 份 JSON)/ 树 = 「13 份 + README + 1 份 freeze manifest」 |
+| N5 | §4.2 表内估时逐行合计 **55 周 > 1 年** → 季度列不可加总 | NIT | ✅ 脚注补「**不可加总 / 不可逐行复算**;排期承诺只认真源串行下界」 |
+
+> **本次修订自身引入并已修复的 2 处问题**(留痕):①**不可达路径字面量** 3 个(`include/tlm/cep/` 下的 glob 写法等)→ 被 `cep_doc_ref_check.sh --strict` 判红 → 改为目录 / 散文形式;②§10 表 **6 行 4 列被误写为 3 列** → 已恢复 4 列。**教训**:本批的校验必须带 `--strict`(非 strict 模式不判路径不可达)。
+
+**⑫ 动态量快照登记(防「下次提交后再次漂移」)**
+
+| 量 | 快照值(2026-10-23) | 性质 | 真源 |
+|---|------------------|------|------|
+| 全仓 case / assertion | **1857 / 81202** | **动态** —— 任意测试提交即漂移 | 实测(`./build/bin/cpptlm_tests`) |
+| `[cep]` case / assertion | **76 / 1284** | 动态 | 实测(`[cep]`) |
+| ctest 用例组数 | **96**(CEP 子集 **18**) | 动态 | 实测(`ctest`) |
+| 07 号行数 | **686** | 随 ADR 增补漂移 | 实测 |
+| ADR 族总行数 | **4859**(基线 5426,−10.4%) | 快照 | git 历史(Entry #20/#21) |
+| ADR 份数 / 冻结成员 / invariant 数 / change 数 / 季度数 | **21 / 29 / 66(67) / 11 / 11** | **结构量** —— 变更须走 ADR | `ADR-CEP-NUMBER-MAP §2` · freeze manifest · `07 号 §4` · `ADR-CEP-00 §2 Decision 3` |
+
+> **规则**:①**动态量**的快照值**允许过期** —— 判读当前状态一律以**实测**为准,**不得**当契约值引用;②**结构量**变更**必须**走 ADR + `--update --authorized-by` + 台账 entry;③ 本表是**快照登记**,**不是**第 5 处口径源 —— 动态量**不设**单一真源(其真源就是"实测"本身)。
+
+### Entry #23 — 2026-10-23 [sprint-review]
+
+**主题**: Stage 0 **自审**回执(变体 B —— 独立性未满足 → **R10 仍未闭合**)+ **实施路径排队真源落到路线图 §4.0** + 评审包刷 **v1.2**
+
+**触发**: DRI 指示三件事 —— ①「治理与排队是基于 change 的内容,可以同时更新路线图文档来体现这个排队吗,**路线图文档才是实施路径的真相源**」②「其他内容我通过自审,可以标注『**自审,独立性未满足**』」③「同时把包刷新为 **v1.2**(补入 3 项披露 + 修正 §6 台账指针)」。
+
+**① 实施路径排队真源 = 本文件 §4.0(新增,权威)**
+
+| 维度 | 唯一真源 | 本文件的角色 |
+|------|---------|-------------|
+| **治理口径**(change 总数 / 串行规则 / 并发上限 / 变更名) | `ADR-CEP-00 §2 Decision 3` | **只引用,不重算** |
+| **实施路径**(顺序 / 季度 / 状态 / 准入前置归属) | **本文件 §4.0 排队总表** | **权威承载** |
+
+- **§4.0 实施路径总排队表**:**11 个 change × 1 季度,串行 2026-Q4 ~ 2029-Q2**(队列 #1 umbrella → #11 ualink-inc),含**状态**(🟡 in-progress / ✅ / 📋 / ⏸)与**承接的 Stage 1 准入前置**。
+- **§4.2 ~ §4.4 的「季度」列已撤除** —— 旧的「乐观并行估计」与 §4.0 的串行季度**并存即两个数**,且表内估时逐行合计 55 周 > 1 年,无法自洽 → **统一到串行口径**。三表现只承载**估时 + 关联 ADR + 语义**。
+- **顺带修正**:旧 §4.3 首行序号 **7** 与 §4.2 末行 **7** 撞号 → 全局重编为 **#1 ~ #11**(§4.0 为唯一编号来源)。
+- ⚠️ **旧序号以本条为准**:**Entry #22 正文内**出现的 `#1 / #3 / #5` 等序号是**重编前**的 Stage 1 局部编号(append-only,不改写);**当前**全局序号 = 本条 §4.0 的 **#1 ~ #11**。
+- **§4.5 / §4.6 季度口径同步**:Stage 0~3 实施完成 = **2029-Q2**;Stage 4+ 维护期 = **2029-Q2 起**;原乐观估计 2028-Q2 已废弃。
+- **§5.1 拆成两条**:治理口径真源(ADR)/ 实施路径真源(§4.0)—— 此前把二者混为一句「只引用不自行重算」,与「路线图承载排队」相冲突,已拆开。
+- **`phase-10.md`** 的依赖图降级为**示意**(明写「不承载排期承诺」)+ 加排期真源指针。
+
+**② 自审回执(评审包 §5 变体 B)—— R10 仍未闭合**
+
+| 项 | 结论 |
+|----|------|
+| 评审包 | `docs/implementation/2026-10-22-cep-stage0-external-review-summary.md` → **v1.2**(补 §3.1 三项披露 + 修 §6 指针 + 增 §5 变体 B) |
+| 自审回执 | `docs/implementation/2026-10-23-cep-stage0-self-review-receipt.md`(**新建**)—— 结论「**无阻断项(自审)**」,5 个检查点逐条给出依据 |
+| **独立性** | ⛔ **未满足** —— 复审人即 Stage 0 契约层的实现与撰写者(per §9.2 取证:两仓 commit 同一作者) |
+| **R10** | ⛔ **仍未闭合** —— 变体 B 不满足 §5 变体 A 的声明要求 |
+| **Stage 0** | ⛔ **仍不 archive** —— `cpptlm-cep-umbrella` 保持 🟡 Proposed / in-progress(105 / 99) |
+| 解锁条件 | 一份**真正未参与** Stage 0 契约层撰写者的**外部真人**回执(变体 A) |
+| 记录纪律 | 自审回执**不得**被表述为「已完成外部验收」或「R10 已闭合」 |
+
+**③ 评审包 v1.2 的 3 项披露(原 v1.1 缺,直接命中检查点 ①)**
+
+| # | 缺口 | 与评审的关系 |
+|---|------|-------------|
+| **G-1** | `ADR-CEP-NUMBER-MAP §2 决策` 仍写「Stage 1 = 6 串行 / 总 **10** 个 change」,与 `ADR-CEP-00 §2 决策 3` 的 **11** 冲突 | **直接命中检查点 ①「跨 ADR 无矛盾」** —— 已登记(Entry #22 L2),批 4 暂缓(改它 = 改冻结面成员) |
+| **G-2** | `openspec validate --strict` **rc=1**(2 预存 WARNING) | 已登记(L1),批 4 暂缓 |
+| **G-3** | ctest 全量曾偶发失败 1 次(**未复现**) | 已登记(L5),观察项 |
+
+> **披露理由**:检查点 ① 问的正是「跨 ADR 无矛盾、计数口径统一」,而 G-1 恰在该领域 —— 不知情则可能对「自洽」给出**失真的**「无阻断项」。
+
+**④ 契约面零改动(红线)**
+
+- **零 ADR 改动**(21 份零 diff)· **零 `07 号` 改动** · **零 `include/tlm/cep/` 下 3 个 schema / `experimental/metrics.schema.json` / `tools/` 下 3 个 py / umbrella `spec.md` 改动**。
+- **§11 Entry #1 ~ #22 正文零改写**(append-only;过期项一律由本条覆盖)。
+- **零 `protocol_version` 取值 / 零 invariant 定义 / 零 ABI 改动**;**§4.0 排队表未新增 change、未新增 KPI slot**(仍是 11 个 change / 串行 11 季度,与真源一致)。
+
+**⑤ 改动清单**
+
+| # | 文件 | 改动 |
+|---|------|------|
+| 1 | `.rddf/roadmap/objectives/obj-cep-platform.md` | §4 术语约定(+ 真源分工)· **§4.0 总排队表(新增)** · §4.1 ~ §4.4(去季度列 + 全局重编)· §4.5 / §4.6 季度口径 · §5.1 拆两条真源 · §8.1 R10 行 · 本条 Entry |
+| 2 | `.rddf/roadmap/phases/phase-10.md` | 排期真源指针 · 依赖图降级为示意 |
+| 3 | `docs/implementation/2026-10-22-cep-stage0-external-review-summary.md` | **v1.2**:头部版本 + 两条评审路径 · **§3.1 三项披露(新增)** · §5 **变体 B(新增)** · §6 指针修正 + 2 行 · 底部版本与关联 |
+| 4 | `docs/implementation/2026-10-23-cep-stage0-self-review-receipt.md` | **新建** —— 自审回执(变体 B) |
+| 5 | `docs/README.md` | `implementation/` 计数 14 → **15**(.md 含 README;另有 1 份 freeze manifest JSON) |
+
+**⑥ 验收**
+
+```
+bash scripts/test/cep_docs_sync_check.sh --strict   == 0
+bash scripts/test/cep_doc_ref_check.sh --strict      == 0
+bash scripts/test/cep_freeze_check.sh --strict       == 0
+bash scripts/test/cep_archforge_alignment_check.sh   == 0
+ctest --test-dir build -j4                           == 96/96
+./build/bin/cpptlm_tests "[cep]"                     == 0(76 case / 1284 assertion)
+git diff --name-only → 冻结面成员集合 = 0 行
+```
+
+### Entry #24 — 2026-10-23 [sprint-review]
+
+**主题**: Entry #22 ⑩ **L5**(`ctest` 偶发失败)**根因定位并关闭** —— `cep_tools_contract` 与 `cep_all` **并行跑同一组用例** + **固定名**临时目录 → **竞态**;已起草 improvement 交 builder
+
+**触发**: Entry #23 的最终验收中,`ctest -j4` **再次**复现 1 次失败,且**首次抓到用例名**(`Test #82: cep_all` → `test/test_cep_tools_contract.cc:115`)→ 根因定位。Entry #22 ⑩ L5 记为「偶发 1 次 · **未复现**」—— 本条**关闭该观察项**并给出根因(L5 的登记文字**不改写**,append-only)。
+
+**① 根因(实证)**
+
+| 项 | 事实 |
+|---|------|
+| **并行源** | ctest 注册 `cep_tools_contract` → `cpptlm_tests "[cep][tools]"` 与 `cep_all` → `cpptlm_tests "[cep]"`(**后者包含前者全部用例**);`-j4` 下两进程并行 |
+| **共享路径** | `test/test_cep_tools_contract.cc:54-57` `make_exp_dir()` 用**固定名** `temp_directory_path() / ("cep_tools_" + tag)`(tag = `gate_good` / `gate_bad` / `ab_run`);另 `:124` `cep_tools_ab_out`、`:183` `cep_ast_dep_check.py` 同型 |
+| **竞态** | 进程 A 的 `remove_all(base)` 与进程 B 的 `render_report` 读写**同一目录** → B 的 `report.html` 被删 / 被覆盖 → 断言 `html.find("一致性违例")` == npos → 失败 |
+| **复现率** | `ctest -j4` **3~4 次复现 1 次**;**串行必绿**(不带 `-j` 与单跑 `[cep]` 均 100% 绿) |
+| **性质** | **测试执行环境隔离缺陷**,非产品代码缺陷;**零**冻结面 / 零 ADR / 零 tools 影响 |
+
+**② 处置:已起草 improvement,交 builder(planner 不改测试代码)**
+
+- 草稿:`.rddf/improvements/cpptlm-cep-tools-test-isolation.md`(5 段;改动面 = `test/test_cep_tools_contract.cc` **单文件数行**;零冻结面 / 零 tools 改动)
+- **验收核心**:`ctest --test-dir build -j4 --repeat until-fail:20 -R "cep_(all|tools_contract)"` == **0**
+- **KPI**:**不新增 change、不新增 slot** —— 落 `cpptlm-cep-umbrella` 的 `tasks.md` 追加一条 task
+- ⚠️ **不接受** `RUN_SERIAL TRUE` 绕过 —— 那是**绕过**竞态而非消除;正解 = 临时路径**跨进程唯一**
+
+**③ 本条为台账第 24 条**;Entry #23 的最终验收:4 个守门脚本 + `docs_sync_check` + `markdown_link_check` + `ctest 96/96` + `[cep]` 76/1284 **全绿**,冻结面 29 成员 **0 diff**。
+
+### Entry #25 — 2026-10-23 [scope-change]
+
+**主题**: **载体分工与状态更新协议落地(obj §4.7)** + 修掉 umbrella ↔ 路线图的 **3 处指针缝隙**(M1/M2/M3)
+
+**触发**: DRI 指示「请把分工写到对应文档里,后续新的会话在推进实施时,是否可以清楚他们的关系,以及实施过程中如何更新状态」。前置核查(obj vs umbrella 交叉核对)发现 **8 项口径已对齐**,但存在 3 处**结构性缝隙** —— 数字对、指针不闭合。
+
+**① 新增 obj §4.7「载体分工与状态更新协议」(单一真源)**
+
+| 小节 | 内容 |
+|------|------|
+| §4.7.1 | **五类载体表** —— objective(为什么/排队/台账,planner 写)· phase(子任务拆解,planner)· improvement(为什么值得做,planner)· **OpenSpec change(做什么/怎么验/做到哪 = 执行真源,builder)** · 实施笔记(时点快照,append-only) |
+| §4.7.2 | **change 状态机** —— 📋 Planned → 🟡 Proposed/in-progress → ✅ archived,旁支 ⏸ 队列位保留;每态给**机器判据** |
+| §4.7.3 | **六步同步清单** —— 起步 / 建 change / 每勾一个 task / 阶段或卡口变化 / 实施事件 / 收尾,每步列「动哪些文件」 |
+| §4.7.4 | **新会话 3 步文档地图** + ⛔ 两个常见误读(依赖图不是排期 / 草稿不是验收判据) |
+
+**三条硬规则**(写入协议,后续以此为判据):
+1. **状态唯一权威 = OpenSpec change 的 `tasks.md` 勾选 + `proposal.md` 状态行**;§4.0 状态列是**投影**,不一致时以 change 为准并立刻回填 §4.0。
+2. **数量口径只在 ADR 写**(11 change / 11 季度 / 21 ADR / 66 invariant / 29 冻结);其余载体一律**引用不复算**。
+3. **实施笔记 append-only**,过期快照不改写。
+
+**② 指针双向闭合(5 类载体各加 1 行,协议只在 §4.7 写一次)**
+
+| 载体 | 新增指针 |
+|------|---------|
+| `phase-10.md` | 「载体分工/状态怎么更新 = obj §4.7」+ 说明本节只是 Stage 0 子任务展开 |
+| `.rddf/roadmap.md` | CEP 载体分工协议 → obj §4.7;实施路径排队真源 → §4.0 |
+| improvement 草稿 | 「本文 = 5 段规划输入;执行契约在 change;排队在 §4.0;协议在 §4.7」 |
+| `proposal.md` | 「本 change = 执行真源;状态真源 = 本 change `tasks.md` 勾选」 |
+| `tasks.md` | 上游补 **§4.0 / §4.7**;两段准入前置各加**归属行**(S1-1~S1-5 → 队列 #2;S1-7 ③ → #4,①② → #6) |
+
+**③ 修掉的 3 处缝隙**
+
+| # | 缝隙 | 修法 |
+|---|------|------|
+| **M1** | obj §6.1 委托范围写「§Acceptance **A1~A6**」,草稿实为 **A1~A7** | §6.1 改 3 行来源表,明确 **A1~A7**(A7 = 前置 gate 汇总,非 assertion) |
+| **M2** | 验收指针指向 **improvement 草稿**,但实测回填在 **change 的 `proposal.md`** | §0 + §6.1 分源标注:**执行真源 = `openspec/changes/cpptlm-cep-umbrella/proposal.md` §Acceptance**;草稿 = 上游规划输入 |
+| **M3** | 准入前置的**归属**只在 §4.0,umbrella 侧不可寻址 | `tasks.md` 两段准入前置加**归属行**;`tasks.md:3` / `phase-10.md:43` / obj §0 的「§4.2」引用统一改 **§4.0** |
+
+**④ 顺带清理**
+
+- 删除 obj §0 内**重复**的「验收层级」注记(同一句话出现两次,其中一次指针错误)。
+- Entry #23 ⑨ 改动清单外,**本条不改任何 ADR / schema / 冻结面成员**。
+
+**⑤ 验收**
+
+```
+cep_docs_sync_check.sh --strict / cep_doc_ref_check.sh --strict / cep_freeze_check.sh --strict /
+cep_archforge_alignment_check.sh --strict / cep_decl_alignment_check.sh --strict   == 0 (5/5)
+docs_sync_check.sh --strict == 0 · markdown_link_check.sh == 0
+ctest 96/96 · [cep] 76 case / 1284 assertion · 冻结面成员 diff == 0
+```
+
+**关联**: Entry #22(M 系列口径)/ #23(排队真源 §4.0 + 自审 + 包 v1.2)/ #24(tools 测试隔离)· `ADR-CEP-00 §2 Decision 3`(治理口径真源)
+
+### Entry #26 — 2026-10-23 [scope-change]
+
+**主题**: **Entry #25 的协议增补** —— critic 复审 4 项放行条件(S1~S4)+ 3 NIT 全部落地;**本条覆盖 Entry #25 ② 与 Entry #25 ⑤ 中已过期的描述**
+
+**触发**: Entry #25 落地后 critic 对抗复审 → **APPROVE_WITH_CONDITIONS**(3 BLOCKERS 已在上一条落地前关闭,剩 4 项放行条件)。
+
+> ⚠️ **覆盖声明(append-only 纪律下的正确做法)**:Entry #25 正文不改写。凡与下列冲突,**以本条为准**:
+> | Entry #25 旧描述 | 本条修正 |
+> |---|---|
+> | ② 「§4.7.4 **两个**常见误读」 | 现为 **4 条**(+AGENTS.md KPI 快照 / +转述计数),并追加以 **L6** 为核心的**第 5 条**(07 号 §8.1) |
+> | ③ 「§4.7.1 **状态唯一权威**...§4.0 状态列是它的**投影**」 | 现明确 **3 个投影**(§4.0 状态列 / phase-10 子任务表 / improvement front-matter),任一漂移都以 change 为准 |
+> | ⑤ 「cep_* 5 个守门脚本 --strict 全绿」(当时未含 docs/link) | 现为 **7 项**:5 个 cep 脚本 + `docs_sync_check --strict` + `markdown_link_check` |
+
+**① S1 — 冻结面「10 change」正式登记为 L6**(此前只在批 4 备注里口头提过)
+
+- `docs/architecture/07-coherence-exploration-platform.md §8.1`(:543-553)写「Stage 1 = 6 change / 合计 10 / 串行 10 季度」,**该文件是 M1 冻结面 29 成员之一**(`2026-10-21-cep-stage0-freeze-manifest.json` 实测 `frozen: True`)→ **不改**,登记为 **§11 L6**。
+- **§4.7.4 误读第 5 条**:新会话不得据 07 号 §8.1 推断排期;Stage 划分 / change 数一律以 §4.0 + `ADR-CEP-00 §2 Decision 3` 为准。
+- **§4.0 自检从「单边」升级为「双边」**:只查新值(`2029-Q2`)会漏「**旧数复活**」;现同时查旧终态(`2029-Q1`)+ 旧串行数(`串行 10 季度` / `10 个 change`),并声明**预期例外 = §4.0 所列 3 处**(`07 号 §8.1` = L6 / `ADR-CEP-NUMBER-MAP §2` = L2 / `.rddf/drafts/` 草稿)—— **不是**只有 07 号一处。
+
+**② S2 — improvement 草稿的归属指针**:`.rddf/improvements/cpptlm-cep-umbrella.md:34` 的「`obj §4.2` 可寻址」→ **`obj §4.0` 排队表**(逐项 owner → 队列 #2 / #4 / #6)。此为该文件**最后一处** §4.2 归属残留。
+
+**③ S3 — 转正路径补 `slot` 硬前置**:§4.7.2 原 3 步转正路径**缺 KPI slot 守卫** —— 若在 umbrella 仍占 slot 时把 ⏸ 项转正,会瞬间出现 **2 个 Proposed**,违反 §5.4(并发 ≤ 1)。现补 **step 0**:`openspec list --json` 实测并发 < 1 才允许建 change,否则**先让出 slot**。
+
+**④ S4 — 本条(NIT 随附)**
+
+| # | NIT | 处置 |
+|---|-----|------|
+| N1 | 收尾清单 #1 把「⏸ 段」的落点指向 `tasks.md`(**错**,应在 `proposal.md` 顶部) | 拆成 #1(`tasks.md` 勾选)+ **#1b**(`proposal.md` 顶部 ⏸ 段),清单数 6 → **7** |
+| N2 | 「六处同改」(§4.0)与「收尾清单六项」(§4.7.3)量词撞车,易混 | §4.0 → **五处同改**(本表为触发源,不计入);§4.7.3 → **收尾 7 个落点** |
+| N3 | §4.0 ⑥「本表本身」同义反复(改动就发生在给它) | 删除,改在标题行写「本表是触发源,不算在内」 |
+
+**⑤ 验收(7 项全绿)**
+
+```
+cep_docs_sync_check / cep_doc_ref_check / cep_freeze_check / cep_archforge_alignment_check / cep_decl_alignment_check  --strict  == 0 (5/5)
+docs_sync_check.sh --strict == 0 · markdown_link_check.sh == 0
+ctest 96/96 · [cep] 76 case / 1284 assertion
+```
+**双边自检实测**:新值 grep → **空**;旧值 grep → **3 处命中,与 §4.0 声明的「已知例外」逐条对应**(`07 号 §8.1` = L6 / `ADR-CEP-NUMBER-MAP §2` = L2 / `.rddf/drafts/` 草稿)。冻结面 29 成员 diff = **0**。
+
+**关联**: Entry #25(协议落地)/ #23(排队真源)· `AGENTS.md` §DOC HYGIENE「两种归档语义必须区分」· `ADR-CEP-00 §2 Decision 3`
+
+**关联**: Entry #12(P-1 增补 / 11 change)/ #13(R-2 已触发 + A6 闭合)/ #15/#16(S2 实测 + ctest 回归门)/ #17(R10 评审包 v1.1)/ #20/#21(ADR 族两轮精简)/ #22(路线图口径同步 + L5 登记)/ #23(排队真源 + 自审 + 评审包 v1.2)· `ADR-CEP-00 §2 Decision 3` · `ADR-CEP-NUMBER-MAP §2 决策`(已知缺陷 G-1)
+
+---
+
 ## §12 Review Schedule
 
 - **2027-01-18**(review_by 默认 = created + 90 天):第一次 sprint-review
@@ -1570,6 +2083,6 @@ Entry #17(R10 评审包 v1.1)· `ADR-CEP-05 §7 / §13` · 决策简报 `:67`(�
 
 ---
 
-**版本**: v1.1(2026-10-20,per oracle v0.4 路线图评审 B1/B2/B4/B5/B6 + metis G1/G4 修订)
-**最后**: 待 rdd-planner stage exit 自动刷新 AGENTS.md `<!-- AUTO: objectives -->` 哨兵段
+**版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
+**最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)
