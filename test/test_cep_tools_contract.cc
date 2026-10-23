@@ -14,6 +14,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 using cpptlm::cep::read_file;
@@ -50,10 +51,25 @@ namespace {
         return "'" + s + "'";
     }
 
+    // 进程唯一化 token:跨进程必异、进程内稳定。
+    //
+    // ⚠️ 2026-10-23 根因修复(per 台账 Entry #24 / improvement
+    //    `cpptlm-cep-tools-test-isolation`):ctest 注册了 **两个** 跑同一组
+    //    `[cep][tools]` 用例的测试项(`cep_tools_contract` → `[cep][tools]`
+    //    与 `cep_all` → `[cep]`),`-j4` 下**并行**执行。此前本文件用**固定名**
+    //    临时目录(`/tmp/cep_tools_<tag>`),进程 A 的 `remove_all` 与进程 B 的
+    //    读写**竞态** → 报告被删/被覆盖 → 断言随机红。
+    //    唯一化后两个进程各写各的目录,竞态消失。
+    const std::string& proc_token() {
+        static const std::string t = "_p" + std::to_string(static_cast<long long>(::getpid()));
+        return t;
+    }
+
     // 造一个实验目录。metrics 覆盖传入的字段。
     std::filesystem::path make_exp_dir(const std::string& tag, const std::string& metrics_json,
                                        bool with_trace = true) {
-        const auto base = std::filesystem::temp_directory_path() / ("cep_tools_" + tag);
+        const auto base =
+            std::filesystem::temp_directory_path() / ("cep_tools_" + tag + proc_token());
         std::filesystem::remove_all(base);
         std::filesystem::create_directories(base);
         std::ofstream(base / "metrics.json") << metrics_json;
@@ -121,7 +137,7 @@ TEST_CASE("[cep][tools] 一致性闸门真的生效(ADR-CEP-06 IC3)", "[cep][too
 TEST_CASE("[cep][tools] ab_compare 可实际运行(回归:缺 import html → NameError)", "[cep][tools]") {
     const auto tool = (repo_root() / "tools/ab_compare.py").string();
     const auto dir = make_exp_dir("ab_run", kGoodMetrics);
-    const auto out = std::filesystem::temp_directory_path() / "cep_tools_ab_out";
+    const auto out = std::filesystem::temp_directory_path() / ("cep_tools_ab_out" + proc_token());
     std::filesystem::remove_all(out);
     INFO("ab_compare 运行失败(此前缺 import html → NameError 崩出)");
     REQUIRE(run_cmd("python3 " + shquote(tool) + " " + shquote(dir.string()) + " " +
@@ -180,7 +196,8 @@ TEST_CASE("[cep][tools] 零项目内依赖(per design D4)", "[cep][tools]") {
             "        if n.module and (n.module=='cpptlm' or n.module.startswith('cpptlm.')): "
             "bad.append(n.module)\n"
             "print(';'.join(bad))\n";
-        const auto checker = std::filesystem::temp_directory_path() / "cep_ast_dep_check.py";
+        const auto checker =
+            std::filesystem::temp_directory_path() / ("cep_ast_dep_check" + proc_token() + ".py");
         {
             std::ofstream cf(checker);
             cf << script;
@@ -199,6 +216,9 @@ TEST_CASE("[cep][tools] 零项目内依赖(per design D4)", "[cep][tools]") {
             out.pop_back();
         INFO("tool import 了项目内包: " << out);
         REQUIRE(out.empty());
+        // 判定脚本是本进程私有的临时文件(PID 唯一化)—— 用完即删,避免 /tmp 堆积
+        std::error_code ec;
+        std::filesystem::remove(checker, ec);
     }
 }
 
