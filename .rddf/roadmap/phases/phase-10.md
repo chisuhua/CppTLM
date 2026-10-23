@@ -1,7 +1,7 @@
 ---
 id: phase-10
 kind: phase
-status: planning
+status: in-progress
 phase_refs:
   - phase-7
   - phase-8
@@ -13,7 +13,7 @@ phase_refs:
 
 > **真源 1 (基础)**: [`docs/architecture/06-inter-module-network.md`](../../../docs/architecture/06-inter-module-network.md) v0.4(仿真层 L1-L6 正交,非 CEP 6 层)
 > **真源 1 (基础)**: [`docs/architecture/06-bis-coherence-as-network-extension.md`](../../../docs/architecture/06-bis-coherence-as-network-extension.md) v0.3(将被 supersede by CEP,顶部加 Status Update 段)
-> **真源 1 (新,✅ 已拍板 α + 已创建)**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1(657 行,2026-10-20~21)
+> **真源 1 (新,✅ 已拍板 α + 已创建)**: [`docs/architecture/07-coherence-exploration-platform.md`](../../../docs/architecture/07-coherence-exploration-platform.md) v0.1(**686 行**,2026-10-20~21;后增补)
 > **真源 3**: **21 份** CEP ADR(per `ADR-CEP-NUMBER-MAP §2 Decision 1`;2026-10-21 architect 阶段两批新增 10 份):
 > - 治理:`ADR-CEP-00-platform-charter-and-governance.md` v0.6
 > - 真源映射:`ADR-CEP-00A-real-source-anchor-map.md` v0.6
@@ -22,19 +22,27 @@ phase_refs:
 > - **协议族与路线**:`ADR-CEP-17` 协议族接入 + 组合承诺边界 / `ADR-CEP-18` 协议生成路线范围
 > - **对齐与治理(2026-10-21 第二批)**:`ADR-CEP-11` 协议版本锁定 / `ADR-CEP-14` Stub 合同测试 / `ADR-CEP-15` CacheTLM 对齐 / `ADR-CEP-16` `06 §15.4` 演进映射 / `ADR-CEP-07A` 06-bis 产物处置
 
-### 当前活跃 (Active)— Stage 0 Umbrella
+### 当前活跃 (Active)— Stage 0 Umbrella(队列 #1)
+
+> **排期真源指针**:本 phase 的**实施路径**(11 个 change 的顺序 / 季度 / 状态 / 准入前置归属)真源 = [`obj-cep-platform §4.0 排队总表`](../roadmap/objectives/obj-cep-platform.md);**治理口径**(change 总数 / 串行 / 并发 ≤ 1)真源 = `ADR-CEP-00 §2 Decision 3`。
+> **载体分工 / 状态怎么更新** = [`obj-cep-platform §4.7`](../roadmap/objectives/obj-cep-platform.md)(**本节只是 Stage 0 子任务展开**,不承载整条队列的状态)。
 
 | 子任务 | 状态 | 范围 | 估时 | 关联 ADR | KPI slot |
 |--------|------|------|------|----------|----------|
-| **10.A 真源 ADR 起草与评审** | ✅ 完成(2026-10-19~21) | **21 份 ADR**(原 10 份 + 2026-10-21 两批新增 08/09/12/13/18 + 11/14/15/16/07A,修订 02/04/05/06/07/17) | 12 人日(architect) | ADR-CEP-00~18 全族 + NUM | 0(doc-only 起草)|
-| **10.B OpenSpec `cpptlm-cep-umbrella` 起草** | 🟡 **Proposed(2026-10-21 已创建,`openspec validate --strict` PASS)** | proposal + design + specs + tasks **4 件套已落**(95 个 task) | 5 人日(builder) | improvement `cpptlm-cep-umbrella.md` | **1**(Stage 0 计 KPI,per oracle v0.4 B2-1 修订)|
-| **10.C 实验输出 4 件套契约测试** | 📋 Planned | `test_cep_canonical_invariants.cc` + `test_cep_dummy_signals.cc` + `test_cep_module_factory_seam.cc` + `test_cep_simulation_mode_lock.cc` | 2 周(builder) | ADR-CEP-06 §2 + ADR-CEP-07 §2 | 0(沿用 10.B)|
-| **10.D `experimental/` 目录 + tools** | 📋 Planned | `tools/render_report.py` + `run_sweep.py` + `ab_compare.py` + `metrics.json` schema | 1 周(builder) | ADR-CEP-06 §4 | 0(沿用 10.B)|
-| **10.E `07-coherence-exploration-platform.md` 顶层真源** | ✅ **完成(2026-10-20~21)** | 整合 **21 份** ADR 为可读真源 1(657 行) | 5 人日(architect,已消耗) | ADR-CEP-00 §5.2 | 0 |
-| **10.F `scripts/test/cep_docs_sync_check.sh` ADR 锚点 lint** | 📋 Planned | 真源章节号机器检查(覆盖 **16 份** ADR) | 6 人日(原 5,随 ADR 数量上调) | ADR-CEP-00A §5.1 | 0 |
-| **10.G capability schema 定义 + 契约** | 📋 Planned | `include/tlm/cep/protocol_instance.schema.json` + `INV-CEP-12-IC1~3` 断言 | 3 人日 | ADR-CEP-12 §2 + §3 | 0(沿用 10.B)|
+| **10.A 真源 ADR 起草与评审** | ✅ 完成(2026-10-19~21) | **21 份 ADR**(原 10 份 + 2026-10-21 两批新增 08/09/12/13/18 + 11/14/15/16/07A,修订 02/04/05/06/07/17) | 12 人日(architect,已消耗) | ADR-CEP-00~18 全族 + NUM | 0(doc-only 起草)|
+| **10.B OpenSpec `cpptlm-cep-umbrella` 起草** | 🟡 **Proposed / in-progress(2026-10-21 创建;4 件套已落;tasks **105 / 99 完成**;`openspec validate --strict` **rc=1** = 2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**;**R10 未闭合 → 不 archive**)** | proposal + design + specs + tasks **4 件套已落** | 5 人日(builder,已消耗) | improvement `cpptlm-cep-umbrella.md` | **1**(Stage 0 计 KPI,per oracle v0.4 B2-1 修订)|
+| **10.C 实验输出 4 件套契约测试** | ✅ **完成(2026-10-21~22)** | `test_cep_canonical_invariants.cc` + `test_cep_dummy_signals.cc` + `test_cep_module_factory_seam.cc` + `test_cep_simulation_mode_lock.cc`(+ 后期补充 `test_cep_schema.cc` / `test_cep_contracts_crosscheck.cc` / `test_cep_tools_contract.cc`) | 10 人日(builder,已消耗) | ADR-CEP-06 §2 + ADR-CEP-07 §2 | 0(沿用 10.B)|
+| **10.D `experimental/` 目录 + tools** | ✅ **完成(2026-10-22)** | `tools/render_report.py` + `run_sweep.py` + `ab_compare.py` + `experimental/metrics.schema.json` | 5 人日(builder,已消耗) | ADR-CEP-06 §4 | 0(沿用 10.B)|
+| **10.E `07-coherence-exploration-platform.md` 顶层真源** | ✅ **完成(2026-10-20~21;后增补至 686 行)** | 整合 **21 份** ADR 为可读真源 1(**686 行**) | 5 人日(architect,已消耗) | ADR-CEP-00 §5.2 | 0 |
+| **10.F `scripts/test/cep_docs_sync_check.sh` ADR 锚点 lint** | ✅ **完成(2026-10-22;后扩至 10 组)** | 真源章节号机器检查(覆盖 **21 份** ADR;第 10 组 = 传输层 `CATEGORY_*` 分层纪律,per Entry #11) | 6 人日(已消耗) | ADR-CEP-00A §5.1 | 0 |
+| **10.G capability schema 定义 + 契约** | ✅ **完成(2026-10-22)** | `include/tlm/cep/protocol_instance.schema.json` + `INV-CEP-12-IC1~3` 断言(+ `fabric.schema.json` / `fabric.json`) | 3 人日(已消耗) | ADR-CEP-12 §2 + §3 | 0(沿用 10.B)|
 
-**总 tasks 待 execute**: Stage 0 共 **41 人日**(builder + architect 混合;**已消耗 13 人日**:10.A 8 + 10.E 5;**剩余 28 人日**:10.B 5 + 10.C 10 + 10.D 5 + 10.F 6 + 10.G 3 —— per oracle S5 人日口径 + 2026-10-21 architect 阶段修订)
+**Stage 0 估时(2026-10-23 重算,per Entry #22)**:上表逐行合计 = **46 人日**(10.A 12 + 10.B 5 + 10.C 10 + 10.D 5 + 10.E 5 + 10.F 6 + 10.G 3)。
+> **口径修正**:原「41 人日 / 已消耗 13 / 剩余 28」与表内逐行值不同步(10.A 由 8 → 12 人日后未回填算式)→ 以表内合计为准。
+
+- **实施侧**:10.A ~ 10.G **全部已落地**(tasks.md **105 task / 99 完成**)→ **Stage 0 工程量视为已消耗**。
+- **剩余工程量**:**0**。umbrella `tasks.md` 6 项未勾 **全部是 Stage 1 准入前置**(S1-1 ~ S1-5 + S1-7)→ 按 `obj-cep-platform §4.0` 排队表归属 Stage 1(队列 #2 / #4 / #6),**不计入 Stage 0**。
+- **唯一卡口(外部依赖,不可估)**:**R10 真人外部评审回执** → Stage 0 **不 archive**。
 
 **KPI 预算**(per `ADR-CEP-00 §2 Decision 3` + oracle v0.4 B8 三处口径对齐):
 
@@ -42,12 +50,12 @@ phase_refs:
 - Stage 1 = 7 串行 × 1 slot = 7 季度(含 `cpptlm-cep-poc-spike`,**2026-10-22 P-1 增补**)
 - Stage 2 = 2 串行 × 1 slot = 2 季度
 - Stage 3 = 1 slot = 1 季度
-- **总计**:11 个 OpenSpec change,串行 11 季度,任一时刻 Proposed 并发 ≤ 1
+- **总计**:11 个 OpenSpec change,串行 11 季度,任一时刻 Proposed 并发 ≤ 1(真源 = `ADR-CEP-00 §2 Decision 3`;**终态季度见 `obj-cep-platform §4.6`** —— per Entry #23 单源纪律,本文件不复制数值)
 
 ### 子任务依赖图(Stage 0)
 
 ```
-10.A 真源 ADR 起草 ✅(16 份)──→ 10.B OpenSpec umbrella 起草(同步)
+10.A 真源 ADR 起草 ✅(21 份)──→ 10.B OpenSpec umbrella 起草(同步)
                                     ↓
         ┌───────────────────────────┼───────────────────────────┐
         ↓                           ↓                           ↓
@@ -62,17 +70,24 @@ phase_refs:
 
 ### 子任务依赖图(Stage 1~3 远期)
 
+> ⚠️ **本图是示意,不承载排期承诺** —— 权威排期见 `obj-cep-platform §4.0 排队总表`(1 change / 1 季度,串行 11 季度)。
+
 ```
 Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2026-10-22 P-1 增补):
                  ├─ cpptlm-cep-poc-spike              ← 2026-10-22 新增,置首位
                  │    (可丢弃 spike:解阻 A6 → 解阻全部协议插件 change)
+                 │    ⏸ 队列位保留 · S2 已实跑 + ctest 回归门 · change 未建
+                 │    (per Entry #22 裁决:补建 / 移出当前均不可执行)
+                 │    承接 Stage 1 准入前置:S1-1 ~ S1-5
                  ├─ cpptlm-cep-stub-cache-core
                  ├─ cpptlm-cep-directory-ordering-plane   ← 2026-10-21 重排
                  │    (原 sharer-tracker-base 扩容:Address Resolver +
                  │     Sharer Tracker 5 实现 + Ordering Point 三判据 +
                  │     装配期通道依赖图无环检查)
+                 │    承接 Stage 1 准入前置:S1-7 的 (β) 重评估
                  ├─ cpptlm-cep-collective-plane-base
                  ├─ cpptlm-cep-chi-rnf-subset
+                 │    承接 Stage 1 准入前置:S1-7 的 perm 形态 schema 演进
                  ├─ cpptlm-cep-cxl-nonsymmetric
                  └─ cpptlm-cep-tilelink-tree-manager
                                     ↓
@@ -83,14 +98,15 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
                           Stage 3 (1 change 串行 1 季度):
                           └─ cpptlm-cep-ualink-inc
                                     ↓
-                          Phase 4+ 远期(per ADR-CEP-NUMBER-MAP §2):
+                          Phase 4+ 远期(per ADR-CEP-NUMBER-MAP §2 Decision 1):
                           ├─ CEP-08/09/12/13 **已起草**(v0.1 2026-10-21),实现按上表分 Stage 落地
-                          ├─ CEP-11 协议版本锁定(待 architect 起草)
-                          ├─ CEP-14 Stub 可验证性合同测试(待 architect 起草)
-                          ├─ CEP-15 CacheTLM 对齐(待 architect 起草)
-                          ├─ CEP-13 IoT 域归属
-                          ├─ CEP-16 06 §15.4 演进对应(待 architect 起草)
-                          └─ CEP-07A 06-bis 既有产物处置(待 architect 起草)
+                          ├─ CEP-17 协议族接入 + 组合承诺边界 **已起草**
+                          ├─ CEP-11 协议版本锁定 **已起草**(Stage 1 前签发)
+                          ├─ CEP-14 Stub 可验证性合同测试 **已起草**
+                          ├─ CEP-15 CacheTLM 对齐 **已起草**
+                          ├─ CEP-16 06 §15.4 演进对应 **已起草**
+                          ├─ CEP-07A 06-bis 既有产物处置 **已起草**
+                          └─ CEP-18 协议生成路线范围 **已起草**(Stage 1~3 不依赖生成器)
 ```
 
 ### 关键依赖
@@ -103,17 +119,18 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
 ### 治理与文档约束(per AGENTS.md §DOC HYGIENE)
 
 - **AGENTS.md:423 边界**: 第 3 条"SoC 架构组件/拓扑/演进类提案 → ArchForge"。CEP **核心框架层**(5 层骨架 + Stub Cache + Coherence Interface + 插件机制)**归 CppTLM**;**协议语义建模**(5 个具体协议设计文档)**归 ArchForge**(per `ADR-CEP-00 §2 Decision 4` 豁免论证,边界条款对照表)
-- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 0/3**(2026-10-20:3 个 active 全部 **⏸ 暂存归档** `--skip-specs`,0% 未实施,per AGENTS.md「两种归档语义必须区分」)。**KPI 空间已腾空** → **创建 `cpptlm-cep-umbrella` 的前置条件已满足**(per AGENTS.md line 422 新提案门槛 + `ADR-CEP-00 §2 Decision 3`)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
+- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 1/3**(2026-10-21 创建 `cpptlm-cep-umbrella`;2026-10-22 M2 跨仓准入门放行后升为 **Proposed**,per Entry #10;此前 2026-10-20 的 3 个 active 全部 **⏸ 暂存归档** `--skip-specs`,0% 未实施,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
 - **ADR 不可变 doc-only 类豁免**: `cpptlm-dgpu-soc-arch-truth-cleanup §6` 显式声明,仅 doc-only cleanup 类不计。**umbrella change 含测试契约骨架,不符豁免**(per oracle v0.4 B2-1)
 - **真源 1 命名空间**: `docs/architecture/` 一律真源 1,`docs/adr/` 一律真源 3,跨仓 ArchForge 文档另立
 
 ### 配套测试标签(规划)
 
-- `[cep]` 新增(Stage 0 起)~30 cases
-- `[coherence]` 新增(Stage 1 起)~20 cases
-- `[canonical-invariant]` 新增(Stage 0 起)~66 cases(66 条实际守门 invariant / 67 编号位,per oracle v0.5 复审 + 全面架构审查 N1/N2 + architect 阶段 2026-10-21 两批:IC4 **唯一跳空**)
-- `[sweep]` + `[ab-compare]` 新增(Stage 0 起,~10 cases)
-- baseline 增量:`1241 → ~1300 cases`(Stage 0)+ 后续 Stage 1~3 增量
+- `[cep]` **已落地**:实测 **76 case / 1284 assertion**(2026-10-23 实测;原规划 ~30 cases)
+- `[canonical-invariant]` **已落地**:**66 条实际守门 invariant 的逐条断言统一落 `test/test_cep_canonical_invariants.cc`**(编号位 67,IC4 **唯一跳空**;组 6/14/15 另有脚本层口径校验 —— **invariant 条数 ≠ case 数**)
+- `[sweep]` + `[ab-compare]` **已落地**(tools 契约测试在 `test/test_cep_tools_contract.cc`)
+- `[coherence]` **Stage 1 起**(尚未落地)
+- 全仓 baseline:Stage 0 实施后 **1857 cases / 81202 assertions**(2026-10-23 实测);Stage 1~3 继续增量
+> ⚠️ `tasks.md` 第 8 项记录的 `1856 / 81145` 是**该批执行时点快照**(append-only,不改)—— 判读当前值以实测为准(per Entry #22 ⑫ 动态量快照登记)
 
 ### 真源现状(per `ADR-CEP-00A` §3.2 实证)
 
@@ -131,13 +148,13 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
 - **oracle 全面架构复审(2026-10-21,首次独立复审)**:9 项问题(N1~N9)全部核实并修复 + 5 项架构级修订(CEN-Ib11 / `INV-CEP-06-IC5` / schema 补 5 维度 / `ADR-CEP-09` 两段式 / §7.2.1 验证深度契约);**CEP 骨架判定成立,无需改层**
 - **architect 阶段(2026-10-21)**:两批新增 `ADR-CEP-08/09/12/13/18` + `ADR-CEP-11/14/15/16/07A` 共 **10 份** + 修订 8 份 → **21 份**;invariant 编号位 36 → **67**(实际 66);planner 阶段同步 Stage 重排 / DoD 7 分解 / change 清单
 
-### 签发前置决策(per `ADR-CEP-00 §5.1 + §5.2` 待决项,pending 用户拍板)
+### 签发前置决策(per `ADR-CEP-00 §5.1 + §5.2` —— **两项均已拍板 2026-10-20**)
 
-1. **签发仓**:✅ **已拍板 = CppTLM 仓**(2026-10-20)。定性:"支持做互相协议探索的"归入框架级,类比 gem5 Ruby network(per `ADR-CEP-00 §5.1` gem5 Ruby 类比锚点)。**16 份 ADR** + 07 号真源 1 全留 CppTLM,引用不断裂
+1. **签发仓**:✅ **已拍板 = CppTLM 仓**(2026-10-20)。定性:"支持做互相协议探索的"归入框架级,类比 gem5 Ruby network(per `ADR-CEP-00 §5.1` gem5 Ruby 类比锚点)。**21 份 ADR** + 07 号真源 1 全留 CppTLM,引用不断裂
 2. **真源文档路径**:✅ **已拍板 α** = `docs/architecture/07-coherence-exploration-platform.md`(2026-10-20 已创建 v0.1 草案,已注册 README Doc Map)
 
 ---
 
-**版本**: v0.1(2026-10-20)
-**最后**: 待 rdd-arch / rdd-builder 阶段推进
+**版本**: v0.2(2026-10-23,per planner 路线图漂移复核 + Entry #22)
+**最后**: Stage 0 实施完成、**R10 真人回执待达** → R10 闭合后方可 archive 并启动 Stage 1
 **作者**: CppTLM build agent(planner mode)
