@@ -21,7 +21,7 @@
     "docs/adr/ADR-CEP-16-06-evolution-route-mapping.md": "16def7fb27b5d93dce23d53096231825ccb2f75e76ac478d1b43f6fbdd2198e1",
     "docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md": "568b3bebd2d3a1667321743e546f80714b6a6997e721938b7413c348ebfab149",
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "fd0c6808ab944ae7d0d059d9486ba5d731bd5389869066f63cb9ee20c1409372",
-    "docs/adr/ADR-CEP-NUMBER-MAP.md": "106e64b4a2892bf4c876095485ecaaf96ef7c452abf4630d6dc1371237d76918",
+    "docs/adr/ADR-CEP-NUMBER-MAP.md": "99b041005c329e5b8116f1d21282fe523302aa538d50bad32ddde1b78570089b",
     "docs/architecture/07-coherence-exploration-platform.md": "26596450e345f3c56d1c93f762cbe41ad2b6bed6db8af1836ca83fff21023fb1",
     "experimental/metrics.schema.json": "be6aa118ca85010ac7d701fabcb74fffbbc3318a8c6a924a07a5f31f455a3d54",
     "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
@@ -32,9 +32,9 @@
     "tools/render_report.py": "1368402696a3aa5753ebd073a9bcab444fcd092d1334b9a7b7e37a28e026967e",
     "tools/run_sweep.py": "f16e33d3834cd2e24422537de9be82aa3b64c2e660d8bd792f4d0f82d00e3297"
   },
-  "authorized_by": "Entry #28",
+  "authorized_by": "Entry #30",
   "frozen_at": "2026-10-23",
-  "frozen_at_commit": "d9b601a2098aae0853cdbd984c21de04f030f4cf",
+  "frozen_at_commit": "1f8bc12d6de8cfe7594e325d39b0e99d60108858",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
@@ -44,7 +44,7 @@
     "tools/render_report.py",
     "tools/run_sweep.py",
     "tools/ab_compare.py",
-    "openspec/changes/**/specs/cep-core-contracts/spec.md",
+    "openspec/changes/archive/*cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md",
     "openspec/specs/cep-core-contracts/spec.md"
   ],
   "mechanism": "M1 产物冻结先于解读(per obj-cep-platform §9.2)",
