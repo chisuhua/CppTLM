@@ -648,7 +648,7 @@ else
 fi
 
 echo ""
-echo -e "${BLUE}[11/11] 归档后状态一致性(4 类客观断言)${NC}"
+echo -e "${BLUE}[11/11] 归档后状态一致性(5 类客观断言)${NC}"
 # ⚠️ 2026-10-23(Entry #32)重新设计:前两版的「散文语义正则」被 critic 实测出
 #    10/13 同义改述绕过 + 行尾贴白名单词即可绕过 → 属 overclaim。
 #    本版只做**客观可判定**的断言(数字 / 同行关联 / glob 覆盖),不再声称「理解语义」。
@@ -663,9 +663,29 @@ LIVE = [
     ".rddf/improvements/cpptlm-cep-umbrella.md",
     ".rddf/roadmap.md",
     "AGENTS.md",
+    # ADR 是**状态入口之一**(§4.7.3「① 起步」要求实施者读 ADR)→ 纳入扫描集
+    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md",
 ]
+# 最近一次「完成归档」日 —— Status Update 块的豁免按**块内日期**判定:
+#   归档日之前的块(如 Status Update 2026-10-21)→ 豁免(历史);
+#   归档日及之后的块(如 Status Update 2026-10-23)→ **不豁免**(必须写当前态)。
+ARCHIVE_DAY = "2026-10-23"
 # 区块级豁免:**标题**含下列词 → 该区块整体豁免(改标题会留痕;行尾贴词不能绕过)
-EXEMPT_HEAD = re.compile(r"历史|沿革|误读|处置|单源纪律|自检|遗留|Status Update")
+EXEMPT_HEAD = re.compile(r"历史|沿革|误读|处置|单源纪律|自检|遗留|机器兜底|Status Update")
+_DATE = re.compile(r"20\d{2}-\d{2}-\d{2}")
+
+
+def exempt_block(head, body, h2=""):
+    """区块级豁免:标题(或所属 h2)命中即豁免;但 **Status Update** 按块内日期判定 ——
+    归档日之前的块豁免(历史),归档日及之后的块**不豁免**(必须写当前态)。"""
+    scope = head + "\n" + h2
+    if not EXEMPT_HEAD.search(scope):
+        return False
+    if "Status Update" in scope:
+        days = _DATE.findall("\n".join(body))   # ⚠️ re.Pattern 没有 .find(只有 findall/finditer/search)
+        if days and max(days) >= ARCHIVE_DAY:
+            return False
+    return True
 # 实体(状态归属的主体)
 ENTITY = re.compile(r"umbrella|cpptlm-cep-umbrella|Stage 0|\bR10\b")
 # 旧状态词(表示「尚未归档 / 仍占用」)
@@ -682,7 +702,7 @@ STALE_STATE = re.compile(
     r"仍 active|未释放|in-progress|处于 Proposed|Proposed 状态|未闭合|"
     r"升为 \*{0,2}Proposed|仍为 \*{0,2}Proposed")
 # 当前状态词(表示「已归档 / 已释放」)
-CURRENT_STATE = re.compile(r"已归档|已完成归档|已释放|已闭合|归档前|曾占用|已被归档|已改写|曾 = |已计入历史|历史描述|措辞为历史|以本节为准")
+CURRENT_STATE = re.compile(r"已归档|已完成归档|已释放|已闭合|归档前|曾占用|已被归档|已改写|曾 = |已计入历史|历史描述|措辞为历史|以本节为准|已失效|已登记|已作废")
 
 
 def live_text(path):
@@ -699,17 +719,22 @@ def live_text(path):
 
 
 def blocks(text):
-    """按标题切块:(标题行, 块内容)。无标题的散文归入块标题 ''。"""
-    out, cur, in_code = [], ["", []], False
+    """按标题切块:(标题行, 块内容, 所属 h2 标题)。无标题的散文归入块标题 ''。
+    `###`/`####` 子节**继承**其所属 `##` 的上下文 —— 否则 `## Status Update` 下的
+    `### 8.3` 子节会脱离豁免(ADR 的历史状态段会被误判)。"""
+    out, cur, in_code, h2 = [], ["", [], ""], False, ""
     for line in text.splitlines():
         if line.strip().startswith("```"):
             in_code = not in_code
         if not in_code and re.match(r"^#{2,4} ", line):
-            out.append((cur[0] if cur else "", cur[1]))
-            cur = [line, []]
+            out.append((cur[0] if cur else "", cur[1], cur[2]))
+            cur = [line, [], h2]
+            if line.startswith("## "):
+                cur[2] = line
+                h2 = line          # 记住最近的 h2(供后续 ###/#### 子节继承)
         else:
             cur[1].append(line)
-    out.append((cur[0] if cur else "", cur[1]))
+    out.append((cur[0] if cur else "", cur[1], cur[2]))
     return out
 
 
@@ -727,9 +752,11 @@ if active is None:
 else:
     expect = f"{active}/3"
     # 只抓「当前/现行/真实 … N/3」的**当前态**表述(历史叙述"0/3 → 1/3"不含这些限定词)
-    CUR = re.compile(r"(当前|现行|真实)[^|\n]{0,80}?([0-9])/3")
+    CUR = re.compile(r"(当前|现行|真实|现在|目前|截至)[^|\n]{0,80}?([0-9])/3")
     vals = {}
-    for p in LIVE:
+    # ⚠️ 断言① 只扫**可变活文档**:ADR 正文不可变(只能追加 Status Update),
+    #    其中的历史数值(如 ADR-CEP-00 §2 的「当前基线 3/3 上限触发」)是合法叙述。
+    for p in [x for x in LIVE if not x.startswith("docs/adr/")]:
         t = live_text(p)
         if not t:
             continue
@@ -747,13 +774,13 @@ for p in LIVE:
     t = live_text(p)
     if not t:
         continue
-    for head, body in blocks(t):
-        if EXEMPT_HEAD.search(head):
+    for head, body, h2 in blocks(t):
+        if exempt_block(head, body, h2):
             continue          # 区块级豁免
         for ln in body:
             # 句级判定:同一**句**内同时出现「实体」与「旧状态词」才算冲突
             # (行级判定会误报:条件句/协议说明句常在同一行内先后出现两者)
-            for sent in re.split(r"[。;!?]", ln):
+            for sent in re.split(r"[。；\n;!?！？]", ln):   # 全角+半角+换行(中文文本主力是全角)
                 if ENTITY.search(sent) and STALE_STATE.search(sent) and not CURRENT_STATE.search(sent):
                     hits.append(f"{p}: {sent.strip()[:110]}")
                     break
@@ -773,14 +800,15 @@ try:
                        encoding="utf-8"))["artifact_count"]
 except Exception:
     n = None
-NUM = re.compile(r"冻结面[^0-9]{0,12}([0-9]{2})[^0-9]{0,4}成员|([0-9]{2})[^0-9]{0,4}冻结成员|冻结成员[^0-9]{0,6}([0-9]{2})")
+NUM = re.compile(r"冻结面[^0-9]{0,12}([0-9]{2})[^0-9]{0,4}成员|([0-9]{2})[^0-9]{0,4}冻结成员|冻结成员[^0-9]{0,6}([0-9]{2})|冻结面成员数[^0-9]{0,6}([0-9]{2})")
 setn = set()
 for p in FZ:
     t = live_text(p)
     if not t:
         continue
     for m in NUM.finditer(t):
-        setn.add(next(g for g in m.groups() if g))
+        gs = [g for g in m.groups() if g]
+        setn.add(gs[0] if gs else "")
 if n is None:
     failed.append("无法读取冻结清单 artifact_count")
 elif setn != {str(n)}:
@@ -789,14 +817,14 @@ else:
     print(f"  \033[0;32m✓\033[0m 冻结成员数字集合一致 {{{n}}}")
 
 # ── 断言 ⑤:旧任务计数(客观数字形态,不依赖实体锚点)───────────────
-OLDCOUNT = re.compile(r"\b105\s*/\s*99\b|\b99\s*/\s*105\b|105\s*task|6\s*项未勾|尚余[^。;]{0,6}项未勾")
+OLDCOUNT = re.compile(r"\b105\s*[/／:：]\s*99\b|\b99\s*[/／:：]\s*105\b|105\s*task|6\s*项未勾|尚余[^。;]{0,6}项未勾")
 c_hits = []
 for p in LIVE:
     t = live_text(p)
     if not t:
         continue
-    for head, body in blocks(t):
-        if EXEMPT_HEAD.search(head):
+    for head, body, h2 in blocks(t):
+        if exempt_block(head, body, h2):
             continue
         for ln in body:
             if OLDCOUNT.search(ln):

@@ -1,5 +1,7 @@
 # CEP Stage 0 自审回执（变体 B —— 独立性未满足）
 
+> **⚠️ 现态指针(2026-10-23 追记,append-only)**:本回执出具于 **Stage 0 归档之前**,其「Stage 0 ⛔ 不 archive」结论**已于同日失效** —— `cpptlm-cep-umbrella` 当日**完成归档**(R10 已按 `obj-cep-platform §9.3` 闭合判据处置,per 台账 Entry #28/#29)。**本文件的结论保留为「归档前的独立评审证据」**,现态以 `obj §4.0` 排队表与 `openspec list --json` 实测为准。
+
 > **复审人**: CppTLM CEP DRI(仓库主提交者,亦为 Stage 0 契约层的实现与撰写者)
 > **复审日期**: 2026-10-23
 > **复审对象**: CEP Stage 0 契约层(per `docs/implementation/2026-10-22-cep-stage0-external-review-summary.md` §1)

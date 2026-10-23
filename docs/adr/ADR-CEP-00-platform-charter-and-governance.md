@@ -273,9 +273,20 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 | `docs/implementation/2026-10-21-cep-archforge-response-receipt.md` | 新增(本轮回执) |
 | M1 冻结集 | 本文件属冻结集 → 冻结清单**已重生成**(`cep_freeze_check.sh --update`) |
 
+## Status Update 2026-10-23 —— `cpptlm-cep-umbrella` 已完成归档(§8 第 5 条失效)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§8 正文不改**,仅登记状态变化。
+> **触发**: 2026-10-23 `cpptlm-cep-umbrella`(Stage 0 umbrella)**完成归档** —— tasks **99/99** 全勾;delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;R10 已按 `obj-cep-platform §9.3` 的闭合判据处置(残余风险已登记 + DRI 书面接受,per 台账 Entry #28)。归档与路径迁移见台账 Entry #29。
+> **§8 第 5 条**「`cpptlm-cep-umbrella` 维持 **🟡 Proposed Draft**,Stage 0 **不 archive**」—— **已失效**:
+> - 该 change 现为 **✅ archived**(归档目录 `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/`);
+> - **KPI slot 已释放** —— 当前 Proposed 并发 **0/3**(实测 `openspec list --json`),下一个可启动 change = 队列 #2 `cpptlm-cep-poc-spike`(per `obj §4.0`)。
+> **不受影响的部分**:§8 其余条款(准入门措辞修订 **C-1** 及其理由)**继续有效** —— C-1 已于 2026-10-21 闭合(ArchForge `6020f42`)。
+> **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #33**
+> **冻结面**:本文件属 M1 冻结面 **30 成员**,本次改动已走授权闸 `cep_freeze_check.sh --update --authorized-by "Entry #33"`。
+
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21
-**最后更新**: 2026-10-21
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23**
+**最后更新**: 2026-10-23
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)
