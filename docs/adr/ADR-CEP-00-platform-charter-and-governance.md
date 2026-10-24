@@ -289,7 +289,7 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文一律不改**,仅登记状态变化。
 > **触发**: 2026-10-24 队列 #2 `cpptlm-cep-poc-spike` **已建 change 目录**(`openspec/changes/cpptlm-cep-poc-spike/`,4 件套齐全 + delta capability `cep-poc-spike-verification`),并占用 1 个 KPI slot → **并发 0/3 → 1/3**。
 > **对上一段(2026-10-23)的衔接**:该段登记「KPI slot 已释放 → 并发 0/3 → 下一个可启动 = 队列 #2」—— **队列 #2 现已启动**,该预测已兑现;其**历史快照语义保留不回改**。
-> **当前态**:Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #3 `cpptlm-cep-stub-cache-core`(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**:Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #3 `cpptlm-cep-stub-cache-core`(per `obj §4.0`)。
 > **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);§8 第 5 条**仍为失效**(umbrella 保持 ✅ archived)。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #42**
 > **冻结面**:本文件属 M1 冻结面 **30 成员**,本次改动已走授权闸 `cep_freeze_check.sh --update --authorized-by "Entry #42"`。
