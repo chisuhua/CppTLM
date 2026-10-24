@@ -248,6 +248,10 @@ add_test(NAME cep_gate_selftest
 # `test.sh` 参数解析回归锁(2026-10-24:`--build` 恒报「与 --test-only 互斥」→ PTX-EMU CI 挂)
 add_test(NAME test_sh_arg_parsing
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/test_sh_arg_parsing.sh)
+# PoC Spike 的 delta spec ↔ 实现对账(每条 Scenario 都有可执行断言;per tasks.md T5.9)
+add_test(NAME cep_poc_spike_verification
+         COMMAND cpptlm_tests "[cep][poc-spike][verification]" -r compact)
+set_tests_properties(cep_poc_spike_verification PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME cep_archforge_alignment_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_archforge_alignment_check.sh)
 set_tests_properties(cep_archforge_alignment_check
@@ -314,6 +318,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # 传入项目根目录路径，使测试可执行文件能找到 configs/
 target_compile_definitions(cpptlm_tests PRIVATE CPPTLM_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+# PoC Spike 二进制目录(供 delta spec ↔ 实现的对账测试调用 spike,per tasks.md T5.9)
+target_compile_definitions(cpptlm_tests PRIVATE CEP_SPIKE_BIN_DIR="${CMAKE_BINARY_DIR}/bin/examples")
 
 # P1 测试辅助: 启用 CPPTLM_TESTING 守卫的方法 (addInternalInstance / addOutputConfig / setName / addInstanceForTesting)
 target_compile_definitions(cpptlm_tests PRIVATE CPPTLM_TESTING)

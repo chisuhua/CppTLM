@@ -3212,6 +3212,56 @@ planner 审查只识别出 **2** 处 → **全仓扫描后补齐到 9 处**(`tes
 
 **关联**: Entry #46(planner 审查)· `scripts/test/cep_docs_sync_check.sh` 断言 ⑦ · `scripts/test/cep_gate_selftest.sh`
 
+### Entry #48 — 2026-10-24 [scope-change]
+
+**主题**: **T2 / T3 / T5 实施** —— S1 / S3 spike 落地 + S2 补反向验证 + delta spec ↔ 实现对账测试
+
+**① S1 spike**(`examples/cep_poc_spike_s1.cc`,364 行)—— 4 值 `perm` 投影 vs 6 态状态机:
+
+| 项 | 实测 |
+|---|---|
+| 序列 | 读X(未命中)→ 读X(命中)→ 写X(命中)→ 写回/驱逐 |
+| **判定结论** | `S1_VERDICT=FAIL` —— **仅写路径 1 处不一致**(`S1_MISMATCH_STEPS=1`) |
+| **R-2 命中** | `S1_R2=TRIGGERED(state_transition[2][1]=3)` —— 与 `ADR-CEP-05:296` 所引的 transition **逐字一致** |
+| 写回 | `S1_WRITEBACK_OBSERVED=1`(内存**内容**比对,非计数器自述) |
+| 自检 | `S1_SELFCHECK=OK` |
+| **退出码** | **0** —— 判定结论为红**不**导致非零(per `design.md` D7-a) |
+
+**关键建模修正**:读/写路径的**暴露不对称** —— 读路径接口在**响应侧**携带 perm(= 授予的权限,32 号 :338)→ 忠实反映行态;写路径接口在**请求侧**携带 perm(Write → UNIQUE,32 号 :560)→ **静默升级不可见**(32 号 :561 的 R-2)。**这个不对称才是 R-2 的发生点**;若两侧都用同一侧,读路径会产生**假不一致**并淹没 R-2 信号。
+
+**② S2 补反向验证**(T1.3)—— 在**既有** spike 上加自检(不动其 (b) 观测路径):桥接**真实关闭** ⇒ 判据 (b) 必不成立;若仍成立 → 判据对「传播是否真发生」不敏感 → **判据退化** → exit 1。实测 `S2_SELFCHECK=OK`,断言 **22/22** 全绿,结论「判据 (b) 声明层裁定被实测确认」**不变**(Entry #16 的 RUN 证据不受影响)。
+
+**③ S3 spike**(`examples/cep_poc_spike_s3.cc`,377 行)—— 通道依赖图:
+
+| 项 | 实测 |
+|---|---|
+| 顶点集 | **恰好 8**(2 网络 × 4 VC,按 `fabric.json` + 权威 `vc_binding` 导出) |
+| 依赖边集 | **恰好 8**(32 号 :383-384 逐网络边表并集)· **跨网边 = 0** |
+| 正向 | 升级顶点下**无环** → `S3_VERDICT=ACYCLIC` · verdict **逐 (network, vc)** 标注(8 行) |
+| 反向 | 降级到 (实例, vc_id) → 报出环 `vc3 → vc2 → vc3`(= 2↔3 对)→ `S3_DOWNGRADED_CYCLE=vc2<->vc3` |
+| **成因标注** | `S3_CAUSE=alias-false-cycle` —— 跨网边 0 ⇒ 该环是**网络别名造成的假环**,**不是**「真实跨网依赖」(per `ADR-CEP-09:223-224`)—— **修正了规格 §3.3 的错误因果** |
+| 有效期 | `S3_REVERSE_VALIDITY=until-3rd-network-appears`(第 3 张网后扁平化可能**掩盖真环** → 该反向断言须重新设计) |
+| 放行禁令 | `S3_RELEASE_USE=forbidden`(per `ADR-CEP-09:221`) |
+
+**④ delta spec ↔ 实现对账测试**(T5.9)—— 新增 `test/test_cep_poc_spike_verification.cc`(135 断言):
+- 解析 delta spec(active change 优先 → main → 归档)抽出**全部 Scenario 标题**;
+- **每条** Scenario 必须在「证据映射表」里有行;**每行**必须匹配到一条真实 Scenario(防陈旧行);
+- 每行的**证据**必须真实存在(spike 的机器可读输出 / 仓内文件内容);支持「**不**出现」型证据(如 `status: implemented` 不得出现);
+- 另附硬边界的**可执行**核查:三个 spike 源码不得含注册宏 / `implemented` 状态。
+→ 这把「每条 Scenario 有消费者」从**声明**变成**可回归验证**(防 M-2 病根,per 台账 Entry #8)。
+
+**⑤ ctest**:98 → **101**(新增 `cep_poc_spike_s1` / `cep_poc_spike_s3` / `cep_poc_spike_verification`)。
+
+**⑥ 实施中踩到的 3 个坑(记录以免重犯)**
+
+- **自检语义**:S1 的自检原写「改错期望 → **必须新增**不一致」→ 但**本就 mismatch** 的点(写路径)改错期望后会变成 match → 被误判为「判据退化」。正确语义是「该点的判定**必须翻转**」—— 翻转同样证明比对器**真的读了**该点的期望。
+- **环检测返回值**:`find_cycle` 命中时返回了 DFS **路径**(`stack`)而非重建的**环**(`cyc`)→ 打印出 `0→1→3→2` 这条路径而非真正的 2↔3 环。已改为返回 `cyc`。
+- **对账测试自伤**:映射表有一行**漏了 `mode` 字段** → 聚合初始化把 `mode` 置 nullptr → `std::string(nullptr)` 抛异常,掩盖了真正的证据缺失。已补字段 + 加 null 防御(缺失字段视为 `present`)。
+
+**⑦ 验收**:`ctest` **101/101** · `[cep]` 76/1284 + 1 新用例 135 断言 · 3 个 spike ctest 全绿 · 守门 9 项 rc=0 · `openspec validate --changes --strict` rc=0 · `format.sh --check` rc=0 · 冻结面 diff=0。
+
+**关联**: Entry #46(planner 审查)· Entry #47(T4.6/T4.7)· `docs/implementation/2026-10-22-cep-poc-spike-spec.md` §3.1/§3.3
+
 ---
 
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)

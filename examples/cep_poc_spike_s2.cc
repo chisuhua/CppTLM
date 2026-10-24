@@ -547,6 +547,7 @@ int main() {
 
     // ── NEG 变体:桥接真实关闭(同一 Bridge 代码路径,真实 fallback 读) ─────────
     std::printf("\n[S2][NEG] 桥接关闭变体(D-FABRIC 读**真的**收不到 snoop 转发)\n");
+    Observation neg_obs; // 提升到外层 —— 自检要用(见下)
     {
         Bridge neg_bridge;
         neg_bridge.fwd_enabled = false;
@@ -556,7 +557,6 @@ int main() {
         neg_bridge.binding = &binding;
         neg_bridge.vc_count = &vc_count;
         ReadResult got = neg_bridge.fabric_read(kAddrX);
-        Observation neg_obs;
         neg_obs.observed_value = got.value;
         neg_obs.source = got.source;
         neg_obs.path_reachable = got.probe_forwarded;
@@ -566,6 +566,24 @@ int main() {
                "NEG 记录: 来源=内存 / 可达=false → 分叉 (i) spike 桥接缺陷形态");
         std::printf("      记录: 观测值=旧值 / 来源=%s / 可达=false\n",
                     source_name(neg_obs.source));
+    }
+
+    // ── 自检(「有牙」,per tasks.md T1.3 + delta spec「每场景的反向验证不得被删除」)──
+    //   判据 (b) 成立的**必要条件** = ①请求者实际收到新值 ②来源是 M 态 cache
+    //   ③传播可达。桥接**真实关闭**后这三条全部不成立 ⇒ 判据必须**不**成立。
+    //   若关闭后仍判 (b) 成立 → 判据对「传播是否真发生」**不敏感** → **判据退化** → exit 1。
+    std::printf("\n[S2][SELFCHECK] 桥接关闭 ⇒ 判据 (b) 必不成立(否则判据退化)\n");
+    {
+        const bool b_holds_main = main_obs.observed_value == kNewValue &&
+                                  main_obs.source == DataSource::gpu_cache &&
+                                  main_obs.path_reachable;
+        const bool b_holds_neg = neg_obs.observed_value == kNewValue &&
+                                 neg_obs.source == DataSource::gpu_cache && neg_obs.path_reachable;
+        const bool selfcheck_ok = b_holds_main && !b_holds_neg;
+        std::printf("[S2][SELFCHECK] 主场景 (b) 成立=%d · 桥接关闭后 (b) 成立=%d\n",
+                    b_holds_main ? 1 : 0, b_holds_neg ? 1 : 0);
+        std::printf("[S2][SELFCHECK] S2_SELFCHECK=%s\n", selfcheck_ok ? "OK" : "DEGENERATE");
+        expect(selfcheck_ok, "自检:桥接真实关闭后判据 (b) 必须不成立(判据对传播敏感,非恒真)");
     }
 
     // ── 总结 ──────────────────────────────────────────────────────────────────

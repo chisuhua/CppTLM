@@ -103,6 +103,31 @@ add_test(NAME cep_poc_spike_s2 COMMAND cep_poc_spike_s2)
 set_tests_properties(cep_poc_spike_s2 PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # ==============================================================================
+# CEP PoC Spike S1(可丢弃单文件 spike,per docs/implementation/2026-10-22-cep-poc-spike-spec.md §3.1)
+# 硬边界(规格 §1.2):不进 ModuleFactory / 不注册 ABI / 无公共 API / 零冻结产物改动
+# 红绿分离(per design.md D7-a):exit 0 = 判据工作正常(**判定结论可能为红**);
+#   exit 1 = 判据退化(故意注入的错期望未被检出)→ 回归门因此能区分两者。
+# WORKING_DIRECTORY = 仓库根 —— spike 按相对路径读冻结 schema。
+# ==============================================================================
+add_executable(cep_poc_spike_s1 cep_poc_spike_s1.cc)
+target_link_libraries(cep_poc_spike_s1 PRIVATE cpptlm_core)
+target_include_directories(cep_poc_spike_s1 PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+add_test(NAME cep_poc_spike_s1 COMMAND cep_poc_spike_s1)
+set_tests_properties(cep_poc_spike_s1 PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# ==============================================================================
+# CEP PoC Spike S3(可丢弃单文件 spike,per docs/implementation/2026-10-22-cep-poc-spike-spec.md §3.3)
+# 硬边界(规格 §1.2):不进 ModuleFactory / 不注册 ABI / 无公共 API / 零冻结产物改动
+# 红绿分离(per design.md D7-a):exit 0 = 判据工作正常;exit 1 = 判据退化。
+# WORKING_DIRECTORY = 仓库根 —— spike 按相对路径读声明 JSON。
+# ==============================================================================
+add_executable(cep_poc_spike_s3 cep_poc_spike_s3.cc)
+target_link_libraries(cep_poc_spike_s3 PRIVATE cpptlm_core)
+target_include_directories(cep_poc_spike_s3 PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+add_test(NAME cep_poc_spike_s3 COMMAND cep_poc_spike_s3)
+set_tests_properties(cep_poc_spike_s3 PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# ==============================================================================
 # HSK-8 Phase 2 Step 6: examples 同样需要 PTX-EMU shared libs
 # ==============================================================================
 if(CPPTLM_WITH_PTX_EMU)
