@@ -56,6 +56,15 @@ jobs:
         python3 -m pip install --quiet networkx pydot pydantic pytest jsonschema
         python3 -c "import jsonschema; print('jsonschema', jsonschema.__version__)"
 
+    - name: Install openspec CLI
+      # ⚠️ 状态一致性闸的断言①(KPI baseline)**实测** `openspec list --json` →
+      #    CLI 缺失即 **fail-closed 报红**(2026-10-24 CI 实测:无 CLI →
+      #    「无法实测 openspec list --json」→ `cep_docs_sync_check` + `cep_gate_selftest` 双红)。
+      #    版本与本地钉平(1.14.3)→ 避免 CLI 行为漂移导致 baseline 实测口径不一致。
+      run: |
+        sudo npm install -g @fission-ai/openspec@1.14.3
+        openspec --version
+
     - name: Configure CMake
       run: |
         cmake -S . -B build \

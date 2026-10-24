@@ -3047,6 +3047,39 @@ openspec validate cpptlm-cep-poc-spike --strict rc=0 · openspec list --json 实
 
 **关联**: Entry #40 ②(PTX-EMU 红源 C 的修法)· `test.sh` · `test/CMakeLists.txt`
 
+### Entry #44 — 2026-10-24 [bugfix]
+
+**主题**: **CI 缺 openspec CLI**(第 4 个红源)—— 闸的断言① 因此 fail-closed 报红
+
+**① 现象**:Entry #40 的 A 修复(`fetch-depth: 0`)在 CI 上**确实生效** —— `cep_module_factory_seam` **已不再失败**;但失败集合换成了 `cep_docs_sync_check` + `cep_gate_selftest`,报:
+
+```
+✗ 无法实测 openspec list --json(KPI baseline 断言无法执行)
+```
+
+**② 根因**:CI 的 `ci.yml` **从未安装 openspec CLI**(该 CLI 是 npm 包 `@fission-ai/openspec`,本地由 pnpm 全局安装)。而闸的断言①(KPI baseline)**必须实测** `openspec list --json` → CLI 缺失 → 无法实测 → **fail-closed 报红**。
+
+> **口径修正**:Entry #40 ③ 写「CI 上 `cep_docs_sync_check` Passed → CI 缺 openspec CLI 的担心不成立」—— **该推断错误**。当时依据的是 2026-10-23 的历史 run;**2026-10-24 的实测证明 CLI 缺失**。**教训**:「某次历史 run 里绿」≠「环境具备该能力」—— 尤其当绿的原因不明时(此处可能是当时 active=0 且 CLI 恰好可解析)。**结论必须由当次 run 的日志直接证伪/证实**,不能由「它绿了」反推环境。
+
+**③ 修法**:`ci.yml` 的 `build-and-test` job 新增 **「Install openspec CLI」** 步骤:`sudo npm install -g @fission-ai/openspec@1.14.3` + `openspec --version` 自检。
+
+**版本钉平的理由**:与本地 `1.14.3` 一致 → 避免 CLI 行为漂移导致「实测 active 数」与「文档声明」口径不一致。
+
+**④ 适用范围**:仅 `build-and-test` 需要(3 条 matrix 腿);`ptx-emu-release` 跑的是 `cpptlm_tests "[sdma][h2d]"`(**不含 ctest**)→ 不需要 CLI。
+
+**⑤ fail-closed 语义实证(本地)**:
+
+| 环境 | 闸的 rc | 消息 |
+|------|:---:|------|
+| PATH 无 openspec | **1** | 「无法实测 openspec list --json(KPI baseline 断言无法执行)」 |
+| PATH 有 openspec | **0** | 6 条断言全绿 |
+
+→ 闸在**缺少实测能力**时**报红而非静默放行** —— 这是设计意图(「不可实测」≠「无漂移」)。
+
+**⑥ 验收**:`ci.yml` YAML 解析通过 · 本地 fail-closed 两态复现 · 其余守门 rc=0。
+
+**关联**: Entry #40(三红源)· Entry #43(`test.sh --build`)· `scripts/test/cep_docs_sync_check.sh` 断言①
+
 ---
 
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
