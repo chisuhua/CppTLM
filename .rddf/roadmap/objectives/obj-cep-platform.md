@@ -175,7 +175,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | 顺序 | Change | Stage | 季度 | 状态 | 承接的 Stage 1 准入前置 |
 |------|--------|-------|------|------|----------------------|
 | **1** | `cpptlm-cep-umbrella` | Stage 0 | **2026-Q4** | ✅ **archived**(2026-10-23;**完成归档**语义 —— tasks **99/99** 全勾 + delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;R10 已按 `§9.3` 闭合,per 台账 Entry #28/#29) | — |
-| **2** | `cpptlm-cep-poc-spike` | Stage 1 | **2027-Q1** | ⏸ **队列位保留** · S2 已实跑 + ctest 回归门 · change 目录未建(per Entry #22) | **S1-1 ~ S1-5** |
+| **2** | `cpptlm-cep-poc-spike` | Stage 1 | **2027-Q1** | 🟡 **Proposed**(2026-10-24 建 change 目录;落地形态裁决为「正式 change + delta capability `cep-poc-spike-verification`」per `design.md` D1)· S2 已实跑 + ctest 回归门 · 承接 **S1-1 ~ S1-5**(装配期前置;**S1-2/S1-3/S1-4 未到消费时机**,per `design.md` D4) | **S1-1 ~ S1-5** |
 | **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | 📋 Planned | — |
 | **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | 📋 Planned | **S1-7 的 (β) 重评估** |
 | **5** | `cpptlm-cep-collective-plane-base` | Stage 1 | **2027-Q4** | 📋 Planned | — |
@@ -448,7 +448,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 0/3**(2026-10-23 修正:`cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**。归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #2 `cpptlm-cep-poc-spike`**(per §4.0)。
+→ **当前 Proposed 并发 = 1/3**(2026-10-24 修正:`cpptlm-cep-poc-spike`(队列 #2)**已建 change 目录**并占用 1 个 KPI slot → 0/3 → **1/3**。历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #3 `cpptlm-cep-stub-cache-core`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -461,7 +461,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 **✅ 前置条件已满足(2026-10-20)**:3 个 active 全部 **⏸ 暂存归档**(`--skip-specs`),baseline **0/3** → `cpptlm-cep-umbrella` **可立即创建**。
 
-**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放,当前并发 **0/3**;归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
+**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **1/3**(2026-10-24 起队列 #2 `cpptlm-cep-poc-spike` 占用 1 个 slot);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
 
 ⚠️ **原候选路径已过期**:"路径 C: archive `cpptlm-gmmu-pte-bus-correction`" —— 该 change **已于 2026-10-12 实际归档**,不再是 active,不能再作为 archive 对象。真实候选是上列 3 个(均已暂存归档)。
 
@@ -2958,6 +2958,67 @@ format.sh --check rc=0        ← CI 红源 B 闭合条件
 ```
 
 **关联**: Entry #40(三红源定位)· `.clang-format` · `include/tlm/pcie/pcie_mock_ip.hh`
+
+### Entry #42 — 2026-10-24 [scope-change]
+
+**主题**: **队列 #2 `cpptlm-cep-poc-spike` 启动** —— 落地形态裁决 + change 4 件套 + KPI 并发 0/3 → 1/3
+
+**① 落地形态裁决(此前「待 DRI 裁决」,per Entry #22)**
+
+**决策**:建立**正式 openspec change** `openspec/changes/cpptlm-cep-poc-spike/`(4 件套齐全)+ **1 个 delta capability `cep-poc-spike-verification`** —— 契约化的是**判定判据**,**不是** spike 的实现(spike 代码留在 `examples/`,可丢弃)。
+
+**理由**(三选一 → 排除另两个):
+- ❌ 只留 `examples/` 里的 spike,不开 change → 判据仍是「某次会话的产物」,无契约 / 无 tasks / 无归档语义;S1-1~S1-5 无处安放 → 队列 #2 的「承接」承诺落空;
+- ❌ 正式 change 但**无 delta spec** → 归档时无 delta 可合并 → 判据随 change 归档失联;
+- ✅ 正式 change + delta capability → 判据进 **main specs**,归档后仍是**系统契约**。
+
+**关键洞察**:spike 本身「零生产影响」,但它**产出的判据**有长期价值 → 把**判据**而非**代码**做成契约。
+
+**② change 4 件套(本条 commit 新增)**
+
+| 件套 | 内容 |
+|------|------|
+| `proposal.md` | Why(Stage 1 准入判据仍在纸面辩论)+ What Changes + Capabilities(新增 1)+ Impact(零生产影响 / 零 ABI)+ **Acceptance 9 条(AC-3 = 「有牙」保证)** |
+| `design.md` | Context / Goals(4)/ Non-Goals(5)/ **Decisions 6 条**(D1 落地形态 · D2 三场景同形 · D3 反向验证硬要求 · D4 S1-1~S1-5 携带规则 · D5 只判 `perm` 投影 · D6 零新依赖)/ Risks 5 / Open Questions 2 |
+| `specs/cep-poc-spike-verification/spec.md` | **ADDED** 1 Requirement · **8** Scenario(含 **S1 / S3 各自的反向「有牙」验证** + 「每场景的反向验证不得被删除」+ spike 硬边界) |
+| `tasks.md` | T0 落地与登记 · T1 S2(继承 + **补反向验证**)· T2 S1(实现 + 正反判据 + ctest)· T3 S3(实现 + 正反判据 + ctest)· **T4 S1-1~S1-5 逐项带消费时机** · T5 验收(含 **T5.7 反向自查**)· T6 归档 |
+
+**③ S1-1 ~ S1-5 的消费时机(承 `umbrella/tasks.md:406-414`)** —— **逐项**登记,不做假完成:
+
+| # | 消费时机 | 本 change 内 |
+|---|---------|:---:|
+| S1-1 | `ADR-CEP-09` 顶点定义修订 → **属冻结面** → 需走 `cep_freeze_check.sh --update --authorized-by` 两步流程 → **不在本 change 内改 ADR** | ⛔(登记 + 挂授权,per `design.md` Q1) |
+| S1-2 | 首个 `implemented` 实例**装配后** | ⛔ |
+| S1-3 | 出现**第 3 张网**或**第 3 个协议实例** | ⛔ |
+| S1-4 | 首个 `implemented` 实例**跑过后**(再纳 M1 冻结集) | ⛔ |
+| S1-5 | 契约层设计 → **可立即** | ✅ |
+
+> **纪律**:承 `umbrella/tasks.md:407`「未消费前不得下线」;**不得**为「表看起来干净」而勾选未到消费时机的事项(`design.md` D4 反例)。
+
+**④ KPI 并发 0/3 → 1/3(本 change 占用 1 slot)** —— 队列 #3 ~ #8 保持 📋 Planned(串行纪律 per `ADR-CEP-00 §2 Decision 3`)。
+
+**⑤ 同步的落点(承 §4.7.3 的 17 落点,本条触及其中的状态漂移面)**:`obj §5.2` · `phase-10.md` · `.rddf/roadmap.md` · `AGENTS.md` 现行基线行 · improvement 两处历史叙述 + 当前态行 · **`ADR-CEP-00` 的 Status Update**(冻结面 → 走授权闸)· `obj §4.0` 队列 #2 状态列。
+
+> **ADR 的处理方式**(遵守「ADR 不可变」):§1 ~ §8 **正文一律不改**;2026-10-23 段内的「当前」改为「**本段登记时点**」(保留历史快照语义,不再自称当前态)+ **追加** `## Status Update 2026-10-24` 登记新状态。**历史叙述不删改语义,只去掉「自称当前」的措辞** —— 这也是闸的设计意图(它要求活文档里**不得残留**自称当前的陈旧数值)。
+
+**⑥ 顺带发现并修复:闸的 fixture 存在「基线依赖」缺陷**
+
+poc-spike 启动 → live KPI baseline 由 0/3 变 1/3 → 两个 fixture(「写 1/3 → 期望 ① fire」)**当场失效** —— 因为 1/3 此时**不是**漂移,闸正确地保持绿。
+
+**根因**:fixture 把漂移值**硬编码**为 `1/3` → 与 live baseline **耦合**。这是**潜在脆弱点**(任何一次 baseline 变化都会让它静默失效)。
+
+**修法**:fixture 的变异脚本先 `openspec list --json` **实测** active 数,再挑一个 **≠ 实测**的 `N/3` 写入 → 与 baseline 无关,**永久有效**。
+
+> **方法论**:这正是「闸自己有回归 fixture」的价值 —— 若没有 fixture,这次 baseline 变化会让断言① 的覆盖**静默丢失**,而没有任何信号。
+
+**⑦ 验收(local)**
+
+```
+openspec validate cpptlm-cep-poc-spike --strict rc=0 · openspec list --json 实测 active=1
+闸断言① 实测 1/3 == 6 个活文档的当前态表述 · 其余 5 条断言绿 · fixture 14/14
+```
+
+**关联**: Entry #22(落地形态待裁决)· Entry #40/#41(CI 三红源)· `docs/implementation/2026-10-22-cep-poc-spike-spec.md`
 
 ---
 

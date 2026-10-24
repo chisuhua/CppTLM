@@ -86,11 +86,16 @@ t = sub(t, "## §2 范围", "## §2 范围\n\n若 `cpptlm-cep-umbrella` 未归�
 p.write_text(t, encoding="utf-8")'
 
 # ── 断言①:当前态数值漂移 + 合法历史叙述 ─────────────────────────
-run_case "obj 豁免块写当前 baseline=1/3 → ① 必须 fire" 1 '
+run_case "obj 豁免块写当前 baseline=<≠实测> → ① 必须 fire" 1 '
 from pathlib import Path
+import json, subprocess
+_d = json.loads(subprocess.run(["openspec", "list", "--json"], capture_output=True, text=True).stdout)
+_n = len(_d if isinstance(_d, list) else _d.get("changes", []))
+# 挑一个 != 实测的 N/3(不得硬编码 —— 否则 fixture 与 live baseline 耦合)
+_drift = "2/3" if _n != 2 else "1/3"
 p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
 t = p.read_text(encoding="utf-8")
-t = sub(t, "### 9.3 R10 处置(2026-10-23)", "### 9.3 R10 处置(2026-10-23)\n\n**当前 baseline = 1/3**")
+t = sub(t, "### 9.3 R10 处置(2026-10-23)", "### 9.3 R10 处置(2026-10-23)\n\n**当前 baseline = " + _drift + "**")
 p.write_text(t, encoding="utf-8")'
 
 run_case "obj 豁免块的合法历史叙述 → 必须 GREEN" 0 '
@@ -117,9 +122,14 @@ p.write_text(t, encoding="utf-8")'
 
 run_case "行尾贴「旧值」+ 当前态限定词 → ① 必须 fire" 1 '
 from pathlib import Path
+import json, subprocess
+_d = json.loads(subprocess.run(["openspec", "list", "--json"], capture_output=True, text=True).stdout)
+_n = len(_d if isinstance(_d, list) else _d.get("changes", []))
+# 挑一个 != 实测的 N/3(不得硬编码 —— 否则 fixture 与 live baseline 耦合)
+_drift = "2/3" if _n != 2 else "1/3"
 p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
 t = p.read_text(encoding="utf-8")
-t = sub(t, "### 9.3 R10 处置(2026-10-23)", "### 9.3 R10 处置(2026-10-23)\n\n**当前 baseline = 1/3**(旧值)")
+t = sub(t, "### 9.3 R10 处置(2026-10-23)", "### 9.3 R10 处置(2026-10-23)\n\n**当前 baseline = " + _drift + "**(旧值)")
 p.write_text(t, encoding="utf-8")'
 
 # ── 断言④:旧任务计数 ────────────────────────────────────────────

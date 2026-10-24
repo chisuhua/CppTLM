@@ -42,7 +42,7 @@ created: 2026-10-20
 
 > **⛔ 前置 gate(per oracle B5 + metis G3-2 修订)**:
 > 1. ~~`ADR-CEP-00 §5.1` 签发仓 + `§5.2` 真源路径~~ ✅ **已拍板 2026-10-20**:签发仓 = **CppTLM 仓**(框架级定位,类比 gem5 Ruby network);真源路径 = `docs/architecture/07-coherence-exploration-platform.md`(已创建 v0.1)。**原 gate 解除**
-> 2. ~~**KPI slot 未腾出**~~ ✅ **已解除 2026-10-20**:3 个 active(`cpptlm-msix-generator-ip` / `cpptlm-pcie-tlp-entry-layer` / `cpptlm-p2-integration-unblock`,均 0% 未实施)全部 **⏸ 暂存归档**(`openspec archive --skip-specs`,delta spec 未合并,proposal 已加 ⏸ 标记)→ 当前 baseline **0/3**,`cpptlm-cep-umbrella` **可立即创建**(per AGENTS.md「⏸ 两种归档语义必须区分」+ `ADR-CEP-00 §2 Decision 3`)
+> 2. ~~**KPI slot 未腾出**~~ ✅ **已解除 2026-10-20**:3 个 active(`cpptlm-msix-generator-ip` / `cpptlm-pcie-tlp-entry-layer` / `cpptlm-p2-integration-unblock`,均 0% 未实施)全部 **⏸ 暂存归档**(`openspec archive --skip-specs`,delta spec 未合并,proposal 已加 ⏸ 标记)→ 本段登记时点(2026-10-20)baseline **0/3**,`cpptlm-cep-umbrella` **可立即创建**(per AGENTS.md「⏸ 两种归档语义必须区分」+ `ADR-CEP-00 §2 Decision 3`)
 > 3. ~~**§9.2 三项角色未指定**(验收方 / 结论消费者 / 维护方)~~ ✅ **已指定 2026-10-21**(ArchForge coherence owner / phase-9 决策链 / CppTLM 维护者)—— 形式 gate 解除;**实质独立性缺口未解除**,登记为 R10(per `objective-cep-platform §8.1` / §9.2)
 
 ---
@@ -302,7 +302,8 @@ canonical 10 条流 + **CEN-Ib1~11**(11 条,per `ADR-CEP-02`;`CEN-Ib11` 为 2026
 
 ### B. KPI 影响
 
-- Stage 0 **曾**占用 1 个 Proposed KPI slot(创建前 3 个 0% change 已 **⏸ 暂存归档** `--skip-specs`,baseline 3/3 → 0/3 → 创建后 1/3)—— **2026-10-23 已完成归档 → 该 slot 已释放**,当前 **0/3**
+- Stage 0 **曾**占用 1 个 Proposed KPI slot(创建前 3 个 0% change 已 **⏸ 暂存归档** `--skip-specs`,baseline 3/3 → 0/3 → 创建后 1/3)—— **2026-10-23 已完成归档 → 该 slot 已释放**,本段登记时点 **0/3**
+- **当前真实 baseline = 1/3**(2026-10-24:`cpptlm-cep-poc-spike`(队列 #2)**已建 change 目录**并占用 1 个 slot)
 - Stage 1~3 后续 **10** 个 change 串行释放 KPI 占用(任一时刻 ≤ 1)
 - 总 CEP 系列占用 **11** KPI slots,跨 **11** 季度(具体季度**见 `obj-cep-platform §4.6`** —— per Entry #25 单源纪律,本文不复制数值);change / 季度数真源 = `ADR-CEP-00 §2 Decision 3`
 

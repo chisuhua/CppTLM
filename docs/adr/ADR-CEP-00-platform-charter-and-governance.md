@@ -279,14 +279,24 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **触发**: 2026-10-23 `cpptlm-cep-umbrella`(Stage 0 umbrella)**完成归档** —— tasks **99/99** 全勾;delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;R10 已按 `obj-cep-platform §9.3` 的闭合判据处置(残余风险已登记 + DRI 书面接受,per 台账 Entry #28)。归档与路径迁移见台账 Entry #29。
 > **§8 第 5 条**「`cpptlm-cep-umbrella` 维持 **🟡 Proposed Draft**,Stage 0 **不 archive**」—— **已失效**:
 > - 该 change 现为 **✅ archived**(归档目录 `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/`);
-> - **KPI slot 已释放** —— 当前 Proposed 并发 **0/3**(实测 `openspec list --json`),下一个可启动 change = 队列 #2 `cpptlm-cep-poc-spike`(per `obj §4.0`)。
+> - **KPI slot 已释放** —— 本段登记时点(2026-10-23)Proposed 并发 **0/3**(实测 `openspec list --json`),下一个可启动 change = 队列 #2 `cpptlm-cep-poc-spike`(per `obj §4.0`)。**该状态已于 2026-10-24 变化 → 见下段 Status Update**。
 > **不受影响的部分**:§8 其余条款(准入门措辞修订 **C-1** 及其理由)**继续有效** —— C-1 已于 2026-10-21 闭合(ArchForge `6020f42`)。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #33**
 > **冻结面**:本文件属 M1 冻结面 **30 成员**,本次改动已走授权闸 `cep_freeze_check.sh --update --authorized-by "Entry #33"`。
 
+## Status Update 2026-10-24 —— 队列 #2 `cpptlm-cep-poc-spike` 已启动(KPI 并发 0/3 → 1/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文一律不改**,仅登记状态变化。
+> **触发**: 2026-10-24 队列 #2 `cpptlm-cep-poc-spike` **已建 change 目录**(`openspec/changes/cpptlm-cep-poc-spike/`,4 件套齐全 + delta capability `cep-poc-spike-verification`),并占用 1 个 KPI slot → **并发 0/3 → 1/3**。
+> **对上一段(2026-10-23)的衔接**:该段登记「KPI slot 已释放 → 并发 0/3 → 下一个可启动 = 队列 #2」—— **队列 #2 现已启动**,该预测已兑现;其**历史快照语义保留不回改**。
+> **当前态**:Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #3 `cpptlm-cep-stub-cache-core`(per `obj §4.0`)。
+> **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);§8 第 5 条**仍为失效**(umbrella 保持 ✅ archived)。
+> **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #42**
+> **冻结面**:本文件属 M1 冻结面 **30 成员**,本次改动已走授权闸 `cep_freeze_check.sh --update --authorized-by "Entry #42"`。
+
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23**
-**最后更新**: 2026-10-23
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24**
+**最后更新**: 2026-10-24
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)
