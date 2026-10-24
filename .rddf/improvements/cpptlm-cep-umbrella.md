@@ -303,7 +303,7 @@ canonical 10 条流 + **CEN-Ib1~11**(11 条,per `ADR-CEP-02`;`CEN-Ib11` 为 2026
 ### B. KPI 影响
 
 - Stage 0 **曾**占用 1 个 Proposed KPI slot(创建前 3 个 0% change 已 **⏸ 暂存归档** `--skip-specs`,baseline 3/3 → 0/3 → 创建后 1/3)—— **2026-10-23 已完成归档 → 该 slot 已释放**,本段登记时点 **0/3**
-- **当前真实 baseline = 1/3**(2026-10-24:`cpptlm-cep-poc-spike`(队列 #2)**已建 change 目录**并占用 1 个 slot)
+- **当前真实 baseline = 0/3**(2026-10-24:`cpptlm-cep-poc-spike`(队列 #2)**已完成归档** → 释放 slot;该 change 建目录后曾为 1/3)
 - Stage 1~3 后续 **10** 个 change 串行释放 KPI 占用(任一时刻 ≤ 1)
 - 总 CEP 系列占用 **11** KPI slots,跨 **11** 季度(具体季度**见 `obj-cep-platform §4.6`** —— per Entry #25 单源纪律,本文不复制数值);change / 季度数真源 = `ADR-CEP-00 §2 Decision 3`
 

@@ -1,6 +1,9 @@
-# Spec: CEP PoC Spike 判定场景的可执行回归契约
+# cep-poc-spike-verification Specification
 
-## ADDED Requirements
+## Purpose
+TBD - created by archiving change cpptlm-cep-poc-spike. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: cep-poc-spike-verification
 
@@ -117,7 +120,8 @@ CEP SHALL 将 **PoC Spike 的 3 个判定场景**(`S1` / `S2` / `S3`)实现为**
 - **AND** 上游两份真实声明(`moesi_gpu` / `mesif`,ArchForge `32 号:405 / :487`)均为 `planned` —— 本 Scenario 只约束**本仓 spike**,不改上游声明
 - **AND** 断言 SHALL **不**用裸串 `status` —— 裸串会把**注释 / 标识符**(如 `inst_status_tag`)也判红(误报面:一次无害编辑即红,训练出「忽略红」的习惯)。断言 SHALL 用**结构化**判据:归一化时剥掉**空白 + 引号 + 反斜杠**后检查**键位形态** `{status:` / `,status:` —— 剥反斜杠是必需的,否则 C++ 里**必然**的转义形态 `"{\"status\":...}"` 会失配而漏判
 - **AND** 断言 SHALL 有**正控**(阳性输入必须判真)—— 否则判据退化为恒假时**全绿**,保护静默消失
-- **AND** 判据的目标 SHALL 为「**防无意引入的退化**」,**不**承诺「防蓄意规避」(`\x73tatus` 转义 / 运行时逐字符构造属**已知边界**)
+- **AND** 判据的目标 SHALL 为「**防无意引入的退化**」,**不**承诺「防蓄意规避」;**已知边界**(明示):① `\x73tatus` 转义 / 运行时逐字符构造;② 在**冒号处**切开字面量(`"{\"status\"" + ":\"...`);③ **注释中**书写键位 token(`// see {"status": ...}`)
+- **AND** 「键位形态」的覆盖范围 SHALL 限于「**键位连续**时的字面量拼接变体」—— 不声称覆盖任意切分位置
 
 #### Scenario: spike 的硬边界(可丢弃 / 零公共影响)
 

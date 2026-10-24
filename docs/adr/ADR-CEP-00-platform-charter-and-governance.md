@@ -294,6 +294,18 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #42**
 > **冻结面**:本文件属 M1 冻结面 **30 成员**,本次改动已走授权闸 `cep_freeze_check.sh --update --authorized-by "Entry #42"`。
 
+## Status Update 2026-10-24 —— 队列 #2 `cpptlm-cep-poc-spike` 已完成归档(KPI 并发 1/3 → 0/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-24 队列 #2 `cpptlm-cep-poc-spike` **已完成归档**(`openspec archive`,归档名 `2026-10-25-cpptlm-cep-poc-spike`)—— delta capability `cep-poc-spike-verification`(**15 Scenario**)已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`,KPI slot 释放 → **并发 1/3 → 0/3**。
+> **对上一段(2026-10-24)的衔接**:该段登记「队列 #2 已启动,并发 0/3 → 1/3」—— **现该 change 已归档**,slot 释放;其**历史快照语义保留不回改**。
+> **前置门**:归档前经 **critic 7 轮复审** —— 前 6 轮 REJECT(逐轮揭示「有牙」的六类缺口:判别力 / 真实性 / 敏感度 / 等价性 / 夹具自守 / 覆盖承诺+正控),每轮均修复并以 mutant 逐条反证;**第 7 轮 APPROVE**(per `obj §11` Entry #49~#54)。
+> **当前态**:Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #3 `cpptlm-cep-stub-cache-core`(per `obj §4.0`;并承接 **M-4 行为侧决策**)。
+> **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);§8 第 5 条**仍为失效**(umbrella 保持 ✅ archived)。
+> **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #55**
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #55)。
+> **owner 重指向(per Entry #55)**:S1-1 ①定义层 = ✅已消费;**②建图层 → 队列 #4**;**③放行闸 → 全局不变量**(不挂队列行);**M-4 决策 → 队列 #3**;**S1-5 表体 → 队列 #6**;S1-2/3/4 → 队列 #3+。
+
 ---
 
 **版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24**
