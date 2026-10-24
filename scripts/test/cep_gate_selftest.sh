@@ -190,15 +190,16 @@ assert "S1-3" in sec, "锚点漂移:§4.0 未含 S1-3"
 sec = sec.replace("S1-3", "(已移除)", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
-run_case "把 §4.0 队列 #2 的 change 名改成已归档的 → ⑦ 必须 fire" 1 '
+run_case "把 §4.0 活队列行的 change 名改成已归档的 → ⑦ 必须 fire" 1 '
 from pathlib import Path
 p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
 t = p.read_text(encoding="utf-8")
 i = t.index("### 4.0 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
-assert "`cpptlm-cep-poc-spike`" in sec, "锚点漂移:§4.0 未含队列 #2 的 change 名"
-sec = sec.replace("`cpptlm-cep-poc-spike`", "`cpptlm-cep-umbrella`", 1)
+# 用**活**队列行(队列 #2 归档后已不在活集内)→ 队列 #3 stub-cache-core
+assert "`cpptlm-cep-stub-cache-core`" in sec, "锚点漂移:§4.0 未含活队列 #3 的 change 名"
+sec = sec.replace("`cpptlm-cep-stub-cache-core`", "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "活文档出现归档件里不存在的 S1-9 → ⑦ 必须 fire" 1 '
