@@ -1,6 +1,6 @@
 // test/test_cep_schema.cc
 // CEP Stage 0 — 协议实例能力声明 schema 契约测试
-// per openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
+// per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
 //     Requirement: cep-capability-map-contract
 //     + ADR-CEP-12 §2 决策 1/2/3/4/5/6/7/8/9
 //     + ADR-CEP-14 §2 决策 3(C9 负向断言)

@@ -156,6 +156,38 @@ for f in files[:3]:
     os.makedirs(os.path.dirname(d), exist_ok=True)
     shutil.copy(f, d)'
 
+# ── 断言 ⑦:移交链的可达性与 owner 活性 ────────────────────────────
+run_case "断言 ⑦ 基线(不移除任何标记)→ 必须 GREEN" 0 '
+pass'
+
+run_case "从 obj §4.0 移除 S1-3 提及 → ⑦ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+i = t.index("### 4.0 ")
+j = t.index("\n### ", i + 1)
+sec = t[i:j]
+assert "S1-3" in sec, "锚点漂移:§4.0 未含 S1-3"
+sec = sec.replace("S1-3", "(已移除)", 1)
+p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
+
+run_case "把 §4.0 队列 #2 的 change 名改成已归档的 → ⑦ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+i = t.index("### 4.0 ")
+j = t.index("\n### ", i + 1)
+sec = t[i:j]
+assert "`cpptlm-cep-poc-spike`" in sec, "锚点漂移:§4.0 未含队列 #2 的 change 名"
+sec = sec.replace("`cpptlm-cep-poc-spike`", "`cpptlm-cep-umbrella`", 1)
+p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
+
+run_case "活文档出现归档件里不存在的 S1-9 → ⑦ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/phases/phase-10.md")
+t = p.read_text(encoding="utf-8")
+p.write_text(t + "\n> 承接 Stage 1 准入前置:S1-9(占位)\n", encoding="utf-8")'
+
 echo ""
 if [ "$FAIL" -eq 0 ]; then
   echo -e "\033[0;32m✅ 闸的回归 fixture 全部通过\033[0m ($PASS 项)"

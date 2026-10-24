@@ -1,6 +1,6 @@
 // test/test_cep_dummy_signals.cc
 // CEP Stage 0 — Null 实现 10 流覆盖矩阵契约
-// per openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
+// per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
 //     Requirement: cep-integration-seam-contract
 //     + ADR-CEP-14 §2 决策 2(C3:折叠映射表)与决策 5(测试替身)
 //     + ADR-CEP-07 §2 决策 4(NullProtocolEngine 10 流覆写)

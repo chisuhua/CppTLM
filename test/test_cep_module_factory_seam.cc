@@ -1,6 +1,6 @@
 // test/test_cep_module_factory_seam.cc
 // CEP Stage 0 — ModuleFactory 集成 seam 契约 + 冻结面 0 diff 守门
-// per openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
+// per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
 //     Requirement: cep-integration-seam-contract
 //     + cep-cachetlm-alignment-contract
 //     + ADR-CEP-07 §2 决策 3(真实注册机制)与决策 6(冻结面)

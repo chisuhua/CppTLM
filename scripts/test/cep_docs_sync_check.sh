@@ -16,7 +16,7 @@
 #   ./scripts/test/cep_docs_sync_check.sh            # 检查并打印报告
 #   ./scripts/test/cep_docs_sync_check.sh --strict   # 发现问题返回非零退出码
 #
-# 设计依据：per openspec/changes/cpptlm-cep-umbrella/design.md D5
+# 设计依据：per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/design.md D5
 #   —— 与既有 docs_sync_check.sh 分工不重叠（本脚本只管 CEP 专属）。
 
 set -e
@@ -648,7 +648,7 @@ else
 fi
 
 echo ""
-echo -e "${BLUE}[11/11] 归档后状态一致性(6 类客观断言)${NC}"
+echo -e "${BLUE}[11/11] 归档后状态一致性(7 类客观断言)${NC}"
 # ⚠️ 2026-10-23(Entry #32)重新设计:前两版的「散文语义正则」被 critic 实测出
 #    10/13 同义改述绕过 + 行尾贴白名单词即可绕过 → 属 overclaim。
 #    本版只做**客观可判定**的断言(数字 / 同行关联 / glob 覆盖),不再声称「理解语义」。
@@ -935,6 +935,104 @@ if a_fail:
         failed.append("      · " + x)
 else:
     print("  \033[0;32m✓\033[0m ADR 的「必须追加 Status Update」回归锁满足")
+
+# ── 断言 ⑦:移交链的可达性与 owner 活性 ────────────────────────────
+# 背景:Entry #22 S8 —— 「6 项移交后**无任何机器闸**保证队列 #2/#4/#6 承接」→
+#       移交链**只有人工可见性**。2026-10-24 planner 审查(Entry #46)正是在这类
+#       漂移上栽了跟头(移交基于**陈旧快照**:已完成的 S1-1 仍写作「待消费」)。
+ARCH_TASKS = "openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/tasks.md"
+OBJ_REL = ".rddf/roadmap/objectives/obj-cep-platform.md"
+PHASE_REL = ".rddf/roadmap/phases/phase-10.md"
+
+
+def _mk_set(text):
+    """抽出文本里出现的 S1-N 标记集合;**区间写法**(S1-1 ~ S1-5)须展开。"""
+    out = set()
+    for m in re.finditer(r"S1-(\d+)\s*(?:~\s*S1-(\d+))?", text):
+        a = int(m.group(1))
+        b = int(m.group(2)) if m.group(2) else a
+        for k in range(min(a, b), max(a, b) + 1):
+            out.add(f"S1-{k}")
+    return out
+
+
+def _section(text, head_prefix):
+    """取 obj 中以 head_prefix 开头的 ### 小节正文(到下一个 ### 为止)。"""
+    i = text.find(head_prefix)
+    if i < 0:
+        return ""
+    j = text.find("\n### ", i + 1)
+    return text[i:j] if j > 0 else text[i:]
+
+
+def _rows(table):
+    """取表格行(以 | 开头且非表头/分隔行)。"""
+    out = []
+    for ln in table.splitlines():
+        s = ln.strip()
+        if not s.startswith("|"):
+            continue
+        if set(s) <= set("|-: "):      # 分隔行
+            continue
+        if "---" in s:                  # 表头分隔
+            continue
+        out.append(s)
+    return out
+
+
+try:
+    _arch_txt = open(os.path.join(root, ARCH_TASKS), encoding="utf-8").read()
+    _obj_txt = open(os.path.join(root, OBJ_REL), encoding="utf-8").read()
+    _phase_txt = open(os.path.join(root, PHASE_REL), encoding="utf-8").read()
+except Exception as _e:
+    failed.append(f"断言 ⑦ 无法读取承接载体({ARCH_TASKS} / {OBJ_REL} / {PHASE_REL}): {_e}")
+    _arch_txt = _obj_txt = _phase_txt = ""
+
+_handed = set()          # 归档件里「移交」的标记
+_arch_all = _mk_set(_arch_txt)   # 归档件里存在过的全部标记
+for _ln in _arch_txt.splitlines():
+    if "⏭(移交)" in _ln:
+        _handed |= _mk_set(_ln)
+
+_s40 = _section(_obj_txt, "### 4.0 ")
+_s42 = _section(_obj_txt, "### 4.2 ")
+_m40 = _mk_set(_s40)
+_m42 = _mk_set(_s42)
+_mph = _mk_set(_phase_txt)
+
+_fail7 = []
+# ① 可达 + ② 复述一致
+for _mk in sorted(_handed):
+    if _mk not in _m40:
+        _fail7.append(f"{_mk}: 归档件标为「移交」,但 obj §4.0 排队表**未提及**(移交项在路线图上消失)")
+    if _mk not in _m42:
+        _fail7.append(f"{_mk}: obj §4.2(§4.0 的同义复述)**未提及** → 两处已漂移")
+# ③ owner 活性:凡提及移交标记的行,其 change 不得是已归档 change
+import glob as _g7
+_archived = set()
+for _p in _g7.glob(os.path.join(root, "openspec/changes/archive/*")):
+    _nm = os.path.basename(_p.rstrip("/"))
+    for _m2 in re.finditer(r"cpptlm-cep-[a-z0-9-]+", _nm):
+        _archived.add(_m2.group(0))
+for _tbl, _tag in ((_s40, "§4.0"), (_s42, "§4.2")):
+    for _row in _rows(_tbl):
+        if not (_mk_set(_row) & _handed):
+            continue
+        for _m3 in re.finditer(r"`(cpptlm-cep-[a-z0-9-]+)`", _row):
+            if _m3.group(1) in _archived:
+                _fail7.append(
+                    f"{_tag}: 行内提及移交标记,但其 change `{_m3.group(1)}` **已归档** → 无主债"
+                    f"(应重指向活队列行)")
+# ④ 反向:不凭空(活文档出现的标记必须在归档件里存在)
+for _mk in sorted((_m40 | _m42 | _mph) - _arch_all):
+    _fail7.append(f"{_mk}: 活文档出现该标记,但归档件中**不存在** → 凭空造的移交项")
+
+if _fail7:
+    failed.append("移交链断言 ⑦ 未满足:")
+    for _x in _fail7:
+        failed.append("      · " + _x)
+else:
+    print(f"  \033[0;32m✓\033[0m 移交链断言 ⑦ 满足(移交 {len(_handed)} 项 · 可达 + 复述一致 + owner 活性)")
 
 # ── 断言 ⑥:glob 覆盖(归档件在 P6 扫描集内)─────────────────────────
 import glob as _g

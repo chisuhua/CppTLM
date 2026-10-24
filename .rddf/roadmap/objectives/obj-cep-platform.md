@@ -3174,6 +3174,44 @@ format.sh --check  rc=0 · 9 项守门 rc=0 · [cep] 76/1284
 
 **关联**: Entry #22(落地形态待裁决)· Entry #42(本 change 启动)· `umbrella/tasks.md:406-414`(S1-1~S1-5 原文)· `ADR-CEP-09:221-224` · `07 号:684` · `ADR-CEP-05:296`
 
+### Entry #47 — 2026-10-24 [scope-change]
+
+**主题**: **T4.6 / T4.7 实施**(承接 Entry #46 遗留)—— 承接链**机器化** + 旧路径引用清理
+
+**① T4.6 —— 一致性闸新增**断言 ⑦**(移交链的可达性与 owner 活性)**
+
+`scripts/test/cep_docs_sync_check.sh` 第 11 组由 **6** 类断言 → **7** 类。4 条子判定:
+
+| # | 子判定 | 依据 |
+|---|-------|------|
+| ① | **可达**:归档件(umbrella 归档 `tasks.md`)里每个 `⏭(移交)` 标记 SHALL 在 `obj §4.0` 排队表出现 | §4.0 = 权威表(per `obj:231`) |
+| ② | **复述一致**:同一集合 SHALL 在 `obj §4.2` 出现 | §4.2 是 §4.0 的同义复述 |
+| ③ | **owner 活性**:§4.0 / §4.2 中凡**行内提及移交标记**的行,其 change 名 SHALL **非已归档 change** | 防「指向已归档 change 的无主债」 |
+| ④ | **反向不凭空**:活文档出现的 `S1-N` SHALL 在归档件中**存在**(归档件含 S1-1 ~ S1-7) | 防幻觉项 |
+
+**实现要点**:标记展开须支持**区间写法**(`S1-1 ~ S1-5` —— `phase-10.md` 用的是区间写法);判定载体 = §4.0 + §4.2 两张表,`phase-10.md` **仅作反向检查的来源**(它是依赖图,不是承接列真源)。
+
+**鉴别力实测(3 个变异全部按预期报红)**:移除 §4.0 的 S1-3 提及 → RED(①)· §4.0 队列 #2 的 change 名改成已归档的 `cpptlm-cep-umbrella` → RED(③)· 凭空造 `S1-9` → RED(④)。
+
+**回归覆盖**:`cep_gate_selftest.sh` 新增 **4** 个 fixture(1 绿 + 3 变异必红)→ 场景数 **14 → 18**,已接入 `ctest`。
+
+**② T4.7 —— 旧路径引用清理(9 处)**
+
+planner 审查只识别出 **2** 处 → **全仓扫描后补齐到 9 处**(`test/test_cep_{canonical_invariants,contracts_crosscheck,dummy_signals,module_factory_seam,schema,simulation_mode_lock,tools_contract}.cc` + `test/cep_adr_parser.hh` + `scripts/test/cep_docs_sync_check.sh`)。归档前路径 `openspec/changes/cpptlm-cep-umbrella/`(及其子路径)→ `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/`(及其子路径)。
+
+**不改**:`docs/implementation/*`(历史快照,append-only;`cep_doc_ref_check.sh:113` 的 VIRTUAL_PATHS 已把旧路径登记为**允许的历史引用**)· 归档件自身(不可变)· VIRTUAL_PATHS 条目本身 · `cep_docs_sync_check.sh:526`(glob 已同时接受新旧形态)。
+
+**③ 规格与实现对齐(本次审查的同型病,自查)** —— 任务描述原写「**恰好命中 1 次**」且把 `phase-10.md` 列为判定载体,与**实际实现**(4 条子判定 + `phase-10.md` 仅作反向来源)**不符** → 已把 `tasks.md` T4.6 与 `design.md` Q3 改成**逐字描述实现**。**文档≠实现即债**,本次即由本次审查所治。
+
+**④ 实施中踩到的 2 个坑(记录以免重犯)**
+
+- **自伤 ①**:Entry #47 初稿在反引号里写了**带省略号的伪路径** → `cep_doc_ref_check.sh` **当场报红**「引用不存在的文件」—— 引用检查器是对的,是我写了一个**不存在的路径**。→ 改写为**逐字真实的目录路径**(末尾加「(及其子路径)」说明)。**教训**:台账里引用路径必须**逐字真实**,省略号**不是**合法路径。⚠️ 本条补记**自身**又踩了一次(第一版把伪路径包在反引号里)→ 改为纯文字描述后通过。
+- **环境 ②**:本地 `build/` 的 CMakeCache 指向 **`/usr/bin/g++-14`(不存在**,本机只有 g++-13)→ 平时**增量构建不触发编译**所以看不出来;本轮改了 7 个 test 文件的注释 → 触发重编译 → 暴露。`build-asan/` 用的是**存在**的 `/workspace/main/opt/bin/g++-14`。→ 本地重新配置 `build/` 指向存在的编译器(注:`CXX=g++-14` 只是**名字**非全路径 → CMake 拒绝重新配置,须 `CXX=<全路径>`)。**纯本地环境问题,不入仓**。
+
+**⑤ 验收**:守门 9 项 rc=0 · `cep_gate_selftest.sh` **18/18** · `ctest` Release **98/98** · `ctest` ASan **98/98** · `[cep]` 76/1284 · `openspec validate --changes --strict` rc=0 · `format.sh --check` rc=0 · 冻结面 diff=0。
+
+**关联**: Entry #46(planner 审查)· `scripts/test/cep_docs_sync_check.sh` 断言 ⑦ · `scripts/test/cep_gate_selftest.sh`
+
 ---
 
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)

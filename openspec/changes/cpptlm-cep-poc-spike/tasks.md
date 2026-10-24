@@ -95,10 +95,17 @@
 
 > **角色边界**:planner 不改 `src/**`、不实施门禁脚本改动、不做实施类 commit —— 以下 3 项**移交 builder**。
 
-- [ ] **T4.6** **承接链的机器化(第 7 条断言)** —— 给 `scripts/test/cep_docs_sync_check.sh` 新增断言:归档件里出现的每个 `S1-N` 标记,SHALL 在活文档承接列(`obj §4.0` / `§4.2` + `phase-10.md`)**恰好命中 1 次**,且其 owner 行 SHALL **非已归档 change**。
-  **为何要**:Entry #22 S8 自陈「6 项移交后**无任何机器闸**保证队列 #2/#4/#6 承接」—— 本次修订所治的正是这类漂移,而它**目前只有人工可见性**。规格见 `design.md` **Q3**。
-  **验收**:新断言有 fixture 覆盖(绿灯 + 至少 1 条**变异必红**的样本),且 `cep_gate_selftest.sh` 场景数相应增加。
-- [ ] **T4.7** **两处测试头注释的旧路径** —— `test/test_cep_canonical_invariants.cc:3` 与 `test/test_cep_contracts_crosscheck.cc:9` 仍写 `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md`(归档前路径)→ 应为 `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md`(per Entry #29 路径迁移)。**低危**(注释不参与判据),但属「路径漂移防护」范畴。
+- [x] **T4.6** **承接链的机器化(第 7 条断言)** ✅ 2026-10-24 —— `scripts/test/cep_docs_sync_check.sh` 第 11 组新增**断言 ⑦**,4 条子判定:
+  ① **可达** —— 归档件(umbrella 归档 `tasks.md`)里每个 `⏭(移交)` 标记 SHALL 在 `obj §4.0` 排队表出现(§4.0 = 权威表,per `obj:231`);
+  ② **复述一致** —— 同一集合 SHALL 在 `obj §4.2` 出现(§4.2 是 §4.0 的同义复述);
+  ③ **owner 活性** —— §4.0 / §4.2 中**凡行内提及移交标记**的行,其 change 名 SHALL **非已归档 change**(防「指向已归档 change 的无主债」);
+  ④ **反向不凭空** —— 活文档出现的 `S1-N` SHALL 在归档件中**存在**(归档件含 S1-1 ~ S1-7)。
+  **标记展开**:`S1-1 ~ S1-5` 这类**区间写法**须展开(phase-10.md 用的是区间写法)。
+  **判定载体**:`obj §4.0` + `obj §4.2` 两张表;`phase-10.md` **仅作反向检查的来源**,不作判定载体(它是依赖图,不是承接列真源)。
+  **为何要**:Entry #22 S8 自陈「6 项移交后**无任何机器闸**保证队列 #2/#4/#6 承接」—— 本次修订所治的正是这类漂移。
+  **验收**:fixture **4 个**(1 绿 + **3 变异必红**:移除 S1-3 提及 / change 名改成已归档的 / 凭空造 S1-9)→ `cep_gate_selftest.sh` 场景数 **14 → 18**。
+- [x] **T4.7** **测试头注释的旧路径** ✅ 2026-10-24 —— 归档前路径 `openspec/changes/cpptlm-cep-umbrella/...` 在**出处引用注释**里共 **9 处**(planner 审查只识别出 2 处 → **全仓扫描后补齐**),已全部改为 `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/...`:`test/test_cep_{canonical_invariants,contracts_crosscheck,dummy_signals,module_factory_seam,schema,simulation_mode_lock,tools_contract}.cc` + `test/cep_adr_parser.hh` + `scripts/test/cep_docs_sync_check.sh`。
+  **不改**:`docs/implementation/*`(历史快照,append-only;`cep_doc_ref_check.sh:113` 的 VIRTUAL_PATHS 已把旧路径登记为**允许的历史引用**)· 归档件自身(不可变)· `cep_doc_ref_check.sh:113`(VIRTUAL_PATHS 条目)· `cep_docs_sync_check.sh:526`(glob 已同时接受新旧形态)。
 - [ ] **T4.8** **断言② 的绕过面复查** —— 本次在 `obj §4.0` 写入了大量状态措辞(如「已判定不触发」「未消费」);已实测 `cep_docs_sync_check.sh` rc=0,故**当前**无冲突;但若后续继续在该行加措辞,须重跑断言②(实体锚点 `umbrella` / `Stage 0` / `R10` + 旧状态词**同句**即报红)。
 
 ---

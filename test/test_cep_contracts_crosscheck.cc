@@ -6,7 +6,7 @@
 //        cep-06bis-artifact-disposition)—— spec 声称了契约,测试却没断言。
 // 本文件补齐这 4 个 requirement 的断言。
 //
-// per openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
+// per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
 // 作者: CppTLM Team / 日期: 2026-10-21
 #include "catch_amalgamated.hpp"
 

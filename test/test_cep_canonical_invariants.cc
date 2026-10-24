@@ -1,6 +1,6 @@
 // test/test_cep_canonical_invariants.cc
 // CEP Stage 0 — canonical 不变量契约测试
-// per openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
+// per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
 //     + ADR-CEP-14 §2 决策 2(C1~C10)+ ADR-CEP-NUMBER-MAP §3
 // 作者: CppTLM Team / 日期: 2026-10-21
 //

@@ -1,6 +1,6 @@
 // test/test_cep_tools_contract.cc
 // CEP Stage 0 — tools 契约测试
-// per openspec/changes/cpptlm-cep-umbrella/design.md D4(零项目内依赖)
+// per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/design.md D4(零项目内依赖)
 //     + D10(依赖方向单向)
 //     + ADR-CEP-06 §4(4 件套 / 13 metric)
 // 作者: CppTLM Team / 日期: 2026-10-21

@@ -1,6 +1,6 @@
 // test/test_cep_simulation_mode_lock.cc
 // CEP Stage 0 — simulation_mode 单一维度 + verification_mode 契约 + 4 件套契约
-// per openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
+// per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md
 //     Requirement: cep-experiment-output-contract
 //     + cep-integration-seam-contract
 // 作者: CppTLM Team / 日期: 2026-10-21

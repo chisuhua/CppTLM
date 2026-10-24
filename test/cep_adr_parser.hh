@@ -2,7 +2,7 @@
 // CEP Stage 0 — ADR 不变量解析器(test 内部工具头,per ADR-CEP-14 决策 5)
 // 作者: CppTLM Team / 日期: 2026-10-21
 //
-// 设计要点(per openspec/changes/cpptlm-cep-umbrella/design.md D2):
+// 设计要点(per openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/design.md D2):
 //   1. **不复制** invariant 文本 —— 一律解析 owner ADR 文档
 //   2. **区分「提及」与「定义」** —— 跳空 ID(IC4)被多处提及但从未定义;
 //      若按"提及"计数会多算 1 条(per 2026-10-21 实测教训)
