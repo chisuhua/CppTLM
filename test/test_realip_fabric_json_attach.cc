@@ -23,28 +23,28 @@
 //
 // Tag: `[realip][p3]`
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "core/sim_module.hh"
 #include "tlm/cluster/gpu_internal_fabric.hh"
 
-#include <nlohmann/json.hpp>
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 using tlm::cluster::GpuInternalFabric;
 using json = nlohmann::json;
 
 namespace {
 
-json load_realip_p2_config() {
-    std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
-    REQUIRE(f.is_open());
-    json cfg;
-    f >> cfg;
-    return cfg;
-}
+    json load_realip_p2_config() {
+        std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
+        REQUIRE(f.is_open());
+        json cfg;
+        f >> cfg;
+        return cfg;
+    }
 
 } // namespace
 
@@ -71,8 +71,7 @@ TEST_CASE("P3 GpuInternalFabric: simulate_instantiate JSON 路径自动 attach i
     auto* soc_sim = dynamic_cast<SimModule*>(soc);
     REQUIRE(soc_sim != nullptr);
 
-    auto* fabric = dynamic_cast<GpuInternalFabric*>(
-        soc_sim->getInternalInstance("fabric"));
+    auto* fabric = dynamic_cast<GpuInternalFabric*>(soc_sim->getInternalInstance("fabric"));
     REQUIRE(fabric != nullptr);
 
     // T25A.1 GREEN 验收: JSON 装配后 crossbar() 应为非 nullptr

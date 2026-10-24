@@ -9,11 +9,10 @@
 
 #include <cstdint>
 
-using cpptlm::utils::PcieTlpSerializer;
 using bundles::PcieTlpBundle;
+using cpptlm::utils::PcieTlpSerializer;
 
-TEST_CASE("PcieTlpSerializer: encode_config_read fields",
-          "[pcie][tlp-serializer][unit][cfg]") {
+TEST_CASE("PcieTlpSerializer: encode_config_read fields", "[pcie][tlp-serializer][unit][cfg]") {
     PcieTlpSerializer ser;
     auto tlp = ser.encode_config_read(0x100, 0x10, 4);
 
@@ -22,12 +21,11 @@ TEST_CASE("PcieTlpSerializer: encode_config_read fields",
     CHECK(tlp.size.read() == 4);
     CHECK(tlp.requester_id.read() == 0x100);
     CHECK(tlp.data.read() == 0);
-    CHECK(tlp.bar_index.read() == 0);  // CFG 不用 BAR
-    CHECK(tlp.trans_id.read() == 0);    // 第一个分配
+    CHECK(tlp.bar_index.read() == 0); // CFG 不用 BAR
+    CHECK(tlp.trans_id.read() == 0);  // 第一个分配
 }
 
-TEST_CASE("PcieTlpSerializer: encode_config_write fields",
-          "[pcie][tlp-serializer][unit][cfg]") {
+TEST_CASE("PcieTlpSerializer: encode_config_write fields", "[pcie][tlp-serializer][unit][cfg]") {
     PcieTlpSerializer ser;
     auto tlp = ser.encode_config_write(0x100, 0x20, 4, 0xDEADBEEF);
 
@@ -38,8 +36,7 @@ TEST_CASE("PcieTlpSerializer: encode_config_write fields",
     CHECK(tlp.requester_id.read() == 0x100);
 }
 
-TEST_CASE("PcieTlpSerializer: encode_mmio_read fields",
-          "[pcie][tlp-serializer][unit][mmio]") {
+TEST_CASE("PcieTlpSerializer: encode_mmio_read fields", "[pcie][tlp-serializer][unit][mmio]") {
     PcieTlpSerializer ser;
     auto tlp = ser.encode_mmio_read(2, 0x10000, 8);
 
@@ -49,8 +46,7 @@ TEST_CASE("PcieTlpSerializer: encode_mmio_read fields",
     CHECK(tlp.size.read() == 8);
 }
 
-TEST_CASE("PcieTlpSerializer: encode_mmio_write fields",
-          "[pcie][tlp-serializer][unit][mmio]") {
+TEST_CASE("PcieTlpSerializer: encode_mmio_write fields", "[pcie][tlp-serializer][unit][mmio]") {
     PcieTlpSerializer ser;
     auto tlp = ser.encode_mmio_write(0, 0x2000, 4, 0xCAFEBABE);
 
@@ -61,8 +57,7 @@ TEST_CASE("PcieTlpSerializer: encode_mmio_write fields",
     CHECK(tlp.data.read() == 0xCAFEBABE);
 }
 
-TEST_CASE("PcieTlpSerializer: encode_completion fields",
-          "[pcie][tlp-serializer][unit][cpld]") {
+TEST_CASE("PcieTlpSerializer: encode_completion fields", "[pcie][tlp-serializer][unit][cpld]") {
     PcieTlpSerializer ser;
     auto tlp = ser.encode_completion(0x100, 0xFEEDFACE, true);
 

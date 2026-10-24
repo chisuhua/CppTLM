@@ -8,8 +8,8 @@
 #include <cstdint>
 #include <fstream>
 #include <vector>
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -23,23 +23,24 @@ using json = nlohmann::json;
 
 namespace {
 
-json load_timing_config() {
-    json cfg;
-    std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
-    if (ifs.is_open()) {
-        cfg = json::parse(ifs);
-    }
-    REQUIRE(ifs.is_open());  // configs/dgpu_soc_timing_v1.json 必须存在
-    // schema 补齐 (per minimal_v1 模式)
-    if (!cfg.contains("connections")) cfg["connections"] = json::array();
-    if (cfg.contains("modules") && cfg["modules"].is_array()) {
-        for (auto& m : cfg["modules"]) {
-            if (m.contains("modules") && !m.contains("connections"))
-                m["connections"] = json::array();
+    json load_timing_config() {
+        json cfg;
+        std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
+        if (ifs.is_open()) {
+            cfg = json::parse(ifs);
         }
+        REQUIRE(ifs.is_open()); // configs/dgpu_soc_timing_v1.json 必须存在
+        // schema 补齐 (per minimal_v1 模式)
+        if (!cfg.contains("connections"))
+            cfg["connections"] = json::array();
+        if (cfg.contains("modules") && cfg["modules"].is_array()) {
+            for (auto& m : cfg["modules"]) {
+                if (m.contains("modules") && !m.contains("connections"))
+                    m["connections"] = json::array();
+            }
+        }
+        return cfg;
     }
-    return cfg;
-}
 
 } // namespace
 

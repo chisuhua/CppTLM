@@ -139,7 +139,8 @@ namespace tlm::gpu {
         //   bits[15:0]  = Cap ID
         //   bits[19:16] = Cap Version
         //   bits[31:20] = Next Cap Offset
-        // 这里写 (next << 20) | (version=1 << 16) | id (Caller 应随后调 add_extended_register 覆盖更高位)
+        // 这里写 (next << 20) | (version=1 << 16) | id (Caller 应随后调 add_extended_register
+        // 覆盖更高位)
         write(offset, static_cast<uint32_t>(id) | (static_cast<uint32_t>(next) << 20));
 
         // 更新 Extended Capabilities pointer (offset 0x100, byte-level)
@@ -153,7 +154,7 @@ namespace tlm::gpu {
     }
 
     void PcieConfigSpace::add_extended_register(uint16_t offset, uint8_t width, uint32_t value) {
-        (void)width;  // width 仅作语义标注, 当前统一按 dword 写
+        (void)width; // width 仅作语义标注, 当前统一按 dword 写
         write(offset, value);
     }
 
@@ -166,9 +167,10 @@ namespace tlm::gpu {
 
     std::size_t PcieConfigSpace::pcie_cap_offset() const noexcept {
         for (const auto& c : capabilities_) {
-            if (c.id == 0x10) return c.offset;
+            if (c.id == 0x10)
+                return c.offset;
         }
-        return 0;  // not installed
+        return 0; // not installed
     }
 
     const PcieConfigSpace::Capability* PcieConfigSpace::get_capability(std::size_t index) const {

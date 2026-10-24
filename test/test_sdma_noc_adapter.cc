@@ -11,9 +11,9 @@
 
 #include <cstdint>
 
-using tlm::gpu::SDMANocAdapter;
-using tlm::cluster::SocInternalNoc;
 using bundles::NoCFlitBundle;
+using tlm::cluster::SocInternalNoc;
+using tlm::gpu::SDMANocAdapter;
 
 TEST_CASE("SDMANocAdapter: emit_noc_request generates valid REQ flit",
           "[realip][pin-contract][noc][adapter][sdma]") {
@@ -27,7 +27,7 @@ TEST_CASE("SDMANocAdapter: emit_noc_request generates valid REQ flit",
     CHECK(flit.src_node.read() == SocInternalNoc::NODE_ID_SDMA);
     CHECK(flit.flit_category.read() == NoCFlitBundle::CATEGORY_REQUEST);
     CHECK(flit.transaction_id.read() == 42);
-    CHECK(flit.is_write.read() == false);  // op=0 → READ
+    CHECK(flit.is_write.read() == false); // op=0 → READ
     CHECK(flit.address.read() == 0x1000);
     CHECK(flit.size.read() == 64);
     CHECK(flit.vc_id.read() == SocInternalNoc::VC_REQ);

@@ -25,26 +25,26 @@
 
 namespace {
 
-// 模拟 UE 端 driver: 通过 ABI 完全驱动 minimal SoC, 不暴露 C++ DGpuBoard 句柄
-struct UeDriverContext {
-    std::atomic<uint32_t> intr_count{0};
-    std::atomic<uint32_t> captured_vector{0xFFFF};
-    cpptlm_emulator_t* emu = nullptr;
+    // 模拟 UE 端 driver: 通过 ABI 完全驱动 minimal SoC, 不暴露 C++ DGpuBoard 句柄
+    struct UeDriverContext {
+        std::atomic<uint32_t> intr_count{0};
+        std::atomic<uint32_t> captured_vector{0xFFFF};
+        cpptlm_emulator_t* emu = nullptr;
 
-    static void intr_thunk(void* user_ctx, uint32_t vector, uint32_t /*trans_id*/) {
-        auto* self = static_cast<UeDriverContext*>(user_ctx);
-        self->intr_count.fetch_add(1, std::memory_order_acq_rel);
-        self->captured_vector.store(vector, std::memory_order_relaxed);
+        static void intr_thunk(void* user_ctx, uint32_t vector, uint32_t /*trans_id*/) {
+            auto* self = static_cast<UeDriverContext*>(user_ctx);
+            self->intr_count.fetch_add(1, std::memory_order_acq_rel);
+            self->captured_vector.store(vector, std::memory_order_relaxed);
+        }
+    };
+
+    // Identity DMA translate (per spec "identity mode" fallback)
+    int identity_translate(uint64_t iova, uint32_t /*size*/, uint64_t* out_pa) {
+        *out_pa = iova;
+        return 0;
     }
-};
 
-// Identity DMA translate (per spec "identity mode" fallback)
-int identity_translate(uint64_t iova, uint32_t /*size*/, uint64_t* out_pa) {
-    *out_pa = iova;
-    return 0;
-}
-
-}  // namespace
+} // namespace
 
 // ── T1.1: ABI create + device info 验证 framebuffer 自动分配 ──
 TEST_CASE("ABI: minimal_soc framebuffer auto-allocates from JSON bar_sizes[1]",
@@ -53,7 +53,7 @@ TEST_CASE("ABI: minimal_soc framebuffer auto-allocates from JSON bar_sizes[1]",
     REQUIRE(emu != nullptr);
 
     cpptlm_device_info_t info{};
-    int rc = cpptlm_emulator_get_device_info(0, &info);  // dev_id 0 (resolve_profile_path)
+    int rc = cpptlm_emulator_get_device_info(0, &info); // dev_id 0 (resolve_profile_path)
     if (rc == 0) {
         // JSON 顶层 framebuffer_size_bytes = 16777216 (16MB)
         // 验证: BAR1 size (= bar_sizes[1]) 等于 JSON 中的 bar_sizes[1]
@@ -66,7 +66,8 @@ TEST_CASE("ABI: minimal_soc framebuffer auto-allocates from JSON bar_sizes[1]",
     cpptlm_emulator_destroy(emu);
 }
 
-// ── T1.2: BAR1 framebuffer round-trip (UE 经 ABI 直写 + 直读, 无 attach_framebuffer_for_testing) ──
+// ── T1.2: BAR1 framebuffer round-trip (UE 经 ABI 直写 + 直读, 无 attach_framebuffer_for_testing)
+// ──
 TEST_CASE("ABI: minimal_soc BAR1 framebuffer round-trip via mmio_*",
           "[abi][minimal_dgpu_soc][bar1]") {
     cpptlm_emulator_t* emu = cpptlm_emulator_create("configs/dgpu_soc_minimal_v1.json");
@@ -132,8 +133,8 @@ TEST_CASE("ABI: minimal_soc msix_init + register_callbacks no-op setup",
     // 接受 0 (PcieEndpointIP live) 或 -ENOSYS (msix path deferred / soc 缺实例)
     REQUIRE((rc_msix == 0 || rc_msix == -38));
 
-    int rc_cb = cpptlm_emulator_register_callbacks(
-        emu, &UeDriverContext::intr_thunk, nullptr, nullptr, nullptr, &ctx);
+    int rc_cb = cpptlm_emulator_register_callbacks(emu, &UeDriverContext::intr_thunk, nullptr,
+                                                   nullptr, nullptr, &ctx);
     REQUIRE(rc_cb == 0);
 
     cpptlm_emulator_destroy(emu);
@@ -145,8 +146,8 @@ TEST_CASE("ABI: minimal_soc register_dma_translate_cb identity",
     cpptlm_emulator_t* emu = cpptlm_emulator_create("configs/dgpu_soc_minimal_v1.json");
     REQUIRE(emu != nullptr);
 
-    int rc = cpptlm_emulator_register_dma_translate_cb(emu,
-                                                       reinterpret_cast<void*>(&identity_translate));
+    int rc = cpptlm_emulator_register_dma_translate_cb(
+        emu, reinterpret_cast<void*>(&identity_translate));
     REQUIRE(rc == 0);
 
     // nullptr callback = identity fallback (per spec "identity mode")
@@ -170,23 +171,22 @@ TEST_CASE("ABI: minimal_soc pcie_config_read vendor_id round-trip",
         REQUIRE((vid & 0xFFFF) == 0x10DEU);
     } else {
         // SOC 内部可能未实例化 pcie_ep_config (deferred) — 接受 -ENOSYS 路径
-        REQUIRE((rc == -110 || rc == -38));  // ENOSYS = -38 / EIO = -110
+        REQUIRE((rc == -110 || rc == -38)); // ENOSYS = -38 / EIO = -110
     }
 
     cpptlm_emulator_destroy(emu);
 }
 
 // ── T1.8: ABI handle-style open/close 与 create/destroy 闭环 (无 profile_path 重叠) ──
-TEST_CASE("ABI: minimal_soc handle-style open/close lifecycle",
-          "[abi][minimal_dgpu_soc][handle]") {
+TEST_CASE("ABI: minimal_soc handle-style open/close lifecycle", "[abi][minimal_dgpu_soc][handle]") {
     uint32_t before = cpptlm_emulator_get_device_count();
 
     cpptlm_emulator_handle_t h = 0;
-    int rc = cpptlm_emulator_open(0, &h);  // dev_id=0 → resolve_profile_path fallback
+    int rc = cpptlm_emulator_open(0, &h); // dev_id=0 → resolve_profile_path fallback
     if (rc == 0) {
         REQUIRE(h != 0);
         REQUIRE(cpptlm_emulator_close(h) == 0);
-        REQUIRE(cpptlm_emulator_get_device_count() == before);  // close 已 destroy
+        REQUIRE(cpptlm_emulator_get_device_count() == before); // close 已 destroy
     } else {
         // 当前 register 表可能无可解析 profile — 接受 -ENODEV (设备未注册) 路径
         REQUIRE(rc == -ENODEV);
@@ -226,7 +226,8 @@ TEST_CASE("ABI: minimal_soc edge case: framebuffer_size_bytes > 64GB rejected",
     cpptlm_emulator_t* emu = cpptlm_emulator_create(path.c_str());
     REQUIRE(emu == nullptr);
 
-    if (emu) cpptlm_emulator_destroy(emu);
+    if (emu)
+        cpptlm_emulator_destroy(emu);
     std::remove(path.c_str());
 }
 

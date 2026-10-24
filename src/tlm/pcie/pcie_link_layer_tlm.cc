@@ -64,15 +64,14 @@ namespace tlm::pcie {
         reset_fc_buckets();
     }
 
-    void PcieLinkLayer::set_fc_initial_credits(std::size_t p,
-                                              std::size_t np,
-                                              std::size_t cpl) noexcept {
+    void PcieLinkLayer::set_fc_initial_credits(std::size_t p, std::size_t np,
+                                               std::size_t cpl) noexcept {
         cfg_.fc_init_p = static_cast<uint32_t>(p);
         cfg_.fc_init_np = static_cast<uint32_t>(np);
         cfg_.fc_init_cpl = static_cast<uint32_t>(cpl);
         for (auto* fc : {&fc_upstream_, &fc_downstream_}) {
-            fc->bucket(0).init_fc(cfg_.fc_capacity, cfg_.fc_init_p,
-                                  cfg_.fc_init_np, cfg_.fc_init_cpl);
+            fc->bucket(0).init_fc(cfg_.fc_capacity, cfg_.fc_init_p, cfg_.fc_init_np,
+                                  cfg_.fc_init_cpl);
         }
     }
 
@@ -334,7 +333,7 @@ namespace tlm::pcie {
         case bundles::PcieTlpBundle::MMIO_READ:
         case bundles::PcieTlpBundle::MEM_READ:
             return FcTokenBucket::Type::NonPosted;
-        case bundles::PcieTlpBundle::CPLD:  // T-P10-1: CplD → Completion credit
+        case bundles::PcieTlpBundle::CPLD: // T-P10-1: CplD → Completion credit
             return FcTokenBucket::Type::Completion;
         case bundles::PcieTlpBundle::IRQ_DELIVERY:
         default:
@@ -467,7 +466,7 @@ namespace tlm::pcie {
         }
         fc_upstream_.consume(vf, fc_type);
 
-tlp_rx_count_.fetch_add(1, std::memory_order_relaxed);
+        tlp_rx_count_.fetch_add(1, std::memory_order_relaxed);
 
         // 分配下行 seq（与上行独立，per Q17）
         const uint16_t rx_seq = next_rx_seq_;

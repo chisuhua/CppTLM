@@ -206,7 +206,7 @@ namespace tlm::pcie {
     void PciePhyDigitalCtrl::enable_aspm(AspmLevel level) noexcept {
         aspm_level_ = level;
         if (level == AspmLevel::Off) {
-            exit_low_power();  // 关闭 ASPM 时强制回到 L0
+            exit_low_power(); // 关闭 ASPM 时强制回到 L0
             exit_pending_ = false;
         }
         last_traffic_cycle_ = eq_ ? eq_->getCurrentCycle() : 0;
@@ -367,8 +367,10 @@ namespace tlm::pcie {
         if (aspm_level_ != AspmLevel::Off && state_ == LtState::L0) {
             const uint64_t threshold = (aspm_level_ == AspmLevel::L0s) ? 100ull : 4000ull;
             if (now - last_traffic_cycle_ >= threshold) {
-                if (aspm_level_ == AspmLevel::L0s) enter_l0s();
-                else enter_l1();
+                if (aspm_level_ == AspmLevel::L0s)
+                    enter_l0s();
+                else
+                    enter_l1();
             }
         }
         // Exit latency countdown

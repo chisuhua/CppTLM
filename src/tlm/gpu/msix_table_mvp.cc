@@ -62,8 +62,8 @@ namespace tlm::gpu {
         return true;
     }
 
-    bool MsiXTable::get_vector_entry(uint16_t vector, uint64_t& msg_addr,
-                                      uint32_t& msg_data, uint32_t& control) const {
+    bool MsiXTable::get_vector_entry(uint16_t vector, uint64_t& msg_addr, uint32_t& msg_data,
+                                     uint32_t& control) const {
         if (vector >= num_vectors_)
             return false;
         msg_addr = entries_[vector].msg_addr;

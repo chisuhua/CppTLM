@@ -19,7 +19,8 @@ TEST_CASE("Full ABI: multi-card lifecycle (4 distinct emus → destroy → resto
     for (uint32_t i = 0; i < 4; ++i) {
         emus[i] = cpptlm_emulator_create(nullptr);
         // P0.5-landing: 接受 nullptr
-        if (emus[i] == nullptr) break;
+        if (emus[i] == nullptr)
+            break;
         for (uint32_t j = 0; j < i; ++j) {
             REQUIRE(emus[i] != emus[j]);
         }
@@ -35,7 +36,8 @@ TEST_CASE("Full ABI: multi-card lifecycle (4 distinct emus → destroy → resto
     REQUIRE(cpptlm_emulator_get_device_info(0xFFFFFFFE, &info) == -2); // ENOENT (actual)
 
     for (uint32_t i = 0; i < 4; ++i) {
-        if (emus[i]) cpptlm_emulator_destroy(emus[i]);
+        if (emus[i])
+            cpptlm_emulator_destroy(emus[i]);
     }
     REQUIRE(cpptlm_emulator_get_device_count() == before);
 }

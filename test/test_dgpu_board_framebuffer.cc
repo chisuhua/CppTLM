@@ -1,5 +1,6 @@
 // test/test_dgpu_board_framebuffer.cc
-// DGpuBoard framebuffer_ + backdoor 单元测试 (Phase A2 of openspec/changes/cpptlm-minimal-dgpu-soc-v1)
+// DGpuBoard framebuffer_ + backdoor 单元测试 (Phase A2 of
+// openspec/changes/cpptlm-minimal-dgpu-soc-v1)
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -16,7 +17,8 @@ TEST_CASE("dgpu_framebuffer: backdoor read/write roundtrip", "[dgpu_framebuffer]
     board.attach_vram_for_testing(fb.data(), fb_size);
 
     std::vector<uint8_t> data(64);
-    for (size_t i = 0; i < data.size(); ++i) data[i] = static_cast<uint8_t>(i & 0xFF);
+    for (size_t i = 0; i < data.size(); ++i)
+        data[i] = static_cast<uint8_t>(i & 0xFF);
     REQUIRE(board.backdoor_write(0x100, data.data(), data.size()) == 0);
 
     std::vector<uint8_t> out(64);
@@ -37,7 +39,8 @@ TEST_CASE("dgpu_framebuffer: backdoor out-of-range returns -EINVAL", "[dgpu_fram
     REQUIRE(board.backdoor_write(fb_size + 8, data.data(), data.size()) == -EINVAL);
 }
 
-TEST_CASE("dgpu_framebuffer: vram_segments_ fallback when framebuffer empty", "[dgpu_framebuffer]") {
+TEST_CASE("dgpu_framebuffer: vram_segments_ fallback when framebuffer empty",
+          "[dgpu_framebuffer]") {
     DGpuBoard board("test_board");
     std::vector<uint8_t> data(32, 0xAB);
 
@@ -48,7 +51,8 @@ TEST_CASE("dgpu_framebuffer: vram_segments_ fallback when framebuffer empty", "[
     REQUIRE(out == data);
 }
 
-TEST_CASE("dgpu_framebuffer: BAR1 mmio_write routes to framebuffer via presence", "[dgpu_framebuffer][bar1_routing]") {
+TEST_CASE("dgpu_framebuffer: BAR1 mmio_write routes to framebuffer via presence",
+          "[dgpu_framebuffer][bar1_routing]") {
     DGpuBoard board("test_board");
     constexpr uint64_t fb_size = 64 * 1024;
     std::vector<uint8_t> fb(fb_size, 0);
@@ -69,7 +73,8 @@ TEST_CASE("dgpu_framebuffer: BAR1 mmio_write routes to framebuffer via presence"
     REQUIRE(fb_byte == (val & 0xFF));
 }
 
-TEST_CASE("dgpu_framebuffer: framebuffer_size_=0 falls back to vram_segments_", "[dgpu_framebuffer][boundary]") {
+TEST_CASE("dgpu_framebuffer: framebuffer_size_=0 falls back to vram_segments_",
+          "[dgpu_framebuffer][boundary]") {
     DGpuBoard board("test_board");
     board.attach_vram_for_testing(nullptr, 0);
 
@@ -81,7 +86,8 @@ TEST_CASE("dgpu_framebuffer: framebuffer_size_=0 falls back to vram_segments_", 
     REQUIRE(out == data);
 }
 
-TEST_CASE("dgpu_framebuffer: BAR1 non-4/8-byte len passes through", "[dgpu_framebuffer][boundary]") {
+TEST_CASE("dgpu_framebuffer: BAR1 non-4/8-byte len passes through",
+          "[dgpu_framebuffer][boundary]") {
     DGpuBoard board("test_board");
     constexpr uint64_t fb_size = 64 * 1024;
     std::vector<uint8_t> fb(fb_size, 0);

@@ -117,7 +117,8 @@ TEST_CASE("PcieEndpointIP: composite 17 ports wired by internal Step 7 (C4, Phas
     // 17 端口程序化可达 (R4 决策 C: getInternalOutputPort/InputPort 命中 internal_factory)
     for (unsigned i = 0; i < 17; ++i) {
         const std::string idx = std::to_string(i);
-        REQUIRE(ep.getInternalOutputPort("pcie_ep_ip_adapter_lpm.resp_out[" + idx + "]") != nullptr);
+        REQUIRE(ep.getInternalOutputPort("pcie_ep_ip_adapter_lpm.resp_out[" + idx + "]") !=
+                nullptr);
         REQUIRE(ep.getInternalInputPort("pcie_ep_ip_adapter_lpm.req_in[" + idx + "]") != nullptr);
     }
 }

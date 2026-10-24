@@ -9,8 +9,8 @@
 //   - 任务 2.3: axislavein 桥接路径保留 (R4=C5 锁定)
 // 作者 CppTLM Team / 日期 2026-09-15
 // 参考: openspec/changes/2026-09-15-cpptlm-pcie-endpoint-ip-simmodule-refactor/{design,tasks}.md
-#include "catch_amalgamated.hpp"
 #include "bundles/axi4_bundles_tlm.hh"
+#include "catch_amalgamated.hpp"
 #include "core/chstream_module.hh"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
@@ -160,7 +160,7 @@ TEST_CASE("PcieLinkPhyMuxTLM: detach + reattach returns fresh instance",
     auto* c2 = PcieLinkPhyMuxTLM::attach_to_endpoint(name, &eq);
     REQUIRE(c2 != nullptr);
     REQUIRE(PcieLinkPhyMuxTLM::for_endpoint(name) == c2);
-    REQUIRE(c2->link().config().fc_capacity == 256u);  // 默认 256,非 c1 的 111
+    REQUIRE(c2->link().config().fc_capacity == 256u); // 默认 256,非 c1 的 111
 
     PcieLinkPhyMuxTLM::detach_from_endpoint(name);
 }
@@ -191,11 +191,11 @@ TEST_CASE("PcieEndpointIP: JSON link_layer.* 7-field consumption via composite",
 
     json cfg;
     cfg["link_layer"]["enabled"] = true;
-    cfg["link_layer"]["fc_token_bucket_capacity"] = 512;   // 非默认 256
+    cfg["link_layer"]["fc_token_bucket_capacity"] = 512; // 非默认 256
     cfg["link_layer"]["fc_initial_credit_p"] = 8;
     cfg["link_layer"]["fc_initial_credit_np"] = 4;
     cfg["link_layer"]["fc_initial_credit_cpl"] = 2;
-    cfg["link_layer"]["retry_buffer_size"] = 1024;         // 非默认 4096
+    cfg["link_layer"]["retry_buffer_size"] = 1024; // 非默认 4096
     cfg["link_layer"]["link_error_injection_enabled"] = true;
     cfg["link_layer"]["bypass_mode"] = "Bypass";
     ep.set_config(cfg);
@@ -306,9 +306,8 @@ static const int s_pcie_simmodule_refactor_registered = []() {
     ModuleFactory::registerObject<tlm::pcie::PcieLinkPhyMuxTLM>("PcieLinkPhyMuxTLM");
     ModuleFactory::registerModule<tlm::pcie::PcieEndpointIP>("PcieEndpointIP");
     ChStreamAdapterFactory::get()
-        .registerMultiPortAdapter<tlm::pcie::PcieLinkPhyMuxTLM,
-                                  bundles::PcieTlpBundle, bundles::PcieTlpBundle, 17>(
-            "PcieLinkPhyMuxTLM");
+        .registerMultiPortAdapter<tlm::pcie::PcieLinkPhyMuxTLM, bundles::PcieTlpBundle,
+                                  bundles::PcieTlpBundle, 17>("PcieLinkPhyMuxTLM");
     return 0;
 }();
 
@@ -321,8 +320,8 @@ TEST_CASE("PcieEndpointIP: SimModule inheritance (Phase 2 base switch)",
     PcieEndpointIP ep("pcie_ep_simmodule", &eq);
     auto* as_sim = dynamic_cast<SimModule*>(&ep);
     auto* as_chstrm = dynamic_cast<ChStreamModuleBase*>(&ep);
-    REQUIRE(as_sim != nullptr);     // Phase 2: EP 是 SimModule
-    REQUIRE(as_chstrm == nullptr);  // Phase 2: 不再是 ChStreamModuleBase
+    REQUIRE(as_sim != nullptr);    // Phase 2: EP 是 SimModule
+    REQUIRE(as_chstrm == nullptr); // Phase 2: 不再是 ChStreamModuleBase
 
     // R2 双注册清理: module registry 命中, object registry 不含
     auto mods = ModuleFactory::getRegisteredModuleTypes();
@@ -349,7 +348,10 @@ TEST_CASE("PcieEndpointIP: composite owned by internal_factory (Phase 2)",
     // EP 实例静态列表含 ep
     bool found = false;
     for (auto* p : PcieEndpointIP::instances_for_test()) {
-        if (p == &ep) { found = true; break; }
+        if (p == &ep) {
+            found = true;
+            break;
+        }
     }
     REQUIRE(found);
 
@@ -375,9 +377,9 @@ TEST_CASE("PcieEndpointIP: ep.tick() drives composite tick in Phase 2",
     REQUIRE(composite->tick_counts(0) == 0u);
 
     ep.tick();
-    REQUIRE(composite->tick_counts(0) == 1u);  // phy tick 经 EP::tick 推进
-    REQUIRE(composite->tick_counts(1) == 1u);  // link tick
-    REQUIRE(composite->tick_counts(2) == 1u);  // adapters tick
+    REQUIRE(composite->tick_counts(0) == 1u); // phy tick 经 EP::tick 推进
+    REQUIRE(composite->tick_counts(1) == 1u); // link tick
+    REQUIRE(composite->tick_counts(2) == 1u); // adapters tick
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -398,7 +400,7 @@ TEST_CASE("PcieEndpointIP: composite 17-port internal reachability (Phase 2)",
         const std::string idx = std::to_string(i);
         auto* master = ep.getInternalOutputPort("pcie_ep_reach_lpm.resp_out[" + idx + "]");
         auto* slave = ep.getInternalInputPort("pcie_ep_reach_lpm.req_in[" + idx + "]");
-        REQUIRE(master != nullptr);  // per design §3.3 + R4=C
+        REQUIRE(master != nullptr); // per design §3.3 + R4=C
         REQUIRE(slave != nullptr);
     }
 }
@@ -426,7 +428,7 @@ TEST_CASE("PcieEndpointIP: axislavein bridge path intact (Phase 2 R4=C5)",
     // 构造 AXI cfg write 经 HostBypass 程序化桥接 (非 JSON connection)
     Axi4Bundle wreq;
     wreq.awid.write(0x10);
-    wreq.awaddr.write(0x04);  // 配置空间偏移 (Command Register)
+    wreq.awaddr.write(0x04); // 配置空间偏移 (Command Register)
     wreq.awlen.write(0);
     wreq.awsize.write(2);
     wreq.awburst.write(1);

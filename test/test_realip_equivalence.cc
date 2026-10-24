@@ -31,37 +31,37 @@
 //
 // Tag: `[realip][p3]`
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "core/sim_module.hh"
-#include "tlm/gpu/dgpu_soc.hh"
 #include "tlm/cluster/gpu_internal_fabric.hh"
-#include "tlm/vram_controller_tlm.hh"
+#include "tlm/gpu/dgpu_soc.hh"
 #include "tlm/pcie/pcie_controller_ip.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
+#include "tlm/vram_controller_tlm.hh"
 
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <string>
+#include <nlohmann/json.hpp>
 
 using tlm::pcie::PcieControllerIP;
 using tlm::pcie::PcieEndpointIP;
 using BT = PcieControllerIP::BarTarget;
-using tlm::cluster::GpuInternalFabric;
 using cpptlm::tlm::DGpuSoc;
+using tlm::cluster::GpuInternalFabric;
 using json = nlohmann::json;
 
 namespace {
 
-json load_realip_p2_config() {
-    std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
-    REQUIRE(f.is_open());
-    json cfg;
-    f >> cfg;
-    return cfg;
-}
+    json load_realip_p2_config() {
+        std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
+        REQUIRE(f.is_open());
+        json cfg;
+        f >> cfg;
+        return cfg;
+    }
 
 } // namespace
 
@@ -88,18 +88,15 @@ TEST_CASE("P3 4-IP topology: DGpuSoc + PcieControllerIP + GpuInternalFabric + "
     auto* soc_sim = dynamic_cast<SimModule*>(soc);
     REQUIRE(soc_sim != nullptr);
 
-    auto* pcie_ctrl = dynamic_cast<PcieControllerIP*>(
-        soc_sim->getInternalInstance("pcie_ctrl"));
+    auto* pcie_ctrl = dynamic_cast<PcieControllerIP*>(soc_sim->getInternalInstance("pcie_ctrl"));
     REQUIRE(pcie_ctrl != nullptr);
     REQUIRE(pcie_ctrl->get_module_type() == "PcieControllerIP");
 
-    auto* fabric = dynamic_cast<GpuInternalFabric*>(
-        soc_sim->getInternalInstance("fabric"));
+    auto* fabric = dynamic_cast<GpuInternalFabric*>(soc_sim->getInternalInstance("fabric"));
     REQUIRE(fabric != nullptr);
     REQUIRE(fabric->get_module_type() == "GpuInternalFabric");
 
-    auto* vram_ctrl = dynamic_cast<VramControllerTLM*>(
-        soc_sim->getInternalInstance("vram_ctrl"));
+    auto* vram_ctrl = dynamic_cast<VramControllerTLM*>(soc_sim->getInternalInstance("vram_ctrl"));
     REQUIRE(vram_ctrl != nullptr);
     REQUIRE(vram_ctrl->get_module_type() == "VramControllerTLM");
 }
@@ -255,7 +252,7 @@ TEST_CASE("P3 dual-path equivalence: facade match_bar 与 EP bar_store_value 在
     REQUIRE(sub_offset == 0x123ULL);
     ep.bar_store_value_set(0, 0, 0x123ULL, 0xCAFE0001ULL);
     ep_stored = ep.bar_store_value(0, 0, 0x123ULL);
-    REQUIRE(ep_stored == 0xCAFE0001ULL);  // direct path 也可写读
+    REQUIRE(ep_stored == 0xCAFE0001ULL); // direct path 也可写读
 
     // 2. bar=1, offset=0x5000 (< bar_size(1)=16MB) → Bar1FbFastPath
     REQUIRE(ctrl->match_bar(1, 0x5000ULL, facade_target, sub_offset));
@@ -295,11 +292,11 @@ TEST_CASE("P3 dual-path equivalence: facade match_bar 与 EP bar_store_value 在
 
     // facade path 通过 mmio_write 直接落到 EP.bar_store_ (per PcieEndpointIP::mmio_write
     // 实现 dispatch), 验证 facade→EP direct 路径一致.
-    REQUIRE(ep.mmio_write(0, 0x200ULL, 0xFACADE00ULL));  // bar=0 寄存器写
+    REQUIRE(ep.mmio_write(0, 0x200ULL, 0xFACADE00ULL)); // bar=0 寄存器写
     REQUIRE(ep.bar_store_value(0, 0, 0x200ULL) == 0xFACADE00ULL);
-    REQUIRE(ep.mmio_write(1, 0x1000ULL, 0xFACADE01ULL));  // bar=1 framebuffer write
+    REQUIRE(ep.mmio_write(1, 0x1000ULL, 0xFACADE01ULL)); // bar=1 framebuffer write
     REQUIRE(ep.bar_store_value(0, 1, 0x1000ULL) == 0xFACADE01ULL);
-    REQUIRE(ep.mmio_write(2, 0x2000ULL, 0xFACADE02ULL));  // bar=2 vram write
+    REQUIRE(ep.mmio_write(2, 0x2000ULL, 0xFACADE02ULL)); // bar=2 vram write
     REQUIRE(ep.bar_store_value(0, 2, 0x2000ULL) == 0xFACADE02ULL);
 
     // 9. facade path 在 doorbell offset 写应该走 SDMA ring WPTR trigger
@@ -313,6 +310,6 @@ TEST_CASE("P3 dual-path equivalence: facade match_bar 与 EP bar_store_value 在
     // 10. facade path mmio_write OOB (per PcieEndpointIP MVP, mmio_write 无条件接受)
     //    ↔ facade match_bar OOB → Unknown (刺激 3+4) 是不一致但符合 MVP 设计。
     //    (mmio_write 边界检查属 P4 deferred 工作, 见 PcieEndpointIP::mmio_write line 651 comment)
-    REQUIRE(ep.mmio_write(1, kBar1Size + 0x100ULL, 0xDEADULL));  // accepted per MVP
+    REQUIRE(ep.mmio_write(1, kBar1Size + 0x100ULL, 0xDEADULL)); // accepted per MVP
     REQUIRE(ep.bar_store_value(0, 1, kBar1Size + 0x100ULL) == 0xDEADULL);
 }

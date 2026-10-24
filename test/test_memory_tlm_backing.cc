@@ -8,8 +8,8 @@
 #include "tlm/memory_tlm.hh"
 #include <catch2/catch_all.hpp>
 
-static void inject_req(MemoryTLM* mem, uint64_t tid, uint64_t addr, bool wr,
-                       uint64_t data = 0, uint8_t size = 8) {
+static void inject_req(MemoryTLM* mem, uint64_t tid, uint64_t addr, bool wr, uint64_t data = 0,
+                       uint8_t size = 8) {
     bundles::CacheReqBundle req;
     req.transaction_id.write(tid);
     req.address.write(addr);
@@ -21,7 +21,8 @@ static void inject_req(MemoryTLM* mem, uint64_t tid, uint64_t addr, bool wr,
     mem->req_in().set_valid(true);
 }
 
-TEST_CASE("memory_backing: write then read roundtrip + out-of-range", "[memory_backing][chstream]") {
+TEST_CASE("memory_backing: write then read roundtrip + out-of-range",
+          "[memory_backing][chstream]") {
     EventQueue eq;
     MemoryTLM mem("mem", &eq);
 
@@ -88,7 +89,8 @@ TEST_CASE("memory_backing: nullptr backing legacy 0xDEADBEEF", "[memory_backing]
     REQUIRE(resp.is_hit.read() == 0);
 }
 
-TEST_CASE("memory_backing: stats_requests counters track reads/writes", "[memory_backing][chstream]") {
+TEST_CASE("memory_backing: stats_requests counters track reads/writes",
+          "[memory_backing][chstream]") {
     EventQueue eq;
     MemoryTLM mem("mem", &eq);
 
@@ -110,7 +112,8 @@ TEST_CASE("memory_backing: stats_requests counters track reads/writes", "[memory
     REQUIRE(s.find("latency") != std::string::npos);
 }
 
-TEST_CASE("memory_backing: set_size_bytes caps backing visible range", "[memory_backing][chstream]") {
+TEST_CASE("memory_backing: set_size_bytes caps backing visible range",
+          "[memory_backing][chstream]") {
     EventQueue eq;
     MemoryTLM mem("mem", &eq);
 

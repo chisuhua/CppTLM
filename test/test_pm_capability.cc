@@ -15,31 +15,30 @@ using tlm::gpu::PcieConfigSpace;
 
 namespace {
 
-constexpr uint8_t  PM_CAP_ID          = 0x01;
-constexpr uint16_t PM_CAP_OFFSET      = 0x40;
-constexpr uint16_t PM_PMCSR_OFFSET    = PM_CAP_OFFSET + 0x04; // 0x44
-constexpr uint16_t PM_CAP_DWORD       = PM_CAP_OFFSET;
-constexpr uint16_t PM_CAP_NEXT_PTR    = PM_CAP_OFFSET + 0x01;
-constexpr uint16_t PM_PMC_OFFSET      = PM_CAP_OFFSET + 0x02;
-constexpr uint16_t PM_PMCSR_BSE_OFF   = PM_CAP_OFFSET + 0x06;
+    constexpr uint8_t PM_CAP_ID = 0x01;
+    constexpr uint16_t PM_CAP_OFFSET = 0x40;
+    constexpr uint16_t PM_PMCSR_OFFSET = PM_CAP_OFFSET + 0x04; // 0x44
+    constexpr uint16_t PM_CAP_DWORD = PM_CAP_OFFSET;
+    constexpr uint16_t PM_CAP_NEXT_PTR = PM_CAP_OFFSET + 0x01;
+    constexpr uint16_t PM_PMC_OFFSET = PM_CAP_OFFSET + 0x02;
+    constexpr uint16_t PM_PMCSR_BSE_OFF = PM_CAP_OFFSET + 0x06;
 
-constexpr uint16_t PM_CAP_VERSION_MASK = 0x0007;
-constexpr uint16_t PM_CAP_PME_CLOCK    = 0x0008;
-constexpr uint16_t PM_CAP_D3HOT_SUPPORT = 0x0010;
+    constexpr uint16_t PM_CAP_VERSION_MASK = 0x0007;
+    constexpr uint16_t PM_CAP_PME_CLOCK = 0x0008;
+    constexpr uint16_t PM_CAP_D3HOT_SUPPORT = 0x0010;
 
-constexpr uint16_t PMCSR_PME_EN       = 0x0100;
-constexpr uint16_t PMCSR_DSEL_MASK    = 0x001E;
-constexpr uint16_t PMCSR_PWS_MASK     = 0x0003;
-constexpr uint16_t PMCSR_PWS_D0       = 0x0000;
-constexpr uint16_t PMCSR_PWS_D3HOT    = 0x0003;
+    constexpr uint16_t PMCSR_PME_EN = 0x0100;
+    constexpr uint16_t PMCSR_DSEL_MASK = 0x001E;
+    constexpr uint16_t PMCSR_PWS_MASK = 0x0003;
+    constexpr uint16_t PMCSR_PWS_D0 = 0x0000;
+    constexpr uint16_t PMCSR_PWS_D3HOT = 0x0003;
 
 } // namespace
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: PM Cap ID readable
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("PcieConfigSpace: PM Cap (id=0x01) registers standard layout",
-          "[pcie][pm][cap]") {
+TEST_CASE("PcieConfigSpace: PM Cap (id=0x01) registers standard layout", "[pcie][pm][cap]") {
     PcieConfigSpace cfg;
     cfg.init();
 
@@ -53,11 +52,12 @@ TEST_CASE("PcieConfigSpace: PM Cap (id=0x01) registers standard layout",
         REQUIRE(cap->id == PM_CAP_ID);
         REQUIRE(cap->offset == PM_CAP_OFFSET);
 
-        // Host CFG_READ[PM_CAP_OFFSET] → cap dword: bits[7:0]=id, bits[15:8]=next, bits[31:16]=control
+        // Host CFG_READ[PM_CAP_OFFSET] → cap dword: bits[7:0]=id, bits[15:8]=next,
+        // bits[31:16]=control
         const uint32_t dword = cfg.read(PM_CAP_OFFSET);
-        REQUIRE((dword & 0xFFu) == PM_CAP_ID);                       // id
-        REQUIRE(((dword >> 8) & 0xFFu) == 0x00u);                    // next = 0 (end of chain)
-        REQUIRE(((dword >> 16) & 0xFFFFu) == (0x03 | PM_CAP_D3HOT_SUPPORT));  // control
+        REQUIRE((dword & 0xFFu) == PM_CAP_ID);    // id
+        REQUIRE(((dword >> 8) & 0xFFu) == 0x00u); // next = 0 (end of chain)
+        REQUIRE(((dword >> 16) & 0xFFFFu) == (0x03 | PM_CAP_D3HOT_SUPPORT)); // control
     }
 
     SECTION("PMCSR register at offset+4 starts at D0") {
@@ -85,7 +85,7 @@ TEST_CASE("PcieConfigSpace: PMCSR write callback fires on power state change",
         });
 
         cfg.write(PM_PMCSR_OFFSET, PMCSR_PWS_D0);
-        REQUIRE(callback_count == 1);  // 首次写: sentinel -> D0, 必须触发
+        REQUIRE(callback_count == 1); // 首次写: sentinel -> D0, 必须触发
         REQUIRE(last_state == PMCSR_PWS_D0);
 
         cfg.write(PM_PMCSR_OFFSET, PMCSR_PWS_D3HOT);
@@ -113,8 +113,7 @@ TEST_CASE("PcieConfigSpace: PMCSR write callback fires on power state change",
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: PM Cap respects OOB / non-aligned writes (PCIe spec semantics)
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("PcieConfigSpace: PM Cap OOB / misaligned writes silently ignored",
-          "[pcie][pm][cap]") {
+TEST_CASE("PcieConfigSpace: PM Cap OOB / misaligned writes silently ignored", "[pcie][pm][cap]") {
     PcieConfigSpace cfg;
     cfg.init();
     REQUIRE(cfg.add_capability(PM_CAP_ID, PM_CAP_OFFSET, 0, 0x03));

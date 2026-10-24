@@ -20,19 +20,17 @@ namespace tlm::pcie {
     } // namespace
 
     PcieLinkPhyMuxTLM::PcieLinkPhyMuxTLM(const std::string& name, EventQueue* eq)
-        : ChStreamModuleBase(name, eq),
-          link_(eq),
-          phy_(eq),
+        : ChStreamModuleBase(name, eq), link_(eq), phy_(eq),
           mux_(&link_) { // 构造即持 link_ 指针 (成员声明序 = 构造序)
         // INV-1: 封装 pcie_endpoint_ip.cc 原 attach 语义 (构造后立即绑定)
-        phy_.link_layer(&link_);      // PHY 持 LL 指针 (rate_switch 0-cycle 同步调用)
-        phy_.set_link_up(true);       // link_up 立即置位 (Detect + initialized)
+        phy_.link_layer(&link_); // PHY 持 LL 指针 (rate_switch 0-cycle 同步调用)
+        phy_.set_link_up(true);  // link_up 立即置位 (Detect + initialized)
         mux_.set_phy_initialized(true);
     }
 
     void PcieLinkPhyMuxTLM::init() {
         ChStreamModuleBase::init();
-        link_.reset_fc_buckets();         // 触发 LL 默认 FC 配置
+        link_.reset_fc_buckets();          // 触发 LL 默认 FC 配置
         mux_.apply_mode(BypassMode::Full); // 默认 Full mode
     }
 
@@ -87,7 +85,7 @@ namespace tlm::pcie {
     }
 
     PcieLinkPhyMuxTLM* PcieLinkPhyMuxTLM::attach_to_endpoint(const std::string& ep_name,
-                                                           EventQueue* eq) {
+                                                             EventQueue* eq) {
         auto& reg = registry();
         auto it = reg.find(ep_name);
         if (it != reg.end()) {
@@ -152,8 +150,7 @@ namespace tlm::pcie {
             PcieLinkPhyMuxTLMRegistrar() {
                 ModuleFactory::registerObject<PcieLinkPhyMuxTLM>("PcieLinkPhyMuxTLM");
                 ChStreamAdapterFactory::get()
-                    .registerMultiPortAdapter<PcieLinkPhyMuxTLM,
-                                              bundles::PcieTlpBundle,
+                    .registerMultiPortAdapter<PcieLinkPhyMuxTLM, bundles::PcieTlpBundle,
                                               bundles::PcieTlpBundle, 17>("PcieLinkPhyMuxTLM");
             }
         };

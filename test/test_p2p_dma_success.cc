@@ -17,9 +17,9 @@ using tlm::pcie::p2p_dma_route;
 using tlm::pcie::P2PResult;
 
 namespace {
-constexpr uint32_t BDF_PF1 = 0x0100;
-constexpr uint32_t BDF_DEV2 = 0x0200;
-constexpr uint32_t BDF_DEV3 = 0x0300;
+    constexpr uint32_t BDF_PF1 = 0x0100;
+    constexpr uint32_t BDF_DEV2 = 0x0200;
+    constexpr uint32_t BDF_DEV3 = 0x0300;
 } // namespace
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -36,8 +36,7 @@ TEST_CASE("P2P DMA: default AcsPolicy keeps strict-deny (backward compat)",
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: explicit grant → SUCCESS
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("P2P DMA: explicit AcsPolicy grant enables SUCCESS path",
-          "[pcie][p2p][acs-policy]") {
+TEST_CASE("P2P DMA: explicit AcsPolicy grant enables SUCCESS path", "[pcie][p2p][acs-policy]") {
     AcsPolicy policy;
     policy.grant(BDF_PF1, BDF_DEV2);
 
@@ -63,8 +62,7 @@ TEST_CASE("P2P DMA: nullptr policy keeps BLOCKED (INV-D no silent fallback)",
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: fuzz with policy — result always explicit
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("P2P DMA: fuzz with AcsPolicy — result always explicit code",
-          "[pcie][p2p][acs-policy]") {
+TEST_CASE("P2P DMA: fuzz with AcsPolicy — result always explicit code", "[pcie][p2p][acs-policy]") {
     AcsPolicy policy;
     policy.grant(0x0100, 0x0200);
 
@@ -73,8 +71,8 @@ TEST_CASE("P2P DMA: fuzz with AcsPolicy — result always explicit code",
         const uint32_t dst = static_cast<uint32_t>(i * 17 + 100);
         const auto r = p2p_dma_route(src, dst, i * 4096, 4096, &policy);
         const bool valid = (r.code == P2PResult::Code::SUCCESS) ||
-                            (r.code == P2PResult::Code::BLOCKED_BY_ACS) ||
-                            (r.code == P2PResult::Code::NO_ROUTE);
+                           (r.code == P2PResult::Code::BLOCKED_BY_ACS) ||
+                           (r.code == P2PResult::Code::NO_ROUTE);
         REQUIRE(valid);
     }
 }

@@ -12,8 +12,8 @@ using namespace bundles;
 
 // Layout-identity: ch_uint_storage<W> must be sizeof + standard-layout + trivially-copyable
 // identical to pre-change ch_uint<W> for W in {1,2,4,8,16,32,64}
-TEMPLATE_TEST_CASE("ch_uint_storage W<=64 layout identity", "[ch_uint][p0]",
-    (uint8_t), (uint16_t), (uint32_t), (uint64_t)) {
+TEMPLATE_TEST_CASE("ch_uint_storage W<=64 layout identity", "[ch_uint][p0]", (uint8_t), (uint16_t),
+                   (uint32_t), (uint64_t)) {
     using W = TestType;
     constexpr unsigned Bits = sizeof(W) * 8;
 

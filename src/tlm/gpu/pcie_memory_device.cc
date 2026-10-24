@@ -6,7 +6,7 @@
 #include "tlm/gpu/pcie_memory_device.hh"
 
 #include "bundles/pcie_bundles_tlm.hh"
-#include "tlm/vram_controller_tlm.hh"  // Change A: handle_functional_request 完整类型
+#include "tlm/vram_controller_tlm.hh" // Change A: handle_functional_request 完整类型
 
 #include <cerrno>
 #include <cstring>
@@ -16,7 +16,8 @@ namespace tlm::gpu {
     void PcieMemoryDevice::init_identity_regs() {
         // registers_ zero-initialized by std::array default constructor
         // backing_view_ = nullptr (no lazy alloc; must be injected via set_backing_view)
-        // DEVICE_IDENTITY 默认初始化: registers_[0..1] = kVendorId (0x1002 LE), [2..3] = kDeviceId (0x0002 LE)
+        // DEVICE_IDENTITY 默认初始化: registers_[0..1] = kVendorId (0x1002 LE), [2..3] = kDeviceId
+        // (0x0002 LE)
         uint16_t vid = kVendorId;
         uint16_t did = kDeviceId;
         std::memcpy(&registers_[0], &vid, sizeof(vid));
@@ -81,7 +82,8 @@ namespace tlm::gpu {
             return -EINVAL;
         }
         std::lock_guard<std::mutex> lock(backing_mutex_);
-        if (backing_view_ == nullptr) return -ENODEV;
+        if (backing_view_ == nullptr)
+            return -ENODEV;
         if (offset >= backing_view_size_ || len > backing_view_size_ - offset) {
             return -EINVAL;
         }
@@ -94,7 +96,8 @@ namespace tlm::gpu {
             return -EINVAL;
         }
         std::lock_guard<std::mutex> lock(backing_mutex_);
-        if (backing_view_ == nullptr) return -ENODEV;
+        if (backing_view_ == nullptr)
+            return -ENODEV;
         if (offset >= backing_view_size_ || len > backing_view_size_ - offset) {
             return -EINVAL;
         }
@@ -128,13 +131,13 @@ namespace tlm::gpu {
             const auto res =
                 vram_controller_->handle_functional_request(off, len, is_write, data_ptr);
             if (res.rc != 0) {
-                resp.kind.write(bundles::PcieTlpBundle::CPLD);  // SLVERR (per D-AXI v1.4 B9)
+                resp.kind.write(bundles::PcieTlpBundle::CPLD); // SLVERR (per D-AXI v1.4 B9)
                 resp.data.write(0xDEAD);
             } else if (is_write) {
-                resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 写完成
+                resp.kind.write(bundles::PcieTlpBundle::CPLD); // 写完成
                 resp.data.write(0);
             } else {
-                resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 读完成
+                resp.kind.write(bundles::PcieTlpBundle::CPLD); // 读完成
                 resp.data.write(val);
             }
             resp_out[p].write(resp);
@@ -146,20 +149,19 @@ namespace tlm::gpu {
         //   null_backing → -ENODEV, oob → -EINVAL
         // v1.8 H1: PcieTlpBundle inline data ≤8B; >8B 走 BAR2 backdoor
         const bool null_backing = !has_backing_view();
-        const bool oob = (len > 8 || off >= backing_size() ||
-                          len > backing_size() - off);
+        const bool oob = (len > 8 || off >= backing_size() || len > backing_size() - off);
         if (null_backing || oob) {
-            resp.kind.write(bundles::PcieTlpBundle::CPLD);  // SLVERR: CPLD + data=0xDEAD
+            resp.kind.write(bundles::PcieTlpBundle::CPLD); // SLVERR: CPLD + data=0xDEAD
             resp.data.write(0xDEAD);
         } else if (req.is_read()) {
             uint64_t val = 0;
             int r = memory_read(off, &val, len);
             resp.data.write((r == 0) ? val : 0xDEAD);
-            resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 读完成: CPLD 带 data
+            resp.kind.write(bundles::PcieTlpBundle::CPLD); // 读完成: CPLD 带 data
         } else if (req.is_write()) {
             uint64_t val = req.data.read();
             (void)memory_write(off, &val, len);
-            resp.kind.write(bundles::PcieTlpBundle::CPLD);  // 写完成: CPLD
+            resp.kind.write(bundles::PcieTlpBundle::CPLD); // 写完成: CPLD
             // minimal_v1 CPLD 无额外状态; D3+ 可通过扩展 resp kind 加 ACK/NACK
         } else {
             resp.kind.write(bundles::PcieTlpBundle::CPLD);
@@ -176,7 +178,8 @@ namespace tlm::gpu {
             handle_slave_port(p);
         }
         // v1.3 B3: 单 tick 一次; MultiPortStreamAdapter 内部遍历 N 端口
-        if (adapter_) adapter_->tick();
+        if (adapter_)
+            adapter_->tick();
     }
 
-}  // namespace tlm::gpu
+} // namespace tlm::gpu

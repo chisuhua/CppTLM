@@ -4,17 +4,17 @@
 // 测试标签: [realip][pin-contract][noc][adapter][vram]
 #include "catch_amalgamated.hpp"
 
-#include "bundles/noc_bundles_tlm.hh"
 #include "bundles/dgpu_fabric_bundles_tlm.hh"
+#include "bundles/noc_bundles_tlm.hh"
 #include "tlm/cluster/soc_internal_noc.hh"
 #include "tlm/vram_noc_adapter.hh"
 
 #include <cstdint>
 
-using tlm::cluster::VramNocAdapter;
-using tlm::cluster::SocInternalNoc;
-using bundles::NoCFlitBundle;
 using bundles::Fabric2VramCtrlBundle;
+using bundles::NoCFlitBundle;
+using tlm::cluster::SocInternalNoc;
+using tlm::cluster::VramNocAdapter;
 
 TEST_CASE("VramNocAdapter: emit_noc_request single flit field mapping",
           "[realip][pin-contract][noc][adapter][vram]") {
@@ -40,8 +40,8 @@ TEST_CASE("VramNocAdapter: emit_noc_request single flit field mapping",
     CHECK(fabric.size.read() == 64);
     CHECK(fabric.is_write.read() == true);
     CHECK(fabric.data.read() == 0xDEADBEEFULL);
-    CHECK(fabric.transaction_id.read() == 42);  // 64→32 截断后
-    CHECK(fabric.error_code.read() == 0);       // REQ 阶段未设
+    CHECK(fabric.transaction_id.read() == 42); // 64→32 截断后
+    CHECK(fabric.error_code.read() == 0);      // REQ 阶段未设
     // chip_select: (vc_id=0 << 4) | (src_node=1 SDMA) = 0x01
     CHECK(fabric.chip_select.read() == 0x01);
 
@@ -56,7 +56,7 @@ TEST_CASE("VramNocAdapter: wrap_response field mapping",
     Fabric2VramCtrlBundle resp{};
     resp.transaction_id.write(42);
     resp.resp_data.write(0xCAFEBABE);
-    resp.error_code.write(0);  // OK
+    resp.error_code.write(0); // OK
 
     // 包装为 NoC RESP flit
     NoCFlitBundle flit = adapter.wrap_response(resp);
@@ -86,7 +86,7 @@ TEST_CASE("VramNocAdapter: multi-beat split flit_count > 1",
     req.is_write.write(true);
     req.address.write(0x10000);
     req.size.write(128);
-    req.flit_count.write(4);  // 4-beat burst
+    req.flit_count.write(4); // 4-beat burst
     req.flit_index.write(0);
 
     // multi-beat split
@@ -94,10 +94,10 @@ TEST_CASE("VramNocAdapter: multi-beat split flit_count > 1",
 
     // 验证: 4 beat, 每 beat 32B 步进地址
     REQUIRE(beats.size() == 4);
-    CHECK(beats[0].address.read() == 0x10000);       // beat 0
-    CHECK(beats[1].address.read() == 0x10020);       // beat 1
-    CHECK(beats[2].address.read() == 0x10040);       // beat 2
-    CHECK(beats[3].address.read() == 0x10060);       // beat 3
+    CHECK(beats[0].address.read() == 0x10000); // beat 0
+    CHECK(beats[1].address.read() == 0x10020); // beat 1
+    CHECK(beats[2].address.read() == 0x10040); // beat 2
+    CHECK(beats[3].address.read() == 0x10060); // beat 3
     for (const auto& beat : beats) {
         CHECK(beat.size.read() == 32);
         CHECK(beat.is_write.read() == true);

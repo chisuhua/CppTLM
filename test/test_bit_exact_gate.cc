@@ -68,7 +68,8 @@ TEST_CASE("G5: 多指令序列后寄存器值 bit-exact", "[sm-bit-exact][sm-mic
     desc.num_dst = 1;
     sm.set_instr_descriptor_buf(&desc, 1);
 
-    for (int i = 0; i < 4; ++i) sm.exe_once();
+    for (int i = 0; i < 4; ++i)
+        sm.exe_once();
 
     uint64_t val = 0;
     REQUIRE(sm.get_register_value(0, 0, 6, &val));
@@ -90,7 +91,8 @@ TEST_CASE("G5: 连续 exe_once 不产生 side-effect 污染", "[sm-bit-exact][sm
     desc.num_src = 0;
     desc.num_dst = 0;
     sm.set_instr_descriptor_buf(&desc, 1);
-    for (int i = 0; i < 4; ++i) sm.exe_once();
+    for (int i = 0; i < 4; ++i)
+        sm.exe_once();
 
     // reg 1 不被污染
     uint64_t val = 0;

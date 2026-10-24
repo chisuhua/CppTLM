@@ -46,41 +46,39 @@ using json = nlohmann::json;
 
 namespace {
 
-// 单实例共享配置: BAR1 = 64 KiB framebuffer window; BAR2 = 8 GiB VRAM aperture.
-// BAR3..BAR5 不参与契约 (BAR3 是 BAR2 64-bit pair upper dword, BAR4-5 unused).
-constexpr uint64_t kBar1Size = 0x10000ULL;            // 64 KiB
-constexpr uint64_t kBar2Size = 0x200000000ULL;        // 8 GiB
+    // 单实例共享配置: BAR1 = 64 KiB framebuffer window; BAR2 = 8 GiB VRAM aperture.
+    // BAR3..BAR5 不参与契约 (BAR3 是 BAR2 64-bit pair upper dword, BAR4-5 unused).
+    constexpr uint64_t kBar1Size = 0x10000ULL;     // 64 KiB
+    constexpr uint64_t kBar2Size = 0x200000000ULL; // 8 GiB
 
-// Pinned contract harness (per stimulus set in dgpu_board_shell.cc:316 / :434):
-//   "expected mirrors controller semantics (pcie_controller_ip.cc)"
-struct PinnedHarness {
-    ::EventQueue eq;
-    PcieEndpointIP ep;
-    ::tlm::gpu::DGpuBoard board;
-    PcieControllerIP ctrl;
+    // Pinned contract harness (per stimulus set in dgpu_board_shell.cc:316 / :434):
+    //   "expected mirrors controller semantics (pcie_controller_ip.cc)"
+    struct PinnedHarness {
+        ::EventQueue eq;
+        PcieEndpointIP ep;
+        ::tlm::gpu::DGpuBoard board;
+        PcieControllerIP ctrl;
 
-    PinnedHarness()
-        : eq{},
-          ep{"pcie_ep_ip_pinned", &eq},
-          board{"board_pinned", &eq},
-          ctrl{"ctrl_pinned", &eq} {
-        // Configure BAR sizes via JSON path (canonical source of truth per
-        // PcieEndpointIP::attach_composition §bar_sizes handler).
-        json cfg;
-        cfg["bar_sizes"] = json::array({0ULL, kBar1Size, kBar2Size, 0ULL, 0ULL, 0ULL});
-        ep.set_config(cfg);
+        PinnedHarness()
+            : eq{}, ep{"pcie_ep_ip_pinned", &eq}, board{"board_pinned", &eq},
+              ctrl{"ctrl_pinned", &eq} {
+            // Configure BAR sizes via JSON path (canonical source of truth per
+            // PcieEndpointIP::attach_composition §bar_sizes handler).
+            json cfg;
+            cfg["bar_sizes"] = json::array({0ULL, kBar1Size, kBar2Size, 0ULL, 0ULL, 0ULL});
+            ep.set_config(cfg);
 
-        // 断言 BAR sizes 真的被写进了 EP (否则下游 match_bar 走错路径)
-        REQUIRE(ep.bar_size(1) == kBar1Size);
-        REQUIRE(ep.bar_size(2) == kBar2Size);
+            // 断言 BAR sizes 真的被写进了 EP (否则下游 match_bar 走错路径)
+            REQUIRE(ep.bar_size(1) == kBar1Size);
+            REQUIRE(ep.bar_size(2) == kBar2Size);
 
-        // ===== B1a MUST-DO #1: attach EP into controller (RED: method 尚未存在) =====
-        ctrl.attach_endpoint(&ep);
+            // ===== B1a MUST-DO #1: attach EP into controller (RED: method 尚未存在) =====
+            ctrl.attach_endpoint(&ep);
 
-        // ===== B1a MUST-DO #2: inject controller into DGpuBoard (dormant B2 gate) =====
-        board.set_pcie_controller_ip(&ctrl);
-    }
-};
+            // ===== B1a MUST-DO #2: inject controller into DGpuBoard (dormant B2 gate) =====
+            board.set_pcie_controller_ip(&ctrl);
+        }
+    };
 
 } // namespace
 
@@ -131,7 +129,7 @@ TEST_CASE("PcieControllerIP: bar=1 offset >= bar_size(1) returns Unknown (B2d gu
           "[controller_ip][p2]") {
     PinnedHarness s;
 
-    BT target = BT::Bar0Mmio;  // sentinel to verify write happened
+    BT target = BT::Bar0Mmio; // sentinel to verify write happened
     uint64_t sub_offset = 0;
 
     // Exactly at boundary (offset == bar_size(1)) — 必须 NOT matched
@@ -177,7 +175,7 @@ TEST_CASE("PcieControllerIP: bar=3 returns Unknown (BAR3 = upper dword of BAR2 p
           "[controller_ip][p2]") {
     PinnedHarness s;
 
-    BT target = BT::Bar0Mmio;  // sentinel
+    BT target = BT::Bar0Mmio; // sentinel
     uint64_t sub_offset = 0;
     const bool matched = s.ctrl.match_bar(3, 0x0ULL, target, sub_offset);
 

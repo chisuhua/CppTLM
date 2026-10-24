@@ -19,7 +19,8 @@ using namespace cpptlm::pcie;
 
 // ==================== TEST_CASE 1: MRd 发起 NP credit 消耗 ====================
 
-TEST_CASE("RequesterEngine MRd 发起 tx_tlp + NP credit 消耗", "[pcie][requester][engine][T-P11-1]") {
+TEST_CASE("RequesterEngine MRd 发起 tx_tlp + NP credit 消耗",
+          "[pcie][requester][engine][T-P11-1]") {
     EventQueue eq;
     tlm::pcie::PcieLinkLayerConfig cfg;
     cfg.fc_capacity = 256;
@@ -33,7 +34,7 @@ TEST_CASE("RequesterEngine MRd 发起 tx_tlp + NP credit 消耗", "[pcie][reques
 
     // 发起 MRd 64B
     bool sent = req_eng.mrd_read(0, 0x10000000, 0, 64);
-    REQUIRE(sent);  // NP=256 充足 → 发送成功
+    REQUIRE(sent); // NP=256 充足 → 发送成功
 
     // 验证 TLP 发出
     REQUIRE(ll.tx_tlp_out_count() == 1);
@@ -46,7 +47,8 @@ TEST_CASE("RequesterEngine MRd 发起 tx_tlp + NP credit 消耗", "[pcie][reques
 
 // ==================== TEST_CASE 2: CplD 接收 + tag 关联 + completion callback ====================
 
-TEST_CASE("RequesterEngine CplD 接收 + tag 关联 + completion callback", "[pcie][requester][engine][cpld][T-P11-1]") {
+TEST_CASE("RequesterEngine CplD 接收 + tag 关联 + completion callback",
+          "[pcie][requester][engine][cpld][T-P11-1]") {
     EventQueue eq;
     tlm::pcie::PcieLinkLayer ll(&eq);
 
@@ -55,11 +57,10 @@ TEST_CASE("RequesterEngine CplD 接收 + tag 关联 + completion callback", "[pc
     uint16_t matched_tag = 0xFF;
 
     // 注册 completion callback
-    req_eng.register_completion_callback(
-        [&](uint16_t tag, const PcieTlpBundle& /*cpld*/) {
-            matched_tag = tag;
-            completed = true;
-        });
+    req_eng.register_completion_callback([&](uint16_t tag, const PcieTlpBundle& /*cpld*/) {
+        matched_tag = tag;
+        completed = true;
+    });
 
     bool sent = req_eng.mrd_read(0, 0x10000000, 0, 64);
     REQUIRE(sent);
@@ -85,7 +86,8 @@ TEST_CASE("RequesterEngine CplD 接收 + tag 关联 + completion callback", "[pc
 
 // ==================== TEST_CASE 3: Completion 超时 error_cb ====================
 
-TEST_CASE("RequesterEngine Completion 超时 error_cb", "[pcie][requester][engine][timeout][T-P11-1]") {
+TEST_CASE("RequesterEngine Completion 超时 error_cb",
+          "[pcie][requester][engine][timeout][T-P11-1]") {
     EventQueue eq;
     tlm::pcie::PcieLinkLayer ll(&eq);
 
@@ -94,12 +96,11 @@ TEST_CASE("RequesterEngine Completion 超时 error_cb", "[pcie][requester][engin
     std::atomic<bool> error{false};
     std::string error_reason;
 
-    req_eng.register_error_callback(
-        [&](uint32_t tag, const std::string& reason) {
-            error = true;
-            error_reason = reason;
-            (void)tag;
-        });
+    req_eng.register_error_callback([&](uint32_t tag, const std::string& reason) {
+        error = true;
+        error_reason = reason;
+        (void)tag;
+    });
 
     bool sent = req_eng.mrd_read(0, 0x10000000, 0, 64);
     REQUIRE(sent);
@@ -116,7 +117,8 @@ TEST_CASE("RequesterEngine Completion 超时 error_cb", "[pcie][requester][engin
 
 // ==================== TEST_CASE 4: 多 outstanding 并发 + 各自 CplD 匹配 ====================
 
-TEST_CASE("RequesterEngine 多 outstanding 并发 + 各自 CplD 匹配", "[pcie][requester][engine][multi][T-P11-1]") {
+TEST_CASE("RequesterEngine 多 outstanding 并发 + 各自 CplD 匹配",
+          "[pcie][requester][engine][multi][T-P11-1]") {
     EventQueue eq;
     tlm::pcie::PcieLinkLayer ll(&eq);
 
@@ -124,9 +126,7 @@ TEST_CASE("RequesterEngine 多 outstanding 并发 + 各自 CplD 匹配", "[pcie]
     int completion_count = 0;
 
     req_eng.register_completion_callback(
-        [&](uint16_t /*tag*/, const PcieTlpBundle& /*cpld*/) {
-            ++completion_count;
-        });
+        [&](uint16_t /*tag*/, const PcieTlpBundle& /*cpld*/) { ++completion_count; });
 
     // 发起 3 个 MRd (3 个不同地址)
     REQUIRE(req_eng.mrd_read(0, 0x10000000, 0, 64));
@@ -172,7 +172,8 @@ TEST_CASE("RequesterEngine 多 outstanding 并发 + 各自 CplD 匹配", "[pcie]
 
 // ==================== TEST_CASE 5: tag 耗尽 (4096 outstanding) ====================
 
-TEST_CASE("RequesterEngine tag 耗尽 (4096 outstanding)", "[pcie][requester][engine][tagfull][T-P11-1]") {
+TEST_CASE("RequesterEngine tag 耗尽 (4096 outstanding)",
+          "[pcie][requester][engine][tagfull][T-P11-1]") {
     EventQueue eq;
     // 需要 4096+ NP credits, 但 PcieLinkLayer::SEQ_WINDOW=2048 限制 retry buffer 深度
     // 无法同时保持 4096 outstanding. 这里验证: tag 分配顺序 + 可填满 SEQ_WINDOW-1 槽位
@@ -189,7 +190,8 @@ TEST_CASE("RequesterEngine tag 耗尽 (4096 outstanding)", "[pcie][requester][en
     // 发起 2048 个 MRd (SEQ_WINDOW=2048, 刚好填满 retry buffer)
     for (int i = 0; i < 2048; ++i) {
         bool sent = req_eng.mrd_read(0, 0x10000000 + i * 0x1000, 0, 64);
-        if (sent) ++success_count;
+        if (sent)
+            ++success_count;
     }
     // 2048 应该全部成功 (tag 1-2048, 12-bit 范围)
     REQUIRE(success_count == 2048);
@@ -198,5 +200,5 @@ TEST_CASE("RequesterEngine tag 耗尽 (4096 outstanding)", "[pcie][requester][en
     // 第 2049 个 → retry buffer 满 → tx_tlp 返回 false
     bool sent = req_eng.mrd_read(0, 0x10000000, 0, 64);
     REQUIRE_FALSE(sent);
-    REQUIRE(req_eng.outstanding_count() == 2048);  // 未变化
+    REQUIRE(req_eng.outstanding_count() == 2048); // 未变化
 }

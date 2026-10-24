@@ -164,7 +164,7 @@ TEST_CASE("PCIe driver perspective: HostPcieTestStub send_config_read (X1 v1.1 é
 
     stub.send_config_read(0, 0, 0, GPU_REG_GPFIFO_PUT, 4);
     CHECK(stub.tlp_send_count() == 1);
-    CHECK(stub.last_tlp_kind() == 0);  // CFG_READ
+    CHECK(stub.last_tlp_kind() == 0); // CFG_READ
 
     stub.send_config_read(0, 0, 0, GPU_REG_DOORBELL, 4);
     CHECK(stub.tlp_send_count() == 2);
@@ -181,9 +181,9 @@ TEST_CASE("PCIe driver perspective: HostPcieTestStub send_mmio_read/write (X1 v1
 
     stub.send_mmio_read(0, GPU_REG_GPFIFO_PUT, 4);
     CHECK(stub.tlp_send_count() == 1);
-    CHECK(stub.last_tlp_kind() == 2);  // MMIO_READ
+    CHECK(stub.last_tlp_kind() == 2); // MMIO_READ
 
     stub.send_mmio_write(0, GPU_REG_DOORBELL, 4, nullptr);
     CHECK(stub.tlp_send_count() == 2);
-    CHECK(stub.last_tlp_kind() == 3);  // MMIO_WRITE
+    CHECK(stub.last_tlp_kind() == 3); // MMIO_WRITE
 }

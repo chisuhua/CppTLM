@@ -11,27 +11,27 @@
 #include <memory>
 #include <vector>
 
-#include "bundles/cr_bundles_tlm.hh"         // T1 RED: 编译失败 (未定义) → T2 GREEN
-#include "bundles/doorbell_bundles_tlm.hh"   // T3 RED: 编译失败 → T4 GREEN
-#include "bundles/msix_bundles_tlm.hh"       // T7 RED: 编译失败 → T8 GREEN
+#include "bundles/cr_bundles_tlm.hh"       // T1 RED: 编译失败 (未定义) → T2 GREEN
+#include "bundles/doorbell_bundles_tlm.hh" // T3 RED: 编译失败 → T4 GREEN
+#include "bundles/msix_bundles_tlm.hh"     // T7 RED: 编译失败 → T8 GREEN
 #include "core/event_queue.hh"
 #include "framework/stream_adapter.hh"
-#include "tlm/gpu/dgpu_board_shell.hh"       // T10: DGpuBoard E2E (mmio_* + LWC 闭环)
+#include "tlm/gpu/dgpu_board_shell.hh" // T10: DGpuBoard E2E (mmio_* + LWC 闭环)
 #include "tlm/gpu/dma_descriptor_mvp.hh"
 #include "tlm/gpu/sdma_ring_buffer.hh"
-#include "tlm/lwc/lwc_bus_hub.hh"            // T5 RED: 编译失败 → T6 GREEN
+#include "tlm/lwc/lwc_bus_hub.hh" // T5 RED: 编译失败 → T6 GREEN
 #include "utils/port_contract_asserts.hh"
 
-using tlm::lwc::LwcBusHub;
 using bundles::CrBundle;
 using bundles::DoorbellBundle;
 using bundles::MsixBundle;
 using tlm::gpu::DGpuBoard;
+using tlm::gpu::DmaDescriptor;
 using tlm::gpu::GmmuTLM;
 using tlm::gpu::SdmaEngineTLM;
-using tlm::gpu::DmaDescriptor;
 using tlm::gpu::SdmaPacket;
 using tlm::gpu::SdmaRingBuffer;
+using tlm::lwc::LwcBusHub;
 
 // ===========================================================================
 // T1/T2 — CrBundle wire-format (RED: 类型未定义 → 编译失败)
@@ -82,8 +82,7 @@ TEST_CASE("CrBundle: 序列化 roundtrip (InputStreamAdapter process 语义)",
     REQUIRE(out.transaction_id.read() == 7);
 }
 
-TEST_CASE("CrBundle: read transaction 语义 (write=0 → rdata 回填)",
-          "[lwc][cr_bundle][unit]") {
+TEST_CASE("CrBundle: read transaction 语义 (write=0 → rdata 回填)", "[lwc][cr_bundle][unit]") {
     CrBundle tx;
     tx.address.write(0x00);
     tx.write.write(0u);
@@ -123,8 +122,7 @@ TEST_CASE("DoorbellBundle: 4-field posted-write wire-format 编译期契约",
     REQUIRE(db.valid.read() == 1u);
 }
 
-TEST_CASE("DoorbellBundle: 序列化 roundtrip + ring 提交语义",
-          "[lwc][doorbell_bundle][unit]") {
+TEST_CASE("DoorbellBundle: 序列化 roundtrip + ring 提交语义", "[lwc][doorbell_bundle][unit]") {
     DoorbellBundle db;
     db.wdata.write(0x100);
     db.ring_id.write(0);
@@ -186,8 +184,8 @@ TEST_CASE("LwcBusHub: cr_write 路由到正确 CR target (不串扰)", "[lwc][un
     REQUIRE(gmmu_cr.valid());
     REQUIRE(gmmu_cr.data().address.read() == 0x00);
     REQUIRE(gmmu_cr.data().wdata.read() == 0xDEADBEEF);
-    REQUIRE_FALSE(msi_cr.valid());   // 不串扰
-    REQUIRE_FALSE(sdma_db.valid());  // Doorbell target 不收 CR
+    REQUIRE_FALSE(msi_cr.valid());  // 不串扰
+    REQUIRE_FALSE(sdma_db.valid()); // Doorbell target 不收 CR
 }
 
 TEST_CASE("LwcBusHub: doorbell_write 路由到正确 Doorbell target", "[lwc][unit]") {
@@ -204,7 +202,7 @@ TEST_CASE("LwcBusHub: doorbell_write 路由到正确 Doorbell target", "[lwc][un
     REQUIRE(sdma_db.valid());
     REQUIRE(sdma_db.data().wdata.read() == 42);
     REQUIRE(sdma_db.data().ring_id.read() == 0);
-    REQUIRE_FALSE(gmmu_cr.valid());  // CR target 不收 Doorbell
+    REQUIRE_FALSE(gmmu_cr.valid()); // CR target 不收 Doorbell
 }
 
 TEST_CASE("LwcBusHub: unknown target → dropped_count 增, 0 crash", "[lwc][unit]") {
@@ -216,10 +214,10 @@ TEST_CASE("LwcBusHub: unknown target → dropped_count 增, 0 crash", "[lwc][uni
     hub.cr_write(CrBundle::make_write(0x00, 1, 1));
     REQUIRE(hub.routed_count() == 1);
 
-    hub.cr_write(CrBundle::make_write(0x00, 2, 2));  // 无 target 名 → 仍默认路由 "gmmu"
+    hub.cr_write(CrBundle::make_write(0x00, 2, 2)); // 无 target 名 → 仍默认路由 "gmmu"
     REQUIRE(hub.routed_count() == 2);
 
-    hub.doorbell_write(DoorbellBundle::make_doorbell(1, 0));  // 无 Doorbell target → dropped
+    hub.doorbell_write(DoorbellBundle::make_doorbell(1, 0)); // 无 Doorbell target → dropped
     REQUIRE(hub.dropped_count() == 1);
     REQUIRE(hub.routed_count() == 2);
 }
@@ -270,7 +268,7 @@ TEST_CASE("LwcBusHub: routed_count 计数器精度 (100 tx: 90 routed + 10 dropp
         hub.cr_write(CrBundle::make_write(0x00, i, i));
     }
     for (unsigned i = 0; i < 10; ++i) {
-        hub.doorbell_write(DoorbellBundle::make_doorbell(i, 0));  // 无 doorbell target
+        hub.doorbell_write(DoorbellBundle::make_doorbell(i, 0)); // 无 doorbell target
     }
     REQUIRE(hub.routed_count() == 90);
     REQUIRE(hub.dropped_count() == 10);
@@ -328,12 +326,11 @@ TEST_CASE("LWC E2E: BAR0 CR-Bus 写 → GMMU PT_BASE_LO/HI/ENABLE 同步生效",
           "[lwc][bar0][e2e][minimal_dgpu_soc]") {
     EventQueue eq;
     DGpuBoard board("lwc_bar0_e2e", &eq);
-    REQUIRE(board.load_soc_config(
-        []() -> nlohmann::json {
-            std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
-            nlohmann::json cfg = nlohmann::json::parse(ifs);
-            return cfg;
-        }()));
+    REQUIRE(board.load_soc_config([]() -> nlohmann::json {
+        std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
+        nlohmann::json cfg = nlohmann::json::parse(ifs);
+        return cfg;
+    }()));
     std::vector<uint8_t> framebuffer(16ULL * 1024 * 1024, 0);
     board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
     REQUIRE(board.init());
@@ -343,15 +340,15 @@ TEST_CASE("LWC E2E: BAR0 CR-Bus 写 → GMMU PT_BASE_LO/HI/ENABLE 同步生效",
 
     uint32_t pt_lo = 0xDEADBEEF;
     REQUIRE(board.mmio_write(0, 0x00, &pt_lo, 4) == 0);
-    REQUIRE(gmmu->pt_base() == 0xDEADBEEFULL);  // LO 同步生效
+    REQUIRE(gmmu->pt_base() == 0xDEADBEEFULL); // LO 同步生效
 
     uint32_t pt_hi = 0x00010000;
     REQUIRE(board.mmio_write(0, 0x04, &pt_hi, 4) == 0);
-    REQUIRE(gmmu->pt_base() == 0x00010000DEADBEEFULL);  // HI + LO
+    REQUIRE(gmmu->pt_base() == 0x00010000DEADBEEFULL); // HI + LO
 
     uint32_t enable = 1;
     REQUIRE(board.mmio_write(0, 0x08, &enable, 4) == 0);
-    REQUIRE(gmmu->pt_base() != 0);  // enabled 后 translate 可用 (寄存器已置位)
+    REQUIRE(gmmu->pt_base() != 0); // enabled 后 translate 可用 (寄存器已置位)
 
     board.shutdown();
 }
@@ -360,11 +357,10 @@ TEST_CASE("LWC E2E: MMIO Read BAR0 → CR-Bus 同步读回 (write-mirror 替代)
           "[lwc][mmio-read][e2e][minimal_dgpu_soc]") {
     EventQueue eq;
     DGpuBoard board("lwc_read_e2e", &eq);
-    REQUIRE(board.load_soc_config(
-        []() -> nlohmann::json {
-            std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
-            return nlohmann::json::parse(ifs);
-        }()));
+    REQUIRE(board.load_soc_config([]() -> nlohmann::json {
+        std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
+        return nlohmann::json::parse(ifs);
+    }()));
     std::vector<uint8_t> framebuffer(16ULL * 1024 * 1024, 0);
     board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
     REQUIRE(board.init());
@@ -373,7 +369,7 @@ TEST_CASE("LWC E2E: MMIO Read BAR0 → CR-Bus 同步读回 (write-mirror 替代)
     REQUIRE(board.mmio_write(0, 0x00, &kPtLo, 4) == 0);
     uint32_t readback = 0;
     REQUIRE(board.mmio_read(0, 0x00, &readback, 4) == 0);
-    REQUIRE(readback == kPtLo);  // 真实寄存器读回 (非 write-mirror)
+    REQUIRE(readback == kPtLo); // 真实寄存器读回 (非 write-mirror)
 
     board.shutdown();
 }
@@ -382,11 +378,10 @@ TEST_CASE("LWC E2E: BAR1 doorbell → SDMA ring consume 同步触发",
           "[lwc][bar1-doorbell][e2e][minimal_dgpu_soc]") {
     EventQueue eq;
     DGpuBoard board("lwc_doorbell_e2e", &eq);
-    REQUIRE(board.load_soc_config(
-        []() -> nlohmann::json {
-            std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
-            return nlohmann::json::parse(ifs);
-        }()));
+    REQUIRE(board.load_soc_config([]() -> nlohmann::json {
+        std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
+        return nlohmann::json::parse(ifs);
+    }()));
     std::vector<uint8_t> framebuffer(16ULL * 1024 * 1024, 0);
     board.attach_vram_for_testing(framebuffer.data(), framebuffer.size());
     REQUIRE(board.init());

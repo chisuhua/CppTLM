@@ -27,7 +27,7 @@ TEST_CASE("dgpu_board_v1.json: pcie_ep type switched to PcieEndpointIP",
     // Locate pcie_ep module (嵌套于 soc.modules)
     const auto& soc_mods = cfg["modules"][0]["modules"];
     auto it = std::find_if(soc_mods.begin(), soc_mods.end(),
-        [](const json& m) { return m.value("name", "") == "pcie_ep"; });
+                           [](const json& m) { return m.value("name", "") == "pcie_ep"; });
     REQUIRE(it != soc_mods.end());
 
     // A-1 主断言: type 切换为 PcieEndpointIP
@@ -69,7 +69,7 @@ TEST_CASE("dgpu_board_v1.json: bar_sizes is numeric array (not strings)",
     json cfg = load_board_json("configs/dgpu_board_v1.json");
     const auto& soc_mods = cfg["modules"][0]["modules"];
     auto it = std::find_if(soc_mods.begin(), soc_mods.end(),
-        [](const json& m) { return m.value("name", "") == "pcie_ep"; });
+                           [](const json& m) { return m.value("name", "") == "pcie_ep"; });
     REQUIRE(it != soc_mods.end());
 
     const auto& bar_sizes = (*it)["params"].value("bar_sizes", json::array());

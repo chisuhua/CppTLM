@@ -10,8 +10,8 @@
 #include "framework/stream_adapter.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 
-using tlm::gpu::GmmuTLM;
 using bundles::PcieTlpBundle;
+using tlm::gpu::GmmuTLM;
 
 TEST_CASE("gmmu: async translate -EAGAIN + iova 匹配 (N2)", "[gmmu][iova][async]") {
     EventQueue eq;
@@ -50,7 +50,7 @@ TEST_CASE("gmmu: async translate -EAGAIN + iova 匹配 (N2)", "[gmmu][iova][asyn
     REQUIRE(bundles::serialize_bundle(resp, pkt->payload->get_data_ptr(),
                                       pkt->payload->get_data_length()));
     REQUIRE(g.resp_in().process(pkt));
-    g.tick();  // state_ WAIT → COMPLETE, resp_in consume
+    g.tick(); // state_ WAIT → COMPLETE, resp_in consume
     PacketPool::get().release(pkt);
 
     // 4. 匹配 iova 重试 → 0 + 正确 paddr

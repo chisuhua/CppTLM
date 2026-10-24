@@ -44,16 +44,19 @@ TEST_CASE("D.3: RouterTLM rules contain required node_x + node_y + defaults",
     }
     REQUIRE(found_node_x);
     REQUIRE(found_node_y);
-    REQUIRE(default_count >= 1);  // vc_count / buffer_size 至少有 1 个 default
+    REQUIRE(default_count >= 1); // vc_count / buffer_size 至少有 1 个 default
 }
 
 TEST_CASE("D.3: registerParamRules is idempotent (ODR-safe)", "[d3][param-resolver]") {
     // 重复注册相同 type 应被 early-return 忽略,不会覆盖原 provider
     size_t before = ModuleFactory::getParamRulesRegistry().size();
-    ModuleFactory::registerParamRules(
-        "RouterTLM", []() -> ParamRules { return {{"sentinel", ParamRule{"sentinel", cpptlm::ParamType::INTEGER, true, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt}}}; });
+    ModuleFactory::registerParamRules("RouterTLM", []() -> ParamRules {
+        return {{"sentinel",
+                 ParamRule{"sentinel", cpptlm::ParamType::INTEGER, true, std::nullopt, std::nullopt,
+                           std::nullopt, std::nullopt, std::nullopt, std::nullopt, std::nullopt}}};
+    });
     size_t after = ModuleFactory::getParamRulesRegistry().size();
-    REQUIRE(before == after);  // 数量未变 (early-return)
+    REQUIRE(before == after); // 数量未变 (early-return)
 
     // 原 provider 仍是 RouterTLM::get_param_rules,不含 sentinel
     ParamRules rules = ModuleFactory::getParamRulesRegistry()["RouterTLM"]();

@@ -22,29 +22,29 @@
 //
 // Tag: `[realip][p3]` (per handoff §9.2 #10: 必须 commit 前打 tag, 避免 vacuous gate)
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "core/sim_module.hh"
 #include "tlm/gpu/dgpu_soc.hh"
 
-#include <nlohmann/json.hpp>
 #include <fstream>
-#include <string>
 #include <stdexcept>
+#include <string>
+#include <nlohmann/json.hpp>
 
 namespace {
 
-nlohmann::json load_config(const std::string& rel_path) {
-    std::ifstream f(rel_path);
-    if (!f.is_open()) {
-        throw std::runtime_error("cannot open config: " + rel_path);
+    nlohmann::json load_config(const std::string& rel_path) {
+        std::ifstream f(rel_path);
+        if (!f.is_open()) {
+            throw std::runtime_error("cannot open config: " + rel_path);
+        }
+        nlohmann::json cfg;
+        f >> cfg;
+        return cfg;
     }
-    nlohmann::json cfg;
-    f >> cfg;
-    return cfg;
-}
 
 } // namespace
 
@@ -59,7 +59,7 @@ TEST_CASE("dgpu_soc_v2_realip_p2.json: DGpuSoc nested + 3 IP children instantiat
     REQUIRE(factory.instantiateAll(cfg));
 
     auto* soc = factory.getInstance("soc");
-    REQUIRE(soc != nullptr);  // 顶层必须是 DGpuSoc, name="soc"
+    REQUIRE(soc != nullptr); // 顶层必须是 DGpuSoc, name="soc"
     REQUIRE(soc->get_module_type() == "DGpuSoc");
 
     auto* sim_soc = dynamic_cast<SimModule*>(soc);
@@ -73,7 +73,7 @@ TEST_CASE("dgpu_soc_v2_realip_p2.json: DGpuSoc nested + 3 IP children instantiat
     // 类型断言 — 锁 4-IP 边界: PcieControllerIP (SimModule), GpuInternalFabric (SimModule),
     // VramControllerTLM (ChStream, 非 SimModule)。
     auto* pcie_ctrl = sim_soc->getInternalInstance("pcie_ctrl");
-    auto* fabric    = sim_soc->getInternalInstance("fabric");
+    auto* fabric = sim_soc->getInternalInstance("fabric");
     auto* vram_ctrl = sim_soc->getInternalInstance("vram_ctrl");
 
     REQUIRE(pcie_ctrl->get_module_type() == "PcieControllerIP");
@@ -81,8 +81,7 @@ TEST_CASE("dgpu_soc_v2_realip_p2.json: DGpuSoc nested + 3 IP children instantiat
     REQUIRE(vram_ctrl->get_module_type() == "VramControllerTLM");
 }
 
-TEST_CASE("dgpu_soc_v2_realip_p2.json: 4-IP topology contract — MUST NOT 2 lock",
-          "[realip][p3]") {
+TEST_CASE("dgpu_soc_v2_realip_p2.json: 4-IP topology contract — MUST NOT 2 lock", "[realip][p3]") {
     auto cfg = load_config("configs/dgpu_soc_v2_realip_p2.json");
 
     EventQueue eq;

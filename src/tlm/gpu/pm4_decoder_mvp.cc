@@ -43,10 +43,10 @@ namespace tlm::gpu {
             lut[0x42] = Pm4MethodType::EVENT_WRITE;
             lut[0x44] = Pm4MethodType::RELEASE_MEM;
             lut[0x45] = Pm4MethodType::ACQUIRE_MEM;
-            lut[0x46] = Pm4MethodType::DISPATCH_INDIRECT;       // Stage 1.3c SDMA copy
-            lut[0x47] = Pm4MethodType::DISPATCH_DIRECT_SDMA;    // Stage 1.3c SDMA fill
+            lut[0x46] = Pm4MethodType::DISPATCH_INDIRECT;      // Stage 1.3c SDMA copy
+            lut[0x47] = Pm4MethodType::DISPATCH_DIRECT_SDMA;   // Stage 1.3c SDMA fill
             lut[0x48] = Pm4MethodType::DISPATCH_INDIRECT_SDMA; // Stage 1.3c SDMA SG chain
-            lut[0x49] = Pm4MethodType::DISPATCH_FENCE_SDMA;     // Stage 1.3c SDMA Fence
+            lut[0x49] = Pm4MethodType::DISPATCH_FENCE_SDMA;    // Stage 1.3c SDMA Fence
             return lut;
         }
 

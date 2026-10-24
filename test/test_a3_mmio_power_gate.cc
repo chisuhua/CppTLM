@@ -84,7 +84,8 @@ TEST_CASE("A-3: mmio_write D3 non-doorbell returns -EIO", "[a3][pcie][unblock]")
     board.shutdown();
 }
 
-TEST_CASE("A-3: mmio_write D3 to doorbell is allowed (compatibility bypass)", "[a3][pcie][unblock]") {
+TEST_CASE("A-3: mmio_write D3 to doorbell is allowed (compatibility bypass)",
+          "[a3][pcie][unblock]") {
     DGpuBoard board("a3_d3_doorbell_test");
     REQUIRE(board.load_soc_config(dgpu_mini_cfg()));
     REQUIRE(board.init());
@@ -95,12 +96,11 @@ TEST_CASE("A-3: mmio_write D3 to doorbell is allowed (compatibility bypass)", "[
 
     uint64_t doorbell_wptr = 8;
     const int rc = board.mmio_write(1, DGpuBoard::kBar1DoorbellOffset, &doorbell_wptr, 8);
-    REQUIRE(rc == 0);  // doorbell 例外
+    REQUIRE(rc == 0); // doorbell 例外
     board.shutdown();
 }
 
-TEST_CASE("A-3: D3 power gate applies (write)",
-          "[a3][pcie][unblock]") {
+TEST_CASE("A-3: D3 power gate applies (write)", "[a3][pcie][unblock]") {
     DGpuBoard board("a3_d3_power_write");
     REQUIRE(board.load_soc_config(dgpu_mini_cfg()));
     REQUIRE(board.init());
@@ -116,8 +116,7 @@ TEST_CASE("A-3: D3 power gate applies (write)",
     board.shutdown();
 }
 
-TEST_CASE("A-3: D3 power gate applies (read)",
-          "[a3][pcie][unblock]") {
+TEST_CASE("A-3: D3 power gate applies (read)", "[a3][pcie][unblock]") {
     DGpuBoard board("a3_d3_power_read");
     REQUIRE(board.load_soc_config(dgpu_mini_cfg()));
     REQUIRE(board.init());

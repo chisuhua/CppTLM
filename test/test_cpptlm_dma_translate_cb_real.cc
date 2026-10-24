@@ -23,26 +23,26 @@
 
 namespace {
 
-// cb 签名 (per ADR-088 §D3.8 + spec.md Scenario "IOMMU mode cb failure"):
-//   int (*cb)(uint64_t iova, uint32_t size, uint64_t* out_pa)
-//   返回 0 = 成功, < 0 = 负 errno.
-using TranslateFn = int (*)(uint64_t iova, uint32_t size, uint64_t* out_pa);
+    // cb 签名 (per ADR-088 §D3.8 + spec.md Scenario "IOMMU mode cb failure"):
+    //   int (*cb)(uint64_t iova, uint32_t size, uint64_t* out_pa)
+    //   返回 0 = 成功, < 0 = 负 errno.
+    using TranslateFn = int (*)(uint64_t iova, uint32_t size, uint64_t* out_pa);
 
-// 测试全局计数器 (验证 cb 真实被调用)
-std::atomic<int> g_identity_call_count{0};
-int test_translate_identity(uint64_t iova, uint32_t /*size*/, uint64_t* out_pa) {
-    g_identity_call_count.fetch_add(1, std::memory_order_acq_rel);
-    *out_pa = iova;
-    return 0;
-}
+    // 测试全局计数器 (验证 cb 真实被调用)
+    std::atomic<int> g_identity_call_count{0};
+    int test_translate_identity(uint64_t iova, uint32_t /*size*/, uint64_t* out_pa) {
+        g_identity_call_count.fetch_add(1, std::memory_order_acq_rel);
+        *out_pa = iova;
+        return 0;
+    }
 
-std::atomic<int> g_iommu_fail_count{0};
-int test_translate_iommu_fail(uint64_t /*iova*/, uint32_t /*size*/, uint64_t* /*out_pa*/) {
-    g_iommu_fail_count.fetch_add(1, std::memory_order_acq_rel);
-    return -EIO;
-}
+    std::atomic<int> g_iommu_fail_count{0};
+    int test_translate_iommu_fail(uint64_t /*iova*/, uint32_t /*size*/, uint64_t* /*out_pa*/) {
+        g_iommu_fail_count.fetch_add(1, std::memory_order_acq_rel);
+        return -EIO;
+    }
 
-}  // namespace
+} // namespace
 
 // =============================================================================
 // Scenario "identity mode pa=iova" — 1.3c 修复 #2 主断言
@@ -93,7 +93,7 @@ TEST_CASE("ABI: register_dma_translate_cb 真 board + nullptr cb → 接受 (ide
     }
 
     int rc = cpptlm_emulator_register_dma_translate_cb(emu, nullptr);
-    REQUIRE(rc == 0);  // 修复 #2 后: nullptr cb → identity fallback, 仍注册成功
+    REQUIRE(rc == 0); // 修复 #2 后: nullptr cb → identity fallback, 仍注册成功
 
     cpptlm_emulator_destroy(emu);
     SUCCEED("nullptr cb 在修复 #2 后 identity fallback 路径, 注册成功");

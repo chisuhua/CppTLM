@@ -138,8 +138,8 @@ namespace tlm::gpu {
         inflight_.clear();
         completed_count_ = 0;
         error_count_ = 0;
-        host_out_tx_count_ = 0;  // Stage 1.3b
-        fence_queue_.clear();    // Stage 1.3d
+        host_out_tx_count_ = 0; // Stage 1.3b
+        fence_queue_.clear();   // Stage 1.3d
         // Stage 1.3a 接入: ring_mode_ 保留 (enable_ring_mode 调用后才启用); 但统计重置
         dropped_desc_in_count_ = 0;
         ring_consumed_count_ = 0;
@@ -249,14 +249,14 @@ namespace tlm::gpu {
         if (cycle_accounting_enabled_ && translate_timing_cb_) {
             uint64_t lat = 0;
             rc = translate_timing_cb_(d.host_iova, d.size, phys, lat);
-            last_tlb_latency_ = lat;  // 记录供 fence cycle 计算 (H2D 路径)
+            last_tlb_latency_ = lat; // 记录供 fence cycle 计算 (H2D 路径)
             // functional 兼容: 无 translate_timing_cb_ 时回退 translate_target_/translate_cb_
         } else if (translate_target_) {
             rc = translate_target_->translate(d.host_iova, d.size, phys);
         } else if (translate_cb_) {
             rc = translate_cb_(d.host_iova, d.size, phys);
         } else {
-            rc = -EIO;  // 未注册 callback → fault
+            rc = -EIO; // 未注册 callback → fault
         }
         if (rc == -EAGAIN) {
             // Phase 3 T3.1 (N3): 异步 GMMU translate pending — 保留 inflight_,
@@ -279,7 +279,7 @@ namespace tlm::gpu {
             constexpr uint64_t kDescriptorBaseCycles = 4;
             last_descriptor_complete_cycle_ =
                 getCurrentCycle() + last_tlb_latency_ + kDescriptorBaseCycles;
-            last_tlb_latency_ = 0;  // 单次消费 (避免重复累加)
+            last_tlb_latency_ = 0; // 单次消费 (避免重复累加)
         }
 
         // 数据搬运（per spec.md R3-S1 "VRAM write visibility"）
@@ -308,7 +308,7 @@ namespace tlm::gpu {
         host_tlp.requester_id.write(0);
         host_tlp.trans_id.write(static_cast<uint32_t>(d.tag));
         resp_out[PORT_HOST_OUT].write(host_tlp);
-        host_out_tx_count_++;  // Stage 1.3b: host_out emit 计数
+        host_out_tx_count_++; // Stage 1.3b: host_out emit 计数
 
         // 同步 emit mem_out MEM_WRITE TLP (数据写入 VRAM)
         bundles::PcieTlpBundle mem_tlp;
@@ -381,7 +381,7 @@ namespace tlm::gpu {
         host_tlp.requester_id.write(0);
         host_tlp.trans_id.write(static_cast<uint32_t>(d.tag));
         resp_out[PORT_HOST_OUT].write(host_tlp);
-        host_out_tx_count_++;  // Stage 1.3b: host_out emit 计数
+        host_out_tx_count_++; // Stage 1.3b: host_out emit 计数
 
         done.status.write(0); // success
         return 0;
@@ -447,31 +447,31 @@ namespace tlm::gpu {
         done.task_id.write(static_cast<uint32_t>(d.tag)); // MVP: task_id == tag
         done.tag.write(static_cast<uint32_t>(d.tag));
 
-int rc = 0;
-    bool requester_path = false;
-    if (d.dir == DmaDescriptor::Dir::D2D) {
-        // Stage 1.3b M6: Dir::D2D → d2d_forward (不 emit host_out)
-        //   done_out emit 由既有 fallback 路径统一处理 (emit_completion)
-        d2d_forward(d.vram_offset, d.vram_offset, d.size);
-        done.status.write(0);
-        rc = 0;  // success
-    } else if (d.dir == DmaDescriptor::Dir::H2D && request_engine_) {
-        // T-P11-2: H2D 经 RequesterEngine 发起 MRd (EP→host TLP)
-        //   CplD callback 会异步回写 VRAM + 触发 completion
-        //   不再同步 emit host_out / mem_out / done_out
-        process_h2d_with_requester(d);
-        requester_path = true;
-    } else if (d.dir == DmaDescriptor::Dir::H2D) {
-        rc = process_h2d(d, done);
-    } else {
-        rc = process_d2h(d, done);
-    }
+        int rc = 0;
+        bool requester_path = false;
+        if (d.dir == DmaDescriptor::Dir::D2D) {
+            // Stage 1.3b M6: Dir::D2D → d2d_forward (不 emit host_out)
+            //   done_out emit 由既有 fallback 路径统一处理 (emit_completion)
+            d2d_forward(d.vram_offset, d.vram_offset, d.size);
+            done.status.write(0);
+            rc = 0; // success
+        } else if (d.dir == DmaDescriptor::Dir::H2D && request_engine_) {
+            // T-P11-2: H2D 经 RequesterEngine 发起 MRd (EP→host TLP)
+            //   CplD callback 会异步回写 VRAM + 触发 completion
+            //   不再同步 emit host_out / mem_out / done_out
+            process_h2d_with_requester(d);
+            requester_path = true;
+        } else if (d.dir == DmaDescriptor::Dir::H2D) {
+            rc = process_h2d(d, done);
+        } else {
+            rc = process_d2h(d, done);
+        }
 
-    // T-P11-2: Requester 路径不在此 emit completion (CplD callback 处理)
-    if (requester_path) {
-        req_in[PORT_DESC_IN].consume();
-        return;
-    }
+        // T-P11-2: Requester 路径不在此 emit completion (CplD callback 处理)
+        if (requester_path) {
+            req_in[PORT_DESC_IN].consume();
+            return;
+        }
 
         // 错误消息（仅用于 board error callback）
         std::string err_msg;
@@ -582,18 +582,16 @@ int rc = 0;
         if (len == 0)
             return;
         if (vram_backdoor_ == nullptr)
-            return;  // MVP 容忍: 无 backdoor 不做事
+            return; // MVP 容忍: 无 backdoor 不做事
         // 越界检查
         if (src_va + len > vram_backdoor_size_ || dst_va + len > vram_backdoor_size_) {
-            return;  // MVP 容忍: 越界静默 skip
+            return; // MVP 容忍: 越界静默 skip
         }
 
         // 走 D2D NoC payload 路径 (若已注入)
         if (d2d_noc_ != nullptr) {
-            d2d_noc_->d2d_forward_payload(
-                static_cast<uint8_t*>(vram_backdoor_) + dst_va,
-                static_cast<uint8_t*>(vram_backdoor_) + src_va,
-                len);
+            d2d_noc_->d2d_forward_payload(static_cast<uint8_t*>(vram_backdoor_) + dst_va,
+                                          static_cast<uint8_t*>(vram_backdoor_) + src_va, len);
         } else {
             // 直 memcpy fallback (测试场景下与 noc 路径等价)
             std::memcpy(static_cast<uint8_t*>(vram_backdoor_) + dst_va,
@@ -603,7 +601,7 @@ int rc = 0;
 
     // Stage 1.3a 接入: ring mode 启用 + BAR1 doorbell 触发 ring consume
     void SdmaEngineTLM::enable_ring_mode(::tlm::gpu::SdmaRingBuffer::RingSize size,
-                                        ::tlm::gpu::SdmaRingBuffer::EntrySize entry_sz) {
+                                         ::tlm::gpu::SdmaRingBuffer::EntrySize entry_sz) {
         ring_buffer_ = std::make_unique<::tlm::gpu::SdmaRingBuffer>(size, entry_sz);
         ring_mode_ = true;
         ring_consumed_count_ = 0;
@@ -614,23 +612,23 @@ int rc = 0;
     //   与 mmio_write(1, kBar1DoorbellOffset, data) 语义逐字节一致 (既有测试兼容)
     void SdmaEngineTLM::handle_doorbell_transaction(const bundles::DoorbellBundle& tx) {
         if (!ring_mode_ || ring_buffer_ == nullptr) {
-            return;  // 非 ring mode: 接受但 no-op
+            return; // 非 ring mode: 接受但 no-op
         }
         if (!tx.posted.read()) {
-            return;  // non-posted doorbell (本 MVP 仅支持 posted write)
+            return; // non-posted doorbell (本 MVP 仅支持 posted write)
         }
         if (tx.ring_id.read() != 0) {
-            return;  // 仅 ring 0 (BAR1 doorbell)
+            return; // 仅 ring 0 (BAR1 doorbell)
         }
         const uint32_t wptr_count = tx.wdata.read();
         if (wptr_count == 0) {
-            return;  // wptr=0 → no-op (spec: ring 0 stop 由 wptr 语义表达)
+            return; // wptr=0 → no-op (spec: ring 0 stop 由 wptr 语义表达)
         }
         const uint32_t cur_wptr = ring_buffer_->wptr().load();
         for (uint32_t i = 0; i < wptr_count; ++i) {
             const uint32_t idx = cur_wptr + i;
             if (idx >= ring_buffer_->capacity_entries()) {
-                break;  // 越界 (per spec WPTR 不应越界; 这里防御性)
+                break; // 越界 (per spec WPTR 不应越界; 这里防御性)
             }
             auto buf = ring_buffer_->read_entry(idx);
             DmaDescriptor d = SdmaPacket::deserialize_descriptor(buf.data(), buf.size());
@@ -662,7 +660,7 @@ int rc = 0;
     // 公开 ABI: mmio_write (与 PcieEndpointIP::mmio_write 独立; 测试 + UE dlopen ABI 入口)
     bool SdmaEngineTLM::mmio_write(uint32_t bar, uint64_t offset, uint64_t data) {
         if (!ring_mode_ || ring_buffer_ == nullptr) {
-            return true;  // 非 ring mode, 接受但 no-op (per spec non-doorbell 落入 BAR space)
+            return true; // 非 ring mode, 接受但 no-op (per spec non-doorbell 落入 BAR space)
         }
         // BAR1+0x10010000: doorbell → consume ring[RPTR..WPTR=data]
         if (bar == 1 && offset == 0x10010000ULL) {
@@ -672,7 +670,7 @@ int rc = 0;
             for (uint32_t i = 0; i < wptr_count; ++i) {
                 const uint32_t idx = cur_wptr + i;
                 if (idx >= ring_buffer_->capacity_entries()) {
-                    break;  // 越界 (per spec WPTR 不应越界; 这里防御性)
+                    break; // 越界 (per spec WPTR 不应越界; 这里防御性)
                 }
                 auto buf = ring_buffer_->read_entry(idx);
                 DmaDescriptor d = SdmaPacket::deserialize_descriptor(buf.data(), buf.size());
@@ -735,8 +733,7 @@ int rc = 0;
                     // CplD payload 写 VRAM
                     const auto& pending_desc = it->second;
                     const uint64_t data = cpld.data.read();
-                    for (size_t i = 0; i < 8 && i < static_cast<size_t>(pending_desc.size);
-                         ++i) {
+                    for (size_t i = 0; i < 8 && i < static_cast<size_t>(pending_desc.size); ++i) {
                         vram_simple_[pending_desc.vram_offset + i] =
                             static_cast<uint8_t>((data >> (i * 8)) & 0xFF);
                     }
@@ -751,7 +748,7 @@ int rc = 0;
         // 经 RequesterEngine 发起 MRd TLP
         bool sent = request_engine_->mrd_read(
             /*bdf=*/0,
-            pa,            // addr (经 translate 后的 PA)
+            pa,               // addr (经 translate 后的 PA)
             /*lower_addr=*/0, // reserved
             static_cast<std::size_t>(d.size));
 
@@ -773,7 +770,7 @@ int rc = 0;
             if (completion_ring_ != nullptr) {
                 bundles::CompletionEntry entry;
                 entry.task_id.write(static_cast<uint32_t>(fence.fence_id));
-                entry.status.write(0);  // Fence 成功 status=0
+                entry.status.write(0); // Fence 成功 status=0
                 entry.tag.write(fence.tag);
                 completion_ring_->push(entry);
             }

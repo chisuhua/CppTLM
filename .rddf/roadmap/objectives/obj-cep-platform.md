@@ -2921,6 +2921,44 @@ docs_sync_check rc=0 · markdown_link_check rc=0 · validate --changes rc=0 · c
 
 **关联**: Entry #30 ~ #39· `docs/implementation/2026-10-22-cep-poc-spike-spec.md`(poc-spike 的 S2 规格)
 
+### Entry #41 — 2026-10-24 [scope-change]
+
+**主题**: **格式债务清偿**(127 文件)+ **1 处 include 顺序依赖**修复 —— CI 红源 B 闭合
+
+**① 诊断(承 Entry #40 ③)** —— 「一键格式化」会**破坏编译**:
+
+```
+SortIncludes: true 重排 include
+  → include/tlm/pcie/pcie_mock_ip.hh:122  error: 'gpu' in namespace 'cpptlm::tlm' does not name a type
+```
+
+**根因(探针实证)**:`include/tlm/gpu/pcie_bar_router_mvp.hh` 用 **全局** `namespace tlm::gpu {`(**无** `cpptlm` 外层 —— 同目录 `doorbell_mvp.hh` 同样如此)。而 `pcie_mock_ip.hh` 位于 `namespace cpptlm::pcie` 内,其 `tlm::gpu::PcieBarRouter` 的解析**取决于此刻 `cpptlm::tlm` 是否已可见**:
+
+| 状态 | 解析结果 | 探针(`static_assert(std::is_same_v<...>)`) |
+|------|---------|--------------------------------------|
+| 格式化前 | `::tlm::gpu::PcieBarRouter` | **通过** ✅ |
+| 格式化后 | `cpptlm::tlm::gpu::…` → 不存在 | **失败** ❌ |
+
+→ 这是**纯粹的 include 顺序依赖**(本仓同时存在「全局 `tlm::gpu`」与「`cpptlm::tlm`」两套并存约定,谁先被引入会改变名字查找结果)。
+
+**② 修法(最小、语义保持)** —— **只改 1 行**:把该处写成**全限定** `::tlm::gpu::PcieBarRouter`(与格式化前的解析结果**逐字一致**),使名字查找不再依赖 include 顺序。
+
+> **⚠️ 已排除的修法(记录以免重犯)**:① 给 `pcie_bar_router_mvp.hh` 加 `namespace cpptlm { … }` 包裹 —— **会改变 API 语义**(把 `::tlm::gpu::PcieBarRouter` 变成 `cpptlm::tlm::gpu::PcieBarRouter`)→ 破坏全部既有调用点;② 把 `.clang-format` 的 `SortIncludes` 置 `false` —— 属**全仓 lint 降级**。**实测:仅 ① 全限定就足够,`.clang-format` 一字未改**(`SortIncludes: true` 保留)。
+
+**③ 变更规模** —— 128 文件 / +3635 −3586:**127 个为 clang-format 机械重排**(换行 / 缩进 / reflow),**1 个为上述语义修复**。
+
+**④ 与冻结面 / 守门的关系** —— M1 冻结面 30 成员**全为 `.md`/`.json`/`.py`** → 与本次 C++ 改动**零交集**;`test_cep_module_factory_seam` 的 7 个 `file_modified()` 目标(`cache_tlm.hh`/`cache_tlm.cc`/`pcie_endpoint_tlm.h`/`pcie_bundles_tlm.hh`/`pcie_display_device.hh`/`pcie_endpoint_ip.hh`/`cpptlm_emulator.h`)**实测全部未被格式化触及** → **无需冻结面授权**。
+
+**⑤ 验收(local)**
+
+```
+format.sh --check rc=0        ← CI 红源 B 闭合条件
+构建 ✅ · ctest 97/97 · [cep] 76/1284
+9 项守门 rc=0 · 闸 fixture 14/14 · 冻结面 30 成员 diff=0
+```
+
+**关联**: Entry #40(三红源定位)· `.clang-format` · `include/tlm/pcie/pcie_mock_ip.hh`
+
 ---
 
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)

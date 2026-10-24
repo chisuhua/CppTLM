@@ -1,21 +1,29 @@
 // test/test_soc_internal_noc.cc
 // SocInternalNoc 测试覆盖 (per cpptlm-dgpu-soc-internal-noc-minimal Change, 2026-10-08)
 // tag: [realip][pin-contract][noc] (防 vacuous pass per handoff §9.2 #10)
+#include <cstdint>
+#include <catch_amalgamated.hpp>
 #include "bundles/noc_bundles_tlm.hh"
 #include "core/event_queue.hh"
 #include "tlm/cluster/soc_internal_noc.hh"
 #include "utils/port_contract_asserts.hh"
-#include <catch_amalgamated.hpp>
-#include <cstdint>
 
-using tlm::cluster::SocInternalNoc;
 using bundles::NoCFlitBundle;
+using tlm::cluster::SocInternalNoc;
 
 // 辅助: 把整数地址 reinterpret 成目标类型 (target 类不实际构造, 仅作指针值测试)
-static tlm::pcie::PcieControllerIP* as_pcie(uintptr_t v) { return reinterpret_cast<tlm::pcie::PcieControllerIP*>(v); }
-static tlm::gpu::SdmaEngineTLM* as_sdma(uintptr_t v) { return reinterpret_cast<tlm::gpu::SdmaEngineTLM*>(v); }
-static tlm::gpu::GmmuTLM* as_gmmu(uintptr_t v) { return reinterpret_cast<tlm::gpu::GmmuTLM*>(v); }
-static VramControllerTLM* as_vram(uintptr_t v) { return reinterpret_cast<VramControllerTLM*>(v); }
+static tlm::pcie::PcieControllerIP* as_pcie(uintptr_t v) {
+    return reinterpret_cast<tlm::pcie::PcieControllerIP*>(v);
+}
+static tlm::gpu::SdmaEngineTLM* as_sdma(uintptr_t v) {
+    return reinterpret_cast<tlm::gpu::SdmaEngineTLM*>(v);
+}
+static tlm::gpu::GmmuTLM* as_gmmu(uintptr_t v) {
+    return reinterpret_cast<tlm::gpu::GmmuTLM*>(v);
+}
+static VramControllerTLM* as_vram(uintptr_t v) {
+    return reinterpret_cast<VramControllerTLM*>(v);
+}
 
 // ── 1) 4 NODE_ID_* 唯一性 + 顺序 (编译期) ──
 TEST_CASE("SocInternalNoc: 4 NODE_ID constants are unique + monotone",
@@ -33,8 +41,7 @@ TEST_CASE("SocInternalNoc: 4 NODE_ID constants are unique + monotone",
 }
 
 // ── 2) 4 setter + accessor 双向 ──
-TEST_CASE("SocInternalNoc: 4 setters + accessors are independent",
-          "[realip][pin-contract][noc]") {
+TEST_CASE("SocInternalNoc: 4 setters + accessors are independent", "[realip][pin-contract][noc]") {
     EventQueue eq;
     SocInternalNoc soc_noc("soc_noc", &eq);
     REQUIRE(soc_noc.pcie_target() == nullptr);
@@ -101,8 +108,7 @@ TEST_CASE("SocInternalNoc: route_flit() unknown dst_node graceful skip",
 }
 
 // ── 6) nullptr target + 路由触发 → 0 crash ──
-TEST_CASE("SocInternalNoc: route_flit() nullptr target is no-op",
-          "[realip][pin-contract][noc]") {
+TEST_CASE("SocInternalNoc: route_flit() nullptr target is no-op", "[realip][pin-contract][noc]") {
     EventQueue eq;
     SocInternalNoc soc_noc("soc_noc", &eq);
     NoCFlitBundle flit{};

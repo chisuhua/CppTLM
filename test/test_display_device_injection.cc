@@ -32,8 +32,7 @@ using namespace tlm::gpu;
 // ============================================================================
 // Case 1: PcieDisplayDevice backing_view 注入
 // ============================================================================
-TEST_CASE("D3a-2: PcieDisplayDevice backing_view_ 注入",
-          "[pcie][pcie-display][d3a2]") {
+TEST_CASE("D3a-2: PcieDisplayDevice backing_view_ 注入", "[pcie][pcie-display][d3a2]") {
     PcieDisplayDevice dev;
     std::vector<uint8_t> backing(1024, 0xAA);
     dev.set_backing_view(backing.data(), backing.size());
@@ -58,8 +57,8 @@ TEST_CASE("D3a-2: PcieDisplayDevice 无注入时 backdoor_read 返 -ENODEV",
           "[pcie][pcie-display][d3a2]") {
     PcieDisplayDevice dev;
     uint8_t buf[4] = {};
-    REQUIRE(dev.backdoor_read(0, buf, 4) == -ENODEV);   // 无 silent lazy alloc
-    REQUIRE(dev.backdoor_write(0, buf, 4) == -ENODEV);  // 对称
+    REQUIRE(dev.backdoor_read(0, buf, 4) == -ENODEV);  // 无 silent lazy alloc
+    REQUIRE(dev.backdoor_write(0, buf, 4) == -ENODEV); // 对称
     REQUIRE_FALSE(dev.has_backing_view());
     REQUIRE(dev.backing_size() == 0);
 }
@@ -67,27 +66,20 @@ TEST_CASE("D3a-2: PcieDisplayDevice 无注入时 backdoor_read 返 -ENODEV",
 // ============================================================================
 // Case 3: PcieDisplayDevice 与 PcieMemoryDevice API 对称 (static_assert)
 // ============================================================================
-TEST_CASE("D3a-2: PcieDisplayDevice 与 PcieMemoryDevice API 对称",
-          "[pcie][pcie-display][d3a2]") {
+TEST_CASE("D3a-2: PcieDisplayDevice 与 PcieMemoryDevice API 对称", "[pcie][pcie-display][d3a2]") {
     // 静态断言:三个 API 签名必须精确镜像 PcieMemoryDevice
     // 用 std::is_invocable_r_v 验证调用约定 + 返回类型(忽略类限定符)
-    static_assert(std::is_invocable_r_v<
-        void,
-        decltype(&PcieDisplayDevice::set_backing_view),
-        PcieDisplayDevice*, uint8_t*, uint64_t
-    >, "PcieDisplayDevice::set_backing_view 可调用 (uint8_t*, uint64_t) → void");
-    static_assert(std::is_invocable_r_v<
-        bool,
-        decltype(&PcieDisplayDevice::has_backing_view),
-        const PcieDisplayDevice*
-    >, "PcieDisplayDevice::has_backing_view const 可调用 → bool");
-    static_assert(std::is_invocable_r_v<
-        uint64_t,
-        decltype(&PcieDisplayDevice::backing_size),
-        const PcieDisplayDevice*
-    >, "PcieDisplayDevice::backing_size const 可调用 → uint64_t");
+    static_assert(std::is_invocable_r_v<void, decltype(&PcieDisplayDevice::set_backing_view),
+                                        PcieDisplayDevice*, uint8_t*, uint64_t>,
+                  "PcieDisplayDevice::set_backing_view 可调用 (uint8_t*, uint64_t) → void");
+    static_assert(std::is_invocable_r_v<bool, decltype(&PcieDisplayDevice::has_backing_view),
+                                        const PcieDisplayDevice*>,
+                  "PcieDisplayDevice::has_backing_view const 可调用 → bool");
+    static_assert(std::is_invocable_r_v<uint64_t, decltype(&PcieDisplayDevice::backing_size),
+                                        const PcieDisplayDevice*>,
+                  "PcieDisplayDevice::backing_size const 可调用 → uint64_t");
 
-    REQUIRE(true);  // 编译期保证为主, 运行期占位
+    REQUIRE(true); // 编译期保证为主, 运行期占位
 }
 
 // ============================================================================
@@ -96,7 +88,7 @@ TEST_CASE("D3a-2: PcieDisplayDevice 与 PcieMemoryDevice API 对称",
 TEST_CASE("D3a-2: PcieEndpointIP display_device_ 改为 raw ptr + set_display_device",
           "[pcie][pcie-display][d3a2]") {
     tlm::pcie::PcieEndpointIP ep("test_ep", nullptr);
-    REQUIRE_FALSE(ep.has_display_device());  // 构造期不自动 make_unique
+    REQUIRE_FALSE(ep.has_display_device()); // 构造期不自动 make_unique
 
     PcieDisplayDevice dev;
     ep.set_display_device(&dev);
@@ -107,8 +99,7 @@ TEST_CASE("D3a-2: PcieEndpointIP display_device_ 改为 raw ptr + set_display_de
 // ============================================================================
 // Case 5: DGpuBoard::bind_display_backings 完整路径
 // ============================================================================
-TEST_CASE("D3a-2: DGpuBoard::bind_display_backings 注入完整路径",
-          "[pcie][pcie-display][d3a2]") {
+TEST_CASE("D3a-2: DGpuBoard::bind_display_backings 注入完整路径", "[pcie][pcie-display][d3a2]") {
     // 内联镜像 configs/dgpu_soc_minimal_v1.json (cwd-independent, 与现有测试模式一致)
     nlohmann::json cfg = nlohmann::json::parse(R"({
         "name": "dgpu_soc_minimal_v1",
@@ -159,14 +150,15 @@ TEST_CASE("D3a-2: DGpuBoard::bind_display_backings 注入完整路径",
 // ============================================================================
 namespace {
 
-// SFINAE: has_ensure_framebuffer_allocated<T> = T 是否声明该方法
-template <typename T, typename = void>
-struct has_ensure_framebuffer_allocated : std::false_type {};
-template <typename T>
-struct has_ensure_framebuffer_allocated<
-    T, std::void_t<decltype(&T::ensure_framebuffer_allocated)>> : std::true_type {};
+    // SFINAE: has_ensure_framebuffer_allocated<T> = T 是否声明该方法
+    template <typename T, typename = void>
+    struct has_ensure_framebuffer_allocated : std::false_type {};
+    template <typename T>
+    struct has_ensure_framebuffer_allocated<T,
+                                            std::void_t<decltype(&T::ensure_framebuffer_allocated)>>
+        : std::true_type {};
 
-}  // namespace
+} // namespace
 
 TEST_CASE("D3a-2: PcieDisplayDevice 不再 ensure_framebuffer_allocated",
           "[pcie][pcie-display][d3a2]") {
@@ -175,18 +167,18 @@ TEST_CASE("D3a-2: PcieDisplayDevice 不再 ensure_framebuffer_allocated",
                   "PcieDisplayDevice::ensure_framebuffer_allocated 应已删除 (D3a-2 AC-1)");
     // 自有 framebuffer_ 字段也不应存在 (SFINAE 无法查私有字段, 用类型大小/行为间接验证)
     PcieDisplayDevice dev;
-    REQUIRE_FALSE(dev.has_backing_view());  // 默认无自有 backing
+    REQUIRE_FALSE(dev.has_backing_view()); // 默认无自有 backing
     REQUIRE(true);
 }
 
 // ============================================================================
 // Case 7: shutdown→load_soc_config→init cycle 后 display 注入仍生效 (P1.1 修复验证)
 // ============================================================================
-TEST_CASE("D3a-2: re-init cycle 后 display 注入仍生效",
-          "[pcie][pcie-display][d3a2][reinit]") {
+TEST_CASE("D3a-2: re-init cycle 后 display 注入仍生效", "[pcie][pcie-display][d3a2][reinit]") {
     // P1.1 修复验证: 旧实现 guard "if (display_fb_storage_) return" 包裹整个函数,
     // 导致 shutdown→load_soc_config→init cycle 后新 soc 的 display_device 永不被注入。
-    // 修复后: guard 仅包裹 make_unique, 注入 (set_backing_view + set_display_device) 每次 init 都执行。
+    // 修复后: guard 仅包裹 make_unique, 注入 (set_backing_view + set_display_device) 每次 init
+    // 都执行。
 
     // 第一次 load + init (load_soc_config 仅接受 json 对象, 需先 JsonIncluder 加载)
     auto cfg = JsonIncluder::loadAndInclude(std::string("configs/dgpu_soc_minimal_v1.json"));
@@ -216,8 +208,8 @@ TEST_CASE("D3a-2: re-init cycle 后 display 注入仍生效",
     REQUIRE(board.display_fb_size() > 0);
     auto* ep_second = board.pcie_ep();
     REQUIRE(ep_second != nullptr);
-    REQUIRE(ep_second->has_display_device());  // ← P1.1 修复后此断言转绿
-    REQUIRE(ep_second->display_device().has_backing_view());  // ← P1.1 修复后此断言转绿
+    REQUIRE(ep_second->has_display_device());                // ← P1.1 修复后此断言转绿
+    REQUIRE(ep_second->display_device().has_backing_view()); // ← P1.1 修复后此断言转绿
     REQUIRE(ep_second->display_device().backing_size() == board.display_fb_size());
 
     // 同一 backing ptr (display_fb_storage_ 复用, 未重新分配)
@@ -229,8 +221,7 @@ TEST_CASE("D3a-2: re-init cycle 后 display 注入仍生效",
 // ============================================================================
 // Case 8: backing_size 多 size 派生语义验证 (覆盖 AC-13 + AC-4 静态对称完整)
 // ============================================================================
-TEST_CASE("D3a-2: backing_size 多 size 派生语义验证",
-          "[pcie][pcie-display][d3a2]") {
+TEST_CASE("D3a-2: backing_size 多 size 派生语义验证", "[pcie][pcie-display][d3a2]") {
     // AC-13 回归保护: 禁止 backing_size() 返回硬编码常量 (例如旧 kFbSize=32MB)
     PcieDisplayDevice dev;
 
@@ -285,8 +276,7 @@ TEST_CASE("D3a-2: PcieEndpointIP set_X_device API 对称性 (display/memory)",
 // ============================================================================
 // Case 10: DGpuBoard::set_display_fb_size override 优先级验证
 // ============================================================================
-TEST_CASE("D3a-2: DGpuBoard set_display_fb_size override 优先级",
-          "[pcie][pcie-display][d3a2]") {
+TEST_CASE("D3a-2: DGpuBoard set_display_fb_size override 优先级", "[pcie][pcie-display][d3a2]") {
     // 内联最小 SoC 配置 (避免依赖文件 IO)
     nlohmann::json cfg = nlohmann::json::parse(R"({
         "name": "d3a_override_test",

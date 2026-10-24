@@ -18,8 +18,7 @@ using namespace tlm::pcie;
 // ========== Test helpers ==========
 
 // 从 LinkLayer tx 输出中查找匹配某个 kind 的 TLP
-static bool find_tx_tlp_of_kind(PcieLinkLayer& ll, uint8_t kind,
-                                 bundles::PcieTlpBundle& out) {
+static bool find_tx_tlp_of_kind(PcieLinkLayer& ll, uint8_t kind, bundles::PcieTlpBundle& out) {
     bundles::PcieTlpBundle tlp;
     while (ll.try_pop_tx_tlp(tlp)) {
         if (tlp.kind.read() == kind) {
@@ -66,10 +65,10 @@ TEST_CASE("PcieSriovVfPool: dispatch_msix 触发后 tick 投递 MWr TLP",
     REQUIRE(find_tx_tlp_of_kind(ll, bundles::PcieTlpBundle::MMIO_WRITE, sent) == true);
 
     // 验证 MWr TLP 内容
-    REQUIRE(sent.offset.read() == 0xFEE00000ULL);  // msg_addr
-    REQUIRE(sent.data.read() == 0x42);              // msg_data
-    REQUIRE(sent.size.read() == 4);                 // 4 bytes (per MSI-X spec)
-    REQUIRE(sent.trans_id.read() == 0);             // vector
+    REQUIRE(sent.offset.read() == 0xFEE00000ULL); // msg_addr
+    REQUIRE(sent.data.read() == 0x42);            // msg_data
+    REQUIRE(sent.size.read() == 4);               // 4 bytes (per MSI-X spec)
+    REQUIRE(sent.trans_id.read() == 0);           // vector
 }
 
 // ========== TEST_CASE 2: 投递完成后调 intr_delivered_callback ==========
@@ -106,8 +105,7 @@ TEST_CASE("PcieSriovVfPool: 投递完成后调 intr_delivered_callback",
 }
 
 // ========== TEST_CASE 3: 多 vector pending 顺序投递 ==========
-TEST_CASE("PcieSriovVfPool: 多 vector pending 顺序投递",
-          "[pcie][msix][msix-mwr][t-p11-3]") {
+TEST_CASE("PcieSriovVfPool: 多 vector pending 顺序投递", "[pcie][msix][msix-mwr][t-p11-3]") {
     EventQueue eq;
     PcieLinkLayer ll(&eq);
     PcieSriovVfPool pool;
@@ -115,9 +113,8 @@ TEST_CASE("PcieSriovVfPool: 多 vector pending 顺序投递",
 
     // 记录回调触发的 vector
     std::vector<uint32_t> delivered_vectors;
-    pool.register_intr_delivered_callback([&](uint32_t vector) {
-        delivered_vectors.push_back(vector);
-    });
+    pool.register_intr_delivered_callback(
+        [&](uint32_t vector) { delivered_vectors.push_back(vector); });
 
     // 配置 MSI-X table: VF0 (stream_id=1) vector 0/1/2
     REQUIRE(pool.msix_configure_vector(1, 0, 0xFEE00000ULL, 0x42, 0) == true);
@@ -141,7 +138,7 @@ TEST_CASE("PcieSriovVfPool: 多 vector pending 顺序投递",
     // 回调按投递完成顺序触发
     if (delivered_vectors.size() >= 3) {
         // LL tx_tlp 按顺序发出, 因此 vector 顺序保持
-        INFO("Checking delivery order: " << delivered_vectors[0] << ", "
-             << delivered_vectors[1] << ", " << delivered_vectors[2]);
+        INFO("Checking delivery order: " << delivered_vectors[0] << ", " << delivered_vectors[1]
+                                         << ", " << delivered_vectors[2]);
     }
 }

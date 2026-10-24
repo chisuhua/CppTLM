@@ -15,8 +15,8 @@
 // → vram_storage_ (D-AXI v1.4 host BAR2 fast-path). fabric→vram_ctrl 链
 // 属 D3/D4, 本期不验证 end-to-end 数据路径.
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "core/sim_module.hh"
@@ -24,8 +24,8 @@
 #include "tlm/pcie/pcie_controller_ip.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
 
-#include <nlohmann/json.hpp>
 #include <fstream>
+#include <nlohmann/json.hpp>
 
 using tlm::pcie::PcieControllerIP;
 using tlm::pcie::PcieEndpointIP;
@@ -35,13 +35,13 @@ using json = nlohmann::json;
 
 namespace {
 
-json load_realip_p2_config() {
-    std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
-    REQUIRE(f.is_open());
-    json cfg;
-    f >> cfg;
-    return cfg;
-}
+    json load_realip_p2_config() {
+        std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
+        REQUIRE(f.is_open());
+        json cfg;
+        f >> cfg;
+        return cfg;
+    }
 
 } // namespace
 
@@ -125,6 +125,6 @@ TEST_CASE("P3 dual-path equivalence: facade match_bar 与 EP bar_store_value 5-1
     // 10. facade path mmio_write OOB (per PcieEndpointIP MVP, mmio_write 无条件接受)
     //    ↔ facade match_bar OOB → Unknown (刺激 3+4) 是不一致但符合 MVP 设计
     //    (mmio_write 边界检查属 P4 deferred 工作, 见 PcieEndpointIP::mmio_write line 651 comment)
-    REQUIRE(ep.mmio_write(1, kBar1Size + 0x100ULL, 0xDEADULL));  // accepted per MVP
+    REQUIRE(ep.mmio_write(1, kBar1Size + 0x100ULL, 0xDEADULL)); // accepted per MVP
     REQUIRE(ep.bar_store_value(0, 1, kBar1Size + 0x100ULL) == 0xDEADULL);
 }

@@ -24,8 +24,7 @@ using namespace tlm::gpu;
 // ============================================================================
 // 1. VBLANK triggers every 1024 cycles (default INT_MASK=0)
 // ============================================================================
-TEST_CASE("PcieDisplayDevice VBLANK: triggers every 1024 cycles",
-          "[pcie][display][vblank]") {
+TEST_CASE("PcieDisplayDevice VBLANK: triggers every 1024 cycles", "[pcie][display][vblank]") {
     PcieDisplayDevice dev;
     MsiXTable msix(1);
 
@@ -43,7 +42,7 @@ TEST_CASE("PcieDisplayDevice VBLANK: triggers every 1024 cycles",
     // 1024th tick: VBLANK triggers, STATUS bit set
     dev.tick(msix);
     REQUIRE(dev.vblank_count() == 1);
-    REQUIRE(dev.cycle_counter() == 0);  // counter reset
+    REQUIRE(dev.cycle_counter() == 0); // counter reset
 
     REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegStatus, &status, sizeof(status)) == 0);
     REQUIRE((status & PcieDisplayDevice::kStatusVblankPending) ==
@@ -67,8 +66,7 @@ TEST_CASE("PcieDisplayDevice VBLANK: counter increments on each trigger",
 // ============================================================================
 // 3. INT_MASK=0 suppresses MSI-X (STATUS bit set, but no IRQ delivered)
 // ============================================================================
-TEST_CASE("PcieDisplayDevice VBLANK: INT_MASK=0 suppresses MSI-X",
-          "[pcie][display][vblank]") {
+TEST_CASE("PcieDisplayDevice VBLANK: INT_MASK=0 suppresses MSI-X", "[pcie][display][vblank]") {
     PcieDisplayDevice dev;
     MsiXTable msix(1);
 
@@ -135,8 +133,8 @@ TEST_CASE("PcieDisplayDevice VBLANK: pending cleared via STATUS_CLEAR W1C",
 
     // Write STATUS_CLEAR with pending bit to clear
     uint8_t clear_byte = PcieDisplayDevice::kStatusVblankPending;
-    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegStatusClear,
-                            &clear_byte, sizeof(clear_byte)) == 0);
+    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegStatusClear, &clear_byte, sizeof(clear_byte)) ==
+            0);
 
     // Verify pending is cleared
     REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegStatus, &status, sizeof(status)) == 0);
@@ -166,7 +164,7 @@ TEST_CASE("PcieDisplayDevice VBLANK: cycle_counter resets after each trigger",
     REQUIRE(dev.cycle_counter() == 500);
 
     // Complete second trigger
-    for (int i = 0; i < 524; ++i) {  // 500 + 524 = 1024
+    for (int i = 0; i < 524; ++i) { // 500 + 524 = 1024
         dev.tick(msix);
     }
     REQUIRE(dev.vblank_count() == 2);
@@ -176,8 +174,7 @@ TEST_CASE("PcieDisplayDevice VBLANK: cycle_counter resets after each trigger",
 // ============================================================================
 // 7. INT_MASK transition: 0 → 1; next VBLANK delivers MSI-X
 // ============================================================================
-TEST_CASE("PcieDisplayDevice VBLANK: INT_MASK transition (0 → 1)",
-          "[pcie][display][vblank]") {
+TEST_CASE("PcieDisplayDevice VBLANK: INT_MASK transition (0 → 1)", "[pcie][display][vblank]") {
     PcieDisplayDevice dev;
     MsiXTable msix(1);
 
@@ -190,8 +187,8 @@ TEST_CASE("PcieDisplayDevice VBLANK: INT_MASK transition (0 → 1)",
 
     // Clear pending via STATUS_CLEAR
     uint8_t clear_byte = PcieDisplayDevice::kStatusVblankPending;
-    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegStatusClear,
-                            &clear_byte, sizeof(clear_byte)) == 0);
+    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegStatusClear, &clear_byte, sizeof(clear_byte)) ==
+            0);
 
     // INT_MASK=1: next VBLANK should call update_pending
     uint32_t mask = PcieDisplayDevice::kIntMaskVblankEnable;

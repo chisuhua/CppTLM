@@ -9,36 +9,34 @@
 #include <cstring>
 #include <vector>
 
-using cpptlm::pcie::PcieTlpWireBundle;
 using cpptlm::pcie::PcieTlpCodec;
+using cpptlm::pcie::PcieTlpWireBundle;
 
-TEST_CASE("tlp_pack_to_bytes: MEM_READ bridge to PcieTlpCodec::encode_mrd",
-          "[pcie][wire][p1]") {
+TEST_CASE("tlp_pack_to_bytes: MEM_READ bridge to PcieTlpCodec::encode_mrd", "[pcie][wire][p1]") {
     PcieTlpWireBundle wb;
     wb.kind = PcieTlpWireBundle::MEM_READ;
-    wb.requester_id = 0x0100;     // BDF 01:00
+    wb.requester_id = 0x0100; // BDF 01:00
     wb.tag = 0x42;
     wb.address_lo = 0x00001000;
-    wb.length = 1;                // 1 DW payload
+    wb.length = 1; // 1 DW payload
 
     uint8_t out[4096];
     unsigned out_len = 0;
     wb.tlp_pack_to_bytes(out, out_len);
 
-    const auto expected = PcieTlpCodec::encode_mrd(wb.requester_id, wb.tag,
-                                                  wb.address_lo, wb.length);
+    const auto expected =
+        PcieTlpCodec::encode_mrd(wb.requester_id, wb.tag, wb.address_lo, wb.length);
     REQUIRE(out_len == expected.size());
     REQUIRE(std::memcmp(out, expected.data(), out_len) == 0);
 }
 
-TEST_CASE("tlp_pack_to_bytes: MEM_WRITE bridge to PcieTlpCodec::encode_mwr",
-          "[pcie][wire][p1]") {
+TEST_CASE("tlp_pack_to_bytes: MEM_WRITE bridge to PcieTlpCodec::encode_mwr", "[pcie][wire][p1]") {
     PcieTlpWireBundle wb;
     wb.kind = PcieTlpWireBundle::MEM_WRITE;
     wb.requester_id = 0x0100;
     wb.tag = 0x55;
     wb.address_lo = 0xDEAD0000;
-    wb.length = 2;                // 2 DW payload = 8 bytes
+    wb.length = 2; // 2 DW payload = 8 bytes
     wb.payload[0] = 0xCAFEBABE;
     wb.payload[1] = 0xDEADBEEF;
 
@@ -50,15 +48,13 @@ TEST_CASE("tlp_pack_to_bytes: MEM_WRITE bridge to PcieTlpCodec::encode_mwr",
     uint8_t payload_bytes[8];
     std::memcpy(&payload_bytes[0], &wb.payload[0], 4);
     std::memcpy(&payload_bytes[4], &wb.payload[1], 4);
-    const auto expected = PcieTlpCodec::encode_mwr(wb.requester_id, wb.tag,
-                                                   wb.address_lo,
-                                                   payload_bytes, 8);
+    const auto expected =
+        PcieTlpCodec::encode_mwr(wb.requester_id, wb.tag, wb.address_lo, payload_bytes, 8);
     REQUIRE(out_len == expected.size());
     REQUIRE(std::memcmp(out, expected.data(), out_len) == 0);
 }
 
-TEST_CASE("tlp_unpack_from_bytes is inverse of pack for MEM_READ",
-          "[pcie][wire][p1]") {
+TEST_CASE("tlp_unpack_from_bytes is inverse of pack for MEM_READ", "[pcie][wire][p1]") {
     // Construct wire bytes via encode, then unpack and verify fields match.
     const uint16_t req_id = 0x0200;
     const uint8_t tag = 0x77;
@@ -93,7 +89,6 @@ TEST_CASE("crc32_compute matches PcieTlpCodec::crc32_pcie on MEM_READ TLP bytes"
     REQUIRE(wire_crc == codec_crc);
 }
 
-TEST_CASE("PcieTlpCodec::crc_self_test still passes (no bridge regression)",
-          "[pcie][wire][p1]") {
+TEST_CASE("PcieTlpCodec::crc_self_test still passes (no bridge regression)", "[pcie][wire][p1]") {
     REQUIRE(PcieTlpCodec::crc_self_test());
 }

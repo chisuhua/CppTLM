@@ -26,19 +26,19 @@ TEST_CASE("PcieTlpWireBundle: 4KB MWr payload fully carried in array<uint32_t,10
     PcieTlpWireBundle wb;
 
     // 填充 wire-format header 字段 (3DW MWr: Fmt=010, Type=00000)
-    wb.fmt = 0b010;       // 3DW with data
-    wb.type = 0b00000;     // Memory
+    wb.fmt = 0b010;    // 3DW with data
+    wb.type = 0b00000; // Memory
     wb.tc = 0;
     wb.td = 0;
     wb.ep = 0;
     wb.attr = 0;
-    wb.length = 1024;      // 1024 DW = 4096 bytes (PCIe Length=0 means 1024 DW)
+    wb.length = 1024; // 1024 DW = 4096 bytes (PCIe Length=0 means 1024 DW)
     wb.requester_id = 0x0100;
     wb.tag = 0x42;
     wb.last_be = 0;
     wb.first_be = 0xF;
     wb.address_lo = 0x10000000;
-    wb.address_hi = 0;     // 3DW header, hi=0
+    wb.address_hi = 0; // 3DW header, hi=0
     wb.kind = PcieTlpWireBundle::MMIO_WRITE;
 
     // 填满 1024 DW payload
@@ -75,7 +75,7 @@ TEST_CASE("PcieTlpWireBundle: 4KB MWr payload fully carried in array<uint32_t,10
     // 修改中间元素验证独立性
     wb.payload[42] = 0xAABBCCDD;
     REQUIRE(wb.payload[42] == 0xAABBCCDD);
-    REQUIRE(wb.payload[0] == 0xDEADBEEF);  // 不改其他
+    REQUIRE(wb.payload[0] == 0xDEADBEEF); // 不改其他
     REQUIRE(wb.payload[1023] == 0xDEADBEEF);
 }
 
@@ -87,9 +87,9 @@ TEST_CASE("PcieTlpWireBundle: to_descriptor and from_descriptor round-trip",
           "[phase9][pcie][wire-bundle]") {
     // ── 准备 wire bundle ──
     PcieTlpWireBundle wire;
-    wire.fmt = 0b010;          // 3DW with data
-    wire.type = 0b00000;       // Memory
-    wire.length = 16;          // 16 DW = 64 bytes
+    wire.fmt = 0b010;    // 3DW with data
+    wire.type = 0b00000; // Memory
+    wire.length = 16;    // 16 DW = 64 bytes
     wire.requester_id = 0x0100;
     wire.tag = 0x42;
     wire.last_be = 0;
@@ -119,8 +119,7 @@ TEST_CASE("PcieTlpWireBundle: to_descriptor and from_descriptor round-trip",
     REQUIRE(desc.size.read() == 64);
     // data (首 8 字节: payload[0] + payload[1])
     // 注意: PcieTlpBundle data 是 uint64, payload 是 uint32[2]
-    uint64_t expected_data = (static_cast<uint64_t>(wire.payload[1]) << 32)
-                             | wire.payload[0];
+    uint64_t expected_data = (static_cast<uint64_t>(wire.payload[1]) << 32) | wire.payload[0];
     REQUIRE(desc.data.read() == expected_data);
 
     // ── from_descriptor: PcieTlpBundle → wire ──
@@ -157,14 +156,13 @@ TEST_CASE("PcieTlpWireBundle: to_descriptor and from_descriptor round-trip",
 TEST_CASE("PcieTlpWireBundle: LL interface remains const PcieTlpBundle& unchanged",
           "[phase9][pcie][wire-bundle]") {
     // 验证 PcieTlpBundle 仍可正常构造和使用 (接口不变)
-    bundles::PcieTlpBundle desc(
-        bundles::PcieTlpBundle::MMIO_WRITE,  // kind
-        0,                                    // bar_index
-        0x1000,                               // offset
-        4,                                    // size (bytes)
-        0xDEADBEEF,                           // data
-        0x0100,                               // requester_id
-        42                                    // trans_id
+    bundles::PcieTlpBundle desc(bundles::PcieTlpBundle::MMIO_WRITE, // kind
+                                0,                                  // bar_index
+                                0x1000,                             // offset
+                                4,                                  // size (bytes)
+                                0xDEADBEEF,                         // data
+                                0x0100,                             // requester_id
+                                42                                  // trans_id
     );
 
     // 验证字段可读

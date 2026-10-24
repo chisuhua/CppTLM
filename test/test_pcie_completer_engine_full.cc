@@ -1,6 +1,6 @@
 // test/test_pcie_completer_engine_full.cc
 // PcieCompleterEngine 全分支测试 (T-P10-1)
-// 功能：验证 CFGrd/CFGwr/MRdr/MWr/MEMr/MEMw 全 6 分支 + CplD 回发 + 
+// 功能：验证 CFGrd/CFGwr/MRdr/MWr/MEMr/MEMw 全 6 分支 + CplD 回发 +
 //       BDF→BAR 路由表动态重建 + fc_type CplD 修复
 // 作者 CppTLM Team / 日期 2026-09-17
 // 参考: openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/tasks.md T-P10-1
@@ -15,21 +15,19 @@ using namespace bundles;
 using namespace cpptlm::pcie;
 
 // ===== TEST_CASE 1: CFGrd 真实读取 ConfigSpace + CplD 回发 =====
-TEST_CASE("PcieCompleterEngine: CFGrd read ConfigSpace + CplD echo",
-          "[pcie][completer][cfgrd]") {
+TEST_CASE("PcieCompleterEngine: CFGrd read ConfigSpace + CplD echo", "[pcie][completer][cfgrd]") {
     PcieCompleterEngine ce;
     // 设置 BAR0 = 0xFFFF0000 (offset 0x10)
     ce.config_space_write(0x10, 4, 0xFFFF0000u);
 
     // 构造 CFGrd TLP
-    PcieTlpBundle cfgrd(
-        PcieTlpBundle::CFG_READ,  // kind
-        0,                         // bar_index (unused for CFG)
-        0x00,                      // offset (read Vendor ID at offset 0)
-        4,                         // size (4 bytes)
-        0,                         // data (unused for read)
-        0x0100,                    // requester_id (bus=1, dev=0, fn=0)
-        0x42                       // trans_id
+    PcieTlpBundle cfgrd(PcieTlpBundle::CFG_READ, // kind
+                        0,                       // bar_index (unused for CFG)
+                        0x00,                    // offset (read Vendor ID at offset 0)
+                        4,                       // size (4 bytes)
+                        0,                       // data (unused for read)
+                        0x0100,                  // requester_id (bus=1, dev=0, fn=0)
+                        0x42                     // trans_id
     );
 
     auto cpld = ce.handle_tlp(cfgrd);
@@ -52,14 +50,13 @@ TEST_CASE("PcieCompleterEngine: MMIO_WRITE BDF->BAR route + bar_store_ write",
     ce.config_space_write(0x10, 4, 0x10000000u);
 
     // 构造 MMIO_WRITE TLP
-    PcieTlpBundle mmio_write(
-        PcieTlpBundle::MMIO_WRITE,  // kind
-        0,                            // bar_index=0 (BAR0)
-        0x100,                        // offset (BAR0 + 0x100)
-        4,                            // size (4 bytes)
-        0xDEADBEEFull,                // data
-        0x0100,                       // requester_id
-        0x55                          // trans_id
+    PcieTlpBundle mmio_write(PcieTlpBundle::MMIO_WRITE, // kind
+                             0,                         // bar_index=0 (BAR0)
+                             0x100,                     // offset (BAR0 + 0x100)
+                             4,                         // size (4 bytes)
+                             0xDEADBEEFull,             // data
+                             0x0100,                    // requester_id
+                             0x55                       // trans_id
     );
 
     // 执行 MMIO_WRITE → 应该写 bar_store_
@@ -79,14 +76,13 @@ TEST_CASE("PcieCompleterEngine: MMIO_READ BAR route + CplD echo back",
     ce.bar_store_write(0, 0x100, 0xCAFEBABEull);
 
     // 构造 MMIO_READ TLP
-    PcieTlpBundle mmio_read(
-        PcieTlpBundle::MMIO_READ,  // kind
-        0,                           // bar_index=0 (BAR0)
-        0x100,                       // offset
-        4,                           // size
-        0,                           // data (unused for read)
-        0x0100,                      // requester_id
-        0x66                         // trans_id
+    PcieTlpBundle mmio_read(PcieTlpBundle::MMIO_READ, // kind
+                            0,                        // bar_index=0 (BAR0)
+                            0x100,                    // offset
+                            4,                        // size
+                            0,                        // data (unused for read)
+                            0x0100,                   // requester_id
+                            0x66                      // trans_id
     );
 
     auto cpld = ce.handle_tlp(mmio_read);
@@ -108,14 +104,13 @@ TEST_CASE("PcieCompleterEngine: MEM_READ/MEM_WRITE BAR1 VRAM forwarding",
     ce.config_space_write(0x14, 4, 0x20000000u);
 
     // MEM_WRITE to BAR1 + 0x100
-    PcieTlpBundle mem_write(
-        PcieTlpBundle::MEM_WRITE,  // kind
-        1,                           // bar_index=1 (BAR1 VRAM)
-        0x100,                       // offset
-        4,                           // size
-        0xFEEDBEEFull,               // data
-        0x0100,                      // requester_id
-        0x77                         // trans_id
+    PcieTlpBundle mem_write(PcieTlpBundle::MEM_WRITE, // kind
+                            1,                        // bar_index=1 (BAR1 VRAM)
+                            0x100,                    // offset
+                            4,                        // size
+                            0xFEEDBEEFull,            // data
+                            0x0100,                   // requester_id
+                            0x77                      // trans_id
     );
     ce.handle_tlp(mem_write);
 
@@ -123,14 +118,13 @@ TEST_CASE("PcieCompleterEngine: MEM_READ/MEM_WRITE BAR1 VRAM forwarding",
     REQUIRE(ce.bar_store_value(1, 0x100) == 0xFEEDBEEFull);
 
     // MEM_READ back
-    PcieTlpBundle mem_read(
-        PcieTlpBundle::MEM_READ,  // kind
-        1,                          // bar_index=1 (BAR1 VRAM)
-        0x100,                      // offset
-        4,                          // size
-        0,                          // data (unused)
-        0x0100,                     // requester_id
-        0x78                        // trans_id
+    PcieTlpBundle mem_read(PcieTlpBundle::MEM_READ, // kind
+                           1,                       // bar_index=1 (BAR1 VRAM)
+                           0x100,                   // offset
+                           4,                       // size
+                           0,                       // data (unused)
+                           0x0100,                  // requester_id
+                           0x78                     // trans_id
     );
     auto cpld = ce.handle_tlp(mem_read);
 
@@ -174,14 +168,13 @@ TEST_CASE("PcieCompleterEngine: CplD uses PcieTlpCodec::encode_cpld API",
     ce.config_space_write(0x10, 4, 0x10000000u);
     ce.bar_store_write(0, 0x200, 0xAABBCCDDull);
 
-    PcieTlpBundle mmio_read(
-        PcieTlpBundle::MMIO_READ,  // kind
-        0,                           // bar_index
-        0x200,                       // offset
-        4,                           // size
-        0,                           // data
-        0x0100,                      // requester_id
-        0x99                         // trans_id
+    PcieTlpBundle mmio_read(PcieTlpBundle::MMIO_READ, // kind
+                            0,                        // bar_index
+                            0x200,                    // offset
+                            4,                        // size
+                            0,                        // data
+                            0x0100,                   // requester_id
+                            0x99                      // trans_id
     );
 
     auto cpld = ce.handle_tlp(mmio_read);

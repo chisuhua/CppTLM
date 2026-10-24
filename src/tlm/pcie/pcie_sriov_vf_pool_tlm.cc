@@ -52,7 +52,7 @@ namespace tlm::pcie {
             return false;
         }
         // T-P11-3: 从 MSI-X table 读取 vector entry → 入 delivery_queue_
-        // (不依赖 irq_out 队列, 直接读 table 保证 dispatch 语义: 
+        // (不依赖 irq_out 队列, 直接读 table 保证 dispatch 语义:
         //  dispatch_msix 后 tick() 投递 MWr)
         uint64_t msg_addr = 0;
         uint32_t msg_data = 0;
@@ -74,8 +74,8 @@ namespace tlm::pcie {
     }
 
     bool PcieSriovVfPool::msix_configure_vector(uint16_t stream_id, uint16_t vector,
-                                                   uint64_t msg_addr, uint32_t msg_data,
-                                                   uint32_t control) {
+                                                uint64_t msg_addr, uint32_t msg_data,
+                                                uint32_t control) {
         if (!is_valid_stream_id(stream_id)) {
             return false;
         }
@@ -97,14 +97,13 @@ namespace tlm::pcie {
 
     void PcieSriovVfPool::emit_mwr_for_msix(const MsixDelivery& d) {
         // 构造 MWr TLP (MMIO_WRITE, addr=msg_addr, data=msg_data)
-        bundles::PcieTlpBundle mwr(
-            bundles::PcieTlpBundle::MMIO_WRITE,  // kind
-            0,                                    // bar_index
-            d.msg_addr,                           // offset (target addr)
-            4,                                    // size (4 bytes data per MSI-X spec)
-            d.msg_data,                           // data
-            0,                                    // requester_id (简化)
-            d.vector                              // trans_id (用 vector 编号区分)
+        bundles::PcieTlpBundle mwr(bundles::PcieTlpBundle::MMIO_WRITE, // kind
+                                   0,                                  // bar_index
+                                   d.msg_addr,                         // offset (target addr)
+                                   4,          // size (4 bytes data per MSI-X spec)
+                                   d.msg_data, // data
+                                   0,          // requester_id (简化)
+                                   d.vector    // trans_id (用 vector 编号区分)
         );
 
         const bool sent = link_layer_->tx_tlp(mwr, d.stream_id);

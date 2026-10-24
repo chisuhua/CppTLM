@@ -29,7 +29,7 @@ TEST_CASE("ResizableBar: 4GB resize accepted (uint64, 修 v1.0 uint32 溢出)",
     CHECK(rb.state() == ResizableBar::State::Disabled);
     CHECK(rb.size_bytes() == 0);
 
-    const uint64_t four_gb = 0x100000000ULL;  // 4GB
+    const uint64_t four_gb = 0x100000000ULL; // 4GB
 
     // 4GB resize (v1.0 uint32 溢出; v1.1 uint64 修复)
     CHECK(rb.reprogram_size(four_gb) == true);
@@ -47,22 +47,21 @@ TEST_CASE("ResizableBar: size_bytes() 接受 4GB (uint64 修复, 修 v1.0 uint32
     // v1.0: new_size_bytes_ uint32 → 4GB = 0x100000000 溢出 → size 变 0
     // v1.1: uint64 → 4GB 正确接受
     ResizableBar rb;
-    rb.reprogram_size(0x100000000ULL);  // 4GB
+    rb.reprogram_size(0x100000000ULL); // 4GB
     rb.enable();
-    CHECK(rb.size_bytes() == 0x100000000ULL);  // 4GB 正确保存
+    CHECK(rb.size_bytes() == 0x100000000ULL); // 4GB 正确保存
     CHECK(rb.enabled() == true);
 }
 
-TEST_CASE("ResizableBar: BAR0 resize rejected (per PCIe spec)",
-          "[pcie][rebar][e2e][bar0-fixed]") {
+TEST_CASE("ResizableBar: BAR0 resize rejected (per PCIe spec)", "[pcie][rebar][e2e][bar0-fixed]") {
     // per design §3.3: BAR0 fixed, 不可 resize
     ResizableBar rb;
     // INV-C: reprogram_size 在 State::Enabled 拒绝
-    rb.reprogram_size(0x100000000ULL);  // 编程
+    rb.reprogram_size(0x100000000ULL); // 编程
     rb.enable();
     CHECK(rb.state() == ResizableBar::State::Enabled);
-    CHECK(rb.reprogram_size(0x200000000ULL) == false);  // 4GB→8GB 在 Enabled 拒绝
-    CHECK(rb.size_bytes() == 0x100000000ULL);  // size 仍为 4GB
+    CHECK(rb.reprogram_size(0x200000000ULL) == false); // 4GB→8GB 在 Enabled 拒绝
+    CHECK(rb.size_bytes() == 0x100000000ULL);          // size 仍为 4GB
 }
 
 TEST_CASE("PcieEndpointIP Resizable BAR: 4GB resize + config space 64-bit encoding",
@@ -84,7 +83,7 @@ TEST_CASE("PcieEndpointIP Resizable BAR: 4GB resize + config space 64-bit encodi
     // 注入 4GB via on_bar_resize (per pcie_endpoint_ip.cc:670-694)
     // 走既有 INV-C 序列: disable → reprogram_size → enable
     rb2.disable();
-    CHECK(rb2.reprogram_size(0x100000000ULL) == true);  // 4GB
+    CHECK(rb2.reprogram_size(0x100000000ULL) == true); // 4GB
     CHECK(rb2.enable() == true);
 
     // 触发 on_bar_resize callback (per design §3.3: enable 后调)

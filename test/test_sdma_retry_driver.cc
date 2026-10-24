@@ -4,10 +4,10 @@
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
+#include "bundles/pcie_bundles_tlm.hh"
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
-#include "bundles/pcie_bundles_tlm.hh"
 
 using namespace tlm::gpu;
 using namespace bundles;
@@ -15,7 +15,8 @@ using namespace bundles;
 // fake translate: 首次 -EAGAIN (异步 pending), 后续同步 0
 static int g_retry_count = 0;
 static int fake_async_translate(uint64_t iova, uint32_t size, uint64_t& phys) {
-    if (g_retry_count++ == 0) return -EAGAIN;
+    if (g_retry_count++ == 0)
+        return -EAGAIN;
     phys = iova;
     return 0;
 }
@@ -27,7 +28,8 @@ TEST_CASE("SDMA: retry driver 保留 -EAGAIN inflight (N3)", "[sdma][retry][driv
     sdma.set_translate_cb(fake_async_translate);
     g_retry_count = 0;
 
-    DmaDescriptor desc(DmaDescriptor::Dir::H2D, /*iova=*/100, /*vram=*/0x1000, /*size=*/4, /*tag=*/1);
+    DmaDescriptor desc(DmaDescriptor::Dir::H2D, /*iova=*/100, /*vram=*/0x1000, /*size=*/4,
+                       /*tag=*/1);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
 

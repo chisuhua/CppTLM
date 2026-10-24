@@ -8,7 +8,8 @@
 using tlm::gpu::PcieMemoryDevice;
 
 TEST_CASE("DGpuBoard 通过 EP 路由 BAR 2 到 PcieMemoryDevice", "[pcie-memory][backing]") {
-    EventQueue eq_dev; PcieMemoryDevice dev("dev", &eq_dev);
+    EventQueue eq_dev;
+    PcieMemoryDevice dev("dev", &eq_dev);
     std::vector<uint8_t> backing(8192, 0);
     dev.set_backing_view(backing.data(), backing.size());
     uint64_t data = 0xDEADBEEFCAFEBABEULL;
@@ -19,7 +20,8 @@ TEST_CASE("DGpuBoard 通过 EP 路由 BAR 2 到 PcieMemoryDevice", "[pcie-memory
 }
 
 TEST_CASE("PcieMemoryDevice backing view injection", "[pcie-memory][backing]") {
-    EventQueue eq_dev; PcieMemoryDevice dev("dev", &eq_dev);
+    EventQueue eq_dev;
+    PcieMemoryDevice dev("dev", &eq_dev);
     REQUIRE(dev.has_backing_view() == false);
     std::vector<uint8_t> backing(8192, 0);
     dev.set_backing_view(backing.data(), backing.size());
@@ -35,7 +37,8 @@ TEST_CASE("PcieMemoryDevice backing view injection", "[pcie-memory][backing]") {
 }
 
 TEST_CASE("PcieMemoryDevice memory_read out-of-range", "[pcie-memory][backing]") {
-    EventQueue eq_dev; PcieMemoryDevice dev("dev", &eq_dev);
+    EventQueue eq_dev;
+    PcieMemoryDevice dev("dev", &eq_dev);
     uint32_t data = 0xDEAD;
     uint64_t huge_off = 8ULL * 1024 * 1024 * 1024 + 4096;
     // v1.4 B12: 未注入 backing 时返 -ENODEV

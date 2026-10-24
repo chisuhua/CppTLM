@@ -14,13 +14,13 @@
 //   - PTE 编码 (paddr & ~0xFFF) | 1 (禁 <<12 偏移错位)
 //   - ring_write_entry 提交 H2D 描述符 + doorbell wptr → GMMU translate → vram backdoor memcpy
 
+#include "chstream_register.hh" // 触发全模块注册 (DGpuSoc/SdmaEngineTLM/GmmuTLM/PcieEndpointIP/...)
 #include "catch_amalgamated.hpp"
-#include "chstream_register.hh"  // 触发全模块注册 (DGpuSoc/SdmaEngineTLM/GmmuTLM/PcieEndpointIP/...)
 #include "core/event_queue.hh"
+#include "tlm/cluster/soc_internal_noc.hh" // Change C T3: SocInternalNoc (Gap G2 观测)
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
-#include "tlm/cluster/soc_internal_noc.hh"  // Change C T3: SocInternalNoc (Gap G2 观测)
 #include "tlm/gpu/sdma_packet.hh"
 
 #include <nlohmann/json.hpp>
@@ -38,25 +38,25 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr uint64_t kFramebufferSize = 16ULL * 1024 * 1024;  // 16 MB (config 声明的尺寸)
-constexpr uint64_t kHostBufferSize = 16ULL * 1024;          // 16 KB (≥ phys + size, per design D6)
-constexpr uint64_t kPtBase = 0x10000;                        // PT_BASE 寄存器值
-constexpr uint64_t kPhys = 0x2000;                           // PTE[1] 译出的 phys
-constexpr uint64_t kIova = 0x1000;                           // 描述符 host_iova (idx=1)
-constexpr uint32_t kH2dSize = 4096;                          // 单页 H2D 传输
-constexpr uint64_t kPteOffset = kPtBase + (kIova >> 12) * 8; // 0x10008 = pt_base + idx*8
+    constexpr uint64_t kFramebufferSize = 16ULL * 1024 * 1024; // 16 MB (config 声明的尺寸)
+    constexpr uint64_t kHostBufferSize = 16ULL * 1024; // 16 KB (≥ phys + size, per design D6)
+    constexpr uint64_t kPtBase = 0x10000;              // PT_BASE 寄存器值
+    constexpr uint64_t kPhys = 0x2000;                 // PTE[1] 译出的 phys
+    constexpr uint64_t kIova = 0x1000;                 // 描述符 host_iova (idx=1)
+    constexpr uint32_t kH2dSize = 4096;                // 单页 H2D 传输
+    constexpr uint64_t kPteOffset = kPtBase + (kIova >> 12) * 8; // 0x10008 = pt_base + idx*8
 
-// 从磁盘加载 minimal SoC 配置 (per spec "加载 configs/dgpu_soc_minimal_v1.json")。
-// 磁盘文件省略了 ModuleFactory schema 必填的 connections 数组 (其 framebuffer_size_bytes
-// 语义由 MUST NOT 约束保持不动), 这里在内存中补齐空数组使 validateConfig 通过。
-json load_minimal_soc_config() {
-    json cfg;
-    std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
-    if (ifs.is_open()) {
-        cfg = json::parse(ifs);
-    } else {
-        // 兜底内联配置 (与磁盘文件语义等价; cwd 非仓库根时启用)
-        cfg = json::parse(R"({
+    // 从磁盘加载 minimal SoC 配置 (per spec "加载 configs/dgpu_soc_minimal_v1.json")。
+    // 磁盘文件省略了 ModuleFactory schema 必填的 connections 数组 (其 framebuffer_size_bytes
+    // 语义由 MUST NOT 约束保持不动), 这里在内存中补齐空数组使 validateConfig 通过。
+    json load_minimal_soc_config() {
+        json cfg;
+        std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
+        if (ifs.is_open()) {
+            cfg = json::parse(ifs);
+        } else {
+            // 兜底内联配置 (与磁盘文件语义等价; cwd 非仓库根时启用)
+            cfg = json::parse(R"({
             "name": "dgpu_soc_minimal_v1",
             "framebuffer_size_bytes": 16777216,
             "modules": [{
@@ -77,63 +77,66 @@ json load_minimal_soc_config() {
                     {"name": "completion", "type": "CompletionRingTLM"}]
             }]
         })");
-    }
-    // schema 补齐: ModuleFactory::validateConfig 要求每层 instantiateAll config 含
-    // "connections" 数组; 磁盘 minimal config 未写 (顶层 + soc 层)。
-    if (!cfg.contains("connections")) cfg["connections"] = json::array();
-    if (cfg.contains("modules") && cfg["modules"].is_array()) {
-        for (auto& m : cfg["modules"]) {
-            if (m.contains("modules") && !m.contains("connections"))
-                m["connections"] = json::array();
         }
+        // schema 补齐: ModuleFactory::validateConfig 要求每层 instantiateAll config 含
+        // "connections" 数组; 磁盘 minimal config 未写 (顶层 + soc 层)。
+        if (!cfg.contains("connections"))
+            cfg["connections"] = json::array();
+        if (cfg.contains("modules") && cfg["modules"].is_array()) {
+            for (auto& m : cfg["modules"]) {
+                if (m.contains("modules") && !m.contains("connections"))
+                    m["connections"] = json::array();
+            }
+        }
+        return cfg;
     }
-    return cfg;
-}
 
-// 构造确定性 pattern (非平凡, 便于比对)
-std::vector<uint8_t> make_pattern(size_t n) {
-    std::vector<uint8_t> buf(n);
-    for (size_t i = 0; i < n; ++i) buf[i] = static_cast<uint8_t>((i * 13 + 7) & 0xFF);
-    return buf;
-}
+    // 构造确定性 pattern (非平凡, 便于比对)
+    std::vector<uint8_t> make_pattern(size_t n) {
+        std::vector<uint8_t> buf(n);
+        for (size_t i = 0; i < n; ++i)
+            buf[i] = static_cast<uint8_t>((i * 13 + 7) & 0xFF);
+        return buf;
+    }
 
-// 驱动全链路 H2D: GMMU 寄存器 (BAR0) + PTE 写 + ring 描述符 + doorbell。
-// 前置: board.init() 已调用 (bind_memory_backings 已注入 sdma backdoor/translate cb)。
-// 返回 host backdoor 缓冲 (调用方持有, 需在 board/描述符消费期间存活)。
-std::vector<uint8_t> drive_full_h2d_link(DGpuBoard& board, SdmaEngineTLM* sdma) {
-    // host backdoor 16KB pattern 缓冲 (PTE 写 ≥ phys+size)
-    std::vector<uint8_t> host_buf = make_pattern(kHostBufferSize);
-    sdma->set_host_backdoor(host_buf.data(), host_buf.size());
+    // 驱动全链路 H2D: GMMU 寄存器 (BAR0) + PTE 写 + ring 描述符 + doorbell。
+    // 前置: board.init() 已调用 (bind_memory_backings 已注入 sdma backdoor/translate cb)。
+    // 返回 host backdoor 缓冲 (调用方持有, 需在 board/描述符消费期间存活)。
+    std::vector<uint8_t> drive_full_h2d_link(DGpuBoard& board, SdmaEngineTLM* sdma) {
+        // host backdoor 16KB pattern 缓冲 (PTE 写 ≥ phys+size)
+        std::vector<uint8_t> host_buf = make_pattern(kHostBufferSize);
+        sdma->set_host_backdoor(host_buf.data(), host_buf.size());
 
-    // ring mode (64B entry, per Stage 1.3a)
-    sdma->enable_ring_mode(SdmaRingBuffer::RingSize::KB_64, SdmaRingBuffer::EntrySize::B_64);
+        // ring mode (64B entry, per Stage 1.3a)
+        sdma->enable_ring_mode(SdmaRingBuffer::RingSize::KB_64, SdmaRingBuffer::EntrySize::B_64);
 
-    // GMMU BAR0 寄存器: PT_BASE LO/HI + enable (offset 0x00/0x04/0x08)
-    uint32_t pt_lo = static_cast<uint32_t>(kPtBase);
-    REQUIRE(board.mmio_write(0, 0x00, &pt_lo, 4) == 0);
-    uint32_t pt_hi = 0;
-    REQUIRE(board.mmio_write(0, 0x04, &pt_hi, 4) == 0);
-    uint32_t enable = 1;
-    REQUIRE(board.mmio_write(0, 0x08, &enable, 4) == 0);
+        // GMMU BAR0 寄存器: PT_BASE LO/HI + enable (offset 0x00/0x04/0x08)
+        uint32_t pt_lo = static_cast<uint32_t>(kPtBase);
+        REQUIRE(board.mmio_write(0, 0x00, &pt_lo, 4) == 0);
+        uint32_t pt_hi = 0;
+        REQUIRE(board.mmio_write(0, 0x04, &pt_hi, 4) == 0);
+        uint32_t enable = 1;
+        REQUIRE(board.mmio_write(0, 0x08, &enable, 4) == 0);
 
-    // PTE[1] 写入 framebuffer (经 BAR1 存储路由): (phys & ~0xFFF) | 1 = 0x2001
-    uint64_t pte = (kPhys & ~0xFFFULL) | 1ULL;
-    REQUIRE(pte == 0x2001ULL);
-    REQUIRE(board.mmio_write(1, kPteOffset, &pte, 8) == 0);
+        // PTE[1] 写入 framebuffer (经 BAR1 存储路由): (phys & ~0xFFF) | 1 = 0x2001
+        uint64_t pte = (kPhys & ~0xFFFULL) | 1ULL;
+        REQUIRE(pte == 0x2001ULL);
+        REQUIRE(board.mmio_write(1, kPteOffset, &pte, 8) == 0);
 
-    // H2D 描述符 (iova=0x1000, vram_offset=0, size=4096) 写入 ring entry 0
-    DmaDescriptor h2d(DmaDescriptor::Dir::H2D, kIova, /*vram_offset=*/0, kH2dSize, /*tag=*/0x11);
-    auto entry = SdmaPacket::serialize_descriptor(h2d);
-    REQUIRE(sdma->ring_write_entry(0, entry.data(), entry.size()));
+        // H2D 描述符 (iova=0x1000, vram_offset=0, size=4096) 写入 ring entry 0
+        DmaDescriptor h2d(DmaDescriptor::Dir::H2D, kIova, /*vram_offset=*/0, kH2dSize,
+                          /*tag=*/0x11);
+        auto entry = SdmaPacket::serialize_descriptor(h2d);
+        REQUIRE(sdma->ring_write_entry(0, entry.data(), entry.size()));
 
-    // doorbell wptr=1 (BAR1+0x10010000) → board 转发 SOC-internal SDMA → ring consume
-    uint32_t wptr = 1;
-    REQUIRE(board.mmio_write(1, DGpuBoard::kBar1DoorbellOffset, &wptr, 4) == 0);
+        // doorbell wptr=1 (BAR1+0x10010000) → board 转发 SOC-internal SDMA → ring consume
+        uint32_t wptr = 1;
+        REQUIRE(board.mmio_write(1, DGpuBoard::kBar1DoorbellOffset, &wptr, 4) == 0);
 
-    return host_buf;
-}
+        return host_buf;
+    }
 
-}  // namespace
+} // namespace
 
 // ── Scenario 1: 全链路 H2D + 双读回一致 ──
 TEST_CASE("minimal dgpu soc E2E: 全链路 H2D + 双读回一致", "[minimal_dgpu_soc][e2e]") {
@@ -168,7 +171,7 @@ TEST_CASE("minimal dgpu soc E2E: 全链路 H2D + 双读回一致", "[minimal_dgp
         // phys=0x2000 → framebuffer[0] 应为 pattern[0x2000]=0x07 (H2D 已搬运)
         uint8_t fb0 = 0;
         REQUIRE(board.backdoor_read(0, &fb0, 1) == 0);
-        REQUIRE(fb0 == 0x07);  // (0x2000*13 + 7) & 0xFF == 0x07
+        REQUIRE(fb0 == 0x07); // (0x2000*13 + 7) & 0xFF == 0x07
     }
 
     // 期望数据: host_buf[0x2000 .. 0x3000) 经 PTE 译出 → framebuffer[0 .. 4096)
@@ -257,16 +260,16 @@ json derive_legacy_config() {
     json cfg = load_minimal_soc_config();
     cfg.erase("simulation_mode");
     auto& mods = cfg["modules"][0]["modules"];
-    mods.erase(std::remove_if(mods.begin(), mods.end(), [](const json& m) {
-                   return m.value("name", "") == "vram_ctrl";
-               }),
+    mods.erase(std::remove_if(mods.begin(), mods.end(),
+                              [](const json& m) { return m.value("name", "") == "vram_ctrl"; }),
                mods.end());
     return cfg;
 }
 
 // Case A: functional-mode 装配 + H2D 经 VramController 委托仍字节一致
-TEST_CASE("minimal dgpu soc functional-mode E2E: vram_ctrl wired + FunctionalZeroDelay + H2D 字节一致",
-          "[minimal_dgpu_soc][vram_controller][e2e]") {
+TEST_CASE(
+    "minimal dgpu soc functional-mode E2E: vram_ctrl wired + FunctionalZeroDelay + H2D 字节一致",
+    "[minimal_dgpu_soc][vram_controller][e2e]") {
     EventQueue eq;
     DGpuBoard board("minimal_dgpu_soc_func_e2e", &eq);
 
@@ -356,8 +359,8 @@ TEST_CASE("minimal dgpu soc functional-mode E2E: H2D → D2H roundtrip 字节闭
     REQUIRE(sdma->completed_count() == 1u);
 
     // D2H 描述符 (entry 1): vram_offset=0 → host_iova=0x3000, size=4096
-    DmaDescriptor d2h(DmaDescriptor::Dir::D2H, /*host_iova=*/0x3000, /*vram_offset=*/0,
-                      kH2dSize, /*tag=*/0x22);
+    DmaDescriptor d2h(DmaDescriptor::Dir::D2H, /*host_iova=*/0x3000, /*vram_offset=*/0, kH2dSize,
+                      /*tag=*/0x22);
     auto entry = SdmaPacket::serialize_descriptor(d2h);
     REQUIRE(sdma->ring_write_entry(1, entry.data(), entry.size()));
     uint32_t wptr = 1;
@@ -390,7 +393,7 @@ TEST_CASE("minimal dgpu soc Change C: GMMU dedicated client + soc_noc 装配 (Ga
     // Gap I: GMMU 注入 VramControllerTLM dedicated client (programmatic bridge)
     GmmuTLM* gmmu = board.gmmu_module();
     REQUIRE(gmmu != nullptr);
-    REQUIRE(gmmu->vram_target() != nullptr);  // GMMU 直连 VramController functional port
+    REQUIRE(gmmu->vram_target() != nullptr); // GMMU 直连 VramController functional port
     REQUIRE(gmmu->uses_vram_dedicated_client());
 
     // Gap G2: soc_noc 装配 (SDMA→VRAM DataNoC)

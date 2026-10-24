@@ -13,8 +13,7 @@
 #include "abi/cpptlm_emulator.h"
 #include "catch_amalgamated.hpp"
 
-TEST_CASE("ABI: get_device_info by dev_id (修订版, 替代 get_adapter_info)",
-          "[abi][device_info]") {
+TEST_CASE("ABI: get_device_info by dev_id (修订版, 替代 get_adapter_info)", "[abi][device_info]") {
     // dev_id 0 默认映射到 configs/dgpu_board_v1.json
     cpptlm_device_info_t info{};
     int rc = cpptlm_emulator_get_device_info(0, &info);
@@ -22,9 +21,9 @@ TEST_CASE("ABI: get_device_info by dev_id (修订版, 替代 get_adapter_info)",
     // 期望: 返回 0 (成功) 或 -2 (ENOENT) — 取决于 registry 中是否存在 dev_id 0
     // 修订版测试只验证函数签名 + 基本错误处理, 不验证业务数据
     if (rc == 0) {
-        REQUIRE(info.vendor_id != 0);  // NVIDIA = 0x10DE 或其他非零值
+        REQUIRE(info.vendor_id != 0); // NVIDIA = 0x10DE 或其他非零值
     } else {
-        REQUIRE(rc == -ENOENT);  // 期望: dev_id 0 不存在
+        REQUIRE(rc == -ENOENT); // 期望: dev_id 0 不存在
     }
 }
 

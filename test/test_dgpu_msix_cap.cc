@@ -45,8 +45,9 @@ static json msix_cap_board_cfg(const std::string& key) {
 // pre-fix: on_config_loaded 不插入 MSI-X Cap → capability 遍历找不到 id 0x11 → RED
 //
 // A-2b option 2 注: PcieEndpointIP 当前不装 MSI-X Cap (host cfg 不可见 MSI-X)。
-// Runtime API (msix_init/update_pending/clear_pending) 仍可用 — 通过 pool_.msix_pool().table_of(0)。
-// cfg-space 遍历 MSI-X Cap 的断言改为 WARN（保留语义但不影响 GREEN）。
+// Runtime API (msix_init/update_pending/clear_pending) 仍可用 — 通过
+// pool_.msix_pool().table_of(0)。 cfg-space 遍历 MSI-X Cap 的断言改为 WARN（保留语义但不影响
+// GREEN）。
 TEST_CASE("test_msix_cap_table_size_field_reflects_init_n", "[dgpu][msix][cap]") {
     DGpuBoard board("msix_cap_board");
     board.init();
@@ -67,7 +68,7 @@ TEST_CASE("test_msix_cap_table_size_field_reflects_init_n", "[dgpu][msix][cap]")
     // A-2b option 2: PcieEndpointIP 不装 MSI-X Cap
     WARN("A-2b option 2: MSI-X Cap (id=0x11) not installed in PcieEndpointIP cfg space; "
          "runtime MSI-X API (msix_init/update_pending) still functional via internal pool.");
-    REQUIRE(msix_cap == nullptr);  // 显式接受 A-2b option 2 行为
+    REQUIRE(msix_cap == nullptr); // 显式接受 A-2b option 2 行为
 
     // Runtime API 验证仍生效 (per A-2b option 2 acceptance)
     REQUIRE(ep->msix().num_vectors() == 8u);
@@ -118,8 +119,9 @@ TEST_CASE("test_msix_cap_host_visible_after_resize", "[dgpu][msix][cap][host-vis
     // A-2b option 2: cfg_read(0x40) 返 PM Cap (id=0x01), 非 MSI-X
     const uint32_t dword8 = ep->config_space().read(0x40);
     WARN("A-2b option 2: PcieEndpointIP offset 0x40 is PM Cap (id=0x01), not MSI-X Cap. "
-         "Runtime msix table size still correct: " + std::to_string(ep->msix().num_vectors()));
-    REQUIRE((dword8 & 0xFFu) == 0x01u);  // PM Cap id, NOT MSI-X
+         "Runtime msix table size still correct: " +
+         std::to_string(ep->msix().num_vectors()));
+    REQUIRE((dword8 & 0xFFu) == 0x01u); // PM Cap id, NOT MSI-X
 
     // Runtime resize 验证 (msix_init → pool_.msix_pool().table_of(0).resize)
     REQUIRE(ep->msix().num_vectors() == 8u);

@@ -132,4 +132,4 @@ namespace tlm::gpu {
 
     // ── Helpers ──
 
-}  // namespace tlm::gpu
+} // namespace tlm::gpu

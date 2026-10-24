@@ -34,7 +34,8 @@ TEST_CASE("cpptlm_emulator ABI slimming: 18→15+1 宏 驱动核心函数签名�
         REQUIRE(fn != nullptr);
     }
     SECTION("mmio_write 仍可用") {
-        using FnMmioWrite = int (*)(cpptlm_emulator_t*, uint8_t, uint64_t, const void*, std::size_t);
+        using FnMmioWrite =
+            int (*)(cpptlm_emulator_t*, uint8_t, uint64_t, const void*, std::size_t);
         constexpr FnMmioWrite fn = &cpptlm_emulator_mmio_write;
         REQUIRE(fn != nullptr);
     }
@@ -61,15 +62,14 @@ TEST_CASE("cpptlm_emulator ABI slimming: 18→15+1 宏 驱动核心函数签名�
 // (编译期验证: 引用已删函数应编译失败)
 // ============================================================
 
-TEST_CASE("cpptlm_emulator ABI slimming: 4 函数应已从 ABI 删除",
-          "[abi-slimming][pcie][t-p-9-0]") {
+TEST_CASE("cpptlm_emulator ABI slimming: 4 函数应已从 ABI 删除", "[abi-slimming][pcie][t-p-9-0]") {
     SECTION("cpptlm_emulator_backdoor_read 签名不可引用") {
         // 引用应编译失败: 函数已删除
         // 验证: 头文件不应有该函数声明
         // (编译期检查: 如果下面这行能编译, 说明函数仍在)
-        // using FnBackdoorRead = int (*)(cpptlm_emulator_t*, uint8_t, uint64_t, void*, std::size_t);
-        // constexpr FnBackdoorRead fn = &cpptlm_emulator_backdoor_read;
-        // REQUIRE(fn != nullptr);
+        // using FnBackdoorRead = int (*)(cpptlm_emulator_t*, uint8_t, uint64_t, void*,
+        // std::size_t); constexpr FnBackdoorRead fn = &cpptlm_emulator_backdoor_read; REQUIRE(fn !=
+        // nullptr);
 
         // 运行时验证: 头文件中无该符号 (使用 grep 替代)
         // 注: 此处仅做注释提示, 实际验证由 G2 门禁完成
@@ -96,7 +96,9 @@ TEST_CASE("cpptlm_emulator ABI slimming: 4 callback typedef 不动",
         // 编译期验证: 头文件定义该 typedef
         using FnType = void (*)(void*, uint32_t, uint32_t);
         constexpr FnType fn = [](void* ctx, uint32_t vec, uint32_t tid) {
-            (void)ctx; (void)vec; (void)tid;
+            (void)ctx;
+            (void)vec;
+            (void)tid;
         };
         cpptlm_intr_deliver_cb_t cb = fn;
         REQUIRE(cb != nullptr);
@@ -104,7 +106,9 @@ TEST_CASE("cpptlm_emulator ABI slimming: 4 callback typedef 不动",
     SECTION("cpptlm_error_cb_t 存在") {
         using FnType = void (*)(void*, int, const char*);
         constexpr FnType fn = [](void* ctx, int code, const char* msg) {
-            (void)ctx; (void)code; (void)msg;
+            (void)ctx;
+            (void)code;
+            (void)msg;
         };
         cpptlm_error_cb_t cb = fn;
         REQUIRE(cb != nullptr);
@@ -112,7 +116,8 @@ TEST_CASE("cpptlm_emulator ABI slimming: 4 callback typedef 不动",
     SECTION("cpptlm_reset_complete_cb_t 存在") {
         using FnType = void (*)(void*, int);
         constexpr FnType fn = [](void* ctx, int sid) {
-            (void)ctx; (void)sid;
+            (void)ctx;
+            (void)sid;
         };
         cpptlm_reset_complete_cb_t cb = fn;
         REQUIRE(cb != nullptr);
@@ -120,7 +125,8 @@ TEST_CASE("cpptlm_emulator ABI slimming: 4 callback typedef 不动",
     SECTION("cpptlm_power_cb_t 存在") {
         using FnType = void (*)(void*, int);
         constexpr FnType fn = [](void* ctx, int state) {
-            (void)ctx; (void)state;
+            (void)ctx;
+            (void)state;
         };
         cpptlm_power_cb_t cb = fn;
         REQUIRE(cb != nullptr);

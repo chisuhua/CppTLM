@@ -17,28 +17,28 @@
 
 namespace {
 
-// 与 test_memory_tlm_backing.cc 相同的注入 helper
-void inject_req(MemoryTLM* mem, uint64_t tid, uint64_t addr, bool wr, uint64_t data = 0,
-                uint8_t size = 8) {
-    bundles::CacheReqBundle req;
-    req.transaction_id.write(tid);
-    req.address.write(addr);
-    req.is_write.write(wr ? 1 : 0);
-    req.data.write(data);
-    req.size.write(size);
-    mem->req_in().consume();
-    std::memcpy(&mem->req_in().data(), &req, sizeof(req));
-    mem->req_in().set_valid(true);
-}
-
-// 推进 N 个 cycle (advance + tick), 期间断言无 resp
-void advance_and_tick_no_resp(MemoryTLM* mem, uint64_t n) {
-    for (uint64_t c = 0; c < n; ++c) {
-        mem->advance_cycle();
-        mem->tick();
-        REQUIRE(mem->resp_out().valid() == false);
+    // 与 test_memory_tlm_backing.cc 相同的注入 helper
+    void inject_req(MemoryTLM* mem, uint64_t tid, uint64_t addr, bool wr, uint64_t data = 0,
+                    uint8_t size = 8) {
+        bundles::CacheReqBundle req;
+        req.transaction_id.write(tid);
+        req.address.write(addr);
+        req.is_write.write(wr ? 1 : 0);
+        req.data.write(data);
+        req.size.write(size);
+        mem->req_in().consume();
+        std::memcpy(&mem->req_in().data(), &req, sizeof(req));
+        mem->req_in().set_valid(true);
     }
-}
+
+    // 推进 N 个 cycle (advance + tick), 期间断言无 resp
+    void advance_and_tick_no_resp(MemoryTLM* mem, uint64_t n) {
+        for (uint64_t c = 0; c < n; ++c) {
+            mem->advance_cycle();
+            mem->tick();
+            REQUIRE(mem->resp_out().valid() == false);
+        }
+    }
 
 } // namespace
 
@@ -133,7 +133,8 @@ TEST_CASE("memory_timing: write → 120 cyc latency", "[dgpu_soc_timing][memory_
     REQUIRE(mem.inflight_resp_count() == 0);
 }
 
-TEST_CASE("memory_timing: out-of-range → 1 cyc immediate error", "[dgpu_soc_timing][memory_tlm][timing]") {
+TEST_CASE("memory_timing: out-of-range → 1 cyc immediate error",
+          "[dgpu_soc_timing][memory_tlm][timing]") {
     EventQueue eq;
     MemoryTLM mem("mem", &eq);
 
@@ -173,14 +174,16 @@ TEST_CASE("memory_timing: pending_resps_ order strict (priority by ready_cycle)"
     mem.tick();
 
     // cycle 5: req B read miss (addr 0x1100, within backing) → ready=5+50=55
-    for (uint64_t c = 0; c < 5; ++c) mem.advance_cycle();
+    for (uint64_t c = 0; c < 5; ++c)
+        mem.advance_cycle();
     inject_req(&mem, 2, 0x1100, false, 0, 8);
     mem.tick();
     REQUIRE(mem.current_cycle() == 5);
-    REQUIRE(mem.resp_out().valid() == false);  // 100 > 5
+    REQUIRE(mem.resp_out().valid() == false); // 100 > 5
 
     // cycle 55: B 先发出 (ready=55 < A ready=100)
-    for (uint64_t c = 0; c < 50; ++c) mem.advance_cycle(); // cycle 5→55
+    for (uint64_t c = 0; c < 50; ++c)
+        mem.advance_cycle(); // cycle 5→55
     mem.tick();
     REQUIRE(mem.current_cycle() == 55);
     REQUIRE(mem.resp_out().valid());
@@ -188,7 +191,8 @@ TEST_CASE("memory_timing: pending_resps_ order strict (priority by ready_cycle)"
     mem.resp_out().clear_valid();
 
     // cycle 100: A 发出
-    for (uint64_t c = 0; c < 45; ++c) mem.advance_cycle(); // cycle 55→100
+    for (uint64_t c = 0; c < 45; ++c)
+        mem.advance_cycle(); // cycle 55→100
     mem.tick();
     REQUIRE(mem.current_cycle() == 100);
     REQUIRE(mem.resp_out().valid());

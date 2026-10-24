@@ -55,7 +55,7 @@ TEST_CASE("A-2: PcieEndpointIP::config_space() reads Vendor ID", "[a2][pcie][unb
     auto* ep = board.pcie_ep();
     REQUIRE(ep != nullptr);
     const uint32_t val = ep->config_space().read(0x00);
-    REQUIRE((val & 0xFFFFu) == 0x10DEu);  // NVIDIA Vendor ID
+    REQUIRE((val & 0xFFFFu) == 0x10DEu); // NVIDIA Vendor ID
     board.shutdown();
 }
 
@@ -70,7 +70,8 @@ TEST_CASE("A-2: PcieEndpointIP::msix() runtime API accessible", "[a2][pcie][unbl
     board.shutdown();
 }
 
-TEST_CASE("A-2: PcieEndpointIP::bar_router() populated from bar0_registers JSON", "[a2][pcie][unblock]") {
+TEST_CASE("A-2: PcieEndpointIP::bar_router() populated from bar0_registers JSON",
+          "[a2][pcie][unblock]") {
     DGpuBoard board("a2_test");
     REQUIRE(board.load_soc_config(dgpu_mini_cfg()));
     REQUIRE(board.init());
@@ -95,7 +96,7 @@ TEST_CASE("A-2: sync_msix_cap_table_size is no-op (A-2b option 2)", "[a2][pcie][
 
     auto* ep = board.pcie_ep();
     REQUIRE(ep != nullptr);
-    ep->sync_msix_cap_table_size(16);  // no-op 应不抛异常
+    ep->sync_msix_cap_table_size(16); // no-op 应不抛异常
     // A-2b option 2: cfg_read(0x40) 仍返 PM Cap id=0x01, NOT MSI-X
     REQUIRE((ep->config_space().read(0x40) & 0xFFu) == 0x01u);
     board.shutdown();

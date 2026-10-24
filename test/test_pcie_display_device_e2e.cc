@@ -18,19 +18,16 @@
 
 using namespace tlm::gpu;
 
-TEST_CASE("PcieDisplayDevice standalone: BAR 0 mmio roundtrip",
-          "[pcie][display][e2e]") {
+TEST_CASE("PcieDisplayDevice standalone: BAR 0 mmio roundtrip", "[pcie][display][e2e]") {
     PcieDisplayDevice dev;
 
     // Write DISPLAY_MODE = 2 (2560x1440)
     uint32_t mode = 2;
-    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegDisplayMode,
-                            &mode, sizeof(mode)) == 0);
+    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegDisplayMode, &mode, sizeof(mode)) == 0);
 
     // Read back
     uint32_t read_val = 0;
-    REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegDisplayMode,
-                           &read_val, sizeof(read_val)) == 0);
+    REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegDisplayMode, &read_val, sizeof(read_val)) == 0);
     REQUIRE(read_val == 2);
 }
 
@@ -40,18 +37,16 @@ TEST_CASE("PcieDisplayDevice standalone: BAR 0 RO registers reject writes",
 
     // DEVICE_IDENTITY (0x00-0x0F) is RO - write should be silently ignored
     uint32_t bad_vendor = 0xDEAD;
-    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegDeviceIdentity,
-                            &bad_vendor, sizeof(bad_vendor)) == 0);
+    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegDeviceIdentity, &bad_vendor,
+                           sizeof(bad_vendor)) == 0);
 
     // VENDOR_ID still 0x1002
     uint16_t vendor = 0;
-    REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegDeviceIdentity,
-                          &vendor, sizeof(vendor)) == 0);
+    REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegDeviceIdentity, &vendor, sizeof(vendor)) == 0);
     REQUIRE(vendor == PcieDisplayDevice::kVendorId);
 }
 
-TEST_CASE("PcieDisplayDevice standalone: STATUS W1C semantics",
-          "[pcie][display][e2e]") {
+TEST_CASE("PcieDisplayDevice standalone: STATUS W1C semantics", "[pcie][display][e2e]") {
     PcieDisplayDevice dev;
     MsiXTable msix(1);
 
@@ -60,21 +55,18 @@ TEST_CASE("PcieDisplayDevice standalone: STATUS W1C semantics",
     }
 
     uint8_t status = 0;
-    REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegStatus,
-                          &status, sizeof(status)) == 0);
+    REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegStatus, &status, sizeof(status)) == 0);
     REQUIRE((status & PcieDisplayDevice::kStatusVblankPending) ==
             PcieDisplayDevice::kStatusVblankPending);
 
     uint8_t clear_byte = 0xFF;
-    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegStatusClear,
-                            &clear_byte, sizeof(clear_byte)) == 0);
-    REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegStatus,
-                          &status, sizeof(status)) == 0);
+    REQUIRE(dev.mmio_write(PcieDisplayDevice::kRegStatusClear, &clear_byte, sizeof(clear_byte)) ==
+            0);
+    REQUIRE(dev.mmio_read(PcieDisplayDevice::kRegStatus, &status, sizeof(status)) == 0);
     REQUIRE((status & PcieDisplayDevice::kStatusVblankPending) == 0);
 }
 
-TEST_CASE("PcieDisplayDevice standalone: BAR 1 framebuffer roundtrip",
-          "[pcie][display][e2e]") {
+TEST_CASE("PcieDisplayDevice standalone: BAR 1 framebuffer roundtrip", "[pcie][display][e2e]") {
     PcieDisplayDevice dev;
 
     // D3a-2: 注入 backing view (32MB)
@@ -87,8 +79,7 @@ TEST_CASE("PcieDisplayDevice standalone: BAR 1 framebuffer roundtrip",
     for (size_t i = 0; i < write_data.size(); ++i) {
         write_data[i] = static_cast<uint8_t>(i * 7 + 13);
     }
-    REQUIRE(dev.backdoor_write(0x10000, write_data.data(), write_data.size())
-            == 0);
+    REQUIRE(dev.backdoor_write(0x10000, write_data.data(), write_data.size()) == 0);
 
     // Read back
     std::vector<uint8_t> read_data(256, 0xFF);
@@ -96,8 +87,7 @@ TEST_CASE("PcieDisplayDevice standalone: BAR 1 framebuffer roundtrip",
     REQUIRE(read_data == write_data);
 }
 
-TEST_CASE("PcieDisplayDevice standalone: framebuffer bounds check",
-          "[pcie][display][e2e]") {
+TEST_CASE("PcieDisplayDevice standalone: framebuffer bounds check", "[pcie][display][e2e]") {
     PcieDisplayDevice dev;
 
     // D3a-2: 注入 backing view (32MB)
@@ -112,8 +102,7 @@ TEST_CASE("PcieDisplayDevice standalone: framebuffer bounds check",
     REQUIRE(dev.backdoor_read(0x80000000ULL, buf.data(), buf.size()) == -EINVAL);
 }
 
-TEST_CASE("PcieDisplayDevice standalone: registers bounds check",
-          "[pcie][display][e2e]") {
+TEST_CASE("PcieDisplayDevice standalone: registers bounds check", "[pcie][display][e2e]") {
     PcieDisplayDevice dev;
 
     // Out-of-range BAR 0 offset (>= 4KB)
@@ -141,7 +130,8 @@ TEST_CASE("DGpuBoard without SOC: still uses mmio_regs_ map (regression for T0)"
 TEST_CASE("DGpuBoard identity: vendor_id 0x1002 + device_id 0x0001 from PcieDisplayDevice",
           "[pcie][display][e2e]") {
     // Note: This test verifies the PcieDisplayDevice identity constants
-    // (DGpuBoard full E2E with SOC topology is tested in test_dgpu_board_v1_uses_pcie_endpoint_ip.cc)
+    // (DGpuBoard full E2E with SOC topology is tested in
+    // test_dgpu_board_v1_uses_pcie_endpoint_ip.cc)
     PcieDisplayDevice dev;
     REQUIRE(dev.vendor_id() == 0x1002);
     REQUIRE(dev.device_id() == 0x0001);

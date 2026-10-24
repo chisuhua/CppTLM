@@ -24,27 +24,28 @@ using tlm::pcie::PcieEndpointIP;
 
 namespace {
 
-struct RbFixture {
-    EventQueue eq;
-    std::unique_ptr<PcieEndpointIP> ep;
-    std::string ep_name;
+    struct RbFixture {
+        EventQueue eq;
+        std::unique_ptr<PcieEndpointIP> ep;
+        std::string ep_name;
 
-    RbFixture() : ep_name("pcie_ep_rb_test_" + std::to_string(next_id())) {
-        ep = std::make_unique<PcieEndpointIP>(ep_name, &eq);
-        ep->init();
-    }
+        RbFixture() : ep_name("pcie_ep_rb_test_" + std::to_string(next_id())) {
+            ep = std::make_unique<PcieEndpointIP>(ep_name, &eq);
+            ep->init();
+        }
 
-    static int next_id() {
-        static std::atomic<int> s{0};
-        return s.fetch_add(1);
-    }
+        static int next_id() {
+            static std::atomic<int> s{0};
+            return s.fetch_add(1);
+        }
 
-    bool warns_about(const std::string& substr) const {
-        const auto& w = ep->config_warnings();
-        return std::any_of(w.begin(), w.end(),
-            [&](const std::string& s) { return s.find(substr) != std::string::npos; });
-    }
-};
+        bool warns_about(const std::string& substr) const {
+            const auto& w = ep->config_warnings();
+            return std::any_of(w.begin(), w.end(), [&](const std::string& s) {
+                return s.find(substr) != std::string::npos;
+            });
+        }
+    };
 
 } // namespace
 
@@ -112,5 +113,5 @@ TEST_CASE("ResizableBar integration: reprogram rejected when Enabled (INV-C)",
 
     // 已 Enabled 时 reprogram 必须拒绝
     REQUIRE_FALSE(f.ep->resizable_bar(1).reprogram_size(0x400000));
-    REQUIRE(f.ep->resizable_bar(1).size_bytes() == 0x200000);  // size 不变
+    REQUIRE(f.ep->resizable_bar(1).size_bytes() == 0x200000); // size 不变
 }

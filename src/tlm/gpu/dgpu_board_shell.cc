@@ -1,20 +1,20 @@
 // Per board-soc-split design §2 + §2.5 thread model (10 约束)
 // Owner: CppTLM Team · Date: 2026-08-31
 #include "tlm/gpu/dgpu_board_shell.hh"
-#include "tlm/pcie/pcie_controller_ip.hh"  // P2 PR-B Stage C: facade match_bar in mmio paths
-#include "tlm/vram_controller_tlm.hh"      // A.5 (cpptlm-driver-visible-minimal-soc 2026-10-08): complete type for dynamic_cast<VramControllerTLM*>
-#include "tlm/cluster/gpu_internal_fabric.hh"  // A.5: complete type for dynamic_cast<tlm::cluster::GpuInternalFabric*>
-#include "tlm/cluster/soc_internal_noc.hh"      // soc-internal-noc-minimal: complete type for dynamic_cast<tlm::cluster::SocInternalNoc*>
 #include <algorithm>
+#include <cassert>
 #include <cerrno>
 #include <chrono>
 #include <cstring>
-#include <cassert>
 #include <iostream>
-#include "tlm/gpu/pcie_endpoint_tlm.h"
-#include "tlm/gpu/sdma_engine_tlm.hh" // 1.3d M6: SdmaEngineTLM::kSdmaFenceVector 单点常量引用
 #include "bundles/cr_bundles_tlm.hh"
 #include "bundles/doorbell_bundles_tlm.hh"
+#include "tlm/cluster/gpu_internal_fabric.hh" // A.5: complete type for dynamic_cast<tlm::cluster::GpuInternalFabric*>
+#include "tlm/cluster/soc_internal_noc.hh" // soc-internal-noc-minimal: complete type for dynamic_cast<tlm::cluster::SocInternalNoc*>
+#include "tlm/gpu/pcie_endpoint_tlm.h"
+#include "tlm/gpu/sdma_engine_tlm.hh"     // 1.3d M6: SdmaEngineTLM::kSdmaFenceVector 单点常量引用
+#include "tlm/pcie/pcie_controller_ip.hh" // P2 PR-B Stage C: facade match_bar in mmio paths
+#include "tlm/vram_controller_tlm.hh" // A.5 (cpptlm-driver-visible-minimal-soc 2026-10-08): complete type for dynamic_cast<VramControllerTLM*>
 
 namespace tlm::gpu {
 
@@ -45,7 +45,7 @@ namespace tlm::gpu {
             if (!eq_) {
                 eq_ = std::make_unique<EventQueue>();
             }
-            cfg_ = board_cfg;  // Phase 4 T5: 保存原始配置供 init_timing_mode 读取
+            cfg_ = board_cfg; // Phase 4 T5: 保存原始配置供 init_timing_mode 读取
             if (!soc_) {
                 soc_ = std::make_unique<DGpuSoc>(name_ + ".soc", eq_.get());
             }
@@ -128,12 +128,15 @@ namespace tlm::gpu {
                 uint64_t final_size = derived_bar1_size;
                 if (board_cfg.contains("framebuffer_size_bytes")) {
                     if (board_cfg["framebuffer_size_bytes"].is_number_unsigned()) {
-                        uint64_t override_size = board_cfg["framebuffer_size_bytes"].get<uint64_t>();
+                        uint64_t override_size =
+                            board_cfg["framebuffer_size_bytes"].get<uint64_t>();
                         if (derived_bar1_size > 0 && override_size != derived_bar1_size) {
-                            DPRINTF(MODULE, "[DGpuBoard] WARN: framebuffer_size_bytes=%llu != bar_sizes[1]=%llu; "
-                                   "BAR1 window and backdoor bounds may diverge.\n",
-                                   (unsigned long long)override_size,
-                                   (unsigned long long)derived_bar1_size);
+                            DPRINTF(MODULE,
+                                    "[DGpuBoard] WARN: framebuffer_size_bytes=%llu != "
+                                    "bar_sizes[1]=%llu; "
+                                    "BAR1 window and backdoor bounds may diverge.\n",
+                                    (unsigned long long)override_size,
+                                    (unsigned long long)derived_bar1_size);
                         }
                         constexpr uint64_t kMaxFramebufferSize = 64ULL << 30;
                         if (override_size > kMaxFramebufferSize) {
@@ -143,8 +146,9 @@ namespace tlm::gpu {
                         }
                         final_size = override_size;
                     } else {
-                        DPRINTF(MODULE,
-                                "[DGpuBoard] WARN: framebuffer_size_bytes not unsigned, ignoring.\n");
+                        DPRINTF(
+                            MODULE,
+                            "[DGpuBoard] WARN: framebuffer_size_bytes not unsigned, ignoring.\n");
                     }
                 }
                 framebuffer_size_ = final_size;
@@ -318,16 +322,19 @@ namespace tlm::gpu {
         }
         using BT = tlm::pcie::PcieControllerIP::BarTarget;
         auto classify_naive = [&](uint8_t b, uint64_t off) -> BT {
-            if (b == 0) return BT::Bar0Mmio;
+            if (b == 0)
+                return BT::Bar0Mmio;
             if (b == 1) {
                 // Production: 取 pcie_ep 报告的 BAR1 size (来自 JSON bar_sizes[1])。
                 // 测试 seam (pcie_ep 未实例化): 回退到 attach_vram_for_testing 注入的
                 // framebuffer_size_, 以让未调 init() 的单元测试走 Bar1FbFastPath 路径。
                 uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
-                if (sz == 0) sz = framebuffer_size_;
+                if (sz == 0)
+                    sz = framebuffer_size_;
                 return off < sz ? BT::Bar1FbFastPath : BT::Unknown;
             }
-            if (b == 2) return BT::Bar2VramAperture;
+            if (b == 2)
+                return BT::Bar2VramAperture;
             return BT::Unknown;
         };
         BT verdict;
@@ -336,58 +343,58 @@ namespace tlm::gpu {
             controller_ip_->match_bar(bar, offset, verdict, sub_offset_unused);
 #ifndef NDEBUG
             const BT naive = classify_naive(bar, offset);
-            assert(verdict == naive && "DGpuBoard C.2 DEBUG: facade verdict diverges from naive classification (ep_ asymmetry?)");
+            assert(verdict == naive && "DGpuBoard C.2 DEBUG: facade verdict diverges from naive "
+                                       "classification (ep_ asymmetry?)");
 #endif
         } else {
             verdict = classify_naive(bar, offset);
         }
         switch (verdict) {
-            case BT::Bar0Mmio: {
-                if (display_routing_enabled_ && bar == 0 && soc_) {
-                    if (auto* ep = pcie_ep(); ep && ep->has_display_device()) {
-                        return ep->display_device().mmio_read(offset, buf, len);
-                    }
+        case BT::Bar0Mmio: {
+            if (display_routing_enabled_ && bar == 0 && soc_) {
+                if (auto* ep = pcie_ep(); ep && ep->has_display_device()) {
+                    return ep->display_device().mmio_read(offset, buf, len);
                 }
-// Change B (Gap K): GMMU 寄存器读走 CR-Bus (mmio_regs_ write-mirror 替代)
-                //   offset < 0x100 + gmmu_routing_enabled_ + gmmu_ → CR-Bus 读
-                //   (未知寄存器 → DECERR → -EIO; per B-B4)
-                //   同步语义: hub 记录 (wire 层, cr_write 计数) + GMMU CR 处理器同步取 rdata
-                //   (既有同步契约; 避免 cr_read future 无 fulfill 泄漏)
-                if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
-                    auto cr_tx = bundles::CrBundle::make_read(
-                        static_cast<uint32_t>(offset));
-                    if (lwc_hub_ != nullptr) {
-                        lwc_hub_->cr_write(cr_tx);  // wire 层记录 (routed++)
-                    }
-                    gmmu_->handle_cr_transaction(cr_tx);
-                    if (cr_tx.error.read() != bundles::CrBundle::ERR_OK) {
-                        return -EIO;
-                    }
-                    uint32_t rdata = cr_tx.rdata.read();
-                    std::memcpy(buf, &rdata, std::min(len, sizeof(rdata)));
-                    return 0;
-                }
-                break;
             }
-            case BT::Bar1FbFastPath:
-                if (offset != kBar1DoorbellOffset && storage_routing_enabled_ &&
-                    framebuffer_ptr_ && framebuffer_size_ > 0) {
-                    if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
-                        return -EINVAL;
-                    }
-                    std::memcpy(buf, framebuffer_ptr_ + offset, len);
-                    return 0;
+            // Change B (Gap K): GMMU 寄存器读走 CR-Bus (mmio_regs_ write-mirror 替代)
+            //   offset < 0x100 + gmmu_routing_enabled_ + gmmu_ → CR-Bus 读
+            //   (未知寄存器 → DECERR → -EIO; per B-B4)
+            //   同步语义: hub 记录 (wire 层, cr_write 计数) + GMMU CR 处理器同步取 rdata
+            //   (既有同步契约; 避免 cr_read future 无 fulfill 泄漏)
+            if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
+                auto cr_tx = bundles::CrBundle::make_read(static_cast<uint32_t>(offset));
+                if (lwc_hub_ != nullptr) {
+                    lwc_hub_->cr_write(cr_tx); // wire 层记录 (routed++)
                 }
-                break;
-            case BT::Bar2VramAperture:
-                if (memory_routing_enabled_ && bar == 2 && soc_) {
-                    if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
-                        return ep->memory_device().memory_read(offset, buf, len);
-                    }
+                gmmu_->handle_cr_transaction(cr_tx);
+                if (cr_tx.error.read() != bundles::CrBundle::ERR_OK) {
+                    return -EIO;
                 }
-                break;
-            default:
-                break;
+                uint32_t rdata = cr_tx.rdata.read();
+                std::memcpy(buf, &rdata, std::min(len, sizeof(rdata)));
+                return 0;
+            }
+            break;
+        }
+        case BT::Bar1FbFastPath:
+            if (offset != kBar1DoorbellOffset && storage_routing_enabled_ && framebuffer_ptr_ &&
+                framebuffer_size_ > 0) {
+                if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
+                    return -EINVAL;
+                }
+                std::memcpy(buf, framebuffer_ptr_ + offset, len);
+                return 0;
+            }
+            break;
+        case BT::Bar2VramAperture:
+            if (memory_routing_enabled_ && bar == 2 && soc_) {
+                if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
+                    return ep->memory_device().memory_read(offset, buf, len);
+                }
+            }
+            break;
+        default:
+            break;
         }
         PendingReq req;
         req.bar = bar;
@@ -452,16 +459,19 @@ namespace tlm::gpu {
         //   - std::abort (NOT assert) keeps gate live in Release builds — was B2a.
         using BT = tlm::pcie::PcieControllerIP::BarTarget;
         auto classify_naive = [&](uint8_t b, uint64_t off) -> BT {
-            if (b == 0) return BT::Bar0Mmio;
+            if (b == 0)
+                return BT::Bar0Mmio;
             if (b == 1) {
                 // Production: 取 pcie_ep 报告的 BAR1 size (来自 JSON bar_sizes[1])。
                 // 测试 seam (pcie_ep 未实例化): 回退到 attach_vram_for_testing 注入的
                 // framebuffer_size_, 以让未调 init() 的单元测试走 Bar1FbFastPath 路径。
                 uint64_t sz = pcie_ep() ? pcie_ep()->bar_size(1) : 0;
-                if (sz == 0) sz = framebuffer_size_;
+                if (sz == 0)
+                    sz = framebuffer_size_;
                 return off < sz ? BT::Bar1FbFastPath : BT::Unknown;
             }
-            if (b == 2) return BT::Bar2VramAperture;
+            if (b == 2)
+                return BT::Bar2VramAperture;
             return BT::Unknown;
         };
         // A-3: INV-A MMIO power-state gate (D3hot → -EIO, doorbell 例外)
@@ -477,51 +487,51 @@ namespace tlm::gpu {
             controller_ip_->match_bar(bar, offset, verdict, sub_offset_unused);
 #ifndef NDEBUG
             const BT naive = classify_naive(bar, offset);
-            assert(verdict == naive && "DGpuBoard C.2 DEBUG write: facade verdict diverges from naive classification (ep_ asymmetry?)");
+            assert(verdict == naive && "DGpuBoard C.2 DEBUG write: facade verdict diverges from "
+                                       "naive classification (ep_ asymmetry?)");
 #endif
         } else {
             verdict = classify_naive(bar, offset);
         }
         switch (verdict) {
-            case BT::Bar0Mmio: {
-                if (display_routing_enabled_ && bar == 0 && soc_) {
-                    if (auto* ep = pcie_ep(); ep && ep->has_display_device()) {
-                        return ep->display_device().mmio_write(offset, buf, len);
-                    }
+        case BT::Bar0Mmio: {
+            if (display_routing_enabled_ && bar == 0 && soc_) {
+                if (auto* ep = pcie_ep(); ep && ep->has_display_device()) {
+                    return ep->display_device().mmio_write(offset, buf, len);
                 }
-                if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
-                    uint32_t val32 = 0;
-                    std::memcpy(&val32, buf, 4);
-                    // Change B (Gap H): 4 处 set_pt_base_* 直调 → CrBundle (CR-Bus)
-                    //   hub 存在 → 经 hub 记录 (wire 层) + GMMU CR 处理器同步生效 (既有同步契约)
-                    //   hub 缺   → 直调 GMMU CR 处理器 (fallback 兼容)
-                    auto cr_tx = bundles::CrBundle::make_write(
-                        static_cast<uint32_t>(offset), val32);
-                    if (lwc_hub_ != nullptr) {
-                        lwc_hub_->cr_write(cr_tx);
-                    }
-                    gmmu_->handle_cr_transaction(cr_tx);
-                }
-                break;
             }
-            case BT::Bar1FbFastPath:
-                if (offset != kBar1DoorbellOffset && storage_routing_enabled_ &&
-                    framebuffer_ptr_ && framebuffer_size_ > 0) {
-                    if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
-                        return -EINVAL;
-                    }
-                    std::memcpy(framebuffer_ptr_ + offset, buf, len);
+            if (gmmu_routing_enabled_ && bar == 0 && offset < 0x100 && gmmu_ && len >= 4) {
+                uint32_t val32 = 0;
+                std::memcpy(&val32, buf, 4);
+                // Change B (Gap H): 4 处 set_pt_base_* 直调 → CrBundle (CR-Bus)
+                //   hub 存在 → 经 hub 记录 (wire 层) + GMMU CR 处理器同步生效 (既有同步契约)
+                //   hub 缺   → 直调 GMMU CR 处理器 (fallback 兼容)
+                auto cr_tx = bundles::CrBundle::make_write(static_cast<uint32_t>(offset), val32);
+                if (lwc_hub_ != nullptr) {
+                    lwc_hub_->cr_write(cr_tx);
                 }
-                break;
-            case BT::Bar2VramAperture:
-                if (memory_routing_enabled_ && bar == 2 && soc_) {
-                    if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
-                        return ep->memory_device().memory_write(offset, buf, len);
-                    }
+                gmmu_->handle_cr_transaction(cr_tx);
+            }
+            break;
+        }
+        case BT::Bar1FbFastPath:
+            if (offset != kBar1DoorbellOffset && storage_routing_enabled_ && framebuffer_ptr_ &&
+                framebuffer_size_ > 0) {
+                if (offset >= framebuffer_size_ || len > framebuffer_size_ - offset) {
+                    return -EINVAL;
                 }
-                break;
-            default:
-                break;
+                std::memcpy(framebuffer_ptr_ + offset, buf, len);
+            }
+            break;
+        case BT::Bar2VramAperture:
+            if (memory_routing_enabled_ && bar == 2 && soc_) {
+                if (auto* ep = pcie_ep(); ep && ep->has_memory_device()) {
+                    return ep->memory_device().memory_write(offset, buf, len);
+                }
+            }
+            break;
+        default:
+            break;
         }
         // 同步存入 BAR-keyed 寄存器映射, 作为 mmio_read roundtrip 的数据源
         std::vector<uint8_t> payload(static_cast<const uint8_t*>(buf),
@@ -566,9 +576,10 @@ namespace tlm::gpu {
                     doorbell_wptr = *reinterpret_cast<const uint64_t*>(reg_data.data());
                 }
                 // Change B (Gap J): sdma_engine_->mmio_write() 直调 → DoorbellBundle (DoorbellBus)
-                //   hub 存在 → 经 hub 记录 (wire 层) + SDMA doorbell 处理器同步 consume (既有同步契约)
-                auto db_tx = bundles::DoorbellBundle::make_doorbell(
-                    static_cast<uint32_t>(doorbell_wptr), 0);
+                //   hub 存在 → 经 hub 记录 (wire 层) + SDMA doorbell 处理器同步 consume
+                //   (既有同步契约)
+                auto db_tx =
+                    bundles::DoorbellBundle::make_doorbell(static_cast<uint32_t>(doorbell_wptr), 0);
                 if (lwc_hub_ != nullptr) {
                     lwc_hub_->doorbell_write(db_tx);
                 }
@@ -731,8 +742,8 @@ namespace tlm::gpu {
             return;
 
         // Phase 3 T4.2 (N12): 条件注入 pcie_memory (minimal_v1 路径) vs legacy memory (MemoryTLM)
-        if (auto* pcie_mem =
-                dynamic_cast<tlm::gpu::PcieMemoryDevice*>(soc_->getInternalInstance("pcie_memory"))) {
+        if (auto* pcie_mem = dynamic_cast<tlm::gpu::PcieMemoryDevice*>(
+                soc_->getInternalInstance("pcie_memory"))) {
             // v1.4 B7: 单一 VRAM backing 注入 PcieMemoryDevice (board 派生 vram_size_)
             pcie_mem->set_backing_view(framebuffer_ptr_, framebuffer_size_);
             // T1.2 (N12): EP 注入 pcie_memory 引用 (BAR2 fast-path 依赖 has_memory_device)
@@ -742,7 +753,8 @@ namespace tlm::gpu {
         } else if (auto* mem = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"))) {
             mem->set_backing_view(framebuffer_ptr_, framebuffer_size_);
         } else {
-            DPRINTF(MODULE, "[DGpuBoard] WARN: SOC 缺 'pcie_memory'/'memory' 实例, backing 注入跳过\n");
+            DPRINTF(MODULE,
+                    "[DGpuBoard] WARN: SOC 缺 'pcie_memory'/'memory' 实例, backing 注入跳过\n");
         }
 
         // Change C T6: GMMU 先解析 (SDMA translate_target 装配依赖 gmmu_)
@@ -755,7 +767,8 @@ namespace tlm::gpu {
         if (auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"))) {
             sdma->set_vram_backdoor(framebuffer_ptr_, framebuffer_size_);
             // Change C T6 (Gap G1): 删旧 lambda callback, 改 programmatic bridge 直连 GMMU
-            // (per §0.1 原则 3.1 "无 callback 注入"; SDMA translate 走 translate_target_->translate())
+            // (per §0.1 原则 3.1 "无 callback 注入"; SDMA translate 走
+            // translate_target_->translate())
             sdma->set_translate_target(gmmu_);
             set_sdma_engine(sdma);
         } else {
@@ -776,8 +789,8 @@ namespace tlm::gpu {
             //   1. vram_ctrl mode = FunctionalZeroDelay
             //   2. PcieMemoryDevice 注入 vram_controller_ (port0 SDMA 委托)
             // timing 配置保持默认 TimingCycleApproximate + 不 wire pcie_memory → 100% 零回归
-            const bool is_functional = !(cfg_.contains("simulation_mode") &&
-                                         cfg_["simulation_mode"] == "timing");
+            const bool is_functional =
+                !(cfg_.contains("simulation_mode") && cfg_["simulation_mode"] == "timing");
             if (is_functional) {
                 vram_ctrl->set_mode(tlm::vram::VramControllerMode::FunctionalZeroDelay);
                 if (auto* pcie_mem = dynamic_cast<tlm::gpu::PcieMemoryDevice*>(
@@ -789,24 +802,25 @@ namespace tlm::gpu {
             // Change C T4 (Gap I): GMMU dedicated memory client → VramControllerTLM functional port
             // programmatic bridge (per design.md §"JSON 修订": GMMU 不走 JSON ChStream connection —
             // GMMU req_out_ 是 PcieTlpBundle, VramControllerTLM 端口是 CacheReqBundle, 类型不兼容;
-            // 走 set_vram_target 先例, 仿 fabric↔vram 装配模式). GMMU PTE fetch 直连 VramController,
-            // 不经 PcieMemoryDevice port 1 / 不经 mesh SocInternalNoc (per NVIDIA H100 GMMU 模式).
-            // 仅 functional: timing-mode 保持 mem_view_ → translate_timing TLB path (H-C6)。
+            // 走 set_vram_target 先例, 仿 fabric↔vram 装配模式). GMMU PTE fetch 直连
+            // VramController, 不经 PcieMemoryDevice port 1 / 不经 mesh SocInternalNoc (per NVIDIA
+            // H100 GMMU 模式). 仅 functional: timing-mode 保持 mem_view_ → translate_timing TLB
+            // path (H-C6)。
             if (is_functional && gmmu_) {
                 gmmu_->set_vram_target(vram_ctrl);
                 DPRINTF(MODULE,
                         "[DGpuBoard] Change C: gmmu -> vram_ctrl dedicated client wired (Gap I)\n");
             }
-            DPRINTF(MODULE,
-                    "[DGpuBoard] T23C+A: vram_ctrl backing injected + mode=%s (ptr=%p, size=%llu)\n",
-                    vram_ctrl->mode() == tlm::vram::VramControllerMode::FunctionalZeroDelay
-                        ? "FunctionalZeroDelay"
-                        : "TimingCycleApproximate",
-                    static_cast<void*>(framebuffer_ptr_),
-                    static_cast<unsigned long long>(framebuffer_size_));
+            DPRINTF(
+                MODULE,
+                "[DGpuBoard] T23C+A: vram_ctrl backing injected + mode=%s (ptr=%p, size=%llu)\n",
+                vram_ctrl->mode() == tlm::vram::VramControllerMode::FunctionalZeroDelay
+                    ? "FunctionalZeroDelay"
+                    : "TimingCycleApproximate",
+                static_cast<void*>(framebuffer_ptr_),
+                static_cast<unsigned long long>(framebuffer_size_));
         } else {
-            DPRINTF(MODULE,
-                    "[DGpuBoard] T23C: SOC 缺 'vram_ctrl' 实例, backing 注入跳过\n");
+            DPRINTF(MODULE, "[DGpuBoard] T23C: SOC 缺 'vram_ctrl' 实例, backing 注入跳过\n");
         }
 
         // A.5 (cpptlm-driver-visible-minimal-soc 2026-10-08): programmatic bridge
@@ -824,12 +838,10 @@ namespace tlm::gpu {
                 DPRINTF(MODULE,
                         "[DGpuBoard] A.5: fabric <-> vram_ctrl programmatic bridge wired\n");
             } else {
-                DPRINTF(MODULE,
-                        "[DGpuBoard] A.5: fabric 存在但 vram_ctrl 缺, 单向 set 跳过\n");
+                DPRINTF(MODULE, "[DGpuBoard] A.5: fabric 存在但 vram_ctrl 缺, 单向 set 跳过\n");
             }
         } else {
-            DPRINTF(MODULE,
-                    "[DGpuBoard] A.5: SOC 缺 'fabric' 实例, programmatic bridge 跳过\n");
+            DPRINTF(MODULE, "[DGpuBoard] A.5: SOC 缺 'fabric' 实例, programmatic bridge 跳过\n");
         }
 
         // cpptlm-dgpu-soc-internal-noc-minimal (2026-10-08): SoC 内部 NoC
@@ -837,25 +849,27 @@ namespace tlm::gpu {
         // 通过 soc_noc->set_*_target() 装配, 与 fabric↔vram 桥接并列.
         // 路由逻辑在 SocInternalNoc::route_flit() 按 flit.dst_node 路由.
         // 注: 4 target 若未 inject (nullptr), set_target 跳过 — graceful degradation.
-        if (auto* soc_noc = dynamic_cast<tlm::cluster::SocInternalNoc*>(
-                soc_->getInternalInstance("soc_noc"))) {
-            soc_noc_ = soc_noc;  // Change C T4: 缓存供 E2E 观测 (Gap G2)
-            if (controller_ip_) soc_noc->set_pcie_target(controller_ip_);
-            if (sdma_engine_)   soc_noc->set_sdma_target(sdma_engine_);
-            if (gmmu_)          soc_noc->set_gmmu_target(gmmu_);
-            if (vram_ctrl_seen) soc_noc->set_vram_target(vram_ctrl_seen);
-            DPRINTF(MODULE,
-                    "[DGpuBoard] soc-internal-noc: 4-target programmatic bridge wired\n");
+        if (auto* soc_noc =
+                dynamic_cast<tlm::cluster::SocInternalNoc*>(soc_->getInternalInstance("soc_noc"))) {
+            soc_noc_ = soc_noc; // Change C T4: 缓存供 E2E 观测 (Gap G2)
+            if (controller_ip_)
+                soc_noc->set_pcie_target(controller_ip_);
+            if (sdma_engine_)
+                soc_noc->set_sdma_target(sdma_engine_);
+            if (gmmu_)
+                soc_noc->set_gmmu_target(gmmu_);
+            if (vram_ctrl_seen)
+                soc_noc->set_vram_target(vram_ctrl_seen);
+            DPRINTF(MODULE, "[DGpuBoard] soc-internal-noc: 4-target programmatic bridge wired\n");
         } else {
-            DPRINTF(MODULE,
-                    "[DGpuBoard] soc-internal-noc: SOC 缺 'soc_noc' 实例, 桥接跳过\n");
+            DPRINTF(MODULE, "[DGpuBoard] soc-internal-noc: SOC 缺 'soc_noc' 实例, 桥接跳过\n");
         }
 
         // Change B (cpptlm-lwc-bus-hub-mvp): LWC Bus Hub 装配 (per design §4)
         //   lwc_hub_ 从 soc_ 解析 + 注册 GMMU cr target + SDMA doorbell target
         //   (per v1.0.1 B-B2 修订: hub 同步路由, DGpuBoard::mmio_* host 线程直调)
-        if (auto* lwc_hub = dynamic_cast<tlm::lwc::LwcBusHub*>(
-                soc_->getInternalInstance("lwc_hub"))) {
+        if (auto* lwc_hub =
+                dynamic_cast<tlm::lwc::LwcBusHub*>(soc_->getInternalInstance("lwc_hub"))) {
             lwc_hub_ = lwc_hub;
             if (gmmu_) {
                 lwc_hub->register_cr_target("gmmu", &gmmu_->cr_in());
@@ -866,8 +880,7 @@ namespace tlm::gpu {
                 DPRINTF(MODULE, "[DGpuBoard] LWC: doorbell target 'sdma' registered\n");
             }
         } else {
-            DPRINTF(MODULE,
-                    "[DGpuBoard] LWC: SOC 缺 'lwc_hub' 实例, mmio CR-Bus 路径 fallback\n");
+            DPRINTF(MODULE, "[DGpuBoard] LWC: SOC 缺 'lwc_hub' 实例, mmio CR-Bus 路径 fallback\n");
         }
     }
 
@@ -1009,7 +1022,7 @@ namespace tlm::gpu {
         cycle_advance_modules_.clear();
 
         // 1. 找 internal modules (memory / vram_ctrl / sdma / gmmu; 均非必全)
-        auto* mem  = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"));
+        auto* mem = dynamic_cast<MemoryTLM*>(soc_->getInternalInstance("memory"));
         auto* vram = dynamic_cast<VramControllerTLM*>(soc_->getInternalInstance("vram_ctrl"));
         auto* sdma = dynamic_cast<SdmaEngineTLM*>(soc_->getInternalInstance("sdma"));
         auto* gmmu = dynamic_cast<GmmuTLM*>(soc_->getInternalInstance("gmmu"));
@@ -1027,21 +1040,18 @@ namespace tlm::gpu {
             const std::string& mname = m.value("name", "");
             const auto& params = m.value("params", json::object());
             if (mname == "memory" && mem) {
-                mem->set_timing_params(
-                    params.value("read_latency_hit_cycles", 100),
-                    params.value("read_latency_miss_cycles", 200),
-                    params.value("write_latency_cycles", 120),
-                    params.value("use_zero_delay_for_test", false));
+                mem->set_timing_params(params.value("read_latency_hit_cycles", 100),
+                                       params.value("read_latency_miss_cycles", 200),
+                                       params.value("write_latency_cycles", 120),
+                                       params.value("use_zero_delay_for_test", false));
             } else if (mname == "vram_ctrl" && vram) {
-                vram->set_timing_params(
-                    params.value("read_latency_hit_cycles", 100),
-                    params.value("read_latency_miss_cycles", 200),
-                    params.value("write_latency_cycles", 120),
-                    params.value("use_zero_delay_for_test", false));
-                vram->set_vram_params(
-                    params.value("row_hit_cycles", 30),
-                    params.value("row_miss_cycles", 80),
-                    params.value("bandwidth_gbps", 32));
+                vram->set_timing_params(params.value("read_latency_hit_cycles", 100),
+                                        params.value("read_latency_miss_cycles", 200),
+                                        params.value("write_latency_cycles", 120),
+                                        params.value("use_zero_delay_for_test", false));
+                vram->set_vram_params(params.value("row_hit_cycles", 30),
+                                      params.value("row_miss_cycles", 80),
+                                      params.value("bandwidth_gbps", 32));
             } else if (mname == "gmmu" && gmmu) {
                 gmmu->set_timing_params(params.value("tlb_miss_latency_cycles", 50));
                 gmmu->set_tlb_size(params.value("tlb_size", 32));
@@ -1061,8 +1071,10 @@ namespace tlm::gpu {
         }
 
         // 5. cycle advance 目标: [memory, vram_ctrl] (剔除 gmmu per M14, sdma per R10)
-        if (mem) cycle_advance_modules_.push_back(mem);
-        if (vram) cycle_advance_modules_.push_back(vram);
+        if (mem)
+            cycle_advance_modules_.push_back(mem);
+        if (vram)
+            cycle_advance_modules_.push_back(vram);
     }
 
     // ── 线程模型 #10 destroy 顺序(严格) ──

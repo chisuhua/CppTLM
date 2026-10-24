@@ -12,8 +12,8 @@
 #include <fstream>
 #include <thread>
 #include <vector>
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -26,36 +26,38 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr uint64_t kFramebufferSize = 64ULL * 1024 * 1024;
-constexpr uint64_t kPtBase = 0x10000;
-constexpr uint64_t kHostBufSize = 8ULL * 1024 * 1024;
-constexpr uint64_t kChunk = 4096;
-constexpr uint32_t kNumChunks = 1024;
-constexpr uint64_t kMaxCycles = 1'000'000;
+    constexpr uint64_t kFramebufferSize = 64ULL * 1024 * 1024;
+    constexpr uint64_t kPtBase = 0x10000;
+    constexpr uint64_t kHostBufSize = 8ULL * 1024 * 1024;
+    constexpr uint64_t kChunk = 4096;
+    constexpr uint32_t kNumChunks = 1024;
+    constexpr uint64_t kMaxCycles = 1'000'000;
 
-json load_timing_config() {
-    json cfg;
-    std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
-    if (ifs.is_open()) cfg = json::parse(ifs);
-    REQUIRE(ifs.is_open());
-    if (!cfg.contains("connections")) cfg["connections"] = json::array();
-    if (cfg.contains("modules") && cfg["modules"].is_array()) {
-        for (auto& m : cfg["modules"]) {
-            if (m.contains("modules") && !m.contains("connections"))
-                m["connections"] = json::array();
+    json load_timing_config() {
+        json cfg;
+        std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
+        if (ifs.is_open())
+            cfg = json::parse(ifs);
+        REQUIRE(ifs.is_open());
+        if (!cfg.contains("connections"))
+            cfg["connections"] = json::array();
+        if (cfg.contains("modules") && cfg["modules"].is_array()) {
+            for (auto& m : cfg["modules"]) {
+                if (m.contains("modules") && !m.contains("connections"))
+                    m["connections"] = json::array();
+            }
+        }
+        return cfg;
+    }
+
+    void fill_ptes(std::vector<uint8_t>& backing) {
+        // descriptor iova=0x1000+i*4096 → page=1+i
+        for (uint64_t i = 0; i < kNumChunks; ++i) {
+            uint64_t page = 1 + i;
+            uint64_t pte = ((0x100000ULL + i * kChunk) & ~0xFFFULL) | 1ULL;
+            std::memcpy(backing.data() + kPtBase + page * 8, &pte, 8);
         }
     }
-    return cfg;
-}
-
-void fill_ptes(std::vector<uint8_t>& backing) {
-    // descriptor iova=0x1000+i*4096 → page=1+i
-    for (uint64_t i = 0; i < kNumChunks; ++i) {
-        uint64_t page = 1 + i;
-        uint64_t pte = ((0x100000ULL + i * kChunk) & ~0xFFFULL) | 1ULL;
-        std::memcpy(backing.data() + kPtBase + page * 8, &pte, 8);
-    }
-}
 
 } // namespace
 

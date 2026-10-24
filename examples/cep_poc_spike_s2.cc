@@ -58,185 +58,205 @@
 
 namespace {
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ① 协议语义层:MOESI/GPU 6 态 × 6 事件表(survey §2.1 抄录 ArchForge 09 号 §3.3)
-// ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ① 协议语义层:MOESI/GPU 6 态 × 6 事件表(survey §2.1 抄录 ArchForge 09 号 §3.3)
+    // ─────────────────────────────────────────────────────────────────────────────
 
-enum Cell : uint8_t { IW = 0, SW = 1, EW = 2, MW = 3, OW = 4, TW = 5 };
-enum Ev : uint8_t { RD = 0, WR = 1, INV = 2, INVA = 3, FL = 4, FLA = 5 };
+    enum Cell : uint8_t { IW = 0, SW = 1, EW = 2, MW = 3, OW = 4, TW = 5 };
+    enum Ev : uint8_t { RD = 0, WR = 1, INV = 2, INVA = 3, FL = 4, FLA = 5 };
 
-constexpr std::array<std::array<uint8_t, 6>, 6> kStateTransition{{
-    { 1, 3, 0, 0, 0, 0 },   // I
-    { 1, 3, 0, 1, 4, 1 },   // S
-    { 2, 3, 0, 2, 4, 2 },   // E   ← S2 主路径:E 行 Wr 列 = 3(09 号 :152)
-    { 3, 3, 3, 3, 3, 3 },   // M
-    { 4, 3, 0, 4, 4, 4 },   // O
-    { 1, 3, 0, 1, 4, 1 },   // T(过渡回 S/M;瞬态不对外,IC1)
-}};
+    constexpr std::array<std::array<uint8_t, 6>, 6> kStateTransition{{
+        {1, 3, 0, 0, 0, 0}, // I
+        {1, 3, 0, 1, 4, 1}, // S
+        {2, 3, 0, 2, 4, 2}, // E   ← S2 主路径:E 行 Wr 列 = 3(09 号 :152)
+        {3, 3, 3, 3, 3, 3}, // M
+        {4, 3, 0, 4, 4, 4}, // O
+        {1, 3, 0, 1, 4, 1}, // T(过渡回 S/M;瞬态不对外,IC1)
+    }};
 
-// S2 场景常量(须先于使用它们的层定义)
-constexpr uint64_t kAddrX = 0x9000;
-constexpr uint64_t kOldValue = 0x1111;
-constexpr uint64_t kNewValue = 0x2222;
-constexpr const char* kDgpu = "D-GPU";
-constexpr const char* kDfab = "D-FABRIC";
+    // S2 场景常量(须先于使用它们的层定义)
+    constexpr uint64_t kAddrX = 0x9000;
+    constexpr uint64_t kOldValue = 0x1111;
+    constexpr uint64_t kNewValue = 0x2222;
+    constexpr const char* kDgpu = "D-GPU";
+    constexpr const char* kDfab = "D-FABRIC";
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ② Stub Cache Core 层:6 态 → 4 值 perm 投影(值域 = protocol_instance.schema.json:82)
-// ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ② Stub Cache Core 层:6 态 → 4 值 perm 投影(值域 = protocol_instance.schema.json:82)
+    // ─────────────────────────────────────────────────────────────────────────────
 
-enum class Perm : uint8_t { NONE = 0, READ = 1, UNIQUE = 2, WRITEBACK = 3 };
+    enum class Perm : uint8_t { NONE = 0, READ = 1, UNIQUE = 2, WRITEBACK = 3 };
 
-std::optional<Perm> project_perm(uint8_t cell) {
-    switch (cell) {
-        case IW: return Perm::NONE;
-        case SW: return Perm::READ;
-        case EW: return Perm::UNIQUE;
-        case MW: return Perm::WRITEBACK;
-        case OW: return Perm::WRITEBACK;  // O=脏共享、持写回责任
-        case TW: return std::nullopt;     // 瞬态不泄漏(IC1)
-        default: return std::nullopt;
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ③ Coherence Interface 层:canonical 流最小子集
-//   消息类(32 号 §6.0.1 六类词表)与流(canonical 流号)分开标注 ——
-//   类决定槽位,流携带语义(forward_data 属 response 类但**例外**与 snoop 同槽 VC2)
-// ─────────────────────────────────────────────────────────────────────────────
-
-struct StreamMsg {
-    const char* flow = "";        // 流语义: request / completion / snoop / snoop_resp / forward_data
-    const char* msg_class = "";   // 消息类(6 类词表): request/response/snoop/snoop_resp/…
-    const char* network = "";     // compute_noc / ualink_fabric
-    int vc = -1;
-    uint64_t addr = 0;
-    uint64_t data = 0;
-    bool has_data = false;        // ⚠️ 仅流 6 forward_data 携带数据(VC-R2,32 号 :391);
-                                  //    流 4 的 has_data=true 语义侧 = DATA_AND_ACK 标志
-    const char* snoop_type = "";  // READ_SHARED / INVALIDATE
-    const char* note = "";
-};
-
-// ④ 权威 vc_binding —— **逐字镜像** ArchForge 32 号 §6.0.2(:367-370)+
-//    moesi_gpu 实例声明(:434-442)。非 spike 自造(初版自造已被证伪):
-//      compute_noc: request 0 / response 1 / snoop 2 / snoop_resp 3
-//      ualink_fabric: request 0 / atomic 1 / query 2 / response 3 / snoop_resp 3
-//    (forward_data = response 类,例外同槽 snoop VC2 —— per 转发表「与 snoop 同槽」)
-struct VcBinding {
-    struct Net { std::map<std::string, int> cls_to_vc; };
-    std::map<std::string, Net> nets;
-    static VcBinding authority() {
-        VcBinding b;
-        b.nets["compute_noc"].cls_to_vc = {{"request", 0}, {"response", 1},
-                                           {"snoop", 2}, {"snoop_resp", 3}};
-        b.nets["ualink_fabric"].cls_to_vc = {{"request", 0}, {"atomic", 1},
-                                             {"query", 2}, {"response", 3},
-                                             {"snoop_resp", 3}};
-        return b;
-    }
-    // 槽位合法性:网络存在 + (类,vc) ∈ 声明绑定;forward_data 例外走 snoop 同槽
-    bool valid(const StreamMsg& m, const std::map<std::string, int>& vc_count) const {
-        auto nit = nets.find(m.network);
-        if (nit == nets.end()) return false;
-        auto cnt = vc_count.find(m.network);
-        if (cnt == vc_count.end() || m.vc < 0 || m.vc >= cnt->second) return false;
-        if (std::string(m.flow) == "forward_data") {
-            int snoop_vc = -1;
-            auto sit = nit->second.cls_to_vc.find("snoop");
-            if (sit != nit->second.cls_to_vc.end()) snoop_vc = sit->second;
-            return m.vc == snoop_vc;  // 同槽规则 Only
+    std::optional<Perm> project_perm(uint8_t cell) {
+        switch (cell) {
+        case IW:
+            return Perm::NONE;
+        case SW:
+            return Perm::READ;
+        case EW:
+            return Perm::UNIQUE;
+        case MW:
+            return Perm::WRITEBACK;
+        case OW:
+            return Perm::WRITEBACK; // O=脏共享、持写回责任
+        case TW:
+            return std::nullopt; // 瞬态不泄漏(IC1)
+        default:
+            return std::nullopt;
         }
-        auto cit = nit->second.cls_to_vc.find(m.msg_class);
-        return cit != nit->second.cls_to_vc.end() && cit->second == m.vc;
     }
-};
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ⑤ Protocol Engine 插件:moesi_gpu(单域单行;snoop 语义对齐 microarch :212-:232)
-// ─────────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ③ Coherence Interface 层:canonical 流最小子集
+    //   消息类(32 号 §6.0.1 六类词表)与流(canonical 流号)分开标注 ——
+    //   类决定槽位,流携带语义(forward_data 属 response 类但**例外**与 snoop 同槽 VC2)
+    // ─────────────────────────────────────────────────────────────────────────────
 
-enum class UpgradeKind { none, silent, explicit_invalidate };
+    struct StreamMsg {
+        const char* flow = ""; // 流语义: request / completion / snoop / snoop_resp / forward_data
+        const char* msg_class = ""; // 消息类(6 类词表): request/response/snoop/snoop_resp/…
+        const char* network = "";   // compute_noc / ualink_fabric
+        int vc = -1;
+        uint64_t addr = 0;
+        uint64_t data = 0;
+        bool has_data = false;       // ⚠️ 仅流 6 forward_data 携带数据(VC-R2,32 号 :391);
+                                     //    流 4 的 has_data=true 语义侧 = DATA_AND_ACK 标志
+        const char* snoop_type = ""; // READ_SHARED / INVALIDATE
+        const char* note = "";
+    };
 
-// probe 应答 = 双消息:流 4 snoop_resp(VC3 状态应答/DATA_AND_ACK 语义)+
-//               流 6 forward_data(VC2 携数据;仅 M/O 态产生)
-struct ProbeOutcome {
-    StreamMsg resp;                     // 流 4(compute_noc VC3)
-    std::optional<StreamMsg> fwd;       // 流 6(compute_noc VC2,同槽规则)
-};
-
-struct MoesiGpuPlugin {
-    uint8_t state = IW;
-    uint64_t line_value = 0;
-    uint64_t addr = 0;
-
-    // 本地写(store 命中)。E→M 静默(零流出线)/ S→M 有他 sharer 时显式(INVALIDATE 出线)
-    std::pair<UpgradeKind, std::vector<StreamMsg>>
-    local_store(bool has_others) {
-        std::vector<StreamMsg> out;
-        uint8_t ns = kStateTransition[state][WR];
-        if (state == EW) {
-            if (ns != MW) return {UpgradeKind::none, out};  // 防御:表不符则不升
-            state = MW;
-            line_value = kNewValue;
-            return {UpgradeKind::silent, out};              // 零流出线 = 判据 (a)
+    // ④ 权威 vc_binding —— **逐字镜像** ArchForge 32 号 §6.0.2(:367-370)+
+    //    moesi_gpu 实例声明(:434-442)。非 spike 自造(初版自造已被证伪):
+    //      compute_noc: request 0 / response 1 / snoop 2 / snoop_resp 3
+    //      ualink_fabric: request 0 / atomic 1 / query 2 / response 3 / snoop_resp 3
+    //    (forward_data = response 类,例外同槽 snoop VC2 —— per 转发表「与 snoop 同槽」)
+    struct VcBinding {
+        struct Net {
+            std::map<std::string, int> cls_to_vc;
+        };
+        std::map<std::string, Net> nets;
+        static VcBinding authority() {
+            VcBinding b;
+            b.nets["compute_noc"].cls_to_vc = {
+                {"request", 0}, {"response", 1}, {"snoop", 2}, {"snoop_resp", 3}};
+            b.nets["ualink_fabric"].cls_to_vc = {
+                {"request", 0}, {"atomic", 1}, {"query", 2}, {"response", 3}, {"snoop_resp", 3}};
+            return b;
         }
-        if (state == SW) {
-            if (has_others) {
-                state = MW;  // 本地表义即升(生效以他端失效确认为界)
-                StreamMsg inv;
-                inv.flow = "snoop"; inv.msg_class = "snoop";
-                inv.network = "compute_noc"; inv.vc = 2;    // 权威绑定 snoop=2(32 号 :437)
-                inv.addr = addr; inv.snoop_type = "INVALIDATE";
-                inv.note = "显式升级:S 态写须先失效其他共享者(INVALIDATE→all,microarch :212)";
-                out.push_back(inv);
-                line_value = kNewValue;
-                return {UpgradeKind::explicit_invalidate, out};
+        // 槽位合法性:网络存在 + (类,vc) ∈ 声明绑定;forward_data 例外走 snoop 同槽
+        bool valid(const StreamMsg& m, const std::map<std::string, int>& vc_count) const {
+            auto nit = nets.find(m.network);
+            if (nit == nets.end())
+                return false;
+            auto cnt = vc_count.find(m.network);
+            if (cnt == vc_count.end() || m.vc < 0 || m.vc >= cnt->second)
+                return false;
+            if (std::string(m.flow) == "forward_data") {
+                int snoop_vc = -1;
+                auto sit = nit->second.cls_to_vc.find("snoop");
+                if (sit != nit->second.cls_to_vc.end())
+                    snoop_vc = sit->second;
+                return m.vc == snoop_vc; // 同槽规则 Only
             }
-            if (ns != MW) return {UpgradeKind::none, out};
-            // 独占共享者(仅自己)→ 无需外部通信,亦为静默路径(不与 E→M 混同)
-            state = MW;
-            line_value = kNewValue;
-            return {UpgradeKind::silent, out};
+            auto cit = nit->second.cls_to_vc.find(m.msg_class);
+            return cit != nit->second.cls_to_vc.end() && cit->second == m.vc;
         }
-        if (state == MW || state == OW) {
-            state = MW;
-            line_value = kNewValue;
-            return {UpgradeKind::none, out};
-        }
-        return {UpgradeKind::none, out};  // I 态外读分配不在本 spike 输入域
-    }
+    };
 
-    // snoop 应答(流 4,center→node 的对向):已裁定语义逐态:
-    //   M + READ_SHARED → O + DATA_AND_ACK + forward_data(:224,Q-3a s2 支)
-    //   E + READ_SHARED → S + ACK(**无** forward_data,:221 —— Q-3a s1 支不成立的证据)
-    //   S + READ_SHARED → S + ACK(tracker +requester)
-    //   INVALIDATE: 仅 S(→I,:213)/ E(→I,同文件 E 段)受支持;
-    //               **M+INVALIDATE = D-9 待裁定 → 拒解且不改态**(防擅自裁定)
-    ProbeOutcome snoop_resp(const StreamMsg& snoop) {
-        ProbeOutcome po;
-        StreamMsg& r = po.resp;
-        r.flow = "snoop_resp"; r.msg_class = "snoop_resp";
-        r.network = "compute_noc"; r.vc = 3;   // 权威绑定 snoop_resp=3(32 号 :438)
-        r.addr = snoop.addr;
-        const bool is_read = std::string(snoop.snoop_type) == "READ_SHARED";
-        if (is_read) {
-            switch (state) {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ⑤ Protocol Engine 插件:moesi_gpu(单域单行;snoop 语义对齐 microarch :212-:232)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    enum class UpgradeKind { none, silent, explicit_invalidate };
+
+    // probe 应答 = 双消息:流 4 snoop_resp(VC3 状态应答/DATA_AND_ACK 语义)+
+    //               流 6 forward_data(VC2 携数据;仅 M/O 态产生)
+    struct ProbeOutcome {
+        StreamMsg resp;               // 流 4(compute_noc VC3)
+        std::optional<StreamMsg> fwd; // 流 6(compute_noc VC2,同槽规则)
+    };
+
+    struct MoesiGpuPlugin {
+        uint8_t state = IW;
+        uint64_t line_value = 0;
+        uint64_t addr = 0;
+
+        // 本地写(store 命中)。E→M 静默(零流出线)/ S→M 有他 sharer 时显式(INVALIDATE 出线)
+        std::pair<UpgradeKind, std::vector<StreamMsg>> local_store(bool has_others) {
+            std::vector<StreamMsg> out;
+            uint8_t ns = kStateTransition[state][WR];
+            if (state == EW) {
+                if (ns != MW)
+                    return {UpgradeKind::none, out}; // 防御:表不符则不升
+                state = MW;
+                line_value = kNewValue;
+                return {UpgradeKind::silent, out}; // 零流出线 = 判据 (a)
+            }
+            if (state == SW) {
+                if (has_others) {
+                    state = MW; // 本地表义即升(生效以他端失效确认为界)
+                    StreamMsg inv;
+                    inv.flow = "snoop";
+                    inv.msg_class = "snoop";
+                    inv.network = "compute_noc";
+                    inv.vc = 2; // 权威绑定 snoop=2(32 号 :437)
+                    inv.addr = addr;
+                    inv.snoop_type = "INVALIDATE";
+                    inv.note = "显式升级:S 态写须先失效其他共享者(INVALIDATE→all,microarch :212)";
+                    out.push_back(inv);
+                    line_value = kNewValue;
+                    return {UpgradeKind::explicit_invalidate, out};
+                }
+                if (ns != MW)
+                    return {UpgradeKind::none, out};
+                // 独占共享者(仅自己)→ 无需外部通信,亦为静默路径(不与 E→M 混同)
+                state = MW;
+                line_value = kNewValue;
+                return {UpgradeKind::silent, out};
+            }
+            if (state == MW || state == OW) {
+                state = MW;
+                line_value = kNewValue;
+                return {UpgradeKind::none, out};
+            }
+            return {UpgradeKind::none, out}; // I 态外读分配不在本 spike 输入域
+        }
+
+        // snoop 应答(流 4,center→node 的对向):已裁定语义逐态:
+        //   M + READ_SHARED → O + DATA_AND_ACK + forward_data(:224,Q-3a s2 支)
+        //   E + READ_SHARED → S + ACK(**无** forward_data,:221 —— Q-3a s1 支不成立的证据)
+        //   S + READ_SHARED → S + ACK(tracker +requester)
+        //   INVALIDATE: 仅 S(→I,:213)/ E(→I,同文件 E 段)受支持;
+        //               **M+INVALIDATE = D-9 待裁定 → 拒解且不改态**(防擅自裁定)
+        ProbeOutcome snoop_resp(const StreamMsg& snoop) {
+            ProbeOutcome po;
+            StreamMsg& r = po.resp;
+            r.flow = "snoop_resp";
+            r.msg_class = "snoop_resp";
+            r.network = "compute_noc";
+            r.vc = 3; // 权威绑定 snoop_resp=3(32 号 :438)
+            r.addr = snoop.addr;
+            const bool is_read = std::string(snoop.snoop_type) == "READ_SHARED";
+            if (is_read) {
+                switch (state) {
                 case EW:
                     state = SW;
-                    r.has_data = false;  // ⚠️ has_data 仅流 6;此处 ACK = 语义「无数据」
+                    r.has_data = false; // ⚠️ has_data 仅流 6;此处 ACK = 语义「无数据」
                     r.note = "E 态回 ACK(无数据;内存供数)——s1 支不成立的证据";
                     break;
                 case MW: {
-                    state = OW;          // M + READ_SHARED → O(:224)
+                    state = OW; // M + READ_SHARED → O(:224)
                     StreamMsg f;
-                    f.flow = "forward_data"; f.msg_class = "response";
-                    f.network = "compute_noc"; f.vc = 2;  // 同槽规则(32 号 :303/:369)
-                    f.addr = snoop.addr; f.has_data = true;
+                    f.flow = "forward_data";
+                    f.msg_class = "response";
+                    f.network = "compute_noc";
+                    f.vc = 2; // 同槽规则(32 号 :303/:369)
+                    f.addr = snoop.addr;
+                    f.has_data = true;
                     f.data = line_value;
                     f.note = "流 6 forward_data 携带 D-GPU M 态 line 数据(同槽 snoop/VC2)";
                     po.fwd = f;
-                    r.has_data = true;   // DATA_AND_ACK 语义标志(数据体在流 6)
+                    r.has_data = true; // DATA_AND_ACK 语义标志(数据体在流 6)
                     r.note = "DATA_AND_ACK(数据体经流 6 forward_data,VC2 同槽)";
                     break;
                 }
@@ -244,131 +264,143 @@ struct MoesiGpuPlugin {
                     r.has_data = false;
                     r.note = "共享命中回 ACK";
                     break;
+                }
+            } else { // INVALIDATE: 仅 S/E 支持并对齐 :213;M 态拒解
+                if (state == MW) {
+                    r.note = "⚠️ M+INVALIDATE = D-9 批 2 待裁定单元格 — 本 spike 拒解、不改态";
+                    return po;
+                }
+                state = IW;
+                r.note = "失效确认(ACK,S→I per :213)";
             }
-        } else {  // INVALIDATE: 仅 S/E 支持并对齐 :213;M 态拒解
-            if (state == MW) {
-                r.note = "⚠️ M+INVALIDATE = D-9 批 2 待裁定单元格 — 本 spike 拒解、不改态";
-                return po;
-            }
-            state = IW;
-            r.note = "失效确认(ACK,S→I per :213)";
+            return po;
         }
-        return po;
+
+        std::optional<Perm> exposed_perm() const {
+            return project_perm(state);
+        }
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ⑥ Directory & Ordering / Transport / Bridge(S2 的最小可观测转发路径)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    struct SharerTracker { // SparseSnoopFilter 最小形(spec §2)
+        std::vector<std::string> sharers;
+        bool holds(const std::string& d) const {
+            for (auto& s : sharers)
+                if (s == d)
+                    return true;
+            return false;
+        }
+        void add(const std::string& d) {
+            if (!holds(d))
+                sharers.push_back(d);
+        }
+    };
+
+    struct Memory { // 单行内存(旧值;S2 全程显式依路径判定是否被读)
+        uint64_t value = kOldValue;
+    };
+
+    enum class DataSource { none, gpu_cache, memory };
+    const char* source_name(DataSource s) {
+        switch (s) {
+        case DataSource::gpu_cache:
+            return "D-GPU M 态 cache 数据响应(流 6 forward_data)";
+        case DataSource::memory:
+            return "内存";
+        default:
+            return "无";
+        }
     }
 
-    std::optional<Perm> exposed_perm() const { return project_perm(state); }
-};
+    struct ReadResult { // 请求者视角的读结果 = 观测的**生成处**(禁止后置自述)
+        uint64_t value = 0;
+        DataSource source = DataSource::none;
+        bool probe_forwarded = false; // ③:probe 流是否**真的发出并收妥**
+        int probe_msgs = 0;           // 计数:compute_noc 层发出的流条数(证据计数)
+        std::vector<StreamMsg> path;  // 实际走过的全链流
+    };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ⑥ Directory & Ordering / Transport / Bridge(S2 的最小可观测转发路径)
-// ─────────────────────────────────────────────────────────────────────────────
+    class Bridge { // 跨域边界:D-FABRIC 读 → tracker → probe D-GPU → 汇聚数据
+    public:
+        bool fwd_enabled = true;
+        MoesiGpuPlugin* gpu_line = nullptr;
+        SharerTracker* tracker = nullptr;
+        Memory* mem = nullptr;
+        const VcBinding* binding = nullptr;
+        const std::map<std::string, int>* vc_count = nullptr;
 
-struct SharerTracker {  // SparseSnoopFilter 最小形(spec §2)
-    std::vector<std::string> sharers;
-    bool holds(const std::string& d) const {
-        for (auto& s : sharers) if (s == d) return true;
-        return false;
-    }
-    void add(const std::string& d) {
-        if (!holds(d)) sharers.push_back(d);
-    }
-};
-
-struct Memory {  // 单行内存(旧值;S2 全程显式依路径判定是否被读)
-    uint64_t value = kOldValue;
-};
-
-enum class DataSource { none, gpu_cache, memory };
-const char* source_name(DataSource s) {
-    switch (s) {
-        case DataSource::gpu_cache: return "D-GPU M 态 cache 数据响应(流 6 forward_data)";
-        case DataSource::memory: return "内存";
-        default: return "无";
-    }
-}
-
-struct ReadResult {  // 请求者视角的读结果 = 观测的**生成处**(禁止后置自述)
-    uint64_t value = 0;
-    DataSource source = DataSource::none;
-    bool probe_forwarded = false;  // ③:probe 流是否**真的发出并收妥**
-    int probe_msgs = 0;            // 计数:compute_noc 层发出的流条数(证据计数)
-    std::vector<StreamMsg> path;   // 实际走过的全链流
-};
-
-class Bridge {  // 跨域边界:D-FABRIC 读 → tracker → probe D-GPU → 汇聚数据
-public:
-    bool fwd_enabled = true;
-    MoesiGpuPlugin* gpu_line = nullptr;
-    SharerTracker* tracker = nullptr;
-    Memory* mem = nullptr;
-    const VcBinding* binding = nullptr;
-    const std::map<std::string, int>* vc_count = nullptr;
-
-    ReadResult fabric_read(uint64_t addr) {
-        ReadResult res;
-        if (!fwd_enabled) {  // 桥接关闭:请求者直读内存(真实 fallback,供 NEG 对照)
-            res.value = mem->value;
-            res.source = DataSource::memory;
-            res.probe_forwarded = false;
+        ReadResult fabric_read(uint64_t addr) {
+            ReadResult res;
+            if (!fwd_enabled) { // 桥接关闭:请求者直读内存(真实 fallback,供 NEG 对照)
+                res.value = mem->value;
+                res.source = DataSource::memory;
+                res.probe_forwarded = false;
+                return res;
+            }
+            // tracker 指路:该行有 sharer 持有(GPU)= probe 下发的对象依据
+            if (tracker == nullptr || !tracker->holds(kDgpu)) {
+                res.value = mem->value;
+                res.source = DataSource::memory;
+                return res; // 无可探测共享者 → 内存路径
+            }
+            StreamMsg snoop;
+            snoop.flow = "snoop";
+            snoop.msg_class = "snoop";
+            snoop.snoop_type = "READ_SHARED";
+            snoop.addr = addr;
+            snoop.network = "compute_noc";
+            snoop.vc = 2; // 权威绑定 snoop=2
+            res.path.push_back(snoop);
+            ProbeOutcome po = gpu_line->snoop_resp(snoop);
+            res.path.push_back(po.resp);
+            res.probe_msgs = 2;
+            if (po.fwd.has_value()) {
+                res.path.push_back(*po.fwd);
+                res.probe_msgs++;
+                res.value = po.fwd->data;
+                res.source = DataSource::gpu_cache;
+            } else {
+                // E 支:cache 回 ACK 无数据(数据应来自内存;本变体不消费之,仅记录)
+                res.value = mem->value;
+                res.source = DataSource::memory;
+            }
+            res.probe_forwarded =
+                binding->valid(snoop, *vc_count) && binding->valid(po.resp, *vc_count);
             return res;
         }
-        // tracker 指路:该行有 sharer 持有(GPU)= probe 下发的对象依据
-        if (tracker == nullptr || !tracker->holds(kDgpu)) {
-            res.value = mem->value;
-            res.source = DataSource::memory;
-            return res;  // 无可探测共享者 → 内存路径
-        }
-        StreamMsg snoop;
-        snoop.flow = "snoop"; snoop.msg_class = "snoop";
-        snoop.snoop_type = "READ_SHARED"; snoop.addr = addr;
-        snoop.network = "compute_noc"; snoop.vc = 2;  // 权威绑定 snoop=2
-        res.path.push_back(snoop);
-        ProbeOutcome po = gpu_line->snoop_resp(snoop);
-        res.path.push_back(po.resp);
-        res.probe_msgs = 2;
-        if (po.fwd.has_value()) {
-            res.path.push_back(*po.fwd);
-            res.probe_msgs++;
-            res.value = po.fwd->data;
-            res.source = DataSource::gpu_cache;
-        } else {
-            // E 支:cache 回 ACK 无数据(数据应来自内存;本变体不消费之,仅记录)
-            res.value = mem->value;
-            res.source = DataSource::memory;
-        }
-        res.probe_forwarded =
-            binding->valid(snoop, *vc_count) && binding->valid(po.resp, *vc_count);
-        return res;
+    };
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // S2 主体
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    int pass_count = 0;
+    int fail_count = 0;
+    void expect(bool cond, const std::string& what) {
+        std::printf("      %s %s\n", cond ? "✓" : "✗", what.c_str());
+        cond ? ++pass_count : ++fail_count;
     }
-};
 
-// ─────────────────────────────────────────────────────────────────────────────
-// S2 主体
-// ─────────────────────────────────────────────────────────────────────────────
+    struct Observation { // 3 项(值/来源/可达;禁止自述 —— 由 Bridge/ReadResult 生成)
+        uint64_t observed_value = 0;
+        DataSource source = DataSource::none;
+        bool path_reachable = false;
+        int probe_msgs = 0;
+    };
 
-int pass_count = 0;
-int fail_count = 0;
-void expect(bool cond, const std::string& what) {
-    std::printf("      %s %s\n", cond ? "✓" : "✗", what.c_str());
-    cond ? ++pass_count : ++fail_count;
-}
+    std::string read_file(const char* path) {
+        std::ifstream in(path);
+        if (!in)
+            return {}; // 开启失败 → 调用方判空退出(critic V-5:CWD 崩溃修复)
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        return ss.str();
+    }
 
-struct Observation {  // 3 项(值/来源/可达;禁止自述 —— 由 Bridge/ReadResult 生成)
-    uint64_t observed_value = 0;
-    DataSource source = DataSource::none;
-    bool path_reachable = false;
-    int probe_msgs = 0;
-};
-
-std::string read_file(const char* path) {
-    std::ifstream in(path);
-    if (!in) return {};  // 开启失败 → 调用方判空退出(critic V-5:CWD 崩溃修复)
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
-}
-
-}  // namespace
+} // namespace
 
 int main() {
     // 0. 读冻结声明(只读;失败即明示退出,不 terminate)
@@ -377,7 +409,8 @@ int main() {
     if (fabric_json_text.empty() || schema_text.empty()) {
         std::fprintf(stderr,
                      "无法读取 include/tlm/cep/{fabric.json,protocol_instance.schema.json}"
-                     "(CWD=%s)—— 必须从仓库根运行(exit 2)\n", "");
+                     "(CWD=%s)—— 必须从仓库根运行(exit 2)\n",
+                     "");
         return 2;
     }
     nlohmann::json fabric_json = nlohmann::json::parse(fabric_json_text);
@@ -397,18 +430,18 @@ int main() {
                 " vc_binding=32 号 :434-442 逐字(非 provisional)\n",
                 vc_count.at("compute_noc"), vc_count.at("ualink_fabric"));
 
-    uint64_t mem_check = 0;  // (占位防 unused;内存对象见 Memory)
+    uint64_t mem_check = 0; // (占位防 unused;内存对象见 Memory)
     (void)mem_check;
 
     // ── S2 主场景(spec §3.2 输入:D-GPU 持 X 为 E → store(静默升 M)→ D-FABRIC 读) ──
     std::printf("\n[S2][MAIN] D-GPU 持 X(E) → D-GPU store(静默 E→M) → D-FABRIC 读 X\n");
     MoesiGpuPlugin gpu_x;
     gpu_x.addr = kAddrX;
-    gpu_x.line_value = kOldValue;  // E:干净独占,与内存一致(spec 输入前提)
+    gpu_x.line_value = kOldValue; // E:干净独占,与内存一致(spec 输入前提)
     gpu_x.state = EW;
     SharerTracker tracker;
     tracker.add(kDgpu);
-    Memory memory;                 // 旧值常驻(主场景**全程不写**)
+    Memory memory; // 旧值常驻(主场景**全程不写**)
     Bridge bridge;
     bridge.fwd_enabled = true;
     bridge.gpu_line = &gpu_x;
@@ -468,9 +501,12 @@ int main() {
         e_line.line_value = kOldValue;
         e_line.state = EW;
         StreamMsg snoop;
-        snoop.flow = "snoop"; snoop.msg_class = "snoop";
-        snoop.snoop_type = "READ_SHARED"; snoop.addr = kAddrX;
-        snoop.network = "compute_noc"; snoop.vc = 2;
+        snoop.flow = "snoop";
+        snoop.msg_class = "snoop";
+        snoop.snoop_type = "READ_SHARED";
+        snoop.addr = kAddrX;
+        snoop.network = "compute_noc";
+        snoop.vc = 2;
         ProbeOutcome po = e_line.snoop_resp(snoop);
         expect(!po.fwd.has_value(), "E+READ_SHARED → **无** forward_data(s1 支:内存供数)");
         expect(e_line.state == SW, "E→S(降共享)");
@@ -504,7 +540,8 @@ int main() {
         auto perm2 = gpu_x2.exposed_perm();
         expect(perm2.has_value() && *perm2 == Perm::WRITEBACK,
                "S2b 终态 perm=WRITEBACK —— 与静默升级**终点相同**但路径通信不同");
-        std::printf("      刻度: 静默 = 0 出线 / 显式 = 1 条 INVALIDATE → 两路径跨域触发不可互换\n");
+        std::printf(
+            "      刻度: 静默 = 0 出线 / 显式 = 1 条 INVALIDATE → 两路径跨域触发不可互换\n");
         std::printf("            (perm 形态约束须承载此区分 —— R-2 的 schema 演进,Stage 1/S1-7)\n");
     }
 
@@ -527,7 +564,8 @@ int main() {
                "NEG 读**真的**来自内存(= 旧值 0x1111,同一 bridge 代码路径 fallback)");
         expect(neg_obs.source == DataSource::memory && !neg_obs.path_reachable,
                "NEG 记录: 来源=内存 / 可达=false → 分叉 (i) spike 桥接缺陷形态");
-        std::printf("      记录: 观测值=旧值 / 来源=%s / 可达=false\n", source_name(neg_obs.source));
+        std::printf("      记录: 观测值=旧值 / 来源=%s / 可达=false\n",
+                    source_name(neg_obs.source));
     }
 
     // ── 总结 ──────────────────────────────────────────────────────────────────

@@ -119,7 +119,7 @@ public:
     std::array<uint64_t, 6> bar_sizes_ = {0, 0, 0, 0, 0, 0};
 
     /** PcieBarRouter（数据驱动 BAR0 寄存器路由）。*/
-    tlm::gpu::PcieBarRouter bar_router_;
+    ::tlm::gpu::PcieBarRouter bar_router_;  // 全限定:消除 include 顺序依赖
 
     /** Axi4StreamAdapter（device-side AXI payload 生成）。*/
     cpptlm::Axi4StreamAdapter axi_adapter_;

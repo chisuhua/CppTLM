@@ -5,40 +5,40 @@
 // (these tests don't load SOC, so controller_ip_ stays nullptr — facade irrelevant here).
 // Profile JSON "pcie_path" stays for back-compat; Change C will delete mechanism.
 // 作者 CppTLM Team / 日期 2027-09-17 (B.5 rewrite 2026-10-08)
-// 参考: openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/spec.md §profile-pcie-path-routing
+// 参考: openspec/changes/2026-09-16-cpptlm-pcie-tlp-wire-datapath/spec.md
+// §profile-pcie-path-routing
 
 #include "catch_amalgamated.hpp"
 
-#include "tlm/pcie/pcie_mock_ip.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
+#include "tlm/pcie/pcie_mock_ip.hh"
 
 #include <atomic>
 #include <cerrno>
 #include <cstring>
-#include <nlohmann/json.hpp>
 #include <thread>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 using namespace tlm::gpu;
 using json = nlohmann::json;
 
 namespace {
 
-int mmio_read_with_pump(DGpuBoard& board, uint8_t bar, uint64_t offset,
-                         void* buf, size_t len) {
-    std::atomic<bool> done{false};
-    std::thread pump([&]() {
-        auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
-        while (!done.load() && std::chrono::steady_clock::now() < deadline) {
-            board.tick();
-            std::this_thread::yield();
-        }
-    });
-    int rc = board.mmio_read(bar, offset, buf, len);
-    done.store(true);
-    pump.join();
-    return rc;
-}
+    int mmio_read_with_pump(DGpuBoard& board, uint8_t bar, uint64_t offset, void* buf, size_t len) {
+        std::atomic<bool> done{false};
+        std::thread pump([&]() {
+            auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+            while (!done.load() && std::chrono::steady_clock::now() < deadline) {
+                board.tick();
+                std::this_thread::yield();
+            }
+        });
+        int rc = board.mmio_read(bar, offset, buf, len);
+        done.store(true);
+        pump.join();
+        return rc;
+    }
 
 } // namespace
 
@@ -58,8 +58,7 @@ TEST_CASE("BypassTLP: axi_bypass profile - data path 验证",
     board.shutdown();
 }
 
-TEST_CASE("BypassTLP: mock profile - PcieMockIP 独立组件验证",
-          "[pcie-bypass-tlp][profile][mock]") {
+TEST_CASE("BypassTLP: mock profile - PcieMockIP 独立组件验证", "[pcie-bypass-tlp][profile][mock]") {
     cpptlm::pcie::PcieMockIP mock;
     json cfg;
     cfg["bar_sizes"] = json::array({0x1000000, 0x1000000, 0, 0, 0, 0});

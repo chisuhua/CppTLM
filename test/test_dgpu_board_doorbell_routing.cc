@@ -21,7 +21,7 @@ TEST_CASE("DGpuBoard: BAR1+0x10010000 doorbell routes to SOC pcie_ep bar_router"
     board.init();
 
     SECTION("doorbell write stores in mmio_regs_ AND routes to SOC") {
-        uint32_t wptr = 0x100;  // ring consume up to entry 256
+        uint32_t wptr = 0x100; // ring consume up to entry 256
         int ret = board.mmio_write(/*bar=*/1, /*offset=*/0x10010000,
                                    /*buf=*/&wptr, /*len=*/4);
 

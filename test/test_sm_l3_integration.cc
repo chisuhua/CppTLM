@@ -18,8 +18,7 @@
 using namespace tlm;
 using namespace cpptlm::gpu;
 
-TEST_CASE("L3: init→exe_once→get_register round-trip",
-          "[sm-l3][sm-microarch][task18]") {
+TEST_CASE("L3: init→exe_once→get_register round-trip", "[sm-l3][sm-microarch][task18]") {
     EventQueue eq;
     StreamingMultiprocessorTLM sm("sm0", &eq);
     DeviceConfig cfg{};
@@ -38,15 +37,15 @@ TEST_CASE("L3: init→exe_once→get_register round-trip",
     desc.num_src = 2;
     desc.num_dst = 1;
     sm.set_instr_descriptor_buf(&desc, 1);
-    for (int i = 0; i < 4; ++i) sm.exe_once();
+    for (int i = 0; i < 4; ++i)
+        sm.exe_once();
 
     uint64_t val = 0;
     REQUIRE(sm.get_register_value(0, 0, 5, &val));
     REQUIRE(val == 30);
 }
 
-TEST_CASE("L3: SM-owns-state 一致性 (G3 Gate)",
-          "[sm-l3][sm-microarch][task18]") {
+TEST_CASE("L3: SM-owns-state 一致性 (G3 Gate)", "[sm-l3][sm-microarch][task18]") {
     EventQueue eq;
     StreamingMultiprocessorTLM sm("sm0", &eq);
     DeviceConfig cfg{};
@@ -66,7 +65,8 @@ TEST_CASE("L3: SM-owns-state 一致性 (G3 Gate)",
     desc.num_dst = 1;
 
     sm.set_instr_descriptor_buf(&desc, 1);
-    for (int i = 0; i < 4; ++i) sm.exe_once();
+    for (int i = 0; i < 4; ++i)
+        sm.exe_once();
 
     uint64_t val = 0;
     REQUIRE(sm.get_register_value(0, 0, 7, &val));
@@ -77,8 +77,7 @@ TEST_CASE("L3: SM-owns-state 一致性 (G3 Gate)",
     REQUIRE(val == 100);
 }
 
-TEST_CASE("L3: is_instruction_completed 轮询协议",
-          "[sm-l3][sm-microarch][task18]") {
+TEST_CASE("L3: is_instruction_completed 轮询协议", "[sm-l3][sm-microarch][task18]") {
     EventQueue eq;
     StreamingMultiprocessorTLM sm("sm0", &eq);
     DeviceConfig cfg{};
@@ -97,7 +96,8 @@ TEST_CASE("L3: is_instruction_completed 轮询协议",
     desc.num_src = 2;
     desc.num_dst = 1;
     sm.set_instr_descriptor_buf(&desc, 1);
-    for (int i = 0; i < 4; ++i) sm.exe_once();
+    for (int i = 0; i < 4; ++i)
+        sm.exe_once();
 
     REQUIRE(sm.is_instruction_completed(3));
 
@@ -106,8 +106,7 @@ TEST_CASE("L3: is_instruction_completed 轮询协议",
     REQUIRE(val == 75);
 }
 
-TEST_CASE("L3: 双指令流水",
-          "[sm-l3][sm-microarch][task18]") {
+TEST_CASE("L3: 双指令流水", "[sm-l3][sm-microarch][task18]") {
     EventQueue eq;
     StreamingMultiprocessorTLM sm("sm0", &eq);
     DeviceConfig cfg{};
@@ -137,7 +136,8 @@ TEST_CASE("L3: 双指令流水",
 
     sm.set_scalar_reg(3, 0);
     sm.set_instr_descriptor_buf(desc, 2);
-    for (int i = 0; i < 8; ++i) sm.exe_once();
+    for (int i = 0; i < 8; ++i)
+        sm.exe_once();
 
     REQUIRE(sm.is_instruction_completed(10));
     REQUIRE(sm.is_instruction_completed(11));

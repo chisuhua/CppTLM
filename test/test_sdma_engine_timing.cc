@@ -24,36 +24,37 @@ using namespace bundles;
 
 namespace {
 
-constexpr uint64_t kPtBase = 0x10000;
-constexpr uint64_t kPageSize = 4096;
+    constexpr uint64_t kPtBase = 0x10000;
+    constexpr uint64_t kPageSize = 4096;
 
-// 构造 GMMU: 单页 PTE (page_num=1 → paddr 0x2000), 32-entry TLB
-std::unique_ptr<GmmuTLM> make_gmmu(EventQueue* eq) {
-    auto g = std::make_unique<GmmuTLM>("gmmu", eq);
-    std::vector<uint8_t>* backing = new std::vector<uint8_t>(128 * 1024, 0);
-    uint64_t pte = (0x2000ULL & ~0xFFFULL) | 1ULL;
-    std::memcpy(backing->data() + kPtBase + 1 * 8, &pte, 8);
-    g->set_mem_view(backing->data(), backing->size());
-    g->set_pt_base_lo(static_cast<uint32_t>(kPtBase));
-    g->set_pt_base_hi(0);
-    g->set_enabled(true);
-    g->set_timing_params(50);
-    return g;
-}
+    // 构造 GMMU: 单页 PTE (page_num=1 → paddr 0x2000), 32-entry TLB
+    std::unique_ptr<GmmuTLM> make_gmmu(EventQueue* eq) {
+        auto g = std::make_unique<GmmuTLM>("gmmu", eq);
+        std::vector<uint8_t>* backing = new std::vector<uint8_t>(128 * 1024, 0);
+        uint64_t pte = (0x2000ULL & ~0xFFFULL) | 1ULL;
+        std::memcpy(backing->data() + kPtBase + 1 * 8, &pte, 8);
+        g->set_mem_view(backing->data(), backing->size());
+        g->set_pt_base_lo(static_cast<uint32_t>(kPtBase));
+        g->set_pt_base_hi(0);
+        g->set_enabled(true);
+        g->set_timing_params(50);
+        return g;
+    }
 
-// 注入 H2D 描述符 + tick 处理, 返回描述符 (供后续断言)
-DmaDescriptor submit_h2d(SdmaEngineTLM* sdma, uint64_t iova, uint32_t size, uint32_t tag) {
-    DmaDescriptor desc(DmaDescriptor::Dir::H2D, iova, /*vram_offset=*/0, size, tag);
-    PcieTlpBundle pkt = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
-    sdma->req_in[SdmaEngineTLM::PORT_DESC_IN].data() = pkt;
-    sdma->req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
-    sdma->tick();
-    return desc;
-}
+    // 注入 H2D 描述符 + tick 处理, 返回描述符 (供后续断言)
+    DmaDescriptor submit_h2d(SdmaEngineTLM* sdma, uint64_t iova, uint32_t size, uint32_t tag) {
+        DmaDescriptor desc(DmaDescriptor::Dir::H2D, iova, /*vram_offset=*/0, size, tag);
+        PcieTlpBundle pkt = SdmaEngineTLM::to_pcie_tlp_descriptor(desc);
+        sdma->req_in[SdmaEngineTLM::PORT_DESC_IN].data() = pkt;
+        sdma->req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
+        sdma->tick();
+        return desc;
+    }
 
 } // namespace
 
-TEST_CASE("sdma_timing: 4KB H2D TLB hit (lat=0) → diff ≈ 4 cyc", "[dgpu_soc_timing][sdma][timing]") {
+TEST_CASE("sdma_timing: 4KB H2D TLB hit (lat=0) → diff ≈ 4 cyc",
+          "[dgpu_soc_timing][sdma][timing]") {
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
     sdma.init();
@@ -89,7 +90,8 @@ TEST_CASE("sdma_timing: 4KB H2D TLB hit (lat=0) → diff ≈ 4 cyc", "[dgpu_soc_
     REQUIRE(sdma.last_tlb_latency() == 0);
 }
 
-TEST_CASE("sdma_timing: 4KB H2D TLB miss (lat=50) → diff ≈ 54 cyc", "[dgpu_soc_timing][sdma][timing]") {
+TEST_CASE("sdma_timing: 4KB H2D TLB miss (lat=50) → diff ≈ 54 cyc",
+          "[dgpu_soc_timing][sdma][timing]") {
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
     sdma.init();
@@ -112,8 +114,8 @@ TEST_CASE("sdma_timing: 4KB H2D TLB miss (lat=50) → diff ≈ 54 cyc", "[dgpu_s
     REQUIRE(sdma.completed_count() == 1);
     REQUIRE(sdma.error_count() == 0);
     uint64_t diff = sdma.last_descriptor_complete_cycle() - submit_cycle;
-    REQUIRE(diff == 54);  // 50 (TLB miss walk) + 4 (descriptor pipeline)
-    REQUIRE(sdma.last_tlb_latency() == 0);  // 单次消费已重置
+    REQUIRE(diff == 54);                   // 50 (TLB miss walk) + 4 (descriptor pipeline)
+    REQUIRE(sdma.last_tlb_latency() == 0); // 单次消费已重置
 }
 
 TEST_CASE("sdma_timing: translate 失败 → fence err + lat 丢弃", "[dgpu_soc_timing][sdma][timing]") {
@@ -134,16 +136,17 @@ TEST_CASE("sdma_timing: translate 失败 → fence err + lat 丢弃", "[dgpu_soc
 
     // 非法 iova (无 PTE) → translate 返回 -EIO
     uint64_t submit_cycle = eq.getCurrentCycle();
-    auto desc = submit_h2d(&sdma, 0x9000, kPageSize, 7);  // page 9 无 PTE
+    auto desc = submit_h2d(&sdma, 0x9000, kPageSize, 7); // page 9 无 PTE
 
     REQUIRE(sdma.completed_count() == 0);
     REQUIRE(sdma.error_count() == 1);
-    REQUIRE(sdma.last_tlb_latency() == 0);  // lat 丢弃
+    REQUIRE(sdma.last_tlb_latency() == 0); // lat 丢弃
     // fence err 不更新 last_descriptor_complete_cycle_ (保持 submit 值)
     REQUIRE(sdma.last_descriptor_complete_cycle() == submit_cycle);
 }
 
-TEST_CASE("sdma_timing: 公共 API 零回归 (submit_descriptor 签名兼容)", "[dgpu_soc_timing][sdma][timing]") {
+TEST_CASE("sdma_timing: 公共 API 零回归 (submit_descriptor 签名兼容)",
+          "[dgpu_soc_timing][sdma][timing]") {
     EventQueue eq;
     SdmaEngineTLM sdma("sdma", &eq);
     sdma.init();
@@ -153,7 +156,7 @@ TEST_CASE("sdma_timing: 公共 API 零回归 (submit_descriptor 签名兼容)", 
         auto gmmu = make_gmmu(&eq);
         return gmmu->translate(iova, size, phys);
     });
-    sdma.set_cycle_accounting_enabled(true);  // timing 开关不影响 functional cb 存在
+    sdma.set_cycle_accounting_enabled(true); // timing 开关不影响 functional cb 存在
 
     std::vector<uint8_t> host_buf(8192, 0xAA);
     std::vector<uint8_t> vram_buf(8192, 0);
@@ -196,5 +199,5 @@ TEST_CASE("sdma_timing: set_cycle_accounting_enabled(false) → functional 兼�
     REQUIRE(sdma.error_count() == 0);
     // cycle accounting 禁用 → 无 diff 记录 (保持 submit 值)
     REQUIRE(sdma.last_descriptor_complete_cycle() == submit_cycle);
-    REQUIRE(sdma.last_tlb_latency() == 0);  // lat 丢弃
+    REQUIRE(sdma.last_tlb_latency() == 0); // lat 丢弃
 }

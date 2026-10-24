@@ -8,8 +8,8 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -20,27 +20,30 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr uint64_t kPtBase = 0x10000;
-constexpr uint64_t kPageSize = 4096;
+    constexpr uint64_t kPtBase = 0x10000;
+    constexpr uint64_t kPageSize = 4096;
 
-json load_timing_config() {
-    json cfg;
-    std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
-    if (ifs.is_open()) cfg = json::parse(ifs);
-    REQUIRE(ifs.is_open());
-    if (!cfg.contains("connections")) cfg["connections"] = json::array();
-    if (cfg.contains("modules") && cfg["modules"].is_array()) {
-        for (auto& m : cfg["modules"]) {
-            if (m.contains("modules") && !m.contains("connections"))
-                m["connections"] = json::array();
+    json load_timing_config() {
+        json cfg;
+        std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
+        if (ifs.is_open())
+            cfg = json::parse(ifs);
+        REQUIRE(ifs.is_open());
+        if (!cfg.contains("connections"))
+            cfg["connections"] = json::array();
+        if (cfg.contains("modules") && cfg["modules"].is_array()) {
+            for (auto& m : cfg["modules"]) {
+                if (m.contains("modules") && !m.contains("connections"))
+                    m["connections"] = json::array();
+            }
         }
+        return cfg;
     }
-    return cfg;
-}
 
 } // namespace
 
-TEST_CASE("timing-soc E2E: TLB 128KB 工作集 hit rate ≈ 96.875%", "[dgpu_soc_timing][timing_soc][e2e][tlb]") {
+TEST_CASE("timing-soc E2E: TLB 128KB 工作集 hit rate ≈ 96.875%",
+          "[dgpu_soc_timing][timing_soc][e2e][tlb]") {
     EventQueue eq;
     DGpuBoard board("timing_tlb", &eq);
     REQUIRE(board.load_soc_config(load_timing_config()));
@@ -60,11 +63,11 @@ TEST_CASE("timing-soc E2E: TLB 128KB 工作集 hit rate ≈ 96.875%", "[dgpu_soc
     REQUIRE(board.mmio_write(0, 0x04, &pt_hi, 4) == 0);
     uint32_t enable = 1;
     REQUIRE(board.mmio_write(0, 0x08, &enable, 4) == 0);
-    board.tick();  // drain inject_q → gmmu set_pt_base/enabled
+    board.tick(); // drain inject_q → gmmu set_pt_base/enabled
 
     GmmuTLM* gmmu = board.gmmu_module();
     REQUIRE(gmmu != nullptr);
-    REQUIRE(gmmu->tlb_size() == 32);  // JSON 注入
+    REQUIRE(gmmu->tlb_size() == 32); // JSON 注入
     REQUIRE(gmmu->tlb_miss_latency() == 50);
 
     // 1024 次访问: 32 pages 循环 × 32 → 32 miss + 992 hit
@@ -76,8 +79,8 @@ TEST_CASE("timing-soc E2E: TLB 128KB 工作集 hit rate ≈ 96.875%", "[dgpu_soc
     }
     REQUIRE(gmmu->stats().hits == 992);
     REQUIRE(gmmu->stats().misses == 32);
-    double hit_rate = static_cast<double>(gmmu->stats().hits) /
-                      (gmmu->stats().hits + gmmu->stats().misses);
+    double hit_rate =
+        static_cast<double>(gmmu->stats().hits) / (gmmu->stats().hits + gmmu->stats().misses);
     REQUIRE(hit_rate == Catch::Approx(0.96875).epsilon(0.0001));
     board.shutdown();
 }
@@ -102,7 +105,7 @@ TEST_CASE("timing-soc E2E: TLB 4MB 顺序流 hit rate 0%", "[dgpu_soc_timing][ti
     REQUIRE(board.mmio_write(0, 0x04, &pt_hi, 4) == 0);
     uint32_t enable = 1;
     REQUIRE(board.mmio_write(0, 0x08, &enable, 4) == 0);
-    board.tick();  // drain inject_q
+    board.tick(); // drain inject_q
 
     GmmuTLM* gmmu = board.gmmu_module();
     REQUIRE(gmmu != nullptr);
@@ -110,7 +113,7 @@ TEST_CASE("timing-soc E2E: TLB 4MB 顺序流 hit rate 0%", "[dgpu_soc_timing][ti
     for (uint64_t p = 0; p < 1024; ++p) {
         uint64_t pa = 0, lat = 0;
         REQUIRE(gmmu->translate_timing(p * kPageSize, kPageSize, pa, lat) == 0);
-        REQUIRE(lat == 50);  // 全 miss (direct-mapped, 无 LRU)
+        REQUIRE(lat == 50); // 全 miss (direct-mapped, 无 LRU)
     }
     REQUIRE(gmmu->stats().misses == 1024);
     REQUIRE(gmmu->stats().hits == 0);

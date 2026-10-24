@@ -23,8 +23,7 @@
 // Wrap ABI calls to swallow 23 函数符号 (避免头文件 extern "C" 重复声明).
 // 直接 #include 头文件即可 (头已带 extern "C"),无需重复声明.
 
-TEST_CASE("ABI: get_version returns v1.0-dgpu-v0 (修订版: 改用宏)",
-          "[abi][version_macro]") {
+TEST_CASE("ABI: get_version returns v1.0-dgpu-v0 (修订版: 改用宏)", "[abi][version_macro]") {
     // 修订版: cpptlm_emulator_get_version 函数已删除, 改用 CPPTLM_EMULATOR_VERSION_STRING 宏
     // (per ADR-SOC-20 §2.1 cpptlm-abi-secondary-slimming, 修订版路径 18→15+宏)
     constexpr const char* v = CPPTLM_EMULATOR_VERSION_STRING;
@@ -99,7 +98,7 @@ TEST_CASE("ABI: 18 symbols are linked (link-time verification, 修订版: 15 函
     using FnMsixUpd = int (*)(cpptlm_emulator_t*, uint32_t);
     using FnMsixClr = int (*)(cpptlm_emulator_t*, uint32_t);
     using FnRegCbs = int (*)(cpptlm_emulator_t*, cpptlm_intr_deliver_cb_t, cpptlm_error_cb_t,
-                              cpptlm_reset_complete_cb_t, cpptlm_power_cb_t, void*);
+                             cpptlm_reset_complete_cb_t, cpptlm_power_cb_t, void*);
     using FnRegDmaCb = int (*)(cpptlm_emulator_t*, void*);
     using FnOpen = int (*)(uint32_t, cpptlm_emulator_handle_t*);
     using FnClose = int (*)(cpptlm_emulator_handle_t);

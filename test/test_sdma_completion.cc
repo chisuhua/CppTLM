@@ -100,11 +100,10 @@ TEST_CASE("SDMA Fence: CompletionRing → MSI-X vector 0 → intr_cb 200ms 内�
 
     // mock MSI-X 触发路径: 完成 → on_fence_complete → trigger vector 0
     // (1.3d 实施后 sdma 内部把 fence 完成转发到 mock callback)
-    sdma.set_fence_msix_handler(
-        [&](uint32_t vector_id, uint32_t /*payload*/) {
-            captured_vector.store(vector_id);
-            intr_cb_count.fetch_add(1);
-        });
+    sdma.set_fence_msix_handler([&](uint32_t vector_id, uint32_t /*payload*/) {
+        captured_vector.store(vector_id);
+        intr_cb_count.fetch_add(1);
+    });
 
     sdma.set_completion_ring(&ring);
 
@@ -129,8 +128,7 @@ TEST_CASE("SDMA Fence: CompletionRing → MSI-X vector 0 → intr_cb 200ms 内�
 // Spec Scenario: 多个 Fence 顺序触发
 //   多个 Fence descriptor 提交, 每次 fence 触发一次 MSI-X
 // =============================================================================
-TEST_CASE("SDMA Fence: 多个 Fence descriptor 顺序触发 MSI-X",
-          "[sdma][fence][1.3d][multi]") {
+TEST_CASE("SDMA Fence: 多个 Fence descriptor 顺序触发 MSI-X", "[sdma][fence][1.3d][multi]") {
     EventQueue eq;
     CompletionRingTLM ring("fence_ring_multi", &eq);
     SdmaEngineTLM sdma("sdma_fence_multi", &eq);
@@ -138,14 +136,13 @@ TEST_CASE("SDMA Fence: 多个 Fence descriptor 顺序触发 MSI-X",
 
     std::atomic<int> intr_cb_count{0};
     sdma.set_fence_msix_handler(
-        [&](uint32_t /*vector*/, uint32_t /*payload*/) {
-            intr_cb_count.fetch_add(1);
-        });
+        [&](uint32_t /*vector*/, uint32_t /*payload*/) { intr_cb_count.fetch_add(1); });
     sdma.set_completion_ring(&ring);
 
     // 提交 3 个 Fence
     for (uint64_t fence_id = 1; fence_id <= 3; ++fence_id) {
-        sdma.submit_fence(SdmaEngineTLM::FenceDescriptor{0x04, fence_id, /*tag=*/(uint32_t)fence_id});
+        sdma.submit_fence(
+            SdmaEngineTLM::FenceDescriptor{0x04, fence_id, /*tag=*/(uint32_t)fence_id});
     }
     sdma.tick();
 
@@ -161,8 +158,7 @@ TEST_CASE("SDMA Fence: 多个 Fence descriptor 顺序触发 MSI-X",
 // =============================================================================
 // Spec Scenario: fence_id 单调递增 (匹配 driver 端 fence 句柄)
 // =============================================================================
-TEST_CASE("SDMA Fence: fence_id 通过 host_notify 单调递增传递",
-          "[sdma][fence][1.3d][fence_id]") {
+TEST_CASE("SDMA Fence: fence_id 通过 host_notify 单调递增传递", "[sdma][fence][1.3d][fence_id]") {
     EventQueue eq;
     CompletionRingTLM ring("fence_ring_id", &eq);
     SdmaEngineTLM sdma("sdma_fence_id", &eq);

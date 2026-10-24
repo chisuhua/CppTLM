@@ -11,8 +11,8 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -26,33 +26,35 @@ using json = nlohmann::json;
 
 namespace {
 
-json load_timing_config() {
-    json cfg;
-    std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
-    if (ifs.is_open()) cfg = json::parse(ifs);
-    REQUIRE(ifs.is_open());
-    if (!cfg.contains("connections")) cfg["connections"] = json::array();
-    if (cfg.contains("modules") && cfg["modules"].is_array()) {
-        for (auto& m : cfg["modules"]) {
-            if (m.contains("modules") && !m.contains("connections"))
-                m["connections"] = json::array();
+    json load_timing_config() {
+        json cfg;
+        std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
+        if (ifs.is_open())
+            cfg = json::parse(ifs);
+        REQUIRE(ifs.is_open());
+        if (!cfg.contains("connections"))
+            cfg["connections"] = json::array();
+        if (cfg.contains("modules") && cfg["modules"].is_array()) {
+            for (auto& m : cfg["modules"]) {
+                if (m.contains("modules") && !m.contains("connections"))
+                    m["connections"] = json::array();
+            }
         }
+        return cfg;
     }
-    return cfg;
-}
 
-void inject_req(VramControllerTLM* vram, uint64_t tid, uint64_t addr, bool wr, uint64_t data = 0,
-                uint8_t size = 8) {
-    bundles::CacheReqBundle req;
-    req.transaction_id.write(tid);
-    req.address.write(addr);
-    req.is_write.write(wr ? 1 : 0);
-    req.data.write(data);
-    req.size.write(size);
-    vram->req_in().consume();
-    std::memcpy(&vram->req_in().data(), &req, sizeof(req));
-    vram->req_in().set_valid(true);
-}
+    void inject_req(VramControllerTLM* vram, uint64_t tid, uint64_t addr, bool wr,
+                    uint64_t data = 0, uint8_t size = 8) {
+        bundles::CacheReqBundle req;
+        req.transaction_id.write(tid);
+        req.address.write(addr);
+        req.is_write.write(wr ? 1 : 0);
+        req.data.write(data);
+        req.size.write(size);
+        vram->req_in().consume();
+        std::memcpy(&vram->req_in().data(), &req, sizeof(req));
+        vram->req_in().set_valid(true);
+    }
 
 } // namespace
 
@@ -87,8 +89,8 @@ TEST_CASE("timing-soc Inv-2: 同一 cycle ordering (pending_resps_ priority by r
     VramControllerTLM vram("vram", &eq);
     std::vector<uint8_t> backing(8192, 0);
     vram.set_backing_view(backing.data(), backing.size());
-    vram.set_vram_params(100, 50, 32);       // row params (同步父类 read lat: hit=100, miss=50)
-    vram.set_timing_params(100, 50, 120, false);  // write=120 显式
+    vram.set_vram_params(100, 50, 32);           // row params (同步父类 read lat: hit=100, miss=50)
+    vram.set_timing_params(100, 50, 120, false); // write=120 显式
 
     // cycle 0: req A write @0x100 → ready = 0 + 120 = 120
     inject_req(&vram, 1, 0x100, true, 0xABCDEF, 8);
@@ -96,20 +98,23 @@ TEST_CASE("timing-soc Inv-2: 同一 cycle ordering (pending_resps_ priority by r
     REQUIRE(vram.inflight_resp_count() == 1);
 
     // cycle 5: req B read @0x1100 → row miss → ready = 5 + 50 = 55 (< 120)
-    for (int i = 0; i < 5; ++i) vram.advance_cycle();
+    for (int i = 0; i < 5; ++i)
+        vram.advance_cycle();
     inject_req(&vram, 2, 0x1100, false, 0, 8);
     vram.tick();
     REQUIRE(vram.inflight_resp_count() == 2);
 
     // cycle 55: B 先发 (ready=55 < A ready=120)
-    for (int i = 0; i < 50; ++i) vram.advance_cycle();
+    for (int i = 0; i < 50; ++i)
+        vram.advance_cycle();
     vram.tick();
     REQUIRE(vram.resp_out().valid());
     REQUIRE(vram.resp_out().data().transaction_id.read() == 2);
     vram.resp_out().clear_valid();
 
     // cycle 120: A 发
-    for (int i = 0; i < 65; ++i) vram.advance_cycle();
+    for (int i = 0; i < 65; ++i)
+        vram.advance_cycle();
     vram.tick();
     REQUIRE(vram.resp_out().valid());
     REQUIRE(vram.resp_out().data().transaction_id.read() == 1);
@@ -158,7 +163,8 @@ TEST_CASE("timing-soc Inv-4: backdoor 禁用性能测试 (不采样时序)",
 }
 
 // Inv-5: BAR 路由优先级 — BAR1 存储路由优先 (非 doorbell offset 落 framebuffer)
-TEST_CASE("timing-soc Inv-5: BAR 路由优先级 (BAR1 storage 路由)", "[dgpu_soc_timing][timing_soc][inv]") {
+TEST_CASE("timing-soc Inv-5: BAR 路由优先级 (BAR1 storage 路由)",
+          "[dgpu_soc_timing][timing_soc][inv]") {
     EventQueue eq;
     DGpuBoard board("inv5", &eq);
     json cfg = load_timing_config();
@@ -172,7 +178,7 @@ TEST_CASE("timing-soc Inv-5: BAR 路由优先级 (BAR1 storage 路由)", "[dgpu_
     // BAR1 write @offset 0x10000 (非 doorbell 0x10010000): storage 路由
     uint64_t val = 0xABCDEF;
     REQUIRE(board.mmio_write(1, 0x10000, &val, 8) == 0);
-    board.tick();  // drain inject_q
+    board.tick(); // drain inject_q
 
     // BAR1 fast-path 读回 (mmio_read 同 offset) 应返回写入值 (落 framebuffer)
     uint64_t out = 0;

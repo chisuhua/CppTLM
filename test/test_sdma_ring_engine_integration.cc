@@ -165,7 +165,8 @@ TEST_CASE("SDMA: mmio_write BAR1 非 doorbell offset → 不触发 ring",
 // =============================================================================
 TEST_CASE("SdmaPacket: serialize_descriptor / deserialize_descriptor roundtrip",
           "[sdma][packet][1.3a_integration][roundtrip]") {
-    DmaDescriptor d(DmaDescriptor::Dir::H2D, /*iova=*/0xCAFE, /*vram=*/0xBABE, /*sz=*/0x100, /*tag=*/0x42);
+    DmaDescriptor d(DmaDescriptor::Dir::H2D, /*iova=*/0xCAFE, /*vram=*/0xBABE, /*sz=*/0x100,
+                    /*tag=*/0x42);
     auto buf = SdmaPacket::serialize_descriptor(d);
     REQUIRE(buf.size() == 64u);
 

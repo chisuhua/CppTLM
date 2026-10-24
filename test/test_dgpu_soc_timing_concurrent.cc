@@ -8,8 +8,8 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
@@ -22,29 +22,32 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr uint64_t kFramebufferSize = 16ULL * 1024 * 1024;
-constexpr uint64_t kPtBase = 0x10000;
-constexpr uint64_t kHostBufSize = 64ULL * 1024;
-constexpr uint64_t kPageSize = 4096;
+    constexpr uint64_t kFramebufferSize = 16ULL * 1024 * 1024;
+    constexpr uint64_t kPtBase = 0x10000;
+    constexpr uint64_t kHostBufSize = 64ULL * 1024;
+    constexpr uint64_t kPageSize = 4096;
 
-json load_timing_config() {
-    json cfg;
-    std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
-    if (ifs.is_open()) cfg = json::parse(ifs);
-    REQUIRE(ifs.is_open());
-    if (!cfg.contains("connections")) cfg["connections"] = json::array();
-    if (cfg.contains("modules") && cfg["modules"].is_array()) {
-        for (auto& m : cfg["modules"]) {
-            if (m.contains("modules") && !m.contains("connections"))
-                m["connections"] = json::array();
+    json load_timing_config() {
+        json cfg;
+        std::ifstream ifs("configs/dgpu_soc_timing_v1.json");
+        if (ifs.is_open())
+            cfg = json::parse(ifs);
+        REQUIRE(ifs.is_open());
+        if (!cfg.contains("connections"))
+            cfg["connections"] = json::array();
+        if (cfg.contains("modules") && cfg["modules"].is_array()) {
+            for (auto& m : cfg["modules"]) {
+                if (m.contains("modules") && !m.contains("connections"))
+                    m["connections"] = json::array();
+            }
         }
+        return cfg;
     }
-    return cfg;
-}
 
 } // namespace
 
-TEST_CASE("timing-soc E2E: SDMA + GMMU + Host egress 并发提交", "[dgpu_soc_timing][timing_soc][e2e][concurrent]") {
+TEST_CASE("timing-soc E2E: SDMA + GMMU + Host egress 并发提交",
+          "[dgpu_soc_timing][timing_soc][e2e][concurrent]") {
     EventQueue eq;
     DGpuBoard board("timing_conc", &eq);
     REQUIRE(board.load_soc_config(load_timing_config()));
@@ -98,12 +101,12 @@ TEST_CASE("timing-soc E2E: SDMA + GMMU + Host egress 并发提交", "[dgpu_soc_t
     board.tick();
     REQUIRE(sdma->completed_count() == 8);
     REQUIRE(sdma->error_count() == 0);
-    REQUIRE(gmmu->stats().misses == 8);  // 8 distinct pages → 8 TLB miss
+    REQUIRE(gmmu->stats().misses == 8); // 8 distinct pages → 8 TLB miss
 
     // Host egress (BAR1 读) 与 SDMA 路径互不干扰 (数据面一致)
     uint64_t out = 0;
     REQUIRE(board.backdoor_read(0, &out, 1) == 0);
-    REQUIRE((out & 0xFF) == 0x55);  // host_buf[0x2000] = 0x55
+    REQUIRE((out & 0xFF) == 0x55); // host_buf[0x2000] = 0x55
 
     board.shutdown();
 }

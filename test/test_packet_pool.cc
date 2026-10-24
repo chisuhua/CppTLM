@@ -176,7 +176,7 @@ TEST_CASE("Packet Pool: acquire_with_min_size (D-AXI B17)", "[packet][pool][d-ax
     PacketPool& pool = PacketPool::get();
 
     SECTION("acquire_with_min_size returns payload >= min_bytes") {
-        constexpr uint64_t kMinPayloadBytes = 4136;  // sizeof(AxiMemBundle)
+        constexpr uint64_t kMinPayloadBytes = 4136; // sizeof(AxiMemBundle)
         Packet* pkt = pool.acquire_with_min_size(kMinPayloadBytes);
         REQUIRE(pkt != nullptr);
         REQUIRE(pkt->payload != nullptr);

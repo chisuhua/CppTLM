@@ -14,8 +14,7 @@ using tlm::pcie::ResizableBar;
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: Initial state is Disabled
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("ResizableBar: initial state is Disabled",
-          "[pcie][bar][resizable]") {
+TEST_CASE("ResizableBar: initial state is Disabled", "[pcie][bar][resizable]") {
     ResizableBar bar;
     REQUIRE(bar.state() == ResizableBar::State::Disabled);
     REQUIRE_FALSE(bar.enabled());
@@ -24,8 +23,7 @@ TEST_CASE("ResizableBar: initial state is Disabled",
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: INV-C — reprogram requires Disabled state
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("ResizableBar: reprogram rejected when Enabled (INV-C)",
-          "[pcie][bar][inv-c]") {
+TEST_CASE("ResizableBar: reprogram rejected when Enabled (INV-C)", "[pcie][bar][inv-c]") {
     ResizableBar bar;
     REQUIRE(bar.reprogram_size(0x100000));
     REQUIRE(bar.enable());
@@ -45,8 +43,7 @@ TEST_CASE("ResizableBar: reprogram rejected when Enabled (INV-C)",
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: enable requires Programming state (post-reprogram)
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("ResizableBar: enable rejected without prior reprogram",
-          "[pcie][bar][resizable]") {
+TEST_CASE("ResizableBar: enable rejected without prior reprogram", "[pcie][bar][resizable]") {
     ResizableBar bar;
 
     // 直接 enable 失败 (未 reprogram)
@@ -63,8 +60,7 @@ TEST_CASE("ResizableBar: enable rejected without prior reprogram",
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: full disable/reprogram/enable cycle
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("ResizableBar: full disable→reprogram→enable cycle",
-          "[pcie][bar][resizable]") {
+TEST_CASE("ResizableBar: full disable→reprogram→enable cycle", "[pcie][bar][resizable]") {
     ResizableBar bar;
 
     // 1. Initial disabled
@@ -90,5 +86,5 @@ TEST_CASE("ResizableBar: full disable→reprogram→enable cycle",
     // 6. Enable
     REQUIRE(bar.enable());
     REQUIRE(bar.enabled());
-    REQUIRE(bar.size_bytes() == 0x10000000);  // size 保持
+    REQUIRE(bar.size_bytes() == 0x10000000); // size 保持
 }

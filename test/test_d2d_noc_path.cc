@@ -61,7 +61,7 @@ TEST_CASE("D2D NoC payload forward: 1MB transfer → simulated_throughput >= 100
     // 在 1MB VRAM 中转 768KB (避免越界): src=0x0, dst=0x10000, len=0xC0000
     constexpr uint64_t kSrcVa = 0x0;
     constexpr uint64_t kDstVa = 0x10000;
-    constexpr uint32_t kLen = 0xC0000;  // 768 KiB
+    constexpr uint32_t kLen = 0xC0000; // 768 KiB
     sdma.d2d_forward(kSrcVa, kDstVa, kLen);
 
     REQUIRE(noc.payload_bytes_forwarded() >= kLen);
@@ -98,8 +98,7 @@ TEST_CASE("D2D NoC host_out zero transactions: D2D 路径不触发 host_out",
 // Scenario "DmaDescriptor::Dir::D2D 扩展"
 //   dma_descriptor_mvp.hh 需新增 Dir::D2D = 2, 让 SDMA 知道是 D2D 路径
 // =============================================================================
-TEST_CASE("DmaDescriptor Dir::D2D 枚举扩展 (D2D NoC 路径)",
-          "[sdma][d2d][1.3b][dir_enum]") {
+TEST_CASE("DmaDescriptor Dir::D2D 枚举扩展 (D2D NoC 路径)", "[sdma][d2d][1.3b][dir_enum]") {
     DmaDescriptor d(DmaDescriptor::Dir::D2D,
                     /*host_iova=*/0,
                     /*vram_offset=*/0x20000,
@@ -113,8 +112,7 @@ TEST_CASE("DmaDescriptor Dir::D2D 枚举扩展 (D2D NoC 路径)",
 // Scenario "D2D 1MB payload integrity"
 //   验证 src VA 数据在转发后能在 dst VA 读到 (per spec "payload integrity")
 // =============================================================================
-TEST_CASE("D2D NoC payload integrity: src→dst 1MB 数据正确",
-          "[sdma][d2d][noc][1.3b][integrity]") {
+TEST_CASE("D2D NoC payload integrity: src→dst 1MB 数据正确", "[sdma][d2d][noc][1.3b][integrity]") {
     EventQueue eq;
     GpuMeshNoC noc("d2d_noc_integrity", &eq);
     SdmaEngineTLM sdma("sdma_d2d_integrity", &eq);
@@ -153,9 +151,9 @@ TEST_CASE("D2D NoC payload counter accumulates across multiple transfers",
 
     REQUIRE(noc.payload_bytes_forwarded() == 0u);
 
-    sdma.d2d_forward(0x10000, 0x20000, 0x1000);   // 4KB
-    sdma.d2d_forward(0x11000, 0x21000, 0x2000);   // 8KB
-    sdma.d2d_forward(0x10000, 0x90000, 0x60000);  // 384KB (fits in 1MB VRAM)
+    sdma.d2d_forward(0x10000, 0x20000, 0x1000);  // 4KB
+    sdma.d2d_forward(0x11000, 0x21000, 0x2000);  // 8KB
+    sdma.d2d_forward(0x10000, 0x90000, 0x60000); // 384KB (fits in 1MB VRAM)
 
     REQUIRE(noc.payload_bytes_forwarded() == 0x1000u + 0x2000u + 0x60000u);
 }
@@ -179,10 +177,10 @@ TEST_CASE("SDMA: Dir::D2D 描述符经 desc_in 提交 → d2d_forward + host_out
 
     // 推 Dir::D2D 描述符经 desc_in (M6 修复点)
     DmaDescriptor d(DmaDescriptor::Dir::D2D,
-                     /*host_iova=*/0,                       // D2D 不需 host_iova
-                     /*vram_offset=*/0x20000,              // D2D: dst VA
-                     /*size=*/1024,
-                     /*tag=*/0xCAFE);
+                    /*host_iova=*/0,         // D2D 不需 host_iova
+                    /*vram_offset=*/0x20000, // D2D: dst VA
+                    /*size=*/1024,
+                    /*tag=*/0xCAFE);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].data() = SdmaEngineTLM::to_pcie_tlp_descriptor(d);
     sdma.req_in[SdmaEngineTLM::PORT_DESC_IN].set_valid(true);
     sdma.tick();

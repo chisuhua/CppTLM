@@ -7,75 +7,75 @@
 // 作者 CppTLM Team / 日期 2027-02-09
 #include "catch_amalgamated.hpp"
 
-#include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/gpu/pcie_config_space_mvp.hh"
 #include "tlm/pcie/pcie_axi_adapter_tlm.hh"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
 
 #include "chstream_register.hh"
+#include "bundles/axi4_bundles_tlm.hh"
 #include "core/event_queue.hh"
 #include "core/sim_object.hh"
-#include "bundles/axi4_bundles_tlm.hh"
 #include "framework/stream_adapter.hh"
 
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
-using tlm::pcie::PcieEndpointIP;
-using tlm::gpu::PcieConfigSpace;
 using cpptlm::Axi4StreamAdapter;
+using tlm::gpu::PcieConfigSpace;
+using tlm::pcie::PcieEndpointIP;
 
 namespace {
 
-constexpr uint16_t PM_CAP_OFFSET   = 0x40;
-constexpr uint16_t PM_PMCSR_OFFSET = PM_CAP_OFFSET + 0x04; // 0x44
-constexpr uint16_t PWS_D0          = 0x0000;
-constexpr uint16_t PWS_D3HOT       = 0x0003;
+    constexpr uint16_t PM_CAP_OFFSET = 0x40;
+    constexpr uint16_t PM_PMCSR_OFFSET = PM_CAP_OFFSET + 0x04; // 0x44
+    constexpr uint16_t PWS_D0 = 0x0000;
+    constexpr uint16_t PWS_D3HOT = 0x0003;
 
-struct PwrFixture {
-    EventQueue eq;
-    PcieEndpointIP ep;
+    struct PwrFixture {
+        EventQueue eq;
+        PcieEndpointIP ep;
 
-    PwrFixture() : ep("pcie_ep_pwr_test", &eq) {
-        json cfg;
-        cfg["axi_adapter"] = json::object();
-        cfg["link_layer"]["enabled"] = true;
-        ep.set_config(cfg);
-        ep.on_config_loaded();
-    }
-
-    void install_pm_cap_and_callback() {
-        // PM Cap 安装由 PcieEndpointIP::init() 处理 (Stage 1.4 新增)
-        // 我们只需验证 PMCSR 写会触发状态切换
-    }
-
-    void write_pmcsr(uint16_t pws) {
-        auto* ax = tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_pwr_test");
-        if (!ax) return;
-        auto& axi = ax->axi();
-
-        bundles::Axi4Bundle wreq;
-        wreq.awid.write(0);
-        wreq.awaddr.write(PM_PMCSR_OFFSET);
-        wreq.awlen.write(0);
-        wreq.awsize.write(2);
-        wreq.awburst.write(1);
-        wreq.wdata.write(pws);
-        wreq.wstrb.write(0xF);
-        wreq.wlast.write(1);
-        axi.master_req(wreq);
-        if (axi.master_resp_valid()) {
-            axi.master_resp_consume();
+        PwrFixture() : ep("pcie_ep_pwr_test", &eq) {
+            json cfg;
+            cfg["axi_adapter"] = json::object();
+            cfg["link_layer"]["enabled"] = true;
+            ep.set_config(cfg);
+            ep.on_config_loaded();
         }
-    }
-};
+
+        void install_pm_cap_and_callback() {
+            // PM Cap 安装由 PcieEndpointIP::init() 处理 (Stage 1.4 新增)
+            // 我们只需验证 PMCSR 写会触发状态切换
+        }
+
+        void write_pmcsr(uint16_t pws) {
+            auto* ax = tlm::pcie::PcieAxiAdapter::for_endpoint("pcie_ep_pwr_test");
+            if (!ax)
+                return;
+            auto& axi = ax->axi();
+
+            bundles::Axi4Bundle wreq;
+            wreq.awid.write(0);
+            wreq.awaddr.write(PM_PMCSR_OFFSET);
+            wreq.awlen.write(0);
+            wreq.awsize.write(2);
+            wreq.awburst.write(1);
+            wreq.wdata.write(pws);
+            wreq.wstrb.write(0xF);
+            wreq.wlast.write(1);
+            axi.master_req(wreq);
+            if (axi.master_resp_valid()) {
+                axi.master_resp_consume();
+            }
+        }
+    };
 
 } // namespace
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scenario: PcieEndpointIP default state is D0
 // ─────────────────────────────────────────────────────────────────────────────
-TEST_CASE("PcieEndpointIP: default power state is D0",
-          "[pcie][pm][state]") {
+TEST_CASE("PcieEndpointIP: default power state is D0", "[pcie][pm][state]") {
     PwrFixture f;
     REQUIRE(f.ep.power_state() == tlm::pcie::PcieEndpointIP::PciePowerState::D0);
     REQUIRE(f.ep.mmio_gated() == false);

@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <cstring>
 #include "event_queue.hh"
-#include "tlm/memory_tlm.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
+#include "tlm/memory_tlm.hh"
 #include <catch2/catch_all.hpp>
 
 using tlm::gpu::DGpuBoard;
@@ -37,7 +37,8 @@ TEST_CASE("T0 MemoryTLM legacy read returns 0xDEADBEEF", "[characterization][mem
     REQUIRE(resp.error_code.read() == 0);
 }
 
-TEST_CASE("T0 BAR1 doorbell increments counter (no SDMA injected)", "[characterization][dgpu_baseline]") {
+TEST_CASE("T0 BAR1 doorbell increments counter (no SDMA injected)",
+          "[characterization][dgpu_baseline]") {
     DGpuBoard board("test_board");
 
     const uint32_t before = board.pcie_ep_doorbell_count();

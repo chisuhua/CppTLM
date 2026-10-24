@@ -11,8 +11,8 @@
 //   - PTE 经 BAR2 写入 → GMMU translate 经 PcieTlpBundle MEM_READ 读同一 PTE (v1.8 H1)
 // 作者: CppTLM Team · 日期: 2027-02-09
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/pcie/host_pcie_test_stub.hh"
@@ -29,20 +29,20 @@ using json = nlohmann::json;
 
 namespace {
 
-constexpr uint64_t kFramebufferSize = 16ULL * 1024 * 1024;      // 16 MB (bar_sizes[1])
-constexpr uint64_t kVramSize = 8ULL * 1024 * 1024 * 1024;       // 8 GB (bar_sizes[2])
-constexpr uint64_t kBar2RegOffset = 0x1000;                     // BAR2 fast-path 读回偏移
+    constexpr uint64_t kFramebufferSize = 16ULL * 1024 * 1024; // 16 MB (bar_sizes[1])
+    constexpr uint64_t kVramSize = 8ULL * 1024 * 1024 * 1024;  // 8 GB (bar_sizes[2])
+    constexpr uint64_t kBar2RegOffset = 0x1000;                // BAR2 fast-path 读回偏移
 
-// 从磁盘加载 minimal SoC 配置 (per design §7 JSON 修订)。
-// 磁盘文件省略 ModuleFactory schema 必填的顶层 connections, 这里内存补齐空数组。
-json load_minimal_soc_config() {
-    json cfg;
-    std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
-    if (ifs.is_open()) {
-        cfg = json::parse(ifs);
-    } else {
-        // 兜底内联配置 (与磁盘文件语义等价; cwd 非仓库根时启用)
-        cfg = json::parse(R"({
+    // 从磁盘加载 minimal SoC 配置 (per design §7 JSON 修订)。
+    // 磁盘文件省略 ModuleFactory schema 必填的顶层 connections, 这里内存补齐空数组。
+    json load_minimal_soc_config() {
+        json cfg;
+        std::ifstream ifs("configs/dgpu_soc_minimal_v1.json");
+        if (ifs.is_open()) {
+            cfg = json::parse(ifs);
+        } else {
+            // 兜底内联配置 (与磁盘文件语义等价; cwd 非仓库根时启用)
+            cfg = json::parse(R"({
             "name": "dgpu_soc_minimal_v1",
             "framebuffer_size_bytes": 16777216,
             "modules": [{
@@ -65,28 +65,31 @@ json load_minimal_soc_config() {
                     {"src": "gmmu.0", "dst": "pcie_memory.1", "latency": 1}]
             }]
         })");
-    }
-    // schema 补齐: ModuleFactory::validateConfig 要求每层含 "connections" 数组
-    if (!cfg.contains("connections")) cfg["connections"] = json::array();
-    if (cfg.contains("modules") && cfg["modules"].is_array()) {
-        for (auto& m : cfg["modules"]) {
-            if (m.contains("modules") && !m.contains("connections"))
-                m["connections"] = json::array();
         }
+        // schema 补齐: ModuleFactory::validateConfig 要求每层含 "connections" 数组
+        if (!cfg.contains("connections"))
+            cfg["connections"] = json::array();
+        if (cfg.contains("modules") && cfg["modules"].is_array()) {
+            for (auto& m : cfg["modules"]) {
+                if (m.contains("modules") && !m.contains("connections"))
+                    m["connections"] = json::array();
+            }
+        }
+        return cfg;
     }
-    return cfg;
-}
 
-std::vector<uint8_t> make_pattern(size_t n) {
-    std::vector<uint8_t> buf(n);
-    for (size_t i = 0; i < n; ++i) buf[i] = static_cast<uint8_t>((i * 13 + 7) & 0xFF);
-    return buf;
-}
+    std::vector<uint8_t> make_pattern(size_t n) {
+        std::vector<uint8_t> buf(n);
+        for (size_t i = 0; i < n; ++i)
+            buf[i] = static_cast<uint8_t>((i * 13 + 7) & 0xFF);
+        return buf;
+    }
 
-}  // namespace
+} // namespace
 
 // ── Scenario 1: BAR 枚举 + BAR2 fast-path + BAR1 backdoor 双读回一致 ──
-TEST_CASE("driver-visible E2E: BAR2 fast-path mmio round-trip + BAR1 backdoor 一致", "[driver_visible][e2e]") {
+TEST_CASE("driver-visible E2E: BAR2 fast-path mmio round-trip + BAR1 backdoor 一致",
+          "[driver_visible][e2e]") {
     EventQueue eq;
     DGpuBoard board("driver_visible_e2e", &eq);
 
@@ -121,7 +124,8 @@ TEST_CASE("driver-visible E2E: BAR2 fast-path mmio round-trip + BAR1 backdoor �
 }
 
 // ── Scenario 2: config_space BAR2 64-bit 双 dword 编码 (N6) + BAR1 窗口/bar_sizes 一致 ──
-TEST_CASE("driver-visible E2E: config BAR 双 dword 编码 + bar_sizes 派生", "[driver_visible][e2e]") {
+TEST_CASE("driver-visible E2E: config BAR 双 dword 编码 + bar_sizes 派生",
+          "[driver_visible][e2e]") {
     EventQueue eq;
     DGpuBoard board("driver_visible_e2e_cfg", &eq);
 
@@ -186,12 +190,12 @@ TEST_CASE("driver-visible: HostPcieTestStub trigger_resize_bar 4GB uint64 集成
 
     tlm::pcie::HostPcieTestStub stub(&board, "configs/dgpu_soc_v2_realip_p2.json");
 
-    stub.trigger_resize_bar(2, 0x100000000ULL);  // 4GB (修 v1.0 uint32 溢出)
+    stub.trigger_resize_bar(2, 0x100000000ULL); // 4GB (修 v1.0 uint32 溢出)
     CHECK(stub.resize_trigger_count() == 1);
     CHECK(stub.last_resize_bar_idx() == 2);
     CHECK(stub.last_resize_new_size() == 0x100000000ULL);
 
-    stub.trigger_resize_bar(2, 0x200000000ULL);  // 8GB
+    stub.trigger_resize_bar(2, 0x200000000ULL); // 8GB
     CHECK(stub.resize_trigger_count() == 2);
     CHECK(stub.last_resize_new_size() == 0x200000000ULL);
 }

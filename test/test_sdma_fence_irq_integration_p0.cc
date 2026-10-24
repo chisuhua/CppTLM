@@ -25,9 +25,9 @@ using json = nlohmann::json;
 
 namespace {
 
-// 内联最小 SOC + PcieEndpointTLM 配置 (无 cwd 依赖), 与 test_dgpu_msix.cc 同模式
-json make_mini_board_cfg() {
-    return json::parse(R"({
+    // 内联最小 SOC + PcieEndpointTLM 配置 (无 cwd 依赖), 与 test_dgpu_msix.cc 同模式
+    json make_mini_board_cfg() {
+        return json::parse(R"({
         "name": "p0_fence_test_board",
         "params": {"device_id": "0x1234", "quantum_cycles": 1000,
                    "ptx_emu_root": "/tmp/test-ptx-emu"},
@@ -44,9 +44,9 @@ json make_mini_board_cfg() {
         }],
         "connections": []
     })");
-}
+    }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("SDMA Fence: end-to-end fence → DGpuBoard → trigger_irq_async(vector=0)",
           "[sdma][fence][1.3a][integration]") {
@@ -73,8 +73,8 @@ TEST_CASE("SDMA Fence: end-to-end fence → DGpuBoard → trigger_irq_async(vect
     sdma.tick();
 
     auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
-    while (intr_cb_count.load(std::memory_order_acquire) < 1
-           && std::chrono::steady_clock::now() < deadline) {
+    while (intr_cb_count.load(std::memory_order_acquire) < 1 &&
+           std::chrono::steady_clock::now() < deadline) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 

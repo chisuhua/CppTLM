@@ -72,8 +72,8 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
                 // D.2 (Change D): SimModule 存在但 named port 找不到 — 记录 WARN
                 // (向后兼容: 不影响 port_creations, 不 return false)
                 warnings_.push_back(std::string("SimModule '") + src_module_name +
-                                     "' has no exposed port '" + src_port_name +
-                                     "'; connection dropped (src " + src_spec + ")");
+                                    "' has no exposed port '" + src_port_name +
+                                    "'; connection dropped (src " + src_spec + ")");
             }
         } else if (!src_port_name.empty()) {
             // Regular module downstream port
@@ -125,8 +125,8 @@ std::vector<PortCreationInfo> ConnectionResolver::resolveConnections(
             } else {
                 // D.2 (Change D): 同 src 端 — SimModule named port 找不到 WARN
                 warnings_.push_back(std::string("SimModule '") + dst_module_name +
-                                     "' has no exposed port '" + dst_port_name +
-                                     "'; connection dropped (dst " + dst_spec + ")");
+                                    "' has no exposed port '" + dst_port_name +
+                                    "'; connection dropped (dst " + dst_spec + ")");
             }
         } else if (!dst_port_name.empty()) {
             // Regular module upstream port

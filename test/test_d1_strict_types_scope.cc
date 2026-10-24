@@ -17,7 +17,7 @@ TEST_CASE("D.1: registerModuleScope records kTopLevel / kCompositeOnly", "[d1][s
     reg[sentinel] = ModuleFactory::ModuleInstScope::kCompositeOnly;
     REQUIRE(reg.find(sentinel) != reg.end());
     REQUIRE(reg[sentinel] == ModuleFactory::ModuleInstScope::kCompositeOnly);
-    reg.erase(sentinel);  // 清理
+    reg.erase(sentinel); // 清理
 }
 
 TEST_CASE("D.1: 默认 type 未注册 scope (graceful skip)", "[d1][strict-types]") {

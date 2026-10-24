@@ -59,8 +59,9 @@ int main(void) {
         }
     }
     if (emu == nullptr) {
-        std::fprintf(stderr, "test_dlopen_minimal_soc: create returned NULL "
-                             "(configs/dgpu_soc_minimal_v1.json not found in cwd=%s)\n",
+        std::fprintf(stderr,
+                     "test_dlopen_minimal_soc: create returned NULL "
+                     "(configs/dgpu_soc_minimal_v1.json not found in cwd=%s)\n",
                      std::strerror(errno));
         dlclose(handle);
         return 1;

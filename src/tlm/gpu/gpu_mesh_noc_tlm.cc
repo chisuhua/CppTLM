@@ -24,7 +24,7 @@ namespace tlm {
     // 注: 不实际模拟 mesh flit 调度 (deterministic analytical model, per Oracle O9).
     uint32_t GpuMeshNoC::d2d_forward_payload(void* dst_vram, const void* src_vram, uint64_t len) {
         if (dst_vram == nullptr || src_vram == nullptr || len == 0) {
-            return 0;  // noop
+            return 0; // noop
         }
         // 简化 memcpy (实际 GPU 硬件有 flit 切分, 但 MVP deterministic 即可)
         std::memcpy(dst_vram, src_vram, static_cast<size_t>(len));
@@ -38,13 +38,14 @@ namespace tlm {
         return latency;
     }
 
-// Oracle O9 测量定义:
-//   throughput = payload_bytes / (last_latency_cycles × cycle_period_s)
-//   单位: bytes/s; 转换为 GB/s (×1e-9)
-//   注 (per Oracle 1.3b 复审 M6): getter 默认用成员 cycle_period_s_ (set_cycle_period_s
-//   JSON 注入生效), 不再硬编码 1e-9 默认值; 参数保留作为 override 入口
+    // Oracle O9 测量定义:
+    //   throughput = payload_bytes / (last_latency_cycles × cycle_period_s)
+    //   单位: bytes/s; 转换为 GB/s (×1e-9)
+    //   注 (per Oracle 1.3b 复审 M6): getter 默认用成员 cycle_period_s_ (set_cycle_period_s
+    //   JSON 注入生效), 不再硬编码 1e-9 默认值; 参数保留作为 override 入口
     double GpuMeshNoC::simulated_throughput_GBps(double cycle_period_s_override) const {
-        const double cps = (cycle_period_s_override > 0.0) ? cycle_period_s_override : cycle_period_s_;
+        const double cps =
+            (cycle_period_s_override > 0.0) ? cycle_period_s_override : cycle_period_s_;
         if (last_transfer_latency_cycles_ == 0 || cps <= 0.0) {
             return 0.0;
         }

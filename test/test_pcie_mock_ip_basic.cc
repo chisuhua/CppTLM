@@ -9,8 +9,8 @@
 #include "catch_amalgamated.hpp"
 #include <nlohmann/json.hpp>
 
-#include "tlm/pcie/pcie_mock_ip.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
+#include "tlm/pcie/pcie_mock_ip.hh"
 #include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
 
 #include <cstring>
@@ -24,10 +24,23 @@ using json = nlohmann::json;
 static json make_bar_config() {
     json cfg;
     cfg["bar0_registers"] = json::array({
-        json{{"offset", 0x0000}, {"name", "GPU_REG_STATUS"},      {"access", "RO"}, {"side_effect", "none"}},
-        json{{"offset", 0x0004}, {"name", "GPU_REG_CONTROL"},     {"access", "RW"}, {"side_effect", "none"}},
-        json{{"offset", 0x1000}, {"name", "GPU_REG_DOORBELL"},    {"access", "WO"}, {"side_effect", "doorbell"}, {"stream_id", 0}},
-        json{{"offset", 0x1004}, {"name", "GPU_REG_DATA"},        {"access", "RW"}, {"side_effect", "none"}},
+        json{{"offset", 0x0000},
+             {"name", "GPU_REG_STATUS"},
+             {"access", "RO"},
+             {"side_effect", "none"}},
+        json{{"offset", 0x0004},
+             {"name", "GPU_REG_CONTROL"},
+             {"access", "RW"},
+             {"side_effect", "none"}},
+        json{{"offset", 0x1000},
+             {"name", "GPU_REG_DOORBELL"},
+             {"access", "WO"},
+             {"side_effect", "doorbell"},
+             {"stream_id", 0}},
+        json{{"offset", 0x1004},
+             {"name", "GPU_REG_DATA"},
+             {"access", "RW"},
+             {"side_effect", "none"}},
     });
     cfg["bar_sizes"] = json::array({0x1000000, 0x1000000, 0, 0, 0, 0});
     return cfg;
@@ -112,14 +125,14 @@ TEST_CASE("Mock IP D3hot gate 行为对齐", "[mock-ip][d3hot]") {
     REQUIRE_FALSE(mock.is_mmio_gated());
 
     // 写 PMCSR (offset 0x44) 置 D3hot
-    int ret = mock.pcie_config_write(0x44, 1, 0x3);  // PMCSR D3hot
+    int ret = mock.pcie_config_write(0x44, 1, 0x3); // PMCSR D3hot
     REQUIRE(ret == 0);
     REQUIRE(mock.is_mmio_gated());
 
     // D3hot 下所有 mmio_write 应返 -EIO
     const uint64_t data = 0xCAFEBABE;
     ret = mock.mmio_write(0, 0x1000, &data, sizeof(data));
-    REQUIRE(ret == -5);  // -EIO
+    REQUIRE(ret == -5); // -EIO
 
     // 即使是 doorbell offset (BAR1+0x10010000) 也被 gate (V-5 决议: 无 doorbell 例外)
     ret = mock.mmio_write(1, 0x10010000, &data, sizeof(data));
@@ -144,7 +157,7 @@ TEST_CASE("Mock IP AXI payload 直接生成", "[mock-ip][axi]") {
     // 验证 AXI bundle 字段
     const auto& req = mock.axi_master_req_data();
     // 地址应该是 0x20000000（通过 req.awaddr 可见）
-    (void)req;  // 抑制未使用警告
+    (void)req; // 抑制未使用警告
 }
 
 // ==================== TEST_CASE 5: 不依赖 PcieEndpointIP/PcieSriovVfPool ====================

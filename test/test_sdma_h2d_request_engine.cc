@@ -77,9 +77,7 @@ TEST_CASE("SDMA CplD 接收后写 VRAM + 触发 completion ring", "[sdma][h2d][r
     tlm::gpu::SdmaEngineTLM sdma("sdma", &eq);
     sdma.init();
     sdma.set_request_engine(&req_eng);
-    sdma.register_dma_translate_callback([](uint64_t iova) -> uint64_t {
-        return iova;
-    });
+    sdma.register_dma_translate_callback([](uint64_t iova) -> uint64_t { return iova; });
 
     // Submit H2D descriptor: host_iova=0x2000 → vram_offset=0x3000, size=8, tag=1
     tlm::gpu::DmaDescriptor desc(tlm::gpu::DmaDescriptor::Dir::H2D,

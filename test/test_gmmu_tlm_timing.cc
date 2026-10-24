@@ -23,19 +23,19 @@ static constexpr uint64_t kPtBase = 0x10000;
 
 namespace {
 
-// 构造 GMMU: 32-entry TLB, 128KB backing, PT_BASE=0x10000, enabled
-std::unique_ptr<GmmuTLM> make_gmmu(EventQueue* eq, uint64_t backing_size = 128 * 1024,
-                                   size_t tlb_size = 32) {
-    auto g = std::make_unique<GmmuTLM>("gmmu", eq);
-    g->set_mem_view(nullptr, 0);  // ensure clean
-    return g;
-}
+    // 构造 GMMU: 32-entry TLB, 128KB backing, PT_BASE=0x10000, enabled
+    std::unique_ptr<GmmuTLM> make_gmmu(EventQueue* eq, uint64_t backing_size = 128 * 1024,
+                                       size_t tlb_size = 32) {
+        auto g = std::make_unique<GmmuTLM>("gmmu", eq);
+        g->set_mem_view(nullptr, 0); // ensure clean
+        return g;
+    }
 
-// 写入合法 PTE: page_num → paddr_page (paddr = page_num * 0x2000 + 0x2000)
-void fill_pte(std::vector<uint8_t>& backing, uint64_t page_num, uint64_t paddr_page) {
-    uint64_t pte = (paddr_page & ~0xFFFULL) | 1ULL;
-    std::memcpy(backing.data() + kPtBase + page_num * 8, &pte, 8);
-}
+    // 写入合法 PTE: page_num → paddr_page (paddr = page_num * 0x2000 + 0x2000)
+    void fill_pte(std::vector<uint8_t>& backing, uint64_t page_num, uint64_t paddr_page) {
+        uint64_t pte = (paddr_page & ~0xFFFULL) | 1ULL;
+        std::memcpy(backing.data() + kPtBase + page_num * 8, &pte, 8);
+    }
 
 } // namespace
 
@@ -55,7 +55,7 @@ TEST_CASE("gmmu_timing: TLB hit → lat=0, hits++", "[dgpu_soc_timing][gmmu][tim
     int rc = g->translate_timing(0x1000, kPageSize, pa, lat);
     REQUIRE(rc == 0);
     REQUIRE(pa == 0x2000);
-    REQUIRE(lat == 50);   // first access = TLB miss → page walk
+    REQUIRE(lat == 50); // first access = TLB miss → page walk
     REQUIRE(g->stats().hits == 0);
     REQUIRE(g->stats().misses == 1);
     REQUIRE(g->stats().total_walk_cycles == 50);
@@ -116,8 +116,7 @@ TEST_CASE("gmmu_timing: 128KB 工作集 (32 pages) 重复 → hit rate ≈ 96.87
     }
     REQUIRE(g->stats().hits == 992);
     REQUIRE(g->stats().misses == 32);
-    double hit_rate = static_cast<double>(g->stats().hits) /
-                      (g->stats().hits + g->stats().misses);
+    double hit_rate = static_cast<double>(g->stats().hits) / (g->stats().hits + g->stats().misses);
     REQUIRE(hit_rate == Catch::Approx(0.96875).epsilon(0.0001));
 }
 
@@ -125,7 +124,7 @@ TEST_CASE("gmmu_timing: 4MB 顺序流 → hit rate 0% (direct-mapped 无 LRU)",
           "[dgpu_soc_timing][gmmu][timing]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("gmmu", &eq);
-    std::vector<uint8_t> backing(8 * 1024 * 1024, 0);  // 8MB backing for 4MB stream
+    std::vector<uint8_t> backing(8 * 1024 * 1024, 0); // 8MB backing for 4MB stream
     // 4MB / 4KB = 1024 pages
     for (uint64_t p = 0; p < 1024; ++p) {
         fill_pte(backing, p, 0x2000 + p * kPageSize);
@@ -140,7 +139,7 @@ TEST_CASE("gmmu_timing: 4MB 顺序流 → hit rate 0% (direct-mapped 无 LRU)",
     for (uint64_t p = 0; p < 1024; ++p) {
         uint64_t pa = 0, lat = 0;
         REQUIRE(g->translate_timing(p * kPageSize, kPageSize, pa, lat) == 0);
-        REQUIRE(lat == 50);  // 全 miss
+        REQUIRE(lat == 50); // 全 miss
     }
     REQUIRE(g->stats().misses == 1024);
     REQUIRE(g->stats().hits == 0);
@@ -164,7 +163,7 @@ TEST_CASE("gmmu_timing: 32-entry TLB 满 → 33rd access 仍 fill (无 LRU 驱�
     for (uint64_t p = 0; p < 33; ++p) {
         uint64_t pa = 0, lat = 0;
         REQUIRE(g->translate_timing(p * kPageSize, kPageSize, pa, lat) == 0);
-        REQUIRE(lat == 50);  // 每个不同 page 都是 miss
+        REQUIRE(lat == 50); // 每个不同 page 都是 miss
     }
     REQUIRE(g->stats().misses == 33);
     REQUIRE(g->stats().hits == 0);
@@ -233,7 +232,7 @@ TEST_CASE("gmmu_timing: reset 清 TLB + stats", "[dgpu_soc_timing][gmmu][timing]
     g->set_timing_params(50);
 
     uint64_t pa = 0, lat = 0;
-    REQUIRE(g->translate_timing(0x1000, kPageSize, pa, lat) == 0);  // miss
+    REQUIRE(g->translate_timing(0x1000, kPageSize, pa, lat) == 0); // miss
     REQUIRE(g->stats().misses == 1);
 
     ResetConfig rc;

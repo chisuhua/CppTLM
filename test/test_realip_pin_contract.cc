@@ -1,19 +1,19 @@
 // test/test_realip_pin_contract.cc
-// A.1 RED → A.5 GREEN: Fabric2VramCtrlBundle field-width static_assert + programmatic bridge round-trip
-// 双标签 [realip][pin-contract] per handoff §9.2 #10 防 vacuous pass
-// Author: CppTLM Team / Date: 2026-10-08
+// A.1 RED → A.5 GREEN: Fabric2VramCtrlBundle field-width static_assert + programmatic bridge
+// round-trip 双标签 [realip][pin-contract] per handoff §9.2 #10 防 vacuous pass Author: CppTLM Team
+// / Date: 2026-10-08
 
 #include "bundles/dgpu_fabric_bundles_tlm.hh"
-#include "bundles/noc_bundles_tlm.hh"  // D.4 (#4) NoCFlitBundle — chip-internal fabric↔SDMA/GMMU
-#include "utils/port_contract_asserts.hh"
+#include "bundles/noc_bundles_tlm.hh" // D.4 (#4) NoCFlitBundle — chip-internal fabric↔SDMA/GMMU
 #include "core/event_queue.hh"
 #include "tlm/cluster/gpu_internal_fabric.hh"
+#include "tlm/pcie/pcie_controller_ip.hh" // match_bar 签名锁 (Change B regression guard)
 #include "tlm/vram_controller_tlm.hh"
-#include "tlm/pcie/pcie_controller_ip.hh"  // match_bar 签名锁 (Change B regression guard)
+#include "utils/port_contract_asserts.hh"
 
-#include <catch_amalgamated.hpp>
 #include <memory>
 #include <type_traits>
+#include <catch_amalgamated.hpp>
 
 using namespace bundles;
 
@@ -36,7 +36,8 @@ TEST_CASE("Fabric2VramCtrlBundle field widths match design AD-5", "[realip][pin-
 }
 
 // TEST_CASE #2 (Momus 修订: set_vram_target / vram_ctrl() accessors + build test)
-TEST_CASE("GpuInternalFabric exposes set_vram_target / vram_ctrl accessors", "[realip][pin-contract]") {
+TEST_CASE("GpuInternalFabric exposes set_vram_target / vram_ctrl accessors",
+          "[realip][pin-contract]") {
     EventQueue eq;
     auto fabric = std::make_unique<tlm::cluster::GpuInternalFabric>("fabric", &eq);
 
@@ -54,7 +55,8 @@ TEST_CASE("GpuInternalFabric exposes set_vram_target / vram_ctrl accessors", "[r
 }
 
 // TEST_CASE #3 (Phase A.5 完整 round-trip: 双向桥接)
-TEST_CASE("set_vram_target programmatic bridge round-trip fabric↔vram_ctrl", "[realip][pin-contract]") {
+TEST_CASE("set_vram_target programmatic bridge round-trip fabric↔vram_ctrl",
+          "[realip][pin-contract]") {
     EventQueue eq;
 
     auto fabric = std::make_unique<tlm::cluster::GpuInternalFabric>("fabric", &eq);
@@ -151,7 +153,7 @@ TEST_CASE("NoCFlitBundle field widths + types (SDMA/GMMU migration prep)",
         /*addr=*/0x1000, /*vc=*/0, /*total_flits=*/1,
         /*write=*/true, /*data_word=*/0xDEADBEEF);
     STATIC_REQUIRE(decltype(head_flit.transaction_id)::width == 64);
-    REQUIRE(head_flit.flit_type.read() == NoCFlitBundle::FLIT_HEAD_TAIL);  // single-flit → HEAD_TAIL
+    REQUIRE(head_flit.flit_type.read() == NoCFlitBundle::FLIT_HEAD_TAIL); // single-flit → HEAD_TAIL
     REQUIRE(head_flit.flit_category.read() == NoCFlitBundle::CATEGORY_REQUEST);
     REQUIRE(head_flit.is_write.read() == true);
 
@@ -180,8 +182,8 @@ TEST_CASE("PcieControllerIP::match_bar signature is locked (Change B regression 
           "[realip][pin-contract][b-regression]") {
     // BarTarget 是 PcieControllerIP 内嵌 enum class, 完整路径须走类作用域
     using BarTarget = tlm::pcie::PcieControllerIP::BarTarget;
-    using MatchBarFn = bool (tlm::pcie::PcieControllerIP::*)(
-        uint8_t, uint64_t, BarTarget&, uint64_t&) noexcept;
+    using MatchBarFn =
+        bool (tlm::pcie::PcieControllerIP::*)(uint8_t, uint64_t, BarTarget&, uint64_t&) noexcept;
     using ActualFn = decltype(&tlm::pcie::PcieControllerIP::match_bar);
     STATIC_REQUIRE(std::is_same_v<ActualFn, MatchBarFn>);
 }

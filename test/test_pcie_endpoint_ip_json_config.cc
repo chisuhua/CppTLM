@@ -1,6 +1,7 @@
 // test/test_pcie_endpoint_ip_json_config.cc
 // PcieEndpointIP JSON 配置扩展 (Phase A1) — Catch2 测试套件
-// 覆盖 5 个 Scenario per openspec/changes/2027-02-09-cpptlm-pcie-endpoint-ip-json-config/specs/spec.md
+// 覆盖 5 个 Scenario per
+// openspec/changes/2027-02-09-cpptlm-pcie-endpoint-ip-json-config/specs/spec.md
 //
 // 标签: [pcie] [pcie-json] + 子标签 [phy] [ari] [msix] [config-size] [warn]
 //
@@ -8,14 +9,14 @@
 // 参考: design.md §5 + spec.md §MODIFIED Requirements
 #include "catch_amalgamated.hpp"
 
-#include "tlm/pcie/pcie_endpoint_ip.hh"
-#include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
-#include "tlm/pcie/pcie_msix_per_vf_tlm.hh"
-#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
+#include "tlm/gpu/msix_table_mvp.hh"
+#include "tlm/gpu/pcie_config_space_mvp.hh"
 #include "tlm/pcie/pcie_ari_router_tlm.hh"
 #include "tlm/pcie/pcie_config_space_per_vf_tlm.hh"
-#include "tlm/gpu/pcie_config_space_mvp.hh"
-#include "tlm/gpu/msix_table_mvp.hh"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
+#include "tlm/pcie/pcie_msix_per_vf_tlm.hh"
+#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
+#include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
 
 #include "chstream_register.hh"
 #include "core/event_queue.hh"
@@ -31,33 +32,34 @@ using tlm::pcie::PcieEndpointIP;
 
 namespace {
 
-// Test fixture: 提供一个最小 PcieEndpointIP 实例 + EventQueue
-struct JsonConfigFixture {
-    EventQueue eq;
-    PcieEndpointIP ep;
+    // Test fixture: 提供一个最小 PcieEndpointIP 实例 + EventQueue
+    struct JsonConfigFixture {
+        EventQueue eq;
+        PcieEndpointIP ep;
 
-    JsonConfigFixture() : ep("pcie_ep_json_test", &eq) {
-        // 默认 attach link_layer+phy, 这样 fixture 默认能验证 phy/sr_iov/transaction_layer
-        ep.init();
-        json default_cfg;
-        default_cfg["link_layer"]["enabled"] = true;
-        ep.set_config(default_cfg);
-        ep.on_config_loaded();
-    }
+        JsonConfigFixture() : ep("pcie_ep_json_test", &eq) {
+            // 默认 attach link_layer+phy, 这样 fixture 默认能验证 phy/sr_iov/transaction_layer
+            ep.init();
+            json default_cfg;
+            default_cfg["link_layer"]["enabled"] = true;
+            ep.set_config(default_cfg);
+            ep.on_config_loaded();
+        }
 
-    // 把 json cfg 推入 attach_composition (完整替换, link_layer 缺失时按 nullptr 处理)
-    void apply(const json& cfg) {
-        ep.set_config(cfg);
-        ep.on_config_loaded();
-    }
+        // 把 json cfg 推入 attach_composition (完整替换, link_layer 缺失时按 nullptr 处理)
+        void apply(const json& cfg) {
+            ep.set_config(cfg);
+            ep.on_config_loaded();
+        }
 
-    // 断言某字符串出现在 config_warnings_ 中
-    bool warns_about(const std::string& substr) const {
-        const auto& w = ep.config_warnings();
-        return std::any_of(w.begin(), w.end(),
-            [&](const std::string& s) { return s.find(substr) != std::string::npos; });
-    }
-};
+        // 断言某字符串出现在 config_warnings_ 中
+        bool warns_about(const std::string& substr) const {
+            const auto& w = ep.config_warnings();
+            return std::any_of(w.begin(), w.end(), [&](const std::string& s) {
+                return s.find(substr) != std::string::npos;
+            });
+        }
+    };
 
 } // namespace
 
@@ -72,8 +74,7 @@ TEST_CASE("PcieEndpointIP JSON config: phy_digital presets take effect; max_spee
     auto* phy = tlm::pcie::PciePhyDigitalCtrl::for_endpoint("pcie_ep_json_test");
     if (phy) {
         tlm::pcie::PciePhyConfig initial_cfg;
-        initial_cfg.max_speed =
-            tlm::pcie::PcieEncodingLatencyModel::Rate::GEN5;
+        initial_cfg.max_speed = tlm::pcie::PcieEncodingLatencyModel::Rate::GEN5;
         initial_cfg.max_lanes = 16;
         initial_cfg.hot_plug_supported = false;
         phy->set_config(initial_cfg);
@@ -97,15 +98,14 @@ TEST_CASE("PcieEndpointIP JSON config: phy_digital presets take effect; max_spee
         REQUIRE(c.preset_NP == 9);
         REQUIRE(c.preset_Cpl == 11);
         REQUIRE(c.hot_plug_supported == true);
-        REQUIRE(c.max_speed ==
-                tlm::pcie::PcieEncodingLatencyModel::Rate::GEN5);  // ← 关键: 未被重置
-        REQUIRE(c.max_lanes == 16);                         // ← 关键: 未被重置
+        REQUIRE(c.max_speed == tlm::pcie::PcieEncodingLatencyModel::Rate::GEN5); // ← 关键: 未被重置
+        REQUIRE(c.max_lanes == 16);                                              // ← 关键: 未被重置
     }
 
     // Step 4: link_layer.enabled=false + phy 块组合不崩溃
     json cfg2;
     cfg2["link_layer"]["enabled"] = false;
-    cfg2["phy_digital"]["preset_p"] = 3;  // 应被静默跳过, 不崩
+    cfg2["phy_digital"]["preset_p"] = 3; // 应被静默跳过, 不崩
     REQUIRE_NOTHROW(f.apply(cfg2));
 }
 
@@ -156,7 +156,7 @@ TEST_CASE("PcieEndpointIP JSON config: msix vectors reconfigure PF + VF1..VFn",
     // PF slot 0
     for (uint16_t v = 0; v < 16; ++v) {
         REQUIRE_NOTHROW(msix_pf.update_pending(0, v, true));
-        msix_pf.update_pending(0, v, false);  // reset
+        msix_pf.update_pending(0, v, false); // reset
     }
     // VF slot 1
     for (uint16_t v = 0; v < 4; ++v) {
@@ -226,7 +226,7 @@ TEST_CASE("PcieEndpointIP JSON config: unconsumed keys warn via getter + stderr"
 
     SECTION("unknown subkey in phy_digital") {
         json cfg;
-        cfg["link_layer"]["enabled"] = true;  // 必填以复用 fixture attach 的 phy
+        cfg["link_layer"]["enabled"] = true; // 必填以复用 fixture attach 的 phy
         cfg["phy_digital"]["pipe_interface"] = "lightweight_4_signal";
         cfg["phy_digital"]["ltssm_initial_state"] = "detect";
         cfg["phy_digital"]["perst_signal_initial"] = "asserted";
@@ -239,11 +239,11 @@ TEST_CASE("PcieEndpointIP JSON config: unconsumed keys warn via getter + stderr"
     SECTION("unknown subkey in sr_iov") {
         json cfg;
         cfg["link_layer"]["enabled"] = true;
-        cfg["sr_iov"]["initial_vfs"] = 8;  // out of scope
-        cfg["sr_iov"]["total_vfs"] = 16;  // out of scope
-        cfg["sr_iov"]["num_vfs"] = 8;     // out of scope
-        cfg["sr_iov"]["vf_bar0_size"] = 65536;  // deferred
-        cfg["sr_iov"]["vf_pool_stream_adapter"] = "shared";  // not consumed
+        cfg["sr_iov"]["initial_vfs"] = 8;                   // out of scope
+        cfg["sr_iov"]["total_vfs"] = 16;                    // out of scope
+        cfg["sr_iov"]["num_vfs"] = 8;                       // out of scope
+        cfg["sr_iov"]["vf_bar0_size"] = 65536;              // deferred
+        cfg["sr_iov"]["vf_pool_stream_adapter"] = "shared"; // not consumed
         f.apply(cfg);
         REQUIRE(f.warns_about("initial_vfs"));
         REQUIRE(f.warns_about("total_vfs"));

@@ -22,27 +22,27 @@
 //
 // Tag: `[realip][p3]`
 
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/vram_controller_tlm.hh"
 
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 using tlm::gpu::DGpuBoard;
 
 namespace {
 
-nlohmann::json load_realip_p2_config() {
-    std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
-    REQUIRE(f.is_open());
-    nlohmann::json cfg;
-    f >> cfg;
-    return cfg;
-}
+    nlohmann::json load_realip_p2_config() {
+        std::ifstream f("configs/dgpu_soc_v2_realip_p2.json");
+        REQUIRE(f.is_open());
+        nlohmann::json cfg;
+        f >> cfg;
+        return cfg;
+    }
 
 } // namespace
 
@@ -60,7 +60,7 @@ TEST_CASE("DGpuBoard::bind_memory_backings: vram_ctrl backing injected when fram
 
     REQUIRE(board.load_soc_config(board_cfg));
 
-    constexpr uint64_t kFbSize = 64ULL * 1024 * 1024;  // 64MB dummy framebuffer
+    constexpr uint64_t kFbSize = 64ULL * 1024 * 1024; // 64MB dummy framebuffer
     std::vector<uint8_t> fb(kFbSize, 0xAB);
     board.attach_vram_for_testing(fb.data(), fb.size());
 
@@ -91,41 +91,32 @@ TEST_CASE("DGpuBoard::bind_memory_backings: vram_ctrl backing injected when fram
 //   backing — 不再是 backing null。test 改测 ENODEV-style ENODEV semantics:
 //   用一个不含 pcie_ep 的 inline config (仅 fabric + vram_ctrl) 模拟 dormant 状态。
 // ─────────────────────────────────────────────────────────────────────────
-TEST_CASE("DGpuBoard::bind_memory_backings: vram_ctrl backing null when framebuffer not attached (no pcie_ep)",
+TEST_CASE("DGpuBoard::bind_memory_backings: vram_ctrl backing null when framebuffer not attached "
+          "(no pcie_ep)",
           "[realip][p3]") {
     nlohmann::json inline_cfg = {
-        {"modules", nlohmann::json::array({
-            {
-                {"type", "DGpuSoc"},
-                {"name", "soc"},
-                {"modules", nlohmann::json::array({
-                    {
-                        {"type", "GpuInternalFabric"},
-                        {"name", "fabric"},
-                        {"modules", nlohmann::json::array({
-                            {{"type", "CrossbarTLM"}, {"name", "crossbar"}}
-                        })},
-                        {"connections", nlohmann::json::array()}
-                    },
-                    {
-                        {"type", "VramControllerTLM"},
-                        {"name", "vram_ctrl"},
-                        {"params", {
-                            {"row_hit_cycles", 30},
-                            {"row_miss_cycles", 80},
-                            {"bandwidth_gbps", 32},
-                            {"read_latency_hit_cycles", 30},
-                            {"read_latency_miss_cycles", 80},
-                            {"write_latency_cycles", 120},
-                            {"use_zero_delay_for_test", true}
-                        }}
-                    }
-                })},
-                {"connections", nlohmann::json::array()}
-            }
-        })},
-        {"connections", nlohmann::json::array()}
-    };
+        {"modules",
+         nlohmann::json::array(
+             {{{"type", "DGpuSoc"},
+               {"name", "soc"},
+               {"modules", nlohmann::json::array(
+                               {{{"type", "GpuInternalFabric"},
+                                 {"name", "fabric"},
+                                 {"modules", nlohmann::json::array({{{"type", "CrossbarTLM"},
+                                                                     {"name", "crossbar"}}})},
+                                 {"connections", nlohmann::json::array()}},
+                                {{"type", "VramControllerTLM"},
+                                 {"name", "vram_ctrl"},
+                                 {"params",
+                                  {{"row_hit_cycles", 30},
+                                   {"row_miss_cycles", 80},
+                                   {"bandwidth_gbps", 32},
+                                   {"read_latency_hit_cycles", 30},
+                                   {"read_latency_miss_cycles", 80},
+                                   {"write_latency_cycles", 120},
+                                   {"use_zero_delay_for_test", true}}}}})},
+               {"connections", nlohmann::json::array()}}})},
+        {"connections", nlohmann::json::array()}};
 
     EventQueue eq;
     DGpuBoard board("realip_vram_null", &eq);
@@ -135,7 +126,7 @@ TEST_CASE("DGpuBoard::bind_memory_backings: vram_ctrl backing null when framebuf
     REQUIRE(board.init());
 
     auto* vram_ctrl = board.vram_ctrl_module();
-    REQUIRE(vram_ctrl != nullptr);  // 实例存在 (JSON 含 children)
+    REQUIRE(vram_ctrl != nullptr); // 实例存在 (JSON 含 children)
 
     // 反向断言: backing null → host_addr(0) == nullptr (ENODEV semantics)
     REQUIRE_FALSE(vram_ctrl->has_backing());

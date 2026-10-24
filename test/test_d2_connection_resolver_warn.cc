@@ -2,19 +2,19 @@
 // D.2 (cpptlm-dgpu-realip-pin-contract Change D, 2026-10-08):
 // ConnectionResolver::warnings() 单元测试 — 验证 named-port-not-found 触发 WARN,
 // 但不影响 return 路径 (向后兼容)。
+#include <string>
+#include <unordered_map>
 #include "catch_amalgamated.hpp"
 #include "core/connection_resolver.hh"
 #include <nlohmann/json.hpp>
-#include <string>
-#include <unordered_map>
 
 namespace {
-// Minimal mock SimModule-like surface for findInternalPath fallback testing.
-// ConnectionResolver::findInternalPath takes SimModule* but we just need an
-// object whose findInternalPath returns empty (i.e. port not found).
-// For testing the warning path, we can use nullptr (SimModule* == nullptr
-// returns "" from findInternalPath) which is enough to skip the WARN path.
-// To test the WARN path we need a real SimModule subclass.
+    // Minimal mock SimModule-like surface for findInternalPath fallback testing.
+    // ConnectionResolver::findInternalPath takes SimModule* but we just need an
+    // object whose findInternalPath returns empty (i.e. port not found).
+    // For testing the warning path, we can use nullptr (SimModule* == nullptr
+    // returns "" from findInternalPath) which is enough to skip the WARN path.
+    // To test the WARN path we need a real SimModule subclass.
 }
 
 TEST_CASE("D.2: warnings() returns empty by default", "[d2][connection-resolver]") {
@@ -49,9 +49,8 @@ TEST_CASE("D.2: connections referencing missing module produce no WARN (not in m
     // 关键 invariant: WARN 仅在 SimModule 存在但 named port 找不到时触发
     // (向后兼容 + 防止误报)。
     ConnectionResolver resolver;
-    nlohmann::json connections = nlohmann::json::array({
-        {{"src", "nonexistent.foo"}, {"dst", "also_missing.bar"}}
-    });
+    nlohmann::json connections =
+        nlohmann::json::array({{{"src", "nonexistent.foo"}, {"dst", "also_missing.bar"}}});
     std::unordered_map<std::string, SimModule*> empty_map;
     auto result = resolver.resolveConnections(connections, empty_map, nullptr);
     // Result 不为空: regular port path 仍创建 port_creations (向后兼容)

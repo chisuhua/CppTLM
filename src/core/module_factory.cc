@@ -196,9 +196,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
                 for (const auto& [name, rule] : rules) {
                     if (!mod["params"].contains(name.c_str())) {
                         if (rule.required) {
-                            DPRINTF(MODULE,
-                                    "[PARAM ERROR] Required parameter '%s' missing for module '%s'\n",
-                                    name.c_str(), type.c_str());
+                            DPRINTF(
+                                MODULE,
+                                "[PARAM ERROR] Required parameter '%s' missing for module '%s'\n",
+                                name.c_str(), type.c_str());
                             return false;
                         }
                         if (rule.default_int.has_value()) {
@@ -292,8 +293,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
             }
             // 这是一个 SimModule。RAII: unique_ptr 持有所有权, module_instances
             // 保存 raw 视图 (非所有权, 用于 Step 4.5/incorporate_parent 迭代)。
-            auto new_module =
-                std::unique_ptr<SimModule>(module_it->second(name, event_queue));
+            auto new_module = std::unique_ptr<SimModule>(module_it->second(name, event_queue));
             module_instances[name] = new_module.get();
             object_instances[name] = std::move(new_module);
         } else {
@@ -476,8 +476,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
             SimObject* raw_obj = it->second.get();
 
             if (info.is_upstream) {
-                auto* port = pm.addUpstreamPort(raw_obj, info.buffer_sizes, info.priorities,
-                                                info.port_name);
+                auto* port =
+                    pm.addUpstreamPort(raw_obj, info.buffer_sizes, info.priorities, info.port_name);
                 if (port)
                     port->setDelay(info.latency);
             } else {
@@ -560,8 +560,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
             } else if (auto obj_it = object_instances.find(src_module_name);
                        obj_it != object_instances.end() && obj_it->second) {
                 // Wildcard/group expansion: create default downstream port
-                src_port = obj_it->second->getPortManager().addDownstreamPort(obj_it->second.get(), {4},
-                                                                              {}, src_module_name);
+                src_port = obj_it->second->getPortManager().addDownstreamPort(
+                    obj_it->second.get(), {4}, {}, src_module_name);
             }
 
             for (const std::string& dst_full : dst_names) {

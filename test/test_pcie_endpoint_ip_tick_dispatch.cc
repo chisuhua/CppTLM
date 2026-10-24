@@ -9,8 +9,8 @@
 #include "bundles/pcie_bundles_tlm.hh"
 #include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
-#include "tlm/pcie/pcie_endpoint_ip.hh"
 #include "tlm/pcie/pcie_bypass_mux.hh"
+#include "tlm/pcie/pcie_endpoint_ip.hh"
 
 #include <cstdint>
 #include <nlohmann/json.hpp>
@@ -27,8 +27,7 @@ namespace {
         PcieEndpointIP ep;
 
         TickDispatchFixture(const std::string& name, const std::string& bypass_mode)
-            : ep(name, &eq)
-        {
+            : ep(name, &eq) {
             ep.init();
             json cfg;
             cfg["link_layer"]["enabled"] = true;
@@ -40,12 +39,9 @@ namespace {
         }
 
         // 构造 MMIO_WRITE TLP
-        static PcieTlpBundle make_mmio_write(uint64_t offset, uint64_t data,
-                                              uint8_t bar = 0)
-        {
-            return PcieTlpBundle(
-                PcieTlpBundle::MMIO_WRITE, bar, offset, 4,
-                data, 0x0100 /* requester_id */, 0x42 /* trans_id */
+        static PcieTlpBundle make_mmio_write(uint64_t offset, uint64_t data, uint8_t bar = 0) {
+            return PcieTlpBundle(PcieTlpBundle::MMIO_WRITE, bar, offset, 4, data,
+                                 0x0100 /* requester_id */, 0x42 /* trans_id */
             );
         }
     };
@@ -56,8 +52,7 @@ namespace {
 // TEST_CASE 1: Full 模式 TLP 经 LL FC check 后到达 CompleterEngine
 // ─────────────────────────────────────────────────────────────────────────────
 TEST_CASE("PcieEndpointIP tick dispatch: Full mode LL FC check then CompleterEngine",
-          "[pcie][tick-dispatch][pcie-t10-3]")
-{
+          "[pcie][tick-dispatch][pcie-t10-3]") {
     TickDispatchFixture f("ep_full_dispatch", "Full");
     // Full mode 默认: bypass_mux_mode_ = Full (由 JSON bypass_mode = "Full" 设置)
 
@@ -72,15 +67,14 @@ TEST_CASE("PcieEndpointIP tick dispatch: Full mode LL FC check then CompleterEng
     // MMIO_WRITE = Posted, 消耗 1 个 P credit
     // 注入后 FC 应 < 256
     auto fc = f.ep.link_layer_fc_snapshot_for_test();
-    REQUIRE(std::get<0>(fc) < 256);  // P credit consumed
+    REQUIRE(std::get<0>(fc) < 256); // P credit consumed
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TEST_CASE 2: Bypass 模式 TLP 跳过 LL FC 直达 CompleterEngine
 // ─────────────────────────────────────────────────────────────────────────────
 TEST_CASE("PcieEndpointIP tick dispatch: Bypass mode skips LL FC",
-          "[pcie][tick-dispatch][pcie-t10-3]")
-{
+          "[pcie][tick-dispatch][pcie-t10-3]") {
     TickDispatchFixture f("ep_bypass_dispatch", "Bypass");
 
     // 记录初始 FC 快照
@@ -102,8 +96,7 @@ TEST_CASE("PcieEndpointIP tick dispatch: Bypass mode skips LL FC",
 // TEST_CASE 3: Partial 模式同 Full (保留 LL FC)
 // ─────────────────────────────────────────────────────────────────────────────
 TEST_CASE("PcieEndpointIP tick dispatch: Partial mode same as Full (LL FC retained)",
-          "[pcie][tick-dispatch][pcie-t10-3]")
-{
+          "[pcie][tick-dispatch][pcie-t10-3]") {
     TickDispatchFixture f("ep_partial_dispatch", "Partial");
 
     // 记录初始 FC
@@ -115,7 +108,7 @@ TEST_CASE("PcieEndpointIP tick dispatch: Partial mode same as Full (LL FC retain
 
     // Partial: FC 应消耗 (同 Full, 保留 LL FC)
     auto fc_after = f.ep.link_layer_fc_snapshot_for_test();
-    REQUIRE(std::get<0>(fc_after) < std::get<0>(fc_initial));  // P credit consumed
+    REQUIRE(std::get<0>(fc_after) < std::get<0>(fc_initial)); // P credit consumed
 
     // 验证 bar_store_ 落盘
     REQUIRE(f.ep.bar_store_value(0, 0, 0x100) == 0xFEEDFACE);

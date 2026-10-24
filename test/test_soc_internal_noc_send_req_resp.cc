@@ -14,13 +14,13 @@
 
 #include <cstdint>
 
-using tlm::cluster::SocInternalNoc;
 using bundles::NoCFlitBundle;
+using tlm::cluster::SocInternalNoc;
 
 TEST_CASE("SocInternalNoc::send_request: 计数 + 路由 (per AC-E1-3.4)",
           "[realip][pin-contract][noc][send-api][request]") {
     SocInternalNoc soc_noc("soc_noc", nullptr);
-    soc_noc.set_vram_accept_fn([](const NoCFlitBundle&) {});  // 注册 callback
+    soc_noc.set_vram_accept_fn([](const NoCFlitBundle&) {}); // 注册 callback
 
     NoCFlitBundle req{};
     req.dst_node.write(SocInternalNoc::NODE_ID_VRAM);

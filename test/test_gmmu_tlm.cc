@@ -4,14 +4,14 @@
 #include <cstring>
 #include <memory>
 #include <vector>
-#include "event_queue.hh"
 #include "core/module_factory.hh"
+#include "event_queue.hh"
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/vram_controller_tlm.hh"
 #include <catch2/catch_all.hpp>
 
-using tlm::gpu::GmmuTLM;
 using ::VramControllerTLM;
+using tlm::gpu::GmmuTLM;
 
 static constexpr uint64_t kPageSize = 4096;
 
@@ -149,8 +149,7 @@ TEST_CASE("gmmu: LO-only state after set_pt_base_lo (Inv-4 race lock)", "[gmmu][
 TEST_CASE("gmmu: addInstanceForTesting path", "[gmmu][module_factory]") {
     EventQueue eq;
     ModuleFactory factory(&eq);
-    factory.addInstanceForTesting("g_test",
-                                  std::make_unique<GmmuTLM>("g_test", &eq));
+    factory.addInstanceForTesting("g_test", std::make_unique<GmmuTLM>("g_test", &eq));
     auto* obj = factory.getInstance("g_test");
     REQUIRE(obj != nullptr);
     REQUIRE(obj->get_module_type() == "GmmuTLM");
@@ -187,7 +186,8 @@ TEST_CASE("gmmu: set_vram_target 装配 programmatic bridge (Gap I)", "[gmmu][no
     REQUIRE(pa == 0x2000);
 }
 
-TEST_CASE("gmmu: vram_ctrl 缺 backing → translate -ENODEV 语义 (Gap I)", "[gmmu][noc-gmmu-bypass]") {
+TEST_CASE("gmmu: vram_ctrl 缺 backing → translate -ENODEV 语义 (Gap I)",
+          "[gmmu][noc-gmmu-bypass]") {
     EventQueue eq;
     auto g = std::make_unique<GmmuTLM>("g", &eq);
     auto vram = std::make_unique<VramControllerTLM>("vram", &eq);
@@ -239,6 +239,6 @@ TEST_CASE("gmmu: translate 经 vram_ctrl 跨页检查仍生效 (Gap I)", "[gmmu]
     g->set_enabled(true);
 
     uint64_t pa = 0;
-    int rc = g->translate(0xFF0, 4096, pa);  // 跨页
+    int rc = g->translate(0xFF0, 4096, pa); // 跨页
     REQUIRE(rc == -EIO);
 }

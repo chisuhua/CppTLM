@@ -1,70 +1,54 @@
-#include "catch_amalgamated.hpp"
 #include "chstream_register.hh"
+#include "catch_amalgamated.hpp"
 #include "core/event_queue.hh"
 #include "tlm/gpu/dgpu_board_shell.hh"
 #include "tlm/pcie/pcie_controller_ip.hh"
 #include "tlm/vram_controller_tlm.hh"
 
-#include <nlohmann/json.hpp>
 #include <fstream>
 #include <memory>
 #include <vector>
+#include <nlohmann/json.hpp>
 
 using tlm::gpu::DGpuBoard;
 
 namespace {
 
-nlohmann::json load_minimal_v1_config() {
-    std::ifstream f("configs/dgpu_soc_minimal_v1.json");
-    REQUIRE(f.is_open());
-    nlohmann::json cfg;
-    f >> cfg;
-    return cfg;
-}
+    nlohmann::json load_minimal_v1_config() {
+        std::ifstream f("configs/dgpu_soc_minimal_v1.json");
+        REQUIRE(f.is_open());
+        nlohmann::json cfg;
+        f >> cfg;
+        return cfg;
+    }
 
-nlohmann::json inline_no_pcie_ctrl_cfg() {
-    nlohmann::json cfg = {
-        {"modules", nlohmann::json::array({
-            {
-                {"type", "DGpuSoc"},
-                {"name", "soc"},
-                {"modules", nlohmann::json::array({
-                    {
-                        {"type", "PcieEndpointIP"},
-                        {"name", "pcie_ep"},
-                        {"params", {
-                            {"config_size", 4096},
-                            {"num_msix_vectors", 16},
-                            {"bar_sizes", {4096, 16777216, 8589934592}}
-                        }}
-                    },
-                    {
-                        {"type", "PcieMemoryDevice"},
-                        {"name", "pcie_memory"},
-                        {"params", {{"capacity_gb", 8}}}
-                    },
-                    {
-                        {"type", "SdmaEngineTLM"},
-                        {"name", "sdma"},
-                        {"params", {{"max_inflight", 4}}}
-                    },
-                    {
-                        {"type", "GmmuTLM"},
-                        {"name", "gmmu"},
-                        {"params", {{"page_size_bytes", 4096}}}
-                    },
-                    {
-                        {"type", "CompletionRingTLM"},
-                        {"name", "completion"}
-                    }
-                })},
-                {"connections", nlohmann::json::array()}
-            }
-        })},
-        {"connections", nlohmann::json::array()}
-    };
-    return cfg;
-}
+    nlohmann::json inline_no_pcie_ctrl_cfg() {
+        nlohmann::json cfg = {
+            {"modules",
+             nlohmann::json::array(
+                 {{{"type", "DGpuSoc"},
+                   {"name", "soc"},
+                   {"modules", nlohmann::json::array(
+                                   {{{"type", "PcieEndpointIP"},
+                                     {"name", "pcie_ep"},
+                                     {"params",
+                                      {{"config_size", 4096},
+                                       {"num_msix_vectors", 16},
+                                       {"bar_sizes", {4096, 16777216, 8589934592}}}}},
+                                    {{"type", "PcieMemoryDevice"},
+                                     {"name", "pcie_memory"},
+                                     {"params", {{"capacity_gb", 8}}}},
+                                    {{"type", "SdmaEngineTLM"},
+                                     {"name", "sdma"},
+                                     {"params", {{"max_inflight", 4}}}},
+                                    {{"type", "GmmuTLM"},
+                                     {"name", "gmmu"},
+                                     {"params", {{"page_size_bytes", 4096}}}},
+                                    {{"type", "CompletionRingTLM"}, {"name", "completion"}}})},
+                   {"connections", nlohmann::json::array()}}})},
+            {"connections", nlohmann::json::array()}};
+        return cfg;
+    }
 
 } // namespace
 

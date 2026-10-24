@@ -73,12 +73,12 @@ namespace {
     //    → 「named_network 解析到**唯一** vc_id」这个谓词**整体消失**:
     //      network 本身就是 key,其下每个 key 直接就是该网络的槽位标识。
     //    → 槽位上界由 fabric 侧的 `vc_count` 给出(不再由 schema 的硬编码上界兜)。
-    using NetworkMap = std::map<std::string, int>;  // network → vc_count
+    using NetworkMap = std::map<std::string, int>; // network → vc_count
 
     // 规范消息类词表(per ADR-CEP-12 §8.3 IC2 ③;ArchForge 32 号 §6.0.1 的 6 类)
     const std::set<std::string>& canonical_msg_classes() {
-        static const std::set<std::string> cls = {"request", "response", "snoop", "snoop_resp",
-                                                  "atomic", "query"};
+        static const std::set<std::string> cls = {"request",    "response", "snoop",
+                                                  "snoop_resp", "atomic",   "query"};
         return cls;
     }
 
@@ -112,7 +112,8 @@ namespace {
             }
             for (auto mit = vit.value().begin(); mit != vit.value().end(); ++mit) {
                 if (canonical_msg_classes().count(mit.key()) == 0) {
-                    r.reason = "vc_binding." + vit.key() + "." + mit.key() + ": 消息类不在 6 类规范词表";
+                    r.reason =
+                        "vc_binding." + vit.key() + "." + mit.key() + ": 消息类不在 6 类规范词表";
                     return r;
                 }
             }
@@ -121,7 +122,8 @@ namespace {
             const std::string network = nit.key();
             const auto& per_net = nit.value();
             if (!per_net.is_object()) {
-                r.reason = "ordering_assumption." + network + " 必须是对象(network→{vc_id→ordering})";
+                r.reason =
+                    "ordering_assumption." + network + " 必须是对象(network→{vc_id→ordering})";
                 return r;
             }
             const auto fit = fabric_networks.find(network);
@@ -140,9 +142,8 @@ namespace {
             }
             for (auto vit = per_net.begin(); vit != per_net.end(); ++vit) {
                 const std::string key = vit.key();
-                if (key.empty() ||
-                    !std::all_of(key.begin(), key.end(),
-                                 [](unsigned char c) { return std::isdigit(c); })) {
+                if (key.empty() || !std::all_of(key.begin(), key.end(),
+                                                [](unsigned char c) { return std::isdigit(c); })) {
                     r.reason = "ordering_assumption." + network + " 的 key 非 vc_id: " + key;
                     return r;
                 }
@@ -168,7 +169,8 @@ namespace {
                 }
                 const std::string ordering = vit.value().get<std::string>();
                 if (ordering != "p2p_ordered" && ordering != "unordered") {
-                    r.reason = "ordering_assumption." + network + "." + key + " 的取值非法: " + ordering;
+                    r.reason =
+                        "ordering_assumption." + network + "." + key + " 的取值非法: " + ordering;
                     return r;
                 }
             }
@@ -229,8 +231,7 @@ namespace {
 
 } // namespace
 
-TEST_CASE("[cep][schema] schema 必含 13 个顶层属性(7 字段组的划分见下一用例)",
-          "[cep][schema]") {
+TEST_CASE("[cep][schema] schema 必含 13 个顶层属性(7 字段组的划分见下一用例)", "[cep][schema]") {
     const json s = load_schema();
     REQUIRE(s.contains("properties"));
     const auto& props = s.at("properties");
@@ -484,9 +485,9 @@ TEST_CASE("[cep][schema] protocol_version 值域必须容纳 ADR-CEP-11 锁定�
     // 锁定表的 8 个取值(per ADR-CEP-11 §3;2026-10-22 per 台账 Entry #12 增补
     // moesi-gpu-1.0 / mesif-1.0 —— 登记 moesi_gpu / mesif 进 07 号 §5.1.1 后,
     // INV-CEP-11-IC1 要求其 protocol_version 必须落在锁表内)
-    const std::vector<std::string> locked = {
-        "chi-r2",         "cxl-2.0",          "cxl-3.0",         "tilelink-c-1.3",
-        "nvlink-4.0",     "ualink-2.0",       "moesi-gpu-1.0",   "mesif-1.0"};
+    const std::vector<std::string> locked = {"chi-r2",         "cxl-2.0",    "cxl-3.0",
+                                             "tilelink-c-1.3", "nvlink-4.0", "ualink-2.0",
+                                             "moesi-gpu-1.0",  "mesif-1.0"};
     const std::regex re(pattern);
     for (const auto& v : locked) {
         INFO("锁定表取值未出现在 ADR-CEP-11: " << v);
@@ -502,31 +503,38 @@ TEST_CASE("[cep][schema] protocol_version 值域必须容纳 ADR-CEP-11 锁定�
     const size_t sec3 = lock.find("## 3. 规范版本锁定表");
     REQUIRE(sec3 != std::string::npos);
     const size_t sec3_end = lock.find("\n## ", sec3 + 1);
-    const std::string sec3_body = lock.substr(
-        sec3, (sec3_end == std::string::npos ? lock.size() : sec3_end) - sec3);
+    const std::string sec3_body =
+        lock.substr(sec3, (sec3_end == std::string::npos ? lock.size() : sec3_end) - sec3);
 
     std::set<std::string> table_vals;
     {
         std::istringstream ss(sec3_body);
         std::string line;
         while (std::getline(ss, line)) {
-            if (line.empty() || line[0] != '|') continue;      // 只看表格行
-            if (line.find("---") != std::string::npos) continue;  // 跳分隔行
-            if (line.find("协议族") != std::string::npos) continue;  // 跳表头
+            if (line.empty() || line[0] != '|')
+                continue; // 只看表格行
+            if (line.find("---") != std::string::npos)
+                continue; // 跳分隔行
+            if (line.find("协议族") != std::string::npos)
+                continue; // 跳表头
             const size_t c1 = line.find('|', 1);
-            if (c1 == std::string::npos) continue;
+            if (c1 == std::string::npos)
+                continue;
             const size_t c2 = line.find('|', c1 + 1);
-            if (c2 == std::string::npos) continue;
+            if (c2 == std::string::npos)
+                continue;
             const std::string col = line.substr(c1 + 1, c2 - c1 - 1);
             const size_t b = col.find('`');
-            if (b == std::string::npos) continue;
+            if (b == std::string::npos)
+                continue;
             const size_t e = col.find('`', b + 1);
-            if (e == std::string::npos) continue;
+            if (e == std::string::npos)
+                continue;
             table_vals.insert(col.substr(b + 1, e - b - 1));
         }
     }
-    INFO("§3 锁表解析出的 protocol_version 取值数: " << table_vals.size()
-         << " (硬编码列表 " << locked.size() << ")");
+    INFO("§3 锁表解析出的 protocol_version 取值数: " << table_vals.size() << " (硬编码列表 "
+                                                     << locked.size() << ")");
     REQUIRE(table_vals.size() == locked.size());
     for (const auto& v : locked) {
         INFO("§3 锁表缺取值: " << v);
@@ -569,10 +577,9 @@ TEST_CASE("[cep][schema] per-network 形态下每个 vc_id 落在该网络槽位
 
     // 同一协议实例可横跨多张网(per ArchForge 32 号 §6.1:moesi_gpu 横跨 compute_noc + ualink_fabric)
     json multi = minimal_valid_instance();
-    multi["ordering_assumption"] = {
-        {"net_fwd", {{"0", "p2p_ordered"}}}, {"net_bwd", {{"1", "unordered"}}}};
-    multi["vc_binding"] = {{"net_fwd", {{"request", 0}}},
-                           {"net_bwd", {{"request", 1}}}};
+    multi["ordering_assumption"] = {{"net_fwd", {{"0", "p2p_ordered"}}},
+                                    {"net_bwd", {{"1", "unordered"}}}};
+    multi["vc_binding"] = {{"net_fwd", {{"request", 0}}}, {"net_bwd", {{"request", 1}}}};
     REQUIRE(resolve_ordering_assumptions(multi, known, fabric).ok);
 }
 
@@ -621,7 +628,8 @@ TEST_CASE("[cep][schema] per-network 形态下的 5 类非法输入必须 fail(I
     REQUIRE_FALSE(r6.ok);
     REQUIRE(r6.reason.find("值域") != std::string::npos);
 
-    // ⑦ IC2 ③:消息类必须 ∈ 6 类规范词表(CATEGORY_CREDIT / forward_data / snoop_completion_ack 均排除)
+    // ⑦ IC2 ③:消息类必须 ∈ 6 类规范词表(CATEGORY_CREDIT / forward_data / snoop_completion_ack
+    // 均排除)
     json bad7 = minimal_valid_instance();
     bad7["vc_binding"] = {{"net_fwd", {{"request", 0}, {"forward_data", 1}}}};
     const auto r7 = resolve_ordering_assumptions(bad7, known, fabric);

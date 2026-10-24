@@ -10,7 +10,8 @@
 // 设计原则 (per tasks.md §3 + Oracle 决策):
 //   - C++ 端不实施 4 级页表 walk (UE 进程实现, 通过 dma_translate_cb 接口注入)
 //   - PcieEndpointIP 暴露 mode 开关 (IDENTITY/IOMMU), 默认 IDENTITY
-//   - 真实 4 级 walk 在 UE 进程 (UsrLinuxEmu 侧), 通过 cpptlm_emulator_register_dma_translate_cb 注入
+//   - 真实 4 级 walk 在 UE 进程 (UsrLinuxEmu 侧), 通过 cpptlm_emulator_register_dma_translate_cb
+//   注入
 //   - 测试通过 cpptlm_emulator_t* ABI 路径验证 cb 真调用
 
 #include "abi/cpptlm_emulator.h"
@@ -22,28 +23,28 @@
 
 namespace {
 
-// cb 签名 (per ADR-088 §D3.8): int (*cb)(uint64_t iova, uint32_t size, uint64_t* out_pa)
-using TranslateFn = int (*)(uint64_t iova, uint32_t size, uint64_t* out_pa);
+    // cb 签名 (per ADR-088 §D3.8): int (*cb)(uint64_t iova, uint32_t size, uint64_t* out_pa)
+    using TranslateFn = int (*)(uint64_t iova, uint32_t size, uint64_t* out_pa);
 
-// identity 模式 cb (Stage 1.3c 默认)
-int test_identity_cb(uint64_t iova, uint32_t /*size*/, uint64_t* out_pa) {
-    *out_pa = iova;
-    return 0;
-}
+    // identity 模式 cb (Stage 1.3c 默认)
+    int test_identity_cb(uint64_t iova, uint32_t /*size*/, uint64_t* out_pa) {
+        *out_pa = iova;
+        return 0;
+    }
 
-// IOMMU 模式 cb (模拟 4 级页表 walk 失败)
-int test_iommu_fail_cb(uint64_t /*iova*/, uint32_t /*size*/, uint64_t* /*out_pa*/) {
-    return -EIO;
-}
+    // IOMMU 模式 cb (模拟 4 级页表 walk 失败)
+    int test_iommu_fail_cb(uint64_t /*iova*/, uint32_t /*size*/, uint64_t* /*out_pa*/) {
+        return -EIO;
+    }
 
-// IOMMU 模式 cb 成功 (模拟 4 级 walk 命中)
-int test_iommu_success_cb(uint64_t iova, uint32_t /*size*/, uint64_t* out_pa) {
-    // 简化的 4 级 walk: PA = IOVA + 0x10000000 (4GB offset)
-    *out_pa = iova + 0x10000000ULL;
-    return 0;
-}
+    // IOMMU 模式 cb 成功 (模拟 4 级 walk 命中)
+    int test_iommu_success_cb(uint64_t iova, uint32_t /*size*/, uint64_t* out_pa) {
+        // 简化的 4 级 walk: PA = IOVA + 0x10000000 (4GB offset)
+        *out_pa = iova + 0x10000000ULL;
+        return 0;
+    }
 
-}  // namespace
+} // namespace
 
 // =============================================================================
 // spec.md Scenario "identity mode pa=iova"
@@ -88,8 +89,7 @@ TEST_CASE("PcieEndpointIP: IOMMU 模式 + cb 失败 → error_cb 触发 -EIO",
 // spec.md Scenario "IOMMU 模式 cb 成功 → pa 编码正确"
 //   IOMMU 4 级 walk 命中, pa = iova + 0x10000000 (4GB offset)
 // =============================================================================
-TEST_CASE("PcieEndpointIP: IOMMU 模式 cb 成功 → pa 编码",
-          "[pcie][iommu][1.3c][iommu_success]") {
+TEST_CASE("PcieEndpointIP: IOMMU 模式 cb 成功 → pa 编码", "[pcie][iommu][1.3c][iommu_success]") {
     cpptlm_emulator_t* emu = cpptlm_emulator_create(nullptr);
     if (emu == nullptr) {
         SKIP("cpptlm_emulator_create 失败 (T-bs-4 follow-up)");

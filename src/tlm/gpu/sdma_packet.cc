@@ -9,4 +9,4 @@
 namespace tlm::gpu {
     // 无需独立实现; 类方法均在 header inline 定义.
     // 此文件保留是为未来扩展 (例如 SgDescriptor wire-format 序列化 helper).
-}  // namespace tlm::gpu
+} // namespace tlm::gpu

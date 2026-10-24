@@ -31,7 +31,8 @@ static std::vector<uint8_t> read_hex_file(const std::string& path) {
     std::string line;
     while (std::getline(f, line)) {
         // 跳过空行
-        if (line.empty()) continue;
+        if (line.empty())
+            continue;
         REQUIRE(line.length() % 2 == 0);
         for (std::size_t i = 0; i < line.length(); i += 2) {
             unsigned int byte_val = 0;
@@ -211,8 +212,7 @@ TEST_CASE("PcieTlpCodec: CRC self-test matches PCIe spec vectors",
 
 // ── is_malformed 测试 ─────────────────────────────────────────────────────
 
-TEST_CASE("PcieTlpCodec: is_malformed detects bad TLP",
-          "[phase9][pcie][tlp-codec][malformed]") {
+TEST_CASE("PcieTlpCodec: is_malformed detects bad TLP", "[phase9][pcie][tlp-codec][malformed]") {
     // 合法 MRd → 不是 malformed
     auto mrd = read_hex_file(golden_path("64b_mrd_32bit.hex"));
     auto dec_mrd = PcieTlpCodec::decode(mrd.data(), mrd.size());
@@ -240,7 +240,7 @@ TEST_CASE("PcieTlpCodec: encode then decode MRd round-trip",
         /*requester_id=*/0x0100,
         /*tag=*/0x02,
         /*address=*/0x10000000,
-        /*len_dw=*/64);  // 64 DW = 256 bytes
+        /*len_dw=*/64); // 64 DW = 256 bytes
 
     REQUIRE(encoded.size() > 0);
 
@@ -340,10 +340,10 @@ TEST_CASE("PcieTlpCodec: encode CplD matches golden fixture byte-for-byte",
     uint8_t payload[64];
     // b"\xDE\xAD\xBE\xEF" * 16
     for (int i = 0; i < 16; ++i) {
-        payload[i*4 + 0] = 0xDE;
-        payload[i*4 + 1] = 0xAD;
-        payload[i*4 + 2] = 0xBE;
-        payload[i*4 + 3] = 0xEF;
+        payload[i * 4 + 0] = 0xDE;
+        payload[i * 4 + 1] = 0xAD;
+        payload[i * 4 + 2] = 0xBE;
+        payload[i * 4 + 3] = 0xEF;
     }
     auto encoded = PcieTlpCodec::encode_cpld(
         /*completer_id=*/0x0200,
@@ -369,8 +369,8 @@ TEST_CASE("PcieTlpCodec: encode 4KB MWr matches golden fixture byte-for-byte",
     uint8_t payload[4096];
     // b"\xAA\x55" * 2048
     for (int i = 0; i < 2048; ++i) {
-        payload[i*2 + 0] = 0xAA;
-        payload[i*2 + 1] = 0x55;
+        payload[i * 2 + 0] = 0xAA;
+        payload[i * 2 + 1] = 0x55;
     }
     auto encoded = PcieTlpCodec::encode_mwr(
         /*requester_id=*/0x0100,

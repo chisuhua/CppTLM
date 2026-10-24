@@ -30,26 +30,26 @@ using namespace tlm::gpu;
 
 namespace {
 
-// 测试辅助: 构造确定性 DmaDescriptor (H2D, 4 字节)
-DmaDescriptor make_test_desc(uint32_t tag) {
-    return DmaDescriptor(DmaDescriptor::Dir::H2D,
-                         /*host_iova=*/0x1000 + tag * 4,
-                         /*vram_offset=*/0x2000 + tag * 4,
-                         /*size=*/4,
-                         /*tag=*/tag);
-}
-
-// 测试辅助: 序列化 DmaDescriptor → 64-byte ring entry (Round-trip 校验用)
-std::array<uint8_t, 64> serialize_desc(const DmaDescriptor& d) {
-    std::array<uint8_t, 64> buf{};
-    const uint8_t* raw = reinterpret_cast<const uint8_t*>(&d);
-    for (size_t i = 0; i < sizeof(DmaDescriptor) && i < 64; ++i) {
-        buf[i] = raw[i];
+    // 测试辅助: 构造确定性 DmaDescriptor (H2D, 4 字节)
+    DmaDescriptor make_test_desc(uint32_t tag) {
+        return DmaDescriptor(DmaDescriptor::Dir::H2D,
+                             /*host_iova=*/0x1000 + tag * 4,
+                             /*vram_offset=*/0x2000 + tag * 4,
+                             /*size=*/4,
+                             /*tag=*/tag);
     }
-    return buf;
-}
 
-}  // namespace
+    // 测试辅助: 序列化 DmaDescriptor → 64-byte ring entry (Round-trip 校验用)
+    std::array<uint8_t, 64> serialize_desc(const DmaDescriptor& d) {
+        std::array<uint8_t, 64> buf{};
+        const uint8_t* raw = reinterpret_cast<const uint8_t*>(&d);
+        for (size_t i = 0; i < sizeof(DmaDescriptor) && i < 64; ++i) {
+            buf[i] = raw[i];
+        }
+        return buf;
+    }
+
+} // namespace
 
 // =============================================================================
 // Scenario 1: Ring Buffer 4 config sizes
@@ -130,8 +130,10 @@ TEST_CASE("SdmaRingBuffer: RPTR/WPTR 32-bit atomic, wptr >= rptr invariant",
                 }
             });
         }
-        for (auto& w : writers) w.join();
-        for (auto& r : readers) r.join();
+        for (auto& w : writers)
+            w.join();
+        for (auto& r : readers)
+            r.join();
 
         REQUIRE(ring.wptr().load() == static_cast<uint32_t>(kThreads * kIters));
         REQUIRE(ring.rptr().load() == static_cast<uint32_t>(kThreads * kIters));
@@ -183,8 +185,7 @@ TEST_CASE("SdmaRingBuffer: doorbell-style WPTR advance → ring entries marked r
 // Scenario 4: SG descriptor chain ≥ 8
 //   SdmaPacket::add_sg() × 8 → sg_count() == 8, 链式访问全部有效
 // =============================================================================
-TEST_CASE("SdmaPacket: SG descriptor chain supports ≥ 8 entries",
-          "[sdma][packet][sg][1.3a]") {
+TEST_CASE("SdmaPacket: SG descriptor chain supports ≥ 8 entries", "[sdma][packet][sg][1.3a]") {
     SdmaPacket packet;
 
     SECTION("空 packet: sg_count() == 0") {
@@ -197,11 +198,11 @@ TEST_CASE("SdmaPacket: SG descriptor chain supports ≥ 8 entries",
             sg.iova = 0x1000 + i * 0x1000;
             sg.size = 0x1000;
             sg.vram_offset = 0x10000 + i * 0x1000;
-            sg.next_offset = (i + 1 < kSgCount) ? (i + 1) * 64 : 0;  // ring offset, 0 = end
+            sg.next_offset = (i + 1 < kSgCount) ? (i + 1) * 64 : 0; // ring offset, 0 = end
             REQUIRE(packet.add_sg(sg) == true);
         }
         REQUIRE(packet.sg_count() == kSgCount);
-        REQUIRE(packet.sg_count() >= 8u);  // spec: "SG ≥ 8"
+        REQUIRE(packet.sg_count() >= 8u); // spec: "SG ≥ 8"
     }
     SECTION("SG 链式访问: 8 个 sg 的字段全部正确读回") {
         constexpr uint32_t kSgCount = 8;

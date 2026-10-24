@@ -2,15 +2,15 @@
 // PcieEndpointIP 实现 (T-P4-7)
 // 作者 CppTLM Team / 日期 2026-10-13
 #include "tlm/pcie/pcie_endpoint_ip.hh"
+#include "tlm/gpu/pcie_bar_router_mvp.hh" // PcieBarRouter Access/SideEffect enums (P2 PR-B Stage B)
 #include "tlm/gpu/pcie_config_space_mvp.hh"
-#include "tlm/gpu/pcie_bar_router_mvp.hh"  // PcieBarRouter Access/SideEffect enums (P2 PR-B Stage B)
-#include "tlm/pcie/pcie_config_space_per_vf_tlm.hh"
-#include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
-#include "tlm/pcie/pcie_msix_per_vf_tlm.hh"
 #include "tlm/pcie/pcie_ari_router_tlm.hh"
-#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
 #include "tlm/pcie/pcie_axi_adapter_tlm.hh"
+#include "tlm/pcie/pcie_config_space_per_vf_tlm.hh"
 #include "tlm/pcie/pcie_link_phy_mux_tlm.hh"
+#include "tlm/pcie/pcie_msix_per_vf_tlm.hh"
+#include "tlm/pcie/pcie_phy_digital_ctrl_tlm.hh"
+#include "tlm/pcie/pcie_sriov_vf_pool_tlm.hh"
 #include <nlohmann/json.hpp>
 
 #include <algorithm>
@@ -23,14 +23,16 @@ namespace tlm::pcie {
 
     PcieEndpointIP::PcieEndpointIP(const std::string& name, EventQueue* eq)
         : SimModule(name, eq)
-        // D1 display-io-mvp: D3a-2 raw ptr (non-owning), 由 DGpuBoard::bind_display_backings 注入
-        , display_device_(nullptr)
-        // D2 memory-device-mvp: Phase 3 T1.2 raw ptr (non-owning), 由 DGpuBoard 注入
-        , memory_device_(nullptr) {
+          // D1 display-io-mvp: D3a-2 raw ptr (non-owning), 由 DGpuBoard::bind_display_backings 注入
+          ,
+          display_device_(nullptr)
+          // D2 memory-device-mvp: Phase 3 T1.2 raw ptr (non-owning), 由 DGpuBoard 注入
+          ,
+          memory_device_(nullptr) {
         pool_.init_all();
         install_pm_capability();
         install_capabilities();
-        install_bar_registers();  // v1.3 B5: 从 bar_sizes_ 写 64-bit BAR 双 dword
+        install_bar_registers(); // v1.3 B5: 从 bar_sizes_ 写 64-bit BAR 双 dword
         instances_for_test().push_back(this);
     }
 
@@ -56,7 +58,7 @@ namespace tlm::pcie {
         cfg_pf.add_capability(0x01, 0x40, /*next=*/0x00, /*control=*/0x0013);
         cfg_pf.set_pmcsr_write_cb([this](uint16_t new_pws) {
             if (new_pws != 0 && new_pws != 3) {
-                return;  // D1/D2 保留值: 忽略, 保持当前状态
+                return; // D1/D2 保留值: 忽略, 保持当前状态
             }
             set_power_state(static_cast<PciePowerState>(new_pws));
         });
@@ -67,10 +69,12 @@ namespace tlm::pcie {
         cfg_pf.set_lnkctl_write_cb([this](uint16_t new_lnkctl) {
             // PCI-SIG LNKCTL ASPM bits[1:0]: 01=L0s, 10=L1
             if (new_lnkctl & 0x0001) {
-                if (auto* p = phy()) p->enable_aspm(::tlm::pcie::PciePhyDigitalCtrl::AspmLevel::L0s);
+                if (auto* p = phy())
+                    p->enable_aspm(::tlm::pcie::PciePhyDigitalCtrl::AspmLevel::L0s);
             }
             if (new_lnkctl & 0x0002) {
-                if (auto* p = phy()) p->enable_aspm(::tlm::pcie::PciePhyDigitalCtrl::AspmLevel::L1);
+                if (auto* p = phy())
+                    p->enable_aspm(::tlm::pcie::PciePhyDigitalCtrl::AspmLevel::L1);
             }
         });
     }
@@ -116,7 +120,8 @@ namespace tlm::pcie {
         for (int i = 0; i < 6; i++) {
             const uint16_t lo_off = static_cast<uint16_t>(0x10 + i * 8);
             const uint16_t hi_off = static_cast<uint16_t>(lo_off + 4);
-            if (lo_off + 8 > cfg_pf.config_size()) break;
+            if (lo_off + 8 > cfg_pf.config_size())
+                break;
             // BAR register = 0 (base addr placeholder) — NOT bar_sizes_[i].
             // Per PCIe spec: BAR holds base addr after host enumeration.
             cfg_pf.write(lo_off, 0u);
@@ -131,27 +136,27 @@ namespace tlm::pcie {
         // offset checks. PcieEndpointIP::tick() doorbell path uses this entry's
         // stream_id for doorbell dispatch.
         bar_router_.add_register(kBar1DoorbellOffset, "DOORBELL",
-                                tlm::gpu::PcieBarRouter::Access::WO,
-                                tlm::gpu::PcieBarRouter::SideEffect::DOORBELL,
-                                0);
+                                 tlm::gpu::PcieBarRouter::Access::WO,
+                                 tlm::gpu::PcieBarRouter::SideEffect::DOORBELL, 0);
     }
 
     // P2 PR-B Stage B (b) per Oracle bg_c60653e0 §1.5/§2.4: BAR size is a config
-//  property — NOT what host BAR register currently programs (BAR register holds
-//  base addr per PCIe spec, post-BLOCKER-B3). The spec previously read back the
-//  cfg_pf BAR-register location because install_bar_registers incorrectly put
-//  size in BAR register. Now spec-compliant — read from bar_sizes_[] directly
-//  (BAR register = base addr, size = bar_sizes_[idx] field, decode-from-config).
-//  NOTE: Real silicon uses write-all-1s probe (host writes 0xFFFFFFFF, EP
-//  returns inverted bits, +1 = size). bar_sizes_[] is pre-seeded from JSON
-//  params (or probe-derived in future work). See docs/superpowers/plans/...
-//  for BLOCKER B3 rationale.
-uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
-    if (idx >= 6) return 0;
-    // Read from dedicated size field (PCIe-spec-compliant); BAR register
-    // holds base addr (per install_bar_registers spec-compliant write).
-    return bar_sizes_[idx];
-}
+    //  property — NOT what host BAR register currently programs (BAR register holds
+    //  base addr per PCIe spec, post-BLOCKER-B3). The spec previously read back the
+    //  cfg_pf BAR-register location because install_bar_registers incorrectly put
+    //  size in BAR register. Now spec-compliant — read from bar_sizes_[] directly
+    //  (BAR register = base addr, size = bar_sizes_[idx] field, decode-from-config).
+    //  NOTE: Real silicon uses write-all-1s probe (host writes 0xFFFFFFFF, EP
+    //  returns inverted bits, +1 = size). bar_sizes_[] is pre-seeded from JSON
+    //  params (or probe-derived in future work). See docs/superpowers/plans/...
+    //  for BLOCKER B3 rationale.
+    uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
+        if (idx >= 6)
+            return 0;
+        // Read from dedicated size field (PCIe-spec-compliant); BAR register
+        // holds base addr (per install_bar_registers spec-compliant write).
+        return bar_sizes_[idx];
+    }
 
     void PcieEndpointIP::simulate_instantiate(const json& cfg) {
         // 决策 3: 双格式 — Module entry {"name","type","params"} (Step 4.5) 或直接 params
@@ -213,15 +218,12 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
                 ensure_composite_instantiated(params);
                 composite_active_ = true;
                 if (auto* lpm = this->composite()) {
-                    lpm->link().set_fc_capacity(
-                        ll_json.value("fc_token_bucket_capacity", 256u));
-                    lpm->link().set_retry_buffer_size(
-                        ll_json.value("retry_buffer_size", 4096u));
+                    lpm->link().set_fc_capacity(ll_json.value("fc_token_bucket_capacity", 256u));
+                    lpm->link().set_retry_buffer_size(ll_json.value("retry_buffer_size", 4096u));
                     lpm->link().set_link_error_injection_enabled(
                         ll_json.value("link_error_injection_enabled", false));
                     if (ll_json.contains("bypass_mode")) {
-                        const std::string bypass_mode =
-                            ll_json["bypass_mode"].get<std::string>();
+                        const std::string bypass_mode = ll_json["bypass_mode"].get<std::string>();
                         if (bypass_mode == "Bypass") {
                             lpm->mux().apply_mode(BypassMode::Bypass);
                         } else if (bypass_mode == "Partial") {
@@ -265,11 +267,11 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
                     cfg.preset_Cpl = pj.value("preset_cpl", cfg.preset_Cpl);
                 }
                 if (pj.contains("hot_plug_supported")) {
-                    cfg.hot_plug_supported =
-                        pj.value("hot_plug_supported", cfg.hot_plug_supported);
+                    cfg.hot_plug_supported = pj.value("hot_plug_supported", cfg.hot_plug_supported);
                 }
                 lpm->phy().set_config(cfg);
-                warn_unconsumed_subkeys(pj, "phy_digital",
+                warn_unconsumed_subkeys(
+                    pj, "phy_digital",
                     {"preset_p", "preset_np", "preset_cpl", "hot_plug_supported"});
             }
         }
@@ -279,8 +281,7 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
         if (params.contains("sr_iov")) {
             const auto& sio = params["sr_iov"];
             if (sio.contains("ari_capable")) {
-                pool_.ari_router().set_ari_enabled(
-                    sio.value("ari_capable", false));
+                pool_.ari_router().set_ari_enabled(sio.value("ari_capable", false));
             }
             if (sio.contains("vf_msix_vectors")) {
                 const uint16_t n = sio.value("vf_msix_vectors", 4u);
@@ -288,8 +289,7 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
                     pool_.msix_pool().configure_vectors(vf, n);
                 }
             }
-            warn_unconsumed_subkeys(sio, "sr_iov",
-                {"ari_capable", "vf_msix_vectors"});
+            warn_unconsumed_subkeys(sio, "sr_iov", {"ari_capable", "vf_msix_vectors"});
         }
 
         if (params.contains("transaction_layer")) {
@@ -302,8 +302,8 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
                         "transaction_layer.config_size must be 256 or 4096; got " +
                         std::to_string(sz) + ", falling back to 4096";
                     config_warnings_.push_back(msg);
-                    std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: "
-                              << msg << "\n";
+                    std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: " << msg
+                              << "\n";
                 }
                 pool_.config_pool().set_config_size_all(applied);
             }
@@ -311,8 +311,7 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
                 const uint16_t n = tl.value("msix_num_vectors", 16u);
                 pool_.msix_pool().configure_vectors(0, n);
             }
-            warn_unconsumed_subkeys(tl, "transaction_layer",
-                {"config_size", "msix_num_vectors"});
+            warn_unconsumed_subkeys(tl, "transaction_layer", {"config_size", "msix_num_vectors"});
         }
 
         if (params.contains("bar0_registers") && params["bar0_registers"].is_array()) {
@@ -324,11 +323,15 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
                 const std::string side_str = reg_json.value("side_effect", std::string{"none"});
 
                 tlm::gpu::PcieBarRouter::Access access = tlm::gpu::PcieBarRouter::Access::RW;
-                if (access_str == "ro" || access_str == "RO") access = tlm::gpu::PcieBarRouter::Access::RO;
-                else if (access_str == "wo" || access_str == "WO") access = tlm::gpu::PcieBarRouter::Access::WO;
+                if (access_str == "ro" || access_str == "RO")
+                    access = tlm::gpu::PcieBarRouter::Access::RO;
+                else if (access_str == "wo" || access_str == "WO")
+                    access = tlm::gpu::PcieBarRouter::Access::WO;
 
-                tlm::gpu::PcieBarRouter::SideEffect side = tlm::gpu::PcieBarRouter::SideEffect::NONE;
-                if (side_str == "doorbell") side = tlm::gpu::PcieBarRouter::SideEffect::DOORBELL;
+                tlm::gpu::PcieBarRouter::SideEffect side =
+                    tlm::gpu::PcieBarRouter::SideEffect::NONE;
+                if (side_str == "doorbell")
+                    side = tlm::gpu::PcieBarRouter::SideEffect::DOORBELL;
 
                 const uint32_t stream_id = reg_json.value("stream_id", 0u);
                 bar_router_.add_register(offset, name, access, side, stream_id);
@@ -343,10 +346,9 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
             install_bar_registers();
         }
 
-        warn_unconsumed(params,
-            {"axi_adapter", "link_layer", "phy_digital",
-             "sr_iov", "transaction_layer", "bypass_mode", "pm_cap_control",
-             "bar0_registers", "bar_sizes", "config_size", "num_msix_vectors"});
+        warn_unconsumed(params, {"axi_adapter", "link_layer", "phy_digital", "sr_iov",
+                                 "transaction_layer", "bypass_mode", "pm_cap_control",
+                                 "bar0_registers", "bar_sizes", "config_size", "num_msix_vectors"});
     }
 
     void PcieEndpointIP::warn_unconsumed(const nlohmann::json& params,
@@ -354,31 +356,26 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
         std::unordered_set<std::string> known_set(known.begin(), known.end());
         for (auto it = params.begin(); it != params.end(); ++it) {
             if (known_set.count(it.key()) == 0) {
-                const std::string msg =
-                    "unrecognized JSON key '" + it.key() +
-                    "' (no consumer; deferred or out-of-scope)";
+                const std::string msg = "unrecognized JSON key '" + it.key() +
+                                        "' (no consumer; deferred or out-of-scope)";
                 config_warnings_.push_back(msg);
-                std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: "
-                          << msg << "\n";
+                std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: " << msg << "\n";
             }
         }
     }
 
-    void PcieEndpointIP::warn_unconsumed_subkeys(
-            const nlohmann::json& group,
-            const std::string& group_name,
-            const std::vector<std::string>& known_subkeys) {
-        if (!group.is_object()) return;
-        std::unordered_set<std::string> known(known_subkeys.begin(),
-                                              known_subkeys.end());
+    void PcieEndpointIP::warn_unconsumed_subkeys(const nlohmann::json& group,
+                                                 const std::string& group_name,
+                                                 const std::vector<std::string>& known_subkeys) {
+        if (!group.is_object())
+            return;
+        std::unordered_set<std::string> known(known_subkeys.begin(), known_subkeys.end());
         for (auto it = group.begin(); it != group.end(); ++it) {
             if (known.count(it.key()) == 0) {
                 const std::string msg =
-                    "unrecognized JSON subkey '" + it.key() +
-                    "' in " + group_name;
+                    "unrecognized JSON subkey '" + it.key() + "' in " + group_name;
                 config_warnings_.push_back(msg);
-                std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: "
-                          << msg << "\n";
+                std::cerr << "[CPPTLM-WARN] PcieEndpointIP::attach_composition: " << msg << "\n";
             }
         }
     }
@@ -432,7 +429,7 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
                     if (mmio_gated_ && !is_cfg) {
                         bundles::Axi4Bundle err_resp;
                         err_resp.bid.write(bid);
-                        err_resp.bresp.write(3u);  // DECERR
+                        err_resp.bresp.write(3u); // DECERR
                         axi.slave_resp(err_resp);
                         axi.slave_req_consume();
                         return;
@@ -464,8 +461,8 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
                                 byte_mask |= (0xFFu << (i * 8));
                             }
                         }
-                        const uint32_t old_val =
-                            static_cast<uint32_t>(bar_store_[BarStoreKey{bdf_, 0, key}]); // 默认 0 if missing
+                        const uint32_t old_val = static_cast<uint32_t>(
+                            bar_store_[BarStoreKey{bdf_, 0, key}]); // 默认 0 if missing
                         const uint32_t new_val = (old_val & ~byte_mask) | (wdata32 & byte_mask);
                         bar_store_[BarStoreKey{bdf_, 0, key}] = new_val;
                     }
@@ -543,14 +540,12 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
         if (!composite_active_ || !internal_factory) {
             return nullptr;
         }
-        return dynamic_cast<PcieLinkPhyMuxTLM*>(
-            internal_factory->getInstance(composite_name()));
+        return dynamic_cast<PcieLinkPhyMuxTLM*>(internal_factory->getInstance(composite_name()));
     }
 
     void PcieEndpointIP::ensure_composite_instantiated(const nlohmann::json& params) {
-        if (!params.contains("link_layer") ||
-            !params["link_layer"].value("enabled", true)) {
-            return;  // 惰性构造: enabled=true 才建 (for_endpoint→nullptr 语义保持)
+        if (!params.contains("link_layer") || !params["link_layer"].value("enabled", true)) {
+            return; // 惰性构造: enabled=true 才建 (for_endpoint→nullptr 语义保持)
         }
         if (!internal_factory || !internal_factory->getAllInstances().empty()) {
             composite_active_ = true;
@@ -682,10 +677,9 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
         for (auto it = bar_store_.begin(); it != bar_store_.end();) {
             const auto& [k_bdf, k_bar, k_addr] = it->first;
             if (k_bdf == bdf_ && k_bar == bar_idx && k_addr >= size) {
-                config_warnings_.push_back(
-                    "BAR" + std::to_string(bar_idx) +
-                    " resized to " + std::to_string(size) +
-                    ", key " + std::to_string(k_addr) + " out of bounds (cleared)");
+                config_warnings_.push_back("BAR" + std::to_string(bar_idx) + " resized to " +
+                                           std::to_string(size) + ", key " +
+                                           std::to_string(k_addr) + " out of bounds (cleared)");
                 it = bar_store_.erase(it);
             } else {
                 ++it;
@@ -764,11 +758,9 @@ uint64_t PcieEndpointIP::bar_size(unsigned idx) noexcept {
     PcieEndpointIP::link_layer_fc_snapshot_for_test() noexcept {
         if (auto* ll = link_layer()) {
             auto& fc = ll->fc();
-            return std::make_tuple(
-                fc.bucket(0).token_count(FcTokenBucket::Type::Posted),
-                fc.bucket(0).token_count(FcTokenBucket::Type::NonPosted),
-                fc.bucket(0).token_count(FcTokenBucket::Type::Completion)
-            );
+            return std::make_tuple(fc.bucket(0).token_count(FcTokenBucket::Type::Posted),
+                                   fc.bucket(0).token_count(FcTokenBucket::Type::NonPosted),
+                                   fc.bucket(0).token_count(FcTokenBucket::Type::Completion));
         }
         return std::make_tuple(0u, 0u, 0u);
     }

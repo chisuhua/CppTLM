@@ -30,8 +30,7 @@ namespace {
         std::string mode_name;
 
         TlpE2EFixture(const std::string& name, const std::string& bypass_mode)
-            : ep(name, &eq), mode_name(bypass_mode)
-        {
+            : ep(name, &eq), mode_name(bypass_mode) {
             ep.init();
             json cfg;
             cfg["link_layer"]["enabled"] = true;
@@ -43,21 +42,16 @@ namespace {
         }
 
         // 构造 MMIO_WRITE TLP
-        static PcieTlpBundle make_mmio_write(uint64_t offset, uint64_t data,
-                                              uint8_t bar = 0)
-        {
-            return PcieTlpBundle(
-                PcieTlpBundle::MMIO_WRITE, bar, offset, 8,
-                data, 0x0100 /* requester_id */, 0x42 /* trans_id */
+        static PcieTlpBundle make_mmio_write(uint64_t offset, uint64_t data, uint8_t bar = 0) {
+            return PcieTlpBundle(PcieTlpBundle::MMIO_WRITE, bar, offset, 8, data,
+                                 0x0100 /* requester_id */, 0x42 /* trans_id */
             );
         }
 
         // 构造 MMIO_READ TLP
-        static PcieTlpBundle make_mmio_read(uint64_t offset, uint8_t tag = 0x77)
-        {
-            return PcieTlpBundle(
-                PcieTlpBundle::MMIO_READ, 0, offset, 8,
-                0, 0x0100 /* requester_id */, tag /* trans_id = tag */
+        static PcieTlpBundle make_mmio_read(uint64_t offset, uint8_t tag = 0x77) {
+            return PcieTlpBundle(PcieTlpBundle::MMIO_READ, 0, offset, 8, 0,
+                                 0x0100 /* requester_id */, tag /* trans_id = tag */
             );
         }
     };
@@ -68,8 +62,7 @@ namespace {
 // TEST_CASE 1: MWr TLP 写路径 — TLP 真实产生, FC P credit 消耗, bar_store_ 落盘
 // ─────────────────────────────────────────────────────────────────────────────
 TEST_CASE("TLP E2E: MWr 写路径 — TLP 真实产生 + FC P credit 消耗 + bar_store_ 落盘",
-          "[pcie][tlp-e2e][phase9]")
-{
+          "[pcie][tlp-e2e][phase9]") {
     TlpE2EFixture f("ep_e2e_mwr", "Full");
 
     // 初始 FC 快照
@@ -114,8 +107,7 @@ TEST_CASE("TLP E2E: MWr 写路径 — TLP 真实产生 + FC P credit 消耗 + ba
 // TEST_CASE 2: MRd→CplD 读路径 — tag 关联 + CplD 数据一致 + FC NP credit 消耗
 // ─────────────────────────────────────────────────────────────────────────────
 TEST_CASE("TLP E2E: MRd→CplD 读路径 — tag 关联 + CplD 回发数据一致 + FC NP 消耗",
-          "[pcie][tlp-e2e][phase9]")
-{
+          "[pcie][tlp-e2e][phase9]") {
     TlpE2EFixture f("ep_e2e_mrd", "Full");
 
     // 先通过 MWr 写入 bar_store_ (模拟 ABI mmio_write 真实路径)
@@ -161,8 +153,7 @@ TEST_CASE("TLP E2E: MRd→CplD 读路径 — tag 关联 + CplD 回发数据一�
 // TEST_CASE 3: 钩子点验证 — tlp_rx_count_ / set_tlp_sink lambda / FC 快照
 // ─────────────────────────────────────────────────────────────────────────────
 TEST_CASE("TLP E2E: 钩子点验证 — tlp_rx_count_ / set_tlp_sink lambda / FC 快照",
-          "[pcie][tlp-e2e][phase9]")
-{
+          "[pcie][tlp-e2e][phase9]") {
     // ── 钩子 1: PcieLinkLayer 入口计数器 ──
     // 使用独立的 Full 模式 EP 验证 tlp_rx_count_ 在 Full 模式下递增
     {
@@ -215,10 +206,8 @@ TEST_CASE("TLP E2E: 钩子点验证 — tlp_rx_count_ / set_tlp_sink lambda / FC
 
         // 注入 2 个 MWr (Posted): P credit 应减 2
         auto fc0 = f.ep.link_layer_fc_snapshot_for_test();
-        f.ep.inject_tlp_from_host_for_test(
-            TlpE2EFixture::make_mmio_write(0x6000, 0x1111));
-        f.ep.inject_tlp_from_host_for_test(
-            TlpE2EFixture::make_mmio_write(0x6008, 0x2222));
+        f.ep.inject_tlp_from_host_for_test(TlpE2EFixture::make_mmio_write(0x6000, 0x1111));
+        f.ep.inject_tlp_from_host_for_test(TlpE2EFixture::make_mmio_write(0x6008, 0x2222));
 
         auto fc2 = f.ep.link_layer_fc_snapshot_for_test();
         // P credit 消耗 2
@@ -228,11 +217,10 @@ TEST_CASE("TLP E2E: 钩子点验证 — tlp_rx_count_ / set_tlp_sink lambda / FC
         REQUIRE(std::get<2>(fc2) == std::get<2>(fc0));
 
         // 注入 1 个 MRd (Non-Posted): NP credit 应减 1
-        f.ep.inject_tlp_from_host_for_test(
-            TlpE2EFixture::make_mmio_read(0x6010, 0x33));
+        f.ep.inject_tlp_from_host_for_test(TlpE2EFixture::make_mmio_read(0x6010, 0x33));
 
         auto fc3 = f.ep.link_layer_fc_snapshot_for_test();
-        REQUIRE(std::get<0>(fc3) == std::get<0>(fc2));  // P 不变
-        REQUIRE(std::get<1>(fc3) == std::get<1>(fc2) - 1);  // NP 减 1
+        REQUIRE(std::get<0>(fc3) == std::get<0>(fc2));     // P 不变
+        REQUIRE(std::get<1>(fc3) == std::get<1>(fc2) - 1); // NP 减 1
     }
 }

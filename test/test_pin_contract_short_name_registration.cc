@@ -21,7 +21,8 @@
 TEST_CASE("PcieControllerIP: 短名 + FQ 双注册已生效", "[controller_ip][p2]") {
     auto mods = ModuleFactory::getRegisteredModuleTypes();
     const bool has_short = std::find(mods.begin(), mods.end(), "PcieControllerIP") != mods.end();
-    const bool has_fq = std::find(mods.begin(), mods.end(), "tlm::pcie::PcieControllerIP") != mods.end();
+    const bool has_fq =
+        std::find(mods.begin(), mods.end(), "tlm::pcie::PcieControllerIP") != mods.end();
     REQUIRE(has_short);
     REQUIRE(has_fq);
 }
@@ -29,13 +30,15 @@ TEST_CASE("PcieControllerIP: 短名 + FQ 双注册已生效", "[controller_ip][p
 TEST_CASE("GpuInternalFabric: 短名 + FQ 双注册已生效", "[fabric]") {
     auto mods = ModuleFactory::getRegisteredModuleTypes();
     const bool has_short = std::find(mods.begin(), mods.end(), "GpuInternalFabric") != mods.end();
-    const bool has_fq = std::find(mods.begin(), mods.end(), "tlm::cluster::GpuInternalFabric") != mods.end();
+    const bool has_fq =
+        std::find(mods.begin(), mods.end(), "tlm::cluster::GpuInternalFabric") != mods.end();
     REQUIRE(has_short);
     REQUIRE(has_fq);
 }
 
 TEST_CASE("ModuleFactory: 未知短名 absent (double-registration 反向断言)", "[controller_ip][p2]") {
     auto mods = ModuleFactory::getRegisteredModuleTypes();
-    const bool has_unknown = std::find(mods.begin(), mods.end(), "NonExistentModule_xyz") != mods.end();
+    const bool has_unknown =
+        std::find(mods.begin(), mods.end(), "NonExistentModule_xyz") != mods.end();
     REQUIRE_FALSE(has_unknown);
 }
