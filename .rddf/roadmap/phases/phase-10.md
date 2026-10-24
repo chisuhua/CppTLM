@@ -78,7 +78,10 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
                  │    (可丢弃 spike:解阻 A6 → 解阻全部协议插件 change)
                  │    ⏸ 队列位保留 · S2 已实跑 + ctest 回归门 · change 未建
                  │    (per Entry #22 裁决:补建 / 移出当前均不可执行)
-                 │    承接 Stage 1 准入前置:S1-1 ~ S1-5
+                 │    承接 Stage 1 准入前置:S1-1 ~ S1-5(2026-10-24 planner 审查
+                 │    逐项分层:定义层已消费 / 建图层+放行闸→队列 #4 /
+                 │    S1-2 不触发 / S1-3 待命 / S1-4 前提已破 / S1-5 待 adapter
+                 │    —— 详见 obj §4.0 队列 #2 行 + Entry #46)
                  ├─ cpptlm-cep-stub-cache-core
                  ├─ cpptlm-cep-directory-ordering-plane   ← 2026-10-21 重排
                  │    (原 sharer-tracker-base 扩容:Address Resolver +

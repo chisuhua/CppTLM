@@ -36,6 +36,7 @@
 - [ ] **T2.3** 实现 S1 的**反向「有牙」验证**(per `design.md` D3):把期望 `perm` 序列**故意改错一项** → 判据**必须**报出不一致(否则该实现恒真 → 报红)
 - [ ] **T2.4** 注册 ctest 用例 `cep_poc_spike_s1`(`examples/CMakeLists.txt`,与 S2 同形)
 - [ ] **T2.5** 核对 S1 判据与 delta spec 的 Scenario 措辞**逐字一致**
+- [ ] **T2.6** **S1 判定结论登记** —— 若 S1 结论为红(4 值 `perm` 无法表达 6 态机转移,即 R-2 命中),该结论 SHALL 作为**交付物**登记(用例**仍绿**),并关联 `ADR-CEP-05 §7` 判据 2 状态(per `design.md` D7-a)
 
 ---
 
@@ -48,38 +49,71 @@
 - [ ] **T3.3** 实现 S3 的**反向「有牙」验证**(per 规格 §3.3 **强制**):把顶点**降级**回 `(协议实例, vc_id)` 重建同一图 → 环检测器**必须报出环**;若仍报无环 → 该检测器恒真 → **报红**
 - [ ] **T3.4** 注册 ctest 用例 `cep_poc_spike_s3`(`examples/CMakeLists.txt`)
 - [ ] **T3.5** 核对 S3 判据与 delta spec 的 Scenario 措辞**逐字一致**
+- [ ] **T3.6** **S3 verdict 逐 `(network, vc)` 标注** —— 不得只给全局结论(per `ADR-CEP-09:223-224`)
+- [ ] **T3.7** **S3 报环成因标注** —— 降级后检出的 2↔3 环 SHALL 标注为「**网络别名造成的假环**」,**不得**表述为「存在真实的跨网依赖」(按权威边表跨网边 = 0;per `design.md` D6-②)
+- [ ] **T3.8** **S3 反向断言的有效期标注** —— 止于**第 3 张网**出现之前(per `design.md` D6-④)
 
 ---
 
 ## 4. S1-1 ~ S1-5 —— 装配期前置(自 `umbrella/tasks.md:406-414` 承接)
 
 > ⚠️ **纪律**(承 `umbrella/tasks.md:407`):**未消费前不得下线** —— provisional **不许变永久债**。
-> ⚠️ **不得为「表看起来干净」而勾选未到消费时机的事项**(per `design.md` D4 反例)。
+> ⚠️ **不得**为「表看起来干净」而勾选未到消费时机的事项(per `design.md` D4 反例)。
+> ⚠️ **更不得**把「已判定不触发」写成「已消费」—— 二者语义不同(per `design.md` D4.5)。
+> ⚠️ **不得**把umbrella 归档件当作**状态真源**去改写(append-only + 归档不可变);真源是本表 + `obj §4.0`。
 
-| # | 条目 | 消费时机 / 触发条件 | 本 change 内 |
-|---|------|--------------------|:---:|
-| **S1-1** | `ADR-CEP-09` 的通道依赖图顶点按 **`(协议实例, network, vc_id)`** 建立 —— 在此之前不得用其无环判据放行任何协议实例 | **可立即**,但属 **`ADR-CEP-09` 修订(冻结面)** → 需走 `cep_freeze_check.sh --update --authorized-by "Entry #N"` 两步流程 → **不在本 change 内改 ADR** | ⛔(登记 + 挂授权) |
-| **S1-2** | N-1 / N-2 的**实现侧复核** —— 复核 per-network 嵌套形态 | 首个 `implemented` 实例**装配后** | ⛔ |
-| **S1-3** | SLICC 式「协议本地 vnet + 装配期绑定」备选的重评 | 出现**第 3 张网**或**第 3 个协议实例** | ⛔ |
-| **S1-4** | `include/tlm/cep/fabric.{schema.json,json}` 在首个 `implemented` 实例跑过后**再纳 M1 冻结集**(零实例新产物不诞生即冻结) | 首个 `implemented` 实例**跑过后** | ⛔ |
-| **S1-5** | **adapter 消息类 → `CATEGORY_*` 的显式映射表(非恒等)** —— 6 类一致性消息类落在 Coherence Interface 层,`CATEGORY_*` 保持**链路层 3 类**不变 | **可立即**(契约层设计) | ✅ |
+### 4.1 逐项三层判定(2026-10-24 planner 审查,per `design.md` D4.1)
 
-- [ ] **T4.0** 5 项**逐项**在本表登记(条目 + 消费时机)—— ✅ **本 commit 已完成登记**
-- [ ] **T4.1** **S1-5** —— 落 `adapter 消息类 → CATEGORY_*` 的**显式映射表**(非恒等)到契约层(Coherence Interface 层);`CATEGORY_*` 维持**链路层 3 类**
-- [ ] **T4.2** **S1-1** —— 登记为**待授权的 ADR 修订项**(不改正文):`ADR-CEP-09` 顶点定义变更走冻结面授权闸;本 change 内只**登记**(`design.md` Q1)
-- [ ] **T4.3** **S1-2 / S1-3 / S1-4** —— 保持 ⛔ 未勾选,并在 `obj §4.0` 队列表末列持续显示「承接 S1-1~S1-5」→ 每次 Stage 1 排期可见
+| 项 | 分层 | 状态 | 证据 |
+|---|------|------|------|
+| **S1-1** | ① 定义层(ADR 顶点定义) | ✅ **已消费** | `ADR-CEP-09 §8.2` · commit `964455e8`(2026-10-22)· `ADR-CEP-12:264` 已同步 |
+| | ② 建图层(按新顶点实际建图并跑装配期无环判据) | ⛔ **未消费** | `ADR-CEP-09:221` 措辞为「**建立**之前」· `07 号:684` = 「📐 契约已定义,🛠️ 未实现」 |
+| | ③ 放行闸(解除「不得用其无环判据放行任何协议实例」) | ⛔ **仍有效**(当前 vacuous:0 个 `implemented` 实例) | `ADR-CEP-09:221` |
+| **S1-2** | N-1 / N-2 实现侧复核 | ⏸ **已判定不触发** | 触发条件 = 首个 `implemented` 实例**装配后**;spike 无 adapter / 不进 `ModuleFactory` → **不产出协议实例** |
+| **S1-3** | SLICC 备选重评 | ⏸ **备选已登记 + 触发条件待命** | 备选登记在 `ADR-CEP-12 §8`(Entry #9) |
+| **S1-4** | `fabric.json` 纳 M1 冻结集 | ⏸ **规则已登记 · 前提已破** | 规则:Entry #9(`fabric.json` 不冻结;`fabric.schema.json` 早已冻结)· **前提已破**:该文件**已被 S2 spike 的 ctest 读取**(`examples/cep_poc_spike_s2.cc:407`) |
+| **S1-5** | adapter 消息类 → `CATEGORY_*` 显式映射表(非恒等) | 🟡 **规约已闭合 · 表体与 contract test 未做** | 规约:`ADR-CEP-12 §8.3` 分层纪律;表体**需 adapter**,而 spike 无 adapter |
+
+### 4.2 本表的动作项(逐项)
+
+- [x] **T4.0** 5 项**逐项**登记(条目 + 分层 + 状态 + 证据)—— ✅ **2026-10-24 planner 审查已完成登记**
+- [ ] **T4.1** **S1-1 ①(定义层)核对** —— S3 的**顶点集与依赖边集** SHALL **恰好**等于机器可导出集合(8 顶点 / 8 边 / 跨网边 = 0),并逐 `(network, vc)` 标注 verdict(per `design.md` D6 + delta spec 对应 Scenario)
+- [ ] **T4.2** **S1-2 / S1-3 / S1-4** 登记「**已判定不触发 / 待命**」+ **钉死度量口径** + **复核节奏**(per `design.md` D4.5 表)—— 落 `obj §4.0` / `§4.2` / `phase-10.md` 三处镜像
+- [ ] **T4.3** **S1-4 的真实问题**改写为**当下可裁**的决策:「`fabric.json` 已被 ctest 回归门消费 → 是否因此立即纳入 M1 冻结集?」→ **交 DRI 裁决**(per `design.md` D4.2)
+- [ ] **T4.4** **S1-5** 同形登记:规约已闭合(`ADR-CEP-12 §8.3`)/ 表体与 contract test 未做(需 adapter)/ **与 M-4 行为侧合并为同一决策**;owner 指向队列 #6(**待 DRI 拍板**)
+- [ ] **T4.5** **补登 3 项孤儿前置**(per `design.md` D4.4):**M-4 行为侧**(与 S1-5 合并)· **`moesi_gpu` / `mesif` 未排期**(S1/S3 的输入依赖,必须给 owner)· **verdict 逐 `(network, vc)` 标注义务**(归队列 #4)
+
+### 4.3 owner 重指向(归档时不产生「指向已归档 change 的无主债」)
+
+| 义务 | owner | 理由 |
+|------|-------|------|
+| S1-1 ②建图层 + ③放行闸 | **队列 #4** `cpptlm-cep-directory-ordering-plane` | 该队列已关联 `ADR-CEP-09 Decision A`(装配期无环检查)· 队列 #2 是可丢弃 spike,**不产出**装配期校验器 |
+| S1-2 / S1-3 / S1-4 | **队列 #3+** | 触发条件本身指向未来实例;spike 不产出实例 |
+| S1-5(+ M-4 行为侧) | **队列 #6** `cpptlm-cep-chi-rnf-subset`(**待 DRI 拍板**) | 「首个真实使用 schema 的协议 change」;归属属**排期决策**,不由本 change 推定 |
+
+## 4.6 移交 builder 的 3 项(属**实施类**,planner 只出规格)
+
+> **角色边界**:planner 不改 `src/**`、不实施门禁脚本改动、不做实施类 commit —— 以下 3 项**移交 builder**。
+
+- [ ] **T4.6** **承接链的机器化(第 7 条断言)** —— 给 `scripts/test/cep_docs_sync_check.sh` 新增断言:归档件里出现的每个 `S1-N` 标记,SHALL 在活文档承接列(`obj §4.0` / `§4.2` + `phase-10.md`)**恰好命中 1 次**,且其 owner 行 SHALL **非已归档 change**。
+  **为何要**:Entry #22 S8 自陈「6 项移交后**无任何机器闸**保证队列 #2/#4/#6 承接」—— 本次修订所治的正是这类漂移,而它**目前只有人工可见性**。规格见 `design.md` **Q3**。
+  **验收**:新断言有 fixture 覆盖(绿灯 + 至少 1 条**变异必红**的样本),且 `cep_gate_selftest.sh` 场景数相应增加。
+- [ ] **T4.7** **两处测试头注释的旧路径** —— `test/test_cep_canonical_invariants.cc:3` 与 `test/test_cep_contracts_crosscheck.cc:9` 仍写 `openspec/changes/cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md`(归档前路径)→ 应为 `openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md`(per Entry #29 路径迁移)。**低危**(注释不参与判据),但属「路径漂移防护」范畴。
+- [ ] **T4.8** **断言② 的绕过面复查** —— 本次在 `obj §4.0` 写入了大量状态措辞(如「已判定不触发」「未消费」);已实测 `cep_docs_sync_check.sh` rc=0,故**当前**无冲突;但若后续继续在该行加措辞,须重跑断言②(实体锚点 `umbrella` / `Stage 0` / `R10` + 旧状态词**同句**即报红)。
 
 ---
 
 ## 5. 验收
 
-- [ ] **T5.1** `ctest -R cep_poc_spike` **恰好 3 个用例全绿**(S1 / S2 / S3)
+- [ ] **T5.1** `ctest -R cep_poc_spike` **恰好 3 个用例全绿**(S1 / S2 / S3)—— 且**判定结论(可能为红)已按 §3.1 / §3.3 的失败含义登记为交付物**(per `design.md` D7-a:**「结论为红」≠「用例失败」**)
 - [ ] **T5.2** `openspec validate cpptlm-cep-poc-spike --strict` rc=0
 - [ ] **T5.3** 全量 `ctest` rc=0;`[cep]` 专项 rc=0;5 个 `cep_* --strict` rc=0
 - [ ] **T5.4** `docs_sync_check --strict` rc=0;`markdown_link_check` rc=0;`openspec validate --changes --strict` rc=0
 - [ ] **T5.5** **冻结面 diff = 0**(M1 冻结面 30 成员;本 change 预期**零**改动)
 - [ ] **T5.6** **零行为变更**:`git diff --stat` 显示生产代码改动仅限 `examples/`;`cpptlm_core` 与 23 ABI 零改动
 - [ ] **T5.7** **反向验证自查**:S1 / S2 / S3 各**故意破坏一次**判据 → 对应用例**必须变红**(逐个验证并记录)
+- [ ] **T5.8** **「结论为红」路径自查**:S1 的 4 值 `perm` 投影**预期会失败**(R-2 已命中)→ 验证该情形下用例**仍绿**且结论被登记(per `design.md` D7-a;若用例变红 → 说明红绿语义未分离,须修)
+- [ ] **T5.9** **delta spec 的每个 Scenario 有可执行断言**(防「声称可自动化却无自动化」)—— 新增 `test/test_cep_poc_spike_verification.cc` 逐条断言
 
 ---
 
@@ -87,4 +121,5 @@
 
 - [ ] **T6.1** 归档前:本 change 的 delta spec 合并进 `openspec/specs/cep-poc-spike-verification/spec.md`(**完成归档**语义 —— 非 ⏸ 暂存)
 - [ ] **T6.2** `obj §4.0` 状态列 🟡 → ✅ archived;`phase-10.md` 同步;§11 台账补归档 Entry
+- [ ] **T6.2b** **owner 重指向**:归档时,S1-2 / S1-3 / S1-4 的承接方 SHALL 从「队列 #2」**迁到活队列行**(队列 #3+),S1-1 ②③ 迁至队列 #4 —— 否则三项成为**指向已归档 change 的无主债**(per `design.md` D4.3 + `obj §4.7.3` A1)
 - [ ] **T6.3** KPI slot 释放 → 并发回到 **0/3** → 队列 **#3 `cpptlm-cep-stub-cache-core`** 可启动

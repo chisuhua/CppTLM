@@ -175,7 +175,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | 顺序 | Change | Stage | 季度 | 状态 | 承接的 Stage 1 准入前置 |
 |------|--------|-------|------|------|----------------------|
 | **1** | `cpptlm-cep-umbrella` | Stage 0 | **2026-Q4** | ✅ **archived**(2026-10-23;**完成归档**语义 —— tasks **99/99** 全勾 + delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;R10 已按 `§9.3` 闭合,per 台账 Entry #28/#29) | — |
-| **2** | `cpptlm-cep-poc-spike` | Stage 1 | **2027-Q1** | 🟡 **Proposed**(2026-10-24 建 change 目录;落地形态裁决为「正式 change + delta capability `cep-poc-spike-verification`」per `design.md` D1)· S2 已实跑 + ctest 回归门 · 承接 **S1-1 ~ S1-5**(装配期前置;**S1-2/S1-3/S1-4 未到消费时机**,per `design.md` D4) | **S1-1 ~ S1-5** |
+| **2** | `cpptlm-cep-poc-spike` | Stage 1 | **2027-Q1** | 🟡 **Proposed**(2026-10-24 建 change 目录;落地形态裁决为「正式 change + delta capability `cep-poc-spike-verification`」per `design.md` D1)· S2 已实跑 + ctest 回归门 · 承接的 Stage 1 准入前置见**本行末列**(2026-10-24 planner 审查逐项分层,per Entry #46) | **S1-1 ①定义层** = ✅ 已消费(`ADR-CEP-09 §8.2` / `964455e8`)· **S1-1 ②建图层 + ③放行闸** = ⛔ → **队列 #4** · **S1-2** = ⏸ 已判定不触发(spike 不产出 `implemented` 实例)· **S1-3** = ⏸ 备选已登记 + 触发待命(度量 = 非 `excluded` 声明数,当前 2)· **S1-4** = ⏸ 规则已登记 + 前提已破(`fabric.json` 已被回归门消费)→ 当下可裁 · **S1-5** = 🟡 规约已闭合 / 表体待 adapter → 队列 #6(待 DRI)· **另补登 3 项孤儿前置**(M-4 行为侧 · `moesi_gpu`/`mesif` 未排期 · verdict 逐 `(network, vc)` 标注) |
 | **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | 📋 Planned | — |
 | **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | 📋 Planned | **S1-7 的 (β) 重评估** |
 | **5** | `cpptlm-cep-collective-plane-base` | Stage 1 | **2027-Q4** | 📋 Planned | — |
@@ -232,7 +232,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 | 顺序 | Change | 关联 ADR | 估时 | 承接的 Stage 1 准入前置 |
 |------|--------|----------|------|----------------------|
-| **2** | **`cpptlm-cep-poc-spike`** ← 2026-10-22 新增(P-1,置首位)· ⏸ **队列位保留 · S2 已实跑并注册 ctest 回归门(per Entry #15/#16)· change 目录未建(per Entry #15 ⑥)· 落地形态待 DRI 裁决(per Entry #22)** | `ADR-CEP-13`(判据 (b) 的**可执行**判定 = Q-3e)+ `ADR-CEP-09`(顶点升级)+ `ADR-CEP-12`(per-network VC) | **3 周**(spike,非实现) | **S1-1 ~ S1-5**(装配期前置,`tasks.md:406-410`) |
+| **2** | **`cpptlm-cep-poc-spike`** ← 2026-10-22 新增(P-1,置首位)· 🟡 **Proposed**(2026-10-24 建 change 目录 + 落地形态裁决为「正式 change + delta capability」per Entry #42;**S1-1~S1-5 的逐项分层状态见本行末列**,2026-10-24 planner 审查 per Entry #46)** | `ADR-CEP-13`(判据 (b) 的**可执行**判定 = Q-3e)+ `ADR-CEP-09`(顶点升级)+ `ADR-CEP-12`(per-network VC) | **3 周**(spike,非实现) | **S1-1 ~ S1-5** 的**逐项分层状态与 owner** —— 与 §4.0 同源(per `obj:231`「漂移时以 §4.0 为准」);2026-10-24 planner 审查修订,per 台账 **Entry #46** |
 | **3** | `cpptlm-cep-stub-cache-core` | ADR-CEP-05 + ADR-CEP-04 stub | 8 周 | — |
 | **4** | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周) | **S1-7 的 (β) 重评估**(与 `ADR-CEP-08 决策 4` 组合检查器**同批**,per `ADR-CEP-05 §13.1` 排期约束) |
 | **5** | `cpptlm-cep-collective-plane-base` | ADR-CEP-03 + ADR-CEP-01 | 8 周 | — |
@@ -3126,6 +3126,53 @@ format.sh --check  rc=0 · 9 项守门 rc=0 · [cep] 76/1284
 ```
 
 **关联**: Entry #40 ~ #44(CI 红源逐个收敛)· `src/tlm/gpu/gpu_mesh_noc_tlm.cc` · `src/tlm/gpu/sdma_engine_tlm.cc` · `test/test_sdma_engine_timing.cc` · `test/test_d2d_noc_path.cc`
+
+### Entry #46 — 2026-10-24 [scope-change]
+
+**主题**: **planner 审查** —— 「S1-1~S1-5 不可能在本 change 内消费完」这一判断的**复核与修订**(含 5 项逐条溯源 + 2 项结构性缺陷修正)
+
+**① 触发**:用户要求以 planner 角色复核该判断与 `design.md` D4。
+
+**② 复核方法**:不采信任何二手转述 —— 逐条溯源到**文件:行 / commit / 台账 Entry**,并用 `metis` 做对抗性 gap 分析;metis 提出的 5 条关键结论**全部一手实证**(见下)。
+
+**③ 核心发现之一 —— S1-1 是**三层**义务,初稿判定「已消费」**过强**
+
+| 层 | 义务 | 状态 | 证据 |
+|---|------|------|------|
+| ① | **定义层**:ADR 顶点定义升为 `(协议实例, network, vc_id)` | ✅ **已消费** | `ADR-CEP-09 §8.2` · commit `964455e8`(2026-10-22)· `ADR-CEP-12:264` 已同步 |
+| ② | **建图层**:按新顶点**实际建图**并跑装配期无环判据 | ⛔ **未消费** | `ADR-CEP-09:221` 措辞是「**建立**之前」;`07 号:684` = 「📐 契约已定义,**🛠️ 未实现**」 |
+| ③ | **放行闸**:「不得用其无环判据放行任何协议实例」的解除 | ⛔ **仍有效** | `ADR-CEP-09:221`;当前 0 个 `implemented` 实例 → vacuous 但未解除 |
+
+**④ 核心发现之二 —— 移交本身基于**陈旧快照**
+
+时序:`964455e8`(2026-10-22,ADR 修订 + SLICC 备选登记 + `fabric.json` 冻结规则) **早于** `5b3c7831`(2026-10-23,把 S1-1~S1-5 移交给队列 #2)→ 移交文本把**已完成的 S1-1 / 已登记的 S1-3 / 已登记的 S1-4** 仍写作「待消费」。
+
+**⑤ 核心发现之三(结构性)—— 「判据退化」与「判定结论为红」被焊死**
+
+`ADR-CEP-05:296` 登记「判据 2 状态 ✅ **已触发**(2026-10-22)—— `moesi_gpu` 有静默 `E→M`,判据 (b) 成立 → **4 值 `perm` 确无法表达**」→ **R-2 已命中** ⇒ **S1 的设计结局本就是「投影表达力不足」**。而初稿的验收口径「3 个用例全绿」会把这个**正确结论**变成**不可归档** → KPI slot 无法释放 → **级联阻塞整个 Stage 1**。
+
+**⑥ 核心发现之四 —— 错误因果会被归档进永久契约**
+
+权威逐网络边表(ArchForge `32 号 §6.0.3`):`compute_noc` 5 条 + `ualink_fabric` 3 条,**跨网边 = 0**。故扁平化后出现的 2↔3 环是「**网络别名造成的假环**」,而规格 §3.3 的失败含义 ① 写「报环 ⇒ 存在**真实的跨网依赖**」—— 该结论**不成立**,且已进 delta spec → 会随归档进 `openspec/specs/`。
+
+**⑦ 核心发现之五 —— 3 项从未被任何 S1-x 覆盖的孤儿前置**:**M-4 行为侧**(与 S1-5 同一决策)· **`moesi_gpu`/`mesif` 未排期**(S1/S3 的**输入依赖**,无 owner)· **verdict 逐 `(network, vc)` 标注义务**(`ADR-CEP-09:223-224`)。
+
+**⑧ 修订清单(planner 产出,已落盘)**
+
+| 产物 | 修订 |
+|------|------|
+| `design.md` | **D4 整段重写**(逐项三层判定 + owner 重指向 + 复核节奏 + 3 项孤儿前置)· 新增 **D6**(S3 顶点/边集合**机器可导出等值** + 报环**成因标注** + verdict 粒度 + 反向断言有效期)· 新增 **D7**(红绿语义分离 + S1-5 规约**不进**本 capability)· **C6**(spike 结论不得作放行依据)· **C7**(红绿语义分离为硬约束)· **NG2/NG4/NG6** 修订 · **R6~R10** 增补 |
+| `specs/cep-poc-spike-verification/spec.md` | 新增 4 条 Scenario(红绿语义分离 / 顶点边集机器等值 / 报环成因标注 / 反向断言有效期 / 放行禁令 / `status: planned` 防虚假触发)· S1/S3 Scenario 改写 · **每条 Scenario 标注消费者** · Requirement 正文压到 397 字符(`openspec validate` 零 warning) |
+| `tasks.md` | **T4 段整段重写**(三层判定表 + 动作项 T4.1~T4.5 + owner 重指向)· **T2.6 / T3.6~T3.8** 结论登记与 verdict 粒度 · **T5.1** 口径改为「用例全绿 **且** 结论已登记」· **T5.8** 「结论为红」路径自查 · **T5.9** Scenario 消费者自查 · **T6.2b** 归档时 owner 重指向 |
+| `obj §4.0` / `§4.2` / `phase-10.md` | **三处镜像同改**(per `obj:231`「漂移时以 §4.0 为准」—— 只改 §4.0 会**主动制造**自声明的漂移) |
+
+**⑨ 冻结面与 ADR**:**零改动** —— `ADR-CEP-09` 的顶点定义**已于 2026-10-22 改完**,本轮**不需要**再改任何 ADR(追加 SU 反而会强制 30 成员冻结清单重生成)。故**无需** `--update --authorized-by` 两步流程。
+
+**⑩ 遗留(交 builder)**:**承接链的机器化** —— 建议给 `cep_docs_sync_check.sh` 加**第 7 条断言**(归档件里每个 `S1-N` 标记须在活文档承接列**恰好命中 1 次**且 owner 行**非已归档**)。这能防住本次修订所治的那类漂移(Entry #22 S8 自陈「6 项移交后**无任何机器闸**保证队列 #2/#4/#6 承接」)。属**门禁脚本**改动 → planner 只出规格,实施归 builder(per `design.md` Q3)。
+
+**⑪ 验收**:`openspec validate cpptlm-cep-poc-spike --strict` **rc=0 且零 warning** · `openspec validate --changes --strict` rc=0 · 守门 9 项 rc=0 · 冻结面 diff=0。
+
+**关联**: Entry #22(落地形态待裁决)· Entry #42(本 change 启动)· `umbrella/tasks.md:406-414`(S1-1~S1-5 原文)· `ADR-CEP-09:221-224` · `07 号:684` · `ADR-CEP-05:296`
 
 ---
 
