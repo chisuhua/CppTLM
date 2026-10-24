@@ -167,23 +167,24 @@ namespace {
         return n;
     }
 
-    // ── 归一化 + **结构化**子串检查(critic S-2 + 四审 SHOULD_FIX-1)──
-    //   目标:捕获 spike 源里的 `protocol_instance` 声明键 `"status"`(**含字面量拼接形态**)。
-    //   做法:剥掉空白与引号后,要求出现 **JSON 键位形态** `{status:` 或 `,status:`
-    //   —— 而非裸 `status` 子串。
-    //   为什么不用裸 `status`(四审 SHOULD_FIX-1):裸串会把**注释**里的
-    //   `// ... status ...` 或**标识符** `inst_status_tag` 也判红(实测误报面),
-    //   未来一次无害编辑即红 —— 与「防无意引入」的目标不符。
-    //   ⚠️ 仍**非密封**:`\x73tatus` 转义 / 运行时构造可绕(已知边界,不防蓄意)。
+    // ── **结构化**子串检查(critic S-2 + 四审 SF-2 + 六审 B1)──
+    //   目标:捕获 spike 源里的 `protocol_instance` 声明键 `status`(**含各种字面量形态**)。
+    //   做法:归一化时剥掉**空白 + 引号 + 反斜杠**(六审 B1:C++ 里 JSON 声明必然写成
+    //   `"{\"status\":\"implemented\"}"` —— 转义引号;不剥反斜杠则归一化得
+    //   `{\status\:...}`,键位形态失配 → **两层同时漏判**)。
+    //   剥反斜杠后,转义形态归一化为 `{status:`,与 raw string 形态一致。
+    //   再要求出现 **JSON 键位形态** `{status:` 或 `,status:`(而非裸 `status` 子串
+    //   —— 后者会把注释 / 标识符也判红,四审 SF-2 的误报面)。
+    //   ⚠️ 已知边界(不防蓄意):`\x73tatus` 转义 / 运行时逐字符构造。
     bool contains_instance_status_key(const std::string& text) {
         std::string norm;
         norm.reserve(text.size());
         for (char c : text) {
-            if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '"' || c == '\'')
+            if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '"' || c == '\'' ||
+                c == '\\')
                 continue;
             norm.push_back(c);
         }
-        // 键位形态:`{status:` / `,status:`(剥引号后)
         return norm.find("{status:") != std::string::npos ||
                norm.find(",status:") != std::string::npos;
     }
@@ -390,10 +391,33 @@ TEST_CASE("[cep][poc-spike][verification] delta spec 的每条 Scenario 都有�
         CHECK(text.find("REGISTER_MODULE") == std::string::npos);
         CHECK(text.find("REGISTER_CHSTREAM") == std::string::npos);
         CHECK(text.find("registerModule") == std::string::npos);
-        // 协议实例声明键 `"status":` 不得出现(否则 S1-2 会被虚假触发)。
-        //   ⚠️ 用**结构化 + 归一化**检查(四审 SHOULD_FIX-1):裸 `status` 子串会把
+        // 协议实例声明键不得出现(否则 S1-2 会被虚假触发)。
+        //   ⚠️ 用**结构化 + 归一化**检查(四审 SF-2):裸 `status` 子串会把
         //      注释 / 标识符也判红(误报面);键位形态 `{status:` / `,status:`
-        //      既捕获拼接变体,又不误报。
+        //      在剥掉空白/引号/**反斜杠**后判定(六审 B1:转义形态必需)。
         CHECK_FALSE(contains_instance_status_key(text));
+    }
+
+    // ⑨ **正控**(critic 六审 B1):上面的 `CHECK_FALSE(contains_instance_status_key(...))`
+    //    是**纯负向**断言 —— 若 helper 退化为恒假(`return false;`),所有文件都「不含声明键」
+    //    → 全绿,而保护已消失。故此处断言 helper 对**阳性输入**必须返回 true。
+    //    形态覆盖(六审 B1 的核心):C++ 里真实 JSON 声明**必然**是**转义引号**形态,
+    //    以及 raw string 形态、字面量拼接形态 —— 三者都须被捕获。
+    {
+        const std::string raw_decl = "static const char* s = R\"({\"status\":\"implemented\"})\";";
+        const std::string esc_decl =
+            "static const char* s = \"{\\\"status\\\":\\\"implemented\\\"}\";";
+        const std::string cat_decl = "static const char* s = \"{\\\"sta\" \"tus\\\":1}\";";
+        // 负控:注释 / 标识符里的裸 `status` 不得误报(四审 SF-2)
+        const std::string comment_neg = "// no protocol_instance status field here\n";
+        const std::string ident_neg = "const char* inst_status_tag = \"x\";";
+        INFO("正控: raw=" << contains_instance_status_key(raw_decl)
+                          << " escaped=" << contains_instance_status_key(esc_decl)
+                          << " concat=" << contains_instance_status_key(cat_decl));
+        CHECK(contains_instance_status_key(raw_decl));
+        CHECK(contains_instance_status_key(esc_decl)); // ← 六审 B1:此形态曾漏判
+        CHECK(contains_instance_status_key(cat_decl));
+        CHECK_FALSE(contains_instance_status_key(comment_neg));
+        CHECK_FALSE(contains_instance_status_key(ident_neg));
     }
 }

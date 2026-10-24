@@ -115,7 +115,8 @@ CEP SHALL 将 **PoC Spike 的 3 个判定场景**(`S1` / `S2` / `S3`)实现为**
 - **THEN** 各源 SHALL **不含协议实例声明键**(JSON 键位形态 `"status":`)—— spike 是**判定实验床**,SHALL **不**复制/承载任何 `protocol_instance` 声明
 - **AND** 理由:`ADR-CEP-12` 的计数口径是「仅 `implemented` 计入 adapter 实例数」;若 spike 携带 `status: "implemented"` 的声明,`S1-2` 的触发条件(首个 `implemented` 实例装配后)会被**虚假触发**
 - **AND** 上游两份真实声明(`moesi_gpu` / `mesif`,ArchForge `32 号:405 / :487`)均为 `planned` —— 本 Scenario 只约束**本仓 spike**,不改上游声明
-- **AND** 断言 SHALL **不**用裸串 `status` —— 裸串会把**注释 / 标识符**(如 `inst_status_tag`)也判红(误报面:一次无害编辑即红,训练出「忽略红」的习惯)。断言 SHALL 用**结构化**判据:剥空白与引号后检查**键位形态** `{status:` / `,status:`(既捕获 `"sta" "tus"` 字面量拼接变体,又不误报)
+- **AND** 断言 SHALL **不**用裸串 `status` —— 裸串会把**注释 / 标识符**(如 `inst_status_tag`)也判红(误报面:一次无害编辑即红,训练出「忽略红」的习惯)。断言 SHALL 用**结构化**判据:归一化时剥掉**空白 + 引号 + 反斜杠**后检查**键位形态** `{status:` / `,status:` —— 剥反斜杠是必需的,否则 C++ 里**必然**的转义形态 `"{\"status\":...}"` 会失配而漏判
+- **AND** 断言 SHALL 有**正控**(阳性输入必须判真)—— 否则判据退化为恒假时**全绿**,保护静默消失
 - **AND** 判据的目标 SHALL 为「**防无意引入的退化**」,**不**承诺「防蓄意规避」(`\x73tatus` 转义 / 运行时逐字符构造属**已知边界**)
 
 #### Scenario: spike 的硬边界(可丢弃 / 零公共影响)
