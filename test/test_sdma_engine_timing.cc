@@ -27,18 +27,32 @@ namespace {
     constexpr uint64_t kPtBase = 0x10000;
     constexpr uint64_t kPageSize = 4096;
 
+    // GMMU 夹具:同时持有 **backing** 与 **GmmuTLM**。
+    // ⚠️ `GmmuTLM::set_mem_view()` 只存**裸指针**(无所有权)→ backing 必须由本夹具
+    //    持有并释放,否则泄漏(ASan 实测:5 处 × 131072 B = 655360 B)。
+    // ⚠️ **声明顺序**决定析构顺序(逆序):`gmmu` 先析构 → 其析构期间仍能访问
+    //    `backing` → `backing` 后析构。
+    struct GmmuFixture {
+        std::unique_ptr<std::vector<uint8_t>> backing;
+        std::unique_ptr<GmmuTLM> gmmu;
+
+        GmmuTLM* operator->() const {
+            return gmmu.get();
+        }
+    };
+
     // 构造 GMMU: 单页 PTE (page_num=1 → paddr 0x2000), 32-entry TLB
-    std::unique_ptr<GmmuTLM> make_gmmu(EventQueue* eq) {
-        auto g = std::make_unique<GmmuTLM>("gmmu", eq);
-        std::vector<uint8_t>* backing = new std::vector<uint8_t>(128 * 1024, 0);
+    GmmuFixture make_gmmu(EventQueue* eq) {
+        auto backing = std::make_unique<std::vector<uint8_t>>(128 * 1024, 0);
         uint64_t pte = (0x2000ULL & ~0xFFFULL) | 1ULL;
         std::memcpy(backing->data() + kPtBase + 1 * 8, &pte, 8);
+        auto g = std::make_unique<GmmuTLM>("gmmu", eq);
         g->set_mem_view(backing->data(), backing->size());
         g->set_pt_base_lo(static_cast<uint32_t>(kPtBase));
         g->set_pt_base_hi(0);
         g->set_enabled(true);
         g->set_timing_params(50);
-        return g;
+        return GmmuFixture{std::move(backing), std::move(g)};
     }
 
     // 注入 H2D 描述符 + tick 处理, 返回描述符 (供后续断言)

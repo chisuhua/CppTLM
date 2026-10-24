@@ -3080,6 +3080,53 @@ openspec validate cpptlm-cep-poc-spike --strict rc=0 · openspec list --json 实
 
 **关联**: Entry #40(三红源)· Entry #43(`test.sh --build`)· `scripts/test/cep_docs_sync_check.sh` 断言①
 
+### Entry #45 — 2026-10-24 [bugfix]
+
+**主题**: **CI 第 5 个红源**(`Build (Debug, ASan=ON)` 腿)—— 2 个**既存**内存问题:重叠 `memcpy` 的 UB + 测试夹具泄漏
+
+**① 现象**:Entry #40 ~ #44 修完前 4 个红源后,CI 只剩 `Build (Debug, ASan=ON)` 一条腿红 → 失败用例 `sdma_engine` + `test_d2d_noc_path`。
+
+> **既存性证据**:同一失败在 run `39996574494`(**2026-10-23,本次会话全部改动之前**)即存在 → **非本次引入**。
+
+**② 问题 1 —— D2D 同缓冲拷贝用 `memcpy` → 重叠区间是 UB**
+
+```
+ERROR: AddressSanitizer: memcpy-param-overlap
+  #0 memcpy
+  #1 tlm::GpuMeshNoC::d2d_forward_payload(void*, void const*, unsigned long)
+  #2 tlm::gpu::SdmaEngineTLM::d2d_forward(unsigned long, unsigned long, unsigned int)
+```
+
+**根因**:D2D 是**同一 VRAM 缓冲内**的拷贝,而 src/dst 区间**可以重叠**(滑动窗口:src=[0,0xC0000) · dst=[0x10000,0xD0000) → 重叠 0xB0000 字节)→ `memcpy` 对重叠区间是 **UB**。
+
+**修法**:同地址空间内的拷贝,正确原语是 **`memmove`**(等价「经临时缓冲」)。改动 **2 处**:`GpuMeshNoC::d2d_forward_payload` + `SdmaEngineTLM::d2d_forward` 的 fallback。**host↔VRAM 的 2 处跨缓冲拷贝保持 `memcpy`**(区间不可能重叠)。
+
+**③ 问题 2 —— 测试夹具的 backing 永不释放(泄漏 655480 B)**
+
+修完问题 1 后 ASan **继续**报(此前在第一个错误就 abort,从未走到这步):
+
+```
+SUMMARY: AddressSanitizer: 655480 byte(s) leaked in 10 allocation(s)
+  ← test/test_sdma_engine_timing.cc:33  make_gmmu
+    std::vector<uint8_t>* backing = new std::vector<uint8_t>(128 * 1024, 0);
+```
+
+`GmmuTLM::set_mem_view()` 只存**裸指针**(无所有权)→ backing 永不释放。**算术吻合**:5 处调用 × (131072 B + 24 B) = **655480 B** ✅。
+
+**修法**:RAII 夹具 `GmmuFixture{backing, gmmu}` —— **声明顺序**保证 `gmmu` 先析构(其析构期间仍可访问 backing)、`backing` 后析构;`operator->` 保形 → **5 处调用点零改动**。
+
+**④ 回归保护(新增)**:`test/test_d2d_noc_path.cc` 加 1 个**内容级**用例 —— 重叠 D2D 拷贝后,**目的区逐字节 == 拷贝前的源字节**(memmove 语义),且拷贝**未越界污染** dst 尾部。ASan 腿抓 UB,本用例锁**语义**。
+
+**⑤ 验收(本地双配置)**:
+
+```
+build(Release)      ctest 98/98 ✅
+build-asan(Debug+ASan) ctest 98/98 ✅   ← 修前该配置 2 个用例红
+format.sh --check  rc=0 · 9 项守门 rc=0 · [cep] 76/1284
+```
+
+**关联**: Entry #40 ~ #44(CI 红源逐个收敛)· `src/tlm/gpu/gpu_mesh_noc_tlm.cc` · `src/tlm/gpu/sdma_engine_tlm.cc` · `test/test_sdma_engine_timing.cc` · `test/test_d2d_noc_path.cc`
+
 ---
 
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)

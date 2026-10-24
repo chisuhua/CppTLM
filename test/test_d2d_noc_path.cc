@@ -45,6 +45,52 @@ static int fake_translate_identity(uint64_t iova, uint32_t size, uint64_t& phys)
 // Scenario "D2D payload forward ≥ 100 GB/s"
 //   d2d_noc_forward(src_va, dst_va, len=1MB) → simulated_throughput >= 100 GB/s
 // =============================================================================
+// =============================================================================
+// Scenario "D2D 同缓冲重叠拷贝 → 内容等价 memmove"
+//   src/dst 区间**重叠**时,拷贝结果必须等价 `memmove`(即「经临时缓冲」的语义)。
+//   背景:2026-10-24 CI 的 Debug+ASan 腿报 `memcpy-param-overlap`
+//   (src=[0,0xC0000) · dst=[0x10000,0xD0000) → 重叠 0xB0000 字节)
+//   → D2D 拷贝必须用 `memmove` 而非 `memcpy`(重叠区间上 `memcpy` 是 UB)。
+// =============================================================================
+TEST_CASE("D2D 同缓冲重叠拷贝: 源/目的区间重叠 → 拷贝内容等价 memmove",
+          "[sdma][d2d][noc][1.3b][overlap]") {
+    EventQueue eq;
+    GpuMeshNoC noc("d2d_noc_overlap", &eq);
+    noc.set_dim(2);
+    noc.set_hops_latency(1);
+
+    SdmaEngineTLM sdma("sdma_d2d_overlap", &eq);
+    sdma.init();
+    sdma.set_translate_cb(fake_translate_identity);
+    sdma.set_vram_backdoor(g_vram.data(), g_vram.size());
+    sdma.set_d2d_noc(&noc);
+
+    // 确定性填充(不可用全 0:那样重叠与非重叠的结果无法区分)
+    constexpr uint64_t kSrcVa = 0x0;
+    constexpr uint64_t kDstVa = 0x10000;
+    constexpr uint32_t kLen = 0xC0000; // 768 KiB
+    for (size_t i = 0; i < g_vram.size(); ++i) {
+        g_vram[i] = static_cast<uint8_t>((i * 31u + 7u) & 0xFFu);
+    }
+    // 参考:拷贝前的原始字节(memmove 语义下,dst[i] == orig[i - kDstVa + kSrcVa])
+    const std::vector<uint8_t> orig = g_vram;
+
+    sdma.d2d_forward(kSrcVa, kDstVa, kLen);
+
+    // 重叠区(dst 覆盖到 src 尾部)必须与原始源字节逐字节相等
+    for (uint64_t i = 0; i < kLen; ++i) {
+        const uint64_t dst_idx = kDstVa + i;
+        const uint64_t src_idx = kSrcVa + i;
+        INFO("重叠拷贝后 dst[" << dst_idx << "] 与 orig[" << src_idx << "] 不一致");
+        REQUIRE(g_vram[dst_idx] == orig[src_idx]);
+    }
+    // 重叠区**之外**的目的字节必须保持不变(dst 尾部 = [kDstVa+kLen, kDstVa+kLen+len))
+    for (uint64_t i = kDstVa + kLen; i < kDstVa + kLen + 0x1000 && i < g_vram.size(); ++i) {
+        INFO("拷贝越界污染了 dst[" << i << "]");
+        REQUIRE(g_vram[i] == orig[i]);
+    }
+}
+
 TEST_CASE("D2D NoC payload forward: 1MB transfer → simulated_throughput >= 100 GB/s",
           "[sdma][d2d][noc][1.3b][throughput]") {
     EventQueue eq;

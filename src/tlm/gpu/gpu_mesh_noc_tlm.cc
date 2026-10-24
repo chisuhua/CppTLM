@@ -26,8 +26,12 @@ namespace tlm {
         if (dst_vram == nullptr || src_vram == nullptr || len == 0) {
             return 0; // noop
         }
-        // 简化 memcpy (实际 GPU 硬件有 flit 切分, 但 MVP deterministic 即可)
-        std::memcpy(dst_vram, src_vram, static_cast<size_t>(len));
+        // ⚠️ 必须用 `memmove` 而非 `memcpy`:D2D 是**同一 VRAM 缓冲内**的拷贝,
+        //    src/dst 区间**可能重叠**(滑动窗口拷贝)→ `memcpy` 对重叠区间是 UB。
+        //    实证:CI 的 Debug+ASan 腿报 `AddressSanitizer: memcpy-param-overlap`
+        //    (2026-10-24;早于本次全部改动即存在)。
+        //    (实际 GPU 硬件有 flit 切分, 但 MVP deterministic 即可)
+        std::memmove(dst_vram, src_vram, static_cast<size_t>(len));
 
         // 延迟计算: 最坏路径 (从 {0,0} 到 {dim-1, dim-1})
         const uint32_t latency =

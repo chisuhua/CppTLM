@@ -593,9 +593,12 @@ namespace tlm::gpu {
             d2d_noc_->d2d_forward_payload(static_cast<uint8_t*>(vram_backdoor_) + dst_va,
                                           static_cast<uint8_t*>(vram_backdoor_) + src_va, len);
         } else {
-            // 直 memcpy fallback (测试场景下与 noc 路径等价)
-            std::memcpy(static_cast<uint8_t*>(vram_backdoor_) + dst_va,
-                        static_cast<uint8_t*>(vram_backdoor_) + src_va, len);
+            // 直拷贝 fallback (测试场景下与 noc 路径等价)。
+            // ⚠️ 必须用 `memmove` 而非 `memcpy`:src/dst 同在 VRAM 缓冲内,
+            //    区间**可能重叠** → `memcpy` 对重叠区间是 UB
+            //    (实证:CI Debug+ASan 腿的 `memcpy-param-overlap`)。
+            std::memmove(static_cast<uint8_t*>(vram_backdoor_) + dst_va,
+                         static_cast<uint8_t*>(vram_backdoor_) + src_va, len);
         }
     }
 
