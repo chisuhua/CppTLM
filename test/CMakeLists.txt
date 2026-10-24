@@ -245,6 +245,9 @@ add_test(NAME cep_docs_sync_check
 # 状态一致性闸的**回归 fixture 集**(10+ 场景,变异 → 期望 rc)
 add_test(NAME cep_gate_selftest
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_gate_selftest.sh)
+# `test.sh` 参数解析回归锁(2026-10-24:`--build` 恒报「与 --test-only 互斥」→ PTX-EMU CI 挂)
+add_test(NAME test_sh_arg_parsing
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/test_sh_arg_parsing.sh)
 add_test(NAME cep_archforge_alignment_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_archforge_alignment_check.sh)
 set_tests_properties(cep_archforge_alignment_check

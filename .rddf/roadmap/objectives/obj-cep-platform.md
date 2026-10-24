@@ -3020,6 +3020,33 @@ openspec validate cpptlm-cep-poc-spike --strict rc=0 · openspec list --json 实
 
 **关联**: Entry #22(落地形态待裁决)· Entry #40/#41(CI 三红源)· `docs/implementation/2026-10-22-cep-poc-spike-spec.md`
 
+### Entry #43 — 2026-10-24 [bugfix]
+
+**主题**: **`test.sh --build` 恒报错**(既存 bug,被 CI 挖出)—— Entry #40 ② 的修法在 CI 上撞上它
+
+**① 现象**:CI 的 PTX-EMU job 在加 `--build` 后**仍红**,报
+`ERROR: --build 与 --test-only 互斥 (--build 含 build+test; --test-only 仅 test)` → exit 2。
+
+**② 根因**:`test.sh` 的 `ACTION` **默认值就是 `"test"`**,而 `--build` 的互斥检查写的是
+`if [[ "$ACTION" == "test" ]]` → **默认路径也命中** → `--build` **恒报错**、**完全不可用**。
+
+> **与文档矛盾**:`AGENTS.md` 明写「`./test.sh --build` # 等价于 `./build.sh && ./test.sh`」→
+> 该入口**从未可用过**(或曾在 `ACTION` 默认值不同的旧版本可用,后被改成 `"test"` 时静默失效)。
+
+**③ 修法**:区分「**默认** `ACTION=test`」与「**显式** `--test-only`」→ 新增
+`EXPLICIT_BUILD_ONLY` / `EXPLICIT_TEST_ONLY` 两个标志,互斥检查改用**显式标志**判定。
+**两项互斥语义保持不变**(`--build-only --build` / `--test-only --build` 仍报错)。
+
+**④ 回归锁(新增)**:`scripts/test/test_sh_arg_parsing.sh` —— 3 项断言:
+① `--build-only --build` 仍互斥报错 · ② `--test-only --build` 仍互斥报错 ·
+③ `--build` **单独**使用时**不**报互斥错(用不存在的 `BUILD_DIR` 让它在**构建阶段**失败,以此证明**解析阶段**已放行)。已注册进 `ctest`(`add_test(NAME test_sh_arg_parsing)`)→ **ctest 97 → 98**。
+
+> **实现细节踩坑**:`grep -qF -- "$want"` 的 `--` 不可省 —— 期望消息以 `--` 开头,否则 grep 把它当选项(**首版回归锁因此 2 项假失败**,当场修)。
+
+**⑤ 验收**:`test_sh_arg_parsing` 3/3 · `ctest` 98/98 · 其余守门 rc=0。
+
+**关联**: Entry #40 ②(PTX-EMU 红源 C 的修法)· `test.sh` · `test/CMakeLists.txt`
+
 ---
 
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)

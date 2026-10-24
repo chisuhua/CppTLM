@@ -35,6 +35,11 @@ MODE="auto"
 # 默认行为改为 "test" (而非 "run"), 显式构建用 --build
 ACTION="test"
 BUILD_FIRST=0
+# ⚠️ 必须区分「**默认** ACTION=test」与「**显式** --test-only」:
+#    否则 --build 永远撞上 --test-only 的互斥检查(test.sh 的 --build 自 2026-10-24
+#    CI 实测**完全不可用** —— 而 AGENTS.md 明写「./test.sh --build ≡ ./build.sh && ./test.sh」)。
+EXPLICIT_BUILD_ONLY=0
+EXPLICIT_TEST_ONLY=0
 VERIFY_FIX=0
 QUICK=0
 PYTHON_ONLY=0
@@ -110,8 +115,8 @@ parse_args() {
                 (($# >= 2)) || error "--mode 需要参数"
                 MODE="$2"; shift 2 ;;
             --build)       BUILD_FIRST=1; shift ;;
-            --build-only)  ACTION=build; shift ;;
-            --test-only)   ACTION=test; shift ;;
+            --build-only)  ACTION=build; EXPLICIT_BUILD_ONLY=1; shift ;;
+            --test-only)   ACTION=test; EXPLICIT_TEST_ONLY=1; shift ;;
             --verify-fix)  VERIFY_FIX=1; shift ;;
             --quick)       QUICK=1; shift ;;
             --python-only) PYTHON_ONLY=1; shift ;;
@@ -124,10 +129,10 @@ parse_args() {
     done
     # --build 隐式转 ACTION=run (build + test 一次完成)
     if (( BUILD_FIRST )); then
-        if [[ "$ACTION" == "build" ]]; then
+        if (( EXPLICIT_BUILD_ONLY )); then
             error "--build 与 --build-only 互斥 (--build 含 build+test; --build-only 仅 build)"
         fi
-        if [[ "$ACTION" == "test" ]]; then
+        if (( EXPLICIT_TEST_ONLY )); then
             error "--build 与 --test-only 互斥 (--build 含 build+test; --test-only 仅 test)"
         fi
         ACTION=run
