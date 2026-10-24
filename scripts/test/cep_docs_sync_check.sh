@@ -1042,6 +1042,40 @@ if n_hit < 4:
 else:
     print(f"  \033[0;32m✓\033[0m 归档区 P6 扫描 glob 命中 {n_hit} 个文件")
 
+# ── 断言 ⑧:S1 结论的有效期登记 SHALL 有机器检测(critic C2 补丁 1)───────
+#   背景:`S1_VALIDITY_UNTIL=queue6-perm-schema-evolution` 是**带有效期**的结论登记。
+#   若只写串而不检测「有效期何时届满」,则有效期是**纯纸面**(本仓既有 `S3_REVERSE_VALIDITY`
+#   正是此形态 —— 无任何脚本在第 3 张网出现时报红)。
+#   检测:① 有效期触发串必须在 spike 源内(锚存在);
+#         ② 有效期**届满条件**出现时(queue #6 目录存在 / schema 引入 perm 形态字段)→ 报红。
+VALIDITY_ANCHOR = "S1_VALIDITY_UNTIL=queue6-perm-schema-evolution"
+_s1src = live_text("examples/cep_poc_spike_s1.cc")
+if _s1src is None:
+    # 真无源(非本仓结构)→ 报红;harness 已把该文件纳入拷贝集(critic S-4),
+    # 故正常沙箱**不应**走到这里
+    failed.append("S1 有效期检查无法执行: examples/cep_poc_spike_s1.cc 不可读")
+elif VALIDITY_ANCHOR not in _s1src:
+    failed.append(f"S1 有效期锚缺失: {VALIDITY_ANCHOR} 不在 examples/cep_poc_spike_s1.cc")
+else:
+    print(f"  \033[0;32m✓\033[0m S1 有效期锚存在({VALIDITY_ANCHOR})")
+    # 届满条件 ①:队列 #6 change 目录出现
+    q6 = os.path.isdir(os.path.join(root, "openspec/changes/cpptlm-cep-chi-rnf-subset"))
+    # 届满条件 ②:schema 引入 perm 形态相关字段(6→4 投影的表达力演进)
+    _perm_evolved = False
+    try:
+        _s = json.load(open(os.path.join(root, "include/tlm/cep/protocol_instance.schema.json"),
+                            encoding="utf-8"))
+        _props = _s.get("properties", {})
+        _perm_evolved = any(k in _props for k in ("perm_form", "perm_variant", "upgrade_kind"))
+    except Exception:
+        pass
+    if q6 or _perm_evolved:
+        failed.append("S1 结论的有效期已**届满**(队列 #6 出现 或 schema 引入 perm 形态字段)"
+                      " → delta spec 的「S1 当前判定结论与有效期登记」SHALL 重评"
+                      "(否则有效期是纯纸面)")
+    else:
+        print(f"  \033[0;32m✓\033[0m S1 有效期未届满(队列 #6 目录未出现 / schema 无 perm 形态字段)")
+
 if failed:
     for f in failed:
         print("  \033[0;31m✗\033[0m " + f)

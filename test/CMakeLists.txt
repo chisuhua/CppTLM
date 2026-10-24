@@ -249,9 +249,14 @@ add_test(NAME cep_gate_selftest
 add_test(NAME test_sh_arg_parsing
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/test_sh_arg_parsing.sh)
 # PoC Spike 的 delta spec ↔ 实现对账(每条 Scenario 都有可执行断言;per tasks.md T5.9)
-add_test(NAME cep_poc_spike_verification
+# ⚠️ ctest NAME 刻意**不含** `cep_poc_spike` 前缀 —— 否则 `ctest -R cep_poc_spike`
+#    会命中 4 个,违反 spec 明文「恰好命中 3 个用例」(critic B3)。Catch2 tag 仍含
+#    `[cep][poc-spike][verification]`(标签不参与 `ctest -R` 匹配)。
+add_test(NAME cep_spike_delta_verification
          COMMAND cpptlm_tests "[cep][poc-spike][verification]" -r compact)
-set_tests_properties(cep_poc_spike_verification PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+set_tests_properties(cep_spike_delta_verification PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                     DEPENDS "cep_poc_spike_s1;cep_poc_spike_s2;cep_poc_spike_s3")
 add_test(NAME cep_archforge_alignment_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_archforge_alignment_check.sh)
 set_tests_properties(cep_archforge_alignment_check

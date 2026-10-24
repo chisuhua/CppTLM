@@ -334,6 +334,7 @@ int main() {
     std::printf("[S1][VERDICT] S1_MISMATCH_STEPS=%zu\n", mis.size());
     std::printf("[S1][VERDICT] S1_WRITEBACK_OBSERVED=%d\n",
                 obs[static_cast<std::size_t>(kWriteback)].writeback_observed ? 1 : 0);
+    std::printf("[S1][VERDICT] S1_VALIDITY_UNTIL=queue6-perm-schema-evolution\n");
 
     // ── 自检(「有牙」):故意改错某点的期望 → 该点的判定**必须翻转** ──────────
     //   语义要点:比对器必须**真的读**该点的期望值。

@@ -9,8 +9,10 @@
 与第 11 组无关。2026-10-24 曾因此把「闸没 fire」误判成「闸 fire 了」。
 
 本 harness 把第 11 组的 Python **原样抽出**,跑在**真拷贝**的临时根上:
-- `.rddf` / `docs` / `scripts` / `AGENTS.md` → **真拷贝**(改副本不写穿仓库)
-- `openspec` → **symlink**(闸只做 glob 与 `openspec list --json`)
+- `.rddf` / `docs` / `scripts` / `AGENTS.md` / `examples/` / `include/` → **真拷贝**(改副本不写穿仓库)
+- `openspec` → **整目录拷贝**(2026-10-24 由 symlink 改为 copytree:沙箱内新建
+  `openspec/changes/<x>/` 曾**写穿**真仓;而「目录实体化 + 文件 symlink」会被
+  `openspec` CLI 拒绝 —— 它解析 symlink 后判定路径在沙箱外)
 
 ## 用法
 
@@ -50,6 +52,9 @@ FILES = [
     "docs/ONBOARDING.md",
     "scripts/README.md",
     "docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json",
+    # 断言 ⑧(S1 有效期检测)的输入 —— 不纳入则闸自检里该断言被 skip(覆盖缺口,critic S-4)
+    "examples/cep_poc_spike_s1.cc",
+    "include/tlm/cep/protocol_instance.schema.json",
 ]
 
 CHECKER = "scripts/test/cep_docs_sync_check.sh"
@@ -67,10 +72,11 @@ def build_root():
         dst = os.path.join(RT, rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         shutil.copy(os.path.join(R, rel), dst)
-    # openspec 只读 → symlink(闸做 glob + openspec list)
-    link = os.path.join(RT, "openspec")
-    if not os.path.exists(link):
-        os.symlink(os.path.join(R, "openspec"), link)
+    # openspec:**整目录拷贝**(非 symlink)—— critic SHOULD_FIX-2:
+    #   symlink 会让沙箱内新建 `openspec/changes/<x>/` **写穿**真仓(实测污染过一次);
+    #   而「目录实体化 + 文件 symlink」又会被 `openspec` CLI 拒绝(它解析 symlink 后
+    #   判定路径在沙箱外,`openspec list` 直接报错)。拷贝 ~5MB / ~1s,可接受。
+    shutil.copytree(os.path.join(R, "openspec"), os.path.join(RT, "openspec"))
 
 
 def extract_block():

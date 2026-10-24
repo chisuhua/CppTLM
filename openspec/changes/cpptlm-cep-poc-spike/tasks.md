@@ -116,29 +116,38 @@
 - [x] **T5.2** `openspec validate cpptlm-cep-poc-spike --strict` rc=0
 - [x] **T5.3** 全量 `ctest` rc=0;`[cep]` 专项 rc=0;5 个 `cep_* --strict` rc=0
 - [x] **T5.4** `docs_sync_check --strict` rc=0;`markdown_link_check` rc=0;`openspec validate --changes --strict` rc=0
-- [x] **T5.5** **冻结面 diff = 0**(M1 冻结面 30 成员;本 change 预期**零**改动)
+- [x] **T5.5** **冻结面 diff = 0**(M1 冻结面成员数以 `scripts/test/cep_freeze_check.sh` 清单为准;本 change 预期**零**改动)
 - [x] **T5.6** **零行为变更**:`git diff --stat` 显示生产代码改动仅限 `examples/`;`cpptlm_core` 与 23 ABI 零改动
 - [x] **T5.7** **反向验证自查**:S1 / S2 / S3 各**故意破坏一次**判据 → 对应用例**必须变红**(逐个验证并记录)
 - [x] **T5.8** **「结论为红」路径自查**:S1 的 4 值 `perm` 投影**预期会失败**(R-2 已命中)→ 验证该情形下用例**仍绿**且结论被登记(per `design.md` D7-a;若用例变红 → 说明红绿语义未分离,须修)
 - [x] **T5.9** **delta spec 的每个 Scenario 有可执行断言**(防「声称可自动化却无自动化」)—— 新增 `test/test_cep_poc_spike_verification.cc` 逐条断言
 
-> **实施结果(2026-10-24,per 台账 Entry #48)**:
+> **实施结果(2026-10-24,per 台账 Entry #48 + #49)**:
 >
 > | 场景 | 产物 | 实测结论 |
 > |------|------|---------|
-> | **S1** | `examples/cep_poc_spike_s1.cc` | `S1_VERDICT=FAIL` · `S1_R2=TRIGGERED(state_transition[2][1]=3)` · `S1_MISMATCH_STEPS=1`(仅写路径)· `S1_WRITEBACK_OBSERVED=1` · `S1_SELFCHECK=OK` · **exit 0** |
-> | **S2** | `examples/cep_poc_spike_s2.cc`(补自检) | `S2_SELFCHECK=OK` · 断言 **22/22** 全绿 · 结论「判据 (b) 声明层裁定被实测确认」**不变** · exit 0 |
-> | **S3** | `examples/cep_poc_spike_s3.cc` | `S3_VERDICT=ACYCLIC` · 顶点 **8** / 边 **8** / 跨网边 **0** · `S3_DOWNGRADED_CYCLE=vc2<->vc3` · `S3_CAUSE=alias-false-cycle` · `S3_REVERSE_VALIDITY=until-3rd-network-appears` · `S3_RELEASE_USE=forbidden` · `S3_SELFCHECK=OK` · exit 0 |
+> | **S1** | `examples/cep_poc_spike_s1.cc` | `S1_VERDICT=FAIL` · `S1_R2=TRIGGERED(state_transition[2][1]=3)` · `S1_MISMATCH_STEPS=1`(仅写路径)· `S1_WRITEBACK_OBSERVED=1` · `S1_VALIDITY_UNTIL=queue6-perm-schema-evolution` · `S1_SELFCHECK=OK` · **exit 0** |
+> | **S2** | `examples/cep_poc_spike_s2.cc`(补自检) | `S2_SELFCHECK=OK` · `S2_NEG_REAL_FALLBACK=1` · 断言 **22/22** 全绿 · 结论「判据 (b) 声明层裁定被实测确认」**不变** · exit 0 |
+> | **S3** | `examples/cep_poc_spike_s3.cc` | `S3_VERDICT=ACYCLIC` · 顶点 **8** / 边 **8** / 跨网边 **0** · `S3_DOWNGRADED_CYCLE=vc2<->vc3`(**从实际环格式化**,非硬编码)· `S3_CAUSE=alias-false-cycle` · `S3_REVERSE_VALIDITY=until-3rd-network-appears` · `S3_RELEASE_USE=forbidden` · `S3_SELFCHECK=OK` · exit 0 |
 >
 > **红绿分离已实证**:S1 的**判定结论为红**(R-2 命中)但 **exit 0** ⇒ ctest 绿;而「判据退化」(自检失败)→ **exit 1** ⇒ 回归门能区分两者。
-> **T2.5 / T3.5 的「逐字一致」核对**由 `test_cep_poc_spike_verification.cc` **机器执行**(Scenario → 证据映射表逐条断言)⇒ 不再靠人眼。
-> **ctest**:98 → **101**(新增 `cep_poc_spike_s1` / `cep_poc_spike_s3` / `cep_poc_spike_verification`)。
+> **T2.5 / T3.5 的「逐字一致」核对**由 `test/test_cep_poc_spike_verification.cc` **机器执行**(Scenario → 证据映射表逐条断言)⇒ 不再靠人眼。
+> **ctest**:98 → **101**(新增 `cep_poc_spike_s1` / `cep_poc_spike_s3` / `cep_spike_delta_verification`)。
+> ⚠️ **验证用例名刻意不含 `cep_poc_spike` 前缀**(否则 `ctest -R cep_poc_spike` 命中 4 个,违反本 change 的 spec「恰好命中 3」—— critic B3)。
+
+> **critic 复审修复(2026-10-24,per 台账 Entry #49)**:首轮 critic 复审 **REJECT / 4 BLOCKERS**,全部修复并**逐条反向验证有牙**:
+> ① **B1** S2 反向验证结构性无判别力(`b_holds_neg` 构造性恒 false → 删整段 NEG 实验自检仍 OK)→ 加 `neg_is_real_fallback`(须真拿到旧值 + 来源内存 + 不可达)→ mutant `s2_nonegexp` 现被检出。
+> ② **B2** S3 `S3_DOWNGRADED_CYCLE` **硬编码** + `has2&&has3` 对错路径恒真 → 改为**从实际环格式化** + 断言「环**恰好** {vc2,vc3}」→ mutant(`return stack`)现被 needle 检出(spike exit 0 也对账红)。
+> ③ **B3** `ctest -R cep_poc_spike` 实为 **4** 个(验证用例撞前缀)→ 改名 `cep_spike_delta_verification` + 对账测试加**注册数断言**。
+> ④ **B4** `status: "planned"` 证据空转(三份 spike 源本无 `status`)+ 带空格可绕过 → Scenario 改写为「spike **SHALL NOT** 引入协议实例声明」+ **结构化键位**判据(`{status:` / `,status:`;不用裸串 —— 裸串会误报注释/标识符)。
+> 另修 5 项 SHOULD_FIX(`mode` 缺失改判失败 / 枚举循环 `CHECK` 累积 / ctest `DEPENDS` / `<functional>` 显式包含 / 归档路径动态发现)+ 3 项 NITS(行数 / 断言数 / `== 15` Scenario 计数)。
 
 ---
 
 ## 6. 归档
 
+- [ ] **T6.0** **critic 复审完成且 BLOCKERS = 0**(归档前置门,per 决策 C1)—— 首轮 REJECT(4 BLOCKERS)已全部修复 + 逐条反向验证有牙;**待复审 PASS 后勾选**
 - [ ] **T6.1** 归档前:本 change 的 delta spec 合并进 `openspec/specs/cep-poc-spike-verification/spec.md`(**完成归档**语义 —— 非 ⏸ 暂存)
 - [ ] **T6.2** `obj §4.0` 状态列 🟡 → ✅ archived;`phase-10.md` 同步;§11 台账补归档 Entry
-- [ ] **T6.2b** **owner 重指向**:归档时,S1-2 / S1-3 / S1-4 的承接方 SHALL 从「队列 #2」**迁到活队列行**(队列 #3+),S1-1 ②③ 迁至队列 #4 —— 否则三项成为**指向已归档 change 的无主债**(per `design.md` D4.3 + `obj §4.7.3` A1)
+- [ ] **T6.2b** **owner 重指向**(per 2026-10-24 四裁决):**S1-1 ②** → 队列 #4(附「装配路径调用 + 逐 (network,vc) verdict」验收);**S1-1 ③** → **改判为全局不变量**(owner = 每个协议实例 change 的放行 Scenario,**不挂**单队列行);**M-4 决策** → 队列 #3(附冻结面耦合预登记:`fabric.schema.json vc_count.maximum=4`);**S1-5 表体** → 队列 #6(依赖方向:#3 决策为其输入前置);S1-2 / S1-3 / S1-4 → 活队列行 —— 否则成为**指向已归档 change 的无主债**(per `design.md` D4.3 + `obj §4.7.3` A1)
 - [ ] **T6.3** KPI slot 释放 → 并发回到 **0/3** → 队列 **#3 `cpptlm-cep-stub-cache-core`** 可启动

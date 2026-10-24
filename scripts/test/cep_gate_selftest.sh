@@ -141,20 +141,39 @@ t = sub(t, "## §2 范围", "## §2 范围\n\ntasks.md 105 / 99 已完成")
 p.write_text(t, encoding="utf-8")'
 
 # ── 断言⑥:glob 覆盖(归档件被移走 → 命中数 < 4)────────────────────
+#   注:harness 现已**整目录拷贝** openspec(critic SHOULD_FIX-2,不再 symlink),
+#   故此处删「拷贝里」的归档件即可 —— 不再需要先 unlink symlink。
 run_case "归档件被移走 → ⑥ 必须 fire" 1 '
 import os, shutil, glob
 rt = os.environ["RT"]
 src = os.path.join(rt, "openspec")
-if os.path.islink(src):
-    os.unlink(src)
 real = os.path.join(os.environ["CEP_GATE_SRC"], "openspec")
 files = sorted(glob.glob(os.path.join(real, "changes/archive/*cpptlm-cep-umbrella/**/*.md"), recursive=True))
 assert len(files) == 4, f"仓内 umbrella 归档件应为 4 个,实得 {len(files)}"
-# 只放 **3 个** → glob 命中 3 < 4 → ⑥ 必须报红
+# 把拷贝里 3 个归档件**移走** → glob 命中 3 < 4 → ⑥ 必须报红
 for f in files[:3]:
     d = os.path.join(src, os.path.relpath(f, real))
-    os.makedirs(os.path.dirname(d), exist_ok=True)
-    shutil.copy(f, d)'
+    if os.path.exists(d):
+        os.unlink(d)'
+
+# ── 断言 ⑧:S1 有效期登记(2026-10-24 新增,per critic SHOULD_FIX-1)────────
+run_case "断言 ⑧ 基线(spike 源含有效期锚)→ 必须 GREEN" 0 '
+pass'
+
+run_case "移除 spike 源的有效期锚 → ⑧ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/examples/cep_poc_spike_s1.cc")
+t = p.read_text(encoding="utf-8")
+assert "S1_VALIDITY_UNTIL=queue6-perm-schema-evolution" in t
+p.write_text(t.replace("S1_VALIDITY_UNTIL=queue6-perm-schema-evolution", "S1_VALIDITY_X"), encoding="utf-8")'
+
+run_case "schema 引入 perm 形态字段(有效期届满条件)→ ⑧ 必须 fire" 1 '
+from pathlib import Path
+import json
+p = Path(os.environ["RT"] + "/include/tlm/cep/protocol_instance.schema.json")
+d = json.loads(p.read_text(encoding="utf-8"))
+d["properties"]["perm_form"] = {"type": "string"}
+p.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")'
 
 # ── 断言 ⑦:移交链的可达性与 owner 活性 ────────────────────────────
 run_case "断言 ⑦ 基线(不移除任何标记)→ 必须 GREEN" 0 '

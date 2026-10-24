@@ -331,6 +331,7 @@ namespace {
         Memory* mem = nullptr;
         const VcBinding* binding = nullptr;
         const std::map<std::string, int>* vc_count = nullptr;
+        int fallback_hits = 0; // provenance:NEG 路径被真实执行过几次(供自检核对)
 
         ReadResult fabric_read(uint64_t addr) {
             ReadResult res;
@@ -338,6 +339,7 @@ namespace {
                 res.value = mem->value;
                 res.source = DataSource::memory;
                 res.probe_forwarded = false;
+                ++fallback_hits; // provenance:本 bridge 的 fallback 路径**确实被执行**
                 return res;
             }
             // tracker 指路:该行有 sharer 持有(GPU)= probe 下发的对象依据
@@ -546,20 +548,21 @@ int main() {
     }
 
     // ── NEG 变体:桥接真实关闭(同一 Bridge 代码路径,真实 fallback 读) ─────────
+    //   ⚠️ provenance 加固(critic S-3):**复用主场景的同一 `bridge` 对象**(而非新建),
+    //      并核对 `bridge.fallback_hits` —— 观测**只能**由该对象的 `fabric_read` 真实调用产生,
+    //      「手工伪造三字段」的变体无法同时伪造 `fallback_hits`(它由 Bridge 内部递增)。
     std::printf("\n[S2][NEG] 桥接关闭变体(D-FABRIC 读**真的**收不到 snoop 转发)\n");
     Observation neg_obs; // 提升到外层 —— 自检要用(见下)
     {
-        Bridge neg_bridge;
-        neg_bridge.fwd_enabled = false;
-        neg_bridge.gpu_line = &gpu_x;
-        neg_bridge.tracker = &tracker;
-        neg_bridge.mem = &memory;
-        neg_bridge.binding = &binding;
-        neg_bridge.vc_count = &vc_count;
-        ReadResult got = neg_bridge.fabric_read(kAddrX);
+        const int hits_before = bridge.fallback_hits;
+        bridge.fwd_enabled = false; // 复用同一 bridge:关闭转发
+        ReadResult got = bridge.fabric_read(kAddrX);
         neg_obs.observed_value = got.value;
         neg_obs.source = got.source;
         neg_obs.path_reachable = got.probe_forwarded;
+        const bool hit_ran = (bridge.fallback_hits == hits_before + 1);
+        std::printf("[S2][NEG] S2_NEG_FALLBACK_HITS=%d\n", hit_ran ? 1 : 0);
+        expect(hit_ran, "NEG 读经同一 bridge 的 fallback 路径**真实执行**(fallback_hits 递增)");
         expect(neg_obs.observed_value == memory.value && neg_obs.observed_value == kOldValue,
                "NEG 读**真的**来自内存(= 旧值 0x1111,同一 bridge 代码路径 fallback)");
         expect(neg_obs.source == DataSource::memory && !neg_obs.path_reachable,
@@ -579,9 +582,19 @@ int main() {
                                   main_obs.path_reachable;
         const bool b_holds_neg = neg_obs.observed_value == kNewValue &&
                                  neg_obs.source == DataSource::gpu_cache && neg_obs.path_reachable;
-        const bool selfcheck_ok = b_holds_main && !b_holds_neg;
-        std::printf("[S2][SELFCHECK] 主场景 (b) 成立=%d · 桥接关闭后 (b) 成立=%d\n",
-                    b_holds_main ? 1 : 0, b_holds_neg ? 1 : 0);
+        // ⚠️ 判别力修正(critic B1 + S-3):`b_holds_neg` 在 fwd_enabled=false 时**构造性恒 false**
+        //   —— fallback 分支(`:337-342`)必然置 source=memory / path_reachable=false,
+        //   故 `!b_holds_neg` 恒真 ⇒ 仅靠它,自检对「NEG 实验是否真的跑过」**零判别力**。
+        //   ⇒ 必须额外要求 NEG **确实是一次真实 fallback 读**。S-3 加固:观测复用同一
+        //     `bridge` 对象,`fallback_hits` 由 Bridge 内部递增 —— 伪造三字段者无法伪造它。
+        const bool neg_is_real_fallback = neg_obs.observed_value == kOldValue &&
+                                          neg_obs.source == DataSource::memory &&
+                                          !neg_obs.path_reachable && (bridge.fallback_hits == 1);
+        const bool selfcheck_ok = b_holds_main && !b_holds_neg && neg_is_real_fallback;
+        std::printf("[S2][SELFCHECK] 主场景 (b) 成立=%d · 桥接关闭后 (b) 成立=%d · "
+                    "NEG 为真实 fallback=%d\n",
+                    b_holds_main ? 1 : 0, b_holds_neg ? 1 : 0, neg_is_real_fallback ? 1 : 0);
+        std::printf("[S2][SELFCHECK] S2_NEG_REAL_FALLBACK=%d\n", neg_is_real_fallback ? 1 : 0);
         std::printf("[S2][SELFCHECK] S2_SELFCHECK=%s\n", selfcheck_ok ? "OK" : "DEGENERATE");
         expect(selfcheck_ok, "自检:桥接真实关闭后判据 (b) 必须不成立(判据对传播敏感,非恒真)");
     }

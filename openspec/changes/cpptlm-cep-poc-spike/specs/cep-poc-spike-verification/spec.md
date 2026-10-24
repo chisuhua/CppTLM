@@ -32,6 +32,7 @@ CEP SHALL 将 **PoC Spike 的 3 个判定场景**(`S1` / `S2` / `S3`)实现为**
 - **AND** 每个场景 SHALL 给出**唯一判据**(不得有并列的「或」判据)
 - **AND** 每个场景 SHALL 有**至少 1 条 Scenario** 陈述其判据的可执行形态
 - **AND** `ctest -R cep_poc_spike` SHALL **恰好命中 3** 个用例(`cep_poc_spike_s1` / `cep_poc_spike_s2` / `cep_poc_spike_s3`)
+- **AND** 验证本契约的对账用例 SHALL **不**使用 `cep_poc_spike` 前缀命名(否则 `ctest -R cep_poc_spike` 命中 4 个,与本条冲突)
 
 #### Scenario: S1 —— 单域基线(`perm` 投影 vs 6 态机推导)
 
@@ -99,16 +100,29 @@ CEP SHALL 将 **PoC Spike 的 3 个判定场景**(`S1` / `S2` / `S3`)实现为**
 - **THEN** 该结论 SHALL **不**被用作「放行任何协议实例」的依据 —— `ADR-CEP-09:221` 的放行禁令要求的是「图顶点按 `(协议实例, network, vc_id)` **建立**」(装配期校验器),而 spike 是**可丢弃实验床**,不产出装配期校验器
 - **AND** 该结论 SHALL **不**被当作 conformance 证据(per 规格 §1.2 硬边界 2)
 
-#### Scenario: spike 内引用的协议实例声明 SHALL 保持 `status: "planned"`
+#### Scenario: S1 当前判定结论与有效期登记(**已知红**契约的耐久写法)
 
-- **WHEN** spike 复制 / 引用 `protocol_instance` 声明
-- **THEN** 该副本的 `status` SHALL 为 **`planned`**(两份上游真实声明亦为 `planned`)
-- **AND** 若写成 `implemented` → SHALL 判失败 —— 否则 `ADR-CEP-12` 的「仅 `implemented` 计入 adapter 实例数」计数口径被击穿,且 `S1-2` 的触发条件(首个 `implemented` 实例装配后)会被**虚假触发**
+- **WHEN** 登记 S1 的**当前判定结论**(与「判据实现退化」区分 —— 见首条 Scenario)
+- **THEN** 结论 SHALL 为:S1 = **FAIL**(`perm` 4 值投影表达力不足,`R-2` 命中)
+- **AND** 该结论 SHALL 被机器登记:spike 输出 `S1_VERDICT=FAIL`,且 `S1_MISMATCH_STEPS=1`(不一致**仅**出现在写路径 —— 读路径由响应侧授予忠实反映行态,per ArchForge `32 号:338`)
+- **AND** 该结论的**有效期** SHALL 被显式标注:`S1_VALIDITY_UNTIL=queue6-perm-schema-evolution`(即 `S1-7` 的 `perm` 形态 schema 演进落地于队列 #6 `cpptlm-cep-chi-rnf-subset`)
+- **AND** 有效期内 `examples/cep_poc_spike_s1.cc` SHALL **不**被删除 —— 本 Scenario 的证据源是它的输出;**「spike 是 `examples/` 下的可丢弃单文件」的适用范围 SHALL 在本 Scenario 有效期内收窄为「不可丢弃」**
+- **AND** 有效期届满(队列 #6 落地 / `protocol_instance.schema.json` 引入 `perm` 形态相关字段)**或**结论翻转时,本 Scenario SHALL 被重评 —— 对账测试的证据链会**变红**,强制复核
+
+#### Scenario: spike SHALL NOT 引入协议实例声明(防虚假触发 `S1-2`)
+
+- **WHEN** 契约测试检查三份 spike 源(`examples/cep_poc_spike_s{1,2,3}.cc`)
+- **THEN** 各源 SHALL **不含协议实例声明键**(JSON 键位形态 `"status":`)—— spike 是**判定实验床**,SHALL **不**复制/承载任何 `protocol_instance` 声明
+- **AND** 理由:`ADR-CEP-12` 的计数口径是「仅 `implemented` 计入 adapter 实例数」;若 spike 携带 `status: "implemented"` 的声明,`S1-2` 的触发条件(首个 `implemented` 实例装配后)会被**虚假触发**
+- **AND** 上游两份真实声明(`moesi_gpu` / `mesif`,ArchForge `32 号:405 / :487`)均为 `planned` —— 本 Scenario 只约束**本仓 spike**,不改上游声明
+- **AND** 断言 SHALL **不**用裸串 `status` —— 裸串会把**注释 / 标识符**(如 `inst_status_tag`)也判红(误报面:一次无害编辑即红,训练出「忽略红」的习惯)。断言 SHALL 用**结构化**判据:剥空白与引号后检查**键位形态** `{status:` / `,status:`(既捕获 `"sta" "tus"` 字面量拼接变体,又不误报)
+- **AND** 判据的目标 SHALL 为「**防无意引入的退化**」,**不**承诺「防蓄意规避」(`\x73tatus` 转义 / 运行时逐字符构造属**已知边界**)
 
 #### Scenario: spike 的硬边界(可丢弃 / 零公共影响)
 
 - **WHEN** 契约测试检查本 capability 所对应实现的生产影响面
-- **THEN** spike 代码 SHALL 仅存在于 `examples/`(单文件、可丢弃)
+- **THEN** spike 代码 SHALL 仅存在于 `examples/`(单文件)
+- **AND** 「可丢弃」SHALL 理解为「**不构成生产依赖**」—— `S1` / `S2` / `S3` 三份 spike SHALL **在本契约有效期内保留**(它们是「S1 当前判定结论」「每场景的反向验证不得被删除」两条 Scenario 的证据源);删除它们 SHALL 使对账测试变红
 - **AND** `cpptlm_core` 与 **23 ABI** SHALL **零改动**
 - **AND** spike SHALL **不**进 `ModuleFactory`、SHALL **不**注册 ABI、SHALL **无**公共 API
 - **AND** spike SHALL **不**引入新依赖(仅用仓内既有头 + 标准库)

@@ -3264,6 +3264,228 @@ planner 审查只识别出 **2** 处 → **全仓扫描后补齐到 9 处**(`tes
 
 ---
 
+### Entry #49 — 2026-10-24 [scope-change]
+
+**主题**: **critic 复审 REJECT(4 BLOCKERS)全部修复 + 逐条反向验证有牙** —— 归档前置门(决策 C1)
+
+**复审范围**: commit `39abd1d5`(3 新文件 + delta spec)+ 4 裁决落盘方案。结论:**REJECT**。
+
+**① 4 个 BLOCKERS(全部实测证实 + 修复 + 反向验证)**
+
+| # | BLOCKER | 根因 | 修法 | 反向验证 |
+|---|---------|------|------|---------|
+| **B1** | S2 反向验证**结构性无判别力** | `b_holds_neg` 在 `fwd_enabled=false` 时**构造性恒 false**(fallback 分支必然置 `source=memory`)⇒ `selfcheck_ok ≡ b_holds_main` ⇒ **删掉整段 [S2][NEG] 实验自检仍报 OK** | 自检加 `neg_is_real_fallback`(须真拿到旧值 `kOldValue` + 来源内存 + 不可达;默认构造的 `neg_obs(observed_value=0)` 不满足)+ 输出 `S2_NEG_REAL_FALLBACK=1` 作对账锚 | 换入 mutant(`s2_nonegexp`,删整段 NEG)→ 对账测试**变红** ✅ |
+| **B2** | S3 pitfall② 的修复**无回归锁** | `S3_DOWNGRADED_CYCLE` **硬编码** `"vc2<->vc3"`(不来自实际环,恒真);`has2&&has3` 对错路径 `0→1→3→2` **也恒真** | 改为 `format_cycle(flat_cycle)`(**从实际环**排序去重格式化)+ 断言环**恰好**由 `{vc2,vc3}` 构成(错路径得 `{0,1,2,3}` 即红) | 构造 subtle mutant(`return stack` + 自检移除 → spike **exit 0**)→ 对账测试的 **needle 变红**(输出 `vc0<->vc1<->vc2<->vc3` ≠ `vc2<->vc3`)✅ |
+| **B3** | `ctest -R cep_poc_spike` 实为 **4** 个,与 spec 明文「**恰好命中 3**」**直接矛盾**;且 `tasks.md:115` T5.1 是**虚假 `[x]`** | 验证用例命名 `cep_poc_spike_verification` **撞了前缀**(`ctest -R` 匹配 NAME 而非 tag) | 验证用例改名 `cep_spike_delta_verification`(不含前缀)+ 对账测试加**注册数断言**(`add_test(NAME cep_poc_spike*` == 3)+ spec 补「验证用例 SHALL 不用该前缀命名」 | `ctest -R cep_poc_spike -N` → **3** ✅ |
+| **B4** | `status: "planned"` Scenario 的**证据全部空转** | 仓内**无实例数据文件** ⇒ 三份 spike 源零 `status` 串 ⇒ `absent` needle **天然通过**;且 needle 带空格(`, `)→ `{"status":"implemented"}` **可绕过** | Scenario 改写为「spike **SHALL NOT** 引入协议实例声明」+ needle 改用**裸串** `status` + 三份源一致性检查 | 注入 `{"status":"implemented"}`(**无空格**变体)→ 对账测试**变红 2 处** ✅ |
+
+**② 5 项 SHOULD_FIX**:`mode` 字段缺失 → **改判失败**(原静默按 `present`,会让漏字段的 `absent` 行静默失效)/ 枚举循环 `REQUIRE` → `CHECK`(累积,避免首败掩盖后续缺口)/ ctest 加 **`DEPENDS`** 边(`ctest -j` 就绪竞态)/ `s3.cc` 显式 `#include <functional>` / 归档路径**动态发现**(原写死 `2026-10-23-`,归档后必落空)。
+
+**③ 3 项 NITS**:`364/377 行` → 实测 **366/379** / `[cep] 76/1284` → 实测 **77/1400** / `titles.size() >= 10` → **恰好 15**(Scenario 条数登记)。
+
+**④ 决策 C2 落盘(丙 + 2 补丁)**
+
+- **新增 Scenario**:「S1 当前判定结论与有效期登记」—— **主体断言状态**(R-2 需求本体成立)+ **事件登记**(`S1_VERDICT=FAIL`,仅写路径)+ **有效期**(`S1_VALIDITY_UNTIL=queue6-perm-schema-evolution`)
+- **补丁 1(有效期**必须**有机器检测)**:`cep_docs_sync_check.sh` 新增**断言 ⑧** —— ① 有效期锚须在 spike 源内;② **届满条件**出现时(queue #6 目录出现 **或** schema 引入 `perm` 形态字段)→ **报红**。反向验证:临时造 `cpptlm-cep-chi-rnf-subset/` 目录 → 断言 ⑧ **fire** ✅
+- **补丁 2(拆定时炸弹)**:「spike 的硬边界」Scenario 改写 ——「**可丢弃**」SHALL 理解为「不构成生产依赖」,三份 spike SHALL **在本契约有效期内保留**(它们是对账测试的证据源)
+
+**⑤ 关键发现:`cep_gate_selftest.sh` 的沙箱不含 `examples/`** → 断言 ⑧ 首版在 fixture 里报「锚缺失」(4 项 fixture 假红)。已改为**容忍源缺失**(沙箱跳过而非报红)。**这是一次「新断言与既有闸的交互」被 fixture 集当场抓出** —— 印证 fixture 集的价值。
+
+**⑥ meta 观察(本轮两 agent 分析的核心产出)**
+
+oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法丙);metis 的 4 条攻击是**同一个问题** ——「**该动作的落盘机制是否真能兑现承诺**」。判据应统一为:**该决策落盘后,有没有机器判据能防止它漂移?** 按此尺子,4 处缺机器判据(有效期 / S1-1③ 解除条件 / S1-1② 镜像抗漂移 / 断言⑦ 孤儿前置盲区)已**逐条补上或登记**。
+
+**⑦ 验收**:`ctest` **101/101** · `[cep]` **77 case / 1400 断言** · 对账测试 **116 断言** · `ctest -R cep_poc_spike` **3** · 守门(除**既存** `markdown_link_check` 65 处失效链接,**非本轮引入**)全 rc=0 · `cep_gate_selftest` **18/18** · `openspec validate --changes --strict` rc=0 · `format.sh --check` rc=0 · 冻结面 diff=**0**。
+
+**关联**: Entry #48(S1/S3 实施)· Entry #46(planner 审查)· 首轮 critic 会话
+
+---
+
+### Entry #50 — 2026-10-24 [scope-change]
+
+**主题**: **critic 二轮复审 REJECT(1 BLOCKER + 4 SHOULD_FIX)全部修复 + 逐条 mutant 反证**
+
+**二轮结论**: 上轮 4 个 BLOCKER 的**原 mutant 全部被真正拦住**(critic 原话「非仅靠 spike 自身 rc —— 强化变体证明 needle 确有牙」);但发现 **B2 修复对同类缺陷仍可绕过**,且 4 项 SHOULD_FIX。**公平面确认**: 二轮的 REJECT **不是**对上轮修复的否定,而是对**修复深度**的加码。
+
+**① BLOCKER-1(二轮):B2 修复缺「边敏感度」** —— `exactly_2_3` 只比**去重集合**,一个**忽略输入的硬编码检测器**仍能通过
+
+- **critic 的 mutant B2e**:`find_cycle` 对降级图**直接返回硬编码** `{2,3,2}`(完全不看边)→ spike **exit 0** + 对账测试**全绿**。
+- **critic 的 mutant B2d**:`find_cycle` 忘记 `cyc.push_back(w)`(环**不闭合**)→ 同样绕过 needle 与自检。
+- **修法(新增 2 条自检)**:
+  - **③ 边敏感度**:逐条删掉降级图的边,**至少存在一条边**使判定由「有环」翻转为「无环」→ 输出 `S3_EDGE_SENSITIVE`。否则「检测器**不看边**」→ 判据退化。
+  - **④ 环闭合性**:环的顶点序列 SHALL 首尾同一顶点 → 输出 `S3_CYCLE_CLOSED`。捕获「忘闭合」类重构 bug。
+- **反证**:B2e mutant → `S3_EDGE_SENSITIVE=0` + `SELFCHECK=DEGENERATE` + **exit 1** ✅;B2d mutant → `S3_CYCLE_CLOSED=0` + **exit 1** ✅。
+
+**② 4 项 SHOULD_FIX**
+
+| # | 问题 | 修法 | 反证 |
+|---|------|------|------|
+| **S-1** | `count_add_test` 用精确前缀 `add_test(NAME `,`add_test( NAME`(括号后带空格,CMake 合法)**绕过** | 正则化 `add_test\s*\(\s*NAME\s+<prefix>` | 空格变体注入 → **红** ✅ |
+| **S-2** | `text.find("status")` 裸串代理,**字面量拼接**(`"sta" "tus"`)绕过 | 新增 `contains_token()`(**剥空白与引号**后查 token)+ 二进制级兜底(实测**未使用的 static 变量在 -O2 下被完全消除** → 二进制检查仅当串被实际使用时有效,已在注释说明为**尽力而为**) | 拼接变体注入 → **红** ✅ |
+| **S-3** | `neg_is_real_fallback` 校验**字段值**而非**实验来源**,「伪造三字段」可绕过 | NEG 观测**复用主场景同一 `bridge` 对象** + `Bridge::fallback_hits` **由 Bridge 内部递增**(伪造者无法递增)→ 打印 `S2_NEG_FALLBACK_HITS` | forge mutant → `S2_NEG_FALLBACK_HITS=0` + 自检 fire + **exit 1** ✅ |
+| **S-4** | `cep_gate_selftest.sh` 沙箱不含 `examples/` → 断言 ⑧ 在闸自检里**永不执行**(覆盖缺口) | `cep_gate_harness.py` 的 `FILES` 纳入 `examples/cep_poc_spike_s1.cc` + `protocol_instance.schema.json`;断言 ⑧ 的「源缺失」由**跳过**改为**报红** | 闸自检 **18/18** 全过 ✅ |
+
+**③ 过程中踩的坑(记录以免重犯)**
+
+- **`git checkout -- <file>` 会丢弃该文件的未提交改动**:本会话两次用 `git checkout` 还原测试注入,把 `s1.cc` 的 `S1_VALIDITY_UNTIL` 一并回滚(另一次把 `s3.cc` 的 `format_cycle` 回滚)。**教训**:对**带未提交改动**的文件做变异测试,必须 `cp` 备份 + `cp` 还原,**禁用 `git checkout`**。
+- **同秒时间戳陷阱**:写源后立即 `cmake --build` 可能因时间戳同秒而**不重编** → mutant 未生效却显示「构建成功」。**教训**:变异构建前先 `rm` 目标二进制 + `touch` 源 + `sleep 1.1`。
+
+**④ 三轮累计:每轮 `REJECT` 都揭示了**新的一类**「有牙」缺口**
+
+| 轮 | 缺口类别 | 修法 |
+|---|---------|------|
+| 一轮 | **判别力**:比对器/检测器恒真 | 加反向验证 + 自检 |
+| 二轮 | **真实性**:反向实验可被删除/伪造 | provenance 锚(同一对象 + 内部计数) |
+| 三轮 | **敏感度**:检测器忽略输入仍能过 | 边敏感度 + 结构断言 |
+
+→ **规律**:断言「某常量存在」永远不够,必须断言「**输入改变时输出必须改变**」。
+
+**⑤ 验收**:`ctest` **101/101** · `[cep]` 77 case · 对账测试 **125 断言** · `ctest -R cep_poc_spike` **3** · 守门全 rc=0 · `cep_gate_selftest` **18/18** · `openspec validate --changes --strict` rc=0 · `format.sh --check` rc=0 · 冻结面 diff=**0**。
+
+**关联**: Entry #49(一轮修复)· 二轮 critic 会话
+
+---
+
+### Entry #51 — 2026-10-24 [scope-change]
+
+**主题**: **critic 三轮复审 REJECT(2 BLOCKERS)全部修复** —— 三轮累计揭示「有牙」的三类缺口
+
+**三轮结论**: 上轮 4 项(S-1~S-4)**全部被确认修复**;发现 **2 个新独立 BLOCKER**(非上轮残留)。
+
+**① BLOCKER-1(三轮):② 注入环自检**判别力不足**
+
+- critic 的 **m8**(`find_cycle` 只从 `g.begin()` 起 DFS —— 教科书级漏掉遍历根循环)→ 逃逸。
+- critic 的 **m6**(只识别互指 **2 环**)→ 逃逸。
+- **修法**:② 注入由「1 个 2 元环」扩为 **3 路**:
+  - 2 元环 + 跨网边(基础)
+  - **3 元环** `1→3→2→1`(刻意避开 `2→0`:既有 `0→2` 会合成 2 环让 m6 仍能检出)
+  - **环在非首个弱连通分量**(`compute_noc|0` 孤立 + `ualink|2↔3` 成环 → 捕「只从首顶点 DFS」)
+  - 打印 `注入检出(2元环=x / 3元环=x / 隔离分量环=x)` 并进对账 needle。
+- **反证**:m8 → `隔离分量环=0` + exit 1 ✅;m6 → `3元环=0` + exit 1 ✅。
+
+**② BLOCKER-2(三轮):`count_add_test` 源码正则与 `ctest -R` 语义不等价**
+
+- **实测**:`ADD_TEST`(大写)/ `add_test(NAME "..")`(引号)/ helper macro 三种 CMake 合法写法**都真实注册**,但源码正则数不到(真实 **3** / 正则 **1**)。
+- **修法**:删 `count_add_test`(源码代理),改 `count_registered_tests()` —— 解析 CMake 生成的 `<build>/**/CTestTestfile.cmake`(**那是 ctest 的真实输入**)。
+- 断言随之改为读 `CTestTestfile.cmake`。
+
+**③ SHOULD_FIX(三轮)**
+
+| # | 问题 | 修法 |
+|---|------|------|
+| S-1 | ⑧(本 change 新增断言)**无 fixture** —— 删掉整段闸自检仍 18/18 绿(自称标准没落到自己身上) | 补 **3 条** `run_case`:基线 GREEN / 删有效性锚 → fire / schema 插 `perm_form` → fire |
+| S-2 | harness `openspec` **symlink 不密封**(沙箱内新建会**写穿**真仓,已实测污染) | 改 **整目录拷贝**(0.84s/次);注:「目录实体化 + 文件 symlink」不可行 —— `openspec` CLI 解析 symlink 后拒绝沙箱外路径 |
+| S-3 | S-2 的 `contains_token` 是**尽力而为**非密封(`\x73tatus` 转义 / 运行时构造仍可绕) | 注释口径改正为「尽力而为、非密封;目标是**防无意引入**」 |
+
+**④ 过程中踩的坑**
+
+- **多行字符串粘连**:我用 `edit` 删了一个空行 → `pass'run_case` 粘连成一条 → ⑦ baseline 恒 `rc=?`。**教训**:shell 里的多行字符串参数,编辑时**不可删结尾空行**。
+- **`git checkout` 回滚未提交改动**(已在 Entry #50 记录,本轮复发一次于 `s1.cc`)。
+
+**⑤ 三轮累计规律(本 change 最有价值的产出)**
+
+| 轮 | 「有牙」的哪类缺口 | 修法 |
+|---|------------------|------|
+| 一轮 | **判别力**:比对器/检测器**恒真** | 加反向验证 + 自检 |
+| 二轮 | **真实性**:反向实验**可被删除/伪造** | provenance 锚(同一对象 + 内部计数) |
+| 三轮 | **敏感度**:检测器**忽略输入**仍能过 | 多路注入(2/3 元环 + 隔离分量) + 边敏感度 |
+
+→ **通用判据**:断言「某常量存在」永远不够;必须断言「**输入改变时输出必须改变**」。三轮 critic 的每一条 BLOCKER 都是这条判据的缺失实例。
+
+**⑥ 验收**:`ctest` **101/101** · `[cep]` 77 case / 1411 断言 · 对账测试 **125 断言** · `ctest -R cep_poc_spike` **3** · `cep_gate_selftest` **21/21**(18 → 21) · 守门全 rc=0 · `format.sh --check` rc=0 · 冻结面 diff=**0**。
+
+**关联**: Entry #49(一轮)· Entry #50(二轮)· 三轮 critic 会话
+
+---
+
+### Entry #52 — 2026-10-24 [scope-change]
+
+**主题**: **critic 四轮复审 REJECT(1 BLOCKER + 3 SHOULD_FIX)全部修复** —— 四轮揭示「守卫自身的语义等价性」缺口
+
+**四轮结论**: 三轮的 2 个 BLOCKER(注入判别力 / `count_add_test`)与 S2-B1 **确已修复**(critic 实测 m8/m6/4 种 CMake 写法/改名回前缀/硬编码伪造 S2 **全部现红**,非过拟合证据 `m_kahn` 现绿);发现 **1 个新 BLOCKER**(新守卫自身)。
+
+**① BLOCKER(四轮):`count_registered_tests` 用前缀匹配,而 `ctest -R` 是**非锚定**正则**
+
+- **实测**:新增 `add_test(NAME test_cep_poc_spike_extra ...)`(**含前缀但不以之开头**)→ `ctest -R cep_poc_spike` 真实命中 **4**(违反 spec「恰好 3」),而对账测试的守卫仍 **绿**(用 `add_test(cep_poc_spike` 前缀匹配,数不到)。
+- **为何是可信路径而非蓄意构造**:按仓内既有 `test_*` 命名习惯新增一条 ctest 即触发,**不需要知道守卫内部实现**。
+- **修法**:抽 `add_test(<name> ...)` 的 `<name>`(剥引号)→ 用 `name.find(prefix) != npos`(**与 `ctest -R` 的非锚定语义一致**)。
+- **反证**:`test_cep_poc_spike_extra` 注入 → 守卫**红** ✅。
+
+**② 3 项 SHOULD_FIX**
+
+| # | 问题 | 修法 |
+|---|------|------|
+| **SF-1** | 注入集缺「环长 > 3」与「DFS 前缀污染」→ m9(只认 ≤3 元环)/ m21 逃逸(输出与基线**逐字节相同**) | ② 注入由 3 路扩为 **4 元环 + 隔离分量**(`compute_noc|0` 孤立 + `ualink|0→1→2→3→0`),一次覆盖 m8 与 m9 |
+| **SF-2** | `contains_token(text,"status")` 是**裸子串**扫描 → **注释/标识符里的 `status` 也判红**(实测误报面:未来一次无害编辑即红) | 改 `contains_instance_status_key()` —— **结构化**检查键位形态(`{status:` / `,status:`,剥空白+引号后),既不误报又仍捕获拼接变体 |
+| **SF-3** | `count_in_binary` 扫**整个二进制**(含静态链接的 `cpptlm_core.a`)→ 未来 core 任意一处出现该子串都会让三份 spike **无理由变红**,且**非密封**(`-O2` 消除未使用的 static 变量) | **删除**二进制兜底,主判据保留在 ⑧ 的结构化源码检查 |
+
+另修 2 项 NIT:`fs::relative` 抛异常重载 → `error_code` 重载;移除不再需要的 `<regex>`。
+
+**③ 反证(全部实测)**
+
+| mutant | 结果 |
+|--------|------|
+| `test_cep_poc_spike_extra`(含前缀不以之开头) | 真实命中 4 → 守卫**红** ✅ |
+| m9(只认环长 ≤ 3) | `4元环+隔离分量=0` → **exit 1** ✅ |
+| 注释 + 标识符含 `status`(误报面) | **不误报**(124 断言全绿)✅ |
+| 真声明 `R"({"status":"implemented"})"` | **红** ✅ |
+
+**④ 四轮累计规律(补三轮表)**
+
+| 轮 | 「有牙」的哪类缺口 | 修法 |
+|---|------------------|------|
+| 一轮 | **判别力**:比对器/检测器恒真 | 反向验证 + 自检 |
+| 二轮 | **真实性**:反向实验可被删除/伪造 | provenance 锚(同一对象 + 内部计数) |
+| 三轮 | **敏感度**:检测器忽略输入仍能过 | 多路注入 + 边敏感度 |
+| **四轮** | **等价性**:守卫与它守护的语义**不等价**(前缀 vs 非锚定正则);且**误报面**本身是缺陷 | 抽真实 name + 非锚定匹配;判据收窄为结构化键位 |
+
+→ **补充判据**:守卫必须与**它声称守护的那条命令/语义**等价(此处 `ctest -R` 的非锚定正则);否则守卫会「看着有牙,实则漏风」。另:**误报与漏报同为缺陷** —— 一个会因无害编辑变红的判据,会训练出「忽略红」的习惯。
+
+**⑤ 验收**:`ctest` **101/101** · `[cep]` 77 case · 对账测试 **124 断言** · `ctest -R cep_poc_spike` **3** · `cep_gate_selftest` **21/21** · 守门全 rc=0 · `format.sh --check` rc=0 · 冻结面 diff=**0**。
+
+**关联**: Entry #50(二轮)· Entry #51(三轮)· 四轮 critic 会话
+
+---
+
+### Entry #53 — 2026-10-24 [scope-change]
+
+**主题**: **critic 五审 APPROVE_WITH_CONDITIONS** —— 条件项(SF-A / SF-B)已修;**四轮 BLOCKER + 3 SHOULD_FIX 全部确认到位**
+
+**五审结论**: **无 BLOCKER**。critic 明确「上一轮 4 项修复均**实测有牙**(BLOCKER 现红、m6/m8/m9 现红、SF-2 误报消除、`count_in_binary` 已删)」;并**主动收敛**评审立场:「连续 4 轮 REJECT 后不再为『刻意构造』类逃逸 REJECT —— 本轮残留逃逸全部需要**知道注入集内部实现**或**编辑 fixture**,不构成可信回归路径」。
+
+**① 条件项 SF-A(五审:本轮**新引入**的真实矛盾,归档前必修)**
+
+- **问题**:我为消除误报面(SF-2)把实现改为**键位形态**检查,但 **spec.md:118 与 tasks.md:142 仍写「断言 SHALL 用**裸串** `status`」** → 形成**代码不满足的 SHALL**;若不修,delta spec 归档后会把该矛盾**并入 main specs(永久)**。
+- **修法**:spec.md:115/118 + tasks.md:142 改为与实现一致的**结构化键位**口径(`{status:` / `,status:`),并**写明不采用裸串的理由**(误报面会训练出「忽略红」的习惯)+ 明示「目标是防无意引入、不承诺防蓄意规避」。
+- **教训**:改动**实现**时,必须同步**所有引用该实现的文本**(spec / tasks / 台账)—— 否则「实现更严/更松」会静默漂移成契约矛盾。
+
+**② 条件项 SF-B(五审:注入 fixture 的判别属性不自守,覆盖侵蚀静默)**
+
+- **问题**:`inj4`(4 元环 + 隔离分量)是为捕 m8/m9 新增的,但其**环长=4**与**分量数=2**无任何断言;对账 needle 只是**硬编码 printf 标签**。critic 实测:`degrade4to3`(4 元环→3 元环)/ `drop_isolated`(删孤立顶点)后,**标签仍印「全 1」而保护静默消失**。
+- **修法**:`s3.cc` 断言**实测**环长(`set(cycle).size()`)与**实测**弱连通分量数,并打印 `注入集自守: 环长=(2,3,4) 分量数=2`;不符预期 → 自检 fail。对账 needle 加锚该行。
+- **反证**:`degrade4to3` → `环长=(2,3,3)` + **自侵蚀** + exit 1 ✅;`drop_isolated` → `分量数=1` + **自侵蚀** + exit 1 ✅。
+- **一般化**:「测试夹具本身」也是判据的一部分 —— **夹具的判别属性必须自守**,否则侵蚀夹具即可静默关闭保护。
+
+**③ 已修 NIT**:`cep_gate_harness.py` 的模块 docstring 仍写「`openspec` → symlink」(与 :77 的 copytree 不符)→ 已更新,并写明改拷贝的**原因**(symlink 写穿真仓)。
+
+**④ 五轮累计规律(完整表)**
+
+| 轮 | 「有牙」的哪类缺口 | 修法 |
+|---|------------------|------|
+| 一轮 | **判别力**:比对器/检测器恒真 | 反向验证 + 自检 |
+| 二轮 | **真实性**:反向实验可被删除/伪造 | provenance 锚(同一对象 + 内部计数) |
+| 三轮 | **敏感度**:检测器忽略输入仍能过 | 多路注入(2/3 元环 + 隔离分量)+ 边敏感度 |
+| 四轮 | **等价性**:守卫与它守护的语义不等价;误报面同为缺陷 | 抽真实 name + 非锚定匹配;判据收窄为结构化键位 |
+| **五轮** | **夹具自守**:注入集被侵蚀后保护静默消失;改实现漏改引用文本 | 断言夹具的判别属性;实现与文本同步 |
+
+**⑤ 已知边界(五审登记,不阻归档)**:N-1/N-2(需知注入集内部实现才能触发的探测矩阵逃逸,如「环长上限 = 最大注入环长」的检测器 —— **任何有限注入集都可被此类检测器击败**,属固有边界)/ N-3(键位形态的窄误报面:注释里写 `{"status":...}` 会红)。
+
+**⑥ 验收**:`ctest` **101/101** · `[cep]` 77 case · 对账测试 **126 断言** · `ctest -R cep_poc_spike` **3** · `cep_gate_selftest` **21/21** · 守门全 rc=0 · `format.sh --check` rc=0 · 冻结面 diff=**0**。
+
+**关联**: Entry #51(三轮)· Entry #52(四轮)· 五轮 critic 会话
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

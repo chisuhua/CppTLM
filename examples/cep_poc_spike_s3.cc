@@ -47,6 +47,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
+#include <functional>
 #include <map>
 #include <set>
 #include <sstream>
@@ -98,6 +99,26 @@ namespace {
     }
     std::string flat_vertex(int vc) {
         return std::string(kInstance) + "|" + std::to_string(vc);
+    }
+
+    // 取顶点串的 vc 分量(末段)—— flat(实例|vc) 与 up(实例|net|vc) 通用
+    std::string vc_of(const std::string& v) {
+        return v.substr(v.rfind('|') + 1);
+    }
+
+    // 把环**从实际顶点序列格式化**(不硬编码 —— critic B2:硬编码串恒真,无回归锁)
+    //   输出环的 **vc 集合(排序去重)** —— 由实际环决定,且不依赖 DFS 起点(稳定可比)
+    std::string format_cycle(const std::vector<std::string>& cyc) {
+        std::set<std::string> vcs;
+        for (const auto& v : cyc)
+            vcs.insert(vc_of(v));
+        std::string s;
+        for (const auto& vc : vcs) {
+            if (!s.empty())
+                s += "<->";
+            s += "vc" + vc;
+        }
+        return s;
     }
 
     // 环检测(DFS 三色):返回找到的**第一个**环的顶点序列;无环则空
@@ -315,16 +336,21 @@ int main() {
         std::printf("\n");
     }
     expect(!flat_cycle.empty(), "降级到 (实例, vc_id) 后**必须**报出环(顶点升级是实质需求)");
-    // 环必须含 2↔3 这一对(由权威边表推导)
+    // 环的构成 SHALL **恰好**是 {vc2, vc3}(2 元环)—— critic B2:
+    //   原断言只查「vc2 与 vc3 是否出现」,而错路径 `0→1→3→2` **同时含 vc2 与 vc3** ⇒ 恒真,
+    //   无法锁住 `find_cycle` 的返回值修复。收紧为「**恰好 2 个顶点**且**恰为 {2,3}**」。
     {
-        bool has2 = false, has3 = false;
-        for (const auto& v : flat_cycle) {
-            if (v == flat_vertex(2))
-                has2 = true;
-            if (v == flat_vertex(3))
-                has3 = true;
-        }
-        expect(has2 && has3, "降级后的环含 vc2 与 vc3(由 32 号 :383-384 边表推导的 2↔3)");
+        std::set<std::string> ring_vcs;
+        for (const auto& v : flat_cycle)
+            ring_vcs.insert(vc_of(v));
+        const bool exactly_2_3 =
+            (ring_vcs.size() == 2) && ring_vcs.count("2") && ring_vcs.count("3");
+        std::printf("[S3][REVERSE] 环的顶点集(去重后)= {");
+        for (const auto& s : ring_vcs)
+            std::printf("vc%s ", s.c_str());
+        std::printf("}\n");
+        expect(exactly_2_3,
+               "降级后的环**恰好**由 {vc2, vc3} 构成(2 元环;由 32 号 :383-384 边表推导的 2↔3)");
     }
     // 成因标注:跨网边 = 0 ⇒ 该环是「网络别名造成的假环」,**不是**「真实跨网依赖」
     expect(n_cross == 0, "报环成因 = **网络别名造成的假环**(跨网边 0 ⇒ 网内边被按 vc 合并;"
@@ -333,25 +359,139 @@ int main() {
     // ── 判据敏感度自检(「有牙」)───────────────────────────────────────────
     // ① 反向:降级后不报环 → 检测器恒无环 → 判据退化
     // ② 正向:向升级图**注入**一个环 → 检测器必须检出 → 否则它对环不敏感
+    // ③ **边敏感度**(critic 复审 BLOCKER-1):删掉降级图里构成 2↔3 环的**一条边**
+    //    → 检测器必须改判**无环**。否则「忽略输入的硬编码 / 不看边的检测器」也能
+    //    通过 ① 与「环恰好 {vc2,vc3}」断言(把硬编码从 printf 下沉到 find_cycle 内部)
+    //   —— 这是本 change 自称「有牙保证」的实质判据。
+    // ④ **环闭合性**:环的顶点序列 SHALL 首尾同一顶点(闭走)。捕获 `find_cycle`
+    //    忘记 `cyc.push_back(w)` 闭合的**可信重构 bug**(序列仍含 vc2/vc3,但非闭走)。
     int selfcheck_ok = 1;
     if (flat_cycle.empty()) {
         selfcheck_ok = 0;
         std::printf("[S3][SELFCHECK] 降级后未报环 → 环检测器恒无环 → 判据退化\n");
     }
     {
-        Graph injected = up;
-        // 注入:compute_noc 的 vc0 → ualink_fabric 的 vc1(制造一条跨网边 + 回边)
+        // ②(a) 2 元环 + 跨网边(基础:检测器至少能检 2 环)
+        Graph inj2 = up;
         const std::string a = up_vertex("compute_noc", 0);
         const std::string b = up_vertex("ualink_fabric", 1);
-        injected[a].push_back(b);
-        injected[b].push_back(a);
-        if (find_cycle(injected).empty()) {
+        inj2[a].push_back(b);
+        inj2[b].push_back(a);
+        // ②(b) **3 元环** —— 捕获「只识别互指 2 环」的检测器(critic BLOCKER-1 / m6)
+        //     构造 `1→3→2→1`:既有边含 1→3 与 3→2,再补 2→1
+        //     (刻意避开 `2→0`:既有 0→2 会与它合成 2 环,让 m6 仍能检出)
+        Graph inj3 = build_upgraded(nets);
+        add_upgraded_edges(inj3);
+        const std::string c1 = up_vertex("compute_noc", 1);
+        const std::string c2 = up_vertex("compute_noc", 2);
+        inj3[c2].push_back(c1); // 2→1(与既有 1→3 / 3→2 合成 3 元环 1→3→2→1)
+        // ②(c) **4 元环 + 环在非首个弱连通分量** —— 一次覆盖两类判别力缺口:
+        //      (i) 「只从 g.begin() 起 DFS」(critic 三轮 m8:漏掉遍历根循环)
+        //      (ii) 「只认环长 ≤ 3」(critic 四审 m9)
+        //      构造:`compute_noc|0` 孤立(map 序首)+ `ualink|0→1→2→3→0` 4 元环
+        //      (手工图,不受顶点集断言约束;刻意不含更短环以逼出 (ii))
+        Graph inj4;
+        inj4[up_vertex("compute_noc", 0)] = {}; // 分量 1:孤立顶点(map 序首)
+        inj4[up_vertex("ualink_fabric", 0)] = {up_vertex("ualink_fabric", 1)};
+        inj4[up_vertex("ualink_fabric", 1)] = {up_vertex("ualink_fabric", 2)};
+        inj4[up_vertex("ualink_fabric", 2)] = {up_vertex("ualink_fabric", 3)};
+        inj4[up_vertex("ualink_fabric", 3)] = {up_vertex("ualink_fabric", 0)};
+
+        const auto cy2 = find_cycle(inj2);
+        const auto cy3 = find_cycle(inj3);
+        const auto cy4 = find_cycle(inj4);
+        const bool r2 = !cy2.empty();
+        const bool r3 = !cy3.empty();
+        const bool r4 = !cy4.empty();
+        std::printf("[S3][SELFCHECK] 注入检出(2元环=%d / 3元环=%d / 4元环+隔离分量=%d)\n",
+                    r2 ? 1 : 0, r3 ? 1 : 0, r4 ? 1 : 0);
+        // ⚠️ **注入集自身的判别属性必须自守**(critic 五审 SF-B):标签是硬编码的,
+        //    若日后把 4 元环错改成 3 元环、或删掉孤立顶点,标签仍印「全 1」而保护**静默消失**。
+        //    ⇒ 断言**实测**的环长(检出环的去重顶点数)与分量数,使 fixture 的侵蚀也变红。
+        {
+            const std::size_t len2 =
+                cy2.empty() ? 0 : std::set<std::string>(cy2.begin(), cy2.end()).size();
+            const std::size_t len3 =
+                cy3.empty() ? 0 : std::set<std::string>(cy3.begin(), cy3.end()).size();
+            const std::size_t len4 =
+                cy4.empty() ? 0 : std::set<std::string>(cy4.begin(), cy4.end()).size();
+            bool inj_wellformed = (len2 == 2) && (len3 == 3) && (len4 == 4);
+            // 分量数:inj4 应恰有 2 个弱连通分量(孤立顶点 + 4 元环)
+            {
+                std::set<std::string> seen;
+                std::size_t comps = 0;
+                for (const auto& [v, outs] : inj4) {
+                    if (seen.count(v))
+                        continue;
+                    ++comps;
+                    std::vector<std::string> todo{v};
+                    while (!todo.empty()) {
+                        const std::string cur = todo.back();
+                        todo.pop_back();
+                        if (seen.count(cur))
+                            continue;
+                        seen.insert(cur);
+                        auto it = inj4.find(cur);
+                        if (it != inj4.end())
+                            for (const auto& w : it->second)
+                                todo.push_back(w);
+                        for (const auto& [u, uo] : inj4)
+                            for (const auto& w : uo)
+                                if (w == cur)
+                                    todo.push_back(u); // 反向可达(弱连通)
+                    }
+                }
+                inj_wellformed = inj_wellformed && (comps == 2);
+                std::printf("[S3][SELFCHECK] 注入集自守: 环长=(%zu,%zu,%zu) 分量数=%zu\n", len2,
+                            len3, len4, comps);
+            }
+            if (!inj_wellformed) {
+                selfcheck_ok = 0;
+                std::printf("[S3][SELFCHECK] 注入集**自侵蚀**(环长/分量数不符预期)→ "
+                            "注入保护已静默失效 → 判据退化\n");
+            }
+        }
+        if (!r2 || !r3 || !r4) {
             selfcheck_ok = 0;
-            std::printf("[S3][SELFCHECK] 注入环后未检出 → 环检测器对环不敏感 → 判据退化\n");
+            std::printf("[S3][SELFCHECK] 注入环未全被检出(2元=%d 3元=%d 4元+隔离=%d)→ "
+                        "环检测器判别力不足 → 判据退化\n",
+                        r2 ? 1 : 0, r3 ? 1 : 0, r4 ? 1 : 0);
+        }
+    }
+    // ③ 边敏感度:逐条删掉降级图的边,至少存在一条边使「有环 → 无环」(2↔3 的两条边均可)
+    {
+        bool any_edge_flips = false;
+        for (const auto& [v, outs] : flat) {
+            for (const auto& w : outs) {
+                Graph cut = flat;
+                auto& dst = cut[v];
+                dst.erase(std::remove(dst.begin(), dst.end(), w), dst.end());
+                if (find_cycle(cut).empty()) {
+                    any_edge_flips = true;
+                    break;
+                }
+            }
+            if (any_edge_flips)
+                break;
+        }
+        std::printf("[S3][SELFCHECK] S3_EDGE_SENSITIVE=%d\n", any_edge_flips ? 1 : 0);
+        if (!any_edge_flips) {
+            selfcheck_ok = 0;
+            std::printf("[S3][SELFCHECK] 删任何边都不改变判定 → 检测器**不看边** → 判据退化\n");
+        }
+    }
+    // ④ 环闭合性
+    {
+        const bool closed = !flat_cycle.empty() && flat_cycle.front() == flat_cycle.back();
+        std::printf("[S3][SELFCHECK] S3_CYCLE_CLOSED=%d\n", closed ? 1 : 0);
+        if (!closed) {
+            selfcheck_ok = 0;
+            std::printf("[S3][SELFCHECK] 环的顶点序列**不闭合**(首 != 末)→ 检测器构造有误\n");
         }
     }
     std::printf("[S3][SELFCHECK] S3_SELFCHECK=%s\n", selfcheck_ok ? "OK" : "DEGENERATE");
-    expect(selfcheck_ok == 1, "自检:降级必报环 + 注入环必检出(检测器非恒真)");
+    expect(selfcheck_ok == 1,
+           "自检:降级必报环 + 注入环必检出 + **删边必改判无环** + 环闭合(检测器非恒真且看边)");
 
     // ── 结论报告(红绿分离:结论不影响 exit code)────────────────────────────
     const bool s3_acyclic = up_cycle.empty();
@@ -361,7 +501,7 @@ int main() {
     std::printf("[S3][VERDICT] S3_EDGES=%zu\n", n_edge);
     std::printf("[S3][VERDICT] S3_CROSSNET_EDGES=%zu\n", n_cross);
     std::printf("[S3][VERDICT] S3_DOWNGRADED_CYCLE=%s\n",
-                flat_cycle.empty() ? "NONE" : "vc2<->vc3");
+                flat_cycle.empty() ? "NONE" : format_cycle(flat_cycle).c_str());
     std::printf("[S3][VERDICT] S3_CAUSE=alias-false-cycle(网络别名造成的假环;"
                 "跨网边 0 ⇒ 非「真实跨网依赖」)\n");
     std::printf("[S3][VERDICT] S3_REVERSE_VALIDITY=until-3rd-network-appears"
