@@ -66,7 +66,11 @@ CEP SHALL 将 **Fabric Collective Plane 的跨平面契约**固化成**可机器
 - **WHEN** 核对本 capability 覆盖的抓取点范围
 - **THEN** SHALL **显式**声明:`ADR-CEP-01 §3.3` 的 7 条抓取点中,哪几条**本 Stage 可机器检查**、哪几条**推迟到 P3 / Stage 2+**、推迟的**理由**
 - **AND** 推迟项 SHALL **不得**以「恒 PASS」「恒 SKIP」的形式出现在判据清单中
-- **AND** 声明 SHALL 可被机器核对(抓取点编号逐条列出,不靠散文)
+- **AND** **权威源 = `docs/adr/ADR-CEP-01-fabric-collective-plane.md` 的「Status Update 2026-10-26 —— §3.3 抓取点的可测性裁决」段**;
+  断言 SHALL **解析该段**并逐条取出 7 个抓取点的覆盖状态与理由
+  (per `test/cep_adr_parser.hh` 的 ADR 解析先例 —— **不是**「文档里有这张表就通过」,
+  也不是测试自建一份期望集与自建一份实际集对比的**恒真**写法)
+- **AND** 解析 SHALL 覆盖**全部 7 条**抓取点编号;缺一条 / 多一条 ⇒ 判红
 
 > **锚点**:`test_cep_collective_plane_contract.cc` 的抓取点覆盖登记断言(编号集合逐条比对)
 

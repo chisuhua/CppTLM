@@ -35,7 +35,7 @@ Stage 1 的第 5 个 change。Fabric Collective Plane 是 CEP 6 层架构里的*
 
 | 文件/capability | 作用 |
 |---|---|
-| `openspec/specs/cep-collective-plane-base/spec.md`(delta) | **capability `cep-collective-plane-base`**(12 Scenario)—— `CollectivePlaneIf` 单接口 + 类型集 + `NullCollectivePlane`(**行为化 `INV-CEP-07-IC3`**)+ `LocalCollectivePlane`(group 生命周期 + region/epoch 表 + **BARRIER rendezvous**)+ **epoch invalid 窗口放行**(**行为化 `INV-CEP-04-IC5`**) |
+| `openspec/specs/cep-collective-plane-base/spec.md`(delta) | **capability `cep-collective-plane-base`**(13 Scenario)—— `CollectivePlaneIf` 单接口 + 类型集 + `NullCollectivePlane`(**行为化 `INV-CEP-07-IC3`**)+ `LocalCollectivePlane`(group 生命周期 + region/epoch 表 + **BARRIER rendezvous**)+ **epoch invalid 窗口放行**(**行为化 `INV-CEP-04-IC5`**) |
 | `openspec/specs/cep-collective-plane-contract/spec.md`(delta) | **capability `cep-collective-plane-contract`**(8 Scenario)—— 5 条**可机器检查**的契约判据:零调用边(include-graph 闸)/ 区域互斥(CEP-13)/ collective VC 预留与 coherence VC 不冲突 / 完成域判别(`group_id` 不进 Coherence Interface)/ canonical 10 流零 diff |
 | `include/tlm/cep/collective_plane.hh` | **header-only** `CollectivePlaneIf` + 类型集 + `NullCollectivePlane` + `LocalCollectivePlane`;**testbench 定位**(不进 `ModuleFactory`、不注册 23 ABI、不改 frozen header) |
 | `include/tlm/cep/collective_plane_contract.hh` | **header-only** 契约判据(5 条)+ 三态 SKIP/PASS/FAIL + verdict 逐条输出 |
@@ -71,7 +71,7 @@ Stage 1 的第 5 个 change。Fabric Collective Plane 是 CEP 6 层架构里的*
 
 ## Capabilities
 
-### capability 1 —— `cep-collective-plane-base`(12 Scenario)
+### capability 1 —— `cep-collective-plane-base`(13 Scenario)
 
 **平面本体**:接口 + 类型 + 两个实现 + group/epoch 状态机。
 
@@ -81,7 +81,7 @@ Stage 1 的第 5 个 change。Fabric Collective Plane 是 CEP 6 层架构里的*
 | 类型面 | `group_id_t` / `member_set_t` / `group_attrs_t` / `addr_range_t` / `access_mode_t` / `CollectiveReq` / `CollectiveEvt`(`Result` \| `Completion` \| `Fault`)/ `cap_t`;`CollectiveEvt` 必须含 **Fault 变体**(per `ADR-CEP-01 §3.3` 抓取点 6 partial failure 显式建模) |
 | Null 面 | `NullCollectivePlane`:**全部**原语返回「不支持」—— **行为化 `INV-CEP-07-IC3`**(此前只有编号文本断言) |
 | Local 面 | `LocalCollectivePlane`:group 生命周期 + region/epoch 表 + **BARRIER rendezvous**(N-1 到达不释放 / N 到达释放)+ REDUCE·BROADCAST·MULTICAST **到「未注册区域立即报错」为止**(数据路径不实现) |
-| epoch 面 | **`table 命中 + epoch invalid` ⇒ 正常服务放行**(非 fail-stop)—— **行为化 `INV-CEP-04-IC5`**(代还队列 #4 遗留给本平面的债) |
+| epoch 面 | R2 **判读侧**的三态判定(`NoRegion` / `RegisteredEpochInvalid` / `RegisteredActive`);`RegisteredEpochInvalid` ⇒ **不 divert**(放行),非 fail-stop —— **行为化 `INV-CEP-04-IC5`**(代还队列 #4 遗留给本平面的债;**P3 实现真 ingress classify 时须在那里重新行为化**,per design D-ι 裁决 1) |
 | 区域面 | 区域互斥(CEP-13 语义):重叠注册 ⇒ `group_register_error`;drain 失败 ⇒ **不建 epoch**;未注册区域上的操作 ⇒ **立即报错**,不静默 |
 
 ### capability 2 —— `cep-collective-plane-contract`(8 Scenario)
@@ -125,17 +125,18 @@ Stage 1 的第 5 个 change。Fabric Collective Plane 是 CEP 6 层架构里的*
 > **红绿分离**：「判据实现退化」= 用例红;「判定结论为红」= 用例**仍绿**且结论**登记为交付物**。
 > **每条判据须配反向 fixture 或正控**(纯负向断言无正控 = 判据可能根本没生效)。
 
-### capability 1 —— `cep-collective-plane-base`(12 Scenario)
+### capability 1 —— `cep-collective-plane-base`(13 Scenario)
 
 - [ ] **A-1-1** `CollectivePlaneIf` 方法集与 `ADR-CEP-03 §2 Decision 2` **逐字对齐**(group 生命周期 3 + `send` / `recv` / `collective_barrier` / `query_capability`);原语集**恰好 4 个** = {REDUCE, BROADCAST, MULTICAST, BARRIER}
 - [ ] **A-1-2** 类型集齐备:`CollectiveEvt` 含 **Fault 变体**(partial failure 显式建模,per 抓取点 6);`CollectiveReq` 的 group-scoped 字段齐备(`group_id` / `op` / `tag` / `src_member` / `reduce_op` / `dtype` / `multicast_mask`)
-- [ ] **A-1-3** `NullCollectivePlane` **全部**原语返回「不支持」(**行为化 `INV-CEP-07-IC3`**)—— **反向 fixture**:注入「假装支持」的 plane ⇒ 红
+- [ ] **A-1-3** `NullCollectivePlane` **全部**原语返回「不支持」(**行为化 `INV-CEP-07-IC3`**)—— 「不支持」经**状态查询口**表达(per design D-ι 裁决 3;`CollectivePlaneIf` 7 方法外的只读辅助口)—— **反向 fixture**:注入「假装支持」的 plane ⇒ 红
 - [ ] **A-1-4** `LocalCollectivePlane` group 生命周期状态机可执行(create → register_region → destroy),含 **group_destroy 对 in-flight 操作的 `Fault` 语义**(ADR 留白的本 change 拍板)
 - [ ] **A-1-5** **BARRIER rendezvous**:N-1 到达**不**释放、N 到达释放 —— **反向 fixture**:阈值改 N-1 ⇒ 红
-- [ ] **A-1-6** **epoch invalid 窗口放行**:`table 命中 + epoch invalid` ⇒ **正常服务放行**(非 fail-stop)—— **行为化 `INV-CEP-04-IC5`** —— **反向 fixture**:删掉 epoch 检查 ⇒ 红
+- [ ] **A-1-6** **epoch invalid 窗口放行**(R2 **判读侧**,per design D-ι 裁决 1):判定结果三态 `NoRegion` / `RegisteredEpochInvalid` / `RegisteredActive`;`RegisteredEpochInvalid` ⇒ **不 divert**(放行),非 fail-stop —— **行为化 `INV-CEP-04-IC5`** —— **反向 fixture**:删掉 epoch 有效性检查 ⇒ 红
 - [ ] **A-1-7** 区域互斥(CEP-13 语义):重叠注册 ⇒ `group_register_error`;drain 失败 ⇒ **不建 epoch** —— **正控**:合法注册成功
 - [ ] **A-1-8** 未注册区域上的 collective 操作 ⇒ **立即报错**,不静默 —— **反向 fixture**:静默返回 ⇒ 红
 - [ ] **A-1-9** functional 模式下 collective **不产生 latency**(与 `INV-CEP-07-IC6` 兼容)
+- [ ] **A-1-9b** **已注册 + epoch 生效区域上的数据原语** ⇒ 明确的「数据路径未实现」状态,与「未注册区域 ⇒ `group_register_error`」**可区分**,且**不投递事件**(per design D-ι 裁决 4)—— **反向 fixture**:静默 ⇒ 红
 - [ ] **A-1-10** `query_capability` 的边界写死:未知 `op` 与 `max_bytes == 0` 的返回契约明确
 - [ ] **A-1-11** `group_id` **不得**出现在 Coherence Interface 侧接口/契约(完成域判别的**反向**面)
 - [ ] **A-1-12** **零调用边**:collective 头文件**不得** include directory / ordering / sharer 头 —— **反向 fixture**:注入 include ⇒ 红

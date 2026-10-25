@@ -4265,7 +4265,7 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 |---|---|---|
 | `openspec/changes/cpptlm-cep-collective-plane-base/proposal.md` | 160 行 | 缺口表(5 项,全部实测)+ What Changes + Capabilities + Impact + **Acceptance 20 项**(A-1-1~12 / A-2-1~8)+ 收尾 5 项 |
 | `openspec/changes/cpptlm-cep-collective-plane-base/design.md` | 246 行 | Context(现状/目标态/8 条关键约束)+ Goals/Non-Goals + **决策 D-α~D-θ**(8 条)+ 实施期裁决占位 + 9 条 Risks + 5 条 Open Questions + 与队列 #3/#4 先例对照 |
-| `openspec/changes/cpptlm-cep-collective-plane-base/specs/cep-collective-plane-base/spec.md` | 12 Scenario | 接口面 / 类型面(含 `CollectiveEvt` Fault 变体)/ Null(行为化 `INV-CEP-07-IC3`)/ Local(group 生命周期 + BARRIER rendezvous + epoch invalid 窗口(行为化 `INV-CEP-04-IC5`))/ 区域互斥(CEP-13)/ 未注册区域报错 / functional 零延迟 / capability 边界 / 零调用边 |
+| `openspec/changes/cpptlm-cep-collective-plane-base/specs/cep-collective-plane-base/spec.md` | 13 Scenario | 接口面 / 类型面(含 `CollectiveEvt` Fault 变体)/ Null(行为化 `INV-CEP-07-IC3`)/ Local(group 生命周期 + BARRIER rendezvous + epoch invalid 窗口(行为化 `INV-CEP-04-IC5`))/ 区域互斥(CEP-13)/ 未注册区域报错 / functional 零延迟 / capability 边界 / 零调用边 |
 | `openspec/changes/cpptlm-cep-collective-plane-base/specs/cep-collective-plane-contract/spec.md` | 8 Scenario | 声明源形态与 schema / 三态显式化 / include-graph 闸 / 10 流零 diff / VC 不冲突 / 同源禁双实现 / 抓取点可测性登记 / B2 贡献非空 |
 | `.rddf/improvements/cpptlm-cep-collective-plane-base.md` | 5 段草稿 | Why / What Changes / Non-Goals / Acceptance / Capabilities / Impact(planning 输入) |
 
@@ -4294,7 +4294,10 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 | `docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md` | Status Update 2026-10-26 —— **§5 Bundle 路径偏离登记**(三候选路径取舍 + 未来具体路径 P3 `include/bundles/collective_bundles_tlm.hh`) |
 | `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | Status Update 2026-10-26 —— **§3.3 七条抓取点逐条可测性裁决**(可测 4 / 仅声明层 1 / 已满足 1 / 推迟 2) |
 
-> **⚠️ 引用约束(踩过就红)**:`ADR-CEP-00` / `ADR-CEP-01` / `ADR-CEP-03` 均在 `test/cep_adr_parser.hh::no_inv_adr_files()` 的 **no-inv 白名单**(6 份)⇒ 其 Status Update 里引用 invariant 编号**必须**用反引号包裹(如 `` `INV-CEP-07-IC3` ``);写成 `- **INV-...**:` 或 `**INV-...**` 紧邻形态即被判为「定义」⇒ 契约违反(per `defined_invariant_ids()` 的 P1/P2 形态识别)。
+> **⚠️ 引用约束(反引号纪律)**:`ADR-CEP-00` / `ADR-CEP-01` / `ADR-CEP-03` 均在 `test/cep_adr_parser.hh::no_inv_adr_files()` 的 **no-inv 白名单**(6 份)⇒ 其 Status Update 里引用 invariant 编号**必须**用反引号包裹(如 `` `INV-CEP-07-IC3` ``)。
+> **⚠️ 纪律强度的准确表述(critic 实测修正,2026-10-26)**:写成 `- **INV-...**:` 或 `**INV-...**` 紧邻形态**会**被 `defined_invariant_ids()` 的 P1/P2 形态识别捕获 —— 但**机器闸未必红**:三条相关测试(全仓已定义 / 全仓孤儿 / no-inv 白名单)都按 **`owner == 文件`** 过滤 ⇒ 在 no-inv ADR 里写**有 owner 的**编号(如 `INV-CEP-07-IC3` 的 owner 是 ADR-CEP-07)⇒ **不被拦**;而写**无 owner 的**编号(如 `INV-CEP-17-IC1`)⇒ **必红**。
+> ⇒ 即:反引号纪律**仍然正确**(避免把引用误写成定义),但「写成定义形态就必红」是**过强**的表述。
+> ⇒ **顺带暴露的机器闸盲区(登记备查,非本 change 范围)**:no-inv 文件里定义形态的**既有编号**不可见 —— 建议后续 change 给 `test_cep_canonical_invariants.cc` 补一条「no-inv ADR 内不得出现定义形态编号(不论 owner)」的断言。
 
 **⑤ 活文档数字一致性(6 处 KPI 0/3 → 1/3)**
 

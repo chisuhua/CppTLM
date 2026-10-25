@@ -75,7 +75,8 @@ Ordering Plane    / Sync Plane        ← 本 change 落地
 | 不做 | 理由 | 归属 |
 |---|---|---|
 | REDUCE / BROADCAST / MULTICAST **数据路径** | 需 fabric ingress 分类(R2) | **P3 SHARP** |
-| R1 / R2 的真实 fabric ingress 分类 | 同上 | **P3** |
+| **fabric ingress 的「接线」**(把 R2 判定结果接到 fabric 路由) | 旁路 plane 侧**无** coherence 路径可「走」;接线是 fabric 侧工作 | **P3** |
+| ~~R1 / R2 的真实 fabric ingress 分类~~ | **已澄清(per D-ι)**:R2 谓词的**判读侧**归本 change,**接线侧**归 P3 | — |
 | 跨平面 ordering 契约 **A / B / E** | Stage 1 物理不可测(无 coherent atomic 流量、无 SHARP 插件)⇒ **禁写恒真/SKIP 判据** | Stage 2+ |
 | 抓取点 2「组播投递单实现」 | fabric 组播机制不存在 ⇒ 仅**声明层**断言 | P3 |
 | `collective_stalls` metric 落地 | 属 `INV-CEP-06-IC2` 实验产出契约;本 change 无实验载体 ⇒ 落即空 metric | Stage 1 末(有实验载体时) |
@@ -150,7 +151,7 @@ Ordering Plane    / Sync Plane        ← 本 change 落地
 | # | 方式 | 内容 | 归属组 |
 |---|------|------|-------|
 | 1 | **行为化** | `INV-CEP-07-IC3`:NullCollectivePlane 全原语返回「不支持」 | "Simulation + Seam" |
-| 2 | **行为化** | `INV-CEP-04-IC5`:epoch invalid 窗口 = 正常服务放行 | "Sharer Tracker" |
+| 2 | **行为化** | `INV-CEP-04-IC5`:epoch invalid 窗口 = 正常服务放行(**判读侧**;**P3 实现真 ingress classify 时须在那里重新行为化** —— per D-ι 裁决 1) | "Sharer Tracker" |
 | 3 | **契约层加固** | 零调用边(抓取点 1)+ canonical 10 流零 diff(抓取点 4) | "Coherence Interface" / "Simulation + Seam" |
 
 > **为何 1/2 能算「行为化」而非「另立新条」**:两条编号**已在 66 条内**,本 change 给它们**可执行载体**;`test_cep_canonical_invariants.cc` 的编号校验不变,但**行为断言**新增 ⇒ 覆盖率提升而计数不变。
@@ -177,7 +178,7 @@ Ordering Plane    / Sync Plane        ← 本 change 落地
 | 1 | `FROZEN_GLOBS` 扩集 | +2 份 main spec(`cep-collective-plane-base` / `cep-collective-plane-contract`);**只冻 main spec**,归档件 delta 不入集(per `Entry #64` 第 1 步的口径) |
 | 2 | manifest 重生成 | `cep_freeze_check.sh --update --authorized-by "Entry #N"`(N = 归档时的台账 entry 号) |
 | 3 | selftest 锚点迁移 | `cep_gate_selftest.sh` 两处 fixture 的「活队列 change 名」锚点 **#5 → #6**(`cpptlm-cep-chi-rnf-subset`);**当前锚点已钉在 #5**(per `Entry #64` 第 3 步的迁移结果) |
-| 4 | `cep_doc_ref_check` VIRTUAL_PATHS 双态注册 | 登记 `openspec/changes/cpptlm-cep-collective-plane-base`(归档前路径保留历史指向);**并移除** planner 阶段预登记的 2 条「设计示意」条目(`include/tlm/cep/collective_plane` 前缀式 / `include/bundles/collective_bundles_tlm.hh` —— 后者 P3 才建,故**保留**)|
+| 4 | `cep_doc_ref_check` VIRTUAL_PATHS 双态注册 | ① 登记 `openspec/changes/cpptlm-cep-collective-plane-base`(归档前路径保留历史指向);② **移除** planner 阶段预登记的 4 条「设计示意」精确路径(`include/tlm/cep/collective_plane.hh` / `_contract.hh` / `collective_planes.json` / `collective_planes.schema.json` —— builder 阶段已真实创建);③ **保留** `include/bundles/collective_bundles_tlm.hh`(P3 才建,本 change 不创建) |
 | 5 | 活文档数字一致性 | KPI 基线 1/3 → 0/3 的 **6 处**(obj §5.2/§4.1 · roadmap.md · phase-10 · AGENTS.md · umbrella improvement · ADR-CEP-00)+ 队列 #5 行 → ✅ archived + 孤儿登记行重指向**队列 #6**(§4.0 + §4.2 两处,标记与项名同行) |
 | 6 | `openspec archive --yes` | 完成归档语义(delta → main spec) |
 
@@ -194,6 +195,47 @@ Ordering Plane    / Sync Plane        ← 本 change 落地
 | 测试 + 反向 fixture | 2 | 3 个 test 文件(行为面 / 判据面 / include-graph 闸) |
 | 评审 + buffer | 1 | critic 复审 + 归档治理 |
 | **合计** | **10 人周 ≈ 8 周标称(单线程 1.5 人)** | 与队列 #4 的「4 header + 1 CLI + 3 test / 22 Scenario」同量级 |
+
+### D-ι:**R2 的「判读 / 接线」分层** + epoch 窗口的可构造性 + 「不支持」的返回通道
+
+> **来源**:critic 对本 change planner 产出的评审(APPROVE_WITH_CONDITIONS)—— 1 个 BLOCKER 级计划洞 + 6 SHOULD_FIX。
+> 本条一次性处置其中与**契约面**相关的 4 项(BLOCKER-1 / S1 / S2 / S3)。
+
+**BLOCKER-1 的原洞**:plan 里同时说「R1/R2 的真实 fabric ingress 分类 ⇒ 推迟至 P3」(Non-Goals)与
+「`table 命中 + epoch invalid` ⇒ 放行」(Scenario 6)—— 而 R2 谓词 = `(dest_addr ∩ collective_region_table) && group_epoch_valid`,
+**Scenario 6 正是 R2 的判读逻辑**。且 `CollectivePlaneIf` 的 7 方法里**无任何 classify/判定入口**
+⇒ 「放行正常服务,走 coherence 路径」在旁路平面上**无可观察点**(plane 侧没有 coherence 路径可走)。
+
+**裁决 1 —— R2 分层**:
+
+| 层 | 内容 | 归属 |
+|---|------|------|
+| **判读侧** | 「某地址的 collective 归属状态」纯判定 = 区域表查找 + epoch 有效性 ⇒ 三态:`NoRegion` / `RegisteredEpochInvalid` / `RegisteredActive` | **本 change** |
+| **接线侧** | 把判定结果接到 fabric 路由(真正的 `fabric_ingress_classify` + divert 计数 + R5 观测) | **P3** |
+
+**「放行」在 plane 侧的可观察形态** = 判定结果为 `RegisteredEpochInvalid` ⇒ **不 divert**。
+这样 Scenario 6 有可观察点,且**不违反** A-1-1 的 7 方法锁(判定查询是 `CollectivePlaneIf` 之外的**只读辅助口**)。
+
+**裁决 2 —— epoch 窗口的可构造性(两阶段)**:epoch-invalid 窗口若在同步 `group_register_region` 内零宽度,则该 Scenario **不可稳定构造**
+(只能靠竞态)。⇒ `group_register_region` 返回后 epoch 保持 invalid,直至 **drain 完成回告**
+(`complete_drain` 类的**装配/驱动用**辅助口)。**先例**:`FullMapDirectory::set_sharer` / `clear_sharer` 同样是
+`SharerTrackerIf` 4 方法之外的**目录安装面** —— plane 的「drain 回告」与目录的「sharer 安装」是同一种**装配缝**。
+⇒ 窗口非零宽度、可稳定构造,**不依赖竞态**。
+
+**裁决 3 —— 「不支持」的返回通道**(S1):`ADR-CEP-03 §2` 的伪码里 `group_create` 返回 `group_id_t`、
+`group_register_region` 返回 `status_t`、而 `send`/`recv`/`collective_barrier` 是 `task`(**无返回值**)
+⇒ 「所有原语返回不支持」在无返回值的原语上**无表达通道**。裁决:
+- **状态查询口**(`last_status()` 类的**只读辅助口**,per `FullMapDirectory::event_count` 先例)承载「不支持」的可观测性;
+- `group_create` 失败另用**哨兵 group id**表达;`group_register_region` 失败用 `status_t` 错误码;
+- **判据形态**:调用原语 ⇒ 查状态查询口 ⇒ 断言「不支持」+ 断言**无副作用**(未建 group / 未投递事件)。
+⇒ builder 不必当场发明返回通道。
+
+**裁决 4 —— 已注册区域上的数据原语行为**(S2):已注册 + epoch 生效的区域上 `send(REDUCE/BROADCAST/MULTICAST)`
+⇒ 明确的**「数据路径未实现」状态**,**与**「未注册区域 ⇒ `group_register_error`」**可区分**,且**不投递事件**。
+⇒ 接口不「承诺了但行为缺失」。
+
+**裁决 5 —— 删掉恒真子句**(S3):BARRIER 的「同相位内跨参与者无序」在零延迟 functional 实现中**无并发可观察**
+⇒ 改为可观察形态「同相位内允许多个成员先后到达且互不排斥」;「跨相位有序」保留(可测)。
 
 ---
 

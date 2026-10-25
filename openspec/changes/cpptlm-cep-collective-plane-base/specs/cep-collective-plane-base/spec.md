@@ -33,6 +33,8 @@ CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`Collecti
 - **WHEN** 对 `NullCollectivePlane` 逐一调用全部原语(含 `group_create` / `group_destroy` / `group_register_region` / `send` / `recv` / `collective_barrier` / `query_capability`)
 - **THEN** 每一个 SHALL 返回「**不支持**」语义(不得有任何原语产生副作用、不得建 group、不得投递事件)
 - **AND** SHALL 保持 CHI / CXL 配置下的**默认绑定**地位(per `07 号 §6.4`)
+- **AND** 「不支持」SHALL 有**可观测的返回通道**:每个原语调用后,实现的**状态查询口** SHALL 报「不支持」
+  (per `FullMapDirectory::event_count` 同类先例 —— 状态查询是 `CollectivePlaneIf` 7 方法之外的**只读辅助口**)
 - **AND** **反向 fixture**:注入一个「假装支持」的 plane ⇒ 断言必红(纯负向断言无正控 = 判据可能根本没生效)
 
 > **锚点**:`test_cep_collective_plane_base.cc` 的 Null 全原语断言 + 反向 fixture
@@ -50,17 +52,30 @@ CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`Collecti
 
 - **WHEN** 一个 N 成员 group 在 BARRIER 原语上陆续到达
 - **THEN** 到达第 N-1 个成员时 SHALL **不**释放;到达第 N 个成员时 SHALL **释放全部**(group-scoped 完成纪律,per `ADR-CEP-01 Decision 2`)
-- **AND** **同相位内**跨参与者 SHALL **无序**;**跨相位** SHALL **有序**(per `ADR-CEP-03 §2` —— 这是本 plane 唯一的 ordering 承诺)
+- **AND** **同相位内** SHALL **允许多个成员先后到达且互不排斥**(到达第 N-1 个后,另一成员仍可到达 —— 可观察形态,不要求并发)
+- **AND** **跨相位** SHALL **有序**(相位 N+1 的完成 SHALL 不得早于相位 N 的释放)—— 这是本 plane 唯一的 ordering 承诺(per `ADR-CEP-03 §2`)
 - **AND** **反向 fixture**:阈值改 N-1 ⇒ 断言必红
 
 > **锚点**:`test_cep_collective_plane_base.cc` 的 rendezvous 阈值断言 + 反向 fixture
 
 #### Scenario: epoch invalid 窗口 = **正常服务放行**(非 fail-stop)(**行为化** `INV-CEP-04-IC5`)
 
-- **WHEN** 某地址**命中** collective region 表,但其 group 的 **epoch 尚未 commit**(epoch invalid)
-- **THEN** 该地址 SHALL 被**放行正常服务**(走 coherence 路径),**不得** fail-stop、**不得** divert(per `ADR-CEP-03 §3.1` R4「epoch 未 commit 前 = 正常服务」)
-- **AND** epoch commit **之后**同一地址 SHALL **divert** 到 collective plane
-- **AND** **反向 fixture**:删掉 epoch 检查 ⇒ 断言必红(该窗口若被误判成 divert 即是契约违反)
+> **分层声明(本 change 与 P3 的边界)**:本条交付的是**判读纯函数** ——「某地址的 collective 归属状态」判定
+> (`R2` 谓词 `(dest_addr ∩ collective_region_table) && group_epoch_valid` 的**判读侧**)。
+> **fabric ingress 的「接线」**(把判定结果接到 fabric 路由上)属 **P3**(`cpptlm-cep-nvlink-sharp-adapter`)。
+> 之所以必须这样切:旁路平面**没有** coherence 路径可「走」,「放行」在 plane 侧的可观察形态
+> 就是**判定结果为「不 divert」** —— 若把整条 R2 推迟到 P3,本条将无任何可测载体。
+
+- **WHEN** 对某地址求 collective 归属判定,且该地址**命中** collective region 表、但其 group 的 **epoch 尚未 commit**(epoch invalid)
+- **THEN** 判定结果 SHALL 为 **「已注册但 epoch 未生效」⇒ 不 divert**(= 放行正常服务),**不得**判为 divert、**不得** fail-stop(per `ADR-CEP-03 §3.1` R4「epoch 未 commit 前 = 正常服务」)
+- **AND** epoch commit **之后**同一地址 SHALL 判定为 **「已注册且生效」⇒ divert**
+- **AND** 未命中 region 表的地址 SHALL 判定为 **「无 region」⇒ 不 divert**
+- **AND** 该判定 SHALL 有**只读观测口**(本 plane 的辅助查询,非 `CollectivePlaneIf` 的 7 方法之一 —— per `FullMapDirectory::view_of` 同类先例)⇒ 断言可写
+- **AND** **反向 fixture**:把 epoch 有效性检查删掉(即永远判 divert)⇒ 断言必红
+
+> **可构造性**:epoch-invalid 窗口由**两阶段**构成 —— `group_register_region` 返回后 epoch 仍为 invalid,
+> 直至 drain 完成回告(`complete_drain` 类的**装配/驱动用**辅助口,per `FullMapDirectory::set_sharer` 同类先例)
+> ⇒ 窗口**非零宽度**、可稳定构造,不依赖竞态。
 
 > **锚点**:`test_cep_collective_plane_base.cc` 的 epoch 三态窗口断言 + 反向 fixture
 
@@ -82,6 +97,18 @@ CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`Collecti
 - **AND** **反向 fixture**:静默返回 ⇒ 断言必红
 
 > **锚点**:`test_cep_collective_plane_base.cc` 的未注册区域断言 + 反向 fixture
+
+#### Scenario: 已注册且 epoch 生效的区域上,数据原语 SHALL **显式声明未实现**(不静默)
+
+> **补这条的理由**:只规定「未注册区域 ⇒ 报错」会留下另一半 —— **已注册区域上** `send(REDUCE)` 到底返回什么?
+> 若不规定,接口就「承诺了但行为缺失」,调用方无从判断是 bug 还是未实现。
+
+- **WHEN** 对一个**已注册**且 **epoch 已生效**的区域发起 `send(REDUCE)` / `send(BROADCAST)` / `send(MULTICAST)`
+- **THEN** SHALL 返回**明确的「数据路径未实现」状态**(与「未注册区域 ⇒ `group_register_error`」**可区分**)
+- **AND** SHALL **不投递**任何 `CollectiveEvt`、**不**产生副作用
+- **AND** **反向 fixture**:静默返回(无状态、无事件、无副作用)⇒ 断言必红
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的「未实现 ≠ 静默」断言 + 反向 fixture
 
 #### Scenario: functional 模式下 collective SHALL **不产生 latency**
 

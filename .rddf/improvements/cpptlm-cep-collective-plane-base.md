@@ -36,7 +36,7 @@ Stage 1 的第 5 个 change。Fabric Collective Plane 是 CEP 6 层架构里的*
 | **`INV-CEP-07-IC3` 只有文本断言** | `ADR-CEP-07:155` 定义「`NullCollectivePlane` 是 Collective Plane 默认实现,所有原语返回"不支持"」;`test/test_cep_canonical_invariants.cc:61` 只校验**编号存在**(`INV-CEP-07-IC3` 在 "Simulation + Seam" 组)⇒ **零行为载体** |
 | **`INV-CEP-04-IC5` 的行为主体落在本平面** | `ADR-CEP-04:301` 定义「`fabric_ingress_classify` 中 "table 命中 + epoch invalid" 窗口 = 正常服务放行」;而 `fabric_ingress_classify` 属 `ADR-CEP-03 §4` ⇒ **owner ADR 是 CEP-04,行为主体在本平面** —— 队列 #4 未实现,是**遗留给本 change 的债** |
 | **完成域判别规则零机器化** | `ADR-CEP-01 Decision 2` 的「requester-scoped → Coherence / group-scoped → Collective」是**全平台唯一的归属裁决规则**,却只存在于 ADR 文本;`ADR-CEP-01 §3.3` 的 7 条抓取点(评审检查单)无一条可机器检查 |
-| **H4 假设无载体** | `obj §9.1` H4 假设「完成域判别规则足以同时容纳 coherence + collective」,验证手段 = 「**同一实验跑 coherence 流 + collective 原语**」;若本 change 只交 Null 实现,H4 在 Stage 2(P3 SHARP,队列 #10)之前**没有任何可跑载体** |
+| **H4 假设无载体** | `obj §9.1` H4 假设「完成域判别规则足以同时容纳 coherence + collective」,验证手段 = 「**同一实验跑 coherence 流 + collective 原语**」;若本 change 只交 Null 实现,H4 在 Stage 2(P3 SHARP,队列 #10)之前**没有任何可跑载体**。⚠️ **本 change 交付后的实际形态**:同一**测试夹具**可同时实例化 coherence 侧与 collective 侧两个平面(可跑、可断言)—— 但**尚未**构成「同一实验跑两类流」(traffic generator 集成留待 Stage 1 末 / P3) |
 
 **为什么必须落在本 change 而非 P3/P4**:`ADR-CEP-03 §6` 已把后续序列排死 ——
 `cpptlm-cep-collective-plane-base`(P2, 本 change)→ `cpptlm-cep-nvlink-sharp-adapter`(P3)→ `cpptlm-cep-ualink-inc-adapter`(P4)。
@@ -92,7 +92,7 @@ fabric ingress 分类(per `ADR-CEP-03 §3.1` R2)—— 那属 P3,**不在本 cha
 | R1/R2 的**真实 fabric ingress 分类** | 同上,P3 |
 | 跨平面 ordering 契约 **A / B / E** 场景 | Stage 1 物理不可测(无 coherent atomic 流量、无 SHARP 插件)⇒ **禁写恒真/SKIP 判据** |
 | 抓取点 2「组播投递单实现」 | fabric 组播机制不存在 ⇒ 只能做**声明层**断言 |
-| `collective_stalls` metric 落地 | 属 `INV-CEP-06-IC2` 的实验产出契约;本 change **无实验载体** ⇒ 落了就���空 metric;最多在 `LocalCollectivePlane` 内部埋 counter |
+| `collective_stalls` metric 落地 | 属 `INV-CEP-06-IC2` 的实验产出契约;本 change **无实验载体** ⇒ 落了就**是**空 metric;最多在 `LocalCollectivePlane` 内部埋 counter |
 | `ModuleFactory` / `REGISTER_MODULE` 注册 | `07 号 §6.3` 是**最终形态**口径;Stage 1 与队列 #3/#4 先例一致(header-only、testbench 定位)⇒ 注册推迟到 P3 有真实 adapter 时 |
 | Bundle 化(`CollectiveReqBundle` / `CollectiveEvtBundle`) | `ADR-CEP-03 §5` 假设的 `coherence_bundles_tlm.hh` **现实不存在**(06-bis P2 未实施);Bundle 的价值在有真实传输通道时 ⇒ 类型内嵌接口头,Bundle 化推迟 |
 | **新增任何 `INV-` 编号** | 15 组 66 条 invariant 的**分组是冻结测试的硬编码**(`test_cep_canonical_invariants.cc` 的 `expected_groups()`)⇒ 新增编号即契约违反;本 change 的 B2 贡献 = **行为化既有条目**,计数恒为 66 |
@@ -143,10 +143,10 @@ fabric ingress 分类(per `ADR-CEP-03 §3.1` R2)—— 那属 P3,**不在本 cha
 
 | capability | 内容 | Scenario 数(标称) |
 |---|---|---|
-| `cep-collective-plane-base` | 平面本体:接口 + 类型 + Null + Local + group/epoch + barrier rendezvous | 12 |
+| `cep-collective-plane-base` | 平面本体:接口 + 类型 + Null + Local + group/epoch + barrier rendezvous | 13 |
 | `cep-collective-plane-contract` | 契约判据:5 条机器可检查的契约 + 声明源 | 8 |
 
-> **合计 20 Scenario**(与队列 #4 的 22 / 队列 #3 的 18 同一量级 ⇒ 4-6 周当量,vs 8 周标称)。
+> **合计 21 Scenario**(与队列 #4 的 22 / 队列 #3 的 18 同一量级 ⇒ 4-6 周当量,vs 8 周标称)。
 
 ---
 
