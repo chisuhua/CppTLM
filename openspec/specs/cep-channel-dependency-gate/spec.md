@@ -1,7 +1,10 @@
 # cep-channel-dependency-gate Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-directory-ordering-plane. Update Purpose after archive.
+定义**装配期通道依赖闸**：把协议实例的 `(实例, network, vc_id)` 三元组与声明式通道依赖边
+建成图，在模块实例化（`instantiateAll`）与离线拓扑校验（`validate_topology`）两处**共享同一判据**
+检测成环，并以 **SKIP / PASS / FAIL 三态** + **逐 `(network, vc)` verdict** 输出可 grep 的判定。
+闸不通过 = 配置 fail（`INV-CEP-09-IC1`），不得以运行时检查替代。
 
 ## Requirements
 
@@ -71,3 +74,32 @@ CEP SHALL 将 **装配期通道依赖图**(顶点 `(协议实例, network, vc_id
 - **THEN** 两处 SHALL **共享同一判据实现**(`channel_dependency_graph.hh`),**禁双实现**(per metis 建议 #8 + 纪律 ⑤「守卫须与它守护的命令等价」)
 
 > **锚点**:`test_cep_channel_dependency_gate.cc` 的共享判据实现断言(两挂点**同一**函数签名)
+
+#### Scenario: 声明源**配置错误** ⇒ FAIL(≠ SKIP)
+
+- **WHEN** 拓扑 config 带 `cep` 段,但声明源是**作者写错**的形态 —— 显式指定的路径不可读 /
+  该路径的 JSON 畸形 / `cep` 段不是对象 / `protocol_instances` 既非 string 也非 object/array /
+  显式给出的内联声明解析出 **0** 个实例
+- **THEN** 闸 SHALL 判 **`[FAIL]`** 并打印**具体**错因(哪一类 + 哪个路径),`instantiateAll` 中止
+- **AND** **不得**把上述任一形态降级为 **`[SKIP]`** —— SKIP 只留给**外部条件**
+  (缺省声明源不存在/为空),二者混用同一出口即「一个会降级的闸门」
+- **AND** 缺省源 SKIP 时 SHALL 在日志里给出 attempted path **+ 当前工作目录**
+  (缺省源按 CWD 解析,非仓库根运行时静默失败会被误读成「无声明」)
+
+> **锚点**:`test_cep_channel_dependency_gate.cc` 的「声明源配置错误 ⇒ FAIL(≠ SKIP)」用例
+> (6 个错误形态逐条断言 + 缺省源 SKIP 的正控)
+
+#### Scenario: 通道依赖**边表内容** SHALL 逐边 = ArchForge §6.0.3(镜像判别力)
+
+- **WHEN** `scripts/test/cep_decl_alignment_check.sh` 跑第 ⑥ 项
+- **THEN** 本仓派生副本 `channel_dependency_edges.per_network.<net>` 的边集 SHALL 与
+  ArchForge `32 号 §6.0.3` 表格推导出的边集**逐边相等**(缺边 / 多边分别报红)
+- **AND** 边表**内容**漂移 SHALL 被检出 ——「二元组形状 + 端点已被 `vc_binding` 绑定 + 无环」
+  三项**不足以**检出内容漂移(改一条边的端点后三项**仍全绿**,且装配闸也照常 PASS)
+- **AND** §6.0.3 解析失败 SHALL 判红(**权威源不可解析 = 守卫失效**,不得降级为 warn)
+- **AND** 逐字段比对 SHALL 做**类型严格**(递归)相等 —— `0`/`false`/`0.0` 在 Python 里互等,
+  裸 `!=` 会让 bool/int/float 的类型漂移(含**嵌套**字段如 `atomic.supported`)静默通过
+
+> **锚点**:`scripts/test/cep_decl_alignment_check.sh` 第 ⑥ 项的第 ③ 子检查 +
+> `strict_equal()`;反向验证 = 把一条边 `VC1→VC3` 改成 `VC1→VC2` ⇒ 报红(缺边 + 多边两条明细),
+> `atomic.supported: false → 0` ⇒ 报红

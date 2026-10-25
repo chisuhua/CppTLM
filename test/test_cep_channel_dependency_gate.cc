@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -342,13 +343,58 @@ TEST_CASE("CEP ChannelGate: 空声明 ⇒ SKIP(≠ PASS)", "[cep][channel-gate]"
     CHECK(fallback.verdict == cep::GateVerdict::PASS);
     CHECK(fallback.stats.vertices == 2u * 8u); // 两个声明实例 × 8 顶点
 
-    // 声明源显式指向不存在的文件 ⇒ 空声明 ⇒ SKIP(外部条件,不阻装配)
+    // 文件不存在且**未显式声明** ⇒ 空声明 ⇒ SKIP(外部条件)
+    CHECK(cep::load_channel_declaration("/nonexistent/cep_decl.json", false).empty());
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// Scenario 8:声明源**配置错误** ⇒ FAIL(不是 SKIP)
+// ═════════════════════════════════════════════════════════════════════
+// 「无可检查对象」(默认源缺失 ⇒ SKIP)与「作者把源写错了」(⇒ FAIL)必须分开:
+// 若共用 SKIP 出口,声明源写错一个字符就等于闸不存在,且日志只说
+// 「no declared protocol instance」,定位不到是路径错还是 JSON 坏。
+TEST_CASE("CEP ChannelGate: 声明源配置错误 ⇒ FAIL(≠ SKIP)", "[cep][channel-gate]") {
+    // ① 显式路径不存在
     nlohmann::json missing_src;
     missing_src["cep"] = nlohmann::json{{"protocol_instances", "/nonexistent/decl.json"}};
-    CHECK(cep::run_channel_gate(missing_src).verdict == cep::GateVerdict::SKIP);
+    const auto r1 = cep::run_channel_gate(missing_src);
+    CHECK(r1.verdict == cep::GateVerdict::FAIL);
+    CHECK(r1.to_log().rfind("[FAIL]", 0) == 0);
+    CHECK(r1.to_log().find("不可读") != std::string::npos);
 
-    // 文件不存在 ⇒ 空声明 ⇒ SKIP
-    CHECK(cep::load_channel_declaration("/nonexistent/cep_decl.json").empty());
+    // ② 显式路径存在但 JSON 畸形
+    const std::string malformed =
+        (std::filesystem::temp_directory_path() / "cep_decl_malformed_test.json").string();
+    {
+        std::ofstream out(malformed);
+        out << "{ not json ,,,";
+    }
+    nlohmann::json bad_json;
+    bad_json["cep"] = nlohmann::json{{"protocol_instances", malformed}};
+    const auto r2 = cep::run_channel_gate(bad_json);
+    CHECK(r2.verdict == cep::GateVerdict::FAIL);
+    CHECK(r2.to_log().find("畸形") != std::string::npos);
+
+    // ③ `cep` 段不是对象
+    nlohmann::json cep_not_object;
+    cep_not_object["cep"] = true;
+    CHECK(cep::run_channel_gate(cep_not_object).verdict == cep::GateVerdict::FAIL);
+
+    // ④ protocol_instances 类型非法(非 string/object/array)
+    nlohmann::json bad_type;
+    bad_type["cep"] = nlohmann::json{{"protocol_instances", 42}};
+    CHECK(cep::run_channel_gate(bad_type).verdict == cep::GateVerdict::FAIL);
+
+    // ⑤ 显式给了内联声明但解析出 0 实例
+    nlohmann::json empty_inline;
+    empty_inline["cep"] = nlohmann::json{
+        {"protocol_instances", nlohmann::json{{"instances", nlohmann::json::array()}}}};
+    CHECK(cep::run_channel_gate(empty_inline).verdict == cep::GateVerdict::FAIL);
+
+    // ⑥ 空实例数组(数组形态)
+    nlohmann::json empty_array;
+    empty_array["cep"] = nlohmann::json{{"protocol_instances", nlohmann::json::array()}};
+    CHECK(cep::run_channel_gate(empty_array).verdict == cep::GateVerdict::FAIL);
 }
 
 // ═════════════════════════════════════════════════════════════════════

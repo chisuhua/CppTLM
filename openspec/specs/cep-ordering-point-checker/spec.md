@@ -1,7 +1,10 @@
 # cep-ordering-point-checker Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-directory-ordering-plane. Update Purpose after archive.
+定义**排序点判据** J1/J2/J3 与跨平面不变量 `INV-CEP-08-IC2`：给定地址解析器
+（`AddressResolverIf` 单方法）与协议实例的 caps 声明，判定「该实例的排序假设是否被其能力所支持」，
+并显式区分 **Sound / Unsound / Undecidable**。J3 在多点场景降级为 `vacuous`——
+通用形式不可静态判定，**降级本身是交付物而非缺陷**，故须显式化而非静默通过。
 
 ## Requirements
 

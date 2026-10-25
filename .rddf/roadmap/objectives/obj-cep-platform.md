@@ -4138,6 +4138,80 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 
 ---
 
+### Entry #65 — 2026-10-25 [fix]
+
+**主题**: 队列 #4 对抗式评审（critic）缺陷修复 —— 2 BLOCKER + 6 SHOULD_FIX 落地；3 份 main spec 补 `## Purpose`
+
+**① 触发（首次对抗式评审）**
+
+队列 #4 归档前的自查不等价于对抗式评审（Entry #64 已标注）。critic 恢复可用后补跑，**结论 REJECT**（评审者与被评审代码同源，**无外部真人评审** —— 单开发者仓结构性局限，已在报告中显式声明）：
+
+| 编号 | 问题 | 我的独立验证 |
+|------|------|-------------|
+| **B1** | ⑥ 镜像闸对 `channel_dependency_edges` **零判别力**：改一条边端点后 ⑥ 全绿、装配闸 PASS | ✅ 实测复现（`[1,3]`→`[1,2]` 全绿）|
+| **B2** | 显式声明源不可读/畸形/类型非法 ⇒ 全落 **SKIP**，且被测试钉成契约 | ✅ 实测复现（5 种配置错误全 SKIP；非仓根 CWD 下「漏写声明源」亦 SKIP）|
+| S1 | `snoop_handle_t` 16-bit 回绕 ⇒ 存活 handle 被覆盖 ⇒ 旧地址永久 STALL | 读码确认（`next_handle_++` 无存活检查）|
+| S2 | `expected_responders` 含未映射位（bit 4..63）⇒ snoop 永不完成 ⇒ 永久 STALL | 读码确认（fold 只能扣已映射位）|
+| S3 | `RetireOnZeroSharers` 可伪触发；`set_sharer` 对未映射节点不是 no-op（留可见空条目）| 读码确认 |
+| S4 | IC3 五事件中 `RetireOnZeroSharers` **零行为覆盖**（只有名字字符串断言）| grep 确认无 `clear_sharer` 调用 |
+| S7 | ⑥ 逐字段比对对 bool/int/float 漂移失明（Python `0 == False`）| ✅ 实测复现（`atomic.supported: false→0` 全绿）|
+| S8 | CLI 头注释称「不可读 ⇒ rc=2」但代码 `return 0`；无 `--help` | 读码确认 |
+
+**② 修复（逐条落地）**
+
+| 编号 | 修复 | 位置 |
+|------|------|------|
+| **B1** | 新增 `archforge_channel_edges()` 解析 ArchForge `32 号 §6.0.3` 的**散文 markdown 表格**（`\| \`compute_noc\` \| VC0→VC1, …`）；⑥ 加第 ③ 子检查**逐边相等**（缺边/多边分别报红；§6.0.3 解析失败判红，不降级 warn）| `cep_decl_alignment_check.sh` |
+| **B2** | `ChannelDeclaration` 加 `source_error` / `source_error_detail` / `skip_hint`；`load_channel_declaration(path, explicit_source)`；`parse_channel_declaration_from_config` 对 4 类非法形态置 `source_error`；判据**优先**判 `source_error ⇒ FAIL`（含具体错因）| `channel_dependency_graph.hh` + `module_factory.cc`（无需改，FAIL 已 `return false`）|
+| **S1** | 保持 16-bit（**ADR-CEP-04** 钉 `logic[15:0]`，不可 widen）⇒ `allocate_handle()` **线性探测空闲槽** + 满表返回 0；`kHandleSpace = 65535` 提为 public 契约常量 | `sharer_tracker.hh` |
+| **S2** | 新增 `kMappedResponderMask`；`snoop_begin` 对 `expected & ~mask` 非零 ⇒ 拒绝（handle=0）| 同上 |
+| **S3** | `set_sharer` 未映射节点**提前 return**（不建条目）；`clear_sharer` 对「本非 sharer」no-op（不伪触发 retire）；删死语句 `(void)state;` | 同上 |
+| **S4** | 新增 `Scenario 10` 用例：handle 满/未映射位/伪 retire 三条负向 **各有正控**（handle 满 + 首条目存活；仅已映射位接受；真 retire 恰好 1 次）| `test_cep_sharer_tracker_base.cc` |
+| **S7** | 新增 `strict_equal()` **递归**类型严格比较（浅层 `type()` 不够 —— `{"supported":0} == {"supported":False}` 为 True）| `cep_decl_alignment_check.sh` |
+| **S8** | 退出码修正（0 = PASS/SKIP 外部条件 · 1 = 判据红/配置错误 · 2 = 用法错误）+ `--help` + 显式路径不可读 ⇒ rc=1 + 缺省源 SKIP 打印 cwd | `examples/cep_channel_dependency_gate.cc` |
+| **附带** | 缺省源 SKIP 时日志打印 **attempted path + CWD**（B2 的「最低修复线」要求）| `channel_dependency_graph.hh`（`skip_hint`）+ CLI |
+
+**③ 顺带修掉的归档治理遗漏**
+
+`openspec archive` 为 3 份 main spec 写了占位 `## Purpose`（`TBD - created by archiving change …`）⇒ `openspec validate <cap> --strict` **rc=1**。已补实际 Purpose，3 份均恢复 rc=0。
+
+**④ 未修（显式登记，需独立决策）**
+
+| 编号 | 问题 | 为什么不修 |
+|------|------|-----------|
+| **S5** | 嵌套 `instantiateAll` 调用方（`apu_soc.cc:70` / `pcie_endpoint_ip.cc:563`）吞掉 FAIL；`sim_module.hh:95` 只 DPRINTF 后继续 | 要动 SimModule 契约（depth 判断 / 失败向上传播），非本批范围；当前仓内无 config 带 `cep` 段（`grep -rn '"cep"' configs/` 零命中）⇒ 暴露面为零 |
+| **S6** | CI 上 ArchForge 缺席 ⇒ `cep_decl_alignment_check` 恒 SKIP（`.github/workflows/ci.yml` 无 ArchForge checkout）| 需 CI 配置决策（pinned commit 浅克隆，或把 SKIP 拆成显式 not-run 状态）|
+| NIT | `cross_net_edges` 结构性恒零（边按网络键控，跨网边不可能被构造）| 死指标，删它要动 spec 的「0 跨网边」Scenario；留待队列 #6 复评 |
+| NIT | `kMaxVcId = 3` 硬编码 vs `fabric.json` 的 per-network `vc_count` 双真相源 | 同上，留待队列 #6 |
+
+**⑤ 冻结面授权（本 entry 即授权记录）**
+
+| 成员 | 改什么 |
+|------|--------|
+| `openspec/specs/cep-channel-dependency-gate/spec.md` | **追加** 2 Scenario（声明源配置错误 ⇒ FAIL / 边表逐边 = §6.0.3）+ 补 `## Purpose`；原 7 Scenario **一字未改** |
+| `openspec/specs/cep-sharer-tracker-base/spec.md` | 仅补 `## Purpose`（占位句替换），Scenario **0 变动** |
+| `openspec/specs/cep-ordering-point-checker/spec.md` | 同上 |
+| 其余 34 个成员 | **0 diff** |
+
+> **为什么 Scenario 6「默认源缺失/为空 ⇒ SKIP」不改**：B2 批评的是**显式指定**的源写错时也 SKIP，那从未被 Scenario 6 覆盖。新增的 Scenario 8 与之互补而非冲突 —— 隔离「外部条件 SKIP」与「配置错误 FAIL」。
+
+**⑥ 验收（实测）**
+
+| 项 | 值 |
+|---|---|
+| `[cep]` | **124 cases / 2076 assertions**（修前 122 / 2050）|
+| 新增用例 | +2（Scenario 8 B2 / Scenario 10 S1·S2·S3 边界）；assertions +26 |
+| 反向验证 | B1 改边 ⇒ 报红（缺边+多边两条明细）· S7 `false→0` ⇒ 报红 · S7 `int→float` ⇒ 报红 · B2 6 形态 ⇒ FAIL |
+| 正控 | S1 handle 满后首条目仍存活 · S2 仅已映射位接受 · S3 真 retire 恰好 1 次 |
+| 守门 | 7 项 rc=0（含 `cep_freeze_check`，本 entry 授权后）· `cep_gate_selftest` 31/31 |
+| `openspec validate <cap> --strict` | 3 份 main spec **rc=0**（修前 rc=1，占位 Purpose）|
+| `openspec validate --changes --strict` | rc=0（无 active change）|
+| 冻结集 | **37**（成员数不变；3 份 spec 内容更新）|
+
+**关联**: Entry #64（归档）· Entry #63（builder 实施）· critic 评审 2 BLOCKER / 8 SHOULD_FIX · `ADR-CEP-04`（16-bit handle RTL 契约，S1 因此不可 widen）· ArchForge `32 号 §6.0.3`（边表权威）
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

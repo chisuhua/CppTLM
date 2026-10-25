@@ -212,6 +212,9 @@ TEST_CASE("CEP SharerTracker: caps 4 属性 / ResponderSet 64-bit / bit→node �
     dir.set_sharer(0xA000, cep::kInvalidNode, cep::SnoopState::S);
     CHECK(dir.view_of(0xA000).sharers == 0u);
     CHECK(dir.view_of(0xA000).dirty == 0u);
+    // no-op 必须彻底:不得留下 sharers == dirty == 0 的**可见空条目**
+    // (否则与「该地址从未出现过」在 view_of 上无法区分)
+    CHECK(!dir.view_of(0xA000).valid);
 }
 
 // ═════════════════════════════════════════════════════════════════════
@@ -518,4 +521,88 @@ TEST_CASE("CEP SharerTracker: 非 FullMap 的 4 实现只做声明层断言", "[
     REQUIRE(!spec.empty());
     CHECK(spec.find("只做声明层断言") != std::string::npos);
     CHECK(spec.find("deferred") != std::string::npos);
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// Scenario 10:状态机边界(handle 空间满 / 未映射 expected / 伪 retire)
+// ═════════════════════════════════════════════════════════════════════
+// 这四条是同批 critic 评审实测出的真缺陷,每条都配「拒绝/不触发」负向 + 一个正控
+// (纯负向断言无正控 = 判据可能根本没生效)。
+TEST_CASE("CEP SharerTracker: 状态机边界(handle 满 / 未映射位 / 伪 retire)",
+          "[cep][sharer-tracker]") {
+    // ① handle 空间满 ⇒ 拒绝新 snoop,不得覆盖存活条目。
+    //    16-bit 是 ADR-CEP-04 的 RTL 契约,不可 widen ⇒ 只能探测 + 拒绝。
+    {
+        cep::FullMapDirectory dir;
+        std::size_t accepted = 0;
+        for (std::uint64_t a = 1; a <= cep::FullMapDirectory::kHandleSpace; ++a) {
+            cep::snoop_handle_t h = 0;
+            dir.snoop_begin(a, mask(cep::kNodeIdVram), h);
+            if (h != 0)
+                ++accepted;
+        }
+        CHECK(accepted == cep::FullMapDirectory::kHandleSpace);
+        CHECK(dir.inflight_count() == cep::FullMapDirectory::kHandleSpace);
+
+        cep::snoop_handle_t overflow = 0;
+        dir.snoop_begin(999999, mask(cep::kNodeIdVram), overflow);
+        CHECK(overflow == 0);      // 满表 ⇒ 拒绝
+        CHECK(dir.is_inflight(1)); // 最老条目仍活着(旧实现会把它覆盖成 handle=1)
+        CHECK(dir.inflight_count() == cep::FullMapDirectory::kHandleSpace);
+    }
+
+    // ② expected_responders 含未映射位(bits 4..63)⇒ 拒绝。
+    //    那些位永远无法被 snoop_fold 扣减 ⇒ snoop 永不 retire ⇒ 地址永久 STALL。
+    {
+        cep::FullMapDirectory dir;
+        cep::snoop_handle_t h = 0xFFFF;
+        dir.snoop_begin(0x1000, mask(cep::kNodeIdSdma) | (cep::responder_set_t{1} << 5), h);
+        CHECK(h == 0);
+        CHECK(!dir.is_inflight(0x1000));
+
+        cep::LookupResult result = cep::LookupResult::ANSWER_HERE;
+        cep::LocalView view;
+        cep::LookupHazard hazard = cep::LookupHazard::STALL;
+        dir.lookup(0x1000, cep::Intent::want_read, result, view, hazard);
+        CHECK(hazard == cep::LookupHazard::NONE); // 未被永久 STALL
+
+        // 正控:只含已映射位 ⇒ 接受
+        cep::snoop_handle_t ok = 0;
+        dir.snoop_begin(0x2000, mask(cep::kNodeIdSdma), ok);
+        CHECK(ok != 0);
+        CHECK(dir.is_inflight(0x2000));
+    }
+
+    // ③ clear 一个「本非 sharer」的节点不得伪触发 RetireOnZeroSharers。
+    //    lookup 会 Allocate 一个 sharers == dirty == 0 的空条目;旧实现在它上面清一次
+    //    就满足 0/0 条件 ⇒ 事件流出现 Allocate → Retire,而全程无 sharer 存在。
+    {
+        cep::FullMapDirectory dir;
+        cep::LookupResult result = cep::LookupResult::ANSWER_HERE;
+        cep::LocalView view;
+        cep::LookupHazard hazard = cep::LookupHazard::NONE;
+        dir.lookup(0xB000, cep::Intent::want_read, result, view, hazard);
+
+        const auto before = dir.event_count(cep::LifecycleEvent::RetireOnZeroSharers);
+        dir.clear_sharer(0xB000, cep::kNodeIdVram);
+        CHECK(dir.event_count(cep::LifecycleEvent::RetireOnZeroSharers) == before);
+        CHECK(dir.view_of(0xB000).valid); // 空条目仍在(未被误删)
+
+        // ④ 正控:真 retire 恰好 1 次(IC3 五事件里 RetireOnZeroSharers 此前零行为覆盖)
+        dir.set_sharer(0xC000, cep::kNodeIdVram, cep::SnoopState::S);
+        REQUIRE(dir.view_of(0xC000).valid);
+        const auto b2 = dir.event_count(cep::LifecycleEvent::RetireOnZeroSharers);
+        dir.clear_sharer(0xC000, cep::kNodeIdVram);
+        CHECK(dir.event_count(cep::LifecycleEvent::RetireOnZeroSharers) == b2 + 1);
+        CHECK(!dir.view_of(0xC000).valid); // retire 后条目消失
+    }
+
+    // ⑤ clear 未映射节点同样 no-op(不制造位、不改条目)
+    {
+        cep::FullMapDirectory dir;
+        dir.set_sharer(0xD000, cep::kNodeIdGmmu, cep::SnoopState::S);
+        REQUIRE(dir.view_of(0xD000).valid);
+        dir.clear_sharer(0xD000, cep::kInvalidNode);
+        CHECK(dir.view_of(0xD000).sharers == mask(cep::kNodeIdGmmu));
+    }
 }

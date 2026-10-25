@@ -1,7 +1,11 @@
 # cep-sharer-tracker-base Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-directory-ordering-plane. Update Purpose after archive.
+定义缓存一致性平台的 **SharerTrackerIf 单接口**（恰好 4 个方法）及其**能力描述符**
+（caps 4 属性 `scope`/`completeness`/`authority`/`aggregation_at` + behavior 2 属性），
+使 5 种一致性族（MOESI / MESIF / CHI RN-F / CXL 非对称 / TileLink 树）能用同一抽象表达
+目录查询与 snoop 生命周期，并让「协议实现的能力边界」成为**可静态判定的声明**而非隐含行为。
+本 capability 交付**唯一行为实现** `FullMapDirectory`；其余 4 种实现的声明层登记随队列 #6~#9 落地。
 
 ## Requirements
 

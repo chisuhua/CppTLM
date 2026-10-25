@@ -12,44 +12,63 @@
 //   否则「守卫」与「被守卫的命令」会漂移。
 //
 // ── 退出码(红绿分离)──────────────────────────────────────────────────
-//   0 = PASS 或 SKIP(SKIP 打印 `[SKIP]`,与 PASS 可区分)
-//   1 = 存在判据红(配置 fail)
-//   2 = 用法错误 / 声明文件不可读
+//   0 = PASS,或 SKIP(**缺省**声明源不可读/为空 —— 外部条件)
+//   1 = 判据红:存在环,或**声明源配置错误**(显式给的路径不可读 / JSON 畸形 / 类型非法)
+//   2 = 用法错误(多余参数)
 //
 // 用法:
-//   ./build/bin/examples/cep_channel_dependency_gate [declaration.json]
-//   缺省 = include/tlm/cep/protocol_instances.json(相对当前工作目录 = 仓库根)
+//   ./build/bin/examples/cep_channel_dependency_gate               # 用缺省声明源
+//   ./build/bin/examples/cep_channel_dependency_gate <decl.json>   # 显式声明源(不可读 ⇒ rc=1)
+//   ./build/bin/examples/cep_channel_dependency_gate --help
 
 #include <cstdio>
-#include <fstream>
+#include <filesystem>
 #include <string>
 
 #include "tlm/cep/channel_dependency_graph.hh"
 #include "tlm/cep/ordering_point_checker.hh"
 
-namespace {
-
-    bool file_readable(const std::string& path) {
-        std::ifstream in(path);
-        return static_cast<bool>(in);
-    }
-
-} // namespace
-
 int main(int argc, char** argv) {
-    const std::string path = (argc > 1) ? argv[1] : tlm::cep::kDefaultDeclarationPath;
-
-    if (!file_readable(path)) {
-        std::fprintf(stderr, "[SKIP] cep assembly gate: declaration not readable: %s\n",
-                     path.c_str());
-        // 声明缺失是**外部条件**(未生成 / 路径不同),不是判据红 ⇒ 不阻断拓扑校验
-        return 0;
+    if (argc > 1) {
+        const std::string first = argv[1];
+        if (first == "--help" || first == "-h") {
+            std::printf(
+                "用法: %s [<declaration.json>]\n\n"
+                "  (无参数)        用缺省声明源 %s\n"
+                "  <declaration.json>  显式声明源 —— 不可读/JSON 畸形 ⇒ 退出码 1\n\n"
+                "退出码: 0 = PASS 或 SKIP(缺省源不可用) · 1 = 判据红/配置错误 · 2 = 用法错误\n",
+                argv[0], tlm::cep::kDefaultDeclarationPath);
+            return 0;
+        }
+    }
+    if (argc > 2) {
+        std::fprintf(stderr, "[usage] 最多接受 1 个位置参数(收到 %d 个);--help 查看用法\n",
+                     argc - 1);
+        return 2;
     }
 
-    const tlm::cep::ChannelDeclaration decl = tlm::cep::load_channel_declaration(path);
+    const bool explicit_path = argc > 1;
+    const std::string path = explicit_path ? argv[1] : tlm::cep::kDefaultDeclarationPath;
+
+    // 显式路径不可读/畸形 ⇒ source_error(⇒ 判据 FAIL);缺省路径不可读 ⇒ 空声明(⇒ SKIP)
+    const tlm::cep::ChannelDeclaration decl =
+        tlm::cep::load_channel_declaration(path, explicit_path);
+
+    if (decl.source_error) {
+        std::printf("[FAIL] cep assembly gate: 声明源配置错误 —— %s\n",
+                    decl.source_error_detail.c_str());
+        return 1;
+    }
     if (decl.empty()) {
         std::printf("[SKIP] cep assembly gate: no declared protocol instance in %s\n",
                     path.c_str());
+        if (!explicit_path) {
+            std::error_code ec;
+            const auto cwd = std::filesystem::current_path(ec);
+            std::printf("  (缺省声明源按**当前工作目录**解析;cwd=%s —— 从仓库根以外运行时"
+                        "需改用显式路径)\n",
+                        ec ? "<unavailable>" : cwd.string().c_str());
+        }
         return 0;
     }
 

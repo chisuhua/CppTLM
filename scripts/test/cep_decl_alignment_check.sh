@@ -54,6 +54,8 @@ FABRIC_SCHEMA_REL = "include/tlm/cep/fabric.schema.json"
 FABRIC_REL = "include/tlm/cep/fabric.json"
 NS_REL = "docs/architecture/22-nsa-fabric-address-spec.md"
 REPO_DECL_REL = "include/tlm/cep/protocol_instances.json"
+# §6.0.3 通道依赖边的权威表(与 DECL_REL 同文件,不同节)
+AF_EDGES_SECTION = r"#{3,4}\s*6\.0\.3\b"
 
 # 规范消息类词表(per ArchForge 32 号 §6.0.1,6 类;排除 CATEGORY_CREDIT / forward_data /
 # snoop_completion_ack —— 后两者是已有槽位的承载实例,不单列)
@@ -64,6 +66,22 @@ errors = []  # (检查编号, 明细)
 
 def err(chk, detail):
     errors.append((chk, detail))
+
+
+def strict_equal(a, b):
+    """JSON 值的**类型严格**相等(递归)。
+
+    Python 里 `0 == False`、`1 == True`、`1 == 1.0`,裸 `!=` 会让 bool/int/float
+    的类型漂移静默通过;且这种等价在**嵌套 dict/list 内部同样成立**
+    (`{"supported": 0} == {"supported": False}` 为 True)⇒ 必须递归,不能只比顶层类型。
+    """
+    if type(a) is not type(b):
+        return False
+    if isinstance(a, dict):
+        return set(a) == set(b) and all(strict_equal(a[k], b[k]) for k in a)
+    if isinstance(a, list):
+        return len(a) == len(b) and all(strict_equal(x, y) for x, y in zip(a, b))
+    return a == b
 
 
 def read_json(path):
@@ -263,6 +281,42 @@ def archforge_locked_networks():
     return out, None
 
 
+def archforge_channel_edges():
+    """从 ArchForge 32 号 §6.0.3 解析 network → {(from_vc, to_vc)}。
+
+    §6.0.3 是**散文 markdown 表格**(不是 json fence),所以 ⑥ 的 json 提取器读不到它 ——
+    这也是边表此前只能校验「二元组形状 + 端点已绑定」的原因。那里恰好漏掉了内容:
+    改一条边的端点后,端点仍被 vc_binding 绑定、边数不变、仍无环 ⇒ 所有判据都察觉不到,
+    而这正是 `A-3-2`「边表作为 ArchForge §6.0.3 派生副本」承诺的兑现机制。
+    """
+    path = os.path.join(archforge, DECL_REL)
+    if not os.path.exists(path):
+        return None, f"文件缺失: {DECL_REL}"
+    body = open(path, encoding="utf-8").read()
+    m = re.search(AF_EDGES_SECTION + r"(.*?)(?=\n#{2,4}\s|\Z)", body, re.S)
+    if not m:
+        return None, "未找到 §6.0.3 节(章节号或标题已变)"
+    out = {}
+    for line in m.group(1).splitlines():
+        s = line.strip()
+        if not s.startswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        net = cells[0].strip("`").strip()
+        if not re.fullmatch(r"[a-z0-9_]+", net):
+            continue
+        edges = set()
+        for em in re.finditer(r"VC(\d+)\s*→\s*VC(\d+)", cells[1]):
+            edges.add((int(em.group(1)), int(em.group(2))))
+        if edges:
+            out[net] = edges
+    if not out:
+        return None, "§6.0.3 表未解析出任何通道依赖边"
+    return out, None
+
+
 af_locked, af_err = archforge_locked_networks()
 if af_err is not None:
     # ⚠️ **权威源解析失败 = 守卫失效** —— 不得降级为 warn
@@ -316,7 +370,8 @@ else:
             continue
         local = repo_insts[rid]
         for key in sorted(set(local) | set(d)):
-            if local.get(key) != d.get(key):
+            # 类型也要严格相等,且**递归**(含嵌套 dict/list 内部)
+            if not strict_equal(local.get(key), d.get(key)):
                 err(6, f"{rid}.{key} 与 ArchForge 不符(派生副本已漂移)")
     extra_ids = set(repo_insts) - set(ids)
     if extra_ids:
@@ -337,13 +392,40 @@ else:
                     if vc not in bound:
                         err(6, f"{rid}:边端点 {net}.vc{vc} 未被 vc_binding 绑定")
 
+    # ③ 边表**内容**与 ArchForge §6.0.3 逐边相等
+    af_edges, af_edges_err = archforge_channel_edges()
+    if af_edges_err is not None:
+        # 同上 ⑤ 的口径:权威源解析失败 = 守卫失效,不得降级为 warn
+        err(6, f"**无法解析 ArchForge §6.0.3 边表**({af_edges_err})—— 边表镜像守卫失效,判红")
+    else:
+        ours_by_net = {}
+        for net, elist in repo_edges.items():
+            ours = set()
+            for pair in elist:
+                if isinstance(pair, list) and len(pair) == 2:
+                    ours.add((pair[0], pair[1]))
+            ours_by_net[net] = ours
+        for net in sorted(set(af_edges) | set(ours_by_net)):
+            theirs = af_edges.get(net)
+            ours = ours_by_net.get(net)
+            if theirs is None:
+                err(6, f"派生副本含 ArchForge §6.0.3 **未声明**的网络边表:{net}")
+                continue
+            if not ours:
+                err(6, f"派生副本缺网络 {net} 的边表(ArchForge §6.0.3 已声明 {len(theirs)} 条)")
+                continue
+            for e in sorted(theirs - ours):
+                err(6, f"{net}:边 VC{e[0]}→VC{e[1]} 在 ArchForge §6.0.3 **有**、派生副本 **无**(漂移)")
+            for e in sorted(ours - theirs):
+                err(6, f"{net}:边 VC{e[0]}→VC{e[1]} 在派生副本 **有**、ArchForge §6.0.3 **无**(自行发明)")
+
 LABELS = {
     1: "① 声明 ↔ schema 全 13 属性(含 required/enum/嵌套结构)",
     2: "② vc_id < vc_count + 键对称 + key 解析",
     3: "③ ordering ⊆ vc_binding(逐网络)",
     4: "④ 消息类 ∈ 6 类规范词表",
     5: "⑤ network ⊆ fabric = ArchForge 已锁定集 + vc_count 双向一致",
-    6: f"⑥ 派生副本逐字段 = ArchForge 声明 + 边端点已绑定({REPO_DECL_REL})",
+    6: f"⑥ 派生副本逐字段 = ArchForge 声明 + 边表逐边 = §6.0.3 + 边端点已绑定({REPO_DECL_REL})",
 }
 
 print("  · [RUN] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查")

@@ -244,6 +244,18 @@ struct ChannelDeclaration {
     std::vector<DeclaredInstance> instances;
     std::map<std::string, std::vector<std::pair<unsigned, unsigned>>> per_network_edges;
 
+    /// 声明源**配置错误** —— 与「无可检查对象」严格区分:
+    ///   · `source_error == true` ⇒ 配置 fail(显式指定的源不可读 / JSON 畸形 /
+    ///     类型非法 / 显式给了一份解析出 0 实例的声明)。这些是**作者写错了**,不是外部条件。
+    ///   · `source_error == false && instances.empty()` ⇒ SKIP(默认源缺失/为空 —— 外部条件)。
+    /// 二者混用同一 SKIP 出口,等于「一个会降级的闸门」,违反 pytest 侧
+    /// `cep_decl_alignment_check.sh` 已写明的自家原则。
+    bool source_error = false;
+    std::string source_error_detail;
+
+    /// SKIP 时的诊断提示(如「缺省源按 CWD 解析」)—— 只影响日志,不影响判据。
+    std::string skip_hint;
+
     bool empty() const { return instances.empty(); }
 };
 
@@ -351,17 +363,36 @@ inline ChannelDeclaration parse_channel_declaration(const nlohmann::json& doc) {
     return d;
 }
 
-inline ChannelDeclaration load_channel_declaration(const std::string& path) {
+inline ChannelDeclaration load_channel_declaration(const std::string& path,
+                                                  bool explicit_source = true) {
+    ChannelDeclaration d;
     std::ifstream in(path);
-    if (!in)
-        return {};
+    if (!in) {
+        // 显式指定却读不到 ⇒ 作者给的路径错了(配置 fail);默认源读不到 ⇒ 外部条件(SKIP)
+        if (explicit_source) {
+            d.source_error = true;
+            d.source_error_detail = "显式指定的声明源不可读: " + path;
+        }
+        return d;
+    }
     std::ostringstream ss;
     ss << in.rdbuf();
     try {
-        return parse_channel_declaration(nlohmann::json::parse(ss.str()));
-    } catch (const std::exception&) {
-        return {};
+        d = parse_channel_declaration(nlohmann::json::parse(ss.str()));
+    } catch (const std::exception& exc) {
+        ChannelDeclaration bad;
+        if (explicit_source) {
+            bad.source_error = true;
+            bad.source_error_detail = std::string("声明源 JSON 畸形: ") + path + " (" + exc.what() +
+                                      ')';
+        }
+        return bad;
     }
+    if (explicit_source && d.instances.empty()) {
+        d.source_error = true;
+        d.source_error_detail = "显式指定的声明源解析出 0 个协议实例: " + path;
+    }
+    return d;
 }
 
 /// 声明输入源的缺省路径(相对仓库根;与 CLI 共用同一常量,避免两处各写一份)
@@ -372,20 +403,55 @@ inline constexpr const char* kDefaultDeclarationPath = "include/tlm/cep/protocol
 /// ⚠️ **有 `cep` 段但未指定声明源** ⇒ 落到本仓默认声明(`kDefaultDeclarationPath`),
 /// 而不是静默 SKIP —— 否则「写了 cep 段却忘写声明源」会变成一条无牙的通过路径。
 /// 默认源不可读时仍然 SKIP(跨工作目录是外部条件,不阻断装配)。
+///
+/// ⚠️ 但**显式指定**的源不可读 / JSON 畸形 / 类型非法 / 解析出 0 实例 ⇒ `source_error`
+/// ⇒ 判据 FAIL。这四类都是作者写错了,不是外部条件 —— 若一律 SKIP,声明源写错一个字符
+/// 就等于闸不存在(且日志只说「no declared protocol instance」,无法定位)。
 inline ChannelDeclaration parse_channel_declaration_from_config(const nlohmann::json& config) {
-    if (!config.is_object() || !config.contains("cep") || !config["cep"].is_object())
+    if (!config.is_object() || !config.contains("cep"))
         return {};
     const auto& cep = config["cep"];
-    if (!cep.contains("protocol_instances"))
-        return load_channel_declaration(kDefaultDeclarationPath);
+    ChannelDeclaration d;
+    if (!cep.is_object()) {
+        d.source_error = true;
+        d.source_error_detail = "config 的 `cep` 段必须是对象(实际为 " +
+                                std::string(cep.type_name()) + ')';
+        return d;
+    }
+    if (!cep.contains("protocol_instances")) {
+        ChannelDeclaration d =
+            load_channel_declaration(kDefaultDeclarationPath, /*explicit_source=*/false);
+        if (d.instances.empty()) {
+            d.skip_hint = std::string("缺省声明源按**当前工作目录**解析为 '") +
+                          kDefaultDeclarationPath +
+                          "' —— 从仓库根以外运行时需改用显式路径(否则 SKIP,闸不生效)";
+        }
+        return d;
+    }
     const auto& pi = cep["protocol_instances"];
     if (pi.is_string())
-        return load_channel_declaration(pi.get<std::string>());
-    if (pi.is_object())
-        return parse_channel_declaration(pi);
-    if (pi.is_array())
-        return parse_channel_declaration(nlohmann::json{{"instances", pi}});
-    return {};
+        return load_channel_declaration(pi.get<std::string>(), /*explicit_source=*/true);
+    if (pi.is_object()) {
+        d = parse_channel_declaration(pi);
+        if (d.instances.empty()) {
+            d.source_error = true;
+            d.source_error_detail = "内联声明的 `instances` 为空(显式给了声明却解析出 0 个实例)";
+        }
+        return d;
+    }
+    if (pi.is_array()) {
+        d = parse_channel_declaration(nlohmann::json{{"instances", pi}});
+        if (d.instances.empty()) {
+            d.source_error = true;
+            d.source_error_detail = "内联实例数组为空(显式给了声明却解析出 0 个实例)";
+        }
+        return d;
+    }
+    d.source_error = true;
+    d.source_error_detail =
+        "cep.protocol_instances 必须是 string(路径)/ object(内联声明)/ array(实例表),实际为 " +
+        std::string(pi.type_name());
+    return d;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -415,10 +481,21 @@ struct GateReport {
 inline GateReport evaluate_channel_dependency_gate(const ChannelDeclaration& decl) {
     GateReport r;
 
+    // 配置错误优先于「无可检查对象」—— 声明源写错不是 SKIP 的理由
+    if (decl.source_error) {
+        r.verdict = GateVerdict::FAIL;
+        r.errors.push_back(decl.source_error_detail);
+        r.log = "[FAIL] cep channel dependency gate: 声明源配置错误 —— " +
+                decl.source_error_detail + '\n';
+        return r;
+    }
+
     if (decl.instances.empty()) {
         r.verdict = GateVerdict::SKIP;
         r.skip_reason = "no declared protocol instance";
-        r.log = "[SKIP] cep channel dependency gate: " + r.skip_reason + "\n";
+        r.log = "[SKIP] cep channel dependency gate: " + r.skip_reason + '\n';
+        if (!decl.skip_hint.empty())
+            r.log += "  (" + decl.skip_hint + ")\n";
         return r;
     }
 

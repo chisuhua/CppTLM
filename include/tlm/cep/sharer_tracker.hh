@@ -91,6 +91,14 @@ constexpr node_id_t responder_node_of(unsigned bit) {
     return (bit < kResponderMappedBits) ? kResponderBitToNode[bit] : kInvalidNode;
 }
 
+/// 已映射 bit 的掩码(bits 0..kResponderMappedBits-1)。
+/// 判据用:`expected_responders` 若含此掩码之外的位,那些位**永远无法被 `snoop_fold` 扣减**
+/// (fold 只认已映射节点 ⇒ `responder_mask_of` 对未映射节点返回 0)⇒ 一经接受,
+/// in-flight 条目永不 retire、该地址 `lookup` 永久 STALL。故 `snoop_begin` 必须显式拒绝。
+inline constexpr responder_set_t kMappedResponderMask =
+    (kResponderMappedBits >= 64) ? ~responder_set_t{0}
+                                 : ((responder_set_t{1} << kResponderMappedBits) - 1);
+
 // ─────────────────────────────────────────────────────────────────────
 // D-5 重构的结果枚举 / 规范意图 / 状态(per ADR §3.1 §3.2)
 // ─────────────────────────────────────────────────────────────────────
@@ -266,6 +274,10 @@ class FullMapDirectory final : public SharerTrackerIf {
 public:
     static constexpr TrackerImpl kImpl = TrackerImpl::FullMapDirectory;
 
+    /// handle 空间大小(handle = 1..65535;0 保留为「无效」)。
+    /// 16-bit 是 `ADR-CEP-04` 的 RTL 契约(`typedef logic [15:0] snoop_handle_t`),不可 widen。
+    static constexpr std::size_t kHandleSpace = 65535u;
+
     // 公开**数据成员**(不是方法)⇒ 接口面仍恰好 4 个方法
     SharerTrackerCaps caps = kTrackerTraits[0].caps;
     SharerTrackerBehavior behavior = kTrackerTraits[0].behavior;
@@ -274,14 +286,17 @@ public:
 
     // ── 目录安装(由 home 侧 / 测试夹具驱动)──
     void set_sharer(std::uint64_t addr, node_id_t node, SnoopState state) {
-        Entry& e = dir_[addr];
         const responder_set_t m = responder_mask_of(node);
+        // 未映射节点 ⇒ **显式 no-op**:不得 `dir_[addr]` 先造条目,否则会留下
+        // sharers == 0 的可见空条目(与「无此地址」在 `view_of` 上无法区分)。
+        if (m == 0)
+            return;
+        Entry& e = dir_[addr];
         e.sharers |= m;
         if (state == SnoopState::M)
             e.dirty |= m;
         else
             e.dirty &= ~m;
-        (void)state;
     }
 
     void clear_sharer(std::uint64_t addr, node_id_t node) {
@@ -289,6 +304,14 @@ public:
         if (it == dir_.end())
             return;
         const responder_set_t m = responder_mask_of(node);
+        if (m == 0)
+            return;  // 未映射节点 ⇒ 本来就无位可清
+        // 该节点**本非** sharer/dirty 持有者 ⇒ no-op。
+        // 否则会伪触发 `RetireOnZeroSharers`:例如 `lookup` 刚 Allocate 的空条目
+        // (sharers == dirty == 0)被清一次就满足 0/0 条件 ⇒ 事件流出现
+        // `Allocate → Retire`,而全程从未有 sharer 存在过 —— 破坏 IC3 的事件语义。
+        if ((it->second.sharers & m) == 0 && (it->second.dirty & m) == 0)
+            return;
         it->second.sharers &= ~m;
         it->second.dirty &= ~m;
         if (it->second.sharers == 0 && it->second.dirty == 0) {
@@ -333,6 +356,13 @@ public:
 
     void snoop_begin(std::uint64_t addr, responder_set_t expected_responders,
                      snoop_handle_t& handle) override {
+        // 期望集含**未映射位**(bits 4..63)⇒ 那些位永远扣不掉 ⇒ snoop 永不完成、
+        // 条目永久泄漏、该地址 lookup 永久 STALL。与「同址矛盾」同一拒绝语义。
+        if ((expected_responders & ~kMappedResponderMask) != 0) {
+            handle = snoop_handle_t{0};
+            return;
+        }
+
         // 同地址已有 snoop 在飞:本实现按 ADR §4 返回 STALL,调用方本应先等 ——
         //   · 期望集**相同** ⇒ IC2 幂等,返回既有 handle(不新建 pending)
         //   · 期望集**不同** ⇒ 与在飞 snoop 矛盾,返回 **0**(无效 handle)并拒绝;
@@ -346,9 +376,9 @@ public:
             return;
         }
 
-        handle = next_handle_++;
-        if (next_handle_ == 0)
-            next_handle_ = 1;  // 0 保留为「无效 handle」
+        handle = allocate_handle();
+        if (handle == 0)
+            return;  // 满表 ⇒ 拒绝,不得覆盖存活 handle
         Inflight f;
         f.addr = addr;
         f.expected = expected_responders;
@@ -447,6 +477,21 @@ private:
         responder_set_t remaining = 0;
         MergedState merged = SnoopState::I;
     };
+
+    /// 16-bit handle 是 `ADR-CEP-04` 的 **RTL 契约**(`typedef logic [15:0] snoop_handle_t`),
+    /// 不可 widen ⇒ 分配时**线性探测空闲槽**,表满显式拒绝。
+    /// (旧实现 `next_handle_++` 无存活检查:65535 个在飞后第 65536 个新地址拿到 handle 1,
+    ///  覆盖存活条目 —— `inflight_by_addr_` 悬挂指向已易主的 handle,旧地址永久 STALL。)
+    snoop_handle_t allocate_handle() {
+        for (std::size_t probe = 0; probe < kHandleSpace; ++probe) {
+            const snoop_handle_t cand = next_handle_;
+            next_handle_ = static_cast<snoop_handle_t>(
+                (next_handle_ == 0xFFFFu) ? 1u : (static_cast<unsigned>(next_handle_) + 1u));
+            if (cand != 0 && inflight_.count(cand) == 0)
+                return cand;
+        }
+        return 0;  // 满表
+    }
 
     static unsigned first_bit(responder_set_t mask) {
         for (unsigned b = 0; b < 64; ++b) {
