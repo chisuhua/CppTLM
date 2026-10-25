@@ -1031,6 +1031,49 @@ for _tbl, _tag in ((_s40, "§4.0"), (_s42, "§4.2")):
                 _fail7.append(
                     f"{_tag}: 行内提及移交标记,但其 change `{_m3.group(1)}` **已归档** → 无主债"
                     f"(应重指向活队列行)")
+# ③b **孤儿前置**的 owner 活性(2026-10-25 Entry #57):
+#   盲区 —— 断言 ③ 只对**归档件里带 `⏭(移交)` 标记的 S1-N** 生效;
+#   而 D4.4 补登的 3 项**孤儿前置**(M-4 行为侧 / `moesi_gpu`·`mesif` 未排期 /
+#   verdict 逐 `(network, vc)` 标注义务)**不在 S1-N 集合内** → owner 活性**管不到**
+#   (metis 指出:机器闸保证「有主」,不保证「主接得住」;孤儿项连「有主」都无保护)。
+#   ⇒ 孤儿前置在活文档用**显式标记** `⏭(孤儿)` 登记;若登记行的 change 已归档 → 报红。
+_ORPHAN_MARK = "⏭(孤儿)"
+_orphan_active = set()
+for _tbl, _tag in ((_s40, "§4.0"), (_s42, "§4.2")):
+    for _row in _rows(_tbl):
+        if _ORPHAN_MARK not in _row:
+            continue
+        for _m4 in re.finditer(r"`(cpptlm-cep-[a-z0-9-]+)`", _row):
+            if _m4.group(1) in _archived:
+                _fail7.append(
+                    f"{_tag}: 孤儿前置行({_ORPHAN_MARK})的 change `{_m4.group(1)}` **已归档** "
+                    f"→ 无主债(应重指向活队列行)")
+            else:
+                _orphan_active.add(_m4.group(1))
+# ③c 反向:孤儿前置**必须**在 §4.0 **与** §4.2 两处都有登记行
+#   (与断言⑦ ①②「两处已漂移」同构 —— 只在一处登记 = 另一处是陈旧副本 → 同样无主)
+#   ⚠️ 判定用**标记**`⏭(孤儿)` 而非裸子串 —— 同一行可能多次提到该项名
+#      (如「**M-4 行为侧决策**」+「**⏭(孤儿)** **M-4 行为侧**」)→ 按裸子串判会漏。
+_orphan_required = ["M-4 行为侧", "未排期", "verdict 逐"]
+
+
+def _orphan_marked(rows, key):
+    """该行是否带 `⏭(孤儿)` 标记**且**提到 key(标记与项名须同行)。"""
+    for r in rows:
+        if _ORPHAN_MARK in r and key in r:
+            return True
+    return False
+
+
+_rows40 = _rows(_s40)
+_rows42 = _rows(_s42)
+for _oq in _orphan_required:
+    if not _orphan_marked(_rows40, _oq):
+        _fail7.append(f"孤儿前置「{_oq}」在 obj §4.0 **无带 `⏭(孤儿)` 标记的登记行** → 无主债")
+    if not _orphan_marked(_rows42, _oq):
+        _fail7.append(f"孤儿前置「{_oq}」在 obj §4.2(§4.0 的同义复述)**无带 `⏭(孤儿)` 标记的登记行** → 两处已漂移")
+if _orphan_active:
+    print(f"  \033[0;32m✓\033[0m 孤儿前置 owner 活性: {sorted(_orphan_active)}")
 # ④ 反向:不凭空(活文档出现的标记必须在归档件里存在)
 for _mk in sorted((_m40 | _m42 | _mph) - _arch_all):
     _fail7.append(f"{_mk}: 活文档出现该标记,但归档件中**不存在** → 凭空造的移交项")

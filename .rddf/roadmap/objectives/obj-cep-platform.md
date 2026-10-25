@@ -176,10 +176,10 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 |------|--------|-------|------|------|----------------------|
 | **1** | `cpptlm-cep-umbrella` | Stage 0 | **2026-Q4** | ✅ **archived**(2026-10-23;**完成归档**语义 —— tasks **99/99** 全勾 + delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;R10 已按 `§9.3` 闭合,per 台账 Entry #28/#29) | — |
 | **2** | `cpptlm-cep-poc-spike` | Stage 1 | **2027-Q1** | ✅ **archived**(2026-10-24;**完成归档**语义 —— delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`(15 Scenario);tasks **全勾**;critic **7 轮复审**(前 6 轮 REJECT 揭示六类「有牙」缺口 → 全部修复 + mutant 反证,**第 7 轮 APPROVE**,per Entry #49~#54);S1/S2/S3 三 spike 实跑 + ctest 回归门;owner 重指向 per Entry #55) | 原承接的全部装配期前置已**重指向见 §4.2 说明 + Entry #55**(① 定义层已消费;② 建图层→队列 #4;③ 放行闸→全局不变量;M-4 决策→队列 #3;表体→队列 #6;其余→队列 #3 起) |
-| **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | 📋 Planned | **M-4 行为侧决策**(credit 是否独占 VC / `CATEGORY_*→VC` 是否改显式表 —— **零先决条件的纯设计决策**,但改它须同步冻结面 `fabric.schema.json` 的 `vc_count.maximum=4` + lint 第 10 组,per Entry #55) + 承接 **S1-2 / S1-3 / S1-4**(触发条件随首个 `implemented` 实例 / 第 3 张网出现) |
-| **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | 📋 Planned | **S1-7 的 (β) 重评估** + **S1-1 ②建图层**(装配期校验器,**须在装配路径调用** + 输出逐 `(network, vc)` verdict;**禁**离线脚本形态;义务未消费但**判据可计算性已由 S3 spike 实证**/镜像↔权威**抗漂移未实证**,per Entry #55) + 承接 **S1-1** ②建图层 |
+| **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | 📋 Planned | **M-4 行为侧决策**(credit 是否独占 VC / `CATEGORY_*→VC` 是否改显式表 —— **零先决条件的纯设计决策**,但改它须同步冻结面 `fabric.schema.json` 的 `vc_count.maximum=4` + lint 第 10 组,per Entry #55) + 承接 **S1-2 / S1-3 / S1-4**(触发条件随首个 `implemented` 实例 / 第 3 张网出现) **⏭(孤儿)** **M-4 行为侧** |
+| **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | 📋 Planned | **S1-7 的 (β) 重评估** + **S1-1 ②建图层**(装配期校验器,**须在装配路径调用** + 输出逐 `(network, vc)` verdict;**禁**离线脚本形态;义务未消费但**判据可计算性已由 S3 spike 实证**/镜像↔权威**抗漂移未实证**,per Entry #55) + 承接 **S1-1** ②建图层 **⏭(孤儿)** **verdict 逐 `(network, vc)` 标注义务** |
 | **5** | `cpptlm-cep-collective-plane-base` | Stage 1 | **2027-Q4** | 📋 Planned | — |
-| **6** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q1** | 📋 Planned | **S1-7 的 `perm` 形态 schema 演进** + **S1-5 表体 + contract test**(adapter 消息类 → `CATEGORY_*` 显式映射表;输入前置 = #3 的 M-4 决策) + 承接 **S1-5** 表体 + **S1-7** |
+| **6** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q1** | 📋 Planned | **S1-7 的 `perm` 形态 schema 演进** + **S1-5 表体 + contract test**(adapter 消息类 → `CATEGORY_*` 显式映射表;输入前置 = #3 的 M-4 决策) + 承接 **S1-5** 表体 + **S1-7** **⏭(孤儿)** **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期) |
 | **7** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2028-Q2** | 📋 Planned | — |
 | **8** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2028-Q3** | 📋 Planned | — |
 | **9** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2028-Q4** | 📋 Planned | — |
@@ -233,10 +233,10 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | 顺序 | Change | 关联 ADR | 估时 | 承接的 Stage 1 准入前置 |
 |------|--------|----------|------|----------------------|
 | **2** | **`cpptlm-cep-poc-spike`** ← 2026-10-22 新增(P-1,置首位)· ✅ **archived**(2026-10-25;**完成归档**语义 —— delta spec 已合并进 main specs;critic 7 轮复审 → 第 7 轮 APPROVE;装配期前置的逐项分层与 owner 见本行末列,2026-10-24 planner 审查 per Entry #46)** | `ADR-CEP-13`(判据 (b) 的**可执行**判定 = Q-3e)+ `ADR-CEP-09`(顶点升级)+ `ADR-CEP-12`(per-network VC) | **3 周**(spike,非实现) | 装配期前置已**全部重指向**(Entry #55):建图层→队列 #4 / 放行闸→全局不变量 / M-4 决策→队列 #3 / 表体→队列 #6 / 其余→队列 #3 起 |
-| **3** | `cpptlm-cep-stub-cache-core` | ADR-CEP-05 + ADR-CEP-04 stub | 8 周 | **M-4 行为侧决策**(credit 是否独占 VC / `CATEGORY_*→VC` 是否改显式表 —— 纯设计决策,但改它须同步冻结面 `fabric.schema.json` 的 `vc_count.maximum=4` + lint 第 10 组,per Entry #55) |
-| **4** | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周;**已含** S1-1 ②建图层 + 逐 `(network, vc)` verdict 义务,per Entry #55) | **S1-7 的 (β) 重评估**(与 `ADR-CEP-08 决策 4` 组合检查器**同批**,per `ADR-CEP-05 §13.1` 排期约束) + **S1-1 ②建图层**(见 §4.0) |
+| **3** | `cpptlm-cep-stub-cache-core` | ADR-CEP-05 + ADR-CEP-04 stub | 8 周 | **M-4 行为侧决策**(credit 是否独占 VC / `CATEGORY_*→VC` 是否改显式表 —— 纯设计决策,但改它须同步冻结面 `fabric.schema.json` 的 `vc_count.maximum=4` + lint 第 10 组,per Entry #55) **⏭(孤儿)** **M-4 行为侧** |
+| **4** | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周;**已含** S1-1 ②建图层 + 逐 `(network, vc)` verdict 义务,per Entry #55) | **S1-7 的 (β) 重评估**(与 `ADR-CEP-08 决策 4` 组合检查器**同批**,per `ADR-CEP-05 §13.1` 排期约束) + **S1-1 ②建图层**(见 §4.0) **⏭(孤儿)** **verdict 逐 `(network, vc)` 标注义务** |
 | **5** | `cpptlm-cep-collective-plane-base` | ADR-CEP-03 + ADR-CEP-01 | 8 周 | — |
-| **6** | `cpptlm-cep-chi-rnf-subset` | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **S1-7 的 `perm` 形态 schema 演进**(`ADR-CEP-12` 为 schema owner;首个真实使用 schema 的协议 change) |
+| **6** | `cpptlm-cep-chi-rnf-subset` | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **S1-7 的 `perm` 形态 schema 演进**(`ADR-CEP-12` 为 schema owner;首个真实使用 schema 的协议 change) **⏭(孤儿)** **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期) |
 | **7** | `cpptlm-cep-cxl-nonsymmetric` | ADR-CEP-04 + ADR-CEP-03 | 8 周 | — |
 | **8** | `cpptlm-cep-tilelink-tree-manager` | ADR-CEP-04 + ADR-CEP-08 + ADR-CEP-12 | 8 周 | — |
 
@@ -3639,6 +3639,36 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 **⑦ 验收**:`cep_freeze_check.sh` rc=0 · `cep_freeze_reverse_verify.sh` 闭环成立 · `cep_docs_sync_check.sh --strict` rc=0(断言 ③ 新口径)· `cep_doc_ref_check.sh --strict` rc=0 · `ctest` **101/101** · `[cep]` 77 case / 1415 断言 · `format.sh --check` rc=0。
 
 **关联**: Entry #9(原冻结规则)· Entry #55(队列 #2 归档 + 4 裁决)· 2026-10-24 决策 B(B1')落盘
+
+---
+
+### Entry #57 — 2026-10-25 [scope-change]
+
+**主题**: **S1-4 消费登记 + 断言 ⑦ 孤儿前置盲区封堵**(Phase 3 收尾 + Phase 4)
+
+**① S1-4 已消费**(`fabric.json` 纳 M1 冻结集)
+
+- **原判据**(design.md D4.1):⏸ 「规则已登记 · **前提已破**」—— 规则 = Entry #9「`fabric.json` 不冻结,Stage 1 首个 `implemented` 实例跑过后再纳」;触发条件 = 「已被非 spike 的回归门消费」。
+- **消费事实**(Entry #56 已执行):`include/tlm/cep/fabric.json` **已在 M1 冻结集**(成员 30 → 32)→ 规则**已执行**,S1-4 由「⏸ 前提已破」变为 **✅ 已消费**。
+- **owner**:本项在队列 #2 归档时已重指向至**队列 #3+**(随首个 `implemented` 实例 / 第 3 张网出现的**复核节奏**);其「登记」义务由本条闭合。
+
+**② 断言 ⑦ 的孤儿前置盲区封堵(per metis 指出的盲区)**
+
+- **盲区**:断言 ⑦ 的 owner 活性(③)只对**归档件里带 `⏭(移交)` 标记的 S1-N** 生效;而 design.md D4.4 补登的 **3 项孤儿前置**(`M-4 行为侧` / `moesi_gpu`·`mesif` 未排期 / `verdict 逐 (network, vc)` 标注义务)**不在 S1-N 集合内** → 连「有主」都**无机器保护**(metis:机器闸保证「有主」,不保证「主接得住」;孤儿项连前者都没有)。
+- **修法**(断言 ⑦ 新增 ③b / ③c):
+  - **③b** 孤儿前置在活文档用**显式标记** `⏭(孤儿)` 登记;其登记行的 change **若已归档 → 报红**(无主债)。
+  - **③c** 孤儿前置**必须**在 §4.0 **与** §4.2 **两处都有**带标记的登记行(与 ①②「两处已漂移」同构 —— 只在一处登记 = 另一处是陈旧副本)。
+  - **判定用标记而非裸子串**:同一行可能多次提到该项名(如「**M-4 行为侧决策**」+「**⏭(孤儿)** **M-4 行为侧**」)→ 按裸子串判会漏。**这是本条实现过程中被 fixture 抓出的设计缺陷**(首版按裸子串 → 「移除登记行」fixture 恒绿)。
+- **登记落点**:3 项孤儿分别落 **队列 #3**(M-4 行为侧决策)/ **队列 #4**(verdict 逐 `(network, vc)` 标注义务)/ **队列 #6**(`moesi_gpu`/`mesif` 未排期),§4.0 与 §4.2 **两处同步**。
+- **fixture**:新增 **2 条** —— ① 孤儿行的 owner 改成已归档 change → 必须 fire;② 孤儿登记行被移除 → 必须 fire(自检后 24/24)。
+
+**③ 顺带修掉的 1 项 fixture 前提失效**
+
+原 fixture「把 README 的 `30 成员` 改成 `29 成员` → ③ fire」的锚点随 Entry #56 的「消灭字面量」消失 → 改为**语义等价**的新 fixture(注入错误数字 → ③ fire)+ 增 1 条 GREEN 样本(全部无数字 → ③ 豁免)。
+
+**④ 验收**:`cep_gate_selftest` **24/24** · `cep_docs_sync_check.sh --strict` rc=0 · `cep_freeze_reverse_verify.sh` 闭环成立 · 守门 7 项 rc=0 · `ctest` **101/101** · `[cep]` 77 case / 1415 断言 · `format.sh --check` rc=0 · 冻结面 diff=**0**。
+
+**关联**: Entry #55(队列 #2 归档 + owner 重指向)· Entry #56(决策 B 落地 B1')· metis 对抗性分析(盲区指出)
 
 ---
 

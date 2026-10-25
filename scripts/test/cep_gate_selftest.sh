@@ -216,6 +216,33 @@ p = Path(os.environ["RT"] + "/.rddf/roadmap/phases/phase-10.md")
 t = p.read_text(encoding="utf-8")
 p.write_text(t + "\n> 承接 Stage 1 准入前置:S1-9(占位)\n", encoding="utf-8")'
 
+# ── 断言 ⑦ ③b:**孤儿前置**的 owner 活性(2026-10-25 Entry #57)────────
+#   盲区:D4.4 补登的 3 项孤儿前置不在 S1-N 集合内 → 断言 ③ 管不到它们。
+#   ⇒ 活文档用 `⏭(孤儿)` 显式登记;owner 若已归档 → 必须 fire。
+run_case "孤儿前置行的 owner 改成已归档 change → ⑦ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+i = t.index("### 4.0 ")
+j = t.index("\n### ", i + 1)
+sec = t[i:j]
+assert "`cpptlm-cep-stub-cache-core`" in sec, "锚点漂移:§4.0 未含活队列 #3 的 change 名"
+sec = sec.replace("`cpptlm-cep-stub-cache-core`", "`cpptlm-cep-umbrella`", 1)
+p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
+
+run_case "孤儿前置登记行被移除 → ⑦ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
+t = p.read_text(encoding="utf-8")
+i = t.index("### 4.0 ")
+j = t.index("\n### ", i + 1)
+sec = t[i:j]
+# 移除**整个**孤儿标记(判定用标记而非裸子串 —— 同一行还有「M-4 行为侧决策」)
+assert "⏭(孤儿)" in sec, "锚点漂移:§4.0 未含孤儿标记"
+sec = sec.replace("**⏭(孤儿)** **M-4 行为侧** ", "", 1)
+assert "**⏭(孤儿)**" not in sec.split("| **4** |")[0], "移除未生效(§4.0 队列 #3 行)"
+p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
+
 echo ""
 if [ "$FAIL" -eq 0 ]; then
   echo -e "\033[0;32m✅ 闸的回归 fixture 全部通过\033[0m ($PASS 项)"
