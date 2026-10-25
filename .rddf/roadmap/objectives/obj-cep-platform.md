@@ -3744,6 +3744,75 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 
 ---
 
+### Entry #59 — 2026-10-25 [stage-gate]
+
+**主题**: 队列 #3 `cpptlm-cep-stub-cache-core` **Phase 0 实施完成**(M-4 传输层 VC 映射契约闭合)
+
+**① 阶段边界**: **Phase 0 ✅ 完成 → Phase 1(Stub Cache Core 实现)未启动**。change 整体状态**仍为 🟡 Proposed**(未归档);KPI **1/3 不变**(Phase 属同一 change,不额外占 slot)。
+
+**② 交付物(6 个文件,均零行为变更)**
+
+| # | 文件 | 改动性质 |
+|---|------|---------|
+| 1 | `include/tlm/cluster/soc_internal_noc.hh` | **仅注释** —— `VC_DAT` 语义正名(预留 DAT 桶 / 恒 0)+ 冲突输入规则三子项(`计数归属` / `编码归属` / `不仲裁`)。**零逻辑 / 零 API / 零常量改名**(diff 的非注释行 = **0**) |
+| 2 | `test/test_soc_internal_noc_data_flow.cc` | **仅注释** —— 修正陈旧注释(该用例实际写 `CATEGORY_REQUEST` 且只断言 `flits_dispatched()` / `unknown_dst_count()`;**断言集合 0 变化**) |
+| 3 | `test/test_cep_vc_mapping_contract.cc`(新增) | **5 cases / 34 assertions** —— 值域连续性(8 条 `static_assert`)/ 三桶计数随输入改变 / **正控**(注入 `CATEGORY_CREDIT` → `vc_dat_count()` 0→1)/ 冲突输入归属 / 传输层不仲裁(不报错·不纠正·不丢弃) |
+| 4 | `scripts/test/cep_docs_sync_check.sh` | 第 10 组**新增**断言 **④⑤⑥**(BEGIN/END 标记围出的独立 python 块)+ 第 11 组补 BEGIN/END 标记。**既有 ①②③ 零迁移** |
+| 5 | `scripts/test/cep_gate_harness.py` | 支持 `--group 10` / `--group 11`(按标记抽取);`FILES` 新增 3 个输入文件 |
+| 6 | `test/CMakeLists.txt` | 注册 ctest 用例 `cep_vc_mapping_contract`(标签 `[cep][vc-mapping-contract]`) |
+
+**③ 新增 lint 断言 ④⑤⑥ 的判据形态(逐条,守门须与它守护的语义等价)**
+
+| 断言 | 判据 | 反向 fixture(变异必红) |
+|------|------|----------------------|
+| **④** | 禁止正则 `credit[^*]{0,6}流量`(把 `VC_DAT` 说成 credit 流量计数器)+ **要求**存在注释块同时含 `VC_DAT` 与「预留」+ **要求**「恒 0」声明 | ① 改回「本桶统计 credit 流量」→ fire ✅ ② 删除「预留」→ fire ✅ |
+| **⑤** | **注释结构**:`计数归属` / `编码归属` / `不仲裁` 三者同时在场(**取带 markdown 强调的完整形态** —— 裸串「不仲裁」可能只是行文用词)+ **代码等价**:解析 `route_flit()` 函数体(大括号配平),链式核对 `cat = flit.flit_category.read()` → vc 变量由 `cat` 派生 → `++vc_counts_[vc]` | ① 删子项标记 → fire ✅ ② **把计数下标改成源自 `vc_id`** → fire ✅ |
+| **⑥** | `test/test_soc_internal_noc_data_flow.cc` 不得出现 `vc_counts_`(私有成员名 —— 该测试的注释不得传播内部实现细节,旧注释正因此把桶指向写错) | 写回旧注释 → fire ✅ |
+
+> **⑤ 的代码等价部分是关键**:仅查注释等于没查(注释可以说谎)—— 所以断言 ⑤ 同时核对**代码里计数下标的实际来源**。
+
+**④ 三条被实测推翻的立项前提(收官确认)**
+
+| # | 立项时的假设 | 实测结论 |
+|---|------------|---------|
+| 1 | 「改 M-4 须同步 `fabric.schema.json` 的 `vc_count.maximum=4`」 | **不成立** —— 冻结面 diff = **0**(实测 32 成员工作区 0 改动);`vc_count.maximum` 仍为 **4** |
+| 2 | 「lint 第 10 组须迁移」 | **既有 ①②③ 全部不回退**(实测逐条绿);仅**新增** ④⑤⑥ |
+| 3 | 「既有断言需迁移」 | **迁移面 = 0 条断言**(仅 1 处注释文字;`vc_dat_count()` 外部消费者 0 命中) |
+
+**⑤ 验收(全绿,实测)**
+
+| 项 | 实测 |
+|---|---|
+| `openspec validate cpptlm-cep-stub-cache-core --strict` | **rc=0** |
+| `openspec validate --changes --strict` | **rc=0** |
+| `cep_docs_sync_check.sh --strict` | **rc=0**(第 10 组 4 项全绿:① 3 类连续 / ② 无幽灵类别 / ③ `VC_COUNT=4` / ④⑤⑥ 通过) |
+| `cep_doc_ref_check.sh --strict` · `cep_freeze_check.sh` · `cep_archforge_alignment_check.sh` · `cep_decl_alignment_check.sh` · `docs_sync_check.sh` · `test_sh_arg_parsing.sh` | 全 **rc=0** |
+| `cep_gate_selftest.sh` | **31 / 31**(含**新增 7 条**第 10 组 fixture —— 6 条必红 + 1 条防误报必绿) |
+| `ctest --test-dir build -j4` | **102 / 102**(新增 1 个;Phase 0 前为 101) |
+| `format.sh --check` · `markdown_link_check.sh` | 全 **rc=0** |
+| 冻结面 | 32 成员**本次 0 改动**(`authorized_by = Entry #58`;planner 阶段的 2 成员改动已单独授权) |
+| **反向验证自查** | 3 个 C++ 断言逐条变异 → 用例**全部变红**(正控 `vc_dat_count()==1→==0` ❌ · 冲突 `vc_req_count()==1→==0` ❌ · 不丢弃 `received==1→==0` ❌),还原后全绿 |
+
+**⑥ 过程中修掉的三个自身缺陷(第 3 条由实施后对抗式自审发现)**
+
+- **harness 抽取歧义**:第 10 组新增块后,第 11 组的「脚本里唯一的 `python3 - "$PROJECT_ROOT" << 'PYEOF'`」定位假设**失效**(实测导致第 11 组既有 fixture **全部假红**)→ 改为**两组各用 BEGIN/END 标记**定位;标记缺失 / 块被掏空 / 块为空 **均显式 `SystemExit` 响亮失败**(实测退出码 ≠ 0,不静默绿)。
+- **fixture 依赖裸串**:断言 ⑤ 原检查裸串「不仲裁」,而该词在注释里出现 **2 次**(小节标题 + 子项行)→ 替换子项后标题仍命中 → **fixture 恒绿**。改为取**带 markdown 强调的完整形态**,并让 fixture 替换**全部**匹配。
+- **断言 ⑤ 对等价改写误报**(对抗式自审探针 ③ 发现):原判据要求 `const unsigned <vc> = …`,故等价改写 `auto vc = …` 会**误判红**(判据⑥「误报与漏报同为缺陷」)→ 改为「**候选 + 验证**」形态:先取函数体内所有「`X = … <cat> …`」的 X(声明前缀不限),再验证其中至少一个被用作 `++vc_counts_[X]` 的下标。**并补 GREEN fixture**(「等价改写 `auto vc` → 必须不 fire」)锁住该形态。
+  - **实测判别力**:① 计数下标改 `vc_id` → fire ✅ ② 硬编码 `vc_counts_[VC_REQ]` → fire ✅ ③ 等价改写 `auto vc` → **不 fire** ✅
+
+**⑦ 纪律要点**
+
+- **零行为变更**:`include/` + `src/` 的 diff **非注释行 = 0**(实测);`cpptlm_core` 与 23 ABI 零改动。
+- **新断言的回归 fixture** 走 `--group 10`(harness 按标记抽块、在真拷贝临时根上跑),与第 11 组 fixture 同机制。
+- **不可验证条款不进 spec**:`ADR-CEP-05 §3` 契约测试 #1/#4 的降级登记在 Phase 1(T2.6)。
+- **单开发者仓的独立性缺口**:本轮实施与自检由同一 agent 完成 —— **不等价于**真人外部评审;缺口已在 `obj §8.1` R10 登记。
+
+**⑧ 下一步**:Phase 1(Stub Cache Core 实现)—— `tasks.md` 的 T2.1 ~ T2.8 待启动。
+
+**关联**: Entry #58(队列 #3 建 change + M-4 决策落盘)· Entry #55(队列 #2 归档 + owner 重指向)· oracle + metis 两路独立分析(2026-10-25)
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

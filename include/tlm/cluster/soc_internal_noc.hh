@@ -67,7 +67,8 @@ public:
     // 按 flit_category **索引对齐**分桶 (per noc_bundles_tlm.hh:60-62):
     //   - VC_REQ = 0 (CATEGORY_REQUEST, e.g. SDMA bulk DMA write/read req)
     //   - VC_RSP = 1 (CATEGORY_RESPONSE, e.g. VRAM response to SDMA)
-    //   - VC_DAT = 2 (CATEGORY_CREDIT —— **索引对齐**的副产物;当前 CATEGORY_* 无 data 类)
+    //   - VC_DAT = 2 (**预留 DAT 桶** —— 当前无 CATEGORY_* 数据类;CATEGORY_CREDIT 落此桶
+    //              只是**索引对齐的副产物**,且该路径**无实际流量**,见下方「预留 DAT 桶」说明)
     //   - VC_SNP = 3 (当前无 CATEGORY_* 落入此桶 —— 为 snoop 类扩展预留)
     //
     // ⚠️ **索引对齐约束**(M-4,per docs/implementation/2026-10-21-cep-archforge-response-receipt.md §8.4.3):
@@ -78,6 +79,17 @@ public:
     //      (per ADR-CEP-12 §8 IC2 ③ 分层纪律),**不**扩本层。
     //    → 本注释块与 noc_bundles_tlm.hh 的 CATEGORY_* 集合由 lint 第 10 组机器校验
     //      (scripts/test/cep_docs_sync_check.sh),防止再出现「幽灵类别」。
+    //
+    // 📌 **预留 DAT 桶**(M-4 行为侧裁决,2026-10-25,per change
+    //    `cpptlm-cep-stub-cache-core` design.md D4 + delta capability `cep-vc-mapping-contract`):
+    //    · `VC_DAT` 是**预留**的数据通道桶,**当前无任何 CATEGORY_* 数据类**落入;
+    //    · `CATEGORY_CREDIT` 按索引落到本桶是**副产物**,而该 credit flit 走
+    //      `include/framework/bidirectional_port_adapter.hh` 的 ChStream port 发出,
+    //      **不经** route_flit() ⇒ 本桶在**所有真实路径中恒为 0**;
+    //    · 本桶**不是** credit 通道 —— 把本桶(或 vc_dat_count())说成 credit 计数器
+    //      是错的(那描述的是一个从未发生的流量);
+    //    · 协议层的 credit 语义(流控类别,**不单独占 VC**)归 ArchForge `32 号 §6.0.1`
+    //      排除表裁决,本仓**不重新裁决**。
     static constexpr unsigned VC_REQ = 0;
     static constexpr unsigned VC_RSP = 1;
     static constexpr unsigned VC_DAT = 2;
@@ -120,6 +132,18 @@ public:
     //   + 增 vc_counts_[flit_category] 计数 (ARM CHI 4 VC 物理对应, 即使 dst 未知也增)
     // 未知 dst_node (>3) → unknown_dst_count++ + 0 crash (D.2 优雅降级, flits_dispatched_ 不增)
     // nullptr accept_fn + 路由触发 → 0 crash (D.2 优雅降级, flits_dispatched_ 仍增)
+    //
+    // ⚠️ **冲突输入规则**(M-4 行为侧裁决,2026-10-25,per change
+    //    `cpptlm-cep-stub-cache-core` design.md D5 + delta capability `cep-vc-mapping-contract`):
+    //    `NoCFlitBundle` 同时携带 `vc_id` 与 `flit_category` 两个字段(两者都写),
+    //    二者**可以不一致**(如 `vc_id=VC_DAT` + `flit_category=CATEGORY_REQUEST`)。
+    //    归属规则(传输层**不仲裁**):
+    //      · **计数归属** = `flit_category` —— route_flit() 以 `cat` 直接作 vc_counts_ 桶下标;
+    //      · **编码归属** = `vc_id` —— `chip_select = (vc << 4) | src` 用 `vc_id` 的值参与计算;
+    //      · **不仲裁**:传输层**不报错、不纠正、不丢弃**该 flit。
+    //    **为什么由传输层「不仲裁」**:仲裁需要**一致性词表**知识(6 类消息类 ↔ CATEGORY_*),
+    //    那是 **adapter 层**的职责(per ADR-CEP-12 §8 IC2 ③ 分层纪律;显式映射表归队列 #6);
+    //    传输层加校验 = 把**协议层语义泄漏进物理层** = 越权。
     void route_flit(const bundles::NoCFlitBundle& flit) noexcept {
         const uint32_t dst = flit.dst_node.read();
         const uint8_t  cat = flit.flit_category.read();
@@ -176,9 +200,15 @@ public:
     uint64_t vc_req_count() const noexcept { return vc_counts_[VC_REQ]; }
     uint64_t vc_rsp_count() const noexcept { return vc_counts_[VC_RSP]; }
     uint64_t vc_dat_count() const noexcept { return vc_counts_[VC_DAT]; }
-    // ⚠️ **语义遗留**:VC_DAT 桶当前由 CATEGORY_CREDIT 占据(索引对齐的副产物),
-    //    故 vc_dat_count() 实际统计的是 **credit 流量**,不是数据流量。
-    //    改映射需单独决策(per 台账 Entry #11 ④ 的遗留声明)。
+    // 📌 **预留 DAT 桶,当前恒 0**(M-4 行为侧裁决,2026-10-25,per change
+    //    `cpptlm-cep-stub-cache-core` design.md D4 + delta capability `cep-vc-mapping-contract`):
+    //    · `VC_DAT` 是**预留**的数据通道桶,当前**无任何 CATEGORY_* 数据类**落入;
+    //    · `CATEGORY_CREDIT` 按索引落到本桶是**副产物**,而该 credit flit 走 ChStream port
+    //      发出、**不经** route_flit() ⇒ 本计数在**所有真实路径中恒为 0**;
+    //    · 本 accessor **不是** credit 计数器 —— 把它说成 credit 计数器是错的
+    //      (那描述的是一个从未发生的流量);
+    //    · 桶名与本 accessor **不改名、不弃用**(`VC_DAT` 已进入 `chip_select=(vc<<4)|src`
+    //      的跨模块 wire 编码契约;本类属**已归档** e1 change 的产物)。
     uint64_t vc_snp_count() const noexcept { return vc_counts_[VC_SNP]; }
 
     void do_reset(const ResetConfig& config) override {

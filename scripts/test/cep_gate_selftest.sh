@@ -18,11 +18,11 @@ HARNESS="scripts/test/cep_gate_harness.py"
 PASS=0
 FAIL=0
 
-run_case() {   # $1=名字 $2=期望(0=绿 / 1=红) $3=变异 python 代码
-  local name="$1" want="$2" code="$3"
+run_case() {   # $1=名字 $2=期望(0=绿 / 1=红) $3=变异 python 代码  [$4=组号,默认 11]
+  local name="$1" want="$2" code="$3" group="${4:-11}"
   local out rc
-  out="$(python3 "$HARNESS" --mutate "$code" 2>&1)"
-  rc="$(printf '%s\n' "$out" | sed -n 's/.*第 11 组 rc = \([0-9]\).*/\1/p' | tail -1)"
+  out="$(python3 "$HARNESS" --group "$group" --mutate "$code" 2>&1)"
+  rc="$(printf '%s\n' "$out" | sed -n "s/.*第 $group 组 rc = \([0-9]\).*/\1/p" | tail -1)"
   [ -z "$rc" ] && rc="?"
   if [ "$rc" = "$want" ]; then
     printf "  \033[0;32m✓\033[0m %-52s rc=%s (期望 %s)\n" "$name" "$rc" "$want"
@@ -244,6 +244,82 @@ n = sec.count("⏭(孤儿)")
 sec = sec.replace("⏭(孤儿)", "", n)
 assert "⏭(孤儿)" not in sec, "移除未生效"
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
+
+# ── 第 10 组断言 ④⑤⑥:M-4 契约(Phase 0,per Entry #58)───────────────
+# 背景:断言 ④⑤⑥ 是**新增**的(per change `cpptlm-cep-stub-cache-core`
+# design.md D4 / D5)。它们守护的是**注释契约 + 一处代码等价**,所以必须有
+# **反向 fixture** —— 否则「断言声称能 fire」与「断言真能 fire」无法区分。
+# ⚠️ 这组走 `--group 10`(harness 按 BEGIN/END 标记抽第 10 组的块)。
+echo ""
+echo -e "\033[1m第 10 组(M-4 契约)—— 回归 fixture\033[0m"
+
+run_case "第 10 组基线(无变异)" 0 'pass' 10
+
+# 断言 ④:把 VC_DAT 的语义改回「credit 流量计数器」→ 必须 fire
+run_case "断言 ④:VC_DAT 改回「credit 流量计数器」→ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/include/tlm/cluster/soc_internal_noc.hh")
+t = p.read_text(encoding="utf-8")
+old = "· 本桶**不是** credit 通道"
+assert t.count(old) == 1, "锚点漂移:未找到「本桶**不是** credit 通道」"
+t = t.replace(old, "· 本桶统计 credit 流量", 1)
+p.write_text(t, encoding="utf-8")' 10
+
+# 断言 ④:删掉「预留」语义 → 必须 fire
+run_case "断言 ④:删除「预留」语义 → 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/include/tlm/cluster/soc_internal_noc.hh")
+t = p.read_text(encoding="utf-8")
+n = t.count("预留")
+assert n > 0, "锚点漂移:未找到「预留」"
+t = t.replace("预留", "数据通道", n)
+p.write_text(t, encoding="utf-8")' 10
+
+# 断言 ⑤:删掉「不仲裁」子项 → 必须 fire
+#   ⚠️ 该标记在文件里出现 **2 次**(小节标题 + 子项行)⇒ 替换**全部**,
+#      否则「子项行删了、标题还在」会漏检(判据④:夹具的判别属性必须自守)。
+run_case "断言 ⑤:删除「不仲裁」子项 → 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/include/tlm/cluster/soc_internal_noc.hh")
+t = p.read_text(encoding="utf-8")
+old = "**不仲裁**"
+n = t.count(old)
+assert n >= 1, "锚点漂移:未找到「**不仲裁**」"
+t = t.replace(old, "**自行处置**")
+p.write_text(t, encoding="utf-8")' 10
+
+# 断言 ⑤ 的**代码等价**部分:把计数下标改成源自 vc_id → 必须 fire
+# (只查注释是不够的 —— 注释可以说谎,代码不会)
+run_case "断言 ⑤:计数下标改成 vc_id → 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/include/tlm/cluster/soc_internal_noc.hh")
+t = p.read_text(encoding="utf-8")
+old = "flit.flit_category.read()"
+assert t.count(old) == 1, "锚点漂移:未找到 `flit.flit_category.read()`"
+t = t.replace(old, "flit.vc_id.read()", 1)
+p.write_text(t, encoding="utf-8")' 10
+
+# 断言 ⑤ 的**误报防护**:等价改写 `const unsigned vc` → `auto vc` 必须 GREEN
+#   (判据⑥:误报与漏报同为缺陷 —— 断言不得因等价形态而判红)
+run_case "断言 ⑤:等价改写 auto vc(应不 fire)" 0 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/include/tlm/cluster/soc_internal_noc.hh")
+t = p.read_text(encoding="utf-8")
+old = "const unsigned vc = (cat < VC_COUNT) ? cat : VC_SNP;"
+assert t.count(old) == 1, "锚点漂移:未找到 vc 声明"
+t = t.replace(old, "auto vc = (cat < VC_COUNT) ? cat : VC_SNP;", 1)
+p.write_text(t, encoding="utf-8")' 10
+
+# 断言 ⑥:把陈旧注释写回 test 文件 → 必须 fire
+#   ⚠️ 用例名**不用反引号** —— 双引号内的反引号会被 shell 当命令替换。
+run_case '断言 ⑥:test 文件写回 vc_counts_[2] → 必须 fire' 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/test/test_soc_internal_noc_data_flow.cc")
+t = p.read_text(encoding="utf-8")
+old = "**不是** VC_DAT 桶"
+assert t.count(old) == 1, "锚点漂移:未找到「**不是** VC_DAT 桶」"
+t = t.replace(old, "但 vc_counts_[2] (DAT VC) 仍增", 1)
+p.write_text(t, encoding="utf-8")' 10
 
 echo ""
 if [ "$FAIL" -eq 0 ]; then

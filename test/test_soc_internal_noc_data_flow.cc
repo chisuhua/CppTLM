@@ -105,8 +105,11 @@ TEST_CASE("E1.1 DataNoC: GMMU TLB verification (per 既已实现 32-entry direct
     SocInternalNoc soc_noc("soc_noc", nullptr);
 
     // GMMU 不接 NoC (per CRITICAL C2: GMMU 独立 memory client bypass mesh NoC)
-    // 验证: route_flit(dst=GMMU) → unknown_dst 不增 flits_dispatched_, 但 vc_counts_[2] (DAT VC)
-    // 仍增
+    // 验证: route_flit(dst=GMMU) → GMMU 是 **known dst**(4 个合法 dst 之一)但**无 accept_fn 注册**
+    //   → flits_dispatched_ 增 1,unknown_dst_count_ 不增;
+    //   计数归属 = flit_category = CATEGORY_REQUEST ⇒ 增的是 VC_REQ 桶,
+    //   **不是** VC_DAT 桶 —— 旧注释此处指向 VC_DAT,与实际行为不符,已修正
+    //   (per change `cpptlm-cep-stub-cache-core` design.md D9 / A-P0-3)
     NoCFlitBundle gmmu_flit{};
     gmmu_flit.dst_node.write(SocInternalNoc::NODE_ID_GMMU);
     gmmu_flit.flit_category.write(NoCFlitBundle::CATEGORY_REQUEST);

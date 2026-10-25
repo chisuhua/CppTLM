@@ -647,11 +647,158 @@ else
     fail "VC_COUNT($VC_COUNT_DECL) 与 soc_internal_noc.hh 的「4 独立 VC」声明不一致"
 fi
 
+# ── CEP-GATE-10-BEGIN ───────────────────────────────────────────────
+# 断言 ④⑤⑥ —— M-4 行为侧契约的机器化(Phase 0,per change
+# `cpptlm-cep-stub-cache-core` design.md D4 / D5 + delta capability
+# `cep-vc-mapping-contract`)。
+#
+# ⚠️ **为什么是独立 python 块**:断言 ④⑤⑥ 依赖 `include/tlm/cluster/` 与 `test/`
+#    两个目录的文件(第 10 组的前 3 条只依赖 `include/bundles/`),而
+#    `scripts/test/cep_gate_harness.py` 的「抽取一个 python 块跑在真拷贝临时根上」
+#    机制需要一个**可定位的独立块** ⇒ 用 BEGIN/END 标记围出。
+#    标记是 harness 的契约 —— 改标记会让闸的自检 fixture 失效(响亮失败,非静默)。
+#
+# 三条断言的**分工**(守门须与它守护的命令等价 —— 判据⑤):
+#   ④ **语义正名**:`VC_DAT` / `vc_dat_count()` 不得被说成 credit 计数器
+#     (那描述的是一个**从未发生的流量** —— 实测该桶在所有真实路径中恒为 0),
+#     且**必须**声明「预留」+「恒 0」语义;
+#   ⑤ **冲突输入规则**:三个子项(计数归属 / 编码归属 / 不仲裁)**结构齐全**
+#     **且代码等价**(计数下标须源自 `flit_category` —— 只查注释等于没查);
+#   ⑥ **陈旧注释防护**:`test_soc_internal_noc_data_flow.cc` 不得引用私有成员
+#     `vc_counts_`(旧注释正因此把桶指向写错)。
+python3 - "$PROJECT_ROOT" << 'PYEOF'
+import os, re, sys
+
+root = sys.argv[1]
+failed = []
+
+NOC_REL = "include/tlm/cluster/soc_internal_noc.hh"
+FLOW_REL = "test/test_soc_internal_noc_data_flow.cc"
+
+
+def _read(rel):
+    p = os.path.join(root, rel)
+    if not os.path.exists(p):
+        return None
+    with open(p, encoding="utf-8") as f:
+        return f.read()
+
+
+def _comment_blocks(text):
+    """把连续的 `//` 注释行切成块(空行 / 非注释行断开)。"""
+    blocks, cur = [], []
+    for ln in text.split("\n"):
+        s = ln.strip()
+        if s.startswith("//"):
+            cur.append(s)
+        else:
+            if cur:
+                blocks.append("\n".join(cur))
+                cur = []
+    if cur:
+        blocks.append("\n".join(cur))
+    return blocks
+
+
+def _line_of(text, pos):
+    return text[:pos].count("\n") + 1
+
+
+noc = _read(NOC_REL)
+flow = _read(FLOW_REL)
+
+if noc is None:
+    failed.append(f"断言④⑤⑥: 找不到 {NOC_REL}")
+if flow is None:
+    failed.append(f"断言④⑤⑥: 找不到 {FLOW_REL}")
+
+if noc is not None:
+    blocks = _comment_blocks(noc)
+
+    # ── 断言 ④:VC_DAT 语义正名 ──────────────────────────────────────
+    # 禁止:把本桶(或 vc_dat_count())说成 credit 流量计数器 —— 该流量从未发生。
+    #   正则取**旧注释的精确指纹**(`credit` 后仅允许空白 / markdown 强调符,
+    #   紧邻「流量」)—— 不用 `credit[^…]{0,6}流量` 这类宽窗口,否则未来
+    #   合法文本(如「credit 类别与数据流量」)会**误报**
+    #   (判据⑥:误报与漏报同为缺陷)。
+    bad = re.search(r"credit\s*\**\s*流量", noc)
+    if bad:
+        failed.append(
+            f"断言④: {NOC_REL}:{_line_of(noc, bad.start())} 仍把 VC_DAT 说成 credit 流量计数器"
+            f"(匹配 `{bad.group(0).strip()}`)—— 该描述的是从未发生的流量"
+        )
+    if not any(("VC_DAT" in b and "预留" in b) for b in blocks):
+        failed.append(f"断言④: {NOC_REL} 无任何注释块同时声明「VC_DAT」与「预留」语义")
+    if not re.search(r"恒\s*(为)?\s*\**\s*0", noc):
+        failed.append(f"断言④: {NOC_REL} 未声明 VC_DAT 当前「恒 0」")
+
+    # ── 断言 ⑤:冲突输入规则(注释结构 + 代码等价)──────────────────
+    #   子项标记取**带 markdown 强调**的完整形态(`**计数归属**` 等)——
+    #   裸串「不仲裁」可能只是行文里的普通用词,不能算「规则在场」。
+    missing = [m for m in ("**计数归属**", "**编码归属**", "**不仲裁**") if m not in noc]
+    if missing:
+        failed.append(
+            f"断言⑤: {NOC_REL} 的冲突输入规则缺子项 {missing} —— "
+            "「**计数归属** / **编码归属** / **不仲裁**」三者必须同时在场"
+        )
+    m_fn = re.search(r"void\s+route_flit\s*\([^)]*\)\s*noexcept\s*\{", noc)
+    if not m_fn:
+        failed.append(f"断言⑤: {NOC_REL} 未找到 route_flit() 定义 —— 计数归属不可核对")
+    else:
+        i = noc.index("{", m_fn.end() - 1)
+        depth = 0
+        j = i
+        for j in range(i, len(noc)):
+            if noc[j] == "{":
+                depth += 1
+            elif noc[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+        body = noc[i:j + 1]
+        m_cat = re.search(r"(\w+)\s*=\s*flit\s*\.\s*flit_category\s*\.\s*read\s*\(\s*\)", body)
+        if not m_cat:
+            failed.append(
+                "断言⑤: route_flit() 内未找到 `cat = flit.flit_category.read()` —— "
+                "计数归属(flit_category)与注释不符"
+            )
+        else:
+            cat = m_cat.group(1)
+            # 候选 = 函数体内所有「X = … <cat> …」的 X(声明前缀不限 ——
+            #   `const unsigned` / `auto` / `unsigned` 等**等价形态都不该误报**,
+            #   判据⑥:误报与漏报同为缺陷)。再验证**其中至少一个** X 被用作
+            #   `++vc_counts_[X]` 的下标。
+            cands = set(re.findall(r"\b(\w+)\s*=\s*[^;]*?\b" + re.escape(cat) + r"\b", body))
+            hit = [c for c in sorted(cands)
+                   if re.search(r"\+\+\s*vc_counts_\s*\[\s*" + re.escape(c) + r"\s*\]", body)]
+            if not hit:
+                failed.append(
+                    f"断言⑤: route_flit() 内 `++vc_counts_[…]` 的下标**未**由 `{cat}`(=flit_category)"
+                    f" 派生(由 `{cat}` 派生的候选:{sorted(cands) or '无'})—— 计数归属与注释不符"
+                )
+
+if flow is not None and "vc_counts_" in flow:
+    pos = flow.index("vc_counts_")
+    failed.append(
+        f"断言⑥: {FLOW_REL}:{_line_of(flow, pos)} 引用了私有成员 `vc_counts_` —— "
+        "该测试的注释不得传播内部实现细节(旧注释正因此把桶指向写错)"
+    )
+
+if failed:
+    for f in failed:
+        print("  \033[0;31m✗\033[0m " + f)
+    sys.exit(1)
+print("  \033[0;32m✓\033[0m 断言 ④⑤⑥ 通过(VC_DAT 语义正名 / 冲突输入规则含代码等价 / 陈旧注释防护)")
+PYEOF
+if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
+# ── CEP-GATE-10-END ─────────────────────────────────────────────────
+
 echo ""
 echo -e "${BLUE}[11/11] 归档后状态一致性(7 类客观断言)${NC}"
 # ⚠️ 2026-10-23(Entry #32)重新设计:前两版的「散文语义正则」被 critic 实测出
 #    10/13 同义改述绕过 + 行尾贴白名单词即可绕过 → 属 overclaim。
 #    本版只做**客观可判定**的断言(数字 / 同行关联 / glob 覆盖),不再声称「理解语义」。
+# ── CEP-GATE-11-BEGIN ───────────────────────────────────────────────
 python3 - "$PROJECT_ROOT" << 'PYEOF'
 import json, os, re, subprocess, sys
 root = sys.argv[1]
@@ -1133,6 +1280,7 @@ if failed:
     sys.exit(1)
 PYEOF
 if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
+# ── CEP-GATE-11-END ─────────────────────────────────────────────────
 
 echo ""
 echo "════════════════════════════════════════"

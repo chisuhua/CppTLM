@@ -20,6 +20,7 @@
 python3 scripts/test/cep_gate_harness.py                 # 基线:6 条断言全绿,rc=0
 python3 scripts/test/cep_gate_harness.py --mutate '<python 代码>'   # 先变异临时根,再跑
 python3 scripts/test/cep_gate_harness.py --mutate-file /path/to/mut.py
+python3 scripts/test/cep_gate_harness.py --group 10       # 抽第 10 组的块(断言 ④⑤⑥)
 ```
 
 **只看本进程的 rc**(0 = 全绿,1 = 有断言报红),不要看整脚本 rc。
@@ -55,9 +56,22 @@ FILES = [
     # 断言 ⑧(S1 有效期检测)的输入 —— 不纳入则闸自检里该断言被 skip(覆盖缺口,critic S-4)
     "examples/cep_poc_spike_s1.cc",
     "include/tlm/cep/protocol_instance.schema.json",
+    # 第 10 组断言 ④⑤⑥ 的输入(M-4 契约:VC_DAT 语义正名 / 冲突输入规则 / 陈旧注释防护)
+    "include/bundles/noc_bundles_tlm.hh",
+    "include/tlm/cluster/soc_internal_noc.hh",
+    "test/test_soc_internal_noc_data_flow.cc",
 ]
 
 CHECKER = "scripts/test/cep_docs_sync_check.sh"
+
+# 两组的 python 块各用 BEGIN/END 标记围出 —— 标记是**闸与本 harness 之间的契约**:
+# 改标记会让 fixture 失效(响亮失败,非静默)。
+#   第 10 组:断言 ④⑤⑥(M-4 契约:VC_DAT 语义正名 / 冲突输入规则 / 陈旧注释防护)
+#   第 11 组:状态一致性闸(既有)
+GROUP_MARKERS = {
+    "10": ("# ── CEP-GATE-10-BEGIN ──", "# ── CEP-GATE-10-END ──"),
+    "11": ("# ── CEP-GATE-11-BEGIN ──", "# ── CEP-GATE-11-END ──"),
+}
 
 
 def cleanup_root():
@@ -79,17 +93,40 @@ def build_root():
     shutil.copytree(os.path.join(R, "openspec"), os.path.join(RT, "openspec"))
 
 
-def extract_block():
-    """把第 11 组的 python 块原样抽出。"""
+def extract_block(group="11"):
+    """把目标组的 python 块原样抽出。
+
+    两组各由 BEGIN/END 标记定位(标记是契约 —— 漂移即响亮失败):
+      group="10" —— 传输层 CATEGORY_* 分层纪律的**新增**块(断言 ④⑤⑥,M-4 契约)
+      group="11" —— 状态一致性闸(既有)
+    """
+    if group not in GROUP_MARKERS:
+        raise SystemExit(f"❌ 未知组号 {group} —— 只支持 {sorted(GROUP_MARKERS)}")
+    begin, end = GROUP_MARKERS[group]
     src = open(os.path.join(R, CHECKER), encoding="utf-8").read()
-    start = src.index("python3 - \"$PROJECT_ROOT\" << 'PYEOF'")
-    end = src.index("\nPYEOF", start)
-    body = src[start:end].split("\n", 1)[1]
+    if begin not in src or end not in src:
+        raise SystemExit(f"❌ 第 {group} 组的 BEGIN/END 标记缺失 —— 抽取失败(标记是契约,不可静默漂移)")
+    i = src.index(begin)
+    j = src.index(end, i)
+    seg = src[i:j]
+    needle = "python3 - \"$PROJECT_ROOT\" << 'PYEOF'"
+    if needle not in seg:
+        raise SystemExit(
+            f"❌ 第 {group} 组的 BEGIN/END 标记之间没有 python 块 —— 抽取失败(桶被掏空?)"
+        )
+    start = seg.index(needle)
+    stop = seg.index("\nPYEOF", start)
+    body = seg[start:stop].split("\n", 1)[1]
+    if not body.strip():
+        raise SystemExit(f"❌ 第 {group} 组的 python 块为空 —— 抽取失败(空块会恒绿,属静默失守)")
     return body
 
 
 def main():
     build_root()
+    group = "11"
+    if "--group" in sys.argv:
+        group = sys.argv[sys.argv.index("--group") + 1]
     if "--mutate" in sys.argv:
         code = sys.argv[sys.argv.index("--mutate") + 1]
         # prelude:变异代码统一可用 `sub()`(锚点唯一性断言 → 漂移即响亮失败)
@@ -112,12 +149,12 @@ def main():
             print(f"❌ 变异脚本失败 rc={p.returncode} —— 变异未生效,本次结果**不可信**")
             return 2
     blk = os.path.join(RT, "_gate_block.py")
-    open(blk, "w", encoding="utf-8").write(extract_block())
+    open(blk, "w", encoding="utf-8").write(extract_block(group))
     p = subprocess.run(["python3", blk, RT], capture_output=True, text=True)
     print(p.stdout.rstrip())
     if p.stderr.strip():
         print("STDERR:", p.stderr.strip()[:600])
-    print(f"→ 第 11 组 rc = {p.returncode} (0 = 全绿;1 = 有断言报红)")
+    print(f"→ 第 {group} 组 rc = {p.returncode} (0 = 全绿;1 = 有断言报红)")
     return p.returncode
 
 

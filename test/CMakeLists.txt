@@ -235,6 +235,12 @@ add_test(NAME cep_tools_contract COMMAND cpptlm_tests "[cep][tools]" -r compact)
 add_test(NAME cep_dummy_signals COMMAND cpptlm_tests "[cep][dummy-signals]" -r compact)
 add_test(NAME cep_module_factory_seam COMMAND cpptlm_tests "[cep][module-factory-seam]" -r compact)
 add_test(NAME cep_contracts_crosscheck COMMAND cpptlm_tests "[cep][contract]" -r compact)
+# 传输层 CATEGORY_* → VC 桶映射契约(Phase 0,per change `cpptlm-cep-stub-cache-core`
+# 的 delta capability `cep-vc-mapping-contract`;M-4 行为侧决策的可执行回归)
+# ⚠️ ctest NAME **不含** `cep_vc_mapping` 之外的额外前缀 —— `[cep]` 已被 `cep_all` 覆盖,
+#    本用例是**独立**标签,便于单独核验 M-4 契约。
+add_test(NAME cep_vc_mapping_contract
+         COMMAND cpptlm_tests "[cep][vc-mapping-contract]" -r compact)
 add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
 # CEP 契约同步 lint(ADR 存在性 / invariant 计数单一真源 / P 编号口径 / 4 件套)
 add_test(NAME cep_docs_sync_check
