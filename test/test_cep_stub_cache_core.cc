@@ -539,12 +539,15 @@ TEST_CASE("CEP Stub: 不引入 status != planned 的协议实例声明", "[cep][
     namespace fs = std::filesystem;
     const fs::path root = CPPTLM_SOURCE_DIR;
 
-    // 扫描本 change 的产物目录 + 本 stub 头文件所在目录,查找**声明文件**
+    // 扫描本 change 的归档件目录,查找**声明文件**
     //   (协议实例声明的载体 = 含 "protocol_instance" 的 JSON)
+    // ⚠️ **扫描集刻意不覆盖 `include/tlm/cep/`**——队列 #4 起,同目录下会出现
+    //   **其它 change** 的协议实例声明(per 2026-10-25 队列 #4 Entry #62:
+    //   `include/tlm/cep/protocol_instances.json` status=planned)。本断言守护的是
+    //   **队列 #3 的 change 不引入**,scope 超出 change 的产物必然误报(判据⑥)。
     std::vector<std::string> decl_files;
     const std::vector<fs::path> roots = {
-        root / "openspec/changes/cpptlm-cep-stub-cache-core",
-        root / "include/tlm/cep",
+        root / "openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core",
     };
     for (const auto& r : roots) {
         if (!fs::exists(r))
