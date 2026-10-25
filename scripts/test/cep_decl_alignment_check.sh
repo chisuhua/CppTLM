@@ -84,6 +84,10 @@ def strict_equal(a, b):
     return a == b
 
 
+# 「键不存在」与「键存在但值为 JSON null」必须可区分(`None == None` 会让两者相等)
+_MISSING = object()
+
+
 def read_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
@@ -297,6 +301,7 @@ def archforge_channel_edges():
     if not m:
         return None, "未找到 §6.0.3 节(章节号或标题已变)"
     out = {}
+    row_networks = []          # 表格里**出现过**的网络行(用于区分「格式漂移」与「副本多网络」)
     for line in m.group(1).splitlines():
         s = line.strip()
         if not s.startswith("|"):
@@ -307,13 +312,20 @@ def archforge_channel_edges():
         net = cells[0].strip("`").strip()
         if not re.fullmatch(r"[a-z0-9_]+", net):
             continue
+        row_networks.append(net)
         edges = set()
         for em in re.finditer(r"VC(\d+)\s*→\s*VC(\d+)", cells[1]):
             edges.add((int(em.group(1)), int(em.group(2))))
         if edges:
             out[net] = edges
-    if not out:
-        return None, "§6.0.3 表未解析出任何通道依赖边"
+    if not row_networks:
+        return None, "§6.0.3 表未解析出任何网络行"
+    # 行存在却抽不出边 ⇒ 箭头/列格式已变(如 `VC0->VC1`)。必须报「格式漂移」而不是静默缺网 ——
+    # 否则会误报成「派生副本含 ArchForge 未声明的网络边表」,把运维引去查副本。
+    missing = [n for n in row_networks if n not in out]
+    if missing:
+        return None, (f"§6.0.3 表格行 {missing} 存在但抽不出 VC 边"
+                      f"(箭头格式已变?期望 `VC<i>→VC<j>`)")
     return out, None
 
 
@@ -370,8 +382,9 @@ else:
             continue
         local = repo_insts[rid]
         for key in sorted(set(local) | set(d)):
-            # 类型也要严格相等,且**递归**(含嵌套 dict/list 内部)
-            if not strict_equal(local.get(key), d.get(key)):
+            # 类型也要严格相等,且**递归**(含嵌套 dict/list 内部);
+            # 键只存在于一侧时用 _MISSING 哨兵(否则两侧都 `.get()` 得 None ⇒ 漏报)
+            if not strict_equal(local.get(key, _MISSING), d.get(key, _MISSING)):
                 err(6, f"{rid}.{key} 与 ArchForge 不符(派生副本已漂移)")
     extra_ids = set(repo_insts) - set(ids)
     if extra_ids:

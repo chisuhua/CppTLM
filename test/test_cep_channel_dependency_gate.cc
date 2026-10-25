@@ -395,6 +395,25 @@ TEST_CASE("CEP ChannelGate: 声明源配置错误 ⇒ FAIL(≠ SKIP)", "[cep][ch
     nlohmann::json empty_array;
     empty_array["cep"] = nlohmann::json{{"protocol_instances", nlohmann::json::array()}};
     CHECK(cep::run_channel_gate(empty_array).verdict == cep::GateVerdict::FAIL);
+
+    // ⑦ `instances` 数组里混入非对象项 ⇒ FAIL(不得 PASS 且 0 顶点 0 边 —— 那是绿灯无牙)
+    nlohmann::json junk_items;
+    junk_items["cep"] = nlohmann::json{
+        {"protocol_instances",
+         nlohmann::json{{"instances", nlohmann::json::array({42, "junk", nullptr})}}}};
+    const auto r7 = cep::run_channel_gate(junk_items);
+    CHECK(r7.verdict == cep::GateVerdict::FAIL);
+    CHECK(r7.to_log().find("不是对象") != std::string::npos);
+    // ordering gate 必须**对称**判 FAIL(否则日志出现「配置错误 / 没有实例」自相矛盾)
+    CHECK(cep::run_ordering_gate(junk_items).verdict == cep::GateVerdict::FAIL);
+
+    // ⑧ 实例对象缺非空 `id` ⇒ FAIL(同样不得当作可检查实例)
+    nlohmann::json no_id;
+    no_id["cep"] =
+        nlohmann::json{{"protocol_instances",
+                        nlohmann::json{{"instances", nlohmann::json::array({{{"family", "x"}}})}}}};
+    CHECK(cep::run_channel_gate(no_id).verdict == cep::GateVerdict::FAIL);
+    CHECK(cep::run_channel_gate(no_id).to_log().find("缺少非空") != std::string::npos);
 }
 
 // ═════════════════════════════════════════════════════════════════════

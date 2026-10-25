@@ -4189,7 +4189,7 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 | 成员 | 改什么 |
 |------|--------|
 | `openspec/specs/cep-channel-dependency-gate/spec.md` | **追加** 2 Scenario（声明源配置错误 ⇒ FAIL / 边表逐边 = §6.0.3）+ 补 `## Purpose`；原 7 Scenario **一字未改** |
-| `openspec/specs/cep-sharer-tracker-base/spec.md` | 仅补 `## Purpose`（占位句替换），Scenario **0 变动** |
+| `openspec/specs/cep-sharer-tracker-base/spec.md` | 补 `## Purpose` + **追加 1 Scenario**（拒绝/no-op 语义，见 ⑦ SF-4）；原 9 Scenario 一字未改 |
 | `openspec/specs/cep-ordering-point-checker/spec.md` | 同上 |
 | 其余 34 个成员 | **0 diff** |
 
@@ -4199,14 +4199,33 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 
 | 项 | 值 |
 |---|---|
-| `[cep]` | **124 cases / 2076 assertions**（修前 122 / 2050）|
-| 新增用例 | +2（Scenario 8 B2 / Scenario 10 S1·S2·S3 边界）；assertions +26 |
+| `[cep]` | **124 cases / 2081 assertions**（修前 122 / 2050）|
+| 新增用例 | +2（Scenario 8 B2 / Scenario 10 S1·S2·S3 边界）；assertions +31 |
+| 反向验证 | `cep_decl_reverse_verify` **16 条**全过（原 12 → 16，见 ⑦ B-NEW-1）|
 | 反向验证 | B1 改边 ⇒ 报红（缺边+多边两条明细）· S7 `false→0` ⇒ 报红 · S7 `int→float` ⇒ 报红 · B2 6 形态 ⇒ FAIL |
 | 正控 | S1 handle 满后首条目仍存活 · S2 仅已映射位接受 · S3 真 retire 恰好 1 次 |
 | 守门 | 7 项 rc=0（含 `cep_freeze_check`，本 entry 授权后）· `cep_gate_selftest` 31/31 |
 | `openspec validate <cap> --strict` | 3 份 main spec **rc=0**（修前 rc=1，占位 Purpose）|
 | `openspec validate --changes --strict` | rc=0（无 active change）|
 | 冻结集 | **37**（成员数不变；3 份 spec 内容更新）|
+
+**⑦ 复审轮（同批 critic 二次评审）**
+
+上一轮 2 BLOCKER + 6 SHOULD_FIX **全部闭合**（critic 逐条实测验收：B1 六方向变异全红 / B2 CLI 矩阵全对 / S1 探针实测回绕后复用空闲槽 / S2~S4 正控齐全 / S7 嵌套漂移报红 / S8 退出码矩阵全对）。复审新发现 1 BLOCKER + 4 SHOULD_FIX，**均已修**：
+
+| 编号 | 问题 | 修复 |
+|------|------|------|
+| **B-NEW-1** | 新断言**无持久反向 fixture**（违反铁律 2）：spec 自己写了「反向验证 = 改边端点 ⇒ 红」，但 `cep_decl_reverse_verify.sh` 零新增 ⇒ `strict_equal` 回退成 `!=`、或边集比较 fail-open 时**仓内无任何自动化会红** | 加 **4 条 fixture**（§6.0.3 边端点变异 / §6.0.3 整节删除 / 副本 `atomic.supported:false→0` / 副本侧多边）+ `protocol_instances.json` 备份还原机制 ⇒ 反向验证 **12 → 16 条** |
+| SF-1 | `instances` 数组混入非对象项（`[42,"junk",null]`）⇒ 双闸 **PASS 且 0 顶点 0 边**（绿灯无牙，比 SKIP 更糟）| parse 时非对象项 / 缺非空 `id` ⇒ `source_error`；通用文案**不得覆盖** parse 的精确 detail（先判 `!d.source_error`）|
+| SF-2 | ordering gate 对 `source_error` 失明 ⇒ 日志自相矛盾（channel 说「配置错误」、ordering 说「没有实例」）| `evaluate_ordering_points` 顶部对称判 `source_error ⇒ FAIL` + 透传 `skip_hint` |
+| SF-3 | spec 承诺「attempted path **+ 当前工作目录**」，module_factory 路径只兑现一半（有 path 无 cwd）| `skip_hint` 内调 `std::filesystem::current_path()` 填实际 cwd |
+| SF-4 | tracker spec 未登记本轮新引入的拒绝/no-op 契约（同 commit 内 channel-gate 追加 2 Scenario，tracker 只补 Purpose ⇒ 两套标准）| 追加 1 Scenario「`snoop_begin` 拒绝语义 + `set_sharer`/`clear_sharer` no-op 语义」（tracker spec 9 → **10** Scenario）|
+| NIT | ASCII 箭头（`VC0->VC1`）格式漂移被报成「副本含未声明网络」⇒ 定位方向错 | 解析器区分「行存在但抽不出边」⇒ 报「箭头格式已变?期望 `VC<i>→VC<j>`」 |
+| NIT | `strict_equal(None, None)` 为 True ⇒ 一侧缺键 vs JSON null 失明 | 比对改 `local.get(key, _MISSING)` 哨兵 |
+
+**复审未修（登记）**：`snoop_begin(addr, 0, h)` 空 expected 被接受且条目永久泄漏 —— **既有行为，非本轮回归**；拒绝或立即 retire 均属行为变更，留**队列 #6** 裁决。
+
+**复审验收**：`cep_decl_reverse_verify` **16/16** · `[cep]` **124 cases / 2081 assertions** · `[cep][channel-gate]` 8 cases / 91 · `openspec validate cep-sharer-tracker-base --strict` rc=0（10 Scenario）· 基线与复原双向 GREEN
 
 **关联**: Entry #64（归档）· Entry #63（builder 实施）· critic 评审 2 BLOCKER / 8 SHOULD_FIX · `ADR-CEP-04`（16-bit handle RTL 契约，S1 因此不可 widen）· ArchForge `32 号 §6.0.3`（边表权威）
 

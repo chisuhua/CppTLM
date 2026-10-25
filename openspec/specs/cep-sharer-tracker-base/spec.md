@@ -90,3 +90,23 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 - **AND** 理由 SHALL 记录:真实行为需真实 protocol instance(per metis 建议 #5 + 队列 #2 先例)
 
 > **锚点**:`test_cep_sharer_tracker_base.cc` 的 deferred 登记断言
+
+#### Scenario: `snoop_begin` 的**拒绝**语义与 `set_sharer`/`clear_sharer` 的 **no-op** 语义
+
+- **WHEN** `FullMapDirectory::snoop_begin` / `set_sharer` / `clear_sharer` 收到下列输入之一:
+  `expected_responders` 含**未映射位**(bits 4..63)/ 16-bit `snoop_handle_t` 空间**已满** /
+  `node` 是未映射节点(`kInvalidNode` 或不在 `kResponderBitToNode` 内)
+- **THEN** 闸 SHALL **拒绝**而非静默接受,且**不得**破坏已有状态:
+  - 含未映射位 ⇒ `handle = 0`(那些位永远扣不掉 ⇒ 接受即意味着 snoop 永不 retire、该地址永久 `STALL`)
+  - handle 空间满(65535 个在飞)⇒ `handle = 0`,**既有条目不得被覆盖**(16-bit 是 `ADR-CEP-04`
+    的 RTL 契约,不可 widen ⇒ 只能**线性探测空闲槽** + 满表拒绝)
+  - 未映射节点 `set_sharer` / `clear_sharer` ⇒ **显式 no-op**:不得创建
+    `sharers == dirty == 0` 的**可见空条目**(与「该地址从未出现过」在 `view_of` 无法区分)
+- **AND** `clear_sharer` 对「本非 sharer/dirty 持有者」的节点 SHALL no-op ——
+  否则会在 `lookup` 刚 Allocate 的空条目上伪触发 `RetireOnZeroSharers`,
+  使 IC3 事件流出现 `Allocate → Retire` 而全程无 sharer 存在(**事件流是本平面的契约可观测面**)
+- **AND** 真 retire SHALL 恰好产生 **1 次** `RetireOnZeroSharers`(正控;纯负向断言无正控 = 判据可能没生效)
+
+> **锚点**:`test_cep_sharer_tracker_base.cc` 的「状态机边界(handle 满 / 未映射位 / 伪 retire)」用例
+> (三条负向**各配正控**);拒绝与「同址矛盾」共用 `handle = 0`(`ADR-CEP-04` 冻结 4 方法接口面,
+> 无法加错误码 ⇒ 调用方不可区分原因,已登记为已知限制)

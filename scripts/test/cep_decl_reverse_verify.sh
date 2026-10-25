@@ -20,6 +20,8 @@ cd "$ROOT" || exit 2
 
 CHECK="scripts/test/cep_decl_alignment_check.sh"
 FABRIC="include/tlm/cep/fabric.json"
+# 本仓派生副本 —— ⑥ 的 ①（逐字段）与 ③（边表逐边）都拿它比对 ArchForge 声明
+REPO_DECL="include/tlm/cep/protocol_instances.json"
 # ⚠️ **刻意不注册进 ctest**:本脚本会**临时改写**本仓 `include/tlm/cep/fabric.json`,
 #    在 `ctest -j4` 并行下会与其它测试读到中间态 → 必须**串行手动跑**。
 TMP="${TMPDIR:-/tmp/opencode}/cep_decl_reverse_verify.$$"
@@ -27,6 +29,7 @@ REAL_AF="${ARCHFORGE_DIR:-/workspace/main/ArchForge}"
 
 cleanup() {
     [ -f "$TMP/fabric.json.bak" ] && cp "$TMP/fabric.json.bak" "$FABRIC"
+    [ -f "$TMP/protocol_instances.json.bak" ] && cp "$TMP/protocol_instances.json.bak" "$REPO_DECL"
     rm -rf "$TMP"
 }
 trap cleanup EXIT
@@ -36,6 +39,7 @@ cp "$REAL_AF/docs/architecture/32-cep-based-coherence-architecture.md" "$TMP/doc
 cp "$REAL_AF/docs/architecture/22-nsa-fabric-address-spec.md" "$TMP/docs/architecture/"
 DECL="$TMP/docs/architecture/32-cep-based-coherence-architecture.md"
 cp "$FABRIC" "$TMP/fabric.json.bak"
+cp "$REPO_DECL" "$TMP/protocol_instances.json.bak"
 
 pass=0; fail=0
 run() {  # run <label> <expect: RED|GREEN> <archforge_dir>
@@ -61,6 +65,7 @@ PYEOF
 }
 restore_decl() { cp "$REAL_AF/docs/architecture/32-cep-based-coherence-architecture.md" "$DECL"; }
 restore_fabric() { cp "$TMP/fabric.json.bak" "$FABRIC"; }
+restore_repo_decl() { cp "$TMP/protocol_instances.json.bak" "$REPO_DECL"; }
 
 echo "═══ 反向验证基线 ═══"
 run "基线(未破坏)" GREEN "$REAL_AF"
@@ -127,6 +132,43 @@ cp "$TMP/docs/architecture/22-nsa-fabric-address-spec.md" "$TMP/22-nsa.bak"
 rm -f "$TMP/docs/architecture/22-nsa-fabric-address-spec.md"
 run "22-nsa 缺失" RED "$TMP"
 cp "$TMP/22-nsa.bak" "$TMP/docs/architecture/22-nsa-fabric-address-spec.md"
+
+echo ""
+echo "═══ 破坏 10:ArchForge §6.0.3 边端点 VC1→VC3 改 VC1→VC2(边表**内容**漂移)═══"
+# Entry #65:⑥ 此前只校验「二元组形状 + 端点已绑定 + 无环」⇒ 改一条边的端点后三项仍全绿,
+#   边表内容漂移仓内无法检出。此 fixture 把「逐边相等」钉成回归保护。
+edit_decl "text.replace('VC1→VC3', 'VC1→VC2', 1)"
+run "§6.0.3 边端点 VC1→VC3 ⇒ VC1→VC2" RED "$TMP"
+restore_decl
+
+echo ""
+echo "═══ 破坏 11:ArchForge §6.0.3 整节删除(权威源不可解析 = 守卫失效)═══"
+edit_decl "re.sub(r'#{3,4}\s*6\.0\.3\b.*?(?=\n#{2,4}\s|\Z)', '', text, count=1, flags=re.S)"
+run "§6.0.3 整节删除" RED "$TMP"
+restore_decl
+
+echo ""
+echo "═══ 破坏 12:本仓副本 atomic.supported  false→0(嵌套 bool→int 类型漂移)═══"
+# Python 里 0 == False,且该等价在嵌套 dict 内部同样成立 ⇒ 裸 `!=` 会静默放行。
+# 若有人把 `strict_equal()` 改回 `!=`,本条会变 GREEN ⇒ 本 fixture 即回归保护。
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['instances'][0]['atomic']['supported']=0
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "副本 atomic.supported false→0" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo "═══ 破坏 13:本仓副本 compute_noc 边表多一条边 VC2→VC0(自行发明)═══"
+# 反向方向:本条证明「多边」也会报红,而非只有「缺边」。
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['channel_dependency_edges']['per_network']['compute_noc'].append([2,0])
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "副本侧多一条边" RED "$REAL_AF"
+restore_repo_decl
 
 echo ""
 echo "═══ 恢复后复验 ═══"

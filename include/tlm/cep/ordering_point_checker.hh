@@ -212,9 +212,20 @@ inline std::vector<CriterionResult> evaluate_ordering_point_instance(const Decla
 inline OrderingReport evaluate_ordering_points(const ChannelDeclaration& decl) {
     OrderingReport r;
 
+    // 声明源配置错误优先于「无可检查对象」—— 与 `evaluate_channel_dependency_gate` 对称。
+    // 否则坏声明源会出现「channel gate 说配置错误、ordering gate 说没有实例」的自相矛盾日志。
+    if (decl.source_error) {
+        r.verdict = GateVerdict::FAIL;
+        r.log = "[FAIL] cep ordering point checker: 声明源配置错误 —— " + decl.source_error_detail +
+                '\n';
+        return r;
+    }
+
     if (decl.instances.empty()) {
         r.verdict = GateVerdict::SKIP;
         r.log = "[SKIP] cep ordering point checker: no declared protocol instance\n";
+        if (!decl.skip_hint.empty())
+            r.log += "  (" + decl.skip_hint + ")\n";
         return r;
     }
 

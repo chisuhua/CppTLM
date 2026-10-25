@@ -27,11 +27,13 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -337,8 +339,25 @@ inline ChannelDeclaration parse_channel_declaration(const nlohmann::json& doc) {
     }
 
     if (doc.contains("instances") && doc["instances"].is_array()) {
-        for (const auto& j : doc["instances"])
-            d.instances.push_back(parse_declared_instance(j));
+        // 数组里混入非对象项 / 解析不出非空 `id` 的项 ⇒ **数据损坏**,不是「没有实例」。
+        // 旧实现无条件 push_back(可能是一个空 DeclaredInstance)⇒ `instances.empty()` 为 false
+        // ⇒ 既不走 SKIP 也不走 source_error ⇒ **双闸 PASS 但 0 顶点 0 边**(比 SKIP 更糟的绿灯)。
+        for (std::size_t i = 0; i < doc["instances"].size(); ++i) {
+            const auto& j = doc["instances"][i];
+            if (!j.is_object()) {
+                d.source_error = true;
+                d.source_error_detail = "instances[" + std::to_string(i) + "] 不是对象(实际为 " +
+                                        std::string(j.type_name()) + ')';
+                continue;
+            }
+            DeclaredInstance inst = parse_declared_instance(j);
+            if (inst.id.empty()) {
+                d.source_error = true;
+                d.source_error_detail = "instances[" + std::to_string(i) + "] 缺少非空的 `id`";
+                continue;
+            }
+            d.instances.push_back(std::move(inst));
+        }
     }
 
     if (doc.contains("channel_dependency_edges") && doc["channel_dependency_edges"].is_object()) {
@@ -388,7 +407,7 @@ inline ChannelDeclaration load_channel_declaration(const std::string& path,
         }
         return bad;
     }
-    if (explicit_source && d.instances.empty()) {
+    if (explicit_source && d.instances.empty() && !d.source_error) {
         d.source_error = true;
         d.source_error_detail = "显式指定的声明源解析出 0 个协议实例: " + path;
     }
@@ -422,9 +441,12 @@ inline ChannelDeclaration parse_channel_declaration_from_config(const nlohmann::
         ChannelDeclaration d =
             load_channel_declaration(kDefaultDeclarationPath, /*explicit_source=*/false);
         if (d.instances.empty()) {
+            std::error_code ec;
+            const auto cwd = std::filesystem::current_path(ec);
             d.skip_hint = std::string("缺省声明源按**当前工作目录**解析为 '") +
-                          kDefaultDeclarationPath +
-                          "' —— 从仓库根以外运行时需改用显式路径(否则 SKIP,闸不生效)";
+                          kDefaultDeclarationPath + "'(cwd=" +
+                          (ec ? std::string("<unavailable>") : cwd.string()) +
+                          ") —— 从仓库根以外运行时需改用显式路径(否则 SKIP,闸不生效)";
         }
         return d;
     }
@@ -433,7 +455,7 @@ inline ChannelDeclaration parse_channel_declaration_from_config(const nlohmann::
         return load_channel_declaration(pi.get<std::string>(), /*explicit_source=*/true);
     if (pi.is_object()) {
         d = parse_channel_declaration(pi);
-        if (d.instances.empty()) {
+        if (d.instances.empty() && !d.source_error) {
             d.source_error = true;
             d.source_error_detail = "内联声明的 `instances` 为空(显式给了声明却解析出 0 个实例)";
         }
@@ -441,7 +463,7 @@ inline ChannelDeclaration parse_channel_declaration_from_config(const nlohmann::
     }
     if (pi.is_array()) {
         d = parse_channel_declaration(nlohmann::json{{"instances", pi}});
-        if (d.instances.empty()) {
+        if (d.instances.empty() && !d.source_error) {
             d.source_error = true;
             d.source_error_detail = "内联实例数组为空(显式给了声明却解析出 0 个实例)";
         }

@@ -32,7 +32,7 @@
     "openspec/specs/cep-core-contracts/spec.md": "198581fc3b27f2a4f25bd0e1d2ab01630d2422cc4a573c50f7339ceca5583d58",
     "openspec/specs/cep-ordering-point-checker/spec.md": "266574f920786e9b49701d56a7e55928bd3dc5bdce28adae34e4740bd3e4c091",
     "openspec/specs/cep-poc-spike-verification/spec.md": "b6b2e0cdbdcbda4f70a97fc27ff929dfbfa280a5413c9b9dca45e0f21d84d795",
-    "openspec/specs/cep-sharer-tracker-base/spec.md": "32e822e94538f085a82198d6a30b5a2ca460a0ceca80c1a63ac7b62cd12faa33",
+    "openspec/specs/cep-sharer-tracker-base/spec.md": "e09d0e5fab4c9bdd66f23d5381ad9e1f3b3b7de543309670f8f52a3b8aa48388",
     "openspec/specs/cep-stub-cache-core/spec.md": "6e2d01d2894b6dcfb80054e2ad97cc5a7af2526202e7def33a1f20a9070250a7",
     "openspec/specs/cep-vc-mapping-contract/spec.md": "35cef62b9b905112b6ca7d3906a43cd941b79bb496e353c3c97ef72d7cca417b",
     "tools/ab_compare.py": "29cbb528c943b2bf72619fb5c3a20de1b61b6cf4002ccc62fe03ec47ffac630c",
@@ -41,7 +41,7 @@
   },
   "authorized_by": "Entry #65",
   "frozen_at": "2026-10-25",
-  "frozen_at_commit": "fa0a657871df25e2493dc89904b815cdb1f94ede",
+  "frozen_at_commit": "12dbd582acdef4a9240477fd9405201c3480977e",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
