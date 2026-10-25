@@ -1,5 +1,9 @@
+# cep-stub-cache-core Specification
 
-## ADDED Requirements
+## Purpose
+TBD - created by archiving change cpptlm-cep-stub-cache-core. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: cep-stub-cache-core
 

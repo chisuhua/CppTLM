@@ -53,6 +53,10 @@ FROZEN_GLOBS=(
   "openspec/specs/cep-core-contracts/spec.md"
   # 2026-10-25(Entry #55):队列 #2 归档 → delta capability 落在 main spec —— 同样纳入冻结
   "openspec/specs/cep-poc-spike-verification/spec.md"
+  # 2026-10-25(Entry #61):队列 #3 归档 → 2 个 delta capability 落在 main spec —— 同样纳入冻结
+  #   (同 Entry #56 先例:契约面被静默改写 = 判据退化,必须走授权闸)
+  "openspec/specs/cep-vc-mapping-contract/spec.md"
+  "openspec/specs/cep-stub-cache-core/spec.md"
 )
 
 if [ "${1:-}" = "--update" ]; then

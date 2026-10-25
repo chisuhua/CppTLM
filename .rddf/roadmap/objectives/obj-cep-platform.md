@@ -176,8 +176,8 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 |------|--------|-------|------|------|----------------------|
 | **1** | `cpptlm-cep-umbrella` | Stage 0 | **2026-Q4** | ✅ **archived**(2026-10-23;**完成归档**语义 —— tasks **99/99** 全勾 + delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`;R10 已按 `§9.3` 闭合,per 台账 Entry #28/#29) | — |
 | **2** | `cpptlm-cep-poc-spike` | Stage 1 | **2027-Q1** | ✅ **archived**(2026-10-24;**完成归档**语义 —— delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`(15 Scenario);tasks **全勾**;critic **7 轮复审**(前 6 轮 REJECT 揭示六类「有牙」缺口 → 全部修复 + mutant 反证,**第 7 轮 APPROVE**,per Entry #49~#54);S1/S2/S3 三 spike 实跑 + ctest 回归门;owner 重指向 per Entry #55) | 原承接的全部装配期前置已**重指向见 §4.2 说明 + Entry #55**(① 定义层已消费;② 建图层→队列 #4;③ 放行闸→全局不变量;M-4 决策→队列 #3;表体→队列 #6;其余→队列 #3 起) |
-| **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | 🟡 **Proposed**(2026-10-25;**双 Phase 单 change** —— Phase 0 = M-4 决策落盘 + 契约化,Phase 1 = stub cache core 实现;change 目录已建,delta capability **2 个**:`cep-vc-mapping-contract` / `cep-stub-cache-core`;**M-4 行为侧决策已落** —— 协议层 credit **不独占** VC(跨仓权威已闭,per ArchForge `32 号 §6.0.1`)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名(预留桶 / 当前恒 0)+ 冲突输入**传输层不仲裁**;**`fabric.schema.json` 零改动** —— 立项时的「须同步 `vc_count.maximum=4`」前提经实测**不成立**(权威已排除「扩 VC 数」与「扩 `CATEGORY_*` 到 6 类」两条路);**`ADR-CEP-05 §10` 的 `-base`/`-impl` 二分作废**(2026-10-25 裁决),per 台账 Entry #58) | **M-4 行为侧决策**(**⏭(孤儿)** —— **已决策**,契约化于 `cep-vc-mapping-contract`;结论见 design.md D2~D9)+ 承接 **S1-2 / S1-3**(触发条件随首个 `implemented` 实例出现;**S1-4 已消费**,per Entry #57) |
-| **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | 📋 Planned | **S1-7 的 (β) 重评估** + **S1-1 ②建图层**(装配期校验器,**须在装配路径调用** + 输出逐 `(network, vc)` verdict;**禁**离线脚本形态;义务未消费但**判据可计算性已由 S3 spike 实证**/镜像↔权威**抗漂移未实证**,per Entry #55) + 承接 **S1-1** ②建图层 **⏭(孤儿)** **verdict 逐 `(network, vc)` 标注义务** |
+| **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | ✅ **archived**(2026-10-25;**完成归档**语义 —— tasks **36/36** 全勾;delta capability **2 个**(`cep-vc-mapping-contract` 8 Scenario / `cep-stub-cache-core` 9 Scenario)**已合并**进 `openspec/specs/`;归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`;**双 Phase** 全部完成 —— Phase 0 = M-4 决策落盘 + 契约化(协议层 credit **不独占** VC / 传输层**保持索引对齐** / `VC_DAT` 语义正名 / 冲突输入**传输层不仲裁** / 桶名不改名不弃用 / `fabric.schema.json` **零改动**),Phase 1 = stub cache core 实现(6 接口 + 5 态 + `INV-SC1`~`INV-SC6`);**`ADR-CEP-05 §10` 的 `-base`/`-impl` 二分作废**(2026-10-25 裁决),per 台账 Entry #58 / #59 / #60) | **M-4 行为侧决策**(✅ **已消费** —— 队列 #3 归档时落成 `cep-vc-mapping-contract`:协议层 credit **不独占** VC(权威已闭,per ArchForge `32 号 §6.0.1`)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名 + 冲突输入**传输层不仲裁**;契约化于 `cep-vc-mapping-contract`,结论见归档件 design.md D2~D9) |
+| **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | 📋 Planned | **S1-7 的 (β) 重评估** + **S1-1 ②建图层**(装配期校验器,**须在装配路径调用** + 输出逐 `(network, vc)` verdict;**禁**离线脚本形态;义务未消费但**判据可计算性已由 S3 spike 实证**/镜像↔权威**抗漂移未实证**,per Entry #55) + 承接 **S1-1** ②建图层 **⏭(孤儿)** **verdict 逐 `(network, vc)` 标注义务** + **M-4 行为侧决策** **⏭(孤儿)**(原 owner = 队列 #3,2026-10-25 队列 #3 **已归档** → **owner 重指向本行**,per Entry #60;项本身已由队列 #3 落成 `cep-vc-mapping-contract`,**此行保留其「待排期项」身份**以免孤儿项在活文档失主) + **S1-2 / S1-3 / S1-4**(原 owner = 队列 #3,同批重指向本行,per Entry #60):**S1-2** 首个 `implemented` 实例**装配后**的实现侧复核(⛔ 队列 #3 归档时**未触发** —— 本仓仍无 `implemented` 实例)· **S1-3** 出现**第 3 张网**或**第 3 个协议实例**时的 SLICC 备选重评(⛔ 未触发)· **S1-4** ✅ **已消费**(Entry #56:`fabric.json` 已纳入 M1 冻结集)—— **仅余「首次 `implemented` 实例跑过后再纳 M1 冻结集」的复核口径** |
 | **5** | `cpptlm-cep-collective-plane-base` | Stage 1 | **2027-Q4** | 📋 Planned | — |
 | **6** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q1** | 📋 Planned | **S1-7 的 `perm` 形态 schema 演进** + **S1-5 表体 + contract test**(adapter 消息类 → `CATEGORY_*` 显式映射表;输入前置 = #3 的 M-4 决策) + 承接 **S1-5** 表体 + **S1-7** **⏭(孤儿)** **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期) |
 | **7** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2028-Q2** | 📋 Planned | — |
@@ -233,8 +233,8 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | 顺序 | Change | 关联 ADR | 估时 | 承接的 Stage 1 准入前置 |
 |------|--------|----------|------|----------------------|
 | **2** | **`cpptlm-cep-poc-spike`** ← 2026-10-22 新增(P-1,置首位)· ✅ **archived**(2026-10-25;**完成归档**语义 —— delta spec 已合并进 main specs;critic 7 轮复审 → 第 7 轮 APPROVE;装配期前置的逐项分层与 owner 见本行末列,2026-10-24 planner 审查 per Entry #46)** | `ADR-CEP-13`(判据 (b) 的**可执行**判定 = Q-3e)+ `ADR-CEP-09`(顶点升级)+ `ADR-CEP-12`(per-network VC) | **3 周**(spike,非实现) | 装配期前置已**全部重指向**(Entry #55):建图层→队列 #4 / 放行闸→全局不变量 / M-4 决策→队列 #3 / 表体→队列 #6 / 其余→队列 #3 起 |
-| **3** | `cpptlm-cep-stub-cache-core` ← 2026-10-25 建 change(🟡 **Proposed**;**双 Phase 单 change** —— Phase 0 = M-4 决策落盘 + 契约化,Phase 1 = stub cache core 实现) | ADR-CEP-05 + ADR-CEP-04 stub | 8 周 | **M-4 行为侧决策**(**⏭(孤儿)** —— **已决策**:协议层 credit **不独占** VC(权威已闭,per ArchForge `32 号 §6.0.1`)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名 + 冲突输入**传输层不仲裁**;**`fabric.schema.json` 零改动**(立项前提经实测不成立);契约化于 `cep-vc-mapping-contract`,结论见 design.md D2~D9,per 台账 Entry #58) |
-| **4** | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周;**已含** S1-1 ②建图层 + 逐 `(network, vc)` verdict 义务,per Entry #55) | **S1-7 的 (β) 重评估**(与 `ADR-CEP-08 决策 4` 组合检查器**同批**,per `ADR-CEP-05 §13.1` 排期约束) + **S1-1 ②建图层**(见 §4.0) **⏭(孤儿)** **verdict 逐 `(network, vc)` 标注义务** |
+| **3** | `cpptlm-cep-stub-cache-core` ✅ **archived(2026-10-25)** —— 完成归档语义;tasks **36/36** 全勾;2 个 delta capability 已合并进 main specs | ADR-CEP-05 + ADR-CEP-04 stub | 8 周(实际交付面**显著更小** —— 单文件头可实现) | **M-4 行为侧决策**(✅ **已消费** —— 队列 #3 归档时落成 `cep-vc-mapping-contract`:协议层 credit **不独占** VC(权威已闭)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名 + 冲突输入**传输层不仲裁**;契约化于 `cep-vc-mapping-contract`,per 台账 Entry #58 / #59 / #60) |
+| **4** | **`cpptlm-cep-directory-ordering-plane`** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 5 实现 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周;**已含** S1-1 ②建图层 + 逐 `(network, vc)` verdict 义务,per Entry #55) | **S1-7 的 (β) 重评估**(与 `ADR-CEP-08 决策 4` 组合检查器**同批**,per `ADR-CEP-05 §13.1` 排期约束) + **S1-1 ②建图层**(见 §4.0) **⏭(孤儿)** **verdict 逐 `(network, vc)` 标注义务** + **M-4 行为侧决策** **⏭(孤儿)**(原 owner = 队列 #3,2026-10-25 队列 #3 **已归档** → **owner 重指向本行**,per Entry #60;项本身已由队列 #3 落成 `cep-vc-mapping-contract`,**此行保留其「待排期项」身份**以免孤儿项在活文档失主) + **S1-2 / S1-3 / S1-4**(原 owner = 队列 #3,同批重指向本行,per Entry #60):**S1-2** 首个 `implemented` 实例装配后的实现侧复核(⛔ 未触发)· **S1-3** 第 3 张网 / 第 3 个协议实例出现时的 SLICC 备选重评(⛔ 未触发)· **S1-4** ✅ 已消费(Entry #56)—— 仅余复核口径 |
 | **5** | `cpptlm-cep-collective-plane-base` | ADR-CEP-03 + ADR-CEP-01 | 8 周 | — |
 | **6** | `cpptlm-cep-chi-rnf-subset` | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **S1-7 的 `perm` 形态 schema 演进**(`ADR-CEP-12` 为 schema owner;首个真实使用 schema 的协议 change) **⏭(孤儿)** **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期) |
 | **7** | `cpptlm-cep-cxl-nonsymmetric` | ADR-CEP-04 + ADR-CEP-03 | 8 周 | — |
@@ -450,7 +450,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 1/3**(2026-10-25 修正:`cpptlm-cep-stub-cache-core`(队列 #3)**建目录**占用 1 个 slot → baseline 0/3 → **1/3**;change 目录 `openspec/changes/cpptlm-cep-stub-cache-core/`,planner 阶段产出 proposal + design + 2 个 delta capability,per §11 **Entry #58**)。历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #4 `cpptlm-cep-directory-ordering-plane`**(per §4.0)。
+→ **当前 Proposed 并发 = 0/3**(2026-10-25 修正:`cpptlm-cep-stub-cache-core`(队列 #3)**已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #4 `cpptlm-cep-directory-ordering-plane`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -463,7 +463,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 **✅ 前置条件已满足(2026-10-20)**:3 个 active 全部 **⏸ 暂存归档**(`--skip-specs`),baseline **0/3** → `cpptlm-cep-umbrella` **可立即创建**。
 
-**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **1/3**(2026-10-25 起队列 #3 `cpptlm-cep-stub-cache-core` 已启动;队列 #2 `cpptlm-cep-poc-spike` **已完成归档** → slot 释放;该 change 建目录后曾为 1/3);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
+**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **0/3**(2026-10-25 起队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档** → slot 已释放;队列 #2 `cpptlm-cep-poc-spike` **已完成归档** → slot 释放;该 change 建目录后曾为 1/3);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
 
 ⚠️ **原候选路径已过期**:"路径 C: archive `cpptlm-gmmu-pte-bus-correction`" —— 该 change **已于 2026-10-12 实际归档**,不再是 active,不能再作为 archive 对象。真实候选是上列 3 个(均已暂存归档)。
 
@@ -3894,6 +3894,82 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 - **下一队列 = #4** `cpptlm-cep-directory-ordering-plane`(2027-Q3)。
 
 **关联**: Entry #59(Phase 0 实施完成)· Entry #58(队列 #3 建 change + M-4 决策落盘)· Entry #55(队列 #2 归档 + owner 重指向)· `ADR-CEP-05`(接口 / 状态机 / `INV-SC*` 定义)· `ADR-CEP-02 §2`(canonical 10 流)
+
+---
+
+### Entry #61 — 2026-10-25 [archive]
+
+**主题**: 队列 #3 `cpptlm-cep-stub-cache-core` **✅ 已完成归档** —— 17 个落点回填 + 冻结集扩容
+
+**① 归档动作**
+
+| 项 | 内容 |
+|---|---|
+| **命令** | `openspec archive cpptlm-cep-stub-cache-core --yes`(2026-10-25) |
+| **归档路径** | `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/` |
+| **语义** | **✅ 已完成归档**(**非** ⏸ 暂存)—— 判据:实现已落地(tasks **36/36** 全勾、Phase 0 + Phase 1 均完成)⇒ 契约**已在系统内** ⇒ delta spec **合并**进 `openspec/specs/` |
+| **合并产物** | `openspec/specs/cep-vc-mapping-contract/spec.md`(**8 Scenario** + 8 锚点)· `openspec/specs/cep-stub-cache-core/spec.md`(**9 Scenario** + 9 锚点)—— 锚点**内嵌**在各自 Scenario 末尾,合并后**仍保留**(供对账测试读) |
+| **KPI** | **1/3 → 0/3**(slot 已释放);下一个可启动 = 队列 #4 `cpptlm-cep-directory-ordering-plane` |
+
+**② 17 个落点回填(per `obj §4.7.3` 收尾同步清单)**
+
+| 组 | # | 落点 | 状态 |
+|---|----|------|------|
+| **A**(change 自身) | A1 | `tasks.md` | ✅ **36/36** 全勾(T3.8 在归档动作中同步勾选) |
+| | A2 | `proposal.md` 状态行 | ✅ 改为「✅ 已完成并归档(完成归档语义)」+ tasks 计数 + 归档路径 |
+| | A3 | `design.md` 去处说明 | ✅ 无内容迁出 ⇒ 无需留去处 |
+| **B**(objective) | B1 | `obj §4.0` 队列 #3 行 | ✅ 状态列 → **✅ archived** |
+| | B2 | `obj §4.2` 队列 #3 行 | ✅ 同上 |
+| | B3 | `obj §5.2` KPI | ✅ **1/3 → 0/3** |
+| | B4 | `obj §8.1` 风险表 | ✅ 本次**未**触发任何风险行变更(M-4 闭合、stub 落地均无新风险) |
+| | B5 | `obj §9.x` 处置段 | ✅ 本次**未**改动既有判据 ⇒ 无需追加 |
+| | B6 | `obj` 头部同步注 | ✅ 状态行已随之更新(front-matter `last_revised`) |
+| | B7 | `obj §11` 台账 | ✅ **本 entry** |
+| **C**(路线图) | C1 | `phase-10.md` 子任务行 + KPI baseline | ✅ 两处同改(依赖图 + `:132` KPI 行) |
+| | C2 | `.rddf/roadmap.md` | ✅ KPI baseline 行 + 顶部「最后更新」 |
+| | C3 | `.rddf/improvements/cpptlm-cep-stub-cache-core.md` | ✅ front-matter `状态: Archived` + 「最后」行 + 全篇改写为归档态 |
+| **D**(仓级/门禁) | D1 | `AGENTS.md` 全仓 KPI 基线行 | ✅ **0/3** |
+| | D2 | **门禁脚本的路径绑定** | ✅ `cep_freeze_check.sh` 的 `FROZEN_GLOBS` 加 2 条新 main spec;`cep_gate_selftest.sh` 的「§4.0 含活队列行」断言由队列 #3 改为**队列 #4** |
+| | D3 | `docs/implementation/` 快照 | ✅ 本 entry 即时点快照(未另建文件 —— 内容与本仓既有「台账承载实施证据」惯例一致) |
+| | D4 | **相关 ADR 的 Status Update** | ✅ `ADR-CEP-00` 追加「队列 #3 已完成归档」段 + 上一段的「当前态」改「**当时态**」;`ADR-CEP-05 §14` 的**既有**段保留(其 `-base`/`-impl` 二分作废声明仍有效) |
+
+**③ 冻结面授权(本 entry 即授权记录)**
+
+| 成员 | 改什么 | 授权 |
+|------|--------|------|
+| `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | **仅追加** Status Update 2026-10-25(队列 #3 归档)+ 上一段「当前态」→「当时态」(**数值保留**,仅状态措辞) | **本 Entry #61** —— `cep_freeze_check.sh --update --authorized-by "Entry #61"` |
+| `openspec/specs/cep-vc-mapping-contract/spec.md` | **新增**(归档合并产物)⇒ 纳入冻结集(Entry #56 先例) | 同上 |
+| `openspec/specs/cep-stub-cache-core/spec.md` | **新增**(归档合并产物)⇒ 纳入冻结集(Entry #56 先例) | 同上 |
+
+冻结成员 **32 → 34**。
+
+> ⚠️ **为什么必须纳入冻结**:这 2 个 main spec 是**系统契约面** —— 若可被静默改写,则 M-4 契约与 stub cache 契约的**判据本身**可被改(退化的正是「防无意引入的退化」这条目标本身)。per Entry #56 先例:`fabric.json` 因被 ctest 消费而纳入冻结,同理。
+
+**④ 归档期修掉的 3 处「无主债 / 路径漂移」(机器闸报红暴露)**
+
+| # | 报红 | 根因 | 处置 |
+|---|------|------|------|
+| 1 | 断言 ⑦:「S1-2 / S1-3 / S1-4: 归档件标为『移交』,但 obj §4.0 排队表**未提及**」 | 队列 #2 归档时把这 3 项的 owner 指给**队列 #3**;队列 #3 归档后其 §4.0 行被改写 → 3 项在活文档**失主** | **owner 重指向队列 #4**(§4.0 + §4.2 两处同改):S1-2「首个 `implemented` 实例装配后复核」⛔ 未触发 · S1-3「第 3 张网 / 第 3 个协议实例出现时 SLICC 备选重评」⛔ 未触发 · S1-4 ✅ 已消费(Entry #56)仅余复核口径 |
+| 2 | 断言 ⑦③b:「孤儿前置行(`⏭(孤儿)`)的 change `cpptlm-cep-stub-cache-core` **已归档** → 无主债」 | 孤儿项「M-4 行为侧」的登记行在**队列 #3 行**上 | 该行的**登记**移至**队列 #4 行**(§4.0 + §4.2 两处)并保留 `⏭(孤儿)` 标记 —— 断言 ⑦③c 要求孤儿项在两处都有带标记的登记行(**「已消费」不等于「可从活文档消失」**) |
+| 3 | `cep_gate_selftest` 的「§4.0 含**活队列 #3** 的 change 名」断言 | 队列 #3 已归档 ⇒ 该 fixture 的锚点漂移 | 改锚点为**队列 #4**(`cpptlm-cep-directory-ordering-plane`) |
+
+> **教训沉淀**:归档的 17 落点清单**不含**「门禁脚本里的**活队列断言**」这一类 —— 它归 D2「门禁脚本的路径绑定」,但该条目读起来像「路径随迁」,而实际是**断言的锚点实体**随归档而失效。**清单按「文件」列,漏了「文件内的活实体引用」** —— 建议后续把 D2 拆为「路径绑定」与「活实体锚点」两条。
+
+**⑤ 验收(全绿,实测)**
+
+| 项 | 实测 |
+|---|---|
+| `openspec validate --changes --strict` | **rc=0** |
+| `openspec list --json` 实测 active | **0**(KPI **0/3**) |
+| 守门 7 项 | 全 **rc=0** |
+| `cep_gate_selftest.sh` | **31 / 31** |
+| `ctest --test-dir build -j4` | **104 / 104** |
+| `format.sh --check` · `markdown_link_check.sh` | 全 **rc=0** |
+| 冻结面 | **34 成员**(`authorized_by = Entry #61`) |
+
+**⑥ 下一步**:队列 #4 `cpptlm-cep-directory-ordering-plane`(2027-Q3)—— 承接 **S1-1 ②建图层** + **verdict 逐 `(network, vc)` 标注义务** + **S1-2 / S1-3** 触发条件待命 + **M-4 行为侧**(已由队列 #3 闭合,登记行保留以免孤儿项失主)。
+
+**关联**: Entry #60(Phase 1 实施完成)· Entry #59(Phase 0 实施完成)· Entry #58(队列 #3 建 change + M-4 决策落盘)· Entry #56(冻结集扩容先例:`fabric.json` 纳入)· Entry #55(队列 #2 归档 + owner 重指向先例)· `ADR-CEP-05`(接口 / 状态机 / `INV-SC*` 定义)
 
 ---
 
