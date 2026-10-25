@@ -195,7 +195,11 @@ i = t.index("### 4.0 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
 assert "S1-3" in sec, "锚点漂移:§4.0 未含 S1-3"
-sec = sec.replace("S1-3", "(已移除)", 1)
+# 移除**全部** S1-3 提及(判定用标记而非单点 —— §4.0 里 S1-3 可出现在多处,
+# 只替换第一处会让「仍有其它提及」→ 断言 ⑦ 仍绿 → fixture 恒绿)
+n = sec.count("S1-3")
+sec = sec.replace("S1-3", "(已移除)", n)
+assert "S1-3" not in sec, "移除未生效"
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "把 §4.0 活队列行的 change 名改成已归档的 → ⑦ 必须 fire" 1 '

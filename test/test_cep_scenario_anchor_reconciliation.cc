@@ -37,9 +37,21 @@ namespace {
 
     namespace fs = std::filesystem;
 
+    // ⚠️ **路径随归档迁移**(2026-10-25 队列 #3 归档):delta spec 从
+    //   `openspec/changes/<name>/specs/…` 迁到 `openspec/changes/archive/<date>-<name>/specs/…`,
+    //   同时**合并**出 main spec `openspec/specs/<capability>/spec.md`。
+    //   ⇒ 对账须扫**当前有效**的位置,否则「守门」会因路径漂移而恒红
+    //   (判据⑤:守卫须与它守护的那条命令等价)。
+    //   本仓已有同形先例:队列 #2 的 `cep-poc-spike-verification`。
     const std::vector<std::string> kCapabilities = {
-        "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-vc-mapping-contract/spec.md",
-        "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-stub-cache-core/spec.md",
+        // 归档件内的 delta spec(设计期形态)
+        "openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/specs/"
+        "cep-vc-mapping-contract/spec.md",
+        "openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/specs/cep-stub-cache-core/"
+        "spec.md",
+        // 合并后的 main spec(系统契约形态)
+        "openspec/specs/cep-vc-mapping-contract/spec.md",
+        "openspec/specs/cep-stub-cache-core/spec.md",
     };
 
     std::string read_repo_file(const std::string& rel) {

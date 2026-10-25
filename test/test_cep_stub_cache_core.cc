@@ -51,8 +51,15 @@ using tlm::cep::WritebackOut;
 namespace {
 
     constexpr const char* kStubHeader = "include/tlm/cep/stub_cache_core.hh";
+    // ⚠️ **路径随归档迁移**(2026-10-25 队列 #3 归档):delta spec 从
+    //   `openspec/changes/<name>/specs/…` 迁到 `openspec/changes/archive/<date>-<name>/specs/…`。
+    //   ⇒ 断言须指向**归档后**的位置(否则守门因路径漂移而恒红 —— 判据⑤)。
+    //   场景 7 同时扫归档件(delta 形态)与 main spec(合并后的契约形态)——
+    //   两者是同一份内容,合并后 Scenario 数不变。
     constexpr const char* kStubSpec =
-        "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-stub-cache-core/spec.md";
+        "openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/specs/cep-stub-cache-core/"
+        "spec.md";
+    constexpr const char* kStubMainSpec = "openspec/specs/cep-stub-cache-core/spec.md";
 
     std::string read_repo_file(const std::string& rel) {
         std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
@@ -473,6 +480,8 @@ TEST_CASE("CEP Stub: hit 路径零网络流量(端到端:读→完成→重复�
 TEST_CASE("CEP Stub: 不可验证条款(#1/#4)降级登记且不进 spec", "[cep][stub-cache-core][scope]") {
     const std::string spec = read_repo_file(kStubSpec);
     REQUIRE_FALSE(spec.empty());
+    const std::string main_spec = read_repo_file(kStubMainSpec);
+    REQUIRE_FALSE(main_spec.empty());
 
     // 规格:spec 里这两个词**只允许**以「**排除**语境」出现(如「SHALL **不**出现 `barrier`」
     //   或「#1/#4 SHALL **不**出现在本 Requirement」)。
@@ -501,9 +510,26 @@ TEST_CASE("CEP Stub: 不可验证条款(#1/#4)降级登记且不进 spec", "[cep
 
     // **正控**:降级登记确实存在于 design.md(不是「删掉了事」)
     const std::string design =
-        read_repo_file("openspec/changes/cpptlm-cep-stub-cache-core/design.md");
+        read_repo_file("openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/design.md");
     REQUIRE_FALSE(design.empty());
     CHECK(design.find("队列 #6") != std::string::npos); // 触发条件登记
+
+    // **main spec 同样不得**把 #1/#4 立为要求(合并后的契约面是同一份内容)
+    {
+        std::vector<std::string> main_titles;
+        {
+            std::istringstream is(main_spec);
+            std::string line;
+            while (std::getline(is, line))
+                if (line.rfind("#### Scenario:", 0) == 0)
+                    main_titles.push_back(line);
+        }
+        REQUIRE(main_titles.size() >= 9); // 合并后 Scenario 数不变
+        for (const auto& tt : main_titles) {
+            CHECK(tt.find("forward_data") == std::string::npos);
+            CHECK(tt.find("barrier") == std::string::npos);
+        }
+    }
 }
 
 // ═════════════════════════════════════════════════════════════════════
