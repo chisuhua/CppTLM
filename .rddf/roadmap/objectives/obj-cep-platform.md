@@ -4227,6 +4227,30 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 
 **复审验收**：`cep_decl_reverse_verify` **16/16** · `[cep]` **124 cases / 2081 assertions** · `[cep][channel-gate]` 8 cases / 91 · `openspec validate cep-sharer-tracker-base --strict` rc=0（10 Scenario）· 基线与复原双向 GREEN
 
+**⑧ 三审（critic 第三次评审）：APPROVE**
+
+**无 BLOCKER、无 SHOULD_FIX**。critic 亲自做了两项**「判据改弱」对抗实验**，验证我声称的回归保护真实有效：
+
+| 实验 | 改什么（临时）| 结果 |
+|------|-------------|------|
+| ① | `strict_equal(...)` → 裸 `!=` | 破坏 12 变 GREEN ⇒ 反验脚本 **rc=1**（15 通过 / 1 失败）|
+| ② | 摘除 ⑥③ 的边集比较循环 | 破坏 10 **和** 13 双双变 GREEN ⇒ 反验 **rc=1**；破坏 11 仍 RED（由「解析失败」守卫独立兜住）⇒ **两条守卫路径正交**，非单一实现 |
+
+另实测：SIGTERM 在破坏 1 窗口中途杀（rc=143）后 `git diff` 0 行 ⇒ `trap cleanup EXIT` 对 SIGTERM/SIGINT 均生效；ArchForge 真仓零改动（脚本只写 `$TMP` 副本）。
+
+**已修 NIT（critic 建议随手修）**：
+- NIT-1 `test_cep_sharer_tracker_base.cc` 文件头「9 Scenario / 9 锚点」→ **10 / 10**（Scenario 10 于 `12dbd582` 引入时漏改）
+- NIT-6 新 Scenario 的锚点精度：「未映射节点 `set_sharer` 不建空条目」的断言实际在**前序**「caps descriptor」用例内，已在锚点段注明两处合起来才是完整覆盖
+
+**登记不修（NIT 级，风险有界）**：
+- `id` 为数字时报「缺少非空的 `id`」而非「类型错」（FAIL 判向正确，仅报文可改进）
+- `id: " "`（纯空白）通过非空检查 ⇒ **内联 config** 路径可得 0 顶点 PASS（权威声明文件路径由 schema `pattern: ^[a-z0-9][a-z0-9_-]*$` 兜住）
+- 破坏 10 的 `text.replace('VC1→VC3', …, 1)` 是**全文首匹配**、未锚定节内 —— **失败方向是响的**（改错位置 ⇒ 保持 GREEN ⇒ 反验脚本红），故不阻塞
+- SIGKILL / 断电无法 trap ⇒ 可能残留被破坏文件（建议后续在脚本头注释补 `git checkout -- include/tlm/cep/` 恢复方法）
+- 默认源分支 `if (d.instances.empty())` 缺 `&& !d.source_error` ⇒ skip_hint 死计算（FAIL 分支不打印 hint ⇒ 用户不可见）
+
+**三审验收**：`[cep]` **124 cases / 2081 assertions** · 反验 16/16 · ctest 105/105 · selftest 31/31 · 守门 7 项 rc=0 · `openspec validate <cap> --strict` 3 份 rc=0 · KPI **0/3** · 冻结集 **37**
+
 **关联**: Entry #64（归档）· Entry #63（builder 实施）· critic 评审 2 BLOCKER / 8 SHOULD_FIX · `ADR-CEP-04`（16-bit handle RTL 契约，S1 因此不可 widen）· ArchForge `32 号 §6.0.3`（边表权威）
 
 ---

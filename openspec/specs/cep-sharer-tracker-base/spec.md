@@ -108,5 +108,8 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 - **AND** 真 retire SHALL 恰好产生 **1 次** `RetireOnZeroSharers`(正控;纯负向断言无正控 = 判据可能没生效)
 
 > **锚点**:`test_cep_sharer_tracker_base.cc` 的「状态机边界(handle 满 / 未映射位 / 伪 retire)」用例
-> (三条负向**各配正控**);拒绝与「同址矛盾」共用 `handle = 0`(`ADR-CEP-04` 冻结 4 方法接口面,
+> (三条负向**各配正控**);
+> 「未映射节点 `set_sharer` 不建可见空条目」这一条的断言在**前序**「caps descriptor 4 属性」用例内
+> (`!dir.view_of(0xA000).valid`),不在状态机边界用例 —— 两处合起来才是本 Scenario 的完整覆盖;
+> 拒绝与「同址矛盾」共用 `handle = 0`(`ADR-CEP-04` 冻结 4 方法接口面,
 > 无法加错误码 ⇒ 调用方不可区分原因,已登记为已知限制)

@@ -1,7 +1,8 @@
 // test/test_cep_sharer_tracker_base.cc
-// capability `cep-sharer-tracker-base` —— 9 Scenario / 9 锚点(
+// capability `cep-sharer-tracker-base` —— 10 Scenario / 10 锚点(
 //   接口签名 / caps 形态 / 5×6 数据表 / FullMap 行为 / 生命周期 / 同址 hazard /
-//   IC2 幂等 + IC3 五事件 / 禁 API 扫描 / 4 实现 deferred)
+//   IC2 幂等 + IC3 五事件 / 禁 API 扫描 / 4 实现 deferred /
+//   状态机边界(拒绝语义 + no-op 语义,与 spec 第 10 个 Scenario 对应))
 //
 // 作者: CppTLM Team / 日期: 2026-10-25
 //
