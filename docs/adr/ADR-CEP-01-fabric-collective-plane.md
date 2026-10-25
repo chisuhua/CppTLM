@@ -161,6 +161,26 @@ group-scoped completion     → Fabric Collective Plane
 ## 6. v0.2 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+## Status Update 2026-10-26 —— §3.3 抓取点的**可测性裁决**(队列 #5 `cpptlm-cep-collective-plane-base`)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记一项**可测性裁决**。
+> **背景**: §3.3 的 **7 条抓取点**是「评审检查单」,但**未逐条声明「哪一条在哪个 Stage 可机器检查」** ⇒ 实施期容易出现两种坏形态:(a) 把抓取点抄成 spec 的文本断言(对行为覆盖贡献为 0);(b) 把 Stage 1 物理不可测的条款写成**恒真 / 恒 SKIP** 的判据。
+> **裁决(逐条)**:
+>
+> | 抓取点 | 内容 | 本 Stage 可测性 | 处置 |
+> |---|---|---|---|
+> | **1**(高) | Collective Plane → Directory 的调用边必须为零 | ✅ **可机器检查**(include-graph 闸) | 队列 #5 落地;**反向 fixture** 必配 |
+> | **2**(高) | 组播投递单实现(coherence snoop broadcast 与 collective multicast 共用 Fabric 层投递机制) | ❌ **不可测**(fabric 组播机制不存在) | 推迟至 **P3**;**禁**在 Stage 1 写成恒真 / 恒 SKIP 判据 |
+> | **3**(高) | 死锁通道隔离(集合流量走独立 VC) | ⚠️ **仅声明层可测**(collective VC 预留与既有 `vc_binding` 不冲突) | 队列 #5 落地声明层检查;真实 VC 分配论证属 P3 / `ADR-CEP-09` |
+> | **4**(中) | Coherence Interface canonical 10 条流清单零 diff | ✅ **可机器检查** | 队列 #5 落地;**反向 fixture** 必配 |
+> | **5**(中) | barrier 分类规则写进 ADR 正文,不留口头约定 | ✅ **已满足**(§3.1 两条 litmus test 已在正文) | 无需实施动作 |
+> | **6**(中) | partial failure 必须有显式建模 | ✅ **可机器检查**(`CollectiveEvt` 的 `Fault` 变体存在性 + 拒绝静默) | 队列 #5 落地 |
+> | **7**(低) | 复合流(release-drain → rendezvous)用跨平面依赖令牌在 Core 层编排 | ❌ **不可测**(无 Core 编排层载体) | 推迟;**禁**在 Stage 1 写成判据 |
+>
+> **配套约束**: 推迟项 SHALL **不**出现在 Stage 1 的判据清单中(per 抓取点 6「不得静默跳过」精神)⇒ 队列 #5 的契约判据 capability 已把该约束写成可机器核对的条款。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #66**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #66)。
+
 ## 7. v0.3 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

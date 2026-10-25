@@ -1,11 +1,11 @@
 {
   "artifact_count": 37,
   "artifacts": {
-    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "cfe1cff8375f89fedd2f8168e0a7160c3f4a1e79d6aec011363bf0cffd5c4677",
+    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "9a219d19b14d8b9cae401ffe470fb8199f64a9d611db828d89593e80f12d5308",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4f27a67ba7982f3d9466df36c85258f1822c89b825d8ab733fb4e5de74221f48",
-    "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "533af2dd02bd6faf9df5333ac74804f970c63fb667e41be3e3476ea7f58fd76b",
+    "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "a4a047f73be34c84d7db44e3b0a3040e4f265d665685c6032526cb2159012a37",
     "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "79793358ad411ca3c6066344db85cf51986a9ab69f40fe0e783744907f678c26",
-    "docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md": "72600a6a396f227aa8a7e20f252e2f8fbd780506e078a926396bf4b91f8336a7",
+    "docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md": "1df960942b631144e914e8fc90aedbca0f710e69d7aac46ef2bb08c2efe81b88",
     "docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md": "6028000d909b44c5bfd19397779126fd1ac3e5a9c7bd517c3c5ad7864b1b93b3",
     "docs/adr/ADR-CEP-05-stub-cache-core-interface.md": "997317d20bb7a880b5c31155b1c5e0dbbf2d7ab4a308051ce342aabfbbcd3066",
     "docs/adr/ADR-CEP-06-experiment-protocol.md": "2f0e93235e2727815d68e013f2403b1f90cbcdcf228c2712565de0d83a5ca993",
@@ -39,9 +39,9 @@
     "tools/render_report.py": "1368402696a3aa5753ebd073a9bcab444fcd092d1334b9a7b7e37a28e026967e",
     "tools/run_sweep.py": "f16e33d3834cd2e24422537de9be82aa3b64c2e660d8bd792f4d0f82d00e3297"
   },
-  "authorized_by": "Entry #65",
-  "frozen_at": "2026-10-25",
-  "frozen_at_commit": "d7bddeb3a92524d0488a0ef36e2779e0a93e6eb5",
+  "authorized_by": "Entry #66",
+  "frozen_at": "2026-10-26",
+  "frozen_at_commit": "ceee2474d4f44105288d182db8130d120045408f",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",

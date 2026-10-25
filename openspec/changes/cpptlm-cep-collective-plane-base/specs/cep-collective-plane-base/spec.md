@@ -1,0 +1,117 @@
+## ADDED Requirements
+
+### Requirement: cep-collective-plane-base
+
+CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`CollectivePlaneIf` 单接口 + 类型集 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous)。
+
+> **定位**:per `ADR-CEP-03 §2/§3` + `ADR-CEP-01 Decision 2`;旁路平面,与 Directory 侧**零调用边**。
+> **行为化既有编号**(per `ADR-CEP-07` / `ADR-CEP-04`;**非新增**):`INV-CEP-07-IC3`、`INV-CEP-04-IC5`。
+> **红绿**:判据退化 = 用例红;判定为红 = 用例**仍绿** + 结论登记为交付物。
+> **积分面**:header-only、testbench 定位(不进 `ModuleFactory`)。
+
+#### Scenario: `CollectivePlaneIf` 方法集与 `ADR-CEP-03 §2 Decision 2` 逐字对齐
+
+- **WHEN** 核对 `CollectivePlaneIf` 的方法集
+- **THEN** SHALL 恰含 group 生命周期 3 个(`group_create` / `group_destroy` / `group_register_region`)+ 数据路径 2 个(`send` / `recv`)+ `collective_barrier` + `query_capability`
+- **AND** 原语枚举 SHALL **恰好 4 值** = `{REDUCE, BROADCAST, MULTICAST, BARRIER}`;AllReduce **不得**作为原语出现
+- **AND** `group_id` 在本接口 SHALL 是一等公民(等价于 address 对 coherence plane 的通用性,per `ADR-CEP-03 §2 Decision 2`)
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的接口面断言(方法集 + 原语值域双向)
+
+#### Scenario: 类型集齐备且 `CollectiveEvt` 含 Fault 变体
+
+- **WHEN** 核对 collective 平面用到的类型集
+- **THEN** SHALL 齐备:`group_id_t` / `member_set_t` / `group_attrs_t` / `addr_range_t` / `access_mode_t` / `CollectiveReq` / `CollectiveEvt` / `cap_t`
+- **AND** `CollectiveReq` SHALL 携 group-scoped 字段:`group_id` / `op` / `tag`(相位/轮次)/ `src_member` / `payload_desc` / `reduce_op` / `dtype` / `multicast_mask`
+- **AND** `CollectiveEvt` SHALL **恰好 3 个变体** = `Result(gid, tag, payload)` | `Completion(gid, tag)` | **`Fault(gid, culprit, cause)`** —— Fault 变体的存在即 partial failure 的**显式建模**(per `ADR-CEP-01 §3.3` 抓取点 6)
+- **AND** `CollectiveEvt` 的三变体 SHALL **不得**退化为「只有 Result + Completion」(缺 Fault ⇒ 成员掉线将成不可见死锁点)
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的类型集断言(含 Fault 变体存在性)
+
+#### Scenario: `NullCollectivePlane` 全原语返回「不支持」(**行为化** `INV-CEP-07-IC3`)
+
+- **WHEN** 对 `NullCollectivePlane` 逐一调用全部原语(含 `group_create` / `group_destroy` / `group_register_region` / `send` / `recv` / `collective_barrier` / `query_capability`)
+- **THEN** 每一个 SHALL 返回「**不支持**」语义(不得有任何原语产生副作用、不得建 group、不得投递事件)
+- **AND** SHALL 保持 CHI / CXL 配置下的**默认绑定**地位(per `07 号 §6.4`)
+- **AND** **反向 fixture**:注入一个「假装支持」的 plane ⇒ 断言必红(纯负向断言无正控 = 判据可能根本没生效)
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的 Null 全原语断言 + 反向 fixture
+
+#### Scenario: `LocalCollectivePlane` group 生命周期状态机可执行
+
+- **WHEN** 走 `group_create` → `group_register_region` → `group_destroy` 的合法路径
+- **THEN** 三步 SHALL 均成功,且 group 状态 SHALL 可观测(create 后 group 可查;register 后 region 表含该 range;destroy 后 region 表移除且 epoch 失效)
+- **AND** `group_destroy` 对 **in-flight 操作** SHALL 发 **`Fault(gid, culprit, cause)`** 且 **不阻塞**(本 change 对 `ADR-CEP-03 §3.1` R4 留白的拍板,per design D-ζ)
+- **AND** `group_destroy` 后该 region SHALL **回归 coherence 域**(per R4 失效化语义)
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的生命周期状态机断言(含 in-flight ⇒ Fault)
+
+#### Scenario: BARRIER rendezvous —— N-1 到达不释放、N 到达释放
+
+- **WHEN** 一个 N 成员 group 在 BARRIER 原语上陆续到达
+- **THEN** 到达第 N-1 个成员时 SHALL **不**释放;到达第 N 个成员时 SHALL **释放全部**(group-scoped 完成纪律,per `ADR-CEP-01 Decision 2`)
+- **AND** **同相位内**跨参与者 SHALL **无序**;**跨相位** SHALL **有序**(per `ADR-CEP-03 §2` —— 这是本 plane 唯一的 ordering 承诺)
+- **AND** **反向 fixture**:阈值改 N-1 ⇒ 断言必红
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的 rendezvous 阈值断言 + 反向 fixture
+
+#### Scenario: epoch invalid 窗口 = **正常服务放行**(非 fail-stop)(**行为化** `INV-CEP-04-IC5`)
+
+- **WHEN** 某地址**命中** collective region 表,但其 group 的 **epoch 尚未 commit**(epoch invalid)
+- **THEN** 该地址 SHALL 被**放行正常服务**(走 coherence 路径),**不得** fail-stop、**不得** divert(per `ADR-CEP-03 §3.1` R4「epoch 未 commit 前 = 正常服务」)
+- **AND** epoch commit **之后**同一地址 SHALL **divert** 到 collective plane
+- **AND** **反向 fixture**:删掉 epoch 检查 ⇒ 断言必红(该窗口若被误判成 divert 即是契约违反)
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的 epoch 三态窗口断言 + 反向 fixture
+
+#### Scenario: 区域互斥(CEP-13 语义)与 epoch 创建的前置条件
+
+- **WHEN** 注册一个与已注册 region **重叠**的 range
+- **THEN** SHALL 返回 **`group_register_error`**(立即报错,不静默),且**不得**创建新 epoch
+- **AND** **drain 失败**时 SHALL **不建 epoch**(per `ADR-CEP-03 §3.2` CEP-13:「drain 失败 ⇒ `group_register_region` 返回 error,不创建 epoch」)
+- **AND** **正控**:不重叠的合法注册 SHALL 成功
+- **AND** 同一地址 SHALL **不得**同时「SHARP 已注册」且「coherence-cacheable」(CEP-13 不变量)
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的区域互斥断言(重叠 ⇒ error / 合法 ⇒ 成功)
+
+#### Scenario: 未注册区域上的 collective 操作 SHALL **立即报错**,不静默
+
+- **WHEN** 对**未注册**的 region 发起 REDUCE / BROADCAST / MULTICAST
+- **THEN** SHALL **立即报错**(per `ADR-CEP-03 §3.4` guardrail:未注册区域的操作 = `group_register_error`,不静默)
+- **AND** **不得**投递任何事件、**不得**建 group
+- **AND** **反向 fixture**:静默返回 ⇒ 断言必红
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的未注册区域断言 + 反向 fixture
+
+#### Scenario: functional 模式下 collective SHALL **不产生 latency**
+
+- **WHEN** 在 functional 模式(`simulation_mode` 顶层唯一维度,per `INV-CEP-07-IC1`)下跑 collective 原语
+- **THEN** SHALL **不产生** latency 字段 / 周期数(与 `INV-CEP-07-IC6`「functional 模式下 `avg_latency_cycles == 0`」兼容)
+- **AND** BARRIER 的完成 SHALL 是**零延迟即时完成**(不得引入等待周期)
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的 functional 模式断言
+
+#### Scenario: `query_capability` 的边界契约 SHALL 写死
+
+- **WHEN** 以**未知 `op`** 或 **`max_bytes == 0`** 调用 `query_capability`
+- **THEN** 返回契约 SHALL 明确且**唯一**(不依赖实现细节):SHALL 返回「不支持」语义的 capability 值,**不得**抛异常、**不得**返回未定义值
+- **AND** 已支持的 `op` SHALL 返回其 capability 值
+
+> **锚点**:`test_cep_collective_plane_base.cc` 的 capability 边界断言
+
+#### Scenario: `group_id` SHALL **不得**出现在 Coherence Interface 侧
+
+- **WHEN** 核对 Coherence Interface 侧的接口与契约
+- **THEN** `group_id` / `member_set_t` / `CollectiveReq` / `CollectiveEvt` 等 group-scoped 字段 SHALL **不出现**(完成域判别规则的**反向**面:requester-scoped → Coherence / group-scoped → Collective,per `ADR-CEP-01 Decision 2`)
+- **AND** canonical 10 流的**清单与语义 SHALL 零 diff**(per `ADR-CEP-01 §3.3` 抓取点 4)
+
+> **锚点**:`test_cep_collective_plane_contract.cc` 的完成域判别断言(与 zero-call-edge 闸**正交**)
+
+#### Scenario: 零调用边 —— collective 侧 SHALL **不**依赖 directory / ordering / sharer 侧
+
+- **WHEN** 扫描 collective 头文件的**直接 include** 与编译期依赖
+- **THEN** SHALL **不出现** directory / ordering / sharer 相关头(per `ADR-CEP-01 §3.3` 抓取点 1:「Collective Plane → Directory 的调用边必须为零(可机器检查)。存在即层级纠缠」)
+- **AND** **R3 的 drain** SHALL 由**发起注册的 node 端**经**自身** Coherence Interface 端口发出,collective plane 只输出 invalidate 请求清单 —— **plane 间零直接调用边**(per `ADR-CEP-03 §3.4`)
+- **AND** **反向 fixture**:注入一条 directory include ⇒ 断言必红
+
+> **锚点**:`test_cep_collective_plane_contract.cc` 的 include-graph 闸断言 + 反向 fixture

@@ -115,6 +115,9 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-poc-spike"           # 同上(2026-10-25 归档 → 2026-10-25-cpptlm-cep-poc-spike);历史叙述(规格文档 §/台账 Entry)指向归档前位置
   "openspec/changes/cpptlm-cep-stub-cache-core"        # 同上(2026-10-25 归档 → 2026-10-25-cpptlm-cep-stub-cache-core);历史叙述(台账 Entry #58/#60 的产出物清单)指向归档前位置
   "openspec/changes/cpptlm-cep-directory-ordering-plane"   # 同上(2026-10-25 归档 → 2026-10-25-cpptlm-cep-directory-ordering-plane);历史叙述(obj 台账 Entry #62/#63、ADR-CEP-00/#04 的 Status Update、improvement 草稿)指向归档前位置 —— **双态注册**(归档日治理第 4 步)
+  # —— 2026-10-26(Entry #66)队列 #5:设计示意,**builder 阶段才创建** ——
+  "include/tlm/cep/collective_plane"                      # 设计示意:队列 #5 builder 阶段新建(前缀式,覆盖 collective_plane.hh / _contract.hh / collective_planes.json / .schema.json)
+  "include/bundles/collective_bundles_tlm.hh"             # 设计示意:P3 才有真实传输通道时新建(per ADR-CEP-03 Status Update 的 Bundle 化推迟登记)
   "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-vc-mapping-contract/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-vc-mapping-contract/spec.md)
   "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-stub-cache-core/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-stub-cache-core/spec.md)
   "openspec/changes/cpptlm-cep-poc-spike/specs/cep-poc-spike-verification/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-poc-spike-verification/spec.md);现址见 openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella

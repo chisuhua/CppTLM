@@ -213,6 +213,22 @@ divert_t fabric_ingress_classify(ck_req_t req) {
 
 ---
 
+## Status Update 2026-10-26 —— §5 Bundle 路径的**偏离登记**(队列 #5 `cpptlm-cep-collective-plane-base`)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文一律不改**,仅登记一项**偏离**。
+> **偏离项**: **§5**「新增 `CollectiveReqBundle` / `CollectiveEvtBundle`,**沿用** `bundles::` 命名空间 + `coherence_bundles_tlm.hh` 路径」。
+> **偏离理由**: §5 假设的 `include/bundles/coherence_bundles_tlm.hh` **在本仓不存在** —— 它是 `06-bis §5` 标注的「P2 实施」产物,而 06-bis 的 P2 **尚未实施**。三条候选路径的取舍:
+>   1. **提前新建 `coherence_bundles_tlm.hh`** ⇒ 抢 06-bis P2 的文件,两个 change 改同一文件 ⇒ 冲突(与 `ADR-CEP-07A` 的 artifact disposition 冲突);
+>   2. **新建 `include/bundles/collective_bundles_tlm.hh` 并立即落 Bundle** ⇒ 本 change 的 plane 是纯内存 + rendezvous,**无真实传输通道** ⇒ Bundle 无消费方 ⇒ 死文件 + 提前承担 `BUNDLE_FIELD_WIDTH` 锁的维护成本;
+>   3. **类型内嵌 `include/tlm/cep/collective_plane.hh`**(沿用 `tlm::cep` 命名空间 + `ch_uint` 宽度体系,与队列 #3/#4 的 `stub_cache_core.hh` / `sharer_tracker.hh` 风格一致)⇒ **采纳**。
+> **本 change 的落地**: 采用 (3) —— **不落 Bundle**;类型(`group_id_t` / `member_set_t` / `group_attrs_t` / `addr_range_t` / `access_mode_t` / `CollectiveReq` / `CollectiveEvt` / `cap_t`)内嵌于 `collective_plane.hh`。
+> **Bundle 化的未来路径(具体,不写「以后再说」)**: 推迟至 **P3**(`cpptlm-cep-nvlink-sharp-adapter`)—— 届时有真实传输通道,新建 `include/bundles/collective_bundles_tlm.hh`,沿用 `bundles::` 命名空间 + `BUNDLE_FIELD_WIDTH` 编译期锁(与 §5 的其余约定一致)。
+> **本 ADR 的 §2 Decision 2 / §3 跨平面契约 / §4 状态机雏形**: **零改动**,仍然有效;§4 明确「builder 阶段实施时按 C++ 实施细节展开」⇒ 本 change 正是那个展开,但**只展开到 BARRIER rendezvous**(REDUCE / BROADCAST / MULTICAST 的数据路径需 fabric ingress 分类,属 P3)。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #66**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #66)。
+
+---
+
 ## 8. v0.2 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

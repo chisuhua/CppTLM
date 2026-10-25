@@ -348,14 +348,25 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **实施期偏差(5 项)**: caps 4 属性按 `ADR-CEP-04 §2 决策 3`(而非 planner 原写的 hazard/broadcast_fallback)· `PARTIAL` 不可由合法 schema 声明表达(J2 判别力由合成声明承担)· 通道依赖边表作为**声明数据**(`32 号 §6.0.3` 派生副本)· 第 4 个 header(`ordering_point_checker.hh`)· 镜像补齐 2 个实例(`moesi_gpu` + `mesif`)。逐条见 design.md `D-ι`。
 > **对上一段(2026-10-25,队列 #4 启动段)的衔接**:该段登记「队列 #4 已启动,并发 0/3 → 1/3」—— **现该 change 已归档**;其历史快照语义保留不回改(措辞已改「当时态」)。
 > **Stage 1 准入前置的余项**: S1-2 ⛔ 未触发(需首个 `implemented` 实例)· S1-3 ⛔ 未触发(需第 3 张网 / 第 3 个协议实例)· S1-4 ✅ 已消费(Entry #56);登记已重指向队列 #5 行(per Entry #64)。
-> **当前态**: Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base`(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**: Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base`(per `obj §4.0`)。
 > **遗留(不属本 change)**: `validate_topology` target 首条命令引用不存在的 `build/configs/dgpu_board_v1_mvp.json`(`scripts/CMakeLists.txt:48`)—— 该 target 事前已不可跑完,修复需单独决策。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #64**
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #64)。
 
+## Status Update 2026-10-26 —— 队列 #5 `cpptlm-cep-collective-plane-base` 已启动(KPI 并发 0/3 → 1/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-26 队列 #5 **已建 change 目录**(`openspec/changes/cpptlm-cep-collective-plane-base/`)—— planner 阶段产出 proposal + design + **2 个** delta capability(`cep-collective-plane-base` / `cep-collective-plane-contract`)⇒ 占 1 个 KPI slot。
+> **交付范围(裁决:DRI 四问)**: 范围切小(`CollectivePlaneIf` 单接口 + `NullCollectivePlane` + `LocalCollectivePlane` 只做 group 生命周期 / region-epoch / **BARRIER rendezvous**;REDUCE·BROADCAST·MULTICAST 的**数据路径**推迟至 P3)/ **Bundle 类型内嵌**(偏离 `ADR-CEP-03 §5`,见该 ADR 的 Status Update)/ **header-only 不进 `ModuleFactory`**(对齐 `07 号 §6.3` 最终形态口径)/ **独立声明源** `collective_planes.json`(不碰冻结的 `protocol_instance.schema.json`)。
+> **B2 贡献方式**: **新增 invariant 数 = 0**(`ADR-CEP-01` / `ADR-CEP-03` 在 15 组 66 条里**无组**,新增编号即契约违反)⇒ 贡献 = **行为化既有条目**(`INV-CEP-07-IC3` NullCollectivePlane 默认实现 / `INV-CEP-04-IC5` epoch invalid 窗口放行)+ **契约层加固**(零调用边 / canonical 10 流零 diff)。
+> **对上一段(2026-10-25,队列 #4 归档段)的衔接**: 该段登记「队列 #4 已归档,并发 0/3」—— 现队列 #5 已启动,并发 0/3 → 1/3;其历史快照语义保留不回改(措辞已改「当时态」)。
+> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #6 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #66**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #66)。
+
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)
-**最后更新**: 2026-10-25
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)
+**最后更新**: 2026-10-26
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)

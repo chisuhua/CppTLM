@@ -101,6 +101,14 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
                  │    + S1-2/S1-3 ⛔ 未触发 / S1-4 ✅;余项登记已重指向队列 #5
                  │    —— 详见 obj §4.0 队列 #4 行 + Entry #62/#63/#64)
                  ├─ cpptlm-cep-collective-plane-base
+                 │    🟡 **Proposed(2026-10-26)** —— change 目录已建 + planner 阶段产出
+                 │    proposal + design + 2 个 delta capability(cep-collective-plane-base /
+                 │    cep-collective-plane-contract),待 builder 实施,Entry #66
+                 │    **裁决(DRI 四问,2026-10-26)**:范围切小 —— CollectivePlaneIf +
+                 │    NullCollectivePlane + LocalCollectivePlane(仅 group 生命周期 /
+                 │    region-epoch / BARRIER rendezvous);Bundle 类型内嵌(§5 路径现实不存在);
+                 │    header-only 不进 ModuleFactory;独立声明源 collective_planes.json
+                 │    **行为化既有编号**:INV-CEP-07-IC3 + INV-CEP-04-IC5(新增 0 条)
                  ├─ cpptlm-cep-chi-rnf-subset
                  │    承接 Stage 1 准入前置:S1-7 的 perm 形态 schema 演进
                  ├─ cpptlm-cep-cxl-nonsymmetric
@@ -134,7 +142,7 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
 ### 治理与文档约束(per AGENTS.md §DOC HYGIENE)
 
 - **AGENTS.md:423 边界**: 第 3 条"SoC 架构组件/拓扑/演进类提案 → ArchForge"。CEP **核心框架层**(5 层骨架 + Stub Cache + Coherence Interface + 插件机制)**归 CppTLM**;**协议语义建模**(5 个具体协议设计文档)**归 ArchForge**(per `ADR-CEP-00 §2 Decision 4` 豁免论证,边界条款对照表)
-- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 0/3**(2026-10-25 `cpptlm-cep-directory-ordering-plane`(队列 #4)**已完成归档** → slot 已释放,per Entry #64;历史:建目录时曾 0/3 → 1/3;2026-10-25 `cpptlm-cep-stub-cache-core`(队列 #3)**已完成归档** → 释放 1 个 slot,1/3 → 0/3;change 目录已建,planner 阶段产出 proposal + design + 2 个 delta capability,per 台账 Entry #58;2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档** → 释放 slot;历史:该 change 建目录后曾为 1/3,**已建 change 目录**并占用 1 个 slot;2026-10-23 `cpptlm-cep-umbrella` **已完成归档** → slot 已释放,per 台账 Entry #28/#29;**历史**:2026-10-21 创建时为 1/3、2026-10-22 M2 放行后仍为 1/3;此前 2026-10-20 的 3 个 active 全部 **⏸ 暂存归档** `--skip-specs`,0% 未实施,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
+- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 1/3**(2026-10-26 `cpptlm-cep-collective-plane-base`(队列 #5)**已建 change 目录** → 占 1 slot,per Entry #66;2026-10-25 `cpptlm-cep-directory-ordering-plane`(队列 #4)**已完成归档** → slot 已释放,per Entry #64;历史:建目录时曾 0/3 → 1/3;2026-10-25 `cpptlm-cep-stub-cache-core`(队列 #3)**已完成归档** → 释放 1 个 slot,1/3 → 0/3;change 目录已建,planner 阶段产出 proposal + design + 2 个 delta capability,per 台账 Entry #58;2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档** → 释放 slot;历史:该 change 建目录后曾为 1/3,**已建 change 目录**并占用 1 个 slot;2026-10-23 `cpptlm-cep-umbrella` **已完成归档** → slot 已释放,per 台账 Entry #28/#29;**历史**:2026-10-21 创建时为 1/3、2026-10-22 M2 放行后仍为 1/3;此前 2026-10-20 的 3 个 active 全部 **⏸ 暂存归档** `--skip-specs`,0% 未实施,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
 - **ADR 不可变 doc-only 类豁免**: `cpptlm-dgpu-soc-arch-truth-cleanup §6` 显式声明,仅 doc-only cleanup 类不计。**umbrella change 含测试契约骨架,不符豁免**(per oracle v0.4 B2-1)
 - **真源 1 命名空间**: `docs/architecture/` 一律真源 1,`docs/adr/` 一律真源 3,跨仓 ArchForge 文档另立
 
