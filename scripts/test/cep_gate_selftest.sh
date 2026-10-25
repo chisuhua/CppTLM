@@ -237,10 +237,12 @@ t = p.read_text(encoding="utf-8")
 i = t.index("### 4.0 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
-# 移除**整个**孤儿标记(判定用标记而非裸子串 —— 同一行还有「M-4 行为侧决策」)
 assert "⏭(孤儿)" in sec, "锚点漂移:§4.0 未含孤儿标记"
-sec = sec.replace("**⏭(孤儿)** **M-4 行为侧** ", "", 1)
-assert "**⏭(孤儿)**" not in sec.split("| **4** |")[0], "移除未生效(§4.0 队列 #3 行)"
+# 移除**全部**孤儿标记(判定用标记而非裸子串 —— 标记与项名的相邻关系会随
+# 承接列措辞调整而变,fixture 不得依赖该布局)
+n = sec.count("⏭(孤儿)")
+sec = sec.replace("⏭(孤儿)", "", n)
+assert "⏭(孤儿)" not in sec, "移除未生效"
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 echo ""
