@@ -1,4 +1,9 @@
-## ADDED Requirements
+# cep-channel-dependency-gate Specification
+
+## Purpose
+TBD - created by archiving change cpptlm-cep-directory-ordering-plane. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: cep-channel-dependency-gate
 

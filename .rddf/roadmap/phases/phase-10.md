@@ -91,18 +91,15 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
                  │    承接 Stage 1 准入前置:M-4 行为侧决策 ✅ 已消费
                  │    —— 详见 obj §4.0 队列 #3 行 + Entry #58/#59/#60/#61)
                  ├─ cpptlm-cep-directory-ordering-plane   ← 2026-10-21 重排
-                 │    🟡 **Proposed(2026-10-25)** —— change 目录已建 + **builder 实施完成**
-                 │    (proposal + design + 3 个 delta capability;4 个 header + 3 个 test
-                 │     + 双挂装配;22 Scenario 全落地,Entry #63)
-                 │    **裁决(DRI 四问,2026-10-25)**:范围切小 —— SharerTrackerIf
-                 │    单接口 + caps + D-5 + **FullMapDirectory 唯一行为实现**;
-                 │    装配闸输入源 = include/tlm/cep/protocol_instances.json;
-                 │    双挂(instantiateAll + validate_topology,禁双实现);
-                 │    S1-7 (β) 同批补入 INV-CEP-08-IC2
-                 │    承接 Stage 1 准入前置:S1-7 的 (β) 重评估 + S1-1 ②建图层
-                 │    + M-4 行为侧(⏭孤儿,已由队列 #3 落成 cep-vc-mapping-contract)
-                 │    + S1-2/S1-3/S1-4(owner 重指向)
-                 │    —— 详见 obj §4.0 队列 #4 行 + Entry #62)
+                 │    ✅ **archived(2026-10-25)** —— 完成归档语义;tasks 53/53 全勾;
+                 │    22 Scenario 并入 3 份 main spec(cep-sharer-tracker-base 9 /
+                 │    cep-ordering-point-checker 6 / cep-channel-dependency-gate 7)
+                 │    交付:SharerTrackerIf 单接口 + caps + D-5 + FullMapDirectory 唯一实现 ·
+                 │    AddressResolverIf + J1/J2/J3 + INV-CEP-08-IC2 + S1-7 (β) 裁决 ·
+                 │    装配期通道依赖图(逐 (network, vc) verdict,双挂共享判据)
+                 │    承接 Stage 1 准入前置:S1-1 ②建图层 ✅ + S1-7 (β) ✅ + M-4 行为侧 ✅
+                 │    + S1-2/S1-3 ⛔ 未触发 / S1-4 ✅;余项登记已重指向队列 #5
+                 │    —— 详见 obj §4.0 队列 #4 行 + Entry #62/#63/#64)
                  ├─ cpptlm-cep-collective-plane-base
                  ├─ cpptlm-cep-chi-rnf-subset
                  │    承接 Stage 1 准入前置:S1-7 的 perm 形态 schema 演进
@@ -137,7 +134,7 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
 ### 治理与文档约束(per AGENTS.md §DOC HYGIENE)
 
 - **AGENTS.md:423 边界**: 第 3 条"SoC 架构组件/拓扑/演进类提案 → ArchForge"。CEP **核心框架层**(5 层骨架 + Stub Cache + Coherence Interface + 插件机制)**归 CppTLM**;**协议语义建模**(5 个具体协议设计文档)**归 ArchForge**(per `ADR-CEP-00 §2 Decision 4` 豁免论证,边界条款对照表)
-- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 1/3**(2026-10-25 `cpptlm-cep-directory-ordering-plane`(队列 #4)**建目录**占用 1 个 slot → 0/3 → 1/3;2026-10-25 `cpptlm-cep-stub-cache-core`(队列 #3)**已完成归档** → 释放 1 个 slot,1/3 → 0/3;change 目录已建,planner 阶段产出 proposal + design + 2 个 delta capability,per 台账 Entry #58;2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档** → 释放 slot;历史:该 change 建目录后曾为 1/3,**已建 change 目录**并占用 1 个 slot;2026-10-23 `cpptlm-cep-umbrella` **已完成归档** → slot 已释放,per 台账 Entry #28/#29;**历史**:2026-10-21 创建时为 1/3、2026-10-22 M2 放行后仍为 1/3;此前 2026-10-20 的 3 个 active 全部 **⏸ 暂存归档** `--skip-specs`,0% 未实施,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
+- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 0/3**(2026-10-25 `cpptlm-cep-directory-ordering-plane`(队列 #4)**已完成归档** → slot 已释放,per Entry #64;历史:建目录时曾 0/3 → 1/3;2026-10-25 `cpptlm-cep-stub-cache-core`(队列 #3)**已完成归档** → 释放 1 个 slot,1/3 → 0/3;change 目录已建,planner 阶段产出 proposal + design + 2 个 delta capability,per 台账 Entry #58;2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档** → 释放 slot;历史:该 change 建目录后曾为 1/3,**已建 change 目录**并占用 1 个 slot;2026-10-23 `cpptlm-cep-umbrella` **已完成归档** → slot 已释放,per 台账 Entry #28/#29;**历史**:2026-10-21 创建时为 1/3、2026-10-22 M2 放行后仍为 1/3;此前 2026-10-20 的 3 个 active 全部 **⏸ 暂存归档** `--skip-specs`,0% 未实施,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
 - **ADR 不可变 doc-only 类豁免**: `cpptlm-dgpu-soc-arch-truth-cleanup §6` 显式声明,仅 doc-only cleanup 类不计。**umbrella change 含测试契约骨架,不符豁免**(per oracle v0.4 B2-1)
 - **真源 1 命名空间**: `docs/architecture/` 一律真源 1,`docs/adr/` 一律真源 3,跨仓 ArchForge 文档另立
 

@@ -40,6 +40,12 @@ FROZEN_GLOBS=(
   #   ⚠️ 它是**派生刷新型**成员:上游 ArchForge 更新时须走 `--update --authorized-by`
   #   走同一授权流程(上游刷新协议见 `obj §11` Entry #56)。
   "include/tlm/cep/fabric.json"
+  # 2026-10-25(Entry #64):队列 #4 归档 → 3 份 main spec 进入 M1 冻结集(34 → 37)。
+  #   ⚠️ **只**匹配 main spec 路径(归档后的权威形态);归档件里的 delta 副本**不**入集 ——
+  #   否则同一能力会有两份"冻结产物",语义重复且漂移面翻倍。
+  "openspec/specs/cep-sharer-tracker-base/spec.md"
+  "openspec/specs/cep-ordering-point-checker/spec.md"
+  "openspec/specs/cep-channel-dependency-gate/spec.md"
   "experimental/metrics.schema.json"
   "tools/render_report.py"
   "tools/run_sweep.py"

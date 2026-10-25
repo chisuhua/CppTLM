@@ -12,6 +12,7 @@
 #include "catch_amalgamated.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -82,6 +83,42 @@ namespace {
                 ++n;
         }
         return n;
+    }
+
+    /// 读 S1-7 裁决的登记文件:**双态**(change 目录内 → 归档件)。
+    /// `kS1_7BetaVerdict.registered_in` 是**逻辑指针**,不随归档改名而变。
+    std::string read_registered_doc(const std::string& logical) {
+        namespace fs = std::filesystem;
+        if (const std::string text = read_repo_file(logical); !text.empty())
+            return text;
+
+        const std::string marker = "openspec/changes/";
+        const auto pos = logical.find(marker);
+        if (pos == std::string::npos)
+            return {};
+        const std::string tail = logical.substr(pos + marker.size()); // "<name>/design.md"
+        const std::string change = tail.substr(0, tail.find('/'));
+        const std::string rest = tail.substr(tail.find('/') + 1);
+
+        const fs::path arch = fs::path(CPPTLM_SOURCE_DIR) / "openspec/changes/archive";
+        std::error_code ec;
+        if (!fs::is_directory(arch, ec))
+            return {};
+        for (const auto& e : fs::directory_iterator(arch, ec)) {
+            if (!e.is_directory())
+                continue;
+            if (e.path().filename().string().find(change) == std::string::npos)
+                continue;
+            const fs::path candidate = e.path() / rest;
+            std::error_code ec2;
+            if (!fs::exists(candidate, ec2))
+                continue;
+            std::ifstream in(candidate);
+            std::ostringstream ss;
+            ss << in.rdbuf();
+            return ss.str();
+        }
+        return {};
     }
 
     cep::ChannelDeclaration repo_declaration() {
@@ -258,7 +295,7 @@ TEST_CASE("CEP OrderingPoint: S1-7 (β) 裁决登记", "[cep][ordering-point]") 
     // 裁决必须能在**登记文件**里查到(不是只活在头文件里)
     const std::string registered_in = cep::kS1_7BetaVerdict.registered_in;
     REQUIRE(!registered_in.empty());
-    const std::string doc = read_repo_file(registered_in);
+    const std::string doc = read_registered_doc(registered_in);
     REQUIRE(!doc.empty());
     CHECK(doc.find("S1-7") != std::string::npos);
     CHECK(doc.find("第 5 判别位") != std::string::npos);

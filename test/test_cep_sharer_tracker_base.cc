@@ -13,6 +13,7 @@
 #include "catch_amalgamated.hpp"
 
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <set>
 #include <sstream>
@@ -96,6 +97,43 @@ namespace {
     cep::SharerTrackerBehavior behavior_of(cep::TrackerImpl impl) {
         const auto* t = cep::find_tracker_traits(impl);
         return t ? t->behavior : cep::SharerTrackerBehavior{};
+    }
+
+    /// 读 delta spec:**双态**(change 目录内 → main specs → 归档件)。
+    /// 归档会把 `openspec/changes/<name>/specs/<cap>/spec.md` 搬到
+    /// `openspec/changes/archive/<date>-<name>/specs/<cap>/spec.md` 并把 delta 并入 main spec,
+    /// 断言必须两态都成立 —— 否则归档当天用例自己就红了。
+    std::string read_capability_spec(const std::string& capability) {
+        namespace fs = std::filesystem;
+        const std::string change = "cpptlm-cep-directory-ordering-plane";
+        const std::vector<std::string> direct{
+            "openspec/changes/" + change + "/specs/" + capability + "/spec.md",
+            "openspec/specs/" + capability + "/spec.md",
+        };
+        for (const auto& rel : direct) {
+            const std::string text = read_repo_file(rel);
+            if (!text.empty())
+                return text;
+        }
+        const fs::path arch = fs::path(CPPTLM_SOURCE_DIR) / "openspec/changes/archive";
+        std::error_code ec;
+        if (fs::is_directory(arch, ec)) {
+            for (const auto& e : fs::directory_iterator(arch, ec)) {
+                if (!e.is_directory())
+                    continue;
+                if (e.path().filename().string().find(change) == std::string::npos)
+                    continue;
+                const fs::path sp = e.path() / "specs" / capability / "spec.md";
+                std::error_code ec2;
+                if (fs::exists(sp, ec2)) {
+                    std::ifstream in(sp);
+                    std::ostringstream ss;
+                    ss << in.rdbuf();
+                    return ss.str();
+                }
+            }
+        }
+        return {};
     }
 
     /// FullMap 行的期望值(ADR-CEP-04 §2 决策 3 表 + §4 表首行)
@@ -474,10 +512,9 @@ TEST_CASE("CEP SharerTracker: 非 FullMap 的 4 实现只做声明层断言", "[
         CHECK(code.find(std::string("struct ") + name) == std::string::npos);
     }
 
-    // deferred 的登记必须可在 spec 里查到(不是只在本文件的注释里)
-    const std::string spec = read_repo_file(
-        "openspec/changes/cpptlm-cep-directory-ordering-plane/specs/cep-sharer-tracker-base/"
-        "spec.md");
+    // deferred 的登记必须可在 spec 里查到(不是只在本文件的注释里);
+    // 读取走双态(change 目录 → main specs → 归档件),归档前后都必须绿
+    const std::string spec = read_capability_spec("cep-sharer-tracker-base");
     REQUIRE(!spec.empty());
     CHECK(spec.find("只做声明层断言") != std::string::npos);
     CHECK(spec.find("deferred") != std::string::npos);

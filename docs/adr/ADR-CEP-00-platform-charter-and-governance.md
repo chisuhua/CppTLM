@@ -334,14 +334,28 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **触发**: 2026-10-25 队列 #4 `cpptlm-cep-directory-ordering-plane` **已建 change 目录**(`openspec/changes/cpptlm-cep-directory-ordering-plane/`)—— planner 阶段产出 proposal + design + **3 个** delta capability(`cep-sharer-tracker-base` / `cep-ordering-point-checker` / `cep-channel-dependency-gate`);并占用 1 个 KPI slot。
 > **裁决(DRI 四问,2026-10-25)**:① **范围切小** —— SharerTrackerIf 单接口 + caps descriptor(第一天就位) + D-5 全量契约 + **FullMapDirectory 唯一行为实现**,其余 4 种实现(SparseSF/DcohSymmetric/TreeManager/BroadcastNull)跟随队列 #6~#9 各自的协议族(per `ADR-CEP-04 §8` 拆分先例 + obj §4.0 排队表);② **装配闸输入源** = `include/tlm/cep/protocol_instances.json`(本仓机器可读实例声明,诞生即不冻结,per Entry #56 先例);③ **双挂**(`instantiateAll` + `validate_topology` 共享同一判据实现,禁双实现);④ **S1-7 (β) 同批补入** `INV-CEP-08-IC2`(E 态静默升级组合检查项)。
 > **对上一段(2026-10-25,队列 #3 归档段)的衔接**:该段登记「队列 #3 已归档,并发 1/3 → 0/3」—— **队列 #4 现已启动**,该预测已兑现;其**历史快照语义保留不回改**(措辞已改「当时态」)。
-> **当前态**:Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base`(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**:Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base`(per `obj §4.0`)。
 > **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);**§2 Decision 3 的「11 个 change,串行 11 季度」算术不变** —— 队列 #4 为**单一** change(oracle 复审确认不拆 `-base`/`-impls` 二分;`ADR-CEP-04 §8` 的 4 个 change 名**失指已在该 ADR 的 Status Update 处置**)。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #62**
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #62)。
 
+## Status Update 2026-10-25 —— 队列 #4 `cpptlm-cep-directory-ordering-plane` 已完成归档(KPI 并发 1/3 → 0/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-25 队列 #4 **已完成归档**(`openspec archive --yes`,archive 名 `2026-10-25-cpptlm-cep-directory-ordering-plane`)—— **完成归档**语义:tasks **53/53** 全勾;**22 Scenario** 并入 **3 份** main spec(`cep-sharer-tracker-base` 9 / `cep-ordering-point-checker` 6 / `cep-channel-dependency-gate` 7)→ slot 释放。
+> **交付内容**: `SharerTrackerIf` 单接口(4 方法)+ caps descriptor(4 属性)+ behavior(2 属性)+ `FullMapDirectory` 唯一行为实现 · `AddressResolverIf` + J1/J2/J3 + `INV-CEP-08-IC2` · 装配期通道依赖图(顶点 = `(实例, network, vc)`,verdict 逐 `(network, vc)`,双挂共享同一判据)`。**S1-1 ②建图层 + S1-7 (β) 重评估两项准入前置同时消费**。
+> **S1-7 (β) 裁决**: 不新增第 5 判别位 —— `UNIQUE` 已编码 E 态可写,静默升级的**可组合性**由 `combination_capabilities.hierarchical` 承载;扩 `perm` 会破 `ADR-CEP-02 CEN-Ib11` 的 4 值锁且不增判别力。
+> **实施期偏差(5 项)**: caps 4 属性按 `ADR-CEP-04 §2 决策 3`(而非 planner 原写的 hazard/broadcast_fallback)· `PARTIAL` 不可由合法 schema 声明表达(J2 判别力由合成声明承担)· 通道依赖边表作为**声明数据**(`32 号 §6.0.3` 派生副本)· 第 4 个 header(`ordering_point_checker.hh`)· 镜像补齐 2 个实例(`moesi_gpu` + `mesif`)。逐条见 design.md `D-ι`。
+> **对上一段(2026-10-25,队列 #4 启动段)的衔接**:该段登记「队列 #4 已启动,并发 0/3 → 1/3」—— **现该 change 已归档**;其历史快照语义保留不回改(措辞已改「当时态」)。
+> **Stage 1 准入前置的余项**: S1-2 ⛔ 未触发(需首个 `implemented` 实例)· S1-3 ⛔ 未触发(需第 3 张网 / 第 3 个协议实例)· S1-4 ✅ 已消费(Entry #56);登记已重指向队列 #5 行(per Entry #64)。
+> **当前态**: Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base`(per `obj §4.0`)。
+> **遗留(不属本 change)**: `validate_topology` target 首条命令引用不存在的 `build/configs/dgpu_board_v1_mvp.json`(`scripts/CMakeLists.txt:48`)—— 该 target 事前已不可跑完,修复需单独决策。
+> **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #64**
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #64)。
+
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #3 归档)
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)
 **最后更新**: 2026-10-25
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)

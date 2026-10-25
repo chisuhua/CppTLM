@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-02
   - ADR-CEP-15
-状态: Proposed
+状态: 已归档(2026-10-25)
 created: 2026-10-25
 last_revised: 2026-10-25
 ---
@@ -199,3 +199,7 @@ last_revised: 2026-10-25
 ---
 
 **最后**: 2026-10-25 planner 阶段 —— 5 段草稿已写;**change 目录已建**(`openspec/changes/cpptlm-cep-directory-ordering-plane/`:proposal + design + 3 个 delta capability`cep-sharer-tracker-base`(9 Scenario) / `cep-ordering-point-checker`(6) / `cep-channel-dependency-gate`(7));裁决四问落地(范围切小 / `protocol_instances.json` / 双挂 / S1-7 β 同批);`openspec validate --strict` rc=0;KPI 0/3 → **1/3**;per 台账 Entry #62。**下一个 change = 队列 #5 `cpptlm-cep-collective-plane-base`**。
+
+---
+
+**最后(归档)** : 2026-10-25 —— builder 实施完成(Entry #63:4 个 header + 1 个 CLI + 3 个 test,22 Scenario 全落地)+ **完成归档**(Entry #64:`openspec archive --yes`,archive 名 `2026-10-25-cpptlm-cep-directory-ordering-plane`;22 Scenario 并入 3 份 main spec;冻结集 34 → **37**;KPI 1/3 → **0/3**)。**下一个 change = 队列 #5 `cpptlm-cep-collective-plane-base`**。
