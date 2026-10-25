@@ -309,3 +309,45 @@ endinterface
 >
 > **变更史**:判据 2 原文逐字引用见上表「原文」行;本条 §7 刷新授权与理由见台账 **Entry #18** ——
 > 本节为三次 adr-amendment(#12 / #13 / #18)的**收敛结果**,过程记录归台账,不在本 ADR 内累积。
+
+---
+
+## 14. Status Update(2026-10-25,per 台账 Entry #58)
+
+> **授权**:Entry #58(队列 #3 建 change + M-4 行为侧决策落盘)。
+> **口径**:本节是 **§10「关联 ADR / OpenSpec」的后续 OpenSpec 命名**的**当前状态** —— **§10 正文零改动**(per ADR 不可变 + Status Update 先例)。
+
+### 14.1 §10 的 `-base` / `-impl` 二分 —— **已作废**
+
+| 项 | 内容 |
+|---|---|
+| **原文**(§10 末段) | 「后续 OpenSpec(架构师不写,builder 阶段):`cpptlm-cep-stub-cache-core-base`(P1 实施 change,1 KPI slot,doc-only + 测试)· `cpptlm-cep-stub-cache-core-impl`(P2 实施 change,1 KPI slot)」 |
+| **§10 正文** | **零改动**(逐字保留) |
+| **§10 当前状态** | ⛔ **已作废** —— 两个后续 OpenSpec 名**永久失指**。**唯一**的后续 OpenSpec = **`cpptlm-cep-stub-cache-core`**(单 change,1 KPI slot) |
+| **落地位置** | `openspec/changes/cpptlm-cep-stub-cache-core/`(🟡 Proposed,2026-10-25 建目录;planner 阶段产出 proposal + design + 2 个 delta capability) |
+| **裁决日** | 2026-10-25(DRI 两问:① 命名 / KPI slot ② 范围切分) |
+
+**作废理由(3 条)**:
+
+1. **`obj-cep-platform §4.0` 排队表是实施路径的唯一权威视图** —— 该表自 2026-10-21 重排起只排**一个** `cpptlm-cep-stub-cache-core`(Stage 1 / 2027-Q2 / 8 周)。
+2. **算术**:`ADR-CEP-00 §2 Decision 3` 是「**11 个 change,串行 11 季度**」的治理真源 —— 拆成 2 个 change 会破该算术(12 个 change)。
+3. **M-4 前置不能与实现分离**:M-4(传输层 `CATEGORY_*` → VC 映射的行为侧决策)是 stub cache 的**准入前置** —— stub 是 CEP 第一个会产生「新断言固化现状语义」的实现型 change;拆开会让 M-4 在**没有真实消费者**的真空里被裁决。
+
+**替代形态**:单一 change 的 **双 Phase** —— **Phase 0** = M-4 决策落盘 + 契约化(delta capability `cep-vc-mapping-contract`);**Phase 1** = stub cache core 实现(delta capability `cep-stub-cache-core`)。
+
+**M-4 决策结论摘要**(详见该 change 的 design.md D2 ~ D9):
+
+| # | 裁定 |
+|---|---|
+| 协议层 | credit **不独占** VC —— 该问题**已**被跨仓权威关闭(ArchForge `32 号 §6.0.1` 排除表),本仓**不重新裁决** |
+| 传输层 | **保持索引对齐**,**不建**显式映射表(显式映射表归队列 #6) |
+| 语义正名 | `VC_DAT` = **预留 DAT 桶**(当前**恒 0** —— 实测该桶在所有真实路径中无流量) |
+| 冲突输入 | `vc_id` 与 `flit_category` 冲突时,计数归 `flit_category`、编码归 `vc_id`,传输层**不仲裁**(仲裁属 adapter 层) |
+| 桶名 / accessor | **不改名、不弃用**(`VC_DAT` 已进入 `chip_select=(vc<<4)|src` 的跨模块 wire 编码契约) |
+| 冻结面 | `include/tlm/cep/fabric.schema.json` 的 `vc_count.maximum=4` **不需要动** —— 冻结面改动仅本 ADR 的本 Status Update 段 |
+
+### 14.2 未变更项(明示)
+
+§2 决策 1 ~ 4(6 接口 / 双端口形态 / 折叠映射表 / bypass 模式)· §3 的 **10** 条契约测试清单 · §4.1 的 5 态状态机 · §4.3 的 **6** 条 `INV-SC1` ~ `INV-SC6` · `INV-CEP-05-IC1` —— **零改动**。
+
+> **变更史**:§10 原文逐字引用见上表「原文」行;本条作废授权与理由见台账 **Entry #58** —— 过程记录归台账,不在本 ADR 内累积。

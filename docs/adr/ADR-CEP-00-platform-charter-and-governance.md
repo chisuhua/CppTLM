@@ -300,15 +300,26 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **触发**: 2026-10-24 队列 #2 `cpptlm-cep-poc-spike` **已完成归档**(`openspec archive`,归档名 `2026-10-25-cpptlm-cep-poc-spike`)—— delta capability `cep-poc-spike-verification`(**15 Scenario**)已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`,KPI slot 释放 → **并发 1/3 → 0/3**。
 > **对上一段(2026-10-24)的衔接**:该段登记「队列 #2 已启动,并发 0/3 → 1/3」—— **现该 change 已归档**,slot 释放;其**历史快照语义保留不回改**。
 > **前置门**:归档前经 **critic 7 轮复审** —— 前 6 轮 REJECT(逐轮揭示「有牙」的六类缺口:判别力 / 真实性 / 敏感度 / 等价性 / 夹具自守 / 覆盖承诺+正控),每轮均修复并以 mutant 逐条反证;**第 7 轮 APPROVE**(per `obj §11` Entry #49~#54)。
-> **当前态**:Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #3 `cpptlm-cep-stub-cache-core`(per `obj §4.0`;并承接 **M-4 行为侧决策**)。
+> **当时态(历史快照,已被下一段取代)**:Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #3 `cpptlm-cep-stub-cache-core`(per `obj §4.0`;并承接 **M-4 行为侧决策**)。
 > **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);§8 第 5 条**仍为失效**(umbrella 保持 ✅ archived)。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #55**
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #55)。
 > **owner 重指向(per Entry #55)**:S1-1 ①定义层 = ✅已消费;**②建图层 → 队列 #4**;**③放行闸 → 全局不变量**(不挂队列行);**M-4 决策 → 队列 #3**;**S1-5 表体 → 队列 #6**;S1-2/3/4 → 队列 #3+。
 
+## Status Update 2026-10-25 —— 队列 #3 `cpptlm-cep-stub-cache-core` 已启动(KPI 并发 0/3 → 1/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已建 change 目录**(`openspec/changes/cpptlm-cep-stub-cache-core/`)—— planner 阶段产出 `proposal.md` + `design.md` + **2 个** delta capability(`cep-vc-mapping-contract` 8 Scenario / `cep-stub-cache-core` 9 Scenario);**双 Phase 单 change**(Phase 0 = M-4 决策落盘 + 契约化 / Phase 1 = stub cache core 实现);并占用 1 个 KPI slot。
+> **对上一段(2026-10-24)的衔接**:该段登记「队列 #2 已完成归档,并发 1/3 → 0/3」—— **队列 #3 现已启动**,该预测已兑现;其**历史快照语义保留不回改**。
+> **M-4 行为侧决策已落**(承接自队列 #2 归档时的 owner 重指向):协议层 credit **不独占** VC(该问题**已**被 ArchForge `32 号 §6.0.1` 排除表关闭,本仓**不重新裁决**)· 传输层**保持索引对齐**、**不建**显式映射表(显式映射表归队列 #6)· `VC_DAT` 语义正名(**预留 DAT 桶**,当前恒 0)· 冲突输入(`vc_id` vs `flit_category`)**传输层不仲裁**;**`include/tlm/cep/fabric.schema.json` 的 `vc_count.maximum=4` 不需要动** —— 本次冻结面改动仅**本文件**与 `ADR-CEP-05` 的 Status Update 追加段。
+> **当前态**:Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #4 `cpptlm-cep-directory-ordering-plane`(per `obj §4.0`)。
+> **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);§8 第 5 条**仍为失效**(umbrella 保持 ✅ archived);**§2 Decision 3 的「11 个 change,串行 11 季度」算术不变** —— 队列 #3 为**单一** change(`ADR-CEP-05 §10` 的 `-base`/`-impl` 二分作废,见该 ADR §14.1)。
+> **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #58**
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸 `cep_freeze_check.sh --update --authorized-by "Entry #58"`。
+
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24**
-**最后更新**: 2026-10-24
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**
+**最后更新**: 2026-10-25
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)
