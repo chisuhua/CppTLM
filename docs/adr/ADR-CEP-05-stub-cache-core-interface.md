@@ -324,7 +324,7 @@ endinterface
 | **原文**(§10 末段) | 「后续 OpenSpec(架构师不写,builder 阶段):`cpptlm-cep-stub-cache-core-base`(P1 实施 change,1 KPI slot,doc-only + 测试)· `cpptlm-cep-stub-cache-core-impl`(P2 实施 change,1 KPI slot)」 |
 | **§10 正文** | **零改动**(逐字保留) |
 | **§10 当前状态** | ⛔ **已作废** —— 两个后续 OpenSpec 名**永久失指**。**唯一**的后续 OpenSpec = **`cpptlm-cep-stub-cache-core`**(单 change,1 KPI slot) |
-| **落地位置** | `openspec/changes/cpptlm-cep-stub-cache-core/`(🟡 Proposed,2026-10-25 建目录;planner 阶段产出 proposal + design + 2 个 delta capability) |
+| **落地位置** | `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`(✅ **已完成归档**,2026-10-25;tasks **36/36** 全勾;2 个 delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` **已合并**进 `openspec/specs/`) |
 | **裁决日** | 2026-10-25(DRI 两问:① 命名 / KPI slot ② 范围切分) |
 
 **作废理由(3 条)**:

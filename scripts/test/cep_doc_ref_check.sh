@@ -102,6 +102,7 @@ VIRTUAL_PATHS=(
   "docs/adr/ADR-CEP-12-...md"                       # 同上
   "docs/adr/ADR-CEP-13-...md"                       # 同上
   "docs/adr/ADR-CEP-00-...md"                       # 同上
+  "openspec/.../tasks.md"                          # 省略号(散文引用,per obj §4.7.3 载体分工表的通用写法)
   "docs/architecture/07-*.md"                        # 通配
   "include/tlm/cep/.gitkeep"                        # 占位文件
   "include/tlm/pcie/pcie_endpoint_tlm.h"            # 冻结/待迁路径
@@ -112,6 +113,9 @@ VIRTUAL_PATHS=(
   "openspec/changes/archive/2026-10-20-*/"          # 通配
   "openspec/changes/cpptlm-cep-umbrella"            # 已归档 change 的**原路径**(2026-10-23 归档)—— 历史快照指向归档前位置
   "openspec/changes/cpptlm-cep-poc-spike"           # 同上(2026-10-25 归档 → 2026-10-25-cpptlm-cep-poc-spike);历史叙述(规格文档 §/台账 Entry)指向归档前位置
+  "openspec/changes/cpptlm-cep-stub-cache-core"        # 同上(2026-10-25 归档 → 2026-10-25-cpptlm-cep-stub-cache-core);历史叙述(台账 Entry #58/#60 的产出物清单)指向归档前位置
+  "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-vc-mapping-contract/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-vc-mapping-contract/spec.md)
+  "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-stub-cache-core/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-stub-cache-core/spec.md)
   "openspec/changes/cpptlm-cep-poc-spike/specs/cep-poc-spike-verification/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-poc-spike-verification/spec.md);现址见 openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella
   # —— 通配 / 族名(2026-10-23 Entry #29 引入):不是「可判存在的单一路径」——
   "docs/implementation/*"                           # 历史快照族通配(台账 Entry #29 ② 引述)
