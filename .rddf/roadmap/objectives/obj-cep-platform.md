@@ -309,7 +309,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 **三条硬规则**:
 
 1. **状态唯一权威 = OpenSpec change 的 `tasks.md` 勾选 + `proposal.md` 状态行**。**§4.0 的状态列、`phase-10.md` 的子任务表、`.rddf/improvements/*.md` 的 front-matter `状态:` 三者都是它的投影** —— 任一投影与 change 不一致时**以 change 为准**,并立刻回填该投影。
-2. **数量口径只在 ADR 写**(11 change / 11 季度 / 21 份 ADR / 66 条 invariant / **30 冻结成员**)。objective / phase / improvement / change **一律引用,不复算**。
+2. **数量口径只在 ADR 写**(11 change / 11 季度 / 21 份 ADR / 66 条 invariant / **冻结成员数以 `cep_freeze_check.sh` 清单为准**)。objective / phase / improvement / change **一律引用,不复算**。
 3. **实施笔记 append-only** —— 过期快照不改写,由新记录覆盖(不「改历史」)。
 
 #### 4.7.2 change 状态机
@@ -3587,6 +3587,58 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 **⑦ 验收**:`ctest` **101/101** · `[cep]` 77 case · 对账测试 **131 断言** · `ctest -R cep_poc_spike` **3** · `cep_gate_selftest` **21/21** · 守门全 rc=0 · `openspec validate --changes --strict` rc=0 · `format.sh --check` rc=0 · **KPI 0/3**。
 
 **关联**: Entry #49~#54(critic 7 轮)· Entry #46(planner 审查)· 五轮/六轮/七轮 critic 会话
+
+---
+
+### Entry #56 — 2026-10-25 [scope-change]
+
+**主题**: **决策 B 落地(B1')** —— `include/tlm/cep/fabric.json` 纳入 M1 冻结集 + 上游刷新协议成文 + 消灭冻结成员数字字面量
+
+**决策 B 的原裁决**(2026-10-24,per oracle + metis 分析):**B1'** = 立即冻结 `fabric.json`,但附 **3 项条款**。本条是它的**执行**。
+
+**① 为什么 `fabric.json` 该冻结(裁决理由已收窄)**
+
+- **原规则**(Entry #9):实例数据**不冻结**(`fabric.json`),触发条件 = 「Stage 1 首个 `implemented` 实例跑过后」;`fabric.schema.json`(契约面)**冻结**。
+- **该规则的前提已破两处**(实测):① spike 消费(`examples/cep_poc_spike_s2.cc:407` / `cep_poc_spike_s3.cc:231`,已注册 ctest);② **非 spike 的回归门消费**(`scripts/test/cep_decl_alignment_check.sh:52`,该脚本是 **ctest #85**,注册于 `test/CMakeLists.txt:267`)→ 按 design.md D4.5 自定的度量口径「已被非 spike 的回归门消费」,**触发条件已满足**。
+- **收窄后的裁决理由(否定 oracle 的宏大论证)**:冻结 `fabric.json` 的**唯一新增价值** = 「**ArchForge-less 环境下唯一的本地 drift 闸**」—— 因为 `cep_decl_alignment_check.sh` 在 ArchForge 仓缺席时 **SKIP**(实测 `[SKIP]` 样例)。**不**声称「冻结与 NS-R2 不矛盾」之类的宏大论证。
+- **反向张力(已处置)**:`fabric.json` 的 `derived_from` 指向**外部仓** → 冻结 = 把外部数据源的快照冻在仓内 → 上游更新时需走刷新流程(见 ②)。**这不是债,是纪律的机器化**。
+
+**② 上游刷新协议(成文,per B1' 条款 b —— 原为「口头纪律」,现为明文流程)**
+
+| 步 | 动作 | 判据 |
+|----|------|------|
+| 1 | ArchForge 侧更新 `22-nsa §0.5.4.1`(网络清单增删 / `vc_count` 变更) | **必须先**走 ArchForge 自身的 ADR 流程(per NS-R2「network_id 单点权威,增删必须走 ADR」) |
+| 2 | 本仓**刷新** `include/tlm/cep/fabric.json` 的 `networks` 段(仅该段;`derived_from` / `authority_note` / `vc_allocation_note` 不动) | 刷新后 `bash scripts/test/cep_decl_alignment_check.sh --strict` 必须 rc=0(⑤ 双向比对) |
+| 3 | 刷新 `fabric.schema.json`(**若**槽位上界变化)—— ⚠️ 它**已在**冻结集 → 须走授权闸 | `vc_count.maximum` 与 `protocol_instance.schema.json` 的 `vc_id` 上界**两处同步** |
+| 4 | **走授权闸重生成冻结清单** | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #N"`(N = 本次刷新对应的台账 entry id)**两步**:先 commit 产物 → 再 `--update` → 再 commit 清单 |
+| 5 | **刷新 SLA**:上游更新后 **≤ 5 个工作日**内完成本仓刷新 | 超期 → `cep_decl_alignment_check.sh` 在有 ArchForge 的环境下报红(⑤ 双向)⇒ 天然被发现 |
+| 6 | 若刷新**只**涉及派生副本(§2)而**不**涉及 §1 的 ArchForge ADR | 仍走 §4 的同一授权流程(**无例外**)—— 冻结面不因「是派生物」而豁免 |
+
+> **本仓侧不复制上游的「增删网络必须走 ADR」纪律**(NS-R2 的权威在 ArchForge);本仓只保证「**本仓副本与上游一致**」(由 ⑤ 双向比对强制)。
+
+**③ 消灭冻结成员数字字面量(per B1' 条款 c + metis 债 3)**
+
+- **问题**:`artifact_count` 原写死在 **7 个活文档**里 → 每加/减一个冻结成员就要改 7 处 → **重复债**,且漏改任一处即报红(断言 ③)。
+- **修法**:
+  - 断言 ③ 改为**双形态**:抓到数字 → 必须 == manifest 值(原防漂移能力**不减**);**一处都没抓到数字** → 豁免(「以清单为准」表述无从写错)。**同时存在互相矛盾的两个数字仍报红**。
+  - 7 个活文档的「N 成员」字面量 → 改为「**成员数以 `cep_freeze_check.sh` 清单为准**」。
+- **效果**:今后增删冻结成员**不再需要**改 7 个文档;而**写了数字**的地方仍受漂移保护。
+
+**④ 新增 freeze 路径的反向验证(per B1' 条款 ④ —— 两条路径的牙必须分别验)**
+
+- **既有** `scripts/test/cep_decl_reverse_verify.sh` 的破坏对象虽含 `fabric.json`,**走的却是 decl check 路径** —— 验的是「声明 ↔ fabric 语义一致」,**不是**「fabric 的 hash 未被静默改写」。**两条路径的牙必须分别验**。
+- **新增** `scripts/test/cep_freeze_reverse_verify.sh`:基线绿 → 破坏 `fabric.json` 一字节 → freeze check **必须报红且点名 fabric.json** → 字节级还原 → 回绿。**刻意不注册进 ctest**(它会临时改写冻结产物,并行下会与其他测试读到中间态)。
+- **实测**:在 `fabric.json` **尚未**纳入冻结时跑该脚本 → 破坏后 freeze check **仍绿** ⇒ 脚本正确暴露「闸对派生文件无牙」;纳入冻结后 → **红且点名** ✅。
+
+**⑤ 附带:归档后的 main spec 也纳入冻结**
+
+`openspec/specs/cep-poc-spike-verification/spec.md`(队列 #2 归档后落 main spec)按 `cep-core-contracts` 的**同一先例**纳入冻结 —— 否则归档后的**系统契约面**可被静默改写(与 umbrella 归档时的处理一致)。
+
+**⑥ 冻结成员数**:30 → **32**(新增 `include/tlm/cep/fabric.json` + `openspec/specs/cep-poc-spike-verification/spec.md`)。
+
+**⑦ 验收**:`cep_freeze_check.sh` rc=0 · `cep_freeze_reverse_verify.sh` 闭环成立 · `cep_docs_sync_check.sh --strict` rc=0(断言 ③ 新口径)· `cep_doc_ref_check.sh --strict` rc=0 · `ctest` **101/101** · `[cep]` 77 case / 1415 断言 · `format.sh --check` rc=0。
+
+**关联**: Entry #9(原冻结规则)· Entry #55(队列 #2 归档 + 4 裁决)· 2026-10-24 决策 B(B1')落盘
 
 ---
 

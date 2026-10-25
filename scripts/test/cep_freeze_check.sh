@@ -32,6 +32,14 @@ FROZEN_GLOBS=(
   "docs/architecture/07-coherence-exploration-platform.md"
   "include/tlm/cep/protocol_instance.schema.json"
   "include/tlm/cep/fabric.schema.json"
+  # 2026-10-25(Entry #56 B1'):**实例数据**也纳入冻结 ——
+  #   `fabric.json` 是 ArchForge 的**派生副本**(`derived_from` = 22-nsa §0.5.4.1 + 32 号 §6.0.2),
+  #   但它被 S3 spike 的**顶点/边集导出**与 ctest #85 `cep_decl_alignment_check` 的
+  #   **第 ⑤ 项双向比对**消费 → 静默改它能翻转回归门的 verdict ⇒ 它事实上承载契约语义。
+  #   冻结它 = 把「改前必须先确认 ArchForge 已更新」的自陈纪律**机器化**。
+  #   ⚠️ 它是**派生刷新型**成员:上游 ArchForge 更新时须走 `--update --authorized-by`
+  #   走同一授权流程(上游刷新协议见 `obj §11` Entry #56)。
+  "include/tlm/cep/fabric.json"
   "experimental/metrics.schema.json"
   "tools/render_report.py"
   "tools/run_sweep.py"
@@ -43,6 +51,8 @@ FROZEN_GLOBS=(
   "openspec/changes/archive/*cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md"
   # 归档后**系统契约**落在 main spec —— 同样纳入冻结(否则契约面可被静默改写)
   "openspec/specs/cep-core-contracts/spec.md"
+  # 2026-10-25(Entry #55):队列 #2 归档 → delta capability 落在 main spec —— 同样纳入冻结
+  "openspec/specs/cep-poc-spike-verification/spec.md"
 )
 
 if [ "${1:-}" = "--update" ]; then

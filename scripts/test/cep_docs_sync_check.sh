@@ -855,7 +855,13 @@ if hits:
 else:
     print("  \033[0;32m✓\033[0m 无「实体 + 旧状态词」同行出现(区块级豁免)")
 
-# ── 断言 ③:冻结成员数字集合 == {30} ───────────────────────────────
+# ── 断言 ③:冻结成员数字集合 == manifest 的 artifact_count ─────────────
+#   口径(2026-10-25 Entry #56 修订):文档**可以**写具体数字(必须与清单一致),
+#   **也可以**写「以 `cep_freeze_check.sh` 清单为准」(无数字 → 无从写错)。
+#   原实现要求集合 == {N},故「不写数字」会被判红 —— 那等于**逼**每加一个冻结成员
+#   就改 7 个文档的字面量(metis 债 3:重复债)。修订后:
+#     · 抓到数字 → 必须 == manifest 值(防漂移,原能力不减)
+#     · 一处没抓到数字 → 该文档豁免(但**不得**同时存在互相矛盾的两个数字)
 FZ = [".rddf/roadmap/objectives/obj-cep-platform.md", ".rddf/roadmap/phases/phase-10.md",
       ".rddf/improvements/cpptlm-cep-umbrella.md", ".rddf/roadmap.md",
       "docs/ONBOARDING.md", "scripts/README.md", "docs/adr/ADR-CEP-NUMBER-MAP.md"]
@@ -875,8 +881,10 @@ for p in FZ:
         setn.add(gs[0] if gs else "")
 if n is None:
     failed.append("无法读取冻结清单 artifact_count")
-elif setn != {str(n)}:
+elif setn and setn != {str(n)}:
     failed.append(f"冻结成员数字集合 {sorted(setn)} != {{{n}}}")
+elif not setn:
+    print(f"  \033[0;33m–\033[0m 冻结成员数:活文档均以「清单为准」表述(无字面量 → 无从漂移)")
 else:
     print(f"  \033[0;32m✓\033[0m 冻结成员数字集合一致 {{{n}}}")
 

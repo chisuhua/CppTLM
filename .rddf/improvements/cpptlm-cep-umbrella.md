@@ -124,7 +124,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 | `tools/ab_compare.py` | ~150 | A/B 对比 → `delta_metrics.json` + CDF overlay |
 | `scripts/test/cep_docs_sync_check.sh` | ~650 | 真源章节号机器检查(覆盖 **21 份** ADR,per `ADR-CEP-00A §5.1`)+ invariant 计数单一真源校验(**区分「提及」与「定义」**)+ P 编号口径校验(per `ADR-CEP-16 IC1`)+ **第 10 组「传输层 `CATEGORY_*` 分层纪律」**(per Entry #11)|
 | `scripts/test/cep_doc_ref_check.sh` | ~400 | 节号引用可达性 + 语义断言 + 负向断言(per Entry #11)|
-| `scripts/test/cep_freeze_check.sh` | ~200 | M1 冻结面 30 成员授权闸(`--update --authorized-by`)|
+| `scripts/test/cep_freeze_check.sh` | ~200 | M1 冻结面授权闸(`--update --authorized-by`;成员数以清单为准)|
 | `scripts/test/cep_archforge_alignment_check.sh` | ~200 | 跨仓锚点守门(33 锚点)|
 | `scripts/test/cep_decl_alignment_check.sh` + `cep_decl_reverse_verify.sh` | ~300 | 声明 ↔ schema 双向映射(判据 C-4,per Entry #9)|
 | `experimental/.gitkeep` + `experimental/metrics.schema.json` | ~60 | 实验目录约定 + schema |
