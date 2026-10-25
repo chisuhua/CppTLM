@@ -128,6 +128,20 @@ add_test(NAME cep_poc_spike_s3 COMMAND cep_poc_spike_s3)
 set_tests_properties(cep_poc_spike_s3 PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # ==============================================================================
+# CEP 装配期判据的**离线挂点**(队列 #4,per ADR-CEP-09 抓取点 1)
+# ==============================================================================
+# 与 `src/core/module_factory.cc::instantiateAll()` 的装配闸**共享同一组判据函数**
+# (tlm/cep/channel_dependency_graph.hh + tlm/cep/ordering_point_checker.hh),禁双实现。
+# `scripts/CMakeLists.txt` 的 `validate_topology` target 追加本 CLI 调用。
+# WORKING_DIRECTORY = 仓库根 —— CLI 按相对路径读 include/tlm/cep/protocol_instances.json。
+add_executable(cep_channel_dependency_gate cep_channel_dependency_gate.cc)
+target_link_libraries(cep_channel_dependency_gate PRIVATE cpptlm_core)
+target_include_directories(cep_channel_dependency_gate PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+add_test(NAME cep_channel_dependency_gate COMMAND cep_channel_dependency_gate)
+set_tests_properties(cep_channel_dependency_gate PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# ==============================================================================
 # HSK-8 Phase 2 Step 6: examples 同样需要 PTX-EMU shared libs
 # ==============================================================================
 if(CPPTLM_WITH_PTX_EMU)

@@ -18,7 +18,8 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 #### Scenario: caps descriptor 4 属性 SHALL 为 bitmask 64-bit(**spec 首次定义**)
 
 - **WHEN** 读取 caps descriptor struct
-- **THEN** SHALL 存在 4 个属性(`completeness` / `aggregation_at` / `hazard` / `broadcast_fallback`)per `ADR-CEP-04 §2 Decision 3`
+- **THEN** SHALL 存在**恰 4 个**属性:`scope` / `completeness` / `authority` / `aggregation_at` per `ADR-CEP-04 §2 决策 3`(与冻结 schema `protocol_instance.schema.json` 的 `sharer_tracker.caps` required 逐项一致)
+- **AND** `hazard`(§4 表)与 `broadcast_fallback`(决策 2)SHALL **不在** caps 内,而是并列的行为属性 `SharerTrackerBehavior`
 - **AND** `ResponderSet` 形态 SHALL 为 **bitmask 64-bit**(编译期 `static_assert(sizeof(responder_set_t)==8)`)⇒ **spec 首次定义**(沿用 `ADR-CEP-04` 先例措辞)
 - **AND** SHALL 有 **bit→node_id 显式映射表**,**bit 0 = NODE_ID_SDMA**(per `soc_internal_noc.hh` 的 NODE_ID 编码)
 

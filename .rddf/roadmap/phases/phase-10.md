@@ -91,8 +91,9 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
                  │    承接 Stage 1 准入前置:M-4 行为侧决策 ✅ 已消费
                  │    —— 详见 obj §4.0 队列 #3 行 + Entry #58/#59/#60/#61)
                  ├─ cpptlm-cep-directory-ordering-plane   ← 2026-10-21 重排
-                 │    🟡 **Proposed(2026-10-25)** —— change 目录已建
-                 │    (proposal + design + 3 个 delta capability;planner 阶段)
+                 │    🟡 **Proposed(2026-10-25)** —— change 目录已建 + **builder 实施完成**
+                 │    (proposal + design + 3 个 delta capability;4 个 header + 3 个 test
+                 │     + 双挂装配;22 Scenario 全落地,Entry #63)
                  │    **裁决(DRI 四问,2026-10-25)**:范围切小 —— SharerTrackerIf
                  │    单接口 + caps + D-5 + **FullMapDirectory 唯一行为实现**;
                  │    装配闸输入源 = include/tlm/cep/protocol_instances.json;

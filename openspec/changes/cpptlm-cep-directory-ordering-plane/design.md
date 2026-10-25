@@ -169,6 +169,62 @@ per 队列 #3(队列 #2/#3 也发生过「单文件头即可实现」),裁决:
 
 ---
 
+## 实施期裁决(builder 阶段,2026-10-25)
+
+### D-ι:实施期对**权威面**的三处校准 + S1-7 (β) 的裁决全文
+
+> **性质**:builder 阶段读到冻结 schema / ArchForge 权威后,发现 planner 期的 delta spec 有三处
+> 与权威**不一致**。权威优先(真源原则):代码按权威实施,delta spec 同步回填,此处登记**为什么**。
+
+#### ι-1 `caps` descriptor 是 4 属性 `{scope, completeness, authority, aggregation_at}`
+
+- **原 spec A-1-2 写的是** `{completeness, aggregation_at, hazard, broadcast_fallback}`,并声称依据
+  `ADR-CEP-04 §2 决策 3`。
+- **实际权威**:`ADR-CEP-04 §2 决策 3` 的结构体是 `{scope, completeness, authority, aggregation_at}`;
+  冻结 schema `protocol_instance.schema.json` 的 `sharer_tracker.caps` **required 恰为这 4 项**
+  (`additionalProperties: false`)。
+- **`hazard` 与 `broadcast_fallback` 不在 caps 里**:前者是 `ADR-CEP-04 §4 表` 的**行为**契约,
+  后者是**决策 2** 的完备性兜底声明 ⇒ 在代码里落到 `SharerTrackerBehavior`(与 caps 并列),
+  不塞进 caps 结构体。
+- **影响**:A-1-2 的断言改为「caps 4 属性 + `sizeof == 4`;行为 2 属性另表」。
+
+#### ι-2 `completeness == PARTIAL` **不可由合法声明表达**
+
+- 冻结 schema 的 `completeness` enum 只有 `EXACT` / `CONSERVATIVE`(决策 2:无兜底的 PARTIAL 是
+  失效实例,故不给它出入口)。
+- ⇒ J2 的 PARTIAL 分支**在合法声明上恒不触发**,其判别力只能由**合成声明**(直接构造
+  `DeclaredInstance`)承担。报告里逐实例显式写 `vacuous PASS`,防止把「schema 不允许」误读成
+  「已实证无漏 snoop」。
+
+#### ι-3 通道依赖**边表**是声明数据,不是可推导规则
+
+- 原 spec A-3-2 写「边由 `vc_binding` + `ordering_assumption` 导出」。实测:**不可导出** ——
+  ArchForge `32 号 §6.0.3` 给的逐网络边表(compute_noc `{0→1,0→2,0→3,1→3,3→2}`、
+  ualink_fabric `{0→3,1→3,2→3}`)不是 `vc_binding` 的函数(同一 vc 绑定集可配多种合法边表)。
+- **落地**:边表随 `include/tlm/cep/protocol_instances.json` 的 `channel_dependency_edges`
+  作为**派生副本**声明;`.hh` 内零网络名/零边字面量(由测试的去注释扫描 + 正控守住)。
+  ⇒ 「不硬编码」的实质是**不把镜像冻进代码**,而不是「不读声明」。
+
+#### ι-4 S1-7 (β) 的裁决全文(**交付物**)
+
+| 项 | 内容 |
+|---|---|
+| **问题** | Stub 的 `perm` 4 值锁(`NONE/READ/UNIQUE/WRITEBACK`,`ADR-CEP-02 CEN-Ib11`)在**组合**语义下是否需要**第 5 判别位**来表达「`UNIQUE` 可静默升 `WRITEBACK`」? |
+| **裁决** | **不新增第 5 判别位**。4 值 `perm` 足够。 |
+| **理由** | ① `UNIQUE` 已经是「E 态、可写」的编码 —— 静默升级的**入口**不需要额外位;② 真正要判的是「这个组合允不允许静默升级」,那是**组合能力**问题,载体是 `combination_capabilities`(冻结 schema 已有 `concurrent/hierarchical/heterogeneous`),不是权限值;③ 扩 `perm` 会破 `CEN-Ib11` 的 4 值锁,且**不多回答任何一个问题**。 |
+| **落地** | `include/tlm/cep/ordering_point_checker.hh` 的 `kS1_7BetaVerdict`(`needs_fifth_perm_bit = false`)+ 本段;IC2 检查项按「`perm` 含 `UNIQUE` ⇒ 需 `hierarchical`」机器化 |
+| **不做** | 不改 `cep-stub-cache-core.spec.md`(冻结面)· 不落 schema 演进(`perm` 形态归队列 #6 复核,S1-7 的 perm 分支)· 不改 `ADR-CEP-05` 正文 |
+| **复核触发** | 首个 `status = implemented` 的协议实例出现时(S1-2),若其实 `perm` 无法表达其权限语义 ⇒ 重开本裁决 |
+
+#### ι-5 第四个头文件 `ordering_point_checker.hh`(结构偏离)
+
+- planner 的 Impact 列了 3 个头文件。实施时把 **J1/J2/J3/IC2** 独立成第 4 个 header:
+  这些判据属于「排序点平面」,而 `channel_dependency_graph.hh` 属于「通道依赖平面」;
+  塞进后者会让两个平面共用一处实现,违反 `ADR-CEP-08 §1.3` 的正交分工。
+- 依赖方向:`ordering_point_checker.hh` → `channel_dependency_graph.hh`(**单向**,无环)。
+
+---
+
 ## Risks / Trade-offs
 
 | 风险 | 影响 | 缓解 | 关联 AC |

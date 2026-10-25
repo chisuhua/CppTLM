@@ -39,6 +39,7 @@
 
 #include "module_factory.hh"
 #include <algorithm>
+#include <cstdio>
 #include <format>
 #include <fstream>
 #include <set>
@@ -60,6 +61,8 @@
 #include "framework/stream_adapter.hh"
 #include "metrics/stats_manager.hh"
 #include "sim_module.hh"
+#include "tlm/cep/channel_dependency_graph.hh"
+#include "tlm/cep/ordering_point_checker.hh"
 #include "tlm/router_tlm.hh"
 #include "utils/config_utils.hh"
 #include "utils/json_includer.hh"
@@ -159,6 +162,27 @@ bool ModuleFactory::instantiateAll(const json& config) {
     if (!validateConfig(final_config)) {
         DPRINTF(MODULE, "[CONFIG ERROR] Schema validation failed, aborting instantiation\n");
         return false;
+    }
+
+    // ========================
+    // 0.25 CEP 装配期判据(ADR-CEP-09 Decision A + ADR-CEP-08 决策 3/4)
+    // ========================
+    // 只在 config 带 `cep` 段时触发;无该段 = 本仓绝大多数拓扑不涉及 CEP ⇒ 不打印噪声。
+    // 两个挂点(此处 + `validate_topology` 跑的 CLI)调用**同一组**判据函数 —— 禁双实现。
+    // 契约:不通过 = 配置 fail(`INV-CEP-09-IC1`),不得以运行时检查替代。
+    if (final_config.is_object() && final_config.contains("cep")) {
+        const tlm::cep::GateReport channel_gate = tlm::cep::run_channel_gate(final_config);
+        const tlm::cep::OrderingReport ordering_gate = tlm::cep::run_ordering_gate(final_config);
+
+        std::fputs(channel_gate.to_log().c_str(), stdout);
+        std::fputs(ordering_gate.to_log().c_str(), stdout);
+        std::fflush(stdout);
+
+        if (channel_gate.verdict == tlm::cep::GateVerdict::FAIL ||
+            ordering_gate.verdict == tlm::cep::GateVerdict::FAIL) {
+            DPRINTF(MODULE, "[CEP GATE] assembly criteria failed, aborting instantiation\n");
+            return false;
+        }
     }
 
     // ========================

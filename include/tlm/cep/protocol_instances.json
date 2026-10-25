@@ -1,21 +1,203 @@
 {
   "derived_from": {
-    "source_doc": "ArchForge 32-cep-based-coherence-architecture.md §6.1/§6.2",
-    "mirror_note": "per Entry #55 抗漂移:本仓只持派生副本,单点权威在 ArchForge;修改镜像须先 ArchForge 侧改 + 本仓 re-derive(fabric.json 同型先例,per 22-nsa §0.5.4.1 NS-R2)",
-    "note_entry": "Entry #62 首次建立(2026-10-25);校验 schema = include/tlm/cep/protocol_instance.schema.json"
+    "source_doc": "ArchForge 32-cep-based-coherence-architecture.md §6.1(moesi_gpu 声明)/ §6.0.2(per-network VC 矩阵)/ §6.0.3(通道依赖边表)",
+    "mirror_note": "本仓只持**派生副本**,单点权威在 ArchForge(与 fabric.json 同型,per 22-nsa §0.5.4.1 NS-R2)。改动本文件前必须先确认 ArchForge 侧已更新;`scripts/test/cep_decl_alignment_check.sh` 第 ⑥ 项做逐字段镜像比对,`cep_fabric` 第 ⑤ 项做网络集双向比对。",
+    "note_entry": "Entry #62 建立(2026-10-25),Entry #63 回填完整 13 字段声明(moesi_gpu + mesif,逐字派生自 ArchForge 32 号 §6.1/§6.2);实例本体按 include/tlm/cep/protocol_instance.schema.json 校验",
+    "freeze_state": "**诞生即不冻结**(per Entry #56 先例);首个 status=implemented 实例跑过装配闸后再按 S1-4 复核口径纳入 M1 冻结集"
   },
   "instances": [
     {
       "id": "moesi_gpu",
+      "family": "industrial",
+      "adapter": "MoesiGpuAdapter",
       "status": "planned",
-      "vc_binding": {
-        "compute_noc": {"request": "0", "response": "1", "snoop": "2", "snoop_resp": "3"},
-        "ualink_fabric": {"request": "0", "atomic": "1", "query": "2", "response": "3"}
+      "protocol_version": "moesi-gpu-1.0",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": true,
+        "address_resolve": true,
+        "barrier": true,
+        "snoop_completion_ack": true
+      },
+      "perm": [
+        "NONE",
+        "READ",
+        "UNIQUE",
+        "WRITEBACK"
+      ],
+      "atomic": {
+        "supported": false
+      },
+      "consistency_labels": {
+        "read": "RC-data",
+        "write": "RC-release"
       },
       "ordering_assumption": {
-        "compute_noc": {"vc_0": "strong", "vc_1": "strong", "vc_2": "strong", "vc_3": "strong"},
-        "ualink_fabric": {"vc_0": "strong", "vc_1": "strong", "vc_2": "strong", "vc_3": "strong"}
+        "compute_noc": {
+          "0": "unordered",
+          "1": "p2p_ordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        },
+        "ualink_fabric": {
+          "0": "unordered",
+          "1": "unordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "compute_noc": {
+          "request": 0,
+          "response": 1,
+          "snoop": 2,
+          "snoop_resp": 3
+        },
+        "ualink_fabric": {
+          "request": 0,
+          "atomic": 1,
+          "query": 2,
+          "response": 3,
+          "snoop_resp": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "SparseSnoopFilter",
+        "caps": {
+          "scope": "SYSTEM",
+          "completeness": "CONSERVATIVE",
+          "authority": "GLOBAL",
+          "aggregation_at": "HOME"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": true,
+        "heterogeneous": true
+      }
+    },
+    {
+      "id": "mesif",
+      "family": "industrial",
+      "adapter": "MesifAdapter",
+      "status": "planned",
+      "protocol_version": "mesif-1.0",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": true,
+        "address_resolve": true,
+        "barrier": true,
+        "snoop_completion_ack": true
+      },
+      "perm": [
+        "NONE",
+        "READ",
+        "UNIQUE",
+        "WRITEBACK"
+      ],
+      "atomic": {
+        "supported": true,
+        "intent_field": "consistency_intent"
+      },
+      "consistency_labels": {
+        "read": "RC-acquire",
+        "write": "RC-release"
+      },
+      "ordering_assumption": {
+        "compute_noc": {
+          "0": "unordered",
+          "1": "p2p_ordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        },
+        "ualink_fabric": {
+          "0": "unordered",
+          "1": "unordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "compute_noc": {
+          "request": 0,
+          "response": 1,
+          "snoop": 2,
+          "snoop_resp": 3
+        },
+        "ualink_fabric": {
+          "request": 0,
+          "atomic": 1,
+          "query": 2,
+          "response": 3,
+          "snoop_resp": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "SparseSnoopFilter",
+        "caps": {
+          "scope": "SYSTEM",
+          "completeness": "CONSERVATIVE",
+          "authority": "GLOBAL",
+          "aggregation_at": "HOME"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": true,
+        "heterogeneous": true
       }
     }
-  ]
+  ],
+  "channel_dependency_edges": {
+    "derived_from": "ArchForge 32-cep-based-coherence-architecture.md §6.0.3(逐网络通道依赖边表 + VC-R1/VC-R2 两条支撑规则)",
+    "note": "边是**声明数据**而不是 C++ 常量 —— 装配闸只读声明建图(`channel_dependency_graph.hh` 内无任何网络名/边字面量)。边表按网络给出,作用于**该网络被实例绑定**的顶点。",
+    "per_network": {
+      "compute_noc": [
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          3,
+          2
+        ]
+      ],
+      "ualink_fabric": [
+        [
+          0,
+          3
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          2,
+          3
+        ]
+      ]
+    }
+  }
 }

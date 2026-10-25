@@ -7,12 +7,14 @@
 #   声明的结构由**本仓** `protocol_instance.schema.json` 约束。声明与 schema 任一侧漂移,
 #   都必须**报红**而不是静默 —— 否则 C-4 就是一条「声称可自动化却无自动化」的判据。
 #
-# 本检查做 5 件事(逐项独立报红/报绿):
+# 本检查做 6 件事(逐项独立报红/报绿):
 #   ① 声明 ↔ 本仓 schema(**全 13 个 required 顶层属性**,用 jsonschema 校验)
 #   ② vc_id < fabric 的 vc_count + 逐网络键对称 + ordering 内层 key 的 int() 解析
 #   ③ ordering_assumption[n] 的每个 vc_id ∈ vc_binding[n].values()
 #   ④ vc_binding[n] 的每个消息类 ∈ 6 类规范词表
 #   ⑤ network ⊆ fabric = ArchForge 已锁定网络集 + vc_count 与 ArchForge 清单一致(**双向**)
+#   ⑥ 本仓 `include/tlm/cep/protocol_instances.json` 是 ArchForge 声明的**逐字段派生副本**
+#      + 声明边表的端点必须落在该网络的 `vc_binding` 里(镜像漂移 ⇒ 报红)
 #
 # ⚠️ **依赖 `jsonschema`** —— 刻意**不降级运行**:
 #   ① 的「13 个 required 属性全覆盖」用通用校验器实现才可靠;手写子集会让 11 个字段零校验。
@@ -51,6 +53,7 @@ SCHEMA_REL = "include/tlm/cep/protocol_instance.schema.json"
 FABRIC_SCHEMA_REL = "include/tlm/cep/fabric.schema.json"
 FABRIC_REL = "include/tlm/cep/fabric.json"
 NS_REL = "docs/architecture/22-nsa-fabric-address-spec.md"
+REPO_DECL_REL = "include/tlm/cep/protocol_instances.json"
 
 # 规范消息类词表(per ArchForge 32 号 §6.0.1,6 类;排除 CATEGORY_CREDIT / forward_data /
 # snoop_completion_ack —— 后两者是已有槽位的承载实例,不单列)
@@ -288,12 +291,59 @@ for d in chk5:
 # ══════════════════════════════════════════════════════════════════════════
 # 输出
 # ══════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════
+# ⑥ 本仓派生副本 ↔ ArchForge 声明(**逐字段**;镜像漂移 ⇒ 红)
+# ══════════════════════════════════════════════════════════════
+repo_decl_path = os.path.join(root, REPO_DECL_REL)
+repo_insts = {}
+repo_edges = {}
+if not os.path.exists(repo_decl_path):
+    err(6, f"本仓派生副本缺失:{REPO_DECL_REL}")
+else:
+    try:
+        repo_doc = read_json(repo_decl_path)
+    except Exception as exc:
+        err(6, f"本仓派生副本 JSON 解析失败:{exc}")
+        repo_doc = {}
+    repo_insts = {d.get("id"): d for d in repo_doc.get("instances", []) if isinstance(d, dict)}
+    repo_edges = (repo_doc.get("channel_dependency_edges") or {}).get("per_network") or {}
+
+    # ① 逐实例逐字段相等(副本不是「差不多」,是**逐字段**)
+    for d in declarations:
+        rid = d.get("id")
+        if rid not in repo_insts:
+            err(6, f"派生副本缺少 ArchForge 已声明的实例:{rid}")
+            continue
+        local = repo_insts[rid]
+        for key in sorted(set(local) | set(d)):
+            if local.get(key) != d.get(key):
+                err(6, f"{rid}.{key} 与 ArchForge 不符(派生副本已漂移)")
+    extra_ids = set(repo_insts) - set(ids)
+    if extra_ids:
+        err(6, f"派生副本含 ArchForge 未声明的实例:{sorted(extra_ids)}")
+
+    # ② 边表端点必须被该网络的 vc_binding 绑定(否则装配闸会以「端点未绑定」报红)
+    for rid, inst in repo_insts.items():
+        binding = inst.get("vc_binding", {}) or {}
+        for net, elist in repo_edges.items():
+            if net not in binding:
+                continue
+            bound = set(binding[net].values())
+            for pair in elist:
+                if not isinstance(pair, list) or len(pair) != 2:
+                    err(6, f"{rid}:网络 {net} 的边 {pair!r} 不是二元组")
+                    continue
+                for vc in pair:
+                    if vc not in bound:
+                        err(6, f"{rid}:边端点 {net}.vc{vc} 未被 vc_binding 绑定")
+
 LABELS = {
     1: "① 声明 ↔ schema 全 13 属性(含 required/enum/嵌套结构)",
     2: "② vc_id < vc_count + 键对称 + key 解析",
     3: "③ ordering ⊆ vc_binding(逐网络)",
     4: "④ 消息类 ∈ 6 类规范词表",
     5: "⑤ network ⊆ fabric = ArchForge 已锁定集 + vc_count 双向一致",
+    6: f"⑥ 派生副本逐字段 = ArchForge 声明 + 边端点已绑定({REPO_DECL_REL})",
 }
 
 print("  · [RUN] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查")
@@ -303,7 +353,7 @@ print(f"    · 本仓 schema: {SCHEMA_REL}")
 print(f"    · 本仓 fabric: {FABRIC_REL}" +
       (f"(ArchForge 清单 {len(af_locked)} 网络)" if af_locked else "(ArchForge 清单**未解析**)"))
 
-for chk in (1, 2, 3, 4, 5):
+for chk in (1, 2, 3, 4, 5, 6):
     sub = [d for c, d in errors if c == chk]
     if sub:
         print(f"    · {LABELS[chk]}: ✗ ({len(sub)} 处)")
@@ -314,10 +364,10 @@ for chk in (1, 2, 3, 4, 5):
 
 if errors:
     n_chk = len(set(c for c, _ in errors))
-    print(f"  ✗ [RUN] 声明对齐检查失败:{n_chk}/5 项红,{len(errors)} 处失配")
+    print(f"  ✗ [RUN] 声明对齐检查失败:{n_chk}/6 项红,{len(errors)} 处失配")
     sys.exit(1)
 
-print("  ✓ [RUN] 声明对齐检查通过:5 项子校验全绿"
+print("  ✓ [RUN] 声明对齐检查通过:6 项子校验全绿"
       f"({len(declarations)} 份声明,{len(used_nets)} 个网络)")
 sys.exit(0)
 PYEOF

@@ -21,7 +21,8 @@ CEP SHALL 将 **装配期通道依赖图**(顶点 `(协议实例, network, vc_id
 #### Scenario: 边由 `vc_binding` + `ordering_assumption` 导出(**不硬编码镜像**)
 
 - **WHEN** 构造通道依赖图的边
-- **THEN** 边 SHALL 由 protocol_instances.json 的 `vc_binding` 语义导出,「**不硬编码 stub 顶点/边**」
+- **THEN** 边 SHALL 由 `protocol_instances.json` 的 `channel_dependency_edges`(**ArchForge `32 号 §6.0.3` 的派生副本**)导出;`vc_binding` 只决定**顶点集**,不决定边
+- **AND** 判据实现(`channel_dependency_graph.hh`)SHALL **不含**任何网络名/边字面量(去注释扫描 + 正控守;边表漂移只能由**声明**漂移体现)
 - **AND** 抗漂移角度(S1-1 ②建图层 per Entry #55):**`protocol_instances.json` 的内容若与 ArchForge `32 号 §6.1/§6.2` 的镜像不符**(那是唯一权威)⇒ parser **判红**
 - **AND** 同轴化检查(per Entry #55):fixture 与 `cep_poc_spike_s3.cc` 的同一 8-顶点/8-边结论**一致**
 

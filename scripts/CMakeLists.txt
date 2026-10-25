@@ -32,6 +32,16 @@ if(Python3_EXECUTABLE)
     add_topology_validation(validate_ring_8 ${CMAKE_SOURCE_DIR}/configs/ring_8_tlm.json)
     add_topology_validation(validate_hierarchical ${CMAKE_SOURCE_DIR}/configs/hierarchical_2x2_tlm.json)
 
+    # CEP 装配期判据的离线挂点(队列 #4,per ADR-CEP-09 抓取点 1)。
+    # 目标定义在 examples/CMakeLists.txt(先于本文件 add_subdirectory)——
+    # 若不存在则跳过,避免配置期硬失败;存在时与 module_factory 闸**共享同一组判据函数**。
+    set(CEP_GATE_COMMAND "")
+    set(CEP_GATE_DEPENDS "")
+    if(TARGET cep_channel_dependency_gate)
+        set(CEP_GATE_COMMAND COMMAND $<TARGET_FILE:cep_channel_dependency_gate>)
+        set(CEP_GATE_DEPENDS cep_channel_dependency_gate)
+    endif()
+
     # Create a combined validation target
     add_custom_target(validate_topology
         COMMAND ${Python3_EXECUTABLE} ${TOPOLOGY_VALIDATOR}
@@ -44,9 +54,10 @@ if(Python3_EXECUTABLE)
             ${CMAKE_SOURCE_DIR}/configs/ring_8_tlm.json
         COMMAND ${Python3_EXECUTABLE} ${TOPOLOGY_VALIDATOR}
             ${CMAKE_SOURCE_DIR}/configs/hierarchical_2x2_tlm.json
+        ${CEP_GATE_COMMAND}
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Validating all topology configurations..."
-        DEPENDS cpptlm_core
+        DEPENDS cpptlm_core ${CEP_GATE_DEPENDS}
     )
 
 else()
