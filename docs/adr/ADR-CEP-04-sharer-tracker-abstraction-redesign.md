@@ -314,7 +314,39 @@ interface SharerTrackerIf {
 
 ---
 
-**版本**: v0.3 草案
-**最后更新**: 2026-10-20
+## 10. Status Update(2026-10-25,per 台账 Entry #62)
+
+> **授权**:Entry #62(队列 #4 建 change + 3 项 DRI 裁决 + S1-7 (β) 同批补入)。
+> **口径**:本节是 **§8「后续 OpenSpec」的 4 个 change 名**的**当前状态** —— **§8 正文零改动**(per ADR 不可变 + Status Update 先例)。
+
+### 10.1 §8 的 4 个后续 change 名 —— **已作废(被 obj §4.0 重排取代)**
+
+| 项 | 内容 |
+|---|---|
+| **原文**(§8 末段) | 「后续 OpenSpec(架构师不写,builder 阶段):`cpptlm-cep-sharer-tracker-base`(P2)· `cpptlm-cep-sharer-tracker-impls`(P3,FullMap + Sparse-SF)· `cpptlm-cep-sharer-tracker-cxl-dcoh`(P4)· `cpptlm-cep-sharer-tracker-tilelink-tree`(P5)」 |
+| **§8 正文** | **零改动**(逐字保留) |
+| **§8 当前状态** | ⛔ **已作废** —— 4 个 change 名**永久失指**。**唯一**的后续 OpenSpec = **`cpptlm-cep-directory-ordering-plane`**(单 change,1 KPI slot) |
+| **落地位置** | `openspec/changes/cpptlm-cep-directory-ordering-plane/`(🟡 Proposed,2026-10-25 建目录;planner 阶段产出 proposal + design + 3 个 delta capability) |
+| **作废理由** | ① 与 `ADR-CEP-00 §2 Decision 3` 的「11 个 change,串行 11 季度」算术冲突(队列 #4 为**单一** change,其名不在 §8 的 4 名之列);② obj §4.0 是实施路径唯一权威(per 队列 #3 同型先例,`ADR-CEP-05 §14` Entry #58) |
+
+**替代与承接形态**(per 2026-10-25 DRI 裁决):
+
+| # | 裁定 |
+|---|---|
+| **范围切小** | 队列 #4 承接「**SharerTrackerIf 单接口 + caps descriptor(第一天就位) + D-5 全量契约 + FullMapDirectory 唯一行为实现**」;**其余 4 种实现**(`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`)**跟随各自的消费队列**(obj §4.0 队列 #6 ~ #9 的各自协议族)—— 即「**单接口 + N 实现,按 N 个协议族载体**」 |
+| **FullMapDirectory 选型** | `completeness=EXACT` 无 broadcast fallback 分支;07 号 §5.1.2 表 3 个 Ruby 实例的共同选型;IC2/IC3 生命周期**必须有 ≥1 个真实实现才可执行断言**(per 队列 #3 G3 先例) |
+| **承接的 Stage 1 前置** | S1-1 ②建图层(装配期校验)+ S1-7 (β) 重评估(同批含 INV-CEP-08-IC2) + S1-2/S1-3/S1-4(owner 重指向,per Entry #61) |
+| **不承接** | S1-5 表体 + contract test(归队列 #6)· M-4 行为侧(已由队列 #3 落成 `cep-vc-mapping-contract`,登记行保留以免孤儿项失主,per Entry #61) |
+
+### 10.2 未变更项(明示)
+
+§2 决策 1 ~ 3(α 权限三件套 / DCOH 完备性契约 / caps descriptor)· §3 D-5 重构 6 小节 · §4 同地址并发 lookup hazard 契约表 · §5 lookup 的同步性假设 · §6 条目生命周期事件 · §7 抓取点 · `INV-CEP-04-IC1/IC2/IC3` —— **零改动**。
+
+> **变更史**:§8 原文逐字引用见上表「原文」行;本条作废授权与理由见台账 **Entry #62** —— 过程记录归台账,不在本 ADR 内累积。
+
+---
+
+**版本**: v0.3 草案 + Status Update 2026-10-25(§8 五 change 名失指)
+**最后更新**: 2026-10-25
 **批准状态**: 🟡 待 Oracle v0.5 二次复审
 **维护者**: CppTLM build agent(architect mode)

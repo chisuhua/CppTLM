@@ -323,14 +323,25 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **触发**: 2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(`openspec archive`,归档名 `2026-10-25-cpptlm-cep-stub-cache-core`)—— **完成归档**语义:tasks **36/36** 全勾;delta capability `cep-vc-mapping-contract`(**8 Scenario**)与 `cep-stub-cache-core`(**9 Scenario**)**已合并**进 `openspec/specs/`(两个新 main spec);归档后 KPI slot 释放 → 并发 **1/3 → 0/3**。
 > **对上一段(2026-10-25)的衔接**:该段登记「队列 #3 已启动,并发 0/3 → 1/3」—— **现该 change 已归档**,slot 释放;其**历史快照语义保留不回改**(措辞改为「**当时态**」)。
 > **M-4 行为侧决策的最终落点**:协议层 credit **不独占** VC(该问题**已**被 ArchForge `32 号 §6.0.1` 排除表关闭,本仓**不重新裁决**)· 传输层**保持索引对齐**、**不建**显式映射表(显式映射表归队列 #6)· `VC_DAT` 语义正名(**预留 DAT 桶**,当前恒 0)· 冲突输入(`vc_id` vs `flit_category`)**传输层不仲裁**;**`include/tlm/cep/fabric.schema.json` 的 `vc_count.maximum=4` 不需要动** —— 立项时「须同步」的假定经实测**不成立**。
-> **当前态**:Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #4 `cpptlm-cep-directory-ordering-plane`(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**:Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #4 `cpptlm-cep-directory-ordering-plane`(per `obj §4.0`)。
 > **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);§8 第 5 条**仍为失效**(umbrella 保持 ✅ archived);**§2 Decision 3 的「11 个 change,串行 11 季度」算术不变** —— 队列 #3 为**单一** change(`ADR-CEP-05 §10` 的 `-base`/`-impl` 二分作废,见该 ADR §14.1)。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #60**
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #60)。
 
+## Status Update 2026-10-25 —— 队列 #4 `cpptlm-cep-directory-ordering-plane` 已启动(KPI 并发 0/3 → 1/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-25 队列 #4 `cpptlm-cep-directory-ordering-plane` **已建 change 目录**(`openspec/changes/cpptlm-cep-directory-ordering-plane/`)—— planner 阶段产出 proposal + design + **3 个** delta capability(`cep-sharer-tracker-base` / `cep-ordering-point-checker` / `cep-channel-dependency-gate`);并占用 1 个 KPI slot。
+> **裁决(DRI 四问,2026-10-25)**:① **范围切小** —— SharerTrackerIf 单接口 + caps descriptor(第一天就位) + D-5 全量契约 + **FullMapDirectory 唯一行为实现**,其余 4 种实现(SparseSF/DcohSymmetric/TreeManager/BroadcastNull)跟随队列 #6~#9 各自的协议族(per `ADR-CEP-04 §8` 拆分先例 + obj §4.0 排队表);② **装配闸输入源** = `include/tlm/cep/protocol_instances.json`(本仓机器可读实例声明,诞生即不冻结,per Entry #56 先例);③ **双挂**(`instantiateAll` + `validate_topology` 共享同一判据实现,禁双实现);④ **S1-7 (β) 同批补入** `INV-CEP-08-IC2`(E 态静默升级组合检查项)。
+> **对上一段(2026-10-25,队列 #3 归档段)的衔接**:该段登记「队列 #3 已归档,并发 1/3 → 0/3」—— **队列 #4 现已启动**,该预测已兑现;其**历史快照语义保留不回改**(措辞已改「当时态」)。
+> **当前态**:Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base`(per `obj §4.0`)。
+> **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);**§2 Decision 3 的「11 个 change,串行 11 季度」算术不变** —— 队列 #4 为**单一** change(oracle 复审确认不拆 `-base`/`-impls` 二分;`ADR-CEP-04 §8` 的 4 个 change 名**失指已在该 ADR 的 Status Update 处置**)。
+> **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #62**
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #62)。
+
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 启动)+ **Status Update 2026-10-25**(队列 #3 归档)
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #3 归档)
 **最后更新**: 2026-10-25
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)

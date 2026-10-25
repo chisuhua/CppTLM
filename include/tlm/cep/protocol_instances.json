@@ -1,0 +1,21 @@
+{
+  "derived_from": {
+    "source_doc": "ArchForge 32-cep-based-coherence-architecture.md §6.1/§6.2",
+    "mirror_note": "per Entry #55 抗漂移:本仓只持派生副本,单点权威在 ArchForge;修改镜像须先 ArchForge 侧改 + 本仓 re-derive(fabric.json 同型先例,per 22-nsa §0.5.4.1 NS-R2)",
+    "note_entry": "Entry #62 首次建立(2026-10-25);校验 schema = include/tlm/cep/protocol_instance.schema.json"
+  },
+  "instances": [
+    {
+      "id": "moesi_gpu",
+      "status": "planned",
+      "vc_binding": {
+        "compute_noc": {"request": "0", "response": "1", "snoop": "2", "snoop_resp": "3"},
+        "ualink_fabric": {"request": "0", "atomic": "1", "query": "2", "response": "3"}
+      },
+      "ordering_assumption": {
+        "compute_noc": {"vc_0": "strong", "vc_1": "strong", "vc_2": "strong", "vc_3": "strong"},
+        "ualink_fabric": {"vc_0": "strong", "vc_1": "strong", "vc_2": "strong", "vc_3": "strong"}
+      }
+    }
+  ]
+}

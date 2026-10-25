@@ -687,6 +687,18 @@ experimental/<run_id>/
 
 ---
 
-**版本**: v0.1 起草(2026-10-20)
+## §附录 · Status Update 2026-10-25(per 台账 Entry #62)
+
+> **授权**:Entry #62(队列 #4 建 change + DRI 四项裁决:S1-1 ②建图层 + S1-7 (β) 同批 + M-4 行为侧登记保留 + scope 切小)。
+> **口径**:本节不改动正文;只**登记授权** + 3 个 change 引用修正。
+> **引用修正清单**:
+> - `§7.4 P3 SnoopFilter → SharerTracker 5 实现` 的 change 关联:队列 #3(已完成归档)的 M-4 契约 + 队列 #4(即将实施)的**FullMapDirectory 唯一行为实现**(per 2026-10-25 DRI 裁决「范围切小」,其余 4 实现跟随队列 #6~#9)
+> - `ADR-CEP-04 §8` 的 4 个后续 change 名(`cpptlm-cep-sharer-tracker-base/-impls/-cxl-dcoh/-tilelink-tree`)**失指已处置**(该 ADR §10 Status Update)
+> - **SharerTracker 实施载体**改为:**`cpptlm-cep-directory-ordering-plane`**(单 change,1 KPI slot)
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #62)。
+
+---
+
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)
