@@ -106,11 +106,19 @@ t = sub(t, "### 9.3 R10 处置(2026-10-23)", "### 9.3 R10 处置(2026-10-23)\n\n
 p.write_text(t, encoding="utf-8")'
 
 # ── 断言③:冻结成员数回退 ───────────────────────────────────────
-run_case "冻结成员数部分回退(README=29)→ ③ 必须 fire" 1 '
+# 2026-10-25(Entry #56):断言③ 改**双形态** —— 文档可写数字(须 == 清单)或
+# 「以清单为准」(无数字 → 无从写错)。故 fixture 改为「**注入一个错误数字**」→
+# ③ 仍必须 fire(防漂移能力不减);另加一条「全部无数字 → ③ 豁免」的 GREEN 用例。
+run_case "活文档注入错误冻结成员数 → ③ 必须 fire" 1 '
 from pathlib import Path
 p = Path(os.environ["RT"] + "/scripts/README.md")
-t = sub(p.read_text(encoding="utf-8"), "M1 冻结面 **30 成员**", "M1 冻结面 **29 成员**")
-p.write_text(t, encoding="utf-8")'
+t = p.read_text(encoding="utf-8")
+anchor = "M1 冻结面授权闸（成员数以清单为准）"
+assert anchor in t, f"锚点漂移:README 未含 {anchor}"
+p.write_text(t.replace(anchor, "M1 冻结面 **29 成员**授权闸", 1), encoding="utf-8")'
+
+run_case "全部活文档以「清单为准」表述 → ③ 必须 GREEN" 0 '
+pass'
 
 # ── critic 第 12 轮新增:句首「当前」不得被当条件句跳过 ─────────────
 run_case "句首「当前 Stage 0 尚未归档」→ ② 必须 fire" 1 '
