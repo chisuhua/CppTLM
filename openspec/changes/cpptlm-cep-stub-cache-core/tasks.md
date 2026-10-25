@@ -59,31 +59,37 @@
 
 ---
 
-## 2. Phase 1 —— Stub Cache Core 实现(**未启动**)
+## 2. Phase 1 —— Stub Cache Core 实现(**已完成** 2026-10-25)
 
-> **本 Phase 的 tasks 在 Phase 0 完成后补全** —— 8 周估时的实现型 Phase,其 task 粒度须在 M-4 契约落地后按实际代码面重新切分(避免「先写许诺再补实现」)。
+> **实际交付面**(较 8 周估时**显著小** —— 因 `ADR-CEP-05` 的定义足够收敛,6 接口 + 5 态
+> + 6 条 `INV-SC*` 可在**单文件头**内实现,无需分层/时序/替换策略):
+> `include/tlm/cep/stub_cache_core.hh`(header-only,**不注册 23 ABI**、**不进 `ModuleFactory`**)
+> + `test/test_cep_stub_cache_core.cc`(14 cases / 204 assertions)
+> + `test/test_cep_scenario_anchor_reconciliation.cc`(4 cases / 25 assertions,A-P1-7 对账)
 
-- [ ] **T2.1** **A-P1-1** —— 6 接口签名存在,命名逐字对齐 `ADR-CEP-05` 决策 1 的 6 行表
-- [ ] **T2.2** **A-P1-2** —— 5 态可达(`I`/`S`/`E`/`M`);接口面**不**出现 CHI UC/SC/UD/SD 字样
-- [ ] **T2.3** **A-P1-3** —— `INV-SC1` ~ `INV-SC6` **各**至少 1 条**行为**断言(断言行为,不断言「常量存在」)
-- [ ] **T2.4** **A-P1-4** —— 折叠映射**单向形态**:接口面**不**出现 `forward_data` / `back_invalidate` / `barrier` 字样
-- [ ] **T2.5** **A-P1-5** —— **零协议实例声明**:不引入任何 `status != "planned"` 的声明
-- [ ] **T2.6** **A-P1-6** —— **不可验证条款已降级登记**:`ADR-CEP-05 §3` 契约测试 #1(`forward_data` 不可分辨性)与 #4(barrier 不可见)登记「触发条件 = 队列 #6」,**不进**本 change 的 spec
-- [ ] **T2.7** **A-P1-7** —— **Scenario ↔ 锚点等值**:每个 Scenario 点名一个 ctest 用例或 lint 断言;对账测试断言「Scenario 数 == 锚点数」
-- [ ] **T2.8** —— `include/tlm/cep/stub_cache_core.hh` + 实现(Phase 1 产物;**不注册 23 ABI**、**不进 `ModuleFactory`**)
+- [x] **T2.1** **A-P1-1** —— 6 接口签名存在,命名逐字对齐 `ADR-CEP-05` 决策 1 的 6 行表
+- [x] **T2.2** **A-P1-2** —— 5 态可达(`I`/`S`/`E`/`M`);接口面**不**出现 CHI UC/SC/UD/SD 字样
+- [x] **T2.3** **A-P1-3** —— `INV-SC1` ~ `INV-SC6` **各**至少 1 条**行为**断言(断言行为,不断言「常量存在」)
+- [x] **T2.4** **A-P1-4** —— 折叠映射**单向形态**:接口面**不**出现 `forward_data` / `back_invalidate` / `barrier` 字样
+- [x] **T2.5** **A-P1-5** —— **零协议实例声明**:不引入任何 `status != "planned"` 的声明
+- [x] **T2.6** **A-P1-6** —— **不可验证条款已降级登记**:`ADR-CEP-05 §3` 契约测试 #1(`forward_data` 不可分辨性)与 #4(barrier 不可见)登记「触发条件 = 队列 #6」,**不进**本 change 的 spec
+- [x] **T2.7** **A-P1-7** —— **Scenario ↔ 锚点等值**:每个 Scenario 点名一个 ctest 用例或 lint 断言;对账测试断言「Scenario 数 == 锚点数」
+- [x] **T2.8** —— `include/tlm/cep/stub_cache_core.hh` + 实现(Phase 1 产物;**不注册 23 ABI**、**不进 `ModuleFactory`**)
 
 ---
 
 ## 3. 验收
 
-### 3.1 Phase 0 验收
+### 3.1 验收(Phase 0 + Phase 1)
 
 - [x] **T3.1** **A-FIN-1** —— `openspec validate cpptlm-cep-stub-cache-core --strict` rc=0
 - [x] **T3.2** **A-FIN-2** —— `cep_docs_sync_check.sh --strict` / `cep_doc_ref_check.sh --strict` / `cep_freeze_check.sh` 全 rc=0;`cep_gate_selftest` 全绿
 - [x] **T3.3** **A-FIN-3** —— `ctest` 全绿;`[cep]` 标签的 case 数与断言数**逐项登记**(断言语义变化须**预登记**)
 - [x] **T3.4** —— **反向验证自查**:新断言 ④⑤⑥ 各**故意破坏一次** → 对应 fixture **必须变红**(逐个验证并记录)
 - [x] **T3.5** —— **零行为变更校验**:`git diff --stat` 显示生产代码改动**仅限注释**(Phase 0 不动任何逻辑);`cpptlm_core` 与 23 ABI 零改动
+- [x] **T3.6** —— **Phase 1 反向验证自查**:`INV-SC1` ~ `INV-SC6` **各 1 条**实现变异 + **3 条**静态/集成面变异(接口面出现 `barrier` / 枚举出现 `SD` / 代码面出现 `REGISTER_MODULE`)→ **9 / 9 全部报红**,还原后全绿
+- [x] **T3.7** —— **Phase 1 零集成面校验**:stub **不**注册 23 ABI、**不**进 `ModuleFactory`、**不**引入协议实例声明(3 条均有**正控**证明扫描机制本身有效)
 
 ### 3.2 收尾(归档时)
 
-- [ ] **T3.6** **A-FIN-4** —— 归档时按 `obj §4.7.3` 的 **17 个落点**逐项回填;delta capability 合并进 main spec 后按 Entry #56 先例纳入冻结集(走 `--update --authorized-by`)
+- [ ] **T3.8** **A-FIN-4** —— 归档时按 `obj §4.7.3` 的 **17 个落点**逐项回填;delta capability 合并进 main spec 后按 Entry #56 先例纳入冻结集(走 `--update --authorized-by`)

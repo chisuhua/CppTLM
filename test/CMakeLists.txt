@@ -241,6 +241,18 @@ add_test(NAME cep_contracts_crosscheck COMMAND cpptlm_tests "[cep][contract]" -r
 #    本用例是**独立**标签,便于单独核验 M-4 契约。
 add_test(NAME cep_vc_mapping_contract
          COMMAND cpptlm_tests "[cep][vc-mapping-contract]" -r compact)
+# Stub Cache Core 契约(Phase 1,per change `cpptlm-cep-stub-cache-core` 的
+# delta capability `cep-stub-cache-core`;ADR-CEP-05 的 6 接口 / 5 态 / INV-SC1~6)
+# WORKING_DIRECTORY 设仓根 —— 用例会读仓内文件(头文件 / spec / design)做静态核对
+add_test(NAME cep_stub_cache_core
+         COMMAND cpptlm_tests "[cep][stub-cache-core]" -r compact)
+set_tests_properties(cep_stub_cache_core PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+# delta capability 的「Scenario ↔ 锚点」对账(A-P1-7)
+# —— 断言 Scenario 数 == 锚点数,且锚点点名的文件 / ctest 用例真实存在
+add_test(NAME cep_scenario_anchor_reconciliation
+         COMMAND cpptlm_tests "[cep][scenario-reconciliation]" -r compact)
+set_tests_properties(cep_scenario_anchor_reconciliation
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
 # CEP 契约同步 lint(ADR 存在性 / invariant 计数单一真源 / P 编号口径 / 4 件套)
 add_test(NAME cep_docs_sync_check

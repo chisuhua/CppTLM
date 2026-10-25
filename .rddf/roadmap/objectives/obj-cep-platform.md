@@ -3813,6 +3813,90 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 
 ---
 
+### Entry #60 — 2026-10-25 [stage-gate]
+
+**主题**: 队列 #3 `cpptlm-cep-stub-cache-core` **Phase 1 实施完成**(Stub Cache Core 实现)—— **change 全部任务完成,待归档**
+
+**① 阶段边界**: **Phase 0 + Phase 1 均 ✅ 完成** ⇒ `tasks.md` **35 / 36** 勾选(仅剩 T3.8 归档回填)。change 状态**仍为 🟡 Proposed** —— **尚未归档**,KPI **1/3 不变**(归档后释放 slot)。
+
+**② 交付物(4 个文件 + 1 个注册)**
+
+| # | 文件 | 改动性质 |
+|---|------|---------|
+| 1 | `include/tlm/cep/stub_cache_core.hh`(**新增**,header-only) | Stub Cache Core 实现:**6 接口**(`request` / `completion` / `snoop` / `snoop_resp` / `writeback` / `evict_line`)+ **5 态**(`NONE/I/S/E/M`)+ **6 条 `INV-SC*`** 的行为实现。**不注册 23 ABI、不进 `ModuleFactory`、不改 frozen header** |
+| 2 | `test/test_cep_stub_cache_core.cc`(**新增**) | **14 cases / 204 assertions** —— 9 个 Scenario 逐条对应 |
+| 3 | `test/test_cep_scenario_anchor_reconciliation.cc`(**新增**) | **4 cases / 25 assertions** —— A-P1-7 的「Scenario ↔ 锚点」对账(数量等值 + 锚点指向的文件 / ctest 用例真实存在) |
+| 4 | `test/CMakeLists.txt` | 注册 2 个 ctest:`cep_stub_cache_core` / `cep_scenario_anchor_reconciliation` |
+| 5 | `openspec/.../tasks.md` | Phase 1 段勾选 + 验收段补 T3.6 / T3.7 |
+
+**③ 设计要点(与 `ADR-CEP-05` 的对应关系)**
+
+| 项 | 实现 | 依据 |
+|---|------|------|
+| **6 接口** | net-side 5 条 CohIf RN 投影 + **1** 条 core-side 原语 `evict_line` | 决策 1 的 6 行表(命名**逐字对齐** `ADR-CEP-02 §2` canonical 10 流) |
+| **方向语义** | `request` / `snoop_resp` / `writeback` = 本 stub **发起**;`completion` / `snoop` = 本 stub **消费** | canonical 10 流的方向列 |
+| **5 态** | `NONE → I → S → E → M`(协议无关);**不**暴露 CHI RN-F 细节态 | §4.1 + `INV-CEP-05-IC1` |
+| **perm** | **4 值锁**(`NONE/READ/UNIQUE/WRITEBACK`);atomic 意图不扩 perm | `ADR-CEP-02` CEN-Ib11 |
+| **折叠映射** | 5 隐藏流**全部不作为接口标识符**;流 7(反向量)以普通 `INVALIDATE` 表现 | 决策 3 |
+| **`INV-SC1`** | MSHR 以 `addr` 为键(`map` ⇒ 同 addr 至多 1)+ 容量上限 → 重复请求**背压**(计数 `mshr_rejects`) | §4.3 |
+| **`INV-SC2`** | `evict_line` 对 outstanding addr **跳过**(计数 `evict_skipped`),line 与状态**保留** | §4.3 |
+| **`INV-SC3`** | snoop 响应在**参数化固定延迟**(`Config::snoop_latency_cycles`)后可得;**逐拍**核对 | §4.3 |
+| **`INV-SC4`** | `completion` 的 `(addr, txn_id)` **双重配对**;不配对即拒(计数 `unsolicited_completions`) | §4.3 |
+| **`INV-SC5`** | `WritebackOut::carries_data == dirty`(**结构编码**);clean 写回 data 置 0 | §4.3 |
+| **`INV-SC6`** | hit 路径**直接返回**,不触碰任何 net-side 动作 | §4.3 |
+
+**④ 与 `ADR-CEP-05 §3` 契约测试 #1 / #4 的降级(T2.6)**
+
+两者需**真实 ProtocolEngine**(仓内首个协议实例在队列 #6)⇒ **不进**本 change 的 spec,以「触发条件 = 队列 #6」登记于 `design.md` D10 + Open Questions Q2。
+
+⚠️ **本仓的「不出现」检查是必要条件、非充分条件** —— 头文件里**不得**出现这两个流名(静态核对),但「stub 无从区分 forward 与 memory 完成」这一**真实性质**需 ProtocolEngine 才能判定。spec 的 Scenario 7 的措辞据此设计为「**没有**一条 Scenario 把 #1/#4 立为要求」,而非「spec 不含这些词」—— 后者会**误报**(排除语境本身就合法使用这些词,判据⑥:误报与漏报同为缺陷)。
+
+**⑤ 反向验证自查(T3.6)—— 9 / 9 全部报红**
+
+| # | 变异 | 结果 |
+|---|------|------|
+| 1 | `INV-SC1`:同 addr 允许重复 outstanding | ❌ 4 assertions failed |
+| 2 | `INV-SC2`:evict 允许驱逐 outstanding line | ❌ 5 failed |
+| 3 | `INV-SC3`:snoop 响应立即可得(忽略延迟) | ❌ 6 failed |
+| 4 | `INV-SC4`:接受 unsolicited completion | ❌ 7 failed |
+| 5 | `INV-SC5`:clean 写回也带 data | ❌ 2 failed |
+| 6 | `INV-SC6`:hit 路径也发 request | ❌ 3 failed |
+| 7 | 折叠映射违规:接口面出现 `barrier` | ❌ 1 failed |
+| 8 | CHI 态违规:枚举出现 `SD` | ❌ 1 failed |
+| 9 | 集成面违规:代码面出现 `REGISTER_MODULE` | ❌ 1 failed |
+
+**⑥ 过程中修掉的自身缺陷(4 个)**
+
+- **头文件笔误 2 处**:初版 `StubCounters` 引用了未定义的 `mshr_rejects` / `evict_skipped`,且 `request()` 残留哨兵逻辑 → 重写。
+- **死计数器**:初版 `StubCounters` 含 4 个「**不可能触发**的违例计数」(`mshr_overcommit` / `evict_of_outstanding` / `snoop_resp_late_or_early` / `writeback_payload_violations`)—— 恒 0 的计数器 = **假覆盖**(判据①)→ 删除,改为只收「**保护性拒绝**」与「**实际动作**」两类计数;`INV-SC3` / `SC5` / `SC6` 改为**纯行为断言**。
+- **测试逻辑 bug 3 处**:① `INV-SC3` 的延迟循环对 `lat=0` 误判(改为**逐拍**核对);② `INV-SC4` 的绝对计数随前置用例漂移(改为**增量**断言);③ Scenario 7 断言「spec 不含 `barrier`」**误报**(排除语境合法)→ 改为「无 Scenario 把 #1/#4 立为要求」。
+- **GCC 编译错**:`explicit StubCacheCore(Config cfg = {})` 在「嵌套类 + 默认成员初始化器 + 默认实参」组合下触发 `could not convert '<brace-enclosed initializer list>'` → 改为显式两个构造函数。
+
+**⑦ 验收(全绿,实测)**
+
+| 项 | 实测 |
+|---|---|
+| `openspec validate cpptlm-cep-stub-cache-core --strict` · `--changes --strict` | **rc=0** |
+| 守门 7 项(`cep_docs_sync_check` / `cep_doc_ref_check` / `cep_freeze_check` / `cep_archforge_alignment_check` / `cep_decl_alignment_check` / `docs_sync_check` / `test_sh_arg_parsing`) | 全 **rc=0** |
+| `cep_gate_selftest.sh` | **31 / 31** |
+| `ctest --test-dir build -j4` | **104 / 104**(新增 2 个:Phase 1 前为 102) |
+| `format.sh --check` · `markdown_link_check.sh` | 全 **rc=0** |
+| 冻结面 32 成员 | **0 改动**(`authorized_by = Entry #58`) |
+| 23 ABI · `ModuleFactory` | **零改动 / 零注册** |
+
+**⑧ 剩余与下一步**
+
+- **T3.8 归档回填** —— 按 `obj §4.7.3` 的 **17 个落点**逐项回填;delta capability 合并进 main spec 后按 Entry #56 先例纳入冻结集(走 `cep_freeze_check.sh --update --authorized-by`)。
+- **⚠️ 归档语义的二选一(需用户裁决)**:
+  - **✅ 已完成归档**(`openspec archive`):实现已落地,契约已在系统内 ⇒ delta spec **合并**进 `openspec/specs/`(新增 2 个 capability:`cep-vc-mapping-contract` / `cep-stub-cache-core`)。**语义**:断言该能力**已在契约内**。
+  - **⏸ 暂存归档**(`openspec archive --skip-specs`):**不合并** main specs + proposal 顶部加 `⏸ 暂存归档` 段。**语义**:断言「设计保留,能力未落地」。
+  - ⇒ 本 change 的**实现已落地**(非 0%),按 AGENTS.md 的判据应走 **✅ 已完成归档**。
+- **下一队列 = #4** `cpptlm-cep-directory-ordering-plane`(2027-Q3)。
+
+**关联**: Entry #59(Phase 0 实施完成)· Entry #58(队列 #3 建 change + M-4 决策落盘)· Entry #55(队列 #2 归档 + owner 重指向)· `ADR-CEP-05`(接口 / 状态机 / `INV-SC*` 定义)· `ADR-CEP-02 §2`(canonical 10 流)
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)
