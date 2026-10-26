@@ -13,6 +13,7 @@
 > - v1 (2026-10-16) — Oracle REJECT, 8 项 BLOCKER
 > - v0.2 (2026-10-17) — 修 v1 BLOCKER, 引入新问题
 > - v0.3 (2026-10-18) — 修 v0.2 + Critic BLOCKER,本版本
+> - **v0.4 + 2026-10-27 增补** — §3.3 补第三类「跨模块共享的业务 Bundle」· §4.3 / §3.2 漂移订正 · §11.2 / §11.3 时间线转隶 CEP + P3.2 偏离登记(per `ADR-CEP-19`;台账 Entry #74)
 
 ---
 
@@ -263,7 +264,7 @@ inline bool SimplePort::send(Packet* pkt) {
 | **tlm_generic_payload 关系** | 业务 Bundle **整体**作为 payload 的 data 序列化(per `bundle_serialization.hh:22-27` `serialize_bundle` memcpy) | 网络 Bundle 也走 payload,但其字段是"网络层",如需持久化业务内容应通过业务 Bundle 字段,而非新增网络 Bundle 字段 |
 | **跨 hop 存活** | **否** — per-hop 序列化/反序列化(每个 hop 销毁 + 新建 per `stream_adapter.hh:48-49` deserialize + `:144` serialize) | **否** — 同样 per-hop,但其字段是"网络层上下文" |
 
-### 3.2 实地归类表(per `include/bundles/` 16 个 .hh + oracle 实证) — **v0.3 B-2 修订**
+### 3.2 实地归类表(per `include/bundles/` **17** 个 .hh + oracle 实证) — **v0.3 B-2 修订**(2026-10-27 per `ADR-CEP-19` D-7 漂移订正:原写「16 个 .hh」,实测 `ls include/bundles/*.hh` = **17**)
 
 **v0.2 B-2 bug**: CrBundle 字段含义错(写 "Cache Request" + 引用 `arch/arm/mpam.hh:51` 外部路径,仓内不存在) + Axi4Bundle 消费者 1→≥5
 
@@ -299,6 +300,25 @@ inline bool SimplePort::send(Packet* pkt) {
 | 模块 owner 可改? | ✅ 加字段 + 改字段宽 + 改序列化都允许(业务自由) | ❌ 编译期 `BUNDLE_FIELD_WIDTH` 锁住,扩展需走 OpenSpec change |
 | 跨模块 owner 文档? | 仅自己模块团队需要 | **需要**(跨模块协议契约)— 必须有架构师守门 |
 | L5 测试覆盖? | 模块级 TestCase 即可 | 项目级 `[pcie]` / `[realip]` / `[dgpu_soc_timing]` 6 标签 |
+
+> **⚠️ 2026-10-27 修订(per `ADR-CEP-19` 决策 3;台账 Entry #74)** —— 本表原有**两列**,但 §3.1 的两条判定规则对「**跨模块共享、但字段非网络层**」的 Bundle 给出**相反**答案:
+> - **字段维度**(§3.1 判定规则第 1 条:是否含 src_node / dst_node / flit_category / vc_id / 流控 marker)⇒ **业务**;
+> - **owner 维度**(第 2 条:项目级 owner vs 业务模块 owner)⇒ **网络**。
+>
+> ⇒ **补第三类**,把「**分类**」(是什么)与「**演进纪律**」(谁能改)解耦:
+>
+> | 含义 | **跨模块共享的业务 Bundle**(第三类) |
+> |------|------|
+> | **字段形态** | **业务语义**(无网络层字段)—— 按 §3.1 第 1 条判定 |
+> | **owner** | **项目级**(跨模块共享契约)—— 按 §3.1 第 2 条判定 |
+> | **模块 owner 可改?** | ❌ **编译期 `BUNDLE_FIELD_WIDTH` 锁住**,扩展需走 OpenSpec change —— **取网络侧的纪律** |
+> | **跨模块 owner 文档?** | **需要** —— 必须有架构师守门(取网络侧) |
+> | **L5 测试覆盖?** | **项目级**(取网络侧) |
+> | **唯一实例** | `bundles::CohIfBundle`(`include/bundles/cep_coherence_bundles_tlm.hh`;承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流**)—— per `ADR-CEP-19` 决策 2 / 3 |
+>
+> **为什么必须解耦**:CEP 的 CohIf 是**第一个**触发该二义的实例(业务语义 + 跨模块共享);若不补第三类,后续每个「跨模块共享但非网络字段」的 Bundle 都要重新吵一遍分类。
+>
+> **写作纪律**:本表**只增第三类**,§3.1 的两条判定规则与 §3.2 的归类表**零改动**;`ADR-CEP-19` 签发**在先**,本修订**在后**(否则构成「用未签发 ADR 草案为改真源 1 背书」)。
 
 ### 3.4 演进粒度(业务 Bundle 可演进粒度)
 
@@ -355,7 +375,7 @@ per oracle 调研 + gem5 Garnet vnet 语义:
 | `data` (ch_uint<64>) | 数据载荷(8 字节 / 拍) | ⚠️ **数据 > 8B 时不能 inline** — 这是 gem5 Garnet flit_size 的根本限制;演进 seam §15.2 |
 | `size` (ch_uint<8>) | 字节数 | ⚠️ 8 bit 最多 255B,**不够大块传输**(如 4KB AxiMemBundle) — 演进 seam §15.2 |
 | `vc_id` / `flit_type` / `flit_index` / `flit_count` / `hops` | vnet + 流控 + 分片 | ✅ 必保 |
-| `flit_category` (REQUEST/RESPONSE/CREDIT/CREDIT_RESPONSE) | gem5 vnet 3 类对位 | ✅ 必保(4 bucket 演进空间, §15.2) |
+| `flit_category` (REQUEST/RESPONSE/CREDIT) | gem5 vnet 3 类对位 | ✅ 必保(per `include/bundles/noc_bundles_tlm.hh:60-62` 实测 **3** 个 `CATEGORY_*` 常量;原写 4 值含 `CREDIT_RESPONSE` —— **全仓零命中**,已订正;3 值与 CEP 的 `CATEGORY_*` 3 类**精确 1:1**) |
 | `src_port` / `is_write` / `is_ok` / `error_code` | 路由 + 协议细节 | ✅ 必保 |
 
 **演进 §15.2 给两种 Bundle 兼容方案**:
@@ -925,9 +945,21 @@ per `01-hybrid-architecture-v2.1.md` §1.5 + `apu_soc.cc:84-103`:
 - P3.2: ModuleFactory Step 7c 精简版 (per-bridge 静态分配, 拒绝 ProtocolBridgeFactory 模式)
 - P3 估时: 20-30d 占位 (per §15.3 现状)
 
+> **⚠️ 2026-10-27 修订(per `ADR-CEP-19` 决策 4 / 7;台账 Entry #74)** —— 上列 **P3+ 时间线**与 **P3.2 的「拒绝 ProtocolBridgeFactory 模式」**两处口径,处置如下:
+>
+> **① 时间线转隶 CEP(决策 7)**:本节 P1 / §11.3 P2 的**实施分期从未执行** —— 实测 `06 §11.2` 承诺的 3 个测试(`test_bundle_classification_contract.cc` / `test_simulation_mode_schema.cc` / `test_seam_documentation_locator.cc`)与 `include/core/coherence_bridge.hh` / `src/core/coherence_bridge.cc` **全仓均不存在**;`openspec/changes/` 与 `openspec/changes/archive/` **无**对应 change 目录 ⇒ 该分期**已被 06-bis 的 CEP 继任取代**(`06-bis` 顶部 `Status Update (2026-10-21) — superseded by CEP`)。⇒ **本节分期时间线作废**,承载 seam 的代码增量改由 **CEP 排期**承接:`ADR-CEP-19` 决策 1 / 5 落在队列 **#7 `cpptlm-cep-cohif-carrier`**(Stage 1 / 2028-Q2,排期真源 = `obj-cep-platform §4.0`)。**本段不改上列任务条目本身**(它们仍是**技术内容**的权威描述),只登记**时间线**与**归属**的转移。
+>
+> **② 显式偏离 P3.2 的「拒绝 ProtocolBridgeFactory 模式」(决策 4)**:本段 P3.2 写「per-bridge 静态分配, **拒绝 ProtocolBridgeFactory 模式**」,而本文件 **§9.3** 写「当 P3+ 引入 `ProtocolBridgeFactory` 时,**扩展** `register_protocol_bridge` 为 `(bridge_name, factory_lambda)` 形式 —— 沿用现有 register 入口,**不重发明**」。⇒ **本文件内部两条互斥**。**处置**:
+> - **遵从 §9.3** —— 采纳**钩子签名扩展**路径(`module_factory.hh:313-315` 的 `register_protocol_bridge` 现为 **write-only 死钩子**;`get_bridges()` 在 `private:` 段 `:326`,全仓无人读);
+> - **显式偏离**本段 P3.2 的「拒绝」条款 —— 偏离理据:该条拒绝的是**独立 factory 抽象层**(与 `01 号 §1.1`「当前 L3+L4 已达 Gem5 MessageBuffer 水准,**不需新增抽象层**」一致);§9.3 的**钩子签名扩展**不产生抽象层 ⇒ 二者**目标一致但字面冲突**,以 §9.3 为准;
+> - **不新建** `ProtocolBridgeFactory` 类(per `ADR-CEP-19` 决策 8「不引入新抽象层」);
+> - **落地形态**见 `ADR-CEP-19` 决策 5:`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏 + `register_protocol_bridge` 签名扩展,**由队列 #7 交付**。
+
 ### 11.3 P2 (实施期, 单 KPI slot — 等 P1 后)
 
 **目标**: `CoherenceBridge` 落地 + Python 拓扑支持多 dGPU 子系统跨域桥接(per 06-bis §11-§12)
+
+> **⚠️ 2026-10-27 时间线转隶(per `ADR-CEP-19` 决策 7;台账 Entry #74)**:本节的 **`CoherenceBridge` C++ 实施**已被 06-bis 的 CEP 继任取代 —— 跨域组合改由 `ADR-CEP-13` 承接(走「人工声明 + 实验证伪」路线),**不做**单一 `CoherenceBridge` C++ 类。**CohIf 侧**的载体由队列 **#7 `cpptlm-cep-cohif-carrier`** 交付(见 §11.2 的 ① 登记)。本节**目标文字零改动**(仍是技术内容的权威描述),只登记**时间线**转隶。
 
 **任务清单**(诚实含 build 改动):
 

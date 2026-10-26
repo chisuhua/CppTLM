@@ -166,6 +166,10 @@ namespace cpptlm {
                 "ADR-CEP-03-fabric-collective-plane-internals.md",
                 "ADR-CEP-17-ruby-slicc-protocol-family.md",
                 "ADR-CEP-18-protocol-generation-scope.md",
+                // 2026-10-27(Entry #74):ADR-CEP-19 = CohIf 载体形态(纯交付机制;
+                // **新增 invariant 数 = 0**,per 其决策 2 / 8)⇒ 与 scripts/test/cep_docs_sync_check.sh
+                // 的 NO_INV 白名单**同步登记**(两处规则重复,修一处必须记得改另一处)。
+                "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
             };
             return v;
         }
