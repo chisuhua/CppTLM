@@ -242,8 +242,8 @@ TEST_CASE("CEP CollectivePlane: group 生命周期 + destroy ⇒ Fault", "[cep][
     cep::LocalCollectivePlane p2;
     const auto gid2 = p2.group_create({1, 2}, cep::GroupAttrs{});
     REQUIRE(gid2 != cep::kInvalidGroupId);
-    REQUIRE(p2.group_register_region(gid2, range(0x1000, 0x1FFF),
-                                     cep::AccessMode::Normal) == cep::Status::Ok);
+    REQUIRE(p2.group_register_region(gid2, range(0x1000, 0x1FFF), cep::AccessMode::Normal) ==
+            cep::Status::Ok);
     CHECK(p2.region_state_of(0x1000) == cep::RegionState::RegisteredEpochInvalid);
 
     p2.group_destroy(gid2);
@@ -253,8 +253,8 @@ TEST_CASE("CEP CollectivePlane: group 生命周期 + destroy ⇒ Fault", "[cep][
     // **关键**:同一地址段能被**新 group 重新注册**(残留会让它永久报废)
     const auto gid3 = p2.group_create({1, 2}, cep::GroupAttrs{});
     REQUIRE(gid3 != cep::kInvalidGroupId);
-    CHECK(p2.group_register_region(gid3, range(0x1000, 0x1FFF),
-                                   cep::AccessMode::Normal) == cep::Status::Ok);
+    CHECK(p2.group_register_region(gid3, range(0x1000, 0x1FFF), cep::AccessMode::Normal) ==
+          cep::Status::Ok);
 }
 
 // ═════════════════════════════════════════════════════════════════════
@@ -539,10 +539,12 @@ TEST_CASE("CEP CollectivePlane: 零调用边(行为面侧)", "[cep][collective-p
     const std::string stripped = strip_comments(code);
 
     // 本文件**不得** include directory / ordering / sharer 侧的头
-    for (const char* forbidden : {"sharer_tracker", "address_resolver", "ordering_point",
-                                  "channel_dependency", "stub_cache_core"}) {
-        CHECK(stripped.find(std::string("#include") + " \"tlm/cep/" + forbidden) ==
-              std::string::npos);
+    // ⚠️ 行为面与判据面**共享同一套** include 提取 + 禁用侧判定
+    //   (`extract_include_paths` + `include_path_is_forbidden`)——
+    //   此前两份实现已分叉(行为面漏 `directory` 条目、漏尖括号形态、漏无前缀形态),
+    //   而「同一规则两份实现」正是本仓最警惕的形态。
+    for (const auto& p : cep::extract_include_paths(stripped)) {
+        CHECK_FALSE(cep::include_path_is_forbidden(p));
     }
 
     // ── 反向 fixture:构造一份含 forbidden include 的文本 ⇒ 判据必须判红 ──
@@ -553,11 +555,10 @@ TEST_CASE("CEP CollectivePlane: 零调用边(行为面侧)", "[cep][collective-p
     const std::string clean = "#include \"tlm/cep/collective_plane.hh\"\n#include <map>\n";
     CHECK(!cep::header_include_is_forbidden(clean));
 
-    // ── 反向 fixture ②:本行为面自己的扫描也必须能抓到 poisoned 文本 ──
-    //   (此前反向 fixture 只打在判据面的函数上,行为面扫描**从未**被注入验证过)
-    CHECK(poisoned.find("sharer_tracker") != std::string::npos);
-    // 对照:clean 文本里不含禁用名
-    CHECK(clean.find("sharer_tracker") == std::string::npos);
+    // ── 反向 fixture ②:尖括号形态 / 注释形态 / 禁用目录形态 ──
+    CHECK(cep::header_include_is_forbidden("#include <tlm/cep/sharer_tracker.hh>\n"));
+    CHECK(!cep::header_include_is_forbidden("// #include \"tlm/cep/sharer_tracker.hh\"\n"));
+    CHECK(cep::header_include_is_forbidden("#include \"tlm/cep/directory/foo.hh\"\n"));
 
     // 另一条:本仓的 collective 头**不得** include `ordering_point_checker.hh`
     //   (那是 coherence 侧的判据头 —— 会被 CP-05 的完成域判别抓到)

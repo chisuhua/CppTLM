@@ -235,7 +235,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **2** | **`cpptlm-cep-poc-spike`** ← 2026-10-22 新增(P-1,置首位)· ✅ **archived**(2026-10-25;**完成归档**语义 —— delta spec 已合并进 main specs;critic 7 轮复审 → 第 7 轮 APPROVE;装配期前置的逐项分层与 owner 见本行末列,2026-10-24 planner 审查 per Entry #46)** | `ADR-CEP-13`(判据 (b) 的**可执行**判定 = Q-3e)+ `ADR-CEP-09`(顶点升级)+ `ADR-CEP-12`(per-network VC) | **3 周**(spike,非实现) | 装配期前置已**全部重指向**(Entry #55):建图层→队列 #4 / 放行闸→全局不变量 / M-4 决策→队列 #3 / 表体→队列 #6 / 其余→队列 #3 起 |
 | **3** | `cpptlm-cep-stub-cache-core` ✅ **archived(2026-10-25)** —— 完成归档语义;tasks **36/36** 全勾;2 个 delta capability 已合并进 main specs | ADR-CEP-05 + ADR-CEP-04 stub | 8 周(实际交付面**显著更小** —— 单文件头可实现) | **M-4 行为侧决策**(✅ **已消费** —— 队列 #3 归档时落成 `cep-vc-mapping-contract`:协议层 credit **不独占** VC(权威已闭)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名 + 冲突输入**传输层不仲裁**;契约化于 `cep-vc-mapping-contract`,per 台账 Entry #58 / #59 / #60) |
 | **4** | **`cpptlm-cep-directory-ordering-plane`** ✅ **archived(2026-10-25)** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 抽象 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周;含建图层与逐 `(network, vc)` verdict 义务) | **已交付(历史记录)**:单接口 + caps + D-5 + FullMapDirectory · AddressResolverIf + J1~J3 + `INV-CEP-08-IC2` + (β) 裁决 · 装配期通道依赖图(双挂共享判据,`[verdict] net=… vc=…` 逐行输出)。**余项登记已重指向队列 #5 行**(per Entry #64) |
-| **5** | `cpptlm-cep-collective-plane-base` 🟡 **Proposed(2026-10-26)** | ADR-CEP-03 + ADR-CEP-01 | 8 周(实际交付面预期**小于**标称 —— 2 header + 2 声明源 + 3 test,per 队列 #2/#3/#4 先例) | **Stage 1 准入前置(滚动登记,per Entry #64)**:**S1-1** ✅ 已消费 · **S1-7 的 (β) 重评估** ✅ 已消费 · **S1-2** ⛔ 未触发 · **S1-3** ⛔ 未触发 · **S1-4** ✅ 已消费;**孤儿前置登记**:**M-4 行为侧** **⏭(孤儿)** · **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)**;**本 change 交付**:`CollectivePlaneIf` + `NullCollectivePlane`(**行为化 `INV-CEP-07-IC3`**)+ `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous,**行为化 `INV-CEP-04-IC5`**)+ 5 条契约判据(零调用边 / 区域互斥 / VC 不冲突 / 完成域判别 / 10 流零 diff)+ 独立声明源 |
+| **5** | `cpptlm-cep-collective-plane-base` 🟡 **Proposed(2026-10-26)** | ADR-CEP-03 + ADR-CEP-01 | 8 周(实际交付面预期**小于**标称 —— 2 header + 2 声明源 + 3 test,per 队列 #2/#3/#4 先例) | **Stage 1 准入前置(滚动登记,per Entry #64)**:**S1-1** ✅ 已消费 · **S1-7 的 (β) 重评估** ✅ 已消费 · **S1-2** ⛔ 未触发 · **S1-3** ⛔ 未触发 · **S1-4** ✅ 已消费;**孤儿前置登记**:**M-4 行为侧** **⏭(孤儿)** · **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)**;**本 change 交付**:`CollectivePlaneIf` + `NullCollectivePlane`(**行为化 `INV-CEP-07-IC3`**)+ `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous,**行为化 `INV-CEP-04-IC5` 的 R2 判读侧**)+ 5 条契约判据(零调用边 / 区域互斥 / VC 不冲突 / 完成域判别 / 10 流零 diff)+ 独立声明源 |
 | **6** | `cpptlm-cep-chi-rnf-subset` | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **S1-7 的 `perm` 形态 schema 演进**(`ADR-CEP-12` 为 schema owner;首个真实使用 schema 的协议 change) **⏭(孤儿)** **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期) |
 | **7** | `cpptlm-cep-cxl-nonsymmetric` | ADR-CEP-04 + ADR-CEP-03 | 8 周 | — |
 | **8** | `cpptlm-cep-tilelink-tree-manager` | ADR-CEP-04 + ADR-CEP-08 + ADR-CEP-12 | 8 周 | — |
@@ -4265,7 +4265,7 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 |---|---|---|
 | `openspec/changes/cpptlm-cep-collective-plane-base/proposal.md` | 160 行 | 缺口表(5 项,全部实测)+ What Changes + Capabilities + Impact + **Acceptance 20 项**(A-1-1~12 / A-2-1~8)+ 收尾 5 项 |
 | `openspec/changes/cpptlm-cep-collective-plane-base/design.md` | 246 行 | Context(现状/目标态/8 条关键约束)+ Goals/Non-Goals + **决策 D-α~D-θ**(8 条)+ 实施期裁决占位 + 9 条 Risks + 5 条 Open Questions + 与队列 #3/#4 先例对照 |
-| `openspec/changes/cpptlm-cep-collective-plane-base/specs/cep-collective-plane-base/spec.md` | 13 Scenario | 接口面 / 类型面(含 `CollectiveEvt` Fault 变体)/ Null(行为化 `INV-CEP-07-IC3`)/ Local(group 生命周期 + BARRIER rendezvous + epoch invalid 窗口(行为化 `INV-CEP-04-IC5`))/ 区域互斥(CEP-13)/ 未注册区域报错 / functional 零延迟 / capability 边界 / 零调用边 |
+| `openspec/changes/cpptlm-cep-collective-plane-base/specs/cep-collective-plane-base/spec.md` | 13 Scenario | 接口面 / 类型面(含 `CollectiveEvt` Fault 变体)/ Null(行为化 `INV-CEP-07-IC3`)/ Local(group 生命周期 + BARRIER rendezvous + epoch invalid 窗口(行为化 `INV-CEP-04-IC5` 的 **R2 判读侧**))/ 区域互斥(CEP-13)/ 未注册区域报错 / functional 零延迟 / capability 边界 / 零调用边 |
 | `openspec/changes/cpptlm-cep-collective-plane-base/specs/cep-collective-plane-contract/spec.md` | 8 Scenario | 声明源形态与 schema / 三态显式化 / include-graph 闸 / 10 流零 diff / VC 不冲突 / 同源禁双实现 / 抓取点可测性登记 / B2 贡献非空 |
 | `.rddf/improvements/cpptlm-cep-collective-plane-base.md` | 5 段草稿 | Why / What Changes / Non-Goals / Acceptance / Capabilities / Impact(planning 输入) |
 
@@ -4282,7 +4282,7 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 
 | 编号 | 裁决 | 理由 |
 |---|---|---|
-| **D-ε** | **B2 贡献 = 行为化既有条目,新增 invariant 数 = 0** | `test_cep_canonical_invariants.cc::expected_groups()` 把 15 组 66 条编号**硬编码**;`ADR-CEP-01`/`ADR-CEP-03` 在 15 组里**无组** ⇒ 新增编号即契约违反。贡献 = 行为化 `INV-CEP-07-IC3` + `INV-CEP-04-IC5` + 契约层加固(零调用边 / 10 流零 diff)。**清单为空则自我否决** |
+| **D-ε** | **B2 贡献 = 行为化既有条目,新增 invariant 数 = 0** | `test_cep_canonical_invariants.cc::expected_groups()` 把 15 组 66 条编号**硬编码**;`ADR-CEP-01`/`ADR-CEP-03` 在 15 组里**无组** ⇒ 新增编号即契约违反。贡献 = 行为化 `INV-CEP-07-IC3` + `INV-CEP-04-IC5` 的 **R2 判读侧** + 契约层加固(零调用边 / 10 流零 diff)。**清单为空则自我否决** |
 | **D-ζ** | 拍死两处 ADR 留白:AllReduce = **调用方组合**(plane 守 4 原语最小集);`group_destroy` 对 in-flight 操作**发 `Fault` 且不阻塞** | 避免 plane 长出第 5 原语;避免 destroy 引入隐式依赖(违反零调用边精神) |
 | **D-η** | **归档日治理 6 步预登记** | 队列 #4 的教训:planner 不预登记,builder 归档时必漏。含 selftest 锚点 **#5 → #6** 的具体值 |
 
@@ -4343,7 +4343,7 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 | 方式 | 内容 | 归属组 |
 |---|---|---|
 | **行为化** | `INV-CEP-07-IC3`:NullCollectivePlane 全部 7 原语 ⇒「不支持」+ 无副作用(对照:Local 不得报不支持) | "Simulation + Seam" |
-| **行为化** | `INV-CEP-04-IC5`:`table 命中 + epoch invalid` ⇒ **不 divert**(放行),非 fail-stop;epoch commit 后翻转 | "Sharer Tracker" |
+| **行为化**(R2 **判读侧**) | `INV-CEP-04-IC5`:`table 命中 + epoch invalid` ⇒ **不 divert**(放行),非 fail-stop;epoch commit 后翻转 —— **行为主体 `fabric_ingress_classify` 本仓不存在**(per `ADR-CEP-04:301`),P3 实现真 ingress 时须在那里**重新**行为化 | "Sharer Tracker" |
 | **契约层加固** | 零调用边(include-graph 闸)+ canonical 10 流零 diff | "Coherence Interface" / "Simulation + Seam" |
 
 > 15 组 66 条编号**未被改动**(`test_cep_canonical_invariants.cc` 零 diff)⇒ D-ε 的计数口径成立。
@@ -4390,7 +4390,7 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 | 项 | 值 |
 |---|---|
 | `[cep]` | **148 cases / 2374 assertions**(planner 期 122 / 2050) |
-| collective 三档 | `24 cases / 267 assertions`(13 + 8 + 3) |
+| collective 三档 | `24 cases / 281 assertions`(13 + 8 + 3;per 三审实测订正,原写 267 有误)|
 | `ctest` | **106/106**(新增 1 = CLI 的 ctest 入口) |
 | 守门 7 项 | rc=0 |
 | `cep_gate_selftest` | 31/31 |
@@ -4483,6 +4483,73 @@ critic 判定:`INV-CEP-04-IC5` 的**行为主体**是 `fabric_ingress_classify`(
 | `design.md` | 新增 **D-σ**(复审轮全文 + 方法论教训) |
 
 **关联**: Entry #67(builder 实施)· Entry #66(planner 阶段)· critic 复审(REJECT:3 BLOCKER / 10 SHOULD_FIX / 3 NIT)· `ADR-CEP-02`(canonical 10 流权威)· `ADR-CEP-04`(`INV-CEP-04-IC5` owner)
+
+---
+
+### Entry #69 — 2026-10-26 [fix]
+
+**主题**: 队列 #5 **三审轮**(critic 第三次评审)—— APPROVE_WITH_CONDITIONS:5 SHOULD_FIX + 6 NIT 落地;3 个原 BLOCKER 经独立 PoC 复验闭合
+
+**① 三审结论**
+
+critic 三审:**无 BLOCKER**。3 个原 BLOCKER(B-1 region 残留 / B-2 违规投递事件 / B-3 无成员校验)
+由评审者**仓外独立 PoC** 逐条复验闭合(并额外构造了「修复转移」场景:二次 destroy、跨 group member、
+partial drain、破坏注释/字符串边界的 include 形态 —— 均未发现新的失效路径)。
+
+**B2 贡献清单的诚实性判定(critic 原文)**:「**行为化 IC5 的 R2 判读侧**」表述**准确**
+—— 实现交付的是 `region_state_of`(R2 谓词判读)+ 观测口,`fabric_ingress_classify` 确实不存在于本仓;
+`INV-CEP-07-IC3` 仍成立(Scenario 3 全原语 `Unsupported` + 无副作用 + 反向 fixture 实测通过)。
+
+**② 5 个 SHOULD_FIX(全部落地)**
+
+| # | 缺陷 | 修复 |
+|---|------|------|
+| **U-1** | `CatchpointBinding::declared_measurable` 是**只写不读的死字段** —— 与刚删除的 `collective_enabled` **同类复发**,且就发生在修该类问题的同一个 commit 里 | 让它参与**交叉核对**:「映射表声明的覆盖承诺」必须与「ADR 的措辞分类」**严格一致**,不一致 ⇒ FAIL ⇒ 死字段变成**真加固** |
+| **U-2** | group 级 `epoch_valid` 旗标在 per-region drain 后**说谎**(2-region group 只 drain 1 个 ⇒ 旗标为真、另一 region 仍在 invalid 窗口) | 删除该旗标;`epoch_valid(gid)` 改为「名下**所有** region 都已 drain 回告」 |
+| **U-3** | `Scenario 13` 的「反向 fixture ②」是**同义反复**(拿刚构造的 poisoned 文本找自己的字面量)⇒ 声称堵的洞仍开着;且行为面扫描与 CP-01 **实质分叉**(漏 `directory` 条目 / 漏尖括号形态 / 漏无前缀形态) | 行为面改为与判据面**共享** `extract_include_paths` + `include_path_is_forbidden`;反向 fixture 改为**真**注入(尖括号 / 注释 / 禁用目录三种形态) |
+| **U-4** | CP-06 段选择仍**关键词脆弱**:重判段若标题不含「抓取点」三字 ⇒ 读到旧段 ⇒ 重判不可见、闸仍绿 | 段选择改为「含**抓取点登记表的表格形态**(`| **N**(` 行)」⇒ 与标题措辞**解耦** |
+| **U-5** | 6 个 NIT | 全部落地(见 ③) |
+
+**③ 6 个 NIT 的落地**
+
+| NIT | 处理 |
+|---|---|
+| `complete_drain` 文档注释**新旧两段并存** | 删旧段 |
+| `recv` 空队列出参语义未在接口注释写明 | 接口注释补「空队列 ⇒ 出参置无效 group 的 Completion + `NoEvent`」 |
+| `NotMember` 同态覆盖「未装配身份」与「身份非成员」 | 注释说明**有意合并** |
+| commit message 断言数订正(实测 281) | 台账 Entry #67 数字订正 |
+| **台账活表格未同步**「R2 判读侧」限定 | obj **3 处**活表格 + Entry #66 **2 处**表述已加限定;`owner)` 引用行不动 |
+| CP-04 声明 gid 语义未澄清 | design 新增 **D-τ**:声明 gid = **分组标签**,不是句柄预约 |
+
+**④ 3 个关键 PoC 复验**
+
+| PoC | 攻击 | 复验结果 |
+|-----|------|---------|
+| SF-2 | 2-region group 只 drain 一个 ⇒ `epoch_valid(gid)` 不得为真 | `false` ✅(R1=active · R2=epoch-invalid) |
+| SF-1 | 「映射表覆盖承诺」与「ADR 措辞」不一致 | `FAIL` ✅(已判红) |
+| SF-4 | 重判段标题**不含**「抓取点」三字但含表格形态 | `parsed=1` ✅(读到新段) |
+
+**⑤ U-1 的教训(登记备查)**
+
+上一轮刚因「`collective_enabled` 是**声称的契约未实施**」被要求删除,同一轮里**又新增**了同类死字段
+(`declared_measurable`)⇒ **「删除死字段」不等于「字段都有用」** —— 新增字段时必须问「谁读它」。
+本轮已把它改造成**交叉核对项**(承诺 vs 声明对账),从「死字段」变成「真加固」。
+
+**⑥ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `[cep]` | **148 cases / 2390 assertions** |
+| collective 三档 | 24 cases / **281** assertions(13 + 8 + 3) |
+| `ctest` | **106/106** |
+| 守门 7 项 | rc=0 |
+| `cep_gate_selftest` | 31/31 |
+| CLI | 6 判据全 PASS(rc=0) |
+| `openspec validate` | **is valid** |
+| 冻结面 | **37** —— 本批**零**冻结成员改动 ⇒ manifest 无需重生成 |
+| `design.md` | 新增 **D-τ** + **D-υ**(三审轮全文 + U-1 教训) |
+
+**关联**: Entry #68(复审轮:3 BLOCKER 修复)· Entry #67(builder 实施)· Entry #66(planner 阶段)· critic 三审(APPROVE_WITH_CONDITIONS:5 SHOULD_FIX / 6 NIT)· `ADR-CEP-04`(`INV-CEP-04-IC5` owner —— 行为主体 `fabric_ingress_classify` 本仓不存在,P3 须重新行为化)
 
 ---
 

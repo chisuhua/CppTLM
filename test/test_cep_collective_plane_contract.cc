@@ -360,7 +360,8 @@ TEST_CASE("CEP CollectiveContract: 抓取点登记 + B2 贡献非空", "[cep][co
     mismatched.verdicts["1"] = "**已满足**(无需实施动作)";
     std::string d2;
     CHECK(cep::evaluate_catchpoint_coverage(mismatched, self, d2) == cep::ContractVerdict::FAIL);
-    CHECK(d2.find("禁写恒真判据") != std::string::npos);
+    // 交叉核对先于「禁写恒真判据」分支触发(声明与措辞不一致 ⇒ 更根本的错)
+    CHECK(d2.find("覆盖声明与 ADR 措辞不一致") != std::string::npos);
 
     // B2 贡献清单**非空** —— 本 change 行为化 2 条既有编号 + 加固 2 组契约
     //   (per design D-ε:新增 invariant 数 = 0,贡献 = 行为化既有条目)

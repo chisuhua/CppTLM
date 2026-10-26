@@ -163,7 +163,8 @@ enum class Status : std::uint8_t {
     DrainFailed = 7,
     UnknownOp = 8,
     EmptyMemberSet = 9,
-    /// 当前成员**不属于**该 group(barrier 到达不得被计入阈值)
+    /// 当前成员**无法计入** rendezvous:未装配身份(`kInvalidMember`)或身份不属于该 group
+    /// —— **有意合并**为同一状态(诊断价值低;两种情形都是「本次到达不计入」)
     NotMember = 10,
     /// `recv` 时**无事件可取**(与「取到事件」必须可区分)
     NoEvent = 11,
@@ -334,6 +335,8 @@ public:
 
     // ---- 数据路径原语 ----
     virtual void send(const CollectiveReq& req) = 0;
+    // `recv` 在**无事件**时 SHALL 把出参置为「无效 group 的 Completion」并把状态置 `NoEvent`
+    //   (调用方据此区分「无事件」与「取到事件」;只看 `kind()` 的调用方须同时看状态)
     virtual void recv(CollectiveEvt& evt) = 0;
 
     // ---- barrier = 相位转换原语 ----
@@ -431,7 +434,6 @@ public:
         groups_[gid] = Group{};
         groups_[gid].members = std::move(members);
         groups_[gid].attrs = attrs;
-        groups_[gid].epoch_valid = false;
         last_status_ = Status::Ok;
         return gid;
     }
@@ -583,10 +585,7 @@ public:
 
     std::uint32_t current_member() const { return current_member_; }
 
-    /// **drain 完成回告** —— epoch 由 invalid 转 valid(per design D-ι 裁决 2)。
-    /// 先例:`FullMapDirectory::set_sharer` 同样是 4 方法之外的**目录安装面**;
-    /// plane 的「drain 回告」与目录的「sharer 安装」是同一种**装配缝**。
-    /// **drain 完成回告** —— 指定 region 的 epoch 由 invalid 转 valid。
+    /// **drain 完成回告** —— 指定 region 的 epoch 由 invalid 转 valid(per design D-ι 裁决 2)。
     ///
     /// ⚠️ **粒度 = per-region**:一次把该 gid 的**所有** region 置 valid 会造成
     ///   「某 region 的 drain 只完成一部分」无法表达 ⇒ 该 region 提前进入 divert 窗口。
@@ -603,7 +602,6 @@ public:
             return Status::InvalidRange;
         }
         rit->second.epoch_valid = true;
-        it->second.epoch_valid = true;
         last_status_ = Status::Ok;
         return Status::Ok;
     }
@@ -629,9 +627,18 @@ public:
     std::size_t group_count() const { return groups_.size(); }
     std::size_t pending_event_count() const { return events_.size(); }
     bool group_alive(group_id_t gid) const { return groups_.count(gid) != 0; }
+    /// 该 group 的 epoch 是否**整体**生效 —— 判据:名下**所有** region 都已 drain 回告。
+    /// ⚠️ 不可按「至少一个 region drain 过」判定 —— 那会让观测口在部分 drain 时**说谎**
+    ///   (group 旗标为真、而另一个 region 仍在 invalid 窗口)。
     bool epoch_valid(group_id_t gid) const {
-        auto it = groups_.find(gid);
-        return it != groups_.end() && it->second.epoch_valid;
+        if (groups_.count(gid) == 0)
+            return false;
+        for (const auto& [range, reg] : regions_) {
+            (void)range;
+            if (reg.gid == gid && !reg.epoch_valid)
+                return false;
+        }
+        return true;
     }
 
     static constexpr cap_t kCapBarrier = 1u << 0;
@@ -640,7 +647,6 @@ private:
     struct Group {
         member_set_t members;
         GroupAttrs attrs;
-        bool epoch_valid = false;
     };
     struct Region {
         group_id_t gid = kInvalidGroupId;

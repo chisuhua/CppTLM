@@ -298,6 +298,13 @@ Ordering Plane    / Sync Plane        ← 本 change 落地
 plane 的 `group_register_region` **不**触碰任何 coherence 侧对象(由 include-graph 闸 + 完成域判据双向保证),
 drain 清单的**发出方**留待队列 #6。**本 change 不假装实现 drain**。
 
+### D-τ:声明源里的 `group` 编号 = **分组标签**,不是**句柄预约**(语义澄清)
+
+`collective_planes.json` 的 `registered_regions[].group` 是**声明侧给 region 打的分组标签**;
+`LocalCollectivePlane::group_create` **自己分配**内部 gid ⇒ 两者**不是同一个编号空间**。
+⇒ 判据 CP-04 用声明 gid 作**映射键**(同 gid 的多个 region 走同一个内部 group),
+**不**检查二者字面相等 —— 声明 gid 不承诺与内部句柄一致(per critic 三审 NIT 澄清)。
+
 ### D-ρ:实施期自查发现的 **5 处真缺陷**(已修,登记备查)
 
 | # | 缺陷 | 后果 |
@@ -369,6 +376,23 @@ critic 判定:`INV-CEP-04-IC5` 的**行为主体**是 `fabric_ingress_classify`(
 本 change 行为化的是 R2 谓词的**判读侧** ⇒ 对外口径**不得**声称「IC5 原文主体已被行为化」。
 ⇒ commit message / 台账措辞统一改为「**行为化 IC5 的 R2 判读侧**」,并保留
 「P3 实现真 ingress classify 时须在那里**重新**行为化」的登记。
+
+### D-υ:三审(critic 第三次评审)—— **APPROVE_WITH_CONDITIONS**,5 SHOULD_FIX + 6 NIT 落地
+
+critic 三审结论:**无 BLOCKER**(3 个原 BLOCKER 全部由其**独立 PoC** 复验闭合),
+但仍有 5 个 SHOULD_FIX —— 全部落地:
+
+| # | 缺陷 | 修复 |
+|---|------|------|
+| **U-1** | `CatchpointBinding::declared_measurable` 是**只写不读的死字段** —— 与刚删除的 `collective_enabled` **同类复发**,且就发生在修该类问题的同一个 commit 里 | 让它参与**交叉核对**:「映射表声明的覆盖承诺」必须与「ADR 的措辞分类」**严格一致**,不一致 ⇒ FAIL(把死字段变成真加固) |
+| **U-2** | group 级 `epoch_valid` 旗标在 per-region drain 后**说谎**(2-region group 只 drain 1 个 ⇒ 旗标为真而另一 region 仍在 invalid 窗口) | 删除该旗标;`epoch_valid(gid)` 改为「该 group 名下**所有** region 都已 drain 回告」 |
+| **U-3** | `Scenario 13` 的「反向 fixture ②」是**同义反复**(拿刚构造的 poisoned 文本找自己的字面量)⇒ 它声称堵的洞仍开着;且行为面扫描与 CP-01 **实质分叉**(漏 `directory` 条目 / 漏尖括号形态 / 漏无前缀形态) | 行为面改为与判据面**共享** `extract_include_paths` + `include_path_is_forbidden`;反向 fixture 改为**真**注入(尖括号形态 / 注释形态 / 禁用目录形态) |
+| **U-4** | CP-06 的段选择仍**关键词脆弱**:未来重判段若标题不含「抓取点」三字 ⇒ 读到旧段 ⇒ 重判不可见、闸仍绿 | 段选择改为「含**抓取点登记表的表格形态**(`| **N**(` 行)」⇒ 与标题措辞**解耦** |
+| **U-5** | 6 个 NIT:死字段 / 死状态 / 断言数订正 / **台账活表格未同步**「R2 判读侧」限定 / CP-04 gid 语义未澄清 / `complete_drain` 注释新旧并存 | 全部落地(台账 3 处活表格 + 2 处 Entry 表述已加「R2 判读侧」;design 补 **D-τ**;`complete_drain` 旧注释段已删) |
+
+> **U-1 的教训值得单记**:上一轮刚因「`collective_enabled` 是声称的契约未实施」被要求删除,
+> 同一轮里**又新增**了一个同类死字段(`declared_measurable`)⇒ 「删除死字段」不等于「字段都有用」,
+> 新增字段时必须问「谁读它」。
 
 #### 评审暴露的**方法论**教训(登记备查)
 

@@ -28,12 +28,11 @@ int main(int argc, char** argv) {
     if (argc > 1) {
         const std::string first = argv[1];
         if (first == "--help" || first == "-h") {
-            std::printf(
-                "用法: %s [<repo_root>]\n\n"
-                "  (无参数)      以当前工作目录为仓库根\n"
-                "  <repo_root>   显式指定仓库根(声明源与权威源都按它解析)\n\n"
-                "退出码: 0 = PASS 或 SKIP · 1 = 判据红/配置错误 · 2 = 用法错误\n",
-                argv[0]);
+            std::printf("用法: %s [<repo_root>]\n\n"
+                        "  (无参数)      以当前工作目录为仓库根\n"
+                        "  <repo_root>   显式指定仓库根(声明源与权威源都按它解析)\n\n"
+                        "退出码: 0 = PASS 或 SKIP · 1 = 判据红/配置错误 · 2 = 用法错误\n",
+                        argv[0]);
             return 0;
         }
     }
@@ -52,7 +51,8 @@ int main(int argc, char** argv) {
 
     const bool failed = report.verdict == tlm::cep::ContractVerdict::FAIL;
     std::printf("[%s] cep collective plane contract: %zu rule(s), %zu failed\n",
-                failed ? "FAIL" : (report.verdict == tlm::cep::ContractVerdict::SKIP ? "SKIP" : "PASS"),
+                failed ? "FAIL"
+                       : (report.verdict == tlm::cep::ContractVerdict::SKIP ? "SKIP" : "PASS"),
                 report.lines.size(), report.count(tlm::cep::ContractVerdict::FAIL));
     return failed ? 1 : 0;
 }

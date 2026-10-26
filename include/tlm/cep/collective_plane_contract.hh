@@ -653,13 +653,44 @@ struct CatchpointCoverage {
     std::string source_error_detail;
 };
 
+/// 该段内是否含**抓取点登记表**的表格形态(行首 `| **N**(`)—— 与标题措辞解耦
+inline bool segment_has_catchpoint_table(const std::string& seg) {
+    std::istringstream in(seg);
+    std::string line;
+    while (std::getline(in, line)) {
+        std::size_t k = 0;
+        while (k < line.size() && (line[k] == ' ' || line[k] == '\t' || line[k] == '>'))
+            ++k;
+        if (k >= line.size() || line[k] != '|')
+            continue;
+        // 行内出现 `**N**(` 形态
+        std::size_t pos = 0;
+        while ((pos = line.find("**", pos)) != std::string::npos) {
+            const auto e = line.find("**", pos + 2);
+            if (e == std::string::npos)
+                break;
+            const std::string token = line.substr(pos + 2, e - pos - 2);
+            bool all_digit = !token.empty();
+            for (char c : token)
+                if (c < '0' || c > '9')
+                    all_digit = false;
+            if (all_digit && token.size() == 1 && line.find('(', e) != std::string::npos &&
+                line.find('(', e) < line.find('|', e))
+                return true;
+            pos = e + 2;
+        }
+    }
+    return false;
+}
+
 inline CatchpointCoverage parse_catchpoint_coverage(const std::string& adr_text) {
     CatchpointCoverage cov;
     // ⚠️ **必须限定在**「Status Update 2026-10-26 —— §3.3 抓取点的可测性裁决」段内:
     //    ADR 正文里的加粗数字(如 `**7 条**`、`**1**`)会污染全文级解析。
-    // ⚠️ **不得硬编码日期** —— 本仓铁律是「ADR 不可变 = 追加新 Status Update」,
-    //    未来对抓取点的**重判**会写进**新**段 ⇒ 硬编码旧日期 ⇒ 重判不可见、闸仍绿
-    //    (per critic BLOCKER 复评)。⇒ 取**最后一个**含「抓取点」关键词的 Status Update 段。
+    // ⚠️ **不得硬编码日期 / 不得依赖标题关键词** —— 本仓铁律是「ADR 不可变 = 追加新 Status Update」,
+    //    未来对抓取点的**重判**会写进**新**段 ⇒ 硬编码旧日期、或靠标题含「抓取点」三字
+    //    (标题可能写成「§3.3 评审检查单更新」)⇒ 重判不可见、闸仍绿(per critic)。
+    // ⇒ 判据 = **该段内含抓取点登记表的表格形态**(行首 `| **N**(`)⇒ 与标题措辞解耦。
     std::string scope;
     std::size_t search_from = 0;
     while (true) {
@@ -670,8 +701,8 @@ inline CatchpointCoverage parse_catchpoint_coverage(const std::string& adr_text)
         const std::string seg = (next_h2 == std::string::npos)
                                     ? adr_text.substr(marker)
                                     : adr_text.substr(marker, next_h2 - marker);
-        if (seg.find("抓取点") != std::string::npos)
-            scope = seg;  // 保留**最后**一个匹配的段
+        if (segment_has_catchpoint_table(seg))
+            scope = seg;  // 保留**最后**一个含抓取点登记表的段
         search_from = (next_h2 == std::string::npos) ? adr_text.size() : next_h2 + 1;
     }
     if (scope.empty())
@@ -770,7 +801,7 @@ inline const std::vector<CatchpointBinding>& catchpoint_bindings() {
         {"3", ContractRule::VcReservation, false, true},  // 死锁通道隔离(仅声明层)
         {"4", ContractRule::CanonicalFlows, false, true}, // canonical 10 流零 diff
         {"5", ContractRule::None, false, false},          // barrier 分类规则已在正文 —— 已满足
-        {"6", ContractRule::None, true, false},           // partial failure —— 行为面覆盖
+        {"6", ContractRule::None, true, true},            // partial failure —— 行为面覆盖
         {"7", ContractRule::None, false, false},          // 复合流编排 —— 推迟
     };
     return v;
@@ -812,6 +843,18 @@ inline ContractVerdict evaluate_catchpoint_coverage(const CatchpointCoverage& co
             detail = std::string("抓取点 ") + binding.id +
                      " 的可测性裁决**无法分类**(三类措辞均不命中): \"" + verdict_text +
                      "\" ⇒ 判红(避免「换个措辞即绕过闸」)";
+            return ContractVerdict::FAIL;
+        }
+
+        // ⚠️ **交叉核对**:映射表声明的「本 change 承诺覆盖」必须与 ADR 的措辞分类**一致** ——
+        //    不一致(ADR 说可测而本 change 没承诺 / 本 change 承诺而 ADR 说不测)⇒ 判红。
+        //    该字段原先**只写不读**(与已删除的 `collective_enabled` 死字段同类)——
+        //    现在它承担「承诺 vs 声明」的对账,不再是死字段。
+        if (says_measurable != binding.declared_measurable) {
+            detail = std::string("抓取点 ") + binding.id + " 的覆盖声明与 ADR 措辞不一致:ADR " +
+                     (says_measurable ? "声称可机器检查" : "标为推迟/已满足") + ",但本 change 的映射表 " +
+                     (binding.declared_measurable ? "承诺覆盖" : "未承诺覆盖") +
+                     " ⇒ 判红(避免「改了 ADR 措辞而闸无感」)";
             return ContractVerdict::FAIL;
         }
 
