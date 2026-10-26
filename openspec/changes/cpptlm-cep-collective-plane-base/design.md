@@ -239,9 +239,90 @@ Ordering Plane    / Sync Plane        ← 本 change 落地
 
 ---
 
-## 实施期裁决(builder 阶段,待补)
+## 实施期裁决(builder 阶段,2026-10-26)
 
-> **占位**:builder 阶段对**权威面**的实测校准 + 与本 design 的偏差,逐条记入本节(per 队列 #4 的 `D-ι` 先例)。**每条须给**「权威来源 + 实测证据 + 偏差性质(授权表述 / 措辞修订 / 语义修正)」。
+> 每条给出「权威来源 + 实测证据 + 偏差性质(授权表述 / 措辞修订 / 语义修正)」。
+> 性质图例:**表述** = 措辞与权威原意一致;**措辞修订** = 权威本意不变但字面需改;**语义修正** = 权威结论变了。
+
+### D-κ:`vc_binding` 的权威位置 —— plan 原文**指错了对象**(语义修正)
+
+| 项 | 内容 |
+|---|---|
+| **权威** | `vc_binding` 在 `include/tlm/cep/protocol_instances.json` 的 `instances[].vc_binding`;`fabric.json` 只有 `networks[].vc_count` |
+| **plan 原写** | 「与 `fabric.json` 既有 `vc_binding` 不冲突」—— **对象错** |
+| **实测** | `moesi_gpu` 与 `mesif` 在 `compute_noc` / `ualink_fabric` 上均占满 VC 0-3;`fabric.json` 的 `networks` 只有 `vc_count` |
+| **修正** | 判据 CP-03 改为「与 `protocol_instances.json` 既有 `vc_binding` 不冲突」;`fabric.json` 只用于取 `vc_count` 做越界检查 |
+
+### D-λ:collective VC 预留的**实测现状** —— 本仓当前拓扑**无** collective 可用隔离 VC(语义补充)
+
+| 项 | 内容 |
+|---|---|
+| **实测** | 2 个协议实例 × 2 个网络,coherence 占满 VC 0-3 ⇒ **任何** collective VC 预留都会与 coherence 冲突 |
+| **风险** | 若判据形态是「预留不冲突 ⇒ 否则 FAIL」,则默认状态**恒红** ⇒ 违反「禁写恒真/恒红判据」 |
+| **裁决** | 声明源默认 `collective_vc_reservation = []`(**本 change 不预留** —— 预留是**拓扑级决策**,归 P3);判据的判别力由**反向 fixture**(注入冲突预留 ⇒ 判红)承载;并把「本仓当前拓扑无 collective 可用 VC」作为**结论登记**在声明源的 `current_state` |
+
+### D-μ:barrier 的**成员身份**需装配缝(措辞修订)
+
+| 项 | 内容 |
+|---|---|
+| **权威** | `ADR-CEP-03 §2` 的 `collective_barrier(group_id_t gid, phase_t phase)` —— **签名里没有 member 参数** |
+| **问题** | rendezvous 的 N-1/N 判定必须知道「谁到了」⇒ 纯 7 方法接口**无法**计数 |
+| **裁决** | 加**装配/驱动用辅助口** `set_current_member(member)`(不在 7 方法接口面内)。**先例**:`FullMapDirectory::set_sharer` 同样是 `SharerTrackerIf` 4 方法之外的**目录安装面**;plane 的「成员身份」与目录的「sharer 安装」是同一种**装配缝** |
+| **一致性** | 7 方法接口面**零变化** ⇒ A-1-1 的「逐字对齐」仍成立 |
+
+### D-ν:`Complete_drain` 与 epoch 两阶段 —— 装配缝的第 2 个(语义补充)
+
+`ADR-CEP-03 §2` 的 `group_register_region` 无「drain 完成回告」入口 ⇒ epoch 两阶段(per D-ι 裁决 2)需要第 2 个装配缝
+`complete_drain(gid)`。它与 D-μ 的 `set_current_member` 同属**装配/驱动用辅助口**,均不在 7 方法接口面内。
+**先例**同上(`set_sharer` / `clear_sharer` 的目录安装面)。
+
+### D-ξ:canonical 流名匹配必须**词边界**(语义修正)
+
+| 项 | 内容 |
+|---|---|
+| **实测** | 裸子串匹配 `barrier(` 会命中 collective 平面的**自有**标识符 `collective_barrier(`;`completion(` 会命中 `make_completion(` ⇒ **假阳性** |
+| **修正** | CP-02 改为**词边界**匹配(前一字符不得是标识符字符)⇒ collective 自有标识符不误判;真正的 canonical 流名(如 `request(`)仍被检出 |
+| **回归** | 判据面 test 的「词边界对照」用例固定该行为 |
+
+### D-ο:`ContractRule` 需真正的**「无覆盖」哨兵**(语义修正)
+
+| 项 | 内容 |
+|---|---|
+| **实测** | 起初用 `ZeroCallEdge` 兼作「无覆盖」哨兵 ⇒ 「未绑定」与「绑定到该规则」**无法区分** ⇒ 抓取点 1 标「已满足」时**不报红**(漏判) |
+| **修正** | 新增 `ContractRule::None` 作哨兵;真实规则编号顺延;`kContractRuleCount` 仍为 6(真实规则数) |
+
+### D-π:**R3 drain 的「零调用边」在本仓的落地形态(语义补充)
+
+`ADR-CEP-03 §3.4` 要求 drain 由**发起注册的 node 端**经**自身** Coherence Interface 端口发出,plane 只输出 invalidate 清单。
+本仓**无** Coherence Interface 实现(队列 #6 才引入 CHI RN-F)⇒ 本 change 只能落地**「plane 侧不发起 drain」这一半**:
+plane 的 `group_register_region` **不**触碰任何 coherence 侧对象(由 include-graph 闸 + 完成域判据双向保证),
+drain 清单的**发出方**留待队列 #6。**本 change 不假装实现 drain**。
+
+### D-ρ:实施期自查发现的 **5 处真缺陷**(已修,登记备查)
+
+| # | 缺陷 | 后果 |
+|---|------|------|
+| 1 | 判据编排里 `add(rule, evaluate(d), std::move(d))` —— **函数实参求值顺序未指定** ⇒ `std::move(d)` 可能先于 `evaluate` 执行 ⇒ **detail 被移空**(实测 CP-02/CP-06 的 detail 全空) | 判据红但**说不出原因** |
+| 2 | `ContractRule` 哨兵冲突(见 D-ο) | 抓取点覆盖核对**漏判** |
+| 3 | canonical 流名裸子串匹配(见 D-ξ) | CP-02 **假阳性** |
+| 4 | 抓取点解析:① 未限定在 Status Update 段 ② 表格行 gate 未容忍 `>` blockquote 前缀 ③ 列计数错位(取到内容列而非可测性列) | 7 条抓取点**一条都解析不出**(`parsed=0`) |
+| 5 | `ContractPaths` 的 `at()` 无条件拼 root ⇒ **绝对路径**输入指向不存在的路径 | 声明源「畸形」被误报成「不可读」 |
+
+> 5 处都在**实现期**被自查与单测抓到 —— 与队列 #4 的经验一致:**判据实现退化必须靠反向 fixture + 实跑发现**,不能靠读代码。
+
+### 实施期与 plan 的偏差汇总
+
+| # | 偏差 | 性质 |
+|---|------|------|
+| 1 | `vc_binding` 权威位置(plan 指错对象) | 语义修正 |
+| 2 | collective VC 预留的默认形态(空 + 反向 fixture) | 语义补充 |
+| 3 | 加 2 个装配缝辅助口(`set_current_member` / `complete_drain`) | 措辞修订 |
+| 4 | canonical 流名词边界 | 语义修正 |
+| 5 | `ContractRule::None` 哨兵 | 语义修正 |
+| 6 | R3 drain 的落地边界(只落地「plane 侧不发起」这一半) | 语义补充 |
+
+> **7 方法接口面零变化** ⇒ A-1-1 的「逐字对齐 `ADR-CEP-03 §2 Decision 2`」仍成立;
+> **新增 invariant 数 = 0** ⇒ D-ε 的 B2 计数口径不变。
 
 ---
 

@@ -4322,6 +4322,88 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 
 ---
 
+### Entry #67 — 2026-10-26 [build]
+
+**主题**: 队列 #5 `cpptlm-cep-collective-plane-base` **builder 实施** —— 2 header + 2 声明源 + 1 CLI + 3 test(24 Scenario);tasks 61/61 全勾;新增 invariant 数 = **0**
+
+**① 交付内容**
+
+| 文件 | 形态 | 内容 |
+|---|---|---|
+| `include/tlm/cep/collective_plane.hh` | header-only,testbench 定位 | `CollectivePlaneIf` **恰好 7 个虚方法**(逐字对齐 `ADR-CEP-03 §2 Decision 2`)+ 类型集(`group_id_t` / `member_set_t` / `GroupAttrs` / `AddrRange` / `AccessMode` / `CollectiveOp` / `ReduceOp` / `DataType` / `PayloadDesc` / `CollectiveReq` / `CollectiveEvt` / `cap_t` / `Status` / `RegionState`)+ `NullCollectivePlane`(**行为化 `INV-CEP-07-IC3`**)+ `LocalCollectivePlane`(group 生命周期 / region-epoch 两阶段 / BARRIER rendezvous / **R2 判读侧三态**) |
+| `include/tlm/cep/collective_plane_contract.hh` | header-only | 6 条契约判据(零调用边 / canonical 10 流零 diff / collective VC 预留 / 区域互斥**与行为面同源** / 完成域判别 / 抓取点可测性登记)+ 三态 SKIP/PASS/FAIL + verdict 逐条可 grep |
+| `include/tlm/cep/collective_planes.json` + `.schema.json` | 声明源(**诞生即不冻结**) | 3 组字段(`plane_binding` / `registered_regions` / `collective_vc_reservation`);schema `additionalProperties: false` |
+| `examples/cep_collective_plane_contract.cc` | 离线 CLI | 与 test 侧**同一份**判据实现;退出码 0/1/2 |
+| `test/test_cep_collective_plane_base.cc` | 13 Scenario / 126 assertions | 行为面 |
+| `test/test_cep_collective_plane_contract.cc` | 8 Scenario / 102 assertions | 判据面 |
+| `test/test_cep_collective_plane_invariants.cc` | 3 Scenario / 39 assertions | **B2 贡献载体**(既有编号的行为化) |
+
+**② B2 贡献(新增 invariant 数 = 0)**
+
+| 方式 | 内容 | 归属组 |
+|---|---|---|
+| **行为化** | `INV-CEP-07-IC3`:NullCollectivePlane 全部 7 原语 ⇒「不支持」+ 无副作用(对照:Local 不得报不支持) | "Simulation + Seam" |
+| **行为化** | `INV-CEP-04-IC5`:`table 命中 + epoch invalid` ⇒ **不 divert**(放行),非 fail-stop;epoch commit 后翻转 | "Sharer Tracker" |
+| **契约层加固** | 零调用边(include-graph 闸)+ canonical 10 流零 diff | "Coherence Interface" / "Simulation + Seam" |
+
+> 15 组 66 条编号**未被改动**(`test_cep_canonical_invariants.cc` 零 diff)⇒ D-ε 的计数口径成立。
+> `ADR-CEP-01` / `ADR-CEP-03` 在 no-inv 白名单 ⇒ 本 change **未**在其正文定义任何 invariant
+> (由 `test_cep_collective_plane_invariants.cc` 的「零新增编号」断言机器守护)。
+
+**③ 实施期偏差(design D-κ ~ D-π 全文已落盘)**
+
+| # | 偏差 | 性质 |
+|---|------|------|
+| D-κ | `vc_binding` 权威位置 = `protocol_instances.json`(**不是** `fabric.json`)⇒ CP-03 回填 | 语义修正 |
+| D-λ | collective VC 预留默认**空**(实测 2 实例 × 2 网络占满 VC 0-3 ⇒ 本仓当前拓扑**无** collective 可用隔离 VC)⇒ 判别力由反向 fixture 承载,结论登记在声明源 `current_state` | 语义补充 |
+| D-μ | 加装配缝 `set_current_member`(barrier 的 7 方法签名**无** member 参数 ⇒ N-1/N 判定需要身份) | 措辞修订 |
+| D-ν | 加装配缝 `complete_drain`(epoch 两阶段的 drain 完成回告入口) | 语义补充 |
+| D-ξ | canonical 流名匹配改**词边界**(裸子串会把 `collective_barrier(` 误判成 `barrier(`) | 语义修正 |
+| D-ο | 新增 `ContractRule::None` 哨兵(原先拿 `ZeroCallEdge` 兼作哨兵 ⇒「未绑定」与「绑定该规则」无法区分) | 语义修正 |
+| D-π | R3 drain 只落地「plane 侧不发起」这一半(drain 清单的发出方留队列 #6) | 语义补充 |
+
+> **7 方法接口面零变化** ⇒ A-1-1「逐字对齐 `ADR-CEP-03 §2 Decision 2`」仍成立。
+
+**④ 实施期自查抓到的 5 处真缺陷(已修,登记备查)**
+
+| # | 缺陷 | 后果 |
+|---|------|------|
+| 1 | 判据编排 `add(rule, evaluate(d), std::move(d))` —— **函数实参求值顺序未指定** ⇒ `std::move(d)` 可能先执行 ⇒ detail 被移空 | 判据红但说不出原因 |
+| 2 | `ContractRule` 哨兵冲突 | 抓取点覆盖核对漏判 |
+| 3 | canonical 流名裸子串匹配 | CP-02 假阳性 |
+| 4 | 抓取点解析三处错(未限定段 / gate 未容忍 `>` blockquote 前缀 / 列计数错位) | 7 条抓取点**一条都解析不出** |
+| 5 | `ContractPaths::at()` 无条件拼 root ⇒ 绝对路径指向不存在路径 | 「畸形」被误报成「不可读」 |
+
+> 与队列 #4 的经验一致:**判据实现退化必须靠反向 fixture + 实跑发现**,读代码不够。
+
+**⑤ 与 planner 产出的偏差(需同步回 plan)**
+
+| # | plan 原文 | 实施期 |
+|---|----------|--------|
+| 1 | 「与 `fabric.json` 既有 `vc_binding` 不冲突」 | 对象错 ⇒ 回填为 `protocol_instances.json` |
+| 2 | `capability 1` = 12 Scenario | 补 1 条(已注册区域数据原语行为)⇒ **13**;合计 **21** |
+| 3 | 无 CLI | 补 `cep_collective_plane_contract` CLI(判据不能只能靠 test 跑) |
+| 4 | 「已注册且 epoch 生效区域上的数据原语行为」未规定 | 补 Scenario + 裁决(明确的「数据路径未实现」状态) |
+
+**⑥ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `[cep]` | **148 cases / 2374 assertions**(planner 期 122 / 2050) |
+| collective 三档 | `24 cases / 267 assertions`(13 + 8 + 3) |
+| `ctest` | **106/106**(新增 1 = CLI 的 ctest 入口) |
+| 守门 7 项 | rc=0 |
+| `cep_gate_selftest` | 31/31 |
+| `openspec validate cpptlm-cep-collective-plane-base --strict` | **is valid** |
+| `openspec list --json` | **1 个 active** ⇒ KPI **1/3** |
+| 冻结集 | **37**(成员数不变;本批**零**冻结成员改动) |
+| `tasks.md` | **61 / 61** 全勾(T6-7 归档治理留归档阶段) |
+| CLI 矩阵 | 无参数 rc=0 · `--help` rc=0 · 错根 rc=1 · 多余参数 rc=2 |
+
+**⑦ 关联**: Entry #66(planner 阶段)· Entry #65(队列 #4 对抗式评审修复)· `ADR-CEP-01` / `ADR-CEP-03`(本 change 的两份权威源)· `ADR-CEP-07`(`INV-CEP-07-IC3` owner)· `ADR-CEP-04`(`INV-CEP-04-IC5` owner)· `ADR-CEP-02`(canonical 10 流权威)
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

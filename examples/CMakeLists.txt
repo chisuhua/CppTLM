@@ -141,6 +141,16 @@ add_test(NAME cep_channel_dependency_gate COMMAND cep_channel_dependency_gate)
 set_tests_properties(cep_channel_dependency_gate PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# 队列 #5:collective plane 契约判据的离线挂点 CLI(per delta capability
+# `cep-collective-plane-contract`)。与 test 侧**同一份**判据实现
+# (`include/tlm/cep/collective_plane_contract.hh`)⇒ 守卫与被守卫对象不漂移。
+add_executable(cep_collective_plane_contract cep_collective_plane_contract.cc)
+target_link_libraries(cep_collective_plane_contract PRIVATE cpptlm_core)
+target_include_directories(cep_collective_plane_contract PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+add_test(NAME cep_collective_plane_contract COMMAND cep_collective_plane_contract)
+set_tests_properties(cep_collective_plane_contract PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # ==============================================================================
 # HSK-8 Phase 2 Step 6: examples 同样需要 PTX-EMU shared libs
 # ==============================================================================

@@ -1,0 +1,13 @@
+{
+  "derived_from": {
+    "source_doc": "docs/architecture/07-coherence-exploration-platform.md §1.3(平面表)/ §2.3(完成域判别规则)/ §6.4(Null 实现)/ §7.2(13 必纳 metric)+ ADR-CEP-01 §3.3(抓取点 3 死锁通道隔离)",
+    "authority_note": "本仓**自持**的 collective plane 声明(非跨仓派生副本)—— collective 平面是 CEP 自有抽象,权威源在本仓 ADR-CEP-01 / ADR-CEP-03。**诞生即不冻结**(per 队列 #4 protocol_instances.json 先例);S1-4 复核口径:首个 implemented 实例消费后可考虑入冻结集。",
+    "current_state": "plane_binding 全为 null(CHI / CXL 配置下默认绑 NullCollectivePlane,per 07 号 §6.4);registered_regions 为空(尚无 collective 流量);collective_vc_reservation 为空 —— **实测**:moesi_gpu 与 mesif 在 compute_noc / ualink_fabric 上已占满 VC 0-3,本仓当前拓扑**没有** collective 可用的隔离 VC(per ADR-CEP-01 §3.3 抓取点 3,预留属拓扑级决策,归 P3)。"
+  },
+  "plane_binding": {
+    "moesi_gpu": null,
+    "mesif": null
+  },
+  "registered_regions": [],
+  "collective_vc_reservation": []
+}

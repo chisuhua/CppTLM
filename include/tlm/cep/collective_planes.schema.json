@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cpptlm.local/schemas/collective_planes.schema.json",
+  "title": "CEP Collective Plane 声明",
+  "description": "Fabric Collective Plane 的本仓声明 schema —— per ADR-CEP-01(旁路平面 + 完成域判别)+ ADR-CEP-03 §2 Decision 2(接口)/ §3(跨平面契约)。**诞生即不冻结**(per 队列 #4 protocol_instance.schema.json 先例的对照:那份是冻结成员,本份不是)。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "plane_binding",
+    "registered_regions",
+    "collective_vc_reservation"
+  ],
+  "properties": {
+    "derived_from": {
+      "type": "object",
+      "description": "来源标注(可省)",
+      "additionalProperties": true
+    },
+    "authority_note": {
+      "type": "string",
+      "description": "权威说明(可省)"
+    },
+    "plane_binding": {
+      "type": "object",
+      "description": "协议实例 → 绑定的 collective plane。**null = 该实例不启用 collective**(CHI / CXL 配置下默认绑 NullCollectivePlane,per 07 号 §6.4)。",
+      "additionalProperties": {
+        "type": ["string", "null"]
+      }
+    },
+    "registered_regions": {
+      "type": "array",
+      "description": "已注册的 collective region 表(per ADR-CEP-03 §3.4 guardrail:集合 plane 操作只允许作用于 registered collective region)。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lo",
+          "hi",
+          "group",
+          "mode"
+        ],
+        "properties": {
+          "lo": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "区间下界(含)"
+          },
+          "hi": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "区间上界(含);须 ≥ lo"
+          },
+          "group": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "所属 group id(≥ 1;0 保留为无效)"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "nc_drop_cacheable"
+            ],
+            "description": "访问模式(per ADR-CEP-03 §3.2 的 R3 降级选项)"
+          }
+        }
+      }
+    },
+    "collective_vc_reservation": {
+      "type": "array",
+      "description": "collective 流量预留的 VC(per ADR-CEP-01 §3.3 抓取点 3 死锁通道隔离:集合流量走独立 VC)。**vc_id 值域 0-3**(per noc_bundles_tlm.hh 的 vc_id 字段 / fabric.schema.json maximum=4)。",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "network",
+          "vc_id"
+        ],
+        "properties": {
+          "network": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$",
+            "description": "网络名(须在 fabric.json 的 networks 内登记)"
+          },
+          "vc_id": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3,
+            "description": "预留的 VC(0-3)"
+          }
+        }
+      }
+    }
+  }
+}
