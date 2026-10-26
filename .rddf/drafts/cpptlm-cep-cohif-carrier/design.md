@@ -102,7 +102,25 @@
 | **CC-05** | `register_protocol_bridge` 从**死钩子**变**活钩子**:注册后 `get_bridges()` 可读**且**被 ModuleFactory **消费**;per-bridge 元数据齐备(`protocol_id_` 非零 / `bridge_id_` 唯一 / 与实例声明 `family` 一致) | `cep-protocol-bridge-contracts` | 只注册不消费 ⇒ 红(须**同时**交付消费方,否则是新的死钩子);重复 `bridge_id_` ⇒ 红;`protocol_id_` 与 `family` 不符 ⇒ 红 |
 | **CC-06** | 6→3 映射表产出的 `CATEGORY_*` **全部落在**网络 Bundle 的 3 个常量内 | `cep-protocol-bridge-contracts` | **引用队列 #6 的 AC-04**(`openspec/changes/cpptlm-cep-moesi-gpu-adapter/design.md:178`「目标写成第 4 类 ⇒ 红」)—— **不重立**(避免两份判据漂移) |
 
-> **⚠️ 本表与 `ADR-CEP-19` 的 CC-01~CC-06 严格一一对应** —— planner **不得**给已签发的 ADR 增删判据(增删 = ADR 修订,须走冻结面两步授权)。本轮初稿曾擅自新增 `CC-04b`,**已删除**,并把 per-bridge 元数据降为 **CC-05 的子条件 ④**。
+> **⚠️ 判据口径:编号对齐 ≠ 定义对齐(critic 首轮 `S1`/`S2` 收口,本块是全仓唯一真源)**
+>
+> - **`ADR-CEP-19` 全文对 `CC-0x` 只有 3 处编号引用**(`:167` / `:168` / `:205`),**不含任何判据定义** ⇒ 本表**不是**「与 ADR 一一对应」;
+> - **判据定义真源** = `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`(`L369-374`,`docs/research/` 是**附属层**)⇒ **真源 3(ADR)不自足**,属**真源层级缺陷**,诚实登记而非掩盖。
+>
+> **2 处为 planner 增补(与 research §6.4 字面不符)**:
+>
+> | 增补 | 内容 | 上游锚点 | 分类 |
+> |------|------|---------|------|
+> | **CC-05 子条件 ④** | per-bridge 元数据齐备 —— `protocol_id_` 非零 / `bridge_id_` 唯一 / 与实例声明 `family` 一致 | ✅ `ADR-CEP-19 §3.2`(`:157`「per-bridge 元数据**只做静态**」)+ `06 号 §4.5`(P1 范围) | **判据化已有代价项**(非新决策) |
+> | **CC-06 子条件 ②** | 映射表 SHALL **非恒等**(至少一行 ≠ 同名) | ❌ **无上游锚点** —— 仅「特化字典存在理由」的逻辑推论 | **纯 planner 推论** |
+>
+> **属细化、不改语义(critic 判定「不动」)**:CC-01 ③(5 个域外流名**类型不可表达**)· CC-02 ③ + 加虚函数 fixture · CC-06 ③(引用队列 #6 的 AC-04 不重立)。
+>
+> **追认路径(`D-κ` 步 0.5 的转正硬前置)**:① architect 给 `ADR-CEP-19` 追加 `## Status Update` 段承认该 2 处(**不改决策正文** ⇒ ADR 不可变纪律成立);② 撤出这 2 处子条件,回到 research §6.4 字面。**未择一落地前,本 change 的任何产出不得宣称「判据完全来自已签发 ADR」**(planner 不得给已签发 ADR 增删判据 —— 增删 = ADR 修订,须走冻结面两步授权)。
+>
+> **真源自足的收口**:转正归档后 `openspec archive` 把 §6.4 的判据**并入 main specs** ⇒ 判据进入真源层(首选);或由 architect 追加 ADR Status Update 固化。
+>
+> **本轮初稿的自查记录**:曾擅自新增 `CC-04b`(per-bridge 元数据独立成条),**已删除**,降为 CC-05 的子条件 —— 编号集合仍严格 = CC-01~CC-06。
 
 > **纪律**(队列 #4 `Entry #65` / 队列 #5 `Entry #68`):**新断言必须有反向 fixture**;**纯负向断言必须有正控**;**判据实现退化 = 用例红**;**判定结论为红 = 用例仍绿 + 结论作为交付物登记**。
 
@@ -146,6 +164,7 @@
 | 步 | 动作 | 判据 |
 |----|------|------|
 | 0 | `openspec list --json` 实测 CEP 内部 active == **0** | 🔴 **硬前置**(`obj §4.7.2` step 0) |
+| **0.5** | **判据增补追认落地** —— CC-05 ④ / CC-06 ② 二者择一:① architect 给 `ADR-CEP-19` 追加 `## Status Update` 承认这 2 处;② 撤出回到 research §6.4 字面 | 🔴 **硬前置**(critic 首轮 `S1`;否则「与 ADR 一一对应」的声明不成立,见 `D-η`) |
 | 1 | `git mv .rddf/drafts/cpptlm-cep-cohif-carrier openspec/changes/cpptlm-cep-cohif-carrier` | 目录就位 |
 | 2 | 删各文件顶部的「未建 change 目录」标注段;状态行改 🟡 Proposed | — |
 | 3 | `openspec validate cpptlm-cep-cohif-carrier --strict` | rc=0 |

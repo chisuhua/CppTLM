@@ -1,3 +1,18 @@
+---
+name: cpptlm-cep-cohif-carrier
+priority: P1
+phase: phase-10
+主题: CEP CohIf 载体形态 —— CohIfBundle 业务 Bundle + ProtocolEngine 的 ChStream 端口面 + ProtocolBridge 特化桥
+依赖:
+  - ADR-CEP-19
+  - ADR-CEP-07
+  - ADR-CEP-12
+  - ADR-CEP-16
+  - ADR-CEP-07A
+状态: Planned
+created: 2026-10-27
+---
+
 # improvement: cpptlm-cep-cohif-carrier
 
 > **状态**: 📋 **规划输入**(planner 阶段,2026-10-27)· **change 目录未建**(KPI slot 硬前置未满足,见 §「阻塞」)
@@ -113,7 +128,7 @@ CohIf(canonical 10 流,`ADR-CEP-02`)至今**没有承载形态** —— 而 `01 
 | **KPI** | 本 change 占 1 slot ⇒ CEP 内部 Proposed 并发恒 **≤ 1** |
 | **独立性缺口** | 本仓为单开发者环境,评审由 AI agent 完成 ⇒ **不等于真人外部评审**;结论登记为「残余风险 + DRI 书面接受」(per `obj §9.3` R10) |
 
-> **⚠️ 6 条判据与 `ADR-CEP-19` 的 CC-01~CC-06 严格一一对应** —— planner **不得**给已签发的 ADR 增删判据(增删 = ADR 修订,须走冻结面两步授权)。本轮初稿曾擅自新增 `CC-04b`,**已删除**,并把 per-bridge 元数据降为 **CC-05 的子条件**。
+> **⚠️ 判据口径(精确版,真源在 `design.md` 的 `D-η`,本处只留指针)**:CC-01~CC-06 的**编号**与 `ADR-CEP-19` 一致,但该 ADR **只有编号引用、不含定义**(`:167` / `:168` / `:205`);判据**定义真源**在 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`(附属层)⇒ **ADR 不自足**。其中 **2 处为 planner 增补、待追认**:**CC-05 ④**(per-bridge 元数据,有 `ADR-CEP-19 §3.2:157` + `docs/architecture/06-inter-module-network.md` §4.5 锚点)· **CC-06 ②**(映射表非恒等,**无上游锚点**)。**转正前必须择一落地**:① architect 给 `ADR-CEP-19` 追加 `## Status Update` 承认这 2 处;② 撤出回到 §6.4 字面。本轮初稿擅自新增的 `CC-04b` **已删除**(降为 CC-05 子条件)。
 
 > **判据无法在仓内验证的降级登记**:「单 `CohIfBundle` 承载 5 流的协议死锁自由度」在**无实现**时不可验证 ⇒ 登记为「残余风险 + DRI 书面接受」,**不**写成 CC 判据。
 

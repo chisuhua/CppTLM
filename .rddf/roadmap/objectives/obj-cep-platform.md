@@ -180,7 +180,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | ✅ **archived**(2026-10-25;**完成归档**语义 —— 22 Scenario 并入 3 份 main spec:`cep-sharer-tracker-base` 9 / `cep-ordering-point-checker` 6 / `cep-channel-dependency-gate` 7;archive 名 `2026-10-25-cpptlm-cep-directory-ordering-plane`;builder Entry #63 / 归档 Entry #64) | **已交付(历史记录,不再承接)**:SharerTrackerIf 单接口 + caps descriptor + D-5 全量契约 + FullMapDirectory 唯一行为实现 · AddressResolverIf + J1/J2/J3 + `INV-CEP-08-IC2` + (β) 重评估裁决 · 装配期通道依赖图(逐 `(network, vc)` verdict,双挂共享判据)。**Stage 1 准入前置的登记与余项已重指向队列 #5 行**(per Entry #64) |
 | **5** | `cpptlm-cep-collective-plane-base` | Stage 1 | **2027-Q4** | ✅ **archived**(2026-10-26;**完成归档**语义 —— 21 Scenario 并入 2 份 main spec(`cep-collective-plane-base` 13 / `cep-collective-plane-contract` 8);archive 名 `2026-10-26-cpptlm-cep-collective-plane-base`;planner 见 Entry #66、builder 见 Entry #67、复审修复见 Entry #68/#69、归档见 Entry #70) | **已交付(历史记录)**:CollectivePlaneIf 恰好 7 方法 + 类型集 + NullCollectivePlane(**行为化 `INV-CEP-07-IC3`**)+ LocalCollectivePlane(group 生命周期 / region-epoch 两阶段 / BARRIER rendezvous / **R2 判读侧三态**,**行为化 `INV-CEP-04-IC5` 的 R2 判读侧**)+ 6 条契约判据(零调用边 / canonical 10 流零 diff / VC 预留 / 区域互斥同源 / 完成域判别 / 抓取点可测性登记)+ 独立声明源 `collective_planes.json` + 离线 CLI。**新增 invariant 数 = 0**。|
 | **6** | `cpptlm-cep-moesi-gpu-adapter` | Stage 1 | **2028-Q1** | 🟡 **Proposed**(2026-10-26;change 目录已建 + planner 阶段产出 proposal + design + **2 个** delta capability(`cep-moesi-gpu-adapter` / `cep-adapter-schema-contracts`),per Entry #71) | **DRI 三问裁决(2026-10-26,per Entry #71)**:① `moesi_gpu` / `mesif` **排入** Stage 1 前段(原 #6 `chi-rnf-subset` 顺延为 #7,`mesif` 新增为 #9)② **S1-7 ①②**(`perm` 形态 schema 演进)**跟 `moesi_gpu` 走** —— 其**唯一真实消费者**是本实例(`ADR-CEP-05 §13.1` 判据 2 **已触发**:`moesi_gpu` 静默 `E→M` ⇒ 4 值 `perm` 无法表达)③ **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**跟首个 adapter 走**。**交付面**:`MoesiGpuAdapter`(6 态 × 6 事件表驱动;`E→M` **静默升级**) + 6→4 投影 + **平台级** `perm` 静默升级表达 + 6→3 消息类映射表机制 + 首个 `implemented` 实例装配。**Stage 1 准入前置(滚动登记,per Entry #70 / #71 —— 原 owner 队列 #5 已归档,owner 重指向本行)**:**S1-1 ②建图层** ✅ 已消费(队列 #4 装配闸)· **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**🟡 本 change 触发**(本 change = 首个 `implemented` 实例)· **S1-3** ⛔ 未触发(需第 3 张网 / 第 3 个协议实例 —— 按新队列于 #9 达成)· **S1-4** ✅ 已消费(Entry #56,`fabric.json` 已入冻结集)· **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**🟡 本 change 交付**· **S1-7 ①②**(`perm` 形态 schema 演进)**🟡 本 change 交付**(③ (β) 已由队列 #4 消费)。**孤儿前置登记**:**M-4 行为侧** **⏭(孤儿)**(已由队列 #3 的 `cep-vc-mapping-contract` 落成)· **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)**(已由队列 #4 的 `cep-channel-dependency-gate` 落成)—— **`moesi_gpu` / `mesif` 未排期** **⏭(孤儿)** —— **已于 Entry #71 消解**(本行 = `moesi_gpu`;`mesif` → #9 行) |
-| **7** | `cpptlm-cep-cohif-carrier` | Stage 1 | **2028-Q2** | 📋 Planned | **新准入前置**:无。本 change **服务** #6 的 S1-2 与 #8 的装配验证 —— 把 #6 的「**逻辑级**装配」(`stub_cache_core.hh:42` 明写 `net_side` 由 **mock ProtocolEngine** 驱动)升级为「**真实载体**装配」。**架构缺口来源**(architect 重审 + critic 四轮;`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`):**C1** CEP 的 7 个 `.hh` 零 `Bundle`/`ChStream` 引用 · **C2** 「CEP 用 canonical 10 流的 Bundle」在 `ADR-CEP-07A:49` 与 `ADR-CEP-16:45` **两处**均为悬空引用 · **C3** 唯一的 Bundle 化承诺绑在 collective 队列(`ADR-CEP-03:225`)。**交付面(3 项 + 1 宏)**:① `include/bundles/cep_coherence_bundles_tlm.hh`(`bundles::CohIfBundle`,**只覆盖 5 条 RN-side 流**,`flow_id` 区分;无网络层字段) ② `include/tlm/cep/protocol_engine_base.hh`(`ChStreamModuleBase` 派生 + `Input/OutputStreamAdapter<CohIfBundle>`) ③ `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`,**首次落地**;`CohIfBundle ↔ NoCFlitBundle`) ④ `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏(`registerObject` + `registerBidirectionalPortAdapter` **两件都做**;`static_assert(n>1)`) + `module_factory.hh:313-315` 钩子扩展(`register_protocol_bridge` 死钩子 → 活钩子)。**装配走 JSON 链**(非 programmatic —— `ADR-CEP-16:46/:86` 明确排除 programmatic bridge 的 C++ 路径;`is_multi` 分支 `module_factory.cc:743-750` 是泛型虚分派)。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface`(需 MODIFIES 冻结 main spec,per `openspec/specs/cep-stub-cache-core/spec.md`)。**待签发**:`ADR-CEP-19`(草案见 `docs/research/cep-adr-19-cohif-carrier-draft.md`) |
+| **7** | `cpptlm-cep-cohif-carrier` | Stage 1 | **2028-Q2** | 📋 Planned(**4 件套草稿已落,待 KPI slot 转正**) | **新准入前置**:无。本 change **服务** #6 的 S1-2 与 #8 的装配验证 —— 把 #6 的「**逻辑级**装配」(`stub_cache_core.hh:42` 明写 `net_side` 由 **mock ProtocolEngine** 驱动)升级为「**真实载体**装配」。**架构缺口来源**(architect 重审 + critic 四轮;`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`):**C1** CEP 的 7 个 `.hh` 零 `Bundle`/`ChStream` 引用 · **C2** 「CEP 用 canonical 10 流的 Bundle」在 `ADR-CEP-07A:49` 与 `ADR-CEP-16:45` **两处**均为悬空引用 · **C3** 唯一的 Bundle 化承诺绑在 collective 队列(`ADR-CEP-03:225`)。**交付面(3 项 + 1 宏)**:① `include/bundles/cep_coherence_bundles_tlm.hh`(`bundles::CohIfBundle`,**只覆盖 5 条 RN-side 流**,`flow_id` 区分;无网络层字段) ② `include/tlm/cep/protocol_engine_base.hh`(`ChStreamModuleBase` 派生 + `Input/OutputStreamAdapter<CohIfBundle>`) ③ `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`,**首次落地**;`CohIfBundle ↔ NoCFlitBundle`) ④ `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏(`registerObject` + `registerBidirectionalPortAdapter` **两件都做**;`static_assert(n>1)`) + `module_factory.hh:313-315` 钩子扩展(`register_protocol_bridge` 死钩子 → 活钩子)。**装配走 JSON 链**(非 programmatic —— `ADR-CEP-16:46/:86` 明确排除 programmatic bridge 的 C++ 路径;`is_multi` 分支 `module_factory.cc:743-750` 是泛型虚分派)。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface`(需 MODIFIES 冻结 main spec,per `openspec/specs/cep-stub-cache-core/spec.md`)。**已签发**:`ADR-CEP-19`(2026-10-27,per Entry #74;草案文件已移除) · **planner 产出已备**:`.rddf/drafts/cpptlm-cep-cohif-carrier/`(improvement 5 段 + proposal + design + 2 份 delta spec,per Entry #75/#76)—— change 目录待 KPI slot 释放后按 `design.md` `D-κ` 六步转正 |
 | **8** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q3** | 📋 Planned | **范围已按 Entry #71 收窄**:`perm` 形态 schema 演进 与 6→3 映射表**机制** 均**已移至队列 #6**(跟唯一真实消费者 / 首个 adapter 走)⇒ 本 change **复用**之,只填 CHI 自身的映射行与实例声明。**交付**:CHI RN-F adapter(6 通道 TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT;RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck)+ 按**已冻结** schema 填实例声明(`ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`)+ 装配期校验实测。**新准入前置**:无(前置已由队列 #6 交付) |
 | **9** | `cpptlm-cep-mesif-adapter` | Stage 1 | **2028-Q4** | 📋 Planned | **⚠ 显式阻塞登记**(per Entry #71):**R-1 第 6 种 SharerTracker 实现 `HierarchicalDirectory`** —— ArchForge 侧 `mesif` 声明的 `sharer_tracker.impl=SparseSnoopFilter` 与其**三级目录**语义**不自洽** ⇒ 本 change 落地**依赖**该实现,而**本仓尚无 owner**。**另**:ArchForge 侧**无 `mesif` 状态机规约**(仅 5 态词表 M/E/S/I/F)与**无 5→4 投影表** ⇒ 实现须本地推导(**待 ArchForge 追认**)。**排期 ≠ 就绪** —— 本行是**登记**,不是承诺(「登记 ≠ 排期」口径的反向用法:登记的是**依赖**,不是**就绪**) |
 | **10** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2029-Q1** | 📋 Planned | — |
@@ -245,7 +245,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **4** | **`cpptlm-cep-directory-ordering-plane`** ✅ **archived(2026-10-25)** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 抽象 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周;含建图层与逐 `(network, vc)` verdict 义务) | **已交付(历史记录)**:单接口 + caps + D-5 + FullMapDirectory · AddressResolverIf + J1~J3 + `INV-CEP-08-IC2` + (β) 裁决 · 装配期通道依赖图(双挂共享判据,`[verdict] net=… vc=…` 逐行输出)。**余项登记已重指向队列 #5 行**(per Entry #64) |
 | **5** | `cpptlm-cep-collective-plane-base` ✅ **archived(2026-10-26)** | ADR-CEP-03 + ADR-CEP-01 | 8 周(实际交付面**小于**标称 —— 2 header + 2 声明源 + 1 CLI + 3 test,per 队列 #2/#3/#4 先例) | **已交付(历史记录)**:CollectivePlaneIf 7 方法 + Null(行为化 `INV-CEP-07-IC3`)+ Local(group/epoch/BARRIER,行为化 `INV-CEP-04-IC5` 的 **R2 判读侧**)+ 6 条契约判据 + 独立声明源 + CLI;**新增 invariant 数 = 0**。**Stage 1 准入前置的余项登记已重指向队列 #6 行**(per Entry #70) |
 | **6** | **`cpptlm-cep-moesi-gpu-adapter`** ← 2026-10-26 新增(DRI 三问裁决①,per Entry #71)· 🟡 **Proposed**(2026-10-26;planner 阶段产出 proposal + design + 2 个 delta capability) | **ADR-CEP-12**(schema owner:`perm` 形态演进 + 首个实例声明)+ **ADR-CEP-05 §13.1**(判据 2 已触发 —— `moesi_gpu` 静默 `E→M`)+ **ADR-CEP-02**(canonical 10 流)+ **ADR-CEP-13**(域可见写判据 (a)(b)) | 10 周 | **S1-7 ①②**(`perm` 形态 schema 演进 —— **跟唯一真实消费者走**,per Entry #71 裁决②)+ **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test —— **跟首个 adapter 走**,per 裁决③)+ **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**🟡 本 change 触发**;**S1-3** ⛔ 未触发(于 #8 达成)· **S1-1 ②** / **S1-4** ✅ 已消费· **S1-7 ③ (β)** ✅ 已消费(队列 #4)。**孤儿前置**:**M-4 行为侧** **⏭(孤儿)** · **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)** · **`moesi_gpu` / `mesif` 未排期** **⏭(孤儿)** —— **已于 Entry #71 消解**(本行 = `moesi_gpu`;`mesif` → #9 行) |
-| **7** | **`cpptlm-cep-cohif-carrier`** ← 2026-10-27 新增(per architect 重审 → critic 四轮;**架构缺口 C1/C2/C3**) | **ADR-CEP-19**(待签发:`CohIfBundle` + `ProtocolBridge` + JSON 装配)+ **ADR-CEP-16**(programmatic bridge 排除 ⇒ 走 JSON 链) | 6 周(3 项交付 + 1 宏 + 1 钩子扩展;`StubCacheCore` 侧端点已延期) | **新准入前置**:无 —— 本 change **服务** #6 的 S1-2 与 #8 的装配验证:把 #6 的**逻辑级装配**(`net_side` 由 mock ProtocolEngine 驱动)升级为**真实载体装配**。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface` |
+| **7** | **`cpptlm-cep-cohif-carrier`** ← 2026-10-27 新增(per architect 重审 → critic 四轮;**架构缺口 C1/C2/C3**) | **ADR-CEP-19**(✅ 已签发 2026-10-27:`CohIfBundle` + `ProtocolBridge` + JSON 装配)+ **ADR-CEP-16**(programmatic bridge 排除 ⇒ 走 JSON 链) | 6 周(3 项交付 + 1 宏 + 1 钩子扩展;`StubCacheCore` 侧端点已延期) | **新准入前置**:无 —— 本 change **服务** #6 的 S1-2 与 #8 的装配验证:把 #6 的**逻辑级装配**(`net_side` 由 mock ProtocolEngine 驱动)升级为**真实载体装配**。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface` |
 | **8** | `cpptlm-cep-chi-rnf-subset` ← 2026-10-27 顺延(原 #7) | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **范围收窄**(per Entry #71 裁决②③):`perm` 形态演进与 6→3 映射表**机制**已移至队列 #6 ⇒ 本 change **复用**,只填 CHI 自身映射行与实例声明。**新准入前置**:无 —— 但**首次在真实载体上验证**(前置 = #6 的 6→3 字典 + #7 的 `CohIfBundle` / `ProtocolBridge`) |
 | **9** | `cpptlm-cep-mesif-adapter` ← 2026-10-27 顺延(原 #8;2026-10-26 新增 per Entry #71) | **ADR-CEP-04**(Sharer Tracker 第 6 实现 `HierarchicalDirectory`)+ **ADR-CEP-12** | 10 周 | **⚠ R-1 阻塞**:依赖**尚不存在**的第 6 种 SharerTracker 实现;ArchForge 侧**无 `mesif` 状态机规约**与**无 5→4 投影表** ⇒ 本地推导待追认。**排期 ≠ 就绪** |
 | **10** | `cpptlm-cep-cxl-nonsymmetric` ← 2026-10-27 顺延(原 #9) | ADR-CEP-04 + ADR-CEP-03 | 8 周 | — |
@@ -671,7 +671,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | `cpptlm-cep-directory-ordering-plane` improvement | 走 add-improve;§4.0 顺序 #4(原 `sharer-tracker-base`,已重排) |
 | P1 | `cpptlm-cep-collective-plane-base` improvement | 走 add-improve;§4.0 顺序 #5 |
 | P1 | `cpptlm-cep-moesi-gpu-adapter` improvement | 🟡 **已写**(2026-10-26 planner;5 段草稿 → change 目录已建,🟡 Proposed);§4.0 顺序 #6 |
-| P1 | `cpptlm-cep-cohif-carrier` improvement | ⬜ **待写**(走 add-improve);§4.0 顺序 **#7**(2026-10-27 新增,per architect 重审 + Entry #74);**设计输入已备** = `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md` + `ADR-CEP-19` 草案 |
+| P1 | `cpptlm-cep-cohif-carrier` improvement | ✅ **已写**(2026-10-27 planner;5 段草稿 + front-matter,4 件套草稿 staged 于 `.rddf/drafts/cpptlm-cep-cohif-carrier/`,change 目录待 KPI slot,per Entry #75/#76);§4.0 顺序 **#7**(2026-10-27 新增,per architect 重审 + Entry #74);**设计输入已备** = `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md` + `ADR-CEP-19`(✅ 已签发) |
 | P1 | `cpptlm-cep-chi-rnf-subset` improvement | 走 add-improve;§4.0 顺序 #8 |
 | P1 | `cpptlm-cep-mesif-adapter` improvement | 走 add-improve;§4.0 顺序 #9(**R-1 `HierarchicalDirectory` 阻塞**登记,per Entry #71) |
 | P2 | `cpptlm-cep-cxl-nonsymmetric` improvement | 走 add-improve;§4.0 顺序 #10 |
@@ -5053,6 +5053,84 @@ Entry #71 建立的是 **13 change 队列**(`moesi_gpu` #6 / `chi-rnf` #7 / `mes
 > **⚠️ 未能跑 `openspec validate`(change 目录未建)** —— 该命令只对 `openspec/changes/<name>/` 生效 ⇒ 本轮以**结构自检**降级替代(Requirement 长度 / Scenario 数 / 锚点完整性 / Purpose 存在性);**转正后必须补跑** `openspec validate cpptlm-cep-cohif-carrier --strict`。
 
 **⑩ 关联**: Entry #74(排队 13 → 14 + `ADR-CEP-19` 签发授权)· #71 / #72 / #73(队列 #6 的 planner + critic 两轮)· `ADR-CEP-19`(✅ v1.0 已签发)· `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3)
+
+---
+
+### Entry #76 — 2026-10-27 [plan]
+
+**主题**: 队列 #7 `cpptlm-cep-cohif-carrier` planner 产出的 **critic 首轮 REJECT 收口**(1 BLOCKER + 5 SHOULD_FIX + 4 NITS)+ **`obj §4.7.2` step 1「三条出路」裁决补注**(补 Entry #75 的漏登)
+
+**① critic 首轮结论**
+
+`mergeable: **no**` · `scope_exceeded: **false**` · `kpi_disposition_correct: **yes**`
+
+| 三问 | 判定 |
+|---|---|
+| 违反 KPI 硬前置(不建 change 目录)? | **否** —— 处置正确 |
+| 无 `tasks.md` 是否符合分工? | **符合**(tasks 属 builder;队列 #6 实测亦无) |
+| planner 给已签发 ADR 增删判据? | **字面上否**(ADR 无 CC 定义),但对 research §6.4 **有 2 处增补**(CC-05 ④ / CC-06 ②)⇒ 与「严格一一对应」声明矛盾 |
+| 转正后 `openspec validate` 会红? | **是** —— 唯一 BLOCKER |
+
+**独立性缺口**:本仓单开发者环境,评审由 AI agent 完成 ⇒ **不等于真人外部评审**;按 `obj §9.3` R10 登记为「残余风险 + DRI 书面接受」,**不得**表述为「已获独立评审通过」。
+
+**② BLOCKER 修复(复现 + 修法均实测)**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | `specs/cep-protocol-bridge-contracts/spec.md` 只有 `## Requirements`,**无** `## ADDED Requirements` |
+| 后果 | 转正步 3 `openspec validate <change> --strict` 报 **ERROR** `No delta sections found`(openspec 1.14.3 `validator.js:428-434` 逐 spec 文件判定,兄弟 spec 有 ADDED 不赦免) |
+| 复现 | `/tmp/opencode/os-fmt` 单文件 delta spec(只 `## Requirements`)⇒ `✗ [ERROR] cap-c/spec.md: No delta sections found` |
+| 修法 | 两份 delta spec **统一**为 `## Purpose` + `## ADDED Requirements`;并删 `cep-cohif-carrier` 那份的**空** `## Requirements` |
+| 验证 | 同形态单文件 ⇒ `Change 'tc' is valid`(rc=0);**转正形态整目录演练**见 ③ |
+| 附带发现 | 空 `## Requirements` 虽不报错,但校验器 **WARNING** 明示「**不随 archive 并入 main spec**」⇒ 空壳无价值且易误导 ⇒ 一并删除 |
+
+**③ S1 + S2 处置 —— 「编号对齐 ≠ 定义对齐」**
+
+critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option ③**(保留增补 + 诚实标注 + 追认路径)。**完整论证落 `design.md` 的 `D-η`,是全仓唯一真源**;`improvement` / `proposal` 两处只留指针(避免三份漂移)。
+
+| 增补 | 上游锚点 | 分类 |
+|---|---|---|
+| **CC-05 子条件 ④**(per-bridge 元数据齐备:`protocol_id_` 非零 / `bridge_id_` 唯一 / 与实例声明 `family` 一致) | ✅ `ADR-CEP-19 §3.2`(`:157`「per-bridge 元数据**只做静态**」)+ `docs/architecture/06-inter-module-network.md` §4.5(P1 范围) | **判据化已有代价项**(非新决策) |
+| **CC-06 子条件 ②**(映射表 SHALL **非恒等**) | ❌ **无上游锚点** —— 仅「特化字典存在理由」的逻辑推论 | **纯 planner 推论** |
+
+**真源层级缺陷(诚实登记)**:`ADR-CEP-19` 全文对 `CC-0x` **只有 3 处编号引用**(`:167` / `:168` / `:205`),**不含定义**;判据定义真源在 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`(`L369-374`,**附属层**)⇒ **真源 3(ADR)不自足**。
+
+**追认路径(已写成 `design.md` `D-κ` 步 0.5 的转正硬前置)**:① architect 给 `ADR-CEP-19` 追加 `## Status Update` 段承认该 2 处(**不改决策正文** ⇒ ADR 不可变纪律成立);② 撤出这 2 处子条件,回到 research §6.4 字面。**未择一落地前,任何产出不得宣称「判据完全来自已签发 ADR」**。
+
+**属细化、不改语义(critic 判定「不动」)**:CC-01 ③(5 个域外流名**类型不可表达**)· CC-02 ③ + 加虚函数 fixture · CC-06 ③(引用队列 #6 的 AC-04,不重立第二份)。
+
+**④ `obj §4.7.2` step 1 的「三条出路」裁决(补 Entry #75 漏登;Entry #75 本身 append-only 不改)**
+
+| # | 出路 | 裁决 |
+|---|---|---|
+| **①** | **建 change**(proposal + design + specs + tasks) | ✅ **DRI 已选** —— 用户指令「起 #7 的 planner」即指向建 change;但 `§4.7.2` step 0 的 KPI slot 硬前置未满足 ⇒ **暂以 staged 形态备妥**,slot 释放后按 `design.md` `D-κ` 七步(含步 0.5)转正 |
+| **②** | 移出队列 | ❌ 不采 —— 载体债会**复制进 #8**(`proposal.md §Why`:#8 将继承 #6 的无载体装配模式) |
+| **③** | 降级为设计草案 | ❌ 不采 —— 6 条判据已**可执行化**(逐条带反向 fixture),降级会丢验收面 |
+
+**⑤ 其余收口**
+
+| 项 | 动作 | 状态 |
+|---|---|---|
+| `S2` 措辞(4 处) | `improvement` / `proposal` / `design` 三处改写完毕;**`Entry #75 ⑤` 因 append-only 不改**,以本 entry 为准 | ✅ |
+| `S3` 三条出路 | 本 entry ④ 补齐 | ✅ |
+| `S4` P1 清单回填 | `obj:674`「⬜ 待写」→「✅ 已写」+「`ADR-CEP-19` 草案」→「✅ 已签发」(违 `§4.7.1` 硬规则 1 已消) | ✅ |
+| `S5` staged 子目录无机器登记 | **planner 侧收口** = `obj:183` 行尾显式登记 `.rddf/drafts/cpptlm-cep-cohif-carrier/`;**闸扫描面扩展**(`cep_docs_sync_check.sh:392` 的 `.rddf/drafts/*.md` → 递归覆盖子目录)owner = **builder**,转正时做 | 部分(planner 侧已做) |
+| NIT `obj:183` 状态列 | 📋 Planned → 📋 Planned(**4 件套草稿已落,待 KPI slot 转正**) | ✅ |
+| NIT `obj:248` | 「ADR-CEP-19(待签发…)」→「✅ 已签发 2026-10-27」 | ✅ |
+| **闸缺陷(本轮新发现)** | `scripts/test/cep_doc_ref_aliases.tsv:18` 把 **`06 号`** 登记为 `archforge:docs/architecture/06-tensor-core.md`,而 CEP 文档里的 `06 号` 指**本仓** `docs/architecture/06-inter-module-network.md` ⇒ 引用被校验到**异构仓文件**上。HEAD 存量引用(§3.1 / §3.3)**恰好**在对方文件里也存在 ⇒ **假阴性**;本轮 `§4.5` 不存在才撞出。**planner 侧收口** = 新写引用改用全路径(已改);**别名表修订** owner = 架构/闸维护者(**改它会重算全仓存量 `06 号 §N`**,可能一次暴露多处,不属 planner 权限) | 已登记,未修 |
+| NIT improvement 无 front-matter | 补 `name` / `priority` / `phase` / `主题` / `依赖` / `状态` / `created`(对齐队列 #6 先例;`obj §4.7.1 C3` 声明其为「机器(①)」落点) | ✅ |
+
+**⑥ 验收(本 entry 落地后实测)**
+
+| 项 | 值 |
+|---|---|
+| 两份 delta spec 形态 | `## Purpose` + `## ADDED Requirements`;各 3 Scenario / 3 锚点;**无** `## Requirements` 空壳 |
+| 转正形态整目录演练 | 复制 4 件套到 `/tmp` 假仓的**同名** change 目录下,跑 `openspec validate --strict` ⇒ **rc=0** |
+| 判据 ↔ 声明自洽 | 3 处措辞已改;CC-05 ④ / CC-06 ② 标注「planner 增补 · 待追认」+ 转正硬前置步 0.5 |
+| 冻结面 | **零改动**(全部在 `.rddf/**`)⇒ 冻结集仍 **40** |
+| KPI | 仍 **1/3**(未建 change 目录 ⇒ 并发未变) |
+
+**⑦ 关联**: Entry #75(planner 产出)· #74(`ADR-CEP-19` 签发 + 排队授权)· critic 首轮 `mergeable: no` · `design.md` `D-η`(判据口径真源)/ `D-κ` 步 0.5(追认硬前置)
 
 ---
 

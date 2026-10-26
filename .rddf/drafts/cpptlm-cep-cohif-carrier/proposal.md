@@ -82,7 +82,7 @@ CohIf(canonical 10 流,`ADR-CEP-02`)至今**没有承载形态**。三个断点(
 
 ## Acceptance
 
-见 2 份 delta spec 的 Scenario 清单(共 **6** 条 = 3 + 3,与 `ADR-CEP-19` 的 CC-01~CC-06 **严格一一对应**)。**判据退化 = 用例红**;**判定结论为红 = 用例仍绿 + 结论作为交付物登记**(per 队列 #5 `Entry #68` 的红绿分离纪律)。
+见 2 份 delta spec 的 Scenario 清单(共 **6** 条 = 3 + 3,编号对齐 `ADR-CEP-19` 的 CC-01~CC-06 —— 但该 ADR **只引用编号、不定义判据**,定义真源在 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`;其中 **2 处为 planner 增补待追认**(CC-05 ④ / CC-06 ②),完整口径与追认路径见 `design.md` 的 `D-η`)。**判据退化 = 用例红**;**判定结论为红 = 用例仍绿 + 结论作为交付物登记**(per 队列 #5 `Entry #68` 的红绿分离纪律)。
 
 **DoD 引用**:`obj-cep-platform §6.2` B1~B8 + §6.3 D1~D3 + `ADR-CEP-00 §2 决策 3` + `ADR-CEP-19` 决策 1~9。
 
