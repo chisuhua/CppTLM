@@ -82,6 +82,7 @@ Stage 1 的第 6 个 change —— 但**排期位置本身就是本 change 的�
 | `test_cep_canonical_invariants.cc` 的 15 组 66 条编号 | **新增 invariant 数 = 0**(`ADR-CEP-01`/`ADR-CEP-03` 在 15 组里**无组** ⇒ 新增编号即契约违反;本 change 贡献 = **行为化既有条目** + 契约层加固) |
 | `mesif` 的实现 | 排 **#8**,被 R-1(`HierarchicalDirectory`)阻塞;本 change **不碰**(design **D-η**) |
 | 跨仓 `ArchForge` 任何文件 | **只读**;跨仓同步是**前置**,不是本 change 的动作 |
+| **S1 有效期的重登记** | 本 change **归档**瞬间断言⑧ 会转红(S1 结论到期)⇒ 该重登记任务须由 **builder** 写进 `tasks.md`(**归档前**完成),否则 #7 planner 开门即遇红闸且无 runbook —— **见 design D-θ** |
 
 ---
 
@@ -115,7 +116,7 @@ Stage 1 的第 6 个 change —— 但**排期位置本身就是本 change 的�
 | **C-1 放行判据要求 ArchForge 侧有 commit hash 的接口 PR** | 治理阻塞(既有) | `ADR-SOC-25 D11` 提议改为「接口规约 PR」;本 change 的跨仓前置登记在 design **D-θ** |
 | **6→3 映射表的「非恒等」可能对某些实例不成立** | 设计风险 | 判据只要求「**至少一行**非恒等」+「每类有行」;若某实例确实恒等 ⇒ 该实例的映射表**显式声明恒等并给出理由**,不静默放过 |
 | **6×6 状态机**不做跨仓逐格镜像 ⇒ 除 `state_transition[2][1]==3` 这**一个**手抄常量外,其余转换若 ArchForge 改表**无人发现** | 一致性风险(缺口已在 design D-ε 诚实登记) | 缓解 = 语义关键点由 **AC-05** 断言 + 跨仓引用按**语义**而非行号(避开 D-9 批 2 的锚点位移);**全表漂移**属已知未覆盖面,登记备查 |
-| **`perm_upgrade` 落独立声明源 ⇒ 与 `protocol_instances.json` 无 schema 级绑定** | 一致性风险 | 由 **AC-02**(引用完整性 + perm 覆盖 + 权限单调)承担;**并**由 **AC-01 ②** 的**机制级**保证兜底 —— builder 把 `perm_upgrades.schema.json` 接入仓内既有 `jsonschema` 设施(`cep_decl_alignment_check.sh:98/122/170`)后,跨文件 `$ref` 绑定即**类型层**排除第 5 值 |
+| **`perm_upgrade` 落独立声明源 ⇒ 与 `protocol_instances.json` 无 schema 级绑定** | 一致性风险 | 由 **AC-02**(引用完整性 + perm 覆盖 + 权限单调)承担;**并**由 **AC-01 ②** 的**机制级**保证兜底 —— builder 把 `perm_upgrades.schema.json` 接入仓内既有 `jsonschema` 设施(`cep_decl_alignment_check.sh:98` import + `:122/:170` 的 `Draft202012Validator`)后,跨文件 `$ref` 绑定即**类型层**排除第 5 值 |
 
 ---
 

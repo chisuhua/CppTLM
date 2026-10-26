@@ -10,7 +10,7 @@ CEP SHALL 将 **adapter 侧的跨实例复用契约**固化成 **5 条可机器�
 
 - **WHEN** 契约判据跑「4 值锁不破」检查
 - **THEN** 子条件 ① SHALL 成立:`protocol_instance.schema.json` 的 `perm` 仍是 **4 值**枚举(`NONE`/`READ`/`UNIQUE`/`WRITEBACK`)且**不含** `ATOMIC`
-- **AND** 子条件 ② SHALL 成立:`perm_upgrades.schema.json` 的 `silent_upgrades[].from` / `.to` **必须**取自该 4 值集合 —— 跨 schema `$ref` 绑定 ⇒ **机制上**不可能表达第 5 值(**前提**:`perm_upgrades.schema.json` 已接入仓内既有 `jsonschema.Draft202012Validator` 设施,per `scripts/test/cep_decl_alignment_check.sh:98/122/170`;跨文件 `$ref` 需 `referencing` registry 解析 —— 接入**前**该保证只是**声明性**)
+- **AND** 子条件 ② SHALL 成立:`perm_upgrades.schema.json` 的 `silent_upgrades[].from` / `.to` **必须**取自该 4 值集合 —— 跨 schema `$ref` 绑定 ⇒ **机制上**不可能表达第 5 值(**前提**:`perm_upgrades.schema.json` 已接入仓内既有 `jsonschema` 设施 —— `scripts/test/cep_decl_alignment_check.sh:98` `import jsonschema`;:122/:170 用 `jsonschema.Draft202012Validator`;跨文件 `$ref` 需 `referencing` registry 解析 —— 接入**前**该保证只是**声明性**)
 - **AND** 子条件 ③ SHALL 成立:契约侧的**权限秩序**(`NONE < READ < UNIQUE < WRITEBACK`)与 schema 侧的**枚举顺序**一致
 - **AND** **反向 fixture**:注入 `from: "ATOMIC"` 或 `to: "SHARED"` ⇒ 断言必红
 - **AND** **反向 fixture**:把 `perm` 扩成 5 值 ⇒ 断言必红(4 值锁**不**因本 change 而松动)
@@ -69,7 +69,7 @@ CEP SHALL 将 **adapter 侧的跨实例复用契约**固化成 **5 条可机器�
 
 - **WHEN** 核对 `protocol_instances.json` 与 ArchForge 声明的逐字段镜像(⑥ 项,per `scripts/test/cep_decl_alignment_check.sh`)
 - **THEN** **正控** SHALL 成立:两侧**仅** `status` 不同时,⑥ 项 SHALL **不**报红(per design **D-ζ**:`status` 是**本仓权威字段** —— 「本仓是否已实现」,非 ArchForge 镜像面)
-- **AND** **反向 fixture** SHALL 成立:改 `protocol_version` / `vc_binding` / `perm` / `flow_support` / `sharer_tracker` / `consistency_labels` / `ordering_assumption` / `combination_capabilities` / `family` / `adapter` / `id` 中**任一非 `status` 键** ⇒ ⑥ 项 SHALL **必红**
+- **AND** **反向 fixture** SHALL 成立:改 `status` 之外**全部 12 键**中的**任一**(`id` / `family` / `adapter` / `protocol_version` / `flow_support` / `perm` / `atomic` / `consistency_labels` / `ordering_assumption` / `vc_binding` / `sharer_tracker` / `combination_capabilities`)⇒ ⑥ 项 SHALL **必红**(穷举清单 = `protocol_instance.schema.json` 的 `required` 去掉 `status`;**不得**只挑其中几个 —— 漏键 ⇒ 该键的镜像漂移无 fixture 钉住)
 - **AND** **反向 fixture** SHALL 成立:新增 / 删除任一实例 ⇒ ⑥ 项 SHALL **必红**
 - **AND** 该收窄 SHALL 被**显式登记**进 `scripts/test/cep_decl_reverse_verify.sh` 的反向验证集(不得只存在于 spec 文本)—— 否则 builder 可静默漏做而归档仍绿
 

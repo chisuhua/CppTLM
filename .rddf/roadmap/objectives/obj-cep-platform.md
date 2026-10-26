@@ -203,9 +203,12 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 > grep -rn "2029-Q2" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
 > grep -rn "串行 11 季度\|11 个 change" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
 > ```
-> **已知例外(实测 1 处,命中是预期的)**:
-> ① `.rddf/drafts/cep-architecture-decision-log.md`(:28)→ architect 阶段**草稿**,**除本条登记外零入向引用**(不参与路线图口径)。
-> **除这 1 处外出现新命中 = 旧数复活,必须改回。**
+> **已知例外(2026-10-26 实测重测,per Entry #73 —— 上一版「实测 1 处」是 10→11 那轮的数,模式重指后必须重测)**:
+> ① 自检 ①(新值 `2029-Q4` / `2028-Q4`):**0 处**命中 ⇒ 无例外。
+> ② 自检 ② 的 `2029-Q2`:**0 处**命中 ⇒ 无例外。
+> ③ 自检 ② 的 `串行 11 季度|11 个 change`:**7 处**命中,**全部**在 `docs/adr/` 的 Status Update **历史引述**段(`ADR-CEP-00:316/327/338` · `ADR-CEP-04:330` · `ADR-CEP-05:333/362` · `ADR-CEP-NUMBER-MAP:131`)⇒ 按**语义规则**(引述旧值的历史说明段不算副本)⇒ **合法**,不需改;但**必须**留在例外清单里 —— 否则照操作句执行的人会误改历史快照。
+> ④ `.rddf/drafts/cep-architecture-decision-log.md`(:28)→ architect 阶段**草稿**,零入向引用(不参与路线图口径)。
+> **除 ③ 的 7 处 + ④ 的 1 处外出现新命中 = 旧数复活,必须改回。**
 > (2026-10-23 更新:原 3 处例外中的 ① `07 号 §8.1` 与 ② `ADR-CEP-NUMBER-MAP §2` **已随 Entry #27 闭合** —— 旧值已不存在,不再需要例外)
 
 ### 4.1 Stage 0: Umbrella 启动(队列 #1 = `cpptlm-cep-umbrella`,2026-Q4)
@@ -454,7 +457,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 1/3**;下一个可启动 change = 队列 #7 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)(2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
+→ **当前 Proposed 并发 = 1/3**;下一个可启动 change = 队列 #7 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)(2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:**当时**(2026-10-23)下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base` —— 队列 #5 现已归档;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -4709,7 +4712,7 @@ CLI 6 判据全 PASS · KPI **0/3** · 冻结集 **39**
 | 载体 | 内容 |
 |---|---|
 | `proposal.md` | Why / What Changes / 冻结面 / Non-Goals / 依赖与风险 |
-| `design.md` | **13 个 D-段裁决**(D-α 队列位置 … D-μ 跨实例复用边界) |
+| `design.md` | **12 个 D-段裁决**(D-α 队列位置 … D-μ 跨实例复用边界;α→μ 共 12 个希腊字母 —— **原写「13 个」经 critic 复审实测订正**,`grep -c "^## D-"` = 12) |
 | `specs/cep-moesi-gpu-adapter/spec.md` | **7 Scenario** |
 | `specs/cep-adapter-schema-contracts/spec.md` | **7 Scenario** |
 | `.rddf/improvements/cpptlm-cep-moesi-gpu-adapter.md` | 5 段草稿(Why / What Changes / Non-Goals / Acceptance / Capabilities / Impact) |
@@ -4782,7 +4785,7 @@ critic 独立评审(仓外 AI agent,**不等于真人外部评审** —— per `
 
 **④ 6 个 NIT(全部落地)**
 
-N-1 proposal「其余 13 字段零改动」→ **12**(实例共 13 键,`status` 翻转 ⇒ 余 12)· N-2 `roadmap.md` 加 2026-10-26 更新注(不与旧日期注并置)· N-3 `role.json` 时间戳单调(不再倒序)· N-4 §4.0 状态口径行补「📋 Planned 行**可**在末列标注外部阻塞」(`登记 ≠ 就绪`:排期位置是计划,阻塞标注是债的可见性)· N-5 proposal 风险表补「**6×6 全表漂移缺口**」行(D-ε 已在 design 登记,风险应浮到 proposal 层)· N-6 两份 Requirement 正文压缩(503/488 → **479/450**,留余量给 builder 增字;`openspec validate --strict` rc=0)
+N-1 proposal「其余 13 字段零改动」→ **12**(实例共 13 键,`status` 翻转 ⇒ 余 12)· N-2 `roadmap.md` 加 2026-10-26 更新注(不与旧日期注并置)· N-3 `role.json` 时间戳单调(不再倒序)· N-4 §4.0 状态口径行补「📋 Planned 行**可**在末列标注外部阻塞」(`登记 ≠ 就绪`:排期位置是计划,阻塞标注是债的可见性)· N-5 proposal 风险表补「**6×6 全表漂移缺口**」行(D-ε 已在 design 登记,风险应浮到 proposal 层)· N-6 两份 Requirement 正文压缩(503/488 → **478/449**,留余量给 builder 增字;`openspec validate --strict` rc=0 —— **实测 ±1 差异**是尾换行计数口径,per critic 复审)
 
 **⑤ 复审前自查(修完 critic 意见后)**
 

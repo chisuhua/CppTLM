@@ -73,7 +73,7 @@ perm_upgrade: {
 | **改成对象数组**(`perm: [{value, silent_upgrade_to}]`)? | ❌ **不取** | **破坏性**:已有实例声明的 `perm` 是**字符串数组**,改类型 ⇒ 全量重写 + `test_cep_schema.cc` 的 4 值锁断言改写 ⇒ 收益(字段内聚)不抵代价 |
 | **顶层字段 vs 字段内嵌?** | **顶层** | ① `perm` 的**语义**是「本 cache 当前持有的权限集合」;`perm_upgrade` 的语义是「**协议能力**(该协议有哪些静默升级路径)」—— 二者是**不同维度**(实例属性 vs 协议属性)⇒ 塞进 `perm` 会把「能力」与「状态」混在一处 |
 | **必填 or 可选?** | **可选** | **省略 = 无静默升级能力**,这是**安全默认**(无能力 ⇒ 无域可见写 ⇒ 不会误判)⇒ 现有 2 个实例声明**零改动**;若设为必填 ⇒ `mesif` 也得补 `{"silent_upgrades": []}` ⇒ 又触碰 ⑥ 镜像面 |
-| **from/to 的取值域?** | **必须**取自 `protocol_instance.schema.json` 的 `perm` 4 值锁 | 跨 schema `$ref` **声明**该绑定。✅ **仓内**有 **JSON-Schema validator**(`scripts/test/cep_decl_alignment_check.sh:98/122/170` 用 `jsonschema.Draft202012Validator`;CI pip 已装;缺依赖时**不降级运行**)⇒ **机制级**保证**可达**:builder 把 `perm_upgrades.schema.json` 接入**同一套**设施(跨文件 `$ref` 需 `referencing` registry 解析)⇒ 「机制上不可能表达第 5 值」**成立**。⚠️ **本条的前置**:接入前 `$ref` 只是**声明性**,机制级保证须由 builder 落地(见 AC-01 ②) |
+| **from/to 的取值域?** | **必须**取自 `protocol_instance.schema.json` 的 `perm` 4 值锁 | 跨 schema `$ref` **声明**该绑定。✅ **仓内**有 **JSON-Schema validator**(`scripts/test/cep_decl_alignment_check.sh:98` `import jsonschema`;:122/:170 用 `jsonschema.Draft202012Validator`;CI pip 已装;缺依赖时**不降级运行**)⇒ **机制级**保证**可达**:builder 把 `perm_upgrades.schema.json` 接入**同一套**设施(跨文件 `$ref` 需 `referencing` registry 解析)⇒ 「机制上不可能表达第 5 值」**成立**。⚠️ **本条的前置**:接入前 `$ref` 只是**声明性**,机制级保证须由 builder 落地(见 AC-01 ②) |
 | **泛化布尔 vs 具体 from→to 对?** | **具体 from→to 对** | `ADR-CEP-05 §13.1` 的 Q-3b 裁定:「新字段**必须**表达「`UNIQUE` 可静默升 `WRITEBACK`」这一**具体**语义,**非**泛化布尔(`O→M` 走 `INVALIDATE` 是**显式**升级,触发条件不同)」⇒ 布尔 `silent_upgrade: true` **被明确排除** |
 | **权限单调性?** | **要求 `to` 的秩 ≥ `from` 的秩** | 权限秩 `NONE < READ < UNIQUE < WRITEBACK` ⇒ 静默升级**不得**降权限(`UNIQUE → READ` 荒谬)⇒ **可机器判定**(AC-02) |
 
@@ -145,6 +145,8 @@ perm_upgrade: {
 | **ArchForge `32 号` 是 Draft v0.1** | 事实 | 本 change 引用其**语义**(6×6 转换 / 投影表 / 6 类词表 / VC 矩阵),不引用其行号 ⇒ 行号漂移不影响本 change |
 | **D-9 批 2(计划 2026-11-05)改 `09 号` 的 8 处引用** | 事实 | 同上;本 change **不**在 `09 号` 上建锚点 |
 | **C-1 放行判据要求 ArchForge 侧有 commit hash 的接口 PR** | **治理阻塞(既有)** | 纯设计仓结构上不可闭合;`ADR-SOC-25 D11` 提议改为「接口规约 PR」⇒ 本 change 的跨仓前置登记在此,**不阻塞**本仓实施 |
+| **S1 有效期届满的**重登记 owner** | **本 change 归档瞬间触发**(per critic 复审) | 断言⑧ 的条件① 在 #6 **完成归档**时转红,报红信息指向 `cep-poc-spike-verification` main spec 的 S1 有效期登记 —— 该 main spec **不属任何 active change** ⇒ **builder 必须在 `tasks.md` 显式列「归档前完成 S1 有效期重登记」任务**,否则 #7 planner 开门即遇红闸且**无 runbook** |
+| **断言⑧ 条件② 的**未来键名** | **builder 落地后才可验证** | `perm_upgrades.schema.json` 的顶层 `properties` 须真含 `perm_upgrade` 键,否则条件② **再度装饰化**(条件① 的归档判定仍兜底,非恒假)⇒ **builder 落地该文件后必须重验** `bash scripts/test/cep_docs_sync_check.sh --strict`,确认条件② 按「有效期届满」语义 fire(而非静默绿或误红) |
 | **ArchForge 侧无 `mesif` 状态机规约 / 投影表** | 债 | 本 change 不碰(见 D-η) |
 
 ---
