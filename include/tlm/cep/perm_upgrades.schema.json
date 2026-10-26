@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cpptlm.local/schemas/perm_upgrades.schema.json",
+  "title": "CEP 静默升级声明 schema",
+  "description": "协议实例的**静默升级能力**声明(本仓自持的独立声明源,per ADR-CEP-12 Status Update 2026-10-26 裁决 ①)。`silent_upgrades[].from` / `.to` 用**跨 schema `$ref`** 绑定到 `protocol_instance.schema.json` 的 `perm` 枚举 ⇒ **机制上**不可能表达第 5 个 `perm` 值(4 值锁,per ADR-CEP-02 CEN-Ib11)。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "perm_upgrade"
+  ],
+  "properties": {
+    "derived_from": {
+      "type": "object",
+      "description": "来源标注(可省)",
+      "additionalProperties": true
+    },
+    "perm_upgrade": {
+      "type": "object",
+      "description": "静默升级能力声明。**省略 = 该协议族无静默升级能力** —— 这是安全默认(无能力 ⇒ 无域可见写 ⇒ 不会误判),故本字段在实例视角是**可选**的;在本独立声明源视角则是必填(文件存在即意味着至少声明了一条)。",
+      "additionalProperties": false,
+      "required": [
+        "silent_upgrades"
+      ],
+      "properties": {
+        "silent_upgrades": {
+          "type": "array",
+          "description": "逐条静默升级路径。**具体 from→to 对**(per ADR-CEP-05 §13.1 Q-3b:必须表达具体语义,泛化布尔被明确排除)",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "instance_id",
+              "from",
+              "to"
+            ],
+            "properties": {
+              "instance_id": {
+                "type": "string",
+                "description": "协议实例 id —— 必须存在于 `protocol_instances.json` 的 `instances[]`(AC-02 ①)",
+                "minLength": 1
+              },
+              "from": {
+                "$ref": "protocol_instance.schema.json#/properties/perm/items",
+                "description": "升级前的权限值 —— 取值域由 `protocol_instance.schema.json` 的 `perm` 枚举**跨 schema 绑定**"
+              },
+              "to": {
+                "$ref": "protocol_instance.schema.json#/properties/perm/items",
+                "description": "升级后的权限值 —— 取值域同上(**不得**降权限,秩由契约判据 AC-02 ③ 检查)"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

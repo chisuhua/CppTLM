@@ -1303,12 +1303,66 @@ else:
                                                   "perm_upgrade"))
     except Exception:
         pass
+    # ── 届满后的**重评登记**检查(2026-10-27,队列 #6 实施)──────────────
+    # ⚠️ 原实现是「届满即永久报红」—— 队列 #6 落地后 `perm_upgrades.schema.json` 的
+    #   `perm_upgrade` 键**永久**满足 `_perm_evolved` ⇒ #6 永远无法归档 ⇒ 队列停滞。
+    #   正确形态:届满 ⇒ **要求重评已落地**(重评登记 = 新有效期锚出现在契约层);
+    #   重评后的**新**有效期同样要有**机器可检测**的届满条件(否则新有效期也是纯纸面)。
+    _NEW_ANCHOR = "S1_VALIDITY_UNTIL=stub-request-side-perm-extension"
+    # 重评登记的可能落点:① 队列 #6 的 delta spec(归档前);② 归档后的目录;
+    #                    ③ 归档后并入的 main spec(契约层 ⇒ 长期可查)
+    _reeval_paths = [
+        "openspec/changes/cpptlm-cep-moesi-gpu-adapter/specs/cep-adapter-schema-contracts/spec.md",
+        "openspec/specs/cep-adapter-schema-contracts/spec.md",
+    ]
+    try:
+        _arch2 = os.path.join(root, "openspec/changes/archive")
+        for _n2 in (os.listdir(_arch2) if os.path.isdir(_arch2) else []):
+            if _n2.endswith("cpptlm-cep-moesi-gpu-adapter"):
+                _reeval_paths.append(
+                    f"openspec/changes/archive/{_n2}/specs/cep-adapter-schema-contracts/spec.md")
+    except Exception:
+        pass
+    _reeval_ok = False
+    for _rel2 in _reeval_paths:
+        _p2 = os.path.join(root, _rel2)
+        try:
+            if os.path.exists(_p2) and _NEW_ANCHOR in open(_p2, encoding="utf-8").read():
+                _reeval_ok = True
+                break
+        except Exception:
+            continue
+    # 新有效期的届满条件(机器可检测):① Stub 请求侧 perm 扩展;② `perm` 4 值锁被击穿
+    _new_expired = False
+    _why = []
+    try:
+        _stub = open(os.path.join(root, "include/tlm/cep/stub_cache_core.hh"), encoding="utf-8").read()
+        if "perm_upgrade" in _stub:
+            _new_expired = True
+            _why.append("Stub 请求侧出现 perm_upgrade 扩展")
+    except Exception:
+        pass
+    try:
+        _ps = json.load(open(os.path.join(root, "include/tlm/cep/protocol_instance.schema.json"),
+                             encoding="utf-8"))
+        _pe = _ps.get("properties", {}).get("perm", {}).get("items", {}).get("enum", [])
+        if len(_pe) != 4:
+            _new_expired = True
+            _why.append(f"perm 枚举 ≠ 4 值(实得 {len(_pe)})")
+    except Exception:
+        pass
+
     if q6 or _perm_evolved:
-        failed.append("S1 结论的有效期已**届满**(队列 #6 的 perm 形态演进已归档 或 schema 引入 perm 形态字段)"
-                      " → delta spec 的「S1 当前判定结论与有效期登记」SHALL 重评"
-                      "(否则有效期是纯纸面)")
+        if not _reeval_ok:
+            failed.append("S1 结论的有效期已**届满**(队列 #6 的 perm 形态演进已归档 或 schema 引入 perm 形态字段)"
+                          " → delta spec 的「S1 当前判定结论与有效期登记」SHALL 重评"
+                          f"(未找到新有效期锚 `{_NEW_ANCHOR}` 的登记 —— 否则有效期是纯纸面)")
+        elif _new_expired:
+            failed.append(f"S1 **新**有效期({_NEW_ANCHOR})已届满:{'; '.join(_why)} → 须再次重评")
+        else:
+            print(f"  \033[0;32m✓\033[0m S1 有效期已届满,**重评已登记**(新锚 {_NEW_ANCHOR})且新锚未届满")
     else:
-        print(f"  \033[0;32m✓\033[0m S1 有效期未届满(队列 #6 的 perm 演进未归档 / schema 无 perm 形态字段)")
+        print("  \033[0;32m✓\033[0m S1 有效期未届满(队列 #6 的 perm 演进未归档 / schema 无 perm 形态字段)")
 
 if failed:
     for f in failed:

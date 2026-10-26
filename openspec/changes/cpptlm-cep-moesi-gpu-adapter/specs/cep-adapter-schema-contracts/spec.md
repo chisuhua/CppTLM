@@ -84,3 +84,14 @@ CEP SHALL 将 **adapter 侧的跨实例复用契约**固化成 **5 条可机器�
 - **AND** **反向 fixture**:CLI 与测试的 verdict 输出 SHALL **逐条相同**(同一实现 ⇒ 同一结论)
 
 > **锚点**:`test_cep_adapter_schema_contracts.cc` 的「声明源被消费」断言 + 「CLI 与测试 verdict 逐条相同」断言
+
+#### Scenario: S1 有效期重评 —— 结论复核 + 新有效期登记(队列 #6 的 `perm` 形态演进落地触发)
+
+- **WHEN** 队列 #6 的 `perm` 形态演进落地(`perm_upgrades.json` + 配套 schema 的 `perm_upgrade` 键 ⇒ `cep-poc-spike-verification` main spec 的 S1 有效期锚 `S1_VALIDITY_UNTIL=queue6-perm-schema-evolution` **届满**)
+- **THEN** 重评结论 SHALL 为:**S1 仍为 FAIL**(结论**未翻转**)—— R-2 的发生点不变:写路径的 `perm` 仍在**请求侧**携带 `UNIQUE`,而期望投影是 `WRITEBACK` ⇒ `perm` 4 值投影**仍**不能表达静默 `E→M` 升级
+- **AND** 重评 SHALL 记录**可发现性的改善**:「哪个协议实例有静默升级能力」现有**机器可读**的声明源(`perm_upgrades.json` + 跨 schema `$ref` 绑定)⇒ 消费端可据此修正请求侧 `perm`;但**修正机制本身不在本 change 的交付面**(Stub↔PE 腿归 `cpptlm-cep-stub-cache-chstream-surface`)
+- **AND** 新有效期 SHALL 被显式标注:`S1_VALIDITY_UNTIL=stub-request-side-perm-extension`
+- **AND** 新有效期的**届满条件 SHALL 机器可检测**:① `include/tlm/cep/stub_cache_core.hh` 出现请求侧 `perm_upgrade` 扩展;② `protocol_instance.schema.json` 的 `perm` 枚举 ≠ **4** 值(4 值锁被击穿)⇒ 任一命中即须**再次重评**(否则新有效期同样是纯纸面)
+- **AND** 重评 SHALL 落在**契约层**(本 delta spec ⇒ 归档后并入 `openspec/specs/cep-adapter-schema-contracts/spec.md`)而**非**冻结的 `cep-poc-spike-verification` main spec —— 后者的 S1 Scenario **逐字仍然成立**(结论仍 FAIL / 机器登记仍 `S1_VERDICT=FAIL` + `S1_MISMATCH_STEPS=1` / spike 仍打印原锚)⇒ **零冻结面改动**
+
+> **锚点**:`scripts/test/cep_docs_sync_check.sh` 断言 ⑧ 的「S1 有效期重评**已登记**」检查(新锚出现在本 delta spec 或归档后的 main spec)+ 2 条反向 fixture(新锚缺失 ⇒ 必红 / 新届满条件命中 ⇒ 必红)

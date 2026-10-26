@@ -354,6 +354,75 @@ else:
 for d in chk5:
     err(5, d)
 
+# ══════════════════════════════════════════════════════════════════════
+# ⑦ 静默升级声明源 × 配套 schema(**跨 schema `$ref` 机制级** + 反向 fixture)
+# ══════════════════════════════════════════════════════════════════════
+# 机制级保证:`silent_upgrades[].from` / `.to` 用 `$ref` 绑定到
+# `protocol_instance.schema.json` 的 `perm` 枚举 ⇒ **不可能**表达第 5 个 `perm` 值
+# (4 值锁,per `ADR-CEP-02` CEN-Ib11)。跨文件 `$ref` 需 `referencing` registry 解析
+# —— 缺依赖即**报错不降级**(与 `jsonschema` 同处置:降级会让「机制级保证」退化成
+# 「声明性」而无人察觉)。
+#
+# ⚠️ **分层**:本项只覆盖 **schema 层**(值域 / 必填 / 多余键)。「声明的实例 id 是否
+# 存在」与「权限秩是否单调」是**数据层**判据 —— 由 `adapter_schema_contracts.hh`
+# 的 AC-02 覆盖(C++ 侧,test 与 CLI 共用一份实现)。
+PERM_UPGRADES_REL = "include/tlm/cep/perm_upgrades.json"
+PERM_UPGRADES_SCHEMA_REL = "include/tlm/cep/perm_upgrades.schema.json"
+
+try:
+    from referencing import Registry, Resource
+except ImportError:
+    print("  ✗ [RUN] 缺少 python 依赖 'referencing' —— 跨 schema `$ref` **无法降级运行**")
+    print("    · 安装: python3 -m pip install referencing")
+    sys.exit(2)
+
+_pu_path = os.path.join(root, PERM_UPGRADES_REL)
+_pus_path = os.path.join(root, PERM_UPGRADES_SCHEMA_REL)
+if not os.path.exists(_pu_path):
+    err(7, f"静默升级声明源缺失:{PERM_UPGRADES_REL}")
+elif not os.path.exists(_pus_path):
+    err(7, f"静默升级声明 schema 缺失:{PERM_UPGRADES_SCHEMA_REL}")
+else:
+    try:
+        _pu_doc = read_json(_pu_path)
+        _pus_doc = read_json(_pus_path)
+    except Exception as exc:
+        err(7, f"静默升级声明源/schema JSON 解析失败:{exc}")
+        _pu_doc = _pus_doc = None
+    if _pu_doc is not None and _pus_doc is not None:
+        # registry:按 `protocol_instance.schema.json` 的 `$id` 注册 ⇒ 相对 `$ref` 可解析
+        _reg = Registry().with_resource(
+            uri=schema.get("$id", SCHEMA_REL),
+            resource=Resource.from_contents(schema))
+        _pu_validator = jsonschema.Draft202012Validator(_pus_doc, registry=_reg)
+        for _e in sorted(_pu_validator.iter_errors(_pu_doc), key=lambda e: list(e.path)):
+            err(7, f"静默升级声明源违反配套 schema:{'/'.join(str(x) for x in _e.path)} {_e.message}")
+
+        # ── 反向 fixture(证明 ⑦ **有牙**:每条都必须被 schema 挡住)────────
+        def _mutate(fn):
+            d = json.loads(json.dumps(_pu_doc))
+            fn(d)
+            return list(_pu_validator.iter_errors(d))
+
+        def _m_from_atomic(d):
+            d["perm_upgrade"]["silent_upgrades"][0]["from"] = "ATOMIC"
+
+        def _m_to_shared(d):
+            d["perm_upgrade"]["silent_upgrades"][0]["to"] = "SHARED"
+
+        def _m_drop_from(d):
+            del d["perm_upgrade"]["silent_upgrades"][0]["from"]
+
+        def _m_extra_key(d):
+            d["perm_upgrade"]["silent_upgrades"][0]["extra_key"] = "x"
+
+        for _label, _fn in (("from=ATOMIC(第 5 个 perm 值)", _m_from_atomic),
+                            ("to=SHARED(域外值)", _m_to_shared),
+                            ("缺 from(必填)", _m_drop_from),
+                            ("多余键 extra_key", _m_extra_key)):
+            if not _mutate(_fn):
+                err(7, f"反向 fixture 未被拦住:`{_label}` 竟然通过 schema 校验 ⇒ ⑦ 无牙")
+
 # ══════════════════════════════════════════════════════════════════════════
 # 输出
 # ══════════════════════════════════════════════════════════════════════════
@@ -382,6 +451,14 @@ else:
             continue
         local = repo_insts[rid]
         for key in sorted(set(local) | set(d)):
+            # ⚠️ `status` 是**本仓权威字段**(「本仓是否已实现」—— 不是 ArchForge 镜像面)
+            #    ⇒ ⑥ 的逐字段比对**跳过** `status`,其余 **12** 键仍严格相等。
+            #    (per `cpptlm-cep-moesi-gpu-adapter` design `D-ζ`;跨仓同步**不**作为前置)
+            #    收窄守卫 ⇒ 必须有反向 fixture:改任一**非** `status` 键 ⇒ 仍必红。
+            #    反向 fixture 见 `scripts/test/cep_decl_reverse_verify.sh` 的
+            #    「破坏 10(12 个非 status 键**穷举**)」+「破坏 11(status 差异 ⇒ 正控绿)」。
+            if key == "status":
+                continue
             # 类型也要严格相等,且**递归**(含嵌套 dict/list 内部);
             # 键只存在于一侧时用 _MISSING 哨兵(否则两侧都 `.get()` 得 None ⇒ 漏报)
             if not strict_equal(local.get(key, _MISSING), d.get(key, _MISSING)):
@@ -438,7 +515,8 @@ LABELS = {
     3: "③ ordering ⊆ vc_binding(逐网络)",
     4: "④ 消息类 ∈ 6 类规范词表",
     5: "⑤ network ⊆ fabric = ArchForge 已锁定集 + vc_count 双向一致",
-    6: f"⑥ 派生副本逐字段 = ArchForge 声明 + 边表逐边 = §6.0.3 + 边端点已绑定({REPO_DECL_REL})",
+    6: f"⑥ 派生副本逐字段 = ArchForge 声明(跳过本仓权威字段 status)+ 边表逐边 = §6.0.3 + 边端点已绑定({REPO_DECL_REL})",
+    7: "⑦ 静默升级声明源 × 配套 schema(跨 schema `$ref` 机制级绑定 perm 4 值域)+ 4 条反向 fixture",
 }
 
 print("  · [RUN] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查")
@@ -448,7 +526,7 @@ print(f"    · 本仓 schema: {SCHEMA_REL}")
 print(f"    · 本仓 fabric: {FABRIC_REL}" +
       (f"(ArchForge 清单 {len(af_locked)} 网络)" if af_locked else "(ArchForge 清单**未解析**)"))
 
-for chk in (1, 2, 3, 4, 5, 6):
+for chk in (1, 2, 3, 4, 5, 6, 7):
     sub = [d for c, d in errors if c == chk]
     if sub:
         print(f"    · {LABELS[chk]}: ✗ ({len(sub)} 处)")
@@ -459,10 +537,10 @@ for chk in (1, 2, 3, 4, 5, 6):
 
 if errors:
     n_chk = len(set(c for c, _ in errors))
-    print(f"  ✗ [RUN] 声明对齐检查失败:{n_chk}/6 项红,{len(errors)} 处失配")
+    print(f"  ✗ [RUN] 声明对齐检查失败:{n_chk}/7 项红,{len(errors)} 处失配")
     sys.exit(1)
 
-print("  ✓ [RUN] 声明对齐检查通过:6 项子校验全绿"
+print("  ✓ [RUN] 声明对齐检查通过:7 项子校验全绿"
       f"({len(declarations)} 份声明,{len(used_nets)} 个网络)")
 sys.exit(0)
 PYEOF

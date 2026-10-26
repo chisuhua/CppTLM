@@ -151,6 +151,22 @@ add_test(NAME cep_collective_plane_contract COMMAND cep_collective_plane_contrac
 set_tests_properties(cep_collective_plane_contract PROPERTIES
                      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# 队列 #6:adapter 契约判据的离线挂点 CLI(per delta capability
+# `cep-adapter-schema-contracts`)。与 test 侧**同一份**判据实现
+# (`include/tlm/cep/adapter_schema_contracts.hh` + `adapter_contracts_loader.hh`)
+# ⇒ CLI 与测试的 verdict 输出必然逐条相同(测试直接跑本 CLI 做逐条比对)。
+add_executable(cep_adapter_contracts cep_adapter_contracts.cc)
+target_link_libraries(cep_adapter_contracts PRIVATE cpptlm_core)
+target_include_directories(cep_adapter_contracts PRIVATE ${EXAMPLES_INCLUDE_DIRS})
+add_test(NAME cep_adapter_contracts COMMAND cep_adapter_contracts ${CMAKE_SOURCE_DIR})
+set_tests_properties(cep_adapter_contracts PROPERTIES
+                     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+# 判据实现单一时,测试需要**运行**本 CLI 做「CLI 与测试 verdict 逐条相同」的逐条比对
+# ⇒ cpptlm_tests 依赖本 target(⚠️ `add_subdirectory(test)` 在 `examples` **之前**,
+#   故依赖必须声明在此处 —— test/CMakeLists.txt 里引用尚未定义的目标会失败)。
+add_dependencies(cpptlm_tests cep_adapter_contracts)
+
 # ==============================================================================
 # HSK-8 Phase 2 Step 6: examples 同样需要 PTX-EMU shared libs
 # ==============================================================================

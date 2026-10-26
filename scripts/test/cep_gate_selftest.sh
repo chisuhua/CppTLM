@@ -190,12 +190,27 @@ t = p.read_text(encoding="utf-8")
 assert "S1_VALIDITY_UNTIL=queue6-perm-schema-evolution" in t
 p.write_text(t.replace("S1_VALIDITY_UNTIL=queue6-perm-schema-evolution", "S1_VALIDITY_X"), encoding="utf-8")'
 
-run_case "schema 引入 perm 形态字段(有效期届满条件)→ ⑧ 必须 fire" 1 '
+# ⚠️ 2026-10-27(队列 #6 实施):本 fixture 的语义**已变** —— 旧锚
+#   `S1_VALIDITY_UNTIL=queue6-perm-schema-evolution` 的届满条件(队列 #6 落地 /
+#   schema 引入 perm 形态字段)现在只**触发「必须已完成重评」**的要求,不再直接判红
+#   (否则 #6 落地后该条件**永久**为真 ⇒ #6 永远无法归档 ⇒ 队列停滞)。
+#   ⇒ 本 fixture 改为**正控**:旧条件命中 + 重评**已**登记 ⇒ 必须 GREEN。
+run_case "旧锚届满条件命中 + 重评已登记 → ⑧ 必须 GREEN(旧条件已历史化)" 0 '
 from pathlib import Path
 import json
 p = Path(os.environ["RT"] + "/include/tlm/cep/protocol_instance.schema.json")
 d = json.loads(p.read_text(encoding="utf-8"))
 d["properties"]["perm_form"] = {"type": "string"}
+p.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")'
+
+# 新锚(`S1_VALIDITY_UNTIL=stub-request-side-perm-extension`)的届满条件 ②:
+#   `perm` 枚举 ≠ 4 值(4 值锁被击穿)⇒ 必须 fire
+run_case "新锚届满条件:perm 枚举 ≠ 4 值 → ⑧ 必须 fire" 1 '
+from pathlib import Path
+import json
+p = Path(os.environ["RT"] + "/include/tlm/cep/protocol_instance.schema.json")
+d = json.loads(p.read_text(encoding="utf-8"))
+d["properties"]["perm"]["items"]["enum"].append("ATOMIC")
 p.write_text(json.dumps(d, ensure_ascii=False, indent=2), encoding="utf-8")'
 
 # ── 断言 ⑦:移交链的可达性与 owner 活性 ────────────────────────────
@@ -341,6 +356,27 @@ old = "**不是** VC_DAT 桶"
 assert t.count(old) == 1, "锚点漂移:未找到「**不是** VC_DAT 桶」"
 t = t.replace(old, "但 vc_counts_[2] (DAT VC) 仍增", 1)
 p.write_text(t, encoding="utf-8")' 10
+
+# 断言 ⑧ 的**重评登记**反向 fixture(2026-10-27,队列 #6 实施)────
+#   ① 新有效期锚从 delta spec 移除 ⇒ 届满且未重评 ⇒ 必须 fire
+run_case "断言 ⑧:移除 S1 重评登记的新锚 ⇒ 必须 fire" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/openspec/changes/cpptlm-cep-moesi-gpu-adapter/specs/cep-adapter-schema-contracts/spec.md")
+t = p.read_text(encoding="utf-8")
+old = "S1_VALIDITY_UNTIL=stub-request-side-perm-extension"
+assert t.count(old) >= 1, "锚点漂移:未找到新有效期锚"
+t = t.replace(old, "S1_VALIDITY_UNTIL=(removed)", 1)
+p.write_text(t, encoding="utf-8")' 11
+
+#   ② Stub 请求侧出现 perm_upgrade 扩展 ⇒ **新**锚届满 ⇒ 必须 fire
+run_case "断言 ⑧:Stub 请求侧 perm_upgrade 扩展 ⇒ 新锚届满" 1 '
+from pathlib import Path
+p = Path(os.environ["RT"] + "/include/tlm/cep/stub_cache_core.hh")
+t = p.read_text(encoding="utf-8")
+anchor = "namespace tlm::cep {"
+assert t.count(anchor) == 1, "锚点漂移:未找到 namespace"
+t = t.replace(anchor, anchor + "\n    // fixture:perm_upgrade 请求侧扩展", 1)
+p.write_text(t, encoding="utf-8")' 11
 
 echo ""
 if [ "$FAIL" -eq 0 ]; then

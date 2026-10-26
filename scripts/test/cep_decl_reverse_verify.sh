@@ -171,6 +171,64 @@ run "副本侧多一条边" RED "$REAL_AF"
 restore_repo_decl
 
 echo ""
+echo "═══ 破坏 14:本仓副本的 12 个非 status 键**穷举**(⑥ 收窄守卫不得无牙)═══"
+# `status` 是**本仓权威字段**(「本仓是否已实现」,非 ArchForge 镜像面)⇒ ⑥ 的逐字段
+# 比对**跳过**该键、其余 **12** 键仍严格相等(per `cpptlm-cep-moesi-gpu-adapter`
+# design `D-ζ`)。收窄守卫 ⇒ 必须有**穷举**反向 fixture:12 个键**逐个**改坏 ⇒ 每次
+# 都必须报红**且报出该键名**(漏一个键 ⇒ 该键的镜像漂移无 fixture 钉住)。
+# 穷举清单 = `protocol_instance.schema.json` 的 `required` 去掉 `status`。
+# **归因**:只有 ⑥ 读本仓副本(`protocol_instances.json`)—— ①~⑤ 读的是 **ArchForge
+# 声明**与本仓 `fabric.json` ⇒ 副本被改 ⇒ 闸红 ⇒ 归因于 ⑥。变异**保结构**(只改叶子
+# 值)⇒ 闸报出的是「漂移」而不是崩溃。
+for key in id family adapter protocol_version flow_support perm atomic consistency_labels \
+           ordering_assumption vc_binding sharer_tracker combination_capabilities; do
+    python3 -c "
+import json, sys
+key = sys.argv[1]
+p = '$REPO_DECL'
+d = json.load(open(p))
+inst = d['instances'][0]          # moesi_gpu
+
+def newval(x):
+    if isinstance(x, bool): return not x
+    if isinstance(x, int):  return x + 1
+    if isinstance(x, str):  return x + '-MUT'
+    return 'MUT'
+
+def mutate(node):
+    # 保结构的叶子级变异:递归到第一个叶子改其值(不改形状 ⇒ 闸报「漂移」而非崩溃)
+    if isinstance(node, dict):
+        if not node: return node
+        k = sorted(node.keys())[0]
+        v = node[k]
+        node[k] = mutate(v) if isinstance(v, (dict, list)) else newval(v)
+        return node
+    if isinstance(node, list):
+        if not node: return node
+        v = node[0]
+        node[0] = mutate(v) if isinstance(v, (dict, list)) else newval(v)
+        return node
+    return newval(node)          # 标量键(id / family / adapter …)也必须被改坏
+
+inst[key] = mutate(inst[key])
+json.dump(d, open(p, 'w'), ensure_ascii=False, indent=2)" "$key"
+    run "副本 $key 改坏" RED "$REAL_AF"
+    restore_repo_decl
+done
+
+echo ""
+echo "═══ 破坏 15:本仓副本 status 改坏(**正控** —— ⑥ 跳过 status ⇒ 必须仍绿)═══"
+# 反向 fixture 的**正控**:若 ⑥ 的收窄被误改成「整条 ⑥ 都不比对」,本条仍绿 ⇒ 收窄
+# 退化为「无牙」而无人察觉;若被误改成「跳过所有键」,破坏 14 会红 ⇒ 两端都被钉住。
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['instances'][0]['status']='excluded'
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "副本 status → excluded(status 是本仓权威字段 ⇒ 不参与镜像比对)" GREEN "$REAL_AF"
+restore_repo_decl
+
+echo ""
 echo "═══ 恢复后复验 ═══"
 run "本仓 + 真仓 全恢复" GREEN "$REAL_AF"
 run "副本 全恢复" GREEN "$TMP"

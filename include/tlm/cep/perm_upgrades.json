@@ -1,0 +1,17 @@
+{
+  "derived_from": {
+    "source_doc": "docs/adr/ADR-CEP-05-stub-cache-core-interface.md §13.1(Q-3b 裁定:perm 形态演进必须表达「UNIQUE 可静默升 WRITEBACK」这一**具体**语义,非泛化布尔)",
+    "authority_note": "本仓**自持**的静默升级声明(非跨仓派生副本)—— 「协议**有什么能力**」是 CEP 侧权威(per ADR-CEP-12 Status Update 2026-10-26 裁决 ①:独立声明源,`protocol_instance.schema.json` 零改动)。「协议**是什么**」(ArchForge 声明)与「协议**怎么投影到 stub cache**」(CEP 契约)本就分层 ⇒ 本文件**不**参与 ⑥ 逐字段镜像比对。",
+    "current_state": "`moesi_gpu` 声明 1 条静默升级(UNIQUE → WRITEBACK;对应 `E + Write → M` 的静默升级,per `ADR-CEP-13` 决策 3 的判据 (a)(b))。`mesif` 无该能力 ⇒ **不出现**在本声明源里(AC-03 的反向 fixture 钉住)。",
+    "freeze_state": "**诞生即不冻结**(per ADR-CEP-12 Status Update 2026-10-26 裁决 ①);配套 schema 同不冻结"
+  },
+  "perm_upgrade": {
+    "silent_upgrades": [
+      {
+        "instance_id": "moesi_gpu",
+        "from": "UNIQUE",
+        "to": "WRITEBACK"
+      }
+    ]
+  }
+}

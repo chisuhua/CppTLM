@@ -56,6 +56,13 @@ FILES = [
     # 断言 ⑧(S1 有效期检测)的输入 —— 不纳入则闸自检里该断言被 skip(覆盖缺口,critic S-4)
     "examples/cep_poc_spike_s1.cc",
     "include/tlm/cep/protocol_instance.schema.json",
+    # 断言 ⑧ 的**重评登记检测**输入(2026-10-27,队列 #6 实施):
+    #   · `perm_upgrades.schema.json` 的 `perm_upgrade` 键 = 旧锚的届满条件 ②
+    #   · `perm_upgrades.json` = 声明源(新锚的登记载体之一)
+    #   · `stub_cache_core.hh` = 新锚的届满条件 ①(请求侧 perm 扩展)
+    "include/tlm/cep/perm_upgrades.schema.json",
+    "include/tlm/cep/perm_upgrades.json",
+    "include/tlm/cep/stub_cache_core.hh",
     # 第 10 组断言 ④⑤⑥ 的输入(M-4 契约:VC_DAT 语义正名 / 冲突输入规则 / 陈旧注释防护)
     "include/bundles/noc_bundles_tlm.hh",
     "include/tlm/cluster/soc_internal_noc.hh",
