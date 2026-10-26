@@ -7,7 +7,7 @@
 #
 # Stage 0 尚无实验 4 件套(那要 Stage 1 才有),故 M1 在 Stage 0 的对应物是
 # **Stage 0 的规范性契约产物**冻结:
-#   ① 21 份 ADR-CEP-*.md           (真源 3:invariant 契约)
+#   ① 22 份 ADR-CEP-*.md           (真源 3:invariant 契约)
 #   ② docs/architecture/07-*.md    (真源 1:CEP 总表)
 #   ③ 2 份 schema                   (能力声明 + metrics)
 #   ④ 3 个 tools/*.py               (4 件套契约的实现)

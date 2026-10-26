@@ -29,7 +29,7 @@ phase_refs:
 
 | 子任务 | 状态 | 范围 | 估时 | 关联 ADR | KPI slot |
 |--------|------|------|------|----------|----------|
-| **10.A 真源 ADR 起草与评审** | ✅ 完成(2026-10-19~21) | **21 份 ADR**(原 10 份 + 2026-10-21 两批新增 08/09/12/13/18 + 11/14/15/16/07A,修订 02/04/05/06/07/17) | 12 人日(architect,已消耗) | ADR-CEP-00~18 全族 + NUM | 0(doc-only 起草)|
+| **10.A 真源 ADR 起草与评审** | ✅ 完成(2026-10-19~21) | **22 份 ADR**(原 10 份 + 2026-10-21 两批 + **2026-10-27 ADR-CEP-19 签发**)新增 08/09/12/13/18 + 11/14/15/16/07A,修订 02/04/05/06/07/17) | 12 人日(architect,已消耗) | ADR-CEP-00~18 全族 + NUM | 0(doc-only 起草)|
 | **10.B OpenSpec `cpptlm-cep-umbrella` 起草** | ✅ **完成 + 已归档(2026-10-23)** —— 4 件套已落;tasks **99 / 99** 全勾;`openspec validate cep-core-contracts --strict` **rc=0**(2 条预存 WARNING 已随批 4 消除,per Entry #27;**裸 `openspec validate --strict` 恒 rc=1**,不可作验收证据);**R10 已闭合**(按 `obj §9.3` 判据,per Entry #28);**完成归档**(delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`,per Entry #29) | proposal + design + specs + tasks **4 件套已落 + 已归档** | 5 人日(builder,已消耗) | improvement `cpptlm-cep-umbrella.md` | **1**(Stage 0 计 KPI,per oracle v0.4 B2-1 修订)|
 | **10.C 实验输出 4 件套契约测试** | ✅ **完成(2026-10-21~22)** | `test_cep_canonical_invariants.cc` + `test_cep_dummy_signals.cc` + `test_cep_module_factory_seam.cc` + `test_cep_simulation_mode_lock.cc`(+ 后期补充 `test_cep_schema.cc` / `test_cep_contracts_crosscheck.cc` / `test_cep_tools_contract.cc`) | 10 人日(builder,已消耗) | ADR-CEP-06 §2 + ADR-CEP-07 §2 | 0(沿用 10.B)|
 | **10.D `experimental/` 目录 + tools** | ✅ **完成(2026-10-22)** | `tools/render_report.py` + `run_sweep.py` + `ab_compare.py` + `experimental/metrics.schema.json` | 5 人日(builder,已消耗) | ADR-CEP-06 §4 | 0(沿用 10.B)|

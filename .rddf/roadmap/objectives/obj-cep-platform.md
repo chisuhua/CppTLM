@@ -4968,6 +4968,94 @@ Entry #71 建立的是 **13 change 队列**(`moesi_gpu` #6 / `chi-rnf` #7 / `mes
 
 ---
 
+### Entry #75 — 2026-10-27 [plan]
+
+**主题**: 队列 #7 `cpptlm-cep-cohif-carrier` **planner 阶段产出(部分落地)** —— improvement 草稿 + 4 件套**草稿**已落,change 目录**未建**(KPI slot 硬前置阻塞)
+
+**① 触发**
+
+用户指令:「起 #7 的 planner」。`ADR-CEP-19` 已于 2026-10-27 签发(Entry #74),队列 #7 `cpptlm-cep-cohif-carrier` 的**架构决策已定**,本 entry 落其 **planner 阶段产出**。
+
+**② 🔴 KPI slot 硬前置阻塞(本 entry 的核心事实)**
+
+**约束**(`ADR-CEP-00 §2 决策 3` 冻结面 + `obj §5.4` + `obj §6.3 D1`):**任一时刻 CEP 系列 Proposed 并发 ≤ 1**。
+
+**实测**(2026-10-27):`openspec list --json` = **1 个 active** = `cpptlm-cep-moesi-gpu-adapter`(队列 #6,🟡 Proposed)⇒ **唯一 slot 已被占用**。
+
+**先例**(本台账早期 entry):「补建 OpenSpec change | ❌ `cpptlm-cep-umbrella` 占**唯一** KPI slot 且 R10 未闭合 → 不 archive → 建新 change 令 CEP 内部 Proposed 并发 = 2,**违规**」。
+
+**⇒ 处置**:按 `obj §4.7.2` step 0(「🔴 **先确认 KPI slot 可用(硬前置,跳过此步必违规)**」)与 `§4.7.3` 的「**先有 improvement 草稿 → 再建 change**」流程 —— **本轮先出 improvement 草稿 + 4 件套草稿(staged 于 `.rddf/drafts/`,照 `.rddf/drafts/cpptlm-pcie-aer-ats-pri/` 先例)⇒ 不占 KPI slot**;**change 目录的创建等队列 #6 归档释放 slot**。
+
+**③ 本轮产出(3 载体,全部不占 KPI slot)**
+
+| 载体 | 路径 | 规模 | 内容 |
+|------|------|------|------|
+| **improvement 草稿** | `.rddf/improvements/cpptlm-cep-cohif-carrier.md` | 5 段 | Why(三断点 C1/C2/C3 + 排序理由)/ What Changes(3 新 + 2 改 + 冻结面)/ Non-Goals(含「不动 StubCacheCore」的四条互斥)/ Acceptance(6 判据 + 流程治理)/ Capabilities(2 个)/ Impact + **阻塞段** |
+| **4 件套草稿** | `.rddf/drafts/cpptlm-cep-cohif-carrier/` | proposal + design + **2 份 delta spec** | `proposal.md` · `design.md`(12 个 `D-` 段:α~λ)· `specs/cep-cohif-carrier/spec.md`(**3** Scenario:CC-01 / CC-02 / CC-04)· `specs/cep-protocol-bridge-contracts/spec.md`(**3** Scenario:CC-03 / CC-05 / CC-06)—— **合计 6 条,与 `ADR-CEP-19` 的 CC-01~CC-06 严格一一对应** |
+| **本 entry** | `obj §11` | — | 产出登记 + 阻塞登记 + 转正动作清单 |
+
+**④ capability 划分(2 个,与队列 #6 不冲突)**
+
+| capability | 面 | 判据 |
+|------------|---|------|
+| `cep-cohif-carrier` | **载体面** —— Bundle 字段契约 + ChStream 端口面 + JSON 装配连通性 | CC-01 / CC-02 / CC-04 |
+| `cep-protocol-bridge-contracts` | **特化桥面** —— 桥可逆性 + 死钩子激活(含 per-bridge 元数据) | CC-03 / CC-05 / CC-06 |
+
+> **与队列 #6 的 `cep-adapter-schema-contracts` 不同层**:后者是**协议实例声明层**的契约(`perm` / `perm_upgrade` / 6→3 映射表 / ⑥ 镜像闸)⇒ capability 名不同、判据不重叠;**CC-06 明确引用队列 #6 的 AC-04,不重立第二份**(避免两份判据漂移)。
+
+**⑤ 判据面(6 条,全部配**可执行**反向 fixture)**
+
+| ID | 判据 | 反向 fixture 形态 |
+|----|------|-------------------|
+| **CC-01** | `CohIfBundle` 只含 5 流 + 无网络层字段 | 静态扫描(加 `flow_id` / 加网络层字段)⇒ 红 —— 参照 `cep-stub-cache-core` spec 的「三流名不出现」先例 |
+| **CC-02** | `BUNDLE_FIELD_WIDTH` 锁 + `is_trivially_copyable` | test TU 内 `static_assert` + **`try_compile` 毒化副本**(编译期锁**不得**只以「编译红」充当 ctest 判据) |
+| **CC-03** | `ProtocolBridge` `pack`/`unpack` 双向可逆 | 篡改字段映射(如 `perm` → `flit_category`)⇒ 红 |
+| **CC-04** | JSON 装配端到端连通 + **N ≥ 2** | 断链 ⇒ 红;**N=1** ⇒ 宏 `static_assert` 编译红(防 `bind_ports` 空 shim **静默不绑定**) |
+| **CC-05** | `register_protocol_bridge` **注册与消费成对** + per-bridge 元数据齐备 | 只注册不消费 ⇒ 红(否则是新的死钩子);重复 `bridge_id_` ⇒ 红;`protocol_id_` 与 `family` 不符 ⇒ 红 |
+| **CC-06** | 6→3 映射落网络 Bundle 的 3 个 `CATEGORY_*` 内 | **引用**队列 #6 的 AC-04 反向 fixture(第 4 类 ⇒ 红) |
+
+> **⚠️ 6 条判据与 `ADR-CEP-19` 的 CC-01~CC-06 严格一一对应** —— planner **不得**给已签发的 ADR 增删判据(增删 = ADR 修订,须走冻结面两步授权)。本轮初稿曾擅自新增 `CC-04b`,**已删除**并把 per-bridge 元数据降为 **CC-05 的子条件**。
+
+**⑥ B2 贡献 —— 新增 invariant 数 = 0**
+
+`test_cep_canonical_invariants.cc::expected_groups()` 硬编码 15 组 66 条;`ADR-CEP-01` / `ADR-CEP-03` 在 15 组里**无组** ⇒ 新增编号即契约违反。⇒ 本 change 贡献 = **行为化既有条目**(`INV-CEP-05-IC1` / `INV-CEP-12-IC1~IC3`)+ 契约层加固 ⇒ **该测试文件零 diff**。
+
+> ⚠️ **双写规则教训(本轮实测踩到)**:ADR 归类清单在**两处** —— `scripts/test/cep_docs_sync_check.sh` 的 `NO_INV` 与 `test/cep_adr_parser.hh` 的 `no_inv_adr_files()`(后者的注释明写「两处规则重复,**修一处必须记得改另一处**,否则守门出现盲区」)。`ADR-CEP-19` 签发时**只改了脚本侧** ⇒ `cep_canonical_invariant` / `cep_all` **ctest 2 项失败**;已同步登记(per commit `d6673757`)。
+
+**⑦ 转正动作清单(slot 释放后,按序执行)**
+
+| 步 | 动作 | 判据 |
+|----|------|------|
+| 0 | `openspec list --json` 实测 CEP 内部 active == **0** | 🔴 **硬前置**(`obj §4.7.2` step 0) |
+| 1 | `git mv .rddf/drafts/cpptlm-cep-cohif-carrier openspec/changes/cpptlm-cep-cohif-carrier` | 目录就位 |
+| 2 | 删各文件顶部的「未建 change 目录」标注段;状态行改 🟡 Proposed | — |
+| 3 | `openspec validate cpptlm-cep-cohif-carrier --strict` | rc=0 |
+| 4 | 台账追加转正 Entry(KPI 0/3 → 1/3) | `obj §11` |
+| 5 | `obj §4.0` 状态列 📋 Planned → 🟡 + `phase-10.md` 同步 + `obj §5.2` KPI 回填 | `obj §4.7.3` ④ |
+
+**⑧ 冻结面**
+
+本轮 **零**冻结面改动 —— 产出全在 `.rddf/improvements/` 与 `.rddf/drafts/`(均不在 M1 冻结集)⇒ **无需两步授权**;冻结集成员数**不变**(40)。`ADR-CEP-19` 的冻结面改动已于 Entry #74 走完两步授权(产物 `90877fd8` → 清单 `19342b79`)。
+
+**⑨ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `openspec list --json` | **1** 个 active(队列 #6)⇒ KPI **1/3** —— 本轮**未**新建 change 目录 ⇒ 并发**未**变 |
+| 守门 7 项 | rc=0 |
+| `cep_gate_selftest` | 31 / 31 |
+| `ctest --test-dir build -j4` | 106 / 106 |
+| `openspec validate --changes --strict` | rc=0(唯一 active 仍是队列 #6) |
+| 冻结集 | **40**(零改动)· provenance 自检通过 |
+| 4 件套草稿的结构自检 | Requirement 正文 **< 500** 字符(实测 432 / 427)· 每 Scenario 带 `> **锚点**`(3/3、3/3 **一一对应**)· 2 份 delta spec 各带实质 `## Purpose` |
+| 判据与 `ADR-CEP-19` 的对应 | **CC-01~CC-06 严格一一对应**(本轮初稿擅自新增的 `CC-04b` 已删,per-bridge 元数据降为 CC-05 子条件) |
+
+> **⚠️ 未能跑 `openspec validate`(change 目录未建)** —— 该命令只对 `openspec/changes/<name>/` 生效 ⇒ 本轮以**结构自检**降级替代(Requirement 长度 / Scenario 数 / 锚点完整性 / Purpose 存在性);**转正后必须补跑** `openspec validate cpptlm-cep-cohif-carrier --strict`。
+
+**⑩ 关联**: Entry #74(排队 13 → 14 + `ADR-CEP-19` 签发授权)· #71 / #72 / #73(队列 #6 的 planner + critic 两轮)· `ADR-CEP-19`(✅ v1.0 已签发)· `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3)
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)
