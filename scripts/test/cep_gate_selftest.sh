@@ -211,8 +211,8 @@ j = t.index("\n### ", i + 1)
 sec = t[i:j]
 # 用**活**队列行(队列 #1~#4 均已归档,不在活集内)→ 队列 #5 collective-plane-base
 # ⚠️ 2026-10-25(Entry #64):队列 #4 已归档 → 活队列行改为 #5
-assert "`cpptlm-cep-collective-plane-base`" in sec, "锚点漂移:§4.0 未含活队列 #5 的 change 名"
-sec = sec.replace("`cpptlm-cep-collective-plane-base`", "`cpptlm-cep-umbrella`", 1)
+assert "`cpptlm-cep-chi-rnf-subset`" in sec, "锚点漂移:§4.0 未含活队列 #6 的 change 名"
+sec = sec.replace("`cpptlm-cep-chi-rnf-subset`", "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "活文档出现归档件里不存在的 S1-9 → ⑦ 必须 fire" 1 '
@@ -232,8 +232,8 @@ i = t.index("### 4.0 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
 # ⚠️ 2026-10-25(Entry #64):队列 #4 已归档 → 活队列行改为 #5
-assert "`cpptlm-cep-collective-plane-base`" in sec, "锚点漂移:§4.0 未含活队列 #5 的 change 名"
-sec = sec.replace("`cpptlm-cep-collective-plane-base`", "`cpptlm-cep-umbrella`", 1)
+assert "`cpptlm-cep-chi-rnf-subset`" in sec, "锚点漂移:§4.0 未含活队列 #6 的 change 名"
+sec = sec.replace("`cpptlm-cep-chi-rnf-subset`", "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "孤儿前置登记行被移除 → ⑦ 必须 fire" 1 '

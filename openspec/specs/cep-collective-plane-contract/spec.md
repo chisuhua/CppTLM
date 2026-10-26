@@ -1,4 +1,16 @@
-## ADDED Requirements
+# cep-collective-plane-contract Specification
+
+## Purpose
+定义 Fabric Collective Plane 的**跨平面契约判据**:6 条可机器检查的规则
+(零调用边 / canonical 10 流零 diff / collective VC 预留不冲突 / 区域互斥(与行为面**同源**)/
+完成域判别(`group_id` 不进 Coherence Interface)/ 抓取点可测性登记)+ 独立声明源
+`collective_planes.json` + **SKIP / PASS / FAIL 三态**显式化 + verdict 逐条可 grep。
+
+本 capability 把 `ADR-CEP-01 §3.3` 的 **7 条抓取点**里本 Stage 可测的部分固化为机器闸;
+**本 Stage 物理不可测的条款(跨平面 ordering A/B/E、fabric 组播投递单实现)不写进判据清单**
+(per「禁写恒真 / 恒 SKIP 判据」纪律)⇒ 判据退化 = 用例红,判定结论为红 = 用例仍绿 + 结论登记为交付物。
+
+## Requirements
 
 ### Requirement: cep-collective-plane-contract
 

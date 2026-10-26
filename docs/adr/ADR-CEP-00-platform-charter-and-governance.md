@@ -360,13 +360,25 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **交付范围(裁决:DRI 四问)**: 范围切小(`CollectivePlaneIf` 单接口 + `NullCollectivePlane` + `LocalCollectivePlane` 只做 group 生命周期 / region-epoch / **BARRIER rendezvous**;REDUCE·BROADCAST·MULTICAST 的**数据路径**推迟至 P3)/ **Bundle 类型内嵌**(偏离 `ADR-CEP-03 §5`,见该 ADR 的 Status Update)/ **header-only 不进 `ModuleFactory`**(对齐 `07 号 §6.3` 最终形态口径)/ **独立声明源** `collective_planes.json`(不碰冻结的 `protocol_instance.schema.json`)。
 > **B2 贡献方式**: **新增 invariant 数 = 0**(`ADR-CEP-01` / `ADR-CEP-03` 在 15 组 66 条里**无组**,新增编号即契约违反)⇒ 贡献 = **行为化既有条目**(`INV-CEP-07-IC3` NullCollectivePlane 默认实现 / `INV-CEP-04-IC5` epoch invalid 窗口放行)+ **契约层加固**(零调用边 / canonical 10 流零 diff)。
 > **对上一段(2026-10-25,队列 #4 归档段)的衔接**: 该段登记「队列 #4 已归档,并发 0/3」—— 现队列 #5 已启动,并发 0/3 → 1/3;其历史快照语义保留不回改(措辞已改「当时态」)。
-> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #6 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #6 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #66**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #66)。
 
+## Status Update 2026-10-26 —— 队列 #5 `cpptlm-cep-collective-plane-base` 已完成归档(KPI 并发 1/3 → 0/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-26 队列 #5 **已完成归档**(`openspec archive --yes`,archive 名 `2026-10-26-cpptlm-cep-collective-plane-base`)—— **完成归档**语义:tasks **62 / 62** 全勾;**21 Scenario** 并入 **2 份** main spec(`cep-collective-plane-base` 13 / `cep-collective-plane-contract` 8)⇒ slot 释放。
+> **交付内容**: `CollectivePlaneIf` **恰好 7 个虚方法**(逐字对齐 `ADR-CEP-03 §2 Decision 2`)+ 类型集 + `NullCollectivePlane`(**行为化 `INV-CEP-07-IC3`**)+ `LocalCollectivePlane`(group 生命周期 / region-epoch 两阶段 / BARRIER rendezvous / **R2 判读侧三态**)+ **6 条契约判据**(零调用边 / canonical 10 流零 diff / collective VC 预留 / 区域互斥(与行为面同源)/ 完成域判别 / 抓取点可测性登记)+ 独立声明源 `collective_planes.json` + 离线 CLI。
+> **B2 贡献口径**: **新增 invariant 数 = 0**(`ADR-CEP-01` / `ADR-CEP-03` 在 15 组 66 条里**无组**,新增编号即契约违反)⇒ 贡献 = **行为化既有条目**(`INV-CEP-07-IC3` NullCollectivePlane 默认实现 / `INV-CEP-04-IC5` 的 **R2 判读侧** —— 其行为主体 `fabric_ingress_classify` 本仓不存在,**P3 实现真 ingress 时须在那里重新行为化**)+ 契约层加固(零调用边 / canonical 10 流零 diff)。
+> **三段评审闭环(本仓首次)**: planner 产出评审 APPROVE_WITH_CONDITIONS → builder 实施评审 **REJECT**(3 BLOCKER + 10 SHOULD_FIX,全部经独立 PoC 复验)→ 三审 APPROVE_WITH_CONDITIONS(5 SHOULD_FIX + 6 NIT)⇒ 全部落地(台账 Entry #66~#70)。
+> **对上一段(2026-10-26,队列 #5 启动段)的衔接**: 该段登记「队列 #5 已启动,并发 0/3 → 1/3」—— 现队列 #5 已归档,并发 1/3 → 0/3;其历史快照语义保留不回改(措辞已改「当时态」)。
+> **当前态**: Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #6 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #70**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #70)。
+
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)+ **Status Update 2026-10-26**(队列 #5 归档)
 **最后更新**: 2026-10-26
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)

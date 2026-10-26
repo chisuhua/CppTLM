@@ -1,4 +1,15 @@
-## ADDED Requirements
+# cep-collective-plane-base Specification
+
+## Purpose
+定义 **Fabric Collective Plane**(CEP 6 层架构里的**旁路平面**,per `ADR-CEP-01 Decision 1`)的可执行契约:
+`CollectivePlaneIf` 单接口(恰好 7 个方法,逐字对齐 `ADR-CEP-03 §2 Decision 2`)+ 类型集 +
+`NullCollectivePlane` 默认实现(**行为化 `INV-CEP-07-IC3`**)+ `LocalCollectivePlane` 行为实现
+(group 生命周期 / region-epoch 两阶段 / BARRIER rendezvous / **R2 判读侧三态**)。
+
+本 plane 与 Directory & Ordering Plane **横向并列、彼此零调用边**(per `ADR-CEP-01 §3.3` 抓取点 1);
+完成语义为 **group-scoped**(全组 ack),与 coherence 面的 requester-scoped 纪律**不混用**(per `ADR-CEP-01 §3.2`)。
+
+## Requirements
 
 ### Requirement: cep-collective-plane-base
 

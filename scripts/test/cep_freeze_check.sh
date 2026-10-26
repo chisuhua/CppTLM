@@ -46,6 +46,11 @@ FROZEN_GLOBS=(
   "openspec/specs/cep-sharer-tracker-base/spec.md"
   "openspec/specs/cep-ordering-point-checker/spec.md"
   "openspec/specs/cep-channel-dependency-gate/spec.md"
+  # 2026-10-26(Entry #70):队列 #5 归档 → 2 份 main spec 进入 M1 冻结集(37 → 39)。
+  #   ⚠️ **只**匹配 main spec 路径(归档后的权威形态);归档件里的 delta 副本**不**入集
+  #     —— 否则同一能力会有两份「冻结产物」,语义重复且漂移面翻倍(per Entry #64 第 1 步口径)。
+  "openspec/specs/cep-collective-plane-base/spec.md"
+  "openspec/specs/cep-collective-plane-contract/spec.md"
   "experimental/metrics.schema.json"
   "tools/render_report.py"
   "tools/run_sweep.py"
