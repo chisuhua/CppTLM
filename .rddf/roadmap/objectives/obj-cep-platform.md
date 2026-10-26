@@ -179,7 +179,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | ✅ **archived**(2026-10-25;**完成归档**语义 —— tasks **36/36** 全勾;delta capability **2 个**(`cep-vc-mapping-contract` 8 Scenario / `cep-stub-cache-core` 9 Scenario)**已合并**进 `openspec/specs/`;归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`;**双 Phase** 全部完成 —— Phase 0 = M-4 决策落盘 + 契约化(协议层 credit **不独占** VC / 传输层**保持索引对齐** / `VC_DAT` 语义正名 / 冲突输入**传输层不仲裁** / 桶名不改名不弃用 / `fabric.schema.json` **零改动**),Phase 1 = stub cache core 实现(6 接口 + 5 态 + `INV-SC1`~`INV-SC6`);**`ADR-CEP-05 §10` 的 `-base`/`-impl` 二分作废**(2026-10-25 裁决),per 台账 Entry #58 / #59 / #60) | **M-4 行为侧决策**(✅ **已消费** —— 队列 #3 归档时落成 `cep-vc-mapping-contract`:协议层 credit **不独占** VC(权威已闭,per ArchForge `32 号 §6.0.1`)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名 + 冲突输入**传输层不仲裁**;契约化于 `cep-vc-mapping-contract`,结论见归档件 design.md D2~D9) |
 | **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | ✅ **archived**(2026-10-25;**完成归档**语义 —— 22 Scenario 并入 3 份 main spec:`cep-sharer-tracker-base` 9 / `cep-ordering-point-checker` 6 / `cep-channel-dependency-gate` 7;archive 名 `2026-10-25-cpptlm-cep-directory-ordering-plane`;builder Entry #63 / 归档 Entry #64) | **已交付(历史记录,不再承接)**:SharerTrackerIf 单接口 + caps descriptor + D-5 全量契约 + FullMapDirectory 唯一行为实现 · AddressResolverIf + J1/J2/J3 + `INV-CEP-08-IC2` + (β) 重评估裁决 · 装配期通道依赖图(逐 `(network, vc)` verdict,双挂共享判据)。**Stage 1 准入前置的登记与余项已重指向队列 #5 行**(per Entry #64) |
 | **5** | `cpptlm-cep-collective-plane-base` | Stage 1 | **2027-Q4** | ✅ **archived**(2026-10-26;**完成归档**语义 —— 21 Scenario 并入 2 份 main spec(`cep-collective-plane-base` 13 / `cep-collective-plane-contract` 8);archive 名 `2026-10-26-cpptlm-cep-collective-plane-base`;planner 见 Entry #66、builder 见 Entry #67、复审修复见 Entry #68/#69、归档见 Entry #70) | **已交付(历史记录)**:CollectivePlaneIf 恰好 7 方法 + 类型集 + NullCollectivePlane(**行为化 `INV-CEP-07-IC3`**)+ LocalCollectivePlane(group 生命周期 / region-epoch 两阶段 / BARRIER rendezvous / **R2 判读侧三态**,**行为化 `INV-CEP-04-IC5` 的 R2 判读侧**)+ 6 条契约判据(零调用边 / canonical 10 流零 diff / VC 预留 / 区域互斥同源 / 完成域判别 / 抓取点可测性登记)+ 独立声明源 `collective_planes.json` + 离线 CLI。**新增 invariant 数 = 0**。|
-| **6** | `cpptlm-cep-moesi-gpu-adapter` | Stage 1 | **2028-Q1** | 🟡 **Proposed**(2026-10-26;change 目录已建 + planner 阶段产出 proposal + design + **2 个** delta capability(`cep-moesi-gpu-adapter` / `cep-adapter-schema-contracts`),per Entry #71) | **DRI 三问裁决(2026-10-26,per Entry #71)**:① `moesi_gpu` / `mesif` **排入** Stage 1 前段(原 #6 `chi-rnf-subset` 顺延为 #7,`mesif` 新增为 #9)② **S1-7 ①②**(`perm` 形态 schema 演进)**跟 `moesi_gpu` 走** —— 其**唯一真实消费者**是本实例(`ADR-CEP-05 §13.1` 判据 2 **已触发**:`moesi_gpu` 静默 `E→M` ⇒ 4 值 `perm` 无法表达)③ **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**跟首个 adapter 走**。**交付面**:`MoesiGpuAdapter`(6 态 × 6 事件表驱动;`E→M` **静默升级**) + 6→4 投影 + **平台级** `perm` 静默升级表达 + 6→3 消息类映射表机制 + 首个 `implemented` 实例装配。**Stage 1 准入前置(滚动登记,per Entry #70 / #71 —— 原 owner 队列 #5 已归档,owner 重指向本行)**:**S1-1 ②建图层** ✅ 已消费(队列 #4 装配闸)· **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**🟡 本 change 触发**(本 change = 首个 `implemented` 实例)· **S1-3** ⛔ 未触发(需第 3 张网 / 第 3 个协议实例 —— 按新队列于 #9 达成)· **S1-4** ✅ 已消费(Entry #56,`fabric.json` 已入冻结集)· **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**🟡 本 change 交付**· **S1-7 ①②**(`perm` 形态 schema 演进)**🟡 本 change 交付**(③ (β) 已由队列 #4 消费)。**孤儿前置登记**:**M-4 行为侧** **⏭(孤儿)**(已由队列 #3 的 `cep-vc-mapping-contract` 落成)· **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)**(已由队列 #4 的 `cep-channel-dependency-gate` 落成)—— **`moesi_gpu` / `mesif` 未排期** **⏭(孤儿)** —— **已于 Entry #71 消解**(本行 = `moesi_gpu`;`mesif` → #9 行) |
+| **6** | `cpptlm-cep-moesi-gpu-adapter` | Stage 1 | **2028-Q1** | ✅ **archived**(2026-10-27;**完成归档**语义 —— 14 Scenario 并入 2 份 main spec(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7);archive 名 `2026-10-27-cpptlm-cep-moesi-gpu-adapter`;planner 见 Entry #71、builder 见 Entry #79、归档见 Entry #80) | **DRI 三问裁决(2026-10-26,per Entry #71)**:① `moesi_gpu` / `mesif` **排入** Stage 1 前段(原 #6 `chi-rnf-subset` 顺延为 #7,`mesif` 新增为 #9)② **S1-7 ①②**(`perm` 形态 schema 演进)**跟 `moesi_gpu` 走** —— 其**唯一真实消费者**是本实例(`ADR-CEP-05 §13.1` 判据 2 **已触发**:`moesi_gpu` 静默 `E→M` ⇒ 4 值 `perm` 无法表达)③ **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**跟首个 adapter 走**。**交付面**:`MoesiGpuAdapter`(6 态 × 6 事件表驱动;`E→M` **静默升级**) + 6→4 投影 + **平台级** `perm` 静默升级表达 + 6→3 消息类映射表机制 + 首个 `implemented` 实例装配。**Stage 1 准入前置(滚动登记,per Entry #70 / #71 —— 原 owner 队列 #5 已归档,owner 重指向本行)**:**S1-1 ②建图层** ✅ 已消费(队列 #4 装配闸)· **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**🟡 本 change 触发**(本 change = 首个 `implemented` 实例)· **S1-3** ⛔ 未触发(需第 3 张网 / 第 3 个协议实例 —— 按新队列于 #9 达成)· **S1-4** ✅ 已消费(Entry #56,`fabric.json` 已入冻结集)· **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**🟡 本 change 交付**· **S1-7 ①②**(`perm` 形态 schema 演进)**🟡 本 change 交付**(③ (β) 已由队列 #4 消费)。**孤儿前置登记**:**M-4 行为侧** **原孤儿前置 3 项已全部收口**(标记已撤 —— 本 change 归档后该标记成无主债,per 断言 ⑦ ③b):① M-4 行为侧 → 落成于队列 #3 的 `cep-vc-mapping-contract` ② verdict 逐 `(network, vc)` 标注义务 → 落成于队列 #4 的 `cep-channel-dependency-gate` ③ `moesi_gpu` / `mesif` 未排期 → 已于 Entry #71 消解(本行 = `moesi_gpu`;`mesif` → #9 行) |
 | **7** | `cpptlm-cep-cohif-carrier` | Stage 1 | **2028-Q2** | 📋 Planned(**4 件套草稿已落,待 KPI slot 转正**) | **新准入前置**:无。本 change **服务** #6 的 S1-2 与 #8 的装配验证 —— 把 #6 的「**逻辑级**装配」(`stub_cache_core.hh:42` 明写 `net_side` 由 **mock ProtocolEngine** 驱动)升级为「**真实载体**装配」。**架构缺口来源**(architect 重审 + critic 四轮;`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`):**C1** CEP 的 7 个 `.hh` 零 `Bundle`/`ChStream` 引用 · **C2** 「CEP 用 canonical 10 流的 Bundle」在 `ADR-CEP-07A:49` 与 `ADR-CEP-16:45` **两处**均为悬空引用 · **C3** 唯一的 Bundle 化承诺绑在 collective 队列(`ADR-CEP-03:225`)。**交付面(3 项 + 1 宏)**:① `include/bundles/cep_coherence_bundles_tlm.hh`(`bundles::CohIfBundle`,**只覆盖 5 条 RN-side 流**,`flow_id` 区分;无网络层字段) ② `include/tlm/cep/protocol_engine_base.hh`(`ChStreamModuleBase` 派生 + `Input/OutputStreamAdapter<CohIfBundle>`) ③ `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`,**首次落地**;`CohIfBundle ↔ NoCFlitBundle`) ④ `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏(`registerObject` + `registerBidirectionalPortAdapter` **两件都做**;`static_assert(n>1)`) + `module_factory.hh:313-315` 钩子扩展(`register_protocol_bridge` 死钩子 → 活钩子)。**装配走 JSON 链**(非 programmatic —— `ADR-CEP-16:46/:86` 明确排除 programmatic bridge 的 C++ 路径;`is_multi` 分支 `module_factory.cc:743-750` 是泛型虚分派)。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface`(需 MODIFIES 冻结 main spec,per `openspec/specs/cep-stub-cache-core/spec.md`)。**已签发**:`ADR-CEP-19`(2026-10-27,per Entry #74;草案文件已移除) · **planner 产出已备**:`.rddf/drafts/cpptlm-cep-cohif-carrier/`(improvement 5 段 + proposal + design + 2 份 delta spec,per Entry #75/#76)—— change 目录待 KPI slot 释放后按 `design.md` `D-κ` 六步转正 |
 | **8** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q3** | 📋 Planned | **范围已按 Entry #71 收窄**:`perm` 形态 schema 演进 与 6→3 映射表**机制** 均**已移至队列 #6**(跟唯一真实消费者 / 首个 adapter 走)⇒ 本 change **复用**之,只填 CHI 自身的映射行与实例声明。**交付**:CHI RN-F adapter(6 通道 TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT;RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck)+ 按**已冻结** schema 填实例声明(`ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`)+ 装配期校验实测。**新准入前置**:无(前置已由队列 #6 交付) |
 | **9** | `cpptlm-cep-mesif-adapter` | Stage 1 | **2028-Q4** | 📋 Planned | **⚠ 显式阻塞登记**(per Entry #71):**R-1 第 6 种 SharerTracker 实现 `HierarchicalDirectory`** —— ArchForge 侧 `mesif` 声明的 `sharer_tracker.impl=SparseSnoopFilter` 与其**三级目录**语义**不自洽** ⇒ 本 change 落地**依赖**该实现,而**本仓尚无 owner**。**另**:ArchForge 侧**无 `mesif` 状态机规约**(仅 5 态词表 M/E/S/I/F)与**无 5→4 投影表** ⇒ 实现须本地推导(**待 ArchForge 追认**)。**排期 ≠ 就绪** —— 本行是**登记**,不是承诺(「登记 ≠ 排期」口径的反向用法:登记的是**依赖**,不是**就绪**) |
@@ -244,7 +244,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **3** | `cpptlm-cep-stub-cache-core` ✅ **archived(2026-10-25)** —— 完成归档语义;tasks **36/36** 全勾;2 个 delta capability 已合并进 main specs | ADR-CEP-05 + ADR-CEP-04 stub | 8 周(实际交付面**显著更小** —— 单文件头可实现) | **M-4 行为侧决策**(✅ **已消费** —— 队列 #3 归档时落成 `cep-vc-mapping-contract`:协议层 credit **不独占** VC(权威已闭)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名 + 冲突输入**传输层不仲裁**;契约化于 `cep-vc-mapping-contract`,per 台账 Entry #58 / #59 / #60) |
 | **4** | **`cpptlm-cep-directory-ordering-plane`** ✅ **archived(2026-10-25)** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 抽象 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周;含建图层与逐 `(network, vc)` verdict 义务) | **已交付(历史记录)**:单接口 + caps + D-5 + FullMapDirectory · AddressResolverIf + J1~J3 + `INV-CEP-08-IC2` + (β) 裁决 · 装配期通道依赖图(双挂共享判据,`[verdict] net=… vc=…` 逐行输出)。**余项登记已重指向队列 #5 行**(per Entry #64) |
 | **5** | `cpptlm-cep-collective-plane-base` ✅ **archived(2026-10-26)** | ADR-CEP-03 + ADR-CEP-01 | 8 周(实际交付面**小于**标称 —— 2 header + 2 声明源 + 1 CLI + 3 test,per 队列 #2/#3/#4 先例) | **已交付(历史记录)**:CollectivePlaneIf 7 方法 + Null(行为化 `INV-CEP-07-IC3`)+ Local(group/epoch/BARRIER,行为化 `INV-CEP-04-IC5` 的 **R2 判读侧**)+ 6 条契约判据 + 独立声明源 + CLI;**新增 invariant 数 = 0**。**Stage 1 准入前置的余项登记已重指向队列 #6 行**(per Entry #70) |
-| **6** | **`cpptlm-cep-moesi-gpu-adapter`** ← 2026-10-26 新增(DRI 三问裁决①,per Entry #71)· 🟡 **Proposed**(2026-10-26;planner 阶段产出 proposal + design + 2 个 delta capability) | **ADR-CEP-12**(schema owner:`perm` 形态演进 + 首个实例声明)+ **ADR-CEP-05 §13.1**(判据 2 已触发 —— `moesi_gpu` 静默 `E→M`)+ **ADR-CEP-02**(canonical 10 流)+ **ADR-CEP-13**(域可见写判据 (a)(b)) | 10 周 | **S1-7 ①②**(`perm` 形态 schema 演进 —— **跟唯一真实消费者走**,per Entry #71 裁决②)+ **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test —— **跟首个 adapter 走**,per 裁决③)+ **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**🟡 本 change 触发**;**S1-3** ⛔ 未触发(于 #8 达成)· **S1-1 ②** / **S1-4** ✅ 已消费· **S1-7 ③ (β)** ✅ 已消费(队列 #4)。**孤儿前置**:**M-4 行为侧** **⏭(孤儿)** · **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)** · **`moesi_gpu` / `mesif` 未排期** **⏭(孤儿)** —— **已于 Entry #71 消解**(本行 = `moesi_gpu`;`mesif` → #9 行) |
+| **6** | **`cpptlm-cep-moesi-gpu-adapter`** ← 2026-10-26 新增(DRI 三问裁决①,per Entry #71)· ✅ **archived**(2026-10-27;**完成归档**语义 —— 14 Scenario 并入 2 份 main spec;archive 名 `2026-10-27-cpptlm-cep-moesi-gpu-adapter`;归档见 Entry #80) | **ADR-CEP-12**(schema owner:`perm` 形态演进 + 首个实例声明)+ **ADR-CEP-05 §13.1**(判据 2 已触发 —— `moesi_gpu` 静默 `E→M`)+ **ADR-CEP-02**(canonical 10 流)+ **ADR-CEP-13**(域可见写判据 (a)(b)) | 10 周 | **S1-7 ①②**(`perm` 形态 schema 演进 —— **跟唯一真实消费者走**,per Entry #71 裁决②)+ **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test —— **跟首个 adapter 走**,per 裁决③)+ **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**🟡 本 change 触发**;**S1-3** ⛔ 未触发(于 #8 达成)· **S1-1 ②** / **S1-4** ✅ 已消费· **S1-7 ③ (β)** ✅ 已消费(队列 #4)。**孤儿前置**:**M-4 行为侧** **⏭(孤儿)** · **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)** · **`moesi_gpu` / `mesif` 未排期** **⏭(孤儿)** —— **已于 Entry #71 消解**(本行 = `moesi_gpu`;`mesif` → #9 行) |
 | **7** | **`cpptlm-cep-cohif-carrier`** ← 2026-10-27 新增(per architect 重审 → critic 四轮;**架构缺口 C1/C2/C3**) | **ADR-CEP-19**(✅ 已签发 2026-10-27:`CohIfBundle` + `ProtocolBridge` + JSON 装配)+ **ADR-CEP-16**(programmatic bridge 排除 ⇒ 走 JSON 链) | 6 周(3 项交付 + 1 宏 + 1 钩子扩展;`StubCacheCore` 侧端点已延期) | **新准入前置**:无 —— 本 change **服务** #6 的 S1-2 与 #8 的装配验证:把 #6 的**逻辑级装配**(`net_side` 由 mock ProtocolEngine 驱动)升级为**真实载体装配**。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface` |
 | **8** | `cpptlm-cep-chi-rnf-subset` ← 2026-10-27 顺延(原 #7) | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **范围收窄**(per Entry #71 裁决②③):`perm` 形态演进与 6→3 映射表**机制**已移至队列 #6 ⇒ 本 change **复用**,只填 CHI 自身映射行与实例声明。**新准入前置**:无 —— 但**首次在真实载体上验证**(前置 = #6 的 6→3 字典 + #7 的 `CohIfBundle` / `ProtocolBridge`) |
 | **9** | `cpptlm-cep-mesif-adapter` ← 2026-10-27 顺延(原 #8;2026-10-26 新增 per Entry #71) | **ADR-CEP-04**(Sharer Tracker 第 6 实现 `HierarchicalDirectory`)+ **ADR-CEP-12** | 10 周 | **⚠ R-1 阻塞**:依赖**尚不存在**的第 6 种 SharerTracker 实现;ArchForge 侧**无 `mesif` 状态机规约**与**无 5→4 投影表** ⇒ 本地推导待追认。**排期 ≠ 就绪** |
@@ -461,7 +461,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 1/3**;下一个可启动 change = 队列 #7 `cpptlm-cep-cohif-carrier`(per `obj §4.0`;2026-10-27 起)(2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:**当时**(2026-10-23)下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base` —— 队列 #5 现已归档;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
+→ **当前 Proposed 并发 = 0/3**;下一个可启动 change = 队列 #7 `cpptlm-cep-cohif-carrier`(per `obj §4.0`;2026-10-27 起)(2026-10-27 归档:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已完成归档**(完成归档语义 —— 14 Scenario 并入 2 份 main spec(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7))→ slot 已释放,per Entry #80;历史:2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:**当时**(2026-10-23)下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base` —— 队列 #5 现已归档;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -5233,7 +5233,7 @@ critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option 
 | `include/tlm/cep/perm_upgrades.json` + `perm_upgrades.schema.json` | 静默升级独立声明源 + 配套 schema(**跨 schema `$ref`** 绑定 `perm` 4 值域 ⇒ 机制级不可能表达第 5 值) |
 | `examples/cep_adapter_contracts.cc` | 离线 CLI(与测试**共用**同一份判据实现;测试实跑 CLI 逐行比对) |
 | `test/test_cep_moesi_gpu_adapter.cc` + `test/test_cep_adapter_schema_contracts.cc` | 13 cases / 170 assertions(14 条 Scenario 全部落地 + 14 条反向 fixture) |
-| `openspec/changes/cpptlm-cep-moesi-gpu-adapter/tasks.md` | **builder 交付物**(本 change 此前**实测无** `tasks.md`)—— 8 Phase 逐任务 + 归档前复核 8 项 |
+| `openspec/changes/archive/2026-10-27-cpptlm-cep-moesi-gpu-adapter/tasks.md` | **builder 交付物**(本 change 此前**实测无** `tasks.md`)—— 8 Phase 逐任务 + 归档前复核 8 项 |
 
 **③ `status` 翻转 + ⑥ 镜像闸收窄(per design `D-ζ`)**
 
@@ -5261,7 +5261,7 @@ critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option 
 
 **⑥ 冻结面**
 
-本 change **零**冻结面改动 —— 新增文件均不在 M1 冻结集(`include/tlm/cep/*.hh` / `include/tlm/cep/perm_upgrades*.json` / `examples/` / `test/` / `scripts/test/` 均**非**冻结成员;`scripts/test/` 的两个 checker **按设计不冻结**)⇒ 冻结集仍 **40**,hash 全一致 ⇒ **无需两步授权**。
+本 change **零**冻结面改动 —— 新增文件均不在 M1 冻结集(`include/tlm/cep/moesi_gpu_adapter.hh` / `include/tlm/cep/adapter_schema_contracts.hh` / `include/tlm/cep/adapter_contracts_loader.hh` / `include/tlm/cep/perm_upgrades.json` / `include/tlm/cep/perm_upgrades.schema.json` / `examples/cep_adapter_contracts.cc` / `test/test_cep_moesi_gpu_adapter.cc` / `test/test_cep_adapter_schema_contracts.cc` 均**非**冻结成员;`scripts/test/` 的两个 checker **按设计不冻结**)⇒ 冻结集仍 **40**,hash 全一致 ⇒ **无需两步授权**。
 
 > ⚠️ 但 `protocol_instances.json` 的 `moesi_gpu.status` 翻转**触及** ⑥ 镜像闸 ⇒ 已按 design `D-ζ` 收窄该闸并配**穷举反向 fixture**(否则「收窄」本身无牙)。
 
@@ -5285,6 +5285,71 @@ critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option 
 **归档后**:KPI slot 释放 ⇒ 队列 #7 `cpptlm-cep-cohif-carrier` 可按 `obj §4.7.2` step 0~6 转正(其 4 件套草稿已 staged 于 `.rddf/drafts/`)。
 
 **⑨ 关联**: Entry #78(`ADR-CEP-19` 判据子条件追认)· #77(critic 第 2 轮 APPROVE)· #76(critic 首轮收口)· #75(队列 #7 planner 产出)· #71(队列 #6 建 change 目录 + 冻结面授权)
+
+---
+
+### Entry #80 — 2026-10-27 [archive]
+
+**主题**: 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **✅ 完成归档**(KPI **1/3 → 0/3**)+ 归档后同步 + 授权 `ADR-CEP-00` 追加 Status Update(冻结面)
+
+**① 归档动作(✅ 完成归档语义)**
+
+| 项 | 内容 |
+|---|---|
+| 命令 | `openspec archive cpptlm-cep-moesi-gpu-adapter --yes` |
+| 归档名 | `2026-10-27-cpptlm-cep-moesi-gpu-adapter`(目录 `openspec/changes/archive/2026-10-27-cpptlm-cep-moesi-gpu-adapter/`) |
+| delta 并入 | **2 份新 main spec**:`openspec/specs/cep-moesi-gpu-adapter/spec.md`(**7** Scenario)+ `openspec/specs/cep-adapter-schema-contracts/spec.md`(**7** Scenario)⇒ 判据**进入系统契约** |
+| 语义判定 | **✅ 已完成归档**(**不是** ⏸ 暂存归档)—— tasks 全勾 + 实现已落地 ⇒ **不**用 `--skip-specs` |
+| KPI | **1/3 → 0/3**(`openspec list --json` 实测 **0** 个 active)⇒ slot 释放 ⇒ 队列 #7 可转正 |
+
+> **为何不是暂存归档**:AGENTS.md「两种归档语义必须区分」—— ⏸ 暂存归档用于「实现未启动 / 0%,设计仍有价值」;本 change 实现**已落地**(14 Scenario / 13 cases / 170 assertions / 6 标签回归)⇒ 断言「该能力已在契约内」成立 ⇒ 走**完成归档**。
+
+**② 归档后同步清单(逐处带「命中 1 次」断言)**
+
+| 落点 | 改什么 |
+|---|---|
+| `obj §4.0` #6 行 | 状态列 🟡 Proposed → ✅ **archived**;**孤儿前置标记撤回**(3 项均已收口,详见 ③) |
+| `obj §4.2` #6 行 | 同上(两处须一致,per 断言 ⑦ ①②) |
+| `obj §5.2` | 当前 Proposed 并发 **1/3 → 0/3**;下一个可启动 = 队列 #7 |
+| `phase-10.md` / `.rddf/roadmap.md` / `.rddf/improvements/cpptlm-cep-umbrella.md` / `AGENTS.md` | KPI baseline **1/3 → 0/3**(+ 现行基线的实测日期与 active 数) |
+| `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | **冻结面** ⇒ 追加 `## Status Update`(队列 #6 已完成归档 + KPI 1/3 → 0/3)⇒ **两步授权**(本 entry = 授权记录) |
+| 2 份新 main spec | `## Purpose` 补**实质**文本(归档器写的是 `TBD - created by archiving change …` 占位符 ⇒ `--specs --strict` 会判红) |
+
+**③ 孤儿前置标记撤回(断言 ⑦ ③b 的要求)**
+
+#6 行带 `⏭(孤儿)` 标记(3 项孤儿前置,登记于 2026-10-25 Entry #57);#6 归档后该标记成为**无主债**(闸 ③b 报红:「孤儿前置行的 change 已归档 → 应重指向活队列行」)。
+**逐项核对 —— 3 项均已收口,无须转投**:
+
+| # | 孤儿前置项 | 现状 |
+|---|---|---|
+| ① | M-4 行为侧(VC_DAT 语义正名 / 冲突输入规则 / 陈旧注释防护) | ✅ 已由队列 #3 的 `cep-vc-mapping-contract` 落成 |
+| ② | verdict 逐 `(network, vc)` 标注义务 | ✅ 已由队列 #4 的 `cep-channel-dependency-gate` 落成 |
+| ③ | `moesi_gpu` / `mesif` 未排期 | ✅ 已于 Entry #71 消解(本行 = `moesi_gpu`;`mesif` → #9 行);`moesi_gpu` 现已 implemented |
+
+⇒ **标记撤回**(改写为「原孤儿前置 3 项已全部收口」+ 逐项出处)⇒ 无主债消失,且**历史可追**(不删内容,只改标记形态)。
+
+**④ S1 有效期重评的落点已随归档迁移**
+
+重评登记原写在 #6 的 delta spec ⇒ 归档后并入 `openspec/specs/cep-adapter-schema-contracts/spec.md`(契约层,长期可查)⇒ 断言 ⑧ 的「重评已登记」检查在新位置仍命中(实测绿)⇒ **S1 有效期不再是纯纸面**。
+
+**⑤ 冻结面授权(本 entry = 两步授权的第一环)**
+
+| 项 | 内容 |
+|---|---|
+| 授权对象 | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` —— **仅追加** `## Status Update 2026-10-27` 段 |
+| 允许写 | 队列 #6 已完成归档(完成归档语义 + archive 名 + 2 份 main spec 的 Scenario 数)+ KPI **1/3 → 0/3** + 下一个可启动 = 队列 #7 |
+| **禁止** | 改 §1 ~ §8 任何正文;改排队算术(仍为 14 change);新增决策 |
+| 两步授权序列 | ① commit 产物(ADR 追加段)→ ② `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #80"` → ③ commit 清单 |
+
+**⑥ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `openspec list --json` | **0** 个 active ⇒ KPI **0/3** |
+| 归档 | 2 份 main spec 已创建(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7 Scenario) |
+| 守门 7 项 + `cep_gate_selftest` + `ctest` | 见本 entry 落地后的提交信息 |
+
+**⑦ 关联**: Entry #79(队列 #6 实施完成 + 归档授权)· #78(`ADR-CEP-19` 判据子条件追认)· #77(critic 第 2 轮 APPROVE)· #76(critic 首轮收口)· #75(队列 #7 planner 产出)· #71(队列 #6 建 change 目录 + 冻结面授权)
 
 ---
 

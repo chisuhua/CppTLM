@@ -1,8 +1,9 @@
 # NVIDIA Blackwell/Hopper SM 内部实现专利与论文 — 研究综述
 
 > 专题目录：`01_GPU_Architecture/17_Blackwell_SM_Internals/`
-> 创建日期：2026-08-20
+> 创建日期：2026-08-20（2026-10-27 增补 §3.7 Operand Collector 专题）
 > 材料构成：10 件 NVIDIA 专利（PDF + 逐篇解析）+ 4 篇微基准剖析论文与 1 份官方技术简报（均 PDF + 逐篇解析）
+> **增补专题（2026-10-27）**：Operand Collector 微架构 —— 3 件 NVIDIA 专利 + 3 篇论文 + GPGPU-Sim 4.2.0 源码剖析，见 [`CudaCore/overview.md`](CudaCore/overview.md)
 
 ## 一、专题定位与范围
 
@@ -68,6 +69,41 @@
 
 **US20240231830A1**（外围）：稀疏矩阵 SpMV 内核的线程级负载均衡算法（二分查找分块 + offset expansion 前缀和），与 SM 硬件内部相关度低—中，作为软件视角的 SM 资源使用样例收录。
 
+### 3.7 操作数供给级：Operand Collector 的世代分水岭（2026-10-27 新增专题）
+
+本专题由 [`CudaCore/overview.md`](CudaCore/overview.md) 完整展开，此处只给交叉索引。
+
+**术语沿革**："operand collector" 是 NVIDIA 自有术语，源头只有**一处图 + 一件专利**：
+
+- **US7834881B2《Operand collector architecture》**（Liu / Lindholm / Siu / Coon / Oberman，2006-11-01 申请，2010-11-16 授权）—— 标题级专利。正文用 "Collector Unit 330" / "Bank Request Arbitration Unit 310" / "Selector 325" / "Crossbar 525" / "Dispatcher Unit 540"。每 bank 1 读口 + 1 写口；**一条 3 源指令若三源同 bank，至少 3 拍才收集齐**。
+- **NVIDIA Fermi 白皮书 (2010) p.8** 的 SM 框图上标注 "Operand Collector"（位于 "Core Register File (32,768 × 32-bit)" 与 "Dispatch Port / Result Queue" 之间）；**全文仅此 1 处**，正文再无该词。
+- **Volta / Turing / Ampere 四份白皮书逐字统计均为 0 次**，改用 "processing block" / "dispatch unit"。但**专利文本一直沿用**（2023 年公开的 US2023/0289398 仍写 "a particular operand collector 420"）。
+
+**三条技术路线**（NVIDIA 内部对照，官方一手材料）：
+
+| 路线 | 代表 | 手段 |
+|------|------|------|
+| **A. 运行时收集** | US7834881B2 / US8639882B2 | 硬件 collector unit + crossbar + bank 仲裁；**收集延迟可变** |
+| **B. 编译期保证** | US8555035B1 | 去掉 crossbar/staging register，由编译器保证 **conflict-free + aligned** |
+| **C. 现代混合（实际落地）** | arXiv:2503.20481 实测 | **定长 3 周期**读源操作数 + **Allocate 级端口预约** + 冲突表现为 **issue 侧气泡** + 编译器 `.reuse` 位管理复用缓存 |
+
+**关键实测结论（arXiv:2503.20481 §5.3）**：
+
+> "Unlike previous works [1, 18, 49] that assume the presence of an operand collector to deal with conflicts in the register file ports, **modern NVIDIA GPUs do not make use of it**. Operand collector units would introduce variability in the elapsed time between issue and write-back, making it impossible to have fixed-latency instructions for the NVIDIA ISA..."
+
+**各代参数速查**：
+
+| 世代 | RF bank | 读带宽 | OC | reuse cache | 冲突表现 |
+|------|---------|--------|----|-------------|---------|
+| Fermi | 4 bank × 8 sub-bank × 128-bit（128 KB/SM） | 1 值/bank/cycle | 4 个 CU（CU0–CU3） | — | OC 内串行化 |
+| Maxwell / Pascal | 4 bank × 32-bit | 1 值/bank/cycle | — | 4 个 reuse cache + 4 个 8-byte slot | 只能靠 reuse 缓解 |
+| **Volta** | **2 bank × 64-bit**（`bank = reg_index % 2`） | 2 值/bank/cycle | **0** | 同上 | 3 源同 bank 才冲突 |
+| **Ampere / Turing** | **2 bank / sub-core** | **1 × 1024-bit 读口 + 1 × 1024-bit 写口 / bank** | **0** | 每 bank 1 entry × 3 操作数位置 = **6 子条目** | **0/1/2 冲突 → 5/6/7 cycles**（issue 侧气泡） |
+
+**建模启示**（详见 `CudaCore/overview.md` §6）：CppTLM 若建模 SM 操作数供给级，应采用**现代口径**（C），并把"数据冒险（`HazardTracker`）"与"端口争用（独立仲裁器）"**分层**——这与 US7834881B2 专利原文（"scoreboard unit ... avoid writeback conflicts and **cycle based conflicts**"）以及 GPGPU-Sim（Scoreboard 与 OC 互不引用）的分层完全一致。
+
+
+
 ## 四、Blackwell 世代的 SM 变化（论文与官方简报证据）
 
 综合 4 篇微基准论文与官方技术简报，Blackwell 相对 Hopper 的 SM 内部变化可归纳为：
@@ -121,6 +157,7 @@
 3. DSMEM 解析 + 论文 3 号 DSMEM 时延数据对读，再回看 16 号专题 US12333311B2（CGA 分发）；
 4. 关注寄存器/占用率方向者：8 号解析 + 07_Register_File 文献；
 5. 需要 Blackwell 官方规格锚点时查 Technical Brief v2.1 第 8 节（Blackwell Tensor Core Architecture）。
+6. **关注 SM 内操作数供给 / 寄存器堆 bank 冲突者**：本文件 §3.7 → [`CudaCore/overview.md`](CudaCore/overview.md)（专题综述）→ `CudaCore/arXiv2503.20481_...`（现代口径的实测依据）→ `CudaCore/gpgpu-sim_...`（仿真器实现口径）。
 
 ## 十、专题文件清单
 
@@ -142,8 +179,18 @@
 | arXiv2402.13499_Hopper微基准剖析.pdf + [逐篇解析](file:///Users/chisuhua/source/myresearch/research/01_GPU_Architecture/17_Blackwell_SM_Internals/arXiv2402.13499_Hopper微基准剖析_解析.md) | 论文 + 解析 |
 | arXiv2501.12084_Hopper微基准剖析v2.pdf + [逐篇解析](file:///Users/chisuhua/source/myresearch/research/01_GPU_Architecture/17_Blackwell_SM_Internals/arXiv2501.12084_Hopper微基准剖析v2_解析.md) | 论文 + 解析 |
 | NVIDIA_Blackwell_Architecture_Technical_Brief_v2.1.pdf + [逐篇解析](file:///Users/chisuhua/source/myresearch/research/01_GPU_Architecture/17_Blackwell_SM_Internals/NVIDIA_Blackwell_Architecture_Technical_Brief_v2.1_官方技术简报_解析.md) | 官方简报 + 解析 |
+| **CudaCore/overview.md** | **★ Operand Collector 专题综述（2026-10-27 新增，仓内相对路径）** |
+| **CudaCore/US7834881B2_操作数收集器架构_解析.md** | 专利 + 解析（OC 源头） |
+| **CudaCore/US8639882B2_源操作数收集器缓存_解析.md** | 专利 + 解析（复用缓存） |
+| **CudaCore/US8555035B1_无冲突寄存器分配对照_解析.md** | 专利 + 解析（编译期保证路线） |
+| **CudaCore/gpgpu-sim_操作数收集器实现剖析.md** | 源码剖析（GPGPU-Sim 4.2.0） |
+| **CudaCore/arXiv2503.20481_现代NVIDIA核心无操作数收集器_解析.md** | 论文 + 解析（否定性实测结论） |
+| **CudaCore/arXiv1804.06826_Volta微基准_寄存器复用与bank冲突_解析.md** | 论文 + 解析（Volta `.reuse` 机制） |
+| **CudaCore/ASPLOS19_CORF_操作数收集器建模_解析.md** | 论文 + 解析（学术建模口径） |
 
 ---
 
-*本综述基于 Google Patents 页面提取全文 + 扫描件附图视觉核对（10 件专利逐篇解析见上表）、arXiv 论文与 NVIDIA 官方技术简报全文提取（5 份逐篇解析见上表）整理（2026-08-20）。专利法律状态/族谱以 Google Patents 页面为准；论文实测数据以原文为准（注：两篇 Hopper 论文实测机型均为 H800 PCIe 而非 H100）。最后更新：2026-08-20*
+*本综述基于 Google Patents 页面提取全文 + 扫描件附图视觉核对（10 件专利逐篇解析见上表）、arXiv 论文与 NVIDIA 官方技术简报全文提取（5 份逐篇解析见上表）整理（2026-08-20）。专利法律状态/族谱以 Google Patents 页面为准；论文实测数据以原文为准（注：两篇 Hopper 论文实测机型均为 H800 PCIe 而非 H100）。*
+
+*§3.7 Operand Collector 专题（2026-10-27 增补）另基于 3 件 NVIDIA 专利 PDF（`patentimages.storage.googleapis.com`，含文本层，逐字提取摘要/说明书/权项）+ 3 篇论文 PDF（`arxiv.org` / `cs.ucr.edu`）+ 本机 GPGPU-Sim 4.2.0 源码（git `c3eeb6d1`）整理。最后更新：2026-10-27*
 

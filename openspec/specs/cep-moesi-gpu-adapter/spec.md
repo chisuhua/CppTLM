@@ -1,4 +1,20 @@
-## ADDED Requirements
+# cep-moesi-gpu-adapter Specification
+
+## Purpose
+定义 **`moesi_gpu` 协议实例 adapter**(CEP 平台上的**首个 `implemented` adapter**)的可执行契约:
+表驱动的 6 态 × 6 事件状态机(状态 `I/S/E/M/O/T` × 事件 `Rd/Wr/Inv/InvAck/Fl/FlAck`)+
+6→4 `perm` 投影(稳定态 `I→NONE` / `S→READ` / `E→UNIQUE` / `M→WRITEBACK` / `O→WRITEBACK`;
+**瞬态 `T` 无投影** —— 跨域接口不得出现中间态)+ 6→3 消息类 → 链路层 `CATEGORY_*` 映射
++ 逐字镜像的实例声明(12 个非 `status` 键)+ 装配期 per-network 校验(IC2 三条件)。
+
+载体 = `include/tlm/cep/moesi_gpu_adapter.hh`(**header-only**,不进 `ModuleFactory`、不注册 23 ABI、
+不改 frozen header、**新增 invariant 数 = 0**)。
+
+**边界**:6×6 全表与 ArchForge 规约的**逐格镜像不在本能力范围**(只锁住语义关键点 `E+Write→M`);
+`StubCacheCore` **不动**;`mesif` **不在**交付面内;`S1` 仍为 **FAIL**(R-2:4 值 `perm` 在请求侧
+仍不能表达静默 `E→M` 升级 ⇒ 修正机制归 `cpptlm-cep-stub-cache-chstream-surface`)。
+
+## Requirements
 
 ### Requirement: cep-moesi-gpu-adapter
 

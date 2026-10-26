@@ -1,4 +1,23 @@
-## ADDED Requirements
+# cep-adapter-schema-contracts Specification
+
+## Purpose
+定义 **adapter 侧跨实例复用契约**的**可机器检查**判据(平台级机制,非某协议的实例):
+`perm` 4 值锁不破(含跨 schema 值域绑定)/ `perm_upgrade` 引用完整性 + 权限单调 /
+三态显式化(声明源畸形 ⇒ **FAIL**,与「无可检查对象 ⇒ **SKIP**」严格区分)/
+6→3 消息类映射表完备、值域受限且非恒等(或恒等 + `identity_reason` 登记)/
+adapter 的投影与状态机自洽。
+
+实现 = `include/tlm/cep/adapter_schema_contracts.hh`(**判据实现单一真源** —— Catch2 测试与离线 CLI
+`examples/cep_adapter_contracts.cc` **共用**一份,禁双实现);声明源 = `include/tlm/cep/perm_upgrades.json`
++ 配套 schema(**跨 schema `$ref`** 绑定 `perm` 4 值域 ⇒ 机制上不可能表达第 5 值)。
+
+**跨实例复用**:后续 7 个 adapter change(`chi-rnf` / `mesif` / `cxl-nonsymmetric` / `tilelink` /
+`cxl-dcoh-symmetric` / `nvlink` / `ualink`)**复用**本机制,只填各自的行。
+
+本能力另含 **S1 有效期重评**登记(S1 结论仍为 **FAIL**;新有效期锚
+`S1_VALIDITY_UNTIL=stub-request-side-perm-extension` + 机器可检测的届满条件)。
+
+## Requirements
 
 ### Requirement: cep-adapter-schema-contracts
 

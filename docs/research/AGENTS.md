@@ -79,15 +79,23 @@
 
 **v0.5 应用**: Doorbell::ring strong-ordered path(per design.md §3.2.5 + `ptx-emu-v05-submodule.md` §3)+ PCIe Gen5 x16 250-700ns latency 区间断言(per `tasks.md` T-P1'-1 验证)。
 
-### 2.5 SM/ — SM 内部实现 (NVIDIA Hopper/Blackwell，15 文件 + 1 综述)
+### 2.5 SM/ — SM 内部实现 (NVIDIA Hopper/Blackwell/Volta，23 文件 + 1 综述)
 
 | 文件 | 主题 |
 |------|------|
 | `SM/overview.md` | **NVIDIA Blackwell/Hopper SM 内部实现专利与论文综述**（10 专利 + 4 微基准论文 + 1 官方简报） |
 | `SM/NVIDIA_Blackwell_Architecture_Technical_Brief_v2.1_官方技术简报_解析.md` | Blackwell 架构官方技术简报解析 |
+| `SM/CudaCore/overview.md` | **★ CudaCore 子专题索引 + Operand Collector 微架构专题综述**（3 专利 + 3 论文 + GPGPU-Sim 源码剖析） |
 | `SM/CudaCore/US20230289211A1_线程组可扩展负载均衡_解析.md` | CWD/CGA 准入（Group F 调度） |
 | `SM/CudaCore/US20240231830A1_工作负载分配_解析.md` | SpMV 线程级均衡（Group F 调度软件外围） |
 | `SM/CudaCore/US20240378089A1_基于性能指标的寄存器配置_解析.md` | 寄存器文件配置（Group E） |
+| `SM/CudaCore/US7834881B2_操作数收集器架构_解析.md` | **★ Operand Collector 源头专利**（bank 仲裁 + 收集单元 + phase 错位） |
+| `SM/CudaCore/US8639882B2_源操作数收集器缓存_解析.md` | **★ 源操作数收集器缓存专利**（6 槽位 + cache table + 写回失效） |
+| `SM/CudaCore/US8555035B1_无冲突寄存器分配对照_解析.md` | **★ 编译期 conflict-free / aligned 路线**（"取消 OC"对照） |
+| `SM/CudaCore/gpgpu-sim_操作数收集器实现剖析.md` | **★ GPGPU-Sim 4.2.0 `opndcoll_rfu_t` 源码剖析**（wavefront 仲裁 + 端口建模） |
+| `SM/CudaCore/arXiv2503.20481_现代NVIDIA核心无操作数收集器_解析.md` | **★ 实测否定现代 NVIDIA 存在 OC**（定长延迟 + Allocate 预约 + RFC 语义） |
+| `SM/CudaCore/arXiv1804.06826_Volta微基准_寄存器复用与bank冲突_解析.md` | **★ Volta SASS `.reuse` 标志位**（4 reuse cache + 4 slot；2×64-bit bank） |
+| `SM/CudaCore/ASPLOS19_CORF_操作数收集器建模_解析.md` | **★ 学术界 OC 建模标准口径**（OC port serialization + bank conflict） |
 | `SM/CudaCore/arXiv2402.13499_Hopper微基准剖析_解析.md` | Hopper 微基准剖析（论文） |
 | `SM/CudaCore/arXiv2501.12084_Hopper微基准剖析v2_解析.md` | Hopper 微基准剖析 v2 |
 | `SM/CudaCore/arXiv2507.10789_Blackwell微基准剖析_解析.md` | Blackwell 微基准剖析 |
@@ -101,6 +109,8 @@
 | `SM/Tensor/US20230289398A1_wgmma组矩阵乘加_解析.md` | wgmma warp 组矩阵乘加（Group B 张量核心） |
 
 **v3.0 / W4+ 应用候选**: TMA multicast (per design.md §DSMEM 通信)+ wgmma 周期预算（per `tensor_core_tlm.cc` PrecisionTable）+ mbarrier 同步原语（per `cuda_core_adapter` 资源模型）。当前 MVP (s2-s3) **不直接消费**，仅 reference。
+
+**Operand Collector 专题（2026-10-27 新增，8 文件）**: 回答"SM 内操作数供给级到底是什么、它在现代 NVIDIA GPU 上还存在吗"。核心结论——**Tesla/Fermi/Kepler 时代 OC 是一级流水结构（收集延迟可变）；Volta 起 OC 被废除，改为「定长延迟 + Allocate 级端口预约 + issue 侧气泡 + 编译器管理的 reuse cache」**。CppTLM 建模建议采用**现代口径**（见 `SM/CudaCore/overview.md` §6 借鉴点表）。
 
 ### 2.6 顶层文件
 
@@ -133,7 +143,7 @@
 | `WDU/` | 5 | ✅ tracked |
 | `TMU/` | 16 | ✅ tracked |
 | `PCIe/` | 1 | ✅ tracked |
-| `SM/` | 16 | ✅ tracked (per ADR-SOC-06 v3.0 / Blackwell 调研) |
+| `SM/` | 24 | ✅ tracked (per ADR-SOC-06 v3.0 / Blackwell 调研 + 2026-10-27 Operand Collector 专题 8 文件) |
 | **顶层** | 7 (gem5-soc-survey.md + 6 个 gem5-ruby 调研) | ✅ tracked（2026-10-16 新增 6 个）|
 
 **注**: v0.5 redo 已 archive（2026-08-28）；新 SM/ 区段于 2026-08-29 跟踪入仓（v3.0 dGPU Board W4+ 候选 reference）。

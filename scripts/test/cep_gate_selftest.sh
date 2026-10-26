@@ -361,7 +361,7 @@ p.write_text(t, encoding="utf-8")' 10
 #   ① 新有效期锚从 delta spec 移除 ⇒ 届满且未重评 ⇒ 必须 fire
 run_case "断言 ⑧:移除 S1 重评登记的新锚 ⇒ 必须 fire" 1 '
 from pathlib import Path
-p = Path(os.environ["RT"] + "/openspec/changes/cpptlm-cep-moesi-gpu-adapter/specs/cep-adapter-schema-contracts/spec.md")
+p = Path(os.environ["RT"] + "/openspec/specs/cep-adapter-schema-contracts/spec.md")
 t = p.read_text(encoding="utf-8")
 old = "S1_VALIDITY_UNTIL=stub-request-side-perm-extension"
 assert t.count(old) >= 1, "锚点漂移:未找到新有效期锚"
