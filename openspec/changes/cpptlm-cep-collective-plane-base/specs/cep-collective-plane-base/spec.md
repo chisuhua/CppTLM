@@ -44,7 +44,13 @@ CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`Collecti
 - **WHEN** 走 `group_create` → `group_register_region` → `group_destroy` 的合法路径
 - **THEN** 三步 SHALL 均成功,且 group 状态 SHALL 可观测(create 后 group 可查;register 后 region 表含该 range;destroy 后 region 表移除且 epoch 失效)
 - **AND** `group_destroy` 对 **in-flight 操作** SHALL 发 **`Fault(gid, culprit, cause)`** 且 **不阻塞**(本 change 对 `ADR-CEP-03 §3.1` R4 留白的拍板,per design D-ζ)
-- **AND** `group_destroy` 后该 region SHALL **回归 coherence 域**(per R4 失效化语义)
+- **AND** `group_destroy` 后该 region SHALL **从 region 表中移除**(⇒ 该地址回到「无 region」状态),
+  per R4「区域回归 coherence 域」—— **只**把 epoch 置为 invalid 而**不移除**会留下**残留**:
+  重叠检查遍历全表不分 group 死活 ⇒ 该地址段被**永久报废**,新 group 再也注册不进去
+- **AND** `collective_barrier` 到达 SHALL 校验**成员身份**:非成员到达 SHALL 被拒绝
+  (SHALL NOT 计入阈值)—— 否则「N-1 到达不释放」被绕过,破掉本 plane **唯一的 ordering 承诺**
+- **AND** `recv` 在**无事件**时 SHALL 报「无事件」状态并清空出参(调用方 SHALL 能区分
+  「无事件」与「取到事件」;轮询式消费者不得把旧事件误读为新事件)
 
 > **锚点**:`test_cep_collective_plane_base.cc` 的生命周期状态机断言(含 in-flight ⇒ Fault)
 
@@ -82,7 +88,9 @@ CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`Collecti
 #### Scenario: 区域互斥(CEP-13 语义)与 epoch 创建的前置条件
 
 - **WHEN** 注册一个与已注册 region **重叠**的 range
-- **THEN** SHALL 返回 **`group_register_error`**(立即报错,不静默),且**不得**创建新 epoch
+- **THEN** SHALL 返回**明确的「区域重叠」状态**(立即报错,不静默),且**不得**创建新 epoch
+  (状态字面 = `RegionOverlap`;比笼统的 `group_register_error` 更精确 —— 两者都是错误,
+  但「重叠」与「未注册」是两种不同的运维情形)
 - **AND** **drain 失败**时 SHALL **不建 epoch**(per `ADR-CEP-03 §3.2` CEP-13:「drain 失败 ⇒ `group_register_region` 返回 error,不创建 epoch」)
 - **AND** **正控**:不重叠的合法注册 SHALL 成功
 - **AND** 同一地址 SHALL **不得**同时「SHARP 已注册」且「coherence-cacheable」(CEP-13 不变量)
@@ -93,7 +101,8 @@ CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`Collecti
 
 - **WHEN** 对**未注册**的 region 发起 REDUCE / BROADCAST / MULTICAST
 - **THEN** SHALL **立即报错**(per `ADR-CEP-03 §3.4` guardrail:未注册区域的操作 = `group_register_error`,不静默)
-- **AND** **不得**投递任何事件、**不得**建 group
+- **AND** **不得**投递任何事件、**不得**建 group —— 错误**只经状态**传达
+  (事件通道留给「已注册但被中断」这类真正的 partial failure)
 - **AND** **反向 fixture**:静默返回 ⇒ 断言必红
 
 > **锚点**:`test_cep_collective_plane_base.cc` 的未注册区域断言 + 反向 fixture

@@ -143,7 +143,7 @@ TEST_CASE("CEP CollectiveInvariant: IC5 epoch invalid 窗口 = 放行非 fail-st
     CHECK(!plane.epoch_valid(gid));
 
     // ④ epoch commit 之后 ⇒ 判定翻转(divert 侧)
-    REQUIRE(plane.complete_drain(gid) == cep::Status::Ok);
+    REQUIRE(plane.complete_drain(gid, range(0x1000, 0x1FFF)) == cep::Status::Ok);
     CHECK(plane.region_state_of(0x1000) == cep::RegionState::RegisteredActive);
     CHECK(plane.epoch_valid(gid));
 

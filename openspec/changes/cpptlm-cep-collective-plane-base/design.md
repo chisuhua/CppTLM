@@ -324,6 +324,60 @@ drain 清单的**发出方**留待队列 #6。**本 change 不假装实现 drain
 > **7 方法接口面零变化** ⇒ A-1-1 的「逐字对齐 `ADR-CEP-03 §2 Decision 2`」仍成立;
 > **新增 invariant 数 = 0** ⇒ D-ε 的 B2 计数口径不变。
 
+### D-σ:对抗式评审(critic)复审轮 —— **3 个 BLOCKER** + 10 个 SHOULD_FIX 落地
+
+> critic 复审结论 **REJECT**;3 个 BLOCKER 全部经**独立 PoC 实测**坐实(评审者在仓外写 PoC 直接链接
+> 被评审 header 跑通)。**核心教训**:第一轮实现「24 Scenario 全绿」却仍被判 REJECT ——
+> **绿的是现有断言,现有断言本身与 spec 矛盾(B-2)、或根本没测(B-1/B-3)**。
+> 这正是本仓最警惕的形态:「声称有自动化、实则锚错对象」。
+
+#### 3 个 BLOCKER(必堵,已逐条用 PoC 复验)
+
+| # | 缺陷 | 后果 | 修复 | PoC 复验 |
+|---|------|------|------|----------|
+| **B-1** | `group_destroy` 只把 epoch 置 false,**不移除 region** | 残留 ⇒ 重叠检查遍历全表 ⇒ 该地址段**永久报废**;且违反 spec「destroy 后 region 表移除」 | destroy 时**从 `regions_` 移除**该 group 的 region | `region_state_of` → `no-region`;重注册 → `ok` ✅ |
+| **B-2** | `send` 在 NoRegion / EpochInvalid 分支**投递 Fault 事件** | 直接违反 spec「**不得**投递任何事件」;且**测试锚定的恰是被禁止的行为** | 错误**只经状态**传达;事件通道留给真正的 partial failure | `pending_events=0` ✅ |
+| **B-3** | `collective_barrier` **不校验成员身份** | 非成员到达计入阈值 ⇒ 「N-1 不释放」被绕过 ⇒ 破掉本 plane **唯一的 ordering 承诺** | 到达前校验 `current_member_ ∈ group.members`,否则 `Status::NotMember` | 非成员 + 2 真成员 ⇒ `pending=0`(不提前释放)✅ |
+
+#### 10 个 SHOULD_FIX(全部落地)
+
+| # | 缺陷 | 修复 |
+|---|------|------|
+| S-1 | `recv` 空队列语义缺失(旧事件原样返回 + status=ok) | 空 ⇒ 清空出参 + `Status::NoEvent` |
+| S-2 | `complete_drain` 粒度 = per-gid 全量(部分 drain 无法表达) | 改 **per-region**:`complete_drain(gid, range)` |
+| S-3 | CP-06 分类落洞(无法分类的措辞**静默绿**) | 三类措辞全不命中 ⇒ **FAIL** |
+| S-4 | CP-06 的 marker **硬编码日期** `## Status Update 2026-10-26` | 改取**最后一个**含「抓取点」关键词的 Status Update 段(本仓铁律:ADR 不可变 = 追加新段) |
+| S-5 | CP-01 只扫 `collective_plane.hh` **一个** header | 扫**两个**(行为面 + 判据面) |
+| S-6 | CP-01 实现与自述口径不符(整行子串) + **不去注释** ⇒ 注释行误报 | **去注释** + 按 **include 路径**判定(不按整行子串) |
+| S-7 | CP-02 只匹配 `name(` 形态 ⇒ `struct request` / `void barrier (` 漏检 | 改为**词边界 + 任意形态**匹配 |
+| S-8 | CP-04 忽略声明源的 group 字段(每条 region 新建 group) | 按**声明的 group 编号**建 group(同 gid 多 region 走同一 group) |
+| S-9 | spec 区域互斥的状态字面与实现不一致 | spec 改为「明确的『区域重叠』状态」(`RegionOverlap`)—— 实现语义更优,spec 对齐实现 |
+| S-10 | CP-05 不去注释(coherence 侧注释提及 `group_id` 即假阳性) | 去注释后再查 |
+
+#### 3 个 NIT(落地)
+
+| # | 处理 |
+|---|------|
+| `GroupAttrs::collective_enabled` 死字段(声称契约未实施) | **删除** —— 「未注册 region 的 group 不可操作」由 `send` 的 NoRegion 分支**直接**保证 |
+| `Group::alive` / `BarrierState::released_phases` 死状态 | **删除** |
+| `next_gid_` 绕回撞 `kInvalidGroupId` 哨兵 | 绕回时**跳过哨兵** |
+| 另:`Scenario 13` 行为面扫描**从未**被注入验证 | 补 poisoned fixture(行为面侧) |
+
+#### 一处「措辞订正」(对外口径)
+
+critic 判定:`INV-CEP-04-IC5` 的**行为主体**是 `fabric_ingress_classify`(本仓不存在),
+本 change 行为化的是 R2 谓词的**判读侧** ⇒ 对外口径**不得**声称「IC5 原文主体已被行为化」。
+⇒ commit message / 台账措辞统一改为「**行为化 IC5 的 R2 判读侧**」,并保留
+「P3 实现真 ingress classify 时须在那里**重新**行为化」的登记。
+
+#### 评审暴露的**方法论**教训(登记备查)
+
+第一轮实现 24 Scenario 全绿、守门 7 项 rc=0、CLI 6 判据全 PASS —— 仍被 REJECT。
+原因不是「测试不够多」,而是**测试锚错了对象**:
+- B-2:测试断言的恰是 spec 明文禁止的行为 ⇒ **测试与 spec 互相矛盾**,而两者都「绿」;
+- B-1/B-3:spec 有条款,测试**零覆盖** ⇒ 「有 24 个 Scenario」不等于「条款被覆盖」。
+⇒ 后续 change 的 Scenario 清单应**逐条对账 spec 的每个 AND 子句**,而非只对账 Scenario 标题。
+
 ---
 
 ## Risks / Trade-offs

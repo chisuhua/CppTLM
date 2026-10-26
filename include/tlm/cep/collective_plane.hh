@@ -141,8 +141,9 @@ struct AddrRange {
 /// group 属性(per `ADR-CEP-03 §2` 的 `group_attrs_t`)
 struct GroupAttrs {
     std::string name;
-    /// 该 group 是否允许被 collective 操作(**未注册 region 的 group 不可操作**)
-    bool collective_enabled = true;
+    // 注:`collective_enabled` 曾在此处声明,但**全仓无一处读取** ⇒ 属「声称的契约未实施」,
+    //   已删除(per critic NIT)。「未注册 region 的 group 不可操作」由
+    //   `send` 的 NoRegion 分支**直接**保证,不靠属性开关。
 };
 
 /// 状态码 —— **「不支持」的返回通道**(per design D-ι 裁决 3)
@@ -162,6 +163,10 @@ enum class Status : std::uint8_t {
     DrainFailed = 7,
     UnknownOp = 8,
     EmptyMemberSet = 9,
+    /// 当前成员**不属于**该 group(barrier 到达不得被计入阈值)
+    NotMember = 10,
+    /// `recv` 时**无事件可取**(与「取到事件」必须可区分)
+    NoEvent = 11,
 };
 
 inline const char* status_name(Status s) {
@@ -186,6 +191,10 @@ inline const char* status_name(Status s) {
             return "unknown-op";
         case Status::EmptyMemberSet:
             return "empty-member-set";
+        case Status::NotMember:
+            return "not-member";
+        case Status::NoEvent:
+            return "no-event";
     }
     return "";
 }
@@ -415,12 +424,14 @@ public:
             last_status_ = Status::EmptyMemberSet;
             return kInvalidGroupId;
         }
+        // ⚠️ 绕回时跳过 `kInvalidGroupId`(0xFFFFFFFF)—— 它是「无效 group」哨兵
+        if (next_gid_ == kInvalidGroupId)
+            next_gid_ = 1;
         const group_id_t gid = next_gid_++;
         groups_[gid] = Group{};
         groups_[gid].members = std::move(members);
         groups_[gid].attrs = attrs;
         groups_[gid].epoch_valid = false;
-        groups_[gid].alive = true;
         last_status_ = Status::Ok;
         return gid;
     }
@@ -431,11 +442,14 @@ public:
             last_status_ = Status::InvalidGroup;
             return;
         }
-        // R4:group_destroy 后区域回归 coherence 域(epoch 失效化)
-        for (auto& [range, reg] : regions_) {
-            (void)range;
-            if (reg.gid == gid)
-                reg.epoch_valid = false;
+        // R4:group_destroy 后区域**回归 coherence 域** —— 即该 region **从表里移除**
+        //   (只把 epoch 置 false 会留下**残留**:重叠检查遍历全表不分 gid 死活 ⇒
+        //    该地址段被**永久报废**,新 group 再也注册不进去)
+        for (auto rit = regions_.begin(); rit != regions_.end();) {
+            if (rit->second.gid == gid)
+                rit = regions_.erase(rit);
+            else
+                ++rit;
         }
         // 对 in-flight 操作发 Fault 且**不阻塞**(design D-ζ)
         for (auto& [g, st] : barrier_state_) {
@@ -484,16 +498,14 @@ public:
         const auto st = region_state_of_payload(req);
         if (st == RegionState::NoRegion) {
             // 未注册区域 ⇒ 立即报错,不静默(per `ADR-CEP-03 §3.4`)
+            // ⚠️ **不得投递任何事件** —— spec 明文禁止;错误只经**状态**传达
+            //   (事件通道留给「已注册但被中断」这类真正的 partial failure)
             last_status_ = Status::GroupRegisterError;
-            events_.push_back(CollectiveEvt::make_fault(req.group, req.src_member,
-                                                         Status::GroupRegisterError));
             return;
         }
         if (st == RegionState::RegisteredEpochInvalid) {
-            // epoch 未 commit ⇒ 正常服务窗口,但 collective 数据路径**不执行**
+            // epoch 未 commit ⇒ 正常服务窗口(R4),但 collective 数据路径**不执行**
             last_status_ = Status::GroupRegisterError;
-            events_.push_back(CollectiveEvt::make_fault(req.group, req.src_member,
-                                                         Status::GroupRegisterError));
             return;
         }
         // 已注册 + epoch 生效 ⇒ 数据路径**未实现**(显式,不静默)
@@ -502,7 +514,10 @@ public:
 
     void recv(CollectiveEvt& evt) override {
         if (events_.empty()) {
-            last_status_ = Status::Ok;
+            // ⚠️ **无事件**必须与「取到事件」**可区分**(轮询式消费者会误读):
+            //   清空出参 + 置 `NoEvent` 状态。
+            evt = CollectiveEvt::make_completion(kInvalidGroupId, 0);
+            last_status_ = Status::NoEvent;
             return;
         }
         evt = events_.front();
@@ -518,7 +533,14 @@ public:
         }
         if (current_member_ == kInvalidMember) {
             // 无成员身份 ⇒ 无法计入 rendezvous(显式报错,不静默)
-            last_status_ = Status::InvalidGroup;
+            last_status_ = Status::NotMember;
+            return;
+        }
+        // ⚠️ **成员身份校验**:非成员到达**不得**计入阈值 ——
+        //   否则「N-1 不释放 / N 释放」被绕过(非成员到达 + N-2 个真成员即释放),
+        //   破掉本 plane 唯一的 ordering 承诺。
+        if (it->second.members.count(current_member_) == 0) {
+            last_status_ = Status::NotMember;
             return;
         }
         BarrierState& st = barrier_state_[gid];
@@ -528,7 +550,6 @@ public:
         if (st.arrived[phase].size() >= it->second.members.size()) {
             for (std::uint32_t m : it->second.members)
                 events_.push_back(CollectiveEvt::make_completion(gid, phase));
-            st.released_phases.insert(phase);
             st.arrived.erase(phase);
         }
         last_status_ = Status::Ok;
@@ -565,17 +586,23 @@ public:
     /// **drain 完成回告** —— epoch 由 invalid 转 valid(per design D-ι 裁决 2)。
     /// 先例:`FullMapDirectory::set_sharer` 同样是 4 方法之外的**目录安装面**;
     /// plane 的「drain 回告」与目录的「sharer 安装」是同一种**装配缝**。
-    Status complete_drain(group_id_t gid) {
+    /// **drain 完成回告** —— 指定 region 的 epoch 由 invalid 转 valid。
+    ///
+    /// ⚠️ **粒度 = per-region**:一次把该 gid 的**所有** region 置 valid 会造成
+    ///   「某 region 的 drain 只完成一部分」无法表达 ⇒ 该 region 提前进入 divert 窗口。
+    ///   先例:`FullMapDirectory::set_sharer` 同样是 4 方法之外的**目录安装面**。
+    Status complete_drain(group_id_t gid, const AddrRange& range) {
         auto it = groups_.find(gid);
         if (it == groups_.end()) {
             last_status_ = Status::InvalidGroup;
             return Status::InvalidGroup;
         }
-        for (auto& [range, reg] : regions_) {
-            (void)range;
-            if (reg.gid == gid)
-                reg.epoch_valid = true;
+        auto rit = regions_.find(range);
+        if (rit == regions_.end() || rit->second.gid != gid) {
+            last_status_ = Status::InvalidRange;
+            return Status::InvalidRange;
         }
+        rit->second.epoch_valid = true;
         it->second.epoch_valid = true;
         last_status_ = Status::Ok;
         return Status::Ok;
@@ -614,7 +641,6 @@ private:
         member_set_t members;
         GroupAttrs attrs;
         bool epoch_valid = false;
-        bool alive = false;
     };
     struct Region {
         group_id_t gid = kInvalidGroupId;
@@ -624,8 +650,6 @@ private:
     struct BarrierState {
         /// 相位 → 已到达该相位的成员集合(per-phase 计,保证跨相位有序)
         std::map<phase_t, std::set<std::uint32_t>> arrived;
-        /// 已释放的相位
-        std::set<phase_t> released_phases;
     };
 
     std::map<group_id_t, Group> groups_;

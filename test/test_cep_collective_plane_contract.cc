@@ -135,7 +135,9 @@ TEST_CASE("CEP CollectiveContract: 零调用边闸可执行", "[cep][collective-
     // 正控:仓内真实 collective 头 ⇒ PASS
     std::string detail;
     const auto v = cep::evaluate_zero_call_edge(
-        std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/collective_plane.hh", detail);
+        {std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/collective_plane.hh",
+         std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/collective_plane_contract.hh"},
+        detail);
     CHECK(v == cep::ContractVerdict::PASS);
     CHECK(detail.size() > 0u);
 
@@ -143,7 +145,7 @@ TEST_CASE("CEP CollectiveContract: 零调用边闸可执行", "[cep][collective-
     const auto poisoned_path = write_temp_json(
         "cep_collective_poisoned.hh", "#include \"tlm/cep/sharer_tracker.hh\"\n#include <map>\n");
     std::string d2;
-    const auto v2 = cep::evaluate_zero_call_edge(poisoned_path, d2);
+    const auto v2 = cep::evaluate_zero_call_edge({poisoned_path}, d2);
     CHECK(v2 == cep::ContractVerdict::FAIL);
     CHECK(d2.find("层级纠缠") != std::string::npos);
 
@@ -151,13 +153,13 @@ TEST_CASE("CEP CollectiveContract: 零调用边闸可执行", "[cep][collective-
     const auto clean_path =
         write_temp_json("cep_collective_clean.hh", "#include \"tlm/cep/collective_plane.hh\"\n");
     std::string d3;
-    CHECK(cep::evaluate_zero_call_edge(clean_path, d3) == cep::ContractVerdict::PASS);
+    CHECK(cep::evaluate_zero_call_edge({clean_path}, d3) == cep::ContractVerdict::PASS);
 
     // 另一条 forbidden 变体也必须被抓
     const auto poisoned2 = write_temp_json("cep_collective_poisoned2.hh",
                                            "#include \"tlm/cep/ordering_point_checker.hh\"\n");
     std::string d4;
-    CHECK(cep::evaluate_zero_call_edge(poisoned2, d4) == cep::ContractVerdict::FAIL);
+    CHECK(cep::evaluate_zero_call_edge({poisoned2}, d4) == cep::ContractVerdict::FAIL);
 }
 
 // ═════════════════════════════════════════════════════════════════════

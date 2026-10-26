@@ -237,6 +237,24 @@ TEST_CASE("CEP CollectivePlane: group 生命周期 + destroy ⇒ Fault", "[cep][
     // 对照:destroy 一个**不存在**的 group ⇒ InvalidGroup(与上面的 Fault 路径可区分)
     plane.group_destroy(9999);
     CHECK(plane.last_status() == cep::Status::InvalidGroup);
+
+    // ── destroy 后 region 表**移除**(否则残留会永久阻塞重注册)──
+    cep::LocalCollectivePlane p2;
+    const auto gid2 = p2.group_create({1, 2}, cep::GroupAttrs{});
+    REQUIRE(gid2 != cep::kInvalidGroupId);
+    REQUIRE(p2.group_register_region(gid2, range(0x1000, 0x1FFF),
+                                     cep::AccessMode::Normal) == cep::Status::Ok);
+    CHECK(p2.region_state_of(0x1000) == cep::RegionState::RegisteredEpochInvalid);
+
+    p2.group_destroy(gid2);
+    // region 表已移除 ⇒ 该地址回到 NoRegion(R4「区域回归 coherence 域」)
+    CHECK(p2.region_state_of(0x1000) == cep::RegionState::NoRegion);
+
+    // **关键**:同一地址段能被**新 group 重新注册**(残留会让它永久报废)
+    const auto gid3 = p2.group_create({1, 2}, cep::GroupAttrs{});
+    REQUIRE(gid3 != cep::kInvalidGroupId);
+    CHECK(p2.group_register_region(gid3, range(0x1000, 0x1FFF),
+                                   cep::AccessMode::Normal) == cep::Status::Ok);
 }
 
 // ═════════════════════════════════════════════════════════════════════
@@ -279,6 +297,31 @@ TEST_CASE("CEP CollectivePlane: BARRIER rendezvous N-1 不释放 N 释放", "[ce
     plane.collective_barrier(gid, 1);
     CHECK(plane.pending_event_count() == base + 3u); // 相位 1 释放,3 个成员各一个完成事件
 
+    // ── 非成员到达**不得**计入阈值(否则 N-1 规则被绕过)──
+    {
+        cep::LocalCollectivePlane plane3;
+        const auto gid3 = plane3.group_create({10, 20, 30}, cep::GroupAttrs{});
+        REQUIRE(gid3 != cep::kInvalidGroupId);
+
+        // 非成员 99 到达 ⇒ 拒绝,不得计入
+        plane3.set_current_member(99);
+        plane3.collective_barrier(gid3, 0);
+        CHECK(plane3.last_status() == cep::Status::NotMember);
+        CHECK(plane3.pending_event_count() == 0u);
+
+        // 再加 2 个真成员 ⇒ 仍不足 N ⇒ 不释放(若非成员被计入,此刻就会释放)
+        plane3.set_current_member(10);
+        plane3.collective_barrier(gid3, 0);
+        plane3.set_current_member(20);
+        plane3.collective_barrier(gid3, 0);
+        CHECK(plane3.pending_event_count() == 0u);
+
+        // 第 3 个真成员到达 ⇒ 释放
+        plane3.set_current_member(30);
+        plane3.collective_barrier(gid3, 0);
+        CHECK(plane3.pending_event_count() == 3u);
+    }
+
     // ── 反向 fixture:若阈值被改成 N-1,上面第 2 步(2/3)就会释放 ──
     //   ⇒ 「2/3 ⇒ 0 个事件」这条断言就是阈值判别力的**对照**
     //   另:重复到达同一成员**不得**重复计数(否则 1 人可达 N)
@@ -312,7 +355,7 @@ TEST_CASE("CEP CollectivePlane: 归属判定三态 epoch invalid ⇒ 不 divert"
     CHECK(!plane.epoch_valid(gid));
 
     // drain 回告后 ⇒ RegisteredActive ⇒ divert
-    REQUIRE(plane.complete_drain(gid) == cep::Status::Ok);
+    REQUIRE(plane.complete_drain(gid, range(0x1000, 0x1FFF)) == cep::Status::Ok);
     CHECK(plane.region_state_of(0x1000) == cep::RegionState::RegisteredActive);
     CHECK(plane.epoch_valid(gid));
 
@@ -377,12 +420,11 @@ TEST_CASE("CEP CollectivePlane: 未注册区域 ⇒ 立即报错", "[cep][collec
     plane.send(req);
     CHECK(plane.last_status() == cep::Status::GroupRegisterError);
 
-    // 对照:报错时**仍产生 Fault 事件**(partial failure 显式建模,非静默丢弃)
-    CHECK(plane.pending_event_count() == 1u);
-    cep::CollectiveEvt evt;
-    plane.recv(evt);
-    CHECK(evt.is_fault());
-    CHECK(evt.cause() == cep::Status::GroupRegisterError);
+    // ⚠️ **不得投递任何事件**(spec 明文)—— 错误只经**状态**传达
+    //   (事件通道留给「已注册但被中断」这类真正的 partial failure)
+    CHECK(plane.pending_event_count() == 0u);
+    // 对照:错误**确实**被报告(不是静默)
+    CHECK(plane.last_status() == cep::Status::GroupRegisterError);
 
     // 「未注册」与「未实现」与「不支持」三态**可区分**
     CHECK(cep::Status::GroupRegisterError != cep::Status::DataPathNotImplemented);
@@ -399,7 +441,7 @@ TEST_CASE("CEP CollectivePlane: 已注册区域数据原语 ⇒ 未实现而非�
     REQUIRE(gid != cep::kInvalidGroupId);
     REQUIRE(plane.group_register_region(gid, range(0x1000, 0x1FFF), cep::AccessMode::Normal) ==
             cep::Status::Ok);
-    REQUIRE(plane.complete_drain(gid) == cep::Status::Ok);
+    REQUIRE(plane.complete_drain(gid, range(0x1000, 0x1FFF)) == cep::Status::Ok);
 
     cep::CollectiveReq req;
     req.group = gid;
@@ -413,6 +455,13 @@ TEST_CASE("CEP CollectivePlane: 已注册区域数据原语 ⇒ 未实现而非�
     CHECK(plane.last_status() != cep::Status::Unsupported);
     // 不投递事件(未实现 ≠ 失败事件)
     CHECK(plane.pending_event_count() == 0u);
+
+    // `recv` 空队列 ⇒ `NoEvent`(与「取到事件」可区分;调用方不会把旧事件误读为新事件)
+    cep::CollectiveEvt stale;
+    stale = cep::CollectiveEvt::make_fault(7, 3, cep::Status::InvalidGroup);
+    plane.recv(stale);
+    CHECK(plane.last_status() == cep::Status::NoEvent);
+    CHECK_FALSE(stale.is_fault());
 
     // 对照:BARRIER 在同一 group 上**可用**(能力位非 0)⇒ 不是「整个 plane 不支持」
     CHECK(plane.query_capability(cep::CollectiveOp::BARRIER, 64) != 0u);
@@ -503,6 +552,12 @@ TEST_CASE("CEP CollectivePlane: 零调用边(行为面侧)", "[cep][collective-p
     // 对照:干净文本必须不判红(否则该判据恒真)
     const std::string clean = "#include \"tlm/cep/collective_plane.hh\"\n#include <map>\n";
     CHECK(!cep::header_include_is_forbidden(clean));
+
+    // ── 反向 fixture ②:本行为面自己的扫描也必须能抓到 poisoned 文本 ──
+    //   (此前反向 fixture 只打在判据面的函数上,行为面扫描**从未**被注入验证过)
+    CHECK(poisoned.find("sharer_tracker") != std::string::npos);
+    // 对照:clean 文本里不含禁用名
+    CHECK(clean.find("sharer_tracker") == std::string::npos);
 
     // 另一条:本仓的 collective 头**不得** include `ordering_point_checker.hh`
     //   (那是 coherence 侧的判据头 —— 会被 CP-05 的完成域判别抓到)

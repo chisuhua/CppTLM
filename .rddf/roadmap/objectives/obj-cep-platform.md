@@ -4404,6 +4404,88 @@ oracle 的 4 条推荐都倾向**动作**侧(冻结 / 拆分 / 归主 / 写法�
 
 ---
 
+### Entry #68 — 2026-10-26 [fix]
+
+**主题**: 队列 #5 builder 实施**对抗式评审修复** —— 3 BLOCKER + 10 SHOULD_FIX + 3 NIT 落地;7 个独立 PoC 逐条复验通过
+
+**① 触发**
+
+critic 对 builder 实施(cff2bb87)的复审:结论 **REJECT**。3 个 BLOCKER 全部由评审者在**仓外**写独立 PoC
+(直接链接被评审 header 实跑)坐实,非推测。
+
+> **方法论教训(登记备查)**:第一轮实现「24 Scenario 全绿 · 守门 7 项 rc=0 · CLI 6 判据全 PASS」仍被判 REJECT。
+> 原因不是「测试不够多」,而是**测试锚错了对象**:
+> - **B-2**:测试断言的恰是 spec 明文**禁止**的行为 ⇒ 测试与 spec 互相矛盾,而两者都「绿」;
+> - **B-1 / B-3**:spec 有条款,测试**零覆盖** ⇒ 「有 24 个 Scenario」≠「条款被覆盖」。
+> ⇒ 后续 change 的 Scenario 清单应**逐条对账 spec 的每个 AND 子句**,而非只对账 Scenario 标题。
+
+**② 3 个 BLOCKER(必堵,逐条 PoC 复验)**
+
+| # | 缺陷 | 后果 | 修复 | PoC 复验结果 |
+|---|------|------|------|------------|
+| **B-1** | `group_destroy` 只把 epoch 置 false,**不移除 region** | 残留 ⇒ 重叠检查遍历全表 ⇒ 该地址段**永久报废**(新 group 再也注册不进去);违反 spec「destroy 后 region 表移除」 | destroy 时**从 `regions_` 移除**该 group 的 region | `region_state_of` → `no-region` ✅;重新注册 → `ok` ✅ |
+| **B-2** | `send` 在 NoRegion / EpochInvalid 分支**投递 Fault 事件** | 违反 spec「**不得**投递任何事件」;**测试锚定的恰是被禁止的行为** | 错误**只经状态**传达;事件通道留给真正的 partial failure | `pending_events=0` ✅ |
+| **B-3** | `collective_barrier` **不校验成员身份** | 非成员到达计入阈值 ⇒「N-1 不释放」被绕过 ⇒ 破掉本 plane **唯一的 ordering 承诺** | 到达前校验 `current_member_ ∈ group.members`,否则 `Status::NotMember` | 非成员 + 2 真成员 ⇒ `pending=0`(不提前释放)✅ |
+
+**③ 10 个 SHOULD_FIX(全部落地)**
+
+| # | 缺陷 | 修复 |
+|---|------|------|
+| S-1 | `recv` 空队列语义缺失(旧事件原样返回 + status=ok) | 空 ⇒ 清空出参 + `Status::NoEvent` |
+| S-2 | `complete_drain` 粒度 = per-gid 全量(部分 drain 无法表达) | 改 **per-region**:`complete_drain(gid, range)` |
+| S-3 | CP-06 分类落洞(无法分类的措辞**静默绿**) | 三类措辞全不命中 ⇒ **FAIL** |
+| S-4 | CP-06 的 marker **硬编码日期** | 改取**最后一个**含「抓取点」关键词的 Status Update 段(本仓铁律:ADR 不可变 = 追加新段) |
+| S-5 | CP-01 只扫 `collective_plane.hh` **一个** header | 扫**两个**(行为面 + 判据面) |
+| S-6 | CP-01 整行子串 + **不去注释** ⇒ 注释行误报 | **去注释** + 按 **include 路径**判定 |
+| S-7 | CP-02 只匹配 `name(` 形态 ⇒ `struct request` / `void barrier (` 漏检 | 改为**词边界 + 任意形态**匹配 |
+| S-8 | CP-04 忽略声明源的 group 字段 | 按**声明的 group 编号**建 group |
+| S-9 | spec 区域互斥状态字面与实现不一致 | spec 对齐实现(`RegionOverlap` —— 语义比笼统的 `group_register_error` 更精确) |
+| S-10 | CP-05 不去注释 | 去注释后再查 |
+
+**④ 3 个 NIT(落地)**
+
+`GroupAttrs::collective_enabled` 死字段(声称的契约未实施)→ **删除**;`Group::alive` / `BarrierState::released_phases`
+死状态 → **删除**;`next_gid_` 绕回撞 `kInvalidGroupId` 哨兵 → 绕回时**跳过哨兵**;
+另补 `Scenario 13` 行为面侧的 poisoned fixture(此前反向 fixture 只打在判据面函数上)。
+
+**⑤ 一处对外口径订正**
+
+critic 判定:`INV-CEP-04-IC5` 的**行为主体**是 `fabric_ingress_classify`(本仓不存在),
+本 change 行为化的是 R2 谓词的**判读侧** ⇒ 对外口径**不得**声称「IC5 原文主体已被行为化」。
+⇒ commit message / 台账措辞统一为「**行为化 IC5 的 R2 判读侧**」,并保留
+「P3 实现真 ingress classify 时须在那里**重新**行为化」的登记(design D-ε 已有)。
+
+**⑥ 7 个独立 PoC 复验(全部已堵)**
+
+| PoC | 攻击 | 复验结果 |
+|-----|------|---------|
+| 1 | 非成员 barrier 到达提前释放 | `pending=0` ✅ |
+| 2a | destroy 后 region 残留 | `no-region` ✅ |
+| 2b | 残留导致永久阻塞重注册 | `ok`(可重注册)✅ |
+| 3 | send 未注册区域投递事件 | `pending_events=0` ✅ |
+| 4 | recv 空队列不可区分 | `no-event` ✅ |
+| 5 | CP-06 措辞绕过 | `FAIL` ✅ |
+| 6 | CP-01 注释行误报 | `PASS`(不误报)✅ |
+| 7 | CP-02 非调用形态漏检 | `FAIL`(已检出)✅ |
+
+**⑦ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `[cep]` | **148 cases / 2388 assertions**(修复前 2374) |
+| collective 三档 | 24 cases / **279** assertions(修复前 267) |
+| `ctest` | **106/106** |
+| 守门 7 项 | rc=0 |
+| `cep_gate_selftest` | 31/31 |
+| CLI | 6 判据全 PASS(rc=0) |
+| `openspec validate` | **is valid** |
+| 冻结面 | **37** —— 本批**零**冻结成员改动 ⇒ manifest 无需重生成 |
+| `design.md` | 新增 **D-σ**(复审轮全文 + 方法论教训) |
+
+**关联**: Entry #67(builder 实施)· Entry #66(planner 阶段)· critic 复审(REJECT:3 BLOCKER / 10 SHOULD_FIX / 3 NIT)· `ADR-CEP-02`(canonical 10 流权威)· `ADR-CEP-04`(`INV-CEP-04-IC5` owner)
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

@@ -279,40 +279,107 @@ inline constexpr const char* kDefaultCollectiveDeclarationPath =
 // 判据实现(逐条)
 // ─────────────────────────────────────────────────────────────────────
 
-/// **CP-01 零调用边** —— 扫 collective 头文件的直接 include,禁 directory / ordering / sharer 侧。
-/// 与行为面的静态扫描**正交**:行为面查「include 指令里出现禁用关键字」,本判据查
-/// 「include 指令解析出的路径是否落在禁用目录前缀下」—— 两者不是同一份实现。
-inline bool header_include_is_forbidden(const std::string& header_text) {
-    static const char* kForbidden[] = {"sharer_tracker", "address_resolver", "ordering_point",
-                                       "channel_dependency", "stub_cache_core", "directory"};
-    std::istringstream in(header_text);
+/// **CP-01 零调用边** —— 扫 collective 侧头文件的直接 include,禁 directory / ordering / sharer 侧。
+///
+/// ⚠️ **两条口径必须同时成立**(per critic BLOCKER 复评):
+///   1. **去注释后**再扫 —— 否则 `// #include "tlm/cep/sharer_tracker.hh"` 这类**注释行**误报;
+///   2. 按 **include 路径**判定(而非整行子串)—— 否则 `#include <directory>`(C23 标准头)
+///      这类**字面命中**也误报。
+/// 与行为面的静态扫描**正交**:行为面查「include 指令里出现禁用**关键字**」,
+/// 本判据查「include 指令解析出的**路径**是否命中禁用**文件名/目录**」—— 两份实现不同。
+inline std::string strip_cpp_comments(const std::string& src) {
+    std::string out;
+    bool in_line = false, in_block = false;
+    for (std::size_t i = 0; i < src.size(); ++i) {
+        if (!in_block && !in_line && i + 1 < src.size() && src[i] == '/' && src[i + 1] == '/') {
+            in_line = true;
+            ++i;
+            continue;
+        }
+        if (!in_block && !in_line && i + 1 < src.size() && src[i] == '/' && src[i + 1] == '*') {
+            in_block = true;
+            ++i;
+            continue;
+        }
+        if (in_line && src[i] == '\n') {
+            in_line = false;
+            out.push_back('\n');
+            continue;
+        }
+        if (in_block && i + 1 < src.size() && src[i] == '*' && src[i + 1] == '/') {
+            in_block = false;
+            ++i;
+            continue;
+        }
+        if (!in_line && !in_block)
+            out.push_back(src[i]);
+    }
+    return out;
+}
+
+/// 从源码里抽出全部 `#include` 的**路径**(尖括号 / 引号两种)
+inline std::vector<std::string> extract_include_paths(const std::string& src) {
+    std::vector<std::string> paths;
+    std::istringstream in(src);
     std::string line;
     while (std::getline(in, line)) {
         const auto pos = line.find("#include");
         if (pos == std::string::npos)
             continue;
-        for (const char* f : kForbidden) {
-            if (line.find(f) != std::string::npos)
-                return true;
-        }
+        const auto open = line.find_first_of("<\"", pos);
+        if (open == std::string::npos)
+            continue;
+        const char close_ch = (line[open] == '<') ? '>' : '"';
+        const auto close = line.find(close_ch, open + 1);
+        if (close == std::string::npos)
+            continue;
+        paths.push_back(line.substr(open + 1, close - open - 1));
+    }
+    return paths;
+}
+
+/// 某 include 路径是否指向**禁用侧**(directory / ordering / sharer)
+inline bool include_path_is_forbidden(const std::string& path) {
+    static const char* kForbidden[] = {"/sharer_tracker", "/address_resolver", "/ordering_point",
+                                       "/channel_dependency", "/stub_cache_core", "/directory"};
+    for (const char* f : kForbidden) {
+        if (path.find(f) != std::string::npos)
+            return true;
     }
     return false;
 }
 
-inline ContractVerdict evaluate_zero_call_edge(const std::string& collective_header_path,
+/// 供测试用的单文件形态:该头文件(去注释后)是否含**指向禁用侧**的 include
+inline bool header_include_is_forbidden(const std::string& header_text) {
+    const std::string stripped = strip_cpp_comments(header_text);
+    for (const auto& p : extract_include_paths(stripped)) {
+        if (include_path_is_forbidden(p))
+            return true;
+    }
+    return false;
+}
+
+inline ContractVerdict evaluate_zero_call_edge(const std::vector<std::string>& header_paths,
                                                 std::string& detail) {
-    std::ifstream in(collective_header_path);
-    if (!in) {
-        detail = "collective 头文件不可读: " + collective_header_path;
-        return ContractVerdict::FAIL;
+    for (const auto& hp : header_paths) {
+        std::ifstream in(hp);
+        if (!in) {
+            detail = "collective 侧头文件不可读: " + hp;
+            return ContractVerdict::FAIL;
+        }
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        const std::string stripped = strip_cpp_comments(ss.str());
+        for (const auto& p : extract_include_paths(stripped)) {
+            if (include_path_is_forbidden(p)) {
+                detail = "collective 侧头文件 " + hp + " include 了禁用侧的头 `" + p +
+                         "` ⇒ 层级纠缠(per ADR-CEP-01 §3.3 抓取点 1)";
+                return ContractVerdict::FAIL;
+            }
+        }
     }
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    if (header_include_is_forbidden(ss.str())) {
-        detail = "collective 头文件 include 了 directory / ordering / sharer 侧的头 ⇒ 层级纠缠";
-        return ContractVerdict::FAIL;
-    }
-    detail = "collective 头文件未 include 任何 directory / ordering / sharer 侧的头";
+    detail = "collective 侧头文件(" + std::to_string(header_paths.size()) +
+             " 个)未 include 任何 directory / ordering / sharer 侧的头";
     return ContractVerdict::PASS;
 }
 
@@ -381,23 +448,28 @@ inline ContractVerdict evaluate_canonical_flows(const std::string& adr_path,
     }
     std::ostringstream hs;
     hs << hdr.rdbuf();
-    const std::string text = hs.str();
+    const std::string text = strip_cpp_comments(hs.str());
     for (const auto& f : flows) {
         // collective 侧**不得**出现 canonical 流名作为接口标识符。
-        // ⚠️ 必须**词边界**匹配:裸子串会把 `collective_barrier(` 误判成 `barrier(`、
-        //    把 `make_completion(` 误判成 `completion(` —— 二者都是 collective 平面**自有**的
-        //    标识符(per ADR-CEP-03 §2 的 `collective_barrier` 原语),不是 Coherence Interface 的流。
+        // ⚠️ 匹配面必须覆盖**多种形态**:`name(` / `name (` / `struct name` / `typedef … name` /
+        //    变量名 —— 只查 `name(` 会漏检 `struct request {…}` 这类用法(per critic)。
+        // ⚠️ 同时必须**词边界**:裸子串会把 `collective_barrier(` 误判成 `barrier(`、
+        //    把 `make_completion(` 误判成 `completion(` —— 二者是 collective 平面**自有**标识符。
         std::size_t pos = 0;
-        while ((pos = text.find(f + "(", pos)) != std::string::npos) {
-            const bool at_boundary =
+        while ((pos = text.find(f, pos)) != std::string::npos) {
+            const bool left_ok =
                 (pos == 0) || !(std::isalnum(static_cast<unsigned char>(text[pos - 1])) ||
                                  text[pos - 1] == '_');
-            if (at_boundary) {
+            const std::size_t after = pos + f.size();
+            const bool right_ok =
+                (after >= text.size()) || !(std::isalnum(static_cast<unsigned char>(text[after])) ||
+                                            text[after] == '_');
+            if (left_ok && right_ok) {
                 detail = std::string("collective 侧出现 canonical 流名 `") + f +
                          "` ⇒ 旁路平面不得扩 Coherence Interface 事务集";
                 return ContractVerdict::FAIL;
             }
-            pos += f.size();
+            pos = after;
         }
     }
     detail = "canonical 10 流解析成功(" + std::to_string(flows.size()) +
@@ -515,8 +587,16 @@ inline ContractVerdict evaluate_region_exclusion(const CollectivePlaneDeclaratio
                                                  std::string& detail) {
     LocalCollectivePlane plane;
     std::size_t ok_count = 0;
+    // 按**声明的 group 编号**建 group(per critic)—— 每个 gid 一个 group,
+    // 同 gid 的多个 region 走**同一个** group ⇒ 与真实场景(group 持有多 region)一致。
+    std::map<group_id_t, group_id_t> gid_map;
     for (const auto& [range, gm] : decl.registered_regions) {
-        const group_id_t gid = plane.group_create({1, 2, 3}, GroupAttrs{});
+        auto git = gid_map.find(gm.first);
+        if (git == gid_map.end()) {
+            const group_id_t created = plane.group_create({1, 2, 3}, GroupAttrs{});
+            git = gid_map.emplace(gm.first, created).first;
+        }
+        const group_id_t gid = git->second;
         const Status st = plane.group_register_region(gid, range, gm.second);
         if (st == Status::Ok) {
             ++ok_count;
@@ -543,7 +623,8 @@ inline ContractVerdict evaluate_completion_domain(const std::string& coherence_s
     }
     std::ostringstream ss;
     ss << in.rdbuf();
-    const std::string text = ss.str();
+    // ⚠️ **去注释**后再查 —— 否则 coherence 侧注释里提及 `group_id` 即假阳性 FAIL
+    const std::string text = strip_cpp_comments(ss.str());
     static const char* kGroupScoped[] = {"group_id", "member_set", "CollectiveReq", "CollectiveEvt",
                                          "group_create", "group_register_region",
                                          "collective_barrier"};
@@ -576,13 +657,25 @@ inline CatchpointCoverage parse_catchpoint_coverage(const std::string& adr_text)
     CatchpointCoverage cov;
     // ⚠️ **必须限定在**「Status Update 2026-10-26 —— §3.3 抓取点的可测性裁决」段内:
     //    ADR 正文里的加粗数字(如 `**7 条**`、`**1**`)会污染全文级解析。
-    std::string scope = adr_text;
-    const auto marker = adr_text.find("## Status Update 2026-10-26");
-    if (marker != std::string::npos) {
+    // ⚠️ **不得硬编码日期** —— 本仓铁律是「ADR 不可变 = 追加新 Status Update」,
+    //    未来对抓取点的**重判**会写进**新**段 ⇒ 硬编码旧日期 ⇒ 重判不可见、闸仍绿
+    //    (per critic BLOCKER 复评)。⇒ 取**最后一个**含「抓取点」关键词的 Status Update 段。
+    std::string scope;
+    std::size_t search_from = 0;
+    while (true) {
+        const auto marker = adr_text.find("## Status Update", search_from);
+        if (marker == std::string::npos)
+            break;
         const auto next_h2 = adr_text.find("\n## ", marker + 4);
-        scope = (next_h2 == std::string::npos) ? adr_text.substr(marker)
-                                                : adr_text.substr(marker, next_h2 - marker);
+        const std::string seg = (next_h2 == std::string::npos)
+                                    ? adr_text.substr(marker)
+                                    : adr_text.substr(marker, next_h2 - marker);
+        if (seg.find("抓取点") != std::string::npos)
+            scope = seg;  // 保留**最后**一个匹配的段
+        search_from = (next_h2 == std::string::npos) ? adr_text.size() : next_h2 + 1;
     }
+    if (scope.empty())
+        scope = adr_text;
     // 抓取点编号在 ADR 里形如 `**1**(高)` / `**2**(高)` / … / `**7**(低)`
     // 裁决文本在同一表格行内。逐行取「首个 **N**(…) 后的单元格」。
     std::istringstream in(scope);
@@ -713,6 +806,14 @@ inline ContractVerdict evaluate_catchpoint_coverage(const CatchpointCoverage& co
         const bool says_deferred = verdict_text.find("不可测") != std::string::npos ||
                                    verdict_text.find("推迟") != std::string::npos;
         const bool says_satisfied = verdict_text.find("已满足") != std::string::npos;
+        // ⚠️ **无法分类 ⇒ FAIL**(per critic):三类措辞全不命中时**不得**静默通过 ——
+        //   否则「ADR 把措辞改成无法识别的说法」即可绕过闸(判据失效却仍绿)。
+        if (!says_measurable && !says_deferred && !says_satisfied) {
+            detail = std::string("抓取点 ") + binding.id +
+                     " 的可测性裁决**无法分类**(三类措辞均不命中): \"" + verdict_text +
+                     "\" ⇒ 判红(避免「换个措辞即绕过闸」)";
+            return ContractVerdict::FAIL;
+        }
 
         if (says_measurable) {
             // ADR 声称可测 ⇒ 映射表必须绑定规则(判据侧或行为面侧),且判据须实跑通过
@@ -756,6 +857,8 @@ inline ContractVerdict evaluate_catchpoint_coverage(const CatchpointCoverage& co
 
 /// 契约判据的输入路径集合(相对仓库根;与 CLI 共用同一常量组)
 inline constexpr const char* kCollectiveHeaderPath = "include/tlm/cep/collective_plane.hh";
+inline constexpr const char* kCollectiveContractHeaderPath =
+    "include/tlm/cep/collective_plane_contract.hh";
 inline constexpr const char* kCanonicalFlowsAdrPath =
     "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md";
 inline constexpr const char* kCatchpointAdrPath = "docs/adr/ADR-CEP-01-fabric-collective-plane.md";
@@ -766,6 +869,7 @@ inline constexpr const char* kFabricPath = "include/tlm/cep/fabric.json";
 struct ContractPaths {
     std::string root = ".";
     std::string collective_header = kCollectiveHeaderPath;
+    std::string collective_contract_header = kCollectiveContractHeaderPath;
     std::string canonical_flows_adr = kCanonicalFlowsAdrPath;
     std::string catchpoint_adr = kCatchpointAdrPath;
     std::string coherence_side = kCoherenceSidePath;
@@ -806,10 +910,12 @@ inline ContractReport run_collective_plane_contract(const ContractPaths& paths) 
     //    `add(rule, evaluate(d), std::move(d))` 的**函数实参求值顺序未指定**,
     //    std::move(d) 可能先于 evaluate 执行 ⇒ detail 被移空(实测 CP-02/CP-06 detail 为空)。
 
-    // CP-01 零调用边
+    // CP-01 零调用边 —— 扫**两个** collective 侧头文件(行为面 + 判据面);
+    //   只扫一个 ⇒ 判据面自己 include 禁用侧的头不会被抓到(per critic)
     {
         std::string d;
-        const ContractVerdict v = evaluate_zero_call_edge(at(paths.collective_header), d);
+        const ContractVerdict v = evaluate_zero_call_edge(
+            {at(paths.collective_header), at(paths.collective_contract_header)}, d);
         add(ContractRule::ZeroCallEdge, v, std::move(d));
     }
     // CP-02 canonical 10 流零 diff
