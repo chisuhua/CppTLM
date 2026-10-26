@@ -1266,18 +1266,35 @@ else:
     # ⚠️ 2026-10-26(Entry #71):首版写成 `glob.glob(...)` —— 本 Python 块**未 import glob**
     #    ⇒ NameError ⇒ 整个闸崩溃(rc=1)。改用**已 import 的 os**(同块用 `import glob as _g7`
     #    是断言⑦ 的局部别名,跨断言引用脆弱)。
+    #    ⚠️ 2026-10-26(critic S-2):⏸ 暂存归档(`--skip-specs`)语义下 perm 演进**未落地**
+    #    ⇒ 只查「archive 目录里有同名」会把**暂存归档**误判为「已届满」。本仓两种归档语义
+    #    必须区分(per AGENTS.md「两种归档语义必须区分」)⇒ 额外要求:**完成归档**语义
+    #    = delta capability **已并入** `openspec/specs/`(暂存归档不并入)⇒ 用 main spec 存在性判定。
     _arch_dir = os.path.join(root, "openspec/changes/archive")
+    _main_spec = os.path.join(root, "openspec/specs")
     q6 = (os.path.isdir(_arch_dir)
-          and any(n.endswith("cpptlm-cep-moesi-gpu-adapter") for n in os.listdir(_arch_dir)))
+          and any(n.endswith("cpptlm-cep-moesi-gpu-adapter") for n in os.listdir(_arch_dir))
+          and os.path.isdir(_main_spec)
+          and any(n.startswith("cep-moesi-gpu-adapter") or n.startswith("cep-adapter-schema-contracts")
+                  for n in os.listdir(_main_spec)))
     # 届满条件 ②:schema 引入 perm 形态相关字段(6→4 投影的表达力演进)。
     #    ⚠️ 键名对齐:队列 #6 采用的字段名是 `perm_upgrade`(per design D-γ);
     #    原键名 `perm_form` / `perm_variant` / `upgrade_kind` **与之不匹配** ⇒ 该子条件
     #    亦为装饰性 ⇒ 补入 `perm_upgrade`(保留旧键名以兼容其他形态命名)。
     _perm_evolved = False
     try:
-        _s = json.load(open(os.path.join(root, "include/tlm/cep/protocol_instance.schema.json"),
-                            encoding="utf-8"))
-        _props = _s.get("properties", {})
+        #    ⚠️ 2026-10-26(critic S-1):**查错了文件** —— design D-β 的裁决是
+        #    `protocol_instance.schema.json` **零改动**(永保 13 属性),`perm_upgrade` 落
+        #    **独立**声明源 ⇒ 只查前者 ⇒ 条件② **恒假**(与改名前的旧键名一样是装饰性)。
+        #    ⇒ 改为**两个**候选文件任一命中即算演进已发生。
+        _props = {}
+        for _rel in ("include/tlm/cep/protocol_instance.schema.json",
+                     "include/tlm/cep/perm_upgrades.schema.json"):
+            try:
+                _sx = json.load(open(os.path.join(root, _rel), encoding="utf-8"))
+            except Exception:
+                continue
+            _props.update(_sx.get("properties", {}) or {})
         _perm_evolved = any(k in _props for k in ("perm_form", "perm_variant", "upgrade_kind",
                                                   "perm_upgrade"))
     except Exception:

@@ -73,7 +73,7 @@ perm_upgrade: {
 | **改成对象数组**(`perm: [{value, silent_upgrade_to}]`)? | ❌ **不取** | **破坏性**:已有实例声明的 `perm` 是**字符串数组**,改类型 ⇒ 全量重写 + `test_cep_schema.cc` 的 4 值锁断言改写 ⇒ 收益(字段内聚)不抵代价 |
 | **顶层字段 vs 字段内嵌?** | **顶层** | ① `perm` 的**语义**是「本 cache 当前持有的权限集合」;`perm_upgrade` 的语义是「**协议能力**(该协议有哪些静默升级路径)」—— 二者是**不同维度**(实例属性 vs 协议属性)⇒ 塞进 `perm` 会把「能力」与「状态」混在一处 |
 | **必填 or 可选?** | **可选** | **省略 = 无静默升级能力**,这是**安全默认**(无能力 ⇒ 无域可见写 ⇒ 不会误判)⇒ 现有 2 个实例声明**零改动**;若设为必填 ⇒ `mesif` 也得补 `{"silent_upgrades": []}` ⇒ 又触碰 ⑥ 镜像面 |
-| **from/to 的取值域?** | **必须**取自 `protocol_instance.schema.json` 的 `perm` 4 值锁 | 跨 schema `$ref` **声明**该绑定。⚠️ **仓内无 JSON-Schema validator**(实测 `grep -rn jsonschema` 零命中;契约判据是手写 C++)⇒ `$ref` 目前是**声明性**约束,**执行**靠 AC-01 ② 的手写判据 ⇒ 「机制上不可能表达 5 值」的措辞**过强**,实际是「**判据层**不可能」 |
+| **from/to 的取值域?** | **必须**取自 `protocol_instance.schema.json` 的 `perm` 4 值锁 | 跨 schema `$ref` **声明**该绑定。✅ **仓内**有 **JSON-Schema validator**(`scripts/test/cep_decl_alignment_check.sh:98/122/170` 用 `jsonschema.Draft202012Validator`;CI pip 已装;缺依赖时**不降级运行**)⇒ **机制级**保证**可达**:builder 把 `perm_upgrades.schema.json` 接入**同一套**设施(跨文件 `$ref` 需 `referencing` registry 解析)⇒ 「机制上不可能表达第 5 值」**成立**。⚠️ **本条的前置**:接入前 `$ref` 只是**声明性**,机制级保证须由 builder 落地(见 AC-01 ②) |
 | **泛化布尔 vs 具体 from→to 对?** | **具体 from→to 对** | `ADR-CEP-05 §13.1` 的 Q-3b 裁定:「新字段**必须**表达「`UNIQUE` 可静默升 `WRITEBACK`」这一**具体**语义,**非**泛化布尔(`O→M` 走 `INVALIDATE` 是**显式**升级,触发条件不同)」⇒ 布尔 `silent_upgrade: true` **被明确排除** |
 | **权限单调性?** | **要求 `to` 的秩 ≥ `from` 的秩** | 权限秩 `NONE < READ < UNIQUE < WRITEBACK` ⇒ 静默升级**不得**降权限(`UNIQUE → READ` 荒谬)⇒ **可机器判定**(AC-02) |
 

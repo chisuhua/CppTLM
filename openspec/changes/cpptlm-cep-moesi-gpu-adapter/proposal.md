@@ -47,7 +47,7 @@ Stage 1 的第 6 个 change —— 但**排期位置本身就是本 change 的�
 
 | 文件 | 改什么 |
 |------|--------|
-| `include/tlm/cep/protocol_instances.json` | `moesi_gpu` 的 `status`:`planned` → `implemented`(**条件达成**,见 design **D-ζ**);**其余 13 字段零改动**(逐字镜像 ArchForge) |
+| `include/tlm/cep/protocol_instances.json` | `moesi_gpu` 的 `status`:`planned` → `implemented`(**条件达成**,见 design **D-ζ**);**其余 12 字段零改动**(逐字镜像 ArchForge;实例共 13 键,`status` 翻转 ⇒ 余 12 键) |
 | `scripts/test/cep_decl_alignment_check.sh` | ⑥ 项**排除 `status` 字段**(本仓权威:「本仓是否已实现」,非 ArchForge 镜像面)—— 收窄守卫 ⇒ 必须有**反向 fixture** 证明其余字段仍严格镜像 |
 | `.rddf/roadmap/objectives/obj-cep-platform.md` | §4.0 排队表**重排**(11 → 13 change)+ §4.2~§4.4 顺序号 + §4.6 终态 2029-Q2 → **2029-Q4** + §6.2 + §10 + §11 Entry #71 |
 | `.rddf/roadmap/phases/phase-10.md` | 依赖图 + KPI 预算行(Stage 1 7 → 9) |
@@ -56,6 +56,7 @@ Stage 1 的第 6 个 change —— 但**排期位置本身就是本 change 的�
 | **`docs/adr/ADR-CEP-12-protocol-engine-capability-map.md`** | **Status Update** —— `perm` 形态演进的**落点裁决**(独立声明源而非 `protocol_instance.schema.json`)+ 6→3 映射表的**首个交付载体** |
 | **`docs/adr/ADR-CEP-05-stub-cache-core-interface.md`** | **Status Update** —— §13.1 的「重评估 (β)/`perm` 判别位 → Stage 1(登记 `S1-7`)」**落地载体确认** + 「`protocol_instance.schema.json` 本批不改」的**本批口径澄清** |
 | **`docs/adr/ADR-CEP-13-coherence-domain-ownership.md`** | **Status Update** —— (b) 成立后的**首个可执行载体**(本 change 的静默升级声明是 (a)(b) 的**声明侧**投影) |
+| **`docs/adr/ADR-CEP-NUMBER-MAP.md`** | **KPI 预算块**(活口径)Stage 1 7 → 9 / 总计 11 → 13 / 串行 11 → 13 + 追加 2026-10-26 增补块 |
 | `scripts/test/cep_gate_selftest.sh` | 活队列锚点 #6 换名(`cpptlm-cep-chi-rnf-subset` → `cpptlm-cep-moesi-gpu-adapter`) |
 
 > **冻结面改动走两步授权**:先 commit 产物 → `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #71"` → 再 commit 清单(台账 §11 须先有 **Entry #71**)。
@@ -65,7 +66,11 @@ Stage 1 的第 6 个 change —— 但**排期位置本身就是本 change 的�
 | 成员 | 改什么 | 授权 |
 |------|--------|------|
 | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | §2 决策 3 排队算术 + §5 汇总 + 追加 Status Update | **Entry #71**(两步 commit 流程) |
-| 其余 **38** 个冻结成员 | **0 diff** | — |
+| `docs/adr/ADR-CEP-05-stub-cache-core-interface.md` | **追加 Status Update §15**(S1-7 落地载体确认) | 同上 |
+| `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | **追加 Status Update §10**(`perm_upgrade` 落点裁决) | 同上 |
+| `docs/adr/ADR-CEP-13-coherence-domain-ownership.md` | **追加 Status Update §9**((b) 的首个可执行载体) | 同上 |
+| `docs/adr/ADR-CEP-NUMBER-MAP.md` | **KPI 预算块** 7 → 9 / 11 → 13 + 增补块 | 同上 |
+| 其余 **34** 个冻结成员 | **0 diff** | — |
 
 ### 不改(明确排除)
 
@@ -94,7 +99,7 @@ Stage 1 的第 6 个 change —— 但**排期位置本身就是本 change 的�
 
 ## 验收
 
-见 2 份 delta spec 的 Scenario 清单(共 **13** 条 = 7 + 6)。**判据退化 = 用例红**;**判定结论为红 = 用例仍绿 + 结论作为交付物登记**(per 队列 #5 `Entry #68` 的红绿分离纪律)。
+见 2 份 delta spec 的 Scenario 清单(共 **14** 条 = 7 + 7)。**判据退化 = 用例红**;**判定结论为红 = 用例仍绿 + 结论作为交付物登记**(per 队列 #5 `Entry #68` 的红绿分离纪律)。
 
 **DoD 引用**:`obj-cep-platform §6.2` B1~B8 + §6.3 D1~D3 + `ADR-CEP-00 §2 决策 3`。
 
@@ -109,7 +114,8 @@ Stage 1 的第 6 个 change —— 但**排期位置本身就是本 change 的�
 | **ArchForge `32 号` 是 Draft v0.1 + D-9 批 2(2026-11-05)会改 `09 号` 的 8 处引用** | 锚点漂移 | 本仓引用 `09 号` 的**状态机语义**而非行号;若引用行号,须在批 2 落地后重生成锚点 |
 | **C-1 放行判据要求 ArchForge 侧有 commit hash 的接口 PR** | 治理阻塞(既有) | `ADR-SOC-25 D11` 提议改为「接口规约 PR」;本 change 的跨仓前置登记在 design **D-θ** |
 | **6→3 映射表的「非恒等」可能对某些实例不成立** | 设计风险 | 判据只要求「**至少一行**非恒等」+「每类有行」;若某实例确实恒等 ⇒ 该实例的映射表**显式声明恒等并给出理由**,不静默放过 |
-| **`perm_upgrade` 落独立声明源 ⇒ 与 `protocol_instances.json` 无 schema 级绑定** | 一致性风险 | 由 **AC-02**(引用完整性 + perm 覆盖 + 权限单调)承担;**不**靠 JSON Schema 的跨文件引用 |
+| **6×6 状态机**不做跨仓逐格镜像 ⇒ 除 `state_transition[2][1]==3` 这**一个**手抄常量外,其余转换若 ArchForge 改表**无人发现** | 一致性风险(缺口已在 design D-ε 诚实登记) | 缓解 = 语义关键点由 **AC-05** 断言 + 跨仓引用按**语义**而非行号(避开 D-9 批 2 的锚点位移);**全表漂移**属已知未覆盖面,登记备查 |
+| **`perm_upgrade` 落独立声明源 ⇒ 与 `protocol_instances.json` 无 schema 级绑定** | 一致性风险 | 由 **AC-02**(引用完整性 + perm 覆盖 + 权限单调)承担;**并**由 **AC-01 ②** 的**机制级**保证兜底 —— builder 把 `perm_upgrades.schema.json` 接入仓内既有 `jsonschema` 设施(`cep_decl_alignment_check.sh:98/122/170`)后,跨文件 `$ref` 绑定即**类型层**排除第 5 值 |
 
 ---
 

@@ -20,7 +20,7 @@ created: 2026-10-26
 > **队列**:`obj-cep-platform §4.0` 队列 **#6**(Stage 1 / 2028-Q1)· 依据 `ADR-CEP-12` + `ADR-CEP-05 §13.1` · 估时 10 周标称。
 > **前序**:#1 umbrella / #2 poc-spike / #3 stub-cache-core / #4 directory-ordering-plane / #5 collective-plane-base 均已 ✅ archived(完成归档语义)
 > ⇒ **KPI 并发 0/3 → 本 change 占 1 slot**(CEP 系列自身并发 ≤ 1,per `obj §6.3 D1`)。
-> **⚠ 本 change 同时承载一次**排期变更**:全局 11 → **13** change / 11 → **13** 季度;终态 2029-Q2 → **2029-Q4**(per DRI 三问裁决,Entry #71)。
+> **⚠ 本 change 同时承载一次**排期变更**:全局 **13** change / 串行 **13** 季度(新旧对照与终态季度**见 `obj §4.6`**,per DRI 三问裁决 Entry #71)。
 
 ---
 
@@ -56,14 +56,18 @@ created: 2026-10-26
 | `include/tlm/cep/protocol_instances.json` | `moesi_gpu.status`:`planned` → `implemented`(**条件达成**) |
 | `scripts/test/cep_decl_alignment_check.sh` | ⑥ 项排除 `status` 字段(本仓权威)—— 守卫收窄 ⇒ 须有反向 fixture |
 | `.rddf/roadmap/**` + `AGENTS.md` | 排队重排(11 → 13 change)+ KPI 0/3 → 1/3 + 季度 11 → 13 |
-| **`ADR-CEP-00` / `ADR-CEP-12` / `ADR-CEP-05` / `ADR-CEP-13`** | **冻结面** —— ADR-CEP-00 排队算术(两步授权)+ 其余 3 份 Status Update |
+| **`ADR-CEP-00` / `ADR-CEP-12` / `ADR-CEP-05` / `ADR-CEP-13` / `ADR-CEP-NUMBER-MAP`** | **冻结面** —— ADR-CEP-00 排队算术 + NUMBER-MAP KPI 预算块(两步授权)+ 其余 3 份 Status Update |
 
 ### 冻结面
 
 | 成员 | 改什么 | 授权 |
 |------|--------|------|
 | `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | §2 决策 3 排队 11 → 13 + §5 汇总 + Status Update | **Entry #71** |
-| 其余 38 个冻结成员 | 0 diff | — |
+| `docs/adr/ADR-CEP-05-stub-cache-core-interface.md` | Status Update §15(S1-7 落地载体确认) | 同上 |
+| `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | Status Update §10(`perm_upgrade` 落点裁决) | 同上 |
+| `docs/adr/ADR-CEP-13-coherence-domain-ownership.md` | Status Update §9((b) 的首个可执行载体) | 同上 |
+| `docs/adr/ADR-CEP-NUMBER-MAP.md` | KPI 预算块 7 → 9 / 11 → 13 + 增补块 | 同上 |
+| 其余 34 个冻结成员 | 0 diff | — |
 
 ## Non-Goals
 
@@ -90,14 +94,15 @@ created: 2026-10-26
 6. `status` 翻转 ⇒ 计数 **0 → 1**;跨仓未同步则记「**条件达成**」
 7. `mesif` **不在**本 change 交付面内(反向)
 
-### B. 契约判据面(`cep-adapter-schema-contracts`,6 Scenario)
+### B. 契约判据面(`cep-adapter-schema-contracts`,7 Scenario)
 
 1. **AC-01** `perm` 4 值锁不破(含跨 schema `$ref` 值域绑定)+ 2 条反向 fixture
 2. **AC-02** 引用完整性 + `perm` 覆盖 + 权限单调 + 3 条反向 fixture
 3. **AC-03** 三态显式化 + verdict 可 grep + 声明源畸形 ⇒ FAIL + `mesif` 注入 ⇒ 红
 4. **AC-04** 映射表完备 / 值域 / 非恒等 / 恒等带理由 + 3 条反向 fixture
 5. **AC-05** 投影自洽(稳定态齐全 / `T` 无投影 / `E+Write→M` / 投影随转换变化)+ 2 条反向 fixture
-6. 判据实现**单一**(禁双实现)+ 声明源被消费 + CLI 与测试 verdict 逐条相同
+6. **⑥ 镜像闸的 `status` 收窄**:正控(仅 `status` 不同 ⇒ 不红)+ 反向 fixture(改任一非 `status` 键 / 增删实例 ⇒ 必红)+ 登记进 `cep_decl_reverse_verify.sh`
+7. 判据实现**单一**(禁双实现)+ 声明源被消费 + CLI 与测试 verdict 逐条相同
 
 ### C. 流程与治理
 
@@ -115,10 +120,10 @@ created: 2026-10-26
 
 | 面 | 影响 |
 |---|---|
-| **路线图** | 全局 11 → **13** change / 11 → **13** 季度;终态 2029-Q2 → **2029-Q4**;Stage 1 变 **9** 个 change |
+| **路线图** | 全局 **13** change / 串行 **13** 季度;终态季度**见 `obj §4.6`**;Stage 1 变 **9** 个 change |
 | **后续 change** | `#7 chi-rnf` / `#8 mesif` / `#9 cxl-nonsym` / `#10 tilelink` / `#11~#13` 顺序号与季度顺延;`chi-rnf` 范围收窄(复用本 change 的机制) |
 | **准入前置** | S1-2 由 ⛔ 未触发 → **🟡 本 change 触发**;S1-5 / S1-7 ①② **本 change 交付**;S1-3 触发点前移至 #8 |
 | **孤儿登记** | 「`moesi_gpu` / `mesif` 未排期」**消解** |
-| **冻结面** | 1 个成员改动(ADR-CEP-00)+ 3 个 Status Update 追加(ADR-CEP-12 / 05 / 13) |
+| **冻结面** | **5** 个成员改动(ADR-CEP-00 排队算术 + NUMBER-MAP KPI 预算块 + ADR-CEP-12 / 05 / 13 各 1 个 Status Update) |
 | **跨仓** | 只读;`status` 翻转的跨仓同步**不作为前置**(design D-ζ);R-1 / C-1 / D-9 批 2 三项登记在案 |
 | **下游 adapter** | 后续 7 个 adapter change **复用** `cep-adapter-schema-contracts` 的判据实现,各自**填行** |

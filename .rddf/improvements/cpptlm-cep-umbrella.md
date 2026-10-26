@@ -158,7 +158,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,CppTLM 已具备 dGPU SoC 完整链路与
 - ❌ **完整缓存核心** — Stage 0 仅 Stub Cache 5 接口 + 6 不变量;不做完整 tag/data SRAM / 复杂预取器 / 精确功耗模型(per `ADR-CEP-05 §4.2`)
 - ❌ **真实 RTL / FPGA 加速** — 推 ArchForge 仓(per `ADR-CEP-00 §2 Decision 5`)
 - ❌ **Multi-VC NoC 全实施** — Stage 0 仅 `vc_id` 字段 0-3 沿用;多 VC 路由器仲裁推迟到 CEP-09(per `ADR-CEP-01 §3.3 抓取点 3`)
-- ❌ **6 协议平行** — Stage 0~3 串行(per `ADR-CEP-00 §2 Decision 3` 11 季度)
+- ❌ **6 协议平行** — Stage 0~3 串行(per `ADR-CEP-00 §2 Decision 3` 13 季度)
 - ❌ **完整 UsrLinuxEmu driver 集成** — 不在 CEP scope(per `ADR-CEP-07 §2 Decision 6`)
 - ❌ **IOMMU 完整协议** — Stage 5 范围 reduction 待签发独立 ADR(per `ADR-CEP-00 §3` supersede 表 P5 行)
 
@@ -304,8 +304,8 @@ canonical 10 条流 + **CEN-Ib1~11**(11 条,per `ADR-CEP-02`;`CEN-Ib11` 为 2026
 
 - Stage 0 **曾**占用 1 个 Proposed KPI slot(创建前 3 个 0% change 已 **⏸ 暂存归档** `--skip-specs`,baseline 3/3 → 0/3 → 创建后 1/3)—— **2026-10-23 已完成归档 → 该 slot 已释放**,本段登记时点 **0/3**
 - **当前真实 baseline = 1/3**(2026-10-26:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:2026-10-26:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:建目录时曾占 1 slot,per Entry #66;2026-10-25:`cpptlm-cep-directory-ordering-plane`(队列 #4)**已完成归档** → slot 已释放,per Entry #64;历史:建目录时曾占用 1 slot;2026-10-25 `cpptlm-cep-stub-cache-core`(队列 #3)**已完成归档** → 释放 1 slot;2026-10-24:`cpptlm-cep-poc-spike`(队列 #2)**已完成归档** → 释放 slot;该 change 建目录后曾为 1/3)
-- Stage 1~3 后续 **10** 个 change 串行释放 KPI 占用(任一时刻 ≤ 1)
-- 总 CEP 系列占用 **11** KPI slots,跨 **11** 季度(具体季度**见 `obj-cep-platform §4.6`** —— per Entry #25 单源纪律,本文不复制数值);change / 季度数真源 = `ADR-CEP-00 §2 Decision 3`
+- Stage 1~3 后续 **12** 个 change 串行释放 KPI 占用(任一时刻 ≤ 1)
+- 总 CEP 系列占用 **13** KPI slots,跨 **13** 季度(具体季度**见 `obj-cep-platform §4.6`** —— per Entry #25 单源纪律,本文不复制数值);change / 季度数真源 = `ADR-CEP-00 §2 Decision 3`
 
 ### C. 测试标签增量
 

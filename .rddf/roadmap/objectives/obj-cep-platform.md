@@ -169,7 +169,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 > **口径**:每个 change 独占 1 KPI slot、独占 1 个季度(per `ADR-CEP-00 §2 Decision 3`「13 个 change,串行 13 季度」+ §5.4 并发 ≤ 1)。
 > **本表是实施路径的唯一权威视图** —— §4.2 ~ §4.4 是各 Stage 的**细节展开**(估时 / 关联 ADR / 语义),其**顺序号与季度以本表为准**;`phase-10.md` 的依赖图是**示意**,不作排期承诺。
-> **状态口径**:🟡 in-progress(已建、待 archive)· ✅ 完成 · 📋 Planned(未建)· ⏸ 队列位保留(待裁决)。
+> **状态口径**:🟡 in-progress(已建、待 archive)· ✅ 完成 · 📋 Planned(未建)· ⏸ 队列位保留(待裁决)。**📋 Planned 行可在末列标注外部阻塞**(如「⚠ R-1 阻塞」)—— **登记 ≠ 就绪**:排期位置是**计划**,阻塞标注是**债的可见性**,二者不冲突。
 > **状态怎么改、改哪几处** ⇒ 见 **§4.7 载体分工与状态更新协议**(本表的状态列是 `tasks.md` 勾选的**投影**,不是第二真源)。
 
 | 顺序 | Change | Stage | 季度 | 状态 | 承接的 Stage 1 准入前置 |
@@ -198,10 +198,10 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 > **语义规则**:「**引述旧值的历史说明段**」(增补块 / 变更说明 / 新旧对照表)**不算副本** —— grep 只是粗筛,最终以语义判定;真实缺陷是**旧值被当作现行口径复活**。
 > ```bash
 > # ① 新值:季度值在 objective 之外应零命中(台账 / implementation 快照除外)
-> grep -rn "2029-Q2\|2028-Q4" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
+> grep -rn "2029-Q4\|2028-Q4" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
 > # ② 旧值:已被取代的旧终态 / 旧串行数,不应在新文本里复活
-> grep -rn "2029-Q1" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
-> grep -rn "串行 10 季度\|10 个 change" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
+> grep -rn "2029-Q2" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
+> grep -rn "串行 11 季度\|11 个 change" .rddf/ docs/ | grep -v "obj-cep-platform.md" | grep -v "docs/implementation/"
 > ```
 > **已知例外(实测 1 处,命中是预期的)**:
 > ① `.rddf/drafts/cep-architecture-decision-log.md`(:28)→ architect 阶段**草稿**,**除本条登记外零入向引用**(不参与路线图口径)。
@@ -454,7 +454,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 1/3**(2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
+→ **当前 Proposed 并发 = 1/3**;下一个可启动 change = 队列 #7 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)(2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -4711,7 +4711,7 @@ CLI 6 判据全 PASS · KPI **0/3** · 冻结集 **39**
 | `proposal.md` | Why / What Changes / 冻结面 / Non-Goals / 依赖与风险 |
 | `design.md` | **13 个 D-段裁决**(D-α 队列位置 … D-μ 跨实例复用边界) |
 | `specs/cep-moesi-gpu-adapter/spec.md` | **7 Scenario** |
-| `specs/cep-adapter-schema-contracts/spec.md` | **6 Scenario** |
+| `specs/cep-adapter-schema-contracts/spec.md` | **7 Scenario** |
 | `.rddf/improvements/cpptlm-cep-moesi-gpu-adapter.md` | 5 段草稿(Why / What Changes / Non-Goals / Acceptance / Capabilities / Impact) |
 
 **⑨ 3 个跨仓登记(诚实登记,不掩盖)**
@@ -4724,8 +4724,8 @@ CLI 6 判据全 PASS · KPI **0/3** · 冻结集 **39**
 
 **⑩ 验收(planner 阶段)**
 
-`openspec validate cpptlm-cep-moesi-gpu-adapter --strict` **rc=0** · delta spec **13 Scenario**(7 + 6)· KPI 实测 **1 个 active** ·
-守门 7 项 rc=0 · `cep_gate_selftest` 全绿(锚点 #6 已换名)· `openspec validate --changes --strict` rc=0 · 冻结集 **39**(成员数不变,仅 ADR-CEP-00 的 hash 变)
+`openspec validate cpptlm-cep-moesi-gpu-adapter --strict` **rc=0** · delta spec **14 Scenario**(7 + 7)· KPI 实测 **1 个 active** ·
+守门 7 项 rc=0 · `cep_gate_selftest` 全绿(锚点 #6 已换名)· `openspec validate --changes --strict` rc=0 · 冻结集 **39**(成员数不变,**5** 个成员的 hash 变:ADR-CEP-00 / 05 / 12 / 13 / NUMBER-MAP)
 
 **⑪ 关联**: Entry #70(队列 #5 归档)· #69 / #68(队列 #5 三段评审)· #67(队列 #5 builder)· #66(队列 #5 planner)· #58(M-4「真空裁决」先例)· **ADR-CEP-05 §13.1**(`perm` 形态约束的权威)· **ADR-CEP-12 §8.3**(6 类词表与 `CATEGORY_*` 的分层纪律)· **ADR-CEP-02 CEN-Ib11**(`perm` 4 值锁)
 
@@ -4748,6 +4748,53 @@ CLI 6 判据全 PASS · KPI **0/3** · 冻结集 **39**
 > **R-1 的教训**:`§4.0` 的「五处同改」规则管的是**跨文件**同步,而**同一张表内部的行结构错误**不在其覆盖范围
 > ⇒ `_rows()` 只按 `|` 抓行、**不校验列数** ⇒ 一张 15 行 / 列数错乱的表能**全绿通过**所有机器闸
 > ⇒ **表格结构需人工核对**(闸只保证「标记在两处出现」,不保证「表是合法的表」)。
+
+---
+
+### Entry #72 — 2026-10-26 [fix]
+
+**主题**: 队列 #6 planner 产出 **critic 对抗式评审轮** —— **REJECT**(2 BLOCKER + 8 SHOULD_FIX + 6 NIT)全部落地
+
+**① 评审结论**
+
+critic 独立评审(仓外 AI agent,**不等于真人外部评审** —— per `obj §9.3` R10 先例,本结论应登记为「残余风险 + DRI 书面接受」,而非「已闭环」)。
+判定 **REJECT**。评审前先由 context-builder 组装上下文并做了一次独立 diff 复核 ⇒ 挖出 8 处我方遗漏(R-1~R-8,已先修),再送 critic ⇒ critic 另挖 2 BLOCKER + 8 SHOULD_FIX + 6 NIT。
+
+**② 2 个 BLOCKER**
+
+| # | 缺陷 | 修复 |
+|---|------|------|
+| **B-1** | **design D-γ 的承重证据是假的** —— 原文称「仓内**无** JSON-Schema validator(实测 `grep -rn jsonschema` 零命中)」;critic 反证:仓内**有**(`scripts/test/cep_decl_alignment_check.sh:98/122/170` 用 `jsonschema.Draft202012Validator`;CI pip 已装;缺依赖时**不降级运行`)。**我的测量方法错了** —— grep 只搜了 `test/` + `CMakeLists.txt`,**漏搜 `scripts/`** ⇒ 假测量 ⇒ 设计结论被错误证据带偏(误以为「无机制」而放弃了本可拿到的**机制级**保证);且 spec 仍写「**机制上**不可能」而 design 已改口「判据层不可能」⇒ **验收面(spec)与设计在同一句话上互相矛盾** | ① design D-γ 的证据链**改正**:仓内**有** validator ⇒ 机制级保证**可达**(builder 把 `perm_upgrades.schema.json` 接入既有设施 + `referencing` registry 解析跨文件 `$ref`)⇒ 「机制上不可能」**成立**;② spec AC-01 ② 补**前提**(接入前只是声明性);③ proposal 风险表同步口径 |
+| **B-2** | **R-5 的修复未传播** —— 台账 Entry #71 §⑦ 已订正为「5 个冻结成员变动」,但**同批产物**三处仍是旧错误口径:`proposal.md` 冻结面表(只列 1 个 + 「其余 **38** 个 0 diff」,且**修改表漏列** NUMBER-MAP)、`improvements` 同款、Entry #71 ⑩(「仅 ADR-CEP-00 的 hash 变」)⇒ 且 proposal **自己的修改表**与**自己的冻结面表**自相矛盾 ⇒ ⑫ 段「8 处全部已修」的登记**不实** | proposal 冻结面表列全 5 个 + 「其余 **34** 个 0 diff」;proposal / improvements 的**修改表**补 NUMBER-MAP;improvements Impact 表冻结面口径改 5 个;Entry #71 ⑩ 改「5 个成员的 hash 变」 |
+
+**③ 8 个 SHOULD_FIX**
+
+| # | 缺陷 | 修复 |
+|---|------|------|
+| **S-1** | 断言⑧ 条件② **查错文件** —— 仍读 `protocol_instance.schema.json` 找 `perm_upgrade`,而 design D-β 的裁决正是该文件**零改动** ⇒ 条件② **恒假**(与旧键名一样装饰性) | 改为**两个**候选文件任一命中即算演进已发生(`protocol_instance.schema.json` / `perm_upgrades.schema.json`) |
+| **S-2** | 断言⑧ 条件① 不区分「✅ 完成归档」与「⏸ 暂存归档」 —— 暂存归档下 perm 演进**未落地**却照样宣布「有效期届满」 | 额外要求 **完成归档**语义 = delta capability **已并入** `openspec/specs/`(暂存归档不并入)⇒ 用 main spec 存在性判定 |
+| **S-3** | §4.0 的「**双边化自检**」块没随 11→13 重指 —— 自检② 仍 grep `2029-Q1` / `串行 10 季度` / `10 个 change`(那是 10→11 那轮的旧值),本轮新旧值一条没查;自检① 也没加新终态 `2029-Q4` | 自检① 改 `2029-Q4`;自检② 改 `2029-Q2` / `串行 11 季度` / `11 个 change` |
+| **S-4** | `obj:457` 活区残留「下一个可启动 = 队列 #5 `cpptlm-cep-collective-plane-base`」—— 队列 #5 已归档、#6 已建目录 ⇒ **双重错误** | 改「下一个可启动 = 队列 #7 `cpptlm-cep-chi-rnf-subset`」 |
+| **S-5** | `cpptlm-cep-umbrella.md` 活区旧数(:161 「11 季度」/ :307 「后续 **10** 个 change」/ :308 「占用 **11** slots,跨 **11** 季度」)—— 本批改了该文件却漏扫同文旧数 | 三处同步为 13 / 12 / 13 |
+| **S-6** | **本批自己引入单源纪律违反** —— improvements 把具体季度值「终态 2029-Q2 → **2029-Q4**」复制到 objective 之外,而 design D-α 自己重申「improvements 一律只写『见 §4.6』」 | 两处改为「见 `obj §4.6`」 |
+| **S-7** | `phase-10.md:44` 准入前置归属多列 #7 —— §4.0 的 #7 行明确写「**新准入前置：无**」 | 归属改为 #2 / #4 / #6 / #8,并注明 #7 不持有任何 S1-x |
+| **S-8** | **⑥ 闸排除 `status` 的收窄没有 Scenario 级反向 fixture** —— design D-ζ 写了「必须有反向 fixture」,但 13 个 Scenario 无一条承载它;AC-03 只覆盖 `mesif` 注入;既有 `cep_decl_reverse_verify.sh` 不含 `status` 用例 ⇒ **收窄一个既有闸而不写进验收面 = builder 可静默漏做且归档仍绿** | **补第 7 个 Scenario**(`cep-adapter-schema-contracts`):**正控**(仅 `status` 不同 ⇒ ⑥ 不红)+ **反向 fixture**(改任一非 `status` 键 ⇒ 必红;增删实例 ⇒ 必红)+ **须登记进 `cep_decl_reverse_verify.sh`**(不得只存在于 spec 文本)⇒ Scenario 数 13 → **14** |
+
+**④ 6 个 NIT(全部落地)**
+
+N-1 proposal「其余 13 字段零改动」→ **12**(实例共 13 键,`status` 翻转 ⇒ 余 12)· N-2 `roadmap.md` 加 2026-10-26 更新注(不与旧日期注并置)· N-3 `role.json` 时间戳单调(不再倒序)· N-4 §4.0 状态口径行补「📋 Planned 行**可**在末列标注外部阻塞」(`登记 ≠ 就绪`:排期位置是计划,阻塞标注是债的可见性)· N-5 proposal 风险表补「**6×6 全表漂移缺口**」行(D-ε 已在 design 登记,风险应浮到 proposal 层)· N-6 两份 Requirement 正文压缩(503/488 → **479/450**,留余量给 builder 增字;`openspec validate --strict` rc=0)
+
+**⑤ 复审前自查(修完 critic 意见后)**
+
+| 项 | 结果 |
+|---|---|
+| 守门 7 项 | rc=0 |
+| `cep_gate_selftest` | **31/31** |
+| `openspec validate --changes --strict` | rc=0 |
+| `ctest` | **106/106** |
+| delta spec | **14 Scenario**(7 + 7) |
+
+**⑥ 关联**: critic 评审轮(REJECT:2 BLOCKER / 8 SHOULD_FIX / 6 NIT)· ⑫ 段的 8 处评审前自查缺陷(R-1~R-8)· Entry #70(队列 #5 归档)· `ADR-CEP-05 §13.1` · `ADR-CEP-12 §8.3` · `ADR-CEP-02 CEN-Ib11`
 
 ---
 

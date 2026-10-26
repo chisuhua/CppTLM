@@ -1,7 +1,7 @@
 {
   "schema_version": "role-v1",
   "current_role": "planner",
-  "updated_at": "2026-10-26T12:00:00Z",
+  "updated_at": "2026-10-26T23:59:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
@@ -113,7 +113,7 @@
     },
     {
       "role": "planner",
-      "at": "2026-10-26T00:00:00Z",
+      "at": "2026-10-26T23:59:00Z",
       "by": "user",
       "note": "队列 #6 cpptlm-cep-moesi-gpu-adapter planner 阶段(Entry #71;原记的 chi-rnf-subset 已随 DRI 三问裁决①重排为 #7)"
     }

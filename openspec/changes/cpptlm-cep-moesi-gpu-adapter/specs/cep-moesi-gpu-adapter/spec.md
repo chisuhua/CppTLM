@@ -4,8 +4,7 @@
 
 CEP SHALL 交付 **`moesi_gpu` 协议实例**作为平台上的**首个 `implemented` adapter**:表驱动的 6 态 × 6 事件状态机 + 6→4 `perm` 投影 + 6→3 消息类映射 + 逐字镜像的实例声明 + 装配期校验实测。
 
-> **形态 / 状态机表**:**header-only 不进 `ModuleFactory`**、不注册 23 ABI、不改 frozen header;6×6 `state_transition` 语义取自 ArchForge `09 号` §3 但**本仓从零实现** ⇒ 全表跨仓逐格镜像**不在**本 change 范围(design **D-ε**)。
-> **边界**:**新增 invariant 数 = 0**(贡献 = 行为化既有条目 + 契约层加固);本 Stage 不可测条款 SHALL **不**进本 capability(依据见 design **D-ι** / **D-λ**)。
+> **形态 / 边界**:**header-only 不进 `ModuleFactory`**、不注册 23 ABI、不改 frozen header;6×6 `state_transition` 语义取自 ArchForge `09 号` §3 但**本仓从零实现** ⇒ 全表跨仓逐格镜像**不在**本 change 范围(design **D-ε**);**新增 invariant 数 = 0**;本 Stage 不可测条款 SHALL **不**进本 capability(design **D-ι** / **D-λ**)。
 
 #### Scenario: 6 态 × 6 事件表驱动,且 `E+Write→M` 静默升级存在
 
