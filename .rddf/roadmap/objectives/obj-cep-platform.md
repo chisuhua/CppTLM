@@ -5134,6 +5134,44 @@ critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option 
 
 ---
 
+### Entry #77 — 2026-10-27 [review]
+
+**主题**: 队列 #7 `cpptlm-cep-cohif-carrier` planner 产出 **critic 第 2 轮复审 = APPROVE**(预算用尽:同一 change 已用 2/2 轮)
+
+**① 结论**
+
+| 信号 | 值 |
+|---|---|
+| `A_BLOCKER_CLOSED` | **yes**(critic 实测:`## ADDED Requirements` 各 1 处 / `## Requirements` 0 命中 / Scenario 与锚点结构未动) |
+| `B_NEW_BLOCKERS` | **0** |
+| `SCOPE_BREACH` | **no**(新增 diff 全在 `.rddf/**`,未越 planner 职责,未超原 finding 收口面) |
+| `mergeable_after_round2` | **yes** |
+
+**② 复审预算(硬规则执行情况)**
+
+| 轮 | 日期 | 结论 | 提交给 critic 的范围 |
+|---|---|---|---|
+| 1 | 2026-10-27 | **REJECT**(1 BLOCKER + 5 SHOULD_FIX + 4 NITS) | planner 产出全量 |
+| 2 | 2026-10-27 | **APPROVE** | 仅「BLOCKER 闭合证据 + 本轮新增 diff」—— 未要求全量重审,未写开放式找漏洞指令 |
+
+⇒ **2/2 轮用尽**。后续若再起 critic 须用户明确批准(per 评审预算规则)。
+
+**③ 独立性缺口(强制标注)**
+
+本仓单开发者环境,本轮复审仍由 AI agent 完成 ⇒ **不等于真人外部评审**;按 `obj §9.3` R10 登记为「残余风险 + DRI 书面接受」,**不得**表述为「已获独立评审通过」。
+
+**④ 未闭合项(非 BLOCKER,转正前必须处理)**
+
+| # | 项 | owner | 触发时点 |
+|---|---|---|---|
+| 1 | **判据增补追认** —— CC-05 ④(有锚点)/ CC-06 ②(无锚点)二者择一:architect 给 `ADR-CEP-19` 追加 `## Status Update` 承认 / 撤出回到 research §6.4 字面 | **architect** | `design.md` `D-κ` **步 0.5**(转正硬前置) |
+| 2 | `scripts/test/cep_doc_ref_aliases.tsv:18` 的 `06 号` 别名指向 ArchForge 异构文件(存量引用假阴性) | **闸维护者** | 任何时候;改它会重算全仓存量 `06 号 §N` |
+| 3 | `cep_docs_sync_check.sh:392` 的 `.rddf/drafts/*.md` 扫描面未递归覆盖子目录 | **builder** | 转正时 |
+
+**⑤ 关联**: Entry #76(critic 首轮收口)· #75(planner 产出)· #74(`ADR-CEP-19` 签发)· `design.md` `D-η`(判据口径真源)/ `D-κ` 步 0.5
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)
