@@ -42,9 +42,9 @@
     "tools/render_report.py": "1368402696a3aa5753ebd073a9bcab444fcd092d1334b9a7b7e37a28e026967e",
     "tools/run_sweep.py": "f16e33d3834cd2e24422537de9be82aa3b64c2e660d8bd792f4d0f82d00e3297"
   },
-  "authorized_by": "Entry #78",
+  "authorized_by": "Entry #80",
   "frozen_at": "2026-10-27",
-  "frozen_at_commit": "5db2dd991f476e901a0be072646321744a831304",
+  "frozen_at_commit": "4971f57eae1aba6aecc0a905b3480761e3b970be",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
