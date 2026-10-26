@@ -230,3 +230,23 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 >
 > - **v1.0(2026-10-27)**:签发。draft 阶段的 3 轮 critic 评审闭环(REJECT 2 B + 10 S + 7 N → APPROVE_WITH_CONDITIONS ×3 → `mergeable: yes`)。
+
+## Status Update 2026-10-27 —— 判据子条件追认(CC-05 ④ / CC-06 ②)与判据真源层级登记
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记追认与口径。
+>
+> **触发**: 队列 #7 `cpptlm-cep-cohif-carrier` 的 planner 产出经 critic **两轮**对抗式评审(第 1 轮 REJECT → 第 2 轮 APPROVE)后,评审在**第 1 轮**指出一处**权威归属问题**:本 ADR 全文对 `CC-0x` **只有 3 处编号引用**(`§3.3` 的 `:167` / `:168` 与 `§5` 的 `:205`),**不含判据定义**;判据定义实际落在 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`(**附属层**调研文档)。planner 的 delta spec 相对该字面**多出 2 条子条件** ⇒ 「planner **不得**给已签发 ADR 增删判据」的纪律对这两处不成立 ⇒ 需追认。**§2 决策正文不可变** ⇒ 只能以本段追认。
+>
+> **追认 ① —— CC-05 子条件 ④(per-bridge 元数据齐备)**: **追认成立**。依据本 ADR `§3.2 代价` 已声明「**per-bridge 元数据只做静态**(`protocol_id_` / `bridge_id_`,per `docs/architecture/06-inter-module-network.md` §4.5)」⇒ 该元数据**本就在本 ADR 的决策面之内**;子条件 ④ 只是把**已声明的代价项**判据化(机器可检),**不引入新决策、不改 §2 决策 5**。
+>
+> **追认 ② —— CC-06 子条件 ②(映射表 SHALL 非恒等)**: **追认成立**,但**依据标注为逻辑推论**(无对应上游条款)—— 依据是「特化字典的存在理由」:若 6→3 映射**恒等**,则「CohIf 语义 → 网络 Bundle 链路层类别」无需字典,队列 #6 的映射表机制本身**失去存在意义**。该子条件是**反向护栏**(防字典退化),**不改变** CC-06 的主判据(产出的 `CATEGORY_*` 必须落在网络 Bundle 的 3 个常量内)。
+>
+> **判据集合的最终形态**: 编号仍为 **CC-01 ~ CC-06 共 6 条** —— 与本 ADR `§5` 后续表所述「6 条判据 CC-01~CC-06」**一致**;本段只固化**子条件**,**不新增判据编号**。
+>
+> **判据口径(编号对齐 ≠ 定义对齐)**: 「判据**编号**」以本 ADR 为准;「判据**定义**」此前只在附属层调研文档 `§6.4` ⇒ **本 ADR 不自足**,属**真源层级缺陷**,在此诚实登记。**治本路径** = 队列 #7 转正归档后 `openspec archive` 把 delta spec 并入 `openspec/specs/` ⇒ 判据进入真源层(自足),本段届时退为历史沿革。
+>
+> **追认的边界**: 本段**不**新增决策、**不**改判据**编号集合**、**不**引入新的架构取舍、**不**触碰 §2 决策 9(`StubCacheCore` 延期)。若实现阶段证明子条件 ④ / ② **不可实现**,须**新开**一段 Status Update 登记其失效,**不得**回改本段(per ADR 不可变纪律)。
+>
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #78**
+>
+> **冻结面**: 本文件属 M1 冻结面 **40 成员**;本次改动已走授权闸 `cep_freeze_check.sh --update --authorized-by "Entry #78"`。
