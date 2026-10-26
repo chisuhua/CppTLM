@@ -106,7 +106,7 @@
 1. **删掉**「不被 supersede」这句断言(它是错的);
 2. **D-2 改选 JSON 链** ⇒ 与 `ADR-CEP-16:46/:86` **不冲突**(它们排除的是 programmatic bridge 的 C++ 路径,本队列走的是 JSON 端口注册,`RouterTLM` 同款既有路径);
 3. **C2 清单补第 2 处**(`ADR-CEP-16:45`);
-4. `ADR-CEP-16` 进入 §7 影响清单 —— 但属性是「**引用依据**」(证明不冲突),**不是**修改对象。
+4. `ADR-CEP-16` 进入 §7 影响清单,**属性 = 修改对象**:动作是**追加 `## Status Update`**(登记 C2 第 2 处悬空引用 + 澄清 `:46/:86` 与 D-2 的 JSON 链不冲突)。⚠️ v2 初稿曾写「引用依据、不是修改对象」—— 与 §7 表里「Status Update」的动作**自相矛盾**(追加 Status Update 就是修改),已订正。
 
 ---
 
@@ -182,6 +182,24 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 
 ## 5. 架构裁决(D-1 ~ D-9)
 
+> **与 `ADR-CEP-19` 决策编号的映射(per critic 第 2 轮 SF-3)** —— 两侧**不是**一一同号,签发后审计「决策 N 实现哪条 D」须查此表:
+
+| 本报告 | `ADR-CEP-19` 决策 | 主题 | 是否可双射 |
+|---|---|---|---|
+| **D-1** | 决策 **3** | `CohIfBundle` 分类(业务语义 + 网络级纪律) | ✅ |
+| **D-2** | 决策 **5** | 装配走 JSON 链 | ✅ |
+| **D-3** | 决策 **4** | 特化桥 + 钩子扩展(显式偏离) | ✅ |
+| **D-4** | 决策 **6** | Bundle 路径避开 `coherence_bundles_tlm.hh` | ✅ |
+| **D-5** | 决策 **1** | 队列位置(#6 与 #7 之间)+ 交付面 | ✅ |
+| **D-6** | 决策 **7** | `06 号 §11.2/§11.3` 时间线转隶 CEP | ✅ |
+| **D-7** | **无对应决策**(`06 号` 漂移订正) | `flit_category` 4→3 值 / Bundle 文件数 16→17 | ❌ **漂移订正属文档维护,不进 ADR** |
+| **D-8** | **无对应决策**(队列 #6 偏离登记) | 队列 #6 补对 `ADR-CEP-07 决策 3` / `07 号 §6.3` 的偏离 | ❌ **属队列 #6 的治理动作,不进 ADR** |
+| **D-9** | 决策 **9** | 不动 `StubCacheCore`(显式延期) | ✅ |
+| — | 决策 **2** | `CohIfBundle` 单一类型 + 5 流界定 | ⚠️ 本报告的 **D-2 前置**(§2.2 第一步 + §0 结论 4),未单列为 D |
+| — | 决策 **8** | 不引入新抽象层 | ⚠️ 本报告的**横贯约束**(D-1/D-2/D-3 共同蕴含),未单列为 D |
+
+> **结论**:9 条 D 对应 7 条决策;决策 2 / 8 是**横贯约束**(不单列为 D);D-7 / D-8 是**治理动作**(不进 ADR)。签发后审计须按本表,**不得**假设「决策 N ↔ D-N」。
+
 ### D-1 —— `CohIfBundle` 分类:**业务语义 + 网络级纪律**
 
 **问题**:`06-bis §5.6` 判 coherence Bundle 为「网络」;`06 号 §3.1` 两条判定规则对 CohIf 给出**相反**答案 —— **字段维度**(无 `src_node`/`dst_node`/`flit_category`/`vc_id` ⇒ 业务)vs **owner 维度**(跨模块共享 ⇒ 网络)。
@@ -201,7 +219,9 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 1. `CohIfBundle` **单一类型**,**只覆盖 5 条 RN-side 流**(§2.2 第一步)⇒ 消解 `06-bis §3.2` 的「多 Bundle 类型」死结;
 2. 端口面用 `BidirectionalPortAdapter<M, CohIfBundle, N>`(仓内已存在,`chstream_adapter_factory.hh:103`);
 3. **装配走 JSON 链**(实测全程通,§2.2 第二步)⇒ 与冻结 `ADR-CEP-16:46/:86`(排除 programmatic bridge)**天然不冲突**;
-4. 新增宏 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)`(与既有 `chstream_register.hh:175` `REGISTER_CHSTREAM_DUAL` 对称),内含 `static_assert(n > 1)` —— 理由:`isMultiPort` 要求 `port_count > 1`(`:61-63`),**N=1 会落 single 分支调 `bind_ports`(空 shim,`bidirectional_port_adapter.hh:141`)** ⇒ 静默不绑定。
+4. 新增宏 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)`,**同时做两件事**:① `ModuleFactory::registerObject<mod_type>("#mod_type")`(否则 ModuleFactory **根本实例化不了** PE —— 对象注册是 adapter 注册的前提)② `ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<mod_type, bundle_t, n>("#mod_type")`;宏内 `static_assert(n > 1)`。
+   - **⚠️ 不照抄 `REGISTER_CHSTREAM_DUAL`(`chstream_register.hh:175`)的半截形态**:实测该宏**全仓零调用点**(只有定义 + 用法注释),且**宏体只注册 adapter、不含 `registerObject`**;`NICTLM` 的真实落点是**内联**在无参批量宏 `REGISTER_CHSTREAM` 体内 —— `registerObject` 在 `:63`,dual adapter 注册在 `:121-122`。⇒ 「与 DUAL 对称」是语法真、语义虚 ⇒ v2 **不采用**该表述。
+   - `static_assert(n > 1)` 的必要性:`isMultiPort` 要求 `port_count > 1`(`:61-63`),**N=1 会落 single 分支调 `bind_ports`(空 shim,`bidirectional_port_adapter.hh:141`)** ⇒ 静默不绑定。
 
 **为什么不选 programmatic(v1 的错误)**:
 - `ADR-CEP-16:46/:86` **明写排除**;
@@ -260,7 +280,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 **裁决**:本队列**不**给 `StubCacheCore` 加 ChStream 端口面。
 
 **理由(实测三叉矛盾)**:
-1. `openspec/specs/cep-stub-cache-core/spec.md` 在 **FROZEN_GLOBS** 内(`cep_freeze_check.sh:69`);
+1. `openspec/specs/cep-stub-cache-core/spec.md` 在 **FROZEN_GLOBS** 内(`cep_freeze_check.sh:70`;`:69` 是 `cep-vc-mapping-contract`);
 2. 该 spec 写「`net_side` SHALL 由 **mock ProtocolEngine** 驱动(本 change **不**引入真实协议引擎)」+ 三个流名「SHALL **不**出现作为 stub 的**对外接口**」;
 3. `stub_cache_core.hh:39-40` 写「**不**经 `ModuleFactory` 注册(本类是 **testbench 定位** 的组件)」;
 4. 而 `ADR-CEP-07:67` / `07 号 §6.3` 说它**应该** `registerObject` + `ChStreamAdapterFactory::create`。
@@ -280,7 +300,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 | **1** | `include/bundles/cep_coherence_bundles_tlm.hh` —— `bundles::CohIfBundle` | `06-bis §5.2/§5.3/§5.4` 字段基线 | 只覆盖 **5 条 RN-side 流**;`bundle_base` + `ch_uint`/`ch_bool` + `BUNDLE_FIELD_WIDTH` 锁 + `is_trivially_copyable`;**无网络层字段**(D-1) |
 | **2** | `include/tlm/cep/protocol_engine_base.hh` —— `ChStreamModuleBase` 派生 + `InputStreamAdapter<CohIfBundle>`/`OutputStreamAdapter<CohIfBundle>` | `ADR-CEP-07:64` + `router_tlm.hh:136-142` 范式 | **JSON 装配**(D-2);持 `ProtocolBridgeEr*` |
 | **3** | `include/framework/protocol_bridge.hh` —— `ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` + `AbstractProtocolBridge` | `06 号 §4.4`(**首次落地**) | 双层:类型擦除基类 + 模板子类;`Ordered` 单 bool |
-| **4** | `chstream_register.hh` 新增 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)` + `module_factory.hh:313-315` 钩子扩展 | `06 号 §9.3` + `chstream_register.hh:175` 对称 | 宏内 `static_assert(n > 1)`;钩子**扩展**不新建类(D-3) |
+| **4** | `chstream_register.hh` 新增 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)`(**`registerObject` + `registerBidirectionalPortAdapter` 两件都做**)+ `module_factory.hh:313-315` 钩子扩展 | `06 号 §9.3` + `chstream_register.hh:63`(`registerObject`)+ `:119`(Bidir 注册) | 宏内 `static_assert(n > 1)`;**不**照抄 `REGISTER_CHSTREAM_DUAL` 的半截形态(零调用点的死宏,只注册 adapter);钩子**扩展**不新建类(D-3) |
 
 > **显式延期(D-9)**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface`(所有权明确,非「以后再说」)。
 
@@ -292,6 +312,9 @@ Traffic Generator ──(cpu_side 功能调用,非 ChStream)──> Stub Cache C
                                                             │
                         CohIfBundle · 5 流 (request / completion /
                         snoop / snoop_resp / writeback)     │ ★ 交付 1
+                        ⚠️ **stub 侧端点 = 延期(决策 9)**:本队列只交付
+                          Bundle 类型 + PE 侧端口面;stub 的 ChStream
+                          端口面归 cpptlm-cep-stub-cache-chstream-surface
                         ⇒ forward_data / back_invalidate / address_resolve /
                           barrier / snoop_completion_ack **不在该 Bundle 域内**
                                                             ▼

@@ -50,7 +50,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 | 1 | `include/bundles/cep_coherence_bundles_tlm.hh` —— `bundles::CohIfBundle` | `06-bis §5.2~§5.4` 字段基线 |
 | 2 | `include/tlm/cep/protocol_engine_base.hh` —— `ChStreamModuleBase` 派生 + ChStream 端口面 | `ADR-CEP-07` 决策 3 + `router_tlm.hh:136-142` 范式 |
 | 3 | `include/framework/protocol_bridge.hh` —— `ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` | `06 号 §4.4`(首次落地) |
-| 4 | `chstream_register.hh` 新增 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)` + `module_factory.hh:313-315` 钩子扩展 | `06 号 §9.3` + `chstream_register.hh:175` 对称 |
+| 4 | `chstream_register.hh` 新增 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)`(**`registerObject` + `registerBidirectionalPortAdapter` 两件都做**)+ `module_factory.hh:313-315` 钩子扩展 | `06 号 §9.3` + `chstream_register.hh:63` + `:119` |
 | **延期** | `StubCacheCore` 的 ChStream 端口面 ⇒ `cpptlm-cep-stub-cache-chstream-surface` | 决策 9 |
 
 **排序理由**:`moesi_gpu` 交付首个真实协议语义 + **特化字典**(6→3);载体队列**消费**该字典;`chi-rnf-subset` 则**首次在真实载体上验证**。若载体排在 `chi-rnf` 之后 ⇒ `chi-rnf` 继承**逻辑级**装配验证(`stub_cache_core.hh:42` 明写 `net_side` 由 mock ProtocolEngine 驱动)⇒ 载体债复制一遍。
@@ -86,7 +86,8 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 ### 决策 5 —— 装配走 **JSON 链**,**不**走 programmatic bridge
 
 **裁决**:
-1. 注册:`REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)`(新增宏,与 `chstream_register.hh:175` 的 `REGISTER_CHSTREAM_DUAL` 对称),内含 `static_assert(n > 1)`;
+1. 注册:`REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)` —— **宏体做两件事**:① `ModuleFactory::registerObject<mod_type>("#mod_type")`(对象注册是 adapter 注册的前提,缺它 ModuleFactory 实例化不了 PE)② `ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<mod_type, bundle_t, n>("#mod_type")`;宏内 `static_assert(n > 1)`。
+   - **不照抄 `REGISTER_CHSTREAM_DUAL`(`:175`)**:实测该宏**零调用点**且**只注册 adapter、不含 `registerObject`**(NICTLM 的真实落点是内联在 `REGISTER_CHSTREAM` 体内 —— `:63` + `:121-122`)⇒「与 DUAL 对称」是语法真、语义虚;
 2. 装配:走既有 JSON 端口路径(`registerBidirectionalPortAdapter` → `port_count_` → `isMultiPort` → `module_factory.cc` 的 `is_multi` 分支 → **虚分派** `bind_port_pair`);
 3. **不做** programmatic 端口注入。
 
@@ -115,7 +116,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 **裁决**:本队列**不**给 `StubCacheCore` 加 ChStream 端口面;该腿归 `cpptlm-cep-stub-cache-chstream-surface`(新,排本队列之后)。
 
 **理由(四条互斥,实测)**:
-1. `openspec/specs/cep-stub-cache-core/spec.md` 在 **FROZEN_GLOBS** 内(`cep_freeze_check.sh:69`);
+1. `openspec/specs/cep-stub-cache-core/spec.md` 在 **FROZEN_GLOBS** 内(`cep_freeze_check.sh:70`;`:69` 是 `cep-vc-mapping-contract`);
 2. 该 spec:「`net_side` SHALL 由 **mock ProtocolEngine** 驱动(本 change **不**引入真实协议引擎)」+ 三个流名「SHALL **不**出现作为 stub 的**对外接口**」;
 3. `stub_cache_core.hh:39-40`:「**不**经 `ModuleFactory` 注册(本类是 **testbench 定位** 的组件)」;
 4. `ADR-CEP-07:67` / `07 号 §6.3`:它**应该** `registerObject` + `ChStreamAdapterFactory::create`。
@@ -161,4 +162,6 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 - 架构基线:`01 号` · `06 号` · `06-bis` · `07 号`
 - 契约:`ADR-CEP-{00,02,03,05,07,07A,12,13,15,16,17,18}-*.md` · `ADR-CEP-NUMBER-MAP.md`
 - 偏离登记格式先例:`ADR-CEP-03` Status Update 2026-10-26
-- critic 第 1 轮评审(REJECT)⇒ 本 v2 全部落地
+- critic 第 1 轮评审(REJECT:2 B + 10 S + 7 N)⇒ 全部落地
+- critic 第 2 轮复审判定 **APPROVE_WITH_CONDITIONS**(无 BLOCKER:2 个 BLOCKER 经逐行读码确认真修、10 S + 7 N 全部落地;新增 3 S + 2 N)⇒ 本轮已修完
+- **决策 ↔ 审查报告 D 编号的映射表**:见审查报告 §5 开头(**不是**同号对应:决策 1↔D-5 / 决策 3↔D-1 / 决策 4↔D-3 / 决策 5↔D-2 / 决策 6↔D-4 / 决策 7↔D-6 / 决策 9↔D-9;决策 2 / 8 是横贯约束;D-7 / D-8 是治理动作、不进本 ADR)
