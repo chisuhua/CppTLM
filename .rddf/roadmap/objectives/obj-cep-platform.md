@@ -5215,6 +5215,79 @@ critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option 
 
 ---
 
+### Entry #79 — 2026-10-27 [build]
+
+**主题**: 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **实施完成** + **✅ 完成归档授权**(首个 `implemented` adapter 落地)
+
+**① 触发**
+
+用户指令「切 architect 做第一项,然后持续推进」⇒ 第一项(判据增补追认,Entry #78)完成后**持续推进**关键路径:队列 #7 转正需先**释放 KPI slot** ⇒ slot 的唯一占用者 = 队列 #6 ⇒ 本 entry 落队列 #6 的 **builder 阶段产出**。
+
+**② 交付面(逐项对应 delta spec 的 14 条 Scenario)**
+
+| 载体 | 内容 |
+|---|---|
+| `include/tlm/cep/moesi_gpu_adapter.hh` | 6×6 `state_transition`(逐字抄 ArchForge `09 号` §3.3)· 6→4 `perm` 投影(瞬态 `T` **无**投影)· 6→3 消息类映射 + 恒等登记 · `is_silent_upgrade` / `snoop_response_carries_data`(`ADR-CEP-13` 决策 3 判据 a/b) |
+| `include/tlm/cep/adapter_schema_contracts.hh` | **判据实现单一真源**:AC-01 ~ AC-05 + 三态(`SKIP`/`PASS`/`FAIL` 可区分)+ 逐条可 grep 的 verdict |
+| `include/tlm/cep/adapter_contracts_loader.hh` | 装载层(判据**不**依赖 JSON;装载**只有一份**)⇒ test 与 CLI 共用 |
+| `include/tlm/cep/perm_upgrades.json` + `perm_upgrades.schema.json` | 静默升级独立声明源 + 配套 schema(**跨 schema `$ref`** 绑定 `perm` 4 值域 ⇒ 机制级不可能表达第 5 值) |
+| `examples/cep_adapter_contracts.cc` | 离线 CLI(与测试**共用**同一份判据实现;测试实跑 CLI 逐行比对) |
+| `test/test_cep_moesi_gpu_adapter.cc` + `test/test_cep_adapter_schema_contracts.cc` | 13 cases / 170 assertions(14 条 Scenario 全部落地 + 14 条反向 fixture) |
+| `openspec/changes/cpptlm-cep-moesi-gpu-adapter/tasks.md` | **builder 交付物**(本 change 此前**实测无** `tasks.md`)—— 8 Phase 逐任务 + 归档前复核 8 项 |
+
+**③ `status` 翻转 + ⑥ 镜像闸收窄(per design `D-ζ`)**
+
+| 项 | 内容 |
+|---|---|
+| 翻转 | `moesi_gpu.status`:`planned` → `implemented`(**其余 12 键逐字零 diff**) |
+| ⑥ 收窄 | 逐字段比对**跳过** `status`(本仓权威字段「本仓是否已实现」,非 ArchForge 镜像面) |
+| 收窄的**反向 fixture** | `cep_decl_reverse_verify.sh` 破坏 **14**:12 个非 `status` 键**穷举**(逐个改坏 ⇒ 每次必红)+ 破坏 **15**:`status` 改坏 ⇒ **正控绿**(收窄不得退化为「整条不比对」)⇒ **29/29** |
+| 归因 | 只有 ⑥ 读本仓副本 ⇒ 副本被改 ⇒ 闸红 ⇒ 归因于 ⑥(变异**保结构** ⇒ 报「漂移」而非崩溃) |
+
+**④ 闸改造:断言 ⑧ 从「届满即永久红」→「届满 ⇒ 必须已重评登记」**
+
+**问题**:队列 #6 落地后 `perm_upgrades.schema.json` 的 `perm_upgrade` 键**永久**满足旧届满条件 ⇒ 旧实现下 #6 **永远无法归档** ⇒ 队列停滞。
+**处置**:届满 ⇒ 要求**重评已登记**(新有效期锚出现在契约层);新锚的届满条件**机器可检测**(① Stub 请求侧 `perm_upgrade` 扩展 ② `perm` 枚举 ≠ 4 值)⇒ 新有效期**不**是纯纸面。闸自检 +4 条 fixture ⇒ **34/34**。
+
+**⑤ S1 有效期重评(design `D-θ` 的**归档前强制任务**)**
+
+| 项 | 内容 |
+|---|---|
+| 触发 | 队列 #6 的 `perm` 形态演进落地 ⇒ `S1_VALIDITY_UNTIL=queue6-perm-schema-evolution` **届满** |
+| 重评结论 | **S1 仍为 FAIL**(结论**未翻转** —— R-2 发生点不变:写路径 `perm` 仍在**请求侧**携带 `UNIQUE`,期望投影是 `WRITEBACK`) |
+| 可发现性改善 | 「哪个实例有静默升级能力」现有**机器可读**声明源(`perm_upgrades.json` + 跨 schema `$ref`)⇒ 消费端可据此修正请求侧 `perm`;**修正机制本身不在本 change 交付面**(Stub↔PE 腿归 `cpptlm-cep-stub-cache-chstream-surface`) |
+| 新有效期 | `S1_VALIDITY_UNTIL=stub-request-side-perm-extension` + 机器可检测的届满条件 |
+| 落点 | **契约层**(本 change 的 delta spec ⇒ 归档后并入 `openspec/specs/cep-adapter-schema-contracts/spec.md`)⇒ **零冻结面改动**(冻结的 `cep-poc-spike-verification` main spec **逐字仍成立**:结论仍 FAIL / 机器登记仍 `S1_VERDICT=FAIL` + `S1_MISMATCH_STEPS=1` / spike 仍打印原锚) |
+
+**⑥ 冻结面**
+
+本 change **零**冻结面改动 —— 新增文件均不在 M1 冻结集(`include/tlm/cep/*.hh` / `include/tlm/cep/perm_upgrades*.json` / `examples/` / `test/` / `scripts/test/` 均**非**冻结成员;`scripts/test/` 的两个 checker **按设计不冻结**)⇒ 冻结集仍 **40**,hash 全一致 ⇒ **无需两步授权**。
+
+> ⚠️ 但 `protocol_instances.json` 的 `moesi_gpu.status` 翻转**触及** ⑥ 镜像闸 ⇒ 已按 design `D-ζ` 收窄该闸并配**穷举反向 fixture**(否则「收窄」本身无牙)。
+
+**⑦ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `openspec validate cpptlm-cep-moesi-gpu-adapter --strict` | rc=0(valid) |
+| 新增测试 | **13 cases / 170 assertions** 全绿 |
+| `ctest --test-dir build -j4` | **107 / 107** 全绿(实施前 106 ⇒ +1 个新测试文件组) |
+| 守门 7 项 | 全 rc=0 |
+| `cep_gate_selftest` | **34 / 34** |
+| `cep_decl_reverse_verify.sh` | **29 / 29**(串行手动跑,未注册进 ctest) |
+| 跨 schema `$ref` 机制级 | 注入 `ATOMIC` / `SHARED` ⇒ **必被挡住**(实测) |
+| 冻结集 | **40**(零改动,hash 全一致) |
+| KPI | 归档前 **1/3** ⇒ 归档后 **0/3** |
+
+**⑧ 归档授权(✅ 完成归档语义)**
+
+**判据**:tasks **全勾** + 实现已落地 ⇒ **✅ 已完成归档**(`openspec archive cpptlm-cep-moesi-gpu-adapter`,**合并** delta spec 进 `openspec/specs/`)—— **不是** ⏸ 暂存归档(`--skip-specs`)⇒ 判据已进入系统契约。
+**归档后**:KPI slot 释放 ⇒ 队列 #7 `cpptlm-cep-cohif-carrier` 可按 `obj §4.7.2` step 0~6 转正(其 4 件套草稿已 staged 于 `.rddf/drafts/`)。
+
+**⑨ 关联**: Entry #78(`ADR-CEP-19` 判据子条件追认)· #77(critic 第 2 轮 APPROVE)· #76(critic 首轮收口)· #75(队列 #7 planner 产出)· #71(队列 #6 建 change 目录 + 冻结面授权)
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)
