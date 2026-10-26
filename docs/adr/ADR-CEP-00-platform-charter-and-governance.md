@@ -388,7 +388,7 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **`moesi_gpu` / `mesif` 未排期** 孤儿项 **已于本 entry 消解** —— `moesi_gpu` → 队列 #6,`mesif` → 队列 #8(**显式标注 R-1 `HierarchicalDirectory` 阻塞**)。
 > **对上一段(2026-10-26,队列 #5 归档段)的衔接**: 该段登记「队列 #5 已完成归档,并发 1/3 → 0/3」—— 现队列 #6 已启动,并发 0/3 → 1/3;其历史快照语义保留不回改(措辞已改「当时态」)。
 > **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);§8 第 5 条**仍为失效**(umbrella 保持 ✅ archived);**§2 决策 3 的「任一时刻 Proposed 并发 ≤ 1」约束不变**;**「登记 ≠ 排期」口径不变** —— 本 entry 登记的是**排队位置**,不是**就绪承诺**。
-> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #7 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #7 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #71**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #71)。
 
@@ -407,7 +407,7 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **准入前置 owner**:本 entry **不新增** Stage 1 准入前置项 —— 载体队列**服务**已有的 `S1-2`(首个 `implemented` 实例装配后复核,由队列 #6 触发)与队列 #8 的装配验证;`S1-3`(第 3 张网 / 第 3 个协议实例)⛔ 仍**未触发**(于 #9 达成)。
 > **对上一段(2026-10-26,队列 #6 启动段)的衔接**: 该段登记「队列 #6 已启动,并发 0/3 → 1/3」;**并发仍为 1/3**(本 entry **不建** change 目录 —— 载体队列的 change 目录待其 planner 阶段建立)⇒ 该段「当前态」的历史快照语义保留不回改。
 > **不受影响的部分**:`§2 决策 3` 的「任一时刻 Proposed 并发 ≤ 1」与 §8 准入门措辞修订 **C-1** 及其理由**继续有效**;`§5` 其余决策行**零改动**。
-> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #7 `cpptlm-cep-cohif-carrier`(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #7 `cpptlm-cep-cohif-carrier`(per `obj §4.0`)。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
 
@@ -416,7 +416,7 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
 > **触发**: 2026-10-27 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **完成归档** —— tasks 全勾 + 实现已落地 ⇒ **✅ 已完成归档**语义(per AGENTS.md「两种归档语义必须区分」,**不是** ⏸ 暂存归档)⇒ 14 Scenario 并入 **2 份新 main spec**(`openspec/specs/cep-moesi-gpu-adapter/spec.md` 7 Scenario / `openspec/specs/cep-adapter-schema-contracts/spec.md` 7 Scenario)⇒ 判据**进入系统契约**;archive 名 `2026-10-27-cpptlm-cep-moesi-gpu-adapter`。
 > **对上一段(2026-10-27,队列 #7 立项段)的衔接**:该段登记「KPI 排队 13 → **14** change」—— 本段登记队列 #6 的**归档释放**;排队总数**仍为 14**(归档**不**改变排队长度,只释放并发 slot)。
-> **KPI 并发**:由 **1/3 → 0/3**(实测 `openspec list --json` = **0** 个 active)⇒ **下一个可启动的 change = 队列 #7 `cpptlm-cep-cohif-carrier`**(per `obj §4.0`)。
+> **当前态**: Proposed 并发 **0/3**(实测 `openspec list --json` = **0** 个 active);由 **1/3 → 0/3** ⇒ **下一个可启动的 change = 队列 #7 `cpptlm-cep-cohif-carrier`**(per `obj §4.0`)。
 > **不受影响的部分**:§2 决策 3 的**排队算术(14 个 change / 14 季度 / Stage 1 = 10 个)**· §8 的准入门措辞修订 **C-1** 及其理由 · 冻结成员数 **40** —— 一律**不变**。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #80**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #80)。
