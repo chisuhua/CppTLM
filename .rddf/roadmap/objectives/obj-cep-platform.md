@@ -5172,6 +5172,49 @@ critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option 
 
 ---
 
+### Entry #78 — 2026-10-27 [adr-amendment]
+
+**主题**: 授权 `ADR-CEP-19` 追加 **Status Update** —— 追认队列 #7 的 **2 处判据子条件**(CC-05 ④ / CC-06 ②)+ 登记**判据真源层级缺陷**(冻结面改动的**授权记录**,两步授权第一环)
+
+**① 触发**
+
+队列 #7 `cpptlm-cep-cohif-carrier` 的 planner 产出经 critic **两轮**对抗式评审(第 1 轮 **REJECT** → 第 2 轮 **APPROVE**,per Entry #76 / #77)。第 1 轮指出一个**架构层**问题,planner 阶段**无法自行闭合**:
+
+> `ADR-CEP-19` 全文对 `CC-0x` **只有 3 处编号引用**(`:167` / `:168` / `:205`),**不含判据定义**;判据定义真源在 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`(**附属层**调研文档)⇒ **真源 3(ADR)不自足**。
+
+而 planner 的 delta spec 相对 research §6.4 字面**多出 2 条子条件** ⇒ 「planner **不得**给已签发 ADR 增删判据」的纪律对这两处不成立 ⇒ 须由 **architect** 追认;而 §2 决策正文**不可变** ⇒ 只能**追加 Status Update**。
+
+**② 追认对象(2 处,逐条带锚点)**
+
+| # | 子条件 | 上游锚点 | 追认依据 | 结论 |
+|---|---|---|---|---|
+| **①** | **CC-05 ④** —— per-bridge 元数据齐备(`protocol_id_` 非零 / `bridge_id_` 唯一 / 与实例声明 `family` 一致) | ✅ `ADR-CEP-19 §3.2`(`:157`「per-bridge 元数据**只做静态**」)+ `docs/architecture/06-inter-module-network.md` §4.5 | 该元数据**本就在本 ADR 的决策面之内**;④ 只是把**已声明的代价项**判据化(机器可检),**不引入新决策** | **追认成立** |
+| **②** | **CC-06 ②** —— 映射表 SHALL **非恒等**(至少一行 ≠ 同名) | ❌ **无上游条款** | 逻辑推论:若 6→3 映射**恒等**,则「CohIf 语义 → 网络 Bundle 链路层类别」无需字典,队列 #6 的映射表机制**失去存在意义**;该子条件是**反向护栏**(防字典退化),**不改变** CC-06 的主判据(产出的 `CATEGORY_*` 必须落在网络 Bundle 的 3 个常量内) | **追认成立**(依据标注为**推论**,非条款) |
+
+**编号集合不变**:追认后判据仍为 **CC-01 ~ CC-06 共 6 条**,与 `ADR-CEP-19 §5` 后续表所述「6 条判据 CC-01~CC-06」**一致** ⇒ **不新增判据编号**,不改 §2 决策 1~9 正文。
+
+**③ 治本路径(真源层级缺陷的收口)**
+
+判据定义置于附属层调研文档、真源 3 只留编号引用 ⇒ ADR **不自足**。治本 = 队列 #7 **转正归档**后 `openspec archive` 把 delta spec 并入 `openspec/specs/` ⇒ 判据进入真源层(自足);本 ADR 的追加段届时退为历史沿革。
+
+**④ 授权范围(冻结面两步授权的**第一环**:授权记录)**
+
+| 项 | 内容 |
+|---|---|
+| 授权对象 | `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md` —— **仅追加** `## Status Update 2026-10-27` 段 |
+| 允许写 | 追认结论(2 处子条件)+ 判据口径(编号对齐 ≠ 定义对齐)+ 真源层级登记 + 台账指针 + 冻结面指针 |
+| **禁止** | 改 §1 ~ §7 **任何正文**;新增决策;改判据**编号集合**;触碰 §2 决策 9(`StubCacheCore` 延期) |
+| 冻结面 | 本文件属 M1 冻结面 **40 成员** ⇒ 本次改动**必须**走两步授权 |
+| 两步授权序列 | ① commit 产物(ADR 追加段)→ ② `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #78"` → ③ commit 清单(`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json`) |
+
+**⑤ 追认的边界(须写进 ADR 段内)**
+
+若实现阶段证明子条件 ④ / ② **不可实现**,须**新开**一段 Status Update 登记其失效,**不得**回改本次追加的段(per AGENTS.md「ADR 不可变 + Status Update」纪律)。
+
+**⑥ 关联**: Entry #77(critic 第 2 轮 APPROVE;本项为其「未闭合项 1」)· #76(critic 首轮收口)· #75(planner 产出)· `ADR-CEP-19`(✅ v1.0 已签发)· `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`(判据定义真源)
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)
