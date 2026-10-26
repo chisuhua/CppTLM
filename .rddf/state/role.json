@@ -1,7 +1,7 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-10-26T23:59:30Z",
+  "current_role": "planner",
+  "updated_at": "2026-10-27T01:00:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
@@ -122,6 +122,12 @@
       "at": "2026-10-26T23:59:30Z",
       "by": "user",
       "note": "以 architect 身份重审队列 #6 planner 产出 —— 对齐 01 号架构文档核心立场(ChStream 承载业务 bundle + 互联网络特化)"
+    },
+    {
+      "role": "planner",
+      "at": "2026-10-27T01:00:00Z",
+      "by": "user",
+      "note": "落地架构重审结论:台账 Entry + 排队 13→14 五处同改(ADR-CEP-19 签发属 architect)"
     }
   ]
 }

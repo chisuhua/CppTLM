@@ -176,7 +176,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 `ADR-CEP-03:225`:
 > **Bundle 化的未来路径(具体,不写「以后再说」)**: 推迟至 **P3**(`cpptlm-cep-nvlink-sharp-adapter`)—— 届时有真实传输通道,新建 `include/bundles/collective_bundles_tlm.hh`
 
-⇒ 那是 **collective** 的 Bundle;**主干流**在 13 个 change 里无人认领。
+⇒ 那是 **collective** 的 Bundle;**主干流**在**当时**(2026-10-26,13 个 change 队列)**无人认领** —— 已于 Entry #74 消解(队列 #7 `cpptlm-cep-cohif-carrier`)。
 
 ---
 

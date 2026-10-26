@@ -24,7 +24,7 @@ phase_refs:
 
 ### 当前活跃 (Active)— Stage 0 Umbrella(队列 #1)
 
-> **排期真源指针**:本 phase 的**实施路径**(13 个 change 的顺序 / 季度 / 状态 / 准入前置归属)真源 = [`obj-cep-platform §4.0 排队总表`](../roadmap/objectives/obj-cep-platform.md);**治理口径**(change 总数 / 串行 / 并发 ≤ 1)真源 = `ADR-CEP-00 §2 Decision 3`。
+> **排期真源指针**:本 phase 的**实施路径**(14 个 change 的顺序 / 季度 / 状态 / 准入前置归属)真源 = [`obj-cep-platform §4.0 排队总表`](../roadmap/objectives/obj-cep-platform.md);**治理口径**(change 总数 / 串行 / 并发 ≤ 1)真源 = `ADR-CEP-00 §2 Decision 3`。
 > **载体分工 / 状态怎么更新** = [`obj-cep-platform §4.7`](../roadmap/objectives/obj-cep-platform.md)(**本节只是 Stage 0 子任务展开**,不承载整条队列的状态)。
 
 | 子任务 | 状态 | 范围 | 估时 | 关联 ADR | KPI slot |
@@ -47,10 +47,10 @@ phase_refs:
 **KPI 预算**(per `ADR-CEP-00 §2 Decision 3` + oracle v0.4 B8 三处口径对齐):
 
 - Stage 0 = 1 slot(`cpptlm-cep-umbrella`,计 KPI,**不符 doc-only 豁免先例**)
-- Stage 1 = 9 串行 × 1 slot = 9 季度(含 `cpptlm-cep-poc-spike`,**2026-10-22 P-1 增补**;**2026-10-26 Entry #71 增补 `moesi_gpu` / `mesif`**)
+- Stage 1 = **10** 串行 × 1 slot = **10** 季度(含 `cpptlm-cep-poc-spike`,**2026-10-22 P-1 增补**;**2026-10-26 Entry #71 增补 `moesi_gpu` / `mesif`**;**2026-10-27 Entry #74 增补 `cohif-carrier`**)
 - Stage 2 = 2 串行 × 1 slot = 2 季度
 - Stage 3 = 1 slot = 1 季度
-- **总计**:13 个 OpenSpec change,串行 13 季度,任一时刻 Proposed 并发 ≤ 1(真源 = `ADR-CEP-00 §2 Decision 3`;**终态季度见 `obj-cep-platform §4.6`** —— per Entry #23 单源纪律,本文件不复制数值)
+- **总计**:**14** 个 OpenSpec change,串行 **14** 季度,任一时刻 Proposed 并发 ≤ 1(真源 = `ADR-CEP-00 §2 Decision 3`;**终态季度见 `obj-cep-platform §4.6`** —— per Entry #23 单源纪律,本文件不复制数值)
 
 ### 子任务依赖图(Stage 0)
 
@@ -70,10 +70,10 @@ phase_refs:
 
 ### 子任务依赖图(Stage 1~3 远期)
 
-> ⚠️ **本图是示意,不承载排期承诺** —— 权威排期见 `obj-cep-platform §4.0 排队总表`(1 change / 1 季度,串行 13 季度)。
+> ⚠️ **本图是示意,不承载排期承诺** —— 权威排期见 `obj-cep-platform §4.0 排队总表`(1 change / 1 季度;**串行规则与季度跨度见 `obj §4.6`**)。
 
 ```
-Stage 0 完成 ──→ Stage 1 (9 change 串行 9 季度,**KPI 总数 = 13**,2026-10-22 P-1 增补;2026-10-26 Entry #71 增补 moesi_gpu / mesif):
+Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**,2026-10-22 P-1 增补;2026-10-26 Entry #71 增补 moesi_gpu / mesif;2026-10-27 Entry #74 增补 cohif-carrier):
                  ├─ cpptlm-cep-poc-spike              ← 2026-10-22 新增,置首位
                  │    (可丢弃 spike:解阻 A6 → 解阻全部协议插件 change)
                  │    ✅ **已完成归档(2026-10-25)** —— 完成归档语义;delta spec
@@ -113,8 +113,12 @@ Stage 0 完成 ──→ Stage 1 (9 change 串行 9 季度,**KPI 总数 = 13**,2
                  ├─ cpptlm-cep-moesi-gpu-adapter      ← 2026-10-26 新增(Entry #71)
                  │    承接 Stage 1 准入前置:S1-7 ①②(perm 形态 schema 演进)、
                  │    S1-5(6→3 映射表机制)、S1-2(首个 implemented 实例装配后复核)
-                 ├─ cpptlm-cep-chi-rnf-subset          ← 2026-10-26 顺延(原 #6)
-                 │    范围收窄:perm 演进与 6→3 映射表机制已移至上一行,本 change 复用
+                 ├─ cpptlm-cep-cohif-carrier            ← 2026-10-27 新增(Entry #74)
+                 │    CohIf 载体:CohIfBundle(5 流)+ ChStream 端口面 + ProtocolBridge
+                 │    (架构缺口 C1/C2/C3;ADR-CEP-19 待签发;StubCacheCore 侧端点延期)
+                 ├─ cpptlm-cep-chi-rnf-subset          ← 2026-10-27 顺延(原 #7)
+                 │    范围收窄:perm 演进与 6→3 映射表机制已移至队列 #6,本 change 复用;
+                 │    首次在真实载体(队列 #7)上验证装配
                  ├─ cpptlm-cep-mesif-adapter           ← 2026-10-26 新增(Entry #71)
                  │    ⚠ R-1 阻塞:依赖尚不存在的 HierarchicalDirectory 第 6 种 SharerTracker
                  ├─ cpptlm-cep-cxl-nonsymmetric
