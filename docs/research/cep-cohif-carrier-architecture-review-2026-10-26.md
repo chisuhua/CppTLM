@@ -331,7 +331,7 @@ Traffic Generator ──(cpu_side 功能调用,非 ChStream)──> Stub Cache C
 
 > **⚠️ 图上「Stub Cache Core → ProtocolEngine」那条边的 stub 侧端点 = 延期(决策 9)**:本队列只交付
 > `CohIfBundle` 类型 + **PE 侧**端口面;stub 的 ChStream 端口面归 `cpptlm-cep-stub-cache-chstream-surface`
-> (见 §6.1 延期行 / D-9 四条互斥 / §3.2 代价 / §3.3 风险表 —— 四处口径一致)。
+> (见本报告 §6.1 延期行 / D-9 四条互斥 / **ADR 草案 §3.2 代价 / §3.3 风险表** —— 四处口径一致)。
 > ⇒ 该边在**本队列内不闭合**;本队列闭合的是 **PE → 网络** 段 + PE 的输入侧类型契约。
 
 
@@ -394,7 +394,7 @@ Traffic Generator ──(cpu_side 功能调用,非 ChStream)──> Stub Cache C
 | `docs/adr/ADR-CEP-15-cachetlm-alignment.md` | Status Update:`§1.2` 的「基类 = `ChStreamModuleBase`」与 `stub_cache_core.hh:154` 不符 | **冻结面** | planner/builder |
 | **`openspec/specs/cep-stub-cache-core/spec.md`** | **本队列不动**(D-9);延期项归 `cpptlm-cep-stub-cache-chstream-surface` | **冻结面** | 后续 change |
 | `docs/adr/ADR-CEP-NUMBER-MAP.md` | ADR 清单 21 → 22 + KPI 预算 13 → 14 | **冻结面** | planner/builder |
-| **新** `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md` | 承载 **D-1~D-6 + D-9**(对应决策 1~9;决策 2 / 8 为横贯约束;**D-7 / D-8 为治理动作、不进 ADR** —— 映射见 §5 表) | **签发前不得落 `docs/adr/`**(会触发 M1 drift ⇒ 守门红) | architect 起草 → DRI 签发 |
+| **新** `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md` | 承载 **7 条 D**(D-1→决策3 · D-2→决策5 · D-3→决策4 · D-4→决策6 · D-5→决策1 · D-6→决策7 · D-9→决策9);决策 2 / 8 为横贯约束;**D-7 / D-8 为治理动作、不进 ADR**(完整映射见 §5 表) | **签发前不得落 `docs/adr/`**(会触发 M1 drift ⇒ 守门红) | architect 起草 → DRI 签发 |
 | `.rddf/roadmap/objectives/obj-cep-platform.md` §4.0 / §4.2 / §4.6 / §11 | 队列插入(13 → 14)+ 台账 Entry | 五处同改 | **planner** |
 
 ---

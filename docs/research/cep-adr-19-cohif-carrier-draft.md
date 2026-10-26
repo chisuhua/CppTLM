@@ -157,7 +157,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 
 ## 4. 关联
 
-- 审查依据(逐 `file:line` 核实):`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v2)
+- 审查依据(逐 `file:line` 核实):`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3;三轮 critic 评审全落地)
 - 队列 #6:`openspec/changes/cpptlm-cep-moesi-gpu-adapter/`
 - 架构基线:`01 号` · `06 号` · `06-bis` · `07 号`
 - 契约:`ADR-CEP-{00,02,03,05,07,07A,12,13,15,16,17,18}-*.md` · `ADR-CEP-NUMBER-MAP.md`
