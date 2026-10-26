@@ -1,7 +1,7 @@
 # ADR-CEP-19 草案(待签发):CohIf 载体与 ProtocolBridge 特化
 
 > **状态**: 🟡 **草案 —— 未签发**
-> **版本**: v2(2026-10-26;per critic 第 1 轮 REJECT 全落地 —— 装配路径从 programmatic 改为 JSON 链 + 5 流界定 + 显式偏离登记 + 不动 StubCacheCore)
+> **版本**: v3(2026-10-26;三轮 critic 评审全落地 —— 装配路径从 programmatic 改为 JSON 链 + 5 流界定 + 显式偏离登记 + 不动 StubCacheCore + 宏体含 registerObject + D↔决策映射)
 > **拟签发路径**: `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md`
 > **作者**: CppTLM architect
 > **⚠️ 签发前置**:

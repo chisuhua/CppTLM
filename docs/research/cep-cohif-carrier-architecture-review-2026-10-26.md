@@ -1,7 +1,7 @@
-# CEP CohIf 载体队列 —— 架构重审与设计(v2)
+# CEP CohIf 载体队列 —— 架构重审与设计(v3)
 
 > **状态**: 🟡 **architect 产出**(调研 + 决策草案)· **未签发**
-> **日期**: 2026-10-26 · **修订**: v2(per critic 第 1 轮 REJECT:2 BLOCKER + 10 SHOULD_FIX + 7 NIT 全落地)
+> **日期**: 2026-10-26 · **修订**: v3(第 1 轮 REJECT 的 2 B + 10 S + 7 N → 其后第 2 轮 APPROVE_WITH_CONDITIONS 的 3 S + 2 N → 第 3 轮 APPROVE_WITH_CONDITIONS 的 1 S + 4 N,**全部落地**)
 > **角色**: architect(per 用户裁决「切 architect 重新审视前面完成的内容」)
 > **独立性说明**: 本仓为**单开发者**环境;本评审由 AI agent 完成,**不等于真人外部评审**(per `obj-cep-platform §9.3` R10 先例 ⇒ 结论应登记为「残余风险 + DRI 书面接受」,而非「已闭环」)。
 > **本文档定位**: **附属 1(调研层)**。⇒ **签发前,任何文档不得引用本文档的「裁决」作为依据**;裁决的生效形态是 `ADR-CEP-19`(见 §9 签发前置)。
@@ -221,7 +221,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 3. **装配走 JSON 链**(实测全程通,§2.2 第二步)⇒ 与冻结 `ADR-CEP-16:46/:86`(排除 programmatic bridge)**天然不冲突**;
 4. 新增宏 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)`,**同时做两件事**:① `ModuleFactory::registerObject<mod_type>("#mod_type")`(否则 ModuleFactory **根本实例化不了** PE —— 对象注册是 adapter 注册的前提)② `ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<mod_type, bundle_t, n>("#mod_type")`;宏内 `static_assert(n > 1)`。
    - **⚠️ 不照抄 `REGISTER_CHSTREAM_DUAL`(`chstream_register.hh:175`)的半截形态**:实测该宏**全仓零调用点**(只有定义 + 用法注释),且**宏体只注册 adapter、不含 `registerObject`**;`NICTLM` 的真实落点是**内联**在无参批量宏 `REGISTER_CHSTREAM` 体内 —— `registerObject` 在 `:63`,dual adapter 注册在 `:121-122`。⇒ 「与 DUAL 对称」是语法真、语义虚 ⇒ v2 **不采用**该表述。
-   - `static_assert(n > 1)` 的必要性:`isMultiPort` 要求 `port_count > 1`(`:61-63`),**N=1 会落 single 分支调 `bind_ports`(空 shim,`bidirectional_port_adapter.hh:141`)** ⇒ 静默不绑定。
+   - `static_assert(n > 1)` 的必要性:`isMultiPort` 要求 `port_count > 1`(`chstream_adapter_factory.hh:59-61`),**N=1 会落 single 分支调 `bind_ports`(空 shim,`bidirectional_port_adapter.hh:141`)** ⇒ 静默不绑定。
 
 **为什么不选 programmatic(v1 的错误)**:
 - `ADR-CEP-16:46/:86` **明写排除**;
@@ -293,7 +293,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 
 ## 6. 新队列设计(`cpptlm-cep-cohif-carrier`)
 
-### 6.1 交付面(3 项 + 1 显式延期)
+### 6.1 交付面(3 项 + 1 宏 + 1 显式延期)
 
 | # | 交付物 | 承接来源 | 关键约束 |
 |---|---|---|---|
@@ -304,7 +304,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 
 > **显式延期(D-9)**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface`(所有权明确,非「以后再说」)。
 
-### 6.2 端到端数据流(v2:标方向 + 标 5/10 分界)
+### 6.2 端到端数据流(标方向 + 标 5/10 分界)
 
 ```
    [业务侧 · 测试夹具装配]
@@ -312,9 +312,6 @@ Traffic Generator ──(cpu_side 功能调用,非 ChStream)──> Stub Cache C
                                                             │
                         CohIfBundle · 5 流 (request / completion /
                         snoop / snoop_resp / writeback)     │ ★ 交付 1
-                        ⚠️ **stub 侧端点 = 延期(决策 9)**:本队列只交付
-                          Bundle 类型 + PE 侧端口面;stub 的 ChStream
-                          端口面归 cpptlm-cep-stub-cache-chstream-surface
                         ⇒ forward_data / back_invalidate / address_resolve /
                           barrier / snoop_completion_ack **不在该 Bundle 域内**
                                                             ▼
@@ -331,6 +328,12 @@ Traffic Generator ──(cpu_side 功能调用,非 ChStream)──> Stub Cache C
                                                             ▼
                         VramControllerTLM / 对端 adapter
 ```
+
+> **⚠️ 图上「Stub Cache Core → ProtocolEngine」那条边的 stub 侧端点 = 延期(决策 9)**:本队列只交付
+> `CohIfBundle` 类型 + **PE 侧**端口面;stub 的 ChStream 端口面归 `cpptlm-cep-stub-cache-chstream-surface`
+> (见 §6.1 延期行 / D-9 四条互斥 / §3.2 代价 / §3.3 风险表 —— 四处口径一致)。
+> ⇒ 该边在**本队列内不闭合**;本队列闭合的是 **PE → 网络** 段 + PE 的输入侧类型契约。
+
 
 **方向语义(v2 新增,per critic S3)**:
 
@@ -391,7 +394,7 @@ Traffic Generator ──(cpu_side 功能调用,非 ChStream)──> Stub Cache C
 | `docs/adr/ADR-CEP-15-cachetlm-alignment.md` | Status Update:`§1.2` 的「基类 = `ChStreamModuleBase`」与 `stub_cache_core.hh:154` 不符 | **冻结面** | planner/builder |
 | **`openspec/specs/cep-stub-cache-core/spec.md`** | **本队列不动**(D-9);延期项归 `cpptlm-cep-stub-cache-chstream-surface` | **冻结面** | 后续 change |
 | `docs/adr/ADR-CEP-NUMBER-MAP.md` | ADR 清单 21 → 22 + KPI 预算 13 → 14 | **冻结面** | planner/builder |
-| **新** `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md` | 承载 D-1 ~ D-9 | **签发前不得落 `docs/adr/`**(会触发 M1 drift ⇒ 守门红) | architect 起草 → DRI 签发 |
+| **新** `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md` | 承载 **D-1~D-6 + D-9**(对应决策 1~9;决策 2 / 8 为横贯约束;**D-7 / D-8 为治理动作、不进 ADR** —— 映射见 §5 表) | **签发前不得落 `docs/adr/`**(会触发 M1 drift ⇒ 守门红) | architect 起草 → DRI 签发 |
 | `.rddf/roadmap/objectives/obj-cep-platform.md` §4.0 / §4.2 / §4.6 / §11 | 队列插入(13 → 14)+ 台账 Entry | 五处同改 | **planner** |
 
 ---
