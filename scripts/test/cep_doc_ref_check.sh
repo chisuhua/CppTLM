@@ -121,10 +121,10 @@ VIRTUAL_PATHS=(
   "include/tlm/cep/perm_upgrades.json"                    # 设计示意:队列 #6 `cpptlm-cep-moesi-gpu-adapter` 的**静默升级声明源**,由 **builder 阶段**产出(per ADR-CEP-12 Status Update 2026-10-26 的落点裁决)
   "include/tlm/cep/perm_upgrades.schema.json"             # 同上(配套 schema)**设计示意**
   # —— 2026-10-27(Entry #74)队列 #7 `cpptlm-cep-cohif-carrier`:设计示意,**尚未签发 / 尚未创建** ——
-  "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md"  # 设计示意:ADR 草案现居 docs/research/cep-adr-19-cohif-carrier-draft.md,签发轮才落 docs/adr/(per Entry #74 的冻结面授权)
   "include/bundles/cep_coherence_bundles_tlm.hh"              # 设计示意:CohIf 业务 Bundle(5 条 RN-side 流),builder 阶段才创建
   "include/tlm/cep/protocol_engine_base.hh"                   # 设计示意:ProtocolEngine 基类 + ChStream 端口面,builder 阶段才创建
   "include/framework/protocol_bridge.hh"                      # 设计示意:ProtocolBridgeEr + ProtocolBridge<InB,OutB,Ordered>,builder 阶段才创建
+  "docs/research/cep-adr-19-cohif-carrier-draft.md"            # 历史路径:ADR-CEP-19 的**签发前草案形态**(2026-10-27 签发后已移除;obj 台账 Entry #74 的历史引述指向该路径)
   "openspec/specs/…"                                      # 省略号写法(obj 台账 Entry #71 ⑫ R-7 的**路径订正对照**)
   "openspec/changes/…/specs/…"                            # 省略号写法(同上)
   "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-vc-mapping-contract/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-vc-mapping-contract/spec.md)

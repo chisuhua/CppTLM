@@ -545,10 +545,10 @@ experimental/<run_id>/
 | Stage | 内容 | change 数 |
 |-------|------|-----------|
 | **Stage 0** | Umbrella 启动(契约测试 + experimental + tools + 顶层真源 + lint)| 1 |
-| **Stage 1** | Stub Cache + Sharer Tracker + Collective Plane + 3 协议 RN-F subset | **7** |
+| **Stage 1** | Stub Cache + Sharer Tracker + Collective Plane + **CohIf 载体** + 5 协议实例(RN-F subset / `moesi_gpu` / `mesif` / CXL 非对称 / TileLink-C) | **10** |
 | **Stage 2** | CXL 对称 DCOH + NVLink SHARP | 2 |
 | **Stage 3** | UALink In-Network Compute | 1 |
-| **合计** | | **11** |
+| **合计** | | **14** |
 
 **KPI 约束**:任一时刻 Proposed 并发 ≤ 1(CEP 内部);全仓 ≤ 3(AGENTS.md 硬上限)。**单一时钟真源**:`ADR-CEP-00 §2 Decision 3`。
 
@@ -697,8 +697,18 @@ experimental/<run_id>/
 > - **SharerTracker 实施载体**改为:**`cpptlm-cep-directory-ordering-plane`**(单 change,1 KPI slot)
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #62)。
 
+## §附录 · Status Update 2026-10-27(per 台账 Entry #74)
+
+> **授权**:Entry #74(队列 #7 `cpptlm-cep-cohif-carrier` 立项 + KPI 排队 13 → 14 + `ADR-CEP-19` 签发)。
+> **口径**:本节**不改**正文,仅登记授权 + 1 处**活口径表**的机械同步 + 3 处引用修正。
+> **① §8.1 Stage 表的机械同步(活口径,per Entry #27 / #71 同款先例)**:该表原写「Stage 1 = **7** / 合计 **11**」—— **已落后两代**(连 2026-10-26 的 13 都未跟上)。`ADR-CEP-00 §2 Decision 3` 的排队现为 **14**(Stage 1 = **10**)⇒ **同批机械同步**为 Stage 1 = **10** / 合计 = **14**,并把 Stage 1 的内容描述从「3 协议 RN-F subset」补全为「**CohIf 载体** + 5 协议实例(RN-F subset / `moesi_gpu` / `mesif` / CXL 非对称 / TileLink-C)」。**本表仍只承载「Stage 划分 + change 数」**,**不含**时间跨度与估时(排期真源 = `obj §4.0`)。
+> **② §6.3 ModuleFactory 集成 seam 的落地排期**:该节表规定「**ProtocolEngine** 派生类 = `ChStreamModuleBase` + `ModuleFactory::registerObject<T>`」等四类派生类 —— 仍是**最终形态**口径;**落地**排在队列 #7 `cpptlm-cep-cohif-carrier`(见 `ADR-CEP-07` Status Update 同日登记)。
+> **③ §5.4 Bundle 约束的落点**:该节列的业务 / 网络 Bundle 清单**不含** CohIf Bundle —— 其交付队列为 #7,路径 `include/bundles/cep_coherence_bundles_tlm.hh`(per `ADR-CEP-19` 决策 6;**避开** `ADR-CEP-07A` 明令「不创建」的 `coherence_bundles_tlm.hh`)。**本节正文不改**,待队列 #7 实施后再同步。
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
+
+
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ **Status Update 2026-10-27**(队列 #7 立项 + 排队 13 → 14)
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

@@ -1,17 +1,33 @@
-# ADR-CEP-19 草案(待签发):CohIf 载体与 ProtocolBridge 特化
+# ADR-CEP-19: CohIf 载体(业务 Bundle + ChStream 端口面 + ProtocolBridge 特化)
 
-> **状态**: 🟡 **草案 —— 未签发**
-> **版本**: v3(2026-10-26;三轮 critic 评审全落地 —— 装配路径从 programmatic 改为 JSON 链 + 5 流界定 + 显式偏离登记 + 不动 StubCacheCore + 宏体含 registerObject + D↔决策映射)
-> **拟签发路径**: `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md`
-> **作者**: CppTLM architect
-> **⚠️ 签发前置**:
-> ① `obj §11` **先有**台账 Entry(本轮 architect 重审 + 本 ADR)
-> ② 两步授权(commit 产物 → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → commit 清单)—— 因 `FROZEN_GLOBS` 含 `docs/adr/ADR-CEP-*.md`,新增文件即 M1 `drift`
-> ③ `ADR-CEP-NUMBER-MAP` 清单 21 → 22 + KPI 预算 13 → 14
-> ④ **先签发本 ADR,再改 `06 号`**(否则构成「用未签发 ADR 为改真源背书」的循环)
-> **依据**: [`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`](cep-cohif-carrier-architecture-review-2026-10-26.md)(逐 `file:line` 核实)
-
----
+> **状态**: ✅ **已签发**(v1.0,2026-10-27;per 台账 `obj-cep-platform §11` **Entry #74** 的冻结面授权)
+> **日期**: 2026-10-27
+> **作者**: CppTLM build agent(architect mode)
+> **作用域**: **CohIf 的承载形态** —— 业务 Bundle(`CohIfBundle`)/ ProtocolEngine 的 ChStream 端口面 / `ProtocolBridge` 特化桥 / 装配路径(JSON 链)/ 与既有冻结 ADR 的边界
+> **关联真源**:
+> - 真源 1:`docs/architecture/01-hybrid-architecture-v2.1.md` v2.1.10 §1.1(L1~L6 分层 + 原则 7「模块设计只依赖 L3+L4」)+ §1.2(Bundle 命名重塑的触发条件)+ §4.2(纯 ch_stream 内部 + StreamAdapter 暴露)
+> - 真源 1:`docs/architecture/06-inter-module-network.md` v0.4 §3(Bundle 二分类)+ §4.1(seam 在 L5↔L4 之间)+ §4.4(`ProtocolBridge` 双层类形态)+ §4.5(per-bridge 元数据)+ §9.3(`register_protocol_bridge` 死钩子)+ §6.1(容器端口契约 = setter 注入)
+> - 真源 1:`docs/architecture/07-coherence-exploration-platform.md` v0.1 §2.1(6 层 CEP 架构)+ §3.1(canonical 10 流)+ §3.2(Stub 只感知 5 条流)+ §5.4(Bundle 约束)+ §6.3(ModuleFactory 集成 seam)
+> - 真源 1:`docs/architecture/06-bis-coherence-as-network-extension.md` v0.3 §3.2(8 端口装配实证)+ §3.4(候选 C programmatic)+ §5.2/§5.3/§5.4(Bundle 字段基线)
+> - 真源 3:同系列 ADR 互引见本 ADR 文末「## 5. 关联 ADR / 后续」节
+>
+> **一手锚点**(全部实测,逐 `file:line` 核实):
+> - `include/tlm/cep/stub_cache_core.hh:154` — `class StubCacheCore {`(**非** `ChStreamModuleBase`)
+> - `docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md:64` / `:67` — ProtocolEngine / StubCacheCore **应当**是 `ChStreamModuleBase`
+> - `docs/adr/ADR-CEP-07A-06bis-artifact-disposition.md:49` 与 `docs/adr/ADR-CEP-16-06-evolution-route-mapping.md:45` — 「CEP 用 **canonical 10 流的 Bundle**」**两处**悬空引用
+> - `docs/adr/ADR-CEP-16-06-evolution-route-mapping.md:46` 与 `:86` — **不**实现 programmatic bridge 的 C++ 路径
+> - `include/framework/chstream_adapter_factory.hh:103`(`registerBidirectionalPortAdapter`)/ `:108`(`port_count_ = N`)/ `:59-61`(`isMultiPort` = `port_count > 1`)
+> - `src/core/module_factory.cc:668-669`(判定)· `:743-750`(`is_multi` 分支 = **泛型虚分派** `bind_port_pair`,**无硬编码 cast**;硬编码 cast 只在 `is_dual` 分支 `:727-741`)
+> - `include/framework/bidirectional_port_adapter.hh:128`(`bind_port_pair` override)· `:141`(`bind_ports` = **空操作 shim** ⇒ `N=1` 静默不绑定)
+> - `include/chstream_register.hh:63`(`registerObject<tlm::NICTLM>`)/ `:119`(RouterTLM 的 Bidir 注册)/ `:175`(`REGISTER_CHSTREAM_DUAL` = **零调用点的死宏**,宏体只注册 adapter)
+> - `include/core/module_factory.hh:313-315` — `register_protocol_bridge` = **write-only 死钩子**(`get_bridges()` 在 `private:` 段 `:326`)
+> - `include/tlm/router_tlm.hh:136-142` — `InputStreamAdapter<NoCFlitBundle>` + `OutputStreamAdapter<NoCFlitBundle>` + `BidirectionalPortAdapter<RouterTLM, NoCFlitBundle, NUM_PORTS>`(范式先例)
+> - `include/bundles/noc_bundles_tlm.hh:60-62` — `CATEGORY_REQUEST=0` / `CATEGORY_RESPONSE=1` / `CATEGORY_CREDIT=2`(**3 类**;`CREDIT_RESPONSE` 全仓零命中)
+> - `scripts/test/cep_freeze_check.sh:70` — `openspec/specs/cep-stub-cache-core/spec.md` 在 M1 冻结集内
+>
+> **⚠️ 签发前置(已由 Entry #74 满足)**:① `obj §11` 台账 Entry #74 已登记本 ADR + 7 份冻结成员的 Status Update 授权;② 两步授权:先 commit 产物 → `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #74"` → 再 commit 清单;③ `ADR-CEP-NUMBER-MAP` 清单 21 → 22 + KPI 预算 13 → 14。
+>
+> **⚠️ 顺序依赖**:`docs/architecture/06-inter-module-network.md` 的 3 处修订(决策 3 的落点)**必须在本 ADR 签发之后** —— 否则构成「用未签发 ADR 草案为改真源 1 背书」的循环论证(见决策 3)。
 
 ## 1. 背景
 
@@ -165,3 +181,52 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 - critic 第 1 轮评审(REJECT:2 B + 10 S + 7 N)⇒ 全部落地
 - critic 第 2 轮复审判定 **APPROVE_WITH_CONDITIONS**(无 BLOCKER:2 个 BLOCKER 经逐行读码确认真修、10 S + 7 N 全部落地;新增 3 S + 2 N)⇒ 本轮已修完
 - **决策 ↔ 审查报告 D 编号的映射表**:见审查报告 §5 开头(**不是**同号对应:决策 1↔D-5 / 决策 3↔D-1 / 决策 4↔D-3 / 决策 5↔D-2 / 决策 6↔D-4 / 决策 7↔D-6 / 决策 9↔D-9;决策 2 / 8 是横贯约束;D-7 / D-8 是治理动作、不进本 ADR)
+
+---
+
+## 5. 关联 ADR / 后续
+
+| ADR | 关系 |
+|-----|------|
+| `ADR-CEP-00` | **§2 决策 3** 的排队算术(Stage 1 名单 / 总数 / 串行季度)—— 本 ADR 落地其**队列 #7** 一项 |
+| `ADR-CEP-02` | canonical 10 流的**权威定义**;本 ADR 决策 2 据其 §3 + `07 号 §3.2` 把**跨 Stub↔PE 边界**的流收敛为 **5 条** |
+| `ADR-CEP-03` | `ProtocolBridge` 未来路径先例(集合通信的 Bundle 化推迟登记)—— 本 ADR 是**主干流**侧的对位物 |
+| `ADR-CEP-07` | 决策 3(ModuleFactory 集成 seam)+ 决策 9(ProtocolEngine 派生类 = `ChStreamModuleBase` 的落地排期) |
+| `ADR-CEP-07A` | 决策 6 的**路径偏离**(第 3 项的替代物一直是悬空引用) |
+| `ADR-CEP-12` | `vc_binding` / `ordering_assumption` 声明 —— 本 ADR 的 PE 端口面消费它们,**不新立** VC 纪律 |
+| `ADR-CEP-13` | (b) 成立后的首个可执行载体 —— 本 ADR 是其**声明侧**投影的载体 |
+| `ADR-CEP-15` | Stub Cache Core 与 `CacheTLM` 的边界 —— 决策 9 **不改** stub,故本 ADR 与其无冲突 |
+| `ADR-CEP-16` | 决策 5(**不**走 programmatic bridge 的 C++ 路径)与 `:45` 的第二处悬空引用 |
+
+**后续**:
+
+| 项 | 归属 | 状态 |
+|---|------|------|
+| `cpptlm-cep-cohif-carrier` 队列的 builder 阶段(4 项交付面 + 6 条判据 CC-01~CC-06) | 队列 #7 | 🟡 **待启动** |
+| `cpptlm-cep-stub-cache-chstream-surface`(Stub↔PE 腿的 ChStream 化;需 MODIFIES 冻结 main spec) | 队列 #7 之后 | ⏸ **已登记,未排期** |
+| `06 号` 的 3 处修订(决策 3 的落点 / 漂移订正 / 时间线转隶) | 本 ADR 签发**之后** | ⏳ **待做**(顺序依赖) |
+| 队列 #6 补对 `ADR-CEP-07 决策 3` / `07 号 §6.3` 的偏离登记 | 队列 #6 | 🟡 **待做** |
+
+---
+
+## 6. 决策汇总
+
+| 决策项 | 决策 | 状态 |
+|--------|------|------|
+| **队列位置** | 新立 `cpptlm-cep-cohif-carrier`,插在 `moesi_gpu`(#6)与 `chi-rnf-subset`(#7→#8)之间 | ✅ 已拍板 |
+| **Bundle 形态** | **单一类型** `CohIfBundle`,**只覆盖 5 条 RN-side 流**,`flow_id` 区分,无网络层字段 | ✅ 已拍板 |
+| **Bundle 分类** | **业务语义** + **网络级演进纪律**(`06 号 §3.3` 加第三类) | ✅ 已拍板 |
+| **特化桥** | `ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`;钩子签名扩展、**不新建 factory 类** | ✅ 已拍板 |
+| **装配路径** | **JSON 链**(`REGISTER_CHSTREAM_BIDIRECTIONAL` + `is_multi` 泛型虚分派);**不**走 programmatic | ✅ 已拍板 |
+| **Bundle 路径** | `include/bundles/cep_coherence_bundles_tlm.hh`(**避开** `coherence_bundles_tlm.hh`) | ✅ 已拍板 |
+| **时间线** | `06 号 §11.2/§11.3` 的 P1/P2 时间线转隶 CEP(实测从未实施) | ✅ 已拍板 |
+| **抽象层** | **不**引入新 StreamAdapter 子类 / factory 抽象层 / 协议语义基类 | ✅ 已拍板 |
+| **stub 边界** | **不动** `StubCacheCore`;延期到 `cpptlm-cep-stub-cache-chstream-surface` | ✅ 已拍板 |
+
+---
+
+## 7. 修订记录
+
+> **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+>
+> - **v1.0(2026-10-27)**:签发。draft 阶段的 3 轮 critic 评审闭环(REJECT 2 B + 10 S + 7 N → APPROVE_WITH_CONDITIONS ×3 → `mergeable: yes`)。

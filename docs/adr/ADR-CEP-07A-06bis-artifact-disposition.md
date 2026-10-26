@@ -134,6 +134,17 @@ per `ADR-CEP-00 §3` 的处置语义:**采用 / 改名 / 废弃** 三选一,每�
 
 ---
 
+
+## Status Update 2026-10-27 —— 决策 1 第 3 项的**替代物一直是悬空引用** + 新路径登记
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化与路径偏离。
+> **触发**: 2026-10-27 architect 角色架构重审 + `ADR-CEP-19` 签发;台账 Entry #74。
+> **登记 ① —— 决策 1 第 3 项的替代物是悬空引用**:该项处置 `include/bundles/coherence_bundles_tlm.hh`(**不存在** → **不创建**),理由栏写「CEP 用 **canonical 10 流的 Bundle**(per `ADR-CEP-02` / `07 号 §5.4`)」。实测该替代物**在本仓不存在**:`ADR-CEP-02` 全文 `Bundle` **零命中**;`07 号 §5.4` 业务 Bundle 列表(7 项)**无它**;`include/bundles/` 17 个 `.hh` grep `coherence` **零命中**。⇒ 「不创建 `coherence_bundles_tlm.hh`」这个**决策本身仍然正确**(理由是避免抢 06-bis P2 的文件,而 06-bis P2 随 06-bis 被 CEP supersede 后**永不实施**),但**其指定的替代物并不存在** ⇒ CohIf 长期**无承载形态**。**同源表述另见** `ADR-CEP-16` §2 决策 1 的 P2.0 行(同日登记)。
+> **登记 ② —— 路径偏离(不违反本决策)**:本决策**只**禁止 `include/bundles/coherence_bundles_tlm.hh` 这一个路径,**未**禁止其他路径。`ADR-CEP-19` 决策 6 选定 **`include/bundles/cep_coherence_bundles_tlm.hh`** ⇒ 路径不同 ⇒ **不构成对本决策的违反**,登记备查。命名风格与 `ADR-CEP-03` Status Update 2026-10-26 登记的 collective 未来路径(`include/bundles/collective_bundles_tlm.hh`)**同构**。
+> **登记 ③ —— 交付主体**:该 Bundle 的交付队列 = **`cpptlm-cep-cohif-carrier`**(队列 #7,Stage 1),**不**在本 ADR 的处置范围内;本 ADR 只负责**既有产物的处置**,新增产物由 `ADR-CEP-19` 承接。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

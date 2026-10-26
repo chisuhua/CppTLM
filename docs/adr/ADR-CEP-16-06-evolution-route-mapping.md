@@ -134,6 +134,20 @@
 
 ---
 
+
+## Status Update 2026-10-27 —— §2 决策 1 的 P2.0 行「canonical 10 流的 Bundle」是**悬空引用** + P2.1 行与 `ADR-CEP-19` 的边界澄清
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化与边界澄清。
+> **触发**: 2026-10-27 architect 角色架构重审(per 用户指令「切 architect 重审队列 #6 是否对齐 `01 号` 核心立场」)⇒ 新立 `ADR-CEP-19`(CohIf 载体)+ 队列 #7 `cpptlm-cep-cohif-carrier`;台账 Entry #74。
+> **登记 ① —— §2 决策 1 的 P2.0 行(本表第 3 行)**:该行写「CEP 用 **ProtocolEngine 插件** + **canonical 10 流** 的 Bundle(per `ADR-CEP-02` / `07 号 §5.4`)」。**该替代物在本仓不存在**:实测 `ADR-CEP-02` 全文 `Bundle` **零命中**;`07 号 §5.4` 的业务 Bundle 列表(`CacheReqBundle` / `CacheRespBundle` / `GmmuPteBundle` / `SdmaCmdBundle` / `DoorbellBundle` / `CrBundle` / `MsixBundle`,共 7 项)**无它**;`include/bundles/` 17 个 `.hh` grep `coherence` **零命中**。⇒ 本行是**悬空引用**;与 `ADR-CEP-07A` 决策 1 第 3 项的同名表述**同源**(两处)。**处置**:**不改本行正文**(append-only),改为在此登记 + 由 `ADR-CEP-19` 决策 6 给出**实体路径** `include/bundles/cep_coherence_bundles_tlm.hh`(回避 `ADR-CEP-07A` 明令「不创建」的 `coherence_bundles_tlm.hh`)。
+> **登记 ② —— §2 决策 1 的 P2.1 行与 §5 决策 5 排除表**:二者写「**不**实现 programmatic bridge 的 C++ 路径」。**与 `ADR-CEP-19` 不冲突**,边界澄清如下(逐 `file:line` 实测):
+> - 本文件排除的 programmatic bridge 指的是 `06 号 §6.3` 用法 **C**(`set_*_target` 装配,**跨域桥**用途)—— 该用法在 `06 号 §6.3` 的分类里与用法 A(flat + name_prefix)/ B(SimModule 嵌套 JSON)并列;
+> - `ADR-CEP-19` 决策 5 选的是**用法 A/B 族**的 **JSON 端口注册路径**(与 `RouterTLM` 同款:`chstream_register.hh:119` 的 `registerBidirectionalPortAdapter` + `module_factory.cc:743-750` 的 `is_multi` 分支**泛型虚分派** `bind_port_pair`)⇒ **不是** `set_*_target` 式 programmatic bridge;
+> - ⇒ **两者对象不同,无冲突**。登记此点是为避免后续读者把「JSON 端口注册」误读成「programmatic bridge」而误判冲突。
+> **登记 ③ —— 装配能力的边界**:仓内**无**「programmatic 创建 ChStream 端口」的先例(实测 `grep -rn "new cpptlm::ChStreamInitiatorPort\|new cpptlm::ChStreamTargetPort" src/ include/ | grep -v module_factory` → **空**;ChStream 端口只在 `module_factory.cc` Step 7 内 new)⇒ 即便本文件的排除条款不存在,programmatic 路径也缺 API 充分性证据。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

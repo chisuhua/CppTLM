@@ -4866,7 +4866,7 @@ critic 复审判定 **APPROVE_WITH_CONDITIONS**,**无 BLOCKER**。critic **独�
 
 architect 角色的重审结论(per 用户指令「切 architect 重审队列 #6 planner 产出是否符合 `01 号` 核心立场:① `ch_stream` 承载业务类 bundle;② 互联网络可特化到具体通信网络」),经 **context-builder + critic 四轮**对抗式评审
 (REJECT 2 B + 10 S + 7 N → APPROVE_WITH_CONDITIONS ×3 → `mergeable: yes`)后由用户裁决「**新开载体队列,插在 #6 与 #7 之间**」。
-产出载体 = `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3,420 行)+ `docs/research/cep-adr-19-cohif-carrier-draft.md`(v3,170 行),5 个 commit `805c8f95 → 07e0e02d → c37667a5 → 86c9ae4f → c45a2bdb`。
+产出载体 = `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3,420 行)+ **`docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md`**(v1.0 已签发;签发前的草案形态为 `docs/research/cep-adr-19-cohif-carrier-draft.md`,**已随签发移除**),5 个 commit `805c8f95 → 07e0e02d → c37667a5 → 86c9ae4f → c45a2bdb`。
 
 > **本 entry 同时履行 architect 重审的「签发前置第 0 项」** —— 架构重审文档 §9 自定纪律:「本轮 architect 重审自身必须有台账 Entry,否则与该文 D-8 批评队列 #6 未登记偏离的标准不一致」。**本 entry 即该登记**。
 

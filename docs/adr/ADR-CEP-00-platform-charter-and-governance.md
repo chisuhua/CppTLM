@@ -50,10 +50,10 @@ Coherence Exploration Platform(CEP)是一个支持 CHI / CXL 3.0 / TileLink-C / 
   - **审计**:每季度跨仓审计(per `06-bis §7.8` KPI 串行约束)由 DRI 执行,产出对齐报告
 - **KPI 排队**(per AGENTS.md "OpenSpec Proposed ≤ 3" 政策 + 当前基线 3/3 上限触发,**v0.3 算术闭环**):
   - **Stage 0**: 1 个 umbrella change `cpptlm-cep-umbrella`(1 KPI slot,30 人日,doc-only + 测试契约骨架 — **计入 KPI**,per oracle B2-1 修订:umbrella 不符 doc-only 豁免"0 函数签名/逻辑/构建改动"先例)
-  - **Stage 1**: 9 个串行 `cpptlm-cep-poc-spike` / `cpptlm-cep-stub-cache-core` / `-directory-ordering-plane` / `-collective-plane-base` / `-moesi-gpu-adapter` / `-chi-rnf-subset` / `-mesif-adapter` / `-cxl-nonsymmetric` / `-tilelink-tree-manager`(每次 1 KPI slot,KPI ≤3 → 排 9 季度)
+  - **Stage 1**: 10 个串行 `cpptlm-cep-poc-spike` / `cpptlm-cep-stub-cache-core` / `-directory-ordering-plane` / `-collective-plane-base` / `-moesi-gpu-adapter` / `-cohif-carrier` / `-chi-rnf-subset` / `-mesif-adapter` / `-cxl-nonsymmetric` / `-tilelink-tree-manager`(每次 1 KPI slot,KPI ≤3 → 排 10 季度)
   - **Stage 2**: 2 个串行 `-cxl-dcoh-symmetric` / `-nvlink-sharp`(KPI 排队同上)
   - **Stage 3**: 1 个 `-ualink-inc`
-  - **总计**:13 个 change(1 + 9 + 2 + 1 = 13),串行 13 季度;**任一时刻 Proposed 并发 ≤ 1**(守 KPI 上限)
+  - **总计**:14 个 change(1 + 10 + 2 + 1 = 14),串行 14 季度;**任一时刻 Proposed 并发 ≤ 1**(守 KPI 上限)
 
 > **2026-10-22 增补(台账 Entry #12 [adr-amendment])** —— `cpptlm-cep-poc-spike`:
 > - **性质**:**可丢弃的 spike**(单文件 / 不进 `ModuleFactory` / 不注册 ABI / 无公共 API)——
@@ -135,7 +135,7 @@ AGENTS.md:423 边界条款("SoC 架构**组件/拓扑/演进**类提案" → Arc
 | 06-bis supersede | 顶部加 Status Update 段,内容继承 | ✅ 已拍板 |
 | DRI | 架构师本人 | ✅ 已拍板 |
 | 准入门 | ArchForge PR 合入前 CppTLM change 不升 Proposed | ✅ 已拍板 |
-| KPI 排队 | 13 个 change 串行 13 季度(per §2 决策 3;2026-10-22 per Entry #12 由 10 → 11;**2026-10-26 per Entry #71 由 11 → 13** —— `moesi_gpu` / `mesif` 排入 Stage 1) | ✅ 已拍板 |
+| KPI 排队 | 14 个 change 串行 14 季度(per §2 决策 3;2026-10-22 per Entry #12 由 10 → 11;**2026-10-26 per Entry #71 由 11 → 13** —— `moesi_gpu` / `mesif` 排入 Stage 1;**2026-10-27 per Entry #74 由 13 → 14** —— 新增 `-cohif-carrier` 插在 `-moesi-gpu-adapter` 与 `-chi-rnf-subset` 之间) | ✅ 已拍板 |
 | AGENTS.md:423 边界 | 不触发(CEP 框架级不属 SoC 业务架构) | ✅ 已拍板 |
 | **ADR 签发仓** | ✅ **已拍板 = CppTLM 仓** — 定性:"支持做互相协议探索的"归入框架级,类比 gem5 Ruby network(per §5.1)| ✅ 已拍板 |
 | **真源文档路径** | ✅ **已拍板 α** = `docs/architecture/07-coherence-exploration-platform.md`(2026-10-20 创建 v0.1 草案) — 见 §5.2 | ✅ 已拍板 |
@@ -392,9 +392,28 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #71**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #71)。
 
+## Status Update 2026-10-27 —— 队列 #7 `cpptlm-cep-cohif-carrier` 立项 + KPI 排队 13 → 14 change
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。**唯一例外**:`§2 决策 3` 的 **KPI 排队算术块**与 `§5` 决策汇总的 **KPI 排队行**属**活口径**(per `Entry #71` 先例:排队总数变动时必须同步,否则本 ADR 与 `obj §4.0` 永久矛盾)—— 已在下方逐处标注。
+> **触发**: 2026-10-27 architect 角色对队列 #6 planner 产出的架构重审(per 用户指令「切 architect 重审是否对齐 `01 号` 核心立场:① `ch_stream` 承载业务类 bundle;② 互联网络可特化到具体通信网络」),经 context-builder + critic 四轮对抗式评审(REJECT 2 B + 10 S + 7 N → APPROVE_WITH_CONDITIONS ×3 → `mergeable: yes`)后,由用户裁决「新开载体队列,插在 #6 与 #7 之间」⇒ 新立 **`cpptlm-cep-cohif-carrier`**(队列 #7)。
+> **架构缺口(本 entry 的实质依据,逐 `file:line` 实测)**:
+> - **C1** **CEP 零 ChStream 承载体** —— `grep -rl "bundles::\|Bundle\|ChStream\|StreamAdapter" include/tlm/cep/` → **空**(7 个 `.hh`);`stub_cache_core.hh:154` 实为普通 `class StubCacheCore` —— 而**本文件 §6.3 的等价规定**(`ADR-CEP-07:64/:67` + `07 号 §6.3`)明写 ProtocolEngine / StubCacheCore **都应是** `ChStreamModuleBase`。
+> - **C2** **「CEP 用 canonical 10 流的 Bundle」是悬空引用,且同源两处** —— `ADR-CEP-07A:49` + `ADR-CEP-16:45` 均如此写;而 `ADR-CEP-02` 全文 `Bundle` **零命中**、`07 号 §5.4` 业务 Bundle 列表(7 项)**无它**、`include/bundles/` 17 个 `.hh` grep `coherence` **零命中**。
+> - **C3** **唯一的 Bundle 化承诺绑在集合通信队列** —— `ADR-CEP-03:225` 推迟至 P3(`cpptlm-cep-nvlink-sharp-adapter`)⇒ **主干流无人认领**。
+> **排队算术变更(本 entry 的实质)**:§2 决策 3 的 **Stage 1 由 9 个串行扩至 10 个** —— 新增 `-cohif-carrier`(插在 `-moesi-gpu-adapter` **之后**、`-chi-rnf-subset` **之前**);其后 `-chi-rnf-subset` / `-mesif-adapter` / `-cxl-nonsymmetric` / `-tilelink-tree-manager` 顺延为 #8 / #9 / #10 / #11;Stage 2 顺延为 #12 / #13;Stage 3 顺延为 #14。**总计 13 → 14 个 change(1 + 10 + 2 + 1 = 14),串行 13 → 14 季度**;Stage 1 跨度 2027-Q1 ~ 2029-Q2;**终态 2029-Q4 → 2030-Q1**。
+> **为什么插在 #6 之后、#7 之前**:队列 #6 `cpptlm-cep-moesi-gpu-adapter` 交付首个真实协议语义 + **6→3 特化字典**;载体队列**消费**该字典;`chi-rnf-subset` 则**首次在真实载体上验证**。若载体排在 `chi-rnf-subset` 之后 ⇒ 后者继承队列 #6 的**逻辑级**装配验证(`stub_cache_core.hh:42` 明写 `net_side` 由 **mock ProtocolEngine** 驱动)⇒ **载体债复制一遍**。
+> **载体交付面(per `ADR-CEP-19` 决策 1~9)**:① `include/bundles/cep_coherence_bundles_tlm.hh`(`bundles::CohIfBundle`,**只覆盖 5 条 RN-side 流**,`flow_id` 区分;无网络层字段)② `include/tlm/cep/protocol_engine_base.hh`(`ChStreamModuleBase` 派生 + `Input/OutputStreamAdapter<CohIfBundle>`)③ `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`,**首次落地**;`CohIfBundle ↔ NoCFlitBundle`)④ `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏(**`registerObject` + `registerBidirectionalPortAdapter` 两件都做**;`static_assert(n>1)`)+ `module_factory.hh:313-315` 钩子扩展(死钩子 → 活钩子)。**装配走 JSON 链**(`ADR-CEP-16:46/:86` 明确**不**实现 programmatic bridge 的 C++ 路径;`module_factory.cc:743-750` 的 `is_multi` 分支是**泛型虚分派**)。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface`(需 MODIFIES 冻结 main spec)。
+> **B2 贡献口径**:**新增 invariant 数 = 0**(本 entry 与 `ADR-CEP-19` 均**不定义** invariant ⇒ `ADR-CEP-19` 登记进 `cep_docs_sync_check.sh` 的 `NO_INV` 白名单)⇒ 15 组 66 条编号**未被改动**。
+> **准入前置 owner**:本 entry **不新增** Stage 1 准入前置项 —— 载体队列**服务**已有的 `S1-2`(首个 `implemented` 实例装配后复核,由队列 #6 触发)与队列 #8 的装配验证;`S1-3`(第 3 张网 / 第 3 个协议实例)⛔ 仍**未触发**(于 #9 达成)。
+> **对上一段(2026-10-26,队列 #6 启动段)的衔接**: 该段登记「队列 #6 已启动,并发 0/3 → 1/3」;**并发仍为 1/3**(本 entry **不建** change 目录 —— 载体队列的 change 目录待其 planner 阶段建立)⇒ 该段「当前态」的历史快照语义保留不回改。
+> **不受影响的部分**:`§2 决策 3` 的「任一时刻 Proposed 并发 ≤ 1」与 §8 准入门措辞修订 **C-1** 及其理由**继续有效**;`§5` 其余决策行**零改动**。
+> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #7 `cpptlm-cep-cohif-carrier`(per `obj §4.0`)。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
+
 ---
 
 **版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)+ **Status Update 2026-10-26**(队列 #5 归档)+ **Status Update 2026-10-26**(队列 #6 启动 + 排队 11 → 13)
-**最后更新**: 2026-10-26
+**最后更新**: 2026-10-27
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)

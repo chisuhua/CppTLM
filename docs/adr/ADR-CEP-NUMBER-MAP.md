@@ -61,6 +61,7 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 | **CEP-16** | ADR | `06 §15.4` P2.0-P5 演进对应(P6 排除)(A14)| CEP-00, CEP-04, CEP-13 | ✅ **v0.1 起草 2026-10-21** |
 | **CEP-17** | ADR | Ruby-SLICC 协议族接入 + 协议私有状态边界 + 学术协议族 + 组合承诺边界 | CEP-00, CEP-02, CEP-04, CEP-05 | ✅ **v0.3 起草 2026-10-21**(超出预分配;§3.4 schema 草案已转由 `ADR-CEP-12` 承接)|
 | **CEP-18** | ADR | 协议生成路线范围(SSP 描述 → 插件生成 vs 纯手写插件)| CEP-12, CEP-17 | ✅ **v0.1 起草 2026-10-21** |
+| **CEP-19** | ADR | **CohIf 载体形态**(业务 Bundle `CohIfBundle` + ProtocolEngine 的 ChStream 端口面 + `ProtocolBridge` 特化桥 + JSON 装配)| CEP-07, CEP-02, CEP-16 | ✅ **v1.0 已签发 2026-10-27**(per 台账 Entry #74) |
 
 **CEP-NUM(本 ADR)**:本表本身,作为"编号映射单一真源"
 
@@ -112,10 +113,10 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 **KPI 预算**(per `ADR-CEP-00 §2 Decision 3`):
 - **ADR KPI 预算以 `ADR-CEP-00 §2 Decision 3` 为单一真源**(per oracle v0.4 B8 修订:三处口径对齐):
   - Stage 0 umbrella = 1 KPI slot(计入)
-  - Stage 1 = **9** 串行 × 1 slot
+  - Stage 1 = **10** 串行 × 1 slot
   - Stage 2 = 2 串行 × 1 slot
   - Stage 3 = 1 slot
-  - 总 **13** 个 OpenSpec change,串行 **13** 季度,任一时刻 Proposed 并发 ≤ 1
+  - 总 **14** 个 OpenSpec change,串行 **14** 季度,任一时刻 Proposed 并发 ≤ 1
 
 > **2026-10-23 增补(台账 Entry #27 [adr-amendment])** —— 本块原写「Stage 1 = 6 串行 /
 > 总 **10** 个 change / 串行 **10** 季度」,与 `ADR-CEP-00 §2 Decision 3` 的 **11**
@@ -130,8 +131,15 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 > **写作纪律**:「表内计数的一致性陈述」随表机械变化 ⇒ 原地更正(同 Entry #12 的「表可增,论断不改」原则);
 > 而**历史论据引述**(如 `ADR-CEP-04` / `ADR-CEP-05` 的 Status Update 里引述「11 个 change」作论据)**不改** ——
 > 其逻辑不因算术扩增而失效(拆分会破算术这一点仍成立)。
+> **2026-10-27 增补(台账 Entry #74 [scope-change])** —— 本块原写「Stage 1 = **9** 串行 /
+> 总 **13** 个 change / 串行 **13** 季度」。`ADR-CEP-00 §2 Decision 3` 的排队已由
+> **13 → 14**(新增队列 #7 `-cohif-carrier`,插在 `-moesi-gpu-adapter` 与 `-chi-rnf-subset`
+> 之间;Stage 1 变 **10** 个串行)⇒ **同批机械同步**为 **10 / 14 / 14**(真源仍 =
+> `ADR-CEP-00 §2 Decision 3`,本块只是其**投影**)。**同批**在 §2 决策 1 的编号预分配表
+> **新增 `CEP-19` 行**(CohIf 载体形态,✅ v1.0 已签发 2026-10-27)⇒ **ADR 清单 21 → 22**。
+> **写作纪律**同 Entry #71:表内计数随表机械变化 ⇒ 原地更正;**历史论据引述不改**。
 > **冻结面**:本文件属 M1 冻结面(成员数以 `scripts/test/cep_freeze_check.sh` 清单为准),本次改动已走授权闸
-> `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #27"`。
+> `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #74"`。
 
 ---
 
@@ -171,6 +179,17 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 | 起草顺序 | 4 批串行,批内并行 | ✅ 已拍板 |
 
 ---
+
+
+## Status Update 2026-10-27 —— §2 决策 1 预分配表**新增 `CEP-19`** + KPI 预算块 13 → 14
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**;唯一例外是 §2 决策 1 的**表内计数**与 §2 决策 4 的 **KPI 预算块**(均为**活口径**,per Entry #12 / #27 / #71 同款先例:随表机械变化 ⇒ 原地更正 + 标注增补块 + 台账 entry)。
+> **触发**: 2026-10-27 architect 角色架构重审 + `ADR-CEP-19` 签发;台账 Entry #74。
+> **登记 ① —— 新增 `CEP-19`**:编号预分配表新增一行 —— `CEP-19` = **CohIf 载体形态**(业务 Bundle `CohIfBundle` + ProtocolEngine 的 ChStream 端口面 + `ProtocolBridge` 特化桥 + JSON 装配),依赖 `CEP-07` / `CEP-02` / `CEP-16`,状态 ✅ **v1.0 已签发 2026-10-27**。⇒ **ADR 清单 21 → 22**。
+> **登记 ② —— KPI 预算块同步**:`ADR-CEP-00 §2 Decision 3` 的排队已由 **13 → 14**(新增队列 #7 `-cohif-carrier`;Stage 1 变 **10** 个串行)⇒ 本块**同批机械同步**为 **10 / 14 / 14**。
+> **登记 ③ —— `CEP-19` 不定义 invariant**:**新增 invariant 数 = 0**(`ADR-CEP-19` 决策 2 / 8 明确「不引入新抽象层」,其 9 条决策**均不含** invariant 定义)⇒ 已登记进 `scripts/test/cep_docs_sync_check.sh` 的 `NO_INV` 白名单(否则「目录内 ADR 未纳入 OWNERS 或 NO_INV ⇒ 其 invariant 不会被计数」会报红)⇒ **15 组 66 条编号未被改动**。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
 
 ## 7. v0.1 修订记录(本 ADR 初版)
 
