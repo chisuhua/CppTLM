@@ -4801,6 +4801,58 @@ N-1 proposal「其余 13 字段零改动」→ **12**(实例共 13 键,`status` 
 
 ---
 
+### Entry #73 — 2026-10-26 [fix]
+
+**主题**: 队列 #6 critic **复审轮** —— **APPROVE_WITH_CONDITIONS**(无 BLOCKER;上轮 16 项独立验证为真修)→ 本轮 3 SHOULD_FIX + 5 NIT 落地
+
+**① 复审结论**
+
+critic 复审判定 **APPROVE_WITH_CONDITIONS**,**无 BLOCKER**。critic **独立重跑了全部声称的验证**(未采信描述):`openspec validate --strict` rc=0 · `--changes --strict` rc=0 · `openspec list` = 1 active(KPI 1/3)· 守门 4 项 rc=0 · `cep_freeze_check` rc=0 + provenance 39 成员 · `cep_decl_alignment_check` 6 项全绿 · `cep_gate_selftest` **31/31** · `ctest` **106/106** ⇒ Entry #72 ⑤ 的自查表**全部属实**。
+
+> **独立性标注**:本轮复审由 AI agent 完成,**不等于真人外部评审** ⇒ 结论应登记为「**残余风险 + DRI 书面接受**」,而非「已闭环」(per `obj §9.3` R10 先例)。
+
+**② 上轮 16 项(2 BLOCKER + 8 SHOULD_FIX + 6 NIT)的独立验证结论**
+
+| # | critic 的独立验证 | 结论 |
+|---|-----------------|------|
+| **B-1** | `design.md:76` 证据链已改正(`:98` import、`:122/:170` validator、CI pip 实测 `.github/workflows/ci.yml:56-57`);spec AC-01 ② 已补前提;`grep "机制上\|判据层"` 三处命中**互相自洽**,无残留矛盾 | ✅ 真修 |
+| **B-2** | `git diff 88e6b88b..ea2ec6e7 -- docs/adr/ \| grep -c "^diff --git"` = **5**;manifest 恰 5 个 hash 变;proposal「其余 **34** 个」算术自洽(39−5=34);全仓旧口径仅剩 `obj:4702` / `obj:4768` 两处**合法历史记录** | ✅ 真修 |
+| **S-1~S-8** | 逐条独立验证(见 Entry #72 的修复清单) | ✅ 真修 |
+| **N-1~N-6** | 同上 | ✅ 真修 |
+
+**③ 本轮新发现 3 个 SHOULD_FIX(全部已修)**
+
+| # | 缺陷 | 修复 |
+|---|------|------|
+| **SF-1** | **台账登记不实(与 B-2 同类,出现在同一份台账里)** —— Entry #71 ⑧ 写「**13 个** D-段裁决」,实测 `grep -c "^## D-"` = **12**(α→μ 共 12 个希腊字母)。**两轮评审均漏** | 订正为 **12** 并在台账内注明「原写 13,经 critic 复审实测订正」 |
+| **SF-2** | **§4.0「双边化自检」块的「已知例外(实测 1 处)」清单未随模式重测** —— 模式已正确重指(①`2029-Q4` 0 命中、②`2029-Q2` 0 命中),但 ③ 的 `串行 11 季度\|11 个 change` 实测 **7 处**命中,**全部**在 `docs/adr/` 的 Status Update **历史引述**段 ⇒ 操作句「除这 1 处外出现新命中 = 旧数复活,必须改回」会**误导**照做的人去改历史快照 | 例外清单按**实测**重写:① 0 处 / ② 0 处 / ③ **7 处**(逐个列出文件行号)+ ④ 草稿 1 处;并把操作句改为「除 ③ 的 7 处 + ④ 的 1 处外」 |
+| **SF-3** | **第 7 个 Scenario 的反向 fixture 键枚举漏 `atomic`** —— 原文列 11 个非 `status` 键,而 schema 的 `required` 是 **13** 键(含 `atomic`)⇒ 措辞会被 builder 当**穷举清单**照抄 ⇒ `atomic` 键的镜像漂移**无 fixture 钉住**(闸本体是全键并集比较,不漏;缺的是 fixture 枚举的完备性) | 改为「改 `status` 之外**全部 12 键**中的**任一**」+ **逐个列出** 12 个键名 + 注明「穷举清单 = schema 的 `required` 去掉 `status`;**不得**只挑其中几个」 |
+
+**④ 本轮 5 个 NIT(全部落地)**
+
+| NIT | 处理 |
+|-----|------|
+| `:98/122/170` 的行号引用不精确(`:98` 实为 `import jsonschema`) | design / spec / proposal 三处改为「`:98` import + `:122/:170` 的 `Draft202012Validator`」 |
+| `obj:457` 历史链尾句「下一个可启动 = 队列 #5」缺「当时」锚定 | 补「**当时**(2026-10-23)」锚定前缀 |
+| 断言⑧ 条件② 的**未来键名**待 builder 落地后重验 | 登记进 design **D-θ** + proposal 的「不改清单」旁 ⇒ **builder 落地 `perm_upgrades.schema.json` 后必须重验** |
+| Entry #72 声称 Requirement 正文 479/450,实测 478/449 | 订正并注明「±1 差异是尾换行计数口径」 |
+| critic prompt 称 26 文件、实测 21 | **prompt 记述误差**,非仓内缺陷 ⇒ 不改 |
+
+**⑤ 两条「未能完全验证」⇒ 已登记为 builder 前置(critic 提出)**
+
+| # | 项 | 登记落点 |
+|---|---|---|
+| ① | **S1 有效期届满的**重登记 owner** —— 断言⑧ 的条件① 在 #6 **完成归档**瞬间转红,报红信息指向 `cep-poc-spike-verification` main spec 的 S1 有效期登记,而该 main spec **不属任何 active change** ⇒ **builder 必须在 `tasks.md` 显式列「归档前完成 S1 有效期重登记」任务**,否则 #7 planner 开门即遇红闸且**无 runbook** | design **D-θ** + proposal「不改清单」旁 + 本 entry |
+| ② | **条件② 的未来键名** —— `perm_upgrades.schema.json` 的顶层 `properties` 须真含 `perm_upgrade`,否则条件② **再度装饰化**(条件① 的归档判定仍兜底,非恒假) | design **D-θ** + 本 entry |
+
+**⑥ 验收(实测)**
+
+守门 7 项 rc=0 · `cep_gate_selftest` **31/31** · `openspec validate --changes --strict` rc=0 · `ctest` **106/106** · delta spec **14 Scenario**(7 + 7)· 冻结集 **39**(本批冻结成员零 diff)· KPI **1/3**
+
+**⑦ 关联**: critic 复审轮(APPROVE_WITH_CONDITIONS:3 SHOULD_FIX / 5 NIT)· Entry #72(critic 首轮 REJECT 的修复)· Entry #71(排队重排 + planner 四件套)· `obj §9.3`(R10 独立性缺口登记先例)
+
+---
+
 **版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)
