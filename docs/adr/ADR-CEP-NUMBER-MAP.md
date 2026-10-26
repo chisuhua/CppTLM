@@ -112,16 +112,24 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 **KPI 预算**(per `ADR-CEP-00 §2 Decision 3`):
 - **ADR KPI 预算以 `ADR-CEP-00 §2 Decision 3` 为单一真源**(per oracle v0.4 B8 修订:三处口径对齐):
   - Stage 0 umbrella = 1 KPI slot(计入)
-  - Stage 1 = 7 串行 × 1 slot
+  - Stage 1 = **9** 串行 × 1 slot
   - Stage 2 = 2 串行 × 1 slot
   - Stage 3 = 1 slot
-  - 总 11 个 OpenSpec change,串行 11 季度,任一时刻 Proposed 并发 ≤ 1
+  - 总 **13** 个 OpenSpec change,串行 **13** 季度,任一时刻 Proposed 并发 ≤ 1
 
 > **2026-10-23 增补(台账 Entry #27 [adr-amendment])** —— 本块原写「Stage 1 = 6 串行 /
 > 总 **10** 个 change / 串行 **10** 季度」,与 `ADR-CEP-00 §2 Decision 3` 的 **11**
 > (Stage 0 = 1 + Stage 1 = **7** + Stage 2 = 2 + Stage 3 = 1)冲突 —— **真源 3 内部矛盾**。
 > **已按权威口径更正为 11**(旧值从未是权威值)。
 > **写法沿用** `ADR-CEP-00 §2 决策 3` 的「2026-10-22 增补」同款:原地更正 + 标注增补块 + 台账 entry。
+
+> **2026-10-26 增补(台账 Entry #71 [scope-change])** —— 本块原写「Stage 1 = **7** 串行 /
+> 总 **11** 个 change / 串行 **11** 季度」。`ADR-CEP-00 §2 Decision 3` 的排队已由
+> **11 → 13**(`moesi_gpu` / `mesif` 排入 Stage 1;Stage 1 变 **9** 个串行)⇒ **同批机械同步**为
+> **9 / 13 / 13**(真源仍 = `ADR-CEP-00 §2 Decision 3`,本块只是其**投影**)。
+> **写作纪律**:「表内计数的一致性陈述」随表机械变化 ⇒ 原地更正(同 Entry #12 的「表可增,论断不改」原则);
+> 而**历史论据引述**(如 `ADR-CEP-04` / `ADR-CEP-05` 的 Status Update 里引述「11 个 change」作论据)**不改** ——
+> 其逻辑不因算术扩增而失效(拆分会破算术这一点仍成立)。
 > **冻结面**:本文件属 M1 冻结面(成员数以 `scripts/test/cep_freeze_check.sh` 清单为准),本次改动已走授权闸
 > `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #27"`。
 
