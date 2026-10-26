@@ -1256,23 +1256,38 @@ elif VALIDITY_ANCHOR not in _s1src:
     failed.append(f"S1 有效期锚缺失: {VALIDITY_ANCHOR} 不在 examples/cep_poc_spike_s1.cc")
 else:
     print(f"  \033[0;32m✓\033[0m S1 有效期锚存在({VALIDITY_ANCHOR})")
-    # 届满条件 ①:队列 #6 change 目录出现
-    q6 = os.path.isdir(os.path.join(root, "openspec/changes/cpptlm-cep-chi-rnf-subset"))
-    # 届满条件 ②:schema 引入 perm 形态相关字段(6→4 投影的表达力演进)
+    # 届满条件 ①:队列 #6 的 **perm 形态演进 change 已落地(归档)**。
+    # ⚠️ 2026-10-26(Entry #71):原条件是「队列 #6 change **目录出现**」且硬编码
+    #    `cpptlm-cep-chi-rnf-subset` —— 队列 #6 改名后该目录名永不存在 ⇒ 条件**恒假**
+    #    ⇒ 断言 ⑧ 静默失守。语义修正:有效期到「perm 形态演进**落地**」为止
+    #    (与 `Entry #64` 的③放行闸解除条件「②完成 **+** 首个实例装配验证通过」同构:
+    #    **开始做** ≠ **做完**)。「目录出现」= 重新评估**尚未发生** ⇒ 不算届满。
+    #    队列 #6 于 Entry #71 重排为 `cpptlm-cep-moesi-gpu-adapter`(正是做 perm 演进的 change)。
+    # ⚠️ 2026-10-26(Entry #71):首版写成 `glob.glob(...)` —— 本 Python 块**未 import glob**
+    #    ⇒ NameError ⇒ 整个闸崩溃(rc=1)。改用**已 import 的 os**(同块用 `import glob as _g7`
+    #    是断言⑦ 的局部别名,跨断言引用脆弱)。
+    _arch_dir = os.path.join(root, "openspec/changes/archive")
+    q6 = (os.path.isdir(_arch_dir)
+          and any(n.endswith("cpptlm-cep-moesi-gpu-adapter") for n in os.listdir(_arch_dir)))
+    # 届满条件 ②:schema 引入 perm 形态相关字段(6→4 投影的表达力演进)。
+    #    ⚠️ 键名对齐:队列 #6 采用的字段名是 `perm_upgrade`(per design D-γ);
+    #    原键名 `perm_form` / `perm_variant` / `upgrade_kind` **与之不匹配** ⇒ 该子条件
+    #    亦为装饰性 ⇒ 补入 `perm_upgrade`(保留旧键名以兼容其他形态命名)。
     _perm_evolved = False
     try:
         _s = json.load(open(os.path.join(root, "include/tlm/cep/protocol_instance.schema.json"),
                             encoding="utf-8"))
         _props = _s.get("properties", {})
-        _perm_evolved = any(k in _props for k in ("perm_form", "perm_variant", "upgrade_kind"))
+        _perm_evolved = any(k in _props for k in ("perm_form", "perm_variant", "upgrade_kind",
+                                                  "perm_upgrade"))
     except Exception:
         pass
     if q6 or _perm_evolved:
-        failed.append("S1 结论的有效期已**届满**(队列 #6 出现 或 schema 引入 perm 形态字段)"
+        failed.append("S1 结论的有效期已**届满**(队列 #6 的 perm 形态演进已归档 或 schema 引入 perm 形态字段)"
                       " → delta spec 的「S1 当前判定结论与有效期登记」SHALL 重评"
                       "(否则有效期是纯纸面)")
     else:
-        print(f"  \033[0;32m✓\033[0m S1 有效期未届满(队列 #6 目录未出现 / schema 无 perm 形态字段)")
+        print(f"  \033[0;32m✓\033[0m S1 有效期未届满(队列 #6 的 perm 演进未归档 / schema 无 perm 形态字段)")
 
 if failed:
     for f in failed:

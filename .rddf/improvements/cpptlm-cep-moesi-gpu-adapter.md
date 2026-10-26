@@ -32,7 +32,7 @@ created: 2026-10-26
 |---|---|
 | **`perm` 形态演进(S1-7 ①②)无归属** | `ADR-CEP-05 §13.1`:判据 2 **已触发** —— `moesi_gpu` 的 `state_transition[2][1]=3`(E+Write→M)是**静默升级**,(a)∧(b) 成立 ⇒ **4 值 `perm` 确无法表达**;而 `CEN-Ib11` 的 4 值锁仍在 ⇒ 表达缺口**存在**且**无载体** |
 | **「演进跟谁走」曾无解** | 原队列 #6 = `chi-rnf-subset`,而 CHI RN-F 是**显式**请求升级(`07 号 §5.1.1`)⇒ **不需要**该演进 ⇒ 由它承载 = schema 在**无消费者**的真空里演进 = `Entry #58` 明确拒绝的形态 |
-| **CEP 至今零个真实 adapter** | `grep -rn "MoesiGpuAdapter" include/ src/ test/ examples/` → **零命中** ⇒ 16 个注册实例里 **0 个**有实现,`status` 全 `planned` ⇒ `INV-CEP-12-IC3` 口径下**计数 = 0** |
+| **CEP 至今零个真实 adapter** | `grep -rn "MoesiGpuAdapter" include/ src/ test/ examples/` → **零命中** ⇒ **设计口径** 16 个 adapter 实例(`07 号 §5.1`)里 **0 个**有实现(本仓 `protocol_instances.json` 迄今仅含 ArchForge 贡献的 **2** 份实例声明),`status` 全 `planned` ⇒ `INV-CEP-12-IC3` 口径下**计数 = 0** |
 | **S1-2 / S1-3 无触发路径** | S1-2 = 「首个 `implemented` 实例装配后复核」;S1-3 = 「第 3 个协议实例」⇒ 二者都以「有真实实例」为前提,而实例**排期 = 未排期** ⇒ 两条准入前置**永久悬空** |
 | **6→3 消息类映射表(S1-5)零载体** | `ADR-CEP-12 §8.3` ②:映射表由 **adapter 处的显式映射表**承担(非恒等,Stage 1 交付);`Entry #58` 裁定传输层**不建**映射表 ⇒ 映射表被**显式推给本 change** |
 | **`perm_upgrade` 的跨仓镜像冲突** | `cep_decl_alignment_check.sh` ⑥ = 本仓 `protocol_instances.json` 与 ArchForge 声明**逐字段严格相等** ⇒ 直接给实例加字段 ⇒ **当场红** ⇒ 落点必须重新设计 |

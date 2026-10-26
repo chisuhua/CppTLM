@@ -120,6 +120,8 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-collective-plane-base"     # 同上(2026-10-26 归档 → 2026-10-26-cpptlm-cep-collective-plane-base);历史叙述(obj 台账 Entry #66~#69、improvement 草稿)指向归档前位置 —— **双态注册**(归档日治理第 4 步)
   "include/tlm/cep/perm_upgrades.json"                    # 设计示意:队列 #6 `cpptlm-cep-moesi-gpu-adapter` 的**静默升级声明源**,由 **builder 阶段**产出(per ADR-CEP-12 Status Update 2026-10-26 的落点裁决)
   "include/tlm/cep/perm_upgrades.schema.json"             # 同上(配套 schema)**设计示意**
+  "openspec/specs/…"                                      # 省略号写法(obj 台账 Entry #71 ⑫ R-7 的**路径订正对照**)
+  "openspec/changes/…/specs/…"                            # 省略号写法(同上)
   "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-vc-mapping-contract/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-vc-mapping-contract/spec.md)
   "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-stub-cache-core/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-stub-cache-core/spec.md)
   "openspec/changes/cpptlm-cep-poc-spike/specs/cep-poc-spike-verification/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-poc-spike-verification/spec.md);现址见 openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella

@@ -249,5 +249,11 @@ else:
           f"(冻结于 {man.get('frozen_at', '?')}, commit {str(man.get('frozen_at_commit', ''))[:12]})")
     print(f"  \033[1;33m!\033[0m **但 provenance 不成立**:{len(_prov_bad)} 个产物的 hash 与该 commit 的内容不一致"
           f" —— 须在 commit 产物后重跑 --update")
+    # ⚠️ 2026-10-26(Entry #71 R-6):provenance 不成立原本只 warn ⇒ rc 仍为 0
+    #    ⇒ 两步授权的**第 3 步**「再 commit 清单」**无机器保证**(清单可停在错误 commit 上)。
+    #    「清单描述的不是该 commit 的内容」是**真缺陷**(不是常态)⇒ 阻断。
+    #    `--update` 模式**天然豁免**:它在 153 行 `exit $?` 提前结束 —— 此刻产物尚未提交,
+    #    provenance 必然不成立 ⇒ 不豁免会把「commit 产物 → --update」流程本身卡死。
+    sys.exit(1)
 PYEOF
 exit $?
