@@ -1,7 +1,7 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-10-26T00:43:50Z",
+  "current_role": "planner",
+  "updated_at": "2026-10-26T00:00:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
@@ -110,6 +110,12 @@
       "at": "2026-10-26T00:43:50Z",
       "by": "user",
       "note": "队列 #5 cpptlm-cep-collective-plane-base builder 阶段"
+    },
+    {
+      "role": "planner",
+      "at": "2026-10-26T00:00:00Z",
+      "by": "user",
+      "note": "队列 #6 cpptlm-cep-chi-rnf-subset planner 阶段"
     }
   ]
 }

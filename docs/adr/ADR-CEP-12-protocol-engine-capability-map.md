@@ -378,3 +378,13 @@ ArchForge 在答复回执 `cep-interface-alignment-response-2026-10-22.md` §1.4
 
 > §2 决策 2 的 `perm` **4 值锁**(禁 `ATOMIC` 第 5 值;`CEN-Ib12` 仍不存在)· §2 决策 1 的 schema 全量结构 ·
 > `protocol_instance.schema.json` · 本 ADR 其余全部正文 —— **全部零改动**。
+
+## 10. Status Update(2026-10-26,per 台账 Entry #71)—— `perm` 形态演进的**落点裁决** + 6→3 映射表的首个载体
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— §2 ~ §9 正文一律不改,仅登记状态变化。
+> **触发**: 2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` 建 change 目录(Stage 1 / 2028-Q1)⇒ 承接 **S1-7 ①②**(`perm` 形态 schema 演进)+ **S1-5**(6→3 消息类映射表机制)。
+> **裁决 ① —— `perm_upgrade` 的落点 = 独立声明源,`protocol_instance.schema.json` **零改动****:新字段 `perm_upgrade.silent_upgrades[]`(`from`/`to` **跨 schema `$ref`** 取自 §9.4 所述的 `perm` **4 值锁**)落**新**文件 `include/tlm/cep/perm_upgrades.json` + 配套 schema,**诞生即不冻结**。**理由**:① `scripts/test/cep_decl_alignment_check.sh` ⑥ 项要求本仓 `protocol_instances.json` 与 ArchForge 声明**逐字段严格相等**(含「键只存在于一侧」判红)⇒ 该文件是 ArchForge **单点权威的派生副本**,不得承载本仓单方字段;② `perm` 的 4 值锁权威在本仓(`CEN-Ib11`),不在 ArchForge ⇒ 「协议**是什么**」与「协议**怎么投影到 stub cache**」本就分层;③ `protocol_instance.schema.json` 的既有 **13 属性断言零回归**(per `test/test_cep_schema.cc:234`)。
+> **裁决 ② —— 6→3 消息类映射表 = adapter 的属性**:落 `MoesiGpuAdapter` 内(逐 adapter 不同 ⇒ 不建独立 JSON);**方向唯一**(6 类 → 链路层 `CATEGORY_*` 3 类);**非恒等**为存在性前提(至少一行 ≠ 恒等;若某实例确实恒等 ⇒ 须**显式声明 + 给出理由**);**`CATEGORY_*` 不扩**(§8.3 ② 的分层纪律维持)。
+> **未变更项(明示)**:§2 决策 1 ~ 9 的正文 · §3 `INV-CEP-12-IC1` ~ `IC3` 的**编号与数量**(3 条不变)· §8 的 per-network 嵌套形态 · §9.4 的 `perm` 4 值锁 —— **全部零改动**。**新增 invariant 数 = 0**。
+> **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #71**
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #71)。

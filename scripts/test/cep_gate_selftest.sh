@@ -41,19 +41,34 @@ run_case "基线(无变异)" 0 'pass'
 
 # ── 断言⑤:ADR 回归锁 ───────────────────────────────────────────
 run_case "删掉真 Status Update 段 → ⑤ 必须 fire" 1 '
+import re
 from pathlib import Path
 p = Path(os.environ["RT"] + "/docs/adr/ADR-CEP-00-platform-charter-and-governance.md")
 t = p.read_text(encoding="utf-8")
-i = t.find("## Status Update 2026-10-23"); j = t.find("\n---", i)
-p.write_text(t[:i] + t[j:], encoding="utf-8")'
+# ⚠️ 2026-10-26(Entry #71):旧写法 `t.find("\n---", i)` 在 2026-10-23 段之后**无** `---`
+#    时返回 -1 ⇒ 变异**意外截断整个文件** ⇒ 断言 ⑤ 是靠「文件没了」才 fire,不是靠
+#    「真段被删」⇒ fixture 老化(2026-10-26 追加新 SU 段后该偶然事实消失)。
+# ⇒ 新写法:删除**全部** `## Status Update 20xx-xx-xx` 段 ⇒ `has_new_su` 必为 False
+#    ⇒ ⑤ 的 fire 来自**真语义**(ADR 仍写旧状态但无 ≥ 归档日的 SU 登记)。
+#    `## 8. Status Update(2026-10-21)`(own_date < 归档日)保留 ⇒ 不影响判定。
+parts = re.split(r"(?m)^(?=## )", t)
+kept = [x for x in parts if not x.startswith("## Status Update 20")]
+assert len(kept) < len(parts), "变异未命中:未找到任何 `## Status Update 20xx` 段"
+p.write_text("".join(kept), encoding="utf-8")'
 
 run_case "回填日期 SU 顶替真段 → ⑤ 必须 fire" 1 '
+import re
 from pathlib import Path
 p = Path(os.environ["RT"] + "/docs/adr/ADR-CEP-00-platform-charter-and-governance.md")
 t = p.read_text(encoding="utf-8")
-i = t.find("## Status Update 2026-10-23"); j = t.find("\n---", i)
-t = t[:i] + "## Status Update 2026-10-22 —— 追加登记\n\n> 本条登记:umbrella 仍为 Proposed,Stage 0 未归档。\n" + t[j:]
-p.write_text(t, encoding="utf-8")'
+# ⚠️ 2026-10-26(Entry #71):同 fixture 1 的老化原因(旧写法依赖 `-1` 截断)。
+# ⇒ 新写法:把**全部**真段(`## Status Update 20xx-xx-xx`)换成**一个回填日期**的段
+#    ⇒ own_date(2026-10-22) < 归档日(2026-10-23) ⇒ `has_new_su` 为 False ⇒ ⑤ 必须 fire。
+parts = re.split(r"(?m)^(?=## )", t)
+kept = [x for x in parts if not x.startswith("## Status Update 20")]
+assert len(kept) < len(parts), "变异未命中:未找到任何 `## Status Update 20xx` 段"
+p.write_text("## Status Update 2026-10-22 —— 追加登记\n\n> 本条登记:umbrella 仍为 Proposed,Stage 0 未归档。\n\n"
+             + "".join(kept), encoding="utf-8")'
 
 # ── 断言②:旧状态投影(同义变体 / 裸字符陷阱)────────────────────
 run_case "旧状态投影(违反准入规则)→ ② 必须 fire" 1 '
@@ -211,8 +226,8 @@ j = t.index("\n### ", i + 1)
 sec = t[i:j]
 # 用**活**队列行(队列 #1~#4 均已归档,不在活集内)→ 队列 #5 collective-plane-base
 # ⚠️ 2026-10-25(Entry #64):队列 #4 已归档 → 活队列行改为 #5
-assert "`cpptlm-cep-chi-rnf-subset`" in sec, "锚点漂移:§4.0 未含活队列 #6 的 change 名"
-sec = sec.replace("`cpptlm-cep-chi-rnf-subset`", "`cpptlm-cep-umbrella`", 1)
+assert "`cpptlm-cep-moesi-gpu-adapter`" in sec, "锚点漂移:§4.0 未含活队列 #6 的 change 名"
+sec = sec.replace("`cpptlm-cep-moesi-gpu-adapter`", "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "活文档出现归档件里不存在的 S1-9 → ⑦ 必须 fire" 1 '
@@ -232,8 +247,8 @@ i = t.index("### 4.0 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
 # ⚠️ 2026-10-25(Entry #64):队列 #4 已归档 → 活队列行改为 #5
-assert "`cpptlm-cep-chi-rnf-subset`" in sec, "锚点漂移:§4.0 未含活队列 #6 的 change 名"
-sec = sec.replace("`cpptlm-cep-chi-rnf-subset`", "`cpptlm-cep-umbrella`", 1)
+assert "`cpptlm-cep-moesi-gpu-adapter`" in sec, "锚点漂移:§4.0 未含活队列 #6 的 change 名"
+sec = sec.replace("`cpptlm-cep-moesi-gpu-adapter`", "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "孤儿前置登记行被移除 → ⑦ 必须 fire" 1 '

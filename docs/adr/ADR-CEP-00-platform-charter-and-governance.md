@@ -50,10 +50,10 @@ Coherence Exploration Platform(CEP)是一个支持 CHI / CXL 3.0 / TileLink-C / 
   - **审计**:每季度跨仓审计(per `06-bis §7.8` KPI 串行约束)由 DRI 执行,产出对齐报告
 - **KPI 排队**(per AGENTS.md "OpenSpec Proposed ≤ 3" 政策 + 当前基线 3/3 上限触发,**v0.3 算术闭环**):
   - **Stage 0**: 1 个 umbrella change `cpptlm-cep-umbrella`(1 KPI slot,30 人日,doc-only + 测试契约骨架 — **计入 KPI**,per oracle B2-1 修订:umbrella 不符 doc-only 豁免"0 函数签名/逻辑/构建改动"先例)
-  - **Stage 1**: 7 个串行 `cpptlm-cep-poc-spike` / `cpptlm-cep-stub-cache-core` / `-directory-ordering-plane` / `-collective-plane-base` / `-chi-rnf-subset` / `-cxl-nonsymmetric` / `-tilelink-tree-manager`(每次 1 KPI slot,KPI ≤3 → 排 7 季度)
+  - **Stage 1**: 9 个串行 `cpptlm-cep-poc-spike` / `cpptlm-cep-stub-cache-core` / `-directory-ordering-plane` / `-collective-plane-base` / `-moesi-gpu-adapter` / `-chi-rnf-subset` / `-mesif-adapter` / `-cxl-nonsymmetric` / `-tilelink-tree-manager`(每次 1 KPI slot,KPI ≤3 → 排 9 季度)
   - **Stage 2**: 2 个串行 `-cxl-dcoh-symmetric` / `-nvlink-sharp`(KPI 排队同上)
   - **Stage 3**: 1 个 `-ualink-inc`
-  - **总计**:11 个 change(1 + 7 + 2 + 1 = 11),串行 11 季度;**任一时刻 Proposed 并发 ≤ 1**(守 KPI 上限)
+  - **总计**:13 个 change(1 + 9 + 2 + 1 = 13),串行 13 季度;**任一时刻 Proposed 并发 ≤ 1**(守 KPI 上限)
 
 > **2026-10-22 增补(台账 Entry #12 [adr-amendment])** —— `cpptlm-cep-poc-spike`:
 > - **性质**:**可丢弃的 spike**(单文件 / 不进 `ModuleFactory` / 不注册 ABI / 无公共 API)——
@@ -135,7 +135,7 @@ AGENTS.md:423 边界条款("SoC 架构**组件/拓扑/演进**类提案" → Arc
 | 06-bis supersede | 顶部加 Status Update 段,内容继承 | ✅ 已拍板 |
 | DRI | 架构师本人 | ✅ 已拍板 |
 | 准入门 | ArchForge PR 合入前 CppTLM change 不升 Proposed | ✅ 已拍板 |
-| KPI 排队 | 11 个 change 串行 11 季度(per §2 决策 3;2026-10-22 per Entry #12 由 10 → 11) | ✅ 已拍板 |
+| KPI 排队 | 13 个 change 串行 13 季度(per §2 决策 3;2026-10-22 per Entry #12 由 10 → 11;**2026-10-26 per Entry #71 由 11 → 13** —— `moesi_gpu` / `mesif` 排入 Stage 1) | ✅ 已拍板 |
 | AGENTS.md:423 边界 | 不触发(CEP 框架级不属 SoC 业务架构) | ✅ 已拍板 |
 | **ADR 签发仓** | ✅ **已拍板 = CppTLM 仓** — 定性:"支持做互相协议探索的"归入框架级,类比 gem5 Ruby network(per §5.1)| ✅ 已拍板 |
 | **真源文档路径** | ✅ **已拍板 α** = `docs/architecture/07-coherence-exploration-platform.md`(2026-10-20 创建 v0.1 草案) — 见 §5.2 | ✅ 已拍板 |
@@ -372,13 +372,29 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **B2 贡献口径**: **新增 invariant 数 = 0**(`ADR-CEP-01` / `ADR-CEP-03` 在 15 组 66 条里**无组**,新增编号即契约违反)⇒ 贡献 = **行为化既有条目**(`INV-CEP-07-IC3` NullCollectivePlane 默认实现 / `INV-CEP-04-IC5` 的 **R2 判读侧** —— 其行为主体 `fabric_ingress_classify` 本仓不存在,**P3 实现真 ingress 时须在那里重新行为化**)+ 契约层加固(零调用边 / canonical 10 流零 diff)。
 > **三段评审闭环(本仓首次)**: planner 产出评审 APPROVE_WITH_CONDITIONS → builder 实施评审 **REJECT**(3 BLOCKER + 10 SHOULD_FIX,全部经独立 PoC 复验)→ 三审 APPROVE_WITH_CONDITIONS(5 SHOULD_FIX + 6 NIT)⇒ 全部落地(台账 Entry #66~#70)。
 > **对上一段(2026-10-26,队列 #5 启动段)的衔接**: 该段登记「队列 #5 已启动,并发 0/3 → 1/3」—— 现队列 #5 已归档,并发 1/3 → 0/3;其历史快照语义保留不回改(措辞已改「当时态」)。
-> **当前态**: Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #6 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**: Proposed 并发 **0/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #6 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #70**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #70)。
 
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)+ **Status Update 2026-10-26**(队列 #5 归档)
+## Status Update 2026-10-26 —— 队列 #6 `cpptlm-cep-moesi-gpu-adapter` 已启动 + KPI 排队 11 → 13 change
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已建 change 目录**(`openspec/changes/cpptlm-cep-moesi-gpu-adapter/`)—— planner 阶段产出 `proposal.md` + `design.md` + **2 个** delta capability(`cep-moesi-gpu-adapter` / `cep-adapter-schema-contracts`)⇒ **占用 1 个 KPI slot**,并发 0/3 → **1/3**。
+> **排队算术变更(本 entry 的实质)**:§2 决策 3 的 **Stage 1 由 7 个串行扩至 9 个** —— 新增 `-moesi-gpu-adapter`(插在 `-chi-rnf-subset` **之前**)与 `-mesif-adapter`(排在 `-chi-rnf-subset` **之后**);`-chi-rnf-subset` 及后续 change 的顺序号顺延。**总计 11 → 13 change,串行 11 → 13 季度**。
+> **DRI 三问裁决(2026-10-26)**:① `moesi_gpu` / `mesif` **排入** Stage 1 前段(而非追加到全局末尾)② **S1-7 ①②**(`perm` 形态 schema 演进)**跟 `moesi_gpu` 走** —— 其**唯一真实消费者**是 `moesi_gpu`(`ADR-CEP-05 §13.1` 判据 2 **已触发**:`moesi_gpu` 静默 `E→M` ⇒ 4 值 `perm` 无法表达);若留在 `-chi-rnf-subset`(显式升级的工业协议)⇒ schema 在**无消费者**的真空里演进 = `Entry #58` 已拒绝的形态 ③ **S1-5**(6 类 → `CATEGORY_*` 显式映射表)**跟首个 adapter 走**。
+> **准入前置 owner 重指向(per Entry #71)**:`S1-2`(首个 `implemented` 实例装配后复核)由 ⛔ 未触发 → **🟡 由队列 #6 触发**;`S1-5` / `S1-7 ①②` 由队列 #6 **交付**;`S1-3`(第 3 个协议实例)触发点由「未排期」前移至 **队列 #8**(`moesi_gpu` + `chi-rnf` + `mesif` = 第 3 个)。
+> **`moesi_gpu` / `mesif` 未排期** 孤儿项 **已于本 entry 消解** —— `moesi_gpu` → 队列 #6,`mesif` → 队列 #8(**显式标注 R-1 `HierarchicalDirectory` 阻塞**)。
+> **对上一段(2026-10-26,队列 #5 归档段)的衔接**: 该段登记「队列 #5 已完成归档,并发 1/3 → 0/3」—— 现队列 #6 已启动,并发 0/3 → 1/3;其历史快照语义保留不回改(措辞已改「当时态」)。
+> **不受影响的部分**:§8 准入门措辞修订 **C-1** 及其理由**继续有效**(2026-10-21 已闭合);§8 第 5 条**仍为失效**(umbrella 保持 ✅ archived);**§2 决策 3 的「任一时刻 Proposed 并发 ≤ 1」约束不变**;**「登记 ≠ 排期」口径不变** —— 本 entry 登记的是**排队位置**,不是**就绪承诺**。
+> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json`);下一个可启动 change = 队列 #7 `cpptlm-cep-chi-rnf-subset`(per `obj §4.0`)。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #71**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #71)。
+
+---
+
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)+ **Status Update 2026-10-26**(队列 #5 归档)+ **Status Update 2026-10-26**(队列 #6 启动 + 排队 11 → 13)
 **最后更新**: 2026-10-26
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)

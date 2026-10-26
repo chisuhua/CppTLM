@@ -165,9 +165,9 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 > ⚠️ 二者**不是**同一件事:ADR 决定「能排几个、怎么串」,路线图决定「**先做哪个、落在哪个季度、当前什么状态、前置挂在谁身上**」。
 > **任何排期调整只改本文件 §4.0 + §11 台账**;若触及 change 总数 / 串行规则,则须走 ADR 修订(冻结面成员)。
 
-### 4.0 实施路径总排队表(权威 —— 11 个 change × 1 季度,串行)
+### 4.0 实施路径总排队表(权威 —— 13 个 change × 1 季度,串行)
 
-> **口径**:每个 change 独占 1 KPI slot、独占 1 个季度(per `ADR-CEP-00 §2 Decision 3`「11 个 change,串行 11 季度」+ §5.4 并发 ≤ 1)。
+> **口径**:每个 change 独占 1 KPI slot、独占 1 个季度(per `ADR-CEP-00 §2 Decision 3`「13 个 change,串行 13 季度」+ §5.4 并发 ≤ 1)。
 > **本表是实施路径的唯一权威视图** —— §4.2 ~ §4.4 是各 Stage 的**细节展开**(估时 / 关联 ADR / 语义),其**顺序号与季度以本表为准**;`phase-10.md` 的依赖图是**示意**,不作排期承诺。
 > **状态口径**:🟡 in-progress(已建、待 archive)· ✅ 完成 · 📋 Planned(未建)· ⏸ 队列位保留(待裁决)。
 > **状态怎么改、改哪几处** ⇒ 见 **§4.7 载体分工与状态更新协议**(本表的状态列是 `tasks.md` 勾选的**投影**,不是第二真源)。
@@ -179,14 +179,18 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **3** | `cpptlm-cep-stub-cache-core` | Stage 1 | **2027-Q2** | ✅ **archived**(2026-10-25;**完成归档**语义 —— tasks **36/36** 全勾;delta capability **2 个**(`cep-vc-mapping-contract` 8 Scenario / `cep-stub-cache-core` 9 Scenario)**已合并**进 `openspec/specs/`;归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`;**双 Phase** 全部完成 —— Phase 0 = M-4 决策落盘 + 契约化(协议层 credit **不独占** VC / 传输层**保持索引对齐** / `VC_DAT` 语义正名 / 冲突输入**传输层不仲裁** / 桶名不改名不弃用 / `fabric.schema.json` **零改动**),Phase 1 = stub cache core 实现(6 接口 + 5 态 + `INV-SC1`~`INV-SC6`);**`ADR-CEP-05 §10` 的 `-base`/`-impl` 二分作废**(2026-10-25 裁决),per 台账 Entry #58 / #59 / #60) | **M-4 行为侧决策**(✅ **已消费** —— 队列 #3 归档时落成 `cep-vc-mapping-contract`:协议层 credit **不独占** VC(权威已闭,per ArchForge `32 号 §6.0.1`)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名 + 冲突输入**传输层不仲裁**;契约化于 `cep-vc-mapping-contract`,结论见归档件 design.md D2~D9) |
 | **4** | `cpptlm-cep-directory-ordering-plane` | Stage 1 | **2027-Q3** | ✅ **archived**(2026-10-25;**完成归档**语义 —— 22 Scenario 并入 3 份 main spec:`cep-sharer-tracker-base` 9 / `cep-ordering-point-checker` 6 / `cep-channel-dependency-gate` 7;archive 名 `2026-10-25-cpptlm-cep-directory-ordering-plane`;builder Entry #63 / 归档 Entry #64) | **已交付(历史记录,不再承接)**:SharerTrackerIf 单接口 + caps descriptor + D-5 全量契约 + FullMapDirectory 唯一行为实现 · AddressResolverIf + J1/J2/J3 + `INV-CEP-08-IC2` + (β) 重评估裁决 · 装配期通道依赖图(逐 `(network, vc)` verdict,双挂共享判据)。**Stage 1 准入前置的登记与余项已重指向队列 #5 行**(per Entry #64) |
 | **5** | `cpptlm-cep-collective-plane-base` | Stage 1 | **2027-Q4** | ✅ **archived**(2026-10-26;**完成归档**语义 —— 21 Scenario 并入 2 份 main spec(`cep-collective-plane-base` 13 / `cep-collective-plane-contract` 8);archive 名 `2026-10-26-cpptlm-cep-collective-plane-base`;planner 见 Entry #66、builder 见 Entry #67、复审修复见 Entry #68/#69、归档见 Entry #70) | **已交付(历史记录)**:CollectivePlaneIf 恰好 7 方法 + 类型集 + NullCollectivePlane(**行为化 `INV-CEP-07-IC3`**)+ LocalCollectivePlane(group 生命周期 / region-epoch 两阶段 / BARRIER rendezvous / **R2 判读侧三态**,**行为化 `INV-CEP-04-IC5` 的 R2 判读侧**)+ 6 条契约判据(零调用边 / canonical 10 流零 diff / VC 预留 / 区域互斥同源 / 完成域判别 / 抓取点可测性登记)+ 独立声明源 `collective_planes.json` + 离线 CLI。**新增 invariant 数 = 0**。|
-| **6** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q1** | 📋 Planned | **S1-7 的 `perm` 形态 schema 演进** + **S1-5 表体 + contract test**(adapter 消息类 → `CATEGORY_*` 显式映射表;输入前置 = #3 的 M-4 决策) + 承接 **S1-5** 表体 + **S1-7** **⏭(孤儿)** **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期) | **Stage 1 准入前置(滚动登记,per Entry #70 —— 原 owner 队列 #5 已归档)**:**S1-1 ②建图层** ✅ 已消费(队列 #4 装配闸)· **S1-7 的 (β) 重评估** ✅ 已消费(队列 #4 裁决)· **S1-2** ⛔ 未触发(需首个 `implemented` 实例)· **S1-3** ⛔ 未触发(需第 3 张网 / 第 3 个协议实例)· **S1-4** ✅ 已消费(Entry #56,`fabric.json` 已入冻结集)。**孤儿前置登记(owner 重指向)**:**M-4 行为侧** **⏭(孤儿)**(已由队列 #3 的 `cep-vc-mapping-contract` 落成)· **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)**(已由队列 #4 的 `cep-channel-dependency-gate` 落成)· `moesi_gpu` / `mesif` 未排期 **⏭(孤儿)** |
-| **7** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2028-Q2** | 📋 Planned | — |
-| **8** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2028-Q3** | 📋 Planned | — |
-| **9** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2028-Q4** | 📋 Planned | — |
-| **10** | `cpptlm-cep-nvlink-sharp` | Stage 2 | **2029-Q1** | 📋 Planned | — |
-| **11** | `cpptlm-cep-ualink-inc` | Stage 3 | **2029-Q2** | 📋 Planned | — |
+| **6** | `cpptlm-cep-moesi-gpu-adapter` | Stage 1 | **2028-Q1** | 🟡 **Proposed**(2026-10-26;change 目录已建 + planner 阶段产出 proposal + design + **2 个** delta capability(`cep-moesi-gpu-adapter` / `cep-adapter-schema-contracts`),per Entry #71) | **DRI 三问裁决(2026-10-26,per Entry #71)**:① `moesi_gpu` / `mesif` **排入** Stage 1 前段(原 #6 `chi-rnf-subset` 顺延为 #7,`mesif` 新增为 #8)② **S1-7 ①②**(`perm` 形态 schema 演进)**跟 `moesi_gpu` 走** —— 其**唯一真实消费者**是本实例(`ADR-CEP-05 §13.1` 判据 2 **已触发**:`moesi_gpu` 静默 `E→M` ⇒ 4 值 `perm` 无法表达)③ **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**跟首个 adapter 走**。**交付面**:`MoesiGpuAdapter`(6 态 × 6 事件表驱动;`E→M` **静默升级**) + 6→4 投影 + **平台级** `perm` 静默升级表达 + 6→3 消息类映射表机制 + 首个 `implemented` 实例装配。**Stage 1 准入前置(滚动登记,per Entry #70 / #71 —— 原 owner 队列 #5 已归档,owner 重指向本行)**:**S1-1 ②建图层** ✅ 已消费(队列 #4 装配闸)· **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**🟡 本 change 触发**(本 change = 首个 `implemented` 实例)· **S1-3** ⛔ 未触发(需第 3 张网 / 第 3 个协议实例 —— 按新队列于 #8 达成)· **S1-4** ✅ 已消费(Entry #56,`fabric.json` 已入冻结集)· **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**🟡 本 change 交付**· **S1-7 ①②**(`perm` 形态 schema 演进)**🟡 本 change 交付**(③ (β) 已由队列 #4 消费)。**孤儿前置登记**:**M-4 行为侧** **⏭(孤儿)**(已由队列 #3 的 `cep-vc-mapping-contract` 落成)· **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)**(已由队列 #4 的 `cep-channel-dependency-gate` 落成)—— **`moesi_gpu` / `mesif` 未排期** **⏭(孤儿)** —— **已于 Entry #71 消解**(本行 = `moesi_gpu`;`mesif` → #8 行) |
+| **7** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q2** | 📋 Planned | **范围已按 Entry #71 收窄**:`perm` 形态 schema 演进 与 6→3 映射表**机制** 均**已移至队列 #6**(跟唯一真实消费者 / 首个 adapter 走)⇒ 本 change **复用**之,只填 CHI 自身的映射行与实例声明。**交付**:CHI RN-F adapter(6 通道 TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT;RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck)+ 按**已冻结** schema 填实例声明(`ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`)+ 装配期校验实测。**新准入前置**:无(前置已由队列 #6 交付) |
+| **8** | `cpptlm-cep-mesif-adapter` | Stage 1 | **2028-Q3** | 📋 Planned | **⚠ 显式阻塞登记**(per Entry #71):**R-1 第 6 种 SharerTracker 实现 `HierarchicalDirectory`** —— ArchForge 侧 `mesif` 声明的 `sharer_tracker.impl=SparseSnoopFilter` 与其**三级目录**语义**不自洽** ⇒ 本 change 落地**依赖**该实现,而**本仓尚无 owner**。**另**:ArchForge 侧**无 `mesif` 状态机规约**(仅 5 态词表 M/E/S/I/F)与**无 5→4 投影表** ⇒ 实现须本地推导(**待 ArchForge 追认**)。**排期 ≠ 就绪** —— 本行是**登记**,不是承诺(「登记 ≠ 排期」口径的反向用法:登记的是**依赖**,不是**就绪**) |
+| **9** | `cpptlm-cep-cxl-nonsymmetric` | ADR-CEP-04 + ADR-CEP-03 | 8 周 | — |
+| **10** | `cpptlm-cep-tilelink-tree-manager` | ADR-CEP-04 + ADR-CEP-08 + ADR-CEP-12 | 8 周 | — |
+| **9** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2028-Q4** | 📋 Planned | — |
+| **10** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2029-Q1** | 📋 Planned | — |
+| **11** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2029-Q2** | 📋 Planned | — |
+| **12** | `cpptlm-cep-nvlink-sharp` | Stage 2 | **2029-Q3** | 📋 Planned | — |
+| **13** | `cpptlm-cep-ualink-inc` | Stage 3 | **2029-Q4** | 📋 Planned | — |
 
-> **终态**:Stage 0~3 实施完成 = **2029-Q2**(per §4.6);Stage 4+ 进入维护态(per §4.5)。
+> **终态**:Stage 0~3 实施完成 = **2029-Q4**(per §4.6);Stage 4+ 进入维护态(per §4.5)。
 > **排期调整规则**:本表任一行的**顺序 / 季度**变化 ⇒ **必须**在 §11 追加台账 entry(kind ∈ `scope-change` / `deferral-rationale`),并**五处同改**(本表是触发源,不算在内):
 > ① §4.2 ~ §4.4 的顺序号 ② **§4.6 终态口径** ③ `phase-10.md` 依赖图 + KPI 预算行 ④ §10「Stage 1~3 远期候选」的顺序指针 ⑤ `.rddf/roadmap.md` Objectives 段的 `Entry` 号引用。
 >
@@ -226,7 +230,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - **剩余工程量**:**0**。umbrella 的 6 项 Stage 1 准入前置(S1-1 ~ S1-5 + S1-7)已**移出该 change 的任务表**(条目 / 判据 / 归属全保留)→ 按 **§4.0 排队表**归属 Stage 1(队列 #2 / #4 / #6),**不计入 Stage 0**。
 - **卡口已闭合(2026-10-23)**:R10 已按 **§9.3** 的闭合判据处置(残余风险已登记 + DRI 书面接受,per 台账 Entry #28);Stage 0 **已完成归档**(per Entry #29)。**残余风险**:契约层结论未经独立第二方(人类)复核 —— 详见 §9.3,不被「闭合」二字掩盖。
 
-### 4.2 Stage 1: Stub Cache + Tracker + Plane + 3 协议 RN-F Subset(队列 #2 ~ #8,2027-Q1 ~ 2028-Q3)
+### 4.2 Stage 1: Stub Cache + Tracker + Plane + 5 协议实例(队列 #2 ~ #10,2027-Q1 ~ 2029-Q1)
 
 **串行约束**:每 change 独占 1 KPI slot、独占 1 个季度,任一时刻仅 1 个 active(per §5.4)。**顺序 / 季度 / 「承接的 Stage 1 准入前置」归属三者一律以 §4.0 排队总表为准**;本表只承载**估时 + 关联 ADR + 语义**(末列是 §4.0 的同义复述,漂移时以 §4.0 为准)。
 
@@ -236,11 +240,11 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **3** | `cpptlm-cep-stub-cache-core` ✅ **archived(2026-10-25)** —— 完成归档语义;tasks **36/36** 全勾;2 个 delta capability 已合并进 main specs | ADR-CEP-05 + ADR-CEP-04 stub | 8 周(实际交付面**显著更小** —— 单文件头可实现) | **M-4 行为侧决策**(✅ **已消费** —— 队列 #3 归档时落成 `cep-vc-mapping-contract`:协议层 credit **不独占** VC(权威已闭)+ 传输层**保持索引对齐** + `VC_DAT` 语义正名 + 冲突输入**传输层不仲裁**;契约化于 `cep-vc-mapping-contract`,per 台账 Entry #58 / #59 / #60) |
 | **4** | **`cpptlm-cep-directory-ordering-plane`** ✅ **archived(2026-10-25)** ← 2026-10-21 重排(原 `sharer-tracker-base` 扩容) | **ADR-CEP-04**(Sharer Tracker 抽象 + caps)+ **ADR-CEP-08**(Address Resolver + Ordering Point 三判据)+ **ADR-CEP-09 Decision A**(装配期通道依赖图无环检查) | **12 周**(原 8 周;含建图层与逐 `(network, vc)` verdict 义务) | **已交付(历史记录)**:单接口 + caps + D-5 + FullMapDirectory · AddressResolverIf + J1~J3 + `INV-CEP-08-IC2` + (β) 裁决 · 装配期通道依赖图(双挂共享判据,`[verdict] net=… vc=…` 逐行输出)。**余项登记已重指向队列 #5 行**(per Entry #64) |
 | **5** | `cpptlm-cep-collective-plane-base` ✅ **archived(2026-10-26)** | ADR-CEP-03 + ADR-CEP-01 | 8 周(实际交付面**小于**标称 —— 2 header + 2 声明源 + 1 CLI + 3 test,per 队列 #2/#3/#4 先例) | **已交付(历史记录)**:CollectivePlaneIf 7 方法 + Null(行为化 `INV-CEP-07-IC3`)+ Local(group/epoch/BARRIER,行为化 `INV-CEP-04-IC5` 的 **R2 判读侧**)+ 6 条契约判据 + 独立声明源 + CLI;**新增 invariant 数 = 0**。**Stage 1 准入前置的余项登记已重指向队列 #6 行**(per Entry #70) |
-| **6** | `cpptlm-cep-chi-rnf-subset` | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(首个实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **S1-7 的 `perm` 形态 schema 演进**(`ADR-CEP-12` 为 schema owner;首个真实使用 schema 的协议 change) **⏭(孤儿)** **`moesi_gpu` / `mesif` 未排期**(登记 ≠ 排期);**Stage 1 准入前置(滚动登记,per Entry #70)**:**S1-1** ✅ 已消费 · **S1-7 的 (β) 重评估** ✅ 已消费 · **S1-2** ⛔ 未触发 · **S1-3** ⛔ 未触发 · **S1-4** ✅ 已消费;**孤儿前置登记**:**M-4 行为侧** **⏭(孤儿)** · **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)** |
-| **7** | `cpptlm-cep-cxl-nonsymmetric` | ADR-CEP-04 + ADR-CEP-03 | 8 周 | — |
-| **8** | `cpptlm-cep-tilelink-tree-manager` | ADR-CEP-04 + ADR-CEP-08 + ADR-CEP-12 | 8 周 | — |
+| **6** | **`cpptlm-cep-moesi-gpu-adapter`** ← 2026-10-26 新增(DRI 三问裁决①,per Entry #71)· 🟡 **Proposed**(2026-10-26;planner 阶段产出 proposal + design + 2 个 delta capability) | **ADR-CEP-12**(schema owner:`perm` 形态演进 + 首个实例声明)+ **ADR-CEP-05 §13.1**(判据 2 已触发 —— `moesi_gpu` 静默 `E→M`)+ **ADR-CEP-02**(canonical 10 流)+ **ADR-CEP-13**(域可见写判据 (a)(b)) | 10 周 | **S1-7 ①②**(`perm` 形态 schema 演进 —— **跟唯一真实消费者走**,per Entry #71 裁决②)+ **S1-5**(6 类 → `CATEGORY_*` 显式映射表 + contract test —— **跟首个 adapter 走**,per 裁决③)+ **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**🟡 本 change 触发**;**S1-3** ⛔ 未触发(于 #8 达成)· **S1-1 ②** / **S1-4** ✅ 已消费· **S1-7 ③ (β)** ✅ 已消费(队列 #4)。**孤儿前置**:**M-4 行为侧** **⏭(孤儿)** · **verdict 逐 `(network, vc)` 标注义务** **⏭(孤儿)** · **`moesi_gpu` / `mesif` 未排期** **⏭(孤儿)** —— **已于 Entry #71 消解**(本行 = `moesi_gpu`;`mesif` → #8 行) |
+| **7** | `cpptlm-cep-chi-rnf-subset` ← 2026-10-26 顺延(原 #6) | ADR-CEP-01 + ADR-CEP-02 + **ADR-CEP-12**(实例声明:填 `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`) | 8 周 | **范围收窄**(per Entry #71 裁决②③):`perm` 形态演进与 6→3 映射表**机制**已移至队列 #6 ⇒ 本 change **复用**,只填 CHI 自身映射行与实例声明。**无新准入前置** |
+| **8** | `cpptlm-cep-mesif-adapter` ← 2026-10-26 新增(DRI 三问裁决①,per Entry #71) | **ADR-CEP-04**(Sharer Tracker 第 6 实现 `HierarchicalDirectory`)+ **ADR-CEP-12** | 10 周 | **⚠ R-1 阻塞**:依赖**尚不存在**的第 6 种 SharerTracker 实现;ArchForge 侧**无 `mesif` 状态机规约**与**无 5→4 投影表** ⇒ 本地推导待追认。**排期 ≠ 就绪** |
 
-**Stage 1 跨度**:2027-Q1 ~ 2028-Q3(**7** 个 change × 1 季度,per §4.0)
+**Stage 1 跨度**:2027-Q1 ~ 2029-Q1(**9** 个 change × 1 季度,per §4.0)
 
 > **季度口径(per Entry #23 修订)**:原表内「乐观并行估计」季度列**已撤除** —— 它与 §4.0 的串行季度**并存即两个数**,且表内估时逐行合计 55 周 > 1 年,无法自洽。**排期承诺唯一口径 = §4.0 排队总表**(1 change / 1 季度)。本表的「估时」是**工作量参考**,不是排期。
 >
@@ -257,20 +261,20 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 >
 > **P-1 后续事实登记(2026-10-23,per Entry #22)**:①**S2 已实跑通过**(首次 RUN 证据被 critic 3 BLOCKERS 证伪 → 修正重跑,per Entry #16)→ 实测 `ctest -R cep` **18/18**、`[cep]` **76 case / 1284 assertion**;②**change 目录仍未建**(`openspec/changes/` 下无 poc-spike change 目录)—— umbrella 已于 2026-10-23 **完成归档** → KPI slot **已释放** → **队列 #2 `cpptlm-cep-poc-spike` 可启动**(其 change 目录仍待建,per 下文 ④);③**S1 / S3 未实现**(S1 需 4 值表达力边界 = Stage 1;S3 需 `vc_binding` 真实声明);④**落地形态待 DRI 裁决** —— 保留队列位(保住 11 change 算术),不建 change、不动 ADR。
 
-### 4.3 Stage 2: CXL 对称 + NVLink SHARP(队列 #9 ~ #10,2028-Q4 ~ 2029-Q1)
+### 4.3 Stage 2: CXL 对称 + NVLink SHARP(队列 #11 ~ #12,2029-Q2 ~ 2029-Q3)
 
 | 顺序 | Change | 关联 ADR | 估时 |
 |------|--------|----------|------|
-| **9** | `cpptlm-cep-cxl-dcoh-symmetric` | ADR-CEP-04 §3.5 | 10 周 |
-| **10** | `cpptlm-cep-nvlink-sharp` | ADR-CEP-03 + ADR-CEP-01 | 10 周 |
+| **11** | `cpptlm-cep-cxl-dcoh-symmetric` | ADR-CEP-04 §3.5 | 10 周 |
+| **12** | `cpptlm-cep-nvlink-sharp` | ADR-CEP-03 + ADR-CEP-01 | 10 周 |
 
-### 4.4 Stage 3: UALink INC(队列 #11,2029-Q2)
+### 4.4 Stage 3: UALink INC(队列 #13,2029-Q4)
 
 | 顺序 | Change | 关联 ADR | 估时 |
 |------|--------|----------|------|
-| **11** | `cpptlm-cep-ualink-inc` | ADR-CEP-03 | 10 周 |
+| **13** | `cpptlm-cep-ualink-inc` | ADR-CEP-03 | 10 周 |
 
-### 4.5 Stage 4+ 远期(2029-Q2 起 —— 队列 #11 完成之后)
+### 4.5 Stage 4+ 远期(2029-Q4 起 —— 队列 #13 完成之后)
 
 - `CEP-08` / `CEP-09` / `CEP-12` / `CEP-13` —— ✅ **已起草 v0.1(2026-10-21)**,实现按 §4.2~§4.4 分 Stage 落地
 - `CEP-17` 协议族接入 + 组合承诺边界 —— ✅ **已起草**(Ruby-SLICC 族;边界声明 per `ADR-CEP-17` 决策 9)
@@ -285,10 +289,10 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 4.6 终态时间口径(per oracle B6 + metis G2-G 修订 + 2026-10-23 季度算术修正)
 
-- **Stage 0~3 实施完成**:**2029-Q2**(队列 #11 = `cpptlm-cep-ualink-inc` 完成;per §4.0)
-- **Stage 4+ 维护期**:**2029-Q2 起**(无固定上界;新协议接入走 add-feature + 单 change)
-- **objective 终态验收**:**2029-Q2**(与实施完成同点;此后转 90 天复审节奏,per §12)
-- **季度口径(per Entry #23 修订)**:**串行 11 季度** —— 2026-Q4 起算,1 change / 1 季度 → 2029-Q2(per `ADR-CEP-00 §2 Decision 3`;2026-10-22 per Entry #12 由 10 → 11)。**§4.2~§4.4 表内「估时」是工作量参考,不是排期**;排期承诺唯一口径 = **§4.0 排队总表**。
+- **Stage 0~3 实施完成**:**2029-Q4**(队列 #13 = `cpptlm-cep-ualink-inc` 完成;per §4.0)
+- **Stage 4+ 维护期**:**2029-Q4 起**(无固定上界;新协议接入走 add-feature + 单 change)
+- **objective 终态验收**:**2029-Q4**(与实施完成同点;此后转 90 天复审节奏,per §12)
+- **季度口径(per Entry #23 修订)**:**串行 13 季度** —— 2026-Q4 起算,1 change / 1 季度 → 2029-Q4(per `ADR-CEP-00 §2 Decision 3`;2026-10-22 per Entry #12 由 10 → 11;**2026-10-26 per Entry #71 由 11 → 13** —— `moesi_gpu` / `mesif` 排入 Stage 1)。**§4.2~§4.4 表内「估时」是工作量参考,不是排期**;排期承诺唯一口径 = **§4.0 排队总表**。
 
 ---
 
@@ -450,7 +454,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 0/3**(2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
+→ **当前 Proposed 并发 = 1/3**(2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -463,7 +467,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 **✅ 前置条件已满足(2026-10-20)**:3 个 active 全部 **⏸ 暂存归档**(`--skip-specs`),baseline **0/3** → `cpptlm-cep-umbrella` **可立即创建**。
 
-**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **0/3**(2026-10-26 队列 #5 `cpptlm-cep-collective-plane-base` **已完成归档** → slot 释放,per Entry #70;2026-10-26 队列 #5 **已建 change 目录** → 曾占 1 slot,per Entry #66;2026-10-25 队列 #4 `cpptlm-cep-directory-ordering-plane` **已完成归档** → slot 释放,per Entry #64;队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档** → slot 已释放;队列 #2 `cpptlm-cep-poc-spike` **已完成归档** → slot 释放;该 change 建目录后曾为 1/3);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
+**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **1/3**(2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已建 change 目录** → 占 1 slot,per Entry #71;2026-10-26 队列 #5 `cpptlm-cep-collective-plane-base` **已完成归档** → slot 释放,per Entry #70;2026-10-26 队列 #5 **已建 change 目录** → 曾占 1 slot,per Entry #66;2026-10-25 队列 #4 `cpptlm-cep-directory-ordering-plane` **已完成归档** → slot 释放,per Entry #64;队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档** → slot 已释放;队列 #2 `cpptlm-cep-poc-spike` **已完成归档** → slot 释放;该 change 建目录后曾为 1/3);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
 
 ⚠️ **原候选路径已过期**:"路径 C: archive `cpptlm-gmmu-pte-bus-correction`" —— 该 change **已于 2026-10-12 实际归档**,不再是 active,不能再作为 archive 对象。真实候选是上列 3 个(均已暂存归档)。
 
@@ -489,7 +493,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 本文件**不重复复述**逐条 assertion(per oracle S1 修订);分工见 **§4.7**。
 
-### 6.2 Stage 1~3 验收(2029-Q2)
+### 6.2 Stage 1~3 验收(2029-Q4)
 
 - B1. **11** 个 OpenSpec change 全部 archived with sync
 - B2. **66 条守门 invariant 机器检查 100% 覆盖**(编号位 67,按 §0 DoD 7 的 **15 组**分解)(per §0 DoD 7)
@@ -651,7 +655,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | ~~P1~~ | 起草 `scripts/test/cep_docs_sync_check.sh` ADR 锚点 lint | ✅ **已完成 2026-10-22**(10 组检查) | — |
 | ~~P2~~ | 实验目录 + tools 3 个(render_report / run_sweep / ab_compare) | ✅ **已完成 2026-10-22** | — |
 
-### Stage 1~3 远期候选(2027-Q1 ~ 2029-Q2)
+### Stage 1~3 远期候选(2027-Q1 ~ 2029-Q4)
 
 | 优先级 | 候选 | 推进建议 |
 |--------|------|---------|
@@ -659,9 +663,11 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | `cpptlm-cep-stub-cache-core` improvement | ✅ **已写**(2026-10-25 planner;5 段草稿 → change 目录已建,🟡 Proposed);§4.0 顺序 #3 |
 | P1 | `cpptlm-cep-directory-ordering-plane` improvement | 走 add-improve;§4.0 顺序 #4(原 `sharer-tracker-base`,已重排) |
 | P1 | `cpptlm-cep-collective-plane-base` improvement | 走 add-improve;§4.0 顺序 #5 |
-| P1 | `cpptlm-cep-chi-rnf-subset` improvement | 走 add-improve;§4.0 顺序 #6 |
-| P2 | `cpptlm-cep-cxl-nonsymmetric` improvement | 走 add-improve;§4.0 顺序 #7 |
-| P2 | `cpptlm-cep-tilelink-tree-manager` improvement | 走 add-improve;§4.0 顺序 #8 |
+| P1 | `cpptlm-cep-moesi-gpu-adapter` improvement | 🟡 **已写**(2026-10-26 planner;5 段草稿 → change 目录已建,🟡 Proposed);§4.0 顺序 #6 |
+| P1 | `cpptlm-cep-chi-rnf-subset` improvement | 走 add-improve;§4.0 顺序 #7 |
+| P1 | `cpptlm-cep-mesif-adapter` improvement | 走 add-improve;§4.0 顺序 #8(**R-1 `HierarchicalDirectory` 阻塞**登记,per Entry #71) |
+| P2 | `cpptlm-cep-cxl-nonsymmetric` improvement | 走 add-improve;§4.0 顺序 #9 |
+| P2 | `cpptlm-cep-tilelink-tree-manager` improvement | 走 add-improve;§4.0 顺序 #10 |
 | P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | 走 add-improve;Stage 2.1 启动 |
 | P1 | `cpptlm-cep-nvlink-sharp` improvement | 走 add-improve;Stage 2.2 启动 |
 | P1 | `cpptlm-cep-ualink-inc` improvement | 走 add-improve;Stage 3 启动 |
@@ -4614,6 +4620,107 @@ CLI 6 判据全 PASS · KPI **0/3** · 冻结集 **39**
 
 **⑥ 关联**: Entry #69(三审轮)· Entry #68(复审轮)· Entry #67(builder 实施)· Entry #66(planner 阶段)· `ADR-CEP-01` / `ADR-CEP-03`(两份权威源,均已追加 Status Update)
 
+
+---
+
+### Entry #71 — 2026-10-26 [scope-change]
+
+**主题**: 队列 #6 **重排** —— `cpptlm-cep-moesi-gpu-adapter` 建 change 目录 + planner 四件套落盘;`moesi_gpu` / `mesif` **排入** Stage 1;全局 **11 → 13** change / **11 → 13** 季度;终态 2029-Q2 → **2029-Q4**;KPI **0/3 → 1/3**
+
+**① 触发**
+
+用户指令:「起队列 #6 的 planner 阶段, 对 moesi_gpu/mesif 等协议进行规划排期」。
+原队列 #6 = `cpptlm-cep-chi-rnf-subset`(Stage 1 / 2028-Q1)—— 但它的范围里挂着 **2 项无主的前置**:
+**S1-7 ①②**(`perm` 形态 schema 演进)+ **S1-5**(6→3 消息类映射表机制),
+以及 **1 条孤儿登记**(`moesi_gpu` / `mesif` **未排期**)。
+
+**② 关键发现(决定裁决的三个事实)**
+
+| # | 发现 | 证据 |
+|---|------|------|
+| **F-1** | **`moesi_gpu` 是 `perm` 形态演进的**唯一**真实消费者** —— `ADR-CEP-05 §13.1` 判据 2 **已触发**(`moesi_gpu` 的 `state_transition[2][1]=3` = E+Write→M **静默升级**,(a)∧(b) 成立 ⇒ 4 值 `perm` 无法表达);而 CHI RN-F 是**显式**请求升级(`07 号 §5.1.1`)⇒ **不需要**该演进 | `docs/adr/ADR-CEP-05-stub-cache-core-interface.md` §13.1 · `docs/architecture/07-coherence-exploration-platform.md` §5.1.1 |
+| **F-2** | **ArchForge 是纯设计仓、零代码**(`find` 搜 `*.slicc`/`*.pcc`/`*.cc` → 0 命中)⇒ `MoesiGpuAdapter` **从零实现**;且 `mesif` **无状态机规约**、**无 5→4 投影表**,依赖**尚不存在**的第 6 种 SharerTracker `HierarchicalDirectory`(R-1) | ArchForge `32 号` §6.1/§6.2 · `25 号` §4.1 · `09 号` §3 |
+| **F-3** | **`perm_upgrade` 直接加进 `protocol_instances.json` 会让镜像闸当场红** —— ⑥ 项要求本仓派生副本与 ArchForge 声明**逐字段严格相等**(含「键只存在于一侧」判红)⇒ 该文件**不得**承载本仓单方字段 | `scripts/test/cep_decl_alignment_check.sh:361` |
+
+⇒ **F-1 的推论**:若 `chi-rnf-subset` 先行做 `perm` 演进 ⇒ schema 在**无消费者**的真空里演进 = `Entry #58` 已明确拒绝的形态(「M-4 前置不能与实现分离 —— 裁决在真空里会被实现目标带偏」)⇒ **必须重排**。
+
+**③ DRI 三问裁决(2026-10-26,3/3 全取推荐项)**
+
+| 问 | 裁决 |
+|---|---|
+| ① `moesi_gpu` / `mesif` 排在哪里? | **插入 Stage 1 前段**(原 #6 顺延为 #7,`mesif` 新增为 #8)—— 而非追加到全局末尾 |
+| ② **S1-7 ①②**(`perm` 形态演进)归谁? | **跟 `moesi_gpu` 走** —— 跟唯一真实消费者走 |
+| ③ **S1-5**(6→3 映射表)归谁? | **跟首个 adapter 走** —— 跟第一个有真实行的实例走 |
+
+**④ 排队重排(§4.0 触发源)**
+
+| # | Change | Stage | 季度 | 相对原队列 |
+|---|--------|-------|------|-----------|
+| **6** | `cpptlm-cep-moesi-gpu-adapter` | Stage 1 | **2028-Q1** | **新增**(插在原 #6 之前) |
+| **7** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q2** | 原 #6 **顺延** |
+| **8** | `cpptlm-cep-mesif-adapter` | Stage 1 | **2028-Q3** | **新增**(排 #7 之后) |
+| **9** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2028-Q4** | 原 #7 顺延 |
+| **10** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2029-Q1** | 原 #8 顺延 |
+| **11** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2029-Q2** | 原 #9 顺延 |
+| **12** | `cpptlm-cep-nvlink-sharp` | Stage 2 | **2029-Q3** | 原 #10 顺延 |
+| **13** | `cpptlm-cep-ualink-inc` | Stage 3 | **2029-Q4** | 原 #11 顺延 |
+
+**⑤ 五处同改(per `obj §4.0` 排期调整规则,逐处「命中 1 次」断言通过)**
+
+| # | 落点 | 改什么 |
+|---|------|--------|
+| ① | `obj §4.2` ~ `§4.4` | 顺序号 + 季度 + Stage 1 标题「3 协议 RN-F Subset」→「**5 协议实例**」+ 跨度 **9** 个 change |
+| ② | `obj §4.6` | 终态 2029-Q4;「串行 **13** 季度」(保留 Entry #12 的 10 → 11 历史注记) |
+| ③ | `phase-10.md` | 排期真源指针 / KPI 预算(Stage 1 7 → 9 / 总计 11 → 13)/ 图注 / 依赖图协议实例行(+ 顺带订正队列 #5 的状态漂移 🟡 → ✅) |
+| ④ | `obj §10` | Stage 1~3 远期候选的顺序指针(+2 行) |
+| ⑤ | `.rddf/roadmap.md` | 「跨 **13** 季度治理叙事」 |
+| — | `obj §4.0` 表头 / 口径段 / 终态行 / 13 行表体 | 触发源(不算入「五处」) |
+| — | `obj §4.5` / `§6.2` | Stage 4+ 起点 / 验收季度 |
+
+**⑥ 准入前置 owner 重指向**
+
+| 前置 | 原状态 | 新状态 |
+|---|---|---|
+| **S1-2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态) | ⛔ 未触发 | **🟡 由队列 #6 触发**(本 change = 首个 `implemented` 实例) |
+| **S1-5**(6→3 映射表 + contract test) | 队列 #6 | **队列 #6 交付**(跟首个 adapter) |
+| **S1-7 ①②**(`perm` 形态 schema 演进) | 队列 #6 | **队列 #6 交付**(跟唯一真实消费者) |
+| **S1-3**(第 3 张网 / 第 3 个协议实例) | ⛔ 未触发 | ⛔ 未触发,但**触发点前移至 #8**(`moesi_gpu` + `chi-rnf` + `mesif` = 第 3 个) |
+| **S1-1 ②** / **S1-4** / **S1-7 ③ (β)** | ✅ 已消费 | ✅ 已消费(不动) |
+| **孤儿**:`moesi_gpu` / `mesif` 未排期 | ⏭(孤儿)登记在 #6 行 | **✅ 消解** —— `moesi_gpu` → #6;`mesif` → #8(**显式标注 R-1 阻塞**) |
+
+**⑦ 冻结面授权(本 entry 即授权记录)**
+
+| 成员 | 改什么 |
+|------|--------|
+| `docs/adr/ADR-CEP-00-platform-charter-and-governance.md` | §2 决策 3 的 Stage 1 名单 **7 → 9** + 总计 **11 → 13** + §5 决策汇总同步 + **追加 Status Update 2026-10-26**(队列 #6 已启动 + 排队扩至 13) |
+| 其余 **38** 个冻结成员 | **0 diff** |
+
+⇒ 走**两步授权**:先 commit 产物 → `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #71"` → 再 commit 清单。
+
+**⑧ planner 阶段产出(planner 四件套;`tasks.md` 属 builder 阶段)**
+
+| 载体 | 内容 |
+|---|---|
+| `proposal.md` | Why / What Changes / 冻结面 / Non-Goals / 依赖与风险 |
+| `design.md` | **13 个 D-段裁决**(D-α 队列位置 … D-μ 跨实例复用边界) |
+| `specs/cep-moesi-gpu-adapter/spec.md` | **7 Scenario** |
+| `specs/cep-adapter-schema-contracts/spec.md` | **6 Scenario** |
+| `.rddf/improvements/cpptlm-cep-moesi-gpu-adapter.md` | 5 段草稿(Why / What Changes / Non-Goals / Acceptance / Capabilities / Impact) |
+
+**⑨ 3 个跨仓登记(诚实登记,不掩盖)**
+
+| 项 | 状态 | 对本 change 的影响 |
+|---|---|---|
+| **`perm_upgrade` 的镜像冲突** | 由 design **D-β** 化解 | 落**独立声明源** `perm_upgrades.json` + schema ⇒ `protocol_instance.schema.json` 与 `protocol_instances.json` 的实例键 **零改动** ⇒ ⑥ 镜像闸不受影响;`protocol_instance.schema.json` 的 13 属性断言零回归 |
+| **`status` 翻转的跨仓同步** | design **D-ζ** 化解 | ⑥ 项**排除 `status` 字段**(本仓权威:「本仓是否已实现」)⇒ 跨仓同步**不作为前置**;守卫收窄 ⇒ **须有反向 fixture**(其余 12 键仍严格镜像) |
+| **C-1 / D-9 批 2 / R-1** | 既有债 | 登记在案:本仓实施**不阻塞**;`mesif` 的 R-1 阻塞在 #8 行显式登记 |
+
+**⑩ 验收(planner 阶段)**
+
+`openspec validate cpptlm-cep-moesi-gpu-adapter --strict` **rc=0** · delta spec **13 Scenario**(7 + 6)· KPI 实测 **1 个 active** ·
+守门 7 项 rc=0 · `cep_gate_selftest` 全绿(锚点 #6 已换名)· `openspec validate --changes --strict` rc=0 · 冻结集 **39**(成员数不变,仅 ADR-CEP-00 的 hash 变)
+
+**⑪ 关联**: Entry #70(队列 #5 归档)· #69 / #68(队列 #5 三段评审)· #67(队列 #5 builder)· #66(队列 #5 planner)· #58(M-4「真空裁决」先例)· **ADR-CEP-05 §13.1**(`perm` 形态约束的权威)· **ADR-CEP-12 §8.3**(6 类词表与 `CATEGORY_*` 的分层纪律)· **ADR-CEP-02 CEN-Ib11**(`perm` 4 值锁)
 
 ---
 

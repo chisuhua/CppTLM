@@ -24,7 +24,7 @@ phase_refs:
 
 ### 当前活跃 (Active)— Stage 0 Umbrella(队列 #1)
 
-> **排期真源指针**:本 phase 的**实施路径**(11 个 change 的顺序 / 季度 / 状态 / 准入前置归属)真源 = [`obj-cep-platform §4.0 排队总表`](../roadmap/objectives/obj-cep-platform.md);**治理口径**(change 总数 / 串行 / 并发 ≤ 1)真源 = `ADR-CEP-00 §2 Decision 3`。
+> **排期真源指针**:本 phase 的**实施路径**(13 个 change 的顺序 / 季度 / 状态 / 准入前置归属)真源 = [`obj-cep-platform §4.0 排队总表`](../roadmap/objectives/obj-cep-platform.md);**治理口径**(change 总数 / 串行 / 并发 ≤ 1)真源 = `ADR-CEP-00 §2 Decision 3`。
 > **载体分工 / 状态怎么更新** = [`obj-cep-platform §4.7`](../roadmap/objectives/obj-cep-platform.md)(**本节只是 Stage 0 子任务展开**,不承载整条队列的状态)。
 
 | 子任务 | 状态 | 范围 | 估时 | 关联 ADR | KPI slot |
@@ -41,16 +41,16 @@ phase_refs:
 > **口径修正**:原「41 人日 / 已消耗 13 / 剩余 28」与表内逐行值不同步(10.A 由 8 → 12 人日后未回填算式)→ 以表内合计为准。
 
 - **实施侧**:10.A ~ 10.G **全部已落地**(tasks **99 / 99 全勾**)→ **Stage 0 工程量视为已消耗**。
-- **剩余工程量**:**0**。umbrella `tasks.md` 的 6 项 Stage 1 准入前置(S1-1 ~ S1-5 + S1-7)已**移出该 change 的任务表**(条目与判据保留)→ 按 `obj-cep-platform §4.0` 排队表归属 Stage 1(队列 #2 / #4 / #6),**不计入 Stage 0**。
+- **剩余工程量**:**0**。umbrella `tasks.md` 的 6 项 Stage 1 准入前置(S1-1 ~ S1-5 + S1-7)已**移出该 change 的任务表**(条目与判据保留)→ 按 `obj-cep-platform §4.0` 排队表归属 Stage 1(队列 #2 / #4 / #6 / #7 / #8,per Entry #71 重排),**不计入 Stage 0**。
 - **卡口已闭合(2026-10-23)**:R10 已按 `obj §9.3` 闭合判据处置(残余风险已登记 + DRI 书面接受,per 台账 Entry #28);Stage 0 **已完成归档**(per Entry #29)。
 
 **KPI 预算**(per `ADR-CEP-00 §2 Decision 3` + oracle v0.4 B8 三处口径对齐):
 
 - Stage 0 = 1 slot(`cpptlm-cep-umbrella`,计 KPI,**不符 doc-only 豁免先例**)
-- Stage 1 = 7 串行 × 1 slot = 7 季度(含 `cpptlm-cep-poc-spike`,**2026-10-22 P-1 增补**)
+- Stage 1 = 9 串行 × 1 slot = 9 季度(含 `cpptlm-cep-poc-spike`,**2026-10-22 P-1 增补**;**2026-10-26 Entry #71 增补 `moesi_gpu` / `mesif`**)
 - Stage 2 = 2 串行 × 1 slot = 2 季度
 - Stage 3 = 1 slot = 1 季度
-- **总计**:11 个 OpenSpec change,串行 11 季度,任一时刻 Proposed 并发 ≤ 1(真源 = `ADR-CEP-00 §2 Decision 3`;**终态季度见 `obj-cep-platform §4.6`** —— per Entry #23 单源纪律,本文件不复制数值)
+- **总计**:13 个 OpenSpec change,串行 13 季度,任一时刻 Proposed 并发 ≤ 1(真源 = `ADR-CEP-00 §2 Decision 3`;**终态季度见 `obj-cep-platform §4.6`** —— per Entry #23 单源纪律,本文件不复制数值)
 
 ### 子任务依赖图(Stage 0)
 
@@ -70,10 +70,10 @@ phase_refs:
 
 ### 子任务依赖图(Stage 1~3 远期)
 
-> ⚠️ **本图是示意,不承载排期承诺** —— 权威排期见 `obj-cep-platform §4.0 排队总表`(1 change / 1 季度,串行 11 季度)。
+> ⚠️ **本图是示意,不承载排期承诺** —— 权威排期见 `obj-cep-platform §4.0 排队总表`(1 change / 1 季度,串行 13 季度)。
 
 ```
-Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2026-10-22 P-1 增补):
+Stage 0 完成 ──→ Stage 1 (9 change 串行 9 季度,**KPI 总数 = 13**,2026-10-22 P-1 增补;2026-10-26 Entry #71 增补 moesi_gpu / mesif):
                  ├─ cpptlm-cep-poc-spike              ← 2026-10-22 新增,置首位
                  │    (可丢弃 spike:解阻 A6 → 解阻全部协议插件 change)
                  │    ✅ **已完成归档(2026-10-25)** —— 完成归档语义;delta spec
@@ -101,16 +101,22 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
                  │    + S1-2/S1-3 ⛔ 未触发 / S1-4 ✅;余项登记已重指向队列 #5
                  │    —— 详见 obj §4.0 队列 #4 行 + Entry #62/#63/#64)
                  ├─ cpptlm-cep-collective-plane-base
-                 │    🟡 **Proposed(2026-10-26)** —— change 目录已建 + planner 阶段产出
-                 │    proposal + design + 2 个 delta capability(cep-collective-plane-base /
-                 │    cep-collective-plane-contract),待 builder 实施,Entry #66
+                 │    ✅ **archived(2026-10-26)** —— 完成归档语义;21 Scenario 并入 2 份
+                 │    main spec(cep-collective-plane-base 13 / cep-collective-plane-contract 8);
+                 │    三段评审闭环(planner → REJECT → 三审 APPROVE_WITH_CONDITIONS)
+                 │    —— 详见 obj §4.0 队列 #5 行 + Entry #66~#70
                  │    **裁决(DRI 四问,2026-10-26)**:范围切小 —— CollectivePlaneIf +
                  │    NullCollectivePlane + LocalCollectivePlane(仅 group 生命周期 /
                  │    region-epoch / BARRIER rendezvous);Bundle 类型内嵌(§5 路径现实不存在);
                  │    header-only 不进 ModuleFactory;独立声明源 collective_planes.json
                  │    **行为化既有编号**:INV-CEP-07-IC3 + INV-CEP-04-IC5(新增 0 条)
-                 ├─ cpptlm-cep-chi-rnf-subset
-                 │    承接 Stage 1 准入前置:S1-7 的 perm 形态 schema 演进
+                 ├─ cpptlm-cep-moesi-gpu-adapter      ← 2026-10-26 新增(Entry #71)
+                 │    承接 Stage 1 准入前置:S1-7 ①②(perm 形态 schema 演进)、
+                 │    S1-5(6→3 映射表机制)、S1-2(首个 implemented 实例装配后复核)
+                 ├─ cpptlm-cep-chi-rnf-subset          ← 2026-10-26 顺延(原 #6)
+                 │    范围收窄:perm 演进与 6→3 映射表机制已移至上一行,本 change 复用
+                 ├─ cpptlm-cep-mesif-adapter           ← 2026-10-26 新增(Entry #71)
+                 │    ⚠ R-1 阻塞:依赖尚不存在的 HierarchicalDirectory 第 6 种 SharerTracker
                  ├─ cpptlm-cep-cxl-nonsymmetric
                  └─ cpptlm-cep-tilelink-tree-manager
                                     ↓
@@ -142,7 +148,7 @@ Stage 0 完成 ──→ Stage 1 (7 change 串行 7 季度,**KPI 总数 = 11**,2
 ### 治理与文档约束(per AGENTS.md §DOC HYGIENE)
 
 - **AGENTS.md:423 边界**: 第 3 条"SoC 架构组件/拓扑/演进类提案 → ArchForge"。CEP **核心框架层**(5 层骨架 + Stub Cache + Coherence Interface + 插件机制)**归 CppTLM**;**协议语义建模**(5 个具体协议设计文档)**归 ArchForge**(per `ADR-CEP-00 §2 Decision 4` 豁免论证,边界条款对照表)
-- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 0/3**(2026-10-26 `cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:建目录时曾占 1 slot,per Entry #66;2026-10-25 `cpptlm-cep-directory-ordering-plane`(队列 #4)**已完成归档** → slot 已释放,per Entry #64;历史:建目录时曾 0/3 → 1/3;2026-10-25 `cpptlm-cep-stub-cache-core`(队列 #3)**已完成归档** → 释放 1 个 slot,1/3 → 0/3;change 目录已建,planner 阶段产出 proposal + design + 2 个 delta capability,per 台账 Entry #58;2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档** → 释放 slot;历史:该 change 建目录后曾为 1/3,**已建 change 目录**并占用 1 个 slot;2026-10-23 `cpptlm-cep-umbrella` **已完成归档** → slot 已释放,per 台账 Entry #28/#29;**历史**:2026-10-21 创建时为 1/3、2026-10-22 M2 放行后仍为 1/3;此前 2026-10-20 的 3 个 active 全部 **⏸ 暂存归档** `--skip-specs`,0% 未实施,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
+- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 1/3**(2026-10-26 `cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:2026-10-26 `cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:建目录时曾占 1 slot,per Entry #66;2026-10-25 `cpptlm-cep-directory-ordering-plane`(队列 #4)**已完成归档** → slot 已释放,per Entry #64;历史:建目录时曾 0/3 → 1/3;2026-10-25 `cpptlm-cep-stub-cache-core`(队列 #3)**已完成归档** → 释放 1 个 slot,1/3 → 0/3;change 目录已建,planner 阶段产出 proposal + design + 2 个 delta capability,per 台账 Entry #58;2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档** → 释放 slot;历史:该 change 建目录后曾为 1/3,**已建 change 目录**并占用 1 个 slot;2026-10-23 `cpptlm-cep-umbrella` **已完成归档** → slot 已释放,per 台账 Entry #28/#29;**历史**:2026-10-21 创建时为 1/3、2026-10-22 M2 放行后仍为 1/3;此前 2026-10-20 的 3 个 active 全部 **⏸ 暂存归档** `--skip-specs`,0% 未实施,per AGENTS.md「两种归档语义必须区分」)。**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
 - **ADR 不可变 doc-only 类豁免**: `cpptlm-dgpu-soc-arch-truth-cleanup §6` 显式声明,仅 doc-only cleanup 类不计。**umbrella change 含测试契约骨架,不符豁免**(per oracle v0.4 B2-1)
 - **真源 1 命名空间**: `docs/architecture/` 一律真源 1,`docs/adr/` 一律真源 3,跨仓 ArchForge 文档另立
 
