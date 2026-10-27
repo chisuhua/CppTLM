@@ -97,9 +97,11 @@
 
 > **⚠️ v0.4 X-11 cross-ref**: 本节定义 Bundle 命名的"现状保守 + 重塑触发条件"真源. [`docs/architecture/06-inter-module-network.md`](06-inter-module-network.md) §3 (Bundle 二分类: 业务 vs 网络) 在本节基础上提议"业务 Bundle 可演进 + 网络 Bundle 后期协议特化时再定"的演进方案, **不破坏本节现状保守立场**. 06 §3.1 业务 Bundle = 本节"命名直接带协议前缀"现状, 06 §3.1 网络 Bundle = 本节"未来重塑触发条件"满足时的演进方向.
 
-**当前现状**: 17 个 Bundle .hh 文件中（`include/bundles/`, per `ls include/bundles/*.hh`），内含 **26 个 Bundle 类型**（**25 个 `bundle_base` 派生类型** + `PcieTlpWireBundle`；per `grep -rho "struct [A-Za-z0-9_]* : public \(ch::core::\)\?bundle_base" include/bundles/*.hh | wc -l` = 25）—— 命名直接带协议前缀（PcieTlp / Cr / Doorbell / Msix），这一选择**在编译期类型安全**与**协议中立**之间取了前者。
+**当前现状**: 18 个 Bundle .hh 文件中（`include/bundles/`, per `ls include/bundles/*.hh`），内含 **27 个 Bundle 类型**（**26 个 `bundle_base` 派生类型** + `PcieTlpWireBundle`；per `grep -rho "struct [A-Za-z0-9_]* : public \(ch::core::\)\?bundle_base" include/bundles/*.hh | wc -l` = 26）—— 命名直接带协议前缀（PcieTlp / Cr / Doorbell / Msix），这一选择**在编译期类型安全**与**协议中立**之间取了前者。
 
-> **⚠️ 2026-10-27 计数订正(per 台账 Entry #82)**:本节原写「当前 **18** 个 Bundle 中」/「18 Bundle 中其余 **17** 个」—— **口径未定义**(文件数 vs 类型数)且数值已过期。**文件数 = 17**(`ls include/bundles/*.hh`)/ **类型数 = 26**。下文统一用**类型数**,并附可复现命令。
+> **⚠️ 2026-10-27 计数订正(per 台账 Entry #82)**:本节原写「当前 **18** 个 Bundle 中」/「18 Bundle 中其余 **17** 个」—— **口径未定义**(文件数 vs 类型数)且数值已过期。**口径确立**:统一用**类型数**,并附可复现命令。**当时**(Entry #82 时点)实测:文件数 = 17 / 类型数 = 26。
+>
+> **⚠️ 2026-10-27 计数再订正(per 台账 Entry #84 —— `bundles::CohIfBundle` 落地,CEP 队列 #7 Phase 1)**:**当前**实测:文件数 = **18**(`ls include/bundles/*.hh`)/ 类型数 = **27**(26 个 `bundle_base` 派生类型 + `PcieTlpWireBundle`)。新增的 1 个类型 = `CohIfBundle` —— 归**跨模块共享的业务 Bundle**(真源 1 `06 号 §3.3` 第三类),**不是**本节讨论的 board-level / chip-internal 二分产物(per `ADR-CEP-19` 决策 3)。
 
 **未来可选的重塑方案**（**仅在出现第二个 chip-internal 协议时启动，不在当前阶段实施**）:
 
@@ -128,8 +130,8 @@ struct TransportReqBundle : public bundle_base {
 ```
 
 **为什么是未来选项而非必须**:
-- 当前 26 个 Bundle 类型中, 真正需要 chip-internal 中立抽象的只有 SDMA 5 端口（`sdma_engine_tlm.hh:82-86`）——但这是**唯一**的 chip-internal 协议特化, **抽象出基类只有 1 个用户**, 不符合"≥2 用户"重构原则
-- 26 个 Bundle 类型中其余 25 个都是 board-level（host↔chip）或 chip-internal 通用 cache/NOC, **命名已合理**
+- 当前 27 个 Bundle 类型中, 真正需要 chip-internal 中立抽象的只有 SDMA 5 端口（`sdma_engine_tlm.hh:82-86`）——但这是**唯一**的 chip-internal 协议特化, **抽象出基类只有 1 个用户**, 不符合"≥2 用户"重构原则
+- 27 个 Bundle 类型中其余 26 个都是 board-level（host↔chip）或 chip-internal 通用 cache/NOC(含 `CohIfBundle` —— CEP 的**跨模块共享业务** Bundle,per `06 号 §3.3` 第三类), **命名已合理**
 - 任何重塑都会触碰 frozen headers（`pcie_bundles_tlm.hh`）+ 23 ABI 冻结面, **风险高于收益**
 - **`port_contract_asserts.hh:4` 已记录历史教训**: 早期计划 `ChStreamInitiatorPort<Bundle>` 模板化被 Momus REJECT, 因为"协议中立"带来的类型擦除成本 > 收益
 

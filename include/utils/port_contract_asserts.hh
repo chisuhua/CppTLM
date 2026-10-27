@@ -27,9 +27,29 @@ namespace utils {
 // Note: `.*` on rvalue yields xvalue; decltype thus gives `T&&`. Static-member access
 // via `T&&::width` works in C++17+, but we strip the reference explicitly for clarity
 // and to avoid tool-chain-dependent acceptance.
+//
+// **枚举类型字段(2026-10-27 新增,per `cpptlm-cep-cohif-carrier` task 1.4 / CC-02 ③)**:
+// 强类型枚举字段(如 `bundles::CohIfBundle::flow_id`)的宽度 = `sizeof(enum) * 8`
+// —— 枚举**无成员**,取不到 `::width`。此前 `BUNDLE_FIELD_WIDTH` 对枚举字段是
+// **硬编译错误** ⇒ 「宏覆盖全部字段」与「`flow_id` 强类型」二者不可兼得。
+// 现按字段类型分派:枚举走 `sizeof * 8`,其余走 `::width`(**行为对既有
+// `ch_uint<W>` 字段逐字不变** —— `ch_uint` 非枚举,仍走原路径)。
+namespace detail {
+
+    template <typename Field>
+    inline constexpr unsigned bundle_field_width_bits() {
+        if constexpr (std::is_enum_v<Field>)
+            return static_cast<unsigned>(sizeof(Field) * 8);
+        else
+            return static_cast<unsigned>(Field::width);
+    }
+
+}  // namespace detail
+
 template <typename Bundle, typename MemberPtr, std::size_t ExpectedWidth>
 inline constexpr bool bundle_field_width_v =
-    std::remove_reference_t<decltype(std::declval<Bundle>().*std::declval<MemberPtr>())>::width == ExpectedWidth;
+    detail::bundle_field_width_bits<
+        std::remove_reference_t<decltype(std::declval<Bundle>().*std::declval<MemberPtr>())>>() == ExpectedWidth;
 
 // Convenience macro — caller preferred form
 #define BUNDLE_FIELD_WIDTH(BundleType, Member, ExpectedWidth) \

@@ -225,6 +225,10 @@ TEST_CASE("[cep][contract] 协议泄漏通用禁令:与协议无关的层无协�
         "include/tlm/cep/ordering_point_checker.hh",  // Ordering Plane(ADR-CEP-08)
         "include/tlm/cep/address_resolver.hh",        // Ordering Plane(ADR-CEP-08)
         "include/tlm/cep/channel_dependency_graph.hh",// Ordering Plane(ADR-CEP-09)
+        // CohIf 载体(2026-10-27 per 台账 Entry #84 / 队列 #7 Phase 1)——
+        // 跨模块共享的**业务** Bundle(真源 1 `06 号 §3.3` 第三类),字段语义取自
+        // 平台级 canonical 流契约(`ADR-CEP-02`)⇒ **与协议无关** ⇒ 纳入本扫描。
+        "include/bundles/cep_coherence_bundles_tlm.hh",
     };
     for (const auto& rel : protocol_neutral_layers) {
         const std::string path = (repo_root() / rel).string();

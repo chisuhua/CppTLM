@@ -5543,8 +5543,69 @@ P1 收尾时列出的 5 项遗留中,**3 项属代码级 / ADR 文字级**(不�
 
 **⑦ 关联**: Entry #82(P1 架构文档漂移回填)· #81(队列 #7 转正)· #80(队列 #6 归档)· #79(队列 #6 实施)· #72/#73(`[fix]` 类先例:critic 评审轮修复未另起 change)· commit `7f91abd9`(缺陷消解 + 断言补齐)
 
+### Entry #84 — 2026-10-27 [build]
+
+**主题**: 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 1 实施** —— `CohIfBundle` 载体落地 + 反向 fixture + 真源同步
+
+**① 触发**
+
+用户指令「请开始队列 #7 Phase 1」。Phase 1 = 载体面(`CohIfBundle`),判据 **CC-01 / CC-02**,共 8 个 task。
+
+**② 交付物**
+
+| # | 产物 | 落点 |
+|---|------|------|
+| 1 | `bundles::CohIfBundle`(**12 字段**) | `include/bundles/cep_coherence_bundles_tlm.hh`(新建) |
+| 2 | `bundles::CohIfFlowId`(**强类型**,域恰好 5 值) | 同上 |
+| 3 | 12 条 `BUNDLE_FIELD_WIDTH` 锁 + `is_trivially_copyable` 头内断言 | 同上 |
+| 4 | 枚举感知的宽度 trait(`BUNDLE_FIELD_WIDTH` 覆盖枚举字段) | `include/utils/port_contract_asserts.hh`(改,**纯增量**) |
+| 5 | 共享扫描器 + 毒化副本生成器 | `test/cep_cohif_contract.hh`(新建) |
+| 6 | 扫描探针 + 编译探针 + 反向验证脚本 | `scripts/test/cep_cohif_scan_probe.cc` · `cep_cohif_compile_probe.cc` · `cep_cohif_reverse_verify.sh`(新建) |
+| 7 | 真源同步 | `06 号`(§1.3 / §1.4 图 / §2 / §3.2 / §3.3)· `01 号`(§1.2)· `07 号`(§5.4 + §11 + 第四则 Status Update) |
+
+**③ 两个关键技术取舍(均在 delta spec 契约面内,非决策变更)**
+
+| 取舍 | 内容 | 理由 |
+|------|------|------|
+| **`flow_id` 用强类型枚举而非 `ch_uint<8>`** | `enum class CohIfFlowId : std::uint8_t`,恰好 5 个枚举值 | CC-01 ③ 要求域外 5 条流「**不可能**出现在 `flow_id` 域内(⇒ **类型保证**,非运行期纪律)」—— 裸整数会让它们在类型层仍可表达 ⇒ 与 `design.md D-α` 的裁决相反。**代价**:枚举无成员 ⇒ `BUNDLE_FIELD_WIDTH` 取不到 `::width` ⇒ 宽度 trait 增枚举分支(**纯增量**,既有 `ch_uint<W>` 字段行为逐字不变)⇒ CC-02 ③「覆盖**全部**字段」仍成立 |
+| **`is_trivially_copyable` 断言写在头文件而非仅测试 TU** | 头内 `static_assert` + 探针 TU 内同款断言 | 该断言是**类型**的结构性不变量(带虚函数 ⇒ 引入 vptr ⇒ 破坏 ChStream 按值拷贝)⇒ 随类型走比只在测试里断言更强;CC-02 ② 要求的「test TU 内」断言由探针 + Phase 6 的 test TU **镜像**保留 |
+
+**④ 反向 fixture(4 类,实测有牙)**
+
+| fixture | 毒化 | 对应判据 | 期望 | 实测 |
+|---------|------|---------|------|------|
+| `flow_count_6` | 注入第 6 个 `flow_id` | CC-01 ① | 静态扫描**红** | ✅ 红(精确报出「域大小 = 6」) |
+| `network_field` | 注入 `ch_uint<32> src_node;` | CC-01 ② | 静态扫描**红** | ✅ 红(报出「出现网络层字段:src_node」) |
+| `width_plus_one` | `ch_uint<64>` → `ch_uint<65>` | CC-02 ③ | 编译**失败** | ✅ 失败(`BUNDLE_FIELD_WIDTH` 静态断言触发) |
+| `virtual_function` | 注入虚函数 | CC-02 ② | 编译**失败** | ✅ 失败(`is_trivially_copyable` 静态断言触发) |
+
+**⑤ 实施中发现并修正的 2 个自身缺陷(诚实登记)**
+
+| # | 缺陷 | 后果 | 修正 |
+|---|------|------|------|
+| 1 | 毒化测试**误覆盖真文件**(毒化副本写到仓内真头,因该文件尚未入库 ⇒ `git checkout` 无法还原) | 真头被污染 | **重写真头**并改用**隔离 include 目录**(`-I <tmp>/shadow/<kind>`)做毒化 ⇒ 后续全程零污染 |
+| 2 | 反向验证脚本把 **4 个毒化写进同一文件** | 后一个毒化盖掉前一个 ⇒ 扫描读到的是最后一次的毒化 ⇒ **判据「假绿」**(首版实测 2 条 RED 期望落 GREEN) | 每个毒化**各自独立目录** ⇒ 重测 11/11 通过 |
+
+**⑥ 真源同步(计数 + 归类)**
+
+- 新增 1 个 `.hh` ⇒ `ls include/bundles/*.hh` **17 → 18**、`bundle_base` 派生类型 **25 → 26**、Bundle 类型总数 **26 → 27**。
+- `06 号`:§3.2 归类表增 `cep_coherence_bundles_tlm.hh::CohIfBundle` 行(第三类)+ 计数 17→18;§3.3「唯一实例」→「已落地(1 个)」;§1.3 第 3 项「不引入新 Bundle 类型」加**例外**;§2 + §1.4 计数同步。
+- `01 号`:§1.2 计数 17/26 → 18/27(**旧值加时态锚定**,不删除历史订正)。
+- `07 号`(冻结面):§5.4 **第三类同步** —— 第一则附录 ③ 声明的「**待队列 #7 实施后再同步**」**本次即该同步点**;§11 活口径行同步;追加第四则 Status Update。冻结清单按两步授权序列更新。
+
+**⑦ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `cep_cohif_reverse_verify.sh` | **11/11 通过**(4 类毒化全部有牙 + 基线绿 + 扫描器自检正反控) |
+| `CohIfBundle` 编译期锁 | `sizeof == 96` · `is_trivially_copyable` · 12 条 `BUNDLE_FIELD_WIDTH` 全通过 |
+| `06 号` / `01 号` / `07 号` 计数同步 | `ls include/bundles/*.hh` = **18**;`bundle_base` 派生类型 = **26** |
+| 冻结集成员数 | **40**(不变) |
+
+**⑧ 关联**: Entry #83(P2 收口)· #81(队列 #7 转正)· #80(队列 #6 归档)· #74(`ADR-CEP-19` 签发)· commit `7f91abd9`(Phase 0 前置)
+
 ---
 
-**版本**: v1.4(2026-10-27,per P0/P1/P2 三批漂移回填与缺口收口;Entry #82 / #83)
+**版本**: v1.5(2026-10-27,per 队列 #7 Phase 1 实施;Entry #84)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

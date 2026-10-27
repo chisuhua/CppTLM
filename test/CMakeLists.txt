@@ -258,6 +258,14 @@ add_test(NAME cep_all COMMAND cpptlm_tests "[cep]" -r compact)
 add_test(NAME cep_docs_sync_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_docs_sync_check.sh --strict)
 
+# CohIf 载体契约的**反向验证**(per change `cpptlm-cep-cohif-carrier` task 1.5~1.7)
+# —— 4 类毒化副本(第 6 个 flow_id / 混入网络层字段 / 字段宽度 +1 / 加虚函数)
+#    分别必须让「静态扫描」报红 / 让「编译期锁」编译失败。
+# ⚠️ 与 `cep_decl_reverse_verify.sh` 不同:本脚本**只写自己的临时目录**、
+#    **不改**仓内任何文件 ⇒ 可安全并行进 ctest。
+add_test(NAME cep_cohif_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_cohif_reverse_verify.sh)
+
 # CEP ↔ ArchForge 接口对齐清单的漂移检测(跨仓引用完整性)
 # —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败)
 # 状态一致性闸的**回归 fixture 集**(10+ 场景,变异 → 期望 rc)

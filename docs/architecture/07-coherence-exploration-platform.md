@@ -434,6 +434,7 @@ group-scoped completion     → Fabric Collective Plane
 
 - **协议 Bundle**(网络层,项目级):`NoCFlitBundle`(16 字段)/ `PcieTlpBundle`(frozen)/ `Axi4Bundle`(≥5 消费者)/ MSI-X / DLLP / TLP wire
 - **业务 Bundle**(业务层,模块 owner):`CacheReqBundle` / `CacheRespBundle` / `GmmuPteBundle` / `SdmaCmdBundle` / `DoorbellBundle` / `CrBundle`(APB-lite LWC)/ `MsixBundle`
+- **跨模块共享的业务 Bundle**(第三类:业务语义字段 + 项目级 owner,真源 1 `06 号 §3.3`):`CohIfBundle`(`include/bundles/cep_coherence_bundles_tlm.hh`)—— 承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流**(`request` / `completion` / `snoop` / `snoop_resp` / `writeback`;由**强类型** `flow_id` 区分,域外 5 条流**类型不可表达**);**不含网络层字段**;**取网络侧演进纪律**
 - **编译期锁**:`BUNDLE_FIELD_WIDTH` static_assert + `is_trivially_copyable` 断言
 - **不做**:协议专属字段泄漏进共享抽象(per `ADR-CEP-04 §3.2` 规范 intent 原则)
 
@@ -673,7 +674,7 @@ experimental/<run_id>/
 
 | 能力 | 定义位置 | 实现状态(2026-10-27 实测) | 承接 change |
 |------|---------|-------------------------|-----------|
-| canonical 10 流契约 | §3.1 | 🟡 **部分落地** —— Stub Cache RN 侧 5 流(`stub_cache_core.hh` 6 接口)已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体未落地**(`CohIfBundle` / `ProtocolEngine` 均不存在) | 载体 = `cpptlm-cep-cohif-carrier`(队列 #7) |
+| canonical 10 流契约 | §3.1 | 🟡 **部分落地** —— Stub Cache RN 侧 5 流(`stub_cache_core.hh` 6 接口)已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体部分落地**(`CohIfBundle` **已落地** —— `include/bundles/cep_coherence_bundles_tlm.hh`,2026-10-27 per 台账 Entry #84;**`ProtocolEngine` 基类仍不存在**) | 载体 = `cpptlm-cep-cohif-carrier`(队列 #7) |
 | Stub Cache Core | §3.2 | ✅ **已落地** —— 6 接口 / 5 态 / `INV-SC1`~`SC6` + `INV-CEP-05-IC1` 行为化(14 测试) | `cpptlm-cep-stub-cache-core`(2026-10-25 已归档) |
 | SharerTracker 5 实现 | §5.2 | 🟡 **1 / 5** —— `FullMapDirectory` 唯一行为实现已落地(10 测试);其余 4 个(`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:178-195`) | 队列 #9 ~ #11(队列 #9 另需第 6 实现 `HierarchicalDirectory`) |
 | Collective Plane | §5.3 | 🟡 **骨架已落地** —— `CollectivePlaneIf` 恰 7 方法 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous);**REDUCE / BROADCAST / MULTICAST 数据路径未实现**(返 `Status::DataPathNotImplemented`);`fabric_ingress_classify` 路由接线未实现 | 骨架 = `cpptlm-cep-collective-plane-base`(2026-10-26 已归档);数据路径 = Stage 3 |
@@ -681,7 +682,7 @@ experimental/<run_id>/
 | ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 零命中)⇒ `INV-CEP-07-IC4` **无载体** | 队列 #7(`REGISTER_CHSTREAM_BIDIRECTIONAL` + `module_factory.hh:313-315` 死钩子扩展) |
 | 实验输出 4 件套 | §7 | ✅ **已落地** —— `tools/{render_report,run_sweep,ab_compare}.py` + `experimental/metrics.schema.json` + 4 件套契约测试(`test_cep_canonical_invariants.cc` / `test_cep_dummy_signals.cc` / `test_cep_module_factory_seam.cc` / `test_cep_simulation_mode_lock.cc`) | Stage 0(`cpptlm-cep-umbrella`,2026-10-23 已归档) |
 | simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |
-| Bundle 二分类 | §5.4 | ✅ 已落地(`06 §3.2` 17 个 .hh;**第三类已由 `06 §3.3` 增补**,其唯一实例待落地 —— 见 §5.4 Status Update ③)| — |
+| Bundle 二分类 | §5.4 | ✅ 已落地(`06 §3.2` 18 个 .hh;**第三类已由 `06 §3.3` 增补**,其唯一实例 `CohIfBundle` **已落地**(2026-10-27 per 台账 Entry #84)—— 见第四则 Status Update ③)| — |
 | Python 拓扑生成 | §8.1 沿用 `06 §7` | ✅ 已落地(`cpptlm.library.mesh_cluster/ring_cluster`)| — |
 | IOMMU 完整协议 | §8.2 P5 | ⛔ scope reduction **待签发独立 ADR**(per `ADR-CEP-00 §3`)| 待定 |
 | Ordering Point 可迁移性判据 | `ADR-CEP-08 §3` | ✅ **已落地** —— J1 / J2 / J3 + `INV-CEP-08-IC2` 行为化(6 测试);**J3 通用形式不可静态判定 ⇒ 多点显式 `SKIP`**;J2 在合法声明上 vacuous PASS | `cpptlm-cep-directory-ordering-plane`(2026-10-25 已归档) |
@@ -748,8 +749,24 @@ experimental/<run_id>/
 
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #83)。
 
+## §附录 · Status Update 2026-10-27(第四则 · per 台账 Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)
+
+> **授权**:Entry #84(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 1 实施** —— `CohIfBundle` 载体落地;用户 2026-10-27 直接指令授权)。
+> **口径**:本节仅登记 ① §5.4 的**已到期同步**(第一则附录 ③ 明确「待队列 #7 实施后再同步」⇒ **本次即该同步点**)+ ② §11 一处**活口径**的计数/状态机械同步。**§2 ~ §4 / §6 ~ §10 的定义 / 职责 / 判据零改动**。
+> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #84"`。
+
+> **① §5.4 Bundle 约束:第三类同步(第一则附录 ③ 的已到期动作)** —— 该节原列「协议 Bundle / 业务 Bundle」**二分**,`CohIfBundle` **不在其中**;第一则附录 ③ 当时的处置是「**本节正文不改,待队列 #7 实施后再同步**」。**队列 #7 Phase 1 已交付 `CohIfBundle`**(2026-10-27,`include/bundles/cep_coherence_bundles_tlm.hh`)⇒ **本次执行该同步**:§5.4 增列**第三类**「跨模块共享的业务 Bundle」+ 其唯一实例 `CohIfBundle`。**§5.4 的其余三条(协议 Bundle 清单 / 业务 Bundle 清单 / 编译期锁 / 不做)** 与 §3.1 / §3.2 / §6 ~ §10 一律零改动。
+
+> **② §11「Bundle 二分类」行的活口径同步** —— 原写「`06 §3.2` **17** 个 .hh …其唯一实例**待落地**」⇒ 现为「**18** 个 .hh …其唯一实例 `CohIfBundle` **已落地**(Entry #84)」。
+
+> **③ `06 号` / `01 号` 侧的配套计数同步(真源 1,非冻结面成员)** —— 新增 1 个 `.hh` ⇒ `ls include/bundles/*.hh` 由 17 → **18**、`bundle_base` 派生类型由 25 → **26**、Bundle 类型总数 26 → **27**。`06 号` §1.3 / §1.4 图 / §2 / §3.2 / §3.3 与 `01 号` §1.2 的计数已同批同步(per 台账 Entry #84);`06 号` §1.3 第 3 项「不引入新 Bundle 类型」已加**例外**说明(`CohIfBundle` 属 §3.3 第三类,不在该文件二分讨论范围内)。
+
+> **④ 本则未处理、已登记的项** —— ① `CohIfBundle` 的**承载面**(ProtocolEngine 端口面 / `ProtocolBridge` / JSON 装配连通性)尚未落地 —— 归队列 #7 **Phase 2 ~ 5**;② `07 号` §6.4 的 `NullProtocolEngine` 仍无载体 —— 归队列 #7 task 2.5~2.7(owner 已于 Entry #83 指派);③ `INV-CEP-07A-IC2` 的时效限定与 `ADR-CEP-14` C9 第 1 条的「反射 / 类型 trait」形态仍**待 architect 裁决**(Entry #83 已登记,本则不重复)。
+
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #84)。
+
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ **Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)**
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

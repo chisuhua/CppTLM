@@ -36,7 +36,7 @@ v0.3 修 v0.2 的 8 项 BLOCKER + 1 项 KPI 口径修正:
 
 CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生成 + SimModule 可装配 + coherence 演进 seam**:
 
-- **协议中立基线 60-70% 已落地**(per `communication-network.md` v1.0 §1): L3 ChStream + L4 StreamAdapter 5 子类(Standalone/MultiPort/DualPort/Bidirectional/Axi4Mapper) + L5 Bundle **17 个 .hh 文件**(frozen headers 0 修改;per `ls include/bundles/*.hh` 实测;**文件数 ≠ Bundle 类型数** —— 类型数因 `*_bundles_tlm.hh` 多类型而更高,per §3.2 归类表),模块业务逻辑**完全不知道**协议特化
+- **协议中立基线 60-70% 已落地**(per `communication-network.md` v1.0 §1): L3 ChStream + L4 StreamAdapter 5 子类(Standalone/MultiPort/DualPort/Bidirectional/Axi4Mapper) + L5 Bundle **18 个 .hh 文件**(frozen headers 0 修改;per `ls include/bundles/*.hh` 实测;**文件数 ≠ Bundle 类型数** —— 类型数因 `*_bundles_tlm.hh` 多类型而更高,per §3.2 归类表),模块业务逻辑**完全不知道**协议特化
 - **业务/网络 Bundle 二分类**(用户 A 决策):
   - **业务 Bundle**(如 `CacheReqBundle` / `CacheRespBundle` / `GmmuPteBundle` / `SdmaCmdBundle`) = 模块内部契约,**前期性能建模期就要定**,由各业务模块团队负责,可演进
   - **网络 Bundle**(如 `NoCFlitBundle` 16 字段 / `PcieTlpBundle` frozen) = 模块间契约,**后期协议特化时再定**,是项目级冻结面
@@ -101,7 +101,7 @@ CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生�
 
 1. **不引入 NetworkModule 基类**(per metis B5): 互联网络功能上是 SimModule,但**不新建基类**,而是显式标注"NOC 角色 module type"在文档中(per `include/tlm/cluster/AGENTS.md` "未实施原因"段已明确:NoC 是中间件不是端点)
 2. **不引入 DSL**(per `cpptlm-dgpu-soc-arch-truth-cleanup §6` 既有先例 + gem5 SLICC 教训)
-3. **不引入新 Bundle 类型**: 复用既有 17 个 .hh(per glob 实地,`ls include/bundles/*.hh` = **17**)
+3. **不引入新 Bundle 类型**: 复用既有 18 个 .hh(per glob 实地,`ls include/bundles/*.hh` = **18**)—— **例外**:`bundles::CohIfBundle`(2026-10-27 per 台账 Entry #84 / `ADR-CEP-19` 决策 1)由 **CEP 队列 #7** 交付,属 §3.3 第三类(**跨模块共享的业务 Bundle**),不在本文件 §3.1 二分类的讨论范围内
 4. **不破 Packet 既有 14 字段**(per oracle BLOCKER 1 修订: v1 写 12 是错的)
 5. **不重发明 coherence 协议**(per ArchForge 已实现 `CoherenceProtocol` / `CoherenceBridge` 接口,本方案引用既有接口作 §15 演进 seam)
 
@@ -123,7 +123,7 @@ CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生�
 │  ACK/NAK 12-bit seq wrap (pcie_link_layer_tlm.cc 手写)             │
 │  posted-write / credit-based / single-outstanding 协议语义          │
 ├────────────────────────────────────────────────────────────────────┤
-│  L5 Bundle 数据格式 (协议特化 typed POD, 17 个 .hh, per §1.3)      │
+│  L5 Bundle 数据格式 (协议特化 typed POD, 18 个 .hh, per §1.3)      │
 │   PcieTlpBundle / NoCFlitBundle / CacheReqBundle / CrBundle /      │
 │   DoorbellBundle / MsixBundle / ...                                 │
 │   ↑─[BUNDLE_FIELD_WIDTH 编译期锁 + is_trivially_copyable 断言]──↑  │
@@ -265,11 +265,11 @@ inline bool SimplePort::send(Packet* pkt) {
 | **tlm_generic_payload 关系** | 业务 Bundle **整体**作为 payload 的 data 序列化(per `bundle_serialization.hh:22-27` `serialize_bundle` memcpy) | 网络 Bundle 也走 payload,但其字段是"网络层",如需持久化业务内容应通过业务 Bundle 字段,而非新增网络 Bundle 字段 |
 | **跨 hop 存活** | **否** — per-hop 序列化/反序列化(每个 hop 销毁 + 新建 per `stream_adapter.hh:48-49` deserialize + `:144` serialize) | **否** — 同样 per-hop,但其字段是"网络层上下文" |
 
-### 3.2 实地归类表(per `include/bundles/` **17** 个 .hh + oracle 实证) — **v0.3 B-2 修订**(2026-10-27 per `ADR-CEP-19` D-7 漂移订正:原写「16 个 .hh」,实测 `ls include/bundles/*.hh` = **17**;**2026-10-27 per 台账 Entry #82** 补登 `bundle_serialization.hh` 行 + 正文计数同步 16 → 17)
+### 3.2 实地归类表(per `include/bundles/` **18** 个 .hh + oracle 实证) — **v0.3 B-2 修订**(2026-10-27 per `ADR-CEP-19` D-7 漂移订正:原写「16 个 .hh」,实测 `ls include/bundles/*.hh` = **17**;**2026-10-27 per 台账 Entry #82** 补登 `bundle_serialization.hh` 行 + 正文计数同步 16 → 17;**2026-10-27 per 台账 Entry #84** 增补 `cep_coherence_bundles_tlm.hh` 行 + 正文计数同步 17 → **18**)
 
 **v0.2 B-2 bug**: CrBundle 字段含义错(写 "Cache Request" + 引用 `arch/arm/mpam.hh:51` 外部路径,仓内不存在) + Axi4Bundle 消费者 1→≥5
 
-**v0.3 实地清点**(per `include/bundles/` 17 个 .hh + grep ):
+**v0.3 实地清点**(per `include/bundles/` 18 个 .hh + grep ):
 
 | Bundle | 类别 | owner / 注册路径 | 关键备注 |
 |--------|------|-------------------|-----------|
@@ -285,6 +285,7 @@ inline bool SimplePort::send(Packet* pkt) {
 | `compute_bundles_tlm.hh::*` | **业务** | SM 内部 | 指令描述符业务 |
 | `dma_bundles_tlm.hh::*` | **业务** | DMA 引擎 | DMA descriptor |
 | `sm_bundles_tlm.hh::*` | **业务** | SM 内部 | SM 子模块 wire-format |
+| `cep_coherence_bundles_tlm.hh::CohIfBundle` | **跨模块共享的业务**(§3.3 第三类) | **项目级**(CEP 队列 #7) | 承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流**(`request` / `completion` / `snoop` / `snoop_resp` / `writeback`,由 `flow_id` 区分);**字段形态 = 业务语义**(无 `src_node` / `dst_node` / `flit_category` / `vc_id`)但**取网络侧演进纪律**(`BUNDLE_FIELD_WIDTH` 编译期锁 + `is_trivially_copyable` 断言);per `ADR-CEP-19` 决策 1~3 + `cpptlm-cep-cohif-carrier` Phase 1 |
 | `dgpu_fabric_bundles_tlm.hh::*` | **业务/网络混合**(待切型) | GPU 内部 + 板级接口 | 交给 [`cpptlm-dgpu-soc-physical-ip-port-boundary`](../../openspec/changes/cpptlm-dgpu-soc-physical-ip-port-boundary/) 处理 |
 | `dgpu_bundles_tlm.hh::*` | **业务/网络** | dGPU 内部 | 同上, 待切型 |
 | `cache_bundles_rtl.hh::*` | **业务** | RTL cache 模块 | RT 桥接用 |
@@ -316,12 +317,14 @@ inline bool SimplePort::send(Packet* pkt) {
 > | **模块 owner 可改?** | ❌ **编译期 `BUNDLE_FIELD_WIDTH` 锁住**,扩展需走 OpenSpec change —— **取网络侧的纪律** |
 > | **跨模块 owner 文档?** | **需要** —— 必须有架构师守门(取网络侧) |
 > | **L5 测试覆盖?** | **项目级**(取网络侧) |
-> | **唯一实例** | **规划实例(当前零实例)** —— `bundles::CohIfBundle`(`include/bundles/cep_coherence_bundles_tlm.hh`;承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流`)—— per `ADR-CEP-19` 决策 2 / 3;⚠ **该文件尚不存在** —— 交付队列 = `cpptlm-cep-cohif-carrier`(队列 #7;季度见 `obj §4.0`);**落地前第三类零实例**,实现层分类仍只有两类(per 台账 Entry #82,2026-10-27) |
+> | **唯一实例** | **已落地(1 个)** —— `bundles::CohIfBundle`(`include/bundles/cep_coherence_bundles_tlm.hh`;承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流`)—— per `ADR-CEP-19` 决策 2 / 3;✅ **文件已存在**(2026-10-27 per 台账 Entry #84,`cpptlm-cep-cohif-carrier` 队列 #7 Phase 1 交付)⇒ **第三类不再是「规划实例」,实现层已有 1 个实例**;承载面(`ProtocolEngine` 端口面 / `ProtocolBridge` / JSON 装配)仍待 Phase 2~5 落地 |
 >
 > **为什么必须解耦**:CEP 的 CohIf 是**第一个**触发该二义的实例(业务语义 + 跨模块共享);若不补第三类,后续每个「跨模块共享但非网络字段」的 Bundle 都要重新吵一遍分类。
 >
 > **写作纪律**:本表**只增第三类**,§3.1 的两条判定规则与 §3.2 的归类表**零改动**;`ADR-CEP-19` 签发**在先**,本修订**在后**(否则构成「用未签发 ADR 草案为改真源 1 背书」)。
 > **⚠️ 例外(2026-10-27 per 台账 Entry #82)**:后续的漂移回填**确实动了 §3.2** —— 补登漏登记的 `bundle_serialization.hh` 行 + 正文计数 16 → 17(实测 `ls include/bundles/*.hh` = 17)。该次回填**不触碰** §3.1 的两条判定规则,亦**不改动**本表第三类的**定义**(只把「唯一实例」改为「规划实例(当前零实例)」以对齐「文件尚不存在」的事实)。**§3.2 归类表的其余行零改动**。
+>
+> **⚠️ 例外(2026-10-27 per 台账 Entry #84 —— 第三类实例落地)**:§3.2 归类表**增补** `cep_coherence_bundles_tlm.hh::CohIfBundle` 行(第三类的**首个实例**)且正文计数 17 → **18**(实测 `ls include/bundles/*.hh` = 18);§3.3 的「唯一实例」由「规划实例(当前零实例)」改为「**已落地(1 个)**」。**§3.1 的两条判定规则与本表第三类的定义零改动** —— 本次只登记**实例**与**计数**,不重新讨论分类规则。
 
 ### 3.4 演进粒度(业务 Bundle 可演进粒度)
 
@@ -920,7 +923,7 @@ per `01-hybrid-architecture-v2.1.md` §1.5 + `apu_soc.cc:84-103`:
 **v0.4 P1 任务清单 (5-8d, 仅测试 + 文档)**:
 
 1. **新增** `test/test_bundle_classification_contract.cc` (~120 行, ≥10 cases / ≥40 assertions):
-   - 验证 §3.2 归类表的 17 个 .hh (per `ls include/bundles/*.hh`) 全部正确标注 (业务 / 网络 / 基础设施)
+   - 验证 §3.2 归类表的 18 个 .hh (per `ls include/bundles/*.hh`) 全部正确标注 (业务 / 网络 / 跨模块共享的业务(第三类)/ 基础设施)
    - 验证每个业务 Bundle 有 default initializer (per §3.4 演进规则)
    - 验证每个网络 Bundle 通过 `BUNDLE_FIELD_WIDTH` 编译期锁
    - 标签: `[bundle-classification]`

@@ -501,6 +501,23 @@ namespace cpptlm {
             return out;
         }
 
+        /// 抽取源码中的**原始标识符**(不拆词、不改大小写)
+        ///
+        /// 与 `identifier_words()` 的区别:后者按 `_` + CamelCase **拆词**并大写归一
+        /// (适合「协议名」这类**单词级**判定);本函数保留**原样拼写** ——
+        /// 用于**复合标识符**的整体判定(如 `snoop_completion_ack` 拆词后会变成
+        /// {SNOOP, COMPLETION, ACK} 三个独立单词 ⇒ 复合身份丢失)。
+        /// 归一化比较请配 `normalize_identifier()`(小写 + 去 `_`)。
+        inline std::set<std::string> identifier_tokens(const std::string& src) {
+            std::set<std::string> out;
+            static const std::regex tok_re(R"([A-Za-z_][A-Za-z0-9_]*)");
+            for (auto it = std::sregex_iterator(src.begin(), src.end(), tok_re);
+                 it != std::sregex_iterator(); ++it) {
+                out.insert(it->str());
+            }
+            return out;
+        }
+
         /// 协议标识符命中判定 —— 命中即返回命中的协议名
         ///
         /// **关键词集合**与 `test_cep_schema.cc` 的 C9 负向断言对齐
