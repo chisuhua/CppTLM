@@ -437,3 +437,17 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 **最后更新**: 2026-10-27
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)
+
+## Status Update 2026-10-28 —— 队列 #7 Phase 3 落地 + `module_factory.hh` 行号漂移登记
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **正文一律不改**,仅登记状态变化。
+> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 3 实施**;台账 Entry #86。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #86**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #86)。
+
+> **登记 ① —— 载体交付面 ③ / ④ 的进度**(per 本文件 2026-10-27 那则登记的「载体交付面」四项):
+> ① `CohIfBundle` ✅(Entry #84)· ② `ProtocolEngineBase` ✅(Entry #85)·
+> ③ `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`)**✅ 已落地**(Entry #86)·
+> ④ `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏 ⬜ **未开始**(归队列 #7 Phase 4);`module_factory.hh` 钩子扩展 ✅(Entry #86)。
+
+> **登记 ② —— 行号漂移**:本文件 2026-10-27 那则引用的 `module_factory.hh:313-315`(钩子扩展点)**按「ADR 不可变」不改**;Phase 3 之后该符号在 **336-343** 行(完整对照表见 `06 号` 文末「附录 · 行号对照表」,2026-10-28)。

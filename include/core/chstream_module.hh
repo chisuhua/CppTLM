@@ -10,6 +10,7 @@
 
 class StreamAdapterBase;
 namespace cpptlm { class StreamAdapterBase; }
+namespace cpptlm { class ProtocolBridgeEr; }
 
 /**
  * @brief ChStream 模块基类
@@ -71,6 +72,22 @@ public:
      * 默认空实现 — 仅 timing-mode 模块 (MemoryTLM/VramControllerTLM) 覆盖。
      */
     virtual void advance_cycle() noexcept {}
+
+    /**
+     * @brief 挂载协议桥（可选能力点，per `cpptlm-cep-cohif-carrier` Phase 3 / CC-05）
+     *
+     * 由 ModuleFactory 在装配期（Step 7.5）调用，把 `ProtocolBridgeEr*` 注入
+     * 支持桥的模块（当前仅 `tlm::cep::ProtocolEngineBase`）。
+     *
+     * @param bridge 类型擦除的协议桥指针（**非拥有** —— 生命周期由 ModuleFactory 负责）
+     * @return true = 已挂载；false = **本模块不支持桥挂载**（默认实现）
+     *
+     * ⚠️ **默认实现返回 false ⇒ 零波及**：所有既有 ChStream 派生类无需改动。
+     * ⚠️ **为什么不用 `dynamic_cast` 到独立 mixin**：`ProtocolBridgeHolder` 与
+     *    `SimObject` 无继承关系 ⇒ 该 cast 编译不过；让 mixin 继承 `SimObject`
+     *    则引入菱形继承 ⇒ 更糟。详见 `include/framework/protocol_bridge.hh` 末段说明。
+     */
+    virtual bool attach_protocol_bridge(cpptlm::ProtocolBridgeEr* /*bridge*/) { return false; }
 };
 
 #endif // CORE_CHSTREAM_MODULE_HH

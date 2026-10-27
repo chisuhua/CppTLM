@@ -271,6 +271,19 @@ tick():
 
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #85)。
 
+## Status Update 2026-10-28(第三则)—— Phase 3 落地 + 行号漂移登记
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文一律不改**,仅登记状态变化。
+> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 3 实施**;台账 Entry #86。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #86**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #86)。
+
+> **登记 ① —— §3 决策表的 ProtocolEngine 落地形态**:`ProtocolEngineBase<N>` + `NullProtocolEngine<N>`(Phase 2,Entry #85)已落地;Phase 3 追加**协议桥挂载点** —— `ProtocolEngineBase` 覆写 `ChStreamModuleBase::attach_protocol_bridge`(per `ADR-CEP-19` 第二则 ① 差异 ③)⇒ **决策 3「`ChStreamModuleBase` 派生 + `ModuleFactory::registerObject<T>`」的落地形态不变**,仅多一个**可选**挂载点。
+
+> **登记 ② —— 行号漂移**:`module_factory.hh` 与 `chstream_module.hh` 因 Phase 3 增量而整体下移 ⇒ 本文件 §3 表格里的 `include/core/module_factory.hh:122`(现 **128**)与 `module_factory.hh:135`(现 **141**)、以及 §4 的 `chstream_module.hh:73`(现 **74**)**按「ADR 不可变」不改**;完整对照表见 `06 号` 文末「附录 · 行号对照表」(2026-10-28)。
+
+> **登记 ③ —— `INV-CEP-07-IC4` 仍无载体**:本 invariant 要求「CEP 模块注册走既有宏体系」⇒ 需 `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏 + CEP 类的 `REGISTER_OBJECT` ⇒ 归队列 #7 **Phase 4 / 5**,**本则不处理**。
+
 ## 9. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

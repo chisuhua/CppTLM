@@ -246,7 +246,7 @@ inline bool SimplePort::send(Packet* pkt) {
 
 1. **L4 StreamAdapter `process_pe_request_input` 仅做 Packet 透传,无字段映射**(per `dual_port_stream_adapter.hh:193-199`): 协议字段映射实际在 NICTLM `packetize`/`reassemble` 内(`nic_tlm.cc:97+`)
 2. **`module_factory.cc:707-709` 硬编码 cast 到 NICTLM 具体 Bundle 组合**: 任何"通用化 DualPort"会触发类型擦除 hard cast 改动 + 双注册表边界验证(详 06-bis v0.3 §3)
-3. **`register_protocol_bridge` 是 write-only 死钩子**(per `module_factory.hh:313-315` + oracle 实证): `get_bridges()` private,无人读;PNN 文档伪代码模板不存在 — **本方案不重发明,扩展现有 `ModuleFactory::register_protocol_bridge()` 为带 factory lambda**(§9.3 详)
+3. **`register_protocol_bridge` 是 write-only 死钩子**(per `module_factory.hh:313-315` + oracle 实证;**2026-10-27 实测口径,2026-10-28 已实施** —— 现为 **336-343**,见 §9.3 的落地登记与文末行号对照表): `get_bridges()` private,无人读;PNN 文档伪代码模板不存在 — **本方案不重发明,扩展现有 `ModuleFactory::register_protocol_bridge()` 为带 factory lambda**(§9.3 详)
 4. **tlm_extension 路径已就绪**(per oracle 评估): 与既有 `TransactionContextExt` / `ErrorContextExt` 同模式,池复用安全,1-2 人日可加 `NetworkProtocolExt`(per oracle §3)
 
 ---
@@ -440,6 +440,27 @@ class AbstractProtocolBridge : public ProtocolBridge<FlitT, FlitT, false> {
 - `Ordered=true` 借鉴 gem5 `MessageBuffer::m_strict_fifo(p.ordered)` 单参数(per gem5-messagebuffer-network-interface §1.2)
 - 1 个 bool 模板参数,**不引入 mandatory/optional 三分类**(per gem5-messagebuffer 实测)
 
+### 4.4.1 落地登记(2026-10-28 · per 台账 Entry #86 · 队列 #7 Phase 3)
+
+**本节原型已首次落地**,落点 `include/framework/protocol_bridge.hh` + `include/tlm/cep/cohif_noc_bridge.hh`。
+**原型正文不改**,此处登记落地形态与 3 处**有意的差异**:
+
+| 项 | 原型 | 落地 | 理由 |
+|---|---|---|---|
+| **pack / unpack 的层次** | 单层 `pack(InB,OutB)` / `unpack(OutB,InB)` | **两层**:① `pack`/`unpack` = **消息内容投影**(共有字段 4 个双向无损);② `pack_with_packet(Packet*)`/`unpack_with_packet(Packet*)` = **端到端完整语义**(`Packet` payload 数据区承载 `InB` 原始字节) | ⚠️ **架构事实**:`CohIfBundle.flow_id` 域 = **5 值**,`NoCFlitBundle.flit_category` 域 = **3 值**,而 6→3 消息类映射表是**刻意多对一**的 ⇒ **仅靠网络 flit 的字段空间不可能唯一恢复 `flow_id`** ⇒ Bundle 级「逐字段 round-trip 恒等」在数学上不可达。协议语义(`perm`/`snoop_type`/`line_state`/`hit`/`dirty`/`error`/`atomic` + `flow_id`)**必须**有自己的落脚点 ⇒ 落在 Packet payload 数据区(**不**用 `tlm_extension` ⇒ 不触 §4.5 的 P3+ 范围) |
+| **per-bridge 元数据** | `protocol_id_` / `bridge_id_` | 同上 + **`metadata_ok()` 要求两者非零** | `0` 需能表达「未分配」这一**可测状态**,否则「忘了分配」与「合法 id 0」不可分辨 |
+| **挂载方式** | 「`ChStreamModuleBase` 持 `ProtocolBridgeEr*`」 | `ChStreamModuleBase` 新增**可选**虚函数 `attach_protocol_bridge`(默认返回 false ⇒ **零波及**) | `ProtocolEngineBase<N>` 的 `N` 是**模板参数** ⇒ ModuleFactory 无法 `dynamic_cast` 到具体类型;独立 mixin 与 `SimObject` **无继承关系** ⇒ `dynamic_cast` **编译不过**,而让 mixin 继承 `SimObject` 会引入**菱形继承** ⇒ 更糟 |
+
+**字段三分类**(per `CohIfNoCProtocolBridge`,共 12 个字段):
+
+| 类 | 数量 | 字段 | 层 1 行为 |
+|---|---|---|---|
+| **共有** | 4 | `transaction_id` / `address` / `data` / `size` | 双向**无损** |
+| **降维映射** | 1 | `flow_id` → `flit_category` | **多对一 ⇒ 不可逆**(同类别流在网络上不可区分) |
+| **丢弃** | 7 | `perm` / `snoop_type` / `line_state` / `hit` / `dirty` / `error` / `atomic` | **完全不进**网络 flit |
+
+⇒ 层 1 **不携带** = 降维 1 + 丢弃 7 = **8** 个 ⇒ 走层 2 的 payload 通道。**该清单显式暴露**(`dropped_fields()` / `lossily_mapped_fields()`)且由判据「**清单 ↔ 实际行为**」机器核对(逐字段变更后看网络 flit 是否跟着变)。
+
 ### 4.5 协议元数据承载(per Q6 + 调研复核)
 
 per oracle + Q6: **per-bridge 注入 + 演进 seam per-packet tlm_extension**:
@@ -494,7 +515,7 @@ per 用户 E 决策 + 最新要求"不需要过多组合"。
 | `functional` | `VramControllerTLM::set_mode(FunctionalZeroDelay)` + `simulation_mode=functional` JSON 字段 | `include/tlm/vram_controller_tlm.hh:74` |
 | `timing` | `VramControllerTLM::set_mode(TimingCycleApproximate)` + `simulation_mode=timing` JSON 字段 | 同上 |
 
-**注**: 网络 Bundle 字段不随 simulation_mode 改变 — 都是 NoCFlitBundle 16 字段。模块自己实现 `advance_cycle()`(时序模式)或 no-op(functional 模式) — per `chstream_module.hh:73` `virtual void advance_cycle() noexcept {}`
+**注**: 网络 Bundle 字段不随 simulation_mode 改变 — 都是 NoCFlitBundle 16 字段。模块自己实现 `advance_cycle()`(时序模式)或 no-op(functional 模式) — per `chstream_module.hh:74` `virtual void advance_cycle() noexcept {}`
 
 **SHOULD-FIX(v0.3 修订)**: §5.3 表述限定 "当前仅 VRAM 路径落地" — RouterTLM / LinkTLM 延迟不受 simulation_mode 影响(per oracle 评审)。
 
@@ -607,7 +628,7 @@ soc.save("configs/dgpu_soc_dual_noc.json")
 ### 6.4 NICTLM/RouterTLM 不可替代性
 
 **答:否**——它们已是 SimModule,**不需要新建基类**。证据:
-- `c++ std::is_base_of<SimModule, T>` static_assert 在 `registerModule<T>` 时执行(per `module_factory.hh:135`) — NICTLM/RouterTLM 是 ChStreamModuleBase **不是** SimModule,**但功能上是 NetworkModule**(没新基类的需求)
+- `c++ std::is_base_of<SimModule, T>` static_assert 在 `registerModule<T>` 时执行(per `module_factory.hh:141`) — NICTLM/RouterTLM 是 ChStreamModuleBase **不是** SimModule,**但功能上是 NetworkModule**(没新基类的需求)
 - 若强制改基类,需:重继承链路 + 6 标签回归测试 + 测试 spiral 全套重跑 — 巨大代价零收益
 
 ### 6.5 与既有架构债务的关系
@@ -804,7 +825,7 @@ PNN v0.1 §2.6 提议"Step 7b 注入协议桥":**不实施** — 理由:
 
 ### 9.3 复用既有 `register_protocol_bridge` 钩子(per oracle 调研确认 dead 钩子)
 
-per `include/core/module_factory.hh:313-315`:
+per `include/core/module_factory.hh:313-315`(**2026-10-27 实测口径**;2026-10-28 已实施 ⇒ 现为 **336-343**,见文末行号对照表):
 ```cpp
 static void register_protocol_bridge(const std::string& bridge_name) {
     get_bridges().insert(bridge_name);
@@ -815,11 +836,19 @@ static void register_protocol_bridge(const std::string& bridge_name) {
 
 **P1 处置(如果真需要)**:
 - 当 P3+ 引入 `ProtocolBridgeFactory` 时,**扩展** `register_protocol_bridge` 为 `(bridge_name, factory_lambda)` lambda 形式 — 沿用现有 register 入口,**不重发明**
-- 当前不实施
+- ~~当前不实施~~ ⇒ **2026-10-28 已实施**(per 台账 Entry #86,队列 #7 `cpptlm-cep-cohif-carrier` Phase 3):
+  - `register_protocol_bridge(bridge_name, factory_lambda)` —— 注册表存 **name → factory**,
+    且 `get_bridges()` **转 public 可读** ⇒ 死钩子消除;
+  - 消费路径:`ModuleFactory::instantiateAll` 的 **Step 7.5**(per §4.5「per-bridge 配置时机 =
+    ModuleFactory Step 7c(构建期)」的同一时机)读 `config["cep"]["bridges"]` → 建桥 →
+    校验 per-bridge 元数据 → 注入目标模块;
+  - **不**引入独立 factory 抽象类 ⇒ §11.2 P3.2 的偏离**依旧成立**(钩子签名扩展不产生抽象层);
+  - 「注册了但本次装配未消费」以**死桥清单**(`unconsumed_bridges()`)暴露,**不**让装配失败 ——
+    多拓扑共用进程级注册表时某个拓扑不引用全部桥是正常的 ⇒ 强制失败会误伤。
 
 ### 9.4 ModuleFactory 现有 ParamRules 的延伸
 
-per `module_factory.hh:81-95` + Change D `getParamRulesRegistry()`:
+per `module_factory.hh:87-101` + Change D `getParamRulesRegistry()`:
 - 已支持 per-type ParamRules provider(早期 router_tlm 硬编码特例泛化)
 - RouterTLM / VramControllerTLM 自注册软默认
 - **06 P1 不动** — 现有机制足够
@@ -966,7 +995,7 @@ per `01-hybrid-architecture-v2.1.md` §1.5 + `apu_soc.cc:84-103`:
 > **① 时间线转隶 CEP(决策 7)**:本节 P1 / §11.3 P2 的**实施分期从未执行** —— 实测 `06 §11.2` 承诺的 3 个测试(`test_bundle_classification_contract.cc` / `test_simulation_mode_schema.cc` / `test_seam_documentation_locator.cc`)与 `include/core/coherence_bridge.hh` / `src/core/coherence_bridge.cc` **全仓均不存在**;`openspec/changes/` 与 `openspec/changes/archive/` **无**对应 change 目录 ⇒ 该分期**已被 06-bis 的 CEP 继任取代**(`06-bis` 顶部 `Status Update (2026-10-21) — superseded by CEP`)。⇒ **本节分期时间线作废**,承载 seam 的代码增量改由 **CEP 排期**承接:`ADR-CEP-19` 决策 1 / 5 落在队列 **#7 `cpptlm-cep-cohif-carrier`**(Stage 1 / 2028-Q2,排期真源 = `obj-cep-platform §4.0`)。**本段不改上列任务条目本身**(它们仍是**技术内容**的权威描述),只登记**时间线**与**归属**的转移。
 >
 > **② 显式偏离 P3.2 的「拒绝 ProtocolBridgeFactory 模式」(决策 4)**:本段 P3.2 写「per-bridge 静态分配, **拒绝 ProtocolBridgeFactory 模式**」,而本文件 **§9.3** 写「当 P3+ 引入 `ProtocolBridgeFactory` 时,**扩展** `register_protocol_bridge` 为 `(bridge_name, factory_lambda)` 形式 —— 沿用现有 register 入口,**不重发明**」。⇒ **本文件内部两条互斥**。**处置**:
-> - **遵从 §9.3** —— 采纳**钩子签名扩展**路径(`module_factory.hh:313-315` 的 `register_protocol_bridge` 现为 **write-only 死钩子**;`get_bridges()` 在 `private:` 段 `:326`,全仓无人读);
+> - **遵从 §9.3** —— 采纳**钩子签名扩展**路径(`module_factory.hh:313-315` 的 `register_protocol_bridge` **2026-10-27 实测为 write-only 死钩子**;`get_bridges()` 在 `private:` 段 `:327`(2026-10-27 实测),全仓无人读;**2026-10-28 已实施**(现为 **346**,**`public:`**) —— 见 §9.3 与文末行号对照表);
 > - **显式偏离**本段 P3.2 的「拒绝」条款 —— 偏离理据:该条拒绝的是**独立 factory 抽象层**(与 `01 号 §1.1`「当前 L3+L4 已达 Gem5 MessageBuffer 水准,**不需新增抽象层**」一致);§9.3 的**钩子签名扩展**不产生抽象层 ⇒ 二者**目标一致但字面冲突**,以 §9.3 为准;
 > - **不新建** `ProtocolBridgeFactory` 类(per `ADR-CEP-19` 决策 8「不引入新抽象层」);
 > - **落地形态**见 `ADR-CEP-19` 决策 5:`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏 + `register_protocol_bridge` 签名扩展,**由队列 #7 交付**。
@@ -1468,6 +1497,41 @@ soc.connect("group:gpu", "noc_cdc_bridge.dst", latency=2)
 2. P0 任务启动(1 周)
 3. 同步 supersede Status Update 段到 PNN / 05-doc / ADR-DGPU-13 / ADR-DGPU-14
 4. 实施 v0.3 §11.2 P1 任务(等 KPI slot 释放)
+
+---
+
+## 附录 · 行号对照表(2026-10-28 · per 台账 Entry #86)
+
+⚠️ **本表登记 `module_factory.hh` / `chstream_module.hh` 的行号漂移** —— 队列 #7 Phase 3
+给这两个头文件加了内容(注册表签名扩展 + 2 个私有成员 + 1 个可选虚函数)⇒ **既有**文档
+与 ADR 里的行号引用**语义漂移**(文件本身未坏,符号仍在,只是行号变了)。
+
+| 符号 | 旧行号(2026-10-27 实测) | 新行号(2026-10-28) | 漂移 |
+|---|---|---|---|
+| `module_factory.hh` `getParamRulesRegistry` | 81 | **87** | +6 |
+| `module_factory.hh` `registerObject<T>` | 122 | **128** | +6 |
+| `module_factory.hh` `registerModule<T>` 的 `static_assert` | 135 | **141** | +6 |
+| `module_factory.hh` `validate_domain_boundary` | 307 | **313** | +6 |
+| `module_factory.hh` `register_protocol_bridge` | 313-315 | **336-343** | +23(签名已扩展) |
+| `module_factory.hh` `get_bridges` | 327(**`private:`**) | **346**(**`public:`**) | +19(可见性已变) |
+| `chstream_module.hh` `num_ports` | 54 | **55** | +1 |
+| `chstream_module.hh` `advance_cycle` | 73 | **74** | +1 |
+
+**漂移原因**:`module_factory.hh` 加了 ① `#include "framework/protocol_bridge.hh"`
+② `#include <unordered_set>` ③ 2 个私有成员(`protocol_bridges_` / `consumed_bridges_`)
+④ public 段的新增块 ⇒ 既有行号整体 **+6**;`chstream_module.hh` 加了 ① 前向声明
+② `attach_protocol_bridge` 虚函数 ⇒ 既有行号整体 **+1**。
+
+⚠️ **一次踩坑记录(可复用的经验)**:`module_factory.hh` 曾尝试用**前向声明**代替 include
+(`namespace cpptlm { class ProtocolBridgeEr; }`)以缩小行号漂移 ⇒ **编译失败**
+(`invalid application of 'sizeof' to incomplete type`):`std::vector<std::unique_ptr<T>>`
+的析构在**头文件里内联** ⇒ 任何 include 本头的 TU 都会实例化 `unique_ptr<T>` 的析构
+⇒ **需要 `T` 完整**。⇒ 改用**自定义 deleter** 又会把漂移从 +6 放大到 +27 ⇒ 最终
+**直接 include**(净漂移最小,且 `core/chstream_port.hh` 本就拉进 `core/packet.hh`
+⇒ **无新增 header 依赖**)。
+
+⚠️ **ADR 不可变** ⇒ 冻结面 ADR(`ADR-CEP-00` / `07` / `07A` / `19`)与 `07 号` 的**正文**行号
+引用**不改**,行号漂移以各自的 `## Status Update` 段登记。
 
 ---
 

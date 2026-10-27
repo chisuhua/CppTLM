@@ -11,10 +11,12 @@
 #include "utils/module_group.hh"
 #include "utils/dynamic_loader.hh"
 #include "core/chstream_port.hh"
+#include "framework/protocol_bridge.hh"
 #include "metrics/stats.hh"
 #include "core/param_rules.hh"  // D.3 (cpptlm-dgpu-realip-pin-contract Change D)
 
 #include <unordered_map>
+#include <unordered_set>
 #include <nlohmann/json.hpp>
 #include <functional>
 #include <print>
@@ -50,6 +52,10 @@ private:
     std::vector<std::unique_ptr<cpptlm::ChStreamInitiatorPort>> ch_initiator_ports_;
     std::vector<std::unique_ptr<cpptlm::ChStreamTargetPort>> ch_target_ports_;
     std::vector<std::unique_ptr<PortPair>> port_pairs_;
+    // 协议桥实例所有权(装配期创建 ⇒ ModuleFactory 负责 delete)
+    std::vector<std::unique_ptr<cpptlm::ProtocolBridgeEr>> protocol_bridges_;
+    // 装配期已消费的桥名(per CC-05 ②「注册与消费成对」的证据)
+    std::unordered_set<std::string> consumed_bridges_;
 
     // 性能指标管理
     bool _metrics_enabled = false;
@@ -310,9 +316,72 @@ public:
         const std::string& src_domain,
         const std::string& bridge_name = "");
 
-    static void register_protocol_bridge(const std::string& bridge_name) {
-        get_bridges().insert(bridge_name);
+    // ══════════════════════════════════════════════════════════════════
+    //  协议桥注册表(per `cpptlm-cep-cohif-carrier` Phase 3 / 判据 CC-05)
+    // ══════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ **死钩子 → 活钩子**(per CC-05 ①):改动前 `register_protocol_bridge(name)`
+    //    只把名字塞进一个 `unordered_set`,而 `get_bridges()` 位于 `private:` 段
+    //    ⇒ **全仓无人读** ⇒ write-only 死钩子。
+    //    改动后:注册表存 **name → factory**,且 **public 可读** ⇒ 可被断言。
+    //
+    // ⚠️ **签名形态**(per `06 号 §9.3` + design `D-γ`):`(name, factory_lambda)`。
+    //    **不**引入独立 factory 抽象类(per `06 号 §11.2` P3 子项的显式偏离)。
+    //
+    // ⚠️ **旧单参签名已移除**:全仓零调用点 ⇒ 无兼容负担;且保留「只给名字、不给
+    //    工厂」的形态会制造「注册了却造不出桥」—— 正是 CC-05 反向 fixture
+    //    「只注册不消费 ⇒ 必红」要抓的形态 ⇒ 不保留。
+    using ProtocolBridgeFactory = std::function<cpptlm::ProtocolBridgeEr*()>;
+
+    static void register_protocol_bridge(const std::string& bridge_name,
+                                         ProtocolBridgeFactory factory) {
+        auto& registry = get_bridges();
+        if (registry.find(bridge_name) != registry.end()) {
+            return;  // early-return on duplicate(与 registerObject 一致的 ODR-safe 模式)
+        }
+        registry.emplace(bridge_name, std::move(factory));
     }
+
+    /// 已注册的协议桥(**public 可读** ⇒ 不再是 write-only 死钩子,per CC-05 ①)
+    static std::unordered_map<std::string, ProtocolBridgeFactory>& get_bridges() {
+        static std::unordered_map<std::string, ProtocolBridgeFactory> bridges;
+        return bridges;
+    }
+
+    /// 本次装配**已消费**的桥名(per CC-05 ②「注册与消费成对」)
+    const std::unordered_set<std::string>& consumed_bridges() const { return consumed_bridges_; }
+
+    /// **死桥**清单:注册了但本次装配**未**消费 ⇒ 「注册与消费不成对」
+    ///
+    /// ⚠️ **不**让装配失败 —— 多拓扑共用同一进程级注册表时,某个拓扑不引用
+    ///    全部桥是**正常**的 ⇒ 强制失败会误伤。
+    ///    ⇒ 以**清单**形式暴露,由判据测试断言其非空(per CC-05 反向 fixture
+    ///    「只注册不消费 ⇒ 必红」)。生产侧记 warning 日志。
+    std::vector<std::string> unconsumed_bridges() const;
+
+    // ══════════════════════════════════════════════════════════════════
+    //  协议桥装配期判据(**可独立单测** —— Step 7.5 与判据测试调用**同一份**)
+    // ══════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ **为什么抽成 public 静态函数**:反向 fixture 必须能在**不**跑完整
+    //    `instantiateAll` 的前提下断言「元数据不合规 ⇒ 红」⇒ 判据逻辑
+    //    **不可**只存在于装配流程的局部变量里。
+    //
+    /// per-bridge 元数据判据(per CC-05 ④):
+    ///   · `protocol_id_` 非零
+    ///   · `bridge_id_` 非零
+    ///   · `protocol_id_` 与 `expected_protocol_id` 一致
+    ///     (`expected_protocol_id == 0` ⇒ 该桥未声明 `protocol_instance` ⇒ 跳过此项)
+    static bool validate_bridge_metadata(const cpptlm::ProtocolBridgeEr* bridge,
+                                         std::uint8_t expected_protocol_id, std::string* why);
+
+    /// `bridge_id_` 唯一性判据(per CC-05 ④「同一 ModuleFactory 内不重复」)
+    ///
+    /// @param assigned 已分配出去的 (bridge_id, 桥名) 对
+    /// @param candidate_id 待分配者的 `bridge_id_`
+    static bool check_bridge_id_collision(
+        const std::vector<std::pair<std::uint16_t, std::string>>& assigned,
+        std::uint16_t candidate_id, const std::string& candidate_name, std::string* why);
 
 #ifdef CPPTLM_TESTING
 public:
@@ -322,12 +391,6 @@ public:
         instances[name] = std::move(obj);
     }
 #endif
-
-private:
-    static std::unordered_set<std::string>& get_bridges() {
-        static std::unordered_set<std::string> bridges;
-        return bridges;
-    }
 };
 
 // 旧的 parsePortSpec 函数，保留向后兼容性

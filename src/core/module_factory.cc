@@ -58,10 +58,12 @@
 #include "core/port_types.hh"
 #include "core/topology_parser.hh"
 #include "framework/chstream_adapter_factory.hh"
+#include "framework/protocol_bridge.hh"
 #include "framework/stream_adapter.hh"
 #include "metrics/stats_manager.hh"
 #include "sim_module.hh"
 #include "tlm/cep/channel_dependency_graph.hh"
+#include "tlm/cep/protocol_family.hh"
 #include "tlm/cep/ordering_point_checker.hh"
 #include "tlm/router_tlm.hh"
 #include "utils/config_utils.hh"
@@ -759,6 +761,225 @@ bool ModuleFactory::instantiateAll(const json& config) {
     }
 
     // ========================
+    // 7.5 协议桥装配(per `cpptlm-cep-cohif-carrier` Phase 3 / 判据 CC-05)
+    // ========================
+    //
+    // 配置形态(挂在**既有** `cep` 段下 —— **零新增** JSON 顶层段):
+    //   "cep": {
+    //     "protocol_instances": "include/tlm/cep/protocol_instances.json",
+    //     "bridges": [
+    //       { "name": "moesi_gpu_cohif", "protocol_instance": "moesi_gpu",
+    //         "bridge_id": 1, "modules": ["pe0", "pe1"] }
+    //     ]
+    //   }
+    //
+    // 校验(任一不过 ⇒ 装配失败):
+    //   ① 配置引用的桥名**未注册**        ⇒ 红(CC-05 ② 的反面:引用了不存在的桥)
+    //   ② `protocol_id_` 与实例声明的 `family` 编号**不符** ⇒ 红(CC-05 ④)
+    //   ③ 两个被消费的桥 `bridge_id_` **重复**   ⇒ 红(CC-05 ④)
+    //   ④ 桥元数据自检不过(`protocol_id_`/`bridge_id_` 为 0) ⇒ 红(CC-05 ④)
+    //   ⑤ 目标模块不存在 / 不支持桥挂载        ⇒ 红
+    //
+    // ⚠️ **共享语义**(per CC-03 ③):一个 bridge 条目的 `modules` 可列**多个**模块
+    //    ⇒ **同一个桥实例**被挂到多个 PE ⇒ 满足「同一 `ProtocolBridgeEr*` 可被
+    //    多个具体桥实例共享」。`bridge_id_` 唯一性针对的是**桥条目**(桥实例)而非
+    //    挂载点 ⇒ 两者不冲突。
+    //
+    // ⚠️ **「死桥」不判红**(per CC-05 反向 fixture 的形态说明):多拓扑共用同一
+    //    进程级注册表时,某个拓扑不引用全部桥是**正常**的 ⇒ 强制失败会误伤。
+    //    ⇒ 以**清单**(`unconsumed_bridges()`)暴露,由判据测试断言其非空。
+    bool bridge_failed = false;
+    {
+        consumed_bridges_.clear();
+        const bool has_bridge_section =
+            final_config.is_object() && final_config.contains("cep") &&
+            final_config["cep"].is_object() && final_config["cep"].contains("bridges");
+        if (has_bridge_section) {
+            const auto& bsec = final_config["cep"]["bridges"];
+            if (!bsec.is_array()) {
+                std::fprintf(stderr, "[ModuleFactory] `cep.bridges` 必须是数组(实际为 %s)\n",
+                             std::string(bsec.type_name()).c_str());
+                bridge_failed = true;
+            } else {
+                // 协议实例声明 —— 与 Step 0.25 的 gate **同一份**解析(不重复实现)
+                const tlm::cep::ChannelDeclaration decl =
+                    tlm::cep::parse_channel_declaration_from_config(final_config);
+
+                auto& registry = get_bridges();
+                std::vector<std::pair<std::uint16_t, std::string>> used_bridge_ids;
+
+                for (const auto& b : bsec) {
+                    if (!b.is_object()) {
+                        std::fprintf(stderr, "[ModuleFactory] `cep.bridges` 元素必须是对象\n");
+                        bridge_failed = true;
+                        continue;
+                    }
+                    const std::string bname =
+                        b.contains("name") && b["name"].is_string() ? b["name"].get<std::string>()
+                                                                  : std::string();
+                    if (bname.empty()) {
+                        std::fprintf(stderr, "[ModuleFactory] `cep.bridges` 条目缺少非空的 `name`\n");
+                        bridge_failed = true;
+                        continue;
+                    }
+                    std::uint8_t expected_protocol_id = 0;  // 0 = 未声明 protocol_instance
+                    const auto it = registry.find(bname);
+                    if (it == registry.end()) {
+                        std::fprintf(stderr,
+                                     "[ModuleFactory] 桥 `%s` 未注册(引用了不存在的桥)\n",
+                                     bname.c_str());
+                        bridge_failed = true;
+                        continue;
+                    }
+                    cpptlm::ProtocolBridgeEr* raw = it->second ? it->second() : nullptr;
+                    if (!raw) {
+                        std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 的 factory 返回空指针\n",
+                                     bname.c_str());
+                        bridge_failed = true;
+                        continue;
+                    }
+                    std::unique_ptr<cpptlm::ProtocolBridgeEr> bridge(raw);
+
+                    // ── `bridge_id`:JSON 显式给,否则自动分配未占用的最小正整数 ──
+                    if (b.contains("bridge_id")) {
+                        if (!b["bridge_id"].is_number_integer()) {
+                            std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 的 `bridge_id` 不是整数\n",
+                                         bname.c_str());
+                            bridge_failed = true;
+                            continue;
+                        }
+                        const long long v = b["bridge_id"].get<long long>();
+                        if (v <= 0 || v > 0xFFFF) {
+                            std::fprintf(stderr,
+                                         "[ModuleFactory] 桥 `%s` 的 `bridge_id` 越界(须 1..65535)\n",
+                                         bname.c_str());
+                            bridge_failed = true;
+                            continue;
+                        }
+                        bridge->set_bridge_id(static_cast<std::uint16_t>(v));
+                    } else {
+                        std::uint16_t cand = 1;
+                        while (std::any_of(used_bridge_ids.begin(), used_bridge_ids.end(),
+                                           [cand](const std::pair<std::uint16_t, std::string>& e) {
+                                               return e.first == cand;
+                                           }))
+                            ++cand;
+                        bridge->set_bridge_id(cand);
+                    }
+
+                    // ── `protocol_id` ← 实例声明的 `family` 编号(per CC-05 ④)──
+                    if (b.contains("protocol_instance")) {
+                        const std::string pid = b["protocol_instance"].is_string()
+                                                    ? b["protocol_instance"].get<std::string>()
+                                                    : std::string();
+                        const tlm::cep::DeclaredInstance* inst = nullptr;
+                        for (const auto& di : decl.instances) {
+                            if (di.id == pid) {
+                                inst = &di;
+                                break;
+                            }
+                        }
+                        if (!inst) {
+                            std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 引用的协议实例 `%s` 不存在\n",
+                                         bname.c_str(), pid.c_str());
+                            bridge_failed = true;
+                            continue;
+                        }
+                        tlm::cep::ProtocolFamily fam{};
+                        if (!tlm::cep::protocol_family_from_name(inst->family, fam)) {
+                            std::fprintf(stderr,
+                                         "[ModuleFactory] 桥 `%s` 的实例 `%s` 的 `family` 非法或未声明: `%s`\n",
+                                         bname.c_str(), pid.c_str(), inst->family.c_str());
+                            bridge_failed = true;
+                            continue;
+                        }
+                        expected_protocol_id = tlm::cep::protocol_family_id(fam);
+                        // 桥自带了 `protocol_id_` 且与族编号不符 ⇒ 判据函数会报红;
+                        // 未自带 ⇒ 由装配期按族编号填入(避免人肉填错)。
+                        if (bridge->protocol_id() == 0)
+                            bridge->set_protocol_id(expected_protocol_id);
+                    }
+
+                    // ── 元数据自检(per CC-05 ④)—— 调**同一份**判据函数 ──
+                    std::string why;
+                    if (!validate_bridge_metadata(bridge.get(), expected_protocol_id, &why)) {
+                        std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 元数据不合规:%s\n", bname.c_str(),
+                                     why.c_str());
+                        bridge_failed = true;
+                        continue;
+                    }
+
+                    // ── `bridge_id_` 唯一(同一 ModuleFactory 内不重复,per CC-05 ④)──
+                    if (!check_bridge_id_collision(used_bridge_ids, bridge->bridge_id(), bname,
+                                                   &why)) {
+                        std::fprintf(stderr, "[ModuleFactory] %s\n", why.c_str());
+                        bridge_failed = true;
+                        continue;
+                    }
+                    used_bridge_ids.emplace_back(bridge->bridge_id(), bname);
+
+                    // ── 注入到目标模块(可多个 ⇒ CC-03 ③ 的共享)──
+                    if (!b.contains("modules") || !b["modules"].is_array() ||
+                        b["modules"].empty()) {
+                        std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 缺少非空的 `modules`\n",
+                                     bname.c_str());
+                        bridge_failed = true;
+                        continue;
+                    }
+                    bool injected = false;
+                    for (const auto& m : b["modules"]) {
+                        if (!m.is_string()) {
+                            std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 的 `modules` 元素不是字符串\n",
+                                         bname.c_str());
+                            bridge_failed = true;
+                            break;
+                        }
+                        const std::string mname = m.get<std::string>();
+                        // ⚠️ 用**局部** `object_instances` —— member `instances` 在本函数
+                        //    末尾才 `= std::move(object_instances)`(Step 7.5 之前为空)。
+                        const auto mit = object_instances.find(mname);
+                        if (mit == object_instances.end()) {
+                            std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 的目标模块 `%s` 不存在\n",
+                                         bname.c_str(), mname.c_str());
+                            bridge_failed = true;
+                            break;
+                        }
+                        auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(mit->second.get());
+                        if (!ch_mod) {
+                            std::fprintf(stderr,
+                                         "[ModuleFactory] 桥 `%s` 的目标模块 `%s` 不是 ChStream 模块\n",
+                                         bname.c_str(), mname.c_str());
+                            bridge_failed = true;
+                            break;
+                        }
+                        if (!ch_mod->attach_protocol_bridge(bridge.get())) {
+                            std::fprintf(stderr,
+                                         "[ModuleFactory] 桥 `%s` 的目标模块 `%s` 不支持桥挂载\n",
+                                         bname.c_str(), mname.c_str());
+                            bridge_failed = true;
+                            break;
+                        }
+                        injected = true;
+                    }
+                    if (!injected)
+                        continue;
+
+                    consumed_bridges_.insert(bname);
+                    protocol_bridges_.push_back(std::move(bridge));
+                    DPRINTF(MODULE, "[Bridge] Mounted bridge %s (bridge_id=%u protocol_id=%u)\n",
+                            bname.c_str(),
+                            static_cast<unsigned>(protocol_bridges_.back()->bridge_id()),
+                            static_cast<unsigned>(protocol_bridges_.back()->protocol_id()));
+                }
+            }
+        }
+    }
+    if (bridge_failed) {
+        std::fprintf(stderr, "[ModuleFactory] 协议桥装配失败(见上方诊断)\n");
+        return false;
+    }
+
+    // ========================
     // 8. 自动注册 StatGroup 到 StatsManager（Phase 0 修复）
     // ========================
     for (auto& [name, obj_ptr] : object_instances) {
@@ -887,6 +1108,56 @@ bool ModuleFactory::instantiateAll(const json& config) {
     //  栈展开自动析构空 map 无副作用)。
     instances = std::move(object_instances);
     return !connection_failed;
+}
+
+bool ModuleFactory::validate_bridge_metadata(const cpptlm::ProtocolBridgeEr* bridge,
+                                               std::uint8_t expected_protocol_id,
+                                               std::string* why) {
+    if (!bridge) {
+        if (why)
+            *why = "桥指针为空";
+        return false;
+    }
+    std::string local;
+    if (!bridge->metadata_ok(&local)) {
+        if (why)
+            *why = local;
+        return false;
+    }
+    if (expected_protocol_id != 0 && bridge->protocol_id() != expected_protocol_id) {
+        if (why) {
+            *why = "protocol_id_(" + std::to_string(static_cast<unsigned>(bridge->protocol_id())) +
+                   ")与协议族编号(" +
+                   std::to_string(static_cast<unsigned>(expected_protocol_id)) + ")不符";
+        }
+        return false;
+    }
+    return true;
+}
+
+bool ModuleFactory::check_bridge_id_collision(
+    const std::vector<std::pair<std::uint16_t, std::string>>& assigned,
+    std::uint16_t candidate_id, const std::string& candidate_name, std::string* why) {
+    for (const auto& e : assigned) {
+        if (e.first == candidate_id) {
+            if (why) {
+                *why = "bridge_id " + std::to_string(static_cast<unsigned>(candidate_id)) +
+                       " 重复(桥 `" + candidate_name + "` 与 `" + e.second + "`)";
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+std::vector<std::string> ModuleFactory::unconsumed_bridges() const {
+    std::vector<std::string> dead;
+    for (const auto& entry : get_bridges()) {
+        if (!consumed_bridges_.count(entry.first))
+            dead.push_back(entry.first);
+    }
+    std::sort(dead.begin(), dead.end());
+    return dead;
 }
 
 void ModuleFactory::startAllTicks() {

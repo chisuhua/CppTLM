@@ -229,6 +229,10 @@ private:
 struct DeclaredInstance {
     std::string id;
     std::string status;        // planned / implemented / excluded
+    /// 协议**来源族**(per `ADR-CEP-12` 的 13 属性之一 `family`;取值域见
+    /// `include/tlm/cep/protocol_family.hh`)。装配期用它推导 per-bridge 的
+    /// `protocol_id_`(per CC-05 ④)。空串 = 声明里没写 `family`。
+    std::string family;
     std::string sharer_impl;   // FullMapDirectory / … / 不参与
     std::string completeness;  // EXACT / CONSERVATIVE(PARTIAL 仅合成声明可造)
     /// 决策 2 的广播兜底声明 —— **不是**冻结 schema 的字段(合法声明恒为 false);
@@ -277,6 +281,7 @@ inline DeclaredInstance parse_declared_instance(const nlohmann::json& j) {
         return d;
     d.id = detail::json_string_or(j, "id");
     d.status = detail::json_string_or(j, "status");
+    d.family = detail::json_string_or(j, "family");
     d.broadcast_fallback = j.value("broadcast_fallback", false);
 
     if (j.contains("vc_binding") && j["vc_binding"].is_object()) {

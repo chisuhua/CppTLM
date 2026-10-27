@@ -1,6 +1,6 @@
 # Tasks — cpptlm-cep-cohif-carrier v1.0(Stage 1,TDD 5-step)
 
-> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 / Phase 2 已完成**(2026-10-27,台账 Entry #84 / #85);Phase 3 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
+> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 / Phase 2 / Phase 3 已完成**(2026-10-27 / 2026-10-28,台账 Entry #84 / #85 / #86);Phase 4 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-cohif-carrier/spec.md`](specs/cep-cohif-carrier/spec.md) · [`specs/cep-protocol-bridge-contracts/spec.md`](specs/cep-protocol-bridge-contracts/spec.md)
 > **上游决策**: `ADR-CEP-19`(✅ v1.0 已签发)· 架构重审 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3)
 > **估时**: 6 周(3 项交付 + 1 宏 + 1 钩子扩展)
@@ -15,7 +15,7 @@
 | 0 前置 | ✅ **已闭合**(2026-10-27) | `tlm::cep::ContractVerdict` 同名冲突消解(独立 fix commit `7f91abd9`;本 change 启动前的前置,不属本 change 交付面) |
 | 1 载体面:`CohIfBundle` | ✅ **已完成**(2026-10-27) | `include/bundles/cep_coherence_bundles_tlm.hh` —— `bundles::CohIfBundle`(12 字段)+ 强类型 `CohIfFlowId`(域恰好 5 值)+ 12 条 `BUNDLE_FIELD_WIDTH` 锁;**4 类反向 fixture 实测有牙**(2 静态扫描红 / 2 编译红) |
 | 2 端口面:`ProtocolEngine` 基类 | ✅ **已完成**(2026-10-27) | `include/tlm/cep/protocol_engine_base.hh` —— `ProtocolEngineBase<N>`(派生 `ChStreamModuleBase` + `Input/OutputStreamAdapter<CohIfBundle>` 端口成员 + 类型擦除 `ProtocolBridgeEr*` + 10 个纯虚 `on_*`)+ `NullProtocolEngine<N>`(**10 流覆盖矩阵** + 两条编译期锁);**2 类反向 fixture 实测有牙** |
-| 3 特化桥:`ProtocolBridge` 双层 | ⬜ 未开始 | `include/framework/protocol_bridge.hh` + 钩子扩展 |
+| 3 特化桥:`ProtocolBridge` 双层 | ✅ **已完成**(2026-10-28) | `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` + `AbstractProtocolBridge`)+ `include/tlm/cep/cohif_noc_bridge.hh`(CohIf ↔ NoC 特化桥,**两层** pack/unpack)+ `include/tlm/cep/protocol_family.hh`;钩子扩展 `register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费;**3 + 2 类反向 fixture 实测有牙** |
 | 4 装配宏:`REGISTER_CHSTREAM_BIDIRECTIONAL` | ⬜ 未开始 | `include/chstream_register.hh` |
 | 5 JSON 装配连通性 | ⬜ 未开始 | `configs/` 侧示例 + E2E |
 | 6 测试(CC-01~CC-06 + 反向 fixture) | ⬜ 未开始 | 2 个测试文件 |
@@ -144,15 +144,83 @@
 
 ### Phase 3 —— 特化桥(判据 CC-03 / CC-05)
 
-- [ ] 3.1 `ProtocolBridgeEr`(类型擦除基类)+ `AbstractProtocolBridge`(identity 基线)(`include/framework/protocol_bridge.hh`)
-- [ ] 3.2 `ProtocolBridge<InB, OutB, Ordered>` 模板子类(`Ordered` 单 bool,per `06 号 §4.4`)
-- [ ] 3.3 `pack` / `unpack` 对 `CohIfBundle ↔ NoCFlitBundle` **双向可逆**(CC-03 ①)
-- [ ] 3.4 职责边界:网络层语义只在 `NoCFlitBundle` 侧(CC-03 ②);同一 `ProtocolBridgeEr*` 可被多具体桥共享(CC-03 ③)
-- [ ] 3.5 `register_protocol_bridge(name, factory_lambda)` 钩子扩展(`include/core/module_factory.hh:313-315`,死钩子 → 活钩子)
-- [ ] 3.6 `get_bridges()` 可读 + 被 ModuleFactory **消费**(注册与消费成对,CC-05 ①②)
-- [ ] 3.7 per-bridge 元数据齐备:`protocol_id_` 非零 / `bridge_id_` 唯一 / 与实例声明 `family` 一致(CC-05 ④)
-- [ ] 3.8 **反向 fixture**:只注册不消费 ⇒ 必红;重复 `bridge_id_` ⇒ 必红;`protocol_id_` 与 `family` 不符 ⇒ 必红
-- [ ] 3.9 **反向 fixture**:篡改任一字段映射(如 `perm` → `flit_category`)⇒ round-trip 必红
+- [x] 3.1 `ProtocolBridgeEr`(类型擦除基类)+ `AbstractProtocolBridge`(identity 基线)(`include/framework/protocol_bridge.hh`)——
+      **已完成**(2026-10-28):按 `06 号 §4.4` 原型落地。**比原型更严一处**:`metadata_ok()`
+      要求 `protocol_id_` / `bridge_id_` **非零** —— 理由:`0` 需能表达「未分配」这一**可测状态**,
+      否则「忘了分配 id」与「合法 id 0」不可分辨。**登记备查**。
+- [x] 3.2 `ProtocolBridge<InB,OutB,Ordered>` 模板子类(`Ordered` 单 bool,per `06 号 §4.4`)——
+      **已完成**:`template <typename InB, typename OutB, bool Ordered = false>`;
+      `static_assert(is_trivially_copyable_v<InB/OutB>)`(端到端「逐字段恒等」依赖**字节等价**)。
+      ⚠️ **踩过的坑**:依赖基类(`ProtocolBridge<FlitT,...>`)的**非静态**数据成员 `stats_`
+      必须写 `this->stats_` —— 否则按 [temp.dep.expr] 在模板定义期名字查找不可见 ⇒
+      编译报「`stats_` was not declared in this scope」(实测踩过)。
+- [x] 3.3 `pack` / `unpack` 对 `CohIfBundle ↔ NoCFlitBundle` **双向可逆**(CC-03 ①)——
+      **已完成**,但**分两层**(per 2026-10-28 DRI 裁决的 **B′ 方案**;论证见 `ADR-CEP-19`
+      Status Update 2026-10-28(第二则)②):
+      · **层 1 · 消息内容投影**(`pack`/`unpack`):**共有字段 4 个**
+        (`transaction_id`/`address`/`data`/`size`)双向**无损**;协议语义字段按
+        **字段三分类**显式登记 —— **共有 4** / **降维 1**(`flow_id` → `flit_category`,
+        5 值→3 值**多对一 ⇒ 不可逆**) / **丢弃 7**(`perm`/`snoop_type`/`line_state`/`hit`/
+        `dirty`/`error`/`atomic`);网络封装字段(`src_node`/`dst_node`/`vc_id`/`flit_type`/
+        `flit_index`/`flit_count`/`hops`/`src_port`/`is_write`/`is_ok`/`error_code`)
+        **既不写也不读** ⇒ per CC-03 ② 的职责边界。
+      · **层 2 · 端到端完整语义**(`pack_with_packet`/`unpack_with_packet`,`06 号 §4.4` 原型
+        **已有**这两个虚函数 ⇒ 零新增抽象):`Packet` payload 数据区承载 `CohIfBundle` 的
+        **完整 12 字段字节** ⇒ **逐字段恒等**成立。
+      ⚠️ **架构事实(本 change 的核心发现)**:`flow_id` 域 = **5 值**,`flit_category` 域 =
+        **3 值**,队列 #6 的 6→3 映射表**刻意多对一** ⇒ **仅靠网络 flit 字段空间不可能唯一
+        恢复 `flow_id`** ⇒ Bundle 级「逐字段 round-trip 恒等」**在数学上不可达** ⇒ 协议语义
+        必须有自己的落脚点。⇒ **判据未被削弱反而被加强**(端到端层覆盖**跨真实网络**的往返)。
+- [x] 3.4 职责边界:网络层语义只在 `NoCFlitBundle` 侧(CC-03 ②);同一 `ProtocolBridgeEr*`
+      可被多具体桥共享(CC-03 ③)——
+      **已完成**:① 职责边界由判据「网络封装字段不被桥改写」机器核对(预置 11 个网络字段
+      → pack 后逐一比对);② 共享 = `ChStreamModuleBase::attach_protocol_bridge` 把**同一个**
+      桥指针挂到**多个** PE(测试里 `pe0`/`pe1` 挂同一 `ProtocolBridgeEr*` ⇒ 断言同一指针)。
+      ⚠️ **挂载点选型**:`ProtocolEngineBase<N>` 的 `N` 是**模板参数** ⇒ ModuleFactory 无法
+      `dynamic_cast` 到具体类型;独立 mixin 与 `SimObject` **无继承关系** ⇒ `dynamic_cast`
+      **编译不过**,让 mixin 继承 `SimObject` 则引入**菱形继承** ⇒ 更糟 ⇒ 最终用
+      `ChStreamModuleBase` 的**可选**虚函数 `attach_protocol_bridge`(默认返回 false ⇒ **零波及**)。
+- [x] 3.5 `register_protocol_bridge(name, factory_lambda)` 钩子扩展(`include/core/module_factory.hh:313-315`,死钩子 → 活钩子)——
+      **已完成**:签名扩为 `(bridge_name, ProtocolBridgeFactory)`;注册表存 **name → factory**;
+      **旧单参签名已移除**(全仓零调用点 ⇒ 无兼容负担;保留「只给名字不给工厂」会制造
+      「注册了却造不出桥」—— 正是 CC-05 反向 fixture「只注册不消费 ⇒ 必红」要抓的形态)。
+      **不**引入独立 factory 抽象类(per `06 号 §11.2` P3 子项的显式偏离)。
+- [x] 3.6 `get_bridges()` 可读 + 被 ModuleFactory **消费**(注册与消费成对,CC-05 ①②)——
+      **已完成**:`get_bridges()` 从 `private:` 转 **public**;消费路径 = `ModuleFactory::instantiateAll`
+      的 **Step 7.5**(per `06 号 §4.5` 的「per-bridge 配置时机 = ModuleFactory Step 7c(构建期)」)
+      读 **既有** `config["cep"]["bridges"]` 段 ⇒ **零新增** JSON 顶层段 → 建桥 → 校验元数据 →
+      注入目标模块。
+      ⚠️ **「只注册不消费」不判装配失败**(多拓扑共用进程级注册表时某个拓扑不引用全部桥是正常的
+      ⇒ 强制失败会误伤)⇒ 以**死桥清单** `unconsumed_bridges()` 暴露,由判据测试断言其非空。
+      ⚠️ **踩过的坑**:Step 7.5 必须查**局部** `object_instances` —— member `instances` 在
+      `instantiateAll` 末尾才 `= std::move(object_instances)`(Step 7.5 之前为空 ⇒ 报「模块不存在」)。
+- [x] 3.7 per-bridge 元数据齐备:`protocol_id_` 非零 / `bridge_id_` 唯一 / 与实例声明的 `family`
+      一致(CC-05 ④)——
+      **已完成**,**口径经 2026-10-28 DRI 裁决**:**`protocol_id_` = 协议来源族的数字编号**
+      (`family` ∈ {`industrial`,`ruby-slicc`,`academic`},编号唯一真源 =
+      `include/tlm/cep/protocol_family.hh`);**实例级唯一性由 `bridge_id_` 负责**。
+      ⚠️ 判据原措辞「与 `family` 一致」若按「相等」读则**恒真**(多个 industrial 实例同族)
+      ⇒ 按**编号对齐**落地 ⇒ 判据可机器检查且**未被削弱**。
+      判据实现抽成 **public 静态函数**(可独立单测,反向 fixture 无需跑完整装配):
+      `ModuleFactory::validate_bridge_metadata(...)` / `ModuleFactory::check_bridge_id_collision(...)`。
+      ⚠️ **附带**:`DeclaredInstance` 加 `family` 字段(`channel_dependency_graph.hh`),
+      避免 ModuleFactory 侧重复解析协议实例 JSON。
+- [x] 3.8 **反向 fixture**:只注册不消费 ⇒ 必红;重复 `bridge_id_` ⇒ 必红;`protocol_id_` 与 `family` 不符 ⇒ 必红——
+      **已完成**,3 条**实测有牙**且**因正确原因**红:
+      ① 只注册不消费 ⇒ `unconsumed_bridges()` 含该桥 ⇒ 红;
+      ② 重复 `bridge_id_` ⇒ `check_bridge_id_collision` 红,且错误信息**点名**冲突的两个桥名;
+      ③ `protocol_id_` 与族编号不符 ⇒ `validate_bridge_metadata` 红,错误信息给出两边的编号。
+- [x] 3.9 **反向 fixture**:篡改任一字段映射(如 `perm` → `flit_category`)⇒ round-trip 必红——
+      **已完成**,2 类毒化**实测有牙**且**因正确原因**红:
+      ① `perm` → `flit_category` ⇒ **字段映射探针**红(报「`perm` 泄漏」+「`flow_id` 跨类别
+      未改变网络 flit」—— 篡改确实破坏了 `flow_id` 的降维映射);
+      ② `address` ↔ `data` 对调 ⇒ **内容层 round-trip** 红(报「`address`/`data` 不相等」)。
+      ⚠️ **判据设计的关键**:「丢弃清单 ↔ 实际行为」用**行为式**判定(逐个变更字段 → 看网络 flit
+      是否跟着变),**不是**清单比对 ⇒ 篡改能被抓到。
+      ⚠️ **判据抓到的真实不一致(已修正)**:初版把 `flow_id` 列为「丢弃」,但它**确实**影响
+      `flit_category` ⇒ 行为式判据**假红** ⇒ 修正为**字段三分类**(共有 4 / 降维 1 / 丢弃 7)。
+      ⚠️ **Phase 3 的判据是运行期语义** ⇒ 毒化副本必须**编得过**但**判红**(若编译失败就是
+      「因错误的原因红」)⇒ 反向验证脚本对每个毒化**同时**断言「编译成功」+「运行期判红」。
 
 ### Phase 4 —— 装配宏(判据 CC-04 ③)
 
@@ -187,7 +255,7 @@
 | # | 项 | 状态 |
 |---|---|---|
 | 1 | 判据增补**已追认**(CC-05 ④ / CC-06 ②) | ✅ 转正前置已落地(`ADR-CEP-19` Status Update,Entry #78) |
-| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类 fixture 实测有牙)· Phase 2 **已完成**(2 类 fixture 实测有牙);Phase 3/4/5 待补 |
+| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类)· Phase 2 **已完成**(2 类)· Phase 3 **已完成**(3 + 2 类,实测有牙);Phase 4/5 待补 |
 | 3 | 编译期锁**不**以「编译红」充当 ctest 判据(`try_compile` 毒化副本) | 🟡 Phase 1.7 **已完成**(毒化副本 + 编译探针断言「编译确实失败」);Phase 4.4 待补 |
 | 4 | 新增 invariant 数 = **0** | ⬜ Phase 7.2 |
 | 5 | 冻结面**零改动**(本 change 3 个新头文件 + 1 宏 + 1 钩子均不在 M1 冻结集) | ⬜ 待实施后复核 |

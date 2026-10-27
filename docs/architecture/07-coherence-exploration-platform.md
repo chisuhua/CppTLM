@@ -679,7 +679,7 @@ experimental/<run_id>/
 | SharerTracker 5 实现 | §5.2 | 🟡 **1 / 5** —— `FullMapDirectory` 唯一行为实现已落地(10 测试);其余 4 个(`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:178-195`) | 队列 #9 ~ #11(队列 #9 另需第 6 实现 `HierarchicalDirectory`) |
 | Collective Plane | §5.3 | 🟡 **骨架已落地** —— `CollectivePlaneIf` 恰 7 方法 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous);**REDUCE / BROADCAST / MULTICAST 数据路径未实现**(返 `Status::DataPathNotImplemented`);`fabric_ingress_classify` 路由接线未实现 | 骨架 = `cpptlm-cep-collective-plane-base`(2026-10-26 已归档);数据路径 = Stage 3 |
 | ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **1 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射),是**首个 `status=implemented` 实例**;**`ProtocolEngine` 基类已落地**(`ProtocolEngineBase<N>`,Entry #85);**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)亦已落地**(10 流覆盖矩阵 + 2 条编译期锁,Entry #85)—— **但 adapter 实例仍是 1 个**(`MoesiGpuAdapter`):基类落地 ≠ 插件实例落地 | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
-| ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 零命中)⇒ `INV-CEP-07-IC4` **无载体** | 队列 #7(`REGISTER_CHSTREAM_BIDIRECTIONAL` + `module_factory.hh:313-315` 死钩子扩展) |
+| ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**协议桥钩子已从死钩子变活钩子**(`register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费路径,Entry #86);**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏仍未开始**(Phase 4)⇒ **0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 零命中)⇒ `INV-CEP-07-IC4` **仍无载体** | 队列 #7 Phase 4(`REGISTER_CHSTREAM_BIDIRECTIONAL` + CEP 类注册) |
 | 实验输出 4 件套 | §7 | ✅ **已落地** —— `tools/{render_report,run_sweep,ab_compare}.py` + `experimental/metrics.schema.json` + 4 件套契约测试(`test_cep_canonical_invariants.cc` / `test_cep_dummy_signals.cc` / `test_cep_module_factory_seam.cc` / `test_cep_simulation_mode_lock.cc`) | Stage 0(`cpptlm-cep-umbrella`,2026-10-23 已归档) |
 | simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |
 | Bundle 二分类 | §5.4 | ✅ 已落地(`06 §3.2` 18 个 .hh;**第三类已由 `06 §3.3` 增补**,其唯一实例 `CohIfBundle` **已落地**(2026-10-27 per 台账 Entry #84)—— 见第四则 Status Update ③)| — |
@@ -781,8 +781,28 @@ experimental/<run_id>/
 
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #85)。
 
+## §附录 · Status Update 2026-10-28(第六则 · per 台账 Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)
+
+> **授权**:Entry #86(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 3 实施** —— ProtocolBridge 特化桥 + `register_protocol_bridge` 死钩子变活钩子 + per-bridge 元数据;用户 2026-10-28 指令授权)。
+> **口径**:本节仅登记 ① §11 活口径的**机械同步** + ② Phase 3 的**落地状态** + ③ **判据分层的架构事实**。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
+> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #86"`。
+
+> **① §11「ModuleFactory seam」行的活口径同步**:原写「0 个 CEP 类注册 ⇒ `INV-CEP-07-IC4` 无载体 | 队列 #7(`REGISTER_CHSTREAM_BIDIRECTIONAL` + `module_factory.hh:313-315` 死钩子扩展)」⇒ 现为「**死钩子扩展已实施**(`register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` Step 7.5 消费路径,Entry #86);**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏仍未开始**(Phase 4)⇒ **0 个 CEP 类注册** ⇒ `INV-CEP-07-IC4` **仍无载体**」。**该行的主结论(0 个 CEP 类注册)不变**。
+
+> **② Phase 3 落地登记(正文不改)**:交付 `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` 类型擦除基类 + `ProtocolBridge<InB,OutB,Ordered>` 模板子类 + `AbstractProtocolBridge<FlitT>` identity 基线)+ `include/tlm/cep/cohif_noc_bridge.hh`(CohIf ↔ NoC 特化桥)+ `include/tlm/cep/protocol_family.hh`(协议来源族 ↔ 数字编号的唯一真源)。
+> 判据状态:**CC-03** 两层落地(① 消息内容层:共有字段 4 个双向无损 + 协议语义字段显式登记丢弃/降维;② 端到端层:`Packet` payload 数据区承载完整 12 字段 ⇒ 逐字段恒等)· **CC-05** 四子条件全部落地(注册表可读 / Step 7.5 消费 / `(name, factory_lambda)` 形态 / per-bridge 元数据齐备)· **CC-06** **引用**队列 #6 的 AC-04 实现(未重立第二份)。
+> ⚠️ **「端到端层」是判据的**加强**而非削弱** —— 「CohIf 语义跨网络不透损」由**跨真实网络的往返**保证(原单层判据只覆盖同进程内 Bundle 往返)。详见 `ADR-CEP-19` Status Update 2026-10-28(第二则)②。
+
+> **③ 架构事实登记(本则核心)—— 「Bundle 级逐字段 round-trip 恒等」不可达**:`CohIfBundle.flow_id` 域 = **5 值**;`NoCFlitBundle.flit_category` 域 = **3 值**;队列 #6 的 6→3 消息类映射表是**刻意多对一**的 ⇒ **5→3 多对一有损** ⇒ 仅靠网络 flit 字段空间**不可能**唯一恢复 `flow_id` ⇒ 协议语义(`perm`/`snoop_type`/`line_state`/`hit`/`dirty`/`error`/`atomic` + `flow_id`)**必须**有自己的落脚点 ⇒ 落在 **Packet payload 数据区**(2026-10-28 DRI 裁决的 **B′ 方案**;**不**用 `tlm_extension` ⇒ 不触 `06 号 §4.5` 的 P3+ 排除项)。
+
+> **④ per-bridge 元数据口径(2026-10-28 DRI 裁决)**:**`protocol_id_` = 协议来源族的数字编号**(`family` ∈ {`industrial`,`ruby-slicc`,`academic`},编号真源在 `include/tlm/cep/protocol_family.hh`);**实例级唯一性由 `bridge_id_` 负责**。⚠️ 判据 CC-05 ④ 原措辞「`protocol_id_` 与实例声明的 `family` 一致」若按「相等」读则**恒真**(多个 industrial 实例同族)⇒ 本次按**编号对齐**落地,判据**未被削弱**反而可机器检查。
+
+> **⑤ 行号漂移登记(本文件正文的行号引用按「ADR 不可变」不改)**:本文件引用的 `include/core/module_factory.hh:122`(现 **128**)/ `:135`(现 **141**)/ `module_factory.hh:313-315`(现 **336-343**)与 `chstream_module.hh:73`(现 **74**)/ `:54`(现 **55**)**均已语义漂移**(符号仍在,行号变了)⇒ 完整对照表见 `06 号` 文末「附录 · 行号对照表」(2026-10-28)。
+
+> **⑥ 本则未处理、已登记的项**:① `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏与 CEP 类注册 ⇒ 归队列 #7 **Phase 4 / 5**(`INV-CEP-07-IC4` 仍无载体);② `BidirectionalPortAdapter::tick()` 仍**硬编码 `NoCFlitBundle` 语义** ⇒ 承载 `CohIfBundle` 需泛化 ⇒ 归 Phase 4 / 5(第五则 ④ 已登记,本则**状态不变**)。
+
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)**
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

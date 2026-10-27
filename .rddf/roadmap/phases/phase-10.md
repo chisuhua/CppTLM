@@ -119,7 +119,7 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
                  ├─ cpptlm-cep-cohif-carrier            ← 2026-10-27 新增(Entry #74)
                  │    🟡 **Proposed**(2026-10-27 转正,Entry #81)—— change 目录已建
                  │    (proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0;
-                 │    tasks **39**(已勾 16 = Phase 0 前置 + Phase 1 载体面 + Phase 2 端口面;未勾 23))
+                 │    tasks **39**(已勾 25 = Phase 0 前置 + Phase 1 载体面 + Phase 2 端口面 + Phase 3 特化桥;未勾 14))
                  │    CohIf 载体:CohIfBundle(5 流)+ ChStream 端口面 + ProtocolBridge
                  │    (架构缺口 C1/C2/C3;**ADR-CEP-19 已签发 2026-10-27**;StubCacheCore 侧端点延期)
                  │    **Phase 0 前置已闭合**:`tlm::cep::ContractVerdict` 同名冲突消解
@@ -133,6 +133,12 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
                  │    端口成员 + 类型擦除 `ProtocolBridgeEr*` + 10 个纯虚 `on_*`)
                  │    + `NullProtocolEngine<N>`(10 流覆盖矩阵 + 2 条编译期锁);
                  │    2 类反向 fixture 实测有牙(2026-10-27,per 台账 Entry #85)
+                 │    **Phase 3 特化桥已落地**:`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`
+                 │    + `AbstractProtocolBridge`(identity 基线)+ CohIf↔NoC 特化桥
+                 │    (**两层** pack/unpack:内容层 + 端到端 payload 层);
+                 │    `register_protocol_bridge(name, factory_lambda)` 死钩子 → 活钩子
+                 │    + `get_bridges()` 转 public + `ModuleFactory` Step 7.5 消费路径;
+                 │    **3 + 2 类反向 fixture 实测有牙**(2026-10-28,per 台账 Entry #86)
                  │    **NullProtocolEngine owner 已定 = 本 change task 2.5~2.7**
                  │    (`INV-CEP-07-IC2` 强制的默认实现 + 10 流覆盖矩阵 + 反向 fixture)
                  ├─ cpptlm-cep-chi-rnf-subset          ← 2026-10-27 顺延(原 #7)

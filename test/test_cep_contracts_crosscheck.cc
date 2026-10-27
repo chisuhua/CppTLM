@@ -233,6 +233,12 @@ TEST_CASE("[cep][contract] 协议泄漏通用禁令:与协议无关的层无协�
         // 持**类型擦除**的 `ProtocolBridgeEr*`,不引入任何协议语义基类
         // (per `ADR-CEP-19` 决策 8)⇒ **与协议无关** ⇒ 纳入本扫描。
         "include/tlm/cep/protocol_engine_base.hh",
+        // ProtocolBridge 特化桥 + 协议族编号表(2026-10-28 per 台账 Entry #86 /
+        // 队列 #7 Phase 3)—— 类型擦除基类 + 模板子类 + CohIf↔NoC 桥,全部**不含**
+        // 任何具体协议语义(per `ADR-CEP-19` 决策 8)⇒ **与协议无关** ⇒ 纳入本扫描。
+        "include/framework/protocol_bridge.hh",
+        "include/tlm/cep/protocol_family.hh",
+        "include/tlm/cep/cohif_noc_bridge.hh",
     };
     for (const auto& rel : protocol_neutral_layers) {
         const std::string path = (repo_root() / rel).string();

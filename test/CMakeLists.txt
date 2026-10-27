@@ -272,6 +272,13 @@ add_test(NAME cep_cohif_reverse_verify
 add_test(NAME cep_protocol_engine_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_protocol_engine_reverse_verify.sh)
 
+# ProtocolBridge 特化桥契约的**反向验证**(per change `cpptlm-cep-cohif-carrier`
+# task 3.8 / 3.9)—— 2 类毒化副本(perm → flit_category / address ↔ data 对调)
+#    分别必须让「字段映射探针」「内容层 round-trip」判据报红;
+#    且毒化是**运行期**语义 ⇒ 毒化副本必须**编得过**(否则判据「因错误的原因红」)。
+add_test(NAME cep_protocol_bridge_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_protocol_bridge_reverse_verify.sh)
+
 # CEP ↔ ArchForge 接口对齐清单的漂移检测(跨仓引用完整性)
 # —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败)
 # 状态一致性闸的**回归 fixture 集**(10+ 场景,变异 → 期望 rc)

@@ -187,6 +187,16 @@ per `ADR-CEP-00 §3` 的处置语义:**采用 / 改名 / 废弃** 三选一,每�
 
 ---
 
+## Status Update 2026-10-28(第三则)—— `module_factory.hh` 行号漂移登记
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §6 正文一律不改**,仅登记状态变化。
+> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 3 实施**;台账 Entry #86。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #86**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #86)。
+
+> **登记 ① —— 行号漂移**:本文件 §2 表格引用的 `include/core/module_factory.hh:307`(`validate_domain_boundary` 声明)**按「ADR 不可变」不改**;Phase 3 之后该符号在 **313** 行(完整对照表见 `06 号` 文末「附录 · 行号对照表」,2026-10-28)。**符号本身未变、仍存在**,仅行号下移。
+> **登记 ② —— 决策 1 第 5 项「保留 + 接入 lint」的载体不受影响**:`validate_domain_boundary` 的落点(`scripts/test/cep_docs_sync_check.sh`)与本 change 无关 ⇒ 本则不处理。
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

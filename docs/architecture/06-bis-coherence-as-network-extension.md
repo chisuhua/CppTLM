@@ -211,7 +211,7 @@ if (is_dual) {  // dual_port_types_ set has this type
 | `ChStreamAdapterFactory` 注册模板 | `chstream_adapter_factory.hh:33-110` | **4 个**模板方法 (oracle 修订: 多了 `registerBidirectionalPortAdapter`): `registerAdapter<M, ReqB, RespB>`(单端口) / `registerMultiPortAdapter<M, ReqB, RespB, N>`(N 端口同 Bundle 对) / `registerDualPortAdapter<M, PE_B, PE_B, Net_B, Net_B>`(硬编码 4 BundleTemplate) / `registerBidirectionalPortAdapter<M, BundleT, N>`(RouterTLM 用) |
 | `port_count_[type]` | `chstream_adapter_factory.hh:114` | 仅 `MultiPort` 与 `Dual` 注册时赋值; Dual 固定 = 2 |
 | `is_multi` / `is_dual` | `module_factory.cc:644-645` | 二选一, 无双标 |
-| `num_ports()` | `chstream_module.hh:54` virtual | 生产代码零调用(per critic NIT 1, test 中大量调用但不影响生产路径) |
+| `num_ports()` | `chstream_module.hh:55` virtual | 生产代码零调用(per critic NIT 1, test 中大量调用但不影响生产路径) |
 
 **结论**:
 - CoherenceBridge 8 端口 = 2 域 × 4 端口(2 CacheReq/Resp + 2 SnoopProbe/SnoopResp) — **4 类 Bundle 4 个端口** — **现有 Step 7a 装配路径不支撑**

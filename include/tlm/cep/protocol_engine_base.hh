@@ -46,6 +46,7 @@
 
 #include "bundles/cep_coherence_bundles_tlm.hh"
 #include "core/chstream_module.hh"
+#include "framework/protocol_bridge.hh"
 #include "framework/stream_adapter.hh"
 #include "tlm/cep/stub_cache_core.hh"
 
@@ -53,14 +54,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
-
-namespace cpptlm {
-// 类型擦除的协议桥基类 —— 本头**只前向声明**(完整定义在
-// `include/framework/protocol_bridge.hh`,per `06 号 §4.4` + tasks 3.1)。
-// 前向声明足够:本基类持**非拥有**指针(生命周期由 ModuleFactory / 装配链负责,
-// per tasks 3.6「注册与消费成对」)⇒ 无需完整类型即可析构。
-class ProtocolBridgeEr;
-}  // namespace cpptlm
 
 namespace tlm::cep {
 
@@ -185,8 +178,18 @@ public:
     // ── 协议桥(类型擦除;**非拥有**)───────────────────────────────
     // 生命周期由 ModuleFactory / 装配链负责(per tasks 3.6「注册与消费成对」)
     // ⇒ 本基类**不**持有所有权、不删除指针。
+    //
+    // ⚠️ Phase 2 落地时此处是**前向声明**;Phase 3 交付了
+    //    `include/framework/protocol_bridge.hh` 的完整定义 ⇒ 改为直接 include。
     void set_bridge(cpptlm::ProtocolBridgeEr* bridge) { bridge_ = bridge; }
     cpptlm::ProtocolBridgeEr* bridge() const { return bridge_; }
+
+    /// 装配期挂载点(per `ChStreamModuleBase::attach_protocol_bridge`)——
+    /// ModuleFactory 在 Step 7.5 调用它把桥注入本 PE。
+    bool attach_protocol_bridge(cpptlm::ProtocolBridgeEr* bridge) override {
+        set_bridge(bridge);
+        return true;
+    }
 
     // ── canonical 10 流接口(per `ADR-CEP-02` §2 + `ADR-CEP-07` 决策 4)──
     //

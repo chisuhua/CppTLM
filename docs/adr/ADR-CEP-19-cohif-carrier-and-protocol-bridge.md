@@ -225,6 +225,36 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 
 ---
 
+## Status Update 2026-10-28(第二则)—— Phase 3 落地 + **B′ 方案**裁决登记 + 「Bundle 级无损不可达」的架构事实
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化与实施形态。
+> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 3 实施**;台账 Entry #86。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #86**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #86)。
+
+> **登记 ① —— 决策 3/4 的落地形态与 3 处**有意的差异**(`06 号 §4.4` 原型 → 落地)**:
+> 落地于 `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` + `AbstractProtocolBridge<FlitT>`)+ `include/tlm/cep/cohif_noc_bridge.hh`(CohIf ↔ NoC 特化桥)。
+> 差异 ① **pack/unpack 拆两层**(见登记 ②);差异 ② per-bridge 元数据**要求非零**(让「未分配」可测);差异 ③ 挂载用 `ChStreamModuleBase` 的**可选**虚函数 `attach_protocol_bridge`(默认 false ⇒ 零波及)—— 理由:`ProtocolEngineBase<N>` 的 `N` 是模板参数 ⇒ ModuleFactory 无法 `dynamic_cast` 到具体类型;独立 mixin 与 `SimObject` 无继承关系 ⇒ `dynamic_cast` 编译不过,让 mixin 继承 `SimObject` 则引入菱形继承 ⇒ 更糟。
+
+> **登记 ② —— 「Bundle 级逐字段 round-trip 恒等」在数学上不可达(架构事实,本则核心)**:
+> `CohIfBundle.flow_id` 的域是 **5 值**(`request`/`completion`/`snoop`/`snoop_resp`/`writeback`);`NoCFlitBundle.flit_category` 的域是 **3 值**(`REQUEST`/`RESPONSE`/`CREDIT`);而队列 #6 的 6→3 消息类映射表是**刻意多对一**的(CC-06 ② 要求它「非恒等」)⇒ **5 值 → 3 值是多对一有损映射** ⇒ **仅靠网络 flit 的字段空间不可能唯一恢复 `flow_id`**(无论怎么压宽度、怎么按流复用槽位都一样)。
+> ⇒ 决策 3 的「`pack`/`unpack` 双向可逆」因此**必须分层**:① **消息内容层**(`pack`/`unpack`)= 共有字段 4 个(`transaction_id`/`address`/`data`/`size`)**双向无损** + 协议语义字段显式登记丢弃;② **端到端层**(`pack_with_packet`/`unpack_with_packet`,原型**已有**这两个虚函数)= `Packet` payload 数据区承载 `InB` 的完整字节 ⇒ **完整 12 字段逐字段恒等**。
+> ⇒ **净效果**:「CohIf 业务语义跨网络不透损」这条主张**由端到端层保证**(比原单层判据**更强** —— 覆盖跨真实网络的往返),而非被削弱。
+> ⚠️ **本登记不是对决策 3 的「变更」**,而是其**载体分层**的落地口径;决策 3 的「双向可逆」在**端到端层**成立。
+
+> **登记 ③ —— 协议语义的落点选择(2026-10-28 DRI 裁决,B′ 方案)**:
+> 备选 5 条:① 新增专用网络 Bundle 类型 ② Packet payload 承载 ③ 收窄 `CohIfBundle` 宽度 ④ 改 `NoCFlitBundle` 加 sideband ⑤ 放宽判据到「可承载子集」。
+> **裁决 ②**,理由:① 新增 Bundle 类型 ⇒ 与 `CohIfBundle` 构成「重复类型」观感 + `06 号 §3.2` 归类表需增行;③ 违反 `06 号 §3.4` 第 ③ 项「字段宽度改:**不可**」;④ 破 `NoCFlitBundle` 的 16 字段编译期锁 + 全 consumer 重编;⑤ 把判据阉割成平凡可满足。
+> ② 的额外优势:`06 号 §4.4` 原型**已有** `pack_with_packet`/`unpack_with_packet` ⇒ **零新增抽象、零新增类型**;且**不**使用 `tlm_extension` ⇒ **不触** `06 号 §4.5` 把 per-packet 承载标为「P3+」的排除项(与 design `D-γ` 一致)。
+
+> **登记 ④ —— 决策 4 的钩子扩展已实施(死钩子 → 活钩子)**:
+> `register_protocol_bridge(bridge_name, factory_lambda)`(per `06 号 §9.3`,**不**引入独立 factory 抽象类 ⇒ §11.2 的 P3 子项偏离依旧成立);`get_bridges()` 转 **public 可读**;消费路径 = `ModuleFactory::instantiateAll` 的 **Step 7.5**(per `06 号 §4.5` 的「per-bridge 配置时机 = ModuleFactory Step 7c(构建期)」)读 `config["cep"]["bridges"]` → 建桥 → 校验元数据 → 注入目标模块。
+> per-bridge 元数据口径(per 2026-10-28 DRI 裁决):**`protocol_id_` = 协议来源族的数字编号**(`family` → 编号的唯一真源在 `include/tlm/cep/protocol_family.hh`;`family` 为 `industrial`/`ruby-slicc`/`academic` 三值);**实例级唯一性由 `bridge_id_` 负责**。
+> ⚠️ **「只注册不消费」不判装配失败**:多拓扑共用进程级注册表时某个拓扑不引用全部桥是正常的 ⇒ 强制失败会误伤 ⇒ 以**死桥清单**(`unconsumed_bridges()`)暴露,由判据测试断言其非空。
+
+> **登记 ⑤ —— 行号漂移(`module_factory.hh` / `chstream_module.hh`)**:
+> Phase 3 给这两个头文件加了内容 ⇒ 既有行号引用语义漂移(符号仍在,行号变了)。**本文件正文的 `module_factory.hh:313-315` / `:326` 引用按「ADR 不可变」不改**;新行号对照表见 `06 号` 文末「附录 · 行号对照表」(2026-10-28):`register_protocol_bridge` 313-315 → **336-343**;`get_bridges` 327(`private:`) → **346**(**`public:`**);`registerObject<T>` 122 → **128**;`registerModule` 的 `static_assert` 135 → **141**;`validate_domain_boundary` 307 → **313**;`getParamRulesRegistry` 81 → **87**;`chstream_module.hh` `num_ports` 54 → **55**、`advance_cycle` 73 → **74**。
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
