@@ -105,6 +105,8 @@ VIRTUAL_PATHS=(
   "openspec/.../tasks.md"                          # 省略号(散文引用,per obj §4.7.3 载体分工表的通用写法)
   "docs/architecture/07-*.md"                        # 通配
   "include/tlm/cep/.gitkeep"                        # 占位文件
+  "include/tlm/cep/null_protocol_engine.hh"          # ADR-CEP-07 决策 4 草图的**落点路径**;
+                                                    #   实现落 protocol_engine_base.hh(路径偏离已登记)
   "include/tlm/pcie/pcie_endpoint_tlm.h"            # 冻结/待迁路径
   "tools/aggregate.py"                              # 设计示意
   "tools/recommend.py"                              # 设计示意
