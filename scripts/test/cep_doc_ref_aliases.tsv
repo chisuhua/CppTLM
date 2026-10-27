@@ -9,15 +9,22 @@
 # ⚠️ 别名到文件的映射**必须显式登记** —— 实测用 glob `NN-*.md` 会把 `07 号`
 #    错解成 ArchForge `07-memory-system.md`(而文档指的是本仓 07-coherence-exploration-platform.md)。
 #    错解比不解更危险,故不使用自动推断。
+# ⚠️ 2026-10-27(修正 **假阴性**):`06 号` / `01 号` 原登记为 archforge 侧文件,而
+#    文档实际指的是**本仓** `06-inter-module-network.md` / `01-hybrid-architecture-v2.1.md`。
+#    两个 archforge 文件恰好也有同名节号(`06-tensor-core.md` 有 §3.1/§4.4/§9.3;
+#    `01-host-interface.md` 有 §1.1/§4.2)⇒ 闸**通过但验的是错文档** = 假阴性。
+#    依据:`ADR-CEP-07:9`「真源 1 = `01-hybrid-architecture-v2.1.md` §1.1(6 层)」;
+#    `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.x` 的
+#    `06-inter-module-network.md §3.3 / §4.3 / §11.2`。
 archforge	docs/architecture/32-cep-based-coherence-architecture.md	32 号
 archforge	docs/architecture/09-coherence-protocol.md	09 号
 archforge	docs/architecture/25-nsa-hardware.md	25 号
 archforge	docs/architecture/30-nsa-comprehensive-supplement.md	30 号
 archforge	docs/architecture/22-nsa-fabric-address-spec.md	22 号
 archforge	docs/architecture/08-noc-interconnect.md	08 号
-archforge	docs/architecture/06-tensor-core.md	06 号
+local	docs/architecture/06-inter-module-network.md	06 号
 archforge	docs/architecture/05-sm-compute-unit.md	05 号
-archforge	docs/architecture/01-host-interface.md	01 号
+local	docs/architecture/01-hybrid-architecture-v2.1.md	01 号
 local	docs/architecture/07-coherence-exploration-platform.md	07 号
 archforge	docs/architecture/22-nsa-fabric-address-spec.md	22-nsa
 archforge	docs/architecture/25-nsa-hardware.md	25-nsa
