@@ -1,7 +1,7 @@
 # cpptlm-cep-cohif-carrier: CohIf 载体 —— 业务 Bundle + ChStream 端口面 + ProtocolBridge 特化
 
-> **状态**: 📋 **Draft**(待队列 #6 归档释放 KPI slot 后落盘到 `openspec/changes/`)
-> **⚠️ 未建 change 目录的因由**:CEP 内部 Proposed 并发 ≤ 1(per `ADR-CEP-00 §2 决策 3` / `obj §5.4` / `obj §6.3 D1`)。实测 `openspec list --json` = **1 个 active**(队列 #6 `cpptlm-cep-moesi-gpu-adapter`)=> **slot 已被占用**。先例:台账「补建 OpenSpec change | ❌ … 令 CEP 内部 Proposed 并发 = 2,**违规**」。**转正命令**见文末。
+> **状态**: 🟡 **Proposed**(2026-10-27 转正 —— change 目录已建;KPI 并发 **0/3 → 1/3**,per Entry #81)
+> **转正依据**:队列 #6 `cpptlm-cep-moesi-gpu-adapter` 已完成归档释放 KPI slot(`openspec list --json` 实测 **0** 个 active,per Entry #80)⇒ 满足 `obj §4.7.2` step 0 的硬前置。转正动作见 `design.md` **`D-κ`**(0 ~ 6 步全部执行,Entry #81)。
 > **队列**: `obj-cep-platform §4.0` 队列 **#7**(Stage 1 / 2028-Q2)· 排在 #6 之后、#8 `cpptlm-cep-chi-rnf-subset` 之前
 > **关联 ADR**: **`ADR-CEP-19`**(✅ v1.0 已签发 2026-10-27,per 台账 Entry #74)· `ADR-CEP-07` · `ADR-CEP-12` · `ADR-CEP-16` · `ADR-CEP-07A`
 > **规划输入**: `.rddf/improvements/cpptlm-cep-cohif-carrier.md`(5 段草稿)
@@ -82,7 +82,7 @@ CohIf(canonical 10 流,`ADR-CEP-02`)至今**没有承载形态**。三个断点(
 
 ## Acceptance
 
-见 2 份 delta spec 的 Scenario 清单(共 **6** 条 = 3 + 3,编号对齐 `ADR-CEP-19` 的 CC-01~CC-06 —— 但该 ADR **只引用编号、不定义判据**,定义真源在 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`;其中 **2 处为 planner 增补待追认**(CC-05 ④ / CC-06 ②),完整口径与追认路径见 `design.md` 的 `D-η`)。**判据退化 = 用例红**;**判定结论为红 = 用例仍绿 + 结论作为交付物登记**(per 队列 #5 `Entry #68` 的红绿分离纪律)。
+见 2 份 delta spec 的 Scenario 清单(共 **6** 条 = 3 + 3,编号对齐 `ADR-CEP-19` 的 CC-01~CC-06 —— 但该 ADR **只引用编号、不定义判据**,定义真源在 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`;其中 **2 处为 planner 增补**(CC-05 ④ / CC-06 ②)—— **已由 architect 追认落地**(`ADR-CEP-19` 追加 `## Status Update 2026-10-27`,正文零改动;per Entry #78),完整口径见 `design.md` 的 `D-η`)。**判据退化 = 用例红**;**判定结论为红 = 用例仍绿 + 结论作为交付物登记**(per 队列 #5 `Entry #68` 的红绿分离纪律)。
 
 **DoD 引用**:`obj-cep-platform §6.2` B1~B8 + §6.3 D1~D3 + `ADR-CEP-00 §2 决策 3` + `ADR-CEP-19` 决策 1~9。
 
@@ -92,7 +92,7 @@ CohIf(canonical 10 流,`ADR-CEP-02`)至今**没有承载形态**。三个断点(
 
 | 项 | 类型 | 缓解 |
 |---|------|------|
-| **KPI slot 未释放** | **硬前置阻塞** | 队列 #6 归档后转正;4 件套已 staged 于 `.rddf/drafts/`,转正是 `git mv` + 删标注 + `openspec validate` |
+| ~~KPI slot 未释放~~ | **已解除** | 2026-10-27 队列 #6 归档 ⇒ slot 释放(Entry #80)⇒ 已 `git mv` 转正 + 删标注 + `openspec validate --strict` rc=0(Entry #81) |
 | `06 号 §3.2` 归类表须同步第三类 | 契约面 | 由 **builder** 同步(归类表在真源 1,不在冻结集) |
 | `module_factory.cc` 核心路径改动 | 框架层 | 6 标签回归 + `ctest` 全量 |
 | `N=1` 落 single 分支 ⇒ `bind_ports` 空 shim 静默不绑定 | 正确性 | 宏内 `static_assert(n > 1)`;CC-04 覆盖 |
@@ -101,21 +101,21 @@ CohIf(canonical 10 流,`ADR-CEP-02`)至今**没有承载形态**。三个断点(
 
 ---
 
-## 转正命令(slot 释放后)
+## 转正记录(已于 2026-10-27 执行,per Entry #81)
 
 ```bash
-# 前置:openspec list --json 实测 CEP 内部 active == 0(队列 #6 已归档)
-git mv .rddf/drafts/cpptlm-cep-cohif-carrier openspec/changes/cpptlm-cep-cohif-carrier
-# 删各文件顶部的「未建 change 目录」标注段(状态行改 🟡 Proposed)
-openspec validate cpptlm-cep-cohif-carrier --strict   # 期望 rc=0
-# 台账追加 Entry(记录转正 + KPI 0/3 → 1/3)
+# 前置:openspec list --json 实测 CEP 内部 active == 0(队列 #6 已归档,Entry #80)✅
+git mv .rddf/drafts/cpptlm-cep-cohif-carrier openspec/changes/cpptlm-cep-cohif-carrier   # ✅
+# 删各文件顶部的「未建 change 目录」标注段(状态行改 🟡 Proposed)                          # ✅
+openspec validate cpptlm-cep-cohif-carrier --strict   # ✅ rc=0
+# 台账追加 Entry(记录转正 + KPI 0/3 → 1/3)                                                # ✅ Entry #81
 ```
 
 ---
 
 ## 关联
 
-- 台账:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**(排队 + 授权)· 本 change 的转正 Entry 待建
+- 台账:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**(排队 + 授权)· **Entry #78**(判据增补追认)· **Entry #80**(队列 #6 归档释放 slot)· **Entry #81**(本方转正)
 - 架构重审:`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3)
 - 决策:`docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md`(✅ v1.0 已签发)
-- 变更件:`.rddf/drafts/cpptlm-cep-cohif-carrier/`(proposal / design / 2 份 delta spec)
+- 变更件:`openspec/changes/cpptlm-cep-cohif-carrier/`(proposal / design / tasks / 2 份 delta spec)

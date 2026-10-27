@@ -9,7 +9,7 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-16
   - ADR-CEP-07A
-状态: Planned
+状态: Proposed(2026-10-27 转正 ⇒ openspec/changes/cpptlm-cep-cohif-carrier/,Entry #81)
 created: 2026-10-27
 ---
 
@@ -170,8 +170,8 @@ CohIf(canonical 10 流,`ADR-CEP-02`)至今**没有承载形态** —— 而 `01 
 **先例**(台账 `obj §11` 早期 entry):「补建 OpenSpec change | ❌ `cpptlm-cep-umbrella` 占**唯一** KPI slot 且 R10 未闭合 → 不 archive → 建新 change 令 CEP 内部 Proposed 并发 = 2,**违规**」。
 
 **⇒ 处置**:
-- 本轮(planner)**先出 improvement 草稿 + 4 件套草稿**(staged 于 `.rddf/drafts/cpptlm-cep-cohif-carrier/`,照 `.rddf/drafts/cpptlm-pcie-aer-ats-pri/` 先例)=> **不占 KPI slot**;
+- ~~本轮(planner)**先出 improvement 草稿 + 4 件套草稿**(staged 于 `.rddf/drafts/cpptlm-cep-cohif-carrier/`,照 `.rddf/drafts/cpptlm-pcie-aer-ats-pri/` 先例)=> **不占 KPI slot**~~ ⇒ **已转正(2026-10-27)**:目录迁入 `openspec/changes/cpptlm-cep-cohif-carrier/`(`tasks.md` 已补),KPI 0/3 → 1/3,per Entry #81;
 - **change 目录**(`openspec/changes/cpptlm-cep-cohif-carrier/`)的创建**必须**等队列 #6 归档释放 slot(per `obj §4.7.2` step 0「🔴 先确认 KPI slot 可用(硬前置,跳过此步必违规)」);
-- **转正命令**(slot 释放后):`git mv .rddf/drafts/cpptlm-cep-cohif-carrier openspec/changes/cpptlm-cep-cohif-carrier` → 删各文件的「未建目录」标注 → `openspec validate cpptlm-cep-cohif-carrier --strict` → 台账追加 Entry。
+- **转正命令**(✅ 已于 2026-10-27 执行,Entry #81):`git mv .rddf/drafts/cpptlm-cep-cohif-carrier openspec/changes/cpptlm-cep-cohif-carrier` → 删各文件的「未建目录」标注 → `openspec validate cpptlm-cep-cohif-carrier --strict` → 台账追加 Entry。
 
 ---

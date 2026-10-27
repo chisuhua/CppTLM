@@ -1,7 +1,7 @@
 # cpptlm-cep-cohif-carrier — 设计(Design)
 
-> **阶段**: planner(2026-10-27)· **状态**: 📋 **Draft**(待 slot 释放转正)· **队列**: `obj-cep-platform §4.0` #7
-> **⚠️ 未建 change 目录的因由**:CEP 内部 Proposed 并发 ≤ 1(`ADR-CEP-00 §2 决策 3` / `obj §5.4`);实测 1 个 active(队列 #6)⇒ slot 被占。**本文件是 planner 阶段的裁决落点** —— 每个 `D-` 段是一次**已拍板**的语义澄清或范围界定;`tasks.md` 属 builder 阶段。
+> **阶段**: planner(2026-10-27)→ **已转正**(2026-10-27,Entry #81)· **状态**: 🟡 **Proposed** · **队列**: `obj-cep-platform §4.0` #7
+> **转正依据**:队列 #6 归档释放 slot(`openspec list --json` 实测 0 个 active,per Entry #80)⇒ 本目录已由 `.rddf/drafts/` 迁入 `openspec/changes/`。**本文件是 planner 阶段的裁决落点** —— 每个 `D-` 段是一次**已拍板**的语义澄清或范围界定;`tasks.md` 属 builder 阶段(已建,见同目录)。
 > **上游决策**: `ADR-CEP-19`(✅ v1.0 已签发)决策 1~9 ↔ 本文件 D-1~D-9 的**映射表**见文末。
 
 ---
@@ -100,7 +100,7 @@
 | **CC-04** | JSON 装配后,一次 CohIf 事务可**穿过** adapter 抵达对端;**N ≥ 2** | `cep-cohif-carrier` | ① 断链 ⇒ 红;② **N=1** ⇒ 宏 `static_assert` 编译红(防 `bind_ports` 空 shim 静默不绑定) |
 | **CC-03** | `ProtocolBridge` 的 `pack`/`unpack` 对 `CohIfBundle ↔ NoCFlitBundle` **双向可逆**(逐字段 round-trip 恒等) | `cep-protocol-bridge-contracts` | 篡改任一字段映射(如把 `perm` 映射到 `flit_category`)⇒ 用例红 |
 | **CC-05** | `register_protocol_bridge` 从**死钩子**变**活钩子**:注册后 `get_bridges()` 可读**且**被 ModuleFactory **消费**;per-bridge 元数据齐备(`protocol_id_` 非零 / `bridge_id_` 唯一 / 与实例声明 `family` 一致) | `cep-protocol-bridge-contracts` | 只注册不消费 ⇒ 红(须**同时**交付消费方,否则是新的死钩子);重复 `bridge_id_` ⇒ 红;`protocol_id_` 与 `family` 不符 ⇒ 红 |
-| **CC-06** | 6→3 映射表产出的 `CATEGORY_*` **全部落在**网络 Bundle 的 3 个常量内 | `cep-protocol-bridge-contracts` | **引用队列 #6 的 AC-04**(`openspec/changes/cpptlm-cep-moesi-gpu-adapter/design.md:178`「目标写成第 4 类 ⇒ 红」)—— **不重立**(避免两份判据漂移) |
+| **CC-06** | 6→3 映射表产出的 `CATEGORY_*` **全部落在**网络 Bundle 的 3 个常量内 | `cep-protocol-bridge-contracts` | **引用队列 #6 的 AC-04**(`openspec/changes/archive/2026-10-27-cpptlm-cep-moesi-gpu-adapter/design.md:178`「目标写成第 4 类 ⇒ 红」)—— **不重立**(避免两份判据漂移) |
 
 > **⚠️ 判据口径:编号对齐 ≠ 定义对齐(critic 首轮 `S1`/`S2` 收口,本块是全仓唯一真源)**
 >
@@ -116,7 +116,7 @@
 >
 > **属细化、不改语义(critic 判定「不动」)**:CC-01 ③(5 个域外流名**类型不可表达**)· CC-02 ③ + 加虚函数 fixture · CC-06 ③(引用队列 #6 的 AC-04 不重立)。
 >
-> **追认路径(`D-κ` 步 0.5 的转正硬前置)**:① architect 给 `ADR-CEP-19` 追加 `## Status Update` 段承认该 2 处(**不改决策正文** ⇒ ADR 不可变纪律成立);② 撤出这 2 处子条件,回到 research §6.4 字面。**未择一落地前,本 change 的任何产出不得宣称「判据完全来自已签发 ADR」**(planner 不得给已签发 ADR 增删判据 —— 增删 = ADR 修订,须走冻结面两步授权)。
+> **追认路径(`D-κ` 步 0.5 的转正硬前置)—— ✅ 已落地(出路 ①,2026-10-27)**:architect 给 `ADR-CEP-19` 追加 `## Status Update 2026-10-27` 追认该 2 处(**§1~§7 正文零改动** ⇒ ADR 不可变纪律成立;冻结面走两步授权,per Entry #78)。⇒ 口径现状:**「判据编号」与本 ADR 一致(CC-01~CC-06),「判据定义」由本 change 的 delta spec 承载并已进入追认范围**;`ADR-CEP-19` 的追加段在归档后并入 `openspec/specs/` 时退为历史沿革(真源自足化)。
 >
 > **真源自足的收口**:转正归档后 `openspec archive` 把 §6.4 的判据**并入 main specs** ⇒ 判据进入真源层(首选);或由 architect 追加 ADR Status Update 固化。
 >
@@ -163,14 +163,14 @@
 
 | 步 | 动作 | 判据 |
 |----|------|------|
-| 0 | `openspec list --json` 实测 CEP 内部 active == **0** | 🔴 **硬前置**(`obj §4.7.2` step 0) |
-| **0.5** | **判据增补追认落地** —— CC-05 ④ / CC-06 ② 二者择一:① architect 给 `ADR-CEP-19` 追加 `## Status Update` 承认这 2 处;② 撤出回到 research §6.4 字面 | 🔴 **硬前置**(critic 首轮 `S1`;否则「与 ADR 一一对应」的声明不成立,见 `D-η`) |
-| 1 | `git mv .rddf/drafts/cpptlm-cep-cohif-carrier openspec/changes/cpptlm-cep-cohif-carrier` | 目录就位 |
-| 2 | 删各文件顶部的「未建 change 目录」标注段;状态行改 🟡 Proposed | — |
-| 3 | `openspec validate cpptlm-cep-cohif-carrier --strict` | rc=0 |
-| 4 | 台账追加 Entry(转正 + KPI 0/3 → 1/3) | `obj §11` |
-| 5 | `obj §4.0` 状态列 📋 Planned → 🟡 | `obj §4.7.3` ④ |
-| 6 | `phase-10.md` 对应子任务行同步 + `obj §5.2` KPI 回填 | `obj §4.7.3` ④ |
+| 0 | `openspec list --json` 实测 CEP 内部 active == **0** | ✅ **已满足**(2026-10-27 实测 0 个 active;队列 #6 已归档,Entry #80) |
+| **0.5** | **判据增补追认落地** —— 走 ①(architect 追加 `## Status Update`) | ✅ **已落地**(`ADR-CEP-19` Status Update 2026-10-27;Entry #78,冻结面两步授权完成) |
+| 1 | `git mv .rddf/drafts/cpptlm-cep-cohif-carrier openspec/changes/cpptlm-cep-cohif-carrier` | ✅ 目录就位 |
+| 2 | 删各文件顶部的「未建 change 目录」标注段;状态行改 🟡 Proposed | ✅ 已删/已改 |
+| 3 | `openspec validate cpptlm-cep-cohif-carrier --strict` | ✅ rc=0 |
+| 4 | 台账追加 Entry(转正 + KPI 0/3 → 1/3) | ✅ **Entry #81** |
+| 5 | `obj §4.0` 状态列 📋 Planned → 🟡 | ✅ 已改(`§4.2` 同义复述同步) |
+| 6 | `phase-10.md` 对应子任务行同步 + `obj §5.2` KPI 回填 | ✅ 已同步 |
 
 ---
 
