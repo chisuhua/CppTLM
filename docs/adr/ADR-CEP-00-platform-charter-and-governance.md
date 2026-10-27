@@ -416,14 +416,24 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
 > **触发**: 2026-10-27 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **完成归档** —— tasks 全勾 + 实现已落地 ⇒ **✅ 已完成归档**语义(per AGENTS.md「两种归档语义必须区分」,**不是** ⏸ 暂存归档)⇒ 14 Scenario 并入 **2 份新 main spec**(`openspec/specs/cep-moesi-gpu-adapter/spec.md` 7 Scenario / `openspec/specs/cep-adapter-schema-contracts/spec.md` 7 Scenario)⇒ 判据**进入系统契约**;archive 名 `2026-10-27-cpptlm-cep-moesi-gpu-adapter`。
 > **对上一段(2026-10-27,队列 #7 立项段)的衔接**:该段登记「KPI 排队 13 → **14** change」—— 本段登记队列 #6 的**归档释放**;排队总数**仍为 14**(归档**不**改变排队长度,只释放并发 slot)。
-> **当前态**: Proposed 并发 **0/3**(实测 `openspec list --json` = **0** 个 active);由 **1/3 → 0/3** ⇒ **下一个可启动的 change = 队列 #7 `cpptlm-cep-cohif-carrier`**(per `obj §4.0`)。
+> **当时态(历史快照,已被下一段取代)**: Proposed 并发 **0/3**(实测 `openspec list --json` = **0** 个 active);由 **1/3 → 0/3** ⇒ **下一个可启动的 change = 队列 #7 `cpptlm-cep-cohif-carrier`**(per `obj §4.0`)。
 > **不受影响的部分**:§2 决策 3 的**排队算术(14 个 change / 14 季度 / Stage 1 = 10 个)**· §8 的准入门措辞修订 **C-1** 及其理由 · 冻结成员数 **40** —— 一律**不变**。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #80**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #80)。
 
+## Status Update 2026-10-27 —— 队列 #7 `cpptlm-cep-cohif-carrier` 已启动(KPI 并发 0/3 → 1/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **转正** —— 队列 #6 归档释放 slot(上一段)⇒ `obj §4.7.2` step 0 硬前置满足(`openspec list --json` 实测 **0** 个 active)⇒ 4 件套由 `.rddf/drafts/` 迁入 `openspec/changes/`(`proposal` + `design` + `tasks` + **2 份** delta spec:`cep-cohif-carrier` / `cep-protocol-bridge-contracts`),`openspec validate --strict` **rc=0**。
+> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json` = **1** 个 active:队列 #7);由 **0/3 → 1/3** ⇒ 下一个可启动 change = **队列 #8**(须待 #7 归档,per §5.4 并发 ≤ 1)。
+> **判据面**:`ADR-CEP-19` 的 2 处判据增补(CC-05 ④ / CC-06 ②)已由本 ADR 的**上一段**之外的另一份 ADR 追加段追认(`ADR-CEP-19` Status Update 2026-10-27,正文零改动,per 台账 Entry #78)⇒ 本段只登记**状态**,不改判据。
+> **不受影响的部分**:§2 决策 3 的**排队算术(14 个 change / 14 季度 / Stage 1 = 10 个)**· §8 的准入门措辞修订 **C-1** 及其理由 · 冻结成员数 **40** —— 一律**不变**。
+> **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #81**
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #81)。
+
 ---
 
-**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档) + **Status Update 2026-10-27**(队列 #6 归档)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)+ **Status Update 2026-10-26**(队列 #5 归档)+ **Status Update 2026-10-26**(队列 #6 启动 + 排队 11 → 13)
+**版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档) + **Status Update 2026-10-27**(队列 #6 归档) + **Status Update 2026-10-27**(队列 #7 启动)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)+ **Status Update 2026-10-26**(队列 #5 归档)+ **Status Update 2026-10-26**(队列 #6 启动 + 排队 11 → 13)
 **最后更新**: 2026-10-27
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)
