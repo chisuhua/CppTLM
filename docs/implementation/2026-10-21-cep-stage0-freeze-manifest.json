@@ -1,7 +1,7 @@
 {
   "artifact_count": 40,
   "artifacts": {
-    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "aca933b5015a70195f91edf9f958fd381346cca0ab5936a01155bf92e50b90f4",
+    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "2cb9efa0ccf60a9f14d760a6da9a3d39bc26bdb26c590ca44103a2fd1f53470b",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4f27a67ba7982f3d9466df36c85258f1822c89b825d8ab733fb4e5de74221f48",
     "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "a4a047f73be34c84d7db44e3b0a3040e4f265d665685c6032526cb2159012a37",
     "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "79793358ad411ca3c6066344db85cf51986a9ab69f40fe0e783744907f678c26",
@@ -44,7 +44,7 @@
   },
   "authorized_by": "Entry #80",
   "frozen_at": "2026-10-27",
-  "frozen_at_commit": "7bcbf0eaf7fe8d987c0e65b1d27d547bc4a2756a",
+  "frozen_at_commit": "f1bf59ef3ef63df63114f00449e951ccc00d094c",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
