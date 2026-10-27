@@ -36,7 +36,7 @@ v0.3 修 v0.2 的 8 项 BLOCKER + 1 项 KPI 口径修正:
 
 CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生成 + SimModule 可装配 + coherence 演进 seam**:
 
-- **协议中立基线 60-70% 已落地**(per `communication-network.md` v1.0 §1): L3 ChStream + L4 StreamAdapter 5 子类(Standalone/MultiPort/DualPort/Bidirectional/Axi4Mapper) + L5 Bundle 18 个(frozen headers 0 修改),模块业务逻辑**完全不知道**协议特化
+- **协议中立基线 60-70% 已落地**(per `communication-network.md` v1.0 §1): L3 ChStream + L4 StreamAdapter 5 子类(Standalone/MultiPort/DualPort/Bidirectional/Axi4Mapper) + L5 Bundle **17 个 .hh 文件**(frozen headers 0 修改;per `ls include/bundles/*.hh` 实测;**文件数 ≠ Bundle 类型数** —— 类型数因 `*_bundles_tlm.hh` 多类型而更高,per §3.2 归类表),模块业务逻辑**完全不知道**协议特化
 - **业务/网络 Bundle 二分类**(用户 A 决策):
   - **业务 Bundle**(如 `CacheReqBundle` / `CacheRespBundle` / `GmmuPteBundle` / `SdmaCmdBundle`) = 模块内部契约,**前期性能建模期就要定**,由各业务模块团队负责,可演进
   - **网络 Bundle**(如 `NoCFlitBundle` 16 字段 / `PcieTlpBundle` frozen) = 模块间契约,**后期协议特化时再定**,是项目级冻结面
@@ -68,6 +68,7 @@ CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生�
 | [`docs/architecture/11-coherence-domain-readiness.md`](11-coherence-domain-readiness.md) v1.0 (2026-04-26) | 草案 | **深度不同 (X-8)**: 11 是 readiness 评估 (做不做), 06-bis §0 阅读引导加 cross-ref 到 11 (per D-3) |
 | [`docs/architecture/P0_P1_P2_DECISIONS.md`](P0_P1_P2_DECISIONS.md) | ✅ 已全部确认 (2026-04-07) | **范围正交**: P0_P1_P2 汇总早 Phase 0-2 决策, 06 §11 P0-P6 是后续演进分阶段; §18 修订记录引用其 P0 任务格式 |
 | ArchForge `09-coherence-protocol.md` + `microarchitecture/coherence-*.md` | 🟡 接口草案 (markdown, 无 C++ 实现) | **不重发明**: §15 + 06-bis §1 跨仓引用, C++ 实施由 CppTLM 仓 (per 06-bis §2.1 实施切分) |
+| [`07-coherence-exploration-platform.md`](07-coherence-exploration-platform.md) v0.1+ | 🟡 已落地 (CEP 顶层真源; 2026-10-21 拍板 "α") | **coherence 演进 seam 的继任真源** —— 06-bis 已被其 supersede(per 06-bis 顶部 Status Update); §15.1 / §15.4 的 coherence 条目**时间线转隶 07 号 + `ADR-CEP-*` 队列**; 双向 cross-ref(07 号 §1.2 引用本文档 §2 / §3 / §5) |
 
 ---
 
@@ -100,7 +101,7 @@ CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生�
 
 1. **不引入 NetworkModule 基类**(per metis B5): 互联网络功能上是 SimModule,但**不新建基类**,而是显式标注"NOC 角色 module type"在文档中(per `include/tlm/cluster/AGENTS.md` "未实施原因"段已明确:NoC 是中间件不是端点)
 2. **不引入 DSL**(per `cpptlm-dgpu-soc-arch-truth-cleanup §6` 既有先例 + gem5 SLICC 教训)
-3. **不引入新 Bundle 类型**: 复用既有 16 个(per glob 实地,16 个 .hh)
+3. **不引入新 Bundle 类型**: 复用既有 17 个 .hh(per glob 实地,`ls include/bundles/*.hh` = **17**)
 4. **不破 Packet 既有 14 字段**(per oracle BLOCKER 1 修订: v1 写 12 是错的)
 5. **不重发明 coherence 协议**(per ArchForge 已实现 `CoherenceProtocol` / `CoherenceBridge` 接口,本方案引用既有接口作 §15 演进 seam)
 
@@ -122,7 +123,7 @@ CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生�
 │  ACK/NAK 12-bit seq wrap (pcie_link_layer_tlm.cc 手写)             │
 │  posted-write / credit-based / single-outstanding 协议语义          │
 ├────────────────────────────────────────────────────────────────────┤
-│  L5 Bundle 数据格式 (协议特化 typed POD, 17 个 .hh, per §1.3.1)    │
+│  L5 Bundle 数据格式 (协议特化 typed POD, 17 个 .hh, per §1.3)      │
 │   PcieTlpBundle / NoCFlitBundle / CacheReqBundle / CrBundle /      │
 │   DoorbellBundle / MsixBundle / ...                                 │
 │   ↑─[BUNDLE_FIELD_WIDTH 编译期锁 + is_trivially_copyable 断言]──↑  │
@@ -149,7 +150,7 @@ CppTLM v1 的模块互联网络目标 = **协议中立基线 + Python 拓扑生�
 - `tlm_generic_payload` 是 `Packet::payload` 字段类型 (per `packet.hh:39`), 与 PacketPool 共同构成 L1
 - SimplePort **不是**独立层 (per 01 §1.1), 是 L2 MasterPort/SlavePort 的基类 (在 §2.2 同步直调约束中详述)
 - DGpuBoard 板级门面 (BAR0/BAR1/BAR2) 在 L6 范围内 (per 01-hybrid §1.1 "板级协议字段" 范畴)
-- HOST 进程 + 23 ABI 是 L7 边界 (per 01-hybrid §1.1 v2.1.10 不展开), 本文聚焦 L1-L6 模块互联
+- HOST 进程 + 23 ABI 属 **01 §1.1 范围外**(per 01-hybrid §1.1 v2.1.10 只有 **L1-L6**,**无 L7 层** —— 与本节 §2.1 的 L1-L6 编号体系一致;原表述「L7 边界」为伪引用,per 台账 Entry #82 订正), 本文聚焦 L1-L6 模块互联
 
 **seam 位置**: §4.1 锁定在 **L5 Bundle ↔ L4 StreamAdapter 之间**
 
@@ -170,7 +171,7 @@ inline bool SimplePort::send(Packet* pkt) {
 
 → **L2 是同步直调**,不是 event-driven。**协议特化不能放在 L2** — 那需要 event-driven 调度(错过 simple_port 设计意图)。**seam 必须往上放**(L4 与 L5 之间,per §4)。
 
-### 2.3 L5 StreamAdapter 5 子类角色边界(per `communication-network.md` v1.0 §4)
+### 2.3 L4 StreamAdapter 5 子类角色边界(per `communication-network.md` v1.0 §4)
 
 | 子类 | 用法 | 双 Bundle 类型? |
 |------|------|----------------|
@@ -182,10 +183,10 @@ inline bool SimplePort::send(Packet* pkt) {
 
 **关键洞察**(per metis / oracle 调研):
 - **DualPortStreamAdapter 是 CppTLM 当前唯一"两侧协议不同"的代码实现**(NICTLM PE=CacheReqBundle, Net=NoCFlitBundle)
-- `module_factory.cc:707-709` 硬编码 cast 到具体特化(类型上对 NICTLM 是形式 UB,但能跑是因为 dual adapter 内部全是 MasterPort* 裸指针,布局与模板参数无关 — per oracle Q-α 实证)
+- `module_factory.cc:731-733` 硬编码 cast 到具体特化(类型上对 NICTLM 是形式 UB,但能跑是因为 dual adapter 内部全是 MasterPort* 裸指针,布局与模板参数无关 — per oracle Q-α 实证)
 - 实际"NICTLM 内的 `packetize`/`reassemble` 字段映射代码在 `nic_tlm.cc:97+` 内部,不在 adapter",adapter 只是 passthrough
 
-### 2.4 L4 ChStream 输入/输出(per `stream_adapter.hh:30-180`)
+### 2.4 L3 ChStream 输入/输出(per `stream_adapter.hh:30-180`)
 
 - `InputStreamAdapter<BundleT>::process(Packet* pkt)` — 反序列化 payload → `stream_data_` Bundle + 标 `stream_valid_=true`
 - `OutputStreamAdapter<BundleT>::send(MasterPort*, PacketType, uint64_t)` — acquire Packet → serialize → MasterPort::send
@@ -264,11 +265,11 @@ inline bool SimplePort::send(Packet* pkt) {
 | **tlm_generic_payload 关系** | 业务 Bundle **整体**作为 payload 的 data 序列化(per `bundle_serialization.hh:22-27` `serialize_bundle` memcpy) | 网络 Bundle 也走 payload,但其字段是"网络层",如需持久化业务内容应通过业务 Bundle 字段,而非新增网络 Bundle 字段 |
 | **跨 hop 存活** | **否** — per-hop 序列化/反序列化(每个 hop 销毁 + 新建 per `stream_adapter.hh:48-49` deserialize + `:144` serialize) | **否** — 同样 per-hop,但其字段是"网络层上下文" |
 
-### 3.2 实地归类表(per `include/bundles/` **17** 个 .hh + oracle 实证) — **v0.3 B-2 修订**(2026-10-27 per `ADR-CEP-19` D-7 漂移订正:原写「16 个 .hh」,实测 `ls include/bundles/*.hh` = **17**)
+### 3.2 实地归类表(per `include/bundles/` **17** 个 .hh + oracle 实证) — **v0.3 B-2 修订**(2026-10-27 per `ADR-CEP-19` D-7 漂移订正:原写「16 个 .hh」,实测 `ls include/bundles/*.hh` = **17**;**2026-10-27 per 台账 Entry #82** 补登 `bundle_serialization.hh` 行 + 正文计数同步 16 → 17)
 
 **v0.2 B-2 bug**: CrBundle 字段含义错(写 "Cache Request" + 引用 `arch/arm/mpam.hh:51` 外部路径,仓内不存在) + Axi4Bundle 消费者 1→≥5
 
-**v0.3 实地清点**(per `include/bundles/` 16 个 .hh + grep ):
+**v0.3 实地清点**(per `include/bundles/` 17 个 .hh + grep ):
 
 | Bundle | 类别 | owner / 注册路径 | 关键备注 |
 |--------|------|-------------------|-----------|
@@ -288,6 +289,7 @@ inline bool SimplePort::send(Packet* pkt) {
 | `dgpu_bundles_tlm.hh::*` | **业务/网络** | dGPU 内部 | 同上, 待切型 |
 | `cache_bundles_rtl.hh::*` | **业务** | RTL cache 模块 | RT 桥接用 |
 | `cpphdl_types.hh` | (基础设施) | 项目框架层 | `bundle_base` + `ch_uint`/`ch_bool` POD, **不归业务/网络** |
+| `bundle_serialization.hh` | (基础设施) | 项目框架层 | `serialize_bundle` / `deserialize_bundle` 的 memcpy 序列化机制(per `bundle_serialization.hh:22-27`);**不归业务/网络** —— 它是 §3.1「tlm_generic_payload 关系」维度的**机制载体**,不是 Bundle 类型 |
 
 **判定规则**:
 - 字段是否网络层?(src_node/dst_node/flit_category/vc_id/流控 marker) → 网络 Bundle
@@ -314,11 +316,12 @@ inline bool SimplePort::send(Packet* pkt) {
 > | **模块 owner 可改?** | ❌ **编译期 `BUNDLE_FIELD_WIDTH` 锁住**,扩展需走 OpenSpec change —— **取网络侧的纪律** |
 > | **跨模块 owner 文档?** | **需要** —— 必须有架构师守门(取网络侧) |
 > | **L5 测试覆盖?** | **项目级**(取网络侧) |
-> | **唯一实例** | `bundles::CohIfBundle`(`include/bundles/cep_coherence_bundles_tlm.hh`;承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流**)—— per `ADR-CEP-19` 决策 2 / 3 |
+> | **唯一实例** | **规划实例(当前零实例)** —— `bundles::CohIfBundle`(`include/bundles/cep_coherence_bundles_tlm.hh`;承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流`)—— per `ADR-CEP-19` 决策 2 / 3;⚠ **该文件尚不存在** —— 交付队列 = `cpptlm-cep-cohif-carrier`(队列 #7;季度见 `obj §4.0`);**落地前第三类零实例**,实现层分类仍只有两类(per 台账 Entry #82,2026-10-27) |
 >
 > **为什么必须解耦**:CEP 的 CohIf 是**第一个**触发该二义的实例(业务语义 + 跨模块共享);若不补第三类,后续每个「跨模块共享但非网络字段」的 Bundle 都要重新吵一遍分类。
 >
 > **写作纪律**:本表**只增第三类**,§3.1 的两条判定规则与 §3.2 的归类表**零改动**;`ADR-CEP-19` 签发**在先**,本修订**在后**(否则构成「用未签发 ADR 草案为改真源 1 背书」)。
+> **⚠️ 例外(2026-10-27 per 台账 Entry #82)**:后续的漂移回填**确实动了 §3.2** —— 补登漏登记的 `bundle_serialization.hh` 行 + 正文计数 16 → 17(实测 `ls include/bundles/*.hh` = 17)。该次回填**不触碰** §3.1 的两条判定规则,亦**不改动**本表第三类的**定义**(只把「唯一实例」改为「规划实例(当前零实例)」以对齐「文件尚不存在」的事实)。**§3.2 归类表的其余行零改动**。
 
 ### 3.4 演进粒度(业务 Bundle 可演进粒度)
 
@@ -730,7 +733,7 @@ per `cpptlm/AGENTS.md`: "标签在 emit 时会展开为顶层 `groups` 字典(C+
 | `groups` (Python tag 展开) | 既有 | 保留 |
 | `extends` / `include` | 既有 | 保留 |
 | `hierarchy` / `sublayers` | TopoLayer 递归 | 保留 — **不引入"network.sublayers" 字段**(沿用顶层 sublayers)|
-| `coherence_domains` (06-bis 演进) | 06-bis 引入 | **§15.1 演进**, 不在 P1 |
+| `coherence_domains` (06-bis 演进) | 06-bis 引入 | **保留**(4 个既有 config 依赖,**不得删** —— `apu_soc_full` / `apu_soc_phase7a` / `apu_soc_phase7b` / `hierarchy_tree_3level`);**解析已落地**(`src/core/module_factory.cc:195-196` hierarchy 分支)但**消费延期到 Stage 2**(per `ADR-CEP-13`;告警文案已指向 `ADR-CEP-13`,per `ADR-CEP-07A` 产物 4)—— **不在 P1 范围** |
 | `simulation_mode` | 既有 | 保留(per §5) |
 | `plugin` / `version` | 既有 | 保留 |
 
@@ -766,18 +769,28 @@ per `cpptlm/AGENTS.md`: "标签在 emit 时会展开为顶层 `groups` 字典(C+
 
 ### 9.1 现有 Step 1-9(保留, 不动)
 
-per `src/core/module_factory.cc:142-874`:
-- Step 1(lines 247-257): PluginLoader dlopen
-- Step 2(lines 262-345): 从 REGISTRY 创建实例
-- Step 3(lines 347-358): 解析 groups
-- Step 4(lines 361-389): `sim_mod->instantiate(cfg)`
-- Step 4.5(lines 391-415): `simulate_instantiate(mod)` 递归
-- Step 5(lines 420-490): `resolveConnections`
-- Step 6(lines 492-615): 建 PortPair
-- Step 7a(lines 620-735): `ChStreamAdapterFactory::create(type, obj)` 创建 + mirror
-- Step 7b(lines 755-847): ChStream 连接(per-port 反向)
-- Step 8(lines 737-753): `StatsManager::register_group`
-- Step 9(lines 849-859): `incorporate_parent(nullptr)` 触发 SimModule 子树 wiring
+per `src/core/module_factory.cc`(**154-882**,文件共 898 行):
+
+> ⚠️ **2026-10-27 行号刷新(per 台账 Entry #82)**:原表行号整体**漂移 ≈25 行** —— 成因是 CEP 的装配期闸门(`0.25` 段)插入到 Step 1 之前,以及其后多次改动。本表改用**步骤起始注释行**作锚点(比区间更抗漂移)。**Step 1-9 本身未被改动**。
+
+| 步骤(本文件编号) | 代码锚点(起始注释行) | 内容 |
+|------|--------|------|
+| 预置 | 154 | 解析变量引用 `${path}` |
+| 预置 | 160 | JSON Schema 验证(CFG-08) |
+| **预置 0.25** | **167-186** | **CEP 装配期判据**(队列 #4 引入)—— `run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化。**非 Step 7c**:只跑判据,不注入 protocol bridge、不引入 `ProtocolBridgeFactory`(per §9.2) |
+| 预置 | 189 | Hierarchy 树解析(TGMS v4.0 Phase 4.1) |
+| 预置 | 239 | 解析 port_specs(Phase 3.2: T3.2-04) |
+| **Step 1** | 272-280 | PluginLoader dlopen(插件加载) |
+| **Step 2** | 285 | 从 REGISTRY 创建实例 |
+| **Step 3** | 372 | 解析 groups |
+| **Step 4** | 385 | `sim_mod->instantiate(cfg)` |
+| **Step 4.5** | 416 | `simulate_instantiate(mod)` 递归 |
+| **Step 5** | 442(调用点 493) | `resolveConnections` |
+| **Step 6** | 517 | 建 PortPair |
+| **Step 7a** | 642 | `ChStreamAdapterFactory::create(type, obj)` 创建 + mirror |
+| **Step 7b** | 668-751 | ChStream 连接(per-port 反向;dual 分支硬编码 cast @ 731-733) |
+| **Step 8** | 762(调用点 774) | `StatsManager::register_group` |
+| **Step 9** | 874(调用点 882) | `incorporate_parent(nullptr)` 触发 SimModule 子树 wiring |
 
 ### 9.2 06 P1 不引入 Step 7c(per §4.5 + §10 supersede 早期方案)
 
@@ -829,6 +842,7 @@ per `01-hybrid-architecture-v2.1.md` §1.5 + `apu_soc.cc:84-103`:
 | [`docs/adr/ADR-DGPU-13-pnn-protocol-neutral-network.md`](../adr/ADR-DGPU-13-pnn-protocol-neutral-network.md) | 🟡 ADR **未签发** (v0.1 起草中) → **⚠️ superseded by 06 v0.4** (永不签发 per D-5) | 不动正文 (per AGENTS.md "ADR 不可变 + Status Update" 先例) | ADR-DGPU-13 是 PNN 范围定义 ADR, 内容被 06 §15 演进 seam 完整收纳 | **真 ADR 格式, 顶部加 `## Status Update 2026-10-18: superseded by 06 v0.4 (未签发 ADR, 永不签发)` 段** — **已落地 2026-10-18** |
 | [`docs/adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md`](../adr/ADR-DGPU-14-stream-adapter-protocol-bridge-seam.md) | 🟡 ADR **未签发** (v0.1 起草中) → **⚠️ superseded by 06 v0.4** (永不签发 per D-5) | 不动正文 (per AGENTS.md "ADR 不可变 + Status Update" 先例) | ADR-DGPU-14 §2.1 seam 位置 vs 06 §4 是同一块领地, 内容被 06 §4.1 + §9.2 收纳 | **真 ADR 格式, 顶部加 Status Update 段** — **已落地 2026-10-18** |
 | ArchForge `09-coherence-protocol.md` + `microarchitecture/coherence-*.md` | 🟡 接口草案 (markdown, 无 C++ 实现) | 保留(不废, **0 改**) | §15 + 06-bis §1 跨仓引用, **不重发明** | 仅引用 + 在 CppTLM 实施 (per 06-bis §2.1 实施切分) |
+| [`07-coherence-exploration-platform.md`](07-coherence-exploration-platform.md) v0.1+ | 🟡 已落地 (CEP 顶层真源; 2026-10-21 拍板 "α") | **保留(不废)** —— §15 的 coherence 演进 seam **已被其承接** | 06-bis 已被 07 号 supersede(per 06-bis 顶部 Status Update 2026-10-21);§15.1 / §15.4 的 coherence 条目**时间线转隶 07 号 + `ADR-CEP-*` 队列** | **双向 cross-ref** —— 本表 + §0.3 均增行;§15.1 / §15.4 加转隶注记(per 台账 Entry #82,2026-10-27) |
 
 **v0.4 X-13 修订要点** (vs v0.3 B-4):
 1. **ADR-DGPU-13/14 是未签发 ADR**, 按 AGENTS.md "ADR 不可变 + Status Update" 惯例 + "未签发永不签发" 标注 (per D-5)
@@ -946,7 +960,6 @@ per `01-hybrid-architecture-v2.1.md` §1.5 + `apu_soc.cc:84-103`:
 - P3 估时: 20-30d 占位 (per §15.3 现状)
 
 > **⚠️ 2026-10-27 修订(per `ADR-CEP-19` 决策 4 / 7;台账 Entry #74)** —— 上列 **P3+ 时间线**与 **P3.2 的「拒绝 ProtocolBridgeFactory 模式」**两处口径,处置如下:
->
 > **① 时间线转隶 CEP(决策 7)**:本节 P1 / §11.3 P2 的**实施分期从未执行** —— 实测 `06 §11.2` 承诺的 3 个测试(`test_bundle_classification_contract.cc` / `test_simulation_mode_schema.cc` / `test_seam_documentation_locator.cc`)与 `include/core/coherence_bridge.hh` / `src/core/coherence_bridge.cc` **全仓均不存在**;`openspec/changes/` 与 `openspec/changes/archive/` **无**对应 change 目录 ⇒ 该分期**已被 06-bis 的 CEP 继任取代**(`06-bis` 顶部 `Status Update (2026-10-21) — superseded by CEP`)。⇒ **本节分期时间线作废**,承载 seam 的代码增量改由 **CEP 排期**承接:`ADR-CEP-19` 决策 1 / 5 落在队列 **#7 `cpptlm-cep-cohif-carrier`**(Stage 1 / 2028-Q2,排期真源 = `obj-cep-platform §4.0`)。**本段不改上列任务条目本身**(它们仍是**技术内容**的权威描述),只登记**时间线**与**归属**的转移。
 >
 > **② 显式偏离 P3.2 的「拒绝 ProtocolBridgeFactory 模式」(决策 4)**:本段 P3.2 写「per-bridge 静态分配, **拒绝 ProtocolBridgeFactory 模式**」,而本文件 **§9.3** 写「当 P3+ 引入 `ProtocolBridgeFactory` 时,**扩展** `register_protocol_bridge` 为 `(bridge_name, factory_lambda)` 形式 —— 沿用现有 register 入口,**不重发明**」。⇒ **本文件内部两条互斥**。**处置**:
@@ -1106,7 +1119,8 @@ per `cpptlm_config/AGENTS.md`:
 |------|------|------|
 | `[inter-module-network]` | 06 §11 实施后新增 | P1 完成 |
 | `[network-protocol-ext]` | 06 P1 新增 NetworkProtocolExt 测试 | P1 |
-| `[coherence]` | 06-bis 后续 Phase 2 标签 | 06-bis 文档落地后 |
+| `[cep]` | **CEP(Coherence Exploration Platform)测试标签** —— 19 个 `test_cep_*.cc` 实际使用(实测 161 case / 2600 assertion) | CEP 各 change 落地 |
+| `[coherence]` | 06-bis 后续 Phase 2 标签 | ⚠️ **已被 `[cep]` 取代** —— 该标签现被 legacy `test/test_coherence_domain.cc` 占用(`[[deprecated]]` 类 `CoherenceDomain` 的回归锁);CEP 新测试**不**使用它 |
 | `[pnn]`, `[pnn-baseline]`, `[pnn-axi4]` | PNN 早期 | **不引入**(per §5.2 不引入 network.mode 字段) |
 | `[packet-semantic]`, `[pnn]` | 05-doc 早期 | **不引入**(per §10.1 superseded) |
 
@@ -1207,8 +1221,13 @@ per `cpptlm_config/AGENTS.md`:
 - `microarchitecture/coherence-bridge.md` v0.x: `CoherenceBridge : ChStreamModuleBase` 8 端口设计 + `translate_request/snoop` + `forward_snoop_*`
 - `microarchitecture/coherence-domain.md`: per-cache 状态机 + snoop callback
 
+> **⚠️ 2026-10-27 修订(per 台账 Entry #82 —— 借鉴 §11.2 的「时间线转隶」样板,不改上列条目本身)** —— 上列 4 条是**技术内容**的权威描述(ArchForge 侧既有接口),**本节不改**;但**时间线与归属**已转移:
+> - **① coherence 演进的范围已由 CEP 承接** —— 06-bis 已被 [`07-coherence-exploration-platform.md`](07-coherence-exploration-platform.md) **supersede**(per 06-bis 顶部 `Status Update (2026-10-21) — superseded by CEP`);CEP 侧顶层真源 = 07 号,决策真源 = `docs/adr/ADR-CEP-*`(22 份)+ `ADR-CEP-00 §2 Decision 3` 的 14 change 串行队列(排期真源 = `obj-cep-platform §4.0`)。
+> - **② 本节列的 4 个 ArchForge 文档仍是**协议语义的**上游引用面**,**不重发明**(per §0.3 / §10.1)—— CEP 侧只提供 adapter 载体 + 能力声明 schema;**协议语义建模归 ArchForge**(per AGENTS.md:423)。
+> - **③ `06 §15.4` 的 P 编号仍是** P2.0 / P2.1 / P3 / P3.5 / P4 / P5(无 P6,per `ADR-CEP-NUMBER-MAP §2 Decision 3` 冻结)—— **编号口径不变**,但**实施分期作废**,改由 CEP 队列承接(见 §15.4 转隶注记)。
+
 **关联 OpenSpec 草案**: `openspec/changes/2026-10-16-cpptlm-coherence-extension/` (待起草)
-**关联草案 06-bis**: [`docs/architecture/06-bis-coherence-as-network-extension.md`](06-bis-coherence-as-network-extension.md) v0.3(同期, 详化实施路径)
+**关联草案 06-bis**: [`docs/architecture/06-bis-coherence-as-network-extension.md`](06-bis-coherence-as-network-extension.md) v0.3(同期, 详化实施路径) —— ⚠️ **已被 07 号 supersede**(per 其顶部 Status Update)
 
 ### 15.2 Topology 参数化演进(P3+)
 
@@ -1252,6 +1271,11 @@ per oracle 评估 §6 + oracle §3 + §4.4:
 | **P3.5** | JSON 端口路径打通(扩 Step 7a registerCoherenceAdapter 候选 C) + Python 工厂落地 | 30-45d |
 | **P4** | CHI 完整协议支持(REQ/SNP/RSP/DAT 4 vnet 借鉴 Gem5 mainline) | 30-45d |
 | **P5** | IOMMU 集成(per ArchForge `09-coherence-protocol.md` §13 R5, 不是 `coherence-bridge.md` R5) + 跨 vendor coherence(NVIDIA USRI vs AMD Infinity Fabric) | 60-90d |
+
+> **⚠️ 2026-10-27 修订(per 台账 Entry #82 —— 借鉴 §11.2 样板;**不改 P 编号与上表条目本身**)** —— 本表的 **P 编号口径(P2.0 / P2.1 / P3 / P3.5 / P4 / P5,无 P6)** 是 `ADR-CEP-NUMBER-MAP §2 Decision 3` 冻结的**唯一编号真源**,并被 `06-bis` 顶部 Status Update 引用为「本文档的 P 编号以 `06 §15.4` 为准」⇒ **本表条目与编号一律不动**。变更的只是**实施分期与归属**:
+> - **① 实施分期已转隶 CEP(时间线作废)** —— 本表 P2.0 ~ P5 的**实施分期从未执行**;承载 seam 的代码增量改由 **CEP 排期**承接:顶层真源 = [`07-coherence-exploration-platform.md`](07-coherence-exploration-platform.md),决策真源 = `docs/adr/ADR-CEP-*`,**排期真源 = `obj-cep-platform §4.0`**(14 change 串行队列,Stage 1 = 10 / Stage 2 = 2 / Stage 3 = 1)。
+> - **② P 阶段 → CEP 队列的逐项对应**(per `ADR-CEP-16 §2` 决策 1 + `07 号 §8.2` 承接映射表):**P2.0** → `ADR-CEP-04 §6` + `ADR-CEP-03 §3.2` R3 · **P2.1** → `ADR-CEP-01 §2 Decision 1`(programmatic bridge 路径)· **P3** → `ADR-CEP-04 §2` SharerTracker 5 实现 · **P3.5** → 沿用 `06 §7` Python 拓扑 + ProtocolEngine 插件描述符 · **P4** → `ChiRnfAdapter` 完整实现(subset → full)· **P5** → **⛔ scope reduction 待签发独立 ADR**(CEP 5 协议族不覆盖 IOMMU 完整协议;跨 vendor 归 ArchForge)。
+> - **③ 队列 #7 的载体形态变更** —— `ADR-CEP-19` 决策 5 / 6 落地 `CohIfBundle` + `ProtocolBridge` + `REGISTER_CHSTREAM_BIDIRECTIONAL`,**走 JSON 装配链**(per `ADR-CEP-16` 决策 2 排除 programmatic bridge 的 C++ 路径)—— 与上表 P2.1 的「programmatic bridge 路径」**表述不同**,以 CEP 侧 ADR 为准(per `ADR-CEP-19` Status Update)。
 
 ### 15.5 5-stage Pipeline 演进(P4 演进 seam)
 

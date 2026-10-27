@@ -97,7 +97,9 @@
 
 > **⚠️ v0.4 X-11 cross-ref**: 本节定义 Bundle 命名的"现状保守 + 重塑触发条件"真源. [`docs/architecture/06-inter-module-network.md`](06-inter-module-network.md) §3 (Bundle 二分类: 业务 vs 网络) 在本节基础上提议"业务 Bundle 可演进 + 网络 Bundle 后期协议特化时再定"的演进方案, **不破坏本节现状保守立场**. 06 §3.1 业务 Bundle = 本节"命名直接带协议前缀"现状, 06 §3.1 网络 Bundle = 本节"未来重塑触发条件"满足时的演进方向.
 
-**当前现状**: 17 个 Bundle .hh 文件中（`include/bundles/`, per `ls include/bundles/*.hh`），命名直接带协议前缀（PcieTlp / Cr / Doorbell / Msix），这一选择**在编译期类型安全**与**协议中立**之间取了前者。
+**当前现状**: 17 个 Bundle .hh 文件中（`include/bundles/`, per `ls include/bundles/*.hh`），内含 **26 个 Bundle 类型**（**25 个 `bundle_base` 派生类型** + `PcieTlpWireBundle`；per `grep -rho "struct [A-Za-z0-9_]* : public \(ch::core::\)\?bundle_base" include/bundles/*.hh | wc -l` = 25）—— 命名直接带协议前缀（PcieTlp / Cr / Doorbell / Msix），这一选择**在编译期类型安全**与**协议中立**之间取了前者。
+
+> **⚠️ 2026-10-27 计数订正(per 台账 Entry #82)**:本节原写「当前 **18** 个 Bundle 中」/「18 Bundle 中其余 **17** 个」—— **口径未定义**(文件数 vs 类型数)且数值已过期。**文件数 = 17**(`ls include/bundles/*.hh`)/ **类型数 = 26**。下文统一用**类型数**,并附可复现命令。
 
 **未来可选的重塑方案**（**仅在出现第二个 chip-internal 协议时启动，不在当前阶段实施**）:
 
@@ -126,8 +128,8 @@ struct TransportReqBundle : public bundle_base {
 ```
 
 **为什么是未来选项而非必须**:
-- 当前 18 个 Bundle 中, 真正需要 chip-internal 中立抽象的只有 SDMA 5 端口（`sdma_engine_tlm.hh:82-86`）——但这是**唯一**的 chip-internal 协议特化, **抽象出基类只有 1 个用户**, 不符合"≥2 用户"重构原则
-- 18 Bundle 中其余 17 个都是 board-level（host↔chip）或 chip-internal 通用 cache/NOC, **命名已合理**
+- 当前 26 个 Bundle 类型中, 真正需要 chip-internal 中立抽象的只有 SDMA 5 端口（`sdma_engine_tlm.hh:82-86`）——但这是**唯一**的 chip-internal 协议特化, **抽象出基类只有 1 个用户**, 不符合"≥2 用户"重构原则
+- 26 个 Bundle 类型中其余 25 个都是 board-level（host↔chip）或 chip-internal 通用 cache/NOC, **命名已合理**
 - 任何重塑都会触碰 frozen headers（`pcie_bundles_tlm.hh`）+ 23 ABI 冻结面, **风险高于收益**
 - **`port_contract_asserts.hh:4` 已记录历史教训**: 早期计划 `ChStreamInitiatorPort<Bundle>` 模板化被 Momus REJECT, 因为"协议中立"带来的类型擦除成本 > 收益
 
@@ -814,6 +816,12 @@ APU 顶层跨域 snoop 广播总线，继承 `CrossbarTLM`。
 
 **当前范围（Phase 7.A/7.B）**：write-through 透传，不下场做 coherence 决策。
 **未来（Phase 7.C）**：引入 6×6 state transition switch 表（per ADR-SOC-01 §3）。
+
+> **⚠️ 2026-10-27 cross-ref 补登(per 台账 Entry #82)** —— 上条「未来(Phase 7.C) 引入 6×6 表」的**意图已由 CEP 承接并落地**,本节原文未同步:
+> - **承接者**:CEP(Coherence Exploration Platform)—— 顶层真源 [`07-coherence-exploration-platform.md`](07-coherence-exploration-platform.md),决策真源 `docs/adr/ADR-CEP-*`。
+> - **已落地**:6×6 MOESI 状态转换表 = `include/tlm/cep/moesi_gpu_adapter.hh` 的 `kStateTransition[6][6]`(队列 #6 `cpptlm-cep-moesi-gpu-adapter`,2026-10-27 归档;6 态 × 6 事件,`E→M` 静默升级)。
+> - **CoherentXBarTLM 的职责边界不变**:它仍是**传输平面**的 snoop broadcast 通道(write-through 透传),**不下场做 coherence 决策**;6×6 状态判定归 CEP 的 ProtocolEngine 载体(per `ADR-CEP-07A` 决策 1 第 2 项 ③「其文件头自述的 6×6 意图 → 由 CEP 的 ProtocolEngine 承接,**该文件不改**」)。
+> - ⇒ **本节正文不改**(per ADR 不可变 + Status Update 先例);上条「未来(Phase 7.C)」表述**保留为历史描述**,以本 cross-ref 为现行口径。
 
 详见 spec: `docs-archived/superpowers/specs/2026-06-19-p0-fixes-design.md §3`
 

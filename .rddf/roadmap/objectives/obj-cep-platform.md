@@ -5416,8 +5416,76 @@ critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option 
 
 **⑧ 关联**: Entry #80(队列 #6 归档释放 slot)· #79(队列 #6 实施)· #78(判据增补追认)· #77/#76(队列 #7 planner 产出 critic 两轮)· #75(planner 产出)· #74(队列 #7 立项 + `ADR-CEP-19` 签发)
 
+### Entry #82 — 2026-10-27 [fix]
+
+**主题**: 架构文档**漂移回填**批(P0 路线图载体 + P1 真源 1)—— 用户 2026-10-27 直接指令授权;**不改排期、不改 ADR 正文、不新增决策**
+
+**① 触发**
+
+用户指令「请审查 CEP 代码情况,并检查是否和路线图/架构文档对齐」→ 审查结论:CEP 代码侧健康(`[cep]` 161 case / 2600 assertion 全绿;5 个守门脚本全 rc=0),但**文档侧落后代码 2~3 代**。用户随后指令「动手做 P0」→ P0 已落地(commit `d52fff56`),再指令「继续 P1」⇒ 本 entry 记录 P1 的授权与逐项处置。
+
+**② P0(已落地,commit `d52fff56`)**
+
+| 项 | 内容 |
+|---|---|
+| `phase-10.md` 依赖图 | 队列 #6 补 `✅ archived(2026-10-27)` 块;队列 #7 补 `🟡 Proposed` 块 + 「ADR-CEP-19 待签发」→「已签发 2026-10-27」 |
+| `phase-10.md` 测试标签 | `[cep]` 76/1284 → **161/2600**;全仓 baseline 追加 **1943/873046**(增量主因 `[sdma]` 69 case / 803473 assertion,非 CEP) |
+| `phase-10.md` / `roadmap.md` 版本行 | v0.2 → v0.3;2026-10-23 → 2026-10-27(v1.5,引用 Entry #80/#81) |
+| `.rddf/state/roadmap-state.json` | **删除**(rdd-workflow 遗留;实测全仓零消费者;内容与 `roadmap.md` Phase Skeleton 直接矛盾 ⇒ 第二份阶段状态真源,违 §4.7.1);`roadmap.md` 顶部增「阶段状态真源」说明行 + `docs_sync_check.sh` `VIRTUAL_PATHS` 登记 |
+
+**③ P1 逐项处置(本 entry 授权范围)**
+
+**A. M1 冻结面成员(`07-coherence-exploration-platform.md`)—— 2 处活口径表机械同步 + 1 则 Status Update 追加**
+
+| 项 | 处置 |
+|---|---|
+| §11「Gap → 实现状态映射」 | 原写「📐 契约已定义,🛠️ 未实现」11 行 —— 落后两代(队列 #3~#6 全部已归档)。**按实测**(代码载体 + 行为化测试 + 归档件三者一致)逐行重写为 🟡/✅/⛔ 三态:✅ 已完全落地 4 行 · 🟡 部分落地 5 行 · **失指引用修正**(`cpptlm-cep-sharer-tracker-base` 作为 change 目录不存在 → 改指队列 #9~#11) |
+| §5.1.1 工业协议族表状态列 | `moesi_gpu` / `mesif` 两行「未排期」→ 「✅ 已落地(队列 #6,2026-10-27 归档)」/「📋 已排期(队列 #9,2028-Q4;⚠ R-1 阻塞)」;**族计数(1 族 / 2 实例)与 Entry #12/#13 历史补记不动**;状态值以 §4.0 排队总表为唯一权威 |
+| §5.4 Bundle 约束 | **正文不改** —— 沿用本文件 2026-10-27 第一则附录 ③ 的既有处置(待队列 #7 落地 `CohIfBundle` 后再同步第三类);仅在 §11 对应行注明「第三类已由 `06 §3.3` 增补,唯一实例待落地」 |
+| 追加 §附录 Status Update 第二则 | 登记授权 + 上述 2 处同步 + 1 处失指修正 + 4 项**未改动**的已知缺口登记(`NullProtocolEngine` 无载体且无 owner / `06 §15.1`+`§15.4` 未加转隶注记 / `06 §9.1` 行号漂移) |
+| 冻结清单 | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #82"`(冻结集成员数 **40**,不变) |
+
+**B. 非冻结面真源 1(`06-inter-module-network.md` / `01-hybrid-architecture-v2.1.md`)—— 漂移回填**
+
+| 位置 | 处置 |
+|---|---|
+| `06 §0.1` / `§1.3-3` / `§3.2` 正文 / L5 图注 | Bundle **.hh 文件数**口径统一为 **17**(实测 `ls include/bundles/*.hh`);「18 个」(§0.1)/「16 个」(§1.3-3 / §3.2 正文 / 图注 `per §1.3.1` → `per §1.3`)逐处订正 |
+| `06 §3.2` 归类表 | **补登漏登记的 `bundle_serialization.hh` 行**(原表体 16 行 vs 标题 17 个 .hh)—— 归类为「(基础设施)」,不归业务/网络 |
+| `06 §3.3` 第三类 | 「唯一实例」→「**规划实例(当前零实例)**」+ 标注 `include/bundles/cep_coherence_bundles_tlm.hh` **尚不存在**(交付队列 = #7,2028-Q2);同时在「写作纪律」段追加 Entry #82 例外说明(§3.2 归类表确实被动过 —— 补登行 + 计数同步,§3.1 判定规则零改动) |
+| `06 §2.3` / `§2.4` | 标题层号互换订正(L5 StreamAdapter → **L4**;L4 ChStream → **L3**);§2.3 内 `module_factory.cc:707-709` → **731-733** |
+| `06 §9.1` | Step 1-9 行号整体刷新(漂移 ≈25 行,成因 = CEP 闸门 `0.25` 段插入)→ 改用**步骤起始注释行**作锚点;**新增登记「预置 0.25 CEP 装配期判据」**(`module_factory.cc:167-186`),并注明它**非 Step 7c**(per §9.2) |
+| `06 §0.3` / `§10.1` | 关联文档表 / supersede 矩阵**各增 07 号一行**(双向 cross-ref) |
+| `06 §8.1` | `coherence_domains` 行:「§15.1 演进, 不在 P1」→ 改为「**保留**(4 config 依赖)+ **解析已落地**(`module_factory.cc:195-196`)+ **消费延期到 Stage 2**」 |
+| `06 §13.2` | `[coherence]` 标签行 → 改标 `[cep]` 为 CEP 实际标签(19 个 `test_cep_*.cc` / 161 case);`[coherence]` 标注为**已被 legacy `test_coherence_domain.cc` 占用** |
+| `06 §15.1` / `§15.4` | 补「**时间线转隶 CEP**」注记(样板 = 同文件 §11.2 的 Entry #74 修订段)—— **P 编号(P2.0~P5,无 P6)与条目本身零改动**,只登记「实施分期作废 + 归属转 CEP」+ P→队列逐项对应 |
+| `06 §2.1` 尾注 | 「HOST 进程 + 23 ABI 是 **L7** 边界(per 01 §1.1)」伪引用订正 —— 01 §1.1 只有 L1-L6,**无 L7**;改为「属 01 §1.1 范围外」 |
+| `01 §1.2` | Bundle 计数口径未定义 + 数值过期(「18 个 Bundle」/「18 中其余 17」)→ 明确为「**17 个 .hh 文件 / 26 个 Bundle 类型**(25 个 `bundle_base` 派生 + `PcieTlpWireBundle`)」并附可复现命令 |
+| `01 §8.5.2` | 补 6×6 cross-ref:「未来(Phase 7.C) 引入 6×6 表」→ **已由 CEP 承接并落地**(`moesi_gpu_adapter.hh` `kStateTransition[6][6]`,队列 #6 已归档);CoherentXBarTLM 职责边界不变(per `ADR-CEP-07A` 决策 1 第 2 项 ③) |
+
+**④ 明确不做(范围边界)**
+
+| 不做 | 理由 |
+|---|---|
+| 改 §4.0 排期 / 季度 / change 数 | 本 entry 是**文档漂移回填**,不涉排期;排期真源 = §4.0,未改一字 |
+| 改任何 ADR 正文 | ADR 不可变 —— P2 批(§11 守门覆盖不足 / `IC2` 时效限定 / `NullProtocolEngine` 无载体)只**登记**,不动 ADR |
+| 07 号 §5.4 / §2~§10 架构正文 | 沿用本文件既有两则 Status Update 的处置口径(只改活口径表 + 追加 Status Update) |
+| 新建台账 kind | 复用既有 kind(`[fix]`,per Entry #72/#73 同款);`cep_freeze_check.sh` 只校验 **entry id 精确命中**,不解析 kind |
+| 实施 `NullProtocolEngine` / `ContractVerdict` 同名冲突 / Stub 源码 grep 守门补强 | 属**代码级**变更,归队列 #7 或新 change,本 entry 只登记 |
+
+**⑤ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `cep_freeze_check`(含 `--update --authorized-by "Entry #82"`) | rc=0,冻结集成员数 **40**(不变) |
+| `cep_docs_sync_check` / `cep_doc_ref_check` / `cep_decl_alignment_check` / `cep_archforge_alignment_check` | 4/4 rc=0 |
+| `cep_gate_selftest` | rc=0 |
+| `scripts/test/docs_sync_check.sh --strict` | rc=0(416 路径 / 0 缺失) |
+| `cpptlm_tests "[cep]"` | 161 case / 2600 assertion 全绿 |
+
+**⑥ 关联**: P0 commit `d52fff56` · Entry #81(队列 #7 转正)· #80(队列 #6 归档)· #79(队列 #6 实施)· #74(`ADR-CEP-19` 签发 + 07 号第一则 Status Update)
+
 ---
 
-**版本**: v1.2(2026-10-23,per planner 路线图漂移复核 + metis 对抗性交叉检查;Entry #22)
+**版本**: v1.3(2026-10-27,per P0/P1 架构文档漂移回填;Entry #82)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

@@ -319,20 +319,20 @@ group-scoped completion     → Fabric Collective Plane
 | **TileLink-C** | TileLink-C | `TileLinkCAdapter` | Stage 1 | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
 | **NVLink** | NVLink | `NvlinkAdapter` | Stage 2 | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
 | **UALink** | UALink | `UalinkAdapter` | Stage 3 | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
-| **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **未排期** | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
-| **MESIF** | `mesif` | `MesifAdapter` | **未排期** | 分级目录型(跨卡);目录查询 / 定向 snoop | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1) |
+| **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **✅ 已落地**(队列 #6,2026-10-27 归档;首个 `status=implemented` 实例) | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
+| **MESIF** | `mesif` | `MesifAdapter` | **📋 已排期**(队列 #9;季度见 `obj §4.0`;⚠ R-1 阻塞) | 分级目录型(跨卡);目录查询 / 定向 snoop | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1) |
 
 > **协议数 6 族 / 8 实例**(CXL 2.0 与 3.0 对称是同一 adapter 的两种模式,但实现阶段是 2 个 change)
 >
 > **族计数的口径**(2026-10-22 补记,per 台账 **Entry #12**):`moesi_gpu` / `mesif` 计为**同一来源族**
 > (ArchForge 声明族,含 2 套互不承认的一致性架构,per `32 号` C1)→ **+1 族 / +2 实例**,
 > 镜像 CXL「1 族 / 2 实例」的先例。两者 `family` 字段均为 `industrial`(per `32 号` 声明)。
-> **状态 = 未排期** —— 登记 ≠ 排期(per `ADR-CEP-00 §2 决策 3`,本季度队列未变)。
+> **状态 = 按队列实况(2026-10-27 更新,per 台账 Entry #82 授权)** —— `moesi_gpu` = 队列 #6 **已落地归档**(2026-10-27;首个 `status=implemented` 实例);`mesif` = 队列 #9 **已排期**(季度见 `obj §4.0`;⚠ R-1 阻塞登记 —— **排期 ≠ 就绪**)。**状态值以 `obj §4.0` 排队总表为唯一权威**(本表**不复制**排期,per 防双真源立场)。
 >
 > **2026-10-22 补记**(per 台账 **Entry #13** [adr-amendment]):`moesi_gpu` 行的「**争点所在**」表述
 > **已失效** —— ArchForge 已裁定判据 (b) **成立**(`4ff2fa6`,Q-3a = 是)→ 该静默 `E→M` **是域可见写**。
 > **状态值以 `ADR-CEP-05 §13.1` 为唯一权威**(本表**不复制**状态值,per 防双真源立场);
-> 本行的「未排期」状态**不受影响**(登记 ≠ 排期)。
+> 本行的「已落地 / 已排期」状态**不受影响**(排期 ≠ 就绪)。
 
 #### 5.1.2 Ruby-SLICC 协议族(1 族 / 8 实例,per `ADR-CEP-17 §2 Decision 2`)
 
@@ -667,23 +667,27 @@ experimental/<run_id>/
 
 ## 11. Gap → 实现状态映射
 
-| 能力 | 定义位置 | 实现状态 | 承接 change |
-|------|---------|---------|-----------|
-| canonical 10 流契约 | §3.1 | 📐 契约已定义,🛠️ 未实现 | Stage 0 契约测试 → Stage 1 ProtocolEngine |
-| Stub Cache Core | §3.2 | 📐 契约已定义,🛠️ 未实现 | `cpptlm-cep-stub-cache-core` |
-| SharerTracker 5 实现 | §5.2 | 📐 契约已定义,🛠️ 未实现 | `cpptlm-cep-sharer-tracker-base` + `-cxl-dcoh-symmetric` + `-tilelink-tree-manager` |
-| Collective Plane | §5.3 | 📐 契约已定义,🛠️ 未实现 | `cpptlm-cep-collective-plane-base` |
-| ProtocolEngine **16 adapter 实例**(工业 8 + Ruby 8;§5.1.4 候选语义落地后为 20) | §5.1 | 📐 契约已定义,🛠️ 未实现 | Stage 1~3 |
-| ModuleFactory seam | §6.3 | 📐 契约已定义,🛠️ 未实现 | Stage 0 契约测试 + Stage 1 |
-| 实验输出 4 件套 | §7 | 📐 契约已定义,🛠️ 未实现 | Stage 0(`cpptlm-cep-umbrella`)|
+> **口径(2026-10-27 活口径表同步,per 台账 Entry #82 授权)**:本表是**实现状态的活映射** —— 状态以**实测**为准(代码载体 + 行为化测试 + 归档件三者一致),**不复制** ADR 判据文本。
+> **图例**:🟡 = 部分落地 / 降级实现(逐行标注缺口与承接队列)· ✅ = 已落地且有行为化载体 · ⛔ = scope reduction。
+> **本表只登记状态**,不改 §3 ~ §8 的架构正文(per ADR 不可变 + Status Update 先例)。
+
+| 能力 | 定义位置 | 实现状态(2026-10-27 实测) | 承接 change |
+|------|---------|-------------------------|-----------|
+| canonical 10 流契约 | §3.1 | 🟡 **部分落地** —— Stub Cache RN 侧 5 流(`stub_cache_core.hh` 6 接口)已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体未落地**(`CohIfBundle` / `ProtocolEngine` 均不存在) | 载体 = `cpptlm-cep-cohif-carrier`(队列 #7) |
+| Stub Cache Core | §3.2 | ✅ **已落地** —— 6 接口 / 5 态 / `INV-SC1`~`SC6` + `INV-CEP-05-IC1` 行为化(14 测试) | `cpptlm-cep-stub-cache-core`(2026-10-25 已归档) |
+| SharerTracker 5 实现 | §5.2 | 🟡 **1 / 5** —— `FullMapDirectory` 唯一行为实现已落地(10 测试);其余 4 个(`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:178-195`) | 队列 #9 ~ #11(队列 #9 另需第 6 实现 `HierarchicalDirectory`) |
+| Collective Plane | §5.3 | 🟡 **骨架已落地** —— `CollectivePlaneIf` 恰 7 方法 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous);**REDUCE / BROADCAST / MULTICAST 数据路径未实现**(返 `Status::DataPathNotImplemented`);`fabric_ingress_classify` 路由接线未实现 | 骨架 = `cpptlm-cep-collective-plane-base`(2026-10-26 已归档);数据路径 = Stage 3 |
+| ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **1 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射),是**首个 `status=implemented` 实例**;**`ProtocolEngine` 基类本身不存在** | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
+| ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 零命中)⇒ `INV-CEP-07-IC4` **无载体** | 队列 #7(`REGISTER_CHSTREAM_BIDIRECTIONAL` + `module_factory.hh:313-315` 死钩子扩展) |
+| 实验输出 4 件套 | §7 | ✅ **已落地** —— `tools/{render_report,run_sweep,ab_compare}.py` + `experimental/metrics.schema.json` + 4 件套契约测试(`test_cep_canonical_invariants.cc` / `test_cep_dummy_signals.cc` / `test_cep_module_factory_seam.cc` / `test_cep_simulation_mode_lock.cc`) | Stage 0(`cpptlm-cep-umbrella`,2026-10-23 已归档) |
 | simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |
-| Bundle 二分类 | §5.4 | ✅ 已落地(`06 §3.2` 16 个 .hh)| — |
+| Bundle 二分类 | §5.4 | ✅ 已落地(`06 §3.2` 17 个 .hh;**第三类已由 `06 §3.3` 增补**,其唯一实例待落地 —— 见 §5.4 Status Update ③)| — |
 | Python 拓扑生成 | §8.1 沿用 `06 §7` | ✅ 已落地(`cpptlm.library.mesh_cluster/ring_cluster`)| — |
-| IOMMU 完整协议 | §8.2 P5 | ⛔ scope reduction 待签发独立 ADR | 待定 |
-| Ordering Point 可迁移性判据 | `ADR-CEP-08 §3` | 📐 契约已定义,🛠️ 未实现 | Stage 1~2 |
-| 通道依赖图无环检查 | `ADR-CEP-09 §3` | 📐 契约已定义,🛠️ 未实现 | Stage 1(装配期校验) |
-| 协议实例能力声明 schema | `ADR-CEP-12 §3` | 📐 契约已定义,🛠️ 未实现 | Stage 2 |
-| 跨域组合判据 | `ADR-CEP-13 §3` | 📐 契约已定义,🛠️ 未实现 | Stage 2(人工声明 + 实验证伪) |
+| IOMMU 完整协议 | §8.2 P5 | ⛔ scope reduction **待签发独立 ADR**(per `ADR-CEP-00 §3`)| 待定 |
+| Ordering Point 可迁移性判据 | `ADR-CEP-08 §3` | ✅ **已落地** —— J1 / J2 / J3 + `INV-CEP-08-IC2` 行为化(6 测试);**J3 通用形式不可静态判定 ⇒ 多点显式 `SKIP`**;J2 在合法声明上 vacuous PASS | `cpptlm-cep-directory-ordering-plane`(2026-10-25 已归档) |
+| 通道依赖图无环检查 | `ADR-CEP-09 §3` | ✅ **已落地** —— 装配期逐 `(network, vc)` verdict + DFS 三色环检测(8 测试) | `cpptlm-cep-directory-ordering-plane`(2026-10-25 已归档) |
+| 协议实例能力声明 schema | `ADR-CEP-12 §3` | ✅ **已落地** —— `protocol_instance.schema.json`(M1 冻结集)+ 5 条 AC 判据 + `protocol_instances.json` 声明源(2 实例);**首个 `implemented` 实例的装配期复核已通过** | `cpptlm-cep-stub-cache-core` / `cpptlm-cep-moesi-gpu-adapter`(均已归档) |
+| 跨域组合判据 | `ADR-CEP-13 §3` | 🟡 **部分落地** —— 判据 (a)(b) 已裁定(`moesi_gpu` 静默 `E→M` = 域可见写);**跨域人工声明 + 实验证伪未落地** | Stage 2(队列 #12 ~ #14) |
 
 ---
 
@@ -706,9 +710,27 @@ experimental/<run_id>/
 > **③ §5.4 Bundle 约束的落点**:该节列的业务 / 网络 Bundle 清单**不含** CohIf Bundle —— 其交付队列为 #7,路径 `include/bundles/cep_coherence_bundles_tlm.hh`(per `ADR-CEP-19` 决策 6;**避开** `ADR-CEP-07A` 明令「不创建」的 `coherence_bundles_tlm.hh`)。**本节正文不改**,待队列 #7 实施后再同步。
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
 
+## §附录 · Status Update 2026-10-27(第二则 · per 台账 Entry #82 —— 实现状态映射漂移回填)
+
+> **授权**:Entry #82(P1 架构文档漂移回填 —— 由用户 2026-10-27 直接指令授权;配套 P0 = commit `d52fff56`)。
+> **口径**:本节**不改**架构正文(§2 ~ §10 的定义 / 职责 / 判据一律不动),仅登记授权 + **2 处活口径表的机械同步** + 失指引用修正。**冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #82"`。
+>
+> **① §11「Gap → 实现状态映射」全表机械同步(活口径表,per Entry #27 / #71 / #74 同款先例)**:该表原写「📐 契约已定义,🛠️ 未实现」11 行 —— **落后两代**(队列 #3 ~ #6 全部已归档,状态早已翻转)。本次按**实测**(代码载体 + 行为化测试 + 归档件三者一致)逐行重写为 🟡 / ✅ / ⛔ 三态并标注缺口与承接队列:
+> - **✅ 已完全落地(4 行)**:Stub Cache Core(`cpptlm-cep-stub-cache-core` 已归档)· 实验输出 4 件套(Stage 0 `cpptlm-cep-umbrella` 已归档)· Ordering Point 可迁移性判据 + 通道依赖图无环检查(均 `cpptlm-cep-directory-ordering-plane` 已归档)· 协议实例能力声明 schema(`cpptlm-cep-stub-cache-core` / `-moesi-gpu-adapter` 已归档)
+> - **🟡 部分落地(5 行)**:canonical 10 流契约(载体未落地)· SharerTracker 5 实现(**1/5**,其余 4 个仅 traits)· Collective Plane(骨架已落地,3 原语数据路径未实现)· ProtocolEngine adapter 实例(**1 个**,且基类本身不存在)· ModuleFactory seam(闸门已接,**0 个 CEP 类注册** ⇒ `INV-CEP-07-IC4` 无载体)· 跨域组合判据(判据已裁定,人工声明未落地)
+> - **失指引用修正**:原「承接 change」列的 `cpptlm-cep-sharer-tracker-base` —— 该**change 目录不存在**(仅存同名 main spec `openspec/specs/cep-sharer-tracker-base/spec.md`);实施载体是 `cpptlm-cep-directory-ordering-plane`(同文件 2026-10-25 附录「SharerTracker 实施载体改为」已声明,本次 §11 漏同步)⇒ 已改为队列 #9 ~ #11 并标注队列 #9 另需第 6 实现 `HierarchicalDirectory`
+>
+> **② §5.1.1 工业协议族表的**状态列**机械同步(活口径,per 同款先例)**:原 `moesi_gpu` / `mesif` 两行状态列均写「**未排期**」—— `moesi_gpu` 已于 2026-10-27 随队列 #6 **完成归档**(首个 `status=implemented` 实例),`mesif` 已**排期至队列 #9**(⚠ R-1 阻塞登记;季度见 `obj §4.0`)⇒ 同步为「✅ 已落地」/「📋 已排期」。**族计数(1 族 / 2 实例)与 `Entry #12` / `#13` 的历史补记不动**;**状态值以 `obj §4.0` 排队总表为唯一权威**,本表不复制排期。
+>
+> **③ §5.4 Bundle 约束:本节正文仍不改**(per 本文件 2026-10-27 第一则附录 ③ 的既有处置 —— 待队列 #7 落地 `CohIfBundle` 后再同步第三类)。本则仅在 §11 的「Bundle 二分类」行注明「**第三类已由 `06 §3.3` 增补**,其唯一实例待落地」。
+>
+> **④ 未随本则改动的已知缺口(登记,不处理)**:`NullProtocolEngine`(`§6.4` + `INV-CEP-07-IC2`)**无代码载体且无队列 owner**;`06 号 §15.1` / `§15.4` 尚未加「时间线转隶 CEP」注记;`06 号 §9.1` 的 `module_factory.cc` 行号漂移 ≈25 行 —— 三项均在**本仓 06 号 / 01 号**(非本冻结面成员),由同批 P1 在 06 号 / 01 号侧处置,本文件不代改。
+>
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #82)。
+
 
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ **Status Update 2026-10-27**(队列 #7 立项 + 排队 13 → 14)
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ **Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)
