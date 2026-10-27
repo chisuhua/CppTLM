@@ -411,6 +411,146 @@ namespace cpptlm {
             return out;
         }
 
+        // ── 源码静态扫描工具(协议标识符负向断言用)──────────────────────
+        // per ADR-CEP-14 §2 决策 3 C9(「Stub 源码 grep 协议标识符」)
+        //     + ADR-CEP-07A §3 INV-CEP-07A-IC2(协议泄漏通用禁令)
+        //
+        // ⚠️ **必须先去注释再扫** —— 否则两头都错:
+        //   · 头文件里解释「折叠表 / 禁止暴露」的中文散文会把被禁流名喂进来(假阳性);
+        //   · 把禁用词写进注释里又能绕过(假阴性)。
+        //   (per `test_cep_stub_cache_core.cc` Scenario 1/3 的既有口径)
+
+        /// 去掉 `//` 行注释与 `/* */` 块注释
+        inline std::string strip_comments(const std::string& src) {
+            std::string out;
+            out.reserve(src.size());
+            bool in_line = false, in_block = false;
+            for (size_t i = 0; i < src.size(); ++i) {
+                const char c = src[i];
+                const char n = (i + 1 < src.size()) ? src[i + 1] : '\0';
+                if (in_line) {
+                    if (c == '\n') {
+                        in_line = false;
+                        out.push_back(c);
+                    }
+                    continue;
+                }
+                if (in_block) {
+                    if (c == '*' && n == '/') {
+                        in_block = false;
+                        ++i;
+                    }
+                    continue;
+                }
+                if (c == '/' && n == '/') {
+                    in_line = true;
+                    ++i;
+                    continue;
+                }
+                if (c == '/' && n == '*') {
+                    in_block = true;
+                    ++i;
+                    continue;
+                }
+                out.push_back(c);
+            }
+            return out;
+        }
+
+        /// 抽取源码中的**标识符词集**(大写归一)
+        ///
+        /// 切分规则(**双重边界**):先按 `_` 切,再按 CamelCase 边界切 ——
+        ///   `chi_rnf`      → {CHI, RNF}
+        ///   `ChiRnfAdapter`→ {CHI, RNF, ADAPTER}
+        ///   `chip_id`      → {CHIP, ID}   ← 「chip」(芯片)不误判为「CHI」(协议)
+        ///   `hierarchical` → {HIERARCHICAL}
+        /// ⇒ 协议名可被**完整词**精确匹配,而非子串匹配(子串会把 `ARCHITECT`
+        ///   误判为含 `CHI`)。
+        inline std::set<std::string> identifier_words(const std::string& src) {
+            std::set<std::string> out;
+            // 标识符 = 字母/下划线开头,后接字母/数字/下划线
+            static const std::regex tok_re(R"([A-Za-z_][A-Za-z0-9_]*)");
+            for (auto it = std::sregex_iterator(src.begin(), src.end(), tok_re);
+                 it != std::sregex_iterator(); ++it) {
+                std::string tok = it->str();
+                // 按 `_` 再切
+                std::string part;
+                auto flush = [&]() {
+                    if (part.empty())
+                        return;
+                    // 按 CamelCase 边界切:连续大写 / 大写+小写串 / 小写数字串
+                    static const std::regex cw_re(R"([A-Z]+(?![a-z])|[A-Z][a-z0-9]*|[a-z0-9]+)");
+                    for (auto w = std::sregex_iterator(part.begin(), part.end(), cw_re);
+                         w != std::sregex_iterator(); ++w) {
+                        std::string s = w->str();
+                        for (auto& c : s)
+                            c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+                        out.insert(std::move(s));
+                    }
+                    part.clear();
+                };
+                for (char c : tok) {
+                    if (c == '_') {
+                        flush();
+                    } else {
+                        part.push_back(c);
+                    }
+                }
+                flush();
+            }
+            return out;
+        }
+
+        /// 协议标识符命中判定 —— 命中即返回命中的协议名
+        ///
+        /// **关键词集合**与 `test_cep_schema.cc` 的 C9 负向断言对齐
+        /// ({MESI, MOESI, CHI, CXL, TILELINK, NVLINK, UALINK} + MESIF),
+        /// 但**不含 TOKEN** —— token 是 MOESI_CMP 的**协议私有状态**概念
+        /// (per ADR-CEP-17 §2 决策 3),不是协议名;源码扫描里 `token` 常见于
+        /// 词法解析的局部变量名 ⇒ 纳入即假阳性。
+        inline std::set<std::string> protocol_identifier_hits(
+            const std::string& src,
+            const std::set<std::string>& keywords = {"MESI", "MOESI", "CHI", "CXL", "TILELINK",
+                                                     "NVLINK", "UALINK", "MESIF"}) {
+            std::set<std::string> out;
+            for (const auto& w : identifier_words(src)) {
+                if (keywords.count(w))
+                    out.insert(w);
+            }
+            return out;
+        }
+
+        /// 标识符**归一化**比较:小写 + 去 `_`
+        ///   ⇒ `vc_binding` / `vcBinding` / `VC_Binding` 归一后同形
+        ///
+        /// ⚠️ **不可**用 `identifier_words()` 做这件事 —— 它会大写并按 `_` 拆词,
+        ///    返回的是 `{VC, BINDING}` 而非 `{VC_BINDING}` ⇒ 与小写原名比对
+        ///    **恒不命中** = 负向断言恒真空(2026-10-27 变异测试实测捕获,
+        ///    per 判据纪律 ③「纯负向断言必须有正控」)。
+        inline std::string normalize_identifier(const std::string& raw) {
+            std::string out;
+            for (char c : raw) {
+                if (c == '_')
+                    continue;
+                out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+            }
+            return out;
+        }
+
+        /// 源码中是否出现指定标识符(归一化后比较,见 `normalize_identifier`)
+        inline bool contains_identifier(const std::string& src, const std::string& ident) {
+            const std::string want = normalize_identifier(ident);
+            if (want.empty())
+                return false;
+            static const std::regex tok_re(R"([A-Za-z_][A-Za-z0-9_]*)");
+            for (auto it = std::sregex_iterator(src.begin(), src.end(), tok_re);
+                 it != std::sregex_iterator(); ++it) {
+                if (normalize_identifier(it->str()) == want)
+                    return true;
+            }
+            return false;
+        }
+
     } // namespace cep
 } // namespace cpptlm
 

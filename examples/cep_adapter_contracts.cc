@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
         return 2;
     }
 
-    const tlm::cep::ContractReport report = tlm::cep::AdapterSchemaContracts::check_all(loaded.inputs);
+    const tlm::cep::AdapterContractReport report = tlm::cep::AdapterSchemaContracts::check_all(loaded.inputs);
     std::printf("%s", report.render().c_str());
     if (report.failed()) {
         std::printf("[FAIL] adapter 契约判据:至少一条判据为红\n");

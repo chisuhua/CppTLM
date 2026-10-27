@@ -198,6 +198,105 @@ TEST_CASE("[cep][contract] 协议泄漏通用禁令:与协议无关的层无协�
         INFO("schema 出现协议标识符: " << proto);
         REQUIRE_FALSE(contains_word(upper, proto));
     }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 2026-10-27 补齐(per 台账 Entry #83):C++ 侧「与协议无关的层」实测扫描
+    //
+    // 背景:`ADR-CEP-07A §4 验证口径`第 2 项声称「Stage 0 由
+    //      `test_cep_canonical_invariants.cc` 的 C9 负向断言覆盖」——
+    //      **实测不成立**(C9 不在 canonical_invariants.cc;实际在
+    //      `test_cep_schema.cc`,且**只扫 schema JSON 一个文件**)。
+    //      ⇒ C++ 侧(Stub / Directory & Ordering Plane)此前**零机器断言**。
+    //      本次按 ADR-CEP-14 §2 决策 3 C9 的「源码 grep」口径补齐 C++ 侧。
+    //
+    // 扫描口径(**与 ADR 一致**):
+    //   · **去注释后**扫(否则散文里的「禁止暴露 CHI」会被误判 = 假阳性;
+    //     而把禁用词写进注释即可绕过 = 假阴性)—— per ADR-CEP-14 C9 的检验方式
+    //   · 按**标识符词**判定(`chi_rnf` / `ChiRnfAdapter` 均命中;
+    //     `chip_id` / `hierarchical` **不**命中 —— 子串匹配会把 `ARCHITECT` 误判为含 `CHI`)
+    //   · 词集 = {MESI, MOESI, CHI, CXL, TILELINK, NVLINK, UALINK, MESIF}
+    //     (与 `test_cep_schema.cc` 的 C9 集合对齐;**不含 TOKEN** ——
+    //      token 是 MOESI_CMP 的**协议私有状态**概念(per ADR-CEP-17 决策 3),
+    //      不是协议名;源码里 `token` 常见于词法解析局部变量 ⇒ 纳入即假阳性)
+    // ─────────────────────────────────────────────────────────────────────
+    const std::vector<std::string> protocol_neutral_layers = {
+        "include/tlm/cep/stub_cache_core.hh",         // Stub Cache Core(ADR-CEP-05)
+        "include/tlm/cep/sharer_tracker.hh",          // Directory(ADR-CEP-04)
+        "include/tlm/cep/ordering_point_checker.hh",  // Ordering Plane(ADR-CEP-08)
+        "include/tlm/cep/address_resolver.hh",        // Ordering Plane(ADR-CEP-08)
+        "include/tlm/cep/channel_dependency_graph.hh",// Ordering Plane(ADR-CEP-09)
+    };
+    for (const auto& rel : protocol_neutral_layers) {
+        const std::string path = (repo_root() / rel).string();
+        const std::string raw = read_file(path);
+        REQUIRE_FALSE(raw.empty());
+        const auto hits = cpptlm::cep::protocol_identifier_hits(cpptlm::cep::strip_comments(raw));
+        for (const auto& h : hits) {
+            INFO("与协议无关的层出现协议标识符: " << rel << " :: " << h);
+            REQUIRE_FALSE(hits.count(h));
+        }
+    }
+
+    // ADR-CEP-14 §2 决策 3 C9 第 4 条:Stub **不感知**协议侧的声明字段
+    // (`ordering_assumption` / `vc_binding` / `consistency_labels` ——
+    //  per ADR-CEP-07 IC7,它们是 ProtocolEngine 侧的声明)
+    {
+        const std::string raw = read_file(
+            (repo_root() / "include" / "tlm" / "cep" / "stub_cache_core.hh").string());
+        const std::string code = cpptlm::cep::strip_comments(raw);
+        for (const char* field : {"ordering_assumption", "vc_binding", "consistency_labels",
+                                  "sharer_tracker"}) {
+            INFO("Stub 感知协议侧声明字段: " << field);
+            REQUIRE_FALSE(cpptlm::cep::contains_identifier(code, field));
+        }
+        // 正控(判别力):同一机制必须能发现确实存在的标识符 ——
+        //   否则「都没找到」可能只是比较逻辑恒真空(2026-10-27 变异测试实测捕获:
+        //   首版误用 `identifier_words()`(大写 + 拆词)与小写原名比对 ⇒ 断言恒绿)。
+        REQUIRE(cpptlm::cep::contains_identifier("int vc_binding = 0;", "vc_binding"));
+        REQUIRE(cpptlm::cep::contains_identifier("int vcBinding = 0;", "vc_binding"));
+        REQUIRE(cpptlm::cep::contains_identifier("int VC_Binding = 0;", "vc_binding"));
+        REQUIRE(cpptlm::cep::contains_identifier("int ordering_assumption = 0;",
+                                                 "ordering_assumption"));
+        // 反控:不同标识符**不得**命中
+        REQUIRE_FALSE(cpptlm::cep::contains_identifier("int vc_bindings = 0;", "vc_binding"));
+        REQUIRE_FALSE(cpptlm::cep::contains_identifier("int vc = 0;", "vc_binding"));
+    }
+
+    // ── 正控(判别力)── 纯负向断言必须有正控,否则「都没找到」可能只是扫描本身失效
+    //   (per `test_cep_stub_cache_core.cc` 判据纪律 ③)
+    {
+        const auto hits_of = [](const std::string& s) {
+            return cpptlm::cep::protocol_identifier_hits(s);
+        };
+        REQUIRE(hits_of("struct ChiRnfAdapter {};").count("CHI") == 1);   // CamelCase
+        REQUIRE(hits_of("chi_rnf").count("CHI") == 1);                    // 下划线形态
+        REQUIRE(hits_of("tilelink_c").count("TILELINK") == 1);
+        REQUIRE(hits_of("MESI_state").count("MESI") == 1);
+        REQUIRE(hits_of("ualink_fabric").count("UALINK") == 1);
+        // 反控:非协议标识符**不得**命中(否则扫描过宽 = 假阳性)
+        REQUIRE(hits_of("chip_id").empty());          // 「chip」(芯片)≠「CHI」(协议)
+        REQUIRE(hits_of("hierarchical").empty());
+        REQUIRE(hits_of("mismatched").empty());
+        REQUIRE(hits_of("no_such_word").empty());
+        REQUIRE(hits_of("struct LineState { int x; };").empty());
+    }
+
+    // ── 拓扑 Python 层的**显式豁免登记**(不是漏检)──
+    //   `cpptlm/topo/layer.py` 的 `protocol=` 参数与 `protocol="MESI"` 默认值
+    //   是 ADR-CEP-07A §3 点名的**两处既有违规之一**(另一处是
+    //   `coherence_domain.hh` 的 `enum Protocol`)。
+    //   处置:per `ADR-CEP-07A` 决策 1 第 7 项 ③ —— **Stage 0~1 不改**
+    //   (避免动既有 Python 测试),Stage 2 与 `ADR-CEP-13` 同步改。
+    //   ⇒ 本断言**故意不覆盖**该层;此处登记豁免,使其不是「静默漏检」。
+    {
+        const std::string py = read_file((repo_root() / "cpptlm" / "topo" / "layer.py").string());
+        REQUIRE_FALSE(py.empty());
+        const bool has_protocol_param = py.find("protocol") != std::string::npos;
+        REQUIRE(has_protocol_param); // 豁免的前提:该层确实仍有 protocol 参数
+        // 豁免的**解除条件**登记:Stage 2 + ADR-CEP-13 落地后,本条须改为
+        // 「拓扑 Python 层纳入扫描」并删除 layer.py 的 protocol 参数。
+        // (per `ADR-CEP-07A` 决策 1 第 7 项 ③ / 决策 2 时间分期)
+    }
 }
 
 TEST_CASE("[cep][contract] coherence_domains 保留但改语义(IC3)", "[cep][contract]") {

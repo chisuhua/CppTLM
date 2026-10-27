@@ -29,6 +29,7 @@
 // 运行:ctest -R cep_stub_cache_core
 #include "catch_amalgamated.hpp"
 
+#include "cep_adr_parser.hh"
 #include "tlm/cep/stub_cache_core.hh"
 
 #include <algorithm>
@@ -73,41 +74,10 @@ namespace {
     /// 去掉 `//` 行注释与 `/* */` 块注释 —— **接口面**的静态扫描必须在去注释后做,
     /// 否则头文件里解释「折叠表」的散文会把被禁流名喂进来(假阳性),
     /// 而把禁用词写进注释里又能绕过(假阴性)。
-    std::string strip_comments(const std::string& src) {
-        std::string out;
-        out.reserve(src.size());
-        bool in_line = false, in_block = false;
-        for (size_t i = 0; i < src.size(); ++i) {
-            const char c = src[i];
-            const char n = (i + 1 < src.size()) ? src[i + 1] : '\0';
-            if (in_line) {
-                if (c == '\n') {
-                    in_line = false;
-                    out.push_back(c);
-                }
-                continue;
-            }
-            if (in_block) {
-                if (c == '*' && n == '/') {
-                    in_block = false;
-                    ++i;
-                }
-                continue;
-            }
-            if (c == '/' && n == '/') {
-                in_line = true;
-                ++i;
-                continue;
-            }
-            if (c == '/' && n == '*') {
-                in_block = true;
-                ++i;
-                continue;
-            }
-            out.push_back(c);
-        }
-        return out;
-    }
+    /// ⚠️ 实现已上提到 `test/cep_adr_parser.hh`(**共享**),与
+    ///    `test_cep_contracts_crosscheck.cc` 的协议标识符负向断言用**同一份** ——
+    ///    两份实现分叉会静默改变断言语义(per ADR-CEP-14 §2 决策 3 C9)。
+    using cpptlm::cep::strip_comments;
 
     bool contains_word(const std::string& hay, const std::string& word) {
         return std::regex_search(hay, std::regex("\\b" + word + "\\b"));

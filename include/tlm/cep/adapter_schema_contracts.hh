@@ -47,37 +47,37 @@ namespace tlm::cep {
 // ══════════════════════════════════════════════════════════════════════
 
 /// 判据结论三态(与 `PASS` 可区分)
-enum class ContractVerdict : std::uint8_t { SKIP = 0, PASS = 1, FAIL = 2 };
+enum class AdapterContractVerdict : std::uint8_t { SKIP = 0, PASS = 1, FAIL = 2 };
 
-inline const char* contract_verdict_name(ContractVerdict v) {
+inline const char* adapter_contract_verdict_name(AdapterContractVerdict v) {
     switch (v) {
-        case ContractVerdict::SKIP: return "SKIP";
-        case ContractVerdict::PASS: return "PASS";
-        case ContractVerdict::FAIL: return "FAIL";
+        case AdapterContractVerdict::SKIP: return "SKIP";
+        case AdapterContractVerdict::PASS: return "PASS";
+        case AdapterContractVerdict::FAIL: return "FAIL";
     }
     return "FAIL";
 }
 
 /// 一条判据的结论(格式 `[verdict] <rule-id> PASS|FAIL|SKIP (detail)` —— 逐条可 grep)
-struct ContractVerdictLine {
+struct AdapterContractVerdictLine {
     const char*   rule_id = "";
-    ContractVerdict verdict = ContractVerdict::SKIP;
+    AdapterContractVerdict verdict = AdapterContractVerdict::SKIP;
     std::string   detail;
 
     /// 渲染为逐条可 grep 的一行
     std::string render() const {
-        return std::string("[verdict] ") + rule_id + " " + contract_verdict_name(verdict) + " (" +
+        return std::string("[verdict] ") + rule_id + " " + adapter_contract_verdict_name(verdict) + " (" +
                detail + ")";
     }
 };
 
 /// 判据报告(逐条结论 + 汇总)
-struct ContractReport {
-    std::vector<ContractVerdictLine> verdicts;
-    ContractVerdict verdict = ContractVerdict::SKIP;
+struct AdapterContractReport {
+    std::vector<AdapterContractVerdictLine> verdicts;
+    AdapterContractVerdict verdict = AdapterContractVerdict::SKIP;
 
-    bool failed() const { return verdict == ContractVerdict::FAIL; }
-    bool skipped() const { return verdict == ContractVerdict::SKIP; }
+    bool failed() const { return verdict == AdapterContractVerdict::FAIL; }
+    bool skipped() const { return verdict == AdapterContractVerdict::SKIP; }
 
     /// 逐条渲染(CLI 与测试**共用**本函数 ⇒ 输出必然逐条相同)
     std::string render() const {
@@ -86,7 +86,7 @@ struct ContractReport {
             out += v.render();
             out += "\n";
         }
-        out += std::string("[verdict] SUMMARY ") + contract_verdict_name(verdict) + " (" +
+        out += std::string("[verdict] SUMMARY ") + adapter_contract_verdict_name(verdict) + " (" +
                std::to_string(verdicts.size()) + " rule(s))\n";
         return out;
     }
@@ -205,41 +205,41 @@ public:
     /// ── AC-01 `perm` 4 值锁不破 ────────────────────────────────────
     /// ① 值域恰为 4 值且不含 `ATOMIC`;② 声明的 `from`/`to` 取自该值域;
     /// ③ 契约侧权限秩序 == schema 侧枚举顺序。
-    static ContractVerdictLine check_perm_four_value_lock(const PermValueDomain&   domain,
+    static AdapterContractVerdictLine check_perm_four_value_lock(const PermValueDomain&   domain,
                                                             const PermUpgradesDecl& upgrades) {
-        ContractVerdictLine line;
+        AdapterContractVerdictLine line;
         line.rule_id = "AC-01";
         if (domain.source_error) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "perm 值域来源畸形: " + domain.source_error_detail;
             return line;
         }
         if (domain.values.size() != perm_order().size()) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "perm 值域应为 4 值,实得 " + std::to_string(domain.values.size()) + " 值";
             return line;
         }
         for (const auto& v : domain.values) {
             if (v == "ATOMIC") {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "perm 值域含 ATOMIC —— 4 值锁(CEN-Ib11)被击穿";
                 return line;
             }
         }
         if (domain.values != perm_order()) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "契约侧权限秩序与 schema 侧枚举顺序不一致";
             return line;
         }
         if (upgrades.source_error) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "静默升级声明源畸形: " + upgrades.source_error_detail;
             return line;
         }
         for (const auto& u : upgrades.silent_upgrades) {
             for (const std::string* v : {&u.from, &u.to}) {
                 if (perm_rank(*v) < 0) {
-                    line.verdict = ContractVerdict::FAIL;
+                    line.verdict = AdapterContractVerdict::FAIL;
                     line.detail  = std::string("静默升级声明的 ") +
                                    (v == &u.from ? "from" : "to") + " = \"" + *v +
                                    "\" 不在 perm 4 值域内";
@@ -247,7 +247,7 @@ public:
                 }
             }
         }
-        line.verdict = ContractVerdict::PASS;
+        line.verdict = AdapterContractVerdict::PASS;
         line.detail  = "perm 4 值锁未破(NONE/READ/UNIQUE/WRITEBACK);秩序与 schema 枚举顺序一致;"
                        "声明值全部落在值域内";
         return line;
@@ -256,36 +256,36 @@ public:
     /// ── AC-02 `perm_upgrade` 引用完整性 + 权限单调 ──────────────────
     /// ① 声明的实例 id 存在;② 该实例的 `perm` 同时含 `from` 与 `to`;
     /// ③ `to` 的权限秩 ≥ `from` 的秩。
-    static ContractVerdictLine check_perm_upgrade_integrity(const ProtocolInstancesDecl& instances,
+    static AdapterContractVerdictLine check_perm_upgrade_integrity(const ProtocolInstancesDecl& instances,
                                                              const PermUpgradesDecl&     upgrades) {
-        ContractVerdictLine line;
+        AdapterContractVerdictLine line;
         line.rule_id = "AC-02";
         if (upgrades.source_error) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "静默升级声明源畸形: " + upgrades.source_error_detail;
             return line;
         }
         if (instances.source_error) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "实例声明源畸形: " + instances.source_error_detail;
             return line;
         }
         if (upgrades.silent_upgrades.empty()) {
-            line.verdict = ContractVerdict::SKIP;
+            line.verdict = AdapterContractVerdict::SKIP;
             line.detail  = "静默升级声明源合法但为空 —— 无可检查对象(SKIP,不得记为 PASS)";
             return line;
         }
         for (const auto& u : upgrades.silent_upgrades) {
             const ProtocolInstanceDecl* inst = instances.find(u.instance_id);
             if (inst == nullptr) {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "静默升级声明引用了不存在的实例 id: \"" + u.instance_id + "\"";
                 return line;
             }
             const bool has_from = contains(inst->perm, u.from);
             const bool has_to   = contains(inst->perm, u.to);
             if (!has_from || !has_to) {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "实例 \"" + u.instance_id + "\" 的 perm 数组未同时包含 from=\"" +
                                u.from + "\" 与 to=\"" + u.to + "\"";
                 return line;
@@ -293,18 +293,18 @@ public:
             const int rf = perm_rank(u.from);
             const int rt = perm_rank(u.to);
             if (rf < 0 || rt < 0) {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "静默升级声明的 from/to 不在权限秩序内: \"" + u.from + "\" → \"" +
                                u.to + "\"";
                 return line;
             }
             if (rt < rf) {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "静默升级降权限: \"" + u.from + "\" → \"" + u.to + "\"";
                 return line;
             }
         }
-        line.verdict = ContractVerdict::PASS;
+        line.verdict = AdapterContractVerdict::PASS;
         line.detail  = std::to_string(upgrades.silent_upgrades.size()) +
                        " 条静默升级声明:实例引用完整 + 权限单调(秩不降)";
         return line;
@@ -313,12 +313,12 @@ public:
     /// ── AC-03 三态显式化 + 声明源畸形 ⇒ FAIL ────────────────────────
     /// ① 声明源缺失/畸形 ⇒ **FAIL**(配置错误,与「无可检查对象 ⇒ SKIP」严格区分);
     /// ② 不得把「无可检查对象」装作 PASS;③ 无静默升级能力的实例不得出现在声明源里。
-    static ContractVerdictLine check_decl_source_sanity(const PermUpgradesDecl&      upgrades,
+    static AdapterContractVerdictLine check_decl_source_sanity(const PermUpgradesDecl&      upgrades,
                                                         const std::vector<std::string>& no_upgrade_instances) {
-        ContractVerdictLine line;
+        AdapterContractVerdictLine line;
         line.rule_id = "AC-03";
         if (upgrades.source_error) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "静默升级声明源缺失或畸形 ⇒ FAIL(配置错误,不得记为 SKIP): " +
                            upgrades.source_error_detail;
             return line;
@@ -326,18 +326,18 @@ public:
         for (const auto& u : upgrades.silent_upgrades) {
             for (const auto& id : no_upgrade_instances) {
                 if (u.instance_id == id) {
-                    line.verdict = ContractVerdict::FAIL;
+                    line.verdict = AdapterContractVerdict::FAIL;
                     line.detail  = "实例 \"" + id + "\" 无静默升级能力,却出现在静默升级声明源里";
                     return line;
                 }
             }
         }
         if (upgrades.silent_upgrades.empty()) {
-            line.verdict = ContractVerdict::SKIP;
+            line.verdict = AdapterContractVerdict::SKIP;
             line.detail  = "声明源合法但为空 —— 无可检查对象(SKIP,不得记为 PASS)";
             return line;
         }
-        line.verdict = ContractVerdict::PASS;
+        line.verdict = AdapterContractVerdict::PASS;
         line.detail  = "声明源形态合法;三态可区分(SKIP/PASS/FAIL);无越权实例";
         return line;
     }
@@ -345,16 +345,16 @@ public:
     /// ── AC-04 6→3 映射表完备、值域受限且非恒等(或恒等 + 登记)──────
     /// ① 该实例用到的每个消息类**恰好一行**;② 目标 ∈ `CATEGORY_*` 3 类;
     /// ③ 相对方向默认表**非恒等**;④ 恒等者必须携带 `identity_reason`。
-    static ContractVerdictLine check_message_class_mapping(const MessageClassMapDecl& map) {
-        ContractVerdictLine line;
+    static AdapterContractVerdictLine check_message_class_mapping(const MessageClassMapDecl& map) {
+        AdapterContractVerdictLine line;
         line.rule_id = "AC-04";
         if (map.used_message_classes.empty()) {
-            line.verdict = ContractVerdict::SKIP;
+            line.verdict = AdapterContractVerdict::SKIP;
             line.detail  = "该实例未声明使用的消息类 —— 无可检查对象(SKIP,不得记为 PASS)";
             return line;
         }
         if (map.rows.size() != map.used_message_classes.size()) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "映射行数 " + std::to_string(map.rows.size()) + " ≠ 使用中的消息类数 " +
                            std::to_string(map.used_message_classes.size()) + "(无多、无少)";
             return line;
@@ -365,7 +365,7 @@ public:
                 if (r.first == cls) ++hits;
             }
             if (hits != 1) {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "消息类 \"" + cls + "\" 的映射行数 = " + std::to_string(hits) +
                                "(应为恰好 1)";
                 return line;
@@ -377,7 +377,7 @@ public:
                 if (r.second == v) { in_domain = true; break; }
             }
             if (!in_domain) {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "消息类 \"" + r.first + "\" 的目标类别 " +
                                std::to_string(r.second) + " 不在 CATEGORY_* 的 3 类值域内";
                 return line;
@@ -398,16 +398,16 @@ public:
         }
         if (identical) {
             if (!map.is_identity || map.identity_reason.empty()) {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "映射 == 方向默认表(恒等)但未显式声明恒等并携带 identity_reason";
                 return line;
             }
-            line.verdict = ContractVerdict::PASS;
+            line.verdict = AdapterContractVerdict::PASS;
             line.detail  = "映射 == 方向默认表(恒等,合法)且已登记 identity_reason:" +
                            map.identity_reason;
             return line;
         }
-        line.verdict = ContractVerdict::PASS;
+        line.verdict = AdapterContractVerdict::PASS;
         line.detail  = "映射完备(" + std::to_string(map.rows.size()) + " 行)且目标 ∈ 3 类值域;"
                        "相对方向默认表非恒等";
         return line;
@@ -416,38 +416,38 @@ public:
     /// ── AC-05 adapter 的投影与状态机自洽 ────────────────────────────
     /// ① 每个稳定态都有 4 值投影;② 瞬态 `T` 无投影;
     /// ③ `E + Write → M` 转换存在;④ 该转换后 `perm` 从 `UNIQUE` 变 `WRITEBACK`。
-    static ContractVerdictLine check_adapter_self_consistency(
+    static AdapterContractVerdictLine check_adapter_self_consistency(
         const std::vector<std::pair<int, bool>>& stable_state_has_projection,
         int  e_write_target_state,
         int  e_state_perm_rank,
         int  m_state_perm_rank) {
-        ContractVerdictLine line;
+        AdapterContractVerdictLine line;
         line.rule_id = "AC-05";
         for (const auto& s : stable_state_has_projection) {
             if (!s.second) {
-                line.verdict = ContractVerdict::FAIL;
+                line.verdict = AdapterContractVerdict::FAIL;
                 line.detail  = "稳定态 " + std::to_string(s.first) + " 缺少 4 值投影";
                 return line;
             }
         }
         if (e_write_target_state != 3) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "E + Write 的目标态 = " + std::to_string(e_write_target_state) +
                            "(应为 3 = M)";
             return line;
         }
         if (e_state_perm_rank < 0 || m_state_perm_rank < 0) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "E / M 态缺少 perm 投影(投影与状态机不一致)";
             return line;
         }
         if (m_state_perm_rank <= e_state_perm_rank) {
-            line.verdict = ContractVerdict::FAIL;
+            line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "E→M 后 perm 秩未升高(E=" + std::to_string(e_state_perm_rank) +
                            " → M=" + std::to_string(m_state_perm_rank) + ")";
             return line;
         }
-        line.verdict = ContractVerdict::PASS;
+        line.verdict = AdapterContractVerdict::PASS;
         line.detail  = "稳定态投影齐备;T 无投影;E+Write→M 存在且 perm 秩 UNIQUE(" +
                        std::to_string(e_state_perm_rank) + ") → WRITEBACK(" +
                        std::to_string(m_state_perm_rank) + ")";
@@ -467,8 +467,8 @@ public:
         int  m_state_perm_rank     = -1;
     };
 
-    static ContractReport check_all(const Inputs& in) {
-        ContractReport report;
+    static AdapterContractReport check_all(const Inputs& in) {
+        AdapterContractReport report;
         report.verdicts.push_back(check_perm_four_value_lock(in.perm_domain, in.upgrades));
         report.verdicts.push_back(check_perm_upgrade_integrity(in.instances, in.upgrades));
         report.verdicts.push_back(check_decl_source_sanity(in.upgrades, in.no_upgrade_instances));
@@ -477,14 +477,14 @@ public:
                                                                 in.e_write_target_state,
                                                                 in.e_state_perm_rank,
                                                                 in.m_state_perm_rank));
-        report.verdict = ContractVerdict::PASS;
+        report.verdict = AdapterContractVerdict::PASS;
         bool any_skip = false;
         for (const auto& v : report.verdicts) {
-            if (v.verdict == ContractVerdict::FAIL) { report.verdict = ContractVerdict::FAIL; break; }
-            if (v.verdict == ContractVerdict::SKIP) { any_skip = true; }
+            if (v.verdict == AdapterContractVerdict::FAIL) { report.verdict = AdapterContractVerdict::FAIL; break; }
+            if (v.verdict == AdapterContractVerdict::SKIP) { any_skip = true; }
         }
-        if (report.verdict != ContractVerdict::FAIL && any_skip) {
-            report.verdict = ContractVerdict::SKIP;
+        if (report.verdict != AdapterContractVerdict::FAIL && any_skip) {
+            report.verdict = AdapterContractVerdict::SKIP;
         }
         return report;
     }
