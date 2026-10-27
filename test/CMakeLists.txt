@@ -266,6 +266,12 @@ add_test(NAME cep_docs_sync_check
 add_test(NAME cep_cohif_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_cohif_reverse_verify.sh)
 
+# ProtocolEngine 端口面契约的**反向验证**(per change `cpptlm-cep-cohif-carrier`
+# task 2.6 / 2.7)—— 2 类毒化副本(10 流覆盖矩阵缺 1 流 / 某流语义退化为 no-op)
+#    分别必须让「覆盖完整性」「逐流行为」两条编译期锁报红。
+add_test(NAME cep_protocol_engine_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_protocol_engine_reverse_verify.sh)
+
 # CEP ↔ ArchForge 接口对齐清单的漂移检测(跨仓引用完整性)
 # —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败)
 # 状态一致性闸的**回归 fixture 集**(10+ 场景,变异 → 期望 rc)

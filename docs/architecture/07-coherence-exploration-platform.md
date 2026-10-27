@@ -674,11 +674,11 @@ experimental/<run_id>/
 
 | 能力 | 定义位置 | 实现状态(2026-10-27 实测) | 承接 change |
 |------|---------|-------------------------|-----------|
-| canonical 10 流契约 | §3.1 | 🟡 **部分落地** —— Stub Cache RN 侧 5 流(`stub_cache_core.hh` 6 接口)已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体部分落地**(`CohIfBundle` **已落地** —— `include/bundles/cep_coherence_bundles_tlm.hh`,2026-10-27 per 台账 Entry #84;**`ProtocolEngine` 基类仍不存在**) | 载体 = `cpptlm-cep-cohif-carrier`(队列 #7) |
+| canonical 10 流契约 | §3.1 | 🟡 **部分落地** —— Stub Cache RN 侧 5 流(`stub_cache_core.hh` 6 接口)已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体已落地**(`CohIfBundle` —— `include/bundles/cep_coherence_bundles_tlm.hh`,Entry #84;`ProtocolEngine` 基类 —— `include/tlm/cep/protocol_engine_base.hh`,Entry #85) | 载体 = `cpptlm-cep-cohif-carrier`(队列 #7) |
 | Stub Cache Core | §3.2 | ✅ **已落地** —— 6 接口 / 5 态 / `INV-SC1`~`SC6` + `INV-CEP-05-IC1` 行为化(14 测试) | `cpptlm-cep-stub-cache-core`(2026-10-25 已归档) |
 | SharerTracker 5 实现 | §5.2 | 🟡 **1 / 5** —— `FullMapDirectory` 唯一行为实现已落地(10 测试);其余 4 个(`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:178-195`) | 队列 #9 ~ #11(队列 #9 另需第 6 实现 `HierarchicalDirectory`) |
 | Collective Plane | §5.3 | 🟡 **骨架已落地** —— `CollectivePlaneIf` 恰 7 方法 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous);**REDUCE / BROADCAST / MULTICAST 数据路径未实现**(返 `Status::DataPathNotImplemented`);`fabric_ingress_classify` 路由接线未实现 | 骨架 = `cpptlm-cep-collective-plane-base`(2026-10-26 已归档);数据路径 = Stage 3 |
-| ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **1 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射),是**首个 `status=implemented` 实例**;**`ProtocolEngine` 基类本身不存在**;**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)亦无载体 —— owner 已定 = 队列 #7 task 2.5(2026-10-27 登记,per 台账 Entry #83)** | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
+| ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **1 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射),是**首个 `status=implemented` 实例**;**`ProtocolEngine` 基类已落地**(`ProtocolEngineBase<N>`,Entry #85);**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)亦已落地**(10 流覆盖矩阵 + 2 条编译期锁,Entry #85)—— **但 adapter 实例仍是 1 个**(`MoesiGpuAdapter`):基类落地 ≠ 插件实例落地 | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
 | ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 零命中)⇒ `INV-CEP-07-IC4` **无载体** | 队列 #7(`REGISTER_CHSTREAM_BIDIRECTIONAL` + `module_factory.hh:313-315` 死钩子扩展) |
 | 实验输出 4 件套 | §7 | ✅ **已落地** —— `tools/{render_report,run_sweep,ab_compare}.py` + `experimental/metrics.schema.json` + 4 件套契约测试(`test_cep_canonical_invariants.cc` / `test_cep_dummy_signals.cc` / `test_cep_module_factory_seam.cc` / `test_cep_simulation_mode_lock.cc`) | Stage 0(`cpptlm-cep-umbrella`,2026-10-23 已归档) |
 | simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |
@@ -765,8 +765,24 @@ experimental/<run_id>/
 
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #84)。
 
+## §附录 · Status Update 2026-10-27(第五则 · per 台账 Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)
+
+> **授权**:Entry #85(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 2 实施** —— ProtocolEngine 端口面 + `NullProtocolEngine`;用户 2026-10-27 直接指令授权)。
+> **口径**:本节仅登记 ① §11 两处**活口径**的机械同步 + ② §6.4 的**实现状态**登记。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
+> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #85"`。
+
+> **① §11 两处**活口径**的机械同步**:「canonical 10 流契约」行的载体口径由「`CohIfBundle` 已落地 / `ProtocolEngine` 基类仍不存在」改为「**两者均已落地**」;「ProtocolEngine adapter 实例」行补登 `ProtocolEngineBase<N>` 与 `NullProtocolEngine` 已落地 —— **但 adapter 实例仍是 1 个**(`MoesiGpuAdapter`):**基类落地 ≠ 插件实例落地**,该行的主计数不变。
+
+> **② §6.4 Null 实现的**状态登记**(正文不改)**:§6.4 的「`NullProtocolEngine`:10 流覆盖矩阵 — 流 1/3/4/5/6/7/10 no-op;流 2 immediate-complete;流 8 immediate-resolve;流 9 immediate-complete」**仍是口径本身**,本次不改;登记其**已落地**:`include/tlm/cep/protocol_engine_base.hh`(`ProtocolEngineBase<N>` + `NullProtocolEngine<N>`),10 流覆盖矩阵以**单一真源**(`kNullFlowMatrix`)落盘,并由**两条编译期锁**钉住(① 覆盖完整性:canonical 10 流各恰好一次且总数 10;② 逐流行为与本节口径一致)。⇒ **`INV-CEP-07-IC2` 的「默认实现 + 10 流覆盖矩阵」两条要求已可执行验证**(此前全仓零载体)。
+
+> **③ 与 `ADR-CEP-07` 的同步**:决策 4 草图的落点路径(`include/tlm/cep/null_protocol_engine.hh`)与实现落点(`protocol_engine_base.hh`)**不同**,已登记为**路径偏离**(语义零变化)—— 详见 `ADR-CEP-07` Status Update 2026-10-27(第二则)②③。
+
+> **④ 本则未处理、已登记的项**:① ProtocolEngine 的**注册与 JSON 装配**(`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏 + `module_factory.hh` 钩子扩展)尚未落地 ⇒ 归队列 #7 **Phase 3 ~ 5**;② `INV-CEP-07-IC4`(0 个 CEP 类注册)**仍无载体** —— 同上;③ 本仓 `BidirectionalPortAdapter::tick()` 的**实现**目前**硬编码 `NoCFlitBundle` 语义**(读 `flit_category` 决定 `PKT_REQ`/`PKT_RESP`、credit 用 `NoCFlitBundle`)⇒ 用它承载 `CohIfBundle` 需要**泛化** —— 归 Phase 4 / 5,**本则不处理**。
+
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #85)。
+
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)**
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

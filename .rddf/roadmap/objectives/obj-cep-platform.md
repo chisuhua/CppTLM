@@ -5604,8 +5604,69 @@ P1 收尾时列出的 5 项遗留中,**3 项属代码级 / ADR 文字级**(不�
 
 **⑧ 关联**: Entry #83(P2 收口)· #81(队列 #7 转正)· #80(队列 #6 归档)· #74(`ADR-CEP-19` 签发)· commit `7f91abd9`(Phase 0 前置)
 
+### Entry #85 — 2026-10-27 [build]
+
+**主题**: 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 2 实施** —— ProtocolEngine 端口面 + `NullProtocolEngine` 默认实现
+
+**① 触发**
+
+用户指令「继续」(承接 Entry #84 的 Phase 1)。Phase 2 = 端口面(`ProtocolEngine` 基类),判据 task **2.1 ~ 2.7**(共 7 个 task)。
+
+**② 交付物**
+
+| # | 产物 | 落点 |
+|---|------|------|
+| 1 | `tlm::cep::ProtocolEngineBase<N>`(派生 `ChStreamModuleBase`) | `include/tlm/cep/protocol_engine_base.hh`(新建) |
+| 2 | `tlm::cep::NullProtocolEngine<N>` + 10 流覆盖矩阵 + 2 条编译期锁 | 同上 |
+| 3 | `tlm::cep::CanonicalFlow`(canonical 10 流枚举)+ `kCanonicalFlowNames` | 同上 |
+| 4 | Bundle ↔ 平台枚举的**编译期值域交叉断言**(13 条) | 同上 |
+| 5 | 毒化副本生成器(`MatrixDropOne` / `BehaviorDegrade`) | `test/cep_protocol_engine_contract.hh`(新建) |
+| 6 | 编译期锁探针(含 `--poison` 模式)+ 反向验证脚本 | `scripts/test/cep_protocol_engine_compile_probe.cc` · `cep_protocol_engine_reverse_verify.sh`(新建,已注册 ctest) |
+| 7 | 真源同步 | `07 号`(§11 两行 + 第五则 Status Update)· `ADR-CEP-07`(第二则 Status Update)· `tasks.md` · `phase-10.md` |
+
+**③ 三个关键技术取舍**
+
+| 取舍 | 内容 | 理由 |
+|------|------|------|
+| **端口数 N 取编译期模板参数** | `template <std::size_t N> class ProtocolEngineBase` | `ChStreamAdapterFactory::registerBidirectionalPortAdapter<ModuleT, BundleT, N>` 的 `N` 是**模板参数**(`include/framework/chstream_adapter_factory.hh:103`),而 adapter 内部按 `m->req_in()[i]` 索引 ⇒ N 必须编译期确定。否则「adapter 的 N」与「模块的运行时端口数」会出现**两个真源**且可能**静默分歧**。附带 `static_assert(N > 1)`(N=1 落 `bind_ports` **空操作 shim** ⇒ 静默不绑定) |
+| **协议桥持**非拥有**指针 + 前向声明** | `cpptlm::ProtocolBridgeEr* bridge_`;完整定义留待 tasks 3.1 | 非拥有 ⇒ 无需完整类型即可析构 ⇒ **Phase 2 不依赖 Phase 3 的产物**;生命周期由 ModuleFactory / 装配链负责(per tasks 3.6「注册与消费成对」) |
+| **10 个 `on_*` 为纯虚 + 矩阵为单一真源** | `kNullFlowMatrix`(C 数组 + 显式 size)+ `expected_null_behavior()` 规则函数 | ① 纯虚 ⇒ 「必须全 10 流」由**类型系统**保证(per `ADR-CEP-07` 决策 4 草图注释 + oracle v0.4 B6);② 期望行为编码为**规则**而非第二份表 ⇒ 矩阵与期望不会互相漂移;③ C 数组 + 显式 size ⇒ 反向 fixture「缺 1 流」表现为「size 变 9」并被**完整性**断言抓到(若用 `std::array<T,10>`,少一元素会因**初始化器个数不足**而编不过 ⇒ 判据被「错误的原因」满足) |
+
+**④ 反向 fixture(2 类,实测有牙)**
+
+| fixture | 毒化 | 期望 | 实测 |
+|---------|------|------|------|
+| `matrix_drop_one` | 删掉矩阵中的 barrier 项(size 9) | **覆盖完整性** `static_assert` 触发 | ✅ 编译失败,错误信息精确命中「10 流覆盖矩阵必须恰好覆盖 canonical 10 流」 |
+| `behavior_degrade` | barrier 的 `ImmediateComplete` → `NoOp` | **逐流行为** `static_assert` 触发 | ✅ 编译失败,精确命中「逐流行为必须与 07 号 §6.4 口径一致」 |
+
+⇒ 已注册 ctest `cep_protocol_engine_reverse_verify`(6/6 通过);探针内含**正控**(干净头必须编译成功)。
+
+**⑤ 诚实登记:3 项已知偏离/缺口**
+
+| 项 | 内容 | 归属 |
+|---|------|------|
+| 落点路径偏离 | `ADR-CEP-07` 决策 4 草图画在 `include/tlm/cep/null_protocol_engine.hh`;实现落 `protocol_engine_base.hh`(per tasks 2.5)⇒ **路径偏离已登记**(语义零变化) | `ADR-CEP-07` 第二则 Status Update ② |
+| 接口形态细化 | 草图的 `address_resolve(&home_node, &coherent)` 双出参 ⇒ 改用结果 struct;草图的 `barrier(domain, direction, txn_id)` 含 `direction` ⇒ 实现取 `barrier(domain, txn_id)`(`direction` 在本仓**无定义** ⇒ 不发明未定义语义) | `ADR-CEP-07` 第二则 Status Update ③ |
+| **`BidirectionalPortAdapter::tick()` 硬编码 `NoCFlitBundle` 语义** | 该 adapter 读 `flit_category` 决定 `PKT_REQ`/`PKT_RESP`,且 credit 用 `NoCFlitBundle` ⇒ 用它承载 `CohIfBundle` 需要**泛化** | Phase 4 / 5(已在 `07 号` 第五则 ④ 登记) |
+
+**⑥ 附带产出:Bundle ↔ 平台枚举的编译期交叉断言(13 条)**
+
+`include/bundles/` 是最底层、**不**反向依赖 `include/tlm/cep/` ⇒ 值域对应无法在 bundle 头内断言。Phase 1 的头注释曾承诺「值域对应关系由测试层做**编译期交叉断言**」⇒ **本次在 PE 头内兑现**:`Perm`(4 值)· `SnoopType`(3 值)· `LineState`(5 值) ↔ `bundles::CohIfBundle` 的对应常量**逐值 `static_assert`** ⇒ 任何一侧改值序都会**编译失败**,而非静默错配。
+
+**⑦ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `cep_protocol_engine_reverse_verify.sh` | **6/6 通过** |
+| PE 探针(干净头) | 编译成功(正控) |
+| `NullProtocolEngine` 行为 | `no_op=1` / `immediate_complete=2` / `immediate_resolve=1`;`per_flow` 逐流计数;`address_resolve` ⇒ `home_node = node_id`、`coherent = false` |
+| `cpptlm_tests` 全仓 | 见本 commit 的门禁记录 |
+| 冻结集成员数 | **40**(不变) |
+
+**⑧ 关联**: Entry #84(Phase 1 载体面)· #83(`NullProtocolEngine` owner 指派)· #81(队列 #7 转正)· #74(`ADR-CEP-19` 签发)
+
 ---
 
-**版本**: v1.5(2026-10-27,per 队列 #7 Phase 1 实施;Entry #84)
+**版本**: v1.6(2026-10-27,per 队列 #7 Phase 1 / Phase 2 实施;Entry #84 / #85)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

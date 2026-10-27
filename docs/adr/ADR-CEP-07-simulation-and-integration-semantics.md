@@ -254,6 +254,23 @@ tick():
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
 
+## Status Update 2026-10-27(第二则)—— `NullProtocolEngine` 与 ProtocolEngine 基类**已落地** + 落点路径偏离登记
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文一律不改**,仅登记状态变化与路径偏离。
+> **触发**: 2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 2 实施**;台账 Entry #85。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #85**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #85)。
+
+> **登记 ① —— `INV-CEP-07-IC2` 的载体已落地**:该条 invariant 此前**全仓零载体**(无 `ProtocolEngine` 基类、无 `NullProtocolEngine`)⇒ **无主债**。**2026-10-27 实测**:队列 #7 Phase 2 交付 `include/tlm/cep/protocol_engine_base.hh` —— `ProtocolEngineBase<N>`(派生 `ChStreamModuleBase`)+ `NullProtocolEngine<N>`。**10 流覆盖矩阵**以**单一真源**(`kNullFlowMatrix`,C 数组 + 显式 size)落盘,两条**编译期锁**钉住:① `null_flow_matrix_is_complete()`(canonical 10 流各出现恰好一次且总数为 10)② `null_flow_matrix_behaviors_are_expected()`(逐流行为 vs `07 号 §6.4` 口径:流 1/3/4/5/6/7/10 = no-op · 流 2 = immediate-complete · 流 8 = immediate-resolve · 流 9 = immediate-complete)。⇒ **IC2 的「默认实现 + 10 流覆盖矩阵」两条要求均已可执行验证**。
+
+> **登记 ② —— 决策 4 草图的**落点路径偏离**(不违反本决策,登记备查)**:决策 4 的代码草图把 `NullProtocolEngine` 画在 `include/tlm/cep/null_protocol_engine.hh`。**实测落点** = `include/tlm/cep/protocol_engine_base.hh`(与 `ProtocolEngineBase` 同头)。**理由**:队列 #7 `tasks.md` task 2.5 明写「落 `include/tlm/cep/protocol_engine_base.hh`」—— 本 ADR 的草图路径是**示意**(非契约条款),而 change 的 tasks 是**执行真源**。⇒ **语义零变化**(类名、10 流接口、逐流行为全部一致),**仅文件路径不同** ⇒ 登记备查,不构成对本决策的违反。
+
+> **登记 ③ —— 决策 4 草图的**接口形态细化**(登记,不视为违反)**:草图的 `address_resolve(pa, node_id, &home_node, &coherent)` 用**两个出参**;实现改用**结果 struct** `AddressResolveResult{home_node, coherent}` ⇒ 语义等价,但避免「出参可被部分写入」的中间态。另:草图的 `barrier(domain, direction, txn_id)` 含 `direction` 参数;实现取 `barrier(domain, txn_id)` —— `direction` 在本仓**无定义**(canonical 流表与 `ADR-CEP-02 §3.2` 的 barrier 信号表都只列 `barrier_domain` + `barrier_txn_id`)⇒ **不发明未定义的语义**。**登记备查**。
+
+> **登记 ④ —— `IC2`「所有方法 no-op」与决策 4 逐流矩阵的关系**:IC2 的措辞是「所有方法 no-op」;决策 4 的草图把流 2 / 8 / 9 细化为 immediate-complete / immediate-resolve / immediate-complete。⇒ 二者**不矛盾**:IC2 的「no-op」指「**不做任何协议语义工作**」,决策 4 给出的是**可观测的终止形态**(立即完成 / 立即解析,均**不引入协议延迟**)。实现按决策 4 的粒度落地,IC2 的语义(解耦测试用的 inert 默认实现)成立。
+
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #85)。
+
 ## 9. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

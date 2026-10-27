@@ -1,6 +1,6 @@
 # Tasks — cpptlm-cep-cohif-carrier v1.0(Stage 1,TDD 5-step)
 
-> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 已完成**(2026-10-27,台账 Entry #84);Phase 2 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
+> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 / Phase 2 已完成**(2026-10-27,台账 Entry #84 / #85);Phase 3 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-cohif-carrier/spec.md`](specs/cep-cohif-carrier/spec.md) · [`specs/cep-protocol-bridge-contracts/spec.md`](specs/cep-protocol-bridge-contracts/spec.md)
 > **上游决策**: `ADR-CEP-19`(✅ v1.0 已签发)· 架构重审 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3)
 > **估时**: 6 周(3 项交付 + 1 宏 + 1 钩子扩展)
@@ -14,7 +14,7 @@
 |-------|------|------|
 | 0 前置 | ✅ **已闭合**(2026-10-27) | `tlm::cep::ContractVerdict` 同名冲突消解(独立 fix commit `7f91abd9`;本 change 启动前的前置,不属本 change 交付面) |
 | 1 载体面:`CohIfBundle` | ✅ **已完成**(2026-10-27) | `include/bundles/cep_coherence_bundles_tlm.hh` —— `bundles::CohIfBundle`(12 字段)+ 强类型 `CohIfFlowId`(域恰好 5 值)+ 12 条 `BUNDLE_FIELD_WIDTH` 锁;**4 类反向 fixture 实测有牙**(2 静态扫描红 / 2 编译红) |
-| 2 端口面:`ProtocolEngine` 基类 | ⬜ 未开始 | `include/tlm/cep/protocol_engine_base.hh`(含 `NullProtocolEngine` 默认实现 —— `INV-CEP-07-IC2` 强制) |
+| 2 端口面:`ProtocolEngine` 基类 | ✅ **已完成**(2026-10-27) | `include/tlm/cep/protocol_engine_base.hh` —— `ProtocolEngineBase<N>`(派生 `ChStreamModuleBase` + `Input/OutputStreamAdapter<CohIfBundle>` 端口成员 + 类型擦除 `ProtocolBridgeEr*` + 10 个纯虚 `on_*`)+ `NullProtocolEngine<N>`(**10 流覆盖矩阵** + 两条编译期锁);**2 类反向 fixture 实测有牙** |
 | 3 特化桥:`ProtocolBridge` 双层 | ⬜ 未开始 | `include/framework/protocol_bridge.hh` + 钩子扩展 |
 | 4 装配宏:`REGISTER_CHSTREAM_BIDIRECTIONAL` | ⬜ 未开始 | `include/chstream_register.hh` |
 | 5 JSON 装配连通性 | ⬜ 未开始 | `configs/` 侧示例 + E2E |
@@ -87,21 +87,60 @@
 
 ### Phase 2 —— 端口面(`ProtocolEngine` 基类)
 
-- [ ] 2.1 `ProtocolEngineBase` 派生 `ChStreamModuleBase`(`include/tlm/cep/protocol_engine_base.hh`)
-- [ ] 2.2 `Input/OutputStreamAdapter<CohIfBundle>` 端口成员(照 `router_tlm.hh:139-141` 范式)
-- [ ] 2.3 持 `ProtocolBridgeEr*`(类型擦除基类指针,不引入协议语义基类)
-- [ ] 2.4 端口方向语义登记:`req_in[i]` = ingress / `resp_out[i]` = egress;**流语义由 `flow_id` 决定**(design `D-ε`)
-- [ ] 2.5 **`NullProtocolEngine`** —— `ProtocolEngineBase` 的 **ADR 强制默认实现**
+- [x] 2.1 `ProtocolEngineBase` 派生 `ChStreamModuleBase`(`include/tlm/cep/protocol_engine_base.hh`)——
+      **已完成**(2026-10-27):`template <std::size_t N> class ProtocolEngineBase : public ChStreamModuleBase`。
+      **端口数 N 取编译期模板参数** —— 理由:`ChStreamAdapterFactory::registerBidirectionalPortAdapter<
+      ModuleT, BundleT, N>` 的 `N` 是模板参数(`include/framework/chstream_adapter_factory.hh:103`),
+      而 adapter 内部按 `m->req_in()[i]` 索引 ⇒ N 必须编译期确定,否则「adapter 的 N」与
+      「模块的运行时端口数」会出现**两个真源**且可能静默分歧。
+      附带 `static_assert(N > 1)`(N=1 会落 `bind_ports` **空操作 shim** ⇒ 静默不绑定)。
+- [x] 2.2 `Input/OutputStreamAdapter<CohIfBundle>` 端口成员(照 `router_tlm.hh:139-141` 范式)——
+      **已完成**:`std::array<ReqAdapter, N> req_in_` / `std::array<RespAdapter, N> resp_out_`
+      + 4 个访问器(含 const 重载);`ReqAdapter`/`RespAdapter` 均为
+      `cpptlm::Input/OutputStreamAdapter<bundles::CohIfBundle>`(**1 个 Bundle 类型 ⇒
+      N 个端口共用同一对适配器类型**,per design `D-ε`)。
+- [x] 2.3 持 `ProtocolBridgeEr*`(类型擦除基类指针,不引入协议语义基类)——
+      **已完成**:`cpptlm::ProtocolBridgeEr* bridge_`(**前向声明** + **非拥有**;
+      完整定义在 `include/framework/protocol_bridge.hh`,归 tasks 3.1);
+      `set_bridge()` / `bridge()`。⚠️ **前向声明即可**的原因:非拥有 ⇒ 无需完整类型即可析构
+      ⇒ Phase 2 **不**依赖 Phase 3 的产物(生命周期由 ModuleFactory / 装配链负责,
+      per tasks 3.6「注册与消费成对」)。
+- [x] 2.4 端口方向语义登记:`req_in[i]` = ingress / `resp_out[i]` = egress;**流语义由
+      `flow_id` 决定**(design `D-ε`)——
+      **已完成**:端口方向语义写在头文件「端口方向语义」段;`dispatch_cohif()` 按
+      `flow_id` 分派 ⇒ **流语义由 `flow_id` 决定,不由端口方向决定**。
+- [x] 2.5 **`NullProtocolEngine`** —— `ProtocolEngineBase` 的 **ADR 强制默认实现**
       (per `ADR-CEP-07 §3` `INV-CEP-07-IC2`:`NullProtocolEngine` 是 ProtocolEngine
       **默认实现**,须有 **10 流覆盖矩阵**;逐流行为 per `07 号 §6.4`:
       流 **1/3/4/5/6/7/10** = no-op · 流 **2** = immediate-complete ·
       流 **8** = immediate-resolve · 流 **9** = immediate-complete)——
       落 `include/tlm/cep/protocol_engine_base.hh`。
       ⚠️ **本项在 2026-10-27 之前无队列 owner**(全仓零载体),owner 自本任务起 = **队列 #7**
-- [ ] 2.6 **反向 fixture**:把 `NullProtocolEngine` 的 10 流覆盖矩阵改成**缺 1 流**
-      ⇒ 覆盖矩阵断言必红(per 判据纪律「纯负向断言必须有正控」)
-- [ ] 2.7 **反向 fixture**:把某流的 `immediate-complete` 语义改成 no-op
-      ⇒ 该流的行为断言必红
+      —— **已完成**(2026-10-27):
+      · `ProtocolEngineBase` 的 **10 个 `on_*` 纯虚方法**(per `ADR-CEP-02` §2 的流表
+        + `ADR-CEP-07` 决策 4 草图注释「必须全 10 流」)⇒ 「10 流覆盖」由**类型系统**
+        保证,而非运行期纪律
+      · `kNullFlowMatrix`(C 数组 + 显式 size)+ 两条编译期锁:
+        `null_flow_matrix_is_complete()`(各流恰好一次且总数 10)/
+        `null_flow_matrix_behaviors_are_expected()`(逐流行为 vs `07 号 §6.4` 口径)
+      · 可观测状态:每流计数 + `no_op`/`immediate_complete`/`immediate_resolve` 分桶计数
+        (只记「调用次数」的计数器**无法区分** no-op 与 immediate-complete ⇒ 不算有判别力)
+      · `on_address_resolve` 的 Null 解析口径:无真实目录 ⇒ `home_node = node_id`
+        (请求者自身)+ `coherent = false`(**不做任何一致性声称**)
+      · **⚠️ 落点偏离登记**:`ADR-CEP-07` 决策 4 的草图路径是
+        `include/tlm/cep/null_protocol_engine.hh`,本实现落 `protocol_engine_base.hh`
+        (per 本 task 的「落 …」句)⇒ **路径偏离已登记**(见 `ADR-CEP-07` Status Update)
+- [x] 2.6 **反向 fixture**:把 `NullProtocolEngine` 的 10 流覆盖矩阵改成**缺 1 流**
+      ⇒ 覆盖矩阵断言必红(per 判据纪律「纯负向断言必须有正控」)——
+      **已完成**:毒化副本生成器 `poison_protocol_engine_base(..., MatrixDropOne)`
+      (删掉 barrier 项 ⇒ 矩阵 size 9)⇒ **覆盖完整性** `static_assert` 触发。
+      **实测**:编译失败,且错误信息**精确命中**预期的完整性断言(非「因错误的原因红」)。
+- [x] 2.7 **反向 fixture**:把某流的 `immediate-complete` 语义改成 no-op
+      ⇒ 该流的行为断言必红——
+      **已完成**:毒化副本生成器 `BehaviorDegrade`(barrier 的 ImmediateComplete → NoOp)
+      ⇒ **逐流行为** `static_assert` 触发。**实测**:编译失败,精确命中预期断言。
+      ⚠️ **矩阵用 C 数组 + 显式 size**(非 `std::array<T,10>`)—— 否则「少一个元素」
+      会因**初始化器个数不足**而编不过(理由不对 ⇒ 判据被「错误的原因」满足)。
 
 ### Phase 3 —— 特化桥(判据 CC-03 / CC-05)
 
@@ -148,7 +187,7 @@
 | # | 项 | 状态 |
 |---|---|---|
 | 1 | 判据增补**已追认**(CC-05 ④ / CC-06 ②) | ✅ 转正前置已落地(`ADR-CEP-19` Status Update,Entry #78) |
-| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类 fixture 实测有牙);Phase 3/4/5 待补 |
+| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类 fixture 实测有牙)· Phase 2 **已完成**(2 类 fixture 实测有牙);Phase 3/4/5 待补 |
 | 3 | 编译期锁**不**以「编译红」充当 ctest 判据(`try_compile` 毒化副本) | 🟡 Phase 1.7 **已完成**(毒化副本 + 编译探针断言「编译确实失败」);Phase 4.4 待补 |
 | 4 | 新增 invariant 数 = **0** | ⬜ Phase 7.2 |
 | 5 | 冻结面**零改动**(本 change 3 个新头文件 + 1 宏 + 1 钩子均不在 M1 冻结集) | ⬜ 待实施后复核 |
