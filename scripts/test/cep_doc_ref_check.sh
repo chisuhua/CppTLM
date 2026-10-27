@@ -206,6 +206,13 @@ fi
 # 别名表:root<TAB>file<TAB>alias。别名按长度降序,避免短名吃掉长名（如 `22 号` 吃掉 `22-nsa`）。
 DETECTED=()          # 元素: root|file|sec|doc|alias|lineno
 BAD_DETECT=0
+# 候选行预过滤（2026-10-27,性能）:匹配**必然含 `§`** ⇒ 不含 `§` 的行不可能命中,
+# 且匹配从不跨行 ⇒ 只在「含 §」的行上跑别名正则**语义等价**。
+# 收益:`obj-cep-platform.md` 5357 行里只有 641 行含 `§`,而别名有 64 个 ⇒
+# 逐别名扫全文是 stage 3 的主要耗时(实测 ~77s → ~10s)。
+# 验证方式:改动前后**输出逐行相同**(含 DETECTED 计数与全部结论行)。
+CAND_DIR="$(mktemp -d)"
+trap 'rm -rf "$CAND_DIR"' EXIT
 while IFS=$'\t' read -r a_root a_file a_alias; do
   case "$a_root" in \#*|"") continue ;; esac
   a_root="$(echo "$a_root" | tr -d ' \r')"
@@ -221,15 +228,17 @@ while IFS=$'\t' read -r a_root a_file a_alias; do
   a_esc="$(printf '%s' "$a_alias" | sed 's/[.[\*^$()+?{}|]/\\&/g')"
   for d in "${DOCS[@]}"; do
     [ -f "$d" ] || continue
+    cand="$CAND_DIR/$(printf '%s' "$d" | tr '/' '_')"
+    [ -f "$cand" ] || { grep '§' "$d" > "$cand" 2>/dev/null || true; }
     # 边界规则:
     #   后边界 → `ADR-CEP-00` 不会吃掉 `ADR-CEP-00A`
     #   前边界 → `回执` 不会匹配到「**答复**回执」的尾部(那是对方文件)
     # 前边界需排除**汉字** → 用 Perl 字符类 \p{Han}(仅 GNU grep -P 支持)
     if [ "$GREP_P_OK" = "1" ]; then
-      _m="$(grep -oP "(?<![\p{Han}A-Za-z0-9])${a_esc}(?![A-Za-z0-9])(?:[^§\`|]{0,3})§[0-9]+(?:\.[0-9]+)*" "$d" 2>/dev/null || true)"
+      _m="$(grep -oP "(?<![\p{Han}A-Za-z0-9])${a_esc}(?![A-Za-z0-9])(?:[^§\`|]{0,3})§[0-9]+(?:\.[0-9]+)*" "$cand" 2>/dev/null || true)"
     else
       # 降级:无 CJK 前边界 → 「答复回执」会被当成本仓「回执」(可能假阳性)
-      _m="$(grep -oE "${a_esc}([^A-Za-z0-9§\`|][^§\`|]{0,3})§[0-9]+(\.[0-9]+)*" "$d" 2>/dev/null || true)"
+      _m="$(grep -oE "${a_esc}([^A-Za-z0-9§\`|][^§\`|]{0,3})§[0-9]+(\.[0-9]+)*" "$cand" 2>/dev/null || true)"
     fi
     while IFS= read -r m; do
       [ -z "$m" ] && continue
@@ -331,18 +340,21 @@ echo -e "${BLUE}[4b] 覆盖度自检 —— 自动检测到的引用中,哪些�
 # ⚠️ 刻意**不**自动生成断言:断言的 `kw` 是**人工判断**（「该节应当讲什么」）,
 #    自动生成只能照抄标题 = 恒真 = 零信息（且照抄笔误文档会精确复刻原始事故）。
 # 匹配用 **file + sec 精确** —— 登记 `§5` **不**覆盖 `§5.1`(子节标题是另一回事)。
+# ⚠️ 注册表**预索引**一次（键 `file|sec`）。曾经的写法是「每条引用 × 每条登记」逐对
+#    重读 TSV + 2 次命令替换（`tr`/`sed`）⇒ 483 × 42 ≈ 2 万对、约 8 万次 fork，
+#    实测 > 300s 未完（闸实质失效:超时 = 无结论）。预索引后为纯内存查表，语义相同。
+declare -A REG_SEC_INDEX=()
+while IFS=$'\t' read -r r_root r_file r_sec _ _ _; do
+  case "$r_root" in \#*|"") continue ;; esac
+  r_file="$(printf '%s' "$r_file" | tr -s '[:space:]' ' ' | sed 's/^ //; s/ $//')"
+  r_sec="$(printf '%s' "$r_sec" | tr -s '[:space:]' ' ' | sed 's/^ //; s/ $//')"
+  REG_SEC_INDEX["$r_file|$r_sec"]=1
+done < "$REGISTRY"
 UNASSERTED=(); N_HAVE_ASSERT=0
 for entry in "${DETECTED[@]}"; do
   IFS='|' read -r e_root e_file e_sec e_doc _ _ <<< "$entry"
   [ "$e_root" = "local" ] && [ "$e_file" = "$e_doc" ] && continue
-  hit=0
-  while IFS=$'\t' read -r r_root r_file r_sec _ _ _; do
-    case "$r_root" in \#*|"") continue ;; esac
-    r_file="$(printf '%s' "$r_file" | tr -s '[:space:]' ' ' | sed 's/^ //; s/ $//')"
-    r_sec="$(printf '%s' "$r_sec" | tr -s '[:space:]' ' ' | sed 's/^ //; s/ $//')"
-    [ "$r_file" = "$e_file" ] && [ "$r_sec" = "$e_sec" ] && { hit=1; break; }
-  done < "$REGISTRY"
-  if [ "$hit" -eq 1 ]; then N_HAVE_ASSERT=$((N_HAVE_ASSERT + 1))
+  if [ -n "${REG_SEC_INDEX["$e_file|$e_sec"]+x}" ]; then N_HAVE_ASSERT=$((N_HAVE_ASSERT + 1))
   else UNASSERTED+=("$(basename "$e_file") §$e_sec"); fi
 done
 N_DISTINCT=$(printf '%s\n' "${UNASSERTED[@]:-}" | sort -u | grep -c . || true)

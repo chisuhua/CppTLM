@@ -232,17 +232,20 @@ sec = sec.replace("S1-3", "(已移除)", n)
 assert "S1-3" not in sec, "移除未生效"
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
-run_case "把 §4.0 活队列行的 change 名改成已归档的 → ⑦ 必须 fire" 1 '
+run_case "把 §4.0 交接标记行的 change 名改成已归档的 → ⑦ 必须 fire" 1 '
 from pathlib import Path
 p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
 t = p.read_text(encoding="utf-8")
 i = t.index("### 4.0 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
-# 用**活**队列行(队列 #1~#4 均已归档,不在活集内)→ 队列 #5 collective-plane-base
-# ⚠️ 2026-10-25(Entry #64):队列 #4 已归档 → 活队列行改为 #5
-assert "`cpptlm-cep-moesi-gpu-adapter`" in sec, "锚点漂移:§4.0 未含活队列 #6 的 change 名"
-sec = sec.replace("`cpptlm-cep-moesi-gpu-adapter`", "`cpptlm-cep-umbrella`", 1)
+# 用**承载 S1-N 承接标记的活队列行** —— 断言 ③ 只对该类行判 owner 活性:
+# 归档行(#6 及更早)**合法地**不带标记(标记已转指),故不得拿它做 fixture。
+# ⚠️ 2026-10-27(Entry #80):队列 #6 归档 ⇒ 标记转指 #7 `cpptlm-cep-cohif-carrier`
+name = "`cpptlm-cep-cohif-carrier`"
+assert sec.count(name) >= 1, "锚点漂移:§4.0 未含活队列 #7 的 change 名"
+assert "S1-" in sec, "锚点漂移:§4.0 未含 S1-N 承接标记"
+sec = sec.replace(name, "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "活文档出现归档件里不存在的 S1-9 → ⑦ 必须 fire" 1 '
@@ -258,12 +261,15 @@ run_case "孤儿前置行的 owner 改成已归档 change → ⑦ 必须 fire" 1
 from pathlib import Path
 p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
 t = p.read_text(encoding="utf-8")
-i = t.index("### 4.0 ")
+# 用 §4.2(**§4.0 的同义复述**)承载孤儿标记的行 —— 断言 ③c 要求两处都有登记行,
+# 故两处都必须各自被夹具钉住(此条钉 §4.2,上一条钉 §4.0)。
+i = t.index("### 4.2 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
-# ⚠️ 2026-10-25(Entry #64):队列 #4 已归档 → 活队列行改为 #5
-assert "`cpptlm-cep-moesi-gpu-adapter`" in sec, "锚点漂移:§4.0 未含活队列 #6 的 change 名"
-sec = sec.replace("`cpptlm-cep-moesi-gpu-adapter`", "`cpptlm-cep-umbrella`", 1)
+name = "`cpptlm-cep-cohif-carrier`"
+assert sec.count(name) >= 1, "锚点漂移:§4.2 未含活队列 #7 的 change 名"
+assert "⏭(孤儿)" in sec, "锚点漂移:§4.2 未含孤儿前置标记"
+sec = sec.replace(name, "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "孤儿前置登记行被移除 → ⑦ 必须 fire" 1 '
@@ -361,12 +367,17 @@ p.write_text(t, encoding="utf-8")' 10
 #   ① 新有效期锚从 delta spec 移除 ⇒ 届满且未重评 ⇒ 必须 fire
 run_case "断言 ⑧:移除 S1 重评登记的新锚 ⇒ 必须 fire" 1 '
 from pathlib import Path
-p = Path(os.environ["RT"] + "/openspec/specs/cep-adapter-schema-contracts/spec.md")
-t = p.read_text(encoding="utf-8")
 old = "S1_VALIDITY_UNTIL=stub-request-side-perm-extension"
-assert t.count(old) >= 1, "锚点漂移:未找到新有效期锚"
-t = t.replace(old, "S1_VALIDITY_UNTIL=(removed)", 1)
-p.write_text(t, encoding="utf-8")' 11
+# 重评登记的可能载体有多处(队列 #6 的 delta spec / 归档后的 delta spec / 归档后的
+# main spec)⇒ 必须**全部**移除才算「未登记」;只删一处会被另一处抵掉 ⇒ fixture 失效。
+root = Path(os.environ["RT"]) / "openspec"
+hits = 0
+for p in root.rglob("*.md"):
+    t = p.read_text(encoding="utf-8")
+    if old in t:
+        hits += 1
+        p.write_text(t.replace(old, "S1_VALIDITY_UNTIL=(removed)"), encoding="utf-8")
+assert hits >= 1, "锚点漂移:openspec 内未找到新有效期锚"' 11
 
 #   ② Stub 请求侧出现 perm_upgrade 扩展 ⇒ **新**锚届满 ⇒ 必须 fire
 run_case "断言 ⑧:Stub 请求侧 perm_upgrade 扩展 ⇒ 新锚届满" 1 '
