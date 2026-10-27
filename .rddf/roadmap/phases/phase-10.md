@@ -118,9 +118,14 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
                  │    S1-5(6→3 映射表机制)、S1-2(首个 implemented 实例装配后复核)
                  ├─ cpptlm-cep-cohif-carrier            ← 2026-10-27 新增(Entry #74)
                  │    🟡 **Proposed**(2026-10-27 转正,Entry #81)—— change 目录已建
-                 │    (proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0)
+                 │    (proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0;
+                 │    tasks **39**(已勾 1 = Phase 0 前置;未勾 38))
                  │    CohIf 载体:CohIfBundle(5 流)+ ChStream 端口面 + ProtocolBridge
                  │    (架构缺口 C1/C2/C3;**ADR-CEP-19 已签发 2026-10-27**;StubCacheCore 侧端点延期)
+                 │    **Phase 0 前置已闭合**:`tlm::cep::ContractVerdict` 同名冲突消解
+                 │    (commit 7f91abd9;两契约头须同 TU 共存 ⇒ 本 change 的启动前置)
+                 │    **NullProtocolEngine owner 已定 = 本 change task 2.5~2.7**
+                 │    (`INV-CEP-07-IC2` 强制的默认实现 + 10 流覆盖矩阵 + 反向 fixture)
                  ├─ cpptlm-cep-chi-rnf-subset          ← 2026-10-27 顺延(原 #7)
                  │    范围收窄:perm 演进与 6→3 映射表机制已移至队列 #6,本 change 复用;
                  │    首次在真实载体(队列 #7)上验证装配

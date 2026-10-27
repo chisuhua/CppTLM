@@ -163,6 +163,42 @@
 
 ---
 
+## Status Update 2026-10-27 —— C9 四条要求的覆盖现状对账 + C++ 侧机器断言补齐
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §6 正文一律不改**,仅登记状态变化与覆盖现状。
+> **触发**: 2026-10-27 CEP 代码 / 路线图 / 架构文档三方对齐审查;台账 Entry #83。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #83**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #83)。
+
+### ① C9 四条要求的覆盖现状对账(实测)
+
+§2 决策 3 列出的 C9 具体断言共 4 条。**2026-10-27 逐条实测结果**:
+
+| # | C9 要求(§2 决策 3 原文) | 检验方式 | 2026-10-27 实测覆盖 |
+|---|---|---|---|
+| 1 | Stub 的公开接口**不含**任何瞬态态 / token / read-set 字段 | 反射或类型 trait 检查 | 🟡 **部分** —— `test_cep_stub_cache_core.cc` Scenario 3 断言 4 个 RN-F **细节态名**(`UC`/`SC`/`UD`/`SD`)不得作为**标识符**出现(去注释后扫);**反射 / 类型 trait** 形态未落地 |
+| 2 | Stub **不感知**协议名(CHI / CXL / MESI / MOESI) | **Stub 源码 grep 协议标识符** | ✅ **本次补齐** —— commit `7f91abd9`:`test_cep_contracts_crosscheck.cc` 的 IC2 断言按本决策的「源码 grep」口径扫 `include/tlm/cep/stub_cache_core.hh`(去注释后 + 标识符词判定) |
+| 3 | Stub **不感知**协议族 | 同上 | ✅ **本次补齐**(与第 2 条同一断言覆盖) |
+| 4 | Stub **不感知** `ordering_assumption` / `vc_binding` / `consistency_labels` | 同上 | ✅ **本次补齐** —— 同一 TEST_CASE 内逐字段断言(归一化比较:`vc_binding` / `vcBinding` / `VC_Binding` 同形) |
+
+### ② 检验口径的澄清(**不改变本决策**,只登记实现形态)
+
+- **必须去注释后扫** —— 否则头文件里解释「禁止暴露 CHI RN-F 细节态」的中文散文会被喂进扫描器(**假阳性**),而把禁用词写进注释即可绕过(**假阴性**)。实现已上提到 `test/cep_adr_parser.hh` 的共享 `strip_comments()`(与 `test_cep_stub_cache_core.cc` 共用同一份,避免两份实现分叉静默改变断言语义)。
+- **按「标识符词」判定,不按子串** —— `chi_rnf` / `ChiRnfAdapter` 均须命中;`chip_id`(「芯片」≠「CHI」协议)/ `hierarchical` 须**不**命中(子串匹配会把 `ARCHITECT` 误判为含 `CHI`)。
+- **正控 + 反控随断言同在**(per 判据纪律「纯负向断言必须有正控」)。
+
+### ③ 变异测试反证(2026-10-27 实测)
+
+两类变异均被新断言捕获:① `sharer_tracker.hh` 注入 `ChiRnfAdapter` ⇒ 变红并精确报出**文件 + 协议名**;② `stub_cache_core.hh` 注入 `int vc_binding` ⇒ **首版未变红**,暴露首版断言误用「大写 + 拆词」的词集与小写原名比对 ⇒ **恒真空**(假绿);修正比较口径后重测 ⇒ 正确变红。
+> ⚠️ **本条登记的是一次真实的「负向断言恒真空」缺陷**(纯负向断言若无正控 + 变异反证,绿不等于有效)。
+
+### ④ 未覆盖项(诚实登记,不掩盖)
+
+- **第 1 条的「反射 / 类型 trait」形态**仍未落地 —— 当前以「标识符词」扫描近似覆盖,**不等于**类型级证明(Stub 若以 `using` 别名间接暴露瞬态态,本断言不保证能发现)。归 Stage 1 实现层(`cpptlm-cep-stub-cache-core` 已归档的 6 接口形态上无此风险;新接口引入时须复核)。
+- **`NullProtocolEngine` 侧**的 10 流覆盖矩阵(per `ADR-CEP-07` `INV-CEP-07-IC2`)尚无载体 —— owner 已定 = 队列 **#7 `cpptlm-cep-cohif-carrier`**(task 2.5 / 2.6 / 2.7,per 本次 Entry #83 增补)。
+
+---
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

@@ -145,6 +145,48 @@ per `ADR-CEP-00 §3` 的处置语义:**采用 / 改名 / 废弃** 三选一,每�
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #74**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #74)。
 
+## Status Update 2026-10-27(第二则)—— §4 验证口径的一处**不实声称**订正 + `INV-CEP-07A-IC2` 的覆盖现状与时效张力登记
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记事实订正与覆盖现状。
+> **触发**: 2026-10-27 CEP 代码 / 路线图 / 架构文档三方对齐审查;台账 Entry #83。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #83**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #83)。
+
+### ① §4 验证口径第 2 项的**不实声称**订正(事实错误,非决策变更)
+
+§4「验证口径」第 2 项原文:
+> 「协议标识符扫描:Stub / Ordering Plane / 拓扑 Python 层的源码 grep `MESI|MOESI|CHI|CXL|TileLink|NVLink|UALink` **必须为空**(per `INV-CEP-07A-IC2`;Stage 0 由 **`test_cep_canonical_invariants.cc` 的 C9 负向断言覆盖**)」
+
+**2026-10-27 实测**:该声称**不成立** —— ① `test_cep_canonical_invariants.cc` 内 **C9 零命中**(该文件只断言「契约存在且自洽」,不扫源码);② C9 负向断言实际落在 `test_cep_schema.cc`,且**只扫 `protocol_instance.schema.json` 一个 JSON 文件**;③ C++ 侧(Stub / Directory & Ordering Plane)与拓扑 Python 层此前**零机器断言**。
+⇒ **订正**:验证口径第 2 项的「Stage 0 由 `test_cep_canonical_invariants.cc` 覆盖」**改为**「C++ 侧由 `test_cep_contracts_crosscheck.cc` 的 IC2 断言覆盖(2026-10-27 补齐,commit `7f91abd9`);schema 侧由 `test_cep_schema.cc` 的 C9 覆盖;**拓扑 Python 层暂不覆盖** —— 见 ②」。
+> ⚠️ **本次只订正「谁在覆盖」这一事实**,**不改变 IC2 的判据内容**(禁止协议标识符出现在与协议无关的层)—— 判据本身仍然成立且更强。
+
+### ② `INV-CEP-07A-IC2` 与决策 1 第 7 项 ③ 的**时效张力**(登记,不消解)
+
+- `INV-CEP-07A-IC2` 是**无条件**禁令:「与协议无关的层(Stub Cache Core / Directory & Ordering Plane / Traffic Generator / **拓扑 Python 层**)**不得**出现协议标识符」。
+- 但决策 1 第 7 项 ③ 明写:`cpptlm/topo/layer.py` 的 `protocol=` 参数 **「Stage 0~1 不改」**(避免动既有 Python 测试),Stage 2 与 `ADR-CEP-13` 同步改。
+- ⇒ **Stage 0~1 期间 IC2 对拓扑 Python 层必然不成立**,而 IC2 条文**未带时效限定** ⇒ 读本 ADR 的人会误判当前状态违规。
+- **精确位置登记**(拓扑 Python 层的两处违规实例):`cpptlm/topo/layer.py:47`(`protocol: str = "MESI"`)、`:211`(`add_coherence_domain(..., protocol: str = "MESI", ...)`)、`:257`(`protocol=d.get("protocol", "MESI")`)。§3 点名的另一处(`coherence_domain.hh` 的 `enum Protocol`)已按决策 1 第 1 项加 `[[deprecated]]` 处置(`.hh:30` / `.cc:3-6`)。
+- **处置**:本次**不改 IC2 条文**(收紧 invariant 属决策变更,需 architect 签发);改为 ① 在 `test_cep_contracts_crosscheck.cc` 的 IC2 断言内**显式登记该层豁免**(含解除条件:Stage 2 + `ADR-CEP-13` 落地后改为纳入扫描并删除 `protocol` 参数)⇒ 豁免**不是静默漏检**;② 在本 Status Update 登记张力。**建议**:IC2 加时效限定(「拓扑 Python 层自 Stage 2 起适用」)—— **待 architect 裁决**。
+
+### ③ C++ 侧 IC2 的覆盖现状(2026-10-27 实测 + 补齐)
+
+| 层 | 载体 | 覆盖前 | 覆盖后 |
+|---|------|--------|--------|
+| Stub Cache Core | `include/tlm/cep/stub_cache_core.hh` | ❌ 零断言 | ✅ 去注释后扫协议标识符 + 4 条声明字段(`ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`)不出现(commit `7f91abd9`) |
+| Directory | `include/tlm/cep/sharer_tracker.hh` | ❌ 零断言 | ✅ 同上 |
+| Ordering Plane | `include/tlm/cep/ordering_point_checker.hh` / `address_resolver.hh` / `channel_dependency_graph.hh` | ❌ 零断言 | ✅ 同上 |
+| **拓扑 Python 层** | `cpptlm/topo/layer.py` | ❌ 零断言 | ⏸ **显式豁免登记**(决策 1 第 7 项 ③「Stage 0~1 不改」)—— 见 ② |
+| Traffic Generator | —— | ⏸ 尚无载体 | ⏸ 无载体 ⇒ 无可扫对象 |
+
+**扫描口径**:去注释后按**标识符词**判定(`chi_rnf` / `ChiRnfAdapter` 命中;`chip_id` / `hierarchical` 不命中);词集 = {MESI, MOESI, CHI, CXL, TILELINK, NVLINK, UALINK, MESIF},**不含 TOKEN**(token 是 MOESI_CMP 的**协议私有状态**概念,per `ADR-CEP-17` 决策 3,不是协议名;源码里 `token` 常见于词法解析局部变量 ⇒ 纳入即假阳性)。
+
+### ④ 变异测试反证
+
+新断言经 2 类变异验证可变红(① 注入 `ChiRnfAdapter`;② 注入 `int vc_binding`)。其中 ② 暴露了首版断言「负向断言恒真空」的缺陷(比较口径错误),已修正并补正控 —— 详见 `ADR-CEP-14` 同日 Status Update ③。
+
+---
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

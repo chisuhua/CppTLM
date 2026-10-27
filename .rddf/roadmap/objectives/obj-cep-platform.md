@@ -5484,8 +5484,67 @@ critic 的 `S1`(三选一)+ `S2`(改措辞)本轮**合并处置 = S1 的 option 
 
 **⑥ 关联**: P0 commit `d52fff56` · Entry #81(队列 #7 转正)· #80(队列 #6 归档)· #79(队列 #6 实施)· #74(`ADR-CEP-19` 签发 + 07 号第一则 Status Update)
 
+### Entry #83 — 2026-10-27 [fix]
+
+**主题**: P2 收口 —— 潜伏编译缺陷消解(`tlm::cep::ContractVerdict` 同名冲突)+ C9 协议标识符机器断言补齐 + `NullProtocolEngine` owner 指派
+
+**① 触发**
+
+P1 收尾时列出的 5 项遗留中,**3 项属代码级 / ADR 文字级**(不涉新决策),用户指令「请继续」授权本批次处置。**边界**:另 2 项(`ADR-CEP-07A` `IC2` 的时效限定 = 收紧 invariant;`ADR-CEP-14` C9 第 1 条的「反射 / 类型 trait」形态)属**决策变更**,本 entry **只登记不处置**。
+
+**② 潜伏编译缺陷:`tlm::cep::ContractVerdict` 同名冲突(commit `7f91abd9`)**
+
+| 项 | 内容 |
+|---|---|
+| 事实 | `include/tlm/cep/adapter_schema_contracts.hh`(队列 #6)与 `include/tlm/cep/collective_plane_contract.hh`(队列 #5)在**同一命名空间 `tlm::cep`** 下各自定义 `ContractVerdict` / `contract_verdict_name` / `ContractVerdictLine` / `ContractReport`,且**底层值序相反**(SKIP=0,PASS=1,FAIL=2 vs PASS=0,FAIL=1,SKIP=2) |
+| 后果 | 任一同时 include 两头的 TU **编译失败**(`g++ -fsyntax-only` 实测 rc=2 `multiple definition`);值序相反使「将来合并」存在**静默语义反转**风险 |
+| 处置 | 改名**消费面更小**的 adapter 侧(3 个 TU vs collective 侧 4 个):`AdapterContractVerdict` / `adapter_contract_verdict_name` / `AdapterContractVerdictLine` / `AdapterContractReport` |
+| 不变性 | ① 枚举**仅按名访问**(无 `static_cast` / 下标依赖值序,grep 实证)② 符号名**从未进入** `openspec/specs/` 或 ADR 契约面(grep 零命中)⇒ **无 delta spec 变更** ③ CLI 渲染输出逐字不变(2 个 example 实测) |
+| 未走 OpenSpec 提案的理由 | AGENTS.md「架构性变更未走 OpenSpec」的门槛为「影响 ≥2 模块 / 公共 API / 配置文件 schema」。本次虽触及公共 API **标识符**,但 **零契约语义变化 + 零 spec 变更 + 零行为变化**,且**新 change 会突破「任一时刻 Proposed 并发 ≤ 1」**(队列 #7 已占 1 slot)⇒ 归**缺陷修复**类(per Entry #72 / #73 同款先例:队列 #6 critic 评审轮的 BLOCKER 修复亦未另起 change) |
+| 队列 #7 侧登记 | `openspec/changes/cpptlm-cep-cohif-carrier/tasks.md` 新增 **Phase 0 前置**(task 0.1,已勾)—— 理由:本 change task 6.3 要求引用 `adapter_schema_contracts.hh`,而 canonical 10 流的校验面在 `collective_plane_contract.hh` ⇒ **两契约头必须同 TU 共存**,该冲突是其**启动前置** |
+
+**③ C9 协议标识符机器断言补齐(commit `7f91abd9`)**
+
+| 项 | 内容 |
+|---|---|
+| 事实 | `ADR-CEP-07A §4 验证口径`第 2 项声称「Stage 0 由 `test_cep_canonical_invariants.cc` 的 C9 负向断言覆盖」—— **实测不成立**(C9 零命中于该文件;实际在 `test_cep_schema.cc` 且**只扫 schema JSON 一个文件`)⇒ C++ 侧(Stub / Directory & Ordering Plane)**零机器断言** |
+| 补齐 | `test/cep_adr_parser.hh` 上提共享 helper(`strip_comments` / `identifier_words` / `protocol_identifier_hits` / `normalize_identifier` / `contains_identifier`);`test_cep_stub_cache_core.cc` 去重改用共享实现;`test_cep_contracts_crosscheck.cc` 的 IC2 断言扩展为:C++ 侧 5 个「与协议无关的层」去注释后扫协议标识符 + `ADR-CEP-14` C9 第 4 条(Stub 不感知 4 条协议侧声明字段)+ **正控/反控** + 拓扑 Python 层**显式豁免登记**(per `ADR-CEP-07A` 决策 1 第 7 项 ③「Stage 0~1 不改」) |
+| 扫描口径 | 去注释后按**标识符词**判定(`chi_rnf` / `ChiRnfAdapter` 命中;`chip_id`「芯片」≠「CHI」协议 / `hierarchical` 不命中);词集 {MESI, MOESI, CHI, CXL, TILELINK, NVLINK, UALINK, MESIF},**不含 TOKEN**(MOESI_CMP 的协议私有状态概念,非协议名) |
+| 变异测试反证 | ① `sharer_tracker.hh` 注入 `ChiRnfAdapter` ⇒ 变红(报出文件 + CHI)② `stub_cache_core.hh` 注入 `int vc_binding` ⇒ **首版未变红** ⇒ 暴露首版断言**恒真空**(误用「大写 + 拆词」词集与小写原名比对)⇒ 修正比较口径 + 补正控 ⇒ 重测正确变红 |
+| 登记 | 该「负向断言恒真空」是一次**真实缺陷**(纯负向断言若无正控 + 变异反证,**绿不等于有效**)—— 已记入两份 ADR 的 Status Update |
+
+**④ `NullProtocolEngine` owner 指派(无主债消解)**
+
+| 项 | 内容 |
+|---|---|
+| 事实 | `ADR-CEP-07 §3` `INV-CEP-07-IC2` 规定 `NullProtocolEngine` 是 ProtocolEngine **默认实现**且须有 **10 流覆盖矩阵**(逐流行为 per `07 号 §6.4`:流 1/3/4/5/6/7/10 no-op · 流 2 immediate-complete · 流 8 immediate-resolve · 流 9 immediate-complete)。2026-10-27 实测:**全仓零载体**,且**无队列 owner** ⇒ 重演「无主债」 |
+| 指派 | owner = **`cpptlm-cep-cohif-carrier`(队列 #7)task 2.5 / 2.6 / 2.7** —— 理由:队列 #7 Phase 2 交付 `ProtocolEngineBase` 派生 `ChStreamModuleBase`,**建基类者同时交付其 ADR 强制的默认实现**属该 change 的契约面自洽,非范围蔓延;task 2.6 / 2.7 附反向 fixture(覆盖矩阵缺 1 流 / 某流语义退化 ⇒ 必红) |
+| 同步 | `07 号 §11`「ProtocolEngine adapter 实例」行补登 owner(活口径)+ `07 号` 追加 Status Update 第三则 + `phase-10.md` 依赖图队列 #7 块同步 task 数 |
+
+**⑤ 本 entry 明确不做(边界)**
+
+| 不做 | 理由 |
+|---|---|
+| `INV-CEP-07A-IC2` 加时效限定(拓扑 Python 层自 Stage 2 起适用) | **收紧 invariant = 决策变更** ⇒ 需 architect 签发;本 entry 只在 `ADR-CEP-07A` Status Update 登记张力 + 在测试里做**显式豁免登记**(豁免不是静默漏检) |
+| `ADR-CEP-14` C9 第 1 条的「反射 / 类型 trait」形态 | 同上(决策形态变更);当前以标识符词扫描近似覆盖,已在 ADR Status Update ④ 登记未覆盖 |
+| 改 `cpptlm/topo/layer.py` 的 `protocol=` 参数 | per `ADR-CEP-07A` 决策 1 第 7 项 ③「Stage 0~1 不改」;Stage 2 + `ADR-CEP-13` 落地时改,并把豁免改为纳入扫描 |
+| 改 `06 号` / `01 号` 正文 | 本 entry 只动 `07 号` + 2 份 ADR + 队列 #7 tasks + 测试;06/01 号已在 Entry #82 处置完毕 |
+
+**⑥ 验收(实测)**
+
+| 项 | 值 |
+|---|---|
+| `g++ -fsyntax-only`(同时 include 两契约头) | **rc=0**(冲突消解前 rc=2) |
+| 变异测试 | 2 类变异**均变红**(且第 ② 类在修正前**假绿** → 已修) |
+| `cpptlm_tests` 全仓 | **1943 case / 873073 assertion** 全绿 |
+| `cpptlm_tests "[cep]"` | **161 case / 2627 assertion** 全绿(较改动前 +27) |
+| `cep_docs_sync_check` / `cep_doc_ref_check` / `cep_decl_alignment_check` / `cep_archforge_alignment_check` / `cep_gate_selftest` | 5/5 rc=0 |
+| 冻结集成员数 | **40**(不变);`cep_freeze_check --update --authorized-by "Entry #83"` 后 provenance 成立 |
+
+**⑦ 关联**: Entry #82(P1 架构文档漂移回填)· #81(队列 #7 转正)· #80(队列 #6 归档)· #79(队列 #6 实施)· #72/#73(`[fix]` 类先例:critic 评审轮修复未另起 change)· commit `7f91abd9`(缺陷消解 + 断言补齐)
+
 ---
 
-**版本**: v1.3(2026-10-27,per P0/P1 架构文档漂移回填;Entry #82)
+**版本**: v1.4(2026-10-27,per P0/P1/P2 三批漂移回填与缺口收口;Entry #82 / #83)
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

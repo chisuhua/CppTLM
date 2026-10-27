@@ -12,8 +12,9 @@
 
 | Phase | 状态 | 说明 |
 |-------|------|------|
+| 0 前置 | ✅ **已闭合**(2026-10-27) | `tlm::cep::ContractVerdict` 同名冲突消解(独立 fix commit `7f91abd9`;本 change 启动前的前置,不属本 change 交付面) |
 | 1 载体面:`CohIfBundle` | ⬜ 未开始 | `include/bundles/cep_coherence_bundles_tlm.hh` |
-| 2 端口面:`ProtocolEngine` 基类 | ⬜ 未开始 | `include/tlm/cep/protocol_engine_base.hh` |
+| 2 端口面:`ProtocolEngine` 基类 | ⬜ 未开始 | `include/tlm/cep/protocol_engine_base.hh`(含 `NullProtocolEngine` 默认实现 —— `INV-CEP-07-IC2` 强制) |
 | 3 特化桥:`ProtocolBridge` 双层 | ⬜ 未开始 | `include/framework/protocol_bridge.hh` + 钩子扩展 |
 | 4 装配宏:`REGISTER_CHSTREAM_BIDIRECTIONAL` | ⬜ 未开始 | `include/chstream_register.hh` |
 | 5 JSON 装配连通性 | ⬜ 未开始 | `configs/` 侧示例 + E2E |
@@ -23,6 +24,22 @@
 ---
 
 ## 逐任务清单(TDD 5-step:判据 → 实现 → 夹具 → 验证 → 登记)
+
+### Phase 0 —— 前置(已闭合,2026-10-27)
+
+> **为什么单列 Phase 0**:本 change 是 **CohIf 契约面** change —— task 6.3 要求**引用**队列 #6 的
+> `adapter_schema_contracts.hh`,而 canonical 10 流的校验面在 `collective_plane_contract.hh`
+> ⇒ **两个契约头必须在同一 TU 共存**。此前它们在 `tlm::cep` 命名空间下**同名定义了
+> `ContractVerdict` / `ContractVerdictLine` / `ContractReport` / `contract_verdict_name`**
+> 且**底层值序相反** ⇒ 同时 include 即编译失败(已实测复现 `multiple definition`)。
+> 该缺陷在本 change 启动**前**已由独立 fix commit 消解(不属于本 change 的交付面)。
+
+- [x] 0.1 **`tlm::cep::ContractVerdict` 同名冲突消解** —— 改名 adapter 侧为
+      `AdapterContractVerdict` / `AdapterContractVerdictLine` / `AdapterContractReport` /
+      `adapter_contract_verdict_name`(消费面更小:3 个 TU vs collective 侧 4 个);
+      **语义与行为零变化**(枚举仅按名访问,无 `static_cast` / 下标依赖值序);
+      **符号名从未进入 `openspec/specs/` 或 ADR 契约面** ⇒ 无 delta spec 变更。
+      **已完成**:commit `7f91abd9`(2026-10-27;台账 Entry #83)
 
 ### Phase 1 —— 载体面(`CohIfBundle`,判据 CC-01 / CC-02)
 
@@ -41,6 +58,17 @@
 - [ ] 2.2 `Input/OutputStreamAdapter<CohIfBundle>` 端口成员(照 `router_tlm.hh:139-141` 范式)
 - [ ] 2.3 持 `ProtocolBridgeEr*`(类型擦除基类指针,不引入协议语义基类)
 - [ ] 2.4 端口方向语义登记:`req_in[i]` = ingress / `resp_out[i]` = egress;**流语义由 `flow_id` 决定**(design `D-ε`)
+- [ ] 2.5 **`NullProtocolEngine`** —— `ProtocolEngineBase` 的 **ADR 强制默认实现**
+      (per `ADR-CEP-07 §3` `INV-CEP-07-IC2`:`NullProtocolEngine` 是 ProtocolEngine
+      **默认实现**,须有 **10 流覆盖矩阵**;逐流行为 per `07 号 §6.4`:
+      流 **1/3/4/5/6/7/10** = no-op · 流 **2** = immediate-complete ·
+      流 **8** = immediate-resolve · 流 **9** = immediate-complete)——
+      落 `include/tlm/cep/protocol_engine_base.hh`。
+      ⚠️ **本项在 2026-10-27 之前无队列 owner**(全仓零载体),owner 自本任务起 = **队列 #7**
+- [ ] 2.6 **反向 fixture**:把 `NullProtocolEngine` 的 10 流覆盖矩阵改成**缺 1 流**
+      ⇒ 覆盖矩阵断言必红(per 判据纪律「纯负向断言必须有正控」)
+- [ ] 2.7 **反向 fixture**:把某流的 `immediate-complete` 语义改成 no-op
+      ⇒ 该流的行为断言必红
 
 ### Phase 3 —— 特化桥(判据 CC-03 / CC-05)
 

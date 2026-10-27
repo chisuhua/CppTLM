@@ -677,7 +677,7 @@ experimental/<run_id>/
 | Stub Cache Core | §3.2 | ✅ **已落地** —— 6 接口 / 5 态 / `INV-SC1`~`SC6` + `INV-CEP-05-IC1` 行为化(14 测试) | `cpptlm-cep-stub-cache-core`(2026-10-25 已归档) |
 | SharerTracker 5 实现 | §5.2 | 🟡 **1 / 5** —— `FullMapDirectory` 唯一行为实现已落地(10 测试);其余 4 个(`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:178-195`) | 队列 #9 ~ #11(队列 #9 另需第 6 实现 `HierarchicalDirectory`) |
 | Collective Plane | §5.3 | 🟡 **骨架已落地** —— `CollectivePlaneIf` 恰 7 方法 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous);**REDUCE / BROADCAST / MULTICAST 数据路径未实现**(返 `Status::DataPathNotImplemented`);`fabric_ingress_classify` 路由接线未实现 | 骨架 = `cpptlm-cep-collective-plane-base`(2026-10-26 已归档);数据路径 = Stage 3 |
-| ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **1 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射),是**首个 `status=implemented` 实例**;**`ProtocolEngine` 基类本身不存在** | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
+| ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **1 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射),是**首个 `status=implemented` 实例**;**`ProtocolEngine` 基类本身不存在**;**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)亦无载体 —— owner 已定 = 队列 #7 task 2.5(2026-10-27 登记,per 台账 Entry #83)** | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
 | ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 零命中)⇒ `INV-CEP-07-IC4` **无载体** | 队列 #7(`REGISTER_CHSTREAM_BIDIRECTIONAL` + `module_factory.hh:313-315` 死钩子扩展) |
 | 实验输出 4 件套 | §7 | ✅ **已落地** —— `tools/{render_report,run_sweep,ab_compare}.py` + `experimental/metrics.schema.json` + 4 件套契约测试(`test_cep_canonical_invariants.cc` / `test_cep_dummy_signals.cc` / `test_cep_module_factory_seam.cc` / `test_cep_simulation_mode_lock.cc`) | Stage 0(`cpptlm-cep-umbrella`,2026-10-23 已归档) |
 | simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |
@@ -726,11 +726,30 @@ experimental/<run_id>/
 >
 > **④ 未随本则改动的已知缺口(登记,不处理)**:`NullProtocolEngine`(`§6.4` + `INV-CEP-07-IC2`)**无代码载体且无队列 owner**;`06 号 §15.1` / `§15.4` 尚未加「时间线转隶 CEP」注记;`06 号 §9.1` 的 `module_factory.cc` 行号漂移 ≈25 行 —— 三项均在**本仓 06 号 / 01 号**(非本冻结面成员),由同批 P1 在 06 号 / 01 号侧处置,本文件不代改。
 >
+> **⚠️ 后续处置(2026-10-27,per 台账 Entry #83)**:上列 3 项**已全部处置** —— ① `NullProtocolEngine` owner = 队列 #7 task 2.5 / 2.6 / 2.7(增补);② `06 §15.1` / `§15.4`「时间线转隶 CEP」注记已加(commit `4d1e54fa`);③ `06 §9.1` 行号已刷新(commit `4d1e54fa`)。
+>
 > **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #82)。
 
+## §附录 · Status Update 2026-10-27(第三则 · per 台账 Entry #83 —— 载体缺口登记与 owner 指派)
+
+> **授权**:Entry #83(P2 收口:潜伏编译缺陷消解 + C9 机器断言补齐 + `NullProtocolEngine` owner 指派;用户 2026-10-27 直接指令授权)。
+> **口径**:本节**不改**架构正文(§2 ~ §10 的定义 / 职责 / 判据一律不动),仅登记 ① §11 一处**活口径**的 owner 补登 + ② 第二则 ④ 的处置回填 + ③ 两份 ADR 的 Status Update 指向。
+> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #83"`。
+
+> **① §11「ProtocolEngine adapter 实例」行的 owner 补登(活口径)**:该行原文记「**`ProtocolEngine` 基类本身不存在**」—— 事实仍成立,但**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)此前既无载体又无 owner** ⇒ 重演「无主债」。**本次指派**:owner = **`cpptlm-cep-cohif-carrier`(队列 #7)task 2.5 / 2.6 / 2.7** —— 理由:队列 #7 的 Phase 2 交付 `ProtocolEngineBase` 派生 `ChStreamModuleBase`,而 `INV-CEP-07-IC2` 规定 `NullProtocolEngine` 是 ProtocolEngine 的**默认实现**且须有 **10 流覆盖矩阵**(逐流行为 per §6.4)⇒ **建基类者同时交付其 ADR 强制的默认实现**,属该 change 的契约面自洽,非范围蔓延。task 2.6 / 2.7 附**反向 fixture**(覆盖矩阵缺 1 流 / 某流语义退化 ⇒ 必红)。
+
+> **② 第二则 ④「未随本则改动的已知缺口」的处置回填**:该处登记的 3 项**已全部处置** —— ① `NullProtocolEngine` owner = 队列 #7 task 2.5~2.7(见 ①);② `06 号 §15.1` / `§15.4`「时间线转隶 CEP」注记已加(commit `4d1e54fa`);③ `06 号 §9.1` 行号已刷新(commit `4d1e54fa`)。
+
+> **③ 本则关联的两份 ADR Status Update(同日追加,授权同源)**:
+> - `ADR-CEP-14` Status Update 2026-10-27 —— C9 四条要求的**覆盖现状逐条对账** + C++ 侧机器断言补齐 + **变异测试反证**(含一次真实的「负向断言恒真空」缺陷登记)。
+> - `ADR-CEP-07A` Status Update 2026-10-27(第二则)—— §4 验证口径第 2 项的**不实声称订正**(「Stage 0 由 `test_cep_canonical_invariants.cc` 的 C9 覆盖」实测不成立)+ `INV-CEP-07A-IC2` 与决策 1 第 7 项 ③ 的**时效张力登记** + C++ 侧 IC2 覆盖现状表。
+>
+> **④ 本则未处理、已登记的项**:① `INV-CEP-07A-IC2` 的**时效限定**(拓扑 Python 层自 Stage 2 起适用)属**收紧 invariant** = 决策变更 —— **待 architect 裁决**,builder 不自行签发;② `ADR-CEP-14` C9 第 1 条的「反射 / 类型 trait」形态仍未落地(当前以标识符词扫描近似覆盖);③ `tlm::cep::ContractVerdict` 同名冲突已消解(commit `7f91abd9`),但 **`openspec/specs/` 与 ADR 契约面均无该符号名** ⇒ 无 delta spec 变更需求。
+
+> **冻结面**:本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #83)。
 
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ **Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)**
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ **Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)
