@@ -1,7 +1,7 @@
 # 架构设计文档 (通用基础架构)
 
 > **版本**: 1.2
-> **最后更新**: 2026-10-19 (v1.2 治理后同步, 18 文档 + 5 归档)
+> **最后更新**: 2026-10-27 (v1.4 — 14-sm-operand-supply-design-target.md 迁出至 ArchForge（编号 33-）, 18 文档 + 5 归档)
 > **变更**: 与 `docs/designs/` 分工明确（dGPU 应用架构已迁出）+ 真源 1 (通用基础架构) 索引同步
 
 > **⚠️ v0.4 X-11 cross-ref**: 本目录是 AGENTS.md §DOC HYGIENE 真源原则定义的"真源 1" (通用基础架构唯一真源). 文档状态与正文严格同步是治理成功的必要条件 (per critic 评审 B1+B2 BLOCKER). 任何修订必须先改这里 + 同步索引 (本 README) + 同步 ADR (docs/adr/) + 同步调研 (docs/research/).
@@ -41,6 +41,7 @@
 | [11-coherence-domain-readiness.md](./11-coherence-domain-readiness.md) | 🟡 早期 readiness 评估 | 一致性域准备状态 (ARCH-011, 与 06-bis v0.3 实施蓝图范围正交, 2026-10-19 加 cross-ref) |
 | [12-topology-gap-analysis.md](./12-topology-gap-analysis.md) | ✅ v1.1 已批准 | 拓扑差距分析 (审查修正版) |
 | [13-dashboard-integration.md](./13-dashboard-integration.md) | ✅ v2.0 已批准 | Dashboard 集成 (FastAPI + RunContext + Monaco Editor) |
+| ~~14-sm-operand-supply-design-target.md~~ | ➡️ **已迁 ArchForge** | **SM 操作数供给下一代架构设计目标（OSF：MCOS / ERW / WABR / SOP）** — 2026-10-27 迁至【ArchForge 仓】`docs/architecture/33-sm-operand-supply-design-target.md`（🟡 设计目标声明，非现状真相，**未经 Oracle/ADR 评审**）；配套证据【ArchForge 仓】`docs/research/SM/CudaCore/`（SYNTHESIS + 8 篇解析）。**本仓不再保留副本**（silicon 侧真源在 ArchForge；真源 1 只描述 CppTLM 现状） |
 | [02-complex-topology-architecture.md](./02-complex-topology-architecture.md) | ✅ 已批准 | 复杂拓扑实现架构 (RT 桥接, per [06 §0.3](./06-inter-module-network.md) 边界标注) |
 
 ### 决策汇总

@@ -118,6 +118,19 @@ VIRTUAL_PATHS=(
     # 子串匹配规则：`docs/soc_arch/<sub>/` 前缀条目覆盖全部子目录。
     # .md 引用不在 PATH_REGEX 扫描范围（line 54 已跳过），以下为文档化声明。
     "docs/soc_arch/architecture/"
+    # 2026-10-27 硬件微架构调研迁 ArchForge 仓（docs/research/{SM,TMU,CP,WDU,WDUtoSM,PCIe} + 顶层 5 份专利 + 14-sm-operand-supply-design-target.md）
+    "docs/research/SM/"
+    "docs/research/TMU/"
+    "docs/research/CP/"
+    "docs/research/WDU/"
+    "docs/research/WDUtoSM/"
+    "docs/research/PCIe/"
+    "docs/research/US12333311B2"
+    "docs/research/US20240036952A1"
+    "docs/research/US20240356866A1"
+    "docs/research/US8917271B2"
+    "docs/research/US9921847B2"
+    "docs/architecture/14-sm-operand-supply-design-target.md"
     "docs/soc_arch/adr/"
     "docs/soc_arch/modules/"
     "docs/soc_arch/specs/"

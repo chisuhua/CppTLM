@@ -1364,7 +1364,7 @@ soc.connect("group:gpu", "noc_cdc_bridge.dst", latency=2)
 - [`docs/research/gem5-messagebuffer-network-interface.md`](../../research/gem5-messagebuffer-network-interface.md) — MessageBuffer + NI + vnet 详解
 - [`docs/research/gem5-garnet-network-survey.md`](../../research/gem5-garnet-network-survey.md) — Garnet 3.0 router + Topology
 - [`docs/research/gem5-soc-survey.md`](../../research/gem5-soc-survey.md) — Gem5 标准库 topology 例子
-- [`docs/research/PCIe/PCIe_上的保序write.md`](../../research/PCIe/PCIe_上的保序write.md) — PCIe TLP 保序
+- 【ArchForge 仓】`docs/research/PCIe/PCIe_上的保序write.md` — PCIe TLP 保序（2026-10-27 自本仓 `docs/research/PCIe/` 迁出）
 
 ### 17.6 相关 ADRs(0 改, 仅引用; 详情见 §10.1)
 

@@ -1,189 +1,116 @@
-# docs/research/ — GPU/PCIe/TMU/WDU 专利研究索引
+# CppTLM `docs/research/` — 框架级调研（CEP 一致性 + gem5 + CppTLM 专用）
 
-> **版本**: v0.5 · **日期**: 2026-08-19 · **状态**: 📋 Research Index
+> **版本**: v1.0 · **日期**: 2026-10-27 · **状态**: 📋 Research Index
 > **维护**: CppTLM Team (Sisyphus)
-> **关联 OpenSpec**: [`openspec/changes/2026-08-19-cpptlm-v05-redo/`](../../openspec/changes/2026-08-19-cpptlm-v05-redo/)
-> **关联 ADR**: [`ADR-X.16-cpptlm-v05-redo.md`](../../adr/ADR-X.16-cpptlm-v05-redo.md)
+> **变更**: 2026-10-27 **拆分迁移** —— 硬件微架构调研（74 份）迁往 **ArchForge 仓** `docs/research/`；本目录保留 **框架级**调研（11 份）。详见 §4。
 
 ---
 
 ## 1. 范围
 
-`docs/research/` 收纳 GPU/dGPU 仿真相关的**专利解析 + 综述文档**,为 v0.5 redo 设计决策提供理论参考。**不是 openspec spec**,**不进 ABI 契约**,**仅作 background reference**。
+本目录收纳 **CppTLM 框架级能力**的调研材料：**一致性互联探索平台（CEP）** 的协议空间调研与架构评审、**gem5 Ruby / Garnet** 一致性协议族调研、以及 **CppTLM 专用**的 GPU SoC 融合调研。
 
-**使用原则**(per Oracle + Metis 重评):
-- ✅ 引用专利的设计思路作为 v0.5 实现参考
-- ❌ **不直接复制专利内容到 CppTLM 源码**(避免版权风险)
-- ❌ **不声称与专利实现等价**(仅 reference,非 conformance)
+**这些文件是本仓已签发 ADR 与 active change 的"判据定义真源"或"证据锚点"**，因此**不能随硬件调研一并迁出**（判据一旦离开被引用的 ADR，ADR 就不再自足）。
 
-## 2. 目录索引
+**使用原则**：
 
-### 2.1 CP/ — Command Processor (12 专利)
-
-| 文件 | 主题 | 关键概念 |
-|------|------|---------|
-| `CP/amd/overview.md` | AMD CP 专利综述 | 6 件专利族 |
-| `CP/nvidia/overview.md` | NVIDIA CP 专利综述 | 6 件专利族 |
-| `CP/amd/US8310492B2_...md` | HQD 硬件队列调度 | Queue Descriptor + ring buffer 模型 |
-| `CP/amd/US8675002B1_...md` | 统一命令缓冲 | Unified command buffer |
-| `CP/amd/US9176795B2_...md` | 用户态图形处理分发 | User-mode graphics dispatch |
-| `CP/amd/US20210191730A1_...md` | 未映射队列聚合门铃 | Unmapped queue aggregated doorbell |
-| `CP/amd/US20210304349A1_...md` | 迭代间接命令缓冲 | Iterative IB (Indirect Buffer) |
-| `CP/amd/US20220091847A1_...md` | 间接缓冲预取 | IB prefetch |
-| `CP/amd/US11822956B2_...md` | 自适应线程组分发 | Adaptive threadgroup dispatch |
-| `CP/amd/US12131186B2_...md` | 硬件加速动态工作创建 | Dynamic work creation |
-| `CP/nvidia/US10489056B2_...md` | SM 系统队列管理器 | SM system queue manager |
-| `CP/nvidia/US20210149719A1_...md` | 可执行图修改 | Executable graph modification |
-| `CP/nvidia/US20210248115A1_...md` | 计算图优化 | Compute graph optimization |
-
-**v0.5 应用**: PM4 TYPE3 opcode 解析(per `command-processor-v05.md` §3)借鉴 AMD HQD + NVIDIA SM 队列管理器的设计思路。
-
-### 2.2 WDU/ — Work Distribution Unit (5 专利)
-
-| 文件 | 主题 | 关键概念 |
-|------|------|---------|
-| `WDU/overview.md` | WDU 专利综述 | Work distribution patterns |
-| `WDU/US10332310B2_...md` | 分布式图元批处理 | Distributed primitive batching |
-| `WDU/US8941653B2_...md` | 保序分布式光栅化 | Ordered distributed rasterization |
-| `WDU/US9594599B1_...md` | 按 SM 数比例分发工作批次 | Proportional SM-based distribution |
-| `WDU/US9710306B2_...md` | 封装计算任务自动节流 | Auto-throttling task packaging |
-
-**v0.5 应用**: ComputeUnitTLM v2 的 `dispatch_whitebox` warp 分发策略借鉴 WDU 思想(per `per-warp-instruction.md` §6)。
-
-### 2.3 TMU/ — Task Management Unit (16 文件)
-
-| 文件 | 主题 |
-|------|------|
-| `TMU/overview.md` | TMU 综述 |
-| `TMU/TMD.md` | **Task Management Descriptor 完整字段布局**(Init/Sched/Exec/QueueState/HW-only/Dep/Queue 区) |
-| `TMU/TMU专利专题整理.md` | 23 件专利族整理(3 代形态:Kepler → Volta → Hopper WSDU) |
-| `TMU/Atomatic_dependent_task_launch.md` | Dependent TMD 自动启动机制 |
-| `TMU/Efficiently_Launch_task_on_processor.md` | PREEXIT/ACQBULK 解耦调度/数据依赖 |
-| `TMU/Method_and_system_for_processing_nested_stream_events.md` | Nested stream events (WE/SE dep count) |
-| `TMU/Signaling_ordering_and_execution_of_dynamically_generated_tasks...md` | 反射通知 + vspan 合并 + 门槛判定 |
-| `TMU/US10552202B2_指令级执行抢占_解析.md` | 指令级执行抢占 |
-| `TMU/US11182207B2_依赖任务描述符预取_解析.md` | TMD prefetch |
-| `TMU/US20130198760A1_依赖任务自动启动_解析.md` | Dependent TMD auto-launch |
-| `TMU/US20210304349A1_...md` | 迭代 IB(已列 CP) |
-| `TMU/US8572573B2_非抢占式GPU交互调试_解析.md` | Debug 三态线程清单 |
-| `TMU/US9535815B2_GPU负载执行统计收集_解析.md` | Trace cell + thread-state table |
-| `TMU/US9928109B2_嵌套流事件处理_解析.md` | Wait Event + Signal Event |
-
-**v0.5 应用**: TmuDispatchProcessor + Scheduler Cache 关键字段 + dep 链(per `command-processor-v05.md` §4 + design.md §3)。
-
-### 2.4 PCIe/ — PCIe 物理行为 (1 文档)
-
-| 文件 | 主题 | 关键概念 |
-|------|------|---------|
-| `PCIe/PCIe_上的保序write.md` | **PCIe TLP 保序 write 机制** | MMU ordering pipe + dummy non-posted read flush |
-
-**v0.5 应用**: Doorbell::ring strong-ordered path(per design.md §3.2.5 + `ptx-emu-v05-submodule.md` §3)+ PCIe Gen5 x16 250-700ns latency 区间断言(per `tasks.md` T-P1'-1 验证)。
-
-### 2.5 SM/ — SM 内部实现 (NVIDIA Hopper/Blackwell/Volta，23 文件 + 1 综述)
-
-| 文件 | 主题 |
-|------|------|
-| `SM/overview.md` | **NVIDIA Blackwell/Hopper SM 内部实现专利与论文综述**（10 专利 + 4 微基准论文 + 1 官方简报） |
-| `SM/NVIDIA_Blackwell_Architecture_Technical_Brief_v2.1_官方技术简报_解析.md` | Blackwell 架构官方技术简报解析 |
-| `SM/CudaCore/overview.md` | **★ CudaCore 子专题索引 + Operand Collector 微架构专题综述**（3 专利 + 3 论文 + GPGPU-Sim 源码剖析） |
-| `SM/CudaCore/US20230289211A1_线程组可扩展负载均衡_解析.md` | CWD/CGA 准入（Group F 调度） |
-| `SM/CudaCore/US20240231830A1_工作负载分配_解析.md` | SpMV 线程级均衡（Group F 调度软件外围） |
-| `SM/CudaCore/US20240378089A1_基于性能指标的寄存器配置_解析.md` | 寄存器文件配置（Group E） |
-| `SM/CudaCore/US7834881B2_操作数收集器架构_解析.md` | **★ Operand Collector 源头专利**（bank 仲裁 + 收集单元 + phase 错位） |
-| `SM/CudaCore/US8639882B2_源操作数收集器缓存_解析.md` | **★ 源操作数收集器缓存专利**（6 槽位 + cache table + 写回失效） |
-| `SM/CudaCore/US8555035B1_无冲突寄存器分配对照_解析.md` | **★ 编译期 conflict-free / aligned 路线**（"取消 OC"对照） |
-| `SM/CudaCore/gpgpu-sim_操作数收集器实现剖析.md` | **★ GPGPU-Sim 4.2.0 `opndcoll_rfu_t` 源码剖析**（wavefront 仲裁 + 端口建模） |
-| `SM/CudaCore/arXiv2503.20481_现代NVIDIA核心无操作数收集器_解析.md` | **★ 实测否定现代 NVIDIA 存在 OC**（定长延迟 + Allocate 预约 + RFC 语义） |
-| `SM/CudaCore/arXiv1804.06826_Volta微基准_寄存器复用与bank冲突_解析.md` | **★ Volta SASS `.reuse` 标志位**（4 reuse cache + 4 slot；2×64-bit bank） |
-| `SM/CudaCore/ASPLOS19_CORF_操作数收集器建模_解析.md` | **★ 学术界 OC 建模标准口径**（OC port serialization + bank conflict） |
-| `SM/CudaCore/arXiv2402.13499_Hopper微基准剖析_解析.md` | Hopper 微基准剖析（论文） |
-| `SM/CudaCore/arXiv2501.12084_Hopper微基准剖析v2_解析.md` | Hopper 微基准剖析 v2 |
-| `SM/CudaCore/arXiv2507.10789_Blackwell微基准剖析_解析.md` | Blackwell 微基准剖析 |
-| `SM/CudaCore/arXiv2512.02189_Blackwell微基准深入_解析.md` | Blackwell 微基准深入 |
-| `SM/TMA/US12020035B2_TMA可编程多播_解析.md` | TMA 多播(LRC 跟踪)|
-| `SM/TMA/US20230289242A1_mbarrier异步事务同步_解析.md` | mbarrier SYNCS（Group C 同步） |
-| `SM/TMA/US20230289304A1_TMA多维数据异步访问_解析.md` | TMAU 核心（Group A 异步搬运） |
-| `SM/TMA/US20230315655A1_快速数据同步_解析.md` | store-and-arrive 同步（Group C） |
-| `SM/TMA/US20240176663A1_TMA张量映射缓存_解析.md` | TMA 描述符缓存（Group A） |
-| `SM/TMA/US20250173152A1_分布式共享内存_解析.md` | DSMEM/cluster（Group D） |
-| `SM/Tensor/US20230289398A1_wgmma组矩阵乘加_解析.md` | wgmma warp 组矩阵乘加（Group B 张量核心） |
-
-**v3.0 / W4+ 应用候选**: TMA multicast (per design.md §DSMEM 通信)+ wgmma 周期预算（per `tensor_core_tlm.cc` PrecisionTable）+ mbarrier 同步原语（per `cuda_core_adapter` 资源模型）。当前 MVP (s2-s3) **不直接消费**，仅 reference。
-
-**Operand Collector 专题（2026-10-27 新增，8 文件）**: 回答"SM 内操作数供给级到底是什么、它在现代 NVIDIA GPU 上还存在吗"。核心结论——**Tesla/Fermi/Kepler 时代 OC 是一级流水结构（收集延迟可变）；Volta 起 OC 被废除，改为「定长延迟 + Allocate 级端口预约 + issue 侧气泡 + 编译器管理的 reuse cache」**。CppTLM 建模建议采用**现代口径**（见 `SM/CudaCore/overview.md` §6 借鉴点表）。
-
-### 2.6 顶层文件
-
-| 文件 | 主题 |
-|------|------|
-| `gem5-soc-survey.md` | gem5 标准库 + AMD MI300X dGPU + ComputeUnit patterns 综述 |
-| `gem5-ruby-protocol-bridge-survey.md` | **Gem5 Ruby/Garnet 协议中立通信网络调研**（PNN 借鉴主文档）|
-| `gem5-slicc-chi-survey.md` | SLICC 协议描述语言编译链 + AMBA CHI 协议族实现（299 行）|
-| `gem5-garnet-network-survey.md` | Garnet 3.0 router pipeline + credit + NI + 拓扑 + routing 三模式（256 行）|
-| `gem5-coherence-protocols-survey.md` | 11 类 coherence 协议族 + Directory 状态转换 + Token 持票 + GPU_VIPER（499 行）|
-| `gem5-messagebuffer-network-interface.md` | MessageBuffer + NetworkInterface + vnet 协议消息流转详解（457 行）|
-| `gem5-coherence-network-evolution.md` | Gem5 一致性网络 20+ 年演进史 + 学术/工业对照 + PNN 借鉴矩阵（291 行）|
-
-**v0.5 应用**: ComputeUnitTLM v2 字段参考(`cu_id` / `WarpContext state machine` / `outstandingReqs`)借鉴 gem5 APU/dGPU 实现。
+- ✅ 引用调研结论作为**框架级**设计参考
+- ❌ **不直接复制第三方内容到源码**（避免版权风险）
+- ❌ **不声称与第三方实现等价**（仅 reference，非 conformance）
+- ⚠ **架构真源在 `docs/architecture/`（真源 1）+ `docs/designs/`（真源 2）+ `docs/adr/`（真源 3）**；本目录是**附属证据层**，不承载"现状真相"，不单独作为设计裁决依据
 
 ---
 
-## 3. 命名约定
+## 2. 目录索引（11 份）
 
-- **专利解析文件**: `US<专利号>_<中文主题>_解析.md`
-  - 例: `US20210304349A1_迭代间接命令缓冲_解析.md`
-- **综述文档**: `overview.md`(每子目录顶)+ `SYNTHESIS.md`(综合提取)
-- **专利原文不存放**(仅分析) — 避免版权 + 体积问题
+### 2.1 CEP 一致性探索平台（2 份）★
 
-## 4. 跟踪状态(per `scripts/test/docs_sync_check.sh`)
+| 文件 | 角色 | 主要引用方 |
+|------|------|-----------|
+| `cep-coherence-protocol-space-survey.md` | **ADR-CEP-08/09/12/13/14 的判据定义真源** | `docs/adr/ADR-CEP-08/09/12/13/14`、`docs/architecture/07-coherence-exploration-platform.md` |
+| `cep-cohif-carrier-architecture-review-2026-10-26.md` | active change `cpptlm-cep-cohif-carrier` 的**架构依据** | 该 change 的 proposal/design/tasks + `.rddf/` |
 
-| 子目录 | 文件数 | 跟踪 |
-|--------|------:|------|
-| `CP/` | 12 | ✅ tracked |
-| `WDU/` | 5 | ✅ tracked |
-| `TMU/` | 16 | ✅ tracked |
-| `PCIe/` | 1 | ✅ tracked |
-| `SM/` | 24 | ✅ tracked (per ADR-SOC-06 v3.0 / Blackwell 调研 + 2026-10-27 Operand Collector 专题 8 文件) |
-| **顶层** | 7 (gem5-soc-survey.md + 6 个 gem5-ruby 调研) | ✅ tracked（2026-10-16 新增 6 个）|
+> ⚠ **已知治理缺陷（登记中）**：`ADR-CEP-19` 全文对 `CC-0x` 只有编号引用、**不含定义**，判据定义真源落在本目录的附属层 → **真源 3（ADR）不自足**。见 `.rddf/roadmap/objectives/obj-cep-platform.md` 登记项。**迁移前必须先消解该缺陷**（把判据定义回写进 ADR），否则等于把缺陷固化。
 
-**注**: v0.5 redo 已 archive（2026-08-28）；新 SM/ 区段于 2026-08-29 跟踪入仓（v3.0 dGPU Board W4+ 候选 reference）。
+### 2.2 gem5 一致性协议族调研（7 份）
 
-## 5. 与 v0.5 redo 关联
+| 文件 | 主题 | 主要引用方 |
+|------|------|-----------|
+| `gem5-soc-survey.md` | gem5 标准库 + AMD MI300X dGPU + ComputeUnit patterns | `docs/architecture/06-inter-module-network.md` / `06-bis-*` / `07-*` |
+| `gem5-coherence-protocols-survey.md` | 11 类 coherence 协议族（SLICC） | `ADR-CEP-00` / `ADR-CEP-17` / `06-bis-*` / `07-*` |
+| `gem5-ruby-protocol-bridge-survey.md` | Ruby/Garnet 协议中立通信网络（PNN 借鉴主文档） | `ADR-CEP-00` / `ADR-DGPU-13` / `ADR-DGPU-14` / `06-bis-*` |
+| `gem5-garnet-network-survey.md` | Garnet 3.0 router pipeline + credit + NI | `06-inter-module-network.md` / `06-bis-*` / `07-*` |
+| `gem5-messagebuffer-network-interface.md` | MessageBuffer + NetworkInterface 事务流转 | `06-inter-module-network.md` / `06-bis-*` / `07-*` |
+| `gem5-coherence-network-evolution.md` | gem5 一致性网络 20+ 年演进史 | `06-bis-*` |
+| `gem5-slicc-chi-survey.md` | SLICC 编译链 + AMBA CHI 协议族 | `ADR-CEP-00` / `06-bis-*` |
 
-| v0.5 组件 | 引用专利 |
-|----------|---------|
-| `Pm4Decoder` (per `command-processor-v05.md`) | `CP/amd/US8310492B2_...md` + `CP/nvidia/US10489056B2_...md` |
-| `CommandProcessor` 5-state FSM | `CP/amd/US8675002B1_...md`(Unified command buffer)|
-| `ComputeUnitTLM::dispatch_whitebox` | `WDU/US9594599B1_...md` + `WDU/US10332310B2_...md` |
-| `ScoreboardTLM` 升级 | `TMU/US11182207B2_...md`(TMD prefetch)|
-| `PipelineTLM` 升级 | `TMU/TMD.md`(5+V stage)|
-| `Doorbell::ring` strong-order | `PCIe/PCIe_上的保序write.md` |
-| `TmuDispatchProcessor::pre_dispatch` | `TMU/US20130198760A1_...md`(Dependent TMD auto-launch)|
-| ComputeUnit 字段参考 | `gem5-soc-survey.md`(ComputeUnit 4-stage pipeline)|
+### 2.3 CppTLM 专用（1 份）
+
+| 文件 | 主题 | 主要引用方 |
+|------|------|-----------|
+| `research-cpptlm-gpu-fused-soc-survey.md` | CppTLM GPU SoC 融合调研 | `.rddf/` 规划依据 |
 
 ---
 
-## 6. 引用方式(代码内)
+## 3. 跨仓指针：已迁往 **ArchForge** 的调研
 
-```cpp
-// 引用示例(代码注释中)
-class Pm4Decoder {
-    // Reference: docs/research/CP/amd/US8310492B2_...md
-    // (HQD 硬件队列调度模式)
-    Pm4Packet parse_type3(...);
-};
+以下硬件微架构调研于 **2026-10-27** 迁往 **ArchForge 仓**（SoC 架构建模真源仓）：
+
+| 原 CppTLM 路径 | ArchForge 路径 | 对应 ArchForge 架构文档 |
+|---------------|---------------|---------------------|
+| `docs/research/SM/`（25 份） | `docs/research/SM/` | `05-sm-compute-unit.md` / `15-sm-microarchitecture-design.md` |
+| `docs/research/TMU/`（16 份） | `docs/research/TMU/` | `03-task-management-unit.md` |
+| `docs/research/WDU/` + `WDUtoSM/`（14 份） | `docs/research/WDU/` + `WDUtoSM/` | `04-work-distribution.md` |
+| `docs/research/CP/`（13 份） | `docs/research/CP/` | `02-command-processor.md` |
+| `docs/research/PCIe/`（1 份） | `docs/research/PCIe/` | `16-pcie-endpoint-architecture.md` |
+| `docs/research/` 顶层 5 份硬件专利解析 | `docs/research/` 顶层 | — |
+| `docs/architecture/14-sm-operand-supply-design-target.md` | `docs/architecture/33-sm-operand-supply-design-target.md` | SM 操作数供给设计目标 OSF |
+
+> **ArchForge 索引**：`/workspace/main/ArchForge/docs/research/AGENTS.md`
+>
+> **注意**：ArchForge 原先以相对路径 `../../research/…` 引用这批文件（迁移前**全部悬空**），迁移后 **9/12 自动解悬空**；剩余 3 个为历史遗留（`2026-09-04-*.md` 三份从未存在 + `WDUtoSM/nvidia/US8112614B2_...md` 原文省略号占位）。
+
+### 3.1 跨仓引用写法
+
+**不要**用相对路径跨仓引用（必然失效）。统一写法：
+
+```
+【ArchForge 仓】docs/research/SM/CudaCore/SYNTHESIS.md
+【CppTLM 仓】docs/research/gem5-soc-survey.md
 ```
 
-**规则**: 仅在 header doc-comment 引用,**代码内不 include 任何 `docs/research/*.md`**(保持编译防火墙)。
+---
+
+## 4. 迁移记录（2026-10-27）
+
+采用**按消费方拆分**，而非整目录搬迁：
+
+| 分类 | 处置 | 依据 |
+|------|------|------|
+| `CP/` `WDU/` `WDUtoSM/` `TMU/` `PCIe/` `SM/` + 顶层 5 份专利（74 份） | → **ArchForge** | ArchForge 的 `00-overview.md` / ADR-SOC-02/06/09/11/15 以相对路径引用它们（迁移前全悬空），且主题属 **SoC 架构建模** |
+| `cep-*.md` `gem5-*.md` `research-cpptlm-*.md`（11 份） | → **留 CppTLM** | 是本仓**已签发 ADR / active change** 的判据真源与证据锚点；主题属**框架级能力**（CEP） |
+| `docs/architecture/14-sm-operand-supply-design-target.md` | → **ArchForge `docs/architecture/33-…`** | silicon 侧真源在 ArchForge；编号 `14` 在 ArchForge 已被 `14-stage-a-architecture-audit.md` 占用 |
+
+**保留在本仓的副作用（已知）**：`docs/architecture/06-inter-module-network.md` §14 等处对 `docs/research/PCIe/…` 的引用改为**跨仓指针**。
 
 ---
 
-## 7. 跨仓同步
+## 5. 命名约定
 
-- `git add docs/research/CP/ docs/research/WDU/ docs/research/TMU/ docs/research/PCIe/ docs/research/gem5-soc-survey.md docs/research/gem5-*.md` 入仓跟踪(per `tasks.md` T-P3'-2 + 2026-10 6 份 PNN 调研)
-- 与 `docs_sync_check.sh --strict` 同步(per `tasks.md` T-P3'-3 验证)
+- **综述文档**：`overview.md` / `SYNTHESIS.md`
+- **专利解析文件**：`US<专利号>_<中文主题>_解析.md`（**已全部迁出**，本仓不再有）
+- **论文解析**：`arXiv<编号>_<中文主题>_解析.md`（**已全部迁出**）
+- **第三方原文不存放**（仅分析）— 避免版权 + 体积问题
 
 ---
 
-**维护**: CppTLM Team (Sisyphus)
-**下次更新**: v0.5 redo W8 (P3' 实施期间引用)
+## 6. 相关文档
+
+- 本仓真源 1：[`docs/architecture/`](../architecture/)（含 [README](../architecture/README.md) 索引）
+- 本仓真源 2：[`docs/designs/`](../designs/)
+- 本仓真源 3（ADR）：[`docs/adr/`](../adr/)
+- ArchForge 仓（设计真源，SoC 架构建模）：`/workspace/main/ArchForge` → 其 `docs/research/AGENTS.md`（调研索引）· `docs/architecture/INDEX.md`（架构索引）· `docs/adr/README.md`（ADR 索引）
+
+---
+
+*本索引基于 2026-10-27 的一手材料与跨仓引用扫描整理。硬件微架构调研的迁移是跨仓动作，需两仓同步提交。*

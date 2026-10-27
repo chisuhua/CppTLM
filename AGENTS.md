@@ -165,7 +165,7 @@ docs/
   roadmap/               # ★ 实施路线图 + 实时状态看板（README + current_status.md）
   superpowers/plans/     # 实施计划 + 进度跟踪归档层（与 openspec/tasks.md 互补）
   requirements/          # 需求规格
-  research/              # 研究材料 + cpptlm-gpu-fused-soc-survey
+  research/              # 框架级调研 (CEP 一致性 + gem5 协议族 + cpptlm 融合) —— 硬件微架构调研已于 2026-10-27 迁 ArchForge
   skills/                # 技能文档
   implementation/        # 实现笔记
   validation/            # 验证报告
@@ -458,7 +458,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | **真源 1 (通用基础架构)** | [`docs/architecture/`](docs/architecture/) | **通用基础架构唯一真源** (TLM 框架 + 事务/错误/复位/拓扑/Metrics/可视化/协议中立基线). 任何通用基础架构变更**必须先改这里** | Oracle 评审 or ADR 触发 |
 | **真源 2 (dGPU 应用架构)** | [`docs/designs/{dgpu-board,dgpu-soc,dgpu-driver}/`](docs/designs/) | **dGPU 应用架构唯一真源** (Board + SoC + Driver 三视角). dGPU 业务架构变更**必须先改这里** | Oracle 评审 or ADR 触发 |
 | **真源 3 (不可变决策)** | [`docs/adr/ADR-{X,DGPU}-*.md`](docs/adr/) | **不可变决策真源** (per ADR 不可变 + Status Update 先例, line 418) | 签发后不改, 只追加 Status Update |
-| **附属 1 (调研)** | [`docs/research/`](docs/research/) | **调研附属** (Gem5 / PCIe / Protocol 等). 引用真源, **不重发明** | 不进架构评审; 仅作 reference |
+| **附属 1 (调研)** | [`docs/research/`](docs/research/) | **框架级调研附属** (CEP 一致性 + gem5 协议族 + cpptlm 融合). 引用真源, **不重发明**. **硬件微架构调研 (SM/TMU/CP/WDU/WDUtoSM/PCIe 专利论文 + 仿真器剖析, 74 份) 已于 2026-10-27 迁 ArchForge 仓 `docs/research/`** —— SoC 架构调研归 ArchForge | 不进架构评审; 仅作 reference |
 | **附属 2 (业务实施笔记)** | [`docs/pcie/`](docs/pcie/) + [`docs/superpowers/`](docs/superpowers/) | **业务实施笔记 + 计划跟踪** (跨边界混合). 引用真源 + OpenSpec, 不重发明架构决策 | 实施期短期, archive 后归档 |
 | **附属 3 (早期方案)** | [`docs/archive/architecture/`](docs/archive/architecture/) + [`docs/archive/designs/`](docs/archive/designs/) + `docs/adr/ADR-*.md` 顶部 `## Status Update` 段 | **历史保留** (调研价值 + superseded 标注). 不重写, 仅追加归档说明或 Status Update | 仅 admin (归档 + Status Update) |
 
@@ -560,6 +560,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 - ❌ 把通用 TLM 框架文档放到 `docs/designs/`（应用设计专用）
 - ❌ 把 dGPU SoC 业务设计放到 `docs/architecture/`（仿真框架专用）
 - ❌ 把 SoC 架构组件/拓扑/演进类文档放到 CppTLM 仓（应去 ArchForge）
+- ❌ 把 **硬件微架构调研**（专利/论文/仿真器剖析）留在 CppTLM 仓（应去 ArchForge `docs/research/`）—— 2026-10-27 已迁 74 份; 本仓 `docs/research/` 仅留**框架级**调研 (CEP + gem5 + cpptlm 融合)，因其是已签发 ADR / active change 的判据定义真源
 - ❌ 把 SoC 架构类 OpenSpec change 放到 `openspec/changes/`（应去 ArchForge openspec/changes/）
 
 **迁移历史**: 2026-09-26 把 dGPU 应用架构三视角（Board + SoC + Driver）从 `docs/architecture/` 迁移至 `docs/designs/` 子目录，明确"仿真框架 vs 应用设计"分工。
