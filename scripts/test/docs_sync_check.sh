@@ -177,6 +177,13 @@ VIRTUAL_PATHS=(
     # 14-pcie-tlp-wire-format.md / 多层次混合仿真.md → docs/designs/dgpu-soc/<english-name>.md
     "docs/architecture/14-pcie-tlp-wire-format.md"
     "docs/architecture/多层次混合仿真.md"
+    # === rdd-workflow 遗留状态文件删除 (2026-10-27) ===
+    # .rddf/state/roadmap-state.json 是 rdd-workflow roadmap refactor (2026-08-18) 的遗留物,
+    # 初始化于 2026-08-25 后再无维护 —— 内容(current_phase=phase-1 / phase-1=in_progress)
+    # 与 .rddf/roadmap.md 的 Phase Skeleton 直接矛盾。实测全仓无任何脚本/代码读取它,
+    # 且保留即制造第二份阶段状态真源(违 obj-cep-platform §4.7.1 载体分工)⇒ 已物理删除。
+    # .rddf/roadmap.md 顶部保留该路径的删除说明句(append-only 溯源需要)。
+    ".rddf/state/roadmap-state.json"
 )
 
 # CMake 添加的 include dir（无前缀写法也能找到文件）

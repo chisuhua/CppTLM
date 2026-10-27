@@ -111,11 +111,16 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
                  │    header-only 不进 ModuleFactory;独立声明源 collective_planes.json
                  │    **行为化既有编号**:INV-CEP-07-IC3 + INV-CEP-04-IC5(新增 0 条)
                  ├─ cpptlm-cep-moesi-gpu-adapter      ← 2026-10-26 新增(Entry #71)
+                 │    ✅ **archived(2026-10-27)** —— 完成归档语义;14 Scenario 并入 2 份
+                 │    main spec(cep-moesi-gpu-adapter 7 / cep-adapter-schema-contracts 7);
+                 │    planner 见 Entry #71、builder 见 Entry #79、归档见 Entry #80
                  │    承接 Stage 1 准入前置:S1-7 ①②(perm 形态 schema 演进)、
                  │    S1-5(6→3 映射表机制)、S1-2(首个 implemented 实例装配后复核)
                  ├─ cpptlm-cep-cohif-carrier            ← 2026-10-27 新增(Entry #74)
+                 │    🟡 **Proposed**(2026-10-27 转正,Entry #81)—— change 目录已建
+                 │    (proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0)
                  │    CohIf 载体:CohIfBundle(5 流)+ ChStream 端口面 + ProtocolBridge
-                 │    (架构缺口 C1/C2/C3;ADR-CEP-19 待签发;StubCacheCore 侧端点延期)
+                 │    (架构缺口 C1/C2/C3;**ADR-CEP-19 已签发 2026-10-27**;StubCacheCore 侧端点延期)
                  ├─ cpptlm-cep-chi-rnf-subset          ← 2026-10-27 顺延(原 #7)
                  │    范围收窄:perm 演进与 6→3 映射表机制已移至队列 #6,本 change 复用;
                  │    首次在真实载体(队列 #7)上验证装配
@@ -158,11 +163,11 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
 
 ### 配套测试标签(规划)
 
-- `[cep]` **已落地**:实测 **76 case / 1284 assertion**(2026-10-23 实测;原规划 ~30 cases)
+- `[cep]` **已落地**:实测 **161 case / 2600 assertion**(2026-10-27 实测;原规划 ~30 cases)
 - `[canonical-invariant]` **已落地**:**66 条实际守门 invariant 的逐条断言统一落 `test/test_cep_canonical_invariants.cc`**(编号位 67,IC4 **唯一跳空**;组 6/14/15 另有脚本层口径校验 —— **invariant 条数 ≠ case 数**)
 - `[sweep]` + `[ab-compare]` **已落地**(tools 契约测试在 `test/test_cep_tools_contract.cc`)
 - `[coherence]` **Stage 1 起**(尚未落地)
-- 全仓 baseline:Stage 0 实施后 **1857 cases / 81202 assertions**(2026-10-23 实测);Stage 1~3 继续增量
+- 全仓 baseline:Stage 0 实施后 **1857 cases / 81202 assertions**(2026-10-23 实测)→ **1943 cases / 873046 assertions**(2026-10-27 实测;增量主因是 `[sdma]` 69 case / 803473 assertion 的环形缓冲夹具,非 CEP);Stage 1~3 继续增量
 > ⚠️ `tasks.md` 第 8 项记录的 `1856 / 81145` 是**该批执行时点快照**(append-only,不改)—— 判读当前值以实测为准(per Entry #22 ⑫ 动态量快照登记)
 
 ### 真源现状(per `ADR-CEP-00A` §3.2 实证)
@@ -188,6 +193,6 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
 
 ---
 
-**版本**: v0.2(2026-10-23,per planner 路线图漂移复核 + Entry #22)
-**最后**: Stage 0 实施完成并**已归档**(2026-10-23,tasks 99/99)· R10 已按 `obj §9.3` 闭合判据处置(残余风险已登记)· **Stage 1 可启动** → 队列 #2 `cpptlm-cep-poc-spike`
+**版本**: v0.3(2026-10-27,per 路线图漂移回填 —— 队列 #6 归档标记 + 队列 #7 转正标记 + 测试标签实测刷新;**不改排期**,排期真源仍 = `obj §4.0`)
+**最后**: Stage 0 实施完成并**已归档**(2026-10-23,tasks 99/99)· R10 已按 `obj §9.3` 闭合判据处置(残余风险已登记)· **Stage 1 进行中** → 队列 #2~#6 已归档(至 `cpptlm-cep-moesi-gpu-adapter`,2026-10-27)· 当前 active = 队列 #7 `cpptlm-cep-cohif-carrier`(🟡 Proposed,2026-10-27 转正)
 **作者**: CppTLM build agent(planner mode)
