@@ -188,7 +188,6 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 ## 9. Status Update(2026-10-22,per 台账 Entry #13)
 
 > **授权**:台账 `objective-cep-platform §11` **Entry #13** [adr-amendment]。
-> **触发**:ArchForge 答复回执(2026-10-22)§1.1 **Q-3a = 是** —— 判据 (b) **成立**。
 > **本节不改本表任何行** —— 按「表的使用规则 1:本表是唯一真源,**只引用**,不复制」,
 > 判据 2 的**状态值**归 `ADR-CEP-05 §13.1`(宿主 ADR)所有,本节**只引用**。
 

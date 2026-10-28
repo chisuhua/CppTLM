@@ -166,7 +166,6 @@
 ## Status Update 2026-10-27 —— C9 四条要求的覆盖现状对账 + C++ 侧机器断言补齐
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §6 正文一律不改**,仅登记状态变化与覆盖现状。
-> **触发**: 2026-10-27 CEP 代码 / 路线图 / 架构文档三方对齐审查;台账 Entry #83。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #83**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #83)。
 

@@ -178,7 +178,6 @@
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
 > §2 决策 2 的「顶点 / 来源」两行与 §2 决策 3 表的「① 排序假设」行的**正文不改**,
 > **自本段起以本段文本为准**。
-> **触发**: ArchForge 侧 coherence 接口规约合入(commit `8290b4c`)后的跨仓对齐 ——
 > VC 分配改为 **per-network 矩阵**(`ordering_assumption` / `vc_binding` 升嵌套形态)。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` Entry #9(`adr-amendment`)
 

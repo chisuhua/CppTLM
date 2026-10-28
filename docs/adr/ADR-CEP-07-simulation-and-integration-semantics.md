@@ -247,7 +247,6 @@ tick():
 ## Status Update 2026-10-27 —— 决策 3 的 ProtocolEngine 基类**落地排期**登记(队列 #7 `cpptlm-cep-cohif-carrier`)
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文一律不改**,仅登记状态变化。
-> **触发**: 2026-10-27 architect 角色架构重审 + `ADR-CEP-19` 签发;台账 Entry #74。
 > **登记 ① —— 决策 3 的表是「最终形态」口径,落地排期在此登记**:决策 3 规定「**ProtocolEngine** 派生类 = `ChStreamModuleBase` + `ModuleFactory::registerObject<T>`」(示例列 `ChiRnfAdapter` / `CxlCacheAdapter` / `TileLinkCAdapter` / `NvlinkAdapter` / `UalinkAdapter`)、「**SharerTracker** 派生类 = `SimModule` + `REGISTER_MODULE`」、「**FabricCollectivePlane** 派生类 = `SimModule` + `REGISTER_MODULE`」、「**StubCacheCore** = `ChStreamModuleBase` + `registerObject<T>` + `ChStreamAdapterFactory::create`」。**实测现状(2026-10-27)**:`include/tlm/cep/` 的 7 个 `.hh` **零** `Bundle`/`ChStream`/`StreamAdapter` 引用;`stub_cache_core.hh:154` 实为普通 `class StubCacheCore`;`sharer_tracker.hh:249/273` = `SharerTrackerIf` / `FullMapDirectory`;`collective_plane.hh:325` = `CollectivePlaneIf` ⇒ **四类派生类均未落地**。本决策的表**仍是最终形态口径**,但**落地**排在 **`cpptlm-cep-cohif-carrier`**(队列 #7,Stage 1 / 2028-Q2)—— 该队列交付 `ProtocolEngine` 基类 + `ChStreamModuleBase` 派生 + `registerObject` 注册。
 > **登记 ② —— 本决策的注册机制在本仓的唯一既有先例**:`chstream_register.hh:63`(`ModuleFactory::registerObject<tlm::NICTLM>`)+ `:119`(`registerBidirectionalPortAdapter<tlm::RouterTLM, bundles::NoCFlitBundle, 5>`)⇒ `ADR-CEP-19` 决策 5 的 `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏沿用该形态(且**必须**同时做 `registerObject` 与 adapter 注册,否则 ModuleFactory 无法实例化该类型)。
 > **登记 ③ —— 与 `ADR-CEP-15` 的基类漂移同源**:`ADR-CEP-15 §1.2` 的表格称 Stub Cache Core 基类 = `ChStreamModuleBase`,与 `stub_cache_core.hh:154` 不符 ⇒ 同日登记(见 `ADR-CEP-15` Status Update)。**`ADR-CEP-19` 决策 9 不改 stub**,故该漂移**不在**队列 #7 的范围内修复,仅登记。
@@ -257,7 +256,6 @@ tick():
 ## Status Update 2026-10-27(第二则)—— `NullProtocolEngine` 与 ProtocolEngine 基类**已落地** + 落点路径偏离登记
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文一律不改**,仅登记状态变化与路径偏离。
-> **触发**: 2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 2 实施**;台账 Entry #85。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #85**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #85)。
 
@@ -274,7 +272,6 @@ tick():
 ## Status Update 2026-10-28(第三则)—— Phase 3 落地 + 行号漂移登记
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文一律不改**,仅登记状态变化。
-> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 3 实施**;台账 Entry #86。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #86**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #86)。
 

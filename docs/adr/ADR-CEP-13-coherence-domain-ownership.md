@@ -200,7 +200,6 @@ acyclic( ppo_com ∪ rfe ∪ fr ∪ ws )
 ## 8. Status Update(2026-10-22):`INV-CEP-13-IC2` 的**应用口径**注记
 
 > **授权**:台账 `objective-cep-platform §11` **Entry #13** [adr-amendment]。
-> **触发**:ArchForge 答复回执(2026-10-22)**§1.1 Q-3a** —— 判据 (b) **首次被评估**且**成立**。
 > **本节不改判据定义** —— §2 决策 3 与 §3 `INV-CEP-13-IC2` 的**正文零改动**;
 > 本节仅记「**怎么用**这条判据」的应用口径(判据本身自 v0.1 起未变)。
 
@@ -236,7 +235,6 @@ ArchForge 的评估过程(答复回执 `cep-interface-alignment-response-2026-10
 ## 9. Status Update(2026-10-26,per 台账 Entry #71)—— (b) 成立后的**首个可执行载体**
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— §1 ~ §8 正文一律不改,仅登记状态变化。
-> **触发**: 2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` 建 change 目录(Stage 1 / 2028-Q1)⇒ 该 change 是 `moesi_gpu` 的**首个 `implemented` adapter**,也是 `INV-CEP-13-IC2` 判据 (a)(b) 的**首个可执行载体**。
 > **载体**:本 ADR 决策 3 的 (a)(b) 判据,在 `moesi_gpu` 上得到**声明侧**的首次落地 —— (a) = `E` 态 store **命中且无需外部通信**(静默升级);(b) = `M` 态的 snoop 响应**携带数据值**(`DATA_AND_ACK`)。该载体以 `perm_upgrade.silent_upgrades[]`(声明 `UNIQUE → WRITEBACK`)+ adapter 状态机表(`E+Write→M`)双向核对的形式落地(per 队列 #6 的契约判据 **AC-02** / **AC-05**)。
 > **边界**:本 change 只落地**声明侧**投影与**语义关键点**断言;**跨域写传播机制**(决策 3 的两条:一致性模型翻译 / proxy-cache)仍**未实施** ⇒ 判据 (a)(b) 的**运行期**验证属后续 change,不因本载体而声称已闭合。
 > **未变更项(明示)**:§2 决策 1 ~ 5 的正文 · §3 `INV-CEP-13-IC1` ~ `IC3` 的**编号与定义** · §8.4 的既有所列 —— **全部零改动**。

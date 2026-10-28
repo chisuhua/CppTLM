@@ -184,7 +184,6 @@ A14 → 06 §15.4 P2.0-P5(per `ADR-CEP-00A §3.1` 实证 — **无 P6**)→ CEP-
 ## Status Update 2026-10-27 —— §2 决策 1 预分配表**新增 `CEP-19`** + KPI 预算块 13 → 14
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**;唯一例外是 §2 决策 1 的**表内计数**与 §2 决策 4 的 **KPI 预算块**(均为**活口径**,per Entry #12 / #27 / #71 同款先例:随表机械变化 ⇒ 原地更正 + 标注增补块 + 台账 entry)。
-> **触发**: 2026-10-27 architect 角色架构重审 + `ADR-CEP-19` 签发;台账 Entry #74。
 > **登记 ① —— 新增 `CEP-19`**:编号预分配表新增一行 —— `CEP-19` = **CohIf 载体形态**(业务 Bundle `CohIfBundle` + ProtocolEngine 的 ChStream 端口面 + `ProtocolBridge` 特化桥 + JSON 装配),依赖 `CEP-07` / `CEP-02` / `CEP-16`,状态 ✅ **v1.0 已签发 2026-10-27**。⇒ **ADR 清单 21 → 22**。
 > **登记 ② —— KPI 预算块同步**:`ADR-CEP-00 §2 Decision 3` 的排队已由 **13 → 14**(新增队列 #7 `-cohif-carrier`;Stage 1 变 **10** 个串行)⇒ 本块**同批机械同步**为 **10 / 14 / 14**。
 > **登记 ③ —— `CEP-19` 不定义 invariant**:**新增 invariant 数 = 0**(`ADR-CEP-19` 决策 2 / 8 明确「不引入新抽象层」,其 9 条决策**均不含** invariant 定义)⇒ 已登记进 `scripts/test/cep_docs_sync_check.sh` 的 `NO_INV` 白名单(否则「目录内 ADR 未纳入 OWNERS 或 NO_INV ⇒ 其 invariant 不会被计数」会报红)⇒ **15 组 66 条编号未被改动**。

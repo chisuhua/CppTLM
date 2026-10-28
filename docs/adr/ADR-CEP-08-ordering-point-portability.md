@@ -197,7 +197,6 @@ Sharer Tracker 决定**谁**要参与,Ordering Point 决定**序**从哪来。�
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
 > §2 决策 6 的「key 粒度」行与 §4 抓取点 4 的**正文不改**,**自本段起以本段文本为准**。
-> **触发**: ArchForge 侧 coherence 接口规约合入(commit `8290b4c`)后的跨仓对齐 ——
 > `ordering_assumption` 由**扁平**(key = `<vc_id | named_network>`)升为 **per-network 嵌套**。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` Entry #9(`adr-amendment`)
 

@@ -355,7 +355,6 @@ endinterface
 ## 15. Status Update(2026-10-26,per 台账 Entry #71)—— §13.1 的「Stage 1 登记 `S1-7`」**落地载体确认**
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— §1 ~ §14 正文一律不改,仅登记状态变化。
-> **触发**: 2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` 建 change 目录(Stage 1 / 2028-Q1)⇒ 承接 **S1-7 ①②**(`perm` 形态 schema 演进)。
 > **落地载体确认**:§13.1 登记的「重评估 (β)/`perm` 判别位 → **Stage 1**(登记 `S1-7`)」—— 其 **①②(`perm` 形态变更)** 的落地载体 = 队列 #6 `cpptlm-cep-moesi-gpu-adapter`;③(β) 重新评估已由队列 #4 消费(per Entry #64)。**载体与「唯一真实消费者」同 change**(per DRI 三问裁决②,Entry #71)—— 理由:`moesi_gpu` 是 `perm` 演进的**唯一**需求来源(§13.1 判据 2 已触发),若由不需要该演进的 `chi-rnf-subset` 承载 ⇒ schema 在**无消费者**的真空里演进 = `Entry #58` 已拒绝的形态。
 > **「`protocol_instance.schema.json` 本批不改」的**本批**口径澄清**:§13.1 的「本批不改」指 2026-10-22 的 A6 批;**本 change 是新批次**,但**主动选择仍不改**(落**独立声明源** `perm_upgrades.json` + schema)⇒ **该文件与本 ADR 的 4 值锁口径零 diff** —— 此为**主动决策**,非遗漏。
 > **未变更项(明示)**:§7 两条 α 失效判据的**定义句**(逐字保留)· §13.1 的**判据 2 状态值**(**已触发**,仍为唯一权威)· §4.3 的 6 条 `INV-SC1` ~ `INV-SC6` · §10 / §14 的既有裁决 —— **全部零改动**。

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://cpptlm.local/schemas/arch-docs.json",
+  "note": "architect 角色的**可写架构文档范围**声明 —— per build agent 角色矩阵「架构文档范围(arch-docs.json)」:architect 只在 arch_paths 命中的路径下起草/编辑架构文档;arch_paths 之外的文档不在其职责内。**匹配口径 = 前缀匹配**。exclude_paths 用于排除 arch_paths 命中但不应由 architect 改写的子路径(如实施笔记、归档件)。",
+  "arch_paths": [
+    "docs/adr",
+    "docs/architecture",
+    "docs/designs"
+  ],
+  "exclude_paths": [
+    "docs/architecture/examples",
+    "docs/implementation",
+    "docs/archive",
+    "docs/research"
+  ],
+  "discovery": {
+    "date": "2026-10-28",
+    "by": "architect",
+    "note": "首次建立(per build agent 角色矩阵:配置缺失时先梳理项目文档结构并写入配置,再继续)。**梳理依据**:① `docs/adr/`(58 份 ADR,其中 22 份 `ADR-CEP-*` 是 CEP 平台决策)· ② `docs/architecture/`(通用基础架构真源,per AGENTS.md 真源分级「真源 1」)· ③ `docs/designs/`(dGPU 应用架构真源,per AGENTS.md 真源分级「真源 2」)—— 三者构成「不可变决策 + 通用基础 + 应用设计」的完整架构文档面。**排除项的理由**:`docs/implementation/` 是**时点快照证据**(per obj §4.7.1「实施笔记 append-only」,非架构文档);`docs/archive/` 是历史保留;`docs/research/` 是附属调研(per AGENTS.md「附属 1」,引用真源不重发明)。",
+    "cross_repo_note": "`docs/soc_arch/` 是 **ArchForge 仓**的迁移占位(per AGENTS.md:「dGPU SoC 子项目文档已迁至独立仓」)⇒ **不**列入 arch_paths(本仓无可写架构内容)。"
+  }
+}

@@ -370,7 +370,6 @@ Table 1.3 佐证:已发布的 3 个工具**各缺一段算法阶段**(HeteroGen 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)——
 > §3 决策 8 的 schema 草图(:185-195)、§4 的模板(:318-325)、§6 的 invariant 建议(:344)
 > 的**正文不改**,**自本段起以本段文本为准**。
-> **触发**: `ADR-CEP-12 §8` Status Update(per-network 嵌套形态,采纳自 ArchForge `32 号 §6.4`)。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` Entry #9(`adr-amendment`)
 
 ### 8.1 取代范围

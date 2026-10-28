@@ -185,7 +185,6 @@ CacheTLM(性能模型) ──adapter──> Coherence Interface(10 流)
 ## Status Update(2026-10-27,per 台账 Entry #74 [scope-change]) —— §1.2 表格「Stub Cache Core 基类 = `ChStreamModuleBase`」与代码不符(基类漂移登记)
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文一律不改**,仅登记状态变化。
-> **触发**: 2026-10-27 architect 角色架构重审 + `ADR-CEP-19` 签发;台账 Entry #74。
 > **登记 —— §1.2 的基类漂移**:§1.2 的对照表写「基类 | `ChStreamModuleBase` | `ChStreamModuleBase`(同类)」—— 左侧(`CacheTLM`,`include/tlm/cache_tlm.hh:35` = `class CacheTLM: public ChStreamModuleBase`)**属实**;**右侧不属实** —— 实测 `include/tlm/cep/stub_cache_core.hh:154` = `class StubCacheCore {`(**普通 class**,非 `ChStreamModuleBase`)。⇒ 本 ADR 的**核心结论(决策 1「二者共存,不替换、不合并」)** **不受影响**(两者仍是两个不同的类,粒度与职责对照表逐行仍成立)—— 漂移的只是「基类」一栏的**实现现状**。
 > **为什么会漂移**:队列 #3 `cpptlm-cep-stub-cache-core`(已完成归档,2026-10-25)把 stub 实现为 **testbench 定位**的组件 —— `stub_cache_core.hh:39-40` 明写「**不**经 `ModuleFactory` 注册(本类是 **testbench 定位**的组件)」;`openspec/specs/cep-stub-cache-core/spec.md`(M1 冻结成员)亦写「`net_side` SHALL 由 **mock ProtocolEngine** 驱动(本 change **不**引入真实协议引擎)」⇒ **实现按队列 #3 的裁决落地,而本 ADR 的表格按「最终形态」写** ⇒ 二者不同步。
 > **与 `ADR-CEP-07` 决策 3 的关系**:该决策同样规定 StubCacheCore **应当**是 `ChStreamModuleBase` + `registerObject` ⇒ 本漂移是**同一个三叉矛盾**的一面(另两面:`ADR-CEP-07:64` 规定 ProtocolEngine 应是 `ChStreamModuleBase`,而仓内尚无 ProtocolEngine;`stub_cache_core.hh:39-40` 的「不注册」与 `ADR-CEP-07:67` 的「应注册」直接冲突)。同日登记于 `ADR-CEP-07` Status Update。

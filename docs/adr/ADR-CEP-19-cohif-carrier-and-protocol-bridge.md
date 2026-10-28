@@ -228,7 +228,6 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 ## Status Update 2026-10-28(第二则)—— Phase 3 落地 + **B′ 方案**裁决登记 + 「Bundle 级无损不可达」的架构事实
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化与实施形态。
-> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 3 实施**;台账 Entry #86。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #86**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #86)。
 
@@ -258,7 +257,6 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 ## Status Update 2026-10-28(第三则)—— 决策 4 的装配宏**已落地** + `BidirectionalPortAdapter` 泛化登记 + 行号漂移
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化。
-> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 4 实施**;台账 Entry #87。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #87**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #87)。
 
@@ -278,7 +276,6 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 ## Status Update 2026-10-28(第四则)—— 决策 4/5 的装配路径**已落地** + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记 + 行号漂移
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化。
-> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 5 实施**(JSON 装配连通性);台账 Entry #88。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #88**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #88)。
 
@@ -301,7 +298,6 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 ## Status Update 2026-10-28(第五则)—— 判据收口(Phase 6)+ 反向 fixture 登记(Phase 7)+ 新增 invariant 数 = 0
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化。
-> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 6 + Phase 7 实施**;台账 Entry #89。
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #89**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #89)。
 
@@ -344,7 +340,6 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记追认与口径。
 >
-> **触发**: 队列 #7 `cpptlm-cep-cohif-carrier` 的 planner 产出经 critic **两轮**对抗式评审(第 1 轮 REJECT → 第 2 轮 APPROVE)后,评审在**第 1 轮**指出一处**权威归属问题**:本 ADR 全文对 `CC-0x` **只有 3 处编号引用**(`§3.3` 的 `:167` / `:168` 与 `§5` 的 `:205`),**不含判据定义**;判据定义实际落在 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md §6.4`(**附属层**调研文档)。planner 的 delta spec 相对该字面**多出 2 条子条件** ⇒ 「planner **不得**给已签发 ADR 增删判据」的纪律对这两处不成立 ⇒ 需追认。**§2 决策正文不可变** ⇒ 只能以本段追认。
 >
 > **追认 ① —— CC-05 子条件 ④(per-bridge 元数据齐备)**: **追认成立**。依据本 ADR `§3.2 代价` 已声明「**per-bridge 元数据只做静态**(`protocol_id_` / `bridge_id_`,per `docs/architecture/06-inter-module-network.md` §4.5)」⇒ 该元数据**本就在本 ADR 的决策面之内**;子条件 ④ 只是把**已声明的代价项**判据化(机器可检),**不引入新决策、不改 §2 决策 5**。
 >
