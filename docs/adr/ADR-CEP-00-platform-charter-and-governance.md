@@ -425,7 +425,7 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
 > **触发**: 2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **转正** —— 队列 #6 归档释放 slot(上一段)⇒ `obj §4.7.2` step 0 硬前置满足(`openspec list --json` 实测 **0** 个 active)⇒ 4 件套由 `.rddf/drafts/` 迁入 `openspec/changes/`(`proposal` + `design` + `tasks` + **2 份** delta spec:`cep-cohif-carrier` / `cep-protocol-bridge-contracts`),`openspec validate --strict` **rc=0**。
-> **当前态**: Proposed 并发 **0/3**(实测 `openspec list --json` = **0** 个 active —— 队列 #7 已于 2026-10-28 **完成归档**,per Entry #90)⇒ 下一个可启动 change = **队列 #8**(per §5.4 并发 ≤ 1)。
+> **当时态(历史快照,已被下一段取代)**: Proposed 并发 **1/3**(实测 `openspec list --json`;队列 #7 转正时点)—— 队列 #7 已于 2026-10-28 **完成归档**,per Entry #90。
 > **判据面**:`ADR-CEP-19` 的 2 处判据增补(CC-05 ④ / CC-06 ②)已由本 ADR 的**上一段**之外的另一份 ADR 追加段追认(`ADR-CEP-19` Status Update 2026-10-27,正文零改动,per 台账 Entry #78)⇒ 本段只登记**状态**,不改判据。
 > **不受影响的部分**:§2 决策 3 的**排队算术(14 个 change / 14 季度 / Stage 1 = 10 个)**· §8 的准入门措辞修订 **C-1** 及其理由 · 冻结成员数 **40** —— 一律**不变**。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #81**
@@ -434,9 +434,20 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 ---
 
 **版本**: v0.2 草案 + Status Update 2026-10-21 + **Status Update 2026-10-23** + **Status Update 2026-10-24** + **Status Update 2026-10-25**(队列 #3 归档) + **Status Update 2026-10-27**(队列 #6 归档) + **Status Update 2026-10-27**(队列 #7 启动)+ **Status Update 2026-10-25**(队列 #4 启动)+ **Status Update 2026-10-25**(队列 #4 归档)+ **Status Update 2026-10-26**(队列 #5 启动)+ **Status Update 2026-10-26**(队列 #5 归档)+ **Status Update 2026-10-26**(队列 #6 启动 + 排队 11 → 13)
-**最后更新**: 2026-10-27
+**最后更新**: 2026-10-28
 **批准状态**: 🟡 待 Oracle 复审(§5.1 签发仓 + §5.2 真源路径已拍板;§8 Status Update 经 DRI 明示措辞拍板)
 **维护者**: CppTLM build agent(architect mode)
+
+## Status Update 2026-10-28 —— 队列 #8 `cpptlm-cep-chi-rnf-subset` 已启动(KPI 并发 0/3 → 1/3)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
+> **触发**: 2026-10-28 队列 #8 `cpptlm-cep-chi-rnf-subset` **转正** —— 队列 #7 归档释放 slot(上一段)⇒ `obj §4.7.2` step 0 硬前置满足(`openspec list --json` 实测 **0** 个 active)⇒ 4 件套由 planner 产出落入 `openspec/changes/`(`proposal` + `design` + `tasks` + **2 份** delta spec:`cep-chi-rnf-subset` / `cep-instance-authority-partition`),`openspec validate --strict` **rc=0**(零 WARNING)。
+> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json` = **1** 个 active = `cpptlm-cep-chi-rnf-subset`)⇒ **下一个可启动 change = 无**(per §5.4 并发 ≤ 1);下一个可启动者 = 队列 #9 `cpptlm-cep-mesif-adapter`(⚠ **R-1 阻塞登记**,per Entry #71)。
+> **本 change 的架构增量(登记,不改正文)**:队列 #8 交付 CEP 平台的**第 1 个**「非 ArchForge 贡献」的工业协议实例(`chi_rnf`,per `07 号 §5.1.1` 的框架级工业族口径)⇒ `protocol_instances.json` 的「`instances[]` 全集 = ArchForge 声明全集」前提在**实例粒度**上首次不成立 ⇒ 引入**实例级权威分区**机制(顶层 `repo_owned_instance_ids[]` 登记 + ⑥ 镜像闸收窄 + ①~⑤ 语义校验扩面)。**该机制的治理裁决归 `ADR-CEP-12` 的追加 Status Update**(architect 权限,队列 #8 Phase 0)—— **本 ADR 不改其任何正文**。
+> **台账勘误登记**:台账 Entry #71 的 F-1 称「CHI RN-F 是**显式**请求升级 ⇒ **不需要** `perm` 形态演进」—— 其引证的 `07 号 §5.1.1` CHI 行**无**「显式/静默升级」字样(引证失锚),且 F-1 混淆**两条升级轴**:**轴 1**(获取独占 S→U)CHI 显式;**轴 2**(独占干净→脏 UC→UD)CHI **静默**。F-1 的**排期结论不受影响**(perm 形态演进跟唯一真实消费者 `moesi_gpu` 走,机制已由队列 #6 交付)⇒ 勘误以**追加台账 entry** 落地(append-only,原文不改)。
+> **不受影响的部分**:§2 决策 3 的**排队算术(14 个 change / 14 季度 / Stage 1 = 10 个)**· §8 的准入门措辞修订 **C-1** 及其理由 · 冻结成员数 **40** —— 一律**不变**。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #91**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #91)。
 
 ## Status Update 2026-10-28 —— 队列 #7 Phase 3 落地 + `module_factory.hh` 行号漂移登记
 
