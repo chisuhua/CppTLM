@@ -1,6 +1,6 @@
 # Tasks — cpptlm-cep-cohif-carrier v1.0(Stage 1,TDD 5-step)
 
-> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 ~ Phase 5 已完成**(2026-10-27 / 2026-10-28,台账 Entry #84 ~ #88);Phase 6 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
+> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 ~ Phase 7 全部完成**(2026-10-27 / 2026-10-28,台账 Entry #84 ~ #89);**待归档**)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-cohif-carrier/spec.md`](specs/cep-cohif-carrier/spec.md) · [`specs/cep-protocol-bridge-contracts/spec.md`](specs/cep-protocol-bridge-contracts/spec.md)
 > **上游决策**: `ADR-CEP-19`(✅ v1.0 已签发)· 架构重审 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3)
 > **估时**: 6 周(3 项交付 + 1 宏 + 1 钩子扩展)
@@ -18,8 +18,8 @@
 | 3 特化桥:`ProtocolBridge` 双层 | ✅ **已完成**(2026-10-28) | `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` + `AbstractProtocolBridge`)+ `include/tlm/cep/cohif_noc_bridge.hh`(CohIf ↔ NoC 特化桥,**两层** pack/unpack)+ `include/tlm/cep/protocol_family.hh`;钩子扩展 `register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费;**3 + 2 类反向 fixture 实测有牙** |
 | 4 装配宏:`REGISTER_CHSTREAM_BIDIRECTIONAL` | ✅ **已完成**(2026-10-28) | `include/chstream_register.hh`(两件都做 + `static_assert(n > 1)`)+ **前置泛化** `cpptlm::BundleDirectionTraits`(解耦 `BidirectionalPortAdapter` 的 `NoCFlitBundle` 硬编码)+ CEP 侧特化 `include/tlm/cep/cohif_direction_traits.hh`;**反向 fixture 实测有牙**(N=1 编译红且原因精确命中断言) |
 | 5 JSON 装配连通性 | ✅ **已完成**(2026-10-28) | `configs/cep_cohif_pe_minimal.json` + `test/test_cep_cohif_json_assembly.cc`(5 case)+ `CohIfNullProtocolEngine` 可注册外壳 + egress 通道 trait |
-| 6 测试(CC-01~CC-06 + 反向 fixture) | ⬜ 未开始 | 2 个测试文件 |
-| 7 闸与真源同步 | ⬜ 未开始 | `cep_decl_reverse_verify.sh` 条目 + `06 号 §3.2` 归类表 |
+| 6 测试(CC-01~CC-06 + 反向 fixture) | ✅ **已完成**(2026-10-28) | `test/test_cep_cohif_carrier.cc`(新建,17 case)+ `test/test_cep_protocol_bridge_contracts.cc`(Phase 3 交付,14 case)+ `test/cep_cohif_assembly_helper.hh`(共享实现) |
+| 7 闸与真源同步 | ✅ **已完成**(2026-10-28) | `scripts/README.md` §反向 fixture 登记(新建)+ `docs/ONBOARDING.md §5.5` 补登记 + ctest 3 条目 + `test/test_cep_canonical_invariants.cc` 零 diff |
 
 ---
 
@@ -306,15 +306,61 @@
 
 ### Phase 6 —— 测试
 
-- [ ] 6.1 `test/test_cep_cohif_carrier.cc`(CC-01 / CC-02 / CC-04)
-- [ ] 6.2 `test/test_cep_protocol_bridge_contracts.cc`(CC-03 / CC-05 / CC-06)
-- [ ] 6.3 CC-06 **引用**队列 #6 的 AC-04 实现(`adapter_schema_contracts.hh`),**不重立**第二份判据
+- [x] 6.1 `test/test_cep_cohif_carrier.cc`(CC-01 / CC-02 / CC-04)——
+      **已完成**(2026-10-28):**17 case / 52 assertion**。
+      判据面:CC-01 ①②③(静态扫描 + 强类型枚举的编译期锁)· CC-02 ①②③(TU 内
+      `static_assert` + 宽度锁表扫描)· CC-04 ①②③(端到端 + N≥2 + N=1 编译失败)。
+      ⚠️ **编译期锁在 ctest 内可执行**:本文件用 `popen` 调编译器,断言
+      「编译**确实**失败」**且**「失败原因命中预期的那条 `static_assert`」
+      ⇒ 满足「编译期锁**不得**只以『编译红』充当 ctest 判据」。
+      ⚠️ **反向 fixture 实测有牙**(毒化验证:临时删掉**头文件 + 探针**两处
+      `is_trivially_copyable` 锁 ⇒ 「CC-02 反向 fixture ④」**报红**;恢复后全绿)。
+      ⚠️ **共享实现**:端到端辅助函数 + `ReachOutcome` 结局枚举抽到
+      `test/cep_cohif_assembly_helper.hh`(与 `test_cep_cohif_json_assembly.cc` 共用)
+      ⇒ 两份判据不漂移。
+- [x] 6.2 `test/test_cep_protocol_bridge_contracts.cc`(CC-03 / CC-05 / CC-06)——
+      **已完成**(Phase 3 交付,Phase 6 复核确认覆盖完整):
+      CC-03 ①(内容层 round-trip 恒等)/ ①(端到端层 12 字段逐字段恒等)/ ②(职责边界)/
+      ③(共享桥实例)· CC-05 ①(注册表可读)/ ②(注册与消费成对)/ ③(钩子形态)/
+      ④(per-bridge 元数据)· CC-06(5→3 映射 ∈ 3 类值域 + 非恒等)
+      + 4 类反向 fixture。**14 case / 104 assertion** 全绿。
+- [x] 6.3 CC-06 **引用**队列 #6 的 AC-04 实现(`adapter_schema_contracts.hh`),**不重立**第二份判据——
+      **已完成**:CC-06 用例直接调 `tlm::cep::category_value_domain()`(队列 #6 的
+      `adapter_schema_contracts.hh` 提供)与 `MoesiGpuAdapter::kMessageClassMap`
+      ⇒ **引用**既有实现,本 change **零新增**值域常量。
 
 ### Phase 7 —— 闸与真源同步
 
-- [ ] 7.1 `scripts/test/cep_decl_reverse_verify.sh` 登记本 change 的反向 fixture 条目
-- [ ] 7.2 `test/test_cep_canonical_invariants.cc` **零 diff**(新增 invariant 数 = 0)
-- [ ] 7.3 守门 7 项 + `cep_gate_selftest` + `ctest` 全绿
+- [x] 7.1 `scripts/test/cep_decl_reverse_verify.sh` 登记本 change 的反向 fixture 条目——
+      **已完成(按实质意图落地 + 口径偏离已诚实登记)**:
+      ① **登记位置补齐**(本项的实质):本 change 的 4 个反向 fixture 脚本
+      (`cep_cohif_reverse_verify.sh` / `cep_protocol_engine_reverse_verify.sh` /
+      `cep_protocol_bridge_reverse_verify.sh` / `cep_chstream_bidirectional_macro_reverse_verify.sh`)
+      此前**未登记**在 `scripts/README.md` 的守门脚本表与 `docs/ONBOARDING.md §5.5`
+      ⇒ 已补登记;并新增 **`scripts/README.md` §反向 fixture 登记**表
+      (判据 ID · fixture 形态 · **登记位置**)⇒ 覆盖 CC-01/02/03/04/05/06 共 **13** 条反向 fixture。
+      ② ctest 显式登记:`cep_cohif_carrier` / `cep_protocol_bridge_contracts` /
+      `cep_json_assembly` 三个条目(此前只被 `cep_all` 的 `[cep]` 通配覆盖
+      ⇒ 「登记位置」不可查)。
+      ⚠️ **口径偏离(诚实登记)**:任务字面指向的 `cep_decl_reverse_verify.sh` 守的是
+      「**协议实例声明 ↔ schema 一致性**」域(`fabric.json` / `protocol_instances.json` /
+      ArchForge 声明),与本 change 的判据域(CohIf 载体 / ProtocolEngine 端口面 /
+      ProtocolBridge / JSON 装配)**零交集** ⇒ 在该脚本里加本 change 的 fixture
+      **等于测另一个闸**(违反「不重发明」)⇒ **未**改动该脚本,改按上述「登记位置补齐」落地。
+      ⚠️ 该脚本另有硬约束:**刻意不注册进 ctest**(它会**临时改写**仓内文件 ⇒
+      `ctest -j4` 并行会读到中间态)⇒ 本 change 的 4 个 fixture 脚本**只写自己的临时目录**
+      ⇒ 可安全并行注册。
+- [x] 7.2 `test/test_cep_canonical_invariants.cc` **零 diff**(新增 invariant 数 = 0)——
+      **已完成(实测)**:① `git diff 8e1d4814..HEAD -- test/test_cep_canonical_invariants.cc`
+      **空**(该文件最后一次改动在 Entry #47,早于本 change);② 本 change 的全部提交中
+      **未新增任何 `INV-CEP-*` 定义**(diff 中只出现既有 invariant 的**引用/登记**:
+      `INV-CEP-07-IC2` 载体落地 · `INV-CEP-07-IC4` 闭合)⇒ **新增 invariant 数 = 0**;
+      ③ `[cep][canonical-invariant]` 13 case / 687 assertion 全绿。
+- [x] 7.3 守门 7 项 + `cep_gate_selftest` + `ctest` 全绿——
+      **已完成(实测)**:9 项 CEP 脚本 + `docs_sync_check --strict` +
+      `openspec validate --changes --strict` 全 rc=0;`cep_gate_selftest` rc=0;
+      `ctest -R cep` **35/35**;全仓 `cpptlm_tests` **1983 case / 873322 assertion** 全绿
+      (原 1966 / 873276 ⇒ +17 case / +46 assertion,**0 回归**)。
 
 ---
 
@@ -323,11 +369,11 @@
 | # | 项 | 状态 |
 |---|---|---|
 | 1 | 判据增补**已追认**(CC-05 ④ / CC-06 ②) | ✅ 转正前置已落地(`ADR-CEP-19` Status Update,Entry #78) |
-| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类)· Phase 2 **已完成**(2 类)· Phase 3 **已完成**(3 + 2 类)· Phase 4 **已完成**(1 类)· Phase 5 **已完成**(2 类,实测有牙);Phase 6/7 待补 |
-| 3 | 编译期锁**不**以「编译红」充当 ctest 判据(`try_compile` 毒化副本) | 🟡 Phase 1.7 **已完成**(毒化副本 + 编译探针断言「编译确实失败」);Phase 4.4 待补 |
-| 4 | 新增 invariant 数 = **0** | ⬜ Phase 7.2 |
-| 5 | 冻结面**零改动**(本 change 3 个新头文件 + 1 宏 + 1 钩子均不在 M1 冻结集) | 🟡 Phase 5 **只追加** `07 号` 第八则 + `ADR-CEP-19` 第四则(**正文零改动**);Phase 6/7 后复核 |
-| 6 | `StubCacheCore` **零触碰**(design `D-ζ`,显式延期) | ⬜ 待实施后复核 |
+| 2 | 每条新判据有**反向 fixture** | ✅ **全部完成**(13 条,见 `scripts/README.md` §反向 fixture 登记):Phase 1(4 类)· Phase 2(2 类)· Phase 3(3 + 2 类)· Phase 4(1 类)· Phase 5(2 类)· Phase 6(补 CC-02 ③ 漏锁 / CC-04 N=1 原因命中断言) |
+| 3 | 编译期锁**不**以「编译红」充当 ctest 判据(`try_compile` 毒化副本) | ✅ **全部完成**:Phase 1.7(毒化副本 + 编译探针断言「编译确实失败」)· Phase 4.4(N=1 且**原因命中** `static_assert`)· Phase 6.1(在 **ctest 内**调编译器,断言「编译确实失败」**且**「失败原因命中预期断言」) |
+| 4 | 新增 invariant 数 = **0** | ✅ **已实测**(Phase 7.2:`test_cep_canonical_invariants.cc` 零 diff + 全部提交**未新增** `INV-CEP-*` 定义 + `[cep][canonical-invariant]` 13 case / 687 assertion 全绿) |
+| 5 | 冻结面**零改动**(本 change 3 个新头文件 + 1 宏 + 1 钩子均不在 M1 冻结集) | ✅ **已复核**:全程**只追加** `07 号` 第六~九则 + `ADR-CEP-19` 第二~五则 Status Update(**正文零改动**),冻结清单每批重算 |
+| 6 | `StubCacheCore` **零触碰**(design `D-ζ`,显式延期) | ✅ **已实测**(`git diff` 全 change 范围对 `include/tlm/cep/stub_cache_core.hh` 零 diff) |
 
 ---
 

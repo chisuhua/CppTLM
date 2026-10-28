@@ -310,6 +310,7 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 | CEP 守门 | `scripts/test/cep_freeze_check.sh` | M1 冻结面授权闸(成员数以清单为准) |
 | CEP 守门 | `scripts/test/cep_archforge_alignment_check.sh` | 跨仓（ArchForge）对齐锚点守门（33 锚点） |
 | CEP 守门 | `scripts/test/cep_decl_alignment_check.sh` + `cep_decl_reverse_verify.sh` | 协议实例声明 ↔ schema 双向映射 + 反向验证 |
+| CEP 守门 | `scripts/test/cep_cohif_reverse_verify.sh` + `cep_protocol_engine_reverse_verify.sh` + `cep_protocol_bridge_reverse_verify.sh` + `cep_chstream_bidirectional_macro_reverse_verify.sh` | 队列 #7 `cpptlm-cep-cohif-carrier` 的 4 个**反向 fixture** 脚本（CohIf 载体 / ProtocolEngine 端口面 / ProtocolBridge 特化桥 / 装配宏编译期锁）—— 登记表见 `scripts/README.md` §反向 fixture 登记 |
 | 流水线 | `scripts/pipeline/run_full_pipeline.sh` | 仿真 → 统计 → 可视化 |
 | 拓扑 | `scripts/topology/topology_validator.py` | 拓扑校验 |
 | 拓扑 | `scripts/topology/topology_generator.py` | 拓扑生成 |

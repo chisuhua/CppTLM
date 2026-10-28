@@ -285,6 +285,17 @@ add_test(NAME cep_protocol_bridge_reverse_verify
 add_test(NAME cep_chstream_bidirectional_macro_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_chstream_bidirectional_macro_reverse_verify.sh)
 
+# 队列 #7 `cpptlm-cep-cohif-carrier` 的 3 个判据收口用例(per Phase 6 task 6.1)
+# —— 显式登记(除 `cep_all` 的 `[cep]` 通配外)⇒ 反向 fixture 的**登记位置**可查。
+# ⚠️ `cep_cohif_carrier` 内含**编译期**反向 fixture(在 ctest 内调编译器断言
+#    「编译确实失败」且失败原因命中预期断言)⇒ 耗时高于普通 Catch2 用例。
+add_test(NAME cep_cohif_carrier
+         COMMAND cpptlm_tests "[cep][cohif-carrier]" -r compact)
+add_test(NAME cep_protocol_bridge_contracts
+         COMMAND cpptlm_tests "[cep][protocol-bridge]" -r compact)
+add_test(NAME cep_json_assembly
+         COMMAND cpptlm_tests "[cep][json-assembly]" -r compact)
+
 # CEP ↔ ArchForge 接口对齐清单的漂移检测(跨仓引用完整性)
 # —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败)
 # 状态一致性闸的**回归 fixture 集**(10+ 场景,变异 → 期望 rc)

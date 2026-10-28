@@ -119,7 +119,7 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
                  ├─ cpptlm-cep-cohif-carrier            ← 2026-10-27 新增(Entry #74)
                  │    🟡 **Proposed**(2026-10-27 转正,Entry #81)—— change 目录已建
                  │    (proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0;
-                 │    tasks **41**(已勾 35 = Phase 0 前置 + Phase 1 载体面 + Phase 2 端口面 + Phase 3 特化桥 + Phase 4 装配宏 + Phase 5 JSON 装配连通性;未勾 6 —— Phase 4.5 / Phase 5.5 是实施中发现的**阻塞前提 / 判据前提**,各登记为独立 task ⇒ 总数 39 → 41))
+                 │    tasks **41**(已勾 **41 = 全完成** = Phase 0 前置 + Phase 1 载体面 + Phase 2 端口面 + Phase 3 特化桥 + Phase 4 装配宏 + Phase 5 JSON 装配连通性 + Phase 6 判据收口 + Phase 7 闸与真源同步;总数 39 → 41 —— Phase 4.5 / Phase 5.5 是实施中发现的**阻塞前提 / 判据前提**,各登记为独立 task))
                  │    CohIf 载体:CohIfBundle(5 流)+ ChStream 端口面 + ProtocolBridge
                  │    (架构缺口 C1/C2/C3;**ADR-CEP-19 已签发 2026-10-27**;StubCacheCore 侧端点延期)
                  │    **Phase 0 前置已闭合**:`tlm::cep::ContractVerdict` 同名冲突消解
@@ -133,6 +133,12 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
                  │    端口成员 + 类型擦除 `ProtocolBridgeEr*` + 10 个纯虚 `on_*`)
                  │    + `NullProtocolEngine<N>`(10 流覆盖矩阵 + 2 条编译期锁);
                  │    2 类反向 fixture 实测有牙(2026-10-27,per 台账 Entry #85)
+                 │    **Phase 6/7 已落地**:判据收口(`test/test_cep_cohif_carrier.cc`
+                 │    17 case / 52 assertion)+ 反向 fixture **登记位置**补齐
+                 │    (`scripts/README.md` §反向 fixture 登记 13 条 + `ONBOARDING §5.5`
+                 │    + ctest 3 条目)+ **零 diff** 复核(`test_cep_canonical_invariants.cc`
+                 │    零 diff + 未新增 `INV-CEP-*` 定义)⇒ **新增 invariant 数 = 0**
+                 │    (2026-10-28,per 台账 Entry #89)⇒ **待归档**
                  │    **Phase 5 JSON 装配连通性已落地**:`CohIfProtocolEngine` 可注册外壳 +
                  │    `configs/cep_cohif_pe_minimal.json`(2 PE,N=2)+ 端到端「一次 CohIf 事务
                  │    **穿过** adapter 抵达对端」+ 反向 fixture 2 类(用 `ReachOutcome` 枚举

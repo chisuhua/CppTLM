@@ -298,6 +298,42 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 > `include/framework/bidirectional_port_adapter.hh` ⇒ `CATEGORY_CREDIT` 写入点 109 → **133**、`pending_credits_` 148 → **174**、`bind_port_pair` 171 → **197**、`bind_ports`(**空操作 shim**)184 → **210**、`receive_credit` 调用 225 → **260**、`send_credit` 257 → **292**、`send_credit_impl` 269 → **304**。
 > ⚠️ **一处「零漂移」结论已失效**:第三则 ③ 登记的「`chstream_register.hh` 既有行号零漂移」是**当时**口径,已被 Phase 5 推翻。⚠️ 本文件**正文**的行号引用(`chstream_register.hh:63` / `:119` / `:175`、`module_factory.hh:313-315` 等)按「ADR 不可变」**不改**;完整对照表见 `docs/architecture/06-inter-module-network.md` 文末「附录 · 行号对照表(Entry #88)」。
 
+## Status Update 2026-10-28(第五则)—— 判据收口(Phase 6)+ 反向 fixture 登记(Phase 7)+ 新增 invariant 数 = 0
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化。
+> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 6 + Phase 7 实施**;台账 Entry #89。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #89**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #89)。
+
+> **登记 ① —— 6 条判据全部有可执行判据 + 反向 fixture,且「登记位置」可查**:
+> - `test/test_cep_cohif_carrier.cc`(新建,17 case / 52 assertion):**CC-01 / CC-02 / CC-04**;
+> - `test/test_cep_protocol_bridge_contracts.cc`(Phase 3 交付,14 case / 104 assertion):**CC-03 / CC-05 / CC-06**;
+> - **CC-06 引用**队列 #6 的 AC-04 实现(`tlm::cep::category_value_domain()`)⇒ **不重立第二份判据**。
+> - ⇒ 新增 **`scripts/README.md` §反向 fixture 登记**表(判据 ID · fixture 形态 · **登记位置**,共 **13** 条)+ `docs/ONBOARDING.md §5.5` 补登记 + ctest 显式登记 3 条 ⇒ 「无登记 ⇒ CI 跑不到 ⇒ 等于没有」的缺口闭合。
+
+> **登记 ② —— 编译期锁的 ctest 形态(per 判据纪律)**:编译期锁**不得**只以「编译红」充当 ctest 判据 ⇒
+> `test/test_cep_cohif_carrier.cc` 在 **ctest 内**调编译器,断言「编译**确实**失败」**且**
+> 「失败原因**命中**预期的那条 `static_assert`」⇒ 防「因错误的原因红」。
+> ⚠️ **反向 fixture 实测有牙**:临时删掉**头文件 + 编译探针**两处 `is_trivially_copyable` 锁
+> ⇒ 「CC-02 反向 fixture ④」**报红**;恢复后全绿。
+
+> **登记 ③ —— 新增 invariant 数 = 0(per 本 ADR `D-θ`)**:实测
+> ① `test/test_cep_canonical_invariants.cc` 在**全 change 范围零 diff**;
+> ② 全部提交**未新增**任何 `INV-CEP-*` **定义**(diff 中只出现既有 invariant 的引用/登记:
+> `INV-CEP-07-IC2` 载体落地 · `INV-CEP-07-IC4` 闭合);
+> ③ `[cep][canonical-invariant]` 13 case / 687 assertion 全绿。
+
+> **登记 ④ —— 一处口径偏离(诚实登记)**:Phase 7 的 task 7.1 字面指向
+> `scripts/test/cep_decl_reverse_verify.sh`,但该脚本守的是「**协议实例声明 ↔ schema 一致性**」域
+> (`fabric.json` / `protocol_instances.json` / ArchForge 声明),与本 change 的判据域
+> (CohIf 载体 / ProtocolEngine 端口面 / ProtocolBridge / JSON 装配)**零交集**
+> ⇒ 在其中加本 change 的 fixture **等于测另一个闸**(违反「不重发明」)
+> ⇒ **未改动该脚本**,改按「登记位置补齐」落地。
+> ⚠️ **决策面影响**:**不改变**本 ADR 决策 1 ~ 9 的任何决策内容。
+
+> **登记 ⑤ —— 门禁实测**:9 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0;
+> `cep_gate_selftest` rc=0;`ctest -R cep` **35/35**;全仓 **1983 case / 873322 assertion** 全绿(0 回归)。
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

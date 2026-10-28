@@ -14,7 +14,7 @@
 | 目录 | 内容 | 用途 |
 |------|------|------|
 | `build/` | `build.sh`, `format.sh`, `build_ptx_emu.sh` | 构建与代码格式化（`build_ptx_emu.sh` 启用 PTX-EMU 集成，dGPU/APU SoC 默认路径）。根 `build.sh` 是薄包装，委托此目录 |
-| `test/` | `test_off.sh`, `test_ptx_emu.sh`, `verify_test_seam_fix.sh`, `run_all_tests.sh`, `ci_e2e_test.sh`, `docs_sync_check.sh`, `markdown_link_check.sh`, `gen_wire_format_snapshot.sh`, `check_pcie_ip_facade.sh`, `cep_docs_sync_check.sh`, `cep_doc_ref_check.sh`, `cep_freeze_check.sh`, `cep_archforge_alignment_check.sh`, `cep_decl_alignment_check.sh`, `cep_decl_reverse_verify.sh` | 分模式测试与兼容入口。根 `test.sh --verify-fix` 委托 `verify_test_seam_fix.sh`；其他仍按模式分派。**`cep_*` 6 个 = CEP 守门脚本**(契约同步 / 对外引用 / M1 冻结 / 跨仓锚点 / 声明映射双向),详见 §CEP 契约守门脚本 |
+| `test/` | `test_off.sh`, `test_ptx_emu.sh`, `verify_test_seam_fix.sh`, `run_all_tests.sh`, `ci_e2e_test.sh`, `docs_sync_check.sh`, `markdown_link_check.sh`, `gen_wire_format_snapshot.sh`, `check_pcie_ip_facade.sh`, `cep_docs_sync_check.sh`, `cep_doc_ref_check.sh`, `cep_freeze_check.sh`, `cep_archforge_alignment_check.sh`, `cep_decl_alignment_check.sh`, `cep_decl_reverse_verify.sh`, `cep_cohif_reverse_verify.sh`, `cep_protocol_engine_reverse_verify.sh`, `cep_protocol_bridge_reverse_verify.sh`, `cep_chstream_bidirectional_macro_reverse_verify.sh` | 分模式测试与兼容入口。根 `test.sh --verify-fix` 委托 `verify_test_seam_fix.sh`；其他仍按模式分派。**`cep_*` 10 个 = CEP 守门脚本**(契约同步 / 对外引用 / M1 冻结 / 跨仓锚点 / 声明映射双向 + 队列 #7 的 4 个反向 fixture 脚本),详见 §CEP 契约守门脚本 |
 | `pipeline/` | `run_full_pipeline.sh` | 完整仿真流程（生成→仿真→可视化） |
 | `topology/` | `topology_validator.py`, `topology_generator.py`, `analyzer.py`, `path_tracer.py`, `credit_flow.py` | 拓扑生成/分析/验证 |
 | `stats/` | `stats_annotator.py`, `stats_watcher.py`, `layout_manager.py`, `derive_expr.py` | 性能统计与可视化 |
@@ -29,9 +29,35 @@
 | `cep_archforge_alignment_check.sh` | 跨仓（ArchForge）对齐锚点守门，33 锚点 | ✅ 生效 |
 | `cep_decl_alignment_check.sh` | 协议实例声明 ↔ schema 双向映射（判据 C-4） | ✅ 生效 |
 | `cep_decl_reverse_verify.sh` | 上者的**反向验证**（防自证） | ✅ 生效 |
+| `cep_cohif_reverse_verify.sh` | CohIf 载体（CC-01 / CC-02）的**反向验证**（静态扫描 + 编译期锁毒化副本） | ✅ 生效（ctest 注册） |
+| `cep_protocol_engine_reverse_verify.sh` | ProtocolEngine 端口面（`INV-CEP-07-IC2`）的反向验证 | ✅ 生效（ctest 注册） |
+| `cep_protocol_bridge_reverse_verify.sh` | ProtocolBridge 特化桥（CC-03 / CC-05 / CC-06）的反向验证 | ✅ 生效（ctest 注册） |
+| `cep_chstream_bidirectional_macro_reverse_verify.sh` | `REGISTER_CHSTREAM_BIDIRECTIONAL` 的**编译期锁**反向验证（N=1 必红且原因命中 `static_assert`） | ✅ 生效（ctest 注册） |
 
 > 配套数据文件：`cep_doc_ref_aliases.tsv`（节号别名）/ `cep_doc_ref_registry.tsv`（语义 + 负向断言登记）。
-> 6 个脚本全部已注册进 `ctest`（`ctest -R cep`，当前 **18/18**）。
+> 10 个脚本全部已注册进 `ctest`（`ctest -R cep`）。
+
+### 反向 fixture 登记（队列 #7 `cpptlm-cep-cohif-carrier`）
+
+> **纪律**：每条新判据必须有**可执行**的反向 fixture，且**必须登记**在此表
+> （无登记 ⇒ fixture 可能只存在于某次会话里 ⇒ CI 跑不到 ⇒ 等于没有）。
+> **登记三要素**：判据 ID · fixture 形态 · **登记位置**（ctest 名 / Catch2 标签）。
+
+| 判据 | 反向 fixture（形态） | 登记位置 |
+|------|----------------------|----------|
+| **CC-01** ① | 加第 6 个 `flow_id` ⇒ 静态扫描红 | `cep_cohif_reverse_verify.sh`（ctest `cep_cohif_reverse_verify`）+ `[cep][cohif-carrier]` |
+| **CC-01** ② | 混入网络层字段 ⇒ 静态扫描红 | 同上 |
+| **CC-01** ③ | 域外流名进入 `flow_id` 域 ⇒ 静态扫描红 | 同上（扫描器含「域外流名」判定） |
+| **CC-02** ② | 加虚函数 ⇒ `is_trivially_copyable` 编译失败 | `cep_cohif_reverse_verify.sh` + `[cep][cohif-carrier]`「CC-02 反向 fixture ④」 |
+| **CC-02** ③ | 字段宽度 +1 ⇒ 宽度锁编译失败 | `cep_cohif_reverse_verify.sh` + `[cep][cohif-carrier]`「CC-02 反向 fixture ③」 |
+| **CC-02** ③ | 某字段漏加宽度锁 ⇒ 锁表扫描红 | `[cep][cohif-carrier]`「CC-02 ③ 反向 fixture」 |
+| **CC-03** | 篡改字段映射 ⇒ round-trip 必红 | `cep_protocol_bridge_reverse_verify.sh`（ctest `cep_protocol_bridge_reverse_verify`）+ `[cep][protocol-bridge]`「反向 fixture ④」 |
+| **CC-04** ① | 断链 ⇒ 端到端断言必红 | `[cep][json-assembly]` / `[cep][cohif-carrier]`「CC-04 反向 fixture」（**结局枚举分类** ⇒ 防「因错误的原因红」） |
+| **CC-04** ③ | `N = 1` ⇒ 宏 `static_assert` 编译红（原因命中） | `cep_chstream_bidirectional_macro_reverse_verify.sh`（ctest）+ `[cep][cohif-carrier]`「CC-04 ③」 |
+| **CC-05** ① | 只注册不消费 ⇒ 死桥清单非空 | `cep_protocol_bridge_reverse_verify.sh` + `[cep][protocol-bridge]`「反向 fixture ①」 |
+| **CC-05** ④ | 重复 `bridge_id_` ⇒ 判红 | 同上「反向 fixture ②」 |
+| **CC-05** ④ | `protocol_id_` 与 `family` 不符 ⇒ 判红 | 同上「反向 fixture ③」 |
+| **CC-06** | 映射产出超出 3 类值域 ⇒ 判红 | `[cep][protocol-bridge]`「CC-06」（**引用**队列 #6 的 `category_value_domain()`，不重立第二份判据） |
 
 ## 路径引用注意
 

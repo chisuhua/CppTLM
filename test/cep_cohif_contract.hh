@@ -213,6 +213,41 @@ namespace cpptlm {
                     CohIfPoison::VirtualFunction};
         }
 
+        // ── CC-02 ③:`BUNDLE_FIELD_WIDTH` 覆盖表扫描 ────────────────────
+
+        /// 一条宽度锁(`BUNDLE_FIELD_WIDTH(bundles::CohIfBundle, <field>, <width>)`)
+        struct CohIfWidthLock {
+            std::string field;
+            unsigned width;
+        };
+
+        /// `CohIfBundle` 的**期望**宽度锁表(12 字段,顺序即源码顺序)
+        ///
+        /// ⚠️ 这是 **CC-02 ③** 的判据真源 —— 「`BUNDLE_FIELD_WIDTH` 宏 SHALL 覆盖
+        ///    `CohIfBundle` 的**全部**字段」⇒ 锁表**条数**与**字段集**都必须吻合。
+        inline const std::vector<CohIfWidthLock>& cohif_expected_width_locks() {
+            static const std::vector<CohIfWidthLock> v = {
+                {"flow_id", 8},         {"transaction_id", 64}, {"address", 64}, {"data", 64},
+                {"size", 8},            {"perm", 8},            {"snoop_type", 8},
+                {"line_state", 8},      {"hit", 1},             {"dirty", 1},
+                {"error", 1},           {"atomic", 1}};
+            return v;
+        }
+
+        /// 扫描 `BUNDLE_FIELD_WIDTH(bundles::CohIfBundle, …)` 锁定表(CC-02 ③)
+        ///
+        /// ⚠️ 输入应是**原始文件内容**(注释里若出现该宏,不应被计入 ⇒ 内部去注释)。
+        inline std::vector<CohIfWidthLock> scan_cohif_width_locks(const std::string& src) {
+            std::vector<CohIfWidthLock> out;
+            const std::string code = strip_comments(src);
+            static const std::regex lock_re(
+                R"(BUNDLE_FIELD_WIDTH\s*\(\s*bundles::CohIfBundle\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([0-9]+)\s*\))");
+            for (std::sregex_iterator it(code.begin(), code.end(), lock_re), end; it != end; ++it) {
+                out.push_back({(*it)[1].str(), static_cast<unsigned>(std::stoul((*it)[2].str()))});
+            }
+            return out;
+        }
+
         /// 扫描器**正控 / 反控**自检 —— 证明扫描逻辑本身有判别力
         ///
         /// 返回违反项(应为空)。任一违反 ⇒ 扫描器退化(假绿)⇒ 调用方必须判红。
