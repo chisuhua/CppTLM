@@ -114,6 +114,11 @@ VIRTUAL_PATHS=(
   "tools/recommend.py"                              # 设计示意
   "docs/architecture/07-...md"                      # 省略号(散文引用)
   "openspec/changes/<name>/"                        # 占位写法
+  "openspec/changes/cpptlm-cep-chi-rnf-subset/"     # 队列 #8 已于 2026-10-28 **完成归档**(Entry #95)
+                                                    #   ⇒ 目录移至**不入库**的
+                                                    #   `openspec/changes/archive/2026-10-28-cpptlm-cep-chi-rnf-subset/`
+                                                    #   ⇒ 活文档里的**历史/时态锚定**引用按「归档路径」处理
+                                                    #   (per AGENTS.md「VIRTUAL_PATHS」约定)
   "openspec/changes/cpptlm-cep-cohif-carrier/"      # 队列 #7 已于 2026-10-28 **完成归档**
                                                     #   (Entry #90)⇒ change 目录移至**不入库**的
                                                     #   `openspec/changes/archive/2026-10-28-cpptlm-cep-cohif-carrier/`

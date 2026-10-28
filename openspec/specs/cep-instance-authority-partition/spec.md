@@ -16,7 +16,7 @@
 > 6→3 映射表 / 镜像闸的逐字段比对);本能力是**声明源权威归属**的契约。⇒ 两者 capability 名不同、
 > 判据不重叠。**本能力 SHALL NOT 改动** `adapter_schema_contracts.hh` 的判据本体。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-instance-authority-partition
 

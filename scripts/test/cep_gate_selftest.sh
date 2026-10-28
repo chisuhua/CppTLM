@@ -243,12 +243,21 @@ sec = t[i:j]
 # 归档行(#7 及更早)**合法地**不带标记(标记已转指),故不得拿它做 fixture。
 # ⚠️ 2026-10-27(Entry #80):队列 #6 归档 ⇒ 标记转指 #7 `cpptlm-cep-cohif-carrier`
 # ⚠️ 2026-10-28(Entry #90):队列 #7 归档 ⇒ 标记再转指 #8 `cpptlm-cep-chi-rnf-subset`
+# ⚠️ 2026-10-28(Entry #95):队列 #8 归档 ⇒ 标记再转指 #9 `cpptlm-cep-mesif-adapter`
 #    ⇒ 本 fixture 的锚点**必须跟随** owner 行(否则变异打在无标记的行 ⇒ ⑦ 不 fire
 #    ⇒ fixture 假失败;实测:2026-10-28 首跑即报「rc=0 期望 1」)
-name = "`cpptlm-cep-chi-rnf-subset`"
-assert sec.count(name) >= 1, "锚点漂移:§4.0 未含活队列 #8 的 change 名"
+#    ⚠️ 且必须**按行定位**(§4.0 的归档行 #8 现在也提到活 owner 名 —— 但**不带** S1-N
+#       标记)⇒ 裸 `str.replace(..., 1)` 会打在无标记的行上 → fixture 再次假失败。
+name = "`cpptlm-cep-mesif-adapter`"
 assert "S1-" in sec, "锚点漂移:§4.0 未含 S1-N 承接标记"
-sec = sec.replace(name, "`cpptlm-cep-umbrella`", 1)
+_lines = sec.splitlines(keepends=True)
+_hit = 0
+for _k, _ln in enumerate(_lines):
+    if "S1-" in _ln and name in _ln:
+        _lines[_k] = _ln.replace(name, "`cpptlm-cep-umbrella`", 1)
+        _hit += 1
+assert _hit >= 1, "锚点漂移:§4.0 无「带 S1-N 标记且含活 owner 名」的行"
+sec = "".join(_lines)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "活文档出现归档件里不存在的 S1-9 → ⑦ 必须 fire" 1 '
@@ -269,11 +278,19 @@ t = p.read_text(encoding="utf-8")
 i = t.index("### 4.2 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
-# ⚠️ 2026-10-28(Entry #90):owner 行随队列 #7 归档再转指 #8(同 fixture ① 的理由)
-name = "`cpptlm-cep-chi-rnf-subset`"
-assert sec.count(name) >= 1, "锚点漂移:§4.2 未含活队列 #8 的 change 名"
+# ⚠️ 2026-10-28(Entry #90):owner 行随队列 #7 归档再转指 #8
+# ⚠️ 2026-10-28(Entry #95):owner 行随队列 #8 归档再转指 #9(同 fixture ① 的理由;
+#    定位同样**按行** —— 归档行 #8 提到活 owner 名但不带 `⏭(孤儿)` 标记)
+name = "`cpptlm-cep-mesif-adapter`"
 assert "⏭(孤儿)" in sec, "锚点漂移:§4.2 未含孤儿前置标记"
-sec = sec.replace(name, "`cpptlm-cep-umbrella`", 1)
+_lines = sec.splitlines(keepends=True)
+_hit = 0
+for _k, _ln in enumerate(_lines):
+    if "⏭(孤儿)" in _ln and name in _ln:
+        _lines[_k] = _ln.replace(name, "`cpptlm-cep-umbrella`", 1)
+        _hit += 1
+assert _hit >= 1, "锚点漂移:§4.2 无「带 ⏭(孤儿) 标记且含活 owner 名」的行"
+sec = "".join(_lines)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "孤儿前置登记行被移除 → ⑦ 必须 fire" 1 '

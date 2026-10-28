@@ -9,13 +9,14 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-11
   - ADR-CEP-07A
-状态: 🟡 **已转正**(2026-10-28,Entry #91 —— change 目录已建于 `openspec/changes/cpptlm-cep-chi-rnf-subset/`;KPI 并发 **0/3 → 1/3**;`openspec validate --strict` rc=0)
+状态: ✅ **已归档**(2026-10-28,Entry #95 —— 「**已完成归档**」语义:2 份 delta spec 已合并进 `openspec/specs/cep-chi-rnf-subset/` + `openspec/specs/cep-instance-authority-partition/`;Phase 1 ~ 6 全完成;KPI 并发 **0/3 → 1/3 → 0/3**;⚠️ 转正时的活跃路径 `openspec/changes/cpptlm-cep-chi-rnf-subset/` 已于归档时失效 ⇒ 现为 `openspec/changes/archive/2026-10-28-cpptlm-cep-chi-rnf-subset/`(**不入库**,per `.gitignore`))
 created: 2026-10-28
 ---
 
 # improvement: cpptlm-cep-chi-rnf-subset
 
-> **状态**: 🟡 **已转正**(2026-10-28,Entry #91)· **change 目录已建**
+> **状态**: ✅ **已归档**(2026-10-28,Entry #95)· **实现已落地、契约已进 main specs**
+> **时态锚定**:2026-10-28 转正时登记的活跃路径 `openspec/changes/cpptlm-cep-chi-rnf-subset/` **已于同日归档时失效**(归档件不入库)
 > **队列**: `obj-cep-platform §4.0` 队列 **#8**(Stage 1 / 2028-Q3)· 排在 #7 `cpptlm-cep-cohif-carrier` 之后、#9 `cpptlm-cep-mesif-adapter` 之前
 > **关联 ADR**: `ADR-CEP-01`(6 层架构 + 旁路平面)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值锁)· `ADR-CEP-12`(实例声明 schema)· `ADR-CEP-11`(规范版本锁定 `chi-r2`)· `ADR-CEP-07A`(协议私有状态边界)
 > **估时**: 8 周(实例 adapter + 实例声明 + 权威分区改造 + 真实载体首验)

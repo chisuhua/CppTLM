@@ -660,7 +660,9 @@ TEST_CASE("CR-01 chi_rnf 声明符合冻结 schema 13 属性 + 版本/族/adapte
     // ── 子条件 ①②③④⑤ ───────────────────────────────────────────────
     CHECK(schema_violations(*chi, schema).empty());
     CHECK(chi_lock_violations(*chi).empty());
-    CHECK(chi->at("status") == "planned");  // 实现落地前(Phase 7 归档时翻 implemented)
+    // per CR-01 ⑤:实现落地前为 `planned`,落地后翻 `implemented`
+    // (Phase 4~6 已交付真插件引擎 + 装配实测 + 判据收口 ⇒ Phase 7 归档时翻转)
+    CHECK(chi->at("status") == "implemented");
     // 13 个 required 键**全部存在**(逐个点名,便于红时定位)
     for (const auto& key : schema.at("required")) {
         INFO("required key " << key);

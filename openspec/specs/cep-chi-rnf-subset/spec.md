@@ -11,7 +11,7 @@ CHI RN-F 是 CEP 平台的**第 2 个**协议实例(第 1 个 = `moesi_gpu`)与*
 
 交付**实例语义**,**不**交付完整 CHI(per `ADR-CEP-16 §4`:Stage 1.4 只做 RN-F subset,完整 CHI → Stage 4+ 维护态)。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-chi-rnf-subset
 

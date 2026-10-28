@@ -359,11 +359,21 @@ TEST_CASE("CEP moesi_gpu: status 翻转 ⇒ implemented 计数 0→1(条件达�
           "[cep][moesi-gpu-adapter][status]") {
     const json doc = decl_doc();
 
+    // ⚠️ 队列 #8 归档后 `chi_rnf` 也翻为 `implemented` ⇒ 计数 **1 → 2**。
+    //    本断言的**意图**是「翻转即计入」⇒ 改为「按实例点名 + 计数一致」,
+    //    不再硬编码总数(硬编码会在每个新实例落地时误判为回归)。
     int implemented = 0;
+    std::set<std::string> implemented_ids;
     for (const auto& inst : doc.at("instances")) {
-        if (inst.at("status") == "implemented") ++implemented;
+        if (inst.at("status") == "implemented") {
+            ++implemented;
+            implemented_ids.insert(inst.at("id").get<std::string>());
+        }
     }
-    REQUIRE(implemented == 1);
+    REQUIRE(implemented == static_cast<int>(implemented_ids.size()));
+    REQUIRE(implemented_ids.count("moesi_gpu") == 1);
+    REQUIRE(implemented_ids.count("chi_rnf") == 1);
+    REQUIRE(implemented_ids.count("mesif") == 0);
     REQUIRE(instance("moesi_gpu").at("status") == "implemented");
     REQUIRE(instance("mesif").at("status") == "planned");
 
