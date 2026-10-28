@@ -13,7 +13,7 @@
 | Phase | 状态 | 说明 |
 |---|------|------|
 | 0 治理前置 | ⬜ **未开始** | 台账勘误 entry(F-1 双轴澄清)· `ADR-CEP-12` Status Update(architect)· `07 号` §5.1.1 状态 · 冻结清单重算(**2 件冻结面**) |
-| 1 adapter 载体面 | ⬜ **未开始** | `ChiRnfAdapter`(状态模型 + 6→4 投影 + 6→3 映射 + merge note + `identity_reason`)+ **E1 一手锚**(IHI0050) |
+| 1 adapter 载体面 | 🟡 **进行中**(2026-10-28) | `ChiRnfAdapter`(状态模型 + 6→4 投影 + 6→3 映射 + merge note + `identity_reason`)+ **E1 一手锚**(IHI0050) |
 | 2 实例声明落地 | ⬜ **未开始** | `protocol_instances.json` 的 `chi_rnf` + `repo_owned_instance_ids[]` + `perm_upgrades.json` 加行与自述改写 |
 | 3 权威分区改造 | ⬜ **未开始** | ⑥ 收窄 + ①~⑤ 扩面 + 3 条新反向 fixture + 装载层参数化 |
 | 4 真插件引擎 | ⬜ **未开始** | `ChiRnfProtocolEngine`(6 通道观测点 + Credit + TxnID + CompAck) |
@@ -45,18 +45,18 @@
 
 ### Phase 1 —— adapter 载体面(`ChiRnfAdapter`,判据 CR-03 / CR-04)
 
-- [ ] **1.1** **E1 一手锚**:引 **IHI0050**(AMBA CHI r2,`ADR-CEP-11 §3` 的锁定锚)的 cache-state
+- [x] **1.1** **E1 一手锚**:引 **IHI0050**(AMBA CHI r2,`ADR-CEP-11 §3` 的锁定锚)的 cache-state
       transition 章节,钉死「`UC` 上 store 命中 ⇒ `UD`,**零总线事务**」——
       ⚠️ **引不到则本 change 停在此处**(不得以 gem5 的二手佐证冒充一手锚;
       二手佐证 = `docs/research/gem5-ruby-protocol-bridge-survey.md:532` 的 `UC`/`UD`/`SC`/`SD` 状态族)
-- [ ] **1.2** `include/tlm/cep/chi_rnf_adapter.hh` —— `tlm::cep::ChiRnfAdapter`:
+- [x] **1.2** `include/tlm/cep/chi_rnf_adapter.hh` —— `tlm::cep::ChiRnfAdapter`:
       6 通道枚举 + 5 稳定态枚举(`I` / `SC` / `UC` / `UD` / `SD`)+ 瞬态(**无投影**)+
       `perm_of(State, Perm&)` 投影 + 状态转换表 + 6→3 消息类映射(4 行)+
       `kMappingIsIdentity = true` + `kIdentityReason` + `kPermMergeNote`
-- [ ] **1.3** **瞬态无投影**的编译期锁 —— 瞬态态**不得**出现在 `perm_of` 的投影表内
+- [x] **1.3** **瞬态无投影**的编译期锁 —— 瞬态态**不得**出现在 `perm_of` 的投影表内
       (per `INV-CEP-05-IC1`)
-- [ ] **1.4** **6→3 映射 4 行** + `identity_reason`(登记「4 行全部与方向默认表一致」)
-- [ ] **1.5** **`kPermMergeNote`** —— `SD → WRITEBACK` 的语义损失登记,
+- [x] **1.4** **6→3 映射 4 行** + `identity_reason`(登记「4 行全部与方向默认表一致」)
+- [x] **1.5** **`kPermMergeNote`** —— `SD → WRITEBACK` 的语义损失登记,
       措辞须写明「**协议信息拓扑的固有损失,RN 侧不可补偿**」(与 `moesi_gpu` 的 `O→WRITEBACK`
       补偿句**措辞不同** —— 后者由 `SparseSnoopFilter` 补偿,本实例 `sharer_tracker = 不参与`)
 - [ ] **1.6** **反向 fixture**(CR-03 / CR-04)—— 删 `snoop` 映射行 ⇒ 红;目标写第 4 类 ⇒ 红;

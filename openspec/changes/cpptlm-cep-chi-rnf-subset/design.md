@@ -180,9 +180,21 @@ F-1 原文:「而 CHI RN-F 是**显式**请求升级(`07 号 §5.1.1`)⇒ **不�
 
 ⇒ **F-1 的排期结论不受影响**(perm 形态演进跟唯一真实消费者 `moesi_gpu` 走,机制已由队列 #6 交付;本 change「复用之,只填行」—— `perm_upgrades.json` 的一行**就是「行」」);要更正的只是 **F-1 的协议事实括注** ⇒ 追加**勘误 entry**(台账 append-only,原文不改)。
 
-### ⚠️ 一手锚义务(Phase 1 的硬门)
+### ✅ E1 一手锚(已获取 —— Phase 1 硬门解除)
 
-`UC→UD` 静默是 AMBA CHI 的**既定性质**(HN-F 不跟踪 RN 侧脏状态 ⇒ 脏发现只能靠 snoop 数据响应)。仓内目前只有**间接**佐证(gem5 `CHI-cache.sm` 的 `UC`/`UD`/`SC`/`SD` 状态族,per `docs/research/gem5-ruby-protocol-bridge-survey.md:532`)⇒ **design 阶段须引 IHI0050(AMBA CHI r2,`ADR-CEP-11 §3` 的锁定锚)的一手 cache-state transition 章节作 E1 锚**;**引不到则本 change 停在 Phase 1**(不得以二手佐证冒充一手锚)。
+**一手文档**:**AMBA® CHI Architecture Specification, ARM IHI 0050, Issue G**(2025-09-08 发布;`ADR-CEP-11 §3` 的 `chi-r2` 锁定锚即此文档族)。
+
+| 条款 | 原文 | 推论 |
+|---|---|---|
+| **§B4.1 Cache line states** | *"A store to a local cache line can only happen when it is held in a Unique state."* | write **只**在 Unique 态发生 ⇒ `UC` 上 store **合法** |
+| **§B1.5.2 Cache state model** | *"When Unique, the cache line exists only in the Unique cache."* | Unique 态 ⇒ **唯一副本** ⇒ store **无需任何总线事务**(无副本可失效) |
+| **§B1.5.2 / Figure B1.3** | 七态模型:`UCE` / `UC` / `SC` / `UDP` / `UD` / `SD` / `I`;且 *"A valid cache state name that is not Partial or Empty is considered to be Full. In Figure B1.3, UC, UD, SC, and SD are all Full cache line states."* | ⇒ 本 subset 取 **Full 态子集**(`I` / `SC` / `UC` / `UD` / `SD`),`UCE` / `UDP` 属 Partial/Empty 变体 ⇒ **Stage 1 排除**(见下) |
+
+**⇒ 净结论(从一手定义直接推导,非二手转述)**:`UC` 是 Unique 态 ⇒ 唯一副本 ⇒ store 命中**零总线事务** ⇒ `UC→UD` 是**静默升级** ⇒ 4 值 `perm`(`UNIQUE` / `WRITEBACK`)无法区分「静默变脏」⇒ 与 `moesi_gpu` 的 `E→M` **同型** ⇒ `perm_upgrades.json` 加行有依据。
+
+**⚠️ 与一手规范的**范围偏离(显式登记)**:IHI0050 定义 **7 态**,本 subset 实现 **5 态**(Full 态子集)。`UCE`(Unique Clean Empty)与 `UDP`(Unique Dirty Partial)被**排除** —— 理由:① 二者是 **Partial / Empty 变体**(非 Full),Stage 1 无价值;② `UDP` 的**部分行脏**写回合并复杂度对 Stage 1 无收益。⚠️ 该偏离**只缩小**覆盖面(不产生与规范矛盾的行为)⇒ **不阻塞** Phase 1。
+
+**二手佐证(仅辅助,不作依据)**:VLSI Mentor《CHI State Transitions》§5 / §8 的转换表(`UC→UD` 为 local action;**No silent SC→UD** —— 共享行须先 upgrade)· gem5 `CHI-cache.sm` 的 `UC`/`UD`/`SC`/`SD` 状态族(仓内 `docs/research/gem5-ruby-protocol-bridge-survey.md:532`)。
 
 ---
 

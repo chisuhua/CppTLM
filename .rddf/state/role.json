@@ -1,15 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-10-28T00:00:00Z",
+  "current_role": "builder",
+  "updated_at": "2026-10-28T01:00:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-10-20T16:50:22Z",
-      "by": "user"
-    },
     {
       "role": "architect",
       "at": "2026-10-20T16:51:34Z",
@@ -113,6 +108,12 @@
       "at": "2026-10-28T00:00:00Z",
       "by": "user",
       "note": "队列 #8 cpptlm-cep-chi-rnf-subset Phase 0 —— ADR-CEP-12 追加 Status Update(实例级权威分区);用户要求:ADR 只保留关键架构方向,历史状态/状态变化不入 ADR"
+    },
+    {
+      "role": "builder",
+      "at": "2026-10-28T01:00:00Z",
+      "by": "user",
+      "note": "队列 #8 cpptlm-cep-chi-rnf-subset Phase 1 实施 —— ChiRnfAdapter 载体面(architect 阶段已完成 Phase 0:ADR-CEP-12 §11 签发 + ADR 精简 + 07 号 CHI 行同步)"
     }
   ]
 }
