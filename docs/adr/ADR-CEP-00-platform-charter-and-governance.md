@@ -425,7 +425,7 @@ ArchForge 是**纯设计仓**(`git log` 全为 `docs(...)` 提交,无 `src/`、�
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与上方各段一律不改**,仅登记状态变化。
 > **触发**: 2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **转正** —— 队列 #6 归档释放 slot(上一段)⇒ `obj §4.7.2` step 0 硬前置满足(`openspec list --json` 实测 **0** 个 active)⇒ 4 件套由 `.rddf/drafts/` 迁入 `openspec/changes/`(`proposal` + `design` + `tasks` + **2 份** delta spec:`cep-cohif-carrier` / `cep-protocol-bridge-contracts`),`openspec validate --strict` **rc=0**。
-> **当前态**: Proposed 并发 **1/3**(实测 `openspec list --json` = **1** 个 active:队列 #7);由 **0/3 → 1/3** ⇒ 下一个可启动 change = **队列 #8**(须待 #7 归档,per §5.4 并发 ≤ 1)。
+> **当前态**: Proposed 并发 **0/3**(实测 `openspec list --json` = **0** 个 active —— 队列 #7 已于 2026-10-28 **完成归档**,per Entry #90)⇒ 下一个可启动 change = **队列 #8**(per §5.4 并发 ≤ 1)。
 > **判据面**:`ADR-CEP-19` 的 2 处判据增补(CC-05 ④ / CC-06 ②)已由本 ADR 的**上一段**之外的另一份 ADR 追加段追认(`ADR-CEP-19` Status Update 2026-10-27,正文零改动,per 台账 Entry #78)⇒ 本段只登记**状态**,不改判据。
 > **不受影响的部分**:§2 决策 3 的**排队算术(14 个 change / 14 季度 / Stage 1 = 10 个)**· §8 的准入门措辞修订 **C-1** 及其理由 · 冻结成员数 **40** —— 一律**不变**。
 > **台账**:`.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #81**

@@ -240,10 +240,13 @@ i = t.index("### 4.0 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
 # 用**承载 S1-N 承接标记的活队列行** —— 断言 ③ 只对该类行判 owner 活性:
-# 归档行(#6 及更早)**合法地**不带标记(标记已转指),故不得拿它做 fixture。
+# 归档行(#7 及更早)**合法地**不带标记(标记已转指),故不得拿它做 fixture。
 # ⚠️ 2026-10-27(Entry #80):队列 #6 归档 ⇒ 标记转指 #7 `cpptlm-cep-cohif-carrier`
-name = "`cpptlm-cep-cohif-carrier`"
-assert sec.count(name) >= 1, "锚点漂移:§4.0 未含活队列 #7 的 change 名"
+# ⚠️ 2026-10-28(Entry #90):队列 #7 归档 ⇒ 标记再转指 #8 `cpptlm-cep-chi-rnf-subset`
+#    ⇒ 本 fixture 的锚点**必须跟随** owner 行(否则变异打在无标记的行 ⇒ ⑦ 不 fire
+#    ⇒ fixture 假失败;实测:2026-10-28 首跑即报「rc=0 期望 1」)
+name = "`cpptlm-cep-chi-rnf-subset`"
+assert sec.count(name) >= 1, "锚点漂移:§4.0 未含活队列 #8 的 change 名"
 assert "S1-" in sec, "锚点漂移:§4.0 未含 S1-N 承接标记"
 sec = sec.replace(name, "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
@@ -266,8 +269,9 @@ t = p.read_text(encoding="utf-8")
 i = t.index("### 4.2 ")
 j = t.index("\n### ", i + 1)
 sec = t[i:j]
-name = "`cpptlm-cep-cohif-carrier`"
-assert sec.count(name) >= 1, "锚点漂移:§4.2 未含活队列 #7 的 change 名"
+# ⚠️ 2026-10-28(Entry #90):owner 行随队列 #7 归档再转指 #8(同 fixture ① 的理由)
+name = "`cpptlm-cep-chi-rnf-subset`"
+assert sec.count(name) >= 1, "锚点漂移:§4.2 未含活队列 #8 的 change 名"
 assert "⏭(孤儿)" in sec, "锚点漂移:§4.2 未含孤儿前置标记"
 sec = sec.replace(name, "`cpptlm-cep-umbrella`", 1)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'

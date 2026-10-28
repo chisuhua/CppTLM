@@ -9,7 +9,7 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-16
   - ADR-CEP-07A
-状态: Proposed(2026-10-27 转正 ⇒ openspec/changes/cpptlm-cep-cohif-carrier/,Entry #81)
+状态: ✅ **已归档**(2026-10-28,Entry #90 —— 「**已完成归档**」语义:2 份 delta spec **已合并**进 `openspec/specs/cep-cohif-carrier/` + `openspec/specs/cep-protocol-bridge-contracts/`;change 目录移至 `openspec/changes/archive/2026-10-28-cpptlm-cep-cohif-carrier/`(**不入库**,per `.gitignore`);⚠️ **2026-10-27 转正时的活跃路径** `openspec/changes/cpptlm-cep-cohif-carrier/` **已于 2026-10-28 归档时失效**)(2026-10-27 转正,Entry #81)
 created: 2026-10-27
 ---
 

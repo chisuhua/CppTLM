@@ -12,7 +12,7 @@
 跨实例复用:后续 7 个 adapter change(`chi-rnf` / `mesif` / `cxl-nonsymmetric` / `tilelink` /
 `cxl-dcoh-symmetric` / `nvlink-sharp` / `ualink-inc`)**复用**本能力,只填各自的行。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-protocol-bridge-contracts
 

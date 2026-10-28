@@ -13,7 +13,7 @@ ProtocolEngine 基类(`ChStreamModuleBase` 派生 + `Input/OutputStreamAdapter<C
 交付**载体**,**不**交付协议语义 —— 后者归 ArchForge(per `06-bis` 顶部处置表);
 `StubCacheCore` **不动**(决策 9,显式延期到 `cpptlm-cep-stub-cache-chstream-surface`)。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-cohif-carrier
 
