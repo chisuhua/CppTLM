@@ -1,0 +1,23 @@
+{
+  "name": "cep_chi_rnf_pe_minimal",
+  "description": "队列 #8 `cpptlm-cep-chi-rnf-subset` Phase 5 —— CHI RN-F subset 的最小装配拓扑(2 个 ChiRnfProtocolEngine,N=2 端口双向互连 + cohif_noc 桥绑定 chi_rnf 实例)",
+  "modules": [
+    { "name": "chi0", "type": "ChiRnfProtocolEngine" },
+    { "name": "chi1", "type": "ChiRnfProtocolEngine" }
+  ],
+  "connections": [
+    { "src": "chi0.0", "dst": "chi1.0" },
+    { "src": "chi1.0", "dst": "chi0.0" }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json",
+    "bridges": [
+      {
+        "name": "cohif_noc",
+        "protocol_instance": "chi_rnf",
+        "bridge_id": 2,
+        "modules": ["chi0", "chi1"]
+      }
+    ]
+  }
+}

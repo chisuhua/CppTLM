@@ -15,11 +15,20 @@
 // ③ **判别谓词必须能区分真插件与 Null** —— 不能只断言「都绿」。
 #include "catch_amalgamated.hpp"
 
+#include "cep_adr_parser.hh"
+
+#include "core/event_queue.hh"
+#include "core/module_factory.hh"
+#include "tlm/cep/channel_dependency_graph.hh"
 #include "tlm/cep/chi_rnf_protocol_engine.hh"
 #include "tlm/cep/cohif_protocol_engine.hh"
+#include "tlm/cep/protocol_family.hh"
+
+#include <nlohmann/json.hpp>
 
 #include <cstddef>
 #include <cstdint>
+#include <fstream>
 #include <string>
 
 namespace {
@@ -103,6 +112,19 @@ void drive_all_channels(ChiRnfProtocolEngine& e, const DrivePlan& plan = {}) {
         e.on_snoop(0x7000, SnoopType::INVALIDATE, 7002);
         drain_egress(e);
     }
+}
+
+/// 加载 CHI RN-F 的最小装配拓扑,并把 `protocol_instances` 的相对路径换成**绝对路径**
+/// (配置的相对路径以**仓库根**为基准;测试的 CWD 不固定 ⇒ 必须绝对化)
+nlohmann::json load_chi_topology() {
+    const auto path = cpptlm::cep::repo_root() / "configs" / "cep_chi_rnf_pe_minimal.json";
+    std::ifstream in(path);
+    if (!in.good())
+        throw std::runtime_error("无法打开 CHI 装配配置: " + path.string());
+    nlohmann::json cfg = nlohmann::json::parse(in);
+    cfg["cep"]["protocol_instances"] =
+        (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json").string();
+    return cfg;
 }
 
 }  // namespace
@@ -358,4 +380,109 @@ TEST_CASE("subset 排除项:非 CopyBack 写 / atomic / DVM / Retry 注入即拒
             ++accepted;
     }
     CHECK(accepted == 16u);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  CR-10 ③ / Phase 5 —— JSON 装配:桥消费路径 + family 编号对齐 + 端到端
+// ══════════════════════════════════════════════════════════════════════
+TEST_CASE("CR-10 ③ JSON 装配:桥消费路径 + protocol_id 与 family 编号对齐 + 端到端抵达",
+          "[cep][chi-rnf][cr-10][json-assembly]") {
+    const nlohmann::json cfg = load_chi_topology();
+
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(cfg));
+
+    auto* chi0 = dynamic_cast<ChiRnfProtocolEngine*>(factory.getInstanceForTesting("chi0"));
+    auto* chi1 = dynamic_cast<ChiRnfProtocolEngine*>(factory.getInstanceForTesting("chi1"));
+    REQUIRE(chi0 != nullptr);
+    REQUIRE(chi1 != nullptr);
+
+    // ── 桥**被消费**(不是「注册表里有但没人用」)────────────────────────
+    REQUIRE(chi0->bridge() != nullptr);
+    REQUIRE(chi1->bridge() != nullptr);
+    CHECK(factory.unconsumed_bridges().empty());
+
+    // ── `protocol_id_` 与实例声明的 `family` **编号对齐**(CC-05 ④)──────
+    tlm::cep::ProtocolFamily fam{};
+    REQUIRE(tlm::cep::protocol_family_from_name("industrial", fam));
+    const std::uint8_t expected = tlm::cep::protocol_family_id(fam);
+    CHECK(expected != 0u);  // 0 保留为「未分配」⇒ 非零才可区分「忘了填」
+    CHECK(chi0->bridge()->protocol_id() == expected);
+    CHECK(chi1->bridge()->protocol_id() == expected);
+
+    // ── 端到端:chi0 发起 ⇒ 穿过 adapter ⇒ chi1 收到 ────────────────────
+    // ⚠️ 抵达证据是 `foreign_events`(RN-F **不接收** request ⇒ 该流在本引擎内
+    //    记为外来事件);「装配成功」本身**不算**抵达(判据 CC-04 的同款纪律)。
+    CHECK(chi1->counters().foreign_events == 0u);
+    CHECK(chi0->submit_request(ChiOpcode::ReadShared, 0x1000, Perm::READ, 64, 1));
+    chi0->tick();  // 消费 ingress(空)+ 驱动 adapter ⇒ 发出
+    chi1->tick();  // 消费 ingress ⇒ 分派到 canonical 流
+    CHECK(chi1->counters().foreign_events == 1u);
+    // 另一端自身也仍在工作(正控:不是「谁都没动」)
+    CHECK(chi0->counters().observed[ch(ChiChannel::TXREQ)] == 1u);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  CR-10 ③ 反向 fixture —— 同拓扑换成 Null 引擎 ⇒ 端到端必红
+// ══════════════════════════════════════════════════════════════════════
+TEST_CASE("CR-10 ③ 反向 fixture:同拓扑换 Null 引擎 ⇒ 类型判据与抵达判据**双红**",
+          "[cep][chi-rnf][cr-10][json-assembly]") {
+    nlohmann::json cfg = load_chi_topology();
+    cfg["modules"][0]["type"] = "CohIfProtocolEngine";  // ⇒ NullProtocolEngine<2> 外壳
+    cfg["modules"][1]["type"] = "CohIfProtocolEngine";
+
+    EventQueue eq;
+    ModuleFactory factory(&eq);
+    REQUIRE(factory.instantiateAll(cfg));  // 装配**成功**(不是靠「装配失败」蒙对判据)
+
+    // ① 类型判据:拿不到真插件 ⇒ 与正控的 `REQUIRE(chi0 != nullptr)` 反向
+    CHECK(dynamic_cast<ChiRnfProtocolEngine*>(factory.getInstanceForTesting("chi0")) == nullptr);
+
+    auto* pe0 = dynamic_cast<CohIfNullProtocolEngine*>(factory.getInstanceForTesting("chi0"));
+    auto* pe1 = dynamic_cast<CohIfNullProtocolEngine*>(factory.getInstanceForTesting("chi1"));
+    REQUIRE(pe0 != nullptr);
+    REQUIRE(pe1 != nullptr);
+
+    // ② 抵达判据:同款驱动下 Null 零发射 ⇒ 对端零抵达(正控里是 1)
+    CHECK(deliver_read_bundles(*pe0, 1) == 0u);
+    pe0->tick();
+    pe1->tick();
+    CHECK(pe1->counters().per_flow[static_cast<std::size_t>(CanonicalFlow::Request)] == 0u);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  Phase 5.2 —— 装配闸对绑定 `chi_rnf` 的 config 出逐 `(network, vc)` verdict
+// ══════════════════════════════════════════════════════════════════════
+TEST_CASE("装配闸:chi_rnf 的逐 (network, vc) verdict", "[cep][chi-rnf][json-assembly][channel-gate]") {
+    const nlohmann::json cfg = load_chi_topology();
+
+    const auto gate = tlm::cep::run_channel_gate(cfg);
+    REQUIRE(gate.verdict == tlm::cep::GateVerdict::PASS);
+
+    // `chi_rnf` 只绑定 `compute_noc`(4 个 VC)⇒ 恰好 4 条 verdict,逐条 PASS
+    std::size_t n = 0;
+    std::uint64_t seen_vc_mask = 0;
+    for (const auto& v : gate.verdicts) {
+        if (v.instance != "chi_rnf")
+            continue;
+        INFO("vc=" << v.vc << " net=" << v.network);
+        ++n;
+        CHECK(v.network == "compute_noc");
+        CHECK(v.verdict == tlm::cep::GateVerdict::PASS);
+        CHECK(v.vc < 4u);
+        seen_vc_mask |= (std::uint64_t{1} << v.vc);
+    }
+    CHECK(n == 4u);
+    CHECK(seen_vc_mask == 0xFu);  // VC0..VC3 **各**有一条(不是「4 条都集中在某个 VC」)
+
+    // 正控:其余两个镜像域实例也在(⇒ 「只看见 chi_rnf」不算通过)
+    CHECK(gate.per_instance.count("moesi_gpu") == 1u);
+    CHECK(gate.per_instance.count("mesif") == 1u);
+    CHECK(gate.per_instance.count("chi_rnf") == 1u);
+
+    // 日志可 grep(判据形态:`[verdict] net=<n> vc=<i> PASS (instance=chi_rnf…`)
+    const std::string log = gate.to_log();
+    CHECK(log.find("[verdict] net=compute_noc vc=0 PASS (instance=chi_rnf") != std::string::npos);
+    CHECK(log.find("[per-instance] instance=chi_rnf ") != std::string::npos);
 }

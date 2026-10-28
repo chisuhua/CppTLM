@@ -17,7 +17,7 @@
 | 2 实例声明落地 | ✅ **已完成**(2026-10-28) | `protocol_instances.json` 的 `chi_rnf` + `repo_owned_instance_ids[]` + `perm_upgrades.json` 加行与自述改写 |
 | 3 权威分区改造 | ✅ **已完成**(2026-10-28) | ⑥ 收窄 + ①~⑤ 扩面 + 3 条新反向 fixture + 装载层参数化 |
 | 4 真插件引擎 | ✅ **已完成**(2026-10-28) | `ChiRnfProtocolEngine`(6 通道观测点 + Credit + TxnID + CompAck) |
-| 5 JSON 装配实测 | ⬜ **未开始** | 装配期校验实测 + CC-05 ④ family 编号对齐 |
+| 5 JSON 装配实测 | ✅ **已完成**(2026-10-28) | 装配期校验实测 + CC-05 ④ family 编号对齐 |
 | 6 判据收口 | ⬜ **未开始** | CR-01 ~ CR-14 + 反向 fixture 登记 + 零 diff 复核 |
 | 7 真源同步 / 归档 | ⬜ **未开始** | 台账 / 活文档 / 归档 |
 
@@ -106,10 +106,10 @@
 
 ### Phase 5 —— JSON 装配实测(CR-10 ③)
 
-- [ ] **5.1** JSON config —— `cep.protocol_instances` + `cep.bridges`(含 `chi_rnf` 桥条目)
-- [ ] **5.2** **装配期校验实测** —— 装配闸对绑定 `chi_rnf` 的 config 出逐 `(network, vc)` verdict
+- [x] **5.1** JSON config —— `cep.protocol_instances` + `cep.bridges`(含 `chi_rnf` 桥条目)
+- [x] **5.2** **装配期校验实测** —— 装配闸对绑定 `chi_rnf` 的 config 出逐 `(network, vc)` verdict
       **全 PASS** + per-instance 统计行含 `chi_rnf`
-- [ ] **5.3** **CC-05 ④ family 编号对齐** —— 桥的 `protocol_id_` = `protocol_family_id("industrial")`
+- [x] **5.3** **CC-05 ④ family 编号对齐** —— 桥的 `protocol_id_` = `protocol_family_id("industrial")`
       (per 队列 #7 的既有机制,**不重立判据**)
 
 ### Phase 6 —— 判据收口(CR-01 ~ CR-14)

@@ -6,6 +6,7 @@
 #include "tlm/arbiter_tlm.hh"
 #include "tlm/cache_tlm.hh"
 #include "tlm/cep/cohif_noc_bridge.hh"
+#include "tlm/cep/chi_rnf_protocol_engine.hh"
 #include "tlm/cep/cohif_protocol_engine.hh"
 #include "tlm/coherent_xbar_tlm.hh"
 #include "tlm/cpu_tlm.hh"
@@ -125,6 +126,12 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
        `NullProtocolEngine<2>` 的非模板外壳(10 流行为完全继承,无新增协议语义)。 */                                       \
     REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("CohIfProtocolEngine",                                    \
                                            tlm::cep::CohIfNullProtocolEngine,                       \
+                                           bundles::CohIfBundle, 2);                                \
+    /* 队列 #8 Phase 5:CHI RN-F subset 的**真插件**引擎(短名 `ChiRnfProtocolEngine`)。                        \
+       `chi_rnf` 是本仓域实例(per `ADR-CEP-12 §11`)⇒ 引擎与实例声明由同一 change 交付;                              \
+       与 `CohIfProtocolEngine` 并存且**同名端口数 N=2** ⇒ JSON 侧可逐实例选择引擎类型(CR-10 的对照基础)。 */      \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("ChiRnfProtocolEngine",                                    \
+                                           tlm::cep::ChiRnfProtocolEngine,                          \
                                            bundles::CohIfBundle, 2);                                \
     /* 队列 #7 Phase 3/5:协议桥注册(per CC-05 —— 死钩子 → 活钩子)。                                               \
        `register_protocol_bridge` 对同名 early-return(ODR-safe)⇒ 幂等。                                   \
