@@ -59,6 +59,43 @@
 | **CC-05** ④ | `protocol_id_` 与 `family` 不符 ⇒ 判红 | 同上「反向 fixture ③」 |
 | **CC-06** | 映射产出超出 3 类值域 ⇒ 判红 | `[cep][protocol-bridge]`「CC-06」（**引用**队列 #6 的 `category_value_domain()`，不重立第二份判据） |
 
+### 反向 fixture 登记（队列 #8 `cpptlm-cep-chi-rnf-subset`）
+
+> 同上纪律。本批的**判据实现分布**决定了 fixture 的落点：实例/状态机/引擎面在 C++（判据本体零改动，
+> 复用 AC-01~05 + 本 change 新增的引擎观测面），声明源闸面在 Python 守门脚本 ⇒ **不复制第二份实现**。
+
+| 判据 | 反向 fixture（形态） | 登记位置 |
+|------|----------------------|----------|
+| **CR-01** ① | 删 `chi_rnf` 的**任一** `required` 键（13 个**穷举**）⇒ 判据必红 | `[cep][chi-rnf][cr-01]`（谓词 `schema_violations()`，缺键**记违规不抛异常**） |
+| **CR-01** ③ | `protocol_version` 写成锁定表外的值（`chi-r3`）⇒ 必红 | 同上 |
+| **CR-01** ② | `perm` 少一个值（4 值锁被破）⇒ 必红 | 同上 |
+| **CR-02** ④ | `vc_binding` 的 `vc_id` 越界（3→9）⇒ 装配闸必 FAIL | `[cep][chi-rnf][cr-02]`（内联声明**必须**带边表，否则「假绿」） |
+| **CR-02** ⑤ | 删 `vc_binding` 的某消息类 ⇒ 边端点失去绑定 ⇒ 闸必 FAIL | 同上 |
+| **CR-02** ② | 消息类写成 6 类词表外的值 ⇒ 红 | `cep_decl_reverse_verify.sh`「破坏 5」 |
+| **CR-02** ③ | 删 `ordering_assumption` 的某网络键（键不对称）⇒ 红 | `cep_decl_reverse_verify.sh`「破坏 4」 |
+| **CR-03** ① | 删 `snoop` 映射行（仍声明使用）⇒ AC-04 必红 | `[cep][chi-rnf][cr-03]` |
+| **CR-03** ② | 映射目标写成第 4 类 ⇒ AC-04 必红 | 同上 |
+| **CR-03** ④ | 全表 == 方向默认表且**无** `identity_reason` ⇒ AC-04 必红 | 同上 |
+| **CR-04** ② | 让某稳定态「有为稳定态但无投影」⇒ AC-05 必红 | `[cep][chi-rnf][cr-04]` |
+| **CR-04** ③ | 改掉 `UC + Store → UD` 的目标态（4 ≠ 3）⇒ AC-05 必红 | 同上 |
+| **CR-05** ① | `instance_id` 改成不存在的 id ⇒ AC-02 必红 | `[cep][chi-rnf][cr-05]` |
+| **CR-05** ④ | 改成 `UNIQUE → READ`（降权限）⇒ AC-02 必红 | 同上 |
+| **CR-06** ② | `impl = 不参与` 但 `caps.scope = SYSTEM` ⇒ 谓词必红 | `[cep][chi-rnf][cr-06]` |
+| **CR-07** ③ | 加**未登记**的额外实例 ⇒ ⑥ 必红 | `cep_decl_reverse_verify.sh`「破坏 16」 |
+| **CR-07** ④ | 把 `moesi_gpu` 登记进 `repo_owned_instance_ids[]`（撞名）⇒ 必红 | 同上「破坏 18」 |
+| **CR-08** ① | 本仓域实例违 schema（`vc_binding` 越出 6 类词表）⇒ ① 扩面必红 | 同上「破坏 17」 |
+| **CR-08** ⑤ | 登记 id 指向不存在的实例 ⇒ 登记键自身必红 | 同上「破坏 19」 |
+| **CR-07** ② | 仅 `status` 差异 ⇒ 仍**绿**（正控：豁免边界） | 同上「破坏 15 / 20」 |
+| **CR-09** ④ | 改 `Status Update` 段 ⇒ hash 校验红 / 跳过 `--update` ⇒ provenance 红 | `cep_freeze_check.sh`（ctest `cep_freeze_check`） |
+| **CR-10** ② | 引擎换成 `CohIfNullProtocolEngine` ⇒ 发射谓词必红（Null 零发射） | `[cep][chi-rnf][cr-10]`（正/反向并置：`deliver_read_bundles` 1 vs 0） |
+| **CR-10** ③ | 同拓扑把 `type` 换成 Null ⇒ 类型判据 + 抵达判据**双红** | `[cep][chi-rnf][cr-10][json-assembly]` |
+| **CR-11** ① | **逐通道**屏蔽（6 条）：该通道观测点 == 0 且汇聚判据红 | `[cep][chi-rnf][cr-11]` |
+| **CR-12** ① | 旁路 credit 门控 ⇒ 耗尽态 `emitted` 不再是 0（同款驱动 + 充足 credit 作对照） | `[cep][chi-rnf][cr-12]` |
+| **CR-13** ① | 强制在途重复 `transaction_id` ⇒ 必被拒且**不增长在途集** | `[cep][chi-rnf][cr-13]` |
+| **CR-14** ① | 抑制 CompAck / 重复完成 ⇒ `comp_ack_sent` 不再是**恰好 1** | `[cep][chi-rnf][cr-14]` |
+| **subset 排除项** | 9 个排除 opcode 注入 ⇒ 全拒 + 三条后果（无通道事件 / 不占 TxnID / 不进发射队列） | `[cep][chi-rnf][subset-exclusions]` |
+| **消费方覆盖** | 从声明里摘掉 `chi_rnf` ⇒ 装配闸 `per_instance` 缺失该实例 | `[cep][chi-rnf][consumers]` |
+
 ## 路径引用注意
 
 - `scripts/CMakeLists.txt` 调度 `topology/topology_validator.py`

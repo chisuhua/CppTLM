@@ -53,6 +53,8 @@ include(CTest)
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-sdma-engine/tasks.md §T-sd-3)
 # 通过 ctest 标签 + Catch2 -t 标志过滤到对应测试
 add_test(NAME sdma_engine COMMAND cpptlm_tests "[sdma]" -r compact)
+# 队列 #8 `cpptlm-cep-chi-rnf-subset`:CHI RN-F subset 的实例面 + 真插件引擎判据(CR-01 ~ CR-14)
+add_test(NAME cep_chi_rnf_subset COMMAND cpptlm_tests "[cep][chi-rnf]" -r compact)
 
 # board-soc-split T-bs-1: DGpuSoc 容器测试
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/tasks.md §T-bs-1)

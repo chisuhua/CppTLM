@@ -18,7 +18,7 @@
 | 3 权威分区改造 | ✅ **已完成**(2026-10-28) | ⑥ 收窄 + ①~⑤ 扩面 + 3 条新反向 fixture + 装载层参数化 |
 | 4 真插件引擎 | ✅ **已完成**(2026-10-28) | `ChiRnfProtocolEngine`(6 通道观测点 + Credit + TxnID + CompAck) |
 | 5 JSON 装配实测 | ✅ **已完成**(2026-10-28) | 装配期校验实测 + CC-05 ④ family 编号对齐 |
-| 6 判据收口 | ⬜ **未开始** | CR-01 ~ CR-14 + 反向 fixture 登记 + 零 diff 复核 |
+| 6 判据收口 | ✅ **已完成**(2026-10-28) | CR-01 ~ CR-14 + 反向 fixture 登记 + 零 diff 复核 |
 | 7 真源同步 / 归档 | ⬜ **未开始** | 台账 / 活文档 / 归档 |
 
 ---
@@ -114,15 +114,15 @@
 
 ### Phase 6 —— 判据收口(CR-01 ~ CR-14)
 
-- [ ] **6.1** `test/test_cep_chi_rnf_subset.cc`(新建)—— CR-01 ~ CR-14 全部断言 + 正控
-- [ ] **6.2** **反向 fixture 登记** —— `scripts/README.md` §反向 fixture 登记表(逐条:判据 ID ·
+- [x] **6.1** `test/test_cep_chi_rnf_subset.cc`(新建)—— CR-01 ~ CR-14 全部断言 + 正控
+- [x] **6.2** **反向 fixture 登记** —— `scripts/README.md` §反向 fixture 登记表(逐条:判据 ID ·
       fixture 形态 · 登记位置)+ `docs/ONBOARDING.md §5.5` 补登记
-- [ ] **6.3** **ctest 显式登记** —— `test/CMakeLists.txt`
-- [ ] **6.4** **零 diff 复核** —— `test/test_cep_canonical_invariants.cc` **零 diff** +
+- [x] **6.3** **ctest 显式登记** —— `test/CMakeLists.txt`
+- [x] **6.4** **零 diff 复核** —— `test/test_cep_canonical_invariants.cc` **零 diff** +
       全 change 范围**未新增** `INV-CEP-*` 定义 ⇒ **新增 invariant 数 = 0**;
       `StubCacheCore` **零 diff**;`adapter_schema_contracts.hh` **零 diff**;
       `protocol_instance.schema.json` **零 diff**;`CohIfBundle` **零 diff**
-- [ ] **6.5** **CLI 与测试 verdict 逐条相同** —— `examples/cep_adapter_contracts.cc` 与 Catch2
+- [x] **6.5** **CLI 与测试 verdict 逐条相同** —— `examples/cep_adapter_contracts.cc` 与 Catch2
       **共用**判据实现 ⇒ 逐条相同(单一真源纪律)
 
 ### Phase 7 —— 真源同步 / 归档

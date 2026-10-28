@@ -6034,6 +6034,40 @@ egress 借用它会**倒置连接方向**;
 
 ---
 
+### Entry #94 — 2026-10-28 [build]
+
+**主题**: 队列 #8 `cpptlm-cep-chi-rnf-subset` Phase 6 —— 判据收口发现 `ADR-CEP-12` 缺 CR-09 要求的**五要素**表述与 `status` 豁免追认 ⇒ 追加 `§12`
+
+**① 触发**
+
+`test/test_cep_chi_rnf_subset.cc` 的 CR-09 断言(per delta spec `cep-instance-authority-partition` 的 CR-09 五要素 + `status` 追认)在 `ADR-CEP-12` 上**实测不成立**:
+- 五要素中的「原前提」「触发」**无对应表述**(§11 只写了决策与理由,未按要素标签组织);
+- 子条件 ②(顺带**追认**队列 #6 的 `status` 字段级豁免)**完全未登记**。
+
+⇒ 不是判据写错,是 **ADR 缺内容**。按 ADR 不可变原则,**只能追加 Status Update**,不得改写 §11。
+
+**② 本次动作**
+
+`docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` 追加 **`§12 Status Update(2026-10-28)`**:
+- ① 原前提 ② 新例外(实例级)③ 不变项 ④ 触发 ⑤ 机器化(**五要素显式成段**);
+- ⑥ **追认**队列 #6 的 `status` 字段级豁免(自队列 #6 起生效、当年未登记);
+  并明确**豁免范围严格限于 `status` 一个键**,其余 12 键仍逐字段严格相等。
+
+§1 ~ §11 **零改动**(纯追加;新增 invariant 数 = 0)。
+
+**③ 冻结面**
+
+`ADR-CEP-12` 属 M1 冻结集 ⇒ 走**两步授权序列**:① commit 产物 → ②
+`bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #94"` → ③ commit 清单。冻结集成员数 **40** 不变。
+
+**④ 顺带修的**判据健壮性缺陷**(同一 commit)
+
+CR-01 的「删 required 键」反向 fixture 暴露测试侧谓词 `schema_violations()` 在**缺键时抛 `json::out_of_range`** ⇒ fixture「因**错误的原因**红」(异常而非判据),会掩盖判据本身是否有牙。已改为**缺键记违规**(不抛)。
+
+**⑤ 关联**: Entry #92(`ADR-CEP-12 §11` 签发)· #91(队列 #8 立项 + CR-09 的 spec 判据)· #71(队列 #6 `D-ζ` 的 `status` 豁免,当年未追认)
+
+---
+
 ### Entry #93 — 2026-10-28 [architect]
 
 **主题**: 队列 #8 `cpptlm-cep-chi-rnf-subset` —— `07 号 §5.1.1` CHI 行同步 + CHI 协议事实(UC→UD 静默升级)登记
