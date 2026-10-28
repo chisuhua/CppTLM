@@ -16,7 +16,7 @@
 | 1 adapter 载体面 | ✅ **已完成**(2026-10-28) | `ChiRnfAdapter`(状态模型 + 6→4 投影 + 6→3 映射 + merge note + `identity_reason`)+ **E1 一手锚**(IHI0050) |
 | 2 实例声明落地 | ✅ **已完成**(2026-10-28) | `protocol_instances.json` 的 `chi_rnf` + `repo_owned_instance_ids[]` + `perm_upgrades.json` 加行与自述改写 |
 | 3 权威分区改造 | ✅ **已完成**(2026-10-28) | ⑥ 收窄 + ①~⑤ 扩面 + 3 条新反向 fixture + 装载层参数化 |
-| 4 真插件引擎 | ⬜ **未开始** | `ChiRnfProtocolEngine`(6 通道观测点 + Credit + TxnID + CompAck) |
+| 4 真插件引擎 | ✅ **已完成**(2026-10-28) | `ChiRnfProtocolEngine`(6 通道观测点 + Credit + TxnID + CompAck) |
 | 5 JSON 装配实测 | ⬜ **未开始** | 装配期校验实测 + CC-05 ④ family 编号对齐 |
 | 6 判据收口 | ⬜ **未开始** | CR-01 ~ CR-14 + 反向 fixture 登记 + 零 diff 复核 |
 | 7 真源同步 / 归档 | ⬜ **未开始** | 台账 / 活文档 / 归档 |
@@ -95,13 +95,13 @@
 
 ### Phase 4 —— 真插件引擎(`ChiRnfProtocolEngine`,CR-10 ~ CR-14)
 
-- [ ] **4.1** `include/tlm/cep/chi_rnf_protocol_engine.hh` —— 派生 `ProtocolEngineBase<CohIfBundle>`;
+- [x] **4.1** `include/tlm/cep/chi_rnf_protocol_engine.hh` —— 派生 `ProtocolEngineBase<CohIfBundle>`;
       **6 通道观测点**(逐通道计数)+ Credit 记账 + TxnID 分配/释放 + CompAck 发射
-- [ ] **4.2** **真插件 vs Null 的判别力** —— 判据钉在 Null **结构上不可能**有的行为上
+- [x] **4.2** **真插件 vs Null 的判别力** —— 判据钉在 Null **结构上不可能**有的行为上
       (`protocol_engine_base.hh:420-455`:全部 `on_*` 把参数 `(void)` 丢弃、**零发射**)
-- [ ] **4.3** **subset 排除项的机器断言** —— 非 CopyBack 写(`NCBWrData`)/ `atomic` /
+- [x] **4.3** **subset 排除项的机器断言** —— 非 CopyBack 写(`NCBWrData`)/ `atomic` /
       DVM / Retry 事务**注入即拒绝**(静默收下 ⇒ 红)
-- [ ] **4.4** **反向 fixture** —— 引擎换成 `CohIfNullProtocolEngine` ⇒ 必红;屏蔽任一通道 ⇒ 必红;
+- [x] **4.4** **反向 fixture** —— 引擎换成 `CohIfNullProtocolEngine` ⇒ 必红;屏蔽任一通道 ⇒ 必红;
       旁路 Credit 记账 ⇒ 必红;强制在途重复 TxnID ⇒ 必红;抑制 CompAck ⇒ 必红
 
 ### Phase 5 —— JSON 装配实测(CR-10 ③)
