@@ -21,9 +21,9 @@
     "docs/adr/ADR-CEP-16-06-evolution-route-mapping.md": "a71f072bbda52d6e6716c76684c3ab6b0615eb269a9d7db523b08bde90db8201",
     "docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md": "568b3bebd2d3a1667321743e546f80714b6a6997e721938b7413c348ebfab149",
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "fd0c6808ab944ae7d0d059d9486ba5d731bd5389869066f63cb9ee20c1409372",
-    "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "8f93af8696d8dfa39a0ee7c3ed26de956527c628affa11f6d1b05bd637601333",
+    "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "4e43774a5cb5dc9f225fd23287d34552ebf0c159f83ccf790dde83e1f99f4173",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "33e483b2567d9a469e90d1ff596dfbcdcdc76b00126c45c86bd32030967aaaad",
-    "docs/architecture/07-coherence-exploration-platform.md": "f46414855cf616b7f25fd1422eb42bf7947580775a6f602dcaa40fd395d53072",
+    "docs/architecture/07-coherence-exploration-platform.md": "b6247cc5000aeefe1dfd1fd81447846d0efdea3f4cf9ea1a02caf125cb6de418",
     "experimental/metrics.schema.json": "be6aa118ca85010ac7d701fabcb74fffbbc3318a8c6a924a07a5f31f455a3d54",
     "include/tlm/cep/fabric.json": "296b8981c3a09e912ba6436f12dde9895935bec703ec046cd3e0e71040a7b364",
     "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
@@ -42,9 +42,9 @@
     "tools/render_report.py": "1368402696a3aa5753ebd073a9bcab444fcd092d1334b9a7b7e37a28e026967e",
     "tools/run_sweep.py": "f16e33d3834cd2e24422537de9be82aa3b64c2e660d8bd792f4d0f82d00e3297"
   },
-  "authorized_by": "Entry #88",
+  "authorized_by": "Entry #89",
   "frozen_at": "2026-10-28",
-  "frozen_at_commit": "e48d268406ad2fe4c2a5fdfe229bb2674e471ca6",
+  "frozen_at_commit": "6047be402404f1512161a7737cf06795573ded51",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
