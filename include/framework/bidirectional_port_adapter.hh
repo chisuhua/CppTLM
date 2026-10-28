@@ -81,6 +81,28 @@ namespace cpptlm {
      *
      * ⚠️ **未特化的 BundleT ⇒ 编译期报错**(不是静默用错方向)。
      */
+    /// egress(模块 → 网络)走**哪条**通道
+    ///
+    /// ⚠️ **为什么需要它**:`BidirectionalPortAdapter` 的每个端口有 **4** 个端口对象
+    ///    (`req_out` / `req_in` / `resp_out` / `resp_in`),而模块通常只暴露 **2** 个
+    ///    方向:
+    ///    · `RouterTLM` 语义 = `req_out` 往下游发 · `resp_out` 往上游回
+    ///      ⇒ egress 走 **`resp_out`**(既有行为)
+    ///    · `CohIf`(协议引擎)语义 = ingress `req_in` + egress 走**本方向的
+    ///      request 通道**(对端由 `req_in` 接收)⇒ egress 走 **`req_out`**
+    ///    ⇒ 由 **Bundle 专属 trait** 声明(各 Bundle 在自己的层决定),框架层不猜。
+    ///
+    /// ⚠️ **两者都能送达对端 ingress**(框架的 `ChStreamTargetPort::recvReq`
+    ///    对 `req_in` / `resp_in` 一视同仁)⇒ 差别在**方向语义**与
+    ///    **「断链 ⇒ 不再抵达」的可判别性**:
+    ///    `resp_out` 装的是「对方→我」那条连接的响应通道 ⇒ egress 借用它会
+    ///    倒置方向,且断开「我→对方」那条连接**切不断** egress
+    ///    (per Phase 5 实测:反向 fixture 在 `Resp` 下假通过)。
+    enum class EgressChannel : std::uint8_t {
+        Resp = 0,  ///< egress 走 `resp_out` 通道(默认;`RouterTLM` 语义)
+        Req = 1,   ///< egress 走 `req_out` 通道(`CohIf` 语义)
+    };
+
     /// 恒假常量(惯用法)—— 让 `static_assert` 的失败信息**只**指向本判据,
     /// 而非被 `-Wtype-limits`(`sizeof(T) == 0` 恒假)的噪声淹没
     template <typename>
@@ -95,6 +117,8 @@ namespace cpptlm {
 
         static PacketType packet_type(const BundleT&) { return PKT_REQ; }
         static void fill_credit(BundleT&, unsigned) {}
+        /// egress 通道(默认 = `resp_out`;`CohIf` 侧特化改为 `req_out`)
+        static constexpr EgressChannel egress_channel() { return EgressChannel::Resp; }
     };
 
     /// `NoCFlitBundle` 的既有语义(**逐行为等价**于泛化前的硬编码实现)
@@ -109,6 +133,8 @@ namespace cpptlm {
             b.flit_category.write(bundles::NoCFlitBundle::CATEGORY_CREDIT);
             b.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);
         }
+        /// `RouterTLM` 语义 = egress 往上游回 ⇒ 走 `resp_out`(既有行为,不变)
+        static constexpr EgressChannel egress_channel() { return EgressChannel::Resp; }
     };
 
     /**
@@ -201,7 +227,16 @@ namespace cpptlm {
             for (std::size_t i = 0; i < N; i++) {
                 // ========== 处理 flit 发送 (forward direction) ==========
                 if (module_->resp_out()[i].valid()) {
-                    MasterPort* out = resp_out_port_[i] ? resp_out_port_[i] : req_out_port_[i];
+                    // egress 通道由 **Bundle 专属 trait** 决定:
+                    // · `Resp`(默认,`RouterTLM` 语义)⇒ `resp_out`,缺失时回退 `req_out`
+                    // · `Req`(`CohIf` 语义)⇒ 走 `req_out` = 「本方向的 request 通道」
+                    //   ⇒ 「断开我→对方的连接」**确实**切不断 egress(判据有牙)
+                    MasterPort* out = nullptr;
+                    if constexpr (DirTraits::egress_channel() == EgressChannel::Req) {
+                        out = req_out_port_[i];
+                    } else {
+                        out = resp_out_port_[i] ? resp_out_port_[i] : req_out_port_[i];
+                    }
                     if (out) {
                         auto& flit = module_->resp_out()[i].data();
                         // 方向判定由 **Bundle 专属 trait** 给出(框架层不认识具体 Bundle)

@@ -46,11 +46,21 @@ using tlm::cep::LineState;
 /// 拿到的就不是自己注册的那个(factory 不被调用)。
 std::string bridge_name(const char* tag) { return std::string("cep_test_cohif_noc_") + tag; }
 
-/// RAII 守卫:析构时清空桥注册表 —— 避免某个用例的 `REQUIRE` 失败时
-/// 跳过清理、污染后续用例(实测踩过:CC-05 ② 失败 ⇒ 注册表残留 ⇒
+/// RAII 守卫:析构时**恢复**桥注册表到进入前的状态 —— 避免某个用例的 `REQUIRE`
+/// 失败时跳过清理、污染后续用例(实测踩过:CC-05 ② 失败 ⇒ 注册表残留 ⇒
 /// CC-05 ③ 的 factory 从未被调用)。
+///
+/// ⚠️ **恢复**而非**清空** —— 因为 `chstream_register.hh` 的 `REGISTER_CHSTREAM`
+///    会**全局**注册 `cohif_noc` 桥(队列 #7 Phase 5)⇒ 清空会**破坏**其它用例
+///    依赖的全局注册 ⇒ 改为「保存 + 恢复」。
 struct BridgeRegistryGuard {
-    ~BridgeRegistryGuard() { ModuleFactory::get_bridges().clear(); }
+    BridgeRegistryGuard() : saved_(ModuleFactory::get_bridges()) {}
+    ~BridgeRegistryGuard() { ModuleFactory::get_bridges() = saved_; }
+    BridgeRegistryGuard(const BridgeRegistryGuard&) = delete;
+    BridgeRegistryGuard& operator=(const BridgeRegistryGuard&) = delete;
+
+private:
+    decltype(ModuleFactory::get_bridges()) saved_;
 };
 
 // ── 测试用 ProtocolEngine 派生类(实现 Phase 2 定义的 10 个纯虚 `on_*`)──
@@ -263,8 +273,13 @@ TEST_CASE("CC-05 ② 桥被 ModuleFactory 消费(注册与消费成对)", "[cep]
 
     REQUIRE(factory.instantiateAll(cfg));
     REQUIRE(factory.consumed_bridges().count(name) == 1);
-    // 注册了但没被消费 ⇒ 死桥清单为空
-    REQUIRE(factory.unconsumed_bridges().empty());
+    // 目标桥**已消费** ⇒ 不在「死桥」清单里
+    //
+    // ⚠️ 清单**不必**为空 —— `chstream_register.hh` 的 `REGISTER_CHSTREAM` 会**全局**
+    //    注册 `cohif_noc`(队列 #7 Phase 5)⇒ 本配置不引用它是**正常**的
+    //    ⇒ per Step 7.5 的「死桥**不判红**,以清单暴露」口径。
+    const auto dead = factory.unconsumed_bridges();
+    REQUIRE(std::find(dead.begin(), dead.end(), name) == dead.end());
 }
 
 TEST_CASE("CC-05 ③ 钩子形态为 (bridge_name, factory_lambda)", "[cep][protocol-bridge]") {
@@ -370,8 +385,10 @@ TEST_CASE("反向 fixture ① 只注册不消费 ⇒ 死桥清单非空", "[cep]
     REQUIRE(factory.instantiateAll(cfg));
 
     const auto dead = factory.unconsumed_bridges();
-    REQUIRE(dead.size() == 1);
-    REQUIRE(dead[0] == name);
+    // ⚠️ **含**目标桥即可(不要求 size == 1)—— `chstream_register.hh` 的
+    //    `REGISTER_CHSTREAM` 会**全局**注册 `cohif_noc`(队列 #7 Phase 5)
+    //    ⇒ 本次装配的未消费清单里可能有其它全局注册的桥。
+    REQUIRE(std::find(dead.begin(), dead.end(), name) != dead.end());
     REQUIRE(factory.consumed_bridges().empty());
 }
 

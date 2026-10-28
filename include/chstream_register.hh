@@ -5,6 +5,8 @@
 #include "modules.hh" // P2-T2.4: 提供 REGISTER_MODULE 宏 (参数化)
 #include "tlm/arbiter_tlm.hh"
 #include "tlm/cache_tlm.hh"
+#include "tlm/cep/cohif_noc_bridge.hh"
+#include "tlm/cep/cohif_protocol_engine.hh"
 #include "tlm/coherent_xbar_tlm.hh"
 #include "tlm/cpu_tlm.hh"
 #include "tlm/crossbar_tlm.hh"
@@ -41,6 +43,61 @@
 // Usage: include modules.hh first, then chstream_register.hh for full registration
 
 // ============================================================
+// 多端口双向模块注册的**共享实现**
+// ============================================================
+//
+// ⚠️ 抽成函数(而非在两个宏里各写一遍)⇒ 避免两份实现漂移;`static_assert(n > 1)`
+//    留在**宏**里(它必须作用于**调用点的字面参数**,函数模板做不到这一点)。
+namespace cpptlm {
+template <typename ModuleT, typename BundleT, std::size_t N>
+inline void register_chstream_bidirectional(const std::string& type_name) {
+    ModuleFactory::registerObject<ModuleT>(type_name);
+    ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<ModuleT, BundleT, N>(
+        type_name);
+}
+}  // namespace cpptlm
+
+// ============================================================
+// 多端口双向模块注册宏(Phase 4 · 队列 #7 `cpptlm-cep-cohif-carrier`)
+// ============================================================
+//
+// 用法(在**函数体内**,与 `REGISTER_CHSTREAM` 同风格):
+//     REGISTER_CHSTREAM_BIDIRECTIONAL(MyProtocolEngine, bundles::CohIfBundle, 5);
+//
+// ⚠️ **两件都做**(per tasks 4.2 —— 缺 `registerObject` ⇒ ModuleFactory 无法
+//    实例化该类型;缺 adapter 注册 ⇒ Step 7 拿不到适配器):
+//    ① `ModuleFactory::registerObject<T>` —— 让 JSON 顶层能实例化该类型
+//    ② `ChStreamAdapterFactory::registerBidirectionalPortAdapter<T, B, N>`
+// ⚠️ **不**照抄 `REGISTER_CHSTREAM_DUAL` 的**半截实现** —— 那个宏**只**注册
+//    adapter、**不含** `registerObject`,且全仓零调用点 ⇒ 不能作为形态基准。
+//
+// ⚠️ **`static_assert(n > 1)` 是必需的**(per tasks 4.3 / 判据 CC-04 ③):
+//    `ChStreamAdapterFactory::isMultiPort` 要求 `port_count > 1`;N=1 会落
+//    single 分支调 `bind_ports` —— 而 `bidirectional_port_adapter.hh` 的
+//    `bind_ports` 是**空操作 shim** ⇒ **静默不绑定**(不报错、不绑定)。
+#define REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)                    \
+    do {                                                                         \
+        static_assert((n) > 1,                                                   \
+                      "REGISTER_CHSTREAM_BIDIRECTIONAL: 端口数 N 必须 > 1 —— "     \
+                      "N=1 会落 `BidirectionalPortAdapter::bind_ports` 的**空操作 " \
+                      "shim** ⇒ **静默不绑定**(per 判据 CC-04 ③)");                \
+        cpptlm::register_chstream_bidirectional<mod_type, bundle_t, (n)>(        \
+            #mod_type);                                                          \
+    } while (0)
+
+// 具名变体 —— 注册表 key 用**短名**(本仓惯例,如 `CoherentXBarTLM`),
+// 而**不是** `#mod_type` 的字符串化(含命名空间/尖括号,不适合做 JSON 里的类型名)。
+#define REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED(type_name, mod_type, bundle_t, n)   \
+    do {                                                                         \
+        static_assert((n) > 1,                                                   \
+                      "REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED: 端口数 N 必须 > 1 —— " \
+                      "N=1 会落 `BidirectionalPortAdapter::bind_ports` 的**空操作" \
+                      "shim** ⇒ **静默不绑定**(per 判据 CC-04 ③)");                \
+        cpptlm::register_chstream_bidirectional<mod_type, bundle_t, (n)>(        \
+            type_name);                                                          \
+    } while (0)
+
+// ============================================================
 // 单端口模块注册（CacheTLM / MemoryTLM）
 // 多端口模块注册（CrossbarTLM 4 端口）
 // Initiator 模块注册（CPUTLM / TrafficGenTLM）
@@ -63,6 +120,18 @@
     ModuleFactory::registerObject<tlm::NICTLM>("NICTLM");                                           \
     ModuleFactory::registerObject<tlm::LinkTLM>("LinkTLM");                                         \
     ModuleFactory::registerObject<tlm::GPUTLM>("GPUTLM");                                           \
+    /* 队列 #7 Phase 5 (per `INV-CEP-07-IC4`:CEP 模块注册走既有宏体系):                                         \
+       CohIf 协议引擎的**可注册**形态(短名 `CohIfProtocolEngine`)——                                             \
+       `NullProtocolEngine<2>` 的非模板外壳(10 流行为完全继承,无新增协议语义)。 */                                       \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("CohIfProtocolEngine",                                    \
+                                           tlm::cep::CohIfNullProtocolEngine,                       \
+                                           bundles::CohIfBundle, 2);                                \
+    /* 队列 #7 Phase 3/5:协议桥注册(per CC-05 —— 死钩子 → 活钩子)。                                               \
+       `register_protocol_bridge` 对同名 early-return(ODR-safe)⇒ 幂等。                                   \
+       桥的**消费**由 `config["cep"]["bridges"]` 驱动(ModuleFactory Step 7.5)。 */                          \
+    ModuleFactory::register_protocol_bridge("cohif_noc", []() -> cpptlm::ProtocolBridgeEr* {        \
+        return new tlm::cep::CohIfNoCProtocolBridge();                                              \
+    });                                           \
     ModuleFactory::registerObject<tlm::SharedMemoryTLM>("SharedMemoryTLM");                         \
     ModuleFactory::registerObject<tlm::MemoryClusterTLM>("MemoryClusterTLM");                       \
     ModuleFactory::registerObject<tlm::GpuMeshNoC>("GpuMeshNoC");                                   \
@@ -175,35 +244,6 @@
 #define REGISTER_CHSTREAM_DUAL(mod_type, pe_req_t, pe_resp_t, net_req_t, net_resp_t)               \
     ChStreamAdapterFactory::get()                                                                  \
         .registerDualPortAdapter<mod_type, pe_req_t, pe_resp_t, net_req_t, net_resp_t>(#mod_type);
-
-// ============================================================
-// 多端口双向模块注册宏(Phase 4 · 队列 #7 `cpptlm-cep-cohif-carrier`)
-// ============================================================
-//
-// 用法(在**函数体内**,与 `REGISTER_CHSTREAM` 同风格):
-//     REGISTER_CHSTREAM_BIDIRECTIONAL(MyProtocolEngine, bundles::CohIfBundle, 5);
-//
-// ⚠️ **两件都做**(per tasks 4.2 —— 缺 `registerObject` ⇒ ModuleFactory 无法
-//    实例化该类型;缺 adapter 注册 ⇒ Step 7 拿不到适配器):
-//    ① `ModuleFactory::registerObject<T>` —— 让 JSON 顶层能实例化该类型
-//    ② `ChStreamAdapterFactory::registerBidirectionalPortAdapter<T, B, N>`
-// ⚠️ **不**照抄 `REGISTER_CHSTREAM_DUAL` 的**半截实现** —— 那个宏**只**注册
-//    adapter、**不含** `registerObject`,且全仓零调用点 ⇒ 不能作为形态基准。
-//
-// ⚠️ **`static_assert(n > 1)` 是必需的**(per tasks 4.3 / 判据 CC-04 ③):
-//    `ChStreamAdapterFactory::isMultiPort` 要求 `port_count > 1`;N=1 会落
-//    single 分支调 `bind_ports` —— 而 `bidirectional_port_adapter.hh` 的
-//    `bind_ports` 是**空操作 shim** ⇒ **静默不绑定**(不报错、不绑定)。
-#define REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)                    \
-    do {                                                                         \
-        static_assert((n) > 1,                                                   \
-                      "REGISTER_CHSTREAM_BIDIRECTIONAL: 端口数 N 必须 > 1 —— "     \
-                      "N=1 会落 `BidirectionalPortAdapter::bind_ports` 的**空操作 " \
-                      "shim** ⇒ **静默不绑定**(per 判据 CC-04 ③)");                \
-        ModuleFactory::registerObject<mod_type>(#mod_type);                      \
-        ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<         \
-            mod_type, bundle_t, (n)>(#mod_type);                                  \
-    } while (0)
 
 // REGISTER_ALL = REGISTER_OBJECT; REGISTER_CHSTREAM
 // - 当 BUILD_LEGACY_MODULES=OFF: REGISTER_OBJECT 退化为 no-op (空注释)

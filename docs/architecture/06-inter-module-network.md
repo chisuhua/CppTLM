@@ -177,7 +177,7 @@ inline bool SimplePort::send(Packet* pkt) {
 |------|------|----------------|
 | StreamAdapter<M, ReqB, RespB> | CacheTLM / MemoryTLM / VramControllerTLM / GmmuTLM | ❌ |
 | MultiPortStreamAdapter<M, Rq, Rp, N> | CrossbarTLM / CoherentXBarTLM / ArbiterTLM / PcieEndpointTLM / LinkTLM 等 | ❌ |
-| DualPortStreamAdapter<M, PE_r, PE_p, Net_r, Net_p> | **NICTLM**(**全仓唯一一处使用**,per `chstream_register.hh:121`)| ✅ |
+| DualPortStreamAdapter<M, PE_r, PE_p, Net_r, Net_p> | **NICTLM**(**全仓唯一一处使用**,per `chstream_register.hh:190`)| ✅ |
 | BidirectionalPortAdapter<M, B, N> | RouterTLM | ❌(单 Bundle) |
 | Axi4StreamAdapter | PcieAxiAdapterTLM | ❌ |
 
@@ -532,8 +532,8 @@ per 用户 E 决策 + 最新要求"不需要过多组合"。
 互联网络功能上是 SimModule,**不需要新建 NetworkModule 基类**。理由:
 
 1. **NICTLM / RouterTLM / CrossbarTLM / LinkTLM 已是 `ChStreamModuleBase` 派生**:
-   - `NICTLM`: `chstream_register.hh:120-122` 唯一注册 `DualPortStreamAdapter`
-   - `RouterTLM`: `chstream_register.hh:62-63,119` 注册 `BidirectionalPortAdapter<M, BundleT, N=5>`
+   - `NICTLM`: `chstream_register.hh:189-191` 唯一注册 `DualPortStreamAdapter`
+   - `RouterTLM`: `chstream_register.hh:119-120,188` 注册 `BidirectionalPortAdapter<M, BundleT, N=5>`
    - `CrossbarTLM` / `CoherentXBarTLM` / `ArbiterTLM` / `LinkTLM` 等
 
 2. **SimModule 容器已存在**:
@@ -1532,6 +1532,51 @@ soc.connect("group:gpu", "noc_cdc_bridge.dst", latency=2)
 
 ⚠️ **ADR 不可变** ⇒ 冻结面 ADR(`ADR-CEP-00` / `07` / `07A` / `19`)与 `07 号` 的**正文**行号
 引用**不改**,行号漂移以各自的 `## Status Update` 段登记。
+
+---
+
+## 附录 · 行号对照表(2026-10-28 · per 台账 Entry #88 —— 队列 #7 Phase 5)
+
+⚠️ **本表登记 Phase 5(JSON 装配连通性)给 4 个头文件带来的行号漂移** —— Phase 5 在
+`chstream_register.hh` **前部**插入了「共享注册 helper + 2 个装配宏」,在
+`REGISTER_CHSTREAM` 宏体**内部**插入了「CEP PE 注册 + 协议桥注册」,并给
+`bidirectional_port_adapter.hh` 加了 `EgressChannel` 枚举。
+
+| 符号 | 旧行号(Entry #87 时实测) | 新行号(2026-10-28) | 漂移 |
+|---|---|---|---|
+| `chstream_register.hh` `#define REGISTER_CHSTREAM` | 50 | **107** | +57 |
+| `chstream_register.hh` `registerObject<tlm::RouterTLM>` | 62 | **119** | +57 |
+| `chstream_register.hh` `registerObject<tlm::NICTLM>` | 63 | **120** | +57 |
+| `chstream_register.hh` `registerBidirectionalPortAdapter<tlm::RouterTLM>` | 119 | **188** | +69 |
+| `chstream_register.hh` `registerDualPortAdapter<tlm::NICTLM>` | 121 | **190** | +69 |
+| `chstream_register.hh` `#define REGISTER_CHSTREAM_DUAL` | 175 | **244** | +69 |
+| `chstream_register.hh` `REGISTER_CHSTREAM_DUAL` 宏内的 `registerDualPortAdapter` | 177 | **246** | +69 |
+| `bidirectional_port_adapter.hh` `CATEGORY_CREDIT` 写入点 | 109 | **133** | +24 |
+| `bidirectional_port_adapter.hh` `pending_credits_` | 148 | **174** | +26 |
+| `bidirectional_port_adapter.hh` `bind_port_pair` | 171 | **197** | +26 |
+| `bidirectional_port_adapter.hh` `bind_ports`(**空操作 shim**) | 184 | **210** | +26 |
+| `bidirectional_port_adapter.hh` `receive_credit` 调用点 | 225 | **260** | +35 |
+| `bidirectional_port_adapter.hh` `send_credit` | 257 | **292** | +35 |
+| `bidirectional_port_adapter.hh` `send_credit_impl` | 269 | **304** | +35 |
+| `module_factory.hh` `getParamRulesRegistry` / `registerObject<T>` / `static_assert` / `validate_domain_boundary` / `register_protocol_bridge` / `get_bridges` | 87 / 128 / 141 / 313 / 336-343 / 346 | **不变** | 0 |
+| `module_factory.hh` `getInstanceForTesting`(Phase 5 新增,`CPPTLM_TESTING` 段) | — | **395** | 新增 |
+
+**漂移原因**:
+- `chstream_register.hh` **+57**(`REGISTER_CHSTREAM` 之前):新增「共享注册 helper」
+  (`cpptlm::register_chstream_bidirectional`)+ 2 个装配宏(`REGISTER_CHSTREAM_BIDIRECTIONAL`
+  / `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED`)。
+- `chstream_register.hh` **再 +12**(`REGISTER_CHSTREAM` 宏体**内部**):新增「CEP PE 注册
+  (`CohIfProtocolEngine`)+ 协议桥注册(`cohif_noc`)」⇒ 该宏体**之后**的行号再 +12 ⇒
+  合计 +69。
+- `bidirectional_port_adapter.hh` **+24 / +26 / +35**:新增 `EgressChannel` 枚举(12 行)
+  + 2 处 `egress_channel()` 默认实现 + 注释 ⇒ 分段漂移。
+- `module_factory.hh` **0**:`getInstanceForTesting` 加在类**末尾**(`addInstanceForTesting`
+  之后)⇒ 其**之前**的行号不变。
+
+⚠️ **一处「零漂移」结论已失效**(诚实登记):Entry #87 的第七则登记过「`chstream_register.hh`
+的既有行号(**50 / 119 / 121 / 175 / 177**)**零漂移**」⇒ 那是**当时**的实测口径
+(Phase 4 把新宏插在 `REGISTER_CHSTREAM_DUAL` **之后**);Phase 5 把 helper + 2 个宏插到
+`REGISTER_CHSTREAM` **之前** ⇒ **该结论已过期**,现以上表为准。
 
 ---
 

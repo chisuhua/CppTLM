@@ -1,0 +1,23 @@
+{
+  "name": "cep_cohif_pe_minimal",
+  "description": "队列 #7 `cpptlm-cep-cohif-carrier` Phase 5 —— 最小 CohIf 协议引擎拓扑(2 个 PE,N=2 端口,双向互连 + 协议桥挂载)",
+  "modules": [
+    { "name": "pe0", "type": "CohIfProtocolEngine" },
+    { "name": "pe1", "type": "CohIfProtocolEngine" }
+  ],
+  "connections": [
+    { "src": "pe0.0", "dst": "pe1.0" },
+    { "src": "pe1.0", "dst": "pe0.0" }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json",
+    "bridges": [
+      {
+        "name": "cohif_noc",
+        "protocol_instance": "moesi_gpu",
+        "bridge_id": 1,
+        "modules": ["pe0", "pe1"]
+      }
+    ]
+  }
+}

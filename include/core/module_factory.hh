@@ -390,6 +390,12 @@ public:
     void addInstanceForTesting(const std::string& name, std::unique_ptr<SimObject> obj) {
         instances[name] = std::move(obj);
     }
+    // P1 测试辅助: 按名**只读**取实例 —— 端到端断言需要拿到装配出来的模块
+    // (如 Phase 5 的「一次 CohIf 事务穿过 adapter 抵达对端」)。
+    SimObject* getInstanceForTesting(const std::string& name) const {
+        auto it = instances.find(name);
+        return (it == instances.end()) ? nullptr : it->second.get();
+    }
 #endif
 };
 

@@ -1,6 +1,6 @@
 # Tasks — cpptlm-cep-cohif-carrier v1.0(Stage 1,TDD 5-step)
 
-> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 ~ Phase 4 已完成**(2026-10-27 / 2026-10-28,台账 Entry #84 ~ #87);Phase 5 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
+> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 ~ Phase 5 已完成**(2026-10-27 / 2026-10-28,台账 Entry #84 ~ #88);Phase 6 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-cohif-carrier/spec.md`](specs/cep-cohif-carrier/spec.md) · [`specs/cep-protocol-bridge-contracts/spec.md`](specs/cep-protocol-bridge-contracts/spec.md)
 > **上游决策**: `ADR-CEP-19`(✅ v1.0 已签发)· 架构重审 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3)
 > **估时**: 6 周(3 项交付 + 1 宏 + 1 钩子扩展)
@@ -17,7 +17,7 @@
 | 2 端口面:`ProtocolEngine` 基类 | ✅ **已完成**(2026-10-27) | `include/tlm/cep/protocol_engine_base.hh` —— `ProtocolEngineBase<N>`(派生 `ChStreamModuleBase` + `Input/OutputStreamAdapter<CohIfBundle>` 端口成员 + 类型擦除 `ProtocolBridgeEr*` + 10 个纯虚 `on_*`)+ `NullProtocolEngine<N>`(**10 流覆盖矩阵** + 两条编译期锁);**2 类反向 fixture 实测有牙** |
 | 3 特化桥:`ProtocolBridge` 双层 | ✅ **已完成**(2026-10-28) | `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` + `AbstractProtocolBridge`)+ `include/tlm/cep/cohif_noc_bridge.hh`(CohIf ↔ NoC 特化桥,**两层** pack/unpack)+ `include/tlm/cep/protocol_family.hh`;钩子扩展 `register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费;**3 + 2 类反向 fixture 实测有牙** |
 | 4 装配宏:`REGISTER_CHSTREAM_BIDIRECTIONAL` | ✅ **已完成**(2026-10-28) | `include/chstream_register.hh`(两件都做 + `static_assert(n > 1)`)+ **前置泛化** `cpptlm::BundleDirectionTraits`(解耦 `BidirectionalPortAdapter` 的 `NoCFlitBundle` 硬编码)+ CEP 侧特化 `include/tlm/cep/cohif_direction_traits.hh`;**反向 fixture 实测有牙**(N=1 编译红且原因精确命中断言) |
-| 5 JSON 装配连通性 | ⬜ 未开始 | `configs/` 侧示例 + E2E |
+| 5 JSON 装配连通性 | ✅ **已完成**(2026-10-28) | `configs/cep_cohif_pe_minimal.json` + `test/test_cep_cohif_json_assembly.cc`(5 case)+ `CohIfNullProtocolEngine` 可注册外壳 + egress 通道 trait |
 | 6 测试(CC-01~CC-06 + 反向 fixture) | ⬜ 未开始 | 2 个测试文件 |
 | 7 闸与真源同步 | ⬜ 未开始 | `cep_decl_reverse_verify.sh` 条目 + `06 号 §3.2` 归类表 |
 
@@ -269,10 +269,40 @@
 
 ### Phase 5 —— JSON 装配连通性(判据 CC-04 ①②)
 
-- [ ] 5.1 走既有 JSON 端口注册链(`chstream_adapter_factory` → `module_factory.cc` `is_multi` 分支),**不**做 programmatic 端口注入
-- [ ] 5.2 示例配置:`configs/` 下新增最小 PE 拓扑(N ≥ 2 端口)
-- [ ] 5.3 端到端:一次 CohIf 事务**穿过** adapter 抵达对端(非仅绑定成功)
-- [ ] 5.4 **反向 fixture**:断开某端口绑定 ⇒ 端到端断言必红
+- [x] 5.1 走既有 JSON 端口注册链(`chstream_adapter_factory` → `module_factory.cc` `is_multi` 分支),**不**做 programmatic 端口注入——
+      **已完成**(2026-10-28):CEP PE 以短名 `CohIfProtocolEngine` 注册
+      (`REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` → `registerObject` + `registerBidirectionalPortAdapter`),
+      ⇒ `ModuleFactory` 走既有 `is_multi` 分支 → `bind_port_pair(i, req_out, resp_in, resp_out, req_in)`
+      ⇒ **零** programmatic 端口注入。
+      ⚠️ 协议桥 `cohif_noc` 由 `ModuleFactory::register_protocol_bridge` **全局注册**,
+      其**消费**由 `config["cep"]["bridges"]` 驱动(Step 7.5)⇒ **注册与消费成对**(CC-05 ②)。
+- [x] 5.2 示例配置:`configs/` 下新增最小 PE 拓扑(N ≥ 2 端口)——
+      **已完成**:`configs/cep_cohif_pe_minimal.json`(2 个 PE,`N = 2`,双向互连
+      + `cep.bridges` 挂载 `cohif_noc` ⇒ 两个 PE **共享**同一桥实例,per CC-03 ③)。
+- [x] 5.3 端到端:一次 CohIf 事务**穿过** adapter 抵达对端(非仅绑定成功)——
+      **已完成**:判据形态 = 对端 canonical 流**计数器递增** + 发起侧**未**收到自己的事务
+      + 其它流**未**被误触发(逐流核对 `Request` / `Completion` / `SnoopResp` / `Writeback`)。
+      ⚠️ **非仅「绑定成功」** —— 断言的是**事务内容**抵达对端并被**按 `flow_id` 正确分派**。
+- [x] 5.4 **反向 fixture**:断开某端口绑定 ⇒ 端到端断言必红——
+      **已完成**,**2 类**,实测有牙且**因正确原因**红:
+      ① **无连接** ⇒ `ReachOutcome::NotArrived`(装配**成功**,端口在位,但事务**通不到**);
+      ② **dst 指向不存在的端口索引**(`pe1.9`)⇒ 非 `Arrived`。
+      ⚠️ **判据纪律**:辅助函数返回 `ReachOutcome` **枚举**
+      (`AssemblyFailed` / `NotInstantiated` / `NotArrived` / `Arrived`)⇒ 断言「**目标结局**」
+      而**不是** `!= Arrived` ⇒ 防止「装配被拒」被误判成「端到端不通」(因错误的原因红)。
+- [x] 5.5 **实施中发现的判据前提**:`CohIf` 的 egress 必须走 `req_out` 通道(登记为独立 task)——
+      **已完成**(本项不在原 task 表内,登记备查):
+      egress 走 `req_out` 还是 `resp_out`,由 **Bundle 专属 trait** 声明
+      (`cpptlm::BundleDirectionTraits<BundleT>::egress_channel()`);`CohIfBundle` 取 `Req`,
+      `NoCFlitBundle` 保持 `Resp`(`RouterTLM` 既有行为**零变化**)。
+      ⚠️ **实测纠偏(避免留下错误口径)**:**两种通道都能把数据送到对端 ingress**
+      —— 框架的 `ChStreamTargetPort::recvReq` 对 `req_in` / `resp_in` **一视同仁**
+      ⇒ 「走 `resp_out` 会丢数据」的推断**不成立**。
+      ⇒ 选 `req_out` 的**真实理由**是:① **方向语义正确**(egress 借用「对方→我」那条
+      JSON 连接的响应通道会**倒置方向**);② **判据有牙** —— egress 走 `req_out` 时
+      「断开我→对方的连接」**确实切得断** egress(实测:改成 `Resp` ⇒ 反向 fixture ②
+      **假通过** —— 另一条 JSON 连接仍把 `resp_out` 接到对端)⇒ 该 trait 值已作为
+      **具名判据**钉在 `test/test_cep_cohif_json_assembly.cc`。
 
 ### Phase 6 —— 测试
 
@@ -293,10 +323,10 @@
 | # | 项 | 状态 |
 |---|---|---|
 | 1 | 判据增补**已追认**(CC-05 ④ / CC-06 ②) | ✅ 转正前置已落地(`ADR-CEP-19` Status Update,Entry #78) |
-| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类)· Phase 2 **已完成**(2 类)· Phase 3 **已完成**(3 + 2 类)· Phase 4 **已完成**(1 类,实测有牙);Phase 5 待补 |
+| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类)· Phase 2 **已完成**(2 类)· Phase 3 **已完成**(3 + 2 类)· Phase 4 **已完成**(1 类)· Phase 5 **已完成**(2 类,实测有牙);Phase 6/7 待补 |
 | 3 | 编译期锁**不**以「编译红」充当 ctest 判据(`try_compile` 毒化副本) | 🟡 Phase 1.7 **已完成**(毒化副本 + 编译探针断言「编译确实失败」);Phase 4.4 待补 |
 | 4 | 新增 invariant 数 = **0** | ⬜ Phase 7.2 |
-| 5 | 冻结面**零改动**(本 change 3 个新头文件 + 1 宏 + 1 钩子均不在 M1 冻结集) | ⬜ 待实施后复核 |
+| 5 | 冻结面**零改动**(本 change 3 个新头文件 + 1 宏 + 1 钩子均不在 M1 冻结集) | 🟡 Phase 5 **只追加** `07 号` 第八则 + `ADR-CEP-19` 第四则(**正文零改动**);Phase 6/7 后复核 |
 | 6 | `StubCacheCore` **零触碰**(design `D-ζ`,显式延期) | ⬜ 待实施后复核 |
 
 ---

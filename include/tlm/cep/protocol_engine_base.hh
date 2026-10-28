@@ -226,6 +226,7 @@ public:
     ///
     /// ⚠️ 这是**协议中立**的通用骨架:任何 PE 派生类若不需要额外行为,直接继承即可。
     void tick() override {
+        // ① 先消费 ingress(分派到 canonical 流)—— 派生类在此产出 egress 数据
         for (std::size_t i = 0; i < N; ++i) {
             auto& in = req_in_[i];
             if (!in.valid())
@@ -233,6 +234,11 @@ public:
             dispatch_cohif(in.data());
             in.consume();
         }
+        // ② 再驱动 StreamAdapter(发送 egress + 回收 credit)—— 与 `RouterTLM::tick()`
+        //    的惯例一致(模块负责驱动 adapter,`ModuleFactory::startAllTicks()` 只调
+        //    模块的 `tick()`)
+        if (adapter_)
+            adapter_->tick();
     }
 
     /// Credit 回收回调(per `BidirectionalPortAdapter::tick()` 的 credit 接收路径)

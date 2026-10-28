@@ -41,6 +41,19 @@ struct BundleDirectionTraits<bundles::CohIfBundle> {
     /// credit 载体 —— `CohIfBundle` **无网络层字段**(per CC-01)
     /// ⇒ credit 的 VC 由 **Packet 字段**(`pkt->vc_id`)承载 ⇒ 此处**不**写任何字段
     static void fill_credit(bundles::CohIfBundle&, unsigned) {}
+
+    /// egress 通道 = **`req_out`**(本方向的 request 通道)
+    ///
+    /// ⚠️ **为什么是 `req_out`**(per Phase 5 实测,非推断):
+    ///    框架的 `ChStreamTargetPort::recvReq` 无论挂在 `req_in` 还是 `resp_in`
+    ///    上,都投递到 `process_request_input` ⇒ **走 `resp_out` 也能把数据送到
+    ///    对端的 ingress**。但 `resp_out` 装的是「**对方→我**」那条 JSON 连接的
+    ///    **响应**通道 ⇒ egress 借用它会**倒置连接方向**,并让「**断开某条连接
+    ///    ⇒ 事务不再抵达**」这条判据**失去判别力**
+    ///    (实测:反向 fixture「dst 指向不存在的端口索引」在 `Resp` 下**假通过**
+    ///    —— 因为另一条 JSON 连接仍把 `resp_out` 接到对端)。
+    ///    ⇒ egress 走 `req_out` = 「用我自己发起的这条连接」⇒ 断链即断达。
+    static constexpr EgressChannel egress_channel() { return EgressChannel::Req; }
 };
 
 }  // namespace cpptlm

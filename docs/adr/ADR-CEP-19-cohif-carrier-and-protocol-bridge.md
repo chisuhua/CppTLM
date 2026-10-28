@@ -275,6 +275,29 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 > **登记 ③ —— 行号漂移**:`include/framework/bidirectional_port_adapter.hh` 因泛化整体下移 —— `bind_port_pair` 128 → **171**、`bind_ports`(**空操作 shim**)141 → **184**、`pending_credits_` 105 → **148**、`receive_credit` 调用 184 → **225**、`send_credit` 216 → **257**、`send_credit_impl` 228 → **269**;**`CATEGORY_CREDIT` 写入点** 235 → **109**(迁入 `BundleDirectionTraits<NoCFlitBundle>::fill_credit`,**语义不变**)。
 > ⚠️ 本文件正文的 `bidirectional_port_adapter.hh:128` / `:141` 引用按「ADR 不可变」**不改**;`chstream_register.hh` 的既有行号(**50 / 119 / 121 / 175 / 177**)**零漂移**。
 
+## Status Update 2026-10-28(第四则)—— 决策 4/5 的装配路径**已落地** + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记 + 行号漂移
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化。
+> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 5 实施**(JSON 装配连通性);台账 Entry #88。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #88**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #88)。
+
+> **登记 ① —— 决策 4 的装配宏 + 决策 5 的 JSON 端口注册路径,已端到端跑通**:
+> - 交付 `CohIfProtocolEngine`(`CohIfNullProtocolEngine` 的**非模板可注册外壳**,10 流行为**完全继承** `NullProtocolEngine`,**无新增协议语义**)⇒ 由 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` 注册(短名 `CohIfProtocolEngine`,N=2)。
+> - 协议桥 `cohif_noc` 由 `ModuleFactory::register_protocol_bridge` **全局注册**;其**消费**由 `config["cep"]["bridges"]` 驱动(Step 7.5)⇒ **注册与消费成对**的判据(CC-05 ②)已可执行。
+> - 端到端判据形态:一次 CohIf 事务**穿过** adapter 抵达对端 ⇒ 断言对端 canonical 流**计数器递增** + 发起侧**未**收到自己的事务 + 其它流**未**被误触发(**非仅「绑定成功」**)。
+> - ⇒ **`INV-CEP-07-IC4`(CEP 模块注册走既有宏体系)** 由「无载体」转「**已闭合**」。
+
+> **登记 ② —— egress 通道语义(新增决策面,此前 ADR 未涉及)**:
+> `BidirectionalPortAdapter` 的 egress 走 `req_out` 还是 `resp_out`,由 **Bundle 专属 trait** 声明:`cpptlm::BundleDirectionTraits<BundleT>::egress_channel()`(`Resp` = 默认 = `RouterTLM` 既有行为;`Req` = `CohIf` 语义)。
+> ⚠️ **一条实测纠偏**(避免留下错误口径):**两种通道都能把数据送到对端 ingress** —— 框架的 `ChStreamTargetPort::recvReq` 对 `req_in` / `resp_in` **一视同仁** ⇒ 「走 `resp_out` 会丢数据」的推断**不成立**。⇒ `CohIf` 选 `req_out` 的**真实理由**是:① **方向语义正确**(egress 借用「对方→我」那条连接的响应通道会**倒置方向**);② **判据有牙**(egress 走 `req_out` 时,「断开我→对方的连接」**确实切得断** egress —— 实测改成 `Resp` 会让反向 fixture **假通过**)。
+> ⚠️ **决策面影响**:本登记**不改变**决策 1 ~ 7 的任何决策内容 —— 它是**实现层的方向语义澄清**,已由具名判据钉住(`test/test_cep_cohif_json_assembly.cc`)。
+
+> **登记 ③ —— 行号漂移**:
+> `include/chstream_register.hh` ⇒ `REGISTER_CHSTREAM` 50 → **107**、`registerObject<tlm::RouterTLM>` 62 → **119**、`registerObject<tlm::NICTLM>` 63 → **120**、`registerBidirectionalPortAdapter<tlm::RouterTLM>` 119 → **188**、`registerDualPortAdapter<tlm::NICTLM>` 121 → **190**、`REGISTER_CHSTREAM_DUAL` 175 → **244**、其宏内 `registerDualPortAdapter` 177 → **246**;
+> `include/framework/bidirectional_port_adapter.hh` ⇒ `CATEGORY_CREDIT` 写入点 109 → **133**、`pending_credits_` 148 → **174**、`bind_port_pair` 171 → **197**、`bind_ports`(**空操作 shim**)184 → **210**、`receive_credit` 调用 225 → **260**、`send_credit` 257 → **292**、`send_credit_impl` 269 → **304**。
+> ⚠️ **一处「零漂移」结论已失效**:第三则 ③ 登记的「`chstream_register.hh` 既有行号零漂移」是**当时**口径,已被 Phase 5 推翻。⚠️ 本文件**正文**的行号引用(`chstream_register.hh:63` / `:119` / `:175`、`module_factory.hh:313-315` 等)按「ADR 不可变」**不改**;完整对照表见 `docs/architecture/06-inter-module-network.md` 文末「附录 · 行号对照表(Entry #88)」。
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
