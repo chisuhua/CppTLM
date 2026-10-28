@@ -210,7 +210,7 @@ inline bool SimplePort::send(Packet* pkt) {
 | 11 | `hop_count` | `int` | 57 | **死** | `coherent_xbar_tlm.cc:60` 拷贝 0 read |
 | 12 | `priority` | `uint8_t` | 58 | **死** | `coherent_xbar_tlm.cc:61` 拷贝 0 read |
 | 13 | `flow_id` | `uint64_t` | 59 | **死** | `coherent_xbar_tlm.cc:62` 拷贝 0 read |
-| 14 | `vc_id` | `int` | 60 | **活跃** | `port_manager.hh:37,105` / `bidirectional_port_adapter.hh:183,241`(VC 仲裁) |
+| 14 | `vc_id` | `int` | 60 | **活跃** | `port_manager.hh:37,105` / `bidirectional_port_adapter.hh:225`(credit 接收 → `receive_credit`)/ `:269`(`send_credit_impl`)(VC 仲裁) |
 
 **+ private** `ref_count`(`atomic<uint32>`, line 243) — Pool 引用计数
 
@@ -1313,13 +1313,13 @@ per oracle 评估 §6 + oracle §3 + §4.4:
 
 per Gem5 Garnet 5-stage + credit-based flow control(`gem5-garnet-network-survey.md` §A 详):
 
-**当前 C++ `RouterTLM`**: 已落地 credit (per `bidirectional_port_adapter.hh:172-209`) + 简单路由表 + 1-cycle 默认延迟
+**当前 C++ `RouterTLM`**: 已落地 credit (per `bidirectional_port_adapter.hh:257`(`send_credit`)/ `:269-280`(`send_credit_impl`)) + 简单路由表 + 1-cycle 默认延迟
 **缺**: BW/RC/SA/VS/ST/LT 5-stage pipeline 详情(per Gem5 `Router.cc:71-97`)
 
 **P4 路径**: 5-stage 不引入新抽象类, **直接在 RouterTLM 内增量**:
 - 新增 `pipeline_phase_` 字段(IDLE/BW_RC/SA/ST/LT)
 - `tick()` 内部循环 5 阶段
-- 现有 `pending_credits_`(per `bidirectional_port_adapter.hh:172-209`)借位成 5-stage credit bookkeeping
+- 现有 `pending_credits_`(per `bidirectional_port_adapter.hh:148`(声明)/ `:257`(`send_credit`))借位成 5-stage credit bookkeeping
 
 **估时**: 30-45d, `RouterTLM` ~150 行业务代码, 不破 6 标签
 

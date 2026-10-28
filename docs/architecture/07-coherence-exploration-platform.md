@@ -679,7 +679,7 @@ experimental/<run_id>/
 | SharerTracker 5 实现 | §5.2 | 🟡 **1 / 5** —— `FullMapDirectory` 唯一行为实现已落地(10 测试);其余 4 个(`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:178-195`) | 队列 #9 ~ #11(队列 #9 另需第 6 实现 `HierarchicalDirectory`) |
 | Collective Plane | §5.3 | 🟡 **骨架已落地** —— `CollectivePlaneIf` 恰 7 方法 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous);**REDUCE / BROADCAST / MULTICAST 数据路径未实现**(返 `Status::DataPathNotImplemented`);`fabric_ingress_classify` 路由接线未实现 | 骨架 = `cpptlm-cep-collective-plane-base`(2026-10-26 已归档);数据路径 = Stage 3 |
 | ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **1 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射),是**首个 `status=implemented` 实例**;**`ProtocolEngine` 基类已落地**(`ProtocolEngineBase<N>`,Entry #85);**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)亦已落地**(10 流覆盖矩阵 + 2 条编译期锁,Entry #85)—— **但 adapter 实例仍是 1 个**(`MoesiGpuAdapter`):基类落地 ≠ 插件实例落地 | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
-| ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**协议桥钩子已从死钩子变活钩子**(`register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费路径,Entry #86);**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏仍未开始**(Phase 4)⇒ **0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 零命中)⇒ `INV-CEP-07-IC4` **仍无载体** | 队列 #7 Phase 4(`REGISTER_CHSTREAM_BIDIRECTIONAL` + CEP 类注册) |
+| ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**协议桥钩子已从死钩子变活钩子**(`register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费路径,Entry #86);**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏已落地**(`include/chstream_register.hh`,Entry #87;含 `static_assert(n > 1)` + 运行期验证)⇒ 但 **0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 对 CEP 类零命中)⇒ `INV-CEP-07-IC4` **仍无载体**(宏是**能力**,不是**注册**) | 队列 #7 Phase 5(**CEP 类注册**)+ JSON 装配连通性 |
 | 实验输出 4 件套 | §7 | ✅ **已落地** —— `tools/{render_report,run_sweep,ab_compare}.py` + `experimental/metrics.schema.json` + 4 件套契约测试(`test_cep_canonical_invariants.cc` / `test_cep_dummy_signals.cc` / `test_cep_module_factory_seam.cc` / `test_cep_simulation_mode_lock.cc`) | Stage 0(`cpptlm-cep-umbrella`,2026-10-23 已归档) |
 | simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |
 | Bundle 二分类 | §5.4 | ✅ 已落地(`06 §3.2` 18 个 .hh;**第三类已由 `06 §3.3` 增补**,其唯一实例 `CohIfBundle` **已落地**(2026-10-27 per 台账 Entry #84)—— 见第四则 Status Update ③)| — |
@@ -801,8 +801,26 @@ experimental/<run_id>/
 
 > **⑥ 本则未处理、已登记的项**:① `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏与 CEP 类注册 ⇒ 归队列 #7 **Phase 4 / 5**(`INV-CEP-07-IC4` 仍无载体);② `BidirectionalPortAdapter::tick()` 仍**硬编码 `NoCFlitBundle` 语义** ⇒ 承载 `CohIfBundle` 需泛化 ⇒ 归 Phase 4 / 5(第五则 ④ 已登记,本则**状态不变**)。
 
+## §附录 · Status Update 2026-10-28(第七则 · per 台账 Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)
+
+> **授权**:Entry #87(队列 #7 `cpptlm-cep-cohif-carrier` **Phase 4 实施** —— 装配宏 + 编译期锁 + 反向 fixture;用户 2026-10-28 指令授权)。
+> **口径**:本节仅登记 ① §11 活口径的**机械同步** + ② Phase 4 的**落地状态** + ③ **泛化的必要性与边界**。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
+> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #87"`。
+
+> **① §11「ModuleFactory seam」行的活口径同步**:原写「**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏仍未开始**(Phase 4)」⇒ 现为「**宏已落地**(`include/chstream_register.hh`,Entry #87;含 `static_assert(n > 1)` 与**运行期**验证:adapter 工厂可查到该类型且端口数一致 + JSON 顶层可实例化该类型)」。⚠️ **该行的主结论不变**:**0 个 CEP 类注册**(`REGISTER_MODULE` / `REGISTER_OBJECT` 对 **CEP 类**零命中)⇒ `INV-CEP-07-IC4` **仍无载体** —— 宏是**能力**,不是**注册**。
+
+> **② Phase 4 落地登记(正文不改)**:交付 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)` —— ① **两件都做**(`ModuleFactory::registerObject<T>` + `ChStreamAdapterFactory::registerBidirectionalPortAdapter<T,B,N>`)② **不**照抄 `REGISTER_CHSTREAM_DUAL` 的**半截实现**(那个宏**只**注册 adapter、**不含** `registerObject`,且全仓零调用点 ⇒ 不能作为形态基准)③ 宏内 `static_assert(n > 1)`(判据 CC-04 ③)。
+
+> **③ 必要的前置:`BidirectionalPortAdapter` 的 Bundle 无关化(泛化)** —— 该 adapter 原本**硬编码** `NoCFlitBundle` 语义:读 `flit_category` 决定 `PKT_REQ`/`PKT_RESP`,且 credit 用 `NoCFlitBundle` 构造 ⇒ 承载 `CohIfBundle` 会**编译不过**(`CohIfBundle` 无 `flit_category` / `vc_id`)。⇒ 抽成 `cpptlm::BundleDirectionTraits<BundleT>`:**框架层不认识任何具体 Bundle**,各 Bundle 在**自己的层**提供特化(CEP 侧先例 `include/tlm/cep/cohif_direction_traits.hh`)。⚠️ **未特化的 BundleT ⇒ 编译期报错**(不是静默用错方向)。⇒ **`NoCFlitBundle` 特化逐行为等价于泛化前的硬编码实现**(实测全量回归 **0 变化**)。
+
+> **④ 判据状态**:CC-04 ③ 的「**N ≥ 2**」由**编译期锁**(`static_assert(n > 1)`)保证,且**反向 fixture 实测有牙**:N=1 ⇒ 编译失败且失败原因**精确命中**该断言(若失败原因是别的 ⇒ 判据「因错误的原因红」⇒ 脚本判红);N=2 ⇒ 编译成功(正控)。⇒ 已注册 ctest `cep_chstream_bidirectional_macro_reverse_verify`(3/3)。
+
+> **⑤ 行号漂移登记(本文件正文的行号引用按「ADR 不可变」不改)**:`include/framework/bidirectional_port_adapter.hh` 因 Phase 4 的泛化(新增 trait 块 + 模板参数)整体下移 —— `bind_port_pair` 128 → **171**、`bind_ports`(**空操作 shim**)141 → **184**、`pending_credits_` 105 → **148**、`receive_credit` 调用 184 → **225**、`send_credit` 216 → **257**、`send_credit_impl` 228 → **269**。⚠️ **`CATEGORY_CREDIT` 的写入点位置迁移**:原 `:235`(在 `send_credit_impl` 内)⇒ 现 `:109`(在 `BundleDirectionTraits<NoCFlitBundle>::fill_credit` 内)—— **语义不变**,但「全仓唯一写 `CATEGORY_CREDIT` 的点」的**位置**变了 ⇒ 相关陈述已加**时态锚定**(见 `.rddf/improvements/cpptlm-cep-stub-cache-core.md`)。⚠️ `include/chstream_register.hh` 的既有行号(**50 / 119 / 121 / 175 / 177**)**零漂移**(新宏插在 `REGISTER_CHSTREAM_DUAL` 之后)。
+
+> **⑥ 本则未处理、已登记的项**:① **CEP 类注册**(`REGISTER_CHSTREAM_BIDIRECTIONAL` 的**实际使用者**)⇒ 归队列 #7 **Phase 5**(`INV-CEP-07-IC4` 仍无载体);② `BidirectionalPortAdapter::tick()` 的其余部分仍**假定模块提供 `receive_credit`** ⇒ `ProtocolEngineBase` 已加**默认空实现**(零波及),但**协议引擎的 credit 回收语义**未建模 ⇒ 归 Phase 5。
+
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)**
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

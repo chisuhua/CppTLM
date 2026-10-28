@@ -279,6 +279,12 @@ add_test(NAME cep_protocol_engine_reverse_verify
 add_test(NAME cep_protocol_bridge_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_protocol_bridge_reverse_verify.sh)
 
+# `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏的**编译期锁**反向验证(per change
+# `cpptlm-cep-cohif-carrier` task 4.3 / 4.4)—— N=1 必须让宏内的
+# `static_assert(n > 1)` 报红(判据 CC-04 ③);N=2 必须编译成功(正控)。
+add_test(NAME cep_chstream_bidirectional_macro_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_chstream_bidirectional_macro_reverse_verify.sh)
+
 # CEP ↔ ArchForge 接口对齐清单的漂移检测(跨仓引用完整性)
 # —— ArchForge 仓不在本环境时该检查**优雅跳过**(不视为失败)
 # 状态一致性闸的**回归 fixture 集**(10+ 场景,变异 → 期望 rc)

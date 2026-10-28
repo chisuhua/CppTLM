@@ -48,6 +48,7 @@
 #include "core/chstream_module.hh"
 #include "framework/protocol_bridge.hh"
 #include "framework/stream_adapter.hh"
+#include "tlm/cep/cohif_direction_traits.hh"
 #include "tlm/cep/stub_cache_core.hh"
 
 #include <array>
@@ -233,6 +234,15 @@ public:
             in.consume();
         }
     }
+
+    /// Credit 回收回调(per `BidirectionalPortAdapter::tick()` 的 credit 接收路径)
+    ///
+    /// ⚠️ **默认空实现 ⇒ 零波及** —— `BidirectionalPortAdapter` 在收到 credit 时
+    ///    会调 `module_->receive_credit(port, vc)` ⇒ 任何用该 adapter 的模块
+    ///    **必须**提供此方法(否则编译不过)。
+    ///    `ProtocolEngineBase` 提供**默认空实现**(CEP 的协议引擎暂不建模链路
+    ///    credit 回收)⇒ 派生类可按需覆写。
+    virtual void receive_credit(unsigned /*port*/, unsigned /*vc*/) {}
 
     // ── CohIf 分派(ingress 侧)──────────────────────────────────────
     //

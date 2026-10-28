@@ -255,6 +255,26 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 > **登记 ⑤ —— 行号漂移(`module_factory.hh` / `chstream_module.hh`)**:
 > Phase 3 给这两个头文件加了内容 ⇒ 既有行号引用语义漂移(符号仍在,行号变了)。**本文件正文的 `module_factory.hh:313-315` / `:326` 引用按「ADR 不可变」不改**;新行号对照表见 `06 号` 文末「附录 · 行号对照表」(2026-10-28):`register_protocol_bridge` 313-315 → **336-343**;`get_bridges` 327(`private:`) → **346**(**`public:`**);`registerObject<T>` 122 → **128**;`registerModule` 的 `static_assert` 135 → **141**;`validate_domain_boundary` 307 → **313**;`getParamRulesRegistry` 81 → **87**;`chstream_module.hh` `num_ports` 54 → **55**、`advance_cycle` 73 → **74**。
 
+## Status Update 2026-10-28(第三则)—— 决策 4 的装配宏**已落地** + `BidirectionalPortAdapter` 泛化登记 + 行号漂移
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 正文一律不改**,仅登记状态变化。
+> **触发**: 2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **Phase 4 实施**;台账 Entry #87。
+> **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #87**
+> **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #87)。
+
+> **登记 ① —— 决策 4 的 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)` 已落地**(`include/chstream_register.hh`):
+> ① **两件都做** —— `ModuleFactory::registerObject<T>`(缺它 ⇒ ModuleFactory 无法实例化该类型)+ `ChStreamAdapterFactory::registerBidirectionalPortAdapter<T,B,N>`;
+> ② **不**照抄 `REGISTER_CHSTREAM_DUAL` 的**半截实现**(它**只**注册 adapter、**不含** `registerObject`,且全仓零调用点 ⇒ 不构成形态基准);
+> ③ 宏内 `static_assert(n > 1)`(判据 CC-04 ③ —— N=1 落 `bind_ports` **空操作 shim** ⇒ 静默不绑定)。
+> ⇒ **反向 fixture 实测有牙**:N=1 ⇒ 编译失败且失败原因**精确命中**该断言;N=2 ⇒ 编译成功(正控)。已注册 ctest `cep_chstream_bidirectional_macro_reverse_verify`(3/3)。
+
+> **登记 ② —— 前置的必要泛化:`BidirectionalPortAdapter` 与 Bundle 解耦**:
+> 该 adapter 原本**硬编码** `NoCFlitBundle` 语义(读 `flit_category` 决定 `PKT_REQ`/`PKT_RESP`;credit 用 `NoCFlitBundle` 构造)⇒ 承载 `CohIfBundle` **编译不过**。⇒ 抽成 `cpptlm::BundleDirectionTraits<BundleT>`(方向判定 + credit 载体),**框架层不认识任何具体 Bundle**;各 Bundle 在**自己的层**提供特化(CEP 侧:`include/tlm/cep/cohif_direction_traits.hh`)。⚠️ **未特化的 BundleT ⇒ 编译期报错**(不静默用错方向)。⇒ **`NoCFlitBundle` 特化逐行为等价**于泛化前的硬编码实现(全量回归 **0 变化**)。
+> ⚠️ **登记本 ADR 的决策面影响**:本登记**不改变**决策 4 的任何决策内容 —— 决策 4 规定的是「**宏** + 钩子扩展」两条;泛化只是让「宏能用于 CohIfBundle」成为可能的**实现前提**,不是新增决策。
+
+> **登记 ③ —— 行号漂移**:`include/framework/bidirectional_port_adapter.hh` 因泛化整体下移 —— `bind_port_pair` 128 → **171**、`bind_ports`(**空操作 shim**)141 → **184**、`pending_credits_` 105 → **148**、`receive_credit` 调用 184 → **225**、`send_credit` 216 → **257**、`send_credit_impl` 228 → **269**;**`CATEGORY_CREDIT` 写入点** 235 → **109**(迁入 `BundleDirectionTraits<NoCFlitBundle>::fill_credit`,**语义不变**)。
+> ⚠️ 本文件正文的 `bidirectional_port_adapter.hh:128` / `:141` 引用按「ADR 不可变」**不改**;`chstream_register.hh` 的既有行号(**50 / 119 / 121 / 175 / 177**)**零漂移**。
+
 ## 7. 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。

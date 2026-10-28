@@ -1,6 +1,6 @@
 # Tasks — cpptlm-cep-cohif-carrier v1.0(Stage 1,TDD 5-step)
 
-> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 / Phase 2 / Phase 3 已完成**(2026-10-27 / 2026-10-28,台账 Entry #84 / #85 / #86);Phase 4 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
+> **状态**: 🟡 **Proposed**(2026-10-27 转正;实施**已启动** —— Phase 0 前置已闭合 + **Phase 1 ~ Phase 4 已完成**(2026-10-27 / 2026-10-28,台账 Entry #84 ~ #87);Phase 5 ~ 7 未开始)· **队列**: `obj-cep-platform §4.0` #7(Stage 1 / 2028-Q2)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-cohif-carrier/spec.md`](specs/cep-cohif-carrier/spec.md) · [`specs/cep-protocol-bridge-contracts/spec.md`](specs/cep-protocol-bridge-contracts/spec.md)
 > **上游决策**: `ADR-CEP-19`(✅ v1.0 已签发)· 架构重审 `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(v3)
 > **估时**: 6 周(3 项交付 + 1 宏 + 1 钩子扩展)
@@ -16,7 +16,7 @@
 | 1 载体面:`CohIfBundle` | ✅ **已完成**(2026-10-27) | `include/bundles/cep_coherence_bundles_tlm.hh` —— `bundles::CohIfBundle`(12 字段)+ 强类型 `CohIfFlowId`(域恰好 5 值)+ 12 条 `BUNDLE_FIELD_WIDTH` 锁;**4 类反向 fixture 实测有牙**(2 静态扫描红 / 2 编译红) |
 | 2 端口面:`ProtocolEngine` 基类 | ✅ **已完成**(2026-10-27) | `include/tlm/cep/protocol_engine_base.hh` —— `ProtocolEngineBase<N>`(派生 `ChStreamModuleBase` + `Input/OutputStreamAdapter<CohIfBundle>` 端口成员 + 类型擦除 `ProtocolBridgeEr*` + 10 个纯虚 `on_*`)+ `NullProtocolEngine<N>`(**10 流覆盖矩阵** + 两条编译期锁);**2 类反向 fixture 实测有牙** |
 | 3 特化桥:`ProtocolBridge` 双层 | ✅ **已完成**(2026-10-28) | `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` + `AbstractProtocolBridge`)+ `include/tlm/cep/cohif_noc_bridge.hh`(CohIf ↔ NoC 特化桥,**两层** pack/unpack)+ `include/tlm/cep/protocol_family.hh`;钩子扩展 `register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费;**3 + 2 类反向 fixture 实测有牙** |
-| 4 装配宏:`REGISTER_CHSTREAM_BIDIRECTIONAL` | ⬜ 未开始 | `include/chstream_register.hh` |
+| 4 装配宏:`REGISTER_CHSTREAM_BIDIRECTIONAL` | ✅ **已完成**(2026-10-28) | `include/chstream_register.hh`(两件都做 + `static_assert(n > 1)`)+ **前置泛化** `cpptlm::BundleDirectionTraits`(解耦 `BidirectionalPortAdapter` 的 `NoCFlitBundle` 硬编码)+ CEP 侧特化 `include/tlm/cep/cohif_direction_traits.hh`;**反向 fixture 实测有牙**(N=1 编译红且原因精确命中断言) |
 | 5 JSON 装配连通性 | ⬜ 未开始 | `configs/` 侧示例 + E2E |
 | 6 测试(CC-01~CC-06 + 反向 fixture) | ⬜ 未开始 | 2 个测试文件 |
 | 7 闸与真源同步 | ⬜ 未开始 | `cep_decl_reverse_verify.sh` 条目 + `06 号 §3.2` 归类表 |
@@ -224,10 +224,48 @@
 
 ### Phase 4 —— 装配宏(判据 CC-04 ③)
 
-- [ ] 4.1 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)`(`include/chstream_register.hh`)
-- [ ] 4.2 宏**同时**做 `registerObject` **与** `registerBidirectionalPortAdapter`(缺 `registerObject` ⇒ ModuleFactory 无法实例化)
-- [ ] 4.3 宏内 `static_assert(n > 1)`(防 `N=1` 落 `bind_ports` 空 shim 静默不绑定)
-- [ ] 4.4 **反向 fixture**:`N = 1` ⇒ 编译必失败
+- [x] 4.1 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)`(`include/chstream_register.hh`)——
+      **已完成**(2026-10-28):参数化宏,用法
+      `REGISTER_CHSTREAM_BIDIRECTIONAL(MyPE, bundles::CohIfBundle, 5);`(在**函数体内**,
+      与 `REGISTER_CHSTREAM` 同风格)。
+      ⚠️ **与既有宏的差异**:`REGISTER_CHSTREAM` 是**批量**宏(一次注册全部 ChStream 类型);
+      本宏是**单类型参数化**宏(per-instance 注册)。
+- [x] 4.2 宏**同时**做 `registerObject` **与** `registerBidirectionalPortAdapter`(缺 `registerObject`
+      ⇒ ModuleFactory 无法实例化该类型)——
+      **已完成**,宏体**两件都做**。
+      ⚠️ **不**照抄 `REGISTER_CHSTREAM_DUAL` 的**半截实现** —— 那个宏**只**注册 adapter、
+      **不含** `registerObject`,且全仓零调用点 ⇒ 不能作为形态基准。
+      ⇒ **运行期判据**:注册后 `ChStreamAdapterFactory::get().isMultiPort(type)` 为 true、
+      `getPortCount(type) == N`,且 `ModuleFactory::instantiateAll` 能用该类型实例化 JSON 模块
+      (实测 4 case / 15 assertion 全绿)。
+- [x] 4.3 宏内 `static_assert(n > 1)`(防 `N=1` 落 `bind_ports` 空 shim 静默不绑定)——
+      **已完成**:宏体第一条语句即 `static_assert((n) > 1, ...)`。
+      ⚠️ **判据 CC-04 ③ 的机器可检形态**:N=1 落 ModuleFactory 的 single 分支调 `bind_ports`
+      —— 而 `bidirectional_port_adapter.hh` 的 `bind_ports` 是**空操作 shim** ⇒ **静默不绑定**
+      (不报错、不绑定)⇒ 编译期锁是唯一防线。
+- [x] 4.4 **反向 fixture**:`N = 1` ⇒ 编译必失败——
+      **已完成**,**实测有牙**且**因正确原因**红:
+      N=1 ⇒ 编译失败,且错误信息**精确命中**宏内的 `static_assert`(脚本检查错误文本
+      「端口数 N 必须 > 1」)⇒ 若失败原因是别的(例如类型不匹配),脚本判红
+      (防「因错误的原因红」);N=2 ⇒ 编译成功(**正控**)。
+      ⇒ 已注册 ctest `cep_chstream_bidirectional_macro_reverse_verify`(3/3)。
+
+- [x] 4.5 **前置的必要泛化**(`BidirectionalPortAdapter` 与 Bundle 解耦)——
+      **已完成**(本项不在原 task 表内,是实施中发现的**阻塞前提**,登记备查):
+      该 adapter 原本**硬编码** `NoCFlitBundle` 语义(读 `flit_category` 决定 `PKT_REQ`/`PKT_RESP`;
+      credit 用 `NoCFlitBundle` 构造)⇒ 承载 `CohIfBundle` **编译不过**
+      (`CohIfBundle` 无 `flit_category` / `vc_id` 字段)⇒ **不泛化则 4.1~4.4 无法用
+      CohIfBundle 验证**。
+      ⇒ 抽成 `cpptlm::BundleDirectionTraits<BundleT>`(方向判定 + credit 载体):
+      **框架层不认识任何具体 Bundle**;各 Bundle 在**自己的层**提供特化
+      (CEP 侧:`include/tlm/cep/cohif_direction_traits.hh`)。
+      ⚠️ **未特化的 BundleT ⇒ 编译期报错**(不静默用错方向)。
+      ⚠️ **`NoCFlitBundle` 特化逐行为等价**于泛化前的硬编码实现 ⇒ **全量回归 0 变化**。
+      ⚠️ **层次纪律**:特化放 CEP 侧(`tlm/cep` → `framework` ✓),**不放** `include/bundles/`
+      (bundles 是最底层,**不得**反向依赖 `core/` / `framework/`)。
+      ⚠️ 附带:`ProtocolEngineBase` 加 `virtual void receive_credit(unsigned, unsigned) {}`
+      (**默认空实现 ⇒ 零波及**)—— `BidirectionalPortAdapter::tick()` 收 credit 时会调
+      `module_->receive_credit(port, vc)` ⇒ 任何用该 adapter 的模块**必须**提供此方法。
 
 ### Phase 5 —— JSON 装配连通性(判据 CC-04 ①②)
 
@@ -255,7 +293,7 @@
 | # | 项 | 状态 |
 |---|---|---|
 | 1 | 判据增补**已追认**(CC-05 ④ / CC-06 ②) | ✅ 转正前置已落地(`ADR-CEP-19` Status Update,Entry #78) |
-| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类)· Phase 2 **已完成**(2 类)· Phase 3 **已完成**(3 + 2 类,实测有牙);Phase 4/5 待补 |
+| 2 | 每条新判据有**反向 fixture** | 🟡 Phase 1 **已完成**(4 类)· Phase 2 **已完成**(2 类)· Phase 3 **已完成**(3 + 2 类)· Phase 4 **已完成**(1 类,实测有牙);Phase 5 待补 |
 | 3 | 编译期锁**不**以「编译红」充当 ctest 判据(`try_compile` 毒化副本) | 🟡 Phase 1.7 **已完成**(毒化副本 + 编译探针断言「编译确实失败」);Phase 4.4 待补 |
 | 4 | 新增 invariant 数 = **0** | ⬜ Phase 7.2 |
 | 5 | 冻结面**零改动**(本 change 3 个新头文件 + 1 宏 + 1 钩子均不在 M1 冻结集) | ⬜ 待实施后复核 |

@@ -13,6 +13,7 @@
 
 #include "cep_adr_parser.hh"
 #include "cep_protocol_bridge_contract.hh"
+#include "cep_test_protocol_engine.hh"
 
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
@@ -53,26 +54,8 @@ struct BridgeRegistryGuard {
 };
 
 // ── 测试用 ProtocolEngine 派生类(实现 Phase 2 定义的 10 个纯虚 `on_*`)──
-class TestProtocolEngine : public tlm::cep::ProtocolEngineBase<2> {
-public:
-    using Base = tlm::cep::ProtocolEngineBase<2>;
-    TestProtocolEngine(const std::string& n, EventQueue* eq) : Base(n, eq) {}
-    void on_request(std::uint64_t, Perm, std::uint64_t) override {}
-    void on_completion(std::uint64_t, std::uint64_t, Perm, bool) override {}
-    void on_snoop(std::uint64_t, SnoopType, std::uint64_t) override {}
-    void on_snoop_resp(std::uint64_t, bool, LineState, bool, std::uint64_t, std::uint64_t) override {
-    }
-    void on_writeback(std::uint64_t, std::uint64_t, bool) override {}
-    void on_forward_data(std::uint64_t, std::uint64_t, std::uint64_t, Perm, std::uint64_t) override {}
-    void on_back_invalidate(std::uint64_t, SnoopType, std::uint64_t) override {}
-    void on_address_resolve(std::uint64_t, std::uint64_t,
-                            tlm::cep::AddressResolveResult& out) override {
-        out.home_node = 0;
-        out.coherent = false;
-    }
-    void on_barrier(std::uint64_t, std::uint64_t) override {}
-    void on_snoop_completion_ack(std::uint64_t, std::uint64_t, std::uint64_t) override {}
-};
+// ⚠️ 定义在**共享头**(Phase 3 测试 + Phase 4 编译探针共用)⇒ 避免两份重复
+using TestProtocolEngine = tlm::cep::testing::TestProtocolEngine;
 
 // ── **篡改**桥(reverse fixture 用)──────────────────────────────────
 // ① `TamperedPermBridge`:把 `perm` 映射到 `flit_category`(task 3.9 的例子)

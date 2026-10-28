@@ -70,6 +70,48 @@
 namespace cpptlm {
 
     /**
+     * @brief Bundle → (PacketType 方向, credit 载体) 的映射 trait
+     *
+     * ⚠️ **为什么需要它**:`BidirectionalPortAdapter` 原本**硬编码** `NoCFlitBundle`
+     *    语义(读 `flit_category` 决定 `PKT_REQ`/`PKT_RESP`;credit 用
+     *    `NoCFlitBundle` 构造)⇒ 承载**其它** Bundle(如 CEP 的 `CohIfBundle`)
+     *    会**编译不过**(`CohIfBundle` 无 `flit_category` / `vc_id` 字段)。
+     *    ⇒ 抽成 trait:**框架层不认识任何具体 Bundle**,各 Bundle 在**自己的层**
+     *    提供特化(CEP 侧先例:`include/tlm/cep/cohif_direction_traits.hh`)。
+     *
+     * ⚠️ **未特化的 BundleT ⇒ 编译期报错**(不是静默用错方向)。
+     */
+    /// 恒假常量(惯用法)—— 让 `static_assert` 的失败信息**只**指向本判据,
+    /// 而非被 `-Wtype-limits`(`sizeof(T) == 0` 恒假)的噪声淹没
+    template <typename>
+    inline constexpr bool bundle_direction_traits_dependent_false = false;
+
+    template <typename BundleT, typename = void>
+    struct BundleDirectionTraits {
+        static_assert(bundle_direction_traits_dependent_false<BundleT>,
+                      "BundleDirectionTraits: 该 BundleT 未特化 —— BidirectionalPortAdapter 需要"
+                      "「请求/响应」方向与 credit 载体;请为该 Bundle 提供特化"
+                      "(CEP 侧先例:include/tlm/cep/cohif_direction_traits.hh)");
+
+        static PacketType packet_type(const BundleT&) { return PKT_REQ; }
+        static void fill_credit(BundleT&, unsigned) {}
+    };
+
+    /// `NoCFlitBundle` 的既有语义(**逐行为等价**于泛化前的硬编码实现)
+    template <>
+    struct BundleDirectionTraits<bundles::NoCFlitBundle> {
+        static PacketType packet_type(const bundles::NoCFlitBundle& b) {
+            return (b.flit_category.read() == bundles::NoCFlitBundle::CATEGORY_REQUEST) ? PKT_REQ
+                                                                                       : PKT_RESP;
+        }
+        static void fill_credit(bundles::NoCFlitBundle& b, unsigned vc) {
+            b.vc_id.write(vc);
+            b.flit_category.write(bundles::NoCFlitBundle::CATEGORY_CREDIT);
+            b.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL);
+        }
+    };
+
+    /**
      * @brief 双向端口 StreamAdapter
      *
      * 用于 RouterTLM 等需要每端口双向通信的模块：
@@ -85,7 +127,8 @@ namespace cpptlm {
      *   req_in[port_idx]()  -> InputStreamAdapter<BundleT>&   // 接收 flit
      *   resp_out[port_idx]() -> OutputStreamAdapter<BundleT>&  // 发送 flit
      */
-    template <typename ModuleT, typename BundleT, std::size_t N>
+    template <typename ModuleT, typename BundleT, std::size_t N,
+              typename DirTraits = BundleDirectionTraits<BundleT>>
     class BidirectionalPortAdapter : public StreamAdapterBase {
     private:
         ModuleT* module_;
@@ -161,10 +204,8 @@ namespace cpptlm {
                     MasterPort* out = resp_out_port_[i] ? resp_out_port_[i] : req_out_port_[i];
                     if (out) {
                         auto& flit = module_->resp_out()[i].data();
-                        PacketType pkt_type =
-                            (flit.flit_category.read() == bundles::NoCFlitBundle::CATEGORY_REQUEST)
-                                ? PKT_REQ
-                                : PKT_RESP;
+                        // 方向判定由 **Bundle 专属 trait** 给出(框架层不认识具体 Bundle)
+                        PacketType pkt_type = DirTraits::packet_type(flit);
                         module_->resp_out()[i].send(out, pkt_type);
                     }
                 }
@@ -229,11 +270,11 @@ namespace cpptlm {
             if (port >= N || !resp_out_port_[port])
                 return;
 
-            // 创建 Credit 信号 Bundle
-            bundles::NoCFlitBundle credit_bundle;
-            credit_bundle.vc_id.write(vc);
-            credit_bundle.flit_category.write(bundles::NoCFlitBundle::CATEGORY_CREDIT);
-            credit_bundle.flit_type.write(bundles::NoCFlitBundle::FLIT_HEAD_TAIL); // 单 flit
+            // 创建 Credit 信号 Bundle —— 类型随端口的 Bundle 走;
+            // credit 相关字段由 **Bundle 专属 trait** 填充
+            // (对 `NoCFlitBundle` 逐行为等价于泛化前的硬编码实现)
+            BundleT credit_bundle{};
+            DirTraits::fill_credit(credit_bundle, vc);
 
             // 通过 resp_out_port_ 发送（连接到上游路由器的 resp_in）
             Packet* pkt = PacketPool::get().acquire();
@@ -242,6 +283,7 @@ namespace cpptlm {
 
             bundles::serialize_bundle(credit_bundle, pkt->payload->get_data_ptr(),
                                       pkt->payload->get_data_length());
+            // ⚠️ credit 的 VC 由 Packet 字段承载 ⇒ 不依赖 Bundle 是否有 `vc_id` 字段
 
             resp_out_port_[port]->send(pkt);
             DPRINTF(MODULE, "[BidirectionalPortAdapter] send_credit_impl port=%u vc=%u\n", port,

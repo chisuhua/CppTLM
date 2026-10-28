@@ -36,7 +36,7 @@ last_revised: 2026-10-25
 
 | 实测事实 | 证据 |
 |---|---|
-| `VC_DAT` 桶在**所有真实路径中恒为 0** | 全仓唯一写 `CATEGORY_CREDIT` 的点是 `include/framework/bidirectional_port_adapter.hh:235`,该 flit 经 ChStream port 发出,**不经** `SocInternalNoc::route_flit()` |
+| `VC_DAT` 桶在**所有真实路径中恒为 0** | 全仓唯一写 `CATEGORY_CREDIT` 的点是 `include/framework/bidirectional_port_adapter.hh` 的 `BundleDirectionTraits<NoCFlitBundle>::fill_credit`(2026-10-28 实测行号 **109**;**原为** `:235`(`send_credit_impl` 内)—— 队列 #7 Phase 4 把该写入点**泛化**为 Bundle 专属 trait,位置随之迁移,**语义不变**),该 flit 经 ChStream port 发出,**不经** `SocInternalNoc::route_flit()` |
 | 现有注释**描述了一个从未发生的流量** | `include/tlm/cluster/soc_internal_noc.hh` 自陈「`vc_dat_count()` 实际统计的是 **credit 流量**」—— 实测该 accessor 的**外部消费者 0 命中** |
 | 「credit 是否独占 VC」**已被跨仓权威关闭** | ArchForge `32 号 §6.0.1` 排除表:credit 是**流控类别**,**不单独占 VC** |
 

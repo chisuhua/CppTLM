@@ -63,7 +63,7 @@ CohIf(canonical 10 流,`ADR-CEP-02`)至今**没有承载形态** —— 而 `01 
 | 文件 | 改什么 |
 |------|--------|
 | `include/chstream_register.hh` | 新增 `REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)` 宏 —— **同时**做 `ModuleFactory::registerObject<mod_type>` **与** `ChStreamAdapterFactory::registerBidirectionalPortAdapter<...>`;宏内 `static_assert(n > 1)`。⚠️ **不**照抄 `REGISTER_CHSTREAM_DUAL`(`:175`)的半截形态 —— 该宏**全仓零调用点**且**只注册 adapter、不含 `registerObject`** |
-| `include/core/module_factory.hh:313-315` | `register_protocol_bridge` 签名扩展为 `(bridge_name, factory_lambda)` —— 现为 **write-only 死钩子**(`get_bridges()` 在 `private:` 段 `:326`,全仓无人读);**不新建** factory 抽象类(per `01 号 §1.1`「不需新增抽象层」) |
+| `include/core/module_factory.hh` | `register_protocol_bridge` 签名扩展为 `(bridge_name, factory_lambda)` —— **2026-10-27 实测为 write-only 死钩子**(`get_bridges()` 在 `private:` 段);**2026-10-28 已实施**(台账 Entry #86);**不新建** factory 抽象类(per `01 号 §1.1`「不需新增抽象层」) |
 | `docs/architecture/06-inter-module-network.md` | **3 处修订已在本轮落地**(per `ADR-CEP-19` 决策 3 / 4 / 7):§3.3 补第三类「跨模块共享的业务 Bundle」· §4.3 `flit_category` 4→3 值 + §3.2 Bundle 数 16→17 · §11.2/§11.3 时间线转隶 + **P3** 子项的偏离登记 |
 
 ### 冻结面
@@ -108,7 +108,7 @@ CohIf(canonical 10 流,`ADR-CEP-02`)至今**没有承载形态** —— 而 `01 
 |----|------|--------------------------|
 | **CC-01** | `CohIfBundle` **只含 5 流**且**不含**网络层字段:`flow_id` 域枚举 == {request, completion, snoop, snoop_resp, writeback};字段集无 `src_node`/`dst_node`/`flit_category`/`vc_id` | ① 加第 6 个 `flow_id` ⇒ **静态扫描用例红**(参照 `cep-stub-cache-core` spec 的「三流名不出现」先例);② 加网络层字段 ⇒ 同上 |
 | **CC-02** | `BUNDLE_FIELD_WIDTH` 锁 + `is_trivially_copyable` **生效** | **test TU 内** `static_assert(sizeof(CohIfBundle) == 期望)` + `static_assert(std::is_trivially_copyable_v<CohIfBundle>)`;外加 `try_compile` 一个「字段宽度篡改为 +1」的**毒化副本** ⇒ 编译失败即通过(⚠️ `BUNDLE_FIELD_WIDTH` 是**编译期锁**,不能只写「编译红」当 ctest 判据) |
-| **CC-04** | JSON 装配后,一次 CohIf 事务可**穿过** adapter 抵达对端;**N ≥ 2** | ① 断链 ⇒ 红;② **N=1** ⇒ 宏 `static_assert` 编译红(防 `bind_ports` 空 shim 静默不绑定,`bidirectional_port_adapter.hh:141`) |
+| **CC-04** | JSON 装配后,一次 CohIf 事务可**穿过** adapter 抵达对端;**N ≥ 2** | ① 断链 ⇒ 红;② **N=1** ⇒ 宏 `static_assert` 编译红(防 `bind_ports` 空 shim 静默不绑定,`bidirectional_port_adapter.hh:184`) |
 
 ### B. 特化桥契约面(`cep-protocol-bridge-contracts`,3 Scenario)
 

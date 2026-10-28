@@ -176,6 +176,35 @@
     ChStreamAdapterFactory::get()                                                                  \
         .registerDualPortAdapter<mod_type, pe_req_t, pe_resp_t, net_req_t, net_resp_t>(#mod_type);
 
+// ============================================================
+// 多端口双向模块注册宏(Phase 4 · 队列 #7 `cpptlm-cep-cohif-carrier`)
+// ============================================================
+//
+// 用法(在**函数体内**,与 `REGISTER_CHSTREAM` 同风格):
+//     REGISTER_CHSTREAM_BIDIRECTIONAL(MyProtocolEngine, bundles::CohIfBundle, 5);
+//
+// ⚠️ **两件都做**(per tasks 4.2 —— 缺 `registerObject` ⇒ ModuleFactory 无法
+//    实例化该类型;缺 adapter 注册 ⇒ Step 7 拿不到适配器):
+//    ① `ModuleFactory::registerObject<T>` —— 让 JSON 顶层能实例化该类型
+//    ② `ChStreamAdapterFactory::registerBidirectionalPortAdapter<T, B, N>`
+// ⚠️ **不**照抄 `REGISTER_CHSTREAM_DUAL` 的**半截实现** —— 那个宏**只**注册
+//    adapter、**不含** `registerObject`,且全仓零调用点 ⇒ 不能作为形态基准。
+//
+// ⚠️ **`static_assert(n > 1)` 是必需的**(per tasks 4.3 / 判据 CC-04 ③):
+//    `ChStreamAdapterFactory::isMultiPort` 要求 `port_count > 1`;N=1 会落
+//    single 分支调 `bind_ports` —— 而 `bidirectional_port_adapter.hh` 的
+//    `bind_ports` 是**空操作 shim** ⇒ **静默不绑定**(不报错、不绑定)。
+#define REGISTER_CHSTREAM_BIDIRECTIONAL(mod_type, bundle_t, n)                    \
+    do {                                                                         \
+        static_assert((n) > 1,                                                   \
+                      "REGISTER_CHSTREAM_BIDIRECTIONAL: 端口数 N 必须 > 1 —— "     \
+                      "N=1 会落 `BidirectionalPortAdapter::bind_ports` 的**空操作 " \
+                      "shim** ⇒ **静默不绑定**(per 判据 CC-04 ③)");                \
+        ModuleFactory::registerObject<mod_type>(#mod_type);                      \
+        ChStreamAdapterFactory::get().registerBidirectionalPortAdapter<         \
+            mod_type, bundle_t, (n)>(#mod_type);                                  \
+    } while (0)
+
 // REGISTER_ALL = REGISTER_OBJECT; REGISTER_CHSTREAM
 // - 当 BUILD_LEGACY_MODULES=OFF: REGISTER_OBJECT 退化为 no-op (空注释)
 //   仍产生空语句 (;)，C++ 合法
