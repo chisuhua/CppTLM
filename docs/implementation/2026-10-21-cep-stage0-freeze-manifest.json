@@ -1,7 +1,7 @@
 {
   "artifact_count": 40,
   "artifacts": {
-    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "9acc545a8715ca1b65d1c0e48b62df309543c3549a90448dea62e3d854386de7",
+    "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "f2deebfcc0bf0f85694849b7f9552887b85b7b6b30be86ac14079faae6b26d13",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4f27a67ba7982f3d9466df36c85258f1822c89b825d8ab733fb4e5de74221f48",
     "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "a4a047f73be34c84d7db44e3b0a3040e4f265d665685c6032526cb2159012a37",
     "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "79793358ad411ca3c6066344db85cf51986a9ab69f40fe0e783744907f678c26",
@@ -42,9 +42,9 @@
     "tools/render_report.py": "1368402696a3aa5753ebd073a9bcab444fcd092d1334b9a7b7e37a28e026967e",
     "tools/run_sweep.py": "f16e33d3834cd2e24422537de9be82aa3b64c2e660d8bd792f4d0f82d00e3297"
   },
-  "authorized_by": "Entry #89",
+  "authorized_by": "Entry #90",
   "frozen_at": "2026-10-28",
-  "frozen_at_commit": "6047be402404f1512161a7737cf06795573ded51",
+  "frozen_at_commit": "7f812cdf22893362b4bcd467b5eb759a9dc7ca69",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
