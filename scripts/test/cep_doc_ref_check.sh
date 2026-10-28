@@ -112,6 +112,12 @@ VIRTUAL_PATHS=(
   "tools/recommend.py"                              # 设计示意
   "docs/architecture/07-...md"                      # 省略号(散文引用)
   "openspec/changes/<name>/"                        # 占位写法
+  "openspec/changes/cpptlm-cep-cohif-carrier/"      # 队列 #7 已于 2026-10-28 **完成归档**
+                                                    #   (Entry #90)⇒ change 目录移至**不入库**的
+                                                    #   `openspec/changes/archive/2026-10-28-cpptlm-cep-cohif-carrier/`
+                                                    #   ⇒ 活文档里的**历史**路径引用按「归档路径」处理
+                                                    #   (per AGENTS.md「VIRTUAL_PATHS」约定:提及已删除/
+                                                    #    归档文件时登记条目,而非删改历史段落)
   "openspec/changes/archive/2026-10-20-*/"          # 通配
   "openspec/changes/cpptlm-cep-umbrella"            # 已归档 change 的**原路径**(2026-10-23 归档)—— 历史快照指向归档前位置
   "openspec/changes/cpptlm-cep-poc-spike"           # 同上(2026-10-25 归档 → 2026-10-25-cpptlm-cep-poc-spike);历史叙述(规格文档 §/台账 Entry)指向归档前位置

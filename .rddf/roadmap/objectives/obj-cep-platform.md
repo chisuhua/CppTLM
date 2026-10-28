@@ -6077,7 +6077,7 @@ openspec archive cpptlm-cep-cohif-carrier -y
 **④ 真源自足性(per `tasks.md`「已知边界」)**
 
 归档把 §6.4 的 6 条判据**并入 main specs** ⇒ 判据进入**真源层** ⇒ 本 change 的
-「判据定义真源在附属层(`docs/research/…`)、ADR 不自足」这一**真源层级缺陷**由归档**闭合**
+「判据定义真源在附属层(`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`)、ADR 不自足」这一**真源层级缺陷**由归档**闭合**
 (per `design.md D-η` 的「真源自足的收口」路径 ①)⇒ **无需**再追加 ADR Status Update 固化。
 
 **⑤ 验收(实测)**
@@ -6102,6 +6102,13 @@ openspec archive cpptlm-cep-cohif-carrier -y
 ⚠️ **第 3 项的可复用教训**:守门自身的**变异 fixture** 锚点必须**跟随**「被变异对象的位置」;
 owner 转指(归档)时,若 fixture 锚点不跟随 ⇒ fixture **假失败**(不是守门失效)——
 2026-10-28 实测即踩到(Entry #80 的同款转指在 #7 → #8 时再次发生)。
+
+**⑥bis 归档引发的第 4 处守门连锁修(`cep_doc_ref_check`)**
+
+| # | 守门报红 | 根因 | 处置 |
+|---|---------|------|------|
+| 4 | 「obj-cep-platform.md: 引用不存在的文件 `openspec/changes/cpptlm-cep-cohif-carrier/`( + `/tasks.md`)」 | 归档把 change 目录移到**不入库**的 `openspec/changes/archive/2026-10-28-…/` ⇒ 活文档里的**历史**路径引用指向了不存在的目录 | 按 AGENTS.md「VIRTUAL_PATHS」约定(提及已删除/归档文件时**登记条目**,而非删改历史段落)⇒ 在 `scripts/test/cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` 登记 `openspec/changes/cpptlm-cep-cohif-carrier/`;⚠️ **不**改写成 archive 路径 —— 该目录**不入库**,改了反而让 clone 后的仓内引用**永久断链** |
+| 4b | 「obj-cep-platform.md: 引用不存在的文件 `docs/research/…`」 | **本 Entry 自己的文字**用了省略号写路径 ⇒ 被路径提取器当成单一路径 | 改为**真实路径** `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(该文件存在)⇒ 兼得**更精确**的引用 |
 
 **⑦ 关联**: Entry #89(Phase 6/7 判据收口 + 反向 fixture 登记)· #88(Phase 5 JSON 装配连通性)· #87(Phase 4 装配宏)· #86(Phase 3 特化桥)· #85(Phase 2 端口面)· #84(Phase 1 载体面)· #81(队列 #7 转正)· #80(同款 owner 转指先例)· #74(`ADR-CEP-19` 签发)
 
