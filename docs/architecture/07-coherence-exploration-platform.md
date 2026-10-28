@@ -313,7 +313,7 @@ group-scoped completion     → Fabric Collective Plane
 
 | 协议族 | 协议实例 | adapter | 状态 | 通道模型 | 关键差异 |
 |--------|---------|---------|------|----------|---------|
-| **CHI** | CHI RN-F | `ChiRnfAdapter` | Stage 1 subset → Stage 2 full | RN-F 6 通道(TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT)| RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck |
+| **CHI** | CHI RN-F | `ChiRnfAdapter` | 🟡 **实施中**(队列 #8;Stage 1 subset → Stage 2 full) | RN-F 6 通道(TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT)| RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck;**UC→UD 静默升级**(轴 2)与 `moesi_gpu` 的 `E→M` **同型** —— 4 值 `perm` 无法表达 ⇒ 静默升级声明归 `perm_upgrades.json`(per `ADR-CEP-12 §11`) |
 | **CXL 2.0 非对称** | CXL 2.0 | `CxlCacheAdapter` | Stage 1 | D2H/H2D 各 3 通道(Req/Rsp/Data)| Host 侧 Snoop Filter;设备不感知其他设备 |
 | **CXL 3.0 对称** | CXL 3.0 对称 | `CxlCacheAdapter`(对称模式)| Stage 2 | + BISnp/BIRsp 反向通道 | DCOH(Device Cache Ownership History);设备可主动反向 snoop;基于 DPA 而非 PA 归属 |
 | **TileLink-C** | TileLink-C | `TileLinkCAdapter` | Stage 1 | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
@@ -327,7 +327,7 @@ group-scoped completion     → Fabric Collective Plane
 > **族计数的口径**(2026-10-22 补记,per 台账 **Entry #12**):`moesi_gpu` / `mesif` 计为**同一来源族**
 > (ArchForge 声明族,含 2 套互不承认的一致性架构,per `32 号` C1)→ **+1 族 / +2 实例**,
 > 镜像 CXL「1 族 / 2 实例」的先例。两者 `family` 字段均为 `industrial`(per `32 号` 声明)。
-> **状态 = 按队列实况(2026-10-27 更新,per 台账 Entry #82 授权)** —— `moesi_gpu` = 队列 #6 **已落地归档**(2026-10-27;首个 `status=implemented` 实例);`mesif` = 队列 #9 **已排期**(季度见 `obj §4.0`;⚠ R-1 阻塞登记 —— **排期 ≠ 就绪**)。**状态值以 `obj §4.0` 排队总表为唯一权威**(本表**不复制**排期,per 防双真源立场)。
+> **状态 = 按队列实况(2026-10-28 更新,per 台账 Entry #93 授权)** —— `moesi_gpu` = 队列 #6 **已落地归档**(2026-10-27;首个 `status=implemented` 实例);`mesif` = 队列 #9 **已排期**(季度见 `obj §4.0`;⚠ R-1 阻塞登记 —— **排期 ≠ 就绪**);`chi_rnf` = 队列 #8 **实施中**(2026-10-28 转正)。**状态值以 `obj §4.0` 排队总表为唯一权威**(本表**不复制**排期,per 防双真源立场)。
 >
 > **2026-10-22 补记**(per 台账 **Entry #13** [adr-amendment]):`moesi_gpu` 行的「**争点所在**」表述
 > **已失效** —— ArchForge 已裁定判据 (b) **成立**(`4ff2fa6`,Q-3a = 是)→ 该静默 `E→M` **是域可见写**。
@@ -857,8 +857,26 @@ experimental/<run_id>/
 
 > **⑤ 本则未处理、已登记的项**:① **协议引擎的 credit 回收语义**仍未建模(`ProtocolEngineBase::receive_credit` 是**默认空实现**)—— `07 号 §6.4` 尚未展开登记该语义 ⇒ 归**后续 change**(不属本 change 范围);② `ProtocolEngineBase::tick()` 驱动 adapter 的行为已进**框架惯例**,其协议引擎侧语义同样待后续 change 登记。
 
+## 附录 · Status Update 2026-10-28(第十则 · per 台账 Entry #93 —— 队列 #8 `cpptlm-cep-chi-rnf-subset` 立项 + §5.1.1 CHI 行同步)
+
+> **授权**:Entry #93(队列 #8 立项 + 转正;Phase 0 治理前置)。
+> **口径**:本节仅登记 §5.1.1 **状态列**的机械同步(活口径,per 同款先例)+ CHI 行的**协议事实**补充。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
+> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #93"`。
+
+> **① §5.1.1 CHI 行的状态列同步**:原写「Stage 1 subset → Stage 2 full」(阶段路线,与本列「按队列实况」的口径不符)⇒ 同步为「🟡 **实施中**(队列 #8;Stage 1 subset → Stage 2 full)」。**状态值以 `obj §4.0` 排队总表为唯一权威**,本表不复制排期(per 防双真源立场);队列 #8 归档后须再同步为「✅ 已落地」。
+
+> **② CHI 行的协议事实补充 —— `UC→UD` 静默升级**:CHI RN-F 在**轴 2**(独占干净 → 脏)上的 `UC→UD` 转换**零总线事务** ⇒ 与 `moesi_gpu` 的 `E→M` **同型** ⇒ 4 值 `perm` 同样无法表达。
+> ⚠️ **与台账 Entry #71 的 F-1 区分(勘误,per Entry #91 ⑤)**:F-1 称「CHI RN-F 是**显式**请求升级 ⇒ 不需要该演进」—— 该结论仅适用于**轴 1**(获取独占 S→U,CHI **显式**:ReadUnique / MakeUnique / CleanUnique 走 TXREQ);**轴 2** 上 CHI 是**静默**的。F-1 的**排期结论不受影响**(perm 形态演进的**机制**已由队列 #6 交付,队列 #8 只**填行**)。
+> **判据 2 的状态仍以 `ADR-CEP-05 §13.1` 为唯一权威**(本表**不复制**状态值);CHI 的静默升级声明落 `perm_upgrades.json`(本仓自持声明源,per `ADR-CEP-12 §11` 的权威分区)。
+
+> **③ 实例声明的权威分区**:CHI RN-F 是**首个非 ArchForge 贡献**的工业协议实例 ⇒ 其实例声明的**权威归属**机制(镜像域 vs 本仓域 + `repo_owned_instance_ids[]` 登记)见 **`ADR-CEP-12 §11`**;本文件不复述。
+
+> **④ 门禁实测**:11 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0;`ctest -R cep` **35/35**;全仓 `cpptlm_tests` **1983 case / 873322 assertion** 全绿(0 回归)。
+
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)** + **Status Update 2026-10-28 第八则(Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)** + **Status Update 2026-10-28 第九则(Entry #89 —— 判据收口 + 反向 fixture 登记 + 零 diff 复核)**
+---
+
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)** + **Status Update 2026-10-28 第八则(Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)** + **Status Update 2026-10-28 第九则(Entry #89 —— 判据收口 + 反向 fixture 登记 + 零 diff 复核)** + **Status Update 2026-10-28 第十则(Entry #93 —— 队列 #8 立项 + §5.1.1 CHI 行同步 + UC→UD 静默升级事实登记)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)
