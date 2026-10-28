@@ -45,9 +45,26 @@ int main(int argc, char** argv) {
         return 2;
     }
 
-    const tlm::cep::AdapterContractReport report = tlm::cep::AdapterSchemaContracts::check_all(loaded.inputs);
-    std::printf("%s", report.render().c_str());
-    if (report.failed()) {
+    // ⚠️ **逐 adapter 填充**(per `adapter_contracts_loader.hh` 的两层结构):
+    //    AC-04 / AC-05 是**逐 adapter**的判据(映射表 / 状态机投影)⇒ 必须为每个
+    //    adapter 各填一份 ⇒ 各跑一次 `check_all`。
+    //    多个 adapter 的 verdict **逐条**输出(格式同单 adapter)⇒ 测试侧可逐行比对。
+    int failures = 0;
+    {
+        auto inputs = loaded.inputs;
+        tlm::cep::fill_adapter_inputs<tlm::cep::MoesiGpuAdapter>(inputs);
+        const auto report = tlm::cep::AdapterSchemaContracts::check_all(inputs);
+        std::printf("%s", report.render().c_str());
+        if (report.failed()) ++failures;
+    }
+    {
+        auto inputs = loaded.inputs;
+        tlm::cep::fill_adapter_inputs<tlm::cep::ChiRnfAdapter>(inputs);
+        const auto report = tlm::cep::AdapterSchemaContracts::check_all(inputs);
+        std::printf("%s", report.render().c_str());
+        if (report.failed()) ++failures;
+    }
+    if (failures > 0) {
         std::printf("[FAIL] adapter 契约判据:至少一条判据为红\n");
         return 1;
     }

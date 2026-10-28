@@ -112,6 +112,21 @@ public:
         {4,     4,     4,     4,       1,         0},  // SD: Read→SD / SnpShared→SC
     };
 
+    // ── 逐 adapter 装载契约(per `adapter_contracts_loader.hh` 的 `fill_adapter_inputs`)──
+    // **「独占干净态 + 写事件 → 独占脏态」**三元组(AC-05 的语义载体;
+    // ⚠️ 字段名沿用 moesi 口径 `e_*` / `m_*`,但**语义**是「独占干净态 + 写事件」,
+    //    对 CHI 即 `UC` + `Wr` → `UD` —— 与 moesi 的 `E`+`Wr`→`M` **同构**):
+    static constexpr State    kUniqueCleanState = State::UC;
+    static constexpr Event    kWriteEvent       = Event::Wr;
+    static constexpr State    kUniqueDirtyState = State::UD;
+
+    /// 瞬态态(AC-05 ②:瞬态**无**投影 ⇒ 不得进稳定态列表)
+    // ⚠️ CHI 的**瞬态态**(等 snoop / 等数据)是**协议内部**的,不建模为独立枚举值 ——
+    //    本 subset 的 5 个枚举值**全部**是稳定态(per IHI0050 Fig B1.3 的 Full 态子集)
+    //    ⇒ 瞬态列表为空(AC-05 ② 因此**平凡成立**)。
+    static constexpr std::uint8_t kTransientStates[]  = {0xFF};  // 0xFF = **无**瞬态(哨兵)
+    static constexpr std::size_t  kTransientStateCount = 0;     // ⇒ 列表长度 0(哨兵不参与判定)
+
     /// 状态转换(表驱动)
     static constexpr std::uint8_t transition(State s, Event e) noexcept {
         return kStateTransition[static_cast<std::uint8_t>(s)][static_cast<std::uint8_t>(e)];

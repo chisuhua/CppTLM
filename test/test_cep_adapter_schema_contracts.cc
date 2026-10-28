@@ -272,24 +272,57 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
     REQUIRE(loaded.error.empty());
 
     // ② 声明源被**至少一个**测试消费(⇒ 不产生死文件)
-    REQUIRE(loaded.inputs.upgrades.silent_upgrades.size() == 1);
+    //    ⚠️ 队列 #8 后:`chi_rnf` 进入静默升级声明源(2 条)且进入实例声明集(3 个)——
+    //    `chi_rnf` 是**本仓域实例**(权威 = 本仓,per `ADR-CEP-12 §11`)。
+    REQUIRE(loaded.inputs.upgrades.silent_upgrades.size() == 2);
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[0].instance_id == "moesi_gpu");
-    REQUIRE(loaded.inputs.instances.instances.size() == 2);
+    REQUIRE(loaded.inputs.upgrades.silent_upgrades[1].instance_id == "chi_rnf");
+    REQUIRE(loaded.inputs.instances.instances.size() == 3);
     REQUIRE(loaded.inputs.perm_domain.values.size() == 4);
+    //    `mesif` 无静默升级能力 ⇒ 不出现在声明源里(AC-03 的负控见证)
+    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 1);
+    REQUIRE(loaded.inputs.no_upgrade_instances[0] == "mesif");
 
-    // ③ 真实数据下 5 条判据全绿
-    const auto report = AdapterSchemaContracts::check_all(loaded.inputs);
-    REQUIRE(report.verdicts.size() == 5);
-    REQUIRE_FALSE(report.failed());
-    REQUIRE(report.verdict == AdapterContractVerdict::PASS);
+    // ③ 真实数据下 5 条判据全绿 —— **逐 adapter 各跑一次**
+    //    (AC-04 / AC-05 是**逐 adapter**的判据,per `adapter_contracts_loader.hh` 的两层结构)
+    {
+        auto inputs = loaded.inputs;
+        tlm::cep::fill_adapter_inputs<tlm::cep::MoesiGpuAdapter>(inputs);
+        const auto report = AdapterSchemaContracts::check_all(inputs);
+        REQUIRE(report.verdicts.size() == 5);
+        REQUIRE_FALSE(report.failed());
+        REQUIRE(report.verdict == AdapterContractVerdict::PASS);
+    }
+    {
+        auto inputs = loaded.inputs;
+        tlm::cep::fill_adapter_inputs<tlm::cep::ChiRnfAdapter>(inputs);
+        const auto report = AdapterSchemaContracts::check_all(inputs);
+        REQUIRE(report.verdicts.size() == 5);
+        REQUIRE_FALSE(report.failed());
+        REQUIRE(report.verdict == AdapterContractVerdict::PASS);
+    }
 
     // ④ verdict 逐条可 grep(格式 `[verdict] <rule-id> PASS|FAIL|SKIP (detail)`)
-    for (const auto& v : report.verdicts) {
-        const std::string line = v.render();
-        REQUIRE(line.rfind("[verdict] ", 0) == 0);
-        REQUIRE(line.find(v.rule_id) != std::string::npos);
-        REQUIRE(line.find("(") != std::string::npos);
-        REQUIRE(line.back() == ')');
+    //    —— **两个 adapter 的 verdict 都要满足**(逐 adapter 各一份)
+    std::vector<tlm::cep::AdapterContractReport> reports;
+    {
+        auto inputs = loaded.inputs;
+        tlm::cep::fill_adapter_inputs<tlm::cep::MoesiGpuAdapter>(inputs);
+        reports.push_back(AdapterSchemaContracts::check_all(inputs));
+    }
+    {
+        auto inputs = loaded.inputs;
+        tlm::cep::fill_adapter_inputs<tlm::cep::ChiRnfAdapter>(inputs);
+        reports.push_back(AdapterSchemaContracts::check_all(inputs));
+    }
+    for (const auto& rep : reports) {
+        for (const auto& v : rep.verdicts) {
+            const std::string line = v.render();
+            REQUIRE(line.rfind("[verdict] ", 0) == 0);
+            REQUIRE(line.find(v.rule_id) != std::string::npos);
+            REQUIRE(line.find("(") != std::string::npos);
+            REQUIRE(line.back() == ')');
+        }
     }
 
     // ⑤ **CLI 与测试的 verdict 输出逐条相同**(同一实现 ⇒ 同一结论)
@@ -316,11 +349,15 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
         if (!cur.empty()) out.push_back(cur);
         return out;
     }();
+    // ⚠️ **CLI 现在逐 adapter 各跑一次** ⇒ 测试侧同样按 **moesi → chi** 的顺序
+    //    拼接两个 report 的 verdict 行,再与 CLI 输出**逐行**比对。
     const auto mine = [&]() {
         std::vector<std::string> out;
-        for (const auto& v : report.verdicts) out.push_back(v.render());
-        out.push_back(std::string("[verdict] SUMMARY ") +
-                      tlm::cep::adapter_contract_verdict_name(report.verdict) + " (5 rule(s))");
+        for (const auto& rep : reports) {
+            for (const auto& v : rep.verdicts) out.push_back(v.render());
+            out.push_back(std::string("[verdict] SUMMARY ") +
+                          tlm::cep::adapter_contract_verdict_name(rep.verdict) + " (5 rule(s))");
+        }
         return out;
     }();
     REQUIRE(lines.size() == mine.size() + 1);   // 末行是 CLI 自己的汇总行

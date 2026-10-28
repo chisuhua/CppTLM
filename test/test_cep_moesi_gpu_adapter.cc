@@ -391,7 +391,16 @@ TEST_CASE("CEP moesi_gpu: 本载体不含 mesif(声明源 / 状态机 / 映射�
     for (const auto& u : pu.at("perm_upgrade").at("silent_upgrades")) {
         REQUIRE(u.at("instance_id").get<std::string>() != "mesif");
     }
-    REQUIRE(pu.at("perm_upgrade").at("silent_upgrades").size() == 1);
+    // ⚠️ 队列 #8 后:`chi_rnf` 也声明了静默升级(UC→UD)⇒ 2 行。
+    //    本断言的**意图**是「mesif **不**出现在声明源里」⇒ 由上面的**逐条**检查承担;
+    //    此处的行数断言改为「moesi_gpu **恰好一条**」(逐实例断言,不被别的实例影响)。
+    {
+        int moesi_rows = 0;
+        for (const auto& u : pu.at("perm_upgrade").at("silent_upgrades")) {
+            if (u.at("instance_id").get<std::string>() == "moesi_gpu") ++moesi_rows;
+        }
+        REQUIRE(moesi_rows == 1);
+    }
 
     // ③ `mesif` 的声明保持 13 键逐字镜像 + status = planned(零改动)
     const json mesif = instance("mesif");

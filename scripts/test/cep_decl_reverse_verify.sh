@@ -229,6 +229,71 @@ run "副本 status → excluded(status 是本仓权威字段 ⇒ 不参与镜像
 restore_repo_decl
 
 echo ""
+echo "═══ 破坏 16:本仓副本加一个**未登记**的额外实例(⑥ 收窄不得无牙)═══"
+# `ADR-CEP-12 §11` 的实例级权威分区:本仓域实例须**显式登记**进
+# `repo_owned_instance_ids[]`;未登记的额外实例 ⇒ 仍报红(否则「收窄」退化为
+# 「任何实例都可混入副本」⇒ 镜像守卫被架空)。
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['instances'].append(json.loads(json.dumps(d['instances'][0])))
+d['instances'][-1]['id']='unregistered_extra'
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "副本加未登记的额外实例" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo "═══ 破坏 17:本仓域实例违反 schema(① 扩面不得无牙)═══"
+# ①~⑤ 的**扩面**:本仓域实例(`chi_rnf`)同样接受 ① schema / ② vc_count /
+# ③ ordering ⊆ vc_binding / ④ 词表 / ⑤ 网络集校验 ⇒ 改坏它的 `vc_binding`
+# 消息类(越出 6 类词表)⇒ 必须报红(若扩面失效 ⇒ 本仓域实例成为「schema 盲区」)。
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+for inst in d['instances']:
+    if inst.get('id')=='chi_rnf':
+        inst['vc_binding']['compute_noc']['bogus_class']=0
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "本仓域实例的 vc_binding 消息类越出 6 类词表" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo '═══ 破坏 18:`repo_owned_instance_ids` 与 ArchForge 声明**撞名**(权威迁移闸)═══'
+# 本仓**不得**接管 ArchForge 的实例(那是 ArchForge 侧撤回声明的动作)⇒ 撞名 ⇒ 报红。
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['repo_owned_instance_ids']=['moesi_gpu']
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "repo_owned_instance_ids 登记 ArchForge 已声明的 id(撞名)" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo '═══ 破坏 19:`repo_owned_instance_ids` 登记不存在的实例(登记键自身须有牙)═══'
+# 登记键写错 id ⇒ 登记**静默失效**(本仓域实例退化为「未登记」⇒ 但那也报红;
+# 本条钉住「登记键本身」的完整性 ⇒ 不得指向不存在的实例)。
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['repo_owned_instance_ids']=['typo_nonexistent_id']
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "repo_owned_instance_ids 登记不存在的实例" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo '═══ 破坏 20:本仓域实例的 `status` 改坏(**正控** —— ⑥ 跳过 status)═══'
+# 与破坏 15 同款正控,但作用于**本仓域实例**(证明 ⑥ 的 status 豁免对两个域一致生效)。
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+for inst in d['instances']:
+    if inst.get('id')=='chi_rnf':
+        inst['status']='excluded'
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "本仓域实例 status → excluded(status 是本仓权威字段 ⇒ 不参与镜像比对)" GREEN "$REAL_AF"
+restore_repo_decl
+
+echo ""
 echo "═══ 恢复后复验 ═══"
 run "本仓 + 真仓 全恢复" GREEN "$REAL_AF"
 run "副本 全恢复" GREEN "$TMP"

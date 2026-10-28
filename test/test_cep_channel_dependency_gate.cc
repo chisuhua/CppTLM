@@ -230,9 +230,23 @@ TEST_CASE("CEP ChannelGate: moesi_gpu 声明 8-8-0 且与 S3 对账", "[cep][cha
     const auto report = cep::evaluate_channel_dependency_gate(decl);
     REQUIRE(report.per_instance.count("moesi_gpu") == 1);
     CHECK(report.per_instance.at("moesi_gpu") == (cep::GraphStats{8, 8, 0}));
-    // 两个实例(ArchForge 声明了 moesi_gpu + mesif)⇒ 全域是逐实例之和
-    CHECK(report.stats.vertices == 8u * decl.instances.size());
-    CHECK(report.stats.edges == 8u * decl.instances.size());
+    // 全域 = **逐实例之和**(⚠️ 不可硬编码 `8 × 实例数` —— 各实例绑定的网络数
+    // 不同:`moesi_gpu` / `mesif` 绑 2 个网络(8 顶点 / 8 边),`chi_rnf` 只绑
+    // `compute_noc`(4 顶点 / 5 边)⇒ 硬编码会把「实例绑定形态差异」误判为缺陷)
+    // ⇒ 改为按 `per_instance` 实际值求和(保持「全域 = 逐实例之和」的原意图)
+    {
+        unsigned sum_v = 0, sum_e = 0, sum_x = 0;
+        for (const auto& [inst, st] : report.per_instance) {
+            INFO("instance=" << inst);
+            sum_v += st.vertices;
+            sum_e += st.edges;
+            sum_x += st.cross_net_edges;
+        }
+        CHECK(report.stats.vertices == sum_v);
+        CHECK(report.stats.edges == sum_e);
+        CHECK(report.stats.cross_net_edges == sum_x);
+        CHECK(report.per_instance.size() == decl.instances.size());
+    }
     CHECK(report.stats.cross_net_edges == 0u);
     CHECK(report.verdict == cep::GateVerdict::PASS);
     CHECK(report.cycle.empty());
@@ -341,7 +355,19 @@ TEST_CASE("CEP ChannelGate: 空声明 ⇒ SKIP(≠ PASS)", "[cep][channel-gate]"
     cep_only["cep"] = nlohmann::json::object();
     const auto fallback = cep::run_channel_gate(cep_only);
     CHECK(fallback.verdict == cep::GateVerdict::PASS);
-    CHECK(fallback.stats.vertices == 2u * 8u); // 两个声明实例 × 8 顶点
+    // 缺省声明源含 3 个实例(moesi_gpu / mesif / chi_rnf)⇒ 顶点 = 逐实例之和
+    // (各实例绑定网络数不同 ⇒ 不可硬编码;按 per_instance 实际值求和)
+    {
+        const auto fb = cep::run_channel_gate(cep_only);
+        REQUIRE(fb.verdict == cep::GateVerdict::PASS);
+        unsigned sum_v = 0;
+        for (const auto& [inst, st] : fb.per_instance) {
+            INFO("instance=" << inst);
+            sum_v += st.vertices;
+        }
+        CHECK(fallback.stats.vertices == sum_v);
+        CHECK(sum_v > 0u);
+    }
 
     // 文件不存在且**未显式声明** ⇒ 空声明 ⇒ SKIP(外部条件)
     CHECK(cep::load_channel_declaration("/nonexistent/cep_decl.json", false).empty());
@@ -442,8 +468,12 @@ TEST_CASE("CEP ChannelGate: 双挂共享同一判据实现", "[cep][channel-gate
         return;
     }
     CHECK(cli.rc == 0);
-    CHECK(cli.out.find("[PASS] cep channel dependency gate: 16 vertices / 16 edges / 0") !=
-          std::string::npos);
+    // ⚠️ CLI 汇总行的顶点/边数随实例集变化 ⇒ **不断言字面量**;
+    //    改为断言「汇总行存在 + 各实例行都在」(逐实例行数 = 实例数)
+    CHECK(cli.out.find("[PASS] cep channel dependency gate:") != std::string::npos);
+    CHECK(cli.out.find("[per-instance] instance=chi_rnf ") != std::string::npos);
+    CHECK(cli.out.find("[per-instance] instance=mesif ") != std::string::npos);
+    CHECK(cli.out.find("[per-instance] instance=moesi_gpu ") != std::string::npos);
     CHECK(cli.out.find("[verdict] net=compute_noc vc=0 PASS (") != std::string::npos);
     CHECK(cli.out.find("[PASS] cep ordering point checker:") != std::string::npos);
 }

@@ -3,7 +3,7 @@
     "source_doc": "ArchForge 32-cep-based-coherence-architecture.md §6.1(moesi_gpu 声明)/ §6.0.2(per-network VC 矩阵)/ §6.0.3(通道依赖边表)",
     "mirror_note": "本仓只持**派生副本**,单点权威在 ArchForge(与 fabric.json 同型,per 22-nsa §0.5.4.1 NS-R2)。改动本文件前必须先确认 ArchForge 侧已更新;`scripts/test/cep_decl_alignment_check.sh` 第 ⑥ 项做逐字段镜像比对,`cep_fabric` 第 ⑤ 项做网络集双向比对。**唯一例外**:`status` 是**本仓权威字段**(「本仓是否已实现」,非 ArchForge 镜像面)⇒ ⑥ 跳过该键,其余 12 键仍严格;收窄守卫的反向 fixture 见 `scripts/test/cep_decl_reverse_verify.sh` 的破坏 10/11。",
     "note_entry": "Entry #62 建立(2026-10-25),Entry #63 回填完整 13 字段声明(moesi_gpu + mesif,逐字派生自 ArchForge 32 号 §6.1/§6.2);实例本体按 include/tlm/cep/protocol_instance.schema.json 校验。**2026-10-27(队列 #6 实施)**:`moesi_gpu.status` 由 `planned` 翻转为 `implemented` —— 该字段是**本仓权威字段**(per `cpptlm-cep-moesi-gpu-adapter` design `D-ζ`),**不**参与 ⑥ 逐字段镜像比对;其余 **12** 键逐字零 diff",
-    "freeze_state": "**诞生即不冻结**(per Entry #56 先例);**2026-10-27(队列 #6 实施)**:`moesi_gpu` 成为首个 `status=implemented` 实例(装配期校验实测通过,per `ADR-CEP-12` `INV-CEP-12-IC2` 三条件)⇒ 后续按 S1-4 复核口径评估是否纳入 M1 冻结集(**本批未纳入**)"
+    "freeze_state": "**诞生即不冻结**(per Entry #56 先例);**2026-10-28(队列 #8 实施)**:`chi_rnf` 作为**首个非 ArchForge 贡献**的工业协议实例进入本文件—— 权威归属由**顶层 `repo_owned_instance_ids[]`** 显式登记(per `ADR-CEP-12 §11` 的**实例级权威分区**:镜像域实例 = ArchForge 逐字段派生;本仓域实例 = 本仓权威,且**同样**受 ①~⑤ 语义校验 —— **收窄的是镜像义务,不是校验义务**);本文件因此**不再**是 ArchForge 的**纯**派生副本。**2026-10-27(队列 #6 实施)**:`moesi_gpu` 成为首个 `status=implemented` 实例(装配期校验实测通过,per `ADR-CEP-12` `INV-CEP-12-IC2` 三条件)⇒ 后续按 S1-4 复核口径评估是否纳入 M1 冻结集(**本批未纳入**)"
   },
   "instances": [
     {
@@ -156,6 +156,68 @@
         "hierarchical": true,
         "heterogeneous": true
       }
+    },
+    {
+      "id": "chi_rnf",
+      "family": "industrial",
+      "adapter": "ChiRnfAdapter",
+      "status": "planned",
+      "protocol_version": "chi-r2",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": true
+      },
+      "perm": [
+        "NONE",
+        "READ",
+        "UNIQUE",
+        "WRITEBACK"
+      ],
+      "atomic": {
+        "supported": false
+      },
+      "consistency_labels": {
+        "read": "SC",
+        "write": "SC"
+      },
+      "ordering_assumption": {
+        "compute_noc": {
+          "0": "unordered",
+          "1": "p2p_ordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "compute_noc": {
+          "request": 0,
+          "response": 1,
+          "snoop": 2,
+          "snoop_resp": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "不参与",
+        "caps": {
+          "scope": "NONE",
+          "completeness": "EXACT",
+          "authority": "NONE",
+          "aggregation_at": "NONE"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": true,
+        "heterogeneous": true
+      }
     }
   ],
   "channel_dependency_edges": {
@@ -199,5 +261,8 @@
         ]
       ]
     }
-  }
+  },
+  "repo_owned_instance_ids": [
+    "chi_rnf"
+  ]
 }

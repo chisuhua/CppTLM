@@ -165,10 +165,61 @@ if dup:
     err(1, f"协议实例 id 重复:{dup}")
 
 # ══════════════════════════════════════════════════════════════════════════
+# ─────────────────────────────────────────────────────────────────────────
+# 权威分区(per `ADR-CEP-12 §11` 的**实例级权威分区**)
+# ─────────────────────────────────────────────────────────────────────────
+# `protocol_instances.json` 承载**两类**协议实例:
+#   · **镜像域实例** = ArchForge 32 号 §6.1/§6.2 声明者(权威 = ArchForge,逐字段镜像)
+#   · **本仓域实例** = 本仓自有口径者(权威 = 本仓,如 `chi_rnf` —— ArchForge 未声明该协议)
+# 分区由**顶层 `repo_owned_instance_ids[]`** 显式登记(不靠推断)。
+#
+# ⇒ ①~⑤ 的**语义校验对象** = 镜像域实例 ∪ 本仓域实例(**扩面** —— 增加受检对象,
+#   不是减少约束;否则本仓域实例将不受 schema / vc_count / 词表 / 网络集校验
+#   ⇒ 传递性信任断裂 ⇒ 改造只放松不加强,背离本裁决的意图)。
+# ⇒ ⑥ 的**镜像比对**只覆盖 `ArchForge ids ∩ repo ids`(**收窄** —— 收窄的是**镜像义务**,
+#   不是**校验义务**)。
+REPO_DECL_PATH = os.path.join(root, REPO_DECL_REL)
+repo_doc = {}
+repo_insts = {}
+repo_edges = {}
+repo_owned_ids = []
+if not os.path.exists(REPO_DECL_PATH):
+    err(6, f"本仓派生副本缺失:{REPO_DECL_REL}")
+else:
+    try:
+        repo_doc = read_json(REPO_DECL_PATH)
+    except Exception as exc:
+        err(6, f"本仓派生副本 JSON 解析失败:{exc}")
+        repo_doc = {}
+    repo_insts = {d.get("id"): d for d in repo_doc.get("instances", []) if isinstance(d, dict)}
+    repo_edges = (repo_doc.get("channel_dependency_edges") or {}).get("per_network") or {}
+    _owned = repo_doc.get("repo_owned_instance_ids") or []
+    if not isinstance(_owned, list):
+        err(6, f"`repo_owned_instance_ids` 必须是数组(实际为 {type(_owned).__name__})")
+        _owned = []
+    repo_owned_ids = [x for x in _owned if isinstance(x, str)]
+
+    # 登记 id 必须**真实存在于** instances[] —— 否则登记键自身失效(拼写错误 ⇒ 静默失守)
+    for oid in repo_owned_ids:
+        if oid not in repo_insts:
+            err(6, f"`repo_owned_instance_ids` 登记了不存在的实例:{oid}")
+
+    # ⚠️ **权威迁移闸**:登记 id 与 ArchForge 已声明 id **撞名** ⇒ 红
+    #    (不允许本仓「接管」ArchForge 的实例 —— 那是 ArchForge 侧撤回声明的动作)
+    for oid in repo_owned_ids:
+        if oid in ids:
+            err(6, f"`repo_owned_instance_ids` 与 ArchForge 声明**撞名**:{oid}"
+                   f"(本仓不得接管 ArchForge 的实例)")
+
+# ①~⑤ 的校验对象 = 镜像域声明 ∪ 本仓域实例
+mirror_ids = set(ids)
+repo_domain_decls = [repo_insts[oid] for oid in repo_owned_ids if oid in repo_insts]
+checked_decls = list(declarations) + repo_domain_decls
+
 # ① 声明 ↔ 本仓 schema(**全 13 个 required 属性**)
 # ══════════════════════════════════════════════════════════════════════════
 validator = jsonschema.Draft202012Validator(schema)
-for decl in declarations:
+for decl in checked_decls:
     decl_id = decl.get("id", "<无 id>")
     for e in validator.iter_errors(decl):
         loc = "/".join(str(p) for p in e.path)
@@ -180,7 +231,7 @@ for decl in declarations:
 # ④ vc_binding[n] 的每个消息类 ∈ 6 类规范词表
 # ══════════════════════════════════════════════════════════════════════════
 chk2, chk3, chk4 = [], [], []
-for decl in declarations:
+for decl in checked_decls:
     decl_id = decl.get("id", "<无 id>")
     oa = decl.get("ordering_assumption", {})
     vb = decl.get("vc_binding", {})
@@ -247,7 +298,7 @@ for d in chk4:
 # ══════════════════════════════════════════════════════════════════════════
 chk5 = []
 used_nets = set()
-for decl in declarations:
+for decl in checked_decls:
     for fld in ("ordering_assumption", "vc_binding"):
         v = decl.get(fld, {})
         if isinstance(v, dict):
@@ -429,20 +480,8 @@ else:
 # ══════════════════════════════════════════════════════════════
 # ⑥ 本仓派生副本 ↔ ArchForge 声明(**逐字段**;镜像漂移 ⇒ 红)
 # ══════════════════════════════════════════════════════════════
-repo_decl_path = os.path.join(root, REPO_DECL_REL)
-repo_insts = {}
-repo_edges = {}
-if not os.path.exists(repo_decl_path):
-    err(6, f"本仓派生副本缺失:{REPO_DECL_REL}")
-else:
-    try:
-        repo_doc = read_json(repo_decl_path)
-    except Exception as exc:
-        err(6, f"本仓派生副本 JSON 解析失败:{exc}")
-        repo_doc = {}
-    repo_insts = {d.get("id"): d for d in repo_doc.get("instances", []) if isinstance(d, dict)}
-    repo_edges = (repo_doc.get("channel_dependency_edges") or {}).get("per_network") or {}
-
+# ⚠️ `repo_insts` / `repo_edges` 已在上方「权威分区」段读取完毕(避免重复解析 + 口径分裂)
+if repo_insts:
     # ① 逐实例逐字段相等(副本不是「差不多」,是**逐字段**)
     for d in declarations:
         rid = d.get("id")
@@ -463,9 +502,12 @@ else:
             # 键只存在于一侧时用 _MISSING 哨兵(否则两侧都 `.get()` 得 None ⇒ 漏报)
             if not strict_equal(local.get(key, _MISSING), d.get(key, _MISSING)):
                 err(6, f"{rid}.{key} 与 ArchForge 不符(派生副本已漂移)")
-    extra_ids = set(repo_insts) - set(ids)
+    # ⚠️ **收窄**(per `ADR-CEP-12 §11`):未登记的额外实例仍报红;
+    #    已登记的**本仓域实例**不再要求与 ArchForge 逐字段相等(权威 = 本仓)。
+    extra_ids = set(repo_insts) - set(ids) - set(repo_owned_ids)
     if extra_ids:
-        err(6, f"派生副本含 ArchForge 未声明的实例:{sorted(extra_ids)}")
+        err(6, f"派生副本含 ArchForge 未声明**且未登记**的实例:{sorted(extra_ids)}"
+               f"(本仓域实例须登记进 `repo_owned_instance_ids[]`)")
 
     # ② 边表端点必须被该网络的 vc_binding 绑定(否则装配闸会以「端点未绑定」报红)
     for rid, inst in repo_insts.items():

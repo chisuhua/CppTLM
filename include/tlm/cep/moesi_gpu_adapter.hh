@@ -79,6 +79,17 @@ public:
         {1, 3, 0, 1, 4, 1},  // T: 过渡态,收敛回 S / M
     };
 
+    // ── 逐 adapter 装载契约(per `adapter_contracts_loader.hh` 的 `fill_adapter_inputs`)──
+    // **「独占干净态 + 写事件 → 独占脏态」**三元组(AC-05 的语义载体,
+    // 字段名沿用 moesi 口径 `e_*` / `m_*`):
+    static constexpr State    kUniqueCleanState = State::E;
+    static constexpr Event    kWriteEvent       = Event::Wr;
+    static constexpr State    kUniqueDirtyState = State::M;
+
+    /// 瞬态态(AC-05 ②:瞬态**无**投影 ⇒ 不得进稳定态列表)
+    static constexpr std::uint8_t kTransientStates[]  = {static_cast<std::uint8_t>(State::T)};
+    static constexpr std::size_t  kTransientStateCount = 1;
+
     /// 状态转换(表驱动)
     static constexpr std::uint8_t transition(State s, Event e) noexcept {
         return kStateTransition[static_cast<std::uint8_t>(s)][static_cast<std::uint8_t>(e)];

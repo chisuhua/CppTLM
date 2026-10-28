@@ -13,9 +13,9 @@
 | Phase | 状态 | 说明 |
 |---|------|------|
 | 0 治理前置 | ⬜ **未开始** | 台账勘误 entry(F-1 双轴澄清)· `ADR-CEP-12` Status Update(architect)· `07 号` §5.1.1 状态 · 冻结清单重算(**2 件冻结面**) |
-| 1 adapter 载体面 | 🟡 **进行中**(2026-10-28) | `ChiRnfAdapter`(状态模型 + 6→4 投影 + 6→3 映射 + merge note + `identity_reason`)+ **E1 一手锚**(IHI0050) |
-| 2 实例声明落地 | ⬜ **未开始** | `protocol_instances.json` 的 `chi_rnf` + `repo_owned_instance_ids[]` + `perm_upgrades.json` 加行与自述改写 |
-| 3 权威分区改造 | ⬜ **未开始** | ⑥ 收窄 + ①~⑤ 扩面 + 3 条新反向 fixture + 装载层参数化 |
+| 1 adapter 载体面 | ✅ **已完成**(2026-10-28) | `ChiRnfAdapter`(状态模型 + 6→4 投影 + 6→3 映射 + merge note + `identity_reason`)+ **E1 一手锚**(IHI0050) |
+| 2 实例声明落地 | ✅ **已完成**(2026-10-28) | `protocol_instances.json` 的 `chi_rnf` + `repo_owned_instance_ids[]` + `perm_upgrades.json` 加行与自述改写 |
+| 3 权威分区改造 | ✅ **已完成**(2026-10-28) | ⑥ 收窄 + ①~⑤ 扩面 + 3 条新反向 fixture + 装载层参数化 |
 | 4 真插件引擎 | ⬜ **未开始** | `ChiRnfProtocolEngine`(6 通道观测点 + Credit + TxnID + CompAck) |
 | 5 JSON 装配实测 | ⬜ **未开始** | 装配期校验实测 + CC-05 ④ family 编号对齐 |
 | 6 判据收口 | ⬜ **未开始** | CR-01 ~ CR-14 + 反向 fixture 登记 + 零 diff 复核 |
@@ -65,33 +65,33 @@
 
 ### Phase 2 —— 实例声明落地(CR-01 / CR-05 / CR-06)
 
-- [ ] **2.1** `protocol_instances.json` 的 `chi_rnf` 实例 —— 13 属性齐全:
+- [x] **2.1** `protocol_instances.json` 的 `chi_rnf` 实例 —— 13 属性齐全:
       `family=industrial` · `adapter=ChiRnfAdapter` · `status=planned`(落地后翻 `implemented`)·
       `protocol_version=chi-r2` · `flow_support`(7 true / 3 false)· `perm`(全 4 值)·
       `atomic={supported:false}` · `consistency_labels={read:SC, write:SC}` ·
       `ordering_assumption` · `vc_binding` · `sharer_tracker` · `combination_capabilities`
-- [ ] **2.2** **顶层 `repo_owned_instance_ids: ["chi_rnf"]`** —— 登记键(envelope 层;
+- [x] **2.2** **顶层 `repo_owned_instance_ids: ["chi_rnf"]`** —— 登记键(envelope 层;
       ⚠️ `protocol_instance.schema.json` **零改动** —— 它校验**单个实例对象**,不校验 envelope)
-- [ ] **2.3** `perm_upgrades.json` 加行 `{chi_rnf, UNIQUE, WRITEBACK}` + **`current_state` 自述改写**
+- [x] **2.3** `perm_upgrades.json` 加行 `{chi_rnf, UNIQUE, WRITEBACK}` + **`current_state` 自述改写**
       (该字段是本仓自持声明源的自述 ⇒ 加行后原文即过期 ⇒ 失真即 drift)
 - [ ] **2.4** **反向 fixture**(CR-05 / CR-06)—— 引用不存在的 id ⇒ 红;`UNIQUE→READ` ⇒ 红;
       `不参与` + `scope=SYSTEM` ⇒ 红
 
 ### Phase 3 —— 权威分区改造(CR-07 / CR-08 / CR-09)
 
-- [ ] **3.1** `cep_decl_alignment_check.sh` 的 **⑥ 收窄** —— 3 条规则:
+- [x] **3.1** `cep_decl_alignment_check.sh` 的 **⑥ 收窄** —— 3 条规则:
       R1 镜像比对只覆盖 `ArchForge ids ∩ repo ids`;R2 `extra_ids − repo_owned` 才红;
       R3 登记 id 撞 ArchForge id ⇒ 红
-- [ ] **3.2** **①~⑤ 扩面** —— repo-owned 实例同样接受 schema / `vc_count` / 词表 / 网络集 /
+- [x] **3.2** **①~⑤ 扩面** —— repo-owned 实例同样接受 schema / `vc_count` / 词表 / 网络集 /
       边端点绑定校验(**增加**受检对象,不是**减少**约束)
-- [ ] **3.3** **3 条新反向 fixture**(登记进 `cep_decl_reverse_verify.sh`)——
+- [x] **3.3** **3 条新反向 fixture**(登记进 `cep_decl_reverse_verify.sh`)——
       未登记的额外实例 ⇒ 红;登记实例违 schema ⇒ 红;撞名 ⇒ 红
       (⚠️ **既有 fixture 的索引假设**:现只变异 `silent_upgrades[0]`(moesi 行)⇒ 加 chi 行后
       chi 行**无 fixture 覆盖** ⇒ **补**一条变异 `[1]` 的用例)
-- [ ] **3.4** **装载层参数化**(`adapter_contracts_loader.hh`)—— 拆「全局输入」(AC-01/02/03)与
+- [x] **3.4** **装载层参数化**(`adapter_contracts_loader.hh`)—— 拆「全局输入」(AC-01/02/03)与
       「逐 adapter 输入」(AC-04/05);逐 adapter 用**模板参数分派**(编译期类型,非运行期字符串分发);
       **判据本体 `adapter_schema_contracts.hh` 零改动**
-- [ ] **3.5** **正控**:既有「破坏 10 / 11」fixture 仍 PASS(12 键穷举 + `status` 正控)
+- [x] **3.5** **正控**:既有「破坏 10 / 11」fixture 仍 PASS(12 键穷举 + `status` 正控)
 
 ### Phase 4 —— 真插件引擎(`ChiRnfProtocolEngine`,CR-10 ~ CR-14)
 
