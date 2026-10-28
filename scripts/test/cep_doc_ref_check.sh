@@ -103,6 +103,8 @@ VIRTUAL_PATHS=(
   "docs/adr/ADR-CEP-13-...md"                       # 同上
   "docs/adr/ADR-CEP-00-...md"                       # 同上
   "openspec/.../tasks.md"                          # 省略号(散文引用,per obj §4.7.3 载体分工表的通用写法)
+  "docs/research/…"                                # 省略号(散文引用)—— 台账 Entry #90 ④b 记录过同类误伤
+  "openspec/changes/archive/2026-10-28-…/"          # 省略号(散文引用)—— 同上
   "docs/architecture/07-*.md"                        # 通配
   "include/tlm/cep/.gitkeep"                        # 占位文件
   "include/tlm/cep/null_protocol_engine.hh"          # ADR-CEP-07 决策 4 草图的**落点路径**;

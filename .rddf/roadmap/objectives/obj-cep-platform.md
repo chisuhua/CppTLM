@@ -6200,6 +6200,7 @@ owner 转指(归档)时,若 fixture 锚点不跟随 ⇒ fixture **假失败**(�
 |---|---------|------|------|
 | 4 | 「obj-cep-platform.md: 引用不存在的文件 `openspec/changes/cpptlm-cep-cohif-carrier/`( + `/tasks.md`)」 | 归档把 change 目录移到**不入库**的 `openspec/changes/archive/2026-10-28-…/` ⇒ 活文档里的**历史**路径引用指向了不存在的目录 | 按 AGENTS.md「VIRTUAL_PATHS」约定(提及已删除/归档文件时**登记条目**,而非删改历史段落)⇒ 在 `scripts/test/cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` 登记 `openspec/changes/cpptlm-cep-cohif-carrier/`;⚠️ **不**改写成 archive 路径 —— 该目录**不入库**,改了反而让 clone 后的仓内引用**永久断链** |
 | 4b | 「obj-cep-platform.md: 引用不存在的文件 `docs/research/…`」 | **本 Entry 自己的文字**用了省略号写路径 ⇒ 被路径提取器当成单一路径 | 改为**真实路径** `docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`(该文件存在)⇒ 兼得**更精确**的引用 |
+| 4c | 「obj-cep-platform.md: 引用不存在的文件 `openspec/changes/archive/2026-10-28-…/`」 | **4b 的同款**:Entry #90 的表格里用**省略号**写归档路径 ⇒ 被提取器当成单一路径 | 登记进 `cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS`(省略号类,与既有 `docs/adr/ADR-CEP-*-...md` / `openspec/.../tasks.md` **同款处置**);⚠️ **不**改写历史表格(改写即篡改台账) |
 
 **⑦ 关联**: Entry #89(Phase 6/7 判据收口 + 反向 fixture 登记)· #88(Phase 5 JSON 装配连通性)· #87(Phase 4 装配宏)· #86(Phase 3 特化桥)· #85(Phase 2 端口面)· #84(Phase 1 载体面)· #81(队列 #7 转正)· #80(同款 owner 转指先例)· #74(`ADR-CEP-19` 签发)
 
