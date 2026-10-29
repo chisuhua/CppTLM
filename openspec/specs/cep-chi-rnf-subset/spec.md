@@ -21,7 +21,6 @@ CEP SHALL 为 **CHI RN-F 子集**提供:6 通道 adapter + 4 值 `perm` 投影 +
 > **边界**:不改 `protocol_instance.schema.json`(冻结面)· 不改 `adapter_schema_contracts.hh`
 > (判据本体零改动)· 不改 `CohIfBundle`(队列 #7 的 CC-01 / CC-02 零触碰)· 不扩 `CATEGORY_*`(恒 3 类)·
 > 不扩 `perm`(恒 4 值)· 新增 invariant 数 = 0。载体落点见 `design.md` D-η。
-
 #### Scenario: CR-01 —— `chi_rnf` 实例声明 SHALL 符合**冻结** schema 的全 13 属性
 
 - **WHEN** 核对 `protocol_instances.json` 的 `chi_rnf` 实例声明
@@ -130,12 +129,20 @@ CEP SHALL 为 **CHI RN-F 子集**提供:6 通道 adapter + 4 值 `perm` 投影 +
   **副本携带权限**协议(`UC`/`UD`/`SC`/`SD` 本地编码权限)⇒ 正是该枚举值的原义
 - **AND** 子条件 ② SHALL 成立:`caps` SHALL 等于**退化行** `scope=NONE` / `completeness=EXACT` /
   `authority=NONE` / `aggregation_at=NONE`(对齐 `ADR-CEP-04` 的 `BroadcastNull` 退化行)
-- **AND** 子条件 ③ SHALL 成立:本仓 SHALL **不**新增 SharerTracker 实现(「不参与」不是第 6 种实现;
-  per `ADR-CEP-04` 决策 7 的实现清单不变)
+- **AND** 子条件 ③ SHALL 成立:本仓 SHALL **不**把「不参与」登记为**一种** SharerTracker 实现
+  (「不参与」是**选型值**,不是**第 6 种实现** —— per `ADR-CEP-04 §13` 的 R-1 裁决,
+  本仓的实现表为 **6 行**,其中第 6 行是 `HierarchicalDirectory`,**不含**「不参与」)
 - **AND** **反向 fixture**:`impl = "不参与"` 但 `caps.scope = "SYSTEM"` ⇒ 必红
 - **AND** **正控**:`moesi_gpu` 的 `SparseSnoopFilter` + 非退化 caps 行 SHALL 仍 PASS
 
 > **锚点**:`test_cep_chi_rnf_subset.cc` 的 CR-06 三子条件断言 + 1 条反向 fixture + 正控断言
+
+>
+> **⚠️ 本次修订(2026-10-29,per `ADR-CEP-04 §13` 的 R-1 裁决)**:CR-06 ③ 的措辞
+> 「本仓 SHALL **不**新增 SharerTracker 实现」与 R-1 裁决(**新增第 6 种实现
+> `HierarchicalDirectory`**)冲突 ⇒ 改为**不与实现表行数耦合**的表述:
+> 「『不参与』**不是**一种 SharerTracker 实现」。**语义**不变,只是去掉了
+> 「行数恒为 5」这一**已被 R-1 裁决取代**的耦合点。其余 Scenario **逐字不改**。
 
 #### Scenario: CR-10 —— CHI 事务 SHALL 由**真插件**驱动、穿过 `ProtocolBridge` 抵达对端
 

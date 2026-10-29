@@ -320,7 +320,7 @@ group-scoped completion     → Fabric Collective Plane
 | **NVLink** | NVLink | `NvlinkAdapter` | Stage 2 | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
 | **UALink** | UALink | `UalinkAdapter` | Stage 3 | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
 | **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **✅ 已落地**(队列 #6,2026-10-27 归档;首个 `status=implemented` 实例) | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
-| **MESIF** | `mesif` | `MesifAdapter` | **📋 已排期**(队列 #9;季度见 `obj §4.0`;⚠ R-1 **已裁决**(Entry #96 —— 新增第 6 种 SharerTracker 实现 `HierarchicalDirectory` + `AggregationAt::HIERARCHICAL`,per `ADR-CEP-04 §13`)+ 声明权威**已迁到本仓**(per `ADR-CEP-12 §13`);**余 2 项缺口**(状态机规约 / 5→4 投影表)另立) | 分级目录型(跨卡);目录查询 / 定向 snoop;**SharerTracker 选型 = `HierarchicalDirectory`**(`SYSTEM/EXACT/GLOBAL/HIERARCHICAL` —— 多级聚合) | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1);⚠ 声明权威已迁本仓 ⇒ 与 `32 号 §6.2` **分叉**(跨仓追认债) |
+| **MESIF** | `mesif` | `MesifAdapter` | **📋 已排期**(队列 #9;季度见 `obj §4.0`;R-1 **已裁决**(Entry #96 —— 新增第 6 种 SharerTracker 实现 `HierarchicalDirectory` + `AggregationAt::HIERARCHICAL`,per `ADR-CEP-04 §13`)+ 声明权威**已迁到本仓**(per `ADR-CEP-12 §13`);**规约层已闭合**(Entry #101 —— `cpptlm-cep-mesif-state-spec` **已归档**:MESIF 5 态 × 6 事件转换表 + 5→4 投影表 + 逐格依据 + **31/35 格待追认**;⚠ **实现层 change 待建**,且须等跨仓逐格追认) | 分级目录型(跨卡);目录查询 / 定向 snoop;**SharerTracker 选型 = `HierarchicalDirectory`**(`SYSTEM/EXACT/GLOBAL/HIERARCHICAL` —— 多级聚合) | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1);⚠ 声明权威已迁本仓 ⇒ 与 `32 号 §6.2` **分叉**(跨仓追认债) |
 
 > **协议数 6 族 / 8 实例**(CXL 2.0 与 3.0 对称是同一 adapter 的两种模式,但实现阶段是 2 个 change)
 >
@@ -909,8 +909,24 @@ experimental/<run_id>/
 ---
 
 
+## 附录 · Status Update 2026-10-29(第十三则 · per 台账 Entry #101 —— 队列 #9 的**规约层**已闭合)
+
+> **授权**:Entry #101(规约层 change `cpptlm-cep-mesif-state-spec` **归档**;architect/builder 实施)。
+> **口径**:本节仅登记 §5.1.1 **MESIF 行**的活口径同步 + 交付物索引。**§2 ~ §5 / §6.1 ~ §6.3 / §7 ~ §10 的定义 / 职责 / 判据零改动**。
+> **冻结面**走 `cep_freeze_check.sh --update --authorized-by "Entry #101"`。
+
+> **① 规约层已闭合**:change `cpptlm-cep-mesif-state-spec` **归档**(「**已完成归档**」语义 ⇒ 2 份 delta spec 合并进 `openspec/specs/cep-mesif-state-spec/` 与 `openspec/specs/cep-chi-rnf-subset/`)。交付:MESIF **5 态 × 6 事件**转换表(30 格)+ **5→4 `perm` 投影表**(5 格)+ **逐格依据**(`kind` / `ref` / `note`)+ **8 条偏离清单** + **2 项语义损失**登记;规范性载体 = `include/tlm/cep/mesif_state_spec.hh`。
+
+> **② 判据口径边界**:判据锁**完备性 / 可审计性 / 待追认标记 / 内部自洽**,**不**锁推导值的**语义正确性** —— 未追认的值**带着 `pending` 标记**留在规约里,**不**被固化为「既定事实」;**唯一例外**是 3 个**锚点格**(`I→NONE` / `E+Wr→M` / `S+Wr→S`),锁定的是**自洽性不变量**(per change 的 design `D-ζ` 锚点格例外段)。
+
+> **③ ⚠️ 跨仓追认债仍在**:**31 / 35 格待追认**(机器可查:`MesifStateSpec::pending_count()`);逐格追认清单 = `docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md`(**由载体生成**,含 `--check` 模式);跨仓承接 = `ArchForge:.rddf/improvements/cep-alignment-debt-cleanup.md`。⇒ **队列 #9 的实现层**须等逐格追认(或明确接受本仓推导)后才可启动。
+
+> **④ 门禁实测**:12 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0;`ctest -R cep` 39/39;全仓 `cpptlm_tests` **2011 case / 874139 assertion** 全绿。
+
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)** + **Status Update 2026-10-28 第八则(Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)** + **Status Update 2026-10-28 第九则(Entry #89 —— 判据收口 + 反向 fixture 登记 + 零 diff 复核)** + **Status Update 2026-10-28 第十则(Entry #93 —— 队列 #8 立项 + §5.1.1 CHI 行同步 + UC→UD 静默升级事实登记)** + **Status Update 2026-10-28 第十一则(Entry #95 —— 队列 #8 归档 + §5.1.1 CHI 行状态列同步)** + **Status Update 2026-10-29 第十二则(Entry #96 —— 队列 #9 的 R-1 裁决落地 + §5.1.1 MESIF 行同步)**
+---
+
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)** + **Status Update 2026-10-28 第八则(Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)** + **Status Update 2026-10-28 第九则(Entry #89 —— 判据收口 + 反向 fixture 登记 + 零 diff 复核)** + **Status Update 2026-10-28 第十则(Entry #93 —— 队列 #8 立项 + §5.1.1 CHI 行同步 + UC→UD 静默升级事实登记)** + **Status Update 2026-10-28 第十一则(Entry #95 —— 队列 #8 归档 + §5.1.1 CHI 行状态列同步)** + **Status Update 2026-10-29 第十二则(Entry #96 —— 队列 #9 的 R-1 裁决落地 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-29 第十三则(Entry #101 —— 队列 #9 的规约层已闭合 + §5.1.1 MESIF 行同步)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

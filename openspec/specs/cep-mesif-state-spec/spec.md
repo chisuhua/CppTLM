@@ -23,7 +23,7 @@
 > 「**不锁非锚点格**的语义正确性」;锚点格锁的是**自洽性**,其 `pending` 标记 SHALL 仍为 `true`;
 > 追认若否定某个锚点格 ⇒ SHALL **同时**改载体该格 + 对应判据 + 追认清单该行(三者由 MS-06 机器核对)。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-mesif-state-spec
 
@@ -36,7 +36,6 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 > `openspec/changes/**/design.md` 只承载**推导口径与统计**,**不**复写逐格表 —— 理由是**可变性**
 > (追认会改逐格 `basis`)+ **不可变性**(归档件不可变;且**新**归档件默认不入库 ⇒ 引用会断链)
 > + **可核对**(统计由机器判据逐数核对载体)⇒ 无双真源。
-
 
 #### Scenario: MS-01 —— MESIF 的 5 态 SHALL 全部有 4 值 `perm` 投影
 

@@ -8,13 +8,17 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-04
   - ADR-CEP-02
-状态: 🟡 **已转正**(2026-10-29 —— change 目录已建;KPI 并发 **0/3 → 1/3**,per Entry #97)
+状态: ✅ **已归档**(2026-10-29,Entry #101 —— 「**已完成归档**」语义:2 份 delta spec 已合并进
+  `openspec/specs/cep-mesif-state-spec/`(ADDED:MS-01 ~ MS-06)+ `openspec/specs/cep-chi-rnf-subset/`
+  (MODIFIED:CR-06 ③ 措辞修正);Phase 0 ~ 5 全完成;KPI 并发 **1/3 → 0/3**;⚠️ 转正时的活跃路径
+  `openspec/changes/cpptlm-cep-mesif-state-spec/` 已于归档时失效 ⇒ 现为
+  `openspec/changes/archive/2026-10-29-cpptlm-cep-mesif-state-spec/`(**不入库**,per `.gitignore`))
 created: 2026-10-29
 ---
 
 # improvement: cpptlm-cep-mesif-state-spec
 
-> **状态**: 🟡 **已转正**(2026-10-29,Entry #97)· **change 目录已建**
+> **状态**: ✅ **已归档**(2026-10-29,Entry #101)· **规约层已交付**
 > **队列**: `obj-cep-platform §4.0` **队列 #9**(`cpptlm-cep-mesif-adapter`)的**第 0 个 change**(规约层)· **不新增队列行** —— 一个队列行可承载多个 openspec change / capability(per 队列 #3 / #4 / #8 先例)⇒ **顺序 / 季度口径不变**(五处同改不触发)
 > **与队列 #9 的分工**:本 change = **规约层**(状态机 + 投影表的**口径来源**与**推导依据**);队列 #9 `cpptlm-cep-mesif-adapter` = **实现层**(adapter + 引擎 + 装配)。⇒ 本 change 是队列 #9 的**前置**,不是它的替代。
 > **关联 ADR**: `ADR-CEP-05`(Stub 只暴露稳定状态 + `perm` 4 值投影)· `ADR-CEP-12`(实例声明 schema + 权威分区/迁移)· `ADR-CEP-04`(SharerTracker caps)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值锁)
