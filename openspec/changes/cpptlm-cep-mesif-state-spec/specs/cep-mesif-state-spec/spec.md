@@ -99,6 +99,22 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 
 > **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-04 断言 + 2 条反向 fixture
 
+#### Scenario: MS-06 —— 逐格追认清单 SHALL 与**载体**逐格一致
+
+- **WHEN** 核对仓内逐格追认清单(`docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md`)与载体的 `kTable`
+- **THEN** 子条件 ① SHALL 成立:清单的**转换表** SHALL **恰好 30 行**,每行的
+  `(态, 事件, 目标态, kind, pending)` SHALL 与载体**逐格相等**
+- **AND** 子条件 ② SHALL 成立:清单的**投影表** SHALL **恰好 5 行**,每行的
+  `(态, perm, kind, pending)` SHALL 与载体**逐格相等**
+- **AND** 子条件 ③ SHALL 成立:清单登记的**待追认格数** SHALL 与载体 `pending_count()` **相等**
+  ⇒ 跨仓债的刻度**唯一**
+- **AND** 子条件 ④ SHALL 成立:清单**不**得存在**载体里没有**的行(防清单里出现未登记的「追认项」)
+- **AND** **反向 fixture**:把清单某行的 `kind` 改掉 / 删掉一行 ⇒ 必红
+- **AND** **正控**:清单的 30 + 5 行与载体**零差异**
+
+> **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-06 断言 + 2 条反向 fixture
+> (反向 fixture 以「同谓词 + 变异输入」实现:解析出的行集合与载体比对)
+
 #### Scenario: MS-05 —— 规约与**协议模板**的偏离 SHALL 被**显式登记**
 
 - **WHEN** 核对 MESIF 规约相对 CHI / MOESI 模板的偏离

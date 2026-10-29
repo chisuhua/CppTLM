@@ -6034,6 +6034,44 @@ egress 借用它会**倒置连接方向**;
 
 ---
 
+### Entry #99 — 2026-10-29 [build](规约层 Phase 3 判据收口 + Phase 4 追认清单 + 跨仓登记)
+
+**主题**: MESIF 规约层的**可执行判据**、**逐格追认清单**与**跨仓追认输入**登记
+
+**① Phase 3 判据收口(可执行)**
+
+| 项 | 内容 |
+|----|------|
+| 判据 | `test/test_cep_mesif_state_spec.cc`(**6 case / 342 assertion**,标签 `[cep][mesif-state-spec]`)= MS-01 ~ MS-06:投影完备 · 转换表完备 · 写规则 · 秩口径 · 逐格依据 · 语义损失 · 偏离清单 · **追认清单逐格一致** |
+| 反向 fixture | **两级**:① **文件内变异 fixture**(18 条)—— 变异**副本** + 同一谓词 ⇒ 真实表与编译期锁恒绿 ⇒ 必是**运行时红**;② **端到端毒化脚本** `scripts/test/cep_mesif_state_spec_reverse_verify.sh`(**8 类毒化** + 探针 `cep_mesif_state_spec_probe.cc`)—— 影子副本 ⇒ 编译期锁或运行期谓词报红 |
+| 门禁登记 | ctest `cep_mesif_state_spec` + `cep_mesif_state_spec_reverse_verify`;`scripts/README.md` 的 CEP 守门脚本表(**10 → 11**)+ `docs/ONBOARDING.md` 守门行 |
+| 载体改造 | `deviations_are_consistent` **模板化**(以清单为参数)+ 新增 `transients_have_no_projection` + `kNoProjection` 哨兵 + `kPermMergeNoteChiRnfContrast`(**损失 ① 主体与对照分离** ⇒ 「措辞纪律」可机器检查) |
+
+**② Phase 4 追认清单 + 跨仓登记**
+
+| 项 | 内容 |
+|----|------|
+| 清单 | `docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md` —— 30 格转换 + 5 格投影 + **8 条偏离** + 2 项跨仓待办 + 追认刻度;**表格由载体直接生成** ⇒ 与载体零漂移(机器判据 **MS-06**) |
+| 跨仓 | ArchForge 仓的改进提案 `.rddf/improvements/cep-alignment-debt-cleanup.md` 新增「**追认输入**」段(commit `22824ce`)—— 载体 / 清单 / 推导口径 三件产物 + 追认刻度(**31 / 35** 待追认)+ 与 D4 / D5 / D7 的对应 + 偏离清单 + **口径边界**警示 ⇒ 其 **AC-7** 具备回填条件 |
+| 销号条件 | design `D-η`:本 change 归档 ⇒ 队列 #9 的「余 2 项缺口」登记项**可销号**的**四条**条件(S-1 规约进 main specs · S-2 队列行标注移除 · S-3 KPI 回 0/3 · S-4 跨仓债仍可见) |
+| 跨仓待办 | 追认清单 §4 的 **X-1**:`authority_migrations[mesif]` 的降级 / 删除 —— 触发条件 = ArchForge 完成 `32 号 §6.2` 追认;执行主体 = **本仓**;**本仓无权单方闭环**(per `ADR-CEP-12 §13`) |
+
+**③ ⚠️ 本轮确立的判据口径边界(per ArchForge 侧风险 ②)**:判据锁**完备性 / 可审计性 / 待追认标记 / 内部自洽**,
+**不**锁推导值的**语义正确性** ⇒ 未追认的值**带着 `pending` 标记**留在规约里,**不**被固化为「既定事实」
+⇒ **投影表回填前不得据此写实现层判据**(队列 #9 的实现层)。
+
+**④ 冻结面**:**零改动** —— `protocol_instance.schema.json` / `adapter_schema_contracts.hh` / `CohIfBundle` /
+`protocol_instances.json` / `sharer_tracker.hh` / `docs/architecture/07-…` 全部不动;新增的
+`include/tlm/cep/mesif_state_spec.hh` 是**规约层新载体**(非既有冻结产物)⇒ **不进** M1 冻结集
+(per Entry #90 / #96 先例:冻结集只含 Stage 0 收口时的产物快照)。
+
+**⑤ 验收(实测)**:12 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0 ·
+`ctest -R cep` **39/39** · 全仓 `cpptlm_tests` **2010 case / 874130 assertion** 全绿。
+
+**⑥ 关联**:Entry #98(ArchForge 答复 + Phase 0/1)· #97(立项)· #96(R-1 裁决落地)· #90 / #95(归档连锁修先例)
+
+---
+
 ### Entry #98 — 2026-10-29 [build](ArchForge 侧答复 + 规约层 Phase 0/1 落地)
 
 **主题**: ArchForge 侧对 41 号提案的**答复**(载体迁移 + 权威归属裁决「方案 A」)+ 规约层 change 的 Phase 0/1 落地

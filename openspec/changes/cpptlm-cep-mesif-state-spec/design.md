@@ -84,6 +84,23 @@
 
 ---
 
+# D-η —— 队列 #9「余 2 项缺口」的**销号条件**
+
+本 change 归档 ⇒ 队列 #9(`cpptlm-cep-mesif-adapter`)的「余 2 项缺口」登记项**可销号**。
+**四条**须**同时**成立(缺一不可 —— 否则「规约已闭合」只是纸面):
+
+| # | 条件 | 判据形态 |
+|---|------|----------|
+| **S-1** | 规约**已进入 main specs** | `openspec/specs/cep-mesif-state-spec/spec.md` 存在且含 MS-01 ~ MS-06(归档时**合并** delta spec,per「已完成归档」语义) |
+| **S-2** | 队列行的缺口标注**已移除** | `obj §4.0` 行 #9 的「余 2 项缺口」登记项被移除,改为「规约层已闭合,**实现层**待启动」 |
+| **S-3** | KPI **回 0/3** | 五处同改(`obj` · `phase-10.md` · `.rddf/roadmap.md` · `AGENTS.md` · `improvements/cpptlm-cep-umbrella.md`) |
+| **S-4** | 跨仓债**仍可见** | 追认清单落盘(`docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md`)+ ArchForge 侧 AC-7 **可回填** ⇒ 规约的**待追认**性质不因归档而消失 |
+
+> ⚠️ **销号 ≠ 追认完成**:S-4 保证**待追认的 31 格**在归档后**依然可查、可追认**;
+> 队列 #9 的**实现层**仍须等 ArchForge 逐格追认(或明确接受本仓推导)后才可启动。
+
+---
+
 # D-ε —— MESIF 规约推导表(Phase 1 产物;**逐格可追认**)
 
 > **本节的地位**:本节是**推导依据与证据**(per 架构文档契约:推导 / 逐格裁决表 ⇒ 落 design,不进架构正文)。

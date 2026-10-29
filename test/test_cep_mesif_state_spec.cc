@@ -14,6 +14,8 @@
 //    **完备性 / 可审计性 / 待追认标记 / 内部自洽**;语义正确性由 ArchForge 逐格追认闭合。
 #include "catch_amalgamated.hpp"
 
+#include "cep_adr_parser.hh"
+
 #include "tlm/cep/chi_rnf_adapter.hh"
 #include "tlm/cep/mesif_state_spec.hh"
 #include "tlm/cep/moesi_gpu_adapter.hh"
@@ -21,6 +23,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -45,6 +48,77 @@ namespace {
     bool rank_note_satisfies(const char* note) {
         return Spec::contains(note, "F → E") && Spec::contains(note, "秩回落") &&
                Spec::contains(note, "第 5 个 perm 值");
+    }
+
+    /// 清单里的一行(前 5 列有效)
+    struct ChecklistRow {
+        std::string c1;      ///< 态(转换表) / 态(投影表)
+        std::string c2;      ///< 事件(转换表) / perm(投影表)
+        std::string c3;      ///< 目标态(转换表)
+        std::string kind;    ///< `kind`
+        std::string pending; ///< `yes` / `no`
+    };
+
+
+    /// 去空白 + 去反引号
+    std::string trim_cell(std::string s) {
+        const auto b = s.find_first_not_of(" \t");
+        if (b == std::string::npos)
+            return std::string();
+        const auto e = s.find_last_not_of(" \t");
+        s = s.substr(b, e - b + 1);
+        if (s.size() >= 2 && s.front() == '`' && s.back() == '`')
+            s = s.substr(1, s.size() - 2);
+        return s;
+    }
+
+    /// 按**表头行**定位并解析一张 markdown 表(只取数据行)
+    std::vector<ChecklistRow> parse_checklist_table(const std::string& doc,
+                                                    const std::string& header, std::size_t kind_col,
+                                                    std::size_t pending_col) {
+        std::vector<ChecklistRow> rows;
+        std::size_t pos = doc.find(header);
+        if (pos == std::string::npos)
+            return rows;
+        pos += header.size();
+        // 跳过表头行尾的换行 ⇒ 从**分隔行**开始读
+        const std::size_t nl = doc.find('\n', pos);
+        if (nl == std::string::npos)
+            return rows;
+        pos = nl + 1;
+        while (pos < doc.size()) {
+            std::size_t eol = doc.find('\n', pos);
+            if (eol == std::string::npos)
+                eol = doc.size();
+            const std::string line = doc.substr(pos, eol - pos);
+            pos = eol + 1;
+            if (line.empty() || line[0] != '|')
+                break; // 表结束
+            std::vector<std::string> cells;
+            std::string cur;
+            for (const char ch : line) {
+                if (ch == '|') {
+                    cells.push_back(cur);
+                    cur.clear();
+                } else {
+                    cur.push_back(ch);
+                }
+            }
+            cells.push_back(cur);
+            if (cells.size() < kind_col + 2)
+                continue;
+            const std::string first = trim_cell(cells[1]);
+            if (first.empty() || first.find_first_not_of("0123456789") != std::string::npos)
+                continue; // 表头 / 分隔行
+            ChecklistRow r;
+            r.c1 = trim_cell(cells[2]);
+            r.c2 = trim_cell(cells[3]);
+            r.c3 = trim_cell(cells[4]);
+            r.kind = trim_cell(cells[kind_col]);
+            r.pending = trim_cell(cells[pending_col]);
+            rows.push_back(r);
+        }
+        return rows;
     }
 
 } // namespace
@@ -402,5 +476,120 @@ TEST_CASE("MESIF 规约:偏离清单与载体逐格一致(MS-05)", "[cep][mesif-
             Spec::kTable.transition[0][static_cast<std::size_t>(Spec::Event::SnpShared)]));
         CHECK_FALSE(Spec::deviations_are_consistent(Spec::kTable, devs));
         CHECK(Spec::deviations_are_consistent(Spec::kTable)); // 正控
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  MS-06 —— 逐格追认清单 SHALL 与**载体**逐格一致
+// ══════════════════════════════════════════════════════════════════════
+namespace {
+
+    const char* perm_name(Spec::Perm p) {
+        switch (p) {
+        case Spec::Perm::NONE:
+            return "NONE";
+        case Spec::Perm::READ:
+            return "READ";
+        case Spec::Perm::UNIQUE:
+            return "UNIQUE";
+        case Spec::Perm::WRITEBACK:
+            return "WRITEBACK";
+        }
+        return "?";
+    }
+
+    /// 清单与载器的**比对谓词**(返回违规描述;空 = 逐格一致)
+    std::vector<std::string> checklist_mismatches(const std::vector<ChecklistRow>& tr,
+                                                  const std::vector<ChecklistRow>& pr) {
+        std::vector<std::string> bad;
+        if (tr.size() != Spec::kStateCount * Spec::kEventCount)
+            bad.push_back("转换表行数不是 30");
+        for (std::size_t s = 0; s < Spec::kStateCount; ++s) {
+            for (std::size_t e = 0; e < Spec::kEventCount; ++e) {
+                const std::size_t idx = s * Spec::kEventCount + e;
+                if (idx >= tr.size()) {
+                    bad.push_back("转换表缺行");
+                    continue;
+                }
+                const auto& row = tr[idx];
+                const auto& b = Spec::kTable.transition_basis[s][e];
+                const char* to =
+                    Spec::state_name(static_cast<Spec::State>(Spec::kTable.transition[s][e]));
+                if (row.c1 != Spec::state_name(static_cast<Spec::State>(s)))
+                    bad.push_back("态不符");
+                if (row.c2 != Spec::event_name(static_cast<Spec::Event>(e)))
+                    bad.push_back("事件不符");
+                if (row.c3 != to)
+                    bad.push_back("目标态不符");
+                if (row.kind != Spec::basis_kind_name(b.kind))
+                    bad.push_back("kind 不符");
+                if (row.pending != (b.pending ? "yes" : "no"))
+                    bad.push_back("pending 不符");
+            }
+        }
+        if (pr.size() != Spec::kStateCount)
+            bad.push_back("投影表行数不是 5");
+        for (std::size_t s = 0; s < Spec::kStateCount && s < pr.size(); ++s) {
+            const auto& row = pr[s];
+            const auto& b = Spec::kTable.projection_basis[s];
+            if (row.c1 != Spec::state_name(static_cast<Spec::State>(s)))
+                bad.push_back("投影态不符");
+            if (row.c2 != perm_name(Spec::kTable.projection[s]))
+                bad.push_back("perm 不符");
+            if (row.kind != Spec::basis_kind_name(b.kind))
+                bad.push_back("投影 kind 不符");
+            if (row.pending != (b.pending ? "yes" : "no"))
+                bad.push_back("投影 pending 不符");
+        }
+        return bad;
+    }
+
+} // namespace
+
+TEST_CASE("MESIF 规约:逐格追认清单与载体逐格一致(MS-06)", "[cep][mesif-state-spec]") {
+    const std::string doc =
+        cpptlm::cep::read_file((cpptlm::cep::repo_root() / "docs" / "implementation" /
+                                "2026-10-29-cep-mesif-state-spec-recognition-checklist.md")
+                                   .string());
+    REQUIRE_FALSE(doc.empty());
+
+    const auto tr = parse_checklist_table(
+        doc, "| # | 态 | 事件 | 目标态 | kind | pending | ArchForge 需确认什么 |", 5, 6);
+    const auto pr = parse_checklist_table(
+        doc, "| # | 态 | perm | kind | pending | ArchForge 需确认什么 |", 4, 5);
+
+    // ── ① ~ ④ 正控:清单与载体**零差异** + 待追认刻度唯一 ──────────────
+    const auto mismatches = checklist_mismatches(tr, pr);
+    for (const auto& m : mismatches)
+        INFO("清单与载体不一致: " << m);
+    CHECK(mismatches.empty());
+
+    std::size_t pending_rows = 0;
+    for (const auto& r : tr) {
+        if (r.pending == "yes")
+            ++pending_rows;
+    }
+    for (const auto& r : pr) {
+        if (r.pending == "yes")
+            ++pending_rows;
+    }
+    CHECK(pending_rows == Spec::pending_count(Spec::kTable));
+    CHECK(pending_rows == 31u);
+
+    // ── 反向 fixture ⑰:清单某行的 `kind` 被改 ⇒ 必红 ──────────────────
+    {
+        auto broken = tr;
+        REQUIRE(!broken.empty());
+        broken[0].kind = "Primary";
+        CHECK_FALSE(checklist_mismatches(broken, pr).empty());
+        CHECK(checklist_mismatches(tr, pr).empty()); // 正控
+    }
+
+    // ── 反向 fixture ⑱:清单少一行 ⇒ 必红 ─────────────────────────────
+    {
+        auto broken = tr;
+        broken.pop_back();
+        CHECK_FALSE(checklist_mismatches(broken, pr).empty());
+        CHECK(checklist_mismatches(tr, pr).empty()); // 正控
     }
 }
