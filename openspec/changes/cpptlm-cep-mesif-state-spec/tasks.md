@@ -4,7 +4,7 @@
 
 | Phase | 内容 | 状态 |
 |-------|------|------|
-| 0 治理前置 | 台账 entry + 队列 #9 行登记 + KPI 五处同改(0/3 → 1/3) | ⬜ **未开始** |
+| 0 治理前置 | 台账 entry + 队列 #9 行登记 + KPI 五处同改(0/3 → 1/3) | ✅ **已完成**(2026-10-29,Entry #97 —— commit `934289d3`) |
 | 1 规约推导 | 5 态 × 6 事件转换表 + 5→4 投影表 + **逐格 basis** | ⬜ **未开始** |
 | 2 可执行载体 | `mesif_state_spec.hh`(表驱动 + 编译期锁) | ⬜ **未开始** |
 | 3 判据收口 | AC-1 ~ AC-8 + 反向 fixture | ⬜ **未开始** |
@@ -17,10 +17,14 @@
 
 ### Phase 0 —— 治理前置
 
-- [ ] **0.1** 台账 entry —— `obj-cep-platform.md §11` 追加(立项依据 · 裁决 · 冻结面授权)
-- [ ] **0.2** 排队表登记 —— **队列 #9 行**登记「第 0 个 change(规约层)」+ 状态列(🟡 Proposed)+ §4.2 估时列(规约层 4 周 + 实现层 10 周)—— **不新增队列行** ⇒ 顺序 / 季度口径不变
-- [ ] **0.3** **五处同改**(per 排期调整规则)—— `phase-10.md` 依赖图与 KPI 行 · `.rddf/roadmap.md` · `AGENTS.md` KPI 当前态 **0/3 → 1/3** · `obj §5.2` · `improvements/cpptlm-cep-mesif-state-spec.md` 状态行
-- [ ] **0.4** **CR-06 ③ 措辞债**的处置确认 —— 已归档 main spec `cep-chi-rnf-subset` 的 CR-06 ③ 写「不新增 SharerTracker 实现」,与 R-1 裁决**冲突** ⇒ 本 change 以 **MODIFIES** 修正(不改已归档件本体)
+- [x] **0.1** 台账 entry —— `obj-cep-platform.md §11` 追加(立项依据 · 裁决 · 冻结面授权)
+  —— ✅ **已完成**:台账 **Entry #97**(2026-10-29;立项依据 + 立项形态的 4 方案对比 + 交付物 + spec 债 + 队列/KPI + 冻结面零改动)
+- [x] **0.2** 排队表登记 —— **队列 #9 行**登记「第 0 个 change(规约层)」+ 状态列(🟡 Proposed)+ §4.2 估时列(规约层 4 周 + 实现层 10 周)—— **不新增队列行** ⇒ 顺序 / 季度口径不变
+  —— ✅ **已完成**:`obj §4.0` 行 #9 状态列 = 🟡 Proposed(第 0 个 change 已建)+ §4.2 估时列 = **4 + 10 周**
+- [x] **0.3** **五处同改**(per 排期调整规则)—— `phase-10.md` 依赖图与 KPI 行 · `.rddf/roadmap.md` · `AGENTS.md` KPI 当前态 **0/3 → 1/3** · `obj §5.2` · `improvements/cpptlm-cep-mesif-state-spec.md` 状态行
+  —— ✅ **已完成**:KPI **0/3 → 1/3**(实测 `openspec list --json` = **1** active);`obj`(`§5.2` + `§5.4`)· `phase-10.md` · `.rddf/roadmap.md` · `AGENTS.md` · `improvements/cpptlm-cep-umbrella.md` **五处同改**
+- [x] **0.4** **CR-06 ③ 措辞债**的处置确认 —— 已归档 main spec `cep-chi-rnf-subset` 的 CR-06 ③ 写「不新增 SharerTracker 实现」,与 R-1 裁决**冲突** ⇒ 本 change 以 **MODIFIES** 修正(不改已归档件本体)
+  —— ✅ **已完成**:本 change 的 `specs/cep-chi-rnf-subset/spec.md` 已写 **MODIFIED**(携带全部 11 个既有 Scenario,仅改 CR-06 ③ 措辞);`openspec validate --strict` rc=0
 
 ### Phase 1 —— 规约推导
 
