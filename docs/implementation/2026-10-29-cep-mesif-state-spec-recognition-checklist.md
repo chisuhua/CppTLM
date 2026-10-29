@@ -33,14 +33,14 @@ ArchForge 侧只需对**第 ②/③ 档**(推导 / 类比)逐格确认或纠正;
 
 ## 1. 转换表逐格追认清单(5 态 × 6 事件 = **30 格**)
 
-<!-- MESHIF-TABLE:transition:START -->
+<!-- MESIF-TABLE:transition:START -->
 | # | 态 | 事件 | 目标态 | kind | pending | ArchForge 需确认什么 |
 |---|---|---|---|---|---|---|
 | 1 | `I` | `Rd` | `S` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
 | 2 | `I` | `RdUnique` | `E` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
 | 3 | `I` | `Wr` | `I` | `Derived` | yes | 确认**推导**成立(MESIF 目录 / 本地-远端事件语义) |
 | 4 | `I` | `Upgrade` | `I` | `Derived` | yes | 确认**推导**成立(MESIF 目录 / 本地-远端事件语义) |
-| 5 | `I` | `SnpShared` | `S` | `Derived` | yes | 确认**推导**成立(MESIF 目录 / 本地-远端事件语义) |
+| 5 | `I` | `SnpShared` | `I` | `Derived` | yes | 确认**推导**成立(MESIF 目录 / 本地-远端事件语义) |
 | 6 | `I` | `SnpUnique` | `I` | `Derived` | yes | 确认**推导**成立(MESIF 目录 / 本地-远端事件语义) |
 | 7 | `S` | `Rd` | `S` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
 | 8 | `S` | `RdUnique` | `E` | `Derived` | yes | 确认**推导**成立(MESIF 目录 / 本地-远端事件语义) |
@@ -66,13 +66,13 @@ ArchForge 侧只需对**第 ②/③ 档**(推导 / 类比)逐格确认或纠正;
 | 28 | `F` | `Upgrade` | `E` | `Analogical` | yes | 确认**类比**成立(ArchForge Owner 唯一性约束 + CHI 同型先例) |
 | 29 | `F` | `SnpShared` | `F` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
 | 30 | `F` | `SnpUnique` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-<!-- MESHIF-TABLE:transition:END -->
+<!-- MESIF-TABLE:transition:END -->
 
 ---
 
 ## 2. 投影表逐格追认清单(**5 格**)
 
-<!-- MESHIF-TABLE:projection:START -->
+<!-- MESIF-TABLE:projection:START -->
 | # | 态 | perm | kind | pending | ArchForge 需确认什么 |
 |---|---|---|---|---|---|
 | 1 | `I` | `NONE` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
@@ -80,7 +80,7 @@ ArchForge 侧只需对**第 ②/③ 档**(推导 / 类比)逐格确认或纠正;
 | 3 | `E` | `UNIQUE` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
 | 4 | `M` | `WRITEBACK` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
 | 5 | `F` | `WRITEBACK` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-<!-- MESHIF-TABLE:projection:END -->
+<!-- MESIF-TABLE:projection:END -->
 
 ---
 
@@ -89,10 +89,10 @@ ArchForge 侧只需对**第 ②/③ 档**(推导 / 类比)逐格确认或纠正;
 以下 8 格**偏离** CHI / MOESI 协议模板 ⇒ 它们是 ArchForge 侧最需要表态的部分
 (per change 的 design `D-ε.8`;逐条数据由载体的 `kDeviations[]` 承载 ⇒ 下表**由载体生成**)。
 
-<!-- MESHIF-TABLE:deviations:START -->
+<!-- MESIF-TABLE:deviations:START -->
 | # | 态 | 事件 | 模板取值 | 本表取值 | 偏离理由 |
 |---|---|---|---|---|---|
-| 1 | `I` | `SnpShared` | `SC` | `S` | D1:CHI 该格把请求者拿到共享副本写进了响应者的行;本表按语义正确性取无副本不因被 snoop 而获得副本 |
+| 1 | `I` | `SnpShared` | `SC` | `I` | D1:CHI 该格把请求者拿到共享副本写进了响应者的行;本表按语义正确性取无副本不因被 snoop 而获得副本 |
 | 2 | `E` | `SnpShared` | `SC` | `F` | D2:MESIF 的 Forward 语义 —— 干净 Owner 保留 Owner 身份成为转发点(CHI 的 RN 侧无转发点概念) |
 | 3 | `S` | `RdUnique` | `SC` | `E` | D3:MESIF 的目录语义 —— 取独占 ⇒ sharer 全失效 ⇒ 本节点成唯一持有者 |
 | 4 | `F` | `RdUnique` | `—` | `E` | D4a:MESIF 特有(F = 转发点)—— 取独占 ⇒ sharer 全失效 ⇒ F 清空 ⇒ 干净独占 |
@@ -100,7 +100,7 @@ ArchForge 侧只需对**第 ②/③ 档**(推导 / 类比)逐格确认或纠正;
 | 6 | `F` | `Upgrade` | `—` | `E` | D4c:MESIF 特有 —— 升级 ⇒ sharer 全失效 ⇒ F 清空 ⇒ 干净独占 |
 | 7 | `F` | `SnpShared` | `—` | `F` | D4d:MESIF 特有 —— 已是单 Owner + 有 sharer ⇒ 再来 sharer ⇒ 仍满足 F 的定义 |
 | 8 | `F` | `SnpUnique` | `—` | `I` | D4e:MESIF 特有 —— 独占 snoop ⇒ Owner 转移 ⇒ Forward 清空 ⇒ 无副本 |
-<!-- MESHIF-TABLE:deviations:END -->
+<!-- MESIF-TABLE:deviations:END -->
 
 > **风险分档**(人工评估,per design `D-ε.8`):**高** = D2(`E+SnpShared` → `F`,MESIF Forward 语义)
 > 与 D4a~D4e(`F` 行 5 格,CHI **无对应态**);**中** = D3(`S+RdUnique` → `E`,MESIF 目录语义);

@@ -48,7 +48,7 @@ MUTATIONS=(
   "primary_ref_without_anchor|BasisKind::Primary, false, \"ArchForge 25-nsa:553; ArchForge 32 号:529\",|BasisKind::Primary, false, \"参见设计文档\","
   "shared_write_mutates|{1, 2, 1, 2, 1, 0}, // S :|{1, 2, 2, 2, 1, 0}, // S :"
   "local_rank_drops|{2, 2, 3, 2, 4, 0}, // E :|{2, 0, 3, 2, 4, 0}, // E :"
-  "transition_hole|{1, 2, 0, 0, 1, 0}, // I :|{1, 2, 0, 0, 0xFF, 0}, // I :"
+  "transition_hole|{1, 2, 0, 0, 0, 0}, // I :|{1, 2, 0, 0, 0xFF, 0}, // I :"
   "deviation_not_real|{State::F, Event::SnpUnique, \"—\",|{State::F, Event::SnpUnique, \"I\","
 )
 

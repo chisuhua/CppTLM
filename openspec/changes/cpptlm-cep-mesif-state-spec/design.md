@@ -201,6 +201,7 @@
 | `E + Wr → M` | 静默升级 | `E` 是**唯一**干净独占态 ⇒ 写 ⇒ 脏独占;**无需总线事务**(无副本可失效)⇒ 与 `moesi_gpu` 的 `E+Wr→M`(`ArchForge 09 号 §3.3:152`)同构 |
 | `S + Wr → S` | 写非法 ⇒ 不变 | 写只在独占态合法(per C3);须先 `Upgrade` 到 `E` |
 | `F + Wr → F` | 写非法 ⇒ 不变 | `F` 有 sharer ⇒ **非独占**;须先 `Upgrade` 到 `E` |
+| `I + SnpShared → I` | 无副本不因被 snoop 而获得副本 | 与 CHI 的 `→SC` **偏离**(D1):CHI 该格把「请求者拿到共享副本」写进了**响应者**的行;本表按语义正确性取**状态不变** |
 | `E + SnpShared → F` | 保留 Owner 身份 | MESIF 的 **Forward 语义**:唯一 Owner 收到远端共享请求 ⇒ Owner 仍单 ⇒ 落入 `F` 定义 |
 | `M + SnpShared → S` | 先写回再共享 | 脏 Owner 不可直接共享 ⇒ 写回后降为 `S`(同型先例 CHI `UD+SnpShared→SC`) |
 | `F + RdUnique → E` / `F + Upgrade → E` | `F` 清空 ⇒ 干净独占 | sharer 全失效 ⇒ `Forward` 清空(per `ArchForge 25-nsa:553`)⇒ 本节点成唯一干净持有者 |

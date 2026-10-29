@@ -55,7 +55,7 @@ namespace {
 
 int main() {
     // ── 转换表 ────────────────────────────────────────────────────────
-    std::printf("===MESHIF:transition===\n");
+    std::printf("===MESIF:transition===\n");
     std::printf("| # | 态 | 事件 | 目标态 | kind | pending | ArchForge 需确认什么 |\n");
     std::printf("|---|---|---|---|---|---|---|\n");
     int n = 0;
@@ -72,7 +72,7 @@ int main() {
     }
 
     // ── 投影表 ────────────────────────────────────────────────────────
-    std::printf("===MESHIF:projection===\n");
+    std::printf("===MESIF:projection===\n");
     std::printf("| # | 态 | perm | kind | pending | ArchForge 需确认什么 |\n");
     std::printf("|---|---|---|---|---|---|\n");
     for (std::size_t s = 0; s < Spec::kStateCount; ++s) {
@@ -84,7 +84,7 @@ int main() {
     }
 
     // ── 偏离清单 ──────────────────────────────────────────────────────
-    std::printf("===MESHIF:deviations===\n");
+    std::printf("===MESIF:deviations===\n");
     std::printf("| # | 态 | 事件 | 模板取值 | 本表取值 | 偏离理由 |\n");
     std::printf("|---|---|---|---|---|---|\n");
     for (std::size_t i = 0; i < Spec::kDeviationCount; ++i) {

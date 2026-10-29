@@ -8,7 +8,7 @@
 # 行为:
 #   ① 编译并运行 `scripts/generate_mesif_recognition_checklist.cc`(读载体 `kTable`);
 #   ② 把三张表**就地替换**进清单文档的标记块
-#      (`<!-- MESHIF-TABLE:<name>:START -->` … `<!-- MESHIF-TABLE:<name>:END -->`);
+#      (`<!-- MESIF-TABLE:<name>:START -->` … `<!-- MESIF-TABLE:<name>:END -->`);
 #   ③ **只改标记块内的内容** ⇒ 人工维护的散文段落**不动**。
 #
 # ⚠️ 生成后必须跑 `test_cep_mesif_state_spec.cc`(MS-06)确认清单与载体逐格一致。
@@ -46,8 +46,8 @@ doc_path, tables_path, check_only = sys.argv[1], sys.argv[2], sys.argv[3] == '1'
 tables = {}
 cur = None
 for line in open(tables_path, encoding='utf-8').read().split('\n'):
-    if line.startswith('===MESHIF:'):
-        cur = line[len('===MESHIF:'):-len('===')]
+    if line.startswith('===MESIF:'):
+        cur = line[len('===MESIF:'):-len('===')]
         tables[cur] = []
     elif cur is not None and line.strip():
         tables[cur].append(line)
@@ -55,8 +55,8 @@ for line in open(tables_path, encoding='utf-8').read().split('\n'):
 doc = open(doc_path, encoding='utf-8').read()
 changed = []
 for name, rows in tables.items():
-    start = f'<!-- MESHIF-TABLE:{name}:START -->'
-    end = f'<!-- MESHIF-TABLE:{name}:END -->'
+    start = f'<!-- MESIF-TABLE:{name}:START -->'
+    end = f'<!-- MESIF-TABLE:{name}:END -->'
     i = doc.find(start)
     j = doc.find(end)
     if i < 0 or j < 0:
