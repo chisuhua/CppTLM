@@ -19,11 +19,11 @@
 
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
+#include "tlm/cep/adapter_contracts_loader.hh"
+#include "tlm/cep/adapter_schema_contracts.hh"
 #include "tlm/cep/channel_dependency_graph.hh"
 #include "tlm/cep/chi_rnf_protocol_engine.hh"
 #include "tlm/cep/cohif_protocol_engine.hh"
-#include "tlm/cep/adapter_contracts_loader.hh"
-#include "tlm/cep/adapter_schema_contracts.hh"
 #include "tlm/cep/collective_plane_contract.hh"
 #include "tlm/cep/protocol_family.hh"
 #include "tlm/cep/sharer_tracker.hh"
@@ -42,101 +42,104 @@
 
 namespace {
 
-using tlm::cep::CanonicalFlow;
-using tlm::cep::ChiChannel;
-using tlm::cep::ChiOpcode;
-using tlm::cep::ChiRejectKind;
-using tlm::cep::ChiRnfProtocolEngine;
-using tlm::cep::CohIfNullProtocolEngine;
-using tlm::cep::LineState;
-using tlm::cep::Perm;
-using tlm::cep::SnoopType;
-using State = tlm::cep::ChiRnfAdapter::State;
+    using tlm::cep::CanonicalFlow;
+    using tlm::cep::ChiChannel;
+    using tlm::cep::ChiOpcode;
+    using tlm::cep::ChiRejectKind;
+    using tlm::cep::ChiRnfProtocolEngine;
+    using tlm::cep::CohIfNullProtocolEngine;
+    using tlm::cep::LineState;
+    using tlm::cep::Perm;
+    using tlm::cep::SnoopType;
+    using State = tlm::cep::ChiRnfAdapter::State;
 
-constexpr std::size_t ch(ChiChannel c) { return static_cast<std::size_t>(c); }
+    constexpr std::size_t ch(ChiChannel c) {
+        return static_cast<std::size_t>(c);
+    }
 
-/// 清空 egress 槽(单测里没有 adapter 搬运;`tick()` 的 adapter 分支是空操作)
-template <typename PE> void drain_egress(PE& pe) {
-    for (std::size_t p = 0; p < PE::kPortCount; ++p) {
-        if (pe.resp_out()[p].valid())
-            pe.resp_out()[p].clear_valid();
+    /// 清空 egress 槽(单测里没有 adapter 搬运;`tick()` 的 adapter 分支是空操作)
+    template <typename PE> void drain_egress(PE& pe) {
+        for (std::size_t p = 0; p < PE::kPortCount; ++p) {
+            if (pe.resp_out()[p].valid())
+                pe.resp_out()[p].clear_valid();
+        }
     }
-}
 
-/// egress 上当前有几个待发 Bundle
-template <typename PE> std::size_t pending_bundles(PE& pe) {
-    std::size_t n = 0;
-    for (std::size_t p = 0; p < PE::kPortCount; ++p) {
-        if (pe.resp_out()[p].valid())
-            ++n;
+    /// egress 上当前有几个待发 Bundle
+    template <typename PE> std::size_t pending_bundles(PE& pe) {
+        std::size_t n = 0;
+        for (std::size_t p = 0; p < PE::kPortCount; ++p) {
+            if (pe.resp_out()[p].valid())
+                ++n;
+        }
+        return n;
     }
-    return n;
-}
 
-/// 把一次 CHI `ReadShared` 送达引擎,返回 egress 上产生的 Bundle 数。
-///
-/// ⚠️ **这是 CR-10 的判别谓词**:真插件走 `submit_request`(CHI 侧 opcode 入口)
-///    并**发射**一个 CohIf Request;Null 只能走 canonical `on_request`,而 Null 的
-///    全部 `on_*` 把参数 `(void)` 丢弃、**零发射**
-///    (per `protocol_engine_base.hh` 的 Null 段)⇒ 谓词值 1 vs 0。
-template <typename PE> std::size_t deliver_read_bundles(PE& pe, std::uint64_t txn_id) {
-    if constexpr (requires(PE& e) {
-                      e.submit_request(ChiOpcode::ReadShared, std::uint64_t{0}, Perm::READ,
-                                       std::uint64_t{64}, std::uint64_t{0});
-                  }) {
-        pe.submit_request(ChiOpcode::ReadShared, 0x1000, Perm::READ, 64, txn_id);
-    } else {
-        pe.on_request(0x1000, Perm::READ, txn_id);
+    /// 把一次 CHI `ReadShared` 送达引擎,返回 egress 上产生的 Bundle 数。
+    ///
+    /// ⚠️ **这是 CR-10 的判别谓词**:真插件走 `submit_request`(CHI 侧 opcode 入口)
+    ///    并**发射**一个 CohIf Request;Null 只能走 canonical `on_request`,而 Null 的
+    ///    全部 `on_*` 把参数 `(void)` 丢弃、**零发射**
+    ///    (per `protocol_engine_base.hh` 的 Null 段)⇒ 谓词值 1 vs 0。
+    template <typename PE> std::size_t deliver_read_bundles(PE& pe, std::uint64_t txn_id) {
+        if constexpr (requires(PE & e) {
+                          e.submit_request(ChiOpcode::ReadShared, std::uint64_t{0}, Perm::READ,
+                                           std::uint64_t{64}, std::uint64_t{0});
+                      }) {
+            pe.submit_request(ChiOpcode::ReadShared, 0x1000, Perm::READ, 64, txn_id);
+        } else {
+            pe.on_request(0x1000, Perm::READ, txn_id);
+        }
+        return pending_bundles(pe);
     }
-    return pending_bundles(pe);
-}
 
-/// 驱动 6 通道的**场景开关**(CR-11 的「屏蔽任一通道」fixture 用)
-struct DrivePlan {
-    bool txreq       = true;  ///< S1:`submit_request(ReadShared)` ⇒ TXREQ
-    bool rxrsp       = true;  ///< S2:`on_completion(无 data)` ⇒ RXRSP
-    bool rxdat       = true;  ///< S3:`on_completion(带 data)` ⇒ RXDAT
-    bool snoop_clean = true;  ///< S4:snoop 未命中/干净行 ⇒ RXSNP + TXRSP
-    bool snoop_dirty = true;  ///< S5:snoop 命中脏行 ⇒ RXSNP + TXDAT
-};
+    /// 驱动 6 通道的**场景开关**(CR-11 的「屏蔽任一通道」fixture 用)
+    struct DrivePlan {
+        bool txreq = true;       ///< S1:`submit_request(ReadShared)` ⇒ TXREQ
+        bool rxrsp = true;       ///< S2:`on_completion(无 data)` ⇒ RXRSP
+        bool rxdat = true;       ///< S3:`on_completion(带 data)` ⇒ RXDAT
+        bool snoop_clean = true; ///< S4:snoop 未命中/干净行 ⇒ RXSNP + TXRSP
+        bool snoop_dirty = true; ///< S5:snoop 命中脏行 ⇒ RXSNP + TXDAT
+    };
 
-/// 按 `plan` 驱动引擎(每个场景独立、互不依赖 ⇒ 屏蔽某场景只影响其通道)
-void drive_all_channels(ChiRnfProtocolEngine& e, const DrivePlan& plan = {}) {
-    if (plan.txreq) {  // S1
-        e.submit_request(ChiOpcode::ReadShared, 0x1000, Perm::READ, 64, 1);
-        drain_egress(e);
+    /// 按 `plan` 驱动引擎(每个场景独立、互不依赖 ⇒ 屏蔽某场景只影响其通道)
+    void drive_all_channels(ChiRnfProtocolEngine& e, const DrivePlan& plan = {}) {
+        if (plan.txreq) { // S1
+            e.submit_request(ChiOpcode::ReadShared, 0x1000, Perm::READ, 64, 1);
+            drain_egress(e);
+        }
+        if (plan.rxrsp) { // S2:无数据的 Comp
+            e.on_completion(9001, 0, Perm::READ, false);
+        }
+        if (plan.rxdat) { // S3:带数据的 CompData(不占 TXREQ —— 不发起请求)
+            e.on_completion(9002, 0xABCD, Perm::READ, false);
+        }
+        if (plan.snoop_clean) { // S4:未命中 ⇒ SnpResp I(TXRSP)
+            e.on_snoop(0x9999, SnoopType::CLEAN, 7001);
+            drain_egress(e);
+        }
+        if (plan.snoop_dirty) { // S5:命中脏行 ⇒ CopyBack(TXDAT)
+            e.set_line(0x7000, State::UD, 0xCAFE);
+            e.on_snoop(0x7000, SnoopType::INVALIDATE, 7002);
+            drain_egress(e);
+        }
     }
-    if (plan.rxrsp) {  // S2:无数据的 Comp
-        e.on_completion(9001, 0, Perm::READ, false);
-    }
-    if (plan.rxdat) {  // S3:带数据的 CompData(不占 TXREQ —— 不发起请求)
-        e.on_completion(9002, 0xABCD, Perm::READ, false);
-    }
-    if (plan.snoop_clean) {  // S4:未命中 ⇒ SnpResp I(TXRSP)
-        e.on_snoop(0x9999, SnoopType::CLEAN, 7001);
-        drain_egress(e);
-    }
-    if (plan.snoop_dirty) {  // S5:命中脏行 ⇒ CopyBack(TXDAT)
-        e.set_line(0x7000, State::UD, 0xCAFE);
-        e.on_snoop(0x7000, SnoopType::INVALIDATE, 7002);
-        drain_egress(e);
-    }
-}
 
-/// 加载 CHI RN-F 的最小装配拓扑,并把 `protocol_instances` 的相对路径换成**绝对路径**
-/// (配置的相对路径以**仓库根**为基准;测试的 CWD 不固定 ⇒ 必须绝对化)
-nlohmann::json load_chi_topology() {
-    const auto path = cpptlm::cep::repo_root() / "configs" / "cep_chi_rnf_pe_minimal.json";
-    std::ifstream in(path);
-    if (!in.good())
-        throw std::runtime_error("无法打开 CHI 装配配置: " + path.string());
-    nlohmann::json cfg = nlohmann::json::parse(in);
-    cfg["cep"]["protocol_instances"] =
-        (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json").string();
-    return cfg;
-}
+    /// 加载 CHI RN-F 的最小装配拓扑,并把 `protocol_instances` 的相对路径换成**绝对路径**
+    /// (配置的相对路径以**仓库根**为基准;测试的 CWD 不固定 ⇒ 必须绝对化)
+    nlohmann::json load_chi_topology() {
+        const auto path = cpptlm::cep::repo_root() / "configs" / "cep_chi_rnf_pe_minimal.json";
+        std::ifstream in(path);
+        if (!in.good())
+            throw std::runtime_error("无法打开 CHI 装配配置: " + path.string());
+        nlohmann::json cfg = nlohmann::json::parse(in);
+        cfg["cep"]["protocol_instances"] =
+            (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json")
+                .string();
+        return cfg;
+    }
 
-}  // namespace
+} // namespace
 
 // ══════════════════════════════════════════════════════════════════════
 //  CR-10 —— 真插件驱动:Null **结构上不可能**有的行为(发射)
@@ -185,8 +188,8 @@ TEST_CASE("CR-11 6 通道各有观测点 + TXREQ 双流承载", "[cep][chi-rnf][
     // `Request`(读类)与 `Writeback`(WriteBackFull)走**同一通道**,靠 `flow_id` 区分。
     ChiRnfProtocolEngine e2("chi2", &eq);
     e2.set_line(0x4000, State::UD, 0x1234);
-    e2.submit_request(ChiOpcode::ReadShared, 0x3000, Perm::READ, 64, 21);      // Request
-    e2.submit_request(ChiOpcode::WriteBackFull, 0x4000, Perm::WRITEBACK, 64, 22);  // Writeback
+    e2.submit_request(ChiOpcode::ReadShared, 0x3000, Perm::READ, 64, 21);         // Request
+    e2.submit_request(ChiOpcode::WriteBackFull, 0x4000, Perm::WRITEBACK, 64, 22); // Writeback
     drain_egress(e2);
     CHECK(e2.counters().txreq_request == 1u);
     CHECK(e2.counters().txreq_writeback == 1u);
@@ -199,12 +202,25 @@ TEST_CASE("CR-11 6 通道各有观测点 + TXREQ 双流承载", "[cep][chi-rnf][
     auto plan_without = [](ChiChannel target) {
         DrivePlan p;
         switch (target) {
-            case ChiChannel::TXREQ: p.txreq = false; break;
-            case ChiChannel::RXRSP: p.rxrsp = false; break;
-            case ChiChannel::RXDAT: p.rxdat = false; break;
-            case ChiChannel::RXSNP: p.snoop_clean = false; p.snoop_dirty = false; break;
-            case ChiChannel::TXRSP: p.snoop_clean = false; break;
-            case ChiChannel::TXDAT: p.snoop_dirty = false; break;
+        case ChiChannel::TXREQ:
+            p.txreq = false;
+            break;
+        case ChiChannel::RXRSP:
+            p.rxrsp = false;
+            break;
+        case ChiChannel::RXDAT:
+            p.rxdat = false;
+            break;
+        case ChiChannel::RXSNP:
+            p.snoop_clean = false;
+            p.snoop_dirty = false;
+            break;
+        case ChiChannel::TXRSP:
+            p.snoop_clean = false;
+            break;
+        case ChiChannel::TXDAT:
+            p.snoop_dirty = false;
+            break;
         }
         return p;
     };
@@ -213,8 +229,8 @@ TEST_CASE("CR-11 6 通道各有观测点 + TXREQ 双流承载", "[cep][chi-rnf][
         ChiRnfProtocolEngine z("chi_masked", &eq);
         drive_all_channels(z, plan_without(target));
         INFO("masked channel " << tlm::cep::kChiChannelNames[ch_i]);
-        CHECK(z.counters().observed[ch_i] == 0u);   // 该通道**确实**没被观测到
-        CHECK_FALSE(z.all_channels_observed());     // ⇒ 汇聚判据必红
+        CHECK(z.counters().observed[ch_i] == 0u); // 该通道**确实**没被观测到
+        CHECK_FALSE(z.all_channels_observed());   // ⇒ 汇聚判据必红
     }
 }
 
@@ -240,11 +256,11 @@ TEST_CASE("CR-12 Credit 耗尽停发 + 补充恢复", "[cep][chi-rnf][cr-12]") {
     // ── 子条件 ②:补充 1 个 credit ⇒ 恢复 1 个(正控)─────────────────
     starved.receive_credit(0, static_cast<unsigned>(ChiChannel::TXREQ));
     CHECK(starved.counters().credit_restored == 1u);
-    starved.tick();  // drain_pending ⇒ 占空槽;adapter 缺省空操作 ⇒ 不再搬运
+    starved.tick(); // drain_pending ⇒ 占空槽;adapter 缺省空操作 ⇒ 不再搬运
     drain_egress(starved);
     starved.tick();
     drain_egress(starved);
-    CHECK(starved.counters().emitted[ch(ChiChannel::TXRSP)] == 0u);  // 无关通道不受影响
+    CHECK(starved.counters().emitted[ch(ChiChannel::TXRSP)] == 0u); // 无关通道不受影响
     CHECK(starved.counters().emitted[ch(ChiChannel::TXREQ)] == 1u);
     CHECK(starved.pending_egress() == 2u);
 
@@ -285,17 +301,17 @@ TEST_CASE("CR-13 TxnID 在途唯一 + 完成后释放复用", "[cep][chi-rnf][cr
     // ── 反向 fixture:强制注入在途重复 id ⇒ 必被拒(唯一性有牙)────────
     CHECK_FALSE(e.submit_request(ChiOpcode::ReadShared, 0x3000, Perm::READ, 64, 42));
     CHECK(e.counters().txn_duplicate_rejected == 1u);
-    CHECK(e.in_flight_count() == 2u);  // 重复注入**不**增长在途集(不是「接受后再报错」)
+    CHECK(e.in_flight_count() == 2u); // 重复注入**不**增长在途集(不是「接受后再报错」)
     // 正控:同一引擎用**新** id 仍可正常接受
     CHECK(e.submit_request(ChiOpcode::ReadShared, 0x3001, Perm::READ, 64, 44));
     CHECK(e.in_flight_count() == 3u);
     drain_egress(e);
 
     // ── 子条件 ②:完成后释放 ⇒ 可复用 ────────────────────────────────
-    e.on_completion(42, 0, Perm::READ, false);  // 无数据 Comp ⇒ 结束(ReadShared 不需 CompAck)
+    e.on_completion(42, 0, Perm::READ, false); // 无数据 Comp ⇒ 结束(ReadShared 不需 CompAck)
     CHECK_FALSE(e.txn_in_flight(42));
     CHECK(e.counters().txn_released == 1u);
-    CHECK(e.submit_request(ChiOpcode::ReadShared, 0x4000, Perm::READ, 64, 42));  // 复用
+    CHECK(e.submit_request(ChiOpcode::ReadShared, 0x4000, Perm::READ, 64, 42)); // 复用
     CHECK(e.counters().txn_reused == 1u);
     CHECK(e.txn_in_flight(42));
     drain_egress(e);
@@ -311,7 +327,7 @@ TEST_CASE("CR-14 CompAck 恰好 1 个 + 不需者零发送", "[cep][chi-rnf][cr-
     ChiRnfProtocolEngine e("chi", &eq);
     CHECK(e.submit_request(ChiOpcode::ReadUnique, 0x1000, Perm::UNIQUE, 64, 51));
     drain_egress(e);
-    CHECK(e.counters().comp_ack_sent == 0u);  // 数据未回来 ⇒ 尚未发(不是「发早了」)
+    CHECK(e.counters().comp_ack_sent == 0u); // 数据未回来 ⇒ 尚未发(不是「发早了」)
     e.on_completion(51, 0xAA55, Perm::UNIQUE, false);
     drain_egress(e);
     CHECK(e.counters().comp_ack_sent == 1u);
@@ -327,7 +343,7 @@ TEST_CASE("CR-14 CompAck 恰好 1 个 + 不需者零发送", "[cep][chi-rnf][cr-
     n.on_completion(52, 0xBB66, Perm::READ, false);
     drain_egress(n);
     CHECK(n.counters().comp_ack_sent == 0u);
-    CHECK(n.counters().comp_ack_not_required == 1u);  // 该事务确实**走完了**数据完成
+    CHECK(n.counters().comp_ack_not_required == 1u); // 该事务确实**走完了**数据完成
 
     // 写回类事务同样不发 CompAck(WriteBackFull 的完成是 Comp,无数据)
     ChiRnfProtocolEngine w("chi_wb", &eq);
@@ -365,9 +381,9 @@ TEST_CASE("subset 排除项:非 CopyBack 写 / atomic / DVM / Retry 注入即拒
     CHECK(c.rejected[static_cast<std::size_t>(ChiRejectKind::Retry)] == 2u);
 
     // ── 拒绝的**三条**可观测后果(缺任一条 ⇒ 「静默收下」会漏过判据)────
-    CHECK(c.observed[ch(ChiChannel::TXREQ)] == 0u);  // ① 未产生通道事件
-    CHECK(e.in_flight_count() == 0u);                // ② 未占用 TxnID
-    CHECK(e.pending_egress() == 0u);                 // ③ 未进入发射队列
+    CHECK(c.observed[ch(ChiChannel::TXREQ)] == 0u); // ① 未产生通道事件
+    CHECK(e.in_flight_count() == 0u);               // ② 未占用 TxnID
+    CHECK(e.pending_egress() == 0u);                // ③ 未进入发射队列
 
     // ── 正控:同引擎下白名单 opcode 仍被接受 ⇒ 拒绝是**分类**而非「全拒」──
     CHECK(e.submit_request(ChiOpcode::ReadShared, 0x2000, Perm::READ, 64, 70));
@@ -416,7 +432,7 @@ TEST_CASE("CR-10 ③ JSON 装配:桥消费路径 + protocol_id 与 family 编号
     tlm::cep::ProtocolFamily fam{};
     REQUIRE(tlm::cep::protocol_family_from_name("industrial", fam));
     const std::uint8_t expected = tlm::cep::protocol_family_id(fam);
-    CHECK(expected != 0u);  // 0 保留为「未分配」⇒ 非零才可区分「忘了填」
+    CHECK(expected != 0u); // 0 保留为「未分配」⇒ 非零才可区分「忘了填」
     CHECK(chi0->bridge()->protocol_id() == expected);
     CHECK(chi1->bridge()->protocol_id() == expected);
 
@@ -425,8 +441,8 @@ TEST_CASE("CR-10 ③ JSON 装配:桥消费路径 + protocol_id 与 family 编号
     //    记为外来事件);「装配成功」本身**不算**抵达(判据 CC-04 的同款纪律)。
     CHECK(chi1->counters().foreign_events == 0u);
     CHECK(chi0->submit_request(ChiOpcode::ReadShared, 0x1000, Perm::READ, 64, 1));
-    chi0->tick();  // 消费 ingress(空)+ 驱动 adapter ⇒ 发出
-    chi1->tick();  // 消费 ingress ⇒ 分派到 canonical 流
+    chi0->tick(); // 消费 ingress(空)+ 驱动 adapter ⇒ 发出
+    chi1->tick(); // 消费 ingress ⇒ 分派到 canonical 流
     CHECK(chi1->counters().foreign_events == 1u);
     // 另一端自身也仍在工作(正控:不是「谁都没动」)
     CHECK(chi0->counters().observed[ch(ChiChannel::TXREQ)] == 1u);
@@ -438,12 +454,12 @@ TEST_CASE("CR-10 ③ JSON 装配:桥消费路径 + protocol_id 与 family 编号
 TEST_CASE("CR-10 ③ 反向 fixture:同拓扑换 Null 引擎 ⇒ 类型判据与抵达判据**双红**",
           "[cep][chi-rnf][cr-10][json-assembly]") {
     nlohmann::json cfg = load_chi_topology();
-    cfg["modules"][0]["type"] = "CohIfProtocolEngine";  // ⇒ NullProtocolEngine<2> 外壳
+    cfg["modules"][0]["type"] = "CohIfProtocolEngine"; // ⇒ NullProtocolEngine<2> 外壳
     cfg["modules"][1]["type"] = "CohIfProtocolEngine";
 
     EventQueue eq;
     ModuleFactory factory(&eq);
-    REQUIRE(factory.instantiateAll(cfg));  // 装配**成功**(不是靠「装配失败」蒙对判据)
+    REQUIRE(factory.instantiateAll(cfg)); // 装配**成功**(不是靠「装配失败」蒙对判据)
 
     // ① 类型判据:拿不到真插件 ⇒ 与正控的 `REQUIRE(chi0 != nullptr)` 反向
     CHECK(dynamic_cast<ChiRnfProtocolEngine*>(factory.getInstanceForTesting("chi0")) == nullptr);
@@ -463,7 +479,8 @@ TEST_CASE("CR-10 ③ 反向 fixture:同拓扑换 Null 引擎 ⇒ 类型判据与
 // ══════════════════════════════════════════════════════════════════════
 //  Phase 5.2 —— 装配闸对绑定 `chi_rnf` 的 config 出逐 `(network, vc)` verdict
 // ══════════════════════════════════════════════════════════════════════
-TEST_CASE("装配闸:chi_rnf 的逐 (network, vc) verdict", "[cep][chi-rnf][json-assembly][channel-gate]") {
+TEST_CASE("装配闸:chi_rnf 的逐 (network, vc) verdict",
+          "[cep][chi-rnf][json-assembly][channel-gate]") {
     const nlohmann::json cfg = load_chi_topology();
 
     const auto gate = tlm::cep::run_channel_gate(cfg);
@@ -483,7 +500,7 @@ TEST_CASE("装配闸:chi_rnf 的逐 (network, vc) verdict", "[cep][chi-rnf][json
         seen_vc_mask |= (std::uint64_t{1} << v.vc);
     }
     CHECK(n == 4u);
-    CHECK(seen_vc_mask == 0xFu);  // VC0..VC3 **各**有一条(不是「4 条都集中在某个 VC」)
+    CHECK(seen_vc_mask == 0xFu); // VC0..VC3 **各**有一条(不是「4 条都集中在某个 VC」)
 
     // 正控:其余两个镜像域实例也在(⇒ 「只看见 chi_rnf」不算通过)
     CHECK(gate.per_instance.count("moesi_gpu") == 1u);
@@ -501,151 +518,157 @@ TEST_CASE("装配闸:chi_rnf 的逐 (network, vc) verdict", "[cep][chi-rnf][json
 // ══════════════════════════════════════════════════════════════════════
 namespace {
 
-using nlohmann::json;
+    using nlohmann::json;
 
-/// 仓库根下的 `include/tlm/cep/<name>` 路径
-std::filesystem::path cep_path(const char* name) {
-    return cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / name;
-}
-
-json load_json(const std::filesystem::path& p) {
-    std::ifstream in(p);
-    if (!in.good())
-        throw std::runtime_error("无法打开 " + p.string());
-    return json::parse(in);
-}
-
-/// 读到协议实例声明文件(`instances[]` + 顶层登记键)
-json load_instances() { return load_json(cep_path("protocol_instances.json")); }
-
-const json* find_instance(const json& doc, const std::string& id) {
-    for (const auto& inst : doc.at("instances")) {
-        if (inst.value("id", "") == id)
-            return &inst;
+    /// 仓库根下的 `include/tlm/cep/<name>` 路径
+    std::filesystem::path cep_path(const char* name) {
+        return cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / name;
     }
-    return nullptr;
-}
 
-/// CR-01 的通用部分 —— 按**冻结 schema 自身**的 `required` / `enum` 判定
-/// (不硬编码键名 ⇒ schema 改了这里自动跟随;硬编码会让二者静默漂移)
-std::vector<std::string> schema_violations(const json& inst, const json& schema) {
-    std::vector<std::string> bad;
-    for (const auto& key : schema.at("required")) {
-        if (!inst.contains(key.get<std::string>()))
-            bad.push_back("缺 required 键:" + key.get<std::string>());
+    json load_json(const std::filesystem::path& p) {
+        std::ifstream in(p);
+        if (!in.good())
+            throw std::runtime_error("无法打开 " + p.string());
+        return json::parse(in);
     }
-    const auto& props = schema.at("properties");
-    // perm:每个值 ∈ enum 且集合 == enum 全集(4 值锁)
-    if (!inst.contains("perm")) {
-        bad.push_back("缺 required 键:perm");
-    } else {
-        std::set<std::string> got;
-        for (const auto& v : inst.at("perm"))
-            got.insert(v.get<std::string>());
-        std::set<std::string> want;
-        for (const auto& v : props.at("perm").at("items").at("enum"))
-            want.insert(v.get<std::string>());
-        if (got != want)
-            bad.push_back("perm 不是 schema 枚举的全 4 值");
+
+    /// 读到协议实例声明文件(`instances[]` + 顶层登记键)
+    json load_instances() {
+        return load_json(cep_path("protocol_instances.json"));
     }
-    // ⚠️ **缺键 ⇒ 记为违规,不抛异常** —— 否则「删 required 键」这条反向 fixture
-    //    会「因错误的原因红」(异常而非判据),掩盖判据本身是否有牙。
-    for (const char* key : {"family", "status"}) {
-        if (!inst.contains(key)) {
-            bad.push_back(std::string(key) + " 缺失");
-            continue;
+
+    const json* find_instance(const json& doc, const std::string& id) {
+        for (const auto& inst : doc.at("instances")) {
+            if (inst.value("id", "") == id)
+                return &inst;
         }
-        const auto& dom = props.at(key).at("enum");
-        bool ok = false;
-        for (const auto& v : dom) {
-            if (v == inst.at(key))
-                ok = true;
-        }
-        if (!ok)
-            bad.push_back(std::string(key) + " 越出 schema 枚举");
+        return nullptr;
     }
-    {
-        if (!inst.contains("sharer_tracker") || !inst.at("sharer_tracker").contains("impl")) {
-            bad.push_back("sharer_tracker.impl 缺失");
+
+    /// CR-01 的通用部分 —— 按**冻结 schema 自身**的 `required` / `enum` 判定
+    /// (不硬编码键名 ⇒ schema 改了这里自动跟随;硬编码会让二者静默漂移)
+    std::vector<std::string> schema_violations(const json& inst, const json& schema) {
+        std::vector<std::string> bad;
+        for (const auto& key : schema.at("required")) {
+            if (!inst.contains(key.get<std::string>()))
+                bad.push_back("缺 required 键:" + key.get<std::string>());
+        }
+        const auto& props = schema.at("properties");
+        // perm:每个值 ∈ enum 且集合 == enum 全集(4 值锁)
+        if (!inst.contains("perm")) {
+            bad.push_back("缺 required 键:perm");
         } else {
-            const auto& dom = props.at("sharer_tracker").at("properties").at("impl").at("enum");
+            std::set<std::string> got;
+            for (const auto& v : inst.at("perm"))
+                got.insert(v.get<std::string>());
+            std::set<std::string> want;
+            for (const auto& v : props.at("perm").at("items").at("enum"))
+                want.insert(v.get<std::string>());
+            if (got != want)
+                bad.push_back("perm 不是 schema 枚举的全 4 值");
+        }
+        // ⚠️ **缺键 ⇒ 记为违规,不抛异常** —— 否则「删 required 键」这条反向 fixture
+        //    会「因错误的原因红」(异常而非判据),掩盖判据本身是否有牙。
+        for (const char* key : {"family", "status"}) {
+            if (!inst.contains(key)) {
+                bad.push_back(std::string(key) + " 缺失");
+                continue;
+            }
+            const auto& dom = props.at(key).at("enum");
             bool ok = false;
             for (const auto& v : dom) {
-                if (v == inst.at("sharer_tracker").at("impl"))
+                if (v == inst.at(key))
                     ok = true;
             }
             if (!ok)
-                bad.push_back("sharer_tracker.impl 越出 schema 枚举");
+                bad.push_back(std::string(key) + " 越出 schema 枚举");
         }
+        {
+            if (!inst.contains("sharer_tracker") || !inst.at("sharer_tracker").contains("impl")) {
+                bad.push_back("sharer_tracker.impl 缺失");
+            } else {
+                const auto& dom = props.at("sharer_tracker").at("properties").at("impl").at("enum");
+                bool ok = false;
+                for (const auto& v : dom) {
+                    if (v == inst.at("sharer_tracker").at("impl"))
+                        ok = true;
+                }
+                if (!ok)
+                    bad.push_back("sharer_tracker.impl 越出 schema 枚举");
+            }
+        }
+        return bad;
     }
-    return bad;
-}
 
-/// CR-01 ③④ 的 **CHI 专有锁**(per `ADR-CEP-11 §3` 的锁定表 `chi-r2` + `07 号 §5.1.1` 的 adapter 名)
-std::vector<std::string> chi_lock_violations(const json& inst) {
-    std::vector<std::string> bad;
-    if (inst.value("protocol_version", "") != "chi-r2")
-        bad.push_back("protocol_version 不在 ADR-CEP-11 §3 的锁定表内(应为 chi-r2)");
-    if (inst.value("adapter", "") != "ChiRnfAdapter")
-        bad.push_back("adapter 与 07 号 §5.1.1 的 adapter 名不逐字一致");
-    if (inst.value("family", "") != "industrial")
-        bad.push_back("family 不是 industrial");
-    return bad;
-}
-
-/// CR-06 —— `sharer_tracker` 的**不参与** + 退化 caps 行(对齐 `ADR-CEP-04` 的 BroadcastNull 行)
-/// ⚠️ 本判据**在测试层**:`adapter_schema_contracts.hh` 的 AC-01~05 **不覆盖** sharer_tracker
-///    (那是 `ADR-CEP-04` 的选型面,不是 adapter 契约面)⇒ 此处实现,反向 fixture 见下。
-std::vector<std::string> sharer_tracker_violations(const json& inst) {
-    std::vector<std::string> bad;
-    const auto& st = inst.at("sharer_tracker");
-    if (st.value("impl", "") != "不参与")
-        bad.push_back("impl 不是「不参与」");
-    const auto& caps = st.at("caps");
-    // 退化行:scope=NONE / completeness=EXACT / authority=NONE / aggregation_at=NONE
-    if (caps.value("scope", "") != "NONE")
-        bad.push_back("caps.scope 不是 NONE(退化行)");
-    if (caps.value("completeness", "") != "EXACT")
-        bad.push_back("caps.completeness 不是 EXACT(退化行)");
-    if (caps.value("authority", "") != "NONE")
-        bad.push_back("caps.authority 不是 NONE(退化行)");
-    if (caps.value("aggregation_at", "") != "NONE")
-        bad.push_back("caps.aggregation_at 不是 NONE(退化行)");
-    // 「不参与」**不是**第 6 种 SharerTracker 实现 ⇒ 实现表不得因本 change 增长
-    for (const auto& t : tlm::cep::kTrackerTraits) {
-        if (std::string(t.name) == "不参与")
-            bad.push_back("「不参与」被误登记为第 6 种 Tracker 实现");
+    /// CR-01 ③④ 的 **CHI 专有锁**(per `ADR-CEP-11 §3` 的锁定表 `chi-r2` + `07 号 §5.1.1` 的 adapter
+    /// 名)
+    std::vector<std::string> chi_lock_violations(const json& inst) {
+        std::vector<std::string> bad;
+        if (inst.value("protocol_version", "") != "chi-r2")
+            bad.push_back("protocol_version 不在 ADR-CEP-11 §3 的锁定表内(应为 chi-r2)");
+        if (inst.value("adapter", "") != "ChiRnfAdapter")
+            bad.push_back("adapter 与 07 号 §5.1.1 的 adapter 名不逐字一致");
+        if (inst.value("family", "") != "industrial")
+            bad.push_back("family 不是 industrial");
+        return bad;
     }
-    return bad;
-}
 
-/// 6 类消息类规范词表(per ArchForge 32 号 §6.0.1)
-bool in_message_class_vocabulary(const std::string& cls) {
-    static const std::set<std::string> kVocab = {"request",  "response", "snoop",
-                                                 "snoop_resp", "atomic", "query"};
-    return kVocab.count(cls) != 0;
-}
+    /// CR-06 —— `sharer_tracker` 的**不参与** + 退化 caps 行(对齐 `ADR-CEP-04` 的 BroadcastNull 行)
+    /// ⚠️ 本判据**在测试层**:`adapter_schema_contracts.hh` 的 AC-01~05 **不覆盖** sharer_tracker
+    ///    (那是 `ADR-CEP-04` 的选型面,不是 adapter 契约面)⇒ 此处实现,反向 fixture 见下。
+    std::vector<std::string> sharer_tracker_violations(const json& inst) {
+        std::vector<std::string> bad;
+        const auto& st = inst.at("sharer_tracker");
+        if (st.value("impl", "") != "不参与")
+            bad.push_back("impl 不是「不参与」");
+        const auto& caps = st.at("caps");
+        // 退化行:scope=NONE / completeness=EXACT / authority=NONE / aggregation_at=NONE
+        if (caps.value("scope", "") != "NONE")
+            bad.push_back("caps.scope 不是 NONE(退化行)");
+        if (caps.value("completeness", "") != "EXACT")
+            bad.push_back("caps.completeness 不是 EXACT(退化行)");
+        if (caps.value("authority", "") != "NONE")
+            bad.push_back("caps.authority 不是 NONE(退化行)");
+        if (caps.value("aggregation_at", "") != "NONE")
+            bad.push_back("caps.aggregation_at 不是 NONE(退化行)");
+        // 「不参与」**不是**一种 SharerTracker 实现 ⇒ 实现表里**不得**有它
+        // (⚠️ 2026-10-29 per `ADR-CEP-04 §13`:实现表已由 5 行增至 6 行(新增
+        //    `HierarchicalDirectory`)⇒ 本条只管「不参与**不是**实现」,与行数无关)
+        for (const auto& t : tlm::cep::kTrackerTraits) {
+            if (std::string(t.name) == "不参与")
+                bad.push_back("「不参与」被误登记为 Tracker 实现");
+        }
+        return bad;
+    }
 
-/// 运行离线 adapter 契约 CLI,返回其 stdout(单一真源纪律:同一判据实现)
-std::string run_adapter_cli() {
-    std::error_code ec;
-    const auto self = std::filesystem::read_symlink("/proc/self/exe", ec);
-    const auto cli = self.parent_path() / "examples" / "cep_adapter_contracts";
-    if (!std::filesystem::exists(cli))
-        return {};
-    const std::string cmd = cli.string() + " " + cpptlm::cep::repo_root().string() + " 2>/dev/null";
-    std::string out;
-    std::FILE* pipe = popen(cmd.c_str(), "r");
-    if (!pipe)
-        return {};
-    char buf[512];
-    while (std::fgets(buf, sizeof(buf), pipe) != nullptr)
-        out += buf;
-    pclose(pipe);
-    return out;
-}
+    /// 6 类消息类规范词表(per ArchForge 32 号 §6.0.1)
+    bool in_message_class_vocabulary(const std::string& cls) {
+        static const std::set<std::string> kVocab = {"request",    "response", "snoop",
+                                                     "snoop_resp", "atomic",   "query"};
+        return kVocab.count(cls) != 0;
+    }
 
-}  // namespace
+    /// 运行离线 adapter 契约 CLI,返回其 stdout(单一真源纪律:同一判据实现)
+    std::string run_adapter_cli() {
+        std::error_code ec;
+        const auto self = std::filesystem::read_symlink("/proc/self/exe", ec);
+        const auto cli = self.parent_path() / "examples" / "cep_adapter_contracts";
+        if (!std::filesystem::exists(cli))
+            return {};
+        const std::string cmd =
+            cli.string() + " " + cpptlm::cep::repo_root().string() + " 2>/dev/null";
+        std::string out;
+        std::FILE* pipe = popen(cmd.c_str(), "r");
+        if (!pipe)
+            return {};
+        char buf[512];
+        while (std::fgets(buf, sizeof(buf), pipe) != nullptr)
+            out += buf;
+        pclose(pipe);
+        return out;
+    }
+
+} // namespace
 
 // ══════════════════════════════════════════════════════════════════════
 //  CR-01 —— 实例声明符合冻结 schema 的全 13 属性
@@ -714,8 +737,10 @@ TEST_CASE("CR-02 chi_rnf 的 ordering_assumption / vc_binding 自洽", "[cep][ch
 
     // ── 子条件 ③:两字段的**网络键对称** ─────────────────────────────
     std::set<std::string> oa_keys, vb_keys;
-    for (auto it = oa.begin(); it != oa.end(); ++it) oa_keys.insert(it.key());
-    for (auto it = vb.begin(); it != vb.end(); ++it) vb_keys.insert(it.key());
+    for (auto it = oa.begin(); it != oa.end(); ++it)
+        oa_keys.insert(it.key());
+    for (auto it = vb.begin(); it != vb.end(); ++it)
+        vb_keys.insert(it.key());
     CHECK(oa_keys == vb_keys);
     CHECK_FALSE(oa_keys.empty());
 
@@ -755,7 +780,7 @@ TEST_CASE("CR-02 chi_rnf 的 ordering_assumption / vc_binding 自洽", "[cep][ch
     {
         json broken = json::array();
         json inst = *chi;
-        inst["vc_binding"]["compute_noc"]["request"] = 9;  // kMaxVcId = 3
+        inst["vc_binding"]["compute_noc"]["request"] = 9; // kMaxVcId = 3
         broken.push_back(inst);
         json inline_decl = json{{"instances", broken}};
         inline_decl["channel_dependency_edges"] = doc.at("channel_dependency_edges");
@@ -769,10 +794,10 @@ TEST_CASE("CR-02 chi_rnf 的 ordering_assumption / vc_binding 自洽", "[cep][ch
         const json real = load_instances();
         auto decl = tlm::cep::parse_channel_declaration(real);
         auto rep = tlm::cep::evaluate_channel_dependency_gate(decl);
-        REQUIRE(rep.verdict == tlm::cep::GateVerdict::PASS);  // 正控(真实声明是绿的)
+        REQUIRE(rep.verdict == tlm::cep::GateVerdict::PASS); // 正控(真实声明是绿的)
         json broken = json::array();
         json inst = *chi;
-        inst["vc_binding"]["compute_noc"].erase("snoop");  // 让某条边的端点失去绑定
+        inst["vc_binding"]["compute_noc"].erase("snoop"); // 让某条边的端点失去绑定
         broken.push_back(inst);
         // ⚠️ 内联声明**必须**带上边表 —— 否则闸没有边可判(4 顶点全孤立)
         //    ⇒ 会得到「假绿」(fixture 因**错误的原因**通过)。
@@ -780,7 +805,7 @@ TEST_CASE("CR-02 chi_rnf 的 ordering_assumption / vc_binding 自洽", "[cep][ch
         inline_decl["channel_dependency_edges"] = doc.at("channel_dependency_edges");
         const auto rep_broken = tlm::cep::evaluate_channel_dependency_gate(
             tlm::cep::parse_channel_declaration(inline_decl));
-        CHECK(rep_broken.verdict == tlm::cep::GateVerdict::FAIL);  // 端点失去绑定 ⇒ 红
+        CHECK(rep_broken.verdict == tlm::cep::GateVerdict::FAIL); // 端点失去绑定 ⇒ 红
         CHECK_FALSE(rep_broken.errors.empty());
     }
     // ⚠️ **子条件 ②/③ 的反向 fixture 由 `scripts/test/cep_decl_reverse_verify.sh`
@@ -867,7 +892,7 @@ TEST_CASE("CR-03 chi 的 6→3 映射完备 + 目标受 3 类值域 + 恒等已�
     // ── 反向 fixture ②:目标写成第 4 类(值域外)⇒ 必红 ─────────────────
     {
         auto broken = map;
-        broken.rows.front().second = 3;  // CATEGORY_* 只有 0/1/2
+        broken.rows.front().second = 3; // CATEGORY_* 只有 0/1/2
         const auto v = tlm::cep::AdapterSchemaContracts::check_message_class_mapping(broken);
         CHECK(v.verdict == tlm::cep::AdapterContractVerdict::FAIL);
     }
@@ -877,7 +902,7 @@ TEST_CASE("CR-03 chi 的 6→3 映射完备 + 目标受 3 类值域 + 恒等已�
         broken.rows = tlm::cep::identity_reference_map();
         for (const auto& r : broken.rows)
             broken.used_message_classes.push_back(r.first);
-        broken.is_identity = false;  // 恒等但不登记
+        broken.is_identity = false; // 恒等但不登记
         const auto v = tlm::cep::AdapterSchemaContracts::check_message_class_mapping(broken);
         CHECK(v.verdict == tlm::cep::AdapterContractVerdict::FAIL);
     }
@@ -885,7 +910,8 @@ TEST_CASE("CR-03 chi 的 6→3 映射完备 + 目标受 3 类值域 + 恒等已�
     // ── 正控:`moesi_gpu` 的映射仍 PASS(恒等 + 已登记)───────────────────
     auto moesi = loaded.inputs;
     tlm::cep::fill_adapter_inputs<tlm::cep::MoesiGpuAdapter>(moesi);
-    const auto v_moesi = tlm::cep::AdapterSchemaContracts::check_message_class_mapping(moesi.mapping);
+    const auto v_moesi =
+        tlm::cep::AdapterSchemaContracts::check_message_class_mapping(moesi.mapping);
     CHECK(v_moesi.verdict == tlm::cep::AdapterContractVerdict::PASS);
     CHECK(v_moesi.detail.find("恒等") != std::string::npos);
 }
@@ -921,7 +947,8 @@ TEST_CASE("CR-04 chi 的 perm 投影完备 + 瞬态无投影 + UC+Store→UD", "
     // 前提:write 只在 Unique 态合法(IHI0050 §B4.1)⇒ `SC + Wr` 状态不变(须先 Upgrade)
     CHECK_FALSE(A::write_is_legal(A::State::SC));
     CHECK(A::transition(A::State::SC, A::Event::Wr) == static_cast<std::uint8_t>(A::State::SC));
-    CHECK(A::transition(A::State::SC, A::Event::Upgrade) == static_cast<std::uint8_t>(A::State::UC));
+    CHECK(A::transition(A::State::SC, A::Event::Upgrade) ==
+          static_cast<std::uint8_t>(A::State::UC));
     // ── 子条件 ⑤:`SD → WRITEBACK` 的语义损失被登记,且注明 RN 侧**不可补偿** ─
     {
         const std::string note = A::kPermMergeNote;
@@ -936,8 +963,8 @@ TEST_CASE("CR-04 chi 的 perm 投影完备 + 瞬态无投影 + UC+Store→UD", "
     auto inputs = loaded.inputs;
     tlm::cep::fill_adapter_inputs<A>(inputs);
     const auto ac05 = tlm::cep::AdapterSchemaContracts::check_adapter_self_consistency(
-        inputs.stable_state_has_projection, inputs.e_write_target_state,
-        inputs.e_state_perm_rank, inputs.m_state_perm_rank);
+        inputs.stable_state_has_projection, inputs.e_write_target_state, inputs.e_state_perm_rank,
+        inputs.m_state_perm_rank);
     CHECK(ac05.verdict == tlm::cep::AdapterContractVerdict::PASS);
 
     // ── 反向 fixture ①:让某个态**有稳定位但无投影** ⇒ 必红 ─────────────
@@ -952,7 +979,7 @@ TEST_CASE("CR-04 chi 的 perm 投影完备 + 瞬态无投影 + UC+Store→UD", "
     // ── 反向 fixture ②:改掉 `UC + Store → UD` 的目标态 ⇒ 必红 ──────────
     {
         auto broken = inputs;
-        broken.e_write_target_state = static_cast<int>(A::State::SD);  // 4 ≠ 3
+        broken.e_write_target_state = static_cast<int>(A::State::SD); // 4 ≠ 3
         const auto v = tlm::cep::AdapterSchemaContracts::check_adapter_self_consistency(
             broken.stable_state_has_projection, broken.e_write_target_state,
             broken.e_state_perm_rank, broken.m_state_perm_rank);
@@ -963,8 +990,8 @@ TEST_CASE("CR-04 chi 的 perm 投影完备 + 瞬态无投影 + UC+Store→UD", "
     auto moesi = loaded.inputs;
     tlm::cep::fill_adapter_inputs<tlm::cep::MoesiGpuAdapter>(moesi);
     const auto v_moesi = tlm::cep::AdapterSchemaContracts::check_adapter_self_consistency(
-        moesi.stable_state_has_projection, moesi.e_write_target_state,
-        moesi.e_state_perm_rank, moesi.m_state_perm_rank);
+        moesi.stable_state_has_projection, moesi.e_write_target_state, moesi.e_state_perm_rank,
+        moesi.m_state_perm_rank);
     CHECK(v_moesi.verdict == tlm::cep::AdapterContractVerdict::PASS);
 }
 
@@ -987,7 +1014,7 @@ TEST_CASE("CR-05 chi_rnf 静默升级声明被契约判据接受", "[cep][chi-rn
         }
     }
     CHECK(found);
-    CHECK(total == 2u);  // moesi_gpu + chi_rnf(`mesif` 无该能力 ⇒ 不出现)
+    CHECK(total == 2u); // moesi_gpu + chi_rnf(`mesif` 无该能力 ⇒ 不出现)
 
     // ── 子条件 ②:引用完整性(`instance_id` 存在于 `instances[]`)────────
     const json* chi = find_instance(doc, "chi_rnf");
@@ -1053,8 +1080,18 @@ TEST_CASE("CR-06 chi_rnf 的 sharer_tracker 为「不参与」+ 退化 caps", "[
         CHECK(t.caps == degenerate);
     }
     CHECK(seen_broadcast_null);
-    // 「不参与」**不是**第 6 种实现 ⇒ 实现表条目数不变(恒 5)
-    CHECK(tlm::cep::kTrackerTraits.size() == 5u);
+    // 「不参与」**不是**一种实现 —— 实现表里**没有**它
+    //
+    // ⚠️ 2026-10-29(per `ADR-CEP-04 §13` 的 R-1 裁决):实现表由 **5 行 ⇒ 6 行**
+    //    (新增 `HierarchicalDirectory`)⇒ 本断言的**意图**「『不参与』不被登记为实现」
+    //    保持,但**行数**不再是 5。
+    //    ⚠️ 该数字变化与**已归档** main spec `cep-chi-rnf-subset` 的 CR-06 ③ 措辞
+    //    (「不新增 SharerTracker 实现」)存在**措辞漂移** ⇒ 已登记为 spec 修正债
+    //    (由 mesif 状态机立项一并处置,per 台账 Entry #96)。
+    CHECK(tlm::cep::kTrackerTraits.size() == 6u);
+    for (const auto& t2 : tlm::cep::kTrackerTraits) {
+        CHECK(std::string(t2.name) != "不参与");
+    }
 
     // ── 反向 fixture:`impl = 不参与` 但 `caps.scope = SYSTEM` ⇒ 必红 ────
     {
@@ -1105,7 +1142,7 @@ TEST_CASE("CR-07/08 权威分区:登记键合法 + 语义校验扩面覆盖 repo
     {
         const auto decl = tlm::cep::parse_channel_declaration(doc);
         const auto rep = tlm::cep::evaluate_channel_dependency_gate(decl);
-        REQUIRE(rep.per_instance.count("chi_rnf") == 1u);  // 正控:真实声明里它**在**
+        REQUIRE(rep.per_instance.count("chi_rnf") == 1u); // 正控:真实声明里它**在**
 
         json filtered = doc;
         json kept = json::array();
@@ -1116,8 +1153,8 @@ TEST_CASE("CR-07/08 权威分区:登记键合法 + 语义校验扩面覆盖 repo
         filtered["instances"] = kept;
         const auto rep2 = tlm::cep::evaluate_channel_dependency_gate(
             tlm::cep::parse_channel_declaration(filtered));
-        CHECK(rep2.per_instance.count("chi_rnf") == 0u);  // ⇒ 「消费方可见」断言有牙
-        CHECK(rep2.verdict == tlm::cep::GateVerdict::PASS);  // 语义:缺失**不**表现为闸红
+        CHECK(rep2.per_instance.count("chi_rnf") == 0u);    // ⇒ 「消费方可见」断言有牙
+        CHECK(rep2.verdict == tlm::cep::GateVerdict::PASS); // 语义:缺失**不**表现为闸红
     }
 
     // ⚠️ **收窄侧(⑥)/ 扩面侧的破坏性 fixture** 由
@@ -1129,8 +1166,8 @@ TEST_CASE("CR-07/08 权威分区:登记键合法 + 语义校验扩面覆盖 repo
 //  CR-09 —— 权威归属裁决的**追加式** ADR 登记(不可变原则)
 // ══════════════════════════════════════════════════════════════════════
 TEST_CASE("CR-09 ADR-CEP-12 的 Status Update 登记实例级权威分区", "[cep][chi-rnf][cr-09]") {
-    const auto path = cpptlm::cep::repo_root() / "docs" / "adr" /
-                      "ADR-CEP-12-protocol-engine-capability-map.md";
+    const auto path =
+        cpptlm::cep::repo_root() / "docs" / "adr" / "ADR-CEP-12-protocol-engine-capability-map.md";
     std::ifstream in(path);
     REQUIRE(in.good());
     std::string text((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
@@ -1158,8 +1195,7 @@ TEST_CASE("CR-09 ADR-CEP-12 的 Status Update 登记实例级权威分区", "[ce
 // ══════════════════════════════════════════════════════════════════════
 //  权威分区的**消费方**覆盖 —— 4 类消费方均看见 repo-owned 实例
 // ══════════════════════════════════════════════════════════════════════
-TEST_CASE("消费方覆盖:装配闸 / 装载层 / VC 快照 / 桥 均可见 chi_rnf",
-          "[cep][chi-rnf][consumers]") {
+TEST_CASE("消费方覆盖:装配闸 / 装载层 / VC 快照 / 桥 均可见 chi_rnf", "[cep][chi-rnf][consumers]") {
     const json doc = load_instances();
 
     // ── ① 装配闸(channel_dependency_graph)────────────────────────────
@@ -1219,7 +1255,8 @@ TEST_CASE("装载层参数化:双 adapter AC-01~05 全 PASS + 漏填必红 + CLI
     {
         auto broken = chi_inputs;
         broken.mapping.rows.clear();
-        const auto v = tlm::cep::AdapterSchemaContracts::check_message_class_mapping(broken.mapping);
+        const auto v =
+            tlm::cep::AdapterSchemaContracts::check_message_class_mapping(broken.mapping);
         CHECK(v.verdict == tlm::cep::AdapterContractVerdict::FAIL);
         const auto rep = tlm::cep::AdapterSchemaContracts::check_all(broken);
         CHECK(rep.verdict == tlm::cep::AdapterContractVerdict::FAIL);

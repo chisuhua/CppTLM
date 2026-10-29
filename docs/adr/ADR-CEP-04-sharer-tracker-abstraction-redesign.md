@@ -344,9 +344,60 @@ interface SharerTrackerIf {
 
 > **变更史**:§8 原文逐字引用见上表「原文」行;本条作废授权与理由见台账 **Entry #62** —— 过程记录归台账,不在本 ADR 内累积。
 
+## 13. Status Update(2026-10-29,per 台账 Entry #96)—— R-1 裁决:第 6 种 SharerTracker 实现 `HierarchicalDirectory` + `aggregation_at` 新枚举值 `HIERARCHICAL`
+
+> **性质**:追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— §1 ~ §12 正文一律不改,仅登记**一项决策**。
+> **触发**:ArchForge `32 号 §9.1:737-741` 自陈的 **R-1** —— NSA 需要 `scope=SYSTEM` + `completeness=EXACT` + `authority=GLOBAL` + **多级 `aggregation_at`**(L1 per-GPC / L2 per-GPU / L3 per-Compute-Tray),而本 ADR §2 决策 3 的 `AggregationAt` 枚举只有 `HOME` / `REQUESTER` / `TREE_PARENT` / `NONE` —— `HOME` 是**单点**、`TREE_PARENT` 是**单父**,**无「多级」表达** ⇒ D-FABRIC 域在 CEP 内不可表达(per `32 号 §13` RK-3)。
+> **关联**:台账 `obj-cep-platform §11` **Entry #96**;ArchForge `32 号 §9.1`(缺口自陈)/ `§13` RK-3(降级方案)。
+
+### 13.1 决策 —— 新增第 6 种实现 `HierarchicalDirectory`,`AggregationAt` 增枚举值 `HIERARCHICAL`
+
+**选项对比**:
+
+| 方案 | 结论 | 理由 |
+|---|---|---|
+| **A′** 新增第 6 种实现 `HierarchicalDirectory` + `AggregationAt` 增 1 个枚举值 `HIERARCHICAL`;`caps` **仍为 4 属性** | ✅ **采纳** | ① 表达力**完整**:多级聚合被表达为「聚合发生**在哪里**」的一个取值,与其余 3 个取值同层;② `caps` 的语义边界**不破** —— 4 属性是**能力属性** descriptor(层级深度是**实现参数**,混入 caps 会让不同实现因深度不同而不可比);③ 与 ArchForge 自陈的建议(`32 号 §9.1:740-741`)**同构** ⇒ 后续可被跨仓追认;④ **不**依赖「降级近似」,不引入新的语义损失 |
+| **B** 把 `caps` 扩为 **5 维**(加 `hierarchy_depth`) | ❌ 否决 | ① 把**实现参数**塞进**能力 descriptor** ⇒ 「同一实现不同深度」变成两个不同能力集,破坏 caps 的可比性;② 冻结 schema 的 `caps.required` 要加属性 ⇒ 冻结面扩大且**存量实例**被迫补字段;③ depth 是**可配置项**,不是「能不能」的二元属性 |
+| **C** 降级:用现有 `TreeManager`(`scope=SUBTREE`)近似承载三级目录 | ❌ 否决 | ① 直接复制 R-1 的**症状**:声明若写 `SYSTEM/EXACT/GLOBAL` 则与 `TreeManager` 行**不符**(实现承载不了声明的能力);若照抄 `TreeManager` 行则**丢掉** `GLOBAL`/`SYSTEM` 语义 ⇒ 把缺口**藏**进「近似」二字;② `32 号 §13` RK-3 自己把该路线标为「**降级**方案」而非解法 |
+| **D** 只加 `HIERARCHICAL` 枚举值,**不**加实现(复用 `TreeManager` 承载) | ❌ 否决 | enum 值与实现**脱钩** ⇒ caps 声称的能力**无实现可承载** ⇒ 变成纸面声明(与 `INV-CEP-04-IC1`「caps 值必须 ∈ enum」的**可执行性**精神相悖) |
+
+**采纳方案的具体形态**:
+
+| 项 | 值 | 落点 |
+|---|---|---|
+| 新增实现 | `HierarchicalDirectory` | `ADR-CEP-04 §2` 决策 3 的 5×4 表**追加第 6 行**;`sharer_tracker.hh` 的 `kTrackerTraits` 追加第 6 行 |
+| 其 `caps` | `scope=SYSTEM` · `completeness=EXACT` · `authority=GLOBAL` · `aggregation_at=HIERARCHICAL` | 同上 |
+| 新增枚举值 | `AggregationAt::HIERARCHICAL` | `ADR-CEP-04 §2` 决策 3 的 enum;`sharer_tracker.hh` 的 `AggregationAt` |
+| `caps` 维度 | **不变(4 属性)** | 冻结 schema 的 `caps.required` **零改动** |
+
+**连带表述修订(追加式,正文不改)**:§2 决策 1 的「(α) 单抽象接口 + **5 种实现**」⇒ 追加式修订为「**6 种实现**」(第 6 种 = `HierarchicalDirectory`)。§2 决策 1 的其余表述、§3 ~ §7、`INV-CEP-04-IC1` ~ `IC3` —— **零改动**;**新增 invariant 数 = 0**。
+
+### 13.2 后果 / 代价
+
+**正面**:① D-FABRIC 域的「多级目录」在 CEP 内**可表达** ⇒ 解锁 ArchForge `32 号 §13` RK-3 记录的「D-FABRIC 域无法建模 / NSA Stage 2~3 阻塞」;② 与 ArchForge 的建议同构 ⇒ 跨仓追认成本低;③ `caps` 维度不变 ⇒ 存量 5 种实现**零迁移**。
+
+**负面(代价)**:① `ADR-CEP-04 §2` 表 **5 → 6 行**;② `AggregationAt` 枚举 **+1 值** ⇒ 枚举字面量与 schema 枚举**各 +1**;③ **冻结面**改动 2 件(`ADR-CEP-04` 本文件 + `protocol_instance.schema.json`)⇒ 走**两步授权序列**;④ 落地涉及 `sharer_tracker.hh` 的实现表 + 守门判据 + 反向 fixture。
+
+**风险 / 已知残留**:
+- ⚠️ **`HIERARCHICAL` 的粒度未定** —— 「聚合发生在多级目录的**哪**一级」仍是**实现参数**(L1/L2/L3 的选择),**未**进 caps ⇒ 若将来需要按级声明能力,仍要再动 caps ⇒ 登记为**已知残留**,不由本次决策解决。
+- ⚠️ **本 ADR 不覆盖 `mesif` 的状态机与投影表** —— ArchForge 侧**无** MESIF 状态转换规约、**无** 5→4 `perm` 投影表 ⇒ 属**独立缺口**(另立 change),**不由本决策派生**。
+- ⚠️ **`mesif` 的声明权威**问题(ArchForge `32 号 §6.2` 声明 `impl=SparseSnoopFilter`,与 §9.1 的三级目录不自洽;且 `SparseSnoopFilter` 已被 `moesi_gpu` 占用)⇒ 由 `ADR-CEP-12` 的**权威迁移**裁决承担(不在本 ADR 范围)。
+
+### 13.3 Verification(前瞻判据,未实施)
+
+- [ ] **V1** `protocol_instance.schema.json` 的 `sharer_tracker.impl` 枚举含 `HierarchicalDirectory`,且 `caps.aggregation_at` 枚举含 `HIERARCHICAL`。
+- [ ] **V2** `include/tlm/cep/sharer_tracker.hh` 的 `kTrackerTraits` **恰 6 行**,第 6 行 caps == `SYSTEM` / `EXACT` / `GLOBAL` / `HIERARCHICAL`。
+- [ ] **V3** `caps` 的 `required` **仍为 4 项**(未扩维度)。
+- [ ] **V4** `protocol_instances.json` 的 `mesif` 实例 `sharer_tracker.impl == "HierarchicalDirectory"`,且其 `caps` 与 V2 的第 6 行**逐字段相等**。
+- [ ] **V5** **反向 fixture**:声明 `impl=HierarchicalDirectory` 但 `caps` 照抄 `TreeManager` 行 ⇒ 必红;`caps.aggregation_at` 取未登记值 ⇒ 必红。
+- [ ] **V6** **正控**:`moesi_gpu` / `chi_rnf` / `mesif` 三条既有声明的 `sharer_tracker` 行**零改动**通过校验。
+
 ---
 
-**版本**: v0.3 草案 + Status Update 2026-10-25(§8 五 change 名失指)
-**最后更新**: 2026-10-25
+
+---
+
+**版本**: v0.3 草案 + Status Update 2026-10-25(§8 五 change 名失指)+ Status Update 2026-10-29(§13 —— R-1 裁决:第 6 种实现 `HierarchicalDirectory` + `HIERARCHICAL`)
+**最后更新**: 2026-10-29
 **批准状态**: 🟡 待 Oracle v0.5 二次复审
 **维护者**: CppTLM build agent(architect mode)

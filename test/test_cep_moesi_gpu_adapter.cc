@@ -27,15 +27,16 @@ namespace {
     using tlm::cep::MoesiGpuAdapter;
 
     const json& decl_doc() {
-        static const json doc = json::parse(
-            read_file((repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json").string()));
+        static const json doc = json::parse(read_file(
+            (repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json").string()));
         return doc;
     }
 
     const json& instance(const std::string& id) {
         static std::map<std::string, json> cache;
         auto it = cache.find(id);
-        if (it != cache.end()) return it->second;
+        if (it != cache.end())
+            return it->second;
         for (const auto& inst : decl_doc().at("instances")) {
             if (inst.at("id") == id) {
                 cache[id] = inst;
@@ -54,15 +55,16 @@ namespace {
     /// canonical 10 流(per ADR-CEP-02 §2)
     const std::vector<std::string>& canonical_flows() {
         static const std::vector<std::string> kFlows = {
-            "request", "completion", "snoop", "snoop_resp", "writeback",
-            "forward_data", "back_invalidate", "address_resolve", "barrier", "snoop_completion_ack"};
+            "request",   "completion",          "snoop",           "snoop_resp",
+            "writeback", "forward_data",        "back_invalidate", "address_resolve",
+            "barrier",   "snoop_completion_ack"};
         return kFlows;
     }
 
     /// 6 类规范消息类词表(per ADR-CEP-12 §8.3 / ArchForge 32 号 §6.0.1)
     const std::vector<std::string>& msg_class_vocab() {
-        static const std::vector<std::string> kV = {"request", "response", "snoop",
-                                                    "snoop_resp", "atomic", "query"};
+        static const std::vector<std::string> kV = {"request",    "response", "snoop",
+                                                    "snoop_resp", "atomic",   "query"};
         return kV;
     }
 
@@ -71,10 +73,12 @@ namespace {
     std::vector<std::string> ic2_violations(const json& inst, const json& fabric) {
         std::vector<std::string> bad;
         const json& ordering = inst.at("ordering_assumption");
-        const json& binding  = inst.at("vc_binding");
+        const json& binding = inst.at("vc_binding");
         std::set<std::string> nets;
-        for (auto it = ordering.begin(); it != ordering.end(); ++it) nets.insert(it.key());
-        for (auto it = binding.begin(); it != binding.end(); ++it) nets.insert(it.key());
+        for (auto it = ordering.begin(); it != ordering.end(); ++it)
+            nets.insert(it.key());
+        for (auto it = binding.begin(); it != binding.end(); ++it)
+            nets.insert(it.key());
 
         for (const auto& net : nets) {
             if (!ordering.contains(net) || !binding.contains(net)) {
@@ -87,17 +91,22 @@ namespace {
                 const int vc = std::stoi(it.key());
                 bool bound = false;
                 for (auto b = binding.at(net).begin(); b != binding.at(net).end(); ++b) {
-                    if (b.value().get<int>() == vc) { bound = true; break; }
+                    if (b.value().get<int>() == vc) {
+                        bound = true;
+                        break;
+                    }
                 }
-                if (!bound) bad.push_back("网络 " + net + ":ordering 的 vc_id " + std::to_string(vc) + " 未被绑定");
+                if (!bound)
+                    bad.push_back("网络 " + net + ":ordering 的 vc_id " + std::to_string(vc) +
+                                  " 未被绑定");
             }
             // 条件 ②:每个 vc_id < 该网络的 vc_count
             const int vc_count = fabric.at("networks").at(net).at("vc_count").get<int>();
             for (auto b = binding.at(net).begin(); b != binding.at(net).end(); ++b) {
                 const int vc = b.value().get<int>();
                 if (vc >= vc_count) {
-                    bad.push_back("网络 " + net + ":vc_id " + std::to_string(vc) + " 越界(vc_count=" +
-                                  std::to_string(vc_count) + ")");
+                    bad.push_back("网络 " + net + ":vc_id " + std::to_string(vc) +
+                                  " 越界(vc_count=" + std::to_string(vc_count) + ")");
                 }
             }
             // 条件 ③:每个消息类 ∈ 6 类词表
@@ -118,7 +127,7 @@ namespace {
         return doc;
     }
 
-}  // namespace
+} // namespace
 
 // ══════════════════════════════════════════════════════════════════════
 // Scenario 1:6 态 × 6 事件表驱动,且 `E+Write→M` 静默升级存在
@@ -153,7 +162,8 @@ TEST_CASE("CEP moesi_gpu: 6 态 × 6 事件表驱动 + E+Write→M 静默升级 
     int silent = 0;
     for (std::size_t s = 0; s < A::kStateCount; ++s) {
         for (std::size_t e = 0; e < A::kEventCount; ++e) {
-            if (A::is_silent_upgrade(static_cast<A::State>(s), static_cast<A::Event>(e))) ++silent;
+            if (A::is_silent_upgrade(static_cast<A::State>(s), static_cast<A::Event>(e)))
+                ++silent;
         }
     }
     REQUIRE(silent == 1);
@@ -168,9 +178,10 @@ TEST_CASE("CEP moesi_gpu: 6 态 × 6 事件表驱动 + E+Write→M 静默升级 
         // ⚠️ `kStateTransition` 是 `static constexpr` ⇒ 直接 `auto` 拷贝会推成**只读**数组
         std::uint8_t broken[A::kStateCount][A::kEventCount];
         for (std::size_t i = 0; i < A::kStateCount; ++i) {
-            for (std::size_t j = 0; j < A::kEventCount; ++j) broken[i][j] = A::kStateTransition[i][j];
+            for (std::size_t j = 0; j < A::kEventCount; ++j)
+                broken[i][j] = A::kStateTransition[i][j];
         }
-        broken[2][1] = 2;                    // E + Wr → E(不再是 M)
+        broken[2][1] = 2; // E + Wr → E(不再是 M)
         REQUIRE(broken[2][1] != 3);
         REQUIRE_FALSE(broken[2][1] == static_cast<std::uint8_t>(A::State::M));
     }
@@ -201,7 +212,8 @@ TEST_CASE("CEP moesi_gpu: 6→4 perm 投影完备 + 瞬态 T 不泄漏 + O/M 合
     int projected = 0;
     for (std::size_t s = 0; s < A::kStateCount; ++s) {
         A::Perm tmp = A::Perm::NONE;
-        if (A::perm_of(static_cast<A::State>(s), tmp)) ++projected;
+        if (A::perm_of(static_cast<A::State>(s), tmp))
+            ++projected;
     }
     REQUIRE(projected == 5);
 
@@ -218,7 +230,7 @@ TEST_CASE("CEP moesi_gpu: 6→4 perm 投影完备 + 瞬态 T 不泄漏 + O/M 合
                 t_has_projection = A::perm_of(static_cast<A::State>(s), tmp);
             }
         }
-        REQUIRE_FALSE(t_has_projection);   // 当前形态:T 无投影
+        REQUIRE_FALSE(t_has_projection); // 当前形态:T 无投影
     }
 
     // `O` 与 `M` 合并为 `WRITEBACK` 的语义损失**被显式登记**
@@ -242,16 +254,16 @@ TEST_CASE("CEP moesi_gpu: 6→3 消息类映射完备 + 目标值域受限 + 恒
     for (const auto& cls : vocab) {
         int hits = 0;
         for (std::size_t i = 0; i < A::kMessageClassCount; ++i) {
-            if (std::string(A::kMessageClassMap[i].message_class) == cls) ++hits;
+            if (std::string(A::kMessageClassMap[i].message_class) == cls)
+                ++hits;
         }
         REQUIRE(hits == 1);
     }
 
     // 每个映射目标 ∈ 链路层 `CATEGORY_*` 的 **3 类**(不扩类)
-    const std::set<std::uint8_t> domain = {
-        bundles::NoCFlitBundle::CATEGORY_REQUEST,
-        bundles::NoCFlitBundle::CATEGORY_RESPONSE,
-        bundles::NoCFlitBundle::CATEGORY_CREDIT};
+    const std::set<std::uint8_t> domain = {bundles::NoCFlitBundle::CATEGORY_REQUEST,
+                                           bundles::NoCFlitBundle::CATEGORY_RESPONSE,
+                                           bundles::NoCFlitBundle::CATEGORY_CREDIT};
     for (std::size_t i = 0; i < A::kMessageClassCount; ++i) {
         REQUIRE(domain.count(A::kMessageClassMap[i].category) == 1);
     }
@@ -267,8 +279,9 @@ TEST_CASE("CEP moesi_gpu: 6→3 消息类映射完备 + 目标值域受限 + 恒
     const auto& ref = tlm::cep::identity_reference_map();
     bool identical = (ref.size() == A::kMessageClassCount);
     for (std::size_t i = 0; i < A::kMessageClassCount && identical; ++i) {
-        identical = (std::string(ref[i].first) == std::string(A::kMessageClassMap[i].message_class)) &&
-                    (ref[i].second == A::kMessageClassMap[i].category);
+        identical =
+            (std::string(ref[i].first) == std::string(A::kMessageClassMap[i].message_class)) &&
+            (ref[i].second == A::kMessageClassMap[i].category);
     }
     REQUIRE(identical);
     REQUIRE(A::kMappingIsIdentity);
@@ -321,7 +334,7 @@ TEST_CASE("CEP moesi_gpu: 实例声明字段(protocol_version / 10 流 / perm 4 
 TEST_CASE("CEP moesi_gpu: per-network 装配期校验(IC2 三条件)+ 越界反向 fixture",
           "[cep][moesi-gpu-adapter][ic2]") {
     const json inst = instance("moesi_gpu");
-    const json fab  = fabric_doc();
+    const json fab = fabric_doc();
 
     // 校验覆盖**两个**网络(嵌套形态是 per-network,不是扁平)
     REQUIRE(inst.at("ordering_assumption").size() == 2);
@@ -389,8 +402,8 @@ TEST_CASE("CEP moesi_gpu: status 翻转 ⇒ implemented 计数 0→1(条件达�
 TEST_CASE("CEP moesi_gpu: 本载体不含 mesif(声明源 / 状态机 / 映射表)",
           "[cep][moesi-gpu-adapter][scope]") {
     // ① adapter 头文件里**零** mesif 命中
-    const std::string hdr = read_file(
-        (repo_root() / "include" / "tlm" / "cep" / "moesi_gpu_adapter.hh").string());
+    const std::string hdr =
+        read_file((repo_root() / "include" / "tlm" / "cep" / "moesi_gpu_adapter.hh").string());
     REQUIRE(hdr.find("mesif") == std::string::npos);
 
     // ② 静默升级声明源里**不得**有 mesif 条目
@@ -407,7 +420,8 @@ TEST_CASE("CEP moesi_gpu: 本载体不含 mesif(声明源 / 状态机 / 映射�
     {
         int moesi_rows = 0;
         for (const auto& u : pu.at("perm_upgrade").at("silent_upgrades")) {
-            if (u.at("instance_id").get<std::string>() == "moesi_gpu") ++moesi_rows;
+            if (u.at("instance_id").get<std::string>() == "moesi_gpu")
+                ++moesi_rows;
         }
         REQUIRE(moesi_rows == 1);
     }

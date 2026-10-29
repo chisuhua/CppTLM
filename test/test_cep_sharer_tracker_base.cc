@@ -219,10 +219,12 @@ TEST_CASE("CEP SharerTracker: caps 4 属性 / ResponderSet 64-bit / bit→node �
 }
 
 // ═════════════════════════════════════════════════════════════════════
-// Scenario 3:5 实现 × (4 caps + 2 behavior) 数据级自洽
+// Scenario 3:6 实现 × (4 caps + 2 behavior) 数据级自洽
+//   (2026-10-29 per `ADR-CEP-04 §13` 的 R-1 裁决:新增第 6 种 `HierarchicalDirectory`
+//    + `AggregationAt::HIERARCHICAL` —— 原 5 行 ⇒ 6 行)
 // ═════════════════════════════════════════════════════════════════════
-TEST_CASE("CEP SharerTracker: 5 实现 × caps/behavior 数据表自洽", "[cep][sharer-tracker]") {
-    CHECK(cep::kTrackerTraits.size() == 5);
+TEST_CASE("CEP SharerTracker: 6 实现 × caps/behavior 数据表自洽", "[cep][sharer-tracker]") {
+    CHECK(cep::kTrackerTraits.size() == 6);
 
     // FullMap 行(ADR §2 决策 3 表 + §4 表首行)
     CHECK(caps_of(cep::TrackerImpl::FullMapDirectory) == fullmap_caps_expected());
@@ -249,7 +251,27 @@ TEST_CASE("CEP SharerTracker: 5 实现 × caps/behavior 数据表自洽", "[cep]
     CHECK(behavior_of(cep::TrackerImpl::BroadcastNull).hazard_under_contention ==
           cep::LookupHazard::NONE);
 
-    // 数据级自洽:5 行 name 唯一;合法实现不声明 PARTIAL(决策 2:无兜底的 PARTIAL = 失效实例)
+    // HierarchicalDirectory(第 6 种,per `ADR-CEP-04 §13` 的 R-1 裁决):
+    //   EXACT + GLOBAL,但 `aggregation_at` 是**多级** —— HOME(单点)/ TREE_PARENT(单父)
+    //   都表达不了「三级目录」⇒ 新枚举值 `HIERARCHICAL`。
+    {
+        const auto caps = caps_of(cep::TrackerImpl::HierarchicalDirectory);
+        CHECK(caps.scope == cep::Scope::SYSTEM);
+        CHECK(caps.completeness == cep::Completeness::EXACT);
+        CHECK(caps.authority == cep::Authority::GLOBAL);
+        CHECK(caps.aggregation_at == cep::AggregationAt::HIERARCHICAL);
+        // EXACT ⇒ 与 FullMapDirectory 同款:无 broadcast fallback、STALL 而非 CHAIN
+        CHECK(behavior_of(cep::TrackerImpl::HierarchicalDirectory).broadcast_fallback == false);
+        CHECK(behavior_of(cep::TrackerImpl::HierarchicalDirectory).hazard_under_contention ==
+              cep::LookupHazard::STALL);
+        // ⚠️ **多级聚合不得退化成单级**:既有 4 个取值仍各自可达(否则「多级」无处表达)
+        CHECK(caps_of(cep::TrackerImpl::FullMapDirectory).aggregation_at ==
+              cep::AggregationAt::HOME);
+        CHECK(caps_of(cep::TrackerImpl::TreeManager).aggregation_at ==
+              cep::AggregationAt::TREE_PARENT);
+    }
+
+    // 数据级自洽:6 行 name 唯一;合法实现不声明 PARTIAL(决策 2:无兜底的 PARTIAL = 失效实例)
     std::set<std::string> names;
     for (const auto& t : cep::kTrackerTraits) {
         names.insert(t.name);
@@ -257,7 +279,7 @@ TEST_CASE("CEP SharerTracker: 5 实现 × caps/behavior 数据表自洽", "[cep]
         REQUIRE(cep::find_tracker_traits(t.impl) != nullptr);
         CHECK(cep::find_tracker_traits(t.impl)->caps == t.caps);
     }
-    CHECK(names.size() == 5);
+    CHECK(names.size() == 6);
 }
 
 // ═════════════════════════════════════════════════════════════════════

@@ -143,12 +143,12 @@
         }
       },
       "sharer_tracker": {
-        "impl": "SparseSnoopFilter",
+        "impl": "HierarchicalDirectory",
         "caps": {
           "scope": "SYSTEM",
-          "completeness": "CONSERVATIVE",
+          "completeness": "EXACT",
           "authority": "GLOBAL",
-          "aggregation_at": "HOME"
+          "aggregation_at": "HIERARCHICAL"
         }
       },
       "combination_capabilities": {
@@ -264,5 +264,13 @@
   },
   "repo_owned_instance_ids": [
     "chi_rnf"
+  ],
+  "authority_migrations": [
+    {
+      "instance_id": "mesif",
+      "reason": "ArchForge `32 号 §6.2` 声明 `mesif` 的 `sharer_tracker.impl = SparseSnoopFilter`(caps SYSTEM/CONSERVATIVE/GLOBAL/HOME),与同文件 `§9.1:716-741` 自陈的**三级目录**并存且**不自洽**;且 `SparseSnoopFilter` 已被 `moesi_gpu` 占用(ArchForge `docs/microarchitecture/snoop_filter.md:45-47` 明说「本模块**就是** CEP 声明中的 `SparseSnoopFilter` 实现」)⇒ 继续声明它是**语义冲突**。按用户 2026-10-29 裁决,`mesif` 的声明权威**迁到本仓**,以便落地 R-1 裁决(per `ADR-CEP-04 §13`:新增第 6 种实现 `HierarchicalDirectory` + `AggregationAt::HIERARCHICAL`)。",
+      "ledger_entry": "Entry #96",
+      "archforge_snapshot": "ArchForge `32 号 §6.2:519-523`(mesif 声明快照,2026-10-29 读取)"
+    }
   ]
 }

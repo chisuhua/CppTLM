@@ -294,6 +294,68 @@ run "本仓域实例 status → excluded(status 是本仓权威字段 ⇒ 不参
 restore_repo_decl
 
 echo ""
+echo '═══ 破坏 21:权威迁移的 `reason` 置空 ⇒ 迁移登记必红(per ADR-CEP-12 §13 判据 ②)═══'
+# 迁移**必须**写明理由 —— 否则「随手接管 ArchForge 的实例」无痕(跨仓义务被稀释)
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['authority_migrations'][0]['reason']=''
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "权威迁移的 reason 置空" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo "═══ 破坏 22:权威迁移登记不存在的实例 id ⇒ 必红(判据 ①)═══"
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['authority_migrations'][0]['instance_id']='typo_nonexistent'
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "权威迁移登记不存在的实例 id" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo '═══ 破坏 23:同一 id 同时在 `repo_owned_instance_ids[]` 与 `authority_migrations[]` ⇒ 必红(判据 ⑤)═══'
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['repo_owned_instance_ids']=d.get('repo_owned_instance_ids',[])+[d['authority_migrations'][0]['instance_id']]
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "同一 id 同时出现在两个名单(权威归属二义)" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo '═══ 破坏 24:权威迁移缺 `ledger_entry` ⇒ 必红(判据 ③)═══'
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['authority_migrations'][0]['ledger_entry']=''
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "权威迁移缺 ledger_entry(台账锚)" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo '═══ 破坏 25:未登记迁移的 `repo_owned` id 与 ArchForge 撞名 ⇒ 必红(权威迁移闸)═══'
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['repo_owned_instance_ids']=['mesif']   # 撞名且**未**登记迁移
+d['authority_migrations']=[]              # ⇒ 迁移名单为空 ⇒ 闸必须 fire
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "repo_owned 撞名且未登记迁移" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
+echo '═══ 破坏 26:权威迁移的 `archforge_snapshot` 置空 ⇒ 必红(判据 ④)═══'
+python3 -c "
+import json
+p='$REPO_DECL'; d=json.load(open(p))
+d['authority_migrations'][0]['archforge_snapshot']=''
+json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
+run "权威迁移缺 archforge_snapshot(原声明锚)" RED "$REAL_AF"
+restore_repo_decl
+
+echo ""
 echo "═══ 恢复后复验 ═══"
 run "本仓 + 真仓 全恢复" GREEN "$REAL_AF"
 run "副本 全恢复" GREEN "$TMP"

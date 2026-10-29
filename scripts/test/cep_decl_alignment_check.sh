@@ -173,6 +173,12 @@ if dup:
 #   · **本仓域实例** = 本仓自有口径者(权威 = 本仓,如 `chi_rnf` —— ArchForge 未声明该协议)
 # 分区由**顶层 `repo_owned_instance_ids[]`** 显式登记(不靠推断)。
 #
+# ⚠️ 2026-10-29(Entry #96,per `ADR-CEP-12 §13`):本仓域再分**两个子类** ——
+#   · **本仓自有** = `repo_owned_instance_ids[]`(ArchForge **未**声明该协议)
+#   · **权威迁移** = `authority_migrations[]`(ArchForge **曾**声明、权威**已迁到**本仓)
+# 二者的**⑥ 镜像义务**相同(都跳过逐字段比对)、**①~⑤ 校验义务**也相同(都覆盖);
+# 但**跨仓义务**不同(迁移者有**追认债**)⇒ 必须**分名单登记 + 理由必填**(否则「随手接管」无痕)。
+#
 # ⇒ ①~⑤ 的**语义校验对象** = 镜像域实例 ∪ 本仓域实例(**扩面** —— 增加受检对象,
 #   不是减少约束;否则本仓域实例将不受 schema / vc_count / 词表 / 网络集校验
 #   ⇒ 传递性信任断裂 ⇒ 改造只放松不加强,背离本裁决的意图)。
@@ -204,16 +210,52 @@ else:
         if oid not in repo_insts:
             err(6, f"`repo_owned_instance_ids` 登记了不存在的实例:{oid}")
 
-    # ⚠️ **权威迁移闸**:登记 id 与 ArchForge 已声明 id **撞名** ⇒ 红
-    #    (不允许本仓「接管」ArchForge 的实例 —— 那是 ArchForge 侧撤回声明的动作)
-    for oid in repo_owned_ids:
-        if oid in ids:
-            err(6, f"`repo_owned_instance_ids` 与 ArchForge 声明**撞名**:{oid}"
-                   f"(本仓不得接管 ArchForge 的实例)")
+    # ── 权威迁移名单(per `ADR-CEP-12 §13`)──────────────────────────────
+    # 迁移名单**从 `authority_migrations[]` 派生**(不要求调用方维护第二份名单)
+    _migs = repo_doc.get("authority_migrations") or []
+    if not isinstance(_migs, list):
+        err(6, f"`authority_migrations` 必须是数组(实际为 {type(_migs).__name__})")
+        _migs = []
+    migrated_ids = []
+    for _m in _migs:
+        if not isinstance(_m, dict):
+            err(6, f"`authority_migrations` 元素必须是对象(实际为 {type(_m).__name__})")
+            continue
+        _mid = _m.get("instance_id")
+        if not isinstance(_mid, str) or not _mid:
+            err(6, f"`authority_migrations` 元素缺 `instance_id`")
+            continue
+        migrated_ids.append(_mid)
+        # 判据 ①:迁移 id 必须存在于 instances[]
+        if _mid not in repo_insts:
+            err(6, f"`authority_migrations` 登记了不存在的实例:{_mid}")
+        # 判据 ②:理由必填(无理由 ⇒ 「随手接管」不可追溯)
+        if not str(_m.get("reason", "")).strip():
+            err(6, f"`authority_migrations[{_mid}]` 缺 `reason`(迁移必须写明理由)")
+        # 判据 ③:台账锚必填(裁决的台账 entry id)
+        if not str(_m.get("ledger_entry", "")).strip():
+            err(6, f"`authority_migrations[{_mid}]` 缺 `ledger_entry`(迁移必须锚到台账 entry)")
+        # 判据 ④:ArchForge 快照锚必填(原声明的位置 ⇒ 可比对分叉)
+        if not str(_m.get("archforge_snapshot", "")).strip():
+            err(6, f"`authority_migrations[{_mid}]` 缺 `archforge_snapshot`(迁移必须锚到原声明快照)")
+    # 判据 ⑤:同一 id 不得同时出现在两个名单(否则权威归属**二义**)
+    for _mid in migrated_ids:
+        if _mid in repo_owned_ids:
+            err(6, f"实例 {_mid} 同时出现在 `repo_owned_instance_ids[]` 与 `authority_migrations[]`"
+                   f"(权威归属二义)")
 
-# ①~⑤ 的校验对象 = 镜像域声明 ∪ 本仓域实例
+    # ⚠️ **权威迁移闸**(2026-10-29 per `ADR-CEP-12 §13` 修订):
+    #    `repo_owned` id 与 ArchForge 声明**撞名** ⇒ 红 —— **除非**该 id 已登记为
+    #    「权威迁移」(那是有理由 + 台账锚 + 快照锚的**显式接管**,per 用户 2026-10-29 裁决)。
+    for oid in repo_owned_ids:
+        if oid in ids and oid not in migrated_ids:
+            err(6, f"`repo_owned_instance_ids` 与 ArchForge 声明**撞名**:{oid}"
+                   f"(本仓不得接管 ArchForge 的实例 —— 若确为权威迁移,须登记进 `authority_migrations[]`)")
+
+# ①~⑤ 的校验对象 = 镜像域声明 ∪ 本仓域实例(自有 ∪ 权威迁移)
 mirror_ids = set(ids)
 repo_domain_decls = [repo_insts[oid] for oid in repo_owned_ids if oid in repo_insts]
+repo_domain_decls += [repo_insts[oid] for oid in migrated_ids if oid in repo_insts]
 checked_decls = list(declarations) + repo_domain_decls
 
 # ① 声明 ↔ 本仓 schema(**全 13 个 required 属性**)
@@ -488,6 +530,12 @@ if repo_insts:
         if rid not in repo_insts:
             err(6, f"派生副本缺少 ArchForge 已声明的实例:{rid}")
             continue
+        # ⚠️ **权威迁移**的 id:声明权威**已迁到本仓** ⇒ **不要求**与 ArchForge
+        #    逐字段相等(per `ADR-CEP-12 §13`;与 `repo_owned` 同待遇)。
+        #    ⇒ 本仓与 ArchForge 的分叉**对 ⑥ 不可见** —— 这是**已登记的代价**
+        #    (跨仓追认债登记在 Entry #96)。
+        if rid in migrated_ids:
+            continue
         local = repo_insts[rid]
         for key in sorted(set(local) | set(d)):
             # ⚠️ `status` 是**本仓权威字段**(「本仓是否已实现」—— 不是 ArchForge 镜像面)
@@ -504,10 +552,10 @@ if repo_insts:
                 err(6, f"{rid}.{key} 与 ArchForge 不符(派生副本已漂移)")
     # ⚠️ **收窄**(per `ADR-CEP-12 §11`):未登记的额外实例仍报红;
     #    已登记的**本仓域实例**不再要求与 ArchForge 逐字段相等(权威 = 本仓)。
-    extra_ids = set(repo_insts) - set(ids) - set(repo_owned_ids)
+    extra_ids = set(repo_insts) - set(ids) - set(repo_owned_ids) - set(migrated_ids)
     if extra_ids:
         err(6, f"派生副本含 ArchForge 未声明**且未登记**的实例:{sorted(extra_ids)}"
-               f"(本仓域实例须登记进 `repo_owned_instance_ids[]`)")
+               f"(本仓域实例须登记进 `repo_owned_instance_ids[]`,或权威迁移进 `authority_migrations[]`)")
 
     # ② 边表端点必须被该网络的 vc_binding 绑定(否则装配闸会以「端点未绑定」报红)
     for rid, inst in repo_insts.items():

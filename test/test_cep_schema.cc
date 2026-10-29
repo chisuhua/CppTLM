@@ -371,14 +371,22 @@ TEST_CASE("[cep][schema][fabric] fabric config schema 含 networks + vc_count,�
     REQUIRE(fi.contains("derived_from"));
 }
 
-TEST_CASE("[cep][schema] sharer_tracker 含 5 实现 + 「不参与」+ caps 四属性", "[cep][schema]") {
+TEST_CASE("[cep][schema] sharer_tracker 含 6 实现 + 「不参与」+ caps 四属性", "[cep][schema]") {
     const json s = load_schema();
     const auto& st = s.at("properties").at("sharer_tracker");
     const std::set<std::string> impls(st.at("properties").at("impl").at("enum").begin(),
                                       st.at("properties").at("impl").at("enum").end());
-    REQUIRE(impls ==
-            std::set<std::string>({"FullMapDirectory", "SparseSnoopFilter", "DcohSymmetric",
-                                   "TreeManager", "BroadcastNull", "不参与"}));
+    // ⚠️ 2026-10-29 per `ADR-CEP-04 §13` 的 R-1 裁决:新增第 6 种实现 `HierarchicalDirectory`
+    REQUIRE(impls == std::set<std::string>({"FullMapDirectory", "SparseSnoopFilter",
+                                            "DcohSymmetric", "TreeManager", "BroadcastNull",
+                                            "HierarchicalDirectory", "不参与"}));
+    // `aggregation_at` 的**多级**取值(per R-1 裁决:`HOME` 单点 / `TREE_PARENT` 单父 都表达不了)
+    {
+        const auto& agg = st.at("properties").at("caps").at("properties").at("aggregation_at");
+        const std::set<std::string> aggs(agg.at("enum").begin(), agg.at("enum").end());
+        REQUIRE(aggs == std::set<std::string>(
+                            {"HOME", "REQUESTER", "TREE_PARENT", "NONE", "HIERARCHICAL"}));
+    }
     const auto& caps = st.at("properties").at("caps");
     REQUIRE(caps.at("required").size() == 4);
     for (const char* k : {"scope", "completeness", "authority", "aggregation_at"}) {

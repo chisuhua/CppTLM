@@ -182,7 +182,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **6** | `cpptlm-cep-moesi-gpu-adapter` | Stage 1 | **2028-Q1** | ✅ **archived**(2026-10-27;**完成归档**语义 —— 14 Scenario 并入 2 份 main spec(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7);archive 名 `2026-10-27-cpptlm-cep-moesi-gpu-adapter`;planner 见 Entry #71、builder 见 Entry #79、归档见 Entry #80) | **DRI 三问裁决(2026-10-26,per Entry #71)**:① `moesi_gpu` / `mesif` **排入** Stage 1 前段(原 #6 `chi-rnf-subset` 顺延为 #7,`mesif` 新增为 #9)② **承接项 7 ①②**(`perm` 形态 schema 演进)**跟 `moesi_gpu` 走** —— 其**唯一真实消费者**是本实例(`ADR-CEP-05 §13.1` 判据 2 **已触发**:`moesi_gpu` 静默 `E→M` ⇒ 4 值 `perm` 无法表达)③ **承接项 5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**跟首个 adapter 走**。**交付面**:`MoesiGpuAdapter`(6 态 × 6 事件表驱动;`E→M` **静默升级**) + 6→4 投影 + **平台级** `perm` 静默升级表达 + 6→3 消息类映射表机制 + 首个 `implemented` 实例装配。**Stage 1 准入前置(滚动登记,per Entry #70 / #71 —— 原 owner 队列 #5 已归档,owner 重指向本行)**:**承接项 1 ②建图层** ✅ 已消费(队列 #4 装配闸)· **承接项 2**(首个 `implemented` 实例装配后复核 per-network 嵌套形态)**✅ 本 change 已交付**(2026-10-27 归档;本 change = 首个 `implemented` 实例)· **承接项 3** ⛔ 未触发(需第 3 张网 / 第 3 个协议实例 —— 按新队列于 #9 达成)· **承接项 4** ✅ 已消费(Entry #56,`fabric.json` 已入冻结集)· **承接项 5**(6 类 → `CATEGORY_*` 显式映射表 + contract test)**✅ 本 change 已交付**· **承接项 7 ①②**(`perm` 形态 schema 演进)**✅ 本 change 已交付**(③ (β) 已由队列 #4 消费)。**孤儿前置登记**:本行的 3 项孤儿前置(M-4 行为侧 / verdict 逐 `(network, vc)` 标注义务 / `moesi_gpu`·`mesif` 未排期)**已全部收口** —— 分别落成于队列 #3 的 `cep-vc-mapping-contract`、队列 #4 的 `cep-channel-dependency-gate`、并已于 Entry #71 消解(`mesif` → #9 行)⇒ **登记随本 change 归档转指队列 #7 行**(per 断言 ⑦ ③b/③c;本行不再带标记,内容保留可追) |
 | **7** | `cpptlm-cep-cohif-carrier` | Stage 1 | **2028-Q2** | ✅ **已归档**(2026-10-28,Entry #90 —— 「**已完成归档**」语义:2 份 delta spec **已合并**进 `openspec/specs/cep-cohif-carrier/` + `openspec/specs/cep-protocol-bridge-contracts/`;Phase 1 ~ 7 全完成(41/41 task)+ 6 条判据全闭合 + **新增 invariant 数 = 0**;KPI 1/3 → **0/3**;⚠️ **2026-10-27 转正时的活跃路径** `openspec/changes/cpptlm-cep-cohif-carrier/` **已于 2026-10-28 归档时失效** ⇒ 现为 `openspec/changes/archive/2026-10-28-cpptlm-cep-cohif-carrier/`(**不入库**,per `.gitignore`)—— 2026-10-27 转正记录见 Entry #81) | **新准入前置**:无。本 change **服务** #6 的第 ② 项准入前置与 #8 的装配验证 —— 把 #6 的「**逻辑级**装配」(`stub_cache_core.hh:42` 明写 `net_side` 由 **mock ProtocolEngine** 驱动)升级为「**真实载体**装配」。**架构缺口来源**(architect 重审 + critic 四轮;`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`):**C1** CEP 的 7 个 `.hh` 零 `Bundle`/`ChStream` 引用 · **C2** 「CEP 用 canonical 10 流的 Bundle」在 `ADR-CEP-07A:49` 与 `ADR-CEP-16:45` **两处**均为悬空引用 · **C3** 唯一的 Bundle 化承诺绑在 collective 队列(`ADR-CEP-03:225`)。**交付面(3 项 + 1 宏)**:① `include/bundles/cep_coherence_bundles_tlm.hh`(`bundles::CohIfBundle`,**只覆盖 5 条 RN-side 流**,`flow_id` 区分;无网络层字段) ② `include/tlm/cep/protocol_engine_base.hh`(`ChStreamModuleBase` 派生 + `Input/OutputStreamAdapter<CohIfBundle>`) ③ `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`,**首次落地**;`CohIfBundle ↔ NoCFlitBundle`) ④ `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏(`registerObject` + `registerBidirectionalPortAdapter` **两件都做**;`static_assert(n>1)`) + `module_factory.hh:313-315` 钩子扩展(`register_protocol_bridge` 死钩子 → 活钩子)。**装配走 JSON 链**(非 programmatic —— `ADR-CEP-16:46/:86` 明确排除 programmatic bridge 的 C++ 路径;`is_multi` 分支 `module_factory.cc:743-750` 是泛型虚分派)。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface`(需 MODIFIES 冻结 main spec,per `openspec/specs/cep-stub-cache-core/spec.md`)。**已签发**:`ADR-CEP-19`(2026-10-27,per Entry #74;草案文件已移除) · **planner 产出已落地 + 已转正**:`openspec/changes/cpptlm-cep-cohif-carrier/`(proposal + design + **tasks** + 2 份 delta spec;improvement 5 段见 `.rddf/improvements/cpptlm-cep-cohif-carrier.md`,per Entry #75/#76)—— 转正按 `design.md` `D-κ` 六步执行完毕(per Entry #81) · **Stage 1 准入前置 + 孤儿前置登记**:owner 自队列 #6 → #7 → **现转指队列 #8**(per Entry #90;#7 已归档 ⇒ 归档件**不得持有活义务**;明细见队列 #8 行) · **实施进度**:Phase 1 ~ Phase 7 **全部完成**(2026-10-27 / 2026-10-28,per 台账 Entry #84 ~ #89;Phase 3 交付 `ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` + CohIf↔NoC 特化桥(**两层** pack/unpack)+ `register_protocol_bridge` 死钩子 → 活钩子 + `ModuleFactory` Step 7.5 消费路径;Phase 4 交付 `REGISTER_CHSTREAM_BIDIRECTIONAL` 装配宏 + `cpptlm::BundleDirectionTraits`(解耦 `BidirectionalPortAdapter` 的 `NoCFlitBundle` 硬编码);Phase 5 交付 `CohIfNullProtocolEngine` 可注册外壳 + `configs/cep_cohif_pe_minimal.json` + 端到端「一次 CohIf 事务**穿过** adapter 抵达对端」+ 反向 fixture 2 类 + `cpptlm::EgressChannel`(egress 通道由 Bundle 专属 trait 声明);Phase 6 交付 `test/test_cep_cohif_carrier.cc`(17 case)+ 共享 helper;Phase 7 交付 **反向 fixture 登记**(13 条,`scripts/README.md`)+ ctest 显式登记 3 条 + **零 diff** 复核(**新增 invariant 数 = 0**))⇒ **Phase 1 ~ 7 全完成,已归档**(2026-10-28,Entry #90) |
 | **8** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q3** | ✅ **已归档**(2026-10-28,Entry #95 —— 「**已完成归档**」语义:2 份 delta spec **已合并**进 `openspec/specs/cep-chi-rnf-subset/` + `openspec/specs/cep-instance-authority-partition/`;Phase 1 ~ 6 全完成;KPI 并发 **0/3 → 1/3 → 0/3**;⚠️ **转正时的活跃路径** `openspec/changes/cpptlm-cep-chi-rnf-subset/` **已于 2026-10-28 归档时失效** ⇒ 现为 `openspec/changes/archive/2026-10-28-cpptlm-cep-chi-rnf-subset/`(**不入库**,per `.gitignore`))· 历史:🟡 Proposed(2026-10-28 转正,Entry #91 —— change 目录已建:proposal + design + **tasks** + 2 份 delta spec(`cep-chi-rnf-subset` / `cep-instance-authority-partition`);`openspec validate --strict` **rc=0**(零 WARNING);improvement 5 段见 `.rddf/improvements/cpptlm-cep-chi-rnf-subset.md`;KPI 并发 **0/3 → 1/3**;⚠️ **Phase 0 含 2 件冻结面改动**(`ADR-CEP-12` + `07 号`)⇒ 两步授权序列 + **1 条台账勘误**(Entry #71 的 F-1 引证失锚)) | **范围已按 Entry #71 收窄**:`perm` 形态 schema 演进 与 6→3 映射表**机制** 均**已移至队列 #6**(跟唯一真实消费者 / 首个 adapter 走)⇒ 本 change **复用**之,只填 CHI 自身的映射行与实例声明。**交付**:CHI RN-F adapter(6 通道 TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT;RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck)+ 按**已冻结** schema 填实例声明(`ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`)+ 装配期校验实测。**新准入前置**:无(前置已由队列 #6 交付) **移交已转出(per Entry #95)**:本行**不再持有**准入前置与孤儿前置的 owner 义务 —— 归档件**不得持有活义务** ⇒ 现 owner = 队列 #9 `cpptlm-cep-mesif-adapter` 行(明细见该行)|
-| **9** | `cpptlm-cep-mesif-adapter` | Stage 1 | **2028-Q4** | 📋 Planned | **Stage 1 准入前置(滚动登记;owner 自队列 #6 → #7 → #8 → **现转指本行**,per Entry #80 / #90 / #95)**:`S1-1` ✅ 已消费(队列 #4 装配闸)· `S1-2` ✅ 已由队列 #6 交付 · `S1-3` ⛔ **未触发**(需第 3 张网 / 第 3 个协议实例 —— **本队列落地即达成**)· `S1-4` ✅ 已消费(Entry #56)· `S1-5` ✅ 已由队列 #6 交付 · `S1-7` ①② ✅ 已由队列 #6 交付(③ 已由队列 #4 消费)· **孤儿前置(承接自队列 #6,已收口,per Entry #80;owner 自 #8 **转指本行**,per Entry #95)**:⏭(孤儿) **M-4 行为侧** ✅ 落成于队列 #3 的 `cep-vc-mapping-contract` · ⏭(孤儿) **`moesi_gpu` / `mesif` 未排期** ✅ 已于 Entry #71 消解(`mesif` → 本行) · ⏭(孤儿) **verdict 逐 `(network, vc)` 标注义务** ✅ 落成于队列 #4 的 `cep-channel-dependency-gate`。**⚠ 显式阻塞登记**(per Entry #71):**R-1 第 6 种 SharerTracker 实现 `HierarchicalDirectory`** —— ArchForge 侧 `mesif` 声明的 `sharer_tracker.impl=SparseSnoopFilter` 与其**三级目录**语义**不自洽** ⇒ 本 change 落地**依赖**该实现,而**本仓尚无 owner**。**另**:ArchForge 侧**无 `mesif` 状态机规约**(仅 5 态词表 M/E/S/I/F)与**无 5→4 投影表** ⇒ 实现须本地推导(**待 ArchForge 追认**)。**排期 ≠ 就绪** —— 本行是**登记**,不是承诺(「登记 ≠ 排期」口径的反向用法:登记的是**依赖**,不是**就绪**) |
+| **9** | `cpptlm-cep-mesif-adapter` | Stage 1 | **2028-Q4** | 📋 Planned | **Stage 1 准入前置(滚动登记;owner 自队列 #6 → #7 → #8 → **现转指本行**,per Entry #80 / #90 / #95)**:`S1-1` ✅ 已消费(队列 #4 装配闸)· `S1-2` ✅ 已由队列 #6 交付 · `S1-3` ⛔ **未触发**(需第 3 张网 / 第 3 个协议实例 —— **本队列落地即达成**)· `S1-4` ✅ 已消费(Entry #56)· `S1-5` ✅ 已由队列 #6 交付 · `S1-7` ①② ✅ 已由队列 #6 交付(③ 已由队列 #4 消费)· **孤儿前置(承接自队列 #6,已收口,per Entry #80;owner 自 #8 **转指本行**,per Entry #95)**:⏭(孤儿) **M-4 行为侧** ✅ 落成于队列 #3 的 `cep-vc-mapping-contract` · ⏭(孤儿) **`moesi_gpu` / `mesif` 未排期** ✅ 已于 Entry #71 消解(`mesif` → 本行) · ⏭(孤儿) **verdict 逐 `(network, vc)` 标注义务** ✅ 落成于队列 #4 的 `cep-channel-dependency-gate`。**⚠ 显式阻塞登记**(per Entry #71;**R-1 已裁决**,per Entry #96):**R-1 第 6 种 SharerTracker 实现 `HierarchicalDirectory`** —— 裁决已落:新增该实现 + `AggregationAt::HIERARCHICAL`(per `ADR-CEP-04 §13`);`mesif` 的声明权威**已迁到本仓**(per `ADR-CEP-12 §13`;ArchForge `32 号 §6.2` 仍写 `SparseSnoopFilter` ⇒ **分叉** + 跨仓追认债)。**余 2 项缺口**(ArchForge 侧**无 `mesif` 状态机规约**(仅 5 态词表 M/E/S/I/F)与**无 5→4 投影表**)⇒ 已另立 change 承载(**规约层**,与本行的**实现层**分离)。**排期 ≠ 就绪** —— 本行是**登记**,不是承诺(「登记 ≠ 排期」口径的反向用法:登记的是**依赖**,不是**就绪**) |
 | **10** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2029-Q1** | 📋 Planned | — |
 | **11** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2029-Q2** | 📋 Planned | — |
 | **12** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2029-Q3** | 📋 Planned | — |
@@ -6031,6 +6031,58 @@ egress 借用它会**倒置连接方向**;
 | `StubCacheCore` | **零 diff**(全 change 范围) |
 
 **⑨ 关联**: Entry #88(Phase 5 JSON 装配连通性)· #87(Phase 4 装配宏)· #86(Phase 3 特化桥)· #85(Phase 2 端口面)· #84(Phase 1 载体面)· #81(队列 #7 转正)· #74(`ADR-CEP-19` 签发)
+
+---
+
+### Entry #96 — 2026-10-29 [architect 裁决 + builder 实施]
+
+**主题**: 队列 #9 `cpptlm-cep-mesif-adapter` 的 **R-1 阻塞** —— 裁决 + 落地(第 6 种 SharerTracker 实现 + 权威迁移机制)
+
+**① 触发**
+
+用户指令「切 architect 解决 R-1」⇒ 随后「切 builder 继续」。R-1 的事实基础经 **ArchForge 一手核验**(`32 号 §9.1:737-741` / `§13` RK-3 / `§6.2:519-523` / `docs/microarchitecture/snoop_filter.md:45-47`):
+
+- ArchForge 自陈:5 种 SharerTracker 实现**全部是单级**;`HOME` 是单点、`TREE_PARENT` 是单父 ⇒ **无「多级聚合」表达** ⇒ D-FABRIC 域在 CEP 内不可表达。
+- `mesif` 声明的 `sharer_tracker.impl = SparseSnoopFilter` 与同文件 §9.1 的三级目录**并存且不自洽**。
+- ⚠️ **附带发现(原登记未提)**:`SparseSnoopFilter` **已被 `moesi_gpu` 占用**(ArchForge `snoop_filter.md:45-47` 明说「本模块**就是** CEP 声明中的 `SparseSnoopFilter` 实现」)⇒ `mesif` 继续声明它是**语义冲突**,不只是「不自洽」。
+- ⚠️ **另 2 项独立缺口**:ArchForge 侧**无** MESIF 状态机规约(全仓 0 命中 `state_transition`/`状态转换表`)、**无** 5→4 投影表(0 命中 `projection`/`投影`;仅 `F → WRITEBACK` 单条)⇒ 与 R-1 **不属同一问题**,单独另立。
+
+**② 用户裁决(2026-10-29)**
+
+| 问 | 裁决 |
+|---|---|
+| 裁决范围 | **先解 R-1 本身,其余另立** |
+| `mesif` 声明冲突 | **本仓用 §11 权威分区接管** |
+
+**③ 架构裁决(决策正文在 ADR,此处只记索引)**
+
+| 决策 | 落点 | 摘要 |
+|---|---|---|
+| **R-1 本体** | `ADR-CEP-04 §13`(追加式 Status Update) | 新增第 6 种实现 `HierarchicalDirectory`(`SYSTEM/EXACT/GLOBAL/HIERARCHICAL`)+ `AggregationAt::HIERARCHICAL`;`caps` **仍 4 属性**。**否决**:扩 caps 为 5 维 / 用 `TreeManager` 降级近似 / 只加枚举不加实现 |
+| **权威迁移** | `ADR-CEP-12 §13`(追加式 Status Update) | §11 的两类**不变**;新增**权威迁移**子分类:顶层 `authority_migrations[]`(`instance_id` / `reason` / `ledger_entry` / `archforge_snapshot` 四字段**必填**)⇒ 守门从它**派生**迁移名单;⑥ 对迁移名单**不适用**逐字段镜像,①~⑤ **仍覆盖**;撞名闸由「一律红」改为「**未登记迁移时**红」 |
+
+**④ 实施(builder,本条落地)**
+
+| 项 | 内容 |
+|---|---|
+| 实现表 | `sharer_tracker.hh`:`TrackerImpl::HierarchicalDirectory` + `AggregationAt::HIERARCHICAL` + `kTrackerTraits` **5 → 6 行** |
+| 冻结 schema(**M1**) | `protocol_instance.schema.json`:`sharer_tracker.impl` enum +`HierarchicalDirectory`;`caps.aggregation_at` enum +`HIERARCHICAL`;`caps.required` **仍 4 项** |
+| 声明源 | `protocol_instances.json`:`mesif.sharer_tracker` 改本仓口径 + 顶层 `authority_migrations[]` |
+| 守门 | `cep_decl_alignment_check.sh`:迁移名单派生 + 撞名闸放宽 + **5 条新判据**(id 存在 / reason 非空 / ledger_entry 非空 / archforge_snapshot 非空 / 两名单不重叠) |
+| 反向 fixture | `cep_decl_reverse_verify.sh`:**破坏 21 ~ 26**(6 条)⇒ 34 → **40 条** |
+| 判据 | 新增 `test/test_cep_authority_migration.cc`(3 case / 41 assertion)+ ctest `cep_authority_migration` |
+| 连带断言修正 | `test_cep_sharer_tracker_base.cc`(5 → **6** 行 + 第 6 行 caps 断言)· `test_cep_schema.cc`(impl enum +1、`aggregation_at` enum 断言)· `test_cep_chi_rnf_subset.cc`(CR-06 ③ 的行数 5 → 6,**语义不变**:「不参与」仍**不是**一种实现) |
+| 活口径 | `07 号 §5.1.1` MESIF 行(R-1 已裁决 + 余 2 项缺口)+ **Status Update 第十二则**;`obj §4.0` 行 #9 的阻塞标注 |
+
+**⑤ ⚠️ 已登记的 spec 措辞债**
+
+已归档 main spec `cep-chi-rnf-subset` 的 CR-06 ③ 写「本仓 SHALL **不**新增 SharerTracker 实现」⇒ 与 R-1 裁决(新增第 6 种)**措辞冲突**。**不改已归档 spec** ⇒ 登记为 **spec 修正债**,由「mesif 状态机规约 + 5→4 投影表」立项一并处置(MODIFIES `cep-chi-rnf-subset`)。
+
+**⑥ 冻结面**:`ADR-CEP-04` + `ADR-CEP-12` + `07 号` + `protocol_instance.schema.json` = **4 件** ⇒ 两步授权序列(① commit 产物 → ② `--update --authorized-by "Entry #96"` → ③ commit 清单)。冻结集成员数 **40** 不变。
+
+**⑦ 验收(实测)**:`openspec list --json` **0 active** · 11 项 CEP 脚本 + `docs_sync_check --strict` 全 rc=0 · `ctest -R cep` **37/37** · 全仓 `cpptlm_tests` **2005 case / 873788 assertion** 全绿。
+
+**⑧ 关联**:Entry #71(R-1 原始登记 + F-1 勘误)· #90(队列 #7 归档的 4 类连锁修先例)· #92 / #94(ADR-CEP-12 的追加式修订先例)· #95(队列 #8 归档 + 活口径同步先例)
 
 ---
 

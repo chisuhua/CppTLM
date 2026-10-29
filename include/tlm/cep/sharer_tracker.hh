@@ -134,7 +134,11 @@ using MergedState = SnoopState;
 enum class Scope : std::uint8_t { SYSTEM = 0, SUBTREE = 1, LOCAL_MEMORY_REGION = 2, NONE = 3 };
 enum class Completeness : std::uint8_t { EXACT = 0, CONSERVATIVE = 1, PARTIAL = 2 };
 enum class Authority : std::uint8_t { GLOBAL = 0, LOCAL_HINT = 1, LOCAL = 2, NONE = 3 };
-enum class AggregationAt : std::uint8_t { HOME = 0, REQUESTER = 1, TREE_PARENT = 2, NONE = 3 };
+enum class AggregationAt : std::uint8_t { HOME = 0, REQUESTER = 1, TREE_PARENT = 2, NONE = 3,
+                                  /// **多级聚合**(per `ADR-CEP-04 §13` 的 R-1 裁决):聚合发生在**多级目录**
+                                  /// (L1 per-GPC / L2 per-GPU / L3 per-Compute-Tray)—— `HOME` 是**单点**、
+                                  /// `TREE_PARENT` 是**单父**,二者都表达不了「多级」
+                                  HIERARCHICAL = 4 };
 
 struct SharerTrackerCaps {
     Scope scope = Scope::NONE;
@@ -163,6 +167,9 @@ enum class TrackerImpl : std::uint8_t {
     DcohSymmetric = 2,
     TreeManager = 3,
     BroadcastNull = 4,
+    /// 第 6 种实现(per `ADR-CEP-04 §13` 的 R-1 裁决):**分级目录**
+    /// —— `scope=SYSTEM` + `completeness=EXACT` + `authority=GLOBAL`,但聚合在**多级**目录
+    HierarchicalDirectory = 5,
 };
 
 struct TrackerTraits {
@@ -172,10 +179,11 @@ struct TrackerTraits {
     SharerTrackerBehavior behavior{};
 };
 
-// 5 实现 × (4 caps + 2 behavior)。数据源:`ADR-CEP-04 §2 决策 3 表` + `§4 表` + `§3.5`(二元)。
+// **6** 实现 × (4 caps + 2 behavior)。数据源:`ADR-CEP-04 §2 决策 3 表` + `§4 表` + `§3.5`(二元)
+// + `§13`(2026-10-29 的 R-1 裁决:新增第 6 种 `HierarchicalDirectory` + `AggregationAt::HIERARCHICAL`)。
 // DcohSymmetric 的 `aggregation_at` 是**二元**(P2P ⇒ REQUESTER / HDM home ⇒ HOME,per §3.5);
 // 表内取 P2P 侧作为代表值,二元本身由测试守(DcohSymmetric 行必须落在该二元内)。
-inline constexpr std::array<TrackerTraits, 5> kTrackerTraits{{
+inline constexpr std::array<TrackerTraits, 6> kTrackerTraits{{
     {TrackerImpl::FullMapDirectory, "FullMapDirectory",
      {Scope::SYSTEM, Completeness::EXACT, Authority::GLOBAL, AggregationAt::HOME},
      {LookupHazard::STALL, false}},
@@ -192,6 +200,11 @@ inline constexpr std::array<TrackerTraits, 5> kTrackerTraits{{
     {TrackerImpl::BroadcastNull, "BroadcastNull",
      {Scope::NONE, Completeness::EXACT, Authority::NONE, AggregationAt::NONE},
      {LookupHazard::NONE, true}},
+    // 第 6 行(per `ADR-CEP-04 §13` 的 R-1 裁决):分级目录 —— EXACT + GLOBAL,
+    // 但 `aggregation_at` 是**多级**(HOME 单点 / TREE_PARENT 单父 都表达不了)
+    {TrackerImpl::HierarchicalDirectory, "HierarchicalDirectory",
+     {Scope::SYSTEM, Completeness::EXACT, Authority::GLOBAL, AggregationAt::HIERARCHICAL},
+     {LookupHazard::STALL, false}},
 }};
 
 constexpr const TrackerTraits* find_tracker_traits(TrackerImpl impl) {

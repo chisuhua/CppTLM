@@ -414,3 +414,57 @@ ArchForge 在答复回执 `cep-interface-alignment-response-2026-10-22.md` §1.4
 > **⑥ 追认(队列 #6 的**字段级**豁免)**:§2 决策 9 已定「`status` 是**计数口径**的唯一依据」⇒ 它是**本仓权威字段**,不是 ArchForge 的镜像面。⑥ 的逐字段比对因此**跳过** `status` —— 该实践自队列 #6 起生效但当年**未**追加本 ADR,本次一并追认。**豁免范围严格限于 `status` 一个键**,其余 **12** 键仍逐字段严格相等(类型严格、递归比较、键只存在于一侧即判红)。
 
 > **关联**:§11(实例级权威分区的裁决正文)· 台账 `obj-cep-platform §11` Entry #91 / #92 / #94。
+
+## 13. Status Update(2026-10-29,per 台账 Entry #96)—— 权威**迁移**子分类:`mesif` 的声明权威由 ArchForge 迁到本仓
+
+> **性质**:追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— §1 ~ §12 正文一律不改,仅登记**一项决策**。
+> **触发**:队列 #9 `cpptlm-cep-mesif-adapter` 的 **R-1** 阻塞 —— ArchForge `32 号 §6.2:519-523` 声明 `mesif` 的 `sharer_tracker.impl = "SparseSnoopFilter"`(caps `SYSTEM/CONSERVATIVE/GLOBAL/HOME`),与同文件 `§9.1:716-741` 自陈的**三级目录**并存且**不自洽**;且 `SparseSnoopFilter` 已被 `moesi_gpu` 占用(ArchForge `docs/microarchitecture/snoop_filter.md:45-47` 明说「本模块**就是** CEP 声明中的 `SparseSnoopFilter` 实现」)⇒ `mesif` 继续声明它是**语义冲突**。
+> **用户裁决**(2026-10-29):`mesif` 的声明权威**由本仓接管**(不走 ArchForge 侧撤回声明的跨仓路径)。
+> **关联**:台账 `obj-cep-platform §11` **Entry #96**;`ADR-CEP-04 §13`(R-1 本体裁决:第 6 种实现 `HierarchicalDirectory`)。
+
+### 13.1 决策 —— §11 的「两类」不变,新增**权威迁移**子分类 + 强制审计痕迹
+
+§11 的两类划分(**镜像域** / **本仓域**)**不变**;本决策在其上给「本仓域」增加一个**可审计的子类**:**权威迁移** —— 即「该实例 id **曾**由 ArchForge 声明,现权威**已迁到**本仓」。
+
+**选项对比**:
+
+| 方案 | 结论 | 理由 |
+|---|---|---|
+| **A′** 新增顶层 `authority_migrations[]`(逐条:`instance_id` / `reason` / `ledger_entry` / `archforge_snapshot`);守门从它派生「迁移名单」;⑥ 对迁移名单**同样不适用**逐字段镜像,①~⑤ **同样覆盖**;**`reason` 必填 + 台账锚必填 + ArchForge 快照锚必填** | ✅ **采纳** | ① **审计可区分**「本仓自有协议」与「从 ArchForge 接管来的协议」—— 二者的**跨仓义务**完全不同(前者无,后者有追认义务);② **强制痕迹** ⇒ 接管**不是随手动作**:无理由 / 无台账锚 ⇒ 守门报红;③ ⑥ 的跳过集合 = `repo_owned` ∪ `迁移名单` ⇒ 守门改动面最小(与 §11 的两条方向相反的闸**同构**);④ `protocol_instance.schema.json` **零改动**(登记键落在**信封层**) |
+| **B** 直接把 `mesif` 塞进 `repo_owned_instance_ids[]` + 放宽「撞名 ⇒ 红」 | ❌ 否决 | ① **稀释** §11 的语义:`repo_owned` 承载两类**跨仓义务完全不同**的实例(自有 vs 接管)⇒ 审计时无法区分;② 迁移**不可追溯**(看不出是接管、何时接管、为何接管);③ 「随手接管」无痕 ⇒ 守门失守 |
+| **C** 不改机制,等 ArchForge 撤回或修正其 `mesif` 声明 | ❌ 否决 | 跨仓**无界阻塞** —— D-FABRIC 域永久阻塞(per ArchForge `32 号 §13` RK-3);与队列 #8 的 A′ 先例**方向相反**但机理相同(那里是「本仓新增协议、ArchForge 未声明」,这里是「本仓要修 ArchForge 已声明的协议」) |
+| **D** 把 §11 的 `repo_owned` 语义**放宽**为「本仓权威(含接管)」,并用注释字段标注 | ❌ 否决 | 同 B 的稀释问题 + 追加式修订**自我否定**已签发条款的语义边界(不可变原则下应**新增**子类而非**改写**原义) |
+
+**采纳方案的具体形态**:
+
+| 项 | 值 | 落点 |
+|---|---|---|
+| 新增信封键 | `authority_migrations[]` = `{instance_id, reason, ledger_entry, archforge_snapshot}` | `protocol_instances.json` 顶层(envelope 层)⇒ `protocol_instance.schema.json` **零改动** |
+| 迁移名单 | = `authority_migrations[].instance_id` 集合 | 守门脚本派生(不要求调用方维护第二份名单) |
+| ⑥ 镜像比对 | 对 `repo_owned` ∪ `迁移名单` **同样不适用**;其余实例**仍逐字段镜像** | `cep_decl_alignment_check.sh` ⑥ |
+| ①~⑤ 语义校验 | 对 `repo_owned` ∪ `迁移名单` **同样覆盖**(不放松) | 同上 ①~⑤ |
+| 撞名闸 | `repo_owned` id 与 ArchForge **撞名且未登记迁移** ⇒ 红;**已登记迁移** ⇒ 绿 | 同上 |
+| 新增判据 | ① 迁移 id 必须存在于 `instances[]` ② `reason` **非空** ③ `ledger_entry` 非空且台账可寻址 ④ `archforge_snapshot` 非空 ⑤ 同一 id 不得同时出现在 `repo_owned` 与迁移名单 | 同上 |
+
+### 13.2 后果 / 代价
+
+**正面**:① `mesif` 的声明可在本仓演进 ⇒ R-1(`ADR-CEP-04 §13`)的落地**不再被跨仓阻塞**;② ⑥ 不再对 `mesif` 误报(它本仓已声明为准);③ ①~⑤ 仍覆盖 ⇒ 本仓域实例**不是** schema 盲区;④ 迁移带**理由 + 台账锚 + ArchForge 快照锚** ⇒ 接管**可追溯**。
+
+**负面(代价)**:① 本仓与 ArchForge 的 `mesif` 声明会**分叉**(ArchForge `32 号 §6.2` 仍写 `SparseSnoopFilter` + `SYSTEM/CONSERVATIVE/GLOBAL/HOME`;本仓将写 `HierarchicalDirectory` + `SYSTEM/EXACT/GLOBAL/HIERARCHICAL`)⇒ 该分叉**对 ⑥ 不可见**(⑥ 对迁移名单不适用)⇒ 只能靠**迁移登记 + 台账 + 跨仓追认**维持;② 守门新增 5 条判据(其中 3 条是「必填字段」);③ `protocol_instances.json` 的 envelope 多 1 个键 ⇒ 6 处消费方**零改动**即看见(per §11 的扩面纪律)。
+
+**风险 / 已知残留**:
+- ⚠️ **迁移机制本身是「接管通道」** ⇒ 若「理由必填」被弱化,就会退化为随手接管 ⇒ 该条已列为 V2/V6 的**反向 fixture**。
+- ⚠️ **ArchForge 侧若将来撤回/修正 `mesif` 声明** ⇒ 迁移名单应**降级**回 `repo_owned`(或直接删除迁移登记)⇒ **该降级动作未机器化**(需人工裁决 + 台账 entry)⇒ 登记为**已知残留**。
+- ⚠️ **跨仓追认是 ArchForge 侧的动作**(把 `32 号 §6.2` 的 `mesif` 声明对齐到本仓口径)⇒ 本仓**无权**修改 ⇒ 追认**未完成前**,两端声明**持续分叉** ⇒ 登记为**跨仓债**(非本仓可闭环项)。
+
+### 13.3 Verification(前瞻判据,未实施)
+
+- [ ] **V1** `protocol_instances.json` 顶层含 `authority_migrations[]`,且含 `mesif` 条目。
+- [ ] **V2** 每条迁移记录含**非空** `reason` + `ledger_entry` + `archforge_snapshot`。
+- [ ] **V3** 迁移名单 id 存在于 `instances[]`;且与 `repo_owned_instance_ids[]` **不重叠**。
+- [ ] **V4** ⑥ 对迁移名单 id **不**要求逐字段镜像(与 `repo_owned` 同待遇);①~⑤ **仍覆盖**。
+- [ ] **V5** 撞名闸:未登记迁移的 `repo_owned` id 与 ArchForge 撞名 ⇒ 红;登记迁移后 ⇒ 绿。
+- [ ] **V6** **反向 fixture**:迁移 `reason` 为空 ⇒ 红;迁移 id 不存在 ⇒ 红;同一 id 同时在两个名单 ⇒ 红。
+- [ ] **V7** **正控**:`moesi_gpu` / `mesif`(镜像域,**未**登记迁移)仍**逐字段镜像** ⇒ ⑥ 绿。
+
+---

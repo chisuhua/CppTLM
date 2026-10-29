@@ -29,7 +29,11 @@
     },
     "family": {
       "description": "来源族(per 07 号 §5.1 口径:族 = 来源集合)",
-      "enum": ["industrial", "ruby-slicc", "academic"]
+      "enum": [
+        "industrial",
+        "ruby-slicc",
+        "academic"
+      ]
     },
     "adapter": {
       "description": "1 协议实例 = 1 adapter",
@@ -38,7 +42,11 @@
     },
     "status": {
       "description": "计数口径的唯一依据:仅 implemented 计入 adapter 实例数",
-      "enum": ["planned", "implemented", "excluded"]
+      "enum": [
+        "planned",
+        "implemented",
+        "excluded"
+      ]
     },
     "protocol_version": {
       "description": "规范版本(per ADR-CEP-11 §3 锁定表);adapter 实现版本由 git 承载,不入本 schema",
@@ -62,16 +70,36 @@
         "snoop_completion_ack"
       ],
       "properties": {
-        "request": { "type": "boolean" },
-        "completion": { "type": "boolean" },
-        "snoop": { "type": "boolean" },
-        "snoop_resp": { "type": "boolean" },
-        "writeback": { "type": "boolean" },
-        "forward_data": { "type": "boolean" },
-        "back_invalidate": { "type": "boolean" },
-        "address_resolve": { "type": "boolean" },
-        "barrier": { "type": "boolean" },
-        "snoop_completion_ack": { "type": "boolean" }
+        "request": {
+          "type": "boolean"
+        },
+        "completion": {
+          "type": "boolean"
+        },
+        "snoop": {
+          "type": "boolean"
+        },
+        "snoop_resp": {
+          "type": "boolean"
+        },
+        "writeback": {
+          "type": "boolean"
+        },
+        "forward_data": {
+          "type": "boolean"
+        },
+        "back_invalidate": {
+          "type": "boolean"
+        },
+        "address_resolve": {
+          "type": "boolean"
+        },
+        "barrier": {
+          "type": "boolean"
+        },
+        "snoop_completion_ack": {
+          "type": "boolean"
+        }
       }
     },
     "perm": {
@@ -79,15 +107,26 @@
       "type": "array",
       "minItems": 1,
       "uniqueItems": true,
-      "items": { "enum": ["NONE", "READ", "UNIQUE", "WRITEBACK"] }
+      "items": {
+        "enum": [
+          "NONE",
+          "READ",
+          "UNIQUE",
+          "WRITEBACK"
+        ]
+      }
     },
     "atomic": {
       "description": "atomic 意图的承载(per ADR-CEP-17 决策 6):语义归插件,意图经 request 流独立属性传递",
       "type": "object",
       "additionalProperties": false,
-      "required": ["supported"],
+      "required": [
+        "supported"
+      ],
       "properties": {
-        "supported": { "type": "boolean" },
+        "supported": {
+          "type": "boolean"
+        },
         "intent_field": {
           "description": "request 流中承载 atomic 意图的属性名",
           "type": "string",
@@ -99,19 +138,41 @@
       "description": "一致性标签(per HeteroGen §II-B / 博士论文 §7.6.6)",
       "type": "object",
       "additionalProperties": false,
-      "required": ["read", "write"],
+      "required": [
+        "read",
+        "write"
+      ],
       "properties": {
         "read": {
-          "enum": ["SC", "TSO", "RC-acquire", "RC-data", "PLO"]
+          "enum": [
+            "SC",
+            "TSO",
+            "RC-acquire",
+            "RC-data",
+            "PLO"
+          ]
         },
         "write": {
-          "enum": ["SC", "TSO", "RC-release", "RC-data", "PLO"]
+          "enum": [
+            "SC",
+            "TSO",
+            "RC-release",
+            "RC-data",
+            "PLO"
+          ]
         },
         "request_level": {
           "description": "请求级标签映射 —— 同一 wire 请求在不同标签下语义不同(如 RCC 的 GetV_R / GetV_A)",
           "type": "object",
           "additionalProperties": {
-            "enum": ["SC", "TSO", "RC-acquire", "RC-data", "RC-release", "PLO"]
+            "enum": [
+              "SC",
+              "TSO",
+              "RC-acquire",
+              "RC-data",
+              "RC-release",
+              "PLO"
+            ]
           }
         }
       }
@@ -123,8 +184,15 @@
       "additionalProperties": {
         "type": "object",
         "minProperties": 1,
-        "propertyNames": { "pattern": "^[0-9]+$" },
-        "additionalProperties": { "enum": ["p2p_ordered", "unordered"] }
+        "propertyNames": {
+          "pattern": "^[0-9]+$"
+        },
+        "additionalProperties": {
+          "enum": [
+            "p2p_ordered",
+            "unordered"
+          ]
+        }
       }
     },
     "vc_binding": {
@@ -135,16 +203,30 @@
         "type": "object",
         "minProperties": 1,
         "propertyNames": {
-          "enum": ["request", "response", "snoop", "snoop_resp", "atomic", "query"]
+          "enum": [
+            "request",
+            "response",
+            "snoop",
+            "snoop_resp",
+            "atomic",
+            "query"
+          ]
         },
-        "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 3 }
+        "additionalProperties": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        }
       }
     },
     "sharer_tracker": {
       "description": "逐实例 Sharer Tracker 选型(per ADR-CEP-04 §2 5 实现 + caps descriptor)",
       "type": "object",
       "additionalProperties": false,
-      "required": ["impl", "caps"],
+      "required": [
+        "impl",
+        "caps"
+      ],
       "properties": {
         "impl": {
           "description": "5 实现之一,或字面值「不参与」(由副本携带权限的协议 / 自失效类协议)",
@@ -154,20 +236,51 @@
             "DcohSymmetric",
             "TreeManager",
             "BroadcastNull",
-            "不参与"
+            "不参与",
+            "HierarchicalDirectory"
           ]
         },
         "caps": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["scope", "completeness", "authority", "aggregation_at"],
+          "required": [
+            "scope",
+            "completeness",
+            "authority",
+            "aggregation_at"
+          ],
           "properties": {
             "scope": {
-              "enum": ["SYSTEM", "LOCAL_MEMORY_REGION", "SUBTREE", "NONE"]
+              "enum": [
+                "SYSTEM",
+                "LOCAL_MEMORY_REGION",
+                "SUBTREE",
+                "NONE"
+              ]
             },
-            "completeness": { "enum": ["EXACT", "CONSERVATIVE"] },
-            "authority": { "enum": ["GLOBAL", "LOCAL_HINT", "LOCAL", "NONE"] },
-            "aggregation_at": { "enum": ["HOME", "REQUESTER", "TREE_PARENT", "NONE"] }
+            "completeness": {
+              "enum": [
+                "EXACT",
+                "CONSERVATIVE"
+              ]
+            },
+            "authority": {
+              "enum": [
+                "GLOBAL",
+                "LOCAL_HINT",
+                "LOCAL",
+                "NONE"
+              ]
+            },
+            "aggregation_at": {
+              "enum": [
+                "HOME",
+                "REQUESTER",
+                "TREE_PARENT",
+                "NONE",
+                "HIERARCHICAL"
+              ]
+            }
           }
         }
       }
@@ -176,11 +289,21 @@
       "description": "组合能力(per 调研 F16):三维正交,且正交于 family",
       "type": "object",
       "additionalProperties": false,
-      "required": ["concurrent", "hierarchical", "heterogeneous"],
+      "required": [
+        "concurrent",
+        "hierarchical",
+        "heterogeneous"
+      ],
       "properties": {
-        "concurrent": { "type": "boolean" },
-        "hierarchical": { "type": "boolean" },
-        "heterogeneous": { "type": "boolean" }
+        "concurrent": {
+          "type": "boolean"
+        },
+        "hierarchical": {
+          "type": "boolean"
+        },
+        "heterogeneous": {
+          "type": "boolean"
+        }
       }
     }
   }

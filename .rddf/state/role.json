@@ -1,20 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-10-28T01:00:00Z",
+  "updated_at": "2026-10-29T02:00:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-10-20T16:51:34Z",
-      "by": "user"
-    },
-    {
-      "role": "builder",
-      "at": "2026-10-20T17:06:17Z",
-      "by": "user"
-    },
     {
       "role": "planner",
       "at": "2026-10-23T00:36:38Z",
@@ -114,6 +104,18 @@
       "at": "2026-10-28T01:00:00Z",
       "by": "user",
       "note": "队列 #8 cpptlm-cep-chi-rnf-subset Phase 1 实施 —— ChiRnfAdapter 载体面(architect 阶段已完成 Phase 0:ADR-CEP-12 §11 签发 + ADR 精简 + 07 号 CHI 行同步)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-10-29T01:00:00Z",
+      "by": "user",
+      "note": "裁决队列 #9 cpptlm-cep-mesif-adapter 的 R-1 阻塞(第 6 种 SharerTracker 实现 HierarchicalDirectory 本仓无 owner + ArchForge 侧 mesif 无状态机规约/无 5→4 投影表)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-10-29T02:00:00Z",
+      "by": "user",
+      "note": "R-1 裁决落地(ADR-CEP-04 §13 + ADR-CEP-12 §13)+ mesif 状态机规约/5→4 投影表立项 + ArchForge 债务清理提案"
     }
   ]
 }

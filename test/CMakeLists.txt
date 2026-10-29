@@ -56,6 +56,9 @@ add_test(NAME sdma_engine COMMAND cpptlm_tests "[sdma]" -r compact)
 # 队列 #8 `cpptlm-cep-chi-rnf-subset`:CHI RN-F subset 的实例面 + 真插件引擎判据(CR-01 ~ CR-14)
 add_test(NAME cep_chi_rnf_subset COMMAND cpptlm_tests "[cep][chi-rnf]" -r compact)
 
+# 队列 #9 `cpptlm-cep-mesif-adapter` 的 R-1 裁决落地:权威迁移 + 第 6 种 SharerTracker 实现
+add_test(NAME cep_authority_migration COMMAND cpptlm_tests "[cep][authority-migration]" -r compact)
+
 # board-soc-split T-bs-1: DGpuSoc 容器测试
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/tasks.md §T-bs-1)
 add_test(NAME test_dgpu_soc_from_config COMMAND cpptlm_tests "[dgpu][json]" -r compact)
