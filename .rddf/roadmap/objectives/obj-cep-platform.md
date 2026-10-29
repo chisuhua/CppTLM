@@ -6034,6 +6034,49 @@ egress 借用它会**倒置连接方向**;
 
 ---
 
+### Entry #98 — 2026-10-29 [build](ArchForge 侧答复 + 规约层 Phase 0/1 落地)
+
+**主题**: ArchForge 侧对 41 号提案的**答复**(载体迁移 + 权威归属裁决「方案 A」)+ 规约层 change 的 Phase 0/1 落地
+
+**① 触发**
+
+ArchForge 仓在本会话期间被外部推进(commit `2e6717c` → `170e7e3` → `4f0f330`,作者 Chi Suhua)⇒ 本仓的跨仓指向**变为悬空**
+⇒ 复核并处置。
+
+**② ArchForge 侧答复要点(逐条核验,2026-10-29)**
+
+| 项 | 答复 | 对本仓的影响 |
+|----|------|--------------|
+| **载体** | `41 号`《CEP 对齐的债务清理与改进提案》**已移除** —— 理由:「提案文档」不是可跟踪工作项(无 owner / 无 tasks / 无 AC / 无归档记录)⇒ 跨仓债不可见。债务台账迁入 **rdd-workflow 改进提案** `.rddf/improvements/cep-alignment-debt-cleanup.md`(已 git 跟踪) | 本仓 **5 处**跨仓指向**改指**新载体(台账 ⑧ + improvement + proposal / design / tasks) |
+| **权威归属** | 采纳 **方案 A(追认)**:ArchForge 侧保留 `mesif` 声明作为**镜像**,口径对齐本仓权威 | 与本仓 `ADR-CEP-12 §13` 的「权威迁移」机制**同向**,无冲突 |
+| **债务核验** | D1 ~ D7 **全部原样存在**(2026-10-29 对其当前文件逐条核验)⇒ 本仓立项证据 **G1 / G2 仍成立** | 本仓的规约推导**不因对方未落地而失效** |
+| **跨仓待办** | 其 AC-11:`authority_migrations[mesif]` 的**降级 / 删除**应在本仓侧追认完成后执行(需人工裁决 + 台账 entry)⇒ **本仓无权单方闭环** | 登记为 tasks **4.4**(条件 + 主体 + 台账锚) |
+| **判据口径** | 其风险 ②:第 ②/③ 档依据**可被追认纠正** ⇒ **投影表回填前不得据此写实现判据** | 落地为 design **D-ζ**「判据口径边界」:判据锁**完备性 / 可审计性 / 待追认标记 / 内部自洽**,**不**锁推导值的语义正确性 |
+
+**③ 本仓 Phase 0 收口 + Phase 1 推导(本条落地)**
+
+| Phase | 内容 | 落点 |
+|-------|------|------|
+| **0** | 治理前置 | 台账 Entry #97 已记(本条只**回填** `tasks.md` checkbox)⇒ `tasks.md` 0.1 ~ 0.4 ✅ |
+| **1** | **规约推导** | design `D-ε.1` ~ `D-ε.11`:建模约定 C1 ~ C6 · 依据强度分级(`Primary`/`Structural`/`Derived`/`Analogical`)· 30 格转换表的**推导逻辑** · 投影表推导口径 · **偏离清单**(D1 ~ D4)· **2 项语义损失** · **秩的精确口径**(本地事件单调 + `F → E` 唯一例外)· 统计(Primary **4** / 待追认 **31**) |
+
+**④ ⚠️ 单一真源纪律的关键裁决(Phase 1 实施中发现)**
+
+逐格 `basis` 原拟落在 `design.md` ⇒ **撤回**:本 change 归档后 `openspec/changes/archive/**` **不入库**(per `.gitignore`)
+⇒ 逐格表留在 design 会造成**归档即断链** ⇒ 改为:**逐格 `basis` 归规范性载体** `include/tlm/cep/mesif_state_spec.hh`,
+design 只承载**推导口径 + 统计**(统计由 Phase 3 判据**逐数核对**载体 ⇒ 漂移即红)。
+
+**⑤ 行号引用复核**:design 中全部 ArchForge 行号引用(25 号 `539/553/554/598/599/611/724/729` · 32 号 `200/213/445/529/582/586-591/593-595/725/738/740-741/1157` · 09 号 `148-156`)均于 2026-10-29 对 ArchForge **当前 HEAD** 逐条实测复核 ⇒ **全部有效**。
+(附:`25 号:611` 的「开放问题 #9」经复核确为**同文件内真误引** —— 该文件 §7 表的 #4 才是本题、#9 是「L3 Directory 跨 Compute Tray 时延」⇒ 佐证 D6 的 canonical = #4。)
+
+**⑥ 冻结面**:**零改动** —— `protocol_instance.schema.json` / `adapter_schema_contracts.hh` / `CohIfBundle` / `protocol_instances.json` / `sharer_tracker.hh` 全部不动;`openspec/specs/cep-chi-rnf-subset/spec.md` 属真源层 ⇒ 走 MODIFIES,**不进** M1 冻结集。
+
+**⑦ 验收(实测)**:`openspec validate cpptlm-cep-mesif-state-spec --strict` **rc=0** · 11 项 CEP 脚本 + `docs_sync_check --strict` 全 rc=0 · 全仓 `cpptlm_tests` 2005 case / 873788 assertion 全绿(本条无代码改动)。
+
+**⑧ 关联**:Entry #97(立项)· #96(R-1 裁决落地)· #95(队列 #8 归档 + KPI 同步先例)· #91(立项 + 转正先例)
+
+---
+
 ### Entry #97 — 2026-10-29 [build]
 
 **主题**: 队列 #9 的**第 0 个 change** 立项 —— `cpptlm-cep-mesif-state-spec`(MESIF 状态机规约 + 5→4 `perm` 投影表)
@@ -6074,7 +6117,7 @@ egress 借用它会**倒置连接方向**;
 
 **⑦ 冻结面**:**零改动** —— `protocol_instance.schema.json` / `adapter_schema_contracts.hh` / `CohIfBundle` / `protocol_instances.json` 全部不动;`openspec/specs/cep-chi-rnf-subset/spec.md` 属真源层 ⇒ 走 MODIFIES,**不进** M1 冻结集(per Entry #90 / #96 先例)。
 
-**⑧ 跨仓动作**:ArchForge 仓的**债务清理与对齐改进提案**(`ArchForge:docs/architecture/41-cep-alignment-debt-cleanup-proposal.md` —— **跨仓**路径,不在本仓)—— 债务清单 + 逐条对齐建议 + 本 change 的追认项。
+**⑧ 跨仓动作**:ArchForge 仓的**债务清理与对齐改进提案**(`ArchForge:.rddf/improvements/cep-alignment-debt-cleanup.md` —— **跨仓**路径,不在本仓)—— 债务清单 + 逐条对齐建议 + 本 change 的追认项。*(2026-10-29 载体迁移修正:原架构文档 `41 号` 已被 ArchForge 侧移除 ⇒ 指向改指新载体,per Entry #98)*
 
 **⑨ 关联**:Entry #96(R-1 裁决落地)· #95(队列 #8 归档 + KPI 同步先例)· #91(队列 #8 立项 + 转正先例)· #71(R-1 原始登记 + F-1 勘误)
 

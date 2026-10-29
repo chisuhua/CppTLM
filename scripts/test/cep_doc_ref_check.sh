@@ -107,6 +107,8 @@ VIRTUAL_PATHS=(
   "openspec/changes/archive/2026-10-28-…/"          # 省略号(散文引用)—— 同上
   "docs/architecture/07-*.md"                        # 通配
   "include/tlm/cep/.gitkeep"                        # 占位文件
+  "include/tlm/cep/mesif_state_spec.hh"              # Phase 2 才新建(规约层载体;per 台账 Entry #98 的单一真源裁决)
+  "openspec/changes/archive/"                        # 归档目录**不入库**(per `.gitignore`)⇒ 干净 clone 中不可判
   "include/tlm/cep/null_protocol_engine.hh"          # ADR-CEP-07 决策 4 草图的**落点路径**;
                                                     #   实现落 protocol_engine_base.hh(路径偏离已登记)
   "include/tlm/pcie/pcie_endpoint_tlm.h"            # 冻结/待迁路径

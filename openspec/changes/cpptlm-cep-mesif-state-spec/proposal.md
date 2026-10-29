@@ -59,7 +59,7 @@
 
 - ❌ **不**实现 `MesifAdapter` / `MesifProtocolEngine` —— 那是队列 #9 的**实现层**。
 - ❌ **不**替 ArchForge 决定 MESIF 协议选型 —— `25-nsa §4.4` 的开放问题由 ArchForge 闭合;本 change 只保证「**即使** ArchForge 闭合前,本仓已有一份**显式标注待追认**的规约」。
-- ❌ **不**修改 ArchForge 仓的任何文件 —— 跨仓对齐由 ArchForge 侧提案承接(`ArchForge:docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`(跨仓))。
+- ❌ **不**修改 ArchForge 仓的任何文件 —— 跨仓对齐由 ArchForge 侧提案承接(`ArchForge:.rddf/improvements/cep-alignment-debt-cleanup.md`(跨仓))。
 - ❌ **不**扩 `perm` 4 值锁 —— MESIF 的 5 态必须**投影**进现有 4 值(per `ADR-CEP-02` CEN-Ib11)。
 - ❌ **不**引入新的 SharerTracker 实现 —— R-1 已在 `ADR-CEP-04 §13` 裁决完毕。
 
