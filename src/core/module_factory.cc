@@ -63,8 +63,8 @@
 #include "metrics/stats_manager.hh"
 #include "sim_module.hh"
 #include "tlm/cep/channel_dependency_graph.hh"
-#include "tlm/cep/protocol_family.hh"
 #include "tlm/cep/ordering_point_checker.hh"
+#include "tlm/cep/protocol_family.hh"
 #include "tlm/router_tlm.hh"
 #include "utils/config_utils.hh"
 #include "utils/json_includer.hh"
@@ -791,9 +791,9 @@ bool ModuleFactory::instantiateAll(const json& config) {
     bool bridge_failed = false;
     {
         consumed_bridges_.clear();
-        const bool has_bridge_section =
-            final_config.is_object() && final_config.contains("cep") &&
-            final_config["cep"].is_object() && final_config["cep"].contains("bridges");
+        const bool has_bridge_section = final_config.is_object() && final_config.contains("cep") &&
+                                        final_config["cep"].is_object() &&
+                                        final_config["cep"].contains("bridges");
         if (has_bridge_section) {
             const auto& bsec = final_config["cep"]["bridges"];
             if (!bsec.is_array()) {
@@ -814,19 +814,19 @@ bool ModuleFactory::instantiateAll(const json& config) {
                         bridge_failed = true;
                         continue;
                     }
-                    const std::string bname =
-                        b.contains("name") && b["name"].is_string() ? b["name"].get<std::string>()
-                                                                  : std::string();
+                    const std::string bname = b.contains("name") && b["name"].is_string()
+                                                  ? b["name"].get<std::string>()
+                                                  : std::string();
                     if (bname.empty()) {
-                        std::fprintf(stderr, "[ModuleFactory] `cep.bridges` 条目缺少非空的 `name`\n");
+                        std::fprintf(stderr,
+                                     "[ModuleFactory] `cep.bridges` 条目缺少非空的 `name`\n");
                         bridge_failed = true;
                         continue;
                     }
-                    std::uint8_t expected_protocol_id = 0;  // 0 = 未声明 protocol_instance
+                    std::uint8_t expected_protocol_id = 0; // 0 = 未声明 protocol_instance
                     const auto it = registry.find(bname);
                     if (it == registry.end()) {
-                        std::fprintf(stderr,
-                                     "[ModuleFactory] 桥 `%s` 未注册(引用了不存在的桥)\n",
+                        std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 未注册(引用了不存在的桥)\n",
                                      bname.c_str());
                         bridge_failed = true;
                         continue;
@@ -843,16 +843,18 @@ bool ModuleFactory::instantiateAll(const json& config) {
                     // ── `bridge_id`:JSON 显式给,否则自动分配未占用的最小正整数 ──
                     if (b.contains("bridge_id")) {
                         if (!b["bridge_id"].is_number_integer()) {
-                            std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 的 `bridge_id` 不是整数\n",
+                            std::fprintf(stderr,
+                                         "[ModuleFactory] 桥 `%s` 的 `bridge_id` 不是整数\n",
                                          bname.c_str());
                             bridge_failed = true;
                             continue;
                         }
                         const long long v = b["bridge_id"].get<long long>();
                         if (v <= 0 || v > 0xFFFF) {
-                            std::fprintf(stderr,
-                                         "[ModuleFactory] 桥 `%s` 的 `bridge_id` 越界(须 1..65535)\n",
-                                         bname.c_str());
+                            std::fprintf(
+                                stderr,
+                                "[ModuleFactory] 桥 `%s` 的 `bridge_id` 越界(须 1..65535)\n",
+                                bname.c_str());
                             bridge_failed = true;
                             continue;
                         }
@@ -880,7 +882,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
                             }
                         }
                         if (!inst) {
-                            std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 引用的协议实例 `%s` 不存在\n",
+                            std::fprintf(stderr,
+                                         "[ModuleFactory] 桥 `%s` 引用的协议实例 `%s` 不存在\n",
                                          bname.c_str(), pid.c_str());
                             bridge_failed = true;
                             continue;
@@ -888,7 +891,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
                         tlm::cep::ProtocolFamily fam{};
                         if (!tlm::cep::protocol_family_from_name(inst->family, fam)) {
                             std::fprintf(stderr,
-                                         "[ModuleFactory] 桥 `%s` 的实例 `%s` 的 `family` 非法或未声明: `%s`\n",
+                                         "[ModuleFactory] 桥 `%s` 的实例 `%s` 的 `family` "
+                                         "非法或未声明: `%s`\n",
                                          bname.c_str(), pid.c_str(), inst->family.c_str());
                             bridge_failed = true;
                             continue;
@@ -903,8 +907,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
                     // ── 元数据自检(per CC-05 ④)—— 调**同一份**判据函数 ──
                     std::string why;
                     if (!validate_bridge_metadata(bridge.get(), expected_protocol_id, &why)) {
-                        std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 元数据不合规:%s\n", bname.c_str(),
-                                     why.c_str());
+                        std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 元数据不合规:%s\n",
+                                     bname.c_str(), why.c_str());
                         bridge_failed = true;
                         continue;
                     }
@@ -929,7 +933,8 @@ bool ModuleFactory::instantiateAll(const json& config) {
                     bool injected = false;
                     for (const auto& m : b["modules"]) {
                         if (!m.is_string()) {
-                            std::fprintf(stderr, "[ModuleFactory] 桥 `%s` 的 `modules` 元素不是字符串\n",
+                            std::fprintf(stderr,
+                                         "[ModuleFactory] 桥 `%s` 的 `modules` 元素不是字符串\n",
                                          bname.c_str());
                             bridge_failed = true;
                             break;
@@ -946,9 +951,10 @@ bool ModuleFactory::instantiateAll(const json& config) {
                         }
                         auto* ch_mod = dynamic_cast<ChStreamModuleBase*>(mit->second.get());
                         if (!ch_mod) {
-                            std::fprintf(stderr,
-                                         "[ModuleFactory] 桥 `%s` 的目标模块 `%s` 不是 ChStream 模块\n",
-                                         bname.c_str(), mname.c_str());
+                            std::fprintf(
+                                stderr,
+                                "[ModuleFactory] 桥 `%s` 的目标模块 `%s` 不是 ChStream 模块\n",
+                                bname.c_str(), mname.c_str());
                             bridge_failed = true;
                             break;
                         }
@@ -1111,8 +1117,7 @@ bool ModuleFactory::instantiateAll(const json& config) {
 }
 
 bool ModuleFactory::validate_bridge_metadata(const cpptlm::ProtocolBridgeEr* bridge,
-                                               std::uint8_t expected_protocol_id,
-                                               std::string* why) {
+                                             std::uint8_t expected_protocol_id, std::string* why) {
     if (!bridge) {
         if (why)
             *why = "桥指针为空";
@@ -1127,8 +1132,8 @@ bool ModuleFactory::validate_bridge_metadata(const cpptlm::ProtocolBridgeEr* bri
     if (expected_protocol_id != 0 && bridge->protocol_id() != expected_protocol_id) {
         if (why) {
             *why = "protocol_id_(" + std::to_string(static_cast<unsigned>(bridge->protocol_id())) +
-                   ")与协议族编号(" +
-                   std::to_string(static_cast<unsigned>(expected_protocol_id)) + ")不符";
+                   ")与协议族编号(" + std::to_string(static_cast<unsigned>(expected_protocol_id)) +
+                   ")不符";
         }
         return false;
     }
@@ -1136,8 +1141,8 @@ bool ModuleFactory::validate_bridge_metadata(const cpptlm::ProtocolBridgeEr* bri
 }
 
 bool ModuleFactory::check_bridge_id_collision(
-    const std::vector<std::pair<std::uint16_t, std::string>>& assigned,
-    std::uint16_t candidate_id, const std::string& candidate_name, std::string* why) {
+    const std::vector<std::pair<std::uint16_t, std::string>>& assigned, std::uint16_t candidate_id,
+    const std::string& candidate_name, std::string* why) {
     for (const auto& e : assigned) {
         if (e.first == candidate_id) {
             if (why) {

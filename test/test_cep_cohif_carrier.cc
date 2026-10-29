@@ -40,125 +40,134 @@ using cpptlm::cep::testing::ReachOutcome;
 
 namespace {
 
-/// 检测某枚举类型**是否有** `Barrier` 枚举项
-///
-/// ⚠️ 必须写成**依赖**表达式的 concept —— 非依赖的 `requires { T::Barrier; }`
-///    在非模板上下文里是**硬错误**(而非 SFINAE 失败)⇒ 依赖化后,`T::Barrier`
-///    的查找失败变成 substitution failure ⇒ concept 求值为 `false`。
-template <typename T>
-concept HasBarrierEnumerator = requires { T::Barrier; };
+    /// 检测某枚举类型**是否有** `Barrier` 枚举项
+    ///
+    /// ⚠️ 必须写成**依赖**表达式的 concept —— 非依赖的 `requires { T::Barrier; }`
+    ///    在非模板上下文里是**硬错误**(而非 SFINAE 失败)⇒ 依赖化后,`T::Barrier`
+    ///    的查找失败变成 substitution failure ⇒ concept 求值为 `false`。
+    template <typename T> concept HasBarrierEnumerator = requires {
+        T::Barrier;
+    };
 
-// ── CC-02 ①:`sizeof` 锁(布局契约)───────────────────────────────
-// ⚠️ 与 `scripts/test/cep_cohif_compile_probe.cc` 的同款断言**镜像**
-//    (spec 要求「test TU 内」有该断言)⇒ 两处漂移会被本文件与反向脚本同时抓到。
-static_assert(sizeof(bundles::CohIfBundle) == 96,
-              "CC-02 ①: CohIfBundle 布局尺寸漂移(期望 96 字节)");
+    // ── CC-02 ①:`sizeof` 锁(布局契约)───────────────────────────────
+    // ⚠️ 与 `scripts/test/cep_cohif_compile_probe.cc` 的同款断言**镜像**
+    //    (spec 要求「test TU 内」有该断言)⇒ 两处漂移会被本文件与反向脚本同时抓到。
+    static_assert(sizeof(bundles::CohIfBundle) == 96,
+                  "CC-02 ①: CohIfBundle 布局尺寸漂移(期望 96 字节)");
 
-// ── CC-02 ②:`is_trivially_copyable` 锁 ───────────────────────────
-static_assert(std::is_trivially_copyable_v<bundles::CohIfBundle>,
-              "CC-02 ②: CohIfBundle 必须 trivially copyable");
+    // ── CC-02 ②:`is_trivially_copyable` 锁 ───────────────────────────
+    static_assert(std::is_trivially_copyable_v<bundles::CohIfBundle>,
+                  "CC-02 ②: CohIfBundle 必须 trivially copyable");
 
-// ── CC-01 ③:`flow_id` 是**强类型枚举**(域外流**类型不可表达**)────
-static_assert(std::is_enum_v<bundles::CohIfFlowId>,
-              "CC-01 ③: flow_id 必须是强类型枚举(裸整数会让域外流仍可表达)");
-static_assert(std::is_same_v<std::underlying_type_t<bundles::CohIfFlowId>, std::uint8_t>,
-              "CC-01 ③: flow_id 的底层类型必须是 uint8_t");
+    // ── CC-01 ③:`flow_id` 是**强类型枚举**(域外流**类型不可表达**)────
+    static_assert(std::is_enum_v<bundles::CohIfFlowId>,
+                  "CC-01 ③: flow_id 必须是强类型枚举(裸整数会让域外流仍可表达)");
+    static_assert(std::is_same_v<std::underlying_type_t<bundles::CohIfFlowId>, std::uint8_t>,
+                  "CC-01 ③: flow_id 的底层类型必须是 uint8_t");
 
-std::filesystem::path repo_root() { return cpptlm::cep::repo_root(); }
+    std::filesystem::path repo_root() {
+        return cpptlm::cep::repo_root();
+    }
 
-std::filesystem::path bundle_header() {
-    return repo_root() / "include" / "bundles" / "cep_coherence_bundles_tlm.hh";
-}
+    std::filesystem::path bundle_header() {
+        return repo_root() / "include" / "bundles" / "cep_coherence_bundles_tlm.hh";
+    }
 
-std::string read_all(const std::filesystem::path& p) {
-    std::ifstream in(p);
-    if (!in.good())
-        throw std::runtime_error("无法打开文件: " + p.string());
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
-}
+    std::string read_all(const std::filesystem::path& p) {
+        std::ifstream in(p);
+        if (!in.good())
+            throw std::runtime_error("无法打开文件: " + p.string());
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        return ss.str();
+    }
 
-/// 临时目录(RAII)—— 编译期反向 fixture 需要把**毒化副本**写成影子头文件。
-class TempDir {
-public:
-    TempDir() {
-        static int counter = 0;
-        const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
-        path_ = std::filesystem::temp_directory_path() /
+    /// 临时目录(RAII)—— 编译期反向 fixture 需要把**毒化副本**写成影子头文件。
+    class TempDir {
+    public:
+        TempDir() {
+            static int counter = 0;
+            const auto stamp = std::chrono::steady_clock::now().time_since_epoch().count();
+            path_ =
+                std::filesystem::temp_directory_path() /
                 ("cep_cohif_carrier_" + std::to_string(stamp) + "_" + std::to_string(counter++));
-        std::filesystem::create_directories(path_ / "bundles");
+            std::filesystem::create_directories(path_ / "bundles");
+        }
+        ~TempDir() {
+            std::error_code ec;
+            std::filesystem::remove_all(path_, ec);
+        }
+        TempDir(const TempDir&) = delete;
+        TempDir& operator=(const TempDir&) = delete;
+
+        const std::filesystem::path& path() const {
+            return path_;
+        }
+
+        /// 把内容写成影子头文件 `<dir>/bundles/cep_coherence_bundles_tlm.hh`
+        void write_shadow_header(const std::string& content) const {
+            std::ofstream out(path_ / "bundles" / "cep_coherence_bundles_tlm.hh");
+            if (!out.good())
+                throw std::runtime_error("无法写影子头文件");
+            out << content;
+        }
+
+    private:
+        std::filesystem::path path_;
+    };
+
+    struct CompileResult {
+        int rc;             ///< 进程退出码(0 = 成功)
+        std::string output; ///< 编译器输出(诊断失败原因)
+    };
+
+    /// 执行一条 shell 命令,返回退出码 + 输出
+    CompileResult run_shell(const std::string& cmd) {
+        const std::string full = cmd + " 2>&1";
+        FILE* p = popen(full.c_str(), "r");
+        if (!p)
+            throw std::runtime_error("popen 失败: " + cmd);
+        std::string out;
+        char buf[4096];
+        while (fgets(buf, sizeof(buf), p))
+            out += buf;
+        const int status = pclose(p);
+        return {WIFEXITED(status) ? WEXITSTATUS(status) : -1, out};
     }
-    ~TempDir() {
-        std::error_code ec;
-        std::filesystem::remove_all(path_, ec);
-    }
-    TempDir(const TempDir&) = delete;
-    TempDir& operator=(const TempDir&) = delete;
 
-    const std::filesystem::path& path() const { return path_; }
-
-    /// 把内容写成影子头文件 `<dir>/bundles/cep_coherence_bundles_tlm.hh`
-    void write_shadow_header(const std::string& content) const {
-        std::ofstream out(path_ / "bundles" / "cep_coherence_bundles_tlm.hh");
-        if (!out.good())
-            throw std::runtime_error("无法写影子头文件");
-        out << content;
+    std::string quote(const std::filesystem::path& p) {
+        return "'" + p.string() + "'";
     }
 
-private:
-    std::filesystem::path path_;
-};
+    /// 编译 CohIf 载体的**编译期锁探针**,`shadow_dir` 为空表示用**真实头文件**
+    ///
+    /// ⚠️ `-I <shadow>` 排在 `-I <repo>/include` **之前** ⇒ 影子头文件**遮蔽**真实头
+    ///    ⇒ 探针编译的就是**毒化副本**。
+    CompileResult compile_width_probe(const std::filesystem::path* shadow_dir) {
+        std::string cmd = "g++ -std=c++17 -fsyntax-only ";
+        if (shadow_dir)
+            cmd += "-I " + quote(*shadow_dir) + " ";
+        cmd += "-I " + quote(repo_root() / "include") + " " +
+               quote(repo_root() / "scripts" / "test" / "cep_cohif_compile_probe.cc");
+        return run_shell(cmd);
+    }
 
-struct CompileResult {
-    int rc;             ///< 进程退出码(0 = 成功)
-    std::string output; ///< 编译器输出(诊断失败原因)
-};
+    /// 编译 `REGISTER_CHSTREAM_BIDIRECTIONAL` 的**宏探针**,`port_count` 为 N
+    ///
+    /// ⚠️ 必须用 **C++23** —— 探针 include `chstream_register.hh` ⇒ 拉进
+    ///    `include/utils/module_group.hh`(它用了 `std::println`,C++23 特性)。
+    CompileResult compile_macro_probe(int port_count) {
+        const auto root = repo_root();
+        std::string cmd =
+            "g++ -std=c++23 -fsyntax-only -DPROBE_PORT_COUNT=" + std::to_string(port_count) +
+            " -I " + quote(root / "include") + " -I " + quote(root / "include" / "bundles") +
+            " -I " + quote(root / "include" / "core") + " -I " + quote(root / "test") + " -I " +
+            quote(root / "external" / "json") + " " +
+            quote(root / "scripts" / "test" / "cep_chstream_bidirectional_macro_probe.cc");
+        return run_shell(cmd);
+    }
 
-/// 执行一条 shell 命令,返回退出码 + 输出
-CompileResult run_shell(const std::string& cmd) {
-    const std::string full = cmd + " 2>&1";
-    FILE* p = popen(full.c_str(), "r");
-    if (!p)
-        throw std::runtime_error("popen 失败: " + cmd);
-    std::string out;
-    char buf[4096];
-    while (fgets(buf, sizeof(buf), p))
-        out += buf;
-    const int status = pclose(p);
-    return {WIFEXITED(status) ? WEXITSTATUS(status) : -1, out};
-}
-
-std::string quote(const std::filesystem::path& p) { return "'" + p.string() + "'"; }
-
-/// 编译 CohIf 载体的**编译期锁探针**,`shadow_dir` 为空表示用**真实头文件**
-///
-/// ⚠️ `-I <shadow>` 排在 `-I <repo>/include` **之前** ⇒ 影子头文件**遮蔽**真实头
-///    ⇒ 探针编译的就是**毒化副本**。
-CompileResult compile_width_probe(const std::filesystem::path* shadow_dir) {
-    std::string cmd = "g++ -std=c++17 -fsyntax-only ";
-    if (shadow_dir)
-        cmd += "-I " + quote(*shadow_dir) + " ";
-    cmd += "-I " + quote(repo_root() / "include") + " " +
-           quote(repo_root() / "scripts" / "test" / "cep_cohif_compile_probe.cc");
-    return run_shell(cmd);
-}
-
-/// 编译 `REGISTER_CHSTREAM_BIDIRECTIONAL` 的**宏探针**,`port_count` 为 N
-///
-/// ⚠️ 必须用 **C++23** —— 探针 include `chstream_register.hh` ⇒ 拉进
-///    `include/utils/module_group.hh`(它用了 `std::println`,C++23 特性)。
-CompileResult compile_macro_probe(int port_count) {
-    const auto root = repo_root();
-    std::string cmd = "g++ -std=c++23 -fsyntax-only -DPROBE_PORT_COUNT=" +
-                      std::to_string(port_count) + " -I " + quote(root / "include") + " -I " +
-                      quote(root / "include" / "bundles") + " -I " + quote(root / "include" / "core") +
-                      " -I " + quote(root / "test") + " -I " + quote(root / "external" / "json") + " " +
-                      quote(root / "scripts" / "test" / "cep_chstream_bidirectional_macro_probe.cc");
-    return run_shell(cmd);
-}
-
-}  // namespace
+} // namespace
 
 // ══════════════════════════════════════════════════════════════════════
 //  CC-01 —— `CohIfBundle` 只含 5 条 RN-side 流且不含网络层字段
@@ -208,11 +217,11 @@ TEST_CASE("CC-01 反向 fixture ① 新增第 6 个 flow_id ⇒ 静态扫描必�
     const std::string src = read_all(bundle_header());
     const std::string poisoned =
         cpptlm::cep::poison_cohif_bundle(src, cpptlm::cep::CohIfPoison::FlowCount6);
-    REQUIRE(poisoned != src);  // 毒化必须真的改了内容
+    REQUIRE(poisoned != src); // 毒化必须真的改了内容
 
     const auto res = cpptlm::cep::scan_cohif_bundle(poisoned);
     INFO(res.render());
-    REQUIRE_FALSE(res.ok());  // 扫描器**必须**报红
+    REQUIRE_FALSE(res.ok()); // 扫描器**必须**报红
 }
 
 TEST_CASE("CC-01 反向 fixture ② 混入网络层字段 ⇒ 静态扫描必红", "[cep][cohif-carrier]") {
@@ -262,7 +271,7 @@ TEST_CASE("CC-02 ③ 反向 fixture:某字段漏加宽度锁 ⇒ 扫描必红", 
     std::string src = read_all(bundle_header());
     const std::string lock_line = "BUNDLE_FIELD_WIDTH(bundles::CohIfBundle, atomic, 1);";
     const auto pos = src.find(lock_line);
-    REQUIRE(pos != std::string::npos);  // 锚点必须存在(否则 fixture 已失效)
+    REQUIRE(pos != std::string::npos); // 锚点必须存在(否则 fixture 已失效)
     src.replace(pos, lock_line.size(), "");
 
     const auto locks = cpptlm::cep::scan_cohif_width_locks(src);
@@ -277,7 +286,7 @@ TEST_CASE("CC-02 反向 fixture ③ 字段宽度 +1 ⇒ 编译必失败(且原�
 
     const auto res = compile_width_probe(&tmp.path());
     INFO("编译输出:\n" << res.output);
-    REQUIRE(res.rc != 0);  // 编译**确实**失败
+    REQUIRE(res.rc != 0); // 编译**确实**失败
     // ⚠️ **因正确原因红** —— 失败必须源于 `BUNDLE_FIELD_WIDTH` 的宽度锁,
     //    而**不是**别的(例如类型不匹配)⇒ 断言输出命中宽度锁的特征串
     REQUIRE(res.output.find("Bundle field width mismatch") != std::string::npos);
@@ -316,15 +325,13 @@ TEST_CASE("CC-04 ② 实例端口数 N ≥ 2(isMultiPort 要求 port_count > 1)"
     ModuleFactory factory(&eq);
     REQUIRE(factory.instantiateAll(cpptlm::cep::testing::load_pe_topology()));
 
-    auto* pe = dynamic_cast<tlm::cep::ProtocolEngineBase<2>*>(
-        factory.getInstanceForTesting("pe0"));
+    auto* pe = dynamic_cast<tlm::cep::ProtocolEngineBase<2>*>(factory.getInstanceForTesting("pe0"));
     REQUIRE(pe != nullptr);
     REQUIRE(pe->num_ports() >= 2u);
     REQUIRE(ChStreamAdapterFactory::get().isMultiPort("CohIfProtocolEngine"));
 }
 
-TEST_CASE("CC-04 ③ N = 1 ⇒ 编译期被 static_assert 拒绝(且原因命中断言)",
-          "[cep][cohif-carrier]") {
+TEST_CASE("CC-04 ③ N = 1 ⇒ 编译期被 static_assert 拒绝(且原因命中断言)", "[cep][cohif-carrier]") {
     // 正控:N=2 ⇒ 编译成功
     const auto ok = compile_macro_probe(2);
     INFO("N=2 编译输出:\n" << ok.output);

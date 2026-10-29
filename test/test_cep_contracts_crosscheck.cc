@@ -220,11 +220,11 @@ TEST_CASE("[cep][contract] 协议泄漏通用禁令:与协议无关的层无协�
     //      不是协议名;源码里 `token` 常见于词法解析局部变量 ⇒ 纳入即假阳性)
     // ─────────────────────────────────────────────────────────────────────
     const std::vector<std::string> protocol_neutral_layers = {
-        "include/tlm/cep/stub_cache_core.hh",         // Stub Cache Core(ADR-CEP-05)
-        "include/tlm/cep/sharer_tracker.hh",          // Directory(ADR-CEP-04)
-        "include/tlm/cep/ordering_point_checker.hh",  // Ordering Plane(ADR-CEP-08)
-        "include/tlm/cep/address_resolver.hh",        // Ordering Plane(ADR-CEP-08)
-        "include/tlm/cep/channel_dependency_graph.hh",// Ordering Plane(ADR-CEP-09)
+        "include/tlm/cep/stub_cache_core.hh",          // Stub Cache Core(ADR-CEP-05)
+        "include/tlm/cep/sharer_tracker.hh",           // Directory(ADR-CEP-04)
+        "include/tlm/cep/ordering_point_checker.hh",   // Ordering Plane(ADR-CEP-08)
+        "include/tlm/cep/address_resolver.hh",         // Ordering Plane(ADR-CEP-08)
+        "include/tlm/cep/channel_dependency_graph.hh", // Ordering Plane(ADR-CEP-09)
         // CohIf 载体(2026-10-27 per 台账 Entry #84 / 队列 #7 Phase 1)——
         // 跨模块共享的**业务** Bundle(真源 1 `06 号 §3.3` 第三类),字段语义取自
         // 平台级 canonical 流契约(`ADR-CEP-02`)⇒ **与协议无关** ⇒ 纳入本扫描。
@@ -255,11 +255,11 @@ TEST_CASE("[cep][contract] 协议泄漏通用禁令:与协议无关的层无协�
     // (`ordering_assumption` / `vc_binding` / `consistency_labels` ——
     //  per ADR-CEP-07 IC7,它们是 ProtocolEngine 侧的声明)
     {
-        const std::string raw = read_file(
-            (repo_root() / "include" / "tlm" / "cep" / "stub_cache_core.hh").string());
+        const std::string raw =
+            read_file((repo_root() / "include" / "tlm" / "cep" / "stub_cache_core.hh").string());
         const std::string code = cpptlm::cep::strip_comments(raw);
-        for (const char* field : {"ordering_assumption", "vc_binding", "consistency_labels",
-                                  "sharer_tracker"}) {
+        for (const char* field :
+             {"ordering_assumption", "vc_binding", "consistency_labels", "sharer_tracker"}) {
             INFO("Stub 感知协议侧声明字段: " << field);
             REQUIRE_FALSE(cpptlm::cep::contains_identifier(code, field));
         }
@@ -282,13 +282,13 @@ TEST_CASE("[cep][contract] 协议泄漏通用禁令:与协议无关的层无协�
         const auto hits_of = [](const std::string& s) {
             return cpptlm::cep::protocol_identifier_hits(s);
         };
-        REQUIRE(hits_of("struct ChiRnfAdapter {};").count("CHI") == 1);   // CamelCase
-        REQUIRE(hits_of("chi_rnf").count("CHI") == 1);                    // 下划线形态
+        REQUIRE(hits_of("struct ChiRnfAdapter {};").count("CHI") == 1); // CamelCase
+        REQUIRE(hits_of("chi_rnf").count("CHI") == 1);                  // 下划线形态
         REQUIRE(hits_of("tilelink_c").count("TILELINK") == 1);
         REQUIRE(hits_of("MESI_state").count("MESI") == 1);
         REQUIRE(hits_of("ualink_fabric").count("UALINK") == 1);
         // 反控:非协议标识符**不得**命中(否则扫描过宽 = 假阳性)
-        REQUIRE(hits_of("chip_id").empty());          // 「chip」(芯片)≠「CHI」(协议)
+        REQUIRE(hits_of("chip_id").empty()); // 「chip」(芯片)≠「CHI」(协议)
         REQUIRE(hits_of("hierarchical").empty());
         REQUIRE(hits_of("mismatched").empty());
         REQUIRE(hits_of("no_such_word").empty());

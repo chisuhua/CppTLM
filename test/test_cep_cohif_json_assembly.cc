@@ -27,9 +27,9 @@ using cpptlm::cep::testing::ReachOutcome;
 
 namespace {
 
-using PE = tlm::cep::ProtocolEngineBase<2>;
+    using PE = tlm::cep::ProtocolEngineBase<2>;
 
-}  // namespace
+} // namespace
 
 TEST_CASE("CC-04 ① 端到端:一次 CohIf 事务穿过 adapter 抵达对端", "[cep][json-assembly]") {
     const json cfg = cpptlm::cep::testing::load_pe_topology();
@@ -53,8 +53,8 @@ TEST_CASE("CC-04 ① 端到端:一次 CohIf 事务穿过 adapter 抵达对端", 
     // ── 端到端事务 ──
     pe0->resp_out()[0].write(cpptlm::cep::testing::make_cohif_request());
 
-    pe0->tick();  // 产出 → adapter 搬运
-    pe1->tick();  // 接收 → 分派
+    pe0->tick(); // 产出 → adapter 搬运
+    pe1->tick(); // 接收 → 分派
 
     auto* engine = dynamic_cast<tlm::cep::NullProtocolEngine<2>*>(pe1);
     REQUIRE(engine != nullptr);
@@ -65,8 +65,9 @@ TEST_CASE("CC-04 ① 端到端:一次 CohIf 事务穿过 adapter 抵达对端", 
     // pe0(发起侧)**未**收到自己的事务
     auto* engine0 = dynamic_cast<tlm::cep::NullProtocolEngine<2>*>(pe0);
     REQUIRE(engine0 != nullptr);
-    REQUIRE(engine0->counters().per_flow[static_cast<std::size_t>(tlm::cep::CanonicalFlow::Request)] ==
-            0u);
+    REQUIRE(
+        engine0->counters().per_flow[static_cast<std::size_t>(tlm::cep::CanonicalFlow::Request)] ==
+        0u);
 }
 
 TEST_CASE("CC-04 ① 事务按 flow_id 被正确分派(非乱序)", "[cep][json-assembly]") {

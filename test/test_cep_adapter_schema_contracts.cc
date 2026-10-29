@@ -22,9 +22,9 @@ using cpptlm::cep::repo_root;
 
 namespace {
 
-    using tlm::cep::AdapterSchemaContracts;
     using tlm::cep::AdapterContractVerdict;
     using tlm::cep::AdapterContractVerdictLine;
+    using tlm::cep::AdapterSchemaContracts;
     using tlm::cep::MessageClassMapDecl;
     using tlm::cep::PermUpgradesDecl;
     using tlm::cep::PermValueDomain;
@@ -47,11 +47,11 @@ namespace {
     ProtocolInstancesDecl good_instances() {
         ProtocolInstancesDecl i;
         ProtocolInstanceDecl a;
-        a.id   = "moesi_gpu";
+        a.id = "moesi_gpu";
         a.perm = {"NONE", "READ", "UNIQUE", "WRITEBACK"};
         i.instances.push_back(a);
         ProtocolInstanceDecl b;
-        b.id   = "mesif";
+        b.id = "mesif";
         b.perm = {"NONE", "READ", "UNIQUE", "WRITEBACK"};
         i.instances.push_back(b);
         return i;
@@ -59,11 +59,11 @@ namespace {
 
     MessageClassMapDecl good_map() {
         MessageClassMapDecl m;
-        m.rows = {{"request", 0}, {"response", 1}, {"snoop", 0},
-                  {"snoop_resp", 1}, {"atomic", 0}, {"query", 0}};
+        m.rows = {{"request", 0},    {"response", 1}, {"snoop", 0},
+                  {"snoop_resp", 1}, {"atomic", 0},   {"query", 0}};
         m.used_message_classes = {"request", "response", "snoop", "snoop_resp", "atomic", "query"};
-        m.is_identity           = true;
-        m.identity_reason       = "测试用恒等理由";
+        m.is_identity = true;
+        m.identity_reason = "测试用恒等理由";
         return m;
     }
 
@@ -75,11 +75,11 @@ namespace {
     std::filesystem::path cli_path() {
         std::error_code ec;
         const auto self = std::filesystem::read_symlink("/proc/self/exe", ec);
-        const auto dir  = self.parent_path();
+        const auto dir = self.parent_path();
         return dir / "examples" / "cep_adapter_contracts";
     }
 
-}  // namespace
+} // namespace
 
 // ══════════════════════════════════════════════════════════════════════
 // AC-01:`perm` 4 值锁不破(含跨 schema 值域绑定)
@@ -87,7 +87,8 @@ namespace {
 TEST_CASE("CEP adapter 契约: AC-01 perm 4 值锁不破 + 2 条反向 fixture",
           "[cep][adapter-contracts][ac-01]") {
     // 正控
-    const auto line = AdapterSchemaContracts::check_perm_four_value_lock(good_domain(), good_upgrades());
+    const auto line =
+        AdapterSchemaContracts::check_perm_four_value_lock(good_domain(), good_upgrades());
     REQUIRE(line.rule_id == std::string("AC-01"));
     REQUIRE(line.verdict == AdapterContractVerdict::PASS);
 
@@ -126,8 +127,8 @@ TEST_CASE("CEP adapter 契约: AC-01 perm 4 值锁不破 + 2 条反向 fixture",
 // ══════════════════════════════════════════════════════════════════════
 TEST_CASE("CEP adapter 契约: AC-02 引用完整性 + 权限单调 + 3 条反向 fixture",
           "[cep][adapter-contracts][ac-02]") {
-    const auto line = AdapterSchemaContracts::check_perm_upgrade_integrity(good_instances(),
-                                                                          good_upgrades());
+    const auto line =
+        AdapterSchemaContracts::check_perm_upgrade_integrity(good_instances(), good_upgrades());
     REQUIRE(line.rule_id == std::string("AC-02"));
     REQUIRE(line.verdict == AdapterContractVerdict::PASS);
 
@@ -141,7 +142,7 @@ TEST_CASE("CEP adapter 契约: AC-02 引用完整性 + 权限单调 + 3 条反�
     // 反向 fixture ②:实例的 perm 数组缺 `to` ⇒ 红
     {
         auto i = good_instances();
-        i.instances[0].perm = {"NONE", "READ", "UNIQUE"};   // 缺 WRITEBACK
+        i.instances[0].perm = {"NONE", "READ", "UNIQUE"}; // 缺 WRITEBACK
         const auto l = AdapterSchemaContracts::check_perm_upgrade_integrity(i, good_upgrades());
         REQUIRE(l.verdict == AdapterContractVerdict::FAIL);
     }
@@ -173,7 +174,7 @@ TEST_CASE("CEP adapter 契约: AC-03 三态可区分 + 声明源畸形 ⇒ FAIL 
     // 声明源畸形 ⇒ FAIL(配置错误,**不是** SKIP)
     {
         PermUpgradesDecl broken;
-        broken.source_error       = true;
+        broken.source_error = true;
         broken.source_error_detail = "JSON 解析失败";
         const auto l = AdapterSchemaContracts::check_decl_source_sanity(broken, {"mesif"});
         REQUIRE(l.verdict == AdapterContractVerdict::FAIL);
@@ -209,14 +210,14 @@ TEST_CASE("CEP adapter 契约: AC-04 映射完备 + 值域受限 + 恒等须登�
     {
         auto m = good_map();
         m.rows[0].second = 3;
-        m.is_identity     = false;
+        m.is_identity = false;
         const auto l = AdapterSchemaContracts::check_message_class_mapping(m);
         REQUIRE(l.verdict == AdapterContractVerdict::FAIL);
     }
     // 反向 fixture ③:全表恒等且**无** identity_reason ⇒ 红
     {
         auto m = good_map();
-        m.is_identity     = true;
+        m.is_identity = true;
         m.identity_reason.clear();
         const auto l = AdapterSchemaContracts::check_message_class_mapping(m);
         REQUIRE(l.verdict == AdapterContractVerdict::FAIL);
@@ -235,8 +236,8 @@ TEST_CASE("CEP adapter 契约: AC-04 映射完备 + 值域受限 + 恒等须登�
 // ══════════════════════════════════════════════════════════════════════
 TEST_CASE("CEP adapter 契约: AC-05 投影与状态机自洽 + 2 条反向 fixture",
           "[cep][adapter-contracts][ac-05]") {
-    const auto line = AdapterSchemaContracts::check_adapter_self_consistency(
-        good_stable_states(), 3, 2, 3);
+    const auto line =
+        AdapterSchemaContracts::check_adapter_self_consistency(good_stable_states(), 3, 2, 3);
     REQUIRE(line.rule_id == std::string("AC-05"));
     REQUIRE(line.verdict == AdapterContractVerdict::PASS);
 
@@ -249,14 +250,14 @@ TEST_CASE("CEP adapter 契约: AC-05 投影与状态机自洽 + 2 条反向 fixt
     }
     // 反向 fixture ②:`E+Write` 的目标被改掉 ⇒ 红
     {
-        const auto l = AdapterSchemaContracts::check_adapter_self_consistency(
-            good_stable_states(), 2, 2, 3);
+        const auto l =
+            AdapterSchemaContracts::check_adapter_self_consistency(good_stable_states(), 2, 2, 3);
         REQUIRE(l.verdict == AdapterContractVerdict::FAIL);
     }
     // 反向 fixture ③:转换后 perm 秩未升高 ⇒ 红
     {
-        const auto l = AdapterSchemaContracts::check_adapter_self_consistency(
-            good_stable_states(), 3, 3, 3);
+        const auto l =
+            AdapterSchemaContracts::check_adapter_self_consistency(good_stable_states(), 3, 3, 3);
         REQUIRE(l.verdict == AdapterContractVerdict::FAIL);
     }
 }
@@ -335,18 +336,23 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
         std::FILE* pipe = popen(cmd.c_str(), "r");
         REQUIRE(pipe != nullptr);
         char buf[512];
-        while (std::fgets(buf, sizeof(buf), pipe) != nullptr) cli_out += buf;
+        while (std::fgets(buf, sizeof(buf), pipe) != nullptr)
+            cli_out += buf;
         const int rc = pclose(pipe);
-        REQUIRE(rc == 0);          // 0 = 全部 PASS/SKIP
+        REQUIRE(rc == 0); // 0 = 全部 PASS/SKIP
     }
     const auto lines = [&]() {
         std::vector<std::string> out;
         std::string cur;
         for (char ch : cli_out) {
-            if (ch == '\n') { out.push_back(cur); cur.clear(); }
-            else cur += ch;
+            if (ch == '\n') {
+                out.push_back(cur);
+                cur.clear();
+            } else
+                cur += ch;
         }
-        if (!cur.empty()) out.push_back(cur);
+        if (!cur.empty())
+            out.push_back(cur);
         return out;
     }();
     // ⚠️ **CLI 现在逐 adapter 各跑一次** ⇒ 测试侧同样按 **moesi → chi** 的顺序
@@ -354,13 +360,14 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
     const auto mine = [&]() {
         std::vector<std::string> out;
         for (const auto& rep : reports) {
-            for (const auto& v : rep.verdicts) out.push_back(v.render());
+            for (const auto& v : rep.verdicts)
+                out.push_back(v.render());
             out.push_back(std::string("[verdict] SUMMARY ") +
                           tlm::cep::adapter_contract_verdict_name(rep.verdict) + " (5 rule(s))");
         }
         return out;
     }();
-    REQUIRE(lines.size() == mine.size() + 1);   // 末行是 CLI 自己的汇总行
+    REQUIRE(lines.size() == mine.size() + 1); // 末行是 CLI 自己的汇总行
     for (std::size_t i = 0; i < mine.size(); ++i) {
         INFO("CLI 第 " << i << " 行: " << lines[i]);
         REQUIRE(lines[i] == mine[i]);

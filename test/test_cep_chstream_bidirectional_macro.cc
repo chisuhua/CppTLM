@@ -29,36 +29,46 @@ using json = nlohmann::json;
 
 namespace {
 
-// ── 本文件专属的 PE 派生类(避免与其它测试的类型名/注册表项冲突)──
-class MacroProbePE : public tlm::cep::ProtocolEngineBase<2> {
-public:
-    using Base = tlm::cep::ProtocolEngineBase<2>;
-    MacroProbePE(const std::string& n, EventQueue* eq) : Base(n, eq) {}
-    void on_request(std::uint64_t, tlm::cep::Perm, std::uint64_t) override {}
-    void on_completion(std::uint64_t, std::uint64_t, tlm::cep::Perm, bool) override {}
-    void on_snoop(std::uint64_t, tlm::cep::SnoopType, std::uint64_t) override {}
-    void on_snoop_resp(std::uint64_t, bool, tlm::cep::LineState, bool, std::uint64_t,
-                       std::uint64_t) override {}
-    void on_writeback(std::uint64_t, std::uint64_t, bool) override {}
-    void on_forward_data(std::uint64_t, std::uint64_t, std::uint64_t, tlm::cep::Perm,
-                         std::uint64_t) override {}
-    void on_back_invalidate(std::uint64_t, tlm::cep::SnoopType, std::uint64_t) override {}
-    void on_address_resolve(std::uint64_t, std::uint64_t,
-                            tlm::cep::AddressResolveResult& out) override {
-        out.home_node = 0;
-        out.coherent = false;
+    // ── 本文件专属的 PE 派生类(避免与其它测试的类型名/注册表项冲突)──
+    class MacroProbePE : public tlm::cep::ProtocolEngineBase<2> {
+    public:
+        using Base = tlm::cep::ProtocolEngineBase<2>;
+        MacroProbePE(const std::string& n, EventQueue* eq) : Base(n, eq) {
+        }
+        void on_request(std::uint64_t, tlm::cep::Perm, std::uint64_t) override {
+        }
+        void on_completion(std::uint64_t, std::uint64_t, tlm::cep::Perm, bool) override {
+        }
+        void on_snoop(std::uint64_t, tlm::cep::SnoopType, std::uint64_t) override {
+        }
+        void on_snoop_resp(std::uint64_t, bool, tlm::cep::LineState, bool, std::uint64_t,
+                           std::uint64_t) override {
+        }
+        void on_writeback(std::uint64_t, std::uint64_t, bool) override {
+        }
+        void on_forward_data(std::uint64_t, std::uint64_t, std::uint64_t, tlm::cep::Perm,
+                             std::uint64_t) override {
+        }
+        void on_back_invalidate(std::uint64_t, tlm::cep::SnoopType, std::uint64_t) override {
+        }
+        void on_address_resolve(std::uint64_t, std::uint64_t,
+                                tlm::cep::AddressResolveResult& out) override {
+            out.home_node = 0;
+            out.coherent = false;
+        }
+        void on_barrier(std::uint64_t, std::uint64_t) override {
+        }
+        void on_snoop_completion_ack(std::uint64_t, std::uint64_t, std::uint64_t) override {
+        }
+    };
+
+    constexpr const char* kProbeType = "MacroProbePE";
+
+    void register_probe() {
+        REGISTER_CHSTREAM_BIDIRECTIONAL(MacroProbePE, bundles::CohIfBundle, 2);
     }
-    void on_barrier(std::uint64_t, std::uint64_t) override {}
-    void on_snoop_completion_ack(std::uint64_t, std::uint64_t, std::uint64_t) override {}
-};
 
-constexpr const char* kProbeType = "MacroProbePE";
-
-void register_probe() {
-    REGISTER_CHSTREAM_BIDIRECTIONAL(MacroProbePE, bundles::CohIfBundle, 2);
-}
-
-}  // namespace
+} // namespace
 
 TEST_CASE("CC-04 ③ 宏的 adapter 注册生效(多端口 + 端口数一致)", "[cep][chstream-macro]") {
     register_probe();
@@ -99,8 +109,10 @@ TEST_CASE("CohIfBundle 的方向映射与 5→3 消息类映射同源(不漂移)
     using Traits = cpptlm::BundleDirectionTraits<bundles::CohIfBundle>;
 
     const std::pair<bundles::CohIfFlowId, bool> resp_flows[] = {
-        {bundles::CohIfFlowId::Completion, true}, {bundles::CohIfFlowId::SnoopResp, true},
-        {bundles::CohIfFlowId::Request, false},   {bundles::CohIfFlowId::Snoop, false},
+        {bundles::CohIfFlowId::Completion, true},
+        {bundles::CohIfFlowId::SnoopResp, true},
+        {bundles::CohIfFlowId::Request, false},
+        {bundles::CohIfFlowId::Snoop, false},
         {bundles::CohIfFlowId::Writeback, false}};
 
     for (const auto& [flow, is_resp] : resp_flows) {
@@ -112,8 +124,7 @@ TEST_CASE("CohIfBundle 的方向映射与 5→3 消息类映射同源(不漂移)
 
         // 与桥的 5→3 映射对照
         const std::uint8_t cat = tlm::cep::CohIfNoCProtocolBridge::category_of(flow);
-        const bool map_says_resp =
-            (cat == bundles::NoCFlitBundle::CATEGORY_RESPONSE);
+        const bool map_says_resp = (cat == bundles::NoCFlitBundle::CATEGORY_RESPONSE);
         INFO("方向 trait 与 5→3 消息类映射漂移");
         REQUIRE(map_says_resp == is_resp);
     }
