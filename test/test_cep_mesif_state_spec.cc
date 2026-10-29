@@ -498,9 +498,65 @@ namespace {
         return "?";
     }
 
+    /// 清单的**偏离清单**一行
+    struct DeviationRow {
+        std::string state;
+        std::string event;
+        std::string template_target; ///< 模板取值(载体的 `template_target`)
+        std::string actual_target;   ///< 本表取值(载体的转换目标态)
+    };
+
+    /// 解析清单的**偏离清单**表(列布局:# | 态 | 事件 | 模板取值 | 本表取值 | 偏离理由)
+    std::vector<DeviationRow> parse_deviation_table(const std::string& doc,
+                                                    const std::string& header) {
+        std::vector<DeviationRow> rows;
+        std::size_t pos = doc.find(header);
+        if (pos == std::string::npos)
+            return rows;
+        pos += header.size();
+        const std::size_t nl = doc.find('\n', pos);
+        if (nl == std::string::npos)
+            return rows;
+        pos = nl + 1;
+        while (pos < doc.size()) {
+            std::size_t eol = doc.find('\n', pos);
+            if (eol == std::string::npos)
+                eol = doc.size();
+            const std::string line = doc.substr(pos, eol - pos);
+            pos = eol + 1;
+            if (line.empty() || line[0] != '|')
+                break;
+            std::vector<std::string> cells;
+            std::string cur;
+            for (const char ch : line) {
+                if (ch == '|') {
+                    cells.push_back(cur);
+                    cur.clear();
+                } else {
+                    cur.push_back(ch);
+                }
+            }
+            cells.push_back(cur);
+            if (cells.size() < 6)
+                continue;
+            const std::string first = trim_cell(cells[1]);
+            if (first.empty() || first.find_first_not_of("0123456789") != std::string::npos)
+                continue;
+            DeviationRow r;
+            r.state = trim_cell(cells[2]);
+            r.event = trim_cell(cells[3]);
+            r.template_target = trim_cell(cells[4]);
+            r.actual_target = trim_cell(cells[5]);
+            rows.push_back(r);
+        }
+        return rows;
+    }
+
+
     /// 清单与载器的**比对谓词**(返回违规描述;空 = 逐格一致)
     std::vector<std::string> checklist_mismatches(const std::vector<ChecklistRow>& tr,
-                                                  const std::vector<ChecklistRow>& pr) {
+                                                  const std::vector<ChecklistRow>& pr,
+                                                  const std::vector<DeviationRow>& dv) {
         std::vector<std::string> bad;
         if (tr.size() != Spec::kStateCount * Spec::kEventCount)
             bad.push_back("转换表行数不是 30");
@@ -541,6 +597,24 @@ namespace {
             if (row.pending != (b.pending ? "yes" : "no"))
                 bad.push_back("投影 pending 不符");
         }
+        // 偏离清单(§3):逐条与载体的 `kDeviations[]` 相等
+        if (dv.size() != Spec::kDeviationCount)
+            bad.push_back("偏离清单行数不是 8");
+        for (std::size_t i = 0; i < Spec::kDeviationCount && i < dv.size(); ++i) {
+            const auto& d = Spec::kDeviations[i];
+            const std::size_t si = static_cast<std::size_t>(d.state);
+            const std::size_t ei = static_cast<std::size_t>(d.event);
+            const char* actual =
+                Spec::state_name(static_cast<Spec::State>(Spec::kTable.transition[si][ei]));
+            if (dv[i].state != Spec::state_name(d.state))
+                bad.push_back("偏离态不符");
+            if (dv[i].event != Spec::event_name(d.event))
+                bad.push_back("偏离事件不符");
+            if (dv[i].template_target != d.template_target)
+                bad.push_back("偏离模板取值不符");
+            if (dv[i].actual_target != actual)
+                bad.push_back("偏离本表取值不符");
+        }
         return bad;
     }
 
@@ -557,9 +631,11 @@ TEST_CASE("MESIF 规约:逐格追认清单与载体逐格一致(MS-06)", "[cep][
         doc, "| # | 态 | 事件 | 目标态 | kind | pending | ArchForge 需确认什么 |", 5, 6);
     const auto pr = parse_checklist_table(
         doc, "| # | 态 | perm | kind | pending | ArchForge 需确认什么 |", 4, 5);
+    const auto dv =
+        parse_deviation_table(doc, "| # | 态 | 事件 | 模板取值 | 本表取值 | 偏离理由 |");
 
     // ── ① ~ ④ 正控:清单与载体**零差异** + 待追认刻度唯一 ──────────────
-    const auto mismatches = checklist_mismatches(tr, pr);
+    const auto mismatches = checklist_mismatches(tr, pr, dv);
     for (const auto& m : mismatches)
         INFO("清单与载体不一致: " << m);
     CHECK(mismatches.empty());
@@ -581,15 +657,15 @@ TEST_CASE("MESIF 规约:逐格追认清单与载体逐格一致(MS-06)", "[cep][
         auto broken = tr;
         REQUIRE(!broken.empty());
         broken[0].kind = "Primary";
-        CHECK_FALSE(checklist_mismatches(broken, pr).empty());
-        CHECK(checklist_mismatches(tr, pr).empty()); // 正控
+        CHECK_FALSE(checklist_mismatches(broken, pr, dv).empty());
+        CHECK(checklist_mismatches(tr, pr, dv).empty()); // 正控
     }
 
     // ── 反向 fixture ⑱:清单少一行 ⇒ 必红 ─────────────────────────────
     {
         auto broken = tr;
         broken.pop_back();
-        CHECK_FALSE(checklist_mismatches(broken, pr).empty());
-        CHECK(checklist_mismatches(tr, pr).empty()); // 正控
+        CHECK_FALSE(checklist_mismatches(broken, pr, dv).empty());
+        CHECK(checklist_mismatches(tr, pr, dv).empty()); // 正控
     }
 }

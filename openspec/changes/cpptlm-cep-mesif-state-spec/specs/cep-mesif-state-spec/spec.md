@@ -17,6 +17,11 @@
 > SHALL **不**锁定各格**目标态**的**语义正确性** —— 后者由 ArchForge 侧逐格追认闭合
 > (per `ArchForge:.rddf/improvements/cep-alignment-debt-cleanup.md` 的风险 ②:第 ②/③ 档依据
 > 可被追认纠正 ⇒ 未追认的值 SHALL **带着 `pending` 标记**留在规约里,SHALL NOT 被固化为「既定事实」)。
+>
+> **锚点格例外**(判据确实锁定了 3 个 `pending=true` 格的值 —— 它们是**自洽性不变量**的支点):
+> `I → NONE`(投影)· `E + Wr → M` · `S + Wr → S`。⇒ 「不锁语义正确性」SHALL 读作
+> 「**不锁非锚点格**的语义正确性」;锚点格锁的是**自洽性**,其 `pending` 标记 SHALL 仍为 `true`;
+> 追认若否定某个锚点格 ⇒ SHALL **同时**改载体该格 + 对应判据 + 追认清单该行(三者由 MS-06 机器核对)。
 
 ## ADDED Requirements
 
@@ -28,7 +33,9 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 > (三者**正交**,per `ADR-CEP-02` 的分层纪律)。本能力只交付前两者。
 >
 > **规约的规范性载体** = `include/tlm/cep/mesif_state_spec.hh`(可执行:表驱动 + 编译期锁);
-> `openspec/changes/**/design.md` 只承载**推导口径与统计**,**不**复写逐格表(避免归档后断链的双真源)。
+> `openspec/changes/**/design.md` 只承载**推导口径与统计**,**不**复写逐格表 —— 理由是**可变性**
+> (追认会改逐格 `basis`)+ **不可变性**(归档件不可变;且**新**归档件默认不入库 ⇒ 引用会断链)
+> + **可核对**(统计由机器判据逐数核对载体)⇒ 无双真源。
 
 
 #### Scenario: MS-01 —— MESIF 的 5 态 SHALL 全部有 4 值 `perm` 投影
@@ -99,22 +106,6 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 
 > **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-04 断言 + 2 条反向 fixture
 
-#### Scenario: MS-06 —— 逐格追认清单 SHALL 与**载体**逐格一致
-
-- **WHEN** 核对仓内逐格追认清单(`docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md`)与载体的 `kTable`
-- **THEN** 子条件 ① SHALL 成立:清单的**转换表** SHALL **恰好 30 行**,每行的
-  `(态, 事件, 目标态, kind, pending)` SHALL 与载体**逐格相等**
-- **AND** 子条件 ② SHALL 成立:清单的**投影表** SHALL **恰好 5 行**,每行的
-  `(态, perm, kind, pending)` SHALL 与载体**逐格相等**
-- **AND** 子条件 ③ SHALL 成立:清单登记的**待追认格数** SHALL 与载体 `pending_count()` **相等**
-  ⇒ 跨仓债的刻度**唯一**
-- **AND** 子条件 ④ SHALL 成立:清单**不**得存在**载体里没有**的行(防清单里出现未登记的「追认项」)
-- **AND** **反向 fixture**:把清单某行的 `kind` 改掉 / 删掉一行 ⇒ 必红
-- **AND** **正控**:清单的 30 + 5 行与载体**零差异**
-
-> **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-06 断言 + 2 条反向 fixture
-> (反向 fixture 以「同谓词 + 变异输入」实现:解析出的行集合与载体比对)
-
 #### Scenario: MS-05 —— 规约与**协议模板**的偏离 SHALL 被**显式登记**
 
 - **WHEN** 核对 MESIF 规约相对 CHI / MOESI 模板的偏离
@@ -125,3 +116,24 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 - **AND** **反向 fixture**:删除清单中的一条偏离 ⇒ 必红;清单登记的取值与载体不符 ⇒ 必红
 
 > **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-05 断言 + 2 条反向 fixture
+
+#### Scenario: MS-06 —— 逐格追认清单 SHALL 与**载体**逐格一致
+
+- **WHEN** 核对仓内逐格追认清单(`docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md`)与载体的 `kTable`
+- **THEN** 子条件 ① SHALL 成立:清单的**转换表** SHALL **恰好 30 行**,每行的
+  `(态, 事件, 目标态, kind, pending)` SHALL 与载体**逐格相等**
+- **AND** 子条件 ② SHALL 成立:清单的**投影表** SHALL **恰好 5 行**,每行的
+  `(态, perm, kind, pending)` SHALL 与载体**逐格相等**
+- **AND** 子条件 ③ SHALL 成立:清单登记的**待追认格数** SHALL 与载体 `pending_count()` **相等**
+  ⇒ 跨仓债的刻度**唯一**
+- **AND** 子条件 ④ SHALL 成立:清单**不**得存在**载体里没有**的行(防清单里出现未登记的「追认项」)
+- **AND** 子条件 ⑤ SHALL 成立:清单的**偏离清单**(§3) SHALL **恰好 8 行**,每行的
+  `(态, 事件, 模板取值, 本表取值)` SHALL 与载体 `kDeviations[]` **逐条相等**
+- **AND** 子条件 ⑥ SHALL 成立:清单的三张表 SHALL 由**入库的生成器**
+  (`scripts/test/generate_mesif_recognition_checklist.sh`)从载体产出 ⇒ 「由载体生成」SHALL 是
+  **可复现**的,不是一次性人工产出
+- **AND** **反向 fixture**:把清单某行的 `kind` 改掉 / 删掉一行 / 改掉偏离清单的「本表取值」⇒ 必红
+- **AND** **正控**:清单的 30 + 5 + 8 行与载体**零差异**
+
+> **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-06 断言 + 2 条反向 fixture
+> (反向 fixture 以「同谓词 + 变异输入」实现:解析出的行集合与载体比对)

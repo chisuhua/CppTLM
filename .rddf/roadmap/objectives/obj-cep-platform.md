@@ -6034,6 +6034,37 @@ egress 借用它会**倒置连接方向**;
 
 ---
 
+### Entry #100 — 2026-10-29 [build](critic 第 1 轮评审 + 3 项 SHOULD_FIX 闭合)
+
+**主题**: 规约层 change `cpptlm-cep-mesif-state-spec` 的**架构评审**(第 1 轮 / 上限 2 轮)+ 评审发现闭合
+
+**① 评审结论**
+
+`critic`(profile `build, plan`;arch 档不涉及 —— ADR 本轮未动)= **APPROVE_WITH_CONDITIONS**,
+**mergeable: yes** · **scope_exceeded: false** · **BLOCKERS = 0**。
+⇒ 评审预算:本 change 已用 **1 / 2** 轮。
+
+**② 3 项 SHOULD_FIX 的闭合(全部已落地)**
+
+| # | critic 发现 | 处置 |
+|---|------------|------|
+| **S1** | **真源裁决的事实前提不成立** —— 「归档后 `openspec/changes/archive/**` **不入库**(per `.gitignore`)⇒ 归档即断链」与事实相反(归档目录**实际被跟踪**,`git ls-files` 命中 **114** 件;`git check-ignore` rc=1)。该失实前提出现在载体头 + design `D-ε.5` + delta spec Purpose + Entry #98 ④ + `cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` 注释 | **裁决结论不变**(逐格 `basis` 归载体),**理由**改为**三条**:① **可变性**(追认会改逐格 `basis`)· ② **不可变性**(归档件不可变;**新**归档件默认不入库 ⇒ 引用会断链)· ③ **可核对**(统计由机器判据逐数核对载体)。5 处表述**同步更正**;`VIRTUAL_PATHS` 的归档目录豁免**保留**但注释改为准确表述 |
+| **S2** | **口径边界与判据实际锁定范围自相矛盾** —— `D-ζ` 声明「不锁语义正确性」,但判据事实上锁定了 3 个 `pending=true` 格的值(`I→NONE` / `E+Wr→M` / `S+Wr→S`) | design `D-ζ` 增「**锚点格例外**」段 + delta spec「判据口径边界」段同步:列明 3 个锚点格 + 被哪条判据锁定 + 锁定的是「**自洽性不变量**」而非「已确认语义」+ **追认若否定锚点格的处置**(同时改载体 / 判据 / 清单,三者由 MS-06 机器核对)⇒ 该成本**显式登记** |
+| **S3** | **清单「由载体生成」的兑现面有缺口** —— 仓内**无生成器**(实为人工产出),且 MS-06 只覆盖 §1/§2,**§3 偏离清单**(追认优先级最高)无机器防线 | **生成器入库**:`scripts/test/generate_mesif_recognition_checklist.sh`(+ `.cc`,读载体 `kTable` → 三张表;`--check` 模式只比对不写)⇒ 清单三张表**全部**由载体生成;**MS-06 扩展到 §3**(新增偏离清单解析器 + 逐条比对 + 反向 fixture)⇒ 偏离清单**也有了机器防线** |
+
+**③ 3 项 NITS 的处置**:① design `D-ε.5` 的 `S+Wr→S` 在 `Derived` 与 `Analogical` 代表格中重复列举 → 改为只列 `Analogical`(与载体一致)· ② delta spec 的 **MS-06 段排在 MS-05 之前** → 调序为 MS-01 ~ MS-06 顺序 · ③ 清单 §3「模板取值」的「无对应态」与载体 `"—"` 文字异 → **统一为 `"—"`**(§3 现由生成器产出 ⇒ 文字**必然**一致)。
+
+**④ 复审**:本轮**复审**只提交「上一轮 finding 的闭合证据 + 本轮新增 diff」(per 评审纪律:禁止全量重审)。
+
+**⑤ 冻结面**:**零改动**(本轮只改 design / delta spec / 台账 / 判据 / 生成器 / 清单,**不动**任何既有冻结产物)。
+
+**⑥ 验收(实测)**:12 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict` 全 rc=0 ·
+`ctest -R cep` 全绿 · 全仓 `cpptlm_tests` 全绿(0 回归)。
+
+**⑦ 关联**:Entry #99(Phase 3/4)· #98(ArchForge 答复)· #97(立项)
+
+---
+
 ### Entry #99 — 2026-10-29 [build](规约层 Phase 3 判据收口 + Phase 4 追认清单 + 跨仓登记)
 
 **主题**: MESIF 规约层的**可执行判据**、**逐格追认清单**与**跨仓追认输入**登记
@@ -6061,7 +6092,7 @@ egress 借用它会**倒置连接方向**;
 ⇒ **投影表回填前不得据此写实现层判据**(队列 #9 的实现层)。
 
 **④ 冻结面**:**零改动** —— `protocol_instance.schema.json` / `adapter_schema_contracts.hh` / `CohIfBundle` /
-`protocol_instances.json` / `sharer_tracker.hh` / `docs/architecture/07-…` 全部不动;新增的
+`protocol_instances.json` / `sharer_tracker.hh` / `docs/architecture/07-...md` 全部不动;新增的
 `include/tlm/cep/mesif_state_spec.hh` 是**规约层新载体**(非既有冻结产物)⇒ **不进** M1 冻结集
 (per Entry #90 / #96 先例:冻结集只含 Stage 0 收口时的产物快照)。
 
@@ -6100,9 +6131,12 @@ ArchForge 仓在本会话期间被外部推进(commit `2e6717c` → `170e7e3` �
 
 **④ ⚠️ 单一真源纪律的关键裁决(Phase 1 实施中发现)**
 
-逐格 `basis` 原拟落在 `design.md` ⇒ **撤回**:本 change 归档后 `openspec/changes/archive/**` **不入库**(per `.gitignore`)
-⇒ 逐格表留在 design 会造成**归档即断链** ⇒ 改为:**逐格 `basis` 归规范性载体** `include/tlm/cep/mesif_state_spec.hh`,
-design 只承载**推导口径 + 统计**(统计由 Phase 3 判据**逐数核对**载体 ⇒ 漂移即红)。
+逐格 `basis` 原拟落在 `design.md` ⇒ **撤回**:理由是**三条** —— ① **可变性**(追认会改逐格 `basis`)·
+② **不可变性**(归档件不可变;**新**归档件默认不入库 ⇒ 引用会断链)· ③ **可核对**(统计由判据逐数核对载体)
+⇒ 改为:**逐格 `basis` 归规范性载体** `include/tlm/cep/mesif_state_spec.hh`,design 只承载**推导口径 + 统计**。
+> ⚠️ **口径勘误(2026-10-29,per critic 第 1 轮)**:本条原写「归档后 `openspec/changes/archive/**` **不入库**
+> (per `.gitignore`)⇒ 归档即断链」—— **与事实不符**:归档目录**实际被跟踪**(`git ls-files` 命中 **114** 件;
+> `git check-ignore` rc=1)⇒ 准确表述是「**新**归档件默认不入库」。裁决**结论**不变,**理由**已更正。
 
 **⑤ 行号引用复核**:design 中全部 ArchForge 行号引用(25 号 `539/553/554/598/599/611/724/729` · 32 号 `200/213/445/529/582/586-591/593-595/725/738/740-741/1157` · 09 号 `148-156`)均于 2026-10-29 对 ArchForge **当前 HEAD** 逐条实测复核 ⇒ **全部有效**。
 (附:`25 号:611` 的「开放问题 #9」经复核确为**同文件内真误引** —— 该文件 §7 表的 #4 才是本题、#9 是「L3 Directory 跨 Compute Tray 时延」⇒ 佐证 D6 的 canonical = #4。)

@@ -68,7 +68,8 @@
 ### Phase 4 —— 追认清单 + 跨仓对齐
 
 - [x] **4.1** **逐格追认清单** —— 列出「ArchForge 侧需确认/补写什么」(按 `basis` 分组:一手原文 / 推导 / 类比)
-  —— ✅ **已完成**:`docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md` —— 30 格转换 + 5 格投影 + 8 条偏离 + 2 项跨仓待办 + 追认刻度;**表格由载体直接生成** ⇒ 与载体零漂移(机器判据 **MS-06** 逐格核对)
+  —— ✅ **已完成**:`docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md` —— 30 格转换 + 5 格投影 + 8 条偏离 + 2 项跨仓待办 + 追认刻度;**三张表由载体直接生成**
+  —— ✅ **生成器已入库**(per critic 第 1 轮 SHOULD_FIX ③):`scripts/test/generate_mesif_recognition_checklist.sh`(+ `.cc`)—— 可复现(另有 `--check` 模式只比对不写)⇒ 「由载体生成」不再是空话;**MS-06 覆盖三张表**(含 §3 偏离清单)
 - [x] **4.2** **ArchForge 侧提案联动** —— 对齐提案 `ArchForge:.rddf/improvements/cep-alignment-debt-cleanup.md`(跨仓)(ArchForge 仓)登记本 change 的追认项 ⇒ **跨仓债可见**
   —— ✅ **已完成**:ArchForge 侧该提案新增「**追认输入**」段(载体 / 清单 / 推导口径 三件产物 + 追认刻度 31/35 + 与 D4/D5/D7 的对应 + 偏离清单 8 条 + 口径边界警示)⇒ **AC-7 具备回填条件**
   —— ⚠️ **载体已迁移**(2026-10-29,ArchForge 侧 commit `4f0f330`):原架构文档 `41 号` 已移除 ⇒ 本仓指向**已改指**新载体(per Entry #98)

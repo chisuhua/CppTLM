@@ -3,8 +3,10 @@
 > **来源**:CppTLM 仓 change `cpptlm-cep-mesif-state-spec`(队列 #9 `cpptlm-cep-mesif-adapter` 的**规约层**)
 > **规范性载体**:`include/tlm/cep/mesif_state_spec.hh`(唯一真源 —— 逐格 `basis` 只在该文件)
 > **跨仓承接**:`ArchForge:.rddf/improvements/cep-alignment-debt-cleanup.md`(跨仓)—— 债务台账 + 追认面
-> **生成方式**:本清单的表格**由载体直接生成**(逐格 `(态, 事件, 目标态, kind, pending)` 与载体 `kTable` 一致)
-> ⇒ **载体变更 ⇒ 本清单必须重新生成**;一致性由 `test_cep_mesif_state_spec.cc` 的 **MS-06** 逐格核对(机器判据)。
+> **生成方式**:本清单的**三张表**(转换表 / 投影表 / 偏离清单)**由载体直接生成**
+> —— 生成器**已入库**:`scripts/test/generate_mesif_recognition_checklist.sh`(+ `.cc`)
+> ⇒ **载体变更 ⇒ 跑一次生成器**;一致性由 `test_cep_mesif_state_spec.cc` 的 **MS-06** 逐格核对(机器判据),
+> 生成器另有 `--check` 模式(只比对不写)可作提交前自检。
 > **日期**:2026-10-29
 
 ---
@@ -31,6 +33,7 @@ ArchForge 侧只需对**第 ②/③ 档**(推导 / 类比)逐格确认或纠正;
 
 ## 1. 转换表逐格追认清单(5 态 × 6 事件 = **30 格**)
 
+<!-- MESHIF-TABLE:transition:START -->
 | # | 态 | 事件 | 目标态 | kind | pending | ArchForge 需确认什么 |
 |---|---|---|---|---|---|---|
 | 1 | `I` | `Rd` | `S` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
@@ -63,11 +66,13 @@ ArchForge 侧只需对**第 ②/③ 档**(推导 / 类比)逐格确认或纠正;
 | 28 | `F` | `Upgrade` | `E` | `Analogical` | yes | 确认**类比**成立(ArchForge Owner 唯一性约束 + CHI 同型先例) |
 | 29 | `F` | `SnpShared` | `F` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
 | 30 | `F` | `SnpUnique` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+<!-- MESHIF-TABLE:transition:END -->
 
 ---
 
 ## 2. 投影表逐格追认清单(**5 格**)
 
+<!-- MESHIF-TABLE:projection:START -->
 | # | 态 | perm | kind | pending | ArchForge 需确认什么 |
 |---|---|---|---|---|---|
 | 1 | `I` | `NONE` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
@@ -75,24 +80,31 @@ ArchForge 侧只需对**第 ②/③ 档**(推导 / 类比)逐格确认或纠正;
 | 3 | `E` | `UNIQUE` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
 | 4 | `M` | `WRITEBACK` | `Structural` | yes | 确认**裁剪**成立(MOESI 6×6 模板行 → MESIF 5 态 / Forward 语义) |
 | 5 | `F` | `WRITEBACK` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+<!-- MESHIF-TABLE:projection:END -->
 
 ---
 
 ## 3. 偏离清单(**8 条** —— 追认优先级最高)
 
 以下 8 格**偏离** CHI / MOESI 协议模板 ⇒ 它们是 ArchForge 侧最需要表态的部分
-(per change 的 design `D-ε.8`;逐条数据由载体的 `kDeviations[]` 承载)。
+(per change 的 design `D-ε.8`;逐条数据由载体的 `kDeviations[]` 承载 ⇒ 下表**由载体生成**)。
 
-| # | 态 | 事件 | 模板取值 | 本表取值 | 偏离理由 | 风险 |
-|---|----|------|----------|----------|----------|------|
-| **D1** | `I` | `SnpShared` | `SC`(CHI) | `I` | CHI 该格把「请求者拿到共享副本」写进了**响应者**的行;本表按语义正确性取「无副本不因被 snoop 而获得副本」 | 低 |
-| **D2** | `E` | `SnpShared` | `SC`(CHI) | `F` | **MESIF 的 Forward 语义** —— 干净 Owner 保留 Owner 身份成为转发点(CHI 的 RN 侧无转发点概念) | **高** |
-| **D3** | `S` | `RdUnique` | `SC`(CHI) | `E` | **MESIF 的目录语义** —— 取独占 ⇒ sharer 全失效 ⇒ 本节点成唯一持有者 | 中 |
-| **D4a** | `F` | `RdUnique` | **无对应态** | `E` | MESIF 特有(`F` = 转发点)—— 取独占 ⇒ sharer 全失效 ⇒ `F` 清空 ⇒ 干净独占 | **高** |
-| **D4b** | `F` | `Wr` | **无对应态** | `F` | MESIF 特有 —— `F` 有 sharer ⇒ **非独占** ⇒ 写非法 ⇒ 状态不变(须先 `Upgrade` 到 `E`) | **高** |
-| **D4c** | `F` | `Upgrade` | **无对应态** | `E` | MESIF 特有 —— 升级 ⇒ sharer 全失效 ⇒ `F` 清空 ⇒ 干净独占 | **高** |
-| **D4d** | `F` | `SnpShared` | **无对应态** | `F` | MESIF 特有 —— 已是单 Owner + 有 sharer ⇒ 再来 sharer ⇒ 仍满足 `F` 的定义 | **高** |
-| **D4e** | `F` | `SnpUnique` | **无对应态** | `I` | MESIF 特有 —— 独占 snoop ⇒ Owner 转移 ⇒ `Forward` 清空 ⇒ 无副本 | **高** |
+<!-- MESHIF-TABLE:deviations:START -->
+| # | 态 | 事件 | 模板取值 | 本表取值 | 偏离理由 |
+|---|---|---|---|---|---|
+| 1 | `I` | `SnpShared` | `SC` | `S` | D1:CHI 该格把请求者拿到共享副本写进了响应者的行;本表按语义正确性取无副本不因被 snoop 而获得副本 |
+| 2 | `E` | `SnpShared` | `SC` | `F` | D2:MESIF 的 Forward 语义 —— 干净 Owner 保留 Owner 身份成为转发点(CHI 的 RN 侧无转发点概念) |
+| 3 | `S` | `RdUnique` | `SC` | `E` | D3:MESIF 的目录语义 —— 取独占 ⇒ sharer 全失效 ⇒ 本节点成唯一持有者 |
+| 4 | `F` | `RdUnique` | `—` | `E` | D4a:MESIF 特有(F = 转发点)—— 取独占 ⇒ sharer 全失效 ⇒ F 清空 ⇒ 干净独占 |
+| 5 | `F` | `Wr` | `—` | `F` | D4b:MESIF 特有 —— F 有 sharer ⇒ 非独占 ⇒ 写非法 ⇒ 状态不变(须先 Upgrade 到 E) |
+| 6 | `F` | `Upgrade` | `—` | `E` | D4c:MESIF 特有 —— 升级 ⇒ sharer 全失效 ⇒ F 清空 ⇒ 干净独占 |
+| 7 | `F` | `SnpShared` | `—` | `F` | D4d:MESIF 特有 —— 已是单 Owner + 有 sharer ⇒ 再来 sharer ⇒ 仍满足 F 的定义 |
+| 8 | `F` | `SnpUnique` | `—` | `I` | D4e:MESIF 特有 —— 独占 snoop ⇒ Owner 转移 ⇒ Forward 清空 ⇒ 无副本 |
+<!-- MESHIF-TABLE:deviations:END -->
+
+> **风险分档**(人工评估,per design `D-ε.8`):**高** = D2(`E+SnpShared` → `F`,MESIF Forward 语义)
+> 与 D4a~D4e(`F` 行 5 格,CHI **无对应态**);**中** = D3(`S+RdUnique` → `E`,MESIF 目录语义);
+> **低** = D1(`I+SnpShared`,CHI 该格把「请求者拿到共享副本」写进了**响应者**的行)。
 
 ---
 
