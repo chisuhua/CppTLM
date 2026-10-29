@@ -6,7 +6,7 @@
 |-------|------|------|
 | 0 治理前置 | 台账 entry + 队列 #9 行登记 + KPI 五处同改(0/3 → 1/3) | ✅ **已完成**(2026-10-29,Entry #97 —— commit `934289d3`) |
 | 1 规约推导 | 5 态 × 6 事件转换表 + 5→4 投影表 + **逐格 basis** | ✅ **已完成**(2026-10-29 —— design `D-ε.1` ~ `D-ε.11`;**逐格 basis 归载体**,design 只留口径与统计) |
-| 2 可执行载体 | `mesif_state_spec.hh`(表驱动 + 编译期锁) | ⬜ **未开始** |
+| 2 可执行载体 | `mesif_state_spec.hh`(表驱动 + 编译期锁) | ✅ **已完成**(2026-10-29 —— 数据单一真源 `kTable` + 13 条编译期锁) |
 | 3 判据收口 | AC-1 ~ AC-8 + 反向 fixture | ⬜ **未开始** |
 | 4 追认清单 + 跨仓对齐 | 逐格追认清单 + ArchForge 侧提案联动 | ⬜ **未开始** |
 | 5 归档 | tasks 全勾 ⇒ `openspec archive`(**已完成归档**语义 ⇒ 合并 delta spec) | ⬜ **未开始** |
@@ -44,9 +44,14 @@
 
 ### Phase 2 —— 可执行载体
 
-- [ ] **2.1** `include/tlm/cep/mesif_state_spec.hh` —— `State` / `Event` 枚举(**值序** `E=2` / `M=3` ⇒ `E+Wr→M` 目标态 = 3)+ `perm_of` + `kStateTransition[5][6]` + 逐格 `basis`
-- [ ] **2.2** 三条**编译期锁** —— ① 转换表完备(无空洞)② 5 态投影齐备 ③ `E + Wr → M` 存在且秩升高
-- [ ] **2.3** `basis` / `pending` 的**可执行性** —— 每格的 `basis` 非空(`const char*`)⇒ 编译期即可断言;`pending` 计数可查(供「追认进度」观测)
+- [x] **2.1** `include/tlm/cep/mesif_state_spec.hh` —— `State` / `Event` 枚举(**值序** `E=2` / `M=3` ⇒ `E+Wr→M` 目标态 = 3)+ `perm_of` + `kStateTransition[5][6]` + 逐格 `basis`
+  —— ✅ **已完成**:新增 `include/tlm/cep/mesif_state_spec.hh`;⚠️ **数据单一真源** —— 转换表 / 逐格依据 / 投影表 / 投影依据**同处** `kTable`(一实例),派生视图一律从它读 ⇒ 无双份数据;反向 fixture 可「拷贝 `kTable` → 改一格 → 跑同一批谓词」
+- [x] **2.2** 三条**编译期锁** —— ① 转换表完备(无空洞)② 5 态投影齐备 ③ `E + Wr → M` 存在且秩升高
+  —— ✅ **已完成**(扩为 **13 条**,覆盖面更广):值序锁(态 5 + 事件 6)· `perm` 4 值锁 · 转换表完备 · 投影表完备 · 35 格依据自洽 · 写规则 · 秩口径 · 偏离清单自洽 · 统计(Primary 4 / 待追认 31 / kind 分布 4 项)· 瞬态不声明
+  —— ⚠️ **编译期锁置于类外命名空间作用域**:类内成员函数体在**类闭合前**尚未解析完整 ⇒ 类内 constexpr 求值被拒 ⇒ 锁必须置于类闭合之后
+  —— ⚠️ **编译期锁不替代 ctest 判据**:Phase 3 对**同一批性质**提供运行时检查(正控 = 真实表,反向 fixture = 变异副本)⇒ 两者并存
+- [x] **2.3** `basis` / `pending` 的**可执行性** —— 每格的 `basis` 非空(`const char*`)⇒ 编译期即可断言;`pending` 计数可查(供「追认进度」观测)
+  —— ✅ **已完成**:`Basis{kind, pending, ref, note}` 四字段 + `basis_entry_is_consistent()`(三字段非空 + `kind`/`pending` **双向一致** + `Primary` 必带 ArchForge 锚点)+ `pending_count()` / `primary_count()` / `kind_count()`
 
 ### Phase 3 —— 判据收口
 

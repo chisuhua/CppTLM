@@ -185,7 +185,7 @@
 | **D1** | `I + SnpShared` | CHI `→SC`(`chi_rnf_adapter.hh:108`) | `→I` | CHI 该格把「请求者拿到共享副本」写进了**响应者**的行;本表按语义正确性取「无副本不因被 snoop 而获得副本」 | 低(CHI 是**本地/远端混合**的建模简化) |
 | **D2** | `E + SnpShared` | CHI `UC+SnpShared→SC` | `→F` | MESIF 的 **Forward 语义**:干净 Owner 保留 Owner 身份成为转发点(CHI 的 RN 侧无转发点概念) | **高** —— 这是 MESIF 相对 CHI 的**核心差异** |
 | **D3** | `S + RdUnique` | CHI `SC+RdUnique→SC` | `→E` | MESIF 的**目录**语义:取独占 ⇒ sharer 全失效 ⇒ 本节点成唯一持有者 | 中 |
-| **D4** | `F` 行的 6 格中的 5 格(`RdUnique` / `Wr` / `Upgrade` / `SnpShared` / `SnpUnique`) | CHI **无对应态**(`F` 无对应) | 见载体 `kStateTransition` 的 `F` 行 | MESIF 特有(`F` = 转发点)⇒ 这 5 格是**纯本地推导**,追认价值最高(仅 `F+Rd→F` 与 MOESI 的 `O+Rd→O` 同构) | **高** |
+| **D4** | `F` 行的 6 格中的 5 格(`RdUnique` / `Wr` / `Upgrade` / `SnpShared` / `SnpUnique`) | CHI **无对应态**(`F` 无对应) | 见载体 `kTable.transition` 的 `F` 行 | MESIF 特有(`F` = 转发点)⇒ 这 5 格是**纯本地推导**,追认价值最高(仅 `F+Rd→F` 与 MOESI 的 `O+Rd→O` 同构) | **高** |
 
 ## D-ε.9 语义损失登记(2 项;Phase 3 的 `MS-04` 判据逐项检查)
 
