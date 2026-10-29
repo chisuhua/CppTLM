@@ -47,7 +47,7 @@
 ### Phase 4 —— 追认清单 + 跨仓对齐
 
 - [ ] **4.1** **逐格追认清单** —— 列出「ArchForge 侧需确认/补写什么」(按 `basis` 分组:一手原文 / 推导 / 类比)
-- [ ] **4.2** **ArchForge 侧提案联动** —— 对齐提案 `docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`(ArchForge 仓)登记本 change 的追认项 ⇒ **跨仓债可见**
+- [ ] **4.2** **ArchForge 侧提案联动** —— 对齐提案 `ArchForge:docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`(跨仓)(ArchForge 仓)登记本 change 的追认项 ⇒ **跨仓债可见**
 - [ ] **4.3** **队列 #9 的销号条件** —— 明确「本 change 归档 ⇒ 队列 #9 的『余 2 项缺口』登记项可销号」的判据
 
 ### Phase 5 —— 归档

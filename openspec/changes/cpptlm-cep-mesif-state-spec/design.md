@@ -50,4 +50,4 @@
 
 # D-δ —— 跨仓追认登记
 
-规约载体里每格带 `basis` + `pending` 标记;另出一份**追认清单**(本 change 的交付物之一),逐格列出「ArchForge 侧需要确认/补写什么」⇒ ArchForge 侧的对齐提案承接(`docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`)。
+规约载体里每格带 `basis` + `pending` 标记;另出一份**追认清单**(本 change 的交付物之一),逐格列出「ArchForge 侧需要确认/补写什么」⇒ ArchForge 侧的对齐提案承接(`ArchForge:docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`(跨仓))。

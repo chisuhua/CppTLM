@@ -71,7 +71,7 @@ created: 2026-10-29
 
 - ❌ **不**实现 `MesifAdapter` / `MesifProtocolEngine` —— 那是队列 #9 的**实现层**。
 - ❌ **不**替 ArchForge 决定 MESIF 协议选型 —— `25-nsa §4.4` 的开放问题由 ArchForge 闭合;本 change 只保证「**即使** ArchForge 闭合前,本仓已有一份**显式标注待追认**的规约」。
-- ❌ **不**修改 ArchForge 仓的任何文件 —— 跨仓对齐由 ArchForge 侧提案承接(见 `docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`)。
+- ❌ **不**修改 ArchForge 仓的任何文件 —— 跨仓对齐由 ArchForge 侧提案承接(见 `ArchForge:docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`(跨仓))。
 - ❌ **不**扩 `perm` 4 值锁 —— MESIF 的 5 态必须**投影**进现有 4 值,不得新增第 5 值(per `ADR-CEP-02` CEN-Ib11)。
 - ❌ **不**引入新的 SharerTracker 实现 —— R-1 已在 `ADR-CEP-04 §13` 裁决完毕(第 6 种 `HierarchicalDirectory`),本 change 只消费它。
 
@@ -104,6 +104,6 @@ created: 2026-10-29
 ## Impact
 
 - **冻结面**:`openspec/specs/cep-chi-rnf-subset/spec.md` 是**已归档 change 合并出的 main spec** ⇒ 属**真源层** ⇒ 改动走 **MODIFIES** 流程(本 change 的 delta spec 声明)+ 归档时合并;**不进** M1 冻结集(冻结集只含 Stage 0 收口时的产物快照,per Entry #90 / #96 先例)。
-- **跨仓债**:规约的每一格都标注**待追认** ⇒ ArchForge 侧闭合 `25-nsa §4.4` 后,本仓只需**逐格比对**即可对齐(对齐提案见 ArchForge `docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`)。
+- **跨仓债**:规约的每一格都标注**待追认** ⇒ ArchForge 侧闭合 `25-nsa §4.4` 后,本仓只需**逐格比对**即可对齐(对齐提案见 ArchForge `ArchForge:docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`(跨仓))。
 - **队列关系**:本 change(#15)**不解除**队列 #9 的「余 2 项缺口」登记 —— 它**正是**那 2 项缺口的处置载体 ⇒ 归档后队列 #9 的该登记项可销号。
 - **KPI**:Stage 1 = **1 slot**(0/3 → 1/3);Stage 1 计数 10 → 11,合计 14 → 15。

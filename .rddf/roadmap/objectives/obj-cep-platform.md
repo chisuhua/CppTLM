@@ -6074,7 +6074,7 @@ egress 借用它会**倒置连接方向**;
 
 **⑦ 冻结面**:**零改动** —— `protocol_instance.schema.json` / `adapter_schema_contracts.hh` / `CohIfBundle` / `protocol_instances.json` 全部不动;`openspec/specs/cep-chi-rnf-subset/spec.md` 属真源层 ⇒ 走 MODIFIES,**不进** M1 冻结集(per Entry #90 / #96 先例)。
 
-**⑧ 跨仓动作**:ArchForge 仓的**债务清理与对齐改进提案**(`docs/architecture/41-cep-alignment-debt-cleanup-proposal.md`)—— 债务清单 + 逐条对齐建议 + 本 change 的追认项。
+**⑧ 跨仓动作**:ArchForge 仓的**债务清理与对齐改进提案**(`ArchForge:docs/architecture/41-cep-alignment-debt-cleanup-proposal.md` —— **跨仓**路径,不在本仓)—— 债务清单 + 逐条对齐建议 + 本 change 的追认项。
 
 **⑨ 关联**:Entry #96(R-1 裁决落地)· #95(队列 #8 归档 + KPI 同步先例)· #91(队列 #8 立项 + 转正先例)· #71(R-1 原始登记 + F-1 勘误)
 
