@@ -23,7 +23,7 @@
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "fd0c6808ab944ae7d0d059d9486ba5d731bd5389869066f63cb9ee20c1409372",
     "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "bb855a45dea28ac1158cd3dc1ce3f79889c62443edc3c7dee8a0d0e00f307174",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "14e9d516620834b0c1ae8318047236adbc0d2a7ce084fb3e6eefcd9102858c32",
-    "docs/architecture/07-coherence-exploration-platform.md": "2ef3d312c087b30bff6cbfc32b5892ff1ad74a183306e51db1eaeebcad6cb7e3",
+    "docs/architecture/07-coherence-exploration-platform.md": "1256ee93b50b671ab13cd9c1b5064daf044320272a508a0add371a776c25570b",
     "experimental/metrics.schema.json": "be6aa118ca85010ac7d701fabcb74fffbbc3318a8c6a924a07a5f31f455a3d54",
     "include/tlm/cep/fabric.json": "296b8981c3a09e912ba6436f12dde9895935bec703ec046cd3e0e71040a7b364",
     "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
@@ -42,9 +42,9 @@
     "tools/render_report.py": "1368402696a3aa5753ebd073a9bcab444fcd092d1334b9a7b7e37a28e026967e",
     "tools/run_sweep.py": "f16e33d3834cd2e24422537de9be82aa3b64c2e660d8bd792f4d0f82d00e3297"
   },
-  "authorized_by": "Entry #96",
+  "authorized_by": "Entry #101",
   "frozen_at": "2026-10-29",
-  "frozen_at_commit": "deb796c223cd62a08fe9bbcd0499dcc3e9c8d987",
+  "frozen_at_commit": "896f773c94c6bac2c732290e6a71d0e455b921eb",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
