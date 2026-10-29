@@ -7,7 +7,7 @@
 | 0 治理前置 | 台账 entry + 队列 #9 行登记 + KPI 五处同改(0/3 → 1/3) | ✅ **已完成**(2026-10-29,Entry #97 —— commit `934289d3`) |
 | 1 规约推导 | 5 态 × 6 事件转换表 + 5→4 投影表 + **逐格 basis** | ✅ **已完成**(2026-10-29 —— design `D-ε.1` ~ `D-ε.11`;**逐格 basis 归载体**,design 只留口径与统计) |
 | 2 可执行载体 | `mesif_state_spec.hh`(表驱动 + 编译期锁) | ✅ **已完成**(2026-10-29 —— 数据单一真源 `kTable` + 13 条编译期锁) |
-| 3 判据收口 | AC-1 ~ AC-8 + 反向 fixture | ⬜ **未开始** |
+| 3 判据收口 | AC-1 ~ AC-8 + 反向 fixture | ✅ **已完成**(2026-10-29 —— 5 case / 333 assertion + 8 类毒化副本端到端反向验证) |
 | 4 追认清单 + 跨仓对齐 | 逐格追认清单 + ArchForge 侧提案联动 | ⬜ **未开始** |
 | 5 归档 | tasks 全勾 ⇒ `openspec archive`(**已完成归档**语义 ⇒ 合并 delta spec) | ⬜ **未开始** |
 
@@ -55,10 +55,15 @@
 
 ### Phase 3 —— 判据收口
 
-- [ ] **3.1** `test/test_cep_mesif_state_spec.cc` —— **AC-1** 5 态各有投影 · **AC-2** 瞬态无投影 · **AC-3** 转换表完备 · **AC-4** 共享态写状态不变 · **AC-5** 秩单调 · **AC-6** 每格 `basis` 非空
-- [ ] **3.2** **反向 fixture** —— ① 给瞬态加投影 ⇒ 红 ② 挖一格转换 ⇒ 红 ③ 共享态写突变 ⇒ 红 ④ 秩下降 ⇒ 红 ⑤ 清空某格 `basis` ⇒ 红(**每条都须「因正确原因红」**)
-- [ ] **3.3** **正控** —— `chi_rnf` / `moesi_gpu` 的既有投影**零回归**
-- [ ] **3.4** **CR-06 ③ 措辞修正**的 spec 断言 + `openspec validate --strict` rc=0
+- [x] **3.1** `test/test_cep_mesif_state_spec.cc` —— **AC-1** 5 态各有投影 · **AC-2** 瞬态无投影 · **AC-3** 转换表完备 · **AC-4** 共享态写状态不变 · **AC-5** 秩单调 · **AC-6** 每格 `basis` 非空
+  —— ✅ **已完成**:`test/test_cep_mesif_state_spec.cc`(**5 case / 333 assertion**,标签 `[cep][mesif-state-spec]`)= MS-01 ~ MS-05;每条判据都配**变异副本**反向 fixture(16 条)+ 正控(真实表 ⇒ 同一谓词为真)
+- [x] **3.2** **反向 fixture** —— ① 给瞬态加投影 ⇒ 红 ② 挖一格转换 ⇒ 红 ③ 共享态写突变 ⇒ 红 ④ 秩下降 ⇒ 红 ⑤ 清空某格 `basis` ⇒ 红(**每条都须「因正确原因红」**)
+  —— ✅ **已完成**,**两级**形态:① **文件内变异 fixture**(16 条)—— 变异**副本** + 同一谓词 ⇒ 真实表与编译期锁恒绿 ⇒ 必是**运行时红**;② **端到端毒化脚本** `scripts/test/cep_mesif_state_spec_reverse_verify.sh`(**8 类毒化**:依据清空 / 一手原文标待追认 / 推导格标已追认 / 无锚点引用 / 共享态写突变 / 本地事件秩下降 / 转换表挖洞 / 偏离不真)—— 影子副本 + 探针 ⇒ 编译期锁或运行期谓词报红
+  —— ⚠️ **口径边界**(per design `D-ζ`):语义**值**本身的漂移(如 `M+SnpShared` 目标态被改)**不**由 ctest 兜住 ⇒ 那是 ArchForge 逐格追认的职责;脚本**刻意不**覆盖该类
+- [x] **3.3** **正控** —— `chi_rnf` / `moesi_gpu` 的既有投影**零回归**
+  —— ✅ **已完成**:MS-01 内含 `chi_rnf`(`UC→UNIQUE` / `SC→READ` / `SD→WRITEBACK`)与 `moesi_gpu`(`O→WRITEBACK` / 瞬态 `T` **无投影**)断言;反向验证脚本另含**基线正控**(干净载体 ⇒ 探针 `PROBE:PASS`)
+- [x] **3.4** **CR-06 ③ 措辞修正**的 spec 断言 + `openspec validate --strict` rc=0
+  —— ✅ **已完成**:CR-06 ③ 的措辞修正由本 change 的 **MODIFIED** delta spec 承载(`specs/cep-chi-rnf-subset/spec.md` 携带全部 11 个既有 Scenario);`openspec validate cpptlm-cep-mesif-state-spec --strict` **rc=0**
 
 ### Phase 4 —— 追认清单 + 跨仓对齐
 

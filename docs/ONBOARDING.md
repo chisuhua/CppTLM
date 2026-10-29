@@ -311,6 +311,7 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 | CEP 守门 | `scripts/test/cep_archforge_alignment_check.sh` | 跨仓（ArchForge）对齐锚点守门（33 锚点） |
 | CEP 守门 | `scripts/test/cep_decl_alignment_check.sh` + `cep_decl_reverse_verify.sh` | 协议实例声明 ↔ schema 双向映射 + 反向验证 |
 | CEP 守门 | `scripts/test/cep_cohif_reverse_verify.sh` + `cep_protocol_engine_reverse_verify.sh` + `cep_protocol_bridge_reverse_verify.sh` + `cep_chstream_bidirectional_macro_reverse_verify.sh` | 队列 #7 `cpptlm-cep-cohif-carrier` 的 4 个**反向 fixture** 脚本（CohIf 载体 / ProtocolEngine 端口面 / ProtocolBridge 特化桥 / 装配宏编译期锁）—— 登记表见 `scripts/README.md` §反向 fixture 登记 |
+| CEP 守门 | `scripts/test/cep_mesif_state_spec_reverse_verify.sh` | 队列 #9 `cpptlm-cep-mesif-state-spec` 的 MESIF 规约判据反向验证（8 类毒化副本）—— 登记表见 `scripts/README.md` §CEP 契约守门脚本 |
 | CEP 判据（队列 #8） | `test/test_cep_chi_rnf_subset.cc`（ctest `cep_chi_rnf_subset`，标签 `[cep][chi-rnf]`） | CHI RN-F subset 的 **19 case / 344 assertion**：实例声明（CR-01/02）· adapter 映射与投影（CR-03/04）· 静默升级（CR-05）· `sharer_tracker`（CR-06）· 权威分区（CR-07/08/09）· 真插件引擎（CR-10~14 + subset 排除项）· 消费方覆盖 · 装载层参数化 |
 | 流水线 | `scripts/pipeline/run_full_pipeline.sh` | 仿真 → 统计 → 可视化 |
 | 拓扑 | `scripts/topology/topology_validator.py` | 拓扑校验 |

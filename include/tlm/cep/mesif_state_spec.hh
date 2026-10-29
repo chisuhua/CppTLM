@@ -262,11 +262,19 @@ namespace tlm::cep {
         static constexpr const char* kPermMergeNote =
             "F 与 M 合并投影为 WRITEBACK:「是否还有其他 sharer」在 4 值接口上不可分辨 —— 该损失"
             "可由 Sharer Tracker 补偿(mesif 的 sharer_tracker = HierarchicalDirectory,caps "
-            "SYSTEM/EXACT/"
-            "GLOBAL/HIERARCHICAL,per ADR-CEP-04 §13 ⇒ EXACT + GLOBAL 目录能回答谁持有)。"
-            "⚠️ 措辞不得沿用 chi_rnf 的「不可补偿」—— 那是协议信息拓扑的固有损失(RN-F 不维护 sharer "
-            "set);"
-            "本损失是投影的表达力损失,可补偿。";
+            "SYSTEM/EXACT/GLOBAL/HIERARCHICAL,per ADR-CEP-04 §13 ⇒ EXACT + GLOBAL "
+            "目录能回答谁持有)。";
+
+        /// 损失 ① 的**对照说明**(与 `chi_rnf` 的措辞差异)
+        ///
+        /// ⚠️ **为什么拆成两个常量**:判据须能**机器**区分「本实例可补偿」与「`chi_rnf` 侧不可补偿」
+        /// ⇒ 主体登记里**不得**出现「不可补偿」字样,对照说明里**必须**出现 ⇒ 措辞纪律可机器检查。
+        static constexpr const char* kPermMergeNoteChiRnfContrast =
+            "对照 chi_rnf:其 sharer_tracker 为「不参与」(RN-F 不维护 sharer set)⇒ "
+            "那是协议信息拓扑的"
+            "固有损失,RN 侧不可补偿;而 mesif 的 sharer_tracker = HierarchicalDirectory(EXACT + "
+            "GLOBAL)"
+            "⇒ 本损失是投影的表达力损失,可由 Sharer Tracker 补偿。两者措辞不得混用。";
 
         /// `F → E` 的**秩回落**登记(损失 ② —— 损失 ① 的次生效应)
         static constexpr const char* kRankRegressionNote =
@@ -536,8 +544,15 @@ namespace tlm::cep {
 
         /// 偏离清单**自洽**:每条都真偏离 + 无重复 + `F` 行的无对应格**全部**登记
         static constexpr bool deviations_are_consistent(const Table& t) noexcept {
-            for (std::size_t i = 0; i < kDeviationCount; ++i) {
-                const Deviation& d = kDeviations[i];
+            return deviations_are_consistent(t, kDeviations);
+        }
+
+        /// 偏离清单谓词的**可变异形态**(以清单为参数 ⇒ 反向 fixture 可传「删了一条」的副本)
+        template <std::size_t N>
+        static constexpr bool deviations_are_consistent(const Table& t,
+                                                        const Deviation (&devs)[N]) noexcept {
+            for (std::size_t i = 0; i < N; ++i) {
+                const Deviation& d = devs[i];
                 const std::size_t si = static_cast<std::size_t>(d.state);
                 const std::size_t ei = static_cast<std::size_t>(d.event);
                 if (si >= kStateCount || ei >= kEventCount)
@@ -546,8 +561,8 @@ namespace tlm::cep {
                     return false; // 登记的格必须存在
                 if (streq(state_name(static_cast<State>(t.transition[si][ei])), d.template_target))
                     return false; // 必须**真**偏离
-                for (std::size_t j = i + 1; j < kDeviationCount; ++j) {
-                    if (kDeviations[j].state == d.state && kDeviations[j].event == d.event)
+                for (std::size_t j = i + 1; j < N; ++j) {
+                    if (devs[j].state == d.state && devs[j].event == d.event)
                         return false; // 不得重复登记
                 }
             }
@@ -558,15 +573,34 @@ namespace tlm::cep {
                 if (e == static_cast<std::size_t>(Event::Rd))
                     continue;
                 bool listed = false;
-                for (std::size_t i = 0; i < kDeviationCount; ++i) {
-                    if (static_cast<std::size_t>(kDeviations[i].state) == fi &&
-                        static_cast<std::size_t>(kDeviations[i].event) == e) {
+                for (std::size_t i = 0; i < N; ++i) {
+                    if (static_cast<std::size_t>(devs[i].state) == fi &&
+                        static_cast<std::size_t>(devs[i].event) == e) {
                         listed = true;
                         break;
                     }
                 }
                 if (!listed)
                     return false;
+            }
+            return true;
+        }
+
+        /// 「无投影」哨兵(`perm` 只有 4 个合法值 ⇒ 用 `0xFF` 表示「该态无投影」)
+        static constexpr Perm kNoProjection = static_cast<Perm>(0xFF);
+
+        /// 瞬态**无投影**(per `ADR-CEP-05` 的 `INV-CEP-05-IC1`)
+        ///
+        /// 本规约当前**不声明瞬态**(列表为空)⇒ 平凡成立;载体保留该谓词以支持未来追认后的扩展。
+        static constexpr bool transients_have_no_projection(const Table& t,
+                                                            const std::uint8_t* transients,
+                                                            std::size_t n) noexcept {
+            for (std::size_t i = 0; i < n; ++i) {
+                const std::uint8_t s = transients[i];
+                if (s >= kStateCount)
+                    return false; // 瞬态下标越界
+                if (t.projection[s] != kNoProjection)
+                    return false; // 瞬态**不得**有投影
             }
             return true;
         }

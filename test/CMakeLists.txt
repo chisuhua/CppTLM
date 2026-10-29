@@ -59,6 +59,9 @@ add_test(NAME cep_chi_rnf_subset COMMAND cpptlm_tests "[cep][chi-rnf]" -r compac
 # 队列 #9 `cpptlm-cep-mesif-adapter` 的 R-1 裁决落地:权威迁移 + 第 6 种 SharerTracker 实现
 add_test(NAME cep_authority_migration COMMAND cpptlm_tests "[cep][authority-migration]" -r compact)
 
+# 队列 #9 `cpptlm-cep-mesif-adapter` 的**规约层**判据(MESIF 状态机规约 + 5→4 perm 投影表)
+add_test(NAME cep_mesif_state_spec COMMAND cpptlm_tests "[cep][mesif-state-spec]" -r compact)
+
 # board-soc-split T-bs-1: DGpuSoc 容器测试
 # (per openspec/changes/2026-08-26-cpptlm-dgpu-board-soc-split/tasks.md §T-bs-1)
 add_test(NAME test_dgpu_soc_from_config COMMAND cpptlm_tests "[dgpu][json]" -r compact)
@@ -287,6 +290,12 @@ add_test(NAME cep_protocol_bridge_reverse_verify
 # `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏的**编译期锁**反向验证(per change
 # `cpptlm-cep-cohif-carrier` task 4.3 / 4.4)—— N=1 必须让宏内的
 # `static_assert(n > 1)` 报红(判据 CC-04 ③);N=2 必须编译成功(正控)。
+# MESIF 规约判据的**反向验证** —— 8 类毒化副本(依据清空 / kind↔pending 错配 /
+#    无锚点引用 / 共享态写突变 / 本地事件秩下降 / 转换表挖洞 / 偏离不真)
+#    分别必须被抓到(编译期锁或运行期谓词报红)
+add_test(NAME cep_mesif_state_spec_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_mesif_state_spec_reverse_verify.sh)
+
 add_test(NAME cep_chstream_bidirectional_macro_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_chstream_bidirectional_macro_reverse_verify.sh)
 

@@ -14,7 +14,7 @@
 | 目录 | 内容 | 用途 |
 |------|------|------|
 | `build/` | `build.sh`, `format.sh`, `build_ptx_emu.sh` | 构建与代码格式化（`build_ptx_emu.sh` 启用 PTX-EMU 集成，dGPU/APU SoC 默认路径）。根 `build.sh` 是薄包装，委托此目录 |
-| `test/` | `test_off.sh`, `test_ptx_emu.sh`, `verify_test_seam_fix.sh`, `run_all_tests.sh`, `ci_e2e_test.sh`, `docs_sync_check.sh`, `markdown_link_check.sh`, `gen_wire_format_snapshot.sh`, `check_pcie_ip_facade.sh`, `cep_docs_sync_check.sh`, `cep_doc_ref_check.sh`, `cep_freeze_check.sh`, `cep_archforge_alignment_check.sh`, `cep_decl_alignment_check.sh`, `cep_decl_reverse_verify.sh`, `cep_cohif_reverse_verify.sh`, `cep_protocol_engine_reverse_verify.sh`, `cep_protocol_bridge_reverse_verify.sh`, `cep_chstream_bidirectional_macro_reverse_verify.sh` | 分模式测试与兼容入口。根 `test.sh --verify-fix` 委托 `verify_test_seam_fix.sh`；其他仍按模式分派。**`cep_*` 10 个 = CEP 守门脚本**(契约同步 / 对外引用 / M1 冻结 / 跨仓锚点 / 声明映射双向 + 队列 #7 的 4 个反向 fixture 脚本),详见 §CEP 契约守门脚本 |
+| `test/` | `test_off.sh`, `test_ptx_emu.sh`, `verify_test_seam_fix.sh`, `run_all_tests.sh`, `ci_e2e_test.sh`, `docs_sync_check.sh`, `markdown_link_check.sh`, `gen_wire_format_snapshot.sh`, `check_pcie_ip_facade.sh`, `cep_docs_sync_check.sh`, `cep_doc_ref_check.sh`, `cep_freeze_check.sh`, `cep_archforge_alignment_check.sh`, `cep_decl_alignment_check.sh`, `cep_decl_reverse_verify.sh`, `cep_cohif_reverse_verify.sh`, `cep_protocol_engine_reverse_verify.sh`, `cep_protocol_bridge_reverse_verify.sh`, `cep_chstream_bidirectional_macro_reverse_verify.sh`, `cep_mesif_state_spec_reverse_verify.sh` | 分模式测试与兼容入口。根 `test.sh --verify-fix` 委托 `verify_test_seam_fix.sh`；其他仍按模式分派。**`cep_*` 11 个 = CEP 守门脚本**(契约同步 / 对外引用 / M1 冻结 / 跨仓锚点 / 声明映射双向 + 队列 #7 的 4 个反向 fixture 脚本),详见 §CEP 契约守门脚本 |
 | `pipeline/` | `run_full_pipeline.sh` | 完整仿真流程（生成→仿真→可视化） |
 | `topology/` | `topology_validator.py`, `topology_generator.py`, `analyzer.py`, `path_tracer.py`, `credit_flow.py` | 拓扑生成/分析/验证 |
 | `stats/` | `stats_annotator.py`, `stats_watcher.py`, `layout_manager.py`, `derive_expr.py` | 性能统计与可视化 |
@@ -33,9 +33,11 @@
 | `cep_protocol_engine_reverse_verify.sh` | ProtocolEngine 端口面（`INV-CEP-07-IC2`）的反向验证 | ✅ 生效（ctest 注册） |
 | `cep_protocol_bridge_reverse_verify.sh` | ProtocolBridge 特化桥（CC-03 / CC-05 / CC-06）的反向验证 | ✅ 生效（ctest 注册） |
 | `cep_chstream_bidirectional_macro_reverse_verify.sh` | `REGISTER_CHSTREAM_BIDIRECTIONAL` 的**编译期锁**反向验证（N=1 必红且原因命中 `static_assert`） | ✅ 生效（ctest 注册） |
+| `cep_mesif_state_spec_reverse_verify.sh` | MESIF 规约判据（队列 #9 `cpptlm-cep-mesif-state-spec` 的 MS-01 ~ MS-05）的反向验证（8 类毒化副本：依据清空 / kind↔pending 错配 / 无锚点引用 / 共享态写突变 / 本地事件秩下降 / 转换表挖洞 / 偏离不真） | ✅ 生效（ctest 注册） |
 
 > 配套数据文件：`cep_doc_ref_aliases.tsv`（节号别名）/ `cep_doc_ref_registry.tsv`（语义 + 负向断言登记）。
-> 10 个脚本全部已注册进 `ctest`（`ctest -R cep`）。
+> **本表 11 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
+> ⚠️ 目录内另有 `cep_freeze_reverse_verify.sh` 与 `cep_gate_selftest.sh` 两个脚本**未列入本表**（预存登记缺口,非本次引入）。
 
 ### 反向 fixture 登记（队列 #7 `cpptlm-cep-cohif-carrier`）
 
