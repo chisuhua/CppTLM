@@ -17,7 +17,7 @@
 | 0 治理前置 | ✅ **已完成**(2026-10-30) | change 目录 4 件套已建 + `openspec validate --strict` rc=0 + KPI **0/3 → 1/3** + 队列 #9 行状态列更新 |
 | 1 语义载体 | ✅ **已完成**(2026-10-30) | `MesifAdapter`(零副本委托消费)+ `HierarchicalDirectory` 行为实现 + 行为决策登记;`[cep][mesif-adapter]` 3 case / 96 assertion + `[cep][sharer-tracker]` 16 case / 312 assertion 绿 |
 | 2 真插件引擎 | ✅ **已完成**(2026-10-30) | `MesifProtocolEngine` + atomic 最小可用路径 + R-3 写回接线 + 最小装配 JSON + 注册行;`[cep][mesif-engine]` 5 case / 98 assertion 绿 |
-| 3 平台级声明 + 装配 | ⬜ **未开始** | `perm_upgrades.json` 增行 + 负控见证双向规则化 + `status` 翻转 + 装配实测 + 通道依赖闸 |
+| 3 平台级声明 + 装配 | ✅ **已完成**(2026-10-30) | `perm_upgrades.json` 增行 + `current_state` 修订 + 负控见证双向规则化(合成输入反控)+ 装配实测 + 通道依赖闸;`status` 翻转按 J-4 移至 Phase 5 |
 | 4 判据收口 | ⬜ **未开始** | 契约测试 + 反向 fixture 脚本(「因正确原因红」机器判定)+ 既有套件零回归 |
 | 5 冻结面 + 归档 | ⬜ **未开始** | `07 号` 漂移 10 处 + Status Update 第十五则 + 两步授权 + 完成归档 + 17 落点 + owner 转指 |
 | 6 S1-3 触发后 | ⬜ **未开始** | SLICC 备选重评(ADR-CEP-12 §8.4)+ 承接项 2 滚动复核 |
@@ -91,18 +91,19 @@
 
 ## Phase 3 — 平台级声明 + 装配实测
 
-- [ ] 3.1 **判据先红**:写 MA-04 / MA-05 / MA-08 断言
-- [ ] 3.2 `perm_upgrades.json` 增 `{instance_id: "mesif", from: "UNIQUE", to: "WRITEBACK"}`;**修订** `derived_from.current_state`(删「`mesif` 无该能力」)
-- [ ] 3.3 `test/test_cep_adapter_schema_contracts.cc` **重基线** + 负控见证**双向规则化**(design `D-θ`):
+- [x] 3.1 **判据先红**:写 MA-04 / MA-05 / MA-08 断言(`test/test_cep_mesif_instance_decl.cc`)
+- [x] 3.2 `perm_upgrades.json` 增 `{instance_id: "mesif", from: "UNIQUE", to: "WRITEBACK"}`;**修订** `derived_from.current_state`(删「`mesif` 无该能力」,改为「3 实例全部具备」+ 空转陷阱说明)
+- [x] 3.3 `test/test_cep_adapter_schema_contracts.cc` **重基线** + 负控见证**双向规则化**(design `D-θ`):
+      （派生逻辑抽出为 `derive_no_upgrade_instances()` —— 埋在装载流程里时「逻辑正确」与「永远返回空」不可分辨）
       - 规则:**有声明 ⇒ 不在 `no_upgrade_instances`;无声明 ⇒ 在**
       - **反控**:合成输入(移除 `mesif` 声明)⇒ `mesif` 必出现在集合里
       - 原「`mesif` 注入 ⇒ 红」毒化**作废并替换**
-- [ ] 3.4 `protocol_instances.json` 的 `mesif.status` → `implemented`;其余 12 键**逐字不动**
-- [ ] 3.5 装配实测:`INV-CEP-12-IC2`(取代后 3 条件)逐网络校验通过 + 一次 CohIf 事务**穿过**引擎抵达对端
-- [ ] 3.6 `evaluate_channel_dependency_gate` 在 **3 实例共存**下 verdict **无环** + 逐 `(instance, network, vc)` 标注
-- [ ] 3.7 跑判据 ⇒ 转绿
-- [ ] 3.8 **反向 fixture**:破坏 `mesif` 的 `vc_binding` ⇒ 必红;破坏声明源派生逻辑 ⇒ 必红;**正控**:3 实例共存闸绿
-- [ ] 3.9 门禁回归 + 勾选
+- [ ] 3.4 ⏭ **移至 Phase 5**(J-4):`INV-CEP-12-IC3`(`status` 变更 ⇒ 计数同步)**无机器闸** ⇒ 翻转必须与计数同步**同批**;承接项见 `5.0`
+- [x] 3.5 装配实测:`INV-CEP-12-IC2`(取代后 3 条件)逐网络校验通过(权威实现 = `cep_decl_alignment_check.sh`;本 Phase 补**非空转前置**) + 一次 CohIf 事务**穿过**引擎抵达对端
+- [x] 3.6 `evaluate_channel_dependency_gate` 在 **3 实例共存**下 verdict **无环** + 逐 `(instance, network, vc)` 标注(mesif 8 条:2 网络 × VC0..3)
+- [x] 3.7 跑判据 ⇒ 转绿(4 case / 96 assertion)
+- [x] 3.8 **反向 fixture**:破坏 `mesif` 的 `vc_binding`(VC 越界 9)⇒ 闸 **FAIL**;移除 `mesif` 声明 ⇒ `mesif` 必出现在 `no_upgrade_instances`;**正控**:3 实例共存闸绿
+- [x] 3.9 门禁回归 + 勾选
 
 ---
 
@@ -125,6 +126,7 @@
 
 > **批内序写死**(design `D-ι`):① `status` 翻转 + 计数同步 → ② `07 号` 漂移 → ③ commit 产物 → ④ `--update` → ⑤ commit 清单 → ⑥ `openspec archive` → ⑦ KPI / 状态列回填
 
+- [ ] 5.0 ⏭ **承接 3.4(批内序 ①)**:`protocol_instances.json` 的 `mesif.status` → `implemented`;其余 12 键**逐字不动** + `INV-CEP-12-IC3` 计数同步(2 → 3 个 `implemented`)+ **重基线** `test/test_cep_moesi_gpu_adapter.cc` 的 2 处 `mesif.status == "planned"` 断言(状态变迁后原断言必红 ⇒ 必须同批改,不得留红)
 - [ ] 5.1 `07 号` 漂移修正 **10 处**(design `D-ι` 普查清单:`:75` / `:86` / `:276` / `:278` / `:323` / `:330` / `:573` / `:679` / `:681` / `:721`);**历史 Status Update 块不回改**
 - [ ] 5.1b `openspec/specs/cep-sharer-tracker-base/spec.md` **2 处**活口径修正(`Purpose` 末句「唯一行为实现」→「首个」+ 队列 #6~#9 → #10~#11;`Requirement` 首句同改);**`deferred` Scenario 措辞保持**(判据依赖它)
 - [ ] 5.2 `07 号` 新增 `## Status Update` 第十五则(覆盖 `:905` 的过时结论)

@@ -1014,7 +1014,9 @@ TEST_CASE("CR-05 chi_rnf 静默升级声明被契约判据接受", "[cep][chi-rn
         }
     }
     CHECK(found);
-    CHECK(total == 2u); // moesi_gpu + chi_rnf(`mesif` 无该能力 ⇒ 不出现)
+    // ⚠️ **不再硬编码总行数**(2026-10-30 队列 #9 重基线):`mesif` 落地后行数 2 → 3,
+    //    硬编码会在**每个**新实例落地时被误判为回归。本判据的意图是「chi_rnf 那一行在
+    //    且 form/to 合法」⇒ 由上面的逐条断言承担;总数由下面的**集合相等**钉住。
 
     // ── 子条件 ②:引用完整性(`instance_id` 存在于 `instances[]`)────────
     const json* chi = find_instance(doc, "chi_rnf");
@@ -1052,9 +1054,22 @@ TEST_CASE("CR-05 chi_rnf 静默升级声明被契约判据接受", "[cep][chi-rn
         CHECK(v.verdict == tlm::cep::AdapterContractVerdict::FAIL);
     }
 
-    // ── 正控:`mesif` **不**出现在声明源里(AC-03 的负控见证)────────────
-    for (const auto& u : upgrades.at("perm_upgrade").at("silent_upgrades"))
-        CHECK(u.value("instance_id", "") != "mesif");
+    // ── 正控(**已重基线**,2026-10-30 队列 #9):`mesif` 现在**有**该能力
+    //    (`E + Wr → M`,规约层已落地)⇒ 旧断言「`mesif` 不得出现在声明源」**已作废**
+    //    ——`mesif` 不再是毒化形态。
+    //    新口径:声明源里的实例集合 = 3 个已声明该能力的实例,且每行 from/to 合法;
+    //    「**无**能力者不得声明」这条**规则**改由
+    //    `test_cep_adapter_schema_contracts.cc` 的**合成输入双向规则**覆盖
+    //    (真实数据下已无「无能力实例」⇒ 任何事实断言都会空转)。
+    {
+        std::set<std::string> declared_ids;
+        for (const auto& u : upgrades.at("perm_upgrade").at("silent_upgrades")) {
+            declared_ids.insert(u.value("instance_id", ""));
+            CHECK(u.at("from") == "UNIQUE");
+            CHECK(u.at("to") == "WRITEBACK");
+        }
+        CHECK(declared_ids == std::set<std::string>({"moesi_gpu", "chi_rnf", "mesif"}));
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════

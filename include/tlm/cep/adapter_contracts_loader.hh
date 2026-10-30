@@ -86,6 +86,32 @@ inline bool is_transient_state(std::size_t state_index) {
     return false;
 }
 
+// ══════════════════════════════════════════════════════════════════════
+//  派生量:无静默升级能力的实例 = 实例声明集 − 已声明静默升级的实例
+// ══════════════════════════════════════════════════════════════════════
+//
+// ⚠️ **为什么独立成函数**:当**所有**实例都声明了静默升级时(队列 #9 之后的实际状态),
+//    该派生量**恒为空** ⇒ 若把派生逻辑埋在上述装载流程里,判据只能断言「集合为空」,
+//    而「逻辑正确」与「逻辑坏成永远返回空」在该断言下**不可分辨**(恒真空转)。
+//    独立成函数后,判据可传**合成输入**走双向规则:
+//      · 有声明 ⇒ **不在**集合里
+//      · 无声明 ⇒ **在**集合里
+//    (形态先例:`MesifStateSpec::deviations_are_consistent(t, list)` 的可变异谓词。)
+inline std::vector<std::string> derive_no_upgrade_instances(
+    const std::vector<ProtocolInstanceDecl>& instances, const PermUpgradesDecl& upgrades) {
+    std::set<std::string> declared;
+    for (const auto& u : upgrades.silent_upgrades) {
+        declared.insert(u.instance_id);
+    }
+    std::vector<std::string> out;
+    for (const auto& inst : instances) {
+        if (declared.find(inst.id) == declared.end()) {
+            out.push_back(inst.id);
+        }
+    }
+    return out;
+}
+
 template <typename AdapterT>
 inline void fill_adapter_inputs(AdapterSchemaContracts::Inputs& in) {
     using A = AdapterT;
@@ -210,18 +236,9 @@ inline LoadedAdapterContracts load_adapter_contract_inputs(const std::string& re
         out.inputs.upgrades.source_error_detail = std::string("静默升级声明读取失败:") + exc.what();
     }
 
-    // ── ④ 无静默升级能力的实例(声明源里**不得**出现它们)────────────────
-    {
-        std::set<std::string> declared;
-        for (const auto& u : out.inputs.upgrades.silent_upgrades) {
-            declared.insert(u.instance_id);
-        }
-        for (const auto& inst : out.inputs.instances.instances) {
-            if (declared.find(inst.id) == declared.end()) {
-                out.inputs.no_upgrade_instances.push_back(inst.id);
-            }
-        }
-    }
+    // ── ④ 无静默升级能力的实例(派生量;判据见 `derive_no_upgrade_instances`)──
+    out.inputs.no_upgrade_instances =
+        derive_no_upgrade_instances(out.inputs.instances.instances, out.inputs.upgrades);
 
     // ── ⑤ / ⑥ 逐 adapter 输入(AC-04 / AC-05)────────────────────────────
     //    ⇒ 移交 `fill_adapter_inputs<AdapterT>()`(文件末尾)——

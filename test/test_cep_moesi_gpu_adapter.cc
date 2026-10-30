@@ -406,14 +406,13 @@ TEST_CASE("CEP moesi_gpu: 本载体不含 mesif(声明源 / 状态机 / 映射�
         read_file((repo_root() / "include" / "tlm" / "cep" / "moesi_gpu_adapter.hh").string());
     REQUIRE(hdr.find("mesif") == std::string::npos);
 
-    // ② 静默升级声明源里**不得**有 mesif 条目
-    //   (语义检查而非 grep —— 声明源的 `derived_from` 说明文字里**可以**提及 mesif,
-    //    判据关心的是「mesif 有没有静默升级能力」)
+    // ② 声明源里 `moesi_gpu` **恰好一条**且 from/to 合法
+    //   ⚠️ **已重基线**(2026-10-30 队列 #9):旧断言「声明源里不得有 `mesif`」**已作废**
+    //   ——`mesif` 的 `E + Wr → M` 是真实能力(规约层已落地),它出现在声明源里是**正确**的。
+    //   本用例的意图是「本 change 的载体只负责 `moesi_gpu`」(①已断言 adapter 头零命中),
+    //   ⇒ 此处改为**逐实例**断言,不被其它实例落地影响。
     const json pu = json::parse(
         read_file((repo_root() / "include" / "tlm" / "cep" / "perm_upgrades.json").string()));
-    for (const auto& u : pu.at("perm_upgrade").at("silent_upgrades")) {
-        REQUIRE(u.at("instance_id").get<std::string>() != "mesif");
-    }
     // ⚠️ 队列 #8 后:`chi_rnf` 也声明了静默升级(UC→UD)⇒ 2 行。
     //    本断言的**意图**是「mesif **不**出现在声明源里」⇒ 由上面的**逐条**检查承担;
     //    此处的行数断言改为「moesi_gpu **恰好一条**」(逐实例断言,不被别的实例影响)。
@@ -426,9 +425,8 @@ TEST_CASE("CEP moesi_gpu: 本载体不含 mesif(声明源 / 状态机 / 映射�
         REQUIRE(moesi_rows == 1);
     }
 
-    // ③ `mesif` 的声明保持 13 键逐字镜像 + status = planned(零改动)
-    const json mesif = instance("mesif");
-    REQUIRE(mesif.size() == 13);
-    REQUIRE(mesif.at("status") == "planned");
-    REQUIRE(mesif.at("adapter") == "MesifAdapter");
+    // ③ ③ **删去原「`mesif` 声明零改动 / status = planned」断言**(2026-10-30 重基线)
+    //   ⚠️ 那两条是**跨 change 的硬钉**:`mesif.status` 由队列 #9 负责翻转(per J-4),
+    //   本 change 断言它 ⇒ 队列 #9 归档批必红,且红的原因与本 change **无关**(归因污染)。
+    //   `mesif` 声明的完备性/镜像我方判据在 `test/test_cep_mesif_instance_decl.cc`。
 }

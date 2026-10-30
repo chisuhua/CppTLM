@@ -263,6 +263,84 @@ TEST_CASE("CEP adapter 契约: AC-05 投影与状态机自洽 + 2 条反向 fixt
 }
 
 // ══════════════════════════════════════════════════════════════════════
+// AC-03 负控见证 —— `no_upgrade_instances` 的**双向规则**(合成输入反控)
+// ══════════════════════════════════════════════════════════════════════
+//
+// ⚠️ 为什么单独成用例:队列 #9 之后**所有**实例都声明了静默升级 ⇒ 真实数据下该派生量
+//    **恒为空**。若判据只断言「为空」,派生逻辑坏掉(永远返回空)也照样绿 —— 这就是
+//    判据纪律第 4 条的「fixture 空转」。⇒ 用**合成输入**把规则的两个方向都钉住:
+//      · 无声明 ⇒ **在**集合里
+//      · 有声明 ⇒ **不在**集合里
+//    并对判据本体(`check_decl_source_sanity`)补一条「越权实例 ⇒ FAIL」的反控。
+TEST_CASE("CEP adapter 契约: no_upgrade_instances 双向规则(合成输入反控)",
+          "[cep][adapter-contracts][single-source]") {
+    using tlm::cep::PermUpgradesDecl;
+    using tlm::cep::ProtocolInstanceDecl;
+    using tlm::cep::SilentUpgradeDecl;
+
+    auto make_instances = [](std::initializer_list<const char*> ids) {
+        std::vector<ProtocolInstanceDecl> v;
+        for (const char* id : ids) {
+            ProtocolInstanceDecl d;
+            d.id = id;
+            v.push_back(d);
+        }
+        return v;
+    };
+    auto make_upgrades = [](std::initializer_list<const char*> ids) {
+        PermUpgradesDecl u;
+        for (const char* id : ids) {
+            SilentUpgradeDecl d;
+            d.instance_id = id;
+            d.from = "UNIQUE";
+            d.to = "WRITEBACK";
+            u.silent_upgrades.push_back(d);
+        }
+        return u;
+    };
+
+    const auto instances = make_instances({"alpha", "beta", "gamma"});
+
+    // 方向 ①:一个都没声明 ⇒ 3 个全**在**集合里(若派生逻辑坏成恒空 ⇒ 本段必红)
+    {
+        const auto derived = tlm::cep::derive_no_upgrade_instances(instances, make_upgrades({}));
+        REQUIRE(derived.size() == 3);
+        CHECK(derived[0] == "alpha");
+        CHECK(derived[1] == "beta");
+        CHECK(derived[2] == "gamma");
+    }
+    // 方向 ②:部分声明 ⇒ 只有未声明的**在**集合里
+    {
+        const auto derived =
+            tlm::cep::derive_no_upgrade_instances(instances, make_upgrades({"beta"}));
+        REQUIRE(derived.size() == 2);
+        CHECK(derived[0] == "alpha");
+        CHECK(derived[1] == "gamma");
+    }
+    // 方向 ③:全部声明 ⇒ 空(**这正是当前真实数据的取值**)
+    {
+        const auto derived = tlm::cep::derive_no_upgrade_instances(
+            instances, make_upgrades({"alpha", "beta", "gamma"}));
+        CHECK(derived.empty());
+    }
+
+    // 判据本体反控:被登记为「无该能力」的实例出现在声明源里 ⇒ **FAIL**
+    {
+        const auto line =
+            AdapterSchemaContracts::check_decl_source_sanity(make_upgrades({"beta"}), {"beta"});
+        CHECK(line.rule_id == "AC-03");
+        REQUIRE(line.verdict == AdapterContractVerdict::FAIL);
+        CHECK(line.detail.find("beta") != std::string::npos); // 归因到具体实例
+    }
+    // 正控:不冲突时 ⇒ PASS(不是「永远 FAIL」)
+    {
+        const auto line =
+            AdapterSchemaContracts::check_decl_source_sanity(make_upgrades({"beta"}), {"alpha"});
+        CHECK(line.verdict == AdapterContractVerdict::PASS);
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════
 // 判据实现单一 + 声明源被消费 + CLI 与测试 verdict 逐条相同
 // ══════════════════════════════════════════════════════════════════════
 TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与测试 verdict 逐条相同",
@@ -275,14 +353,22 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
     // ② 声明源被**至少一个**测试消费(⇒ 不产生死文件)
     //    ⚠️ 队列 #8 后:`chi_rnf` 进入静默升级声明源(2 条)且进入实例声明集(3 个)——
     //    `chi_rnf` 是**本仓域实例**(权威 = 本仓,per `ADR-CEP-12 §11`)。
-    REQUIRE(loaded.inputs.upgrades.silent_upgrades.size() == 2);
+    //    ⚠️ 队列 #9 后:`mesif` 也进入(3 条)—— 它的 `E + Wr → M` 静默升级在规约层落地后
+    //    是**真实能力**,此前 `perm_upgrades.json` 的 `current_state` 自述「`mesif` 无该能力」
+    //    是**事实性错误**(已随本 change 修订)。
+    REQUIRE(loaded.inputs.upgrades.silent_upgrades.size() == 3);
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[0].instance_id == "moesi_gpu");
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[1].instance_id == "chi_rnf");
+    REQUIRE(loaded.inputs.upgrades.silent_upgrades[2].instance_id == "mesif");
     REQUIRE(loaded.inputs.instances.instances.size() == 3);
     REQUIRE(loaded.inputs.perm_domain.values.size() == 4);
-    //    `mesif` 无静默升级能力 ⇒ 不出现在声明源里(AC-03 的负控见证)
-    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 1);
-    REQUIRE(loaded.inputs.no_upgrade_instances[0] == "mesif");
+
+    // ⚠️ **负控见证已改造为双向规则**(队列 #9 AC-5):
+    //    真实数据下 3 个实例**全部**声明了静默升级 ⇒ `no_upgrade_instances` 为空。
+    //    若只断言「集合为空」,则「派生逻辑正确」与「派生逻辑坏成永远返回空」
+    //    **不可分辨**(恒真空转)⇒ 规格规则改由下面的合成输入用例覆盖
+    //    (见 `TEST_CASE("... no_upgrade_instances 的双向规则 ...")`)。
+    REQUIRE(loaded.inputs.no_upgrade_instances.empty());
 
     // ③ 真实数据下 5 条判据全绿 —— **逐 adapter 各跑一次**
     //    (AC-04 / AC-05 是**逐 adapter**的判据,per `adapter_contracts_loader.hh` 的两层结构)
