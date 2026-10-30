@@ -1,20 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-10-30T21:15:11",
+  "updated_at": "2026-10-30T22:54:54",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-10-24T13:51:12Z",
-      "by": "user"
-    },
-    {
-      "role": "builder",
-      "at": "2026-10-24T14:22:51Z",
-      "by": "user"
-    },
     {
       "role": "planner",
       "at": "2026-10-25T01:24:40Z",
@@ -120,6 +110,18 @@
       "at": "2026-10-30T21:15:11",
       "by": "user",
       "reason": "ADR-CEP-11 签发完成(architect 边界内)⇒ 切回实现 G-1/G-2 通用闸 + 台账 Entry #109 + 冻结面授权"
+    },
+    {
+      "role": "planner",
+      "at": "2026-10-30T21:53:42",
+      "by": "user",
+      "reason": "Entry #110 后续:队列 #10 cpptlm-cep-cxl-nonsymmetric 的 improvement 草稿(planner 边界)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-10-30T22:54:54",
+      "by": "user",
+      "reason": "队列 #10 improvement 草稿已落(planner 边界内)⇒ 切回做最终门禁 + 提交收尾"
     }
   ]
 }

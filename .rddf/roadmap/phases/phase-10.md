@@ -167,7 +167,10 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
                  │    规约层已归档 + 跨仓逐格追认已闭合(Entry #101/#102/#103)⇒ 阻塞解除;
                  │    实现层 4 件套 + 2 份 delta spec 已建(adapter 零副本委托消费规约载体 +
                  │    HierarchicalDirectory 第 6 种实现 + 真插件引擎 + 静默升级声明 + 装配实测)
-                 ├─ cpptlm-cep-cxl-nonsymmetric
+                 ├─ cpptlm-cep-cxl-nonsymmetric    ← 2026-10-27 顺延(原 #9)· 📋 2026-10-30 improvement 草稿已写
+                 │    两段式:第 0 个 change = 规约层(CXL 2.0 非对称状态机 + 5→4 perm 投影表)
+                 │    + 第 1 个 change = 实现层(CxlCacheAdapter + SparseSnoopFilter 行为实现 + 实例声明);
+                 │    ⚠️ 规约层先行:ArchForge 侧无 CXL 状态机规约与投影表(实测 0 命中)⇒ 否则实现层必然自推
                  └─ cpptlm-cep-tilelink-tree-manager
                                     ↓
                           Stage 2 (2 change 串行 2 季度):
