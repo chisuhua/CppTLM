@@ -66,7 +66,7 @@ FIXTURES=(
   # ── 声明层 ────────────────────────────────────────────────────────
   "decl-upgrade-row-missing|perm_upgrades.json|||runtime-predicate|decl:MA-04-UPGRADE-ROW"
   "decl-current-state-lie|perm_upgrades.json|**3 个实例全部具备该能力**|`mesif` 无该能力|runtime-predicate|decl:MA-04-CURRENT-STATE"
-  "decl-status-bogus|protocol_instances.json|\"status\": \"planned\"|\"status\": \"bogus\"|runtime-predicate|decl:MA-05-STATUS-DOMAIN"
+  "decl-status-bogus|protocol_instances.json|||runtime-predicate|decl:MA-05-STATUS-DOMAIN"
   "decl-vc-out-of-range|protocol_instances.json|          \"query\": 2,|          \"query\": 9,|runtime-predicate|decl:MA-08-VC-BOUND"
 )
 
@@ -115,6 +115,27 @@ d['perm_upgrade']['silent_upgrades'] = [u for u in d['perm_upgrade']['silent_upg
 after = len(d['perm_upgrade']['silent_upgrades'])
 if before - after != 1:
     print(f"移除行数 {before - after}(必须恰好 1)—— 毒化是空操作")
+    sys.exit(3)
+open(p, 'w', encoding='utf-8').write(json.dumps(d, ensure_ascii=False, indent=2) + "\n")
+PY
+                mrc=$?
+            elif [ "$kind" = "decl-status-bogus" ]; then
+                # ⚠️ 必须**结构化**改:`"status"` 的值会随实现进度**翻转**(planned → implemented)
+                #    ⇒ 字符串锚点会随状态变迁**失效**(本脚本在 status 翻转后实测即红了一次)。
+                #    这正是判据纪律第 4 条的形态:状态变迁 ⇒ fixture 必须重新基线化,
+                #    且脚本要**响亮报红**(而不是静默跳过)。
+                python3 - "$work/json/protocol_instances.json" <<'PY' 2>"$work/mut.log"
+import json, sys
+p = sys.argv[1]
+d = json.load(open(p, encoding='utf-8'))
+hit = 0
+for inst in d['instances']:
+    if inst.get('id') != 'mesif':
+        continue
+    inst['status'] = 'bogus'          # 越域值:schema enum 只有 planned/implemented/excluded
+    hit += 1
+if hit != 1:
+    print(f"mesif 命中 {hit} 次(必须恰好 1)—— 毒化是空操作")
     sys.exit(3)
 open(p, 'w', encoding='utf-8').write(json.dumps(d, ensure_ascii=False, indent=2) + "\n")
 PY
