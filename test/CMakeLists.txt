@@ -295,6 +295,11 @@ add_test(NAME cep_protocol_bridge_reverse_verify
 #    分别必须被抓到(编译期锁或运行期谓词报红)
 add_test(NAME cep_mesif_state_spec_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_mesif_state_spec_reverse_verify.sh)
+# 队列 #9 Phase 4:实现层判据(MA-01 ~ MA-05 / MA-08 / HD-01 ~ HD-05)的反向验证。
+# ⚠️ 与上者的口径差异:每条 fixture 声明**期望失败模式**(compile-lock / runtime-predicate)
+#    且必须命中**指定的判据 id 或 static_assert 文案** ⇒ 「因正确原因红」有机器判定。
+add_test(NAME cep_mesif_adapter_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_mesif_adapter_reverse_verify.sh)
 
 add_test(NAME cep_chstream_bidirectional_macro_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_chstream_bidirectional_macro_reverse_verify.sh)

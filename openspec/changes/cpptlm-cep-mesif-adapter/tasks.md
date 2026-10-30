@@ -18,7 +18,7 @@
 | 1 语义载体 | ✅ **已完成**(2026-10-30) | `MesifAdapter`(零副本委托消费)+ `HierarchicalDirectory` 行为实现 + 行为决策登记;`[cep][mesif-adapter]` 3 case / 96 assertion + `[cep][sharer-tracker]` 16 case / 312 assertion 绿 |
 | 2 真插件引擎 | ✅ **已完成**(2026-10-30) | `MesifProtocolEngine` + atomic 最小可用路径 + R-3 写回接线 + 最小装配 JSON + 注册行;`[cep][mesif-engine]` 5 case / 98 assertion 绿 |
 | 3 平台级声明 + 装配 | ✅ **已完成**(2026-10-30) | `perm_upgrades.json` 增行 + `current_state` 修订 + 负控见证双向规则化(合成输入反控)+ 装配实测 + 通道依赖闸;`status` 翻转按 J-4 移至 Phase 5 |
-| 4 判据收口 | ⬜ **未开始** | 契约测试 + 反向 fixture 脚本(「因正确原因红」机器判定)+ 既有套件零回归 |
+| 4 判据收口 | ✅ **已完成**(2026-10-30) | 反向 fixture 脚本(**16 条毒化** + 基线 2 项,「因正确原因红」机器判定)+ ctest 注册 + 既有套件零回归(11/11) |
 | 5 冻结面 + 归档 | ⬜ **未开始** | `07 号` 漂移 10 处 + Status Update 第十五则 + 两步授权 + 完成归档 + 17 落点 + owner 转指 |
 | 6 S1-3 触发后 | ⬜ **未开始** | SLICC 备选重评(ADR-CEP-12 §8.4)+ 承接项 2 滚动复核 |
 
@@ -109,16 +109,17 @@
 
 ## Phase 4 — 判据收口
 
-- [ ] 4.1 `scripts/test/cep_mesif_adapter_reverse_verify.sh`:
+- [x] 4.1 `scripts/test/cep_mesif_adapter_reverse_verify.sh`(**16 条毒化** + 基线 2 项):
       - 每条 fixture **声明期望失败模式**(`compile-lock` / `runtime-predicate`)
-      - probe 输出**失败判据 id** ⇒ 脚本 **grep 断言「红在预期的判据上」**(design `D-η`)
-      - **不**沿用「编译 / 运行合并计数」口径 ⇒ 差异已在本文件显式说明
-      - 毒化**规约载体**时**两层判据 id 分开打印**
-      - 命中 0 次 ⇒ **响亮报红**(非静默跳过)
-- [ ] 4.2 ctest 注册新脚本;`scripts/README.md` §CEP 守门脚本表新增行 ⇒「**12 项 CEP 脚本**」计数 → **13**
-- [ ] 4.3 **既有套件零回归**:`cep_mesif_state_spec_reverse_verify.sh` 仍 **11/11**;若锚点因载体变更而失效 ⇒ **重新基线化**并**响亮报红**
-- [ ] 4.4 全量门禁:13 项 CEP 脚本 + `docs_sync --strict` + `openspec validate --changes --strict` + `format --check` rc=0;`ctest -R cep` 全绿;全仓 `cpptlm_tests` 全绿
-- [ ] 4.5 勾选
+      - probe(`scripts/test/cep_mesif_adapter_probe.cc`)输出 `FAIL [spec|impl|decl] <id>` ⇒ 脚本 grep 断言「红在预期的判据上」
+      - **不**沿用「编译 / 运行合并计数」口径 ⇒ 模式不符直接判失败
+      - 毒化**规约载体**时**两层判据 id 分开打印**;实测统计锁先红 ⇒ impl 层不运行(**层序**,登记于 design `D-η.1` 事实 1)
+      - 命中 0 次 / anchor 不唯一 / 执行数 ≠ 声明数 ⇒ **响亮报红**(非静默跳过)
+      - 实施期实测 3 条**假绿来源**(扫描路径未随毒化覆盖 / `$?` 被分支尾赋值重置 / 两层同时红在该载体不可达)已修并登记 design `D-η.1`
+- [x] 4.2 ctest 注册新脚本(`cep_mesif_adapter_reverse_verify`);`scripts/README.md` §CEP 守门脚本表新增行 ⇒ **本表 11 → 12**、目录 `cep_*` 11 → 12(⚠️ `obj` / `AGENTS.md` 的「12 项」均在**台账历史条目**内 ⇒ append-only **不回改**;当前套件计数以新台账条目为准 = **13 项**)
+- [x] 4.3 **既有套件零回归**:`cep_mesif_state_spec_reverse_verify.sh` 仍 **11/11**
+- [x] 4.4 全量门禁:**13 项** CEP 脚本 + `docs_sync --strict` + `openspec validate --changes --strict` + `format --check` rc=0;`ctest -R cep` 全绿;全仓 `cpptlm_tests` 全绿
+- [x] 4.5 勾选
 
 ---
 
