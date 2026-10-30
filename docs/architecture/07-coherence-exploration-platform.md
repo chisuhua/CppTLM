@@ -986,8 +986,68 @@ experimental/<run_id>/
 
 ---
 
+## 附录 · Status Update 2026-10-30(第十六则 · per 台账 Entry #106 —— **S1-3 触发后的真实义务**结论)
+
+> **为何单独一则**:第十五则登记的是队列 #9 的归档事实与**触发**(S1-3 由 ⛔ → ✅);
+> 本则登记的是**触发之后必须做的两件事**的结论(`ADR-CEP-12 §8.4` 的备选重评 +
+> `objective` 的「承接项 2」滚动复核)。两则同批、同来源,便于回溯。
+
+### 一、S1-3 的真实义务:`ADR-CEP-12 §8.4` **SLICC 式备选重评**
+
+**备选内容**(登记在 `ADR-CEP-12 §8.4`,当时**明确不实施**):协议只声明**协议本地虚拟网络**
+(`fwd` / `resp` / `req`,各带 ordering 属性 —— 等价 `.pcc` 的 `Network {}` 块),另设**装配绑定产物**
+承载 `(协议, vnet) → (network, vc_id)`。登记理由原文:「当前为 **0 个 `implemented` 实例** ——
+这是将来最便宜的改点,**别让这个选项无声死掉**」。
+
+**重评时点**:`implemented` 实例数 = **3**(`moesi_gpu` / `chi_rnf` / `mesif`),正是 §8.4 写的触发条件。
+
+| 评估维度 | SLICC 式(协议本地 vnet + 装配绑定) | 现行嵌套形态(实例内声明 `vc_binding[network]`) |
+|---|---|---|
+| 排序声明次数 | **1 次**(协议本地) | 每实例每网络各一次(mesif 现有 2 网络 × 5–4 类) |
+| 跨协议实例重复 | 零重复 | 机械重复(`mesif` 与 `moesi_gpu` 的 `compute_noc` 绑定**逐字相同**) |
+| 装配期校验强度 | `ADR-CEP-09` 前提 3 由弱校验 → **强校验** | 现状:三条件逐网络校验(`INV-CEP-12-IC2`)+ 跨仓镜像闸,**已机器化** |
+| C-4 双向映射 | 声明 vnet ↔ 绑定表 ↔ fabric 三段各管一段(更干净) | 两段(声明 + fabric),**判据已闭合** |
+| 代价 | **推翻 ArchForge N-2 已交付的嵌套形态** ⇒ 跨仓谈判重开;且需新增一份**装配绑定产物**及其消费者 | 重复是**机械**的,可被判据锁住(现已有 `cep_decl_alignment_check.sh`) |
+
+**结论:维持现行嵌套形态**(**不**迁移 SLICC 式),理由按权重排序:
+1. **收益尚不成立**:3 个实例的重复是**机械**的,已被 `INV-CEP-12-IC2`(逐网络三条件)与
+   `cep_decl_alignment_check.sh`(双向映射 + VC 上界 + 6 类词表 + 网络集)锁住 ⇒ 重复**未产生**
+   过实际缺陷;而 SLICC 式的**新增装配绑定产物**在 Stage 1 **没有消费者**(fabric 侧尚无绑定面)。
+2. **代价是跨仓的**:迁移推翻 ArchForge `N-2` 已交付形态 ⇒ 需要重开跨仓谈判,而当前跨仓口径
+   刚在 Entry #102 达成逐字段一致(12 键全等)——**在刚收敛时重开谈判**的成本远高于收益。
+3. **选项不被杀死**(§8.4 的原始诉求):本条**不注销**该备选,而是**改绑到更强的触发条件**:
+   「出现**第 3 张网**」或「某实例需要**跨网络的联合排序**(即单实例无法用 per-network 绑定表达)」
+   时**再评**。当前 3 个实例**都**能用 per-network 绑定完整表达(mesif 的 `atomic` 只在
+   `ualink_fabric`、`snoop` 只在 `compute_noc`,是**网络特化**而非联合排序)。
+
+### 二、「承接项 2」滚动复核(**第 2 次**)
+
+**承接项 2** = per-network 嵌套形态的充分性复核(节奏源:umbrella design `D4.5`);
+第 1 次已随队列 #6(`moesi_gpu`)交付并复核。
+
+**本次复核(第 2 次)结论**:在 `chi_rnf` + `mesif` 两个实例落地后,嵌套形态**仍然充分**:
+- 三实例的 `ordering_assumption` / `vc_binding` **均**以 `network` 为外层键,**无**跨网络联合约束;
+- `mesif` 是**首个目录型/跨卡**实例(两个网络:`compute_noc` + `ualink_fabric`),它把
+  `atomic` / `query` 只声明在 `ualink_fabric`、`snoop` 只声明在 `compute_noc` ——
+  这仍是**网络特化**,可用嵌套表直接表达;
+- 装配闸在 3 实例共存下 verdict **无环**(`evaluate_channel_dependency_gate`,逐
+  `(instance, network, vc)` 8 条 `mesif` 记录全 PASS)。
+
+⇒ **无需修改嵌套形态**;下次滚动复核的触发 = 出现**第 4 个** `implemented` 实例,或任一实例
+需要跨网络联合排序。
+
+### 三、残余风险(不得写成「已消除」)
+
+`R-1`(按档批量 14 格证据强度弱于逐格)· `R-3`(写回事实在 4 值 `perm` 上不可分辨 ⇒ 由
+`LocalView.dirty` 掩码 + 写回接线补偿)· 残留 A(`HierarchicalDirectory` 行为语义无真源 ⇒
+逐条 `basis` + `pending` + 跨仓追认债)· 残留 C(`atomic` 的 `consistency_intent` 无独立字段)·
+引擎建模决策 `E-1 ~ E-6` —— **均未消除**,见 `Entry #105` §③ 与 design `D-β` / `D-λ`。
+
+
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)** + **Status Update 2026-10-28 第八则(Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)** + **Status Update 2026-10-28 第九则(Entry #89 —— 判据收口 + 反向 fixture 登记 + 零 diff 复核)** + **Status Update 2026-10-28 第十则(Entry #93 —— 队列 #8 立项 + §5.1.1 CHI 行同步 + UC→UD 静默升级事实登记)** + **Status Update 2026-10-28 第十一则(Entry #95 —— 队列 #8 归档 + §5.1.1 CHI 行状态列同步)** + **Status Update 2026-10-29 第十二则(Entry #96 —— 队列 #9 的 R-1 裁决落地 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-29 第十三则(Entry #101 —— 队列 #9 的规约层已闭合 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-30 第十四则(Entry #102 —— MESIF 规约的跨仓逐格追认闭合 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-30 第十五则(Entry #105 / #106 —— 队列 #9 实现层归档 + SharerTracker 6 实现 / adapter 3 实例口径同步)**
+---
+
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)** + **Status Update 2026-10-28 第八则(Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)** + **Status Update 2026-10-28 第九则(Entry #89 —— 判据收口 + 反向 fixture 登记 + 零 diff 复核)** + **Status Update 2026-10-28 第十则(Entry #93 —— 队列 #8 立项 + §5.1.1 CHI 行同步 + UC→UD 静默升级事实登记)** + **Status Update 2026-10-28 第十一则(Entry #95 —— 队列 #8 归档 + §5.1.1 CHI 行状态列同步)** + **Status Update 2026-10-29 第十二则(Entry #96 —— 队列 #9 的 R-1 裁决落地 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-29 第十三则(Entry #101 —— 队列 #9 的规约层已闭合 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-30 第十四则(Entry #102 —— MESIF 规约的跨仓逐格追认闭合 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-30 第十五则(Entry #105 / #106 —— 队列 #9 实现层归档 + SharerTracker 6 实现 / adapter 3 实例口径同步)** + **Status Update 2026-10-30 第十六则(Entry #106 —— S1-3 触发后的 SLICC 备选重评结论「维持嵌套形态」+ 承接项 2 第 2 次复核)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)

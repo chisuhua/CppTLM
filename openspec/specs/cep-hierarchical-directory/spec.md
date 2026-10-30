@@ -17,7 +17,7 @@
 > ⇒ 本能力 SHALL 承担**行为决策登记 + 跨仓追认债**的义务(见 HD-04),SHALL **不**把自推语义写成
 > 「已裁决」。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-hierarchical-directory
 

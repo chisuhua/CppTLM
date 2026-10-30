@@ -468,3 +468,40 @@ ArchForge 在答复回执 `cep-interface-alignment-response-2026-10-22.md` §1.4
 - [ ] **V7** **正控**:`moesi_gpu` / `mesif`(镜像域,**未**登记迁移)仍**逐字段镜像** ⇒ ⑥ 绿。
 
 ---
+
+## Status Update(2026-10-30,per 台账 Entry #106)—— §8.4 的 SLICC 式备选**重评结论**
+
+> **正文不改**(ADR 不可变;§8.4 的「登记备选(不实施)」原文保留)。本条登记**触发后的重评结论**。
+
+### 触发
+
+§8.4 的触发条件:「Stage 1 出现**第 3 张网**或**第 3 个协议实例**时重评」。
+`implemented` 实例数已达 **3**(`moesi_gpu` / `chi_rnf` / `mesif`,队列 #9 归档后)⇒ **已触发**。
+
+### 结论:**维持现行嵌套形态**(不迁移 SLICC 式)
+
+| 维度 | SLICC 式(协议本地 vnet + 装配绑定) | 现行嵌套形态 | 判定 |
+|---|---|---|---|
+| 排序声明次数 | 1 次(协议本地) | 每实例每网络一次 | SLICC 优 |
+| 重复是否已产生缺陷 | — | 机械重复(`mesif` 与 `moesi_gpu` 的 `compute_noc` 绑定逐字相同)| **否**(被 `INV-CEP-12-IC2` 三条件 + `cep_decl_alignment_check.sh` 锁住)|
+| 装配期校验强度 | 前提 3 强校验 | 逐网络三条件 + 跨仓镜像闸,**已机器化** | 持平 |
+| 代价 | **推翻 ArchForge `N-2` 已交付形态** ⇒ 跨仓谈判重开;需新增**装配绑定产物** | 无 | 嵌套优(Stage 1) |
+| 消费者 | 装配绑定产物在 Stage 1 **无消费者**(fabric 侧尚无绑定面) | 队列 #4 已消费 | 嵌套优 |
+
+### 选项**不注销**,改绑更强触发条件
+
+在下列任一情形出现时**再评**:
+1. 出现**第 3 张网**;
+2. 任一实例需要**跨网络的联合排序**(即单实例无法用 per-network 绑定表达);
+3. Stage 2 引入 fabric 侧**绑定面**消费者(届时 SLICC 式的收益才成立)。
+
+> 当前 3 实例**均**可用 per-network 绑定完整表达:`mesif` 的 `atomic` / `query` 只在
+> `ualink_fabric`、`snoop` 只在 `compute_noc` —— 属**网络特化**,不是联合排序。
+
+### 关联
+
+- 「承接项 2」滚动复核**第 2 次**:嵌套形态仍**充分**(per-network 即可表达);
+  下次复核触发 = 第 4 个 `implemented` 实例;
+- 完整评估表与残余风险见 `docs/architecture/07-coherence-exploration-platform.md`
+  **Status Update 2026-10-30 第十六则** + `obj-cep-platform §9.4`。
+

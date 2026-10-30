@@ -394,10 +394,33 @@ interface SharerTrackerIf {
 
 ---
 
+## 14. Status Update(2026-10-30,per 台账 Entry #105 / #106)—— 第 6 种实现的**行为面**已落地
+
+> **正文不改**(ADR 不可变)。本条登记 §13 裁决的**落地结果**,以及随之产生的**新债**。
+
+**① §13 裁决已落地**:`HierarchicalDirectory` 不再只有 enum + traits 行,已有**行为实现**
+(`include/tlm/cep/sharer_tracker.hh`):`SharerTrackerIf` 4 方法 + 目录安装面
+(`set_sharer` / `clear_sharer`,带层级参数)+ 多级聚合查询面(`aggregate_view_at` /
+`own_view_at` / `lookup_scoped`)。
+
+**② 与 `FullMapDirectory` 的**可观测**差异**(而非「克隆 + 纸面 caps」)**:
+聚合视图是**派生**的(各级只存**自有**位掩码,查询时 OR)⇒ **不存在「陈旧聚合」**;
+且存在**严格更窄**的级内视图 ⇒ 「`FullMapDirectory` 克隆」在此**不可能**。
+
+**③ 行为决策**无真源** ⇒ 逐条登记 + 挂跨仓追认债**(本条是**新债**,不是「已裁决」):
+`kBehaviorDecisions[5]`(B-1 层级数 / B-2 `ESCALATE_UP` 不使用 / B-3 fold 复用 `SnoopMechanics`
+/ B-4 满表拒绝 / B-5 **F 态转发点角色不可分辨**),每条 `basis` 非空 + `pending = true`;
+判据 = `behavior_decisions_are_consistent()`(可变异谓词)+ `test_cep_hierarchical_directory.cc`
+HD-04 / HD-05 + 反向 fixture `cep_mesif_adapter_reverse_verify.sh`。
+
+**④ 附带纪律**:`SnoopMechanics`(零虚函数)被两个行为实现**共用一份** ⇒ 禁双实现
+(`SharerTrackerIf` 仍**恰好 4 个**虚方法,虚析构计入 = 5)。
+
+**⑤ 状态**:§13 的「新增第 6 种实现」= ✅ **已落地归档**(队列 #9,2026-10-30)。
 
 ---
 
-**版本**: v0.3 草案 + Status Update 2026-10-25(§8 五 change 名失指)+ Status Update 2026-10-29(§13 —— R-1 裁决:第 6 种实现 `HierarchicalDirectory` + `HIERARCHICAL`)
-**最后更新**: 2026-10-29
+**版本**: v0.3 草案 + Status Update 2026-10-25(§8 五 change 名失指)+ Status Update 2026-10-29(§13 —— R-1 裁决:第 6 种实现 `HierarchicalDirectory` + `HIERARCHICAL`) + **Status Update 2026-10-30(§14 —— 第 6 实现的「行为面」已落地 + 行为决策跨仓追认债)**
+**最后更新**: 2026-10-30
 **批准状态**: 🟡 待 Oracle v0.5 二次复审
 **维护者**: CppTLM build agent(architect mode)

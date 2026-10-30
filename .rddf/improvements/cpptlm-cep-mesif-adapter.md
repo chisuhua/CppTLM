@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-13
   - ADR-CEP-16
   - ADR-CEP-07A
-状态: 📋 草稿(2026-10-30 —— 队列 #9 **实现层**;规约层 `cpptlm-cep-mesif-state-spec` 已归档(Entry #101)+ 跨仓逐格追认已闭合(Entry #102 / #103)⇒ **可启动**)
+状态: ✅ **已归档**(2026-10-30,Entry #105 / #106 —— 「**已完成归档**」语义:2 份 delta spec 已合并进 `openspec/specs/`(`cep-mesif-adapter` + `cep-hierarchical-directory`);实现层 6 项交付全落地;`implemented` 实例 **2 → 3**;KPI 并发 **1/3 → 0/3**;⚠️ 活跃路径 `openspec/changes/cpptlm-cep-mesif-adapter/` 已于归档时失效 ⇒ 现为 `openspec/changes/archive/2026-10-30-cpptlm-cep-mesif-adapter/`(**不入库**,per `.gitignore`))
 created: 2026-10-30
 ---
 
@@ -18,11 +18,12 @@ created: 2026-10-30
 
 **主题**: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 
-> **状态**: 📋 草稿(2026-10-30)· **实现层** · 规约层已归档 + 追认已闭合
+> **状态**: ✅ **已归档**(2026-10-30,Entry #105 / #106)· **实现层已交付** · 规约层已归档 + 追认已闭合
+> **残余风险(未消除)**:R-1 · R-3 · 残留 A(`HierarchicalDirectory` 行为语义)· 残留 C(`consistency_intent`)· 引擎决策 E-1 ~ E-6 —— 见 design `D-β` / `D-λ` 与台账 Entry #105 §③
 > **队列**: `obj-cep-platform §4.0` **队列 #9**(`cpptlm-cep-mesif-adapter`,Stage 1 / 2028-Q4)· **不新增队列行**(一个队列行可承载多个 change / capability,per 队列 #3 / #4 / #8 先例)
 > **与规约层的分工**:规约层 `cpptlm-cep-mesif-state-spec`(**已归档**)交付**口径来源与推导依据**;本 change 交付**可执行插件**。二者是**前置 vs 实现**,不是替代。
 > **关联 ADR**: `ADR-CEP-04`(第 6 种 SharerTracker 实现 + `AggregationAt::HIERARCHICAL`)· `ADR-CEP-12`(实例声明 schema + 权威分区)· `ADR-CEP-05`(`perm` 4 值投影 + `INV-CEP-05-IC1`)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值锁)· `ADR-CEP-13`(域可见写判据 (a)(b))· `ADR-CEP-16`(排除 programmatic bridge)· `ADR-CEP-07A`(协议私有状态边界)
-> **实施计划**: `.rddf/plans/2026-10-30-cpptlm-cep-mesif-adapter.md`(v0.2,经 oracle + metis 双审修订)
+> **实施计划**: `.rddf/plans/2026-10-30-cpptlm-cep-mesif-adapter.md`(v0.3,经 oracle + metis 双审修订,实施期补漏)
 > **估时**: 10 周(实现层;规约层 4 周**已完成**)
 > **KPI**: Stage 1 = **1 slot**(per `ADR-CEP-00 §2 决策 3`;并发上限 1,per `obj §5.4`;当前实测 **0/3**)
 

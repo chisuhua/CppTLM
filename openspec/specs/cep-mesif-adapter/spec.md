@@ -20,7 +20,7 @@ MESIF 是 CEP 平台的**第 3 个**协议实例(第 1 个 = `moesi_gpu`,第 2 �
 > 各格**目标态**的**语义正确性** —— 后者由 ArchForge 侧逐格追认闭合(残余风险 R-1 显式登记)。
 > **例外**:3 个锚点格(`I → NONE` / `E + Wr → M` / `S + Wr → S`)锁其**自洽性**。
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-mesif-adapter
 
