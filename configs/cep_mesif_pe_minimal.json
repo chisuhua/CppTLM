@@ -1,0 +1,23 @@
+{
+  "name": "cep_mesif_pe_minimal",
+  "description": "队列 #9 `cpptlm-cep-mesif-adapter` Phase 2 —— MESIF 的最小装配拓扑(2 个 MesifProtocolEngine,N=2 端口双向互连 + cohif_noc 桥绑定 mesif 实例)",
+  "modules": [
+    { "name": "mesif0", "type": "MesifProtocolEngine" },
+    { "name": "mesif1", "type": "MesifProtocolEngine" }
+  ],
+  "connections": [
+    { "src": "mesif0.0", "dst": "mesif1.0" },
+    { "src": "mesif1.0", "dst": "mesif0.0" }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json",
+    "bridges": [
+      {
+        "name": "cohif_noc",
+        "protocol_instance": "mesif",
+        "bridge_id": 2,
+        "modules": ["mesif0", "mesif1"]
+      }
+    ]
+  }
+}

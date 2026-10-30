@@ -216,6 +216,7 @@ WU-0 角色切换(planner → builder)
 |---|-----|--------|------|
 | **1** | `HierarchicalDirectory` 的**行为规约**(层级数 / `ESCALATE_UP` / fold 合并规则 / 满表拒绝 / **F 态表示** —— `SnoopState` 只有 `I/S/E/M`,**无 F**) | **ArchForge** | 本仓 `basis` 登记 + `pending` 标记 ⇒ 跨仓追认提案(类比规约层 D-α) |
 | **2** | `mesif` 的 `atomic` 语义细节(`consistency_intent` 的协议侧定义) | **ArchForge** | 本 change 只做最小可用路径 + 显式登记 |
+| **3** | **引擎侧建模决策 E-1 ~ E-6**(`F` 的 wire 投影 / `CLEAN`+`FORWARD` 合并 / 节点侧不建模 home / 静默升级两段式 / 在飞集合不建模 / VC 只记意图) | **ArchForge** | `basis` 登记 + `pending`(design `D-λ`);与债 #1 同款机制 |
 
 ### 对既有载体的影响
 

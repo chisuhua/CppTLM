@@ -187,3 +187,22 @@
 **真实义务**:`ADR-CEP-12 §8.4` 登记的 **SLICC 式「协议本地虚拟网络 + 装配期绑定」备选重评** —— 该备选的登记理由是「当前为 0 个 `implemented` 实例 —— 这是将来最便宜的改点,**别让这个选项无声死掉**」⇒ 归档后必须出结论(维持嵌套形态 / 迁移 SLICC 式)。
 
 **承接项 2** = **滚动复核的第 2 次**(节奏源 umbrella design D4.5);`obj §4.0` 队列 #6 行已标「✅ 本 change 已交付(2026-10-27 归档)」⇒ 本次**不得**与该行形成台账矛盾。
+
+---
+
+## D-λ 引擎侧的**建模决策**(E-1 ~ E-6)—— 同样是「无真源自推」⇒ 逐条登记 + 挂跨仓追认债
+
+**问题**:`MesifProtocolEngine` 落地时必须回答若干 ArchForge **没有规约**的问题(事件词表表达能力、wire 值域、在飞集合建模边界)。这些决策若不登记,就会成为**无标记的隐性债** —— 与残留 A(`HierarchicalDirectory` 行为语义)是**同一类风险**,因此用**同一套处置**(逐条 `basis` 式登记 + `pending` + 跨仓追认债)。
+
+| # | 决策 | 依据 | 待追认 |
+|---|------|------|:-----:|
+| **E-1** | `F` 在 **wire** 上投影为 `LineState::S` + `dirty = 0`(`perm` 仍取 `F` 的投影 `WRITEBACK`) | `CohIfBundle::line_state` 只有 `NONE`/`I`/`S`/`E`/`M`,**无 F**;`F` 语义是「已写回 ⇒ 非脏」⇒ 发 `S` 才不让对端误记脏位(发 `M` 会违反「`M` ⇒ `dirty`」这条别处依赖的不变量) | ✅ |
+| **E-2** | `SnoopType::CLEAN` 与 `SnoopType::FORWARD` **都**映射为 `Event::SnpShared` | 规约的 6 事件词表(`Rd`/`RdUnique`/`Wr`/`Upgrade`/`SnpShared`/`SnpUnique`)**没有**「降级为 S」的独立事件 ⇒「降到 S」与「成为转发点」在**事件层不可分辨**(6 事件的表达能力缺口,不是本引擎省略) | ✅ |
+| **E-3** | `on_request`(线缆上收到请求)只**记账**不迁态;本地请求由 `submit_local_request()` 发起 | 本引擎建模的是**节点侧**(目录在 PE 之外)⇒ 请求的响应由 home 以 `on_completion` 回来;收到请求就地迁态等于把 home 行为塞进节点侧 | ✅ |
+| **E-4** | `on_completion(perm = WRITEBACK)` ⇒ `RdUnique` **后接** `Wr`(两次表查询,快照留最后一次) | `E + Wr → M` 是本规约的**静默升级**(`is_silent_upgrade`);一次直接跳 `M` 会绕过该路径的记账 | ✅ |
+| **E-5** | `on_snoop_resp` / `on_forward_data` / `on_barrier` / `on_snoop_completion_ack` 只**记账** | 本引擎不建模「在飞 snoop 集合」与屏障域(归 Stage 2)⇒ 只记账**不会**产出虚假行为 | ✅ |
+| **E-6** | VC 路由只记**意图**(`last_atomic_network()` / `last_atomic_vc()`),不写进 Bundle | `CohIfBundle` **无** `vc` 字段(VC 由 fabric 按 `vc_binding` 分配)⇒ 引擎只能回答「按声明该走哪个 `(network, vc)`」;扩字段会破 `CohIfBundle` 零改动边界 | ✅ |
+
+**落点**:`include/tlm/cep/mesif_protocol_engine.hh` 的头注释(同表)+ 本节;判据 `MA-06`(E-6 / E-4 的 atomic 与静默升级路径)与 `MA-07`(E-1 的 wire 投影)。
+
+**追认债**:见 `proposal.md` 的跨仓债 **#3**。⚠️ **不得**把 E-1 ~ E-6 写成「已裁决」。

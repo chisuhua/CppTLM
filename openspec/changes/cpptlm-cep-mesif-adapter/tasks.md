@@ -16,7 +16,7 @@
 |---|------|------|
 | 0 治理前置 | ✅ **已完成**(2026-10-30) | change 目录 4 件套已建 + `openspec validate --strict` rc=0 + KPI **0/3 → 1/3** + 队列 #9 行状态列更新 |
 | 1 语义载体 | ✅ **已完成**(2026-10-30) | `MesifAdapter`(零副本委托消费)+ `HierarchicalDirectory` 行为实现 + 行为决策登记;`[cep][mesif-adapter]` 3 case / 96 assertion + `[cep][sharer-tracker]` 16 case / 312 assertion 绿 |
-| 2 真插件引擎 | ⬜ **未开始** | `MesifProtocolEngine` + atomic 最小可用路径 + 写回接线 + 最小装配 JSON + 注册行 |
+| 2 真插件引擎 | ✅ **已完成**(2026-10-30) | `MesifProtocolEngine` + atomic 最小可用路径 + R-3 写回接线 + 最小装配 JSON + 注册行;`[cep][mesif-engine]` 5 case / 98 assertion 绿 |
 | 3 平台级声明 + 装配 | ⬜ **未开始** | `perm_upgrades.json` 增行 + 负控见证双向规则化 + `status` 翻转 + 装配实测 + 通道依赖闸 |
 | 4 判据收口 | ⬜ **未开始** | 契约测试 + 反向 fixture 脚本(「因正确原因红」机器判定)+ 既有套件零回归 |
 | 5 冻结面 + 归档 | ⬜ **未开始** | `07 号` 漂移 10 处 + Status Update 第十五则 + 两步授权 + 完成归档 + 17 落点 + owner 转指 |
@@ -73,17 +73,19 @@
 
 ## Phase 2 — 真插件引擎(`MesifProtocolEngine`)
 
-- [ ] 2.1 **判据先红**:写 MA-06 / MA-07 断言(引擎面 + atomic + R-3 补偿可观测)
-- [ ] 2.2 实现 `include/tlm/cep/mesif_protocol_engine.hh`:
+- [x] 2.1 **判据先红**:写 MA-06 / MA-07 断言(引擎面 + atomic + R-3 补偿可观测)
+- [x] 2.2 实现 `include/tlm/cep/mesif_protocol_engine.hh`:
+      （引擎侧无真源的建模决策 **E-1 ~ E-6** 逐条登记(design `D-λ` + 头注释),并挂跨仓债 #3）
       - 派生 `ProtocolEngineBase<2>`;实现**全部 10 条** canonical 流的 `on_*`
       - 驱动 `MesifAdapter` 表(**可观测点**能区分「走了表」与「空转」)
       - **写回接线**:`M + SnpShared → F` 路径把「写回发生」喂给 tracker(design `D-γ`)
       - **atomic 最小可用路径**:接受 + 按 `vc_binding` 路由 VC1 + `CohIfBundle::atomic` 承载(design `D-δ`)
-- [ ] 2.3 `configs/cep_mesif_pe_minimal.json`(对齐 `configs/cep_chi_rnf_pe_minimal.json`)
-- [ ] 2.4 `include/chstream_register.hh` 增 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MesifProtocolEngine", ...)`
-- [ ] 2.5 跑判据 ⇒ 转绿
-- [ ] 2.6 **反向 fixture**:① 断掉引擎→tracker 写回接线 ⇒ dirty 位不转 ⇒ 必红 ② atomic 走错 VC ⇒ 必红 ③ atomic 被拒绝闸误杀 ⇒ 必红;**正控**:接线在位时 dirty 转清 + 合法 atomic 落 VC1
-- [ ] 2.7 门禁回归 + 勾选
+- [x] 2.3 `configs/cep_mesif_pe_minimal.json`(对齐 `configs/cep_chi_rnf_pe_minimal.json`)
+- [x] 2.4 `include/chstream_register.hh` 增 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MesifProtocolEngine", ...)`
+- [x] 2.5 跑判据 ⇒ 转绿(5 case / 98 assertion;全仓 `cpptlm_tests` 2024 case / 874527 assertion 全绿)
+- [x] 2.6 **反向 fixture**:① 断掉引擎→tracker 写回接线 ⇒ dirty 位不转 ⇒ 必红 ② atomic 走错 VC ⇒ 必红 ③ atomic 被拒绝闸误杀 ⇒ 必红;**正控**:接线在位时 dirty 转清 + 合法 atomic 落 VC1
+      （本 Phase 为**可变异谓词/实例级**反控;真实载体毒化版由 `4.1` 脚本执行并做判据 id 归因）
+- [x] 2.7 门禁回归 + 勾选
 
 ---
 

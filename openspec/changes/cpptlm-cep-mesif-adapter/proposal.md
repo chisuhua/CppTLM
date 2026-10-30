@@ -126,6 +126,7 @@ MESIF 5 态与 MOESI 6 态**词表都不同**,同名态语义未必同构(MESIF 
 |---|-----|--------|------|
 | **1** | `HierarchicalDirectory` 的**行为规约**(层级数 / `ESCALATE_UP` 使用 / fold 合并规则 / 满表拒绝语义 / **F 态表示** —— `SnoopState` 只有 `I/S/E/M`,**无 F**) | **ArchForge** | 本仓 `basis` 登记 + `pending` 标记 ⇒ 跨仓追认提案(类比规约层 D-α) |
 | **2** | `mesif` 的 `atomic` 协议侧语义(`consistency_intent` 的定义) | **ArchForge** | 本 change 只做最小可用路径 + 显式登记 |
+| **3** | **引擎侧建模决策 E-1 ~ E-6**(`F` 的 wire 投影 / `CLEAN` 与 `FORWARD` 合并为 `SnpShared` / 节点侧不建模 home / 静默升级两段式 / 在飞集合不建模 / VC 只记意图) | **ArchForge** | 本仓 `basis` 登记(`design D-λ` + 引擎头注释)+ `pending` ⇒ 跨仓追认提案(与债 #1 同款机制) |
 
 ### KPI
 

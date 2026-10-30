@@ -7,6 +7,7 @@
 #include "tlm/cache_tlm.hh"
 #include "tlm/cep/cohif_noc_bridge.hh"
 #include "tlm/cep/chi_rnf_protocol_engine.hh"
+#include "tlm/cep/mesif_protocol_engine.hh"
 #include "tlm/cep/cohif_protocol_engine.hh"
 #include "tlm/coherent_xbar_tlm.hh"
 #include "tlm/cpu_tlm.hh"
@@ -132,6 +133,12 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
        与 `CohIfProtocolEngine` 并存且**同名端口数 N=2** ⇒ JSON 侧可逐实例选择引擎类型(CR-10 的对照基础)。 */      \
     REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("ChiRnfProtocolEngine",                                    \
                                            tlm::cep::ChiRnfProtocolEngine,                          \
+                                           bundles::CohIfBundle, 2);                                \
+    /* 队列 #9 Phase 2:MESIF 实例的**真插件**引擎(短名 `MesifProtocolEngine`)。                         \
+       与 `ChiRnfProtocolEngine` 同为 N=2 ⇒ JSON 侧可逐实例选择;`vc_binding` 由装配方              \
+       装载声明后 `set_route(...)` 注入(引擎不解析 JSON ⇒ 声明是唯一真源)。 */                        \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MesifProtocolEngine",                                    \
+                                           tlm::cep::MesifProtocolEngine,                           \
                                            bundles::CohIfBundle, 2);                                \
     /* 队列 #7 Phase 3/5:协议桥注册(per CC-05 —— 死钩子 → 活钩子)。                                               \
        `register_protocol_bridge` 对同名 early-return(ODR-safe)⇒ 幂等。                                   \
