@@ -285,3 +285,35 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
   `test/test_cep_schema.cc`(锁表 ⊆ pattern + 双向相等)· `test/test_cep_chi_rnf_subset.cc` /
   `test/test_cep_moesi_gpu_adapter.cc` / `test/test_cep_mesif_instance_decl.cc`(per-instance 硬钉 3 例)
 - 待补(G-1 / G-2):通用闸 + 单份解析 ⇒ **转 builder**,台账 Entry #109 承接
+
+---
+
+## 11. Status Update(2026-10-30)—— **R2 降级落地**(per 台账 Entry #112)
+
+> **授权**:台账 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 **Entry #112** `[adr-amendment]`。
+> **本节不改 §1 ~ §10 的任何正文** —— §10.3 已写明的降级条件在本节**判定达成**并落地。
+
+### 11.1 降级条件逐条核对
+
+| 条件(§10.3) | 达成证据 | 判定 |
+|---|---|---|
+| **G-1 通用闸落地** | `test/test_cep_schema.cc` 的 `[cep][schema][ic1]`:逐实例查**从 ADR 解析**的锁表 + 可变异谓词 + 双向反向 fixture;**鉴别力实测**:临时毒化 `mesif.protocol_version = mesif-9.9` ⇒ 报红并归因到具体实例 ⇒ 还原 ⇒ 绿(台账 Entry #109 §③) | ✅ 达成 |
+| **G-2 收敛** | 锁表取值集合原本在 **2 处**测试各存一份 ⇒ 收敛为「**1 处独立基准**(反向核对用 tripwire)+ 其余从 ADR 解析」;共享解析器 `test/cep_adr_parser.hh::parse_protocol_version_lock_table()` 为 test 内部唯一实现点(Entry #109 §②) | ✅ 达成 |
+
+⇒ **R2(规范演进返工)由 🟡 中降为 🟢 低**。
+
+### 11.2 降级的语义边界(**不得**越界表述)
+
+- 被验证的是**机制存在且会拦截**(新族接入时表外 `protocol_version` 必被通用闸拦下),
+  **不是**「外部规范演进不会造成返工」这一**结论**。
+- **R2 降级不蕴含 R7 变化** —— R7(探索平台结论不可信 · 无对拍验证)的降级条件是
+  **首轮对拍 P-1 ~ P-5 达标**(per `docs/architecture/14-coherence-parity-baseline.md`),
+  该实测**尚未发生** ⇒ **R7 维持 🟡 中**。
+  ⚠️ 两条风险相邻且都挂在「外部规范 / 外部基准」上 ⇒ 后人**不得**把 R2 的 🟢 读成 R7 也已闭合。
+- **G-3(IC3 变更留痕无自动闸)不因本次降级而关闭** —— 仍为**残余风险**(见 §10.2),自动化列 backlog。
+
+### 11.3 未变更项(明示)
+
+§1 ~ §9 正文 · §3 锁定表 8 行 · 决策 1 ~ 6 · 3 条 invariant 的**定义** · §4.1 机器闸现状表的
+**闸状态**(IC1 仍是「🟡 部分落地」—— 落地的是**声明侧通用闸**,§5 抓取点 1 的**装配期运行时检查器**
+仍属 Stage 1 待办)—— **全部零改动**。

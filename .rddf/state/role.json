@@ -1,20 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-10-30T22:54:54",
+  "updated_at": "2026-10-30T23:26:20",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-10-25T01:24:40Z",
-      "by": "user"
-    },
-    {
-      "role": "builder",
-      "at": "2026-10-25T04:50:13Z",
-      "by": "user"
-    },
     {
       "role": "builder",
       "at": "2026-10-26T00:43:50Z",
@@ -122,6 +112,18 @@
       "at": "2026-10-30T22:54:54",
       "by": "user",
       "reason": "队列 #10 improvement 草稿已落(planner 边界内)⇒ 切回做最终门禁 + 提交收尾"
+    },
+    {
+      "role": "architect",
+      "at": "2026-10-30T23:26:00",
+      "by": "user",
+      "reason": "oracle 决策 A1/B2:ADR-CEP-11 R2 降级落地(Status Update)+ BroadcastNull 落位裁决"
+    },
+    {
+      "role": "builder",
+      "at": "2026-10-30T23:26:20",
+      "by": "user",
+      "reason": "ADR Status Update 完成 ⇒ 切回落地 R2 降级行 / BroadcastNull 裁决 / 落位句 / 台账 Entry #112 + 冻结面授权"
     }
   ]
 }

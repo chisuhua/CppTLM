@@ -11,9 +11,9 @@
 （`ADR-CEP-04 §13` 裁决；本文件**不改**其契约）。
 
 其余 4 种实现（`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`）的**行为实现**尚未落地；
-其**落位**已登记（`TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12 · `SparseSnoopFilter` 已被 #6 占用、
-行为待补 · `BroadcastNull` 待裁决）⇒ 本文件**不复述**未经登记的队列区间
-（事实与依据见台账 Entry #107）。
+其**落位**已登记（`TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12 · `SparseSnoopFilter` ↔ 队列 #10
+实现层（已被 #6 声明占用，行为待补）· `BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**）
+⇒ 本文件**不复述**未经登记的队列区间（事实与依据见台账 Entry #107 / #112）。
 
 ## Requirements
 

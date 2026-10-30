@@ -535,7 +535,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | # | 风险 | 等级 | 缓解 |
 |---|------|------|------|
 | **R1** | KPI 排队延期(遇 hotfix / phase-9 active 让位)| 🟡 中 | §11 台账追踪;**延期 >2 季度触发 §8.2 replan** |
-| **R2** | 规范演进返工(CXL 3.0→4.0 / UALink Common 2.x / NVLink 代际 / CHI 版本)| 🟡 中 | 版本锁定由 `ADR-CEP-11` 承担(Stage 1 前签发);spec 变更走 §11 `scope-change` / `adr-amendment` entry |
+| **R2** | 规范演进返工(CXL 3.0→4.0 / UALink Common 2.x / NVLink 代际 / CHI 版本)| 🟢 低(**2026-10-30 降级**,per 台账 Entry #112 —— 依据 `ADR-CEP-11 §11`:降级条件「G-1 通用闸落地 **且** G-2 收敛」**已逐条达成**;IC1 通用闸经**鉴别力实测**:毒化 `mesif-9.9` 必红) | 版本锁定由 `ADR-CEP-11` 承担(**已签发** v1.0,2026-10-30);spec 变更走 §11 `scope-change` / `adr-amendment` entry。⚠️ **降级不蕴含 R7 变化**:R7 的降级条件是**首轮对拍 P-1 ~ P-5 达标**(`docs/architecture/14-coherence-parity-baseline.md`),**尚未发生** ⇒ R7 维持 🟡 中。⚠️ **G-3**(IC3 变更留痕无自动闸)**不因本次降级关闭** —— 仍为残余风险 |
 | **R3** | Stub Cache 性能模型边界(Stage 0 stub 不够真实)| 🟢 低 | Stage 2 后期可补充完整 cache micro(需新 change + KPI slot) |
 | **R4** | 多 VC 仲裁推迟(CEP-09 在 Stage 4+)| 🟢 低 | 影响 fabric 性能建模精度,不影响功能正确性 |
 | **R5** | ⚠️ **无外部验收方**(DRI = 自己给自己验收)| 🟡 中(**形式已解;实质由 R10 承接处置** —— 2026-10-23 per §9.3) | §9.2 三项角色 2026-10-21 已指定(形式 gate 解除);但三者指向同一人 → 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制部分替代;**真外部真人评审待建立** |
@@ -696,7 +696,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | `cpptlm-cep-chi-rnf-subset` improvement | 走 add-improve;§4.0 顺序 #8 |
 | P1 | `cpptlm-cep-mesif-adapter` improvement | ✅ **已写并已归档**(2026-10-30,Entry #105 / #106;§4.0 顺序 #9 —— R-1 阻塞已解除并落地为 `HierarchicalDirectory` 行为实现)
 | P2 | `cpptlm-cep-cxl-nonsymmetric` improvement | ✅ **已写**(2026-10-30 planner;brainstorm HARD-GATE 通过;**两段式** —— 第 0 个 change = 规约层 + 第 1 个 change = 实现层;⚠️ 关键前置:**ArchForge 侧无 CXL 状态机规约与投影表**(实测全仓 0 命中)+ `32 号 §6.1` 无 CXL 实例声明 ⇒ 规约层必须先行);§4.0 顺序 #10 |
-| P2 | **`SparseSnoopFilter` 行为实现**(backlog,per Entry #107) |
+| ~~P2~~ | **`SparseSnoopFilter` 行为实现**(backlog,per Entry #107) | ❌ **本行关闭** —— 归属**去重**(per oracle 决策 C / 台账 Entry #112):该实现归**队列 #10 实现层**(`cpptlm-cep-cxl-nonsymmetric`,Entry #111 已登记为该 change 的关键交付)⇒ 与 §10 的 #10 improvement 行**同一 owner**,不另起小 change(避免双 owner + 绕过「规约层先行」纪律)。**落位裁决**(architect,Entry #112):`SparseSnoopFilter` = 队列 #10 实现层;`BroadcastNull` = **当前队列序列(#10 ~ #14)无消费者 ⇒ 不排期,保留登记**(6 族映射无一指向广播型;未来出现广播型协议族时再评) |
 | P1 | **对拍基准首轮实测**(P-B / P-C,per `docs/architecture/14-coherence-parity-baseline.md` §7) | 实现 trace 生成器 + gem5 配置 + 对拍脚本 + 首轮实测;**产出** = `docs/validation/` 报告 + H7 状态更新 + R7 降级判定;⚠️ 不属任何队列 change 的门禁 | 走 add-improve;理由:`moesi_gpu`(队列 #6)**已声明占用**该实现但仓内**只有 traits 行** ⇒ 声明面承诺的能力未兑现(§8.1 **R11**);`BroadcastNull` 的落位**无线索**,一并在该小 change 里裁决 |
 | P2 | `cpptlm-cep-tilelink-tree-manager` improvement | 走 add-improve;§4.0 顺序 #11 |
 | P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | 走 add-improve;Stage 2.1 启动 |
@@ -6056,6 +6056,56 @@ egress 借用它会**倒置连接方向**;
 **⑨ 关联**: Entry #88(Phase 5 JSON 装配连通性)· #87(Phase 4 装配宏)· #86(Phase 3 特化桥)· #85(Phase 2 端口面)· #84(Phase 1 载体面)· #81(队列 #7 转正)· #74(`ADR-CEP-19` 签发)
 
 ---
+
+### Entry #112 — 2026-10-30 [build](R2 降级落地(architect)+ BroadcastNull 落位裁决 + SparseSnoopFilter 归属去重)
+
+**主题**: 执行 **oracle** 对 3 个决策点的建议(本仓**首次**以 oracle 建议作为裁决输入)——
+决策 **A1**(R2 现在降级)+ **B2**(不跨仓写,回执格式建议进本仓请求件)+ **C**((i) H7 只做辅助档 ·
+(iii) BroadcastNull 顺手裁决 · (ii) SparseSnoopFilter 归属去重后不做 · (iv) IC3 留 backlog)。
+
+**① 决策 A1 —— R2(规范演进返工)🟡 中 → 🟢 低**
+- **降级条件**(ADR 自己写明,`ADR-CEP-11 §10.3`)=「G-1 通用闸落地 **且** G-2 收敛」⇒ **逐条达成**:
+  G-1 = `test_cep_schema.cc` 的 `[cep][schema][ic1]`(从 ADR 解析锁表 + 可变异谓词 + 双向反向 fixture;
+  **鉴别力实测**:毒化 `mesif-9.9` ⇒ 报红归因到实例);G-2 = 锁表取值收敛为「1 处独立基准 + 其余解析」。
+- **落地**:`ADR-CEP-11` 追加 **§11 Status Update**(ADR 不可变,只追加)+ `obj §8.1 R2` 行改。
+- ⚠️ **语义边界(明写,防混读)**:被验证的是**机制存在且会拦截**,**不是**「外部规范演进不会造成返工」;
+  **R2 降级不蕴含 R7 变化**(R7 的降级条件 = 首轮对拍 P-1 ~ P-5 达标,**尚未发生** ⇒ R7 维持 🟡 中);
+  **G-3 不因本次降级关闭**(残余风险 + backlog)。
+- **否决的替代方案**:A2(等 H7 实测后一并复评 —— 用 R7 的未完成**惩罚** R2 的已完成 + 🟡 中语义通胀);
+  A3(加「新族接入须过 IC1 通用闸」的文字条件 —— 该条件**已被机器闸强制**,文字复述只增漂移面 = G-2 同型错误)。
+
+**② 决策 B2 —— 跨仓追认:不跨仓写**
+- **不**在 ArchForge 仓内落结论表模板(**理由**:模板落对方仓 = 债务方在债权方账本上预建账页 ⇒
+  「谁建的」这一 provenance 归属债务方,与 M3 同源防线);**不**代填结论(B3 = 自销账,直接违规)。
+- **回收 B1 的结构化价值** ⇒ 在**本仓**请求件(`docs/implementation/2026-10-30-cep-mesif-adapter-ratification-request.md`)
+  附「**回执格式建议**」(逐条裁定栏 + 三档口径 + 行号锚),供对方采用。
+- 先例:`42 号`(Entry #102)已建立的异步模式 —— 请求件在本仓落 → 对方出结论表 → 本仓收讫回填。
+- ⇒ 3 项债的 `pending` **全部保持 true**(未回执 ⇒ 不得写成「已裁决」)。
+
+**③ 决策 C(iii) —— `BroadcastNull` 落位裁决**
+**结论**:**当前队列序列(#10 ~ #14)无消费者 ⇒ 不排期,保留登记**(未来出现广播型协议族时再评)。
+**依据**:`07 号 §5.1.1` 的 6 族映射中,CXL 非对称 → `SparseSnoopFilter`、TileLink → `TreeManager`、
+CXL 对称 → `DcohSymmetric`;剩余队列(#12 / #13 / #14)亦无广播型协议 ⇒ 无消费者 ⇒ 不排期。
+落点:base spec 落位句 + `07 号 §11` 映射表 + `sharer_tracker.hh` 头注释 + `obj §10`(**同批**)。
+
+**④ 决策 C(ii) —— `SparseSnoopFilter` 归属去重(本轮不做实现)**
+- 归属**归 #10 实现层**(Entry #111 已登记为该 change 的关键交付)⇒ `obj §10` 的 backlog 行**关闭**
+  ⇒ 消除**双 owner**(§10 行 vs Entry #111)与「绕过规约层先行」的纪律冲突;
+- **本轮不实现**:R11 是 🟡 中、无迫近消费者阻塞,且实现会与 #10 实现层重复 ⇒ 等 #10。
+
+**⑤ 决策 C(i) —— H7 首轮对拍 P-B:本轮**只做辅助档(常数档)**
+- **辅助档**(保持现有 `CacheTLM`:无限容量 + 硬编码 hit 5 / miss 50)⇒ **只比未命中路径延迟常数**
+  ⇒ **零冻结面接触**;
+- **容量对齐档(主对拍)不在本批范围**:需「等容量 + 同替换的目录视图」= **新增建模组件**,可能触碰 M1 冻结面
+  ⇒ 列为**条件分支**(命中归因类 D-1 才启动;若触碰冻结面则走两步授权);
+- gem5 引入走 `external/gem5` submodule,**版本钉死**并登记(否则对拍不可复现)。
+
+**⑥ 冻结面**:本条目覆盖 3 件冻结面改动(`ADR-CEP-11 §11` + base spec 落位句 + `07 号 §11`)⇒ **一次**两步授权。
+
+**⑦ 门禁**:13 项 CEP 脚本 + `docs_sync --strict` + `doc_ref` + `gate_selftest` + `format --check` rc=0;
+`[cep]` 250 case / 4284 assertion 全绿。
+
+**⑧ 关联**:Entry #111(#10 草稿)· #110(追认提案件)· #109(ADR 签发 + G-1/G-2)· #108(对拍基准指定)· #107(落位登记 + R11)
 
 ### Entry #111 — 2026-10-30 [planner](队列 #10 `cpptlm-cep-cxl-nonsymmetric` 的 improvement 草稿 —— 两段式 + 规约缺口普查结论)
 

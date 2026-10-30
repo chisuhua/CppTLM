@@ -8,8 +8,9 @@
 //       其余 4 种(SparseSnoopFilter / DcohSymmetric / TreeManager / BroadcastNull)
 //       **行为实现尚未落地** —— 此处只留**声明层** traits;落位已登记(per 台账 Entry #107):
 //       `TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12(均**队列名对应**的推导值);
-//       `SparseSnoopFilter` **已被 `moesi_gpu`(队列 #6)声明占用**但无行为实现(§8.1 R11);
-//       `BroadcastNull` 落位待裁决。
+//       `SparseSnoopFilter` **已被 `moesi_gpu`(队列 #6)声明占用**但无行为实现(§8.1 R11)
+//         ⇒ 归**队列 #10 实现层**补齐(per 台账 Entry #112);
+//       `BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**(per Entry #112)。
 // 作者: CppTLM Team / 日期: 2026-10-25(2026-10-30 增 `HierarchicalDirectory` + 公共机械抽取)
 //
 // ── 定位 ───────────────────────────────────────────────────────────────
