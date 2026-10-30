@@ -23,6 +23,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -321,14 +322,26 @@ TEST_CASE("CEP MESIF 引擎:JSON 装配 + 事务穿过引擎抵达对端", "[cep
 // MA-06 ⑤ —— `consistency_intent` 无独立字段的裁决**显式登记**(不沉默)
 // ─────────────────────────────────────────────────────────────────────────
 TEST_CASE("CEP MESIF 引擎:consistency_intent 无独立字段的裁决已登记", "[cep][mesif-engine]") {
-    const std::string design =
-        cpptlm::cep::read_file((cpptlm::cep::repo_root() / "openspec" / "changes" /
-                                "cpptlm-cep-mesif-adapter" / "design.md")
-                                   .string());
-    const std::string spec_file = cpptlm::cep::read_file(
-        (cpptlm::cep::repo_root() / "openspec" / "changes" / "cpptlm-cep-mesif-adapter" / "specs" /
-         "cep-mesif-adapter" / "spec.md")
-            .string());
+    // ⚠️ **双态读取**(change 目录 → 归档件 → main specs):本 change 归档后活跃路径失效,
+    //    只读活跃路径的 fixture 会在归档那一刻**无故变红**(判据纪律第 4 条:状态变迁后
+    //    必须重新基线化,不能让「归档」把判据弄红)。
+    const auto read_first_existing = [](const std::vector<std::filesystem::path>& candidates) {
+        for (const auto& p : candidates) {
+            const std::string t = cpptlm::cep::read_file(p.string());
+            if (!t.empty())
+                return t;
+        }
+        return std::string{};
+    };
+    const auto root = cpptlm::cep::repo_root();
+    const std::string design = read_first_existing(
+        {root / "openspec" / "changes" / "cpptlm-cep-mesif-adapter" / "design.md",
+         root / "openspec" / "changes" / "archive" / "2026-10-30-cpptlm-cep-mesif-adapter" /
+             "design.md"});
+    const std::string spec_file =
+        read_first_existing({root / "openspec" / "changes" / "cpptlm-cep-mesif-adapter" / "specs" /
+                                 "cep-mesif-adapter" / "spec.md",
+                             root / "openspec" / "specs" / "cep-mesif-adapter" / "spec.md"});
     const std::string decl = cpptlm::cep::read_file(
         (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json")
             .string());
@@ -343,8 +356,14 @@ TEST_CASE("CEP MESIF 引擎:consistency_intent 无独立字段的裁决已登记
             .string());
     CHECK(bundle.find("consistency_intent") == std::string::npos);
 
-    // 裁决**显式登记**在 change 的 design / spec 里(两处都可寻址)
-    CHECK(design.find("consistency_intent") != std::string::npos);
-    CHECK(design.find("无独立字段") != std::string::npos);
+    // 裁决**显式登记**。⚠️ 判据钉在 **spec** 上(归档后它合并进 `openspec/specs/` ⇒ 长期可寻址);
+    // `design.md` 是**附属**载体(归档件供需 **不入库**,per `.gitignore`)⇒ 有则交叉校验、
+    // 无则**不**因此判红(否则 fresh clone 上这条判据会因为「档案不在库里」而假红)。
+    REQUIRE(!spec_file.empty());
     CHECK(spec_file.find("consistency_intent") != std::string::npos);
+    if (!design.empty()) {
+        INFO("design.md 在场,交叉校验 D-δ 的裁决措辞");
+        CHECK(design.find("consistency_intent") != std::string::npos);
+        CHECK(design.find("无独立字段") != std::string::npos);
+    }
 }

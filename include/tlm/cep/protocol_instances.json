@@ -85,7 +85,7 @@
       "id": "mesif",
       "family": "industrial",
       "adapter": "MesifAdapter",
-      "status": "planned",
+      "status": "implemented",
       "protocol_version": "mesif-1.0",
       "flow_support": {
         "request": true,

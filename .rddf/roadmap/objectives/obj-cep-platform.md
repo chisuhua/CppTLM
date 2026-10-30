@@ -6034,6 +6034,63 @@ egress 借用它会**倒置连接方向**;
 
 ---
 
+### Entry #105 — 2026-10-30 [build](队列 #9 实现层 `cpptlm-cep-mesif-adapter` —— WU-3 ~ WU-6 实施 + M1 冻结面一次授权)
+
+**主题**: 队列 #9 `cpptlm-cep-mesif-adapter` 的**实现层**落地:`MesifAdapter`(零自有表副本)+
+`HierarchicalDirectory`(第 6 种 SharerTracker 的行为实现)+ `MesifProtocolEngine`(真插件)+
+平台级静默升级声明 + 判据与反向 fixture。**本条目同时是 M1 冻结面本次授权的署名**
+(`cep_freeze_check.sh --update --authorized-by "Entry #105"`)。
+
+**① 载体交付(4 个新文件 + 2 个修改)**
+- `include/tlm/cep/mesif_adapter.hh`(新):5 态 × 6 事件 + 5→4 `perm` 投影 + 6→3 消息类映射;
+  **零自有表副本** —— 去注释后**零** `State::` / `Event::` / `Perm::` / `kTable` 字面量 ⇒
+  「实现层自己拍一套表」在语法上**不可能**(不是「拍了会被抓到」)。
+- `include/tlm/cep/sharer_tracker.hh`:`SnoopMechanics`(零虚函数,禁双实现)抽取 +
+  `FullMapDirectory` 行为等价重构 + 新增 `HierarchicalDirectory`(多级聚合**派生而非存储** ⇒
+  无陈旧聚合;`kBehaviorDecisions[5]` 机器可读 + `behavior_decisions_are_consistent()` 可变异谓词 +
+  `kForwardPointRoleRepresentable = false` 的 F 态缺口登记)。
+- `include/tlm/cep/mesif_protocol_engine.hh`(新):`ProtocolEngineBase<2>` 派生;10 条 canonical 流;
+  **驱动 adapter 表**(快照 `(from,event,to)` 与规约逐格对拍 ⇒ Null 结构上不可满足);
+  **R-3 写回接线**(`M + SnpShared → F` 把写回喂给目录 ⇒ `dirty` 由置转清);
+  **atomic 最小可用路径**(接受 + 按 `vc_binding` 路由 `ualink_fabric` VC1 + 意图位)。
+- `configs/cep_mesif_pe_minimal.json`(新)+ `include/chstream_register.hh`(注册行)
+- `include/tlm/cep/perm_upgrades.json`:增 `{mesif, UNIQUE → WRITEBACK}`;**修订** `current_state`
+  的事实性错误(原句「`mesif` 无该能力」)。
+- `include/tlm/cep/protocol_instances.json`:`mesif.status` → `implemented`(`INV-CEP-12-IC3` 计数 2 → 3)。
+
+**② 判据(4 个新测试文件 + 1 个反向脚本)**
+`test_cep_mesif_adapter.cc`(3 case)· `test_cep_hierarchical_directory.cc`(5 case)·
+`test_cep_mesif_protocol_engine.cc`(5 case)· `test_cep_mesif_instance_decl.cc`(4 case)·
+`scripts/test/cep_mesif_adapter_reverse_verify.sh`(**16 条毒化 + 基线 2 项**,ctest 注册)。
+`[cep]` 247 case / 4190 assertion;全仓 `cpptlm_tests` **2029 case / 874636 assertion** 全绿。
+
+**③ 实施期实测的 1 个计划外事实 / 3 条假绿来源(均已处置并登记)**
+- **计划外冻结面第 2 件**:`openspec/specs/cep-sharer-tracker-base/spec.md` 自称
+  「`FullMapDirectory` **唯一**行为实现」+「其余 4 种随队列 #6~#9」 ⇒ 第 6 种实现落地后成
+  **事实性错误**(与 `07 号` 的 `1 / 5` 同型)⇒ 折进本批修正(「唯一」→「首个」+ 队列 #10~#11),
+  **不**提前改以免二次授权(计划 v0.3 已补)。
+- **3 条「红/绿都可能是假的」来源**(design `D-η.1`):① 探针静态扫描读磁盘、影子头只影响编译 ⇒
+  毒化对扫描不可见(5 条 fixture 假绿);② `$?` 被分支末尾数组赋值重置 ⇒ 毒化被静默吞掉却被判成
+  「判据无牙」;③ 规约载体的 14 条 `static_assert` 覆盖每一格 ⇒ 「两层同时红」不可达(层序而非漏判)。
+
+**④ 陈旧硬钉的重基线(4 处,均为「跨 change 硬钉」)**
+`test_cep_chi_rnf_subset.cc` CR-05(硬编码行数 2 / 「声明源不得有 `mesif`」)·
+`test_cep_moesi_gpu_adapter.cc` Scenario 6(`implemented_ids.count("mesif") == 0`)与
+Scenario 7(「`mesif` 声明零改动 / status = planned」)⇒ 全部改为**逐实例**断言,消除归因污染。
+
+**⑤ 冻结面(本次授权的范围,两件)**
+| 成员 | 改动 |
+|------|------|
+| `docs/architecture/07-coherence-exploration-platform.md` | 漂移 **9 处**活口径(§1/§2 的 5→6 实现、§4 IC3/IC6 措辞、§5.1.1 MESIF 行与状态注、§8.2、§11 两行)+ **新增第十五则 Status Update**。⚠️ `:721` 属 2026-10-27 第二则 **Status Update 块** ⇒ append-only **不回改**,由第十五则覆盖(计划普查表把它列为「活口径」是误判,已按纪律纠正) |
+| `openspec/specs/cep-sharer-tracker-base/spec.md` | **2 处**活口径:「唯一行为实现」→「首个」;队列 `#6~#9` → `#10 ~ #11`(契约面零改动) |
+
+**⑥ 门禁**:13 项 CEP 脚本 + `docs_sync --strict` + `openspec validate --strict` +
+`format.sh --check` 全 rc=0(`cep_freeze_check` 在本条目授权的 `--update` 之前为**预期红**)·
+`ctest -R cep` 40/40 · 全仓 `cpptlm_tests` 全绿。
+
+**⑦ 关联**:Entry #104(转正 + 计划双审)· #103(原档位结构化)· #102(追认闭合)· #101(规约层归档)·
+#96(R-1 裁决)· #95(队列 #8 归档先例)
+
 ### Entry #104 — 2026-10-30 [build](队列 #9 实现层转正 —— change 目录已建 + 双审修订 + 4 项残留登记)
 
 **主题**: 队列 #9 `cpptlm-cep-mesif-adapter` **实现层**转正(change 目录已建;KPI **0/3 → 1/3**)。

@@ -5,13 +5,15 @@
 （caps 4 属性 `scope`/`completeness`/`authority`/`aggregation_at` + behavior 2 属性），
 使 5 种一致性族（MOESI / MESIF / CHI RN-F / CXL 非对称 / TileLink 树）能用同一抽象表达
 目录查询与 snoop 生命周期，并让「协议实现的能力边界」成为**可静态判定的声明**而非隐含行为。
-本 capability 交付**唯一行为实现** `FullMapDirectory`；其余 4 种实现的声明层登记随队列 #6~#9 落地。
+本 capability 交付**首个**行为实现 `FullMapDirectory`；其余 4 种实现的声明层登记随队列 **#10 ~ #11** 落地。
+第 6 种实现 `HierarchicalDirectory` 的**行为面**由另一 capability `cep-hierarchical-directory` 承担
+（`ADR-CEP-04 §13` 裁决；本文件**不改**其契约）。
 
 ## Requirements
 
 ### Requirement: cep-sharer-tracker-base
 
-CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全量契约 + FullMapDirectory 唯一行为实现**固化为**可执行契约**;每条 SHALL 有**行为级**断言,SHALL **只收本仓可验证**的判据。
+CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全量契约 + FullMapDirectory 行为实现（首个）**固化为**可执行契约**;每条 SHALL 有**行为级**断言,SHALL **只收本仓可验证**的判据。
 
 > **定位**:Sharer Tracker 是**协议无关单接口**(per `ADR-CEP-04 §2 Decision 1` α 权限三件套);FullMapDirectory 是**首个行为实现**(其余 4 种跟随各自队列)。
 

@@ -386,9 +386,13 @@ TEST_CASE("CEP moesi_gpu: status 翻转 ⇒ implemented 计数 0→1(条件达�
     REQUIRE(implemented == static_cast<int>(implemented_ids.size()));
     REQUIRE(implemented_ids.count("moesi_gpu") == 1);
     REQUIRE(implemented_ids.count("chi_rnf") == 1);
-    REQUIRE(implemented_ids.count("mesif") == 0);
+    // ⚠️ 队列 #9 归档批重基线(2026-10-30):`mesif` 已翻为 `implemented`
+    //    (`INV-CEP-12-IC3`:status 变更 ⇒ 计数同步,3 个 implemented)。
+    //    旧断言 `== 0` 是**跨 change 硬钉**,翻转后必红(且红的原因与本 change 无关)。
+    REQUIRE(implemented_ids.count("mesif") == 1);
+    REQUIRE(implemented == 3);
     REQUIRE(instance("moesi_gpu").at("status") == "implemented");
-    REQUIRE(instance("mesif").at("status") == "planned");
+    REQUIRE(instance("mesif").at("status") == "implemented");  // 队列 #9 归档批翻转
 
     // 「条件达成」登记:ArchForge 侧是否已翻转**不**由本仓断言
     // (per change design `D-ζ`:跨仓同步**不**作为前置 ⇒ S1-2 记「条件达成」)
