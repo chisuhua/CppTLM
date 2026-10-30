@@ -6057,6 +6057,43 @@ egress 借用它会**倒置连接方向**;
 
 ---
 
+### Entry #110 — 2026-10-30 [build](跨仓追认债 3 项的**提案件**落地 —— 12 条请求项 + 生成器 + 机器判据)
+
+**主题**: 把队列 #9 登记的 **3 项跨仓追认债**(#1 `HierarchicalDirectory` 行为规约 · #2 `atomic` 的
+`consistency_intent` 协议侧定义 · #3 引擎侧建模决策 E-1 ~ E-6)从「**只登记了债**」推进到
+「**有可被对方逐条裁定的提案件**」。
+
+**① 本仓侧的载体补强**:E-1 ~ E-6 此前**只存在于注释表**(散文)⇒ 与 `HierarchicalDirectory` 的
+`kBehaviorDecisions[5]`(机器可读)不同款 ⇒ 已改为**类内**机器可读载体
+`MesifProtocolEngine::kEngineDecisions[6]` + `engine_decisions_are_consistent()` 可变异谓词
+(与 tracker 侧**同款形态**)。
+
+**② 提案件(追认请求清单)**:12 条 = 债 #1 的 **B-1 ~ B-5** + 债 #3 的 **E-1 ~ E-6** + 债 #2 的 **A-1**。
+- 逐条给出:**决策点** / **本仓当前取值** / **本仓依据(basis)** / **机器载体指针** / **待裁定问题** /
+  **裁定后本仓动作**(确认 ⇒ `pending=false` + 回填对方结论行号;纠正 ⇒ 改载体 + 更新 basis + 追加台账
+  `adr-amendment`;补规约 ⇒ `pending` 保持 true);
+- **口径**:沿用 `42 号` 先例的「确认 / 纠正 / 补规约」三档 + **未回执 ⇒ `pending` 保持 true**
+  ⇒ **不得**把「已登记」写成「已裁决」;
+- 落点:`docs/implementation/2026-10-30-cep-mesif-adapter-ratification-request.md`
+  (**由载体生成**,先例:`generate_mesif_recognition_checklist.sh`)。
+
+**③ 生成器 + 机器判据(防「清单退化成纸面」)**
+- `scripts/test/cep_mesif_ratification_probe.cc`(生成器)+ `generate_mesif_ratification_request.sh`
+  (`--check` 只比对模式);
+- `test/test_cep_mesif_ratification_request.cc`:2 case / 76 assertion —— ① 两类载体决策表**自洽且
+  `pending` 全 true**(含 3 条可变异反向 fixture)② **清单与载体逐条一致**(漏登记 / 凭空登记 ⇒ 必红;
+  含「漏一条」的可变异反向 fixture + 正控);
+- ctest 新增 `cep_mesif_ratification_request_check`(清单被手改 ⇒ rc≠0)。
+
+**④ 跨仓交付状态**:本条目交付的是**请求侧**入口。**结论侧**(对方出具逐条结论表,先例 `42 号`)
+**未完成** ⇒ 3 项债的 `pending` **全部保持 true**;本条目**不改**任何 `pending`。
+⇒ 对方结论到位后,本仓按「裁定后本仓动作」列翻转 + 回填 `ref` + 追加台账 `adr-amendment`。
+
+**⑤ 门禁**:13 项 CEP 脚本 + `docs_sync --strict` + `doc_ref` + `format --check` rc=0;
+`[cep]` 250 case / 4284 assertion 全绿。
+
+**⑥ 关联**:Entry #109(ADR-CEP-11 签发 + G-1/G-2)· #108(R7 / H7 对拍基准指定)· #107(勘误 + 落位登记)· #106(队列 #9 归档)· #105 · #102(规约层 35 格追认闭合,`42 号` 先例)
+
 ### Entry #109 — 2026-10-30 [build](ADR-CEP-11 签发 + IC1 声明侧**通用闸**落地(G-1 / G-2))
 
 **主题**: 闭合 `§10` 的 **P2 候选**「`ADR-CEP-11` 版本锁定(Stage 1 前签发)」⇒ **architect 边界**内完成签发,

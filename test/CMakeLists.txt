@@ -301,6 +301,11 @@ add_test(NAME cep_mesif_state_spec_reverse_verify
 add_test(NAME cep_mesif_adapter_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_mesif_adapter_reverse_verify.sh)
 
+# 队列 #9 后续:跨仓追认请求清单的**生成器自检**(只比对不写)——
+# 清单由机器可读载体生成 ⇒ 手改清单(或载体改了忘重生成)⇒ rc≠0。
+add_test(NAME cep_mesif_ratification_request_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/generate_mesif_ratification_request.sh --check)
+
 add_test(NAME cep_chstream_bidirectional_macro_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_chstream_bidirectional_macro_reverse_verify.sh)
 

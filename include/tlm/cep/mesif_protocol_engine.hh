@@ -147,6 +147,65 @@ namespace tlm::cep {
             return static_cast<PlatformPerm>(static_cast<std::uint8_t>(p));
         }
 
+        // ══════════════════════════════════════════════════════════════════════
+        //  引擎侧建模决策登记(机器可读的那一份;散文版见本文件头注释)
+        // ══════════════════════════════════════════════════════════════════════
+        //
+        // ⚠️ **为什么做成结构化字段**:E-1 ~ E-6 全部是**本仓自推**的建模决策
+        //    (ArchForge 侧**无规约**)⇒ 若只留在注释里,跨仓追认债会退化成
+        //    **不可审计的散文** ⇒ 做成与 `HierarchicalDirectory::kBehaviorDecisions`
+        //    同款的**可判据**载体(逐条 `basis` 非空 + `pending` 全 true)。
+        struct EngineDecision {
+            const char* id;      ///< 决策编号(`E-1` …)
+            const char* topic;   ///< 决策点
+            const char* basis;   ///< 推导依据(**非空**;缺失 ⇒ 判据必红)
+            bool        pending; ///< 待追认标记(**全部为 true**)
+        };
+
+        /// 逐条引擎侧建模决策(per 本 change 的 design `D-λ` + 跨仓债 #3)
+        static constexpr EngineDecision kEngineDecisions[] = {
+            {"E-1", "F 态在 wire 上投影为 LineState::S + dirty = 0(perm 仍取 WRITEBACK)",
+             "CohIfBundle::line_state 只有 NONE/I/S/E/M,无 F;而 F 语义是「已写回 ⇒ 非脏」"
+             " ⇒ 发 S 才不让对端误记脏位(发 M 会违反「M ⇒ dirty」这条别处依赖的不变量)", true},
+            {"E-2", "SnoopType::CLEAN 与 SnoopType::FORWARD 都映射为 Event::SnpShared",
+             "规约的 6 事件词表(Rd/RdUnique/Wr/Upgrade/SnpShared/SnpUnique)没有「降级为 S」的"
+             "独立事件 ⇒「降到 S」与「成为转发点」在事件层不可分辨(6 事件的表达能力缺口)", true},
+            {"E-3", "on_request(线缆上收到请求)只记账不迁态;本地请求由 submit_local_request 发起",
+             "本引擎建模的是节点侧(目录在 PE 之外)⇒ 请求的响应由 home 以 on_completion 回来;"
+             "收到请求就地迁态等于把 home 的行为塞进节点侧", true},
+            {"E-4", "on_completion(perm = WRITEBACK) ⇒ RdUnique 后接 Wr(两次表查询)",
+             "E + Wr → M 是本规约的静默升级(is_silent_upgrade);一次直接跳 M 会绕过该路径的记账", true},
+            {"E-5", "on_snoop_resp / on_forward_data / on_barrier / on_snoop_completion_ack 只记账",
+             "本引擎不建模在飞 snoop 集合与屏障域(归 Stage 2)⇒ 只记账不会产出虚假行为", true},
+            {"E-6", "VC 路由只记意图(last_atomic_network / last_atomic_vc),不写进 Bundle",
+             "CohIfBundle 无 vc 字段(VC 由 fabric 按 vc_binding 分配)⇒ 引擎只能回答「按声明"
+             "该走哪个 (network, vc)」;扩字段会破 CohIfBundle 零改动边界", true},
+        };
+
+        /// 引擎侧决策条数
+        static constexpr std::size_t kEngineDecisionCount =
+            sizeof(kEngineDecisions) / sizeof(kEngineDecisions[0]);
+
+        /// 引擎侧决策表的**自洽谓词**(可变异形态 ⇒ 反向 fixture 可传「删了一条 / basis 置空」的副本)
+        static constexpr bool engine_decisions_are_consistent(const EngineDecision* list,
+                                                               std::size_t n) noexcept {
+            for (std::size_t i = 0; i < n; ++i) {
+                if (list[i].id == nullptr || list[i].id[0] == '\0')
+                    return false;
+                if (list[i].topic == nullptr || list[i].topic[0] == '\0')
+                    return false;
+                if (list[i].basis == nullptr || list[i].basis[0] == '\0')
+                    return false;
+                if (!list[i].pending)
+                    return false;
+            }
+            return true;
+        }
+
+        /// 本类的决策表 SHALL 自洽
+        static constexpr bool engine_decisions_are_consistent() noexcept {
+            return engine_decisions_are_consistent(kEngineDecisions, kEngineDecisionCount);
+        }
         /// 一次表迁移的快照(MA-06 的判别点:Null **结构上不可能**有非空快照)
         struct TransitionSnapshot {
             State from = State::I;
