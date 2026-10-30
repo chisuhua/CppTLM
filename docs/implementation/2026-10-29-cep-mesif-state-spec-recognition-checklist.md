@@ -22,15 +22,24 @@ ArchForge 侧原先**没有** MESIF 的状态转换规约与 5→4 `perm` 投影
 
 ### 依据强度分档(per design `D-ε.2`;**追认闭合后**的实测分布)
 
-| 档 | `kind` | 含义 | 追认动作 | **追认前**格数 | **追认后**格数 |
+| 档 | 档位名 | 含义 | 追认动作 | **追认前**格数 | **追认后**格数 |
 |----|--------|------|----------|----------------|----------------|
 | **①** | `Primary` | 一手原文 | 确认未被推翻 / 逐格结论 | **4** | **35** |
-| **②** | `Structural` | 结构模板推导:以 MOESI 6×6 为模板按 MESIF 裁剪 | 确认裁剪成立 | 11 | **0**(痕迹在 `note`) |
-| **③** | `Derived` | 本仓推导:依 MESIF 的目录 / 本地-远端事件语义 | 确认推导成立 | 15 | **0**(痕迹在 `note`) |
-| **③** | `Analogical` | 类比推导:ArchForge 约束 + CHI 同型先例 | 确认类比成立 | 5 | **0**(痕迹在 `note`) |
+| **②** | `Structural` | 结构模板推导:以 MOESI 6×6 为模板按 MESIF 裁剪 | 确认裁剪成立 | **10** | **0**(痕迹在 `note`) |
+| **③** | `Derived` | 本仓推导:依 MESIF 的目录 / 本地-远端事件语义 | 确认推导成立 | **15** | **0**(痕迹在 `note`) |
+| **③** | `Analogical` | 类比推导:ArchForge 约束 + CHI 同型先例 | 确认类比成立 | **6** | **0**(痕迹在 `note`) |
 
-> ⚠️ **原档位不丢**:每格 `note` 的「〔原档位 …;原依据 …〕」段保留了追认**前**的档位与依据
-> ⇒ **审计链完整**,而「待追认」计数归零 ⇒ 跨仓债的**性质**从「待追认」变为「已追认 + 残余风险」(见 §5-残余风险)。
+> **追认前的原档位刻度 = 4 / 10 / 15 / 6**(合计 35),与 `ArchForge 42 号` §0 的「原档位」分组
+> **逐数一致**;该刻度由载体的**结构化字段** `Basis::origin_kind` 承载 + `origin_kind_count()` +
+> `kExpectedOrigin*` 常量 + 静态锁 ⑪ **机器锁定**(不再靠散文同步 ⇒ 双侧刻度不会漂移)。
+>
+> **`I + RdUnique` 的原档位由 `Structural` 改判为 `Analogical`**(per `ArchForge` 回信 §2:MOESI 6×6
+> 事件集**无** `RdUnique` 列,实据为 CHI `I+RdUnique→UC` 同构)⇒ 故 `Structural` 11 → **10**、
+> `Analogical` 5 → **6**;该格当前 `kind` 仍为 `Primary`(追认闭合后一律如此)。
+
+> ⚠️ **原档位不丢**:每格 `note` 的「〔原档位 …;原依据 …〕」段保留了追认**前**的档位与依据,
+> 且 `origin_kind` 字段是**机器可读**的那一份 ⇒ **审计链完整**,而「待追认」计数归零
+> ⇒ 跨仓债的**性质**从「待追认」变为「已追认 + 残余风险」(见 §5-残余风险)。
 
 > **待追认刻度**:**0 / 35** 格待追认(`pending=no`;机器可查:`MesifStateSpec::pending_count()`);
 > 一手原文 **35 / 35**(`MesifStateSpec::primary_count()`)。
@@ -40,38 +49,38 @@ ArchForge 侧原先**没有** MESIF 的状态转换规约与 5→4 `perm` 投影
 ## 1. 转换表逐格追认清单(5 态 × 6 事件 = **30 格**)
 
 <!-- MESIF-TABLE:transition:START -->
-| # | 态 | 事件 | 目标态 | kind | pending | ArchForge 需确认什么 |
-|---|---|---|---|---|---|---|
-| 1 | `I` | `Rd` | `S` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 2 | `I` | `RdUnique` | `E` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 3 | `I` | `Wr` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 4 | `I` | `Upgrade` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 5 | `I` | `SnpShared` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 6 | `I` | `SnpUnique` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 7 | `S` | `Rd` | `S` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 8 | `S` | `RdUnique` | `E` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 9 | `S` | `Wr` | `S` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 10 | `S` | `Upgrade` | `E` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 11 | `S` | `SnpShared` | `S` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 12 | `S` | `SnpUnique` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 13 | `E` | `Rd` | `E` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 14 | `E` | `RdUnique` | `E` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 15 | `E` | `Wr` | `M` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 16 | `E` | `Upgrade` | `E` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 17 | `E` | `SnpShared` | `F` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 18 | `E` | `SnpUnique` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 19 | `M` | `Rd` | `M` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 20 | `M` | `RdUnique` | `M` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 21 | `M` | `Wr` | `M` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 22 | `M` | `Upgrade` | `M` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 23 | `M` | `SnpShared` | `F` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 24 | `M` | `SnpUnique` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 25 | `F` | `Rd` | `F` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 26 | `F` | `RdUnique` | `E` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 27 | `F` | `Wr` | `F` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 28 | `F` | `Upgrade` | `E` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 29 | `F` | `SnpShared` | `F` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 30 | `F` | `SnpUnique` | `I` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| # | 态 | 事件 | 目标态 | kind | 原档位 | pending | ArchForge 需确认什么 |
+|---|---|---|---|---|---|---|---|
+| 1 | `I` | `Rd` | `S` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 2 | `I` | `RdUnique` | `E` | `Primary` | `Analogical` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 3 | `I` | `Wr` | `I` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 4 | `I` | `Upgrade` | `I` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 5 | `I` | `SnpShared` | `I` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 6 | `I` | `SnpUnique` | `I` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 7 | `S` | `Rd` | `S` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 8 | `S` | `RdUnique` | `E` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 9 | `S` | `Wr` | `S` | `Primary` | `Analogical` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 10 | `S` | `Upgrade` | `E` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 11 | `S` | `SnpShared` | `S` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 12 | `S` | `SnpUnique` | `I` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 13 | `E` | `Rd` | `E` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 14 | `E` | `RdUnique` | `E` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 15 | `E` | `Wr` | `M` | `Primary` | `Analogical` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 16 | `E` | `Upgrade` | `E` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 17 | `E` | `SnpShared` | `F` | `Primary` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 18 | `E` | `SnpUnique` | `I` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 19 | `M` | `Rd` | `M` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 20 | `M` | `RdUnique` | `M` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 21 | `M` | `Wr` | `M` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 22 | `M` | `Upgrade` | `M` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 23 | `M` | `SnpShared` | `F` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 24 | `M` | `SnpUnique` | `I` | `Primary` | `Derived` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 25 | `F` | `Rd` | `F` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 26 | `F` | `RdUnique` | `E` | `Primary` | `Analogical` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 27 | `F` | `Wr` | `F` | `Primary` | `Analogical` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 28 | `F` | `Upgrade` | `E` | `Primary` | `Analogical` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 29 | `F` | `SnpShared` | `F` | `Primary` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 30 | `F` | `SnpUnique` | `I` | `Primary` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
 <!-- MESIF-TABLE:transition:END -->
 
 ---
@@ -79,13 +88,13 @@ ArchForge 侧原先**没有** MESIF 的状态转换规约与 5→4 `perm` 投影
 ## 2. 投影表逐格追认清单(**5 格**)
 
 <!-- MESIF-TABLE:projection:START -->
-| # | 态 | perm | kind | pending | ArchForge 需确认什么 |
-|---|---|---|---|---|---|
-| 1 | `I` | `NONE` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 2 | `S` | `READ` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 3 | `E` | `UNIQUE` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 4 | `M` | `WRITEBACK` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
-| 5 | `F` | `WRITEBACK` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| # | 态 | perm | kind | 原档位 | pending | ArchForge 需确认什么 |
+|---|---|---|---|---|---|---|
+| 1 | `I` | `NONE` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 2 | `S` | `READ` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 3 | `E` | `UNIQUE` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 4 | `M` | `WRITEBACK` | `Primary` | `Structural` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
+| 5 | `F` | `WRITEBACK` | `Primary` | `Primary` | no | **无需追认**(一手原文)—— 仅需确认该原文未被推翻 |
 <!-- MESIF-TABLE:projection:END -->
 
 ---
@@ -122,7 +131,7 @@ ArchForge 侧原先**没有** MESIF 的状态转换规约与 5→4 `perm` 投影
 | # | 动作 | 触发条件 | 执行主体 | 状态 |
 |---|------|----------|----------|------|
 | **X-1** | `protocol_instances.json` 的 `authority_migrations[mesif]` **降级 / 删除** | ArchForge 侧完成 `32 号 §6.2` 的追认(方案 A)⇒ 两端口径一致 | **本仓**(需人工裁决 + 台账 entry) | ✅ **已触发并执行**(2026-10-30 —— ArchForge `32 号 §6.2:519-523` 已改为 `HierarchicalDirectory` + `SYSTEM/EXACT/GLOBAL/HIERARCHICAL`;两端声明**逐字段实测全等**(12 个非 `status` 键)⇒ 迁移条目**已删除**,⑥ 镜像闸对 `mesif` **恢复逐字段校验**;per 台账 Entry #102) |
-| **X-2** | 追认完成后把 35 格回填进 ArchForge `32 号`(§7 之后新增小节)+ `25 号 §4.2` 的目录条目状态编码依据 | ArchForge 侧追认完成 | ArchForge | 🟡 **进行中** —— ArchForge 已产出 `42 号`(逐格结论载体)+ `32 号 §6.2` 声明对齐;`32 号` 的**转换表回填**待其后续 change |
+| **X-2** | 追认完成后把 35 格回填进 ArchForge `32 号`(§7 之后新增小节)+ `25 号 §4.2` 的目录条目状态编码依据 | ArchForge 侧追认完成 | ArchForge | ✅ **已完成**(2026-10-30,ArchForge commit `b3062f1`)—— 落点:`32 号 §7.4`(:634,30 格转换表)+ `25 号 §4.2` + `32 号 §7.2.1`(投影 5 格);**无需后续 change**(per ArchForge 回信 §1) |
 
 ---
 
@@ -155,4 +164,5 @@ ArchForge 侧原先**没有** MESIF 的状态转换规约与 5→4 `perm` 投影
 | 日期 | 版本 | 修订 |
 |------|------|------|
 | 2026-10-29 | v0.1 | 初版:30 格转换 + 5 格投影 + 8 条偏离 + 2 项跨仓待办(清单由载体生成) |
+| 2026-10-30 | **v0.3** | 收讫 ArchForge 回信(`cross-repo-ratification-apply-ack.md`):**原档位刻度结构化** —— `Basis::origin_kind` + `origin_kind_count()` + `kExpectedOrigin*`(4/10/15/6)+ 静态锁 ⑪ ⇒ 双侧刻度机器可核对;`I+RdUnique` 原档位 `Structural` → `Analogical`(per 回信 §2);清单三表增「原档位」列;**X-2 ✅ 已完成**(落点 `32 号 §7.4` / `25 号 §4.2` / `32 号 §7.2.1`) |
 | 2026-10-30 | v0.2 | **追认闭合落地**(per ArchForge `42 号`):35 格全部转一手原文(`pending` 31 → **0**)· **纠正 1 格**(`M+SnpShared`:`S`→`F`,新增 **D5** ⇒ 偏离 8 → **9**)· 统计按**实表**重算(转换 **30** / 投影 **5**)· 刻度与残余风险(§5)重写 · X-1 已触发并执行 |

@@ -56,31 +56,32 @@ namespace {
 int main() {
     // ── 转换表 ────────────────────────────────────────────────────────
     std::printf("===MESIF:transition===\n");
-    std::printf("| # | 态 | 事件 | 目标态 | kind | pending | ArchForge 需确认什么 |\n");
-    std::printf("|---|---|---|---|---|---|---|\n");
+    std::printf("| # | 态 | 事件 | 目标态 | kind | 原档位 | pending | ArchForge 需确认什么 |\n");
+    std::printf("|---|---|---|---|---|---|---|---|\n");
     int n = 0;
     for (std::size_t s = 0; s < Spec::kStateCount; ++s) {
         for (std::size_t e = 0; e < Spec::kEventCount; ++e) {
             const auto& b = Spec::kTable.transition_basis[s][e];
             const std::uint8_t to = Spec::kTable.transition[s][e];
-            std::printf("| %d | `%s` | `%s` | `%s` | `%s` | %s | %s |\n", ++n,
+            std::printf("| %d | `%s` | `%s` | `%s` | `%s` | `%s` | %s | %s |\n", ++n,
                         Spec::state_name(static_cast<Spec::State>(s)),
                         Spec::event_name(static_cast<Spec::Event>(e)),
                         Spec::state_name(static_cast<Spec::State>(to)),
-                        Spec::basis_kind_name(b.kind), yesno(b.pending), need(b.kind).c_str());
+                        Spec::basis_kind_name(b.kind), Spec::basis_kind_name(b.origin_kind),
+                        yesno(b.pending), need(b.kind).c_str());
         }
     }
 
     // ── 投影表 ────────────────────────────────────────────────────────
     std::printf("===MESIF:projection===\n");
-    std::printf("| # | 态 | perm | kind | pending | ArchForge 需确认什么 |\n");
-    std::printf("|---|---|---|---|---|---|\n");
+    std::printf("| # | 态 | perm | kind | 原档位 | pending | ArchForge 需确认什么 |\n");
+    std::printf("|---|---|---|---|---|---|---|\n");
     for (std::size_t s = 0; s < Spec::kStateCount; ++s) {
         const auto& b = Spec::kTable.projection_basis[s];
-        std::printf("| %zu | `%s` | `%s` | `%s` | %s | %s |\n", s + 1,
+        std::printf("| %zu | `%s` | `%s` | `%s` | `%s` | %s | %s |\n", s + 1,
                     Spec::state_name(static_cast<Spec::State>(s)),
                     perm_name(Spec::kTable.projection[s]), Spec::basis_kind_name(b.kind),
-                    yesno(b.pending), need(b.kind).c_str());
+                    Spec::basis_kind_name(b.origin_kind), yesno(b.pending), need(b.kind).c_str());
     }
 
     // ── 偏离清单 ──────────────────────────────────────────────────────

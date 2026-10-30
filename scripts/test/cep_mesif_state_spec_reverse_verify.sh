@@ -43,13 +43,16 @@ fi
 # ⚠️ 旧串**必须唯一命中** —— 否则毒化是空操作 ⇒ 判据假绿(脚本会显式报错)。
 MUTATIONS=(
   "basis_ref_empty|\"ArchForge 42 号:§2 行 1\",|\"\","
-  "primary_marked_pending|BasisKind::Primary, false, \"ArchForge 25-nsa:553; ArchForge 32 号:529\",|BasisKind::Primary, true, \"ArchForge 25-nsa:553; ArchForge 32 号:529\","
-  "kind_downgraded_without_pending|{BasisKind::Primary, false, \"ArchForge 42 号:§2 行 3\",|{BasisKind::Derived, false, \"ArchForge 42 号:§2 行 3\","
-  "primary_ref_without_anchor|BasisKind::Primary, false, \"ArchForge 25-nsa:553; ArchForge 32 号:529\",|BasisKind::Primary, false, \"参见设计文档\","
+  "primary_marked_pending|{BasisKind::Primary, BasisKind::Analogical, false, \"ArchForge 42 号:§2 行 2\",|{BasisKind::Primary, BasisKind::Analogical, true, \"ArchForge 42 号:§2 行 2\","
+  "kind_downgraded_without_pending|{BasisKind::Primary, BasisKind::Derived, false, \"ArchForge 42 号:§2 行 3\",|{BasisKind::Derived, BasisKind::Derived, false, \"ArchForge 42 号:§2 行 3\","
+  "primary_ref_without_anchor|{BasisKind::Primary, BasisKind::Analogical, false, \"ArchForge 42 号:§2 行 2\",|{BasisKind::Primary, BasisKind::Analogical, false, \"参见设计文档\","
   "shared_write_mutates|{1, 2, 1, 2, 1, 0}, // S :|{1, 2, 2, 2, 1, 0}, // S :"
   "local_rank_drops|{2, 2, 3, 2, 4, 0}, // E :|{2, 0, 3, 2, 4, 0}, // E :"
   "transition_hole|{1, 2, 0, 0, 0, 0}, // I :|{1, 2, 0, 0, 0xFF, 0}, // I :"
   "deviation_not_real|{State::F, Event::SnpUnique, \"—\",|{State::F, Event::SnpUnique, \"I\","
+  # 原档位毒化(静态锁 ⑪ 的独立验证):撤销 `I+RdUnique` 的改判 ⇒ Analogical 6→5 / Structural 10→11
+  # ⇒ 与 `42 号` §0 的原档位刻度不一致 ⇒ 静态锁必红。
+  "origin_kind_drift|{BasisKind::Primary, BasisKind::Analogical, false, \"ArchForge 42 号:§2 行 2\",|{BasisKind::Primary, BasisKind::Structural, false, \"ArchForge 42 号:§2 行 2\","
 )
 
 echo ""

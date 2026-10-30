@@ -91,8 +91,12 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
   且 SHALL 与推导记录中的统计**逐数一致**
 - **AND** 子条件 ④ SHALL 成立:`kind == Primary` 的格 SHALL 引用 **ArchForge 的具体位置**
   (形如 `32 号:529` / `25-nsa:599` 的文件 + 行/条款)⇒ 不得写成无定位的泛化表述
+- **AND** 子条件 ⑤ SHALL 成立:每格 SHALL 带**原档位**(追认**前**的依据来源档)的结构化字段,
+  且其分组计数 SHALL 与 `ArchForge 42 号` §0 的「原档位」刻度**逐数一致**(当前 4 / 10 / 15 / 6,合计 35)
+  ⇒ 追认把 `kind` 统一为 `Primary` 后,原档位**仍机器可读**(不得只凭散文 `note` 回溯)
 - **AND** **反向 fixture**:清空某格的 `basis` ⇒ 必红;把一手原文格的 `ref` 改成无定位表述 ⇒ 必红;
-  把一手原文格标为待追认 ⇒ 必红;把推导格标为已追认 ⇒ 必红;改动载体使统计与推导记录不一致 ⇒ 必红
+  把一手原文格标为待追认 ⇒ 必红;把推导格标为已追认 ⇒ 必红;改动载体使统计与推导记录不一致 ⇒ 必红;
+  改动某格的原档位使分组计数漂移 ⇒ 必红
 - **AND** **正控**:`F` 态投影的 `basis` SHALL 为 `Primary` 且指向 `32 号:529` ⇒ 待追认计数**不**含它
 
 > **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-03 断言 + 5 条反向 fixture + 正控断言
@@ -135,9 +139,9 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 
 - **WHEN** 核对仓内逐格追认清单(`docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md`)与载体的 `kTable`
 - **THEN** 子条件 ① SHALL 成立:清单的**转换表** SHALL **恰好 30 行**,每行的
-  `(态, 事件, 目标态, kind, pending)` SHALL 与载体**逐格相等**
+  `(态, 事件, 目标态, kind, 原档位, pending)` SHALL 与载体**逐格相等**
 - **AND** 子条件 ② SHALL 成立:清单的**投影表** SHALL **恰好 5 行**,每行的
-  `(态, perm, kind, pending)` SHALL 与载体**逐格相等**
+  `(态, perm, kind, 原档位, pending)` SHALL 与载体**逐格相等**
 - **AND** 子条件 ③ SHALL 成立:清单登记的**待追认格数** SHALL 与载体 `pending_count()` **相等**
   ⇒ 跨仓债的刻度**唯一**
 - **AND** 子条件 ④ SHALL 成立:清单**不**得存在**载体里没有**的行(防清单里出现未登记的「追认项」)
@@ -147,7 +151,8 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 - **AND** 子条件 ⑥ SHALL 成立:清单的三张表 SHALL 由**入库的生成器**
   (`scripts/test/generate_mesif_recognition_checklist.sh`)从载体产出 ⇒ 「由载体生成」SHALL 是
   **可复现**的,不是一次性人工产出
-- **AND** **反向 fixture**:把清单某行的 `kind` 改掉 / 删掉一行 / 改掉偏离清单的「本表取值」⇒ 必红
+- **AND** **反向 fixture**:把清单某行的 `kind` 改掉 / 把某行的**原档位**改掉 / 删掉一行 /
+  改掉偏离清单的「本表取值」⇒ 必红
 - **AND** **正控**:清单的 30 + 5 + 9 行与载体**零差异**
 
 > **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-06 断言 + 2 条反向 fixture

@@ -6034,6 +6034,59 @@ egress 借用它会**倒置连接方向**;
 
 ---
 
+### Entry #103 — 2026-10-30 [build](收讫 ArchForge 回信 + 原档位结构化:ACK 第 2 项执行)
+
+**主题**: 收讫 ArchForge 回信《MESIF 追认闭合的载体侧执行结果(收讫确认 + 2 项澄清/确认)》
+(`.rddf/reviews/cross-repo-ratification-apply-ack.md`,2026-10-30;ArchForge main @ `b8b92c3`)。
+回信 **3 项**中 **仅第 2 项需本仓动手**;第 1 项为**澄清**(X-2 对方已完成),第 3 项为确认(无需动作)。
+
+**① 回信 3 项对照**
+
+| # | 回信内容 | 本仓处置 |
+|---|---------|---------|
+| 1 | **澄清**:X-2 **已完成**(回执 §8 状态过时)—— 落点 `32 号 §7.4`(:634,30 格转换表)/ `25 号 §4.2` / `32 号 §7.2.1`(投影 5 格),ArchForge `b3062f1`,**不需后续 change** | ✅ 追认清单 §4 的 X-2 由 `🟡 进行中` → **`✅ 已完成`**(含落点与 commit) |
+| 2 | **需动手**:`I+RdUnique` 的原档位改判 `Structural` → `Analogical`(MOESI 6×6 **无** `RdUnique` 列,实据为 CHI `I+RdUnique→UC` 同构) | ✅ 已执行,并**结构化**(见 ②) |
+| 3 | **确认**:回执的两处纠正值(统计 30/5 · 「原档位」维度)对方已采纳进 `42 号` §0 | ✅ 知悉,无需动作 |
+
+**② 原档位从「散文」升级为「结构化字段」(本仓自主判定,关键决定)**
+
+回信 §2 的档位改判与「追认闭合后 35 格全部 `kind = Primary`」**在 `kind` 上不可见** ⇒ 若只靠
+`note` 里的「〔原档位 …〕」散文,**双侧刻度无法机器核对**(只能人工比对)。故本仓把原档位做成
+**结构化字段**:
+
+| # | 改动 | 位置 |
+|---|------|------|
+| 1 | `Basis` 增 `BasisKind origin_kind`(原档位;逐格 35 条填值) | `mesif_state_spec.hh` |
+| 2 | 增 `origin_kind_count(t, k)` 谓词 | 同上 |
+| 3 | 增 `kExpectedOriginPrimary/Structural/Derived/Analogical` = **4 / 10 / 15 / 6** | 同上 |
+| 4 | 增**静态锁 ⑪**(4 条 `static_assert`:原档位分组计数 == 期望值) | 同上 |
+| 5 | `I + RdUnique` 的 `origin_kind` = **`Analogical`**(撤销原 `Structural`) | `transition_basis[0][1]` |
+| 6 | 生成器三表增「**原档位**」列;判据 `ChecklistRow` 增 `origin` 字段 + 比对(转换 / 投影各一条) | 生成器 + 判据 |
+| 7 | spec **MS-03 子条件 ⑤**(原档位 SHALL 结构化且分组计数与 `42 号` §0 逐数一致)+ MS-06 ①② 列比对加「原档位」+ 反向 fixture 加「改原档位」 | `openspec/specs/cep-mesif-state-spec/spec.md` |
+| 8 | 追认清单 §0 分档表改「原档位」维度(`Structural` 11 → **10** / `Analogical` 5 → **6**)并注明改判依据 | 清单 v0.3 |
+
+⇒ **实测原档位分布 = 4 / 10 / 15 / 6**(合计 35),与 `ArchForge 42 号` §0 **逐数一致**;
+该刻度此后由**静态锁 + 运行期断言 + 清单列比对**三重兜住 ⇒ 双侧不会再靠散文同步而漂移。
+
+**③ 判据(fixture 再次因字段变化而失效 ⇒ 均已重新基线化,且**响亮报红**)**
+
+| 项 | 症状 | 处置 |
+|----|------|------|
+| 判据解析器 | 清单加了「原档位」列 ⇒ `ChecklistRow` 无该字段 ⇒ MS-06 比对上「列布局」红 | 加 `origin` 字段 + `parse_checklist_table(kind_col, origin_col, pending_col)` + 调用点列号改 `(5,6,7)` / `(4,5,6)` |
+| 新增 ⑲ | — | 「改动某格 `origin_kind` ⇒ 分组计数漂移 ⇒ 必红」+ 正控(载体两侧刻度都对得上) |
+| reverse-verify 3 条 | `origin_kind` 插入后 `BasisKind::Primary, false, ...` 串失效 ⇒ **命中 0 次直接报红**(不是假绿) | 改锚:2 条改用**单行唯一串**(行 2 条目);`kind_downgraded` 同步补 `origin_kind` 字段 |
+| reverse-verify 新增 | — | 增 `origin_kind_drift` 毒化(撤销改判 ⇒ 静态锁 ⑪ 必红)⇒ **11/11** 通过 |
+
+**④ 门禁**:12 项 CEP 脚本 + `docs_sync_check --strict` + `openspec validate --changes --strict`
++ `generate_mesif_recognition_checklist.sh --check` + `format.sh --check` 全 rc=0;
+`[cep][mesif-state-spec]` **6 case / 393 assertion** 全绿;全仓 `cpptlm_tests` **2011 case / 874191 assertion** 全绿。
+
+**⑤ 冻结面**:`07 号` **未改动** ⇒ **不需**跑 `cep_freeze_check.sh --update`
+(冻结集 40 件、`authorized_by` 仍 Entry #102)⇒ `cep_freeze_check` rc=0 已实证。
+
+**⑥ 关联**:Entry #102(追认闭合落地 + X-1/X-3)· #101(规约层归档)· #100(critic 2 轮)
+· ArchForge 回信 `cross-repo-ratification-apply-ack.md`(ArchForge `b8b92c3`)
+
 ### Entry #102 — 2026-10-30 [build](收讫 ArchForge 跨仓通告 + 执行 X-1 / X-3:MESIF 规约追认闭合落地)
 
 **主题**: 收讫 ArchForge 跨仓通告《MESIF 追认闭合后的锚点位移 + X-1 触发 + X-3 改动集合》

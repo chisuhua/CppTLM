@@ -55,7 +55,8 @@ namespace {
         std::string c1;      ///< 态(转换表) / 态(投影表)
         std::string c2;      ///< 事件(转换表) / perm(投影表)
         std::string c3;      ///< 目标态(转换表)
-        std::string kind;    ///< `kind`
+        std::string kind;    ///< `kind`(**当前**档位;追认闭合后一律 `Primary`)
+        std::string origin;  ///< **原档位**(追认**前**的档位;与 ArchForge `42 号` §0 同口径)
         std::string pending; ///< `yes` / `no`
     };
 
@@ -75,6 +76,7 @@ namespace {
     /// 按**表头行**定位并解析一张 markdown 表(只取数据行)
     std::vector<ChecklistRow> parse_checklist_table(const std::string& doc,
                                                     const std::string& header, std::size_t kind_col,
+                                                    std::size_t origin_col,
                                                     std::size_t pending_col) {
         std::vector<ChecklistRow> rows;
         std::size_t pos = doc.find(header);
@@ -105,7 +107,7 @@ namespace {
                 }
             }
             cells.push_back(cur);
-            if (cells.size() < kind_col + 2)
+            if (cells.size() < pending_col + 1)
                 continue;
             const std::string first = trim_cell(cells[1]);
             if (first.empty() || first.find_first_not_of("0123456789") != std::string::npos)
@@ -115,6 +117,7 @@ namespace {
             r.c2 = trim_cell(cells[3]);
             r.c3 = trim_cell(cells[4]);
             r.kind = trim_cell(cells[kind_col]);
+            r.origin = trim_cell(cells[origin_col]);
             r.pending = trim_cell(cells[pending_col]);
             rows.push_back(r);
         }
@@ -337,6 +340,49 @@ TEST_CASE("MESIF 规约:逐格依据齐备 + kind/pending 双向一致 + 待追�
     // `Primary` 的分布:3 转换格 + 1 投影格
     CHECK(Spec::transition_primary_count(Spec::kTable) == 30u);
     CHECK(Spec::projection_primary_count(Spec::kTable) == 5u);
+
+    // ── ③' **原档位**刻度(追认**前**的档位)与 ArchForge `42 号` §0 逐数一致 ──
+    //    ⚠️ 追认闭合把 `kind` 统一成 `Primary` ⇒ 原档位只能从 `origin_kind` 读回
+    //    ⇒ 本段是**双侧刻度可直接核对**的机器判据(不再靠散文同步)。
+    CHECK(Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Primary) ==
+          Spec::kExpectedOriginPrimary);
+    CHECK(Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Structural) ==
+          Spec::kExpectedOriginStructural);
+    CHECK(Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Derived) ==
+          Spec::kExpectedOriginDerived);
+    CHECK(Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Analogical) ==
+          Spec::kExpectedOriginAnalogical);
+    CHECK(Spec::kExpectedOriginPrimary == 4u);
+    CHECK(Spec::kExpectedOriginStructural == 10u);
+    CHECK(Spec::kExpectedOriginDerived == 15u);
+    CHECK(Spec::kExpectedOriginAnalogical == 6u);
+    // 原档位总和 SHALL = 35(不得有格漏档)
+    CHECK(Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Primary) +
+              Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Structural) +
+              Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Derived) +
+              Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Analogical) ==
+          35u);
+    // `I + RdUnique` 的原档位 = `Analogical`(per ArchForge 回信 §2:MOESI 6×6 无
+    // `RdUnique` 列,实据为 CHI `I+RdUnique→UC` 同构)⇒ 该改判**逐格可回查**。
+    CHECK(Spec::kTable.transition_basis[0][1].origin_kind == Spec::BasisKind::Analogical);
+    CHECK(Spec::kTable.transition_basis[0][1].kind ==
+          Spec::BasisKind::Primary); // 当前档位仍是 Primary
+
+    // ── 反向 fixture ⑲:改动某格的 `origin_kind` ⇒ 原档位刻度漂移 ⇒ 必红 ──
+    {
+        Table t = copy_table();
+        t.transition_basis[0][1].origin_kind =
+            Spec::BasisKind::Structural; // 撤销 I+RdUnique 的改判
+        CHECK(Spec::origin_kind_count(t, Spec::BasisKind::Analogical) !=
+              Spec::kExpectedOriginAnalogical);
+        CHECK(Spec::origin_kind_count(t, Spec::BasisKind::Structural) !=
+              Spec::kExpectedOriginStructural);
+        // 正控:载体本身两侧刻度都对得上
+        CHECK(Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Analogical) ==
+              Spec::kExpectedOriginAnalogical);
+        CHECK(Spec::origin_kind_count(Spec::kTable, Spec::BasisKind::Structural) ==
+              Spec::kExpectedOriginStructural);
+    }
 
     // ── ④ 正控:`F` 态投影是 `Primary` 且指向 `32 号:529` ⇒ 不计入待追认 ──
     CHECK(Spec::projection_primary_count(Spec::kTable) == 5u);
@@ -609,6 +655,8 @@ namespace {
                     bad.push_back("目标态不符");
                 if (row.kind != Spec::basis_kind_name(b.kind))
                     bad.push_back("kind 不符");
+                if (row.origin != Spec::basis_kind_name(b.origin_kind))
+                    bad.push_back("原档位不符");
                 if (row.pending != (b.pending ? "yes" : "no"))
                     bad.push_back("pending 不符");
             }
@@ -624,6 +672,8 @@ namespace {
                 bad.push_back("perm 不符");
             if (row.kind != Spec::basis_kind_name(b.kind))
                 bad.push_back("投影 kind 不符");
+            if (row.origin != Spec::basis_kind_name(b.origin_kind))
+                bad.push_back("投影原档位不符");
             if (row.pending != (b.pending ? "yes" : "no"))
                 bad.push_back("投影 pending 不符");
         }
@@ -658,9 +708,10 @@ TEST_CASE("MESIF 规约:逐格追认清单与载体逐格一致(MS-06)", "[cep][
     REQUIRE_FALSE(doc.empty());
 
     const auto tr = parse_checklist_table(
-        doc, "| # | 态 | 事件 | 目标态 | kind | pending | ArchForge 需确认什么 |", 5, 6);
+        doc, "| # | 态 | 事件 | 目标态 | kind | 原档位 | pending | ArchForge 需确认什么 |", 5, 6,
+        7);
     const auto pr = parse_checklist_table(
-        doc, "| # | 态 | perm | kind | pending | ArchForge 需确认什么 |", 4, 5);
+        doc, "| # | 态 | perm | kind | 原档位 | pending | ArchForge 需确认什么 |", 4, 5, 6);
     const auto dv =
         parse_deviation_table(doc, "| # | 态 | 事件 | 模板取值 | 本表取值 | 偏离理由 |");
 
