@@ -6,7 +6,10 @@
 //       · `FullMapDirectory`(队列 #4 —— 单级目录)
 //       · `HierarchicalDirectory`(队列 #9 —— 分级目录,第 6 种实现,per `ADR-CEP-04 §13`)
 //       其余 4 种(SparseSnoopFilter / DcohSymmetric / TreeManager / BroadcastNull)
-//       跟随各自的消费队列(队列 #10 ~ #11)落地 —— 此处只留**声明层** traits。
+//       **行为实现尚未落地** —— 此处只留**声明层** traits;落位已登记(per 台账 Entry #107):
+//       `TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12(均**队列名对应**的推导值);
+//       `SparseSnoopFilter` **已被 `moesi_gpu`(队列 #6)声明占用**但无行为实现(§8.1 R11);
+//       `BroadcastNull` 落位待裁决。
 // 作者: CppTLM Team / 日期: 2026-10-25(2026-10-30 增 `HierarchicalDirectory` + 公共机械抽取)
 //
 // ── 定位 ───────────────────────────────────────────────────────────────

@@ -357,7 +357,8 @@ MESIF 5 态与 MOESI 6 态**词表都不同**，同名态语义未必同构（ME
 - [x] WU-6 既有 `cep_mesif_state_spec_reverse_verify.sh` 仍 **11/11**（零回归）
 - [x] WU-7 批内序 ①~⑦ **未乱序**（KPI 在归档之后改；冻结面**两次** `--update`，偏差已在 Entry #106 ④ 登记）
 - [x] WU-7 `07 号` **9 处**活口径已修（`:721` 实施期判定为**历史块** ⇒ 不回改，由第十五则覆盖）；**历史块未回改**
-- [x] WU-7 `cep-sharer-tracker-base/spec.md` **2 处**已修（「唯一」→「首个」+ 队列 #6~#9 → #10~#11）；**`deferred` 措辞保持**
+- [x] WU-7 `cep-sharer-tracker-base/spec.md` **2 处**已修（「唯一」→「首个」+ 队列区间）；**`deferred` 措辞保持**
+      ⚠️ **2026-10-30 勘误**(台账 Entry #107):当时写的「队列 #6~#9 → #10~#11」是**未核实的臆测** ⇒ **已撤回**;改为「落位**已登记**」(`TreeManager` ↔ #11 · `DcohSymmetric` ↔ #12 · `SparseSnoopFilter` 已被 #6 占用、行为待补 · `BroadcastNull` 待裁决)—— **本计划与 base spec / `07 号` / `sharer_tracker.hh` 三处同源文本已同批更正**
 - [x] WU-7 invariant 计数仍 **66 / 编号位 67 / 15 组**（`cep_docs_sync_check.sh` rc=0 实证）
 - [x] WU-8 S1-3 口径 = **`implemented` ≥ 3**（实测 3）；重评对象 = **SLICC 备选**；结论 = **维持嵌套形态** + 选项不注销（改绑更强触发条件）+ 承接项 2 第 2 次复核
 - [x] 全仓 `cpptlm_tests`（2029 case / 874636 assertion）+ `ctest -R cep`（40/40）全绿；工作区干净
@@ -368,6 +369,7 @@ MESIF 5 态与 MOESI 6 态**词表都不同**，同名态语义未必同构（ME
 
 | 日期 | 版本 | 修订 |
 |------|------|------|
+| 2026-10-30 | **v0.5** | **归档后勘误**(台账 Entry #107):撤回本计划自身引入的一处**未核实队列区间**(`#6~#9 → #10~#11`)⇒ 改为「落位**已登记**」;同时补 `S1-6`(已闭合)的 owner 登记行;新增 §8.1 **R11**(声明超前于实现)与 §10 backlog 行。⚠️ 该区间在 3 处同源文本(base spec / `07 号` / `sharer_tracker.hh`)⇒ **同批一次**冻结面授权更正,避免重算两次。 |
 | 2026-10-30 | **v0.4** | **实施收口**：① 检查清单全勾；② `:721` 的普查判定**纠正**为「历史 Status Update 块 ⇒ append-only 不回改，由第十五则覆盖」（实际修 9 处活口径）;③ 冻结面**同批两次** `--update` 的偏差登记（首次 Entry #105:07 号 9 处 + base spec 2 处；第二次 Entry #106:07 号第十六则 + ADR-04 §14 + ADR-12 Status Update）;④ 状态变迁导致 `cep_gate_selftest` 2 条 owner-活性 fixture 锚点失效 ⇒ 锚点跟随 owner #9 → #10 （判据纪律第 4 条第二次实证）;⑤ WU-9 按 J-2 独立立项，不属本 change 门禁。 |
 | 2026-10-30 | **v0.3** | **实施期补漏**（WU-3 实测）：发现 **第 2 件 M1 冻结面漂移** —— `openspec/specs/cep-sharer-tracker-base/spec.md` 自称「FullMapDirectory **唯一**行为实现」+「其余 4 种随队列 #6~#9」，在 `HierarchicalDirectory` 落地后成**事实性错误**。v0.1/v0.2 均断言「冻结面仅 `07 号` 一件」⇒ 本版修正为**两件、一次授权**（WU-7 ② 合并）。**不改**任何判据口径，只补冻结面普查清单。 |
 | 2026-10-30 | **v0.2** | **双审修订**（oracle `mergeable: no` 3 BLOCKER + metis 4 BLOCKER）：① 补 `perm_upgrades.json` 静默升级线 + 负控见证空转陷阱（AC-5）② R-3 补偿维度由「谁持有」修正为 **`LocalView.dirty` 掩码 + 写回接线**（AC-7）③ P0-8/AC-9 由「per-network 嵌套形态复核」修正为 **`ADR-CEP-12 §8.4` SLICC 备选重评** + S1-3 口径钉死为 `implemented ≥ 3` ④ AC-1 改为「**零自有表副本** + 伪造表 fixture」⑤ 补 `atomic` 漏项（AC-6）⑥ 补 `HierarchicalDirectory` 行为决策登记义务（残留 A）⑦ `status` 翻转折进 WU-7 批首（J-4）⑧ 补 `07 号` 漂移**10 处**普查清单 + 历史块不可改标注 ⑨ 补 6→3 映射 AC（AC-8）+ 通道依赖闸 3 实例共存 AC（AC-9）+ 引擎探针判别力 AC ⑩「因正确原因红」机器化（期望失败模式 + 判据 id grep + 两层 id 分离）⑪ 补 owner 再转指 + 脚本计数 12→13 ⑫ 补 `configs/cep_mesif_pe_minimal.json` + 注册行交付物 ⑬ P1-4 改写为时效性裁决 |

@@ -195,7 +195,7 @@ WU-0 角色切换(planner → builder)
 | 成员 | 是否触碰 | 处置 |
 |------|---------|------|
 | `docs/architecture/07-coherence-exploration-platform.md` | ⚠️ **是**(漂移修正 10 处 + 新 Status Update) | **两步授权**:commit 产物 → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → commit 清单(**全 change 只此一次**) |
-| `openspec/specs/cep-sharer-tracker-base/spec.md` | ⚠️ **2 处活口径** | 契约零改动;「**唯一**行为实现」→「**首个**」+ 队列 #6~#9 → #10~#11 ⇒ 与 `07 号` **同批**授权 |
+| `openspec/specs/cep-sharer-tracker-base/spec.md` | ⚠️ **2 处活口径** | 契约零改动;「**唯一**行为实现」→「**首个**」+ 队列 #6~#9 → #10~#11 ⇒ 与 `07 号` **同批**授权 | ⚠️ **2026-10-30 勘误**(台账 Entry #107):当时写的队列区间「#10 ~ #11」**未核实** ⇒ **已撤回**,改为「落位**已登记**」
 | `include/tlm/cep/protocol_instance.schema.json` | ❌ 否 | 零改动(per 队列 #6 / #8 先例) |
 | `include/tlm/cep/fabric.json` / `fabric.schema.json` | ❌ 否 | 零改动 |
 | `ADR-CEP-*.md` | ❌ 否 | 零改动(ADR 不可变) |

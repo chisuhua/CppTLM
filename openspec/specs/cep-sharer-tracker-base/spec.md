@@ -5,9 +5,15 @@
 （caps 4 属性 `scope`/`completeness`/`authority`/`aggregation_at` + behavior 2 属性），
 使 5 种一致性族（MOESI / MESIF / CHI RN-F / CXL 非对称 / TileLink 树）能用同一抽象表达
 目录查询与 snoop 生命周期，并让「协议实现的能力边界」成为**可静态判定的声明**而非隐含行为。
-本 capability 交付**首个**行为实现 `FullMapDirectory`；其余 4 种实现的声明层登记随队列 **#10 ~ #11** 落地。
+本 capability 交付**首个**行为实现 `FullMapDirectory`（**参考实现**；当前**无协议实例声明**它）；
+`SparseSnoopFilter` **已被 `moesi_gpu` 声明占用**（队列 #6）但**仅声明层**（无行为实现）；
 第 6 种实现 `HierarchicalDirectory` 的**行为面**由另一 capability `cep-hierarchical-directory` 承担
 （`ADR-CEP-04 §13` 裁决；本文件**不改**其契约）。
+
+其余 4 种实现（`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`）的**行为实现**尚未落地；
+其**落位**已登记（`TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12 · `SparseSnoopFilter` 已被 #6 占用、
+行为待补 · `BroadcastNull` 待裁决）⇒ 本文件**不复述**未经登记的队列区间
+（事实与依据见台账 Entry #107）。
 
 ## Requirements
 
