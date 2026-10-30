@@ -181,4 +181,5 @@ H7 在首轮实测落地前**仍是「未验证假设」**,R7 **不因本文件�
 | 2 | **R7 不因本文件降级** | 🟡 中(不变)⇒ 缓解路径已确定,**实测**才是降级条件 |
 | 3 | **P-2 的 15% 阈值来源** | 取自 `§9.1 H7` 的既有口径;**未**由实测标定 ⇒ 首轮实测后应**复核**该阈值是否合理 |
 | 4 | **D-4 协议开销不可消除** | 🟡 已知上限 ⇒ 长期口径:本平台是**模型级**延迟比较,**不是**周期精确验证 |
-| 5 | gem5 引入的**版本锁定** | 待 P-B 时登记(per `ADR-CEP-11` 的版本锁定口径)⇒ 版本必须钉死,否则对拍不可复现 |
+| 5 | gem5 引入的**版本锁定** | ✅ **已登记**(2026-10-31,per 台账 Entry #113)⇒ gem5 **v24.1.0.0** + tarball **SHA256 钉版** + 构建入口 `scripts/cep/parity/build_gem5.sh` |
+| 6 | ⚠️ **变体与组件偏差**(首轮实测暴露) | 本文件 §2/§3 写的是 `build/RUBY/gem5.opt` + **Ruby cache**;实测:**gem5 v24 无 `build/RUBY` 变体**(`build_opts/` 实测 24 个变体无 `RUBY`)⇒ 改用 `build/NULL`(`RUBY=y` + `PROTOCOL="MI_example"`);且 **Ruby 的 `Sequencer.in_ports` 是 `VectorResponsePort`** ⇒ **CPU-less 驱动不了 Ruby coherence 栈** ⇒ 首轮实测用 **classic `Cache`**(无 coherence 协议开销)。⇒ 首轮结论**只覆盖口径与建模语义**,**不覆盖** Ruby 协议栈基准(per 台账 Entry #113 §④) |

@@ -306,6 +306,21 @@ add_test(NAME cep_mesif_adapter_reverse_verify
 add_test(NAME cep_mesif_ratification_request_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/generate_mesif_ratification_request.sh --check)
 
+# H7 对拍基准(辅助档)的**比较器自测** —— 不需要 gem5 ⇒ 可进 ctest;
+# 判据逻辑坏掉(边界放行 / 静默 PASS / 缺归因)⇒ 必红。
+add_test(NAME cep_parity_compare_selftest
+         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/cep/parity/selftest_parity_compare.py)
+
+# H7 对拍基准的**端到端实测**(gem5 探针 → 比较器)——
+# ⚠️ 需要 gem5 二进制(第三方基准,**不入库**;构建入口 = scripts/cep/parity/build_gem5.sh)。
+#    gem5 缺席时**跳过**(SKIP_RETURN_CODE 77)⇒ 不阻塞常规 CI,
+#    但在「装了 gem5」的机器上会真跑并对判据。
+add_test(NAME cep_parity_e2e
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/cep/parity/run_parity.sh)
+set_tests_properties(cep_parity_e2e PROPERTIES
+                     SKIP_RETURN_CODE 77
+                     TIMEOUT 1800)
+
 add_test(NAME cep_chstream_bidirectional_macro_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_chstream_bidirectional_macro_reverse_verify.sh)
 

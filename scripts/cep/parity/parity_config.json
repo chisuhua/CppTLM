@@ -1,0 +1,31 @@
+{
+  "_note": "对拍参数的唯一真源(本仓侧);`cycle_ns` 与 `cycle_ns_anchor` 必须与时基文档一致(由 cpptlm_params.py 自检)",
+  "cycle_ns": 1.0,
+  "cycle_ns_anchor": "1 sim_cycle = 1 ns @ 1 GHz",
+  "gem5": {
+    "version": "v24.1.0.0",
+    "tarball_sha256": "ef5373ec9e514a15dbb1cc6dbc6771182771f1ec48ece1123e0beb876eca8b32",
+    "variant": "build/NULL/gem5.opt",
+    "cache": {
+      "size": "16KiB",
+      "assoc": 2,
+      "tag_latency_cycles": 2,
+      "data_latency_cycles": 2,
+      "response_latency_cycles": 1,
+      "mshrs": 4,
+      "write_buffers": 4
+    },
+    "memory": {
+      "latency": "45ns",
+      "range": "16MiB"
+    },
+    "tester": {
+      "num_accesses": 20000,
+      "interval_cycles": 200,
+      "working_set_bytes": 4096
+    }
+  },
+  "tolerances": {
+    "P-4_latency_rel": 0.15
+  }
+}
