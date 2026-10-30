@@ -41,6 +41,7 @@
 | [11-coherence-domain-readiness.md](./11-coherence-domain-readiness.md) | 🟡 早期 readiness 评估 | 一致性域准备状态 (ARCH-011, 与 06-bis v0.3 实施蓝图范围正交, 2026-10-19 加 cross-ref) |
 | [12-topology-gap-analysis.md](./12-topology-gap-analysis.md) | ✅ v1.1 已批准 | 拓扑差距分析 (审查修正版) |
 | [13-dashboard-integration.md](./13-dashboard-integration.md) | ✅ v2.0 已批准 | Dashboard 集成 (FastAPI + RunContext + Monaco Editor) |
+| [14-coherence-parity-baseline.md](./14-coherence-parity-baseline.md) | 🟡 草案 v0.1 | CEP 一致性平台**对拍基准**规格(R7 / H7 / M3):三选项对比 + 裁决(**gem5 Ruby 主基准**)+ 对拍手段(P-1 ~ P-5 判据 + 4 类失配归因)+ 已知结构性差异;**指定 ≠ 实测** ⇒ H7 仍未验证
 | ~~14-sm-operand-supply-design-target.md~~ | ➡️ **已迁 ArchForge** | **SM 操作数供给下一代架构设计目标（OSF：MCOS / ERW / WABR / SOP）** — 2026-10-27 迁至【ArchForge 仓】`docs/architecture/33-sm-operand-supply-design-target.md`（🟡 设计目标声明，非现状真相，**未经 Oracle/ADR 评审**）；配套证据【ArchForge 仓】`docs/research/SM/CudaCore/`（SYNTHESIS + 8 篇解析）。**本仓不再保留副本**（silicon 侧真源在 ArchForge；真源 1 只描述 CppTLM 现状） |
 | [02-complex-topology-architecture.md](./02-complex-topology-architecture.md) | ✅ 已批准 | 复杂拓扑实现架构 (RT 桥接, per [06 §0.3](./06-inter-module-network.md) 边界标注) |
 

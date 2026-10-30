@@ -540,7 +540,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **R4** | 多 VC 仲裁推迟(CEP-09 在 Stage 4+)| 🟢 低 | 影响 fabric 性能建模精度,不影响功能正确性 |
 | **R5** | ⚠️ **无外部验收方**(DRI = 自己给自己验收)| 🟡 中(**形式已解;实质由 R10 承接处置** —— 2026-10-23 per §9.3) | §9.2 三项角色 2026-10-21 已指定(形式 gate 解除);但三者指向同一人 → 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制部分替代;**真外部真人评审待建立** |
 | **R6** | 与 phase-9 资源竞争(共用 builder 队列 + 执行容量)| 🟡 中 | §8.2 优先级仲裁规则 |
-| **R7** | 探索平台结论不可信(无对拍验证)| 🟡 中 | **Stage 1 前须定义对拍手段**(gem5 Ruby / ArchForge 参考模型 / RTL benchmark 三选一) |
+| **R7** | 探索平台结论不可信(无对拍验证)| 🟡 中(**手段已指定,实测未做** —— 2026-10-30 per Entry #108) | **手段已指定**:`docs/architecture/14-coherence-parity-baseline.md` ⇒ **主基准 = gem5 Ruby**(M3 独立性只有它满足:第三方既有资产)· ArchForge 参考模型 = 同作者 ⇒ **降为交叉验证、不计 M3** · RTL benchmark = 本地无资产 ⇒ 不作主基准。⚠️ **R7 状态不变**:指定 ≠ 实测 ⇒ H7 仍是「**未验证假设**」,降级条件 = 首轮对拍(P-1 ~ P-5)达标 |
 | **R8** | ArchForge 单边依赖(准入门把阻塞全转嫁 CppTLM 侧)| 🟡 中 | 需 ArchForge 侧排期承诺;缺承诺时 §9 假设降级为"仅 CppTLM 内部对比" |
 | **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟢 低(**已接受残余风险**,2026-10-23 per **§9.3**) | **闭合判据已改写** = 「就 **Stage 0 交付范围**(契约层 + 契约测试 + 冻结产物)而言,**M1 / M2 / M4 三项补偿机制均有落地证据 + 残余风险已登记**」—— M1 冻结清单 **30 成员** + 授权闸 · M2 ArchForge 合入回执 · M4 独立 AI 复审(实证抓出 9 项 + 4 轮 critic 审稿抓 3 BLOCKER)。**M3(对拍基准外置)不适用**:它服务**实现期**对拍,Stage 0 无实现交付物 → 保留为 **Stage 1 的 P0 前置**(见 §10)。**残余风险见 §9.3**(结论性独立缺失,由 DRI 书面接受)。**Stage 0 已于 2026-10-23 完成归档**(per 台账 Entry #29)。**M4 不可替代真人外部评审** 这一残余风险依然成立并已登记 |
 | **R9** | **单 change 体积上升**(2026-10-21 新增)—— `cpptlm-cep-directory-ordering-plane` 8→12 周(ADR-CEP-08 + 09 Decision A 并入)| 🟡 中 | 同平面合并是模型自洽而非将就;若该 change 延期 >2 季度,走 §8.2 `Replan` 拆 `phase-11`(并评估建 feature fragment)|
@@ -676,7 +676,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 |--------|------|---------|------|
 | ~~P0~~ | 起草 `cpptlm-cep-umbrella/` proposal + design + specs + tasks | ✅ **已完成 2026-10-21**(builder)**并于 2026-10-23 归档**(tasks 99/99) | — |
 | ~~P0~~ | 指定 §9.2 三项角色(验收方 / 结论消费者 / 维护方) | ✅ **已完成 2026-10-21**(三项均已指定;形式 gate 解除,实质独立性缺口登记为 R10) | — |
-| **P0** | 指定 §9.1 H7 对拍基准(gem5 Ruby / ArchForge / RTL benchmark) | 调研 3 人日 | ⛔ R7 —— **唯一仍未完成的 P0**(per Entry #22 复核)|
+| **P0** | 指定 §9.1 H7 对拍基准(gem5 Ruby / ArchForge / RTL benchmark) | 调研 3 人日 | ✅ **已指定**(2026-10-30,Entry #108)—— 裁决 = **gem5 Ruby 主基准** + 判据 P-1 ~ P-5 + 归因 4 类,落 `docs/architecture/14-coherence-parity-baseline.md`;⚠️ **指定 ≠ 实测** ⇒ R7 维持 🟡 中 |
 | P1 | 起草 Stage 1 **七个** change 的 improvement 草稿 | 走 add-improve HARD-GATE;每 change 5 人日 | Stage 0 archive(**R10 已按 §9.3 处置**,2026-10-23)|
 | ~~P1~~ | 起草 `docs/architecture/07-coherence-exploration-platform.md` 顶层真源 | ✅ **已完成 2026-10-21**(architect;**686 行**) | — |
 | ~~P1~~ | 起草 `ADR-CEP-11` / `ADR-CEP-14` / `ADR-CEP-15` / `ADR-CEP-07A` / `ADR-CEP-16` | ✅ **已完成 2026-10-21**(architect;**21 份 ADR 全族**) | — |
@@ -696,7 +696,8 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | `cpptlm-cep-chi-rnf-subset` improvement | 走 add-improve;§4.0 顺序 #8 |
 | P1 | `cpptlm-cep-mesif-adapter` improvement | ✅ **已写并已归档**(2026-10-30,Entry #105 / #106;§4.0 顺序 #9 —— R-1 阻塞已解除并落地为 `HierarchicalDirectory` 行为实现)
 | P2 | `cpptlm-cep-cxl-nonsymmetric` improvement | 走 add-improve;§4.0 顺序 #10 |
-| P2 | **`SparseSnoopFilter` 行为实现**(backlog,per Entry #107) | 走 add-improve;理由:`moesi_gpu`(队列 #6)**已声明占用**该实现但仓内**只有 traits 行** ⇒ 声明面承诺的能力未兑现(§8.1 **R11**);`BroadcastNull` 的落位**无线索**,一并在该小 change 里裁决 |
+| P2 | **`SparseSnoopFilter` 行为实现**(backlog,per Entry #107) |
+| P1 | **对拍基准首轮实测**(P-B / P-C,per `docs/architecture/14-coherence-parity-baseline.md` §7) | 实现 trace 生成器 + gem5 配置 + 对拍脚本 + 首轮实测;**产出** = `docs/validation/` 报告 + H7 状态更新 + R7 降级判定;⚠️ 不属任何队列 change 的门禁 | 走 add-improve;理由:`moesi_gpu`(队列 #6)**已声明占用**该实现但仓内**只有 traits 行** ⇒ 声明面承诺的能力未兑现(§8.1 **R11**);`BroadcastNull` 的落位**无线索**,一并在该小 change 里裁决 |
 | P2 | `cpptlm-cep-tilelink-tree-manager` improvement | 走 add-improve;§4.0 顺序 #11 |
 | P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | 走 add-improve;Stage 2.1 启动 |
 | P1 | `cpptlm-cep-nvlink-sharp` improvement | 走 add-improve;Stage 2.2 启动 |
@@ -6055,6 +6056,43 @@ egress 借用它会**倒置连接方向**;
 **⑨ 关联**: Entry #88(Phase 5 JSON 装配连通性)· #87(Phase 4 装配宏)· #86(Phase 3 特化桥)· #85(Phase 2 端口面)· #84(Phase 1 载体面)· #81(队列 #7 转正)· #74(`ADR-CEP-19` 签发)
 
 ---
+
+### Entry #108 — 2026-10-30 [build](R7 / H7 对拍基准**指定** —— §10 唯一未完成的 P0 闭合)
+
+**主题**: 交付 `§10` 的 **P0 行**「指定 §9.1 H7 对拍基准(gem5 Ruby / ArchForge / RTL benchmark 三选一)」
+⇒ 这是 **R7** 的缓解路径、**M3**(4 条独立性机制中唯一未落地者)的落点,也是 **H7** 的验证方法前提。
+
+**① 裁决**:**主基准 = gem5 Ruby**;**ArchForge 参考模型 = 交叉验证(不计 M3)**;**RTL benchmark = 保留、不作主基准**。
+- **gem5 Ruby**:M3 的「第三方既有资产、不依赖本仓维护者实现」**只有它满足**;上游**实测可达**
+  (`git ls-remote github.com/gem5/gem5` 通);与 H7 的判据类型匹配(能跑真实 cache 层级 ⇒ 命中/未命中延迟、
+  容量、替换四个量可对齐);
+- **ArchForge 参考模型**:**同作者**(6/6 commit 同一作者)⇒ **不满足** M3 ⇒ **不得**用其延迟值判定 H7
+  ⇒ 降为**结构 / 语义对照** + 跨仓追认债的对照材料;
+- **RTL benchmark**:本地**无资产** + 依赖外部排期 ⇒ 把 R7 闭合绑定到**不可控**依赖 ⇒ 不作主基准。
+- **三选项均不注销**:各自改绑再评触发(见文档 §6)。
+
+**② 对拍手段(可执行规格,落 `docs/architecture/14-coherence-parity-baseline.md`)**
+- 访问流:离线**确定性 trace**(两侧读同一文件)—— 两侧**不共用 RNG**(`TrafficGenTLM` 的 `rng_(42)` 是内部种子);
+- 模型对齐:**显式承认** `CacheTLM` 是**无限容量 + 精确地址 map + 硬编码延迟**(hit 5 / miss 50)⇒ 判据**分两档**
+  (主对拍 = 容量对齐档,比命中率 ±5pp + 延迟 < 15%;辅助对拍 = 常数档,只比未命中延迟 < 15%);
+- 指标:`avg_latency_cycles` ↔ gem5 `numCycles`,归一到**每事务周期数**;总事务数**必须相等**(P-1,先查);
+- 判据 **P-1 ~ P-5** + 失配归因 **4 类**(容量 / 替换 / 时基 / 协议开销)—— **归因未排除前不得判 H7**;
+- 失配降级:per **R8** 口径降为「仅 CppTLM 内部对比」并**显式登记**。
+
+**③ 诚实边界(不得越界表述)**
+- **指定 ≠ 实测** ⇒ **H7 仍是「未验证假设」**、**R7 维持 🟡 中**(不因本条降级);降级条件 = 首轮对拍达标。
+- 本平台是**模型级**延迟比较,**不是**周期精确验证(协议开销不可对齐,归因类 D-4)。
+
+**④ 落点**:新文档 `docs/architecture/14-coherence-parity-baseline.md`(真源 1 层 · 验证**方法**规格;
+实测报告走 `docs/validation/`)· `obj §8.1 R7` 缓解列 · `obj §10` P0 行 → ✅ 已指定 + 新增实测候选行。
+
+**⑤ 实测(P-B / P-C)**:列入 `obj §10`(2 人日 + gem5 构建)⇒ **不属任何队列 change 的门禁**。
+
+**⑥ 门禁**:13 项 CEP 脚本 + `docs_sync --strict` + `doc_ref` + `format --check` rc=0;
+`[cep]` 247 case / 4190 assertion 全绿。
+
+**⑦ 关联**:Entry #107(勘误 + 落位登记 + R11)· #106(队列 #9 归档 + S1-3 重评)· #105 ·
+Entry #22(R7 复核:唯一未完成的 P0)· #29(Stage 0 归档 · M3 保留为 Stage 1 P0)
 
 ### Entry #107 — 2026-10-30 [build](队列 #9 归档后的**口径勘误**:撤回未核实的队列区间 + 补 S1-6 登记 + 落位映射登记 + R11)
 
