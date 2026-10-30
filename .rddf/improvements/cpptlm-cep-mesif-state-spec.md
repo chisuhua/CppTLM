@@ -18,7 +18,7 @@ created: 2026-10-29
 
 # improvement: cpptlm-cep-mesif-state-spec
 
-> **状态**: ✅ **已归档**(2026-10-29,Entry #101)· **规约层已交付**
+> **状态**: ✅ **已归档**(2026-10-29,Entry #101)· **规约层已交付** · **跨仓逐格追认已闭合**(2026-10-30,Entry #102:ArchForge `42 号` 35 格全闭合、纠正 1 格 `M+SnpShared`(`S`→`F`)、待追认 31/35 → **0/35**;权威迁移条目已删除 ⇒ 两端声明逐字段全等)
 > **队列**: `obj-cep-platform §4.0` **队列 #9**(`cpptlm-cep-mesif-adapter`)的**第 0 个 change**(规约层)· **不新增队列行** —— 一个队列行可承载多个 openspec change / capability(per 队列 #3 / #4 / #8 先例)⇒ **顺序 / 季度口径不变**(五处同改不触发)
 > **与队列 #9 的分工**:本 change = **规约层**(状态机 + 投影表的**口径来源**与**推导依据**);队列 #9 `cpptlm-cep-mesif-adapter` = **实现层**(adapter + 引擎 + 装配)。⇒ 本 change 是队列 #9 的**前置**,不是它的替代。
 > **关联 ADR**: `ADR-CEP-05`(Stub 只暴露稳定状态 + `perm` 4 值投影)· `ADR-CEP-12`(实例声明 schema + 权威分区/迁移)· `ADR-CEP-04`(SharerTracker caps)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值锁)

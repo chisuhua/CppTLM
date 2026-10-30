@@ -326,20 +326,20 @@ TEST_CASE("MESIF 规约:逐格依据齐备 + kind/pending 双向一致 + 待追�
 
     // ── ③ 待追认格数**可查** + 与 design `D-ε.11` 逐数一致 ──────────
     CHECK(Spec::pending_count(Spec::kTable) == Spec::kExpectedPendingCount);
-    CHECK(Spec::pending_count(Spec::kTable) == 31u);
+    CHECK(Spec::pending_count(Spec::kTable) == 0u);
     CHECK(Spec::primary_count(Spec::kTable) == Spec::kExpectedPrimaryCount);
-    CHECK(Spec::primary_count(Spec::kTable) == 4u);
+    CHECK(Spec::primary_count(Spec::kTable) == 35u);
     CHECK(Spec::kind_count(Spec::kTable, Spec::BasisKind::Structural) ==
           Spec::kExpectedStructuralCount);
     CHECK(Spec::kind_count(Spec::kTable, Spec::BasisKind::Derived) == Spec::kExpectedDerivedCount);
     CHECK(Spec::kind_count(Spec::kTable, Spec::BasisKind::Analogical) ==
           Spec::kExpectedAnalogicalCount);
     // `Primary` 的分布:3 转换格 + 1 投影格
-    CHECK(Spec::transition_primary_count(Spec::kTable) == 3u);
-    CHECK(Spec::projection_primary_count(Spec::kTable) == 1u);
+    CHECK(Spec::transition_primary_count(Spec::kTable) == 30u);
+    CHECK(Spec::projection_primary_count(Spec::kTable) == 5u);
 
     // ── ④ 正控:`F` 态投影是 `Primary` 且指向 `32 号:529` ⇒ 不计入待追认 ──
-    CHECK(Spec::projection_primary_count(Spec::kTable) == 1u);
+    CHECK(Spec::projection_primary_count(Spec::kTable) == 5u);
     CHECK_FALSE(Spec::kTable.projection_basis[4].pending);
 
     // ── 反向 fixture ⑦:清空某格的 `basis` ⇒ 必红 ─────────────────────
@@ -358,10 +358,12 @@ TEST_CASE("MESIF 规约:逐格依据齐备 + kind/pending 双向一致 + 待追�
         CHECK(Spec::basis_entry_is_consistent(Spec::kTable.transition_basis[2][4])); // 正控
     }
 
-    // ── 反向 fixture ⑨:推导格标为已追认 ⇒ 必红 ───────────────────────
+    // ── 反向 fixture ⑨:把某格的 `kind` 改成非 `Primary`(而 `pending` 仍 false)⇒ 必红 ──
+    //    ⚠️ 追认闭合后**已无非 Primary 格** ⇒ 原「推导格标为已追认」fixture **空转**;
+    //    改为直接破坏不变式的**后半段**(`kind != Primary` ⇒ `pending == true`)⇒ 仍「有牙」。
     {
         Table t = copy_table();
-        t.transition_basis[0][0].pending = false; // I + Rd(Structural)
+        t.transition_basis[0][0].kind = Spec::BasisKind::Derived; // I + Rd(Primary → Derived)
         CHECK_FALSE(Spec::basis_entry_is_consistent(t.transition_basis[0][0]));
         CHECK(Spec::basis_entry_is_consistent(Spec::kTable.transition_basis[0][0])); // 正控
     }
@@ -377,7 +379,7 @@ TEST_CASE("MESIF 规约:逐格依据齐备 + kind/pending 双向一致 + 待追�
     // ── 反向 fixture ⑪:改动载体 ⇒ 统计与推导记录不一致 ⇒ 必红 ────────
     {
         Table t = copy_table();
-        t.transition_basis[0][0].pending = false; // 抹掉一个待追认标记
+        t.transition_basis[0][0].pending = true; // 把一格标回「待追认」⇒ 计数 0 → 1
         CHECK(Spec::pending_count(t) != Spec::kExpectedPendingCount);
         CHECK(Spec::pending_count(Spec::kTable) == Spec::kExpectedPendingCount); // 正控
     }
@@ -407,6 +409,19 @@ TEST_CASE("MESIF 规约:2 项语义损失显式登记 + 措辞可机器区分(MS
           Spec::perm_rank(Spec::kTable.projection[e_idx]));
     CHECK(Spec::kTable.transition[f_idx][static_cast<std::size_t>(Spec::Event::RdUnique)] == e_idx);
 
+    // ── 损失 ③:`M → F` 写回路径落在 F/M 合并的不可分辨点 ──
+    {
+        const char* wb = Spec::kPermMergeWritebackPathNote;
+        CHECK(Spec::contains(wb, "写回"));
+        CHECK(Spec::contains(wb, "不可分辨"));
+        CHECK(Spec::contains(wb, "M → F"));
+        // 前提成立:纠正后脏 Owner 的写回路径确实落到 `F`(per ArchForge 42 号 §2 行 23)
+        CHECK(Spec::transition(Spec::State::M, Spec::Event::SnpShared) ==
+              static_cast<std::uint8_t>(Spec::State::F));
+        // 且 `F` 与 `M` 同投影 ⇒ 写回不可见
+        CHECK(Spec::kTable.projection[4] == Spec::kTable.projection[3]);
+    }
+
     // ── 反向 fixture ⑫:登记缺「可由 Sharer Tracker 补偿」的限定 ⇒ 必红 ──
     {
         const char* broken = "F 与 M 合并投影为 WRITEBACK:信息丢失。";
@@ -434,7 +449,7 @@ TEST_CASE("MESIF 规约:2 项语义损失显式登记 + 措辞可机器区分(MS
 // ══════════════════════════════════════════════════════════════════════
 TEST_CASE("MESIF 规约:偏离清单与载体逐格一致(MS-05)", "[cep][mesif-state-spec]") {
     CHECK(Spec::deviations_are_consistent(Spec::kTable));
-    CHECK(Spec::kDeviationCount == 8u);
+    CHECK(Spec::kDeviationCount == 9u);
 
     // 每条登记都**真偏离**:实际目标态 ≠ 模板取值
     for (std::size_t i = 0; i < Spec::kDeviationCount; ++i) {
@@ -457,11 +472,26 @@ TEST_CASE("MESIF 规约:偏离清单与载体逐格一致(MS-05)", "[cep][mesif-
     }
     CHECK(f_listed == 5u);
 
-    // ── 反向 fixture ⑮:删除清单中的一条偏离 ⇒ 必红 ───────────────────
+    // ── 反向 fixture ⑮:删除清单中的一条**F 行**偏离 ⇒ 必红 ─────────────
+    //    ⚠️ 覆盖规则的守门对象是「`F` 行中模板无对应的 5 格须**全部**登记」⇒ fixture 必须
+    //    删 **F 行**那条才红(删 `M` 行的 D5 不触发覆盖规则 ⇒ 改由「恰好 9 行」守)。
     {
+        std::size_t drop = Spec::kDeviationCount; // 待删项下标
+        for (std::size_t i = 0; i < Spec::kDeviationCount; ++i) {
+            if (Spec::kDeviations[i].state == Spec::State::F &&
+                Spec::kDeviations[i].event == Spec::Event::SnpUnique) {
+                drop = i;
+                break;
+            }
+        }
+        REQUIRE(drop < Spec::kDeviationCount);
         Spec::Deviation devs[Spec::kDeviationCount - 1];
-        for (std::size_t i = 0; i + 1 < Spec::kDeviationCount; ++i)
-            devs[i] = Spec::kDeviations[i];
+        std::size_t k = 0;
+        for (std::size_t i = 0; i < Spec::kDeviationCount; ++i) {
+            if (i == drop)
+                continue;
+            devs[k++] = Spec::kDeviations[i];
+        }
         CHECK_FALSE(Spec::deviations_are_consistent(Spec::kTable, devs));
         CHECK(Spec::deviations_are_consistent(Spec::kTable)); // 正控
     }
@@ -599,7 +629,7 @@ namespace {
         }
         // 偏离清单(§3):逐条与载体的 `kDeviations[]` 相等
         if (dv.size() != Spec::kDeviationCount)
-            bad.push_back("偏离清单行数不是 8");
+            bad.push_back("偏离清单行数不是 9");
         for (std::size_t i = 0; i < Spec::kDeviationCount && i < dv.size(); ++i) {
             const auto& d = Spec::kDeviations[i];
             const std::size_t si = static_cast<std::size_t>(d.state);
@@ -650,13 +680,15 @@ TEST_CASE("MESIF 规约:逐格追认清单与载体逐格一致(MS-06)", "[cep][
             ++pending_rows;
     }
     CHECK(pending_rows == Spec::pending_count(Spec::kTable));
-    CHECK(pending_rows == 31u);
+    CHECK(pending_rows == 0u);
 
     // ── 反向 fixture ⑰:清单某行的 `kind` 被改 ⇒ 必红 ──────────────────
+    //    ⚠️ 追认闭合后**全部 35 格都是 `Primary`** ⇒ 改成 `Primary` 是**空操作**
+    //    ⇒ fixture 必须改成**非 `Primary`** 才有牙。
     {
         auto broken = tr;
         REQUIRE(!broken.empty());
-        broken[0].kind = "Primary";
+        broken[0].kind = "Derived";
         CHECK_FALSE(checklist_mismatches(broken, pr, dv).empty());
         CHECK(checklist_mismatches(tr, pr, dv).empty()); // 正控
     }

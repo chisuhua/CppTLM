@@ -299,6 +299,7 @@ echo '═══ 破坏 21:权威迁移的 `reason` 置空 ⇒ 迁移登记必红
 python3 -c "
 import json
 p='$REPO_DECL'; d=json.load(open(p))
+d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['authority_migrations'][0]['reason']=''
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "权威迁移的 reason 置空" RED "$REAL_AF"
@@ -309,6 +310,7 @@ echo "═══ 破坏 22:权威迁移登记不存在的实例 id ⇒ 必红(判
 python3 -c "
 import json
 p='$REPO_DECL'; d=json.load(open(p))
+d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['authority_migrations'][0]['instance_id']='typo_nonexistent'
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "权威迁移登记不存在的实例 id" RED "$REAL_AF"
@@ -319,7 +321,8 @@ echo '═══ 破坏 23:同一 id 同时在 `repo_owned_instance_ids[]` 与 `a
 python3 -c "
 import json
 p='$REPO_DECL'; d=json.load(open(p))
-d['repo_owned_instance_ids']=d.get('repo_owned_instance_ids',[])+[d['authority_migrations'][0]['instance_id']]
+d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
+d['repo_owned_instance_ids']=d.get('repo_owned_instance_ids',[])+['mesif']
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "同一 id 同时出现在两个名单(权威归属二义)" RED "$REAL_AF"
 restore_repo_decl
@@ -329,6 +332,7 @@ echo '═══ 破坏 24:权威迁移缺 `ledger_entry` ⇒ 必红(判据 ③)�
 python3 -c "
 import json
 p='$REPO_DECL'; d=json.load(open(p))
+d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['authority_migrations'][0]['ledger_entry']=''
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "权威迁移缺 ledger_entry(台账锚)" RED "$REAL_AF"
@@ -350,6 +354,7 @@ echo '═══ 破坏 26:权威迁移的 `archforge_snapshot` 置空 ⇒ 必红
 python3 -c "
 import json
 p='$REPO_DECL'; d=json.load(open(p))
+d['authority_migrations']=[{'instance_id':'mesif','reason':'合成(毒化用)','ledger_entry':'Entry #SYNTH','archforge_snapshot':'ArchForge 32 号:529(合成)'}]
 d['authority_migrations'][0]['archforge_snapshot']=''
 json.dump(d,open(p,'w'),ensure_ascii=False,indent=2)"
 run "权威迁移缺 archforge_snapshot(原声明锚)" RED "$REAL_AF"

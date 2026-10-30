@@ -42,9 +42,9 @@ fi
 # ── 毒化定义:每条 = (kind, 旧串, 新串)──────────────────────────────
 # ⚠️ 旧串**必须唯一命中** —— 否则毒化是空操作 ⇒ 判据假绿(脚本会显式报错)。
 MUTATIONS=(
-  "basis_ref_empty|BasisKind::Structural, true, \"ArchForge 09 号 §3.3:150\",|BasisKind::Structural, true, \"\","
+  "basis_ref_empty|\"ArchForge 42 号:§2 行 1\",|\"\","
   "primary_marked_pending|BasisKind::Primary, false, \"ArchForge 25-nsa:553; ArchForge 32 号:529\",|BasisKind::Primary, true, \"ArchForge 25-nsa:553; ArchForge 32 号:529\","
-  "derived_not_pending|BasisKind::Structural, true, \"ArchForge 09 号 §3.3:151\",|BasisKind::Structural, false, \"ArchForge 09 号 §3.3:151\","
+  "kind_downgraded_without_pending|{BasisKind::Primary, false, \"ArchForge 42 号:§2 行 3\",|{BasisKind::Derived, false, \"ArchForge 42 号:§2 行 3\","
   "primary_ref_without_anchor|BasisKind::Primary, false, \"ArchForge 25-nsa:553; ArchForge 32 号:529\",|BasisKind::Primary, false, \"参见设计文档\","
   "shared_write_mutates|{1, 2, 1, 2, 1, 0}, // S :|{1, 2, 2, 2, 1, 0}, // S :"
   "local_rank_drops|{2, 2, 3, 2, 4, 0}, // E :|{2, 0, 3, 2, 4, 0}, // E :"

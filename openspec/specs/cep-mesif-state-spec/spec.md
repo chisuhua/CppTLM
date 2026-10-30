@@ -11,6 +11,12 @@
 > **边界**:不改 `protocol_instance.schema.json`(冻结面)· 不改 `adapter_schema_contracts.hh` ·
 > 不改 `CohIfBundle` · 不扩 `perm` 4 值 · 不引入新的 SharerTracker 实现 ·
 > **不**实现 `MesifAdapter`(队列 #9)。
+>
+> **追认状态(2026-10-29 更新)**:ArchForge `42 号` 的 **35 格逐格追认已闭合**
+> (路径 A 混合变体:20 格逐格 + 15 格按档批量,豁免 1)⇒ 载体 35 格全部转为**一手原文**
+> (`kind = Primary` · `pending = false`);其中 **1 格被纠正**:`M + SnpShared` 的目标态
+> `S` → **`F`**(脏 Owner 写回后保留 Owner 身份成转发点,per ArchForge `42 号` §2 行 23);
+> 3 个**锚点格**全部「确认(签署自洽性不变量)」⇒ **不触发**三处同改。
 
 >
 > **判据口径边界**:本能力的判据 SHALL 锁定规约的**完备性 / 可审计性 / 待追认标记 / 内部自洽**,
@@ -77,6 +83,10 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 - **AND** 子条件 ② SHALL 成立:`kind` 与 `pending` SHALL **双向一致** ——
   `kind == Primary`(一手原文)⇒ `pending == false`;`kind != Primary`(推导 / 类比)⇒ `pending == true`
   ⇒ 「一手原文」与「待追认」**不得**错配(否则跨仓债被静默放过 / 已确认项被反复追认)
+  > ⚠️ **追认闭合后的口径**(2026-10-29,per ArchForge `42 号` 逐格追认结论):35 格**全部**追认闭合
+  > ⇒ 全部转为 `kind = Primary` · `pending = false` ⇒ 不变式的**后半段当前**平凡成立(无推导格);
+  > 但该规则**继续有效** —— 任何**将来**新增的推导格 SHALL 标 `pending = true`;
+  > 原档位痕迹保留在每格 `note` 的「〔原档位 …;原依据 …〕」段 ⇒ **审计链不丢**。
 - **AND** 子条件 ③ SHALL 成立:**待追认格数 SHALL 可查**(供「追认进度」观测),
   且 SHALL 与推导记录中的统计**逐数一致**
 - **AND** 子条件 ④ SHALL 成立:`kind == Primary` 的格 SHALL 引用 **ArchForge 的具体位置**
@@ -100,6 +110,11 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
   且 SHALL 注明该例外的**成因**是「`F` 无独立的 `perm` 值」
 - **AND** 子条件 ⑤ SHALL 成立:登记 SHALL **不得**以「给 `F` 新增第 5 个 `perm` 值」作为消除手段
   (per `ADR-CEP-02` CEN-Ib11 的 4 值锁)
+- **AND** 子条件 ⑥ SHALL 成立:损失 ① 的**可观测后果** SHALL 被登记 —— 脏 Owner 经 `M → F`
+  (写回后保留 Owner 身份成转发点)得到的是**干净**转发点,而 `F` 与 `M` 同投影 `WRITEBACK`
+  ⇒ 「已写回(干净)」与「仍脏」在 4 值接口上**同值不可分辨** ⇒ **写回事实在 perm 接口上不可见**
+  ⇒ 该后果在 2026-10-29 的追认纠正(`M + SnpShared`:`S` → `F`,per ArchForge `42 号` §2 行 23)
+  之后才**可达**
 - **AND** **反向 fixture**:登记缺「可由 Sharer Tracker 补偿」的限定 ⇒ 必红(误用 `chi_rnf` 的措辞);
   登记缺次生损失(秩回落)⇒ 必红
 
@@ -126,13 +141,14 @@ CEP SHALL 为 **MESIF** 提供:5 态状态机规约 + 5→4 `perm` 投影表 + *
 - **AND** 子条件 ③ SHALL 成立:清单登记的**待追认格数** SHALL 与载体 `pending_count()` **相等**
   ⇒ 跨仓债的刻度**唯一**
 - **AND** 子条件 ④ SHALL 成立:清单**不**得存在**载体里没有**的行(防清单里出现未登记的「追认项」)
-- **AND** 子条件 ⑤ SHALL 成立:清单的**偏离清单**(§3) SHALL **恰好 8 行**,每行的
+- **AND** 子条件 ⑤ SHALL 成立:清单的**偏离清单**(§3) SHALL **恰好 9 行**,每行的
   `(态, 事件, 模板取值, 本表取值)` SHALL 与载体 `kDeviations[]` **逐条相等**
+  (9 = 原 8 条 + **D5**:`M + SnpShared` 的纠正 ⇒ 脏 Owner 写回后保留 Owner 身份成转发点)
 - **AND** 子条件 ⑥ SHALL 成立:清单的三张表 SHALL 由**入库的生成器**
   (`scripts/test/generate_mesif_recognition_checklist.sh`)从载体产出 ⇒ 「由载体生成」SHALL 是
   **可复现**的,不是一次性人工产出
 - **AND** **反向 fixture**:把清单某行的 `kind` 改掉 / 删掉一行 / 改掉偏离清单的「本表取值」⇒ 必红
-- **AND** **正控**:清单的 30 + 5 + 8 行与载体**零差异**
+- **AND** **正控**:清单的 30 + 5 + 9 行与载体**零差异**
 
 > **锚点**:`test_cep_mesif_state_spec.cc` 的 MS-06 断言 + 2 条反向 fixture
 > (反向 fixture 以「同谓词 + 变异输入」实现:解析出的行集合与载体比对)

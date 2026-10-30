@@ -122,84 +122,131 @@ namespace tlm::cep {
         /// | `RdUnique` | local | `I→E` · `S→E` · `E→E` · `M→M` · `F→E` |
         /// | `Wr` | local | `E→M` · `M→M`;**`I` / `S` / `F` 上写非法 ⇒ 状态不变** |
         /// | `Upgrade` | local | `S→E` · `F→E`;其余保持 |
-        /// | `SnpShared` | remote | `E→F`(保留 Owner 身份)· `M→S`(先写回)· `S→S` · `F→F` |
-        /// | `SnpUnique` | remote | 任何有副本的态 → `I` |
+        /// | `SnpShared` | remote | `E→F`(保留 Owner 身份)· `M→F`(先写回,保留转发点)· `S→S` · `F→F`
+        /// | | `SnpUnique` | remote | 任何有副本的态 → `I` |
         static constexpr Table kTable{
             // ── 转换表(目标态)────────────────────────────────────────────
             {
                 {1, 2, 0, 0, 0, 0}, // I : Rd→S / RdUnique→E / SnpShared→I(不变)
                 {1, 2, 1, 2, 1, 0}, // S : RdUnique→E / Upgrade→E / Wr→S(不变)
                 {2, 2, 3, 2, 4, 0}, // E : Wr→M / SnpShared→F
-                {3, 3, 3, 3, 1, 0}, // M : SnpShared→S(先写回)
+                {3, 3, 3, 3, 4, 0}, // M : SnpShared→F(先写回,保留转发点)
                 {4, 2, 4, 2, 4, 0}, // F : RdUnique→E / Upgrade→E / SnpShared→F
             },
             // ── 转换表的逐格依据(kind / pending / ref / note)────────────
             {
                 {
-                    {BasisKind::Structural, true, "ArchForge 09 号 §3.3:150",
-                     "读缺失 ⇒ 取共享干净副本(MOESI I+Rd→S 同构)"},
-                    {BasisKind::Structural, true,
-                     "ArchForge 09 号 §3.3:150; include/tlm/cep/chi_rnf_adapter.hh:108",
-                     "取独占干净副本(CHI I+RdUnique→UC 同构)"},
-                    {BasisKind::Derived, true, "include/tlm/cep/chi_rnf_adapter.hh:101-105",
-                     "无副本可写 ⇒ 写非法 ⇒ 状态不变(CHI 非法事件 ⇒ 不变约定)"},
-                    {BasisKind::Derived, true, "include/tlm/cep/chi_rnf_adapter.hh:109",
-                     "无共享副本可升级 ⇒ 状态不变"},
-                    {BasisKind::Derived, true, "include/tlm/cep/chi_rnf_adapter.hh:108",
-                     "无副本可降级 ⇒ 状态不变(偏离 CHI 的 I+SnpShared→SC,见偏离清单 D1)"},
-                    {BasisKind::Derived, true, "include/tlm/cep/chi_rnf_adapter.hh:108",
-                     "无副本可失效 ⇒ 状态不变"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 1",
+                     "读缺失 ⇒ 取共享干净副本(MOESI I+Rd→S 同构)〔原档位 Structural;原依据 "
+                     "ArchForge 09 号 §3.3:150〕—— 经 ArchForge `42 号` §2 行 1 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 2",
+                     "取独占干净副本(CHI I+RdUnique→UC 同构)〔原档位 Structural;原依据 ArchForge "
+                     "09 号 §3.3:150; include/tlm/cep/chi_rnf_adapter.hh:108〕—— 经 ArchForge `42 "
+                     "号` §2 行 2 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 3",
+                     "无副本可写 ⇒ 写非法 ⇒ 状态不变(CHI 非法事件 ⇒ 不变约定)〔原档位 "
+                     "Derived;原依据 include/tlm/cep/chi_rnf_adapter.hh:101-105〕—— 经 ArchForge "
+                     "`42 号` §2 行 3 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 4",
+                     "无共享副本可升级 ⇒ 状态不变〔原档位 Derived;原依据 "
+                     "include/tlm/cep/chi_rnf_adapter.hh:109〕—— 经 ArchForge `42 号` §2 行 4 "
+                     "追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 5",
+                     "无副本可降级 ⇒ 状态不变(偏离 CHI 的 I+SnpShared→SC,见偏离清单 D1)〔原档位 "
+                     "Derived;原依据 include/tlm/cep/chi_rnf_adapter.hh:108〕—— 经 ArchForge `42 "
+                     "号` §2 行 5 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 6",
+                     "无副本可失效 ⇒ 状态不变〔原档位 Derived;原依据 "
+                     "include/tlm/cep/chi_rnf_adapter.hh:108〕—— 经 ArchForge `42 号` §2 行 6 "
+                     "追认:确认"},
                 },
                 {
-                    {BasisKind::Structural, true, "ArchForge 09 号 §3.3:151",
-                     "共享命中 ⇒ 保持共享"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553-554",
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 7",
+                     "共享命中 ⇒ 保持共享〔原档位 Structural;原依据 ArchForge 09 号 §3.3:151〕—— "
+                     "经 ArchForge `42 号` §2 行 7 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 8",
                      "取独占 ⇒ 失效他 sharer ⇒ 本节点成干净独占(偏离 CHI 的 "
-                     "SC+RdUnique→SC,见偏离清单 D3)"},
-                    {BasisKind::Analogical, true, "ArchForge 25-nsa:553-554; IHI0050 §B4.1",
-                     "写只在独占态合法 ⇒ 共享态写状态不变(须先 Upgrade)"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553-554",
-                     "共享 → 独占升级(失效 sharer)"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:599", "已是 sharer ⇒ 保持共享"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553", "独占 snoop ⇒ 失效本副本"},
+                     "SC+RdUnique→SC,见偏离清单 D3)〔原档位 Derived;原依据 ArchForge "
+                     "25-nsa:553-554〕—— 经 ArchForge `42 号` §2 行 8 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 9",
+                     "写只在独占态合法 ⇒ 共享态写状态不变(须先 Upgrade)〔原档位 Analogical;原依据 "
+                     "ArchForge 25-nsa:553-554; IHI0050 §B4.1〕—— 经 ArchForge `42 号` §2 行 9 "
+                     "追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 10",
+                     "共享 → 独占升级(失效 sharer)〔原档位 Derived;原依据 ArchForge "
+                     "25-nsa:553-554〕—— 经 ArchForge `42 号` §2 行 10 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 11",
+                     "已是 sharer ⇒ 保持共享〔原档位 Derived;原依据 ArchForge 25-nsa:599〕—— 经 "
+                     "ArchForge `42 号` §2 行 11 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 12",
+                     "独占 snoop ⇒ 失效本副本〔原档位 Derived;原依据 ArchForge 25-nsa:553〕—— 经 "
+                     "ArchForge `42 号` §2 行 12 追认:确认"},
                 },
                 {
-                    {BasisKind::Structural, true, "ArchForge 09 号 §3.3:152",
-                     "独占命中 ⇒ 保持独占干净"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553-554", "已是唯一持有者 ⇒ 保持"},
-                    {BasisKind::Analogical, true, "ArchForge 09 号 §3.3:152; IHI0050 §B4.1",
-                     "干净独占 → 脏独占(静默升级,无总线事务)"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553-554", "已是独占 ⇒ 保持"},
-                    {BasisKind::Primary, false, "ArchForge 25-nsa:599",
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 13",
+                     "独占命中 ⇒ 保持独占干净〔原档位 Structural;原依据 ArchForge 09 号 "
+                     "§3.3:152〕—— 经 ArchForge `42 号` §2 行 13 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 14",
+                     "已是唯一持有者 ⇒ 保持〔原档位 Derived;原依据 ArchForge 25-nsa:553-554〕—— 经 "
+                     "ArchForge `42 号` §2 行 14 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 15",
+                     "干净独占 → 脏独占(静默升级,无总线事务)〔原档位 Analogical;原依据 ArchForge "
+                     "09 号 §3.3:152; IHI0050 §B4.1〕—— 经 ArchForge `42 号` §2 行 15 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 16",
+                     "已是独占 ⇒ 保持〔原档位 Derived;原依据 ArchForge 25-nsa:553-554〕—— 经 "
+                     "ArchForge `42 号` §2 行 16 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 25-nsa:605",
                      "唯一 Owner 收到远端共享请求 ⇒ Owner 仍单 ⇒ 直接落入 F 的定义(单 Owner + 多 "
-                     "Sharer)"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553",
-                     "独占 snoop ⇒ 失效 ⇒ Owner 转移"},
+                     "Sharer)〔原档位 Primary〕—— 经 ArchForge `42 号` §2 行 17 "
+                     "追认:确认(原文未推翻)"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 18",
+                     "独占 snoop ⇒ 失效 ⇒ Owner 转移〔原档位 Derived;原依据 ArchForge "
+                     "25-nsa:553〕—— 经 ArchForge `42 号` §2 行 18 追认:确认"},
                 },
                 {
-                    {BasisKind::Structural, true, "ArchForge 09 号 §3.3:153", "脏独占命中 ⇒ 保持"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553-554",
-                     "已是唯一脏持有者 ⇒ 保持"},
-                    {BasisKind::Structural, true, "ArchForge 09 号 §3.3:153", "已脏 ⇒ 保持脏独占"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553-554", "已是独占 ⇒ 保持"},
-                    {BasisKind::Derived, true, "include/tlm/cep/chi_rnf_adapter.hh:111",
-                     "脏 Owner 须先写回再共享 ⇒ 降为 S(CHI UD+SnpShared→SC 同构)"},
-                    {BasisKind::Derived, true, "ArchForge 25-nsa:553",
-                     "独占 snoop ⇒ 失效(隐含写回)"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 19",
+                     "脏独占命中 ⇒ 保持〔原档位 Structural;原依据 ArchForge 09 号 §3.3:153〕—— 经 "
+                     "ArchForge `42 号` §2 行 19 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 20",
+                     "已是唯一脏持有者 ⇒ 保持〔原档位 Derived;原依据 ArchForge 25-nsa:553-554〕—— "
+                     "经 ArchForge `42 号` §2 行 20 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 21",
+                     "已脏 ⇒ 保持脏独占〔原档位 Structural;原依据 ArchForge 09 号 §3.3:153〕—— 经 "
+                     "ArchForge `42 号` §2 行 21 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 22",
+                     "已是独占 ⇒ 保持〔原档位 Derived;原依据 ArchForge 25-nsa:553-554〕—— 经 "
+                     "ArchForge `42 号` §2 行 22 追认:确认"},
+                    {BasisKind::Primary, false,
+                     "ArchForge 42 号:§2 行 23; ArchForge 25-nsa:605; ArchForge 25-nsa:553",
+                     "脏 Owner 先写回 ⇒ 干净 Owner + ≥1 sharer ⇒ 保留 Owner 身份成转发点(与 D2 "
+                     "同型;CHI 无转发点)〔原档位 Derived;原依据 ArchForge 25-nsa:605 + "
+                     "25-nsa:553〕—— 经 ArchForge `42 号` §2 行 23 追认:**纠正** `S`→`F`"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 24",
+                     "独占 snoop ⇒ 失效(隐含写回)〔原档位 Derived;原依据 ArchForge 25-nsa:553〕—— "
+                     "经 ArchForge `42 号` §2 行 24 追认:确认"},
                 },
                 {
-                    {BasisKind::Structural, true, "ArchForge 09 号 §3.3:154",
-                     "Forward 节点命中 ⇒ 保持转发者身份(MOESI O+Rd→O 同构)"},
-                    {BasisKind::Analogical, true, "ArchForge 25-nsa:553",
-                     "取独占 ⇒ sharer 全失效 ⇒ F 清空 ⇒ 干净独占"},
-                    {BasisKind::Analogical, true, "ArchForge 25-nsa:554; IHI0050 §B4.1",
-                     "F 非独占(有 sharer)⇒ 写非法 ⇒ 状态不变(须先 Upgrade 到 E)"},
-                    {BasisKind::Analogical, true, "ArchForge 25-nsa:553",
-                     "升级 ⇒ sharer 全失效 ⇒ F 清空 ⇒ 干净独占"},
-                    {BasisKind::Primary, false, "ArchForge 25-nsa:599",
-                     "已是单 Owner + 有 sharer ⇒ 再来 sharer ⇒ 仍满足 F 的定义"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 25",
+                     "Forward 节点命中 ⇒ 保持转发者身份(MOESI O+Rd→O 同构)〔原档位 "
+                     "Structural;原依据 ArchForge 09 号 §3.3:154〕—— 经 ArchForge `42 号` §2 行 25 "
+                     "追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 26",
+                     "取独占 ⇒ sharer 全失效 ⇒ F 清空 ⇒ 干净独占〔原档位 Analogical;原依据 "
+                     "ArchForge 25-nsa:553〕—— 经 ArchForge `42 号` §2 行 26 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 27",
+                     "F 非独占(有 sharer)⇒ 写非法 ⇒ 状态不变(须先 Upgrade 到 E)〔原档位 "
+                     "Analogical;原依据 ArchForge 25-nsa:554; IHI0050 §B4.1〕—— 经 ArchForge `42 "
+                     "号` §2 行 27 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 42 号:§2 行 28",
+                     "升级 ⇒ sharer 全失效 ⇒ F 清空 ⇒ 干净独占〔原档位 Analogical;原依据 ArchForge "
+                     "25-nsa:553〕—— 经 ArchForge `42 号` §2 行 28 追认:确认"},
+                    {BasisKind::Primary, false, "ArchForge 25-nsa:605",
+                     "已是单 Owner + 有 sharer ⇒ 再来 sharer ⇒ 仍满足 F 的定义〔原档位 Primary〕—— "
+                     "经 ArchForge `42 号` §2 行 29 追认:确认(原文未推翻)"},
                     {BasisKind::Primary, false, "ArchForge 25-nsa:553; ArchForge 32 号:529",
-                     "独占 snoop ⇒ Owner 转移 ⇒ Forward 清空 ⇒ 无副本"},
+                     "独占 snoop ⇒ Owner 转移 ⇒ Forward 清空 ⇒ 无副本〔原档位 Primary;原依据 "
+                     "ArchForge 25-nsa:553; ArchForge 32 号:529〕—— 经 ArchForge `42 号` §2 行 30 "
+                     "追认:确认"},
                 },
             },
             // ── 5→4 投影表(瞬态无投影 —— 本规约不声明瞬态)──────────────
@@ -212,13 +259,21 @@ namespace tlm::cep {
             },
             // ── 投影表的逐格依据────────────────────────────────────────
             {
-                {BasisKind::Structural, true, "ArchForge 32 号 §7.2:586",
-                 "MOESI 6→4 表的 I→NONE 同义迁移(状态同义)"},
-                {BasisKind::Structural, true, "ArchForge 32 号 §7.2:587", "同上(S→READ)"},
-                {BasisKind::Structural, true, "ArchForge 32 号 §7.2:588", "同上(E→UNIQUE)"},
-                {BasisKind::Structural, true, "ArchForge 32 号 §7.2:589", "同上(M→WRITEBACK)"},
-                {BasisKind::Primary, false, "ArchForge 32 号:529",
-                 "一手原文:F(Forward)态 → perm 投影为 WRITEBACK"},
+                {BasisKind::Primary, false, "ArchForge 42 号:§3 行 1",
+                 "MOESI 6→4 表的 I→NONE 同义迁移(状态同义)〔原档位 Structural;原依据 ArchForge 32 "
+                 "号 §7.2:586〕—— 经 ArchForge `42 号` §3 行 1 追认:确认"},
+                {BasisKind::Primary, false, "ArchForge 42 号:§3 行 2",
+                 "同上(S→READ)〔原档位 Structural;原依据 ArchForge 32 号 §7.2:587〕—— 经 ArchForge "
+                 "`42 号` §3 行 2 追认:确认"},
+                {BasisKind::Primary, false, "ArchForge 42 号:§3 行 3",
+                 "同上(E→UNIQUE)〔原档位 Structural;原依据 ArchForge 32 号 §7.2:588〕—— 经 "
+                 "ArchForge `42 号` §3 行 3 追认:确认"},
+                {BasisKind::Primary, false, "ArchForge 42 号:§3 行 4",
+                 "同上(M→WRITEBACK)〔原档位 Structural;原依据 ArchForge 32 号 §7.2:589〕—— 经 "
+                 "ArchForge `42 号` §3 行 4 追认:确认"},
+                {BasisKind::Primary, false, "ArchForge 42 号:§3 行 5; ArchForge 32 号:529",
+                 "一手原文:F(Forward)态 → perm 投影为 WRITEBACK〔原档位 Primary〕—— 经 ArchForge "
+                 "`42 号` §3 行 5 追认:确认(原文未推翻)"},
             },
         };
 
@@ -226,7 +281,7 @@ namespace tlm::cep {
         //  (2) 与协议模板(CHI / MOESI)的**偏离清单**
         // ══════════════════════════════════════════════════════════════════
 
-        static constexpr std::size_t kDeviationCount = 8;
+        static constexpr std::size_t kDeviationCount = 9;
 
         /// 偏离清单(per change 的 design `D-ε.8`;追认优先级最高)
         static constexpr Deviation kDeviations[kDeviationCount] = {
@@ -248,6 +303,9 @@ namespace tlm::cep {
              "D4d:MESIF 特有 —— 已是单 Owner + 有 sharer ⇒ 再来 sharer ⇒ 仍满足 F 的定义"},
             {State::F, Event::SnpUnique, "—",
              "D4e:MESIF 特有 —— 独占 snoop ⇒ Owner 转移 ⇒ Forward 清空 ⇒ 无副本"},
+            {State::M, Event::SnpShared, "SC",
+             "D5:MESIF 特有 —— 脏 Owner 写回后成干净 Owner,保留 Owner 身份成为转发点(与 D2 "
+             "同型;CHI 无转发点概念,UD+SnpShared→SC 不适用)"},
         };
 
         // ══════════════════════════════════════════════════════════════════
@@ -280,6 +338,21 @@ namespace tlm::cep {
             "固有损失,RN 侧不可补偿;而 mesif 的 sharer_tracker = HierarchicalDirectory(EXACT + "
             "GLOBAL)"
             "⇒ 本损失是投影的表达力损失,可由 Sharer Tracker 补偿。两者措辞不得混用。";
+
+        /// 损失 ① 的**可观测后果**:脏 Owner 的**写回路径**落在 F/M 合并的不可分辨点
+        ///
+        /// 2026-10-29 追认纠正(`M + SnpShared`:`S` → `F`,per ArchForge `42 号` §2 行 23)之后,
+        /// 脏 Owner 经写回 → **干净**转发点(`F`);而 `F` 与 `M` 同投影 `WRITEBACK`
+        /// ⇒ 「**已写回(干净)**」与「**仍脏**」在 4 值接口上**同值不可分辨**
+        /// ⇒ **写回这一事实在 perm 接口上不可见**。
+        /// ⇒ 该后果在纠正之前**不可达**(脏 Owner 写回后原落 `S`,`S` 投影 `READ` ⇒ 可分辨)。
+        static constexpr const char* kPermMergeWritebackPathNote =
+            "损失①的可观测后果:脏 Owner 经 M → F(写回后保留 Owner "
+            "身份成转发点)时得到的是**干净**转发点,"
+            "而 F 与 M 同投影 WRITEBACK ⇒ 「已写回(干净)」与「仍脏」在 4 值接口上**同值不可分辨** "
+            "⇒ "
+            "写回这一事实在 perm 接口上不可见。该后果在 2026-10-29 追认纠正(M+SnpShared:S→F,"
+            "per ArchForge 42 号 §2 行 23)之后才**可达**。";
 
         /// `F → E` 的**秩回落**登记(损失 ② —— 损失 ① 的次生效应)
         static constexpr const char* kRankRegressionNote =
@@ -681,13 +754,19 @@ namespace tlm::cep {
         }
 
         // ── 统计的**期望值**(与 change 的 design `D-ε.11` 逐数一致)────────
-        static constexpr std::size_t kExpectedPrimaryCount = 4;     ///< 一手原文格(3 转换 + 1 投影)
-        static constexpr std::size_t kExpectedPendingCount = 31;    ///< 待追认格
-        static constexpr std::size_t kExpectedStructuralCount = 11; ///< 7 转换 + 4 投影
-        static constexpr std::size_t kExpectedDerivedCount = 15;    ///< 15 转换
-        static constexpr std::size_t kExpectedAnalogicalCount = 5;  ///< 5 转换
-        static constexpr std::size_t kExpectedTransitionPrimary = 3;
-        static constexpr std::size_t kExpectedProjectionPrimary = 1;
+        // ⚠️ **追认闭合后**(per ArchForge `42 号` 逐格追认结论,2026-10-29):35 格**全部**追认闭合
+        //    ⇒ 全部转为**一手原文**(`kind = Primary` · `pending = false`);原档位痕迹保留在每格
+        //    `note` 的「〔原档位 …;原依据 …〕」段 ⇒ **审计链不丢**,而「待追认」计数归零。
+        static constexpr std::size_t kExpectedPrimaryCount =
+            35; ///< 35 格全部一手原文(转换 30 + 投影 5)
+        static constexpr std::size_t kExpectedPendingCount = 0; ///< 待追认格(**追认已闭合**)
+        static constexpr std::size_t kExpectedStructuralCount =
+            0; ///< 原档位已随追认闭合(痕迹在 `note`)
+        static constexpr std::size_t kExpectedDerivedCount = 0;
+        static constexpr std::size_t kExpectedAnalogicalCount = 0;
+        static constexpr std::size_t kExpectedTransitionPrimary =
+            30; ///< 转换表 30 格(5 态 × 6 事件)
+        static constexpr std::size_t kExpectedProjectionPrimary = 5; ///< 投影表 5 格
     };
 
 } // namespace tlm::cep

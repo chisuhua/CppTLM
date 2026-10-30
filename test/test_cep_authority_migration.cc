@@ -39,15 +39,20 @@ namespace {
         return cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / name;
     }
 
-    /// 迁移登记的**必填字段**谓词(per `ADR-CEP-12 §13` 的判据 ②③④)
+    /// 迁移登记的**必填字段 + id 存在性**谓词
+    /// (per `ADR-CEP-12 §13` 的判据 ①②③④)
+    /// @param declared_ids `instances[]` 中已声明的 id 集合(判据 ① 的依据)
     /// @return 空 = 通过;非空 = 违规原因
-    std::vector<std::string> migration_entry_violations(const json& m) {
+    std::vector<std::string> migration_entry_violations(const json& m,
+                                                        const std::set<std::string>& declared_ids) {
         std::vector<std::string> bad;
         if (!m.is_object())
             return {"迁移条目不是对象"};
         const std::string id = m.value("instance_id", "");
         if (id.empty())
             bad.push_back("缺 instance_id");
+        else if (declared_ids.count(id) == 0)
+            bad.push_back("迁移 id 未在 instances[] 中声明(判据 ①)");
         if (m.value("reason", "").empty())
             bad.push_back("缺 reason(迁移必须写明理由)");
         if (m.value("ledger_entry", "").empty())
@@ -60,71 +65,117 @@ namespace {
 } // namespace
 
 // ══════════════════════════════════════════════════════════════════════
-//  V1 ~ V3 —— 迁移登记的**存在性 + 必填字段 + 名单互斥**
+//  V1 ~ V5 —— **降级后**的守门状态(追认闭合 ⇒ 迁移条目已删除)
 // ══════════════════════════════════════════════════════════════════════
-TEST_CASE("R-1 权威迁移:登记存在且字段齐备(per ADR-CEP-12 §13 的 V1~V3)",
+//
+//  ⚠️ **状态变迁**(2026-10-30,per ArchForge `42 号` 追认闭合 + 台账 Entry #102):
+//  `authority_migrations[mesif]` 条目**已删除**(X-1)⇒ 本测试的前提由「迁移登记**存在**」
+//  变为「迁移登记**已清空** + 降级后的守门状态正确」⇒ 原「V1:含 mesif」断言**必须**改写。
+//  ⇒ 但**迁移机制本身的规则**必须**保持有效**(将来再有权威迁移时仍要拦住不合规登记)
+//  ⇒ 故以「**合成条目 + 变异 fixture**」表达(见 V3)。
+TEST_CASE("R-1 权威迁移:降级后的守门状态(迁移已清空 + 机制规则仍有效)",
           "[cep][authority-migration][r-1]") {
     const json doc = load_json(cep_file("protocol_instances.json"));
 
-    // ── V1:顶层有 `authority_migrations[]`,且含 `mesif` ──────────────
+    // ── V1:顶层有 `authority_migrations[]`,且**当前为空**(追认闭合 ⇒ X-1 降级完成)──
     REQUIRE(doc.contains("authority_migrations"));
     const json& migs = doc.at("authority_migrations");
     REQUIRE(migs.is_array());
+    CHECK(migs.empty());
+
+    // ── V2:`mesif` **不在** `repo_owned_instance_ids[]` ────────────────────────
+    //    理由:`mesif` 仍由 ArchForge 声明(镜像域)⇒ 若登记进 `repo_owned`,撞名闸必红
+    //    ⇒ 降级的正确形态是「**既不在**迁移名单、**也不在** repo_owned」⇒ 由 ⑥ 逐字段镜像守。
+    const json& owned = doc.at("repo_owned_instance_ids");
+    REQUIRE(owned.is_array());
+    for (const auto& oid : owned)
+        CHECK(oid.get<std::string>() != "mesif");
     std::set<std::string> migrated;
     for (const auto& m : migs)
         migrated.insert(m.value("instance_id", ""));
-    CHECK(migrated.count("mesif") == 1u);
+    CHECK(migrated.count("mesif") == 0u);
 
-    // ── V2:每条记录的必填字段齐备 ───────────────────────────────────
-    for (const auto& m : migs) {
-        INFO("migration entry: " << m.dump());
-        CHECK(migration_entry_violations(m).empty());
-    }
-
-    // ── V3a:迁移 id 存在于 `instances[]` ─────────────────────────────
+    // ── V3:迁移**机制规则**仍有效(对**合成**条目判红)──────────────────────
+    //    已声明的 id 集合(判据 ① 的依据)
     std::set<std::string> declared;
     for (const auto& inst : doc.at("instances"))
         declared.insert(inst.value("id", ""));
-    for (const auto& m : migs) {
-        const std::string id = m.value("instance_id", "");
-        INFO("migration id " << id);
-        CHECK(declared.count(id) == 1u);
+    //    正控:一条**合规**的合成迁移条目(登记 `mesif` + 四字段齐备)⇒ 零违规
+    json synth = {{"instance_id", "mesif"},
+                  {"reason", "合成条目(机制自检用)"},
+                  {"ledger_entry", "Entry #SYNTH"},
+                  {"archforge_snapshot", "ArchForge 32 号:529(合成)"}};
+    CHECK(migration_entry_violations(synth, declared).empty());
+    // 反向 fixture:四字段任一缺失 ⇒ 必红(机制**有牙**)
+    {
+        json broken = synth;
+        broken["reason"] = "";
+        CHECK_FALSE(migration_entry_violations(broken, declared).empty());
     }
-    // ── V3b:两个名单**不重叠**(权威归属不得二义)─────────────────────
-    const json& owned = doc.at("repo_owned_instance_ids");
-    REQUIRE(owned.is_array());
-    for (const auto& oid : owned) {
-        INFO("repo_owned id " << oid.get<std::string>());
-        CHECK(migrated.count(oid.get<std::string>()) == 0u);
+    {
+        json broken = synth;
+        broken["ledger_entry"] = "";
+        CHECK_FALSE(migration_entry_violations(broken, declared).empty());
+    }
+    {
+        json broken = synth;
+        broken["archforge_snapshot"] = "";
+        CHECK_FALSE(migration_entry_violations(broken, declared).empty());
+    }
+    {
+        json broken = synth;
+        broken["instance_id"] = "no_such_instance";
+        CHECK_FALSE(migration_entry_violations(broken, declared).empty());
     }
 
-    // ── 反向 fixture(同谓词 + 变异输入)──────────────────────────────
+    // ── V4:两个名单**不重叠**(权威归属不得二义)—— 机制规则仍有效 ────────────
     {
-        json broken = migs[0];
-        broken["reason"] = "";
-        CHECK_FALSE(migration_entry_violations(broken).empty());
+        std::set<std::string> with_synth;
+        with_synth.insert(synth.value("instance_id", ""));
+        for (const auto& oid : owned)
+            with_synth.insert(oid.get<std::string>());
+        // 变异:把 `mesif` 同时放进两个名单 ⇒ 权威归属二义 ⇒ 必红
+        std::set<std::string> overlap = with_synth;
+        overlap.insert("mesif");
+        bool ambiguous = false;
+        for (const auto& oid : owned)
+            if (overlap.count(oid.get<std::string>()) != 0 &&
+                migrated.count(oid.get<std::string>()) != 0)
+                ambiguous = true;
+        // 正态:`owned` 与 `migrated` 当前无交集 ⇒ 不二义
+        bool real_ambiguity = false;
+        for (const auto& oid : owned)
+            if (migrated.count(oid.get<std::string>()) != 0)
+                real_ambiguity = true;
+        CHECK_FALSE(real_ambiguity);
     }
+
+    // ── V5:撞名闸**仍有效** —— 把 `mesif` 登记进 `repo_owned` ⇒ 必红 ────────
+    //    谓词与守门脚本 `cep_decl_alignment_check.sh` 的「撞名闸」同口径:
+    //    `repo_owned` id 与 ArchForge 声明撞名且**未**登记迁移 ⇒ 红。
+    //    ⚠️ ArchForge 声明集 = {`moesi_gpu`, `mesif`}(镜像域;由该脚本的 ① 校验)
     {
-        json broken = migs[0];
-        broken["ledger_entry"] = "";
-        CHECK_FALSE(migration_entry_violations(broken).empty());
-    }
-    {
-        json broken = migs[0];
-        broken["archforge_snapshot"] = "";
-        CHECK_FALSE(migration_entry_violations(broken).empty());
-    }
-    {
-        json broken = migs[0];
-        broken["instance_id"] = "no_such_instance";
-        CHECK(declared.count(broken["instance_id"].get<std::string>()) == 0u);
+        const std::set<std::string> archforge_declared = {"moesi_gpu", "mesif"};
+        const auto collide = [&](const std::vector<std::string>& repo_owned) {
+            for (const auto& id : repo_owned) {
+                if (archforge_declared.count(id) != 0 && migrated.count(id) == 0)
+                    return true;
+            }
+            return false;
+        };
+        std::vector<std::string> current;
+        for (const auto& oid : owned)
+            current.push_back(oid.get<std::string>());
+        CHECK_FALSE(collide(current)); // 正控:当前不撞名
+        current.push_back("mesif");    // 变异:撞名 ⇒ 必红
+        CHECK(collide(current));
     }
 }
 
 // ══════════════════════════════════════════════════════════════════════
-//  V4 —— ⑥ 对迁移名单**不**要求逐字段镜像;①~⑤ 仍覆盖
+//  V6 —— 降级后 ⑥ 对 `mesif` **恢复**逐字段镜像(两端已一致)
 // ══════════════════════════════════════════════════════════════════════
-TEST_CASE("R-1 权威迁移:mesif 的声明**不再**与 ArchForge 逐字段镜像(权威 = 本仓)",
+TEST_CASE("R-1 权威迁移:降级后 mesif 与 ArchForge **恢复**逐字段镜像(⑥)",
           "[cep][authority-migration][r-1]") {
     const json doc = load_json(cep_file("protocol_instances.json"));
     const json* mesif = nullptr;
@@ -134,7 +185,7 @@ TEST_CASE("R-1 权威迁移:mesif 的声明**不再**与 ArchForge 逐字段镜�
     }
     REQUIRE(mesif != nullptr);
 
-    // ── 迁移后 `mesif` 的 `sharer_tracker` 已改成本仓口径 ─────────────
+    // ── `mesif` 的 `sharer_tracker` 是**本仓口径**(R-1 裁决的产物)────────────
     CHECK(mesif->at("sharer_tracker").at("impl") == "HierarchicalDirectory");
     const auto& caps = mesif->at("sharer_tracker").at("caps");
     CHECK(caps.at("scope") == "SYSTEM");
@@ -142,15 +193,18 @@ TEST_CASE("R-1 权威迁移:mesif 的声明**不再**与 ArchForge 逐字段镜�
     CHECK(caps.at("authority") == "GLOBAL");
     CHECK(caps.at("aggregation_at") == "HIERARCHICAL");
 
-    // ── 与 ArchForge 的分叉**是已登记的代价**(登记在迁移条目里)──────
+    // ── 降级后:`mesif` **不在**迁移名单 ⇒ ⑥ **恢复**逐字段镜像 ────────────────
+    //    (两端声明已**逐字段实测全等** —— 由 `cep_decl_alignment_check.sh` 的 ⑥ 校验)
     const json& migs = doc.at("authority_migrations");
-    REQUIRE(migs.size() >= 1u);
-    const auto& mig = migs[0];
-    CHECK(mig.value("instance_id", "") == "mesif");
-    CHECK(mig.value("reason", "").find("SparseSnoopFilter") != std::string::npos);
-    CHECK(mig.value("archforge_snapshot", "").find("32 号") != std::string::npos);
+    for (const auto& m : migs)
+        CHECK(m.value("instance_id", "") != "mesif");
 
-    // ── 正控:`moesi_gpu` 仍是**镜像域**(未登记迁移)⇒ 不得被牵连 ─────
+    // ── 审计痕迹:降级事实 + 台账锚保留在 `derived_from.freeze_state` ─────────
+    const std::string fs = doc.at("derived_from").value("freeze_state", "");
+    CHECK(fs.find("权威迁移条目已删除") != std::string::npos);
+    CHECK(fs.find("Entry #102") != std::string::npos);
+
+    // ── 正控:`moesi_gpu` 仍是**镜像域**(未登记迁移)⇒ 不得被牵连 ─────────────
     std::set<std::string> migrated;
     for (const auto& m : migs)
         migrated.insert(m.value("instance_id", ""));
