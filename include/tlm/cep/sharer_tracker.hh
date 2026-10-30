@@ -1,11 +1,13 @@
 // include/tlm/cep/sharer_tracker.hh
-// Sharer Tracker —— 协议无关单接口 + caps descriptor + FullMapDirectory 最小行为实现
+// Sharer Tracker —— 协议无关单接口 + caps descriptor + 2 个行为实现
 //
 // 功能:把 `ADR-CEP-04` 的 α′ 三件套((α) 单接口 + (γ′) caps descriptor + D-5 重构)
-//       落成**可执行契约**。队列 #4 只实现 5 种实现中的 **FullMapDirectory**;
+//       落成**可执行契约**。行为实现已有 **2** 种:
+//       · `FullMapDirectory`(队列 #4 —— 单级目录)
+//       · `HierarchicalDirectory`(队列 #9 —— 分级目录,第 6 种实现,per `ADR-CEP-04 §13`)
 //       其余 4 种(SparseSnoopFilter / DcohSymmetric / TreeManager / BroadcastNull)
-//       跟随各自的消费队列(队列 #6~#9)落地 —— 此处只留**声明层** traits。
-// 作者: CppTLM Team / 日期: 2026-10-25
+//       跟随各自的消费队列(队列 #10 ~ #11)落地 —— 此处只留**声明层** traits。
+// 作者: CppTLM Team / 日期: 2026-10-25(2026-10-30 增 `HierarchicalDirectory` + 公共机械抽取)
 //
 // ── 定位 ───────────────────────────────────────────────────────────────
 // **不是缓存、不是网络组件**:不与 JSON `connections[]` 相连、不进 `ModuleFactory`、
@@ -278,18 +280,190 @@ public:
 };
 
 // ─────────────────────────────────────────────────────────────────────
-// FullMapDirectory —— 唯一行为实现(completeness = EXACT,无 broadcast 分支)
+// SnoopMechanics —— snoop 在飞句柄 + 被动记账的**公共机械**
+// ─────────────────────────────────────────────────────────────────────
+// ⚠️ **为什么抽出来**:snoop begin/fold/observe 的**协议语义**由 `ADR-CEP-04 §4`
+//    定义,**不随实现而异** ⇒ 多个行为实现(本期:`FullMapDirectory` /
+//    `HierarchicalDirectory`)**必须共用一份** ⇒ 禁双实现(同
+//    `adapter_contracts_loader.hh` 的同源纪律)。
+// ⚠️ **零虚函数** ⇒ `SharerTrackerIf` 的「恰好 4 个方法」契约不受影响
+//    (判据 `count_member_virtuals == 5` 不变)。
+struct SnoopMechanics {
+    /// 在飞的 snoop 条目
+    struct Inflight {
+        std::uint64_t addr = 0;
+        responder_set_t expected = 0;  // begin 时的原始期望集(幂等判定用,不随 fold 收缩)
+        responder_set_t remaining = 0;
+        MergedState merged = SnoopState::I;
+    };
+
+    /// handle 空间大小(handle = 1..65535;0 保留为「无效」)。
+    /// 16-bit 是 `ADR-CEP-04` 的 RTL 契约(`typedef logic [15:0] snoop_handle_t`),不可 widen。
+    static constexpr std::size_t kHandleSpace = 65535u;
+
+    // ── snoop_begin 的公共实现 ──────────────────────────────────────────
+    void snoop_begin_core(std::uint64_t addr, responder_set_t expected_responders,
+                          snoop_handle_t& handle) {
+        // 期望集含**未映射位**(bits 4..63)⇒ 那些位永远扣不掉 ⇒ snoop 永不完成、
+        // 条目永久泄漏、该地址 lookup 永久 STALL。与「同址矛盾」同一拒绝语义。
+        if ((expected_responders & ~kMappedResponderMask) != 0) {
+            handle = snoop_handle_t{0};
+            return;
+        }
+
+        // 同地址已有 snoop 在飞:本实现按 ADR §4 返回 STALL,调用方本应先等 ——
+        //   · 期望集**相同** ⇒ IC2 幂等,返回既有 handle(不新建 pending)
+        //   · 期望集**不同** ⇒ 与在飞 snoop 矛盾,返回 **0**(无效 handle)并拒绝;
+        //     不得新建第二条 pending(否则旧 handle 泄漏,且 addr→handle 索引会被覆盖)
+        auto sit = inflight_by_addr_.find(addr);
+        if (sit != inflight_by_addr_.end()) {
+            const auto fit = inflight_.find(sit->second);
+            handle = (fit != inflight_.end() && fit->second.expected == expected_responders)
+                         ? sit->second
+                         : snoop_handle_t{0};
+            return;
+        }
+
+        handle = allocate_handle();
+        if (handle == 0)
+            return;  // 满表 ⇒ 拒绝,不得覆盖存活 handle
+        Inflight f;
+        f.addr = addr;
+        f.expected = expected_responders;
+        f.remaining = expected_responders;
+        f.merged = SnoopState::I;
+        inflight_[handle] = f;
+        inflight_by_addr_[addr] = handle;
+        events_.push_back(LifecycleEvent::MergeOnSnoopBegin);
+    }
+
+    // ── snoop_fold 的公共实现 ───────────────────────────────────────────
+    void snoop_fold_core(snoop_handle_t handle, node_id_t node_id, SnoopState resp_state,
+                         bool dirty, bool data_supplied, responder_set_t& remaining_mask,
+                         MergedState& merged_state) {
+        auto it = inflight_.find(handle);
+        if (it == inflight_.end()) {
+            // 未知 handle:显式返回「无进展」的哨兵值(全 1 + I),调用方据此报错
+            remaining_mask = ~responder_set_t{0};
+            merged_state = SnoopState::I;
+            return;
+        }
+
+        const responder_set_t bit = responder_mask_of(node_id);
+        if ((it->second.remaining & bit) != 0) {
+            it->second.remaining &= ~bit;
+            it->second.merged = join_state(it->second.merged, resp_state, dirty, data_supplied);
+            events_.push_back(LifecycleEvent::DecrementOnSnoopFold);
+        }
+        // bit 已清 ⇒ 重复 fold:返回当前值、不重复扣减(IC2 幂等)
+
+        remaining_mask = it->second.remaining;
+        merged_state = it->second.merged;
+
+        if (it->second.remaining == 0) {
+            inflight_by_addr_.erase(it->second.addr);
+            inflight_.erase(it);
+            events_.push_back(LifecycleEvent::RetireOnZeroPending);
+        }
+    }
+
+    // ── observe_snoop 的公共实现 ────────────────────────────────────────
+    void observe_snoop_core(std::uint64_t addr, node_id_t from_node,
+                            SnoopState resulting_local_state) {
+        // 被动记账:同 (addr, from_node, state) 重复调用 ⇒ 同一投影(IC2 幂等)
+        observed_[addr][from_node] = resulting_local_state;
+    }
+
+    // ── 观测(测试夹具 / 调用方诊断)──
+    /// peer 视角投影(由 `observe_snoop` 累积) —— IC2 幂等断言的观测点
+    LocalView peer_view_of(std::uint64_t addr) const {
+        LocalView v;
+        auto it = observed_.find(addr);
+        if (it == observed_.end())
+            return v;
+        v.valid = true;
+        for (const auto& [node, state] : it->second) {
+            if (state == SnoopState::I)
+                continue;
+            v.sharers |= responder_mask_of(node);
+            if (state == SnoopState::M)
+                v.dirty |= responder_mask_of(node);
+        }
+        return v;
+    }
+
+    std::size_t inflight_count() const { return inflight_.size(); }
+    bool is_inflight(std::uint64_t addr) const { return inflight_by_addr_.count(addr) != 0; }
+    const std::vector<LifecycleEvent>& events() const { return events_; }
+
+    std::size_t event_count(LifecycleEvent e) const {
+        std::size_t n = 0;
+        for (const auto& x : events_)
+            if (x == e)
+                ++n;
+        return n;
+    }
+
+protected:
+    /// 16-bit handle 是 `ADR-CEP-04` 的 **RTL 契约**(`typedef logic [15:0] snoop_handle_t`),
+    /// 不可 widen ⇒ 分配时**线性探测空闲槽**,表满显式拒绝。
+    /// (旧实现 `next_handle_++` 无存活检查:65535 个在飞后第 65536 个新地址拿到 handle 1,
+    ///  覆盖存活条目 —— `inflight_by_addr_` 悬挂指向已易主的 handle,旧地址永久 STALL。)
+    snoop_handle_t allocate_handle() {
+        for (std::size_t probe = 0; probe < kHandleSpace; ++probe) {
+            const snoop_handle_t cand = next_handle_;
+            next_handle_ = static_cast<snoop_handle_t>(
+                (next_handle_ == 0xFFFFu) ? 1u : (static_cast<unsigned>(next_handle_) + 1u));
+            if (cand != 0 && inflight_.count(cand) == 0)
+                return cand;
+        }
+        return 0;  // 满表
+    }
+
+    /// 状态并:E/M 的「并」不丢脏;但 dirty 必须**带数据**才升 M(per ArchForge VC-R2:
+    /// 数据一律走 forward_data 槽,dirty 而无数据 ⇒ 不构成可写副本)。
+    static MergedState join_state(MergedState cur, SnoopState resp, bool dirty,
+                                  bool data_supplied) {
+        MergedState r = cur;
+        if (static_cast<std::uint8_t>(resp) > static_cast<std::uint8_t>(r))
+            r = resp;
+        if (dirty && data_supplied)
+            r = SnoopState::M;
+        return r;
+    }
+
+    /// 掩码中最低置位的 bit 序号(无则 `kNoBit`)
+    static unsigned first_bit(responder_set_t mask) {
+        for (unsigned b = 0; b < 64; ++b) {
+            if ((mask & (responder_set_t{1} << b)) != 0)
+                return b;
+        }
+        return kNoBit;
+    }
+
+    std::map<snoop_handle_t, Inflight> inflight_;
+    std::map<std::uint64_t, snoop_handle_t> inflight_by_addr_;
+    std::map<std::uint64_t, std::map<node_id_t, SnoopState>> observed_;
+    std::vector<LifecycleEvent> events_;
+    snoop_handle_t next_handle_ = 1;
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// FullMapDirectory —— 行为实现之一(completeness = EXACT,无 broadcast 分支)
 // ─────────────────────────────────────────────────────────────────────
 // 状态模型:per addr → {sharers, dirty} 两个 64-bit bitmask(**精确集**,可超集?不 ——
 // FullMap 是 EXACT,不做保守超集)。`observe_snoop` 记的是「peer 对某节点的认知」,
 // 与 `dir_` 正交存放,不参与判断(per ADR §3.4「被动记账」)。
-class FullMapDirectory final : public SharerTrackerIf {
+//
+// ⚠️ **单级**目录:全部 sharer 落在**同一张**表里 ⇒ 只有**一个**视图。
+//    对比:`HierarchicalDirectory`(同头文件)按**层级**分解 ⇒ 视图可**逐级收窄**。
+class FullMapDirectory final : public SharerTrackerIf, public SnoopMechanics {
 public:
     static constexpr TrackerImpl kImpl = TrackerImpl::FullMapDirectory;
 
     /// handle 空间大小(handle = 1..65535;0 保留为「无效」)。
     /// 16-bit 是 `ADR-CEP-04` 的 RTL 契约(`typedef logic [15:0] snoop_handle_t`),不可 widen。
-    static constexpr std::size_t kHandleSpace = 65535u;
+    static constexpr std::size_t kHandleSpace = SnoopMechanics::kHandleSpace;
 
     // 公开**数据成员**(不是方法)⇒ 接口面仍恰好 4 个方法
     SharerTrackerCaps caps = kTrackerTraits[0].caps;
@@ -369,72 +543,19 @@ public:
 
     void snoop_begin(std::uint64_t addr, responder_set_t expected_responders,
                      snoop_handle_t& handle) override {
-        // 期望集含**未映射位**(bits 4..63)⇒ 那些位永远扣不掉 ⇒ snoop 永不完成、
-        // 条目永久泄漏、该地址 lookup 永久 STALL。与「同址矛盾」同一拒绝语义。
-        if ((expected_responders & ~kMappedResponderMask) != 0) {
-            handle = snoop_handle_t{0};
-            return;
-        }
-
-        // 同地址已有 snoop 在飞:本实现按 ADR §4 返回 STALL,调用方本应先等 ——
-        //   · 期望集**相同** ⇒ IC2 幂等,返回既有 handle(不新建 pending)
-        //   · 期望集**不同** ⇒ 与在飞 snoop 矛盾,返回 **0**(无效 handle)并拒绝;
-        //     不得新建第二条 pending(否则旧 handle 泄漏,且 addr→handle 索引会被覆盖)
-        auto sit = inflight_by_addr_.find(addr);
-        if (sit != inflight_by_addr_.end()) {
-            const auto fit = inflight_.find(sit->second);
-            handle = (fit != inflight_.end() && fit->second.expected == expected_responders)
-                         ? sit->second
-                         : snoop_handle_t{0};
-            return;
-        }
-
-        handle = allocate_handle();
-        if (handle == 0)
-            return;  // 满表 ⇒ 拒绝,不得覆盖存活 handle
-        Inflight f;
-        f.addr = addr;
-        f.expected = expected_responders;
-        f.remaining = expected_responders;
-        f.merged = SnoopState::I;
-        inflight_[handle] = f;
-        inflight_by_addr_[addr] = handle;
-        events_.push_back(LifecycleEvent::MergeOnSnoopBegin);
+        snoop_begin_core(addr, expected_responders, handle);
     }
 
     void snoop_fold(snoop_handle_t handle, node_id_t node_id, SnoopState resp_state, bool dirty,
                     bool data_supplied, responder_set_t& remaining_mask,
                     MergedState& merged_state) override {
-        auto it = inflight_.find(handle);
-        if (it == inflight_.end()) {
-            // 未知 handle:显式返回「无进展」的哨兵值(全 1 + I),调用方据此报错
-            remaining_mask = ~responder_set_t{0};
-            merged_state = SnoopState::I;
-            return;
-        }
-
-        const responder_set_t bit = responder_mask_of(node_id);
-        if ((it->second.remaining & bit) != 0) {
-            it->second.remaining &= ~bit;
-            it->second.merged = join_state(it->second.merged, resp_state, dirty, data_supplied);
-            events_.push_back(LifecycleEvent::DecrementOnSnoopFold);
-        }
-        // bit 已清 ⇒ 重复 fold:返回当前值、不重复扣减(IC2 幂等)
-
-        remaining_mask = it->second.remaining;
-        merged_state = it->second.merged;
-
-        if (it->second.remaining == 0) {
-            inflight_by_addr_.erase(it->second.addr);
-            inflight_.erase(it);
-            events_.push_back(LifecycleEvent::RetireOnZeroPending);
-        }
+        snoop_fold_core(handle, node_id, resp_state, dirty, data_supplied, remaining_mask,
+                        merged_state);
     }
 
     void observe_snoop(std::uint64_t addr, node_id_t from_node,
                        SnoopState resulting_local_state) override {
-        // 被动记账:同 (addr, from_node, state) 重复调用 ⇒ 同一投影(IC2 幂等)
-        observed_[addr][from_node] = resulting_local_state;
+        observe_snoop_core(addr, from_node, resulting_local_state);
     }
 
     // ── 观测(测试夹具 / 调用方诊断)──
@@ -450,89 +571,294 @@ public:
         return v;
     }
 
-    /// peer 视角投影(由 `observe_snoop` 累积) —— IC2 幂等断言的观测点
-    LocalView peer_view_of(std::uint64_t addr) const {
-        LocalView v;
-        auto it = observed_.find(addr);
-        if (it == observed_.end())
-            return v;
-        v.valid = true;
-        for (const auto& [node, state] : it->second) {
-            if (state == SnoopState::I)
-                continue;
-            v.sharers |= responder_mask_of(node);
-            if (state == SnoopState::M)
-                v.dirty |= responder_mask_of(node);
-        }
-        return v;
-    }
-
-    std::size_t inflight_count() const { return inflight_.size(); }
-    bool is_inflight(std::uint64_t addr) const { return inflight_by_addr_.count(addr) != 0; }
-    const std::vector<LifecycleEvent>& events() const { return events_; }
-
-    std::size_t event_count(LifecycleEvent e) const {
-        std::size_t n = 0;
-        for (const auto& x : events_)
-            if (x == e)
-                ++n;
-        return n;
-    }
-
 private:
     struct Entry {
         responder_set_t sharers = 0;
         responder_set_t dirty = 0;
     };
-    struct Inflight {
-        std::uint64_t addr = 0;
-        responder_set_t expected = 0;  // begin 时的原始期望集(幂等判定用,不随 fold 收缩)
-        responder_set_t remaining = 0;
-        MergedState merged = SnoopState::I;
-    };
-
-    /// 16-bit handle 是 `ADR-CEP-04` 的 **RTL 契约**(`typedef logic [15:0] snoop_handle_t`),
-    /// 不可 widen ⇒ 分配时**线性探测空闲槽**,表满显式拒绝。
-    /// (旧实现 `next_handle_++` 无存活检查:65535 个在飞后第 65536 个新地址拿到 handle 1,
-    ///  覆盖存活条目 —— `inflight_by_addr_` 悬挂指向已易主的 handle,旧地址永久 STALL。)
-    snoop_handle_t allocate_handle() {
-        for (std::size_t probe = 0; probe < kHandleSpace; ++probe) {
-            const snoop_handle_t cand = next_handle_;
-            next_handle_ = static_cast<snoop_handle_t>(
-                (next_handle_ == 0xFFFFu) ? 1u : (static_cast<unsigned>(next_handle_) + 1u));
-            if (cand != 0 && inflight_.count(cand) == 0)
-                return cand;
-        }
-        return 0;  // 满表
-    }
-
-    static unsigned first_bit(responder_set_t mask) {
-        for (unsigned b = 0; b < 64; ++b) {
-            if ((mask & (responder_set_t{1} << b)) != 0)
-                return b;
-        }
-        return kNoBit;
-    }
-
-    /// 状态并:E/M 的「并」不丢脏;但 dirty 必须**带数据**才升 M(per ArchForge VC-R2:
-    /// 数据一律走 forward_data 槽,dirty 而无数据 ⇒ 不构成可写副本)。
-    static MergedState join_state(MergedState cur, SnoopState resp, bool dirty,
-                                  bool data_supplied) {
-        MergedState r = cur;
-        if (static_cast<std::uint8_t>(resp) > static_cast<std::uint8_t>(r))
-            r = resp;
-        if (dirty && data_supplied)
-            r = SnoopState::M;
-        return r;
-    }
 
     std::map<std::uint64_t, Entry> dir_;
-    std::map<snoop_handle_t, Inflight> inflight_;
-    std::map<std::uint64_t, snoop_handle_t> inflight_by_addr_;
-    std::map<std::uint64_t, std::map<node_id_t, SnoopState>> observed_;
-    std::vector<LifecycleEvent> events_;
-    snoop_handle_t next_handle_ = 1;
 };
+
+// ─────────────────────────────────────────────────────────────────────
+// HierarchicalDirectory —— 第 6 种实现(`ADR-CEP-04 §13` 的 R-1 裁决落地)
+// ─────────────────────────────────────────────────────────────────────
+// **分级目录型**:sharer 按**层级**归属(本仓模型:`L0` = 最细 / 离 sharer 最近,
+// `L{kLevelCount-1}` = 最粗 / 全局),每一级维护**自有**视图;任一级视图是
+// 「本级自有 + 所有更细级自有」的**并集** ⇒ **逐级上卷(roll-up)**。
+//
+// ⚠️ **与 `FullMapDirectory` 的可观测差异**(HD-02 的判据落点):
+//   · `FullMapDirectory`:**单级** ⇒ 只有**一个**视图(`view_of`);
+//   · `HierarchicalDirectory`:**多级** ⇒ `aggregate_view_at(addr, L)` 给出
+//     **L 级的聚合视图**,它**可能严格窄于**根级视图(当 sharer 分居不同层时)
+//     ⇒ 「`FullMapDirectory` 克隆 + 纸面 caps」在此**不可能**:克隆体**没有**
+//     `aggregate_view_at` 这个**收窄**能力。
+//
+// ⚠️ **聚合是派生的,不是存储的** ⇒ 各级只存**自有**位掩码,聚合视图在查询时
+//    按需 OR 出来 ⇒ **不可能出现「陈旧聚合」**(增量维护式聚合的经典失效模式)。
+//
+// ── 行为决策登记(per `ADR-CEP-04 §13` + 本 change 的 design `D-β`)────────
+// ⚠️ **本实现的行为规约在 ArchForge 与本仓均不存在**(只有 caps 声明 + 一句
+//    注释级描述)⇒ 以下决策**逐条**登记推导依据 + **待追认**标记 ⇒ 挂**跨仓追认债**
+//    (类比规约层 D-α 的 35 格 `pending` + ArchForge `42 号` 逐格追认)。
+//    ⇒ **不得**把自推语义写成「已裁决」。
+//
+//   | # | 决策点 | 依据 | 待追认 |
+//   |---|--------|------|:-----:|
+//   | B-1 | 层级数 = 3(`L0` 最细 → `L2` 最粗) | `sharer_tracker.hh:138-141` 注释级描述「L1 per-GPC / L2 per-GPU / L3 per-Compute-Tray」+ `ADR-CEP-04 §13` 的「层级深度是**实现参数**,不是能力属性」 | ✅ |
+//   | B-2 | `LookupHazard::ESCALATE_UP` **不**使用 —— 本实现的 `lookup` 一律给**根级完整视图**;**收窄**视图由 `lookup_scoped` 显式提供 | `ADR-CEP-04 §2` 的 hazard 语义(4 值:`NONE`/`STALL`/`CHAIN`/`ESCALATE_UP`);本仓 `traits` 只声明 `STALL` ⇒ 引入 `ESCALATE_UP` 会让**声明与实现**脱节 | ✅ |
+//   | B-3 | `snoop_fold` 的合并规则**复用** `SnoopMechanics::join_state`(与 `FullMapDirectory` **同源**) | `ADR-CEP-04 §4` 的 fold 语义**不随实现而异** | ✅ |
+//   | B-4 | handle 空间满 ⇒ **拒绝**(返回 `handle = 0`),不覆盖存活 handle | 与 `FullMapDirectory` 同源(`SnoopMechanics::allocate_handle`) | ✅ |
+//   | B-5 | **F 态(转发点)在 tracker 中不可分辨** —— `SnoopState` 只有 `I`/`S`/`E`/`M`,**无 F** ⇒ 「谁是转发点」对 tracker 不可见;本实现**只**用 `LocalView::forward_to` 承载**转发目标节点**,**转发点角色本身丢失** ⇒ 登记为「**转发点保真度缺口**」 | MESIF 规约的 `F` 态 = 单 Owner + 多 Sharer + 转发点(规约载体 `F` 态定义);`sharer_tracker.hh:128` 的 `SnoopState` 定义 | ✅ |
+class HierarchicalDirectory final : public SharerTrackerIf, public SnoopMechanics {
+public:
+    static constexpr TrackerImpl kImpl = TrackerImpl::HierarchicalDirectory;
+
+    /// handle 空间大小(与 `FullMapDirectory` 同契约 —— `ADR-CEP-04` 的 RTL 契约)
+    static constexpr std::size_t kHandleSpace = SnoopMechanics::kHandleSpace;
+
+    /// 层级数(`L0` 最细 → `L{kLevelCount-1}` 最粗)—— per 行为决策 **B-1**
+    static constexpr std::size_t kLevelCount = 3;
+    /// 根级(最粗 / 全局)索引
+    static constexpr std::size_t kRootLevel = kLevelCount - 1;
+
+    // ── 行为决策登记(机器可读的那一份;散文版见本类上方注释)──────────
+    //
+    // ⚠️ **为什么做成结构化字段**:本实现的行为规约**无真源** ⇒ 决策必须**可判据**,
+    //    否则「登记了没有」与「登记了但 basis 是空的」都查不出来 ⇒ 跨仓追认债会
+    //    退化成**不可审计的散文**。
+    struct BehaviorDecision {
+        const char* id;      ///< 决策编号(`B-1` …)
+        const char* topic;   ///< 决策点
+        const char* basis;   ///< 推导依据(**非空**;`basis` 缺失 ⇒ 判据必红)
+        bool        pending; ///< 待追认标记(**本实现全部为 true**)
+    };
+
+    /// 逐条行为决策(per `ADR-CEP-04 §13` + 本 change 的 design `D-β`)
+    static constexpr BehaviorDecision kBehaviorDecisions[] = {
+        {"B-1", "层级数与层级语义(L0 最细 → L2 最粗)",
+         "sharer_tracker.hh:138-141 的注释级描述(L1 per-GPC / L2 per-GPU / L3 per-Compute-Tray)"
+         " + ADR-CEP-04 §13 的「层级深度是实现参数,不是能力属性」", true},
+        {"B-2", "LookupHazard::ESCALATE_UP 不使用;收窄语义由 lookup_scoped 显式提供",
+         "ADR-CEP-04 §2 的 hazard 语义(4 值)+ 本仓 traits 只声明 STALL"
+         " ⇒ 引入 ESCALATE_UP 会让声明与实现脱节", true},
+        {"B-3", "snoop_fold 的合并规则复用 SnoopMechanics::join_state(与 FullMapDirectory 同源)",
+         "ADR-CEP-04 §4 的 fold 语义不随实现而异 ⇒ 禁双实现", true},
+        {"B-4", "handle 空间满 ⇒ 拒绝(返回 handle = 0),不覆盖存活 handle",
+         "与 FullMapDirectory 同源(SnoopMechanics::allocate_handle 的线性探测 + 满表拒绝)", true},
+        {"B-5", "F 态(转发点)角色在 tracker 中不可分辨 —— 只承载转发目标节点",
+         "sharer_tracker.hh:128 的 SnoopState 只有 I/S/E/M,无 F"
+         " ⇒ 「谁是转发点」对 tracker 不可见 ⇒ 登记为转发点保真度缺口", true},
+    };
+
+    /// 行为决策条数
+    static constexpr std::size_t kBehaviorDecisionCount =
+        sizeof(kBehaviorDecisions) / sizeof(kBehaviorDecisions[0]);
+
+    /// 行为决策表的**自洽谓词**(可变异形态 ⇒ 反向 fixture 可传「删了一条 / basis 置空」的副本)
+    /// —— 四字段**全部必填**,且 `pending` **必须**为 true(自推语义**不得**写成「已裁决」)。
+    static constexpr bool behavior_decisions_are_consistent(const BehaviorDecision* list,
+                                                             std::size_t n) noexcept {
+        for (std::size_t i = 0; i < n; ++i) {
+            if (list[i].id == nullptr || list[i].id[0] == '\0')
+                return false;
+            if (list[i].topic == nullptr || list[i].topic[0] == '\0')
+                return false;
+            if (list[i].basis == nullptr || list[i].basis[0] == '\0')
+                return false;
+            if (!list[i].pending)
+                return false;
+        }
+        return true;
+    }
+
+    /// 本实现的决策表 SHALL 自洽
+    static constexpr bool behavior_decisions_are_consistent() noexcept {
+        return behavior_decisions_are_consistent(kBehaviorDecisions, kBehaviorDecisionCount);
+    }
+
+    /// **F 态(转发点)角色可分辨?** —— **否**:`SnoopState` 无 F ⇒ 角色本身丢失
+    /// ⇒ 只用 `LocalView::forward_to` 承载**转发目标节点**。
+    /// ⇒ 登记为「**转发点保真度缺口**」(per 行为决策 **B-5**)。
+    static constexpr bool kForwardPointRoleRepresentable = false;
+
+    /// 转发点保真度缺口的登记措辞
+    static constexpr const char* kForwardPointGapNote =
+        "F 态(转发点)= 单 Owner + 多 Sharer + 一个转发点;但 SnoopState 只有 I/S/E/M,无 F"
+        " ⇒ 「谁是转发点」对 tracker 不可分辨 ⇒ 本实现只承载转发目标节点"
+        "(LocalView::forward_to),转发点角色本身丢失 ⇒ 转发点保真度缺口(待跨仓追认)。";
+
+    // 公开**数据成员**(不是方法)⇒ 接口面仍恰好 4 个方法
+    SharerTrackerCaps caps = kTrackerTraits[5].caps;
+    SharerTrackerBehavior behavior = kTrackerTraits[5].behavior;
+
+    /// traits 表第 6 行**必须**是本实现(索引写错 ⇒ 编译期红)
+    static_assert(kTrackerTraits[5].impl == TrackerImpl::HierarchicalDirectory,
+                  "kTrackerTraits[5] 必须是 HierarchicalDirectory 行");
+    static_assert(kTrackerTraits[5].caps.aggregation_at == AggregationAt::HIERARCHICAL,
+                  "HierarchicalDirectory 的 aggregation_at 必须是 HIERARCHICAL");
+
+    HierarchicalDirectory() = default;
+
+    // ── 目录安装(带层级)──
+    /// 把 `node` 装到 `addr` 的**第 `level` 级**;`level` 非法 ⇒ **显式 no-op**
+    /// (不得静默落到根级 —— 那会让「层级归属」不可辨)。
+    void set_sharer(std::uint64_t addr, node_id_t node, std::size_t level, SnoopState state) {
+        const responder_set_t m = responder_mask_of(node);
+        if (m == 0)
+            return;  // 未映射节点 ⇒ 显式 no-op(不造空条目)
+        if (level >= kLevelCount)
+            return;  // 非法层级 ⇒ 显式 no-op
+        LevelEntry& e = own_[level][addr];
+        e.sharers |= m;
+        if (state == SnoopState::M)
+            e.dirty |= m;
+        else
+            e.dirty &= ~m;
+    }
+
+    /// 从第 `level` 级移除 `node`
+    void clear_sharer(std::uint64_t addr, node_id_t node, std::size_t level) {
+        if (level >= kLevelCount)
+            return;
+        auto it = own_[level].find(addr);
+        if (it == own_[level].end())
+            return;
+        const responder_set_t m = responder_mask_of(node);
+        if (m == 0)
+            return;
+        if ((it->second.sharers & m) == 0 && (it->second.dirty & m) == 0)
+            return;  // 本非持有者 ⇒ no-op(不伪触发 retire)
+        it->second.sharers &= ~m;
+        it->second.dirty &= ~m;
+        if (it->second.sharers == 0 && it->second.dirty == 0) {
+            own_[level].erase(it);
+            events_.push_back(LifecycleEvent::RetireOnZeroSharers);
+        }
+    }
+
+    // ── 4 个接口方法 ──
+
+    void lookup(std::uint64_t addr, Intent intent, LookupResult& result, LocalView& view,
+                LookupHazard& hazard) override {
+        if (inflight_by_addr_.count(addr) != 0) {
+            // 同地址 snoop 在飞:契约是 STALL(ADR §4 表首行),view 无意义
+            result = LookupResult::ANSWER_HERE;
+            view = LocalView{};
+            hazard = behavior.hazard_under_contention;
+            return;
+        }
+
+        const bool existed = has_entry(addr);
+        if (!existed)
+            events_.push_back(LifecycleEvent::AllocateOnFirstForward);
+
+        hazard = LookupHazard::NONE;
+        view = aggregate_view_at(addr, kRootLevel);
+        view.valid = true;
+
+        // 分级目录:要取数 ⇒ 找 dirty 持有者(根级聚合 ⇒ 完整视图,不会漏 snoop)
+        if (intent == Intent::want_read && view.dirty != 0) {
+            const unsigned b = first_bit(view.dirty);
+            view.forward_to = responder_node_of(b);
+            result = LookupResult::FORWARD_TO;
+            return;
+        }
+        result = LookupResult::ANSWER_HERE;
+    }
+
+    void snoop_begin(std::uint64_t addr, responder_set_t expected_responders,
+                     snoop_handle_t& handle) override {
+        snoop_begin_core(addr, expected_responders, handle);
+    }
+
+    void snoop_fold(snoop_handle_t handle, node_id_t node_id, SnoopState resp_state, bool dirty,
+                    bool data_supplied, responder_set_t& remaining_mask,
+                    MergedState& merged_state) override {
+        snoop_fold_core(handle, node_id, resp_state, dirty, data_supplied, remaining_mask,
+                        merged_state);
+    }
+
+    void observe_snoop(std::uint64_t addr, node_id_t from_node,
+                       SnoopState resulting_local_state) override {
+        observe_snoop_core(addr, from_node, resulting_local_state);
+    }
+
+    // ── 层级视图(多级聚合的**可观测面**)──
+
+    /// 根级(全局)聚合视图 —— 与 `FullMapDirectory::view_of` **同口径**(完整视图)
+    LocalView view_of(std::uint64_t addr) const { return aggregate_view_at(addr, kRootLevel); }
+
+    /// 第 `level` 级的**聚合**视图 = 本级自有 + 所有**更细**级自有(逐级上卷)
+    /// —— `level` 非法 ⇒ 返回**无效**视图(不静默落到根级)。
+    LocalView aggregate_view_at(std::uint64_t addr, std::size_t level) const {
+        LocalView v;
+        if (level >= kLevelCount)
+            return v;
+        v.valid = true;
+        for (std::size_t l = 0; l <= level; ++l) {
+            auto it = own_[l].find(addr);
+            if (it == own_[l].end())
+                continue;
+            v.sharers |= it->second.sharers;
+            v.dirty |= it->second.dirty;
+        }
+        return v;
+    }
+
+    /// 第 `level` 级的**自有**视图(只含**恰好**装在该级的 sharer)
+    LocalView own_view_at(std::uint64_t addr, std::size_t level) const {
+        LocalView v;
+        if (level >= kLevelCount)
+            return v;
+        auto it = own_[level].find(addr);
+        if (it == own_[level].end())
+            return v;
+        v.valid = true;
+        v.sharers = it->second.sharers;
+        v.dirty = it->second.dirty;
+        return v;
+    }
+
+    /// **限定层级**的 lookup:从 `level` 起**逐级上卷**,直到找到**持有该地址**的层级
+    /// ⇒ 返回**该级**的聚合视图(**可能严格窄于**根级视图)⇒ 收窄能力可观测。
+    /// 找不到 ⇒ 落回根级完整视图。
+    ///
+    /// ⚠️ 行为决策 **B-2**:`lookup` 本身**不**使用 `ESCALATE_UP`;**收窄**语义
+    ///    由本方法**显式**提供 ⇒ `traits` 声明的 hazard(`STALL`)与实现**一致**。
+    LocalView lookup_scoped(std::uint64_t addr, std::size_t level) const {
+        for (std::size_t l = level; l < kLevelCount; ++l) {
+            if (has_entry_at(addr, l))
+                return aggregate_view_at(addr, l);
+        }
+        return aggregate_view_at(addr, kRootLevel);
+    }
+
+    /// 该地址在**任一级**是否有条目
+    bool has_entry(std::uint64_t addr) const {
+        for (std::size_t l = 0; l < kLevelCount; ++l)
+            if (own_[l].count(addr) != 0)
+                return true;
+        return false;
+    }
+
+    /// 该地址在**指定级**是否有条目
+    bool has_entry_at(std::uint64_t addr, std::size_t level) const {
+        if (level >= kLevelCount)
+            return false;
+        return own_[level].count(addr) != 0;
+    }
+
+private:
+    struct LevelEntry {
+        responder_set_t sharers = 0;
+        responder_set_t dirty = 0;
+    };
+
+    /// 每级**自有**视图(聚合视图在查询时派生 ⇒ 无陈旧聚合)
+    std::map<std::uint64_t, LevelEntry> own_[kLevelCount];
+};
+
 
 }  // namespace tlm::cep
 

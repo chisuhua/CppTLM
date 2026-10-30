@@ -6,7 +6,7 @@
 > **与规约层的分工**:规约层 `cpptlm-cep-mesif-state-spec`(**已归档**,Entry #101 + #102 + #103)交付**口径来源与推导依据**;本 change 交付**可执行插件**。⇒ 本 change 是规约层的**消费方**,不是替代。
 > **关联 ADR**: `ADR-CEP-04 §13`(第 6 种 SharerTracker 实现 + `AggregationAt::HIERARCHICAL`)· `ADR-CEP-12 §8.3` / `§8.4` / `§12` / `§13`(6 类词表分层 / SLICC 备选重评 / `status` 权威)· `ADR-CEP-05 §13.1`(`perm` 形态演进 + `INV-CEP-05-IC1`)· `ADR-CEP-02`(canonical 10 流 + CEN-Ib11 4 值锁)· `ADR-CEP-13` 决策 3(域可见写判据 (a)(b))· `ADR-CEP-16`(排除 programmatic bridge)· `ADR-CEP-07A`(协议私有状态边界)
 > **规划输入**: `.rddf/improvements/cpptlm-cep-mesif-adapter.md`(5 段草稿)· **实施计划**: `.rddf/plans/2026-10-30-cpptlm-cep-mesif-adapter.md`(v0.2,经 oracle + metis 双审修订)
-> **冻结面**: `protocol_instance.schema.json` / `adapter_schema_contracts.hh` / `CohIfBundle` **零改动**;`openspec/specs/cep-sharer-tracker-base/spec.md` **零改动**(第 6 种实现**另立** capability,不改 base 契约)⇒ 冻结面改动**仅** `07 号` 一件(漂移修正 + 新 Status Update)⇒ **一次**两步授权
+> **冻结面**: `protocol_instance.schema.json` / `adapter_schema_contracts.hh` / `CohIfBundle` **零改动**;`openspec/specs/cep-sharer-tracker-base/spec.md` **契约零改动**(第 6 种实现**另立** capability)—— 但该文件有 **2 处活口径**在 WU-3 实施期实测为**事实性错误**(「**唯一**行为实现 `FullMapDirectory`」+「其余 4 种随队列 #6~#9」)⇒ 与 `07 号` **同批**修正(「唯一」→「首个」· 队列 → #10~#11)⇒ 冻结面改动**两件、一次**两步授权
 > **估时**: 10 周(实现层;规约层 4 周**已完成**)
 > **KPI**: Stage 1 = **1 slot**(per `ADR-CEP-00 §2 决策 3`;并发上限 1,per `obj §5.4`)
 
@@ -71,6 +71,7 @@ MESIF 5 态与 MOESI 6 态**词表都不同**,同名态语义未必同构(MESIF 
 | `test/test_cep_adapter_schema_contracts.cc` | **重基线**:`silent_upgrades.size()` 2→3;`no_upgrade_instances` 1→0;负控见证改造为**双向规则**(design `D-θ`) |
 | `scripts/README.md` | 新脚本入 §CEP 契约守门脚本表 ⇒「**12 项 CEP 脚本**」计数 → **13** |
 | `docs/architecture/07-coherence-exploration-platform.md` | **冻结面**:漂移修正 **10 处** + 新 `## Status Update` 第十五则 ⇒ **两步授权** |
+| `openspec/specs/cep-sharer-tracker-base/spec.md` | **冻结面**:2 处活口径(「唯一行为实现」→「首个」· 队列 #6~#9 → #10~#11);契约面零改动 ⇒ 与上一行**同批**授权 |
 | `.rddf/roadmap/objectives/obj-cep-platform.md` | §4.0 队列 #9 行状态 + 准入前置 / 孤儿前置的 **owner 义务再转指**;§5.2 KPI 回填;§11 台账追加 |
 | `.rddf/roadmap/phases/phase-10.md` · `.rddf/roadmap.md` · `AGENTS.md` | KPI 当前态 **0/3 → 1/3 → 0/3**(五处同改) |
 
@@ -79,7 +80,7 @@ MESIF 5 态与 MOESI 6 态**词表都不同**,同名态语义未必同构(MESIF 
 - `protocol_instance.schema.json`(**M1 冻结面**)**零改动** —— 本 change 不新增 schema 字段
 - `adapter_schema_contracts.hh` **零改动** —— 判据本体不动
 - `CohIfBundle` **零改动** —— `atomic` 意图位已存在(`cep_coherence_bundles_tlm.hh:114`,1 bit,与 `perm` 正交);**不**为 `consistency_intent` 新增字段(design `D-δ`)
-- `openspec/specs/cep-sharer-tracker-base/spec.md`(**M1 冻结面**)**零改动** —— 第 6 种实现**另立** capability,不改 base 契约
+- `openspec/specs/cep-sharer-tracker-base/spec.md`(**M1 冻结面**)**契约零改动** —— 第 6 种实现**另立** capability;仅 **2 处活口径**随 `07 号` 同批修正(见上表)
 - `perm` 仍 **4 值** · `CATEGORY_*` 仍 **3 类** · `ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker` 的**声明值**不动(仅 `status` 翻转)
 - **不**新增 invariant 编号(沿用 `INV-CEP-05-IC1` / `INV-CEP-12-IC1~IC3` 的**行为化**)
 
@@ -107,7 +108,8 @@ MESIF 5 态与 MOESI 6 态**词表都不同**,同名态语义未必同构(MESIF 
 | `docs/architecture/07-coherence-exploration-platform.md` | ⚠️ **是** | **两步授权**:commit 产物 → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → commit 清单(**全 change 只此一次**) |
 | `include/tlm/cep/protocol_instance.schema.json` | ❌ 否 | 零改动 |
 | `include/tlm/cep/fabric.json` / `fabric.schema.json` | ❌ 否 | 零改动 |
-| `openspec/specs/cep-sharer-tracker-base/spec.md` 等 9 份 main spec | ❌ 否 | 零改动(第 6 种实现另立 capability) |
+| `openspec/specs/cep-sharer-tracker-base/spec.md` | ⚠️ **2 处活口径** | 契约零改动;「唯一行为实现」→「首个」+ 队列范围 ⇒ 与 `07 号` **同批**两步授权 |
+| 其余 8 份 main spec | ❌ 否 | 零改动 |
 | `include/tlm/cep/sharer_tracker.hh` / `perm_upgrades.json` / `protocol_instances.json` | ❌ 否 | 「诞生即不冻结」/ 不在冻结集 ⇒ 自由改 |
 
 ### 残余风险登记(**显式,不隐藏**)

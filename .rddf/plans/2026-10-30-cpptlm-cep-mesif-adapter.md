@@ -169,7 +169,7 @@ MESIF 5 态与 MOESI 6 态**词表都不同**，同名态语义未必同构（ME
   | 序 | 动作 | 说明 |
   |---|------|------|
   | ① | `protocol_instances.json` 的 `mesif.status` → **`implemented`** + `INV-CEP-12-IC3` 计数同步 | 折叠面**非**冻结（C-5）|
-  | ② | **`07 号` 漂移修正**（下表 10 处活口径）| 冻结面 ⇒ 走两步授权 |
+  | ② | **冻结面活口径修正**：`07 号` 漂移 **10 处** + `cep-sharer-tracker-base/spec.md` **2 处**（见下表）| 冻结面 ⇒ 走两步授权（**一次覆盖两件**）|
   | ③ | **commit 冻结面产物** | |
   | ④ | `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #N"` | |
   | ⑤ | **commit 清单** | |
@@ -193,6 +193,17 @@ MESIF 5 态与 MOESI 6 态**词表都不同**，同名态语义未必同构（ME
 
   > ⚠️ **历史 Status Update 块不可改**（append-only）：`:701` / `:702`（2026-10-25 块）、`:905`（第十二则「余 2 项缺口 ⇒ 队列 #9 仍不可启动」）⇒ 由**新的 Status Update 第十五则**覆盖，不得回改。
   > ⚠️ **invariant 计数不得变**：改 `:276` / `:278` 的「5 种实现」措辞**不改变** invariant 条数（66 / 编号位 67 / 15 组）⇒ 改后 `cep_docs_sync_check.sh` **必须** rc=0。
+
+- **`cep-sharer-tracker-base/spec.md` 的 2 处**（WU-3 实施期**实测发现**，v0.1/v0.2 **漏项**）：
+
+  | 位置 | 现状 | 目标 |
+  |---|---|---|
+  | `Purpose` 末句 | 「本 capability 交付**唯一行为实现** `FullMapDirectory`；其余 4 种实现的声明层登记随队列 #6~#9 落地」| → 交付**首个**行为实现；其余 4 种随队列 **#10 ~ #11**；第 6 种 `HierarchicalDirectory` 的**行为面**由 `cep-hierarchical-directory` 承担 |
+  | `Requirement` 首句 | 「… + FullMapDirectory **唯一行为实现** 固化为**可执行契约**」| → 「… + FullMapDirectory **行为实现（首个）** 固化为**可执行契约**」|
+
+  > **为何必须改**：该文件是**主 spec**（读者入口）。`HierarchicalDirectory` 落地后「**唯一**行为实现」是**事实性错误** ⇒ 与 `07 号` 的 `1 / 5 → 2 / 6` **同型**，属**同一批活口径漂移**。
+  > **为何不提前改**：它是 **M1 冻结面** ⇒ 提前改要**第二次授权**；折进 WU-7 批 ⇒ **不增加授权次数**（J-3 的「避免两次冻结面重算」本意）。
+  > ⚠️ **`deferred` Scenario 措辞保持**（4 个实现仍 deferred）⇒ `test_cep_sharer_tracker_base.cc` 的 `read_capability_spec` 断言（`只做声明层断言` / `deferred`）**不受影响**。
 
 - **17 落点同步**（`obj §4.7.3` 收尾清单 A1-A3 / B1-B7 / C1-C3 / D1-D4）**逐项**勾
 - **#9 特有移交义务**（v0.1 遗漏，本轮补）：队列 #9 行当前**持有** Stage 1 准入前置 + 孤儿前置的 **owner 义务**（per Entry #95 转指）⇒ 归档时必须**再转指**（给 #10 或宣告 Stage 1 收口）—— 对齐 Entry #95 的「移交已转出」先例
@@ -273,7 +284,7 @@ MESIF 5 态与 MOESI 6 态**词表都不同**，同名态语义未必同构（ME
 
 > ⚠️ **`protocol_instance.schema.json` 零改动**（C-5）⇒ `mesif.status` 翻转 / `perm_upgrades.json` 增行**均不触发**冻结面重算。
 > ⚠️ **`sharer_tracker.hh` 不在冻结集**（C-6）⇒ WU-3 自由改。
-> ⚠️ **唯一触发冻结面重算的是 WU-7 ② 的 `07 号` 漂移修正** ⇒ **只有一次**（J-3 同批）。
+> ⚠️ **触发冻结面重算的只有 WU-7 ②** —— **两件**：`07 号` 漂移 10 处 + `cep-sharer-tracker-base/spec.md` 2 处活口径 ⇒ **一次** `cep_freeze_check.sh --update` 覆盖（J-3 同批）。
 
 ---
 
@@ -342,6 +353,7 @@ MESIF 5 态与 MOESI 6 态**词表都不同**，同名态语义未必同构（ME
 - [ ] WU-6 既有 `cep_mesif_state_spec_reverse_verify.sh` 仍 **11/11**
 - [ ] WU-7 批内序 ①~⑦ **未乱序**（KPI 只能在归档之后改）
 - [ ] WU-7 `07 号` **10 处**活口径已修；**历史块未回改**
+- [ ] WU-7 `cep-sharer-tracker-base/spec.md` **2 处**已修（「唯一」→「首个」+ 队列 #6~#9 → #10~#11）；**`deferred` 措辞保持**
 - [ ] WU-7 invariant 计数仍 **66 / 编号位 67 / 15 组**
 - [ ] WU-8 S1-3 口径 = **`implemented` ≥ 3**；重评对象 = **SLICC 备选**
 - [ ] 全仓 `cpptlm_tests` + `ctest -R cep` 全绿；工作区干净
@@ -352,5 +364,6 @@ MESIF 5 态与 MOESI 6 态**词表都不同**，同名态语义未必同构（ME
 
 | 日期 | 版本 | 修订 |
 |------|------|------|
+| 2026-10-30 | **v0.3** | **实施期补漏**（WU-3 实测）：发现 **第 2 件 M1 冻结面漂移** —— `openspec/specs/cep-sharer-tracker-base/spec.md` 自称「FullMapDirectory **唯一**行为实现」+「其余 4 种随队列 #6~#9」，在 `HierarchicalDirectory` 落地后成**事实性错误**。v0.1/v0.2 均断言「冻结面仅 `07 号` 一件」⇒ 本版修正为**两件、一次授权**（WU-7 ② 合并）。**不改**任何判据口径，只补冻结面普查清单。 |
 | 2026-10-30 | **v0.2** | **双审修订**（oracle `mergeable: no` 3 BLOCKER + metis 4 BLOCKER）：① 补 `perm_upgrades.json` 静默升级线 + 负控见证空转陷阱（AC-5）② R-3 补偿维度由「谁持有」修正为 **`LocalView.dirty` 掩码 + 写回接线**（AC-7）③ P0-8/AC-9 由「per-network 嵌套形态复核」修正为 **`ADR-CEP-12 §8.4` SLICC 备选重评** + S1-3 口径钉死为 `implemented ≥ 3` ④ AC-1 改为「**零自有表副本** + 伪造表 fixture」⑤ 补 `atomic` 漏项（AC-6）⑥ 补 `HierarchicalDirectory` 行为决策登记义务（残留 A）⑦ `status` 翻转折进 WU-7 批首（J-4）⑧ 补 `07 号` 漂移**10 处**普查清单 + 历史块不可改标注 ⑨ 补 6→3 映射 AC（AC-8）+ 通道依赖闸 3 实例共存 AC（AC-9）+ 引擎探针判别力 AC ⑩「因正确原因红」机器化（期望失败模式 + 判据 id grep + 两层 id 分离）⑪ 补 owner 再转指 + 脚本计数 12→13 ⑫ 补 `configs/cep_mesif_pe_minimal.json` + 注册行交付物 ⑬ P1-4 改写为时效性裁决 |
 | 2026-10-30 | v0.1 | 初版（`/home/ubuntu/.opencode/plan/20261030-cep-mesif-adapter-implementation-order.md`）：P0-0~P0-8 / P1-1~P1-4 / P2 顺序 + J-1~J-3 裁决 + R-1/R-3 义务 + AC-1~AC-10 |

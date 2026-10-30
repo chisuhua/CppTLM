@@ -15,7 +15,7 @@
 | Phase | 状态 | 说明 |
 |---|------|------|
 | 0 治理前置 | ✅ **已完成**(2026-10-30) | change 目录 4 件套已建 + `openspec validate --strict` rc=0 + KPI **0/3 → 1/3** + 队列 #9 行状态列更新 |
-| 1 语义载体 | ⬜ **未开始** | `MesifAdapter`(零副本委托消费)+ `HierarchicalDirectory` 行为实现 + 行为决策登记 |
+| 1 语义载体 | ✅ **已完成**(2026-10-30) | `MesifAdapter`(零副本委托消费)+ `HierarchicalDirectory` 行为实现 + 行为决策登记;`[cep][mesif-adapter]` 3 case / 96 assertion + `[cep][sharer-tracker]` 16 case / 312 assertion 绿 |
 | 2 真插件引擎 | ⬜ **未开始** | `MesifProtocolEngine` + atomic 最小可用路径 + 写回接线 + 最小装配 JSON + 注册行 |
 | 3 平台级声明 + 装配 | ⬜ **未开始** | `perm_upgrades.json` 增行 + 负控见证双向规则化 + `status` 翻转 + 装配实测 + 通道依赖闸 |
 | 4 判据收口 | ⬜ **未开始** | 契约测试 + 反向 fixture 脚本(「因正确原因红」机器判定)+ 既有套件零回归 |
@@ -44,27 +44,30 @@
 
 ### 1.A `MesifAdapter`(MA-01 / MA-02 / MA-03)
 
-- [ ] 1.A.1 **判据先红**:`test/test_cep_mesif_adapter.cc` 建骨架,写 MA-01 / MA-02 / MA-03 的断言(尚无实现 ⇒ 红)
-- [ ] 1.A.2 实现 `include/tlm/cep/mesif_adapter.hh`:
+- [x] 1.A.1 **判据先红**:`test/test_cep_mesif_adapter.cc` 建骨架,写 MA-01 / MA-02 / MA-03 的断言(尚无实现 ⇒ 红)
+- [x] 1.A.2 实现 `include/tlm/cep/mesif_adapter.hh`:
       - **零自有表副本** —— `constexpr` 委托消费 `MesifStateSpec::kTable` + `perm_of()` + 三元组(design `D-α`)
       - 5→4 `perm` 投影(委托 + 瞬态无投影)
       - 6→3 消息类映射表 `kMessageClassMap` + `kMappingIsIdentity` + `kIdentityReason`(design `D-ε`)
       - 语义损失 ① 的措辞(与 `chi_rnf` 同类损失**可机器区分**)
-- [ ] 1.A.3 跑判据 ⇒ 转绿
-- [ ] 1.A.4 **反向 fixture**:① 在 `mesif_adapter.hh` 内伪造一份表 ⇒ 必红 ② 删一行映射 ⇒ 必红 ③ 写错类别 ⇒ 必红;**正控**:载体 35 格全通
-- [ ] 1.A.5 门禁回归 + 勾选
+- [x] 1.A.3 跑判据 ⇒ 转绿(3 case / 96 assertion)
+- [x] 1.A.4 **反向 fixture**:① 在 `mesif_adapter.hh` 内伪造一份表 ⇒ 必红 ② 删一行映射 ⇒ 必红 ③ 写错类别 ⇒ 必红;**正控**:载体 35 格全通
+      （本 Phase 落地**检测器灵敏度**断言:伪造串必须被扫描器命中 + 缺行/错类别的鉴别力断言;**真实载体的毒化执行版**由 Phase 4 的 `4.1` 脚本承担 —— 那里才有「因正确原因红」的判据 id 归因）
+- [x] 1.A.5 门禁回归 + 勾选
 
 ### 1.B `HierarchicalDirectory`(HD-01 ~ HD-05)
 
-- [ ] 1.B.1 **判据先红**:写 HD-01(caps+behavior 三方相等)/ HD-02(多级聚合差异化)/ HD-03(STALL)/ HD-04(basis 登记)/ HD-05(F 态)断言
-- [ ] 1.B.2 实现 `include/tlm/cep/sharer_tracker.hh` 的 `HierarchicalDirectory` class:
+- [x] 1.B.1 **判据先红**:写 HD-01(caps+behavior 三方相等)/ HD-02(多级聚合差异化)/ HD-03(STALL)/ HD-04(basis 登记)/ HD-05(F 态)断言
+- [x] 1.B.2 实现 `include/tlm/cep/sharer_tracker.hh` 的 `HierarchicalDirectory` class:
       - caps = `SYSTEM`/`EXACT`/`GLOBAL`/`HIERARCHICAL`;behavior = `STALL` + 无广播兜底
       - **多级聚合**行为(非 `FullMapDirectory` 克隆)
       - contention ⇒ `STALL` + `valid = false`
-- [ ] 1.B.3 **行为决策登记表**(design `D-β` B-1 ~ B-5)逐条填「依据」+ 标 `pending = true` ⇒ **跨仓追认债**挂账
-- [ ] 1.B.4 跑判据 ⇒ 转绿
-- [ ] 1.B.5 **反向 fixture**:① 改 caps 任一字段 ⇒ 必红 ② 行为与 traits 行矛盾 ⇒ 必红 ③ 聚合退化为单级 ⇒ 必红 ④ 删任一决策的 `basis` ⇒ 必红;**正控**:三方相等 + 聚合可观测
-- [ ] 1.B.6 门禁回归 + 勾选
+- [x] 1.B.3 **行为决策登记表**(design `D-β` B-1 ~ B-5)逐条填「依据」+ 标 `pending = true` ⇒ **跨仓追认债**挂账
+      （机器可读形态:`kBehaviorDecisions[5]` + `behavior_decisions_are_consistent()` 可变异谓词 + `kForwardPointRoleRepresentable = false`）
+- [x] 1.B.4 跑判据 ⇒ 转绿(16 case / 312 assertion)
+- [x] 1.B.5 **反向 fixture**:① 改 caps 任一字段 ⇒ 必红 ② 行为与 traits 行矛盾 ⇒ 必红 ③ 聚合退化为单级 ⇒ 必红 ④ 删任一决策的 `basis` ⇒ 必红;**正控**:三方相等 + 聚合可观测
+      （同 1.A.4:真实载体毒化版由 `4.1` 脚本执行;本 Phase 落地可变异谓词的判别力断言 —— `std::array` 可变异副本是必需的,直接 `auto` 拷贝会 decay 成 `const *` 导致 fixture 恒红/恒绿）
+- [x] 1.B.6 门禁回归 + 勾选
 
 ---
 
@@ -121,6 +124,7 @@
 > **批内序写死**(design `D-ι`):① `status` 翻转 + 计数同步 → ② `07 号` 漂移 → ③ commit 产物 → ④ `--update` → ⑤ commit 清单 → ⑥ `openspec archive` → ⑦ KPI / 状态列回填
 
 - [ ] 5.1 `07 号` 漂移修正 **10 处**(design `D-ι` 普查清单:`:75` / `:86` / `:276` / `:278` / `:323` / `:330` / `:573` / `:679` / `:681` / `:721`);**历史 Status Update 块不回改**
+- [ ] 5.1b `openspec/specs/cep-sharer-tracker-base/spec.md` **2 处**活口径修正(`Purpose` 末句「唯一行为实现」→「首个」+ 队列 #6~#9 → #10~#11;`Requirement` 首句同改);**`deferred` Scenario 措辞保持**(判据依赖它)
 - [ ] 5.2 `07 号` 新增 `## Status Update` 第十五则(覆盖 `:905` 的过时结论)
 - [ ] 5.3 invariant 计数**未变**(66 / 编号位 67 / 15 组);`cep_docs_sync_check.sh` rc=0
 - [ ] 5.4 commit 冻结面产物

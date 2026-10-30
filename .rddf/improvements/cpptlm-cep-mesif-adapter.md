@@ -134,7 +134,7 @@ WU-0 角色切换(planner → builder)
   └─ WU-9 H7 对拍基准(独立,不进本 change 硬前置)
 ```
 
-> **WU-7 批内序(写死,不得乱序)**:① `status` 翻转 + `IC3` 计数同步 → ② `07 号` 漂移修正 → ③ commit 冻结面产物 → ④ `cep_freeze_check.sh --update --authorized-by` → ⑤ commit 清单 → ⑥ `openspec archive` → ⑦ KPI / 状态列回填(**KPI 只能在归档之后改**)。
+> **WU-7 批内序(写死,不得乱序)**:① `status` 翻转 + `IC3` 计数同步 → ② 冻结面活口径修正(`07 号` 10 处 + `cep-sharer-tracker-base/spec.md` 2 处)→ ③ commit 冻结面产物 → ④ `cep_freeze_check.sh --update --authorized-by` → ⑤ commit 清单 → ⑥ `openspec archive` → ⑦ KPI / 状态列回填(**KPI 只能在归档之后改**)。
 
 ---
 
@@ -194,6 +194,7 @@ WU-0 角色切换(planner → builder)
 | 成员 | 是否触碰 | 处置 |
 |------|---------|------|
 | `docs/architecture/07-coherence-exploration-platform.md` | ⚠️ **是**(漂移修正 10 处 + 新 Status Update) | **两步授权**:commit 产物 → `cep_freeze_check.sh --update --authorized-by "Entry #N"` → commit 清单(**全 change 只此一次**) |
+| `openspec/specs/cep-sharer-tracker-base/spec.md` | ⚠️ **2 处活口径** | 契约零改动;「**唯一**行为实现」→「**首个**」+ 队列 #6~#9 → #10~#11 ⇒ 与 `07 号` **同批**授权 |
 | `include/tlm/cep/protocol_instance.schema.json` | ❌ 否 | 零改动(per 队列 #6 / #8 先例) |
 | `include/tlm/cep/fabric.json` / `fabric.schema.json` | ❌ 否 | 零改动 |
 | `ADR-CEP-*.md` | ❌ 否 | 零改动(ADR 不可变) |
