@@ -114,10 +114,13 @@ TEST_CASE("[cep][contract] 锁定表是规范版本唯一真源(IC2)", "[cep][co
         REQUIRE(lock.find(fam) != std::string::npos);
     }
     // 且 schema / 代码里**不得**重复列出规范版本号(唯一真源)
+    // ⚠️ 取值集合**从 ADR 解析**(per Entry #109 的 G-2)—— 本仓曾有**两份**硬编码副本
+    //    (此处 + `test_cep_schema.cc`)⇒ 两处会各自漂移;现已收敛为「1 处独立基准 + 其余解析」。
     const auto schema = read_file(
         (repo_root() / "include" / "tlm" / "cep" / "protocol_instance.schema.json").string());
-    for (const char* v : {"chi-r2", "cxl-2.0", "cxl-3.0", "tilelink-c-1.3", "nvlink-4.0",
-                          "ualink-2.0", "moesi-gpu-1.0", "mesif-1.0"}) {
+    const auto table = cpptlm::cep::parse_protocol_version_lock_table(lock);
+    REQUIRE(table.size() == 8u);
+    for (const auto& v : table) {
         INFO("schema 重复了锁定表的规范版本号: " << v);
         REQUIRE(schema.find(v) == std::string::npos);
     }

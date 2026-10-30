@@ -167,8 +167,9 @@ namespace cpptlm {
                 "ADR-CEP-17-ruby-slicc-protocol-family.md",
                 "ADR-CEP-18-protocol-generation-scope.md",
                 // 2026-10-27(Entry #74):ADR-CEP-19 = CohIf 载体形态(纯交付机制;
-                // **新增 invariant 数 = 0**,per 其决策 2 / 8)⇒ 与 scripts/test/cep_docs_sync_check.sh
-                // 的 NO_INV 白名单**同步登记**(两处规则重复,修一处必须记得改另一处)。
+                // **新增 invariant 数 = 0**,per 其决策 2 / 8)⇒ 与
+                // scripts/test/cep_docs_sync_check.sh 的 NO_INV
+                // 白名单**同步登记**(两处规则重复,修一处必须记得改另一处)。
                 "ADR-CEP-19-cohif-carrier-and-protocol-bridge.md",
             };
             return v;
@@ -566,6 +567,62 @@ namespace cpptlm {
                     return true;
             }
             return false;
+        }
+
+
+        // ── ADR-CEP-11 §3 规范版本锁定表解析(唯一真源读取)───────────────
+        //
+        // ⚠️ **为什么放在这里**:锁表是 `protocol_version` 的**唯一真源**
+        //    (per `ADR-CEP-11 INV-CEP-11-IC2`);**任何**「某取值是否合法」的判定
+        //    都必须**从 ADR 解析**,不得在代码里再抄一份(2026-10-30 Entry #109 的 G-2)。
+        //    ⇒ 声明侧通用闸 / IC2 负向检查 / 实例声明校验**共用**本函数。
+        //
+        // 形态:`## 3. 规范版本锁定表` 的表格第 2 列(`` `xxx` `` 形式)⇒ 取值集合。
+        inline std::set<std::string>
+        parse_protocol_version_lock_table(const std::string& adr_text) {
+            std::set<std::string> out;
+            const std::string head = "## 3. 规范版本锁定表";
+            const size_t sec = adr_text.find(head);
+            if (sec == std::string::npos)
+                return out;
+            const size_t sec_end = adr_text.find("\n## ", sec + 1);
+            const std::string body = adr_text.substr(
+                sec, (sec_end == std::string::npos ? adr_text.size() : sec_end) - sec);
+
+            std::istringstream ss(body);
+            std::string line;
+            while (std::getline(ss, line)) {
+                if (line.empty() || line[0] != '|')
+                    continue;
+                if (line.find("---") != std::string::npos)
+                    continue; // 分隔行
+                if (line.find("协议族") != std::string::npos)
+                    continue; // 表头
+                const size_t c1 = line.find('|', 1);
+                if (c1 == std::string::npos)
+                    continue;
+                const size_t c2 = line.find('|', c1 + 1);
+                if (c2 == std::string::npos)
+                    continue;
+                const std::string col = line.substr(c1 + 1, c2 - c1 - 1);
+                const size_t b = col.find('`');
+                if (b == std::string::npos)
+                    continue;
+                const size_t e = col.find('`', b + 1);
+                if (e == std::string::npos)
+                    continue;
+                out.insert(col.substr(b + 1, e - b - 1));
+            }
+            return out;
+        }
+
+        /// 判定谓词:某 `protocol_version` 取值是否落在锁表内
+        /// (取参形态 ⇒ 可作**可变异**反向 fixture 的载体,per 判据纪律)。
+        inline bool protocol_version_in_lock_table(const std::string& version,
+                                                   const std::set<std::string>& table) {
+            if (version.empty())
+                return false;
+            return table.count(version) == 1;
         }
 
     } // namespace cep

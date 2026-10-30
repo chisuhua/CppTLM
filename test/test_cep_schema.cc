@@ -514,39 +514,79 @@ TEST_CASE("[cep][schema] protocol_version 值域必须容纳 ADR-CEP-11 锁定�
     const std::string sec3_body =
         lock.substr(sec3, (sec3_end == std::string::npos ? lock.size() : sec3_end) - sec3);
 
-    std::set<std::string> table_vals;
-    {
-        std::istringstream ss(sec3_body);
-        std::string line;
-        while (std::getline(ss, line)) {
-            if (line.empty() || line[0] != '|')
-                continue; // 只看表格行
-            if (line.find("---") != std::string::npos)
-                continue; // 跳分隔行
-            if (line.find("协议族") != std::string::npos)
-                continue; // 跳表头
-            const size_t c1 = line.find('|', 1);
-            if (c1 == std::string::npos)
-                continue;
-            const size_t c2 = line.find('|', c1 + 1);
-            if (c2 == std::string::npos)
-                continue;
-            const std::string col = line.substr(c1 + 1, c2 - c1 - 1);
-            const size_t b = col.find('`');
-            if (b == std::string::npos)
-                continue;
-            const size_t e = col.find('`', b + 1);
-            if (e == std::string::npos)
-                continue;
-            table_vals.insert(col.substr(b + 1, e - b - 1));
-        }
-    }
+    // ⚠️ 解析走**共享 helper**(per Entry #109 的 G-2:锁表是唯一真源 ⇒ 不得在多处各抄一份
+    //    解析逻辑;`cep_adr_parser.hh` 是 test 内部唯一实现点)
+    const std::set<std::string> table_vals = cpptlm::cep::parse_protocol_version_lock_table(lock);
     INFO("§3 锁表解析出的 protocol_version 取值数: " << table_vals.size() << " (硬编码列表 "
                                                      << locked.size() << ")");
     REQUIRE(table_vals.size() == locked.size());
     for (const auto& v : locked) {
         INFO("§3 锁表缺取值: " << v);
         REQUIRE(table_vals.count(v) == 1);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// IC1 声明侧**通用闸**(per ADR-CEP-11 §10.2 G-1,台账 Entry #109)
+// ─────────────────────────────────────────────────────────────────────────
+// ⚠️ **为什么补这条**:此前只有 **per-instance 硬钉**(`chi_rnf` / `moesi_gpu` / `mesif` 各钉一个
+//    具体值)⇒ **新增实例**写表外 `protocol_version` **无人报错** ⇒ 「表外取值 = 装配期 fail」
+//    对新族**不成立**。本 case 把判定做成**通用**的:逐实例查**从 ADR 解析**的锁表。
+// ⚠️ **判据纪律**:① 判定必须是**可变异谓词**(对输入取参)⇒ 反向 fixture 能真红;
+//    ② 真实数据(3 实例全合法)与合成坏值**双向**都要断言 ⇒ 不空转。
+TEST_CASE(
+    "[cep][schema] 每个协议实例的 protocol_version 必须落在 ADR-CEP-11 §3 锁表内(IC1 声明侧通用闸)",
+    "[cep][schema][ic1]") {
+    const auto lock = read_file(
+        (repo_root() / "docs" / "adr" / "ADR-CEP-11-protocol-version-locking.md").string());
+    REQUIRE_FALSE(lock.empty());
+    const std::set<std::string> table = cpptlm::cep::parse_protocol_version_lock_table(lock);
+    REQUIRE(table.size() == 8u); // 锁表 8 行(数量变了 ⇒ 本 case 先红)
+
+    // ── 真实数据:逐实例判定 ──────────────────────────────────────────
+    const auto inst_path = repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json";
+    const json inst_doc = json::parse(read_file(inst_path.string()));
+    REQUIRE(inst_doc.contains("instances"));
+    std::size_t checked = 0;
+    for (const auto& inst : inst_doc.at("instances")) {
+        const std::string id = inst.value("id", "");
+        const std::string ver = inst.value("protocol_version", "");
+        INFO("instance=" << id << " protocol_version=" << ver);
+        REQUIRE(inst.contains("protocol_version"));
+        CHECK(cpptlm::cep::protocol_version_in_lock_table(ver, table));
+        ++checked;
+    }
+    CHECK(checked >= 3u); // 真实实例数(防止「删到只剩 0 个 ⇒ 断言空转」)
+
+    // ── 反向 fixture ①:合成**表外**取值 ⇒ 谓词必假(鉴别力证明)──────────
+    //    ⚠️ 用「表外」而非「随便一个字符串」:表外值才是**真实会犯的错**
+    //    (把 `chi-r2` 写成 `chi-r3`,或给新族编一个版本号)。
+    CHECK_FALSE(cpptlm::cep::protocol_version_in_lock_table("chi-r9", table));
+    CHECK_FALSE(cpptlm::cep::protocol_version_in_lock_table("mesif-9.9", table));
+    CHECK_FALSE(cpptlm::cep::protocol_version_in_lock_table("", table));
+    // 正控:表内取值 ⇒ 谓词为真(否则上面的反控可能因谓词恒假而恒绿)
+    CHECK(cpptlm::cep::protocol_version_in_lock_table("chi-r2", table));
+    CHECK(cpptlm::cep::protocol_version_in_lock_table("mesif-1.0", table));
+
+    // ── 反向 fixture ②:把**真实声明**改成表外值 ⇒ 通用闸必红 ────────────
+    //    (对「判定函数」自证不够 —— 必须证明「声明 → 判定」这条**真实路径**会红)
+    {
+        json mutated = inst_doc;
+        bool mutated_any = false;
+        for (auto& inst : mutated.at("instances")) {
+            if (inst.value("id", "") == "mesif") {
+                inst["protocol_version"] = "mesif-9.9"; // 表外
+                mutated_any = true;
+            }
+        }
+        REQUIRE(mutated_any);
+        bool rejected = false;
+        for (const auto& inst : mutated.at("instances")) {
+            if (!cpptlm::cep::protocol_version_in_lock_table(inst.value("protocol_version", ""),
+                                                             table))
+                rejected = true;
+        }
+        CHECK(rejected); // 通用闸抓到了表外取值
     }
 }
 
