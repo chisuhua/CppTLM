@@ -317,3 +317,52 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 §1 ~ §9 正文 · §3 锁定表 8 行 · 决策 1 ~ 6 · 3 条 invariant 的**定义** · §4.1 机器闸现状表的
 **闸状态**(IC1 仍是「🟡 部分落地」—— 落地的是**声明侧通用闸**,§5 抓取点 1 的**装配期运行时检查器**
 仍属 Stage 1 待办)—— **全部零改动**。
+
+---
+
+## Status Update(2026-11-01,per 台账 Entry #122)—— 队列 #10 `cxl-2.0` 的**语义子集边界**与 **basis 权威**裁决
+
+> **正文不改**(ADR 不可变;§3 锁定表 8 行 · 决策 1 ~ 6 · 3 条 invariant 的**定义** · §11 全部保留)。
+> 本条登记**队列 #10 规约层起手前**对「`cxl-2.0` 锁的是什么 / basis 权威是谁」的裁决。
+> ⚠️ **§3 锁定表零改动** —— 决策 4(规范升级的三条路径)**不触发** ⇒ 改锁表反而多付一次冻结面授权。
+
+### 触发
+
+队列 #10(`cpptlm-cep-cxl-nonsymmetric`)第 0 个 change(规约层)起手前,**oracle 架构审查 + metis gap 分析 +
+公开来源调研**三方结论一致指出:草稿的「5→4 `perm` 投影表」与「全部逐格 `pending` + 跨仓追认」两项
+**均无可执行依据** ⇒ 必须先裁决语义子集边界与 basis 权威,否则规约层必然「把模板形状当协议事实」。
+
+### 结论
+
+| # | 裁决 | 理由(实测依据) |
+|---|---|---|
+| **1** | 「CXL 2.0 非对称」= **CXL.cache 子协议**(**host-centric / 单一一致性点**):设备以 **MESI** 缓存 Host 内存;Host 侧 Home / Snoop Filter 为**唯一**一致性点;**H2D 承载 snoop**;设备侧**无** snoop **发起**型事件。**显式不含** CXL.mem 池化语义与 CXL 3.0 DCOH / BISnp / BIRsp | 三处已锁口径互证(`07 号 §5.1.1` CXL 行 · 本 ADR §3 `cxl-2.0` 行的「D2H/H2D 各 3 通道;Host Snoop Filter」· `ADR-CEP-04 §2` 的「CXL 2.0 Host SF」行) |
+| **2** | 设备侧稳定态 = **MESI 4 态**(M/E/S/I)⇒ `perm` 投影 = **4→4**(`I→NONE` / `S→READ` / `E→UNIQUE` / `M→WRITEBACK`)。⚠️ **「5→4」作废** —— `F` 态是 MESIF 特有,CXL **无 `F` 态** ⇒ 该投影行**不存在** | 同行评审公开形式化论文 + 公开会议 deck(CXL.cache「four stable states」);`RdOwn` 取所有权(E **或** M) |
+| **3** | 「非对称」的精确表述 = **host-centric / 单一一致性点**。⚠️ **「设备互不感知其他设备」在 CXL 2.0 是平凡成立**(每 root port **只有 1 个** cache device;3.0 才最多 16 个)⇒ 不得把它当作 CXL 2.0 的**区分性**语义 | 公开 CXL 3.0 tutorial 的 root-port 拓扑口径 |
+| **4** | **basis 权威 = 本仓钉版的「公开来源锚点摘要」** —— **既非 CXL 规范正文、亦非 ArchForge**。强度三档 `direct` / `analogical` / `inferred` **不得升格**;**追认 = 条目映射的二方复核,仓内闭环**(⇒ **无**跨仓往返债) | ArchForge 对 CXL **既无追认义务也无追认依据**(它**明确立法**不做 CXL 栈)⇒ 「全部逐格 pending + 跨仓追认」在 CXL 语境下**必然永久挂账**;而 CXL 2.0 是**公开标准** ⇒ basis 可引**公开来源** |
+| **5** | ⛔ **合规禁令**:CXL 规范受 **Evaluation Copy Agreement §3** + **AI Acceptable Use Policy**(覆盖 past / current / future 规范)+ **NOTICE TO NON-MEMBERS** 约束 ⇒ **禁止**把规范正文投喂任何 AI。**只能靠规范正文确定的 8 项语义** 走「**人类成员条款摘要**」流程 | 合规条款原文(2026-02-12 采纳版) |
+| **6** | CXL 实例 = **CEP 探索实例**,显式声明「**≠ dGPU SoC 实现路径**」;**不镜像**进 ArchForge `32 号 §6.1`(那是**产品侧**实例注册表 ⇒ 镜像 = 污染 + 与其「GPU Die 无 CXL」立法冲突)⇒ 跨仓至多一条**定位注记** | ArchForge `ADR-SOC-21` D2 + `21-fabric-switch-mvp.md` 的「GPU Die 内不存在 CXL 协议状态机」 |
+| **7** | ⚠️ **「CXL 3.0 对称」指的是 HDM-DB / CXL.mem 的多 host 共享内存**,**不是** CXL.cache 变对称 ⇒ **CXL.cache 全代次都非对称** | 公开 CXL 3.0 资料把 BI 归在 **Memory Protocol**;同行评审论文明示 CXL.cache 始终 asymmetric |
+
+### 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR 自身** | **零改动** —— §3 锁定表 / 决策 / invariant 定义全部保留;决策 4 **不触发** |
+| **队列 #10 规约层** | 载体形态从 #9 的「ArchForge 锚 + 跨仓追认」改为「**公开来源锚点摘要 + 仓内复核**」⇒ `has_archforge_anchor()` 一类接口**不适用** ⇒ 追认清单生成器的**对象**改为「本仓摘要的逐格核对表」 |
+| **跨仓债** | **由 #9 式 35 格异步跨仓往返 ⇒ 归零** ⇒ 规约层**周期显著缩短**(估时 12 周不变但重分配:规约层 4 周 = **1 周公开来源普查硬门** + 3 周载体) |
+| **残余风险(不得写成「已消除」)** | ① **规范正文不可得** ⇒ 8 项语义只能靠人类成员条款摘要(开放项,非本 ADR 能闭合)② **公开来源的强度天花板** —— 「SF 宁多探不漏探」的判定规则无公开 CXL 原文(只能从 CHI / CCI **类比**)③ **公开来源的形式化模型假设 host perfect tracking** ⇒ 不得当作 `SparseSnoopFilter`(`CONSERVATIVE`)的**精度**依据,只可作**协议骨架** ④ 「搜不到」**≠**「不存在」(是否存在 P / pseudo / 厂商扩展态不可判定) |
+| **对 R7 / H7** | **无影响** —— 本条只裁协议语义子集,不产生性能结论;⚠️ CXL 非对称的 workload **结构性非均匀** ⇒ 落在 H7 已声明范围(均匀随机)**之外** ⇒ 本队列**禁止**附着任何延迟 / 性能读数 |
+
+### Verification(前瞻判据 · 可勾选)
+
+- [ ] **V-1** 队列 #10 规约层载体的 `basis.kind` 值域 = {`public-direct`, `public-analogical`, `archforge-anchor`, `self-derived`},且 **`archforge-anchor` 仅用于 caps 等已逐字段对齐的格**(`ADR-CEP-04 §2` 的 4 值)—— 机器可校
+- [ ] **V-2** 载体的态集合**恰为 4 态**且 `perm` 投影**恰为 4 行**;`F` 行**不存在** —— 编译期锁 + 反向 fixture(把 `F` 行加回 ⇒ 必红)
+- [ ] **V-3** 编译期结构断言成立:`H2DReqOp ⊆ {SnpInv, SnpData, SnpCurr}` ∧ `D2HReqOp ∩ H2DReqOp = ∅` ∧ 设备侧无 snoop **发起**型事件 —— 毒化任一条 ⇒ 必红
+- [ ] **V-4** 锚点摘要的每条 `direct` 断言均有**可钉版定位**(arXiv 版本 + DOI / PDF sha256 / 文档号 / 博客抓取日期);`analogical` / `inferred` **未**被升格 —— `--check` 机器比对载体 ↔ 摘要 ⇒ 手改任一侧必红
+- [ ] **V-5** 载体的**头注释**含「**≠ dGPU SoC 实现路径**」消歧声明;且 ArchForge 侧**未**新增 CXL 实例声明(仅允许一条定位注记)
+- [ ] **V-6** §3 锁定表**零 diff**(本 Status Update 之外的冻结面改动**仅限**本段与清单 hash 刷新)
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #122**(口径裁决 + 授权记录 + 8 项残余风险 + 草稿修订清单)
+· `ADR-CEP-04 §2 / §4`(caps + hazard 契约)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值锁)
+· `07 号 §5.1.1`(协议族表)· `docs/architecture/14-coherence-parity-baseline.md`(H7 的范围限定与 R-B 失效区)

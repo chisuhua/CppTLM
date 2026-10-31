@@ -183,7 +183,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **7** | `cpptlm-cep-cohif-carrier` | Stage 1 | **2028-Q2** | ✅ **已归档**(2026-10-28,Entry #90 —— 「**已完成归档**」语义:2 份 delta spec **已合并**进 `openspec/specs/cep-cohif-carrier/` + `openspec/specs/cep-protocol-bridge-contracts/`;Phase 1 ~ 7 全完成(41/41 task)+ 6 条判据全闭合 + **新增 invariant 数 = 0**;KPI 1/3 → **0/3**;⚠️ **2026-10-27 转正时的活跃路径** `openspec/changes/cpptlm-cep-cohif-carrier/` **已于 2026-10-28 归档时失效** ⇒ 现为 `openspec/changes/archive/2026-10-28-cpptlm-cep-cohif-carrier/`(**不入库**,per `.gitignore`)—— 2026-10-27 转正记录见 Entry #81) | **新准入前置**:无。本 change **服务** #6 的第 ② 项准入前置与 #8 的装配验证 —— 把 #6 的「**逻辑级**装配」(`stub_cache_core.hh:42` 明写 `net_side` 由 **mock ProtocolEngine** 驱动)升级为「**真实载体**装配」。**架构缺口来源**(architect 重审 + critic 四轮;`docs/research/cep-cohif-carrier-architecture-review-2026-10-26.md`):**C1** CEP 的 7 个 `.hh` 零 `Bundle`/`ChStream` 引用 · **C2** 「CEP 用 canonical 10 流的 Bundle」在 `ADR-CEP-07A:49` 与 `ADR-CEP-16:45` **两处**均为悬空引用 · **C3** 唯一的 Bundle 化承诺绑在 collective 队列(`ADR-CEP-03:225`)。**交付面(3 项 + 1 宏)**:① `include/bundles/cep_coherence_bundles_tlm.hh`(`bundles::CohIfBundle`,**只覆盖 5 条 RN-side 流**,`flow_id` 区分;无网络层字段) ② `include/tlm/cep/protocol_engine_base.hh`(`ChStreamModuleBase` 派生 + `Input/OutputStreamAdapter<CohIfBundle>`) ③ `include/framework/protocol_bridge.hh`(`ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>`,**首次落地**;`CohIfBundle ↔ NoCFlitBundle`) ④ `REGISTER_CHSTREAM_BIDIRECTIONAL` 宏(`registerObject` + `registerBidirectionalPortAdapter` **两件都做**;`static_assert(n>1)`) + `module_factory.hh:313-315` 钩子扩展(`register_protocol_bridge` 死钩子 → 活钩子)。**装配走 JSON 链**(非 programmatic —— `ADR-CEP-16:46/:86` 明确排除 programmatic bridge 的 C++ 路径;`is_multi` 分支 `module_factory.cc:743-750` 是泛型虚分派)。**显式延期**:`StubCacheCore` 的 ChStream 端口面 → `cpptlm-cep-stub-cache-chstream-surface`(需 MODIFIES 冻结 main spec,per `openspec/specs/cep-stub-cache-core/spec.md`)。**已签发**:`ADR-CEP-19`(2026-10-27,per Entry #74;草案文件已移除) · **planner 产出已落地 + 已转正**:`openspec/changes/cpptlm-cep-cohif-carrier/`(proposal + design + **tasks** + 2 份 delta spec;improvement 5 段见 `.rddf/improvements/cpptlm-cep-cohif-carrier.md`,per Entry #75/#76)—— 转正按 `design.md` `D-κ` 六步执行完毕(per Entry #81) · **Stage 1 准入前置 + 孤儿前置登记**:owner 自队列 #6 → #7 → **现转指队列 #8**(per Entry #90;#7 已归档 ⇒ 归档件**不得持有活义务**;明细见队列 #8 行) · **实施进度**:Phase 1 ~ Phase 7 **全部完成**(2026-10-27 / 2026-10-28,per 台账 Entry #84 ~ #89;Phase 3 交付 `ProtocolBridgeEr` + `ProtocolBridge<InB,OutB,Ordered>` + CohIf↔NoC 特化桥(**两层** pack/unpack)+ `register_protocol_bridge` 死钩子 → 活钩子 + `ModuleFactory` Step 7.5 消费路径;Phase 4 交付 `REGISTER_CHSTREAM_BIDIRECTIONAL` 装配宏 + `cpptlm::BundleDirectionTraits`(解耦 `BidirectionalPortAdapter` 的 `NoCFlitBundle` 硬编码);Phase 5 交付 `CohIfNullProtocolEngine` 可注册外壳 + `configs/cep_cohif_pe_minimal.json` + 端到端「一次 CohIf 事务**穿过** adapter 抵达对端」+ 反向 fixture 2 类 + `cpptlm::EgressChannel`(egress 通道由 Bundle 专属 trait 声明);Phase 6 交付 `test/test_cep_cohif_carrier.cc`(17 case)+ 共享 helper;Phase 7 交付 **反向 fixture 登记**(13 条,`scripts/README.md`)+ ctest 显式登记 3 条 + **零 diff** 复核(**新增 invariant 数 = 0**))⇒ **Phase 1 ~ 7 全完成,已归档**(2026-10-28,Entry #90) |
 | **8** | `cpptlm-cep-chi-rnf-subset` | Stage 1 | **2028-Q3** | ✅ **已归档**(2026-10-28,Entry #95 —— 「**已完成归档**」语义:2 份 delta spec **已合并**进 `openspec/specs/cep-chi-rnf-subset/` + `openspec/specs/cep-instance-authority-partition/`;Phase 1 ~ 6 全完成;KPI 并发 **0/3 → 1/3 → 0/3**;⚠️ **转正时的活跃路径** `openspec/changes/cpptlm-cep-chi-rnf-subset/` **已于 2026-10-28 归档时失效** ⇒ 现为 `openspec/changes/archive/2026-10-28-cpptlm-cep-chi-rnf-subset/`(**不入库**,per `.gitignore`))· 历史:🟡 Proposed(2026-10-28 转正,Entry #91 —— change 目录已建:proposal + design + **tasks** + 2 份 delta spec(`cep-chi-rnf-subset` / `cep-instance-authority-partition`);`openspec validate --strict` **rc=0**(零 WARNING);improvement 5 段见 `.rddf/improvements/cpptlm-cep-chi-rnf-subset.md`;KPI 并发 **0/3 → 1/3**;⚠️ **Phase 0 含 2 件冻结面改动**(`ADR-CEP-12` + `07 号`)⇒ 两步授权序列 + **1 条台账勘误**(Entry #71 的 F-1 引证失锚)) | **范围已按 Entry #71 收窄**:`perm` 形态 schema 演进 与 6→3 映射表**机制** 均**已移至队列 #6**(跟唯一真实消费者 / 首个 adapter 走)⇒ 本 change **复用**之,只填 CHI 自身的映射行与实例声明。**交付**:CHI RN-F adapter(6 通道 TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT;RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck)+ 按**已冻结** schema 填实例声明(`ordering_assumption` / `vc_binding` / `consistency_labels` / `sharer_tracker`)+ 装配期校验实测。**新准入前置**:无(前置已由队列 #6 交付) **移交已转出(per Entry #95)**:本行**不再持有**准入前置与孤儿前置的 owner 义务 —— 归档件**不得持有活义务** ⇒ 现 owner = 队列 #10 `cpptlm-cep-cxl-nonsymmetric` 行(明细见该行;**2026-10-30 再转指**,per Entry #106 —— #9 已于同日归档,归档件**不得持有活义务**)|
 | **9** | `cpptlm-cep-mesif-adapter` | Stage 1 | **2028-Q4** | ✅ **已归档**(2026-10-30,Entry #105 / #106 —— 「**已完成归档**」语义:2 份 delta spec **已合并**进 `openspec/specs/`(`cep-mesif-adapter` + `cep-hierarchical-directory`);实现层 4 个新载体 + 2 个修改;`implemented` 实例 **2 → 3**;KPI 并发 **1/3 → 0/3**)· 历史:🟡 Proposed(2026-10-30 —— **实现层 change 已建**:cpptlm-cep-mesif-adapter(**4 件套 + 2 份 delta spec** —— `cep-mesif-adapter` / `cep-hierarchical-directory`;`openspec validate --strict` rc=0;KPI **0/3 → 1/3**,per Entry #104)· 规约层已归档:cpptlm-cep-mesif-state-spec(已归档)(MESIF 5 态 × 6 事件转换表 + 5→4 投影表 + 逐格依据;Entry #101)· **跨仓逐格追认已闭合**(Entry #102 / #103)⇒ **实现层可启动**)| **本行已归档 ⇒ 不再持有活义务**(per Entry #106)。准入前置 / 孤儿前置的 **owner 义务已再转指**队列 #10 `cpptlm-cep-cxl-nonsymmetric` 行(明细见该行);本行仅保留历史登记。 |
-| **10** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2029-Q1** | 📋 Planned (**improvement 草稿已写**,2026-10-30 planner · HARD-GATE 通过 · **两段式**:第 0 个 change = 规约层 `cpptlm-cep-cxl-nonsymmetric-state-spec` + 第 1 个 change = 实现层;change 目录**未建** ⇒ 状态仍 📋) | **Stage 1 准入前置(滚动登记;owner 自队列 #6 → #7 → #8 → #9 → **现转指本行**,per Entry #80 / #90 / #95 / #106)**:`S1-1` ✅ 已消费(队列 #4 装配闸)· `S1-2` ✅ 已由队列 #6 交付 · **`S1-3` ✅ 已于队列 #9 触发**(`implemented` 实例数 2 → 3,`mesif` 为第 3 个;真实义务 = `ADR-CEP-12 §8.4` 的 SLICC 式备选重评,结论见 Entry #106)· `S1-4` ✅ 已消费(Entry #56)· `S1-5` ✅ 已由队列 #6 交付 · `S1-6` ✅ **已闭合**(2026-10-22 —— 判据 (b) 成立 + PoC `S2` 实跑,per `docs/implementation/2026-10-22-cep-stage0-external-review-summary.md` §2.2)· `S1-7` ①② ✅ 已由队列 #6 交付(③ 已由队列 #4 消费)· **孤儿前置(已收口)**:⏭(孤儿) M-4 行为侧 ✅ 落成于队列 #3 `cep-vc-mapping-contract` · ⏭(孤儿) `moesi_gpu` / `mesif` 未排期 ✅ 已于 Entry #71 消解 · ⏭(孤儿) verdict 逐 `(network, vc)` 标注义务 ✅ 落成于队列 #4 `cep-channel-dependency-gate`。 |
+| **10** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2029-Q1** | 📋 Planned (**improvement 草稿已写**,2026-10-30 planner · HARD-GATE 通过 · **两段式**:第 0 个 change = 规约层 `cpptlm-cep-cxl-nonsymmetric-state-spec` + 第 1 个 change = 实现层;change 目录**未建** ⇒ 状态仍 📋)· ⚠️ **口径已裁决**(2026-11-01,per **Entry #122**):「CXL 2.0 非对称」= **CXL.cache** 子协议(**host-centric / 单一一致性点**);设备侧 = **MESI 4 态** ⇒ `perm` 投影 = **4→4**(⚠️ 原草稿「5→4」系 MESIF 模板形状的未审视继承 ⇒ **作废**);basis 权威 = **本仓公开来源锚点摘要**(**非**规范正文、**非** ArchForge)⇒ 追认 = **仓内**二方复核闭环 ⇒ **无 #9 式跨仓债**;⛔ **合规**:CXL 规范受 ECA §3 + AI AUP 约束 ⇒ **禁止**把规范 PDF 投喂任何 AI ⇒ 8 项语义走「**人类成员条款摘要**」;⛔ **硬门**:**公开来源普查未完成 ⇒ change 目录不建**;⚠️ **R11 owner 交叉引用**:`SparseSnoopFilter` 行为实现归**本行第 1 个 change**(per Entry #112 归属去重 · §10 **P2** 行已关闭为「不另起小 change」)⇒ R11 详情见 **§8.1 R11** 行 + Entry #107 / #112 | **Stage 1 准入前置(滚动登记;owner 自队列 #6 → #7 → #8 → #9 → **现转指本行**,per Entry #80 / #90 / #95 / #106)**:`S1-1` ✅ 已消费(队列 #4 装配闸)· `S1-2` ✅ 已由队列 #6 交付 · **`S1-3` ✅ 已于队列 #9 触发**(`implemented` 实例数 2 → 3,`mesif` 为第 3 个;真实义务 = `ADR-CEP-12 §8.4` 的 SLICC 式备选重评,结论见 Entry #106)· `S1-4` ✅ 已消费(Entry #56)· `S1-5` ✅ 已由队列 #6 交付 · `S1-6` ✅ **已闭合**(2026-10-22 —— 判据 (b) 成立 + PoC `S2` 实跑,per `docs/implementation/2026-10-22-cep-stage0-external-review-summary.md` §2.2)· `S1-7` ①② ✅ 已由队列 #6 交付(③ 已由队列 #4 消费)· **孤儿前置(已收口)**:⏭(孤儿) M-4 行为侧 ✅ 落成于队列 #3 `cep-vc-mapping-contract` · ⏭(孤儿) `moesi_gpu` / `mesif` 未排期 ✅ 已于 Entry #71 消解 · ⏭(孤儿) verdict 逐 `(network, vc)` 标注义务 ✅ 落成于队列 #4 `cep-channel-dependency-gate`。 |
 | **11** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2029-Q2** | 📋 Planned | — |
 | **12** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2029-Q3** | 📋 Planned | — |
 | **13** | `cpptlm-cep-nvlink-sharp` | Stage 2 | **2029-Q4** | 📋 Planned | — |
@@ -7728,9 +7728,72 @@ owner 转指(归档)时,若 fixture 锚点不跟随 ⇒ fixture **假失败**(�
 
 **⑦ 关联**: Entry #120 §⑨(缺陷登记 + §⑨bis 第 2 轮 critic 闭合 + §⑨ter 第 3 轮 critic 收官)· #119 / #118 / #117(H7 主线)
 
+### Entry #122 — 2026-11-01 [adr-amendment](队列 #10 **口径裁决签发** + CXL 规约层 **公开来源普查**硬门 + 冻结面**两步授权**第 1 步)
+
+**主题**: 队列 #10(`cpptlm-cep-cxl-nonsymmetric`)**第 0 个 change(规约层)**起手前的架构裁决 ——
+口径钉死 + 追认对象改判 + 合规禁令 + 前提验证硬门。
+⇒ **本条是冻结面两步授权的「授权记录」**(per `scripts/test/cep_freeze_check.sh`:
+「改冻结产物必须先在台账 §11 追加 entry(授权记录),再 `--update`」)
+⇒ 授权对象 = `docs/adr/ADR-CEP-11-protocol-version-locking.md` 的 **`## Status Update` 段追加**
+(ADR 正文**不可变**,只追加 Status Update;per AGENTS.md「ADR 不可变」纪律)。
+
+**① 口径裁决(architect 签发;依据 = oracle 5 裁决 + metis 6 必须改 + librarian 18 公开来源调研)**
+| # | 裁决 |
+|---|---|
+| **①-a** | 「CXL 2.0 非对称」= **CXL.cache 子协议**(**host-centric / 单一一致性点**:设备以 MESI 缓存 Host 内存,Host 侧 Home/Snoop Filter 为**唯一**一致性点,H2D 承载 snoop);**显式不含** CXL.mem 池化语义与 CXL 3.0 DCOH/BISnp/BIRsp;⚠️ **CXL.cache 在 3.0 仍非对称** —— 「3.0 对称」指的是 **HDM-DB / CXL.mem 的多 host 共享内存**,不是 CXL.cache 变对称 |
+| **①-b** | 设备侧稳定态 = **MESI 4 态**(M/E/S/I)⇒ `perm` 投影 = **4→4**(复用现有 MESIF 表前 4 行:`I→NONE` / `S→READ` / `E→UNIQUE` / `M→WRITEBACK`)⇒ **「5→4」作废**(`F` 行**整行删除** —— CXL 无 F 态);⚠️ **普查/复核前不得写死态数** |
+| **①-c** | **basis 权威 = 本仓钉版的「公开来源锚点摘要」** —— **既非 CXL 规范正文、亦非 ArchForge**;强度三档 `direct` / `analogical` / `inferred` **不得升格**;追认 = 条目映射的**二方复核**,**仓内闭环**(无跨仓往返) |
+| **①-d** | **合规禁令** —— ⛔ **禁止**把 CXL 规范 PDF 投喂任何 AI(CXL **Evaluation Copy Agreement §3**「USE OF ARTIFICIAL INTELLIGENCE SYSTEMS」+ **AI Acceptable Use Policy**(2026-02-12 采纳,覆盖「any **past**, current, or future CXL Specification」)+ **NOTICE TO NON-MEMBERS**(非会员未经 CXL 董事会**书面同意**不得用 AI 处理))⇒ **8 项只能靠规范正文确定的语义** 登记为残余风险,走「**人类成员条款摘要**」流程(AI 不接触正文) |
+| **①-e** | CXL 实例 = **CEP 探索实例**,显式声明「**≠ dGPU SoC 实现路径**」(per ArchForge `ADR-SOC-21` D2「GPU Die 上**严禁**包含任何 CXL PHY 或 CXL Controller」);**不**镜像进 ArchForge `32 号 §6.1`(那是**产品侧**实例注册表 ⇒ 镜像 = 污染 + 与其立法冲突)⇒ 跨仓至多一条**定位注记** |
+
+**② 关键实测证据(可钉版;全部**非规范正文**来源)**
+| # | 结论 | 强度 | 来源 |
+|---|---|---|---|
+| E-1 | CXL.cache 设备侧稳定态 = **MESI 4 态** | **direct** | ASPLOS'25 形式化论文(CC-BY)+ SNIA SDC 2020 deck |
+| E-2 | `RdOwn` = 取所有权(E **或** M);`RdOwnNoData` 必须收 `GO-E`;`RdCurr` 不改态 | **direct** | 同上 + Rambus CXL Glossary |
+| E-3 | **D2H Req = 设备请求(local);H2D Req = 只有 snoop(remote,发起方恒为 Home)** ⇒ 两集合不相交 | **direct** | SNIA SDC 2020:「**H2D Requests are snoops from the host**」 |
+| E-4 | *「the host manages all tracking of coherence for peer caches and **the device never directly interacts with any peer cache**」*;*「CXL.cache is an **asymmetric** protocol」* | **direct** | ACM CSUR 2024 / ASPLOS'25 |
+| E-5 | ⚠️ **CXL 2.0 每 root port 只有 1 个 cache device**(3.0 最多 16 个)⇒「设备互不感知」在 2.0 是**平凡成立** ⇒ 精确表述改为「**host-centric / 单一一致性点**」(全代次成立) | **direct** | Hot Chips 2022 CXL 3.0 tutorial |
+| E-6 | ⚠️ ASPLOS'25 形式化**假设 host perfect tracking** ⇒ **不得**当作 CEP `SparseSnoopFilter`(`CONSERVATIVE`)的**精度**依据 ⇒ 只适合作**协议骨架** | caveat | 同上原文 |
+| E-7 | 「SF 宁多探不漏探」的**判定规则**无公开 CXL 原文 ⇒ 只能从 CHI/CCI **类比** ⇒ **不得**标 `direct` | 证据不足 | — |
+| E-8 | 上游**无** CXL.cache 实现(Linux `drivers/cxl/` 两项均 `[0]`;QEMU 明写「not emulating a coherency protocol」)⇒ **本仓无现成实现可抄** | **direct** | Linux docs / QEMU docs |
+
+**③ 8 项残余风险(只能靠规范正文确定 ⇒ 公开来源无法闭合)**
+`opcode 编码/字段宽度/credit 规则` · `15 条 request 的权威枚举与逐状态合法性表`(公开 deck 已有 `MemWr`↔`WrCur` 差异)· `transient state 官方命名`(ASPLOS'25 明说「not officially part of the CXL.cache specification」)· `错误语义(GO-Err / poison / viral)` · `SF completeness 的规范性判定` · `版本记账(CacheID / 16 device / 68B vs 256B)` · `是否存在 P/pseudo/厂商扩展态`(⚠️ **「搜不到」≠「不存在」**)· `HDM-DB MetaValue / BISnp/BIRsp opcode`
+⇒ ⇒ **不得用推理填空**;走 ①-d 的「人类成员条款摘要」流程。
+
+**④ 前提验证硬门(Phase -1,约 1 周)—— 普查未完成 ⇒ change 目录不建**
+Task 0 = ①**公开来源普查**(态/事件词表 + 逐格「公开来源有明示 vs 须推导」覆盖矩阵)⇒ 产出 `docs/research/` 锚点摘要骨架(**不整段复制任何原文** ⇒ IP 风险)
+⇒ ② 公开来源**不足以**钉死的格 ⇒ **回退裁决**(登记为「须人类成员条款摘要」)⇒ **不进入** `cxl_state_spec.hh` 编码。
+⇒ ⚠️ **普查内容为「公开来源」而非「规范条款」** —— 因 ①-d 的合规约束,oracle 原设计的「引钉版 spec 条款」**不可由 AI 执行**(前提未实测)。
+
+**⑤ 判据分列(第 0 个 change 必含,per oracle Q4 + metis M1/M2)**
+- **事件集划分**:local(D2H 侧设备操作)vs remote(**仅** H2D snoop 操作码,发起方恒为 Home)⇒ 编译期结构断言:`H2DReqOp ⊆ {SnpInv, SnpData, SnpCurr}` ∧ `D2HReqOp ∩ H2DReqOp = ∅` ∧ 设备侧无 snoop **发起**型事件;
+- **defining 语义 AC**(metis M1):「设备不感知其他设备」必须**有断言**(负向:设备节点**收不到**指向其他设备的 snoop / 设备侧视图不含其他设备 sharer)—— 现有 9 条 AC **无一条测语义**;
+- **协议序列正向 AC**(metis M2):设备 read miss → SF lookup → Home 广播 snoop → `snoop_resp` 聚合 → `completion` 携带正确 `perm` 返回(全流程);
+- **hazard 契约继承**(metis M3):`ADR-CEP-04 §4` 已冻结 `LookupHazard{NONE, STALL, CHAIN}` 与 5 种实现的 hazard 行为表 ⇒ 实现层不得交付「caps 全对、hazard 语义不对」的类;
+- **`moesi_gpu` 回归 AC**(metis M4):traits 行 → 真行为实现会**改变运行时行为**(`CONSERVATIVE` ⇒ snoop 数变多)⇒ 须有「0 回归」或「行为变化显式登记 + 重基线」;
+- ⚠️ **R-B 失效区登记**(metis M5):CXL 非对称 workload **结构性非均匀** ⇒ **恰好落在 H7 已声明范围(均匀随机)之外**、`14 号` 实测的 R-B 失效区(误差 15.5~72.3pp)**之内** ⇒ 本 change **禁止**附着任何延迟/性能读数。
+
+**⑥ 纠正 improvement 草稿 10 处(清单,待本条后落盘)**
+① **Why #1 事实错误**:`07 号 §5.1.1` **TileLink-C 也是 Stage 1** ⇒ 删「唯一仍空着的 Stage 1 族」与「落地后 Stage 1 覆盖收口」,改为「CXL 2.0 非对称是 Stage 1 的第 4 个**协议实例**;落地后仅剩 TileLink-C(队列 #11)」;动机排序改为 **R11 收口(architect 义务) > 实例覆盖 > DCOH 对照(远期,不进 AC)**;
+② **「5→4」全部改为「N→4(N 由普查钉死)」** + 删 `F` 行;
+③ **删**「全部逐格 `pending = true` + 跨仓追认债」⇒ 改 ①-c 的混合口径(`basis.kind` 值域:`public-direct` / `public-analogical` / `archforge-anchor`(仅 caps 等已对齐格)/ `self-derived`);
+④ **Impact 跨仓债两行改写**:删「镜像进 ArchForge `32 号 §6.1`」+ 删「35 格同型追认」⇒ 改「仓内摘要复核闭环」;
+⑤ **删** Impact 的「`ADR-CEP-11`(若锁表需微调)」⇒ 实测 `ADR-CEP-11 决策 4` **不触发**(不改锁表);
+⑥ **补 defining 语义 AC + 协议序列正向 AC**(⑤);
+⑦ **补 hazard 契约 AC + `moesi_gpu` 回归 AC**(⑤);
+⑧ **补 R-B 失效区登记**(⑤);
+⑨ **Capabilities #4 降调**:删「#9 已验证过」(实测:#9 追认花了 2 个台账 Entry + 纠正 1 格 `M+SnpShared` S→F + 残余「按档批量证据强度弱于逐格」**至今挂着**);
+⑩ **补前提验证 Stage-gate**(④)+ 范围节补「非对称」可判定义段(目录侧 / snoop 发起侧 / 设备态集 三维度逐条挂引用)。
+
+**⑦ 关联**: Entry #121(H7 收尾 + 既有缺陷修复)· #112(`SparseSnoopFilter` 归属去重 + R11)· #111(队列 #10 草稿)· #107(R11 登记 + 落位映射)· #109(`ADR-CEP-11` 签发 + G-1/G-2)· `ADR-CEP-04 §2/§4`(caps + hazard)· `ADR-CEP-11 §3`(锁表)· `07 号 §5.1.1`(协议族表)
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
+
+
 
 
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
