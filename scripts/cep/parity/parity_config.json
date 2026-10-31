@@ -39,5 +39,10 @@
   },
   "tolerances": {
     "P-4_latency_rel": 0.15
+  },
+  "verification": {
+    "_note": "P-5 判据的字段取值(per ADR-CEP-06 §3 / `14 号` §4.4)",
+    "verification_mode": "bounded_random",
+    "verification_scope": "100000 accesses; deterministic linear sweep over a 16KiB working set (start=0x100000, end=0x104000, blocksize=64B, tick interval=10000); non-random sequence (NOT stochastic sampling) — exhaustive within the declared scope, NOT exhaustive over the address space"
   }
 }

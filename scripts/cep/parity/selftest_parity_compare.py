@@ -32,19 +32,31 @@ def check(ok, name):
 
 def base_cpptlm():
     # ⚠️ 字段名与两侧 JSON 一致 = **`accesses`**(比较器里做了归一)
-    return {"hit_ns": 5.0, "miss_ns": 50.0, "accesses": 20000, "mode": "constant_tier"}
+    return {"hit_ns": 5.0, "miss_ns": 50.0, "accesses": 20000, "mode": "constant_tier",
+            # ⚠️ **P-5** 字段(per `ADR-CEP-06 §3`):缺失 ⇒ P-5 FAIL ⇒ 整个 verdict 红
+            "verification_mode": "bounded_random",
+            "verification_scope": "20000 accesses; deterministic linear sweep"}
 
 
 def base_gem5():
     return {"hit_latency_ns": 5.0, "miss_latency_ns": 50.0, "accesses": 20000,
-            "mode": "constant_tier"}
+            "mode": "constant_tier",
+            "verification_mode": "bounded_random",
+            "verification_scope": "20000 accesses; deterministic linear sweep"}
 
 
 def main():
     print("── 正控:两侧一致 ⇒ PASS ──")
     v = parity_compare.compare(base_cpptlm(), base_gem5(), TOL)
     check(v["passed"], "基线通过")
-    check(len(v["checks"]) == 3, "常数档判据条数 = 3(P-1 / P-4a / P-4b)")
+    # ⚠️ 常数档的判据集合(per `14 号` §4.4 的「档位分列」):
+    #    P-1 · P-2(N/A,主对拍档)· P-3(N/A,主对拍档)· P-4a · P-4b · P-5
+    #    ⇒ 6 条(P-1b / P-1c 只在同源/参数同源档出现)。
+    check(len(v["checks"]) == 6,
+          f"常数档判据条数 = 6(实测 {len(v['checks'])})")
+    _ids = [c["id"] for c in v["checks"]]
+    check(_ids == ["P-1", "P-4a", "P-4b", "P-3", "P-2", "P-5"],
+          f"常数档判据 id 集合正确(实测 {_ids})")
 
     print("── 反控 ①:gem5 命中延迟偏 30% ⇒ 必须 FAIL ──")
     g = base_gem5()
@@ -105,6 +117,30 @@ def main():
     print("── 反控 ⑤:容差收紧到 0 ⇒ 基线也必须 FAIL(证明判据有鉴别力)──")
     v = parity_compare.compare(base_cpptlm(), base_gem5(), 0.0)
     check(not v["passed"], "容差 = 0 时零偏差仍 FAIL ⇒ 说明 '<' 是严格小于(与口径一致)")
+
+    print("── 反控 ⑥:缺 `verification_mode` ⇒ P-5 必须 FAIL ──")
+    c = base_cpptlm()
+    del c["verification_mode"]
+    v = parity_compare.compare(c, base_gem5(), TOL)
+    p5 = [c for c in v["checks"] if c["id"] == "P-5"][0]
+    check(not p5["ok"], "缺 verification_mode ⇒ P-5 FAIL")
+    check(bool(p5["attribution"]), "P-5 失败必须带归因提示")
+    check(not v["passed"], "缺 verification_mode ⇒ 整个 verdict 必须 FAIL")
+
+    print("── 反控 ⑦:`verification_mode` 不在枚举 ⇒ P-5 必须 FAIL ──")
+    c = base_cpptlm()
+    c["verification_mode"] = "whatever"
+    v = parity_compare.compare(c, base_gem5(), TOL)
+    p5 = [c for c in v["checks"] if c["id"] == "P-5"][0]
+    check(not p5["ok"], "verification_mode 越界 ⇒ P-5 FAIL")
+
+    print("── 反控 ⑧:两侧 `verification_scope` 不一致 ⇒ P-5 必须 FAIL ──")
+    c = base_cpptlm()
+    g = base_gem5()
+    g["verification_scope"] = "different scope"
+    v = parity_compare.compare(c, g, TOL)
+    p5 = [c for c in v["checks"] if c["id"] == "P-5"][0]
+    check(not p5["ok"], "scope 不一致 ⇒ P-5 FAIL")
 
     print(f"\n反向验证:{PASS} 项通过 / {FAIL} 项失败")
     return 1 if FAIL else 0

@@ -45,6 +45,21 @@ lin = c['gem5']['linear']
 print(lin['$1'])
 "
 }
+# ⚠️ **P-5 的两个字段**从**唯一真源** `parity_config.json` 的 `verification` 段读
+#    (per `ADR-CEP-06 §3`)⇒ 两侧取值必然一致 ⇒ P-5 不会因「配置漂移」而红。
+read_cfg_verification_mode() {
+    python3 -c "
+import json
+print(json.load(open('$CFG'))['verification']['verification_mode'])
+"
+}
+read_cfg_verification_scope() {
+    python3 -c "
+import json
+print(json.load(open('$CFG'))['verification']['verification_scope'])
+"
+}
+
 START_ADDR="$(read_cfg start_addr)"
 END_ADDR="$(read_cfg end_addr)"
 BLOCKSIZE="$(read_cfg blocksize)"
@@ -72,6 +87,8 @@ PARITY_READ_PERCENT="$READ_PERCENT" \
 PARITY_DATA_LIMIT="$DATA_LIMIT" \
 PARITY_HIT_NS="${PARITY_HIT_NS:-5}" \
 PARITY_MISS_NS="${PARITY_MISS_NS:-50}" \
+PARITY_VERIFICATION_MODE="$(read_cfg_verification_mode)" \
+PARITY_VERIFICATION_SCOPE="$(read_cfg_verification_scope)" \
 PARITY_OUT="$OUT_DIR/cpptlm_linear_probe.json" \
     "$ROOT/build/bin/cpptlm_tests" "[cep][parity]" \
     || fail "CppTLM 侧回放失败"

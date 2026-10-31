@@ -121,22 +121,42 @@ def compare(cpptlm, gem5, tolerance, hit_rate_tol_pp=5.0):
             "attribution": "" if ok else attribute(dev, kind),
         })
 
-    # ── P-2 命中率偏差(仅**同源 trace** 档)────────────────────────────
-    # ⚠️ `14 号` §4.2 的主对拍(容量对齐档)判据 = 「命中率 ± 5 个百分点」。
-    #    但本仓 `CacheTLM` 是**无限容量 + 精确地址 map**(命中 = 该地址曾被访问过),
-    #    gem5 是**容量内命中** ⇒ 两者命中判据**结构性不同**
-    #    ⇒ 命中率偏差**必然存在**,本判据只作**登记**(观察值),**不参与 verdict**。
-    #    ⇒ 真正的容量对齐档需要本仓侧引入「等容量 + 同替换」的目录视图(未做)。
-    if (cpptlm.get("mode") in ("same_source_trace", "parameter_same_source")
-            or gem5.get("mode") in ("same_source_trace", "parameter_same_source")):
+    # ── P-2 / P-3:仅**主对拍档**适用;辅助档为 **N/A**(不是「已达标」)────
+    # ⚠️ `14 号` §4.4(2026-10-31 修订)明确:P-2(平均访问延迟)/ P-3(命中率)是
+    #    **主对拍(容量对齐档)**的判据;辅助档按定义只比**延迟常数** ⇒
+    #    **N/A**(不得当作「已达标」,否则制造假结论)。
+    #    ⇒ 本实现跑的是**辅助档** ⇒ P-2 / P-3 标 **N/A** 并记录观察值(供 A5 参照)。
+    aux_tier = not (
+        cpptlm.get("mode") == "main_tier" or gem5.get("mode") == "main_tier"
+    )
+    if aux_tier:
         hr_cpptlm = cpptlm.get("miss_rate")
         hr_gem5 = gem5.get("miss_rate")
-        if hr_cpptlm is not None and hr_gem5 is not None:
+        # ⚠️ **P-3 总是加入**(即使测量值缺失)—— 否则判据**条数**会随 fixture 漂移
+        #    (实测踩过:基线 fixture 无 `miss_rate` ⇒ P-3 被跳过 ⇒ 条数 5 ≠ 6)
+        #    ⇒ 违反「fixture 状态变迁后必须重新基线化」的纪律。
+        #    ⇒ 缺测量值 ⇒ 记 **N/A + 归因「测量值缺失」**,**不得**当作 0 偏差。
+        if hr_cpptlm is None or hr_gem5 is None:
+            checks.append({
+                "id": "P-3",
+                "name": (f"命中率偏差 —— **N/A(主对拍档判据)**;"
+                         f"观察值 偏差=**缺测量值**(阈值 ±{hit_rate_tol_pp:.0f}pp,**不参与 verdict**)"),
+                "ok": True,
+                "na": True,
+                "observed": True,
+                "deviation_pp": None,
+                "detail": f"cpptlm={hr_cpptlm} gem5={hr_gem5}",
+                "attribution": ("缺测量值 ⇒ **不得**当作 0 偏差(per 判据纪律);"
+                                "先查测量链路,不是模型问题"),
+            })
+        else:
             dev_pp = abs(float(hr_cpptlm) - float(hr_gem5)) * 100.0
             checks.append({
-                "id": "P-2",
-                "name": f"未命中率偏差(观察值,阈值 ±{hit_rate_tol_pp:.0f}pp,**不参与 verdict**)",
-                "ok": True,  # 登记项:不参与判定
+                "id": "P-3",
+                "name": (f"命中率偏差 —— **N/A(主对拍档判据)**;"
+                         f"观察值 偏差={dev_pp:.2f}pp(阈值 ±{hit_rate_tol_pp:.0f}pp,**不参与 verdict**)"),
+                "ok": True,  # 辅助档:N/A ⇒ 不判红
+                "na": True,
                 "observed": True,
                 "deviation_pp": dev_pp,
                 "detail": f"cpptlm={float(hr_cpptlm):.4f} gem5={float(hr_gem5):.4f} 偏差={dev_pp:.2f}pp",
@@ -148,9 +168,41 @@ def compare(cpptlm, gem5, tolerance, hit_rate_tol_pp=5.0):
                     "⇒ **纯读序列的命中率恒为 0**;gem5 侧读 miss **会填充**;"
                     "② **容量**:本仓无限容量 + 精确地址 map,gem5 = 16KiB/2-way/LRU;"
                     "③ **命中判据**:本仓 = 「该地址曾被命中/写入」,gem5 = 「容量内命中」;"
-                    "⇒ 命中率**不可直接判**;真要对齐(P-3)需本仓侧引入"
-                    "「**等容量 + 同替换 + 同填充策略(read-allocate)**」的目录视图 —— **未做**"),
+                    "⇒ 命中率**不可直接判**;要对齐需本仓侧引入"
+                    "「**等容量 + 同替换 + 同填充策略(read-allocate)**」的目录视图 —— **未做**(A5)"),
             })
+        checks.append({
+            "id": "P-2",
+            "name": "平均访问延迟偏差 —— **N/A(主对拍档判据)**",
+            "ok": True,
+            "na": True,
+            "detail": f"cpptlm={cpptlm.get('avg_latency_ns')}ns gem5={gem5.get('avg_latency_ns')}ns",
+            "attribution": "辅助档按定义只比**延迟常数** ⇒ 平均访问延迟需**对齐过的容量模型**才有意义",
+        })
+
+    # ── P-5:`verification_mode` + `verification_scope` 齐备 ────────────
+    #    (per `ADR-CEP-06 §3` / `14 号` §4.4)⇒ 缺失 ⇒ **FAIL**(硬判据)
+    _VALID_MODES = {"exhaustive", "bounded_random", "sampled"}
+    _vm_cp = cpptlm.get("verification_mode")
+    _vm_gm = gem5.get("verification_mode")
+    _vs_cp = cpptlm.get("verification_scope")
+    _vs_gm = gem5.get("verification_scope")
+    p5_ok = (
+        _vm_cp in _VALID_MODES and _vm_gm in _VALID_MODES
+        and bool(_vs_cp) and bool(_vs_gm)
+        and _vm_cp == _vm_gm and _vs_cp == _vs_gm
+    )
+    checks.append({
+        "id": "P-5",
+        "name": ("`verification_mode` + `verification_scope` 两侧齐备且一致"
+                 f"(mode ∈ {sorted(_VALID_MODES)})"),
+        "ok": p5_ok,
+        "detail": (f"cpptlm(mode={_vm_cp}, scope_len={len(_vs_cp or '')}) "
+                   f"gem5(mode={_vm_gm}, scope_len={len(_vs_gm or '')})"),
+        "attribution": "" if p5_ok else (
+            "P-5 不满足 ⇒ 违反 `ADR-CEP-06 §3` ⇒ 结果**不得**表述为「已证明」"
+            "(缺 `verification_mode` / `verification_scope`,或两侧取值不一致)"),
+    })
 
     # ── P-1c **地址序列指纹**一致(参数同源档的**直接证据**)──────────
     #    两侧**各自独立**按同一组参数生成序列 ⇒ 指纹相同 ⇒ 序列逐条相同。
@@ -176,10 +228,12 @@ def compare(cpptlm, gem5, tolerance, hit_rate_tol_pp=5.0):
         ("参数同源档 ⇒ 两侧**各自独立**按同一组参数生成序列 ⇒ **地址序列指纹**一致"
          "⇒ 验证的是「同一条访问流下的口径一致性 + 路径延迟常数」;"
          "**不**验证 H7(本仓 stub cache 的现实性)⇒ H7 仍未验证、R7 不降级;"
-         "P-2(命中率)因命中判据结构性不同**只作观察登记**")
+         "**P-2(平均访问延迟)/ P-3(命中率)是主对拍档判据 ⇒ 本档 N/A**"
+         "(命中率另因命中判据结构性不同只作观察登记)")
         if same_source else
         ("辅助档(常数档)⇒ 验证的是**口径与建模语义**;"
-         "**不**验证 H7(本仓 stub cache 的现实性)⇒ H7 仍未验证、R7 不降级")
+         "**不**验证 H7(本仓 stub cache 的现实性)⇒ H7 仍未验证、R7 不降级;"
+         "**P-2 / P-3 是主对拍档判据 ⇒ 本档 N/A**")
     )
     return {
         "passed": passed,

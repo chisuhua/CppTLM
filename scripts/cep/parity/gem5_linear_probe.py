@@ -191,6 +191,21 @@ miss_avg_ns = None
 if avg_miss_latency_ticks is not None:
     miss_avg_ns = float(avg_miss_latency_ticks) / TICKS_PER_NS
 
+# ⚠️ **平均访问延迟**:v24 classic cache **无「命中延迟总和」统计**
+#    (实测 stats 文件里 `overallHitLatency` 0 命中)⇒ 命中延迟只能用配置解析式
+#    ⇒ 平均延迟 = (命中数 × 派生命中延迟 + 未命中数 × 实测未命中延迟) / 总访问数。
+#    ⇒ 这是**混合口径**(派生 + 实测)⇒ 仅作 P-2 的**观察值**(辅助档 P-2 为 N/A)。
+_avg_latency_ns = None
+if hits or misses:
+    _hit_ns = (
+        cache_cfg["tag_latency_cycles"]
+        + cache_cfg["data_latency_cycles"]
+        + cache_cfg["response_latency_cycles"]
+    ) * clk_period_ns
+    _avg_latency_ns = (
+        float(hits) * _hit_ns + float(misses) * (miss_avg_ns or 0.0)
+    ) / float(hits + misses)
+
 hit_avg_ns = (
     cache_cfg["tag_latency_cycles"]
     + cache_cfg["data_latency_cycles"]
@@ -221,10 +236,16 @@ def _fnv1a64(values):
 
 seq_hash = _fnv1a64(seq)
 
+# ⚠️ **P-5**(per `14 号` §4.4 / `ADR-CEP-06 §3`):每次对拍必须声明
+#    `verification_mode` + `verification_scope` ⇒ 缺失 ⇒ 判据 FAIL。
+_ver = CFG.get("verification", {})
+
 result = {
     "tool": "gem5",
     "mode": "parameter_same_source",
     "version": CFG["gem5"]["version"],
+    "verification_mode": _ver.get("verification_mode"),
+    "verification_scope": _ver.get("verification_scope"),
     "sequence": {
         "start_addr": START_ADDR,
         "end_addr": END_ADDR,
@@ -244,6 +265,8 @@ result = {
     "num_writes": num_writes,
     "hit_latency_ns": hit_avg_ns,
     "miss_latency_ns": miss_avg_ns,
+    "avg_latency_ns": _avg_latency_ns,
+    "avg_latency_ns_source": "mixed(命中=派生 tag+data+response;未命中=实测)⇒ 观察值",
     "hit_latency_ns_source": "derived(tag+data+response;v24 classic cache 无命中延迟实测统计)",
     "miss_latency_ns_source": "measured(overallAvgMissLatency::total)",
     "ticks_per_ns": TICKS_PER_NS,

@@ -176,6 +176,10 @@ TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
 
     const std::string sha = seq_fnv1a64(addrs);
 
+    // ⚠️ **P-5** 的两个字段(取值由 `parity_config.json` 的 `verification` 段注入)
+    const std::string vmode = env_or("PARITY_VERIFICATION_MODE", "");
+    const std::string vscope = env_or("PARITY_VERIFICATION_SCOPE", "");
+
     if (!out_path.empty()) {
         std::ofstream out(out_path);
         REQUIRE(out.good());
@@ -184,6 +188,12 @@ TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
         out << "{\n"
             << "  \"tool\": \"cpptlm\",\n"
             << "  \"mode\": \"parameter_same_source\",\n"
+            // ⚠️ **P-5**(per `14 号` §4.4 / `ADR-CEP-06 §3`):必须声明
+            //    `verification_mode` + `verification_scope` ⇒ 缺失 ⇒ 判据 FAIL。
+            //    取值由**唯一真源** `parity_config.json` 的 `verification` 段注入
+            //    (环境变量 `PARITY_VERIFICATION_MODE` / `PARITY_VERIFICATION_SCOPE`)。
+            << "  \"verification_mode\": \"" << vmode << "\",\n"
+            << "  \"verification_scope\": \"" << vscope << "\",\n"
             << "  \"sequence\": {\n"
             << "    \"start_addr\": " << seq.start_addr << ",\n"
             << "    \"end_addr\": " << seq.end_addr << ",\n"

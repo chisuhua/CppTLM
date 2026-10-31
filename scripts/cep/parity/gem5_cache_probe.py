@@ -266,9 +266,15 @@ miss_avg_ns = None
 if avg_miss_latency_ticks is not None:
     miss_avg_ns = ticks_to_ns(avg_miss_latency_ticks)
 
+# ⚠️ **P-5**(per `14 号` §4.4 / `ADR-CEP-06 §3`):每次对拍必须声明
+#    `verification_mode` + `verification_scope` ⇒ 缺失 ⇒ 判据 FAIL。
+_ver = CFG.get("verification", {})
+
 result = {
     "tool": "gem5",
     "version": CFG["gem5"]["version"],
+    "verification_mode": _ver.get("verification_mode"),
+    "verification_scope": _ver.get("verification_scope"),
     "hits": hits,
     "misses": misses,
     "accesses": accesses,
