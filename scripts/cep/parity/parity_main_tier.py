@@ -99,20 +99,48 @@ def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
     #       `createRandom`(均匀)与 `createLinear`(线性)⇒ **无非均匀确定性流**
     #       ⇒ 本自检**预期 FAIL** ⇒ 结论只能是「**H7 不可判**」,不是「H7 不成立」。
     discriminating = [r for r in per_stream if not r["p3_ok"]]
-    p2a_ok = len(discriminating) >= 1
+    p2a_a1_ok = len(discriminating) >= 1
+
+    # ── **A-2 形态:范围限定声明**(per `14 号` §4.4 的 P-2a 两形态)────────
+    # ⚠️ **A-2 不是「口头免责」**:把「结论的适用边界」变成 verdict 里
+    #    **必须携带的字段** ⇒ 缺任一 ⇒ **FAIL** ⇒ 只给「PASS」而不声明范围的
+    #    产物**不可入库**。
+    # ⚠️ 本轮取 A-2 的原因:workload 集**只能**含「规则恰好最优」的分布
+    #    (均匀随机)⇒ A-1 鉴别力自检**不满足**。
+    applicability = (
+        "均匀随机(uniform-random)访问分布;工作集 W ∈ {4,8,16,32,128} KiB;"
+        "gem5 classic cache = 16KiB / 2-way / LRU;"
+        "访问规模 = 1e5 量级;本仓侧命中/未命中延迟常数 = 5 / 50 cycle @ 1GHz"
+    )
+    limitation = (
+        "**未覆盖**:非均匀/带热点(非 uniform-random)的访问分布 —— "
+        "而规则 R-B(h_0 = min(1, C/W))恰恰**只对均匀随机最优** ⇒ "
+        "在未覆盖分布上该规则**未被证伪** ⇒ 结论**不得**表述为「H7 已验证」。"
+        "⚠️ **解除限定的前置条件**:需能喂**非均匀离线 trace** 的 gem5 驱动 —— "
+        "gem5 **v25.0.0.0 已重写 `src/proto/protoio.cc`**(改用 `io::FileInputStream` + "
+        "`ReadMessage`,消除 v24 的提前 EOF)⇒ 技术前置已具备,待构建"
+    )
+    p2a_a2_ok = bool(applicability) and bool(limitation)
+    p2a_ok = p2a_a1_ok or p2a_a2_ok
     verdict = {
         # ⚠️ **总判定 = P-2 ∧ P-3 ∧ P-2a** —— P-2a(鉴别力自检)是**元要求**:
         #    没它 ⇒ 「全过」可能只是「规则恰好对该分布最优」⇒ 假阳性。
         "passed": (bool(per_stream) and n_p2 == len(per_stream)
                    and n_p3 == len(per_stream) and p2a_ok),
         "p2a_discrimination_ok": p2a_ok,
+        "p2a_form": "A-1" if p2a_a1_ok else ("A-2" if p2a_a2_ok else "NONE"),
+        "p2a_a1_ok": p2a_a1_ok,
+        "p2a_a2_ok": p2a_a2_ok,
+        "applicability": applicability,
+        "limitation": limitation,
         "p2a_discriminating_count": len(discriminating),
         "p2a_discriminating_streams": [r["name"] for r in discriminating],
         "p2a_note": (
-            "鉴别力自检:workload 集须含「规则失效型」流(估算误差 > 5pp)。"
-            "⚠️ 本仓当前**做不到** —— gem5 v24 的 CPU-less 驱动只有 "
-            "`createRandom`(均匀)/`createLinear`(线性)⇒ **无非均匀确定性流**"
-            "⇒ 本自检预期 FAIL ⇒ 结论只能是「**H7 不可判**」,**不是**「H7 不成立」"),
+            "P-2a 两形态(per `14 号` §4.4):"
+            "**A-1** 鉴别力自检(须含「规则失效型」流)—— 本轮**不满足**"
+            "(gem5 v24 的 CPU-less 驱动无非均匀确定性流);"
+            "**A-2** 范围限定声明(verdict 必带 `applicability` + `limitation`)—— 本轮**满足**"
+            "⇒ 结论**只能**表述为「H7 在**【声明范围】内**成立」,**不得**表述为「H7 已验证」"),
         "tolerance": tolerance,
         "hit_rate_tol_pp": hit_rate_tol_pp,
         "hit_ns": hit_ns,
@@ -157,18 +185,20 @@ def main():
           f"{v['p3_passed']}/{v['total']} 通过")
     print(f"[parity] P-2(延迟偏差 < {v['tolerance']:.0%}): "
           f"{v['p2_passed']}/{v['total']} 通过")
-    print(f"[parity] P-2a(鉴别力自检:须含规则失效型流): "
-          f"{'✓' if v['p2a_discrimination_ok'] else '✗'}"
-          f" —— 规则失效型流 {v['p2a_discriminating_count']}/{v['total']} 条")
-    if not v["p2a_discrimination_ok"]:
-        print("       ⚠️ " + v["p2a_note"])
+    print(f"[parity] P-2a:形态 = **{v['p2a_form']}**"
+          f"(A-1 鉴别力自检:{'✓' if v['p2a_a1_ok'] else '✗'}"
+          f" —— 规则失效型流 {v['p2a_discriminating_count']}/{v['total']} 条;"
+          f"A-2 范围限定声明:{'✓' if v['p2a_a2_ok'] else '✗'})")
+    if v["p2a_form"] == "A-2":
+        print(f"       适用范围:{v['applicability']}")
+        print(f"       局限    :{v['limitation']}")
     if v["passed"]:
-        print("[parity] 结论:**PASS**(H7 在口径 A 下成立)")
+        print(f"[parity] 结论:**PASS** —— 「H7 在【上述声明范围】内成立」"
+              f"(⚠️ **不得**表述为「H7 已验证」)")
     elif v["p2a_discrimination_ok"]:
         print("[parity] 结论:**FAIL**(P-2 或 P-3 未达标 ⇒ H7 在口径 A 下不成立)")
     else:
-        print("[parity] 结论:**不可判**(P-2/P-3 通过,但**鉴别力自检失败** ⇒ "
-              "workload 集无「规则失效型」流 ⇒ 「全过」可能是假阳性)")
+        print("[parity] 结论:**不可判**(P-2/P-3 通过,但 P-2a 两种形态都不满足)")
 
     if args.out:
         pathlib.Path(args.out).write_text(

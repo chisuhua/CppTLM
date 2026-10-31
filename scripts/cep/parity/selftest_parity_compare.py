@@ -142,6 +142,23 @@ def main():
     p5 = [c for c in v["checks"] if c["id"] == "P-5"][0]
     check(not p5["ok"], "scope 不一致 ⇒ P-5 FAIL")
 
+    print("── 反控 ⑨:主对拍档的 P-2a(A-2 形态)必须携带范围声明 ──")
+    # ⚠️ 「范围限定声明」若是**口头免责** ⇒ 就没有鉴别力 ⇒ 必须是**可判字段**
+    #    (`applicability` + `limitation` 齐备 ⇒ 缺一即 FAIL)。
+    import parity_main_tier as pmt
+    streams = [
+        {"name": "S1", "hit_rate": 0.5, "avg_latency_ns": 26.0,
+         "hits": 50000, "misses": 50000, "accesses": 100000,
+         "nominal_accesses": 100000,
+         "working_set_bytes": 32768, "cache_bytes": 16384},
+    ]
+    v = pmt.analyse(streams)
+    check(v["p2a_form"] == "A-2",
+          f"A-1 不满足时形态应为 A-2(实测 {v['p2a_form']})")
+    check(bool(v.get("applicability")), "A-2 必须携带 `applicability`(适用范围)")
+    check(bool(v.get("limitation")), "A-2 必须携带 `limitation`(局限 + 解除条件)")
+    check(v["passed"], "A-2 形态下 P-2/P-3 达标 ⇒ 判定通过")
+
     print(f"\n反向验证:{PASS} 项通过 / {FAIL} 项失败")
     return 1 if FAIL else 0
 
