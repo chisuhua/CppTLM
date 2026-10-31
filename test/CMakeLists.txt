@@ -311,6 +311,23 @@ add_test(NAME cep_mesif_ratification_request_check
 add_test(NAME cep_parity_compare_selftest
          COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/cep/parity/selftest_parity_compare.py)
 
+# H7 对拍基准的 **CppTLM 侧**执行器 —— 读**同一条** trace(CSV)→ 跑 TrafficGenTLM+CacheTLM
+#   → 产出与 gem5 侧同格式的 JSON。未设 `PARITY_TRACE_CSV` ⇒ **跳过**(SKIP)。
+add_test(NAME cep_parity_cpptlm_side
+         COMMAND ${CMAKE_SOURCE_DIR}/build/bin/cpptlm_tests "[cep][parity]")
+# ⚠️ Catch2 的 `SKIP` 返回码 = **4** ⇒ 登记为 ctest 的「跳过」返回码,
+#    否则「没跑 trace 生成」的常规 CI 会把它当**失败**(实测:ctest 报 Failed)。
+set_tests_properties(cep_parity_cpptlm_side PROPERTIES SKIP_RETURN_CODE 4)
+
+# H7 对拍基准的**同源 trace 档端到端**(trace 生成 → gem5 回放 → CppTLM 回放 → 比较)
+#   —— 两侧消费**同一条**访问流(per `14 号` §4.1)。
+#   ⚠️ 需要 gem5 二进制(第三方基准,不入库);缺席时 exit 77 ⇒ ctest 跳过。
+add_test(NAME cep_parity_trace_e2e
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/cep/parity/run_parity_trace.sh)
+set_tests_properties(cep_parity_trace_e2e PROPERTIES
+                     SKIP_RETURN_CODE 77
+                     TIMEOUT 1800)
+
 # H7 对拍基准的**端到端实测**(gem5 探针 → 比较器)——
 # ⚠️ 需要 gem5 二进制(第三方基准,**不入库**;构建入口 = scripts/cep/parity/build_gem5.sh)。
 #    gem5 缺席时**跳过**(SKIP_RETURN_CODE 77)⇒ 不阻塞常规 CI,

@@ -38,7 +38,7 @@ import pathlib
 import m5
 from m5.objects import (
     AddrRange,
-    Cache,
+    NoncoherentCache,
     MemTest,
     Root,
     SimpleMemory,
@@ -97,7 +97,14 @@ tester.percent_atomic = 0
 system.mem_tester = tester
 
 # ── 缓存(命中路径 = tag + data + response;未命中 = 其上 + 存储延迟)──────
-cache = Cache()
+# ⚠️ 必须用 **`NoncoherentCache`**(不是 `Cache`):
+#    coherent `Cache` 对**整行写**会转成 `MemCmd::InvalidateReq`
+#    (per `src/mem/cache/cache.cc`:`if (is_whole_line_write) cmd = MemCmd::InvalidateReq;`)
+#    ⇒ 而 `SimpleMemory` **只接受读/写** ⇒ panic:
+#    `Should only see read and writes at memory controller, saw InvalidateReq`。
+#    `NoncoherentCache` 的 miss 路径发 `ReadReq` ⇒ 无 invalidate 语义 ⇒ 兼容。
+#    (官方 `configs/example/cache_partitioning.py` 同样用 `NoncoherentCache`。)
+cache = NoncoherentCache()
 cache.size = cache_cfg["size"]
 cache.assoc = cache_cfg["assoc"]
 # ⚠️ 这三项是 `Param.Cycles` ⇒ 收**整数**;配置里的 "2ns"/"1ns" 需换算成 cycle
@@ -122,7 +129,21 @@ system.cache = cache
 #    **`SimpleMemory` 直接挂 cache 的 `mem_side`**(无中间控制器)⇒ 延迟 = `latency` 精确可控。
 memory = SimpleMemory(latency=mem_cfg["latency"])
 memory.range = AddrRange(mem_cfg["range"])
-system.memory = memory
+# ⚠️ 必须挂进 `system.memories`(VectorParam)而不是 `system.memory`:
+#    `System::isMemAddr()`(per `src/sim/system.cc` → `PhysicalMemory::isMemAddr`)
+#    查的是 `physmem.addrMap`,而该 map 只收 `system.memories` 里的 memory
+#    (per `src/mem/physical.cc`:`for (const auto& m : memories)`)。
+#    挂错 ⇒ 地址不被认作物理内存 ⇒ `BaseTrafficGen::update()` 里
+#    `if (pkt && system->isMemAddr(...))` 恒假 ⇒ 一个包都不发 ⇒
+#    gem5 报 `spent 1000000000 ticks without making progress`。
+system.memories = [memory]
+# ⚠️ `system.mem_ranges` 必须**显式**设置(实测为空 ⇒ `isMemAddr` 恒 false):
+#    `System::isMemAddr()` → `PhysicalMemory::isMemAddr()` 查的是 `addrMap`,
+#    而 `addrMap` 由 `system.mem_ranges` 填充(不只是 `system.memories`)。
+#    ⇒ 不设 ⇒ `BaseTrafficGen::update()` 的
+#    `if (pkt && system->isMemAddr(pkt->getAddr()))` 恒假 ⇒ **一个包都不发**
+#    ⇒ gem5 报 `spent 1000000000 ticks without making progress`。
+system.mem_ranges = [AddrRange(mem_cfg["range"])]
 
 # ── 接线:MemTest → Cache → Memory ────────────────────────────────────
 tester.port = cache.cpu_side

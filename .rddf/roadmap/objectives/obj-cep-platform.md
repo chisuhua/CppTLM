@@ -540,7 +540,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **R4** | 多 VC 仲裁推迟(CEP-09 在 Stage 4+)| 🟢 低 | 影响 fabric 性能建模精度,不影响功能正确性 |
 | **R5** | ⚠️ **无外部验收方**(DRI = 自己给自己验收)| 🟡 中(**形式已解;实质由 R10 承接处置** —— 2026-10-23 per §9.3) | §9.2 三项角色 2026-10-21 已指定(形式 gate 解除);但三者指向同一人 → 独立性以 **M1 产物冻结 / M2 跨仓准入门 / M3 对拍基准外置 / M4 独立 AI 复审** 四条机制部分替代;**真外部真人评审待建立** |
 | **R6** | 与 phase-9 资源竞争(共用 builder 队列 + 执行容量)| 🟡 中 | §8.2 优先级仲裁规则 |
-| **R7** | 探索平台结论不可信(无对拍验证)| 🟡 中(**手段已指定 + 首轮实测(辅助档)已完成** —— 2026-10-31 per Entry #113;**仍不降级**:降级条件是首轮对拍 **P-1 ~ P-5 全部达标**,本轮只达成 P-1 / P-4a / P-4b ⇒ **P-2 / P-3 / P-5 未做**) | **手段已指定**:`docs/architecture/14-coherence-parity-baseline.md` ⇒ **主基准 = gem5 Ruby**(M3 独立性只有它满足:第三方既有资产)· ArchForge 参考模型 = 同作者 ⇒ **降为交叉验证、不计 M3** · RTL benchmark = 本地无资产 ⇒ 不作主基准。⚠️ **R7 状态不变**:指定 ≠ 实测 ⇒ H7 仍是「**未验证假设**」,降级条件 = 首轮对拍(P-1 ~ P-5)达标 |
+| **R7** | 探索平台结论不可信(无对拍验证)| 🟡 中(**手段已指定 + 两轮实测完成(常数档 + 同源 trace 档)** —— 2026-10-31 per Entry #113 / #114;**仍不降级**:降级条件是首轮对拍 **P-1 ~ P-5 全部达标**,已达成 **P-1 / P-1b / P-4a / P-4b** ⇒ **P-3(容量对齐档)与 P-5 未做**;且 P-2 因命中判据结构性不同**只作观察登记**) | **手段已指定**:`docs/architecture/14-coherence-parity-baseline.md` ⇒ **主基准 = gem5 Ruby**(M3 独立性只有它满足:第三方既有资产)· ArchForge 参考模型 = 同作者 ⇒ **降为交叉验证、不计 M3** · RTL benchmark = 本地无资产 ⇒ 不作主基准。⚠️ **R7 状态不变**:指定 ≠ 实测 ⇒ H7 仍是「**未验证假设**」,降级条件 = 首轮对拍(P-1 ~ P-5)达标 |
 | **R8** | ArchForge 单边依赖(准入门把阻塞全转嫁 CppTLM 侧)| 🟡 中 | 需 ArchForge 侧排期承诺;缺承诺时 §9 假设降级为"仅 CppTLM 内部对比" |
 | **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟢 低(**已接受残余风险**,2026-10-23 per **§9.3**) | **闭合判据已改写** = 「就 **Stage 0 交付范围**(契约层 + 契约测试 + 冻结产物)而言,**M1 / M2 / M4 三项补偿机制均有落地证据 + 残余风险已登记**」—— M1 冻结清单 **30 成员** + 授权闸 · M2 ArchForge 合入回执 · M4 独立 AI 复审(实证抓出 9 项 + 4 轮 critic 审稿抓 3 BLOCKER)。**M3(对拍基准外置)不适用**:它服务**实现期**对拍,Stage 0 无实现交付物 → 保留为 **Stage 1 的 P0 前置**(见 §10)。**残余风险见 §9.3**(结论性独立缺失,由 DRI 书面接受)。**Stage 0 已于 2026-10-23 完成归档**(per 台账 Entry #29)。**M4 不可替代真人外部评审** 这一残余风险依然成立并已登记 |
 | **R9** | **单 change 体积上升**(2026-10-21 新增)—— `cpptlm-cep-directory-ordering-plane` 8→12 周(ADR-CEP-08 + 09 Decision A 并入)| 🟡 中 | 同平面合并是模型自洽而非将就;若该 change 延期 >2 季度,走 §8.2 `Replan` 拆 `phase-11`(并评估建 feature fragment)|
@@ -697,7 +697,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | `cpptlm-cep-mesif-adapter` improvement | ✅ **已写并已归档**(2026-10-30,Entry #105 / #106;§4.0 顺序 #9 —— R-1 阻塞已解除并落地为 `HierarchicalDirectory` 行为实现)
 | P2 | `cpptlm-cep-cxl-nonsymmetric` improvement | ✅ **已写**(2026-10-30 planner;brainstorm HARD-GATE 通过;**两段式** —— 第 0 个 change = 规约层 + 第 1 个 change = 实现层;⚠️ 关键前置:**ArchForge 侧无 CXL 状态机规约与投影表**(实测全仓 0 命中)+ `32 号 §6.1` 无 CXL 实例声明 ⇒ 规约层必须先行);§4.0 顺序 #10 |
 | ~~P2~~ | **`SparseSnoopFilter` 行为实现**(backlog,per Entry #107) | ❌ **本行关闭** —— 归属**去重**(per oracle 决策 C / 台账 Entry #112):该实现归**队列 #10 实现层**(`cpptlm-cep-cxl-nonsymmetric`,Entry #111 已登记为该 change 的关键交付)⇒ 与 §10 的 #10 improvement 行**同一 owner**,不另起小 change(避免双 owner + 绕过「规约层先行」纪律)。**落位裁决**(architect,Entry #112):`SparseSnoopFilter` = 队列 #10 实现层;`BroadcastNull` = **当前队列序列(#10 ~ #14)无消费者 ⇒ 不排期,保留登记**(6 族映射无一指向广播型;未来出现广播型协议族时再评) |
-| P1 | **对拍基准首轮实测**(P-B / P-C,per `docs/architecture/14-coherence-parity-baseline.md` §7) | 🟡 **部分完成**(2026-10-31,Entry #113)—— **辅助档(常数档)已实测 PASS**(3/3 判据;gem5 v24.1.0.0 实测未命中延迟 48ns vs 本仓 50ns,偏差 4%);**剩余** = 主对拍(容量对齐档):需**同源 trace**(本仓 trace 生成器 + gem5 `PyTrafficGen.createTrace`,后者需 protobuf ⇒ 当前二进制无 trace 支持,需增量重建);**产出** = `docs/validation/2026-10-31-cep-h7-parity-first-round.md`;⚠️ 不属任何队列 change 的门禁 | 走 add-improve;理由:`moesi_gpu`(队列 #6)**已声明占用**该实现但仓内**只有 traits 行** ⇒ 声明面承诺的能力未兑现(§8.1 **R11**);`BroadcastNull` 的落位**无线索**,一并在该小 change 里裁决 |
+| P1 | **对拍基准首轮实测**(P-B / P-C,per `docs/architecture/14-coherence-parity-baseline.md` §7) | 🟡 **部分完成**(2026-10-31,Entry #113 / #114)—— **常数档 PASS(3/3)** + **同源 trace 档 PASS(5/5)**:gem5 v24.1.0.0 已增量重建出 **protobuf** 支持 ⇒ `PyTrafficGen.createTrace` 可用 ⇒ 新建 trace 生成器(CSV + gem5 protobuf,同一次 LCG)⇒ **两侧消费同一条访问流**(访问数 1000=1000 · 读写 793/207 逐条相同)⇒ 未命中延迟 48ns vs 本仓 50ns(偏差 4%);**剩余** = **P-3 容量对齐档**(需本仓侧引入「等容量+同替换」目录视图 ⇒ 新增建模组件 ⇒ 条件分支)+ **P-5**(定义待补);**产出** = `docs/validation/2026-10-31-cep-h7-parity-first-round.md`;⚠️ 不属任何队列 change 的门禁 | 走 add-improve;理由:`moesi_gpu`(队列 #6)**已声明占用**该实现但仓内**只有 traits 行** ⇒ 声明面承诺的能力未兑现(§8.1 **R11**);`BroadcastNull` 的落位**无线索**,一并在该小 change 里裁决 |
 | P2 | `cpptlm-cep-tilelink-tree-manager` improvement | 走 add-improve;§4.0 顺序 #11 |
 | P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | 走 add-improve;Stage 2.1 启动 |
 | P1 | `cpptlm-cep-nvlink-sharp` improvement | 走 add-improve;Stage 2.2 启动 |
@@ -6056,6 +6056,57 @@ egress 借用它会**倒置连接方向**;
 **⑨ 关联**: Entry #88(Phase 5 JSON 装配连通性)· #87(Phase 4 装配宏)· #86(Phase 3 特化桥)· #85(Phase 2 端口面)· #84(Phase 1 载体面)· #81(队列 #7 转正)· #74(`ADR-CEP-19` 签发)
 
 ---
+
+### Entry #114 — 2026-10-31 [build](H7 对拍 —— **同源 trace 档**跑通(5/5 判据绿);解掉 protobuf / trace 生成器 / 本仓注入三个硬阻塞)
+
+**主题**: 执行 Entry #113 §⑤ 残余的**主对拍前置**(A1 gem5 加 protobuf + A2 trace 生成器 +
+A3 本仓侧注入 + A4 gem5 侧同源消费)⇒ 首次真正满足 `14 号` §4.1「两侧消费同一条离线 trace」。
+
+**① 三个硬阻塞的解除**
+- **A1 gem5 加 protobuf**:二进制构建于 `protoc` 安装之前 ⇒ 增量重建 ⇒ `HAVE_PROTOBUF = True`
+  (实测 `[PROTOC] src/proto/packet.proto -> packet.pb.cc` + `[CONFIG H] HAVE_PROTOBUF, 1`);
+- **A2 trace 生成器** `scripts/cep/parity/parity_trace_gen.py`(**`14 号` §4.1 早已指定但从未建**):
+  固定 LCG 种子 ⇒ 同参数**逐字节一致**;一次生成产出 **CSV**(本仓侧)+ **gem5 protobuf**(gem5 侧);
+  访问大小 8B(< cache line)· 工作集大小可配 ⇒ 命中/未命中比可控;
+- **A3 本仓侧注入**:`TrafficGenTLM` 的 `trace_` 是**构造函数写死的 4 条**、无 setter
+  ⇒ 加 `set_trace()`(该文件**不在 M1 冻结面**);
+- **A4 gem5 侧同源消费**:`PyTrafficGen.createTrace` + `m5.setMaxTick`。
+
+**② 同源性证据(本轮最硬的产出)**
+- 访问数 **1000 = 1000**(严格相等)· 读 **793 = 793** · 写 **207 = 207** ⇒ **逐条相同**;
+- ⇒ **P-1b**(读写条数逐条一致)是「同源」的直接证据,比「访问数相等」强;
+- 延迟常数:命中 5ns vs 5ns(0%)· **未命中 50ns vs 48ns(实测,4%)** ⇒ <15% ⇒ PASS;
+- **P-2 未命中率偏差 1.90pp** ⇒ ⚠️ **只作观察登记,不参与 verdict**
+  (本仓 `CacheTLM` 命中判据 = 「该地址曾被访问过」(无限容量+精确地址 map),
+  gem5 = 「容量内命中」(16KiB/2-way/LRU)⇒ **结构性不同**,per `14 号` §4.2)。
+
+**③ gem5 v24 五处「实测才发现」的 API 事实(已固化进脚本注释)**
+① proto 流**非裸序列化**:4B magic `0x356d6567`(LE) + **Varint32 长度前缀**(否则 `not a valid gem5 proto format`);
+② `Packet.cmd` 须取 **`MemCmd` 枚举值**(`ReadReq=1` / `WriteReq=4`;0 = `InvalidCmd` ⇒ 断言失败);
+③ coherent `Cache` 把**整行写**转 `InvalidateReq` ⇒ 须 `NoncoherentCache` + 访问大小 < cache line;
+④ `progress_check` 默认 1ms(1e9 ticks)会先于 trace 播完撞上 ⇒ 调大 + `setMaxTick` 贴 trace 末尾;
+⑤ `PyTrafficGen` 须 `start([gen])`;`system.mem_ranges` **须显式设置**(否则 `isMemAddr` 恒 false ⇒ 包被丢);
+另:`system.clk_domain` 须在 **`System` 构造时**传入(默认子对象 `dvfs_handler` 的 unproxy)。
+
+**④ 工程化**
+- `scripts/cep/parity/run_parity_trace.sh` —— 同源档端到端(生成 → gem5 回放 → CppTLM 回放 → 比较);
+- ctest:`cep_parity_trace_e2e`(+ `cep_parity_cpptlm_side`,Catch2 `SKIP` 返回码 **4** ⇒ 登记为跳过);
+- 比较器加 **P-1b / P-2** + P-1 **分档**(常数档 ≤1% vs 同源档**严格相等**);
+- 自测加 3 个反控(同源档差 1 条 / 读写不一致 / 常数档 >1%)⇒ **13/13 绿**;
+- 产物:`docs/validation/2026-10-31-cep-h7-parity-same-source-trace.md`。
+
+**⑤ 诚实边界**
+- ⚠️ **H7 仍未验证** —— 本轮验的是「**同源访问流下的口径一致性**」,**不是**「stub cache 性能模型
+  足以支撑 early-stage 取舍判断」;
+- ⚠️ **R7 维持 🟡 中** —— 降级条件 = P-1 ~ P-5 全达标;已达成 P-1 / P-1b / P-4a / P-4b;
+  **P-3(容量对齐档)与 P-5 未做**;
+- P-3 需本仓侧新增「等容量+同替换」目录视图 ⇒ **新增建模组件** ⇒ 条件分支(命中归因 D-1 才启动);
+- P-5 定义在 `14 号` §4.4 **未展开** ⇒ 待补。
+
+**⑥ 门禁**:`cep_*` 4 脚本 + `docs_sync --strict` + `doc_ref` + `gate_selftest` + `format --check` rc=0;
+ctest `-R cep` **全绿**(含 2 项新增 parity 门禁)。
+
+**⑦ 关联**:Entry #113(常数档首轮)· #112(oracle 决策落地)· #108(R7/H7 基准指定)
 
 ### Entry #113 — 2026-10-31 [build](H7 对拍基准**首轮实测** —— 辅助档(常数档)PASS;gem5 基准引入工程化)
 

@@ -101,6 +101,16 @@ public:
     void set_mode(GenMode_TLM m) { mode_ = m; }
     void set_num_requests(int n) { num_requests_ = n; }
 
+    /// 注入**外部**的访问序列(供 H7 对拍用,per
+    /// `docs/architecture/14-coherence-parity-baseline.md` §4.1「两侧消费同一条离线 trace」)。
+    /// ⚠️ 与构造函数里写死的 4 条默认 trace **互斥**:调用本方法后,
+    ///    `TRACE` 模式将回放**注入的**序列(⇒ 两侧逐条相同)。
+    /// ⚠️ 调用方需先 `set_mode(GenMode_TLM::TRACE)`。
+    void set_trace(const std::vector<TraceRecord_TLM>& trace) {
+        trace_ = trace;
+        trace_pos_ = 0;
+    }
+
     // 压力模式配置方法
     void set_stress_pattern(StressPattern p) {
         stress_pattern_ = p;
