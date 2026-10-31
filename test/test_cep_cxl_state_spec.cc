@@ -21,7 +21,10 @@
 
 #include <array>
 #include <cstdint>
+#include <fstream>
+#include <sstream>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -260,4 +263,183 @@ TEST_CASE("CEP CXL state spec — 反向 fixture:非法矩阵必因正确原因�
         constexpr std::array<std::array<Cell, 4>, 1> m{{{{bad, good_k, good_k, good_k}}}};
         REQUIRE_FALSE(CxlStateSpec::transitions_are_valid_for(m));
     }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CSS-06 —— 载体 ↔ 核对表 ↔ 锚点摘要 三方逐格一致(机器判据)
+// ─────────────────────────────────────────────────────────────────────────────
+
+namespace {
+
+    /// 仓库根(CPPTLM_SOURCE_DIR 由 test/CMakeLists.txt 注入)。
+    std::string repo_root_dir() {
+#ifdef CPPTLM_SOURCE_DIR
+        return std::string(CPPTLM_SOURCE_DIR);
+#else
+        return std::string(".");
+#endif
+    }
+
+    std::string read_file_or_empty(const std::string& path) {
+        std::ifstream in(path, std::ios::binary);
+        if (!in) {
+            return {};
+        }
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        return ss.str();
+    }
+
+    std::vector<std::string> split_lines(const std::string& doc) {
+        std::vector<std::string> out;
+        std::istringstream in(doc);
+        std::string line;
+        while (std::getline(in, line)) {
+            out.push_back(line);
+        }
+        return out;
+    }
+
+    /// 取标记块内的表行(`<!-- CXL-TABLE:<name>:START -->` … `END -->`)。
+    std::vector<std::string> extract_block_rows(const std::string& doc, const std::string& name) {
+        std::vector<std::string> rows;
+        const std::string start = "<!-- CXL-TABLE:" + name + ":START -->";
+        const std::string end = "<!-- CXL-TABLE:" + name + ":END -->";
+        const std::size_t i = doc.find(start);
+        const std::size_t j = doc.find(end);
+        if (i == std::string::npos || j == std::string::npos || j < i) {
+            return rows;
+        }
+        for (const auto& line : split_lines(doc.substr(i + start.size(), j - i - start.size()))) {
+            if (line.rfind("|", 0) == 0) {
+                rows.push_back(line);
+            }
+        }
+        return rows;
+    }
+
+    /// 拆分 markdown 表行(去首尾 `|`,按 `|` 切分并 trim)。
+    std::vector<std::string> split_row(const std::string& line) {
+        std::vector<std::string> cells;
+        std::string cur;
+        for (const char c : line) {
+            if (c == '|') {
+                cells.push_back(cur);
+                cur.clear();
+            } else {
+                cur.push_back(c);
+            }
+        }
+        cells.push_back(cur);
+        // 去掉首尾两个空单元(行首 `|` 与行尾 `|`)
+        if (cells.size() >= 2 && cells.front().empty()) {
+            cells.erase(cells.begin());
+        }
+        if (!cells.empty() && cells.back().empty()) {
+            cells.pop_back();
+        }
+        for (auto& c : cells) {
+            const std::size_t b = c.find_first_not_of(" \t");
+            const std::size_t e = c.find_last_not_of(" \t");
+            c = (b == std::string::npos) ? std::string() : c.substr(b, e - b + 1);
+        }
+        return cells;
+    }
+
+    /// 抽取引文段(直引号 / 直角引号)的最长长度 —— CSS-06 ③「不整段复制原文」。
+    std::size_t longest_quote_span(const std::string& doc) {
+        std::size_t best = 0;
+        // 直角引号
+        std::size_t pos = 0;
+        while ((pos = doc.find("\u300c", pos)) != std::string::npos) {
+            const std::size_t e = doc.find("\u300d", pos);
+            if (e == std::string::npos) {
+                break;
+            }
+            best = std::max(best, e - pos - 1);
+            pos = e;
+        }
+        // 直引号(成对)
+        pos = 0;
+        while ((pos = doc.find('"', pos)) != std::string::npos) {
+            const std::size_t e = doc.find('"', pos + 1);
+            if (e == std::string::npos) {
+                break;
+            }
+            best = std::max(best, e - pos - 1);
+            pos = e + 1;
+        }
+        return best;
+    }
+
+} // namespace
+
+TEST_CASE("CEP CXL state spec — CSS-06:载体 ↔ 核对表 ↔ 摘要 三方逐格一致",
+          "[cep][cxl][state-spec][css06]") {
+    const std::string doc = read_file_or_empty(
+        repo_root_dir() + "/docs/implementation/2026-11-01-cep-cxl-state-spec-anchor-checklist.md");
+    const std::string summary = read_file_or_empty(
+        repo_root_dir() + "/docs/research/2026-11-01-cep-cxl-nonsymmetric-anchor-summary.md");
+    REQUIRE_FALSE(doc.empty());
+    REQUIRE_FALSE(summary.empty());
+
+    // ── ① 核对表 SHALL 恰有 68 行(表头 2 行 + 数据 68 行)──────────────────
+    const auto rows = extract_block_rows(doc, "MATRIX");
+    REQUIRE(rows.size() == CxlStateSpec::kTransitionCellCount + 2);
+
+    // ── ② 逐格比对:核对表 ⟷ 载体(任一格不一致 ⇒ 红)────────────────────────
+    std::size_t mismatches = 0;
+    std::size_t idx = 0;
+    for (std::size_t e = 0; e < CxlStateSpec::kEventCount; ++e) {
+        for (std::size_t st = 0; st < CxlStateSpec::kStateCount; ++st) {
+            const auto& cell = CxlStateSpec::kTransitions[e][st];
+            const auto c = split_row(rows[2 + idx]);
+            ++idx;
+            REQUIRE(c.size() == 9);
+            const std::string want_kind =
+                cell.kind == CxlStateSpec::CellKind::Known
+                    ? "Known"
+                    : (cell.kind == CxlStateSpec::CellKind::Illegal ? "Illegal" : "Unknown");
+            const std::string want_target = cell.kind == CxlStateSpec::CellKind::Known
+                                                ? std::string(CxlStateSpec::state_name(cell.target))
+                                                : std::string("-");
+            if (c[1] != CxlStateSpec::event_name(static_cast<Event>(e)) ||
+                c[2] != CxlStateSpec::state_name(static_cast<State>(st)) || c[3] != want_kind ||
+                c[4] != want_target || c[5] != CxlStateSpec::basis_kind_name(cell.basis) ||
+                c[6] != (cell.pending ? "true" : "false") || c[7] != cell.ref ||
+                c[8] != cell.note) {
+                ++mismatches;
+            }
+        }
+    }
+    REQUIRE(mismatches == 0);
+
+    // ── ③ 摘要统计块 ⟷ 载体(聚合层;防「虚报覆盖率」)───────────────────────
+    const auto stats = extract_block_rows(summary, "STATS");
+    // STATS 块是 `key=value` 行(非表),故按行解析
+    std::string stats_text;
+    {
+        const std::string start = "<!-- CXL-TABLE:STATS:START -->";
+        const std::string end = "<!-- CXL-TABLE:STATS:END -->";
+        const std::size_t i = summary.find(start);
+        const std::size_t j = summary.find(end);
+        REQUIRE(i != std::string::npos);
+        REQUIRE(j != std::string::npos);
+        stats_text = summary.substr(i + start.size(), j - i - start.size());
+    }
+    REQUIRE(stats_text.find("cells=68") != std::string::npos);
+    REQUIRE(stats_text.find("known=26") != std::string::npos);
+    REQUIRE(stats_text.find("illegal=0") != std::string::npos);
+    REQUIRE(stats_text.find("unknown=42") != std::string::npos);
+    REQUIRE(stats_text.find("pending_false=22") != std::string::npos);
+    REQUIRE(stats_text.find("coverage=26/68") != std::string::npos);
+    // ⚠️ 硬编码值 SHALL 与载体实际统计相等(防虚报)
+    REQUIRE(CxlStateSpec::count_cells(CxlStateSpec::CellKind::Known) == 26);
+    REQUIRE(CxlStateSpec::count_cells(CxlStateSpec::CellKind::Illegal) == 0);
+    REQUIRE(CxlStateSpec::count_cells(CxlStateSpec::CellKind::Unknown) == 42);
+
+    // ── ④ CSS-06 ③:摘要与核对表 SHALL **不**整段复制来源原文 ────────────────
+    //     (阈值 200 字符 —— 实测当前最长引文 122 ⇒ 不误伤;整段复制必超)
+    REQUIRE(longest_quote_span(summary) <= 200);
+    REQUIRE(longest_quote_span(doc) <= 200);
 }

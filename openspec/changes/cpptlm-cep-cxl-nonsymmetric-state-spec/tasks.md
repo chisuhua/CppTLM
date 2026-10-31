@@ -16,7 +16,7 @@
 | 1 钉版补齐 | 🟡 **有条件完成**(2026-11-01) | **7 `pin=strong`**(sha256 / D14 commit SHA)/ **1 `pin=weak`**(D3,Cloudflare 403 无哈希)/ **6 `pin=transcribed`**(live 403 + archive.org 全站不可达)⇒ 摘要 §8.1 · ⚠️ 新增载体规则「只有 `pin=strong` 可 `public-direct` + `pending=false`」 |
 | 2a 规约载体(结构层) | ✅ **已完成**(2026-11-01) | `cxl_state_spec.hh`:4 态 / 事件词表 / 4→4 投影 / 秩 / 3 条结构断言 / `basis` 4 档 / 8 项残余风险;`test_cep_cxl_state_spec.cc` 8 cases / 48 assertions 全绿(含 5 条反向 fixture) |
 | 2b 规约载体(转换表) | ✅ **已完成**(2026-11-01) | 68 格**三态格语义**:`Known` **26** / `Illegal` **0** / `Unknown` **42**;`pending=false` **22** 格(全 D1);覆盖率 `26/68` + 逐格 `basis`;`transition()` 对 `Unknown` 返回显式态 |
-| 3 判据收口 | ⬜ 待实施 | 契约测试 + 反向 fixture + 核对表生成器 + `--check` |
+| 3 判据收口 | ✅ **已完成**(2026-11-01) | 契约测试(12 cases / 166 assertions)+ 反向 fixture(5 条)+ 核对表生成器(68 格)+ `--check` 交叉核对 + ctest 注册 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + 零冻结面 diff + 归档 |
 
 ---
@@ -75,11 +75,18 @@
 
 ## Phase 3 — 判据收口
 
-- [ ] 3.1 `scripts/test/generate_cxl_anchor_checklist.sh` + `.cc`:生成「载体 ↔ 摘要」逐格核对表(+ `--check`)
-- [ ] 3.2 `--check` 模式接入 CI(手改核对表 ⇒ 必红;载体变更未重生成 ⇒ 必红;摘要与载体不一致 ⇒ 必红)
-- [ ] 3.3 **反向 fixture 机器化**:每条 fixture 声明**期望失败模式** + 命中**指定的判据 id**(per `cep_mesif_adapter_reverse_verify.sh` 先例)
-- [ ] 3.4 ctest 注册 + `ctest -R cep` 全绿
-- [ ] 3.5 门禁:13 项 CEP 脚本 + `docs_sync --strict` + `doc_ref --strict` + `gate_selftest` + `format --check` 全 rc=0
+- [x] 3.1 `scripts/test/generate_cxl_anchor_checklist.sh` + `.cc`:生成「载体 ↔ 摘要」逐格核对表(+ `--check`)
+      ⇒ 产物 `docs/implementation/2026-11-01-cep-cxl-state-spec-anchor-checklist.md`(68 格)
+      + 摘要 §8.4 **机器可读统计块**
+- [x] 3.2 `--check` 模式接入 CI(手改核对表 ⇒ 必红;载体变更未重生成 ⇒ 必红;摘要与载体不一致 ⇒ 必红)
+      ⇒ 生成器**内置交叉核对**:每格 `ref` SHALL 解析到摘要 §8 真实条目号;`note` 的 `R-n` SHALL 解析到 §6 真实编号
+- [x] 3.3 **反向 fixture 机器化**:3 条实测鉴别力(2026-11-01)——
+      ① 手改载体 1 格目标态 ⇒ `--check` rc=1(`MATRIX` 块不一致)
+      ② 手改载体 `ref` → `D99` ⇒ 交叉核对 rc=1(`CHECK:ref_resolves:...:FAIL`)
+      ③ 手改摘要(删**被引用**的 `D1` 行)⇒ 交叉核对 rc=1
+      ⚠️ 反向:删**未被引用**的 `D17` 行 ⇒ **绿**(正确 —— 无格依赖它 ⇒ 不构成孤儿)
+- [x] 3.4 ctest 注册(`cep_cxl_state_spec` + `cep_cxl_anchor_checklist_check`)+ `ctest -R cep` 全绿
+- [x] 3.5 门禁:13 项 CEP 脚本 + `docs_sync --strict` + `doc_ref --strict` + `gate_selftest` + `format --check` 全 rc=0
 
 ## Phase 4 — 验收 + 归档
 

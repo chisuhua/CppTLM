@@ -306,6 +306,17 @@ add_test(NAME cep_mesif_adapter_reverse_verify
 add_test(NAME cep_mesif_ratification_request_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/generate_mesif_ratification_request.sh --check)
 
+# 队列 #10 `cpptlm-cep-cxl-nonsymmetric-state-spec`(第 0 个 change = 规约层)的判据:
+#   ① 载体契约(4 态 / 4→4 投影 / 非对称结构断言 / 三态 68 格矩阵 / 反向 fixture);
+#   ② CSS-06 —— 载体 ↔ 核对表 ↔ 锚点摘要 三方逐格一致 + 「不整段复制原文」。
+add_test(NAME cep_cxl_state_spec COMMAND cpptlm_tests "[cep][cxl][state-spec]" -r compact)
+
+# 队列 #10 后续:68 格核对表 + 摘要统计块的**生成器自检**(只比对不写)——
+# 两者均由机器可读载体生成 ⇒ 手改任一侧(或载体改了忘重生成)⇒ rc≠0;
+# 且生成器内置**交叉核对**(每格 `ref` SHALL 解析到摘要 §8 真实条目号)⇒ 手改摘要同样 rc≠0。
+add_test(NAME cep_cxl_anchor_checklist_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/generate_cxl_anchor_checklist.sh --check)
+
 # H7 对拍基准(辅助档)的**比较器自测** —— 不需要 gem5 ⇒ 可进 ctest;
 # 判据逻辑坏掉(边界放行 / 静默 PASS / 缺归因)⇒ 必红。
 add_test(NAME cep_parity_compare_selftest

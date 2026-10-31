@@ -268,6 +268,26 @@ D2HReqOp  ∩ H2DReqOp = ∅
 
 ⇒ ⇒ **Phase 1 = 有条件完成** ⇒ 载体逐格编码**现在即可启动**(按 8.2 两轴规则),上述重锚可与之并行。
 
+### 8.4 载体矩阵统计(**机器可读区**,由载体直接生成)
+
+> ⚠️ 本块由 `scripts/test/generate_cxl_anchor_checklist.sh` 生成 ⇒ **载体变更未重生成 ⇒ `--check` 红**。
+> 该块使「载体 ↔ 摘要」在**聚合层**也可机器比对(逐格层的比对在核对表文档 + 生成器的交叉核对)。
+
+<!-- CXL-TABLE:STATS:START -->
+cells=68
+known=26
+illegal=0
+unknown=42
+pending_false=22
+coverage=26/68
+GEN:PASS
+<!-- CXL-TABLE:STATS:END -->
+
+⇒ 覆盖率 **26/68** —— ⚠️ 「已定立场」= `Known` **或** `Illegal`;`Unknown` **不计入**(「不知道」不是立场)。
+⇒ `pending = false` 的 **22** 格**全部为 D1**(CC-BY 4.0)⇒ 可作已裁决依据;
+余 4 格 `pending = true`:`RdOwn` / `RdOwnNoData` 的 `S` 列(`self-derived` 结构性推断)·
+`CleanEvict` / `CleanEvictNoData` 的 `E` 列(仅 D2 分类式表述,且 **D2 许可 `absent`**)。
+
 ---
 
 ## §9 关联
