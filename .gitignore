@@ -105,6 +105,7 @@ experimental/*
 # gem5 v24.1.0.0 —— H7 对拍基准(per 台账 Entry #113 / docs/architecture/14-coherence-parity-baseline.md)
 # 版本钉死见 scripts/cep/parity/parity_config.json;构建入口 = scripts/cep/parity/build_gem5.sh
 external/gem5/
+external/gem5-v25/
 
 # gem5 运行产物(per scripts/cep/parity/run_parity.sh)
 m5out/

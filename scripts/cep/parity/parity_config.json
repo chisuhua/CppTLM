@@ -40,6 +40,28 @@
       "driver": "linear",
       "random_start_addr": 1048576,
       "random_end_addr": 1052672
+    },
+    "versions": {
+      "_note": "gem5 版本钉版(唯一真源);构建入口 = scripts/cep/parity/build_gem5.sh。⚠️ **v25 是「文件同源」路径的关键** —— v24 的 `ProtoInputStream` 有提前 EOF 缺陷(实测 1000 条读到 966)⇒ v25 已重写 `src/proto/protoio.cc`(改用 `io::FileInputStream` 非零拷贝 + `ReadMessage`)⇒ 根因已消除。",
+      "default": {
+        "version": "v25.0.0.0",
+        "dir": "external/gem5-v25",
+        "tarball_url": "https://codeload.github.com/gem5/gem5/tar.gz/refs/tags/v25.0.0.0",
+        "sha256": "99c942cbc3711cc280545f35f013cfafbcb43a791cd5aebf7d03ac391ba74724"
+      },
+      "v25.0.0.0": {
+        "version": "v25.0.0.0",
+        "dir": "external/gem5-v25",
+        "tarball_url": "https://codeload.github.com/gem5/gem5/tar.gz/refs/tags/v25.0.0.0",
+        "sha256": "99c942cbc3711cc280545f35f013cfafbcb43a791cd5aebf7d03ac391ba74724"
+      },
+      "v24.1.0.0": {
+        "version": "v24.1.0.0",
+        "dir": "external/gem5",
+        "tarball_url": "https://codeload.github.com/gem5/gem5/tar.gz/refs/tags/v24.1.0.0",
+        "sha256": "ef5373ec9e514a15dbb1cc6dbc6771182771f1ec48ece1123e0beb876eca8b32",
+        "note": "v24 的 `src/base/random.cc` 缺 `<algorithm>`(GCC13)⇒ 需本地补丁(构建脚本自动应用)"
+      }
     }
   },
   "tolerances": {

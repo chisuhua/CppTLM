@@ -45,6 +45,34 @@ def lcg_stream(seed, count):
         yield state / float(LCG_M)
 
 
+def gen_accesses_hot_cold(seed, num_accesses, hot_bytes, cold_bytes,
+                          base_addr, line_size, write_percent, hot_ratio):
+    """**双峰(非均匀)**访问分布 —— 用于**证伪**「工作集/容量」规则 R-B。
+
+    ⚠️ **为什么需要它**(per `14 号` §4.4 的 P-2a A-1 鉴别力自检):
+    规则 R-B 估 `h_0 = min(1, C/W)`(`W` = **整体**工作集)⇒ 它**只对均匀随机最优**。
+    本生成器构造「**热区全命中 + 冷区全不命中**」的双峰分布:
+      · 热区 `hot_bytes` ≤ cache 容量 ⇒ 第 2 遍起**全命中**;
+      · 冷区 `cold_bytes` ≫ cache 容量 ⇒ **全不命中**;
+      · 按 `hot_ratio` 比例交替访问 ⇒ 实际命中率 ≈ `hot_ratio`;
+    ⇒ 而 R-B 用「整体工作集」估 ⇒ `h_0 ≈ min(1, C/(hot+cold))` ≪ `hot_ratio`
+    ⇒ **估算误差 ≫ 5pp** ⇒ 构成「**规则失效型**」流 ⇒ **A-1 可满足**。
+    """
+    hot_lines = max(1, hot_bytes // line_size)
+    cold_lines = max(1, cold_bytes // line_size)
+    cold_base = base_addr + (1 << 24)   # 远离热区 ⇒ 必然不在 cache 内
+    randoms = lcg_stream(seed, num_accesses * 3)
+    for _ in range(num_accesses):
+        pick = next(randoms)
+        offset = int(next(randoms) * 1000000) % 1000000
+        is_write = next(randoms) < (write_percent / 100.0)
+        if pick < hot_ratio:
+            addr = base_addr + (offset % hot_lines) * line_size
+        else:
+            addr = cold_base + (offset % cold_lines) * line_size
+        yield addr, is_write, line_size
+
+
 def gen_accesses(seed, num_accesses, working_set_bytes, base_addr, line_size,
                  write_percent):
     """生成访问序列。
@@ -190,6 +218,15 @@ def main():
                          "(per `src/mem/packet.hh`:cmd==WriteReq && offset==0 && size==blk_size)"
                          "⇒ cache 把整行写转成 `MemCmd::InvalidateReq` ⇒ `SimpleMemory` panic")
     ap.add_argument("--write-percent", type=float, default=20.0, help="写访问占比 %%")
+    ap.add_argument("--profile", default="uniform", choices=["uniform", "hot_cold"],
+                    help="访问分布形态:uniform(均匀,规则 R-B 最优 ⇒ 证伪不了)/"
+                         "hot_cold(双峰,**规则失效型** ⇒ 满足 P-2a 的 A-1 鉴别力自检)")
+    ap.add_argument("--hot-bytes", type=int, default=4096,
+                    help="hot_cold 形态下的热区字节数(应 ≤ cache 容量)")
+    ap.add_argument("--cold-bytes", type=int, default=1048576,
+                    help="hot_cold 形态下的冷区字节数(应 ≫ cache 容量)")
+    ap.add_argument("--hot-ratio", type=float, default=0.5,
+                    help="hot_cold 形态下访问热区的比例(⇒ 实际命中率 ≈ hot_ratio)")
     ap.add_argument("--obj-id", default="parity_trace",
                     help="gem5 protobuf 头里的 obj_id")
     ap.add_argument("--tick-freq", type=int, default=1000000000000,
@@ -204,10 +241,16 @@ def main():
     csv_path = out.with_suffix(".csv")
     pb_path = out.with_suffix(".pb")
 
-    accesses = list(gen_accesses(
-        args.seed, args.num_accesses, args.working_set, args.base_addr,
-        args.line_size, args.write_percent,
-    ))
+    if args.profile == "hot_cold":
+        accesses = list(gen_accesses_hot_cold(
+            args.seed, args.num_accesses, args.hot_bytes, args.cold_bytes,
+            args.base_addr, args.line_size, args.write_percent, args.hot_ratio,
+        ))
+    else:
+        accesses = list(gen_accesses(
+            args.seed, args.num_accesses, args.working_set, args.base_addr,
+            args.line_size, args.write_percent,
+        ))
 
     write_csv(csv_path, accesses)
     write_protobuf(pb_path, accesses, args.obj_id, args.tick_freq, args.tick_interval)
@@ -223,7 +266,11 @@ def main():
         "tick_interval": args.tick_interval,
         "tick_freq": args.tick_freq,
         "seed": args.seed,
+        "profile": args.profile,
         "working_set_bytes": args.working_set,
+        "hot_bytes": args.hot_bytes,
+        "cold_bytes": args.cold_bytes,
+        "hot_ratio": args.hot_ratio,
         "base_addr": args.base_addr,
         "access_size": args.line_size,
         "write_percent": args.write_percent,

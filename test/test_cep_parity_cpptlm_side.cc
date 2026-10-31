@@ -121,6 +121,43 @@ namespace {
 
 } // namespace
 
+// ── **文件同源**路径:读**同一份 CSV** ─────────────────────────────
+// ⚠️ gem5 **v25** 修掉了 `ProtoInputStream` 的提前 EOF ⇒ `createTrace` 可靠
+//    ⇒ 两侧**读同一文件**(本仓读 `.csv`,gem5 回放由同一 CSV 生成的 `.pb`)
+//    ⇒ 才是**真正的文件同源**(而「参数同源」是两侧各自生成)。
+//    ⇒ 存在时**优先**用 CSV(它才是逐条相同的强证据)。
+// ⚠️ 放在命名空间外(定义须早于使用点)⇒ 也不用 `REQUIRE`(非 void 返回)。
+std::vector<TraceRecord_TLM> load_trace_csv(const std::string& path, uint64_t& out_count) {
+    std::vector<TraceRecord_TLM> rows;
+    out_count = 0;
+    std::ifstream in(path);
+    if (!in.good()) {
+        return rows;
+    }
+    std::string line;
+    if (!std::getline(in, line)) {
+        return rows;
+    }
+    while (std::getline(in, line)) {
+        if (line.empty()) {
+            continue;
+        }
+        std::istringstream ss(line);
+        std::string a, w, sz;
+        if (!std::getline(ss, a, ',')) {
+            continue;
+        }
+        std::getline(ss, w, ',');
+        std::getline(ss, sz, ',');
+        TraceRecord_TLM r;
+        r.addr = std::strtoull(a.c_str(), nullptr, 0);
+        r.is_write = (w == "1");
+        rows.push_back(r);
+        ++out_count;
+    }
+    return rows;
+}
+
 TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
     const std::string out_path = env_or("PARITY_OUT", "");
 
@@ -128,8 +165,23 @@ TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
     REQUIRE(seq.num_accesses > 0);
     REQUIRE(seq.end_addr > seq.start_addr);
 
-    const std::vector<uint64_t> addrs = gen_addresses(seq);
-    REQUIRE(addrs.size() == seq.num_accesses);
+    // ⚠️ **文件同源优先**:若给了 `PARITY_TRACE_CSV` ⇒ 读**同一份文件**
+    //    (gem5 侧回放由同一 CSV 生成的 `.pb`)⇒ 逐条相同(强证据)。
+    const std::string csv_path = env_or("PARITY_TRACE_CSV", "");
+    std::vector<uint64_t> addrs;
+    std::vector<TraceRecord_TLM> csv_rows;
+    uint64_t csv_count = 0;
+    if (!csv_path.empty()) {
+        csv_rows = load_trace_csv(csv_path, csv_count);
+        REQUIRE(csv_count > 0);
+        addrs.reserve(csv_rows.size());
+        for (const auto& r : csv_rows) {
+            addrs.push_back(r.addr);
+        }
+    } else {
+        addrs = gen_addresses(seq);
+        REQUIRE(addrs.size() == seq.num_accesses);
+    }
 
     // ── 装配:TrafficGenTLM → CacheTLM ──────────────────────────────
     EventQueue eq;
@@ -138,10 +190,14 @@ TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
 
     // 注入**同一条**序列(gem5 侧按同一参数独立生成 ⇒ sha256 交叉验证)
     std::vector<TraceRecord_TLM> trace_rows;
-    trace_rows.reserve(addrs.size());
     const bool all_read = (seq.read_percent == 100);
-    for (uint64_t a : addrs) {
-        trace_rows.push_back({a, !all_read});
+    if (!csv_rows.empty()) {
+        trace_rows = csv_rows; // ⚠️ **文件同源**:直接用 CSV 的 (addr, is_write)
+    } else {
+        trace_rows.reserve(addrs.size());
+        for (uint64_t a : addrs) {
+            trace_rows.push_back({a, !all_read});
+        }
     }
     gen.set_trace(trace_rows);
     gen.set_mode(GenMode_TLM::TRACE);
@@ -196,7 +252,9 @@ TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
         const uint64_t n_writes = all_read ? 0 : issued;
         out << "{\n"
             << "  \"tool\": \"cpptlm\",\n"
-            << "  \"mode\": \"parameter_same_source\",\n"
+            << "  \"mode\": \""
+            << (csv_rows.empty() ? "parameter_same_source" : "same_source_trace")
+            << "\",\n"
             // ⚠️ **P-5**(per `14 号` §4.4 / `ADR-CEP-06 §3`):必须声明
             //    `verification_mode` + `verification_scope` ⇒ 缺失 ⇒ 判据 FAIL。
             //    取值由**唯一真源** `parity_config.json` 的 `verification` 段注入
@@ -209,7 +267,8 @@ TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
             << "    \"blocksize\": " << seq.blocksize << ",\n"
             << "    \"read_percent\": " << seq.read_percent << ",\n"
             << "    \"data_limit\": " << seq.data_limit << ",\n"
-            << "    \"num_accesses\": " << seq.num_accesses << ",\n"
+            << "    \"num_accesses\": " << (csv_rows.empty() ? seq.num_accesses : csv_rows.size())
+            << ",\n"
             << "    \"addr_seq_fnv1a64\": \"" << sha << "\"\n"
             << "  },\n"
             << "  \"hits\": " << hits << ",\n"
@@ -230,6 +289,7 @@ TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
     }
 
     // 判据:访问数必须与序列条数**完全一致**;命中+未命中必须等于访问数
-    REQUIRE(issued == seq.num_accesses);
+    const size_t expected = csv_rows.empty() ? seq.num_accesses : csv_rows.size();
+    REQUIRE(issued == expected);
     REQUIRE(hits + misses == issued);
 }

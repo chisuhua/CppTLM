@@ -246,11 +246,51 @@ hit_avg_ns = (
     + cache_cfg["response_latency_cycles"]
 ) * clk_period_ns
 
+# ── **地址序列指纹**(文件同源证据)──────────────────────────────────
+# ⚠️ **两侧读同一份 CSV**(本仓侧读 `.csv`,gem5 侧回放由同一 CSV 生成的 `.pb`)
+#    ⇒ 指纹基于**同一序列** ⇒ 相同即证明**逐条同源**。
+#    ⇒ 指纹**只按 CSV 计算**(不解析 `.pb`)—— 避免「protobuf 编码差异」干扰证据。
+#    ⚠️ 指纹算法 = **FNV-1a 64bit**,与本仓 C++ 侧 `seq_fnv1a64` **逐字一致**。
+def _fnv1a64(values):
+    h = 0xCBF29CE484222325
+    for v in values:
+        h ^= (v & 0xFFFFFFFFFFFFFFFF)
+        h = (h * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
+    return f"{h:016x}"
+
+
+def _seq_fingerprint_from_csv(csv_path):
+    import csv as _csv
+    seq = []
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        for row in _csv.DictReader(f):
+            seq.append(int(row["addr"]))
+    return _fnv1a64(seq), len(seq)
+
+
+CSV_PATH = os.environ.get(
+    "PARITY_TRACE_CSV", TRACE_PB.replace(".pb", ".csv"))
+try:
+    _fp, _fp_n = _seq_fingerprint_from_csv(CSV_PATH)
+except Exception as e:
+    raise SystemExit(f"✗ 读不到 trace 的 CSV({CSV_PATH}):{e}"
+                     f"—— 文件同源档需要 .csv 与 .pb 同时存在")
+
+# ⚠️ **P-5**(per `14 号` §4.4 / `ADR-CEP-06 §3`):每次对拍必须声明
+#    `verification_mode` + `verification_scope` ⇒ 缺失 ⇒ 判据 FAIL。
+_ver = CFG.get("verification", {})
+
 result = {
     "tool": "gem5",
     "mode": "same_source_trace",
     "version": CFG["gem5"]["version"],
+    # ⚠️ **P-5** 字段(缺失 ⇒ 判据 FAIL)
+    "verification_mode": _ver.get("verification_mode"),
+    "verification_scope": _ver.get("verification_scope"),
     "trace_file": TRACE_PB,
+    "trace_csv": CSV_PATH,
+    "addr_seq_fnv1a64": _fp,
+    "addr_seq_count": _fp_n,
     "hits": hits,
     "misses": misses,
     "accesses": accesses,
