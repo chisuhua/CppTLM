@@ -7623,7 +7623,7 @@ owner 转指(归档)时,若 fixture 锚点不跟随 ⇒ fixture **假失败**(�
 
 **⑧ R7 状态** 🟢 低 —— **维持**(per critic 复核:**D-6 不影响 Entry #119 的 A-2 判定路径**,该路径 5 条流 P-3 全过 ⇒ 未触发合取矛盾;R7 降级建立在**判据齐备性**上,不建立在 Entry #118 的数字上)⇒ **不回退**;但**依据更新**为 A-1 形态实测达成(边界已实测 + 失效已观测)。
 
-**⑨bis 第 2 轮 critic 复审(REJECT)的闭合**(⚠️ **评审预算 2 / 2 已用尽** ⇒ 本轮修复**未再送第 3 轮复审**)
+**⑨bis 第 2 轮 critic 复审(REJECT)的闭合**(第 3 轮复审经**用户批准**(U1 裁决)⇒ 已送审,结论见 §⑨ter)
 | # | 上轮 finding | 闭合方式 | 闭合证据 |
 |---|---|---|---|
 | **BLOCKER-1**(build/plan) | D-5 修复**未按 driver 分档** ⇒ `run_parity_main.sh` 恒红(上轮点名的复现入口) | **两处断言同时分档**:① `main_tier_stream_rec.py`(rec 侧)② `parity_main_tier.py` 的**分析器前置断言**(analyzer 侧 —— 旧 rec 写错键名 ⇒ `nominal_accesses` 恒 0 ⇒ 该断言此前是**哑火**的;D-5 修复使其**首次变为活代码** ⇒ 炸点从 rec 移到 analyzer) | ✅ `bash scripts/cep/parity/run_parity_main.sh` **rc=0 走完全程** ⇒ 5 条流 P-2/P-3 全过(偏差 0.03~2.26%)+ **独立复现 Entry #118 的全部数字**(W16384 0.9999 / W32768 0.5003 / W131072 0.1255)⇒ 上轮「恒不可通过」原样闭合 |
@@ -7635,8 +7635,26 @@ owner 转指(归档)时,若 fixture 锚点不跟随 ⇒ fixture **假失败**(�
 | NIT 1 | `passed` 公式漏 A-2 合取项 | §4.4 的 `passed` 公式补全 **A-1 / A-2 两支**的完整定义(含「A-2 只在 breaking 为空时适用」) | ✅ 规格已改 |
 | NIT 2 | `passed` 里 `breaking_ok` 冗余合取 | 删除(已由 `p2a_ok` 涵盖) | ✅ 代码已改 |
 
-⇒ ⚠️ **评审预算纪律**:本 change 已用 **2 / 2 轮** critic 评审(用户批准)⇒ 上轮闭合**未再送第 3 轮**
-⇒ 本表是**如实登记的闭合证据**,**不代表**已被独立复审确认 ⇒ 若后续认为需复审,须**用户另行批准**第 3 轮。
+⇒ ⚠️ **评审预算纪律**:原预算 2 轮已用尽 ⇒ **用户另行批准第 3 轮**(U1 裁决)⇒ 上轮闭合**已送第 3 轮复审**
+⇒ 复审结论见 §⑨ter(2/2 BLOCKER 闭合、无新 BLOCKER、`mergeable: yes`)。
+
+**⑨ter 第 3 轮 critic 复审(收官)= APPROVE_WITH_CONDITIONS**
+> ⚠️ 第 3 轮经**用户批准**(U1 裁决「继续 critic 复审」)⇒ 原 2 轮预算上限被显式扩展。
+
+**结论**:`mergeable: yes` · `scope_exceeded: false` · **无 BLOCKER** ⇒ **收官信号:可归档 / 可进入队列 #10**。
+
+| 项 | 判定 |
+|---|---|
+| **上一轮 BLOCKER-1**(条数断言未按 driver 分档) | ✅ **闭合** —— critic 核验了**两份拷贝**均已分档(rec 侧 + analyzer 侧)· 核验了上游数据链闭环(`gem5_linear_probe.py` 写 `mode: parameter_same_source` ⇒ 该档不触发断言;`gem5_trace_probe.py` 写 `mode: same_source_trace` + `sequence.nominal_accesses` ⇒ trace 档断言在正确一侧激活)· 确认「D-5 键名对齐后断言首次变活」的激活机制与上轮指认一致 |
+| **上一轮 BLOCKER-2**(floor 校验在冻结点之后 ⇒ 半死断言) | ✅ **闭合** —— 校验确在冻结点**之前**;声明生产端链路**无断点**(`parity_trace_gen.py` meta → `gem5_trace_probe.py` sequence 透传 → `main_tier_stream_rec.py` → analyzer 消费);反控 ⑰ 锁定三个判据 |
+| **本轮新增 diff** | ✅ **无新 BLOCKER** —— 判据分档在规格 §4.4 已有依据(非越权决策);floor 强制校验方向是 **fail-closed** |
+| SHOULD_FIX(§4.4 `passed` 公式未记录「未声明下界 ⇒ warning」分支) | ✅ **已修** —— §4.4 补该分支 + 补「未知 `mode` ⇒ 拒判」条 |
+| NIT(台账「未再送第 3 轮」句已过时) | ✅ **已修** —— 本 §⑨ter 即其取代 |
+| NIT(未知 mode 硬拒未写进规格分档表) | ✅ **已修** —— §4.4 已补 |
+
+⇒ ⚠️ **未做**的事(如实登记):critic 的「验证建议」中,**实跑**由本方完成
+(`selftest_parity_compare.py` 42/42 · `run_parity_main.sh` rc=0 · `run_parity_main_trace.sh` rc=0 ·
+`ctest -R cep_parity` 5/5)⇒ **所有结论均为实测**,非推断。
 
 **⑨ 验收**
 - 判据自测 `selftest_parity_compare.py`:**42 项全绿**(原 23 + 新增 19 项检查,含 8 条新反控 ⑩~⑰);
@@ -7645,12 +7663,19 @@ owner 转指(归档)时,若 fixture 锚点不跟随 ⇒ fixture **假失败**(�
   `ctest -R cep_parity` **5/5**(3 个 e2e **真跑**(此前因 v24 路径硬编码而**静默 SKIP**)⇒ D-9/D-10 已修);
   全量 `ctest` **124/124**(排除 `test_sh_arg_parsing`);
 - ⚠️ **既有缺陷登记(不属本轮 scope,响亮记录)**:全量 `ctest` 的 `test_sh_arg_parsing` **超时**
-  (1500s)⇒ 根因 = **递归**:该测试的第 3 项检查跑 `./test.sh --mode off --build`
-  ⇒ `test.sh` 内部跑**全量 ctest** ⇒ 全量 ctest 里又含它自己 ⇒ 无限递归。
-  ⚠️ 引入于 **2026-10-24**(commit `6a990316`,修 `test.sh --build` 互斥 bug 的回归锁)
+  (1500s)⇒ 引入于 **2026-10-24**(commit `6a990316`,修 `test.sh --build` 互斥 bug 的回归锁)
   ⇒ **早于本轮**(`test.sh` / `test_sh_arg_parsing.sh` 本轮**未触碰**)⇒ **非本轮引入**。
   ⇒ 处置:**本轮不修**(超出 scope)⇒ 留待独立 change;⚠️ 但**必须**记录 ——
   否则「全量 ctest 绿」的断言会被这条超时污染;
+  > ⚠️ **2026-10-31 dated 更正(per 独立 change `cpptlm-test-sh-arg-parsing-timeout`)**:
+  > 本段原登记的根因「**递归**(该测试跑 `./test.sh --mode off --build` ⇒ 内部跑全量 ctest
+  > ⇒ 含它自己)」—— **该归因经实测证伪**:第 3 项检查用的是**不存在的** `BUILD_DIR`
+  > (`/tmp/opencode/__no_such_build_dir__`)⇒ cmake 在该**新目录**从零配置并
+  > **全量编译 459 个目标** ⇒ **超时发生在编译阶段,尚未进入 ctest**。
+  > 实测证据:`BUILD_DIR=/tmp/opencode/__probe_bd bash -x ./test.sh --mode off --build`
+  > ⇒ 输出 `[1/459] Building CXX object ...`。
+  > ⇒ **真根因 = 该检查触发了全量编译**(且每次残留一个半成品构建树);
+  > **「递归」不成立**(命令从未走到 `ctest` 那一行)。
 - **冻结面零风险**:`docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` 的 40 件 = ADR + 架构文档 + spec + schema + `tools/*.py` ⇒ **不含** `test/` / `scripts/cep/parity/` / `TrafficGenTLM`;
 - ⚠️ **不 push**(30 个 commit 未推送)。
 
