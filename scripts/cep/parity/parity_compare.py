@@ -61,7 +61,8 @@ def compare(cpptlm, gem5, tolerance, hit_rate_tol_pp=5.0):
     #    (实测:配置 20000 ⇒ gem5 侧 `overallAccesses` = 20101)
     #    ⇒ 常数档 P-1 放宽为「**相对偏差 ≤ 1%**」,并**明确标注**是放宽口径;
     #    **同源 trace 档**要求**严格相等**(逐条相同,判据更强)。
-    if cpptlm.get("mode") == "same_source_trace" or gem5.get("mode") == "same_source_trace":
+    if (cpptlm.get("mode") in ("same_source_trace", "parameter_same_source")
+            or gem5.get("mode") in ("same_source_trace", "parameter_same_source")):
         p1_ok = (n_cpptlm is not None and n_gem5 is not None and n_cpptlm == n_gem5)
         p1_name = "访问数两侧**严格相等**(同源 trace)"
         p1_attr = "" if p1_ok else (
@@ -84,7 +85,8 @@ def compare(cpptlm, gem5, tolerance, hit_rate_tol_pp=5.0):
     # ── P-1b 读写条数逐条一致(**同源 trace** 的更强证据)────────────
     # ⚠️ 只在**同源 trace 档**有意义(两侧读同一文件 ⇒ 读写分布必然相同);
     #    常数档(MemTest)不满足 ⇒ 该判据在常数档**跳过**(不判红)。
-    if cpptlm.get("mode") == "same_source_trace" or gem5.get("mode") == "same_source_trace":
+    if (cpptlm.get("mode") in ("same_source_trace", "parameter_same_source")
+            or gem5.get("mode") in ("same_source_trace", "parameter_same_source")):
         r_cpptlm = cpptlm.get("num_reads")
         w_cpptlm = cpptlm.get("num_writes")
         r_gem5 = gem5.get("num_reads")
@@ -125,7 +127,8 @@ def compare(cpptlm, gem5, tolerance, hit_rate_tol_pp=5.0):
     #    gem5 是**容量内命中** ⇒ 两者命中判据**结构性不同**
     #    ⇒ 命中率偏差**必然存在**,本判据只作**登记**(观察值),**不参与 verdict**。
     #    ⇒ 真正的容量对齐档需要本仓侧引入「等容量 + 同替换」的目录视图(未做)。
-    if cpptlm.get("mode") == "same_source_trace" or gem5.get("mode") == "same_source_trace":
+    if (cpptlm.get("mode") in ("same_source_trace", "parameter_same_source")
+            or gem5.get("mode") in ("same_source_trace", "parameter_same_source")):
         hr_cpptlm = cpptlm.get("miss_rate")
         hr_gem5 = gem5.get("miss_rate")
         if hr_cpptlm is not None and hr_gem5 is not None:
@@ -139,17 +142,39 @@ def compare(cpptlm, gem5, tolerance, hit_rate_tol_pp=5.0):
                 "detail": f"cpptlm={float(hr_cpptlm):.4f} gem5={float(hr_gem5):.4f} 偏差={dev_pp:.2f}pp",
                 "attribution": (
                     f"偏差 {dev_pp:.2f}pp {'在' if dev_pp <= hit_rate_tol_pp else '**超**'}阈值 —— "
-                    "**结构性差异**:本仓 `CacheTLM` 命中判据 = 「该地址曾被访问过」"
-                    "(无限容量 + 精确地址 map),gem5 = 「容量内命中」(16KiB/2-way/LRU)"
-                    "⇒ 命中率**不可直接比**(per `14 号` §4.2);真要判需本仓侧引入"
-                    "「等容量 + 同替换」目录视图(未做)"),
+                    "**结构性差异(三重)**(per `14 号` §4.2):"
+                    "① **填充策略**:本仓 `CacheTLM` 的 `cache_lines_[addr]` **只在 `is_write` 时写入**"
+                    "(per `include/tlm/cache_tlm.hh`)⇒ **读 miss 不填充**(read-no-allocate)"
+                    "⇒ **纯读序列的命中率恒为 0**;gem5 侧读 miss **会填充**;"
+                    "② **容量**:本仓无限容量 + 精确地址 map,gem5 = 16KiB/2-way/LRU;"
+                    "③ **命中判据**:本仓 = 「该地址曾被命中/写入」,gem5 = 「容量内命中」;"
+                    "⇒ 命中率**不可直接判**;真要对齐(P-3)需本仓侧引入"
+                    "「**等容量 + 同替换 + 同填充策略(read-allocate)**」的目录视图 —— **未做**"),
             })
 
+    # ── P-1c **地址序列指纹**一致(参数同源档的**直接证据**)──────────
+    #    两侧**各自独立**按同一组参数生成序列 ⇒ 指纹相同 ⇒ 序列逐条相同。
+    #    ⇒ 这比「访问数相等」强得多(访问数相同但顺序不同也能骗过 P-1)。
+    if cpptlm.get("mode") == "parameter_same_source" or gem5.get("mode") == "parameter_same_source":
+        f_cpptlm = (cpptlm.get("sequence") or {}).get("addr_seq_fnv1a64")
+        f_gem5 = (gem5.get("sequence") or {}).get("addr_seq_fnv1a64")
+        p1c_ok = (f_cpptlm is not None and f_gem5 is not None and f_cpptlm == f_gem5)
+        checks.append({
+            "id": "P-1c",
+            "name": "**地址序列指纹**两侧一致(FNV-1a 64bit;各自独立生成 ⇒ 逐条相同)",
+            "ok": p1c_ok,
+            "detail": f"cpptlm={f_cpptlm} gem5={f_gem5}",
+            "attribution": "" if p1c_ok else (
+                "P-1c 不满足 ⇒ 两侧**独立生成的序列不同** ⇒ 对拍无效"
+                "(先查参数口径:start/end/blocksize/data_limit 是否两侧同源)"),
+        })
+
     passed = all(c["ok"] for c in checks)
-    same_source = (cpptlm.get("mode") == "same_source_trace"
-                   or gem5.get("mode") == "same_source_trace")
+    same_source = (cpptlm.get("mode") in ("same_source_trace", "parameter_same_source")
+                   or gem5.get("mode") in ("same_source_trace", "parameter_same_source"))
     scope_note = (
-        ("同源 trace 档 ⇒ 验证的是「**同一条访问流**下的口径一致性 + 路径延迟常数」;"
+        ("参数同源档 ⇒ 两侧**各自独立**按同一组参数生成序列 ⇒ **地址序列指纹**一致"
+         "⇒ 验证的是「同一条访问流下的口径一致性 + 路径延迟常数」;"
          "**不**验证 H7(本仓 stub cache 的现实性)⇒ H7 仍未验证、R7 不降级;"
          "P-2(命中率)因命中判据结构性不同**只作观察登记**")
         if same_source else

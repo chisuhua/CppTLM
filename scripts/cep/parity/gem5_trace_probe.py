@@ -104,8 +104,25 @@ system.memories = [memory]
 system.mem_ranges = [AddrRange(mem_cfg["range"])]
 
 # ── 驱动:`PyTrafficGen` 吃同源 trace ───────────────────────────────
-# trace 的 tick 间隔(与生成器默认一致;生成器可用 `--tick-interval` 改)。
-TICK_INTERVAL = int(os.environ.get("PARITY_TICK_INTERVAL", "100000"))
+# ⚠️ **条数 / tick 间隔一律从 `meta.json` 读**(trace 的元数据单一真源),
+#    **不**从配置值猜 —— 早期版本用 `parity_config.json` 的 `tester.num_accesses`
+#    (=20000)算 `progress_check`,而实际 trace 只有 1000 条 ⇒ trace 放大到 1e5 条时
+#    `progress_check` 会**远小于**真实需要 ⇒ 撞上 ⇒ gem5 fatal。
+META_PATH = os.environ.get(
+    "PARITY_TRACE_META",
+    TRACE_PB.replace(".pb", ".meta.json"),
+)
+try:
+    _meta = json.loads(pathlib.Path(META_PATH).read_text(encoding="utf-8"))
+except Exception as e:
+    raise SystemExit(f"✗ 读不到 trace 元数据 {META_PATH}({e})—— 先跑 parity_trace_gen.py")
+
+TRACE_COUNT = int(_meta["num_accesses"])
+TICK_INTERVAL = int(_meta["tick_interval"])
+# 环境变量可覆盖 tick 间隔(但**条数**只认 meta.json ⇒ 避免漂移)
+_env_ti = os.environ.get("PARITY_TICK_INTERVAL")
+if _env_ti:
+    TICK_INTERVAL = int(_env_ti)
 
 tgen = PyTrafficGen()
 # ⚠️ **`progress_check` 必须远大于 trace 的总时长**(默认 `1ms` = **1e9 ticks** @1THz):
@@ -116,9 +133,7 @@ tgen = PyTrafficGen()
 #    ⇒ 设为「trace 总时长的 4 倍」(下限 10ms)。
 # ⚠️ `progress_check` 是 **`Param.Latency`** ⇒ 收**时间字符串**(如 `"8ms"`),
 #    **不是**整数 tick 数(传 int 会报 `'int' object has no attribute 'endswith'`)。
-_progress_ticks = max(
-    int(tester_cfg["num_accesses"] * TICK_INTERVAL * 4), 10_000_000
-)
+_progress_ticks = max(TRACE_COUNT * TICK_INTERVAL * 4, 10_000_000)
 tgen.progress_check = f"{_progress_ticks / 1000:.0f}ms"  # 1THz ⇒ 1000 tick = 1ns
 system.tgen = tgen
 tgen.port = cache.cpu_side
@@ -153,12 +168,10 @@ m5.instantiate()
 #    ⇒ 正确做法:算出 trace 的**实际最后一条 tick**(+ 余量)作为 max tick,
 #    模拟到那儿就停 ⇒ 不会触发 progress_check。
 #    trace 的 tick 间隔由生成器决定(默认 100000 ticks/条)。
-# trace 的**实际条数**(从 trace 文件头读,或用配置值)⇒ 算出最后一条的 tick。
-# ⚠️ 不能用「配置里的 num_accesses」代替 —— trace 文件里的条数才是真的。
 # ⚠️ `TRACE_DURATION_TICKS` 是 **generator 的 duration**(TraceGen 播多久),
 #    必须 ≥ trace 实际总时长,否则 trace 会被**截断**(gem5 会 warn
 #    "Trace player was unable to replay the entire trace")。
-TRACE_DURATION_TICKS = int(tester_cfg["num_accesses"] * TICK_INTERVAL * 2)
+TRACE_DURATION_TICKS = TRACE_COUNT * TICK_INTERVAL * 2
 trace_gen = tgen.createTrace(TRACE_DURATION_TICKS, TRACE_PB, 0)
 # ⚠️ **不要追加 `createExit(0)`**:
 #    `BaseTrafficGen::transition()`(per `src/cpu/testers/traffic_gen/base.cc`)在
@@ -173,58 +186,13 @@ print(f"[parity] gem5 trace 探针开始:trace={TRACE_PB}")
 # ⚠️ **max tick 必须贴着 trace 的末尾**,不能设成「trace 总时长 + 大余量」:
 #    trace 播完后 `TraceGen::nextPacketTick()` 返回 `MaxTick`
 #    ⇒ `BaseTrafficGen` 把下一个事件排到 max tick ⇒ 事件循环**空等**到那里;
-#    而 `progress_check`(默认 **1e9 ticks**)会先到 ⇒ gem5 报
+#    而 `progress_check` 会先到 ⇒ gem5 报
 #    `fatal: BaseTrafficGen system.tgen spent 1000000000 ticks without making progress`。
 #    ⇒ max tick = 「trace 最后一条的 tick + 少量余量(够跑完最后一批响应)」。
-#    trace 条数从 **protobuf 文件实测**得到(不猜)。
-try:
-    sys.path.insert(0, str(pathlib.Path(STATS_TEXT).parent))
-    import packet_pb2  # type: ignore
-    _n = 0
-    with open(TRACE_PB, "rb") as _f:
-        _f.read(4)  # magic
-        # 跳过 header(varint 长度 + 消息体)
-        _b = bytearray()
-        while True:
-            _c = _f.read(1)
-            if not _c:
-                break
-            _b += _c
-            if _c[0] & 0x80 == 0:
-                break
-        _hlen = 0
-        _shift = 0
-        for byte in _b:
-            _hlen |= (byte & 0x7F) << _shift
-            _shift += 7
-        _f.read(_hlen)
-        while True:
-            _b = bytearray()
-            while True:
-                _c = _f.read(1)
-                if not _c:
-                    break
-                _b += _c
-                if _c[0] & 0x80 == 0:
-                    break
-            if not _b:
-                break
-            _len = 0
-            _shift = 0
-            for byte in _b:
-                _len |= (byte & 0x7F) << _shift
-                _shift += 7
-            _body = _f.read(_len)
-            if not _body:
-                break
-            _n += 1
-    TRACE_COUNT = _n
-except Exception:
-    TRACE_COUNT = int(tester_cfg["num_accesses"])
-
 LAST_TRACE_TICK = TRACE_COUNT * TICK_INTERVAL
-MAX_TICK = LAST_TRACE_TICK + 20 * TICK_INTERVAL  # 余量:够跑完最后一批请求的响应
-print(f"[parity] trace 条数={TRACE_COUNT} · 末 tick={LAST_TRACE_TICK} · max tick={MAX_TICK}")
+MAX_TICK = LAST_TRACE_TICK + 20 * TICK_INTERVAL
+print(f"[parity] trace 条数={TRACE_COUNT} · tick 间隔={TICK_INTERVAL} "
+      f"· 末 tick={LAST_TRACE_TICK} · max tick={MAX_TICK}")
 m5.setMaxTick(MAX_TICK)
 m5.simulate(MAX_TICK)
 m5.stats.dump()

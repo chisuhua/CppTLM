@@ -319,6 +319,17 @@ add_test(NAME cep_parity_cpptlm_side
 #    否则「没跑 trace 生成」的常规 CI 会把它当**失败**(实测:ctest 报 Failed)。
 set_tests_properties(cep_parity_cpptlm_side PROPERTIES SKIP_RETURN_CODE 4)
 
+# H7 对拍基准的**参数同源档端到端**(两侧**各自独立**按同一组参数生成序列
+#   → 地址序列指纹(FNV-1a 64bit)交叉验证 → 比较)。
+#   —— 这是**当前唯一可靠**的同源档:gem5 v24 的 protobuf 文件读取会提前 EOF
+#      (per 台账 Entry #115);参数同源反而是**更强**的证据。
+#   ⚠️ 需要 gem5 二进制(第三方基准,不入库);缺席时 exit 77 ⇒ ctest 跳过。
+add_test(NAME cep_parity_linear_e2e
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/cep/parity/run_parity_linear.sh)
+set_tests_properties(cep_parity_linear_e2e PROPERTIES
+                     SKIP_RETURN_CODE 77
+                     TIMEOUT 1800)
+
 # H7 对拍基准的**同源 trace 档端到端**(trace 生成 → gem5 回放 → CppTLM 回放 → 比较)
 #   —— 两侧消费**同一条**访问流(per `14 号` §4.1)。
 #   ⚠️ 需要 gem5 二进制(第三方基准,不入库);缺席时 exit 77 ⇒ ctest 跳过。

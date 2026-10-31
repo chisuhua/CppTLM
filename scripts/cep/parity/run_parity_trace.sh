@@ -22,9 +22,16 @@ mkdir -p "$OUT_DIR"
 
 GEM5_BIN="${GEM5_BIN:-$ROOT/external/gem5/build/NULL/gem5.opt}"
 TRACE_BASE="${PARITY_TRACE_BASE:-$OUT_DIR/trace}"
-NUM_ACCESSES="${PARITY_NUM_ACCESSES:-1000}"
+# ⚠️ **默认 1e5 条** —— `14 号` §4.1 规定「主对拍 **≥ 10⁵ 事务**」
+#    (与 `verification_scope` 声明一致);统计置信度需要足够样本量。
+NUM_ACCESSES="${PARITY_NUM_ACCESSES:-100000}"
 WORKING_SET="${PARITY_WORKING_SET:-65536}"
 SEED="${PARITY_SEED:-42}"
+# trace 的 tick 间隔(默认 10000 = 10ns @1THz):
+# ⚠️ 间隔过密 ⇒ 请求堆在 cache 的 MSHR(`mshrs=4`)上 ⇒ 事件循环看似卡死(实测踩过);
+#    间隔过大 ⇒ trace 总时长 = 条数 × 间隔 逼近 `progress_check`(1e9 ticks)⇒ 撞上。
+#    ⇒ 1e5 条 × 10000 = 1e9 ticks ⇒ `progress_check` 由探针按**实测条数**算(4 倍)。
+TICK_INTERVAL="${PARITY_TICK_INTERVAL:-10000}"
 
 log() { printf '[run_parity_trace] %s\n' "$*"; }
 fail() { printf '[run_parity_trace] ✗ %s\n' "$*" >&2; exit 1; }
@@ -41,6 +48,7 @@ log "生成 trace(seed=$SEED, 条数=$NUM_ACCESSES, 工作集=$WORKING_SET)..."
 python3 "$ROOT/scripts/cep/parity/parity_trace_gen.py" \
     --out "$TRACE_BASE" --seed "$SEED" \
     --num-accesses "$NUM_ACCESSES" --working-set "$WORKING_SET" \
+    --tick-interval "$TICK_INTERVAL" \
     || fail "trace 生成失败"
 
 # ③ gem5 侧回放
@@ -69,5 +77,28 @@ python3 "$ROOT/scripts/cep/parity/parity_compare.py" \
     --out "$OUT_DIR/verdict_trace.json"
 rc=$?
 set -e
-log "产物:$OUT_DIR/{trace.csv,trace.pb,gem5_trace_probe.json,cpptlm_probe.json,verdict_trace.json}"
+
+# ⚠️ **已知限制检测(上游 gem5 缺陷,非本仓判据问题)**:
+#    gem5 v24 的 `ProtoInputStream` 用 protobuf 的 `IstreamInputStream`(零拷贝路径)
+#    **逐条消息新建** `io::CodedInputStream` ⇒ **文件较大时提前 EOF**
+#    (实测:1000 条读到 966 / 20000 条读到 19735 / 100000 条读到 98874;
+#     同一文件用 Python 的 protobuf 库可完整读出 ⇒ 文件本身没问题)。
+#    ⇒ 文件同源路径在 gem5 v24 侧**不可靠** ⇒ 走**参数同源**路线
+#      (`scripts/cep/parity/run_parity_linear.sh`)。
+#    ⇒ 这里检测到截断 ⇒ 报「已知限制」并 **exit 77**(ctest 跳过)——
+#      不让**上游缺陷**把门禁打红,但**信息保留**在日志与台账里。
+_trunc=$(python3 -c "
+import json
+m = json.load(open('$OUT_DIR/trace.meta.json'))
+g = json.load(open('$OUT_DIR/gem5_trace_probe.json'))
+print(1 if g.get('accesses', 0) < m.get('num_accesses', 0) else 0)
+" 2>/dev/null || echo 0)
+if [[ "$_trunc" == "1" ]]; then
+    log "⚠️ **已知限制**:gem5 v24 的 protobuf 流**提前 EOF**(上游缺陷)⇒"
+    log "    gem5 读到 $(python3 -c "import json;print(json.load(open('$OUT_DIR/gem5_trace_probe.json')).get('accesses'))") 条 < trace $(python3 -c "import json;print(json.load(open('$OUT_DIR/trace.meta.json'))['num_accesses'])") 条"
+    log "    ⇒ 文件同源路径**不可用**;请用 scripts/cep/parity/run_parity_linear.sh(参数同源)"
+    log "产物:$OUT_DIR/{trace.csv,trace.pb,trace.meta.json,gem5_trace_probe.json,cpptlm_probe.json,verdict_trace.json}"
+    exit 77
+fi
+log "产物:$OUT_DIR/{trace.csv,trace.pb,trace.meta.json,gem5_trace_probe.json,cpptlm_probe.json,verdict_trace.json}"
 exit $rc

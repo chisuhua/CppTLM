@@ -26,6 +26,7 @@
 """
 import argparse
 import hashlib
+import json
 import os
 import pathlib
 import sys
@@ -211,7 +212,30 @@ def main():
     write_csv(csv_path, accesses)
     write_protobuf(pb_path, accesses, args.obj_id, args.tick_freq, args.tick_interval)
 
-    for p in (csv_path, pb_path):
+    # ③ **meta.json** —— trace 的**元数据单一真源**:
+    #    消费侧(gem5 探针 / 比较器)**只**从这里读「条数 / tick 间隔」,
+    #    **不**从配置值猜 ⇒ 避免「配置说 20000、文件里其实 1000 条」这类漂移
+    #    (早期版本正踩过:探针的 `progress_check` 用配置值算 ⇒ 与实际 trace 不符
+    #     ⇒ trace 放大到 1e5 条时会撞上 `progress_check` 而 fatal)。
+    meta_path = out.with_suffix(".meta.json")
+    meta = {
+        "num_accesses": len(accesses),
+        "tick_interval": args.tick_interval,
+        "tick_freq": args.tick_freq,
+        "seed": args.seed,
+        "working_set_bytes": args.working_set,
+        "base_addr": args.base_addr,
+        "access_size": args.line_size,
+        "write_percent": args.write_percent,
+        "csv": csv_path.name,
+        "pb": pb_path.name,
+        "csv_sha256": hashlib.sha256(csv_path.read_bytes()).hexdigest(),
+        "pb_sha256": hashlib.sha256(pb_path.read_bytes()).hexdigest(),
+    }
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n",
+                          encoding="utf-8")
+
+    for p in (csv_path, pb_path, meta_path):
         data = p.read_bytes()
         print(f"[trace] {p} · {len(accesses)} 条 · sha256={hashlib.sha256(data).hexdigest()[:16]}")
     return 0

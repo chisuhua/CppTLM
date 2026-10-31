@@ -23,6 +23,18 @@
       "num_accesses": 20000,
       "interval_cycles": 200,
       "working_set_bytes": 4096
+    },
+    "linear": {
+      "_note": "「参数同源」路线的参数(两侧**各自独立**按同一参数生成序列 ⇒ 用 addr_seq_sha256 交叉验证)。⚠️ 工作集(end-start)= **16KiB = cache 容量** ⇒ 线性扫一圈 256 条 ⇒ 第 2 圈起全命中⇒ 命中率 ≈ 99.7%,且与本仓 `CacheTLM` 的「精确地址 map」判定**几乎一致** ⇒ 命中率偏差极小。",
+      "start_addr": 1048576,
+      "end_addr": 1064960,
+      "blocksize": 64,
+      "read_percent": 100,
+      "min_period": 10000,
+      "max_period": 10000,
+      "data_limit": 6400000,
+      "duration_ticks": 20000000000,
+      "elastic_req": true
     }
   },
   "tolerances": {
