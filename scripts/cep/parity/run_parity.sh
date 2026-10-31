@@ -37,6 +37,8 @@ bash "$ROOT/scripts/cep/parity/build_gem5.sh" --check >/dev/null || fail "gem5 �
 PROBE_JSON="$OUT_DIR/gem5_probe.json"
 STATS_TXT="$OUT_DIR/gem5_stats.txt"
 log "跑 gem5 探针(变体 NULL)..."
+# ⚠️ **必须传 `PARITY_CONFIG`**(探针默认读脚本同目录的共享文件)
+PARITY_CONFIG="$ROOT/scripts/cep/parity/parity_config.json" \
 PARITY_OUT="$PROBE_JSON" PARITY_STATS="$STATS_TXT" \
     "$GEM5_BIN" "--stats-file=$STATS_TXT" "$PROBE" > "$OUT_DIR/gem5_run.log" 2>&1 \
     || { tail -20 "$OUT_DIR/gem5_run.log"; fail "gem5 探针失败(见 $OUT_DIR/gem5_run.log)"; }

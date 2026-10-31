@@ -63,13 +63,30 @@ lin_cfg = CFG["gem5"]["linear"]
 TICKS_PER_NS = 1000.0
 clk_period_ns = float(CFG["cycle_ns"])
 
-START_ADDR = int(lin_cfg["start_addr"])
-END_ADDR = int(lin_cfg["end_addr"])
+# ⚠️ **多段设计**(per 台账 Entry #117 的主对拍修订):
+#    目的 = 让**自然**产生不同的命中率 `h_m`(而不是「瞄准」某个值)⇒
+#    扫 `h_0` 网格找**统一**解才有鉴别力。
+#    实测:单一线性区间在 LRU 下只有**两个极端** —— 工作集 ≤ cache ⇒ ~99.7%;
+#    工作集 > cache ⇒ **0%**(线性扫描是 LRU 的**最坏情况**)⇒ 无法连续调 `h`。
+#    ⇒ 用「**hot 段扫 R 遍**(第 1 遍 miss、第 2~R 遍 hit)+ **cold 段扫 1 遍**(全 miss)」
+#    ⇒ h_m = (R−1)×H / (R×H + C) ⇒ **连续可调**且序列**完全确定**(可参数同源)。
+#
+# `segments` 形态(每项):`{start, end, repeats, data_limit}`
+#   · `repeats` = 该区间扫几遍(每遍一个 `createLinear` generator);
+#   · `data_limit` = **每遍**的字节上限(⇒ 每遍条数 = data_limit / blocksize)。
+SEGMENTS = lin_cfg.get("segments") or []
+if not SEGMENTS:
+    # 兼容旧形态:单区间
+    SEGMENTS = [{
+        "start": int(lin_cfg["start_addr"]),
+        "end": int(lin_cfg["end_addr"]),
+        "repeats": 1,
+        "data_limit": int(lin_cfg["data_limit"]),
+    }]
 BLOCK_SIZE = int(lin_cfg["blocksize"])
 READ_PERCENT = int(lin_cfg["read_percent"])
 MIN_PERIOD = int(lin_cfg["min_period"])
 MAX_PERIOD = int(lin_cfg["max_period"])
-DATA_LIMIT = int(lin_cfg["data_limit"])
 
 # ── 系统装配 ───────────────────────────────────────────────────────
 vd = VoltageDomain()
@@ -107,8 +124,14 @@ system.tgen = tgen
 # `progress_check` 必须远大于序列总时长(默认 `1ms` = 1e9 ticks):
 #    序列播完后 generator 空转 ⇒ 若 progress_check 先于 max tick 到期 ⇒ gem5 fatal。
 #    ⇒ 按**实际条数**(data_limit / blocksize)算 4 倍。
-_num_accesses = (DATA_LIMIT // BLOCK_SIZE) if DATA_LIMIT else 0
-_progress_ticks = max(_num_accesses * MIN_PERIOD * 4, 10_000_000)
+# ⚠️ `progress_check` 必须在 instantiate **之前**设(instantiate 会冻结参数 ⇒ segfault)
+#    且必须远大于**总时长**(各段 duration 之和)。
+#    ⇒ 先算总条数(各段每遍条数之和)。
+_total_accesses = sum(
+    (int(seg["data_limit"]) // BLOCK_SIZE) * int(seg.get("repeats", 1))
+    for seg in SEGMENTS
+)
+_progress_ticks = max(_total_accesses * (MIN_PERIOD + 100000) * 4, 10_000_000)
 tgen.progress_check = f"{_progress_ticks / 1000:.0f}ms"
 
 root = Root(full_system=False, system=system)
@@ -119,11 +142,23 @@ m5.instantiate()
 # ⚠️ `createLinear` 是 pybind 导出的方法,**可以**在 instantiate 之后调
 #    (官方 `configs/example/dramsys.py` 就是这么用的)。
 DURATION = int(lin_cfg["duration_ticks"])
-gen = tgen.createLinear(
-    DURATION, START_ADDR, END_ADDR, BLOCK_SIZE, MIN_PERIOD, MAX_PERIOD,
-    READ_PERCENT, DATA_LIMIT,
-)
-tgen.start([gen])
+# ⚠️ 每段一个 generator(`createLinear` 的 `data_limit` 是**每段**的字节上限);
+#    `tgen.start([...])` 按**顺序**执行各段(每段 duration 到期 ⇒ transition 到下一段)。
+generators = []
+for seg in SEGMENTS:
+    _seg_start = int(seg["start"])
+    _seg_end = int(seg["end"])
+    _seg_limit = int(seg["data_limit"])
+    _seg_lines = (_seg_end - _seg_start) // BLOCK_SIZE
+    for _rep in range(int(seg.get("repeats", 1))):
+        # ⚠️ 每段的 `duration` 必须够跑完该段 ⇒ 按该段条数 × (间隔 + 响应上界) 估
+        _seg_accesses = _seg_limit // BLOCK_SIZE
+        _seg_duration = int(_seg_accesses * (MIN_PERIOD + 100000) * 2)
+        generators.append(tgen.createLinear(
+            _seg_duration, _seg_start, _seg_end, BLOCK_SIZE,
+            MIN_PERIOD, MAX_PERIOD, READ_PERCENT, _seg_limit,
+        ))
+tgen.start(generators)
 
 # ⚠️ **max tick 必须严格小于 generator 的 `duration`** ——
 #    gem5 v24 的 `BaseTrafficGen::update()` 在 `duration` 到期 ⇒ `transition()` ⇒
@@ -138,14 +173,14 @@ tgen.start([gen])
 #    ⇒ max tick = 条数 × (名义间隔 + 单次响应时间上界) + 余量。
 # ⚠️ 且必须 **< duration**(否则 gem5 v24 在 generator 耗尽处 segfault)。
 _RESP_TICKS = 100000  # 单次未命中响应时间上界(~49ns @1THz)
-LAST_TICK = _num_accesses * (MIN_PERIOD + _RESP_TICKS)
+LAST_TICK = _total_accesses * (MIN_PERIOD + _RESP_TICKS)
 MAX_TICK = LAST_TICK + 100 * MIN_PERIOD
 assert MAX_TICK < DURATION, (
     f"max tick({MAX_TICK}) 必须 < duration({DURATION})——否则 gem5 v24 会在 "
     f"generator 耗尽处 segfault")
 m5.setMaxTick(MAX_TICK)
 m5.stats.reset()
-print(f"[parity] gem5 线性探针开始:start={START_ADDR:#x} end={END_ADDR:#x} "
+print(f"[parity] gem5 线性探针开始:段数={len(SEGMENTS)} 总条数={_total_accesses} "
       f"blk={BLOCK_SIZE} reads={READ_PERCENT}% period={MIN_PERIOD}..{MAX_PERIOD}")
 m5.simulate(MAX_TICK)
 m5.stats.dump()
@@ -212,17 +247,22 @@ hit_avg_ns = (
     + cache_cfg["response_latency_cycles"]
 ) * clk_period_ns
 
-# ── **地址序列 sha256**(同源的**交叉验证**证据)────────────────────
-# 两侧**各自独立**按同一参数生成序列 ⇒ 哈希相同 ⇒ 序列逐条相同。
+# ── **地址序列指纹**(同源的**交叉验证**证据)────────────────────────
+# 两侧**各自独立**按同一参数生成序列 ⇒ 指纹相同 ⇒ 序列逐条相同。
+# ⚠️ 多段:按「段的顺序 × 每段的遍数」依次展开(与 gem5 的 `tgen.start([...])`
+#    **顺序**执行一致)⇒ 每段独立从头扫(per `LinearGen::enter()`:`nextAddr = startAddr`)。
 seq = []
-addr = START_ADDR
-span = END_ADDR - START_ADDR
-if span > 0:
-    for _ in range(_num_accesses):
-        seq.append(addr)
-        addr += BLOCK_SIZE
-        if addr >= END_ADDR:
-            addr = START_ADDR
+for _seg in SEGMENTS:
+    _ss = int(_seg["start"])
+    _se = int(_seg["end"])
+    _per = int(_seg["data_limit"]) // BLOCK_SIZE
+    for _rep in range(int(_seg.get("repeats", 1))):
+        _a = _ss
+        for _ in range(_per):
+            seq.append(_a)
+            _a += BLOCK_SIZE
+            if _a >= _se:
+                _a = _ss
 # ⚠️ 哈希算法用 **FNV-1a 64bit**(顺序敏感;实现极简 ⇒ C++/Python 两侧口径易对齐)。
 #    不用 SHA-256:本仓(C++)侧无现成实现 ⇒ 引入密码学哈希只为「算个校验和」不划算。
 #    ⚠️ 口径(位移/乘法/取模)必须与 C++ 侧**逐字一致**。
@@ -247,14 +287,12 @@ result = {
     "verification_mode": _ver.get("verification_mode"),
     "verification_scope": _ver.get("verification_scope"),
     "sequence": {
-        "start_addr": START_ADDR,
-        "end_addr": END_ADDR,
+        "segments": SEGMENTS,
         "blocksize": BLOCK_SIZE,
         "read_percent": READ_PERCENT,
         "min_period": MIN_PERIOD,
         "max_period": MAX_PERIOD,
-        "data_limit": DATA_LIMIT,
-        "num_accesses": _num_accesses,
+        "num_accesses": _total_accesses,
         "addr_seq_fnv1a64": seq_hash,
     },
     "hits": hits,

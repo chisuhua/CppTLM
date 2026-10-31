@@ -24,7 +24,10 @@ OUT_DIR="${PARITY_OUT_DIR:-$ROOT/build/parity}"
 mkdir -p "$OUT_DIR"
 
 GEM5_BIN="${GEM5_BIN:-$ROOT/external/gem5/build/NULL/gem5.opt}"
-CFG="$ROOT/scripts/cep/parity/parity_config.json"
+# ⚠️ **用临时 config 副本** —— 避免与其它档共享时互相污染
+CFG_SHARED="$ROOT/scripts/cep/parity/parity_config.json"
+CFG="$OUT_DIR/linear_config.json"
+cp "$CFG_SHARED" "$CFG"
 
 log() { printf '[run_parity_linear] %s\n' "$*"; }
 fail() { printf '[run_parity_linear] ✗ %s\n' "$*" >&2; exit 1; }
@@ -71,6 +74,8 @@ log "      条数=$NUM_ACCESSES(≥1e5,per 14 号 §4.1)"
 
 # ③ gem5 侧
 log "gem5 侧回放(参数同源)..."
+# ⚠️ **必须传 `PARITY_CONFIG`**(探针默认读脚本同目录的共享文件)
+PARITY_CONFIG="$CFG" \
 PARITY_OUT="$OUT_DIR/gem5_linear_probe.json" \
 PARITY_STATS="$OUT_DIR/gem5_linear_stats.txt" \
     "$GEM5_BIN" "--stats-file=$OUT_DIR/gem5_linear_stats.txt" \

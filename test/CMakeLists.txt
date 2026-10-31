@@ -319,6 +319,12 @@ add_test(NAME cep_parity_cpptlm_side
 #    否则「没跑 trace 生成」的常规 CI 会把它当**失败**(实测:ctest 报 Failed)。
 set_tests_properties(cep_parity_cpptlm_side PROPERTIES SKIP_RETURN_CODE 4)
 
+# ⚠️ **主对拍档(固定命中率档)刻意不进 ctest 门禁** ——
+#   `scripts/cep/parity/run_parity_main.sh` 的**结论本身就是 FAIL**
+#   (P-2 在「统一 `h_0`」口径下不成立,per 台账 Entry #117)
+#   ⇒ 它是**一次性实验**而非**回归门禁** ⇒ 把「预期红」写进 CI 会污染门禁语义。
+#   ⇒ 人工复跑:`bash scripts/cep/parity/run_parity_main.sh`(详见 docs/validation/)。
+
 # H7 对拍基准的**参数同源档端到端**(两侧**各自独立**按同一组参数生成序列
 #   → 地址序列指纹(FNV-1a 64bit)交叉验证 → 比较)。
 #   —— 这是**当前唯一可靠**的同源档:gem5 v24 的 protobuf 文件读取会提前 EOF
