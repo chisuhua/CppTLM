@@ -78,7 +78,16 @@ namespace {
         s.blocksize = static_cast<uint64_t>(env_ll("PARITY_BLOCKSIZE", 64));
         s.read_percent = static_cast<uint64_t>(env_ll("PARITY_READ_PERCENT", 100));
         s.data_limit = static_cast<uint64_t>(env_ll("PARITY_DATA_LIMIT", 100000 * 64));
-        s.num_accesses = s.data_limit / s.blocksize;
+        // ⚠️ **条数可被 `PARITY_NUM_ACCESSES` 覆盖** —— gem5 v24 的 `data_limit` 不生效
+        //    ⇒ gem5 侧**实际**发出的条数由 `duration` 决定 ⇒ 可能与名义值差几十条
+        //    ⇒ 本仓侧须按**同一个实际条数**生成 ⇒ 指纹逐条一致(P-1c 才是真正的同源证据)。
+        const long long n_override = env_ll("PARITY_NUM_ACCESSES", 0);
+        if (n_override > 0) {
+            s.num_accesses = static_cast<size_t>(n_override);
+            s.data_limit = s.num_accesses * s.blocksize;
+        } else {
+            s.num_accesses = s.data_limit / s.blocksize;
+        }
         return s;
     }
 

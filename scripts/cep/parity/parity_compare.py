@@ -63,8 +63,18 @@ def compare(cpptlm, gem5, tolerance, hit_rate_tol_pp=5.0):
     #    **同源 trace 档**要求**严格相等**(逐条相同,判据更强)。
     if (cpptlm.get("mode") in ("same_source_trace", "parameter_same_source")
             or gem5.get("mode") in ("same_source_trace", "parameter_same_source")):
-        p1_ok = (n_cpptlm is not None and n_gem5 is not None and n_cpptlm == n_gem5)
-        p1_name = "访问数两侧**严格相等**(同源 trace)"
+        # ⚠️ **参数同源档的条数由 gem5 的 `duration` 决定**(v24 的 `data_limit` 不生效)
+        #    ⇒ **不可能精确等于名义条数** ⇒ P-1 在此档退化为「**长度一致性**」检查
+        #    (容差 0.1%);**严格的逐条同源由 P-1c(地址序列指纹)承担**。
+        if gem5.get("mode") == "parameter_same_source":
+            _den = max(float(n_cpptlm or 0), float(n_gem5 or 0))
+            _dev = abs(float(n_cpptlm or 0) - float(n_gem5 or 0)) / _den if _den else 1.0
+            p1_ok = (n_cpptlm is not None and n_gem5 is not None and _dev <= 0.001)
+            p1_name = ("访问数长度一致(偏差 ≤0.1%;严格同源由 **P-1c 指纹**承担 —— "
+                       "gem5 v24 的 `data_limit` 不生效 ⇒ 条数由 `duration` 决定)")
+        else:
+            p1_ok = (n_cpptlm is not None and n_gem5 is not None and n_cpptlm == n_gem5)
+            p1_name = "访问数两侧**严格相等**(同源 trace)"
         p1_attr = "" if p1_ok else (
             "P-1 不满足 ⇒ 对拍无效(先查 trace 文件与消费路径,不是模型问题)")
     else:

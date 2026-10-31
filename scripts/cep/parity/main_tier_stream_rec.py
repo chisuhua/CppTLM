@@ -17,6 +17,20 @@ def main():
     hr = d.get("miss_rate")
     if hr is None:
         raise SystemExit(f"流 {name} 缺 miss_rate ⇒ stats 未读到")
+    # ⚠️ **序列完整性硬断言**:gem5 侧实际访问数必须 == **名义**总条数。
+    #    否则说明序列被**截断**(max tick / duration 口径不一致)⇒
+    #    **该流的数据不可信** ⇒ 必须报错退出,**不得**把截断的数据带进结论。
+    #    (实测踩过:R4 名义 512 条、实测 340 条 ⇒ 4 条流的数据全错,
+    #     而当时的报告基于它 ⇒ 属「用错误数据出结论」。)
+    seq = d.get("sequence") or {}
+    nominal = int(seq.get("num_accesses", 0))
+    actual = int(d.get("accesses", 0))
+    if nominal and actual != nominal:
+        raise SystemExit(
+            f"✗ 流 {name} 的**序列被截断**:名义 {nominal} 条、实测 {actual} 条"
+            f" ⇒ 数据不可信(检查 max tick / duration 口径)"
+            f"⇒ 拒绝把截断数据带入结论")
+
     rec = {
         "name": name,
         "hit_rate": 1.0 - float(hr),
@@ -24,6 +38,10 @@ def main():
         "hits": d.get("hits"),
         "misses": d.get("misses"),
         "accesses": d.get("accesses"),
+        "nominal_accesses": nominal,
+        # ⚠️ **workload 特征** ⇒ 供分析器用 R-B 规则估 h_0(不依赖实测命中率)
+        "working_set_bytes": seq.get("working_set_bytes"),
+        "cache_bytes": seq.get("cache_bytes"),
     }
     out = pathlib.Path(out_dir) / f"stream_{name}.json"
     out.parent.mkdir(parents=True, exist_ok=True)

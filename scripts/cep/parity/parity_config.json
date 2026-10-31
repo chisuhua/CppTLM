@@ -25,7 +25,7 @@
       "working_set_bytes": 4096
     },
     "linear": {
-      "_note": "「参数同源」路线的参数(两侧**各自独立**按同一参数生成序列 ⇒ 用 addr_seq_sha256 交叉验证)。⚠️ 工作集(end-start)= **16KiB = cache 容量** ⇒ 线性扫一圈 256 条 ⇒ 第 2 圈起全命中⇒ 命中率 ≈ 99.7%,且与本仓 `CacheTLM` 的「精确地址 map」判定**几乎一致** ⇒ 命中率偏差极小。",
+      "_note": "「参数同源」路线的参数(两侧**各自独立**按同一参数生成序列 ⇒ 用 addr_seq_sha256 交叉验证)。⚠️ 工作集(end-start)= **16KiB = cache 容量** ⇒ 线性扫一圈 256 条 ⇒ 第 2 圈起全命中⇒ 命中率 ≈ 99.7%,且与本仓 `CacheTLM` 的「精确地址 map」判定**几乎一致** ⇒ 命中率偏差极小。 ⚠️ `tick_budget_per_access` = **每条访问的 tick 预算**(用于算 MAX_TICK 与各段 duration)。⚠️ **不可猜**:背压下实际每条耗时可达 ~165ns(实测)⇒ 预算不足 ⇒ **序列被截断**;预算过大且各段 duration 之和 ≤ MAX_TICK ⇒ gem5 v24 在 generator 耗尽处 **null 崩**。⇒ 驱动脚本 `run_parity_main.sh` **自适应**:截断则**加倍**预算重跑(最多 5 次)。 ⚠️ `nominal_accesses` = **名义访问条数**(探针按「条数 × tick 预算」算 duration)。⚠️ `driver` = `random`(主对拍档;均匀随机 ⇒ 命中率连续可调)或 `linear`(参数同源档;线性 ⇒ 可算指纹)。",
       "start_addr": 1048576,
       "end_addr": 1064960,
       "blocksize": 64,
@@ -34,7 +34,12 @@
       "max_period": 10000,
       "data_limit": 6400000,
       "duration_ticks": 20000000000,
-      "elastic_req": true
+      "elastic_req": true,
+      "tick_budget_per_access": 200000,
+      "nominal_accesses": 100000,
+      "driver": "linear",
+      "random_start_addr": 1048576,
+      "random_end_addr": 1052672
     }
   },
   "tolerances": {
