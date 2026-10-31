@@ -280,6 +280,8 @@ illegal=0
 unknown=42
 pending_false=22
 coverage=26/68
+coverage_floor=26
+pending_false_floor=22
 GEN:PASS
 <!-- CXL-TABLE:STATS:END -->
 

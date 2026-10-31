@@ -433,6 +433,12 @@ TEST_CASE("CEP CXL state spec — CSS-06:载体 ↔ 核对表 ↔ 摘要 三方�
     REQUIRE(stats_text.find("unknown=42") != std::string::npos);
     REQUIRE(stats_text.find("pending_false=22") != std::string::npos);
     REQUIRE(stats_text.find("coverage=26/68") != std::string::npos);
+    // ⚠️ **单调下界**(AC-9「单调不减」条款)—— 整体降档 SHALL 必红
+    REQUIRE(stats_text.find("coverage_floor=26") != std::string::npos);
+    REQUIRE(stats_text.find("pending_false_floor=22") != std::string::npos);
+    REQUIRE(CxlStateSpec::coverage_is_not_regressed());
+    REQUIRE(CxlStateSpec::kCoverageFloor == 26);
+    REQUIRE(CxlStateSpec::kPendingFalseFloor == 22);
     // ⚠️ 硬编码值 SHALL 与载体实际统计相等(防虚报)
     REQUIRE(CxlStateSpec::count_cells(CxlStateSpec::CellKind::Known) == 26);
     REQUIRE(CxlStateSpec::count_cells(CxlStateSpec::CellKind::Illegal) == 0);

@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-05
   - ADR-CEP-03
   - ADR-CEP-17
-状态: 📋 草稿(2026-10-30 —— 队列 #10;**两段式**:第 0 个 change = 规约层 + 第 1 个 change = 实现层)
+状态: 🟡 **部分完成**(2026-11-01,per **Entry #127**)—— 队列 #10;**两段式**:第 0 个 change(规约层)= ✅ **已完成归档**(`cpptlm-cep-cxl-nonsymmetric-state-spec` ⇒ main spec `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;KPI 1/3 → 0/3)+ 第 1 个 change(实现层)= ⬜ **待启动**
 created: 2026-10-30
 ---
 
@@ -126,7 +126,7 @@ created: 2026-10-30
 | `include/tlm/cep/cxl_state_spec.hh`(新) | CXL 2.0 非对称态 / 事件 / 转换表 / **N→4** `perm` 投影表(N 由普查钉死)/ 逐格 `basis{kind, pending, ref, note}` / 偏离清单 / 编译期锁(与 `mesif_state_spec.hh` 同款结构)+ **非对称结构级断言**(remote 事件集 ⊆ H2D snoop 集 ∧ local∩remote = ∅ ∧ 设备侧无 snoop 发起型事件) |
 | `scripts/test/generate_cxl_anchor_checklist.sh` + `.cc`(新) | **本仓锚点摘要的逐格核对表生成器**(+ `--check`,手改必红) |
 | `docs/research/<date>-cep-cxl-nonsymmetric-anchor-summary.md`(新) | **公开来源锚点摘要**(条款/文献级定位 + 强度三档 `direct`/`analogical`/`inferred` + **钉版信息**:arXiv 版本 + DOI / PDF sha256 / 文档号 / 博客抓取日期)⇒ **本仓 basis 的唯一人工审计面** |
-| `openspec/changes/cpptlm-cep-cxl-nonsymmetric-state-spec/`(新) | change 4 件套 + delta spec(capability `cep-cxl-nonsymmetric-state-spec`) |
+| ~~`openspec/changes/cpptlm-cep-cxl-nonsymmetric-state-spec/`~~ → `openspec/changes/archive/2026-11-01-cpptlm-cep-cxl-nonsymmetric-state-spec/` | ✅ **已完成归档**(2026-11-01,Entry #127)⇒ 活路径 = `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`(capability `cep-cxl-nonsymmetric-state-spec`;归档件**不入库**,per `.gitignore`) |
 
 ### 第 1 个 change(实现层)
 
@@ -204,7 +204,7 @@ created: 2026-10-30
 
 | 面 | 影响 |
 |---|---|
-| **队列 / KPI** | #10 `Planned` → `Proposed`;KPI 并发 **0/3 → 1/3**(规约层先占 slot,实现层排队) |
+| **队列 / KPI** | #10 `Planned` → `Proposed`;KPI 并发 **0/3 → 1/3 → 0/3**(规约层先占 slot → **已归档释放**;实现层排队,启动时再占 1 slot) |
 | **SharerTracker** | 行为实现 **2 → 3**;`SparseSnoopFilter` 补上行为面 ⇒ `moesi_gpu` 的声明**兑现** |
 | **协议实例** | `implemented` 实例 **3 → 4**;`protocol_version` 新增 `cxl-2.0`(锁表**已有**,无需改锁表) |
 | **冻结面** | 预计触碰 `07 号`(§5.1.1 CXL 行 + §11 映射表)+ `ADR-CEP-04`(第 3 个行为实现)⇒ **两步授权**;**⚠️ `07 号 §5.1.1` 的编辑清单 SHALL 显式含「对齐 `ADR-CEP-11` SU ③⑦ 的措辞」**(实测:该行现写「设备不感知其他设备」与「CXL 3.0 对称」⇒ 前者在 2.0 **平凡成立**、后者按裁决 ⑦ 指 **HDM-DB/CXL.mem** 而非 CXL.cache ⇒ 现为**真源 1 vs 真源 3 措辞冲突**,per oracle 复核 2026-11-01;⚠️ **不**单独立即走冻结面授权 —— 收益不抵成本,随本次实现层编辑一并执行);⚠️ **`ADR-CEP-11` 锁表不改**(实测:`ADR-CEP-11 决策 4` 的路径判定**不触发** ⇒ 改锁表反而多付一次冻结面授权)⇒ 队列 #10 的口径**以 `ADR-CEP-11` 的 Status Update 段登记**(per Entry #122 的授权记录) |

@@ -159,6 +159,7 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-vc-mapping-contract/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-vc-mapping-contract/spec.md)
   "openspec/changes/cpptlm-cep-stub-cache-core/specs/cep-stub-cache-core/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-stub-cache-core/spec.md)
   "openspec/changes/cpptlm-cep-poc-spike/specs/cep-poc-spike-verification/spec.md"  # 同上(该 delta spec 已合并进 openspec/specs/cep-poc-spike-verification/spec.md);现址见 openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella
+  "openspec/changes/cpptlm-cep-cxl-nonsymmetric-state-spec/"  # 队列 #10 第 0 个 change 的**转正时活跃路径**(2026-11-01 已归档 ⇒ 该目录不存在);台账 Entry #123 的历史引述指向该路径(append-only 保留);现址 = openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md(归档件不入库,per .gitignore)
   # —— 通配 / 族名(2026-10-23 Entry #29 引入):不是「可判存在的单一路径」——
   "docs/implementation/*"                           # 历史快照族通配(台账 Entry #29 ② 引述)
   "openspec/changes/**/specs/cep-core-contracts/spec.md"  # 冻结清单 glob(兼容 active/archived 两态)

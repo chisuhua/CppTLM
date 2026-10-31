@@ -226,6 +226,8 @@ int main(int argc, char** argv) {
     std::printf("pending_false=%zu\n", n_pending_false);
     std::printf("coverage=%zu/%zu\n", Spec::kLegalTransitionCoverageNum,
                 Spec::kLegalTransitionCoverageDen);
+    std::printf("coverage_floor=%zu\n", Spec::kCoverageFloor);
+    std::printf("pending_false_floor=%zu\n", Spec::kPendingFalseFloor);
 
     if (fail != 0) {
         std::printf("GEN:FAIL(%d)\n", fail);

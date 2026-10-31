@@ -344,6 +344,31 @@ public:
     static constexpr std::size_t kLegalTransitionCoverageNum = kKnownCellCount + kIllegalCellCount;
     static constexpr std::size_t kLegalTransitionCoverageDen = kTransitionCellCount;
 
+    // ── **单调下界**(AC-9 的「单调不减」条款)───────────────────────────────
+    /// 已确证格(`pending = false`)的**下界** —— ⚠️ **不得下降**。
+    /// ⇒ 「全 68 格皆 `pending`」这类整体降档 SHALL **必红**;而**上调下界**是一次
+    ///    **可见且可审计**的编辑(须台账 entry 授权,per AC-9)。
+    static constexpr std::size_t kPendingFalseFloor = 22;
+    /// 覆盖率(已定立场格数)的**下界** —— 同上,不得下降。
+    static constexpr std::size_t kCoverageFloor = 26;
+
+    /// **覆盖率未回退**判据(运行时可判,判据铁律 ③)。
+    static constexpr bool coverage_is_not_regressed() noexcept {
+        std::size_t pf = 0;
+        std::size_t decided = 0;
+        for (const auto& row : kTransitions) {
+            for (const auto& cell : row) {
+                if (cell.kind == CellKind::Known || cell.kind == CellKind::Illegal) {
+                    ++decided;
+                }
+                if (cell.kind == CellKind::Known && !cell.pending) {
+                    ++pf;
+                }
+            }
+        }
+        return pf >= kPendingFalseFloor && decided >= kCoverageFloor;
+    }
+
     /// **可传入矩阵**的校验(⚠️ 反向 fixture 的运行时可判入口,判据铁律 ③)。
     /// 校验 5 条:① 三态之和 == 总格数 ② `Unknown` 的 `note` 须带 `R-` 编号
     /// ③ `Illegal` 格须有 `ref` ④ 只有 `Known` 可 `pending = false`,且须有 `ref`
