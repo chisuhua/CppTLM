@@ -7925,6 +7925,56 @@ Entry #112 的两条前提里**没有**「#10 何时做」这一项 ⇒ #10 的�
 
 ---
 
+### Entry #126 — 2026-11-01 [implement](队列 #10 Phase 2b 收官:68 格**三态矩阵** + D1/D2 重锚 + `R-2` 升级)
+
+**主题**:Phase 1 的 `pin=strong` 字节已在本地 ⇒ **重锚 2 个待定格**并落 **68 格转换矩阵**(Phase 2b)。
+
+**① D1 / D2 重锚结果(实测抽取,非推断)**
+
+| 格 | 结论 | 依据 |
+|---|---|---|
+| **`G-A`「H2D Req 只含 snoop」** | ✅ **翻 `pending=false`**,但 `basis` **必须从 D3 换成 D1** | D1 p.4 **Fig.3 闭类型** `H2DReqType def = {SnpData, SnpInv}` + p.5 `A host-to-device request (H2DReq) is a snoop` |
+| **`G-B`「`E` + 写事件 → `M`」** | ❌ **不得升 `direct`**,维持 `analogical` + `pending` | ① D1 **合并 E/M**(`StableState def = {M,S,I}` 闭枚举)⇒ `E` 证据量**为零**;② D2 无该表述;③ **决定性**:D1 p.5/p.12 把载体那 3 个写 opcode **全部显式排除** |
+
+⚠️ **`G-A` 的口径必须写准**(防夸大):这是「**模型内可证**」(闭枚举 ⇒ 类型上不可能出现非 snoop),
+**不是**「某来源逐字写了 `only snoops`」(两来源**都没有**该句);且 D1 建模对象是 **CXL 3.1**,**不是** 2.0 正文。
+D2 的「`H2D Request channel is used for ... Snooping`」**只到「承载」不达「仅承载」**(且 D2 同页给 D2H 命令数 15、
+对 H2D **一个数字都没给** ⇒ D2 作者自身**未主张** H2D 枚举完备性)⇒ **D2 不得单独作该格的 direct 依据**。
+
+**② 两个合规发现**
+- ✅ **D1 = CC-BY 4.0**(p.1 页脚原文)⇒ 可作 `pending=false` 依据
+- ❌ **D2 许可 `absent`**(元数据 / p.1 / 页脚**全无声明**;非 arXiv 排版件)⇒ **仅靠 D2 支撑的格维持 `pending=true`**
+  (现为 `CleanEvict` / `CleanEvictNoData` 的 `E` 格)⇒ 这是「双轴规则第二必要条件」的**首次实际生效**
+
+**③ `R-2` 从「存在性未知」**升级**为「已知存在、位置已定」**
+- D1 p.7 §4.5 逐字:规范里**确有这样一张表**(`certain requests are only legal when the device's cache
+  is in a certain state`),位置 = **§3.2.5.15**,且 **§3.2.4.2 开头缺指引**(D1 已向 consortium 提议补注)
+- ⇒ 人类成员条款摘要流程**可定点读该节**;同时 D2 的 `15 commands` vs 本仓可枚举 `14` 的差异并入 R-2
+
+**④ Phase 2b 落地:68 格三态矩阵**
+- `Known` **26** · `Illegal` **0** · `Unknown` **42**;`pending=false` **22** 格(全 D1)⇒ 覆盖率 **26/68**
+- ⚠️ **`Illegal` 恒 0 不是「没查」而是「来源不给」** ⇒ 填任何 `Illegal` 即**杜撰**
+- ⚠️ **`E` 列 D1 证据量为零**(合并态)⇒ `E` 格只接受**态无关**义务或独立 E 证据,**严禁**复制 `M` 规则
+- 反秃头:`kLegalTransitionCoverageNum/Den` + 测试断言与**逐格实际统计**相等(防虚报)
+
+**⑤ 本轮抓到的两处自身缺陷(如实登记)**
+1. **`basis_pending_consistent` 原为双向判据**(`public-direct ⇒ pending=false`)⇒ 与**裁决 A 直接冲突**
+   (裁决 A 明定 `pin=weak` 可 `public-direct` + `pending=true`)⇒ 该判据会把**合法组合判成非法**;
+   已改**单向**(弱强度 kind ⇒ 必须 pending;强强度 kind ⇒ **不受 pending 约束**)。
+   ⇒ 教训:**裁决落地后须回扫所有既有判据**,否则「新裁决 + 旧判据」= 互相打架。
+2. **数据校验一度写成 `STATIC_REQUIRE`** ⇒ 毒化矩阵时表现为**编译失败**而非 ctest 失败
+   ⇒ 撞**判据铁律 ③**;已改 `REQUIRE`(运行时)⇒ 毒化复测 = **ctest 1 failed**(鉴别力实测确认)。
+   ⚠️ 另登记一处操作失误:`git checkout <file>` 曾把**未提交**的矩阵改动还原掉(已按生成器重跑恢复)
+   ⇒ 纪律:**对含未提交改动的文件禁用 `git checkout`,用备份/生成器回滚**。
+
+**⑥ 冻结面**:零改动。门禁:format / docs_sync --strict / doc_ref --strict / freeze / `openspec validate --strict` 全绿;
+全量 `ctest` **125/125**。
+
+**⑦ 关联**: Entry #122(裁决 7 条)· #125(双审 + 裁决 A/B)· 摘要 §8.1(许可列)/ §8.3(重锚结果)/ §6(R-2 升级)·
+`design.md D-γbis` · delta spec CSS-03 ⑥⑦⑧⑨ · proposal AC-9 / AC-10
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

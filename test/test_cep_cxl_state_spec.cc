@@ -107,10 +107,13 @@ TEST_CASE("CEP CXL state spec — basis kind / pending 双向一致", "[cep][cxl
         CxlStateSpec::basis_pending_consistent(BasisKind::PublicAnalogical, false));
     STATIC_REQUIRE(CxlStateSpec::basis_pending_consistent(BasisKind::SelfDerived, true));
     STATIC_REQUIRE_FALSE(CxlStateSpec::basis_pending_consistent(BasisKind::SelfDerived, false));
-    // direct / archforge-anchor:复核通过即 false
+    // direct / archforge-anchor:⚠️ **两轴独立**(2026-11-01 修正,per 裁决 A)
+    //    ⇒ `public-direct` + `pending=true` 是**合法组合**(pin=weak 的证据仍是 direct,
+    //      只是字节不可本地复核)⇒ 原「双向一致」判据已废(会把合法组合判成非法)
     STATIC_REQUIRE(CxlStateSpec::basis_pending_consistent(BasisKind::PublicDirect, false));
-    STATIC_REQUIRE_FALSE(CxlStateSpec::basis_pending_consistent(BasisKind::PublicDirect, true));
+    STATIC_REQUIRE(CxlStateSpec::basis_pending_consistent(BasisKind::PublicDirect, true));
     STATIC_REQUIRE(CxlStateSpec::basis_pending_consistent(BasisKind::ArchforgeAnchor, false));
+    STATIC_REQUIRE(CxlStateSpec::basis_pending_consistent(BasisKind::ArchforgeAnchor, true));
 }
 
 TEST_CASE("CEP CXL state spec — 头注释消歧声明可机器校", "[cep][cxl][state-spec]") {
@@ -170,4 +173,91 @@ TEST_CASE("CEP CXL state spec — 反向 fixture:结构校验对错误集合必�
                                                         CxlStateSpec::kLocalEvents,
                                                         CxlStateSpec::kPermProjection));
     STATIC_REQUIRE(CxlStateSpec::structure_is_valid());
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 转换矩阵(Phase 2b)—— 三态格语义 + 反秃头覆盖率
+// ─────────────────────────────────────────────────────────────────────────────
+
+TEST_CASE("CEP CXL state spec — 转换矩阵 68 格且三态计数自洽", "[cep][cxl][state-spec][matrix]") {
+    STATIC_REQUIRE(CxlStateSpec::kEventCount == 17);
+    STATIC_REQUIRE(CxlStateSpec::kTransitionCellCount == 68);
+
+    // ⚠️ 硬编码常量 SHALL 与**逐格实际统计**相等(防虚报覆盖率,判据 AC-9)
+    STATIC_REQUIRE(CxlStateSpec::kKnownCellCount ==
+                   CxlStateSpec::count_cells(CxlStateSpec::CellKind::Known));
+    STATIC_REQUIRE(CxlStateSpec::kIllegalCellCount ==
+                   CxlStateSpec::count_cells(CxlStateSpec::CellKind::Illegal));
+    STATIC_REQUIRE(CxlStateSpec::kUnknownCellCount ==
+                   CxlStateSpec::count_cells(CxlStateSpec::CellKind::Unknown));
+
+    STATIC_REQUIRE(CxlStateSpec::kKnownCellCount == 26);
+    // ⚠️ `Illegal` 恒 0 = **来源不给**(D1 p.7 证实存在但不说哪些)⇒ 填任何 Illegal 即杜撰
+    STATIC_REQUIRE(CxlStateSpec::kIllegalCellCount == 0);
+    STATIC_REQUIRE(CxlStateSpec::kUnknownCellCount == 42);
+    STATIC_REQUIRE(CxlStateSpec::kLegalTransitionCoverageNum == 26);
+    STATIC_REQUIRE(CxlStateSpec::kLegalTransitionCoverageDen == 68);
+    // ⚠️ **运行时断言**(非 `STATIC_REQUIRE`):矩阵**数据内容**若被毒化,须表现为
+    //    **ctest 失败**而非「编译失败」—— 判据铁律 ③(编译期锁不得只以「编译红」充当 ctest 判据)
+    REQUIRE(CxlStateSpec::transitions_are_valid());
+}
+
+TEST_CASE("CEP CXL state spec — Unknown 显式携带缺失项(R 编号),不得退化为 Illegal",
+          "[cep][cxl][state-spec][matrix][reverse]") {
+    // ⚠️ 关键语义:「我不知道」≠「它非法」—— 消费者不得把 Unknown 读成 Illegal
+    STATIC_REQUIRE(CxlStateSpec::transition(State::E, Event::ItoMWr).kind ==
+                   CxlStateSpec::CellKind::Unknown);
+    STATIC_REQUIRE(CxlStateSpec::transition(State::E, Event::ItoMWr).kind !=
+                   CxlStateSpec::CellKind::Illegal);
+    STATIC_REQUIRE(CxlStateSpec::transition(State::I, Event::SnpInv).kind ==
+                   CxlStateSpec::CellKind::Unknown);
+
+    // 正控:有证据的格 SHALL 是 Known
+    STATIC_REQUIRE(CxlStateSpec::transition(State::M, Event::SnpInv).kind ==
+                   CxlStateSpec::CellKind::Known);
+    STATIC_REQUIRE(CxlStateSpec::transition(State::M, Event::SnpInv).target == State::I);
+    STATIC_REQUIRE(CxlStateSpec::transition(State::S, Event::SnpData).target == State::S);
+    STATIC_REQUIRE(CxlStateSpec::transition(State::I, Event::RdOwn).target == State::M);
+}
+
+TEST_CASE("CEP CXL state spec — 反向 fixture:非法矩阵必因正确原因红",
+          "[cep][cxl][state-spec][matrix][reverse]") {
+    using Cell = CxlStateSpec::Transition;
+    using CK = CxlStateSpec::CellKind;
+
+    constexpr Cell good_k{CK::Known, State::I, BasisKind::PublicDirect, false, "D1 p.4", ""};
+    constexpr Cell good_u{CK::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 缺"};
+
+    // 正要:全合法 ⇒ 绿(否则下面的负向断言没有鉴别力)
+    {
+        constexpr std::array<std::array<Cell, 4>, 1> ok{{{{good_k, good_u, good_k, good_u}}}};
+        REQUIRE(CxlStateSpec::transitions_are_valid_for(ok));
+    }
+    // ① `Unknown` 的 note 不带 `R-` 编号 ⇒ 红(「缺什么」必须可读,不能只是一个布尔)
+    {
+        constexpr Cell bad{CK::Unknown, State::I, BasisKind::SelfDerived, true, "", "不知道"};
+        constexpr std::array<std::array<Cell, 4>, 1> m{{{{bad, good_k, good_k, good_k}}}};
+        REQUIRE_FALSE(CxlStateSpec::transitions_are_valid_for(m));
+    }
+    // ② `Illegal` 无证据(`ref` 空)⇒ 红(断言「非法」也必须举证)
+    {
+        constexpr Cell bad{CK::Illegal, State::I, BasisKind::PublicDirect, false, "", "R-2"};
+        constexpr std::array<std::array<Cell, 4>, 1> m{{{{bad, good_k, good_k, good_k}}}};
+        REQUIRE_FALSE(CxlStateSpec::transitions_are_valid_for(m));
+    }
+    // ③ `Unknown` 被编码成 `Illegal`(二态化)⇒ 红 —— 这正是 mesif 的 `0xFF` 空洞语义之害
+    {
+        constexpr Cell bad{CK::Illegal, State::I, BasisKind::PublicDirect, false, "D1 p.4", "R-2"};
+        constexpr std::array<std::array<Cell, 4>, 1> m{{{{bad, good_k, good_k, good_k}}}};
+        // 该格本身合法(有 ref)⇒ 用「三态之和」不守恒的矩阵触发红更强:换 3 格
+        constexpr std::array<std::array<Cell, 3>, 1> m3{{{{bad, good_k, good_k}}}};
+        REQUIRE_FALSE(CxlStateSpec::transitions_are_valid_for(m3));
+        (void)m;
+    }
+    // ④ `pending = false` 却无 `ref` ⇒ 红(不得声称已裁决而不给依据)
+    {
+        constexpr Cell bad{CK::Known, State::I, BasisKind::PublicDirect, false, "", ""};
+        constexpr std::array<std::array<Cell, 4>, 1> m{{{{bad, good_k, good_k, good_k}}}};
+        REQUIRE_FALSE(CxlStateSpec::transitions_are_valid_for(m));
+    }
 }

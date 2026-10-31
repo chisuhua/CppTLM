@@ -15,7 +15,7 @@
 | 0 治理前置 | ✅ **已完成**(2026-11-01) | 口径裁决签发(Entry #122 + ADR Status Update)· Task 0 公开来源普查(硬门有条件通过)· change 目录 4 件套已建 |
 | 1 钉版补齐 | 🟡 **有条件完成**(2026-11-01) | **7 `pin=strong`**(sha256 / D14 commit SHA)/ **1 `pin=weak`**(D3,Cloudflare 403 无哈希)/ **6 `pin=transcribed`**(live 403 + archive.org 全站不可达)⇒ 摘要 §8.1 · ⚠️ 新增载体规则「只有 `pin=strong` 可 `public-direct` + `pending=false`」 |
 | 2a 规约载体(结构层) | ✅ **已完成**(2026-11-01) | `cxl_state_spec.hh`:4 态 / 事件词表 / 4→4 投影 / 秩 / 3 条结构断言 / `basis` 4 档 / 8 项残余风险;`test_cep_cxl_state_spec.cc` 8 cases / 48 assertions 全绿(含 5 条反向 fixture) |
-| 2b 规约载体(转换表) | ⬜ **待实施(阻塞于 R-2)** | 4 态 × 17 事件转换表 + **逐格 `basis{kind,pending,ref,note}`** + `transition()` —— ⚠️ 逐状态合法性表**公开来源不可得**(R-2)⇒ 缩小口径待裁决 |
+| 2b 规约载体(转换表) | ✅ **已完成**(2026-11-01) | 68 格**三态格语义**:`Known` **26** / `Illegal` **0** / `Unknown` **42**;`pending=false` **22** 格(全 D1);覆盖率 `26/68` + 逐格 `basis`;`transition()` 对 `Unknown` 返回显式态 |
 | 3 判据收口 | ⬜ 待实施 | 契约测试 + 反向 fixture + 核对表生成器 + `--check` |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + 零冻结面 diff + 归档 |
 
@@ -55,21 +55,23 @@
 
 ## Phase 2 — 规约载体(TDD 5-step)
 
-- [ ] 2.1 **先写红**:测试骨架(`test/test_cep_cxl_state_spec.cc`)+ 反向 fixture
+- [x] 2.1 **先写红**:测试骨架(`test/test_cep_cxl_state_spec.cc`)+ 反向 fixture
       (① 加回 `F` 行 ⇒ 必红 ② 毒化 `H2DReqOp` 集合 ⇒ 必红 ③ 强度升格 ⇒ 必红 ④ 删头注释消歧 ⇒ 必红)
-- [ ] 2.2 `include/tlm/cep/cxl_state_spec.hh` 骨架:`kStates`(4 态)/ `kEvents`(枚举名)/ `kPermProjection`(4 行)
-- [ ] 2.3 **转换表(三态格语义,per `design.md D-γbis`)**:每格 ∈ {`Known(target,basis)`,
+- [x] 2.2 `include/tlm/cep/cxl_state_spec.hh` 骨架:`kStates`(4 态)/ `kEvents`(枚举名)/ `kPermProjection`(4 行)
+- [x] 2.3 **转换表(三态格语义,per `design.md D-γbis`)**:每格 ∈ {`Known(target,basis)`,
       `Illegal(basis)`, `Unknown(pending → R-2)`};⚠️ `Unknown` SHALL **显式区分**于 `Illegal`,
       **不复用**「未定义空洞值」;逐格 `basis{kind, pending, ref, note}`,`ref` **只指向锚点摘要条目号**,
       `pending` 格 `note` **带 R-1~R-8 编号**
-- [ ] 2.3b **覆盖率**:`kLegalTransitionCoverageNum` / `Den`(已确证格 / 68)+ 测试断言与逐格统计**相等**
+      ⇒ **实测结果**:`Known` 26 / `Illegal` 0 / `Unknown` 42 —— ⚠️ `Illegal` 恒 0 是**来源不给**
+      (D1 p.7 证实规范存在该类约束但不说哪些;逐状态合法性表在 §3.2.5.15,禁读)⇒ 填任何 `Illegal` 即杜撰
+- [x] 2.3b **覆盖率**:`kLegalTransitionCoverageNum` / `Den`(已确证格 / 68)+ 测试断言与逐格统计**相等**
        ⇒ 台账每次推进复核**单调不减**(回退必红 + 须授权)
-- [ ] 2.4 **编译期锁**:① 态数恰 4 ② 投影恰 4 行 ③ `F` 行不存在 ④ `H2DReqOp ⊆ {SnpInv,SnpData,SnpCurr}`
+- [x] 2.4 **编译期锁**:① 态数恰 4 ② 投影恰 4 行 ③ `F` 行不存在 ④ `H2DReqOp ⊆ {SnpInv,SnpData,SnpCurr}`
       ⑤ `D2HReqOp ∩ H2DReqOp = ∅` ⑥ 设备侧无 snoop 发起型事件 ⑦ `kind`/`pending` 一致
       ⑧ `public-analogical` / `self-derived` ⇒ `pending = true` ⑨ 头注释含「≠ dGPU SoC 实现路径」
       ⑩ **两轴不混读**:`pin=transcribed` 的格 ⇒ 降 `public-analogical` + `pending=true`
-- [ ] 2.5 **偏离清单** + **8 项残余风险登记**(与摘要 §6 逐项一致)
-- [ ] 2.6 跑绿 + **零冻结面 diff** 复核(`git diff --stat` 只含本 change 载体 + 测试 + 文档)
+- [x] 2.5 **偏离清单** + **8 项残余风险登记**(与摘要 §6 逐项一致)
+- [x] 2.6 跑绿 + **零冻结面 diff** 复核(`git diff --stat` 只含本 change 载体 + 测试 + 文档)
 
 ## Phase 3 — 判据收口
 

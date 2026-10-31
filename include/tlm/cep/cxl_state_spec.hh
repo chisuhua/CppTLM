@@ -112,6 +112,9 @@ public:
     static constexpr std::size_t kPermCount = 4;    ///< 4 值锁(不扩)
     static constexpr std::size_t kRemoteEventCount = 3; ///< H2D snoop 操作码数
     static constexpr std::size_t kLocalEventCount = 14; ///< D2H 侧设备发起的事件数
+    /// 事件总数 = 14 local + 3 remote ⇒ 转换矩阵 = `kEventCount × kStateCount` = **68 格**
+    static constexpr std::size_t kEventCount = kLocalEventCount + kRemoteEventCount;
+    static constexpr std::size_t kTransitionCellCount = kEventCount * kStateCount;
 
     /// 全部 **remote**(H2D snoop)事件 —— **仅**这三个(口径 ①)。
     static constexpr std::array<Event, kRemoteEventCount> kRemoteEvents{
@@ -169,6 +172,220 @@ public:
         return !is_remote_event(e);
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    //  转换矩阵(Phase 2b)—— **三态格语义**,4 态 × 17 事件 = 68 格
+    // ══════════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ **二态(合法/未知)不采用**(per `design.md D-γbis`):若用「未定义空洞值」表达「未知」,
+    //    消费者会把**未知**读成**非法** ⇒ 这**本身是一处未实测断言**(「我断言此转换非法」≠「我不知道」)
+    //    ⇒ ⇒ 每格 SHALL ∈ {`Known`, `Illegal`, `Unknown`},三者**语义不同**。
+    //
+    // ⚠️ **`Illegal` 当前恒 0 格** —— 不是「没查」,是**来源不给**:
+    //    D1 p.7 证实规范**存在**这类约束(`certain requests are only legal when the device's cache
+    //    is in a certain state`)但**不给具体是哪些**;逐状态合法性表在规范 §3.2.5.15(R-2,禁读)
+    //    ⇒ **填任何 `Illegal` 都是杜撰** ⇒ 一律留 `Unknown` + `R-2` 注记。
+    //
+    // ⚠️ **`E` 列的 D1 证据量为零**(D1 把 E 并入 M:`StableState def = {M,S,I}` 闭枚举 + 瞬时态无 `E` 前缀)
+    //    ⇒ `E` 格只接受**态无关**义务(如 `SnpInv ⇒ 降 I`)或**独立 E 证据**;
+    //    **严禁**把 D1 的 `M` 规则复制成 `E` 规则。
+    //
+    // ⚠️ **D2 无许可声明**(`pin=strong` 但 license `absent`)⇒ 仅靠 D2 支撑的格维持 `pending = true`
+    //    (现为 `CleanEvict` / `CleanEvictNoData` 的 `E` 格)。
+    //
+    // ⚠️ 初始化器一律用**聚合字面量**而非辅助函数调用 —— 类内 `constexpr` 成员函数在类
+    //    **未完成**时不可作常量求值(GCC:`called in a constant expression before its
+    //    definition is complete`)⇒ 这不是风格选择,是语言限制。
+
+    /// 格的**三态语义**(⚠️ 不是二态)。
+    enum class CellKind : std::uint8_t {
+        Known = 0,    ///< 已知**目标态**(强度由 `basis` 承载,弱证据可 `pending = true`)
+        Illegal = 1,  ///< 已知**不合法**(须有证据 —— 当前恒 0 格)
+        Unknown = 2,  ///< **不知道**(不是非法)⇒ 消费者 SHALL 走降级路径,SHALL NOT 当作 `Illegal`
+    };
+
+    /// 单格。
+    struct Transition {
+        CellKind kind;
+        State target;        ///< **仅 `kind == Known` 时有意义**
+        BasisKind basis;
+        bool pending;
+        const char* ref;     ///< 锚点摘要条目号(如 `D1 p.5 Fig.4`)—— SHALL 不指向规范原文
+        const char* note;    ///< 缺失项(`R-1`~`R-8` 编号)或口径说明
+    };
+
+    /// **行序 SHALL 与 `Event` 枚举值一致**(index = 枚举值)—— 下方 `static_assert` 锁。
+    ///
+    /// 强度口径(实测 2026-11-01):`Known` **26** 格 · `Illegal` **0** 格 · `Unknown` **42** 格;
+    /// 其中 `pending = false` 的 **22** 格,**全部为 D1**(CC-BY 4.0);余 4 格 `pending = true`:
+    /// `RdOwn` / `RdOwnNoData` 的 `S` 列(`self-derived` 结构性推断)·
+    /// `CleanEvict` / `CleanEvictNoData` 的 `E` 列(仅 D2 分类式表述,且 **D2 许可 absent**)。
+    static constexpr std::array<std::array<Transition, kStateCount>, kEventCount> kTransitions{{
+        // 0 RdShared
+        {{Transition{CellKind::Known, State::S, BasisKind::PublicDirect, false, "D1 p.5 Fig.4 InvalidLoad1", "I + Load ⇒ 发 RdShared;态 := ISAD ⇒ 完成后 S"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: S 态读命中应静默无消息(可能根本没有规则 ⇒ 不可读作 Illegal)"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上;D1 合并 E/M ⇒ E 无独立证据"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"}}},
+        // 1 RdCurr
+        {{Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.4", "逐字:does not affect ownership (nor coherence)"},
+          Transition{CellKind::Known, State::S, BasisKind::PublicDirect, false, "D1 p.4", "不改态"},
+          Transition{CellKind::Known, State::E, BasisKind::PublicDirect, false, "D1 p.4", "不改态"},
+          Transition{CellKind::Known, State::M, BasisKind::PublicDirect, false, "D1 p.4", "不改态"}}},
+        // 2 RdOwn
+        {{Transition{CellKind::Known, State::M, BasisKind::PublicDirect, false, "D1 p.4 Fig.4 InvalidStore1", "I + Store ⇒ 发 RdOwn;IMAD 释义给 I→M 的 A/D 等待"},
+          Transition{CellKind::Known, State::M, BasisKind::SelfDerived, true, "D1 p.4 瞬时态命名", "结构性推断:SMAD/SMD/SMA + IMAD 同构 ⇒ 目标 M;⚠️ 无逐字规则"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: E 已含写权限(D1 p.3 exclusive (write-access and clean))⇒ 语义冗余,但无来源断言合法性"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 无来源"}}},
+        // 3 RdAny
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: D1 只说功能被 RdOwn+RdShared 覆盖,**不指明取哪个** ⇒ 不得臆断目标态"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"}}},
+        // 4 RdOwnNoData
+        {{Transition{CellKind::Known, State::M, BasisKind::PublicDirect, false, "D1 p.4", "定义式等价于 RdOwn ⇒ 继承其 I 格"},
+          Transition{CellKind::Known, State::M, BasisKind::SelfDerived, true, "D1 p.4", "继承 RdOwn 的 S 格(结构性推断)"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 继承 RdOwn 的 E 格"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 继承 RdOwn 的 M 格"}}},
+        // 5 CLFlush
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: D1 p.5/p.12 显式排除(**证明相关性判断**,非状态语义断言)"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"}}},
+        // 6 CacheFlushed
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 无来源"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 无来源"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 无来源"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 无来源"}}},
+        // 7 ItoMWr
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: D1 显式排除;⚠️ 该排除不得推出「不改态」"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上;⚠️ D1 合并 E/M ⇒ 严禁复制 M 规则"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"}}},
+        // 8 WrCur
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: D1 显式排除;⚠️ 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"}}},
+        // 9 WOWrInv
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: D1 显式排除;⚠️ 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"}}},
+        // 10 WrInv
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: D1 显式排除;⚠️ 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同上"}}},
+        // 11 DirtyEvict
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: I 态无脏数据可逐出"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: S 态无脏数据"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: E 无脏数据(D1 的 M+DirtyEvict 路径依赖 dirty payload ⇒ 不可移植)"},
+          Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.9 Table 2 ModifiedEvict1 / MIAGO_WritePull1", "M + Evict ⇒ DirtyEvict;收 GO_WritePull 后回 Data 并转 I"}}},
+        // 12 CleanEvict
+        {{Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.8 §5.1", "逐字:Subsequent Evicts have no effect ... already in invalid"},
+          Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.9 Table 1 SharedEvict1 / SIA_GO_WritePullDrop1", "S + Evict ⇒ CleanEvict ⇒ SIA ⇒ 收 GO_WritePullDrop 转 I"},
+          Transition{CellKind::Known, State::I, BasisKind::PublicDirect, true, "D2 p.10", "D2 分类式表述 clean Data (E or S state) 给合法性;⚠️ 目标态为自明语义推断;⚠️ **D2 许可 absent** ⇒ pending"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: M 态走 dirty 变体;无来源禁止 CleanEvict"}}},
+        // 13 CleanEvictNoData
+        {{Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.4", "定义式:同 CleanEvict 但无数据 ⇒ 继承其 I 格"},
+          Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.4", "继承 CleanEvict 的 S 格"},
+          Transition{CellKind::Known, State::I, BasisKind::PublicDirect, true, "D2 p.10", "继承 CleanEvict 的 E 格(⚠️ D2 许可 absent ⇒ pending)"},
+          Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 继承 CleanEvict 的 M 格"}}},
+        // 14 SnpInv
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: D1 显式不建模 I 态收 snoop(RspIHitI is not used)⇒ **未知,非非法**"},
+          Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.5 Fig.4 SharedSnpInv1", "回 RspIHitSE(S 干净 ⇒ 不带数据)"},
+          Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.5 通用义务 + RspIHitSE 定义含 E", "E 干净 ⇒ 回 RspIHitSE 且不带数据"},
+          Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.5", "逐字:from M to I and is also forwarding its dirty data(RspIFwdM)"}}},
+        // 15 SnpData
+        {{Transition{CellKind::Unknown, State::I, BasisKind::SelfDerived, true, "", "R-2: 同 SnpInv 的 I 格(D1 显式不建模)"},
+          Transition{CellKind::Known, State::S, BasisKind::PublicDirect, false, "D1 p.5", "值域 {S,I};干净行无需失效 ⇒ 取 S(⚠️ S-vs-I 选择为推断,降级本身 direct)"},
+          Transition{CellKind::Known, State::S, BasisKind::PublicDirect, false, "D1 p.5", "同上;E 干净 ⇒ 不回数据"},
+          Transition{CellKind::Known, State::S, BasisKind::PublicDirect, false, "D1 p.5", "逐字:from M to S and is also forwarding its dirty data(RspSFwdM)"}}},
+        // 16 SnpCurr
+        {{Transition{CellKind::Known, State::I, BasisKind::PublicDirect, false, "D1 p.5", "不改态"},
+          Transition{CellKind::Known, State::S, BasisKind::PublicDirect, false, "D1 p.5", "不改态"},
+          Transition{CellKind::Known, State::E, BasisKind::PublicDirect, false, "D1 p.5", "不改态"},
+          Transition{CellKind::Known, State::M, BasisKind::PublicDirect, false, "D1 p.5", "不改态;脏则回数据"}}},
+    }};
+
+    /// 行序自检:矩阵行序 SHALL == `Event` 枚举值。
+    static_assert(static_cast<std::uint8_t>(Event::RdShared) == 0, "矩阵第 0 行 SHALL 是 RdShared");
+    static_assert(static_cast<std::uint8_t>(Event::SnpInv) == 14, "矩阵第 14 行 SHALL 是 SnpInv");
+    static_assert(static_cast<std::uint8_t>(Event::SnpCurr) + 1 == kEventCount,
+                  "矩阵行数 SHALL == 事件数");
+
+    /// 取格(⚠️ 调用方 SHALL 先判 `kind`;`Unknown` 的 `target` **无意义**)。
+    static constexpr Transition transition(State s, Event e) noexcept {
+        return kTransitions[static_cast<std::uint8_t>(e)][static_cast<std::uint8_t>(s)];
+    }
+
+    /// 逐格统计 —— 供测试**交叉核对**下方硬编码常量 ⇒ 防「虚报覆盖率」(判据 AC-9)。
+    static constexpr std::size_t count_cells(CellKind k) noexcept {
+        std::size_t n = 0;
+        for (const auto& row : kTransitions) {
+            for (const auto& cell : row) {
+                if (cell.kind == k) {
+                    ++n;
+                }
+            }
+        }
+        return n;
+    }
+
+    static constexpr std::size_t kKnownCellCount = 26;
+    static constexpr std::size_t kIllegalCellCount = 0;
+    static constexpr std::size_t kUnknownCellCount = 42;
+
+    /// 统计自洽(三者相加 == 68)—— 防算术笔误;真值由测试用 `count_cells()` 交叉核对。
+    static_assert(kKnownCellCount + kIllegalCellCount + kUnknownCellCount == kTransitionCellCount,
+                  "三态格数之和 SHALL == 总格数");
+
+    /// **反秃头覆盖率**(判据 AC-9):已定立场的格数 / 总格数。
+    /// ⚠️ 「已定立场」= `Known` **或** `Illegal`;`Unknown` **不计入**(「不知道」不是立场)。
+    static constexpr std::size_t kLegalTransitionCoverageNum = kKnownCellCount + kIllegalCellCount;
+    static constexpr std::size_t kLegalTransitionCoverageDen = kTransitionCellCount;
+
+    /// **可传入矩阵**的校验(⚠️ 反向 fixture 的运行时可判入口,判据铁律 ③)。
+    /// 校验 5 条:① 三态之和 == 总格数 ② `Unknown` 的 `note` 须带 `R-` 编号
+    /// ③ `Illegal` 格须有 `ref` ④ 只有 `Known` 可 `pending = false`,且须有 `ref`
+    /// ⑤ `basis_pending_consistent` 逐格成立。
+    template <std::size_t NE, std::size_t NS>
+    static constexpr bool transitions_are_valid_for(
+        const std::array<std::array<Transition, NS>, NE>& m) noexcept {
+        std::size_t n_known = 0;
+        std::size_t n_illegal = 0;
+        std::size_t n_unknown = 0;
+        for (const auto& row : m) {
+            for (const auto& cell : row) {
+                switch (cell.kind) {
+                    case CellKind::Known: ++n_known; break;
+                    case CellKind::Illegal: ++n_illegal; break;
+                    case CellKind::Unknown: ++n_unknown; break;
+                }
+                if (cell.kind == CellKind::Unknown) {
+                    if (!contains(cell.note, "R-")) {
+                        return false;
+                    }
+                    continue;
+                }
+                if (cell.kind == CellKind::Illegal && !contains(cell.ref, "D")) {
+                    return false;
+                }
+                if (!cell.pending && (cell.kind != CellKind::Known || !contains(cell.ref, "D"))) {
+                    return false;
+                }
+                if (!basis_pending_consistent(cell.basis, cell.pending)) {
+                    return false;
+                }
+            }
+        }
+        return n_known + n_illegal + n_unknown == NE * NS;
+    }
+
+    /// 本矩阵自检(= 上式的绑定调用)。
+    static constexpr bool transitions_are_valid() noexcept {
+        return transitions_are_valid_for(kTransitions);
+    }
+
     // ── 命名函数(供错误消息 / 核对表生成器用)────────────────────────────────
     static constexpr const char* state_name(State s) noexcept {
         switch (s) {
@@ -213,14 +430,21 @@ public:
         return "?";
     }
 
-    /// `basis.kind` / `pending` 的**双向一致**判据(口径 ④)。
-    /// ⚠️ `public-analogical` 与 `self-derived` ⇒ **必须** `pending = true`
-    ///    (强度天花板 ⇒ 不得当已裁决)。
+    /// `basis.kind` / `pending` 的一致性判据 —— ⚠️ **单向**(2026-11-01 修正,per 裁决 A 两轴)。
+    ///
+    /// 原版要求**双向**(`public-direct` ⇒ `pending = false`)。该要求与**裁决 A** 冲突:
+    /// 裁决 A 明定 `pin=weak` 的格**可保留** `public-direct` 但 `pending = true`
+    /// (证据强度轴 ≠ 钉版强度轴)⇒ 双向判据会把**合法组合判成非法**。
+    ///
+    /// 现规则(单向):
+    /// · `public-analogical` / `self-derived` ⇒ **必须** `pending = true`(强度天花板,不得当已裁决);
+    /// · `public-direct` / `archforge-anchor` ⇒ `pending` **不受 kind 约束**
+    ///   (由 `pin` 等级 + 许可确认**独立**决定,per 锚点摘要 §8.2)。
     static constexpr bool basis_pending_consistent(BasisKind k, bool pending) noexcept {
         if (k == BasisKind::PublicAnalogical || k == BasisKind::SelfDerived) {
             return pending;
         }
-        return !pending;  // PublicDirect / ArchforgeAnchor:复核通过即 false
+        return true;  // PublicDirect / ArchforgeAnchor:两轴独立
     }
 
     // ── 结构自检(编译期锁)──────────────────────────────────────────────────

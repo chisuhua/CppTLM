@@ -133,7 +133,7 @@ D2HReqOp  ∩ H2DReqOp = ∅
 | # | 项 | 处置 |
 |---|---|---|
 | R-1 | opcode **编码** / 字段宽度 / credit 规则 / channel 级排序 | 载体用**枚举名** + `pending` |
-| R-2 | **request 权威枚举**与**逐状态合法性表**(公开 deck 间已有 `MemWr`↔`WrCur` 差异)。⚠️ 本仓公开来源**可枚举** `D2H Req` = **14** 条(per §2)· `H2D Req` = **3** 条 snoop ⇒ **不保证**与规范权威枚举**等量**(「搜不到」≠「不存在」,同 R-7 口径) | 登记 + 人类摘要 |
+| R-2 | **request 权威枚举**与**逐状态合法性表**。⚠️ **2026-11-01 升级(per D1 p.7 §4.5)**:该表**已确认存在**,位于规范 **§3.2.5.15**,且 **§3.2.4.2 开头缺指引**(D1 作者已向 CXL consortium 提议补注)⇒ 人类成员条款摘要流程**可定点读该节**。⚠️ 数量差异仍在:D2 p.10 逐字给 `D2H Request ... 15 commands`,本仓公开来源可枚举 **14** 条(`H2D Req` = 3 条 snoop)⇒ **不保证等量**(「搜不到」≠「不存在」,同 R-7 口径);且 D1 p.7 已**证实 `Illegal` 格存在**(`certain requests are only legal when the device's cache is in a certain state`),只是**不给具体是哪些** | 登记 + 人类摘要(**定点 §3.2.5.15**) |
 | R-3 | **transient state** 的官方命名 / 编码(D1 明说「not officially part of the CXL.cache specification」) | 载体**不建模** transient ⇒ 只登记稳定态 |
 | R-4 | **错误语义**(`GO-Err` / poison / viral / timeout isolation) | 登记;实现层**不预支** |
 | R-5 | **SF completeness** 的**规范性判定**(允许多大 over-snoop) | 只标 `analogical`(CHI / CCI 类比) |
@@ -190,6 +190,17 @@ D2HReqOp  ∩ H2DReqOp = ∅
 | 类别 | 数量 | 明细 |
 |---|---|---|
 | ✅ **`pin=strong`**(字节已取 + sha256) | **7** | D1 · D2 · D4 · D10 · D14(commit SHA)· D17 · D18 |
+
+**⚠️ 许可列(2026-11-01 逐件实测,per `design.md D-γ` 双轴规则的第二必要条件)**:
+
+| 来源 | `pin` | 许可 | 结论 |
+|---|---|---|---|
+| **D1**(arXiv `2410.15908v2`) | strong | ✅ **CC-BY 4.0**(p.1 页脚原文:`This work is licensed under a Creative Commons Attribution 4.0 International License.`) | **可 `pending=false`** |
+| **D2**(arXiv `2306.11227v3`) | strong | ❌ **`absent`** —— PDF 内**查无任何许可声明**(元数据 / p.1 / 页脚全无;非 arXiv 排版件) | ⚠️ **仅靠 D2 支撑的格 SHALL 维持 `pending=true`**,许可人工确认前**不得** `false` |
+| D4 | strong | ⚠️ © CXL Consortium,「引用需节制」 | 引用范围须人工把关 |
+| D10 | strong | ⚠️ Arm 文档(未逐字核许可) | 保守处理 |
+| D14 | strong | ❌ **`license = null`**(仓库未声明) | 人工确认前**不得** `false` |
+| D17 / D18 | strong | ⚠️ arXiv 默认许可(未逐字核) | 保守处理 |
 | ❌ **`pin=weak`**(仅 URL + 抓取日;**字节不可本地复核**) | **1**(+ D5/D11/D12/D13 未取字节) | **D3(SNIA deck)** —— Cloudflare JS 挑战 403,4 个路径变体全 403 ⇒ **无哈希** |
 | ❌ **`pin=transcribed`**(原文**本环境取不到**,仅二手转述) | **6** | D6 · D7 · D8 · D9 · D15 · D16 —— live 页 403(Akamai / Cloudflare)且 **archive.org 全站不可达** |
 
@@ -226,7 +237,29 @@ D2HReqOp  ∩ H2DReqOp = ∅
 ⇒ ⚠️ **禁止**把「未取到字节」×「未确认许可」的来源写成 `public-direct` + `pending = false`
 ⇒ **假钉版的危害 > 诚实的缺口**(本 change delta spec CSS-06)。
 
-### 8.3 Phase 2b 前置任务(因上述两轴规则新增)
+### 8.3 Phase 2b 前置任务(因上述两轴规则新增)—— **已执行 2026-11-01**
+
+> **执行结果(per D1 / D2 本地字节抽取)**:
+> - **`G-A`(H2D Req 只含 snoop)= ✅ 可翻 `pending=false`** —— 但 `basis` **必须从 D3 换成 D1**:
+>   D1 p.4 **Fig.3 闭类型** `H2DReqType def = {SnpData, SnpInv}` + p.5 定义式
+>   `A host-to-device request (H2DReq) is a snoop`。
+>   ⚠️ **口径须写准**:这是「**模型内可证**」(闭枚举 ⇒ 类型上不可能出现非 snoop),
+>   **不是**「某来源逐字写了 `only snoops`」(两来源**都没有**该逐字句);
+>   且 D1 建模对象是 **CXL 3.1**(其 ref [9]),**不是** 2.0 正文;D1 略去 `SnpCur`(属 snoop,不破坏该性质)。
+>   D2 p.10「`The H2D Request channel is used for the host to change coherence state ... 'Snooping'`」
+>   **只到「承载」不达「仅承载」**(句式 `is used for`;且 D2 同页给 D2H 命令数 15、对 H2D **一个数字都没给**
+>   ⇒ D2 作者自己**未主张** H2D 枚举完备性)⇒ **D2 不得单独作该格的 `public-direct` 依据**。
+> - **`G-B`(`E` + 写事件 → `M`)= ❌ 不得升 `direct`**,且**维持 `analogical` + `pending`** —— 三条独立理由:
+>   ① D1 **合并 E/M**(`StableState def = {M,S,I}` 闭枚举 + 12 个瞬时态**无 `E` 前缀**)⇒ `E` 证据量**为零**;
+>   ② D2 **无**该表述(反而只给 `S → E` 且写成**需发请求**);
+>   ③ **决定性**:D1 p.5/p.12 把载体那 3 个写 opcode(`WrInv(F)`/`WOWrInv`/`ItoMWr`)**全部显式排除**
+>   (`... are not interesting for coherence`)⇒ D1 对这 3 个 opcode **一条规则都没有**。
+>   ⇒ **诚实解法 = 拆格**(而非升档):「`E→M` 是 **silent upgrade**」单独成断言(可 `pending=false`,
+>   D1 p.11 §8 逐字 `silent upgrades from the E to M state` + p.3 `exclusive (write-access and clean)`);
+>   「触发事件 ∈ 那 3 个 opcode 且目标恒为 `M`」**无来源** ⇒ 维持 `pending=true`。
+> - **附(可执行收获)**:`R-2` 从「不知道有没有这张表」升级为「**已知存在,位于 §3.2.5.15**」⇒ 见 §6。
+
+
 
 1. **D1 / D2 重锚「H2D Req 只含 snoop」** —— 二者均为 `pin=strong` 且**字节已在本地**
    (`/tmp/opencode/cxlpin/A.pdf` / `B.pdf`,sha256 已复核)⇒ 若找到等价表述,该格可由
