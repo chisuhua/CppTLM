@@ -191,9 +191,9 @@ W=2C ⇒ 每组 4 块、LRU 保 2 MRU ⇒ h=0.5;W=8C ⇒ 16 块/组 ⇒ h=0.125�
 
 ## 8. 判据自测(反控)
 
-`scripts/cep/parity/selftest_parity_compare.py`:**37 项全绿**(原 23 项 + 新增 14 项)。
+`scripts/cep/parity/selftest_parity_compare.py`:**42 项全绿**(原 23 项 + 新增 19 项)。
 
-新增 5 条(per critic 指定):
+新增 8 条(per critic 两轮指定):
 
 | # | 反控 | 断言 |
 |---|---|---|
@@ -202,8 +202,32 @@ W=2C ⇒ 每组 4 块、LRU 保 2 MRU ⇒ h=0.5;W=8C ⇒ 16 块/组 ⇒ h=0.125�
 | ⑫ | `breaking` 流**意外通过** P-3 | ⇒ FAIL(正控未激发)且**不得**判为 A-1 |
 | ⑬ | `conforming` 流 P-3 挂 | ⇒ FAIL 且**不得**被计入 `breaking` |
 | ⑭ | A-1 形态下 conforming 全过 + breaking 正控激发 | ⇒ **PASS**(D-6 的正解) |
+| ⑮ | random-driver 路径 `nominal ≠ actual` | ⇒ **不得**被条数断言误杀(断言已按 driver 分档) |
+| ⑯ | **未知 mode** | ⇒ **必须拒判**(`SystemExit`,不得静默放行) |
+| ⑰ | `breaking` 流违反**声明的期望误差下界** | ⇒ **必须判红**且**不得**判为 A-1(守住「冻结前校验」) |
 
 ⇒ ⚠️ 反控 ⑫ 在实现中**真的抓到一个 bug**(A-2 兜底掩盖正控失效)⇒ 已修。
+⇒ ⚠️ 反控 ⑮ / ⑯ / ⑰ 是**第 2 轮 critic 的 BLOCKER-1 / BLOCKER-2 的反向 fixture**
+⇒ 它们把「断言按 driver 分档」与「floor 校验必须在冻结点之前」两条**结构性约束**
+固化成**可执行**的回归锁(而非仅写在注释里)。
+
+---
+
+## 8.1 第 2 轮 critic 复审(REJECT)的闭合
+
+⚠️ **评审预算 2 / 2 已用尽**(用户批准)⇒ 本轮闭合**未再送第 3 轮复审**
+⇒ 下表是**如实登记的闭合证据**,**不代表**已被独立复审确认。
+
+| # | 上轮 finding | 闭合方式 | 闭合证据 |
+|---|---|---|---|
+| **BLOCKER-1** | D-5 修复**未按 driver 分档** ⇒ `run_parity_main.sh` 恒红 | **两处断言同时分档**:① rec 侧(`main_tier_stream_rec.py`)② **analyzer 侧**(`parity_main_tier.py` 的前置断言 —— 旧 rec 写错键名 ⇒ `nominal_accesses` 恒 0 ⇒ 该断言此前**哑火**;D-5 修复使其首次变为活代码 ⇒ 炸点从 rec 移到 analyzer) | ✅ `run_parity_main.sh` **rc=0 走完全程**,并**独立复现 Entry #118 的全部数字**(W16384 0.9999 / W32768 0.5003 / W131072 0.1255) |
+| **BLOCKER-2** | `expected_error_floor_pp` 校验在 `p2a_a1_ok` **冻结之后** ⇒ **半死断言**(同一 verdict 同时宣称 PASS 与判红) | 校验**移到冻结点之前**;并补**声明的生产端**(生成器 `--expected-error-floor` CLI) | ✅ 反控 ⑰ |
+| SHOULD_FIX 1 | `limitation` 基础子句与「已观测到规则失效」并存自相矛盾 | 基础子句**按 `breaking` 是否为空分支** | ✅ 主对拍输出已呈现新措辞 |
+| SHOULD_FIX 2 | `conforming` 为空 ⇒ 误标「H7 不成立」 | 新增独立结论文案「不可判(判据不适用)」 | ✅ 代码分支 |
+| SHOULD_FIX 3 | `fixed_ratio` 足迹规格写 2W,实际 1MiB+W | §4.4 **改正为 1MiB + W** | ✅ 规格已改 |
+| SHOULD_FIX 4 | 旧 entry #115 / #119 的被推翻段无 dated 注记 | 两 entry 各加 **dated 注记**指向 #120(原文不改写) | ✅ 台账 2 处 |
+| NIT 1 | `passed` 公式漏 A-2 合取项 | §4.4 公式补全 A-1 / A-2 两支 | ✅ 规格已改 |
+| NIT 2 | `passed` 里 `breaking_ok` 冗余合取 | 删除 | ✅ 代码已改 |
 
 ---
 

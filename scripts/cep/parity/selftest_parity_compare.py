@@ -150,6 +150,10 @@ def main():
         {"name": "S1", "hit_rate": 0.5, "avg_latency_ns": 26.0,
          "hits": 50000, "misses": 50000, "accesses": 100000,
          "nominal_accesses": 100000,
+         # ⚠️ **mode 必须声明**(per `14 号` §4.4「条数契约按 driver 分档」)
+         #    ⇒ 未知 mode ⇒ 分析器**拒判**(不得静默放行)
+         "mode": "same_source_trace",
+         "profile": "uniform",
          "working_set_bytes": 32768, "cache_bytes": 16384},
     ]
     v = pmt.analyse(streams)
@@ -165,11 +169,13 @@ def main():
     #    ⇒ 合取 ⇒ A-1 一旦满足,`passed` 恒 False ⇒ 这些场景**无法被正确判定**。
     import parity_main_tier as pmt
 
-    def _stream(name, profile, hit_rate, lat, ws, cache=16384):
+    def _stream(name, profile, hit_rate, lat, ws, cache=16384,
+                mode="same_source_trace", nominal=100000, actual=100000):
         return {"name": name, "profile": profile, "hit_rate": hit_rate,
                 "avg_latency_ns": lat, "hits": int(hit_rate * 100000),
-                "misses": int((1 - hit_rate) * 100000), "accesses": 100000,
-                "nominal_accesses": 100000,
+                "misses": int((1 - hit_rate) * 100000), "accesses": actual,
+                "nominal_accesses": nominal,
+                "mode": mode,
                 "working_set_bytes": ws, "cache_bytes": cache}
 
     # `hot_cold` 的有效足迹 = hot + cold = 1052672 ⇒ R-B 的 h_0 = 16384/1052672
@@ -213,6 +219,40 @@ def main():
     check(v["conforming_ok"], "conforming 全过 ⇒ conforming_ok")
     check(v["passed"], "⚠️ **D-6 的正解**:A-1 形态下 verdict 必须能 PASS"
                        "(旧实现恒 False)")
+
+    print("── 反控 ⑮:random-driver 路径 nominal≠actual ⇒ **不得**炸 ──")
+    # ⚠️ 该路径的条数由 gem5 `duration` 决定 ⇒ 实测可达名义的 17~20 倍
+    #    ⇒ **超发是设计行为,不是截断** ⇒ 分析器的前置断言**必须按 driver 分档**
+    #    (per `14 号` §4.4「条数契约按 driver 分档」)。
+    _rnd = dict(_CONF_OK)
+    _rnd.update({"name": "R1", "mode": "parameter_same_source",
+                 "nominal_accesses": 100000, "accesses": 1999982})
+    try:
+        v = pmt.analyse([_rnd])
+        check(True, "random-driver 路径 nominal≠actual ⇒ 不炸(断言已分档)")
+    except SystemExit as e:
+        check(False, f"random-driver 路径被条数断言误杀:{e}")
+
+    print("── 反控 ⑯:unknown mode ⇒ 必须拒判(不得静默放行)──")
+    _unk = dict(_CONF_OK)
+    _unk.update({"name": "U1", "mode": "whatever"})
+    try:
+        pmt.analyse([_unk])
+        check(False, "unknown mode ⇒ 必须 SystemExit")
+    except SystemExit:
+        check(True, "unknown mode ⇒ SystemExit(拒判)")
+
+    print("── 反控 ⑰:breaking 流违反**声明的期望误差下界** ⇒ 必须判红 ──")
+    # ⚠️ BLOCKER-2:floor 校验若在 `p2a_a1_ok` 冻结**之后** ⇒ 只被记录、不影响判定
+    #    ⇒ 同一份 verdict 同时宣称 PASS 与判红 ⇒ 本反控守住「冻结前校验」。
+    _b_floor = _stream("B1", "hot_cold", 0.7389, 16.226, _BREAK_WS)
+    _b_floor["expected_error_floor_pp"] = 80.0   # 高于实测 72.34pp
+    v = pmt.analyse([_CONF_OK, _b_floor])
+    check(not v["passed"], "违反声明的误差下界 ⇒ passed 必须为 False")
+    check(v["p2a_form"] != "A-1",
+          f"违反下界 ⇒ 不得判为 A-1(实测 {v['p2a_form']})")
+    check(bool(v["p2a_breaking_not_excited"]),
+          "必须列出违反下界的 breaking 流(不得静默)")
 
     print(f"\n反向验证:{PASS} 项通过 / {FAIL} 项失败")
     return 1 if FAIL else 0

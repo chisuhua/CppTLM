@@ -82,14 +82,28 @@ def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
     hit_ns = p["hit_ns"]
     miss_ns = p["miss_ns"]
 
-    # ── 序列完整性前置断言:任何一条流被截断 ⇒ 整个分析作废 ──────────
+    # ── 序列完整性前置断言:**按 driver 分档**(per `14 号` §4.4「条数契约(P-1)按 driver 分档」)
+    # ⚠️ **BLOCKER-1 修复**:本断言原先是**无条件**的 ⇒ 与规格「**禁止**统一断言」冲突
+    #    ⇒ random-driver 路径(条数由 `duration` 决定 ⇒ 实测可达名义的 **17~20 倍**,
+    #      **超发是设计行为而非截断**)会在**分析阶段**恒红 ⇒ 该档不可复现。
+    # ⚠️ 该断言此前是**哑火**的(rec 写错键名 ⇒ `nominal_accesses` 恒 0 ⇒ 恒跳过);
+    #    D-5 修复让 rec 正确写出该字段 ⇒ 断言**首次变为活代码** ⇒ 必须同时分档。
     for st in streams:
         nom = int(st.get("nominal_accesses") or 0)
         act = int(st.get("accesses") or 0)
-        if nom and act != nom:
+        mode = st.get("mode") or ""
+        if mode == "same_source_trace":
+            if nom and act != nom:
+                raise SystemExit(
+                    f"✗ 流 {st.get('name')} 的**序列被截断**:名义 {nom}、实测 {act}"
+                    f" ⇒ 整个分析作废")
+        elif mode == "parameter_same_source":
+            # ⚠️ 该路径**不做**条数断言(超发是该路径的**设计行为**)⇒ 仅登记比例
+            pass
+        else:
             raise SystemExit(
-                f"✗ 流 {st.get('name')} 的**序列被截断**:名义 {nom}、实测 {act}"
-                f" ⇒ 整个分析作废")
+                f"✗ 流 {st.get('name')} 的 mode 未知({mode!r})⇒ 无法判定条数契约"
+                f" ⇒ 拒绝出结论(避免因未知口径而静默放行)")
 
     per_stream = []
     for st in streams:
@@ -137,12 +151,14 @@ def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
     #    ⇒ 若某条 breaking 流**意外通过** P-3 ⇒ **判红**
     #      (要么生成器变了、要么规则变了 ⇒ 判据失去鉴别力)。
     # ⚠️ **不再**用「P-3 失败的流数」反推(那会让标准不可证伪)。
-    p2a_a1_ok = False
     breaking_not_excited = []
+    # ⚠️ **期望误差下界校验必须在 `p2a_a1_ok` 冻结之前** —— 否则「违反下界」只被
+    #    append 进 `breaking_not_excited` 却**不影响** `p2a_a1_ok` / `passed`
+    #    ⇒ 同一份 verdict 同时宣称 PASS 与判红(**半死断言**,BLOCKER-2)。
+    #    ⇒ 顺序:先算 P-3 是否通过 → 再校验下界 → **然后**才冻结 `p2a_a1_ok`。
     for r in breaking:
         if r["p3_ok"]:
             breaking_not_excited.append(r["name"])
-    p2a_a1_ok = len(breaking) >= 1 and not breaking_not_excited
 
     # ⚠️ **期望误差下界校验**(脆性防护;per §4.4):声明了就强制,
     #    未声明则低于 2× 阈值只记 warning(不判红,避免因缺声明而误红)。
@@ -158,6 +174,9 @@ def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
                 f"breaking 流 {r['name']} 的误差 {r['h_est_error_pp']:.2f}pp < 2× 阈值"
                 f"({2.0 * hit_rate_tol_pp:.1f}pp)⇒ margin 偏薄 ⇒ 建议在流声明里"
                 f"写明 `expected_error_floor_pp`")
+
+    # ⚠️ **冻结点** —— 必须在上面两项校验**之后**(BLOCKER-2)
+    p2a_a1_ok = len(breaking) >= 1 and not breaking_not_excited
 
     # ── **A-2 形态:范围限定声明**(per `14 号` §4.4)────────────────────
     # ⚠️ **A-2 不是「口头免责」**:把「结论的适用边界」变成 verdict 里
@@ -178,17 +197,28 @@ def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
         f"访问规模 = 1e5 量级;"
         f"本仓侧命中/未命中延迟常数 = {hit_ns:.0f} / {miss_ns:.0f} cycle @ 1GHz"
     ) if conforming else ""
+    # ⚠️ **SHOULD_FIX**:基础子句按 `breaking` 是否为空分支 —— 否则同一字段内
+    #    自相矛盾(「**未覆盖**…**未被证伪**」与「**已观测到规则失效**」并存)。
+    if breaking:
+        _lim_base = (
+            f"**已实测的边界**:非均匀/带热点(非 uniform-random)的访问分布 —— "
+            f"规则 R-B(h_0 = min(1, C/W))**只对均匀随机最优** ⇒ "
+            f"本轮在 `breaking` 流上**观测到该规则失效**(误差 > 阈值)⇒ "
+            f"**该估算规则**在非均匀负载上不可用(⚠️ 但**模型本体**在 h 对齐下仍准确)。"
+        )
+    else:
+        _lim_base = (
+            f"**未覆盖**:非均匀/带热点(非 uniform-random)的访问分布 —— "
+            f"而规则 R-B(h_0 = min(1, C/W))恰恰**只对均匀随机最优** ⇒ "
+            f"在未覆盖分布上该规则**未被证伪** ⇒ 结论**不得**表述为「H7 已验证」。"
+        )
     limitation = (
-        f"**未覆盖**:非均匀/带热点(非 uniform-random)的访问分布 —— "
-        f"而规则 R-B(h_0 = min(1, C/W))恰恰**只对均匀随机最优** ⇒ "
-        f"在未覆盖分布上该规则**未被证伪** ⇒ 结论**不得**表述为「H7 已验证」。"
-        f"⚠️ **解除限定的前置条件**:需能喂**非均匀离线 trace** 的 gem5 驱动 —— "
+        _lim_base
+        + f"⚠️ **解除限定的前置条件**:需能喂**非均匀离线 trace** 的 gem5 驱动 —— "
         f"该前置**已具备**(与 gem5 版本**无关**;只需 `createTrace` 能读离线 trace 文件;"
         f"per 台账 Entry #120:此前登记的「v24 提前 EOF = 上游缺陷」**已被实测推翻**)"
-        + (f"\n⚠️ **本轮已观测到规则失效**:`breaking` 流 {len(breaking)} 条"
-           f"(W ∈ {{{', '.join(_break_ws)}}});R-B 在其上的误差 > 阈值 ⇒ "
-           f"**该规则**在非均匀负载上不可用(⚠️ 但**模型本体**在 h 对齐下仍准确)"
-           if breaking else "")
+        + (f"\n⚠️ 本轮 `breaking` 流 {len(breaking)} 条(W ∈ {{{', '.join(_break_ws)}}});"
+           f"其 R-B 误差均 > 阈值 ⇒ 正控已激发" if breaking else "")
     ) if conforming else ""
     p2a_a2_ok = bool(applicability) and bool(limitation)
     # ⚠️ **A-2 只在 `breaking` 为空时适用** —— 否则「正控未激发」会被 A-2 兜底
@@ -203,9 +233,9 @@ def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
     # ⇒ 判定域 = `conforming` 全体;`breaking` 走**正控激发**判据。
     conforming_ok = bool(conforming) and all(
         r["p2_ok"] and r["p3_ok"] for r in conforming)
-    breaking_ok = p2a_a1_ok or (p2a_a2_ok and p2a_a2_applicable)
     verdict = {
-        "passed": bool(conforming_ok and breaking_ok and p2a_ok),
+        # ⚠️ `p2a_ok` 已含「A-1 正控激发」或「A-2 兜底」两支 ⇒ 无需再并列 `breaking_ok`
+        "passed": bool(conforming_ok and p2a_ok),
         "p2a_discrimination_ok": p2a_ok,
         "p2a_form": ("A-1" if p2a_a1_ok else
                      ("A-2" if (p2a_a2_ok and p2a_a2_applicable) else
@@ -298,6 +328,11 @@ def main():
     if v["passed"]:
         print(f"[parity] 结论:**PASS** —— 「H7 在【上述声明范围】内成立」"
               f"(⚠️ **不得**表述为「H7 已验证」)")
+    elif not v["class_counts"]["conforming"]:
+        # ⚠️ **判据不适用** ≠ **实质性否定**(SHOULD_FIX):workload 集里没有
+        #    `conforming` 流 ⇒ P-2/P-3 **无判定对象** ⇒ 结论只能是「不可判」。
+        print("[parity] 结论:**不可判**(workload 集不含 `conforming` 流 ⇒ "
+              "P-2/P-3 **无判定对象** ⇒ 判据不适用;⚠️ **不是**「H7 不成立」)")
     elif not v["conforming_ok"]:
         print("[parity] 结论:**FAIL**(conforming 流未全过 P-2/P-3 ⇒ H7 在声明范围内不成立)")
     elif v["p2a_breaking_not_excited"]:

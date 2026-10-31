@@ -259,6 +259,12 @@ def main():
                     help="hot_cold 形态下的冷区字节数(应 ≫ cache 容量)")
     ap.add_argument("--hot-ratio", type=float, default=0.5,
                     help="hot_cold 形态下访问热区的比例(⇒ 实际命中率 ≈ hot_ratio)")
+    ap.add_argument("--expected-error-floor", type=float, default=None,
+                    help="**声明期望误差下界**(pp)—— per `14 号` §4.4:breaking 流"
+                         "可声明 R-B 估算误差的期望下界(≥ 2× 阈值 = 10pp);"
+                         "**声明了就被强制校验**:实测误差 < 下界 ⇒ 判红"
+                         "(生成器与声明不符 ⇒ 判据失去鉴别力);"
+                         "未声明 ⇒ 低于 2× 阈值只记 warning")
     ap.add_argument("--obj-id", default="parity_trace",
                     help="gem5 protobuf 头里的 obj_id")
     ap.add_argument("--tick-freq", type=int, default=1000000000000,
@@ -320,6 +326,8 @@ def main():
         "hot_bytes": args.hot_bytes,
         "cold_bytes": args.cold_bytes,
         "hot_ratio": args.hot_ratio,
+        # ⚠️ **期望误差下界**(per `14 号` §4.4)—— 声明了就被强制校验
+        "expected_error_floor_pp": args.expected_error_floor,
         "base_addr": args.base_addr,
         "access_size": args.line_size,
         "write_percent": args.write_percent,
