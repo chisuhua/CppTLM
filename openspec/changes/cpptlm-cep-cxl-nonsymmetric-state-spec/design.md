@@ -65,10 +65,22 @@ remote = 仅 H2D snoop 操作码(发起方恒为 Home)
 
 | `kind` | 含义 | `pending` 规则 |
 |---|---|---|
-| `public-direct` | 公开来源**明确这样写** | 可 `false`(须经二方复核) |
+| `public-direct` | 公开来源**明确这样写** | 可 `false`,**但须同时满足「`pin=strong` ∧ 许可已人工确认」** |
 | `public-analogical` | 跨协议 / 跨代次**类比** | **`true`**(强度天花板) |
 | `archforge-anchor` | **仅** caps 等**已逐字段对齐**的格(`ADR-CEP-04 §2` 的 4 值) | 可 `false` |
 | `self-derived` | **本仓推导** | **必须 `true`** |
+
+⚠️ **两轴不得混读**(2026-11-01 裁决,per oracle 复核 + critic 第 1 轮 SHOULD_FIX #1):
+
+| `pin` | `kind` | `pending` |
+|---|---|---|
+| `strong`(字节已取 + sha256) | 可 `public-direct` | 可 `false`(另须许可确认) |
+| `weak`(仅 URL + 抓取日) | **可保留** `public-direct` | **`true`** |
+| `transcribed`(原文本环境未读到) | **降** `public-analogical` | **`true`** |
+
+⇒ **理由**:「证据强度」(来源措辞)与「钉版强度」(字节可否本地复核)是**两个轴** ——
+Cloudflare 403 不会把一条直接引语变成「类比」;而**转述**支持「大意存在」但不支持「措辞如此」
+⇒ 后者「明确这样写」这一谓词**不可判定**,故须降档。细则见锚点摘要 §8.2。
 
 ⇒ **禁止**把 `analogical` / `inferred` 升格为 `public-direct`(判据 AC-4)。
 
@@ -80,6 +92,39 @@ remote = 仅 H2D snoop 操作码(发起方恒为 Home)
 ④ **残余风险登记**(8 项)。
 
 **落点**:`cxl_state_spec.hh` 的 `BasisKind` / `basis_entry_is_consistent()`;判据 AC-3 / AC-4。
+
+---
+
+## D-γbis 转换表 = **三态格语义**(不是二态「合法/未知」)
+
+**问题**:Phase 2b 的转换矩阵需要「**逐状态合法性表**」(某事件在某态下是否合法)⇒
+该表**公开来源不可得**(残余 **R-2**,且不同年代 deck 已有 `MemWr`↔`WrCur` 差异)
+⇒ 4 态 × 17 事件 = **68 格**中大量格的合法性**无法确证**。
+
+**已排除的二态方案(与 `mesif` 先例同形)**:`0xFF = 未定义(空洞)` ⇒ 消费者把「未知」读成「非法」
+⇒ ⇒ 这**本身是一处新的未实测断言**(「我断言此转换非法」≠「我不知道」)。
+
+**决策**:每格 SHALL ∈ **三态** ——
+
+| 格语义 | 含义 | 承载 |
+|---|---|---|
+| `Known(target, basis)` | 已确证的目标态 | `basis` 四字段 |
+| `Illegal(basis)` | 已确证**不合法**(须有证据,不能靠「未找到」) | `basis` 四字段 |
+| `Unknown(pending → R-2)` | **不知道**(不是非法) | 显式 `Unknown` 态,`transition()` 返回它 |
+
+⇒ `transition()` 对 `Unknown` SHALL 返回**显式 unknown 态**,SHALL NOT 返回目标态、SHALL NOT abort。
+
+**反秃头判据(coverage,判据 AC-6)**:载体 SHALL 声明
+`kLegalTransitionCoverageNum` / `kLegalTransitionCoverageDen`(已确证格数 / 68),测试 SHALL 断言
+该比值与**载体实际逐格统计相等**(防虚报),台账 SHALL 在每次推进时复核**单调不减**(回退必红 + 须授权)。
+
+**理由**:规约层的鉴别力在**结构层**(4 态 / 投影 / 划分 / 断言,已编译期锁定),不在转换表填满度;
+「**半空但诚实**」严格优于「填满但杜撰」(#9 的 35 格债即前车)。
+
+**代价**:消费者须处理 `Unknown` 分支 ⇒ 第 1 个 change 的 adapter SHALL 在 `Unknown` 路径**显式降级**
+(保守行为 + 事件登记),SHALL NOT 静默当作 `Illegal`。
+
+**落点**:`cxl_state_spec.hh` 的转换表 + `kLegalTransitionCoverage*`;判据 AC-6。
 
 ---
 

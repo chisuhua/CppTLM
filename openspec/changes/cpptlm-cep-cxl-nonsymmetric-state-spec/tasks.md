@@ -32,22 +32,42 @@
 
 ## Phase 1 — 钉版补齐(⚠️ 阻塞载体**逐格**编码)
 
-- [ ] 1.1 6 个 PDF 的 **sha256** + 字节数(D1 / D2 / D3 / D4 / D17 / D18)
-- [ ] 1.2 7 个 blog / 网页类来源的 **Wayback 快照 URL + 抓取日期**(D6 / D7 / D8 / D9 / D10 / D15 / D16)
-- [ ] 1.3 D14 Isabelle artifact 的 **HEAD commit SHA** + 最近 5 commit + 文件树 + README 前 40 行
-      ⇒ ⚠️ 上次 `git clone` 报 TLS `recv error (-110)` ⇒ 走 **GitHub API**(不 clone)
-- [ ] 1.4 摘要 §8 的「钉版状态」列**全部转为已钉** + 新增「抓取日期」列 ⇒ `--check` 的钉版完整性检查可跑通
-- [ ] 1.5 ⚠️ **诚实登记**:任何取不到的项**如实记「取不到 + 原因」**,**禁编造哈希**(假哈希会进钉版清单 ⇒ 危害大于诚实的缺口)
+> **状态**:🟡 **有条件完成**(2026-11-01)—— 7 `pin=strong` / 1 `pin=weak` / 6 `pin=transcribed`
+> ⇒ 按摘要 **§8.2 两轴规则**载体逐格编码**已可启动**;下列 1.6~1.8 为**新增前置**(可与载体并行)。
+
+- [x] 1.1 6 个 PDF 的 **sha256** + 字节数 —— ✅ **5/6 取得**(D1 / D2 / D4 / D17 / D18);
+      ⚠️ **D3 取不到**(Cloudflare JS 挑战 403,4 个路径变体全 403)⇒ **无哈希**,如实登记
+- [x] 1.2 7 个 blog / 网页类来源的 Wayback 快照 —— ❌ **0/7 取得**(archive.org **全站不可达**:
+      curl + webfetch 双通道 · 80/443 · 120s 全超时;`arquivo.pt`/`timetravel`/`archive.ph`/`archive-it` 亦不可达)
+      ⇒ 全部降 `pin=transcribed`;
+      ⚠️ **D10 例外**:该 URL 本身即**静态内容寻址 PDF** ⇒ 取字节 + sha256 成功,已升 `pin=strong`(无需 Wayback)
+- [x] 1.3 D14 Isabelle artifact 的 **HEAD commit SHA** —— ✅ `f729052e1032980561f2c0cc5e341859228ded26`
+      (2026-09-27,31 commits,走 **GitHub API**,未 clone);⚠️ **license = null**(未声明)·
+      ⚠️ artifact **≠ 论文快照**(含 ASPLOS'25 之后的 guard 改动 + `Liveness/` 扩展)
+- [x] 1.4 摘要 §8 钉版状态列已更新为**分级**(`pin=strong`/`weak`/`transcribed`)
+- [x] 1.5 ⚠️ **诚实登记**已执行:取不到的项如实记「取不到 + 原因」,**零编造哈希**
+- [ ] 1.6 **D1 / D2 重锚「H2D Req 只含 snoop」**(二者 `pin=strong` 且字节已在本地
+      `/tmp/opencode/cxlpin/A.pdf` / `B.pdf`)⇒ 找到等价表述则该格由 `pending=true` 翻 `false`;
+      **复核不出则维持 `pending=true`**(不影响结构断言锁定效力)
+- [ ] 1.7 **D1 重锚 `E + 写 → M` 静默升级**(现为 `analogical`,摘要 §4)⇒ 找到对应规则则升 `direct`
+- [ ] 1.8 **许可确认**:D14(`license = null`)与 D4(© Consortium,「引用需节制」)的
+      引用 / 再分发范围人工确认 ⇒ 未确认前**不得** `pending = false`(摘要 §8.2 许可必要条件)
 
 ## Phase 2 — 规约载体(TDD 5-step)
 
 - [ ] 2.1 **先写红**:测试骨架(`test/test_cep_cxl_state_spec.cc`)+ 反向 fixture
       (① 加回 `F` 行 ⇒ 必红 ② 毒化 `H2DReqOp` 集合 ⇒ 必红 ③ 强度升格 ⇒ 必红 ④ 删头注释消歧 ⇒ 必红)
 - [ ] 2.2 `include/tlm/cep/cxl_state_spec.hh` 骨架:`kStates`(4 态)/ `kEvents`(枚举名)/ `kPermProjection`(4 行)
-- [ ] 2.3 **转换表**:逐格 `basis{kind, pending, ref, note}`;`ref` **只指向锚点摘要条目号**
+- [ ] 2.3 **转换表(三态格语义,per `design.md D-γbis`)**:每格 ∈ {`Known(target,basis)`,
+      `Illegal(basis)`, `Unknown(pending → R-2)`};⚠️ `Unknown` SHALL **显式区分**于 `Illegal`,
+      **不复用**「未定义空洞值」;逐格 `basis{kind, pending, ref, note}`,`ref` **只指向锚点摘要条目号**,
+      `pending` 格 `note` **带 R-1~R-8 编号**
+- [ ] 2.3b **覆盖率**:`kLegalTransitionCoverageNum` / `Den`(已确证格 / 68)+ 测试断言与逐格统计**相等**
+       ⇒ 台账每次推进复核**单调不减**(回退必红 + 须授权)
 - [ ] 2.4 **编译期锁**:① 态数恰 4 ② 投影恰 4 行 ③ `F` 行不存在 ④ `H2DReqOp ⊆ {SnpInv,SnpData,SnpCurr}`
       ⑤ `D2HReqOp ∩ H2DReqOp = ∅` ⑥ 设备侧无 snoop 发起型事件 ⑦ `kind`/`pending` 一致
       ⑧ `public-analogical` / `self-derived` ⇒ `pending = true` ⑨ 头注释含「≠ dGPU SoC 实现路径」
+      ⑩ **两轴不混读**:`pin=transcribed` 的格 ⇒ 降 `public-analogical` + `pending=true`
 - [ ] 2.5 **偏离清单** + **8 项残余风险登记**(与摘要 §6 逐项一致)
 - [ ] 2.6 跑绿 + **零冻结面 diff** 复核(`git diff --stat` 只含本 change 载体 + 测试 + 文档)
 

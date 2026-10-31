@@ -65,12 +65,14 @@
 |---|---|---|
 | **AC-1** | 载体态集合**恰为 4 态**且 `perm` 投影**恰为 4 行**;**`F` 行不存在** | 编译期锁 + 反向 fixture(加回 `F` 行 ⇒ 必红) |
 | **AC-2** | **非对称结构断言**成立:`H2DReqOp ⊆ {SnpInv, SnpData, SnpCurr}` ∧ `D2HReqOp ∩ H2DReqOp = ∅` ∧ 设备侧**无** snoop **发起**型事件 | 编译期 `static_assert` + 毒化任一条 ⇒ 必红 |
-| **AC-3** | 每格 `basis` **非空**且 `kind`/`pending` **一致**(`self-derived` ⇒ `pending = true`);`ref` 指向**锚点摘要条目号**(不指向规范原文) | `--check` 比对载体 ↔ 摘要 ⇒ 手改任一侧必红 |
+| **AC-3** | 每格 `basis` **非空**且 `kind`/`pending` **一致**;`ref` 指向**锚点摘要条目号**(不指向规范原文);**每格 ∈ 三态** {`Known`/`Illegal`/`Unknown`},`Unknown` **显式区分**于 `Illegal`;`pending` 格 `note` **带 R-1~R-8 编号** | `--check` 比对载体 ↔ 摘要 ⇒ 手改任一侧必红;**反 vacuity**:全格 `pending` ⇒ 必红 |
 | **AC-4** | 强度标注**不得升格**:`analogical` / `inferred` 未被标为 `public-direct` | 生成器校验 + 反向 fixture |
 | **AC-5** | 载体**头注释**含「**≠ dGPU SoC 实现路径**」消歧声明 | 文本断言(正向)+ 反向 fixture(删掉 ⇒ 必红) |
 | **AC-6** | **8 项残余风险**(R-1~R-8)在载体与摘要中**逐项登记**且状态一致 | 清单比对 ⇒ 缺项/多项必红 |
-| **AC-7** | **零冻结面 diff**:`07 号` / `ADR-CEP-*` / `openspec/specs/*` 零改动 | `git diff` 断言 + `cep_freeze_check` provenance 通过 |
+| **AC-7** | **冻结面零正文改动**:`07 号` / `openspec/specs/*` 零改动;⚠️ **例外(经授权)**:`ADR-CEP-11`(+49)/ `ADR-CEP-04`(+45)**仅追加 Status Update**,分别经台账 **Entry #122 / #124** 两步授权 | `git diff` 断言(仅追加段)+ `cep_freeze_check` provenance 通过 |
 | **AC-8** | 门禁全绿:13 项 CEP 脚本 + `docs_sync --strict` + `openspec validate --strict` + `format --check` + `ctest -R cep` | 退出码 |
+| **AC-9** | **转换表覆盖率可判且单调**:载体声明 `kLegalTransitionCoverageNum/Den`,测试断言该比值与**逐格实际统计相等**(防虚报);台账每次推进复核**单调不减**(回退 ⇒ 必红 + 须 entry 授权) | 断言 + 台账复核 |
+| **AC-10** | **两轴不混读**:`pin=weak` 的格可 `public-direct` 但 `pending=true`;`pin=transcribed` 的格**降** `public-analogical`;`pending=false` 须「`pin=strong` ∧ 许可已人工确认」 | 生成器校验 + 反向 fixture |
 
 ⇒ ⚠️ **判据纪律**:每条**纯负向**断言(「`F` 行不存在」「不得升格」)都有**正控**(「`F` 行存在 ⇒ 必红」的反向 fixture)
 ⇒ **因正确原因红**,不因超时/副作用红。

@@ -72,10 +72,26 @@ CEP SHALL 为 **CXL 2.0 非对称**(CXL.cache · host-centric)提供一份**可�
   SHALL **不**指向 CXL 规范原文
 - **AND** 子条件 ⑤ SHALL 成立:**强度 SHALL NOT 升格** —— `public-analogical` / `inferred`
   SHALL NOT 被标记为 `public-direct`(⇒ 反向 fixture:升格 ⇒ **必须因正确原因红**)
+- **AND** 子条件 ⑥ SHALL 成立:**两轴不得混读**(per 摘要 §8.2)—— `pin=weak` 的格 SHALL 可保留
+  `kind=public-direct` 但 SHALL `pending=true`;`pin=transcribed` 的格 SHALL **降** `kind=public-analogical`
+  且 SHALL `pending=true`;`pending=false` SHALL **同时**要求 `pin=strong` **且** 引用/再分发许可已人工确认
+  (⇒ 反向 fixture:`pin=transcribed` 仍标 `public-direct` ⇒ **必须因正确原因红**)
+- **AND** 子条件 ⑦ SHALL 成立:每格 SHALL ∈ **三态格语义** {`Known(target, basis)`, `Illegal(basis)`,
+  `Unknown(pending → R-2)`};⚠️ `Unknown` SHALL **显式区分**于 `Illegal`(「未知」≠「非法」),
+  SHALL **不**复用「未定义空洞值」表达(⇒ 反向 fixture:把 `Unknown` 编码为 `Illegal` ⇒ **必须因正确原因红**)
+- **AND** 子条件 ⑧ SHALL 成立:载体 SHALL 声明 `kLegalTransitionCoverageNum` / `kLegalTransitionCoverageDen`
+  (已确证格数 / 总格数);测试 SHALL 断言该比值与**载体实际逐格统计相等**(防虚报),
+  且台账 SHALL 在每次 Task 推进时复核该比值**单调不减**(回退 ⇒ **必须因正确原因红** + 须台账 entry 授权)
+- **AND** 子条件 ⑨ SHALL 成立:`pending = true` 格的 `note` SHALL 携带**缺失项编号**(`R-1`~`R-8`),
+  SHALL **不**仅为布尔标记;`pending = false` 格的集合 SHALL 被**枚举**且与锚点摘要 §8 的
+  `pin=strong` 可推导集合机器比对一致(⇒ **反 vacuity**:全 68 格皆 `pending` ⇒ **必须因正确原因红**)
 
 > **语义**:`kind` 分档是**抗自欺**机制 ⇒ 「结构完备、语义空洞」必须可机器检出。
 > ⚠️ 「全部逐格 pending + 跨仓追认」**不采用**:ArchForge 对 CXL 既无追认义务也无追认依据
 > ⇒ 债**必然永久挂账**且被误读为「已尽责」。
+> ⚠️ **「填满 68 格、无证据的格标 `self-derived`」同样不采用**(2026-11-01 裁决,per oracle 复核):
+> `self-derived` 仍是「我断言这个转移」⇒ 对大部分格构成**批量杜撰**,重蹈 #9 的 35 格债覆辙;
+> **三态格语义的 `Unknown` 才是诚实形态** —— 「我不知道」必须可表达,且不得被读成「它非法」。
 
 #### Scenario: CSS-04 —— 载体 SHALL **零自有表副本**地供第 1 个 change 委托消费
 

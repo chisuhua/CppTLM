@@ -76,7 +76,8 @@ public:
         RdShared = 0,  ///< 读共享(可进 S)
         RdCurr,        ///< 只取当前值(不改态)
         RdOwn,         ///< 取所有权(grant 为 E **或** M)
-        RdAny,         ///< 取所有权(功能已被 RdOwn + RdShared 覆盖)
+        RdAny,         ///< 取所有权(⚠️ 与 `RdOwn` 的**关系无公开来源** —— 摘要 §2 只列名不释义,
+                       ///<   ⇒ **不得**断言「已被 RdOwn + RdShared 覆盖」(该断言原无出处,2026-11-01 删除))
         RdOwnNoData,   ///< 只要所有权不要数据(必须收 GO-E)
         CLFlush,       ///< cache line flush
         CacheFlushed,  ///< cache flushed 通知
@@ -137,10 +138,24 @@ public:
         return static_cast<std::uint8_t>(p);
     }
 
-    /// 是否为**静默升级**(跨域可见写):仅 `E + 写事件 → M`。
+    /// **写事件类**(= 摘要 §4 的 `local write` 类:`WrInv` / `WOWrInv` / `ItoMWr`)。
+    /// ⚠️ **类级判定,不是单 opcode** —— 摘要 §4 锚的是**事件类**;无任何公开来源把写语义
+    ///    钉到单一 opcode(残余 R-2)⇒ 单 opcode 版(`e == ItoMWr`)会把类级证据
+    ///    **越证成**单 opcode 事实(2026-11-01 修正,per oracle 复核)。
+    /// ⚠️ **`WrCur` 存疑**:其名指示写语义,但摘要 §4 的 `local write` 类**未收**它
+    ///    ⇒ 本函数**不收**,该缺口登记于 R-2(「不保证与规范权威枚举等量」)⇒ 待重锚。
+    static constexpr bool is_write_event(Event e) noexcept {
+        return e == Event::WrInv || e == Event::WOWrInv || e == Event::ItoMWr;
+    }
+
+    /// 是否为**静默升级**(跨域可见写:`E + 写事件 → M`)。
+    /// ⚠️ **basis = `public-analogical` + `pending = true`**:「`E` 蕴含无其他 sharer ⇒
+    ///    就地改 `M` 不产生跨域可见性」是**MESI 通用性质**,公开来源**未逐字断言该格**
+    ///    (摘要 §4 已相应降为 `analogical`)⇒ **不得当作已裁决**;Phase 2b SHALL 尝试在
+    ///    D1(字节已在本地)重锚,重锚不出则维持 `pending`。
     /// ⚠️ 该升级 SHALL 落 `perm_upgrades.json`(per `ADR-CEP-12 §11`)—— 属第 1 个 change。
     static constexpr bool is_silent_upgrade(State s, Event e) noexcept {
-        return s == State::E && e == Event::ItoMWr;
+        return s == State::E && is_write_event(e);
     }
 
     // ── local / remote 判定(口径 ① 的**结构级**落点)────────────────────────

@@ -68,9 +68,22 @@ TEST_CASE("CEP CXL state spec — 秩只增不减,无例外", "[cep][cxl][state-
     STATIC_REQUIRE(CxlStateSpec::perm_rank(Perm::READ) == 1);
     STATIC_REQUIRE(CxlStateSpec::perm_rank(Perm::UNIQUE) == 2);
     STATIC_REQUIRE(CxlStateSpec::perm_rank(Perm::WRITEBACK) == 3);
-    // ⚠️ 唯一静默升级 = `E + 写事件 → M`(MESIF 的 `F→E` 秩回落例外**不可移植**)
+    // ⚠️ 静默升级 = `E + 写事件 → M`(**类级判定**,MESIF 的 `F→E` 秩回落例外**不可移植**)
+    // ⚠️ 类级口径:摘要 §4 的 `local write` 类 = {`WrInv`, `WOWrInv`, `ItoMWr`}
+    //    ⇒ **不得**收窄到单 opcode(`e == ItoMWr` 会把类级证据越证成单 opcode 事实)
+    STATIC_REQUIRE(CxlStateSpec::is_write_event(Event::WrInv));
+    STATIC_REQUIRE(CxlStateSpec::is_write_event(Event::WOWrInv));
+    STATIC_REQUIRE(CxlStateSpec::is_write_event(Event::ItoMWr));
+    STATIC_REQUIRE_FALSE(CxlStateSpec::is_write_event(Event::RdShared));
+    STATIC_REQUIRE_FALSE(CxlStateSpec::is_write_event(Event::SnpInv));
+    // ⚠️ `WrCur` **存疑**:摘要 §4 的 write 类未收它 ⇒ 本载体不收(登记于 R-2)
+    STATIC_REQUIRE_FALSE(CxlStateSpec::is_write_event(Event::WrCur));
+
+    STATIC_REQUIRE(CxlStateSpec::is_silent_upgrade(State::E, Event::WrInv));
+    STATIC_REQUIRE(CxlStateSpec::is_silent_upgrade(State::E, Event::WOWrInv));
     STATIC_REQUIRE(CxlStateSpec::is_silent_upgrade(State::E, Event::ItoMWr));
     STATIC_REQUIRE_FALSE(CxlStateSpec::is_silent_upgrade(State::M, Event::ItoMWr));
+    STATIC_REQUIRE_FALSE(CxlStateSpec::is_silent_upgrade(State::S, Event::ItoMWr));
     STATIC_REQUIRE_FALSE(CxlStateSpec::is_silent_upgrade(State::E, Event::RdShared));
 }
 

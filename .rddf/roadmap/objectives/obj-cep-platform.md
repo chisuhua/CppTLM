@@ -545,7 +545,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **R10** | **验收独立性实质缺口**(2026-10-21 新增)—— §9.2 三角色均指向单一作者;M1~M4 只是**部分**替代 | 🟢 低(**已接受残余风险**,2026-10-23 per **§9.3**) | **闭合判据已改写** = 「就 **Stage 0 交付范围**(契约层 + 契约测试 + 冻结产物)而言,**M1 / M2 / M4 三项补偿机制均有落地证据 + 残余风险已登记**」—— M1 冻结清单 **30 成员** + 授权闸 · M2 ArchForge 合入回执 · M4 独立 AI 复审(实证抓出 9 项 + 4 轮 critic 审稿抓 3 BLOCKER)。**M3(对拍基准外置)不适用**:它服务**实现期**对拍,Stage 0 无实现交付物 → 保留为 **Stage 1 的 P0 前置**(见 §10)。**残余风险见 §9.3**(结论性独立缺失,由 DRI 书面接受)。**Stage 0 已于 2026-10-23 完成归档**(per 台账 Entry #29)。**M4 不可替代真人外部评审** 这一残余风险依然成立并已登记 |
 | **R9** | **单 change 体积上升**(2026-10-21 新增)—— `cpptlm-cep-directory-ordering-plane` 8→12 周(ADR-CEP-08 + 09 Decision A 并入)| 🟡 中 | 同平面合并是模型自洽而非将就;若该 change 延期 >2 季度,走 §8.2 `Replan` 拆 `phase-11`(并评估建 feature fragment)|
 
-| **R11** | **声明超前于实现**(两条并列,2026-11-01 升级,per **Entry #124**):① **meta 层** —— `moesi_gpu` 的 `sharer_tracker.impl = SparseSnoopFilter` **只有 traits 行、无行为类**(而 `FullMapDirectory` 有行为实现却**无任何实例声明**)⇒ 声明面承诺的能力在实现面**未兑现**;② **语义层(实测确认,新增)** —— `moesi_gpu` 的 `O→WRITEBACK` 投影损失**设计上**由 `SparseSnoopFilter`(`scope=SYSTEM`)**补偿**(per `chi_rnf_adapter.hh:172` 的对照注释明载)⇒ 该补偿机制**当前无行为实现** ⇒ `moesi_gpu` 的 `perm` 投影完备性判据存在一处「**可补偿但未补偿**」的缺口。⚠️ **与 `chi_rnf` 的同类损失不得混谈**:后者的「是否还有其他 sharer」在 RN 侧**物理不可得** ⇒ 是**协议信息拓扑的固有损失**、**非**实现缺口(per `chi_rnf_adapter.hh:171` 的明文告诫) | 🟡 中 | **落位映射已登记**(per 台账 Entry #107:`TreeManager` ↔ 队列 #11 / `DcohSymmetric` ↔ 队列 #12,均属**队列名对应**的推导;`SparseSnoopFilter` **已被 #6 占用**、`BroadcastNull` **无线索** ⇒ 后二者的**行为实现**列入 **§10 backlog**)。**降级条件(2026-11-01 明确化,per Entry #124)**:🟡 中 → 🟢 低 SHALL **同时**满足 ① `SparseSnoopFilter` 行为类落地 **且** ② `moesi_gpu` 的 `O→WRITEBACK` **补偿路径有判据**(⚠️ 防「落地了但补偿语义未验」就降级)· **归属维持** #10 实现层(per Entry #112 去重裁决 —— 其两条前提经 2026-11-01 复核**均未失效**:`SparseSnoopFilter` **零实例化点** ⇒ 「无迫近消费者阻塞」仍成立;与 #10 实现层**同载体** `sharer_tracker.hh` ⇒ 「实现会重复」仍成立)· **债期**:起点 **2026-10-27**(队列 #6 `moesi_gpu` 归档,声明首次指向空实现)⇒ 终点 = 队列 #10 实现层落地 ⇒ **每次 #10 排期变动 SHALL 复核并更新本债期**(防无声延长)。⚠️ 与残留 C(`atomic.supported` 无消费点)**同型** ⇒ 处置口径一致:显式登记,不得沉默 |
+| **R11** | **声明超前于实现**(两条并列,2026-11-01 升级,per **Entry #124**):① **meta 层** —— `moesi_gpu` 的 `sharer_tracker.impl = SparseSnoopFilter` **只有 traits 行、无行为类**(而 `FullMapDirectory` 有行为实现却**无任何实例声明**)⇒ 声明面承诺的能力在实现面**未兑现**;② **语义层(实测确认,新增)** —— `moesi_gpu` 的 `O→WRITEBACK` 投影损失**设计上**由 `SparseSnoopFilter`(`scope=SYSTEM`)**补偿**(per `chi_rnf_adapter.hh:172` 的对照注释明载)⇒ 该补偿机制**当前无行为实现** ⇒ `moesi_gpu` 的 `perm` 投影完备性判据存在一处「**可补偿但未补偿**」的缺口。⚠️ **与 `chi_rnf` 的同类损失不得混谈**:后者的「是否还有其他 sharer」在 RN 侧**物理不可得** ⇒ 是**协议信息拓扑的固有损失**、**非**实现缺口(per `chi_rnf_adapter.hh:171` 的明文告诫) | 🟡 中 | **落位映射已登记**(per 台账 Entry #107:`TreeManager` ↔ 队列 #11 / `DcohSymmetric` ↔ 队列 #12,均属**队列名对应**的推导;`SparseSnoopFilter` **已被 #6 占用**、`BroadcastNull` **无线索** ⇒ 后二者的**行为实现**列入 **§10 backlog**)。**降级条件(2026-11-01 明确化,per Entry #124)**:🟡 中 → 🟢 低 SHALL **同时**满足 ① `SparseSnoopFilter` 行为类落地 **且** ② `moesi_gpu` 的 `O→WRITEBACK` **补偿路径有判据**(⚠️ 防「落地了但补偿语义未验」就降级);**⚠️ 2026-11-01 补记(per Entry #125 ⑤)**:条件 ② 的「判据」SHALL 判**保守补偿**语义,**SHALL NOT** 读作「**等价恢复**」—— `SparseSnoopFilter` = `CONSERVATIVE`(宁多探不漏探 = **不精确**)⇒ 只能给「**可能**还有其他 sharer」的保守近似,**无法**精确恢复 `O` 态携带的「**没有**其他 sharer」⇒ 实现层**不得**声称等价恢复)· **归属维持** #10 实现层(per Entry #112 去重裁决 —— 其两条前提经 2026-11-01 复核**均未失效**:`SparseSnoopFilter` **零实例化点** ⇒ 「无迫近消费者阻塞」仍成立;与 #10 实现层**同载体** `sharer_tracker.hh` ⇒ 「实现会重复」仍成立)· **债期**:起点 **2026-10-27**(队列 #6 `moesi_gpu` 归档,声明首次指向空实现)⇒ 终点 = 队列 #10 实现层落地 ⇒ **每次 #10 排期变动 SHALL 复核并更新本债期**(防无声延长)。⚠️ 与残留 C(`atomic.supported` 无消费点)**同型** ⇒ 处置口径一致:显式登记,不得沉默 |
 
 #### R10 状态沿革(历史结论 —— 已被 §9.3 取代,保留供追溯)
 
@@ -7857,6 +7857,71 @@ Entry #112 的两条前提里**没有**「#10 何时做」这一项 ⇒ #10 的�
 ⇒ ⚠️ `ADR-CEP-04` 正文(§2 caps 表 · §4 hazard 表 · §13) **零改动**。
 
 **⑥ 关联**: Entry #112(去重裁决 · 原文明文不改写)· #111(#10 关键交付登记)· #107(R11 登记 + 落位映射)· #123(队列 #10 第 0 个 change 转正)· `ADR-CEP-04 §2 / §4`(caps + hazard 契约)
+
+---
+
+### Entry #125 — 2026-11-01 [review](队列 #10 第 0 个 change 的 **critic 第 1 轮 + oracle 复核**双审结论 + **4 处越证修正** + 裁决 A/B 落地)
+
+**主题**:用户要求 `@oracle @critic` 对「已完成内容 + 两项待裁决」审查,**两者独立跑、互不注入结论**
+(⇒ 一致处才有信息量,分歧处才是真问题)。收口后按 finding 逐条修正。
+
+**① critic 第 1 轮 = `APPROVE_WITH_CONDITIONS` / `mergeable: yes` / `scope_exceeded: false` / 无 BLOCKER**
+- focus #1(口径裁决+载体是否把「自推」变成「可判」)= **成立**;CSS-03/CSS-06 本轮不可触发 ⇒
+  属「change 尚未交付完」**而非**「声称范围与判据不自洽」(本轮非 archive 轮,delta spec 未冻进 main spec)
+- focus #3(R11 两级登记)= **是记账,但记账即本轮范围**;`V-4` **不**构成未闭合判据
+  (其触发条件是「R11 **已收口**」⇒ 未到;R11 终点 = #10 实现层落地)
+- **5 项 SHOULD_FIX** + 3 NIT ⇒ 已修 3 项文档对齐(#3 摘要 §4 强度时点声明 / #4 proposal 冻结面口径 /
+  #5 tasks 进度表)+ 2 NIT(namespace `cpptlm::cep` → `tlm::cep`;「15 条」笔误 → **14**)
+  ⚠️ 其中「15 条」**无任何公开来源支撑** = **未实测断言**,与本轮主题同型,已去掉
+
+**② oracle 复核 = 4 处越证/未实测断言(全部实测核实成立)⇒ 已逐条修**
+| # | 越证内容 | 修正 |
+|---|---|---|
+| **O-1** | `is_silent_upgrade(E, ItoMWr)` —— 注释写「仅 `E + **写事件**` → M」,代码只认**单 opcode** `ItoMWr`;而摘要 §4 锚的是**事件类**(`WrInv`/`WOWrInv`/`ItoMWr`)⇒ 把类级证据**越证成单 opcode 事实**(与「5→4」同型的模板形状继承) | 新增 `is_write_event()`(**类级**);`is_silent_upgrade` 改用类级判定;**并显式降 `basis = public-analogical + pending`**;`WrCur` 存疑单列(摘要 §4 未收它,归 R-2) |
+| **O-2** | `RdAny` 注释「功能已被 `RdOwn` + `RdShared` 覆盖」——**全仓无出处**(摘要 §2 只列名不释义) | 删除该断言,改为「⚠️ 与 `RdOwn` 的关系**无公开来源**」 |
+| **O-3** | 摘要 §4 把 `E + Wr → M` 标 **`direct`**,违反**同表** `S + 写 ⇒ M` 行的「MESI 通用性质 ⇒ `analogical`」判据 | 降 `analogical` + 待 **D1 本地字节**重锚 |
+| **O-4** | 摘要 §7「事件词表与 local/remote 划分 ✅ **钉死**」与 §8.1 新规则冲突 —— 直接引语「H2D Requests are snoops from the host」**仅锚在 D3(`pin=weak`)** | 改为「**治理裁决钉死**(`ADR-CEP-11` SU ①)+ **直接引语锚待升级**」:该格 `kind=public-direct, pending=true`,`pending` 翻 `false` 待 **D1/D2 重锚**;**复核不出则维持** |
+
+**③ 裁决 A(弱钉版下 `public-direct` 门槛)= 维持门槛,但 **拆两轴**(per oracle,采纳 critic SHOULD_FIX #1)**
+- **证据强度轴**(`kind`)= 来源的**措辞性质**;**钉版强度轴**(`pending`)= 字节能否**本地复核**
+- `pin=strong` ⇒ 可 `public-direct`,可 `pending=false`(另须**许可确认**)
+  · `pin=weak` ⇒ **可保留** `public-direct`,但 **`pending` SHALL `true`**
+  · `pin=transcribed` ⇒ **SHALL 降** `public-analogical` + `pending=true`(「明确这样写」**不可判定**)
+- ⚠️ **排除**:「`pin=weak`/`transcribed` 一律降 `analogical`」—— 会**混淆两轴**
+  (Cloudflare 403 不把一条直接引语变成「类比」)
+- ⚠️ **新增许可必要条件**:`pending=false` SHALL **同时** `pin=strong` **∧** **引用/再分发许可已人工确认**
+  ⇒ 已知缺口:**D14 `license=null`** · D4 © Consortium
+- 落点:摘要 **§8.2**(规则表)· **§8.3**(Phase 2b 前置:D1/D2 重锚)· delta spec **CSS-03 ⑥** · proposal **AC-10**
+
+**④ 裁决 B(Phase 2b 转换表缩小口径)= 接受缩小,但把「二态」升级为**三态格语义**(per oracle)
+- 每格 SHALL ∈ {`Known(target, basis)` · `Illegal(basis)` · **`Unknown(pending → R-2)`**}
+- ⚠️ **`Unknown` SHALL 显式区分于 `Illegal`** —— 「未知」≠「非法」;
+  沿用 mesif 的 `0xFF = 未定义(空洞)` 会让消费者把「未知」读成「非法」⇒ **本身是一处新的未实测断言**
+- `transition()` 对 `Unknown` SHALL 返回**显式 unknown 态**(不返回目标态、不 abort)
+- **反秃头判据**:`kLegalTransitionCoverageNum/Den`(已确证格数 / **68**)+ 测试断言与**逐格实际统计相等**(防虚报)
+  + 台账每次推进复核**单调不减**(回退必红 + 须授权)
+- ⚠️ **排除**「填满 68 格、无证据的格标 `self-derived`」—— `self-derived` 仍是「我断言这个转移」
+  ⇒ 对大部分格构成**批量杜撰**,重蹈 #9 的 35 格债覆辙
+- 落点:design **D-γbis** · delta spec **CSS-03 ⑦⑧⑨** · proposal **AC-3 / AC-9** · tasks **2.3 / 2.3b**
+
+**⑤ 对 Entry #124 的 **dated 追加注记**(append-only,不改写原文)**
+> **2026-11-01 补记(per Entry #125 ③ 与 oracle 复核)**:#124 的**降级条件 ②「补偿路径有判据」**
+> SHALL 读作判**「保守补偿」**语义,**SHALL NOT** 读作「等价恢复」——
+> `SparseSnoopFilter` 的 caps 是 `CONSERVATIVE`(**宁多探不漏探 = 不精确**)⇒
+> 它只能给出「**可能**还有其他 sharer」的保守近似,**无法**精确恢复 `O` 态携带的
+> 「**没有**其他 sharer」这一信息 ⇒ 实现层落地时**不得**声称等价恢复(否则即过度声称)。
+
+**⑥ 另一条治理义务登记(不立即执行,写明义务)**
+- ⚠️ **`07 号 §5.1.1` 措辞与裁决 ③⑦ 冲突**(实测:该行仍写「设备不感知其他设备」—— 在 2.0 **平凡成立**;
+  「CXL 3.0 对称」—— 按裁决 ⑦ 指 **HDM-DB/CXL.mem** 而非 CXL.cache)⇒ **真源 1 vs 真源 3 措辞冲突**
+- **处置**:**不**单独立即走冻结面授权(收益不抵成本)⇒ 随 #10 **实现层**对 `07 号` 的编辑一并执行,
+  且该编辑清单 SHALL **显式含「对齐裁决 ③⑦ 措辞」**(已写进 improvement `Impact` 冻结面行)
+
+**⑦ 冻结面**:本条**零冻结面改动**(未碰任何 ADR / 07 号)⇒ `cep_freeze_check` 维持通过,
+⚠️ `frozen_at_commit` 仍指向 `d062da60`(滞后 HEAD 但 **40 件 hash 全对**)⇒ 下次授权时顺手刷新。
+
+**⑧ 关联**: Entry #122(7 条口径)· #123(change 转正)· #124(R11 复核 + 本条 ⑤ 的追加注记)·
+#112(去重裁决)· `ADR-CEP-11` SU · `ADR-CEP-04` SU · 摘要 §8.2/§8.3 · delta spec CSS-03 ⑥⑦⑧⑨
 
 ---
 

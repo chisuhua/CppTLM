@@ -100,7 +100,7 @@ D2HReqOp  ∩ H2DReqOp = ∅
 | 事件类 \ 态 | `I` | `S` | `E` | `M` |
 |---|---|---|---|---|
 | **local read**(`RdShared` / `RdCurr`) | 可进 `S`(共享)· **公开来源 direct** | 保持 `S`(**direct**) | 保持 `E`(**direct**) | 保持 `M`(**direct**) |
-| **local write**(`WrInv(F)` / `WOWrInv` / `ItoMWr`) | 可进 `E` / `M`(**direct**:`RdOwn` grant `GO-E`/`GO-M` 存在 ⇒ 写取所有权可行) | 须先降级(`S` + 写 ⇒ `M`,**analogical**:MESI 通用性质) | `E + Wr → M`(**direct**:静默升级,**strict 升秩**) | 保持 `M`(**direct**) |
+| **local write**(`WrInv(F)` / `WOWrInv` / `ItoMWr`) | 可进 `E` / `M`(**direct**:`RdOwn` grant `GO-E`/`GO-M` 存在 ⇒ 写取所有权可行) | 须先降级(`S` + 写 ⇒ `M`,**analogical**:MESI 通用性质) | `E + Wr → M`(**analogical**:MESI 通用性质 —— `E` 含无其他 sharer ⇒ 就地改 `M`;⚠️ 公开来源**未逐字断言该格**,原标 `direct` 违反本表 `S+写` 行的同一判据;待 **D1 本地字节**重锚,重锚不出则维持 `analogical` + `pending`) | 保持 `M`(**direct**) |
 | **remote snoop**(`SnpInv` / `SnpData` / `SnpCurr`) | 保持 `I`(**direct**) | `SnpInv` → `I`;`SnpData` → `S`(**direct**) | `SnpInv` → `I` + 回脏数据(**direct**) | `SnpInv`/`SnpData` → `I` + **回脏数据**(M→I 转发 / M→S 转发)(**direct**) |
 | **evict**(`DirtyEvict` / `CleanEvict` / `CleanEvictNoData`) | — | — | `CleanEvict`(**direct**) | `DirtyEvict`(**direct**) |
 
@@ -150,7 +150,7 @@ D2HReqOp  ∩ H2DReqOp = ∅
 | 判定项 | 结果 |
 |---|---|
 | 设备侧态数 | ✅ **钉死 = 4**(M/E/S/I)⇒ 投影 **4→4** |
-| 事件词表与 local/remote 划分 | ✅ **钉死**(结构级;opcode 编码留 R-1) |
+| 事件词表与 local/remote 划分 | 🟡 **治理裁决钉死 + 直接引语锚待升级**:划分本身是 **`ADR-CEP-11` SU ① 的治理层定义**(编译期断言锁的是**建模决策**,其成立**不依赖证据强度**);⚠️ 但直接引语「H2D Requests are snoops from the host」**仅锚在 D3(`pin=weak`)** ⇒ 该格 `kind=public-direct, pending=true`,待 **D1/D2 本地字节复核**出等价表述后翻 `pending=false`;**复核不出则维持 `pending=true`,不影响结构断言的锁定效力**。opcode 编码留 R-1 |
 | 投影形状 | ✅ **钉死 = 4→4**(`F` 行不存在) |
 | 「非对称」可判定义 | ✅ **钉死**(三维度) |
 | 编译期结构断言 | ✅ **可写**(V-3) |
@@ -196,13 +196,44 @@ D2HReqOp  ∩ H2DReqOp = ∅
 ⚠️ **archive.org 不可达是环境级阻断**(实测:curl 与 webfetch 双通道 · 80/443 双端口 · 120s 超时全失败;
 `arquivo.pt` / `timetravel` / `archive.ph` / `archive-it` 替代亦全部不可达)⇒ **本环境无法补 6 条网页类的快照 URL**。
 
-⇒ **载体侧规则(新增,须写进 §4 载体 AC)**:
-> **载体 SHALL 只把 `pin=strong` 的来源记为 `public-direct` 且 `pending = false`**;
-> `pin=weak` / `pin=transcribed` 的格 SHALL 标 `pending = true`(或降为 `public-analogical`)⇒
-> ⚠️ **禁止**把「未取到字节」的来源写成 `public-direct` + `pending = false`。
+### 8.2 载体侧 `basis` 规则(**裁决 A 已裁决 2026-11-01,per oracle 复核 + critic SHOULD_FIX #1**)
 
-⇒ ⇒ **Phase 1 = 有条件完成** ⇒ 载体逐格编码**可在「只用 `pin=strong` + 已本地复核的 `pin=weak`」前提下启动**;
-⚠️ **待裁决**(architect/planner):是否接受该「弱钉版下 `public-direct` 门槛」口径(本条已按「保守方向」写入,若裁决更严则载体 AC 需加严)。
+⚠️ **核心:两个轴必须拆开,不得混读** ——
+
+| 轴 | 含义 | 由什么决定 |
+|---|---|---|
+| **证据强度轴**(`basis.kind`) | 该来源是**明确这样写**(`direct`)还是**跨协议/跨代次类比**(`analogical`) | **来源的措辞性质** |
+| **钉版强度轴**(`basis.pending`) | 该来源的字节能否**在本环境复核** | **`pin` 等级** |
+
+⇒ ⇒ **Cloudflare 403 不会把一条直接引语变成「类比」**(证据性质不因取不到字节而改变);
+把 `pin=weak` 一律降 `analogical` 会**混淆两轴**(已排除)。
+
+**规则(逐档)**:
+
+| `pin` 等级 | `basis.kind` | `basis.pending` | 理由 |
+|---|---|---|---|
+| `pin=strong`(字节已取 + sha256) | `public-direct` **可**(另须满足下方许可条件) | **可得 `false`** | 两轴皆满足 |
+| `pin=weak`(仅 URL + 抓取日) | **可保留** `public-direct` | **SHALL `true`** | 措辞性质仍为「明确这样写」,但**字节不可本地复核** ⇒ 不得声称已裁决 |
+| `pin=transcribed`(原文本环境未读到) | **SHALL 降** `public-analogical` | **SHALL `true`** | 「明确这样写」这一谓词**不可判定** —— 转述支持「大意存在」,不支持「措辞如此」 |
+| 未取字节(D5/D11/D12/D13) | 同上按 `pin=weak` **保守处理** | SHALL `true` | — |
+
+**⚠️ 许可必要条件(独立于上表,不得省略)**:
+
+> `pending = false` SHALL **同时**满足 ① `pin=strong` **且** ② **引用 / 再分发许可已人工确认**。
+> 已知许可缺口:**D14**(`license = null`,仓库未声明)⇒ 在人工确认前**不得** `pending = false`;
+> **D4** © CXL Consortium(「引用需节制」)⇒ 引用范围须人工把关。
+
+⇒ ⚠️ **禁止**把「未取到字节」×「未确认许可」的来源写成 `public-direct` + `pending = false`
+⇒ **假钉版的危害 > 诚实的缺口**(本 change delta spec CSS-06)。
+
+### 8.3 Phase 2b 前置任务(因上述两轴规则新增)
+
+1. **D1 / D2 重锚「H2D Req 只含 snoop」** —— 二者均为 `pin=strong` 且**字节已在本地**
+   (`/tmp/opencode/cxlpin/A.pdf` / `B.pdf`,sha256 已复核)⇒ 若找到等价表述,该格可由
+   `pending=true` 翻 `false`;复核不出则**维持 `pending=true`**(不影响结构断言锁定效力)。
+2. **D1 重锚 `E + 写 → M` 静默升级** —— 该格现为 `analogical`(§4),若 D1 形式化模型含对应规则则升 `direct`。
+
+⇒ ⇒ **Phase 1 = 有条件完成** ⇒ 载体逐格编码**现在即可启动**(按 8.2 两轴规则),上述重锚可与之并行。
 
 ---
 
