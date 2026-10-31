@@ -461,7 +461,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 0/3（2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec`(MESIF 状态机规约 + 5→4 投影表)**已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**;队列 #8 `cpptlm-cep-chi-rnf-subset` **已转正**(2026-10-28,per Entry #91 —— change 目录已建,`openspec validate --strict` rc=0)⇒ 占 1 slot;下一个可启动 change = **无**(per §5.4 并发 ≤ 1);历史:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(2026-10-28,per Entry #90)(2026-10-28 归档:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(完成归档语义 —— 2 份 delta spec 已合并进 main specs:`cep-cohif-carrier` / `cep-protocol-bridge-contracts`;tasks **41/41** 全勾)→ slot 已释放,per Entry #90;历史:2026-10-27 转正:`cpptlm-cep-cohif-carrier`(队列 #7)**已建 change 目录**(proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0)→ 占 1 slot,per Entry #81;历史:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已完成归档**(完成归档语义 —— 14 Scenario 并入 2 份 main spec(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7))→ slot 已释放,per Entry #80;历史:2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:**当时**(2026-10-23)下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base` —— 队列 #5 现已归档;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
+→ **当前 Proposed 并发 = 0/3**（2026-10-31 归档:`cpptlm-test-sh-arg-parsing-timeout` **已完成归档**(delta spec `ci-test-entrypoint` 已合并进 `openspec/specs/`)⇒ slot 已释放;历史:2026-10-31 转正:非 CEP 能力的**测试基础设施**修复 change `cpptlm-test-sh-arg-parsing-timeout` 已建 change 目录(4 件套 + 1 份 delta spec `ci-test-entrypoint`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec`(MESIF 状态机规约 + 5→4 投影表)**已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**;队列 #8 `cpptlm-cep-chi-rnf-subset` **已转正**(2026-10-28,per Entry #91 —— change 目录已建,`openspec validate --strict` rc=0)⇒ 占 1 slot;下一个可启动 change = **无**(per §5.4 并发 ≤ 1);历史:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(2026-10-28,per Entry #90)(2026-10-28 归档:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(完成归档语义 —— 2 份 delta spec 已合并进 main specs:`cep-cohif-carrier` / `cep-protocol-bridge-contracts`;tasks **41/41** 全勾)→ slot 已释放,per Entry #90;历史:2026-10-27 转正:`cpptlm-cep-cohif-carrier`(队列 #7)**已建 change 目录**(proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0)→ 占 1 slot,per Entry #81;历史:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已完成归档**(完成归档语义 —— 14 Scenario 并入 2 份 main spec(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7))→ slot 已释放,per Entry #80;历史:2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:**当时**(2026-10-23)下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base` —— 队列 #5 现已归档;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -474,7 +474,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 **✅ 前置条件已满足(2026-10-20)**:3 个 active 全部 **⏸ 暂存归档**(`--skip-specs`),baseline **0/3** → `cpptlm-cep-umbrella` **可立即创建**。
 
-**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **0/3（2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec` **已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**(2026-10-28 转正:队列 #8 `cpptlm-cep-chi-rnf-subset` **已建 change 目录** → 占 1 slot,per Entry #91;历史:2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档** → slot 已释放,per Entry #90;历史:2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **已转正** → 占 1 slot,per Entry #81;历史:2026-10-27 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已完成归档** → slot 已释放,per Entry #80;历史:2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已建 change 目录** → 占 1 slot,per Entry #71;2026-10-26 队列 #5 `cpptlm-cep-collective-plane-base` **已完成归档** → slot 释放,per Entry #70;2026-10-26 队列 #5 **已建 change 目录** → 曾占 1 slot,per Entry #66;2026-10-25 队列 #4 `cpptlm-cep-directory-ordering-plane` **已完成归档** → slot 释放,per Entry #64;队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档** → slot 已释放;队列 #2 `cpptlm-cep-poc-spike` **已完成归档** → slot 释放;该 change 建目录后曾为 1/3);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
+**✅ 已创建(2026-10-21)**:builder 起草完成 —— proposal + design + specs(`cep-core-contracts`)+ tasks **4 件套全落**;baseline **0/3 → 1/3**。**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **0/3**（2026-10-31 转正:非 CEP 能力的**测试基础设施**修复 change `cpptlm-test-sh-arg-parsing-timeout` 已建 change 目录(4 件套 + 1 份 delta spec `ci-test-entrypoint`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec` **已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**(2026-10-28 转正:队列 #8 `cpptlm-cep-chi-rnf-subset` **已建 change 目录** → 占 1 slot,per Entry #91;历史:2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档** → slot 已释放,per Entry #90;历史:2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **已转正** → 占 1 slot,per Entry #81;历史:2026-10-27 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已完成归档** → slot 已释放,per Entry #80;历史:2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已建 change 目录** → 占 1 slot,per Entry #71;2026-10-26 队列 #5 `cpptlm-cep-collective-plane-base` **已完成归档** → slot 释放,per Entry #70;2026-10-26 队列 #5 **已建 change 目录** → 曾占 1 slot,per Entry #66;2026-10-25 队列 #4 `cpptlm-cep-directory-ordering-plane` **已完成归档** → slot 释放,per Entry #64;队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档** → slot 已释放;队列 #2 `cpptlm-cep-poc-spike` **已完成归档** → slot 释放;该 change 建目录后曾为 1/3);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
 
 ⚠️ **原候选路径已过期**:"路径 C: archive `cpptlm-gmmu-pte-bus-correction`" —— 该 change **已于 2026-10-12 实际归档**,不再是 active,不能再作为 archive 对象。真实候选是上列 3 个(均已暂存归档)。
 
@@ -7687,8 +7687,51 @@ owner 转指(归档)时,若 fixture 锚点不跟随 ⇒ fixture **假失败**(�
 
 ---
 
+### Entry #121 — 2026-11-01 [scope-change](独立 change `cpptlm-test-sh-arg-parsing-timeout` 完成 + **纠正 §⑨ 的错误归因**)
+
+> **日期口径**:本条为 **2026-11-01**(H7 对拍主线 Entry #120 = 2026-10-31;本轮**跨日**收尾,
+> 归档目录名 `2026-11-01-cpptlm-test-sh-arg-parsing-timeout` 由 CLI 按**系统日期**生成 ⇒ 二者一致)。
+
+**主题**: H7 对拍收尾轮暴露的**既有缺陷**(全量 `ctest` 因 `test_sh_arg_parsing` 超时而**永不可全绿**)
+⇒ 按**用户裁决 U2**「建独立 change 修」⇒ 本 change 已完成并归档。
+
+**① ⚠️ 归因纠正(append-only;§⑨ 原文不改写,只加 dated 注记)**
+| 项 | 内容 |
+|---|---|
+| §⑨ 原登记的根因 | 「**递归**」(第 3 项检查跑 `./test.sh --mode off --build` ⇒ 内部跑全量 ctest ⇒ 含它自己) |
+| **实测判定** | ❌ **不成立** —— `BUILD_DIR=/tmp/opencode/__probe_bd bash -x ./test.sh --mode off --build` ⇒ 输出 `[1/459] Building CXX object ...` ⇒ **超时发生在编译阶段**(459 目标全量编译)⇒ 命令**从未走到** `test.sh:222` 的 `ctest` |
+| **真根因** | 该自检用**不存在的** `BUILD_DIR` ⇒ cmake **创建**它并从零全量编译 ⇒ **1500s+ 超时**;且每次**残留**一个半成品构建树(已清理) |
+| **为何必须先纠正** | 若按「递归」去修会**改错地方**(去改**生产脚本** `test.sh`),而正确修法在**测试脚本**内且**零生产代码改动** ⇒ 与本轮 H7 收尾轮的核心教训同源(「归因未实测就写入台账」已连续犯错 3 次:Entry #115 / #119 / 本条) |
+
+**② 修法(改动面 = 1 文件)**
+- 第 3 项检查的 `BUILD_DIR` 从「**不存在的目录**」改为「**已存在的普通文件**」⇒ cmake 在**配置阶段**秒级失败(实测输出**不含**「互斥」⇒ **断言语义保持不变**:仍然证明「解析阶段放行」);
+- 新增第 4 项检查作为**可执行反向 fixture** ⇒ 形态回退时**因「产生了构建产物」而红**(实测);
+- **零生产代码改动**(`test.sh` 未动)· 冻结面零改动。
+
+**③ 实测**
+| 项 | 修复前 | 修复后 |
+|---|---|---|
+| 自检耗时 | **> 1500s**(超时) | **0.046s** |
+| 全量 `ctest`(不排除任何测试) | 必红(必须排除该条) | **125/125 全绿**、零 Timeout |
+| 自测项数 | 3 | **4**(新增「③ 无构建产物」) |
+
+**④ 判据纪律自检(两条反向 fixture 均实测因正确原因红)**
+- **鉴别力**:临时把 `test.sh:135` 的互斥检查改回「`--build` 恒报互斥错」⇒ 第 3 项**因正确原因红**;
+- **反向 fixture**:临时把第 3 项形态回退为「不存在的目录」⇒ 第 4 项**因「产生了构建产物」而红**并列出具体目录。
+
+**⑤ ⚠️ 连带修正:KPI baseline 漂移**
+新建 change 后实测 Proposed 并发 = **1/3**,而 **6 处**活文档(obj §5.4 / obj §4.0 队列表行 / phase-10 / umbrella improvement / roadmap.md / AGENTS.md)仍登记 **0/3**
+⇒ `cep_docs_sync_check` + `cep_gate_selftest` 报红 ⇒ 已同步(只改**当前态**数字 + 追加 dated 句,**历史叙述一律保留**)⇒ 归档后随 slot 释放回到 **0/3**。
+
+**⑥ 产物**:`openspec/changes/archive/2026-10-31-cpptlm-test-sh-arg-parsing-timeout/`
+(4 件套 + delta spec `ci-test-entrypoint` **已合并**进 `openspec/specs/`)· 改动文件 = `scripts/test/test_sh_arg_parsing.sh`(**1 个**)
+
+**⑦ 关联**: Entry #120 §⑨(缺陷登记 + §⑨bis 第 2 轮 critic 闭合 + §⑨ter 第 3 轮 critic 收官)· #119 / #118 / #117(H7 主线)
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
+
+
 **最后**: ⚠️ AGENTS.md 中**不存在** `<!-- AUTO: objectives -->` 哨兵段(实测 0 命中)→ 路线图索引需**手工同步** `.rddf/roadmap.md` §Objectives / §AUTO-INDEX
 **作者**: CppTLM build agent(planner mode)

@@ -14,7 +14,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: ci-test-entrypoint
 
