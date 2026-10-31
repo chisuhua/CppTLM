@@ -13,8 +13,9 @@
 | Phase | 状态 | 说明 |
 |---|---|---|
 | 0 治理前置 | ✅ **已完成**(2026-11-01) | 口径裁决签发(Entry #122 + ADR Status Update)· Task 0 公开来源普查(硬门有条件通过)· change 目录 4 件套已建 |
-| 1 钉版补齐 | ⬜ **待实施(阻塞载体逐格编码)** | sha256 / Wayback 快照 / D14 commit SHA |
-| 2 规约载体 | ⬜ 待实施 | `cxl_state_spec.hh`:4 态 / 事件词表 / 转换表 / 4→4 投影 / 逐格 `basis` / 编译期锁 |
+| 1 钉版补齐 | 🟡 **有条件完成**(2026-11-01) | **7 `pin=strong`**(sha256 / D14 commit SHA)/ **1 `pin=weak`**(D3,Cloudflare 403 无哈希)/ **6 `pin=transcribed`**(live 403 + archive.org 全站不可达)⇒ 摘要 §8.1 · ⚠️ 新增载体规则「只有 `pin=strong` 可 `public-direct` + `pending=false`」 |
+| 2a 规约载体(结构层) | ✅ **已完成**(2026-11-01) | `cxl_state_spec.hh`:4 态 / 事件词表 / 4→4 投影 / 秩 / 3 条结构断言 / `basis` 4 档 / 8 项残余风险;`test_cep_cxl_state_spec.cc` 8 cases / 48 assertions 全绿(含 5 条反向 fixture) |
+| 2b 规约载体(转换表) | ⬜ **待实施(阻塞于 R-2)** | 4 态 × 17 事件转换表 + **逐格 `basis{kind,pending,ref,note}`** + `transition()` —— ⚠️ 逐状态合法性表**公开来源不可得**(R-2)⇒ 缩小口径待裁决 |
 | 3 判据收口 | ⬜ 待实施 | 契约测试 + 反向 fixture + 核对表生成器 + `--check` |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + 零冻结面 diff + 归档 |
 

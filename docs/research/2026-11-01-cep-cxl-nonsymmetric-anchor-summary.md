@@ -92,6 +92,11 @@ D2HReqOp  ∩ H2DReqOp = ∅
 
 ## §4 逐格覆盖矩阵(粗粒度:4 态 × 4 事件类)
 
+> ⚠️ **强度时点声明**:本表强度为**普查期标注**,且**未逐格给出上游条目号** ⇒
+> **最终以 §8.1 的 pin 规则为准**(只有 `pin=strong` 可记 `public-direct` + `pending=false`)。
+> ⇒ Phase 2b 逐格编码时 **SHALL NOT 照抄本表强度**,须回到 §8 逐条核对上游的 pin 等级;
+> 上游落在 `pin=weak`(D3)/ `pin=transcribed`(D6~D9/D15/D16)的格 SHALL 标 `pending = true`。
+
 | 事件类 \ 态 | `I` | `S` | `E` | `M` |
 |---|---|---|---|---|
 | **local read**(`RdShared` / `RdCurr`) | 可进 `S`(共享)· **公开来源 direct** | 保持 `S`(**direct**) | 保持 `E`(**direct**) | 保持 `M`(**direct**) |
@@ -128,7 +133,7 @@ D2HReqOp  ∩ H2DReqOp = ∅
 | # | 项 | 处置 |
 |---|---|---|
 | R-1 | opcode **编码** / 字段宽度 / credit 规则 / channel 级排序 | 载体用**枚举名** + `pending` |
-| R-2 | 「15 条 request」的**权威枚举**与**逐状态合法性表**(公开 deck 间已有 `MemWr`↔`WrCur` 差异) | 登记 + 人类摘要 |
+| R-2 | **request 权威枚举**与**逐状态合法性表**(公开 deck 间已有 `MemWr`↔`WrCur` 差异)。⚠️ 本仓公开来源**可枚举** `D2H Req` = **14** 条(per §2)· `H2D Req` = **3** 条 snoop ⇒ **不保证**与规范权威枚举**等量**(「搜不到」≠「不存在」,同 R-7 口径) | 登记 + 人类摘要 |
 | R-3 | **transient state** 的官方命名 / 编码(D1 明说「not officially part of the CXL.cache specification」) | 载体**不建模** transient ⇒ 只登记稳定态 |
 | R-4 | **错误语义**(`GO-Err` / poison / viral / timeout isolation) | 登记;实现层**不预支** |
 | R-5 | **SF completeness** 的**规范性判定**(允许多大 over-snoop) | 只标 `analogical`(CHI / CCI 类比) |

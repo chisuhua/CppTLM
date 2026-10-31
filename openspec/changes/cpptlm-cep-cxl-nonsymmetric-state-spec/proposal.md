@@ -6,7 +6,7 @@
 > **规划输入**: `.rddf/improvements/cpptlm-cep-cxl-nonsymmetric.md`(2026-11-01 修订版,10 大项 / 16 编辑点)
 > **估时**: 4 周(规约层)= **1 周普查硬门(已完成)** + 3 周载体 / 摘要核对表 / 生成器 / 编译期锁
 > **KPI**: Stage 1 = **1 slot**;Proposed 并发 **0/3 → 1/3**
-> **冻结面**: **零改动**(本 change 只新增载体 + 测试 + 文档;`07 号` / `ADR-CEP-*` **不碰** —— 口径已由 `ADR-CEP-11` 的 Status Update 承载)
+> **冻结面**: **零正文改动**(`07 号` 不碰)。**仅两件 ADR 追加 `## Status Update`(纯追加,正文零改动)**:`ADR-CEP-11`(口径裁决,经台账 **Entry #122** 两步授权)· `ADR-CEP-04`(R11 归属复核,经 **Entry #124** 两步授权)⇒ provenance 已对齐
 
 ---
 

@@ -48,7 +48,7 @@ remote = 仅 H2D snoop 操作码(发起方恒为 Home)
 「非对称」不再是标签。⚠️ 精确表述 = **host-centric**;「设备互不感知」在 CXL 2.0 **平凡成立**(每 root port 只 1 个 cache device)
 ⇒ 不得当作 2.0 的区分性语义(per Entry #122 ①③)。
 
-**代价**:事件词表**必须**枚举(local 侧 15 条 D2H Req + remote 侧 3 条 snoop)
+**代价**:事件词表**必须**枚举(local 侧 **14** 条 D2H Req + remote 侧 **3** 条 snoop —— 与摘要 §2 的枚举逐项一致)
 ⇒ 公开来源的 opcode 清单在**不同年代的 deck 间有差异**(`MemWr`↔`WrCur`)⇒ ⇒ 载体用**枚举名**,
 **不写死编码**,且该差异登记为 `R-2`。
 

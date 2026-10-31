@@ -25,7 +25,7 @@
 
 namespace {
 
-    using cpptlm::cep::CxlStateSpec;
+    using tlm::cep::CxlStateSpec;
 
     using State = CxlStateSpec::State;
     using Event = CxlStateSpec::Event;

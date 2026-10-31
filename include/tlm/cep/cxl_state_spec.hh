@@ -53,7 +53,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace cpptlm::cep {
+namespace tlm::cep {
 
 /// CXL 2.0 非对称(CXL.cache)规约载体 —— **Phase 2a 结构层**。
 ///
@@ -337,6 +337,6 @@ public:
     }
 };
 
-}  // namespace cpptlm::cep
+}  // namespace tlm::cep
 
 #endif  // CPPTLM_CEP_CXL_STATE_SPEC_HH
