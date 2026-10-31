@@ -44,6 +44,7 @@ from m5.objects import (
 )
 
 CFG = json.loads(
+
     open(
         os.environ.get(
             "PARITY_CONFIG",
@@ -52,6 +53,16 @@ CFG = json.loads(
         encoding="utf-8",
     ).read()
 )
+
+# ⚠️ **gem5 版本的唯一真源** = `gem5.versions.default.version`;
+#    顶层 `gem5.version` 仅作**兼容镜像** ⇒ 两者不一致 ⇒ 报错退出(D-4 自检)。
+_GEM5_VERSION = CFG["gem5"]["versions"]["default"]["version"]
+_mirror = CFG["gem5"].get("version")
+if _mirror and _mirror != _GEM5_VERSION:
+    raise SystemExit(
+        f"✗ gem5 版本口径不一致:`gem5.version`={_mirror} vs "
+        f"`gem5.versions.default.version`={_GEM5_VERSION}"
+        f" ⇒ 产物会错标版本 ⇒ 拒绝出结果")
 OUT = os.environ.get("PARITY_OUT", "gem5_linear_probe.json")
 STATS_TEXT = os.environ.get(
     "PARITY_STATS",
@@ -241,7 +252,9 @@ _ver = CFG.get("verification", {})
 result = {
     "tool": "gem5",
     "mode": "parameter_same_source",
-    "version": CFG["gem5"]["version"],
+    # ⚠️ **D-4 修复**:version 取**唯一真源** `gem5.versions.default.version`
+    #    (旧的顶层 `gem5.version` 曾停在 v24 ⇒ v25 的产物**全部错标 v24**)。
+    "version": _GEM5_VERSION,
     "verification_mode": _ver.get("verification_mode"),
     "verification_scope": _ver.get("verification_scope"),
     "sequence": {
@@ -251,6 +264,11 @@ result = {
         "min_period": MIN_PERIOD,
         "max_period": MAX_PERIOD,
         "nominal_accesses": NOMINAL_ACCESSES,
+        # ⚠️ **声明的 profile**(per `14 号` §4.4 封闭枚举表)——
+        #    ⚠️ `random` driver = gem5 `createRandom` = **真均匀** ⇒ `conforming` 类;
+        #    `linear` driver = 线性扫描 ⇒ 命中/未命中两极 ⇒ `observe` 类
+        #    (不参与判定;其 R-B 误差随 W/C 连续变化 ⇒ 不能当 `breaking` 正控)。
+        "profile": "uniform" if DRIVER == "random" else "fixed_ratio",
         # ⚠️ **workload 特征**(供分析器用 R-B 规则估 h_0)
         "working_set_bytes": lin_cfg.get("working_set_bytes"),
         "cache_bytes": lin_cfg.get("cache_bytes"),

@@ -20,7 +20,27 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 OUT_DIR="${PARITY_OUT_DIR:-$ROOT/build/parity}"
 mkdir -p "$OUT_DIR"
 
-GEM5_BIN="${GEM5_BIN:-$ROOT/external/gem5/build/NULL/gem5.opt}"
+# ⚠️ **gem5 二进制路径的唯一真源** = `parity_config.json` 的
+#    `gem5.versions.default`(dir + variant)⇒ 避免脚本各自硬编码版本目录
+#    (此前 4 个脚本硬编码 `external/gem5/...` = v24 路径 ⇒ v24 build 删除后
+#     **静默跳过** e2e ⇒ 门禁失守)。
+GEM5_BIN="${GEM5_BIN:-$ROOT/$(python3 -c "
+import json
+v = json.load(open('$ROOT/scripts/cep/parity/parity_config.json'))['gem5']['versions']['default']
+print(v['dir'] + '/build/NULL/gem5.opt')
+")}"
+
+# ⚠️ **P-5 字段注入**(per `14 号` §4.4 / `ADR-CEP-06 §3`):两侧 JSON 必须
+#    声明 `verification_mode` + `verification_scope` ⇒ 缺失 ⇒ P-5 FAIL。
+#    取值来自**唯一真源** `parity_config.json` 的 `verification` 段。
+export PARITY_VERIFICATION_MODE="$(python3 -c "
+import json
+print(json.load(open('$ROOT/scripts/cep/parity/parity_config.json'))['verification']['verification_mode'])
+")"
+export PARITY_VERIFICATION_SCOPE="$(python3 -c "
+import json
+print(json.load(open('$ROOT/scripts/cep/parity/parity_config.json'))['verification']['verification_scope'])
+")"
 TRACE_BASE="${PARITY_TRACE_BASE:-$OUT_DIR/trace}"
 # ⚠️ **默认 1e5 条** —— `14 号` §4.1 规定「主对拍 **≥ 10⁵ 事务**」
 #    (与 `verification_scope` 声明一致);统计置信度需要足够样本量。
@@ -45,9 +65,14 @@ bash "$ROOT/scripts/cep/parity/build_gem5.sh" --check >/dev/null || fail "gem5 �
 
 # ② 生成 trace(确定性)
 log "生成 trace(seed=$SEED, 条数=$NUM_ACCESSES, 工作集=$WORKING_SET)..."
+# ⚠️ **显式指定 `--profile fixed_ratio`** —— 该 profile 是**历史默认语义**
+#    (2026-10-31 前名为 `uniform`:80% 工作集内 + 20% 工作集外)。
+#    ⚠️ 2026-10-31 起 `uniform` 改为**真均匀**(R-B 规则的前提)⇒ 若此处不显式指定,
+#    本档的**字节级基线会静默改变** ⇒ 显式化以保基线(判据铁律 4)。
 python3 "$ROOT/scripts/cep/parity/parity_trace_gen.py" \
     --out "$TRACE_BASE" --seed "$SEED" \
     --num-accesses "$NUM_ACCESSES" --working-set "$WORKING_SET" \
+    --profile fixed_ratio \
     --tick-interval "$TICK_INTERVAL" \
     || fail "trace 生成失败"
 
@@ -78,15 +103,19 @@ python3 "$ROOT/scripts/cep/parity/parity_compare.py" \
 rc=$?
 set -e
 
-# ⚠️ **已知限制检测(上游 gem5 缺陷,非本仓判据问题)**:
-#    gem5 v24 的 `ProtoInputStream` 用 protobuf 的 `IstreamInputStream`(零拷贝路径)
-#    **逐条消息新建** `io::CodedInputStream` ⇒ **文件较大时提前 EOF**
-#    (实测:1000 条读到 966 / 20000 条读到 19735 / 100000 条读到 98874;
-#     同一文件用 Python 的 protobuf 库可完整读出 ⇒ 文件本身没问题)。
-#    ⇒ 文件同源路径在 gem5 v24 侧**不可靠** ⇒ 走**参数同源**路线
-#      (`scripts/cep/parity/run_parity_linear.sh`)。
-#    ⇒ 这里检测到截断 ⇒ 报「已知限制」并 **exit 77**(ctest 跳过)——
-#      不让**上游缺陷**把门禁打红,但**信息保留**在日志与台账里。
+# ⚠️ **序列截断检测** —— ⚠️ **2026-10-31 归因更正**(per 台账 Entry #120):
+#    此前此处登记为「gem5 v24 `ProtoInputStream` 提前 EOF = **上游缺陷**」,
+#    并据此让截断走 **exit 77(ctest 跳过)** —— 该结论**已被实测推翻**:
+#    · C++ 复现程序按 gem5 **完全相同**的读法(`ReadVarint32`+`PushLimit`+
+#      `ParseFromCodedStream`)可读满 1000/1001 条;
+#    · gem5 内 DIAG 显示 `read` **从未失败**;
+#    · **上游原版 gem5 v25(零本地补丁)** 可读满 100000/100000 条。
+#    ⇒ **真根因 = 本仓对拍探针的 tick 预算不足**
+#      (名义 tick 间隔 vs 实际每条耗时含背压 ⇒ 模拟在序列发完前就结束)
+#      ⇒ 探针已修(`gem5_trace_probe.py` 的 `MAX_TICK` 按「名义间隔 + 响应上界」算)。
+#    ⇒ **截断 = 本仓缺陷 ⇒ 必须响亮报红**(不再 exit 77 免责):
+#      截断 ⇒ 对拍无效 ⇒ 结论不可采信。
+#    ⇒ 仅「gem5 二进制缺席」仍走 exit 77(合法跳过)。
 _trunc=$(python3 -c "
 import json
 m = json.load(open('$OUT_DIR/trace.meta.json'))
@@ -94,11 +123,12 @@ g = json.load(open('$OUT_DIR/gem5_trace_probe.json'))
 print(1 if g.get('accesses', 0) < m.get('num_accesses', 0) else 0)
 " 2>/dev/null || echo 0)
 if [[ "$_trunc" == "1" ]]; then
-    log "⚠️ **已知限制**:gem5 v24 的 protobuf 流**提前 EOF**(上游缺陷)⇒"
+    log "✗ **序列被截断 ⇒ 对拍无效 ⇒ 报红**"
     log "    gem5 读到 $(python3 -c "import json;print(json.load(open('$OUT_DIR/gem5_trace_probe.json')).get('accesses'))") 条 < trace $(python3 -c "import json;print(json.load(open('$OUT_DIR/trace.meta.json'))['num_accesses'])") 条"
-    log "    ⇒ 文件同源路径**不可用**;请用 scripts/cep/parity/run_parity_linear.sh(参数同源)"
+    log "    ⇒ 真根因 = **本仓探针的 tick 预算不足**(非 gem5 上游缺陷;per Entry #120)"
+    log "    ⇒ 修法:`gem5_trace_probe.py` 的 `MAX_TICK` 须覆盖「条数 ×(名义间隔 + 响应上界)」"
     log "产物:$OUT_DIR/{trace.csv,trace.pb,trace.meta.json,gem5_trace_probe.json,cpptlm_probe.json,verdict_trace.json}"
-    exit 77
+    exit 1
 fi
 log "产物:$OUT_DIR/{trace.csv,trace.pb,trace.meta.json,gem5_trace_probe.json,cpptlm_probe.json,verdict_trace.json}"
 exit $rc

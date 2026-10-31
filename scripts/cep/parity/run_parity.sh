@@ -19,7 +19,27 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 OUT_DIR="${PARITY_OUT_DIR:-$ROOT/build/parity}"
 mkdir -p "$OUT_DIR"
 
-GEM5_BIN="${GEM5_BIN:-$ROOT/external/gem5/build/NULL/gem5.opt}"
+# ⚠️ **gem5 二进制路径的唯一真源** = `parity_config.json` 的
+#    `gem5.versions.default`(dir + variant)⇒ 避免脚本各自硬编码版本目录
+#    (此前 4 个脚本硬编码 `external/gem5/...` = v24 路径 ⇒ v24 build 删除后
+#     **静默跳过** e2e ⇒ 门禁失守)。
+GEM5_BIN="${GEM5_BIN:-$ROOT/$(python3 -c "
+import json
+v = json.load(open('$ROOT/scripts/cep/parity/parity_config.json'))['gem5']['versions']['default']
+print(v['dir'] + '/build/NULL/gem5.opt')
+")}"
+
+# ⚠️ **P-5 字段注入**(per `14 号` §4.4 / `ADR-CEP-06 §3`):两侧 JSON 必须
+#    声明 `verification_mode` + `verification_scope` ⇒ 缺失 ⇒ P-5 FAIL。
+#    取值来自**唯一真源** `parity_config.json` 的 `verification` 段。
+export PARITY_VERIFICATION_MODE="$(python3 -c "
+import json
+print(json.load(open('$ROOT/scripts/cep/parity/parity_config.json'))['verification']['verification_mode'])
+")"
+export PARITY_VERIFICATION_SCOPE="$(python3 -c "
+import json
+print(json.load(open('$ROOT/scripts/cep/parity/parity_config.json'))['verification']['verification_scope'])
+")"
 PROBE="$ROOT/scripts/cep/parity/gem5_cache_probe.py"
 COMPARE="$ROOT/scripts/cep/parity/parity_compare.py"
 

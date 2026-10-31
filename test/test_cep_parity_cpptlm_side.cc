@@ -248,8 +248,24 @@ TEST_CASE("CEP parity: CppTLM 侧参数同源", "[cep][parity]") {
     if (!out_path.empty()) {
         std::ofstream out(out_path);
         REQUIRE(out.good());
-        const uint64_t n_reads = all_read ? issued : 0;
-        const uint64_t n_writes = all_read ? 0 : issued;
+        // ⚠️ **读写条数必须按「实际消费的序列」统计** —— 旧实现用
+        //    `all_read ? issued : 0` ⇒ 在**混合读写**的 trace 下完全失真
+        //    (实测:trace 含 20% 写 ⇒ 报 r=100000 / w=0 ⇒ P-1b 假红)。
+        uint64_t n_reads = 0;
+        uint64_t n_writes = 0;
+        if (!csv_rows.empty()) {
+            for (const auto& r : csv_rows) {
+                if (r.is_write) {
+                    ++n_writes;
+                } else {
+                    ++n_reads;
+                }
+            }
+        } else {
+            // 参数同源路径:两侧**各自独立**生成 ⇒ 按 `read_percent` 的比例
+            n_reads = issued * seq.read_percent / 100;
+            n_writes = issued - n_reads;
+        }
         out << "{\n"
             << "  \"tool\": \"cpptlm\",\n"
             << "  \"mode\": \""

@@ -73,16 +73,45 @@ def gen_accesses_hot_cold(seed, num_accesses, hot_bytes, cold_bytes,
         yield addr, is_write, line_size
 
 
-def gen_accesses(seed, num_accesses, working_set_bytes, base_addr, line_size,
-                 write_percent):
-    """生成访问序列。
+def gen_accesses_uniform(seed, num_accesses, working_set_bytes, base_addr,
+                         line_size, write_percent):
+    """**真均匀**访问序列 —— 均匀覆盖 `[base, base + working_set_bytes)`。
 
-    命中/未命中比的控制(**per §4.2**):本仓 `CacheTLM` 的命中判定是
-    「该地址**曾被访问过**」(精确地址 map,无限容量)⇒ 因此
+    ⚠️ **这是规则 R-B(`h_0 = min(1, C/W)`)的前提成立所必需的分布**:
+    与 gem5 `createRandom` 同语义(per gem5 `src/cpu/testers/traffic_gen/random_gen.cc`:
+    `addr = rng->random(startAddr, endAddr - 1)`)⇒ 均匀覆盖整个工作集
+    ⇒ 稳态命中率 ≈ **C/W** ⇒ R-B 可被验证。
+    ⇒ 本 profile 对应 `14 号` §4.4 封闭枚举表里的 **`conforming`** 类。
+
+    ⚠️ **地址必须覆盖连续块**(不是随机 byte)—— gem5 的 cache 按
+    `addr / 64B` 模索引 ⇒ **连续**块 ⇒ W=C 时每组恰好 2 块 = 相联度
+    ⇒ 完美装下、不驱逐 ⇒ `h_m ≈ 1`(实测 W=32768 ⇒ h_m=0.501570 ≈ C/W=0.5,
+    误差 0.157pp,与 Entry #118 同 W 的 0.500344 一致)。
+    """
+    ws_lines = max(1, working_set_bytes // line_size)
+    # ⚠️ 每条访问取 **2 个** LCG 值(① 区内偏移 + ② 读写判定)
+    randoms = lcg_stream(seed, num_accesses * 2)
+    for _ in range(num_accesses):
+        offset = int(next(randoms) * 1000000) % 1000000
+        addr = base_addr + (offset % ws_lines) * line_size
+        is_write = next(randoms) < (write_percent / 100.0)
+        yield addr, is_write, line_size
+
+
+def gen_accesses_fixed_ratio(seed, num_accesses, working_set_bytes, base_addr,
+                             line_size, write_percent):
+    """**固定比例双峰**访问序列 —— **历史默认语义**(2026-10-31 前名为 `uniform`)。
+
+    ⚠️ **它不是均匀分布**,也不是双峰「热/冷」形态:
+    80% 落在 `[base, base+W)`,20% 落在 `[base+1MiB, base+1MiB+W)`
+    ⇒ **实际足迹 = 1MiB + W**(不是 W)⇒ **R-B 的 W 若取 `working_set_bytes` 即失真**。
+    ⇒ 命中/未命中比的控制原理(**per §4.2**):本仓 `CacheTLM` 的命中判定是
+    「该地址**曾被访问过**」(精确地址 map,无限容量)⇒
     **命中率 ≈ 「落在已访问地址集合内的比例」**,而不是容量/替换的结果。
-    ⇒ 本生成器用「工作集内随机 + 工作集外随机」的比例来**显式控制**该比例:
-      · `working_set_bytes` 内的地址 ⇒ 命中(第二次及以后);
-      · 其余 ⇒ 未命中(首次见到即 miss)。
+    ⇒ ⚠️ 归 `14 号` §4.4 封闭枚举表的 **`观察`** 类(既非真均匀,
+    也不保证 R-B 误差 > 5pp ⇒ 不能当 `breaking` 正控,否则近边界参数会误红)。
+    ⇒ **保留**本 profile 是为了**保住 #114 起同源 trace 档的字节级基线**
+    (同 seed 同参数 ⇒ sha256 不变)。
     """
     ws_lines = max(1, working_set_bytes // line_size)
     out_ws = (1 << 20)  # 工作集外区域:距工作集足够远 ⇒ 必然未命中
@@ -218,9 +247,12 @@ def main():
                          "(per `src/mem/packet.hh`:cmd==WriteReq && offset==0 && size==blk_size)"
                          "⇒ cache 把整行写转成 `MemCmd::InvalidateReq` ⇒ `SimpleMemory` panic")
     ap.add_argument("--write-percent", type=float, default=20.0, help="写访问占比 %%")
-    ap.add_argument("--profile", default="uniform", choices=["uniform", "hot_cold"],
-                    help="访问分布形态:uniform(均匀,规则 R-B 最优 ⇒ 证伪不了)/"
-                         "hot_cold(双峰,**规则失效型** ⇒ 满足 P-2a 的 A-1 鉴别力自检)")
+    ap.add_argument("--profile", default="uniform",
+                    choices=["uniform", "fixed_ratio", "hot_cold"],
+                    help="访问分布形态(⚠️ **class 归类以 `14 号` §4.4 封闭枚举表为准**):"
+                         "uniform(**真均匀**覆盖 W ⇒ R-B 前提成立 ⇒ `conforming` 类)/"
+                         "fixed_ratio(80%% 内 + 20%% 外,足迹 1MiB+W ⇒ 历史默认语义 ⇒ `观察` 类)/"
+                         "hot_cold(双峰 ⇒ R-B 前提不成立 ⇒ `breaking` 类 = 正控)")
     ap.add_argument("--hot-bytes", type=int, default=4096,
                     help="hot_cold 形态下的热区字节数(应 ≤ cache 容量)")
     ap.add_argument("--cold-bytes", type=int, default=1048576,
@@ -241,16 +273,31 @@ def main():
     csv_path = out.with_suffix(".csv")
     pb_path = out.with_suffix(".pb")
 
+    # ⚠️ **R-B 规则用的 W = 「有效足迹」**(per `14 号` §4.4:规则 R-B = `h_0 = min(1, C/W)`,
+    #    `W` 必须是**实际唯一地址的量级**,不是 CLI 上名义的 `--working-set`)。
+    #    · uniform      ⇒ 足迹 = W
+    #    · fixed_ratio  ⇒ 足迹 = 1MiB + W(外区在 base+1MiB 起,同样跨 W 字节)
+    #    · hot_cold     ⇒ 足迹 = hot + cold(热区 + 冷区)
+    #    ⇒ 写进 meta 的 `working_set_bytes`(R-B 的唯一输入);
+    #      另存 `declared_working_set_bytes` 供追溯名义值。
     if args.profile == "hot_cold":
         accesses = list(gen_accesses_hot_cold(
             args.seed, args.num_accesses, args.hot_bytes, args.cold_bytes,
             args.base_addr, args.line_size, args.write_percent, args.hot_ratio,
         ))
-    else:
-        accesses = list(gen_accesses(
+        effective_footprint = args.hot_bytes + args.cold_bytes
+    elif args.profile == "fixed_ratio":
+        accesses = list(gen_accesses_fixed_ratio(
             args.seed, args.num_accesses, args.working_set, args.base_addr,
             args.line_size, args.write_percent,
         ))
+        effective_footprint = (1 << 20) + args.working_set
+    else:
+        accesses = list(gen_accesses_uniform(
+            args.seed, args.num_accesses, args.working_set, args.base_addr,
+            args.line_size, args.write_percent,
+        ))
+        effective_footprint = args.working_set
 
     write_csv(csv_path, accesses)
     write_protobuf(pb_path, accesses, args.obj_id, args.tick_freq, args.tick_interval)
@@ -267,7 +314,9 @@ def main():
         "tick_freq": args.tick_freq,
         "seed": args.seed,
         "profile": args.profile,
-        "working_set_bytes": args.working_set,
+        # ⚠️ `working_set_bytes` = **有效足迹**(R-B 规则的 W)⇒ 见上方分派处注释
+        "working_set_bytes": effective_footprint,
+        "declared_working_set_bytes": args.working_set,
         "hot_bytes": args.hot_bytes,
         "cold_bytes": args.cold_bytes,
         "hot_ratio": args.hot_ratio,

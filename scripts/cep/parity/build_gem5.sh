@@ -19,13 +19,22 @@
 #      `git ls-remote` 可通但 `git clone` 失败 ⇒ 改用 codeload tarball + SHA256 钉版。
 #      语义等价(submodule 也是钉 commit),但**更抗网络故障**且**更易校验**。
 #
-# ── 为什么需要 v25(解封 H7 的范围限定)───────────────────────────────
-#   **v24 的 `ProtoInputStream` 有提前 EOF 缺陷** ⇒ `createTrace`(protobuf)不可靠
-#   (实测 1000 条读到 966 / 100000 条读到 98874)⇒ **文件同源路径不可用**
-#   ⇒ 只能用 CPU-less 驱动 ⇒ **无非均匀确定性流** ⇒ P-2a 的 A-1 鉴别力自检不满足。
-#   **v25 已重写 `src/proto/protoio.cc`**:改用 `io::FileInputStream`(**非零拷贝**)+
-#   `codeStream->ReadMessage(&msg, limit)`(整条读)+ `SetTotalBytesLimit` + 支持 gzip
-#   ⇒ **提前 EOF 的根因已消除** ⇒ **文件同源路径可用** ⇒ 可喂**非均匀离线 trace**。
+# ── 版本选择(⚠️ **2026-10-31 更正**,per 台账 Entry #120)───────────────
+#   此前本节写的是「**v24 的 `ProtoInputStream` 有提前 EOF 缺陷** ⇒ 文件同源不可用
+#   ⇒ 需 v25;v25 已重写 `protoio.cc` ⇒ 根因消除」—— **该结论已被实测推翻**:
+#   · C++ 复现程序按 gem5 **完全相同**的读法(`ReadVarint32`+`PushLimit`+
+#     `ParseFromCodedStream`)可读满 1000/1001 条;
+#   · gem5 内 DIAG 显示 `read` **从未失败**;
+#   · **上游原版 v25(零本地补丁)** 可读满 **100000/100000** 条。
+#   ⇒ **真根因 = 对拍探针的 tick 预算不足**(名义 tick 间隔 vs 实际每条含背压)
+#     ⇒ 与 gem5 版本**无关** ⇒ **v24 同样可用**(未复测,属推断)。
+#   ⇒ **v25 的价值 = 0**(在本路径上);保留 v25 作为默认是因为**已构建并验证过**,
+#     而非因为它「修好了什么」。
+#   ⇒ **解封 H7 的真实前提** = 「能喂**非均匀离线 trace**」⇒ 只需 `createTrace`
+#     能读 trace 文件(v24 即支持)⇒ **与版本解耦**。
+#   ⚠️ **本仓当前对 v25 源码零本地补丁**(2026-10-31 已还原上游原版并重建验证)
+#      ⇒ `diff -rq` 与 tarball 一致;若将来需要打补丁,**必须**在本文件登记
+#      补丁标记 + 理由(可复现性要求)。
 #
 # ── 版本差异(实测核对)───────────────────────────────────────────────
 #   · `MemCmd` 枚举 **v24 与 v25 一致**(`InvalidCmd=0, ReadReq=1, ReadResp=2,
@@ -64,7 +73,10 @@ if [[ "${1:-}" == "--version" ]]; then
     VERSION="$2"
     shift 2
 fi
-GEM5_DIR="$(read_cfg "$VERSION" dir)"
+# ⚠️ **绝对路径**(D-4 同源的口径问题):`--check` 会被 ctest 从 `build/` 目录调用
+#    ⇒ 相对路径会解析到 `build/external/...` ⇒ 误报「二进制不存在」⇒ e2e 假红。
+#    ⇒ 全部以仓库根 `$ROOT` 为基准的**绝对路径**。
+GEM5_DIR="$ROOT/$(read_cfg "$VERSION" dir)"
 GEM5_TARBALL_URL="$(read_cfg "$VERSION" tarball_url)"
 GEM5_SHA256="$(read_cfg "$VERSION" sha256)"
 GEM5_VARIANT="${GEM5_VARIANT:-NULL}"

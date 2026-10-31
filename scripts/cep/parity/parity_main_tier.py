@@ -51,6 +51,32 @@ def estimate_h0_rB(working_set_bytes, cache_bytes):
     return min(1.0, float(cache_bytes) / float(working_set_bytes))
 
 
+# ── **封闭枚举表**(profile → class)──────────────────────────────────
+# ⚠️ **唯一真源 = `docs/architecture/14-coherence-parity-baseline.md` §4.4**
+#    (「流的两类分类与『按声明分类』的判据语义」);此处是它的**机器镜像**。
+# ⚠️ **分类由「声明的 profile」决定,不由观测结果反推** ——
+#    否则标准**不可证伪**(一条真均匀流若真挂了会被自动改判为 breaking)。
+PROFILE_CLASS = {
+    # 真均匀覆盖 W(与 gem5 `createRandom` 同语义)⇒ R-B 前提成立 ⇒ 必须全过
+    "uniform": "conforming",
+    # 双峰(热区全命中 + 冷区全不命中)⇒ R-B 前提**不成立** ⇒ 必须 FAIL(正控激发)
+    "hot_cold": "breaking",
+    # 80% 内 + 20% 外(足迹 1MiB+W)⇒ 既非均匀、也不保证误差 > 5pp ⇒ 不参与判定
+    "fixed_ratio": "observe",
+}
+# ⚠️ `profile` 缺失时的兜底:参数同源档的流由 **gem5 `createRandom`**(真均匀)产生
+#    ⇒ 归 `conforming`;⚠️ 未知 profile ⇒ 归 `observe`(不参与判定,避免误判)。
+DEFAULT_PROFILE = "uniform"
+UNKNOWN_PROFILE_CLASS = "observe"
+
+
+def classify(profile):
+    """按**声明的 profile** 归类(per §4.4 封闭枚举表)。"""
+    if not profile:
+        return PROFILE_CLASS.get(DEFAULT_PROFILE, UNKNOWN_PROFILE_CLASS)
+    return PROFILE_CLASS.get(profile, UNKNOWN_PROFILE_CLASS)
+
+
 def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
     p = cpptlm_params.collect()
     hit_ns = p["hit_ns"]
@@ -76,8 +102,14 @@ def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
         dev_lat = abs(l_model - l_gem5) / l_gem5 if l_gem5 > 0 else None
         per_stream.append({
             "name": st["name"],
+            "profile": st.get("profile"),
+            # ⚠️ **class 由「声明的 profile」决定**(不按观测结果反推)
+            "class": classify(st.get("profile")),
             "working_set_bytes": st.get("working_set_bytes"),
             "cache_bytes": st.get("cache_bytes"),
+            # ⚠️ breaking 流可**声明期望误差下界**(≥ 2× 阈值)⇒ 声明了就强制校验
+            #    (生成器与声明不符 ⇒ 判红);未声明 ⇒ 低于 2× 阈值只记 warning
+            "expected_error_floor_pp": st.get("expected_error_floor_pp"),
             "h_m": h_m,
             "h0_estimated": h0,
             "h_est_error_pp": dev_pct,
@@ -88,64 +120,123 @@ def analyse(streams, tolerance=LATENCY_TOL, hit_rate_tol_pp=HIT_RATE_TOL_PP):
             "p2_ok": (dev_lat is not None and dev_lat < tolerance),
         })
 
+    # ── **按 class 分列**(per `14 号` §4.4 封闭枚举表)─────────────────
+    # ⚠️ **判定域 = `conforming` 全体**,不是全部流 ——
+    #    `breaking` 流的作用是**证伪「判据本身无鉴别力」**(正控必须激发),
+    #    它**不参与** H7 的判定;`observe` 流不参与任何判定。
+    conforming = [r for r in per_stream if r["class"] == "conforming"]
+    breaking = [r for r in per_stream if r["class"] == "breaking"]
+    observe = [r for r in per_stream if r["class"] == "observe"]
+
     n_p3 = sum(1 for r in per_stream if r["p3_ok"])
     n_p2 = sum(1 for r in per_stream if r["p2_ok"])
 
-    # ── **P-2a 鉴别力自检**(判据的**元要求**)──────────────────────────
-    # ⚠️ 若 workload 集里**每条流**的估算误差都很小 ⇒ 说明「规则恰好对该分布最优」
-    #    ⇒ 判据**分不清**「模型准」与「规则恰好蒙对」⇒ **无鉴别力** ⇒ 不可据此判 H7。
-    # ⇒ 要求:workload 集**必须包含「规则失效型」流**(估算误差 > 5pp 的流 ≥ 1 条)。
-    #    ⚠️ 本仓当前**做不到**:gem5 v24 的 CPU-less 驱动只有
-    #       `createRandom`(均匀)与 `createLinear`(线性)⇒ **无非均匀确定性流**
-    #       ⇒ 本自检**预期 FAIL** ⇒ 结论只能是「**H7 不可判**」,不是「H7 不成立」。
-    discriminating = [r for r in per_stream if not r["p3_ok"]]
-    p2a_a1_ok = len(discriminating) >= 1
+    # ── **P-2a = A-1 鉴别力自检**(正控必须激发)────────────────────────
+    # ⚠️ **A-1 的判定独立于观测结果**:由「声明的 breaking 流」决定,
+    #    且要求这些流的 **P-3 误差全部 > 阈值**(正控必须激发)。
+    #    ⇒ 若某条 breaking 流**意外通过** P-3 ⇒ **判红**
+    #      (要么生成器变了、要么规则变了 ⇒ 判据失去鉴别力)。
+    # ⚠️ **不再**用「P-3 失败的流数」反推(那会让标准不可证伪)。
+    p2a_a1_ok = False
+    breaking_not_excited = []
+    for r in breaking:
+        if r["p3_ok"]:
+            breaking_not_excited.append(r["name"])
+    p2a_a1_ok = len(breaking) >= 1 and not breaking_not_excited
 
-    # ── **A-2 形态:范围限定声明**(per `14 号` §4.4 的 P-2a 两形态)────────
+    # ⚠️ **期望误差下界校验**(脆性防护;per §4.4):声明了就强制,
+    #    未声明则低于 2× 阈值只记 warning(不判红,避免因缺声明而误红)。
+    warnings = []
+    for r in breaking:
+        floor = r.get("expected_error_floor_pp")
+        if floor is not None:
+            if r["h_est_error_pp"] < float(floor):
+                breaking_not_excited.append(
+                    f"{r['name']}(误差 {r['h_est_error_pp']:.2f}pp < 声明下界 {float(floor):.2f}pp)")
+        elif r["h_est_error_pp"] < 2.0 * hit_rate_tol_pp:
+            warnings.append(
+                f"breaking 流 {r['name']} 的误差 {r['h_est_error_pp']:.2f}pp < 2× 阈值"
+                f"({2.0 * hit_rate_tol_pp:.1f}pp)⇒ margin 偏薄 ⇒ 建议在流声明里"
+                f"写明 `expected_error_floor_pp`")
+
+    # ── **A-2 形态:范围限定声明**(per `14 号` §4.4)────────────────────
     # ⚠️ **A-2 不是「口头免责」**:把「结论的适用边界」变成 verdict 里
-    #    **必须携带的字段** ⇒ 缺任一 ⇒ **FAIL** ⇒ 只给「PASS」而不声明范围的
-    #    产物**不可入库**。
-    # ⚠️ 本轮取 A-2 的原因:workload 集**只能**含「规则恰好最优」的分布
-    #    (均匀随机)⇒ A-1 鉴别力自检**不满足**。
+    #    **必须携带的字段** ⇒ 缺任一 ⇒ **FAIL**。
+    # ⚠️ **从实际流集合派生**(不得硬编码)⇒ 声明的范围与跑的流**永远一致**。
+    def _fmt_ws(r):
+        w = r.get("working_set_bytes")
+        return "?" if w is None else f"{int(w) / 1024:.0f}KiB"
+
+    _conf_ws = sorted({_fmt_ws(r) for r in conforming})
+    _break_ws = sorted({_fmt_ws(r) for r in breaking})
+    _cache = next((r.get("cache_bytes") for r in per_stream
+                   if r.get("cache_bytes")), 0)
     applicability = (
-        "均匀随机(uniform-random)访问分布;工作集 W ∈ {4,8,16,32,128} KiB;"
-        "gem5 classic cache = 16KiB / 2-way / LRU;"
-        "访问规模 = 1e5 量级;本仓侧命中/未命中延迟常数 = 5 / 50 cycle @ 1GHz"
-    )
+        f"**均匀随机(uniform-random)访问分布**(声明 profile = `uniform`);"
+        f"工作集 W ∈ {{{', '.join(_conf_ws)}}};"
+        f"gem5 classic cache = {int(_cache) / 1024:.0f}KiB / 2-way / LRU;"
+        f"访问规模 = 1e5 量级;"
+        f"本仓侧命中/未命中延迟常数 = {hit_ns:.0f} / {miss_ns:.0f} cycle @ 1GHz"
+    ) if conforming else ""
     limitation = (
-        "**未覆盖**:非均匀/带热点(非 uniform-random)的访问分布 —— "
-        "而规则 R-B(h_0 = min(1, C/W))恰恰**只对均匀随机最优** ⇒ "
-        "在未覆盖分布上该规则**未被证伪** ⇒ 结论**不得**表述为「H7 已验证」。"
-        "⚠️ **解除限定的前置条件**:需能喂**非均匀离线 trace** 的 gem5 驱动 —— "
-        "gem5 **v25.0.0.0 已重写 `src/proto/protoio.cc`**(改用 `io::FileInputStream` + "
-        "`ReadMessage`,消除 v24 的提前 EOF)⇒ 技术前置已具备,待构建"
-    )
+        f"**未覆盖**:非均匀/带热点(非 uniform-random)的访问分布 —— "
+        f"而规则 R-B(h_0 = min(1, C/W))恰恰**只对均匀随机最优** ⇒ "
+        f"在未覆盖分布上该规则**未被证伪** ⇒ 结论**不得**表述为「H7 已验证」。"
+        f"⚠️ **解除限定的前置条件**:需能喂**非均匀离线 trace** 的 gem5 驱动 —— "
+        f"该前置**已具备**(与 gem5 版本**无关**;只需 `createTrace` 能读离线 trace 文件;"
+        f"per 台账 Entry #120:此前登记的「v24 提前 EOF = 上游缺陷」**已被实测推翻**)"
+        + (f"\n⚠️ **本轮已观测到规则失效**:`breaking` 流 {len(breaking)} 条"
+           f"(W ∈ {{{', '.join(_break_ws)}}});R-B 在其上的误差 > 阈值 ⇒ "
+           f"**该规则**在非均匀负载上不可用(⚠️ 但**模型本体**在 h 对齐下仍准确)"
+           if breaking else "")
+    ) if conforming else ""
     p2a_a2_ok = bool(applicability) and bool(limitation)
-    p2a_ok = p2a_a1_ok or p2a_a2_ok
+    # ⚠️ **A-2 只在 `breaking` 为空时适用** —— 否则「正控未激发」会被 A-2 兜底
+    #    **掩盖**(反控 ⑫ 实测抓到:breaking 流意外通过 P-3 时 verdict 仍 PASS)。
+    #    ⇒ breaking 存在但有未激发 ⇒ **判红**(形态 = `A-1-BROKEN`)。
+    p2a_a2_applicable = (len(breaking) == 0)
+    p2a_ok = p2a_a1_ok or (p2a_a2_ok and p2a_a2_applicable)
+
+    # ── **总判定** —— ⚠️ 修 D-6:不再要求「全部流」P-2/P-3 通过 ──────
+    #    (旧实现里 breaking 流由 P-3 失败反推,而 passed 又要求全部通过
+    #     ⇒ 合取 ⇒ A-1 一旦满足,passed 恒 False ⇒ 结论必然是错误文案)。
+    # ⇒ 判定域 = `conforming` 全体;`breaking` 走**正控激发**判据。
+    conforming_ok = bool(conforming) and all(
+        r["p2_ok"] and r["p3_ok"] for r in conforming)
+    breaking_ok = p2a_a1_ok or (p2a_a2_ok and p2a_a2_applicable)
     verdict = {
-        # ⚠️ **总判定 = P-2 ∧ P-3 ∧ P-2a** —— P-2a(鉴别力自检)是**元要求**:
-        #    没它 ⇒ 「全过」可能只是「规则恰好对该分布最优」⇒ 假阳性。
-        "passed": (bool(per_stream) and n_p2 == len(per_stream)
-                   and n_p3 == len(per_stream) and p2a_ok),
+        "passed": bool(conforming_ok and breaking_ok and p2a_ok),
         "p2a_discrimination_ok": p2a_ok,
-        "p2a_form": "A-1" if p2a_a1_ok else ("A-2" if p2a_a2_ok else "NONE"),
+        "p2a_form": ("A-1" if p2a_a1_ok else
+                     ("A-2" if (p2a_a2_ok and p2a_a2_applicable) else
+                      ("A-1-BROKEN" if len(breaking) >= 1 else "NONE"))),
         "p2a_a1_ok": p2a_a1_ok,
         "p2a_a2_ok": p2a_a2_ok,
         "applicability": applicability,
         "limitation": limitation,
-        "p2a_discriminating_count": len(discriminating),
-        "p2a_discriminating_streams": [r["name"] for r in discriminating],
+        # ⚠️ **breaking 流清单**(正控载体)—— 不再叫「discriminating」,
+        #    因为它**不是**「P-3 失败的流」,而是「**声明**为规则失效型的流」。
+        "p2a_breaking_count": len(breaking),
+        "p2a_breaking_streams": [r["name"] for r in breaking],
+        "p2a_breaking_not_excited": breaking_not_excited,
+        "class_counts": {"conforming": len(conforming),
+                         "breaking": len(breaking),
+                         "observe": len(observe)},
+        "conforming_ok": conforming_ok,
+        "warnings": warnings,
         "p2a_note": (
             "P-2a 两形态(per `14 号` §4.4):"
-            "**A-1** 鉴别力自检(须含「规则失效型」流)—— 本轮**不满足**"
-            "(gem5 v24 的 CPU-less 驱动无非均匀确定性流);"
-            "**A-2** 范围限定声明(verdict 必带 `applicability` + `limitation`)—— 本轮**满足**"
+            "**A-1** 鉴别力自检 = `breaking` 流 ≥ 1 条 **且** 它们的 P-3 误差"
+            "**全部 > 阈值**(正控必须激发;分类由**声明的 profile** 决定,"
+            "**不由观测结果反推**);"
+            "**A-2** 范围限定声明 = verdict 必带 `applicability` + `limitation`"
             "⇒ 结论**只能**表述为「H7 在**【声明范围】内**成立」,**不得**表述为「H7 已验证」"),
         "tolerance": tolerance,
         "hit_rate_tol_pp": hit_rate_tol_pp,
         "hit_ns": hit_ns,
         "miss_ns": miss_ns,
-        "rule": "R-B: h_0 = max(0, 1 - W/C)(工作集/容量;不依赖实测命中率)",
+        # ⚠️ 修陈旧标签:代码是 `min(1, C/W)`,旧标签印的是 `max(0, 1 - W/C)`(已作废)
+        "rule": "R-B: h_0 = min(1, C/W)(cache 容量 / 工作集;不依赖实测命中率)",
         "per_stream": per_stream,
         "p3_passed": n_p3,
         "p2_passed": n_p2,
@@ -168,35 +259,49 @@ def main():
     v = analyse(streams)
 
     print(f"── 估算规则:{v['rule']} ──")
-    print(f"{'流':<14} {'W(B)':>9} {'h_m实测':>8} {'h_0估计':>8} "
+    print(f"{'流':<14} {'class':<11} {'W(B)':>9} {'h_m实测':>8} {'h_0估计':>8} "
           f"{'误差pp':>7} {'P-3':>4} {'L_gem5':>9} {'L_model':>9} "
           f"{'偏差':>7} {'P-2':>4}")
     for r in v["per_stream"]:
         m3 = "✓" if r["p3_ok"] else "✗"
         m2 = "✓" if r["p2_ok"] else "✗"
-        print(f"  {r['name']:<12} {r['working_set_bytes']:>9} {r['h_m']:>8.4f} "
+        print(f"  {r['name']:<12} {r['class']:<11} {r['working_set_bytes']:>9} "
+              f"{r['h_m']:>8.4f} "
               f"{(r['h0_estimated'] if r['h0_estimated'] is not None else -1):>8.4f} "
               f"{r['h_est_error_pp']:>6.2f} {m3:>4} {r['l_gem5']:>9.3f} "
               f"{r['l_model']:>9.3f} "
               f"{(r['latency_deviation'] if r['latency_deviation'] is not None else -1):>6.2%} "
               f"{m2:>4}")
 
-    print(f"\n[parity] P-3(估算误差 ≤ {v['hit_rate_tol_pp']:.0f}pp): "
-          f"{v['p3_passed']}/{v['total']} 通过")
+    _cc = v["class_counts"]
+    print(f"\n[parity] 分类:conforming {_cc['conforming']} · "
+          f"breaking {_cc['breaking']} · observe {_cc['observe']}"
+          f"(⚠️ **判定域 = conforming 全体**;breaking 是正控载体,不参与 H7 判定)")
+    print(f"[parity] P-3(估算误差 ≤ {v['hit_rate_tol_pp']:.0f}pp): "
+          f"{v['p3_passed']}/{v['total']} 通过"
+          f"(⚠️ **breaking 流的 P-3 必须 FAIL** = 正控必须激发)")
     print(f"[parity] P-2(延迟偏差 < {v['tolerance']:.0%}): "
-          f"{v['p2_passed']}/{v['total']} 通过")
+          f"{v['p2_passed']}/{v['total']} 通过"
+          f"(⚠️ **仅对 conforming 判定**)")
     print(f"[parity] P-2a:形态 = **{v['p2a_form']}**"
           f"(A-1 鉴别力自检:{'✓' if v['p2a_a1_ok'] else '✗'}"
-          f" —— 规则失效型流 {v['p2a_discriminating_count']}/{v['total']} 条;"
+          f" —— breaking 流 {v['p2a_breaking_count']} 条"
+          f"{'(全部正控激发)' if v['p2a_a1_ok'] else ''};"
           f"A-2 范围限定声明:{'✓' if v['p2a_a2_ok'] else '✗'})")
-    if v["p2a_form"] == "A-2":
-        print(f"       适用范围:{v['applicability']}")
-        print(f"       局限    :{v['limitation']}")
+    if v["p2a_breaking_not_excited"]:
+        print(f"       ✗ **正控未激发**:{', '.join(v['p2a_breaking_not_excited'])}"
+              f" ⇒ 判红(生成器变了或规则变了 ⇒ 判据失去鉴别力)")
+    for _w in v.get("warnings", []):
+        print(f"       ⚠️ {_w}")
+    print(f"       适用范围:{v['applicability']}")
+    print(f"       局限    :{v['limitation']}")
     if v["passed"]:
         print(f"[parity] 结论:**PASS** —— 「H7 在【上述声明范围】内成立」"
               f"(⚠️ **不得**表述为「H7 已验证」)")
-    elif v["p2a_discrimination_ok"]:
-        print("[parity] 结论:**FAIL**(P-2 或 P-3 未达标 ⇒ H7 在口径 A 下不成立)")
+    elif not v["conforming_ok"]:
+        print("[parity] 结论:**FAIL**(conforming 流未全过 P-2/P-3 ⇒ H7 在声明范围内不成立)")
+    elif v["p2a_breaking_not_excited"]:
+        print("[parity] 结论:**FAIL**(正控未激发 ⇒ 判据无鉴别力 ⇒ 不可判)")
     else:
         print("[parity] 结论:**不可判**(P-2/P-3 通过,但 P-2a 两种形态都不满足)")
 

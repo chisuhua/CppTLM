@@ -9,12 +9,15 @@
 #   ③ CppTLM 侧:按同一参数生成同一条序列 ⇒ 驱动 `TrafficGenTLM` + `CacheTLM`
 #   ④ 比较器:访问数 / 读写条数 / **地址序列 FNV-1a 64bit** / 延迟常数 / P-5
 #
-# ⚠️ **为什么是「参数同源」而不是「文件同源」**:
-#    gem5 v24 的 `ProtoInputStream` 用 protobuf 的 `IstreamInputStream`(零拷贝路径)
-#    **逐条消息新建** `io::CodedInputStream` ⇒ **文件较大时提前 EOF**
-#    (实测:1000 条读到 966 / 20000 条读到 19735 / 100000 条读到 98874;
-#     同一文件用 Python 的 protobuf 库可完整读出 ⇒ 文件本身没问题)。
-#    ⇒ 文件同源路径在 gem5 v24 侧**不可靠** ⇒ 改走「参数同源」。
+# ⚠️ **为什么是「参数同源」而不是「文件同源」**(⚠️ **2026-10-31 更正**):
+#    此前本节写的是「gem5 v24 的 `ProtoInputStream` **提前 EOF**(上游缺陷)
+#    ⇒ 文件同源不可靠 ⇒ 改走参数同源」—— **该结论已被实测推翻**
+#    (真根因 = 对拍探针的 tick 预算不足,与 gem5 版本无关)。
+#    ⇒ 文件同源**现在也可用**(见 `run_parity_main_trace.sh`);
+#    本脚本保留为**参数同源的对照档**(它提供**跨侧指纹**证据,
+#    且是 Entry #118 的 5 条流的来源)⇒ **不退役**。
+#    ⚠️ 本档的条数由 gem5 `createRandom` 的 `duration` 决定 ⇒ 实测可达名义的
+#    **17~20 倍** ⇒ 该路径**不做**条数断言(per `14 号` §4.4「条数契约按 driver 分档」)。
 #
 # ⚠️ **为什么需要 duration 校准**:
 #    gem5 v24 的 `data_limit` 在 **Release 构建下不生效** ⇒ 实际终止条件是 `duration`
@@ -30,7 +33,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 OUT_DIR="${PARITY_OUT_DIR:-$ROOT/build/parity}"
 mkdir -p "$OUT_DIR"
 
-GEM5_BIN="${GEM5_BIN:-$ROOT/external/gem5/build/NULL/gem5.opt}"
+# ⚠️ **gem5 二进制路径的唯一真源** = `parity_config.json` 的
+#    `gem5.versions.default`(dir + variant)⇒ 避免脚本各自硬编码版本目录
+#    (此前 4 个脚本硬编码 `external/gem5/...` = v24 路径 ⇒ v24 build 删除后
+#     **静默跳过** e2e ⇒ 门禁失守)。
+GEM5_BIN="${GEM5_BIN:-$ROOT/$(python3 -c "
+import json
+v = json.load(open('$ROOT/scripts/cep/parity/parity_config.json'))['gem5']['versions']['default']
+print(v['dir'] + '/build/NULL/gem5.opt')
+")}"
 CFG_SHARED="$ROOT/scripts/cep/parity/parity_config.json"
 CFG="$OUT_DIR/linear_config.json"
 PROBE="$ROOT/scripts/cep/parity/gem5_linear_probe.py"

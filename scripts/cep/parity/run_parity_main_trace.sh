@@ -8,26 +8,36 @@
 #   · `run_parity_main.sh` 是「参数同源」:两侧**各自独立**按同一组参数生成序列
 #     ⇒ 靠**地址序列指纹**交叉验证。
 #
-# ⚠️ **为什么现在才有文件同源路径**:
-#   gem5 **v24** 的 `ProtoInputStream` 有**提前 EOF** 缺陷 ⇒ `createTrace` 不可靠
-#   (实测 1000 条读到 966)⇒ 文件同源不可用;
-#   **gem5 v25 已重写 `src/proto/protoio.cc`**(改用 `io::FileInputStream` 非零拷贝 +
-#   `ReadMessage`)⇒ **根因已消除** ⇒ 本路径可用。
+# ⚠️ **文件同源路径为何可用**(⚠️ **2026-10-31 更正**,per 台账 Entry #120):
+#   此前本节写的是「gem5 **v24** 的 `ProtoInputStream` 有**提前 EOF** 缺陷 ⇒ 文件同源
+#   不可用;**gem5 v25 已重写 `src/proto/protoio.cc`** ⇒ 根因已消除」——
+#   **该结论已被实测推翻**(真根因 = 对拍探针的 tick 预算不足,与 gem5 版本无关;
+#   **上游原版 v25 零补丁**即可读满 1e5 条)。
+#   ⇒ 文件同源路径**与 gem5 版本解耦**(只需 `createTrace` 能读 trace 文件)。
 #
 # 流程:
-#   ① 生成 **非均匀(双峰)** trace(⇒ 构成「**规则失效型**」流)
-#      + 若干**均匀**流(对照)
-#   ② gem5 侧 `createTrace` 回放(需 **gem5 v25**)
+#   ① 生成 trace:①「**真均匀**」流(⇒ `conforming` 类,R-B 前提成立)
+#      + ②「**双峰**」流(⇒ `breaking` 类 = **正控**,R-B 前提不成立)
+#      ⇒ 二者的 class 归类见 `14 号` §4.4 的**封闭枚举表**
+#   ② gem5 侧 `createTrace` 回放
 #   ③ CppTLM 侧读**同一** CSV
-#   ④ 分析:用 **R-B 规则**估 `h_0` ⇒ **P-3**(估算误差)· **P-2**(延迟偏差)
-#      ⇒ **P-2a 的 A-1 形态**(鉴别力自检:须含「规则失效型」流)
+#   ④ 分析:按 **class 分列**判据 —— `conforming` 全过 P-2/P-3(= H7 判定);
+#      `breaking` 的 P-3 **必须 FAIL**(正控必须激发)⇒ P-2a 的 **A-1 形态**
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 OUT_DIR="${PARITY_OUT_DIR:-$ROOT/build/parity}"
 mkdir -p "$OUT_DIR"
 
-GEM5_BIN="${GEM5_BIN:-$ROOT/external/gem5-v25/build/NULL/gem5.opt}"
+# ⚠️ **gem5 二进制路径的唯一真源** = `parity_config.json` 的
+#    `gem5.versions.default`(dir + variant)⇒ 避免脚本各自硬编码版本目录
+#    (此前 4 个脚本硬编码 `external/gem5/...` = v24 路径 ⇒ v24 build 删除后
+#     **静默跳过** e2e ⇒ 门禁失守)。
+GEM5_BIN="${GEM5_BIN:-$ROOT/$(python3 -c "
+import json
+v = json.load(open('$ROOT/scripts/cep/parity/parity_config.json'))['gem5']['versions']['default']
+print(v['dir'] + '/build/NULL/gem5.opt')
+")}"
 CFG_SHARED="$ROOT/scripts/cep/parity/parity_config.json"
 CFG="$OUT_DIR/main_trace_config.json"
 PROBE="$ROOT/scripts/cep/parity/gem5_trace_probe.py"
@@ -52,11 +62,22 @@ BASE=0x100000
 # ⚠️ **必须含「规则失效型」流**(双峰分布)⇒ 否则 P-2a 的 **A-1 鉴别力自检**不满足
 #    ⇒ 结论只能是 A-2(范围限定声明)⇒ H7 仍带限定。
 #    ⇒ 这里**混合**:2 条均匀(对照)+ 2 条双峰(规则失效型)⇒ **A-1 可满足**。
+# ⚠️ **流名不得含 `.`** —— `parity_trace_gen.py` 用 `Path(out).with_suffix(".csv")`
+#    推导产物路径 ⇒ 流名里的 `.25` 会被**当作扩展名替换掉**
+#    (`trace_HC_hot0.25` ⇒ 实际产出 `trace_HC_hot0.csv`)⇒ 回放时找不到文件 ⇒ 崩。
+#    ⇒ 用 `_` 分隔: `HC_hot0p25`。
+# ⚠️ **流集合设计**(per oracle 建议 + `14 号` §4.4):
+#   · `uniform`(真均匀 ⇒ `conforming`):必须含 **W = C = 16KiB 的边界点**
+#     (该点每组恰好 2 块 = 相联度 ⇒ 完美装下 ⇒ `h_m ≈ 1` = C/W ⇒ R-B 的**最强单点**),
+#     外加 W=32KiB(=2C)与 W=128KiB(=8C)两个远离边界的点;
+#   · `hot_cold`(双峰 ⇒ `breaking` = 正控):2 条不同 hot_ratio
+#     (避免单点运气;当前 margin = 阈值的 3~14 倍)。
 STREAM_SPECS=(
+    "uniform|W16384|16384|0"
     "uniform|W32768|32768|0"
     "uniform|W131072|131072|0"
-    "hot_cold|HC_hot0.25|4096|0.25"
-    "hot_cold|HC_hot0.75|4096|0.75"
+    "hot_cold|HC_hot0p25|4096|0.25"
+    "hot_cold|HC_hot0p75|4096|0.75"
 )
 
 STREAM_DIR="$OUT_DIR/main_trace_streams"

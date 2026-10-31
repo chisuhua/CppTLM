@@ -3,7 +3,7 @@
   "cycle_ns": 1.0,
   "cycle_ns_anchor": "1 sim_cycle = 1 ns @ 1 GHz",
   "gem5": {
-    "version": "v24.1.0.0",
+    "version": "v25.0.0.0",
     "tarball_sha256": "ef5373ec9e514a15dbb1cc6dbc6771182771f1ec48ece1123e0beb876eca8b32",
     "variant": "build/NULL/gem5.opt",
     "cache": {
@@ -17,7 +17,8 @@
     },
     "memory": {
       "latency": "45ns",
-      "range": "16MiB"
+      "range": "32MiB",
+      "_note": "⚠️ **range 必须覆盖 trace 的全部地址** —— gem5 的 `BaseTrafficGen::update()` 会**丢弃非 mem range 的包**(warn: `suppressed N packets with non-memory addresses`) ⇒ 双峰流的冷区(base + 16MiB)若超出 range ⇒ gem5 侧访问数骤降 ⇒ 对拍无效。⇒ range 取 32MiB(覆盖热区 base=1MiB + 冷区 offset 16MiB + 冷区 1MiB)。"
     },
     "tester": {
       "num_accesses": 20000,
@@ -42,7 +43,7 @@
       "random_end_addr": 1052672
     },
     "versions": {
-      "_note": "gem5 版本钉版(唯一真源);构建入口 = scripts/cep/parity/build_gem5.sh。⚠️ **v25 是「文件同源」路径的关键** —— v24 的 `ProtoInputStream` 有提前 EOF 缺陷(实测 1000 条读到 966)⇒ v25 已重写 `src/proto/protoio.cc`(改用 `io::FileInputStream` 非零拷贝 + `ReadMessage`)⇒ 根因已消除。",
+      "_note": "gem5 版本钉版(唯一真源);构建入口 = scripts/cep/parity/build_gem5.sh。⚠️ **2026-10-31 更正**(per 台账 Entry #120):此前登记的「v24 的 `ProtoInputStream` 提前 EOF = 上游缺陷」与「v25 已重写 `src/proto/protoio.cc` ⇒ 根因已消除」**均已被实测推翻** —— **真根因 = 对拍探针的 tick 预算不足**(名义间隔 vs 实际每条含背压);**上游原版 v25(零本地补丁)可读满 1e5 条** ⇒ v25 的本地补丁**非必需**。⇒ **v25 与版本无关地可用**;解封 H7 的前提是「能喂非均匀离线 trace」(只需 `createTrace` 能读 trace 文件;v24 亦支持)。",
       "default": {
         "version": "v25.0.0.0",
         "dir": "external/gem5-v25",
@@ -62,7 +63,8 @@
         "sha256": "ef5373ec9e514a15dbb1cc6dbc6771182771f1ec48ece1123e0beb876eca8b32",
         "note": "v24 的 `src/base/random.cc` 缺 `<algorithm>`(GCC13)⇒ 需本地补丁(构建脚本自动应用)"
       }
-    }
+    },
+    "version_note": "⚠️ **version 字段 = 实际使用的 gem5 版本**(D-4 修复):此前它停在 `v24.1.0.0` 而三个探针都读它 ⇒ v25 的产物**全部错标 v24**(治理产物的溯源错误)。⇒ 唯一真源 = `gem5.versions.default.version`;本字段与之**必须一致**(探针启动时自检,不一致 ⇒ 报错退出)。"
   },
   "tolerances": {
     "P-4_latency_rel": 0.15

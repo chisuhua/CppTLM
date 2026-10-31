@@ -57,6 +57,9 @@ def main():
             "working_set_bytes": meta.get("working_set_bytes"),
             "cache_bytes": CACHE_BYTES_DEFAULT,
             "profile": meta.get("profile"),
+            "mode": g.get("mode"),
+            # ⚠️ breaking 流可声明**期望误差下界**(per `14 号` §4.4)
+            "expected_error_floor_pp": meta.get("expected_error_floor_pp"),
             "hot_ratio": meta.get("hot_ratio"),
             "addr_seq_fnv1a64": fp_g,
         }

@@ -49,6 +49,7 @@ from m5.objects import (
 
 # ── 参数(默认值与 `parity_config.json` 对齐;实际取值由调用方注入)──────────
 CFG = json.loads(
+
     open(
         os.environ.get(
             "PARITY_CONFIG",
@@ -57,6 +58,16 @@ CFG = json.loads(
         encoding="utf-8",
     ).read()
 )
+
+# ⚠️ **gem5 版本的唯一真源** = `gem5.versions.default.version`;
+#    顶层 `gem5.version` 仅作**兼容镜像** ⇒ 两者不一致 ⇒ 报错退出(D-4 自检)。
+_GEM5_VERSION = CFG["gem5"]["versions"]["default"]["version"]
+_mirror = CFG["gem5"].get("version")
+if _mirror and _mirror != _GEM5_VERSION:
+    raise SystemExit(
+        f"✗ gem5 版本口径不一致:`gem5.version`={_mirror} vs "
+        f"`gem5.versions.default.version`={_GEM5_VERSION}"
+        f" ⇒ 产物会错标版本 ⇒ 拒绝出结果")
 OUT = os.environ.get("PARITY_OUT", "gem5_cache_probe.json")
 
 cache_cfg = CFG["gem5"]["cache"]
@@ -272,7 +283,9 @@ _ver = CFG.get("verification", {})
 
 result = {
     "tool": "gem5",
-    "version": CFG["gem5"]["version"],
+    # ⚠️ **D-4 修复**:version 取**唯一真源** `gem5.versions.default.version`
+    #    (旧的顶层 `gem5.version` 曾停在 v24 ⇒ v25 的产物**全部错标 v24**)。
+    "version": _GEM5_VERSION,
     "verification_mode": _ver.get("verification_mode"),
     "verification_scope": _ver.get("verification_scope"),
     "hits": hits,

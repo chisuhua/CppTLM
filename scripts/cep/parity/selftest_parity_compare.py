@@ -159,6 +159,61 @@ def main():
     check(bool(v.get("limitation")), "A-2 必须携带 `limitation`(局限 + 解除条件)")
     check(v["passed"], "A-2 形态下 P-2/P-3 达标 ⇒ 判定通过")
 
+    # ── **反控 ⑩ ~ ⑬**:按 class 分列的判据(per `14 号` §4.4 封闭枚举表)────
+    # ⚠️ 这 4 条是 **D-6**(verdict 聚合自相矛盾)的**反向 fixture**:
+    #    旧实现里「breaking 流」由 P-3 失败反推、而 `passed` 又要求全部通过
+    #    ⇒ 合取 ⇒ A-1 一旦满足,`passed` 恒 False ⇒ 这些场景**无法被正确判定**。
+    import parity_main_tier as pmt
+
+    def _stream(name, profile, hit_rate, lat, ws, cache=16384):
+        return {"name": name, "profile": profile, "hit_rate": hit_rate,
+                "avg_latency_ns": lat, "hits": int(hit_rate * 100000),
+                "misses": int((1 - hit_rate) * 100000), "accesses": 100000,
+                "nominal_accesses": 100000,
+                "working_set_bytes": ws, "cache_bytes": cache}
+
+    # `hot_cold` 的有效足迹 = hot + cold = 1052672 ⇒ R-B 的 h_0 = 16384/1052672
+    _BREAK_WS = 4096 + 1048576
+    _CONF_OK = _stream("C1", "uniform", 0.5, 26.0, 32768)
+    _BREAK_OK = _stream("B1", "hot_cold", 0.17, 40.6, _BREAK_WS)
+
+    print("── 反控 ⑩:conforming 流 P-2 挂 ⇒ 必须 FAIL ──")
+    _c = _stream("C1", "uniform", 0.5, 10.0, 32768)   # l_model=27.5 ⇒ 偏差 175%
+    v = pmt.analyse([_c, _BREAK_OK])
+    check(not v["passed"], "conforming 流 P-2 挂 ⇒ FAIL")
+    check(not v["conforming_ok"], "conforming_ok 必须为 False")
+
+    print("── 反控 ⑪:零 breaking 流 ⇒ 形态必须是 A-2 ──")
+    v = pmt.analyse([_CONF_OK])
+    check(v["p2a_form"] == "A-2",
+          f"零 breaking 流 ⇒ A-2(实测 {v['p2a_form']})")
+    check(v["p2a_breaking_count"] == 0, "breaking 计数必须为 0")
+    check(v["passed"], "A-2 形态下 conforming 达标 ⇒ 判定通过")
+
+    print("── 反控 ⑫:breaking 流**意外通过** P-3 ⇒ 必须 FAIL(正控未激发)──")
+    _b_excited = _stream("B1", "hot_cold", 1.0, 5.0, 16384)  # h_0=1.0 ⇒ 误差 0
+    v = pmt.analyse([_CONF_OK, _b_excited])
+    check(not v["passed"], "正控未激发 ⇒ FAIL")
+    check(bool(v["p2a_breaking_not_excited"]),
+          "必须列出未激发的 breaking 流(不得静默放行)")
+    check(v["p2a_form"] != "A-1", "正控未激发 ⇒ 不得判为 A-1")
+
+    print("── 反控 ⑬:conforming 流 P-3 挂 ⇒ FAIL 且**不得**被计入 breaking ──")
+    _c_p3 = _stream("C1", "uniform", 0.5, 26.0, 131072)  # h_0=0.125 ⇒ 误差 37.5pp
+    v = pmt.analyse([_c_p3, _BREAK_OK])
+    check(not v["passed"], "conforming 流 P-3 挂 ⇒ FAIL")
+    check(v["p2a_breaking_streams"] == ["B1"],
+          f"conforming 的失败**不得**被计入 breaking(实测 {v['p2a_breaking_streams']})")
+    check(v["p2a_a1_ok"], "A-1 仍成立(breaking 正控已激发)⇒ 失败原因是 conforming")
+
+    print("── 反控 ⑭:A-1 形态下 conforming 全过 + breaking 正控激发 ⇒ PASS ──")
+    v = pmt.analyse([_CONF_OK, _BREAK_OK])
+    check(v["p2a_form"] == "A-1",
+          f"含 breaking 且正控激发 ⇒ A-1(实测 {v['p2a_form']})")
+    check(v["conforming_ok"], "conforming 全过 ⇒ conforming_ok")
+    check(v["passed"], "⚠️ **D-6 的正解**:A-1 形态下 verdict 必须能 PASS"
+                       "(旧实现恒 False)")
+
     print(f"\n反向验证:{PASS} 项通过 / {FAIL} 项失败")
     return 1 if FAIL else 0
 
