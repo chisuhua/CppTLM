@@ -14,6 +14,7 @@
 | **⛔ 合规禁令** | CXL 规范正文受 **Evaluation Copy Agreement §3**「USE OF ARTIFICIAL INTELLIGENCE SYSTEMS」+ **AI Acceptable Use Policy**(2026-02-12 采纳,覆盖「any **past**, current, or future CXL Specification」)+ **NOTICE TO NON-MEMBERS** 约束 ⇒ **禁止**把规范正文投喂任何 AI ⇒ 本摘要**全部**来自**公开非规范来源** |
 | **未做** | 未下载 / 未打开 / 未引用任何 CXL 规范 PDF(1.0 / 2.0 / 3.x / 4.0)⇒ **零合规暴露** |
 | **强度三档** | `direct`(该公开来源**明确这样写**)· `analogical`(跨协议/跨代次**类比**)· `inferred`(推理)⇒ **禁止升格**;载体侧 `basis.kind` 与此一一对应 |
+| **⚠️ 钉版强度分级(2026-11-01 补齐,Phase 1)** | `pin=strong`(本环境**取到字节**并算得 sha256)· `pin=weak`(仅 URL + 抓取日;**字节不可本地复核**)· `pin=transcribed`(原文**本环境取不到**,仅二手转述)⇒ **载体侧 `public-direct` SHALL 只接受 `pin=strong`**;`pin=weak` / `pin=transcribed` 的格 SHALL 标 `pending = true` 或降为 `public-analogical` ⇒ ⚠️ **禁止**把「未取到字节」的来源写成 `public-direct` + `pending=false` |
 | **不整段复制** | 本摘要只记**条款级/文献级定位 + 断言摘要**,**不复制原文段落**(IP 风险) |
 | **上游无实现** | Linux `drivers/cxl/` 的 CXL.cache 两项均 `[0]`;QEMU 明写「not emulating a coherency protocol」⇒ **本仓无现成实现可抄** ⇒ 规约层必须自建载体 |
 
@@ -160,28 +161,43 @@ D2HReqOp  ∩ H2DReqOp = ∅
 
 | # | 来源 | 类型 | 定位 | 强度上限 | 钉版状态 |
 |---|---|---|---|---|---|
-| D1 | Tan / Donaldson / Wickerson, *Formalising CXL Cache Coherence*, ASPLOS'25 | 同行评审论文(CC-BY 4.0) | arXiv `2410.15908v2` · DOI `10.1145/3676641.3715999` | direct | ⚠️ sha256 **待算**;源码仓 `github.com/ChengsongTan/CXLcacheFormalisation`(**本次 clone 失败** ⇒ 待补 commit SHA) |
-| D2 | Sharma / Blankenship / Berger, *An Introduction to the CXL Interconnect*, ACM CSUR 2024 | 同行评审综述 | DOI `10.1145/3669900` · arXiv `2306.11227` | direct | ⚠️ sha256 待算 |
-| D3 | Blankenship (Intel), *CXL Cache Mem Protocols*, SNIA SDC 2020 | 公开会议 deck | `snia.org/…/130-Blankenship-CXL-1.1-Protocol-Extensions.pdf` | direct | ⚠️ sha256 待算;⚠️ **CXL 1.1 时代** ⇒ 标版本 |
-| D4 | *CXL 3.0 Coherence Deep Dive*, Hot Chips 2022 | 公开 tutorial | `hc34.hotchips.org/…/Hot Chips 2022 CXL3 Coherence Deep Dive.pdf` | direct | ⚠️ sha256 待算;© CXL Consortium ⇒ **引用需节制** |
-| D5 | Intel, *Xeon Scalable Uncore Performance Monitoring RM* | vendor-public | `cdrdv2-public.intel.com/671389/336274-…pdf` | analogical | 文档号已钉 |
-| D6 | Intel, *DDIO Performance Monitoring* | vendor-public | `intel.com/…/ddio-analysis-performance-monitoring.html` | analogical | ⚠️ 网页可能改版 ⇒ **须存快照** |
-| D7 | Intel, *Xeon Scalable Family Technical Overview* | vendor-public | `intel.com/…/xeon-processor-scalable-family-technical-overview.html` | analogical | ⚠️ 同上 |
-| D8 | Arm, *CCN-502 TRM — Fully-coherent Home Node (HN-F)* | vendor-public | `support.arm.com/documentation/100052/…` | analogical | 文档 ID + revision 已钉 |
-| D9 | Arm, *CCI-500 TRM — Snoop filter* | vendor-public | `support.arm.com/documentation/100023/…` | analogical | 同上 |
-| D10 | Arm, *Introducing AMBA CHI* | vendor-public | `documentation-service.arm.com/…/68590853961937560be90eb2` | analogical | 同上 |
-| D11 | Linux kernel, *CXL Devices and Protocols* | oss-impl | `kernel.org/doc/html/latest/driver-api/cxl/devices/device-types.html` | direct(负面证据) | kernel version 已钉 |
-| D12 | Linux kernel, *CXL Maturity Map* | oss-impl | `docs.kernel.org/driver-api/cxl/maturity-map.html` | direct(负面证据) | ⚠️ 两项均 `[0]` ⇒ 内核**未实现** |
-| D13 | QEMU, `docs/system/devices/cxl.rst` | oss-impl | `github.com/qemu/qemu/blob/master/docs/system/devices/cxl.rst` | direct(负面证据) | QEMU tag 已钉 |
-| D14 | Isabelle 形式化 artifact | oss-impl | `github.com/ChengsongTan/CXLcacheFormalisation` | direct | ⚠️ **本次 clone 失败** ⇒ commit SHA **待补** |
-| D15 | Rambus, *CXL Glossary* | vendor-public | `rambus.com/interface-ip/cxl-glossary` | direct | ⚠️ **blog 易变** ⇒ **须 Wayback 快照 + 抓取日期** |
-| D16 | Cadence, *Navigating Cache Coherence: BISnp in CXL 3.0* | vendor-public(blog) | `community.cadence.com/…/navigating-cache-coherence…` | direct | ⚠️ 同上 |
-| D17 | *A Novel Extensible Simulation Framework for CXL-Enabled Systems* | 同行评审论文 | arXiv `2411.08312v1` | direct | ⚠️ sha256 待算 |
-| D18 | *A Programming Model for Disaggregated Memory over CXL* | 同行评审论文 | arXiv `2407.16300v3` | direct | ⚠️ sha256 待算 |
+| D1 | Tan / Donaldson / Wickerson, *Formalising CXL Cache Coherence*, ASPLOS'25 | 同行评审论文(CC-BY 4.0) | arXiv `2410.15908v2` · DOI `10.1145/3676641.3715999` | direct | ✅ **`pin=strong`** · 315,274 B · sha256 `a1c740bb9359d7dece4886804b12007b643b4238139d05762c8beaf13e283303` |
+| D2 | Sharma / Blankenship / Berger, *An Introduction to the CXL Interconnect*, ACM CSUR 2024 | 同行评审综述 | DOI `10.1145/3669900` · arXiv `2306.11227`(=**v3** @2024-05-07) | direct | ✅ **`pin=strong`** · 4,145,235 B · sha256 `30f5baac34bb23e478834536db334c45338ec77324f25db799ef6e0deb3075bf` |
+| D3 | Blankenship (Intel), *CXL Cache Mem Protocols*, SNIA SDC 2020 | 公开会议 deck | `snia.org/…/130-Blankenship-CXL-1.1-Protocol-Extensions.pdf` | direct | ❌ **`pin=weak`** —— **本环境取不到**(Cloudflare JS 挑战 HTTP 403,4 个路径变体全 403)⇒ **无哈希**;⚠️ **CXL 1.1 时代** ⇒ 标版本;⇒ 载体侧该来源的格 SHALL `pending = true` |
+| D4 | *CXL 3.0 Coherence Deep Dive*, Hot Chips 2022 | 公开 tutorial(非规范) | `hc34.hotchips.org/…/Hot Chips 2022 CXL3 Coherence Deep Dive.pdf` | direct | ✅ **`pin=strong`** · 1,999,264 B · sha256 `8de5e47a0d23c8869dd1dbbafd56b24f03eb4672ee29ee676abb5605a3561a54`;© CXL Consortium ⇒ **引用需节制** |
+| D5 | Intel, *Xeon Scalable Uncore Performance Monitoring RM* | vendor-public | `cdrdv2-public.intel.com/671389/336274-…pdf` | analogical | ⬜ **未取字节**(本轮未试)⇒ `pin=weak` |
+| D6 | Intel, *DDIO Performance Monitoring* | vendor-public | `intel.com/…/ddio-analysis-performance-monitoring.html` | analogical | ❌ **`pin=transcribed`** —— live 页 **403 "Access Denied"**(Akamai)⇒ 原文**本环境不可复核**;archive.org **全站不可达**(见 §8.1) |
+| D7 | Intel, *Xeon Scalable Family Technical Overview* | vendor-public | `intel.com/…/xeon-processor-scalable-family-technical-overview.html` | analogical | ❌ **`pin=transcribed`** —— live 页 403;archive.org 不可达 |
+| D8 | Arm, *CCN-502 TRM — HN-F* | vendor-public | `support.arm.com/documentation/100052/…` | analogical | ❌ **`pin=transcribed`** —— live 页 403;archive.org 不可达 |
+| D9 | Arm, *CCI-500 TRM — Snoop filter* | vendor-public | `support.arm.com/documentation/100023/…` | analogical | ❌ **`pin=transcribed`** —— live 页 403;archive.org 不可达 |
+| D10 | Arm, *Introducing AMBA CHI* | vendor-public | `documentation-service.arm.com/static/68590853961937560be90eb2` | analogical | ✅ **`pin=strong`** · 2,049,968 B · sha256 `2c0a5f6e94bf0471d0172a8c58135613e9ad00e83b8a98eb9b4f242781b61512`;⚠️ 实为「Learn the architecture - Introducing AMBA CHI」Issue 01 / 文档号 `102407_0102_01_en`(102 页)⇒ **静态内容寻址 PDF ⇒ 无需 Wayback** |
+| D11 | Linux kernel, *CXL Devices and Protocols* | oss-impl | `kernel.org/doc/html/latest/driver-api/cxl/devices/device-types.html` | direct(负面证据) | ⬜ `pin=weak`(kernel version 已钉;字节未取) |
+| D12 | Linux kernel, *CXL Maturity Map* | oss-impl | `docs.kernel.org/driver-api/cxl/maturity-map.html` | direct(负面证据) | ⬜ `pin=weak`;⚠️ 两项均 `[0]` ⇒ 内核**未实现** |
+| D13 | QEMU, `docs/system/devices/cxl.rst` | oss-impl | `github.com/qemu/qemu/blob/master/docs/system/devices/cxl.rst` | direct(负面证据) | ⬜ `pin=weak`(QEMU tag 已钉) |
+| D14 | Isabelle 形式化 artifact | oss-impl | `github.com/ChengsongTan/CXLcacheFormalisation` | direct | ✅ **`pin=strong`** · HEAD `f729052e1032980561f2c0cc5e341859228ded26`(2026-09-27,31 commits)· ⚠️ **license = null**(未声明)⇒ **再分发/引用条款待人工确认**;⚠️ **artifact ≠ 论文快照**(含 ASPLOS'25 之后的 guard 改动 + `Liveness/` 扩展)⇒ 钉版须记 commit SHA 而非仅论文版本 |
+| D15 | Rambus, *CXL Glossary* | vendor-public | `rambus.com/interface-ip/cxl-glossary` | direct | ⚠️ `pin=transcribed`(curl 403 Cloudflare;**webfetch 可通** ⇒ 原文曾被读到但**字节未取** ⇒ 无哈希) |
+| D16 | Cadence, *Navigating Cache Coherence: BISnp in CXL 3.0* | vendor-public(blog) | `community.cadence.com/…/navigating-cache-coherence…` | direct | ❌ **`pin=transcribed`** —— curl 403 Cloudflare;archive.org 不可达 |
+| D17 | *A Novel Extensible Simulation Framework for CXL-Enabled Systems* | 同行评审论文 | arXiv `2411.08312v1` | direct | ✅ **`pin=strong`** · 2,672,753 B · sha256 `2f6701c8006d87508df4d52f4d8722f6441cd54130675c50829f1ae38410c5cc` |
+| D18 | *A Programming Model for Disaggregated Memory over CXL* | 同行评审论文 | arXiv `2407.16300v3` | direct | ✅ **`pin=strong`** · 1,402,971 B · sha256 `cc70a39547974d8385f77f90d3f2eb4b756ccafe9db536725cb539bd90a5c697`;⚠️ 正文标 "Accepted to ASPLOS, 2026" |
 
-⇒ ⚠️ **钉版缺口**:**sha256 全部待算** + D14 commit SHA 待补 + 6 个 blog/网页类来源的**快照 URL + 抓取日期**待补
-⇒ ⇒ 载体 `--check` 的「摘要 ↔ 载体」比对**可先跑通**(结构层),但**钉版完整性**须在载体编码**之前**补齐
-⇒ **责任**:Task 0 的第 2 步(钉版补齐)—— 可与 change 目录建档**并行**,但**载体逐格编码**须等它完成。
+### 8.1 Phase 1 钉版补齐结果(2026-11-01):**有条件完成**
+
+| 类别 | 数量 | 明细 |
+|---|---|---|
+| ✅ **`pin=strong`**(字节已取 + sha256) | **7** | D1 · D2 · D4 · D10 · D14(commit SHA)· D17 · D18 |
+| ❌ **`pin=weak`**(仅 URL + 抓取日;**字节不可本地复核**) | **1**(+ D5/D11/D12/D13 未取字节) | **D3(SNIA deck)** —— Cloudflare JS 挑战 403,4 个路径变体全 403 ⇒ **无哈希** |
+| ❌ **`pin=transcribed`**(原文**本环境取不到**,仅二手转述) | **6** | D6 · D7 · D8 · D9 · D15 · D16 —— live 页 403(Akamai / Cloudflare)且 **archive.org 全站不可达** |
+
+⚠️ **archive.org 不可达是环境级阻断**(实测:curl 与 webfetch 双通道 · 80/443 双端口 · 120s 超时全失败;
+`arquivo.pt` / `timetravel` / `archive.ph` / `archive-it` 替代亦全部不可达)⇒ **本环境无法补 6 条网页类的快照 URL**。
+
+⇒ **载体侧规则(新增,须写进 §4 载体 AC)**:
+> **载体 SHALL 只把 `pin=strong` 的来源记为 `public-direct` 且 `pending = false`**;
+> `pin=weak` / `pin=transcribed` 的格 SHALL 标 `pending = true`(或降为 `public-analogical`)⇒
+> ⚠️ **禁止**把「未取到字节」的来源写成 `public-direct` + `pending = false`。
+
+⇒ ⇒ **Phase 1 = 有条件完成** ⇒ 载体逐格编码**可在「只用 `pin=strong` + 已本地复核的 `pin=weak`」前提下启动**;
+⚠️ **待裁决**(architect/planner):是否接受该「弱钉版下 `public-direct` 门槛」口径(本条已按「保守方向」写入,若裁决更严则载体 AC 需加严)。
 
 ---
 
