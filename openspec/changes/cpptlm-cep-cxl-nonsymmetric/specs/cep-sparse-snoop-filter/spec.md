@@ -40,7 +40,11 @@ caps 与 hazard 契约 · SHALL 具备 **CONSERVATIVE** 语义 · SHALL 为 `moe
   (SHALL **不**返回 `ANSWER_HERE` —— 无条目意味着「**可能**有别人」)
 - **AND** 子条件 ② SHALL 成立:条目含**除自己以外**的 bit ⇒ SHALL 返回 `BROADCAST`
   或 `FORWARD_TO`(有脏持有者提示时)
-- **AND** 子条件 ③ SHALL 成立:条目**确实存在**且只含自己 ⇒ MAY 返回 `ANSWER_HERE`
+- **AND** 子条件 ③ SHALL 成立:条目**确实存在**且**唯一**可能的 sharer 是脏持有者 ⇒ SHALL 返回
+  `FORWARD_TO`(该持有者);可能的 sharer > 1 ⇒ SHALL 返回 `BROADCAST`
+- **AND** 子条件 ③' SHALL 成立:SHALL **永不**返回 `ANSWER_HERE` ——
+  `completeness = CONSERVATIVE` ⇒ filter **不能**回答「**没有**其他 sharer」⇒ 该回答只能由
+  **EXACT** 目录给出(⇒ 此即本实现与 `FullMapDirectory` 的**可观测差异**)
 - **AND** 子条件 ④ SHALL 成立:contention 在飞 ⇒ SHALL 返回 `LookupHazard::STALL`
 - **AND** 子条件 ⑤ SHALL 成立:以上 SHALL 有**反向 fixture** 证明有鉴别力
   (构造「filter 说独占、实际另有 sharer」⇒ **必须因正确原因红** —— 漏探 = 正确性失败)

@@ -2,16 +2,19 @@
 // Sharer Tracker —— 协议无关单接口 + caps descriptor + 2 个行为实现
 //
 // 功能:把 `ADR-CEP-04` 的 α′ 三件套((α) 单接口 + (γ′) caps descriptor + D-5 重构)
-//       落成**可执行契约**。行为实现已有 **2** 种:
-//       · `FullMapDirectory`(队列 #4 —— 单级目录)
+//       落成**可执行契约**。行为实现已有 **3** 种:
+//       · `FullMapDirectory`(队列 #4 —— 单级目录,**EXACT**)
 //       · `HierarchicalDirectory`(队列 #9 —— 分级目录,第 6 种实现,per `ADR-CEP-04 §13`)
-//       其余 4 种(SparseSnoopFilter / DcohSymmetric / TreeManager / BroadcastNull)
+//       · `SparseSnoopFilter`(队列 #10 实现层 —— **CONSERVATIVE** 保守型 snoop filter)
+//       其余 3 种(DcohSymmetric / TreeManager / BroadcastNull)
 //       **行为实现尚未落地** —— 此处只留**声明层** traits;落位已登记(per 台账 Entry #107):
 //       `TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12(均**队列名对应**的推导值);
-//       `SparseSnoopFilter` **已被 `moesi_gpu`(队列 #6)声明占用**但无行为实现(§8.1 R11)
-//         ⇒ 归**队列 #10 实现层**补齐(per 台账 Entry #112);
 //       `BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**(per Entry #112)。
-// 作者: CppTLM Team / 日期: 2026-10-25(2026-10-30 增 `HierarchicalDirectory` + 公共机械抽取)
+// ⚠️ `SparseSnoopFilter` 的行为实现**已被 `moesi_gpu`(队列 #6)声明占用**,
+//    落地于**队列 #10 实现层**(per 台账 Entry #112 去重 · Entry #124 复核维持)⇒ §8.1 **R11**
+//    的「meta 层」缺口闭合;其「语义层」缺口(补偿路径无判据)由**实现层 change** 承担。
+// 作者: CppTLM Team / 日期: 2026-10-25(2026-10-30 增 `HierarchicalDirectory` + 公共机械抽取;
+//       2026-11-01 增 `SparseSnoopFilter`,per 队列 #10 实现层)
 //
 // ── 定位 ───────────────────────────────────────────────────────────────
 // **不是缓存、不是网络组件**:不与 JSON `connections[]` 相连、不进 `ModuleFactory`、
@@ -582,6 +585,178 @@ private:
     };
 
     std::map<std::uint64_t, Entry> dir_;
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// SparseSnoopFilter —— 第 3 种行为实现(CHI SF / CXL 2.0 Host SF)
+// ─────────────────────────────────────────────────────────────────────
+// **保守型 snoop filter**:home 侧维护「**可能**持有某行的节点集合」(位集 = sharer 集的**上界**)。
+//
+// ⚠️ **CONSERVATIVE 的确切含义(不得含糊,否则实现会过度声称)**:
+//    `completeness = CONSERVATIVE` ⇒ filter **不能**回答「**没有**其他 sharer」
+//    ⇒ 本实现 **永不**返回 `LookupResult::ANSWER_HERE`。
+//    它能给的只有:①「**可能**有别人」⇒ `BROADCAST` ②「**可能**有别人且只有一个脏持有者」
+//    ⇒ `FORWARD_TO` ③ 同地址 snoop 在飞 ⇒ `STALL`。
+//    ⇒ **漏探**(漏掉一个真实 sharer)是**正确性失败**;**多探**只是代价 ⇒ 恒偏保守。
+//
+// ⚠️ **与 `FullMapDirectory` 的可观测差异(本实现**不是**它的克隆)**:
+//    EXACT 目录**能**回答「没有其他 sharer」;CONSERVATIVE filter **不能** ⇒ 行为可判别。
+//
+// ⚠️ **收缩的合法来源**:`observe_snoop` 观测到该节点转为 `I`,或调用方**确知**地
+//    `clear_sharer` ⇒ 其它路径**不得**收缩(filter 更新滞后只会造成**假阳性**,
+//    而假阳性在 CONSERVATIVE 下**可接受** —— 漏探不可接受)。
+//
+// ⚠️ **归属**:本实现**不服务** CXL 实例(CXL.cache 的 peer 集平凡为空 ⇒ 其
+//    `sharer_tracker` 为「不参与」);它服务 **`moesi_gpu`** 的 `O→WRITEBACK` 投影损失补偿
+//    (台账 §8.1 **R11**,per Entry #124)。
+class SparseSnoopFilter final : public SharerTrackerIf, public SnoopMechanics {
+public:
+    static constexpr TrackerImpl kImpl = TrackerImpl::SparseSnoopFilter;
+
+    /// handle 空间大小(与另两个实现同 —— `ADR-CEP-04` 的 RTL 契约,不可 widen)
+    static constexpr std::size_t kHandleSpace = SnoopMechanics::kHandleSpace;
+
+    // 公开**数据成员**(不是方法)⇒ 接口面仍恰好 4 个方法。
+    // ⚠️ **取** `kTrackerTraits[1]`(traits 行已存在)⇒ 本类**不**另写一份 caps 字面量
+    //    ⇒ `ADR-CEP-04 §2` / `§4` 的冻结契约**被消费**,不重推。
+    SharerTrackerCaps caps = kTrackerTraits[1].caps;
+    SharerTrackerBehavior behavior = kTrackerTraits[1].behavior;
+
+    SparseSnoopFilter() = default;
+
+    // ── 安装面(记录「**可能**持有」)──
+
+    /// 记录「**可能**持有该行」 —— CONSERVATIVE 下**只增不减**是安全的。
+    /// 未映射节点 ⇒ **显式 no-op**(不留下可见空条目,同 `FullMapDirectory` 的同型纪律)。
+    void set_sharer(std::uint64_t addr, node_id_t node, SnoopState state) {
+        const responder_set_t m = responder_mask_of(node);
+        if (m == 0)
+            return;
+        Entry& e = filter_[addr];
+        e.sharers |= m;
+        if (state == SnoopState::M)
+            e.dirty |= m;
+        else
+            e.dirty &= ~m;
+    }
+
+    /// 依据**观测**确认该节点已放弃该行 ⇒ **合法收缩**。
+    void note_sharer_dropped(std::uint64_t addr, node_id_t node) {
+        auto it = filter_.find(addr);
+        if (it == filter_.end())
+            return;
+        const responder_set_t m = responder_mask_of(node);
+        if (m == 0)
+            return;
+        if ((it->second.sharers & m) == 0 && (it->second.dirty & m) == 0)
+            return;  // 本非 sharer ⇒ no-op(避免伪触发 Retire,同 FullMap 的同型纪律)
+        it->second.sharers &= ~m;
+        it->second.dirty &= ~m;
+        if (it->second.sharers == 0 && it->second.dirty == 0) {
+            filter_.erase(it);
+            events_.push_back(LifecycleEvent::RetireOnZeroSharers);
+        }
+    }
+
+    /// 调用方**确知**地清除(⚠️ 误用 ⇒ 漏探风险 ⇒ SHALLOW 前须有确证)。
+    void clear_sharer(std::uint64_t addr, node_id_t node) { note_sharer_dropped(addr, node); }
+
+    // ── 4 个接口方法 ──
+
+    void lookup(std::uint64_t addr, Intent intent, LookupResult& result, LocalView& view,
+                LookupHazard& hazard) override {
+        if (inflight_by_addr_.count(addr) != 0) {
+            // 同地址 snoop 在飞:本实现的契约是 STALL(per `ADR-CEP-04 §4` 表首行)
+            result = LookupResult::ANSWER_HERE;  // 无意义占位(视图在 STALL 下不成立)
+            view = LocalView{};
+            hazard = behavior.hazard_under_contention;
+            return;
+        }
+
+        hazard = LookupHazard::NONE;
+        auto it = filter_.find(addr);
+        if (it == filter_.end()) {
+            // ★ **CONSERVATIVE 保守默认**:filter 无此地址 ⇒ **不能**证明无人持有 ⇒ 广播
+            view = LocalView{};
+            result = LookupResult::BROADCAST;
+            return;
+        }
+
+        view = LocalView{};
+        view.valid = true;
+        view.sharers = it->second.sharers;
+        view.dirty = it->second.dirty;
+
+        // 位集是 sharer 集的**上界** ⇒ 掩码只含 1 位 ⇒ 不可能有别的 sharer ⇒ 单点转发安全。
+        if (intent == Intent::want_read && it->second.dirty != 0 &&
+            bit_count(it->second.dirty) == 1 && bit_count(it->second.sharers) == 1) {
+            view.forward_to = responder_node_of(first_bit(it->second.dirty));
+            result = LookupResult::FORWARD_TO;
+            return;
+        }
+        // 其余一切情形 ⇒ **广播**(含「可能多个 sharer」⇒ 单点转发会漏探)
+        result = LookupResult::BROADCAST;
+    }
+
+    void snoop_begin(std::uint64_t addr, responder_set_t expected_responders,
+                     snoop_handle_t& handle) override {
+        snoop_begin_core(addr, expected_responders, handle);
+    }
+
+    void snoop_fold(snoop_handle_t handle, node_id_t node_id, SnoopState resp_state, bool dirty,
+                    bool data_supplied, responder_set_t& remaining_mask,
+                    MergedState& merged_state) override {
+        snoop_fold_core(handle, node_id, resp_state, dirty, data_supplied, remaining_mask,
+                        merged_state);
+    }
+
+    void observe_snoop(std::uint64_t addr, node_id_t from_node,
+                       SnoopState resulting_local_state) override {
+        observe_snoop_core(addr, from_node, resulting_local_state);
+        // 观测到该节点转为 `I` ⇒ 它已放弃该行 ⇒ **合法收缩**(CONSERVATIVE 的唯一收缩来源)
+        if (resulting_local_state == SnoopState::I) {
+            note_sharer_dropped(addr, from_node);
+        }
+    }
+
+    // ── 观测(测试夹具 / 调用方诊断)──
+
+    LocalView view_of(std::uint64_t addr) const {
+        LocalView v;
+        auto it = filter_.find(addr);
+        if (it == filter_.end())
+            return v;
+        v.valid = true;
+        v.sharers = it->second.sharers;
+        v.dirty = it->second.dirty;
+        return v;
+    }
+
+    /// filter 当前**可能**持有的节点数(诊断用;`0` = 无条目 或 已确知为空)
+    std::size_t possible_sharer_count(std::uint64_t addr) const {
+        auto it = filter_.find(addr);
+        if (it == filter_.end())
+            return 0;
+        return bit_count(it->second.sharers);
+    }
+
+    /// 位计数(CONSERVATIVE 判定用:唯一可能 sharer ⇒ 单点转发安全)
+    static constexpr std::size_t bit_count(responder_set_t v) noexcept {
+        std::size_t n = 0;
+        while (v != 0) {
+            v &= (v - 1);
+            ++n;
+        }
+        return n;
+    }
+
+private:
+    struct Entry {
+        responder_set_t sharers = 0;  ///< **可能**持有该行的节点集合(sharer 集的**上界**)
+        responder_set_t dirty = 0;    ///< **可能**的脏持有者集合
+    };
+
+    std::map<std::uint64_t, Entry> filter_;
 };
 
 // ─────────────────────────────────────────────────────────────────────

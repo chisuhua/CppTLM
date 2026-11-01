@@ -8080,6 +8080,55 @@ D2 的「`H2D Request channel is used for ... Snooping`」**只到「承载」�
 
 ---
 
+### Entry #129 — 2026-11-01 [implement](队列 #10 实现层 Phase 1:`SparseSnoopFilter` 行为实现落地 + **第 3 件冻结面**浮现)
+
+**主题**:队列 #10 第 1 个 change(实现层,Entry #128 转正)的 Phase 1 落地。
+
+**① 交付**:`include/tlm/cep/sharer_tracker.hh` 追加 `class SparseSnoopFilter final : public SharerTrackerIf, public SnoopMechanics`
+- caps / behavior **取** `kTrackerTraits[1]` ⇒ `ADR-CEP-04 §2`/`§4` 的冻结契约**被消费,不重推**
+- 安装面 `set_sharer`(**可能**持有)· `note_sharer_dropped`(**观测**驱动的合法收缩)· `clear_sharer`
+- 4 个 `override` 薄壳(`snoop_begin`/`snoop_fold`/`observe_snoop` 转调 `SnoopMechanics::*_core`)
+- 观测面 `view_of` / `possible_sharer_count`;文件头注释同步(行为实现 **2 → 3**)
+
+**② ⚠️ 实现期把设计**收紧**了 1 处(诚实登记)**
+`design.md D-β.2` 原写「条目只含自己 ⇒ `ANSWER_HERE`」—— 实现时发现**不可达**:
+① `lookup` 的签名**不含请求者 id** ⇒ 「只含自己」语义上**不可表达**;
+② `completeness = CONSERVATIVE` ⇒ filter **不能**回答「**没有**其他 sharer」
+⇒ **本实现永不返回 `ANSWER_HERE`**(定义性后果,非缺陷)
+⇒ 已**同步改写** `design.md D-β.2` + delta spec `SSF-02` 子条件 ③③′
+⇒ ⭐ 这条差异正是「本实现**不是** `FullMapDirectory` 克隆」的**可观测证据**
+(EXACT 目录**能**答「没有其他 sharer」,本实现不能)。
+
+**③ CONSERVATIVE 的判定表(实现落地形态)**
+| 情形 | 判定 |
+|---|---|
+| 无条目 | `BROADCAST`(**不能**证明无人持有) |
+| 唯一可能 sharer 且是脏持有者 | `FORWARD_TO`(位集是上界 ⇒ 单点转发安全) |
+| 可能 sharer > 1 | `BROADCAST`(单点转发会**漏探**) |
+| 唯一可能 sharer 但干净 | `BROADCAST`(不得声称「无人持有」) |
+| contention 在飞 | `STALL` |
+
+**④ 判据**:`test/test_cep_sparse_snoop_filter.cc` —— **5 cases / 39 assertions**;
+**2 条毒化实测鉴别力**:① 无条目返回 `ANSWER_HERE` ⇒ **3 failed** ② 漏查 sharers 位数(漏探)⇒ **2 failed**
+⇒ 反向 fixture **因正确原因红**。ctest 注册 `cep_sparse_snoop_filter`;全量 `ctest` **128/128**。
+
+**⑤ ⚠️ 第 3 件冻结面浮现(实现期才发现)**
+`openspec/specs/cep-sharer-tracker-base/spec.md`(**冻结 M1 产物**)写着
+「**其余 4 种实现**(`SparseSnoopFilter` / …)的行为实现尚未落地」+ Scenario「非 FullMap 的其余 **4** 实现
+SHALL 只做声明层断言(deferred)」⇒ 落地后**已成过期陈述** ⇒ 按真源原则**必须**改
+⇒ 冻结面由 **2 件**扩为 **3 件**;⚠️ 该件是**改写**而非**追加** ⇒ 走 delta spec `MODIFIED Requirements`
+⇒ **归档 → 重冻**顺序不可颠倒(已写入 `design.md D-⑤` + `tasks.md 3.3`)。
+⇒ 同期修正既有守门测试 `test_cep_sharer_tracker_base.cc`:deferred 名单 **4 → 3**
++ 补 `SparseSnoopFilter` 的**反向**断言(否则纯负向断言在实现落地后**空转**)。
+
+**⑥ R11 状态**:meta 层缺口**已闭合**(行为类落地)⇒ 语义层缺口(补偿路径无判据)仍待 Phase 3
+⇒ R11 **维持 🟡 中**(降级须 V-1∧V-2∧V-3 全达成)。
+
+**⑦ 关联**: Entry #124(R11 复核)· #128(change 转正)· `ADR-CEP-04` §2 / §4 · `ADR-CEP-02` CEN-Ib11 ·
+`sharer_tracker.hh` · `test_cep_sharer_tracker_base.cc`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

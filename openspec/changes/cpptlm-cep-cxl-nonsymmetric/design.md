@@ -65,9 +65,17 @@ SHALL 表现为**保守近似**,SHALL **NOT** 声称等价恢复(per Entry #124 
 | 情形 | 判定 | 依据 |
 |---|---|---|
 | filter 无该地址条目 ⇒ 「**可能**有别人」 | `BROADCAST` | **保守默认**;`broadcast_fallback = true`(traits) |
-| 条目含**除自己以外**的 bit | `BROADCAST` / `FORWARD_TO`(有脏持有者提示时) | 保守转发 |
-| 条目只含自己 | `ANSWER_HERE` | **仅当**条目**确实存在**且只含自己 |
+| 条目存在且**唯一**可能的 sharer 是脏持有者 | `FORWARD_TO`(该持有者) | filter 的位集是 sharer 集的**上界** ⇒ 掩码只含 1 位 ⇒ 不可能有别的 sharer ⇒ 转发安全 |
+| 条目存在但**可能**的 sharer > 1 | `BROADCAST` | 其余可能的 sharer 也须被 snoop ⇒ 单点转发会**漏探** |
 | contention 在飞 | `LookupHazard::STALL` | `ADR-CEP-04 §4` 的 `Hazard_STALL` 契约 |
+
+⚠️ **`ANSWER_HERE` 在本实现中**永不**发生** —— 这是 CONSERVATIVE 的**定义性后果**,不是缺陷:
+`completeness = CONSERVATIVE` ⇒ filter **不能**回答「**没有**其他 sharer」
+⇒ 该回答只能由 **EXACT** 目录(`FullMapDirectory`)给出。
+⇒ ⚠️ **「永不 `ANSWER_HERE`」正是本实现与 `FullMapDirectory` 的可观测差异**
+(⇒ 满足 `ADR-CEP-04 §13` 的「克隆体不可能」判据:EXACT 目录**能**答「没有其他 sharer」,本实现不能)。
+⚠️ 另:`lookup` 的签名**不含请求者 id** ⇒ 「只含自己」在语义上**不可表达**
+⇒ 原草稿的「条目只含自己 ⇒ `ANSWER_HERE`」一行为**不可达**,已删(2026-11-01 实现期收紧)。
 
 ⚠️ 「无条目 ⇒ `BROADCAST`」是 CONSERVATIVE 的**关键**:若按 EXACT 语义返回 `ANSWER_HERE`,
 则 filter 的漏更新 ⇒ **漏探** ⇒ 正确性失败(判据 **AC-4** 的反向 fixture 即针对此)。
@@ -109,12 +117,18 @@ SHALL 表现为**保守近似**,SHALL **NOT** 声称等价恢复(per Entry #124 
 
 ---
 
-## D-⑤ 冻结面:2 件,**仅追加** `## Status Update`,**两步授权**
+## D-⑤ 冻结面:**3 件**,**两步授权**
 
-| 冻结件 | 追加内容 | 授权 |
+| 冻结件 | 追加/修改内容 | 授权 |
 |---|---|---|
 | `docs/architecture/07-coherence-exploration-platform.md` | §5.1.1 **CXL 2.0 行**的措辞对齐裁决 ③⑦(「设备不感知其他设备」在 2.0 **平凡成立**;「CXL 3.0 对称」按裁决 ⑦ 指 **HDM-DB/CXL.mem** 而非 CXL.cache)⇒ **真源 1 vs 真源 3 措辞冲突消解** | 台账 entry + `--update --authorized-by` |
 | `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | 第 3 个行为实现(`SparseSnoopFilter`)**落地**登记 + R11 降级条件(V-1∧V-2∧V-3) | 台账 entry + `--update --authorized-by` |
+| `openspec/specs/cep-sharer-tracker-base/spec.md` | ⚠️ **第 3 件 = 实现期才发现**(2026-11-01):该 main spec 写着「**其余 4 种实现**(`SparseSnoopFilter` / …)**的行为实现尚未落地**」+ Scenario「非 FullMap 的其余 **4** 实现 SHALL 只做声明层断言(deferred)」⇒ `SparseSnoopFilter` 落地后**已成过期陈述** ⇒ 按真源原则**必须**改 | 同上(改后须 `--update` 重冻) |
+
+⚠️ **第 3 件的性质与前两件不同**:前两件是**追加**(正文不可变 ⇒ 只加 `## Status Update`);
+第 3 件是**改写既有 Requirement 文本**(冻结 M1 产物)⇒ 须走 delta spec(`MODIFIED Requirements`)
+⇒ **归档动作会写该文件** ⇒ 顺序须为:台账 entry(授权)→ delta spec 落盘 → `openspec archive`
+→ `--update --authorized-by`(重冻 + provenance)→ commit ⇒ ⚠️ **归档与重冻的顺序不可颠倒**。
 
 ⚠️ `07 号` 的 CXL 行**措辞**改动**只限**该行;⚠️ `ADR-CEP-04` 的 §2 caps 表 / §4 hazard 表**零改动**
 (caps/hazard **消费**,不重推 —— per `ADR-CEP-04` Status Update 的 V-1)。

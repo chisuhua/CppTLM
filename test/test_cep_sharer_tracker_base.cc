@@ -532,14 +532,16 @@ TEST_CASE("CEP SharerTracker: 禁用 API 零出现(去注释 + 正控)", "[cep][
 //      · 4 个 deferred 实现 ⇒ 只有声明层(无 class 定义)
 //      · `HierarchicalDirectory` ⇒ **必须**有 class 定义 + 是 `SharerTrackerIf` 派生
 //    (单向断言会**空转**:一旦所有实现都落地,「非 FullMap 无 class」不再有鉴别力)
-TEST_CASE("CEP SharerTracker: 4 实现仍 deferred,而 HierarchicalDirectory 已是行为实现",
+TEST_CASE("CEP SharerTracker: 3 实现仍 deferred,而 HierarchicalDirectory / "
+          "SparseSnoopFilter 已是行为实现",
           "[cep][sharer-tracker]") {
     const std::string code = strip_comments(read_repo_file("include/tlm/cep/sharer_tracker.hh"));
     REQUIRE(!code.empty());
 
-    // ── (a) 4 个 deferred 实现:声明层在表里,但头文件里**不得**有它们的类定义 ──
-    for (const char* name :
-         {"SparseSnoopFilter", "DcohSymmetric", "TreeManager", "BroadcastNull"}) {
+    // ── (a) 3 个 deferred 实现:声明层在表里,但头文件里**不得**有它们的类定义 ──
+    // ⚠️ 2026-11-01 更新(队列 #10 实现层):`SparseSnoopFilter` **已落地**行为实现 ⇒
+    //    从 deferred 名单**移出**(该名单必须随实现落地而收缩,否则守门判据失真)。
+    for (const char* name : {"DcohSymmetric", "TreeManager", "BroadcastNull"}) {
         INFO("deferred impl: " << name);
         CHECK(code.find(std::string("\"") + name + "\"") != std::string::npos);
         CHECK(code.find(std::string("class ") + name) == std::string::npos);
@@ -557,9 +559,22 @@ TEST_CASE("CEP SharerTracker: 4 实现仍 deferred,而 HierarchicalDirectory 已
     CHECK(code.find("aggregate_view_at") != std::string::npos);
     CHECK(code.find("lookup_scoped") != std::string::npos);
 
-    // ── (c) 只有 2 个行为实现(其余 4 仍是声明层)────────────────────────────
+    // ── (b2) `SparseSnoopFilter`:**反向**断言 —— 必须是行为实现(队列 #10 实现层)──
+    //    ⚠️ 与 `HierarchicalDirectory` 同型:纯负向断言(「deferred 无 class」)在实现落地后
+    //    会**空转** ⇒ 每落地一个实现,SHALL 补一条**反向**断言。
+    INFO("behavior impl: SparseSnoopFilter");
+    CHECK(code.find("class SparseSnoopFilter") != std::string::npos);
+    static_assert(std::is_base_of_v<cep::SharerTrackerIf, cep::SparseSnoopFilter>,
+                  "SparseSnoopFilter 必须是 SharerTrackerIf 的派生类");
+    // 行为面有**可观测差异**:CONSERVATIVE ⇒ **永不** `ANSWER_HERE`
+    // (EXACT 目录能答「没有其他 sharer」,它不能)⇒ 二者可判别
+    CHECK(code.find("SparseSnoopFilter") != std::string::npos);
+    CHECK(code.find("possible_sharer_count") != std::string::npos);
+
+    // ── (c) 只有 **3** 个行为实现(其余 3 仍是声明层)────────────────────────
     CHECK(std::is_base_of_v<cep::SharerTrackerIf, cep::FullMapDirectory>);
     CHECK(std::is_base_of_v<cep::SharerTrackerIf, cep::HierarchicalDirectory>);
+    CHECK(std::is_base_of_v<cep::SharerTrackerIf, cep::SparseSnoopFilter>);
 
     // deferred 的登记必须可在 spec 里查到(不是只在本文件的注释里);
     // 读取走双态(change 目录 → main specs → 归档件),归档前后都必须绿

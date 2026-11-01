@@ -3,7 +3,7 @@
 | Phase | 状态 | 说明 |
 |---|---|---|
 | 0 治理前置 | ⬜ 待实施 | change 4 件套(本文件)+ KPI slot + **7 处** baseline 同步 |
-| 1 `SparseSnoopFilter` 行为实现 | ⬜ 待实施 | `sharer_tracker.hh` 追加;CONSERVATIVE 语义 + 反向 fixture(漏探必红) |
+| 1 `SparseSnoopFilter` 行为实现 | ✅ **已完成**(2026-11-01) | `sharer_tracker.hh` 追加;CONSERVATIVE 语义 + 5 cases / 39 assertions;**2 条毒化实测鉴别力**(无条目→`ANSWER_HERE` ⇒ 3 failed;漏查 sharers 位数 ⇒ 2 failed)|
 | 2 `CxlCacheAdapter` | ⬜ 待实施 | `cxl_cache_adapter.hh`(新);委托规约载体 + 三态查询面 + 零副本扫描器 |
 | 3 实例声明 + 冻结面 | ⬜ 待实施 | `protocol_instances.json` + `perm_upgrades.json` + `07 号` / `ADR-CEP-04` 两步授权 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + 零冻结面 diff + 归档 + KPI 1/3 → 0/3 |
@@ -21,15 +21,15 @@
 
 ## Phase 1 — `SparseSnoopFilter` 行为实现(TDD 5-step)
 
-- [ ] 1.1 **先写红**:`test/test_cep_sparse_snoop_filter.cc` 骨架 + 反向 fixture
+- [x] 1.1 **先写红**:`test/test_cep_sparse_snoop_filter.cc` 骨架 + 反向 fixture
       (① caps/behavior 与 traits 不一致 ⇒ 必红 ② 「filter 说独占、实际另有 sharer」⇒ 必红
        ③ 无条目 ⇒ 返回 `ANSWER_HERE` ⇒ 必红 ④ contention 不报 `STALL` ⇒ 必红)
-- [ ] 1.2 `include/tlm/cep/sharer_tracker.hh` 追加 `SparseSnoopFilter`
+- [x] 1.2 `include/tlm/cep/sharer_tracker.hh` 追加 `SparseSnoopFilter`
       (`final : public SharerTrackerIf, public SnoopMechanics`;caps/behavior **取** `kTrackerTraits[1]`)
-- [ ] 1.3 `lookup` 三档判定(D-β.2)+ 「无条目 ⇒ `BROADCAST`」保守默认
-- [ ] 1.4 4 个 `override` 薄壳(`snoop_begin`/`snoop_fold`/`observe_snoop` 转调 `SnoopMechanics::*_core`)
+- [x] 1.3 `lookup` 三档判定(D-β.2)+ 「无条目 ⇒ `BROADCAST`」保守默认
+- [x] 1.4 4 个 `override` 薄壳(`snoop_begin`/`snoop_fold`/`observe_snoop` 转调 `SnoopMechanics::*_core`)
       + 观察面 `view_of`
-- [ ] 1.5 跑绿 + `moesi_gpu` 既有测试 **0 回归**(若 snoop 数变化 ⇒ 显式登记 + 重基线)
+- [x] 1.5 跑绿 + `moesi_gpu` 既有测试 **0 回归**(若 snoop 数变化 ⇒ 显式登记 + 重基线)
 
 ---
 
@@ -55,6 +55,8 @@
       → `--update`(provenance 对齐)→ commit 清单
       · `docs/architecture/07-coherence-exploration-platform.md`(§5.1.1 CXL 行措辞对齐裁决 ③⑦)
       · `docs/adr/ADR-CEP-04-*.md`(第 3 个行为实现落地 + R11 降级条件评估)
+      · `openspec/specs/cep-sharer-tracker-base/spec.md`(⚠️ **第 3 件** —— 「其余 4 实现 deferred」
+        已**过期**;走 delta spec `MODIFIED Requirements`;⚠️ **归档 → 重冻**顺序不可颠倒)
 - [ ] 3.4 R11 降级评估:V-1 ∧ V-2 ∧ V-3 **全达成**才降 🟢;任一未达成 ⇒ **保持 🟡 中**并登记
 
 ---
