@@ -46,22 +46,32 @@ CEP SHALL 为 **TileLink-C**(`tilelink-c-1.7.1`)提供一份**可执行实现层
 - **AND** 子条件 ② SHALL 成立:`UNIQUE` SHALL **NOT** 出现
   (规范只说副本 *may contain dirty data* ⇒ 不承诺干净 ⇒ `UNIQUE` 不可确证 ⇒ 保守投影 `WRITEBACK`)
 - **AND** 子条件 ③ SHALL 成立:该投影 SHALL **只消费**规约载体,SHALL **不**另写 switch
+- **AND** 子条件 ④ SHALL 成立:`perm_of` SHALL **同时**提供**返回值**形态与**出参**形态
+  (出参形态 = 平台 adapter 装载契约的调用约定,per `adapter_contracts_loader.hh`)
+  ⇒ 二者 SHALL **同源**(同一张投影表)⇒ **零双真源**
 
-#### Scenario: TMA-03 —— 6→3 消息类映射 SHALL 逐条等于 **R-T3 归属表**
+#### Scenario: TMA-03 —— 消息类映射 SHALL **分两张方向不同的表**且逐条等于 **R-T3 归属表**
 
 - **WHEN** 核对 `TileLinkCAdapter` 的消息类映射
-- **THEN** 子条件 ① SHALL 成立:映射 SHALL 覆盖 R-T3 归属表的**全部**消息
+- **THEN** 子条件 ① SHALL 成立:**6→3 表**(`kMessageClassMap`:消息类 → `CATEGORY_*`)SHALL 恰为 **4 行**
+  (`request`→REQUEST · `snoop`→REQUEST · `snoop_resp`→RESPONSE · `response`→RESPONSE)
+  ⇒ TileLink-C **不使用** `atomic` / `query` ⇒ 相对平台方向默认表**非恒等**
+- **AND** 子条件 ② SHALL 成立:`kMappingIsIdentity` SHALL 为 **`false`** 且**理由必填**
+  (理由 SHALL 指明「非恒等的成因是**词表子集**,**不是**方向不同」)
+- **AND** 子条件 ③ SHALL 成立:**逐消息表**(`kProtocolMessageMap`:逐消息 → 6 类)SHALL 恰为 **10 行**
+  且逐条等于 **R-T3 归属表**
   (`Acquire`→`request` · `Probe`→`snoop` ·
   `ProbeAck`/`ProbeAckData`/`Release`/`ReleaseData`→`snoop_resp` ·
   `Grant`/`GrantData`/`ReleaseAck`/`GrantAck`→`response`)
-- **AND** 子条件 ② SHALL 成立:`kMappingIsIdentity` SHALL 为 **`false`** 且**理由必填**
-- **AND** 子条件 ③ SHALL 成立:映射目标 SHALL ∈ **6 类规范词表**
+- **AND** 子条件 ④ SHALL 成立:逐消息表的归属目标 SHALL ∈ **6 类规范词表**
   `{request, response, snoop, snoop_resp, atomic, query}`
-- **AND** 子条件 ④ SHALL 成立:⚠️ **`writeback` SHALL NOT** 出现在映射目标中
+- **AND** 子条件 ⑤ SHALL 成立:⚠️ **`writeback` SHALL NOT** 出现在**任一**表的键或目标中
   (它是 **canonical 10 流名**,不是消息类名)
-- **AND** 子条件 ⑤ SHALL 成立:**2 处降维 SHALL 显式登记**:
+- **AND** 子条件 ⑥ SHALL 成立:**2 处降维 SHALL 显式登记**:
   `Release`/`ReleaseData` 归 `snoop_resp`(语义是「自愿放弃」)·
   `GrantAck` 归 `response`(词表无「对 completion 的 ack」档)
+- **AND** 子条件 ⑦ SHALL 成立:⚠️ **两张表 SHALL 分别断言** —— 合并断言则「平台机制面」与
+  「协议族特有面」的混淆**不可分辨**
 
 #### Scenario: TMA-04 —— `TreeManager` 的 caps/behavior SHALL **逐字段**等于 `kTrackerTraits[3]`
 
@@ -95,6 +105,8 @@ CEP SHALL 为 **TileLink-C**(`tilelink-c-1.7.1`)提供一份**可执行实现层
 - **AND** 子条件 ④ SHALL 成立:否则 SHALL 把新增位并入 `expected` **与** `remaining`
   ⇒ `snoop_fold` 的归零逻辑 SHALL **不变**(⇒ **零重复实现**)
 - **AND** 子条件 ⑤ SHALL 成立:**反向 fixture**:不并入 `remaining` ⇒ 归零判定**必须红**
+- **AND** 子条件 ⑥ SHALL 成立:该机械 SHALL 位于 **`SnoopMechanics`**(公共机械)⇒ **禁双实现**;
+  SHALL **不**在 `TreeManager` 内自持(否则与 `snoop_fold_core` **双份**归零逻辑)
 
 #### Scenario: TMA-07 —— `LocalView` SHALL **零改动**(复用 `forward_to`)
 

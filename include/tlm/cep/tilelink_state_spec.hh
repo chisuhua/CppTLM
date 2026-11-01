@@ -282,6 +282,16 @@ public:
         return kPermProjection[static_cast<std::uint8_t>(s)];
     }
 
+    /// 稳定态 → `perm` 投影(**出参**形态)—— **平台 adapter 契约面**的调用约定
+    /// (per `adapter_contracts_loader.hh` 的 `fill_adapter_inputs`:`perm_of(state, out)` → `bool`)。
+    /// ⚠️ **与上面的返回值形态同源**(同一张 `kPermProjection` 表)⇒ **零双真源**;
+    /// ⚠️ 本 overload 于 2026-11-02 补入 —— 第 0 个 change 的载体**只**提供了返回值形态,
+    ///    与平台 adapter 装载契约**不兼容** ⇒ 实现层落地时才发现(per 台账 Entry #145)。
+    static constexpr bool perm_of(State s, Perm& out) noexcept {
+        out = kPermProjection[static_cast<std::uint8_t>(s)];
+        return true;
+    }
+
     /// 掩码中 1 的个数。
     static constexpr std::size_t popcount(std::uint8_t v) noexcept {
         std::size_t n = 0;

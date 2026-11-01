@@ -9101,6 +9101,57 @@ SU 的 3 行表格首格由 **数字** 改为 **圈号**(`① ② ③`)—— �
 
 ---
 
+### Entry #145 — 2026-11-02 [implement](队列 #11 第 1 个 change Phase 2 落地 —— adapter + `TreeManager` + `snoop_join_core`;含 **1 处载体缺陷补正**)
+
+**主题**:第 1 个 change(实现层)的 Phase 2(TDD 5-step)完成 ⇒ 落地 3 件载体 + **1 处通用机械**,
+并**补正**第 0 个 change 载体的一处**平台契约面缺陷**。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `include/tlm/cep/tilelink_c_adapter.hh`(新) | `TileLinkCAdapter`:**零自有表副本**(委托 `TileLinkStateSpec`)· 3→3 `perm` 投影 · **6→3** 映射(4 行)+ **逐消息 → 6 类**(10 行,per R-T3)+ 2 处降维登记 |
+| `include/tlm/cep/tilelink_tree_manager.hh`(新) | `TreeManager`(第 4 种行为类)—— `ESCALATE_UP` + `CHAIN` 的**全仓首次真实使用** |
+| `include/tlm/cep/sharer_tracker.hh`(改) | **+1 通用机械** `SnoopMechanics::snoop_join_core`(4 步语义;**零协议耦合**) |
+| `test/test_cep_tilelink_adapter.cc`(新) | **7 cases / 165 assertions** 全绿(TMA-01 ~ TMA-07)+ 反向 fixture |
+
+**② ⚠️ 补正:第 0 个 change 的载体缺**平台 adapter 契约面**(真实缺陷)**
+
+| 面 | 事实 |
+|---|---|
+| 载体原形态 | `tilelink_state_spec.hh` 只提供 `perm_of(State) → Perm`(**返回值**形态) |
+| 平台契约 | `adapter_contracts_loader.hh` 的 `fill_adapter_inputs` 调用 `perm_of(state, out) → bool`(**出参**形态) |
+| ⇒ 后果 | **不兼容** ⇒ 实现层落地时才发现(第 0 个 change 的 `TMA-02`「`perm_of` 委托载体」**无法满足**) |
+| **补正** | 在载体**补入同源**的出参 overload(同一张 `kPermProjection` 表)⇒ **零双真源** · 载体**行为**不变 · 仅**签名面**补齐 |
+| **main spec** | **零改动** —— `TSS-04` 只锁「投影 3 行 + 逐行 + `UNIQUE` 不出现」⇒ **不涉及签名** |
+
+**③ 2 处设计订正(实施期发现 ⇒ 已回写 `design.md` / delta spec / tasks)**
+
+| # | 订正 | 理由 |
+|---|---|---|
+| 1 | `TreeManager` 由「并入 `sharer_tracker.hh`」改为**独立头** `tilelink_tree_manager.hh` | `sharer_tracker.hh` 是**协议无关**的通用抽象层 ⇒ 在其中 include 协议族头 ⇒ **通用层反向依赖协议族** ⇒ **层级倒置** ⇒ 独立头是**正确方向**(协议族头**依赖**通用层)。⇒ `sharer_tracker.hh` 的改动面缩到 **1 处**(新增**零协议耦合**的通用机械) |
+| 2 | 消息类映射 = **两张方向不同的表** | ① `kMessageClassMap`:**消息类 → `CATEGORY_*` 3 类**(平台机制面)—— 本实例**只用 4 类**(TileLink 无 `atomic`/`query`)⇒ 相对方向默认表**非恒等**(成因 = **词表子集**,**不是**方向不同)② `kProtocolMessageMap`:**逐消息 → 6 类**(协议族特有面,R-T3 的 10 条)⇒ 二者**不得混为一谈** ⇒ 判据**分别**断言 |
+
+**④ TDD 5-step 实测轨迹**
+
+| 步 | 实测 |
+|---|---|
+| 1(红) | `fatal error: tlm/cep/tilelink_c_adapter.hh: No such file or directory` |
+| 2(绿) | `[cep][tilelink][adapter]` **7 cases / 165 assertions** 全绿 |
+| 3(重构) | 零副本静态扫描口径与 `cxl_cache_adapter.hh` 对齐;命名与既有 adapter 对齐 ⇒ 全量 `ctest` **133/133** ⇒ **0 回归** |
+
+**⑤ 验收**:全量 `ctest` **133/133** · 门禁全 rc=0 · `openspec validate --strict` rc=0 · **冻结面零 diff**
+⇒ ⚠️ 本条**未**改任何 M1 冻结面成员(`sharer_tracker.hh` / `tilelink_state_spec.hh` 均**非**冻结面)
+⇒ 冻结面 2 件的两步授权**留在 Phase 3**(per `tasks.md` 3.4)。
+
+**⑥ 关联**: Entry #144(第 1 个 change 建档)· #143(第 0 个 change 归档)· #141(二审落修 批 2)
+· `openspec/changes/cpptlm-cep-tilelink-tree-manager/`(design.md / delta spec / tasks.md)
+· `include/tlm/cep/tilelink_c_adapter.hh` · `include/tlm/cep/tilelink_tree_manager.hh`
+· `include/tlm/cep/sharer_tracker.hh` · `include/tlm/cep/tilelink_state_spec.hh`
+· `include/tlm/cep/adapter_contracts_loader.hh`(平台契约面的调用约定来源)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

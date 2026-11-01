@@ -27,7 +27,37 @@
 ### ⚠️ 结构性保证(不只是约定)
 
 `cxl_cache_adapter.hh:24-28` 的写法:**去注释后**的 adapter 文本 SHALL **不**含 `State::` / `Event::` / `Perm::` **任何字面量**,SHALL **不**含任何**表名**(`kTransitions` / `kPermProjection` / `kTable`)
-⇒ **语法上不可能**携带自己的表 ⇒ 由**测试的静态扫描**兜底(AC-1 的反向 fixture:植入字面量 ⇒ 必红)。
+⇒ ⇒ **结构性保证**:adapter 去注释后文本 SHALL **不**含 `State::` / `Event::` / `Perm::` 字面量、不含表名 ⇒ 由**静态扫描**兜底(AC-1 的反向 fixture:植入字面量 ⇒ 必红)。
+
+### ⚠️ 两张**方向不同**的映射表(实施期澄清 —— 不得混为一谈)
+
+| 表 | 方向 | 内容 | 平台机制 |
+|---|---|---|---|
+| `kMessageClassMap` | **消息类 → `CATEGORY_*` 3 类** | 本实例**只用 4 类**(`request` / `snoop` / `snoop_resp` / `response`;TileLink **无** `atomic` / `query`)⇒ 平台方向默认表的**词表子集** ⇒ **非恒等**(成因 = 词表子集,**不是**方向不同) | AC-04 的完备性 / 值域 / 恒等判定 |
+| `kProtocolMessageMap` | **逐消息 → 6 类消息类** | TileLink-C 的 **10 条**消息的归属(per **R-T3**)⇒ **协议族特有** | 无平台对应面 ⇒ **本 change 新增** |
+
+⇒ ⇒ 二者**不是**同一张表 ⇒ 判据 SHALL **分别断言**(合并 ⇒ 平台机制面与协议族特有面的混淆**不可分辨**)。
+⇒ ⇒ **本协议族的真正差异在后者**(2 处降维:`Release`/`ReleaseData` → `snoop_resp` · `GrantAck` → `response`)。
+
+### ⚠️ `TreeManager` 的**落位**(实施期修订 —— 原设计并入 `sharer_tracker.hh`)
+
+**改为独立头** `include/tlm/cep/tilelink_tree_manager.hh`。
+
+| 面 | 内容 |
+|---|---|
+| **理由** | `sharer_tracker.hh` 是**协议无关**的通用抽象层 ⇒ 在其中 `#include` 协议族头(本例 = TileLink 规约载体)⇒ **通用层反向依赖协议族** ⇒ **层级倒置** ⇒ 独立头是**正确方向**(协议族头**依赖**通用层) |
+| **单源保持** | 3 稳定态词表**别名**规约载体(`using State = TileLinkStateSpec::State`)⇒ **零重复枚举** |
+| **`sharer_tracker.hh` 的改动面** | **仅 1 处** = 新增**通用机械** `SnoopMechanics::snoop_join_core`(**零协议耦合**)⇒ 通用抽象面的**行为面**扩大 ⇒ `cep-sharer-tracker-base` main spec 的**实现数陈述**仍须同步(★ 冻结面 ⇒ 两步授权) |
+
+### ⚠️ 规约载体的 `perm_of` **出参 overload**(实施期补入 —— 第 0 个 change 的载体缺平台契约面)
+
+第 0 个 change 的载体 `tilelink_state_spec.hh` 只提供了 `perm_of(State) → Perm`(**返回值**形态)
+⇒ 与平台 adapter 装载契约(`adapter_contracts_loader.hh` 的 `fill_adapter_inputs` 调用
+`perm_of(state, out) → bool`)**不兼容** ⇒ **实现层落地时才发现**。
+
+⇒ 补入**同源**的**出参** overload(同一张 `kPermProjection` 表 ⇒ **零双真源**)⇒ 载体**行为**不变,仅**签名面**补齐。
+⇒ ⚠️ 已归档的 main spec `openspec/specs/cep-tilelink-state-spec/spec.md` 的 `TSS-04`
+只锁「投影 3 行 + 逐行 + `UNIQUE` 不出现」⇒ **不涉及签名** ⇒ **main spec 零改动**。
 
 ---
 

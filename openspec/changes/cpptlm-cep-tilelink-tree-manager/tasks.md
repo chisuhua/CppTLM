@@ -14,7 +14,7 @@
 |---|---|---|
 | 0 治理前置 | ✅ **已完成**(2026-11-02) | 版本锁定(#135)· 三项 architect 裁决(#138)· **R-T4 裁决**(#141)· 第 0 个 change 已归档(#143)· improvement 草稿(HARD-GATE 通过)· change 目录 4 件套已建 |
 | 1 载体形态定稿 | ✅ **已完成**(2026-11-02) | adapter = **零自有表副本**· `TreeManager` = **第 4 种行为类**· `LocalView` **零改动** · `AC-05` **族无关化** · 冻结面 **2 件**清单 —— 详见 `design.md` D-α ~ D-⑨ |
-| 2 adapter + tracker 行为实现 | ⬜ 待实施 | `tilelink_c_adapter.hh` + `sharer_tracker.hh`(加 `TreeManager` + `snoop_join_core`) |
+| 2 adapter + tracker 行为实现 | ✅ **已完成**(2026-11-02) | `tilelink_c_adapter.hh`(新)+ `tilelink_tree_manager.hh`(新)+ `sharer_tracker.hh`(+1 通用机械 `snoop_join_core`);TDD 5-step 走完(红 ⇒ 绿 ⇒ 重构);`[cep][tilelink][adapter]` **7 cases / 165 assertions** 全绿;全量 `ctest` **133/133** ⇒ **0 回归**;⚠️ **3 处实施期修订**已回写 `design.md` / delta spec(per 台账 Entry #145) |
 | 3 实例声明 + 判据收口 | ⬜ 待实施 | `protocol_instances.json` + `perm_upgrades.json` + `adapter_contracts_loader.hh` + `adapter_schema_contracts.hh`(AC-05 族无关化)+ `examples/cep_adapter_contracts.cc` + 判据 + 反向验证脚本 + **冻结面 2 件两步授权** |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + 全量 ctest 0 回归 + KPI 1/3 → 0/3 + 7 处 baseline + 归档 |
 
@@ -54,26 +54,42 @@
 
 ### 2.1 `include/tlm/cep/tilelink_c_adapter.hh`(新 · header-only)
 
-- [ ] 2.1.1 `kAdapterName = "TileLinkCAdapter"` · `kInstanceId = "tilelink_c"` · 状态/事件类型别名取 `TileLinkStateSpec`
-- [ ] 2.1.2 `transition()` **委托** `TileLinkStateSpec::transition`;`perm_of()` **委托** `TileLinkStateSpec::perm_of`
-- [ ] 2.1.3 **6→3 消息类映射表** `kMessageClassMap`(按 **R-T3** 逐消息归属表)+ `kMappingIsIdentity = false` + `kIdentityReason`
-- [ ] 2.1.4 **瞬态态**声明(`Trunk` = 折叠 ⇒ **无瞬态态可泄漏**)+ `kPermMergeNote`(语义损失登记)
-- [ ] 2.1.5 **零注册**:不注册 23 ABI · 不进 `ModuleFactory` · 不改 frozen header
+- [x] 2.1.1 `kAdapterName = "TileLinkCAdapter"` · `kInstanceId = "tilelink_c"` · 状态/事件类型别名取 `TileLinkStateSpec`
+- [x] 2.1.2 `transition()` **委托** `TileLinkStateSpec::transition`;`perm_of()` **委托** `TileLinkStateSpec::perm_of`
+      ⇒ ⚠️ **实施期补正**:第 0 个 change 的载体只有 `perm_of(State) → Perm`(**返回值**形态)
+      ⇒ 与平台装载契约(`perm_of(state, out) → bool`)**不兼容** ⇒ 已在载体**补入同源**的出参 overload
+      ⇒ 载体**行为**不变、**签名面**补齐;main spec `TSS-04` **零改动**
+- [x] 2.1.3 **6→3 消息类映射表** `kMessageClassMap`(**4 行**:消息类 → `CATEGORY_*`)+ `kMappingIsIdentity = false`
+      + `kIdentityReason`(非恒等成因 = **词表子集**,**不是**方向不同)
+- [x] 2.1.4 **逐消息 → 6 类**归属表 `kProtocolMessageMap`(**10 行**,per **R-T3**)+ `kMessageClassDowngradeNote`(2 处降维登记)
+      ⇒ ⚠️ **与 2.1.3 是两张方向不同的表** ⇒ 判据**分别**断言
+- [x] 2.1.5 **瞬态态**声明(`Trunk` = 折叠 ⇒ **无瞬态态可泄漏**)+ `kPermMergeNote`(语义损失登记)
+- [x] 2.1.6 **零注册**:不注册 23 ABI · 不进 `ModuleFactory` · 不改 frozen header
 
-### 2.2 `include/tlm/cep/sharer_tracker.hh`(`TreeManager` + `snoop_join_core`)
+### 2.2 `sharer_tracker.hh`(+1 通用机械)与 `tilelink_tree_manager.hh`(新 · `TreeManager`)
 
-- [ ] 2.2.1 **新增** `SnoopMechanics::snoop_join_core(addr, extra_responders, handle)`(4 步语义,见 `design.md` D-γ)
-- [ ] 2.2.2 **新增** `class TreeManager final : public SharerTrackerIf, public SnoopMechanics`
+> ⚠️ **实施期修订**:`TreeManager` 由「并入 `sharer_tracker.hh`」改为**独立头**
+> ⇒ 通用抽象层**不**反向依赖协议族(详见 `design.md` D-α 的「`TreeManager` 的落位」)。
+
+- [x] 2.2.1 **新增** `SnoopMechanics::snoop_join_core(addr, extra_responders, handle)`(4 步语义,见 `design.md` D-γ)
+      ⇒ ⚠️ **不产生 IC3 生命周期事件**(join **不是**一次新的 snoop begin)⇒ 事件流语义不变
+- [x] 2.2.2 **新增** `class TreeManager final : public SharerTrackerIf, public SnoopMechanics`
+      (落 `include/tlm/cep/tilelink_tree_manager.hh`)
       —— caps/behavior **取** `kTrackerTraits[3]`(**单源**,不另写字面量)
-- [ ] 2.2.3 `lookup` = 3 态语义(1.3)· `set_sharer` / `clear_sharer`(照 `FullMapDirectory` 的**非虚公开方法**形态)
-- [ ] 2.2.4 `snoop_begin` / `snoop_fold` / `observe_snoop` **委托** `*_core`(禁双实现)
-- [ ] 2.2.5 `static_assert` 锁:`TreeManager` 的 caps/behavior == `kTrackerTraits[3]`(照 `HierarchicalDirectory` 形态)
+- [x] 2.2.3 `lookup` = 3 态语义(1.3)· `set_sharer` / `clear_sharer`(照 `FullMapDirectory` 的**非虚公开方法**形态)
+      ⇒ ⚠️ `set_sharer` 的第 3 参 = **树位置**(`TileLinkStateSpec::State`),**非** `SnoopState`
+      ⇒ 位置**派生**(`tips != 0 ⇒ Tip` / `sharers != 0 ⇒ Branch` / 否则 `Nothing`)⇒ **无双真源**
+- [x] 2.2.4 `snoop_begin` / `snoop_fold` / `observe_snoop` **委托** `*_core`(禁双实现)
+- [x] 2.2.5 `static_assert` 锁:`TreeManager` 的 caps/behavior == `kTrackerTraits[3]`(照 `HierarchicalDirectory` 形态)
 
 ### 2.3 TDD 5-step(每步:红 → 绿 → 重构)
 
-- [ ] 2.3.1 **步 1(红)**:先写 `test/test_cep_tilelink_adapter.cc` 的 AC-1 ~ AC-5 断言 ⇒ 编译失败
-- [ ] 2.3.2 **步 2(绿)**:实现 adapter + `TreeManager` 使 AC-1 ~ AC-5 全绿
-- [ ] 2.3.3 **步 3(重构)**:零副本静态扫描口径与 `cxl_cache_adapter.hh` 对齐;命名与既有 adapter 对齐
+- [x] 2.3.1 **步 1(红)**:先写 `test/test_cep_tilelink_adapter.cc` 的 AC-1 ~ AC-5 断言 ⇒ 编译失败
+      ⇒ **实测红**:`fatal error: tlm/cep/tilelink_c_adapter.hh: No such file or directory`
+- [x] 2.3.2 **步 2(绿)**:实现 adapter + `TreeManager` 使 AC-1 ~ AC-5 全绿
+      ⇒ **实测绿**:`[cep][tilelink][adapter]` **7 cases / 165 assertions** 全绿
+- [x] 2.3.3 **步 3(重构)**:零副本静态扫描口径与 `cxl_cache_adapter.hh` 对齐;命名与既有 adapter 对齐
+      ⇒ 全量 `ctest` **133/133** ⇒ **0 回归**
 
 ---
 
@@ -98,7 +114,7 @@
 
 ### 3.3 判据
 
-- [ ] 3.3.1 `test/test_cep_tilelink_adapter.cc` —— 零副本静态扫描 + 12 格 pass-through + 3→3 投影 + 6→3 映射 + 非对称形态 + `ESCALATE_UP` / `CHAIN` 真实使用
+- [x] 3.3.1 `test/test_cep_tilelink_adapter.cc` —— 零副本静态扫描 + 12 格 pass-through + 3→3 投影 + 6→3 映射 + 非对称形态 + `ESCALATE_UP` / `CHAIN` 真实使用(⇒ **Phase 2 的 TDD 步 1 已建**,**7 cases / 165 assertions** 全绿;Phase 3 追加实例面断言)
 - [ ] 3.3.2 `test/test_cep_tilelink_instance_decl.cc` —— 13 键齐备 + `perm` 3 值 + `vc_binding` 逐类 + `sharer_tracker` caps + `repo_owned_instance_ids` + `no_upgrade_instances` **恰含** `tilelink_c`
 - [ ] 3.3.3 **反向 fixture**(每条 SHALL **因正确原因红**):
       ① adapter 植入 `State::` 字面量 ⇒ AC-1 红 ② adapter 自持表 ⇒ AC-1 红

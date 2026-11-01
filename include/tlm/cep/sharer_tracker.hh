@@ -368,6 +368,45 @@ struct SnoopMechanics {
         events_.push_back(LifecycleEvent::MergeOnSnoopBegin);
     }
 
+    // ── snoop_join 的公共实现(**CHAIN** 语义:加入**同一** in-flight snoop)──
+    // ⚠️ **与 `snoop_begin_core` 的拒绝语义不同**:后者在「同址已有 snoop 且期望集不同」时
+    //    **拒绝**(返 0);而 `LookupHazard::CHAIN` 的语义是「**加入**它」(扩展期望集)
+    //    ⇒ 二者是**不同**操作 ⇒ 分列两个入口(禁双实现 ⇒ 本机械是**唯一**实现)。
+    //
+    // 4 步语义(per `openspec/changes/cpptlm-cep-tilelink-tree-manager` 的 `design.md` D-γ):
+    //   ① 该地址**无** in-flight ⇒ 返 0(「无可加入」⇒ 调用方应改走 `snoop_begin_core`)
+    //   ② 加入集含**未映射位** ⇒ 返 0(与 `snoop_begin_core` 同一拒绝语义)
+    //   ③ 加入集与既有期望集**无新增位** ⇒ 返**既有 handle**(幂等)
+    //   ④ 否则 ⇒ 把新增位并入 `expected` **与** `remaining` ⇒ `snoop_fold` 的归零逻辑**不变**
+    //
+    // ⚠️ **不产生 IC3 生命周期事件** —— join **不是**一次新的 snoop begin,而是既有 snoop 的
+    //    期望集扩展 ⇒ 事件流语义不变(`MergeOnSnoopBegin` 的计数不受影响)。
+    void snoop_join_core(std::uint64_t addr, responder_set_t extra_responders,
+                         snoop_handle_t& handle) {
+        handle = snoop_handle_t{0};
+        // ① 该地址**无** in-flight ⇒ 无可加入
+        auto sit = inflight_by_addr_.find(addr);
+        if (sit == inflight_by_addr_.end())
+            return;
+        auto fit = inflight_.find(sit->second);
+        if (fit == inflight_.end())
+            return;
+        // ② 加入集含**未映射位** ⇒ 与 `snoop_begin_core` 同一拒绝语义
+        if ((extra_responders & ~kMappedResponderMask) != 0)
+            return;
+        // ③ 无新增位 ⇒ 幂等(返既有 handle,不重复扩张)
+        const responder_set_t added = extra_responders & ~fit->second.expected;
+        if (added == 0) {
+            handle = sit->second;
+            return;
+        }
+        // ④ 并入 `expected`(幂等判定基准)**与** `remaining`(归零判定基准)
+        //    ⇒ `snoop_fold_core` 的归零逻辑**完全不变** ⇒ 零重复实现
+        fit->second.expected |= extra_responders;
+        fit->second.remaining |= added;
+        handle = sit->second;
+    }
+
     // ── snoop_fold 的公共实现 ───────────────────────────────────────────
     void snoop_fold_core(snoop_handle_t handle, node_id_t node_id, SnoopState resp_state,
                          bool dirty, bool data_supplied, responder_set_t& remaining_mask,
