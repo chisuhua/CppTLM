@@ -1,8 +1,10 @@
 # TileLink-C(TileLink Tree Manager)—— 公开来源锚点摘要(Task 0 普查产物)
 
 > **日期**:2026-11-01 · **状态**:🔵 **普查完成(有条件通过)** —— **载体形态可钉死**(3 态 × 4 事件 = 12 格,
-> **零 `Unknown`**),但**版本锁定缺口**(R-T1)未闭合 ⇒ 决定载体形态的 5 项**全部 `pending=true`**;
-> 另发现 **1 项头号架构风险**(通道 5 → VC 4 的映射冲突,R-T2)+ **3 项待裁决设计点**。
+> **零 `Unknown`**);**版本锁定缺口(R-T1)已闭合**(2026-11-01,per 台账 Entry #135 + `ADR-CEP-11` 的
+> `## Status Update(2026-11-01,per 台账 Entry #135)` ⇒ 锁定版本 = **`tilelink-c-1.7.1`**,SiFive);
+> ⚠️ **仍余 3 项 architect 待裁决**:**R-T6**(非对称定义形态,阻塞规约层)+ **R-T2 / R-T3**
+> (通道 5 → VC 4 / 6 类消息类词表,阻塞实现层的实例声明)。
 > · **用途**:队列 #11 `cpptlm-cep-tilelink-tree-manager` 的 **basis 唯一人工审计面**
 >   (per `ADR-CEP-11` Status Update ①-c / ④ 的同款定位)
 > · **上位裁决**:台账 `obj-cep-platform.md` **Entry #134** · `docs/adr/ADR-CEP-11-protocol-version-locking.md` 的 `## Status Update(2026-11-01)`
@@ -239,7 +241,7 @@
 
 | # | 残余风险 | 等级 | 处置 |
 |---|---|---|---|
-| **R-T1** | **版本锁定缺口** —— `ADR-CEP-11 §3` 锁 `tilelink-c-1.3`;本环境**取不到 1.3 正文**(≥6 次尝试:riscv.org 404 / RISC-V adoc 不存在 / `openspecification/tilespec` 仓库 **404** / GitHub 搜索无命中);而可取的 **1.7.1** 与 **1.9.3** 属 **SiFive 版本线**、且**语义已漂移**(事件词表 10 → 12 条 + 节点类别 4 → 5 类)⇒ **不得拿 1.7.1/1.9.3 冒充 1.3** ⇒ 决定载体形态的 5 项**全部 `pending=true`** | **🔴 阻塞** | **architect 裁决**(见 §10) |
+| **R-T1** | ~~**版本锁定缺口**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #135** + `ADR-CEP-11` 的 `## Status Update(2026-11-01,per 台账 Entry #135)`)—— `ADR-CEP-11 §3` 锁表现为 **`tilelink-c-1.7.1`**(SiFive;PDF sha256 `30c09b5f…a2dd`)。**历史事实保留**:原锁 `tilelink-c-1.3` 的正文**至今取不到**(≥6 次尝试:riscv.org 404 / RISC-V adoc 不存在 / `openspecification/tilespec` 仓库 **404** / GitHub 搜索无命中)⇒ **该版本永久不可确证** ⇒ 本裁决是**改锁**,**不是**「已取得 1.3」 | **✅ 已闭合** | 台账 Entry #135(授权记录)+ `ADR-CEP-11` SU |
 | **R-T2** | **通道 5 → VC 4 冲突** —— 见 §5;合并通道会破坏规范自带的 `A<B<C<D<E` 无环论证 ⇒ 装配期闸可能误报 | **🔴 高** | **architect 裁决** |
 | **R-T3** | **6 类消息类词表缺口** —— `GrantAck` 无对应类;`Release`/`ReleaseData` 类归属歧义;`writeback` 是**流名**不是**类名**(两套词表混用) | 🟡 中 | 与 R-T2 合并裁决 |
 | **R-T4** | **`perm` 退化为 3 值** —— `UNIQUE` 不可达 ⇒ 该实例**不声明**静默升级 ⇒ 不触发 `INV-CEP-08-IC2`;「`perm` 4 值锁」是**值域**锁还是「每实例用满 4 值」需显式承认 | 🟡 中 | architect 口径确认 + 实例散文登记 |
@@ -257,7 +259,7 @@
 | 项 | 判定 |
 |---|---|
 | 公开来源可得性 | ✅ **良** —— TileLink 规范**开源可取**(3 份 `pin=strong` + sha256)⇒ **远优于**队列 #10(CXL 全程禁读) |
-| 决定载体形态的 5 项 | ❌ **未钉死** —— **R-T1** 使其全部 `pending=true`;但**内容已可推导**(见下)⇒ 只差**版本裁决** |
+| 决定载体形态的 5 项 | ✅ **已钉死** —— **R-T1 已闭合**(锁版本 = `tilelink-c-1.7.1`)⇒ **内容可推导 + 版本已定** ⇒ 可产出 `pending=false` 格 |
 | 态集合 | ✅ **可推导** —— **3 值** `{Nothing, Branch, Tip}`(`Trunk` = 过渡态,R-T7) |
 | 事件词表 | ✅ **可推导** —— **4 类** `{Cap, Grow, Prune, Report}` + **10 条**消息(D1)/ 12 条(D2) |
 | 逐格覆盖 | ✅ **零 `Unknown`** —— 9 个有序对全被 `Grow`/`Prune`/`Report` 覆盖 + `Cap` 3 条通配 ⇒ **12 格全 Known** |
@@ -266,7 +268,7 @@
 | 非对称定义 | ⚠️ **待裁决**(R-T6) |
 | 通道 → VC 冲突 | 🔴 **新发现**(R-T2)⇒ **超出 #10 同类先例**,须 architect 裁决 |
 | 硬门效力 | ⇒ **change 目录**(`cpptlm-cep-tilelink-tree-manager`)**暂不建** —— 与队列 #10 的硬门同款效力 |
-| ⇒ 前置动作 | **须先闭合 R-T1(版本裁决)** —— 该裁决**属 architect 域**(`ADR-CEP-11 §3` 是**冻结面**) |
+| ⇒ 前置动作 | ✅ **R-T1 已闭合**(Entry #135 + `ADR-CEP-11` SU)⇒ **版本不再是阻塞点**<br>⚠️ **仍余**:**R-T6**(非对称定义形态 —— 规约层要写「非对称」的结构断言 ⇒ **阻塞规约层**)+ **R-T2 / R-T3**(通道 5 → VC 4 / 6 类词表 —— **阻塞实现层的实例声明**)<br>⇒ **下一步**:R-T6 的 architect 裁决(可与 R-T2 / R-T3 合并立项) |
 
 ### ⇒ 版本建议(**供 architect 裁决参考**)
 
@@ -290,13 +292,16 @@
 | **D6** | OpenTitan `TL-UL` 文档(明写「based on TileLink specification version **1.7.1**」) | — | ❌ | — | `weak` | 二手 |
 
 > **取字节说明**:D1 / D2 / D3 均由本环境 `curl` 实取并算得 sha256(2026-11-01)⇒ `pin=strong`。
-> ⚠️ **未取到**:`tilelink-c-1.3` 对应的规范正文(见 R-T1)⇒ **本摘要不得声称代表 1.3**。
+> ⚠️ **未取到**:`tilelink-c-1.3` 对应的规范正文 ⇒ **本摘要不得声称代表 1.3**。
+> ✅ **锁定版本 = `tilelink-c-1.7.1` = D1**(2026-11-01,per 台账 Entry #135 + `ADR-CEP-11` SU)
+> ⇒ **载体 basis 的唯一规范源 = D1**;D2(1.9.3)/ D3(0.3.1)仅作**版本对照**用,不得当载体依据。
 
 ---
 
 ## §10 关联
 
 - **上位裁决**:台账 `obj-cep-platform.md` **Entry #134**(Task 0 硬门结论 + 版本裁决升级)
+  · **Entry #135**(**R-T1 闭合的授权记录**)+ `ADR-CEP-11` 的 `## Status Update(2026-11-01,per 台账 Entry #135)`
 - **版本锁真源**:`docs/adr/ADR-CEP-11-protocol-version-locking.md` §3 锁表(**冻结面** · 变更须两步授权)
 - **载体形态先例**:队列 #10 的 `docs/research/2026-11-01-cep-cxl-nonsymmetric-anchor-summary.md`
   (CXL **全程禁读规范正文** ⇒ basis 全来自公开非规范来源;**TileLink 相反** ⇒ basis **直接来自规范**)
