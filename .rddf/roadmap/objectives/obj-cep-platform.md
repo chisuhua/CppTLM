@@ -8962,7 +8962,7 @@ SU 的 3 行表格首格由 **数字** 改为 **圈号**(`① ② ③`)—— �
 
 **⑤ 冻结面纪律**
 
-`docs/adr/ADR-CEP-02-*.md` 是本条**第 2 次**修改(第 1 次在 Entry #141)
+`docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` 是本条**第 2 次**修改(第 1 次在 Entry #141)
 ⇒ 本条 = **重新授权的台账记录** ⇒ 两步授权:`--update --authorized-by "Entry #142"` → commit
 → `--update`(provenance 对齐)→ commit。
 
