@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-01T07:27:50Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-01T07:49:49Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-10-30T23:26:00",
-      "by": "user",
-      "reason": "oracle 决策 A1/B2:ADR-CEP-11 R2 降级落地(Status Update)+ BroadcastNull 落位裁决"
-    },
     {
       "role": "builder",
       "at": "2026-10-30T23:26:20",
@@ -124,6 +118,12 @@
       "at": "2026-11-01T07:27:50Z",
       "by": "user",
       "reason": "用户裁决「切 architect,签发 R11 降级 SU」+「一次性签发 R-T6 + R-T2 + R-T3」⇒ 第 1 批:签发 ADR-CEP-04 的 R11 降级 Status Update(台账 Entry #137 授权记录已落)⇒ 跑冻结面两步授权;第 2 批:签发 R-T6(ADR-CEP-17)+ R-T2(ADR-CEP-09)+ R-T3(ADR-CEP-12)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-01T07:49:49Z",
+      "by": "user",
+      "reason": "两批 architect 签发完成(R11 降级 SU + 队列 #11 的 R-T2/R-T3/R-T6)⇒ 切回 builder:起队列 #11 的第 0 个 change(规约层)"
     }
   ]
 }
