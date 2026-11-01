@@ -8924,6 +8924,53 @@ cep_docs_sync / gate_selftest / freeze / decl_alignment / format --check)· `ope
 
 ---
 
+### Entry #142 — 2026-11-02 [bugfix](`ctest` 抓到的回归:批 2 的 `ADR-CEP-02` SU 表格与 **CP-02 解析器**冲突 ⇒ 2 个测试失败)
+
+**主题**: 批 2(Entry #141)落盘后 `ctest` **131 → 129 通过**,失败项 = `cep_all` +
+`cep_collective_plane_contract`(同一测试文件)。本条 = **根因 + 修复 + 冻结面授权记录**。
+
+**① 症状**
+
+| 项 | 实测 |
+|---|---|
+| 失败断言 | `test_cep_collective_plane_contract.cc` 行 **174 / 186 / 197 / 205 / 339**(5 条) |
+| 首发断言 | `CHECK(flows.size() == 10u)` ⇒ 实测 **13** |
+| 时点 | 批 2 commit `2f8cee43` 之后首次全量 `ctest` |
+
+**② 根因(代码实测)**
+
+`include/tlm/cep/collective_plane_contract.hh` 的 `parse_canonical_flow_names`(行 388~427):
+**扫全文档每一行**,把形如 `| <全数字> | <name> |` 的行一律当作 canonical 流名行
+⇒ 本意是「只解析 `ADR-CEP-02 §2` 的流清单表」,实现上是**全文扫描**。
+
+⇒ 我在 `ADR-CEP-02` 追加的 SU 中共有 **3 行编号表**(`| 1 | **条文措辞** |` 等)
+⇒ 被误收为流名 ⇒ 10 → **13** ⇒ `size()==10` 红 ⇒ `evaluate_canonical_flows` 亦红
+⇒ 连带 `CatchpointCoverage`(行 339)因整体 report 非 PASS 而红(**级联**,非独立缺陷)。
+
+**③ 修复(最小:只改文档,不动代码)**
+
+SU 的 3 行表格首格由 **数字** 改为 **圈号**(`① ② ③`)—— 解析器的 `all_digit` 判据(行 415~421)
+即跳过 ⇒ 首格全数字的表格行回到 **10** ⇒ `[collective-contract]` 8 cases / 102 assertions 全绿。
+
+**④ ⚠️ 已登记的潜在陷阱(本条**只登记**,不修)**
+
+| 面 | 内容 |
+|---|---|
+| **陷阱** | **任何**在 `ADR-CEP-02` 追加「首格为数字」的表格的 SU ⇒ **都会**让 CP-02 判据红;而 ADR 只能追加 SU ⇒ **陷阱会反复触发** |
+| **正确修法** | 让 `parse_canonical_flow_names` **只解析第一个 `## Status Update` 之前**的内容(或只解析 `§2`)⇒ 属**代码改动**,须独立 change + 反向 fixture |
+| **处置** | ⬜ **backlog**(不随本条修)—— 本条只做「文档侧规避 + 显式登记」;⚠️ 下次给 `ADR-CEP-02` 加 SU 时**MUST** 避开数字首格,或先做上述代码修 |
+
+**⑤ 冻结面纪律**
+
+`docs/adr/ADR-CEP-02-*.md` 是本条**第 2 次**修改(第 1 次在 Entry #141)
+⇒ 本条 = **重新授权的台账记录** ⇒ 两步授权:`--update --authorized-by "Entry #142"` → commit
+→ `--update`(provenance 对齐)→ commit。
+
+**⑥ 关联**: Entry #141(批 2 主体 —— 本条的引入源)· `ADR-CEP-02` 的 `## Status Update(2026-11-02)`
+· `include/tlm/cep/collective_plane_contract.hh`(解析器,行 388~427)· `test/test_cep_collective_plane_contract.cc`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

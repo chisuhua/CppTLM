@@ -205,9 +205,9 @@ barrier 流接口信号(per ADR-CEP-02 锁定语义):
 
 | # | 依据 | 说明 |
 |---|---|---|
-| 1 | **条文措辞** | `CEN-Ib11` 的原文是「`perm` 枚举**维持 4 值锁**……**不新增 "ATOMIC" perm 值**」⇒ 论域是**词汇表**(禁止新增第 5 值),**不是**「每实例覆盖度」 |
-| 2 | **schema 无对应用闸** | `include/tlm/cep/protocol_instance.schema.json` 的 `perm` = `{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":[4 值]}}` ⇒ **没有**任何「必须列全 4 值」的约束 ⇒ 「用满」解释**无载体支撑** |
-| 3 | **与平台命题冲突** | 若解释为「必须用满」,则**任何不暴露 `UNIQUE` 的协议族**都**无法合法声明** ⇒ 与 `ADR-CEP-00` 的「协议中立 / 跨协议对比」命题**直接冲突** |
+| ① | **条文措辞** | `CEN-Ib11` 的原文是「`perm` 枚举**维持 4 值锁**……**不新增 "ATOMIC" perm 值**」⇒ 论域是**词汇表**(禁止新增第 5 值),**不是**「每实例覆盖度」 |
+| ② | **schema 无对应用闸** | `include/tlm/cep/protocol_instance.schema.json` 的 `perm` = `{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":[4 值]}}` ⇒ **没有**任何「必须列全 4 值」的约束 ⇒ 「用满」解释**无载体支撑** |
+| ③ | **与平台命题冲突** | 若解释为「必须用满」,则**任何不暴露 `UNIQUE` 的协议族**都**无法合法声明** ⇒ 与 `ADR-CEP-00` 的「协议中立 / 跨协议对比」命题**直接冲突** |
 
 ### ③ 推论(对协议实例的约束)
 
