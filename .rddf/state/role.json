@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-01T03:33:40Z",
+  "current_role": "architect",
+  "updated_at": "2026-11-01T07:27:50Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-10-30T22:54:54",
-      "by": "user",
-      "reason": "队列 #10 improvement 草稿已落(planner 边界内)⇒ 切回做最终门禁 + 提交收尾"
-    },
     {
       "role": "architect",
       "at": "2026-10-30T23:26:00",
@@ -124,6 +118,12 @@
       "at": "2026-11-01T03:33:40Z",
       "by": "user",
       "reason": "ADR-CEP-11 版本修订已签发(§3 锁表 3 处 + 增补块 + Status Update 段)⇒ 切回 builder:同步 test/test_cep_schema.cc 的锁表取值列表 + 跑冻结面两步授权第 1 步(--update --authorized-by \"Entry #135\")+ commit + 第 2 步(--update provenance 对齐)+ commit;随后推进 R11 的 V-2 独立面"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-01T07:27:50Z",
+      "by": "user",
+      "reason": "用户裁决「切 architect,签发 R11 降级 SU」+「一次性签发 R-T6 + R-T2 + R-T3」⇒ 第 1 批:签发 ADR-CEP-04 的 R11 降级 Status Update(台账 Entry #137 授权记录已落)⇒ 跑冻结面两步授权;第 2 批:签发 R-T6(ADR-CEP-17)+ R-T2(ADR-CEP-09)+ R-T3(ADR-CEP-12)"
     }
   ]
 }

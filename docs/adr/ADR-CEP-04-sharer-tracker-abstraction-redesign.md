@@ -517,3 +517,62 @@ EXACT 目录**能**回答「没有其他 sharer」;CONSERVATIVE filter **不能*
 
 **关联**: 台账 `obj-cep-platform.md` **Entry #131**(授权记录)· #124(R11 复核 + 债期)· #128(实现层转正)
 · #129(Phase 1 落地)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值)· `ADR-CEP-05`(投影)
+
+---
+
+## Status Update(2026-11-01,per 台账 Entry #137)—— **R11 降级**:🟡 中 → **🟢 低**
+
+> **授权**:台账 `objective-cep-platform §11` **Entry #137** [scope-change] —— **冻结面授权记录**。
+> **形态**:**纯追加**(本 ADR **正文不改**;§2 caps 表 · §4 hazard 表 · §13 全部保留)。
+> **前序**:本 ADR 的 `## Status Update(2026-11-01,per 台账 Entry #131)` 已登记「第 3 种行为实现
+> `SparseSnoopFilter` 落地」并做过一次 R11 降级评估(当时 **V-2 🔴** ⇒ 维持 🟡 中);
+> **本段**是**该评估的第二次**,**V-2 已达成** ⇒ 降级。
+
+### ① 事件
+
+R11 的降级三条件(V-1 ∧ V-2 ∧ V-3)**全部达成** ⇒ **R11 由 🟡 中 降为 🟢 低**。
+
+| 条件 | 判定 | 证据(逐条) |
+|---|---|---|
+| **V-1** 行为与 §2 caps / §4 hazard **逐字段一致** | ✅ **达成** | `SparseSnoopFilter::caps` / `behavior` 取 `kTrackerTraits[1]`(不另写字面量)⇒ §2 / §4 的冻结值**被消费**、不重推;判据 `test_cep_sparse_snoop_filter.cc`(5 cases / 39 assertions)+ **2 条毒化实测** |
+| **V-2** `moesi_gpu` 的 `O→WRITEBACK` **补偿路径有判据** | ✅ **达成**(2026-11-01,per 台账 **Entry #136**) | ① **运行期载体**:`MoesiGpuProtocolEngine`(此前**不存在** —— `MoesiGpuAdapter` 是**纯静态**的且 `moesi_gpu` **无 protocol engine**)② **接口面扩展**:`SharerTrackerIf` 的 `caps` / `behavior` 提为基类**数据成员** ⇒ 持接口指针**即可**读 `completeness` ③ 判据 `test_cep_moesi_gpu_compensation.cc`(**5 cases / 65 assertions**)+ **2 条毒化实测** |
+| **V-3** `moesi_gpu` 既有测试 **0 回归** | ✅ **达成** | 全量 `ctest` **131/131** 全绿 |
+
+### ② ⚠️ 降级的**语义边界**(不得越界表述)
+
+| 不得表述为 | 理由 |
+|---|---|
+| 「CEP 已有完整协议实现」 | 降级的是 **R11**(「声明超前于实现」);本载体只服务**补偿路径** —— canonical 10 流的 `on_*` **只记账**(引擎侧决策 M-6)⇒ **不是**完整协议引擎 |
+| 「等价恢复已实现」 | 真实 tracker 是 `CONSERVATIVE` ⇒ 补偿结论**恒为** `ConservativeOnly` ⇒ **只能**给「**可能**还有其他 sharer」的**保守近似**(per 本 ADR 的 V-2 补记)⇒ 等价恢复**仅**在 tracker 声明 `EXACT` 时才成立 |
+| 「`SharerTrackerIf` 变成 5 个方法」 | `caps` / `behavior` 是**数据成员**、**不是**虚方法 ⇒ `ADR-CEP-04 §3` 的「接口恰好 **4** 个方法」契约**不变**(`count_member_virtuals` 仍 = **5**,含虚析构)⇒ 已归档的 `cep-sharer-tracker-base` 的 **Scenario 全部不受影响** ⇒ 其 main spec **零改动** |
+
+### ③ `SharerTrackerIf` 的**接口面扩展**(受控,记录在案)
+
+| 面 | 内容 |
+|---|---|
+| **变更** | `caps` / `behavior` 从**各行为实现类**移到 **`SharerTrackerIf` 基类**(public **数据成员**) |
+| **根因** | `caps` 此前**只在实现类上** ⇒ 持 `SharerTrackerIf*` 的消费方**读不到** `completeness` ⇒ 补偿路径无法判 verdict ⇒ 只剩「抄第二份 caps」(**违反单源纪律**)或「提到接口上」⇒ **本次走后者** |
+| **存储唯一性** | 3 个行为实现**删除**自己的成员副本 ⇒ 改在**构造器**里给基类成员赋值 ⇒ `impl.caps` 写法**仍可用**(继承而来)⇒ **源码兼容**;各实现的 caps 取值仍**逐字取自** `kTrackerTraits[N]` |
+| **契约影响** | **零** —— 虚方法数不变(4 + 虚析构 = 5);`ADR-CEP-04 §2` / `§4` 的冻结值**不变**;已归档 main spec **零改动** |
+| **反向验证连带** | `cep_mesif_adapter_reverse_verify.sh` 的 `tracker-caps-drift` 毒化锚点随之**迁移**(第三次复现「状态变迁 ⇒ 锚点失效」形态)⇒ 反向验证 **18 项通过 / 0 项失败** |
+
+### ④ R11 债期**收口**
+
+起点 **2026-10-27**(队列 #6 `moesi_gpu` 归档,声明首次指向空实现)⇒ **终点 2026-11-01**
+(Entry #136 交付 V-2)⇒ **债期闭合**。
+⚠️ **残余(不属 R11)**:`FullMapDirectory` 的**反向缺口**(有行为实现 · **零**实例声明)
+⇒ 仍挂台账 **Entry #133 ③**(事实登记;落位裁决**待 architect**)。
+
+### ⑤ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR** | **零改动**(仅追加本段);§2 / §4 / §13 全部保留 |
+| **`SharerTrackerIf` 的契约** | **零改动** —— 方法数、签名、caps / hazard 的冻结值全部不变;只是**存放位置**上移 |
+| **`SparseSnoopFilter` 的行为语义** | **零改动** —— 仍**不依赖任何协议规约层** ⇒ 仍**可被独立排期** |
+| **平台自证能力** | 声明面承诺**已兑现**(meta 层 + 语义层**双闭合**)⇒ 「`moesi_gpu` 的 `sharer_tracker.impl = SparseSnoopFilter`」**不再超前于实现** |
+| **新增的运行期面** | `moesi_gpu` 现在**有**运行期载体 ⇒ 但它**只服务补偿路径** ⇒ ⚠️ **不得**据此推断 `moesi_gpu` 的协议引擎已完整(见 ②) |
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #137**(授权记录)· #136(V-2 交付)· #133(债期重开 + 反向缺口)
+· #131(第 3 实现落地 + 首次降级评估)· #129(Phase 1 落地)· #124(R11 复核)
+· `moesi_gpu_protocol_engine.hh` · `sharer_tracker.hh` · `test_cep_moesi_gpu_compensation.cc`

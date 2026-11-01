@@ -6,7 +6,7 @@
     "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "a4a047f73be34c84d7db44e3b0a3040e4f265d665685c6032526cb2159012a37",
     "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "79793358ad411ca3c6066344db85cf51986a9ab69f40fe0e783744907f678c26",
     "docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md": "1df960942b631144e914e8fc90aedbca0f710e69d7aac46ef2bb08c2efe81b88",
-    "docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md": "5ee2d0161d5e97860c42bf6559c04200dd61d4a3d33bdfbec35be01295ae5498",
+    "docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md": "86238398a6bc23cbe1d02217ede7a465744044ec95d95037b4b8fb79e0399414",
     "docs/adr/ADR-CEP-05-stub-cache-core-interface.md": "0a9ee86b1f58315b0cb9ade29f717a09c4d47c8d32e94c9b2553009e2739fce4",
     "docs/adr/ADR-CEP-06-experiment-protocol.md": "2f0e93235e2727815d68e013f2403b1f90cbcdcf228c2712565de0d83a5ca993",
     "docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md": "c11248f7e62346948135a8424f1da53f794d5a211892e14dc45c74d6fe949064",
@@ -42,9 +42,9 @@
     "tools/render_report.py": "1368402696a3aa5753ebd073a9bcab444fcd092d1334b9a7b7e37a28e026967e",
     "tools/run_sweep.py": "f16e33d3834cd2e24422537de9be82aa3b64c2e660d8bd792f4d0f82d00e3297"
   },
-  "authorized_by": "Entry #135",
+  "authorized_by": "Entry #137",
   "frozen_at": "2026-11-01",
-  "frozen_at_commit": "96a7478940ba6bc0540f82ac342176835750c97b",
+  "frozen_at_commit": "a0a16e0b8d61a04173d2ad3b6f8c1a5b884ce01d",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
