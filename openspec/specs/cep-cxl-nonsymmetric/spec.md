@@ -17,7 +17,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-cxl-nonsymmetric
 

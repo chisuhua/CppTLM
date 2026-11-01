@@ -14,7 +14,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-sparse-snoop-filter
 

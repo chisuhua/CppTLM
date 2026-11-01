@@ -251,7 +251,9 @@ sec = t[i:j]
 #      2026-10-30 队列 #9 归档后**再次**以同一形态复现 —— 两次都是「状态变迁 ⇒ 锚点失效」)
 #    ⚠️ 且必须**按行定位**(§4.0 的归档行 #8 现在也提到活 owner 名 —— 但**不带** S1-N
 #       标记)⇒ 裸 `str.replace(..., 1)` 会打在无标记的行上 → fixture 再次假失败。
-name = "`cpptlm-cep-cxl-nonsymmetric`"
+# ⚠️ 2026-11-01(Entry #132):队列 #10 归档 ⇒ 标记再转指 #11 `cpptlm-cep-tilelink-tree-manager`
+#    (同 fixture 前两次的「状态变迁 ⇒ 锚点失效」形态,第三次复现 ⇒ 锚点**必须**跟随 owner 行)
+name = "`cpptlm-cep-tilelink-tree-manager`"
 assert "S1-" in sec, "锚点漂移:§4.0 未含 S1-N 承接标记"
 _lines = sec.splitlines(keepends=True)
 _hit = 0
@@ -285,7 +287,9 @@ sec = t[i:j]
 # ⚠️ 2026-10-28(Entry #95):owner 行随队列 #8 归档再转指 #9(同 fixture ① 的理由;
 #    定位同样**按行** —— 归档行 #8 提到活 owner 名但不带 `⏭(孤儿)` 标记)
 # ⚠️ 2026-10-30(Entry #106):owner 行随队列 #9 归档再转指 #10 `cpptlm-cep-cxl-nonsymmetric`
-name = "`cpptlm-cep-cxl-nonsymmetric`"
+# ⚠️ 2026-11-01(Entry #132):队列 #10 归档 ⇒ 标记再转指 #11 `cpptlm-cep-tilelink-tree-manager`
+#    (同 fixture 前两次的「状态变迁 ⇒ 锚点失效」形态,第三次复现 ⇒ 锚点**必须**跟随 owner 行)
+name = "`cpptlm-cep-tilelink-tree-manager`"
 assert "⏭(孤儿)" in sec, "锚点漂移:§4.2 未含孤儿前置标记"
 _lines = sec.splitlines(keepends=True)
 _hit = 0
