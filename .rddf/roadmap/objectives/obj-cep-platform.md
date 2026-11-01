@@ -8803,6 +8803,28 @@ SHALL **NOT** 读作『**等价恢复**』—— `SparseSnoopFilter` = `CONSERVA
 
 ⇒ ⇒ ⚠️ **`Known-empty` 与 `Unknown` MUST 分别断言** —— 合并断言则「规范明确空集」与「规范未覆盖」
 **不可分辨** ⇒ 判据**失去鉴别力**。
+
+> ⚠️ **勘误(2026-11-01,同日二审发现 —— append-only,不改写上表原文)**:
+> **上表的 `Known-single 6 / Known-multi 3` 计数错误**(合计 **11 ≠ 12**)。正确分桶 = **`5 / 5 / 2 / 0`**:
+>
+> | 格 | 目标集 | 分桶 |
+> |---|---|---|
+> | `Cap` × 3(源不定) | {Tip, Branch, Nothing} | **multi** ×3 |
+> | `Grow`｜源=N | `NtoB`,`NtoT` = {Branch, Tip} | **multi** |
+> | `Grow`｜源=B | `BtoT` = {Tip} | single |
+> | `Grow`｜源=T | ∅ | empty |
+> | `Prune`｜源=N | ∅ | empty |
+> | `Prune`｜源=B | `BtoN` = {Nothing} | single |
+> | `Prune`｜源=T | `TtoB`,`TtoN` = {Branch, Nothing} | **multi** |
+> | `Report` × 3 | 各自单值 | single ×3 |
+>
+> ⇒ **single 5 · multi 5 · empty 2 · unknown 0 = 12** ✓
+> ⇒ 原表把 `Grow｜源=N` 与 `Prune｜源=T`(**都是 2 元目标**)误记为 single ⇒ 会误导载体实施
+> ⇒ 已同步修正 `design.md` D-γ(新增逐格分桶表为**唯一计数真源**)· `tasks.md` 1.4 / 2.1.8 · delta spec `TSS-03` ⑦
+>
+> ⚠️ **可复用门禁机制(检索关键词 —— 避免随 Entry 淹没)**:
+> ① `CUR regex 每行只取首个匹配` —— 追加新状态**必须改行首**当前态数字,追加行尾**无效**
+> ② `新段必须独立成行` —— 新段与旧叙述**同行**时,旧「当前状态 … N/3」仍会被读到
 ⇒ ⇒ ⚠️ **与队列 #10 的载体形态不同型** ⇒ 后人若按 #10 模板套用 ⇒ 会把 `Cap` 建成单值 ⇒ **丢信息**。
 
 **③ 规划输入(3 项用户裁决,2026-11-01)**

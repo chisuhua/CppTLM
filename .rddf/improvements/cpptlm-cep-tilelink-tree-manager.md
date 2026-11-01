@@ -59,8 +59,11 @@ created: 2026-11-01
 
 **第 0 个 change(`cpptlm-cep-tilelink-state-spec`,规约层)**:
 
-1. **3 稳定态集合** —— `Nothing` / `Branch` / `Tip`;⚠️ `Trunk` = **过渡态**,**不进**稳定态集合
-   (依据 = D1 §8.1.4 `Table 8.3` 的转移记号全集 = **N/B/T**,**无任何 `Trunk` 参与的转移**)
+1. **3 稳定态集合** —— `Nothing` / `Branch` / `Tip`;⚠️ `Trunk` **折叠**为 `Branch`,**不进**稳定态集合
+   (**决策口径**,非规范断言:① `Table 8.1` 中 `Trunk`/`Branch` 权限**相同**(均仅 `Get`)
+   ② `Table 8.3` 的 `Grow`/`Prune` 必须**单调** ⇒ `T` 唯一自洽读法 = `Tip` ③ 故折叠)
+   ⇒ ⚠️ `Trunk` **本身存在**(D1 §8.1 的 **4 类持久节点之一**),**不得**写成「过渡态」;
+   折叠的**语义损失 3 条**已登记(副本存在性 / 脏数据 / 树位置)
 2. **4 类事件词表** —— `Cap` / `Grow` / `Prune` / `Report`(D1 §8.1.4 `Table 8.3` 的 4 个 Category)
 3. **12 格转移表** —— 3 态 × 4 事件,**逐格零 `Unknown`**
    (9 个有序对被 `Grow`/`Prune`/`Report` 全覆盖 + `Cap` 的 3 条**源不定**通配转移)
@@ -128,7 +131,9 @@ TileLink 是 **SiFive 明示的 free and open standard** ⇒ **规范正文可�
 ### 第 0 个 change(`cpptlm-cep-tilelink-state-spec`,规约层)
 
 - **新增载体** `include/tlm/cep/tilelink_state_spec.hh`(header-only)
-  - 3 态 + 4 事件 + 12 格转移表(逐格 `basis` + 三态格语义:Known / Invalid / Unknown)
+  - 3 态 + 4 事件 + 12 格转移表(逐格 `basis` + **格形态 = `kind ∈ {Known, Unknown}` + 3 位目标掩码**
+    ⇒ 分桶 **`single 5 / multi 5 / empty 2 / unknown 0`**;⚠️ 原稿此处抄自 CXL 模板的
+    「三态格语义:Known / Invalid / Unknown」**已作废** —— 本载体**无 `Invalid` 语义**)
   - `perm` 3→3 投影 + 非对称结构断言(逐消息查通道)
   - 编译期锁:`kStateCount == 3` · `kEventCount == 4` · `kTransitionCellCount == 12`
     · `kUnknownCellCount == 0`

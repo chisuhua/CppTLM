@@ -38,7 +38,12 @@
 - **维度 B —— 树中位置**(4 类):`Nothing` / `Trunk` / `Tip` / `Branch`
   「Every node in the graph falls into one of **four** categories describing its position on the tree」(D1 §8.1)
 
-### 1.2 ⚠️ **`Trunk` 是过渡态,不是稳定态**
+### 1.2 ⚠️ `Trunk` **折叠**为 `Branch`,不进稳定态集合(**决策口径**,**非**规范断言)
+
+> ⚠️ **2026-11-01 自审更正**:本节原名「`Trunk` **是过渡态**」—— 但 D1 §8.1 把 `Trunk`
+> **明列为 4 类持久节点之一**(«Every node in the graph falls into one of **four**
+> categories describing its position on the tree»),**不是**过渡态。
+> ⇒ 本节**结论不变**(仍不进稳定态集合),但**依据改为决策口径**(见下),并**登记语义损失**(§1.2bis)。
 
 | 断言 | 强度 | 来源 |
 |---|---|---|
@@ -46,8 +51,29 @@
 | `Acquire`「**grow** the tree, either by **extending the trunk** or by **adding a new branch** from an existing branch or the tip」⇒ `Trunk` 是**生长过程**中的路径节点 | **direct** | D1 §8.1.1 |
 | `Trunk` 的描述(D1)=「Has **Read** permissions on its copy, **which may contain dirty data**」;`Branch`=只读副本;`Tip`=「the **point of memory access serialization**」+ Read/Write 权限 + **may contain dirty data** | **direct** | D1 §8.1 |
 | `Nothing` = 无副本、既无读权限也无写权限 | **direct** | D1 §8.1 |
+| **`Trunk` 与 `Branch` 的访问权限完全相同**(均**仅** `Get`);只有 `Tip` 是 `Get, PutPartial, PutFull, Logical, Arithmetic` ⇒ 在「**权限**转移」模型里 `Trunk` 可**折叠**为 `Branch` | **direct** | D1 §8.1 **Table 8.1** |
+| **权限转移表有规范的穷尽性逐字背书**:「Table 8.3 shows **all the permissions transitions any coherence policy based on TileLink could want to express**」⇒ `Grow`(源=`Tip`)与 `Prune`(源=`Nothing`) 的**空集是规范明确**的,而非「规范未覆盖」 | **direct** | D1 §8.1.4 **末段** |
 
-⇒ ⇒ **稳定态 = {`Nothing`, `Branch`, `Tip`}**;`Trunk` 归 **过渡态**(不建模,或建模为显式标注的过渡类)。
+⇒ ⇒ **决策口径(三步推导,全部 `direct`)**:
+
+1. **Table 8.1**:`Trunk` 与 `Branch` 的**访问权限完全相同**(均仅 `Get`)⇒ 在权限层面二者**不可区分**
+2. **Table 8.3** 的转移记号只有 **N / B / T**,且 `Grow`/`Prune` 按规范释义必须是**单调**的升级/降级
+   ⇒ `T` 的**唯一自洽读法是 `Tip`** —— 若 `T` = `Trunk`,则 `BtoT` 两边都只有 `Get`(**不构成升级**),
+   且该表将**无法表达任何进入 `Tip` 的转移** ⇒ 无法表达「取得写权限」
+3. ⇒ **稳定态 = {`Nothing`, `Branch`, `Tip`}**;`Trunk` 在**权限转移模型**中**折叠**为 `Branch`
+
+⇒ ⇒ ⚠️ **这是决策,不是规范断言** —— `Trunk` **确实存在**(D1 §8.1 的 4 类持久节点之一),我们只是
+**决定不在权限转移模型中单独建模它**。依据是 Table 8.1 的访问权限等价 + Table 8.3 的单调性要求。
+
+### 1.2bis ⚠️ **已登记的语义损失**(折叠的代价 —— 必须随载体一起登记)
+
+| 面 | 损失 |
+|---|---|
+| **副本存在性** | `Trunk` **有**副本 ⇒ 因此**只能**折叠为 `Branch`,**不得**折叠为 `Nothing` |
+| **脏数据** | `Trunk` 的 *may contain dirty data* **在 4 值 `perm` 中无值可表达**:`NONE` 丢「有副本」· `READ` 丢脏性 · `WRITEBACK` **越权**(`Trunk` 只有 `Get`)· `UNIQUE` 要求**干净** |
+| **树位置** | `Trunk` 是「**Tip → Root 路径上**」的**位置**属性;`perm` 不建模位置 ⇒ 位置信息**全部丢失** |
+
+⇒ ⇒ 载体 **MUST** 在**偏离清单**登记上述三条;**MUST NOT** 声称「`Trunk` 不存在」或「`Trunk` 是过渡态」。
 
 ### 1.3 ⚠️ 版本差异(D2 = 1.9.3)
 
@@ -239,17 +265,17 @@
 
 ---
 
-## §7 8 项残余风险(**不得推理填空** —— 截至 2026-11-01:**5 项已闭合**[R-T1 / R-T2 / R-T3 / R-T6 / R-T8],余 **3 项**待处置[R-T4 / R-T5 / R-T7])
+## §7 8 项残余风险(**不得推理填空** —— 截至 2026-11-01:**6 项已闭合**[R-T1 / R-T3 / R-T5 / R-T6 / R-T7 / R-T8]· **1 项重开**[R-T2 —— 论证前提不成立,待修订]· **1 项待裁决**[R-T4])
 
 | # | 残余风险 | 等级 | 处置 |
 |---|---|---|---|
 | **R-T1** | ~~**版本锁定缺口**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #135** + `ADR-CEP-11` 的 `## Status Update(2026-11-01,per 台账 Entry #135)`)—— `ADR-CEP-11 §3` 锁表现为 **`tilelink-c-1.7.1`**(SiFive;PDF sha256 `30c09b5f…a2dd`)。**历史事实保留**:原锁 `tilelink-c-1.3` 的正文**至今取不到**(≥6 次尝试:riscv.org 404 / RISC-V adoc 不存在 / `openspecification/tilespec` 仓库 **404** / GitHub 搜索无命中)⇒ **该版本永久不可确证** ⇒ 本裁决是**改锁**,**不是**「已取得 1.3」 | **✅ 已闭合** | 台账 Entry #135(授权记录)+ `ADR-CEP-11` SU |
-| **R-T2** | ~~**通道 5 → VC 4 冲突**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-09` 的 `## Status Update(2026-11-01,per 台账 Entry #138)`)—— 裁决 = **合并 D∪E 到同一 VC**(`response` 类)⇒ E 的唯一跨流等待对象(D 的 `Grant`)落**同一 VC** ⇒ VC 内有序 ⇒ **不产生**跨 VC 依赖 ⇒ **无环判据仍成立**;⚠️ **3 条降维代价已登记**(优先级降维 5→4 / D 与 E 方向相反共 VC / `compute_noc` 边表对 TileLink 是**保守近似**);⚠️ **明确否决**:扩 `vc_id` 上限到 4、新开 `tilelink` network(两者都 ⇒ **跨仓债**) | **✅ 已闭合** | 台账 Entry #138 |
+| **R-T2** | ~~**通道 5 → VC 4 冲突**~~ ⇒ 🟡 **重开**(2026-11-01 自审)—— 裁决本身(**合并 D∪E 到同一 VC**)维持,但**原无环性论证的前提不成立**:① 原论证称「该等待在 **VC 内**有序(FIFO)」—— 但 `D`(slave→master)与 `E`(master→slave) **方向相反** ⇒ 真实 NoC 中**不存在跨方向 FIFO** ⇒ 该前提**假**;② D1 §4.2.1 原文「**A response message always has higher priority than its initiating request message**」⇒ `E` > `D` 的**严格优先级**在合并时被丢弃,而规范自身的死锁自由证明依赖它;③ 原论证只列 3 条跨 VC 依赖边,但 D1 **Table 5.2** 显示 `Release`(C 通道)→ `ReleaseAck`(D 通道) ⇒ 按 R-T3 归属存在 **`vc2 → vc3`** 边(**原遗漏**);④ 装配闸实际读的是 `protocol_instances.json` 的 `compute_noc` 边表 `[[0,1],[0,2],[0,3],[1,3],[3,2]]`(**缺 `1→2` 与 `2→3`,多 `3→2`**)⇒ **两图不同** ⇒ 「闸通过」**不构成** SU 论证正确的证据 | 🟡 **重开** | 待以**因果依赖**论证替换(`GrantAck` 只在 `Grant` **到达后创建** ⇒ 依赖单向) |
 | **R-T3** | ~~**6 类消息类词表缺口**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-12` 的同 Entry `## Status Update`)—— 裁决 = **6 类词表零改动** + 逐消息归属表:`Acquire`→`request` · `Probe`→`snoop` · `ProbeAck`/`ProbeAckData`/`Release`/`ReleaseData`→`snoop_resp` · `Grant`/`GrantData`/`ReleaseAck`/`GrantAck`→`response`;⚠️ **2 处降维已登记**(`Release` 归 `snoop_resp` / `GrantAck` 归 `response`);⚠️ **两套词表混用**的处置 = `writeback` **只**是 10 流名、**不得**写进 `vc_binding` | **✅ 已闭合** | 台账 Entry #138 |
 | **R-T4** | **`perm` 退化为 3 值** —— `UNIQUE` 不可达 ⇒ 该实例**不声明**静默升级 ⇒ 不触发 `INV-CEP-08-IC2`;「`perm` 4 值锁」是**值域**锁还是「每实例用满 4 值」需显式承认 | 🟡 中 | architect 口径确认 + 实例散文登记 |
-| **R-T5** | **两版各有内部表述不一致** —— D1 §8.1.4 正文说转移分「**six** subsets」而表列 **4** 类(下一段又说 "four");D1 Table 8.3 表头写 `Permissions: None, Branch, **Trunk**` 而全部转移记号用 **T = Tip** ⇒ **表头疑为笔误**(Trunk 不参与任何转移)· D2 正文说 `Trunk` 无读/写权限而同份 `Table 29` 给 `Trunk` 一项 `Get` | 🟡 中 | 已取**转移记号**为准(`T`=Tip);矛盾**显式登记**;若钉版到 D1 ⇒ 表头笔误不影响载体 |
+| **R-T5** | ~~**两版各有内部表述不一致**~~ ⇒ ✅ **已闭合**(2026-11-01,自审复核)—— ① D1 §8.1.4 正文「**six** subsets」vs 表列 **4** 类(下一段又说 "four")⇒ **规范内部笔误**,以 **4 类**为准;② D1 `Table 8.3` 表头 `Permissions: None, Branch, **Trunk**` 而转移记号用 **T = Tip** ⇒ **图例行笔误**(`Table 8.1` 证明 `Trunk` 与 `Branch` 权限相同 ⇒ 图例应为 `None, Branch, Tip` 或直接给字母);③ D2 正文说 `Trunk` 无读/写权限而 `Table 29` 给 `Trunk` 一项 `Get` ⇒ **D2 内部矛盾**(D2 仅作版本对照,不进载体);④ ⚠️ **关键**:D1 §8.1.4 **末段有穷尽性逐字背书** —— 「Table 8.3 shows **all the permissions transitions any coherence policy based on TileLink could want to express**」⇒ `Known-empty` 2 格(`Grow` 源=`Tip` / `Prune` 源=`Nothing`)可判 **`direct`**,**不依赖**「以记号为准」的推断 | ✅ **已闭合** | 矛盾**显式保留登记**(供规范修订时复核);载体逐格 `basis` 可全 `direct` |
 | **R-T6** | ~~**「非对称」定义**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-17` 的同 Entry `## Status Update`)—— 裁决 = TileLink-C 的非对称维度 = 「**权限的授予与强制撤销只由 manager 发起**」(`Grant`/`GrantData` **只**在 D 通道、`Probe` **只**在 B 通道);⚠️ **与 CXL 形态的差异已显式登记**(CXL = request 方向 / TileLink = 权限变更发起方)⇒ **两者不可互相套用** ⇒ 队列 #10 的断言形态**不得**直接套用 | **✅ 已闭合** | 台账 Entry #138 |
-| **R-T7** | **`Trunk` 的建模归属** —— 结论:**过渡态**,不进稳定态集合(依据 = Table 8.3 转移记号全集中**无** `Trunk`)⇒ 稳定态 = 3 值;⚠️ 残余:D1 表头写 `Trunk` ⇒ 若规范本意含 Trunk,则态数变 4 ⇒ **须以转移记号为准并登记该矛盾** | 🟢 低(已消解大半) | 载体按 3 态实现 + 登记矛盾 |
+| **R-T7** | ~~**`Trunk` 的建模归属**~~ ⇒ ✅ **已闭合**(2026-11-01,自审复核)—— **决策口径**(非规范断言):`Table 8.1` 中 `Trunk` 与 `Branch` 的访问权限**完全相同**(均仅 `Get`) ⇒ 权限层面折叠为 `Branch`;`Table 8.3` 的 `Grow`/`Prune` 单调性要求 ⇒ `T` 唯一自洽读法 = `Tip`。⚠️ **`Trunk` 本身确实存在**(D1 §8.1 的 4 类持久节点之一),**不得**表述为「过渡态」;⚠️ **代价已登记**(§1.2bis 三条语义损失:副本存在性 / 脏数据 / 树位置) | ✅ **已闭合** | 载体按 3 态实现 + 偏离清单登记 §1.2bis 三条 |
 | **R-T8** | ~~**1.3 与 1.7.1/1.9.3 的谱系关系**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #135** §⑤ + `ADR-CEP-11` 的 `## Status Update(2026-11-01,per 台账 Entry #135)`)—— 新锁表值写作 **`tilelink-c-1.7.1`** ⇒ 格式为 `<spec_name>-<spec_version>` ⇒ **版本线歧义不再存在**(值本身唯一指向 SiFive 的 1.7.1)⇒ 且 §3 表「锁定依据」列已**写明发布方 + PDF sha256** ⇒ 同类歧义**不再复发**。**历史事实保留**:原锁 `tilelink-c-1.3` 的正文**至今取不到** ⇒ 该版本**永久不可确证** | **✅ 已闭合** | 台账 Entry #135 §⑤ |
 
 ---
@@ -262,7 +288,7 @@
 |---|---|
 | 公开来源可得性 | ✅ **良** —— TileLink 规范**开源可取**(3 份 `pin=strong` + sha256)⇒ **远优于**队列 #10(CXL 全程禁读) |
 | 决定载体形态的 5 项 | ✅ **已钉死** —— **R-T1 已闭合**(锁版本 = `tilelink-c-1.7.1`)⇒ **内容可推导 + 版本已定** ⇒ 可产出 `pending=false` 格 |
-| 态集合 | ✅ **可推导** —— **3 值** `{Nothing, Branch, Tip}`(`Trunk` = 过渡态,R-T7) |
+| 态集合 | ✅ **可推导** —— **3 值** `{Nothing, Branch, Tip}`(`Trunk` **折叠**为 `Branch`;决策口径见 §1.2,R-T7) |
 | 事件词表 | ✅ **可推导** —— **4 类** `{Cap, Grow, Prune, Report}` + **10 条**消息(D1)/ 12 条(D2) |
 | 逐格覆盖 | ✅ **零 `Unknown`** —— 9 个有序对全被 `Grow`/`Prune`/`Report` 覆盖 + `Cap` 3 条通配 ⇒ **12 格全 Known** |
 | `perm` 投影 | ✅ **3→3** —— `Nothing→NONE` · `Branch→READ` · `Tip→WRITEBACK`;⚠️ `UNIQUE` 不可达(R-T4) |
@@ -276,7 +302,7 @@
 
 | 候选 | 事件词表 | 态集合 | 内部一致性 | 生态 | 评价 |
 |---|---|---|---|---|---|
-| **`tilelink-c-1.7.1`**(D1) | **4 类转移** + **10 条**消息 | **3 稳定态**(+ Trunk 过渡态) | 2 处内部不一致(均**不影响**载体:转移记号为准) | OpenTitan TL-UL 基线 | **✅ 推荐** —— 转移分类表**显式且完备** ⇒ 零 `Unknown`;事件词表最紧 |
+| **`tilelink-c-1.7.1`**(D1) | **4 类转移** + **10 条**消息 | **3 稳定态**(`Trunk` **折叠**为 `Branch`,§1.2) | 2 处内部不一致(**均已闭合**,R-T5:转移记号为准 + 穷尽性句背书) | OpenTitan TL-UL 基线 | **✅ 推荐** —— 转移分类表**显式且完备** ⇒ 零 `Unknown`;事件词表最紧 |
 | `tilelink-c-1.9.3`(D2) | 4 类转移 + **12 条**消息 | **4~5 稳定态**(Tip 拆两类) | 1 处内部不一致(**影响** Trunk 投影) | 最新(2023-02) | 备选 —— 最新但态数膨胀 + `Trunk` 矛盾落在投影上 |
 | `tilelink-c-1.3` | **不可取** | **不可确证** | — | RISC-V 谱系未证实 | ❌ **不可行**(R-T1/R-T8) |
 

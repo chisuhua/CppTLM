@@ -8,22 +8,38 @@
 
 ---
 
-## D-α 稳定态集合 = **3 值**(`Nothing` / `Branch` / `Tip`);`Trunk` = **过渡态**
+## D-α 稳定态集合 = **3 值**(`Nothing` / `Branch` / `Tip`);`Trunk` **折叠**为 `Branch`(**决策口径**)
 
-### 依据
+> ⚠️ **2026-11-01 自审更正**:本节原写「`Trunk` = **过渡态**」—— 这是**推断**,且与 D1 §8.1 原文冲突:
+> «Every node in the graph falls into one of **four** categories describing its position on the tree»
+> ⇒ `Trunk` 是 **4 类持久节点之一**,**不是**过渡态。
+> ⇒ 结论不变(**仍不进稳定态集合**),但**依据与措辞必须改**(见下三步 + 措辞纪律 + 语义损失)。
 
-D1(1.7.1)§8.1.4 `Table 8.3` 的转移记号全集 = **N / B / T** ⇒ **无任何 `Trunk` 参与的转移**
-(`Cap` = `toT`/`toB`/`toN` · `Grow` = `NtoB`/`NtoT`/`BtoT` · `Prune` = `TtoB`/`TtoN`/`BtoN` ·
-`Report` = `TtoT`/`BtoB`/`NtoN`)⇒ **`Trunk` 不参与任何转移**。
-D1 §8.1.1 的「`Acquire` 操作**长树**,或**延长 trunk** 或从既有 branch/tip **新增 branch**」
-⇒ `Trunk` 是**生长过程**中的路径节点 ⇒ **过渡态**。
+### 依据(三步推导,**全部 `direct`**)
+
+1. **`Table 8.1`(D1 §8.1)**:`Trunk` 与 `Branch` 的**访问权限完全相同**(均仅 `Get`);
+   只有 `Tip` 是 `Get, PutPartial, PutFull, Logical, Arithmetic` ⇒ 权限层面 `Trunk` ≡ `Branch`
+2. **`Table 8.3`(D1 §8.1.4)**:转移记号只有 **N / B / T**,且 `Grow`/`Prune` 按规范释义必须**单调**
+   (`Grow` = "permissions **upgrades** that grow the tree" · `Prune` = "permissions **downgrades**
+   that shrink the tree")⇒ ⇒ `T` 的**唯一自洽读法是 `Tip`** —— 若 `T` = `Trunk`,`BtoT` 两边都只有 `Get`
+   (**不构成升级**),且该表**无法表达任何进入 `Tip` 的转移** ⇒ 无法表达「取得写权限」
+3. ⇒ **稳定态 = {`Nothing`, `Branch`, `Tip`}**;`Trunk` 在**权限转移模型**中**折叠**为 `Branch`
+
+### ⚠️ 措辞纪律(硬性 —— 二审发现原稿把「决策」写成了「规范断言」)
+
+| ❌ 禁止表述 | ✅ 正确表述 |
+|---|---|
+| 「`Trunk` 是**过渡态**」 | 「`Trunk` **是** D1 的 4 类持久节点之一;我们**决定**在权限转移模型中**折叠**为 `Branch`」 |
+| 「依据 = 记号全集中无 `Trunk`」(**单一弱证据**) | 「依据 = `Table 8.1` 权限等价 + `Table 8.3` 单调性要求」(两条 `direct`) |
+| 不登记代价 | **必须**登记 §1.2bis 三条语义损失(**副本存在性 / 脏数据 / 树位置**) |
 
 ### ⚠️ 已登记的规范内部矛盾(R-T5)
 
 | # | 矛盾 | 处置 |
 |---|---|---|
 | 1 | D1 §8.1.4 正文说转移分「**six** subsets」,而同表列 **4** 类(下一段又说 "four") | 以**转移记号**为准;矛盾**显式登记** |
-| 2 | D1 `Table 8.3` 表头写 `Permissions: None, Branch, **Trunk**`,而全部转移记号用 **T = Tip** | **表头疑为笔误** ⇒ 以**转移记号**为准;若规范本意含 `Trunk` ⇒ 态数变 4 ⇒ **判据须能抓住**(反向 fixture:加回 `Trunk` ⇒ 必红) |
+| 2 | D1 `Table 8.3` 表头写 `Permissions: None, Branch, **Trunk**`,而全部转移记号用 **T = Tip** | **图例行笔误** —— `Table 8.1` 证明 `Trunk` 与 `Branch` 权限相同 ⇒ 图例应为 `None, Branch, Tip` (或直接给字母 N/B/T)⇒ 以**转移记号**为准;反向 fixture:加回 `Trunk` ⇒ 必红 |
+| 3 | D1 §8.1.4 正文说「**six** subsets」,而同表列 **4** 类(下一段又说 "four") | **规范内部笔误**,以 **4 类**为准;⚠️ **但同段末尾的穷尽性句成立** —— 「Table 8.3 shows **all the permissions transitions any coherence policy based on TileLink could want to express**」 ⇒ `Known-empty` 2 格可判 **`direct`**(不依赖「以记号为准」的推断) |
 
 ⇒ **判据设计要求**:稳定态集合的**断言必须逐字列出 3 个名字**(而非「恰为 3 个」)
 ⇒ 这样才**有鉴别力**(换掉任一个名字都红),否则「加回 `Trunk` 仍 3 个」的漂移**不可分辨**。
@@ -55,8 +71,29 @@ D1 §8.1.4 `Table 8.3` 的 4 个 Category 行 + 其后的逐类释义:
 ⇒ ⇒ **12 格仍全 Known**(每格都有规范枚举的转移支撑),但 `Cap` 的 3 格是**多目标**。
 
 > ⚠️ **这一条与队列 #10 的载体形态不同** —— #10 的 68 格是**单值**(目标态或 `Unknown`/`Illegal`)。
-> ⇒ 本载体引入**第三种格语义**:`Known-single` / `Known-multi` / `Unknown`。
+> ⇒ 本载体**不能**用「单值 + 标记」形态(见下),改用 **`kind` + 目标位掩码**。
 > ⇒ **必须显式登记**,否则后人会按 #10 的模板误判。
+
+### ⚠️ 载体形态决策(二审修订 —— 原「4 值格语义枚举」被否决)
+
+| 形态 | 裁决 | 理由 |
+|---|---|---|
+| 单值 + `Multi`/`Empty` 标记 | ❌ **否决** | 允许 `single ∧ empty` 这类**非法组合**(标记与值可矛盾)⇒ 引入无法判定的状态 |
+| **4 值格语义枚举**(`Known-single`/`Known-multi`/`Known-empty`/`Unknown`) | ❌ **否决** | 同上:枚举本身不阻止「`Known-single` 却存了 2 个目标位」⇒ 非法组合**靠约定**而非**靠类型** |
+| **2 值 `kind ∈ {Known, Unknown}` + 3 位目标掩码**(`n`,`b`,`t`) | ✅ **采用** | **零非法组合**:`kind=Known` ⇒ 掩码任意(0/1/2/3 位都合法,分别表达 **空集 / 单值 / 多值**);`kind=Unknown` ⇒ 掩码 **MUST** 为 0 ⇒ 「规范明确空集」与「规范未覆盖」由 **`kind`** 区分、由掩码**内容**细分,二者**结构性可分** |
+
+⇒ ⇒ **派生量**(全部可由表推出、**不单独存储**):
+
+| 量 | 定义 | 期望值 |
+|---|---|---|
+| `kKnownCellCount` | `kind == Known` | **12** |
+| `kUnknownCellCount` | `kind == Unknown` | **0** |
+| `kEmptyCellCount` | `kind == Known` ∧ `popcount(mask) == 0` | **2** |
+| `kSingleCellCount` | `kind == Known` ∧ `popcount(mask) == 1` | **5** |
+| `kMultiCellCount` | `kind == Known` ∧ `popcount(mask) >= 2` | **5** |
+
+> ⚠️ **二审抓到的算错**:原稿写 `single 6 / multi 3 / empty 2 / unknown 0`(合计 **11 ≠ 12**)。
+> 正确为 **`single 5 / multi 5 / empty 2 / unknown 0`**(合计 12)—— 逐格见 D-γ。
 
 ---
 
@@ -79,11 +116,24 @@ D1 §8.1.4 `Table 8.3` 的 4 个 Category 行 + 其后的逐类释义:
 `Grow` 的 3 条覆盖 (N,B) (N,T) (B,T) ⇒ **源 = T 的 `Grow` 格为空集**(Tip 已是最高权限,无从再「长」)
 ⇒ 同理 **源 = N 的 `Prune` 格为空集**(Nothing 无从「缩」)。
 ⇒ ⇒ **载体必须能表达「空集」这一合法态** ⇒ **不是** `Unknown`(「规范未覆盖」)
-⇒ ⇒ **第三种语义再次必需**:`Known-empty`(= 规范**明确**该转移不存在)
+⇒ ⇒ 故用 `kind == Known` ∧ 掩码 `= 0` 表达(`kind` 区分**是否规范明确**,掩码**内容**区分**空/单/多**)。
 
-⇒ ⇒ **格语义共 4 种**:`Known-single` / `Known-multi` / `Known-empty` / `Unknown`
-⇒ ⇒ **编译期锁**:`kUnknownCellCount == 0` + `kEmptyCellCount == 2`
-⇒ ⇒ **判据须分别断言「空集格恰为 2 个」与「`Unknown` 格为 0」** —— 合并断言则**不可分辨**。
+### 12 格逐格分桶(**唯一计数真源** —— 任何文档引用此数值须与此表一致)
+
+| 事件 | 源 = `Nothing` | 源 = `Branch` | 源 = `Tip` |
+|---|---|---|---|
+| `Cap` | `{T,B,N}` = **3 位 → multi** | `{T,B,N}` = **3 位 → multi** | `{T,B,N}` = **3 位 → multi** |
+| `Grow` | `NtoB`,`NtoT` = `{B,T}` = **2 位 → multi** | `BtoT` = `{T}` = **single** | 空集 = **empty** |
+| `Prune` | 空集 = **empty** | `BtoN` = `{N}` = **single** | `TtoB`,`TtoN` = `{B,N}` = **2 位 → multi** |
+| `Report` | `NtoN` = `{N}` = **single** | `BtoB` = `{B}` = **single** | `TtoT` = `{T}` = **single** |
+
+⇒ ⇒ 合计:**`single` 5**(`Grow｜B` · `Prune｜B` · `Report`×3)· **`multi` 5**(`Cap`×3 · `Grow｜N` · `Prune｜T`)
+· **`empty` 2**(`Grow｜T` · `Prune｜N`)· **`unknown` 0** ⇒ **5 + 5 + 2 + 0 = 12** ✓
+
+⇒ ⇒ **编译期锁**:`kTransitionCellCount == 12` · `kUnknownCellCount == 0` · `kEmptyCellCount == 2`
+· `kSingleCellCount == 5` · `kMultiCellCount == 5`
+⇒ ⇒ **判据 MUST 五个量分别断言**(合并断言则「规范明确空集」与「规范未覆盖」**不可分辨**,
+且 `single`/`multi` 混淆**不可发现**)。
 
 ---
 
@@ -162,11 +212,47 @@ D1 §8.1「The fundamental permissions it is possible for a particular agent's c
 
 | 方案 | 排除理由 |
 |---|---|
-| **把 `Trunk` 作为第 4 个稳定态** | 转移记号全集中**无** `Trunk` ⇒ 它是**过渡态**;纳入会让 12 格变 16 格且**引入无规范支撑的格** ⇒ 违背「零 `Unknown`」目标 |
+| **把 `Trunk` 作为第 4 个稳定态** | ⚠️ **不是**因为「`Trunk` 是过渡态」(那是**推断**,且与 D1 §8.1
+「`four` categories」冲突);真实理由是**决策**:`Table 8.1` 中 `Trunk` 与 `Branch` 权限**相同**
+(均仅 `Get`)⇒ 权限层面**不可区分**;纳入会让 12 格变 16 格且**引入与 `Branch` 同权限的重复态**
+⇒ 违背「每态可判别」目标 |
 | **用 CXL 式「request 方向」判非对称** | TileLink 的 A/B **都是** request 类 ⇒ 该断言**恒假** ⇒ 形态**不可套用**(per Entry #138) |
 | **扩 `perm` 值域到 5 值**(加 `TREE` 之类) | `CEN-Ib11` 的 4 值锁是**冻结契约** ⇒ 扩值域 = 击穿冻结面 ⇒ **禁止** |
-| **把 12 格建成全单值矩阵** | `Cap` 的**源不定**语义**无法**用单值表达 ⇒ 会丢信息 ⇒ 需 `Known-multi` 格语义 |
-| **不引入 `Known-empty` 格语义** | `Grow`(源=T)与 `Prune`(源=N)**规范明确**为空集 ⇒ 与 `Unknown`(规范未覆盖)**语义不同** ⇒ 混用即**丢失可判别性** |
+| **把 12 格建成全单值矩阵** | `Cap` 的**源不定**语义**无法**用单值表达 ⇒ 会丢信息 ⇒ 需**多位掩码** |
+| **空集与 `Unknown` 不区分**(不引入 `kind` 二分) | `Grow`(源=T)与 `Prune`(源=N)**规范明确**为空集 ⇒ 与 `Unknown`(规范未覆盖)**语义不同** ⇒ 混用即**丢失可判别性** |
+
+---
+
+## D-η ⚠️ **已知不兼容登记**:`AC-05` 判据族对 TileLink **恒红**
+
+### 事实(代码实测,2026-11-01)
+
+`include/tlm/cep/adapter_schema_contracts.hh` 的 `check_adapter_self_consistency`:
+
+```cpp
+if (e_write_target_state != 3) {          // 硬编码 3 = M 态
+    line.verdict = AdapterContractVerdict::FAIL;
+    line.detail  = "E + Write 的目标态 = ... (应为 3 = M)";
+    return line;                          // ⚠️ 无 SKIP / UNKNOWN 分支
+}
+```
+
+⇒ TileLink-C **无 `E` 态**(投影 3→3,`UNIQUE` 不可达)⇒ 该判据**恒红**。
+
+### 后果(必须在规约层登记,不能留到实现层才发现)
+
+| 若不登记 | 会发生什么 |
+|---|---|
+| 实现层跑 `AC-05` | **必然红** ⇒ 实施者面对「红闸」有 2 条路:(a) 诚实宣布判据不适用,(b) **填一个假的 `e_write_target_state = 3`** ⇒ **(b) 会产生「语义为假的绿灯」** |
+| 平台自证 | 「`AC-05` PASS ⇒ 适配器自洽」这一结论对 TileLink **不成立** ⇒ 平台失去该维度的判别力 |
+
+### 处置(boundary 明确)
+
+| 面 | 归属 |
+|---|---|
+| **登记**「`AC-05` 族对 TileLink 恒红」+ 「**不得**通过填假值使其变绿」 | ✅ **本 change(规约层)** —— 落 `TSS-05` 子条件 ⑤ + 载体**偏离清单** |
+| **族无关化**(给 `AC-05` 加 SKIP / UNKNOWN 分支,或按 caps 动态判定 `E` 态是否存在) | ⬜ **第 1 个 change(实现层)** —— 属适配器契约改造,不属规约层 |
+| **两步授权** | ❌ **不需要** —— 已确认 `adapter_schema_contracts.hh` 与其 main spec **均不在 M1 冻结 40 件内** |
 
 ---
 
@@ -174,5 +260,7 @@ D1 §8.1「The fundamental permissions it is possible for a particular agent's c
 
 | 方案 | 排除理由 |
 |---|---|
-| **规约层 + 实例声明合并为一个 change** | 实例声明依赖 **R-T4** 裁决(未闭合)⇒ 合并 ⇒ 规约层被阻塞 ⇒ **拆开** |
+| **规约层 + 实例声明合并为一个 change** | **帕累托改进,非被迫拆分** —— ⚠️ `TSS-01` ~ `TSS-11` **无一依赖** R-T4
+(规约层只锁 **3→3 投影**;R-T4 只影响**实例 `perm` 数组填几值**)⇒ 合并**不会**阻塞规约层;
+拆开的真实收益 = 两段各自**独立可归档 / 独立可验收**,且规约层的 `direct` basis **不必等待**实例面裁决 |
 | **只做实现层,跳过规约层** | 实现层必然**自推** `TreeManager` 语义(per `ADR-CEP-04 §5` 的「善意撒谎」告警)⇒ 重蹈 #9 覆辙 |

@@ -13,7 +13,7 @@
 | Phase | 状态 | 说明 |
 |---|---|---|
 | 0 治理前置 | ✅ **已完成**(2026-11-01) | 版本锁定(Entry #135)· 三项 architect 裁决(Entry #138)· Task 0 普查(硬门**通过**)· improvement 草稿(HARD-GATE 通过)· change 目录 4 件套已建 |
-| 1 载体形态定稿 | ✅ **已完成**(2026-11-01) | 3 稳定态 + 4 事件 + **4 种格语义**(`Known-single`/`Known-multi`/`Known-empty`/`Unknown`)—— 与 #10 的单值矩阵**不同型**,见 design D-β / D-γ |
+| 1 载体形态定稿 | ✅ **已完成**(2026-11-01)· ⚠️ **二审已更正** | 3 稳定态 + 4 事件 + **`kind` + 3 位目标掩码** ⇒ 分桶 `single 5 / multi 5 / empty 2 / unknown 0`;与 #10 的单值矩阵**不同型**,见 design D-β / D-γ |
 | 2 规约载体 | ⬜ 待实施 | `tilelink_state_spec.hh`:3 态 / 4 事件 / 12 格 / 3→3 投影 / 4 类结构断言 / `basis` / 编译期锁 |
 | 3 判据收口 | ⬜ 待实施 | 契约测试 + 反向 fixture + 锚点核对表生成器 + `--check` 交叉核对 + ctest 注册 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + 零冻结面 diff + KPI 1/3 → 0/3 + 7 处 baseline 同步 + 归档 |
@@ -42,14 +42,26 @@
 ## Phase 1 — 载体形态定稿 ✅
 
 > **状态**:✅ **已完成**(2026-11-01)—— 关键发现:**本载体与 #10 的单值矩阵不同型**。
+> ⚠️ **2026-11-01 二审更正**:Phase 1 的产出**存在缺陷**,已就地修正,详见本段各条的「⚠️ 二审」注记:
+> ① 1.1 的 `Trunk` 依据由「过渡态」(**推断**)改为**决策口径**(`Table 8.1` 权限等价);
+> ② 1.3/1.4 的格语义由「4 值枚举」改为 **`kind` + 3 位掩码**(理由:枚举不阻止非法组合);
+> ③ 原稿的 `single 6 / multi 3` **算错**(合计 11 ≠ 12),正确为 **`5 / 5`**。
+> ⇒ 标 ✅ **不代表**原产出正确,而代表**已修正并通过复核**。
 
-- [x] 1.1 **稳定态 = 3 值**(`Nothing`/`Branch`/`Tip`);`Trunk` = **过渡态**
-      (依据 = D1 §8.1.4 `Table 8.3` 转移记号全集 N/B/T)
-      ⇒ ⚠️ **R-T5 的 2 处规范内部矛盾已登记**,处置 = **以转移记号为准**
+- [x] 1.1 **稳定态 = 3 值**(`Nothing`/`Branch`/`Tip`);`Trunk` **折叠**为 `Branch`
+      ⚠️ **二审更正**:原写「`Trunk` = **过渡态**」是**推断**,且与 D1 §8.1「`four` categories」冲突
+      ⇒ 改为**决策口径**:① `Table 8.1` 中 `Trunk`/`Branch` 权限**相同**(均仅 `Get`)
+      ② `Table 8.3` 的 `Grow`/`Prune` 必须**单调** ⇒ `T` 唯一自洽读法 = `Tip` ③ 故折叠
+      ⇒ ⚠️ **R-T5 已闭合**(3 处内部不一致 + **§8.1.4 末段穷尽性句背书**)
+      ⇒ ⚠️ **语义损失已登记**(§1.2bis 三条),**不得**表述为「过渡态」
 - [x] 1.2 **事件 = 4 类**(`Cap`/`Grow`/`Prune`/`Report`);`Cap` = **源不定**通配
-- [x] 1.3 ⚠️ **`Cap` 的源不定 ⇒ 需 `Known-multi` 格语义**(目标态集合,非单值)
-- [x] 1.4 ⚠️ **`Grow`(源=T)与 `Prune`(源=N)规范明确为空集** ⇒ 需 `Known-empty` 格语义
-      ⇒ ⇒ **格语义共 4 种**:`Known-single` / `Known-multi` / `Known-empty` / `Unknown`
+- [x] 1.3 ⚠️ **`Cap` 的源不定 ⇒ 每格目标是 3 元集合**(非单值)
+      ⚠️ **二审**:原写「需 `Known-multi` 格语义」⇒ 形态改为 **`kind` + 3 位掩码**(见 1.4)
+- [x] 1.4 ⚠️ **`Grow`(源=T)与 `Prune`(源=N)规范明确为空集**
+      ⚠️ **二审**:形态定为 **`kind ∈ {Known, Unknown}` + 3 位目标掩码**(**零非法组合**;
+      「规范明确空集」= `Known` ∧ `mask == 0`;「规范未覆盖」= `Unknown` ∧ `mask == 0`)
+      ⇒ ⇒ **派生量 5 个**:`kKnown 12` / `kUnknown 0` / `kEmpty 2` / `kSingle 5` / `kMulti 5`
+      (⚠️ **原稿 `single 6 / multi 3` 算错,合计 11 ≠ 12**)
       ⇒ ⇒ ⚠️ **必须分别断言**「空集格恰为 2 个」与「`Unknown` 格为 0」—— 合并则**不可分辨**
 - [x] 1.5 **`perm` 3→3**;`UNIQUE` **不可达** ⇒ 保守降级方向唯一
 - [x] 1.6 **非对称 = TileLink 形态**(权限变更的发起方)⇒ ⚠️ **不得**复用 #10 的 CXL 形态
@@ -61,7 +73,8 @@
 ### 2.1 载体骨架(`include/tlm/cep/tilelink_state_spec.hh`,新 · header-only)
 
 - [ ] 2.1.1 `State` 枚举(3 值)· `Event` 枚举(4 类)· `Perm` 投影(3 值)
-- [ ] 2.1.2 **格语义**枚举(4 种)· 格内目标态集合的表示(bitmask 或枚举数组)
+- [ ] 2.1.2 **格形态**:`enum class CellKind { Known, Unknown }` + `std::uint8_t target_mask`
+      (位 0/1/2 = `Nothing`/`Branch`/`Tip`)—— **零非法组合**(`Unknown` ⇒ mask MUST 为 0)
 - [ ] 2.1.3 **12 格转移表**(`std::array<std::array<Cell, kStateCount>, kEventCount>`)
       —— 行序 SHALL 与 `Event` 枚举值一致 ⇒ `static_assert` 锁
 - [ ] 2.1.4 **`perm` 投影表**(3 行)+ `perm_of(state, out)` 辅助
@@ -71,9 +84,14 @@
       ① 稳定态集合**逐字** = 3 个名字 ② 事件词表**逐字** = 4 个名字
       ③ 非对称断言 = TileLink 形态(`Grant`/`GrantData` 只在 D 通道 · `Probe` 只在 B 通道)
       ④ `Trunk` 不在稳定态集合中
-- [ ] 2.1.7 **偏离清单**(规范内部矛盾 R-T5 的 2 条 + `UNIQUE` 不可达 + R-T4 指针)
+- [ ] 2.1.7 **偏离清单**(**5 条**):
+      ① D1 §8.1.4「six subsets」vs 表列 4 类 ② `Table 8.3` 图例行 `Trunk` vs 记号 `T = Tip`
+      ③ `UNIQUE` 不可达(保守投影) ④ **`Trunk` 折叠的三条语义损失**(`design.md` §1.2bis)
+      ⑤ **`AC-05` 族对 TileLink 恒红**(`design.md` D-η)⇒ ⚠️ **不得**填假值使其变绿
+      ⇒ R-T4 只作**指针**(不在本 change 裁决)
 - [ ] 2.1.8 **编译期锁**:`kStateCount == 3` · `kEventCount == 4` · `kTransitionCellCount == 12`
       · `kUnknownCellCount == 0` · `kEmptyCellCount == 2`
+      · `kSingleCellCount == 5` · `kMultiCellCount == 5`(**5/5/2/0**,逐格见 `design.md` D-γ)
       ⇒ ⚠️ 铁律 ③:**编译期锁不得只以「编译红」充当 ctest 判据** ⇒ 每条须有**运行时**断言
 
 ### 2.2 TDD 5-step(每步:红 → 绿 → 重构)
@@ -92,8 +110,18 @@
       ① 加回 `Trunk` ⇒ AC-1 红 ② 换掉某个稳定态名字 ⇒ AC-1 红(逐字断言才有鉴别力)
       ③ 某格改成 `Unknown` ⇒ AC-3 红 ④ 空集格数改成 3 ⇒ AC-3 红(空集与 Unknown **分别**断言)
       ⑤ 非对称断言换成 CXL 形态 ⇒ AC-5 红 ⑥ `perm` 投影加回 `UNIQUE` 行 ⇒ AC-4 红
+      ⑦ **`single` ↔ `multi` 互移一格**(如把 `Grow｜N` 建成单值)⇒ AC-3 红(**5/5 分桶**才有鉴别力)
+      ⑧ **`Known` 格的掩码置 0 但 `kind` 仍 `Known`** ⇒ AC-3 **GREEN**(空集是合法态)
+         —— 这是**正控**:证明命题「空集 ≠ Unknown」可判
+      ⑨ **`Unknown` 格携带非零掩码** ⇒ 载体的 `static_assert` **与** 运行时断言**双红**(零非法组合)
 - [ ] 3.3 **锚点核对表生成器** `scripts/test/generate_tilelink_anchor_checklist.sh` + `.cc`
-      (照 `generate_cxl_anchor_checklist.cc` 同款)⇒ 每格 `ref` SHALL 解析到锚点摘要的**真实条目号**
+      ⚠️ **不得照抄** `generate_cxl_anchor_checklist.cc` 的 ID 文法 —— 其 `is_wellformed_id`
+      只认「`prefix` + **全数字**」(`D<digit>` / `R-<digit>`);TileLink 锚点用 `| **D1** |`(**加粗**)
+      与 `R-T1`(**非纯数字**)⇒ 合法集为**空** ⇒ 逐格校验**恒真空转**
+      ⇒ 必须做 **3 件事**:① ID 文法**容忍 Markdown 加粗** ② **接受 `R-T<n>` 前缀**
+      ③ **逐格白名单**比对(**不得**只校验 source id 首部)
+      ⇒ 且 SHALL 有**反向 fixture 证明它不是空转**:毒化 ① 加粗形态 ② `R-T` 前缀 ③ 错格号
+      ⇒ 三者**各自**必须因正确原因红
 - [ ] 3.4 **`--check` 交叉核对**:手改载体或摘要任一侧 ⇒ **必须因正确原因红**
 - [ ] 3.5 **ctest 注册** `cep_tilelink_state_spec`
 
@@ -119,5 +147,6 @@
 - ❌ **不**改冻结 schema · **不**新增 ABI · **不**新增 invariant 编号数
 - ❌ **不**追加任何 ADR 的 `## Status Update`(三项裁决 + 锁表修订**已签发**)
 - ❌ **不**裁决 **R-T4**(实例 `perm` 数组填 3 值还是 4 值)—— 属第 1 个 change 前的前置
-- ❌ **不**建模 transient state(`Trunk` 是过渡态)
+- ❌ **不**单独建模 `Trunk`(**决策口径**:`Table 8.1` 权限等价 ⇒ **折叠**为 `Branch`)
+      ⇒ ⚠️ **语义损失已登记**;⚠️ **不得**写成「过渡态」
 - ❌ **不**产出任何性能结论
