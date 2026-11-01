@@ -356,11 +356,15 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
     //    ⚠️ 队列 #9 后:`mesif` 也进入(3 条)—— 它的 `E + Wr → M` 静默升级在规约层落地后
     //    是**真实能力**,此前 `perm_upgrades.json` 的 `current_state` 自述「`mesif` 无该能力」
     //    是**事实性错误**(已随本 change 修订)。
-    REQUIRE(loaded.inputs.upgrades.silent_upgrades.size() == 3);
+    // ⚠️ 2026-11-01(队列 #10 实现层):`cxl_2_0` 的 `E + 写事件 → M` 静默升级登记 ⇒ 4 条
+    //    (⚠️ 该格 basis = `public-analogical` + `pending` ⇒ 登记**不等于**「已确证」)
+    REQUIRE(loaded.inputs.upgrades.silent_upgrades.size() == 4);
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[0].instance_id == "moesi_gpu");
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[1].instance_id == "chi_rnf");
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[2].instance_id == "mesif");
-    REQUIRE(loaded.inputs.instances.instances.size() == 3);
+    REQUIRE(loaded.inputs.upgrades.silent_upgrades[3].instance_id == "cxl_2_0");
+    // ⚠️ 2026-11-01(队列 #10 实现层):新增 `cxl_2_0` ⇒ 计数 **+1**(per 台账 Entry #131)
+    REQUIRE(loaded.inputs.instances.instances.size() == 4);
     REQUIRE(loaded.inputs.perm_domain.values.size() == 4);
 
     // ⚠️ **负控见证已改造为双向规则**(队列 #9 AC-5):

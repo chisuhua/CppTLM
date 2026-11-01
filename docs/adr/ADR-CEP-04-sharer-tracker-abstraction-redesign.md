@@ -469,3 +469,51 @@ HD-04 / HD-05 + 反向 fixture `cep_mesif_adapter_reverse_verify.sh`。
 
 **关联**: 台账 `obj-cep-platform.md` **Entry #124**(复核 + 授权记录 + 债期)· #112(去重裁决 · 原文保留)
 · #107(R11 登记 + 落位映射)· #111(#10 关键交付)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值)· `ADR-CEP-05`(投影)
+
+---
+
+## Status Update(2026-11-01,per 台账 Entry #131)—— 第 **3** 种行为实现 `SparseSnoopFilter` **落地** + R11 降级评估
+
+> **正文不改**(§2 caps 表 · §4 hazard 表 · §13 全部保留;本段**纯追加**)。
+> ⚠️ **冻结面两步授权**:授权记录 = 台账 **Entry #131**(`--update --authorized-by "Entry #131"`)。
+
+### ① 事件
+
+`SparseSnoopFilter` 的**行为实现**于 2026-11-01 在 `include/tlm/cep/sharer_tracker.hh` 落地
+(队列 #10 实现层 change `cpptlm-cep-cxl-nonsymmetric`,per Entry #128 转正)。
+
+| 面 | 内容 |
+|---|---|
+| 落点 | `include/tlm/cep/sharer_tracker.hh` —— 与 `FullMapDirectory` / `HierarchicalDirectory` **同文件** |
+| 组合 | `final : public SharerTrackerIf, public SnoopMechanics` ⇒ **禁双实现**(snoop 在飞句柄与被动记账共用一份机械) |
+| caps / hazard | **消费** `kTrackerTraits[1]`(§2 的 `SYSTEM`/`CONSERVATIVE`/`GLOBAL`/`HOME` + §4 的 `Hazard_STALL` + `broadcast_fallback = true`)**不重推** ⇒ 本类**不**另写一份 caps 字面量 |
+| 语义 | **CONSERVATIVE** ⇒ filter **不能**回答「**没有**其他 sharer」⇒ **永不**返回 `ANSWER_HERE`;「无条目」⇒ `BROADCAST`;唯一可能 sharer 且脏 ⇒ `FORWARD_TO`;可能 sharer > 1 ⇒ `BROADCAST`(单点转发会**漏探**) |
+
+### ② ⚠️ 与 `FullMapDirectory` 的**可观测差异**(非克隆)
+
+EXACT 目录**能**回答「没有其他 sharer」;CONSERVATIVE filter **不能**
+⇒ 二者的 `lookup` 结果**可判别** ⇒ 满足本 ADR §13「克隆体不可能」的判据精神。
+
+### ③ R11 降级评估(V-1 ∧ V-2 ∧ V-3)
+
+| 条件 | 判定 | 依据 |
+|---|---|---|
+| **V-1** 行为与 §2 / §4 **逐字段一致** | ✅ **达成** | caps / behavior **取** `kTrackerTraits[1]`;判据 `test_cep_sparse_snoop_filter.cc`(5 cases / 39 assertions)+ 2 条毒化实测鉴别力 |
+| **V-2** `moesi_gpu` 的 `O→WRITEBACK` **补偿路径有判据** | 🔴 **未达成** | 补偿路径需把 SF 的**保守查询**接入 `moesi_gpu` 的投影补偿 ⇒ **后续**工作 |
+| **V-3** `moesi_gpu` 既有测试 **0 回归** | ✅ **达成** | 全量 `ctest` **129/129** 全绿 |
+
+⇒ ⛔ **R11 维持 🟡 中**(合取不成立)⇒ **不得**降级。
+⇒ **meta 层**缺口(声明指向只有 traits 行、无行为类)⇒ **已闭合**;
+**语义层**缺口(`O→WRITEBACK` 补偿无判据)⇒ **仍在**。
+
+### ④ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR** | **零改动**(仅追加本段);§2 / §4 / §13 全部保留 |
+| **`SparseSnoopFilter` 的 caps / hazard 契约** | **零改动** —— §2 / §4 的冻结值**被消费** ⇒ 该实现的**行为语义不依赖任何协议规约层**(含 CXL 规约层)⇒ 它**可被独立排期** |
+| **平台自证能力** | 声明面承诺**部分兑现**(meta 层闭合);⚠️ 语义层仍待补偿判据 ⇒ R11 不降级(见 ③) |
+| **实现面** | `protocol_instances.json` 的 `moesi_gpu` 声明 **逐字不变**(其 `impl = "SparseSnoopFilter"` 现在**有行为实现**了 ⇒ 声明**兑现**) |
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #131**(授权记录)· #124(R11 复核 + 债期)· #128(实现层转正)
+· #129(Phase 1 落地)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值)· `ADR-CEP-05`(投影)

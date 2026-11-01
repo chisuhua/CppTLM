@@ -6,14 +6,16 @@
 使 5 种一致性族（MOESI / MESIF / CHI RN-F / CXL 非对称 / TileLink 树）能用同一抽象表达
 目录查询与 snoop 生命周期，并让「协议实现的能力边界」成为**可静态判定的声明**而非隐含行为。
 本 capability 交付**首个**行为实现 `FullMapDirectory`（**参考实现**；当前**无协议实例声明**它）；
-`SparseSnoopFilter` **已被 `moesi_gpu` 声明占用**（队列 #6）但**仅声明层**（无行为实现）；
+`SparseSnoopFilter` **已被 `moesi_gpu` 声明占用**（队列 #6）——其**行为面**于 2026-11-01 在
+队列 #10 实现层落地（另一 capability `cep-sparse-snoop-filter` 承担；本文件**不改**其契约）；
 第 6 种实现 `HierarchicalDirectory` 的**行为面**由另一 capability `cep-hierarchical-directory` 承担
 （`ADR-CEP-04 §13` 裁决；本文件**不改**其契约）。
 
-其余 4 种实现（`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`）的**行为实现**尚未落地；
-其**落位**已登记（`TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12 · `SparseSnoopFilter` ↔ 队列 #10
-实现层（已被 #6 声明占用，行为待补）· `BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**）
-⇒ 本文件**不复述**未经登记的队列区间（事实与依据见台账 Entry #107 / #112）。
+其余 **3** 种实现（`DcohSymmetric` / `TreeManager` / `BroadcastNull`）的**行为实现**尚未落地；
+其**落位**已登记（`TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12 ·
+`BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**）
+⇒ 本文件**不复述**未经登记的队列区间（事实与依据见台账 Entry #107 / #112 / #129 / #131）。
+⚠️ **本段改写经台账 Entry #131 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #131"`）。
 
 ## Requirements
 
@@ -91,11 +93,13 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 
 > **锚点**:`test_cep_sharer_tracker_base.cc` 的静态扫描断言(去注释 + 正控)
 
-#### Scenario: 非 FullMap 的其余 4 实现 SHALL 只做声明层断言(**deferred**)
+#### Scenario: 非 FullMap 的其余 **3** 实现 SHALL 只做声明层断言(**deferred**)
 
-- **WHEN** 核对其余 4 实现(SparseSF / DcohSymmetric / TreeManager / BroadcastNull)的覆盖面
+- **WHEN** 核对其余 **3** 实现(DcohSymmetric / TreeManager / BroadcastNull)的覆盖面
 - **THEN** 行为断言 SHALL **deferred**;只有 caps 表的**声明层枚举一致性**断言可用
 - **AND** 理由 SHALL 记录:真实行为需真实 protocol instance(per metis 建议 #5 + 队列 #2 先例)
+- **AND** 已落地的行为实现(`HierarchicalDirectory` / `SparseSnoopFilter`)SHALL **另有反向断言**
+  (纯负向断言在实现落地后**空转**)
 
 > **锚点**:`test_cep_sharer_tracker_base.cc` 的 deferred 登记断言
 

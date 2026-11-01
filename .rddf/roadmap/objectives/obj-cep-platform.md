@@ -8161,6 +8161,73 @@ SHALL 只做声明层断言(deferred)」⇒ 落地后**已成过期陈述** ⇒ 
 
 ---
 
+### Entry #131 — 2026-11-01 [scope-change](队列 #10 实现层 Phase 3:实例声明登记 + **3 件冻结面授权**)
+
+**主题**:队列 #10 第 1 个 change(实现层)的实例声明面落地 + 冻结面同步(**本条是冻结面授权记录**)。
+
+**① 实例声明(非冻结面)**
+- `include/tlm/cep/protocol_instances.json`:新增 `cxl_2_0` 实例(13 必填键齐备)
+  · `adapter = "CxlCacheAdapter"` · `protocol_version = "cxl-2.0"`(与 `ADR-CEP-11 §3` 锁表**已有**行一致)
+  · `sharer_tracker.impl = "不参与"` + caps `NONE`/`EXACT`/`NONE`/`NONE`(照 `chi_rnf` 先例)
+    ⇒ **理由**:口径 ③(host-centric / **单一一致性点**)⇒ CXL.cache 的 peer 集**平凡为空**
+    ⇒ 挂 SF 是**过度声明** ⇒ **不**给 CXL 实例挂 `SparseSnoopFilter`
+  · `combination_capabilities.hierarchical = false`(单一一致性点 ⇒ 非分级)
+  · `flow_support`:`back_invalidate` / `address_resolve` / `barrier` / `snoop_completion_ack` = **false**
+    (逐条依据见锚点摘要 §2 的通道表;**无**对应流)
+  · `repo_owned_instance_ids` += `cxl_2_0` ⇒ **本仓自有**(口径 ⑥:不镜像进 ArchForge `32 号 §6.1`)
+- `include/tlm/cep/perm_upgrades.json`:新增 `cxl_2_0` 的 `UNIQUE → WRITEBACK` 一行
+  ⇒ 4 个实例齐备;⚠️ 散文已登记该格 basis = **`public-analogical` + `pending`** ⇒ **登记 ≠ 已确证**
+- 判据:`test/test_cep_cxl_instance_decl.cc` —— **2 cases / 45 assertions**;声明闸 7 项子校验全绿
+
+**② 冻结面 **3 件**(本条 = 授权记录 ⇒ `--update --authorized-by "Entry #131"`)**
+
+| # | 冻结件 | 改动形态 | 内容 |
+|---|---|---|---|
+| 1 | `docs/architecture/07-coherence-exploration-platform.md` | **追加** `## Status Update(2026-11-01)` | §5.1.1 **CXL 2.0 行**的措辞对齐裁决 ③⑦:「设备不感知其他设备」在 2.0 **平凡成立**、**非**区分性语义;「CXL 3.0 对称」按裁决 ⑦ 指 **HDM-DB / CXL.mem** 的多 host 共享内存 ⇒ **CXL.cache 全代次非对称**;并登记 `cxl_2_0` 实例已 `implemented` |
+| 2 | `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | **追加** `## Status Update(2026-11-01)` | 第 **3** 种行为实现 `SparseSnoopFilter` **落地**(caps/hazard **消费**不重推)+ **R11 降级评估**(V-1∧V-2∧V-3 逐条判定) |
+| 3 | `openspec/specs/cep-sharer-tracker-base/spec.md` | ⚠️ **改写**(非追加) | 该 main spec 的 `## Purpose` 与 Scenario「非 FullMap 的其余 **4** 实现 SHALL 只做声明层断言(deferred)」**已过期** ⇒ 改为 **3** 个 deferred + `SparseSnoopFilter` 已落地 |
+
+⚠️ **第 3 件为何不用 delta spec 的 `MODIFIED Requirements`**:delta 只能替换 **Requirement 块**,
+**改不到** `## Purpose` 段 —— 而「`SparseSnoopFilter` **仅声明层**(无行为实现)」这句**恰好在 `## Purpose` 里**
+⇒ 走 delta 会留下**半修**状态 ⇒ 改用**直接编辑 + 两步授权**(本仓冻结面的既有路径)。
+
+**③ R11 降级评估(per `ADR-CEP-04` SU 的 V-1 ∧ V-2 ∧ V-3)**
+| 条件 | 判定 | 依据 |
+|---|---|---|
+| **V-1** 行为与 §2 caps / §4 hazard **逐字段一致** | ✅ 达成 | `SparseSnoopFilter::caps` / `behavior` **取** `kTrackerTraits[1]`(不另写字面量)+ 判据 `test_cep_sparse_snoop_filter.cc` |
+| **V-2** `moesi_gpu` 的 `O→WRITEBACK` **补偿路径有判据** | 🔴 **未达成** | 该路径要求 SF 的**保守查询**接入 `moesi_gpu` 的投影补偿 ⇒ 属**后续**(Phase 3 之后的实现层工作) |
+| **V-3** `moesi_gpu` 既有测试 **0 回归** | ✅ 达成 | 全量 `ctest` **129/129** 全绿 |
+⇒ ⛔ **R11 维持 🟡 中**(V-2 未达成 ⇒ 合取不成立)⇒ **不得**降级。
+
+**④ 冻结面纪律**:本条为**授权记录** ⇒ `--update --authorized-by "Entry #131"` ⇒
+**两步授权**:台账 entry → `--update`(产物 hash 重算)→ commit → `--update`(provenance 对齐)→ commit。
+
+**⑤ ⚠️ 实例声明的**语义域**踩坑(装配闸实测抓出,非事后诸葛)**
+初版把 `cxl_2_0` 的 `combination_capabilities.hierarchical` 填为 **`false`**
+(依据 = 口径 ③「host-centric / **单一一致性点** ⇒ 非分级」)
+⇒ **装配期闸直接拒绝**:`INV-CEP-08-IC2=FAIL`(「UNIQUE 允许静默升级,但未声明 hierarchical 组合能力
+⇒ 全局 SWMR 可能被破坏」)。
+
+⇒ **根因 = 语义域混淆**:`combination_capabilities.hierarchical` 指的是
+**平台组合维度**(「本实例**能否**参与分层组合」),**不是**「本协议自身是否有层级结构」。
+口径 ③ 的「单一一致性点」说的是**后者** ⇒ 二者**不冲突**:
+CXL.cache 的设备侧是**叶节点**(peer 集平凡为空)⇒ 作为叶参与分层组合**成立** ⇒ 改为 **`true`**。
+
+⇒ ⚠️ **教训**:把**协议语义**的裁决直接填进**平台组合语义**的字段 ⇒ 会撞平台级不变式
+⇒ **声明字段的语义域必须逐个核实**,不能靠「读起来像」就填。
+
+**⑥ 因新增第 4 个实例而更新的既有硬编码期望(4 处,全部合法)**
+`test_cep_chi_rnf_subset.cc`(declared_ids 集合 + `owned.size()`)·
+`test_cep_adapter_schema_contracts.cc`(`instances.size()` / `silent_upgrades.size()`)·
+`test_cep_mesif_instance_decl.cc`(散文断言「**4** 个实例全部」+ `silent_upgrades.size()`)·
+`test_cep_moesi_gpu_adapter.cc`(`implemented == 4`)
+⇒ 全部标注了变更原因(per 台账 Entry #131)⇒ **零静默改期望值**。
+
+**⑦ 关联**: Entry #122(口径)· #124(R11 复核)· #128(转正)· #129(Phase 1 SF)· #130(Phase 2 adapter)
+· `ADR-CEP-11` §3 锁表 · `ADR-CEP-04` §2 / §4 / §13 · 锚点摘要 §2 / §4 / §8.2
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

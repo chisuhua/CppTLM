@@ -1048,6 +1048,52 @@ experimental/<run_id>/
 
 ---
 
-**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)** + **Status Update 2026-10-28 第八则(Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)** + **Status Update 2026-10-28 第九则(Entry #89 —— 判据收口 + 反向 fixture 登记 + 零 diff 复核)** + **Status Update 2026-10-28 第十则(Entry #93 —— 队列 #8 立项 + §5.1.1 CHI 行同步 + UC→UD 静默升级事实登记)** + **Status Update 2026-10-28 第十一则(Entry #95 —— 队列 #8 归档 + §5.1.1 CHI 行状态列同步)** + **Status Update 2026-10-29 第十二则(Entry #96 —— 队列 #9 的 R-1 裁决落地 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-29 第十三则(Entry #101 —— 队列 #9 的规约层已闭合 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-30 第十四则(Entry #102 —— MESIF 规约的跨仓逐格追认闭合 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-30 第十五则(Entry #105 / #106 —— 队列 #9 实现层归档 + SharerTracker 6 实现 / adapter 3 实例口径同步)** + **Status Update 2026-10-30 第十六则(Entry #106 —— S1-3 触发后的 SLICC 备选重评结论「维持嵌套形态」+ 承接项 2 第 2 次复核)**
+**版本**: v0.1 起草(2026-10-20) + Status Update 2026-10-25(队列 #4 启动)+ Status Update 2026-10-27(队列 #7 立项 + 排队 13 → 14)+ Status Update 2026-10-27 第二则(Entry #82 —— 实现状态映射漂移回填)+ Status Update 2026-10-27 第三则(Entry #83 —— 载体缺口登记与 owner 指派)+ **Status Update 2026-10-27 第四则(Entry #84 —— CohIf 载体落地 + §5.4 第三类同步)** + **Status Update 2026-10-27 第五则(Entry #85 —— ProtocolEngine 端口面落地 + Null 默认实现)** + **Status Update 2026-10-28 第六则(Entry #86 —— ProtocolBridge 特化桥落地 + 钩子死→活 + 判据分层)** + **Status Update 2026-10-28 第七则(Entry #87 —— `REGISTER_CHSTREAM_BIDIRECTIONAL` 落地 + `BidirectionalPortAdapter` 泛化)** + **Status Update 2026-10-28 第八则(Entry #88 —— JSON 装配连通性落地 + `INV-CEP-07-IC4` 闭合 + egress 通道语义登记)** + **Status Update 2026-10-28 第九则(Entry #89 —— 判据收口 + 反向 fixture 登记 + 零 diff 复核)** + **Status Update 2026-10-28 第十则(Entry #93 —— 队列 #8 立项 + §5.1.1 CHI 行同步 + UC→UD 静默升级事实登记)** + **Status Update 2026-10-28 第十一则(Entry #95 —— 队列 #8 归档 + §5.1.1 CHI 行状态列同步)** + **Status Update 2026-10-29 第十二则(Entry #96 —— 队列 #9 的 R-1 裁决落地 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-29 第十三则(Entry #101 —— 队列 #9 的规约层已闭合 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-30 第十四则(Entry #102 —— MESIF 规约的跨仓逐格追认闭合 + §5.1.1 MESIF 行同步)** + **Status Update 2026-10-30 第十五则(Entry #105 / #106 —— 队列 #9 实现层归档 + SharerTracker 6 实现 / adapter 3 实例口径同步)** + **Status Update 2026-10-30 第十六则(Entry #106 —— S1-3 触发后的 SLICC 备选重评结论「维持嵌套形态」+ 承接项 2 第 2 次复核)** + **Status Update 2026-11-01 第十七则(Entry #131 —— 队列 #10 实现层 §5.1.1 CXL 行措辞对齐裁决 ③⑦ + `cxl_2_0` 实例登记)**
 **批准状态**: 🟡 待 Oracle 复审
 **维护者**: CppTLM build agent(architect mode)
+---
+
+## Status Update(2026-11-01,per 台账 Entry #131)—— §5.1.1 **CXL 行**的措辞对齐(裁决 ③⑦)+ `cxl_2_0` 实例登记
+
+> **正文不改**(07 号 §5.1.1 表格**零改动**);本段只登记**措辞对齐**与**实例状态**。
+> ⚠️ **冻结面两步授权**:授权记录 = 台账 **Entry #131**(`--update --authorized-by "Entry #131"`)。
+
+### ① §5.1.1 CXL 2.0 行:两处措辞与队列 #10 的裁决 ③⑦ **冲突**(现予消解)
+
+| # | §5.1.1 现行措辞 | 裁决后的**准确**表述 | 处置 |
+|---|---|---|---|
+| 1 | 「Host 侧 Snoop Filter;**设备不感知其他设备**」 | 「Host 侧 Snoop Filter(**唯一**一致性点);**设备互不感知其他设备**在 CXL 2.0 **平凡成立**(每 root port 只 1 个 cache device)⇒ **不得**当作 2.0 的**区分性语义**」 | **仅登记**(表格正文不改);新增实例行的「关键差异」列以**追加**方式对齐 ⇒ 见 ③ |
+| 2 | 「**CXL 3.0 对称**」行(「DCOH;设备可主动反向 snoop」) | 按裁决 ⑦:「CXL 3.0 对称」指 **HDM-DB / CXL.mem 的多 host 共享内存**;**CXL.cache 全代次都非对称** ⇒ 该行**不得**被读成「CXL.cache 在 3.0 变对称」 | **仅登记**;⇒ **CXL 3.0 的 BI 通道 / DCOH 仍属队列 #12**(per 队列 #10 的 Non-Goal #5) |
+
+⚠️ **冲突性质**:真源 1(本文件)与真源 3(`ADR-CEP-11` 的 Status Update ③⑦)措辞不一致
+⇒ per 真源原则冲突规则 3(真源 3 不可变)⇒ 以**真源 3**为准 ⇒ 本段登记对齐结论。
+
+### ② §5.1.1 的**协议族计数**未变
+
+⚠️ §5.1.1 的「6 族 / 8 实例」计数**不变**:CXL 2.0 与 3.0 仍是**同一 adapter 的两种模式**
+⇒ 本次只新增**一个协议实例登记**(CXL 2.0 的 `cxl_2_0`),**不是**新增协议族
+⇒ 族计数仍 6;⚠️ **实例计数口径**:§5.1.1 的「8 实例」指的是**协议族内的模式行**,与
+`protocol_instances.json` 的 `instances[]`(**协议实例声明**,含 `chi_rnf` / `cxl_2_0` 等)**不是同一口径**
+⇒ **两者不得互相换算**(per `ADR-CEP-12 §11` 的实例级权威分区)。
+
+### ③ `cxl_2_0` 协议实例登记(2026-11-01,per 队列 #10 实现层)
+
+| 面 | 值 |
+|---|---|
+| 实例 id / adapter | `cxl_2_0` / `CxlCacheAdapter` |
+| 协议版本 | `cxl-2.0`(**`ADR-CEP-11 §3` 锁表已有该行** ⇒ 无需改锁表) |
+| 状态 | `implemented`(adapter 已落地;**无 protocol engine** —— 照 `moesi_gpu` 先例 = adapter-only) |
+| `sharer_tracker` | **`不参与`** —— CXL.cache 的 peer 集**平凡为空**(host-centric / 单一一致性点)⇒ 挂 SF 是**过度声明** |
+| 消息类 → VC | `request`→0 / `response`→1 / `snoop`→2 / `snoop_resp`→3(逐条依据 = 锚点摘要 §2 的 D2H/H2D 通道表) |
+| 权威分区 | **本仓自有**(`repo_owned_instance_ids[]`)⇒ **不镜像**进 ArchForge `32 号 §6.1` |
+
+### ④ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本文件** | **零正文改动**;§5.1.1 表格与「6 族 / 8 实例」计数**不变** |
+| **CXL 3.0 范围** | 本次**不**动 CXL 3.0 ⇒ BI 通道 / DCOH 仍归**队列 #12** |
+| **声明面** | `protocol_instances.json` 新增 1 条 ⇒ `implemented` 实例数 **3 → 4**(⚠️ 与 ② 的「8 实例」**不是同一口径**) |
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #131**(授权记录)· #122(口径 7 条)· #127(规约层归档)· #128(实现层转正)
+· `ADR-CEP-11` 的 `## Status Update(2026-11-01)` ③⑦ · `ADR-CEP-12 §11`(实例级权威分区)

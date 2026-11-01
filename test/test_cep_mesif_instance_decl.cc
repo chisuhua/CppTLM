@@ -86,15 +86,17 @@ TEST_CASE("CEP MESIF 声明:静默升级行落地且 current_state 不再否认�
     // ② `current_state` 的**事实性错误**已修订:不得再声称「`mesif` 无该能力」
     const std::string cs = upgrades_doc().at("derived_from").at("current_state");
     CHECK(cs.find("mesif") != std::string::npos);
-    CHECK(cs.find("无该能力") == std::string::npos);     // 旧句的核心断言
-    CHECK(cs.find("3 个实例全部") != std::string::npos); // 新句的核心断言
+    CHECK(cs.find("无该能力") == std::string::npos); // 旧句的核心断言
+    // ⚠️ 2026-11-01(队列 #10 实现层):新增 `cxl_2_0` ⇒ 计数 **+1**(per 台账 Entry #131)
+    CHECK(cs.find("4 个实例全部") != std::string::npos); // 新句的核心断言
     CHECK(cs.find("双向规则") != std::string::npos);     // 负控空转陷阱已登记
 
     // ③ 真实数据侧:3 个实例全部有声明 ⇒ 派生量为空(正控)
     //    ⚠️ 「为空」本身**不构成**规则被验证(见 adapter-contracts 的合成输入用例)
     const auto loaded = tlm::cep::load_adapter_contract_inputs(cpptlm::cep::repo_root().string());
     REQUIRE(loaded.ok);
-    CHECK(loaded.inputs.upgrades.silent_upgrades.size() == 3u);
+    // ⚠️ 2026-11-01(队列 #10 实现层):新增 `cxl_2_0` ⇒ 计数 **+1**(per 台账 Entry #131)
+    CHECK(loaded.inputs.upgrades.silent_upgrades.size() == 4u);
     CHECK(loaded.inputs.no_upgrade_instances.empty());
 
     // ④ 反向 fixture:`mesif` 行的 `to` 一旦被改成 `READ` ⇒ 上面的 `== WRITEBACK` 必红

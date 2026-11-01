@@ -1068,7 +1068,9 @@ TEST_CASE("CR-05 chi_rnf 静默升级声明被契约判据接受", "[cep][chi-rn
             CHECK(u.at("from") == "UNIQUE");
             CHECK(u.at("to") == "WRITEBACK");
         }
-        CHECK(declared_ids == std::set<std::string>({"moesi_gpu", "chi_rnf", "mesif"}));
+        // ⚠️ 2026-11-01(队列 #10 实现层):新增 `cxl_2_0` ⇒ 该集合 **+1**
+        //    (per 台账 Entry #131;`cxl_2_0` 是**本仓域**实例,权威 = 本仓)
+        CHECK(declared_ids == std::set<std::string>({"moesi_gpu", "chi_rnf", "mesif", "cxl_2_0"}));
     }
 }
 
@@ -1134,8 +1136,10 @@ TEST_CASE("CR-07/08 权威分区:登记键合法 + 语义校验扩面覆盖 repo
     REQUIRE(doc.contains("repo_owned_instance_ids"));
     const json& owned = doc.at("repo_owned_instance_ids");
     REQUIRE(owned.is_array());
-    CHECK(owned.size() == 1u);
+    // ⚠️ 2026-11-01(队列 #10 实现层):`cxl_2_0` 亦为**本仓域**实例 ⇒ 2 个
+    CHECK(owned.size() == 2u);
     CHECK(owned.at(0) == "chi_rnf");
+    CHECK(owned.at(1) == "cxl_2_0");
     for (const auto& id : owned) {
         INFO("owned id " << id);
         CHECK(find_instance(doc, id.get<std::string>()) != nullptr);
