@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-01T07:49:49Z",
+  "updated_at": "2026-11-01T08:42:46Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-10-30T23:26:20",
-      "by": "user",
-      "reason": "ADR Status Update 完成 ⇒ 切回落地 R2 降级行 / BroadcastNull 裁决 / 落位句 / 台账 Entry #112 + 冻结面授权"
-    },
-    {
-      "role": "architect",
-      "at": "2026-10-31T11:38:25",
-      "by": "user",
-      "reason": "A6: 定义 P-5 + 纠正 14 号 §4.4 判据编号漂移(P-2/P-3 错位)"
-    },
     {
       "role": "builder",
       "at": "2026-10-31T11:48:46",
@@ -124,6 +112,18 @@
       "at": "2026-11-01T07:49:49Z",
       "by": "user",
       "reason": "两批 architect 签发完成(R11 降级 SU + 队列 #11 的 R-T2/R-T3/R-T6)⇒ 切回 builder:起队列 #11 的第 0 个 change(规约层)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-01T08:42:14Z",
+      "by": "user",
+      "reason": "用户裁决「按建议推进」⇒ D3 = `FullMapDirectory` 反向缺口的落位裁决(architect 域);台账 Entry #139 授权记录已落 ⇒ 跑冻结面两步授权(--update --authorized-by \"Entry #139\")"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-01T08:42:46Z",
+      "by": "user",
+      "reason": "D3 落位裁决已签发(ADR-CEP-04 SU + 07 号 §11 行 + base spec 落位句 + sharer_tracker.hh 注释)⇒ 切回 builder:跑冻结面两步授权(--update --authorized-by \"Entry #139\")+ commit"
     }
   ]
 }

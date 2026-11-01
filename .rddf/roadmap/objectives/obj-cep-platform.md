@@ -8719,6 +8719,63 @@ SHALL **NOT** 读作『**等价恢复**』—— `SparseSnoopFilter` = `CONSERVA
 
 ---
 
+### Entry #139 — 2026-11-01 [scope-change](`FullMapDirectory` **反向缺口**的落位裁决 —— **无消费者 ⇒ 不排期、保留登记** + 07 号 §11 实现状态计数勘误)
+
+**主题**:Entry #133 ③ 登记的事实缺口(`FullMapDirectory` **有行为实现 · 零实例声明**)
+⇒ 本条作**落位裁决**(architect 域)⇒ 裁决口径照 `BroadcastNull` 先例(per Entry #112)。
+
+**① 事实复核(2026-11-01 实测)**
+
+| 项 | 实测 |
+|---|---|
+| 行为类 | ✅ **存在** —— `sharer_tracker.hh` 的 `class FullMapDirectory final : public SharerTrackerIf, public SnoopMechanics` |
+| traits 行 | ✅ 存在 —— `kTrackerTraits[0]`(caps = `SYSTEM`/`EXACT`/`GLOBAL`/`HOME`;hazard = `STALL`) |
+| **实例声明** | ❌ **零** —— `protocol_instances.json` 的 4 个实例(`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0`)**无一**声明它 |
+| 消费者 | ❌ **当前队列序列无消费者** |
+
+⇒ ⇒ 与 R11 的「声明超前于实现」**方向相反** —— 这是「**实现超前于声明**」(有货没人买)
+⇒ ⇒ 二者**不可混谈**:R11 已于 Entry #137 降级为 🟢 低;**本条不属 R11**。
+
+**② 裁决:③ 无消费者 ⇒ 不排期、保留登记**(照 `BroadcastNull` 先例)
+
+| 候选 | 裁决 | 理由 |
+|---|---|---|
+| ① `chi_rnf` 升 **HN-F** | ❌ **否决** | `ADR-CEP-04 §2` 的 caps 表把 `FullMapDirectory` 标注为「CHI HN-F」载体 —— 但队列 #8 只做 **RN-F subset**,队列表**无 CHI-full 行** ⇒ **无消费者** ⇒ 强行造消费者 = 为一个实现**逆向发明**需求 |
+| ② 队列 #13 `nvlink-sharp` / #14 `ualink-inc` 的 tracker 选型 | ❌ **暂不裁决** | 二者**均未起手**(§4.0 状态列 = 📋 Planned)⇒ 其 tracker 选型**尚不存在** ⇒ 现在指定 = **猜测**(与「不得推理填空」同款纪律);且二者是否需要集中目录**本身**未定 |
+| ③ **无消费者 ⇒ 不排期、保留登记** | ✅ **裁决** | 照 `BroadcastNull` 先例(Entry #112:「当前队列序列(#10 ~ #14)无消费者 ⇒ 不排期,保留登记」)⇒ 未来出现消费者时再评 |
+
+**③ 落点(与 `BroadcastNull` 先例同款,4 处)**
+
+| # | 落点 | 改动形态 |
+|---|---|---|
+| 1 | `docs/architecture/07-coherence-exploration-platform.md` §11 的「SharerTracker **6** 实现」行 | **原地更新**:① 补 `FullMapDirectory` 的落位裁决(**无消费者 ⇒ 不排期、保留登记**)② ⚠️ **勘误实现状态计数**:原文「🟡 **2 / 6** …… 其余 4 个(`SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull`)**仅声明层 traits**」—— **`SparseSnoopFilter` 的行为面已于 2026-11-01 落地**(per Entry #129)⇒ 计数应为 **3 / 6** 且「仅声明层」只余 **3** 个 ⇒ **该行遗漏了 Entry #129 的事实**(冻结面文档的 dated 事实未回写) |
+| 2 | `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | **追加** `## Status Update(2026-11-01,per 台账 Entry #139)` —— 登记本裁决 + §2 caps 表的 `FullMapDirectory` 行**零改动** |
+| 3 | `openspec/specs/cep-sharer-tracker-base/spec.md` | **追加**一段(§8「其余 3 种实现」的**落位句旁**)—— 登记 `FullMapDirectory` 的落位裁决 ⇒ ⚠️ 该文件是**冻结面 M1 产物** ⇒ 同样走两步授权 |
+| 4 | `.rddf/roadmap/objectives/obj-cep-platform.md` §10 | **追加** backlog 行(`FullMapDirectory` 落位裁决 = ③)—— 本条即台账记录 |
+
+**④ ⚠️ 与 `BroadcastNull` 的**区别**(不得混读)**
+
+| 面 | `BroadcastNull` | `FullMapDirectory` |
+|---|---|---|
+| 行为实现 | ❌ 无(仅 traits) | ✅ **有** |
+| 消费者 | ❌ 无 | ❌ 无 |
+| 裁决 | ③ 不排期、保留登记 | ③ **同款** |
+| **可复用性** | 未来**广播型**协议族接入时**直接可用** | 未来 **CHI-full 队列**出现时**直接可用** ⇒ **实现不废弃、只是暂不排期** ⇒ ⚠️ **不得**表述为「该实现无用/应删除」 |
+
+**⑤ 冻结面纪律(本条 = 授权记录 ⇒ `--update --authorized-by "Entry #139"`)**
+
+**3 件 M1 冻结面成员**: `docs/architecture/07-coherence-exploration-platform.md` ·
+`docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` ·
+`openspec/specs/cep-sharer-tracker-base/spec.md`
+⇒ **两步授权**:台账 entry → `--update`(产物 hash 重算)→ commit → `--update`(provenance 对齐)→ commit。
+
+**⑥ 关联**: Entry #133(R11 债期重开 + **本缺口的首次登记**)· #137(R11 降级 · **方向相反**,勿混谈)
+· #131 · #129(`SparseSnoopFilter` 行为面落地 —— 07 号 §11 遗漏该事实的来源)
+· #112(**`BroadcastNull` 落位裁决先例**)· #107(落位映射登记)
+· `ADR-CEP-04` §2 caps 表 · `07 号` §11 · `cep-sharer-tracker-base` spec · `sharer_tracker.hh`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

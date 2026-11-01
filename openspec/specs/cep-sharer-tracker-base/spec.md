@@ -17,6 +17,13 @@
 ⇒ 本文件**不复述**未经登记的队列区间（事实与依据见台账 Entry #107 / #112 / #129 / #131）。
 ⚠️ **本段改写经台账 Entry #131 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #131"`）。
 
+⚠️ **补充登记(2026-11-01,per 台账 Entry #139 —— 追加段,不改上方原文)**：
+`FullMapDirectory` 是**反向缺口** —— **有行为实现 · 零实例声明**(4 个实例无一声明它)
+⇒ 落位裁决 = **当前队列序列无消费者 ⇒ 不排期、保留登记**(照 `BroadcastNull` 同款,per Entry #112)
+⇒ ⚠️ 与 R11 的「声明超前于实现」**方向相反** ⇒ **不因 R11 降级(Entry #137)而闭合**
+⇒ ⚠️ **实现不废弃** —— 未来 CHI-full 队列出现时**直接可用**。
+⚠️ **本段追加经台账 Entry #139 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #139"`）。
+
 ## Requirements
 
 ### Requirement: cep-sharer-tracker-base

@@ -576,3 +576,54 @@ R11 的降级三条件(V-1 ∧ V-2 ∧ V-3)**全部达成** ⇒ **R11 由 🟡 �
 **关联**: 台账 `obj-cep-platform.md` **Entry #137**(授权记录)· #136(V-2 交付)· #133(债期重开 + 反向缺口)
 · #131(第 3 实现落地 + 首次降级评估)· #129(Phase 1 落地)· #124(R11 复核)
 · `moesi_gpu_protocol_engine.hh` · `sharer_tracker.hh` · `test_cep_moesi_gpu_compensation.cc`
+
+---
+
+## Status Update(2026-11-01,per 台账 Entry #139)—— `FullMapDirectory` 的**落位裁决**(**无消费者 ⇒ 不排期、保留登记**)
+
+> **授权**:台账 `objective-cep-platform §11` **Entry #139** [scope-change] —— **冻结面授权记录**。
+> **形态**:**纯追加**(本 ADR **正文不改**;§2 caps 表 · §4 hazard 表 · §13 全部保留)。
+> ⚠️ **本段不改 §2 caps 表的 `FullMapDirectory` 行** —— caps 是**能力描述**,与「是否有消费者」**正交**。
+
+### ① 事实复核(2026-11-01 实测)
+
+| 项 | 实测 |
+|---|---|
+| 行为类 | ✅ **存在**(`sharer_tracker.hh` 的 `class FullMapDirectory final : public SharerTrackerIf, public SnoopMechanics`) |
+| traits 行 | ✅ 存在(`kTrackerTraits[0]`;caps = `SYSTEM`/`EXACT`/`GLOBAL`/`HOME`;hazard = `STALL`) |
+| **实例声明** | ❌ **零** —— `protocol_instances.json` 的 4 个实例(`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0`)**无一**声明它 |
+
+### ② 裁决:**无消费者 ⇒ 不排期、保留登记**(照 `BroadcastNull` 先例,per Entry #112)
+
+| 候选 | 裁决 | 理由 |
+|---|---|---|
+| ① `chi_rnf` 升 **HN-F** | ❌ 否决 | 本 ADR §2 的 caps 表把 `FullMapDirectory` 标注为「CHI HN-F」载体 —— 但队列 #8 只做 **RN-F subset**,**队列表无 CHI-full 行** ⇒ 无消费者 ⇒ 强行造消费者 = 为一个实现**逆向发明**需求 |
+| ② 队列 #13 `nvlink-sharp` / #14 `ualink-inc` 的 tracker 选型 | ❌ 暂不裁决 | 二者**均未起手**(§4.0 状态列 = 📋 Planned)⇒ 其 tracker 选型**尚不存在** ⇒ 现在指定 = **猜测**;且二者是否需要集中目录**本身**未定 |
+| ③ **无消费者 ⇒ 不排期、保留登记** | ✅ **裁决** | 照 `BroadcastNull` 先例(Entry #112)⇒ 未来出现消费者时再评 |
+
+### ③ ⚠️ 与 R11 的**方向相反**(不得混谈)
+
+R11 是「**声明超前于实现**」(声明了 `SparseSnoopFilter` 却无行为类)⇒ 已于 Entry #137 降级为 🟢 低;
+本条是「**实现超前于声明**」(有行为类却无实例声明)⇒ **不属 R11** ⇒ **不因 R11 的降级而闭合**。
+
+### ④ 与 `BroadcastNull` 的**区别**(不得混读)
+
+| 面 | `BroadcastNull` | `FullMapDirectory` |
+|---|---|---|
+| 行为实现 | ❌ 无(仅 traits) | ✅ **有** |
+| 裁决 | ③ 不排期、保留登记 | ③ **同款** |
+| **可复用性** | 未来**广播型**协议族接入时**直接可用** | 未来 **CHI-full 队列**出现时**直接可用** ⇒ **实现不废弃、只是暂不排期** ⇒ ⚠️ **不得**表述为「该实现无用 / 应删除」 |
+
+### ⑤ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR** | **零改动**(仅追加本段);§2 caps 表 · §4 hazard 表 · §13 全部保留 |
+| **caps 契约** | **零改动** —— `FullMapDirectory` 的 caps = `SYSTEM`/`EXACT`/`GLOBAL`/`HOME` **不变** |
+| **实现面** | **零改动** —— `sharer_tracker.hh` 的 `FullMapDirectory` 行为类**不删不改**;仅头注释补落位口径 |
+| **平台自证能力** | ✅ 「6 种实现中哪几种有行为类 / 哪几种有实例声明」**可逐项核对** ⇒ 反向缺口**显式登记**,不沉默 |
+| **残余** | ⚠️ `FullMapDirectory` 在 **CHI-full 队列**出现前**持续无消费者** ⇒ 该缺口**保持开放**(登记态,非闭合态) |
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #139**(授权记录 + 裁决)· #133(反向缺口首次登记)
+· #137(R11 降级 · **方向相反**)· #131 · #129 · **#112(`BroadcastNull` 落位裁决先例)** · #107
+· `07 号` §11 · `openspec/specs/cep-sharer-tracker-base/spec.md` · `sharer_tracker.hh`
