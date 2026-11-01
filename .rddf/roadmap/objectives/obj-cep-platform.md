@@ -547,6 +547,27 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 | **R11** | **声明超前于实现**(两条并列,2026-11-01 升级,per **Entry #124**):① **meta 层** —— `moesi_gpu` 的 `sharer_tracker.impl = SparseSnoopFilter` **只有 traits 行、无行为类**(而 `FullMapDirectory` 有行为实现却**无任何实例声明**)⇒ 声明面承诺的能力在实现面**未兑现**;② **语义层(实测确认,新增)** —— `moesi_gpu` 的 `O→WRITEBACK` 投影损失**设计上**由 `SparseSnoopFilter`(`scope=SYSTEM`)**补偿**(per `chi_rnf_adapter.hh:172` 的对照注释明载)⇒ 该补偿机制**当前无行为实现** ⇒ `moesi_gpu` 的 `perm` 投影完备性判据存在一处「**可补偿但未补偿**」的缺口。⚠️ **与 `chi_rnf` 的同类损失不得混谈**:后者的「是否还有其他 sharer」在 RN 侧**物理不可得** ⇒ 是**协议信息拓扑的固有损失**、**非**实现缺口(per `chi_rnf_adapter.hh:171` 的明文告诫) | 🟡 中 | **落位映射已登记**(per 台账 Entry #107:`TreeManager` ↔ 队列 #11 / `DcohSymmetric` ↔ 队列 #12,均属**队列名对应**的推导;`SparseSnoopFilter` **已被 #6 占用**、`BroadcastNull` **无线索** ⇒ 后二者的**行为实现**列入 **§10 backlog**)。**降级条件(2026-11-01 明确化,per Entry #124)**:🟡 中 → 🟢 低 SHALL **同时**满足 ① `SparseSnoopFilter` 行为类落地 **且** ② `moesi_gpu` 的 `O→WRITEBACK` **补偿路径有判据**(⚠️ 防「落地了但补偿语义未验」就降级);**⚠️ 2026-11-01 补记(per Entry #125 ⑤)**:条件 ② 的「判据」SHALL 判**保守补偿**语义,**SHALL NOT** 读作「**等价恢复**」—— `SparseSnoopFilter` = `CONSERVATIVE`(宁多探不漏探 = **不精确**)⇒ 只能给「**可能**还有其他 sharer」的保守近似,**无法**精确恢复 `O` 态携带的「**没有**其他 sharer」⇒ 实现层**不得**声称等价恢复)· **归属维持** #10 实现层(per Entry #112 去重裁决 —— 其两条前提经 2026-11-01 复核**均未失效**:`SparseSnoopFilter` **零实例化点** ⇒ 「无迫近消费者阻塞」仍成立;与 #10 实现层**同载体** `sharer_tracker.hh` ⇒ 「实现会重复」仍成立)· **债期**:起点 **2026-10-27**(队列 #6 `moesi_gpu` 归档,声明首次指向空实现)⇒ 终点 = 队列 #10 实现层落地 ⇒ **每次 #10 排期变动 SHALL 复核并更新本债期**(防无声延长)。⚠️ 与残留 C(`atomic.supported` 无消费点)**同型** ⇒ 处置口径一致:显式登记,不得沉默 |
 
+> ⚠️ **2026-11-01 dated 注记(per Entry #133 —— 不改写原文,仅指向取代关系)**:
+>
+> 上表 **① meta 层** 的子陈述「`moesi_gpu` 的 `sharer_tracker.impl = SparseSnoopFilter`
+> **只有 traits 行、无行为类**」**已被实测推翻** —— 该行为类已于 2026-11-01 在
+> `include/tlm/cep/sharer_tracker.hh` 落地(队列 #10 实现层 Phase 1,per **Entry #129**;
+> R11 降级评估见 **Entry #131** + `ADR-CEP-04` 的 `## Status Update(2026-11-01)`)
+> ⇒ **meta 层缺口已闭合**。
+>
+> ⚠️ **但同一子陈述的另一半仍然成立** ——「`FullMapDirectory` 有行为实现却**无任何实例声明**」:
+> 2026-11-01 实测 `include/tlm/cep/protocol_instances.json` 的 **4** 个实例
+> (`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0`)**无一**声明 `FullMapDirectory`
+> ⇒ 该子项**维持**(反向缺口:有实现、无消费者)。
+>
+> ⇒ **② 语义层**(`moesi_gpu` 的 `O→WRITEBACK` 补偿路径**无行为实现**)**维持不变** ——
+> 实测根因:`MoesiGpuAdapter` 是**纯静态**的(全部 `static constexpr`)且 `moesi_gpu`
+> **无 protocol engine** ⇒ **无运行期对象**可持有并查询 SF
+> ⇒ 补偿路径要可执行,须先有 `moesi_gpu` 的**运行期载体**(独立交付面,per **Entry #133**)。
+>
+> ⇒ **R11 维持 🟡 中**(降级三条件:**V-1 ✅** / **V-3 ✅** / **V-2 🔴**)。
+> ⇒ 本表**风险列原文保留**(append-only 纪律);**R11 的现行状态以本注记 + Entry #131 / #133 为准**。
+
 #### R10 状态沿革(历史结论 —— 已被 §9.3 取代,保留供追溯)
 
 > 以下为**当时的**结论,**不是现状**;现状见 §8.1 表格的 R10 行 + §9.3。
@@ -8269,6 +8290,56 @@ roadmap.md · AGENTS.md(+ §4.0 / §4.2 的 #11 行承接移交链)
 
 **⑦ 关联**: Entry #122(口径)· #124(R11 复核 + 债期)· #127(规约层归档)· #128(实现层转正)·
 #129(Phase 1 SF)· #130(Phase 2 adapter)· #131(实例声明 + 3 件冻结面授权)· `ADR-CEP-04` SU(2026-11-01)
+
+---
+
+### Entry #133 — 2026-11-01 [scope-change](台账 §8.1 **R11 行**的 dated 更正 + **R11 债期重开** + `FullMapDirectory` 反向缺口登记)
+
+**主题**:队列 #10 归档后,台账 §8.1 的 **R11 行**风险列陈述**已过期**(meta 层实为已闭合)
+⇒ 按 append-only 纪律加 **dated 注记**(不改写原文),并处置一笔**实质治理动作**:
+**R11 债期的「终点」已到但降级条件未达成 ⇒ 债期不得无声结束,须重开**。
+
+**① §8.1 R11 行的 dated 更正(不改写原文)**
+- **meta 层子陈述「`SparseSnoopFilter` 只有 traits 行、无行为类」⇒ 已被实测推翻**
+  (该行为类 2026-11-01 落地,per Entry #129;R11 降级评估 per Entry #131 + `ADR-CEP-04` SU(2026-11-01))
+  ⇒ **meta 层缺口已闭合**。
+- ⚠️ **同一子陈述的另一半仍成立** ——「`FullMapDirectory` 有行为实现却**无任何实例声明**」:
+  实测 `protocol_instances.json` 的 **4** 个实例(`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0`)
+  **无一**声明 `FullMapDirectory` ⇒ 该子项**维持**。
+- **② 语义层维持不变**(`moesi_gpu` 的 `O→WRITEBACK` 补偿路径无行为实现);
+  实测根因 = `MoesiGpuAdapter` **纯静态** + `moesi_gpu` **无 protocol engine**
+  ⇒ **无运行期对象**可持有并查询 SF。
+⇒ **R11 维持 🟡 中**(V-1 ✅ / V-3 ✅ / **V-2 🔴**)。
+
+**② ⚠️ R11 债期**重开**(本条是**实质治理动作**,非文字修正)**
+
+§8.1 R11 行原文:「**债期**:起点 **2026-10-27**(队列 #6 `moesi_gpu` 归档,声明首次指向空实现)
+⇒ 终点 = **队列 #10 实现层落地** ⇒ **每次 #10 排期变动 SHALL 复核并更新本债期**(防无声延长)」。
+
+⚠️ **实测**:终点**已到**(队列 #10 实现层 2026-11-01 归档,per Entry #132)
+⇒ 但**降级条件未达成**(V-2 🔴)⇒ 若就此让债期「按原文结束」⇒ **降级条件与债期脱钩**
+⇒ **正是该条款要防的「无声延长」**(只是形式上是「按时结束、实质未闭合」)。
+
+⇒ **决策**:债期**重开**,新起点 = **2026-11-01**(队列 #10 实现层归档日),
+新终点 = **`moesi_gpu` 运行期载体落地**(`MoesiGpuProtocolEngine` 类)⇒ 该载体落地 ⇒
+SF 的保守查询可被 `O→WRITEBACK` 补偿路径**消费** ⇒ 才可产出 **V-2 的可执行判据**
+⇒ 届时 **V-1 ∧ V-2 ∧ V-3** 方成立 ⇒ R11 方可降为 🟢 低。
+⇒ ⚠️ 该载体是**独立交付面**(不属队列 #10 ~ #14 任一队列行)⇒ **须单独立项**并占 KPI slot
+⇒ **不得**并入队列 #11(会混淆 owner 与载体边界:`sharer_tracker.hh` vs TileLink 载体)。
+⇒ 本条同时是 §8.1 R11 行的**债期字段更新授权**(append-only:以 dated 注记追加,不回改原文)。
+
+**③ `FullMapDirectory` 反向缺口 = 事实登记(落位裁决**待 architect**)**
+- **事实**:有行为实现(`sharer_tracker.hh`)· **零实例声明**(实测 4/4 实例均未声明)。
+- **候选落位**(**本条不作裁决**,per architect 域边界):
+  ① `chi_rnf` 升 **HN-F**(`ADR-CEP-04 §2` 的 caps 表把 `FullMapDirectory` 标注为「CHI HN-F」载体)
+  —— ⚠️ 但队列 #8 只做 **RN-F subset**,队列表**无** CHI-full 行 ⇒ 需先有消费者;
+  ② 队列 #13 `nvlink-sharp` / #14 `ualink-inc` 的 tracker 选型(未定);
+  ③ **无消费者 ⇒ 不排期,保留登记**(照 `BroadcastNull` 先例,per Entry #112)。
+- ⇒ 处置口径一致(与残留 C / `atomic.supported` 同型):**显式登记,不得沉默**。
+
+**④ 关联**: Entry #124(R11 归属复核 + 债期登记)· #125 · #127 · #128 · #129(Phase 1 SF 落地)
+· #130 · #131(实例声明 + 3 件冻结面授权 + R11 降级评估 V-1/V-2/V-3)· #132(实现层归档)
+· `ADR-CEP-04` 的 `## Status Update(2026-11-01)` · `sharer_tracker.hh` · `moesi_gpu_adapter.hh`
 
 ---
 
