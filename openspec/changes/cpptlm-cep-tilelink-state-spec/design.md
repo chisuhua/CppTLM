@@ -161,7 +161,7 @@ D1 §8.1「The fundamental permissions it is possible for a particular agent's c
    ⇒ ⚠️ **规约层不做这个判定** —— 它属**实例声明**(第 1 个 change);规约层只**记录**「`UNIQUE` 不可达」这一事实
 3. **「`perm` 4 值锁」是值域锁** —— schema 的 `perm` 是 `array` + `minItems: 1` + 枚举项
    ⇒ **无**「必须列全 4 值」的闸 ⇒ 本协议族的**投影**只用 3 值 **不违反**值域锁
-   ⇒ ⚠️ 但「实例 `perm` 数组填 3 值还是 4 值」是 **R-T4**,**不在本 change 内**(见 D-⑥)
+   ⇒ ⚠️ 「实例 `perm` 数组填 3 值还是 4 值」= **R-T4** ⇒ ✅ **已裁决**(2026-11-02,Entry #141)= **值域锁** ⇒ 实例 SHALL 填 **3 值**;**不在本 change 内**(见 D-⑥)
 
 ---
 

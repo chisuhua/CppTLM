@@ -187,3 +187,59 @@ barrier 流接口信号(per ADR-CEP-02 锁定语义):
 ## 7. v0.2 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+---
+
+## Status Update(2026-11-02, per 台账 Entry #141)—— **R-T4 裁决**:`perm` 4 值锁 = **值域锁**
+
+> **授权**:台账 `obj-cep-platform.md` **Entry #141** [scope-change] —— **冻结面授权记录**。
+> **形态**:**纯追加** —— 本 ADR 正文(`CEN-Ib11` 条文)**原文保留不改**;本段只**解释**其口径。
+> **议题**(R-T4):`CEN-Ib11` 的「`perm` 枚举维持 **4 值锁**」是
+> **(a) 值域锁**(只允许这 4 个字面值)还是 **(b) 每实例必须用满 4 值**?
+
+### ① 裁决 = **(a) 值域锁**
+
+`CEN-Ib11` 的 4 值锁 **锁定的是「允许出现的字面值集合」**,**不要求**每个协议实例的 `perm` 数组列全 4 值。
+
+### ② 依据(三条,均可复核)
+
+| # | 依据 | 说明 |
+|---|---|---|
+| 1 | **条文措辞** | `CEN-Ib11` 的原文是「`perm` 枚举**维持 4 值锁**……**不新增 "ATOMIC" perm 值**」⇒ 论域是**词汇表**(禁止新增第 5 值),**不是**「每实例覆盖度」 |
+| 2 | **schema 无对应用闸** | `include/tlm/cep/protocol_instance.schema.json` 的 `perm` = `{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":[4 值]}}` ⇒ **没有**任何「必须列全 4 值」的约束 ⇒ 「用满」解释**无载体支撑** |
+| 3 | **与平台命题冲突** | 若解释为「必须用满」,则**任何不暴露 `UNIQUE` 的协议族**都**无法合法声明** ⇒ 与 `ADR-CEP-00` 的「协议中立 / 跨协议对比」命题**直接冲突** |
+
+### ③ 推论(对协议实例的约束)
+
+| 情形 | `perm` 数组 | `exposes_unique_perm` | `INV-CEP-08-IC2` 的结果 |
+|---|---|---|---|
+| 协议族**暴露** `UNIQUE`(有干净独占态) | 4 值(或含 `UNIQUE` 的子集) | `true` | 由 `hierarchical` 声明决定(PASS / FAIL)—— **语义真实** |
+| 协议族**不暴露** `UNIQUE`(如 **TileLink-C**:投影 3→3) | **3 值** `["NONE","READ","WRITEBACK"]` | `false` | **vacuous PASS**,detail = 「perm 不含 UNIQUE ⇒ 无静默升级入口」—— **语义真实** |
+
+⇒ ⇒ **不暴露 `UNIQUE` 的协议族 SHALL 填 3 值**。
+
+### ④ ⚠️ 反面约束(**MUST NOT**)
+
+| ❌ 禁止 | 后果 |
+|---|---|
+| 为了让数组「看起来完整」而**填 4 值**(含 `UNIQUE`) | `exposes_unique_perm` 被推为 `true` ⇒ `INV-CEP-08-IC2` 走 `hierarchical` 分支 ⇒ **PASS**,但 detail 写「UNIQUE(E 可静默升 M)」而该协议族**根本没有 `E` 态** ⇒ **语义为假的绿灯** ⇒ 平台在该维度**失去判别力** |
+
+> 依据:`include/tlm/cep/ordering_point_checker.hh` 的 IC2 实现 ——
+> `!exposes_unique_perm` ⇒ PASS + 「(vacuous PASS)」;`exposes_unique_perm && hierarchical` ⇒ PASS + 「UNIQUE(E 可静默升 M)」。
+> ⇒ 后者的 PASS 文字**默认**协议族存在 `E` 态;对本仓 TileLink-C 与任何 3 值投影族**均不成立**。
+
+### ⑤ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **`CEN-Ib11` 正文** | **零改动**(仅追加本段解释) |
+| **`perm` 值域** | **零改动** —— 仍为 4 值,不新增第 5 值 |
+| **`protocol_instance.schema.json`** | **零改动**(现有 `minItems:1` + 枚举已足以承载本裁决) |
+| **对既有 4 实例的影响** | **零** —— `moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0` 的 `perm` 均**已含 `UNIQUE`** ⇒ 本裁决不改变其判定 |
+| **对 TileLink-C 的影响** | 实例 `perm` **填 3 值** ⇒ `no_upgrade_instances` 派生集**首次非空** ⇒ 既有断言 `no_upgrade_instances.empty()` **必红** ⇒ 第 1 个 change 须改为「恰含 `tilelink_c`」(**已在该 change 的 improvement 草稿登记**) |
+| **残余** | ⚠️ 「值域锁」的措辞目前**只在本段**;若未来 continuum 需要更强的「用满」语义,须**另立 ADR**,不得回改本段 |
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #141**(授权记录)· #138(2026-11-01 三项裁决)
+· `CEN-Ib11`(本条正文)· `ADR-CEP-05` §13.1(Q-3b:perm 形态演进)· `ADR-CEP-08`(IC2 定义)
+· `include/tlm/cep/protocol_instance.schema.json` · `include/tlm/cep/ordering_point_checker.hh`
+· `include/tlm/cep/perm_upgrades.json` · `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` §7 R-T4

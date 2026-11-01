@@ -118,7 +118,7 @@ CEP SHALL 为 **TileLink-C**(`tilelink-c-1.7.1`)提供一份**可执行规约载
   (`NONE` / `READ` / `UNIQUE` / `WRITEBACK`,per `ADR-CEP-02` `CEN-Ib11`)
 - **AND** 子条件 ② SHALL 成立:本能力 SHALL **不**新增第 5 个 `perm` 值
 - **AND** 子条件 ③ SHALL 成立:本能力 SHALL 登记「`UNIQUE` 在 TileLink-C 投影中**不可达**」
-  这一事实 ⇒ 并指向 **R-T4**(「实例 `perm` 数组填 3 值还是 4 值」)**不在本能力内裁决**
+  这一事实 ⇒ 并指向 **R-T4** —— ✅ **已裁决**(2026-11-02,Entry #141 + `ADR-CEP-02` SU)= **值域锁** ⇒ 实例 `perm` SHALL 填 **3 值**;**本能力只记录,不裁决**
 - **AND** 子条件 ④ SHALL 成立:本能力 SHALL **不**裁决**静默升级**的声明与否
   (⇒ 属**实例声明**面,第 1 个 change)
 - **AND** 子条件 ⑤ SHALL 成立:载体 SHALL **登记**「**`AC-05` 判据族对 TileLink 恒红**」

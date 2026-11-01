@@ -64,7 +64,8 @@ TileLink-C 是**树形**语义(权限沿树递归、序列化点在 Tip)⇒ **�
 - ❌ **不**单独建模 `Trunk`(**决策口径**:`Table 8.1` 中 `Trunk` 与 `Branch` 权限相同 ⇒ **折叠**为 `Branch`)
   ⇒ ⚠️ **语义损失已登记**(副本存在性 / 脏数据 / 树位置,见 `design.md` §1.2bis);**不得**表述为「`Trunk` 是过渡态」
 - ❌ **不**追加任何 ADR 的 `## Status Update` —— 三项裁决(Entry #138)与锁表修订(Entry #135)**已签发**,本 change 只**引用**
-- ❌ **不**裁决 **R-T4**(「`perm` 4 值锁 = 值域锁 还是 每实例用满 4 值」)—— 该口径只影响**实例声明**(第 1 个 change)
+- ❌ **不**裁决 **R-T4** —— ✅ **已由 architect 裁决**(2026-11-02,per 台账 **Entry #141** + `ADR-CEP-02` 的 `## Status Update(2026-11-02, per 台账 Entry #141)`)= **值域锁**
+  ⇒ 本 change 只**消费**该结论(实例 `perm` 填 **3 值**归第 1 个 change)
 - ❌ **不**产出任何性能结论
 
 ### ⚠️ 已登记的不兼容与判据风险(**必须**在规约层登记,不得留到实现层)
@@ -73,7 +74,7 @@ TileLink-C 是**树形**语义(权限沿树递归、序列化点在 Tip)⇒ **�
 |---|---|---|
 | 1 | **`AC-05` 判据族对 TileLink 恒红** —— `check_adapter_self_consistency` 硬编码 `e_write_target_state != 3 ⇒ FAIL` 且**无 SKIP 分支**;TileLink 无 `E` 态 ⇒ 实现层**必然红** ⇒ 有「填假值换绿灯」的诱因 | **规约层登记**(本 change);**族无关化**落第 1 个 change;⚠️ **不得**通过填假的 `e_write_target_state` 使其变绿 |
 | 2 | **锚点核对生成器不可照抄 CXL 版** —— `is_wellformed_id` 只认「`prefix` + **全数字**」;TileLink 锚点用 `| **D1** |`(加粗)与 `R-T1`(非纯数字)⇒ 合法集为**空** ⇒ 逐格校验**恒真空转** | 生成器须 ① 容忍 Markdown 加粗 ② 接受 `R-T<n>` ③ **逐格**白名单比对;并须有**反向 fixture** 证明它**不是**空转 |
-| 3 | **`R-T4`(实例 `perm` 填 3 值还是 4 值)不在本 change** —— 填 4 值会使 `exposes_unique_perm = true` ⇒ `INV-CEP-08-IC2` 走 hierarchical 分支 ⇒ **PASS 但语义为假** | 留第 1 个 change 前由 architect 裁决(**倾向值域锁 ⇒ 填 3 值**) |
+| 3 | **`R-T4`(实例 `perm` 填 3 值还是 4 值)不在本 change** —— 填 4 值会使 `exposes_unique_perm = true` ⇒ `INV-CEP-08-IC2` 走 hierarchical 分支 ⇒ **PASS 但语义为假** | ✅ **已裁决**(2026-11-02,Entry #141)= **值域锁** ⇒ 实例填 **3 值**;由第 1 个 change 执行 |
 
 ---
 

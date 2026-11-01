@@ -75,7 +75,8 @@ created: 2026-11-01
 
 7. `TileLinkCAdapter`(6→3 消息类映射 + 状态机驱动)
 8. `TreeManager` tracker **行为实现**(第 4 种行为类;`Hazard_CHAIN` + `ESCALATE_UP` 语义)
-9. `tilelink_c` 实例声明(13 键;`vc_binding` 按 R-T2 裁决填;`perm` 数组按 R-T4 裁决填)
+9. `tilelink_c` 实例声明(13 键;`vc_binding` 按 **R-T2 裁决**(4 条依赖边 + 因果论证,Entry #141)填;
+   `perm` 数组按 **R-T4 裁决**填 ⇒ ⚠️ **已裁决 = 值域锁** ⇒ SHALL 填 **3 值** `["NONE","READ","WRITEBACK"]`,**不得**填 4 值(否则假绿灯;per Entry #141)
 10. 装配期校验接入 + 判据
 
 ### Out Scope
@@ -87,7 +88,8 @@ created: 2026-11-01
 - ❌ **不改 `ADR-CEP-09` / `ADR-CEP-12` / `ADR-CEP-17`** —— 三项裁决已于 Entry #138 签发,本 change 只**引用**
 - ❌ **不产出任何性能结论**(规约层只锁结构)
 - ❌ **不做对拍**(对拍基线属 `docs/architecture/14-coherence-parity-baseline.md` 的独立面)
-- ⚠️ **R-T4 口径**(「`perm` 4 值锁 = 值域锁 还是 每实例用满 4 值」)—— **不在第 0 个 change 内**;
+- ✅ **R-T4 已裁决**(2026-11-02,per 台账 **Entry #141** + `ADR-CEP-02` 的 `## Status Update`)= **值域锁**
+  ⇒ 不暴露 `UNIQUE` 的协议族 SHALL 填 **3 值** ⇒ 本 change(第 0 个)**不裁决**它,只**消费**该结论;
   规约层只锁**投影**(3→3),实例 `perm` 数组填 3 值还是 4 值**留到第 1 个 change 前**由 architect 裁决
 
 ---

@@ -178,8 +178,10 @@
    ⇒ ⚠️ 与 `chi_rnf` / `cxl_2_0`(均声明了静默升级)**形态不同** ⇒ 属**合法差异**,非不一致。
 2. **`perm` 字段可只列 3 值**:schema 的 `perm` 是 `array` + `minItems: 1` + 枚举项
    ⇒ **无**「必须列全 4 值」的闸 ⇒ `["NONE","READ","WRITEBACK"]` 合法
-   (⚠️ 但 `mesif` / `chi_rnf` / `moesi_gpu` / `cxl_2_0` 当前**都列了 4 值** ⇒ 口径须确认,见 R-T4)。
-3. **「`perm` 4 值锁」是**值域**锁,不是「每实例用满 4 值」** ⇒ 需确认该口径已被显式承认(R-T4)。
+   (⚠️ `mesif` / `chi_rnf` / `moesi_gpu` / `cxl_2_0` 当前**都列了 4 值** —— 这是**它们的合法选择**
+   (各自都暴露 `UNIQUE`),**不是**对本协议族的约束;口径已于 **R-T4**(2026-11-02)裁决为**值域锁**)。
+3. **「`perm` 4 值锁」是**值域**锁,不是「每实例用满 4 值」**
+   ⇒ ✅ **已裁决**(2026-11-02,per 台账 **Entry #141** + `ADR-CEP-02` 的 `## Status Update(2026-11-02, per 台账 Entry #141)`)⇒ **R-T4 已闭合**。
 
 ---
 
@@ -254,7 +256,7 @@
 ⇒ ⇒ **request 类消息(A 与 B)**双向都有 ⇒ **CXL 式定义不适用**。
 ⇒ ⇒ **真正单向的是「权限的授予」与「权限的强制撤销」** —— 二者**都只由 slave 发出**。
 
-⇒ **候选可判定义(3 维度,待裁决)**:
+⇒ **可判定义(3 维度 ⇒ 维度 ①② 采用)** ✅ **已裁决**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-17` 的 `## Status Update`;R-T6 已闭合):
 | 维度 | TileLink 表述 | 可判? |
 |---|---|---|
 | ① 权限**授予**方向 | **只有 slave 能授予**(`Grant` 仅出现在 D 通道) | ✅ 可判(逐消息查通道) |
@@ -265,14 +267,14 @@
 
 ---
 
-## §7 8 项残余风险(**不得推理填空** —— 截至 2026-11-01:**6 项已闭合**[R-T1 / R-T3 / R-T5 / R-T6 / R-T7 / R-T8]· **1 项重开**[R-T2 —— 论证前提不成立,待修订]· **1 项待裁决**[R-T4])
+## §7 8 项残余风险(**不得推理填空** —— 截至 2026-11-02:**8 项全部已闭合**[R-T1 / R-T2 / R-T3 / R-T4 / R-T5 / R-T6 / R-T7 / R-T8])
 
 | # | 残余风险 | 等级 | 处置 |
 |---|---|---|---|
 | **R-T1** | ~~**版本锁定缺口**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #135** + `ADR-CEP-11` 的 `## Status Update(2026-11-01,per 台账 Entry #135)`)—— `ADR-CEP-11 §3` 锁表现为 **`tilelink-c-1.7.1`**(SiFive;PDF sha256 `30c09b5f…a2dd`)。**历史事实保留**:原锁 `tilelink-c-1.3` 的正文**至今取不到**(≥6 次尝试:riscv.org 404 / RISC-V adoc 不存在 / `openspecification/tilespec` 仓库 **404** / GitHub 搜索无命中)⇒ **该版本永久不可确证** ⇒ 本裁决是**改锁**,**不是**「已取得 1.3」 | **✅ 已闭合** | 台账 Entry #135(授权记录)+ `ADR-CEP-11` SU |
-| **R-T2** | ~~**通道 5 → VC 4 冲突**~~ ⇒ 🟡 **重开**(2026-11-01 自审)—— 裁决本身(**合并 D∪E 到同一 VC**)维持,但**原无环性论证的前提不成立**:① 原论证称「该等待在 **VC 内**有序(FIFO)」—— 但 `D`(slave→master)与 `E`(master→slave) **方向相反** ⇒ 真实 NoC 中**不存在跨方向 FIFO** ⇒ 该前提**假**;② D1 §4.2.1 原文「**A response message always has higher priority than its initiating request message**」⇒ `E` > `D` 的**严格优先级**在合并时被丢弃,而规范自身的死锁自由证明依赖它;③ 原论证只列 3 条跨 VC 依赖边,但 D1 **Table 5.2** 显示 `Release`(C 通道)→ `ReleaseAck`(D 通道) ⇒ 按 R-T3 归属存在 **`vc2 → vc3`** 边(**原遗漏**);④ 装配闸实际读的是 `protocol_instances.json` 的 `compute_noc` 边表 `[[0,1],[0,2],[0,3],[1,3],[3,2]]`(**缺 `1→2` 与 `2→3`,多 `3→2`**)⇒ **两图不同** ⇒ 「闸通过」**不构成** SU 论证正确的证据 | 🟡 **重开** | 待以**因果依赖**论证替换(`GrantAck` 只在 `Grant` **到达后创建** ⇒ 依赖单向) |
+| **R-T2** | ~~**通道 5 → VC 4 冲突**~~ ⇒ ✅ **已闭合**(2026-11-02,per 台账 **Entry #141** + `ADR-CEP-09` 的 `## Status Update(2026-11-02, per 台账 Entry #141)`)—— 裁决 = **合并 D∪E 到同一 VC**,**结论不变**,但**论证已换**:① **不再依赖**「VC 内有序(FIFO)」(该前提**假**:`D` slave→master 与 `E` master→slave **方向相反** ⇒ **无跨方向 FIFO**)⇒ 改用**因果创建关系**(`GrantAck` **只能在 `Grant` 到达后被创建** ⇒ 「E 等 D」是**生成顺序**,与队列是否 FIFO **无关**);② 依赖集 **3 条 → 4 条**:`vc0→vc3` · `vc1→vc2` · `vc1→vc3` · **`vc2→vc3`**(`Release`/`ReleaseData` → `ReleaseAck`,per D1 `Table 5.2`,原**漏**);③ ⚠️ **点名**:D1 §4.2.1「response always has higher priority than its initiating request」⇒ `E` > `D` 的**严格优先级被合并丢弃** ⇒ 登记为**第 4 条降维代价**(实现层须由 vc3 内仲裁补偿);④ ⚠️ **登记**:装配闸的 `compute_noc` 边表 `[[0,1],[0,2],[0,3],[1,3],[3,2]]` 与本 SU 的边表**不同**(有 `0→1`/`0→2`/`3→2`,缺 `1→2`/`2→3`)⇒ 「闸通过」**不构成** SU 论证正确的证据 | ✅ **已闭合** | 台账 Entry #141 |
 | **R-T3** | ~~**6 类消息类词表缺口**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-12` 的同 Entry `## Status Update`)—— 裁决 = **6 类词表零改动** + 逐消息归属表:`Acquire`→`request` · `Probe`→`snoop` · `ProbeAck`/`ProbeAckData`/`Release`/`ReleaseData`→`snoop_resp` · `Grant`/`GrantData`/`ReleaseAck`/`GrantAck`→`response`;⚠️ **2 处降维已登记**(`Release` 归 `snoop_resp` / `GrantAck` 归 `response`);⚠️ **两套词表混用**的处置 = `writeback` **只**是 10 流名、**不得**写进 `vc_binding` | **✅ 已闭合** | 台账 Entry #138 |
-| **R-T4** | **`perm` 退化为 3 值** —— `UNIQUE` 不可达 ⇒ 该实例**不声明**静默升级 ⇒ 不触发 `INV-CEP-08-IC2`;「`perm` 4 值锁」是**值域**锁还是「每实例用满 4 值」需显式承认 | 🟡 中 | architect 口径确认 + 实例散文登记 |
+| **R-T4** | ~~**`perm` 退化为 3 值**~~ ⇒ ✅ **已闭合**(2026-11-02,per 台账 **Entry #141** + `ADR-CEP-02` 的 `## Status Update(2026-11-02, per 台账 Entry #141)`)—— **裁决 = 「`perm` 4 值锁」是值域锁**(只锁**允许出现的字面值集合**,**不要求**每实例用满 4 值)⇒ 依据 3 条:① `CEN-Ib11` 的措辞是「**不新增** "ATOMIC" perm 值」⇒ 论域是词汇表;② schema 的 `perm` = `array` + `minItems:1` + 枚举 ⇒ **无**「必须列全」的闸;③ 若解释为「用满」,则不暴露 `UNIQUE` 的协议族**无法合法声明** ⇒ 与「协议中立」命题冲突。**推论**:TileLink-C 的实例 `perm` SHALL 填 **3 值** `["NONE","READ","WRITEBACK"]`。⚠️ **反面**:填 4 值 ⇒ `exposes_unique_perm=true` ⇒ IC2 走 `hierarchical` ⇒ **PASS 但 detail 写「UNIQUE(E 可静默升 M)」而 TileLink 无 E 态** ⇒ **语义为假的绿灯** | ✅ **已闭合** | 台账 Entry #141 |
 | **R-T5** | ~~**两版各有内部表述不一致**~~ ⇒ ✅ **已闭合**(2026-11-01,自审复核)—— ① D1 §8.1.4 正文「**six** subsets」vs 表列 **4** 类(下一段又说 "four")⇒ **规范内部笔误**,以 **4 类**为准;② D1 `Table 8.3` 表头 `Permissions: None, Branch, **Trunk**` 而转移记号用 **T = Tip** ⇒ **图例行笔误**(`Table 8.1` 证明 `Trunk` 与 `Branch` 权限相同 ⇒ 图例应为 `None, Branch, Tip` 或直接给字母);③ D2 正文说 `Trunk` 无读/写权限而 `Table 29` 给 `Trunk` 一项 `Get` ⇒ **D2 内部矛盾**(D2 仅作版本对照,不进载体);④ ⚠️ **关键**:D1 §8.1.4 **末段有穷尽性逐字背书** —— 「Table 8.3 shows **all the permissions transitions any coherence policy based on TileLink could want to express**」⇒ `Known-empty` 2 格(`Grow` 源=`Tip` / `Prune` 源=`Nothing`)可判 **`direct`**,**不依赖**「以记号为准」的推断 | ✅ **已闭合** | 矛盾**显式保留登记**(供规范修订时复核);载体逐格 `basis` 可全 `direct` |
 | **R-T6** | ~~**「非对称」定义**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-17` 的同 Entry `## Status Update`)—— 裁决 = TileLink-C 的非对称维度 = 「**权限的授予与强制撤销只由 manager 发起**」(`Grant`/`GrantData` **只**在 D 通道、`Probe` **只**在 B 通道);⚠️ **与 CXL 形态的差异已显式登记**(CXL = request 方向 / TileLink = 权限变更发起方)⇒ **两者不可互相套用** ⇒ 队列 #10 的断言形态**不得**直接套用 | **✅ 已闭合** | 台账 Entry #138 |
 | **R-T7** | ~~**`Trunk` 的建模归属**~~ ⇒ ✅ **已闭合**(2026-11-01,自审复核)—— **决策口径**(非规范断言):`Table 8.1` 中 `Trunk` 与 `Branch` 的访问权限**完全相同**(均仅 `Get`) ⇒ 权限层面折叠为 `Branch`;`Table 8.3` 的 `Grow`/`Prune` 单调性要求 ⇒ `T` 唯一自洽读法 = `Tip`。⚠️ **`Trunk` 本身确实存在**(D1 §8.1 的 4 类持久节点之一),**不得**表述为「过渡态」;⚠️ **代价已登记**(§1.2bis 三条语义损失:副本存在性 / 脏数据 / 树位置) | ✅ **已闭合** | 载体按 3 态实现 + 偏离清单登记 §1.2bis 三条 |
@@ -291,10 +293,10 @@
 | 态集合 | ✅ **可推导** —— **3 值** `{Nothing, Branch, Tip}`(`Trunk` **折叠**为 `Branch`;决策口径见 §1.2,R-T7) |
 | 事件词表 | ✅ **可推导** —— **4 类** `{Cap, Grow, Prune, Report}` + **10 条**消息(D1)/ 12 条(D2) |
 | 逐格覆盖 | ✅ **零 `Unknown`** —— 9 个有序对全被 `Grow`/`Prune`/`Report` 覆盖 + `Cap` 3 条通配 ⇒ **12 格全 Known** |
-| `perm` 投影 | ✅ **3→3** —— `Nothing→NONE` · `Branch→READ` · `Tip→WRITEBACK`;⚠️ `UNIQUE` 不可达(R-T4) |
+| `perm` 投影 | ✅ **3→3** —— `Nothing→NONE` · `Branch→READ` · `Tip→WRITEBACK`;⚠️ `UNIQUE` 不可达 ⇒ ✅ **已裁决**(R-T4 = **值域锁** ⇒ 实例填 3 值;2026-11-02 Entry #141) |
 | canonical 10 流 | ✅ **可推导** —— 5 条 `true` / 5 条 `false`(§4) |
-| 非对称定义 | ⚠️ **待裁决**(R-T6) |
-| 通道 → VC 冲突 | 🔴 **新发现**(R-T2)⇒ **超出 #10 同类先例**,须 architect 裁决 |
+| 非对称定义 | ✅ **已裁决**(R-T6;2026-11-01 Entry #138)= 「权限的授予与强制撤销只由 slave 发起」 |
+| 通道 → VC 冲突 | ✅ **已闭合**(R-T2;2026-11-02 Entry #141)= 合并 D∪E 到 vc3 + **因果依赖**论证 + 依赖集 4 条 |
 | 硬门效力 | ✅ **通过** ⇒ **change 目录可建**(`cpptlm-cep-tilelink-tree-manager`;规约层先行,照 #10 两段式先例) |
 | ⇒ 前置动作 | ✅ **R-T1 / R-T6 / R-T2 / R-T3 全部闭合**(Entry #135 + Entry #138)⇒ **版本不再是阻塞点**;**非对称定义形态**已裁决(§6 + `ADR-CEP-17` SU);**通道 → VC 映射**与**6 类归属**已裁决(§5 + `ADR-CEP-09` / `ADR-CEP-12` SU)<br>⇒ **下一步**:**可建 change 目录** ⇒ 起队列 #11 的**第 0 个 change(规约层)** |
 

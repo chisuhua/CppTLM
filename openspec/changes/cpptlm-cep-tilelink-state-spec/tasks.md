@@ -88,7 +88,7 @@
       ① D1 §8.1.4「six subsets」vs 表列 4 类 ② `Table 8.3` 图例行 `Trunk` vs 记号 `T = Tip`
       ③ `UNIQUE` 不可达(保守投影) ④ **`Trunk` 折叠的三条语义损失**(`design.md` §1.2bis)
       ⑤ **`AC-05` 族对 TileLink 恒红**(`design.md` D-η)⇒ ⚠️ **不得**填假值使其变绿
-      ⇒ R-T4 只作**指针**(不在本 change 裁决)
+      ⇒ R-T4 只作**指针**(✅ **已裁决** 2026-11-02 Entry #141 = **值域锁** ⇒ 实例填 3 值;本 change 不裁决)
 - [ ] 2.1.8 **编译期锁**:`kStateCount == 3` · `kEventCount == 4` · `kTransitionCellCount == 12`
       · `kUnknownCellCount == 0` · `kEmptyCellCount == 2`
       · `kSingleCellCount == 5` · `kMultiCellCount == 5`(**5/5/2/0**,逐格见 `design.md` D-γ)
@@ -146,7 +146,8 @@
 - ❌ **不**扩 `perm` 4 值锁 · **不**扩 `CATEGORY_*` 3 类 · **不**改 `CohIfBundle`
 - ❌ **不**改冻结 schema · **不**新增 ABI · **不**新增 invariant 编号数
 - ❌ **不**追加任何 ADR 的 `## Status Update`(三项裁决 + 锁表修订**已签发**)
-- ❌ **不**裁决 **R-T4**(实例 `perm` 数组填 3 值还是 4 值)—— 属第 1 个 change 前的前置
+- ❌ **不**裁决 **R-T4** —— ✅ **已裁决**(2026-11-02,Entry #141)= **值域锁** ⇒ 实例填 **3 值**;
+      执行属第 1 个 change
 - ❌ **不**单独建模 `Trunk`(**决策口径**:`Table 8.1` 权限等价 ⇒ **折叠**为 `Branch`)
       ⇒ ⚠️ **语义损失已登记**;⚠️ **不得**写成「过渡态」
 - ❌ **不**产出任何性能结论

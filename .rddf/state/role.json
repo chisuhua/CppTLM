@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-01T09:20:20Z",
+  "updated_at": "2026-11-01T16:06:31Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-10-31T14:04:09",
-      "by": "user",
-      "reason": "A5 口径修订完成 ⇒ 实施「固定命中率参考模型 vs gem5 实测」主对拍档"
-    },
-    {
-      "role": "architect",
-      "at": "2026-10-31T15:31:47",
-      "by": "user",
-      "reason": "A6': 裁决 P-2 的 h_0 选取规则口径(A/B/C)+ 修订 P-3 语义"
-    },
     {
       "role": "architect",
       "at": "2026-10-31T16:19:27",
@@ -124,6 +112,18 @@
       "at": "2026-11-01T09:20:20Z",
       "by": "user",
       "reason": "队列 #11 的 improvement 草稿已写(brainstorm HARD-GATE 通过)⇒ 切回 builder:提交 planner 域产物 + 推进第 0 个 change(cpptlm-cep-tilelink-state-spec)的 4 件套"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-01T16:05:52Z",
+      "by": "user",
+      "reason": "批 2 = 2 件冻结面 ADR 的架构级修订:`ADR-CEP-09` 无环性论证换因果依赖(R-T2 重新闭合)+ `ADR-CEP-02` 的 R-T4 裁决(perm 4 值锁 = 值域锁)。台账 Entry #141 授权记录已落。"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-01T16:06:31Z",
+      "by": "user",
+      "reason": "批 2 的 2 份 ADR SU 已由 architect 签发 ⇒ 切回 builder:更新锚点 §7 / 指针 + 跑冻结面两步授权(Entry #141)+ commit"
     }
   ]
 }

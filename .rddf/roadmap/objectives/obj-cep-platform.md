@@ -8861,6 +8861,69 @@ cep_docs_sync / gate_selftest / freeze / decl_alignment / format --check)· `ope
 
 ---
 
+### Entry #141 — 2026-11-02 [scope-change](队列 #11 二审落修 **批 2** —— `ADR-CEP-09` 无环性论证修订 + `ADR-CEP-02` 的 **R-T4 裁决**)
+
+**主题**: 二审(2026-11-01 起)发现的两项**架构级**缺陷,落修触及 **2 件 M1 冻结面成员**
+⇒ 本条 = **冻结面授权记录**;产物由 architect 签发、builder 执行两步授权。
+
+**① 一手证据(2026-11-01/02 实测,均可复核)**
+
+| # | 证据 | 位置 |
+|---|---|---|
+| 1 | 原论证写「该等待在 **VC 内**有序(FIFO)⇒ 不产生新的跨 VC 依赖」—— 但 `D`(slave→master)与 `E`(master→slave) **方向相反** ⇒ 真实 NoC 中**不存在跨方向 FIFO** ⇒ 前提**假** | `ADR-CEP-09` 的 SU §③ |
+| 2 | D1 §4.2.1 原文:「**A response message always has higher priority than its initiating request message**」⇒ `E` > `D` 的**严格优先级**在合并 D∪E 时被丢弃,而规范自身的死锁自由证明依赖它 | D1 `tl171.txt:577` |
+| 3 | D1 `Table 5.2`:`Release` / `ReleaseData` 在 **C** 通道,响应 `ReleaseAck` 在 **D** 通道 ⇒ 按 R-T3 归属(C=`snoop_resp`=vc2 / D=`response`=vc3)⇒ 存在依赖边 **`vc2 → vc3`** —— 原 SU **只列 3 条**(`0→3` / `1→2` / `1→3`)**⇒ 漏边** | D1 `Table 5.2` + `ADR-CEP-09` SU §③ |
+| 4 | 装配闸实际读的边表 = `protocol_instances.json` 的 `compute_noc` = `[[0,1],[0,2],[0,3],[1,3],[3,2]]` ⇒ **有** `0→1`/`0→2`/`3→2`(**SU 无**)、**缺** `1→2`(**SU 有**)、**缺** `2→3`(两者都缺)⇒ **两图不同** ⇒ 「闸通过」**不构成** SU 论证正确的证据 | `include/tlm/cep/protocol_instances.json` |
+| 5 | `CEN-Ib11` 条文原文:「`perm` 枚举**维持 4 值锁**(`NONE`/`READ`/`UNIQUE`/`WRITEBACK`),**不新增 "ATOMIC" perm 值**」⇒ 论域是**词汇表**(不得新增第 5 值),非「每实例必须用满 4 值」 | `ADR-CEP-02` 行 62 |
+| 6 | schema 侧**无**「必须列全 4 值」的闸:`perm` = `{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":[4 值]}}` | `include/tlm/cep/protocol_instance.schema.json` |
+| 7 | `ordering_point_checker.hh` 的 **IC2**:`!exposes_unique_perm` ⇒ PASS 且 detail = 「perm 不含 UNIQUE ⇒ 无静默升级入口(**vacuous PASS**)」;`exposes_unique_perm && hierarchical` ⇒ PASS 且 detail = 「UNIQUE(E 可静默升 M)+ hierarchical 组合已声明」 | `include/tlm/cep/ordering_point_checker.hh` 行 191-205 |
+
+**② 裁决 1 —— `ADR-CEP-09` 的无环性论证** **换因果依赖**,结论不变
+
+| 面 | 内容 |
+|---|---|
+| **结论** | **维持**「合并 D∪E 到同一 VC」⇒ 依赖图仍为 DAG ⇒ `INV-CEP-09-IC1` 无环判据仍成立 |
+| **理由(换)** | 不再依赖「VC 内有序(FIFO)」,改为**因果创建关系**:`GrantAck` **只能在 `Grant` 到达后被创建** ⇒ 「E 等 D」是**消息生成顺序**,不是**队列有序性** ⇒ **不需要**跨方向 FIFO |
+| **补边** | 依赖集 **3 条 → 4 条**:`vc0→vc3` · `vc1→vc2` · `vc1→vc3` · **`vc2→vc3`**(`Release`/`ReleaseData` → `ReleaseAck`,per D1 `Table 5.2`) |
+| **点名** | ⚠️ **E > D 的严格优先级被合并丢弃**(D1 §4.2.1)⇒ 登记为**第 4 条降维代价** |
+| **登记** | ⚠️ **闸边表 ≠ SU 边表**(见 ① 第 4 条)⇒ 「装配闸通过」**不得**作为 SU 论证正确的证据 |
+
+**③ 裁决 2 —— R-T4:」`perm` 4 值锁」= **值域锁**(**非**「每实例用满 4 值」)
+
+| 面 | 内容 |
+|---|---|
+| **裁决** | `CEN-Ib11` 的 4 值锁是 **值域锁** —— 锁定**允许出现的字面值集合**(4 个),**不要求**每个实例的 `perm` 数组列全 4 值 |
+| **依据** | ① 条文措辞是「**不新增** "ATOMIC" perm 值」⇒ 论域是词汇表;② schema **无**「必须列全」的闸(`minItems:1` + 枚举);③ 若解释为「必须用满」,则任何不暴露 `UNIQUE` 的协议族都**无法合法声明** ⇒ 与「协议中立」命题冲突 |
+| **推论** | 不暴露 `UNIQUE` 的协议族(如 **TileLink-C**)⇒ 实例 `perm` SHALL 填 **3 值** `["NONE","READ","WRITEBACK"]` |
+| **⚠️ 反面约束** | **不得**为了让数组「看起来完整」而填 4 值 —— 填 `UNIQUE` ⇒ `exposes_unique_perm = true` ⇒ IC2 走 `hierarchical` 分支 ⇒ **PASS 但 detail 写「UNIQUE(E 可静默升 M)」而 TileLink 无 E 态** ⇒ **语义为假的绿灯** |
+| **落点** | `ADR-CEP-02` 追加 `## Status Update(2026-11-02,per 台账 Entry #141)`;`protocol_instance.schema.json` **零改动** |
+
+**④ 落点与冻结面纪律(2 件 M1 成员 ⇒ 两步授权)**
+
+| # | 产物 | 改动形态 | 冻结 |
+|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md` | ① SU §③ 之后**插入 1 行指针**(不改 ③ 原文)② 尾部**追加** `## Status Update(2026-11-02,per 台账 Entry #141)`(因果依赖论证 + 4 条边 + E>D 点名 + 闸边表登记) | ★ |
+| 2 | `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` | **纯追加** `## Status Update(2026-11-02,per 台账 Entry #141)`(R-T4 裁决 + 3 值推论 + 反面约束);`CEN-Ib11` 正文**零改动** | ★ |
+| 3 | `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` | §7 的 **R-T2 → ✅ 已闭合**(理由更新)· **R-T4 → ✅ 已闭合**(裁决 = 值域锁)· 标题计数 | 非冻结 |
+| 4 | `.rddf/improvements/cpptlm-cep-tilelink-tree-manager.md` · change 4 件套 | R-T4 指针改为「**已裁决** = 值域锁 ⇒ 实例填 3 值」 | 非冻结 |
+
+⇒ **两步授权**:台账 entry(本条)→ `--update --authorized-by "Entry #141"` → commit 产物
+→ `--update`(provenance 对齐)→ commit。
+
+**⑤ ⚠️ 遗留连带面(第 1 个 change 时必撞,本条**不**处置)**
+
+| 项 | 说明 |
+|---|---|
+| `perm_upgrades.json` 的 `current_state` 自述 | 现写「`moesi_gpu` / `chi_rnf` / `mesif` **各声明 1 条**静默升级」—— `tilelink_c` 加入后该集合**仍只有 3 条**(本实例**不声明**)⇒ ⚠️ 须核对是否另有「恒空」类表述失实 |
+| `no_upgrade_instances.empty()` 断言 | `tilelink_c` 进派生集 ⇒ 既有断言**必红** ⇒ 改为「恰含 `tilelink_c`」(已在 improvement 草稿登记) |
+| `AC-05` 族恒红 | 已在 Entry #140 的 change 中登记(`design.md` D-η);**族无关化**落第 1 个 change |
+
+**⑥ 关联**: Entry #138(三项裁决授权记录 —— 本条的 ① 是它的**修订**)· #140(第 0 个 change 建档 + B-1 勘误)
+· #139(`FullMapDirectory` 落位裁决)· `ADR-CEP-09` / `ADR-CEP-02` / `ADR-CEP-05`(Q-3b perm 形态)
+· D1 `Table 5.2` / §4.2.1 · `ordering_point_checker.hh` · `channel_dependency_graph.hh` · `protocol_instance.schema.json`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 
