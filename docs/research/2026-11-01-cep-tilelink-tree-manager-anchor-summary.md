@@ -1,7 +1,7 @@
 # TileLink-C(TileLink Tree Manager)—— 公开来源锚点摘要(Task 0 普查产物)
 
-> **日期**:2026-11-01 · **状态**:🔵 **普查完成(有条件通过)** —— **载体形态未钉死**:
-> **版本锁定缺口**(R-T1)未闭合 ⇒ 决定载体形态的 5 项**全部 `pending=true`**;
+> **日期**:2026-11-01 · **状态**:🔵 **普查完成(有条件通过)** —— **载体形态可钉死**(3 态 × 4 事件 = 12 格,
+> **零 `Unknown`**),但**版本锁定缺口**(R-T1)未闭合 ⇒ 决定载体形态的 5 项**全部 `pending=true`**;
 > 另发现 **1 项头号架构风险**(通道 5 → VC 4 的映射冲突,R-T2)+ **3 项待裁决设计点**。
 > · **用途**:队列 #11 `cpptlm-cep-tilelink-tree-manager` 的 **basis 唯一人工审计面**
 >   (per `ADR-CEP-11` Status Update ①-c / ④ 的同款定位)
@@ -22,68 +22,103 @@
 
 ---
 
-## §1 客户端可见「稳定态」集合(**决定载体形态** —— ⚠️ **未钉死**)
+## §1 稳定态集合(**决定载体形态**)
 
-**结论**:TileLink-C 给的是**两个正交维度**,不是**一组**稳定态:
+**结论**:稳定态 = **{ `Nothing` , `Branch` , `Tip` }**(3 值)⇒ 转移载体 = **3×3 = 9 格**(+ `Cap` 的 3 条「源不定」转移)⇒ **零 `Unknown`**。
+
+### 1.1 两个正交维度
 
 - **维度 A —— 副本权限**(3 值):`None` / `Read` / `Read+Write`
-- **维度 B —— 树中位置**(节点类别):`Nothing` / `Trunk` / `Tip` / `Branch`
+  「The fundamental permissions it is possible for a particular agent's copy of a block to have are
+  **None, Read, or Read+Write**」(D1 §8.1 / D2 §8.1)
+- **维度 B —— 树中位置**(4 类):`Nothing` / `Trunk` / `Tip` / `Branch`
+  「Every node in the graph falls into one of **four** categories describing its position on the tree」(D1 §8.1)
 
-| 断言 | 强度 | 来源 | 钉版 |
-|---|---|---|---|
-| 「The fundamental permissions it is possible for a particular agent's copy of a block to have are **None, Read, or Read+Write**」 | **direct** | D1 §8.1 · D2 §8.1 | D1/D2 均 `pin=strong` |
-| 「Every node in the graph falls into one of **four** categories describing its position on the tree」= `Nothing` / `Trunk` / `Tip` / `Branch` | **direct** | D1 §8.1 | D1 `pin=strong` |
-| D2(1.9.3)把节点类别改为 **5** 类:`Nothing` / `Trunk` / `Tip (with no Branches)` / `Tip (with Branches)` / `Branch` | **direct** | D2 §8.1 | D2 `pin=strong` |
-| `Nothing` = 无副本、既无读权限也无写权限 | **direct** | D1 §8.1 | D1 `pin=strong` |
-| `Trunk`(D1 表述)= 「Has **Read** permissions on its copy, **which may contain dirty data**」 | **direct** | D1 §8.1 | D1 `pin=strong` |
-| `Trunk`(D2 表述)= 「Has **neither read nor write** permissions on the copy. The copy **may be out of date** with respect to writes occurring at the Tip」 | **direct** | D2 §8.1 | D2 `pin=strong` |
-| `Tip` = 「the **point of memory access serialization**」(1.9.3 细化为「point of **write** serialization」)· 有 Read/Write 权限 · **may contain dirty data** | **direct** | D1 §8.1 · D2 §8.1 | D1/D2 `pin=strong` |
-| `Branch` = 只读副本 | **direct** | D1 §8.1 · D2 §8.1 | D1/D2 `pin=strong` |
-| D2 的 `Table 29`(权限 ↔ 允许的访问)给出:`None`→无;`Branch`→Get;`Trunk`→Get;`Tip(w/ Branches)`→Get;`Tip(no Branches)`→Get/PutPartial/PutFull/Logical/Arithmetic | **direct** | D2 §8.1 Table 29 | D2 `pin=strong` |
-| ⚠️ **D2 内部表述不一致**:D2 正文说 `Trunk`「neither read nor write permissions」,**同一份** `Table 29` 却给 `Trunk` 一项 `Get` 访问 | **direct**(矛盾事实本身) | D2 §8.1 | D2 `pin=strong` |
+### 1.2 ⚠️ **`Trunk` 是过渡态,不是稳定态**
 
-### ⇒ 载体形态的**两个候选**(均**未钉死**,见 R-T1)
+| 断言 | 强度 | 来源 |
+|---|---|---|
+| 转移记号的全集只含 **N / B / T**(= `Nothing` / `Branch` / `Tip`):`Cap`=`toT,toB,toN` · `Grow`=`NtoB,NtoT,BtoT` · `Prune`=`TtoB,TtoN,BtoN` · `Report`=`TtoT,BtoB,NtoN` ⇒ **无任何 `Trunk` 参与的转移** | **direct** | D1 §8.1.4 Table 8.3 |
+| `Acquire`「**grow** the tree, either by **extending the trunk** or by **adding a new branch** from an existing branch or the tip」⇒ `Trunk` 是**生长过程**中的路径节点 | **direct** | D1 §8.1.1 |
+| `Trunk` 的描述(D1)=「Has **Read** permissions on its copy, **which may contain dirty data**」;`Branch`=只读副本;`Tip`=「the **point of memory access serialization**」+ Read/Write 权限 + **may contain dirty data** | **direct** | D1 §8.1 |
+| `Nothing` = 无副本、既无读权限也无写权限 | **direct** | D1 §8.1 |
 
-| 候选 | 态集合 | 优点 | 缺点 |
-|---|---|---|---|
-| **(S-a) 树位置维度** | 4 类(1.7.1)/ 5 类(1.9.3) | 与 CXL 的 4 态**数量对齐**;直接对应 `TreeManager` 的 `SUBTREE` scope | 「位置」**不是** client 的协议状态 ⇒ 投影到 `perm` 需跨维度推理 |
-| **(S-b) 副本权限维度** | 3 值 `{None, Read, Read+Write}` | 语义上**就是**「client 的副本能做什么」⇒ 与 `perm` 投影**同维度** | 丢失「是否独占」信息 ⇒ `UNIQUE` vs `WRITEBACK` **无法区分**(见 §3) |
+⇒ ⇒ **稳定态 = {`Nothing`, `Branch`, `Tip`}**;`Trunk` 归 **过渡态**(不建模,或建模为显式标注的过渡类)。
 
-⇒ ⚠️ **不得先选后补**:两个候选产出的 `perm` 投影**形状不同**(4→4 vs 3→4)⇒ 属**载体级**决策。
-⇒ **须先闭合 R-T1(版本)** ⇒ 再由 architect 裁决 (S-a) / (S-b)。
+### 1.3 ⚠️ 版本差异(D2 = 1.9.3)
 
----
+| 断言 | 强度 | 来源 |
+|---|---|---|
+| D2 把节点类别改为 **5** 类:`Nothing` / `Trunk` / `Tip (with no Branches)` / `Tip (with Branches)` / `Branch` | **direct** | D2 §8.1 |
+| D2 的 `Trunk` 表述变为「Has **neither read nor write** permissions on the copy. The copy **may be out of date** with respect to writes occurring at the Tip」(**与 D1 表述不同**) | **direct** | D2 §8.1 |
+| D2 的 `Table 29` 给 `Trunk` 一项 `Get` 访问 —— **与 D2 自身正文矛盾**(正文说无读/写权限)⇒ 见 R-T5 | **direct**(矛盾事实本身) | D2 §8.1 Table 29 |
 
-## §2 事件词表与通道(**决定编译期断言**)
-
-**结论**:TL-C 消息族 = **12 条**(不含 TL-UL/TL-UH 的 Get/Put/Atomic/Hint 族),分布在 **5 个通道**。
-
-| 通道 | 方向 | 承载(TL-C 部分) | 语义 |
-|---|---|---|---|
-| **A** | client → manager | `AcquireBlock` · `AcquirePerm` | 请求**权限** |
-| **B** | manager → client | `ProbeBlock` · `ProbePerm` | 查询 / 撤销副本权限 |
-| **C** | client → manager | `ProbeAck` · `ProbeAckData` · `Release` · `ReleaseData` | 对 probe 的应答 / 释放权限(可带脏数据) |
-| **D** | manager → client | `Grant` · `GrantData` · `ReleaseAck` | **授予**权限(可带数据) / 释放确认 |
-| **E** | client → manager | `GrantAck` | cache block 传输的最终握手 |
-
-| 断言 | 强度 | 来源 | 钉版 |
-|---|---|---|---|
-| 「The prioritization of messages across channels is **A < B < C < D < E**, in order of increasing priority」 | **direct** | D1 §4.2 · D2 §2 | D1/D2 `pin=strong` |
-| 「Priorities ensure that messages flowing through the TileLink network **never enter a routing or hold-and-wait loop** … the message flow through all channels between all agents remains a **DAG**. This is a **necessary property** for TileLink to remain **deadlock free**」 | **direct** | D1 §4.2 · D2 §2 | D1/D2 `pin=strong` |
-| `Table 13` 逐消息给出「通道 / opcode / Operation / Response」对应(TL-C 12 条) | **direct** | D2 §9.3 Table 13 | D2 `pin=strong` |
-| `AcquireBlock` → `Grant` 或 `GrantData`;`AcquirePerm` → `Grant`;`ProbeBlock` → `ProbeAck` 或 `ProbeAckData`;`ProbePerm` → `ProbeAck`;`Release`/`ReleaseData` → `ReleaseAck`;`Grant`/`GrantData` → `GrantAck` | **direct** | D2 §9.3 Table 13 | D2 `pin=strong` |
-| 早期版本(0.3.1)用 **Acquire / Probe / Release / Grant / Finish** 五消息模型,**无** Block/Perm 之分 | **direct** | D3 §1 | D3 `pin=strong` |
-| TL-C 客户端**收 B 通道探针、发 C 通道 release、发 E 通道 grant ack** | **direct** | D5 | `pin=weak`(二手) |
-
-### ⇒ 载体侧编译期结构断言(**V-3** 形态,per 队列 #10 先例)
-
-- 态集合大小 == §1 选定候选的态数(4 / 5 / 3 **待 R-T1 + 裁决**定)
-- 事件词表大小 == 12(TL-C 消息族;**不含** TL-UL/TL-UH 的 Get/Put/Atomic/Hint)
-- **通道数(5) 与 VC 数(4) 不等** ⇒ 编译期须显式登记该失配(见 §5 / R-T2)
+⇒ ⇒ **版本差异是实质的**(态数 3→4/5、事件词表 10→12)⇒ **钉版必须精确到版本**(R-T1)。
 
 ---
 
-## §3 `perm` 投影(**形状待定** + ⚠️ **`UNIQUE` 不可达**的发现)
+## §2 事件词表(**决定编译期断言**)
+
+### 2.1 三个 transfer operations(D1 §8.1.1)
+
+| 操作 | 方向 | 语义 |
+|---|---|---|
+| **`Acquire`** | master → slave | 创建副本 / 升级权限 |
+| **`Release`** | master → slave | 自愿放弃副本 / 权限 |
+| **`Probe`** | slave → master | 强制移除副本 / 权限 |
+
+### 2.2 四个权限转移类别(D1 §8.1.4 Table 8.3)—— **事件分类的天然载体**
+
+| 类别 | 转移 | 语义(D1 原文要点) |
+|---|---|---|
+| **`Cap`** | `toT` `toB` `toN` | 「权限变化**不指定原权限**,只指定**应变成什么**」 |
+| **`Grow`** | `NtoB` `NtoT` `BtoT` | 「权限升级,**长树**,并记录原权限与新权限」 |
+| **`Prune`** | `TtoB` `TtoN` `BtoN` | 「权限降级,**缩树**,并记录原权限与新权限」 |
+| **`Report`** | `TtoT` `BtoB` `NtoN` | 「**空操作**,权限不变,但**报告当前权限**」 |
+
+⇒ ⇒ **事件词表 = 4 类**(`Cap` / `Grow` / `Prune` / `Report`)——
+⚠️ 这是**比 CXL 的 17 事件、MESIF 的 6 事件都更紧**的分类,且**每类有规范枚举的转移**。
+
+### 2.3 逐格覆盖 ⇒ **零 `Unknown`**
+
+- `Grow`(3) + `Prune`(3) + `Report`(3) = **9 条**,恰好覆盖 {N,B,T} 上的**全部 9 个有序对**;
+- `Cap`(3) = 「到 T / 到 B / 到 N」,**源态不定** ⇒ 3 条**通配**转移。
+
+⇒ ⇒ **3 态 × 4 事件 = 12 格,每格都有规范枚举的转移支撑** ⇒
+⇒ **载体可产出 `pending=false` 格**(对比 CXL:68 格中 42 格 `Unknown`)。
+
+### 2.4 消息表(**版本差异显著**)
+
+| 版本 | TL-C 消息数 | 消息 |
+|---|---|---|
+| **D1(1.7.1)** | **10** | `Acquire`(A) · `Grant`(D) · `GrantData`(D) · `GrantAck`(E) · `Probe`(B) · `ProbeAck`(C) · `ProbeAckData`(C) · `Release`(C) · `ReleaseData`(C) · `ReleaseAck`(D) |
+| **D2(1.9.3)** | **12** | D1 的 10 条 **+ `AcquireBlock` / `AcquirePerm`(代 `Acquire`)** **+ `ProbeBlock` / `ProbePerm`(代 `Probe`)** ⇒ **净增 2 条** |
+
+> ⚠️ D2 修订记录明写:「**1.8.0 — Added TL-C Opcodes and Permissions**」
+> ⇒ ⇒ **`AcquireBlock`/`AcquirePerm` 与 `ProbeBlock`/`ProbePerm` 的拆分是 1.8.0 才引入的**,
+> **1.7.1 没有这层区分** ⇒ **事件词表随版本变化** ⇒ R-T1 的实质影响。
+
+| 断言 | 强度 | 来源 |
+|---|---|---|
+| 「Across the **five** channels, TL-C specifies **ten** messages comprising **three** operations」 | **direct** | D1 §8.1.3 |
+| 「The prioritization of messages across channels is **A < B < C < D < E**, in order of increasing priority」 | **direct** | D1 §4.2 · D2 §2 |
+| 「…the message flow through all channels between all agents remains a **DAG**. This is a **necessary property** for TileLink to remain **deadlock free**」 | **direct** | D1 §4.2 · D2 §2 |
+| 早期版本(0.3.1)用 **Acquire / Probe / Release / Grant / Finish** 模型,**无** Block/Perm 区分 | **direct** | D3 §1 |
+| TL-C 客户端**收 B 通道探针、发 C 通道 release、发 E 通道 grant ack** | **direct** | D5(`pin=weak`) |
+
+### 2.5 五个通道的**语义**(canonical 10 流映射的**直接依据**,D1 §8.1.2)
+
+| 通道 | 方向 | D1 原文语义要点 |
+|---|---|---|
+| **A** | master → slave | 「A master **initiates acquiring permission** to read or write a copy of a cache block」 |
+| **B** | slave → master | 「A slave **queries or modifies** a master's permissions on a cached data block, or forwards a memory access」 |
+| **C** | master → slave | 「A master **acknowledges a Channel B message**, potentially releasing permissions along with any dirty data. **Also used to voluntarily write back dirtied cache data**」 |
+| **D** | slave → master | 「A slave **provides data or permissions** to the original requestor, granting access. **Also used to acknowledge voluntary writebacks** of dirty data」 |
+| **E** | master → slave | 「A master provides **final acknowledgment of transaction completion**, used by the slave for **transaction serialization**」 |
+
+---
+
+## §3 `perm` 投影(**3→3**,含 ⚠️ `UNIQUE` 不可达)
 
 **CEP 的 `perm` 4 值语义**(per `ADR-CEP-02` CEN-Ib11 4 值锁 + `ADR-CEP-11` 的 CXL 投影行
 `I→NONE` / `S→READ` / `E→UNIQUE` / `M→WRITEBACK` 反推):
@@ -98,24 +133,23 @@
 **TileLink 侧的事实**:规范**只说**副本「**may** contain dirty data」⇒ **不承诺**干净/脏
 ⇒ ⇒ **`UNIQUE`(干净独占)在 TileLink-C 投影中不可确证**。
 
-| 候选投影(以 (S-b) 3 值权限维度为例) | 投影结果 | 强度 |
-|---|---|---|
-| `None` | `NONE` | direct(权限维度直接读出) |
-| `Read`(Trunk / Branch) | `READ` **或** `WRITEBACK` —— 取决于副本是否脏 ⇒ **不可确证** | ⚠️ 需保守降级 |
-| `Read+Write`(Tip) | `WRITEBACK`(独占但**可能脏** ⇒ 保守) | direct(独占性)+ pending(干净性) |
+| 稳定态 | 副本权限 | 独占? | 可能脏? | 投影(**保守**) | 强度 |
+|---|---|---|---|---|---|
+| `Nothing` | None | — | — | **`NONE`** | direct |
+| `Branch` | Read | 否 | 否(只读副本,非写者) | **`READ`** | direct |
+| `Tip` | Read+Write | **是**(唯一写者) | **是** | **`WRITEBACK`** | direct(独占)+ pending(干净性) |
 
-### ⇒ 三条**结构性**结论(**均须进载体设计**)
+⇒ ⇒ **投影 = 3→3**,实际用到 `{NONE, READ, WRITEBACK}`。
 
-1. **保守降级方向唯一**:凡副本**可能脏** ⇒ 一律投影 `WRITEBACK` ⇒ **`UNIQUE` 永不出现**
-   ⇒ ⇒ **TileLink-C 实例不应声明 `UNIQUE → WRITEBACK` 静默升级**
-   ⇒ ⇒ 也**不触发** `INV-CEP-08-IC2`(`perm` 含 `UNIQUE` 且静默升级 ⇒ 才要求 hierarchical 组合能力)
+### ⇒ 三条**结构性**结论
+
+1. **`UNIQUE` 永不出现** ⇒ ⇒ **TileLink-C 实例不应声明 `UNIQUE → WRITEBACK` 静默升级**
+   ⇒ ⇒ 也**不触发** `INV-CEP-08-IC2`(`perm` 含 `UNIQUE` **且**声明静默升级 ⇒ 才要求 hierarchical 组合能力)
    ⇒ ⚠️ 与 `chi_rnf` / `cxl_2_0`(均声明了静默升级)**形态不同** ⇒ 属**合法差异**,非不一致。
 2. **`perm` 字段可只列 3 值**:schema 的 `perm` 是 `array` + `minItems: 1` + 枚举项
    ⇒ **无**「必须列全 4 值」的闸 ⇒ `["NONE","READ","WRITEBACK"]` 合法
-   (但 `mesif` / `chi_rnf` / `moesi_gpu` / `cxl_2_0` 当前**都列了 4 值** ⇒ 需确认口径,见 R-T4)。
-3. **`UNIQUE` 不可达 ⇒ CEP 的 `perm` 在 TileLink-C 上退化为 3 值** ⇒
-   ⚠️ 这是**平台层**问题:「`perm` 4 值锁」是**值域**锁(4 值**上界**),不是「每实例必须用满 4 值」
-   ⇒ 需确认该口径已被显式承认(见 R-T4)。
+   (⚠️ 但 `mesif` / `chi_rnf` / `moesi_gpu` / `cxl_2_0` 当前**都列了 4 值** ⇒ 口径须确认,见 R-T4)。
+3. **「`perm` 4 值锁」是**值域**锁,不是「每实例用满 4 值」** ⇒ 需确认该口径已被显式承认(R-T4)。
 
 ---
 
@@ -123,18 +157,18 @@
 
 **结论**:TileLink-C **无独立流**的项有 **5** 条 ⇒ 该实例是**目前最窄**的。
 
-| # | canonical 流 | TileLink 载体 | `flow_support` | 依据 |
-|---|---|---|---|---|
-| 1 | `request` | A:`AcquireBlock` / `AcquirePerm` | **true** | D2 Table 13 |
-| 2 | `completion` | D:`Grant` / `GrantData` | **true** | D2 Table 13 |
-| 3 | `snoop` | B:`ProbeBlock` / `ProbePerm` | **true** | D2 Table 13 |
-| 4 | `snoop_resp` | C:`ProbeAck` / `ProbeAckData` | **true** | D2 Table 13 |
-| 5 | `writeback` | C:`ReleaseData`(释放权限**并回传脏数据**) | **true**(承载为 `ReleaseData`) | D2 Table 13 + D1 §8.1「may contain dirty data」 |
-| 6 | `forward_data` | **无独立流** —— 数据恒附着于 `GrantData` / `ProbeAckData` / `ReleaseData` | **false** | D2 Table 13(无独立消息) |
-| 7 | `back_invalidate` | **无独立流** —— 权限撤销由 B:`ProbePerm` 承载(属 `snoop`) | **false** | D2 Table 13 |
-| 8 | `address_resolve` | **无** —— TileLink 路由静态(「every valid address must route over a single path to exactly one slave」) | **false** | D2 §6.3 |
-| 9 | `barrier` | **无** —— 规范无 barrier 消息 | **false** | D2 Table 13(TL-C 12 条内无) |
-| 10 | `snoop_completion_ack` | **无独立流** —— `ProbeAck` **本身**即 ack(配对已在 `snoop_resp` 内) | **false** | D2 Table 13 |
+| # | canonical 流 | TileLink 载体(D1 §8.1.2 通道语义) | `flow_support` |
+|---|---|---|---|
+| 1 | `request` | **A**:`Acquire` | **true** |
+| 2 | `completion` | **D**:`Grant` / `GrantData` | **true** |
+| 3 | `snoop` | **B**:`Probe` | **true** |
+| 4 | `snoop_resp` | **C**:`ProbeAck` / `ProbeAckData` | **true** |
+| 5 | `writeback` | **C**:`Release` / `ReleaseData` —— D1 原文「**Also used to voluntarily write back dirtied cache data**」 | **true** |
+| 6 | `forward_data` | **无独立流** —— 数据恒附着于 `GrantData` / `ProbeAckData` / `ReleaseData` | **false** |
+| 7 | `back_invalidate` | **无独立流** —— 强制撤销由 **B**:`Probe` 承载(属 `snoop`) | **false** |
+| 8 | `address_resolve` | **无** —— 路由静态(D2 §6.3:「every valid address must route over a single path to exactly one slave」) | **false** |
+| 9 | `barrier` | **无** —— 规范无 barrier 消息 | **false** |
+| 10 | `snoop_completion_ack` | **无独立流** —— `ProbeAck` 本身即 ack(配对已在 `snoop_resp` 内);**E**:`GrantAck` 配对的是 **completion** 而非 `snoop_resp` ⇒ CEP canonical 10 流**无**该位置 | **false** |
 
 ⚠️ **对照 `chi_rnf`**:`chi_rnf` 的 `forward_data` / `snoop_completion_ack` 均为 `true`
 ⇒ ⇒ **两者取值不同是合法的**(协议族差异),但**须在 `protocol_instances.json` 的散文里说明**,
@@ -149,22 +183,21 @@
    (per D1 §4.2 / D2 §2)—— 这是**规范级**的死锁自由论证。
 2. CEP 的 `vc_binding` **消息类词表 = 6 类** `{request, response, snoop, snoop_resp, atomic, query}`
    (per `ADR-CEP-12` 决策 6 + ArchForge 32 号 §6.0.1),**每个消息类恰一个 `vc_id`**,且
-   `vc_id` 的 schema 上限是 **3** ⇒ **最多 4 个 VC**(per `protocol_instance.schema.json:218`)。
-3. TileLink 的 5 通道 → 6 类消息类的自然映射:
+   `vc_id` 的 schema 上限是 **3** ⇒ **最多 4 个 VC**(`protocol_instance.schema.json:218`)。
+3. TileLink 5 通道 → 6 类消息类的自然映射:
 
    | 通道 | 消息 | CEP 消息类 | 方向 |
    |---|---|---|---|
-   | A | AcquireBlock / AcquirePerm | `request` | client → manager |
-   | B | ProbeBlock / ProbePerm | `snoop` | manager → client |
-   | C | ProbeAck / ProbeAckData | `snoop_resp` | client → manager |
-   | C | Release / ReleaseData | `writeback` 系(`snoop_resp`?)⚠️ **类归属歧义** | client → manager |
-   | D | Grant / GrantData | `response`(→ CEP 无 `response` 类,只有 `completion`)⚠️ **类归属歧义** | manager → client |
-   | E | GrantAck | **无对应类** | client → manager |
+   | A | `Acquire` | `request` | master → slave |
+   | B | `Probe` | `snoop` | slave → master |
+   | C | `ProbeAck` / `ProbeAckData` | `snoop_resp` | master → slave |
+   | C | `Release` / `ReleaseData` | ⚠️ **类归属歧义**(见 R-T3) | master → slave |
+   | D | `Grant` / `GrantData` | ⚠️ **类归属歧义**(CEP 6 类里是 `response`,但 canonical 10 流里叫 `completion`) | slave → master |
+   | E | `GrantAck` | **无对应类** | master → slave |
 
 ⇒ ⇒ **两个独立问题**:
 - **(P-1) 类词表缺口**:CEP 6 类词表**无**「对 completion 的 ack」类 ⇒ `GrantAck` 无处可放;
-  `Release` / `ReleaseData` 的类归属也需裁决(`snoop_resp`? `writeback`? —— `writeback` **不在** 6 类词表里,
-  它是 **10 流**的名字,不是**消息类**名 ⇒ ⚠️ 两套词表被混用,须分清)。
+  `Release` / `ReleaseData` 的类归属也需裁决(⚠️ `writeback` 是 **10 流名**,**不是**消息类名 ⇒ 两套词表被混用)。
 - **(P-2) VC 数不足**:5 通道 → ≤4 VC ⇒ **至少 2 个通道必须合并** ⇒
   **合并会破坏 `A<B<C<D<E` 的全序** ⇒ 依赖图上可能出现**真实存在的环** ⇒
   ⇒ **装配期闸(`INV-CEP-09-IC1`)可能误报**(过近似 ⇒ 保守拒绝,per `ADR-CEP-09` 决策 2 前提 2)。
@@ -181,36 +214,38 @@
 **CXL 的非对称**(队列 #10 已裁决):`H2D Req` **只含 snoop**、`D2H Req` **只含 local** ⇒
 「**请求类消息只在一个方向出现**」。
 
-**TileLink 的事实**:
-- **A 通道**(client→manager)与 **B 通道**(manager→client)**都是 request 类**
-  ⇒ ⇒ **TileLink 的 request 是双向的** ⇒ **CXL 式定义不适用**。
-- **真正单向的是「权限的授予 / 撤销」**:
-  - **授予**只由 manager 发(`Grant` / `GrantData`,D 通道)⇒ **D 通道单向**;
-  - **撤销**只由 manager 发起(`ProbeBlock` / `ProbePerm`,B 通道)⇒ **B 通道单向**;
-  - client 侧只**请求**(A 通道)与**应答 / 释放**(C/E 通道)。
+**TileLink 的事实**(D1 §8.1.2 的 5 通道语义):
+
+| 方向 | 消息 | 类别 |
+|---|---|---|
+| master → slave | `Acquire`(A) · `Release`/`ReleaseData`(C) · `GrantAck`(E) | **请求获得** / **自愿放弃** / **确认** |
+| slave → master | `Probe`(B) · `Grant`/`GrantData`(D) | **强制撤销** / **授予** |
+
+⇒ ⇒ **request 类消息(A 与 B)**双向都有 ⇒ **CXL 式定义不适用**。
+⇒ ⇒ **真正单向的是「权限的授予」与「权限的强制撤销」** —— 二者**都只由 slave 发出**。
 
 ⇒ **候选可判定义(3 维度,待裁决)**:
 | 维度 | TileLink 表述 | 可判? |
 |---|---|---|
-| ① 权限授予方向 | **只有 manager 能授予**(Grant 仅出现在 D 通道) | ✅ 可判(逐消息查通道) |
-| ② 权限撤销发起方 | **只有 manager 能发起撤销**(Probe 仅出现在 B 通道) | ✅ 可判 |
+| ① 权限**授予**方向 | **只有 slave 能授予**(`Grant` 仅出现在 D 通道) | ✅ 可判(逐消息查通道) |
+| ② 权限**强制撤销**发起方 | **只有 slave 能发起**(`Probe` 仅出现在 B 通道) | ✅ 可判 |
 | ③ request 类消息方向 | **双向**(A 与 B)⇒ **不可**用 CXL 式定义 | ❌ |
 
 ⇒ ⇒ **不能把队列 #10 的「非对称」断言形态直接套到 TileLink-C** ⇒ 需 architect 裁决 TileLink 的定义。
 
 ---
 
-## §7 8 项残余风险(**只能靠规范正文 / 人工裁决确定** ⇒ 不得推理填空)
+## §7 8 项残余风险(**不得推理填空**)
 
 | # | 残余风险 | 等级 | 处置 |
 |---|---|---|---|
-| **R-T1** | **版本锁定缺口** —— `ADR-CEP-11 §3` 锁 `tilelink-c-1.3`;本环境**取不到 1.3 正文**(≥6 次尝试全失败:riscv.org 404 / RISC-V adoc 不存在 / `openspecification/tilespec` 仓库 **404** / GitHub 搜索无命中);而可取的 **1.7.1** 与 **1.9.3** 属 **SiFive 版本线**、且**语义已漂移**(Trunk 权限表述变更 + 节点类别 4→5)⇒ **不得拿 1.7.1/1.9.3 冒充 1.3** ⇒ 决定载体形态的 5 项**全部 `pending=true`** | **🔴 阻塞** | **architect 裁决**(见 §10) |
-| **R-T2** | **通道 5 → VC 4 冲突** —— 见 §5;合并通道会破坏规范自带的 `A<B<C<D<E` 无环论证 ⇒ 装配期闸可能误报 | **🔴 高** | **architect 裁决**(见 §5 ③ 个选项) |
-| **R-T3** | **6 类消息类词表缺口** —— `GrantAck` 无对应类;`Release` / `ReleaseData` 的类归属歧义;`writeback` 是**流名**不是**消息类名**(两套词表混用) | 🟡 中 | 与 R-T2 合并裁决 |
-| **R-T4** | **`perm` 退化为 3 值的口径** —— TileLink-C 投影**永不出 `UNIQUE`** ⇒ 该实例**不声明**静默升级 ⇒ 「`perm` 4 值锁」是**值域**锁还是「每实例用满 4 值」,需显式承认 | 🟡 中 | architect 口径确认 + 实例散文登记 |
-| **R-T5** | **D2(1.9.3)内部表述不一致** —— 正文说 `Trunk` 无读/写权限,**同份** `Table 29` 却给 `Trunk` 一项 `Get` | 🟡 中 | 若钉版到 1.9.3 ⇒ 须**保守**取 `READ`(可读)⇒ 投影 `READ`;登记矛盾 |
+| **R-T1** | **版本锁定缺口** —— `ADR-CEP-11 §3` 锁 `tilelink-c-1.3`;本环境**取不到 1.3 正文**(≥6 次尝试:riscv.org 404 / RISC-V adoc 不存在 / `openspecification/tilespec` 仓库 **404** / GitHub 搜索无命中);而可取的 **1.7.1** 与 **1.9.3** 属 **SiFive 版本线**、且**语义已漂移**(事件词表 10 → 12 条 + 节点类别 4 → 5 类)⇒ **不得拿 1.7.1/1.9.3 冒充 1.3** ⇒ 决定载体形态的 5 项**全部 `pending=true`** | **🔴 阻塞** | **architect 裁决**(见 §10) |
+| **R-T2** | **通道 5 → VC 4 冲突** —— 见 §5;合并通道会破坏规范自带的 `A<B<C<D<E` 无环论证 ⇒ 装配期闸可能误报 | **🔴 高** | **architect 裁决** |
+| **R-T3** | **6 类消息类词表缺口** —— `GrantAck` 无对应类;`Release`/`ReleaseData` 类归属歧义;`writeback` 是**流名**不是**类名**(两套词表混用) | 🟡 中 | 与 R-T2 合并裁决 |
+| **R-T4** | **`perm` 退化为 3 值** —— `UNIQUE` 不可达 ⇒ 该实例**不声明**静默升级 ⇒ 不触发 `INV-CEP-08-IC2`;「`perm` 4 值锁」是**值域**锁还是「每实例用满 4 值」需显式承认 | 🟡 中 | architect 口径确认 + 实例散文登记 |
+| **R-T5** | **两版各有内部表述不一致** —— D1 §8.1.4 正文说转移分「**six** subsets」而表列 **4** 类(下一段又说 "four");D1 Table 8.3 表头写 `Permissions: None, Branch, **Trunk**` 而全部转移记号用 **T = Tip** ⇒ **表头疑为笔误**(Trunk 不参与任何转移)· D2 正文说 `Trunk` 无读/写权限而同份 `Table 29` 给 `Trunk` 一项 `Get` | 🟡 中 | 已取**转移记号**为准(`T`=Tip);矛盾**显式登记**;若钉版到 D1 ⇒ 表头笔误不影响载体 |
 | **R-T6** | **「非对称」定义** —— 见 §6;TileLink 的 request 双向 ⇒ CXL 式断言形态**不适用** | 🟡 中 | architect 裁决 |
-| **R-T7** | **态集合维度选择** —— (S-a) 树位置 4/5 类 vs (S-b) 副本权限 3 值 ⇒ 投影形状不同(4→4 / 3→4) | 🟡 中 | 须在 R-T1 闭合**之后**裁决 |
+| **R-T7** | **`Trunk` 的建模归属** —— 结论:**过渡态**,不进稳定态集合(依据 = Table 8.3 转移记号全集中**无** `Trunk`)⇒ 稳定态 = 3 值;⚠️ 残余:D1 表头写 `Trunk` ⇒ 若规范本意含 Trunk,则态数变 4 ⇒ **须以转移记号为准并登记该矛盾** | 🟢 低(已消解大半) | 载体按 3 态实现 + 登记矛盾 |
 | **R-T8** | **1.3 与 1.7.1/1.9.3 的谱系关系** —— RISC-V 的「TileLink 1.3」与 SiFive 的 1.7.1/1.9.3 是否同一版本线**未证实** ⇒ `tilelink-c-1.3` 这个**标识符本身**可能指错版本 | 🟡 中 | 与 R-T1 合并处置;若改锁表则须写明**版本线 + 发布方** |
 
 ---
@@ -221,12 +256,25 @@
 
 | 项 | 判定 |
 |---|---|
-| 公开来源可得性 | ✅ **良** —— TileLink 规范**开源可取**(2 份 `pin=strong` + sha256)⇒ **远优于**队列 #10 的 CXL(全程禁读) |
-| 决定载体形态的 5 项(态数 / 事件词表 / 投影形状 / 非对称定义 / 编译期断言) | ❌ **未钉死** —— **R-T1** 使其全部 `pending=true` |
-| 事件词表 | ✅ **可钉**(TL-C 12 条 + 5 通道 + 优先级全序,D1/D2 `pin=strong`) |
+| 公开来源可得性 | ✅ **良** —— TileLink 规范**开源可取**(3 份 `pin=strong` + sha256)⇒ **远优于**队列 #10(CXL 全程禁读) |
+| 决定载体形态的 5 项 | ❌ **未钉死** —— **R-T1** 使其全部 `pending=true`;但**内容已可推导**(见下)⇒ 只差**版本裁决** |
+| 态集合 | ✅ **可推导** —— **3 值** `{Nothing, Branch, Tip}`(`Trunk` = 过渡态,R-T7) |
+| 事件词表 | ✅ **可推导** —— **4 类** `{Cap, Grow, Prune, Report}` + **10 条**消息(D1)/ 12 条(D2) |
+| 逐格覆盖 | ✅ **零 `Unknown`** —— 9 个有序对全被 `Grow`/`Prune`/`Report` 覆盖 + `Cap` 3 条通配 ⇒ **12 格全 Known** |
+| `perm` 投影 | ✅ **3→3** —— `Nothing→NONE` · `Branch→READ` · `Tip→WRITEBACK`;⚠️ `UNIQUE` 不可达(R-T4) |
+| canonical 10 流 | ✅ **可推导** —— 5 条 `true` / 5 条 `false`(§4) |
+| 非对称定义 | ⚠️ **待裁决**(R-T6) |
 | 通道 → VC 冲突 | 🔴 **新发现**(R-T2)⇒ **超出 #10 同类先例**,须 architect 裁决 |
-| 硬门效力 | ⇒ **change 目录**(`cpptlm-cep-tilelink-tree-manager`)**暂不建** —— 与队列 #10 的硬门同款效力:「**公开来源普查未完成 ⇒ change 目录不建**」 |
+| 硬门效力 | ⇒ **change 目录**(`cpptlm-cep-tilelink-tree-manager`)**暂不建** —— 与队列 #10 的硬门同款效力 |
 | ⇒ 前置动作 | **须先闭合 R-T1(版本裁决)** —— 该裁决**属 architect 域**(`ADR-CEP-11 §3` 是**冻结面**) |
+
+### ⇒ 版本建议(**供 architect 裁决参考**)
+
+| 候选 | 事件词表 | 态集合 | 内部一致性 | 生态 | 评价 |
+|---|---|---|---|---|---|
+| **`tilelink-c-1.7.1`**(D1) | **4 类转移** + **10 条**消息 | **3 稳定态**(+ Trunk 过渡态) | 2 处内部不一致(均**不影响**载体:转移记号为准) | OpenTitan TL-UL 基线 | **✅ 推荐** —— 转移分类表**显式且完备** ⇒ 零 `Unknown`;事件词表最紧 |
+| `tilelink-c-1.9.3`(D2) | 4 类转移 + **12 条**消息 | **4~5 稳定态**(Tip 拆两类) | 1 处内部不一致(**影响** Trunk 投影) | 最新(2023-02) | 备选 —— 最新但态数膨胀 + `Trunk` 矛盾落在投影上 |
+| `tilelink-c-1.3` | **不可取** | **不可确证** | — | RISC-V 谱系未证实 | ❌ **不可行**(R-T1/R-T8) |
 
 ---
 
@@ -239,7 +287,7 @@
 | **D3** | TileLink Specification **0.3.1**(早期 Acquire/Probe/Grant/Release/Finish 模型)—— `https://git.tiband.de/riscv/rocket-chip/raw/commit/d774afaf736c7a90a53ecf0c8e24f99f54c70538/uncore/doc/TileLink0.3.1Specification.pdf` | **0.3.1** | ✅ 172 795 B | `8caab6cc0082bc9c6373f5f7dba4729cecc58dfedf1a5749d72b9d2d3df474fc` | **strong** | © SiFive Inc. |
 | **D4** | Synopsys 博客(通道优先级 `A<<B<<C<<D<<E`) | 2024 | ❌ | — | `weak` | 二手 |
 | **D5** | Chipyard 文档(TL-C 客户端的 B/C/E 通道行为) | — | ❌ | — | `weak` | 二手 |
-| **D6** | OpenTitan `TL-UL` 文档(明写「based on TileLink specification version 1.7.1」) | — | ❌ | — | `weak` | 二手 |
+| **D6** | OpenTitan `TL-UL` 文档(明写「based on TileLink specification version **1.7.1**」) | — | ❌ | — | `weak` | 二手 |
 
 > **取字节说明**:D1 / D2 / D3 均由本环境 `curl` 实取并算得 sha256(2026-11-01)⇒ `pin=strong`。
 > ⚠️ **未取到**:`tilelink-c-1.3` 对应的规范正文(见 R-T1)⇒ **本摘要不得声称代表 1.3**。
