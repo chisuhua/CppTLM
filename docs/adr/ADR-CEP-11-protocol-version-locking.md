@@ -55,7 +55,7 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 **字段格式**:`<spec_name>-<spec_version>`,例:
 - `chi-r2`(ARM AMBA CHI,Revision 2)
 - `cxl-3.0`
-- `tilelink-c-1.3`
+- `tilelink-c-1.7.1`
 - `nvlink-4.0`
 - `ualink-2.0`
 
@@ -68,7 +68,7 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 | **CHI** | **AMBA CHI r2**(`amba-5` 文档族) | RN-F 子集;仅需 request / snoop / response / data 4 通道语义(per `07 号 §5.1.1`) |
 | **CXL 2.0 非对称** | **CXL 2.0** | Host 侧 Snoop Filter |
 | **CXL 3.0 对称** | **CXL 3.0** | DCOH / BISnp / BIRsp;基于 DPA 归属 |
-| **TileLink-C** | **TileLink-C 1.3** | Tree Tip 权限模型 |
+| **TileLink-C** | **TileLink-C 1.7.1**(SiFive) | Tree Tip 权限模型;**3 稳定态**(`Nothing`/`Branch`/`Tip`)+ **4 类权限转移**(`Cap`/`Grow`/`Prune`/`Report`) |
 | **NVLink** | **NVLink 4.0** | TL Read / Write / Atomic / Probe;NVSwitch SHARP |
 | **UALink** | **UALink Common 2.0** | Station / Port / Lane;INC 原语 |
 | **MOESI/GPU** | **MOESI/GPU 1.0** | ArchForge `09 号` §3 的 6 态 × 6 事件;snoop 型(SoC 内) |
@@ -129,11 +129,19 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 | CHI | `chi-r2` | RN-F 6 通道(TXREQ / RXRSP / RXDAT / RXSNP / TXRSP / TXDAT);Credit 流控;TxnID;CompAck | AMBA CHI `amba-5` 文档族 |
 | CXL 2.0 非对称 | `cxl-2.0` | D2H / H2D 各 3 通道;Host Snoop Filter | CXL 2.0 |
 | CXL 3.0 对称 | `cxl-3.0` | + BISnp / BIRsp;DCOH;DPA 归属 | CXL 3.0 |
-| TileLink-C | `tilelink-c-1.3` | A/B/C/D/E 通道;Tree Tip 权限;Probe / Acquire / Grant | TileLink-C 1.3 |
+| TileLink-C | `tilelink-c-1.7.1` | A/B/C/D/E 通道;Tree Tip 权限;Probe / Acquire / Grant;**3 稳定态**(`Nothing`/`Branch`/`Tip`,`Trunk` 为过渡态)+ **4 类权限转移**(`Cap`/`Grow`/`Prune`/`Report`) | TileLink-C 1.7.1(SiFive;PDF sha256 `30c09b5f…a2dd`) |
 | NVLink | `nvlink-4.0` | TL Read / Write / Atomic / Probe;NVSwitch SHARP / atomic / barrier | NVLink 4.0 |
 | UALink | `ualink-2.0` | Station / Port / Lane;TL Load / Store / Atomic;INC 原语 | UALink Common 2.0 |
 | MOESI/GPU | `moesi-gpu-1.0` | 6 态 × 6 事件;snoop 型(SoC 内);E→M 静默升级是跨域可见写判据的争点(per `ADR-CEP-13`;**该争点已裁定,见 §9 Status Update**) | ArchForge `09 号` §3 + `ADR-SOC-25` |
 | MESIF | `mesif-1.0` | 分级目录型(跨卡);目录查询 / 定向 snoop | ArchForge `09 号` §3 + `ADR-SOC-25` |
+
+> ⚠️ **2026-11-01 增补块(per 台账 Entry #135 —— 原地更新留痕)**:本表的 **TileLink-C 行**
+> (及决策 2 表 + 决策 1 字段格式示例中的同一取值)由 `tilelink-c-1.3` **原地更新**为
+> `tilelink-c-1.7.1`(SiFive)⇒ 走**决策 4 路径 A**(仅锁表更新 · adapter 代码不动 · **0 KPI slot**)。
+> **原地更新而非「只追加 Status Update」的理由**:本 ADR 决策 2 注释明写
+> 「§3 是唯一真源 …… **变更必须同步两表**,否则表外取值 = 装配期 fail」
+> ⇒ 只在文末追加而不同步表内 = **同一 ADR 内部双真源**。
+> 依据 / 未变更项 / 后果 / 验证判据 ⇒ 见 **文末 `## Status Update(2026-11-01,per 台账 Entry #135)`**。
 
 > **表的使用规则**:
 > 1. 本表是**唯一真源**;schema / 代码 / 文档**只引用**,不复制
@@ -366,3 +374,54 @@ CEP 的每个协议 adapter 都对应一个**外部规范**(CHI / CXL / TileLink
 **关联**: 台账 `obj-cep-platform.md` **Entry #122**(口径裁决 + 授权记录 + 8 项残余风险 + 草稿修订清单)
 · `ADR-CEP-04 §2 / §4`(caps + hazard 契约)· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值锁)
 · `07 号 §5.1.1`(协议族表)· `docs/architecture/14-coherence-parity-baseline.md`(H7 的范围限定与 R-B 失效区)
+
+---
+
+## Status Update(2026-11-01,per 台账 Entry #135)—— 队列 #11 `cpptlm-cep-tilelink-tree-manager` 的 **版本锁定**裁决(`tilelink-c-1.3` → `tilelink-c-1.7.1`)
+
+> **授权**:台账 `objective-cep-platform §11` **Entry #135** [adr-amendment] —— **冻结面授权记录**。
+> **形态**:**决策 4 路径 A**(「仅锁表更新」—— 新版**未引入** adapter 关注的语义变化 ⇒ adapter 代码不动)⇒ **0 KPI slot(doc-only)**。
+> **改动面**:决策 1 字段格式示例 + 决策 2 表 + §3 锁定表(**3 处同步**) + §3 表后增补块 + 本段。
+
+### 触发
+
+队列 #11 的 **Task 0 硬门**(公开来源普查)结论 = **有条件通过**,但**唯一阻塞点**是版本锁定:
+`ADR-CEP-11 §3` 原锁 `tilelink-c-1.3`,而**该版本正文本环境取不到**(≥6 次尝试:riscv.org 404 ·
+RISC-V adoc 不存在 · `openspecification/tilespec` 仓库 404 · GitHub 搜索无命中)⇒ **不可确证**;
+且 RISC-V「1.3」与 SiFive 版本线的**谱系关系未证实** ⇒ 该**标识符本身可能指错版本线**。
+⇒ 而可取的 **1.7.1** / **1.9.3** 属 **SiFive 版本线**,且二者**语义已漂移**(事件词表 10 → 12 条;
+节点类别 4 → 5 类)⇒ **不得拿它们冒充 1.3**。
+
+### 结论
+
+| # | 裁决 | 理由(实测依据) |
+|---|---|---|
+| **1** | TileLink-C 的锁定版本 = **`tilelink-c-1.7.1`**(发布方 **SiFive**)⇒ 走**决策 4 路径 A** | 本环境 `curl` 实取 PDF(735 145 B)+ sha256 `30c09b5f…a2dd` ⇒ `pin=strong`;**决策 4 路径 A 的适用条件成立**(adapter 尚未建 ⇒ 无代码要改) |
+| **2** | ⚠️ **1.7.1 不是最新版本**(1.9.3 是)⇒ 本裁决**恰好落在决策 5 的允许范围内** | 决策 5 明写「**不**追外部规范的**最新**版本 \| CEP 锁"**可实现的那一版**"」⇒ 理由**不得**写成「选最新」 |
+| **3** | §3 表的「关注的语义子集」列**同步补齐**为「**3 稳定态**(`Nothing`/`Branch`/`Tip`)+ **4 类权限转移**(`Cap`/`Grow`/`Prune`/`Report`)」 | 载体形态已由锚点摘要推导完成(3 态 × 4 事件 = 12 格,**零 `Unknown`**);锁表的语义子集列**就是**给 adapter 实现看的 |
+| **4** | 「锁定依据」列**写明发布方 + PDF sha256** | 闭合锚点摘要 **R-T8**(版本线歧义):新取值本身唯一指向 SiFive 1.7.1;再写发布方 + 字节指纹 ⇒ **同类歧义不再复发** |
+| **5** | `Trunk` **不进**稳定态集合(过渡态) | §8.1.4 转移记号全集 = **N/B/T** ⇒ **无任何 `Trunk` 参与的转移**;⚠️ 但该表表头写 `Permissions: None, Branch, Trunk` ⇒ **表头疑为笔误** ⇒ **以转移记号为准**并登记矛盾(锚点摘要 R-T5) |
+| **6** | **未选 1.9.3** | `Tip` 拆为 `Tip(no Branches)`/`Tip(with Branches)` ⇒ 稳定态膨胀到 4~5 值;且 1.9.3 自身的 `Trunk` 矛盾(正文说无读/写权限而同份 `Table 29` 给 `Get`)**落在 `perm` 投影上** ⇒ 载体风险更高 |
+
+### 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR 自身** | 决策 1 / 3 / 4 / 5 / 6 **零改动**;invariant 集合**零增量**(**新增 invariant 数 = 0**);§3 表**行集不变**(仍 **8 行**) |
+| **schema** | `protocol_instance.schema.json` **零改动** —— pattern `^[a-z0-9]+(-[a-z0-9.]+)*$` **已容纳** `tilelink-c-1.7.1` |
+| **实例声明** | `protocol_instances.json` **零改动** —— **无任何实例**声明 `tilelink-c-*`(队列 #11 的实例尚未建) |
+| **非冻结面连带** | `test/test_cep_schema.cc` 的锁表取值列表 **+1 处**同步(该测试断言「schema 值域 ⊇ §3 锁表全部取值」) |
+| **队列 #11 规约层** | **阻塞解除** —— 载体形态已可推导(3 态 × 4 事件 = 12 格,零 `Unknown`)⇒ 可起 change 目录;⚠️ **另有两项 architect 裁决未闭合**:`ADR-CEP-09`(通道 5 → VC 4 的 R-T2)与 `ADR-CEP-12`(6 类消息类词表的 R-T3)—— **本条不动这两份 ADR** |
+| **残余风险(不得写成「已消除」)** | ① **1.3 的内容永久不可确证** —— 本裁决**放弃**该版本,不追补 ② **两版各有内部表述不一致**(D1「six subsets」vs 4 类;D1 表头 `Trunk` vs 记号 `T`=Tip;D2 正文与 `Table 29` 矛盾)⇒ 已登记 R-T5,**以转移记号为准** ③ **`Trunk` 是否本意为稳定态** —— 若规范本意含之 ⇒ 态数变 4 ⇒ **须以转移记号为准**并登记矛盾 |
+
+### Verification(前瞻判据 · 可勾选)
+
+- [ ] **V-1** §3 锁定表 **8 行不变**,且 TileLink-C 行的 `protocol_version` 取值 = **`tilelink-c-1.7.1`**;决策 2 表与决策 1 示例**同值** ⇒ **三处同步**(机器可校:三处取值相等)
+- [ ] **V-2** `test/test_cep_schema.cc` 的锁表取值列表**含** `tilelink-c-1.7.1` 且 schema pattern **接受**它 ⇒ 既有断言持续绿
+- [ ] **V-3** `protocol_instances.json` 的**任一**实例的 `protocol_version` ∈ §3 锁表(**通用闸**,per 决策 3;⚠️ 截至本条该闸**仍未通用实现** —— 见决策 3 的「实现现状」段,补齐义务在台账 Entry #109)—— **本条不关闭该义务**
+- [ ] **V-4** `ADR-CEP-09` / `ADR-CEP-12` **零 diff**(本条只动本 ADR);`ADR-CEP-11` 的**其余**段落**零 diff**(冻结面改动**仅限**锁表 3 处 + 增补块 + 本段)
+- [ ] **V-5** 锚点摘要 `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` 的 **D1 行**(sha256 `30c09b5f…a2dd`)与 §3 表「锁定依据」列的指纹**一致**
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #135**(授权记录 + 逐条依据)· **#134**(队列 #11 Task 0 硬门 + ④bis 二次普查)
+· `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md`(§8 版本建议 / §9 钉版 / §7 R-T1·R-T5·R-T8)
+· `ADR-CEP-09`(通道 5 → VC 4,裁决未闭合)· `ADR-CEP-12`(6 类消息类词表,裁决未闭合)

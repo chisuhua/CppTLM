@@ -8449,6 +8449,72 @@ RISC-V adoc 不存在 · `openspecification/tilespec` 仓库 **404** · GitHub �
 
 ---
 
+### Entry #135 — 2026-11-01 [adr-amendment](`ADR-CEP-11 §3` 锁表 **TileLink-C 行**版本修订:`tilelink-c-1.3` → `tilelink-c-1.7.1` —— **本条是冻结面授权记录**)
+
+**主题**:队列 #11 的 Task 0 硬门**唯一阻塞点**(R-T1 版本锁定缺口)的裁决落地。
+⇒ 走 `ADR-CEP-11` **决策 4 的路径 A**(「仅锁表更新」—— 新版**未引入** adapter 关注的语义变化
+—— adapter **代码不动**)⇒ **0 KPI slot(doc-only)**。
+
+**① 冻结面授权(本条 = 授权记录 ⇒ `--update --authorized-by "Entry #135"`)**
+
+| # | 冻结件 | 改动形态 | 内容 |
+|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-11-protocol-version-locking.md` | **原地更新 3 处 + 增补块留痕 + 追加 Status Update 段** | ① 决策 1 字段格式示例 `tilelink-c-1.3` → `tilelink-c-1.7.1`;② 决策 2 锁表 `TileLink-C 1.3` → `1.7.1`;③ §3 锁表 `tilelink-c-1.3` / 锁定依据 `TileLink-C 1.3` → `1.7.1`;④ **新增** `## Status Update(2026-11-01,per 台账 Entry #135)` 段(依据 · 为何选 1.7.1 · 未变更项 · 后果/代价 · Verification) |
+
+⚠️ **为何「原地更新」而非「只追加 Status Update」**:该 ADR **决策 2 的注释**明写
+「§3 是唯一真源 …… **变更必须同步两表**,否则表外取值 = 装配期 fail」
+⇒ 若只在 Status Update 里写「1.7.1」而 §3 表仍写 `1.3` ⇒ **同一 ADR 内部双真源**
+⇒ ⇒ 必须**原地更新三处 + 增补块留痕**(per Entry #22 的「原地更正 + 增补块 + 台账 entry」先例)。
+
+**② 非冻结面的连带改动(1 处)**
+`test/test_cep_schema.cc` 的锁表取值列表(`tilelink-c-1.3` → `tilelink-c-1.7.1`)+ 注释
+⇒ 该测试断言「schema 的 `protocol_version` 值域 ⊇ ADR-CEP-11 §3 锁表全部取值」
+⇒ 锁表一改,**该断言的期望值必须同步**(否则红)。
+⚠️ schema 的 pattern `^[a-z0-9]+(-[a-z0-9.]+)*$` **已容纳** `tilelink-c-1.7.1` ⇒ **schema 零改动**。
+
+**③ 为何选 `1.7.1`(逐条依据,per 锚点摘要 §8 + §9)**
+
+| # | 依据 | 来源 |
+|---|---|---|
+| 1 | **可取字节 + sha256** —— 本环境 `curl` 实取,**735 145 B**,sha256 `30c09b5f…a2dd` ⇒ `pin=strong` | 锚点摘要 §9 D1 |
+| 2 | **转移分类表显式且完备** ⇒ 12 格**零 `Unknown`**(对比 CXL 68 格中 42 格 `Unknown`) | 锚点摘要 §2.2 / §2.3 · D1 §8.1.4 `Table 8.3` |
+| 3 | **事件词表最紧** —— 4 类转移(`Cap`/`Grow`/`Prune`/`Report`)+ **10 条**消息(1.9.3 为 12 条) | 锚点摘要 §2.2 / §2.4 · D1 §8.1.3 |
+| 4 | **稳定态 3 值** `{Nothing, Branch, Tip}`(`Trunk` = 过渡态)⇒ 与 CXL 的 4 态同样"少而干净" | 锚点摘要 §1.2 · D1 §8.1.4 转移记号全集 N/B/T |
+| 5 | **生态事实** —— OpenTitan `TL-UL` 明写「based on TileLink specification version **1.7.1**」 | 锚点摘要 §9 D6 |
+| 6 | 两处**内部表述不一致均不影响载体**(以**转移记号**为准)⇒ 已登记 R-T5 | 锚点摘要 §7 R-T5 |
+
+⚠️ **决策 5 的口径一致性**:本 ADR 决策 5 明写「**不**追外部规范的**最新**版本 | CEP 锁"**可实现的那一版**"」
+⇒ ⇒ **1.7.1 不是最新(1.9.3 是)** ⇒ 本裁决**恰好落在该排除项允许的范围内**
+⇒ ⇒ 理由**不得**写成「选最新的可取版本」。
+
+**④ 为何不是 1.9.3 / 为何不是维持 1.3**
+- **1.9.3(备选,未选)**:`Tip` 拆为 `Tip(no Branches)` / `Tip(with Branches)` ⇒ 稳定态膨胀到 4~5 值;
+  且其 `Trunk` 的**内部矛盾**(正文说无读/写权限而同份 `Table 29` 给 `Get`)**落在 `perm` 投影上**
+  ⇒ 载体风险更高;生态基线仍是 1.7.1。
+- **维持 1.3(不可行)**:**正文本环境取不到**(≥6 次尝试:riscv.org 404 · RISC-V adoc 不存在 ·
+  `openspecification/tilespec` 仓库 404 · GitHub 搜索无命中)⇒ **不可确证**;
+  且 RISC-V「1.3」与 SiFive 1.7.1/1.9.3 的**版本线关系未证实**(R-T8)⇒ 该**标识符本身可能指错版本**。
+
+**⑤ R-T8 的处置**:新锁表值写作 **`tilelink-c-1.7.1`** ⇒ 格式为 `<spec_name>-<spec_version>`
+⇒ **版本线歧义不再存在**(值本身唯一指向 SiFive 的 1.7.1)⇒ R-T8 **随本次修订闭合**。
+⚠️ 落地时**必须在 §3 锁表的「锁定依据」列写明发布方**(SiFive)⇒ 避免再次出现「标识符指错版本线」。
+
+**⑥ 未变更项(明示)**
+- `ADR-CEP-11` 的**决策 1 / 3 / 4 / 5 / 6 零改动**;invariant 集合零增量(**新增 invariant 数 = 0**)
+- `protocol_instance.schema.json` **零改动**(pattern 已容纳)
+- `protocol_instances.json` **零改动** —— **无任何实例**声明 `tilelink-c-*`(队列 #11 的实例尚未建)
+- `ADR-CEP-09`(通道 5 → VC 4 的 R-T2)/ `ADR-CEP-12`(6 类消息类词表的 R-T3)**本条不动**
+  ⇒ 二者的裁决**独立立项**(队列 #11 的规约层落地前必须先闭合)
+
+**⑦ 冻结面纪律**:本条为**授权记录** ⇒ `--update --authorized-by "Entry #135"` ⇒
+**两步授权**:台账 entry → `--update`(产物 hash 重算)→ commit → `--update`(provenance 对齐)→ commit。
+
+**⑧ 关联**: Entry #122(队列 #10 口径)· #127 · #128 · #131 · #132 · #133(R11 债期重开)
+· **#134(队列 #11 Task 0 硬门 + ④bis 二次普查)** · `ADR-CEP-11`(决策 2 / 决策 4 路径 A / 决策 5)
+· `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md`(§8 版本建议 / §9 钉版)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

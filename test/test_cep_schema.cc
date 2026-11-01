@@ -480,8 +480,11 @@ TEST_CASE("[cep][schema][negative] contains_word 词边界不得被下划线绕�
 TEST_CASE("[cep][schema] protocol_version 值域必须容纳 ADR-CEP-11 锁定表全部取值",
           "[cep][schema]") {
     // 跨文档契约:schema 的值域 ⊇ ADR-CEP-11 §3 锁定表。
-    // 回归:初版 pattern `^[a-z0-9]+(-[0-9.]+)?$` 拒绝 `chi-r2` / `tilelink-c-1.3`
+    // 回归:初版 pattern `^[a-z0-9]+(-[0-9.]+)?$` 拒绝 `chi-r2` / `tilelink-c-1.7.1`
     //      —— 即拒绝锁定表 2/6 的合法取值(2026-10-21 自审发现)。
+    // ⚠️ 2026-11-01(per 台账 Entry #135):`tilelink-c-1.3` → **`tilelink-c-1.7.1`**
+    //    —— `ADR-CEP-11 §3` 锁表行原地更新(SiFive 版本线;PDF sha256 `30c09b5f…a2dd`),
+    //    走该 ADR 决策 4 路径 A(仅锁表更新 · 0 KPI slot)。
     const json s = load_schema();
     const std::string pattern = s.at("properties").at("protocol_version").at("pattern");
     INFO("schema 的 protocol_version pattern: " << pattern);
@@ -493,9 +496,9 @@ TEST_CASE("[cep][schema] protocol_version 值域必须容纳 ADR-CEP-11 锁定�
     // 锁定表的 8 个取值(per ADR-CEP-11 §3;2026-10-22 per 台账 Entry #12 增补
     // moesi-gpu-1.0 / mesif-1.0 —— 登记 moesi_gpu / mesif 进 07 号 §5.1.1 后,
     // INV-CEP-11-IC1 要求其 protocol_version 必须落在锁表内)
-    const std::vector<std::string> locked = {"chi-r2",         "cxl-2.0",    "cxl-3.0",
-                                             "tilelink-c-1.3", "nvlink-4.0", "ualink-2.0",
-                                             "moesi-gpu-1.0",  "mesif-1.0"};
+    const std::vector<std::string> locked = {"chi-r2",          "cxl-2.0",    "cxl-3.0",
+                                             "tilelink-c-1.7.1", "nvlink-4.0", "ualink-2.0",
+                                             "moesi-gpu-1.0",   "mesif-1.0"};
     const std::regex re(pattern);
     for (const auto& v : locked) {
         INFO("锁定表取值未出现在 ADR-CEP-11: " << v);
