@@ -14,7 +14,7 @@
 | 目录 | 内容 | 用途 |
 |------|------|------|
 | `build/` | `build.sh`, `format.sh`, `build_ptx_emu.sh` | 构建与代码格式化（`build_ptx_emu.sh` 启用 PTX-EMU 集成，dGPU/APU SoC 默认路径）。根 `build.sh` 是薄包装，委托此目录 |
-| `test/` | `test_off.sh`, `test_ptx_emu.sh`, `verify_test_seam_fix.sh`, `run_all_tests.sh`, `ci_e2e_test.sh`, `docs_sync_check.sh`, `markdown_link_check.sh`, `gen_wire_format_snapshot.sh`, `check_pcie_ip_facade.sh`, `cep_docs_sync_check.sh`, `cep_doc_ref_check.sh`, `cep_freeze_check.sh`, `cep_archforge_alignment_check.sh`, `cep_decl_alignment_check.sh`, `cep_decl_reverse_verify.sh`, `cep_cohif_reverse_verify.sh`, `cep_protocol_engine_reverse_verify.sh`, `cep_protocol_bridge_reverse_verify.sh`, `cep_chstream_bidirectional_macro_reverse_verify.sh`, `cep_mesif_state_spec_reverse_verify.sh`, `cep_mesif_adapter_reverse_verify.sh`, `generate_mesif_recognition_checklist.sh` | 分模式测试与兼容入口。根 `test.sh --verify-fix` 委托 `verify_test_seam_fix.sh`；其他仍按模式分派。**`cep_*` 12 个 = CEP 守门脚本**(契约同步 / 对外引用 / M1 冻结 / 跨仓锚点 / 声明映射双向 + 队列 #7 的 4 个反向 fixture 脚本),详见 §CEP 契约守门脚本 |
+| `test/` | `test_off.sh`, `test_ptx_emu.sh`, `verify_test_seam_fix.sh`, `run_all_tests.sh`, `ci_e2e_test.sh`, `docs_sync_check.sh`, `markdown_link_check.sh`, `gen_wire_format_snapshot.sh`, `check_pcie_ip_facade.sh`, `cep_docs_sync_check.sh`, `cep_doc_ref_check.sh`, `cep_freeze_check.sh`, `cep_archforge_alignment_check.sh`, `cep_decl_alignment_check.sh`, `cep_decl_reverse_verify.sh`, `cep_cohif_reverse_verify.sh`, `cep_protocol_engine_reverse_verify.sh`, `cep_protocol_bridge_reverse_verify.sh`, `cep_chstream_bidirectional_macro_reverse_verify.sh`, `cep_mesif_state_spec_reverse_verify.sh`, `cep_mesif_adapter_reverse_verify.sh`, `generate_mesif_recognition_checklist.sh`, `generate_tilelink_anchor_checklist.sh` | 分模式测试与兼容入口。根 `test.sh --verify-fix` 委托 `verify_test_seam_fix.sh`；其他仍按模式分派。**`cep_*` 12 个 = CEP 守门脚本**(契约同步 / 对外引用 / M1 冻结 / 跨仓锚点 / 声明映射双向 + 队列 #7 的 4 个反向 fixture 脚本),详见 §CEP 契约守门脚本 |
 | `pipeline/` | `run_full_pipeline.sh` | 完整仿真流程（生成→仿真→可视化） |
 | `topology/` | `topology_validator.py`, `topology_generator.py`, `analyzer.py`, `path_tracer.py`, `credit_flow.py` | 拓扑生成/分析/验证 |
 | `stats/` | `stats_annotator.py`, `stats_watcher.py`, `layout_manager.py`, `derive_expr.py` | 性能统计与可视化 |
@@ -61,6 +61,33 @@
 | **CC-05** ④ | 重复 `bridge_id_` ⇒ 判红 | 同上「反向 fixture ②」 |
 | **CC-05** ④ | `protocol_id_` 与 `family` 不符 ⇒ 判红 | 同上「反向 fixture ③」 |
 | **CC-06** | 映射产出超出 3 类值域 ⇒ 判红 | `[cep][protocol-bridge]`「CC-06」（**引用**队列 #6 的 `category_value_domain()`，不重立第二份判据） |
+
+### 反向 fixture 登记（队列 #11 `cpptlm-cep-tilelink-state-spec`）
+
+> 同上纪律。本批的判据实现**全部在 C++ 载体 + Catch2**（无 Python 守门脚本）⇒ fixture 落点 = Catch2 标签
+> `[cep][tilelink][state-spec]`;**锚点交叉核对**面另由生成器承担(`generate_tilelink_anchor_checklist.sh`)。
+> ⚠️ **编译期锁不得只以「编译红」充当 ctest 判据** ⇒ 载体的结构校验全部提供 `*_for(...)` 运行时可判入口。
+
+| 判据 | 反向 fixture（形态） | 登记位置 |
+|------|----------------------|----------|
+| **TSS-01** ② | 把 `Tip` 换成 `Trunk`（**仍 3 个**）⇒ 必红 | `[cep][tilelink][state-spec]`「稳定态集合」 |
+| **TSS-01** ③ | 加回 `Trunk`（4 个名字）⇒ 必红 | 同上 |
+| **TSS-02** | 把 `Report` 换成 `Query` ⇒ 必红 | 同上「事件词表」 |
+| **TSS-03** ⑤ | 某格改成 `Unknown` ⇒ 计数层必红（`Unknown` 0→1） | 同上「转移矩阵」 |
+| **TSS-03** ⑥ | 空集格数改成 3 ⇒ 必红 | 同上 |
+| **TSS-03** ⑦ | `single` ↔ `multi` 互移一格 ⇒ 必红（**5/5 分桶**才有鉴别力） | 同上 |
+| **TSS-03** ④ | `Unknown` 格携带非零掩码 ⇒ 必红（零非法组合） | 同上 |
+| **TSS-03** ⑤ | `Known` 格缺 `ref` ⇒ 必红 | 同上 |
+| **TSS-04** | `perm` 投影加回 `UNIQUE` 行 ⇒ 必红 | 同上「perm 投影」 |
+| **TSS-06** | 换成 CXL 形态（`Acquire` 挪到 B 通道）⇒ 必红 | 同上「非对称断言」 |
+| **TSS-06** | `Grant` 挪到 A 通道 ⇒ 必红 | 同上 |
+| **TSS-06** | `Probe` 挪到 D 通道 ⇒ 必红 | 同上 |
+| **TSS-07** ④ | 锚点少一条 `TLC-nn` ⇒ 必红 | 同上「逐格 basis」 |
+| **TSS-07** ④ | 载体引用锚点里不存在的条目号 ⇒ 必红 | 同上 |
+| **TSS-07** ④ | 载体重复引用同一条目号 ⇒ 必红 | 同上 |
+| **TSS-07** ⑥ | ID 后缀非全数字 ⇒ **不得**被收（文法收紧） | 同上 |
+| **TSS-07** ④ | 锚点改一个 `TLC-nn` / 一个目标掩码 ⇒ 必红 | `generate_tilelink_anchor_checklist.sh --check` |
+| **TSS-07** ④ | 载体改一个 `ref` ⇒ 必红 | 同上 |
 
 ### 反向 fixture 登记（队列 #8 `cpptlm-cep-chi-rnf-subset`）
 

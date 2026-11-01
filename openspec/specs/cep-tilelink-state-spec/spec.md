@@ -29,7 +29,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-tilelink-state-spec
 

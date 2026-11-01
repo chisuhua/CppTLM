@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-17
   - ADR-CEP-02
   - ADR-CEP-05
-状态: 📋 **草稿待批**(2026-11-01)—— 队列 #11;**两段式**:第 0 个 change(规约层)= `cpptlm-cep-tilelink-state-spec`(尚未建)+ 第 1 个 change(实现层)= `cpptlm-cep-tilelink-tree-manager`(尚未建)
+状态: 🟡 **进行中**(2026-11-02)—— 队列 #11;**两段式**:第 0 个 change(规约层)= `cpptlm-cep-tilelink-state-spec` **✅ 已完成归档**(2026-11-02,per **Entry #143**;main spec = `openspec/specs/cep-tilelink-state-spec/spec.md`)+ 第 1 个 change(实现层)= `cpptlm-cep-tilelink-tree-manager`(尚未建)
 created: 2026-11-01
 ---
 
@@ -18,7 +18,8 @@ created: 2026-11-01
 
 **主题**: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台
 
-> **状态**: 📋 草稿(2026-11-01)· **两段式**(per 队列 #9 / #10 先例:先规约层、再实现层)
+> **状态**: 🟡 进行中(2026-11-02)· **两段式**(per 队列 #9 / #10 先例:先规约层、再实现层)
+> · **第 0 个 change(规约层)= ✅ 已完成归档**(2026-11-02,per 台账 **Entry #143**)⇒ main spec = `openspec/specs/cep-tilelink-state-spec/spec.md`
 > **队列**: `obj-cep-platform §4.0` **队列 #11**(`cpptlm-cep-tilelink-tree-manager`,Stage 1 / **2029-Q2**)
 > · **不新增队列行**(一个队列行可承载多个 change / capability,per 队列 #3 / #4 / #8 / #9 / #10 先例)
 > **两段式拆分**(per 队列 #9 的 `cpptlm-cep-mesif-state-spec` → `cpptlm-cep-mesif-adapter`、
@@ -251,3 +252,5 @@ TileLink 是 **SiFive 明示的 free and open standard** ⇒ **规范正文可�
 | 2026-11-01 | #137 | R11 降级 🟡 中 → 🟢 低 —— 与本 change **无交集** |
 | 2026-11-01 | #138 | **R-T2 / R-T3 / R-T6 三项 architect 裁决一次性签发**(通道→VC 映射 + 6 类归属 + 非对称定义形态)⇒ **Task 0 硬门通过** ⇒ 可起 change |
 | 2026-11-01 | #139 | `FullMapDirectory` 反向缺口落位裁决 —— 与本 change **无交集**(但**同属** `TreeManager` 落位体系:该 tracker 的行为实现归本 change 的第 1 个 change) |
+| 2026-11-02 | #141 | **二审落修(批 2)** —— `ADR-CEP-09` 无环性论证换**因果依赖** + 依赖集 3→4 条 + `ADR-CEP-02` 的 **R-T4 裁决**(`perm` 4 值锁 = **值域锁** ⇒ 实例填 **3 值**)⇒ 本 change 的「实例 `perm` 填几值」**已闭合** |
+| 2026-11-02 | #143 | **第 0 个 change 已完成归档** —— Phase 2 载体(`tilelink_state_spec.hh`)+ Phase 3 判据(`test_cep_tilelink_state_spec.cc` 8 cases / 213 assertions + 生成器逐格交叉核对)+ Phase 4 验收(`ctest` 133/133 · 冻结面零 diff · KPI 1/3 → 0/3)⇒ **余下第 1 个 change(实现层)** |

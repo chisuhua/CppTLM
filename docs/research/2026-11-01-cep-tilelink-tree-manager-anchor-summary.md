@@ -117,6 +117,55 @@
 ⇒ ⇒ **3 态 × 4 事件 = 12 格,每格都有规范枚举的转移支撑** ⇒
 ⇒ **载体可产出 `pending=false` 格**(对比 CXL:68 格中 42 格 `Unknown`)。
 
+### 2.3bis ★ **12 格逐格 basis 核对表**(载体 `ref` 的**唯一**目标)
+
+> **用途**:规约载体 `include/tlm/cep/tilelink_state_spec.hh` 的每格 `basis.ref` **只**指向本表的
+> **条目号**(`TLC-01` ~ `TLC-12`)⇒ 载体与本表**交叉核对**(核对表生成器做**逐格**白名单比对)
+> ⇒ **手改任一侧(载体或本表)⇒ 必须因正确原因红**。
+>
+> **掩码口径**:目标集以 3 位掩码表达 —— bit0 = `Nothing` · bit1 = `Branch` · bit2 = `Tip`;
+> `∅` = 掩码 `0`(**规范明确**该转移不存在,与「规范未覆盖」**不是**一回事)。
+
+| 条目号 | 事件 | 源态 | 规范转移记号 | 目标掩码 | 目标集 | 分桶 | 条款级定位 |
+|---|---|---|---|---|---|---|---|
+| **TLC-01** | `Cap` | `Nothing` | `toT` / `toB` / `toN` | `0b111` | {`Tip`, `Branch`, `Nothing`} | **multi** | D1 §8.1.4 `Table 8.3` |
+| **TLC-02** | `Cap` | `Branch` | `toT` / `toB` / `toN` | `0b111` | {`Tip`, `Branch`, `Nothing`} | **multi** | D1 §8.1.4 `Table 8.3` |
+| **TLC-03** | `Cap` | `Tip` | `toT` / `toB` / `toN` | `0b111` | {`Tip`, `Branch`, `Nothing`} | **multi** | D1 §8.1.4 `Table 8.3` |
+| **TLC-04** | `Grow` | `Nothing` | `NtoB` / `NtoT` | `0b110` | {`Branch`, `Tip`} | **multi** | D1 §8.1.4 `Table 8.3` |
+| **TLC-05** | `Grow` | `Branch` | `BtoT` | `0b100` | {`Tip`} | **single** | D1 §8.1.4 `Table 8.3` |
+| **TLC-06** | `Grow` | `Tip` | ——(记号集**无** `Tto*`) | `0b000` | `∅` | **empty** | D1 §8.1.4 `Table 8.3` + **末段穷尽性句** |
+| **TLC-07** | `Prune` | `Nothing` | ——(记号集**无** `Nto*`) | `0b000` | `∅` | **empty** | D1 §8.1.4 `Table 8.3` + **末段穷尽性句** |
+| **TLC-08** | `Prune` | `Branch` | `BtoN` | `0b001` | {`Nothing`} | **single** | D1 §8.1.4 `Table 8.3` |
+| **TLC-09** | `Prune` | `Tip` | `TtoB` / `TtoN` | `0b011` | {`Branch`, `Nothing`} | **multi** | D1 §8.1.4 `Table 8.3` |
+| **TLC-10** | `Report` | `Nothing` | `NtoN` | `0b001` | {`Nothing`} | **single** | D1 §8.1.4 `Table 8.3` |
+| **TLC-11** | `Report` | `Branch` | `BtoB` | `0b010` | {`Branch`} | **single** | D1 §8.1.4 `Table 8.3` |
+| **TLC-12** | `Report` | `Tip` | `TtoT` | `0b100` | {`Tip`} | **single** | D1 §8.1.4 `Table 8.3` |
+
+
+<!-- TL-TABLE:STATS:START -->
+| 指标 | 值 |
+|---|---|
+| 稳定态数 | 3 |
+| 事件数 | 4 |
+| 转移格数 | 12 |
+| `single` | 5 |
+| `multi` | 5 |
+| `empty` | 2 |
+| `unknown` | 0 |
+| 逐格条目号 | `TLC-01`, `TLC-02`, `TLC-03`, `TLC-04`, `TLC-05`, `TLC-06`, `TLC-07`, `TLC-08`, `TLC-09`, `TLC-10`, `TLC-11`, `TLC-12` |
+GEN:OK 载体 ↔ 锚点逐格交叉核对通过(12 格)
+<!-- TL-TABLE:STATS:END -->
+
+⇒ ⇒ 分桶合计:**`single` 5**(`TLC-05` / `TLC-08` / `TLC-10` ~ `TLC-12`)·
+**`multi` 5**(`TLC-01` ~ `TLC-04` + `TLC-09`)· **`empty` 2**(`TLC-06` / `TLC-07`)· **`unknown` 0**
+⇒ **5 + 5 + 2 + 0 = 12** ✓ ⇒ **本表是计数的唯一真源**。
+
+> ⚠️ **`TLC-06` / `TLC-07`(空集)的依据**:`Table 8.3` 的 `Grow` 记号集 = {`NtoB`,`NtoT`,`BtoT`}
+> ⇒ **无**以 `Tip` 为源的 `Grow` 转移;`Prune` 记号集 = {`TtoB`,`TtoN`,`BtoN`} ⇒ **无**以 `Nothing`
+> 为源的 `Prune` 转移 ⇒ 二者是**规范明确**的**空集**,**不是**「规范未覆盖」。
+> ⚠️ 该判定由 D1 §8.1.4 **末段的穷尽性句**背书:「Table 8.3 shows **all the permissions transitions
+> any coherence policy based on TileLink could want to express**」⇒ 记号集**之外**不存在其它转移。
+
 ### 2.4 消息表(**版本差异显著**)
 
 | 版本 | TL-C 消息数 | 消息 |

@@ -311,6 +311,22 @@ add_test(NAME cep_mesif_ratification_request_check
 #   ② CSS-06 —— 载体 ↔ 核对表 ↔ 锚点摘要 三方逐格一致 + 「不整段复制原文」。
 add_test(NAME cep_cxl_state_spec COMMAND cpptlm_tests "[cep][cxl][state-spec]" -r compact)
 
+# 队列 #11 `cpptlm-cep-tilelink-state-spec`(第 0 个 change = 规约层)的判据:
+#   ① 载体契约(3 态 / 4 事件 / 12 格(5/5/2/0 分桶)/ 3→3 投影 / TileLink 形态非对称断言
+#      / 逐格 basis + 偏离清单)+ 8 条反向 fixture;
+#   ② TSS-07 —— 载体逐格 `ref` ↔ 锚点摘要 §2.3bis 的 `TLC-01`~`TLC-12` **逐格**一一对应
+#      (ID 文法容忍 Markdown 粗体 + 接受 `R-T<n>` 前缀 ⇒ **不得**照抄 CXL 版的「全数字」文法)。
+add_test(NAME cep_tilelink_state_spec COMMAND cpptlm_tests "[cep][tilelink][state-spec]" -r compact)
+
+# 队列 #11 `cpptlm-cep-tilelink-state-spec` 的**锚点核对表生成器自检**(只比对不写)——
+# 12 格核对表 + 锚点统计块均由机器可读载体生成 ⇒ 手改任一侧(或载体改了忘重生成)⇒ rc≠0;
+# 且生成器内置**逐格交叉核对**(每格 `ref` SHALL 一一对应锚点 §2.3bis 的真实条目号
+# + 每行目标掩码 / 分桶 SHALL 与载体实算一致)⇒ 手改锚点同样 rc≠0。
+# ⚠️ ID 文法**容忍 Markdown 粗体**且接受 `R-T<n>` 前缀(复用 `test/cep_anchor_ids.hh`)
+#    ⇒ 合法 ID 集合**非空** ⇒ 逐格校验**不是**空转(per 二审 finding B-7)。
+add_test(NAME cep_tilelink_anchor_checklist_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/generate_tilelink_anchor_checklist.sh --check)
+
 # R11 的 **V-2** 判据(队列 #10 之后的独立面):
 #   `moesi_gpu` 的 `O→WRITEBACK` **补偿路径** —— 合并点强制查询 tracker +
 #   verdict 由 `completeness` 决定(保守补偿 ≠ 等价恢复)+ 记录逐字镜像实际返回值。

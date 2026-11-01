@@ -312,6 +312,8 @@ Bundle (消息载荷) → StreamAdapter (适配) → ChStreamModuleBase → ChSt
 | CEP 守门 | `scripts/test/cep_decl_alignment_check.sh` + `cep_decl_reverse_verify.sh` | 协议实例声明 ↔ schema 双向映射 + 反向验证 |
 | CEP 守门 | `scripts/test/cep_cohif_reverse_verify.sh` + `cep_protocol_engine_reverse_verify.sh` + `cep_protocol_bridge_reverse_verify.sh` + `cep_chstream_bidirectional_macro_reverse_verify.sh` | 队列 #7 `cpptlm-cep-cohif-carrier` 的 4 个**反向 fixture** 脚本（CohIf 载体 / ProtocolEngine 端口面 / ProtocolBridge 特化桥 / 装配宏编译期锁）—— 登记表见 `scripts/README.md` §反向 fixture 登记 |
 | CEP 守门 | `scripts/test/cep_mesif_state_spec_reverse_verify.sh` | 队列 #9 `cpptlm-cep-mesif-state-spec` 的 MESIF 规约判据反向验证（8 类毒化副本）—— 登记表见 `scripts/README.md` §CEP 契约守门脚本 |
+| CEP 判据（队列 #11） | `test/test_cep_tilelink_state_spec.cc`（ctest `cep_tilelink_state_spec`，标签 `[cep][tilelink][state-spec]`） | TileLink-C 规约载体判据（3 态 / 4 事件 / 12 格 5-5-2-0 分桶 / 3→3 投影 / TileLink 形态非对称断言 / 逐格 basis / 偏离清单）+ 8 类反向 fixture |
+| CEP 核对表（队列 #11） | `scripts/test/generate_tilelink_anchor_checklist.sh`（ctest `cep_tilelink_anchor_checklist_check`） | 12 格核对表 + 锚点统计块的生成器；**逐格交叉核对**载体 ↔ 锚点摘要 §2.3bis（条目号一一对应 + 目标掩码 + 分桶）⇒ 手改任一侧必红 |
 | CEP 判据（队列 #8） | `test/test_cep_chi_rnf_subset.cc`（ctest `cep_chi_rnf_subset`，标签 `[cep][chi-rnf]`） | CHI RN-F subset 的 **19 case / 344 assertion**：实例声明（CR-01/02）· adapter 映射与投影（CR-03/04）· 静默升级（CR-05）· `sharer_tracker`（CR-06）· 权威分区（CR-07/08/09）· 真插件引擎（CR-10~14 + subset 排除项）· 消费方覆盖 · 装载层参数化 |
 | 流水线 | `scripts/pipeline/run_full_pipeline.sh` | 仿真 → 统计 → 可视化 |
 | 拓扑 | `scripts/topology/topology_validator.py` | 拓扑校验 |
