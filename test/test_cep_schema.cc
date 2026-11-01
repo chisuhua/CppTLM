@@ -496,9 +496,9 @@ TEST_CASE("[cep][schema] protocol_version 值域必须容纳 ADR-CEP-11 锁定�
     // 锁定表的 8 个取值(per ADR-CEP-11 §3;2026-10-22 per 台账 Entry #12 增补
     // moesi-gpu-1.0 / mesif-1.0 —— 登记 moesi_gpu / mesif 进 07 号 §5.1.1 后,
     // INV-CEP-11-IC1 要求其 protocol_version 必须落在锁表内)
-    const std::vector<std::string> locked = {"chi-r2",          "cxl-2.0",    "cxl-3.0",
+    const std::vector<std::string> locked = {"chi-r2",           "cxl-2.0",    "cxl-3.0",
                                              "tilelink-c-1.7.1", "nvlink-4.0", "ualink-2.0",
-                                             "moesi-gpu-1.0",   "mesif-1.0"};
+                                             "moesi-gpu-1.0",    "mesif-1.0"};
     const std::regex re(pattern);
     for (const auto& v : locked) {
         INFO("锁定表取值未出现在 ADR-CEP-11: " << v);

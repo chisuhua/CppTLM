@@ -55,7 +55,10 @@ FIXTURES=(
   "adapter-identity-flag-lie|include/tlm/cep/mesif_adapter.hh|        static constexpr bool kMappingIsIdentity = true;|        static constexpr bool kMappingIsIdentity = false;|runtime-predicate|impl:MA-03-IDENTITY-REASON"
   "adapter-transient-declared|include/tlm/cep/mesif_adapter.hh|        static constexpr std::size_t kTransientStateCount = 0;|        static constexpr std::size_t kTransientStateCount = 1;|runtime-predicate|impl:MA-02-TRANSIENT"
   # ── 实现层:tracker 载体(第 6 种实现)──────────────────────────────
-  "tracker-caps-drift|include/tlm/cep/sharer_tracker.hh|    SharerTrackerCaps caps = kTrackerTraits[5].caps;|    SharerTrackerCaps caps = kTrackerTraits[0].caps;|runtime-predicate|impl:HD-01-CAPS"
+  # ⚠️ 2026-11-01(per 台账 Entry #136):`SharerTrackerIf` 接口面扩展 ⇒ `caps`/`behavior`
+#    从派生类**移到基类** ⇒ 派生类里只剩**构造器中的赋值语句** ⇒ 毒化锚点随之迁移
+#    (同 fixture 前两次的「状态变迁 ⇒ 锚点失效」形态,第三次复现)
+"tracker-caps-drift|include/tlm/cep/sharer_tracker.hh|        caps = kTrackerTraits[5].caps;|        caps = kTrackerTraits[0].caps;|runtime-predicate|impl:HD-01-CAPS"
   "tracker-aggregation-degraded|include/tlm/cep/sharer_tracker.hh|        for (std::size_t l = 0; l <= level; ++l) {|        for (std::size_t l = 0; l <= kRootLevel; ++l) {|runtime-predicate|impl:HD-02-AGGREGATION"
   "tracker-decision-topic-empty|include/tlm/cep/sharer_tracker.hh|{\"B-1\", \"层级数与层级语义(L0 最细 → L2 最粗)\",|{\"B-1\", \"\",|runtime-predicate|impl:HD-04-DECISIONS"
   "tracker-decision-not-pending|include/tlm/cep/sharer_tracker.hh|         \" + ADR-CEP-04 §13 的「层级深度是实现参数,不是能力属性」\", true},|         \" + ADR-CEP-04 §13 的「层级深度是实现参数,不是能力属性」\", false},|runtime-predicate|impl:HD-04-DECISIONS"

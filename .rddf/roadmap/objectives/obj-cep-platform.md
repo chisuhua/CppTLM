@@ -8529,6 +8529,87 @@ RISC-V adoc 不存在 · `openspecification/tilespec` 仓库 **404** · GitHub �
 
 ---
 
+### Entry #136 — 2026-11-01 [scope-change](R11 的 **V-2** 独立面落地 —— `moesi_gpu` 运行期载体 + `O→WRITEBACK` **补偿路径**的可执行判据)
+
+**主题**:Entry #133 ② 重开的 **R11 债期**的**终点** —— 交付「`moesi_gpu` 的 `O→WRITEBACK`
+补偿路径**有可执行判据**」这一义务(per `ADR-CEP-04` SU(2026-11-01) 的 **V-2**)。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `include/tlm/cep/moesi_gpu_protocol_engine.hh`(新 · header-only · 端口数 N=2) | **`moesi_gpu` 的运行期载体** —— 此前**不存在**(adapter 纯静态 + 无 engine)⇒ 这是 V-2 的**前提**。持有 tracker 句柄 + per-line 态 + 补偿日志 + 计数器 |
+| `include/tlm/cep/sharer_tracker.hh`(**受控扩展**) | `caps` / `behavior` 从**派生类**移到 **`SharerTrackerIf` 基类** ⇒ 消费方持接口指针**即可**读 `completeness` |
+| `test/test_cep_moesi_gpu_compensation.cc`(新) | **5 cases / 65 assertions** + **2 条毒化实测** |
+
+**② ⚠️ `SharerTrackerIf` 接口面扩展 —— 为什么是**根因修复**而非绕过**
+
+补偿路径要判「保守补偿 vs 等价恢复」⇒ **必须**读 tracker 的 `completeness`;
+而 `caps` 此前**只在各行为实现类上** ⇒ 持 `SharerTrackerIf*` 的消费方**读不到**
+⇒ 只剩两条路:① 抄**第二份** caps(⇒ **违反单源纪律** + 会漂移)
+② 把 `caps` 提到**接口上** ⇒ **本次走 ②**。
+
+⇒ **形态约束**:`caps` / `behavior` 是**数据成员**、**不是**虚方法
+⇒ `ADR-CEP-04 §3` 的「接口恰好 **4** 个方法」契约**不变**(`count_member_virtuals` 仍 = **5**,含虚析构)
+⇒ **已归档**的 `cep-sharer-tracker-base` 的 **Scenario 全部不受影响**
+⇒ ⚠️ **`openspec/specs/cep-sharer-tracker-base/spec.md` 零改动** ⇒ **不产生**冻结面冲突。
+⇒ **存储唯一**:3 个行为实现**删除**自己的成员副本 ⇒ 改在构造器里赋值基类成员
+⇒ `impl.caps` 的写法**仍可用**(继承而来)⇒ **源码兼容**;各实现的 caps 取值仍**逐字取自
+`kTrackerTraits[N]`** ⇒ 冻结契约**被消费**,不重推。
+
+**③ ⚠️ 补偿语义的**决定性设计**(V-2 补记的忠实落地)**
+
+`ADR-CEP-04` SU(2026-11-01) 的 V-2 补记:「该『判据』SHALL 判**保守补偿**语义,
+SHALL **NOT** 读作『**等价恢复**』—— `SparseSnoopFilter` = `CONSERVATIVE`」。
+
+⇒ ⇒ **verdict 由 tracker 的 `completeness` 决定**,**不**由本次 `lookup` 的返回值决定:
+| `completeness` | verdict | 语义 |
+|---|---|---|
+| `CONSERVATIVE` | `ConservativeOnly` | 只能给「**可能**还有其他 sharer」的保守近似 ⇒ **不得**声称等价恢复 |
+| `EXACT` | `ExactRestorable` | 此时 `ANSWER_HERE` **确实**证明「没有其他 sharer」⇒ 合并损失**可被等价恢复** |
+
+⇒ ⚠️ **判别力关键**:CONSERVATIVE tracker 即使**返回** `ANSWER_HERE`,verdict **仍**是
+`ConservativeOnly` ⇒ 判据断言「verdict 由 caps 而非返回值决定」⇒ **有鉴别力**(非恒真)。
+⇒ **真实**的 `SparseSnoopFilter` 是 CONSERVATIVE ⇒ 恒 `ConservativeOnly` ⇒ 平台**当前**不声称等价恢复。
+
+**④ 判据(5 cases / 65 assertions)**
+- **CMP-01** 补偿路径**存在**且在合并点被**强制触发**:未接 tracker ⇒ **拒绝**投影(`compensation_skipped`)+ 记录 0 条;
+  接上 ⇒ 投影成功 + **恰好 1 次**查询 + 1 条记录;非 `O` 态**不**触发;瞬态 `T` **无投影**
+- **CMP-02** verdict 由 `completeness` 决定(含「CONSERVATIVE + `ANSWER_HERE` ⇒ 仍保守」的正交用例
+  + EXACT ⇒ `ExactRestorable` 的**正控** ⇒ 两档**都有**实例 ⇒ 非恒真空转)
+- **CMP-03** 记录**逐字镜像** tracker 的实际 `lookup` / `hazard` / `forward_to`
+  ⇒ 附**反向 fixture**:毒化 tracker 返回值 ⇒ 记录**必变** ⇒ 判据**必红**
+- **CMP-04** `O→M` **迁移前**补偿;无 tracker ⇒ **不迁移**(不得在未补偿的情况下丢信息)
+- **CMP-05** 运行期载体是 V-2 的**前提**(可运行期改挂 tracker ⇒ 结论随挂载对象变化)
+- **2 条毒化实测**:① verdict 改由返回值决定 ⇒ **1 failed** ② 补偿路径不查 tracker ⇒ **2 failed**
+- ctest 注册 `cep_moesi_gpu_compensation`
+
+**⑤ 连带修正(第三次复现「状态变迁 ⇒ 锚点失效」)**
+`scripts/test/cep_mesif_adapter_reverse_verify.sh` 的 `tracker-caps-drift` 毒化锚点写死了
+`SharerTrackerCaps caps = kTrackerTraits[5].caps;` ⇒ 接口面扩展后该串**不存在** ⇒ 毒化命中 0 次
+⇒ 锚点**迁移**到构造器中的 `caps = kTrackerTraits[5].caps;`
+⇒ **反向验证 18 项通过 / 0 项失败**(16 条毒化 + 基线 2 项检查)。
+
+**⑥ R11 降级评估(V-1 ∧ V-2 ∧ V-3)—— 本条**只登记 V-2 已达成**,**降级裁决属 architect****
+
+| 条件 | 判定 | 依据 |
+|---|---|---|
+| **V-1** 行为与 §2 caps / §4 hazard 逐字段一致 | ✅ 达成 | `SparseSnoopFilter::caps` 取 `kTrackerTraits[1]`;判据 `test_cep_sparse_snoop_filter.cc` |
+| **V-2** `moesi_gpu` 的 `O→WRITEBACK` **补偿路径有判据** | ✅ **本条达成** | 本条交付:运行期载体 + 补偿路径 + **可执行**判据(5 cases / 65 assertions + 2 条毒化) |
+| **V-3** `moesi_gpu` 既有测试 **0 回归** | ✅ 达成 | 全量 `ctest` **131/131** 全绿 |
+
+⇒ **三条件合取成立** ⇒ **R11 在技术上已可降为 🟢 低**。
+⇒ ⚠️ **但降级动作本身 = `ADR-CEP-04` 的 `## Status Update`**(**冻结面** + architect 域)
+⇒ **本条不作降级裁决** ⇒ **待 architect 签发**(另需台账授权记录 + 两步授权闭环)。
+⇒ **债期**:新终点 = 本条(2026-11-01)⇒ **待 architect 签发 R11 降级 SU 时一并收口**。
+
+**⑦ 关联**: Entry #124(R11 复核 + 债期)· #125(V-2 措辞收紧)· #129(Phase 1 SF)· #131(3 件冻结面授权)
+· #132(实现层归档)· #133(R11 债期**重开** + `FullMapDirectory` 反向缺口)· #134 · #135
+· `ADR-CEP-04` SU(2026-11-01) · `ADR-CEP-02` CEN-Ib11(`perm` 4 值锁)· `ADR-CEP-05`(投影)
+· `moesi_gpu_protocol_engine.hh` · `moesi_gpu_adapter.hh` · `sharer_tracker.hh`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

@@ -311,6 +311,11 @@ add_test(NAME cep_mesif_ratification_request_check
 #   ② CSS-06 —— 载体 ↔ 核对表 ↔ 锚点摘要 三方逐格一致 + 「不整段复制原文」。
 add_test(NAME cep_cxl_state_spec COMMAND cpptlm_tests "[cep][cxl][state-spec]" -r compact)
 
+# R11 的 **V-2** 判据(队列 #10 之后的独立面):
+#   `moesi_gpu` 的 `O→WRITEBACK` **补偿路径** —— 合并点强制查询 tracker +
+#   verdict 由 `completeness` 决定(保守补偿 ≠ 等价恢复)+ 记录逐字镜像实际返回值。
+add_test(NAME cep_moesi_gpu_compensation COMMAND cpptlm_tests "[cep][moesi-gpu][compensation]" -r compact)
+
 # 队列 #10 `cpptlm-cep-cxl-nonsymmetric`(实现层)的**实例声明面**判据:
 #   `cxl_2_0` 的 13 必填键 + `sharer_tracker` = 「不参与」+ 权威分区 + 静默升级登记。
 add_test(NAME cep_cxl_instance_decl COMMAND cpptlm_tests "[cep][cxl][instance-decl]" -r compact)

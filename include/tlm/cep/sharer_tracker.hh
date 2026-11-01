@@ -272,6 +272,25 @@ class SharerTrackerIf {
 public:
     virtual ~SharerTrackerIf() = default;
 
+    // ── 能力描述符(**数据成员**,不是虚方法)────────────────────────────
+    // ⚠️ **为什么提到接口上**(2026-11-01,per 台账 Entry #136 / R11 语义层缺口):
+    //   `caps` / `behavior` 此前**只在各行为实现类上** ⇒ 持 `SharerTrackerIf*` 的
+    //   **消费方读不到** `completeness` ⇒ `moesi_gpu` 的 `O→WRITEBACK` **补偿路径**
+    //   无法判定「保守补偿 vs 等价恢复」⇒ 只能抄第二份 caps ⇒ **违反单源纪律**。
+    //   (根因:补偿路径需要一个**运行期载体**才能持有并查询 tracker ——
+    //    `MoesiGpuAdapter` 是**纯静态**的且 `moesi_gpu` **无 protocol engine**。)
+    // ⇒ 现在 **存储唯一**(基类这一份),各实现**不再另存副本**。
+    //
+    // ⚠️ **「接口恰好 4 个方法」契约不受影响**(per `ADR-CEP-04 §3`):
+    //   本处是**数据成员**、**不是**虚方法 ⇒ `count_member_virtuals` 仍 = 5
+    //   (4 个接口方法 + 1 个虚析构)⇒ 已归档的 `cep-sharer-tracker-base`
+    //   的 **Scenario 全部不受影响** ⇒ main spec **零改动**。
+    //
+    // ⚠️ **各实现的 caps 取值仍逐字来自 `kTrackerTraits[N]`**(冻结契约**被消费**,
+    //    不重推)—— 只是**存放位置**从派生类移到基类。
+    SharerTrackerCaps caps{};
+    SharerTrackerBehavior behavior{};
+
     virtual void lookup(std::uint64_t addr, Intent intent, LookupResult& result, LocalView& view,
                         LookupHazard& hazard) = 0;
 
@@ -472,11 +491,14 @@ public:
     /// 16-bit 是 `ADR-CEP-04` 的 RTL 契约(`typedef logic [15:0] snoop_handle_t`),不可 widen。
     static constexpr std::size_t kHandleSpace = SnoopMechanics::kHandleSpace;
 
-    // 公开**数据成员**(不是方法)⇒ 接口面仍恰好 4 个方法
-    SharerTrackerCaps caps = kTrackerTraits[0].caps;
-    SharerTrackerBehavior behavior = kTrackerTraits[0].behavior;
-
-    FullMapDirectory() = default;
+    // ⚠️ **caps / behavior 现存于基类** `SharerTrackerIf`(2026-11-01 接口面扩展)
+    //    ⇒ 本类**不再另存副本**(存储唯一)⇒ `impl.caps` 写法仍可用(继承而来)。
+    // ⚠️ **取** `kTrackerTraits[0]`(traits 行已存在)⇒ 本类**不**另写一份 caps 字面量
+    //    ⇒ `ADR-CEP-04 §2` / `§4` 的冻结契约**被消费**,不重推。
+    FullMapDirectory() {
+        caps = kTrackerTraits[0].caps;
+        behavior = kTrackerTraits[0].behavior;
+    }
 
     // ── 目录安装(由 home 侧 / 测试夹具驱动)──
     void set_sharer(std::uint64_t addr, node_id_t node, SnoopState state) {
@@ -616,13 +638,14 @@ public:
     /// handle 空间大小(与另两个实现同 —— `ADR-CEP-04` 的 RTL 契约,不可 widen)
     static constexpr std::size_t kHandleSpace = SnoopMechanics::kHandleSpace;
 
-    // 公开**数据成员**(不是方法)⇒ 接口面仍恰好 4 个方法。
+    // ⚠️ **caps / behavior 现存于基类** `SharerTrackerIf`(2026-11-01 接口面扩展)
+    //    ⇒ 本类**不再另存副本**(存储唯一)⇒ `impl.caps` 写法仍可用(继承而来)。
     // ⚠️ **取** `kTrackerTraits[1]`(traits 行已存在)⇒ 本类**不**另写一份 caps 字面量
     //    ⇒ `ADR-CEP-04 §2` / `§4` 的冻结契约**被消费**,不重推。
-    SharerTrackerCaps caps = kTrackerTraits[1].caps;
-    SharerTrackerBehavior behavior = kTrackerTraits[1].behavior;
-
-    SparseSnoopFilter() = default;
+    SparseSnoopFilter() {
+        caps = kTrackerTraits[1].caps;
+        behavior = kTrackerTraits[1].behavior;
+    }
 
     // ── 安装面(记录「**可能**持有」)──
 
@@ -867,9 +890,12 @@ public:
         " ⇒ 「谁是转发点」对 tracker 不可分辨 ⇒ 本实现只承载转发目标节点"
         "(LocalView::forward_to),转发点角色本身丢失 ⇒ 转发点保真度缺口(待跨仓追认)。";
 
-    // 公开**数据成员**(不是方法)⇒ 接口面仍恰好 4 个方法
-    SharerTrackerCaps caps = kTrackerTraits[5].caps;
-    SharerTrackerBehavior behavior = kTrackerTraits[5].behavior;
+    // ⚠️ **caps / behavior 现存于基类** `SharerTrackerIf`(2026-11-01 接口面扩展)
+    //    ⇒ 本类**不再另存副本**(存储唯一)⇒ `impl.caps` 写法仍可用(继承而来)。
+    HierarchicalDirectory() {
+        caps = kTrackerTraits[5].caps;
+        behavior = kTrackerTraits[5].behavior;
+    }
 
     /// traits 表第 6 行**必须**是本实现(索引写错 ⇒ 编译期红)
     static_assert(kTrackerTraits[5].impl == TrackerImpl::HierarchicalDirectory,
@@ -877,7 +903,7 @@ public:
     static_assert(kTrackerTraits[5].caps.aggregation_at == AggregationAt::HIERARCHICAL,
                   "HierarchicalDirectory 的 aggregation_at 必须是 HIERARCHICAL");
 
-    HierarchicalDirectory() = default;
+
 
     // ── 目录安装(带层级)──
     /// 把 `node` 装到 `addr` 的**第 `level` 级**;`level` 非法 ⇒ **显式 no-op**
