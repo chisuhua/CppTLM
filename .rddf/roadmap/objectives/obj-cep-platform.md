@@ -8129,6 +8129,38 @@ SHALL 只做声明层断言(deferred)」⇒ 落地后**已成过期陈述** ⇒ 
 
 ---
 
+### Entry #130 — 2026-11-01 [implement](队列 #10 实现层 Phase 2:`CxlCacheAdapter` 落地 —— **零副本** + **三态不被折叠**)
+
+**主题**:队列 #10 第 1 个 change(实现层,Entry #128 转正)的 Phase 2 落地。
+
+**① 交付**:`include/tlm/cep/cxl_cache_adapter.hh`(新,header-only · **不进 `ModuleFactory`**)
+- **委托**规约载体(`CxlStateSpec`):`transition_kind` / `transition_target` / `transition_is_known`
+  / `transition_is_illegal` / `transition_is_unknown` / `perm_of` / `is_silent_upgrade` / 残余风险清单
+- **刻意不提供**「返回 `std::uint8_t` 目标态」的折叠接口(⇒ `Unknown` 不被折叠成哨兵值)
+- ⚠️ **刻意不做**「消息类 → `CATEGORY_*` 映射」:CXL 的通道划分(D2H/H2D × Req/Rsp/Data)与既有
+  **3 类 flit 词表不是同一层** ⇒ 属**后续**工作 ⇒ **宁可缺,不可编**
+
+**② 零副本的结构性保证(比 mesif 更严)**
+除 `State::` / `Event::` / `Perm::` / `kTable` 外,本实现**追加**禁止 `kTransitions` /
+`kPermProjection` ⇒ adapter **不得指名任何表**,**只能调访问器**。
+⚠️ ⇒ 这与载体形态**互斥**(载体原本只暴露 `kPermProjection` 表)⇒ 已**受控扩展**载体:
+增补**纯访问器** `perm_of(State, Perm&)`(逐行等价,零语义变更)
+⇒ 已归档的 `cep-cxl-nonsymmetric-state-spec` 的 **CSS-01 ~ CSS-06 全部不受影响**
+⇒ **无需**改其 main spec ⇒ **不产生**冻结面冲突。
+⇒ ⚠️ **教训**:零副本纪律要求「**访问器优先**」—— 载体形态须**先**满足访问器需求。
+
+**③ 判据**:`test/test_cep_cxl_cache_adapter.cc` —— **3 cases / 610 assertions**
+- 68 格逐格 pass-through(每格 5 项核对)+ 4 态投影逐格
+- 静态扫描(6 个违禁记号)+ **扫描器鉴别力**自测(含「注释里的违禁记号**不算**命中」)
+- **2 条毒化实测鉴别力**:① adapter 自带 `kTransitions` 表 ⇒ **1 failed**
+  ② adapter 写死 `State::` 字面量 ⇒ **1 failed**
+- ctest 注册 `cep_cxl_cache_adapter`;全量 `ctest` **129/129**
+
+**④ 关联**: Entry #122(口径)· #127(规约层归档)· #128(实现层转正)· #129(Phase 1 SF)
+· `cxl_state_spec.hh` · `cxl_cache_adapter.hh` · `mesif_adapter.hh`(形态先例)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

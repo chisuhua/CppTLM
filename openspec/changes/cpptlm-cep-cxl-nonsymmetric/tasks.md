@@ -4,7 +4,7 @@
 |---|---|---|
 | 0 治理前置 | ⬜ 待实施 | change 4 件套(本文件)+ KPI slot + **7 处** baseline 同步 |
 | 1 `SparseSnoopFilter` 行为实现 | ✅ **已完成**(2026-11-01) | `sharer_tracker.hh` 追加;CONSERVATIVE 语义 + 5 cases / 39 assertions;**2 条毒化实测鉴别力**(无条目→`ANSWER_HERE` ⇒ 3 failed;漏查 sharers 位数 ⇒ 2 failed)|
-| 2 `CxlCacheAdapter` | ⬜ 待实施 | `cxl_cache_adapter.hh`(新);委托规约载体 + 三态查询面 + 零副本扫描器 |
+| 2 `CxlCacheAdapter` | ✅ **已完成**(2026-11-01) | `cxl_cache_adapter.hh`(新);委托规约载体 + 三态查询面 + 零副本扫描器;**3 cases / 610 assertions**;**2 条毒化实测鉴别力**(自带表 ⇒ 1 failed;写死 `State::` 字面量 ⇒ 1 failed)
 | 3 实例声明 + 冻结面 | ⬜ 待实施 | `protocol_instances.json` + `perm_upgrades.json` + `07 号` / `ADR-CEP-04` 两步授权 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + 零冻结面 diff + 归档 + KPI 1/3 → 0/3 |
 
@@ -35,13 +35,13 @@
 
 ## Phase 2 — `CxlCacheAdapter`(TDD 5-step)
 
-- [ ] 2.1 **先写红**:适配测试骨架 + 反向 fixture(① 注入 `State::` 字面量 ⇒ 扫描器必红
+- [x] 2.1 **先写红**:适配测试骨架 + 反向 fixture(① 注入 `State::` 字面量 ⇒ 扫描器必红
       ② `Unknown` 被折叠成哨兵 ⇒ 必红 ③ 68 格 kind 不一致 ⇒ 必红)
-- [ ] 2.2 `include/tlm/cep/cxl_cache_adapter.hh`(新):类型别名 + `constexpr` 委托
+- [x] 2.2 `include/tlm/cep/cxl_cache_adapter.hh`(新):类型别名 + `constexpr` 委托
       (`transition_kind` / `transition_target` / `transition_is_known` / `perm_of` / `is_silent_upgrade`)
-- [ ] 2.3 **零自有表副本**扫描器 + 扫描器**鉴别力**自测(注入字面量 ⇒ 必红)
-- [ ] 2.4 68 格逐格 pass-through + `Unknown` 抽样(22 个 `pending=false` 格全抽样)
-- [ ] 2.5 跑绿 + **零冻结面 diff** 复核
+- [x] 2.3 **零自有表副本**扫描器 + 扫描器**鉴别力**自测(注入字面量 ⇒ 必红)
+- [x] 2.4 68 格逐格 pass-through + `Unknown` 抽样(22 个 `pending=false` 格全抽样)
+- [x] 2.5 跑绿 + **零冻结面 diff** 复核
 
 ---
 

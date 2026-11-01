@@ -311,6 +311,10 @@ add_test(NAME cep_mesif_ratification_request_check
 #   ② CSS-06 —— 载体 ↔ 核对表 ↔ 锚点摘要 三方逐格一致 + 「不整段复制原文」。
 add_test(NAME cep_cxl_state_spec COMMAND cpptlm_tests "[cep][cxl][state-spec]" -r compact)
 
+# 队列 #10 `cpptlm-cep-cxl-nonsymmetric`(实现层)的 **adapter** 判据:
+#   零自有表副本(68 格 pass-through + 静态扫描 + 扫描器鉴别力自测)+ 三态不被折叠。
+add_test(NAME cep_cxl_cache_adapter COMMAND cpptlm_tests "[cep][cxl][adapter]" -r compact)
+
 # 队列 #10 `cpptlm-cep-cxl-nonsymmetric`(实现层)的**行为实现**判据:
 #   `SparseSnoopFilter` —— CONSERVATIVE 保守型 snoop filter(caps/hazard 逐字段对齐
 #   `ADR-CEP-04 §2`/`§4`;「永不 ANSWER_HERE」+ 漏探必红 + contention STALL + 合法收缩)。

@@ -137,6 +137,18 @@ public:
     };
 
     // ── 秩口径:**只增不减**,**无例外**(CXL 无 `F` 态 ⇒ 无 `F→E` 秩回落)──────
+    /// 稳定态 → 4 值 `perm` 投影(**访问器**)。
+    /// ⚠️ **本访问器是「实现层零副本」的前置条件**(2026-11-01 增,per 队列 #10 实现层):
+    ///    adapter 若直接读 `kPermProjection[...]` 就必须**指名**该表名 ⇒ 违「零自有表副本」
+    ///    的静态扫描(禁止记号含表名)⇒ 故提供**函数**形态的访问面,adapter 只调函数。
+    /// ⚠️ **纯访问器,零语义变更**(与 `kPermProjection` 逐行相同)⇒ 已归档的
+    ///    `cep-cxl-nonsymmetric-state-spec` 的 CSS-01 ~ CSS-06 **不受影响**。
+    static constexpr bool perm_of(State s, Perm& out) noexcept {
+        const auto v = kPermProjection[static_cast<std::uint8_t>(s)];
+        out = v;
+        return true;  // 4 态**全部**有投影(CXL 无瞬态 ⇒ 无「无投影」情形)
+    }
+
     static constexpr std::uint8_t perm_rank(Perm p) noexcept {
         return static_cast<std::uint8_t>(p);
     }
