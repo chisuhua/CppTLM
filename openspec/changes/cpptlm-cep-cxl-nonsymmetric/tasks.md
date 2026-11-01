@@ -5,7 +5,7 @@
 | 0 治理前置 | ⬜ 待实施 | change 4 件套(本文件)+ KPI slot + **7 处** baseline 同步 |
 | 1 `SparseSnoopFilter` 行为实现 | ✅ **已完成**(2026-11-01) | `sharer_tracker.hh` 追加;CONSERVATIVE 语义 + 5 cases / 39 assertions;**2 条毒化实测鉴别力**(无条目→`ANSWER_HERE` ⇒ 3 failed;漏查 sharers 位数 ⇒ 2 failed)|
 | 2 `CxlCacheAdapter` | ✅ **已完成**(2026-11-01) | `cxl_cache_adapter.hh`(新);委托规约载体 + 三态查询面 + 零副本扫描器;**3 cases / 610 assertions**;**2 条毒化实测鉴别力**(自带表 ⇒ 1 failed;写死 `State::` 字面量 ⇒ 1 failed)
-| 3 实例声明 + 冻结面 | ⬜ 待实施 | `protocol_instances.json` + `perm_upgrades.json` + `07 号` / `ADR-CEP-04` 两步授权 |
+| 3 实例声明 + 冻结面 | ✅ **已完成**(2026-11-01) | `cxl_2_0` 实例块 + `perm_upgrades.json` 一行 + **3 件**冻结面两步授权闭环(Entry #131);⚠️ 装配闸抓出 `hierarchical` **语义域**踩坑(已修);4 处既有硬编码期望同步;反向验证 18/18 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + 零冻结面 diff + 归档 + KPI 1/3 → 0/3 |
 
 ---
@@ -47,17 +47,17 @@
 
 ## Phase 3 — 实例声明 + 冻结面(两步授权)
 
-- [ ] 3.1 `include/tlm/cep/protocol_instances.json` 新增 `cxl_2_0` 实例块
+- [x] 3.1 `include/tlm/cep/protocol_instances.json` 新增 `cxl_2_0` 实例块
       (`sharer_tracker.impl = "不参与"`)+ `repo_owned_instance_ids` 追加
-- [ ] 3.2 `include/tlm/cep/perm_upgrades.json` 新增 `cxl_2_0` 的 `UNIQUE → WRITEBACK` 一行
+- [x] 3.2 `include/tlm/cep/perm_upgrades.json` 新增 `cxl_2_0` 的 `UNIQUE → WRITEBACK` 一行
       + `pending` 注记
-- [ ] 3.3 台账 Entry(授权记录)→ `--update --authorized-by "Entry #N"` → commit 产物
+- [x] 3.3 台账 Entry(授权记录)→ `--update --authorized-by "Entry #N"` → commit 产物
       → `--update`(provenance 对齐)→ commit 清单
       · `docs/architecture/07-coherence-exploration-platform.md`(§5.1.1 CXL 行措辞对齐裁决 ③⑦)
       · `docs/adr/ADR-CEP-04-*.md`(第 3 个行为实现落地 + R11 降级条件评估)
       · `openspec/specs/cep-sharer-tracker-base/spec.md`(⚠️ **第 3 件** —— 「其余 4 实现 deferred」
         已**过期**;走 delta spec `MODIFIED Requirements`;⚠️ **归档 → 重冻**顺序不可颠倒)
-- [ ] 3.4 R11 降级评估:V-1 ∧ V-2 ∧ V-3 **全达成**才降 🟢;任一未达成 ⇒ **保持 🟡 中**并登记
+- [x] 3.4 R11 降级评估:V-1 ∧ V-2 ∧ V-3 **全达成**才降 🟢;任一未达成 ⇒ **保持 🟡 中**并登记
 
 ---
 

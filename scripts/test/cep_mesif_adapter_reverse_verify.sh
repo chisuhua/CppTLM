@@ -65,7 +65,7 @@ FIXTURES=(
   "spec-write-rule|include/tlm/cep/mesif_state_spec.hh|{1, 2, 1, 2, 1, 0}, // S :|{1, 2, 2, 2, 1, 0}, // S :|compile-lock|MESIF 写规则被破坏"
   # ── 声明层 ────────────────────────────────────────────────────────
   "decl-upgrade-row-missing|perm_upgrades.json|||runtime-predicate|decl:MA-04-UPGRADE-ROW"
-  "decl-current-state-lie|perm_upgrades.json|**3 个实例全部具备该能力**|`mesif` 无该能力|runtime-predicate|decl:MA-04-CURRENT-STATE"
+  "decl-current-state-lie|perm_upgrades.json|**4 个实例全部具备该能力**|`mesif` 无该能力|runtime-predicate|decl:MA-04-CURRENT-STATE"
   "decl-status-bogus|protocol_instances.json|||runtime-predicate|decl:MA-05-STATUS-DOMAIN"
   "decl-vc-out-of-range|protocol_instances.json|          \"query\": 2,|          \"query\": 9,|runtime-predicate|decl:MA-08-VC-BOUND"
 )

@@ -341,7 +341,9 @@ int main(int argc, char** argv) {
         check(hits == 1u, "decl", "MA-04-UPGRADE-ROW", "mesif 行缺失或重复");
 
         const std::string cs = pu.at("derived_from").at("current_state").get<std::string>();
-        check(cs.find("无该能力") == std::string::npos && cs.find("3 个实例全部") != std::string::npos,
+        // ⚠️ 2026-11-01(队列 #10 实现层):静默升级声明 **3 → 4** 条(新增 `cxl_2_0`)
+        //    ⇒ 计数串同步为「4 个实例全部」(per 台账 Entry #131)
+        check(cs.find("无该能力") == std::string::npos && cs.find("4 个实例全部") != std::string::npos,
               "decl", "MA-04-CURRENT-STATE", "current_state 仍否认 mesif 的能力");
     }
     {
