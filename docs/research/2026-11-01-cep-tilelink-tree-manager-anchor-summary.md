@@ -1,10 +1,12 @@
 # TileLink-C(TileLink Tree Manager)—— 公开来源锚点摘要(Task 0 普查产物)
 
-> **日期**:2026-11-01 · **状态**:🔵 **普查完成(有条件通过)** —— **载体形态可钉死**(3 态 × 4 事件 = 12 格,
+> **日期**:2026-11-01 · **状态**:🔵 **普查完成(硬门通过)** —— **载体形态已钉死**(3 态 × 4 事件 = 12 格,
 > **零 `Unknown`**);**版本锁定缺口(R-T1)已闭合**(2026-11-01,per 台账 Entry #135 + `ADR-CEP-11` 的
 > `## Status Update(2026-11-01,per 台账 Entry #135)` ⇒ 锁定版本 = **`tilelink-c-1.7.1`**,SiFive);
-> ⚠️ **仍余 3 项 architect 待裁决**:**R-T6**(非对称定义形态,阻塞规约层)+ **R-T2 / R-T3**
-> (通道 5 → VC 4 / 6 类消息类词表,阻塞实现层的实例声明)。
+> ✅ **3 项 architect 裁决已全部闭合**(2026-11-01,per 台账 Entry #138 + 3 份 ADR 的
+> `## Status Update(2026-11-01,per 台账 Entry #138)`):**R-T6**(非对称定义形态 → `ADR-CEP-17`)·
+> **R-T2**(通道 5 → VC 4 → `ADR-CEP-09`)· **R-T3**(6 类消息类词表 → `ADR-CEP-12`)
+> ⇒ ⇒ **Task 0 硬门通过** ⇒ 队列 #11 的 **change 目录可建**(规约层先行)。
 > · **用途**:队列 #11 `cpptlm-cep-tilelink-tree-manager` 的 **basis 唯一人工审计面**
 >   (per `ADR-CEP-11` Status Update ①-c / ④ 的同款定位)
 > · **上位裁决**:台账 `obj-cep-platform.md` **Entry #134** · `docs/adr/ADR-CEP-11-protocol-version-locking.md` 的 `## Status Update(2026-11-01)`
@@ -242,11 +244,11 @@
 | # | 残余风险 | 等级 | 处置 |
 |---|---|---|---|
 | **R-T1** | ~~**版本锁定缺口**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #135** + `ADR-CEP-11` 的 `## Status Update(2026-11-01,per 台账 Entry #135)`)—— `ADR-CEP-11 §3` 锁表现为 **`tilelink-c-1.7.1`**(SiFive;PDF sha256 `30c09b5f…a2dd`)。**历史事实保留**:原锁 `tilelink-c-1.3` 的正文**至今取不到**(≥6 次尝试:riscv.org 404 / RISC-V adoc 不存在 / `openspecification/tilespec` 仓库 **404** / GitHub 搜索无命中)⇒ **该版本永久不可确证** ⇒ 本裁决是**改锁**,**不是**「已取得 1.3」 | **✅ 已闭合** | 台账 Entry #135(授权记录)+ `ADR-CEP-11` SU |
-| **R-T2** | **通道 5 → VC 4 冲突** —— 见 §5;合并通道会破坏规范自带的 `A<B<C<D<E` 无环论证 ⇒ 装配期闸可能误报 | **🔴 高** | **architect 裁决** |
-| **R-T3** | **6 类消息类词表缺口** —— `GrantAck` 无对应类;`Release`/`ReleaseData` 类归属歧义;`writeback` 是**流名**不是**类名**(两套词表混用) | 🟡 中 | 与 R-T2 合并裁决 |
+| **R-T2** | ~~**通道 5 → VC 4 冲突**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-09` 的 `## Status Update(2026-11-01,per 台账 Entry #138)`)—— 裁决 = **合并 D∪E 到同一 VC**(`response` 类)⇒ E 的唯一跨流等待对象(D 的 `Grant`)落**同一 VC** ⇒ VC 内有序 ⇒ **不产生**跨 VC 依赖 ⇒ **无环判据仍成立**;⚠️ **3 条降维代价已登记**(优先级降维 5→4 / D 与 E 方向相反共 VC / `compute_noc` 边表对 TileLink 是**保守近似**);⚠️ **明确否决**:扩 `vc_id` 上限到 4、新开 `tilelink` network(两者都 ⇒ **跨仓债**) | **✅ 已闭合** | 台账 Entry #138 |
+| **R-T3** | ~~**6 类消息类词表缺口**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-12` 的同 Entry `## Status Update`)—— 裁决 = **6 类词表零改动** + 逐消息归属表:`Acquire`→`request` · `Probe`→`snoop` · `ProbeAck`/`ProbeAckData`/`Release`/`ReleaseData`→`snoop_resp` · `Grant`/`GrantData`/`ReleaseAck`/`GrantAck`→`response`;⚠️ **2 处降维已登记**(`Release` 归 `snoop_resp` / `GrantAck` 归 `response`);⚠️ **两套词表混用**的处置 = `writeback` **只**是 10 流名、**不得**写进 `vc_binding` | **✅ 已闭合** | 台账 Entry #138 |
 | **R-T4** | **`perm` 退化为 3 值** —— `UNIQUE` 不可达 ⇒ 该实例**不声明**静默升级 ⇒ 不触发 `INV-CEP-08-IC2`;「`perm` 4 值锁」是**值域**锁还是「每实例用满 4 值」需显式承认 | 🟡 中 | architect 口径确认 + 实例散文登记 |
 | **R-T5** | **两版各有内部表述不一致** —— D1 §8.1.4 正文说转移分「**six** subsets」而表列 **4** 类(下一段又说 "four");D1 Table 8.3 表头写 `Permissions: None, Branch, **Trunk**` 而全部转移记号用 **T = Tip** ⇒ **表头疑为笔误**(Trunk 不参与任何转移)· D2 正文说 `Trunk` 无读/写权限而同份 `Table 29` 给 `Trunk` 一项 `Get` | 🟡 中 | 已取**转移记号**为准(`T`=Tip);矛盾**显式登记**;若钉版到 D1 ⇒ 表头笔误不影响载体 |
-| **R-T6** | **「非对称」定义** —— 见 §6;TileLink 的 request 双向 ⇒ CXL 式断言形态**不适用** | 🟡 中 | architect 裁决 |
+| **R-T6** | ~~**「非对称」定义**~~ ⇒ ✅ **已闭合**(2026-11-01,per 台账 **Entry #138** + `ADR-CEP-17` 的同 Entry `## Status Update`)—— 裁决 = TileLink-C 的非对称维度 = 「**权限的授予与强制撤销只由 manager 发起**」(`Grant`/`GrantData` **只**在 D 通道、`Probe` **只**在 B 通道);⚠️ **与 CXL 形态的差异已显式登记**(CXL = request 方向 / TileLink = 权限变更发起方)⇒ **两者不可互相套用** ⇒ 队列 #10 的断言形态**不得**直接套用 | **✅ 已闭合** | 台账 Entry #138 |
 | **R-T7** | **`Trunk` 的建模归属** —— 结论:**过渡态**,不进稳定态集合(依据 = Table 8.3 转移记号全集中**无** `Trunk`)⇒ 稳定态 = 3 值;⚠️ 残余:D1 表头写 `Trunk` ⇒ 若规范本意含 Trunk,则态数变 4 ⇒ **须以转移记号为准并登记该矛盾** | 🟢 低(已消解大半) | 载体按 3 态实现 + 登记矛盾 |
 | **R-T8** | **1.3 与 1.7.1/1.9.3 的谱系关系** —— RISC-V 的「TileLink 1.3」与 SiFive 的 1.7.1/1.9.3 是否同一版本线**未证实** ⇒ `tilelink-c-1.3` 这个**标识符本身**可能指错版本 | 🟡 中 | 与 R-T1 合并处置;若改锁表则须写明**版本线 + 发布方** |
 
@@ -267,8 +269,8 @@
 | canonical 10 流 | ✅ **可推导** —— 5 条 `true` / 5 条 `false`(§4) |
 | 非对称定义 | ⚠️ **待裁决**(R-T6) |
 | 通道 → VC 冲突 | 🔴 **新发现**(R-T2)⇒ **超出 #10 同类先例**,须 architect 裁决 |
-| 硬门效力 | ⇒ **change 目录**(`cpptlm-cep-tilelink-tree-manager`)**暂不建** —— 与队列 #10 的硬门同款效力 |
-| ⇒ 前置动作 | ✅ **R-T1 已闭合**(Entry #135 + `ADR-CEP-11` SU)⇒ **版本不再是阻塞点**<br>⚠️ **仍余**:**R-T6**(非对称定义形态 —— 规约层要写「非对称」的结构断言 ⇒ **阻塞规约层**)+ **R-T2 / R-T3**(通道 5 → VC 4 / 6 类词表 —— **阻塞实现层的实例声明**)<br>⇒ **下一步**:R-T6 的 architect 裁决(可与 R-T2 / R-T3 合并立项) |
+| 硬门效力 | ✅ **通过** ⇒ **change 目录可建**(`cpptlm-cep-tilelink-tree-manager`;规约层先行,照 #10 两段式先例) |
+| ⇒ 前置动作 | ✅ **R-T1 / R-T6 / R-T2 / R-T3 全部闭合**(Entry #135 + Entry #138)⇒ **版本不再是阻塞点**;**非对称定义形态**已裁决(§6 + `ADR-CEP-17` SU);**通道 → VC 映射**与**6 类归属**已裁决(§5 + `ADR-CEP-09` / `ADR-CEP-12` SU)<br>⇒ **下一步**:**可建 change 目录** ⇒ 起队列 #11 的**第 0 个 change(规约层)** |
 
 ### ⇒ 版本建议(**供 architect 裁决参考**)
 
@@ -302,6 +304,8 @@
 
 - **上位裁决**:台账 `obj-cep-platform.md` **Entry #134**(Task 0 硬门结论 + 版本裁决升级)
   · **Entry #135**(**R-T1 闭合的授权记录**)+ `ADR-CEP-11` 的 `## Status Update(2026-11-01,per 台账 Entry #135)`
+  · **Entry #138**(**R-T2 / R-T3 / R-T6 闭合的授权记录**)+ `ADR-CEP-09` / `ADR-CEP-12` / `ADR-CEP-17`
+  的 `## Status Update(2026-11-01,per 台账 Entry #138)`
 - **版本锁真源**:`docs/adr/ADR-CEP-11-protocol-version-locking.md` §3 锁表(**冻结面** · 变更须两步授权)
 - **载体形态先例**:队列 #10 的 `docs/research/2026-11-01-cep-cxl-nonsymmetric-anchor-summary.md`
   (CXL **全程禁读规范正文** ⇒ basis 全来自公开非规范来源;**TileLink 相反** ⇒ basis **直接来自规范**)

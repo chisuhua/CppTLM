@@ -8654,6 +8654,71 @@ SHALL **NOT** 读作『**等价恢复**』—— `SparseSnoopFilter` = `CONSERVA
 
 ---
 
+### Entry #138 — 2026-11-01 [adr-amendment](队列 #11 剩余 **3 项 architect 裁决**一次性签发(R-T2 / R-T3 / R-T6)—— **本条是冻结面授权记录**)
+
+**主题**:队列 #11(`cpptlm-cep-tilelink-tree-manager`)的 Task 0 硬门在 **R-T1 闭合**
+(Entry #135)后**仍余 3 项 architect 裁决** ⇒ 本条一次性签发,解冻队列 #11 的全部阻塞点。
+
+**① 冻结面授权(本条 = 授权记录 ⇒ `--update --authorized-by "Entry #138"`)**
+
+| # | 冻结件 | 改动形态 | 内容 |
+|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md` | **追加** `## Status Update(2026-11-01,per 台账 Entry #138)` | **R-T2**:TileLink-C 的 **5 通道 → 4 VC** 映射 + **无环性论证** + **3 条降维代价登记**(决定 §3 / §4 / §5 **零改动**) |
+| 2 | `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | **追加** `## Status Update(2026-11-01,per 台账 Entry #138)` | **R-T3**:TileLink-C 的**逐消息 → 6 类消息类归属表** + **2 处降维登记**(决定**6 类词表**与**schema** **零改动**) |
+| 3 | `docs/adr/ADR-CEP-17-ruby-slicc-protocol-family.md` | **追加** `## Status Update(2026-11-01,per 台账 Entry #138)` | **R-T6**:TileLink-C 的「**非对称**」定义形态 = 「**权限的授予与强制撤销只由 manager 发起**」+ **与 CXL 形态的差异显式登记**(两者**不可互相套用**) |
+
+**② R-T2 裁决:5 通道 → 4 VC(**零改动** `vc_id` 上限 / `fabric.json` / 无新 network)**
+
+| 通道 | 消息 | CEP 6 类归属 | `vc_id` |
+|---|---|---|---|
+| **A** | `Acquire` | `request` | **0** |
+| **B** | `Probe` | `snoop` | **1** |
+| **C** | `ProbeAck` / `ProbeAckData` / `Release` / `ReleaseData` | `snoop_resp` | **2** |
+| **D + E** | `Grant` / `GrantData` / `ReleaseAck` / `GrantAck` | `response` | **3** |
+
+- **合并 D∪E 的理由**:E 通道(`GrantAck`)的**唯一**跨流等待对象是 D 通道(`Grant`)
+  ⇒ 二者落**同一 VC** ⇒ 依赖在 **VC 内**有序 ⇒ **不产生**新的跨 VC 依赖
+  ⇒ `INV-CEP-09-IC1` 的**无环判据仍成立**。
+- **明确否决的两个选项**:
+  ① **扩 `vc_id` 上限到 4**(5 VC)⇒ 需改 `protocol_instance.schema.json`(`maximum: 3`)+
+  `fabric.json` 的 `vc_count` + **ArchForge 侧新增 network / 边表** ⇒ **跨仓债** + 爆炸半径
+  ⇒ **收益(1 个 VC 值)不抵代价**;
+  ② **新开 `tilelink` network**(5 VC)⇒ CEP 的 network 集与 ArchForge 有**双向比对闸**
+  ⇒ **本仓无法单方新增** ⇒ **跨仓债** ⇒ **否决**。
+- **3 条降维代价(登记,不得静默沿用)**:① 通道优先级 `A<B<C<D<E` 在 VC 层**降维为 4 级**;
+  ② **D 与 E 方向相反**却共 VC;③ `compute_noc` 的边表是**按 mesif / moesi_gpu 的 vc 语义派生**的
+  ⇒ 对 TileLink 的映射是**保守近似**(多一条 `3→2` 不影响无环性,但**语义不完全贴切**)。
+
+**③ R-T3 裁决:6 类消息类词表**零改动**
+- CEP 的 6 类词表**无**「对 completion 的 ack」这一档 ⇒ `GrantAck` 归 **`response`** 类
+  (与 `Grant` **同类同 VC**)⇒ 同 VC 内有序 ⇒ 不引入跨 VC 依赖;
+- `Release` / `ReleaseData`(C 通道)归 **`snoop_resp`** 类(与 `ProbeAck` **同方向同通道**)
+  ⇒ ⚠️ **降维登记**:`Release` 语义是「自愿放弃」,**不是**「应答」;
+- ⇒ **6 类词表**与 **`protocol_instance.schema.json`** **零改动**。
+
+**④ R-T6 裁决:TileLink-C 的「非对称」定义形态**
+- **判据(可判形式)**:TileLink-C 的 request 类消息**双向**都有(A=`Acquire` / B=`Probe`)
+  ⇒ **CXL 式定义(「request 类消息只在一个方向」)不适用**;
+- ⇒ **本协议族的非对称维度 = 「**权限的授予与强制撤销只由 manager 发起**」**:
+  `Grant` / `GrantData` **只**出现在 D 通道、`Probe` **只**出现在 B 通道(均 manager→client);
+- ⇒ **与 CXL 形态的差异显式登记**:CXL 的维度 = 「request 类消息的方向」;
+  TileLink 的维度 = 「**权限变更的发起方**」⇒ **两者不可互相套用**;
+  ⚠️ 队列 #10 的「非对称」断言形态**不得**直接套到 TileLink-C。
+
+**⑤ 队列 #11 的解锁状态**
+⇒ **3 项阻塞全部闭合** ⇒ **Task 0 硬门通过** ⇒ **可建 change 目录**(规约层先行,照 #10 两段式先例)
+⇒ ⚠️ 但**实例声明面**(`vc_binding` / `ordering_assumption` / `flow_support`)的**落地**仍需
+队列 #11 的实现层 change ⇒ 本条只解冻**规约层**的起手条件。
+
+**⑥ 冻结面纪律**:本条为**授权记录** ⇒ `--update --authorized-by "Entry #138"` ⇒
+**两步授权**:台账 entry → `--update`(产物 hash 重算)→ commit → `--update`(provenance 对齐)→ commit。
+
+**⑦ 关联**: Entry #134(队列 #11 Task 0 + ④bis)· **#135(R-T1 闭合)**· #137(R11 降级)
+· `ADR-CEP-09` · `ADR-CEP-12` · `ADR-CEP-17` · `ADR-CEP-11` SU(2026-11-01,Entry #135)
+· `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md`(§5 / §6 / §7 R-T2·R-T3·R-T6)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

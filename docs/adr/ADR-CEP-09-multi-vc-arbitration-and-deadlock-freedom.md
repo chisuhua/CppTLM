@@ -225,3 +225,62 @@
 **机器校验**:`scripts/test/cep_decl_alignment_check.sh` 第 ② 项**网络键对称性**
 (每 network 必须**同时**出现在 `ordering_assumption` 与 `vc_binding`,per ArchForge `32 号 §6.2`)
 + 第 ③ 项(`ordering ⊆ vc_binding`,逐网络)。
+
+---
+
+## Status Update(2026-11-01,per 台账 Entry #138)—— **TileLink-C 的 5 通道 → 4 VC** 映射与无环性论证(R-T2)
+
+> **授权**:台账 `objective-cep-platform §11` **Entry #138** [adr-amendment] —— **冻结面授权记录**。
+> **形态**:**纯追加**(本 ADR **正文不改**;决策 1 ~ 8 · §3 三条 invariant · §5 全部保留)。
+> ⚠️ **本段不改** `vc_id` 上限、**不**改 `fabric.json`、**不**新增 network ⇒ **本 ADR 零实质改动**。
+
+### ① 触发
+
+队列 #11(`cpptlm-cep-tilelink-tree-manager`)的 Task 0 硬门普查发现 **R-T2**:
+TileLink 有 **5** 个通道(A/B/C/D/E)且**规范自带**全序 `A < B < C < D < E`(⇒ DAG ⇒ 死锁自由),
+而本 ADR 决策 2 的顶点是 `(协议实例, network, vc_id)`、`vc_id` 由 `vc_binding` 给出
+⇒ ⇒ **5 通道必须落到 ≤4 个 VC** ⇒ 至少 2 个通道要合并 ⇒ **合并会不会破坏无环性?** 本段给答案。
+
+### ② 裁决:通道 → VC 映射(与 `ADR-CEP-12` 的 6 类归属配套,per 同 Entry #138)
+
+| 通道 | 消息 | CEP 6 类归属 | `vc_id` |
+|---|---|---|---|
+| **A** | `Acquire` | `request` | **0** |
+| **B** | `Probe` | `snoop` | **1** |
+| **C** | `ProbeAck` / `ProbeAckData` / `Release` / `ReleaseData` | `snoop_resp` | **2** |
+| **D + E** | `Grant` / `GrantData` / `ReleaseAck` / `GrantAck` | `response` | **3** |
+
+### ③ 无环性论证(为什么合并 D∪E **不**引入环)
+
+- E 通道(`GrantAck`)的**唯一**跨流等待对象是 D 通道的 `Grant` ⇒ 二者落**同一 VC**
+  ⇒ 该等待在 **VC 内**有序(FIFO)⇒ **不产生**新的**跨 VC** 依赖;
+- 其余跨 VC 依赖仍**沿 vc 序单调**:`vc0 → vc3`(Acquire 的完成要等 Grant)、
+  `vc1 → vc2`(Probe 的处理要等 ProbeAck)、`vc1 → vc3`(Probe 的处理要等 ReleaseAck)
+  ⇒ 依赖图是 **DAG** ⇒ `INV-CEP-09-IC1` 的**无环判据仍成立**。
+
+### ④ 明确否决的两个选项(理由在案)
+
+| 选项 | 否决理由 |
+|---|---|
+| **扩 `vc_id` 上限到 4**(5 VC 逐通道保真) | 需改 `protocol_instance.schema.json`(`maximum: 3`)+ `fabric.json` 的 `vc_count` + **ArchForge 侧新增 network / 边表** ⇒ **跨仓债** + 爆炸半径大 ⇒ **收益(1 个 VC 值)不抵代价** |
+| **新开 `tilelink` network**(5 VC) | CEP 的 network 集与 ArchForge 有**双向比对闸**(`cep_decl_alignment_check.sh` ⑤)⇒ **本仓无法单方新增** ⇒ **跨仓债** ⇒ **否决** |
+
+### ⑤ ⚠️ 3 条降维代价(**登记**,不得静默沿用)
+
+1. 通道优先级 `A < B < C < D < E` 在 VC 层**降维为 4 级** ⇒ 「VC 级优先级 = 通道优先级」的**严格保真有损**;
+2. **D 与 E 方向相反**(manager→client / client→manager)却**共 VC**;
+3. `compute_noc` 的边表是**按 mesif / moesi_gpu 的 `vc_binding` 语义派生**的 ⇒ 对 TileLink 的映射是
+   **保守近似**(多一条 `3→2` **不影响**无环性,但**语义不完全贴切**)⇒ **显式登记**,不静默沿用。
+
+### ⑥ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR** | **零改动**(仅追加本段);决策 1 ~ 8 · §3 三条 invariant **全部保留** |
+| **`vc_id` 上限 / `fabric.json`** | **零改动** —— 上限仍为 **3**;network 仍为 **2** 张 ⇒ **无跨仓债** |
+| **队列 #11** | **R-T2 闭合** ⇒ 实例声明面的 `vc_binding` 可按本段填写 ⇒ 实现层不再被阻塞 |
+| **平台自证能力** | ⚠️ 「5 通道保真」**未**达成(降维为 4 VC)⇒ **登记为已知降维**,不声称等价 |
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #138**(授权记录)· #134(Task 0 普查 + R-T2 登记)
+· `ADR-CEP-12` SU(2026-11-01,per 同 Entry #138)(6 类归属配套)
+· `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` §5 / §7

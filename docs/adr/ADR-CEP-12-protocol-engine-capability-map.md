@@ -505,3 +505,53 @@ ArchForge 在答复回执 `cep-interface-alignment-response-2026-10-22.md` §1.4
 - 完整评估表与残余风险见 `docs/architecture/07-coherence-exploration-platform.md`
   **Status Update 2026-10-30 第十六则** + `obj-cep-platform §9.4`。
 
+---
+
+## Status Update(2026-11-01,per 台账 Entry #138)—— **TileLink-C 的逐消息 → 6 类消息类归属表**(R-T3)
+
+> **授权**:台账 `objective-cep-platform §11` **Entry #138** [adr-amendment] —— **冻结面授权记录**。
+> **形态**:**纯追加**(本 ADR **正文不改**;决策 1 ~ 10 · §2 schema 全部保留)。
+> ⚠️ **6 类消息类词表**与 **`protocol_instance.schema.json`** **零改动** ⇒ 本段只登记**归属表**与**降维**。
+
+### ① 触发
+
+R-T3:本 ADR 决策 6 的 6 类消息类词表 `{request, response, snoop, snoop_resp, atomic, query}`
+**无**「对 completion 的 ack」这一档 ⇒ TileLink-C 的 `GrantAck` **无处可放**;
+且 `writeback` 是 **canonical 10 流名**、**不是**消息类名 ⇒ **两套词表被混用**的风险须正面处置。
+
+### ② 裁决:逐消息 → 6 类归属表(**零词表改动**)
+
+| TileLink 通道 | 消息 | 归属类 | 理由 |
+|---|---|---|---|
+| **A** | `Acquire` | **`request`** | 语义即「请求获得权限」 |
+| **B** | `Probe` | **`snoop`** | 语义即「查询 / 撤销副本权限」 |
+| **C** | `ProbeAck` / `ProbeAckData` | **`snoop_resp`** | 对 `snoop` 的应答(方向 client→manager) |
+| **C** | `Release` / `ReleaseData` | **`snoop_resp`** | ⚠️ **降维** —— 语义是「**自愿放弃**」,**不是**「应答」;但它与 `ProbeAck` **同方向同通道** ⇒ 归同类以保持「通道 ↔ VC」一一 |
+| **D** | `Grant` / `GrantData` / `ReleaseAck` | **`response`** | 对 `request` 的响应(方向 manager→client) |
+| **E** | `GrantAck` | **`response`** | 对 `response` 的确认;词表**无**「completion 的 ack」档 ⇒ 与 `Grant` **同类同 VC** ⇒ VC 内有序 ⇒ **不引入**跨 VC 依赖 |
+
+⇒ ⇒ **`vc_binding` 逐 network 填写**:`request`→0 · `snoop`→1 · `snoop_resp`→2 · `response`→3
+(配套的无环性论证见 `ADR-CEP-09` 的 `## Status Update(2026-11-01,per 台账 Entry #138)`)。
+
+### ③ ⚠️ 2 处降维(**登记**,不得静默)
+
+| # | 降维 | 说明 |
+|---|---|---|
+| 1 | `Release` / `ReleaseData` 归 `snoop_resp` | 语义是「自愿放弃权限」⇒ 词表**无**对应档 ⇒ 借 `snoop_resp`(同方向同通道) |
+| 2 | `GrantAck` 归 `response` | 词表**无**「对 completion 的 ack」档 ⇒ 与 `Grant` 同类 ⇒ 同 VC ⇒ VC 内有序 |
+
+⚠️ **「两套词表混用」的处置口径**:**canonical 10 流名**(`request` / `completion` / `snoop` /
+`snoop_resp` / `writeback` / …)与**消息类名**(`request` / `response` / `snoop` / `snoop_resp` /
+`atomic` / `query`)是**两套不同词表** ⇒ `writeback` **只**是流名,**不是**消息类名
+⇒ **填 `vc_binding` 时不得写 `writeback`**(schema 的 `propertyNames` enum 也不含它 ⇒ 写了即装配期 fail)。
+
+### ④ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR** | **零改动**(仅追加本段);**6 类消息类词表**与 **§2 schema** **全部保留** ⇒ `protocol_instance.schema.json` **零改动** |
+| **队列 #11** | **R-T3 闭合** ⇒ `tilelink_c` 实例的 `vc_binding` 可逐类填写 |
+| **平台自证能力** | ⚠️ 「5 通道 → 4 VC」的降维**仍然存在**(见 `ADR-CEP-09` 同 Entry 的 ⑤)⇒ 本段只解决**类归属** |
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #138**(授权记录)· #134 · `ADR-CEP-09` SU(同 Entry)
+· `ADR-CEP-02`(canonical 10 流)· `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` §4 / §7
