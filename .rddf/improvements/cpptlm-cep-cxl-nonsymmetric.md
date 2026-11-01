@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-05
   - ADR-CEP-03
   - ADR-CEP-17
-状态: 🟡 **部分完成**(2026-11-01,per **Entry #127**)—— 队列 #10;**两段式**:第 0 个 change(规约层)= ✅ **已完成归档**(`cpptlm-cep-cxl-nonsymmetric-state-spec` ⇒ main spec `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;KPI 1/3 → 0/3)+ 第 1 个 change(实现层)= ⬜ **待启动**
+状态: 🟡 **部分完成**(2026-11-01,per **Entry #127** / **#128**)—— 队列 #10;**两段式**:第 0 个 change(规约层)= ✅ **已完成归档**(`cpptlm-cep-cxl-nonsymmetric-state-spec` ⇒ main spec `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`)+ 第 1 个 change(实现层)= 🟡 **已转正**(`cpptlm-cep-cxl-nonsymmetric`;KPI 0/3 → 1/3)
 created: 2026-10-30
 ---
 
