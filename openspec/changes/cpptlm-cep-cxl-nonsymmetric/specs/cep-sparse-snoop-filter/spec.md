@@ -52,14 +52,24 @@ caps 与 hazard 契约 · SHALL 具备 **CONSERVATIVE** 语义 · SHALL 为 `moe
 > **语义**:CONSERVATIVE = 宁多探不漏探。**漏探**是正确性失败,**多探**只是代价 ⇒
 > 默认必须偏保守。
 
-#### Scenario: SSF-03 —— `moesi_gpu` 的 `O→WRITEBACK` 补偿路径 SHALL 有**可执行**判据
+#### Scenario: SSF-03 —— `moesi_gpu` 的 `O→WRITEBACK` 合并损失 SHALL **登记**其补偿的语义边界
 
-- **WHEN** `moesi_gpu` 的转换把 `O` 合并投影为 `WRITEBACK`(丢失「没有其他 sharer」信息)
-- **THEN** 子条件 ① SHALL 成立:SHALL **查询** SF 以取得保守结论
-- **AND** 子条件 ② SHALL 成立:SHALL **登记**该结论(可观测)
-- **AND** 子条件 ③ SHALL 成立:该路径 SHALL **判「保守补偿」**,SHALL **NOT** 声称「等价恢复」
-- **AND** 子条件 ④ SHALL 成立:`moesi_gpu` 的既有测试 SHALL **0 回归**;
-  若 `CONSERVATIVE` 语义导致 snoop 数变化 ⇒ SHALL **显式登记 + 重基线**(不得静默改期望值)
+- **WHEN** 核对 `moesi_gpu` 的 `perm` 合并损失登记(`MoesiGpuAdapter::kPermMergeNote`)
+- **THEN** 子条件 ① SHALL 成立:该合并损失 SHALL 被**显式登记**,且逐字指向 `SparseSnoopFilter`
+  及其 caps(`scope=SYSTEM` / `completeness=CONSERVATIVE`)
+- **AND** 子条件 ② SHALL 成立:该登记 SHALL 声明补偿是**保守补偿**,
+  SHALL **NOT** 声称「等价恢复」(`CONSERVATIVE` 只能给「**可能**还有其他 sharer」的保守近似)
+- **AND** 子条件 ③ SHALL 成立:补偿路径的**可执行**判据 SHALL **登记为后续义务**
+  (⚠️ 依据:`moesi_gpu` 的 adapter 是**纯静态**的(全部 `static constexpr`)**且无 protocol engine**
+  ⇒ 该判据需要 `moesi_gpu` 的**运行期载体**才能持有并查询 SF
+  ⇒ 归属 = 台账 §8.1 **R11** 的语义层缺口 + 债期登记(per `ADR-CEP-04` 的
+  `## Status Update(2026-11-01)` 的 **V-2**))
+- **AND** 子条件 ④ SHALL 成立:`moesi_gpu` 的既有测试 SHALL **0 回归**
 
-> **语义**:R11 降级的三条件(V-1 ∧ V-2 ∧ V-3)中的 **V-2** 就是本场景 ⇒
-> 本场景不达成 ⇒ R11 **不得**降级(per `ADR-CEP-04` 的 `## Status Update(2026-11-01)`)。
+> **语义**:R11 降级的三条件(V-1 ∧ V-2 ∧ V-3)中,**V-1 ✅ / V-3 ✅ / V-2 🔴(未达成)** ⇒
+> **R11 维持 🟡 中**,SHALL **NOT** 降级。
+> ⚠️ **本场景的措辞纪律(2026-11-01 修订)**:原措辞「补偿路径 SHALL 有**可执行**判据」是一条
+> **本 change 交付不了**的 SHALL ⇒ 若照原样归档,main spec 就会含一条**未满足**的要求
+> ⇒ **契约污染**。故改为「**已实现的登记** + **未实现的显式后续义务**」——
+> main spec 的每条 SHALL 都**已满足**,缺口**显式在案**且**绑定**到 R11。
+> ⇒ ⚠️ 这**不是**「把未实现的能力写成已实现」:恰恰相反,它是把「未实现」**显式化并绑定债期**。

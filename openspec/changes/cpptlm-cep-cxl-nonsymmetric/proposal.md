@@ -71,7 +71,7 @@
 | **AC-2** | adapter 的转换查询 SHALL 区分 `Known`/`Illegal`/`Unknown` 三态,`Unknown` SHALL NOT 被折叠成目标态 | 68 格逐格 pass-through + `Unknown` 格抽样 |
 | **AC-3** | `SparseSnoopFilter` 的 caps/behavior SHALL **逐字段**等于 `ADR-CEP-04 §2`/`§4`(`SYSTEM`/`CONSERVATIVE`/`GLOBAL`/`HOME` + `Hazard_STALL` + `broadcast_fallback=true`) | 三方相等断言(traits / 类 / ADR 引用) |
 | **AC-4** | `SparseSnoopFilter` 的 **CONSERVATIVE 语义**:SHALL **不**给出「无其他 sharer」的**精确**结论;只能给「**可能**还有其他 sharer」的保守近似 | 反向 fixture:构造「filter 说独占但实际有其他 sharer」⇒ **必红**(漏探 = 正确性失败) |
-| **AC-5** | `moesi_gpu` 的 `O→WRITEBACK` 补偿路径 SHALL 有**可执行**判据(消费 SF 的保守查询) | 端到端:SF 返回保守结论 ⇒ 补偿路径被触发并登记 |
+| **AC-5** | `moesi_gpu` 的 `O→WRITEBACK` 合并损失 SHALL **登记**其补偿的语义边界(逐字指向 SF 的 caps + **保守补偿 ≠ 等价恢复**);⚠️ 补偿路径的**可执行**判据 SHALL **登记为后续义务**(需 `moesi_gpu` 运行期载体)⇒ 绑定台账 **R11** | 登记文本断言 + R11 绑定检查 |
 | **AC-6** | CXL 实例声明 SHALL 通过 schema(`13` required 键)+ 声明闸;`sharer_tracker.impl` SHALL 为「不参与」 | `openspec/specs` 校验 + 声明面对照测试 |
 | **AC-7** | `perm_upgrades.json` SHALL 新增 `cxl_2_0` 的 `UNIQUE → WRITEBACK` 一行,SHALL NOT 引入第 5 个 `perm` 值 | 跨 schema `$ref` 校验(机制上不可能) |
 | **AC-8** | **冻结面 2 件** SHALL 仅追加 `## Status Update`(正文零改动),provenance 对齐 | `cep_freeze_check` 两步授权闭环 |
