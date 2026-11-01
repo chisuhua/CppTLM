@@ -8343,6 +8343,73 @@ SF 的保守查询可被 `O→WRITEBACK` 补偿路径**消费** ⇒ 才可产出
 
 ---
 
+### Entry #134 — 2026-11-01 [scope-change](队列 #11 `cpptlm-cep-tilelink-tree-manager` 的 **Task 0 硬门**结论:普查完成但**载体形态未钉死** ⇒ **change 目录暂不建**;**版本裁决升级 architect**)
+
+**主题**:队列 #11 的 Task 0 硬门(公开来源普查)。产物 =
+`docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md`(302+ 行)。
+
+**① 普查结论:🔵 有条件通过 —— 与队列 #10 同款效力**
+
+| 项 | 判定 |
+|---|---|
+| 公开来源可得性 | ✅ **良** —— TileLink 规范**开源可取** ⇒ **2 份 `pin=strong`**(1.7.1 / 1.9.3,含 sha256)+ 1 份(0.3.1)⇒ **远优于**队列 #10(CXL **全程禁读规范正文**) |
+| 决定载体形态的 5 项 | ❌ **未钉死** ⇒ **全部 `pending=true`**(因 R-T1) |
+| 事件词表 | ✅ **可钉** —— TL-C **12** 条消息 + **5** 通道 + 优先级全序 `A<B<C<D<E` ⇒ **规范自带 DAG 无环论证** |
+| 硬门效力 | ⇒ **change 目录暂不建**(同 #10:「公开来源普查未完成 ⇒ change 目录不建」) |
+
+**② ⚠️ R-T1(🔴 阻塞):版本锁定缺口**
+
+`ADR-CEP-11 §3` 锁表写 `tilelink-c-1.3`;本环境**取不到 1.3 正文**(≥6 次尝试:riscv.org 404 ·
+RISC-V adoc 不存在 · `openspecification/tilespec` 仓库 **404** · GitHub 搜索无命中)⇒ **该标识符本身可能指错版本**(R-T8)。
+而可取的 **1.7.1** 与 **1.9.3** 属 **SiFive 版本线**、且**语义已漂移**:
+`Trunk` 权限表述变更(1.7.1「Has Read permissions」→ 1.9.3「Has neither read nor write permissions」)
++ 节点类别 **4 → 5** 类(1.9.3 拆 `Tip (no Branches)` / `Tip (with Branches)`)
+⇒ ⇒ **不得拿 1.7.1/1.9.3 冒充 1.3** ⇒ 依裁决 A(`public-direct` SHALL 只接受 `pin=strong`),
+**5 项载体形态全部 `pending=true`** ⇒ **规约层无 `pending=false` 格** ⇒ **等于没做**。
+
+⇒ **⇒ 须先做版本裁决(architect 域,`ADR-CEP-11 §3` 是冻结面)**,三选项:
+① **改锁表**为 `tilelink-c-1.7.1` / `tilelink-c-1.9.3`(须写明**版本线 + 发布方**)—— 两步授权 + architect 签发;
+② 走**人类成员流程**取到 1.3 字节 —— 维持锁表不变;
+③ 接受全部 `pending=true` —— **不可行**(见上)⇒ **排除**。
+⚠️ **本条不作裁决**(architect 域)⇒ **升级为 architect 待决项**。
+
+**③ ⚠️ R-T2(🔴 高,新发现):通道 5 → VC 4 的映射冲突**
+
+- TileLink **5** 通道,规范自带**全序** `A<B<C<D<E` ⇒ DAG ⇒ **规范级**死锁自由论证;
+- CEP `vc_binding` 消息类词表 = **6 类**且每类**恰一个** `vc_id`,`vc_id` schema 上限 = **3** ⇒ **≤4 个 VC**;
+- ⇒ **至少 2 个通道必须合并** ⇒ **合并破坏全序** ⇒ 依赖图可能**真实成环**
+  ⇒ ⇒ `INV-CEP-09-IC1` 装配期闸**可能误报**(过近似 ⇒ 保守拒绝,per `ADR-CEP-09` 决策 2 前提 2)。
+
+⇒ 三选项(architect 裁决):① 扩 `vc_id` 上限到 4(动 schema + `ADR-CEP-12` + `ADR-CEP-09`,**均冻结面**)
+② 合并通道 + **显式登记**保守拒绝的代价 ③ 重定义 6 类消息类词表(动 `ADR-CEP-12`,冻结面)。
+
+**④ R-T3(词表缺口)**:`GrantAck` 在 6 类词表**无对应**;`Release`/`ReleaseData` 类归属歧义;
+⚠️ 且 `writeback` 是 **10 流名**不是**消息类名** ⇒ 两套词表混用风险。
+**⑤ R-T4(`perm` 退化为 3 值)**:TileLink 规范只说副本「**may** contain dirty data」⇒ **不承诺**干净/脏
+⇒ CEP 的 `UNIQUE`(**干净独占**)**不可确证** ⇒ **保守降级 ⇒ `UNIQUE` 永不出现**
+⇒ 该实例**不声明** `UNIQUE→WRITEBACK` 静默升级 ⇒ **不触发** `INV-CEP-08-IC2`
+⇒ 与 `chi_rnf`/`cxl_2_0` 形态**不同属合法差异**,但须在实例散文登记 + 确认「`perm` 4 值锁 = **值域**锁」口径。
+**⑥ R-T5**:D2(1.9.3)**内部表述不一致** —— 正文说 `Trunk` 无读/写权限,**同份** `Table 29` 却给 `Trunk` 一项 `Get`。
+**⑦ R-T6(非对称定义)**:TileLink 的 **A 与 B 都是 request 类** ⇒ **CXL 式「request 单向」定义不适用**
+⇒ 候选定义改为「**权限授予 / 撤销只由 manager 发起**」(D 通道 + B 通道单向)—— 待裁决。
+**⑧ R-T7(态集合维度)**:(S-a) 树位置 4/5 类 vs (S-b) 副本权限 3 值 ⇒ 投影形状 **4→4 vs 3→4** 不同
+⇒ 须在 **R-T1 闭合之后**裁决。
+
+**⑨ 与队列 #10 的关键差异(方法论层)**
+| 面 | 队列 #10(CXL) | 队列 #11(TileLink) |
+|---|---|---|
+| 规范正文 | ⛔ **全程禁读**(ECA §3 + AI AUP) | ✅ **可读**(开源标准) |
+| basis 来源 | 公开**非规范**来源(论文 / 博客) | **规范正文本身**(D1/D2/D3 `pin=strong`) |
+| 钉版障碍 | **许可**(D2 `absent` / D14 `license=null`) | **版本**(1.3 取不到)+ **版本线歧义**(R-T8) |
+| 投影形状 | 4→4(已钉) | **待裁决**(4→4 / 3→4) |
+
+**⑩ 关联**: Entry #122(队列 #10 口径 7 条)· #123 · #127 · #128 · #131 · #132 · #133(R11 债期重开)
+· `ADR-CEP-11` §3 锁表(**冻结面**)· `ADR-CEP-04`(`TreeManager` caps 表)· `ADR-CEP-09`(Decision A/B)
+· `ADR-CEP-02`(canonical 10 流 + `perm` 4 值锁)· `ADR-CEP-12`(6 类消息类词表 + schema)
+· `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

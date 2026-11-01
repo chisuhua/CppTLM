@@ -1,6 +1,9 @@
 # CppTLM `docs/research/` — 框架级调研（CEP 一致性 + gem5 + CppTLM 专用）
 
-> **版本**: v1.0 · **日期**: 2026-10-27 · **状态**: 📋 Research Index
+> **版本**: v1.1 · **日期**: 2026-11-01 · **状态**: 📋 Research Index
+> **变更**: 2026-11-01 补登记 **2 份 Task 0 公开来源锚点摘要**(队列 #10 CXL / 队列 #11 TileLink-C)
+> —— 二者是**队列 change 的 basis 唯一人工审计面**(per `ADR-CEP-11` Status Update ①-c / ④);
+> ⚠️ 此前索引计数 **11 份** 未含它们 ⇒ **索引漂移**,本次一并修正。
 > **维护**: CppTLM Team (Sisyphus)
 > **变更**: 2026-10-27 **拆分迁移** —— 硬件微架构调研（74 份）迁往 **ArchForge 仓** `docs/research/`；本目录保留 **框架级**调研（11 份）。详见 §4。
 
@@ -21,14 +24,16 @@
 
 ---
 
-## 2. 目录索引（11 份）
+## 2. 目录索引（13 份）
 
-### 2.1 CEP 一致性探索平台（2 份）★
+### 2.1 CEP 一致性探索平台（4 份）★
 
 | 文件 | 角色 | 主要引用方 |
 |------|------|-----------|
 | `cep-coherence-protocol-space-survey.md` | **ADR-CEP-08/09/12/13/14 的判据定义真源** | `docs/adr/ADR-CEP-08/09/12/13/14`、`docs/architecture/07-coherence-exploration-platform.md` |
 | `cep-cohif-carrier-architecture-review-2026-10-26.md` | active change `cpptlm-cep-cohif-carrier` 的**架构依据** | 该 change 的 proposal/design/tasks + `.rddf/` |
+| `2026-11-01-cep-cxl-nonsymmetric-anchor-summary.md` | 队列 #10 的 **Task 0 公开来源锚点摘要**(CXL 2.0 非对称)—— ⛔ **全程禁读规范正文**(ECA §3 + AI AUP)⇒ basis 全来自**公开非规范来源** | 队列 #10 规约层 change + `openspec/specs/cep-cxl-nonsymmetric-state-spec/` + 台账 Entry #122 |
+| `2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` | 队列 #11 的 **Task 0 公开来源锚点摘要**(TileLink-C)—— ✅ 规范**开源可读** ⇒ basis **直接来自规范**(2 份 `pin=strong` + sha256);⚠️ **版本锁定缺口**(R-T1)未闭合 | 队列 #11 规约层 change(⚠️ **暂未建**)+ 台账 Entry #134 |
 
 > ⚠ **已知治理缺陷（登记中）**：`ADR-CEP-19` 全文对 `CC-0x` 只有编号引用、**不含定义**，判据定义真源落在本目录的附属层 → **真源 3（ADR）不自足**。见 `.rddf/roadmap/objectives/obj-cep-platform.md` 登记项。**迁移前必须先消解该缺陷**（把判据定义回写进 ADR），否则等于把缺陷固化。
 
