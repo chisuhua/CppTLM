@@ -748,7 +748,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P2 | `ADR-CEP-11` 版本锁定(Stage 1 前签发)| 走 architect;触发 R2 缓解 —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「走 architect」**已失实** ⇒ `ADR-CEP-11` **已于 2026-10-30 签发 v1.0**(per Entry #112 / #135);⇒ **本行关闭**;⚠️ **残余**:版本锁定闸的 **G-3**(IC3 变更留痕**无自动闸**)**未闭合**(per §8.1 R2 缓解列)—— 仍为登记态残余风险 |
 | P2 | phase-11 注册后建 feature fragment | 走 rdd-planner 后续评估;≥2 change 跨 phase-10/11 分布时 |
 | P2 | **`FullMapDirectory` 落位登记**(反向缺口:有行为实现 · 零实例声明) | ⚠️ **登记态 · 不排期**(per **Entry #139** ③ 裁决 —— 与 `BroadcastNull` 同款:当前队列序列 #10 ~ #14 **无消费者** ⇒ 不排期、保留登记);⚠️ **2026-11-02 补登记**(per 台账 Entry #148):Entry #139 ③ 落点表要求「§10 追加 backlog 行」**至今未落地** ⇒ **本条补上**;**解除条件** = **CHI-full 队列**出现(即有实例声明 `sharer_tracker.impl = FullMapDirectory`)⇒ 届时才排期;⚠️ **实现不废弃**(per Entry #139 ④)—— **不得**表述为「该实现无用/应删除」;⚠️ 与 §8.1 **R11** 的「声明超前于实现」**方向相反**(R11 已降级 🟢 低,per Entry #137)⇒ **不因 R11 降级而闭合** |
-| P2 | **`LocalView` 双重语义登记**(`forward_to` 字段须先读 `result` 再解释) | ⚠️ **登记态 · 未落点**(per **Entry #144** ② 2 —— 实现层复用既有 `LocalView` **零改动** ⇒ 代价 = `forward_to` 字段**语义重载**:判读前**必须**先读 `result`);⚠️ **2026-11-02 补登记**(per 台账 Entry #148):该义务**至今无落点**;**若**要消歧 ⇒ 须**扩 `LocalView`**(新增 `tree_parent` 字段)—— 属**公开契约变更** ⇒ **须单独登记 + 独立 change**,**非**默认动作(per Entry #143 ⑥ item 5);⇒ 现状 = **文档侧约定 + 判据覆盖**,不改契约面 |
+| P2 | **`LocalView` 双重语义登记**(`forward_to` 字段须先读 `result` 再解释) | ⚠️ **登记态 · 未落点**(per **Entry #144** ② 2 —— 实现层复用既有 `LocalView` **零改动** ⇒ 代价 = `forward_to` 字段**语义重载**:判读前**必须**先读 `result`);⚠️ **2026-11-02 补登记**(per 台账 Entry #148):该义务**至今无落点**;**若**要消歧 ⇒ 须**扩 `LocalView`**(新增 `tree_parent` 字段)—— 属**公开契约变更** ⇒ **须单独登记 + 独立 change**,**非**默认动作(per Entry #143 ⑥ item 5);⇒ 现状 = **文档侧约定 + 判据覆盖**,不改契约面;✅ **2026-11-02 已落点**(per 台账 **Entry #165** —— 队列 #12 实现层):`DcohSymmetric` 的 `authority` = `LOCAL_HINT` ⇒ 该义务**首次落到冻结面契约面** —— `openspec/specs/cep-sharer-tracker-base/spec.md` **追加段**(M1 **member 35** · 两步授权)写明「`forward_to` 承载**hint 目标**、判读前**必须**先读 `result`」⇒ **可寻址**(`test/test_cep_cxl_dcoh_tracker.cc` 的 CDX-05 **登记侧**断言守着);⇒ ⚠️ 本条**仍开放**:`LocalView` 契约面**零改动** ⇒ 双重语义**仍在** ⇒ **消歧**(扩 `LocalView`)仍须**单独登记 + 独立 change**(非默认动作) |
 | P1 | **`cpptlm-cep-canonical-flow-parser-scope`**(CP-02 解析器范围限定) | ✅ **已完成归档**(2026-11-02,per 台账 **Entry #149** / **#150** / **#152**)—— delta capability `cep-canonical-flow-parser-scope` 已合并进 `openspec/specs/cep-canonical-flow-parser-scope/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;KPI **1/3 → 0/3**—— **1 slot**;**目标** = 把 `parse_canonical_flow_names` 的解析范围限定到 `ADR-CEP-02` 的 `## 2.` 段 ⇒ 权威 ADR 的**合法追加**(SU / 附录 / 其它章节表格)**不再**让 CP-02 判据假红;**判据形态** = 「毒化 ⇒ **仍绿**」(回归防护,与既有 `*_reverse_verify.sh` 的鉴别力形态**相反**,已显式登记);⚠️ **不属** §4.0 的 14 个主线队列 ⇒ **不触及** `ADR-CEP-00 §2 Decision 3` 的治理口径 |
 | P2 | **vc3 内 `E` 不被 `D` 饿死**(`ADR-CEP-09` SU ④ 登记的第 4 条降维代价) | ⚠️ **登记态 · 未建模**(per **Entry #143** ⑥ item 6 —— 多 VC 仲裁本身属 **Stage 4+**(`ADR-CEP-09`,per §8.1 R4));⚠️ **2026-11-02 补登记**(per 台账 Entry #148):全仓检索「饿死 / starv」**0 命中** ⇒ **既无仲裁器补偿、也无「未建模」标注** ⇒ 本条把**「未建模」**这一事实**显式落盘**;**解除条件** = 多 VC 仲裁落地(`ADR-CEP-09`)时由仲裁器补偿,或届时补等价判据;⚠️ **不得**表述为「已解决」 |
 
@@ -10251,6 +10251,50 @@ CDX-04 要求「**逐字段**可核对(数据级断言,非仅「常量存在」)
 · #159(规约层归档)· #158(规约层 Phase 3 —— 同款反向 fixture 先例)· #154(architect 4 项裁决)
 · `scripts/test/cep_cxl_dcoh_adapter_probe.cc` · `scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh`
 · `openspec/changes/cpptlm-cep-cxl-dcoh-symmetric/specs/cep-cxl-dcoh-symmetric/spec.md`
+
+---
+
+### Entry #165 — 2026-11-02 [scope-change](队列 #12 第 1 个 change **Phase 3.5** —— **第 3 件**冻结面 `cep-sharer-tracker-base` 追加段的**授权记录**)
+
+**主题**:`LOCAL_HINT` 的**语义代价**登记 —— 落 `openspec/specs/cep-sharer-tracker-base/spec.md`
+(**M1 冻结面 member 35**)**追加段** + 台账 §10 backlog 行。
+**本条 = 冻结面授权记录**(per §4.7.3 D2:`cep_freeze_check.sh --update` 要求台账存在**精确匹配**的 entry id)。
+
+**① 授权范围(仅 1 件冻结面)**
+
+| # | 冻结面成员 | 改动 | 理由 |
+|---|---|---|---|
+| 1 | `openspec/specs/cep-sharer-tracker-base/spec.md`(M1 **member 35**) | **追加段**(不改上方原文):① `DcohSymmetric` 的**行为实现已落地**(队列 #12 实现层,2026-11-02)⇒ 「其余 2 种」⇒「其余 **1** 种」;② `LOCAL_HINT` 的**语义代价**登记(`forward_to` **语义重载** ⇒ 判读前**必须**先读 `result`) | 该 spec 的「其余 2 种行为实现尚未落地」陈述**已失实** ⇒ 必须登记;且 `LOCAL_HINT` 的双重语义义务**须可寻址** |
+
+**② ⚠️ 为何 `DcohSymmetric` 的行为实现落地**也**要改这个冻结面**
+
+原 spec 写「其余 **2** 种实现(`DcohSymmetric` / `BroadcastNull`)的**行为实现**尚未落地」。
+⇒ `DcohSymmetric` 的行为类已于本 change 落地(独立头 `cxl_dcoh_tracker.hh`,per Entry #162)
+⇒ 该陈述**已失实** ⇒ 「其余 2 种」⇒「其余 **1** 种」(`BroadcastNull` = 当前队列序列无消费者 ⇒ 保留登记)。
+⇒ **先例**:队列 #11 的 `TreeManager` 落地时同款改法(per Entry #146 §④)。
+
+**③ ⚠️ `LOCAL_HINT` 的语义代价 —— 为何是**「双重语义」****
+
+`ADR-CEP-04 §2` 的 caps 表把 `DcohSymmetric` 的 `authority` 定为 `LOCAL_HINT`
+⇒ tracker 的答案**只是 hint**,**不可当权威**。
+⇒ 但 `LocalView` **零改动**(per `ADR-CEP-04 §3` 的冻结接口面)⇒ `forward_to` 字段**语义重载**:
+本实现用它承载「**hint 的目标**」,而**不是**「权威转发点」。
+⇒ **消费方纪律**:判读 `forward_to` 前**必须**先读 `result`
+⇒ 该义务**须可寻址**(spec 追加段 + 台账 §10 backlog 行)⇒ 否则它是**纸面约定**。
+
+> ⚠️ **依据强度**:锚点摘要 §6 #4 记 `LOCAL_HINT` 为 🟡(公开来源称 DCOH 是其区域内的**最终仲裁者**,
+> S6 p.30)⇒ **存在张力** ⇒ 实现**保守**(只给 hint)⇒ 代价即本条登记的**双重语义**。
+> ⇒ ⚠️ **不得**表述为「权威仲裁」。
+
+**④ 两步授权序列**
+
+台账 entry(本条)→ 追加冻结面段 → `--update --authorized-by "Entry #165"` → commit 产物
+→ `--update`(provenance 对齐)→ commit。
+
+**⑤ 关联**: Entry #164(Phase 3.4 —— 反向 fixture)· #163(Phase 3.1~3.3)· #162(Phase 2.3 —— 行为类落地)
+· #159(规约层归档)· #154(architect 4 项裁决)· #146(队列 #11 Phase 3 —— **2 件冻结面**两步授权的流程先例)
+· `openspec/specs/cep-sharer-tracker-base/spec.md`(M1 **member 35**)
+· `include/tlm/cep/cxl_dcoh_tracker.hh` · `include/tlm/cep/sharer_tracker.hh`(**零改动**)
 
 ---
 

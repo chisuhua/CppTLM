@@ -156,3 +156,31 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 > (`!dir.view_of(0xA000).valid`),不在状态机边界用例 —— 两处合起来才是本 Scenario 的完整覆盖;
 > 拒绝与「同址矛盾」共用 `handle = 0`(`ADR-CEP-04` 冻结 4 方法接口面,
 > 无法加错误码 ⇒ 调用方不可区分原因,已登记为已知限制)
+
+⚠️ **补充登记(2026-11-02,per 台账 Entry #165 —— 追加段,不改上方原文)**：
+`DcohSymmetric` 的**行为实现已落地**（队列 #12 实现层 `cpptlm-cep-cxl-dcoh-symmetric`，2026-11-02）
+⇒ 「其余 2 种」⇒「其余 **1** 种」（仅 `BroadcastNull` = **当前队列序列无消费者 ⇒ 保留登记**）
+⇒ `DcohSymmetric` 与 `FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` /
+`TreeManager` 同列**已落地**（**第 5 个行为实现**）。
+⇒ 落地位置 = **独立头** `include/tlm/cep/cxl_dcoh_tracker.hh`（⚠️ **不**并入 `sharer_tracker.hh`
+—— 后者是**协议无关通用层** ⇒ 在其中 include CXL DCOH 规约载体 ⇒ **层级倒置**;
+且既有 deferred 判据「`sharer_tracker.hh` 内**不得**出现 `class DcohSymmetric`」**零改动**即绿
+—— per 台账 Entry #162 §② 的 4 条依据）。
+⇒ ⚠️ **行为语义基源**:本实现的 6 个 caps / behavior 字段**逐字段**可核对，
+每条行为断言**配正控**（对照实现 `FullMapDirectory` / `SparseSnoopFilter` / `TreeManager`）
+⇒ **非纸面 caps**（per `ADR-CEP-04 §13`「克隆 + 纸面 caps」禁令）。
+⇒ ⚠️ **依据强度**（per 锚点摘要 §6 #4）:`STALL` ✅ · `LOCAL_MEMORY_REGION` ✅ ·
+`CONSERVATIVE` 🟡 · `LOCAL_HINT` 🟡 · `broadcast_fallback=true` ❌ **未见依据** ⇒ **登记 pending**。
+⚠️ **本段追加经台账 Entry #165 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #165"`）。
+
+⚠️ **补充登记(2026-11-02,per 台账 Entry #165 —— 追加段,不改上方原文)**：
+**`LOCAL_HINT` 的语义代价** —— `DcohSymmetric` 的 `authority` = `LOCAL_HINT`
+⇒ tracker 的答案**只是 hint**,**不可当权威**。
+⇒ 但 `LocalView` **零改动**（per `ADR-CEP-04 §3` 的冻结接口面）⇒ `forward_to` 字段**语义重载**:
+本实现用它承载「**hint 的目标**」,而**不是**「权威转发点」
+⇒ **消费方纪律**:判读 `forward_to` 前**必须**先读 `result`。
+⇒ 该义务**须可寻址**（本段 + 台账 §10 的 backlog 行）⇒ 否则它是**纸面约定**。
+⇒ ⚠️ **不得**表述为「权威仲裁」—— 锚点摘要 §6 #4 记 `LOCAL_HINT` 为 🟡
+（公开来源称 DCOH 是其区域内的**最终仲裁者**,S6 p.30）⇒ **存在张力**
+⇒ 实现**保守**（只给 hint）⇒ 代价即本条登记的**双重语义**。
+⚠️ **本段追加经台账 Entry #165 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #165"`）。

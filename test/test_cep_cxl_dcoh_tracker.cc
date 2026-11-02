@@ -330,6 +330,17 @@ TEST_CASE("CDX-05:LOCAL_HINT 的语义代价(双重语义)已显式登记且可�
     //    ⇒ 判读 `forward_to` 前**必须**先读 `result`(双重语义)
     CHECK(res != ad::LookupResult::BROADCAST);
 
+    // ③ 语义代价的**登记侧**(Phase 3.5 的冻结面追加段)—— 须**可寻址**
+    //    ⇒ 否则该义务是**纸面约定**(没人能在契约面找到它)
+    const std::string spec = read_capability_spec("cep-sharer-tracker-base");
+    REQUIRE_FALSE(spec.empty());
+    CHECK(spec.find("LOCAL_HINT") != std::string::npos);
+    CHECK(spec.find("语义代价") != std::string::npos);
+    CHECK(spec.find("语义重载") != std::string::npos);
+    CHECK(spec.find("Entry #165") != std::string::npos);
+    //    ⇒ 冻结面 spec 的「其余 2 种」计数 SHALL 已随本实现落地而收缩
+    CHECK(spec.find("其余 **1** 种") != std::string::npos);
+
     // ② 语义代价的**实现侧文档义务**:头文件**必须**写明「双重语义」+ 判读纪律
     //    ⇒ 消费方只读头文件即知「`forward_to` 前须先读 `result`」
     //    (⚠️ 台账 / main spec 的**登记**属 Phase 3.5 的**冻结面追加段**
