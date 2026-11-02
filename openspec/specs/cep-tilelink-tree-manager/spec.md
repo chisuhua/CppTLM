@@ -20,7 +20,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-tilelink-tree-manager
 

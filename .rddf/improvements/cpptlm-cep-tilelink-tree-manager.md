@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-17
   - ADR-CEP-02
   - ADR-CEP-05
-状态: 🟡 **进行中**(2026-11-02)—— 队列 #11;**两段式**:第 0 个 change(规约层)= `cpptlm-cep-tilelink-state-spec` **✅ 已完成归档**(2026-11-02,per **Entry #143**;main spec = `openspec/specs/cep-tilelink-state-spec/spec.md`)+ 第 1 个 change(实现层)= `cpptlm-cep-tilelink-tree-manager` **🟡 已建档**(2026-11-02,per **Entry #144**;4 件套 + delta spec `cep-tilelink-tree-manager`)
+状态: 🟡 **进行中**(2026-11-02)—— 队列 #11;**两段式**:第 0 个 change(规约层)= `cpptlm-cep-tilelink-state-spec` **✅ 已完成归档**(2026-11-02,per **Entry #143**;main spec = `openspec/specs/cep-tilelink-state-spec/spec.md`)+ 第 1 个 change(实现层)= `cpptlm-cep-tilelink-tree-manager` **✅ 已完成归档**(2026-11-02,per **Entry #147**;main spec = `openspec/specs/cep-tilelink-tree-manager/spec.md`)
 created: 2026-11-01
 ---
 
@@ -20,7 +20,7 @@ created: 2026-11-01
 
 > **状态**: 🟡 进行中(2026-11-02)· **两段式**(per 队列 #9 / #10 先例:先规约层、再实现层)
 > · **第 0 个 change(规约层)= ✅ 已完成归档**(2026-11-02,per 台账 **Entry #143**)⇒ main spec = `openspec/specs/cep-tilelink-state-spec/spec.md`
-> · **第 1 个 change(实现层)= 🟡 已建档**(2026-11-02,per 台账 **Entry #144**)⇒ `openspec/changes/cpptlm-cep-tilelink-tree-manager/`
+> · **第 1 个 change(实现层)= ✅ 已完成归档**(2026-11-02,per 台账 **Entry #147**)⇒ main spec = `openspec/specs/cep-tilelink-tree-manager/spec.md`
 > **队列**: `obj-cep-platform §4.0` **队列 #11**(`cpptlm-cep-tilelink-tree-manager`,Stage 1 / **2029-Q2**)
 > · **不新增队列行**(一个队列行可承载多个 change / capability,per 队列 #3 / #4 / #8 / #9 / #10 先例)
 > **两段式拆分**(per 队列 #9 的 `cpptlm-cep-mesif-state-spec` → `cpptlm-cep-mesif-adapter`、
@@ -254,5 +254,7 @@ TileLink 是 **SiFive 明示的 free and open standard** ⇒ **规范正文可�
 | 2026-11-01 | #138 | **R-T2 / R-T3 / R-T6 三项 architect 裁决一次性签发**(通道→VC 映射 + 6 类归属 + 非对称定义形态)⇒ **Task 0 硬门通过** ⇒ 可起 change |
 | 2026-11-01 | #139 | `FullMapDirectory` 反向缺口落位裁决 —— 与本 change **无交集**(但**同属** `TreeManager` 落位体系:该 tracker 的行为实现归本 change 的第 1 个 change) |
 | 2026-11-02 | #141 | **二审落修(批 2)** —— `ADR-CEP-09` 无环性论证换**因果依赖** + 依赖集 3→4 条 + `ADR-CEP-02` 的 **R-T4 裁决**(`perm` 4 值锁 = **值域锁** ⇒ 实例填 **3 值**)⇒ 本 change 的「实例 `perm` 填几值」**已闭合** |
+| 2026-11-02 | #146 | **第 1 个 change Phase 3 落地** —— 实例声明(`tilelink_c`,13 键)+ **`AC-05` 族无关化**(参数化 + SKIP)+ 派生量 `no_upgrade_instances` **首次非空**(⇒ 判据变强)+ **13 条**反向验证 ⇒ 2 件冻结面两步授权闭环 |
+| 2026-11-02 | #147 | **第 1 个 change 已完成归档** —— Phase 0 ~ 4 全完成;delta capability `cep-tilelink-tree-manager` 已合并进 `openspec/specs/cep-tilelink-tree-manager/spec.md`;**新增 invariant 数 = 0**;KPI **1/3 → 0/3** ⇒ **队列 #11 两段式全部完成** |
 | 2026-11-02 | #144 | **第 1 个 change(实现层)已建档** —— `cpptlm-cep-tilelink-tree-manager`(4 件套 + delta spec `cep-tilelink-tree-manager`;`openspec validate --strict` rc=0;KPI **0/3 → 1/3**)⇒ **两段式闭合**;⚠️ 本轮**复核推翻了 1 条子代理结论**:schema 的 `perm` 是**值级**枚举 ⇒ **3 值合法** ⇒ ★冻结面 `protocol_instance.schema.json` **零改动** |
 | 2026-11-02 | #143 | **第 0 个 change 已完成归档** —— Phase 2 载体(`tilelink_state_spec.hh`)+ Phase 3 判据(`test_cep_tilelink_state_spec.cc` 8 cases / 213 assertions + 生成器逐格交叉核对)+ Phase 4 验收(`ctest` 133/133 · 冻结面零 diff · KPI 1/3 → 0/3)⇒ **余下第 1 个 change(实现层)** |

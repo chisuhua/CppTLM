@@ -253,7 +253,7 @@ sec = t[i:j]
 #       标记)⇒ 裸 `str.replace(..., 1)` 会打在无标记的行上 → fixture 再次假失败。
 # ⚠️ 2026-11-01(Entry #132):队列 #10 归档 ⇒ 标记再转指 #11 `cpptlm-cep-tilelink-tree-manager`
 #    (同 fixture 前两次的「状态变迁 ⇒ 锚点失效」形态,第三次复现 ⇒ 锚点**必须**跟随 owner 行)
-name = "`cpptlm-cep-tilelink-tree-manager`"
+name = "`cpptlm-cep-cxl-dcoh-symmetric`"
 assert "S1-" in sec, "锚点漂移:§4.0 未含 S1-N 承接标记"
 _lines = sec.splitlines(keepends=True)
 _hit = 0
@@ -289,7 +289,7 @@ sec = t[i:j]
 # ⚠️ 2026-10-30(Entry #106):owner 行随队列 #9 归档再转指 #10 `cpptlm-cep-cxl-nonsymmetric`
 # ⚠️ 2026-11-01(Entry #132):队列 #10 归档 ⇒ 标记再转指 #11 `cpptlm-cep-tilelink-tree-manager`
 #    (同 fixture 前两次的「状态变迁 ⇒ 锚点失效」形态,第三次复现 ⇒ 锚点**必须**跟随 owner 行)
-name = "`cpptlm-cep-tilelink-tree-manager`"
+name = "`cpptlm-cep-cxl-dcoh-symmetric`"
 assert "⏭(孤儿)" in sec, "锚点漂移:§4.2 未含孤儿前置标记"
 _lines = sec.splitlines(keepends=True)
 _hit = 0

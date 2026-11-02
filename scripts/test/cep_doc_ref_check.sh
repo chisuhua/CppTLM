@@ -138,6 +138,10 @@ VIRTUAL_PATHS=(
                                                     #   `openspec/changes/archive/2026-11-02-cpptlm-cep-tilelink-state-spec/`
                                                     #   ⇒ 活文档里的**历史/时态锚定**引用按「归档路径」处理
                                                     #   (per AGENTS.md「VIRTUAL_PATHS」约定)
+  "openspec/changes/cpptlm-cep-tilelink-tree-manager/"  # 队列 #11 的**实现层** change 已于 2026-11-02
+                                                    #   **完成归档**(Entry #147)⇒ 目录移至**不入库**的
+                                                    #   `openspec/changes/archive/2026-11-02-cpptlm-cep-tilelink-tree-manager/`
+                                                    #   ⇒ 活文档里的**历史/时态锚定**引用按「归档路径」处理
   "openspec/changes/cpptlm-cep-cohif-carrier/"      # 队列 #7 已于 2026-10-28 **完成归档**
                                                     #   (Entry #90)⇒ change 目录移至**不入库**的
                                                     #   `openspec/changes/archive/2026-10-28-cpptlm-cep-cohif-carrier/`
