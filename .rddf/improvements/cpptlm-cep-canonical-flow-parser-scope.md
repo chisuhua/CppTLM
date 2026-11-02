@@ -5,7 +5,7 @@ phase: phase-10
 依赖:
   - ADR-CEP-02
   - ADR-CEP-01
-状态: 🟡 **进行中**(2026-11-02)—— 组 1;Phase 0 ~ 3 已完成(per 台账 Entry #149 / **#150**);Phase 4 验收 + 归档待做
+状态: ✅ **已完成并归档**(2026-11-02,per 台账 Entry #149 / **#150** / **#152**)—— 组 1;Phase 0 ~ 4 全完成;delta capability `cep-canonical-flow-parser-scope` 已合并进 `openspec/specs/cep-canonical-flow-parser-scope/spec.md`
 created: 2026-11-02
 ---
 

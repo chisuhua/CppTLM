@@ -20,8 +20,6 @@ SHALL NOT 影响 canonical 流清单的解析结果。
 
 ## Requirements
 
-## ADDED Requirements
-
 ### Requirement: cep-canonical-flow-parser-scope
 
 CEP SHALL 将 CP-02 的 canonical 流清单解析范围**限定**于 `ADR-CEP-02` 的 `## 2.` 段,
