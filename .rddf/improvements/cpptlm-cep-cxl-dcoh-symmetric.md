@@ -77,8 +77,8 @@ created: 2026-11-02
 
 ### ① 平台缺的不是「又一个 adapter」,而是**第三种一致性拓扑**
 
-已落地的 5 个实例(`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0` / `tilelink_c`)**全部**是
-**host-centric 或中心化目录**语义 —— 只有 `tilelink_c` 是**树形**。
+建档时已落地的 5 个实例(`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0` / `tilelink_c`)**全部**是
+**host-centric 或中心化目录**语义(⚠️ 本 change 落地后为 **6** 个 —— 新增 `cxl_3_0_symmetric`) —— 只有 `tilelink_c` 是**树形**。
 CXL 3.0 对称(DCOH)是**第四种**:设备侧**自带**一致性代理 + SF/目录,**可对 host 发起反向 snoop**
 ⇒ 平台不覆盖它,就答不了「**中心化目录 vs 设备侧代理**」这一档取舍 —— 而这恰是 dGPU SoC 里
 「加速器自带 snoop filter」这一现实方案的**直接对应**(per §0 Goal 的核心命题)。
