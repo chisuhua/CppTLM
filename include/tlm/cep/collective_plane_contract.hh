@@ -383,11 +383,49 @@ inline ContractVerdict evaluate_zero_call_edge(const std::vector<std::string>& h
     return ContractVerdict::PASS;
 }
 
+/// **截取 canonical 10 流表的权威位置** —— `ADR-CEP-02` 的 `## 2.` 段(到下一个 `## ` 为止)。
+///
+/// ⚠️ **为什么必须限定范围**(per 台账 **Entry #142** ④ / **Entry #149**):
+///   canonical 10 流表只存在于 `## 2.` 段;而 ADR 是**不可变**文档 ⇒ 状态变化
+///   **只能追加** `## Status Update` 段 / 附录 ⇒ 若解析器扫**全文**,任何
+///   「首格为 ASCII 数字 + 第二格为新标识符」的表格都会被**误收为流名**
+///   ⇒ CP-02 判据**假红** ⇒ 判据惩罚了 ADR 的正常演进。
+///
+/// ⚠️ **失败方向安全**:若 `## 2.` 段被改名 / 移位 ⇒ 本函数返回**空**
+///   ⇒ 解析出 **0** 条 ⇒ 判据**红** + detail 提示「权威源格式已变」
+///   ⇒ **不引入漏检**(静默通过才是危险方向)。
+///
+/// ⚠️ `## 2.` 的匹配是**前缀精确**(`## 2.`):`### 2.1` 这类 h3 **不**终止本段
+///   (真实 ADR 的 §2 段内含 `### 决策 1/2/3` 三个子节)。
+inline std::string slice_canonical_flow_section(const std::string& adr_text) {
+    std::istringstream in(adr_text);
+    std::string line;
+    std::string out;
+    bool inside = false;
+    while (std::getline(in, line)) {
+        if (line.compare(0, 5, "## 2.") == 0) {
+            inside = true;
+            continue;
+        }
+        if (inside && line.compare(0, 3, "## ") == 0) {
+            break;  // 下一个 h2 ⇒ 本段结束
+        }
+        if (inside) {
+            out += line;
+            out += "\n";
+        }
+    }
+    return out;
+}
+
 /// **CP-02 canonical 10 流零 diff** —— 解析 `ADR-CEP-02 §2` 的流清单表。
 /// canonical 流名**不得**出现在 collective 侧(collective 是**旁路**,不扩事务集)。
+///
+/// ⚠️ **解析范围限定在 `## 2.` 段**(per `slice_canonical_flow_section` 的论证)
+///   ⇒ ADR 的**合法追加**(SU / 附录 / 其它章节的表格)**不**影响解析结果。
 inline std::set<std::string> parse_canonical_flow_names(const std::string& adr_text) {
     std::set<std::string> names;
-    std::istringstream in(adr_text);
+    std::istringstream in(slice_canonical_flow_section(adr_text));
     std::string line;
     while (std::getline(in, line)) {
         const auto s = line.find('|');

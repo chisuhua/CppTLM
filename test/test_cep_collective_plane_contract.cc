@@ -53,6 +53,32 @@ namespace {
         return path.string();
     }
 
+
+    /// ── 合成 ADR 文本(最小形态)────────────────────────────────────────────
+    /// §2 段 = canonical 10 流表(表头 + 分隔行 + 10 行);`tail` 追加在 §2 之后。
+    /// ⚠️ **不修改真实 ADR 文件** ⇒ 用例**零副作用**。
+    std::string synth_adr(const std::string& tail) {
+        std::string s = "# ADR-TEST\n\n## 1. 背景\n\n正文。\n\n## 2. 决策\n\n";
+        s += "| # | 名称 | 方向 | 说明 |\n|---|------|------|------|\n";
+        const char* kFlows[10] = {
+            "request",   "completion",          "snoop",           "snoop_resp",
+            "writeback", "forward_data",        "back_invalidate", "address_resolve",
+            "barrier",   "snoop_completion_ack"};
+        for (int i = 0; i < 10; ++i) {
+            s += "| " + std::to_string(i + 1) + " | `" + kFlows[i] + "` | a | b |\n";
+        }
+        return s + tail;
+    }
+
+    /// canonical 10 流名(用于断言「合成文本的解析结果 == 真实流集」)
+    const std::vector<std::string>& canonical_flow_names() {
+        static const std::vector<std::string> v = {
+            "request",   "completion",          "snoop",           "snoop_resp",
+            "writeback", "forward_data",        "back_invalidate", "address_resolve",
+            "barrier",   "snoop_completion_ack"};
+        return v;
+    }
+
 } // namespace
 
 // ═════════════════════════════════════════════════════════════════════
@@ -207,6 +233,67 @@ TEST_CASE("CEP CollectiveContract: canonical 10 流零 diff", "[cep][collective-
                   "/docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md",
               legit_path, d3) == cep::ContractVerdict::PASS);
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+// 队列 #11 组 1 `cpptlm-cep-canonical-flow-parser-scope`
+//   —— CP-02 解析范围限定(CFP-01 ~ CFP-04)
+// ══════════════════════════════════════════════════════════════════════════
+//
+// ⚠️ **反向 fixture 的形态与既有 `*_reverse_verify.sh` 相反**:
+//   既有脚本验的是「毒化 ⇒ 判据**必红**」(鉴别力);
+//   本组修的是**误报**(判据因 ADR 的合法追加而**假红**)⇒ 正确形态 =
+//   「**毒化 ⇒ 判据仍绿**」(回归防护)⇒ 全部用例用**合成 ADR 文本**,
+//   **不修改真实 ADR 文件** ⇒ 零副作用。
+// ⚠️ 铁律 ①:每个毒化用例都有**基线正控**(SECTION「正控」)。
+// ⚠️ 铁律 ②:毒化用例断言「解析集 == 10」**且**「**不含**注入名」
+//   ⇒ 若解析器退化为「仍收 §2 段外的表格」,用例**必红且归因命中**。
+TEST_CASE("CEP CollectiveContract: CP-02 解析范围限定(§2 段)—— 4 个合成 ADR 文本用例",
+          "[cep][collective-contract][parser-scope]") {
+    // ── 正控(基线):干净合成文本 ⇒ 恰 10 条,且 == 真实 canonical 流集 ────────
+    SECTION("正控:干净 §2 段 ⇒ 恰 10 条") {
+        const auto flows = cep::parse_canonical_flow_names(synth_adr(""));
+        CHECK(flows.size() == 10u);
+        for (const auto& f : canonical_flow_names()) {
+            INFO("canonical 流名 " << f);
+            CHECK(flows.count(f) == 1u);
+        }
+    }
+
+    // ── CFP-02a:`## Status Update` 段内追加「首格 ASCII 数字 + 第二格新名」的表格 ──
+    //    ⇒ 解析集 SHALL 仍为 10 且 SHALL **不含** `fake_flow`
+    SECTION("CFP-02a:SU 内追加表格 ⇒ 仍 10 条且不含注入名") {
+        const std::string tail = "\n## Status Update(2099-01-01)—— 合成 SU\n\n"
+                                 "| 11 | `fake_flow` | x | y |\n";
+        const auto flows = cep::parse_canonical_flow_names(synth_adr(tail));
+        CHECK(flows.size() == 10u);
+        CHECK(flows.count("fake_flow") == 0u);
+    }
+
+    // ── CFP-02b / CFP-01:`## 3.` 段内追加同类表格 ⇒ 同样 SHALL 不影响解析集 ──
+    //    (⚠️ 这一面**未被**台账 Entry #142 ④ 覆盖 —— 原记录只提 SU)
+    SECTION("CFP-02b:§3 段内追加表格 ⇒ 仍 10 条且不含注入名") {
+        const std::string tail = "\n## 3. 关键约束\n\n| 12 | `fake_flow2` | x | y |\n";
+        const auto flows = cep::parse_canonical_flow_names(synth_adr(tail));
+        CHECK(flows.size() == 10u);
+        CHECK(flows.count("fake_flow2") == 0u);
+    }
+
+    // ── CFP-03:权威源结构异常(无 §2 段)⇒ SHALL **安全失败**(不是静默通过)──
+    SECTION("CFP-03:无 §2 段 ⇒ 0 条 + 判据 FAIL + 提示「权威源格式已变」") {
+        const std::string broken = "# ADR-TEST\n\n## 1. 背景\n\n正文。\n";
+        const auto flows = cep::parse_canonical_flow_names(broken);
+        CHECK(flows.size() == 0u);
+
+        const auto broken_path = write_temp_json("cep_canonical_broken_adr.md", broken);
+        std::string detail;
+        const auto v = cep::evaluate_canonical_flows(
+            broken_path, std::string(CPPTLM_SOURCE_DIR) + "/include/tlm/cep/collective_plane.hh",
+            detail);
+        CHECK(v == cep::ContractVerdict::FAIL);
+        CHECK(detail.find("权威源格式已变") != std::string::npos);
+    }
+}
+
 
 // ═════════════════════════════════════════════════════════════════════
 // Scenario 5:collective VC 预留判据 —— 反向 fixture(注入冲突 VC ⇒ 红)

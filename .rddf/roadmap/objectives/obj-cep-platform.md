@@ -459,12 +459,12 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-02 实测,per oracle B1) —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原标题「2026-10-20 实证」**已落后两代**;现行值以 `openspec list --json` **实测**为准
 
-`openspec/changes/` 当前 **0 个 active**(2026-11-02 实测, per `openspec list --json`): —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「1 个 active」(2026-10-28 实证)**已失实**,且与本节下方「当前 Proposed 并发 = **0/3**」**互斥** ⇒ 现取实测值 **0**
+`openspec/changes/` 当前 **0 个 active**(2026-11-02 实测, per `openspec list --json`): —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「1 个 active」(2026-10-28 实证)**已失实**,且与本节下方的**并发计数**表述**互斥** ⇒ 现取实测值 **0** —— ⚠️ **2026-11-02 再订正**(per 台账 Entry #149:建档 `cpptlm-cep-canonical-flow-parser-scope` ⇒ 并发回到 **1 个 active**)
 - 原 3 个 active(`cpptlm-msix-generator-ip` 0/44 / `cpptlm-pcie-tlp-entry-layer` 0/56 / `cpptlm-p2-integration-unblock` 0/45)**均 0% 未实施**
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
 
-→ **当前 Proposed 并发 = 0/3**（2026-11-02 —— 队列 #11 的**第 1 个 change**(实现层)**已完成归档** ⇒ slot 已释放;前序:2026-11-02 归档:队列 #11 的**第 0 个 change**(规约层)**已完成归档** ⇒ slot 已释放;前序:2026-11-01 归档:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` **已完成归档**(「**已完成归档**」语义 —— 2 份 delta spec(`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`)已合并进 `openspec/specs/`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;⚠️ `SSF-03` 措辞收紧为「已实现的登记 + 显式后续义务」⇒ **R11 维持 🟡 中**(V-2 未达成);Entry #132)⇒ slot 已释放;2026-11-01 转正:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` 已建 change 目录(4 件套 + **2 份** delta spec:`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;`openspec validate --strict` rc=0)⇒ 占 1 slot;2026-11-01 归档:队列 #10 的**第 0 个 change**(规约层)`cpptlm-cep-cxl-nonsymmetric-state-spec` **已完成归档**(「**已完成归档**」语义 —— delta spec `cep-cxl-nonsymmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;Entry #127)⇒ slot 已释放;2026-10-31 归档:`cpptlm-test-sh-arg-parsing-timeout` **已完成归档**(delta spec `ci-test-entrypoint` 已合并进 `openspec/specs/`)⇒ slot 已释放;历史:2026-11-01 转正:队列 #10 的**第 0 个 change**(规约层)`cpptlm-cep-cxl-nonsymmetric-state-spec` 已建 change 目录(4 件套 + 1 份 delta spec `cep-cxl-nonsymmetric-state-spec`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-31 转正:非 CEP 能力的**测试基础设施**修复 change `cpptlm-test-sh-arg-parsing-timeout` 已建 change 目录(4 件套 + 1 份 delta spec `ci-test-entrypoint`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec`(MESIF 状态机规约 + 5→4 投影表)**已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**;队列 #8 `cpptlm-cep-chi-rnf-subset` **已转正**(2026-10-28,per Entry #91 —— change 目录已建,`openspec validate --strict` rc=0)⇒ 占 1 slot;下一个可启动 change = **无**(per §5.4 并发 ≤ 1);历史:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(2026-10-28,per Entry #90)(2026-10-28 归档:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(完成归档语义 —— 2 份 delta spec 已合并进 main specs:`cep-cohif-carrier` / `cep-protocol-bridge-contracts`;tasks **41/41** 全勾)→ slot 已释放,per Entry #90;历史:2026-10-27 转正:`cpptlm-cep-cohif-carrier`(队列 #7)**已建 change 目录**(proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0)→ 占 1 slot,per Entry #81;历史:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已完成归档**(完成归档语义 —— 14 Scenario 并入 2 份 main spec(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7))→ slot 已释放,per Entry #80;历史:2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:**当时**(2026-10-23)下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base` —— 队列 #5 现已归档;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
+→ **当前 Proposed 并发 = 1/3**（2026-11-02 —— 组 1 的 `cpptlm-cep-canonical-flow-parser-scope` **已建档** ⇒ 占 1 slot;前序:队列 #11 的**第 1 个 change**(实现层)**已完成归档** ⇒ slot 已释放;前序:2026-11-02 归档:队列 #11 的**第 0 个 change**(规约层)**已完成归档** ⇒ slot 已释放;前序:2026-11-01 归档:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` **已完成归档**(「**已完成归档**」语义 —— 2 份 delta spec(`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`)已合并进 `openspec/specs/`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;⚠️ `SSF-03` 措辞收紧为「已实现的登记 + 显式后续义务」⇒ **R11 维持 🟡 中**(V-2 未达成);Entry #132)⇒ slot 已释放;2026-11-01 转正:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` 已建 change 目录(4 件套 + **2 份** delta spec:`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;`openspec validate --strict` rc=0)⇒ 占 1 slot;2026-11-01 归档:队列 #10 的**第 0 个 change**(规约层)`cpptlm-cep-cxl-nonsymmetric-state-spec` **已完成归档**(「**已完成归档**」语义 —— delta spec `cep-cxl-nonsymmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;Entry #127)⇒ slot 已释放;2026-10-31 归档:`cpptlm-test-sh-arg-parsing-timeout` **已完成归档**(delta spec `ci-test-entrypoint` 已合并进 `openspec/specs/`)⇒ slot 已释放;历史:2026-11-01 转正:队列 #10 的**第 0 个 change**(规约层)`cpptlm-cep-cxl-nonsymmetric-state-spec` 已建 change 目录(4 件套 + 1 份 delta spec `cep-cxl-nonsymmetric-state-spec`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-31 转正:非 CEP 能力的**测试基础设施**修复 change `cpptlm-test-sh-arg-parsing-timeout` 已建 change 目录(4 件套 + 1 份 delta spec `ci-test-entrypoint`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec`(MESIF 状态机规约 + 5→4 投影表)**已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**;队列 #8 `cpptlm-cep-chi-rnf-subset` **已转正**(2026-10-28,per Entry #91 —— change 目录已建,`openspec validate --strict` rc=0)⇒ 占 1 slot;下一个可启动 change = **无**(per §5.4 并发 ≤ 1);历史:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(2026-10-28,per Entry #90)(2026-10-28 归档:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(完成归档语义 —— 2 份 delta spec 已合并进 main specs:`cep-cohif-carrier` / `cep-protocol-bridge-contracts`;tasks **41/41** 全勾)→ slot 已释放,per Entry #90;历史:2026-10-27 转正:`cpptlm-cep-cohif-carrier`(队列 #7)**已建 change 目录**(proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0)→ 占 1 slot,per Entry #81;历史:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已完成归档**(完成归档语义 —— 14 Scenario 并入 2 份 main spec(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7))→ slot 已释放,per Entry #80;历史:2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:**当时**(2026-10-23)下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base` —— 队列 #5 现已归档;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
@@ -484,7 +484,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 **✅ 已创建(2026-11-02)**:队列 #11 的**第 1 个 change**(实现层)`cpptlm-cep-tilelink-tree-manager` —— proposal + design + specs(`cep-tilelink-tree-manager`)+ tasks **4 件套全落**;baseline 由 **0/3 升至 1/3**
 
 **✅ 已归档(2026-11-02)**:队列 #11 的**第 1 个 change**(实现层)—— delta capability `cep-tilelink-tree-manager` 已合并进 `openspec/specs/cep-tilelink-tree-manager/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;baseline 由 **1/3 回到 0/3**(⚠️ 前序 = 同日归档的**第 0 个 change**(规约层);**两段式**由此闭合:规约层 ✅ 已归档 + 实现层 🟡 已建档)(⚠️ 本条 = **第 7 处** —— 队列 #10 的前例**被门禁抓出来**的漏项,本次**主动**同步)。
-**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **0/3**（2026-11-02 归档:队列 #11 的**第 1 个 change**(实现层)⇒ slot 已释放;2026-11-02 归档:队列 #11 的**第 0 个 change**(规约层)⇒ slot 已释放;2026-11-01 归档:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` **已完成归档**(「**已完成归档**」语义 —— 2 份 delta spec(`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`)已合并进 `openspec/specs/`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;⚠️ `SSF-03` 措辞收紧为「已实现的登记 + 显式后续义务」⇒ **R11 维持 🟡 中**(V-2 未达成);Entry #132)⇒ slot 已释放;2026-11-01 转正:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` 已建 change 目录(4 件套 + **2 份** delta spec:`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;`openspec validate --strict` rc=0)⇒ 占 1 slot;2026-11-01 归档:队列 #10 的**第 0 个 change**(规约层)**已完成归档**(「**已完成归档**」语义 —— delta capability `cep-cxl-nonsymmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;Entry #127)⇒ slot 已释放;2026-10-31 转正:非 CEP 能力的**测试基础设施**修复 change `cpptlm-test-sh-arg-parsing-timeout` 已建 change 目录(4 件套 + 1 份 delta spec `ci-test-entrypoint`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec` **已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**(2026-10-28 转正:队列 #8 `cpptlm-cep-chi-rnf-subset` **已建 change 目录** → 占 1 slot,per Entry #91;历史:2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档** → slot 已释放,per Entry #90;历史:2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **已转正** → 占 1 slot,per Entry #81;历史:2026-10-27 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已完成归档** → slot 已释放,per Entry #80;历史:2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已建 change 目录** → 占 1 slot,per Entry #71;2026-10-26 队列 #5 `cpptlm-cep-collective-plane-base` **已完成归档** → slot 释放,per Entry #70;2026-10-26 队列 #5 **已建 change 目录** → 曾占 1 slot,per Entry #66;2026-10-25 队列 #4 `cpptlm-cep-directory-ordering-plane` **已完成归档** → slot 释放,per Entry #64;队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档** → slot 已释放;队列 #2 `cpptlm-cep-poc-spike` **已完成归档** → slot 释放;该 change 建目录后曾为 1/3);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
+**⚠️ `openspec validate cpptlm-cep-umbrella --strict` 实测 rc=1**(2 条预存 WARNING,per Entry #12 ⑦ 实证为**预存不满足**,非本批引入)。**历史**:2026-10-21 Task 8.4 Step 4 曾因跨仓准入门未放行暂回 **Proposed Draft** → 已被 2026-10-22 M2 放行(Entry #10)取代 → 已被 2026-10-23 **完成归档**(Entry #29)取代。**当前状态**:umbrella **已归档**,KPI slot 已释放;当前全局 Proposed 并发 **1/3**（2026-11-02 建档:组 1 的 `cpptlm-cep-canonical-flow-parser-scope` ⇒ 占 1 slot;前序:2026-11-02 归档:队列 #11 的**第 1 个 change**(实现层)⇒ slot 已释放;2026-11-02 归档:队列 #11 的**第 0 个 change**(规约层)⇒ slot 已释放;2026-11-01 归档:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` **已完成归档**(「**已完成归档**」语义 —— 2 份 delta spec(`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`)已合并进 `openspec/specs/`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;⚠️ `SSF-03` 措辞收紧为「已实现的登记 + 显式后续义务」⇒ **R11 维持 🟡 中**(V-2 未达成);Entry #132)⇒ slot 已释放;2026-11-01 转正:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` 已建 change 目录(4 件套 + **2 份** delta spec:`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;`openspec validate --strict` rc=0)⇒ 占 1 slot;2026-11-01 归档:队列 #10 的**第 0 个 change**(规约层)**已完成归档**(「**已完成归档**」语义 —— delta capability `cep-cxl-nonsymmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;Entry #127)⇒ slot 已释放;2026-10-31 转正:非 CEP 能力的**测试基础设施**修复 change `cpptlm-test-sh-arg-parsing-timeout` 已建 change 目录(4 件套 + 1 份 delta spec `ci-test-entrypoint`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec` **已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**(2026-10-28 转正:队列 #8 `cpptlm-cep-chi-rnf-subset` **已建 change 目录** → 占 1 slot,per Entry #91;历史:2026-10-28 队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档** → slot 已释放,per Entry #90;历史:2026-10-27 队列 #7 `cpptlm-cep-cohif-carrier` **已转正** → 占 1 slot,per Entry #81;历史:2026-10-27 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已完成归档** → slot 已释放,per Entry #80;历史:2026-10-26 队列 #6 `cpptlm-cep-moesi-gpu-adapter` **已建 change 目录** → 占 1 slot,per Entry #71;2026-10-26 队列 #5 `cpptlm-cep-collective-plane-base` **已完成归档** → slot 释放,per Entry #70;2026-10-26 队列 #5 **已建 change 目录** → 曾占 1 slot,per Entry #66;2026-10-25 队列 #4 `cpptlm-cep-directory-ordering-plane` **已完成归档** → slot 释放,per Entry #64;队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档** → slot 已释放;队列 #2 `cpptlm-cep-poc-spike` **已完成归档** → slot 释放;该 change 建目录后曾为 1/3);归档后的有效验收命令 = `openspec validate cep-core-contracts --strict`(rc=0)—— 裸 `openspec validate --strict` **恒为 rc=1**(`Nothing to validate`),不可作验收证据。
 
 ⚠️ **原候选路径已过期**:"路径 C: archive `cpptlm-gmmu-pte-bus-correction`" —— 该 change **已于 2026-10-12 实际归档**,不再是 active,不能再作为 archive 对象。真实候选是上列 3 个(均已暂存归档)。
 
@@ -749,6 +749,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P2 | phase-11 注册后建 feature fragment | 走 rdd-planner 后续评估;≥2 change 跨 phase-10/11 分布时 |
 | P2 | **`FullMapDirectory` 落位登记**(反向缺口:有行为实现 · 零实例声明) | ⚠️ **登记态 · 不排期**(per **Entry #139** ③ 裁决 —— 与 `BroadcastNull` 同款:当前队列序列 #10 ~ #14 **无消费者** ⇒ 不排期、保留登记);⚠️ **2026-11-02 补登记**(per 台账 Entry #148):Entry #139 ③ 落点表要求「§10 追加 backlog 行」**至今未落地** ⇒ **本条补上**;**解除条件** = **CHI-full 队列**出现(即有实例声明 `sharer_tracker.impl = FullMapDirectory`)⇒ 届时才排期;⚠️ **实现不废弃**(per Entry #139 ④)—— **不得**表述为「该实现无用/应删除」;⚠️ 与 §8.1 **R11** 的「声明超前于实现」**方向相反**(R11 已降级 🟢 低,per Entry #137)⇒ **不因 R11 降级而闭合** |
 | P2 | **`LocalView` 双重语义登记**(`forward_to` 字段须先读 `result` 再解释) | ⚠️ **登记态 · 未落点**(per **Entry #144** ② 2 —— 实现层复用既有 `LocalView` **零改动** ⇒ 代价 = `forward_to` 字段**语义重载**:判读前**必须**先读 `result`);⚠️ **2026-11-02 补登记**(per 台账 Entry #148):该义务**至今无落点**;**若**要消歧 ⇒ 须**扩 `LocalView`**(新增 `tree_parent` 字段)—— 属**公开契约变更** ⇒ **须单独登记 + 独立 change**,**非**默认动作(per Entry #143 ⑥ item 5);⇒ 现状 = **文档侧约定 + 判据覆盖**,不改契约面 |
+| P1 | **`cpptlm-cep-canonical-flow-parser-scope`**(CP-02 解析器范围限定) | 🟡 **已建档**(2026-11-02,per 台账 **Entry #149**)—— **1 slot**;**目标** = 把 `parse_canonical_flow_names` 的解析范围限定到 `ADR-CEP-02` 的 `## 2.` 段 ⇒ 权威 ADR 的**合法追加**(SU / 附录 / 其它章节表格)**不再**让 CP-02 判据假红;**判据形态** = 「毒化 ⇒ **仍绿**」(回归防护,与既有 `*_reverse_verify.sh` 的鉴别力形态**相反**,已显式登记);⚠️ **不属** §4.0 的 14 个主线队列 ⇒ **不触及** `ADR-CEP-00 §2 Decision 3` 的治理口径 |
 | P2 | **vc3 内 `E` 不被 `D` 饿死**(`ADR-CEP-09` SU ④ 登记的第 4 条降维代价) | ⚠️ **登记态 · 未建模**(per **Entry #143** ⑥ item 6 —— 多 VC 仲裁本身属 **Stage 4+**(`ADR-CEP-09`,per §8.1 R4));⚠️ **2026-11-02 补登记**(per 台账 Entry #148):全仓检索「饿死 / starv」**0 命中** ⇒ **既无仲裁器补偿、也无「未建模」标注** ⇒ 本条把**「未建模」**这一事实**显式落盘**;**解除条件** = 多 VC 仲裁落地(`ADR-CEP-09`)时由仲裁器补偿,或届时补等价判据;⚠️ **不得**表述为「已解决」 |
 
 ---
@@ -9354,6 +9355,140 @@ SU 的 3 行表格首格由 **数字** 改为 **圈号**(`① ② ③`)—— �
 · #129(`SparseSnoopFilter` 落地)· #107(SharerTracker 落位映射)
 · `docs/architecture/07-coherence-exploration-platform.md`(第 18 则 SU)· `openspec/specs/cep-sharer-tracker-base/spec.md`
 · `test/test_cep_schema.cc`(`rows511 == 8` —— **零改动**,A12 澄清)
+
+---
+
+### Entry #149 — 2026-11-02 [go-decision](组 1 启动 —— `cpptlm-cep-canonical-flow-parser-scope` 的裁决 + **陷阱条件精确化** + 修法验证矩阵)
+
+**主题**:组 0 复盘登记的 **B1**(CP-02 解析器全文扫描)启动 —— 按 §4.7.2「⏸ → 🟡 转正路径」
+走 step 0 ~ 3;本条 = **裁决记录 + 修法验证矩阵 + 实施计划**。
+**范围**:判据 / 契约**基础设施**修复 ⇒ **不属** §4.0 的 14 个主线协议族队列
+(照先例 `cpptlm-test-sh-arg-parsing-timeout` = 非 CEP 主线能力的修复 change ⇒ 不进 §4.0)
+⇒ **不触及** `ADR-CEP-00 §2 Decision 3` 的治理口径(14 change / 14 季度)**零改动**;
+⇒ **占 1 个 KPI slot**(per `AGENTS.md`:代码改动非 doc-only ⇒ 须走 OpenSpec 工作流)。
+
+**① 裁决路径(per §4.7.2 转正路径)**
+
+| 步 | 判定 |
+|---|---|
+| 0. KPI slot 可用 | ✅ 实测 `openspec list --json` = **0 个 active** ⇒ slot 可用 |
+| 1. DRI 对三条出路的裁决 | ✅ **裁决 ① 建 change**(用户 2026-11-02 接受「组 1 占 KPI slot」建议)⇒ 采纳 Entry #142 ④ 登记的**正确修法** |
+| 2. 补 improvement 草稿 | 🟡 **待办** —— improvement = **planner 域**(per 角色矩阵 + `add-improve` HARD-GATE)⇒ **draft 已起草并 staged 于** `.rddf/drafts/cpptlm-cep-canonical-flow-parser-scope/`,**待 planner 落** `.rddf/improvements/` |
+| 3. §4.0 状态列 | ➖ **不适用**(不进 §4.0,见上)⇒ 状态由 change 的 `tasks.md` 勾选承载 |
+
+**② ⚠️ 陷阱条件的精确化(本条的核心发现 —— 比 Entry #142 的记录更严)**
+
+Entry #142 ④ 记的陷阱是「**任何**在 `ADR-CEP-02` 追加『首格为数字』的表格的 SU ⇒ 都会让 CP-02 判据红」。
+本条**实测复核**后**精化**为:
+
+| 面 | 精确条件(实测) |
+|---|---|
+| **触发面** | **不止 SU** —— 现行实现扫**全文** ⇒ `## 3.` 之后**任意段**(§3 ~ §7、SU、未来的附录)追加表格**同样触发**。Entry #142 只登记了 SU 这一个面 ⇒ **覆盖面被低估** |
+| **触发条件** | 需**同时**满足:① 首格为 **ASCII 数字**(C++ 判据 `c < '0' \|\| c > '9'` ⇒ **Unicode 圈号 `①` 不触发**)② 第二格为**新标识符**(解析结果是 `set` ⇒ **同名去重** ⇒ 第二格若是 `request` 等已有流名则**不触发**) |
+| **当前规避的有效性** | Entry #142 的文档侧规避(首格改圈号 `①②③`)**之所以有效,是因为圈号不是 ASCII 数字**,**不是**因为范围限定 ⇒ **纯人肉约定 ⇒ 不可持续**(ADR 只能追加 SU ⇒ 必然复发) |
+| **副产物** | 现行实现对**真实 ADR** 实测解析出 **10** 条(C++ ASCII 判据)⇒ 与 CP-02 判据的 `size()==10` 断言一致 ⇒ **当前无既存红**;⚠️ 但用 Unicode `isdigit()` 语义复刻会得 **13** 条 ⇒ **复刻实现必须逐字对齐 ASCII 判据**,否则会误判现状 |
+
+**③ 修法 + 验证矩阵(PoC 实测,ASCII 判据逐字对齐 C++)**
+
+**修法** = `parse_canonical_flow_names` **只解析 `## 2.` 段**(到下一个 `## ` 为止)
+⇒ 一次性挡住 SU **与** §3+ 全部段。
+⚠️ **比 Entry #142 ④ 记的「只解析第一个 `## Status Update` 之前」更严** —— 后者**只挡 SU**,
+挡不住 §3+ 段 ⇒ 选**更严**者。
+
+| 场景 | 现行实现 | 修法后 | 判定 |
+|---|:---:|:---:|---|
+| 真实 ADR(当前) | 10 | 10 | ✅ 无回归 |
+| SU 内 `\| 11 \| `fake_flow` \|` | **11** | **10** | 🔴→✅ 陷阱被挡住 |
+| §3 内 `\| 12 \| `fake_flow2` \|` | **11** | **10** | 🔴→✅ **原记录未覆盖的一面** |
+| 无 `## 2.` 段(结构异常) | 0 | 0 | 🔴→🔴 **安全失败**(判据红 + 「权威源格式已变」提示) |
+
+**④ 实施计划(Phase 0 ~ 4)**
+
+| Phase | 内容 | 产物 |
+|---|---|---|
+| 0 治理前置 | improvement 草稿落 `.rddf/improvements/`(planner)+ 4 件套建档 + KPI **0/3 → 1/3** + 本 Entry | `openspec/changes/cpptlm-cep-canonical-flow-parser-scope/` |
+| 1 修法 | `parse_canonical_flow_names` 范围限定(§2 段)+ **纯函数级**单元测试(4 个合成用例,直接喂 ADR 文本副本,**不碰真文件**) | `include/tlm/cep/collective_plane_contract.hh` + `test/test_cep_collective_plane_contract.cc` |
+| 2 判据 | **回归 fixture**(形态与既有 reverse_verify **相反**:此处是「毒化 ⇒ 判据**仍绿**」—— 修的是**误报**,不是加判据)⇒ 单测内合成用例即覆盖 | 同上(§2 内 4 个合成用例) |
+| 3 连带 | B5「闸边表 ≠ SU 边表」差异**显式登记**(不改代码)+ 冻结面同步(**若触及**) | 台账 §8.1 / `ADR-CEP-09` SU(**冻结面 ⇒ 两步授权**) |
+| 4 验收 + 归档 | 全门禁 + `ctest` + 冻结面 provenance + KPI **1/3 → 0/3** | 归档件 + main spec |
+
+**⑤ 反向 fixture 的形态澄清(与既有约定不同,须显式登记)**
+
+既有 `*_reverse_verify.sh` 的形态 = 「**毒化载体 ⇒ 判据必红**」(鉴别力)。
+本 change 修的是**误报**(CP-02 因 ADR 追加而**假红**)⇒ 正确形态 = 「**毒化 ⇒ 判据仍绿**」
+⇒ **不新建** reverse_verify 脚本;改为在 `test_cep_collective_plane_contract.cc` 内
+用**合成 ADR 文本**做 4 个用例(正控 + 3 个毒化场景)⇒ **同源、无需另建脚本、随 ctest 跑**。
+⚠️ **铁律 ② 仍满足**:每个毒化用例都有**因正确原因**的断言(解析集 == 10 且**不含**注入名)。
+
+**⑥ 关联**: Entry #148(组 0 收尾债清理 + B1 登记)· #142(CP-02 回归修复 + **陷阱登记**)
+· #147(队列 #11 归档)· #141(`ADR-CEP-02` 的 R-T4 SU —— **本 change 的诱因**)
+· `include/tlm/cep/collective_plane_contract.hh`(解析器,行 388~427)
+· `test/test_cep_collective_plane_contract.cc`(现有用例直接调用解析器 ⇒ 纯函数级测试可行)
+· `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md`(`## 2.` 段行 40~49 · SU 段行 193+)
+
+---
+
+### Entry #150 — 2026-11-02 [implement](组 1 `cpptlm-cep-canonical-flow-parser-scope` Phase 1 ~ 3 落地 —— CP-02 解析范围限定 + 4 个合成用例 + B5 复核)
+
+**主题**:组 1 的**修法**落地 —— 把 CP-02 的 canonical 流清单解析范围**限定**到 `ADR-CEP-02` 的 `## 2.` 段
+⇒ 权威 ADR 的**合法追加**不再让判据假红。**本条 = Phase 1 ~ 3 的落修登记**
+(Phase 4 验收 + 归档另立 Entry)。
+
+**① Phase 1 落修 —— 解析器范围限定(TDD 红 ⇒ 绿)**
+
+| 步 | 内容 | 状态 |
+|---|---|---|
+| 1.1 | **红**:先写 4 个合成 ADR 文本用例 ⇒ 在**现行实现**上 CFP-02a / CFP-02b **必红** | ✅ 实测红:**`11 == 10`** + 注入名计数 `1 != 0` ⇒ **归因命中**(正是「多收 1 条 + 收了注入名」) |
+| 1.2 | **绿**:新增 `slice_canonical_flow_section()`(截取 `## 2.` 段)+ `parse_canonical_flow_names` 的入参改为切片结果 | ✅ |
+| 1.3 | **重构**:辅助函数**独立命名** + 注释写明**为何**限定范围 + **失败方向安全**的论证 | ✅ |
+| 1.4 | **零回归**:`evaluate_canonical_flows` 的 collective 侧扫描逻辑**零改动** | ✅ diff = **39 insertions / 1 deletion** |
+
+⚠️ **§2 段前缀匹配是精确的**(`## 2.`):`### 2.1` 这类 h3 **不**终止本段
+(真实 ADR 的 §2 段内含 `### 决策 1 / 2 / 3` 三个子节)。
+
+**② Phase 2 落修 —— 4 个合成用例(CFP-01 ~ CFP-04)**
+
+| # | 用例 | 断言 | 结果 |
+|---|---|---|---|
+| **正控** | 干净 §2 段 | 恰 10 条 + 10 个真实流名各 1 次 | ✅ 绿 |
+| **CFP-02a** | SU 内追加 `\| 11 \| `fake_flow` \|` | 仍 10 条 **且**不含 `fake_flow` | ✅ 修法前红 → 修法后绿 |
+| **CFP-02b** | `## 3.` 内追加 `\| 12 \| `fake_flow2` \|` | 仍 10 条 **且**不含 `fake_flow2` | ✅ 修法前红 → 修法后绿(**原记录未覆盖的一面**) |
+| **CFP-03** | 无 `## 2.` 段 | 0 条 + `evaluate_canonical_flows` = **FAIL** + detail 含「权威源格式已变」 | ✅ 绿(**安全失败**,非静默通过) |
+
+⇒ 新增 `test/test_cep_collective_plane_contract.cc` 的 1 个 TEST_CASE(4 个 SECTION)= **18 assertions**;
+既有 9 cases / 120 assertions **零回归**。
+
+**③ ⚠️ 反向 fixture 形态说明(与既有约定不同 ⇒ 显式登记)**
+
+既有 `*_reverse_verify.sh` = 「**毒化 ⇒ 判据必红**」(鉴别力);
+本组修的是**误报**(判据因 ADR 合法追加而**假红**)⇒ 正确形态 = 「**毒化 ⇒ 判据仍绿**」(回归防护)
+⇒ **不新建** reverse_verify 脚本;改为**同源**的合成 ADR 文本用例(随 ctest 跑 ⇒ **零副作用**)。
+⚠️ **铁律 ② 仍满足**:每个毒化用例断言「解析集 == 10」**且**「**不含**注入名」
+⇒ 若解析器退化为「仍收 §2 段外的表格」,用例**必红且归因命中**(实测已见证)。
+
+**④ Phase 3 —— B5 现状复核 + 冻结面核对**
+
+| 面 | 内容 |
+|---|---|
+| **B5「闸边表 ≠ SU 边表」** | **复核结论:差异仍在** —— `protocol_instances.json` 的 `compute_noc` 边集 `[[0,1],[0,2],[0,3],[1,3],[3,2]]` 与 `ADR-CEP-09` SU 的 4 条边**仍不同**;Entry #141 ② 的登记「『装配闸通过』**不得**作为 SU 论证正确的证据」**继续有效** ⇒ 本条**不改代码**、**不改 ADR**(登记态) |
+| **冻结面实测** | `include/tlm/cep/collective_plane_contract.hh` **不在** M1 冻结集内(实测清单:冻结集含 `include/` 下仅 3 件 —— `fabric.json` / `fabric.schema.json` / `protocol_instance.schema.json`)⇒ **0 件冻结面** ⇒ **无需两步授权** |
+
+**⑤ ⚠️ 实现期发现(存量问题,本 change 不处理 —— 仅登记)**
+
+`include/tlm/cep/collective_plane_contract.hh` **与 `.clang-format` 不兼容** ⇒ 对它跑 `clang-format -style=file -i`
+会产生 **1737 行**的整文件重排(983 insertions / 841 deletions)⇒ **与本 change 无关的噪声**。
+⇒ 本次已 **`git checkout` 还原 + 只重放语义改动**(最终 diff **39 / 1**);
+⇒ ⚠️ **批量格式化该文件前须先评估** —— 否则一次格式化就会淹没真实 diff。
+(`scripts/build/format.sh --check` 对该文件 **rc=0** ⇒ 不影响门禁。)
+
+**⑥ 验收**:`ctest` **136/136** · 新用例 18 assertions · 既有 collective-contract **9 cases / 120 assertions** 零回归 ·
+门禁全 rc=0 · `openspec validate cpptlm-cep-canonical-flow-parser-scope --strict` rc=0 · `format.sh --check` rc=0。
+
+**⑦ 关联**: Entry #149(组 1 启动 + 裁决 + 陷阱条件精确化 + 验证矩阵)· #148(组 0 收尾债清理 + B1 登记)
+· #142(CP-02 回归修复 + 陷阱登记)· #141(`ADR-CEP-02` 的 R-T4 SU —— **诱因** + 「闸边表 ≠ SU 边表」登记)
+· `include/tlm/cep/collective_plane_contract.hh`(`slice_canonical_flow_section` + `parse_canonical_flow_names`)
+· `test/test_cep_collective_plane_contract.cc`(新 TEST_CASE · 4 个 SECTION)
+· `openspec/changes/cpptlm-cep-canonical-flow-parser-scope/`(4 件套)
 
 ---
 
