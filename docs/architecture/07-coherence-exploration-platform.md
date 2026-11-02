@@ -1210,7 +1210,7 @@ experimental/<run_id>/
 |---|---|
 | **本文件** | **正文订正 6 处** + 追加本则;§5.1.1 **表体行数不变**(8)· §8.1 Stage 表**不变** · **6 族 / 8 实例**计数**不变** |
 | **测试面** | `test/test_cep_schema.cc` 的 `rows511 == 8` **零改动**(表体未变) |
-| **代码面(连带,builder 域)** | ① `sharer_tracker.hh` 的 `DcohSymmetric` traits:`AggregationAt::REQUESTER` ⇒ **`HOME`**(该实现**行为未落地** ⇒ **零行为影响**)② `test_cep_sharer_tracker_base.cc` 的**二元断言**(`∈ {REQUESTER, HOME}`)⇒ **收紧**为 `== HOME` ③ `protocol_instance.schema.json` **零改动**(枚举**保留** `REQUESTER` ⇒ 该值转为「保留但无消费者」) |
+| **代码面(连带,builder 域)** | ① `sharer_tracker.hh` 的 `DcohSymmetric` traits:`AggregationAt::REQUESTER` ⇒ **`HOME`**(该实现**行为未落地** ⇒ **零行为影响**(⚠️ **2026-11-02 后更新**(per 台账 Entry #167):行为实现已于队列 #12 落地 `cxl_dcoh_tracker.hh` ⇒ 该括注**仅对当次 traits 改动成立**,**不是**现状描述))② `test_cep_sharer_tracker_base.cc` 的**二元断言**(`∈ {REQUESTER, HOME}`)⇒ **收紧**为 `== HOME` ③ `protocol_instance.schema.json` **零改动**(枚举**保留** `REQUESTER` ⇒ 该值转为「保留但无消费者」) |
 | **ADR 面** | `ADR-CEP-04` **第 3 则 SU** 已追加(聚合点二元裁决 + 选项对比 + 待确认路径);**正文零改动** |
 | **合规** | 本则**不含**任何规范正文引用 ⇒ 全部依据为**公开非规范来源**(白皮书 / 会议 tutorial / 同行评审论文)+ **文献级定位 + 断言摘要** |
 | **残余** | ⚠️ **规范性依据待**「人类成员条款摘要」确认(per `ADR-CEP-04` 第 3 则 SU ④)⇒ 登记态 |

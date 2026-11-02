@@ -1,15 +1,19 @@
 // include/tlm/cep/sharer_tracker.hh
-// Sharer Tracker —— 协议无关单接口 + caps descriptor + 2 个行为实现
+// Sharer Tracker —— 协议无关单接口 + caps descriptor + 3 个**本文件内**的行为实现
 //
 // 功能:把 `ADR-CEP-04` 的 α′ 三件套((α) 单接口 + (γ′) caps descriptor + D-5 重构)
-//       落成**可执行契约**。行为实现已有 **3** 种:
+//       落成**可执行契约**。**本文件内**的行为实现 = **3** 种:
 //       · `FullMapDirectory`(队列 #4 —— 单级目录,**EXACT**)
 //       · `HierarchicalDirectory`(队列 #9 —— 分级目录,第 6 种实现,per `ADR-CEP-04 §13`)
 //       · `SparseSnoopFilter`(队列 #10 实现层 —— **CONSERVATIVE** 保守型 snoop filter)
-//       其余 3 种(DcohSymmetric / TreeManager / BroadcastNull)
-//       **行为实现尚未落地** —— 此处只留**声明层** traits;落位已登记(per 台账 Entry #107):
-//       `TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12(均**队列名对应**的推导值);
-//       `BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**(per Entry #112)。
+// ⚠️ **层级纪律(2026-11-02,per 台账 Entry #167)**:本文件是**协议无关**通用层 ⇒
+//    **协议专有**的行为实现**不得**定义在这里(否则通用层反向依赖协议族)⇒ 落**独立头**:
+//    · `TreeManager` → `tilelink_tree_manager.hh`(队列 #11 实现层,✅ 已落地)
+//    · `DcohSymmetric` → `cxl_dcoh_tracker.hh`(队列 #12 实现层,✅ 已落地)
+//    ⇒ 二者在此**只留** `kTrackerTraits` 的**声明层**行(名字 + caps/behavior),
+//    ⚠️ **不代表**「行为未落地」。
+//    仍未落地的只剩 `BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**
+//    (per Entry #112);其落位推导值见台账 Entry #107。
 // ⚠️ `SparseSnoopFilter` 的行为实现**已被 `moesi_gpu`(队列 #6)声明占用**,
 //    落地于**队列 #10 实现层**(per 台账 Entry #112 去重 · Entry #124 复核维持)⇒ §8.1 **R11**
 //    的「meta 层」缺口闭合;其「语义层」缺口(补偿路径无判据)由**实现层 change** 承担。

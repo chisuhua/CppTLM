@@ -535,17 +535,24 @@ TEST_CASE("CEP SharerTracker: 禁用 API 零出现(去注释 + 正控)", "[cep][
 //      · 4 个 deferred 实现 ⇒ 只有声明层(无 class 定义)
 //      · `HierarchicalDirectory` ⇒ **必须**有 class 定义 + 是 `SharerTrackerIf` 派生
 //    (单向断言会**空转**:一旦所有实现都落地,「非 FullMap 无 class」不再有鉴别力)
-TEST_CASE("CEP SharerTracker: 3 实现仍 deferred,而 HierarchicalDirectory / "
-          "SparseSnoopFilter 已是行为实现",
+// ⚠️ 2026-11-02(per 台账 Entry #167):标题与注释**订正** —— `TreeManager`(队列 #11)与
+//    `DcohSymmetric`(队列 #12)的**行为实现已落地**,只是落在**独立头**(层级纪律:
+//    协议专有行为类不定义在协议无关的 `sharer_tracker.hh` 内)。
+//    ⇒ 本 case 的真不变量**不是**「未落地」,而是「**不在通用头内定义**」;
+//    ⇒ 真正仍 deferred 的只剩 `BroadcastNull`。
+TEST_CASE("CEP SharerTracker: 协议专有行为类不定义在通用头内(BroadcastNull 仍 deferred)",
           "[cep][sharer-tracker]") {
     const std::string code = strip_comments(read_repo_file("include/tlm/cep/sharer_tracker.hh"));
     REQUIRE(!code.empty());
 
-    // ── (a) 3 个 deferred 实现:声明层在表里,但头文件里**不得**有它们的类定义 ──
+    // ── (a) 3 个实现的**声明层行**在表里,但**本头文件内不得**有它们的类定义 ──
     // ⚠️ 2026-11-01 更新(队列 #10 实现层):`SparseSnoopFilter` **已落地**行为实现 ⇒
-    //    从 deferred 名单**移出**(该名单必须随实现落地而收缩,否则守门判据失真)。
+    //    从本名单**移出**(该名单必须随实现落地而收缩,否则守门判据失真)。
+    // ⚠️ 2026-11-02(per 台账 Entry #167):`TreeManager` / `DcohSymmetric` 的**行为实现已落地**
+    //    但落**独立头** ⇒ 断言**不变**(本头文件内不得出现其类定义 = **层级纪律回归锁**),
+    //    ⚠️ 它们的缺席**不**等于「行为未落地」。真 deferred 只有 `BroadcastNull`。
     for (const char* name : {"DcohSymmetric", "TreeManager", "BroadcastNull"}) {
-        INFO("deferred impl: " << name);
+        INFO("impl declared in traits only (not defined in this header): " << name);
         CHECK(code.find(std::string("\"") + name + "\"") != std::string::npos);
         CHECK(code.find(std::string("class ") + name) == std::string::npos);
         CHECK(code.find(std::string("struct ") + name) == std::string::npos);
