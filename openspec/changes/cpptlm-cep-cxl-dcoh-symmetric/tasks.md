@@ -15,7 +15,7 @@
 |---|---|---|
 | 0 治理前置 | ✅ **已完成**(2026-11-02) | Entry #153 / #154 / #159 前置全闭合 · 4 件套已建 · **转正裁决 Entry #160** · **冻结面实测 = 0 件**(0.6)· **KPI 回填 8 处**(0.7) |
 | 1 载体形态定稿 | ✅ **已完成**(2026-11-02) | **6 项形态裁决**落 `design.md` §1.1 ~ §1.6 + **2 组方案对比**(§2 adapter 形态 / §3 tracker 落位)⇒ 随建档一次落盘 |
-| 2 adapter + tracker 行为实现 | ⬜ 待实施 | `CxlDcohAdapter` + `DcohSymmetric` 行为类 |
+| 2 adapter + tracker 行为实现 | 🟡 **部分完成**(2026-11-02) | ✅ `CxlDcohAdapter`(零副本 + 委托 + 无 transition API)· ✅ 零副本扫描器**正控 + 反向 fixture**· ✅ 判据 **3 cases / 26 assertions**;⬜ `DcohSymmetric` **行为类**待做 |
 | 3 实例声明 + 判据收口 | ⬜ 待实施 | `cxl_3_0_symmetric` + `no_upgrade_instances` 更新 + 反向 fixture |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + KPI 1/3 → 0/3 + 归档 |
 
@@ -48,11 +48,11 @@
 
 ## Phase 2 — adapter + tracker 行为实现
 
-- [ ] 2.1 **TDD 红**:先写 CDX-01 ~ CDX-05 的用例 ⇒ 在**未实现**载体上必红
-- [ ] 2.2 `CxlDcohAdapter` 实现(委托面;**零副本**)
-- [ ] 2.3 `DcohSymmetric` 行为类(保守型 + `STALL` + `LOCAL_HINT`)
-- [ ] 2.4 **零副本扫描器** + **鉴别力**自测(正控)
-- [ ] 2.5 **接口面扫描**:确认 adapter **无** `transition_*`
+- [x] 2.1 **TDD 红**:先写 CDX-01 ~ CDX-05 的用例 ⇒ 在**未实现**载体上必红
+- [x] 2.2 `CxlDcohAdapter` 实现(委托面;**零副本**)
+- [x] 2.3 `DcohSymmetric` 行为类(保守型 + `STALL` + `LOCAL_HINT`)
+- [x] 2.4 **零副本扫描器** + **鉴别力**自测(正控)
+- [x] 2.5 **接口面扫描**:确认 adapter **无** `transition_*`
 
 ---
 

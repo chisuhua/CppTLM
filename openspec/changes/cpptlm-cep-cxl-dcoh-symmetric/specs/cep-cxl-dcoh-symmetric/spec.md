@@ -42,8 +42,9 @@ CEP SHALL 为 **CXL 3.0 对称(DCOH)**提供一份**可执行实现层契约**:
 #### Scenario: CDX-02 —— adapter SHALL **委托**规约载体
 
 - **WHEN** 核对 adapter 的每个查询面
-- **THEN** 基数常量 / `perm` 投影 / 对称判别式 / 通道词表 / 方向表 SHALL **全部**委托 `cxl_dcoh_state_spec.hh`
+- **THEN** 基数常量 / `perm` 投影 / 对称判别式 SHALL **全部**委托 `cxl_dcoh_state_spec.hh`
 - **AND** adapter SHALL **不**持有任何**自有副本**
+- **AND** adapter SHALL **不暴露任何「表」**(通道词表 / 方向表 / snoop 集合 / 投影表 / basis 表)—— ⚠️ **理由**:**「引用载体表」与「自有表」在文本上**不可分辨** ⇒ 若允许引用,零副本判据即失效 ⇒ 解法 = 连引用都不做,只暴露**标量**
 - **AND** 委托 SHALL 为**编译期可见**(规约一改 ⇒ adapter **编译期即红**)
 
 > **锚点**:`test/test_cep_cxl_dcoh_adapter.cc` 的委托面逐项核对

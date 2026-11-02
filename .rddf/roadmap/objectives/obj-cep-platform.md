@@ -10048,6 +10048,51 @@ Phase 3(实例声明 + 判据收口 + 反向 fixture)→ Phase 4(验收 + 归档
 
 ---
 
+### Entry #161 — 2026-11-02 [implement](队列 #12 第 1 个 change **Phase 2 部分** —— `CxlDcohAdapter` 落地(零副本 + 委托 + 无 transition API))
+
+**主题**:实现层的**第一块**落地 —— `CxlDcohAdapter`(独立 · header-only · 零自有表副本)。
+**`DcohSymmetric` 行为类**待做(Phase 2 余下)。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `include/tlm/cep/cxl_dcoh_adapter.hh`(新 · header-only) | **零自有表副本** · 只暴露**标量**(5 个基数 + `perm_of` + `is_cxl3_symmetric` + `kAdapterName` / `kInstanceId`)· **不暴露**任何「表」· **无** `transition_*` |
+| `test/test_cep_cxl_dcoh_adapter.cc`(新) | **3 cases / 26 assertions**:CDX-01(零副本 + 扫描器**正控 + 反向 fixture** + 类型别名**不得**被误报)· CDX-02(逐项委托)· CDX-03(无 transition API) |
+| `test/CMakeLists.txt` | **+1** ctest 注册(`cep_cxl_dcoh_adapter`) |
+
+**② ⚠️ 实现期抓到的一处判据设计缺陷(已订正)**
+
+原「零副本禁词表」把**载体表名**也列入禁词 ⇒ 但「**委托**读载体的表」是**合法**的 ⇒
+若允许引用,静态扫描**无法**区分「引用」与「复制」⇒ **判据失效**。
+⇒ **解法**:adapter **连引用都不做** —— 只暴露**标量** ⇒ 零副本既是**语义**要求,也是**静态可判**的要求。
+⇒ 已订正 `design.md` §1.1 / §1.2(+ 新增 §1.2bis)与 delta spec 的 CDX-02。
+
+**③ ⚠️ 实现期的 3 处形态坑(登记备查)**
+
+| # | 坑 | 处置 |
+|---|---|---|
+| 1 | 载体命名空间是 `tlm::cep::cxl_dcoh`(不是 `CxlDcohStateSpec` 之类**类**名) | 别名改 `cxl_dcoh::DevCacheState` |
+| 2 | **命名空间不能作 type alias**(`using Spec = tlm::cep::cxl_dcoh;` 编译红) | 改 `namespace Spec = tlm::cep::cxl_dcoh;`(文件作用域) |
+| 3 | adapter 曾暴露 `kDeviceInitiatedSnoopCount` ⇒ **引用了载体表名** ⇒ 违自己的禁词表 | **删掉**该暴露(判别式由 `is_cxl3_symmetric` 承担)⇒ 零表名成立 |
+
+**④ ⚠️ 存量问题登记:`sharer_tracker.hh` 与 `.clang-format` **不兼容****
+
+实测 `clang-format -style=file` 对该文件产生 **2140 行** diff ⇒ 修改它时**不得**跑 `clang-format -i`
+(否则**淹没**真实 diff)⇒ 与 `collective_plane_contract.hh` **同款**存量问题(该问题在队列 #11 已踩过一次)。
+⇒ `DcohSymmetric` 行为类(Phase 2 余下)**落 `sharer_tracker.hh`**(与 3 个既有行为类**同构** ⇒ 平台可比较性优先)
+⇒ **但须手工控格式**(缩进 4 空格 · 换行宽度 ≈ 100)⇒ **不跑** `clang-format -i` 于该文件。
+
+**⑤ 验收**:`[cep][cxl-dcoh][adapter]` **3 cases / 26 assertions** 全绿 · `ctest` 全绿 ·
+门禁全 rc=0 · `format.sh --check` rc=0。
+
+**⑥ 关联**: Entry #160(建档 + Phase 1 形态定稿)· #159(规约层归档)· #154(4 项 architect 裁决)
+· #153(Task 0 普查)· #127(队列 #10 规约层归档 —— 同款两段式先例)
+· `include/tlm/cep/cxl_dcoh_adapter.hh` · `include/tlm/cep/cxl_dcoh_state_spec.hh`(**已归档**,只读消费)
+· `test/test_cep_cxl_dcoh_adapter.cc`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

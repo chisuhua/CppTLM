@@ -326,6 +326,12 @@ add_test(NAME cep_tilelink_state_spec COMMAND cpptlm_tests "[cep][tilelink][stat
 #   ⑤ 窄义「对称」5 谓词合取(正控 + 逐谓词反控)
 add_test(NAME cep_cxl_dcoh_state_spec COMMAND cpptlm_tests "[cep][cxl-dcoh][state-spec]" -r compact)
 
+# 队列 #12 `cpptlm-cep-cxl-dcoh-symmetric`(第 1 个 change = 实现层)的 **adapter 判据**:
+#   ① CDX-01 零自有表副本(零成员字面量 + 零表名)· 含扫描器**正控 + 反向 fixture**
+#   ② CDX-02 逐项委托规约载体
+#   ③ CDX-03 不暴露 `transition_*`(载体无转移表 ⇒ 暴露即等于自造转移表)
+add_test(NAME cep_cxl_dcoh_adapter COMMAND cpptlm_tests "[cep][cxl-dcoh][adapter]" -r compact)
+
 # 队列 #12 `cpptlm-cep-cxl-dcoh-symmetric-state-spec`(第 0 个 change = 规约层)的**反向验证**:
 #   4 组毒化 fixture + 基线正控 ⇒ 手改载体任一处必红且**归因命中**判据 id。
 #   ⚠️ 本组形态 = 「**毒化 ⇒ 判据必红**」(鉴别力)⇒ 与队列 #11 修**误报**的那一组

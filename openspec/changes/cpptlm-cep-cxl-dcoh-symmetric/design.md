@@ -15,9 +15,10 @@
 | **类名** | `CxlDcohAdapter`(header-only · **独立** · 不进 `ModuleFactory` · 不注册 23 ABI) |
 | **别名(允许)** | `using DevCacheState = CxlDcohStateSpec::DevCacheState;` 等 —— **类型名**允许 |
 | **禁词(成员字面量)** | `DevCacheState::` · `DcohViewState::` · `HomeDirState::` · `CxlMemChannel::` · `CxlCacheChannel::` · `ChannelDirection::` · `Perm::` |
-| **禁词(表名)** | `kPermProjection` · `kDeviceInitiatedSnoopSet` · `kCxlMemChannelDirection` · `kBasisDevCacheState` · `kBasisDcohViewState` · `kBasisHomeDirState` · `kBasisCxlMemChannel` · `kBasisCxlCacheChannel` · `kBasisPermProjection` · `kBasisSymmetricPredicate` · `kPendingSemanticItems` |
+| **禁词(表名)** | `kPermProjection` · `kDeviceInitiatedSnoopSet` · `kCxlMemChannelDirection` · `kBasisDevCacheState` · `kBasisDcohViewState` · `kBasisHomeDirState` · `kBasisCxlMemChannel` · `kBasisCxlCacheChannel` · `kBasisPermProjection` · `kBasisSymmetricPredicate` · `kPendingSemanticItems` —— ⚠️ **本 adapter SHALL NOT 暴露任何「表」**(通道词表 / 方向表 / 投影表 / basis 表)⇒ **它连「引用载体表名」都不做** ⇒ 这既满足**零副本**语义,也让零副本**静态可判**(否则「引用」与「复制」在文本上**不可分辨** ⇒ 判据失效) |
 | **判据形态** | **去注释后**静态扫描 + **配正控**(同机制必须能发现**确实存在**的标识符)⇒ 纯负向断言无正控 = 判据可能没生效 |
 | **⚠️ 与队列 #10 / #11 的差异** | 那两族的成员名是 `State` / `Event` / `Perm`;本族有 **3 套状态空间** ⇒ 禁词表**必须按本族名字**列,不能照抄 |
+| **⚠️ 与队列 #10 / #11 的差异 ②** | 命名空间是 `tlm::cep::cxl_dcoh`(不是 `CxlDcohStateSpec` 之类**类**名)⇒ 别名写作 `cxl_dcoh::DevCacheState`;⚠️ **命名空间不能作 type alias** ⇒ 测试侧用 `namespace Spec = tlm::cep::cxl_dcoh;` |
 
 ### 1.2 委托契约(adapter **只**调访问器)
 
@@ -25,8 +26,15 @@
 |---|---|---|
 | 基数常量 | `kDevCacheStateCount` / `kDcohViewStateCount` / `kHomeDirStateCount` / `kCxlMemChannelCount` / `kCxlCacheChannelCount` | `static constexpr` **别名**载体常量 |
 | `perm` 投影 | 载体的 `perm_of` | **委托调用**(返回类型 `Perm` 是**类型名** ⇒ 允许) |
-| 对称判别式 | 载体的 `is_cxl3_symmetric` + `kDeviceInitiatedSnoopSet` | **委托** |
-| 通道词表 / 方向表 | 载体的 `kCxlMemChannelDirection` | **委托**(读载体常量 ⇒ **不**复制进 adapter) |
+| 对称判别式 | 载体的 `is_cxl3_symmetric` | **委托** |
+| ⛔ **通道词表 / 方向表 / snoop 集合** | —— | **刻意不暴露**(见 §1.1「禁词(表名)」行)⇒ 只暴露**标量** |
+
+### 1.2bis ⚠️ **实现期发现**:「引用载体表」与「自有表」在**文本上不可分辨**
+
+原禁词表把**载体表名**也列入禁词 ⇒ 但「**委托**读载体的表」是**合法**的 ⇒ 若允许引用,
+则静态扫描**无法**区分「引用」与「复制」⇒ 判据失效。
+⇒ **解法**:adapter **连引用都不做** —— 只暴露**标量**(5 个基数 + `perm_of` + 判别式 + 2 个名字常量)
+⇒ 零副本既是**语义**要求,也是**静态可判**的要求。(载体侧仍持全部表。)
 
 ### 1.3 ⛔ adapter **不暴露** transition API(CDX-03)
 
