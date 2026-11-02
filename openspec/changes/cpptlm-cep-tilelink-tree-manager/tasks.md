@@ -127,7 +127,7 @@
 
 ### 3.4 冻结面同步(**两步授权**)
 
-- [ ] 3.4.1 台账 Entry(授权记录)⇒ `--update --authorized-by "Entry #N"` → commit 产物 → `--update`(provenance 对齐)→ commit
+- [x] 3.4.1 台账 Entry(授权记录)⇒ `--update --authorized-by "Entry #146"` → commit 产物 → `--update`(provenance 对齐)→ commit
 - [x] 3.4.2 `openspec/specs/cep-sharer-tracker-base/spec.md` —— 「其余 **3** 种」→「其余 **2** 种」+ 登记 `TreeManager` 落位
 - [x] 3.4.3 `docs/architecture/07-coherence-exploration-platform.md` §11 —— `3 / 6` → `4 / 6` + 「其余 3 个」→「其余 **2** 个」
 - [x] 3.4.4 ⚠️ **既有计数断言的连带更新逐条登记**(`instances.size() == 4` → 5 · 07 号 §5.1.1 行数 `== 8` → 9 · `no_upgrade_instances.empty()` → 「恰含 `tilelink_c`」)—— **不得静默改**
