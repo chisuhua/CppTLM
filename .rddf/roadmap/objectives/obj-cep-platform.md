@@ -9492,6 +9492,55 @@ Entry #142 ④ 记的陷阱是「**任何**在 `ADR-CEP-02` 追加『首格为�
 
 ---
 
+### Entry #151 — 2026-11-02 [build](组 1 improvement 草稿落盘 —— `cpptlm-cep-canonical-flow-parser-scope`;brainstorm **HARD-GATE 通过**)
+
+**主题**:用户裁决「**切 planner 落盘**」后的 planner 域动作 —— 把组 1 的 improvement 草稿落
+`.rddf/improvements/` 并通过 `pre_create_brainstorm_check.sh` 的 **HARD-GATE**。
+⇒ 闭合组 1 `tasks.md` 的 **Phase 0.5**(**归档前唯一的未勾项**)。
+
+**① 落盘与 HARD-GATE 证据**
+
+| # | HARD-GATE 条件 | 证据 |
+|---|---|---|
+| 0 | YAML frontmatter(首行 `---` + 20 行内闭合) | ✅ `name` / `priority` / `phase` / `依赖` / `状态` / `created` |
+| 1 | **7 个核心段**齐备 | ✅ `## 架构依据` / `## 范围` / `## Why` / `## What Changes` / `## Acceptance` / `## Capabilities` / `## Impact` |
+| 2 | `## Why` + `## What Changes` | ✅ |
+| 3 | `## Acceptance` 含 ≥3 个 checkbox | ✅ **7** 个(6 已勾 + Phase 4 待勾) |
+| 4 | `**主题**:` 字段 | ✅ |
+| 5 | **主题**匹配 roadmap theme | ✅ 子串匹配 `phase-10.md` 的 `主题: Coherence Exploration Platform(CEP)— 协议中立一致性互联仿真平台` |
+
+⇒ `bash pre_create_brainstorm_check.sh .rddf/improvements/cpptlm-cep-canonical-flow-parser-scope.md` ⇒ **rc=0**
+(「✅ brainstorm HARD-GATE satisfied」)。
+
+**② ⚠️ 草稿形态的订正(实施期发现)**
+
+staged 草稿初版用的是 **5 段英文形态**(Why / What Changes / Acceptance / Capabilities / Impact)
+⇒ **不满足** HARD-GATE —— 它要求的是 **`## 架构依据` / `## 范围`** 两个**中文核心段**
++ `## Why` / `## What Changes` / `## Acceptance` / `## Capabilities` / `## Impact` 共 **7 段**。
+⇒ 已**按 HARD-GATE 重写**正式稿(并把台账指针、§10 行、Phase 状态一并写进去)。
+⇒ **教训**:improvement 草稿的**段名**由 `pre_create_brainstorm_check.sh` 的 `section_exists`
+**逐字比对** ⇒ 段名写错 ⇒ HARD-GATE 静默不过 ⇒ **起草前应先读该脚本的 Check 1 列表**。
+
+**③ `.rddf/drafts/` 副本处置**
+
+正式稿已落 `.rddf/improvements/` ⇒ staged 副本(`.rddf/drafts/cpptlm-cep-canonical-flow-parser-scope/`)
+**已删除** ⇒ **不留双副本**(否则两处会漂移)。
+⚠️ 与先例 `cpptlm-cep-cohif-carrier`(drafts 副本保留)的差异:该例的正式 improvement **从未落盘** ⇒ 副本是唯一载体;
+本例正式稿已落 ⇒ 副本是**冗余**。
+
+**④ 角色切换记录**
+
+用户 2026-11-02 裁决「切 planner 落盘」⇒ `role.json` 的 `current_role` 由 `builder` → `planner`
+(`updated_by: user`;history 追加一条,保留最近 20 条)⇒ 本条即 planner 域动作的记录。
+⇒ 组 1 的 **Phase 4 验收 + 归档**(builder 域)在 planner 动作完成后**切回 builder** 执行。
+
+**⑤ 关联**: Entry #150(Phase 1 ~ 3 落修 + B5 复核)· #149(组 1 启动 + 裁决 + 陷阱条件精确化 + 验证矩阵)
+· #142(CP-02 陷阱登记)· #141(`ADR-CEP-02` 的 R-T4 SU —— 诱因)
+· `.rddf/improvements/cpptlm-cep-canonical-flow-parser-scope.md`(本条落盘物)
+· `openspec/changes/cpptlm-cep-canonical-flow-parser-scope/tasks.md`(Phase 0.5 的被闭合项)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

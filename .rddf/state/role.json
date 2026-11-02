@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-01T16:06:31Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-02T06:06:16Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-10-31T16:19:27",
-      "by": "user",
-      "reason": "A6′③: P-2a 从「鉴别力自检」改为「范围限定声明」(可判形式)+ H7 表述纪律"
-    },
     {
       "role": "builder",
       "at": "2026-10-31T16:20:10",
@@ -124,6 +118,12 @@
       "at": "2026-11-01T16:06:31Z",
       "by": "user",
       "reason": "批 2 的 2 份 ADR SU 已由 architect 签发 ⇒ 切回 builder:更新锚点 §7 / 指针 + 跑冻结面两步授权(Entry #141)+ commit"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-02T06:06:16Z",
+      "by": "user",
+      "reason": "用户裁决(2026-11-02):improvement 草稿落盘方式 = **切 planner 落盘**(组 1 `cpptlm-cep-canonical-flow-parser-scope` 的 tasks Phase 0.5 = 归档前唯一未勾项)⇒ 把 staged 草稿落 `.rddf/improvements/`;随后切回 builder 完成 Phase 4 验收 + 归档,再起组 2(队列 #12 `cpptlm-cep-cxl-dcoh-symmetric`)"
     }
   ]
 }
