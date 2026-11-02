@@ -339,6 +339,13 @@ add_test(NAME cep_cxl_dcoh_adapter COMMAND cpptlm_tests "[cep][cxl-dcoh][adapter
 #   ③ CDX-05 `LOCAL_HINT` 双重语义登记可寻址(main spec)
 add_test(NAME cep_cxl_dcoh_tracker COMMAND cpptlm_tests "[cep][cxl-dcoh][tracker]" -r compact)
 
+# 队列 #12 `cpptlm-cep-cxl-dcoh-symmetric`(第 1 个 change = 实现层)的 **实例声明判据**:
+#   ① CDX-06 13 键齐备(**机器驱动**:schema `required` 实读)+ `perm` 4 值 + ★`back_invalidate=true`
+#      (配正控:`cxl_2_0` 同项 = `false` ⇒ 二者可判别)
+#   ② CDX-07 不声明静默升级 + 派生量 `no_upgrade_instances` 恰含 2 个
+#   ③ CDX-08 `AC-05` 走 **SKIP**(不得 FAIL / 不得 PASS)+ 既有族判定**回归锁** + 鉴别力
+add_test(NAME cep_cxl_dcoh_instance_decl COMMAND cpptlm_tests "[cep][cxl-dcoh][instance-decl]" -r compact)
+
 # 队列 #12 `cpptlm-cep-cxl-dcoh-symmetric-state-spec`(第 0 个 change = 规约层)的**反向验证**:
 #   4 组毒化 fixture + 基线正控 ⇒ 手改载体任一处必红且**归因命中**判据 id。
 #   ⚠️ 本组形态 = 「**毒化 ⇒ 判据必红**」(鉴别力)⇒ 与队列 #11 修**误报**的那一组

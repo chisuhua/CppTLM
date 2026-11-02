@@ -10154,6 +10154,61 @@ CDX-04 要求「**逐字段**可核对(数据级断言,非仅「常量存在」)
 
 ---
 
+### Entry #163 — 2026-11-02 [implement](队列 #12 第 1 个 change **Phase 3.1 ~ 3.3** —— 实例声明 `cxl_3_0_symmetric` + 派生集更新 + `AC-05` SKIP)
+
+**主题**:实现层的**声明面**落地 —— 第 6 个协议实例 `cxl_3_0_symmetric`(13 键 · `perm` 4 值 ·
+★`back_invalidate=true`)+ 派生量 `no_upgrade_instances` 更新 + `AC-05` **SKIP** 断言 + **回归锁**。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `include/tlm/cep/protocol_instances.json` | **+1** 实例 `cxl_3_0_symmetric`(13 键 · `family=industrial` · `adapter=CxlDcohAdapter` · `protocol_version=cxl-3.0` · `perm` **4 值** · ★**`back_invalidate=true`** · `sharer_tracker.impl=DcohSymmetric` + caps **逐字段**取 `kTrackerTraits[2]`)· `repo_owned_instance_ids` **+1**(**3 → 4**)⇒ **本仓域** 4 个 |
+| `include/tlm/cep/perm_upgrades.json` | **零行**(本族 E→M **未确证** ⇒ 声明即**假声明**)+ `current_state` 自述同步订正(派生集 = `{tilelink_c, cxl_3_0_symmetric}`) |
+| `test/test_cep_cxl_dcoh_instance_decl.cc`(新) | **3 cases / 80 assertions**:CDX-06(13 键**机器驱动** + `perm` 4 值 + ★`back_invalidate=true` **配正控** + caps 逐字段)· CDX-07(**不**声明静默升级 + 派生集恰含 2 个)· CDX-08(**SKIP** ≠ PASS + 既有族**回归锁** + **鉴别力**) |
+| `test/CMakeLists.txt` | **+1** ctest 注册(`cep_cxl_dcoh_instance_decl`) |
+| `include/tlm/cep/adapter_schema_contracts.hh` · `adapter_contracts_loader.hh` | **零改动** ⇒ `AC-05` 族无关化确为**复用**(队列 #11 的产物) |
+
+**② ⚠️ 计数断言实测为 **5 处**(原估「2 处」失实 ⇒ 已订正)**
+
+| # | 位置 | 改动 |
+|---|---|---|
+| 1 | `test/test_cep_adapter_schema_contracts.cc` | `no_upgrade_instances` **1 → 2**(含顺序断言) |
+| 2 | `test/test_cep_mesif_instance_decl.cc` | `no_upgrade_instances` **1 → 2**(含顺序断言) |
+| 3 | `test/test_cep_tilelink_instance_decl.cc` | `no_upgrade_instances` **1 → 2** + 实例总数 **5 → 6** |
+| 4 | `test/test_cep_adapter_schema_contracts.cc` | 实例总数 **5 → 6** |
+| 5 | `test/test_cep_chi_rnf_subset.cc` | `repo_owned_instance_ids` **3 → 4**(+ 本族 id 断言) |
+| 6 | `test/test_cep_moesi_gpu_adapter.cc` | `implemented` 实例计数 **5 → 6** |
+
+⇒ ⚠️ **派生集顺序** = `instances[]` **数组序**(派生函数按数组序遍历)⇒ 新实例插在 `cxl_2_0` 之后
+⇒ 顺序为 `[cxl_3_0_symmetric, tilelink_c]`(非按字母序)⇒ 断言按数组序写。
+
+**③ ⚠️ `AC-05` 对本族走 **SKIP** 的**理由**(易误判 ⇒ 显式记录)**
+
+本族 `perm` **含** `UNIQUE`(设备缓存含 E 态 ⇒ E→UNIQUE 需可表达)⇒ **看似**有 unique-clean 态
+⇒ 但 AC-05 的「unique-clean 态」指**状态机**的 **E 态**,而本族载体**无转移表**
+⇒ **无** `kUniqueCleanState` 可声明 ⇒ `AdapterHasUniqueClean` 判 **false** ⇒ **SKIP**。
+⇒ **SKIP ≠ PASS**(「无可检查对象」不得记为通过)⇒ 判据显式断言 `verdict == SKIP` 且 `!= PASS` / `!= FAIL`。
+⇒ **回归锁**:既有 MESI 族(MOESI / MESIF)的 AC-05 判定 SHALL **仍为 PASS** ⇒ 本族接入**未放宽**既有族。
+⇒ **鉴别力**:同一族但「目标态 ≠ 期望值」⇒ **仍 FAIL** ⇒ SKIP 不是放宽。
+
+**④ ⚠️ 已知边界(登记)**:本族 adapter **不**参与 CLI 的 `fill_adapter_inputs`
+(`examples/cep_adapter_contracts.cc`)—— ⚠️ **不是遗漏**,而是**裁决的必然结果**:
+`CxlDcohAdapter` **故意**不暴露 `kMessageClassMap` / `kStateCount` / `transition_*`
+(per CDX-01 / CDX-03 的**零副本** + **禁转移表**裁决)⇒ `fill_adapter_inputs<T>` **编译不通过**。
+⇒ 与 `CxlCacheAdapter` / `MesifAdapter` **同款**(它们也不在 CLI 里)⇒ **一致**。
+
+**⑤ 验收**:`[cep][cxl-dcoh][instance-decl]` **3 cases / 80 assertions** 全绿 · `ctest` **141/141** ·
+门禁 6 个脚本全 rc=0(含 `cep_decl_alignment_check.sh` **7/7 子校验**)· `format.sh --check` rc=0。
+
+**⑥ 关联**: Entry #162(Phase 2.3 —— `DcohSymmetric` 行为类落地)· #161(Phase 2 部分 —— adapter)
+· #160(建档 + Phase 1 形态定稿)· #159(规约层归档)· #154(architect 4 项裁决)· #146(队列 #11 Phase 3 —— 同款流程先例)
+· `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/perm_upgrades.json`
+· `test/test_cep_cxl_dcoh_instance_decl.cc` · `test/test_cep_cxl_dcoh_tracker.cc`
+· `openspec/changes/cpptlm-cep-cxl-dcoh-symmetric/`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

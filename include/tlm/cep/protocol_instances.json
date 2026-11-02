@@ -282,6 +282,68 @@
       }
     },
     {
+      "id": "cxl_3_0_symmetric",
+      "family": "industrial",
+      "adapter": "CxlDcohAdapter",
+      "status": "implemented",
+      "protocol_version": "cxl-3.0",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": true,
+        "back_invalidate": true,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": false
+      },
+      "perm": [
+        "NONE",
+        "READ",
+        "UNIQUE",
+        "WRITEBACK"
+      ],
+      "atomic": {
+        "supported": false
+      },
+      "consistency_labels": {
+        "read": "SC",
+        "write": "SC"
+      },
+      "ordering_assumption": {
+        "compute_noc": {
+          "0": "unordered",
+          "1": "p2p_ordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "compute_noc": {
+          "request": 0,
+          "response": 1,
+          "snoop": 2,
+          "snoop_resp": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "DcohSymmetric",
+        "caps": {
+          "scope": "LOCAL_MEMORY_REGION",
+          "completeness": "CONSERVATIVE",
+          "authority": "LOCAL_HINT",
+          "aggregation_at": "HOME"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": true,
+        "heterogeneous": true
+      }
+    },
+    {
       "id": "tilelink_c",
       "family": "academic",
       "adapter": "TileLinkCAdapter",
@@ -388,7 +450,8 @@
   "repo_owned_instance_ids": [
     "chi_rnf",
     "cxl_2_0",
-    "tilelink_c"
+    "tilelink_c",
+    "cxl_3_0_symmetric"
   ],
   "authority_migrations": []
 }

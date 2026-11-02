@@ -194,11 +194,15 @@ TEST_CASE("CEP TileLink: 派生量首次非空 + IC-2 vacuous PASS(文字与实�
     // ── ② 装载层派生出的 `no_upgrade_instances` SHALL **恰含** `tilelink_c` ──
     const auto loaded = tlm::cep::load_adapter_contract_inputs(cpptlm::cep::repo_root().string());
     REQUIRE(loaded.ok);
-    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 1u);
-    CHECK(loaded.inputs.no_upgrade_instances.at(0) == "tilelink_c");
+    // ⚠️ 2026-11-02(队列 #12 实现层):新增 `cxl_3_0_symmetric`(E→M **未确证** ⇒ **不声明**)
+    //    ⇒ 派生集**恰含 2 个**(`tilelink_c` + `cxl_3_0_symmetric`)
+    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 2u);
+    //    ⇒ 顺序 = `instances[]` 数组序(派生函数按数组序遍历)
+    CHECK(loaded.inputs.no_upgrade_instances.at(0) == "cxl_3_0_symmetric");
+    CHECK(loaded.inputs.no_upgrade_instances.at(1) == "tilelink_c");
 
-    // ── ③ 实例总数 5(新增实例 ⇒ 计数同步)────────────────────────────────
-    CHECK(loaded.inputs.instances.instances.size() == 5u);
+    // ── ③ 实例总数 6(新增实例 ⇒ 计数同步)────────────────────────────────
+    CHECK(loaded.inputs.instances.instances.size() == 6u);
 
     // ── ④ 装配期 ordering 判据:本族 IC-2 SHALL 是 **vacuous PASS** ───────
     //    (perm 不含 UNIQUE ⇒ `exposes_unique_perm == false` ⇒ 无静默升级入口)

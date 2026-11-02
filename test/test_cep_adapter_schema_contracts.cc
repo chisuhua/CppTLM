@@ -366,7 +366,7 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[3].instance_id == "cxl_2_0");
     // ⚠️ 2026-11-01(队列 #10 实现层):新增 `cxl_2_0` ⇒ 计数 **+1**(per 台账 Entry #131)
     // ⚠️ 2026-11-02(队列 #11 实现层):新增 `tilelink_c` ⇒ 计数 **+1**(per 台账 Entry #146)
-    REQUIRE(loaded.inputs.instances.instances.size() == 5);
+    REQUIRE(loaded.inputs.instances.instances.size() == 6); // ⚠️ 2026-11-02 队列 #12:+1 实例
     REQUIRE(loaded.inputs.perm_domain.values.size() == 4);
 
     // ⚠️ **负控见证已改造为双向规则**(队列 #9 AC-5):
@@ -377,8 +377,13 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
     //    `tilelink_c` 的投影是 3→3、`UNIQUE` 不可达 ⇒ **不声明**静默升级
     //    ⇒ 派生量**首次非空** = **{`tilelink_c`}** ⇒ **首次具备判别力**
     //    (判据变强,非变弱)⇒ 断言由「为空」改为「**恰含** `tilelink_c`」。
-    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 1u);
-    REQUIRE(loaded.inputs.no_upgrade_instances.at(0) == "tilelink_c");
+    // ⚠️ 2026-11-02(队列 #12 实现层):新增 `cxl_3_0_symmetric` ⇒ 计数 **+1**
+    //    (本族**不声明**静默升级 —— E→M 在本族**未确证** ⇒ 声明即**假声明**)
+    //    ⇒ 派生集**恰含 2 个**(`tilelink_c` + `cxl_3_0_symmetric`)
+    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 2u);
+    //    ⇒ 顺序 = `instances[]` 数组序(派生函数按数组序遍历)
+    REQUIRE(loaded.inputs.no_upgrade_instances.at(0) == "cxl_3_0_symmetric");
+    REQUIRE(loaded.inputs.no_upgrade_instances.at(1) == "tilelink_c");
 
     // ③ 真实数据下 5 条判据全绿 —— **逐 adapter 各跑一次**
     //    (AC-04 / AC-05 是**逐 adapter**的判据,per `adapter_contracts_loader.hh` 的两层结构)
