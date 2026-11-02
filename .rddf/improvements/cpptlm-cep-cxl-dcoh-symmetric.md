@@ -58,7 +58,7 @@ created: 2026-11-02
   `include/tlm/cep/cxl_dcoh_adapter.hh`(新 · **独立 adapter**,per architect 裁决 #4)+ `DcohSymmetric` 行为实现
   + `cxl_3_0_symmetric` 实例声明(13 键)+ 装配期校验
 - 判据:正向 + **反向 fixture**;`AC-05` 族无关化复用(本族若无 unique-clean 态 ⇒ **SKIP**)
-- 登记:`DcohSymmetric` 的**行为语义基源**缺口(07 号「残留 A」)⇒ 本队列**首次**为该实现提供 basis
+- 登记:`DcohSymmetric` 的**行为语义基源**缺口(07 号 §11「仅声明层 traits」)⇒ 本队列**首次**为该实现提供 basis;⚠️ **2026-11-02 订正**(per 台账 Entry #167 §④)—— 原文写「07 号『残留 A』」系**错指**:07 号的**残留 A 是 `HierarchicalDirectory`**(队列 #9),不属本队列
 
 ### Out of Scope
 
@@ -114,7 +114,7 @@ CXL 3.0 对称(DCOH)是**第四种**:设备侧**自带**一致性代理 + SF/目
 | 面 | 第 0 个 change(规约层) | 第 1 个 change(实现层) |
 |---|---|---|
 | **载体** | `cxl_dcoh_state_spec.hh`:**3 套状态空间** + 6 通道 + `{BISnp}` 判别式 + 4→4 投影 + 5 谓词定义 + 逐格 `basis` | `cxl_dcoh_adapter.hh`:**独立 adapter**,**零自有表副本**,**委托**规约载体(照 #11 的 `TileLinkCAdapter` 零副本范式) |
-| **tracker** | — | `DcohSymmetric` **行为实现**(traits 已登记 ⇒ 本队列**首次**兑现)⇒ 闭合 07 号「残留 A」 |
+| **tracker** | — | `DcohSymmetric` **行为实现**(traits 已登记 ⇒ 本队列**首次**兑现)⇒ 闭合 07 号 §11 的「`DcohSymmetric` 仅声明层 traits」缺口(⚠️ **非**「残留 A」—— 残留 A = `HierarchicalDirectory`,per 台账 Entry #167 §④) |
 | **实例** | — | `cxl_3_0_symmetric`(13 键)+ `repo_owned_instance_ids` + `perm_upgrades.json`(若本族**不暴露** `UNIQUE` ⇒ **不声明**,照 #11 先例) |
 | **判据** | 编译期结构断言(4/3/3 态 · 6 通道 · `{BISnp}` · `perm_rows == 4`)+ 逐格 basis 核对表 | 正向 + **反向 fixture**(毒化 ⇒ 必红 + 归因命中)· 装配期校验 |
 | **零改动** | `ADR-CEP-*` 正文 · `protocol_instance.schema.json`(值级枚举已含 `REQUESTER` ⇒ **零改动**)· `CxlCacheAdapter` · canonical 10 流清单 | 同左 + `CxlCacheAdapter` |

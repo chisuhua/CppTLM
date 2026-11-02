@@ -315,14 +315,14 @@ group-scoped completion     → Fabric Collective Plane
 |--------|---------|---------|------|----------|---------|
 | **CHI** | CHI RN-F | `ChiRnfAdapter` | **✅ 已落地**(队列 #8,2026-10-28 归档;Stage 1 subset → Stage 2 full) | RN-F 6 通道(TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT)| RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck;**UC→UD 静默升级**(轴 2)与 `moesi_gpu` 的 `E→M` **同型** —— 4 值 `perm` 无法表达 ⇒ 静默升级声明归 `perm_upgrades.json`(per `ADR-CEP-12 §11`) |
 | **CXL 2.0 非对称** | CXL 2.0 | `CxlCacheAdapter` | **✅ 已落地**(队列 #10,2026-11-01 归档;**两段式** —— 规约层 + 实现层) | D2H/H2D 各 3 通道(Req/Rsp/Data)| Host 侧 Snoop Filter;设备不感知其他设备 |
-| **CXL 3.0 对称** | CXL 3.0 对称 | `CxlDcohAdapter`(独立载体;**非** `CxlCacheAdapter` 的模式)| Stage 2 | + CXL.mem 增 **BISnp(S2M)/ BIRsp(M2S)** 两通道 | **DCOH = Device Coherence(agent / engine)**(设备内的一致性代理,**非** "Ownership History");设备可对 **host** 发起反向 snoop(BI;**不**对 peer device);归属基于 **HPA**(设备内部翻译到 media address,**非** DPA 归属) |
+| **CXL 3.0 对称** | CXL 3.0 对称 | `CxlDcohAdapter`(独立载体;**非** `CxlCacheAdapter` 的模式)| **✅ 已落地**(队列 #12,2026-11-02 归档;**两段式** —— 规约层 + 实现层) | + CXL.mem 增 **BISnp(S2M)/ BIRsp(M2S)** 两通道 | **DCOH = Device Coherence(agent / engine)**(设备内的一致性代理,**非** "Ownership History");设备可对 **host** 发起反向 snoop(BI;**不**对 peer device);归属基于 **HPA**(设备内部翻译到 media address,**非** DPA 归属) |
 | **TileLink-C** | TileLink-C | `TileLinkCAdapter` | **✅ 已落地**(队列 #11,2026-11-02 归档;**两段式** —— 规约层 + 实现层) | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
 | **NVLink** | NVLink | `NvlinkAdapter` | Stage 2 | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
 | **UALink** | UALink | `UalinkAdapter` | Stage 3 | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
 | **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **✅ 已落地**(队列 #6,2026-10-27 归档;首个 `status=implemented` 实例) | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
 | **MESIF** | `mesif` | `MesifAdapter` | **✅ 已落地**(队列 #9,2026-10-30 归档;R-1 **已裁决**(Entry #96 —— 新增第 6 种 SharerTracker 实现 `HierarchicalDirectory` + `AggregationAt::HIERARCHICAL`,per `ADR-CEP-04 §13`)+ 声明权威**已迁到本仓**(per `ADR-CEP-12 §13`);**规约层已闭合 + 已追认**(Entry #101 归档 + Entry #102 追认闭合:ArchForge `42 号` **35 格逐格追认闭合**、**纠正 1 格**(`M+SnpShared`:`S`→`F`)、待追认 **31/35 → 0/35**;⚠ **残余风险**(按档批量 14 格证据强度弱于逐格)见 `docs/implementation/2026-10-29-cep-mesif-state-spec-recognition-checklist.md` §5)· **实现层已落地归档**(2026-10-30,Entry #105 / #106:`cpptlm-cep-mesif-adapter` —— `MesifAdapter`(零自有表副本,委托消费规约载体)+ `MesifProtocolEngine`(真插件 + atomic 最小可用路径 + R-3 写回接线)+ `HierarchicalDirectory` 行为实现;落点见 `.rddf/improvements/cpptlm-cep-mesif-adapter.md` 与 `openspec/specs/cep-mesif-adapter/`) | 分级目录型(跨卡);目录查询 / 定向 snoop;**SharerTracker 选型 = `HierarchicalDirectory`**(`SYSTEM/EXACT/GLOBAL/HIERARCHICAL` —— 多级聚合) | ArchForge 贡献(per `32 号` §6.2);与 `moesi_gpu` **互不承认**(per `32 号` C1);⚠ 声明权威已迁本仓 ⇒ 与 `32 号 §6.2` **分叉**(跨仓追认债) |
 
-> **协议数 6 族 / 8 实例**(CXL 2.0 与 3.0 对称是同一 adapter 的两种模式,但实现阶段是 2 个 change)
+> **协议数 6 族 / 8 实例**(CXL 2.0 与 3.0 对称在**实现阶段**是两个 change;⚠️ **2026-11-02 订正**(per 台账 Entry #167)—— adapter **不共用**:2.0 = `CxlCacheAdapter` · 3.0 对称 = `CxlDcohAdapter`(**独立载体**;per 本文件 `Status Update(2026-11-02)` ③ + 台账 Entry #154)⇒ 原「同一 adapter 的两种模式」的表述**已失效**)
 >
 > **族计数的口径**(2026-10-22 补记,per 台账 **Entry #12**):`moesi_gpu` / `mesif` 计为**同一来源族**
 > (ArchForge 声明族,含 2 套互不承认的一致性架构,per `32 号` C1)→ **+1 族 / +2 实例**,
@@ -676,9 +676,9 @@ experimental/<run_id>/
 |------|---------|-------------------------|-----------|
 | canonical 10 流契约 | §3.1 | 🟡 **部分落地** —— Stub Cache RN 侧 5 流(`stub_cache_core.hh` 6 接口)已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体已落地**(`CohIfBundle` —— `include/bundles/cep_coherence_bundles_tlm.hh`,Entry #84;`ProtocolEngine` 基类 —— `include/tlm/cep/protocol_engine_base.hh`,Entry #85) | 载体 = `cpptlm-cep-cohif-carrier`(队列 #7) |
 | Stub Cache Core | §3.2 | ✅ **已落地** —— 6 接口 / 5 态 / `INV-SC1`~`SC6` + `INV-CEP-05-IC1` 行为化(14 测试) | `cpptlm-cep-stub-cache-core`(2026-10-25 已归档) |
-| SharerTracker **6** 实现 | §5.2 | 🟡 **4 / 6** —— `FullMapDirectory`(队列 #4,**参考实现**,当前**无实例声明**)+ `HierarchicalDirectory`(队列 #9,多级聚合 + F 态缺口登记)+ `SparseSnoopFilter`(队列 #10 实现层,**CONSERVATIVE** 保守型)+ `TreeManager`(队列 #11 实现层,**树形**:`SUBTREE`/`EXACT`/`LOCAL`/`TREE_PARENT` + `CHAIN` hazard;`ESCALATE_UP` 的**首次真实使用**)**四个行为实现已落地**;其余 2 个(`DcohSymmetric` / `BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:200` 的 `kTrackerTraits` 数组) | 其余 2 个的**行为实现落位已登记**(`DcohSymmetric` ↔ #12 · `BroadcastNull` = **无消费者 ⇒ 不排期、保留登记**);⚠️ `TreeManager` 的**行为实现已于 2026-11-02 落地**(队列 #11 实现层,per 台账 Entry #146)⇒ **本行的实现数由 3 / 6 改为 4 / 6**;⚠️ **`FullMapDirectory` = 同样「无消费者 ⇒ 不排期、保留登记」**(2026-11-01 per 台账 Entry #139 裁决 —— **反向缺口**:有行为实现 · 零实例声明;⚠️ 与 R11 的「声明超前于实现」**方向相反**,不因 R11 降级而闭合;**实现不废弃**,未来 CHI-full 队列出现时直接可用);per 台账 Entry #107 / #112 / #129 / #139) |
+| SharerTracker **6** 实现 | §5.2 | 🟡 **5 / 6** —— `FullMapDirectory`(队列 #4,**参考实现**,当前**无实例声明**)+ `HierarchicalDirectory`(队列 #9,多级聚合 + F 态缺口登记)+ `SparseSnoopFilter`(队列 #10 实现层,**CONSERVATIVE** 保守型)+ `TreeManager`(队列 #11 实现层,**树形**:`SUBTREE`/`EXACT`/`LOCAL`/`TREE_PARENT` + `CHAIN` hazard;`ESCALATE_UP` 的**首次真实使用**)+ `DcohSymmetric`(队列 #12 实现层,**保守型**:`LOCAL_MEMORY_REGION`/`CONSERVATIVE`/`LOCAL_HINT`/`HOME` + `STALL` hazard;**独立头** `cxl_dcoh_tracker.hh`)**五个行为实现已落地**;其余 1 个(`BroadcastNull`)**仅声明层 traits**(`sharer_tracker.hh:200` 的 `kTrackerTraits` 数组) | 行为实现落位登记:`DcohSymmetric` ↔ #12 **✅ 已落地**(2026-11-02)· `BroadcastNull` = **无消费者 ⇒ 不排期、保留登记**;⚠️ `TreeManager` 的**行为实现已于 2026-11-02 落地**(队列 #11 实现层,per 台账 Entry #146)⇒ **本行的实现数由 3 / 6 改为 4 / 6 → 5 / 6**(第 5 个 = `DcohSymmetric`,队列 #12 实现层,2026-11-02,per 台账 Entry #166 / **#167**);⚠️ **`FullMapDirectory` = 同样「无消费者 ⇒ 不排期、保留登记」**(2026-11-01 per 台账 Entry #139 裁决 —— **反向缺口**:有行为实现 · 零实例声明;⚠️ 与 R11 的「声明超前于实现」**方向相反**,不因 R11 降级而闭合;**实现不废弃**,未来 CHI-full 队列出现时直接可用);per 台账 Entry #107 / #112 / #129 / #139) |
 | Collective Plane | §5.3 | 🟡 **骨架已落地** —— `CollectivePlaneIf` 恰 7 方法 + `NullCollectivePlane` + `LocalCollectivePlane`(group 生命周期 / region-epoch / BARRIER rendezvous);**REDUCE / BROADCAST / MULTICAST 数据路径未实现**(返 `Status::DataPathNotImplemented`);`fabric_ingress_classify` 路由接线未实现 | 骨架 = `cpptlm-cep-collective-plane-base`(2026-10-26 已归档);数据路径 = Stage 3 |
-| ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **5 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射;首个 `status=implemented` 实例)· `ChiRnfAdapter`(队列 #8)· `MesifAdapter`(队列 #9,零自有表副本 + 6→3 映射)· `CxlCacheAdapter`(队列 #10,委托规约载体 + 三态查询面)· `TileLinkCAdapter`(队列 #11,零自有表副本 + 6→3 映射 + 10 行逐消息表);**`ProtocolEngine` 基类已落地**(`ProtocolEngineBase<N>`,Entry #85);**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)亦已落地**(10 流覆盖矩阵 + 2 条编译期锁,Entry #85)—— **adapter 实例 5 个**(`MoesiGpuAdapter` / `ChiRnfAdapter` / `MesifAdapter` / `CxlCacheAdapter` / `TileLinkCAdapter`);基类落地 ≠ 插件实例落地 | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
+| ProtocolEngine adapter 实例(§5.1.1 工业 8 + §5.1.2 Ruby 8 = 16;§5.1.4 候选语义落地后为 20) | §5.1 | 🟡 **6 个已落地** —— `MoesiGpuAdapter`(6 态 × 6 事件表驱动 + 6→4 perm 投影 + 6→3 消息类映射;首个 `status=implemented` 实例)· `ChiRnfAdapter`(队列 #8)· `MesifAdapter`(队列 #9,零自有表副本 + 6→3 映射)· `CxlDcohAdapter`(队列 #12,零自有表副本 + 独立规约载体;**6 实例**)· `CxlCacheAdapter`(队列 #10,委托规约载体 + 三态查询面)· `TileLinkCAdapter`(队列 #11,零自有表副本 + 6→3 映射 + 10 行逐消息表);**`ProtocolEngine` 基类已落地**(`ProtocolEngineBase<N>`,Entry #85);**`NullProtocolEngine`(§6.4 + `INV-CEP-07-IC2`)亦已落地**(10 流覆盖矩阵 + 2 条编译期锁,Entry #85)—— **adapter 实例 5 个**(`MoesiGpuAdapter` / `ChiRnfAdapter` / `MesifAdapter` / `CxlCacheAdapter` / `TileLinkCAdapter`);基类落地 ≠ 插件实例落地 | `cpptlm-cep-moesi-gpu-adapter`(2026-10-27 已归档);载体 = 队列 #7 |
 | ModuleFactory seam | §6.3 | 🟡 **部分落地** —— 装配期判据闸门已接(`src/core/module_factory.cc:167-186`,`run_channel_gate` + `run_ordering_gate`,FAIL 即中止实例化);**协议桥钩子已从死钩子变活钩子**(`register_protocol_bridge(name, factory_lambda)` + `get_bridges()` 转 public + `ModuleFactory` **Step 7.5** 消费路径,Entry #86);**`REGISTER_CHSTREAM_BIDIRECTIONAL` 宏已落地**(`include/chstream_register.hh`,Entry #87;含 `static_assert(n > 1)` + 运行期验证)⇒ **CEP 类注册已落地**(`CohIfProtocolEngine`,Entry #88)+ **JSON 装配端到端通过**(一次 CohIf 事务**穿过** adapter 抵达对端)⇒ `INV-CEP-07-IC4` **已闭合** | **已完成**(Entry #89):Phase 6 判据收口(`test/test_cep_cohif_carrier.cc` 17 case)+ Phase 7 反向 fixture **登记位置**补齐(`scripts/README.md` §反向 fixture 登记 + `docs/ONBOARDING.md §5.5`)+ **零 diff** 复核通过 |
 | 实验输出 4 件套 | §7 | ✅ **已落地** —— `tools/{render_report,run_sweep,ab_compare}.py` + `experimental/metrics.schema.json` + 4 件套契约测试(`test_cep_canonical_invariants.cc` / `test_cep_dummy_signals.cc` / `test_cep_module_factory_seam.cc` / `test_cep_simulation_mode_lock.cc`) | Stage 0(`cpptlm-cep-umbrella`,2026-10-23 已归档) |
 | simulation_mode 单一维度 | §6.1 | ✅ 已落地(`06 §5.1` + `01-hybrid §4.7` + `VramControllerTLM::set_mode`)| — |
@@ -1217,15 +1217,18 @@ experimental/<run_id>/
 
 ### ⑤ Verification(前瞻判据 · 可勾选)
 
-- [ ] §5.1.1「CXL 3.0 对称」行的 adapter 列 == `CxlDcohAdapter`
-- [ ] 同行的 DCOH 展开 **不含** "Ownership History";反向 snoop 表述含「**对 host**」;归属含「**HPA**」且**不含** "DPA"
-- [ ] §5.4 `back_invalidate` 行的 BISnp 方向 == **device→host(S2M)**
-- [ ] §11 caps 表 `DcohSymmetric` 的 `aggregation_at` == **HOME**(不含 "REQUESTER 或")
-- [ ] `sharer_tracker.hh` 的 `DcohSymmetric` traits `aggregation_at` == `AggregationAt::HOME`(builder 域)
-- [ ] `test_cep_sharer_tracker_base.cc` 的该行断言**收紧**为 `== HOME`(builder 域)
-- [ ] `protocol_instance.schema.json` **零改动**(`AggregationAt` 枚举仍含 `REQUESTER`)
-- [ ] `test/test_cep_schema.cc` 的 `rows511 == 8` **零改动**且仍绿
-- [ ] 冻结面 provenance 通过(40/40 hash 一致 + 与产物 commit 一致)
+> ⚠️ **2026-11-02 复核(per 台账 Entry #167 §③)**:下列 **8 项全部满足** ⇒ 已勾选;
+> 逐项复核证据见台账 Entry #167(其中 ⑦ schema 零改动 · ⑧ `rows511 == 8` 仍绿)。
+
+- [x] §5.1.1「CXL 3.0 对称」行的 adapter 列 == `CxlDcohAdapter`
+- [x] 同行的 DCOH 展开 **不含** "Ownership History";反向 snoop 表述含「**对 host**」;归属含「**HPA**」且**不含** "DPA"
+- [x] §5.4 `back_invalidate` 行的 BISnp 方向 == **device→host(S2M)**
+- [x] §11 caps 表 `DcohSymmetric` 的 `aggregation_at` == **HOME**(不含 "REQUESTER 或")
+- [x] `sharer_tracker.hh` 的 `DcohSymmetric` traits `aggregation_at` == `AggregationAt::HOME`(builder 域)
+- [x] `test_cep_sharer_tracker_base.cc` 的该行断言**收紧**为 `== HOME`(builder 域)
+- [x] `protocol_instance.schema.json` **零改动**(`AggregationAt` 枚举仍含 `REQUESTER`)
+- [x] `test/test_cep_schema.cc` 的 `rows511 == 8` **零改动**且仍绿
+- [x] 冻结面 provenance 通过(40/40 hash 一致 + 与产物 commit 一致) —— 本则的 provenance 在**两步授权的第 2 步**核验(产物 commit 后 `--update` 对齐)
 
 **关联**: 台账 `obj-cep-platform.md` **Entry #154**(授权记录 + 4 项裁决摘要)· **#153**(Task 0 普查登记 + architect 裁决面)
 · #152(组 1 归档)· #148(组 0 收尾债清理 · §5.1.1 状态列同步先例)· #139(`FullMapDirectory` 落位裁决)

@@ -114,7 +114,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - **6 层架构骨架**:Core / Traffic Generator / Stub Cache / Coherence Interface / Protocol Engine / Directory & Ordering Plane / Fabric Collective Plane / Fabric & Transport Plane
 - **canonical 10 条 Coherence Interface 流清单**(per `ADR-CEP-02 §2`):request / completion / snoop / snoop_resp / writeback / forward_data / back_invalidate / address_resolve / barrier / snoop_completion_ack
 - **StubCacheCore 6 接口 + 6 不变量**:net-side 5 (`request` / `snoop` / `snoop_resp` / `writeback` / `completion`)+ core-side 1 (`evict_line`)
-- **SharerTracker 6 实现 + caps descriptor + D-5 重构**:`FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` / `DcohSymmetric` / `TreeManager` / `BroadcastNull` —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「5 实现」**漏** `HierarchicalDirectory`(Entry #96 于 2026-10-29 增第 6 种);**行为实现已落地 4 种**(`FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` / `TreeManager`),另 2 种(`DcohSymmetric` / `BroadcastNull`)**仅声明层 traits**
+- **SharerTracker 6 实现 + caps descriptor + D-5 重构**:`FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` / `DcohSymmetric` / `TreeManager` / `BroadcastNull` —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「5 实现」**漏** `HierarchicalDirectory`(Entry #96 于 2026-10-29 增第 6 种);**行为实现已落地 5 种**(`FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` / `TreeManager` / **`DcohSymmetric`**),另 **1 种**(`BroadcastNull`)**仅声明层 traits**;⚠️ **2026-11-02 订正**(per 台账 Entry #167)—— `DcohSymmetric` 行为实现已于队列 #12 落地
 - **FabricCollective Plane 旁路平面 + 5 条防误分类规则(R1-R5)**
 - **NullProtocolEngine / NullCollectivePlane**:10 流覆盖矩阵(per oracle v0.4 B6)
 - **Experiment Output Protocol**:4 件套 + 13 必纳 metric + 4 可选 metric + 一致性 fail 闸
@@ -10370,6 +10370,68 @@ CDX-04 要求「**逐字段**可核对(数据级断言,非仅「常量存在」)
 `include/tlm/cep/protocol_instances.json` ·
 `scripts/test/cep_gate_selftest.sh` · `scripts/test/cep_doc_ref_check.sh`
 · 下一步队列:**#13** `cpptlm-cep-nvlink-sharp`(Stage 2;移交链 owner · improvement 草稿**未写**)
+
+---
+
+### Entry #167 — 2026-11-02 [scope-change](队列 #12 归档后的**遗留排查** —— `07 号`(M1 冻结面)**4 处状态失实** + `obj §3` 1 处 + **授权记录**)
+
+**主题**:归档后遗留排查发现 **5 处「已做/未做」陈述失实** + **1 类错指**(「残留 A」误归属)⇒ 本条目登记**授权记录**与**订正清单**。
+
+**① 授权范围(仅 1 件冻结面)**
+
+| # | 冻结面成员 | 改动 | 理由 |
+|---|---|---|---|
+| 1 | `docs/architecture/07-coherence-exploration-platform.md`(**M1 冻结面 40 件之一**) | **正文 4 处**(§5.1.1 状态列 + 表下口径注 + §11 两行计数)+ **Entry #154 §⑤ 的 8 项前瞻判据勾选** | `DcohSymmetric` 行为实现已落地(队列 #12)⇒ §5.1.1 / §11 的「未落地 / 4 / 6 / 5 个已落地」**全部失实** |
+
+**② ⚠️ 4 处状态失实(逐处)**
+
+| # | 位置 | 原文 | 订正 | 依据 |
+|---|---|---|---|---|
+| 1 | §5.1.1 `CXL 3.0 对称` 行 **状态列** | `Stage 2` | **✅ 已落地**(队列 #12,2026-11-02 归档;两段式) | 队列 #12 第 1 个 change **已完成归档**(per Entry #166) |
+| 2 | §5.1.1 表下**口径注** | 「CXL 2.0 与 3.0 对称是**同一 adapter 的两种模式**」 | adapter **不共用**:2.0 = `CxlCacheAdapter` · 3.0 对称 = `CxlDcohAdapter`(**独立载体**) | ⚠️ **自相矛盾** —— 同表 :318 行的 adapter 列已在 Entry #154 订正为 `CxlDcohAdapter`(独立载体)⇒ 口径注**遗漏**同步 |
+| 3 | §11 `SharerTracker **6** 实现` 行 | `🟡 **4 / 6**` + 「其余 2 个(`DcohSymmetric` / `BroadcastNull`)仅声明层 traits」 | `🟡 **5 / 6**` + 「其余 **1** 个(`BroadcastNull`)」 | `DcohSymmetric` 行为实现落地(`include/tlm/cep/cxl_dcoh_tracker.hh`) |
+| 4 | §11 `ProtocolEngine adapter 实例` 行 | `🟡 **5 个已落地**` | `🟡 **6 个已落地**`(+ `CxlDcohAdapter`) | 队列 #12 交付 `CxlDcohAdapter`(实读 `protocol_instances.json` = **6 实例**) |
+
+**③ ⚠️ Entry #154 §⑤ 的 8 项**前瞻判据**逐条复核(全部满足)**
+
+| # | 判据 | 复核结果 |
+|---|---|---|
+| 1 | §5.1.1 adapter 列 == `CxlDcohAdapter` | ✅ |
+| 2 | DCOH 展开不含 "Ownership History" + 反向 snoop 含「对 host」+ 归属含 **HPA** 不含 "DPA" | ✅ |
+| 3 | §5.4 `back_invalidate` 行 BISnp 方向 == **device→host(S2M)** | ✅(`:177`) |
+| 4 | §11 caps 表 `DcohSymmetric` 的 `aggregation_at` == **HOME** | ✅(`:409`) |
+| 5 | `sharer_tracker.hh` traits `aggregation_at` == `AggregationAt::HOME` | ✅(`:219`) |
+| 6 | `test_cep_sharer_tracker_base.cc` 该行断言**收紧**为 `== HOME` | ✅(`:243`) |
+| 7 | `protocol_instance.schema.json` **零改动** | ✅(`git log` 该文件自 2026-11-01 起**零 commit**) |
+| 8 | `test_cep_schema.cc` 的 `rows511 == 8` **零改动且仍绿** | ✅(`:795` 仍 8;`[cep]` **317 cases / 6283 assertions** 全绿) |
+
+⇒ 8 项**全部满足** ⇒ Entry #154 的前瞻判据**闭合**。
+
+**④ ⚠️ 错指订正:「残留 A」**不属于** `DcohSymmetric`**
+
+| 项 | 内容 |
+|---|---|
+| 错指 | 台账 Entry **#162** / **#166** 与 improvement 草稿称「闭合 07 号『**残留 A**:`DcohSymmetric` 行为语义无基源』」 |
+| 事实 | 07 号 §11 / 台账 Entry #148 / #154 的 **「残留 A」= `HierarchicalDirectory` 行为语义无真源**(队列 #9 的残留,**非**本队列) |
+| `DcohSymmetric` 的缺口正确表述 | 07 号 §11 的「**`DcohSymmetric` 仅声明层 traits**」(`kTrackerTraits` 有行 · **无**行为类)⇒ 本队列兑现的是**该缺口**,不是「残留 A」 |
+| 处置 | 台账为 append-only ⇒ **不改写** Entry #162 / #166 正文,以**本条**为**订正记录**;improvement 草稿(非台账)直接订正 2 处 |
+| 纪律 | ⚠️ 「残留 X」是 07 号 §11 的**编号**而非泛称 ⇒ 引用时必须带**所属队列**,否则编号会指向别的残项 |
+
+**⑤ `obj-cep-platform.md §3` 的 1 处失实(非冻结面)**
+
+| 位置 | 原文 | 订正 |
+|---|---|---|
+| `obj §3`「SharerTracker 6 实现」条 | 「**行为实现已落地 4 种**(`FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` / `TreeManager`),另 2 种(`DcohSymmetric` / `BroadcastNull`)**仅声明层 traits**」 | 「已落地 **5 种**(+ `DcohSymmetric`),另 **1 种**(`BroadcastNull`)**仅声明层 traits**」 |
+
+**⑥ 两步授权序列**
+
+台账 entry(本条)→ 07 号 4 处正文 + 8 项勾选 → `--update --authorized-by "Entry #167"` → commit 产物
+→ `--update`(provenance 对齐)→ commit。
+
+**⑦ 关联**: Entry #166(队列 #12 归档)· #165(Phase 3.5 冻结面)· #162(Phase 2.3 —— `DcohSymmetric` 落地)· #154(07 号上一则 SU + 4 项裁决)· #148(07 号 §11 状态列追平先例)· #146(队列 #11 —— `TreeManager` 落地后同款追平)· #139(`FullMapDirectory` 落位裁决 —— 「残留 A」的正确归属见 §④)
+· `docs/architecture/07-coherence-exploration-platform.md`(**M1 冻结面**)·
+`include/tlm/cep/cxl_dcoh_tracker.hh` · `include/tlm/cep/protocol_instances.json` ·
+`.rddf/improvements/cpptlm-cep-cxl-dcoh-symmetric.md`
 
 ---
 
