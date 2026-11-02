@@ -44,7 +44,7 @@
 | 面 | 改动 |
 |---|---|
 | **adapter(新增)** | `include/tlm/cep/cxl_dcoh_adapter.hh`(header-only · **独立** · **零自有表副本** · 委托消费规约载体)—— ⚠️ **不暴露** transition API(载体**无转移表**) |
-| **tracker(新增行为类)** | `include/tlm/cep/sharer_tracker.hh` 的 `DcohSymmetric` **行为实现**(traits 已登记)—— 保守型(宁多探不漏探)+ `STALL` hazard + `LOCAL_HINT` 权威强度 |
+| **tracker(新增行为类)** | **独立头** `include/tlm/cep/cxl_dcoh_tracker.hh` 的 `DcohSymmetric` **行为实现**(traits 已登记)—— 保守型(宁多探不漏探)+ `STALL` hazard + `LOCAL_HINT` 权威强度;⚠️ **Phase 2.3 订正落点**(`sharer_tracker.hh` ⇒ 独立头,理由见 design §3.1) |
 | **实例声明** | `protocol_instances.json` **+1** `cxl_3_0_symmetric`(13 键 · `perm` **4 值** · `family=industrial` · `sharer_tracker.impl=DcohSymmetric`)+ `repo_owned_instance_ids` **+1** |
 | **`perm_upgrades.json`** | **不声明**静默升级(E→M 在本族**未确证** ⇒ 加了即**假声明**)⇒ `no_upgrade_instances` 变 **2** 个 ⇒ 既有 2 处断言**同步更新** |
 | **判据** | 正向 + **反向 fixture**(形态 = 「毒化 ⇒ 必红」)· `AC-05` 族无关化**复用**(本族无 unique-clean 态 ⇒ SKIP)⇒ **零改动** |
@@ -73,7 +73,7 @@
 
 | 面 | 影响 |
 |---|---|
-| **代码(新增)** | `include/tlm/cep/cxl_dcoh_adapter.hh` · `include/tlm/cep/sharer_tracker.hh`(+`DcohSymmetric` 行为类) |
+| **代码(新增)** | `include/tlm/cep/cxl_dcoh_adapter.hh` · `include/tlm/cep/cxl_dcoh_tracker.hh`(新 · 独立头 · `DcohSymmetric` 行为类) |
 | **代码(既有,零改动)** | `CxlCacheAdapter` · `cxl_state_spec.hh` · `cxl_dcoh_state_spec.hh` · `protocol_instance.schema.json` · `adapter_schema_contracts.hh`(AC-05 复用) |
 | **代码(声明面)** | `protocol_instances.json`(+1 实例 · +1 `repo_owned`)· `perm_upgrades.json`(**零行**)· **2 处**既有计数断言更新 |
 | **测试** | 新增 adapter + tracker + 实例声明三组用例;反向 fixture |

@@ -65,8 +65,12 @@ CEP SHALL 为 **CXL 3.0 对称(DCOH)**提供一份**可执行实现层契约**:
   `authority` SHALL 为 `LOCAL_HINT` · `aggregation_at` SHALL 为 `HOME` · `hazard` SHALL 为 `STALL`
 - **AND** `broadcast_fallback` SHALL 为 `true`(⚠️ **公开来源未见依据** ⇒ **登记 pending**,**不改** traits)
 - **AND** 行为 SHALL **逐字段**可核对(数据级断言,非仅「常量存在」)
+- **AND** 每条行为断言 SHALL **配正控**(对照实现 `FullMapDirectory` / `SparseSnoopFilter` /
+  `TreeManager`)⇒ 否则「断言恒绿」= 判据可能没生效
+- **AND** 实现 SHALL 落**独立头** `include/tlm/cep/cxl_dcoh_tracker.hh`
+  (⇒ `sharer_tracker.hh` **零改动** ⇒ 既有 deferred 判据零改动)
 
-> **锚点**:`test/test_cep_cxl_dcoh_adapter.cc` 的 tracker 行为断言
+> **锚点**:`test/test_cep_cxl_dcoh_tracker.cc`(7 cases / 57 assertions · **每条行为断言配正控**)
 
 #### Scenario: CDX-05 —— `LOCAL_HINT` 的**语义代价** SHALL **显式登记**
 

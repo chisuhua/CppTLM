@@ -10093,6 +10093,67 @@ Phase 3(实例声明 + 判据收口 + 反向 fixture)→ Phase 4(验收 + 归档
 
 ---
 
+### Entry #162 — 2026-11-02 [implement](队列 #12 第 1 个 change **Phase 2.3** —— `DcohSymmetric` 行为类落地(**独立头**)· **落点裁决 A ⇒ A′**)
+
+**主题**:`DcohSymmetric` **行为实现**落地 —— 闭合 07 号「残留 A:`DcohSymmetric` 行为语义无基源」。
+本条同时记录一项**实施期落点裁决反转**(A ⇒ **A′ 独立头**)及其依据。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `include/tlm/cep/cxl_dcoh_tracker.hh`(新 · header-only) | `DcohSymmetric`(**第 5 个行为实现**)· 继承 `SharerTrackerIf` + `SnoopMechanics` · traits **取** `kTrackerTraits[2]`(不另写 caps 字面量)· 6 个 caps / behavior 字段**逐字段**行为落地 |
+| `test/test_cep_cxl_dcoh_tracker.cc`(新) | **7 cases / 57 assertions**:CDX-04(caps/behavior 逐字段数据级)· CDX-04①(`scope=LOCAL_MEMORY_REGION` 的区域门禁)· ②(`CONSERVATIVE` 永不 `ANSWER_HERE` + 只增不减)· ③(`LOCAL_HINT` 双重语义载体)· ④(`aggregation_at=HOME` 无 `ESCALATE_UP` + `hazard=STALL`)· ⑤(收缩仅来自观测)· CDX-05(语义代价的**实现侧**文档义务) |
+| `test/CMakeLists.txt` | **+1** ctest 注册(`cep_cxl_dcoh_tracker`) |
+| `include/tlm/cep/sharer_tracker.hh` | **零改动**(⇒ 既有 deferred 判据零改动) |
+
+**② ⚠️ 落点裁决反转:A ⇒ **A′ 独立头**(实施期发现 4 条依据)**
+
+| # | 依据 | 处置 |
+|---|---|---|
+| 1 | **既有判据会红**:`test/test_cep_sharer_tracker_base.cc:547-550` 的 deferred 名单断言「`sharer_tracker.hh` 内**不得**出现 `class DcohSymmetric`」⇒ 落该头 ⇒ **既有守门判据必红**(且它**不是**本 change 的判据 ⇒ 改它 = 动既有判据) | ⇒ 落**独立头** ⇒ 既有判据**零改动** |
+| 2 | **层级倒置**:`sharer_tracker.hh` 是**协议无关通用层**(per 其头注释)⇒ 在其中 `#include` CXL DCOH 规约载体 ⇒ **通用层反向依赖协议族** | ⇒ 独立头(与队列 #11 `TreeManager` **同款**) |
+| 3 | **`sharer_tracker.hh` 与 `.clang-format` 不兼容**(实测 **2140 行** diff)⇒ 改它须**手工控格式**(否则淹没真实 diff) | ⇒ 独立头**规避** |
+| 4 | 原方案 A 的理由(「同属 SharerTracker 家族 ⇒ 仍归 `sharer_tracker.hh`」)与 #11 的理由(「协议专有 ⇒ 独立头」)**不自洽** ⇒ 原裁决**基于错误的分类依据** | ⇒ **显式推翻** + 给出**正确依据** |
+
+> ⚠️ **裁决纪律**:方案 A 的**目标**(同构 + 平台可比较)**不变**,变的只是**物理落点**
+> ⇒ 可比较性(同一 `SharerTrackerIf` + 同一 `kTrackerTraits[2]`)**不降**。
+> ⇒ 已同步订正 `design.md` §3(+ 新增 §3.1 依据表)· `proposal.md`(What Changes / Impact)· delta spec CDX-04。
+
+**③ ⚠️ 判据形态:每条行为断言**配正控****(铁律 ①)
+
+CDX-04 要求「**逐字段**可核对(数据级断言,非仅「常量存在」)」⇒ 本实现为 6 个 caps / behavior 字段
+**逐个**落**可观测**行为,且每条断言都**配对照实现**作正控:
+
+| 字段 | 可观测行为 | 正控(对照实现) |
+|---|---|---|
+| `scope=LOCAL_MEMORY_REGION` | **区域外**地址 ⇒ `BROADCAST` + `set_sharer` **显式 no-op** | `FullMapDirectory`(`SYSTEM`)对同一地址**能**给本地结论 ⇒ **可判别** |
+| `completeness=CONSERVATIVE` | 永不 `ANSWER_HERE`;「多个可能 sharer」⇒ 广播;**唯一**可能 sharer 且脏 ⇒ 单点转发 | `FullMapDirectory`(`EXACT`)对「无该地址」**能**答 `ANSWER_HERE` ⇒ **可判别** |
+| `authority=LOCAL_HINT` | 答案**只是 hint** ⇒ 永不 `ANSWER_HERE`;`forward_to` **语义重载**(须先读 `result`) | `SparseSnoopFilter`(同 CONSERVATIVE 但 `GLOBAL`)在唯一 sharer 时**同样** `FORWARD_TO` ⇒ 鉴别力来自「永不 `ANSWER_HERE`」这条**独立**差异 |
+| `aggregation_at=HOME` | **不**产生 `ESCALATE_UP`(那是 `TREE_PARENT` 的语义) | —— |
+| `hazard=STALL` | 同址 snoop 在飞 ⇒ `STALL` + view 无效 | `TreeManager`(`CHAIN`)⇒ **可判别** |
+| `broadcast_fallback=true` | 保守兜底一律 `BROADCAST` | —— |
+
+⇒ 「断言恒绿」= 判据可能没生效 ⇒ 该面**不成立**。
+
+**④ ⚠️ CDX-05 的**判据拆分**(语义代价登记跨 Phase)**
+
+`LOCAL_HINT` 的语义代价登记落**冻结面** `cep-sharer-tracker-base` 追加段(**Phase 3.5** · 两步授权)
+⇒ **Phase 2.3 只断言「实现侧」**(头文件**必须**写明双重语义 + 判读纪律 ⇒ 消费方只读头文件即知)
+⇒ 「登记可寻址」断言落 **Phase 3.5** 的用例 ⇒ **不在 Phase 2.3 重复**(避免假绿)。
+
+**⑤ 验收**:`[cep][cxl-dcoh][tracker]` **7 cases / 57 assertions** 全绿 · `ctest` **140/140** ·
+门禁 5 个脚本全 rc=0 · `format.sh --check` rc=0 · `openspec validate --strict` rc=0。
+
+**⑥ 关联**: Entry #161(Phase 2 部分 —— adapter)· #160(建档 + Phase 1 形态定稿)· #159(规约层归档)
+· #154(4 项 architect 裁决)· #153(Task 0 普查)· #147(队列 #11 归档 —— **独立头先例**)·
+#146(队列 #11 Phase 3 —— **2 件冻结面两步授权**的流程先例)
+· `include/tlm/cep/cxl_dcoh_tracker.hh` · `include/tlm/cep/cxl_dcoh_adapter.hh`
+· `include/tlm/cep/sharer_tracker.hh`(**零改动**)· `include/tlm/cep/cxl_dcoh_state_spec.hh`(**已归档**,只读消费)
+· `test/test_cep_cxl_dcoh_tracker.cc` · `openspec/changes/cpptlm-cep-cxl-dcoh-symmetric/`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

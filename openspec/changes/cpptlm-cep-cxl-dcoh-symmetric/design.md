@@ -91,12 +91,25 @@
 
 ---
 
-## 3. `DcohSymmetric` 行为类的形态对比
+## 3. `DcohSymmetric` 行为类的形态对比(⚠️ **Phase 2.3 实施期订正** ⇒ A ⇒ **A′**)
 
 | # | 方案 | 优点 | 代价 | 判定 |
 |---|---|---|---|---|
-| **A** | **实现**行为类(纳入 `sharer_tracker.hh`) | 与既有 3 个行为类**同构** ⇒ 平台可比较 | `sharer_tracker.hh` 体量增加 | ✅ **裁决采用** |
-| **B** | 独立头 `tilelink_tree_manager` 式的**独立文件** | 隔离 | ⚠️ `sharer_tracker.hh` 已有 3 个行为类 ⇒ 单独隔离**不一致** ⇒ 反而增加认知负担 | ❌(注:#11 的 `TreeManager` 选独立头是因为 `sharer_tracker.hh` 是**协议无关通用层**,而 TileLink 语义**协议专有** ⇒ 本族是 **CXL 专有**但**同属 SharerTracker 家族** ⇒ 仍归 `sharer_tracker.hh`) |
+| **A′** | **独立头** `include/tlm/cep/cxl_dcoh_tracker.hh`(**Phase 2.3 裁决采用**) | ① `sharer_tracker.hh` 是**协议无关通用层** ⇒ 本族语义**协议专有** ⇒ 独立头**避免层级倒置**;② 同队列 #11 `TreeManager` **同款先例** ⇒ 平台可比较性不降;③ **既有判据零改动**(`test_cep_sharer_tracker_base.cc` 的 deferred 名单断言「`sharer_tracker.hh` 内**不得**有 `class DcohSymmetric`」⇒ 落该头即**天然绿**);④ 规避 `sharer_tracker.hh` 与 `.clang-format` **不兼容**(实测 2140 行 diff) | 多一个头文件 | ✅ **裁决采用** |
+| **A** | 行为类纳入 `sharer_tracker.hh` | 与既有 3 个行为类**物理同文件** | ⚠️ **通用层反向依赖协议族** ⇒ 层级倒置;⚠️ **撞既有判据** ⇒ 须同步改 `test_cep_sharer_tracker_base.cc` 的 deferred 名单 + 冻结面 `cep-sharer-tracker-base` spec 的「其余 2 种」计数;⚠️ 须**手工控格式**(该文件与 `.clang-format` 不兼容) | ❌ **Phase 2.3 推翻** |
+| **B** | 独立头但**不改名**(沿用 `cxl_dcoh_*` 之外的命名) | —— | —— | ❌ 命名与同族载体(`cxl_dcoh_state_spec.hh` / `cxl_dcoh_adapter.hh`)**不自洽** ⇒ 不采用 |
+
+### 3.1 ⚠️ Phase 2.3 实施期发现(裁决反转的依据)
+
+| # | 发现 | 处置 |
+|---|---|---|
+| 1 | **既有判据会红**:`test/test_cep_sharer_tracker_base.cc:547-550` 的 deferred 名单断言「`sharer_tracker.hh` 内**不得**出现 `class DcohSymmetric`」⇒ 落 `sharer_tracker.hh` ⇒ **该判据必红**(且它**不是**本 change 的判据 ⇒ 改它 = 动既有守门判据) | ⇒ 落**独立头** ⇒ **既有判据零改动** |
+| 2 | **层级倒置**:`sharer_tracker.hh` 是**协议无关通用层**(per 其头注释)⇒ 在其中 `#include` CXL DCOH 规约载体 ⇒ **通用层反向依赖协议族** | ⇒ 独立头(与 #11 `TreeManager` **同款**) |
+| 3 | **`sharer_tracker.hh` 与 `.clang-format` 不兼容**(实测 **2140 行** diff)⇒ 改它须**手工控格式** | ⇒ 独立头**规避**该风险 |
+| 4 | 原 §3 方案 A 的理由(「本族同属 SharerTracker 家族 ⇒ 仍归 `sharer_tracker.hh`」)与 #11 的理由(「协议专有 ⇒ 独立头」)**不自洽** ⇒ 原裁决**基于错误的分类依据** | ⇒ 本节**显式推翻**并给出**正确依据**(层级方向 + 既有判据 + 格式兼容) |
+
+> ⚠️ **裁决纪律**:方案 A 的**目标**(同构 + 可比较)**不变**,变的只是**物理落点**
+> ⇒ 平台可比较性(同一 `SharerTrackerIf` + 同一 `kTrackerTraits[2]`)**不降**。
 
 ---
 
@@ -105,7 +118,7 @@
 | 面 | 后果 |
 |---|---|
 | **adapter** | 新增 1 个 header-only 文件;**零副本**由静态扫描 + 正控保证 |
-| **tracker** | `sharer_tracker.hh` **+1** 行为类(traits 已登记 ⇒ 首次兑现)⇒ 闭合 07 号「残留 A」 |
+| **tracker** | **独立头** `include/tlm/cep/cxl_dcoh_tracker.hh` **+1** 行为类(traits 已登记 ⇒ 首次兑现)⇒ 闭合 07 号「残留 A」;⇒ `sharer_tracker.hh` **零改动** |
 | **声明面** | `protocol_instances.json` **+1** 实例 · `perm_upgrades.json` **零行** · `no_upgrade_instances` 变 **2** 个 ⇒ **2 处**既有断言更新 |
 | **零改动** | `ADR-CEP-*` 正文 · `protocol_instance.schema.json` · `CxlCacheAdapter` · `cxl_state_spec.hh` · `cxl_dcoh_state_spec.hh` · `adapter_schema_contracts.hh` |
 | **已知边界** | ⚠️ `LOCAL_HINT` 的**双重语义**(`LocalView` 零改动)· ⚠️ `broadcast_fallback` 无依据仍 pending · ⚠️ `IC-2` 的「E 可静默升 M」措辞沿用 |

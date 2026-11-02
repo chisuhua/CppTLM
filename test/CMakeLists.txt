@@ -332,6 +332,13 @@ add_test(NAME cep_cxl_dcoh_state_spec COMMAND cpptlm_tests "[cep][cxl-dcoh][stat
 #   ③ CDX-03 不暴露 `transition_*`(载体无转移表 ⇒ 暴露即等于自造转移表)
 add_test(NAME cep_cxl_dcoh_adapter COMMAND cpptlm_tests "[cep][cxl-dcoh][adapter]" -r compact)
 
+# 队列 #12 `cpptlm-cep-cxl-dcoh-symmetric`(第 1 个 change = 实现层)的 **tracker 行为判据**:
+#   ① CDX-04 caps/behavior 6 字段**逐字段**数据级断言(非仅「常量存在」)
+#   ② 每个行为断言**配正控**(对照实现 `FullMapDirectory` / `SparseSnoopFilter` / `TreeManager`)
+#      ⇒ 「断言恒绿」= 判据可能没生效 ⇒ 铁律 ①
+#   ③ CDX-05 `LOCAL_HINT` 双重语义登记可寻址(main spec)
+add_test(NAME cep_cxl_dcoh_tracker COMMAND cpptlm_tests "[cep][cxl-dcoh][tracker]" -r compact)
+
 # 队列 #12 `cpptlm-cep-cxl-dcoh-symmetric-state-spec`(第 0 个 change = 规约层)的**反向验证**:
 #   4 组毒化 fixture + 基线正控 ⇒ 手改载体任一处必红且**归因命中**判据 id。
 #   ⚠️ 本组形态 = 「**毒化 ⇒ 判据必红**」(鉴别力)⇒ 与队列 #11 修**误报**的那一组
