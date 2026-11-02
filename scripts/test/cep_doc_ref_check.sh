@@ -138,6 +138,10 @@ VIRTUAL_PATHS=(
                                                     #   `openspec/changes/archive/2026-11-02-cpptlm-cep-tilelink-state-spec/`
                                                     #   ⇒ 活文档里的**历史/时态锚定**引用按「归档路径」处理
                                                     #   (per AGENTS.md「VIRTUAL_PATHS」约定)
+  "openspec/changes/cpptlm-cep-cxl-dcoh-symmetric-state-spec/"  # 队列 #12 的**规约层** change
+                                                    #   已于 2026-11-02 **完成归档**(Entry #159)⇒ 目录移至
+                                                    #   **不入库**的 `openspec/changes/archive/2026-11-02-cpptlm-cep-cxl-dcoh-symmetric-state-spec/`
+                                                    #   ⇒ 活文档里的**历史/时态锚定**引用按「归档路径」处理
   "openspec/changes/cpptlm-cep-canonical-flow-parser-scope/"  # 组 1 的 change 已于 2026-11-02
                                                     #   **完成归档**(Entry #152)⇒ 目录移至**不入库**的
                                                     #   `openspec/changes/archive/2026-11-02-cpptlm-cep-canonical-flow-parser-scope/`

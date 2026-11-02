@@ -21,7 +21,7 @@ CXL.mem **6** 通道 + CXL.cache 双向各 3 · ⭐ `device_initiated_snoop_set 
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-cxl-dcoh-symmetric-state-spec
 
