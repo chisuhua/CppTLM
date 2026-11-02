@@ -233,6 +233,7 @@ assert "S1-3" not in sec, "移除未生效"
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
 run_case "把 §4.0 交接标记行的 change 名改成已归档的 → ⑦ 必须 fire" 1 '
+import re
 from pathlib import Path
 p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
 t = p.read_text(encoding="utf-8")
@@ -253,15 +254,24 @@ sec = t[i:j]
 #       标记)⇒ 裸 `str.replace(..., 1)` 会打在无标记的行上 → fixture 再次假失败。
 # ⚠️ 2026-11-01(Entry #132):队列 #10 归档 ⇒ 标记再转指 #11 `cpptlm-cep-tilelink-tree-manager`
 #    (同 fixture 前两次的「状态变迁 ⇒ 锚点失效」形态,第三次复现 ⇒ 锚点**必须**跟随 owner 行)
-name = "`cpptlm-cep-cxl-dcoh-symmetric`"
+# ⚠️ 2026-11-02(Entry #166):锚点**改为动态定位** —— 队列 #12 归档 ⇒ 标记转指 #13
+#    (这是「状态变迁 ⇒ 硬编码锚点失效」的**第 4 次**;前三次 = Entry #106 / #132 / #147
+#     各改一次硬编码名字 ⇒ 同一 bug 的第 N 个补丁)。⇒ 改为按行解析 owner:
+#    带 S1-N 标记的行形态恒为 `| **N** | `change` | ...` ⇒ 从首列取 change 名,
+#    再把它替换为已归档的 `cpptlm-cep-umbrella`。⇒ 标记再转指**无需**改本 fixture。
 assert "S1-" in sec, "锚点漂移:§4.0 未含 S1-N 承接标记"
 _lines = sec.splitlines(keepends=True)
-_hit = 0
+_owner = None
 for _k, _ln in enumerate(_lines):
-    if "S1-" in _ln and name in _ln:
-        _lines[_k] = _ln.replace(name, "`cpptlm-cep-umbrella`", 1)
-        _hit += 1
-assert _hit >= 1, "锚点漂移:§4.0 无「带 S1-N 标记且含活 owner 名」的行"
+    if "S1-" not in _ln:
+        continue
+    _m = re.match(r"\|\s*\*\*\d+\*\*\s*\|\s*`(cpptlm-cep-[a-z0-9-]+)`", _ln)
+    if _m:
+        _owner = (_k, _m.group(1))
+        break
+assert _owner, "锚点漂移:§4.0 无「带 S1-N 标记的活队列行」"
+_ok, _onm = _owner
+_lines[_ok] = _lines[_ok].replace("`" + _onm + "`", "`cpptlm-cep-umbrella`", 1)
 sec = "".join(_lines)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
@@ -275,6 +285,7 @@ p.write_text(t + "\n> 承接 Stage 1 准入前置:S1-9(占位)\n", encoding="utf
 #   盲区:D4.4 补登的 3 项孤儿前置不在 S1-N 集合内 → 断言 ③ 管不到它们。
 #   ⇒ 活文档用 `⏭(孤儿)` 显式登记;owner 若已归档 → 必须 fire。
 run_case "孤儿前置行的 owner 改成已归档 change → ⑦ 必须 fire" 1 '
+import re
 from pathlib import Path
 p = Path(os.environ["RT"] + "/.rddf/roadmap/objectives/obj-cep-platform.md")
 t = p.read_text(encoding="utf-8")
@@ -289,15 +300,21 @@ sec = t[i:j]
 # ⚠️ 2026-10-30(Entry #106):owner 行随队列 #9 归档再转指 #10 `cpptlm-cep-cxl-nonsymmetric`
 # ⚠️ 2026-11-01(Entry #132):队列 #10 归档 ⇒ 标记再转指 #11 `cpptlm-cep-tilelink-tree-manager`
 #    (同 fixture 前两次的「状态变迁 ⇒ 锚点失效」形态,第三次复现 ⇒ 锚点**必须**跟随 owner 行)
-name = "`cpptlm-cep-cxl-dcoh-symmetric`"
+# ⚠️ 2026-11-02(Entry #166):同 fixture ① ⇒ 锚点**改为动态定位**(按行解析 owner 名,
+#    再替换为已归档的 `cpptlm-cep-umbrella`)⇒ 标记再转指**无需**改本 fixture。
 assert "⏭(孤儿)" in sec, "锚点漂移:§4.2 未含孤儿前置标记"
 _lines = sec.splitlines(keepends=True)
-_hit = 0
+_owner = None
 for _k, _ln in enumerate(_lines):
-    if "⏭(孤儿)" in _ln and name in _ln:
-        _lines[_k] = _ln.replace(name, "`cpptlm-cep-umbrella`", 1)
-        _hit += 1
-assert _hit >= 1, "锚点漂移:§4.2 无「带 ⏭(孤儿) 标记且含活 owner 名」的行"
+    if "⏭(孤儿)" not in _ln:
+        continue
+    _m = re.match(r"\|\s*\*\*\d+\*\*\s*\|\s*`(cpptlm-cep-[a-z0-9-]+)`", _ln)
+    if _m:
+        _owner = (_k, _m.group(1))
+        break
+assert _owner, "锚点漂移:§4.2 无「带 ⏭(孤儿) 标记的活队列行」"
+_ok, _onm = _owner
+_lines[_ok] = _lines[_ok].replace("`" + _onm + "`", "`cpptlm-cep-umbrella`", 1)
 sec = "".join(_lines)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 

@@ -8,7 +8,7 @@ phase: phase-10
   - ADR-CEP-11
   - ADR-CEP-12
   - ADR-CEP-17
-状态: 🟡 **进行中**(2026-11-02)—— 队列 #12;**两段式**;Task 0 硬门已过(有条件,per Entry #153)· architect 4 项裁决已落(per Entry #154)· **第 0 个 change(规约层)**`cpptlm-cep-cxl-dcoh-symmetric-state-spec` **已完成归档**(per Entry #159;main spec = `openspec/specs/cep-cxl-dcoh-symmetric-state-spec/spec.md`)· **第 1 个 change(实现层)**`cpptlm-cep-cxl-dcoh-symmetric` **已建档**(per Entry #160)
+状态: ✅ **已完成**(2026-11-02)—— 队列 #12;**两段式**;Task 0 硬门已过(有条件,per Entry #153)· architect 4 项裁决已落(per Entry #154)· **第 0 个 change(规约层)**`cpptlm-cep-cxl-dcoh-symmetric-state-spec` **已完成归档**(per Entry #159;main spec = `openspec/specs/cep-cxl-dcoh-symmetric-state-spec/spec.md`)· **第 1 个 change(实现层)**`cpptlm-cep-cxl-dcoh-symmetric` **✅ 已完成归档**(per Entry #166)⇒ **队列 #12 两段式全部完成**
 created: 2026-11-02
 ---
 

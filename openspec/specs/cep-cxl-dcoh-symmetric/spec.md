@@ -29,7 +29,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-cxl-dcoh-symmetric
 
