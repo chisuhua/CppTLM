@@ -10209,6 +10209,51 @@ CDX-04 要求「**逐字段**可核对(数据级断言,非仅「常量存在」)
 
 ---
 
+### Entry #164 — 2026-11-02 [implement](队列 #12 第 1 个 change **Phase 3.4** —— **5 组反向 fixture**(毒化 ⇒ 必红))
+
+**主题**:实现层的**判据鉴别力**收口 —— **5 组**毒化 fixture 逐条验证「判据**因正确原因**红」。
+本条同时登记**反向 fixture 的两组形态相反**这一事实(避免后人混用)。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `scripts/test/cep_cxl_dcoh_adapter_probe.cc`(新) | 反向验证**探针** —— 影子目录下编译运行 ⇒ 逐条输出 `PROBE:FAIL <id>` |
+| `scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh`(新) | **5 组** fixture + **基线正控** ⇒ 共 **6 条**全过 |
+
+**② 5 组 fixture(形态 = 「毒化 ⇒ 判据必红」= 鉴别力)**
+
+| # | fixture | 毒化内容 | 期望判据 id |
+|---|---|---|---|
+| ① | `adapter-member-literal` | adapter 植入**成员字面量**(`cxl_dcoh::Perm::UNIQUE`) | `CDX-01-ZEROCOPY` |
+| ② | `adapter-table-name` | adapter 植入**表名**(`cxl_dcoh::kPermProjection`) | `CDX-01-ZEROCOPY` |
+| ③ | `adapter-transition-api` | adapter 暴露 `transition_kind` ⇒ 等于**自造转移表** | `CDX-03-NO-TRANSITION` |
+| ④ | `decl-perm-5th-value` | 实例 `perm` 加第 **5** 值(`ATOMIC`)⇒ 破 4 值锁 | `CDX-06-PERM-COUNT` |
+| ⑤ | `decl-fake-upgrade-row` | `perm_upgrades.json` 加本族**假声明行** ⇒ 假声明 | `CDX-07-NO-UPGRADE-DECL` |
+
+⇒ **基线正控**:干净载体必须编译通过 + 探针全绿 ⇒ 探针本身有鉴别力。
+⇒ **归因判定**:探针红了**还不够** ⇒ 失败原因 SHALL **命中期望判据 id**(不给「反正红了」放行)。
+⇒ **锚点自检**:每条 fixture 的毒化锚点 SHALL **恰命中 1 次**(命中 0 或 >1 ⇒ fixture 失效 ⇒ 记失败)。
+
+**③ ⚠️ 反向 fixture 的**两组形态相反** —— 两组都须登记(避免后人混用)**
+
+| 组 | 形态 | 目的 | 脚本 |
+|---|---|---|---|
+| **本族 + 本队列第 0 个 change(规约层)** | **毒化 ⇒ 判据必红** | **鉴别力** | `cep_cxl_dcoh_adapter_reverse_verify.sh` · `cep_cxl_dcoh_state_spec_reverse_verify.sh` |
+| **队列 #11**(TileLink) | **毒化 ⇒ 判据仍绿** | **回归防护**(修误报) | `cep_tilelink_adapter_reverse_verify.sh` |
+
+⇒ 队列 #12 **内部**两组形态**一致**(同型)⇒ 本队列的可比性成立。
+
+**④ 验收**:`ctest` **141/141** · 门禁 6 个脚本全 rc=0 · `format.sh --check` rc=0 ·
+`openspec validate --strict` rc=0 · 反向验证 **6/6**。
+
+**⑤ 关联**: Entry #163(Phase 3.1~3.3)· #162(Phase 2.3)· #161(Phase 2 部分)· #160(建档 + Phase 1)
+· #159(规约层归档)· #158(规约层 Phase 3 —— 同款反向 fixture 先例)· #154(architect 4 项裁决)
+· `scripts/test/cep_cxl_dcoh_adapter_probe.cc` · `scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh`
+· `openspec/changes/cpptlm-cep-cxl-dcoh-symmetric/specs/cep-cxl-dcoh-symmetric/spec.md`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

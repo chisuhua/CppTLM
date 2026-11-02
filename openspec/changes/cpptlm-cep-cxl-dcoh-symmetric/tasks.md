@@ -16,7 +16,7 @@
 | 0 治理前置 | ✅ **已完成**(2026-11-02) | Entry #153 / #154 / #159 前置全闭合 · 4 件套已建 · **转正裁决 Entry #160** · **冻结面实测 = 0 件**(0.6)· **KPI 回填 8 处**(0.7) |
 | 1 载体形态定稿 | ✅ **已完成**(2026-11-02) | **6 项形态裁决**落 `design.md` §1.1 ~ §1.6 + **2 组方案对比**(§2 adapter 形态 / §3 tracker 落位)⇒ 随建档一次落盘 |
 | 2 adapter + tracker 行为实现 | ✅ **已完成**(2026-11-02) | ✅ `CxlDcohAdapter`(零副本 + 委托 + 无 transition API)· ✅ 零副本扫描器**正控 + 反向 fixture**· ✅ 判据 **3 cases / 26 assertions**;✅ `DcohSymmetric` **行为类**(**独立头** `cxl_dcoh_tracker.hh`,落点裁决 **A ⇒ A′** 见 design §3.1)· ✅ tracker 判据 **7 cases / 57 assertions**(每条行为断言**配正控**) |
-| 3 实例声明 + 判据收口 | 🟡 **部分完成**(2026-11-02) | ✅ `cxl_3_0_symmetric`(13 键 · `perm` 4 值 · ★`back_invalidate=true`)+ `repo_owned` **+1** · ✅ `perm_upgrades.json` **零行** + 派生集断言 **5 处**同步 · ✅ `AC-05` **SKIP** + 回归锁 · ✅ 实例声明判据 **3 cases / 80 assertions**;⬜ **5 组反向 fixture**(3.4)+ ⬜ `LOCAL_HINT` 冻结面登记(3.5) |
+| 3 实例声明 + 判据收口 | 🟡 **部分完成**(2026-11-02) | ✅ `cxl_3_0_symmetric`(13 键 · `perm` 4 值 · ★`back_invalidate=true`)+ `repo_owned` **+1** · ✅ `perm_upgrades.json` **零行** + 派生集断言 **5 处**同步 · ✅ `AC-05` **SKIP** + 回归锁 · ✅ 实例声明判据 **3 cases / 80 assertions** · ✅ **5 组反向 fixture** 全部「毒化 ⇒ 必红」且**归因命中**(含基线正控,共 **6 条**全过);⬜ `LOCAL_HINT` 冻结面登记(3.5) |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + KPI 1/3 → 0/3 + 归档 |
 
 ---
@@ -61,7 +61,7 @@
 - [x] 3.1 `cxl_3_0_symmetric`(13 键)+ `repo_owned_instance_ids` **+1**
 - [x] 3.2 `perm_upgrades.json` **零行** + `no_upgrade_instances` 断言同步更新(⚠️ 原估「2 处」**实测 5 处**:3 处派生集断言 + 2 处实例计数断言)
 - [x] 3.3 `AC-05` SKIP 断言 + **回归锁**(既有族判定逐条不变)
-- [ ] 3.4 **反向 fixture**(形态 = 「毒化 ⇒ 必红」):① 植入成员字面量 ② 植入表名 ③ 暴露 `transition_*` ④ 实例 `perm` 加第 5 值 ⑤ `perm_upgrades` 加假声明行
+- [x] 3.4 **反向 fixture**(形态 = 「毒化 ⇒ 必红」):① 植入成员字面量 ② 植入表名 ③ 暴露 `transition_*` ④ 实例 `perm` 加第 5 值 ⑤ `perm_upgrades` 加假声明行
 - [ ] 3.5 **`LOCAL_HINT` 双重语义**登记 ⇒ 冻结面 `cep-sharer-tracker-base` 追加段(**两步授权**)+ 台账 §10 backlog 行
 
 ---

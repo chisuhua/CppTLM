@@ -16,6 +16,16 @@
 >
 > **合规边界**:CXL 规范受 **Evaluation Copy Agreement §3** + **AI Acceptable Use Policy** 约束
 > ⇒ **禁止**把规范正文投喂任何 AI ⇒ 本能力全部 basis 指向**公开非规范来源**的锚点摘要条目号。
+>
+> **⚠️ 反向 fixture 的**两组形态相反** —— 两组都须登记(避免后人混用)**:
+>
+> | 组 | 形态 | 目的 | 脚本 |
+> |---|---|---|---|
+> | **本族(实现层)** | **毒化 ⇒ 判据必红** | **鉴别力**(判据有牙) | `scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh`(5 组) |
+> | **队列 #11**(TileLink) | **毒化 ⇒ 判据仍绿** | **回归防护**(修误报) | `scripts/test/cep_tilelink_adapter_reverse_verify.sh` |
+>
+> ⇒ 队列 #12 **第 0 个 change**(规约层)的 `cep_cxl_dcoh_state_spec_reverse_verify.sh`
+> 与本族**同型**(毒化 ⇒ 必红)⇒ 本队列**内部**形态一致 ⇒ **两组**(本队列内 / 队列 #11)都须登记。
 
 ---
 
@@ -37,7 +47,7 @@ CEP SHALL 为 **CXL 3.0 对称(DCOH)**提供一份**可执行实现层契约**:
 - **AND** 子条件 ④ SHALL 成立:**反向 fixture**:植入任一成员字面量或表名 ⇒ SHALL **必须因正确原因红**
 - **AND** 子条件 ⑤ SHALL 成立:**正控** —— 同扫描机制 SHALL 能发现**确实存在**的标识符
 
-> **锚点**:`test/test_cep_cxl_dcoh_adapter.cc` 的零副本静态扫描 + 扫描器**鉴别力**自测
+> **锚点**:`test/test_cep_cxl_dcoh_adapter.cc` 的零副本静态扫描 + 扫描器**鉴别力**自测 · `scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh` 的 **反向 fixture**(① 植入成员字面量 · ② 植入表名)
 
 #### Scenario: CDX-02 —— adapter SHALL **委托**规约载体
 
@@ -56,7 +66,7 @@ CEP SHALL 为 **CXL 3.0 对称(DCOH)**提供一份**可执行实现层契约**:
 - **AND** **理由** SHALL 记录:规约载体**无转移表**(对称模式的转移语义在公开来源里**没有**
   ⇒ 转移表会要求**推理填空** ⇒ 禁止)⇒ adapter 提供该 API 即等于**自造转移表**
 
-> **锚点**:`test/test_cep_cxl_dcoh_adapter.cc` 的接口面扫描
+> **锚点**:`test/test_cep_cxl_dcoh_adapter.cc` 的接口面扫描 · `scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh` 的 **反向 fixture**(③ 暴露 `transition_*`)
 
 #### Scenario: CDX-04 —— `DcohSymmetric` 行为 SHALL 符合 traits
 
@@ -89,7 +99,7 @@ CEP SHALL 为 **CXL 3.0 对称(DCOH)**提供一份**可执行实现层契约**:
 - **AND** `family` SHALL 为 `industrial` · `sharer_tracker.impl` SHALL 为 `DcohSymmetric`
 - **AND** `flow_support.back_invalidate` SHALL 为 **true**(BISnp 走 canonical `back_invalidate` 流)—— 与 `cxl_2_0` 的 `false` **不同**
 
-> **锚点**:`test/test_cep_cxl_dcoh_instance_decl.cc` 的实例声明断言
+> **锚点**:`test/test_cep_cxl_dcoh_instance_decl.cc` 的实例声明断言 · `scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh` 的**反向 fixture**(④ `perm` 加第 5 值 · ⑤ `perm_upgrades` 加假声明行)
 
 #### Scenario: CDX-07 —— 实例 SHALL **不声明**静默升级
 
