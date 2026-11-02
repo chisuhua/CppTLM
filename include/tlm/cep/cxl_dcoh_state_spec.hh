@@ -194,6 +194,158 @@ namespace tlm {
             inline constexpr std::size_t kSymmetricPredicateCount = 5;
 
             // ═══════════════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════════════════
+            //  ④-b 逐格 `basis`(两轴:证据强度 × 钉版强度)
+            // ═══════════════════════════════════════════════════════════════════════════
+            //
+            // ── 两轴规则(照队列 #10 锚点摘要 §8.2)────────────────────────────────────────
+            //   **证据强度轴**(`kind`):`public-direct` / `public-analogical` / `self-derived`
+            //   **钉版强度轴**(`pending`):`true` / `false` —— 二者**必须拆开**
+            //   ⇒ `pending == false` SHALL **同时**满足 ① 来源 `pin=strong`
+            //     **且** ② **引用 / 再分发许可已人工确认**(`kSourceLicenseConfirmed`)
+            //   ⇒ `kind` **禁止升格**;`ref` **只**指向**锚点摘要条目号**(**不**指向规范原文)
+            //
+            // ── 来源表(逐来源的「许可已人工确认」)──────────────────────────────────────────
+            enum class SourceId : std::uint8_t {
+                S2 = 0,     // FMS 2023 Tutorial(公开)—— © CXL Consortium(引用需节制)
+                S4 = 1,     // ACM CSUR 2024(arXiv 2306.11227v3)—— PDF 内**查无许可声明**
+                S5 = 2,     // ASPLOS'25(arXiv 2410.15908v2)—— **CC-BY 4.0**
+                S6 = 3,     // Hot Chips 2022(公开 tutorial)—— © CXL Consortium(引用需节制)
+                S7 = 4,     // HCDS 2024(arXiv 2404.03245v1, AMD)—— **CC-BY 4.0**
+                Derived = 5 // 派生 / 二手(锚点摘要内的推论)
+            };
+
+            inline constexpr std::size_t kSourceCount = 6;
+
+            /// **逐来源**:「引用 / 再分发许可已**人工确认**」—— ⚠️ `S6`(© Consortium)与 `S4`(许可
+            /// absent)
+            /// **保守取 `false`** ⇒ 它们的格**必须** `pending = true`(待人工确认)。
+            inline constexpr std::array<bool, kSourceCount> kSourceLicenseConfirmed{{
+                false, // S2 —— © CXL Consortium(引用需节制 ⇒ 待人工确认)
+                false, // S4 —— 无许可声明
+                true,  // S5 —— CC-BY 4.0
+                false, // S6 —— © CXL Consortium(引用需节制 ⇒ 待人工确认)
+                true,  // S7 —— CC-BY 4.0
+                false  // Derived —— 派生 / 二手
+            }};
+
+            /// **证据强度**(禁止升格)
+            enum class EvidenceKind : std::uint8_t {
+                PublicDirect = 0,     // 公开来源**明确这样写**
+                PublicAnalogical = 1, // 跨代次 / 跨协议**类比**
+                SelfDerived = 2       // 推理
+            };
+
+            /// **逐格 basis** —— `ref` **只**指向锚点摘要条目号
+            struct Basis {
+                EvidenceKind kind = EvidenceKind::SelfDerived;
+                bool pending = true;
+                SourceId source = SourceId::Derived;
+                const char* ref = nullptr; // 例:"§1 / S5"
+            };
+
+            /// **basis 有效性**:① `ref` 非空 ② `pending == false` ⇒ 来源许可已人工确认
+            constexpr bool basis_is_valid(const Basis& b) noexcept {
+                return b.ref != nullptr && b.ref[0] != '\0' &&
+                       (b.pending || kSourceLicenseConfirmed[static_cast<std::size_t>(b.source)]);
+            }
+
+            /// 逐组 basis 表的**全格**有效性(编译期)
+            template <std::size_t N>
+            constexpr bool all_basis_valid(const std::array<Basis, N>& t) noexcept {
+                for (const auto& b : t) {
+                    if (!basis_is_valid(b))
+                        return false;
+                }
+                return true;
+            }
+
+
+            // ── 10 项语义 pending(只能靠规范正文确定 ⇒ 禁止推理填空)───────────────────
+            // ⚠️ 与「格的 `pending`(钉版强度)」是**两个层次**:格级 pending =
+            // 该格的**证据**可否直接用;
+            //    本清单 = **语义本身**尚未确定(只有规范正文能定)⇒ 二者**不得**混谈。
+            struct PendingSemanticItem {
+                const char* id = nullptr;   // R-S1 ~ R-S10
+                const char* what = nullptr; // 一句话摘要
+                const char* ref = nullptr;  // 锚点摘要条目号
+            };
+
+            inline constexpr std::size_t kPendingSemanticItemCount = 10;
+
+            /// **10 项**语义 pending(per 锚点摘要 §7)—— 逐条登记,供判据逐项寻址
+            inline constexpr std::array<PendingSemanticItem, kPendingSemanticItemCount>
+                kPendingSemanticItems{
+                    {{"R-S1", "opcode 编码 / 字段宽度 / credit 规则 / channel 级排序", "§7 / R-S1"},
+                     {"R-S2", "BISnp 消息变体 / BIRsp payload / block 粒度(128B vs 256B)",
+                      "§7 / R-S2"},
+                     {"R-S3", "DCOH bias 表的精确编码(1 bit vs 2 bit / 第 4 code 是否保留)",
+                      "§7 / R-S3"},
+                     {"R-S4", "HDM-DB 是替换 bias-based 还是复用 bias table 状态", "§7 / R-S4"},
+                     {"R-S5", "home 目录 I/S/E 是否区分 dirty / sharing list 编码 / SF 精度",
+                      "§7 / R-S5"},
+                     {"R-S6", "transient state 的官方命名与编码 / BI 与 M2S Req 的排序细节",
+                      "§7 / R-S6"},
+                     {"R-S7", "错误语义(BI timeout / poison / viral / isolation)", "§7 / R-S7"},
+                     {"R-S8", "peer 集语义(home 是否 snoop peer device cache)/ GFD 规模",
+                      "§7 / R-S8"},
+                     {"R-S9", "是否存在 P / pseudo / 厂商扩展态;后续代次是否新增状态", "§7 / R-S9"},
+                     {"R-S10", "aggregation_at 二元的规范性依据(已由公开来源反证 ⇒ 待复核)",
+                      "§7 / R-S10"}}};
+
+            // ── 28 格逐格 basis(4 + 3 + 3 + 6 + 3 + 4 + 5)──────────────────────────────
+            // ⚠️ **唯一真源** —— 锚点摘要**不复制**本表(只提供条目号);测试逐格核对。
+
+            /// ① `DevCacheState` 4 格(M/E/S/I)—— S5(CC-BY)+ S4 ⇒ **许可已确认** ⇒ `pending=false`
+            inline constexpr std::array<Basis, kDevCacheStateCount> kBasisDevCacheState{
+                {{EvidenceKind::PublicDirect, false, SourceId::S5, "§1 / S5"},
+                 {EvidenceKind::PublicDirect, false, SourceId::S5, "§1 / S5"},
+                 {EvidenceKind::PublicDirect, false, SourceId::S5, "§1 / S5"},
+                 {EvidenceKind::PublicDirect, false, SourceId::S5, "§1 / S5"}}};
+
+            /// ② `DcohViewState` 3 格(I/S/A)—— S6(© Consortium)⇒ `pending=true`
+            inline constexpr std::array<Basis, kDcohViewStateCount> kBasisDcohViewState{
+                {{EvidenceKind::PublicDirect, true, SourceId::S6, "§1 / S6"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S6, "§1 / S6"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S6, "§1 / S6"}}};
+
+            /// ③ `HomeDirState` 3 格(I/S/E)—— S4(许可 absent)⇒ `pending=true`
+            inline constexpr std::array<Basis, kHomeDirStateCount> kBasisHomeDirState{
+                {{EvidenceKind::PublicDirect, true, SourceId::S4, "§1 / S4"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S4, "§1 / S4"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S4, "§1 / S4"}}};
+
+            /// ④ CXL.mem 6 格通道 —— S4 / S6 ⇒ `pending=true`
+            inline constexpr std::array<Basis, kCxlMemChannelCount> kBasisCxlMemChannel{
+                {{EvidenceKind::PublicDirect, true, SourceId::S4, "§2 / S4"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S4, "§2 / S4"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S4, "§2 / S4"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S4, "§2 / S4"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S6, "§2 / S6"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S6, "§2 / S6"}}};
+
+            /// ⑤ CXL.cache 3 格通道 —— S5(CC-BY)⇒ `pending=false`
+            inline constexpr std::array<Basis, kCxlCacheChannelCount> kBasisCxlCacheChannel{
+                {{EvidenceKind::PublicDirect, false, SourceId::S5, "§2 / S5"},
+                 {EvidenceKind::PublicDirect, false, SourceId::S5, "§2 / S5"},
+                 {EvidenceKind::PublicDirect, false, SourceId::S5, "§2 / S5"}}};
+
+            /// ⑥ `perm` 投影 4 格 —— **类比**(#10 §3 的投影表)⇒ `public-analogical` +
+            /// `pending=true`
+            inline constexpr std::array<Basis, kDevCacheStateCount> kBasisPermProjection{
+                {{EvidenceKind::PublicAnalogical, true, SourceId::Derived, "§3 / #10 §3"},
+                 {EvidenceKind::PublicAnalogical, true, SourceId::Derived, "§3 / #10 §3"},
+                 {EvidenceKind::PublicAnalogical, true, SourceId::Derived, "§3 / #10 §3"},
+                 {EvidenceKind::PublicAnalogical, true, SourceId::Derived, "§3 / #10 §3"}}};
+
+            /// ⑦ 窄义「对称」5 谓词 —— S2 / S3 / S6 / S4 / S7 ⇒ `pending=true`
+            inline constexpr std::array<Basis, kSymmetricPredicateCount> kBasisSymmetricPredicate{
+                {{EvidenceKind::PublicDirect, true, SourceId::S2, "§4 / S2"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S7, "§4 / S7"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S7, "§4 / S7"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S4, "§4 / S4"},
+                 {EvidenceKind::PublicDirect, true, SourceId::S6, "§4 / S6"}}};
+
             //  ⑤ 编译期断言(V-1 ~ V-6)
             // ═══════════════════════════════════════════════════════════════════════════
 
@@ -251,6 +403,75 @@ namespace tlm {
             // ── V-5:窄义「对称」5 谓词 ──────────────────────────────────────────────
             static_assert(kSymmetricPredicateCount == 5,
                           "CDS-05: 窄义「对称」SHALL 恰为 5 谓词合取");
+
+
+            // ── V-6:逐格 basis(CDS-06)—— 全格有效 + 覆盖完整 ─────────────────────────
+            static_assert(
+                all_basis_valid(kBasisDevCacheState),
+                "CDS-06: DevCacheState 逐格 basis SHALL 全格有效(ref 非空 + pending 规则)");
+            static_assert(all_basis_valid(kBasisDcohViewState),
+                          "CDS-06: DcohViewState 逐格 basis SHALL 全格有效");
+            static_assert(all_basis_valid(kBasisHomeDirState),
+                          "CDS-06: HomeDirState 逐格 basis SHALL 全格有效");
+            static_assert(all_basis_valid(kBasisCxlMemChannel),
+                          "CDS-06: CXL.mem 通道逐格 basis SHALL 全格有效");
+            static_assert(all_basis_valid(kBasisCxlCacheChannel),
+                          "CDS-06: CXL.cache 通道逐格 basis SHALL 全格有效");
+            static_assert(all_basis_valid(kBasisPermProjection),
+                          "CDS-06: `perm` 投影逐格 basis SHALL 全格有效");
+            static_assert(all_basis_valid(kBasisSymmetricPredicate),
+                          "CDS-06: 「对称」谓词逐格 basis SHALL 全格有效");
+
+            // 覆盖完整性:每组的 basis 数 SHALL == 该组的项数(逐格,不留空洞)
+            static_assert(kBasisDevCacheState.size() == kDevCacheStateCount,
+                          "CDS-06: DevCacheState 的 basis 数 SHALL == 态数");
+            static_assert(kBasisDcohViewState.size() == kDcohViewStateCount,
+                          "CDS-06: DcohViewState 的 basis 数 SHALL == 态数");
+            static_assert(kBasisHomeDirState.size() == kHomeDirStateCount,
+                          "CDS-06: HomeDirState 的 basis 数 SHALL == 态数");
+            static_assert(kBasisCxlMemChannel.size() == kCxlMemChannelCount,
+                          "CDS-06: CXL.mem 通道的 basis 数 SHALL == 通道数");
+            static_assert(kBasisCxlCacheChannel.size() == kCxlCacheChannelCount,
+                          "CDS-06: CXL.cache 通道的 basis 数 SHALL == 通道数");
+            static_assert(kBasisPermProjection.size() == kDevCacheStateCount,
+                          "CDS-06: `perm` 投影的 basis 数 SHALL == 投影行数");
+            static_assert(kBasisSymmetricPredicate.size() == kSymmetricPredicateCount,
+                          "CDS-06: 「对称」谓词的 basis 数 SHALL == 谓词数");
+
+            // ⚠️ `pending == false` ⇒ 其来源的许可**必须**已人工确认(两轴规则的编译期形态)
+            static_assert(kSourceLicenseConfirmed[static_cast<std::size_t>(SourceId::S5)],
+                          "CDS-06: S5(ASPLOS'25) SHALL 是 CC-BY 4.0 ⇒ 许可已确认");
+            static_assert(kSourceLicenseConfirmed[static_cast<std::size_t>(SourceId::S7)],
+                          "CDS-06: S7(HCDS 2024) SHALL 是 CC-BY 4.0 ⇒ 许可已确认");
+            static_assert(
+                !kSourceLicenseConfirmed[static_cast<std::size_t>(SourceId::S4)],
+                "CDS-06: S4(许可 absent) SHALL **不**标许可已确认 ⇒ 其格 SHALL pending=true");
+            ;
+            static_assert(!kSourceLicenseConfirmed[static_cast<std::size_t>(SourceId::S6)],
+                          "CDS-06: S6 SHALL 不标许可已确认 ⇒ 其格 SHALL pending=true");
+
+
+            // ── V-7:10 项语义 pending 的登记完整性(CDS-07)────────────────────────────
+            static_assert(kPendingSemanticItemCount == 10,
+                          "CDS-07: 语义 pending 项 SHALL 恰为 10(R-S1 ~ R-S10)");
+            static_assert(kPendingSemanticItems.size() == kPendingSemanticItemCount,
+                          "CDS-07: 语义 pending 清单长度 SHALL == 声明数");
+
+            constexpr bool all_pending_items_wellformed(
+                const std::array<PendingSemanticItem, kPendingSemanticItemCount>& items) noexcept {
+                for (const auto& it : items) {
+                    if (it.id == nullptr || it.id[0] == '\0')
+                        return false;
+                    if (it.what == nullptr || it.what[0] == '\0')
+                        return false;
+                    if (it.ref == nullptr || it.ref[0] == '\0')
+                        return false;
+                }
+                return true;
+            }
+
+            static_assert(all_pending_items_wellformed(kPendingSemanticItems),
+                          "CDS-07: 10 项语义 pending SHALL 逐项带 id / what / ref");
 
         } // namespace cxl_dcoh
     } // namespace cep

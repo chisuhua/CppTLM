@@ -9836,6 +9836,60 @@ step 0 ~ 3。本条 = **转正裁决记录** + KPI 回填。
 
 ---
 
+### Entry #157 — 2026-11-02 [implement](队列 #12 第 0 个 change **Phase 2 完成** —— **28 格**逐格 `basis` + **10 项语义 pending** + 两轴编译期锁)
+
+**主题**:Phase 2 的余下部分落地 —— 逐格 `basis`(证据强度 × 钉版强度两轴)+ 来源许可表
++ **10 项语义 pending** 的显式登记 + 「**禁止推理填空**」的可判定面。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `include/tlm/cep/cxl_dcoh_state_spec.hh` | **+28 格**逐格 `basis`(4 缓存代理 + 3 DCOH 视图 + 3 home 目录 + 6 CXL.mem 通道 + 3 CXL.cache 通道 + 4 `perm` 投影 + 5 「对称」谓词)+ **来源许可表**(6 来源:S2/S4/S5/S6/S7/Derived)+ `basis_is_valid` + `all_basis_valid` + **10 项语义 pending** 登记 + **CDS-06 19 条** / **CDS-07** 编译期锁 |
+| `test/test_cep_cxl_dcoh_state_spec.cc` | **+2 cases**(CDS-06 逐格核对 + CDS-07 pending 登记)⇒ 累计 **7 cases / 291 assertions** |
+
+**② 逐格 `basis` 的两轴(照队列 #10 锚点摘要 §8.2)**
+
+| 轴 | 取值 | 落地 |
+|---|---|---|
+| **证据强度**(`kind`) | `public-direct` / `public-analogical` / `self-derived` | 逐格;**禁止升格**;`perm` 投影 4 格 = `public-analogical`(类比 #10 §3) |
+| **钉版强度**(`pending`) | `true` / `false` | `pending == false` SHALL **同时**满足 ① `pin=strong` **且** ② **许可已人工确认** ⇒ 载体用 `kSourceLicenseConfirmed[]` **逐来源**表达 ⇒ **编译期**可判 |
+
+⇒ **精确计数**:**28** 格中 `pending == false` 恰 **7** 格(`DevCacheState` 4 + `CxlCacheChannel` 3
+—— 二者来源均为 **CC-BY 4.0** ⇒ 许可已确认);其余 **21** 格 `pending == true`
+(S4 许可 absent / S6 © Consortium / `Derived` 类比)⇒ **保守**方向。
+
+**③ 10 项语义 pending(与「格级 pending」是两个层次,不得混谈)**
+
+格级 `pending` = 该格的**证据**可否直接用;本清单 = **语义本身**尚未确定(只有规范正文能定)
+⇒ 载体加 `kPendingSemanticItems`(R-S1 ~ R-S10)+ 逐项 `id`/`what`/`ref` + **编译期**完整性锁
+⇒ ⚠️ **禁止推理填空**的可判定面:未建模语义词(`opcode` / `transient` / `poison` / `viral`)
+在载体去注释后**各恰出现 1 次** —— 且那 1 次**必**在 pending 登记的 `what` 里
+⇒ 若被**建模**(出现取值表)⇒ 次数 > 1 ⇒ 判据红。
+
+**④ ⚠️ 单源纪律**:逐格 basis 的**唯一真源 = 载体**;锚点摘要**不复制**该表
+(只提供**条目号**作为人工审计面)⇒ 避免两份 28 格表漂移。
+
+**⑤ 实施期的 3 处载体编译错(已修,登记备查)**
+① `SourceId` 漏列 `S2`(P1 谓词的来源)⇒ 补入并重排枚举 ② `kSourceCount` 未同步 5→6
+③ 末条 `static_assert` 缺分号,且 clang-format 把**字符串字面量拆成两行**(非法相邻字面量)
+⇒ 处置 = 缩短文案至**不折行** + 行定位修 ⇒ ⚠️ **教训**:`static_assert` 的长文案**会被 clang-format 折断**
+⇒ 文案须短到「缩进 + 文案 < 100 列」。
+
+**⑥ 验收**:`[cep][cxl-dcoh][state-spec]` **7 cases / 291 assertions** 全绿 · 门禁全 rc=0 ·
+`format.sh --check` rc=0。
+
+**⑦ 余下(Phase 3)**:**4 组反向 fixture**(① 合并状态空间 ② `{BISnp}` 置空 ③ 5 谓词置假
+④ 去掉 `pending` 标记)—— 形态 = 「**毒化 ⇒ 判据必红**」(鉴别力)⇒ 与队列 #11 修误报的那一组
+(「毒化 ⇒ 仍绿」)**形态相反** ⇒ 两组都须登记。
+
+**⑧ 关联**: Entry #156(Phase 1 落修 + Phase 2 部分)· #155(建档 + 转正裁决)· #154(4 项 architect 裁决)
+· #153(Task 0 普查 + 验证矩阵)· #127(队列 #10 规约层归档 —— 同款两段式先例)
+· `include/tlm/cep/cxl_dcoh_state_spec.hh` · `test/test_cep_cxl_dcoh_state_spec.cc`
+· `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(**basis 唯一人工审计面**)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

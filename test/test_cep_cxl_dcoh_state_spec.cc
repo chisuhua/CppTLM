@@ -19,14 +19,49 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <fstream>
 #include <set>
+#include <sstream>
+#include <string>
 #include <type_traits>
+#include <vector>
 
 #include "tlm/cep/cxl_dcoh_state_spec.hh"
 
 namespace {
 
     namespace spec = tlm::cep::cxl_dcoh;
+
+    /// 读**载体源文件**(去注释)⇒ 用于「禁止推理填空」的静态扫描
+    std::string carrier_source_without_comments() {
+        std::ifstream in(std::string(CPPTLM_SOURCE_DIR) +
+                         "/include/tlm/cep/cxl_dcoh_state_spec.hh");
+        if (!in)
+            return {};
+        std::string src;
+        std::string line;
+        while (std::getline(in, line)) {
+            const auto sl = line.find("//");
+            if (sl != std::string::npos)
+                line = line.substr(0, sl);
+            src += line;
+            src += "\n";
+        }
+        return src;
+    }
+
+    /// 统计子串出现次数
+    std::size_t count_of(const std::string& hay, const std::string& needle) {
+        if (needle.empty())
+            return 0;
+        std::size_t n = 0;
+        std::size_t pos = 0;
+        while ((pos = hay.find(needle, pos)) != std::string::npos) {
+            ++n;
+            pos += needle.size();
+        }
+        return n;
+    }
 
     // ── CDS-01:3 套状态空间(**不得合并**)──────────────────────────────
     // ⚠️ 互斥性由**类型系统**保证(enum class 强类型)⇒ 运行期可判定的是
@@ -170,6 +205,125 @@ namespace {
         }
         // ⚠️ P5 的语义:被 snoop 的是 **caching host**,**不是** peer device cache
         //    ⇒ ⛔ 不得表述为 peer-to-peer 全对称(公开来源明写 CXL 3.0 **不满足**经典 symmetric)
+    }
+
+
+    // ── CDS-06:逐格 `basis` 的两轴核对(分组断言 + 精确计数)────────────
+    TEST_CASE("CDS-06:逐格 basis 带 kind/pending/ref + 两轴规则成立",
+              "[cep][cxl-dcoh][state-spec]") {
+        // ① 每组的 basis 数 == 该组项数(编译期已锁;此处**运行期**复核)
+        CHECK(spec::kBasisDevCacheState.size() == spec::kDevCacheStateCount);
+        CHECK(spec::kBasisDcohViewState.size() == spec::kDcohViewStateCount);
+        CHECK(spec::kBasisHomeDirState.size() == spec::kHomeDirStateCount);
+        CHECK(spec::kBasisCxlMemChannel.size() == spec::kCxlMemChannelCount);
+        CHECK(spec::kBasisCxlCacheChannel.size() == spec::kCxlCacheChannelCount);
+        CHECK(spec::kBasisPermProjection.size() == spec::kDevCacheStateCount);
+        CHECK(spec::kBasisSymmetricPredicate.size() == spec::kSymmetricPredicateCount);
+
+        // ② 逐格核对:**ref 非空且以 `§` 开头** + `basis_is_valid` 成立
+        std::size_t total = 0;
+        std::size_t not_pending = 0;
+        const auto check = [&](const spec::Basis& b) {
+            ++total;
+            INFO("ref=" << (b.ref ? b.ref : "(null)"));
+            CHECK(b.ref != nullptr);
+            REQUIRE(b.ref != nullptr);
+            CHECK(std::string(b.ref).rfind("\u00a7", 0) == 0); // 以 § 开头
+            CHECK(spec::basis_is_valid(b));
+            // 两轴规则:`pending == false` ⇒ 其来源的许可**必须**已人工确认
+            if (!b.pending) {
+                ++not_pending;
+                CHECK(spec::kSourceLicenseConfirmed[static_cast<std::size_t>(b.source)]);
+            }
+        };
+        for (const auto& b : spec::kBasisDevCacheState)
+            check(b);
+        for (const auto& b : spec::kBasisDcohViewState)
+            check(b);
+        for (const auto& b : spec::kBasisHomeDirState)
+            check(b);
+        for (const auto& b : spec::kBasisCxlMemChannel)
+            check(b);
+        for (const auto& b : spec::kBasisCxlCacheChannel)
+            check(b);
+        for (const auto& b : spec::kBasisPermProjection)
+            check(b);
+        for (const auto& b : spec::kBasisSymmetricPredicate)
+            check(b);
+
+        // ③ 精确计数:总 **28** 格;`pending == false` 恰 **7** 格
+        //    (DevCache 4 + CxlCache 3 —— 二者来源均为 **CC-BY 4.0** ⇒ 许可已确认)
+        //    ⇒ 其余 **21** 格 `pending == true`(S4 / S6 / Derived ⇒ 许可未确认或仅类比)
+        CHECK(total == 28u);
+        CHECK(not_pending == 7u);
+
+        // ④ 分组断言:CC-BY 来源的组**全部** `pending == false`;许可未确认的组**全部** true
+        for (const auto& b : spec::kBasisDevCacheState)
+            CHECK_FALSE(b.pending);
+        for (const auto& b : spec::kBasisCxlCacheChannel)
+            CHECK_FALSE(b.pending);
+        for (const auto& b : spec::kBasisDcohViewState)
+            CHECK(b.pending);
+        for (const auto& b : spec::kBasisHomeDirState)
+            CHECK(b.pending);
+        for (const auto& b : spec::kBasisCxlMemChannel)
+            CHECK(b.pending);
+        for (const auto& b : spec::kBasisPermProjection)
+            CHECK(b.pending);
+        for (const auto& b : spec::kBasisSymmetricPredicate)
+            CHECK(b.pending);
+
+        // ⑤ `perm` 投影组是**类比**(`public-analogical`)⇒ kind 逐格为该值
+        for (const auto& b : spec::kBasisPermProjection) {
+            CHECK(b.kind == spec::EvidenceKind::PublicAnalogical);
+        }
+        // ⑥ 许可表:CC-BY 的两个来源已确认;许可 absent / © Consortium 的两个未确认
+        CHECK(spec::kSourceLicenseConfirmed[static_cast<std::size_t>(spec::SourceId::S5)]);
+        CHECK(spec::kSourceLicenseConfirmed[static_cast<std::size_t>(spec::SourceId::S7)]);
+        CHECK_FALSE(spec::kSourceLicenseConfirmed[static_cast<std::size_t>(spec::SourceId::S4)]);
+        CHECK_FALSE(spec::kSourceLicenseConfirmed[static_cast<std::size_t>(spec::SourceId::S6)]);
+    }
+
+    // ── CDS-07:10 项语义 pending 登记 + **禁止推理填空** ──────────────────
+    TEST_CASE("CDS-07:10 项语义 pending 逐条登记 + 未建模项零出现", "[cep][cxl-dcoh][state-spec]") {
+        STATIC_REQUIRE(spec::kPendingSemanticItemCount == 10u);
+        CHECK(spec::kPendingSemanticItems.size() == 10u);
+
+        // ① 逐项:id / what / ref 齐备 + id 唯一 + id 形如 `R-S<n>`
+        std::set<std::string> ids;
+        for (const auto& it : spec::kPendingSemanticItems) {
+            INFO("id=" << (it.id ? it.id : "(null)"));
+            REQUIRE(it.id != nullptr);
+            REQUIRE(it.what != nullptr);
+            REQUIRE(it.ref != nullptr);
+            CHECK(std::string(it.id).rfind("R-S", 0) == 0);
+            CHECK(std::string(it.ref).rfind("\u00a7", 0) == 0);
+            CHECK(ids.insert(std::string(it.id)).second); // 唯一
+        }
+        // 逐项可寻址:R-S1 ~ R-S10 连续
+        CHECK(ids.size() == 10u);
+        for (int i = 1; i <= 10; ++i) {
+            CHECK(ids.count("R-S" + std::to_string(i)) == 1u);
+        }
+
+        // ② ⚠️ **禁止推理填空**的可判定面:这些**未建模**的语义词在载体里
+        //    **只**作为 pending 登记的**描述**出现(各恰 1 次)⇒ 若被建模 ⇒ 次数 > 1 ⇒ 红
+        const std::string src = carrier_source_without_comments();
+        REQUIRE_FALSE(src.empty());
+        for (const char* w : {"opcode", "transient", "poison", "viral"}) {
+            INFO("未建模语义词 " << w);
+            CHECK(count_of(src, w) == 1u);
+        }
+        // ③ pending 登记的 `what` SHALL 确实提到这 4 项(⇒ 上面的「恰 1 次」不是偶然)
+        std::string whats;
+        for (const auto& it : spec::kPendingSemanticItems) {
+            whats += it.what;
+            whats += " | ";
+        }
+        CHECK(count_of(whats, "opcode") == 1u);
+        CHECK(count_of(whats, "transient") == 1u);
+        CHECK(count_of(whats, "poison") == 1u);
+        CHECK(count_of(whats, "viral") == 1u);
     }
 
 } // namespace
