@@ -326,6 +326,13 @@ add_test(NAME cep_tilelink_state_spec COMMAND cpptlm_tests "[cep][tilelink][stat
 #   ⑤ 窄义「对称」5 谓词合取(正控 + 逐谓词反控)
 add_test(NAME cep_cxl_dcoh_state_spec COMMAND cpptlm_tests "[cep][cxl-dcoh][state-spec]" -r compact)
 
+# 队列 #12 `cpptlm-cep-cxl-dcoh-symmetric-state-spec`(第 0 个 change = 规约层)的**反向验证**:
+#   4 组毒化 fixture + 基线正控 ⇒ 手改载体任一处必红且**归因命中**判据 id。
+#   ⚠️ 本组形态 = 「**毒化 ⇒ 判据必红**」(鉴别力)⇒ 与队列 #11 修**误报**的那一组
+#   (「毒化 ⇒ 判据仍绿」= 回归防护)**形态相反** ⇒ 两组都须登记,避免混用。
+add_test(NAME cep_cxl_dcoh_state_spec_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_cxl_dcoh_state_spec_reverse_verify.sh)
+
 # 队列 #11 `cpptlm-cep-tilelink-tree-manager`(第 1 个 change = 实现层)的判据:
 #   ① 载体契约(adapter 零副本 + `TreeManager` 的 `ESCALATE_UP`/`CHAIN` 真实使用
 #      + `snoop_join_core` 的 4 步语义);

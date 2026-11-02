@@ -9890,6 +9890,57 @@ step 0 ~ 3。本条 = **转正裁决记录** + KPI 回填。
 
 ---
 
+### Entry #158 — 2026-11-02 [implement](队列 #12 第 0 个 change **Phase 3 判据收口** —— 逐格 basis 核对 + **4 组反向 fixture**)
+
+**主题**:Phase 3 落地 —— 逐格 `basis` 的**运行期核对** + **10 项** `pending` 的**禁止推理填空**可判定面
++ **4 组反向 fixture**(形态 = 「毒化 ⇒ 判据必红」)。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `test/test_cep_cxl_dcoh_state_spec.cc` | **+2 cases**:CDS-06(逐格 basis 两轴核对 + 精确计数)· CDS-07(10 项 pending 登记 + 禁推理填空静态扫描)⇒ 累计 **7 cases / 291 assertions** |
+| `scripts/test/cep_cxl_dcoh_state_spec_probe.cc`(新) | 反向验证**探针**:CDS-03 / CDS-04 / CDS-05 / CDS-06 的运行期谓词 + 基线正控 |
+| `scripts/test/cep_cxl_dcoh_state_spec_reverse_verify.sh`(新) | **4 组**毒化 fixture + 基线正控 ⇒ **5/5** 通过 |
+| `test/CMakeLists.txt` | **+1** ctest 注册(`cep_cxl_dcoh_state_spec_reverse_verify`) |
+
+**② 4 组反向 fixture(形态 = 「毒化 ⇒ 判据必红」= 鉴别力)**
+
+| # | 毒化 | 失败形态 | 归因判据 |
+|---|---|---|---|
+| 1 | `DcohViewState` 改为 `DevCacheState` 的别名(**合并状态空间**) | **编译期红** | `CDS-01`(三套不再互斥) |
+| 2 | `kDeviceInitiatedSnoopSet` 置空(**`{BISnp}` 消失**) | **编译期红** | `CDS-03` |
+| 3 | `is_cxl3_symmetric` 只看 P1(**忽略其余 4 谓词**) | **运行期红** | `CDS-05` |
+| 4 | `kBasisHomeDirState` 首格 `pending` true ⇒ false(**去掉 `pending` 标记**) | **编译期红** | `CDS-06` |
+
+⇒ **双形态**都验证到:① ② ④ 是**编译期**(`static_assert` 触发,归因 = 文案前缀 `CDS-0x:`)
+③ 是**运行期**(探针输出 `PROBE:FAIL CDS-05`)⇒ 脚本**两类都支持**,不给「反正红了」放行。
+⇒ ⚠️ **形态登记**:本组 = **鉴别力**;队列 #11 那组 = **回归防护**(「毒化 ⇒ 仍绿」)⇒ **两组都须登记**,避免混用。
+
+**③ 「禁止推理填空」的可判定面(CDS-07)**
+
+未建模语义词(`opcode` / `transient` / `poison` / `viral`)在载体**去注释后**各**恰出现 1 次**,
+且那 1 次**必**在 `kPendingSemanticItems` 的 `what` 里 ⇒ 若被**建模**(出现取值表)⇒ 次数 > 1 ⇒ 判据红。
+
+**④ ⚠️ 反向验证脚本的 3 处实施期坑(登记备查)**
+
+| # | 坑 | 处置 |
+|---|---|---|
+| 1 | 4 条 fixture **全部**漏了 `old` 与 `new` 之间的 `:::` ⇒ 字段只解析出 4 个 ⇒ 锚点错位 ⇒ 全部「未命中」 | 重写 FIXTURES 块并**逐条断言字段数 == 5** + **逐条实测** old 在载体里命中 1 次 |
+| 2 | bash 双引号里的 `
+` 是**两字符**不是换行 | 改用 `@NL@` 占位符(python 侧转真换行) |
+| 3 | 锚点里的 `§`(转义)与载体的**真 `§`** 不匹配 | 锚点直接写真 `§` |
+
+**⑤ 验收**:反向验证 **5/5**(含基线正控)· `[cep][cxl-dcoh][state-spec]` **7 cases / 291 assertions** 全绿 ·
+`ctest` 全绿 · 门禁全 rc=0 · `format.sh --check` rc=0。
+
+**⑥ 关联**: Entry #157(Phase 2 完成)· #156(Phase 1 落修)· #155(建档 + 转正裁决)
+· #154(4 项 architect 裁决)· #153(Task 0 普查)· #127(队列 #10 规约层归档 —— 同款先例)
+· `include/tlm/cep/cxl_dcoh_state_spec.hh` · `test/test_cep_cxl_dcoh_state_spec.cc`
+· `scripts/test/cep_cxl_dcoh_state_spec_probe.cc` · `scripts/test/cep_cxl_dcoh_state_spec_reverse_verify.sh`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 
