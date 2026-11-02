@@ -742,7 +742,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | ~~P2~~ | **`SparseSnoopFilter` 行为实现**(backlog,per Entry #107) | ❌ **本行关闭** —— 归属**去重**(per oracle 决策 C / 台账 Entry #112):该实现归**队列 #10 实现层**(`cpptlm-cep-cxl-nonsymmetric`,Entry #111 已登记为该 change 的关键交付)⇒ 与 §10 的 #10 improvement 行**同一 owner**,不另起小 change(避免双 owner + 绕过「规约层先行」纪律)。**落位裁决**(architect,Entry #112):`SparseSnoopFilter` = 队列 #10 实现层;`BroadcastNull` = **当前队列序列(#10 ~ #14)无消费者 ⇒ 不排期,保留登记**(6 族映射无一指向广播型;未来出现广播型协议族时再评) |
 | P1 | **对拍基准首轮实测**(P-B / P-C,per `docs/architecture/14-coherence-parity-baseline.md` §7) | 🟡 **部分完成**(2026-10-31,Entry #113 / #114)—— **常数档 PASS(3/3)** + **同源 trace 档 PASS(5/5)**:gem5 v24.1.0.0 已增量重建出 **protobuf** 支持 ⇒ `PyTrafficGen.createTrace` 可用 ⇒ 新建 trace 生成器(CSV + gem5 protobuf,同一次 LCG)⇒ **两侧消费同一条访问流**(访问数 1000=1000 · 读写 793/207 逐条相同)⇒ 未命中延迟 48ns vs 本仓 50ns(偏差 4%);**剩余** = **P-3 容量对齐档**(需本仓侧引入「等容量+同替换」目录视图 ⇒ 新增建模组件 ⇒ 条件分支)+ **P-5**(定义待补);**产出** = `docs/validation/2026-10-31-cep-h7-parity-first-round.md`;⚠️ 不属任何队列 change 的门禁 | 走 add-improve —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):本行的**原理由已失效** —— ① `moesi_gpu` 的「仓内**只有 traits 行** ⇒ 声明面承诺的能力未兑现」**已不成立**(`SparseSnoopFilter` 行为类已于 2026-11-01 落地,per Entry #129;§8.1 **R11 已降级为 🟢 低**,per Entry #136 / #137);② `BroadcastNull` 的落位**已由 Entry #112 裁决**(当前队列序列 #10 ~ #14 无消费者 ⇒ 不排期、保留登记)⇒ **本小 change 只剩对拍义务本身**:**P-3 容量对齐档**(需本仓侧引入「等容量+同替换」目录视图 ⇒ 新增建模组件)+ **P-5**(定义待补) |
 | P2 | `cpptlm-cep-tilelink-tree-manager` improvement | ✅ **已写**(2026-11-01 planner;brainstorm HARD-GATE 通过(`pre_create_brainstorm_check.sh` rc=0);**两段式** —— 第 0 个 change = `cpptlm-cep-tilelink-state-spec`(规约层;范围 = 3 稳定态 + 4 事件类别 + 12 格转移表 + `perm` 3→3 投影 + 非对称结构断言,**照 #10 同款只锁 5 项结构**) + 第 1 个 change = `cpptlm-cep-tilelink-tree-manager`(实现层:`TileLinkCAdapter` + `TreeManager` tracker 行为实现 + 实例声明);估时 规约层 4 周 + 实现层 8 周;⚠️ **2026-11-02 订正**(per 台账 Entry #148):① 原写「change 目录已建,🟡 Proposed」**已失实** ⇒ 队列 #11 **两段式均已于 2026-11-02 完成归档**(per Entry #143 / #147);② 原写「**R-T4 口径留到第 1 个 change 前裁决**」**已裁决** —— per **Entry #141** §③:R-T4 = **值域锁** ⇒ 实例 `perm` 填 **3 值**(per `ADR-CEP-02` 的 `## Status Update(2026-11-02)`);§4.0 顺序 #11;✅ **Task 0 硬门已通过**(2026-11-01,per Entry #134 / #135 / #138)—— **版本锁定**(`tilelink-c-1.7.1`,SiFive)· **R-T2**(通道 5→VC 4)· **R-T3**(6 类归属)· **R-T6**(非对称定义形态)**四项 architect 裁决全闭合** ⇒ **可起 change**(规约层先行,照 #10 两段式先例);basis 唯一人工审计面 = `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` |
-| P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | 走 add-improve;Stage 2.1 启动 |
+| P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | 走 add-improve;Stage 2.1 启动 —— ✅ **Task 0 硬门已过(有条件)**(2026-11-02,per 台账 **Entry #153**):公开来源普查产物 `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md` ⇒ 5 项载体形态决定项中 **4 项可结构钉死**;**10 项**细粒度语义登记 `pending`(走「人类成员条款摘要」);⚠️ **阻塞项 = architect 复核**(3 项:`ADR-CEP-04 §3.5` 的 `P2P ⇒ REQUESTER` **被公开来源反证** + `DcohSymmetric` 的 `LOCAL_HINT` / `broadcast_fallback=true` 张力 + 07 号 **4 处口径错误** ⇒ 冻结面 Status Update)⇒ **architect 复核后方可起草 improvement** |
 | P1 | `cpptlm-cep-nvlink-sharp` improvement | 走 add-improve;Stage 2.2 启动 |
 | P1 | `cpptlm-cep-ualink-inc` improvement | 走 add-improve;Stage 3 启动 |
 | P2 | `ADR-CEP-11` 版本锁定(Stage 1 前签发)| 走 architect;触发 R2 缓解 —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「走 architect」**已失实** ⇒ `ADR-CEP-11` **已于 2026-10-30 签发 v1.0**(per Entry #112 / #135);⇒ **本行关闭**;⚠️ **残余**:版本锁定闸的 **G-3**(IC3 变更留痕**无自动闸**)**未闭合**(per §8.1 R2 缓解列)—— 仍为登记态残余风险 |
@@ -9598,6 +9598,75 @@ staged 草稿初版用的是 **5 段英文形态**(Why / What Changes / Acceptan
 · `include/tlm/cep/collective_plane_contract.hh` · `test/test_cep_collective_plane_contract.cc`
 · `.rddf/improvements/cpptlm-cep-canonical-flow-parser-scope.md`
 · `openspec/specs/cep-canonical-flow-parser-scope/spec.md`(归档后的活路径)
+
+---
+
+### Entry #153 — 2026-11-02 [scope-change](组 2 启动 —— 队列 #12 的 **Task 0 公开来源普查**(有条件通过)+ **architect 裁决面 3 项**)
+
+**主题**:队列 #12 `cpptlm-cep-cxl-dcoh-symmetric`(CXL 3.0 对称 / DCOH)的 **Task 0 硬门**
+—— 公开来源普查产物 `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`
+⇒ **有条件通过**(4 / 5 项可结构钉死)⇒ 同时**暴露 4 处仓内口径错误 + 1 处 ADR 决策被公开来源反证**
+⇒ 登记为 **architect 裁决面**(本条**不改任何仓内文件**)。
+
+**① 合规(零规范暴露)**
+
+| 项 | 内容 |
+|---|---|
+| ⛔ **禁令** | CXL 规范正文受 **ECA §3** + **AI AUP** 约束 ⇒ **禁止**下载 / 打开 / 引用 / 摘抄任何 CXL **规范 PDF**(1.0 / 1.1 / 2.0 / 3.0 / 3.1 / 4.0)⇒ **禁止**把规范正文投喂任何 AI |
+| **未做** | 未打开 / 未下载 / 未引用任何 CXL 规范 PDF ⇒ **零规范正文暴露** |
+| **⚠️ 检索中遇到并排除** | ① 搜索结果返回 `CXL-3.0-Specification.pdf` 链接 + 一段含章节号的规范正文片段 ⇒ **立即停止采用**(未打开、未用于任何断言)② `SNIA-SDC23` PDF ⇒ 403 排除 ③ Cadence 原博客 ⇒ 403(未绕过),改用公开转载摘要(强度降级) |
+| **来源** | 12 条(S1~S12)⇒ 4 条 **CC-BY 4.0**(可 `pending=false`)· 4 条 © Consortium(`pin=strong` 但 `pending=true`,引用范围待人工确认)· 1 条许可 absent · 3 条二手/403(强度降级) |
+| **两轴规则** | 证据强度轴(`kind`)与钉版强度轴(`pending`)**必须拆开**(照 #10 §8.2) |
+
+**② 5 项载体形态决定项(结论)**
+
+| # | 项 | 结论 |
+|---|---|---|
+| 1 | **设备侧稳定态集合** | **CXL.cache 缓存代理 = MESI 4 态(M/E/S/I)**,与 CXL 2.0 **相同**;⚠️ **DCOH 不引入新缓存稳定态** —— 它引入 **3 态 coherence metadata**(`I/S/A`,A 是**集合**);多 host home 目录另有一套 **3 态**(`I/S/E`)+ sharing list ⇒ **3 套状态空间不得合并** |
+| 2 | **事件词表与 local/remote** | CXL.cache 通道**不变**(双向各 3);CXL.mem = **4 基础 + 2 新增**(`S2M BISnp` / `M2S BIRsp`)= **6**;⚠️ **通道级**不相交成立,**事件种类级不相交不成立**(两侧都有 snoop 种类)⇒ ⭐ **唯一机械判别式 = `device_initiated_snoop_set == {BISnp}`**(非空,恰 1 类)—— 正是 #10「空集」的**否定** |
+| 3 | **`perm` 投影形状** | **按域分离**:缓存代理域 **4→4**(沿用 #10);DCOH 视图域 `A` 是**集合** ⇒ **不可单值投影** ⇒ **不得**塞进 `perm`;home 目录域 3→3 ⇒ **`perm` 维持 4 值锁**,**不新增第 5 值** |
+| 4 | **「对称」的可判定义** | ⛔ **不是**经典 peer 全对称(公开来源明写 CXL 3.0 **不满足**)⇒ 窄义 **5 谓词合取**(P1 设备发起 BI · P2 设备侧 SF/目录 · P3 跨 ≥2 host · P4 P2P 不经 host CPU · P5 snoop 目标是 host 而非 peer) |
+| 5 | **编译期断言可锁结构** | ✅ 可锁:4 态 / 3 态 / 3 态 / 6 通道 / `{BISnp}` / 通道不相交 / `perm_rows == 4`;❌ **不能**锁:opcode · 字段宽度 · credit · 排序 · block 粒度 · SF 精度 · transient · 错误语义;⚠️ **`aggregation_at` 二元不能照原样锁**(见 ④) |
+
+**③ 10 项残余风险(只能靠规范正文 ⇒ 禁止推理填空)**
+R-S1(opcode/credit/排序)· R-S2(BISnp 变体 + block 粒度)· R-S3(bias 表编码)· R-S4(bias 表**替换 vs 复用** —— S1/S6 措辞张力)
+· R-S5(home 目录 dirty 语义 + SF 精度)· R-S6(transient 命名)· R-S7(错误语义)· R-S8(peer 集语义 + GFD 4095 vs 4096)
+· R-S9(是否存在 P/pseudo 态)· R-S10(**`aggregation_at` 二元的规范性依据**)
+⇒ 处置 = **人类成员条款摘要**(AI 不接触正文)⇒ 摘要入锚点摘要 ⇒ 载体 `pending` 翻转 + 二方复核。
+
+**④ ⚠️ architect 裁决面(3 项 · 阻塞)**
+
+| # | 对象 | 仓内原文 | 公开来源核对 | 处置 |
+|---|---|---|---|---|
+| **1** | `ADR-CEP-04 §3.5`(**冻结面 ADR**) | 「HDM P2P ⇒ `REQUESTER`;HDM home ⇒ `HOME`」 | 🟡 `home ⇒ HOME` **印证**;❌ **`P2P ⇒ REQUESTER` 被反证** —— 公开来源明写 **memory device** 发 BISnp、**等两个 host 的 BIRsp**、再更新目录 ⇒ 聚合点在 **HOME**,不在 requester | ⛔ **ADR 决策被反证** ⇒ 需 architect 复核(ADR 不可变 ⇒ 只能**追加** `## Status Update`)⇒ **冻结面两步授权** |
+| **2** | `sharer_tracker.hh` 的 `DcohSymmetric` traits 行 | `LOCAL_MEMORY_REGION` / `CONSERVATIVE` / `LOCAL_HINT` / `AggregationAt::REQUESTER` + `STALL` + `broadcast_fallback=true` | ✅ `STALL`;✅ `LOCAL_MEMORY_REGION`;🟡 `CONSERVATIVE`(imprecise SF 会 over-snoop);🟡 `LOCAL_HINT`(公开来源称 DCOH 是其区域内的**最终仲裁者**);❌ `AggregationAt::REQUESTER`(同 #1);❌ `broadcast_fallback=true` **未见依据** | traits 是**声明层**、**行为实现未落地** ⇒ 可随规约层一并订正 ⇒ 需 architect 复核 |
+| **3** | `docs/architecture/07-coherence-exploration-platform.md`(**M1 冻结面**) | `:318`「DCOH(**Device Cache Ownership History**);设备可主动反向 snoop;**基于 DPA 而非 PA** 归属」· `:177`「BISnp 走 `back_invalidate` 流,**host→device**」 | ❌ **4 处口径错误**:① DCOH 公开展开 = **Device Coherence (agent / engine)**(**不是** Ownership History)② 「反向 snoop」只对 **host**,不对 peer device ③ CXL.mem 用 **HPA** ⇒ **不是** DPA 归属 ④ **BISnp 方向反了** —— BISnp 是 **S2M(device → host)**,`M2S BIRsp` 才是 host → device | ⇒ 需 architect 裁决 + **冻结面两步授权**(`## Status Update`,不改写正文) |
+
+**⑤ 队列 #12 的开工前置(现状)**
+
+| # | 前置 | 状态 |
+|---|---|---|
+| 1 | **Task 0 硬门 = 公开来源普查** | ✅ **有条件通过**(本条) |
+| 2 | **architect 复核 ④ 的 3 项** | ⛔ **未做** ⇒ **阻塞** |
+| 3 | **improvement 草稿**(planner 域 · `add-improve` HARD-GATE) | ⬜ 待做(须在 ② 之后 —— 草稿的 basis 依赖裁决结论) |
+| 4 | **change 目录**(4 件套 + delta spec) | ⬜ 待做 |
+| 5 | **两段式**:第 0 个 = 规约层(`*-state-spec`)+ 第 1 个 = 实现层 | ⚠️ **照 #9 / #10 / #11 先例** —— 队列 #12 需**两段式**(规约层先行) |
+
+**⑥ 与队列 #10 的关键差异(决定「不能照抄 #10」)**
+
+| 项 | #10(CXL 2.0 非对称) | #12(CXL 3.0 对称 / DCOH) |
+|---|---|---|
+| 设备发起 snoop | **不存在**(`= ∅`) | **存在 1 类**(`{BISnp}`)⇒ **核心判别式反转** |
+| 设备侧状态空间 | 1 套(MESI 4) | **3 套**(4 / 3 / 3)⇒ **不得合并** |
+| CXL.mem 通道 | 4 | **6** |
+| 对称定义 | host-centric | **窄义**(设备可为 HDM home + 反向 snoop **host**)⇒ **不得**写成 peer 全对称 |
+
+**⑦ 关联**: Entry #152(组 1 归档)· #151 / #150 / #149(组 1 全链)· #148(组 0 收尾债清理)· #122(CXL 口径裁决 —— 本轮**印证**)
+· #127(队列 #10 规约层归档 —— **同款两段式先例**)· #112 / #107(SharerTracker 落位映射)
+· `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(**本条登记的普查产物**)
+· `docs/research/2026-11-01-cep-cxl-nonsymmetric-anchor-summary.md`(队列 #10 的**直接范式**)
+· `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` §3.5 · `include/tlm/cep/sharer_tracker.hh`(`DcohSymmetric` traits)
+· `docs/architecture/07-coherence-exploration-platform.md` §5.1.1 / §5.2(**冻结面** · 4 处口径错误待裁决)
 
 ---
 
