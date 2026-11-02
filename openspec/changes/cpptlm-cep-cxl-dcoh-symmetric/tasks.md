@@ -35,14 +35,14 @@
 
 ## Phase 1 — 载体形态定稿
 
-- [ ] 1.1 **adapter 形态**:`CxlDcohAdapter`(独立 · header-only · 不进 `ModuleFactory` · 不注册 ABI)
-- [ ] 1.2 **零副本禁词表**(7 个成员字面量 + 11 个表名)· **类型名**允许 ⇒ 落 `design.md` §1.1(已定稿)
-- [ ] 1.3 **委托契约**(基数 / `perm` / 判别式 / 通道词表 / 方向表)⇒ 落 `design.md` §1.2(已定稿)
-- [ ] 1.4 **不暴露 transition API** ⇒ 落 `design.md` §1.3(已定稿)
-- [ ] 1.5 **`DcohSymmetric` 行为边界**(6 个 caps 字段逐条)⇒ 落 `design.md` §1.4(已定稿)
-- [ ] 1.6 **`AC-05` 复用** + **`perm_upgrades.json` 不声明** + 实例 `perm` 4 值 + IC-2 措辞 pending ⇒ 落 `design.md` §1.5(已定稿)
-- [ ] 1.7 **实例 13 键**取值表 ⇒ 落 `design.md` §1.6(已定稿)
-- [ ] 1.8 **两个方案对比**(adapter 形态 / tracker 行为类落位)⇒ 落 `design.md` §2 / §3(已定稿)
+- [x] 1.1 **adapter 形态**:`CxlDcohAdapter`(独立 · header-only · 不进 `ModuleFactory` · 不注册 ABI)
+- [x] 1.2 **零副本禁词表**(7 个成员字面量 + 11 个表名)· **类型名**允许 ⇒ 落 `design.md` §1.1(已定稿)
+- [x] 1.3 **委托契约**(基数 / `perm` / 判别式 / 通道词表 / 方向表)⇒ 落 `design.md` §1.2(已定稿)
+- [x] 1.4 **不暴露 transition API** ⇒ 落 `design.md` §1.3(已定稿)
+- [x] 1.5 **`DcohSymmetric` 行为边界**(6 个 caps 字段逐条)⇒ 落 `design.md` §1.4(已定稿)
+- [x] 1.6 **`AC-05` 复用** + **`perm_upgrades.json` 不声明** + 实例 `perm` 4 值 + IC-2 措辞 pending ⇒ 落 `design.md` §1.5(已定稿)
+- [x] 1.7 **实例 13 键**取值表 ⇒ 落 `design.md` §1.6(已定稿)
+- [x] 1.8 **两个方案对比**(adapter 形态 / tracker 行为类落位)⇒ 落 `design.md` §2 / §3(已定稿)
 
 ---
 
@@ -50,7 +50,7 @@
 
 - [x] 2.1 **TDD 红**:先写 CDX-01 ~ CDX-05 的用例 ⇒ 在**未实现**载体上必红
 - [x] 2.2 `CxlDcohAdapter` 实现(委托面;**零副本**)
-- [x] 2.3 `DcohSymmetric` 行为类(保守型 + `STALL` + `LOCAL_HINT`)
+- [ ] 2.3 `DcohSymmetric` 行为类(保守型 + `STALL` + `LOCAL_HINT`)
 - [x] 2.4 **零副本扫描器** + **鉴别力**自测(正控)
 - [x] 2.5 **接口面扫描**:确认 adapter **无** `transition_*`
 

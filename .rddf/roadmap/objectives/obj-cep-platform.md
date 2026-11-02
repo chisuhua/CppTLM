@@ -459,7 +459,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-02 实测,per oracle B1) —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原标题「2026-10-20 实证」**已落后两代**;现行值以 `openspec list --json` **实测**为准
 
-`openspec/changes/` 当前 **0 个 active**(2026-11-02 实测, per `openspec list --json`): —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「1 个 active」(2026-10-28 实证)**已失实**,且与本节下方的**并发计数**表述**互斥** ⇒ 现取实测值 **0** —— ⚠️ **2026-11-02 再订正**(per 台账 Entry #149:建档 `cpptlm-cep-canonical-flow-parser-scope` ⇒ 并发回到 **1 个 active**)
+`openspec/changes/` 当前 **1 个 active**(2026-11-02 实测, per `openspec list --json`): —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「1 个 active」(2026-10-28 实证)**已失实**,且与本节下方的**并发计数**表述**互斥** ⇒ 现取实测值 **0** —— ⚠️ **2026-11-02 再订正**(per 台账 Entry #149:建档 `cpptlm-cep-canonical-flow-parser-scope` ⇒ 并发回到 **1 个 active**) —— ⚠️ **2026-11-02 三订正**(per 台账 Entry #160:队列 #12 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-dcoh-symmetric` **已建档** ⇒ 仍为 **1 个 active** —— 组 1 的 `cpptlm-cep-canonical-flow-parser-scope` 已于同日归档 ⇒ slot 已释放)
 - 原 3 个 active(`cpptlm-msix-generator-ip` 0/44 / `cpptlm-pcie-tlp-entry-layer` 0/56 / `cpptlm-p2-integration-unblock` 0/45)**均 0% 未实施**
 - 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
 - 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
