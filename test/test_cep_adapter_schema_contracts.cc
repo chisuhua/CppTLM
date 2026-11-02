@@ -16,6 +16,7 @@
 
 #include "tlm/cep/adapter_contracts_loader.hh"
 #include "tlm/cep/adapter_schema_contracts.hh"
+#include "tlm/cep/tilelink_c_adapter.hh"
 
 using cpptlm::cep::read_file;
 using cpptlm::cep::repo_root;
@@ -364,15 +365,20 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[2].instance_id == "mesif");
     REQUIRE(loaded.inputs.upgrades.silent_upgrades[3].instance_id == "cxl_2_0");
     // ⚠️ 2026-11-01(队列 #10 实现层):新增 `cxl_2_0` ⇒ 计数 **+1**(per 台账 Entry #131)
-    REQUIRE(loaded.inputs.instances.instances.size() == 4);
+    // ⚠️ 2026-11-02(队列 #11 实现层):新增 `tilelink_c` ⇒ 计数 **+1**(per 台账 Entry #146)
+    REQUIRE(loaded.inputs.instances.instances.size() == 5);
     REQUIRE(loaded.inputs.perm_domain.values.size() == 4);
 
     // ⚠️ **负控见证已改造为双向规则**(队列 #9 AC-5):
-    //    真实数据下 3 个实例**全部**声明了静默升级 ⇒ `no_upgrade_instances` 为空。
     //    若只断言「集合为空」,则「派生逻辑正确」与「派生逻辑坏成永远返回空」
     //    **不可分辨**(恒真空转)⇒ 规格规则改由下面的合成输入用例覆盖
     //    (见 `TEST_CASE("... no_upgrade_instances 的双向规则 ...")`)。
-    REQUIRE(loaded.inputs.no_upgrade_instances.empty());
+    // ⚠️ 2026-11-02(队列 #11 实现层):**该「恒为空」前提已失效** ——
+    //    `tilelink_c` 的投影是 3→3、`UNIQUE` 不可达 ⇒ **不声明**静默升级
+    //    ⇒ 派生量**首次非空** = **{`tilelink_c`}** ⇒ **首次具备判别力**
+    //    (判据变强,非变弱)⇒ 断言由「为空」改为「**恰含** `tilelink_c`」。
+    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 1u);
+    REQUIRE(loaded.inputs.no_upgrade_instances.at(0) == "tilelink_c");
 
     // ③ 真实数据下 5 条判据全绿 —— **逐 adapter 各跑一次**
     //    (AC-04 / AC-05 是**逐 adapter**的判据,per `adapter_contracts_loader.hh` 的两层结构)
@@ -404,6 +410,13 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
     {
         auto inputs = loaded.inputs;
         tlm::cep::fill_adapter_inputs<tlm::cep::ChiRnfAdapter>(inputs);
+        reports.push_back(AdapterSchemaContracts::check_all(inputs));
+    }
+    // ⚠️ 2026-11-02(队列 #11 实现层):CLI **新增** `TileLinkCAdapter` 段 ⇒ 报告数 2 → 3
+    //    ⇒ 下方与 CLI 输出的**逐行**比对随之多一段 ⇒ TileLink 的 AC-05 **SKIP** 也被锁住
+    {
+        auto inputs = loaded.inputs;
+        tlm::cep::fill_adapter_inputs<tlm::cep::TileLinkCAdapter>(inputs);
         reports.push_back(AdapterSchemaContracts::check_all(inputs));
     }
     for (const auto& rep : reports) {
@@ -445,8 +458,10 @@ TEST_CASE("CEP adapter 契约: 判据实现单一 + 声明源被消费 + CLI 与
             out.push_back(cur);
         return out;
     }();
-    // ⚠️ **CLI 现在逐 adapter 各跑一次** ⇒ 测试侧同样按 **moesi → chi** 的顺序
-    //    拼接两个 report 的 verdict 行,再与 CLI 输出**逐行**比对。
+    // ⚠️ **CLI 现在逐 adapter 各跑一次** ⇒ 测试侧同样按 **moesi → chi → tilelink** 的顺序
+    //    拼接三个 report 的 verdict 行,再与 CLI 输出**逐行**比对。
+    //    ⚠️ 2026-11-02(队列 #11 实现层):CLI **新增** `TileLinkCAdapter` 段 ⇒ 报告数 2 → 3
+    //    ⇒ **逐行**比对(不是只比行数)⇒ 新段的 verdict 内容也被逐行锁住。
     const auto mine = [&]() {
         std::vector<std::string> out;
         for (const auto& rep : reports) {

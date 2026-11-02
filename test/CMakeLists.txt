@@ -318,6 +318,16 @@ add_test(NAME cep_cxl_state_spec COMMAND cpptlm_tests "[cep][cxl][state-spec]" -
 #      (ID 文法容忍 Markdown 粗体 + 接受 `R-T<n>` 前缀 ⇒ **不得**照抄 CXL 版的「全数字」文法)。
 add_test(NAME cep_tilelink_state_spec COMMAND cpptlm_tests "[cep][tilelink][state-spec]" -r compact)
 
+# 队列 #11 `cpptlm-cep-tilelink-tree-manager`(第 1 个 change = 实现层)的判据:
+#   ① 载体契约(adapter 零副本 + `TreeManager` 的 `ESCALATE_UP`/`CHAIN` 真实使用
+#      + `snoop_join_core` 的 4 步语义);
+#   ② 实例声明面(13 键 / `perm` 3 值 / `vc_binding` 逐类 / AC-05 SKIP / 派生量首次非空);
+#   ③ **反向验证**(13 条毒化 fixture + 基线正控)⇒ 手改任一侧必红且归因命中。
+add_test(NAME cep_tilelink_adapter COMMAND cpptlm_tests "[cep][tilelink][adapter]" -r compact)
+add_test(NAME cep_tilelink_instance_decl COMMAND cpptlm_tests "[cep][tilelink][instance-decl]" -r compact)
+add_test(NAME cep_tilelink_adapter_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_tilelink_adapter_reverse_verify.sh)
+
 # 队列 #11 `cpptlm-cep-tilelink-state-spec` 的**锚点核对表生成器自检**(只比对不写)——
 # 12 格核对表 + 锚点统计块均由机器可读载体生成 ⇒ 手改任一侧(或载体改了忘重生成)⇒ rc≠0;
 # 且生成器内置**逐格交叉核对**(每格 `ref` SHALL 一一对应锚点 §2.3bis 的真实条目号

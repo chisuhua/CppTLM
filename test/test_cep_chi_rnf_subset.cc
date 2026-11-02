@@ -1137,9 +1137,12 @@ TEST_CASE("CR-07/08 权威分区:登记键合法 + 语义校验扩面覆盖 repo
     const json& owned = doc.at("repo_owned_instance_ids");
     REQUIRE(owned.is_array());
     // ⚠️ 2026-11-01(队列 #10 实现层):`cxl_2_0` 亦为**本仓域**实例 ⇒ 2 个
-    CHECK(owned.size() == 2u);
+    // ⚠️ 2026-11-02(队列 #11 实现层):`tilelink_c` 亦为**本仓域**实例(ArchForge 未声明
+    //    TileLink 协议族)⇒ 3 个(per 台账 Entry #146)
+    CHECK(owned.size() == 3u);
     CHECK(owned.at(0) == "chi_rnf");
     CHECK(owned.at(1) == "cxl_2_0");
+    CHECK(owned.at(2) == "tilelink_c");
     for (const auto& id : owned) {
         INFO("owned id " << id);
         CHECK(find_instance(doc, id.get<std::string>()) != nullptr);

@@ -35,6 +35,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -57,6 +58,18 @@ inline const char* perm_name(typename AdapterT::Perm p) {
     }
     return "NONE";
 }
+
+// ── **AC-05 族无关化**的检测(2026-11-02)────────────────────────────
+// 检测 adapter 是否声明了「唯一干净独占态」三元组(`kUniqueCleanState` /
+// `kWriteEvent` / `kUniqueDirtyState`)。
+// ⚠️ **未声明 ⇒ 该族无 unique-clean 态** ⇒ AC-05 走 **SKIP**(不是 FAIL)——
+//    TileLink-C 的投影是 3→3、`UNIQUE` 不可达 ⇒ 语义不适用。
+template <typename AdapterT, typename = void>
+struct AdapterHasUniqueClean : std::false_type {};
+
+template <typename AdapterT>
+struct AdapterHasUniqueClean<AdapterT,
+                              std::void_t<decltype(AdapterT::kUniqueCleanState)>> : std::true_type {};
 
 // ══════════════════════════════════════════════════════════════════════
 //  逐 adapter 输入(AC-04 / AC-05)—— 模板参数分派
@@ -140,14 +153,27 @@ inline void fill_adapter_inputs(AdapterSchemaContracts::Inputs& in) {
     }
 
     // ── AC-05:「独占干净态 + 写事件 → 目标态」的三元组 ────────────────
-    in.e_write_target_state =
-        static_cast<int>(A::transition(A::kUniqueCleanState, A::kWriteEvent));
-    typename A::Perm pc = A::Perm::NONE;
-    typename A::Perm pd = A::Perm::NONE;
-    const bool hc = A::perm_of(A::kUniqueCleanState, pc);
-    const bool hd = A::perm_of(A::kUniqueDirtyState, pd);
-    in.e_state_perm_rank = hc ? perm_rank(perm_name<A>(pc)) : -1;
-    in.m_state_perm_rank = hd ? perm_rank(perm_name<A>(pd)) : -1;
+    // ⚠️ **族无关化(2026-11-02,per 台账 Entry #146)**:该族**无** unique-clean 态时
+    //    ⇒ 三元组与两个秩一律置 -1 + `has_unique_clean_state = false`
+    //    ⇒ AC-05 判据走 **SKIP**(不是 FAIL)—— per delta spec `TMA-09` ②。
+    //    ⇒ 目标态**不硬编码** `3`(M 态)⇒ 改为读 adapter 自身的 `kUniqueDirtyState`。
+    if constexpr (AdapterHasUniqueClean<A>::value) {
+        in.has_unique_clean_state = true;
+        in.unique_dirty_target_state = static_cast<int>(A::kUniqueDirtyState);
+        in.e_write_target_state =
+            static_cast<int>(A::transition(A::kUniqueCleanState, A::kWriteEvent));
+        typename A::Perm pc = A::Perm::NONE;
+        typename A::Perm pd = A::Perm::NONE;
+        const bool hc = A::perm_of(A::kUniqueCleanState, pc);
+        const bool hd = A::perm_of(A::kUniqueDirtyState, pd);
+        in.e_state_perm_rank = hc ? perm_rank(perm_name<A>(pc)) : -1;
+        in.m_state_perm_rank = hd ? perm_rank(perm_name<A>(pd)) : -1;
+    } else {
+        in.has_unique_clean_state = false;
+        in.e_write_target_state = -1;
+        in.e_state_perm_rank = -1;
+        in.m_state_perm_rank = -1;
+    }
 }
 
 

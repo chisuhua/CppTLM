@@ -11,11 +11,14 @@
 第 6 种实现 `HierarchicalDirectory` 的**行为面**由另一 capability `cep-hierarchical-directory` 承担
 （`ADR-CEP-04 §13` 裁决；本文件**不改**其契约）。
 
-其余 **3** 种实现（`DcohSymmetric` / `TreeManager` / `BroadcastNull`）的**行为实现**尚未落地；
-其**落位**已登记（`TreeManager` ↔ 队列 #11 · `DcohSymmetric` ↔ 队列 #12 ·
+其余 **2** 种实现（`DcohSymmetric` / `BroadcastNull`）的**行为实现**尚未落地；
+其**落位**已登记（`DcohSymmetric` ↔ 队列 #12 ·
 `BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**）
-⇒ 本文件**不复述**未经登记的队列区间（事实与依据见台账 Entry #107 / #112 / #129 / #131）。
+⇒ 本文件**不复述**未经登记的队列区间（事实与依据见台账 Entry #107 / #112 / #129 / #131 / **#146**）。
 ⚠️ **本段改写经台账 Entry #131 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #131"`）。
+⚠️ **2026-11-02 修订(per 台账 Entry #146 两步授权)**：`TreeManager` 的**行为实现已落地**
+（队列 #11 实现层 `cpptlm-cep-tilelink-tree-manager`，2026-11-02）⇒ 「其余 3 种」⇒「其余 **2** 种」
+⇒ `TreeManager` 与 `FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` 同列**已落地**。
 
 ⚠️ **补充登记(2026-11-01,per 台账 Entry #139 —— 追加段,不改上方原文)**：
 `FullMapDirectory` 是**反向缺口** —— **有行为实现 · 零实例声明**(4 个实例无一声明它)

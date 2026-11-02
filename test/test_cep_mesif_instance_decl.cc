@@ -97,7 +97,11 @@ TEST_CASE("CEP MESIF 声明:静默升级行落地且 current_state 不再否认�
     REQUIRE(loaded.ok);
     // ⚠️ 2026-11-01(队列 #10 实现层):新增 `cxl_2_0` ⇒ 计数 **+1**(per 台账 Entry #131)
     CHECK(loaded.inputs.upgrades.silent_upgrades.size() == 4u);
-    CHECK(loaded.inputs.no_upgrade_instances.empty());
+    // ⚠️ 2026-11-02(队列 #11 实现层):`tilelink_c` **不声明**静默升级(无 `UNIQUE`)
+    //    ⇒ 派生集**首次非空** ⇒ 断言由「为空」改为「**恰含** `tilelink_c`」
+    //    (per 台账 Entry #146;⇒ 派生量从「恒空」转为「有判别力」)
+    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 1u);
+    REQUIRE(loaded.inputs.no_upgrade_instances.at(0) == "tilelink_c");
 
     // ④ 反向 fixture:`mesif` 行的 `to` 一旦被改成 `READ` ⇒ 上面的 `== WRITEBACK` 必红
     //    (此处用可变异副本证明判据有鉴别力,不改真实文件)

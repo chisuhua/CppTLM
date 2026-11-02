@@ -19,6 +19,7 @@
 #include <string>
 
 #include "tlm/cep/adapter_contracts_loader.hh"
+#include "tlm/cep/tilelink_c_adapter.hh"
 
 int main(int argc, char** argv) {
     std::string repo_root = ".";
@@ -61,6 +62,16 @@ int main(int argc, char** argv) {
     {
         auto inputs = loaded.inputs;
         tlm::cep::fill_adapter_inputs<tlm::cep::ChiRnfAdapter>(inputs);
+        const auto report = tlm::cep::AdapterSchemaContracts::check_all(inputs);
+        std::printf("%s", report.render().c_str());
+        if (report.failed())
+            ++failures;
+    }
+    {
+        // ⚠️ 2026-11-02(队列 #11 实现层):`TileLinkCAdapter` —— AC-05 走 **SKIP**
+        //    (该族**无** unique-clean 态:`UNIQUE` 不可达 ⇒ 投影 3→3 ⇒ 语义不适用)
+        auto inputs = loaded.inputs;
+        tlm::cep::fill_adapter_inputs<tlm::cep::TileLinkCAdapter>(inputs);
         const auto report = tlm::cep::AdapterSchemaContracts::check_all(inputs);
         std::printf("%s", report.render().c_str());
         if (report.failed())

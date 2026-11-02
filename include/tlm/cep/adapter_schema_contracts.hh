@@ -416,11 +416,21 @@ public:
     /// ── AC-05 adapter 的投影与状态机自洽 ────────────────────────────
     /// ① 每个稳定态都有 4 值投影;② 瞬态 `T` 无投影;
     /// ③ `E + Write → M` 转换存在;④ 该转换后 `perm` 从 `UNIQUE` 变 `WRITEBACK`。
+    ///
+    /// ⚠️ **族无关化(2026-11-02,per 台账 Entry #146)**:
+    ///   · ③ 的目标态**不再硬编码 `3`** —— 由调用方传入 `expected_write_target_state`
+    ///     (MESI 族 = 3 = `M`;各 adapter 按**自身**语义填)⇒ **零族硬编码**;
+    ///   · **该族无「唯一干净独占态」时 ⇒ SKIP**(不是 FAIL)—— TileLink-C 的投影是 3→3,
+    ///     **无** `UNIQUE` ⇒ 「`E + Write → M`」语义**不适用** ⇒ 判据无对象
+    ///     (per delta spec `TMA-09` ②);
+    ///   · ⚠️ **两个新参数带默认值** ⇒ **既有调用点与既有 4 族的判定逐条不变**(回归锁)。
     static AdapterContractVerdictLine check_adapter_self_consistency(
         const std::vector<std::pair<int, bool>>& stable_state_has_projection,
         int  e_write_target_state,
         int  e_state_perm_rank,
-        int  m_state_perm_rank) {
+        int  m_state_perm_rank,
+        int  expected_write_target_state = 3,
+        bool has_unique_clean_state = true) {
         AdapterContractVerdictLine line;
         line.rule_id = "AC-05";
         for (const auto& s : stable_state_has_projection) {
@@ -430,10 +440,17 @@ public:
                 return line;
             }
         }
-        if (e_write_target_state != 3) {
+        // ⚠️ **该族无 unique-clean 态 ⇒ SKIP**(不是 FAIL)—— 语义不适用,不是不一致
+        if (!has_unique_clean_state) {
+            line.verdict = AdapterContractVerdict::SKIP;
+            line.detail  = "该协议族无「唯一干净独占态」(UNIQUE 不可达)⇒ "
+                           "`E + Write → M` 语义不适用 ⇒ SKIP(不得记为 PASS,亦非 FAIL)";
+            return line;
+        }
+        if (e_write_target_state != expected_write_target_state) {
             line.verdict = AdapterContractVerdict::FAIL;
             line.detail  = "E + Write 的目标态 = " + std::to_string(e_write_target_state) +
-                           "(应为 3 = M)";
+                           "(应为 " + std::to_string(expected_write_target_state) + ")";
             return line;
         }
         if (e_state_perm_rank < 0 || m_state_perm_rank < 0) {
@@ -465,6 +482,11 @@ public:
         int  e_write_target_state = -1;
         int  e_state_perm_rank     = -1;
         int  m_state_perm_rank     = -1;
+        // ⚠️ **族无关化(2026-11-02)**:「唯一干净独占态」的**目标态**由调用方填
+        // (MESI 族 = 3 = `M`)⇒ 判据**不再硬编码**某个族的枚举值。
+        int  unique_dirty_target_state = 3;
+        // ⚠️ 该族**是否**有「唯一干净独占态」(UNIQUE 不可达 ⇒ `false` ⇒ AC-05 走 SKIP)
+        bool has_unique_clean_state = true;
     };
 
     static AdapterContractReport check_all(const Inputs& in) {
@@ -476,7 +498,9 @@ public:
         report.verdicts.push_back(check_adapter_self_consistency(in.stable_state_has_projection,
                                                                 in.e_write_target_state,
                                                                 in.e_state_perm_rank,
-                                                                in.m_state_perm_rank));
+                                                                in.m_state_perm_rank,
+                                                                in.unique_dirty_target_state,
+                                                                in.has_unique_clean_state));
         report.verdict = AdapterContractVerdict::PASS;
         bool any_skip = false;
         for (const auto& v : report.verdicts) {

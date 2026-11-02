@@ -9152,6 +9152,72 @@ SU 的 3 行表格首格由 **数字** 改为 **圈号**(`① ② ③`)—— �
 
 ---
 
+### Entry #146 — 2026-11-02 [scope-change](队列 #11 第 1 个 change Phase 3 —— 实例声明 + **AC-05 族无关化** + 判据收口 + **2 件冻结面两步授权**)
+
+**主题**:第 1 个 change(实现层)Phase 3 落地 ⇒ **平台侧两处族硬编码族无关化** + 实例面就位
++ 2 件 M1 冻结面同步。**本条 = 冻结面授权记录**。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `include/tlm/cep/protocol_instances.json` | **+1 实例** `tilelink_c`(13 键)+ `repo_owned_instance_ids` **+1** ⇒ 镜像域 4 → **本仓域 3** |
+| `include/tlm/cep/perm_upgrades.json` | **不加行**(无 `UNIQUE` ⇒ 无静默升级)+ `current_state` 自述**订正** |
+| `include/tlm/cep/adapter_schema_contracts.hh` | **AC-05 族无关化**:目标态**不再硬编码 `3`** + 该族**无** unique-clean 态 ⇒ **SKIP**(不是 FAIL) |
+| `include/tlm/cep/adapter_contracts_loader.hh` | `AdapterHasUniqueClean` 检测 trait + `fill_adapter_inputs` 的 `if constexpr` 分支 |
+| `examples/cep_adapter_contracts.cc` | **+1 段** `fill_adapter_inputs<TileLinkCAdapter>`(CLI 与测试**同源** ⇒ 禁双实现) |
+| `test/test_cep_tilelink_instance_decl.cc`(新) | **3 cases / 69 assertions** 全绿(13 键 / `perm` 3 值 / `vc_binding` 逐类 / caps 逐字段 / AC-05 SKIP / 派生量 / IC2 vacuous) |
+| `scripts/test/cep_tilelink_adapter_reverse_verify.sh` + `.cc`(新) | **13 条**反向验证 + 基线正控 ⇒ **全部通过** |
+
+**② ⚠️ `AC-05` 族无关化(本 change 的核心)**
+
+| 面 | 处置 |
+|---|---|
+| **硬编码** | 原:③ 的目标态硬编码 `3`(= `M`)⇒ 改为**调用方传入** `unique_dirty_target_state` |
+| **SKIP 分支** | 该族**无** unique-clean 态(`UNIQUE` 不可达 ⇒ 投影 3→3)⇒ AC-05 **SKIP**(不是 FAIL)⇒ **不得**记为 PASS(「无可检查对象」≠「通过」) |
+| **回归锁** | 新参数**带默认值** ⇒ **既有调用点零改动** ⇒ 既有 4 族判定**逐条不变**(实测 `[cep]` **293 cases / 5673 assertions** 全绿) |
+| **鉴别力** | 「目标态 ≠ 期望值 ⇒ 仍 FAIL」已被判据覆盖 ⇒ 族无关化**未放宽**既有族的严格性 |
+
+**③ ⚠️ 派生量 `no_upgrade_instances` **首次非空**(判据变强)**
+
+| 面 | 处置 |
+|---|---|
+| 事实 | `tilelink_c` **不暴露 `UNIQUE`** ⇒ 无静默升级 ⇒ 进派生集 ⇒ 该派生集从「**恒空**」变为「**恰含 `tilelink_c`**」 |
+| 意义 | 派生量**首次具备判别力** ⇒ 「派生逻辑正确」与「派生逻辑坏成永远返回空」**重新可分辨** ⇒ **判据变强**,非变弱 |
+| 连带断言 | **4 处**既有计数断言**逐条更新**(不得静默改):① 实例计数 `4`→`5` ② `no_upgrade_instances.empty()`→「恰含 `tilelink_c`」×2 ③ `implemented` 计数 `4`→`5` ④ `repo_owned_instance_ids` `2`→`3` |
+| `perm_upgrades.json` | **不加行**(加了即**假声明**)⇒ `current_state` 的「4 个实例全部具备该能力 ⇒ 派生量恒为空」**已失实** ⇒ 同步订正 |
+
+**④ ⚠️ 2 件冻结面同步(本条 = 授权记录 ⇒ 两步授权)**
+
+| # | 冻结面成员 | 改动 |
+|---|---|---|
+| 1 | `openspec/specs/cep-sharer-tracker-base/spec.md` | 「其余 **3** 种实现的行为实现尚未落地」⇒「其余 **2** 种」;并追加 `TreeManager` 行为实现已落地的登记 |
+| 2 | `docs/architecture/07-coherence-exploration-platform.md` §11 | SharerTracker **6** 实现:`🟡 **3 / 6**` ⇒ `🟡 **4 / 6**`;「其余 3 个」→「其余 **2** 个」 |
+
+⇒ **两步授权**:台账 entry(本条)→ `--update --authorized-by "Entry #146"` → commit 产物
+→ `--update`(provenance 对齐)→ commit。
+
+**⑤ 判据收口**
+
+| 面 | 内容 |
+|---|---|
+| 实例面 | `test_cep_tilelink_instance_decl.cc` **3 cases / 69 assertions**:13 键齐备(机器驱动)· `perm` 恰 3 值且**无** `UNIQUE` · `vc_binding` 逐类按 R-T2 · **无** `writeback` · `ordering_assumption` 的 vc2/vc3 = `p2p_ordered`(J1)· caps 逐字段 == `kTrackerTraits[3]` · `repo_owned_instance_ids` 含 `tilelink_c` · AC-05 **SKIP** · IC-2 **vacuous PASS** 且 detail **不含**「E 可静默升 M」(⇒ 非假绿灯) |
+| 反向验证 | **13 条**毒化 fixture + **基线正控** ⇒ 全部通过(探针红且**归因命中**期望判据 id) |
+| **实测发现** | 探针初版**漏查** `"response"` ⇒ `adapter-mapping-row-dropped` fixture **恒绿**(判据无鉴别力)⇒ 已补 ⇒ 该 fixture 现**正确变红** |
+
+**⑥ 验收**:全量 `ctest` **133/133** · 门禁全 rc=0 · `openspec validate --strict` rc=0
+· 反向验证 **13/13** · 冻结面两步授权闭环后 provenance 通过。
+
+**⑦ 关联**: Entry #145(Phase 2 落地)· #144(第 1 个 change 建档)· #143(第 0 个 change 归档)
+· #141(二审落修 批 2 + **R-T4 裁决**)· #140(第 0 个 change 建档)
+· `openspec/changes/cpptlm-cep-tilelink-tree-manager/`(design.md / delta spec / tasks.md)
+· `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/perm_upgrades.json`
+· `include/tlm/cep/adapter_schema_contracts.hh` · `include/tlm/cep/adapter_contracts_loader.hh`
+· `include/tlm/cep/tilelink_c_adapter.hh` · `include/tlm/cep/tilelink_tree_manager.hh`
+· `openspec/specs/cep-sharer-tracker-base/spec.md` · `docs/architecture/07-coherence-exploration-platform.md`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

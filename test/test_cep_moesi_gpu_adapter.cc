@@ -391,7 +391,9 @@ TEST_CASE("CEP moesi_gpu: status 翻转 ⇒ implemented 计数 0→1(条件达�
     //    旧断言 `== 0` 是**跨 change 硬钉**,翻转后必红(且红的原因与本 change 无关)。
     REQUIRE(implemented_ids.count("mesif") == 1);
     // ⚠️ 2026-11-01(队列 #10 实现层):新增 `cxl_2_0` ⇒ `implemented` 实例 **+1**(per 台账 Entry #131)
-    REQUIRE(implemented == 4);
+    // ⚠️ 2026-11-02(队列 #11 实现层):新增 `tilelink_c` ⇒ `implemented` 实例 **+1**(per 台账 Entry
+    // #146)
+    REQUIRE(implemented == 5);
     REQUIRE(instance("moesi_gpu").at("status") == "implemented");
     REQUIRE(instance("mesif").at("status") == "implemented"); // 队列 #9 归档批翻转
 

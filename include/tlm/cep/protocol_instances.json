@@ -280,6 +280,67 @@
         "hierarchical": true,
         "heterogeneous": true
       }
+    },
+    {
+      "id": "tilelink_c",
+      "family": "academic",
+      "adapter": "TileLinkCAdapter",
+      "status": "implemented",
+      "protocol_version": "tilelink-c-1.7.1",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": false,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": false
+      },
+      "perm": [
+        "NONE",
+        "READ",
+        "WRITEBACK"
+      ],
+      "atomic": {
+        "supported": false
+      },
+      "consistency_labels": {
+        "read": "SC",
+        "write": "SC"
+      },
+      "ordering_assumption": {
+        "compute_noc": {
+          "0": "unordered",
+          "1": "unordered",
+          "2": "p2p_ordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "compute_noc": {
+          "request": 0,
+          "snoop": 1,
+          "snoop_resp": 2,
+          "response": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "TreeManager",
+        "caps": {
+          "scope": "SUBTREE",
+          "completeness": "EXACT",
+          "authority": "LOCAL",
+          "aggregation_at": "TREE_PARENT"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": true,
+        "heterogeneous": true
+      }
     }
   ],
   "channel_dependency_edges": {
@@ -326,7 +387,8 @@
   },
   "repo_owned_instance_ids": [
     "chi_rnf",
-    "cxl_2_0"
+    "cxl_2_0",
+    "tilelink_c"
   ],
   "authority_migrations": []
 }
