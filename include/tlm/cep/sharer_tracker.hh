@@ -195,8 +195,18 @@ struct TrackerTraits {
 
 // **6** 实现 × (4 caps + 2 behavior)。数据源:`ADR-CEP-04 §2 决策 3 表` + `§4 表` + `§3.5`(二元)
 // + `§13`(2026-10-29 的 R-1 裁决:新增第 6 种 `HierarchicalDirectory` + `AggregationAt::HIERARCHICAL`)。
-// DcohSymmetric 的 `aggregation_at` 是**二元**(P2P ⇒ REQUESTER / HDM home ⇒ HOME,per §3.5);
-// 表内取 P2P 侧作为代表值,二元本身由测试守(DcohSymmetric 行必须落在该二元内)。
+// DcohSymmetric 的 `aggregation_at` = **`HOME`**(聚合点**恒为 home**)。
+// ⚠️ **2026-11-02 订正**(per 台账 Entry #154 + `ADR-CEP-04` 的
+//    `## Status Update(2026-11-02)`):原写「**二元**(P2P ⇒ REQUESTER / HDM home ⇒ HOME,per §3.5)」
+//    ⇒ 其 `REQUESTER` 分支被**公开来源反证**(S4 = ACM CSUR 2024,arXiv `2306.11227v3`,
+//    sha256 `30f5baac…75bf`;**architect 一手复核** + sha256 重算一致):
+//    「UIO transactions are serviced directly from memory… **else the memory controller
+//    back-snoops the host processor** using the BI flows」⇒ 仲裁者在 **home 一侧**(两侧场景皆然)
+//    ⇒ 现行口径 = **聚合点恒为 `HOME`**;`P2P` / `HDM home` **降级为「场景标签」**
+//    (承载不同的 fold 触发源,**不**决定聚合点)⇒ **载体可锁** `aggregation_at == HOME`。
+// ⚠️ `AggregationAt::REQUESTER` **枚举值保留**(公共契约面;`protocol_instance.schema.json`
+//    的值级枚举含它 ⇒ **冻结 schema 零改动**)⇒ 该值转为「**保留但无消费者**」。
+// ⚠️ 规范性依据**待**「人类成员条款摘要」确认(per `ADR-CEP-04` 第 3 则 SU ④ 的分层处置)。
 inline constexpr std::array<TrackerTraits, 6> kTrackerTraits{{
     {TrackerImpl::FullMapDirectory, "FullMapDirectory",
      {Scope::SYSTEM, Completeness::EXACT, Authority::GLOBAL, AggregationAt::HOME},
@@ -206,7 +216,7 @@ inline constexpr std::array<TrackerTraits, 6> kTrackerTraits{{
      {LookupHazard::STALL, true}},
     {TrackerImpl::DcohSymmetric, "DcohSymmetric",
      {Scope::LOCAL_MEMORY_REGION, Completeness::CONSERVATIVE, Authority::LOCAL_HINT,
-      AggregationAt::REQUESTER},
+      AggregationAt::HOME},
      {LookupHazard::STALL, true}},
     {TrackerImpl::TreeManager, "TreeManager",
      {Scope::SUBTREE, Completeness::EXACT, Authority::LOCAL, AggregationAt::TREE_PARENT},

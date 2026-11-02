@@ -9670,6 +9670,70 @@ R-S1(opcode/credit/排序)· R-S2(BISnp 变体 + block 粒度)· R-S3(bias 表�
 
 ---
 
+### Entry #154 — 2026-11-02 [adr-amendment](队列 #12 的 **4 项 architect 裁决**落盘 —— **本条 = 2 件冻结面的授权记录**)
+
+**主题**:Entry #153 登记的 **architect 裁决面**(3 项) + 本轮新增的 **adapter 形态裁决**(1 项)
+⇒ 共 **4 项**裁决已落盘为**文档追加** ⇒ 本条 = **冻结面两步授权的授权记录**
+⇒ 随后的 builder 步骤执行 `--update --authorized-by "Entry #154"` → commit 产物 → `--update` → commit。
+
+**① 4 项裁决摘要(architect 域;一手复核,非转述)**
+
+| # | 对象 | 裁决 | 落点 |
+|---|---|---|---|
+| **1** | `ADR-CEP-04 §3.5` 聚合点二元 | **`REQUESTER` 分支被公开来源反证** ⇒ 现行口径 = **聚合点恒为 `HOME`**;`P2P` / `HDM-home` **降级为「场景标签」**(保留触发源差异,**不**决定聚合点);枚举值 `REQUESTER` **保留**(schema **零改动**);⚠️ **规范性依据待**人类成员条款摘要确认 ⇒ 分层处置(若确认反证 ⇒ 走 **ADR 修订**改正 §3.5 表) | `ADR-CEP-04` **第 3 则 Status Update**(703 行;**正文零改动**) |
+| **2** | `sharer_tracker.hh` 的 `DcohSymmetric` traits | `AggregationAt::REQUESTER` ⇒ **`HOME`**(该实现**行为未落地** ⇒ **零行为影响**);`CONSERVATIVE` / `LOCAL_HINT` / `broadcast_fallback=true` ⇒ **保留 + 标 pending**（「未见依据 ≠ 不存在」⇒ 不擅自改) | **builder 域**(代码)· 连带 `test_cep_sharer_tracker_base.cc` 的**二元断言 ⇒ 收紧为 `== HOME`** |
+| **3** | 07 号 §5.1.1 / §5.4 / §11 | **6 处口径订正**:① DCOH 展开 ⇒ **Device Coherence (agent / engine)**(不是 Ownership History)② 反向 snoop ⇒ 加限定「**对 host**」③ 归属 ⇒ **HPA**(不是 DPA)④ 通道 ⇒ **BISnp(S2M)/ BIRsp(M2S)** ⑤ BISnp 方向 ⇒ **device→host** ⑥ caps 表 `aggregation_at` ⇒ **HOME** | `07 号` **第 19 则 Status Update** + **6 处正文订正**(**M1 冻结面**) |
+| **4** | 对称模式的 **adapter 形态** | **独立 adapter `CxlDcohAdapter`**(不扩 `CxlCacheAdapter`)⇒ 保持「零自有表副本 + 单一委托」的**结构性保证**;两族语义各自独立(非对称 = 1 套 4 态;对称 = **3 套** 4/3/3 态)⇒ 一个 adapter 一套真相源 | 07 号 §5.1.1 的 adapter 列(已改)+ 第 19 则 SU ③ 的 3 方案对比 |
+
+**② 冻结面授权记录(本条 = 授权记录)**
+
+| # | 冻结面成员 | 改动形态 |
+|---|---|---|
+| 1 | `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | **纯追加** 第 3 则 `## Status Update`(聚合点二元裁决)—— **§2 caps 表 / §4 hazard 表 / §13 / §3.5 正文全部零改动** |
+| 2 | `docs/architecture/07-coherence-exploration-platform.md` | **追加** 第 19 则 `## Status Update` + **6 处正文订正**(§5.1.1 的 4 处 / §5.4 的 1 处 / §11 caps 表的 1 处)—— **表体行数不变**(§5.1.1 仍 8 行)· **6 族 / 8 实例**计数不变 · §8.1 Stage 表不变 |
+| 3 | `openspec/specs/cep-sharer-tracker-base/spec.md` | **追加** Entry #154 段 + **2 处 Scenario 订正**:① 「DcohSymmetric 行 SHALL 与 `§3.5` 的 P2P/HDM **二元**一致」⇒ 「与 `§3.5` 的**聚合点**一致(现行口径 = `HOME`,per `ADR-CEP-04` 第 3 则 SU)」② 「其余 **3** 实现(DcohSymmetric / **TreeManager** / BroadcastNull)」⇒ 「其余 **2** 实现」(**`TreeManager` 已于 2026-11-02 落地**,per Entry #146 —— ⚠️ **组 0 复盘漏检**,本批顺手订正)—— §Requirements 的**其余条款零改动** |
+
+⇒ **两步授权**:台账 entry(本条)→ `--update --authorized-by "Entry #154"` → commit 产物
+→ `--update`(provenance 对齐)→ commit。
+
+**③ architect 一手复核的证据链(不只信转述)**
+
+| 项 | 内容 |
+|---|---|
+| **比对源** | **S4** = *An Introduction to the CXL Interconnect*,ACM CSUR 2024(arXiv `2306.11227v3`) |
+| **钉版复核** | 本次**重新下载**该 PDF 并**重算 sha256** = `30f5baac34bb23e478834536db334c45338ec77324f25db799ef6e0deb3075bf` ⇒ **与锚点摘要登记的钉点完全一致** ⇒ `pin=strong` 复核通过 |
+| **反证原文(P2P 场景)** | 「UIO transactions are serviced directly from memory, if the state of the cache line is I or S for a UIO Read or I for a UIO Write; **else the memory controller back-snoops the host processor** using the BI flows」(S4 p.21,§5.3 / Fig.16)⇒ 仲裁者 = **memory controller**(home 一侧);snoop 目标 = **host processor** ⇒ 与 `ADR-CEP-04 §3.5` 的「`REQUESTER` + 其他设备发 BIRsp」**两处冲突** |
+| **印证原文(HDM home 场景)** | 「the memory device (GFD/MLD) maintains a directory (or a snoop filter) to track ownership of cache lines in the coherent shared memory」(S4 p.21,§5.3 / Fig.17b)⇒ `HOME` **印证** |
+| **合规** | 本裁决依据**全部**为**公开非规范来源**(白皮书 / 会议 tutorial / 同行评审论文)⇒ **零规范正文暴露**;**不复制原文段落**(仅文献级定位 + 断言摘要) |
+
+**④ 连带(builder 域,待执行)**
+
+| # | 件 | 改动 |
+|---|---|---|
+| 1 | `include/tlm/cep/sharer_tracker.hh` | `DcohSymmetric` traits 的 `AggregationAt::REQUESTER` ⇒ **`HOME`** + 该 traits 旁的**二元注释**同步订正 |
+| 2 | `test/test_cep_sharer_tracker_base.cc` | 该行断言由 **二元**(`∈ {REQUESTER, HOME}`)⇒ **收紧**为 `== HOME` |
+| 3 | `include/tlm/cep/protocol_instance.schema.json` | **零改动** —— `AggregationAt` 值级枚举**保留** `REQUESTER` ⇒ 该值转为「**保留但无消费者**」(per Entry #139 的反向缺口登记范式) |
+| 4 | `openspec/specs/cep-sharer-tracker-base/spec.md` | **零改动**(其「5 实现 × 4 caps mapping 表」Scenario 断言的是**数据级一致性** ⇒ traits 改值后该断言**仍成立**) |
+
+**⑤ 组 2 的开工前置更新**
+
+| # | 前置 | 状态 |
+|---|---|---|
+| 1 | Task 0 硬门 = 公开来源普查 | ✅ 有条件通过(Entry #153) |
+| 2 | **architect 复核 4 项** | ✅ **已完成**(本条)⇒ **阻塞解除** |
+| 3 | **improvement 草稿**(planner 域 · `add-improve` HARD-GATE) | 🟡 **本条同批起草**(落 `.rddf/improvements/cpptlm-cep-cxl-dcoh-symmetric.md`)⇒ 待 HARD-GATE 自检 |
+| 4 | change 目录(4 件套 + delta spec) | ⬜ 待做(builder 域) |
+| 5 | **两段式**(规约层 → 实现层) | ⚠️ 照 #9 / #10 / #11 先例 ⇒ 第 0 段 = `cpptlm-cep-cxl-dcoh-symmetric-state-spec` |
+
+**⑥ 关联**: Entry #153(Task 0 普查登记 + architect 裁决面)· #152(组 1 归档)· #148(组 0 收尾债清理)·
+#139(`FullMapDirectory` 落位裁决 —— 「保留但无消费者」登记范式)· #127(队列 #10 规约层归档 —— **同款两段式先例**)·
+#122(CXL 口径裁决)· #112 / #107(SharerTracker 落位映射)
+· `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md`(**第 3 则 SU**)·
+`docs/architecture/07-coherence-exploration-platform.md`(**第 19 则 SU** + 6 处正文订正)
+· `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(§3.4 / §6 —— **裁决依据**)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

@@ -26,6 +26,17 @@
 ⇒ ⚠️ 与 R11 的「声明超前于实现」**方向相反** ⇒ **不因 R11 降级(Entry #137)而闭合**
 ⇒ ⚠️ **实现不废弃** —— 未来 CHI-full 队列出现时**直接可用**。
 ⚠️ **本段追加经台账 Entry #139 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #139"`）。
+⚠️ **补充登记(2026-11-02,per 台账 Entry #154 —— 追加段,不改上方原文)**：
+`DcohSymmetric` 的 **`aggregation_at`** 由**二元**收敛为 **单一 `HOME`** ——
+原「P2P ⇒ `REQUESTER` / HDM home ⇒ `HOME`」的 `REQUESTER` 分支被**公开来源反证**
+（S4 = ACM CSUR 2024,arXiv `2306.11227v3`,sha256 `30f5baac…75bf`;**architect 一手复核** + sha256 重算一致）
+⇒ **两处场景**（P2P / HDM home）的仲裁点**均在 home 一侧** ⇒ 现行口径 = **聚合点恒为 `HOME`**。
+⇒ `P2P` / `HDM home` **降级为「场景标签」**（承载不同的 fold 触发源，**不**决定聚合点）⇒ **载体可锁** `aggregation_at == HOME`。
+⇒ ⚠️ `AggregationAt::REQUESTER` **枚举值保留**（公共契约面；`protocol_instance.schema.json` 的值级枚举含它 ⇒ **冻结 schema 零改动**）
+⇒ 该值转为「**保留但无消费者**」（per Entry #139 的反向缺口登记范式）。
+⇒ ⚠️ 规范性依据**待**「人类成员条款摘要」确认（per `ADR-CEP-04` 第 3 则 SU ④ 的分层处置）。
+⚠️ **本段追加经台账 Entry #154 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #154"`）。
+
 ⚠️ **补充登记(2026-11-02,per 台账 Entry #148 —— 追加段,不改上方原文)**：
 `FullMapDirectory` 的**反向缺口**在实例面新增后**依然成立** ——
 `protocol_instances.json` 现有 **5** 个实例(`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0` / `tilelink_c`),
@@ -66,7 +77,8 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 #### Scenario: 5 实现 × 4 caps mapping 表 SHALL 数据级自洽
 
 - **WHEN** 读取 caps 表(FullMap / SparseSF / DcohSymmetric / TreeManager / BroadcastNull × `completeness`/`aggregation_at`/`hazard`/`broadcast_fallback`)
-- **THEN** FullMap 行 SHALL 与 `ADR-CEP-04 §4 table` + `§3.5` 一致;DcohSymmetric 行 SHALL 与 `§3.5` 的 P2P/HDM **二元**一致
+- **THEN** FullMap 行 SHALL 与 `ADR-CEP-04 §4 table` + `§3.5` 一致;DcohSymmetric 行 SHALL 与 `§3.5` 的**聚合点**一致(现行口径 = **`HOME`** —— 聚合点**恒为 home**;`P2P` / `HDM home` 为**场景标签**、**不**决定聚合点;
+  per `ADR-CEP-04` 的 `## Status Update(2026-11-02,per 台账 Entry #154)`)
 - **AND** 断言 SHALL 针对**数据一致性**(表值逐项对齐),非仅「常量存在」
 
 > **锚点**:`test_cep_sharer_tracker_base.cc` 的 caps 表数据级契约断言
@@ -112,9 +124,9 @@ CEP SHALL 将 **SharerTrackerIf 单接口 + caps descriptor 4 属性 + D-5 全�
 
 > **锚点**:`test_cep_sharer_tracker_base.cc` 的静态扫描断言(去注释 + 正控)
 
-#### Scenario: 非 FullMap 的其余 **3** 实现 SHALL 只做声明层断言(**deferred**)
+#### Scenario: 非 FullMap 的其余 **2** 实现 SHALL 只做声明层断言(**deferred**)
 
-- **WHEN** 核对其余 **3** 实现(DcohSymmetric / TreeManager / BroadcastNull)的覆盖面
+- **WHEN** 核对其余 **2** 实现(DcohSymmetric / BroadcastNull)的覆盖面
 - **THEN** 行为断言 SHALL **deferred**;只有 caps 表的**声明层枚举一致性**断言可用
 - **AND** 理由 SHALL 记录:真实行为需真实 protocol instance(per metis 建议 #5 + 队列 #2 先例)
 - **AND** 已落地的行为实现(`HierarchicalDirectory` / `SparseSnoopFilter`)SHALL **另有反向断言**

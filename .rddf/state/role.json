@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-02T06:12:46Z",
+  "updated_at": "2026-11-02T08:08:34Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-10-31T18:29:28Z",
-      "by": "user",
-      "reason": "队列 #10 口径裁决签发(用户采纳 oracle/metis/librarian 三方结论 + 合规约束)⇒ 追加 ADR-CEP-11 Status Update;随后切 planner 落台账 + 修订 improvement 草稿,再切 builder 执行公开来源普查与规约层载体"
-    },
-    {
-      "role": "planner",
-      "at": "2026-10-31T18:29:46Z",
-      "by": "user",
-      "reason": "architect 起草完队列 #10 口径裁决后切 planner:落台账 Entry #122(授权记录,= 冻结面两步授权的第 1 步)+ 修订 improvement 草稿 10 处;随后切 architect 追加 ADR-CEP-11 Status Update,再切 builder 跑 --update 与公开来源普查"
-    },
-    {
-      "role": "architect",
-      "at": "2026-10-31T18:31:23Z",
-      "by": "user",
-      "reason": "队列 #10 口径裁决的架构决策层登记:追加 ADR-CEP-11 的 Status Update(冻结面 ⇒ 授权记录 per 台账 Entry #122 已落)"
-    },
     {
       "role": "builder",
       "at": "2026-10-31T18:31:42Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-02T06:12:46Z",
       "by": "user",
       "reason": "用户裁决(2026-11-02):planner 域动作(组 1 improvement 落盘 + HARD-GATE)已完成 (Entry #151)⇒ 切回 builder 执行组 1 **Phase 4 验收 + 归档**;归档后按用户裁决「组 1 归档后立刻起组 2」推进队列 #12"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-02T08:00:00Z",
+      "by": "user",
+      "reason": "用户裁决(2026-11-02):队列 #12 卡在 4 项 architect 裁决 ⇒ 切 architect 逐项裁决 (#1 ADR-CEP-04 §3.5 的 `P2P ⇒ REQUESTER` 被公开来源反证 / #2 `DcohSymmetric` traits 张力 / #3 07 号 4 处口径错误 ⇒ 第 19 则 Status Update 两步授权 / #4 adapter 形态)⇒ 裁决后切 builder 推进队列 #12 两段式"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-02T08:07:01Z",
+      "by": "user",
+      "reason": "architect 的 4 项裁决已落盘(ADR-CEP-04 第 3 则 SU + 07 号第 19 则 SU + 6 处正文订正)⇒ 切 planner 落台账 Entry #154(冻结面授权记录 + 4 项裁决摘要)并起草队列 #12 的 improvement 草稿(planner 域 · 需 add-improve HARD-GATE);随后切 builder 落代码订正 + 冻结面两步授权 + commit"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-02T08:08:34Z",
+      "by": "user",
+      "reason": "planner 域动作完成(台账 Entry #154 冻结面授权记录 + 队列 #12 improvement 草稿 HARD-GATE rc=0)⇒ 切 builder 落地 Entry #154 ④ 的连带:traits 订正 + 测试收紧 + 冻结面 spec 2 处 Scenario 订正 + **3 件**冻结面两步授权 + commit;随后建队列 #12 的 change 目录"
     }
   ]
 }

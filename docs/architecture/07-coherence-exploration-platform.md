@@ -174,7 +174,7 @@ group-scoped completion     → Fabric Collective Plane
 | 4 | `snoop_resp` | node → center | requester-scoped | snoop 响应:hit + state + dirty + data + txn_id |
 | 5 | `writeback` | node → center | requester-scoped | 驱逐/写回:addr + data + dirty |
 | 6 | `forward_data` | node ↔ node(经中心调度)| requester-scoped | 数据转发:src_addr + dst_addr + data + perm |
-| 7 | `back_invalidate` | center → node | requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 BISnp 走这里,host→device)|
+| 7 | `back_invalidate` | center → node | requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 BISnp 走这里,**device→host(S2M)**;其响应 BIRsp 为 M2S)|
 | 8 | `address_resolve` | node ↔ center | requester-scoped | 地址归属解析:pa + node_id → home_node + coherent_flag |
 | 9 | `barrier` | center → node ↔ center(双向)| requester-scoped | 单请求者排空/可见性点;**不携带 group_id / participant_count / epoch_id** |
 | 10 | `snoop_completion_ack` | node → center | requester-scoped | snoop 完成后 ack;配对 `snoop_resp` 而非 `completion` |
@@ -315,7 +315,7 @@ group-scoped completion     → Fabric Collective Plane
 |--------|---------|---------|------|----------|---------|
 | **CHI** | CHI RN-F | `ChiRnfAdapter` | **✅ 已落地**(队列 #8,2026-10-28 归档;Stage 1 subset → Stage 2 full) | RN-F 6 通道(TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT)| RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck;**UC→UD 静默升级**(轴 2)与 `moesi_gpu` 的 `E→M` **同型** —— 4 值 `perm` 无法表达 ⇒ 静默升级声明归 `perm_upgrades.json`(per `ADR-CEP-12 §11`) |
 | **CXL 2.0 非对称** | CXL 2.0 | `CxlCacheAdapter` | **✅ 已落地**(队列 #10,2026-11-01 归档;**两段式** —— 规约层 + 实现层) | D2H/H2D 各 3 通道(Req/Rsp/Data)| Host 侧 Snoop Filter;设备不感知其他设备 |
-| **CXL 3.0 对称** | CXL 3.0 对称 | `CxlCacheAdapter`(对称模式)| Stage 2 | + BISnp/BIRsp 反向通道 | DCOH(Device Cache Ownership History);设备可主动反向 snoop;基于 DPA 而非 PA 归属 |
+| **CXL 3.0 对称** | CXL 3.0 对称 | `CxlDcohAdapter`(独立载体;**非** `CxlCacheAdapter` 的模式)| Stage 2 | + CXL.mem 增 **BISnp(S2M)/ BIRsp(M2S)** 两通道 | **DCOH = Device Coherence(agent / engine)**(设备内的一致性代理,**非** "Ownership History");设备可对 **host** 发起反向 snoop(BI;**不**对 peer device);归属基于 **HPA**(设备内部翻译到 media address,**非** DPA 归属) |
 | **TileLink-C** | TileLink-C | `TileLinkCAdapter` | **✅ 已落地**(队列 #11,2026-11-02 归档;**两段式** —— 规约层 + 实现层) | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
 | **NVLink** | NVLink | `NvlinkAdapter` | Stage 2 | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
 | **UALink** | UALink | `UalinkAdapter` | Stage 3 | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
@@ -406,7 +406,7 @@ group-scoped completion     → Fabric Collective Plane
 |------|-------|--------------|-----------|----------------|------|
 | `FullMapDirectory` | SYSTEM | EXACT | GLOBAL | HOME | CHI HN-F 精确目录 |
 | `SparseSnoopFilter` | SYSTEM | CONSERVATIVE | GLOBAL | HOME | CHI SF / CXL 2.0 Host SF(宁多探不漏探)|
-| `DcohSymmetric` | LOCAL_MEMORY_REGION | **必须 CONSERVATIVE** | LOCAL_HINT | REQUESTER 或 HOME | CXL 3.0 对称(per-device DCOH)|
+| `DcohSymmetric` | LOCAL_MEMORY_REGION | **必须 CONSERVATIVE** | LOCAL_HINT | **HOME** | CXL 3.0 对称(per-device DCOH)|
 | `TreeManager` | SUBTREE | EXACT | LOCAL | TREE_PARENT | TileLink ClientMetadata |
 | `BroadcastNull` | NONE | EXACT(degenerate) | NONE | NONE | 无目录基线(target = all)|
 
@@ -1154,4 +1154,83 @@ experimental/<run_id>/
 · #143(队列 #11 规约层归档)· #139(`FullMapDirectory` 落位裁决)· #137(R11 降级)
 · `ADR-CEP-04` 的 `## Status Update(2026-11-01)` · `ADR-CEP-12 §11`(实例级权威分区)
 · `openspec/specs/cep-sharer-tracker-base/spec.md`(同批追加段)
+
+---
+
+## Status Update(2026-11-02,per 台账 Entry #154)—— §5.1.1 / §5.4 / §11 的 **5 处口径订正** + **对称模式的 adapter 形态裁决**
+
+> **本则含**:**正文订正 5 处**(见 ②)+ **adapter 形态裁决**(见 ③)—— ⚠️ **本文件属 M1 冻结面**
+> ⇒ 走**两步授权**(授权记录 = 台账 **Entry #154**;`--update --authorized-by "Entry #154"` → commit 产物 → `--update` → commit)
+> · **表体行数不变**(§5.1.1 仍 **8** 行)⇒ `test/test_cep_schema.cc` 的 `rows511 == 8` **零改动**
+> · **触发**:队列 #12 `cpptlm-cep-cxl-dcoh-symmetric` 的 **Task 0 公开来源普查**
+> (产物 `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`,**零规范正文暴露**)
+
+### ① 事实复核(公开来源核对;architect 一手复核,非转述)
+
+**比对源** = **S4** = *An Introduction to the CXL Interconnect*,ACM CSUR 2024
+(arXiv `2306.11227v3` · sha256 `30f5baac34bb23e478834536db334c45338ec77324f25db799ef6e0deb3075bf` —— **本次重新下载并校验 sha256 一致**)。
+
+| # | 本文件原断言 | 公开来源核对 | 判定 |
+|---|---|---|---|
+| 1 | §5.1.1 「DCOH(**Device Cache Ownership History**)」 | S4 p.12:「the term **Device Coherence (DCOH) agent** to describe the agent in the device managing/tracking coherence between the device and the host」;S6 p.30:「**Device Coherence Engine (Dcoh)**」 | ❌ **展开错误** ⇒ 订正为 **Device Coherence(agent / engine)** |
+| 2 | §5.1.1 「设备可主动反向 snoop」(无限定) | S4 p.21:snoop 目标是 **host processor**(memory controller back-snoops the host)⇒ **不对 peer device** | ❌ **缺限定** ⇒ 订正为「对 **host** 发起」 |
+| 3 | §5.1.1 「基于 **DPA** 而非 PA 归属」 | S4 p.11:CXL.mem 使用 **Host Physical Addresses**,设备内部翻译到 media address space | ❌ **反证** ⇒ 订正为 **HPA**(设备内部翻译) |
+| 4 | §5.4 `back_invalidate` 行「CXL 3.0 BISnp 走这里,**host→device**」 | S4 p.20:「Back-Invalidate (BI) in the **S2M** direction and the response BI-Rsp in the **M2S** direction」 | ❌ **方向反了** ⇒ 订正为 **device→host(S2M)**;其响应 BIRsp 为 M2S |
+| 5 | §11 caps 表 `DcohSymmetric` 的 `aggregation_at` = 「**REQUESTER 或 HOME**」 | `ADR-CEP-04 §3.5` 的二元被 S4 **反证**(聚合点两侧场景均在 home 一侧)⇒ 收敛为 `HOME` | ❌ **二元作废** ⇒ 订正为 **HOME**(per `ADR-CEP-04` **第 3 则 SU**) |
+
+### ② 正文订正(已落;逐条可核)
+
+| # | 位置 | 订正后 |
+|---|---|---|
+| 1 | §5.1.1「CXL 3.0 对称」行的 **DCOH 展开** | **Device Coherence(agent / engine)**(设备内的一致性代理) |
+| 2 | 同行的 **反向 snoop 表述** | 「设备可对 **host** 发起反向 snoop(BI;**不**对 peer device)」 |
+| 3 | 同行的 **归属口径** | 「归属基于 **HPA**(设备内部翻译到 media address)」 |
+| 4 | 同行的 **通道描述** | 「+ CXL.mem 增 **BISnp(S2M)/ BIRsp(M2S)** 两通道」(原写「反向通道」不精确) |
+| 5 | §5.4 `back_invalidate` 行的 **BISnp 方向** | 「**device→host(S2M)**;其响应 BIRsp 为 M2S」 |
+| 6 | §11 caps 表 `DcohSymmetric` 的 `aggregation_at` | **HOME**(原「REQUESTER 或 HOME」二元作废) |
+
+### ③ ⚠️ 裁决:对称模式的 **adapter 形态** = **独立载体**,**不**扩 `CxlCacheAdapter`
+
+**问题**:本表 §5.1.1 原写「CXL 3.0 对称 → `CxlCacheAdapter`(对称模式)」;但实测
+`include/tlm/cep/cxl_cache_adapter.hh` 是 **`cxl_2_0` 实例专用**的载体 ——
+**零自有表副本** + **单一委托** `cxl_state_spec.hh`(4 态 × 17 事件 · MESI 4 态)。
+
+| # | 方案 | 优点 | 代价 | 判定 |
+|---|---|---|---|---|
+| **A** | **独立 adapter** `CxlDcohAdapter` + 独立规约载体 | 零副本原则**结构性不变**;两族语义**各自独立**(CXL 2.0 非对称 = 1 套 4 态;CXL 3.0 对称 = **3 套** 4/3/3 态)⇒ 一个 adapter 一套真相源 | 本表 §5.1.1 的 adapter 列需改(已改);**多一个** adapter 类 | ✅ **裁决采用** |
+| **B** | 扩 `CxlCacheAdapter` 支持**双载体** | 类少一个 | ⚠️ 迫使该类引入**载体选择逻辑** ⇒ **破坏「去注释后文本不含 `State::`/`Event::`/`Perm::`/表名」的结构性保证**;两套状态空间共处一载体 ⇒ 两套真相源 | ❌ |
+| **C** | `CxlCacheAdapter` 的规约载体**参数化**(模板参数) | 复用类骨架 | ⚠️ 同样引入载体选择;且零副本判据(静态扫描)需重写 ⇒ **判据面扩大** | ❌ |
+
+⇒ **裁决 A**。⇒ 连带:队列 #12 的**第 1 个 change**(实现层)交付 `CxlDcohAdapter`(**新**)+ 独立规约载体
+⇒ **不**改 `CxlCacheAdapter`(`cxl_2_0` 载体**零改动**)。
+
+### ④ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本文件** | **正文订正 6 处** + 追加本则;§5.1.1 **表体行数不变**(8)· §8.1 Stage 表**不变** · **6 族 / 8 实例**计数**不变** |
+| **测试面** | `test/test_cep_schema.cc` 的 `rows511 == 8` **零改动**(表体未变) |
+| **代码面(连带,builder 域)** | ① `sharer_tracker.hh` 的 `DcohSymmetric` traits:`AggregationAt::REQUESTER` ⇒ **`HOME`**(该实现**行为未落地** ⇒ **零行为影响**)② `test_cep_sharer_tracker_base.cc` 的**二元断言**(`∈ {REQUESTER, HOME}`)⇒ **收紧**为 `== HOME` ③ `protocol_instance.schema.json` **零改动**(枚举**保留** `REQUESTER` ⇒ 该值转为「保留但无消费者」) |
+| **ADR 面** | `ADR-CEP-04` **第 3 则 SU** 已追加(聚合点二元裁决 + 选项对比 + 待确认路径);**正文零改动** |
+| **合规** | 本则**不含**任何规范正文引用 ⇒ 全部依据为**公开非规范来源**(白皮书 / 会议 tutorial / 同行评审论文)+ **文献级定位 + 断言摘要** |
+| **残余** | ⚠️ **规范性依据待**「人类成员条款摘要」确认(per `ADR-CEP-04` 第 3 则 SU ④)⇒ 登记态 |
+
+### ⑤ Verification(前瞻判据 · 可勾选)
+
+- [ ] §5.1.1「CXL 3.0 对称」行的 adapter 列 == `CxlDcohAdapter`
+- [ ] 同行的 DCOH 展开 **不含** "Ownership History";反向 snoop 表述含「**对 host**」;归属含「**HPA**」且**不含** "DPA"
+- [ ] §5.4 `back_invalidate` 行的 BISnp 方向 == **device→host(S2M)**
+- [ ] §11 caps 表 `DcohSymmetric` 的 `aggregation_at` == **HOME**(不含 "REQUESTER 或")
+- [ ] `sharer_tracker.hh` 的 `DcohSymmetric` traits `aggregation_at` == `AggregationAt::HOME`(builder 域)
+- [ ] `test_cep_sharer_tracker_base.cc` 的该行断言**收紧**为 `== HOME`(builder 域)
+- [ ] `protocol_instance.schema.json` **零改动**(`AggregationAt` 枚举仍含 `REQUESTER`)
+- [ ] `test/test_cep_schema.cc` 的 `rows511 == 8` **零改动**且仍绿
+- [ ] 冻结面 provenance 通过(40/40 hash 一致 + 与产物 commit 一致)
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #154**(授权记录 + 4 项裁决摘要)· **#153**(Task 0 普查登记 + architect 裁决面)
+· #152(组 1 归档)· #148(组 0 收尾债清理 · §5.1.1 状态列同步先例)· #139(`FullMapDirectory` 落位裁决)
+· `ADR-CEP-04` 的 **第 3 则 Status Update(2026-11-02)**(聚合点二元裁决)
+· `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(§3.4 / §6 —— **本则依据**)
+· `include/tlm/cep/cxl_cache_adapter.hh`(`cxl_2_0` 专用载体的**零副本 + 单一委托**结构 —— ③ 的判据依据)
+
 

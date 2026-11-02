@@ -627,3 +627,77 @@ R11 是「**声明超前于实现**」(声明了 `SparseSnoopFilter` 却无行�
 **关联**: 台账 `obj-cep-platform.md` **Entry #139**(授权记录 + 裁决)· #133(反向缺口首次登记)
 · #137(R11 降级 · **方向相反**)· #131 · #129 · **#112(`BroadcastNull` 落位裁决先例)** · #107
 · `07 号` §11 · `openspec/specs/cep-sharer-tracker-base/spec.md` · `sharer_tracker.hh`
+
+---
+
+## Status Update(2026-11-02,per 台账 Entry #154)—— §3.5 聚合点二元:**`REQUESTER` 分支被公开来源反证** ⇒ 现行口径 = 聚合点**恒为 `HOME`**
+
+> **§3.5 正文零改动**(二元表原文保留,作历史);本段登记**反证 + 现行口径 + 待确认路径**。
+> ⚠️ **冻结面两步授权**:授权记录 = 台账 **Entry #154**(`--update --authorized-by "Entry #154"`)。
+> ⚠️ **本段不改 §2 caps 表 · §4 hazard 表 · §13** —— 只处置 §3.5 的**聚合点二元**。
+
+### ① 事件:公开来源普查发现 §3.5 的 `REQUESTER` 分支**未被任何公开来源支持**
+
+队列 #12 的 **Task 0 公开来源普查**(产物 `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`,
+**零规范正文暴露**,ECA §3 + AI AUP 合规)对 §3.5 的二元做了核对:
+
+| 场景 | §3.5 原文 | 公开来源(S4 = ACM CSUR 2024 · arXiv `2306.11227v3` · sha256 `30f5baac…75bf` · **architect 一手复核**) | 判定 |
+|---|---|---|---|
+| **HDM P2P**(device-to-device data pull) | `aggregation_at = REQUESTER`;理由「请求者驱动 fold 状态;**其他设备**发 BIRsp」 | 「UIO transactions are serviced directly from memory… **else the memory controller back-snoops the host processor** using the BI flows」(S4 p.21,§5.3 / Fig.16)⇒ 仲裁者是 **memory controller**(= home);且 snoop 目标是 **host processor**,**不是**「其他设备」 | ❌ **反证**(聚合点 + snoop 对象**两处**冲突) |
+| **HDM home**(归属设备作为 home) | `aggregation_at = HOME` | 「the memory device (GFD/MLD) maintains a directory (or a snoop filter) to track ownership of cache lines」(S4 p.21,§5.3 / Fig.17b) | ✅ **印证** |
+
+⇒ **两处场景的公开来源都把仲裁点放在 home 一侧** ⇒ §3.5 的「二元」在**聚合点维度**上**不成立**。
+
+### ② 选项对比(≥3 方案)
+
+| # | 方案 | 聚合点口径 | 代价 | 判定 |
+|---|---|---|---|---|
+| **A** | **保留二元不动**,只登记反证 | 载体**不得**锁 `aggregation_at` ⇒ 该格标 `pending` | 规约层**少一个可锁结构**;`DcohSymmetric` 的 traits 与 ADR 的**张力持续**;载体 basis 里留一个永远 pending 的格 | ❌ 覆盖不足 |
+| **B** | **二元收敛为 `HOME`**(直接删掉 `REQUESTER` 分支) | `aggregation_at = HOME` 恒定 | ⚠️ 若人类成员条款摘要最终**推翻**反证 ⇒ 需**再次**修订 ⇒ **反复**;且**丢掉**了 P2P / HDM-home 的**触发源差异**(该差异是**真实**的,只是**不决定聚合点**) | ❌ 过度收敛 + 丢信息 |
+| **C** | **聚合点收敛为 `HOME`;P2P / HDM-home 降级为「场景标签」** | `aggregation_at = HOME` 恒定;场景维度**仍区分**两者(承载不同的 fold 触发源) | 需把「P2P ⇒ REQUESTER」的语义位置从**聚合点**改为**场景标签** ⇒ 属**语义重定位**而非删除 ⇒ 信息**不丢**;⚠️ 仍**不改正文**(只追加本段) | ✅ **裁决采用** |
+
+### ③ 裁决(现行口径)
+
+1. **聚合点恒为 `HOME`** —— CXL 3.0 对称模式下,**公开来源不区分** P2P 与 HDM-home 的**仲裁位置**(均在 home 一侧)⇒
+   `aggregation_at` **不再随场景变化** ⇒ **载体可锁** `aggregation_at == HOME`。
+2. **P2P / HDM-home 保留为「场景标签」** —— 二者的**触发源差异**(P2P = device 经 UIO 直接访问 memory;
+   HDM-home = 多 host 共享同一行)仍然成立 ⇒ **保留**为载体可登记的场景维度,**不**用于选择聚合点。
+3. ⚠️ **`REQUESTER` 分支不得作为载体锁定依据** —— 载体侧若出现该值 ⇒ 视为**未钉死** ⇒ 须标 `pending`。
+4. ⚠️ **`AggregationAt::REQUESTER` 枚举值** —— **保留**(公共契约面;`protocol_instance.schema.json` 的值级枚举含它 ⇒ **冻结 schema 零改动**)⇒
+   改 traits 后该值**无消费者** ⇒ 登记为「保留但无消费者」(照 `FullMapDirectory` 的**反向缺口**同款登记范式)。
+5. ⛔ **不得**表述为「§3.5 的二元被规范推翻」 —— 本段登记的是**公开来源反证**;**规范性依据**须由「**人类成员条款摘要**」确认。
+
+### ④ 待确认路径(分层处置,防反复)
+
+| 阶段 | 触发 | 动作 |
+|---|---|---|
+| **现在** | 公开来源反证已一手复核 | 按 ③ 的现行口径推进载体(`aggregation_at = HOME` **可锁**)⇒ 规约层**不被** §3.5 的历史二元阻塞 |
+| **人类成员条款摘要到位** | 拿到 CXL 规范正文的条款摘要(**AI 不接触正文**) | 若**确认**反证 ⇒ **走 ADR 修订**:改正 §3.5 二元表 + 追加第 4 则 SU(登记修订)⇒ **本段随之追加**「已正式修订」 |
+| | 若**推翻**反证 | 本段追加「反证不成立」+ 恢复 §3.5 原口径 ⇒ 载体该格由 `HOME` 改回 `REQUESTER` ⇒ ⚠️ 因载体该格**可锁**,此改动**成本可控** |
+
+### ⑤ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR** | **零正文改动**(仅追加本段);§2 caps 表 · §4 hazard 表 · §13 全部保留 |
+| **`§3.5` 的状态** | ⚠️ 二元表**原文保留**但**已被本段登记为「聚合点维度不成立」** ⇒ 载体与实现**不得**再据其第一支锁定 |
+| **载体面** | ✅ **受益** —— `aggregation_at` 由「不可锁」变为**可锁**(`HOME`)⇒ 规约层少一个 `pending` 格 |
+| **traits 面** | `DcohSymmetric` 的 `AggregationAt::REQUESTER` ⇒ **订正为 `HOME`**(该实现**行为未落地** ⇒ **零行为影响**);连带 `test_cep_sharer_tracker_base.cc` 的**二元断言**(`∈ {REQUESTER, HOME}`)⇒ **收紧**为 `== HOME` |
+| **冻结 schema** | **零改动** —— `protocol_instance.schema.json` 的 `AggregationAt` 值级枚举**保留** `REQUESTER` |
+| **对外表述** | ⚠️ **不得**表述为「CXL 3.0 对称模式下聚合点在 requester」;现行口径 = **home** |
+| **残余** | ⚠️ 规范性依据**待**人类成员条款摘要确认(§④)⇒ 登记态 |
+
+### ⑥ Verification(前瞻判据 · 可勾选)
+
+- [ ] `sharer_tracker.hh` 的 `DcohSymmetric` traits 的 `aggregation_at` == `AggregationAt::HOME`
+- [ ] `test_cep_sharer_tracker_base.cc` 的该行断言**收紧**为 `== HOME`(不再是二元 `∈ {REQUESTER, HOME}`)
+- [ ] `protocol_instance.schema.json` **零改动**(枚举仍含 `REQUESTER`)
+- [ ] 队列 #12 规约层载体可**静态锁死** `aggregation_at == HOME`(不标 `pending`)
+- [ ] 载体把 P2P / HDM-home 登记为**场景标签**(非聚合点选择)
+- [ ] 人类成员条款摘要到位后:本段追加「已正式修订」或「反证不成立」(§④ 的两条路径之一)
+
+**关联**: 台账 `obj-cep-platform.md` **Entry #154**(授权记录 + 本裁决)· **#153**(Task 0 普查登记 + architect 裁决面)
+· #152(组 1 归档)· #139(`FullMapDirectory` 落位裁决 · **「保留但无消费者」登记范式**)· #137(R11 降级)· #127(队列 #10 规约层归档)
+· `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(§3.4 / §6 #3 —— **本段的一手复核依据**)
+· `07 号` §5.1.1 / §11(第 19 则 SU)· `openspec/specs/cep-sharer-tracker-base/spec.md` · `sharer_tracker.hh`
+

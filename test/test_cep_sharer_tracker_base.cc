@@ -238,9 +238,12 @@ TEST_CASE("CEP SharerTracker: 6 实现 × caps/behavior 数据表自洽", "[cep]
     CHECK(caps_of(cep::TrackerImpl::DcohSymmetric).completeness == cep::Completeness::CONSERVATIVE);
     CHECK(caps_of(cep::TrackerImpl::DcohSymmetric).authority == cep::Authority::LOCAL_HINT);
 
-    // DcohSymmetric 的 aggregation_at 是**二元**(P2P ⇒ REQUESTER / HDM home ⇒ HOME,per §3.5)
+    // DcohSymmetric 的 aggregation_at = **HOME**(聚合点**恒为 home**)。
+    // ⚠️ **2026-11-02 收紧**(per 台账 Entry #154 + `ADR-CEP-04` 第 3 则 SU):
+    //    原断言是**二元**(`∈ {REQUESTER, HOME}`)⇒ 允许 `REQUESTER` 混过 ⇒
+    //    该分支已被**公开来源反证** ⇒ 断言**收紧**为**单值** `== HOME`。
     const auto dcoh_agg = caps_of(cep::TrackerImpl::DcohSymmetric).aggregation_at;
-    CHECK((dcoh_agg == cep::AggregationAt::REQUESTER || dcoh_agg == cep::AggregationAt::HOME));
+    CHECK(dcoh_agg == cep::AggregationAt::HOME);
 
     // TreeManager:向上递归 ⇒ CHAIN 而非 STALL(与 FullMap 的区别点)
     CHECK(behavior_of(cep::TrackerImpl::TreeManager).hazard_under_contention ==
