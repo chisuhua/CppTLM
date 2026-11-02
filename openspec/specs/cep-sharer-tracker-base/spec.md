@@ -21,11 +21,20 @@
 ⇒ `TreeManager` 与 `FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` 同列**已落地**。
 
 ⚠️ **补充登记(2026-11-01,per 台账 Entry #139 —— 追加段,不改上方原文)**：
-`FullMapDirectory` 是**反向缺口** —— **有行为实现 · 零实例声明**(4 个实例无一声明它)
+`FullMapDirectory` 是**反向缺口** —— **有行为实现 · 零实例声明**(5 个实例无一声明它)
 ⇒ 落位裁决 = **当前队列序列无消费者 ⇒ 不排期、保留登记**(照 `BroadcastNull` 同款,per Entry #112)
 ⇒ ⚠️ 与 R11 的「声明超前于实现」**方向相反** ⇒ **不因 R11 降级(Entry #137)而闭合**
 ⇒ ⚠️ **实现不废弃** —— 未来 CHI-full 队列出现时**直接可用**。
 ⚠️ **本段追加经台账 Entry #139 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #139"`）。
+⚠️ **补充登记(2026-11-02,per 台账 Entry #148 —— 追加段,不改上方原文)**：
+`FullMapDirectory` 的**反向缺口**在实例面新增后**依然成立** ——
+`protocol_instances.json` 现有 **5** 个实例(`moesi_gpu` / `mesif` / `chi_rnf` / `cxl_2_0` / `tilelink_c`),
+**无一**声明 `FullMapDirectory` ⇒ 「有行为实现 · 零实例声明」**未变**。
+⇒ 落位裁决**不变** = 当前队列序列无消费者 ⇒ 不排期、保留登记(per Entry #139 ③)；
+⇒ ⚠️ **实现不废弃** —— 未来 CHI-full 队列出现时**直接可用**(per Entry #139 ④)；
+⇒ ⚠️ 与 R11 的「声明超前于实现」**方向相反** ⇒ **不因 R11 降级(Entry #137)而闭合**。
+⚠️ **本段追加经台账 Entry #148 两步授权**（冻结面 M1 产物；`--update --authorized-by "Entry #148"`）。
+
 
 ## Requirements
 
