@@ -318,6 +318,14 @@ add_test(NAME cep_cxl_state_spec COMMAND cpptlm_tests "[cep][cxl][state-spec]" -
 #      (ID 文法容忍 Markdown 粗体 + 接受 `R-T<n>` 前缀 ⇒ **不得**照抄 CXL 版的「全数字」文法)。
 add_test(NAME cep_tilelink_state_spec COMMAND cpptlm_tests "[cep][tilelink][state-spec]" -r compact)
 
+# 队列 #12 `cpptlm-cep-cxl-dcoh-symmetric-state-spec`(第 0 个 change = 规约层)的判据:
+#   ① 3 套状态空间(基数 + 跨域同名是预期的 + 强类型互斥)
+#   ② 通道词表(CXL.mem 6 + CXL.cache 每方向 3 + 方向表)
+#   ③ ⭐ 对称判别式(`device_initiated_snoop_set == {BISnp}`)
+#   ④ `perm` 只从缓存代理域投影(4→4)
+#   ⑤ 窄义「对称」5 谓词合取(正控 + 逐谓词反控)
+add_test(NAME cep_cxl_dcoh_state_spec COMMAND cpptlm_tests "[cep][cxl-dcoh][state-spec]" -r compact)
+
 # 队列 #11 `cpptlm-cep-tilelink-tree-manager`(第 1 个 change = 实现层)的判据:
 #   ① 载体契约(adapter 零副本 + `TreeManager` 的 `ESCALATE_UP`/`CHAIN` 真实使用
 #      + `snoop_join_core` 的 4 步语义);

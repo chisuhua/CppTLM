@@ -9795,6 +9795,47 @@ step 0 ~ 3。本条 = **转正裁决记录** + KPI 回填。
 
 ---
 
+### Entry #156 — 2026-11-02 [implement](队列 #12 第 0 个 change **Phase 1 落修** + Phase 2 部分(编译期锁 + 运行期判据))
+
+**主题**:队列 #12 第 0 个 change(规约层)`cpptlm-cep-cxl-dcoh-symmetric-state-spec` 的
+**载体形态定稿** + **编译期锁** + **运行期判据**落地。**Phase 2 余下**(逐格 `basis` 两轴 + 4 组反向 fixture)待续。
+
+**① 交付面**
+
+| 件 | 内容 |
+|---|---|
+| `include/tlm/cep/cxl_dcoh_state_spec.hh`(新 · header-only) | 3 套状态空间(`DevCacheState` 4 / `DcohViewState` 3 / `HomeDirState` 3,**不得合并**)+ CXL.mem **6** 通道 + CXL.cache 每方向 **3** + 通道方向表 + ⭐ `kDeviceInitiatedSnoopSet == {BISnp}` + `perm` **4→4**(仅缓存代理域)+ `kDcohViewIsSetLike` + 窄义 **5 谓词** `is_cxl3_symmetric` + **18 条**编译期断言(**全部带可归因 id** `CDS-0x: …`) |
+| `test/test_cep_cxl_dcoh_state_spec.cc`(新) | **5 cases / 45 assertions**:CDS-01 ~ CDS-05 的**运行期**见证 + 编译期锁的**重复见证** |
+| `test/CMakeLists.txt` | **+1** ctest 注册(`cep_cxl_dcoh_state_spec`) |
+
+**② ⚠️ 载体**不做转移表**(设计结论)**
+
+对称模式的**状态转移语义**在**公开非规范来源**里**没有** ⇒ 逐格转移表会要求**推理填空**
+⇒ ⛔ **禁止**(per 锚点摘要 §7 的 10 项 pending)⇒ 载体**只**表达**状态空间 / 通道 / 投影 / 判别式**
+⇒ 消费方(第 1 个 change 的 `CxlDcohAdapter`)**不得**自造转移表。
+
+**③ ⚠️ 实施期的 3 处判据自纠(判据本身写错的记录 —— 已修)**
+
+| # | 我写的判据 | 实测 | 处置 |
+|---|---|---|---|
+| 1 | 「同名元素的枚举值**必然不同**」 | ❌ `DcohViewState::S` 与 `HomeDirState::S` **皆为 1** ⇒ 该判据**既非契约也非事实** | **删除**该判据 ⇒ 互斥性改由**强类型不可转换**(`is_convertible_v` 全 false)承载;载体补注释「**枚举值不承载跨域语义**」 |
+| 2 | `local_has_snoop` 硬编码为 `false` 后 `CHECK(...)` | ❌ 恒红(自相矛盾) | 改为**从载体数据推导**(遍历通道表 + 方向表)⇒ 载体若把 BISnp 改成 remote,判据必红 |
+| 3 | 用 `std::set` 但**未** `#include <set>` | 编译红 | 补 include |
+
+⇒ **教训**:**负向 / 反控判据本身也要先自洽** ⇒ 否则「红」的原因会指向**判据**而非**载体**
+⇒ 与队列 #11 的「探针漏查 ⇒ fixture 恒绿」是**同一族**的坑(方向相反:判据过强/过弱)。
+
+**④ 验收**:`[cep]` **302 cases / 5840 assertions** 全绿 · 新用例 **5 cases / 45 assertions** 全绿 ·
+`format.sh --check` rc=0 · 门禁全 rc=0。
+
+**⑤ 关联**: Entry #155(第 0 个 change 建档 + 转正裁决 + KPI)· #154(4 项 architect 裁决 + 3 件冻结面授权)
+· #153(Task 0 普查 + 验证矩阵)· #127(队列 #10 规约层归档 —— **同款两段式先例**)
+· `include/tlm/cep/cxl_dcoh_state_spec.hh` · `test/test_cep_cxl_dcoh_state_spec.cc`
+· `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(**basis 唯一人工审计面**)
+· `openspec/changes/cpptlm-cep-cxl-dcoh-symmetric-state-spec/`(4 件套)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 
