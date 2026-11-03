@@ -291,3 +291,68 @@ group-scoped completion     → Fabric Collective Plane
 
 **③ ⚠️ 决策内容零改动** —— 本次**不新增 / 不修改任何决策**;只补形式要素 + 把 §1.2 的既有论证结构化 + 补 1 行汇总口径。
 ⇒ 「一决策一文档」的**存量越界**(本 ADR 含 3 个决策)按契约「**存量文档不追溯**」⇒ **记 backlog**,不在本次拆分(per 台账 Entry #169 ⑤)。
+
+---
+
+## Status Update 2026-11-03 —— 队列 #13 的 **VC 空间裁决**(**Decision D**:显式声明门)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §7 与附录正文一律不改**,
+> 仅**取代** §7 Verification 的 **`V6-a` / `V6-b` 两行**。**取代形态**照 `ADR-CEP-09 §8.1(取代范围)/ §8.2(取代后文本)` 先例。
+> **台账**: `obj-cep-platform §11` **Entry #171**(`decision`)· **用户裁决 2026-11-03**。
+
+### D.1 背景:VC 空间实测**饱和**
+
+| 网络 | `vc_count` | coherence 占用 | 空闲 VC |
+|---|---|---|---|
+| `compute_noc` | 4 | `{0,1,2,3}` | **无** |
+| `ualink_fabric` | 4 | `{0,1,2,3}` | **无** |
+
+- 6 个实例的 `vc_binding` 见 `include/tlm/cep/protocol_instances.json`(`tilelink_c` 用 `{0,2,1,3}`,同样占满)。
+- ⚠️ **`vc_id` 是 `ch_uint<8>`**(`include/bundles/noc_bundles_tlm.hh:38`)⇒ **"0-3" 是 schema 策略锁,不是物理上限**。
+- ⚠️ **`ADR-CEP-09 §2 决策 4` 显式排除**跨平面 VC 隔离(「本 ADR 是**平面内**问题,两者不重复」)⇒ **不存在**「共享 VC + 仲裁保无环」的现成解。
+- ⚠️ `include/tlm/cep/collective_plane_contract.hh` 的 `evaluate_vc_reservation`:预留表为空 ⇒ **直接 PASS**(`detail` 仅为散文,**不可判定**)⇒ **CP-03 恒真**(违反铁律「纯负向断言须配正控」)。
+
+### D.2 裁决
+
+> **抓取点 3 不变** —— 集合流量若上 fabric,**必须**走**独立** VC。
+> **改变的是 CP-03 对「空预留」的处置**:`空预留 + 无显式声明 = FAIL`(不再是 PASS)。
+
+`collective_planes.json` 在 `collective_vc_reservation: []` 时**必须**给出 `vc_reservation_declaration`:
+
+| 字段 | 语义 |
+|---|---|
+| `status` | 恒为 `"unavailable"`(本拓扑不提供隔离 VC) |
+| `reason` | 不可用原因(须可归因:VC 饱和 ∧ 抓取点 3 要求独立) |
+| `owner` | 重访责任人(裁决方 / 队列号) |
+| `revisit_trigger` | 何时**必须**重访(≥5 VC / 首次需真实网内归约 / `ADR-CEP-09` 给出跨平面无环论证) |
+
+**前提约束**:本拓扑下 **collective 流量不得上 fabric**(只允许 `LocalCollectivePlane` 类本地模型);
+将来若需真实网内归约 ⇒ **必须**先解决隔离 VC(即 `revisit_trigger` 命中)。
+
+### D.3 取代范围
+
+§7 Verification 的 **`V6-a` / `V6-b` 两行** —— 自本段起以 **D.4** 为准。
+
+### D.4 取代后文本(规范)
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V6-a** | **空预留门**:`collective_vc_reservation` 为空 ⇒ **必须**有 `vc_reservation_declaration` 且 `status` / `reason` / `owner` / `revisit_trigger` **四字段齐全**;缺任一 ⇒ 必红 | `include/tlm/cep/collective_planes.json` + `collective_plane_contract.hh` 的 `evaluate_vc_reservation` —— ⚠️ **载体待 builder 落地(当前不存在)** ⇒ 该判据在其落地前**不可执行** | **正控**:四字段齐全 ⇒ PASS · **反 fixture**:删 `revisit_trigger`(或整段删声明)⇒ 必红(`CP-03`) |
+| **V6-b** | **非空预留门**:预留非空 ⇒ 每个 `(network, vc_id)` 须 `vc_id ≤ 3` ∧ `vc_id < vc_count` ∧ **不与**该网络既有 coherence `vc_binding` 撞号 | 同上(既有实现) | 毒化:预留撞号 / 越界 ⇒ 必红(`CP-03`) |
+| **V6-c**(新增) | **前提约束**:声明 `status: unavailable` 时,拓扑中**不得**存在真实 fabric collective 流量载体(仅本地模型) | 队列 #13 规约层 / 实现层的载体清单 | 毒化:声明 `unavailable` 却接入 fabric collective 通道 ⇒ 必红(`CP-03-VC-PRECONDITION`) |
+
+> ⚠️ **载体落地前不得宣称 CP-03 已具备鉴别力** —— `V6-a` / `V6-c` 的载体均由 **builder** 交付(见 `obj §10` 的登记)。
+
+### D.5 未采取的路径(用户裁决时逐条比较)
+
+| 路 | 不采理由 |
+|---|---|
+| **A** 扩 `vc_count` → 5 | 需改本仓 3 个 schema(`protocol_instance` / `collective_planes` / `fabric`)**+ ArchForge 仓**的 `fabric.json`(该文件 `derived_from` = ArchForge `22-nsa` §0.5.4.1)⇒ **跨仓阻塞** ⇒ 队列 #13 在本仓无法推进 |
+| **B** 新增 network | 同 A + 拓扑侵入性更强(需 ArchForge 边表) |
+| **C** 复用 VC + 时序隔离 | 需以 SU 改抓取点 3 的「独立 VC」表述,且把死锁隔离从**结构性**退化为**论证性** |
+
+### D.6 重访触发条件(命中任一 ⇒ **必须**重开本裁决,**不自动升级**)
+
+1. 拓扑提供 **≥5 VC**(本仓 schema 或 ArchForge 侧变更);
+2. 队列 #13 实现层或后续队列**首次需要**真实 fabric collective 流量;
+3. `ADR-CEP-09` 定稿且给出**跨平面** VC 共享的无环性论证(目前它显式排除该问题)。

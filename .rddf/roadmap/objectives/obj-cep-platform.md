@@ -186,7 +186,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **10** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2029-Q1** | ✅ **已归档**(2026-11-01,per **Entry #123** / **#127** / **#132**)—— **两段式均已完成归档**(「**已完成归档**」语义 —— delta capability `cep-cxl-nonsymmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 并发 1/3 → 0/3**;⚠️ 归档件**不入库**(per `.gitignore`)⇒ 活路径 = main spec)· **两段式**:第 0 个 = 规约层(✅ 已归档,Entry #127)+ **第 1 个 = 实现层(✅ 已归档 2026-11-01,per Entry #132)** —— change `cpptlm-cep-cxl-nonsymmetric`(4 件套 + **2 份** delta spec:`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;「**已完成归档**」语义 —— 2 份 delta spec 已合并进 `openspec/specs/`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 1/3 → 0/3**)⇒ 交付面 = `CxlCacheAdapter`(**委托**规约载体 · **三态**查询面)+ `SparseSnoopFilter` 行为实现(**服务 `moesi_gpu` 的 R11 补偿**,**不**服务 CXL 实例 —— 其 peer 集平凡为空)+ `cxl_2_0` 实例声明(`sharer_tracker` = 「不参与」)+ `perm_upgrades.json` 一行 + **3 件**冻结面两步授权 · ✅ **R11 已于 2026-11-01 降级为 🟢 低**(per **Entry #136** 交付 V-2 —— `MoesiGpuProtocolEngine` 运行期载体 + `O→WRITEBACK` 补偿路径判据;**Entry #137** 签发降级裁决)⇒ 本行原先登记的「V-2 🔴」义务**已闭合**;⚠️ **降级不蕴含**「完整协议实现」或「等价恢复已实现」(per Entry #137 ③ 语义边界 —— 真实 tracker 是 `CONSERVATIVE` ⇒ 只能给**保守近似**)· 历史:2026-11-01 转正时**第 0 个 change 已建目录**(4 件套 + 1 份 delta spec;`openspec validate --strict` rc=0;**KPI 并发 0/3 → 1/3**)· **Task 0 硬门已过(有条件)**:公开来源普查产物 `docs/research/2026-11-01-cep-cxl-nonsymmetric-anchor-summary.md` ⇒ 态数/事件词表/投影形状/非对称定义/编译期断言 **5 项已钉死**,8 项 `pending`(R-1~R-8)· ⚠️ **钉版缺口待补**(sha256 / Wayback 快照 / D14 SHA)⇒ **载体逐格编码须等它完成**· ⚠️ **口径已裁决**(2026-11-01,per **Entry #122**):「CXL 2.0 非对称」= **CXL.cache** 子协议(**host-centric / 单一一致性点**);设备侧 = **MESI 4 态** ⇒ `perm` 投影 = **4→4**(⚠️ 原草稿「5→4」系 MESIF 模板形状的未审视继承 ⇒ **作废**);basis 权威 = **本仓公开来源锚点摘要**(**非**规范正文、**非** ArchForge)⇒ 追认 = **仓内**二方复核闭环 ⇒ **无 #9 式跨仓债**;⛔ **合规**:CXL 规范受 ECA §3 + AI AUP 约束 ⇒ **禁止**把规范 PDF 投喂任何 AI ⇒ 8 项语义走「**人类成员条款摘要**」;⛔ **硬门**:**公开来源普查未完成 ⇒ change 目录不建**;⚠️ **R11 owner 交叉引用**:`SparseSnoopFilter` 行为实现归**本行第 1 个 change**(per Entry #112 归属去重 · §10 **P2** 行已关闭为「不另起小 change」)⇒ R11 详情见 **§8.1 R11** 行 + Entry #107 / #112 | **本行已归档 ⇒ 不再持有活义务**(2026-11-01,per Entry #132):Stage 1 准入前置(**7 项**,滚动登记;owner 自队列 #6 → #7 → #8 → #9 → 本行)与**3 项孤儿前置**均**已消费 / 已收口** ⇒ 逐项明细见台账 **Entry #71 / #80 / #90 / #95 / #106**(本行的逐项原文随本行归档保留在 `openspec/changes/archive/2026-11-01-cpptlm-cep-cxl-nonsymmetric/`)⇒ ⚠️ **不再在本行列 `⏭(移交)` 标记**:归档件**不得持有活义务**,且门禁断言 ⑦ 要求「提及移交标记的行其 change 不得为已归档 change」⇒ 故**移出**而非改写。 |
 | **11** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2029-Q2** | ✅ **已归档**(2026-11-02,per **Entry #143** / **#147**)—— **两段式均已完成归档**(「**已完成归档**」语义 —— delta capability `cep-tilelink-state-spec` 已合并进 `openspec/specs/cep-tilelink-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 并发 1/3 → 0/3**;⚠️ 归档件**不入库**(per `.gitignore`)⇒ 活路径 = main spec)· **两段式**:第 0 个 = 规约层(✅ 已归档,Entry #143)+ **第 1 个 = 实现层(✅ 已归档,Entry #147** —— delta capability `cep-tilelink-tree-manager` 已合并进 `openspec/specs/cep-tilelink-tree-manager/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;KPI **1/3 → 0/3**;⚠️ **R-T4 已裁决** = 值域锁 ⇒ 实例 `perm` 填 **3 值**;⚠️ `AC-05` 族对 TileLink **恒红** ⇒ 族无关化落该 change)· 历史:2026-11-01 转正时**第 0 个 change 已建目录**(4 件套 + 1 份 delta spec;`openspec validate --strict` rc=0;**KPI 并发 0/3 → 1/3**)· **Task 0 硬门已过**:公开来源普查产物 `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` ⇒ 态数/事件词表/投影/非对称形态/编译期断言 **5 项已钉死**,8 项残余风险 **全部闭合**(per Entry #134 / #135 / #138 / #141)) | **Stage 1 准入前置**:⚠️ **2026-11-02 本队列两段式均已归档**(per 台账 Entry #143 / **#147**)⇒ 归档件**不得持有活义务** ⇒ 前置块**整块移出**本行 ⇒ **标记转指 #12**(per Entry #80 / #90 / #95 / #106 / #132 / **#147** 的既定模式)。 |
 | **12** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2029-Q3** | 🟡 **Proposed**(2026-11-02 —— **第 0 个 change(规约层)已完成归档**(「**已完成归档**」语义 —— delta capability `cep-cxl-dcoh-symmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-dcoh-symmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 并发 1/3 → 0/3**;⚠️ 归档件**不入库**(per `.gitignore`)⇒ 活路径 = main spec;**Task 0 硬门已过(有条件)**(per Entry #153)· **architect 4 项裁决已落**(per Entry #154);**两段式** ⇒ **第 1 个 change**(实现层)`cpptlm-cep-cxl-dcoh-symmetric` **✅ 已完成归档**(2026-11-02;「**已完成归档**」语义 —— delta capability `cep-cxl-dcoh-symmetric` 已合并进 `openspec/specs/cep-cxl-dcoh-symmetric/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;⚠️ 落点裁决 = tracker 行为类落**独立头** `cxl_dcoh_tracker.hh`(per Entry #162)· **冻结面 1 件**(`cep-sharer-tracker-base` 追加段 · per Entry #165)· 反向验证 **6/6**) ⇒ **队列 #12 两段式全部完成** | —— **Stage 1 准入前置**:⚠️ **2026-11-02 本队列两段式均已归档**(per 台账 Entry #159 / **#166**)⇒ 前置块**整块移出**本行 ⇒ **标记转指 #13**(per Entry #166)。 |
-| **13** | `cpptlm-cep-nvlink-sharp` | Stage 2 | **2029-Q4** | 📋 Planned | **Stage 1 准入前置(滚动登记;owner 自队列 #6 → #7 → #8 → #9 → #10 → #11 → #12 → **现转指本行**,per Entry #80 / #90 / #95 / #106 / #132 / #147 / **#166**):`S1-1` ✅ 已消费(队列 #4 装配闸)· `S1-2` ✅ 已由队列 #6 交付 · **`S1-3` ✅ 已于队列 #9 触发**(`implemented` 实例数 2 → 3,`mesif` 为第 3 个;真实义务 = `ADR-CEP-12 §8.4` 的 SLICC 式备选重评,结论见 Entry #106)· `S1-4` ✅ 已消费(Entry #56)· `S1-5` ✅ 已由队列 #6 交付 · `S1-6` ✅ **已闭合**(2026-10-22 —— 判据 (b) 成立 + PoC `S2` 实跑,per `docs/implementation/2026-10-22-cep-stage0-external-review-summary.md` §2.2)· `S1-7` ①② ✅ 已由队列 #6 交付(③ 已由队列 #4 消费)· **孤儿前置(已收口)**:⏭(孤儿) M-4 行为侧 ✅ 落成于队列 #3 `cep-vc-mapping-contract` · ⏭(孤儿) `moesi_gpu` / `mesif` 未排期 ✅ 已于 Entry #71 消解 · ⏭(孤儿) verdict 逐 `(network, vc)` 标注义务 ✅ 落成于队列 #4 `cep-channel-dependency-gate`。 · ⚠️ **2026-11-03**:improvement `cpptlm-cep-nvlink-sharp` **已写**(planner;HARD-GATE rc=0)⇒ **队列仍为 📋 Planned**(未建 change 目录,per §4.7.2 判据)⇒ ✅ `ADR-CEP-01` / `02` / `03` **已于 2026-11-03 定稿签发**(per 台账 Entry #169 / **#170**)⇒ **剩余前置 = 队列 #13 Task 0 公开来源普查 + 未建 change 目录**(per Entry #168 Acceptance 第 1、2 项) |
+| **13** | `cpptlm-cep-nvlink-sharp` | Stage 2 | **2029-Q4** | 📋 Planned | **Stage 1 准入前置(滚动登记;owner 自队列 #6 → #7 → #8 → #9 → #10 → #11 → #12 → **现转指本行**,per Entry #80 / #90 / #95 / #106 / #132 / #147 / **#166**):`S1-1` ✅ 已消费(队列 #4 装配闸)· `S1-2` ✅ 已由队列 #6 交付 · **`S1-3` ✅ 已于队列 #9 触发**(`implemented` 实例数 2 → 3,`mesif` 为第 3 个;真实义务 = `ADR-CEP-12 §8.4` 的 SLICC 式备选重评,结论见 Entry #106)· `S1-4` ✅ 已消费(Entry #56)· `S1-5` ✅ 已由队列 #6 交付 · `S1-6` ✅ **已闭合**(2026-10-22 —— 判据 (b) 成立 + PoC `S2` 实跑,per `docs/implementation/2026-10-22-cep-stage0-external-review-summary.md` §2.2)· `S1-7` ①② ✅ 已由队列 #6 交付(③ 已由队列 #4 消费)· **孤儿前置(已收口)**:⏭(孤儿) M-4 行为侧 ✅ 落成于队列 #3 `cep-vc-mapping-contract` · ⏭(孤儿) `moesi_gpu` / `mesif` 未排期 ✅ 已于 Entry #71 消解 · ⏭(孤儿) verdict 逐 `(network, vc)` 标注义务 ✅ 落成于队列 #4 `cep-channel-dependency-gate`。 · ⚠️ **2026-11-03**:improvement `cpptlm-cep-nvlink-sharp` **已写**(planner;HARD-GATE rc=0)⇒ **队列仍为 📋 Planned**(未建 change 目录,per §4.7.2 判据)⇒ ✅ `ADR-CEP-01` / `02` / `03` **已于 2026-11-03 定稿签发**(per 台账 Entry #169 / **#170**)⇒ **剩余前置 = 队列 #13 Task 0 公开来源普查 + 未建 change 目录**(per Entry #168 Acceptance 第 1、2 项);**VC 空间裁决 ✅ 已消费**(2026-11-03,per Entry #171 —— Decision D) |
 | **14** | `cpptlm-cep-ualink-inc` | Stage 3 | **2030-Q1** | 📋 Planned | — |
 
 > **终态**:Stage 0~3 实施完成 = **2030-Q1**(per §4.6);Stage 4+ 进入维护态(per §4.5)。
@@ -744,14 +744,14 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | **对拍基准首轮实测**(P-B / P-C,per `docs/architecture/14-coherence-parity-baseline.md` §7) | 🟡 **部分完成**(2026-10-31,Entry #113 / #114)—— **常数档 PASS(3/3)** + **同源 trace 档 PASS(5/5)**:gem5 v24.1.0.0 已增量重建出 **protobuf** 支持 ⇒ `PyTrafficGen.createTrace` 可用 ⇒ 新建 trace 生成器(CSV + gem5 protobuf,同一次 LCG)⇒ **两侧消费同一条访问流**(访问数 1000=1000 · 读写 793/207 逐条相同)⇒ 未命中延迟 48ns vs 本仓 50ns(偏差 4%);**剩余** = **P-3 容量对齐档**(需本仓侧引入「等容量+同替换」目录视图 ⇒ 新增建模组件 ⇒ 条件分支)+ **P-5**(定义待补);**产出** = `docs/validation/2026-10-31-cep-h7-parity-first-round.md`;⚠️ 不属任何队列 change 的门禁 | 走 add-improve —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):本行的**原理由已失效** —— ① `moesi_gpu` 的「仓内**只有 traits 行** ⇒ 声明面承诺的能力未兑现」**已不成立**(`SparseSnoopFilter` 行为类已于 2026-11-01 落地,per Entry #129;§8.1 **R11 已降级为 🟢 低**,per Entry #136 / #137);② `BroadcastNull` 的落位**已由 Entry #112 裁决**(当前队列序列 #10 ~ #14 无消费者 ⇒ 不排期、保留登记)⇒ **本小 change 只剩对拍义务本身**:**P-3 容量对齐档**(需本仓侧引入「等容量+同替换」目录视图 ⇒ 新增建模组件)+ **P-5**(定义待补) |
 | P2 | `cpptlm-cep-tilelink-tree-manager` improvement | ✅ **已写**(2026-11-01 planner;brainstorm HARD-GATE 通过(`pre_create_brainstorm_check.sh` rc=0);**两段式** —— 第 0 个 change = `cpptlm-cep-tilelink-state-spec`(规约层;范围 = 3 稳定态 + 4 事件类别 + 12 格转移表 + `perm` 3→3 投影 + 非对称结构断言,**照 #10 同款只锁 5 项结构**) + 第 1 个 change = `cpptlm-cep-tilelink-tree-manager`(实现层:`TileLinkCAdapter` + `TreeManager` tracker 行为实现 + 实例声明);估时 规约层 4 周 + 实现层 8 周;⚠️ **2026-11-02 订正**(per 台账 Entry #148):① 原写「change 目录已建,🟡 Proposed」**已失实** ⇒ 队列 #11 **两段式均已于 2026-11-02 完成归档**(per Entry #143 / #147);② 原写「**R-T4 口径留到第 1 个 change 前裁决**」**已裁决** —— per **Entry #141** §③:R-T4 = **值域锁** ⇒ 实例 `perm` 填 **3 值**(per `ADR-CEP-02` 的 `## Status Update(2026-11-02)`);§4.0 顺序 #11;✅ **Task 0 硬门已通过**(2026-11-01,per Entry #134 / #135 / #138)—— **版本锁定**(`tilelink-c-1.7.1`,SiFive)· **R-T2**(通道 5→VC 4)· **R-T3**(6 类归属)· **R-T6**(非对称定义形态)**四项 architect 裁决全闭合** ⇒ **可起 change**(规约层先行,照 #10 两段式先例);basis 唯一人工审计面 = `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` |
 | P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | ✅ **已写**(2026-11-02 planner;brainstorm HARD-GATE rc=0;**两段式** —— 第 0 个 change = 规约层 `cpptlm-cep-cxl-dcoh-symmetric-state-spec` **✅ 已完成归档**(2026-11-02,per Entry #159;KPI **1/3 → 0/3**)+ 第 1 个 change = 实现层 `cpptlm-cep-cxl-dcoh-symmetric`**✅ 已完成归档**(2026-11-02,per Entry #166;KPI **1/3 → 0/3**)) —— ✅ **Task 0 硬门已过(有条件)**(2026-11-02,per 台账 **Entry #153**):公开来源普查产物 `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md` ⇒ 5 项载体形态决定项中 **4 项可结构钉死**;**10 项**细粒度语义登记 `pending`(走「人类成员条款摘要」);⚠️ **阻塞项 = architect 复核**(3 项:`ADR-CEP-04 §3.5` 的 `P2P ⇒ REQUESTER` **被公开来源反证** + `DcohSymmetric` 的 `LOCAL_HINT` / `broadcast_fallback=true` 张力 + 07 号 **4 处口径错误** ⇒ 冻结面 Status Update)⇒ **architect 复核后方可起草 improvement** |
-| P1 | `cpptlm-cep-nvlink-sharp` improvement | ✅ **已写**(2026-11-03 planner;brainstorm HARD-GATE **rc=0**;**两段式**(形态丙,per 用户裁决 2026-11-03)—— 第 0 个 change = 规约层 `cpptlm-cep-nvlink-sharp-state-spec` + 第 1 个 change = 实现层 `cpptlm-cep-nvlink-sharp`;**开工前置 = `ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` 定稿**(per 用户裁决 2026-11-03)⇒ ✅ **前置已解除**(三则 **2026-11-03 定稿签发**,per 台账 Entry #169 / **#170**)⇒ **剩余前置 = Task 0 公开来源普查** ⇒ 普查通过后方可建 change 目录;`sharer_tracker.impl` = **`BroadcastNull`** + 本队列**补行为类**(per 用户裁决 2026-11-03)⇒ 顺带闭合 07 号 §11 的「`BroadcastNull` 仅声明层 traits」缺口) |
+| P1 | `cpptlm-cep-nvlink-sharp` improvement | ✅ **已写**(2026-11-03 planner;brainstorm HARD-GATE **rc=0**;**两段式**(形态丙,per 用户裁决 2026-11-03)—— 第 0 个 change = 规约层 `cpptlm-cep-nvlink-sharp-state-spec` + 第 1 个 change = 实现层 `cpptlm-cep-nvlink-sharp`;**开工前置 = `ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` 定稿**(per 用户裁决 2026-11-03)⇒ ✅ **前置已解除**(三则 **2026-11-03 定稿签发**,per 台账 Entry #169 / **#170**)⇒ **剩余前置 = Task 0 公开来源普查** ⇒ 普查通过后方可建 change 目录;**VC 空间裁决 ✅ 已消费**(2026-11-03,per Entry #171 —— Decision D);`sharer_tracker.impl` = **`BroadcastNull`** + 本队列**补行为类**(per 用户裁决 2026-11-03)⇒ 顺带闭合 07 号 §11 的「`BroadcastNull` 仅声明层 traits」缺口) |
 | P1 | `cpptlm-cep-ualink-inc` improvement | 走 add-improve;Stage 3 启动 |
 | P2 | `ADR-CEP-11` 版本锁定(Stage 1 前签发)| 走 architect;触发 R2 缓解 —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「走 architect」**已失实** ⇒ `ADR-CEP-11` **已于 2026-10-30 签发 v1.0**(per Entry #112 / #135);⇒ **本行关闭**;⚠️ **残余**:版本锁定闸的 **G-3**(IC3 变更留痕**无自动闸**)**未闭合**(per §8.1 R2 缓解列)—— 仍为登记态残余风险 |
 | P2 | phase-11 注册后建 feature fragment | 走 rdd-planner 后续评估;≥2 change 跨 phase-10/11 分布时 |
 | P2 | **失指 change 名 `cpptlm-cep-nvlink-sharp-adapter` 的残余位置** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X1)—— 本次**只在 `ADR-CEP-03` 内**订正(⇒ Entry #169 ⑧ 的「② 已订正」应限定为「**ADR-CEP-03 内**已订正」);残余位置 = `include/tlm/cep/collective_plane.hh` · `openspec/specs/cep-collective-plane-base/spec.md` · **`docs/adr/ADR-CEP-00-platform-charter-and-governance.md`**(真源 3 治理 ADR)⇒ 跨 builder(代码 / spec)与 architect(治理 ADR)**两个域** ⇒ **单独立项** |
 | P2 | **代码域的 BISnp 方向注释口径相反** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X2)—— `include/tlm/cep/cxl_dcoh_state_spec.hh` 的枚举注释「host → memory」与同文件「`S2M_BISnp` 是**设备**发起」**口径相反** ⇒ 它是 critic B1 的**实现侧佐证** ⇒ **builder 域**订正 |
 | P2 | **`ADR-CEP-04 §3.4` 的 BISnp 注释口径相反** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X3)—— 「远端设备**收到** BISnp」与「BISnp = **设备发起**」相反 ⇒ 队列 #12 的反证**残余**(Entry #154 只裁了 §3.5 聚合点,未裁 §3.4 注释)⇒ **architect 域**,**单独 SU** |
-| P2 | **队列 #13 的 VC 空间方案裁决** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤-补 ⑩)—— 两个网络的 `vc_id` 0-3 **全被 coherence 占满** ⇒ 集合流量**无空闲 VC**;`CP-03` 在空预留下**恒 PASS**(不构成「已满足抓取点 3」的证据);扩 VC 上限 / 新开 network 已被 `ADR-CEP-09` 判为**跨仓债** ⇒ 须由 **architect** 裁决方案(扩 VC / 新增 network / 走 ArchForge 侧 ADR)⇒ **#13 开工前必须先有裁决**,否则 `V6-b` 无解 |
+| P2 | **队列 #13 的 VC 空间方案裁决** | ✅ **已裁决 2026-11-03**(per 台账 **Entry #171**,用户裁决 **Decision D**)⇒ **契约面已交割**(`ADR-CEP-01` 的 SU 取代 §7 `V6-a`/`V6-b` + 新增 `V6-c`);⚠️ **行为面待 builder**(① `collective_planes.schema.json` 加 `vc_reservation_declaration`(`additionalProperties: false` ⇒ 必须同步)② `evaluate_vc_reservation` 改造:空预留 ⇒ 声明四字段齐全,否则 FAIL③ 反向 fixture:`CP-03`);⚠️ **载体落地前不得宣称 CP-03 已具备鉴别力**。(原登记依据:台账 **Entry #170** ⑤-补 ⑩)—— 两个网络的 `vc_id` 0-3 **全被 coherence 占满** ⇒ 集合流量**无空闲 VC**;`CP-03` 在空预留下**恒 PASS**(不构成「已满足抓取点 3」的证据);扩 VC 上限 / 新开 network 已被 `ADR-CEP-09` 判为**跨仓债** ⇒ 须由 **architect** 裁决方案(扩 VC / 新增 network / 走 ArchForge 侧 ADR)⇒ **#13 开工前必须先有裁决**,否则 `V6-b` 无解 |
 | P2 | **ADR 一决策一文档化的存量拆分**(`ADR-CEP-01` 3 决策 / `ADR-CEP-02` 4 决策 / `ADR-CEP-03` 3 决策) | ⚠️ **登记态 · 不排期**(per 台账 **Entry #169** ⑤ —— 产出形态契约要求「一决策一文档」,但同契约「**存量文档不追溯**」⇒ **不在** ADR 定稿中顺手改写)⇒ 拆分前须**先定拆分边界**(哪些决策是「同一决策的不同侧面」)⇒ 避免把 3 个决策拆成 3 篇却共享同一组不变量 ⇒ **拆分后**须同步 `ADR-CEP-00` / `07 号` 的引用面与 `ADR-CEP-NUMBER-MAP` 的预分配表 |
 | P2 | **实施笔记的 ADR 行号锚点 ⇒ 改节号引用**(`ADR-CEP-02:55` / `:66` 等) | ⚠️ **登记态 · 未排期**(per 台账 **Entry #169** ⑨ b)—— 门禁 `cep_archforge_alignment_check.sh` 以**行号**锚定 `ADR-CEP-02:51` / `:62` ⇒ **ADR 一改行就失准**;该清单文件属**实施笔记**(per `obj §4.7.1` append-only;**不在** architect 的 `arch_paths` 内)⇒ 需 **builder / planner** 域处置;建议:① 锚点改**节号**(`ADR-CEP-02 §2`)② 或在 ADR 内加**稳定锚点标记**供门禁按标记定位 |
 | P2 | **队列 #13 improvement 草稿的 epoch 语义矛盾** | ⚠️ **登记态 · 待 planner 订正**(per 台账 **Entry #169** ⑨ c)—— 草稿写「epoch 未 commit 前该区域的 coherence 请求**被拒**」⇒ 与 `ADR-CEP-03 §3.1 R4`「epoch 未 commit 前 = **正常服务**」**矛盾** ⇒ 该文件属 **planner 域**(`.rddf/improvements/**`)⇒ architect **不改**;⇒ **回归锁已在 ADR 落**(`ADR-CEP-03` §4 **S1** + §9 **V6** 明写「不得写成未 commit 前拒绝」) |
@@ -10668,6 +10668,78 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 **⑦ 关联**: Entry #169(三则 ADR 定稿的授权记录 + 9 处「签发即债」清单 + §⑧ 定稿完成记录)· #168(队列 #13 improvement + 3 项用户裁决)· #166(队列 #12 归档)· #154(队列 #12 的 architect 裁决 + 07 号 6 处口径订正 —— **B1 的一致性先例**)· #66(`ADR-CEP-01/03` 的抓取点可测性裁决 + Bundle 路径偏离登记 —— **S3「有判据无 owner」的反面先例**)· #141(`ADR-CEP-02` 的 `perm` 值域锁裁决)
 · `docs/adr/ADR-CEP-01-fabric-collective-plane.md` · `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` · `docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md` · `docs/architecture/07-coherence-exploration-platform.md`(**M1 冻结面 4 件**)
+
+---
+
+### Entry #171 — 2026-11-03 [decision](**architect** —— 队列 #13 的 **VC 空间裁决**(**Decision D**:显式声明门)· 冻结面授权记录)
+
+**主题**:`ADR-CEP-01 §7` 的 `V6` 在 Entry #170 被拆成 `V6-a`(现状恒真登记)/ `V6-b`(#13 交付门) ⇒
+**恒真 PASS 不是判据**,须给出真正的收敛。用户裁决 2026-11-03:**走 D = 把「空即 PASS」改成「空必须显式声明」**。
+
+**① 授权范围(M1 冻结面 1 件 + 台账)**
+
+| # | 成员 | 动作 |
+|---|---|---|
+| 1 | `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | 追加 `## Status Update 2026-11-03 —— VC 空间裁决(Decision D)`,**取代** §7 的 `V6-a` / `V6-b` 两行(形态照 `ADR-CEP-09 §8.1 / §8.2` 的「取代范围 + 取代后文本」先例);**§1 ~ 附录正文一律不改** |
+| 2 | 本台账 | 本条 + obj §10 的 B-新-4 ⇒ ✅ 已裁决 + §4.0 / §10 P1 的「剩余前置」补 VC 项 |
+
+**② 裁决的事实基础(实测,可复现)**
+
+| 网络 | `vc_count` | coherence 占用 | 空闲 VC |
+|---|---|---|---|
+| `compute_noc` | 4 | `{0,1,2,3}`(moesi_gpu / mesif / chi_rnf / cxl_2_0 / cxl_3_0_symmetric / tilelink_c 覆盖) | **无** |
+| `ualink_fabric` | 4 | `{0,1,2,3}` | **无** |
+
+- ⚠️ **`vc_id` 是 `ch_uint<8>`**(`include/bundles/noc_bundles_tlm.hh:38`)⇒ **"0-3" 是 schema 策略锁,不是物理上限** —— 这条纠正了 Entry #170 ⑤-补 ⑩ 的表述("扩 `vc_id` 上限"并非 bundle 层改动)。
+- ⚠️ **`ADR-CEP-09 §2 决策 4` 显式排除**跨平面 VC 隔离(「本 ADR 是**平面内**问题」)⇒ **没有**"共享 VC + 仲裁保无环"的现成解可用。
+- ⚠️ `collective_plane_contract.hh:591-594`:`vc_reservation.empty()` ⇒ **直接 PASS**(`detail` 只是一句散文,不可判定)⇒ **CP-03 恒真**。
+
+**③ 裁决**
+
+> **抓取点 3 不变**(集合流量若上 fabric,**必须**走**独立** VC)。
+> **改变的是 CP-03 对「空预留」的处置**:`空预留 + 无显式声明 = FAIL`(不再是 PASS)。
+
+`collective_planes.json` 在 `collective_vc_reservation: []` 时**必须**给出 `vc_reservation_declaration`:
+
+| 字段 | 语义 |
+|---|---|
+| `status` | 恒为 `"unavailable"`(本拓扑不提供隔离 VC) |
+| `reason` | 不可用的原因(须可归因:VC 饱和 + 抓取点 3 要求独立) |
+| `owner` | 重访责任人(裁决方 / 队列号) |
+| `revisit_trigger` | 何时**必须**重访(≥5 VC / 首次需真实网内归约 / `ADR-CEP-09` 给出跨平面无环论证) |
+
+**并附前提约束**:本拓扑下 **collective 流量不得上 fabric**(只允许 `LocalCollectivePlane` 类本地模型);
+若将来需要真实网内归约 ⇒ **必须**先解决隔离 VC(即 `revisit_trigger` 命中)。
+
+**④ ⚠️ 未采取的路径(用户裁决时已逐条比较)**
+
+| 路 | 不采理由 |
+|---|---|
+| **A** 扩 `vc_count` → 5 | 需改本仓 3 个 schema(`protocol_instance` / `collective_planes` / `fabric`)**+ ArchForge 仓**的 `fabric.json`(`derived_from` = ArchForge 22-nsa §0.5.4.1)⇒ **跨仓阻塞** ⇒ #13 在本仓无法推进 |
+| **B** 新增 network | 同 A + 拓扑侵入性更强(需 ArchForge 边表) |
+| **C** 复用 VC + 时序隔离 | 需 SU 改抓取点 3 的「独立 VC」表述,且把死锁隔离从**结构性**退化为**论证性** |
+
+**⑤ ⚠️ 载体状态(不得含糊 —— 否则本条自身即「纸面契约」)**
+
+| 判据 | 载体 | 状态 |
+|---|---|---|
+| `V6-a`(空预留门) | `collective_planes.json` 的 `vc_reservation_declaration` + `collective_plane_contract.hh` 的 `evaluate_vc_reservation` | ❌ **尚未落地**(需 **builder** 域:① schema 加字段(`additionalProperties: false` ⇒ 必须同步改 schema)② 判据改造 ③ 反向 fixture) |
+| `V6-b`(非空预留门) | 既有实现 | ✅ 已存在 |
+| `V6-c`(前提约束) | 规约层 / 实现层的载体清单 | ❌ **尚未落地**(随队列 #13) |
+
+⇒ **本条只交割契约面**;**行为面 = builder 的待办**(obj §10 已登记)。
+⇒ ⚠️ 在 `V6-a` 载体落地**之前**,**不得**宣称「CP-03 已具备鉴别力」。
+
+**⑥ 两步授权序列**
+
+台账 entry(本条)→ `ADR-CEP-01` 追加 SU → `--update --authorized-by "Entry #171"` → commit 产物
+→ `--update`(provenance 对齐)→ commit。
+
+**⑦ 关联**: Entry #170(三则 ADR 定稿 + ⑤-补 ⑩ 登记 VC 死结)· #169(三则 ADR 定稿授权)· #66(`ADR-CEP-01 §3.3` 抓取点可测性裁决 —— 抓取点 3 的口径来源)· #141(`perm` 值域锁 —— 与 VC 无关但同为「值域/上界」类裁决的先例)
+· `docs/adr/ADR-CEP-01-fabric-collective-plane.md`(**M1 冻结面**)
+· `docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md`(§2 决策 4 的排除声明 —— 本裁决的依据之一)
+· `include/tlm/cep/collective_planes.json` · `include/tlm/cep/collective_planes.schema.json` · `include/tlm/cep/collective_plane_contract.hh`(**行为面待 builder**)
+**队列 #13 的 improvement**(`.rddf/improvements/cpptlm-cep-nvlink-sharp.md` —— 其 `:180` 的验收项「集合 VC 预留(独立 VC)」须按本裁决改写,属 **planner 域**)
 
 ---
 
