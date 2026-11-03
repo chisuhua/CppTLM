@@ -36,8 +36,14 @@
 | `cep_mesif_state_spec_reverse_verify.sh` | MESIF 规约判据（队列 #9 `cpptlm-cep-mesif-state-spec` 的 MS-01 ~ MS-05）的反向验证（8 类毒化副本：依据清空 / kind↔pending 错配 / 无锚点引用 / 共享态写突变 / 本地事件秩下降 / 转换表挖洞 / 偏离不真） | ✅ 生效（ctest 注册） |
 | `cep_mesif_adapter_reverse_verify.sh` | MESIF **实现层**判据（队列 #9 `cpptlm-cep-mesif-adapter` 的 MA-01 ~ MA-05 / MA-08 / HD-01 ~ HD-05）的反向验证。**每条 fixture 声明期望失败模式**（`compile-lock` 须命中指定 `static_assert` 文案 / `runtime-predicate` 须命中指定判据 id）⇒「因正确原因红」有机器判定；探针按 `[spec]` / `[impl]` / `[decl]` 三层打印失败 id | ✅ 生效（ctest 注册） |
 
+| `cep_cxl_dcoh_state_spec_reverse_verify.sh` | 队列 #12 规约载体（`CDS-01` ~ `CDS-07`）的反向验证（4 类毒化副本） | ✅ 生效（ctest 注册） |
+| `cep_tilelink_adapter_reverse_verify.sh` | 队列 #11 实现层 adapter（`TLA-01` ~ `TLA-13`）的反向验证 | ✅ 生效（ctest 注册） |
+| `cep_nvlink_sharp_state_spec_reverse_verify.sh` | 队列 #13 规约载体（`NSS-01` ~ `NSS-09`）的反向验证：**9 组 / 10 条**毒化 fixture（每条必红 **且** 归因 id 命中）+ 基线正控 | ✅ 生效（ctest 注册） |
+
 > 配套数据文件：`cep_doc_ref_aliases.tsv`（节号别名）/ `cep_doc_ref_registry.tsv`（语义 + 负向断言登记）。
-> **本表 12 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
+> **本表 15 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
+> ⚠️ **2026-11-03 补登**（队列 #13 Phase 3，Entry #184）：此前 **队列 #11 / #12 的两个反向脚本**
+> 虽已注册进 ctest，却**未列入本表**（预存登记缺口）⇒ 本次一并补上。
 > ⚠️ 目录内另有 `cep_freeze_reverse_verify.sh` 与 `cep_gate_selftest.sh` 两个脚本**未列入本表**（预存登记缺口,非本次引入）。
 
 ### 反向 fixture 登记（队列 #7 `cpptlm-cep-cohif-carrier`）

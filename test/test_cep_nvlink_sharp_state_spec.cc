@@ -29,6 +29,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "cep_anchor_ids.hh"
 #include "tlm/cep/nvlink_sharp_state_spec.hh"
 
 namespace {
@@ -36,6 +37,8 @@ namespace {
     namespace nvs = tlm::cep::nvlink_sharp;
 
     constexpr const char* kCarrierRelPath = "include/tlm/cep/nvlink_sharp_state_spec.hh";
+    constexpr const char* kAnchorRelPath =
+        "docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md";
 
     std::string read_repo_file(const std::string& rel) {
         std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
@@ -384,6 +387,88 @@ TEST_CASE("NSS-09:9 项 pending 逐条可寻址 + 未建模项零出现", "[cep]
     for (const char* tok :
          {"BitAnd", "BitOr", "BitXor", "ReduceScatter", "AllGather", "opcode_layout"})
         CHECK(idents.find(tok) == std::string::npos);
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// NSS-09(3.1 逐格核对表)—— 12 格 `ref` ↔ 锚点摘要条目**一一可解析**
+//   ⚠️ **防空转**:若收集器退化为空集,「一一对应」会**恒真**(队列 #11 Entry #141 B-7 同型陷阱)
+// ══════════════════════════════════════════════════════════════════════════
+TEST_CASE("NSS-09:逐格 ref 可解析 —— 12 格 ↔ 锚点摘要条目(含防空转)",
+          "[cep][nvlink-sharp][state-spec]") {
+    const std::string doc = read_repo_file(kAnchorRelPath);
+    REQUIRE(!doc.empty());
+
+    // ① 锚点摘要有**两种**条目形态:`A-n` 在 `###` **标题**;`N-n` / `C-n` 在**表格单元格**
+    const auto a_ids = cpptlm::cep::collect_heading_ids(doc, "A-");
+    const auto n_ids = cpptlm::cep::collect_ids(doc, "N-");
+    const auto c_ids = cpptlm::cep::collect_ids(doc, "C-");
+
+    // ② **防空转**:三者都**非空**且条数精确 ⇒ 下面的「一一对应」才有意义
+    CHECK(a_ids.size() == 5u); // A-1 ~ A-5
+    CHECK(n_ids.size() == 9u); // N-1 ~ N-9
+    CHECK(c_ids.size() == 9u); // C-1 ~ C-9
+
+    // ③ 载体侧:12 格的 `ref` token
+    std::set<std::string> used_a;
+    std::set<std::string> used_c;
+    std::size_t cells = 0;
+    std::size_t bad_tokens = 0;
+    const auto collect = [&](const nvs::Basis& b) {
+        ++cells;
+        std::istringstream iss(b.ref != nullptr ? b.ref : "");
+        std::string tok;
+        while (iss >> tok) {
+            if (tok.rfind("A-", 0) == 0) {
+                used_a.insert(tok);
+            } else if (tok.rfind("C-", 0) == 0) {
+                used_c.insert(tok);
+            } else {
+                ++bad_tokens;
+                INFO("未预期的 ref token: " << tok);
+            }
+        }
+    };
+    for (const auto& b : nvs::kBasisIngressDecision)
+        collect(b);
+    for (const auto& b : nvs::kBasisRegisterResult)
+        collect(b);
+    for (const auto& b : nvs::kBasisEpochState)
+        collect(b);
+    for (const auto& b : nvs::kBasisOrderingRule)
+        collect(b);
+    for (const auto& b : nvs::kBasisVcReservationState)
+        collect(b);
+    for (const auto& b : nvs::kBasisCollectiveScope)
+        collect(b);
+
+    CHECK(cells == 12u);
+    CHECK(bad_tokens == 0u);
+    // ④ 每个 token 都**真实存在于**锚点摘要(逐格可解析)
+    for (const auto& t : used_c)
+        CHECK(c_ids.count(t) == 1u);
+    for (const auto& t : used_a)
+        CHECK(a_ids.count(t) == 1u);
+    // ⑤ `C-1` ~ `C-9` **全部**被引用(无空洞 —— 「非 pending 下限」的另一面)
+    CHECK(used_c == c_ids);
+    // ⑥ 佐证指针:`A-1` / `A-3` / `A-5` 被引用;`A-2` / `A-4` 已登记为「无载体格」
+    //    (锚点摘要 §2bis.2 口径 3 + `tasks 2.8c`)
+    CHECK(used_a.count("A-1") == 1u);
+    CHECK(used_a.count("A-3") == 1u);
+    CHECK(used_a.count("A-5") == 1u);
+    CHECK(used_a.count("A-2") == 0u);
+    CHECK(used_a.count("A-4") == 0u);
+
+    // ⑦ 9 项 pending 的 `ref` 覆盖 `N-1` ~ `N-9`(锚点摘要 §3 的表格条目)
+    std::set<std::string> used_n;
+    for (const auto& it : nvs::kPendingSemanticItems) {
+        std::istringstream iss(it.ref != nullptr ? it.ref : "");
+        std::string tok;
+        while (iss >> tok) {
+            if (tok.rfind("N-", 0) == 0)
+                used_n.insert(tok);
+        }
+    }
+    CHECK(used_n == n_ids);
 }
 
 // ══════════════════════════════════════════════════════════════════════════

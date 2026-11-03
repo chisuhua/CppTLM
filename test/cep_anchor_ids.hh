@@ -35,94 +35,131 @@
 #include <vector>
 
 namespace cpptlm {
-namespace cep {
+    namespace cep {
 
-    /// 去掉 Markdown 粗体标记(`**`)与首尾空白。
-    inline std::string strip_bold_and_trim(std::string s) {
-        const auto trim = [](std::string& v) {
-            while (!v.empty() && (v.front() == ' ' || v.front() == '\t')) {
-                v.erase(v.begin());
-            }
-            while (!v.empty() && (v.back() == ' ' || v.back() == '\t' || v.back() == '\r')) {
-                v.pop_back();
-            }
-        };
-        trim(s);
-        // 反复去首尾 `**`(容忍 `**x**` 与 `****x****`)
-        while (s.size() >= 4 && s.compare(0, 2, "**") == 0 && s.compare(s.size() - 2, 2, "**") == 0) {
-            s = s.substr(2, s.size() - 4);
+        /// 去掉 Markdown 粗体标记(`**`)与首尾空白。
+        inline std::string strip_bold_and_trim(std::string s) {
+            const auto trim = [](std::string& v) {
+                while (!v.empty() && (v.front() == ' ' || v.front() == '\t')) {
+                    v.erase(v.begin());
+                }
+                while (!v.empty() && (v.back() == ' ' || v.back() == '\t' || v.back() == '\r')) {
+                    v.pop_back();
+                }
+            };
             trim(s);
+            // 反复去首尾 `**`(容忍 `**x**` 与 `****x****`)
+            while (s.size() >= 4 && s.compare(0, 2, "**") == 0 &&
+                   s.compare(s.size() - 2, 2, "**") == 0) {
+                s = s.substr(2, s.size() - 4);
+                trim(s);
+            }
+            return s;
         }
-        return s;
-    }
 
-    /// 形如 `TLC-01` / `R-T1` / `D1` 的**条目号** = `prefix` + **全数字**后缀。
-    /// ⚠️ 后缀**必须全为数字** —— 否则 `R-T1` 之类会被误当合法 id。
-    inline bool is_wellformed_id(const std::string& id, const std::string& prefix) {
-        if (prefix.empty() || id.size() <= prefix.size()) {
-            return false;
-        }
-        if (id.compare(0, prefix.size(), prefix) != 0) {
-            return false;
-        }
-        for (std::size_t i = prefix.size(); i < id.size(); ++i) {
-            if (!std::isdigit(static_cast<unsigned char>(id[i]))) {
+        /// 形如 `TLC-01` / `R-T1` / `D1` 的**条目号** = `prefix` + **全数字**后缀。
+        /// ⚠️ 后缀**必须全为数字** —— 否则 `R-T1` 之类会被误当合法 id。
+        inline bool is_wellformed_id(const std::string& id, const std::string& prefix) {
+            if (prefix.empty() || id.size() <= prefix.size()) {
                 return false;
             }
-        }
-        return true;
-    }
-
-    /// 收集文档**表格单元格**里形如 `<prefix><数字>` 的条目号。
-    ///
-    /// ⚠️ **容忍 Markdown 粗体** —— `| **TLC-01** |` 与 `| TLC-01 |` 等价。
-    /// ⚠️ **只认「整个单元格」** —— `| x TLC-01 |` 这类**不会**被误收。
-    inline std::set<std::string> collect_ids(const std::string& doc, const std::string& prefix) {
-        std::set<std::string> ids;
-        std::istringstream in(doc);
-        std::string line;
-        while (std::getline(in, line)) {
-            std::size_t start = 0;
-            while (true) {
-                const std::size_t bar = line.find('|', start);
-                if (bar == std::string::npos) {
-                    break;
-                }
-                const std::size_t next = line.find('|', bar + 1);
-                const std::size_t end = (next == std::string::npos) ? line.size() : next;
-                const std::string cell = strip_bold_and_trim(line.substr(bar + 1, end - bar - 1));
-                if (is_wellformed_id(cell, prefix)) {
-                    ids.insert(cell);
-                }
-                if (next == std::string::npos) {
-                    break;
-                }
-                start = next;
+            if (id.compare(0, prefix.size(), prefix) != 0) {
+                return false;
             }
-        }
-        return ids;
-    }
-
-    /// **逐格**白名单比对:载体的 `refs` 与锚点的 `ids` 必须**一一对应**
-    /// (集合相等 **且** 载体侧无重复)⇒ 任一侧被改 ⇒ **必红**。
-    inline bool refs_resolve_one_to_one(const std::vector<std::string>& refs,
-                                         const std::set<std::string>& ids) {
-        if (refs.size() != ids.size()) {
-            return false;
-        }
-        std::set<std::string> seen;
-        for (const auto& r : refs) {
-            if (ids.find(r) == ids.end()) {
-                return false;  // 载体侧有锚点里**不存在**的条目号
+            for (std::size_t i = prefix.size(); i < id.size(); ++i) {
+                if (!std::isdigit(static_cast<unsigned char>(id[i]))) {
+                    return false;
+                }
             }
-            if (!seen.insert(r).second) {
-                return false;  // 载体侧重复引用同一条目号
-            }
+            return true;
         }
-        return seen.size() == ids.size();
-    }
 
-}  // namespace cep
-}  // namespace cpptlm
+        /// 收集文档**表格单元格**里形如 `<prefix><数字>` 的条目号。
+        ///
+        /// ⚠️ **容忍 Markdown 粗体** —— `| **TLC-01** |` 与 `| TLC-01 |` 等价。
+        /// ⚠️ **只认「整个单元格」** —— `| x TLC-01 |` 这类**不会**被误收。
+        inline std::set<std::string> collect_ids(const std::string& doc,
+                                                 const std::string& prefix) {
+            std::set<std::string> ids;
+            std::istringstream in(doc);
+            std::string line;
+            while (std::getline(in, line)) {
+                std::size_t start = 0;
+                while (true) {
+                    const std::size_t bar = line.find('|', start);
+                    if (bar == std::string::npos) {
+                        break;
+                    }
+                    const std::size_t next = line.find('|', bar + 1);
+                    const std::size_t end = (next == std::string::npos) ? line.size() : next;
+                    const std::string cell =
+                        strip_bold_and_trim(line.substr(bar + 1, end - bar - 1));
+                    if (is_wellformed_id(cell, prefix)) {
+                        ids.insert(cell);
+                    }
+                    if (next == std::string::npos) {
+                        break;
+                    }
+                    start = next;
+                }
+            }
+            return ids;
+        }
 
-#endif  // CEP_ANCHOR_IDS_HH
+        /// 收集**标题**里的条目号(`### A-1 **…**` / `#### C-3 …`)。
+        ///
+        /// ⚠️ **为什么必须有这个函数**:`collect_ids` **只扫表格单元格**,而锚点摘要的
+        /// `A-n` 条目是 `###` **标题** ⇒ 只用 `collect_ids` 会得到**空集** ⇒
+        /// 逐格核对**恒真空转**(= 判据不生效)。本函数与 `collect_ids` **配套**使用。
+        ///
+        /// 支持 `##` ~ `######`;容忍标题里的 Markdown 粗体。
+        inline std::set<std::string> collect_heading_ids(const std::string& doc,
+                                                         const std::string& prefix) {
+            std::set<std::string> ids;
+            std::istringstream in(doc);
+            std::string line;
+            while (std::getline(in, line)) {
+                std::size_t h = 0;
+                while (h < line.size() && line[h] == '#')
+                    ++h;
+                if (h < 2 || h > 6)
+                    continue; // 不是 `##` ~ `######`
+                if (h >= line.size() || line[h] != ' ')
+                    continue;
+                std::size_t b = h;
+                while (b < line.size() && line[b] == ' ')
+                    ++b;
+                // 取标题的第一个 token
+                std::size_t e = b;
+                while (e < line.size() && line[e] != ' ' && line[e] != '\r')
+                    ++e;
+                const std::string head = strip_bold_and_trim(line.substr(b, e - b));
+                if (is_wellformed_id(head, prefix))
+                    ids.insert(head);
+            }
+            return ids;
+        }
+
+        /// **逐格**白名单比对:载体的 `refs` 与锚点的 `ids` 必须**一一对应**
+        /// (集合相等 **且** 载体侧无重复)⇒ 任一侧被改 ⇒ **必红**。
+        inline bool refs_resolve_one_to_one(const std::vector<std::string>& refs,
+                                            const std::set<std::string>& ids) {
+            if (refs.size() != ids.size()) {
+                return false;
+            }
+            std::set<std::string> seen;
+            for (const auto& r : refs) {
+                if (ids.find(r) == ids.end()) {
+                    return false; // 载体侧有锚点里**不存在**的条目号
+                }
+                if (!seen.insert(r).second) {
+                    return false; // 载体侧重复引用同一条目号
+                }
+            }
+            return seen.size() == ids.size();
+        }
+
+    } // namespace cep
+} // namespace cpptlm
+
+#endif // CEP_ANCHOR_IDS_HH

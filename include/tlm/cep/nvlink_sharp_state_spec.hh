@@ -527,6 +527,19 @@ namespace tlm {
             static_assert(!ordering_d_allows_reduce(false, true),
                           "NSS-06-ORDERING-MIS: D —— barrier 未完成 ⇒ SHALL 禁止 reduce");
 
+            // ⚠️ **「登记锁」与「结构锁」的界限**(评测夹具 Phase 3 实测后如实登记,Entry #184)
+            //   `kIngressDecisionCount` / `kRegisterResultCount` / `kEpochStateCount` /
+            //   `kOrderingRuleCount` / `kVcReservationStateCount` / `kCollectiveScopeCount`
+            //   都是**登记锁**:常量是**手写**的,与枚举成员**手工同步** ——
+            //   C++17 **无法**反射枚举基数 ⇒ 给某个枚举**新增一个成员**时,这些计数断言
+            //   **不会**自动触发(实测:`enum { Unavailable = 0, Reserved = 1 }` ⇒ 计数仍为 1)。
+            //   ⇒ 真正的**结构性**保证在下面两处,**不**依赖计数常量:
+            //     ① 「类型**无** `vc_id` / 四字段」—— SFINAE 可判定(探针 `CP-03`)·
+            //        载体源扫描(代码标识符里不得出现 `vc_id` / `revisit_trigger`)
+            //     ② 「跨 fabric 取值不可表达」—— 载体源扫描(`CrossFabric` / `InterNode` /
+            //        `GlobalScope` 零命中,探针 `NSS-08-SCOPE-OVERREACH`)
+            //   ⇒ ⛔ **不得**把登记锁当作结构锁来宣称(否则就是「纸面锁」)。
+
             // ── NSS-07 / CP-03:VC 预留单一状态 ─────────────────────────────────
             static_assert(kVcReservationStateCount == 1,
                           "CP-03: 集合 VC 预留 SHALL 只有 Unavailable 单一取值"

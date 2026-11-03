@@ -11352,6 +11352,73 @@ Phase 2 给断言文案加归因 id 后,`NSS-07` 的 token 扫描(`src.find("vc_
 
 ---
 
+### Entry #184 — 2026-11-03 [plan](队列 #13 规约层 **Phase 3 完成** —— 9 组/10 条反向 fixture + 逐格核对表 + 2 处真实缺陷)
+
+**主题**:队列 #13 规约层 change 的 **Phase 3(判据收口)**完成(3.1 ~ 3.9 全勾)。**角色**:builder。
+
+**① 交付面**
+
+| 项 | 内容 |
+|---|---|
+| 探针 | `scripts/test/cep_nvlink_sharp_state_spec_probe.cc`(运行期判据 + 源扫描 + `PROBE:FAIL <id>`) |
+| 驱动 | `scripts/test/cep_nvlink_sharp_state_spec_reverse_verify.sh`(影子毒化 ⇒ `-I $SHADOW/include` 优先;仓内文件零改动) |
+| ctest | `cep_nvlink_sharp_state_spec_reverse_verify` ⇒ `ctest` **143/143**(+1) |
+| 测试 | 11 cases / **226** assertions(Phase 2 为 10 / 201) |
+
+**② 9 组 / 10 条 fixture(全部「毒化 ⇒ 必红 + 归因 id 命中」)**
+
+| # | 毒化 | 红形态 | 归因 id |
+|---|---|---|---|
+| 3.2a | 给 `classify_at_fabric_ingress` 加 `std::uint32_t opcode` 参数 | 编译期 | `CP-OPCODE-CLASSIFIER` |
+| 3.2b | 载体加 `#include "tlm/cep/collective_plane.hh"` | 运行期(源扫描) | `CP-05` |
+| 3.2c | `epoch_routes_to_collective(Uncommitted)` 返 `true` | 编译期 | `CP-EPOCH-SEMANTICS` |
+| 3.2d | `register_region` 恒返 `Ok` | 编译期 | `CP-DRAIN-FAIL` |
+| 3.2e | `classify_after_destroy` 恒返 `Pass` | 编译期 | `NSS-04-DESTROY-LEAK` |
+| 3.2f | `is_fail_stop` 恒返 `false` | 编译期 | `CP-DIVERT-STOP` |
+| 3.2g | `ordering_c_orders_reduce` 反转比较 | 编译期 | `NSS-06-ORDERING-MIS` |
+| 3.2h | 给载体加 `std::uint8_t vc_id` 成员 | 运行期(源扫描) | `CP-03` |
+| 3.2i | `CollectiveScope` 加 `CrossFabric` | 运行期(源扫描) | `NSS-08-SCOPE-OVERREACH` |
+| 3.2j | 某格 `basis.ref` 置 `nullptr` | 编译期 | `NSS-09-BASIS-MISSING` |
+
+⇒ **11/11 通过**(含 1 条基线正控)。全部 fixture 的毒化锚点**恰好命中 1 次**(未命中 ⇒ 判 fixture 失效,不当「红」放行)。
+
+**③ ⚠️ 反向 fixture 抓到 **2 处真实缺陷**(本 Phase 的核心价值)
+
+| # | 缺陷 | 处置 |
+|---|---|---|
+| **B-1** | **`kVcReservationStateCount` 等 6 个计数常量是「登记锁」,与枚举解耦** —— 实测:给 `VcReservationState` 加 `Reserved = 1` ⇒ 计数断言**不触发**(C++17 无法反射枚举基数)⇒ 原计划的 3.2h「加第 2 枚举值」**无鉴别力** | ① fixture 改采 **delta spec 明写的形态**(「填入具体 VC 编号 ⇒ 必红」= 加 `vc_id` 字段)⇒ 运行期源扫描红;② 在载体 §⑪ 前**如实登记**「登记锁 vs 结构锁」的界限,并点名真正的结构性保证(无 `vc_id` 字段的 SFINAE + 源扫描)⇒ ⛔ **不得**把登记锁当作结构锁宣称 |
+| **B-2** | **`A-n` 在 `###` 标题、`N-n` / `C-n` 在表格** ⇒ 只用 `collect_ids`(只扫表格)会得到**空集** ⇒ 逐格核对**恒真空转** | 新增 `collect_heading_ids()` 到 `test/cep_anchor_ids.hh`(追加式,不改既有行为);测试断言 `A-n` 恰 **5** / `N-n` 恰 **9** / `C-n` 恰 **9** ⇒ **防空转**;再逐 token 比对 + `used_c == c_ids`(无空洞) |
+
+⚠️ **B-2 与队列 #11 Entry #141 的 B-7 是同一陷阱**(「合法 ID 集合为空 ⇒ 逐格校验恒真空转」)
+⇒ 本次在**写之前**就识别到并加了防空转断言;但仍登记,因它**只能靠人记得加**。
+⚠️ **B-1 类缺陷是反向 fixture 的正当产出** —— 若不做「毒化 ⇒ 必红」,「计数锁」会被当成结构锁沿用下去。
+
+**④ 逐格核对表(3.1)**
+
+12 格的 `ref` token(空格分隔)逐条解析:`C-n` 作**断言依据**、`A-n` 作**佐证指针**。
+⇒ 断言:`C-1` ~ `C-9` **全部**被引用(无空洞)· `A-1` / `A-3` / `A-5` 被引用 · `A-2` / `A-4`
+**零引用**(已登记为「无载体格」,per 锚点摘要 §2bis.2 口径 3)· 9 项 pending 的 `N-1` ~ `N-9` 全覆盖。
+
+**⑤ 文档同步(顺带闭合 Entry #182 的 C-1 / C-4)**
+
+| 项 | 处置 |
+|---|---|
+| **C-1** `docs/research/AGENTS.md` 索引漂移 | 补登队列 #12 / #13 两条锚点摘要;并订正索引计数 —— 原写 13 份,而逐节合计 12、磁盘实际 **14** ⇒ 三重不一致 ⇒ 现**逐节合计 = 磁盘实际 = 14** |
+| **C-4** `scripts/README.md` 漏登反向脚本 | 补 **3 行**(本脚本 + 队列 #11 / #12 的两个遗漏项);表内计数 12 → **15** |
+
+**⑥ 验收(实测)**
+
+门禁 **7/7** rc=0 · `openspec validate --strict` rc=0 · `format.sh --check` rc=0 ·
+`[cep][nvlink-sharp][state-spec]` **11 cases / 226 assertions** 全过 · 反向验证 **11/11** ·
+`ctest` **143/143** · `-Wall -Wextra` 零警告
+
+**⑦ 关联**: Entry #183(Phase 2)· #182(Phase 2/3 细化 + D-1/D-2/D-3)· #181 / #180(Phase 1)
+· #179 / #178(critic 两轮)· #141(队列 #11 的 B-7 同型陷阱)
+· `scripts/test/cep_nvlink_sharp_state_spec_{probe.cc,reverse_verify.sh}`(本条对象)
+· `test/cep_anchor_ids.hh`(新增 `collect_heading_ids`)· `test/CMakeLists.txt` / `scripts/README.md` / `docs/research/AGENTS.md`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 
