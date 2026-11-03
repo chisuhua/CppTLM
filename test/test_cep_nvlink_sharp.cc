@@ -43,7 +43,10 @@ namespace {
     constexpr const char* kCollectiveRelPath = "include/tlm/cep/collective_plane.hh";
     constexpr const char* kInstancesRelPath = "include/tlm/cep/protocol_instances.json";
     constexpr const char* kPlanesRelPath = "include/tlm/cep/collective_planes.json";
-    constexpr const char* kDesignRelPath = "openspec/changes/cpptlm-cep-nvlink-sharp/design.md";
+    /// ⚠️ **归因 id 的可执行登记面 = main spec**(committed)——
+    /// change 的 4 件套在归档后位于**不入库**的 `openspec/changes/archive/`(per `.gitignore`)
+    /// ⇒ 判据**不得**依赖它们(否则归档即失效)⇒ 本文件读 **main spec**。
+    constexpr const char* kDesignRelPath = "openspec/specs/cep-nvlink-sharp/spec.md";
 
     std::string read_repo_file(const std::string& rel) {
         std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
@@ -451,7 +454,7 @@ TEST_CASE("归因 id 元测试 —— fixture id ⊆ design §7 id,且本层新�
     const std::string design = read_repo_file(kDesignRelPath);
     REQUIRE(!design.empty());
 
-    // ① 每个 fixture id 都 SHALL 出现在 design §7(唯一登记处)
+    // ① 每个 fixture id 都 SHALL 出现在 main spec(可执行登记面)
     for (const auto& id : fixture_ids) {
         INFO("fixture id: " << id);
         CHECK(design.find(id) != std::string::npos);
@@ -461,7 +464,7 @@ TEST_CASE("归因 id 元测试 —— fixture id ⊆ design §7 id,且本层新�
         INFO("new cp id: " << id);
         CHECK(fixture_ids.count(id) == 1u);
     }
-    // ③ **反向**:`design` 里出现的 `CP-NVLINK-*` 归因 id SHALL 为 **0**
+    // ③ **反向**:`CP-NVLINK-*` 归因 id SHALL 为 **0**
     //    (A-10:本层**不**自造 `CP-NVLINK-*` 体系 ⇒ 归因用 `NVA-xx`)
     CHECK(design.find("CP-NVLINK-") == std::string::npos);
 }

@@ -265,13 +265,16 @@ _owner = None
 for _k, _ln in enumerate(_lines):
     if "S1-" not in _ln:
         continue
-    _m = re.match(r"\|\s*\*\*\d+\*\*\s*\|\s*`(cpptlm-cep-[a-z0-9-]+)`", _ln)
+    _m = re.match(r"\|\s*\*\*\d+\*\*\s*\|\s*`?(cpptlm-cep-[a-z0-9-]+)`?", _ln)
     if _m:
         _owner = (_k, _m.group(1))
         break
-assert _owner, "锚点漂移:§4.0 无「带 S1-N 标记的活队列行」"
+assert _owner, "锚点漂移:§4.0 无「带 S1-N 标记的队列行」"
 _ok, _onm = _owner
-_lines[_ok] = _lines[_ok].replace("`" + _onm + "`", "`cpptlm-cep-umbrella`", 1)
+# ⚠️ 2026-11-03(队列 #13 实现层归档,per 台账 Entry #190):owner 行的 change 名**去反引号**
+#    (断言 ⑦ ③:含移交标记的行**不得**以反引号提及**已归档** change)⇒ 本 fixture 的
+#    变异必须**与反引号状态无关** ⇒ 用正则同时覆盖「带引号」与「不带引号」两种形态。
+_lines[_ok] = re.sub(r"`?" + re.escape(_onm) + "`?", "`cpptlm-cep-umbrella`", _lines[_ok], count=1)
 sec = "".join(_lines)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
@@ -308,13 +311,15 @@ _owner = None
 for _k, _ln in enumerate(_lines):
     if "⏭(孤儿)" not in _ln:
         continue
-    _m = re.match(r"\|\s*\*\*\d+\*\*\s*\|\s*`(cpptlm-cep-[a-z0-9-]+)`", _ln)
+    _m = re.match(r"\|\s*\*\*\d+\*\*\s*\|\s*`?(cpptlm-cep-[a-z0-9-]+)`?", _ln)
     if _m:
         _owner = (_k, _m.group(1))
         break
-assert _owner, "锚点漂移:§4.2 无「带 ⏭(孤儿) 标记的活队列行」"
+assert _owner, "锚点漂移:§4.2 无「带 ⏭(孤儿) 标记的队列行」"
 _ok, _onm = _owner
-_lines[_ok] = _lines[_ok].replace("`" + _onm + "`", "`cpptlm-cep-umbrella`", 1)
+# ⚠️ 2026-11-03(队列 #13 实现层归档,per 台账 Entry #190):同 fixture ① ——
+#    owner 行的 change 名已**去反引号** ⇒ 变异必须与反引号状态无关。
+_lines[_ok] = re.sub(r"`?" + re.escape(_onm) + "`?", "`cpptlm-cep-umbrella`", _lines[_ok], count=1)
 sec = "".join(_lines)
 p.write_text(t[:i] + sec + t[j:], encoding="utf-8")'
 
