@@ -260,7 +260,8 @@ group-scoped completion     → Fabric Collective Plane
 | V3 | barrier 分类 litmus 双向 | 分类函数(`fabric_ingress_classify`) | ⚠️ **载体尚不存在**(属 P3 / 队列 #13)⇒ 在 #13 落地前**不可执行**;归因 id **待 #13 建立** |
 | V4 | CHI / CXL 配置零调用 | `NullCollectivePlane` + 调用计数 · 队列 #5 已交付 | ✅ **已存在** |
 | V5 | partial failure 显式建模 | 静态扫描 + 运行期(`CollectiveEvt::Fault`)· 队列 #5 已交付 | ✅ **已存在**;归因 id **待 #13 建立** |
-| V6-a | VC 预留现状恒真登记 | 声明层检查 · 队列 #5 已交付(`include/tlm/cep/collective_planes.json`) | ✅ **已存在**(既有 id `CP-03`);⚠️ **恒真** ⇒ 见 V6-b |
+| V6-a | 空预留**显式声明门**(complement: **非**恒真) | 声明层检查 · `include/tlm/cep/collective_planes.json` 的 `vc_reservation_declaration` | ✅ **已落地**(`2ea09607`;既有 id `CP-03`)。⚠️ **以 SU 2026-11-03 的 D.4 为准** —— 原「恒真登记」表述已被取代 |
+| V6-c | 前提约束:声明 `unavailable` 时不得存在真实 fabric collective 流量载体 | 队列 #13 规约层 / 实现层的载体清单 | ⚠️ **载体尚不存在** ⇒ 由队列 #13 交付 (归因 id `CP-03-VC-PRECONDITION`) |
 | V6-b | VC 预留交付门 | 队列 #13 的预留表 | ⚠️ **载体尚不存在** ⇒ 由队列 #13 交付;⚠️ 与台账 Entry #170 ⑤-补 ⑩ 联动(两个网络 VC 已占满 ⇒ 须先裁决 VC 空间方案) |
 | V7 | 原语恰 4 | **判据本体 = `ADR-CEP-03 §9 V2`**(去重) | ✅ **已存在**(队列 #5 的 `CollectiveOp` 恰 4 值) |
 | V8 | 关闭后无残留 | 绑定检查 + 关闭路径 · 队列 #5 已交付 | ✅ **已存在**;归因 id **待 #13 建立** |
@@ -309,8 +310,8 @@ group-scoped completion     → Fabric Collective Plane
 
 - 6 个实例的 `vc_binding` 见 `include/tlm/cep/protocol_instances.json`(`tilelink_c` 用 `{0,2,1,3}`,同样占满)。
 - ⚠️ **`vc_id` 是 `ch_uint<8>`**(`include/bundles/noc_bundles_tlm.hh:38`)⇒ **"0-3" 是 schema 策略锁,不是物理上限**。
-- ⚠️ **`ADR-CEP-09 §2 决策 4` 显式排除**跨平面 VC 隔离(「本 ADR 是**平面内**问题,两者不重复」)⇒ **不存在**「共享 VC + 仲裁保无环」的现成解。
-- ⚠️ `include/tlm/cep/collective_plane_contract.hh` 的 `evaluate_vc_reservation`:预留表为空 ⇒ **直接 PASS**(`detail` 仅为散文,**不可判定**)⇒ **CP-03 恒真**(违反铁律「纯负向断言须配正控」)。
+- ⚠️ **`ADR-CEP-09 §2 决策 4` 显式排除**跨平面 VC 隔离(「本 ADR 是**平面内**问题,两者不重复」)⇒ **不存在**「共享 VC + 仲裁保无环」的现成解。⚠️ **该 ADR 当前仍为草案(v0.1)**,本引用的是**草案措辞**;D.6 已把「`ADR-CEP-09` 定稿」列为重访触发。
+- ⚠️ `include/tlm/cep/collective_plane_contract.hh` 的 `evaluate_vc_reservation`:预留表为空 ⇒ **直接 PASS**(`detail` 仅为散文,**不可判定**)⇒ **CP-03 恒真**(违反铁律「纯负向断言须配正控」)。⚠️ 这是 **Decision D 裁决前**的状态;D.4 已取代之(载体见下)。
 
 ### D.2 裁决
 
@@ -337,11 +338,11 @@ group-scoped completion     → Fabric Collective Plane
 
 | # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
 |---|---|---|---|
-| **V6-a** | **空预留门**:`collective_vc_reservation` 为空 ⇒ **必须**有 `vc_reservation_declaration` 且 `status` / `reason` / `owner` / `revisit_trigger` **四字段齐全**;缺任一 ⇒ 必红 | `include/tlm/cep/collective_planes.json` + `collective_plane_contract.hh` 的 `evaluate_vc_reservation` —— ⚠️ **载体待 builder 落地(当前不存在)** ⇒ 该判据在其落地前**不可执行** | **正控**:四字段齐全 ⇒ PASS · **反 fixture**:删 `revisit_trigger`(或整段删声明)⇒ 必红(`CP-03`) |
+| **V6-a** | **空预留门**:`collective_vc_reservation` 为空 ⇒ **必须**有 `vc_reservation_declaration` 且 `status` / `reason` / `owner` / `revisit_trigger` **四字段齐全**;缺任一 ⇒ 必红 | `include/tlm/cep/collective_planes.json` + `collective_plane_contract.hh` 的 `evaluate_vc_reservation` —— ✅ **载体已落地**(commit `2ea09607`:schema 的 `if/then` + JSON 四字段 + 判据 + 3 条反 fixture + 1 条文件级 E2E 反 fixture) | **正控**:四字段齐全 ⇒ PASS · **反 fixture**:删 `revisit_trigger`(或整段删声明)⇒ 必红(`CP-03`) |
 | **V6-b** | **非空预留门**:预留非空 ⇒ 每个 `(network, vc_id)` 须 `vc_id ≤ 3` ∧ `vc_id < vc_count` ∧ **不与**该网络既有 coherence `vc_binding` 撞号 | 同上(既有实现) | 毒化:预留撞号 / 越界 ⇒ 必红(`CP-03`) |
 | **V6-c**(新增) | **前提约束**:声明 `status: unavailable` 时,拓扑中**不得**存在真实 fabric collective 流量载体(仅本地模型) | 队列 #13 规约层 / 实现层的载体清单 | 毒化:声明 `unavailable` 却接入 fabric collective 通道 ⇒ 必红(`CP-03-VC-PRECONDITION`) |
 
-> ⚠️ **载体落地前不得宣称 CP-03 已具备鉴别力** —— `V6-a` / `V6-c` 的载体均由 **builder** 交付(见 `obj §10` 的登记)。
+> ⚠️ **载体状态**:`V6-a` **已落地**(`2ea09607`,含文件级 E2E 反 fixture:删 `revisit_trigger` ⇒ 报告出现 **CP-03** 行且 detail 点名缺项);**`V6-c` 仍由队列 #13 交付**(规约层载体清单)。⇒ 在 `V6-c` 落地前,**不得**宣称「本拓扑的 collective 前提约束已被机器验证」。
 
 ### D.5 未采取的路径(用户裁决时逐条比较)
 

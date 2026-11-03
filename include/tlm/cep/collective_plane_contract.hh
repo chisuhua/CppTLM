@@ -266,8 +266,11 @@ inline CollectivePlaneDeclaration parse_collective_plane_declaration(const nlohm
             }
         }
     }
-    // **预留为空时的显式声明**(Decision D)。存在但字段缺失/类型非法 ⇒ source_error(配置错误),
-    // 与「未声明」区分:未声明由 CP-03 判 FAIL(不是配置错误,是**漏声明**)。
+    // **预留为空时的显式声明**(Decision D)。
+    // ⚠️ **归因纪律**:声明节点内的缺陷(缺字段 / 非字符串)**不**置 `source_error` ——
+    //    否则 `run_collective_plane_contract` 会在 CP-03 之前早退,报告里**没有 CP-03 行**,
+    //    与 `ADR-CEP-01` D.4 的反向 fixture「删 revisit_trigger ⇒ 必红(**CP-03**)」不符。
+    //    ⇒ 置 `present=true` + 缺的字段留空,由 `evaluate_vc_reservation` 判 FAIL 并点名缺项。
     if (doc.contains("vc_reservation_declaration")) {
         const auto& vd = doc["vc_reservation_declaration"];
         if (!vd.is_object()) {
@@ -276,19 +279,8 @@ inline CollectivePlaneDeclaration parse_collective_plane_declaration(const nlohm
         } else {
             d.vc_reservation_declaration.present = true;
             const auto take = [&](const char* key, std::string& dst) {
-                if (!vd.contains(key)) {
-                    d.source_error = true;
-                    d.source_error_detail =
-                        std::string("vc_reservation_declaration 缺字段 ") + key;
-                    return;
-                }
-                if (!vd[key].is_string()) {
-                    d.source_error = true;
-                    d.source_error_detail =
-                        std::string("vc_reservation_declaration.") + key + " 不是字符串";
-                    return;
-                }
-                dst = vd[key].get<std::string>();
+                if (vd.contains(key) && vd[key].is_string())
+                    dst = vd[key].get<std::string>();
             };
             take("status", d.vc_reservation_declaration.status);
             take("reason", d.vc_reservation_declaration.reason);

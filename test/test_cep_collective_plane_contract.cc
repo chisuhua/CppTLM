@@ -379,6 +379,37 @@ TEST_CASE("CEP CollectiveContract: collective VC 预留不冲突", "[cep][collec
     CHECK(cep::evaluate_vc_reservation(unknown_net, snap, d4) == cep::ContractVerdict::FAIL);
 }
 
+// ══════════════════════════════════════════════════════
+// Scenario 5b:Decision D 的**文件级**反向 fixture —— 归因必须落在 CP-03
+//   ⚠️ 单测直调 `evaluate_vc_reservation` 能拿到 CP-03,但**真实 JSON 路径**若在解析期
+//      置 `source_error` 就会在 CP-03 之前早退 ⇒ 报告里没有 CP-03 行,
+//      与 `ADR-CEP-01` D.4 的反向 fixture「删 revisit_trigger ⇒ 必红(CP-03)」不符。
+// ══════════════════════════════════════════════════════
+TEST_CASE("CEP CollectiveContract: 声明缺字段 ⇒ 报告里有 CP-03 行且判红",
+          "[cep][collective-contract]") {
+    const std::string real = read_repo_file("include/tlm/cep/collective_planes.json");
+    REQUIRE(!real.empty());
+    auto doc = nlohmann::json::parse(real);
+    REQUIRE(doc.contains("vc_reservation_declaration"));
+    doc["vc_reservation_declaration"].erase("revisit_trigger");
+
+    cep::ContractPaths p = repo_paths();
+    p.declaration = write_temp_json("cep_collective_missing_field.json", doc.dump(2));
+    const auto report = cep::run_collective_plane_contract(p);
+
+    // ① 必须**不是**「配置错误早退」—— 报告里得有完整判据行
+    REQUIRE(report.lines.size() >= 6u);
+    // ② CP-03 必须存在且为 FAIL(归因正确),detail 点名缺的字段
+    CHECK(report.verdict_of(cep::ContractRule::VcReservation) == cep::ContractVerdict::FAIL);
+    const std::string log = report.to_log();
+    CHECK(log.find("revisit_trigger") != std::string::npos);
+    // ③ 正控:同一份声明补回字段 ⇒ 整体 PASS(否则上面的红可能来自别的判据)
+    auto fixed = nlohmann::json::parse(real);
+    cep::ContractPaths p2 = repo_paths();
+    p2.declaration = write_temp_json("cep_collective_fixed_field.json", fixed.dump(2));
+    CHECK(cep::run_collective_plane_contract(p2).verdict == cep::ContractVerdict::PASS);
+}
+
 // ═════════════════════════════════════════════════════════════════════
 // Scenario 6:区域互斥判据与行为面同源(结论一致)
 // ═════════════════════════════════════════════════════════════════════

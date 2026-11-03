@@ -38,14 +38,14 @@ created: 2026-11-03
 
 | 依据 | 来源 | 本 change 用到的决策要点 |
 |---|---|---|
-| `ADR-CEP-01` | Fabric Collective Plane 作为**旁路平面** · §3.1 barrier 分类 litmus · §3.3 抓取点 | SHARP 属 **collective 平面**(非 coherence 目录);抓取点 1「Collective Plane → Directory 调用边**必须为零**」(机器检查)⇒ `BroadcastNull`(`scope=NONE`)是唯一零目录边的选择;抓取点 3「集合流量走**独立 VC**」⇒ 须交付 VC 预留 |
+| `ADR-CEP-01` | Fabric Collective Plane 作为**旁路平面** · §3.1 barrier 分类 litmus · §3.3 抓取点 | SHARP 属 **collective 平面**(非 coherence 目录);抓取点 1「Collective Plane → Directory 调用边**必须为零**」(机器检查)⇒ `BroadcastNull`(`scope=NONE`)是唯一零目录边的选择;抓取点 3「集合流量走**独立 VC**」⇒ ⚠️ **本拓扑无隔离 VC**(**Decision D**,Entry #171)⇒ 须交付「`unavailable` + `vc_reservation_declaration` 四字段」,**不得**分配独立 VC |
 | `ADR-CEP-02` | canonical **10 流**清单 + barrier 重钉为 Ordering Point | SHARP 的 TL atomic **不得**新造第 11 条流 ⇒ 必须归入既有 10 流 ⇒ 清单**零 diff** |
 | `ADR-CEP-03` | §3.1 **R1~R5** + §3.2 non-cacheable 降级(CEP-13 首次定义)+ §3.3 ordering **A/B/C/D** | **规约层载体的主干**:分类判据 / 区域互斥 / epoch 纪律 / 可观测性 / 跨平面 ordering |
 | `ADR-CEP-04` | §2 caps 表(6 实现)· §13「克隆 + 纸面 caps」禁令 | `BroadcastNull` traits 行已登记 ⇒ 本队列**首次兑现**其行为面(⇒ 非纸面 caps);**禁止**用「克隆 + 抄一份 caps」交差 |
 | `ADR-CEP-11` | §3 版本锁表 | NVLink 版本锁 = **`nvlink-4.0`**(在锁表内 ⇒ 装配期不 fail) |
 | `ADR-CEP-12` | §3 schema(13 键)· §11 实例级权威分区 · §13 声明权威 | 实例声明面(13 键齐备性**机器驱动**:`required` 实读) |
 | 07 号 §5.1.1 | NVLink 行(`NvlinkAdapter` · Stage 2 · 工业 **6 族 / 8 实例**)· §5.4 canonical 10 流 · §11 状态表 | 本队列的**载体落点**与计数口径(⇒ 落地后需同步 §5.1.1 状态列与 §11 两行计数) |
-| 队列 #6 先例 | `cpptlm-cep-collective-plane-base` 已交付 `CollectivePlaneIf`(**7 方法**,含 `group_register_region`)+ `NullCollectivePlane` + `LocalCollectivePlane` + `collective_planes.json`(**本仓自持**载体) | collective 面**载体已在** ⇒ 本队列**复用**而非重建(⇒ 只扩 `collective_planes.json` 的三块内容) |
+| 队列 #6 先例 | `cpptlm-cep-collective-plane-base` 已交付 `CollectivePlaneIf`(**7 方法**,含 `group_register_region`)+ `NullCollectivePlane` + `LocalCollectivePlane` + `collective_planes.json`(**本仓自持**载体) | collective 面**载体已在** ⇒ 本队列**复用**而非重建(⇒ 只扩 `collective_planes.json` 的**三块 + `vc_reservation_declaration`**(Decision D)) |
 | 台账 Entry #166 / #167 | 队列 #12 两段式归档 + 遗留订正 | 移交链 owner 已转指 **#13**;队列 #12 的**两段式 + 5 项载体形态决定项 + Task 0 普查 + 反向 fixture** 全流程为本队列的**可复用先例** |
 | 用户裁决 | 2026-11-03 | 形态**丙**(两段式)· 开工前置含「ADR 定稿」· `sharer_tracker.impl` = `BroadcastNull` + 本队列补行为类 |
 
@@ -62,12 +62,12 @@ created: 2026-11-03
   - **可观测性(R5)**:divert 计数器 + fail-stop 断言(「epoch commit 后仍有 coherence atomic 命中已注册区域 = error」)
   - **跨平面 ordering A / B / C / D** 的规约表述(coherent atomic ↔ SHARP reduce 的可见性次序 / 同 group 内 reduce 排序约束 / SHARP barrier ↔ reduce)
   - **reduce 函数族**与 **group epoch** 的**逐格 `basis{kind, pending, ref→锚点摘要条目号}`**(公开来源受限 ⇒ 多数 `pending=true`)
-  - **集合 VC 预留表**(独立 VC;与 `ordering_assumption` 的 VC 键对齐)
+  - **集合 VC 预留状态**(**Decision D**:本拓扑 `unavailable` ⇒ `vc_reservation_declaration` 四字段 `status` / `reason` / `owner` / `revisit_trigger`;⚠️ **不得**分配独立 VC,**集合流量不得上 fabric**)
 - **第 1 个 change(实现层)** `cpptlm-cep-nvlink-sharp`:
   - `include/tlm/cep/nvlink_adapter.hh`(新 · **独立头** · 零自有表副本 · **无 `transition_*`**)
   - **`BroadcastNull` 行为实现**(新 · traits 取 `kTrackerTraits[4]` ⇒ **不另写 caps 字面量**)
   - `nvlink_4` 实例声明(13 键 · `protocol_version = nvlink-4.0`)+ `repo_owned_instance_ids` **+1**
-  - `include/tlm/cep/collective_planes.json` 三块:`plane_binding` / `registered_regions` / `collective_vc_reservation`
+  - `include/tlm/cep/collective_planes.json` **三块 + 声明**:`plane_binding` / `registered_regions` / `collective_vc_reservation`(空)+ **`vc_reservation_declaration`**(Decision D 的四字段)
   - 装配期校验 + 判据(正向 + **反向 fixture**)
 
 ### Out Scope
@@ -139,10 +139,10 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 
 | 面 | 第 0 个 change(规约层) | 第 1 个 change(实现层) |
 |---|---|---|
-| **载体** | `nvlink_sharp_state_spec.hh`:R1/R2 分类判据 + R3/R4 区域互斥与 epoch + R5 计数器/断言 + ordering A/B/C/D + reduce 函数族 + **集合 VC 预留表** + 逐格 `basis` | `nvlink_adapter.hh`:**独立 adapter**,**零自有表副本**,**无 `transition_*`**(NVLink 状态空间薄 ⇒ 无转移表可暴露) |
+| **载体** | `nvlink_sharp_state_spec.hh`:R1/R2 分类判据 + R3/R4 区域互斥与 epoch + R5 计数器/断言 + ordering A/B/C/D + reduce 函数族 + **集合 VC 预留状态**(Decision D 的 `unavailable` 四字段声明)+ 逐格 `basis` | `nvlink_adapter.hh`:**独立 adapter**,**零自有表副本**,**无 `transition_*`**(NVLink 状态空间薄 ⇒ 无转移表可暴露) |
 | **tracker** | — | **`BroadcastNull` 行为实现**(traits 取 `kTrackerTraits[4]` ⇒ 不另写 caps 字面量)⇒ 闭合 07 号 §11 的「仅声明层 traits」缺口 |
 | **实例** | — | `nvlink_4`(13 键 · `protocol_version = nvlink-4.0`)+ `repo_owned_instance_ids` **+1** |
-| **collective 面** | VC 预留表(规约) | `collective_planes.json`:`plane_binding` + `registered_regions` + `collective_vc_reservation` |
+| **collective 面** | VC 预留**状态**(Decision D:空预留 + 四字段声明) | `collective_planes.json`:`plane_binding` + `registered_regions` + `collective_vc_reservation`(空)+ `vc_reservation_declaration` |
 | **判据** | 编译期结构断言 + **逐格 basis 核对表**(每格 `pending` 须有 `ref`)+ **反向 fixture**(毒化 ⇒ **必红** + 归因命中) | 正向判据(每条**负向断言配正控**)+ **反向 fixture** + 装配期校验 + `ctest` 注册 |
 | **零改动** | `ADR-CEP-01` / `02` / `03` **正文** · canonical 10 流清单 · `protocol_instance.schema.json` | 同左 + `collective_plane.hh` / `collective_plane_contract.hh`(**除已授权追加段**)· `sharer_tracker.hh`(接口面**零改动**) |
 
@@ -175,7 +175,7 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 - [ ] **architect 裁决**:上述 **5 项载体形态决定项** 落盘(② 已裁 = `BroadcastNull`;**⑤ 的 VC 编号已裁** = **Decision D**(2026-11-03,Entry #171);①③④ 与 ⑤ 的 epoch / reduce 族**待裁**)⇒ 裁决结论**同步** `ADR-CEP-01` / `02` / `03` 与 07 号
 - [ ] **第 0 个 change(规约层)**:R1/R2 分类判据 + R3/R4 区域互斥与 epoch 生命周期 + R5 计数器/断言 + ordering A/B/C/D + reduce 函数族 + **集合 VC 预留状态**(**Decision D**:`unavailable` + `vc_reservation_declaration` 四字段,或非空预留)+ **逐格 `basis`**(每格 `pending` 须有 `ref` ⇒ 无 `ref` 的 `pending` 即红)
 - [ ] **第 0 个 change 的反向 fixture**:毒化任一格 ⇒ 编译期锁**必红** + 归因命中(铁律 ②③)⇒ **正控**(干净载体必绿)
-- [ ] **第 1 个 change(实现层)**:`NvlinkAdapter` **零自有表副本**(静态扫描 + **鉴别力自测**)+ **无 `transition_*`** + `BroadcastNull` **行为实现**(caps 逐字段取 `kTrackerTraits[4]`)+ `nvlink_4` **13 键齐备**(schema `required` **实读**)+ `repo_owned_instance_ids` **+1** + `collective_planes.json` 三块 + 装配期校验
+- [ ] **第 1 个 change(实现层)**:`NvlinkAdapter` **零自有表副本**(静态扫描 + **鉴别力自测**)+ **无 `transition_*`** + `BroadcastNull` **行为实现**(caps 逐字段取 `kTrackerTraits[4]`)+ `nvlink_4` **13 键齐备**(schema `required` **实读**)+ `repo_owned_instance_ids` **+1** + `collective_planes.json` **三块 + `vc_reservation_declaration`** + 装配期校验
 - [ ] **第 1 个 change 的反向 fixture**:**5 组**毒化 ⇒ 必红 + 归因命中 + 基线正控 ⇒ **全过**
 - [ ] **零改动核验**:`ADR-CEP-01/02/03` 正文 · canonical 10 流清单 · `protocol_instance.schema.json` · `sharer_tracker.hh` 接口面 ⇒ **零 diff**(冻结面除**已授权**追加段外)
 - [ ] **收口**:`ctest` 全绿 + 门禁 6 脚本全 rc=0 + `openspec validate --strict` rc=0 + `format.sh --check` rc=0 + KPI **2 slot 串行**(规约层归档后 slot 释放再启实现层)+ 台账 Entry(归档记录)+ 07 号 §5.1.1 状态列与 §11 计数同步
@@ -201,7 +201,7 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 
 | 面 | 影响 |
 |---|---|
-| **本仓实现** | 新增 2 个头 + 1 个行为类 + 1 个实例声明 + `collective_planes.json` 三块;**冻结面零 diff**(除已授权追加段) |
+| **本仓实现** | 新增 2 个头 + 1 个行为类 + 1 个实例声明 + `collective_planes.json` **三块 + `vc_reservation_declaration`**;**冻结面零 diff**(除已授权追加段) |
 | **平台能力** | 首次覆盖「coherence × collective × 网内归约」组合;**`BroadcastNull` 从「无消费者」变为「有消费者」** ⇒ 07 号 §11 该行状态须同步 |
 | **文档** | 07 号 §5.1.1 的 NVLink 行状态列(Stage 2 ⇒ 已落地)+ §11 两行计数(SharerTracker `5/6` ⇒ `6/6`;adapter `6 个` ⇒ `7 个`)+ §5.1.1「6 族 / 8 实例」计数口径核对;`ADR-CEP-01/02/03` 定稿后追平 |
 | **KPI** | **2 slot 串行**(规约层 → 实现层;当前实测 **0/3**)⇒ 规约层归档释放 slot 后方可启实现层 |

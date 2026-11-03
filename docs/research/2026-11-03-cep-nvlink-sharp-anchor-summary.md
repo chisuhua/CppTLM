@@ -57,7 +57,7 @@
 |---|---|
 | **定位** | S2(§Creation of NVIDIA SHARP 段)· S3(Overview 段) |
 | **断言摘要(改写)** | SHARP 把 all-reduce / reduce / broadcast 等集合操作**从 CPU/GPU 卸载到网络交换机**;**归约在 fabric 内完成**,随着到达聚合节点,网络中传输的数据量随之下降;S2 另称该迁移可把传输数据量**减少约一半**并降低抖动 |
-| **对队列 #13 的约束** | 与 `ADR-CEP-01` 的「collective 是**旁路平面**、完成域为 group-scoped」一致;`ADR-CEP-03 §4` 的**唯一分类点在 fabric ingress** 得到该来源支持(归约点在网络侧,不在源端) |
+| **对队列 #13 的约束** | 与 `ADR-CEP-01` 的「collective 是**旁路平面**、完成域为 group-scoped」一致;`ADR-CEP-03 §4` 的 **S1**(唯一分类点在 fabric ingress)得到该来源支持(归约点在网络侧,不在源端)。⚠️ **S4**(opcode 永不作分类器)**不**由本来源支撑 —— 它是 ADR 的**设计约束**,无需公开来源 |
 
 ### A-4 **第 3 代 SHARP:同一拓扑上可建多棵聚合树(多作业并发)**
 
@@ -112,7 +112,7 @@
 |---|---|---|
 | 1 | `nvlink_4` 的 collective 能力 = **节点内**(A-1 / A-5) | 实例声明 + 规约层能力面 |
 | 2 | 多 group 并存是**必须**(A-4) | group 表 / epoch 表按多组建模 |
-| 3 | 归约点在 **fabric ingress**(A-3)⇒ 支撑 `ADR-CEP-03` 的 S1/S4 | 分类判据 |
+| 3 | 归约点在 **fabric ingress**(A-3)⇒ 支撑 `ADR-CEP-03` 的 **S1**;⚠️ **S4 属设计约束**,不引用公开来源 | 分类判据 |
 | 4 | reduce 算子族 / 逐操作矩阵 / epoch / VC / 报文格式 ⇒ **`pending`**(§3) | 逐格 `basis` |
 
 ---

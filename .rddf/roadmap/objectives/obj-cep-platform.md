@@ -748,10 +748,10 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | `cpptlm-cep-ualink-inc` improvement | 走 add-improve;Stage 3 启动 |
 | P2 | `ADR-CEP-11` 版本锁定(Stage 1 前签发)| 走 architect;触发 R2 缓解 —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「走 architect」**已失实** ⇒ `ADR-CEP-11` **已于 2026-10-30 签发 v1.0**(per Entry #112 / #135);⇒ **本行关闭**;⚠️ **残余**:版本锁定闸的 **G-3**(IC3 变更留痕**无自动闸**)**未闭合**(per §8.1 R2 缓解列)—— 仍为登记态残余风险 |
 | P2 | phase-11 注册后建 feature fragment | 走 rdd-planner 后续评估;≥2 change 跨 phase-10/11 分布时 |
-| P2 | **失指 change 名 `cpptlm-cep-nvlink-sharp-adapter` 的残余位置** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X1)—— 本次**只在 `ADR-CEP-03` 内**订正(⇒ Entry #169 ⑧ 的「② 已订正」应限定为「**ADR-CEP-03 内**已订正」);残余位置 = `include/tlm/cep/collective_plane.hh` · `openspec/specs/cep-collective-plane-base/spec.md` · **`docs/adr/ADR-CEP-00-platform-charter-and-governance.md`**(真源 3 治理 ADR)⇒ 跨 builder(代码 / spec)与 architect(治理 ADR)**两个域** ⇒ **单独立项** |
+| P2 | **`cep-collective-plane-contract` 主 spec 缺第四键的 delta** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #174** ③ S1)—— 主 spec 的「声明最小集 SHALL **恰含三组**」(`openspec/specs/cep-collective-plane-contract/spec.md`)未含 `vc_reservation_declaration`;而 Decision D 已把「空预留 ⇒ 必须声明」落成**判据**(`2ea09607`)。⇒ 若「恰含三组」被读作**封闭集** ⇒ 契约漂移;按「最小集」读法可视为条件可选扩展 ⇒ **当前不阻断**。⇒ 处置 = **下一个 openspec change** 补 delta(第四键 + 「空预留缺声明 ⇒ FAIL」场景)或对该 main spec 走 SU;⚠️ `cep_freeze_check.sh` 只查哈希,**抓不到**这类语义漂移 |\n| P2 | **失指 change 名 `cpptlm-cep-nvlink-sharp-adapter` 的残余位置** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X1)—— 本次**只在 `ADR-CEP-03` 内**订正(⇒ Entry #169 ⑧ 的「② 已订正」应限定为「**ADR-CEP-03 内**已订正」);残余位置 = `include/tlm/cep/collective_plane.hh` · `openspec/specs/cep-collective-plane-base/spec.md` · **`docs/adr/ADR-CEP-00-platform-charter-and-governance.md`**(真源 3 治理 ADR)⇒ 跨 builder(代码 / spec)与 architect(治理 ADR)**两个域** ⇒ **单独立项** |
 | P2 | **代码域的 BISnp 方向注释口径相反** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X2)—— `include/tlm/cep/cxl_dcoh_state_spec.hh` 的枚举注释「host → memory」与同文件「`S2M_BISnp` 是**设备**发起」**口径相反** ⇒ 它是 critic B1 的**实现侧佐证** ⇒ **builder 域**订正 |
 | P2 | **`ADR-CEP-04 §3.4` 的 BISnp 注释口径相反** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X3)—— 「远端设备**收到** BISnp」与「BISnp = **设备发起**」相反 ⇒ 队列 #12 的反证**残余**(Entry #154 只裁了 §3.5 聚合点,未裁 §3.4 注释)⇒ **architect 域**,**单独 SU** |
-| P2 | **队列 #13 的 VC 空间方案裁决** | ✅ **已裁决 2026-11-03**(per 台账 **Entry #171**,用户裁决 **Decision D**)⇒ **契约面已交割**(`ADR-CEP-01` 的 SU 取代 §7 `V6-a`/`V6-b` + 新增 `V6-c`);⚠️ **行为面待 builder**(① `collective_planes.schema.json` 加 `vc_reservation_declaration`(`additionalProperties: false` ⇒ 必须同步)② `evaluate_vc_reservation` 改造:空预留 ⇒ 声明四字段齐全,否则 FAIL③ 反向 fixture:`CP-03`);⚠️ **载体落地前不得宣称 CP-03 已具备鉴别力**。(原登记依据:台账 **Entry #170** ⑤-补 ⑩)—— 两个网络的 `vc_id` 0-3 **全被 coherence 占满** ⇒ 集合流量**无空闲 VC**;`CP-03` 在空预留下**恒 PASS**(不构成「已满足抓取点 3」的证据);扩 VC 上限 / 新开 network 已被 `ADR-CEP-09` 判为**跨仓债** ⇒ 须由 **architect** 裁决方案(扩 VC / 新增 network / 走 ArchForge 侧 ADR)⇒ **#13 开工前必须先有裁决**,否则 `V6-b` 无解 |
+| P2 | **队列 #13 的 VC 空间方案裁决** | ✅ **已裁决 2026-11-03**(per 台账 **Entry #171**,用户裁决 **Decision D**)⇒ **契约面已交割**(`ADR-CEP-01` 的 SU 取代 §7 `V6-a`/`V6-b` + 新增 `V6-c`);✅ **行为面已落地**(`2ea09607`:schema 的 `if/then` + JSON 四字段 + `evaluate_vc_reservation` 四道门 + 3 条单测反 fixture + **1 条文件级 E2E 反 fixture**);⚠️ **`V6-c` 仍待队列 #13**(规约层载体清单)⇒ 在 `V6-c` 落地前不得宣称「collective 前提约束已被机器验证」。(原登记依据:台账 **Entry #170** ⑤-补 ⑩)—— 两个网络的 `vc_id` 0-3 **全被 coherence 占满** ⇒ 集合流量**无空闲 VC**;`CP-03` 在空预留下**恒 PASS**(不构成「已满足抓取点 3」的证据);扩 VC 上限 / 新开 network 已被 `ADR-CEP-09` 判为**跨仓债** ⇒ 须由 **architect** 裁决方案(扩 VC / 新增 network / 走 ArchForge 侧 ADR)⇒ **#13 开工前必须先有裁决**,否则 `V6-b` 无解 |
 | P2 | **ADR 一决策一文档化的存量拆分**(`ADR-CEP-01` 3 决策 / `ADR-CEP-02` 4 决策 / `ADR-CEP-03` 3 决策) | ⚠️ **登记态 · 不排期**(per 台账 **Entry #169** ⑤ —— 产出形态契约要求「一决策一文档」,但同契约「**存量文档不追溯**」⇒ **不在** ADR 定稿中顺手改写)⇒ 拆分前须**先定拆分边界**(哪些决策是「同一决策的不同侧面」)⇒ 避免把 3 个决策拆成 3 篇却共享同一组不变量 ⇒ **拆分后**须同步 `ADR-CEP-00` / `07 号` 的引用面与 `ADR-CEP-NUMBER-MAP` 的预分配表 |
 | P2 | **实施笔记的 ADR 行号锚点 ⇒ 改节号引用**(`ADR-CEP-02:55` / `:66` 等) | ⚠️ **登记态 · 未排期**(per 台账 **Entry #169** ⑨ b)—— 门禁 `cep_archforge_alignment_check.sh` 以**行号**锚定 `ADR-CEP-02:51` / `:62` ⇒ **ADR 一改行就失准**;该清单文件属**实施笔记**(per `obj §4.7.1` append-only;**不在** architect 的 `arch_paths` 内)⇒ 需 **builder / planner** 域处置;建议:① 锚点改**节号**(`ADR-CEP-02 §2`)② 或在 ADR 内加**稳定锚点标记**供门禁按标记定位 |
 | P2 | **队列 #13 improvement 草稿的 epoch 语义矛盾** | ⚠️ **登记态 · 待 planner 订正**(per 台账 **Entry #169** ⑨ c)—— 草稿写「epoch 未 commit 前该区域的 coherence 请求**被拒**」⇒ 与 `ADR-CEP-03 §3.1 R4`「epoch 未 commit 前 = **正常服务**」**矛盾** ⇒ 该文件属 **planner 域**(`.rddf/improvements/**`)⇒ architect **不改**;⇒ **回归锁已在 ADR 落**(`ADR-CEP-03` §4 **S1** + §9 **V6** 明写「不得写成未 commit 前拒绝」) |
@@ -10832,6 +10832,50 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 **⑥ 关联**: Entry #171(Decision D—— 与 N-4 联动)· #170 / #169(三则 ADR 定稿)· #168(队列 #13 improvement)
 · `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`(**本条的产物**)
 · `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(Task 0 硬门 ⇒ 已勾选)
+
+---
+
+### Entry #174 — 2026-11-03 [scope-change](**critic 第 2 轮** —— B1 / B2 **闭合** + **1 条新 BLOCKER** + 7 条 SHOULD_FIX 处置)
+
+**主题**:critic 第 2 轮(配额恢复后首次跑通)判词:**B1 已闭合 · B2 已闭合 · 新 diff 引入 1 条新 BLOCKER**。
+
+**① ✅ BLOCKER 闭合确认(独立复核,非自查)**
+
+| 条 | 判词 | 证据 |
+|---|---|---|
+| **B1** | ✅ **已闭合** | `ADR-CEP-02:46` 方向列保持 `center → node`,备注把 DCOH 的 BISnp 写成**显式「方向反转例外 = node → center」**;`ADR-CEP-02:68-74` 表下说明段明写「方向列不动、实现须显式承载反转」;`07 号:177` 备注 cell **逐字一致**(差异仅加粗) |
+| **B2** | ✅ **已闭合** | `obj §4.0 #13`(:189)/ `§10 P1`(:747)/ `§4.2 #13`(:256)均已改「定稿 ✅ 已消费」;**活文本区(< §11)零命中** `起草中(v0.6)` / `开工前置未满足` / `不得开工` |
+
+**② ⚠️ 新 BLOCKER(已修):improvement 的 `In Scope` 仍要「集合 VC 预留表(独立 VC)」**
+
+| 项 | 内容 |
+|---|---|
+| 性质 | **架构一致性矛盾 + 目标场景失败** —— 同一文件内 `In Scope` 要独立 VC,而 `Acceptance` 已写 `unavailable` 声明(Entry #172)⇒ 实施方**二选一皆错** |
+| 根因 | Entry #172 **只改了 Acceptance 与交付面表**,漏了 `In Scope` / 决定项表 / 载体表 / 影响面表 |
+| 修法 | **8 处**统一为 Decision D 口径:`:41`(抓取点 3 推论)· `:48`(先例行「三块」)· `:65`(In Scope 第 0 个 change)· `:70`(In Scope 第 1 个 change)· `:142`(载体表)· `:145`(collective 面)· `:178`(Acceptance)· `:204`(影响面表) |
+| 复核 | `grep "预留表\|独立 VC"` ⇒ **0 处**未消解(脚本判定) |
+
+**③ SHOULD_FIX 处置(7 条)**
+
+| # | 项 | 处置 |
+|---|---|---|
+| S1 | `openspec/specs/cep-collective-plane-contract/spec.md:27` 的「声明最小集 **SHALL 恰含三组**」未含第四键 `vc_reservation_declaration` | ⚠️ **不做**(需 openspec change + delta spec)⇒ **登记 obj §10 backlog** |
+| S2 | `ADR-CEP-01` 附录的 `V6-a` 行仍写「恒真」 | ✅ 已改「**以 SU 2026-11-03 的 D.4 为准** —— 原『恒真登记』表述已被取代」;并**补 `V6-c` 行** |
+| S3 | `ADR-CEP-01` D.4 的 `V6-a` 载体列仍写「当前不存在」 | ✅ 已改「**已落地**(`2ea09607`)」;note 改为「`V6-a` 已落地 / **`V6-c` 仍待 #13**」 |
+| S4 | `obj §10` 的 B-新-4 仍写「行为面待 builder」 | ✅ 已改为「行为面**已落地**(`2ea09607`);`V6-c` 仍待 #13」 |
+| S5 | 锚点摘要 A-3 称「支撑 S1/**S4**」—— S4 无公开来源支撑 | ✅ 已改「仅支撑 **S1**;S4 属 ADR 设计约束,不引用公开来源」 |
+| S6 | D.1 引 `ADR-CEP-09 §2 决策 4` 但该 ADR 仍是草案 | ✅ 已加「该 ADR 当前仍为**草案(v0.1)**,引用的是草案措辞」 |
+| S7 | 声明缺字段走 `source_error` 早退 ⇒ 报告**没有 CP-03 行**,与 D.4 的反向 fixture 归因不符 | ✅ **代码已修**:声明节点内的缺字段/非字符串**不再**置 `source_error` ⇒ 由 `evaluate_vc_reservation` 判 FAIL 并点名缺项;新增**文件级 E2E 反 fixture**(临时 JSON 删 `revisit_trigger` ⇒ 报告出现 `CP-03 FAIL (…缺 revisit_trigger)`) |
+
+**④ 评审预算**
+
+同一 change 已用 **2 轮**(第 1 轮 REJECT / 第 2 轮 REJECT)。per 预算规则:**第 3 轮起须用户明确批准** ⇒ 本次**不再**自动复审。
+⇒ 剩余 SHOULD_FIX 仅 S1(需 openspec change)⇒ 已登记 backlog。
+
+**⑤ 关联**: Entry #173(Task 0 普查)· #172(improvement 首次订正 —— 本条 ② 的根因来源)· #171(Decision D)· #170 / #169(三则 ADR 定稿)
+· `docs/adr/ADR-CEP-01-fabric-collective-plane.md`(**M1 冻结面,本条授权**)· `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md`
+· `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(② 的对象)· `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`(S5 的对象)
+· `include/tlm/cep/collective_plane_contract.hh` + `test/test_cep_collective_plane_contract.cc`(S7)
 
 ---
 
