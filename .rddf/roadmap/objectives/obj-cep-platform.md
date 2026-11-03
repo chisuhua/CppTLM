@@ -11151,6 +11151,50 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 ---
 
+### Entry #180 — 2026-11-03 [plan](队列 #13 规约层 **Phase 1 完成** —— `nvlink_sharp_state_spec.hh` 载体形态定稿)
+
+**主题**:队列 #13 规约层 change 的 **Phase 1(载体形态定稿)**完成。**角色**:builder。
+
+**① 交付面**
+
+| 项 | 内容 |
+|---|---|
+| 文件 | `include/tlm/cep/nvlink_sharp_state_spec.hh`(新 · **263 行** · header-only) |
+| 自足性 | **只 include `<cstddef>` / `<cstdint>`** ⇒ ⛔ **不** include `collective_plane.hh`(per `ADR-CEP-03` SU(#2) F.1-a) |
+| 内容 | 形状型辅助类型(`GroupId` / `AddressRange`)· R1/R2 分类判据 · R3/R4 区域与 epoch 纪律 · R5 可观测性 · ordering A/B/C/D · VC 预留**单一状态** · 能力域 **节点内** · **19 条编译期断言** |
+
+**② 红线自查(实测)**
+
+| 红线 | 口径 | 实测 |
+|---|---|---|
+| ⛔ 不 include `collective_plane.hh` | `grep "^#include"` | 仅 `<cstddef>` / `<cstdint>` ✅ |
+| ⛔ 不承载词表型语义 | 载体**不**定义 `ReduceOp` / `CollectiveOp` / `AccessMode` | `enum class (ReduceOp\|CollectiveOp\|AccessMode)` 命中 **0** ✅ |
+| ⛔ 不暴露区域表类型 | 载体**不**定义 `collective_region_table` | 命中 **0** ✅ |
+| ⛔ opcode 永不作分类器 | 分类函数签名**无** opcode 参数 | `classify_at_fabric_ingress(region_hit, epoch_committed)` ✅ |
+| ⛔ 「未 commit ⇒ 拒绝」 | 编译期断言**锁死**「未 commit ⇒ 放行」 | `static_assert(!epoch_routes_to_collective(EpochState::Uncommitted))` ✅(本仓已错过一次的回归锁) |
+| 编译 | `-Wall -Wextra` | **零警告**通过 ✅ · `clang-format` rc=0 ✅ |
+
+**③ Phase 1 **未**包含(留给后续 Phase,不越界)**
+
+| 项 | 归属 |
+|---|---|
+| 逐格 `basis`(kind / pending / ref)+ 锚点摘要逐格核对表 + 完整编译期锁 | **Phase 2**(tasks 2.1 ~ 2.6) |
+| 判据收口:逐格核对表 + **9 组反向 fixture** + 正控 + 归因命中 | **Phase 3**(tasks 3.1 ~ 3.6) |
+| 「算子族恰 6 值」的运行期断言 · coherence 侧扫描集合扩展(`CP-05`)· `nvlink_4` 实例声明 | **实现层**(per `ADR-CEP-03` SU(#2) F.4) |
+
+**④ ⚠️ 本 Phase 留下的一处**已知取舍**(登记,非缺陷)**
+
+`ordering_c_orders_reduce` 以 `code_a < code_b` 表达「code 小者先」⇒ **code 相等时顺序未定义**
+⇒ 显式登记 `kReduceCodeTieUnspecified = true`(照队列 #12 的 `kDcohViewIsSetLike` 风格)⇒
+**禁止**实现层**默认**某一种序(排序约束无公开来源 ⇒ 属 `N-1` / `N-5` 邻域的 pending 面)。
+
+**⑤ 关联**: Entry #179(critic 第 2 轮修复)· #178(critic 第 1 轮修复)· #177(③④)· #176(①/⑤)· #175(change 建档)· #173(Task 0)
+· `include/tlm/cep/nvlink_sharp_state_spec.hh`(**本条的对象**)
+· `openspec/changes/cpptlm-cep-nvlink-sharp-state-spec/tasks.md`(Phase 0 ~ 4)
+· `docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md`(SU 2026-11-03(#2) F.1 / F.2 / (#3) K.2)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

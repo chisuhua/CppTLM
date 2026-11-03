@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-03T08:02:16Z",
-  "updated_by": "auto",
+  "updated_at": "2026-11-03T08:56:09Z",
+  "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-01T07:49:49Z",
-      "by": "user",
-      "reason": "两批 architect 签发完成(R11 降级 SU + 队列 #11 的 R-T2/R-T3/R-T6)⇒ 切回 builder:起队列 #11 的第 0 个 change(规约层)"
-    },
     {
       "role": "architect",
       "at": "2026-11-01T08:42:14Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-03T08:02:16Z",
       "by": "auto",
       "reason": "critic 全面审修复的 plan 域(change 4 件套)已闭合 ⇒ 回 builder 修 improvement 的 2 处失实(S5)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-03T08:56:09Z",
+      "by": "user",
+      "reason": "用户裁决 2026-11-03「切 builder 进 Phase 1」⇒ 实现队列 #13 规约层载体 nvlink_sharp_state_spec.hh(tasks 1.1~1.7)"
     }
   ]
 }

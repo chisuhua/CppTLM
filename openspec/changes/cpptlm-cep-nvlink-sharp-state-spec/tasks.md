@@ -14,7 +14,7 @@
 | Phase | 状态 | 说明 |
 |---|---|---|
 | 0 治理前置 | 🟡 **进行中**(0.1~0.4 ✅ / 0.5~0.7 待本轮闭环) | Task 0 普查 ✅(Entry #173)· Decision D ✅(#171)· 三则 ADR 定稿 ✅(#169/#170)· improvement 订正 ✅(#172)· critic 第 2 轮收口 ✅(#174)· 4 件套已建 · **待**:转正登记 + 冻结面实测 + KPI 回填 |
-| 1 载体形态定稿 | ⬜ 待实施 | `nvlink_sharp_state_spec.hh`(新)—— 类型 + 纯函数 + 常量表 |
+| 1 载体形态定稿 | ✅ **已完成**(2026-11-03) | `nvlink_sharp_state_spec.hh`(新 · 263 行 · header-only · **自足**:只 include `<cstddef>` / `<cstdint>`)—— 类型 + 纯函数 + 常量表 + **19 条编译期断言**;⛔ 无 opcode / 无区域表 / 无词表型枚举 |
 | 2 逐格 basis + 编译期锁 | ⬜ 待实施 | 逐格 `basis`(两轴)+ 来源许可表 + 编译期锁 + **运行期兜底判据** |
 | 3 判据收口 | ⬜ 待实施 | 逐格核对表 + **9 组反向 fixture**(各带可归因 id)+ **9** 项 `pending` 登记 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + `openspec validate --strict` + KPI 1/3 → 0/3 + 归档 |
@@ -30,18 +30,18 @@
 - [x] 0.3 **improvement 草稿**落 `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` ⇒ `pre_create_brainstorm_check.sh` **rc=0**
       ⇒ **已两次订正**(Entry #172 前置陈述 · Entry #174 的 `In Scope` 与 Decision D 对齐)
 - [x] 0.4 **4 件套建档**(proposal + design + delta spec + tasks)
-- [ ] 0.5 **转正裁决**(per `obj §4.7.2` step 1:DRI 裁决「① 建 change」)⇒ 台账 Entry 登记
-- [ ] 0.6 **冻结面实测确认**:新增载体 `include/tlm/cep/nvlink_sharp_state_spec.hh` 不在 M1 冻结集内 ⇒ **0 件** ⇒ 无需两步授权
-- [ ] 0.7 **KPI baseline 回填**:7 处(`obj §5.2` / `§5.3` / `§10` / `phase-10.md` / `roadmap.md` / `AGENTS.md` / umbrella improvement)
+- [x] 0.5 **转正裁决**(per `obj §4.7.2` step 1:DRI 裁决「① 建 change」)⇒ 台账 Entry 登记 ⇒ ✅ 已落(**Entry #175**,2026-11-03)
+- [x] 0.6 **冻结面实测确认**:新增载体 `include/tlm/cep/nvlink_sharp_state_spec.hh` 不在 M1 冻结集内 ⇒ **0 件** ⇒ 无需两步授权 ⇒ ✅ 已实测(M1 清单只含 `docs/**` + 台账)⇒ **0 件**
+- [x] 0.7 **KPI baseline 回填**:7 处(`obj §5.2` / `§5.3` / `§10` / `phase-10.md` / `roadmap.md` / `AGENTS.md` / umbrella improvement) ⇒ ✅ 已落(**Entry #175**:0/3 → 1/3)
 
 ## Phase 1 — 载体形态定稿
 
-- [ ] 1.1 **分类判据(R1/R2)**:类型 + 纯函数 `classify_at_fabric_ingress`;源端侧类型**不含**区域表字段
-- [ ] 1.2 **区域/epoch 纪律(R3/R4)**:注册三步原子 · **epoch 未 commit ⇒ 放行** · 注销失效化
-- [ ] 1.3 **可观测性(R5)**:divert 计数器 + fail-stop 断言
-- [ ] 1.4 **ordering A/B/C/D**:四类**可判定**谓词(非散文)
-- [ ] 1.5 **VC 预留单一状态**:载体**仅**表达 `Unavailable` **单一取值**(类型上**无** `vc_id`、**无** `reason` / `owner` / `revisit_trigger`)⇒ **四字段权威恒在** `collective_planes.json` + `CP-03`
-- [ ] 1.6 **能力域**:`IntraNode` 唯一取值(依据 `A-1` / `A-5`)
+- [x] 1.1 **分类判据(R1/R2)**:类型 + 纯函数 `classify_at_fabric_ingress`;源端侧类型**不含**区域表字段 ⇒ ✅ 已落:`IngressDecision{DiverT,Pass}` + `classify_at_fabric_ingress(region_hit, epoch_committed)` —— ⚠️ 签名里**刻意没有** opcode / 区域表 / group 上下文 ⇒ **R1( opcode 非分类器)与 R4(源端无区域表可见性)由**类型**保证** |
+- [x] 1.2 **区域/epoch 纪律(R3/R4)**:注册三步原子 · **epoch 未 commit ⇒ 放行** · 注销失效化 ⇒ ✅ 已落:`RegisterResult{Ok,DrainFailed}` + `register_region(drain_succeeded)` + `EpochState{Uncommitted,Committed}` + `epoch_routes_to_collective` + `decision_after_destroy()`;⚠️ **状态容器不在载体**(区域表归实现层)⇒ 载体只给**纯函数判定**(per SU(#3) K.2) |
+- [x] 1.3 **可观测性(R5)**:divert 计数器 + fail-stop 断言 ⇒ ✅ 已落:`DivertCounter`(仅**形状**,状态归实现层)+ `is_fail_stop(region_hit, epoch_committed, coherence_atomic)` |
+- [x] 1.4 **ordering A/B/C/D**:四类**可判定**谓词(非散文) ⇒ ✅ 已落:`OrderingRule{A,B,C,D}` + `ordering_a_allows_reduce` / `ordering_b_allows_atomic` / `ordering_c_orders_reduce` / `ordering_d_allows_reduce`;⚠️ **code 相等 ⇒ 顺序未定义** ⇒ 显式登记 `kReduceCodeTieUnspecified` |
+- [x] 1.5 **VC 预留单一状态**:载体**仅**表达 `Unavailable` **单一取值**(类型上**无** `vc_id`、**无** `reason` / `owner` / `revisit_trigger`)⇒ **四字段权威恒在** `collective_planes.json` + `CP-03` ⇒ ✅ 已落:`VcReservationState{Unavailable}`(枚举**仅 1 个取值** ⇒ `vc_id` 与四字段**不可表达**) |
+- [x] 1.6 **能力域**:`IntraNode` 唯一取值(依据 `A-1` / `A-5`) ⇒ ✅ 已落:`CollectiveScope{IntraNode}`(枚举**仅 1 个取值** ⇒ 跨 fabric 值**不可表达**) |
 - [x] 1.7 ✅ **2 项待裁决定项已裁**(2026-11-03,Entry #176 + `ADR-CEP-03` SU 2026-11-03):
       ① `NvlinkAdapter` = **独立头** `nvlink_adapter.hh` + **委托** state spec(先例 `cxl_dcoh_adapter`),
       **前提**:载体**自足**(只 include 标准库)且**不暴露** `collective_region_table` 类型 ⇒ 区域表运行时状态归实现层;
