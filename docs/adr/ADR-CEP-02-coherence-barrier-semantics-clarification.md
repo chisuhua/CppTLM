@@ -1,7 +1,7 @@
 # ADR-CEP-02: Coherence Interface 10 条抽象事务流清单 + barrier 流语义澄清
 
-> **状态**: 🟡 起草中(v0.6)
-> **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订)
+> **状态**: ✅ **已签发(v1.0)**(2026-11-03 定稿;per 台账 **Entry #169** —— 队列 #13 `cpptlm-cep-nvlink-sharp` 的**开工前置**)
+> **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订)/ **2026-11-03 定稿**
 > **作者**: CppTLM build agent(architect mode)
 > **关联真源**:
 > - 真源 1:`06-inter-module-network.md` v0.4 §2.1 L1-L6 仿真层层模型(正交,非 CEP 6 层架构)
@@ -43,7 +43,7 @@ CEP 抽象事务流必须避免歧义 — `barrier` 流存在混入两种 barrie
 | 4 | `snoop_resp` | node → center | requester-scoped | snoop 响应:hit + state + dirty + data + txn_id |
 | 5 | `writeback` | node → center | requester-scoped | 驱逐/写回:addr + data + dirty |
 | 6 | `forward_data` | node ↔ node(经中心调度)| requester-scoped | 数据转发:src_addr + dst_addr + data + perm(per `ADR-CEP-05` §2 折叠映射表 不可分辨性)|
-| 7 | `back_invalidate` | **center → node**| requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 BISnp 走这里,host→device 方向)|
+| 7 | `back_invalidate` | **center → node**| requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 BISnp 走这里,**device→host(S2M)**;其响应 BIRsp 为 M2S —— ⚠️ **2026-11-03 订正**(per 台账 Entry #169):原写「host→device 方向」系**方向反了**,公开来源已反证(per `07 号` Entry #154 的 6 处口径订正 + 锚点摘要 §6 #2)|
 | 8 | `address_resolve` | node ↔ center | requester-scoped | 地址归属解析:pa + node_id → home_node + coherent_flag |
 | 9 | `barrier` | center → node ↔ center(双向)| **requester-scoped**(per Decision 3) | 单请求者排空 / 可见性点;**不携带 group_id / participant_count / epoch_id** |
 | 10 | `snoop_completion_ack` | node → center | requester-scoped | snoop 完成后 ack(CHI CompAck 类);不与 `completion` 流重叠 |
@@ -65,6 +65,31 @@ CEP 抽象事务流必须避免歧义 — `barrier` 流存在混入两种 barrie
 - `ADR-CEP-05` §2 必须逐字对齐本表 10 条流
 - `ADR-CEP-03` / `ADR-CEP-04` / `ADR-CEP-01` 引用本表时使用本 ADR canonical 名
 
+### 2.0 选项对比表(定稿补入 —— 「barrier 归谁」这一决策的可审计取舍)
+
+| 方案 | 结论 | 理由 |
+|---|---|---|
+| **A** `barrier` 流承载 **rendezvous**(group-scoped) | ❌ **否决** | `barrier` 流的完成纪律是 **requester-scoped**;改判 group-scoped ⇒ 死锁分析需**同时**用两套纪律 ⇒ 违反本 ADR §3.2「两套纪律**不能混用同一分析工具**」;且 `group_id` / `participant_count` / `epoch_id` 进 Coherence Interface ⇒ 破坏**协议无关性** |
+| **B** `barrier` 流**保持 requester-scoped**;rendezvous 走 `collective_barrier` | ✅ **采纳** | 与 `ADR-CEP-01` 完成域判别规则**单一规则**推导一致;**canonical 10 流零变更**;两平面各自保持单纯(「复合流」由 Core 层编排) |
+| **C** 另加**第 11 条流** `collective_barrier` 进 Coherence Interface | ❌ **否决** | 同 **A** 的协议无关性问题 + 破坏 **canonical 10 流**不变量(per 决策 1) |
+| **D** 把 `barrier` **从** Coherence Interface **移出** | ❌ **否决** | DVM-Sync / CXL Fence / GPU sys-scope atomic release 的语义**就是** requester-scoped 可见性点(per 决策 3)⇒ 移出即**丢语义** |
+
+> ⚠️ **决策 1(零流数变更)是硬约束** ⇒ atomic / Fence / 未来需求**只能**塞进既有 10 流 ⇒ 每次扩展都要重新论证「哪一条流承载」(代价见 §6)。
+
+
+### 决策 1(精简):零流数变更(守 canonical 10 条流清单)
+
+- **不增加** Coherence Interface 抽象事务数量(10 → 11)
+- **不修改** 任何现有流的字段语义
+- 本 ADR 是首次定义(canonical),不修改既有(per oracle B1 修复方向 (b))
+
+### 决策 2:CXL Fence 走 barrier 流
+
+CXL Fence 的语义 = requester-scoped("我之前的写对 X 可见后再前进"),**留在 coherence `barrier` 流**。
+
+**理由**:CXL 是 host 中心的内存一致性,无 group 概念,barrier 语义本质是 DVM-Sync 类的"我之前的写对 X 可见后再前进" → Ordering Point。
+
+**未来扩展**:若未来出现多 CXL 设备会合需求,再按完成域规则判到 Fabric Collective Plane — 不需要现在预留。
 ### 决策 3:barrier 流钉死为 Ordering Point 语义
 
 **barrier 流的语义 = requester-scoped**(requester-scoped 完成纪律):
@@ -83,19 +108,6 @@ requester-scoped completion → Coherence flow (含 `request` / `completion` / `
 group-scoped completion     → Fabric Collective Plane (含 collective_barrier)
 ```
 
-### 决策 1(精简):零流数变更(守 canonical 10 条流清单)
-
-- **不增加** Coherence Interface 抽象事务数量(10 → 11)
-- **不修改** 任何现有流的字段语义
-- 本 ADR 是首次定义(canonical),不修改既有(per oracle B1 修复方向 (b))
-
-### 决策 2:CXL Fence 走 barrier 流
-
-CXL Fence 的语义 = requester-scoped("我之前的写对 X 可见后再前进"),**留在 coherence `barrier` 流**。
-
-**理由**:CXL 是 host 中心的内存一致性,无 group 概念,barrier 语义本质是 DVM-Sync 类的"我之前的写对 X 可见后再前进" → Ordering Point。
-
-**未来扩展**:若未来出现多 CXL 设备会合需求,再按完成域规则判到 Fabric Collective Plane — 不需要现在预留。
 
 ---
 
@@ -184,7 +196,52 @@ barrier 流接口信号(per ADR-CEP-02 锁定语义):
 
 ---
 
-## 7. v0.2 修订记录
+## 7. 后果 / 代价
+
+### 7.1 正面
+
+| # | 后果 |
+|---|---|
+| 1 | canonical **10 流一次定义**、跨 ADR 逐字对齐(`ADR-CEP-02 §2` ↔ `07 号 §3.1` ↔ schema `flow_support` ↔ `ADR-CEP-05` 折叠映射表)⇒ **单一真源** |
+| 2 | `perm` **4 值锁** + atomic 意图走 `request` 的**独立属性** ⇒ 协议插件可表达 atomic 意图而**不**扩 perm 值域(不破坏 `CEN-Ib11`,也不动 `ADR-CEP-12` schema) |
+| 3 | barrier 分类 litmus **入正文** ⇒ 「rendezvous 走错平面」这一类**静默死锁**有机械判据(而非口头约定,per `ADR-CEP-01 §3.3` 抓取点 5) |
+| 4 | `CEN-Ib1 ~ CEN-Ib11` 是**跨 ADR 不变量集合** ⇒ 协议族的**共享假设**集中在 11 条 ⇒ 新协议族接入时**逐条核对**即可 |
+
+### 7.2 负面 / 代价
+
+| # | 代价 |
+|---|---|
+| 1 | **零流数变更**是硬约束 ⇒ atomic / Fence / 未来语义**只能**塞进既有 10 流 ⇒ 每次扩展都要**重新论证**承载流;承载不合适时**无处可去** ⇒ 只能改字段语义(⇒ 更强的评审压力) |
+| 2 | `barrier_direction` **两个方向**可表达 ⇒ 适配器层需按方向分支 ⇒ 判据与测试成本翻倍 |
+| 3 | `CEN-Ib1 ~ CEN-Ib11` 是**跨 ADR 契约** ⇒ 任一 ADR 改动都要**复核 11 条** ⇒ 变更成本集中化(优点是可审计) |
+| 4 | atomic 作为 `request` 的**独立属性**(与 `perm` 正交)⇒ `perm` 4 值锁下**无法**从 perm 看出 atomic ⇒ 消费方**必须**读该属性 ⇒ 漏读即语义错 |
+
+### 7.3 风险
+
+| # | 风险 | 缓解 |
+|---|---|---|
+| 1 | **口径漂移**:§2 表 / `07 号 §3.1` / schema `flow_support` / `ADR-CEP-05` 四处任一漂移 | 机器 diff(§8 **V1**)⇒ 漂移即红 |
+| 2 | **方向类错误**(本 ADR 定稿前**已发生一次**:流 7 的 BISnp 方向) | 已订正 + 逐条复核公开来源(per 锚点摘要)⇒ **不再**只改 07 号而不同步 ADR |
+| 3 | **行号锚点脆弱**:实施笔记用 `ADR-CEP-02:55` 形式引用 ⇒ 改行即失准(已登记,per 台账 Entry #169 ⑦) | 建议**改节号引用**(`ADR-CEP-02 §2`)⇒ 本 ADR 定稿后**该类行号锚点一律视为待修** |
+
+---
+
+## 8. Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> ⚠️ **纪律**(per 队列 #12 沉淀的 4 铁律):① **纯负向断言须配正控** ② 每条判据须有**可执行反向 fixture 且因正确原因红**(须写明**载体**与**归因 id**)③ **编译期锁不得只以「编译红」充当 ctest 判据**。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V1** | canonical **10 流清单零 diff**(§2 表 ↔ `07 号 §3.1` ↔ schema `flow_support` ↔ `ADR-CEP-05`) | 机器 diff(四方) | 改任一侧的流名 / 顺序 / 条数 ⇒ diff 必红(`CEN-10-DIFF`) |
+| **V2** | `barrier` 流**不**携带 `group_id` / `participant_count` / `epoch_id` | 静态扫描 + 运行期 | **纯负向 ⇒ 须配正控**:同一扫描器**必须**确认 `barrier` 流**确实**携带 `txn_id` 与 `barrier_direction`(⇒ 扫描器本身有鉴别力);毒化:加进 `group_id` ⇒ 必红(`BARRIER-NO-GROUP-ID`) |
+| **V3** | `perm` 枚举**恰 4 值**(`NONE` / `READ` / `UNIQUE` / `WRITEBACK`) | 值域锁 | **正控**:某实例确实声明 4 值;毒化:加第 5 值 ⇒ 必红(`PERM-4-LOCK`) |
+| **V4** | atomic 意图走 `request` 的**独立属性**,**不**占 `perm` | schema + 实例声明 | 毒化:以第 5 个 perm 值表达 atomic ⇒ 必红(`ATOMIC-NOT-PERM`);**正控**:某实例声明 `atomic.supported = true` 且 `perm` 仍 4 值 |
+| **V5** | `barrier_direction` **两个方向**均可表达(0 = center→node / 1 = node→center) | 字段存在性 + 适配器分支 | **正控**:两个方向各一例通过;毒化:方向字段被删 / 恒为 0 ⇒ 必红(`BARRIER-DIRECTION`) |
+| **V6** | 配对关系不重叠:`request`↔`completion` · `snoop`↔`snoop_resp` · `snoop_completion_ack` 配 `snoop_resp` **不**配 `completion` | 运行期断言 | **正控**:三类配对各一例;毒化:`snoop_completion_ack` 被改成配 `completion` ⇒ 必红(`PAIRING-OVERLAP`) |
+
+---
+
+## 9. v0.2 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 
@@ -243,3 +300,34 @@ barrier 流接口信号(per ADR-CEP-02 锁定语义):
 · `CEN-Ib11`(本条正文)· `ADR-CEP-05` §13.1(Q-3b:perm 形态演进)· `ADR-CEP-08`(IC2 定义)
 · `include/tlm/cep/protocol_instance.schema.json` · `include/tlm/cep/ordering_point_checker.hh`
 · `include/tlm/cep/perm_upgrades.json` · `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` §7 R-T4
+
+---
+
+## 定稿说明(2026-11-03,per 台账 **Entry #169** —— 队列 #13 `cpptlm-cep-nvlink-sharp` 的**开工前置**)
+
+> **性质**:本段是**追加式**(per AGENTS.md「ADR 不可变 + Status Update」先例)—— §1 ~ §8 **正文内容**除下列**两处订正**外**一律不改**。
+
+**① 本次定稿的实质**
+
+| # | 动作 | 说明 |
+|---|---|---|
+| 1 | **流 7 的 BISnp 方向订正** | 原写「CXL 3.0 BISnp 走这里,**host→device 方向**」⇒ **方向反了**;公开来源已反证(BISnp = **S2M device→host**;其响应 BIRsp 才是 M2S)⇒ 订正为 **device→host(S2M)**;⚠️ `07 号` 已于 **Entry #154** 订正同一口径 ⇒ 本 ADR 同步(per `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md` §6 #2) |
+| 2 | **决策编号重排** | 原序 = 决策 3 → 决策 1(精简) → 决策 2(**乱序**);现序 = 决策 1 → 决策 2 → 决策 3。⚠️ **标签不变** ⇒ 外部引用(如 `ADR-CEP-03` 的「`ADR-CEP-02` Decision 3」)**不断** |
+| 3 | 补 **选项对比表**(§2.0)/ **后果·代价**(§7)/ **Verification**(§8) | per 产出形态契约的 4 必备要素(元数据 ✓ / 选项对比表 / 后果·代价 / Verification)⇒ 本次补齐后三者 |
+
+**② 关联 change**:`cpptlm-cep-stub-cache-core` · `cpptlm-cep-directory-ordering-plane` · `cpptlm-cep-moesi-gpu-adapter` ·
+`cpptlm-cep-mesif-adapter` · `cpptlm-cep-cxl-nonsymmetric` · `cpptlm-cep-tilelink-tree-manager` ·
+`cpptlm-cep-cxl-dcoh-symmetric`(均 ✅ 已归档)· `cpptlm-cep-nvlink-sharp`(队列 #13 · 📋 Planned)·
+`cpptlm-cep-ualink-inc`(队列 #14 · 📋 Planned)
+
+**③ ⚠️ canonical 10 流清单本身**零改动**(仅流 7 的**备注文字**订正)⇒ `CEN-Ib1 ~ CEN-Ib11` 不变量集合**逐条不变**
+⇒ `ADR-CEP-05` 的折叠映射表 / `07 号 §3.1` / schema `flow_support` 的对齐关系**不受影响**。
+
+**④ 行数口径**:**正文行数** = §1 ~ §8(**不含**修订记录段与 Status Update 追加段)⇒ 本 ADR 正文 = **≤ 250 行**(per 产出形态契约)。
+
+**⑤ ⚠️ 未随之处置者(已登记,不在本次范围)**
+
+| 项 | 位置 | 处置 |
+|---|---|---|
+| **实施笔记的行号锚点** | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` 的 `ADR-CEP-02:55` / `:66` 形式引用 | ⚠️ 该文件属**实施笔记**(per `obj §4.7.1` append-only;**不在** architect 的 `arch_paths` 内)⇒ 本次**不改**;⇒ **建议**改用**节号**引用(`ADR-CEP-02 §2`)⇒ 登记为 backlog(per 台账 Entry #169 ⑦) |
+| **一决策一文档的存量越界** | 本 ADR 含 **4** 个决策(决策 0 表 + 决策 1 / 2 / 3) | per 产出形态契约「**存量文档不追溯**」⇒ **不**在本次拆分 ⇒ 登记为 backlog(per 台账 Entry #169 ⑤) |

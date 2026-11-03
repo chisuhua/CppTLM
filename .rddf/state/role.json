@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-02T16:14:56Z",
+  "current_role": "architect",
+  "updated_at": "2026-11-03T02:57:42Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-10-31T18:42:47Z",
-      "by": "user",
-      "reason": "R11 归属裁决重开(Entry #112 去重裁决的前提『#10 会做 + 无迫近消费者阻塞』已因 #10 排期/合规约束失效)⇒ 追加 ADR-CEP-04 Status Update;随后切 planner 落台账 entry,再切 builder 跑 --update"
-    },
     {
       "role": "planner",
       "at": "2026-10-31T18:43:30Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-02T16:14:56Z",
       "by": "user",
       "reason": "队列 #12 两段式全部完成(Entry #166 归档 + Entry #167 遗留订正)⇒ 启动队列 #13 `cpptlm-cep-nvlink-sharp`:improvement 草稿(5 段式 · add-improve · HARD-GATE brainstorm)按既定裁决由 planner 落盘(builder 不代落)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-03T02:57:42Z",
+      "by": "user",
+      "reason": "队列 #13 开工前置 = `ADR-CEP-01`/`02`/`03` 定稿(用户裁决 2026-11-03)⇒ 切 architect 推进三则 ADR 定稿(一次解锁 #13 SHARP + #14 UALink)"
     }
   ]
 }

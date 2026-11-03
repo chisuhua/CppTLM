@@ -1,7 +1,8 @@
 # ADR-CEP-01: Fabric Collective Plane 作为旁路平面
 
-> **状态**: 🟡 起草中(v0.6)
-> **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订)
+> **状态**: ✅ **已签发(v1.0)**(2026-11-03 定稿;per 台账 **Entry #169** —— 队列 #13 `cpptlm-cep-nvlink-sharp` 的**开工前置**)
+> **日期**: 2026-10-19(初版)/ 2026-10-20(v0.5 修订)/ **2026-11-03 定稿**
+
 > **作者**: CppTLM build agent(architect mode)
 > **关联真源**:
 > - 真源 1:[`../architecture/06-inter-module-network.md`](../architecture/06-inter-module-network.md) v0.4(锚点 per `ADR-CEP-00A §3.1`;06 §2.1 是 L1-L6 payload/port 层模型,与 CEP 6 层正交共存)
@@ -72,6 +73,17 @@ NVLink SHARP(可聚合原语)和 UALink In-Network Compute(ReadReduce / WriteMul
 ---
 
 ## 2. 决策
+
+### 2.0 选项对比表(定稿补入 —— 把 §1.2 的三个反例固化成可审计的取舍表)
+
+| 方案 | 结论 | 理由 |
+|---|---|---|
+| **A** 集合通信塞进 **Directory & Ordering Plane** | ❌ **否决** | 腐蚀 Ordering Point 的 **per-address 串行化**不变量(死锁分析 / 单一序证明都假设 address-keyed);目录状态(**长**寿命)与 reduction 状态(**短**寿命)混居 ⇒ 污染 eviction / rollback 语义 |
+| **B** 集合通信塞进 **Fabric & Transport Plane** | ❌ **否决** | 层语义从「传输」漂移到「传输 + 计算」;关闭 collective 需在传输层内部做手术 ⇒ **「启停干净」做不到** |
+| **C** Coherence Interface 增**第 11 条流** `collective_request`(带 `group_id`) | ❌ **否决** | 破坏 **canonical 10 条流**不变量(per `ADR-CEP-02 §2`);`group_id` 对 Coherence Interface **违反协议无关性**(CHI / CXL / PCIe 无 group 概念) |
+| **D** **独立第 6 层旁路平面**(横向并列,非堆叠) | ✅ **采纳** | 两套完成纪律(requester-scoped / group-scoped)**物理隔离** ⇒ 死锁分析 / ordering 规则 / 形式化验证**不混用同一工具**(per §3.2);平面可**整体关闭**(`NullCollectivePlane`)⇒ 「启停干净」**可测**;同一接口承载 CHI 裁剪实例 / SHARP op 集 / UALink 全集合族 |
+
+> ⚠️ **代价不在选项里** ⇒ 见 **§6 后果 / 代价**(跨平面 ordering 契约是**必需**而非可选)。
 
 ### 决策 1:6 层架构 = 5 层 + 1 旁路平面
 
@@ -155,10 +167,59 @@ group-scoped completion     → Fabric Collective Plane
 | CHI 裁剪实例 | `{multicast_sync}` 能力集 | ✅ 已拍板 |
 | NVLink/UALink | 全集(reduce/broadcast/multicast/allreduce/barrier) | ✅ 已拍板 |
 | NullCollectivePlane | 作为"启停干净"验收测试 | ✅ 已拍板 |
+| NVLink / UALink 的 SHARP 语义 | **不在本 ADR 定义**(本 ADR 只定**平面归属 + 完成域**)⇒ 具体契约见 `ADR-CEP-03 §3`(R1~R5 + A~D)与队列 #13 / #14 的**规约层** | ✅ 已拍板 |
 
 ---
 
-## 6. v0.2 修订记录
+## 6. 后果 / 代价
+
+### 6.1 正面
+
+| # | 后果 |
+|---|---|
+| 1 | 集合通信与一致性事务**物理隔离** ⇒ 两套完成纪律各自可形式化(死锁分析 / 单一序证明**不混用同一工具**,per §3.2) |
+| 2 | collective 平面可**整体关闭**(CHI / CXL 配置默认 `NullCollectivePlane`)⇒ 「启停干净」**可测**(不是口头承诺) |
+| 3 | 平面**协议无关**:同一接口承载 CHI 裁剪实例 `{multicast_sync}` / NVLink SHARP op 集 / UALink 全集合族 ⇒ 新协议族**不新增平面** |
+| 4 | `group_id` 归属**明确**(collective plane 的一等公民,**不进** Coherence Interface)⇒ 「地址 vs 组」的边界**一次说清**,不留口头约定 |
+
+### 6.2 负面 / 代价
+
+| # | 代价 |
+|---|---|
+| 1 | **多一个平面** ⇒ 多一套接口 / 类型 / VC / 判据(维护成本) |
+| 2 | **跨平面 ordering 必须另立契约** —— 平面并列**不自动**带来可见性次序 ⇒ `ADR-CEP-03 §3` 的 R1~R5 + A~D 是**必需**而非可选(否则 SHARP reduce 与 coherent atomic 的混合流**无序**) |
+| 3 | **barrier 语义双轨**:requester-scoped 走 coherence `barrier` 流;group-scoped 走 `collective_barrier` ⇒ **分类错误 = 静默死锁** ⇒ 必须有 litmus test(§3.1)且写入正文(per §3.3 抓取点 5) |
+| 4 | 「可关闭」**不是所有配置都成立**:CHI / CXL 配置用 `NullCollectivePlane`;**NVLink / UALink 配置用全集** ⇒ 关闭路径**只在裁剪实例配置下**可测 |
+
+### 6.3 风险
+
+| # | 风险 | 缓解 |
+|---|---|---|
+| 1 | **纸面契约**:旁路平面只有接口、没有行为面 ⇒ 与 R11(「声明超前于实现」)**同型** | 由 `ADR-CEP-03` 决策 1 的 **3 生效条件** + 本 ADR **§7 Verification** 兜住 |
+| 2 | **不可测抓取点被写成恒真判据**:§3.3 抓取点 **2 / 7** 在 Stage 1 **不可测** | per **Entry #66**:推迟 P3 ⇒ **禁**写成恒真 / 恒 SKIP 判据 ⇒ §7 **不收录**该两条 |
+| 3 | **分类漂移**:把 group-scoped 完成误判为 requester-scoped(或反之) | §3.1 两条 litmus test 入正文 + §7 **V3** 双向判据(正控 + 反控) |
+
+---
+
+## 7. Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+> ⚠️ **纪律**(per 队列 #12 沉淀的 4 铁律):① **纯负向断言须配正控** ② 每条判据须有**可执行反向 fixture 且因正确原因红**(须写明**载体**与**归因 id**)③ **编译期锁不得只以「编译红」充当 ctest 判据** ⇒ `static_assert` 须另有一条**运行期**判据兜住。
+> ⚠️ **不收录**:§3.3 抓取点 **2 / 7**(Stage 1 不可测,per Entry #66)⇒ 禁写恒真 / 恒 SKIP 判据。
+
+| # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
+|---|---|---|---|
+| **V1** | Collective Plane → Directory 的调用边**恒为零** | include-graph 闸(grep + 图谱) | 注入一条 collective → directory 边 ⇒ 闸必红(`CE-PLANE-DIR-EDGE`) |
+| **V2** | canonical **10 流清单零 diff**(`ADR-CEP-02 §2` ↔ `07 号 §3.1` ↔ schema `flow_support`) | 机器 diff | 改任一侧的流名 / 顺序 ⇒ diff 必红(`CEN-10-DIFF`) |
+| **V3** | barrier 分类 litmus **双向**成立(地址 key ⇒ Ordering;组 key ⇒ Collective) | 分类函数 + 判据 | ① **正控**:两类各一例通过 ② **反控**:毒化「两者同判」⇒ 必红(`BARRIER-CLASSIFY`) |
+| **V4** | CHI / CXL 配置下 collective 原语**零调用**(boot / shutdown 期间) | `NullCollectivePlane` + 调用计数 | 毒化:CHI 配置下发起一次 reduce ⇒ 必红(`NULL-PLANE-CALLED`) |
+| **V5** | partial failure 有**显式**建模(`CollectiveEvt::Fault` 存在 + **拒绝静默**) | 静态扫描 + 运行期 | 毒化:成员掉线被静默吞掉 ⇒ 必红(`COLLECTIVE-PARTIAL-FAIL`) |
+| **V6** | 集合流量 VC 预留与既有 `vc_binding` **不冲突** | 声明层检查 | 毒化:预留 VC 与实例 `vc_binding` 撞号 ⇒ 必红(`COLLECTIVE-VC-COLLISION`) |
+| **V7** | 原语最小集**恰 4**(`REDUCE` / `BROADCAST` / `MULTICAST` / `BARRIER`;`AllReduce` **不**列为原语) | 结构断言 | 加第 5 个原语 ⇒ 必红(`COLLECTIVE-PRIM-SET`) |
+| **V8** | 平面**可关闭**且关闭后**无残留**(禁「以后再说」式关闭) | 绑定检查 + 关闭路径 | 毒化:关闭后仍有 collective 流量 ⇒ 必红(`PLANE-OFF-LEAK`) |
+
+---
+
+## 8. v0.2 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
 ## Status Update 2026-10-26 —— §3.3 抓取点的**可测性裁决**(队列 #5 `cpptlm-cep-collective-plane-base`)
@@ -181,6 +242,27 @@ group-scoped completion     → Fabric Collective Plane
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #66**
 > **冻结面**: 本文件属 M1 冻结面,本次追加已走授权闸(见 Entry #66)。
 
-## 7. v0.3 修订记录
+## 9. v0.3 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+---
+
+## 定稿说明(2026-11-03,per 台账 **Entry #169** —— 队列 #13 `cpptlm-cep-nvlink-sharp` 的**开工前置**)
+
+> **性质**:本段是**追加式**(per AGENTS.md「ADR 不可变 + Status Update」先例)—— §1 ~ §7 **正文内容**除下列**订正**外**一律不改**。
+
+**① 本次定稿的实质**
+
+| # | 动作 | 说明 |
+|---|---|---|
+| 1 | 补 **§2.0 选项对比表** | 把 §1.2 的三个反例(塞 Directory & Ordering Plane / 塞 Fabric & Transport Plane / 加第 11 条 `collective_request` 流)**固化成可审计的取舍表**;新增的第四行 = 本 ADR 的采纳方案(独立第 6 层旁路平面)⇒ 决策内容**未变** |
+| 2 | 补 **§6 后果 / 代价** | 正面 4 条 + 负面 4 条 + 风险 3 条(含**缓解**);⇒ 把「代价不在选项里」显式落盘 |
+| 3 | 补 **§7 Verification** | 8 条**前瞻**判据(可勾选)⇒ 每条写明**载体**与**反向 fixture 的归因 id**;⚠️ **不收录** §3.3 抓取点 **2 / 7**(Stage 1 不可测,per Entry #66) |
+| 4 | §5 决策汇总**补 1 行** | 「NVLink / UALink 的 SHARP 语义」**不在本 ADR 定义**(本 ADR 只定**平面归属 + 完成域**)⇒ 具体契约归 `ADR-CEP-03 §3` 与队列 #13 / #14 的**规约层** ⇒ 消除「本 ADR 到底管到哪」的歧义 |
+| 5 | 状态 ⇒ **已签发(v1.0)** | 元数据补 **关联 change**;**正文行数口径** = §1 ~ §7(**不含**修订记录与 Status Update 追加段)⇒ 本 ADR 正文 = **222 行** ≤ 250 |
+
+**② 关联 change**:`cpptlm-cep-collective-plane-base`(✅ 已归档 2026-10-26)· `cpptlm-cep-nvlink-sharp`(队列 #13 · 📋 Planned)· `cpptlm-cep-ualink-inc`(队列 #14 · 📋 Planned)
+
+**③ ⚠️ 决策内容零改动** —— 本次**不新增 / 不修改任何决策**;只补形式要素 + 把 §1.2 的既有论证结构化 + 补 1 行汇总口径。
+⇒ 「一决策一文档」的**存量越界**(本 ADR 含 3 个决策)按契约「**存量文档不追溯**」⇒ **记 backlog**,不在本次拆分(per 台账 Entry #169 ⑤)。

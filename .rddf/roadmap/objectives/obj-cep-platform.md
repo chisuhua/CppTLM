@@ -748,6 +748,9 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | `cpptlm-cep-ualink-inc` improvement | 走 add-improve;Stage 3 启动 |
 | P2 | `ADR-CEP-11` 版本锁定(Stage 1 前签发)| 走 architect;触发 R2 缓解 —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「走 architect」**已失实** ⇒ `ADR-CEP-11` **已于 2026-10-30 签发 v1.0**(per Entry #112 / #135);⇒ **本行关闭**;⚠️ **残余**:版本锁定闸的 **G-3**(IC3 变更留痕**无自动闸**)**未闭合**(per §8.1 R2 缓解列)—— 仍为登记态残余风险 |
 | P2 | phase-11 注册后建 feature fragment | 走 rdd-planner 后续评估;≥2 change 跨 phase-10/11 分布时 |
+| P2 | **ADR 一决策一文档化的存量拆分**(`ADR-CEP-01` 3 决策 / `ADR-CEP-02` 4 决策 / `ADR-CEP-03` 3 决策) | ⚠️ **登记态 · 不排期**(per 台账 **Entry #169** ⑤ —— 产出形态契约要求「一决策一文档」,但同契约「**存量文档不追溯**」⇒ **不在** ADR 定稿中顺手改写)⇒ 拆分前须**先定拆分边界**(哪些决策是「同一决策的不同侧面」)⇒ 避免把 3 个决策拆成 3 篇却共享同一组不变量 ⇒ **拆分后**须同步 `ADR-CEP-00` / `07 号` 的引用面与 `ADR-CEP-NUMBER-MAP` 的预分配表 |
+| P2 | **实施笔记的 ADR 行号锚点 ⇒ 改节号引用**(`ADR-CEP-02:55` / `:66` 等) | ⚠️ **登记态 · 未排期**(per 台账 **Entry #169** ⑨ b)—— 门禁 `cep_archforge_alignment_check.sh` 以**行号**锚定 `ADR-CEP-02:51` / `:62` ⇒ **ADR 一改行就失准**;该清单文件属**实施笔记**(per `obj §4.7.1` append-only;**不在** architect 的 `arch_paths` 内)⇒ 需 **builder / planner** 域处置;建议:① 锚点改**节号**(`ADR-CEP-02 §2`)② 或在 ADR 内加**稳定锚点标记**供门禁按标记定位 |
+| P2 | **队列 #13 improvement 草稿的 epoch 语义矛盾** | ⚠️ **登记态 · 待 planner 订正**(per 台账 **Entry #169** ⑨ c)—— 草稿写「epoch 未 commit 前该区域的 coherence 请求**被拒**」⇒ 与 `ADR-CEP-03 §3.1 R4`「epoch 未 commit 前 = **正常服务**」**矛盾** ⇒ 该文件属 **planner 域**(`.rddf/improvements/**`)⇒ architect **不改**;⇒ **回归锁已在 ADR 落**(`ADR-CEP-03` §4 **S1** + §9 **V6** 明写「不得写成未 commit 前拒绝」) |
 | P2 | **`FullMapDirectory` 落位登记**(反向缺口:有行为实现 · 零实例声明) | ⚠️ **登记态 · 不排期**(per **Entry #139** ③ 裁决 —— 与 `BroadcastNull` 同款:当前队列序列 #10 ~ #14 **无消费者** ⇒ 不排期、保留登记);⚠️ **2026-11-02 补登记**(per 台账 Entry #148):Entry #139 ③ 落点表要求「§10 追加 backlog 行」**至今未落地** ⇒ **本条补上**;**解除条件** = **CHI-full 队列**出现(即有实例声明 `sharer_tracker.impl = FullMapDirectory`)⇒ 届时才排期;⚠️ **实现不废弃**(per Entry #139 ④)—— **不得**表述为「该实现无用/应删除」;⚠️ 与 §8.1 **R11** 的「声明超前于实现」**方向相反**(R11 已降级 🟢 低,per Entry #137)⇒ **不因 R11 降级而闭合** |
 | P2 | **`LocalView` 双重语义登记**(`forward_to` 字段须先读 `result` 再解释) | ⚠️ **登记态 · 未落点**(per **Entry #144** ② 2 —— 实现层复用既有 `LocalView` **零改动** ⇒ 代价 = `forward_to` 字段**语义重载**:判读前**必须**先读 `result`);⚠️ **2026-11-02 补登记**(per 台账 Entry #148):该义务**至今无落点**;**若**要消歧 ⇒ 须**扩 `LocalView`**(新增 `tree_parent` 字段)—— 属**公开契约变更** ⇒ **须单独登记 + 独立 change**,**非**默认动作(per Entry #143 ⑥ item 5);⇒ 现状 = **文档侧约定 + 判据覆盖**,不改契约面;✅ **2026-11-02 已落点**(per 台账 **Entry #165** —— 队列 #12 实现层):`DcohSymmetric` 的 `authority` = `LOCAL_HINT` ⇒ 该义务**首次落到冻结面契约面** —— `openspec/specs/cep-sharer-tracker-base/spec.md` **追加段**(M1 **member 35** · 两步授权)写明「`forward_to` 承载**hint 目标**、判读前**必须**先读 `result`」⇒ **可寻址**(`test/test_cep_cxl_dcoh_tracker.cc` 的 CDX-05 **登记侧**断言守着);⇒ ⚠️ 本条**仍开放**:`LocalView` 契约面**零改动** ⇒ 双重语义**仍在** ⇒ **消歧**(扩 `LocalView`)仍须**单独登记 + 独立 change**(非默认动作) |
 | P1 | **`cpptlm-cep-canonical-flow-parser-scope`**(CP-02 解析器范围限定) | ✅ **已完成归档**(2026-11-02,per 台账 **Entry #149** / **#150** / **#152**)—— delta capability `cep-canonical-flow-parser-scope` 已合并进 `openspec/specs/cep-canonical-flow-parser-scope/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;KPI **1/3 → 0/3**—— **1 slot**;**目标** = 把 `parse_canonical_flow_names` 的解析范围限定到 `ADR-CEP-02` 的 `## 2.` 段 ⇒ 权威 ADR 的**合法追加**(SU / 附录 / 其它章节表格)**不再**让 CP-02 判据假红;**判据形态** = 「毒化 ⇒ **仍绿**」(回归防护,与既有 `*_reverse_verify.sh` 的鉴别力形态**相反**,已显式登记);⚠️ **不属** §4.0 的 14 个主线队列 ⇒ **不触及** `ADR-CEP-00 §2 Decision 3` 的治理口径 |
@@ -10478,6 +10481,83 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 · `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` · `docs/adr/ADR-CEP-01-fabric-collective-plane.md` · `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` · `docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md` ·
 `include/tlm/cep/collective_plane.hh` · `include/tlm/cep/collective_planes.json` ·
 `docs/architecture/07-coherence-exploration-platform.md`(§5.1.1 NVLink 行 · §11 两行计数)
+
+---
+
+### Entry #169 — 2026-11-02 [scope-change](**architect** —— `ADR-CEP-01` / `02` / `03` **定稿**的**冻结面授权记录** + **9 处「签发即债」**清单)
+
+**主题**:队列 #13 `cpptlm-cep-nvlink-sharp` 的**开工前置** = 三则 ADR 定稿(用户裁决 2026-11-03)
+⇒ 本条为**授权记录**(M1 冻结面三件)⇒ 并登记定稿前勘察出的 **9 处「签发即债」**。
+
+**① 授权范围(3 件 M1 冻结面)**
+
+| # | 冻结面成员 | 动作 |
+|---|---|---|
+| 1 | `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | 补**选项对比表** / **后果·代价** / **Verification** 三章 + 状态签发 + 关联面状态订正 |
+| 2 | `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` | 同上 + **决策编号重排**(3→1→2 现为乱序)+ **流 7 方向订正**(见 ②-①) |
+| 3 | `docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md` | 同上 + **§4 状态机雏形降级为指针**(见 ②-⑦)+ **change 名 / Bundle 路径 / Stage 口径**订正(见 ②-②③④) |
+
+**② ⚠️ 9 处「签发即债」(签发前必须处置 —— 否则签发即欠债)**
+
+| # | 位置 | 问题 | 性质 |
+|---|---|---|---|
+| ① | `ADR-CEP-02` §2 表格 **流 7** 备注 | 「CXL 3.0 BISnp 走这里,**host→device 方向**」⇒ **方向反了**(BISnp = **S2M device→host**;响应 BIRsp 才是 M2S)—— 公开来源已反证,07 号 **Entry #154** 已订正,⚠️ **ADR 未同步** | **事实错误**(照队列 #12 的 `ADR-CEP-04 §3.5` 同型) |
+| ② | `ADR-CEP-03` §6 + §8 Entry #66 SU 段 | 引用**不存在的 change 名** `cpptlm-cep-nvlink-sharp-adapter` / `cpptlm-cep-ualink-inc-adapter` ⇒ 台账实名是 `cpptlm-cep-nvlink-sharp` / `cpptlm-cep-ualink-inc` | 失指引用 |
+| ③ | `ADR-CEP-03` §7 汇总「Bundle 路径」行 | 仍写「沿用 `bundles:coherence_bundles_tlm.hh` + 新增 CollectiveReq/Evt」⇒ 与 **Entry #66 SU 的偏离登记**(类型内嵌 `collective_plane.hh`,**不落 Bundle**)**冲突** | **内部矛盾** |
+| ④ | `ADR-CEP-03` §6 | `cpptlm-cep-collective-plane-base` 未标注**已归档**(2026-10-26) | 状态失实 |
+| ⑤ | `ADR-CEP-03` §6 | 「P2 / P3 / P4 实施 change」⇒ 与台账 **Stage** 映射(队列 #5 = **Stage 1** · #13 = **Stage 2** · #14 = **Stage 3**)**不一致** | 口径不一致 |
+| ⑥ | `ADR-CEP-02` §2 | **决策编号乱序**(决策 3 → 决策 1(精简) → 决策 2) | 形式缺陷 |
+| ⑦ | `ADR-CEP-03` §4 | 「SHARP 插件状态机**雏形**」= **占位符伪码** ⇒ 若原样签发 ⇒ **纸面契约**(与 R11「声明超前于实现」同型) | **纸面契约** |
+| ⑧ | 三则 ADR | 均缺产出形态契约的 **②选项对比表(≥3 行)** / **③独立「后果·代价」章** / **④Verification 章(前瞻 · 可勾选)** | 形式缺失 |
+| ⑨ | `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` | 「epoch 未 commit 前该区域的 coherence 请求**被拒**」⇒ 与 `ADR-CEP-03 §3.1 R4`「epoch 未 commit 前 = **正常服务**」**矛盾** | ⚠️ **本队列引入**(planner 域文件)⇒ 由 architect 在本条**登记**,回 planner 时订正 |
+
+**③ 定稿的「行数」口径(显式声明,避免歧义)**
+
+- **正文行数** = §1 背景 ~ 决策汇总 + 新增三章,**不含**「修订记录」段与 **Status Update 追加段**
+  (后者是 append-only 治理层,per AGENTS.md「ADR 不可变 + Status Update」先例)⇒ 三则均须 **≤ 250 行**(正文口径)。
+- ⚠️ 「一决策一文档」的**存量越界**(三则各含 3~4 个决策)按契约「存量文档不追溯」⇒ **记 backlog 单独立项**,不在本次顺手改写(见 ⑤)。
+
+**④ Verification 章的编写纪律(照队列 #12 沉淀的 4 铁律)**
+
+1. **纯负向断言须配正控** ⇒ 「不携带某字段」「调用边为零」类断言必须配一条**期望通过**的正向用例;
+2. **每条判据须有可执行反向 fixture 且因正确原因红** ⇒ 须写明**载体**与**归因 id**形态,不给「反正红了」放行;
+3. **编译期锁不得只以「编译红」充当 ctest 判据** ⇒ `static_assert` 须**另有一条运行期判据**兜住;
+4. ⚠️ **不可测项禁写**:`ADR-CEP-01 §3.3` 抓取点 **2 / 7** 已由 **Entry #66** 裁决为「不可测 ⇒ 推迟 P3 ⇒ **禁**写成恒真 / 恒 SKIP 判据」⇒ Verification 章**不得**收录。
+
+**⑤ ⚠️ backlog 登记(存量越界,本次不做)**
+
+| 项 | 内容 |
+|---|---|
+| 位置 | obj **§10**(Next Sprint Candidates)P2 行 |
+| 条目 | 「**ADR 一决策一文档化的存量拆分**」—— `ADR-CEP-01`(3 决策)/ `ADR-CEP-02`(4 决策,含「决策 1(精简)」与「决策 3」并存)/ `ADR-CEP-03`(3 决策)各含多个独立决策 ⇒ per 产出形态契约应拆为「一决策一文档」;⚠️ per 契约「**存量文档不追溯**」⇒ **不在 ADR 定稿中顺手改写** ⇒ 单独立项;⚠️ 拆分须**先定拆分边界**(哪些决策是「同一决策的不同侧面」)⇒ 避免把 3 个决策拆成 3 篇却共享同一组不变量 |
+
+**⑥ 两步授权序列**
+
+台账 entry(本条)→ 三则 ADR 定稿改动 → `--update --authorized-by "Entry #169"` → commit 产物
+→ `--update`(provenance 对齐)→ commit。
+
+**⑦ 关联**: Entry #168(队列 #13 improvement 落盘 + 3 项用户裁决)· #166(队列 #12 归档)· #154(队列 #12 的 4 项 architect 裁决 —— **「ADR 正文与 07 号同步订正」的流程先例**)· #141(`ADR-CEP-02` 的 `perm` 值域锁裁决)· #66(队列 #5 —— `ADR-CEP-01/03` 的抓取点可测性裁决 + Bundle 路径偏离登记)· #139 / #137(R11 与「声明超前于实现」同型口径)
+· `docs/adr/ADR-CEP-01-fabric-collective-plane.md` · `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` · `docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md`(**M1 冻结面 3 件**)
+· `docs/architecture/07-coherence-exploration-platform.md`(Entry #154 的 6 处订正 —— ① 的对照面)
+· `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(§6 #2 —— ① 的公开来源依据)
+· `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(⑨ —— planner 域,待回 planner 订正)
+
+**⑧ ✅ 定稿完成记录(2026-11-03 · architect)**
+
+| ADR | 正文行数(§1~结论,**不含**修订记录与 SU 段) | 本次动作 | 9 处「签发即债」的处置 |
+|---|---|---|---|
+| `ADR-CEP-01` | **221** ≤ 250 | 状态 ⇒ **已签发(v1.0)** · §2.0 **选项对比表**(4 行,固化 §1.2 的三个反例)· §6 **后果/代价**(正面 4 + 负面 4 + 风险 3)· §7 **Verification**(8 条前瞻判据,各带**载体**与**反向 fixture 归因 id**)· §5 汇总补 1 行(NVLink/UALink 的 SHARP 语义**不归本 ADR**) | ⑧(形式要素)✔ · ⑥(不适用)✔ |
+| `ADR-CEP-02` | **243** ≤ 250 | 状态 ⇒ **已签发(v1.0)** · ① **流 7 BISnp 方向订正**(host→device ⇒ **device→host(S2M)**;BIRsp 才是 M2S)· ⑥ **决策编号重排**(3→1→2 ⇒ **1→2→3**,**标签不变** ⇒ 外部引用不断)· §2.0 选项对比表(4 行)· §7 后果/代价 · §8 Verification(6 条) | ① **已订正** · ⑥ **已修** · ⑧ **已补** |
+| `ADR-CEP-03` | **248** ≤ 250 | 状态 ⇒ **已签发(v1.0)** · ⑦ **§4 状态机雏形降级**为「判据摘要(S1~S3)+ 实现指针」(细节外移 ⇒ 避免签发即**纸面契约**)· 决策 1 **三条生效条件逐条状态化** · §6/§7/SU 三处口径订正 · §2.0 选项对比表 · §8 后果/代价 · §9 Verification(7 条) | ② **已订正**(change 名)· ③ **已订正**(汇总 vs Entry #66 SU)· ④ **已订正**(已归档标注)· ⑤ **已订正**(Stage 口径)· ⑦ **已降级** · ⑧ **已补** |
+
+**⑨ ⚠️ 副作用与登记**
+
+| # | 事项 | 处置 |
+|---|---|---|
+| a | **行号锚点**:门禁 `cep_archforge_alignment_check.sh` 以**行号**锚定 `ADR-CEP-02:51`(CEN-Ib1)与 `:62`(4 值锁)⇒ 定稿的插入会**移位** ⇒ 首版改动曾触发 2 处红 | ⇒ **零改动门禁**地解决:① front-matter 收回 **2 行**(状态 + 日期)⇒ 「关联 change / 定稿实质」**追加到文末**;② §2.0 选项对比表移到**锚点之后**(决策 1 之前)⇒ **锚点行号复位** ⇒ 复测 **33/33 全过** |
+| b | **实施笔记的行号锚点**:`docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` 用 `ADR-CEP-02:55` / `:66` 形式引用 ⇒ 本 ADR 行号**已移位** ⇒ 该文件属**实施笔记**(**不在** architect 的 `arch_paths` 内)⇒ 本次**不改** | ⇒ 登记为 **§10 backlog**(建议改用**节号**引用 `ADR-CEP-02 §2`) |
+| c | **improvement 草稿的 epoch 语义矛盾**:`.rddf/improvements/cpptlm-cep-nvlink-sharp.md` 写「epoch 未 commit 前该区域的 coherence 请求**被拒**」⇒ 与 `ADR-CEP-03 §3.1 R4`「epoch 未 commit 前 = **正常服务**」**矛盾** | ⇒ ⚠️ 该文件属 **planner 域**(`.rddf/improvements/**`)⇒ architect **不改**;⇒ 登记为 **§10 backlog**(回 planner 时订正);⇒ 已在 `ADR-CEP-03` §4 的 **S1** 判据与 §9 **V6** 写明「**不得**写成未 commit 前拒绝」⇒ **回归锁已落** |
+| d | **「一决策一文档」存量越界** | ⇒ 登记为 **§10 backlog**(per 契约「存量文档不追溯」) |
 
 ---
 
