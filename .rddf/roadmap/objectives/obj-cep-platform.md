@@ -11292,6 +11292,66 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 ---
 
+### Entry #183 — 2026-11-03 [plan](队列 #13 规约层 **Phase 2 完成** —— 逐格 basis(12 格)+ 9 项 pending + 下限 + 归因 id 全覆盖)
+
+**主题**:队列 #13 规约层 change 的 **Phase 2(逐格 `basis` + 编译期锁)**完成(2.0 ~ 2.9 全勾)。**角色**:builder。
+
+**① 交付面**
+
+| 项 | 内容 |
+|---|---|
+| 锚点摘要 | `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md` —— §1 加 **`pin` 列**(S1/S2/S3 全 `strong`)+ **引用/再分发许可列**;新增 **`§2bis 契约锚点 `C-1`~`C-9`**;§6 补 `C-n` / `N-n` 复核口径 |
+| 载体 | `include/tlm/cep/nvlink_sharp_state_spec.hh` —— **597 行** · **46 条编译期断言**(Phase 1 为 24)|
+| 测试 | `test/test_cep_nvlink_sharp_state_spec.cc` —— **10 cases / 201 assertions**(Phase 1 为 8 / 57) |
+
+**② 12 格逐格 `basis`(D-1 口径;全部 `self-derived` + `pending=false` + `source=AdrContract`)**
+
+| 组 | 格数 | `ref` |
+|---|:--:|---|
+| `IngressDecision` | 2 | `C-1 A-3` |
+| `RegisterResult` | 2 | `C-2` |
+| `EpochState` | 2 | `C-3` |
+| `OrderingRule` | 4 | `C-4` / `C-5` / `C-6` / `C-7` |
+| `VcReservationState` | 1 | `C-8` |
+| `CollectiveScope` | 1 | `C-9 A-1 A-5` |
+
+⇒ **`kNonPendingCellCount` = 12** · **`kNonPendingFloor` = 12**(`2.6b` 实测登记;任一格改 `pending=true` ⇒ 编译红)。
+
+**③ 关键修复(逐条对应 Entry #182 的 A 类债务)**
+
+| 债 | 修复 |
+|---|---|
+| **A-1** 无 `Basis` | 新增 `SourceId` / `kSourceLicenseConfirmed` / `EvidenceKind` / `Basis` / `basis_is_valid` / `all_basis_valid<N>` + 6 组逐格表 |
+| **A-2** 断言零归因 id | **46/46** 断言文案改为 `<唯一归因 id>: <语义>` 形态(实测脚本核验,零例外)⇒ **Phase 3 的归因命中从此可执行** |
+| **A-3** NSS-05「字段恰 2」vs 载体 1 字段 | 采 **(i)**:`DivertCounter` = `{key(DivertCounterKey{GroupId,AddressRange}), total}` ⇒ **恰 2 字段** 且落实 delta spec 的「按 group / 区域可寻址」;字段数由**结构化绑定锁**兜住 |
+| **A-4** NSS-04 `lookup_region` | design 改为 `classify_after_destroy(region_still_registered)`(`K.2` 纯函数形态) |
+| **A-5** NSS-07「解析结果」 | design 改为「枚举基数 == 1 + 类型无 `vc_id`」(两个可判定面) |
+| **A-6** `decision_after_destroy()` 恒真 | **参数化**为 `classify_after_destroy(bool region_still_registered)`:`false ⇒ Pass` / `true ⇒ 仍 DiverT`(泄露**可观测**)⇒ 非恒真,可被 fixture 毒化 |
+| **A-7** 锚点摘要无 `pin` / 许可 | 见 ①(两列齐备) |
+| **A-8** `A-n` 在标题 ⇒ `collect_ids` 空集 | Phase 3 承接(`tasks 3.1b` heading-aware 收集器);Phase 2 先把 `C-n` 放在**表格**(可被现有文法收) |
+| **A-9** pending 计数矛盾 | `N-1`~`N-7` → `N-1`~`N-9`(tasks 0.1 + design 头注 + design §4 表行) |
+| **A-10** 「19 条断言」失实 | → **24**(Phase 1 实测);Phase 2 后为 **46** |
+| **A-11** `A-4` 多 group 未表达 | **显式登记**归属 = 实现层(design §1.2 第 2 项);⛔ 不得声称已覆盖 |
+| **A-12** `A-2` flow_support 未表达 | **新增 design §1.2 3b 行**,归属 = 实现层;逐操作矩阵 = `N-2` pending |
+
+**④ ⚠️ 本轮实施中抓到的一处**假阳性**(判据自身缺陷,已修)**
+
+Phase 2 给断言文案加归因 id 后,`NSS-07` 的 token 扫描(`src.find("vc_id") == npos`)**因正确的文案而红** ——
+断言文案**有义务点名**被禁标识符(`"…不得表达 vc_id…"`),而原判据扫的是「去注释后的整段源码」⇒ 把**字符串字面量**算进去了。
+⇒ 新增 `strip_cpp_comments_and_strings()`,让「某标识符**不得出现**」类判据(NSS-07 / NSS-08 / NSS-09 的零 token 检查)
+只扫**代码标识符**。⇒ 判据本意是「载体不得**声明 / 使用**它」,不是「不得**提及**它」。
+
+**⑤ 验收(实测)**
+
+门禁 **7/7** rc=0 · `openspec validate --strict` rc=0 · `format.sh --check` rc=0 ·
+`[cep][nvlink-sharp][state-spec]` **10 cases / 201 assertions** 全过 · `ctest` **142/142** · `-Wall -Wextra` **零警告**
+
+**⑥ 关联**: Entry #182(Phase 2/3 细化 + D-1/D-2/D-3)· #181 / #180(Phase 1)· #179 / #178(critic 两轮)
+· `include/tlm/cep/nvlink_sharp_state_spec.hh`(本条对象)· `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`
+· `openspec/changes/cpptlm-cep-nvlink-sharp-state-spec/{design,tasks}.md`(2.7 / 2.8 的订正)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

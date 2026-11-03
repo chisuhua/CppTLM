@@ -14,9 +14,9 @@
 | Phase | 状态 | 说明 |
 |---|---|---|
 | 0 治理前置 | 🟡 **进行中**(0.1~0.4 ✅ / 0.5~0.7 待本轮闭环) | Task 0 普查 ✅(Entry #173)· Decision D ✅(#171)· 三则 ADR 定稿 ✅(#169/#170)· improvement 订正 ✅(#172)· critic 第 2 轮收口 ✅(#174)· 4 件套已建 · **待**:转正登记 + 冻结面实测 + KPI 回填 |
-| 1 载体形态定稿 | ✅ **已完成**(2026-11-03) | `nvlink_sharp_state_spec.hh`(新 · 263 行 · header-only · **自足**:只 include `<cstddef>` / `<cstdint>`)—— 类型 + 纯函数 + 常量表 + **19 条编译期断言**;⛔ 无 opcode / 无区域表 / 无词表型枚举 |
-| 2 逐格 basis + 编译期锁 | 🟡 **进行中**(子步已细化,per Entry #182) | 12 格逐格 `basis`(两轴)+ 来源许可表(真源在锚点摘要)+ 归因 id 落进断言文案 + 9 项 pending 登记 + **非 pending 格数下限** + 3 处 design 口径订正 + 3 处计数/范围漂移订正 |
-| 3 判据收口 | 🟡 **进行中**(子步已细化,per Entry #182) | 逐格核对表(含 **heading-aware** 条目收集器,防空转)+ **9 组 / 10 条反向 fixture** + 基线正控 + probe/脚本 + ctest 注册 |
+| 1 载体形态定稿 | ✅ **已完成**(2026-11-03) | `nvlink_sharp_state_spec.hh`(新 · header-only · **自足**)—— 类型 + 纯函数 + 常量表 + **24 条编译期断言**。⚠️ **2026-11-03 订正**(Entry #182 · `tasks 2.8a`):原写 19 条 ⇒ Phase 1 实测 **24**;Phase 2 后为 **46 条**(全部带归因 id);⛔ 无 opcode / 无区域表 / 无词表型枚举 |
+| 2 逐格 basis + 编译期锁 | ✅ **已完成**(2026-11-03) | 12 格逐格 `basis`(两轴)+ 来源许可表(真源在锚点摘要)+ 归因 id 落进断言文案 + 9 项 pending 登记 + **非 pending 格数下限** + 3 处 design 口径订正 + 3 处计数/范围漂移订正 |
+| 3 判据收口 | ⬜ 待实施(子步已细化,per Entry #182) | 逐格核对表(含 **heading-aware** 条目收集器,防空转)+ **9 组 / 10 条反向 fixture** + 基线正控 + probe/脚本 + ctest 注册 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + `openspec validate --strict` + KPI 1/3 → 0/3 + 归档 |
 
 ---
@@ -24,7 +24,7 @@
 ## Phase 0 — 治理前置
 
 - [x] 0.1 **Task 0 硬门**:公开来源普查 ⇒ `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`(Entry #173)
-      ⇒ **通过**(3 个公开来源 sha256 钉版 · 5 条锚点 `A-1`~`A-5` · **9 项** `pending` 白名单 `N-1`~`N-7`)
+      ⇒ **通过**(3 个公开来源 sha256 钉版 · 5 条锚点 `A-1`~`A-5` · **9 项** `pending` 白名单 **`N-1`~`N-9`**) ⚠️ **2026-11-03 订正**(Entry #182 · `tasks 2.8b`):原写 7 项 ⇒ 与本行的「9 项」自相矛盾
 - [x] 0.2 **architect 裁决**:三则 ADR 定稿(Entry #169 / #170)· **VC 空间 = Decision D**(Entry #171)
       ⇒ ✅ **载体形态决定项已全部裁完**(①/⑤ = Entry #176 · ② = 用户裁决 · ③④ = Entry #177)⇒ Phase 1 无未决前置
 - [x] 0.3 **improvement 草稿**落 `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` ⇒ `pre_create_brainstorm_check.sh` **rc=0**
@@ -37,7 +37,7 @@
 ## Phase 1 — 载体形态定稿
 
 - [x] 1.1 **分类判据(R1/R2)**:类型 + 纯函数 `classify_at_fabric_ingress`;源端侧类型**不含**区域表字段 ⇒ ✅ 已落:`IngressDecision{DiverT,Pass}` + `classify_at_fabric_ingress(region_hit, epoch_committed)` —— ⚠️ 签名里**刻意没有** opcode / 区域表 / group 上下文 ⇒ **R1( opcode 非分类器)与 R4(源端无区域表可见性)由**类型**保证** |
-- [x] 1.2 **区域/epoch 纪律(R3/R4)**:注册三步原子 · **epoch 未 commit ⇒ 放行** · 注销失效化 ⇒ ✅ 已落:`RegisterResult{Ok,DrainFailed}` + `register_region(drain_succeeded)` + `EpochState{Uncommitted,Committed}` + `epoch_routes_to_collective` + `decision_after_destroy()`;⚠️ **状态容器不在载体**(区域表归实现层)⇒ 载体只给**纯函数判定**(per SU(#3) K.2) |
+- [x] 1.2 **区域/epoch 纪律(R3/R4)**:注册三步原子 · **epoch 未 commit ⇒ 放行** · 注销失效化 ⇒ ✅ 已落:`RegisterResult{Ok,DrainFailed}` + `register_region(drain_succeeded)` + `EpochState{Uncommitted,Committed}` + `epoch_routes_to_collective` + `decision_after_destroy()`(⚠️ Phase 2 已**改名并参数化**为 `classify_after_destroy(bool)`,per `tasks 2.7a`);⚠️ **状态容器不在载体**(区域表归实现层)⇒ 载体只给**纯函数判定**(per SU(#3) K.2) |
 - [x] 1.3 **可观测性(R5)**:divert 计数器 + fail-stop 断言 ⇒ ✅ 已落:`DivertCounter`(仅**形状**,状态归实现层)+ `is_fail_stop(region_hit, epoch_committed, coherence_atomic)` |
 - [x] 1.4 **ordering A/B/C/D**:四类**可判定**谓词(非散文) ⇒ ✅ 已落:`OrderingRule{A,B,C,D}` + `ordering_a_allows_reduce` / `ordering_b_allows_atomic` / `ordering_c_orders_reduce` / `ordering_d_allows_reduce`;⚠️ **code 相等 ⇒ 顺序未定义** ⇒ 显式登记 `kReduceCodeTieUnspecified` |
 - [x] 1.5 **VC 预留单一状态**:载体**仅**表达 `Unavailable` **单一取值**(类型上**无** `vc_id`、**无** `reason` / `owner` / `revisit_trigger`)⇒ **四字段权威恒在** `collective_planes.json` + `CP-03` ⇒ ✅ 已落:`VcReservationState{Unavailable}`(枚举**仅 1 个取值** ⇒ `vc_id` 与四字段**不可表达**) |
@@ -62,73 +62,73 @@
 > ⚠️ **`CollectiveScope` 格判 `self-derived`**:能力域收窄是 ADR 决策(`ADR-CEP-01` SU(#2) G.1 + `ADR-CEP-03 §1`),
 > `A-1` / `A-5` 只作**佐证指针** ⇒ 否则该格 `pending=true`,与 `NSS-08` 的**硬锁**直接冲突(两轴规则: `pending=true` ⇒ 不得断言该值)。
 
-- [ ] 2.0 **锚点摘要补两张表**(本 Phase 的**硬前置**;`docs/research/` **不在** M1 冻结集 ⇒ 无需两步授权)
-      - [ ] 2.0a §1 钉版清单加 **`pin` 列** + **引用 / 再分发许可已人工确认** 列
+- [x] 2.0 **锚点摘要补两张表**(本 Phase 的**硬前置**;`docs/research/` **不在** M1 冻结集 ⇒ 无需两步授权)
+      - [x] 2.0a §1 钉版清单加 **`pin` 列** + **引用 / 再分发许可已人工确认** 列
             ⇒ 三个来源均有 `sha256` ⇒ 全 `pin=strong`;许可**保守**取: S1(arXiv 预印本)待确认 · S2(NVIDIA blog ©) · S3(NVIDIA docs ©) ⇒ `false`
-      - [ ] 2.0b 新增 **`§2bis 契约锚点`**:`C-1` ~ `C-12` 逐条 = 一个 self-derived 格 ↔ 其 ADR 条款(`ADR-CEP-0x §y.z Rz`)
-      - [ ] 2.0c §6 复核段补一句:`C-n` / `N-n` 的**变更**同样使本摘要在对应格上失效
+      - [x] 2.0b 新增 **`§2bis 契约锚点`**:`C-1` ~ `C-12` 逐条 = 一个 self-derived 格 ↔ 其 ADR 条款(`ADR-CEP-0x §y.z Rz`)
+      - [x] 2.0c §6 复核段补一句:`C-n` / `N-n` 的**变更**同样使本摘要在对应格上失效
       ⇒ **判据**:每来源 `pin` + 许可两列齐备;`C-n` 12 条无空洞且每条有 ADR 条款定位
 
-- [ ] 2.1 **逐格 `basis`**(两轴):`kind` ∈ `public-direct` / `public-analogical` / `self-derived` · `pending` ∈ `true` / `false`
-      - [ ] 2.1a 载体加元数据: `#include <array>` + `SourceId{S1,S2,S3,AdrContract,Derived}` + `kSourceCount`
+- [x] 2.1 **逐格 `basis`**(两轴):`kind` ∈ `public-direct` / `public-analogical` / `self-derived` · `pending` ∈ `true` / `false`
+      - [x] 2.1a 载体加元数据: `#include <array>` + `SourceId{S1,S2,S3,AdrContract,Derived}` + `kSourceCount`
             + `kSourceLicenseConfirmed` + `EvidenceKind{PublicDirect,PublicAnalogical,SelfDerived}`
             + `struct Basis{kind, pending, source, ref}` + `basis_is_valid` + `all_basis_valid<N>`
             ⇒ ⚠️ `<array>` 是**标准库** ⇒ **不破**自足红线(`ADR-CEP-03` SU(#2) F.1-a)
-      - [ ] 2.1b **12 格逐格表**(6 组):`kBasisIngressDecision[2]` · `kBasisRegisterResult[2]` · `kBasisEpochState[2]` ·
+      - [x] 2.1b **12 格逐格表**(6 组):`kBasisIngressDecision[2]` · `kBasisRegisterResult[2]` · `kBasisEpochState[2]` ·
             `kBasisOrderingRule[4]` · `kBasisVcReservationState[1]` · `kBasisCollectiveScope[1]`
-      - [ ] 2.1c **6 条编译期锁**:`all_basis_valid(kBasisXxx)` + `kBasisXxx.size() == kXxxCount`(逐组,不留空洞)
+      - [x] 2.1c **6 条编译期锁**:`all_basis_valid(kBasisXxx)` + `kBasisXxx.size() == kXxxCount`(逐组,不留空洞)
       ⇒ **判据**:12 格三字段齐全;`pending == false` ⇒ 来源许可已确认(D-2 的 `AdrContract` = `true`)
 
-- [ ] 2.2 **`ref` 纪律**:指向锚点摘要条目号(`A-n` / `N-n` / `C-n`)⇒ **SHALL NOT** 指向规范原文
-      - [ ] 2.2a 逐格 `ref` **不得** `nullptr`、**不得**空串(`basis_is_valid` 覆盖)
-      - [ ] 2.2b 可解析性核对归 **Phase 3**(3.1),本条只锁**非空**
+- [x] 2.2 **`ref` 纪律**:指向锚点摘要条目号(`A-n` / `N-n` / `C-n`)⇒ **SHALL NOT** 指向规范原文
+      - [x] 2.2a 逐格 `ref` **不得** `nullptr`、**不得**空串(`basis_is_valid` 覆盖)
+      - [x] 2.2b 可解析性核对归 **Phase 3**(3.1),本条只锁**非空**
       ⇒ **判据**:载体零处引用 NVLink 规范正文 / NDA 材料
 
-- [ ] 2.3 **来源许可表**:逐来源记录 `pin=strong|weak` 与引用 / 再分发许可的人工确认
+- [x] 2.3 **来源许可表**:逐来源记录 `pin=strong|weak` 与引用 / 再分发许可的人工确认
       ⇒ **真源在锚点摘要(2.0a)**,载体只**镜像布尔**(`kSourceLicenseConfirmed`)
-      - [ ] 2.3a `AdrContract` 的许可 = **`true`**(本仓自著 ADR ⇒ 无第三方许可问题)
-      - [ ] 2.3b `Derived`(派生 / 二手推论)的许可 = **`false`**(照队列 #12 先例)
+      - [x] 2.3a `AdrContract` 的许可 = **`true`**(本仓自著 ADR ⇒ 无第三方许可问题)
+      - [x] 2.3b `Derived`(派生 / 二手推论)的许可 = **`false`**(照队列 #12 先例)
       ⇒ **判据**:载体布尔与锚点摘要两列**逐来源一致**
 
-- [ ] 2.4 **编译期锁**:NSS-01 ~ NSS-09 的 `static_assert`(**每条**另配运行期判据 —— 铁律 ③)
-      - [ ] 2.4a ⚠️ **归因 id 落进断言文案**(实测当前 24 条**零** id ⇒ Phase 3 的「归因命中」无法成立)
+- [x] 2.4 **编译期锁**:NSS-01 ~ NSS-09 的 `static_assert`(**每条**另配运行期判据 —— 铁律 ③)
+      - [x] 2.4a ⚠️ **归因 id 落进断言文案**(实测当前 24 条**零** id ⇒ Phase 3 的「归因命中」无法成立)
             ⇒ 文案形态 `<唯一归因 id>: <语义>`(id 集**唯一登记处** = 本条 + `tasks 3.2` + `design §3`)
-      - [ ] 2.4b **新增 4 条缺的锁**:
+      - [x] 2.4b **新增 4 条缺的锁**:
             ① `classify_at_fabric_ingress` 的**签名锁**
                (`is_same_v<decltype(&classify_at_fabric_ingress), IngressDecision (*)(bool, bool) noexcept>` ⇒ 锁死「无 opcode 参数」)
             ② `NSS-05` 计数器**形状锁** ③ `all_basis_valid` 系列 ④ `all_pending_items_wellformed`
-      - [ ] 2.4c 逐条对照 `design §3` 的「编译期锁」列 ⇒ 不得缺项(口径冲突见 2.7)
+      - [x] 2.4c 逐条对照 `design §3` 的「编译期锁」列 ⇒ 不得缺项(口径冲突见 2.7)
       ⇒ **判据**:去注释后 `static_assert(` 计数 == 「带归因 id 的断言数」(零例外)
 
-- [ ] 2.5 **9 项 `pending` 登记**:`N-1` ~ `N-9` 逐条可寻址,且载体**不得**出现其具体取值的断言
-      - [ ] 2.5a `struct PendingSemanticItem{id, what, ref}` + `kPendingSemanticItemCount = 9` + `kPendingSemanticItems`
-      - [ ] 2.5b `all_pending_items_wellformed`:id / what / ref 非空 + id 唯一 + 形态 `N-<数字>`
-      - [ ] 2.5c 「不得出现具体取值」的可判定面:载体零处出现 reduce 算子名 / VC 编号 / 报文格式常量 / 聚合树算法名
+- [x] 2.5 **9 项 `pending` 登记**:`N-1` ~ `N-9` 逐条可寻址,且载体**不得**出现其具体取值的断言
+      - [x] 2.5a `struct PendingSemanticItem{id, what, ref}` + `kPendingSemanticItemCount = 9` + `kPendingSemanticItems`
+      - [x] 2.5b `all_pending_items_wellformed`:id / what / ref 非空 + id 唯一 + 形态 `N-<数字>`
+      - [x] 2.5c 「不得出现具体取值」的可判定面:载体零处出现 reduce 算子名 / VC 编号 / 报文格式常量 / 聚合树算法名
       ⇒ **判据**:9 项逐条可寻址 + 反向 fixture(`NSS-09-BASIS-MISSING`)必红
 
-- [ ] 2.6 ⚠️ **非 pending 格数下限**:防止「规约层自身成为纸面契约」(design §5.3 风险 5)
+- [x] 2.6 ⚠️ **非 pending 格数下限**:防止「规约层自身成为纸面契约」(design §5.3 风险 5)
       ⇒ 统计 `pending == false` 的格数,**下限**由 Phase 1 的实际产出确定并登记 ⇒ 低于下限即判红
-      - [ ] 2.6a `kNonPendingCellCount`(constexpr 遍历 12 格)+ `kNonPendingFloor` + `static_assert(count >= floor)`
-      - [ ] 2.6b 登记实际值:按 D-1/D-2 + `CollectiveScope` 判 `self-derived` ⇒ **下限 = 12**(若 `CollectiveScope` 改判公开来源则 **11**)
+      - [x] 2.6a `kNonPendingCellCount`(constexpr 遍历 12 格)+ `kNonPendingFloor` + `static_assert(count >= floor)`
+      - [x] 2.6b **实测登记**:`kNonPendingCellCount` = **12** · `kNonPendingFloor` = **12**(12 格全部出自已签发 ADR ⇒ D-2);任一格改 `pending=true` ⇒ 低于下限 ⇒ **编译红**
       ⇒ **判据**:手改任一格为 `pending=true` ⇒ 计数下降 ⇒ 低于下限即**编译红**
 
-- [ ] 2.7 **`design §3` 的口径漂移订正**(使 design ↔ 载体逐条一致;实测 **3 处**)
-      - [ ] 2.7a `NSS-04`:「`destroy` 后 `lookup_region` 返回空」⇒ 改为「`classify_after_destroy(region_still_registered)` 在**注销成功**时返 `Pass`」
+- [x] 2.7 **`design §3` 的口径漂移订正**(使 design ↔ 载体逐条一致;实测 **3 处**)
+      - [x] 2.7a `NSS-04`:「`destroy` 后 `lookup_region` 返回空」⇒ 改为「`classify_after_destroy(region_still_registered)` 在**注销成功**时返 `Pass`」
             (`ADR-CEP-03` SU(#3) K.2 的纯函数形态)+ 载体把**恒真**的 `decision_after_destroy()` **参数化**(铁律①)
-      - [ ] 2.7b `NSS-05`:「`DivertCounters` 字段集合**恰 2**」与载体 `DivertCounter{total}`(**1 字段**)冲突 ⇒ 二选一并登记:
+      - [x] 2.7b `NSS-05`:「`DivertCounters` 字段集合**恰 2**」与载体 `DivertCounter{total}`(**1 字段**)冲突 ⇒ 二选一并登记:
             **(i)** 载体扩为可寻址键形状(`GroupId` + `AddressRange` 键 + `total`)· **(ii)** design 改为「1 字段 + 可寻址性归实现层」
             ⚠️ 须同时对齐 delta spec NSS-05「按 group / 区域可寻址」
-      - [ ] 2.7c `NSS-07`:「载体解析结果恒为 `Unavailable`」⇒ 改为「`VcReservationState` **枚举仅 1 取值** 且其类型**无** `vc_id` / 四字段」
+      - [x] 2.7c `NSS-07`:「载体解析结果恒为 `Unavailable`」⇒ 改为「`VcReservationState` **枚举仅 1 取值** 且其类型**无** `vc_id` / 四字段」
       ⇒ **判据**:`design §3` 九行逐行对照载体,**零**口径冲突
 
-- [ ] 2.8 **计数 / 范围漂移订正**(实测 **3 处**)
-      - [ ] 2.8a 「**19** 条编译期断言」⇒ **24**(`Entry #180` + `tasks 1.1` 两处;台账 append-only ⇒ 由新 Entry 订正)
-      - [ ] 2.8b 「9 项 pending 白名单 **`N-1`~`N-7`**」⇒ `N-1`~`N-9`(`tasks 0.1` + `design` 头注)
-      - [ ] 2.8c `design §1.2` 第 2 项「多 group 并存(`A-4`)」与 `A-2` 的 flow_support 粒度在载体**无表达**
+- [x] 2.8 **计数 / 范围漂移订正**(实测 **3 处**)
+      - [x] 2.8a **断言条数失实**(原值偏小)⇒ 订正为 Phase 1 实测 **24**、Phase 2 后 **46**(`Entry #180` + `tasks 1.1`;台账 append-only ⇒ 由新 Entry 订正)
+      - [x] 2.8b **pending 白名单的上界写成 7 项**(而实际 9 项)⇒ 订正为 `N-1` ~ `N-9`(`tasks 0.1` + `design` 头注 + `design §4` 表行)
+      - [x] 2.8c `design §1.2` 第 2 项「多 group 并存(`A-4`)」与 `A-2` 的 flow_support 粒度在载体**无表达**
             ⇒ 显式登记归属(载体格 or 实现层),**不得静默缺失**
-      ⇒ **判据**:`grep "19 条编译期断言"` **0** 命中;`N-1` ~ `N-7` **0** 命中
+      ⇒ **判据**:change 4 件套内**零**命中「断言条数为 19」与「pending 白名单上界为 7」两种旧表述
 
-- [ ] 2.9 Phase 2 验收:门禁 **7** 脚本 rc=0 + `-Wall -Wextra` **零警告** + `format.sh --check` rc=0 + 台账 Entry
+- [x] 2.9 Phase 2 验收:门禁 **7** 脚本 rc=0 ✅ + `-Wall -Wextra` **零警告** ✅ + `format.sh --check` rc=0 ✅ + `ctest` **142/142** ✅ + 台账 **Entry #183**
 
 ## Phase 3 — 判据收口
 
@@ -137,7 +137,7 @@
       - [ ] 3.1b ⚠️ **新增 heading-aware 的锚点条目收集器**:`A-n` 在 `###` **标题**里、`N-n` / `C-n` 在**表格单元格**里
             ⇒ 照抄 `test/cep_anchor_ids.hh` 的 `collect_ids`(**只扫表格**)会得到**空集** ⇒ 逐格核对**恒真空转**
             (队列 #11 Entry #141 B-7 的**同型陷阱**)
-      - [ ] 3.1c 断言收集结果**非空**(`A-n` 恰 **5** 条、`C-n` 恰 **12** 条)⇒ **防空转**
+      - [ ] 3.1c 断言收集结果**非空**(`A-n` 恰 **5** 条、`C-n` 恰 **9** 条)—— ⚠️ **防空转**;并登记 **`A-2` / `A-4` 无载体格**(见锚点摘要 §2bis.2 口径 3)
       ⇒ **判据**:12 格 `ref` 与锚点摘要条目**一一可解析**;任一侧手改 ⇒ **必红**
 
 - [ ] 3.2 **9 组反向 fixture**(每组**必红** + **归因 id** 命中)—— 归因 id 的**唯一登记处 = 本条 + `design §3`**:

@@ -2,6 +2,8 @@
 
 > **状态**: ✅ 已产出(2026-11-03) · **队列**: #13 `cpptlm-cep-nvlink-sharp`(Stage 2)· **achitect 裁决**: `ADR-CEP-01` / `02` / `03` 已签发 v1.0(Entry #169 / #170)· **VC**: Decision D(Entry #171)
 > **用途**: 队列 #13 **规约层**的逐格 `basis` 来源。本文件**只记"来源定位 + 断言摘要"**,不复制任何规范 / NDA 正文。
+> **两类条目**: `A-n` = **公开来源断言**(§2)· `N-n` = **pending 白名单**(§3)· **`C-n` = 契约锚点**(§2bis,指向已签发本仓 ADR)
+> ⇒ 三者合起来构成本 change **唯一的人工审计面**(per `tasks 3.1`)
 > **产出者**: builder(Task 0 普查)· **复核周期**: 来源改版即失效(见 §6)
 
 ---
@@ -21,11 +23,15 @@
 
 抓取时间:**2026-11-03**(UTC 日)
 
-| id | 来源 | 类型 | URL | bytes | sha256 |
-|---|---|---|---|---|---|
-| **S1** | *Demystifying NCCL: An In-depth Analysis of GPU Communication Protocols and Algorithms*(arXiv:2507.04786**v3**) | 公开预印本(学术) | `https://arxiv.org/html/2507.04786v3` | 235202 | `c7932a3ae3cfebd97ca62addf8623bf1511f7f9317d13f8014151d4e9708a66d` |
-| **S2** | *Advancing Performance with NVIDIA SHARP In-Network Computing*(NVIDIA Developer Blog,2024-10-25,Scot Schultz) | 官方技术博客 | `https://developer.nvidia.com/blog/advancing-performance-with-nvidia-sharp-in-network-computing/` | 225120 | `68cda3daed0cff19309e529160b416ffa5c452c8138671125d23c90fa64fd29b` |
-| **S3** | *NVIDIA Scalable Hierarchical Aggregation and Reduction Protocol (SHARP)* Rev **3.16.0** — Overview | 官方产品文档(公开) | `https://networking-docs.nvidia.com/sharpum/3.16.0` | 46015 | `bb415a6b57e0d14246f6ce742b4a5991e007176e35b45d17376c8dc4411e7ec3` |
+| id | 来源 | 类型 | URL | bytes | sha256 | `pin` | 引用 / 再分发许可(**人工确认**) |
+|---|---|---|---|---|---|---|---|
+| **S1** | *Demystifying NCCL: An In-depth Analysis of GPU Communication Protocols and Algorithms*(arXiv:2507.04786**v3**) | 公开预印本(学术) | `https://arxiv.org/html/2507.04786v3` | 235202 | `c7932a3ae3cfebd97ca62addf8623bf1511f7f9317d13f8014151d4e9708a66d` | ✅ `pin=strong` | `引用 OK` / `再分发 待确认`(arXiv per-paper license 未逐一核验) |
+| **S2** | *Advancing Performance with NVIDIA SHARP In-Network Computing*(NVIDIA Developer Blog,2024-10-25,Scot Schultz) | 官方技术博客 | `https://developer.nvidia.com/blog/advancing-performance-with-nvidia-sharp-in-network-computing/` | 225120 | `68cda3daed0cff19309e529160b416ffa5c452c8138671125d23c90fa64fd29b` | ✅ `pin=strong` | `引用 OK` / `再分发 未授权`(© NVIDIA) |
+| **S3** | *NVIDIA Scalable Hierarchical Aggregation and Reduction Protocol (SHARP)* Rev **3.16.0** — Overview | 官方产品文档(公开) | `https://networking-docs.nvidia.com/sharpum/3.16.0` | 46015 | `bb415a6b57e0d14246f6ce742b4a5991e007176e35b45d17376c8dc4411e7ec3` | ✅ `pin=strong` | `引用 OK` / `再分发 未授权`(© NVIDIA) |
+
+**两轴规则的判定面**(per `tasks 2.3` / `design §4`):`pin` = 钉版强度(有 `bytes` + `sha256` ⇒ `strong`);**许可列** = 「引用 / 再分发许可已**人工确认**」的结论。
+⚠️ **三个来源的「再分发」许可均未确认** ⇒ 载体 `kSourceLicenseConfirmed[S1/S2/S3]` 一律取 **`false`**(保守)。
+⇒ 因此本 change 的 12 格**没有任何一格以公开来源为断言依据**:全部判 `kind = self-derived`、`pending = false`、`source = AdrContract`(见 §2bis 口径)。
 
 **权威级别声明**:S1(学术预印本,同行可追溯)> S2(官方博客,描述性)> S3(官方产品文档,描述性)。三者**均非规范**,冲突时**不得**用它们互裁;冲突 ⇒ 记 `conflict` 并标 `pending`。
 
@@ -74,6 +80,41 @@
 | **定位** | S1 §V-A(Table II 的传输层分类 + 正文) |
 | **断言摘要(改写)** | `NVLS` 与 `CollNet` 分属不同算法/传输实现(`nvls.cc` vs `coll_net.cc`);**NVLS Tree** 是 NVLS 的树形变体(节点内仍用 NVLink SHARP,跨节点改 fan-out) |
 | **对队列 #13 的约束** | `NvlinkAdapter` 的语义位置 = **节点内 fabric 代理**,**不是** CollNet 的网络侧代理 ⇒ 不能复用 CollNet 的建模假设(与 `ADR-CEP-04` 的 adapter 分离纪律一致) |
+
+---
+
+## 2bis. 契约锚点(`C-n`)—— **self-derived 格的 `ref` 解析空间**
+
+> **为什么需要这一节**:本 change 的 12 个格**全部**由**已签发的本仓 ADR** 定稿(而非公开来源)⇒
+> 若 `ref` 只能指 `A-n` / `N-n`,则这些格**无处可指** ⇒ 与 `NSS-09`「每格 SHALL 带 `ref`」直接冲突。
+> ⇒ 本节登记 **`C-n`** 命名空间:`C-n` 的真源是 **`docs/adr/` 的已签发条款**,不是公开来源。
+
+### 2bis.1 逐条登记
+
+| id | 契约内容(一句话) | **ADR 条款**(真源) | 覆盖的载体格 |
+|---|---|---|---|
+| **C-1** | R1/R2:**opcode 永不作分类器**;**唯一分类点 = fabric ingress** | `ADR-CEP-03 §3.1` R1 / R2 | `IngressDecision::DiverT` · `::Pass` |
+| **C-2** | R3:注册三步原子(**登记 + drain + 建 epoch**);**drain 失败 ⇒ 注册失败且不建 epoch** | `ADR-CEP-03 §3.1` R3 | `RegisterResult::Ok` · `::DrainFailed` |
+| **C-3** | R4:epoch **未 commit ⇒ 放行**;commit ⇒ divert;注销 ⇒ 失效化并**回归 coherence 域** | `ADR-CEP-03 §3.1` R4 | `EpochState::Uncommitted` · `::Committed` |
+| **C-4** | ordering **A**:同址 coherent atomic → SHARP reduce ⇒ atomic 须先 completion | `ADR-CEP-03 §3.3` A | `OrderingRule::A` |
+| **C-5** | ordering **B**:同址 SHARP reduce → coherent atomic ⇒ reduce 须先 commit | `ADR-CEP-03 §3.3` B | `OrderingRule::B` |
+| **C-6** | ordering **C**:同 group 内 reduce 由 **code** 排序;⚠️ **code 相等 ⇒ 顺序未定义** | `ADR-CEP-03 §3.3` C | `OrderingRule::C` |
+| **C-7** | ordering **D**:SHARP barrier → SHARP reduce ⇒ group-scoped rendezvous 须先完成 | `ADR-CEP-03 §3.3` D | `OrderingRule::D` |
+| **C-8** | 集合 VC 预留 = **`unavailable`**(Decision D);**四字段权威在** `collective_planes.json` + `CP-03` | `ADR-CEP-01` SU 2026-11-03 **D.4** | `VcReservationState::Unavailable` |
+| **C-9** | **能力域 = 节点内**(载体 SHALL NOT 声明跨 fabric 归约);⚠️ 只约束**能力域**,不约束**流量落点** | `ADR-CEP-01` SU 2026-11-03(#2) **G.1** + `ADR-CEP-03 §1` | `CollectiveScope::IntraNode`(佐证 `A-1` / `A-5`) |
+
+⇒ **共 9 条**;12 个格**共享**这 9 条(允许**多格引同一条目**,照队列 #12 的 `Base` 先例)。
+
+### 2bis.2 口径(三条,避免后人误读)
+
+| # | 口径 |
+|---|---|
+| 1 | **`C-n` 是「契约锚点」,不是公开来源** ⇒ 以 `C-n` 为依据的格,其 `kind = self-derived`、`source = AdrContract`(**许可自持** = `true`) ⇒ `pending = false` **合法**(per 台账 Entry #182 的 **D-2**) |
+| 2 | ⚠️ **`A-n` 在本 change 里只作「佐证指针」**:它说明契约**不凭空**,但**不是**断言的依据 ⇒ **不受**「许可已人工确认」门约束(该门只约束**以公开来源为依据**的格)。⇒ 若某格 `ref` 同时含 `C-n` 与 `A-n`,**门控看 `source`**(= `AdrContract`) |
+| 3 | ⚠️ **`A-2` 与 `A-4` 当前无载体格** —— `A-2`(「AllReduce 为主 + ReduceScatter/AllGather 存在」的粒度)归**实现层**的 flow_support;`A-4`(多 group 并存)载体仅以 `GroupId` **形状**承载、**未断言**「多 group」⇒ 二者登记为**未表达**,⛔ **不得**声称已覆盖(per `tasks 2.8c`) |
+
+> ⚠️ **不得据此扩 `A-n`**:`C-n` 的存在**不**豁免「公开来源不支持 ⇒ 必须 `pending`」这条规则 —— 该规则约束的是
+> **以公开来源为依据**的情形;本 change 的 self-derived 格压根**不以公开来源为依据**。
 
 ---
 
@@ -129,5 +170,9 @@ curl -sSL -A "Mozilla/5.0" https://arxiv.org/html/2507.04786v3 | sha256sum
 curl -sSL -A "Mozilla/5.0" https://developer.nvidia.com/blog/advancing-performance-with-nvidia-sharp-in-network-computing/ | sha256sum
 curl -sSL -A "Mozilla/5.0" https://networking-docs.nvidia.com/sharpum/3.16.0 | sha256sum
 ```
+
+⚠️ **`C-n` / `N-n` 的复核方式不同**:二者**不依赖重抓**,而依赖**本仓 ADR / 普查结论是否变更** ⇒
+对应 `ADR-CEP-01` / `ADR-CEP-03` 追加 **Status Update**、或 `N-n` 的 pending 结论被裁定时,
+**本文件在对应格上即失效** ⇒ 须同步改 §2bis / §3 **并与载体 `basis` 表同批更新**(否则 `tasks 3.1` 的逐格核对必红)。
 
 ⚠️ **已知脆弱点**:S2 / S3 是**动态网页**(含导航 / 版本选择器)⇒ 站点改版会让 hash 漂移但**语义未变**。⇒ 复核时若 hash 变化,**先**比对 §2 的断言是否仍成立;**断言不变可只更新 hash 并记 `reverified`**,断言变化 ⇒ 走完整重跑。
