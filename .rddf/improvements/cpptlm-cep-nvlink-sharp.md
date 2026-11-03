@@ -58,7 +58,7 @@ created: 2026-11-03
 - **第 0 个 change(规约层)** `cpptlm-cep-nvlink-sharp-state-spec`:
   - `include/tlm/cep/nvlink_sharp_state_spec.hh`(新 · header-only)
   - **SHARP 分类判据(R1 / R2)**:opcode **永不作分类器**(源端只发一种 ATOMIC);**唯一分类点 = fabric ingress**(`dest_addr ∩ collective_region_table` && `group_epoch_valid`)
-  - **区域互斥与 epoch 纪律(R3 / R4)**:`group_register_region` 触发 coherence drain(**non-cacheable 降级**,CEP-13)⇒ drain 失败 ⇒ 注册失败且**不创建 epoch**;`group_destroy` 触发 stale copy 失效化 ⇒ 区域回归 coherence 域;epoch 未 commit 前该区域的 coherence 请求被拒
+  - **区域互斥与 epoch 纪律(R3 / R4)**:`group_register_region` 触发 coherence drain(**non-cacheable 降级**,CEP-13)⇒ drain 失败 ⇒ 注册失败且**不创建 epoch**;`group_destroy` 触发 stale copy 失效化 ⇒ 区域回归 coherence 域;epoch 未 commit 前该区域的 coherence 请求**正常服务(放行)**(⚠️ 2026-11-03 订正 —— 原写「被拒」与 `ADR-CEP-03 §3.1` R4 相反;per `ADR-CEP-03` SU 2026-11-03(#2) 的 S2 / `ADR-CEP-03 §4` 的 S1)
   - **可观测性(R5)**:divert 计数器 + fail-stop 断言(「epoch commit 后仍有 coherence atomic 命中已注册区域 = error」)
   - **跨平面 ordering A / B / C / D** 的规约表述(coherent atomic ↔ SHARP reduce 的可见性次序 / 同 group 内 reduce 排序约束 / SHARP barrier ↔ reduce)
   - **reduce 函数族**与 **group epoch** 的**逐格 `basis{kind, pending, ref→锚点摘要条目号}`**(公开来源受限 ⇒ 多数 `pending=true`)
@@ -112,7 +112,7 @@ R1~R5(分类 / 互斥 / epoch / 可观测性)与 A~D(跨平面 ordering)是本�
 
 **✅ 2026-11-03 状态**:三则已**定稿签发 v1.0**(正文 `ADR-CEP-01` **219** / `ADR-CEP-02` **248** / `ADR-CEP-03` **249** 行),
 其中 `ADR-CEP-03` 决策 1 的 3 条生效条件**逐条标注为已满足**,且其 §4 由「状态机雏形伪码」**降级**为
-「判据摘要 **S1~S4** + 实现指针」⇒ 本队列规约层是**唯一可执行真源**(无双真源)。
+「判据摘要 **S1~S6** + 实现指针」(S5 / S6 = per `ADR-CEP-03` SU 2026-11-03(#2) F.2)⇒ 本队列规约层是**唯一可执行真源**(无双真源)。
 ⚠️ 本节的历史措辞「三则当前仍是「🟡 起草中(v0.6)」」**已失效**,以本段为准。
 台账:Entry #169(定稿授权 + 9 处「签发即债」)· #170(critic B1/B2 + oracle 复核修复)。
 

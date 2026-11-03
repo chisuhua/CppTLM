@@ -26,7 +26,7 @@
 - [x] 0.1 **Task 0 硬门**:公开来源普查 ⇒ `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`(Entry #173)
       ⇒ **通过**(3 个公开来源 sha256 钉版 · 5 条锚点 `A-1`~`A-5` · **9 项** `pending` 白名单 `N-1`~`N-7`)
 - [x] 0.2 **architect 裁决**:三则 ADR 定稿(Entry #169 / #170)· **VC 空间 = Decision D**(Entry #171)
-      ⇒ ⚠️ **剩余 2 项载体形态决定项待裁**:① `NvlinkAdapter` 是否新建头文件 · ⑤ epoch / reduce 族细节
+      ⇒ ✅ **载体形态决定项已全部裁完**(①/⑤ = Entry #176 · ② = 用户裁决 · ③④ = Entry #177)⇒ Phase 1 无未决前置
 - [x] 0.3 **improvement 草稿**落 `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` ⇒ `pre_create_brainstorm_check.sh` **rc=0**
       ⇒ **已两次订正**(Entry #172 前置陈述 · Entry #174 的 `In Scope` 与 Decision D 对齐)
 - [x] 0.4 **4 件套建档**(proposal + design + delta spec + tasks)
@@ -61,9 +61,11 @@
 ## Phase 3 — 判据收口
 
 - [ ] 3.1 **逐格核对表**:`basis` 三字段齐全 + `ref` 可解析
-- [ ] 3.2 **9 组反向 fixture**(每组**必红** + **归因 id** 命中):
-      `NSS-01-SRC-OPCODE` · `NSS-02-EPOCH-SEMANTICS` · `NSS-03-DRAIN-FAIL` · `NSS-04-DESTROY-LEAK` ·
-      `NSS-05-NO-FAILSTOP` · `NSS-06-ORDERING-MIS` · `NSS-07-VC-TABLE` · `NSS-08-SCOPE-OVERREACH` · `NSS-09-BASIS-MISSING`
+- [ ] 3.2 **9 组反向 fixture**(每组**必红** + **归因 id** 命中)—— 归因 id 的**唯一登记处 = 本条 + `design §3`**:
+      **既有 id(复用,5 条)**:`CP-OPCODE-CLASSIFIER` + `CP-05`(NSS-01)· `CP-EPOCH-SEMANTICS`(NSS-02)·
+      `CP-DRAIN-FAIL`(NSS-03)· `CP-DIVERT-STOP`(NSS-05)· `CP-03`(NSS-07);
+      **新建 id(本 change 单一登记,4 条)**:`NSS-04-DESTROY-LEAK` · `NSS-06-ORDERING-MIS` ·
+      `NSS-08-SCOPE-OVERREACH` · `NSS-09-BASIS-MISSING`
 - [ ] 3.3 **正控**:每条反向 fixture SHALL 有**期望通过**的对照 ⇒ 纯负向断言无对照 = 判据可能没生效
 - [ ] 3.4 **「不可表达」型判据**(NSS-07 / NSS-08)的**运行期兜底** ⇒ 不得只以「编译红」充当 ctest 判据
 - [ ] 3.5 **归因纪律**:反向 fixture SHALL 报出**可归因 id** ⇒ **不得**只以「整体 FAIL」充当判据

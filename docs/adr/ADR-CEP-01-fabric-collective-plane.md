@@ -357,3 +357,44 @@ group-scoped completion     → Fabric Collective Plane
 1. 拓扑提供 **≥5 VC**(本仓 schema 或 ArchForge 侧变更);
 2. 队列 #13 实现层或后续队列**首次需要**真实 fabric collective 流量;
 3. `ADR-CEP-09` 定稿且给出**跨平面** VC 共享的无环性论证(目前它显式排除该问题)。
+
+---
+
+## Status Update 2026-11-03(#2)—— `fabric` 口径收窄(S1)+ 归因 id 唯一化(S6)+ V6-b 上界随重访迁移(N1)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文与 2026-11-03(#1) 段一律不改**。
+> 本段**收窄**(#1) 段 **D.2** 的前提约束措辞,并声明 id 唯一化与 V6-b 的上界迁移。
+> **台账**: `obj-cep-platform §11` **Entry #178**。
+
+### G.1 **`fabric` 口径收窄(取代 #1 段 D.2 的前提约束句)**
+
+> **原措辞**:「本拓扑下 **collective 流量不得上 fabric**(只允许 `LocalCollectivePlane` 类的本地模型)」
+> **收窄后**:「本拓扑下 collective 流量 **不得占用承载 coherence 的 `compute_noc` / `ualink_fabric` 的 VC 与传输通道**
+> (只允许 `LocalCollectivePlane` 类的本地模型)」
+
+⚠️ **收窄理由**:「fabric」在两处被用于**不同**含义 —— ① **传输平面 / VC 隔离**(本约束的对象)② **节点域 / 拓扑范围**
+(能力域判定的对象)⇒ 原措辞字面会**误禁**「NVSwitch 节点内归约」这一目标场景。
+⇒ **抓取点 3 管的是 VC 隔离,不是拓扑域**;**能力域 = 节点内**(NVSwitch 节点内)**不受**本约束限制。
+
+### G.2 **归因 id 唯一化(S6)**
+
+| 义务 | **唯一归因 id** | 说明 |
+|---|---|---|
+| 调用边恒为零 | **`CP-01`** | 原附录的 `CE-PLANE-DIR-EDGE` 为同义别名 ⇒ **以 `CP-01` 为准** |
+| canonical 10 流零 diff | **`CP-02`** | 原 `CEN-10-DIFF` 为同义别名 ⇒ **以 `CP-02` 为准** |
+| collective VC 预留(空预留门 / 非空预留门) | **`CP-03`** | — |
+| `V6-c` 前提约束 | **移交实现层** | 载体 = 队列 #13 规约层 / 实现层的载体清单;id **待实现层建立** |
+
+⇒ **同一义务不得有两个 id**;别名只在本表登记一次,判据实现与 fixture **一律用 `CP-0x`**。
+
+### G.3 **V6-b 的上界随重访迁移(N1)**
+
+`V6-b` 的「`vc_id ≤ 3`」是 **schema 策略锁**(per D.1:0-3 **不是**物理上限,`vc_id` 字段是 `ch_uint<8>`)
+⇒ 当 **D.6.1**(拓扑提供 **≥5 VC**)命中并重裁时,**该上界 SHALL 随之一并迁移** ⇒
+否则重访会先以「越界」红、而非以「预留冲突」红 ⇒ 归因误导。
+
+### G.4 **V3 的 owner(S2)**
+
+`V3`(barrier 分类 litmus:地址 key ⇒ Ordering / 组 key ⇒ Collective)的载体 owner = 队列 #13 **实现层**
+(函数名由实现层定);它与 `ADR-CEP-03` 的 `classify_at_fabric_ingress`(reduce / coherence 分流)**不是同一判据**
+⇒ 规约层的 `NSS-01` **不覆盖** V3 ⇒ V3 的归因 id **待实现层建立**。

@@ -11054,6 +11054,68 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 ---
 
+### Entry #178 — 2026-11-03 [scope-change](**critic 全面审**(新 scope 第 1 轮)判 **REJECT** —— 2 条 BLOCKER + 8 条 SHOULD_FIX 的修复授权记录)
+
+**主题**:用户裁决 2026-11-03「@critic 进行审查全面决策内容」⇒ critic 对「队列 #13 的**全部决策内容**」
+(三则 ADR 定稿 + Decision D + 载体形态裁决 + ③④ + 规约层 4 件套 + 锚点摘要 + CP-03 行为面)判 **REJECT**。
+**评审预算**:本 scope 为**新** scope ⇒ 预算**重新起算**(本轮 = 第 1 轮)⇒ 修复后可跑第 2 轮。
+
+**① BLOCKER B1(arch·架构一致性矛盾):`ADR-CEP-03` SU E.1 / E.2 / S6 的三选一死结**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | E.1 要求载体「**自足**(只 include 标准库)」;E.2 / S6 要求载体「**引用**既有 `ReduceOp`(恰 6 值)」⇒ **二者不可兼得**:`ReduceOp` / `group_id_t` / `AddrRange` **全在** `collective_plane.hh` ⇒ 引用即须 include ⇒ 不自足 ⇒ E.1 的推论「契约面零改动」**失效** |
+| 关键实证(critic 复核) | 「自足 = 复制词表」有**既有先例**:全仓 **6 份** `enum class Perm`(`cxl_dcoh_state_spec.hh` / `tilelink_state_spec.hh` / `cxl_state_spec.hh` / `mesif_state_spec.hh` 等各自重定义)+ adapter 再 `using Perm = XxxStateSpec::Perm` ⇒ **既有自足先例的代价正是复制词表** ⇒ 与 E.2「不另立算子族」**冲突** |
+| **裁决(采 critic 推荐的 (c))** | **载体保持自足,且**不表达 reduce 族**:① 载体 SHALL **NOT** include `collective_plane.hh`;② 载体 SHALL **NOT** 定义 / 承载任何**词表型**语义(`ReduceOp` / `CollectiveOp` / `AccessMode` 等枚举);③ 载体 MAY 自带**形状型**辅助类型(`group_id` / 地址区间);④「**恰 6 值**」的运行期断言**归实现层**(测试可同时 include 两头的头)⇒ 载体**不**自证 6 值;⑤ 算子族的**唯一真源**恒为 `tlm::cep::ReduceOp` |
+| 未采 | (a) 载体 include `collective_plane.hh` ⇒ 须扩 CP-01 扫描集合 + `ContractPaths` 结构变更 + 对**真正冻结**的 main spec 出 delta ⇒ 代价高于收益;(b) 本地重定义 `ReduceOp` ⇒ 两套算子词表 + adapter 边界转换 ⇒ 与 `ADR-CEP-04 §13`「克隆 + 纸面 caps」禁令同型 |
+
+**② BLOCKER B2(plan·契约矛盾):`NSS-xx` id 体系与自家 tasks 3.6 硬冲突**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | `tasks.md` 3.6 写「SHALL 引用既有机器闸(`CP-0x`)或锚点摘要条目,SHALL **NOT** 自造平行 id 体系」;而 3.2 与 delta spec 的 9 条 Scenario 硬编码 `NSS-xx-*` 作归因 id ⇒ **二选一皆违约** |
+| 更实的问题 | **5 条** `NSS` 与 `ADR-CEP-03 §9` 的既有判据**一一重复**:`NSS-01`(R1 opcode)↔ `CP-OPCODE-CLASSIFIER`(V8)· `NSS-01`(源端可见性)↔ `CP-05` · `NSS-02` ↔ `CP-EPOCH-SEMANTICS`(V6)· `NSS-03` ↔ `CP-DRAIN-FAIL`(V4)· `NSS-05` ↔ `CP-DIVERT-STOP`(V5)· `NSS-07` ↔ `CP-03` ⇒ 同一义务出现**第二套 id** ⇒ ADR 自己的「每条判据须有 fixture 命中其 id」将**无人命中** |
+| **裁决** | ① `tasks 3.6` 改为**有范围**的禁令:「**同一义务不得有两个 id**」;② **5 条改用既有 id**(`NSS-xx` 降级为 Scenario 标题 / 离线标签,**不再**作归因 id);③ **新建 id 仅 4 条**(`NSS-04` 注销回归 · `NSS-06` ordering · `NSS-08` 能力域 · `NSS-09` 逐格 basis),**单一登记**在规约层 `design §3` + `tasks 3.2`;④ `ADR-CEP-03` 附录的「待 #13 建立」清单由**新 SU 段**给出**已建立 / 移交实现层**的明确归属 |
+
+**③ SHOULD_FIX 处置(8 条)**
+
+| # | 项 | 处置 |
+|---|---|---|
+| S1 | **`fabric` 二义**:`ADR-CEP-01` D.2「不得上 fabric」与 `ADR-CEP-03` E.6 / `NSS-08`「跨 fabric / 节点域」字面冲突 | ⇒ `ADR-CEP-01` **新 SU** 收窄 D.2 为「不得占用承载 coherence 的 `compute_noc` / `ualink_fabric` 的 **VC 与传输通道**」并明示「**能力域 = 节点内不受限**;本约束管**落点**」;`NSS-08` 加同款区分句 |
+| S2 | `ADR-CEP-01` V3(barrier litmus)载体悬空且函数名与 `NSS-01` 的 `classify_at_fabric_ingress` 对不上 | ⇒ 新 SU 声明二者**不是**同一判据:V3 = **barrier 分类**(地址 key ⇒ Ordering / 组 key ⇒ Collective)· owner = 队列 #13 **实现层**;`NSS-01` = reduce/coherence 分流 |
+| S3 | `NSS-07` **复制**了 Decision D 的声明(拓扑级事实烘进协议级载体) | ⇒ 载体改**纯负向**(SHALL NOT 表达具体 `vc_id` / 不可表达隔离 VC);四字段内容断言留在 `CP-03` |
+| S4 | `design.md` 冻结面表不准(代码文件**不在**冻结集;真正冻结的是 `openspec/specs/cep-collective-plane-contract/spec.md`) | ⇒ 按 manifest 重排该表;⇒ 显式记「**选 (a) 需对 main spec 出 delta**」的代价 |
+| S5 | 决策状态失实 3 处(`design §5.2` / `tasks 0.2` 仍写「2 项未裁」· `improvement:61` 仍写 epoch「被拒」· `improvement:115` 仍写「S1~S4」) | ⇒ 前两项在 change 4 件套内改;后两项在 improvement 内改(builder 域) |
+| S6 | ADR 内 id 仍有重复(`CEN-10-DIFF` ↔ `CP-02`;`CE-PLANE-DIR-EDGE` ↔ `CP-01`) | ⇒ 三则 ADR 各**新 SU** 声明唯一 id(不动既有正文) |
+| N1 | `ADR-CEP-01` V6-b 把 `vc_id ≤ 3` 写死,与 D.6.1「≥5 VC」重访冲突 | ⇒ 新 SU 注明「该上界随 D.6.1 重裁迁移」 |
+| N2 | `ADR-CEP-03` 只写「复用既有 id」未点名 | ⇒ 新 SU 点名 **`CP-05`** |
+
+**④ 冻结面授权**
+
+本条授权改动的 M1 冻结面成员:**3 件**(`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03`)+ 台账
+⇒ 走**两步授权**(台账 entry → `--update --authorized-by "Entry #178"` → commit 产物 → `--update` → commit)。
+
+**④-补 ✅ 修复完成记录(2026-11-03)**
+
+| # | 修法落点 | 结果 |
+|---|---|---|
+| B1 | `ADR-CEP-03` **新 SU 2026-11-03(#2)**:F.1(采 (c):载体自足 + **不表达 reduce 族**;含 F.1-a~f 六条规范条款)· F.2(取代 #1 段的 S5 / S6)· F.4(载体归属 + 点名 `CP-05`)· F.5(V3 与 `NSS-01` 区分)· F.6(冻结面真源澄清) | ✅ 三个互斥出路收敛为**一条**;E.1/E.2/S6 的死结消除 |
+| B2 | 三则 ADR 各**新 SU 2026-11-03(#2)** 声明 id 唯一化(`ADR-CEP-01` G.2 / `ADR-CEP-02` H.1 / `ADR-CEP-03` F.3)· 规约层 `design §3` 判据表重写 · `tasks 3.2` / `3.6` 同步 · `spec` + `proposal` 的 Scenario / Acceptance 同步 | ✅ **5 条**改用既有 id(`CP-OPCODE-CLASSIFIER`+`CP-05` / `CP-EPOCH-SEMANTICS` / `CP-DRAIN-FAIL` / `CP-DIVERT-STOP` / `CP-03`);**4 条**新建 id 单一登记于 `design §3` + `tasks 3.2` |
+| S1 | `ADR-CEP-01` **新 SU G.1** 收窄 D.2 为「不得占用承载 coherence 的 `compute_noc` / `ualink_fabric` 的 **VC 与传输通道**」+ 明示「能力域 = 节点内不受限」;`spec` / `proposal` 的 NSS-08 加落点区分句 | ✅ `fabric` 二义消除 |
+| S2 | `ADR-CEP-03` **新 SU F.5** + `ADR-CEP-01` **新 SU G.4**:V3 与 `NSS-01` **不是同一判据**;V3 的 owner = 实现层 | ✅ 载体归属明确 |
+| S3 | `spec` / `proposal` 的 **NSS-07 改纯负向**(载体 SHALL NOT 表达具体 `vc_id` / 不复制 Decision D 的四字段) | ✅ 拓扑级事实不再烘进协议级载体 |
+| S4 | `design §6` 冻结面表按 manifest 重排(新增「是否在 M1 冻结集」列 + 点明 `openspec/specs/cep-collective-plane-contract/spec.md` 才是**真正冻结**的契约面) | ✅ 代价口径校正 |
+| S5 | `design §5.2` 代价④ + `tasks 0.2`:「2 项未裁」⇒「**已全部裁完**」;`improvement:61` epoch「被拒」⇒「**正常服务**」;`improvement:115`「S1~S4」⇒「**S1~S6**」 | ✅ 决策状态失实清零 |
+| S6 | 三则 ADR 新 SU 的 id 唯一化段(`CEN-10-DIFF` ⇒ `CP-02`;`CE-PLANE-DIR-EDGE` ⇒ `CP-01`) | ✅ 残余别名归一 |
+| N1 | `ADR-CEP-01` **新 SU G.3**:V6-b 的 `vc_id ≤ 3` 随 D.6.1 重访**一并迁移** | ✅ 归因误导消除 |
+| N2 | `ADR-CEP-03` **新 SU F.4**:实现层扫描扩展**点名 `CP-05`** | ✅ 消除第二义 |
+
+**⑤ 关联**: Entry #177(③④ 裁决)· #176(①/⑤ 裁决)· #175(change 建档)· #174(critic 第 2 轮)· #173 / #172 / #171 / #169 / #170
+· `docs/adr/ADR-CEP-01-fabric-collective-plane.md` · `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` · `docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md`(**M1 冻结面 3 件**)
+· `openspec/changes/cpptlm-cep-nvlink-sharp-state-spec/`(B2 / S1 / S3 / S4 / S5 的对象)· `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(S5 的对象)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

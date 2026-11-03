@@ -358,3 +358,28 @@ barrier 流接口信号(per ADR-CEP-02 锁定语义):
 |---|---|---|
 | **实施笔记的行号锚点** | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` 的 `ADR-CEP-02:55` / `:66` 形式引用 | ⚠️ 该文件属**实施笔记**(per `obj §4.7.1` append-only;**不在** architect 的 `arch_paths` 内)⇒ 本次**不改**;⇒ **建议**改用**节号**引用(`ADR-CEP-02 §2`)⇒ 登记为 backlog(per 台账 Entry #170 ⑤-补 / obj §10) |
 | **一决策一文档的存量越界** | 本 ADR 含 **4** 个决策(决策 0 表 + 决策 1 / 2 / 3) | per 产出形态契约「**存量文档不追溯**」⇒ **不**在本次拆分 ⇒ 登记为 backlog(per 台账 Entry #169 ⑤) |
+
+---
+
+## Status Update 2026-11-03(#2)—— 归因 id 唯一化(`CEN-10-DIFF` ⇒ `CP-02`)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与既有 SU 段一律不改**。
+> **台账**: `obj-cep-platform §11` **Entry #178**。
+
+### H.1 **`CEN-10-DIFF` 为同义别名 ⇒ 唯一 id = `CP-02`**
+
+本 ADR §8 **V1**(canonical 10 流清单零 diff)与 `ADR-CEP-01 §7` **V2** 是**同一套四方 harness**
+(`ADR-CEP-02 §2` ↔ `07 号 §3.1` ↔ schema `flow_support` ↔ `ADR-CEP-05`)⇒
+⇒ **同一义务不得有两个 id** ⇒ 归因 id **唯一** = **`CP-02`**(既有机器闸);
+本 ADR §8 表内的 `CEN-10-DIFF` 仅作**历史别名**保留,**判据实现与反向 fixture 一律用 `CP-02`**。
+
+### H.2 **其余 id 的唯一性**
+
+| 义务 | 唯一归因 id |
+|---|---|
+| `barrier` 流不携带 group-scoped 字段 | `CEN-Ib9` 场景 id(既有)· 载体待实现层建立 |
+| `perm` 恰 4 值(值域锁) | 值域锁 + 实例声明判据(既有)· per Entry #141 |
+| atomic 走 `request` 独立属性 | schema `atomic` + 实例声明判据(既有)· per Entry #177 |
+| 配对关系不重叠 | `openspec/specs/cep-core-contracts/spec.md` 场景 id(既有) |
+
+⇒ 未列入上表者 ⇒ **不得**在别处另起别名 id。

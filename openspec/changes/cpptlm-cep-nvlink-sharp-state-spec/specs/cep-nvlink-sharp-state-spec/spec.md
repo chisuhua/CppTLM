@@ -34,14 +34,14 @@ CEP SHALL 为 **NVLink SHARP**提供一份**可执行规约层契约**:
 - **WHEN** 读取载体的分类判据
 - **THEN** 分类 SHALL **只**发生在 fabric ingress(输入 = 目的地址 + 区域表 + epoch 状态)
 - **AND** 源端 SHALL **SHALL NOT** 持有区域表的可见性,SHALL **SHALL NOT** 因「该地址是 SHARP 区」而改变 opcode
-- **AND** **反向 fixture**:让源端按「是否 SHARP 区」改 opcode ⇒ 判据 SHALL 必红(归因 `NSS-01-SRC-OPCODE`)
+- **AND** **反向 fixture**:让源端按「是否 SHARP 区」改 opcode ⇒ 判据 SHALL 必红(归因 `CP-OPCODE-CLASSIFIER`(R1 分类器)与 `CP-05`(源端可见性))
 - **AND** ⚠️ 编译期锁 SHALL 另配一条**运行期**判据(静态扫描源端侧不出现区域表字段)⇒ 不得只以「编译红」充当 ctest 判据
 
 #### Scenario: NSS-02 —— R4 epoch 语义 SHALL **双向**成立
 
 - **WHEN** 对**同一**地址分别求值「epoch 未 commit」与「epoch 已 commit」两种状态
 - **THEN** 未 commit ⇒ SHALL **放行**(正常服务 coherence 路径);已 commit ⇒ SHALL **divert**(转 collective 平面)
-- **AND** ⚠️ 「未 commit ⇒ **拒绝**」SHALL **SHALL NOT** 成立(与 `ADR-CEP-03 §3.1` R4 矛盾)⇒ **反向 fixture**:改成「未 commit 拒绝」⇒ SHALL 必红(归因 `NSS-02-EPOCH-SEMANTICS`)
+- **AND** ⚠️ 「未 commit ⇒ **拒绝**」SHALL **SHALL NOT** 成立(与 `ADR-CEP-03 §3.1` R4 矛盾)⇒ **反向 fixture**:改成「未 commit 拒绝」⇒ SHALL 必红(归因 `CP-EPOCH-SEMANTICS`)
 - **AND** 本条 SHALL 同时作为**正控**存在(两向各一例)⇒ 纯负向断言无对照 = 判据可能没生效
 
 #### Scenario: NSS-03 —— R3 注册 SHALL 为**三步原子**
@@ -49,7 +49,7 @@ CEP SHALL 为 **NVLink SHARP**提供一份**可执行规约层契约**:
 - **WHEN** 对一个地址区间执行 `register_region`
 - **THEN** SHALL 依次完成 ① 登记 ② drain ③ 建立 epoch
 - **AND** **drain 失败** ⇒ SHALL 返回失败且 **SHALL NOT** 建立 epoch、SHALL **SHALL NOT** 把该区间留在区域表内
-- **AND** **反向 fixture**:drain 失败仍建 epoch ⇒ SHALL 必红(归因 `NSS-03-DRAIN-FAIL`)
+- **AND** **反向 fixture**:drain 失败仍建 epoch ⇒ SHALL 必红(归因 `CP-DRAIN-FAIL`)
 
 #### Scenario: NSS-04 —— R4 注销 SHALL 失效化并**回归 coherence 域**
 
@@ -63,7 +63,7 @@ CEP SHALL 为 **NVLink SHARP**提供一份**可执行规约层契约**:
 - **WHEN** 读取载体的可观测性面
 - **THEN** SHALL 有 divert **计数器**(按 group / 区域可寻址)
 - **AND** SHALL 有 **fail-stop 断言**:**epoch commit 后仍有 coherence atomic 命中已注册区域** ⇒ SHALL 报错(非静默)
-- **AND** **反向 fixture**:该情形**不**报错 ⇒ SHALL 必红(归因 `NSS-05-NO-FAILSTOP`)
+- **AND** **反向 fixture**:该情形**不**报错 ⇒ SHALL 必红(归因 `CP-DIVERT-STOP`)
 
 #### Scenario: NSS-06 —— 跨平面 ordering A/B/C/D SHALL **可判定**
 
@@ -75,10 +75,10 @@ CEP SHALL 为 **NVLink SHARP**提供一份**可执行规约层契约**:
 #### Scenario: NSS-07 —— 集合 VC SHALL 登记为**「状态」**而非「表」
 
 - **WHEN** 读取载体的 VC 预留面
-- **THEN** SHALL 断言 `status == "unavailable"` + `reason` / `owner` / `revisit_trigger` **四字段齐全**
-- **AND** 载体 SHALL **SHALL NOT** 断言任何**具体 VC 编号**、SHALL **SHALL NOT** 断言存在隔离 VC
-- **AND** 该形态 SHALL 与 `ADR-CEP-01` SU 2026-11-03 的 **Decision D** 一致
-- **AND** **反向 fixture**:填入具体 VC 编号 ⇒ SHALL 必红(归因 `NSS-07-VC-TABLE`)
+- **THEN** 载体 SHALL **SHALL NOT** 表达任何**具体 `vc_id`**、SHALL **SHALL NOT** 表达「隔离 VC 可用」(⇒ 由**不可表达性**保证,而非由断言保证)
+- **AND** ⚠️ 载体 SHALL **NOT** 复制 Decision D 的**四字段内容**(那是**拓扑级**事实,权威在 `collective_planes.json` + `CP-03`;复制会把拓扑变化变成两处同改)
+- **AND** 该形态 SHALL 与 `ADR-CEP-01` SU 2026-11-03 的 **Decision D** 一致(判定**负向**而非复制)
+- **AND** **反向 fixture**:填入具体 VC 编号 ⇒ SHALL 必红(归因 `CP-03`)
 - **AND** ⚠️ 「不可表达」型判据 SHALL 另配一条**运行期**判据(载体解析出的 scope / status 恒为预期值)⇒ 不得只以「编译红」充当 ctest 判据
 
 #### Scenario: NSS-08 —— 能力域 SHALL 钉为**节点内**
@@ -86,6 +86,7 @@ CEP SHALL 为 **NVLink SHARP**提供一份**可执行规约层契约**:
 - **WHEN** 读取载体声明的 collective 能力域
 - **THEN** SHALL 为 **intra-node**(节点内)—— 依据:NVLink SHARP(`NVLS`)用于**节点内**归约,跨节点归约属 CollNet 通路
 - **AND** 载体 SHALL **SHALL NOT** 声明跨 fabric 的通用归约能力
+- **AND** ⚠️ 本条约束**能力域**(拓扑域),**不**约束**流量落点** ⇒ 落点约束见 `ADR-CEP-01` SU 2026-11-03(#2) G.1(「不得占用承载 coherence 的 VC 与传输通道」)—— 二者是**两条不同**的约束,**不**共用归因 id
 - **AND** **反向 fixture**:把能力域改为跨 fabric ⇒ SHALL 必红(归因 `NSS-08-SCOPE-OVERREACH`)
 
 #### Scenario: NSS-09 —— 逐格 `basis` SHALL 带两轴 + **9 项 `pending`** SHALL 逐条登记

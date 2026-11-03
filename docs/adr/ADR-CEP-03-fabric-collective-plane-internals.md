@@ -379,3 +379,84 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 1. 实例声明 schema 变更 ⇒ 载体常量面重核;
 2. §2 决策 2 的原语集变更 ⇒ E.2 的 reduce 族裁决重核;
 3. 平台引入**跨 fabric** collective ⇒ 能力域裁决重核。
+
+---
+
+## Status Update 2026-11-03(#2)—— critic 全面审的修复(**B1** 三选一死结 + **B2** id 归一 + 载体归属澄清)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文与 2026-11-03(#1) 段一律不改**。
+> 本段**取代**(#1) 段的 **E.1 / E.2 / E.4 相应行** 与 **S5 / S6** 两条,并**补充** id 归一表(F.3)。
+> **台账**: `obj-cep-platform §11` **Entry #178**。
+
+### F.1 **B1 的裁决(采 (c):载体保持自足,且不表达 reduce 族)**
+
+| # | 条款(取代文本) |
+|---|---|
+| **F.1-a** | 载体 SHALL **自足**:只 include **标准库**,SHALL **NOT** include `collective_plane.hh` |
+| **F.1-b** | 载体 SHALL **NOT** 定义 / 承载任何**词表型**语义(`ReduceOp` / `CollectiveOp` / `AccessMode` 等枚举)⇒ **算子族与原语族的唯一真源恒为 `tlm::cep::ReduceOp` / `tlm::cep::CollectiveOp`** |
+| **F.1-c** | 载体 MAY 自带**形状型**辅助类型(`group_id` / 地址区间)—— 形状**不承载**语义枚举 ⇒ 不构成「第二套词表」 |
+| **F.1-d** | 「算子族**恰 6** 值」的**运行期断言归实现层**(测试可同时 include 两头的头)⇒ 载体**不**自证 6 值 |
+| **F.1-e** | 载体 SHALL **NOT** 定义 / 暴露 `collective_region_table` 类型 ⇒ 区域表的**运行时状态归实现层**(collective 侧) |
+| **F.1-f** | 因 F.1-a ⇒ collective 侧扫描集合**无需扩展** ⇒ **契约面零改动**(限**规约层**;实现层的 `CP-05` 扩展见 F.4) |
+
+> ⚠️ **为何不是 (a)/(b)**:(a) 载体 include `collective_plane.hh` ⇒ 须扩 CP-01 扫描集合 + `ContractPaths` 结构变更
+> + 对**真正冻结**的 `openspec/specs/cep-collective-plane-contract/spec.md` 出 delta ⇒ 代价高于收益;
+> (b) 本地重定义 `ReduceOp` ⇒ **两套算子词表** + adapter 边界转换 ⇒ 与 `ADR-CEP-04 §13`「克隆 + 纸面 caps」禁令同型
+> (且既有 6 份 `enum class Perm` 已是该代价的实证)。
+
+### F.2 **取代 #1 段 S5 / S6 的规范文本**
+
+| # | 判据 | 可判定行为 |
+|---|---|---|
+| **S5** | **R1 / S4 的可判定形式:源端不得获得区域表可见性** | 载体 SHALL **NOT** 定义 / 暴露 `collective_region_table` 类型(F.1-e)· 载体 SHALL **NOT** include `collective_plane.hh`(F.1-a)⇒ adapter **委托**载体**不**构成源端可见性;⚠️ 实现侧判据(coherence 侧扫描集合 + 标识清单补 `collective_region_table`)**归实现层**并**复用既有 id `CP-05`** |
+| **S6** | **⑤ 的锁定:算子族唯一真源 + epoch 分层** | 载体 SHALL **NOT** 定义任何 reduce 算子枚举 / 常量;**唯一真源** = `tlm::cep::ReduceOp`(恰 6 值)(F.1-b/d)· SHARP 逐算子支持 SHALL 为 **pending**;epoch 平台侧 SHALL 等于 **R3 / R4**,协议侧 SHALL 为 **pending**;平台原语集 SHALL **维持恰 4** |
+
+> ⚠️ **S6 的运行期断言归实现层** ⇒ 规约层 SHALL **NOT** 把「恰 6 值」写成载体自证的判据(载体无从自证)。
+
+### F.3 **判据 id 归一表(**B2**;同一义务不得有两个 id)**
+
+| 义务 | **唯一归因 id** | 登记处 | 备注 |
+|---|---|---|---|
+| R1:opcode 永不作分类器 | **`CP-OPCODE-CLASSIFIER`** | `ADR-CEP-03 §9` V8 | 规约层的 `NSS-01` **降级为 Scenario 标题 / 离线标签**,不再作归因 id |
+| 源端不得持有区域表可见性 | **`CP-05`** | `ADR-CEP-03` 本段 S5 + `ADR-CEP-01` 附录 | 实现层扩展 coherence 侧扫描集合时**复用**该 id |
+| R4 epoch 语义双向 | **`CP-EPOCH-SEMANTICS`** | `ADR-CEP-03 §9` V6 | `NSS-02` 降级为标签 |
+| R3 drain 失败不建 epoch | **`CP-DRAIN-FAIL`** | `ADR-CEP-03 §9` V4 | `NSS-03` 降级为标签 |
+| R5 divert 计数 + fail-stop | **`CP-DIVERT-STOP`** | `ADR-CEP-03 §9` V5 | `NSS-05` 降级为标签 |
+| collective VC 预留状态 | **`CP-03`** | `ADR-CEP-01` SU(D.4) | `NSS-07` 降级为标签 |
+| 原语最小集恰 4 | **`CP-PRIM-SET`** | `ADR-CEP-03 §9` V2 | — |
+| 调用边恒为零 | **`CP-01`** | `ADR-CEP-01 §7` V1 | — |
+| canonical 10 流零 diff | **`CP-02`** | `ADR-CEP-02 §8` V1 | — |
+| 注销后回归 coherence 域 | **新建 id**(登记于队列 #13 规约层 `design §3` + `tasks 3.2`) | 规约层 | 原 `NSS-04`;**单一登记**,不在本 ADR 重复登记 |
+| ordering A/B/C/D 可判定 | **新建 id**(同上) | 规约层 | 原 `NSS-06` |
+| 能力域 = 节点内 | **新建 id**(同上) | 规约层 | 原 `NSS-08` |
+| 逐格 `basis` 核对 | **新建 id**(同上) | 规约层 | 原 `NSS-09` |
+| partial failure 显式建模 | **移交实现层** | `ADR-CEP-01 §7` V5 | 载体已在队列 #5 交付 ⇒ id **待实现层建立** |
+| `V6-c` 前提约束 | **移交实现层** | 本段 S5 + `ADR-CEP-01` SU | 载体 = 队列 #13 规约层 / 实现层的载体清单 |
+
+> ⇒ 本 ADR 附录「归因 id **待 #13 建立**」的清单**以本表为准**:已建立者**列出 id**;移交实现层者**指名归属**。
+
+### F.4 **载体归属(取代 #1 段 E.4 的相应行)**
+
+| 载体 / 义务 | 归属 | 归因 id |
+|---|---|---|
+| state spec 的**纯类型 + 常量 + 纯函数**(SHALL NOT 定义词表型语义) | **规约层** | 新建 id 登记于规约层 `design §3` |
+| `nvlink_adapter.hh`(独立头 + 委托载体) | **实现层** | — |
+| 区域表的**运行时状态** | **实现层**(collective 侧) | — |
+| coherence 侧扫描集合扩展 + 标识清单补 `collective_region_table` | **实现层** | **复用 `CP-05`**(不新造) |
+| 「算子族恰 6 值」的运行期断言 | **实现层**(F.1-d) | 复用 `CP-05` 之外的实现层断言面,**不**由载体自证 |
+| `nvlink_4` 实例声明 | **实现层** | — |
+
+### F.5 **V3 与 `NSS-01` 的区分(S2)**
+
+`ADR-CEP-01 §7` **V3**(barrier 分类 litmus:地址 key ⇒ Ordering / 组 key ⇒ Collective)与规约层 `NSS-01`
+(`classify_at_fabric_ingress`:reduce / coherence 分流)**不是同一判据** ⇒
+⇒ **V3 不由 `NSS-01` 覆盖**;V3 的载体 owner = 队列 #13 **实现层** 的 barrier 分类函数(名字由实现层定),
+其归因 id **待实现层建立**;`NSS-01` 的新 id 只覆盖 reduce / coherence 分流。
+
+### F.6 **冻结面真源澄清(S4)**
+
+**真正冻结**的产物是 `openspec/specs/cep-collective-plane-contract/spec.md`(M1 清单内);
+`include/tlm/cep/collective_planes.json` / `.schema.json` / `collective_plane_contract.hh` **不在** M1 冻结集内
+(且 `collective_planes.json` 自述「诞生即不冻结」)⇒
+⇒ **选 (a)(载体 include `collective_plane.hh`)的代价主要在 main spec 的 delta,而非代码文件**;
+本段采 (c) ⇒ 规约层**不触发**该 delta。

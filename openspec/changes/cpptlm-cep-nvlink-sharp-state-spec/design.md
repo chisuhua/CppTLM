@@ -70,15 +70,15 @@
 
 | # | 判据 | 编译期锁 | 运行期兜底(必需) | 反向 fixture(必红 + 归因 id) |
 |---|---|---|---|---|
-| **NSS-01** | 分类点唯一 | 源端侧类型**不含**区域表字段(编译期不可构造);**载体自足**(只 include 标准库,照 `cxl_dcoh_state_spec.hh` 先例)⇒ 委托**不**构成源端可见性 | 静态扫描:源端头文件不出现 `collective_region_table` —— ⚠️ **该扫描归实现层**(coherence 侧扫描集合扩展 + 标识清单补项,**复用既有 id**,per Entry #176 ①) | `NSS-01-SRC-OPCODE` |
-| **NSS-02** | epoch 双向 | `classify_at_fabric_ingress` 的返回值集合 == {`DiverT`, `Pass`} | 两向各一例 | `NSS-02-EPOCH-SEMANTICS` |
-| **NSS-03** | 注册三步原子 | `register_region` 返回值集合 == {`Ok`, `DrainFailed`} | drain 失败一例 | `NSS-03-DRAIN-FAIL` |
-| **NSS-04** | 注销回归 | `destroy` 后 `lookup_region` 返回空 | 注销一例 | `NSS-04-DESTROY-LEAK` |
-| **NSS-05** | 可观测性 | `DivertCounters` 的字段集合恰 2 | 计数器递增 + fail-stop 一例 | `NSS-05-NO-FAILSTOP` |
-| **NSS-06** | ordering 四类 | `OrderingRule` 枚举恰 4 值 | 四类各一例 | `NSS-06-ORDERING-MIS` |
-| **NSS-07** | VC = 状态 | `VcReservationStatus::status` 类型为**字符串字面量枚举**,仅 `Unavailable` | 四字段齐全一例 + 独立 VC 编号**不可表达** | `NSS-07-VC-TABLE` |
-| **NSS-08** | 能力域 = 节点内 | `CollectiveScope` 枚举恰 {`IntraNode`} | 跨 fabric 值**不可表达** | `NSS-08-SCOPE-OVERREACH` |
-| **NSS-09** | 逐格 basis | 每格 `Basis` 含 `kind` / `pending` / `ref` 三字段 | 逐格核对表 + **9 项** pending 逐条可寻址 | `NSS-09-BASIS-MISSING` |
+| **NSS-01** | 分类点唯一 | 源端侧类型**不含**区域表字段(编译期不可构造);**载体自足**(只 include 标准库;**SHALL NOT** include `collective_plane.hh`,per `ADR-CEP-03` SU 2026-11-03(#2) F.1-a)⇒ 委托**不**构成源端可见性 | 静态扫描:源端头文件不出现 `collective_region_table` —— ⚠️ **该扫描归实现层**(coherence 侧扫描集合扩展 + 标识清单补项,**复用既有 id `CP-05`**) | **`CP-OPCODE-CLASSIFIER`**(R1)·**`CP-05`**(源端可见性)—— 均为**既有 id**,本 change **不另起别名** |
+| **NSS-02** | epoch 双向 | `classify_at_fabric_ingress` 的返回值集合 == {`DiverT`, `Pass`} | 两向各一例 | **`CP-EPOCH-SEMANTICS`**(既有) |
+| **NSS-03** | 注册三步原子 | `register_region` 返回值集合 == {`Ok`, `DrainFailed`} | drain 失败一例 | **`CP-DRAIN-FAIL`**(既有) |
+| **NSS-04** | 注销回归 | `destroy` 后 `lookup_region` 返回空 | 注销一例 | **`NSS-04-DESTROY-LEAK`** —— ⚠️ **新建 id**,**唯一登记处 = 本表 + `tasks 3.2`**(ADR 侧**不**重复登记) |
+| **NSS-05** | 可观测性 | `DivertCounters` 的字段集合恰 2 | 计数器递增 + fail-stop 一例 | **`CP-DIVERT-STOP`**(既有) |
+| **NSS-06** | ordering 四类 | `OrderingRule` 枚举恰 4 值 | 四类各一例 | **`NSS-06-ORDERING-MIS`** —— ⚠️ **新建 id**,**唯一登记处 = 本表 + `tasks 3.2`** |
+| **NSS-07** | VC = **状态**(纯负向) | 载体 SHALL **NOT** 表达任何**具体 `vc_id`**、SHALL **NOT** 表达「隔离 VC 可用」⇒ **不可表达性**由类型保证;⚠️ **四字段内容断言不在载体**(属拓扑级,归 `CP-03`) | 载体解析结果恒无 `vc_id` 字段 | **`CP-03`**(既有)—— 载体的负向属性另配运行期判据 |
+| **NSS-08** | 能力域 = 节点内 | `CollectiveScope` 枚举恰 {`IntraNode`} | 跨 fabric 值**不可表达** | **`NSS-08-SCOPE-OVERREACH`** —— ⚠️ **新建 id**,**唯一登记处 = 本表 + `tasks 3.2`**;⚠️ 本条约束**能力域**(拓扑域),**不**约束**流量落点**(落点见 `ADR-CEP-01` SU 2026-11-03(#2) G.1) |
+| **NSS-09** | 逐格 basis | 每格 `Basis` 含 `kind` / `pending` / `ref` 三字段 | 逐格核对表 + **9 项** pending 逐条可寻址 | **`NSS-09-BASIS-MISSING`** —— ⚠️ **新建 id**,**唯一登记处 = 本表 + `tasks 3.2`** |
 
 > ⚠️ **NSS-07 / NSS-08 的反向 fixture 形态特殊**:它们靠**「不可表达」**成立 ⇒ 反向 fixture 是
 > 「**试图表达 ⇒ 编译红**」⇒ 按铁律 ③,SHALL 另配一条**运行期**判据(如「载体解析出的 scope 恒为 intra-node」)
@@ -118,7 +118,7 @@
 | 1 | **两段式 = 两次 KPI slot** ⇒ 规约层归档前实现层**不得开工** ⇒ 总时长拉长 |
 | 2 | 载体是**纯声明** ⇒ 本身**不产生行为**;若实现层始终不落地 ⇒ 规约层即纸面契约 ⇒ Phase 4 SHALL 复核实现层是否已建 |
 | 3 | `N-3`(epoch 状态机细节)留 pending ⇒ 平台**无法**据此校验协议侧 epoch 行为 ⇒ 该风险显式转移到实现层的取证流程 |
-| 4 | 载体形态决定项仍有 **2 项未裁**(① `NvlinkAdapter` 是否新建头文件 · ⑤ epoch / reduce 族细节)⇒ 规约层须在 Phase 1 前拿到裁决 |
+| 4 | 载体形态决定项**已全部裁完**(①/⑤ = Entry #176 · ② = 用户裁决 · ③④ = Entry #177)⇒ Phase 1 **无未决前置**;代价转为「实现层须承接 4 项移交义务」(扫描集合扩展 + 算子族断言 + `nvlink_4` 声明 + `V6-c` 前提约束) |
 
 ### 5.3 风险
 
@@ -134,12 +134,12 @@
 
 ## 6. 冻结面
 
-| # | 冻结面成员 | 本 change 是否改动 | 处置 |
-|---|---|---|---|
-| 1 | `docs/adr/ADR-CEP-01` ~ `ADR-CEP-03` | ❌ **零改动** | 契约面已于 Entries #169 / #170 / #171 交割;本 change **只消费** |
-| 2 | `include/tlm/cep/collective_planes.json` / `.schema.json` | ❌ **零改动** | Decision D 的改动已在 `2ea09607` 落地 |
-| 3 | `include/tlm/cep/collective_plane_contract.hh` | ❌ **零改动** | CP-03 的声明门已在 `2ea09607` 落地 |
-| 4 | `include/tlm/cep/protocol_instance.schema.json` | ❌ **零改动** | `nvlink_4` 的 13 键由**实现层**登记(本 change 不碰实例声明) |
+| # | 冻结面成员 | 是否在 M1 冻结集 | 本 change 是否改动 | 处置 |
+|---|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-01` ~ `ADR-CEP-03` | ✅ **在** | ❌ **零改动** | 契约面已于 Entries #169 / #170 / #171 / #178 交割;本 change **只消费** |
+| 2 | `openspec/specs/cep-collective-plane-contract/spec.md` | ✅ **在** | ❌ **零改动** | ⚠️ **真正冻结**的契约面;若采纳「载体 include `collective_plane.hh`」出路 ⇒ **须对本 spec 出 delta**(两步授权)—— 本 change 采「载体自足」⇒ **不触发** |
+| 3 | `include/tlm/cep/collective_planes.json` / `.schema.json` / `collective_plane_contract.hh` | ❌ **不在**(且 `collective_planes.json` 自述「诞生即不冻结」) | ❌ **零改动** | Decision D 的改动已在 `2ea09607` 落地;⚠️ **代码文件不是冻结面** ⇒ 改它们的成本**不含**两步授权 |
+| 4 | `include/tlm/cep/protocol_instance.schema.json` | ✅ **在** | ❌ **零改动** | `nvlink_4` 的 13 键由**实现层**登记(本 change 不碰实例声明) |
 
 ⇒ **预期 0 件** ⇒ Phase 0 须**实测确认**(新增载体 `nvlink_sharp_state_spec.hh` 不在 M1 冻结集内)。⚠️ **裁决 ① 的附带结论**(Entry #176):因 state spec 载体**自足** ⇒ collective 侧扫描集合**无需扩展** ⇒ **契约面零改动** ⇒ 冻结面仍为 **0 件**
 ⇒ 若实测出 1 件 ⇒ 走**两步授权**(台账 Entry → `--update --authorized-by` → commit → `--update` → commit)。

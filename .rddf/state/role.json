@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-03T07:45:36Z",
-  "updated_by": "user",
+  "updated_at": "2026-11-03T08:02:16Z",
+  "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-01T03:33:40Z",
-      "by": "user",
-      "reason": "ADR-CEP-11 版本修订已签发(§3 锁表 3 处 + 增补块 + Status Update 段)⇒ 切回 builder:同步 test/test_cep_schema.cc 的锁表取值列表 + 跑冻结面两步授权第 1 步(--update --authorized-by \"Entry #135\")+ commit + 第 2 步(--update provenance 对齐)+ commit;随后推进 R11 的 V-2 独立面"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-01T07:27:50Z",
-      "by": "user",
-      "reason": "用户裁决「切 architect,签发 R11 降级 SU」+「一次性签发 R-T6 + R-T2 + R-T3」⇒ 第 1 批:签发 ADR-CEP-04 的 R11 降级 Status Update(台账 Entry #137 授权记录已落)⇒ 跑冻结面两步授权;第 2 批:签发 R-T6(ADR-CEP-17)+ R-T2(ADR-CEP-09)+ R-T3(ADR-CEP-12)"
-    },
     {
       "role": "builder",
       "at": "2026-11-01T07:49:49Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-03T07:45:36Z",
       "by": "user",
       "reason": "用户裁决 2026-11-03「一并裁掉」⇒ ③/④ 的落点执行域 = improvement + 规约层 4 件套 + 锚点摘要 §3 白名单(docs/research/ 不在 architect 可写范围)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-03T08:01:20Z",
+      "by": "user",
+      "reason": "用户裁决 2026-11-03「@critic 进行审查全面决策内容」⇒ critic 判 REJECT(2 BLOCKER)⇒ 修复属架构决策面 ⇒ 回 architect 追加 SU 段"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-03T08:02:16Z",
+      "by": "auto",
+      "reason": "critic 全面审修复的 plan 域(change 4 件套)已闭合 ⇒ 回 builder 修 improvement 的 2 处失实(S5)"
     }
   ]
 }

@@ -69,8 +69,8 @@ epoch 状态机 / VC 编号 / 聚合树构建算法 / 报文格式 / 数值精�
 | **NSS-04** | **R4 注销 SHALL 失效化并回归 coherence 域** | 区域退出表 ⇒ 后续 coherence 请求**正常服务** · **反向 fixture**:注销后仍 divert ⇒ 必红 |
 | **NSS-05** | **R5 可观测性 SHALL 落地** | divert 计数器 + **fail-stop 断言**(epoch commit 后仍有 coherence atomic 命中已注册区域 = error) · **反向 fixture**:该情形不报错 ⇒ 必红 |
 | **NSS-06** | **跨平面 ordering A/B/C/D** SHALL **可判定** | 四类可见性次序各一例 + **反向 fixture**:把某类判反 ⇒ 必红 |
-| **NSS-07** | **集合 VC 预留 SHALL 登记为「状态」而非「表」** | 载体 SHALL 断言 `status == "unavailable"` + 四字段齐全;**SHALL NOT** 断言任何独立 VC 编号 · **反向 fixture**:填入具体 VC 编号 ⇒ 必红 |
-| **NSS-08** | **能力域 SHALL 钉为节点内** | 载体 SHALL 断言 collective 能力域 = intra-node(依据 A-1 / A-5);**SHALL NOT** 声明跨 fabric 归约 · **反向 fixture**:把能力域改为跨 fabric ⇒ 必红 |
+| **NSS-07** | **集合 VC 预留 SHALL 登记为「状态」而非「表」** | 载体 SHALL **SHALL NOT** 表达任何具体 VC 编号 / 「隔离 VC 可用」(纯负向 + 不可表达性)· ⚠️ **不复制** Decision D 的四字段(拓扑级事实归 `CP-03`)· **反向 fixture**:填入具体 VC 编号 ⇒ 必红 |
+| **NSS-08** | **能力域 SHALL 钉为节点内** | 载体 SHALL 断言 collective 能力域 = intra-node(依据 A-1 / A-5);**SHALL NOT** 声明跨 fabric 归约 · ⚠️ 本条约束**能力域**,**不**约束流量落点(落点见 `ADR-CEP-01` SU G.1)· **反向 fixture**:把能力域改为跨 fabric ⇒ 必红 |
 | **NSS-09** | **逐格 `basis` SHALL 带两轴 + 9 项 `pending` 逐条登记** | 每格带 `kind` / `pending` / `ref→锚点摘要条目号`;**9 项** pending 逐条可寻址且 **SHALL NOT** 出现其具体取值的断言 · **反向 fixture**:去掉 `pending` 标记 ⇒ 必红 |
 
 ⇒ `ctest` 全绿 · 门禁全 rc=0 · `openspec validate --strict` rc=0 · `format.sh --check` rc=0。
