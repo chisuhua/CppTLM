@@ -3,9 +3,9 @@
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "b10df24a203fab8942eb8bd85b403020df903309113281c13926609f9cdd025f",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4f27a67ba7982f3d9466df36c85258f1822c89b825d8ab733fb4e5de74221f48",
-    "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "3797d11c87a64f8f5416d70219c8c3fbfff81dc6a15ff4b5ddf42d56a4eb97ef",
-    "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "172512d7659e0ec75cf426b10fe54e5aa78d133e02e87401b679c5547b314f4b",
-    "docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md": "235c573ac11540d6cfccbfead4a6fd3d71ef55154bfb03ac3aeb1099f7e066aa",
+    "docs/adr/ADR-CEP-01-fabric-collective-plane.md": "e06e70c059668159066337fd8b89bb189b0c56d232eafee15d4a7188abf1e93e",
+    "docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md": "43876da2261b70382f2817285e15b4cf68e0d214849b89d6ef711d12a1baf165",
+    "docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md": "76d34c2b9f144e446eaab1086e11ff620b806c2e2642bddb74a909d40686b927",
     "docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md": "835027d1963486853d744ba6587837e74cde481288154d7995fbebe6a9cb9641",
     "docs/adr/ADR-CEP-05-stub-cache-core-interface.md": "0a9ee86b1f58315b0cb9ade29f717a09c4d47c8d32e94c9b2553009e2739fce4",
     "docs/adr/ADR-CEP-06-experiment-protocol.md": "2f0e93235e2727815d68e013f2403b1f90cbcdcf228c2712565de0d83a5ca993",
@@ -44,7 +44,7 @@
   },
   "authorized_by": "Entry #170",
   "frozen_at": "2026-11-03",
-  "frozen_at_commit": "07a78d71504edeca83476a68633cb3354f2ba27d",
+  "frozen_at_commit": "ec0a696d3974596533fbc17a4bb4395f11fd0912",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",

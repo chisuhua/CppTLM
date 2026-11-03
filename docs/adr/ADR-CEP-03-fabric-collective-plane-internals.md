@@ -251,6 +251,7 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文一律不改**,仅登记一项**偏离**。
 > ⚠️ **2026-11-03 订正**(per 台账 Entry #169 / #170):本段内**括注的 change 名 `cpptlm-cep-nvlink-sharp-adapter` 已作废** ⇒ 以**台账实名** `cpptlm-cep-nvlink-sharp` 为准。
+> ⚠️ **编号漂移说明**(2026-11-03,per 台账 Entry #170 ⑤-补-3):本行「**§1 ~ §8**」按**当时编号**理解 —— 定稿新增两章(**§8 后果/代价** · **§9 Verification**)⇒ 原 §8「v0.2 修订记录」**已顺延为 §10** ⇒ 本行的「一律不改」**不**覆盖新增的两章。
 > **偏离项**: **§5**「新增 `CollectiveReqBundle` / `CollectiveEvtBundle`,**沿用** `bundles::` 命名空间 + `coherence_bundles_tlm.hh` 路径」。
 > **偏离理由**: §5 假设的 `include/bundles/coherence_bundles_tlm.hh` **在本仓不存在** —— 它是 `06-bis §5` 标注的「P2 实施」产物,而 06-bis 的 P2 **尚未实施**。三条候选路径的取舍:
 >   1. **提前新建 `coherence_bundles_tlm.hh`** ⇒ 抢 06-bis P2 的文件,两个 change 改同一文件 ⇒ 冲突(与 `ADR-CEP-07A` 的 artifact disposition 冲突);
