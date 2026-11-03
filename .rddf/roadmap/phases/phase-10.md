@@ -174,8 +174,13 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
                  └─ cpptlm-cep-tilelink-tree-manager
                                     ↓
                           Stage 2 (2 change 串行 2 季度):
-                          ├─ cpptlm-cep-cxl-dcoh-symmetric
-                          └─ cpptlm-cep-nvlink-sharp
+                          ├─ cpptlm-cep-cxl-dcoh-symmetric   ← ✅ 2026-11-02 两段式全部完成(Entry #166)
+                          └─ cpptlm-cep-nvlink-sharp        ← 📋 2026-11-03 improvement 草稿已写
+                                                                 (HARD-GATE rc=0 · 两段式 · per Entry #168)
+                                                                 ⚠️ **开工前置未满足**:`ADR-CEP-01`/`02`/`03`
+                                                                 **定稿**(三则仍「起草中(v0.6)」)⇒ **不得开工**
+                                                                 (per 用户裁决 2026-11-03);`sharer_tracker.impl` = `BroadcastNull`
+                                                                 (本队列补其行为类 ⇒ 闭合 07 号 §11 该实现缺口)
                                     ↓
                           Stage 3 (1 change 串行 1 季度):
                           └─ cpptlm-cep-ualink-inc
