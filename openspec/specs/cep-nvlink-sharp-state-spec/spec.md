@@ -22,7 +22,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-nvlink-sharp-state-spec
 
