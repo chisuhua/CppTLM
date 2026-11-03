@@ -90,6 +90,60 @@
           }
         }
       }
+    },
+    "vc_reservation_declaration": {
+      "type": "object",
+      "description": "**collective_vc_reservation 为空时的显式声明**(per ADR-CEP-01 的 SU 2026-11-03 · Decision D):空预留**不再**默认合格,必须显式声明「本拓扑不提供隔离 VC」,否则 CP-03 判红。本仓当前 = coherence 侧已占满 vc_id 0-3。",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason",
+        "owner",
+        "revisit_trigger"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "unavailable"
+          ],
+          "description": "空预留只允许声明 unavailable"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "不可用原因(须可归因:VC 饱和 ∧ 抓取点 3 要求独立 VC)"
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "description": "重访责任人(裁决方 / 队列号)"
+        },
+        "revisit_trigger": {
+          "type": "string",
+          "minLength": 1,
+          "description": "何时必须重访(≥5 VC / 首次需真实网内归约 / ADR-CEP-09 给出跨平面无环论证)"
+        }
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "collective_vc_reservation": {
+            "maxItems": 0
+          }
+        },
+        "required": [
+          "collective_vc_reservation"
+        ]
+      },
+      "then": {
+        "required": [
+          "vc_reservation_declaration"
+        ]
+      }
+    }
+  ]
 }

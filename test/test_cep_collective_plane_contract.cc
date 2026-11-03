@@ -114,6 +114,26 @@ TEST_CASE("CEP CollectiveContract: 声明源形态与 schema 一致", "[cep][col
     const auto& req = schema["required"];
     CHECK(req.size() == 3u);
 
+    // **Decision D**(`ADR-CEP-01` SU 2026-11-03):空预留须显式声明 ⇒ schema 必须同时表达
+    //   ① 新属性存在且内部四字段必填 ② 根级 allOf 的 if/then 把「空预留 ⇒ 必须声明」写死
+    // ⚠️ `required` 是**数组** ⇒ 用 `contains(key)` 会按**下标**判(字符串 key ⇒ 恒 false)
+    const auto has_value = [](const nlohmann::json& arr, const std::string& want) {
+        for (const auto& e : arr)
+            if (e.is_string() && e.get<std::string>() == want)
+                return true;
+        return false;
+    };
+    REQUIRE(schema["properties"].contains("vc_reservation_declaration"));
+    const auto& vd = schema["properties"]["vc_reservation_declaration"];
+    CHECK(vd["required"].size() == 4u);
+    for (const char* k : {"status", "reason", "owner", "revisit_trigger"})
+        CHECK(has_value(vd["required"], k));
+    REQUIRE(schema.contains("allOf"));
+    REQUIRE(schema["allOf"].size() == 1u);
+    const auto& then_req = schema["allOf"][0]["then"]["required"];
+    CHECK(then_req.size() == 1u);
+    CHECK(has_value(then_req, "vc_reservation_declaration"));
+
     // 对照:声明源**确实被消费** —— 判据清单里必须有与声明源相关的规则
     const auto report = cep::run_collective_plane_contract(repo_paths());
     CHECK(report.has(cep::ContractRule::VcReservation));
@@ -307,10 +327,37 @@ TEST_CASE("CEP CollectiveContract: collective VC 预留不冲突", "[cep][collec
     CHECK(snap.used.at("compute_noc").size() == 4u);
     CHECK(snap.vc_count.at("compute_noc") == 4u);
 
-    // 正控:不预留 ⇒ PASS
-    cep::CollectivePlaneDeclaration empty_decl;
-    std::string detail;
-    CHECK(cep::evaluate_vc_reservation(empty_decl, snap, detail) == cep::ContractVerdict::PASS);
+    // ── Decision D(`ADR-CEP-01` SU 2026-11-03):空预留**不再**默认 PASS ──
+    // 反 fixture ①:空预留 + **无**显式声明 ⇒ 必红(旧实现此处 PASS ⇒ CP-03 恒真)
+    cep::CollectivePlaneDeclaration no_decl;
+    std::string d0;
+    CHECK(cep::evaluate_vc_reservation(no_decl, snap, d0) == cep::ContractVerdict::FAIL);
+    CHECK(d0.find("vc_reservation_declaration") != std::string::npos);
+
+    // 反 fixture ②:四字段缺一 ⇒ 必红,且 detail 必须点名缺哪一条
+    cep::CollectivePlaneDeclaration partial;
+    partial.vc_reservation_declaration.present = true;
+    partial.vc_reservation_declaration.status = "unavailable";
+    partial.vc_reservation_declaration.reason = "coherence 已占满 vc_id 0-3";
+    partial.vc_reservation_declaration.owner = "Entry #171";
+    std::string d1;
+    CHECK(cep::evaluate_vc_reservation(partial, snap, d1) == cep::ContractVerdict::FAIL);
+    CHECK(d1.find("revisit_trigger") != std::string::npos);
+
+    // 反 fixture ③:声明齐全但 status 非 unavailable(空预留却声称「可用」= 自相矛盾)⇒ 必红
+    cep::CollectivePlaneDeclaration wrong_status = partial;
+    wrong_status.vc_reservation_declaration.revisit_trigger = "拓扑提供 >=5 VC";
+    wrong_status.vc_reservation_declaration.status = "available";
+    std::string d1b;
+    CHECK(cep::evaluate_vc_reservation(wrong_status, snap, d1b) == cep::ContractVerdict::FAIL);
+    CHECK(d1b.find("unavailable") != std::string::npos);
+
+    // 正控:四字段齐全 + status=unavailable ⇒ PASS(否则上面的反 fixture 无鉴别力)
+    cep::CollectivePlaneDeclaration declared = partial;
+    declared.vc_reservation_declaration.revisit_trigger = "拓扑提供 >=5 VC / 首次需真实网内归约";
+    std::string dp;
+    CHECK(cep::evaluate_vc_reservation(declared, snap, dp) == cep::ContractVerdict::PASS);
+    CHECK(dp.find("unavailable") != std::string::npos);
 
     // ── 反向 fixture:预留一个**已被 coherence 占用**的 VC ⇒ 必须判红 ──
     cep::CollectivePlaneDeclaration conflict;

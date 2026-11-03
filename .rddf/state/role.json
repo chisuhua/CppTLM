@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-03T04:44:12Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-03T06:09:25Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-10-31T18:43:53Z",
-      "by": "user",
-      "reason": "R11 裁决的架构决策层登记:追加 ADR-CEP-04 Status Update(冻结面 ⇒ 授权记录 per Entry #124 已落)"
-    },
     {
       "role": "builder",
       "at": "2026-10-31T18:43:57Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-03T04:44:12Z",
       "by": "user",
       "reason": "用户裁决 2026-11-03:订正队列 #13 improvement 的 4 处过期前置陈述(仍写「🟡 起草中(v0.6)⇒ 前置尚未满足」)⇒ architect 已完成 Decision D 的契约面交割(Entry #171)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-03T06:09:25Z",
+      "by": "user",
+      "reason": "用户裁决 2026-11-03「切 builder 推进」⇒ ① Decision D 的行为面落地(collective_planes.schema.json + evaluate_vc_reservation + 反向 fixture)② Task 0 公开来源普查(docs/research/ 不在 architect/planner 可写范围)"
     }
   ]
 }

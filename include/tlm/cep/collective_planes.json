@@ -9,5 +9,11 @@
     "mesif": null
   },
   "registered_regions": [],
-  "collective_vc_reservation": []
+  "collective_vc_reservation": [],
+  "vc_reservation_declaration": {
+    "status": "unavailable",
+    "reason": "coherence 侧已占满 compute_noc / ualink_fabric 的 vc_id 0-3(protocol_instances.json 的 6 个实例),而 ADR-CEP-01 §3.3 抓取点 3 要求集合流量走独立 VC ⇒ 本拓扑无隔离 VC 可分配",
+    "owner": "architect(台账 Entry #171 · Decision D)",
+    "revisit_trigger": "① 拓扑提供 ≥5 VC(schema / ArchForge fabric.json 变更) ② 队列 #13 实现层或后续队列首次需要真实 fabric collective 流量 ③ ADR-CEP-09 给出跨平面 VC 共享的无环性论证"
+  }
 }

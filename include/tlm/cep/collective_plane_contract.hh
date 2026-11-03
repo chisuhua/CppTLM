@@ -143,6 +143,23 @@ struct ContractReport {
 // ─────────────────────────────────────────────────────────────────────
 // 声明源(集体平面声明)
 // ─────────────────────────────────────────────────────────────────────
+/// **`collective_vc_reservation` 为空时的显式声明**(per `ADR-CEP-01` 的 SU 2026-11-03 · **Decision D**)
+///
+/// ⚠️ **为什么需要它**:预留表为空时旧实现**直接返回 PASS** ⇒ CP-03 **恒真**
+/// (违反铁律「纯负向断言须配正控」)。Decision D 把「空」从「默认合格」改成
+/// 「**必须显式声明不可用**」—— 声明本身成为**可判定对象**(四字段齐全 ⇒ PASS;缺任一 ⇒ FAIL)。
+struct VcReservationDeclaration {
+    std::string status;            ///< 契约值 `"unavailable"`(本拓扑不提供隔离 VC)
+    std::string reason;            ///< 不可用原因(须可归因)
+    std::string owner;             ///< 重访责任人(裁决方 / 队列号)
+    std::string revisit_trigger;   ///< 何时必须重访
+    bool present = false;          ///< 声明键是否存在于 JSON
+
+    bool complete() const {
+        return !status.empty() && !reason.empty() && !owner.empty() && !revisit_trigger.empty();
+    }
+};
+
 struct CollectivePlaneDeclaration {
     /// 协议实例 → 绑定的 plane(空串 / 未列 = 不启用)
     std::map<std::string, std::string> plane_binding;
@@ -150,13 +167,16 @@ struct CollectivePlaneDeclaration {
     std::vector<std::pair<AddrRange, std::pair<group_id_t, AccessMode>>> registered_regions;
     /// collective VC 预留:network → vc_id
     std::vector<std::pair<std::string, unsigned>> vc_reservation;
+    /// 预留为空时的显式声明(Decision D)
+    VcReservationDeclaration vc_reservation_declaration;
 
     /// **配置错误**(声明源缺失 / 畸形 / 类型非法)—— 与「无可检查对象 ⇒ SKIP」严格区分
     bool source_error = false;
     std::string source_error_detail;
 
     bool empty() const {
-        return plane_binding.empty() && registered_regions.empty() && vc_reservation.empty();
+        return plane_binding.empty() && registered_regions.empty() && vc_reservation.empty() &&
+               !vc_reservation_declaration.present;
     }
 };
 
@@ -244,6 +264,36 @@ inline CollectivePlaneDeclaration parse_collective_plane_declaration(const nlohm
                 d.vc_reservation.emplace_back(v["network"].get<std::string>(),
                                              v["vc_id"].get<unsigned>());
             }
+        }
+    }
+    // **预留为空时的显式声明**(Decision D)。存在但字段缺失/类型非法 ⇒ source_error(配置错误),
+    // 与「未声明」区分:未声明由 CP-03 判 FAIL(不是配置错误,是**漏声明**)。
+    if (doc.contains("vc_reservation_declaration")) {
+        const auto& vd = doc["vc_reservation_declaration"];
+        if (!vd.is_object()) {
+            d.source_error = true;
+            d.source_error_detail = "vc_reservation_declaration 不是对象";
+        } else {
+            d.vc_reservation_declaration.present = true;
+            const auto take = [&](const char* key, std::string& dst) {
+                if (!vd.contains(key)) {
+                    d.source_error = true;
+                    d.source_error_detail =
+                        std::string("vc_reservation_declaration 缺字段 ") + key;
+                    return;
+                }
+                if (!vd[key].is_string()) {
+                    d.source_error = true;
+                    d.source_error_detail =
+                        std::string("vc_reservation_declaration.") + key + " 不是字符串";
+                    return;
+                }
+                dst = vd[key].get<std::string>();
+            };
+            take("status", d.vc_reservation_declaration.status);
+            take("reason", d.vc_reservation_declaration.reason);
+            take("owner", d.vc_reservation_declaration.owner);
+            take("revisit_trigger", d.vc_reservation_declaration.revisit_trigger);
         }
     }
     return d;
@@ -589,7 +639,38 @@ inline ContractVerdict evaluate_vc_reservation(const CollectivePlaneDeclaration&
                                                 const VcBindingSnapshot& snap,
                                                 std::string& detail) {
     if (decl.vc_reservation.empty()) {
-        detail = "未预留任何 collective VC(本仓当前拓扑无 collective 可用隔离 VC,per 抓取点 3)";
+        // **Decision D**(`ADR-CEP-01` 的 SU 2026-11-03):空预留**不再**默认 PASS。
+        // 必须由声明源显式声明「本拓扑不提供隔离 VC」的四字段 ⇒ 否则判红。
+        const auto& vd = decl.vc_reservation_declaration;
+        if (!vd.present) {
+            detail = "collective_vc_reservation 为空且缺 vc_reservation_declaration —— "
+                     "空预留须显式声明不可用(per ADR-CEP-01 Decision D),"
+                     "否则 CP-03 对不同拓扑**恒真**、不具鉴别力";
+            return ContractVerdict::FAIL;
+        }
+        std::string missing;
+        const auto need = [&](bool ok, const char* k) {
+            if (ok)
+                return;
+            if (!missing.empty())
+                missing += '/';
+            missing += k;
+        };
+        need(!vd.status.empty(), "status");
+        need(!vd.reason.empty(), "reason");
+        need(!vd.owner.empty(), "owner");
+        need(!vd.revisit_trigger.empty(), "revisit_trigger");
+        if (!missing.empty()) {
+            detail = "vc_reservation_declaration 四字段不全(缺 " + missing + ')';
+            return ContractVerdict::FAIL;
+        }
+        if (vd.status != "unavailable") {
+            detail = "vc_reservation_declaration.status 非 \"unavailable\"(实为 \"" + vd.status +
+                     "\")—— 空预留只允许声明「不可用」";
+            return ContractVerdict::FAIL;
+        }
+        detail = "未预留任何 collective VC;已显式声明 unavailable(owner=" + vd.owner +
+                 ";per ADR-CEP-01 Decision D)";
         return ContractVerdict::PASS;
     }
     for (const auto& [net, vc] : decl.vc_reservation) {
