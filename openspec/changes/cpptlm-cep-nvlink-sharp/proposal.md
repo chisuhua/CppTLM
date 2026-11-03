@@ -49,11 +49,12 @@
 | 面 | 交付 |
 |---|---|
 | **载体 ①** | `include/tlm/cep/nvlink_adapter.hh`(新 · header-only · **独立头**)—— **零自有表副本** · **无 `transition_*`** · **不暴露**区域表类型 · **委托** `nvlink_sharp_state_spec.hh`(已归档规约载体,唯一真源) |
-| **载体 ②** | `include/tlm/cep/nvlink_broadcast_null_tracker.hh`(新 · header-only)—— `BroadcastNull` **行为实现**;caps / behavior **逐字段取自 `kTrackerTraits[4]`**(不另写 caps 字面量);`scope=NONE` ⇒ 恒 `BROADCAST` + **零目录边** ⇒ 满足 `ADR-CEP-01 §3.3` 抓取点 1 |
+| **载体 ②** | `include/tlm/cep/broadcast_null_tracker.hh`(新 · header-only · **协议无关** · ⛔ **不叫 `nvlink_*`**)—— `BroadcastNull` **行为实现**;caps / behavior **逐字段取自** traits 的 `BroadcastNull` 行(**查找函数**,⛔ 不用硬编码下标);`scope=NONE` ⇒ 恒 `BROADCAST` + **零目录边** ⇒ 满足 `ADR-CEP-01 §3.3` 抓取点 1 |
 | **载体 ③** | `include/tlm/cep/protocol_instances.json` —— **`nvlink_4` 实例声明**(schema `required` **实读** 13 键 · `protocol_version = nvlink-4.0` · `sharer_tracker.impl = BroadcastNull`)+ `repo_owned_instance_ids` **+1** |
 | **载体 ④** | `include/tlm/cep/collective_planes.json` —— `plane_binding` 加 `nvlink_4` → **本地模型** + `registered_regions` 增 1 条(`mode = nc_drop_cacheable`,per R3 区域互斥)⇒ 集体面**首个消费者** |
-| **载体 ⑤** | `include/tlm/cep/collective_plane_contract.hh` —— **V6-c 前提约束**(`CP-03-VC-PRECONDITION`)+ **CP-05 标识清单补 `collective_region_table`** + coherence 侧扫描集合扩展(**复用 `CP-05`,不新造 id**) |
-| **判据** | 正向判据(每条**负向断言配正控**)+ **8 组反向 fixture**(毒化 ⇒ **必红**且归因 id 命中)+ 基线正控 + `ctest` 注册 + 装配期校验 |
+| **载体 ⑤** | `include/tlm/cep/collective_plane_contract.hh` —— **V6-c 前提约束**(`CP-03-VC-PRECONDITION`,走 `CP-03` 行的 **detail 前缀**;⛔ **不新增**第 7 条规则)+ **CP-05 标识清单补 `collective_region_table`** + 扫描面**可注入**扩展(**复用 `CP-05`,不新造 id**)|
+| **载体 ⑥** | `include/tlm/cep/collective_plane.hh` —— **V3** barrier 分类 litmus(`barrier_key_class` · **协议中立** · ⛔ **不**复用已被 `INV-CEP-04-IC5` 占用的 `fabric_ingress_classify` 名) |
+| **判据** | 正向判据(每条**负向断言配正控**)+ **9 组反向 fixture**(毒化 ⇒ **必红**且归因 id **精确相等**命中)+ 基线正控 + `ctest` 注册 + **扩展**既有 loader 的校验项(⛔ 不新增第二套装配校验)|
 | **文档** | 07 号 §5.1.1 NVLink 行状态列 + §11 两行计数(SharerTracker `5/6` → `6/6`;adapter `6 个` → `7 个`)· `collective_plane.hh` 的**失指 change 名**订正(§10 登记项) |
 | **零改动** | `ADR-CEP-01` / `02` / `03` **正文** · canonical **10 流**清单 · `protocol_instance.schema.json` · `collective_planes.schema.json` · `sharer_tracker.hh` **接口面** · `nvlink_sharp_state_spec.hh`(**只读消费**) |
 
@@ -61,6 +62,8 @@
 
 **「毒化 ⇒ 判据必红」= 鉴别力**(与队列 #11 修**误报**的「毒化 ⇒ 判据仍绿」形态**相反**)
 ⇒ **两组都须登记**,避免后人混用(per improvement §判据纪律)。
+- ⚠️ **9 组** fixture = 1:1 对应 `NVA-01` ~ `NVA-09`;归因 = **2 个**本层新建 `CP-*`(`CP-BARRIER-CLASS` / `CP-PARTIAL-FAIL`)+ **7 个** `NVA-xx`
+  ⇒ **复用**的既有 id(`CP-03` / `CP-03-VC-PRECONDITION` / `CP-05` / 规约层 4 个)由**既有判据 / 规约层**承担,本层**不**重复立 fixture(禁双实现)。
 
 ### 4 铁律继承(自队列 #12)
 
@@ -107,15 +110,24 @@
 - [ ] **载体形态定稿**:`nvlink_adapter.hh` 零自有表副本(静态扫描 + 鉴别力自测)· 无 `transition_*` · 不暴露区域表类型;`nvlink_broadcast_null_tracker.hh` 的 caps **逐字段取自 `kTrackerTraits[4]`**
 - [ ] **声明面**:`nvlink_4` **13 键齐备**(schema `required` 实读)· `protocol_version = nvlink-4.0` · `repo_owned_instance_ids` +1 · `collective_planes.json` `plane_binding` / `registered_regions` / `collective_vc_reservation`(空)/ `vc_reservation_declaration`(四字段)齐备
 - [ ] **3 条悬空判据落载体**:V3(barrier 分类 litmus 双向)· V6-c(`CP-03-VC-PRECONDITION`)· partial failure 显式建模 ⇒ **归因 id 唯一登记**于 `design §7`
-- [ ] **反向 fixture**:**8 组**毒化 ⇒ 必红 + 归因命中 + 基线正控 ⇒ **全过**
+- [ ] **反向 fixture**:**9 组**毒化 ⇒ 必红 + 归因 id **精确相等**命中 + 基线正控 ⇒ **全过**(含 **归因 id 元测试**:id 集合双向覆盖)
 - [ ] **零改动核验**:`ADR-CEP-01/02/03` 正文 · 10 流清单 · 两个 schema · `sharer_tracker.hh` 接口面 · `nvlink_sharp_state_spec.hh` ⇒ **零 diff**
-- [ ] **收口**:`ctest` 全绿 + 门禁 **7** 脚本 rc=0 + `openspec validate --strict` rc=0 + `format.sh --check` rc=0 + **冻结面两步授权**(`cep_freeze_check.sh --update --authorized-by "Entry #N"`)· 07 号 §5.1.1 / §11 同步 + 台账 Entry(归档记录)
+- [ ] **收口**:`ctest` 全绿 + 门禁 **7** 脚本 rc=0 + `openspec validate --strict` rc=0 + `format.sh --check` rc=0 + **冻结面两步授权**(**3 份**冻结产物 + manifest;顺序 = 台账 Entry → archive → `--update --authorized-by` → commit → `--update` → commit)· 07 号 §5.1.1 / §11 同步 + 台账 Entry(归档记录)
 
 ---
 
 ## ⚠️ 与 improvement 草稿的**一处数字订正**
 
 improvement(`cpptlm-cep-nvlink-sharp.md` §Acceptance)写「第 1 个 change 的反向 fixture:**5 组**」
-⇒ **实测订正为 8 组**:ADR 指派给本层的义务共 **8 条**(每条一个独立归因 id)⇒ 铁律 ② 要求
-**每条**判据各有**因正确原因红**的反向 fixture ⇒ **5 组不足以逐条归因**。
+⇒ **实测订正为 9 组**:9 个实现层义务(NVA-01 ~ NVA-09)各有**独立归因**
+⇒ 铁律 ② 要求每条**因正确原因红** ⇒ **5 组不足以逐条归因**。
 ⇒ improvement 草稿随本 change 同步订正(台账 Entry 登记)。
+
+---
+
+## ⚠️ 与台账 `Entry #186 ⑥` 的**口径差异声明**
+
+台账 `Entry #186 ⑥` 写「SHARP 归约**行为实现**」⇒ ⚠️ 本层交付的是**载体 + 声明 + 判据**,
+**不含**归约**数据路径**(`LocalCollectivePlane::send` 在已注册 + epoch 生效时仍返回
+`DataPathNotImplemented`)⇒ 「行为实现」在本层 = **判据与声明面**的行为,**不是**数据通路的实现。
+⇒ 台账按 **append-only** 追加订正句(不改原文),见 `tasks 0.5`。

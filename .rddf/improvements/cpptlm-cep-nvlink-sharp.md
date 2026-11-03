@@ -176,7 +176,7 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 - [ ] **第 0 个 change(规约层)**:R1/R2 分类判据 + R3/R4 区域互斥与 epoch 生命周期 + R5 计数器/断言 + ordering A/B/C/D + **集合 VC 预留单一状态**(**Decision D**:载体仅 `Unavailable` 单一取值;四字段权威在 `collective_planes.json` + `CP-03`)+ **逐格 `basis`**(每格 `pending` 须有 `ref` ⇒ 无 `ref` 的 `pending` 即红)
 - [ ] **第 0 个 change 的反向 fixture**:毒化任一格 ⇒ 编译期锁**必红** + 归因命中(铁律 ②③)⇒ **正控**(干净载体必绿)
 - [ ] **第 1 个 change(实现层)**:`NvlinkAdapter` **零自有表副本**(静态扫描 + **鉴别力自测**)+ **无 `transition_*`** + `BroadcastNull` **行为实现**(caps 逐字段取 `kTrackerTraits[4]`)+ `nvlink_4` **13 键齐备**(schema `required` **实读**)+ `repo_owned_instance_ids` **+1** + `collective_planes.json` **三块 + `vc_reservation_declaration`** + 装配期校验
-- [ ] **第 1 个 change 的反向 fixture**:**5 组**毒化 ⇒ 必红 + 归因命中 + 基线正控 ⇒ **全过**
+- [ ] **第 1 个 change 的反向 fixture**:**9 组**毒化 ⇒ 必红 + 归因 id **精确相等**命中 + 基线正控 ⇒ **全过** —— ⚠️ **2026-11-03 订正**(per 台账 Entry #187 · oracle + metis 双审):原写 **5 组** ⇒ 实现层义务共 **9 条**(NVA-01 ~ NVA-09,各有独立归因)⇒ 铁律 ② 要求**逐条**「因正确原因红」
 - [ ] **零改动核验**:`ADR-CEP-01/02/03` 正文 · canonical 10 流清单 · `protocol_instance.schema.json` · `sharer_tracker.hh` 接口面 ⇒ **零 diff**(冻结面除**已授权**追加段外)
 - [ ] **收口**:`ctest` 全绿 + 门禁 6 脚本全 rc=0 + `openspec validate --strict` rc=0 + `format.sh --check` rc=0 + KPI **2 slot 串行**(规约层归档后 slot 释放再启实现层)+ 台账 Entry(归档记录)+ 07 号 §5.1.1 状态列与 §11 计数同步
 

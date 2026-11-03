@@ -11534,6 +11534,59 @@ SHARP 归约**行为实现** + `nvlink_4` 实例声明 + `collective_planes.json
 
 ---
 
+### Entry #187 — 2026-11-03 [plan](队列 #13 **实现层** change `cpptlm-cep-nvlink-sharp` 建档 + **oracle + metis 双审修订**)
+
+**主题**:队列 #13 的**两段式**之**第 1 个 change**(实现层)建档转正 ⇒ 经 **oracle**(架构取舍)+ **metis**(缺口 / 歧义)双审 ⇒ **17 项**修订落盘。**角色**:builder。
+
+**① 交付面(change 已建档,`openspec validate --strict` rc=0)**
+
+4 件套 + **2 份 delta spec**:`cep-nvlink-sharp`(新能力 · NVA-01 ~ NVA-09)+
+`cep-collective-plane-contract`(对**已冻结** main spec 的 delta —— 声明最小集**第四键** + **V6-c** +
+**CP-05** 扩展 ⇒ 同时闭合 §10 的 **Entry #174 ③ S1**)。
+⇒ 载体面:`nvlink_adapter.hh`(新)· `broadcast_null_tracker.hh`(新 · **协议无关**)·
+`collective_plane.hh`(V3 载体)· `collective_plane_contract.hh`(V6-c + CP-05)·
+`protocol_instances.json`(`nvlink_4`)· `collective_planes.json`(集体面首个消费者)。
+⇒ KPI **0/3 → 1/3**(**8 处**)。
+
+**② ⚠️ 双审的 17 项修订(全部已落 `design §0` + `tasks` + 2 份 spec)**
+
+| # | 审查结论 | 处置 |
+|---|---|---|
+| **A-1** | **`fabric_ingress_classify` 名已被占用**(`INV-CEP-04-IC5` = region/epoch divert,`ADR-CEP-04:301`)+ `collective_plane.hh:206` 的**接线侧**注释也用它 | V3 改名 **`barrier_key_class`** + 落点改**协议中立**的 `collective_plane.hh` + **结构体输入**(禁标签入参 ⇒ 否则恒等映射 = 恒真) |
+| **A-2** | **V6-c 正控必红**:现 `plane_binding` = `{moesi_gpu: null, mesif: null}` ⇒ `null ∉ 白名单` | 只判**非空**绑定值;零键 ⇒ **SKIP**(禁 vacuous PASS) |
+| **A-3** | **`CP-03-VC-PRECONDITION` 无 verdict 通道**(`kContractRuleCount == 6` 被 `test_cep_collective_plane_contract.cc:166` 硬断言) | ⛔ 不新增第 7 条规则;折进 `CP-03` 行,`detail` 以 `[CP-03-VC-PRECONDITION]` 开头;探针**精确相等**输出 |
+| **A-4** | **冻结面被低估**:07 号在 `FROZEN_GLOBS:32` | **3 份** + manifest;授权 Entry **逐件**列名;归档顺序固定(Entry → archive → `--update` → commit → `--update` → commit) |
+| **A-5** | **F-3 天然恒真**:`SharerTrackerCaps{}` 默认值与 traits 行**逐字段相同** ⇒ 从不赋值也通过 | 正控改为**毒化 traits 行本身** ⇒ 类的可见 caps **必须跟随** |
+| **A-6** | **F-6 恒真**:`ReduceOp` 无 count 表 + C++17 无反射 ⇒ 「追加第 7 值」计数不变 | 改为**去注释后源文本枚举项计数**;毒化 = 追加 `Prod = 6` |
+| **A-7** | **F-7 的触发源不存在**(平台无 member-leave API) | 正控 = 既有真实路径(`collective_barrier` 至 N-1 → `group_destroy` ⇒ 发 `Fault`) |
+| **A-8** | **CP-05 扫描集合语义反了**(adapter 是 collective 侧) | CP-05 拆**两 profile**;⛔ 不把 adapter 头塞进 coherence 侧扫描 |
+| **A-9** | **「装配期校验 = 唯一读者」是事实错误**(既有读者 ≥ 6) | 改为**扩展** `load_adapter_contract_inputs` 校验项;⛔ 不新增第二套 |
+| **A-10** | **归因 id 通胀**(5 条自设机制判据被升成 `CP-*`) | 只保留 ADR 强制的 **2 个**(`CP-BARRIER-CLASS` / `CP-PARTIAL-FAIL`);其余用 `NVA-xx`(照 #12 先例) |
+| **A-11** | **fixture 组数四套数字**(5 / 8 / 9 / 14) | 全仓统一「**9 组** / 1:1 对应 NVA-01 ~ NVA-09」+ **元测试**(id 集合双向覆盖) |
+| **A-12** | **台账 `Entry #186 ⑥` 的「归约行为实现」措辞**与本层交付面不符(本层**无**数据路径) | proposal 增「口径差异声明」;台账 **append-only** 追加订正句(`tasks 0.5`) |
+| **A-13** | **6 处硬编码实例计数**会集体转红 | `design §9.3` 计数同步清单(文件:行 + 新值 + 保留来源注释) |
+| **A-14** | `sharer_tracker.hh` 头注释将变假陈述;「接口面零 diff」需**机械定义** | 注释订正 + 接口面 = 4 个纯虚签名 + `kTrackerTraits` 6 行值 + 查找函数 |
+| **A-15** | 「只读消费 state spec」**无机器门禁**(该头不在 `FROZEN_GLOBS`) | **sha256 钉版断言** |
+| **A-16** | `collective_planes.json` 的 `current_state` 自述变假陈述 | 与声明面**同批**改 + 写进冻结前置 |
+| **A-17** | `scripts/README.md` 漏登记 + 计数漂移(写 12 / 实测 18) | `tasks 3.6` 新增子项 |
+
+**③ oracle / metis 的一致结论(双审收敛 ⇒ 置信度高)**
+
+① **V3 必须改名 + 换落点**(名已被占用 + 协议中立性)② **V6-c 必须改 null 语义 + 单源白名单 + 子 id 通道**
+③ **F-3 / F-6 / F-7 三组 fixture 原本恒真或不可实施** ④ **冻结面 3 份**(07 号在冻结集内)
+⑤ **归因 id 应收敛到 2 个新建** ⑥ **计数同步清单**缺失。
+
+**④ 验收(实测)**
+
+`openspec validate cpptlm-cep-nvlink-sharp --strict` rc=0 · 门禁 **7/7** rc=0 · `format.sh --check` rc=0 ·
+`openspec list --json` ⇒ **1 active**(KPI **1/3**)· 双审结论 **17/17** 落盘。
+
+**⑤ 关联**: Entry #186(规约层归档 + 移交)· #185(C-2 / C-3)· #184(Phase 3)· #182(口径裁决)· #175(规约层建档)
+· #179 / #178(归因 id 唯一化)· #171(Decision D)· #169 / #170(三则 ADR 定稿)
+· `openspec/changes/cpptlm-cep-nvlink-sharp/`(本条对象)· `openspec/specs/cep-nvlink-sharp-state-spec/spec.md`(规约层唯一真源)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

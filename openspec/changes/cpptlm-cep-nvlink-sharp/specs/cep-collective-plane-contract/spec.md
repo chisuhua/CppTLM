@@ -2,22 +2,23 @@
 
 ## Purpose
 
-> ⚠️ **本 delta 指向的 main spec 在 M1 冻结集内**(`openspec/specs/cep-collective-plane-contract/spec.md`)
-> ⇒ 归档合并**必须**走**冻结面两步授权**(`cep_freeze_check.sh --update --authorized-by "Entry #N"` ⇒ commit ⇒ `--update` ⇒ commit)。
-> **本 delta 同时闭合**台账 §10 的 **Entry #174 ③ S1**(「下一个 openspec change 补 delta(第四键 + 「空预留缺声明 ⇒ FAIL」场景)」)。
-
-## Purpose
-
 把 **Decision D**(`ADR-CEP-01` SU 2026-11-03)的**显式声明门**与 **`V6-c` 前提约束**、
 **CP-05 标识清单扩展**同步进本 capability 的契约面:
 
 - 声明最小集由**三组**扩为**四组**(加 `vc_reservation_declaration`);
 - 「`collective_vc_reservation` 为空且**缺** `vc_reservation_declaration`」⇒ 判 **FAIL**(不得**恒 PASS**);
 - `status = unavailable` ⇒ 拓扑中**不得**存在**真实 fabric 集合流量载体**(仅本地模型)⇒ 归因 `CP-03-VC-PRECONDITION`;
-- coherence 侧标识清单补 `collective_region_table` + 扫描集合扩展 ⇒ 归因 `CP-05`(**复用**,不新造 id)。
+- coherence 侧标识清单补 `collective_region_table` + 扫描面可注入扩展 ⇒ 归因 `CP-05`(**复用**,不新造 id)。
 
-> **规则条数不变**:本次新增的是 **`CP-03` 族**的子判据(`CP-03-VC-PRECONDITION`)与 **`CP-05` 族**的清单扩展
-> ⇒ 本 capability 的「**6 条**可机器检查的规则」口径**仍成立** ⇒ **不**改该计数。
+> ⚠️ **本 delta 指向的 main spec 在 M1 冻结集内**(`openspec/specs/cep-collective-plane-contract/spec.md`)
+> ⇒ 归档合并**必须**走**冻结面两步授权**(`cep_freeze_check.sh --update --authorized-by "Entry #N"` ⇒ commit ⇒ `--update` ⇒ commit)。
+> **本 delta 同时闭合**台账 §10 的 **Entry #174 ③ S1**(「下一个 openspec change 补 delta(第四键 + 「空预留缺声明 ⇒ FAIL」场景)」)。
+>
+> ⚠️ **规则族数不变**:本次新增的是 **`CP-03` 族**的子判据(`CP-03-VC-PRECONDITION`)与
+> **`CP-05` 族**的清单扩展 ⇒ 本 capability 的「**6 条**可机器检查的规则」口径**仍成立**
+> (枚举 = `CP-01`..`CP-06`;`kContractRuleCount == 6` **不变**)。
+> ⚠️ **合并后不变式**:main spec 的 Requirement 数 **1 → 2**;Scenario 数 **8 → 10**;
+> `kContractRuleCount` 仍 == **6**;`openspec validate cep-collective-plane-contract --strict` rc=0。
 
 ---
 
@@ -25,12 +26,14 @@
 
 ### Requirement: cep-collective-plane-contract
 
-CEP SHALL 将 **Fabric Collective Plane 的跨平面契约**固化成**可机器检查的判据**:5 条契约判据 + 独立声明源 + 三态显式化判定。
+CEP SHALL 将 **Fabric Collective Plane 的跨平面契约**固化成**可机器检查的判据**:6 条契约判据(`CP-01`..`CP-06`)+ 独立声明源 + 三态显式化判定。
 
 > **定位**:per `ADR-CEP-01 §3.3` 的 7 条抓取点 —— 覆盖本 Stage 可测部分,其余 P3 / Stage 2+。
 > **判据实现**:`collective_plane_contract.hh` —— 与行为面**共享**同一判据实现,**禁双实现**。
 > **声明源**:`collective_planes.json` + schema —— **诞生即不冻结**;**不扩** `protocol_instances.json`。
 > **禁写恒真 / 恒 SKIP 判据**:本 Stage 不可测的条款 SHALL **不**进判据清单。
+> ⚠️ **本次修订的实质变化 = 1 个 Scenario**(「声明源形态与 schema 一致」:三组 → 四组 + 空预留门)
+> + 「5 条契约判据」计数订正为 **6**;其余 Scenario **逐字不变**。
 
 #### Scenario: 声明源形态与 schema 一致(plane 绑定 / region 表 / VC 预留)
 
@@ -47,7 +50,7 @@ CEP SHALL 将 **Fabric Collective Plane 的跨平面契约**固化成**可机器
 
 - **WHEN** 契约判据给出结论
 - **THEN** SHALL 显式区分 **`[SKIP]`** / **`[PASS]`** / **`[FAIL]`** 三态(SKIP 与 PASS **可区分**,per 队列 #4 `cep-channel-dependency-gate` 先例)
-- **AND** 每条判据 SHALL 输出**逐条可 grep** 的 verdict(格式 `[verdict] <rule-id> PASS|FAIL|SKIP (detail)`,per `ADR-CEP-09 §8.3` 同源格式)
+- **AND** 每条判据 SHALL 输出**逐条可 grep** 的 verdict(格式 `[verdict] rule=<CP-0x> PASS|FAIL|SKIP (detail)`,per `ADR-CEP-09 §8.3` 同源格式)
 - **AND** **不得**把「无可检查对象」装作 **PASS**
 
 > **锚点**:`test_cep_collective_plane_contract.cc` 的三态可区分断言 + verdict 格式断言
@@ -74,20 +77,10 @@ CEP SHALL 将 **Fabric Collective Plane 的跨平面契约**固化成**可机器
 - **WHEN** 契约判据核对 `collective_planes.json` 的 `collective_vc_reservation` 与 `include/tlm/cep/fabric.json` 的既有 `vc_binding`
 - **THEN** 预留 VC SHALL ∈ **0-3**(per `noc_bundles_tlm.hh` 的 `vc_id` 值域 / `fabric.schema.json` maximum=4)
 - **AND** 预留的 VC SHALL **不与**任何已声明协议的 `vc_binding` **冲突**(死锁通道隔离:collective barrier 等待期间不得占用 coherence 事务依赖的 fabric 资源,per `ADR-CEP-01 §3.3` 抓取点 3)
-- **AND** 预留为**空**时 SHALL 按上一条 Scenario 的**空预留门**判定(缺声明 ⇒ FAIL)
+- **AND** 预留为**空**时 SHALL 按「声明源形态」Scenario 的**空预留门**判定(缺声明 ⇒ FAIL)
 - **AND** **反向 fixture**:fixture 改成冲突 VC ⇒ 断言必红
 
 > **锚点**:`test_cep_collective_plane_contract.cc` 的 VC 冲突断言 + 反向 fixture
-
-#### Scenario: **`V6-c` 前提约束 SHALL 可执行**(`unavailable` ⇒ 仅本地模型)
-
-- **WHEN** `vc_reservation_declaration.status == "unavailable"`
-- **THEN** `plane_binding` 的**每个**绑定值 SHALL 落在**本地模型白名单**内 ⇒ 否则 SHALL 判 **FAIL**(拓扑中**不得**存在真实 fabric 集合流量载体)
-- **AND** 白名单 SHALL 为**枚举式**(白名单外的绑定名 ⇒ FAIL)⇒ 新增 plane 实现时**必须**同步更新白名单 ⇒ 不会「忘了更新就静默通过」
-- **AND** **正控**:当前绑定 ⇒ PASS;**反向 fixture**:绑定一个 fabric 承载的 plane ⇒ 断言必红
-- **AND** 归因 id SHALL 为 **`CP-03-VC-PRECONDITION`**(唯一 id,per `ADR-CEP-01` SU 2026-11-03(#3) I.1)
-
-> **锚点**:`test_cep_collective_plane_contract.cc` 的 V6-c 断言 + 反向 fixture
 
 #### Scenario: 区域互斥判据 SHALL 与行为面**同源**(禁双实现)
 
@@ -110,16 +103,6 @@ CEP SHALL 将 **Fabric Collective Plane 的跨平面契约**固化成**可机器
 
 > **锚点**:`test_cep_collective_plane_contract.cc` 的抓取点覆盖登记断言(编号集合逐条比对)
 
-#### Scenario: **CP-05** 标识清单 SHALL 含 `collective_region_table` 且扫描集合 SHALL 扩展
-
-- **WHEN** 运行完成域判别(coherence 侧扫描)
-- **THEN** 标识清单 SHALL 含 `collective_region_table`(coherence 侧**不得**出现区域表类型)
-- **AND** 扫描面 SHALL 覆盖**新增的协议族 adapter 头**(队列 #13 实现层交付)
-- **AND** **正控**:coherence 侧文件 ⇒ PASS;**反向 fixture**:在扫描面注入 `collective_region_table` ⇒ 断言必红
-- **AND** 归因 id SHALL **复用** `CP-05`(per `ADR-CEP-03` SU 2026-11-03(#2) F.3 / F.4 —— **不新造** id)
-
-> **锚点**:`test_cep_collective_plane_contract.cc` 的 CP-05 清单断言 + 反向 fixture
-
 #### Scenario: 本 capability 对 B2 的贡献 SHALL **非空**且逐条可查
 
 - **WHEN** 核对本 change 对「66 条守门 invariant 机器检查 100% 覆盖」的贡献
@@ -128,3 +111,43 @@ CEP SHALL 将 **Fabric Collective Plane 的跨平面契约**固化成**可机器
 - **AND** 若该清单为空 ⇒ 本 change **自我否决**
 
 > **锚点**:`test_cep_collective_plane_contract.cc` 的贡献清单非空断言
+
+---
+
+## ADDED Requirements
+
+### Requirement: cep-collective-plane-contract-vc-precondition
+
+CEP SHALL 为 **`CP-03` 族**补充 **`V6-c` 前提约束**,并为 **`CP-05`** 补充
+**标识清单扩展**与**可注入的扫描面扩展**。
+
+> **为什么独立成 Requirement**(而非并入既有 Requirement):既有 Requirement 的 8 个 Scenario
+> **逐字不变** ⇒ 冻结面的**实质 diff 仅 1 个 Scenario** ⇒ review / 授权时逐行可比。
+> **归因 id 不新增规则族**:`V6-c` 折进 `CP-03` 行(以 **detail 前缀** 表达)· `CP-05` 扩展仍在 `CP-05` 行
+> ⇒ `kContractRuleCount == 6` **不变**。
+
+#### Scenario: **`V6-c` 前提约束 SHALL 可执行**(`unavailable` ⇒ 仅本地模型)
+
+- **WHEN** `vc_reservation_declaration.status == "unavailable"`
+- **THEN** `plane_binding` 的**每个非空**绑定值 SHALL 落在**本地模型白名单**内 ⇒ 否则 SHALL 判 **FAIL**
+  (拓扑中**不得**存在真实 fabric 集合流量载体)
+- **AND** 白名单 SHALL **从 plane 注册表派生**(每个 plane 实现在**定义点**声明其局部性)⇒ **未注册**的绑定名 ⇒ SHALL 判 **FAIL**
+- **AND** ⚠️ `null` 绑定(loader 物化为空串)SHALL **不**判 FAIL;`plane_binding` 为**零键** ⇒ SHALL 判 **SKIP**
+  (⛔ **禁** vacuous PASS)
+- **AND** ⛔ SHALL **不**新增第 7 条 `ContractRule` ⇒ V6-c SHALL 作为 `CP-03` 行的 **detail 前缀**
+  `[CP-03-VC-PRECONDITION]` 表达;`rule=` 字段**仍为** `CP-03`
+- **AND** **正控**:当前绑定 ⇒ PASS;`null` 绑定 ⇒ SKIP;**反向 fixture**:绑定一个**未注册**的 plane 名 ⇒ 必红
+  (归因 `CP-03-VC-PRECONDITION`;**精确相等**匹配 —— ⛔ 不用前缀匹配,否则 `CP-03` 会命中它)
+
+> **锚点**:`test_cep_collective_plane_contract.cc` 的 V6-c 断言 + 反向 fixture
+
+#### Scenario: **CP-05** 标识清单 SHALL 含 `collective_region_table` 且扫描面 SHALL 可注入扩展
+
+- **WHEN** 运行完成域判别(coherence 侧扫描)
+- **THEN** 标识清单 SHALL 含 `collective_region_table`(coherence 侧**不得**出现区域表类型)
+- **AND** 扫描面 SHALL 支持**注入扩展**(由 `ContractPaths` 提供扩展文件列表)⇒ 扩展面 SHALL 是**真正的 coherence / 源端侧**文件
+  —— ⛔ SHALL **不**把 collective 侧的 adapter 头塞进 coherence 侧扫描(那只会「证明没扫错文件」= 恒真)
+- **AND** **正控**:同一注入对既有 coherence 侧文件 **必红** ⇒ 证明扫描器有牙;
+  **反向 fixture**:注入 `collective_region_table` ⇒ 必红(归因 `CP-05`)
+
+> **锚点**:`test_cep_collective_plane_contract.cc` 的 CP-05 清单断言 + 反向 fixture
