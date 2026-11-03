@@ -172,13 +172,17 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 
 - [x] **开工前置**:`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` **定稿** —— ✅ **已完成**(2026-11-03 签发 **v1.0**,per Entry #169 / #170;本项即原「状态由未签发 ⇒ 已签发」的验收条款)
 - [x] **Task 0 硬门**:✅ **已产出**(2026-11-03,Entry #173)⇒ 锚点摘要产物(`docs/research/<date>-cep-nvlink-sharp-anchor-summary.md`):**sha256 钉版** · **零 NDA / 规范正文暴露** · 记**条款级定位 + 断言摘要**;公开来源候选类 = NVSHMEM(开源实现)/ 公开白皮书 / in-network reduction 学术论文
-- [ ] **architect 裁决**:上述 **5 项载体形态决定项** 落盘(**5 项已全部裁**:② = `BroadcastNull`;③ / ④ = Entry #177;① / ⑤ = Entry #176;⑤ 的 VC 编号 = Entry #171)⇒ 裁决结论**同步** `ADR-CEP-01` / `02` / `03` 与 07 号
-- [ ] **第 0 个 change(规约层)**:R1/R2 分类判据 + R3/R4 区域互斥与 epoch 生命周期 + R5 计数器/断言 + ordering A/B/C/D + **集合 VC 预留单一状态**(**Decision D**:载体仅 `Unavailable` 单一取值;四字段权威在 `collective_planes.json` + `CP-03`)+ **逐格 `basis`**(每格 `pending` 须有 `ref` ⇒ 无 `ref` 的 `pending` 即红)
-- [ ] **第 0 个 change 的反向 fixture**:毒化任一格 ⇒ 编译期锁**必红** + 归因命中(铁律 ②③)⇒ **正控**(干净载体必绿)
-- [ ] **第 1 个 change(实现层)**:`NvlinkAdapter` **零自有表副本**(静态扫描 + **鉴别力自测**)+ **无 `transition_*`** + `BroadcastNull` **行为实现**(caps 逐字段取 `kTrackerTraits[4]`)+ `nvlink_4` **13 键齐备**(schema `required` **实读**)+ `repo_owned_instance_ids` **+1** + `collective_planes.json` **三块 + `vc_reservation_declaration`** + 装配期校验
-- [ ] **第 1 个 change 的反向 fixture**:**9 组**毒化 ⇒ 必红 + 归因 id **精确相等**命中 + 基线正控 ⇒ **全过** —— ⚠️ **2026-11-03 订正**(per 台账 Entry #187 · oracle + metis 双审):原写 **5 组** ⇒ 实现层义务共 **9 条**(NVA-01 ~ NVA-09,各有独立归因)⇒ 铁律 ② 要求**逐条**「因正确原因红」
-- [ ] **零改动核验**:`ADR-CEP-01/02/03` 正文 · canonical 10 流清单 · `protocol_instance.schema.json` · `sharer_tracker.hh` 接口面 ⇒ **零 diff**(冻结面除**已授权**追加段外)
-- [ ] **收口**:`ctest` 全绿 + 门禁 6 脚本全 rc=0 + `openspec validate --strict` rc=0 + `format.sh --check` rc=0 + KPI **2 slot 串行**(规约层归档后 slot 释放再启实现层)+ 台账 Entry(归档记录)+ 07 号 §5.1.1 状态列与 §11 计数同步
+- [x] **architect 裁决**:上述 **5 项载体形态决定项** 落盘(**5 项已全部裁**:② = `BroadcastNull`;③ / ④ = Entry #177;① / ⑤ = Entry #176;⑤ 的 VC 编号 = Entry #171)⇒ 裁决结论**同步** `ADR-CEP-01` / `02` / `03` 与 07 号 —— ✅ **已完成**(2026-11-03:三则 ADR **SU** 落盘,per Entry #169 / #170 / #171;07 号 §5.1.1 NVLink 行 + §11 三处计数已随队列 #13 归档同步,per Entry #190)⇒ ⚠️ **残留 2 项 architect 域**(不属 builder):`ADR-CEP-01` 附录 V3 行的 `fabric_ingress_classify` 别名/撞名、`ADR-CEP-03` SU F.4 缺 tracker 行 ⇒ 已登记 §10
+- [x] **第 0 个 change(规约层)**:R1/R2 分类判据 + R3/R4 区域互斥与 epoch 生命周期 + R5 计数器/断言 + ordering A/B/C/D + **集合 VC 预留单一状态**(**Decision D**:载体仅 `Unavailable` 单一取值;四字段权威在 `collective_planes.json` + `CP-03`)+ **逐格 `basis`**(每格 `pending` 须有 `ref` ⇒ 无 `ref` 的 `pending` 即红)
+- [x] **第 0 个 change 的反向 fixture**:毒化任一格 ⇒ 编译期锁**必红** + 归因命中(铁律 ②③)⇒ **正控**(干净载体必绿)
+- [x] **第 1 个 change(实现层)**:`NvlinkAdapter` **零自有表副本**(静态扫描 + **鉴别力自测**)+ **无 `transition_*`** + `BroadcastNull` **行为实现**(caps 逐字段取 `kTrackerTraits[4]`)+ `nvlink_4` **13 键齐备**(schema `required` **实读**)+ `repo_owned_instance_ids` **+1** + `collective_planes.json` **三块 + `vc_reservation_declaration`** + 装配期校验
+- [x] **第 1 个 change 的反向 fixture**:**9 组**毒化 ⇒ 必红 + 归因 id **精确相等**命中 + 基线正控 ⇒ **全过** —— ⚠️ **2026-11-03 订正**(per 台账 Entry #187 · oracle + metis 双审):原写 **5 组** ⇒ 实现层义务共 **9 条**(NVA-01 ~ NVA-09,各有独立归因)⇒ 铁律 ② 要求**逐条**「因正确原因红」
+- [x] **零改动核验**:`ADR-CEP-01/02/03` 正文 · canonical 10 流清单 · `protocol_instance.schema.json` · `sharer_tracker.hh` 接口面 ⇒ **零 diff**(冻结面除**已授权**追加段外)
+- [x] **收口**:`ctest` 全绿 + 门禁 6 脚本全 rc=0 + `openspec validate --strict` rc=0 + `format.sh --check` rc=0 + KPI **2 slot 串行**(规约层归档后 slot 释放再启实现层)+ 台账 Entry(归档记录)+ 07 号 §5.1.1 状态列与 §11 计数同步 —— ✅ **已完成**(2026-11-03):`ctest` **145/145** ·
+门禁 **7/7** rc=0 · `openspec validate --strict` rc=0 · `format.sh --check` rc=0 ·
+KPI **2 slot 串行**已按「规约层归档 ⇒ 释放 slot ⇒ 启实现层 ⇒ 实现层归档 ⇒ 释放 slot」走完
+(1/3 → 0/3 → 1/3 → **0/3**)· 台账 Entry #186 / #187 / #188 / **#190** · 07 号 §5.1.1 + §11 同步
+(⚠️ 冻结面 ⇒ 两步授权,per Entry #189)
 
 ---
 

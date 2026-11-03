@@ -46,7 +46,7 @@ namespace {
     /// ⚠️ **归因 id 的可执行登记面 = main spec**(committed)——
     /// change 的 4 件套在归档后位于**不入库**的 `openspec/changes/archive/`(per `.gitignore`)
     /// ⇒ 判据**不得**依赖它们(否则归档即失效)⇒ 本文件读 **main spec**。
-    constexpr const char* kDesignRelPath = "openspec/specs/cep-nvlink-sharp/spec.md";
+    constexpr const char* kIdRegistryRelPath = "openspec/specs/cep-nvlink-sharp/spec.md";
 
     std::string read_repo_file(const std::string& rel) {
         std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
@@ -451,13 +451,13 @@ TEST_CASE("归因 id 元测试 —— fixture id ⊆ design §7 id,且本层新�
     // 本层**新建**的 `CP-*` id(ADR 强制 ⇒ 只能有这 2 个)
     const std::set<std::string> new_cp_ids{"CP-BARRIER-CLASS", "CP-PARTIAL-FAIL"};
 
-    const std::string design = read_repo_file(kDesignRelPath);
-    REQUIRE(!design.empty());
+    const std::string registry = read_repo_file(kIdRegistryRelPath);
+    REQUIRE(!registry.empty());
 
     // ① 每个 fixture id 都 SHALL 出现在 main spec(可执行登记面)
     for (const auto& id : fixture_ids) {
         INFO("fixture id: " << id);
-        CHECK(design.find(id) != std::string::npos);
+        CHECK(registry.find(id) != std::string::npos);
     }
     // ② 本层新建的每个 `CP-*` id SHALL 有一条 fixture
     for (const auto& id : new_cp_ids) {
@@ -466,5 +466,5 @@ TEST_CASE("归因 id 元测试 —— fixture id ⊆ design §7 id,且本层新�
     }
     // ③ **反向**:`CP-NVLINK-*` 归因 id SHALL 为 **0**
     //    (A-10:本层**不**自造 `CP-NVLINK-*` 体系 ⇒ 归因用 `NVA-xx`)
-    CHECK(design.find("CP-NVLINK-") == std::string::npos);
+    CHECK(registry.find("CP-NVLINK-") == std::string::npos);
 }
