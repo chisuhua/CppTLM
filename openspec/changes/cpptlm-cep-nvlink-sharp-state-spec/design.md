@@ -28,6 +28,8 @@
 | 2 | **多 group 并存** | 第 3 代 SHARP 允许**同一拓扑多棵聚合树**、多作业共享 ⇒ `group_id` **不得**是单例 | `A-4` |
 | 3 | **归约点在 fabric ingress** | 归约在网络侧完成 ⇒ 支撑 `ADR-CEP-03 §4` 的 **S1**(唯一分类点);⚠️ **S4 是设计约束,不由公开来源支撑** | `A-3` |
 | 4 | **VC = 无隔离 VC(显式声明)** | 两网络 0-3 全占 ⇒ Decision D:`unavailable` + 四字段声明 | `ADR-CEP-01` SU 2026-11-03(D.4) |
+| 5 | **reduce 族 = 复用既有 `ReduceOp` 恰 6 值** | 不新增枚举、不改 `collective_plane.hh`;SHARP 逐算子支持 = `N-1` **pending** | `ADR-CEP-03` SU 2026-11-03(E.2) |
+| 6 | **epoch 分层**:平台侧 = R3/R4(已定稿)· 协议侧 = `N-3` **pending** | 载体 SHALL NOT 断言协议侧状态机 | `ADR-CEP-03` SU 2026-11-03(E.2) |
 
 ### 1.3 已被判为**不可锁**的 7 项(锚点摘要 §3)
 
@@ -39,6 +41,8 @@
 
 > ⚠️ `N-3` 与本 ADR 的 `R4` **不矛盾**:`R4` 是**平台侧**的 epoch 纪律(未 commit ⇒ 放行),
 > 公开来源缺的是**协议侧**的 epoch 状态机细节 ⇒ 前者可锁,后者须 pending。
+> ⇒ **已裁**(Entry #176):平台侧 R3/R4 **锁**(`self-derived` + 非 pending),协议侧 `N-3` **留 pending**;
+> **reduce 族**同理:**平台侧复用既有 `ReduceOp` 恰 6 值**(锁)· **SHARP 逐算子支持 = `N-1` pending**。
 
 ---
 
@@ -64,7 +68,7 @@
 
 | # | 判据 | 编译期锁 | 运行期兜底(必需) | 反向 fixture(必红 + 归因 id) |
 |---|---|---|---|---|
-| **NSS-01** | 分类点唯一 | 源端侧类型**不含**区域表字段(编译期不可构造) | 静态扫描:源端头文件不出现 `collective_region_table` | `NSS-01-SRC-OPCODE` |
+| **NSS-01** | 分类点唯一 | 源端侧类型**不含**区域表字段(编译期不可构造);**载体自足**(只 include 标准库,照 `cxl_dcoh_state_spec.hh` 先例)⇒ 委托**不**构成源端可见性 | 静态扫描:源端头文件不出现 `collective_region_table` —— ⚠️ **该扫描归实现层**(coherence 侧扫描集合扩展 + 标识清单补项,**复用既有 id**,per Entry #176 ①) | `NSS-01-SRC-OPCODE` |
 | **NSS-02** | epoch 双向 | `classify_at_fabric_ingress` 的返回值集合 == {`DiverT`, `Pass`} | 两向各一例 | `NSS-02-EPOCH-SEMANTICS` |
 | **NSS-03** | 注册三步原子 | `register_region` 返回值集合 == {`Ok`, `DrainFailed`} | drain 失败一例 | `NSS-03-DRAIN-FAIL` |
 | **NSS-04** | 注销回归 | `destroy` 后 `lookup_region` 返回空 | 注销一例 | `NSS-04-DESTROY-LEAK` |
@@ -135,5 +139,5 @@
 | 3 | `include/tlm/cep/collective_plane_contract.hh` | ❌ **零改动** | CP-03 的声明门已在 `2ea09607` 落地 |
 | 4 | `include/tlm/cep/protocol_instance.schema.json` | ❌ **零改动** | `nvlink_4` 的 13 键由**实现层**登记(本 change 不碰实例声明) |
 
-⇒ **预期 0 件** ⇒ Phase 0 须**实测确认**(新增载体 `nvlink_sharp_state_spec.hh` 不在 M1 冻结集内)
+⇒ **预期 0 件** ⇒ Phase 0 须**实测确认**(新增载体 `nvlink_sharp_state_spec.hh` 不在 M1 冻结集内)。⚠️ **裁决 ① 的附带结论**(Entry #176):因 state spec 载体**自足** ⇒ collective 侧扫描集合**无需扩展** ⇒ **契约面零改动** ⇒ 冻结面仍为 **0 件**
 ⇒ 若实测出 1 件 ⇒ 走**两步授权**(台账 Entry → `--update --authorized-by` → commit → `--update` → commit)。

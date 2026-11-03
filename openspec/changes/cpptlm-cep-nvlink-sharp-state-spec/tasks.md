@@ -42,8 +42,11 @@
 - [ ] 1.4 **ordering A/B/C/D**:四类**可判定**谓词(非散文)
 - [ ] 1.5 **VC 预留状态**:Decision D 的 `unavailable` 四字段(**不**含任何具体 VC 编号)
 - [ ] 1.6 **能力域**:`IntraNode` 唯一取值(依据 `A-1` / `A-5`)
-- [ ] 1.7 ⚠️ **2 项待裁决定项的落点**:① 若 `NvlinkAdapter` 新建头文件 ⇒ 载体**不含** adapter 声明面(留给实现层);
-      ⑤ epoch / reduce 族的**平台侧**纪律可锁,**协议侧**细节 ⇒ `pending`(入 `N-3`)
+- [x] 1.7 ✅ **2 项待裁决定项已裁**(2026-11-03,Entry #176 + `ADR-CEP-03` SU 2026-11-03):
+      ① `NvlinkAdapter` = **独立头** `nvlink_adapter.hh` + **委托** state spec(先例 `cxl_dcoh_adapter`),
+      **前提**:载体**自足**(只 include 标准库)且**不暴露** `collective_region_table` 类型 ⇒ 区域表运行时状态归实现层;
+      ⑤ **reduce 族 = 复用既有 `ReduceOp` 恰 6 值**(不新增枚举)· **epoch 平台侧 = R3/R4**(锁)/ 协议侧 = `N-3` **pending** ·
+      **平台原语集维持恰 4** ⇒ 载体 SHALL **NOT** 另立算子族、SHALL **NOT** 断言逐算子支持
 
 ## Phase 2 — 逐格 basis + 编译期锁
 

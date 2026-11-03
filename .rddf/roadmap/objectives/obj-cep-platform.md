@@ -10940,6 +10940,64 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 ---
 
+### Entry #176 — 2026-11-03 [decision](**architect** —— 队列 #13 的载体形态裁决 **① `NvlinkAdapter` 载体归属** + **⑤ epoch / reduce 族**)
+
+**主题**:improvement 的 5 项载体形态决定项中,剩 **①** 与 **⑤** 两项未裁 ⇒ 规约层 Phase 1 无法开工
+⇒ 用户裁决 2026-11-03「切 architect 决定 ① / ⑤」。
+**授权范围**:`docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md`(**M1 冻结面 1 件**)+ 本台账 + improvement + 规约层 change 的 `design.md` / `tasks.md`。
+
+**① 裁决 ①:`NvlinkAdapter` 的载体归属**
+
+| 项 | 裁决 |
+|---|---|
+| **形态** | **独立头** `nvlink_adapter.hh` —— 与既有 **6** 个 adapter 一致(`chi_rnf` / `mesif` / `moesi_gpu` / `tilelink_c` / `cxl_cache` / `cxl_dcoh` 均**一协议一头**) |
+| **委托** | **委托** `nvlink_sharp_state_spec.hh` —— **有先例**:`cxl_dcoh_adapter.hh` 确实 include `cxl_dcoh_state_spec.hh` |
+| **⚠️ 委托的**前提**(**R1 / S4 的可判定形式**)** | state spec 载体 SHALL **自足**(只 include **标准库**,照 `cxl_dcoh_state_spec.hh` 先例)且 SHALL **NOT** 定义 / 暴露 `collective_region_table` 类型 ⇒ 区域表的**运行时状态**归**实现层**(collective 侧)⇒ 载体只保留**纯类型 + 常量 + 纯函数**(输入是「是否命中」/「epoch 是否有效」这类**已判定的事实**,**不接触表本身**)⇒ **adapter 委托载体 ≠ 源端获得区域表可见性** |
+| **推论(契约面零改动)** | 因载体自足 ⇒ `CP-01` 的 collective 侧扫描集合(`collective_plane.hh` + `collective_plane_contract.hh`)**无需扩展** ⇒ 规约层 **零**契约面改动(与 design §6 的「冻结面 0 件」一致) |
+| **⚠️ 仍缺的判据** | 「源端不获得区域表可见性」**目前无判据**:既有 `CP-05`(完成域判别)机制**已在扫 coherence 侧**的 group-scoped 标识(`group_id` / `member_set` / `CollectiveReq` / `CollectiveEvt` / `group_create` / `group_register_region` / `collective_barrier`),但① **只扫 `ordering_point_checker.hh` 一个文件** ② 标识清单**无** `collective_region_table` ⇒ ⇒ **契约面扩展**(扩扫描集合 + 补标识)归**实现层**;**复用既有 id `CP-05`**,**不新造平行 id 体系** |
+
+**② 裁决 ⑤:epoch / reduce 族**
+
+| 项 | 裁决 |
+|---|---|
+| **reduce 算子族** | **复用既有 `ReduceOp`**(`include/tlm/cep/collective_plane.hh:71` —— `Sum` / `Min` / `Max` / `BitAnd` / `BitOr` / `BitXor`,恰 **6** 值)⇒ **不新增枚举、不改** `collective_plane.hh` ⇒ 载体**不另立**算子族 |
+| **SHARP ↔ `ReduceOp` 逐算子支持矩阵** | **pending**(锚点 `N-1`:公开来源只给 "summing / averaging" 之类**举例**,非闭集)⇒ 载体 SHALL **NOT** 断言任何具体算子可用 |
+| **epoch · 平台侧纪律** | = `ADR-CEP-03 §3.1` **R3 / R4**(注册三步原子 · 未 commit 前**正常服务** · 注销失效化)—— **已定稿** ⇒ 载体该部分记 `kind = self-derived` + `pending = false` |
+| **epoch · 协议侧细节** | **pending**(锚点 `N-3`:epoch 状态机与提交时点无公开来源)⇒ 载体 SHALL **NOT** 断言协议侧状态机 |
+| **epoch 的载体位置** | 与 group 表同处 `nvlink_sharp_state_spec.hh`(纯类型 + 生命周期谓词)⇒ **不新增载体** |
+| **⚠️ 平台原语集** | **不扩张** —— `ADR-CEP-03 §2` 的原语最小集**恰 4**(`REDUCE` / `BROADCAST` / `MULTICAST` / `BARRIER`)⇒ 锚点 `A-2` 提到的 **ReduceScatter / AllGather 不在本平台原语集内** ⇒ 记 `pending` + **不**新增 `CollectiveOp` 值 |
+
+**③ 未采路径(逐条比较)**
+
+| 决策点 | 未采 | 理由 |
+|---|---|---|
+| ① | adapter **不**独立头(并入 state spec) | 与既有 6 个 adapter 的**一协议一头**惯例冲突;且会混淆「源端」与「collective 侧」边界 |
+| ① | state spec **不**自足(include `collective_plane.hh` 取类型) | ⇒ 载体→collective 边的 include 链 ⇒ **CP-01 扫描集合必须扩展** ⇒ 契约面改动;自足可**零改动** |
+| ① | 载体**含**区域表类型 | ⇒ adapter 委托即**获得区域表可见性** ⇒ 违反 `ADR-CEP-03 §3.1` R1 与 §4 **S4**(源端**不得**持有区域表可见性) |
+| ⑤ | 另立 SHARP 专用 reduce 枚举 | 与既有 `ReduceOp` **重复** ⇒ 平台出现两套算子集 ⇒ `ADR-CEP-04 §13`「克隆 + 纸面 caps」禁令同型 |
+| ⑤ | 扩 `CollectiveOp` 加 ReduceScatter / AllGather | 破 `ADR-CEP-03 §2` 的「恰 4」⇒ 且公开来源**不**支撑其语义 ⇒ 属杜撰 |
+
+**④ 载体归属(规约层 vs 实现层)**
+
+| 载体 / 义务 | 归属 |
+|---|---|
+| `nvlink_sharp_state_spec.hh` 的**纯类型 + 常量 + 纯函数** | **规约层**(本 change 的 Phase 1) |
+| `nvlink_adapter.hh`(独立头 + 委托载体) | **实现层**(队列 #13 第 1 个 change) |
+| 区域表的**运行时状态** | **实现层**(collective 侧) |
+| `CP-05` 扫描集合扩展 + 标识清单补 `collective_region_table` | **实现层**(**复用既有 id**,不新造) |
+| `nvlink_4` 实例声明(13 键) | **实现层** |
+
+**⑤ 重访触发条件**:① `ADR-CEP-12` 的实例 schema 若变更 ⇒ 载体常量面重核;② `ADR-CEP-03 §2` 原语集若变更 ⇒ ⑤ 的 reduce 族裁决重核;③ 若平台引入**跨 fabric** collective ⇒ 能力域裁决(`NSS-08`)重核。
+
+**⑥ 关联**: Entry #175(规约层 change 建档)· #174(critic 第 2 轮)· #173(Task 0 普查)· #172(improvement 订正)· #171(Decision D)· #169 / #170(三则 ADR 定稿)
+· `docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md`(**M1 冻结面**)
+· `openspec/changes/cpptlm-cep-nvlink-sharp-state-spec/design.md` + `tasks.md`(裁决的落点)
+· `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(决定项表 ① / ⑤ 行)
+· `include/tlm/cep/collective_plane.hh`(既有 `ReduceOp` 6 值 —— ⑤ 的复用对象)· `include/tlm/cep/cxl_dcoh_adapter.hh` + `cxl_dcoh_state_spec.hh`(① 的形态先例)
+· `include/tlm/cep/collective_plane_contract.hh`(既有 `CP-05` —— 判据归属对象)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

@@ -315,3 +315,67 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 ⇒ 「一决策一文档」的**存量越界**(本 ADR 含 3 个决策)按契约「**存量文档不追溯**」⇒ **记 backlog**(per 台账 Entry #169 ⑤)。
 
 **④ 行数口径**:**正文行数** = §1 ~ §9(**不含**修订记录段与 Status Update 追加段)⇒ 本 ADR 正文 = **249 行**(2026-11-03 定稿后实测;口径 = §1 ~ §9 + Verification 章,**不含**修订记录 / Status Update 追加段 / **附录**)≤ 250。
+
+---
+
+## Status Update 2026-11-03 —— 载体形态裁决 **① / ⑤**(队列 #13 规约层的前置)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文一律不改**。
+> 本段**补充** §4 判据摘要的 **S5 / S6** 两条,并登记**载体归属**;自本段起以本段文本为准。
+> **台账**: `obj-cep-platform §11` **Entry #176**(`decision`,architect,2026-11-03)。
+> **背景**: 队列 #13 的 improvement 列了 **5 项**载体形态决定项;②(`BroadcastNull`)、③、④ 已由既有裁决覆盖,
+> **① 与 ⑤** 是规约层 Phase 1 的**唯一**未决前置 ⇒ 本段一次性裁掉。
+
+### E.1 裁决 ① —— `NvlinkAdapter` 的载体归属
+
+| 项 | 裁决 |
+|---|---|
+| **形态** | **独立头** `nvlink_adapter.hh` —— 与既有 **6** 个 adapter 的**一协议一头**惯例一致 |
+| **委托** | **委托** `nvlink_sharp_state_spec.hh` —— **有先例**(`cxl_dcoh_adapter.hh` include `cxl_dcoh_state_spec.hh`) |
+| **⚠️ 委托的前提** | state spec 载体 SHALL **自足**(只 include **标准库**)且 SHALL **NOT** 定义 / 暴露 `collective_region_table` 类型 ⇒ **区域表的运行时状态归实现层**(collective 侧)⇒ 载体只保留**纯类型 + 常量 + 纯函数**(输入是「是否命中」/「epoch 是否有效」这类**已判定的事实**)⇒ **委托 ≠ 源端获得区域表可见性** |
+| **推论** | 因载体自足 ⇒ collective 侧扫描集合**无需扩展** ⇒ **契约面零改动** |
+| **⚠️ 仍缺的判据** | 「源端不获得区域表可见性」**目前无判据**:现有机制只扫**一个** coherence 侧文件,且标识清单**无** `collective_region_table` ⇒ 契约面扩展(扩扫描集合 + 补标识)**归实现层**,**复用既有 id**,**不新造平行 id 体系** |
+
+### E.2 裁决 ⑤ —— epoch / reduce 族
+
+| 项 | 裁决 |
+|---|---|
+| **reduce 算子族** | **复用既有 `ReduceOp`**(恰 **6** 值: `Sum` / `Min` / `Max` / `BitAnd` / `BitOr` / `BitXor`)⇒ **不新增枚举**、**不改**既有头 ⇒ 载体**不另立**算子族 |
+| **SHARP ↔ 算子的逐项支持** | **pending**(公开来源只给**举例**,非闭集)⇒ 载体 SHALL **NOT** 断言任何具体算子可用 |
+| **epoch · 平台侧** | = 本 ADR §3.1 **R3 / R4**(**已定稿**)⇒ 载体该部分记 `self-derived` + 非 pending |
+| **epoch · 协议侧细节** | **pending**(epoch 状态机与提交时点无公开来源)⇒ 载体 SHALL **NOT** 断言协议侧状态机 |
+| **epoch 载体位置** | 与 group 表同处 state spec 载体 ⇒ **不新增载体** |
+| **⚠️ 原语集** | **不扩张** —— §2 决策 2 的原语最小集**恰 4** ⇒ 公开来源提到的 **ReduceScatter / AllGather 不在本平台原语集内** ⇒ 记 `pending`,**不**新增原语值 |
+
+### E.3 补充的判据摘要(自本段起,与 §4 的 S1~S4 并列)
+
+| # | 判据 | 可判定行为 |
+|---|---|---|
+| **S5** | **R1 / S4 的可判定形式:源端不得获得区域表可见性** | 载体 SHALL **NOT** 定义 / 暴露 `collective_region_table` 类型;载体 SHALL **自足**(只 include 标准库)⇒ adapter **委托**载体**不**构成源端可见性;⚠️ 该条的实现侧判据(coherence 侧扫描集合 + 标识清单)**归实现层**并**复用既有 id** |
+| **S6** | **⑤ 的锁定:reduce 族复用既有枚举 + epoch 分层** | 载体 SHALL **引用**既有 `ReduceOp`(恰 6 值)且 **SHALL NOT** 另立算子枚举;SHARP 逐算子支持 SHALL 为 **pending**;epoch 平台侧 SHALL 等于 R3 / R4,协议侧 SHALL 为 **pending**;平台原语集 SHALL **维持恰 4** |
+
+### E.4 载体归属
+
+| 载体 / 义务 | 归属 |
+|---|---|
+| state spec 载体的**纯类型 + 常量 + 纯函数** | **规约层**(队列 #13 第 0 个 change 的 Phase 1) |
+| `nvlink_adapter.hh`(独立头 + 委托载体) | **实现层**(队列 #13 第 1 个 change) |
+| 区域表的**运行时状态** | **实现层**(collective 侧) |
+| coherence 侧扫描集合扩展 + 标识清单补项 | **实现层**(**复用既有 id**) |
+| `nvlink_4` 实例声明 | **实现层** |
+
+### E.5 未采取的路径
+
+| 决策点 | 未采 | 理由 |
+|---|---|---|
+| ① | adapter **不**独立头(并入 state spec) | 与**一协议一头**惯例冲突;混淆「源端」与「collective 侧」边界 |
+| ① | state spec **不**自足(include collective 侧取类型) | ⇒ collective 侧扫描集合必须扩展 ⇒ 契约面改动;自足可**零改动** |
+| ① | 载体**含**区域表类型 | ⇒ 委托即**获得区域表可见性** ⇒ 违反 R1 与 S4 |
+| ⑤ | 另立 SHARP 专用 reduce 枚举 | 与既有 `ReduceOp` **重复** ⇒ 平台两套算子集 ⇒ 与「克隆 + 纸面 caps」禁令同型 |
+| ⑤ | 扩原语集加 ReduceScatter / AllGather | 破 §2 决策 2 的「恰 4」;且公开来源**不**支撑其语义 ⇒ 杜撰 |
+
+### E.6 重访触发条件(命中任一 ⇒ **必须**重开本裁决)
+
+1. 实例声明 schema 变更 ⇒ 载体常量面重核;
+2. §2 决策 2 的原语集变更 ⇒ E.2 的 reduce 族裁决重核;
+3. 平台引入**跨 fabric** collective ⇒ 能力域裁决重核。
