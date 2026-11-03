@@ -152,9 +152,14 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 | **S1** | **唯一分类点在 fabric ingress** | 同一地址在 `collective_region_table` 命中 **且** `group_epoch_valid` ⇒ **divert** 到 Collective Plane;否则 ⇒ 走 coherence `request` 流;**命中但 epoch 未 commit** ⇒ **放行**(per **R4**「正常服务」)—— ⚠️ **不得**写成「未 commit 前拒绝」(与 R4 矛盾) |
 | **S2** | **注册 = 登记 + drain + 建 epoch**(三步**原子**) | `group_register_region` 成功 ⇒ 区域**已在**表内 **且** drain **已完成** **且** `epoch_valid = true`;drain 失败 ⇒ **不建 epoch** 且区域**不**在表内(per §3.2 不变量) |
 | **S3** | **注销 = 失效化 + 回归 coherence 域** | `group_destroy` 触发 stale copy 失效化 ⇒ 区域**退出**表 ⇒ 后续 coherence 请求**正常服务**(per **R4**) |
+| **S4** | **R1:opcode 永不作分类器** | 源端插件对**已注册**与**未注册**地址发**同一** opcode(不因「这地址是 SHARP 区」而改指令)⇒ **分类只发生在 fabric ingress**;⚠️ 源端**不得**持有 `collective_region_table` 的可见性 |
 
 **实现指针**:可执行形态落 `include/tlm/cep/nvlink_sharp_state_spec.hh` + 队列 #13 规约层的 `design.md`
 ⇒ **本 ADR 不复制该载体**(避免双真源);规约层的**逐格 `basis`** 是其唯一人工审计面。
+
+**⚠️ 未落地时的回退口径(critic S5)**:队列 #13 **未落地** ⇒ **禁止**声明 `nvlink_4` 实例 / SHARP capability
+⇒ **登记态 ≠ 能力**(声明面零兑现)⇒ 任何 `nvlink_4` 实例声明若先于本节载体出现 ⇒ 视为**过度声明**
+⇒ 判据 = 队列 #13 的实例声明判据(`CDX-06`)与本节载体**同时**存在才成立。
 
 ---
 
@@ -209,30 +214,25 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 
 | # | 后果 |
 |---|---|
-| 1 | R1~R5 把「**opcode 不是分类器**」「**唯一分类点在 fabric ingress**」钉成**机械判据** ⇒ 避免「源端插件知道 SHARP 存在」这一**最易写错**的实现形态 |
-| 2 | registered region guardrail + non-cacheable 降级 ⇒ 未注册区域的操作**报错不静默** ⇒ 不会有「悄悄算错」的 reduce |
+| 1 | R1~R5 把「**opcode 不是分类器**」「**唯一分类点在 fabric ingress**」钉成**机械判据** ⇒ 避免「源端插件知道 SHARP 存在」这一**最易写错**的实现形态;registered region guardrail + non-cacheable 降级 ⇒ 未注册区域的操作**报错不静默** ⇒ 不会有「悄悄算错」的 reduce |
 | 3 | 跨平面 ordering **A~D** ⇒ 混合流(coherent atomic ↔ reduce)的**可见性次序有定义**;§4 降级为「判据摘要 + 实现指针」⇒ **ADR 不再持有伪码** ⇒ 规约层是唯一可执行真源(无双真源) |
 
 ### 8.2 负面 / 代价
 
 | # | 代价 |
 |---|---|
-| 1 | **三平面耦合**:collective plane 的正确性依赖 coherence plane 的 drain 能力 ⇒ **跨平面**测试成本显著高于单平面 |
-| 2 | R3 drain **代价高**(逐 cache line invalidate / flush)⇒ 仿真中的 drain 语义与真实硬件**不等价** ⇒ **性能结论不可外推**(本 ADR 只承诺功能正确性) |
-| 4 | §3 的契约(R1~R5 + A~D + guardrail)横跨**两个平面** ⇒ 任一平面演进都要**复核**本 ADR;`BroadcastNull` 作为退化基线 ⇒ 「NVLink 实例**无目录**」这一选择**必须在实例声明里显式化**(否则与 `ADR-CEP-04 §2` 的 caps 表**冲突**) |
+| 1 | **三平面耦合**:collective plane 的正确性依赖 coherence plane 的 drain 能力 ⇒ **跨平面**测试成本显著高于单平面;R3 drain **代价高**(逐 cache line invalidate / flush)⇒ 仿真中的 drain 语义与真实硬件**不等价** ⇒ **性能结论不可外推**(本 ADR 只承诺功能正确性) |
+| 2 | §3 的契约(R1~R5 + A~D + guardrail)横跨**两个平面** ⇒ 任一平面演进都要**复核**本 ADR;`BroadcastNull` 作为退化基线 ⇒ 「NVLink 实例**无目录**」这一选择**必须在实例声明里显式化**(否则与 `ADR-CEP-04 §2` 的 caps 表**冲突**) |
 
 ### 8.3 风险
 
 1. **epoch 语义易写反** —— R4 的「epoch 未 commit 前 = **正常服务**」「commit 后 = divert」必须**逐字**保留(写成「未 commit 前**拒绝**」即与 §3.3 ordering A 冲突;⚠️ **已发生一次**,per 台账 Entry #169 ②-⑨)⇒ 缓解 = §9 **V6** 双向判据;
-2. **VC 编号臆造** —— 多 VC 仲裁属 `ADR-CEP-09`(未起草)⇒ 队列 #13 只能用**预留**口径(§9 **V6** 只校验「预留与既有 `vc_binding` **不冲突**」;**真实**仲裁显式**不**在 #13 范围内);
+   **VC 编号臆造** —— 多 VC 仲裁属 `ADR-CEP-09`(⚠️ **2026-11-03 订正**:原写「(未起草)」**失实** —— 已起草(v0.1,2026-10-21),**仲裁策略属其决策 4**)⇒ 队列 #13 只能用**预留**口径(VC 预留判据在 **`ADR-CEP-01 §7 V6-a` / `V6-b`** —— ⚠️ **V6-a 是「现状恒真登记」**,**真正**的交付门在 **V6-b**);⚠️ 另见台账 **Entry #170 ⑤-补 ⑩**:两个网络的 `vc_id` 0-3 **全被占满** ⇒ **当前无解** ⇒ 须**先裁决 VC 空间方案**(见队列 #13 的 architect 裁决项);
 3. **纸面契约回流** —— §4 的指针若被后续 change 忽略 ⇒ 回到「有契约无行为面」⇒ 缓解 = §9 全部判据**只**落在**可执行载体**上。
 
 ---
 
 ## 9. Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
-
-> ⚠️ **纪律**(per 队列 #12 的 4 铁律):① **纯负向断言须配正控** ② 每条判据须有**可执行反向 fixture 且因正确原因红**(须写明**载体**与**归因 id**)③ **编译期锁不得只以「编译红」充当 ctest 判据**。
-> ⚠️ **载体归属**:下列判据**只**落在**可执行载体**(队列 #5 / #13 的实现)上,**不**以本 ADR 正文为判据对象。
 
 | # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
 |---|---|---|---|
@@ -242,13 +242,15 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 | **V4** | R3 drain 失败 ⇒ 注册失败且**不建 epoch** | 运行期 | **正控**:drain 成功 ⇒ 建 epoch;毒化:失败仍建 epoch ⇒ 必红(`CP-DRAIN-FAIL`) |
 | **V5** | R5 divert 计数器 + **fail-stop** 断言(epoch commit 后仍有 coherence atomic 命中已注册区域 = error) | 运行期 | **正控**:正常路径计数器**递增**;毒化:该情形**不**报错 ⇒ 必红(`CP-DIVERT-STOP`) |
 | **V6** | **epoch 语义双向**:命中表 **且** epoch **未** commit ⇒ **放行**;epoch **已** commit ⇒ **divert** | 运行期 | **正控**:两条路径各一例;毒化:「未 commit 前拒绝」⇒ 必红(`CP-EPOCH-SEMANTICS`)—— ⚠️ **本条正是 R4 的回归锁** |
-| **V7** | Collective Plane → Directory 的调用边**恒为零**(与 `ADR-CEP-01` V1 同款) | include-graph 闸 | 注入一条调用边 ⇒ 必红(`CP-DIR-EDGE`) |
+| **V7** | Collective Plane → Directory 的调用边**恒为零** —— ⚠️ **判据本体在 `ADR-CEP-01 §7 V1`**(去重)⇒ 本行**不重复**实现 | 见 `ADR-CEP-01 §7 V1` | 归因 id **唯一** = `CP-01` |
+| **V8** | **R1:opcode 永不作分类器** —— 源端对已注册 / 未注册地址发**同一** opcode(源端**不得**持有区域表可见性) | 队列 #13 规约层的 ProtocolEngine NVLink 适配器契约(**载体尚未存在** ⇒ 该判据在 #13 落地前**不可执行**) | 毒化:源端按「是否 SHARP 区」改 opcode / 查区域表 ⇒ 必红(`CP-OPCODE-CLASSIFIER`);⚠️ 归因 id **待 #13 建立** |
 
 ---
 
 ## Status Update 2026-10-26 —— §5 Bundle 路径的**偏离登记**(队列 #5 `cpptlm-cep-collective-plane-base`)
 
 > **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文一律不改**,仅登记一项**偏离**。
+> ⚠️ **2026-11-03 订正**(per 台账 Entry #169 / #170):本段内**括注的 change 名 `cpptlm-cep-nvlink-sharp-adapter` 已作废** ⇒ 以**台账实名** `cpptlm-cep-nvlink-sharp` 为准。
 > **偏离项**: **§5**「新增 `CollectiveReqBundle` / `CollectiveEvtBundle`,**沿用** `bundles::` 命名空间 + `coherence_bundles_tlm.hh` 路径」。
 > **偏离理由**: §5 假设的 `include/bundles/coherence_bundles_tlm.hh` **在本仓不存在** —— 它是 `06-bis §5` 标注的「P2 实施」产物,而 06-bis 的 P2 **尚未实施**。三条候选路径的取舍:
 >   1. **提前新建 `coherence_bundles_tlm.hh`** ⇒ 抢 06-bis P2 的文件,两个 change 改同一文件 ⇒ 冲突(与 `ADR-CEP-07A` 的 artifact disposition 冲突);
@@ -265,6 +267,31 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 ## 10. v0.2 修订记录
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+---
+
+## 附录 · Verification 判据的**载体归属**与**归因 id 登记**(2026-11-03,per 台账 Entry #170)
+
+**⚠️ 判据 id 体系(须与既有机器闸一致)** —— 本仓既有归因 id = **`CP-01`(零调用边)· `CP-02`(canonical 10 流零 diff)· `CP-03`(collective VC 预留)· `CP-04`(区域互斥)· `CP-05`(完成域判别)· `CP-06`(抓点可测性登记)**(见 `include/tlm/cep/collective_plane_contract.hh`)⇒ 本章判据**一律复用该体系**;**尚未纳入既有体系**者 ⇒ 归因 id **待队列 #13 建立**(登记于 #13 的 tasks)⇒ **禁**在本仓新造平行 id 体系。
+
+**载体归属总表(S3 —— 每条判据落在**哪个队列的哪个载体**上)**
+
+| # | 判据 | 载体归属 | 载体状态 |
+|---|---|---|---|
+| V1 | `CollectivePlaneIf` 恰 7 个虚方法 | 结构断言 · 队列 #5 已交付(`include/tlm/cep/collective_plane.hh`) | ✅ **已存在**(= **现状已满足 + 回归锁**) |
+| V2 | 原语最小集恰 4 | 结构断言(`CollectiveOp` 恰 4 值)· 队列 #5 已交付 | ✅ **已存在**;归因 id **待 #13 建立** |
+| V3 | 未注册区域报错不静默 | 运行期 · 队列 #5 的 `NullCollectivePlane` / `LocalCollectivePlane` **部分**覆盖 | ⚠️ **完整 guardrail 行为面**由队列 #13 交付(既有 id `CP-04`) |
+| V4 | R3 drain 失败不建 epoch | 运行期(R3 drain 流程) | ⚠️ **载体尚不存在**(属队列 #13 规约层)⇒ 在 #13 落地前**不可执行**;归因 id **待 #13 建立** |
+| V5 | R5 divert 计数 + fail-stop | 运行期 | ⚠️ 同上(队列 #13);归因 id **待 #13 建立** |
+| V6 | epoch 语义双向(R4 回归锁) | 运行期 | ⚠️ 同上(队列 #13);归因 id **待 #13 建立** |
+| V7 | 调用边恒为零 | **判据本体 = `ADR-CEP-01 §7 V1`**(去重) | ✅ **已存在**(队列 #5;既有 id `CP-01`) |
+| V8 | R1 opcode 永不作分类器 | 队列 #13 规约层的 ProtocolEngine NVLink 适配器契约 | ⚠️ **载体尚不存在** ⇒ 由队列 #13 交付;归因 id **待 #13 建立** |
+
+> ⚠️ **悬空判据禁令**(per Entry #66 对抓取点 2 / 7 的处置):**载体尚不存在**者 ⇒ 该判据在载体落地前**不可执行** ⇒ **禁**写成恒真 / 恒 SKIP 判据。
+
+> ⚠️ **纪律**(per 队列 #12 的 4 铁律):① **纯负向断言须配正控** ② 每条判据须有**可执行反向 fixture 且因正确原因红**(须写明**载体**与**归因 id**)③ **编译期锁不得只以「编译红」充当 ctest 判据**。
+> ⚠️ **载体归属**:下列判据**只**落在**可执行载体**(队列 #5 / #13 的实现)上,**不**以本 ADR 正文为判据对象。
+
 
 ---
 
@@ -286,4 +313,4 @@ non-cacheable 降级语义(CEP-13 · 首次定义):
 **③ ⚠️ 决策内容零改动** —— §2 三决策 / §3 R1~R5 + A~D / §3.2 CEP-13 / §3.4 guardrail **逐条不变**;本次只做**形式补齐 + 口径订正 + §4 降级**。
 ⇒ 「一决策一文档」的**存量越界**(本 ADR 含 3 个决策)按契约「**存量文档不追溯**」⇒ **记 backlog**(per 台账 Entry #169 ⑤)。
 
-**④ 行数口径**:**正文行数** = §1 ~ §9(**不含**修订记录段与 Status Update 追加段)⇒ 本 ADR 正文 = **250 行** ≤ 250。
+**④ 行数口径**:**正文行数** = §1 ~ §9(**不含**修订记录段与 Status Update 追加段)⇒ 本 ADR 正文 = **249 行**(2026-11-03 定稿后实测;口径 = §1 ~ §9 + Verification 章,**不含**修订记录 / Status Update 追加段 / **附录**)≤ 250。

@@ -91,7 +91,7 @@ NVLink SHARP(可聚合原语)和 UALink In-Network Compute(ReadReduce / WriteMul
 - Directory & Ordering Plane 与 Fabric Collective Plane **横向并列**,**彼此无调用边**
 - 两者都向下消费 Fabric & Transport Plane 的服务
 - CHI / CXL 配置下用 `{multicast_sync}` 裁剪实例 + `NullCollectivePlane` 可关闭
-- NVLink / UALink 配置下用全集(reduce / broadcast / multicast / allreduce / barrier)
+- NVLink / UALink 配置下用**全集**(= **能力族集合**:reduce / broadcast / multicast / allreduce / barrier)⇒ ⚠️ **原语最小集 = 4**(`REDUCE` / `BROADCAST` / `MULTICAST` / `BARRIER`;`AllReduce` = REDUCE + BROADCAST 的**复合**,**不**列为原语,per `ADR-CEP-03 §2` 决策 2)—— ⚠️ **2026-11-03 订正**(per 台账 Entry #170 ⑤-补 ⑪):原措辞把「allreduce」与「原语」混列,与同文档 §7 判据 + `ADR-CEP-03 §2` 决策 2 **打架** ⇒ 收敛为「全集 = 能力族」
 
 ### 决策 2:完成域判别规则(单规则推导所有同类争议)
 
@@ -135,7 +135,7 @@ group-scoped completion     → Fabric Collective Plane
 **高 impact / 必查**:
 1. **Collective Plane → Directory 的调用边必须为零**(图谱/grep 机器检查)。存在即层级纠缠。
 2. **组播投递单实现**:coherence snoop broadcast 与 collective multicast 共用 Fabric 层投递机制,Collective Plane 只拥有语义(reduction 函数、成员、到达计数)。发现两套组播路由 = 驳回。
-3. **死锁通道隔离**:collective barrier 等待期间不得占用 coherence 事务依赖的 fabric 资源。规则:集合流量走独立 VC(`include/bundles/noc_bundles_tlm.hh:38` `vc_id` 字段 0-3,已存在);路由器侧多 VC 仲裁**待 CEP-09 起草**(per `ADR-CEP-NUMBER-MAP §2 Decision 1` 预分配)。**v0.3 补充**:本条只处理"coherence ↔ collective"的**跨平面**通道隔离;"coherence 内部 VC 分配如何保死锁自由"是**平面内**的同类问题,由 `ADR-CEP-09` 承担 —— 依据:VC 分配的目的**不是 QoS 调优,而是保证死锁自由**(per 调研 F18 / 博士论文 §9.3.1 "for ensuring deadlock freedom")。注:`noc_bundles_tlm.hh:60-62` 定义 `flit_category` 3 类常量(REQUEST=0 / RESPONSE=1 / CREDIT=2),初版 §3.3 写"2 类"系 oracle B2-4 实证错误,**已修订为 3 类**。
+3. **死锁通道隔离**:collective barrier 等待期间不得占用 coherence 事务依赖的 fabric 资源。规则:集合流量走独立 VC(`include/bundles/noc_bundles_tlm.hh:38` `vc_id` 字段 0-3,已存在);路由器侧多 VC 仲裁属 **`ADR-CEP-09`**(⚠️ **2026-11-03 订正**:原写「待 CEP-09 起草」**失实** —— `ADR-CEP-09` 已于 2026-10-21 起草(v0.1);**仲裁策略属其决策 4**;per `ADR-CEP-NUMBER-MAP §2 Decision 1` 预分配)。**v0.3 补充**:本条只处理"coherence ↔ collective"的**跨平面**通道隔离;"coherence 内部 VC 分配如何保死锁自由"是**平面内**的同类问题,由 `ADR-CEP-09` 承担 —— 依据:VC 分配的目的**不是 QoS 调优,而是保证死锁自由**(per 调研 F18 / 博士论文 §9.3.1 "for ensuring deadlock freedom")。注:`noc_bundles_tlm.hh:60-62` 定义 `flit_category` 3 类常量(REQUEST=0 / RESPONSE=1 / CREDIT=2),初版 §3.3 写"2 类"系 oracle B2-4 实证错误,**已修订为 3 类**。
 
 **中**:
 4. **Coherence Interface canonical 10 条流清单零 diff**(机器 diff 检查,per `ADR-CEP-02` §2 首次定义清单)。
@@ -165,7 +165,7 @@ group-scoped completion     → Fabric Collective Plane
 | 完成域判别规则 | requester-scoped → Coherence / group-scoped → Collective | ✅ 已拍板 |
 | barrier 流重钉 | Ordering Point(零流数变更) | ✅ 已拍板 |
 | CHI 裁剪实例 | `{multicast_sync}` 能力集 | ✅ 已拍板 |
-| NVLink/UALink | 全集(reduce/broadcast/multicast/allreduce/barrier) | ✅ 已拍板 |
+| NVLink/UALink | 全集(能力族:reduce/broadcast/multicast/allreduce/barrier);**原语最小集 = 4**(`AllReduce` = 复合,不列为原语) | ✅ 已拍板(⚠️ 2026-11-03 措辞收敛,per Entry #170 ⑤-补 ⑪) |
 | NullCollectivePlane | 作为"启停干净"验收测试 | ✅ 已拍板 |
 | NVLink / UALink 的 SHARP 语义 | **不在本 ADR 定义**(本 ADR 只定**平面归属 + 完成域**)⇒ 具体契约见 `ADR-CEP-03 §3`(R1~R5 + A~D)与队列 #13 / #14 的**规约层** | ✅ 已拍板 |
 
@@ -203,18 +203,16 @@ group-scoped completion     → Fabric Collective Plane
 
 ## 7. Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
 
-> ⚠️ **纪律**(per 队列 #12 沉淀的 4 铁律):① **纯负向断言须配正控** ② 每条判据须有**可执行反向 fixture 且因正确原因红**(须写明**载体**与**归因 id**)③ **编译期锁不得只以「编译红」充当 ctest 判据** ⇒ `static_assert` 须另有一条**运行期**判据兜住。
-> ⚠️ **不收录**:§3.3 抓取点 **2 / 7**(Stage 1 不可测,per Entry #66)⇒ 禁写恒真 / 恒 SKIP 判据。
-
 | # | 判据 | 载体 | 反向 fixture(毒化 ⇒ 必红 + 归因 id) |
 |---|---|---|---|
 | **V1** | Collective Plane → Directory 的调用边**恒为零** | include-graph 闸(grep + 图谱) | 注入一条 collective → directory 边 ⇒ 闸必红(`CE-PLANE-DIR-EDGE`) |
-| **V2** | canonical **10 流清单零 diff**(`ADR-CEP-02 §2` ↔ `07 号 §3.1` ↔ schema `flow_support`) | 机器 diff | 改任一侧的流名 / 顺序 ⇒ diff 必红(`CEN-10-DIFF`) |
+| **V2** | canonical **10 流清单零 diff** —— ⚠️ **判据本体在 `ADR-CEP-02 §8 V1`**(去重)⇒ 本行**不重复**实现 | 见 `ADR-CEP-02 §8 V1` | 归因 id **唯一** = `CP-02`(与 `ADR-CEP-02 §8 V1` **同一套** harness) |
 | **V3** | barrier 分类 litmus **双向**成立(地址 key ⇒ Ordering;组 key ⇒ Collective) | 分类函数 + 判据 | ① **正控**:两类各一例通过 ② **反控**:毒化「两者同判」⇒ 必红(`BARRIER-CLASSIFY`) |
 | **V4** | CHI / CXL 配置下 collective 原语**零调用**(boot / shutdown 期间) | `NullCollectivePlane` + 调用计数 | 毒化:CHI 配置下发起一次 reduce ⇒ 必红(`NULL-PLANE-CALLED`) |
 | **V5** | partial failure 有**显式**建模(`CollectiveEvt::Fault` 存在 + **拒绝静默**) | 静态扫描 + 运行期 | 毒化:成员掉线被静默吞掉 ⇒ 必红(`COLLECTIVE-PARTIAL-FAIL`) |
-| **V6** | 集合流量 VC 预留与既有 `vc_binding` **不冲突** | 声明层检查 | 毒化:预留 VC 与实例 `vc_binding` 撞号 ⇒ 必红(`COLLECTIVE-VC-COLLISION`) |
-| **V7** | 原语最小集**恰 4**(`REDUCE` / `BROADCAST` / `MULTICAST` / `BARRIER`;`AllReduce` **不**列为原语) | 结构断言 | 加第 5 个原语 ⇒ 必红(`COLLECTIVE-PRIM-SET`) |
+| **V6-a** | ⚠️ **现状恒真登记**:`collective_vc_reservation` 为空 ⇒ `CP-03`(`collective_plane_contract.hh`)**恒 PASS** ⇒ 该 PASS **不构成**「已满足抓取点 3」的证据(⚠️ 实测 `compute_noc` / `ualink_fabric` 的 `vc_id` **0-3 全被 coherence 占满** ⇒ 无空闲 VC) | 声明层检查 · 既有 id `CP-03` | **无有效反向 fixture**(不填预留 ⇒ 恒 PASS;填预留 ⇒ 必撞号)⇒ ⚠️ **禁**当作鉴别力判据(per 铁律 ①) |
+| **V6-b** | **队列 #13 交付门**:预留表**非空** ⇒ 须给出**不撞号**的 `(network, vc_id)` 组合;若**不存在** ⇒ **#13 必须先裁决 VC 空间方案**(扩 VC 上限 / 新开 network / 走 ArchForge 侧 ADR)⇒ **不得**以空预留交差 | 队列 #13 的 `include/tlm/cep/collective_planes.json` 预留表 | 毒化:预留撞号 ⇒ 必红(`CP-03`);⚠️ 归因 id 沿用既有 `CP-03`,**不新造** |
+| **V7** | 原语最小集**恰 4** —— ⚠️ **判据本体在 `ADR-CEP-03 §9 V2`**(去重)⇒ 本行**不重复**实现 | 见 `ADR-CEP-03 §9 V2` | 归因 id **唯一** = `CP-PRIM-SET`(与 `ADR-CEP-03 §9 V2` **同一套** harness) |
 | **V8** | 平面**可关闭**且关闭后**无残留**(禁「以后再说」式关闭) | 绑定检查 + 关闭路径 | 毒化:关闭后仍有 collective 流量 ⇒ 必红(`PLANE-OFF-LEAK`) |
 
 ---
@@ -248,6 +246,32 @@ group-scoped completion     → Fabric Collective Plane
 
 ---
 
+## 附录 · Verification 判据的**载体归属**与**归因 id 登记**(2026-11-03,per 台账 Entry #170)
+
+**⚠️ 判据 id 体系(须与既有机器闸一致)** —— 本仓既有归因 id = **`CP-01`(零调用边)· `CP-02`(canonical 10 流零 diff)· `CP-03`(collective VC 预留)· `CP-04`(区域互斥)· `CP-05`(完成域判别)· `CP-06`(抓点可测性登记)**(见 `include/tlm/cep/collective_plane_contract.hh`)⇒ 本章判据**一律复用该体系**;**尚未纳入既有体系**者 ⇒ 归因 id **待队列 #13 建立**(登记于 #13 的 tasks)⇒ **禁**在本仓新造平行 id 体系。
+
+**载体归属总表(S3 —— 每条判据落在**哪个队列的哪个载体**上)**
+
+| # | 判据 | 载体归属 | 载体状态 |
+|---|---|---|---|
+| V1 | 调用边恒为零 | include-graph 闸 · 队列 #5 已交付(`include/tlm/cep/collective_plane.hh` / `collective_plane_contract.hh`) | ✅ **已存在**(既有 id `CP-01`) |
+| V2 | 10 流零 diff | **判据本体 = `ADR-CEP-02 §8 V1`**(去重) | ⚠️ 四方 diff **部分实现**(ADR 自解析 + collective 侧无泄漏 + schema 编译期锁)⇒ **07 号 §3.1 / ADR-CEP-05 侧 diff 未实现** ⇒ 由队列 #13 / #14 补齐(既有 id `CP-02`) |
+| V3 | barrier 分类 litmus 双向 | 分类函数(`fabric_ingress_classify`) | ⚠️ **载体尚不存在**(属 P3 / 队列 #13)⇒ 在 #13 落地前**不可执行**;归因 id **待 #13 建立** |
+| V4 | CHI / CXL 配置零调用 | `NullCollectivePlane` + 调用计数 · 队列 #5 已交付 | ✅ **已存在** |
+| V5 | partial failure 显式建模 | 静态扫描 + 运行期(`CollectiveEvt::Fault`)· 队列 #5 已交付 | ✅ **已存在**;归因 id **待 #13 建立** |
+| V6-a | VC 预留现状恒真登记 | 声明层检查 · 队列 #5 已交付(`include/tlm/cep/collective_planes.json`) | ✅ **已存在**(既有 id `CP-03`);⚠️ **恒真** ⇒ 见 V6-b |
+| V6-b | VC 预留交付门 | 队列 #13 的预留表 | ⚠️ **载体尚不存在** ⇒ 由队列 #13 交付;⚠️ 与台账 Entry #170 ⑤-补 ⑩ 联动(两个网络 VC 已占满 ⇒ 须先裁决 VC 空间方案) |
+| V7 | 原语恰 4 | **判据本体 = `ADR-CEP-03 §9 V2`**(去重) | ✅ **已存在**(队列 #5 的 `CollectiveOp` 恰 4 值) |
+| V8 | 关闭后无残留 | 绑定检查 + 关闭路径 · 队列 #5 已交付 | ✅ **已存在**;归因 id **待 #13 建立** |
+
+> ⚠️ **悬空判据禁令**(per Entry #66 对抓取点 2 / 7 的处置):**载体尚不存在**者 ⇒ 该判据在载体落地前**不可执行** ⇒ **禁**写成恒真 / 恒 SKIP 判据 ⇒ 一律标注为「**载体由队列 #N 交付**」。
+
+> ⚠️ **纪律**(per 队列 #12 沉淀的 4 铁律):① **纯负向断言须配正控** ② 每条判据须有**可执行反向 fixture 且因正确原因红**(须写明**载体**与**归因 id**)③ **编译期锁不得只以「编译红」充当 ctest 判据** ⇒ `static_assert` 须另有一条**运行期**判据兜住。
+> ⚠️ **不收录**:§3.3 抓取点 **2 / 7**(Stage 1 不可测,per Entry #66)⇒ 禁写恒真 / 恒 SKIP 判据。
+
+
+---
+
 ## 定稿说明(2026-11-03,per 台账 **Entry #169** —— 队列 #13 `cpptlm-cep-nvlink-sharp` 的**开工前置**)
 
 > **性质**:本段是**追加式**(per AGENTS.md「ADR 不可变 + Status Update」先例)—— §1 ~ §7 **正文内容**除下列**订正**外**一律不改**。
@@ -260,7 +284,7 @@ group-scoped completion     → Fabric Collective Plane
 | 2 | 补 **§6 后果 / 代价** | 正面 4 条 + 负面 4 条 + 风险 3 条(含**缓解**);⇒ 把「代价不在选项里」显式落盘 |
 | 3 | 补 **§7 Verification** | 8 条**前瞻**判据(可勾选)⇒ 每条写明**载体**与**反向 fixture 的归因 id**;⚠️ **不收录** §3.3 抓取点 **2 / 7**(Stage 1 不可测,per Entry #66) |
 | 4 | §5 决策汇总**补 1 行** | 「NVLink / UALink 的 SHARP 语义」**不在本 ADR 定义**(本 ADR 只定**平面归属 + 完成域**)⇒ 具体契约归 `ADR-CEP-03 §3` 与队列 #13 / #14 的**规约层** ⇒ 消除「本 ADR 到底管到哪」的歧义 |
-| 5 | 状态 ⇒ **已签发(v1.0)** | 元数据补 **关联 change**;**正文行数口径** = §1 ~ §7(**不含**修订记录与 Status Update 追加段)⇒ 本 ADR 正文 = **222 行** ≤ 250 |
+| 5 | 状态 ⇒ **已签发(v1.0)** | 元数据补 **关联 change**;**正文行数口径** = §1 ~ §7(**不含**修订记录与 Status Update 追加段)⇒ 本 ADR 正文 = **219 行**(2026-11-03 定稿后实测;口径 = §1 ~ §7 + Verification 章,**不含**修订记录 / Status Update 追加段 / **附录**) ≤ 250 |
 
 **② 关联 change**:`cpptlm-cep-collective-plane-base`(✅ 已归档 2026-10-26)· `cpptlm-cep-nvlink-sharp`(队列 #13 · 📋 Planned)· `cpptlm-cep-ualink-inc`(队列 #14 · 📋 Planned)
 

@@ -174,7 +174,7 @@ group-scoped completion     → Fabric Collective Plane
 | 4 | `snoop_resp` | node → center | requester-scoped | snoop 响应:hit + state + dirty + data + txn_id |
 | 5 | `writeback` | node → center | requester-scoped | 驱逐/写回:addr + data + dirty |
 | 6 | `forward_data` | node ↔ node(经中心调度)| requester-scoped | 数据转发:src_addr + dst_addr + data + perm |
-| 7 | `back_invalidate` | center → node | requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 BISnp 走这里,**device→host(S2M)**;其响应 BIRsp 为 M2S)|
+| 7 | `back_invalidate` | center → node | requester-scoped | 反向失效:addr + type(invalidate/clean)+ txn_id(CXL 3.0 DCOH 的 BISnp 走这里;⚠️ **方向反转例外** = `node → center`(device→host,S2M),其响应 BIRsp = M2S —— 方向反转例外说明见 `ADR-CEP-02` §2 表下)|
 | 8 | `address_resolve` | node ↔ center | requester-scoped | 地址归属解析:pa + node_id → home_node + coherent_flag |
 | 9 | `barrier` | center → node ↔ center(双向)| requester-scoped | 单请求者排空/可见性点;**不携带 group_id / participant_count / epoch_id** |
 | 10 | `snoop_completion_ack` | node → center | requester-scoped | snoop 完成后 ack;配对 `snoop_resp` 而非 `completion` |
@@ -1235,5 +1235,3 @@ experimental/<run_id>/
 · `ADR-CEP-04` 的 **第 3 则 Status Update(2026-11-02)**(聚合点二元裁决)
 · `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(§3.4 / §6 —— **本则依据**)
 · `include/tlm/cep/cxl_cache_adapter.hh`(`cxl_2_0` 专用载体的**零副本 + 单一委托**结构 —— ③ 的判据依据)
-
-
