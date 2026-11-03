@@ -353,6 +353,15 @@ add_test(NAME cep_cxl_dcoh_instance_decl COMMAND cpptlm_tests "[cep][cxl-dcoh][i
 add_test(NAME cep_cxl_dcoh_state_spec_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_cxl_dcoh_state_spec_reverse_verify.sh)
 
+# 队列 #13 `cpptlm-cep-nvlink-sharp-state-spec`(第 0 个 change = 规约层)的判据:
+#   ① 载体**自足**(只 include 标准库 · 无词表型枚举 · 无区域表类型)
+#   ② R1/R2 分类判据 + **R4 epoch 语义双向**(未 commit ⇒ 放行;本仓已错过一次的回归锁)
+#   ③ R3 注册三步原子 · R4 注销回归 · R5 fail-stop
+#   ④ ordering A/B/C/D 的**可判定**谓词 · VC 预留**单一状态** · 能力域**节点内**
+#   ⚠️ 本组只提供**正控**(Phase 1 的最小覆盖);**反向 fixture** 属 Phase 3(tasks 3.2)。
+add_test(NAME cep_nvlink_sharp_state_spec
+         COMMAND cpptlm_tests "[cep][nvlink-sharp][state-spec]" -r compact)
+
 # 队列 #11 `cpptlm-cep-tilelink-tree-manager`(第 1 个 change = 实现层)的判据:
 #   ① 载体契约(adapter 零副本 + `TreeManager` 的 `ESCALATE_UP`/`CHAIN` 真实使用
 #      + `snoop_join_core` 的 4 步语义);

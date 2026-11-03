@@ -42,6 +42,7 @@
 - [x] 1.4 **ordering A/B/C/D**:四类**可判定**谓词(非散文) ⇒ ✅ 已落:`OrderingRule{A,B,C,D}` + `ordering_a_allows_reduce` / `ordering_b_allows_atomic` / `ordering_c_orders_reduce` / `ordering_d_allows_reduce`;⚠️ **code 相等 ⇒ 顺序未定义** ⇒ 显式登记 `kReduceCodeTieUnspecified` |
 - [x] 1.5 **VC 预留单一状态**:载体**仅**表达 `Unavailable` **单一取值**(类型上**无** `vc_id`、**无** `reason` / `owner` / `revisit_trigger`)⇒ **四字段权威恒在** `collective_planes.json` + `CP-03` ⇒ ✅ 已落:`VcReservationState{Unavailable}`(枚举**仅 1 个取值** ⇒ `vc_id` 与四字段**不可表达**) |
 - [x] 1.6 **能力域**:`IntraNode` 唯一取值(依据 `A-1` / `A-5`) ⇒ ✅ 已落:`CollectiveScope{IntraNode}`(枚举**仅 1 个取值** ⇒ 跨 fabric 值**不可表达**) |
+- [x] 1.8 **Phase 1 的最小测试覆盖**(提前于 Phase 3 的判据收口,per 用户裁决 2026-11-03):`test/test_cep_nvlink_sharp_state_spec.cc` —— **8 cases / 57 assertions**;覆盖 = 载体**红线**(只 include 标准库 · 无词表型枚举 · 无区域表类型)· 分类判据 · **R4 回归锁** · R3/R4/R5 · ordering A/B/C/D · VC 单一状态 · 能力域节点内;⚠️ **只提供正控** + 编译期锁的**运行期见证**;⛔ **不含反向 fixture**(Phase 3 的 tasks 3.2);⚠️ **不新建归因 id**(per tasks 3.6 ②)
 - [x] 1.7 ✅ **2 项待裁决定项已裁**(2026-11-03,Entry #176 + `ADR-CEP-03` SU 2026-11-03):
       ① `NvlinkAdapter` = **独立头** `nvlink_adapter.hh` + **委托** state spec(先例 `cxl_dcoh_adapter`),
       **前提**:载体**自足**(只 include 标准库)且**不暴露** `collective_region_table` 类型 ⇒ 区域表运行时状态归实现层;
@@ -79,7 +80,7 @@
 ## Phase 4 — 验收 + 归档
 
 - [ ] 4.1 门禁 7 脚本全 rc=0 + `format.sh --check` rc=0
-- [ ] 4.2 `ctest` 全绿(含新增 `[cep][nvlink-sharp-spec]` 标签)
+- [ ] 4.2 `ctest` 全绿(新增 `[cep][nvlink-sharp][state-spec]` 标签;⚠️ 标签**沿用**队列 #11/#12 的`[cep][<queue>][<face>]` 三段式惯例,非本仓先例的 `[cep][nvlink-sharp-spec]`)
 - [ ] 4.3 `openspec validate cpptlm-cep-nvlink-sharp-state-spec --strict` rc=0
 - [ ] 4.4 ⚠️ **纸面契约复核**:确认实现层 change(`cpptlm-cep-nvlink-sharp`)已在建或已排期 ⇒ 否则本层**不得**归档
 - [ ] 4.5 KPI **1/3 → 0/3** 回填(7 处同 0.7)

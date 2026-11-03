@@ -11195,6 +11195,45 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 ---
 
+### Entry #181 — 2026-11-03 [plan](队列 #13 规约层 **Phase 1 最小测试覆盖** —— 载体红线 + 编译期锁的运行期见证)
+
+**主题**:用户裁决 2026-11-03「补 Phase 1 的最小测试用例」⇒ 载体 `nvlink_sharp_state_spec.hh`
+在合入前即有**运行期**覆盖(不等到 Phase 3)。**角色**:builder。
+
+**① 交付面**
+
+| 项 | 内容 |
+|---|---|
+| 测试 | `test/test_cep_nvlink_sharp_state_spec.cc`(新)—— **8 cases / 57 assertions** |
+| ctest | `cep_nvlink_sharp_state_spec` ⇒ 标签 `[cep][nvlink-sharp][state-spec]`(沿用队列 #11/#12 的三段式惯例) |
+| 覆盖 | ① 载体**红线**:只 include **标准库**(引号形式的项目内头即红)· 无 `ReduceOp`/`CollectiveOp`/`AccessMode` 词表枚举 · 无 `collective_region_table` 类型 ② **R1/R2** 分类判据(4 组组合)③ **R4 回归锁**(未 commit ⇒ 放行)④ R3 三步原子 · R4 注销回归 · R5 fail-stop ⑤ ordering A/B/C/D 各一组正反例 ⑥ VC 单一状态(**SFINAE** 见证 `vc_id` / 四字段**不可表达**)⑦ 能力域节点内(跨 fabric 取值**不可表达**) |
+
+**② ⚠️ 范围纪律(本文件**刻意不做**什么)**
+
+| 不做 | 理由 |
+|---|---|
+| **反向 fixture**(毒化 ⇒ 必红) | 属 **Phase 3**(tasks 3.2)⇒ 本文件**只提供正控**,避免与 Phase 3 的归因 id 登记冲突 |
+| **新建归因 id** | per tasks 3.6 ②(新增 id 单一登记在 `design §3` + `tasks 3.2`)⇒ 本文件的断言归入**载体自带**判据的**运行期等价物** |
+| **逐格 `basis` 核对** | 属 **Phase 2**(tasks 2.1 ~ 2.5) |
+
+**③ ⚠️ 本轮实测抓到的一处**期望写反**(已修,载体的语义无误)**
+
+`ordering_a_allows_reduce(false, false)` = **无 reduce 请求 ⇒ 平凡允许** ⇒ 期望为 `true`;
+初版测试误写为 `false` ⇒ 测试自红 ⇒ 已改为「无 reduce 请求 ⇒ 平凡允许(不构成排序约束)」
++ 「有 reduce 请求但 atomic 未 completion ⇒ 禁止」。
+⇒ 该次自红同时验证了**测试确实有鉴别力**(不是恒绿)。
+
+**④ 验收**
+
+`[cep][nvlink-sharp][state-spec]` **8 cases / 57 assertions** 全过 · `ctest` **142/142**(新增 1 个)·
+门禁 7 脚本全 rc=0 · `openspec validate --strict` rc=0 · `format.sh --check` rc=0
+
+**⑤ 关联**: Entry #180(Phase 1 载体)· #179 / #178(critic 两轮)· #177 / #176(裁决)· #175(change 建档)· #173(Task 0)
+· `test/test_cep_nvlink_sharp_state_spec.cc`(**本条的对象**)· `include/tlm/cep/nvlink_sharp_state_spec.hh`
+· `openspec/changes/cpptlm-cep-nvlink-sharp-state-spec/tasks.md`(1.8 / 4.2)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 
