@@ -19,7 +19,13 @@ created: 2026-11-03
 
 > **状态**: 🟡 待启动(2026-11-03)· **队列 #13**(`obj-cep-platform §4.0` · Stage 2 · **2029-Q4**)
 > · **两段式**(形态丙,per 用户裁决 2026-11-03):第 0 个 change = `cpptlm-cep-nvlink-sharp-state-spec`(**规约层**)+ 第 1 个 change = `cpptlm-cep-nvlink-sharp`(**实现层**)
-> · **开工前置**:`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` **定稿**(用户裁决 2026-11-03)⇒ 三则当前仍是「🟡 起草中(v0.6)」⇒ **前置尚未满足**
+> · **开工前置**:`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` **定稿**(用户裁决 2026-11-03)
+>   ⇒ ✅ **已满足**(三则 **2026-11-03 定稿签发 v1.0**,per 台账 Entry #169 / #170)
+>   ⚠️ **2026-11-03 订正**:原文写「三则当前仍是「🟡 起草中(v0.6)」⇒ **前置尚未满足**」⇒ 已被签发取代
+> · **VC 空间**:✅ **已裁**(2026-11-03,台账 Entry #171 —— **Decision D「显式声明门」**)
+>   ⇒ 本拓扑**无隔离 VC**(coherence 占满 `compute_noc` / `ualink_fabric` 的 0-3)⇒ **集合流量不得上 fabric**(仅本地模型)
+>   ⇒ `collective_planes.json` 须给 `vc_reservation_declaration` 四字段(`status`/`reason`/`owner`/`revisit_trigger`)
+>   ⚠️ **行为面待 builder**(判据 `CP-03` 的 `V6-a` / `V6-c`;见 `obj-cep-platform §10` 的登记)
 > · **载体归属**:形态丙 = **甲(第 7 个 coherence 实例 `nvlink_4`)+ 乙(collective plane 的 SHARP 扩展)合流**
 > · **`sharer_tracker.impl` = `BroadcastNull`**(用户裁决 2026-11-03)⇒ 本队列**补其行为实现**(traits 行已登记 · 行为类**从未落地**)⇒ 顺带闭合 07 号 §11 的「`BroadcastNull` 仅声明层 traits」缺口
 > · **KPI**: Stage 2 = **2 slot 串行**(规约层 → 实现层);当前实测 **0/3**
@@ -99,11 +105,19 @@ R1~R5(分类 / 互斥 / epoch / 可观测性)与 A~D(跨平面 ordering)是本�
 「in-network reduction 与 coherence 共存」的规则写下来的地方 —— 但它**只存在于 ADR 正文**,
 **没有任何可执行载体** ⇒ 与队列 #12 落地前的 `DcohSymmetric` 完全同型。
 
-### ④ 开工前置必须先满足(用户裁决 2026-11-03)
+### ④ 开工前置(用户裁决 2026-11-03)—— ✅ **已满足**
 
-`ADR-CEP-01` / `02` / `03` 当前状态均为「🟡 起草中(v0.6)」,而 `ADR-CEP-03` 决策 1 明写
-「**任何 SHARP / UALink 插件落地前必成**」3 条生效条件 ⇒ 契约本体未定稿就先写载体
-⇒ 会把**「起草中」的措辞**固化成**可执行判据** ⇒ 开工前置 = **三则 ADR 定稿**(前置**不含**在估时内)。
+`ADR-CEP-03` 决策 1 明写「**任何 SHARP / UALink 插件落地前必成**」3 条生效条件 ⇒ 契约本体未定稿就先写载体
+⇒ 会把**未定稿的措辞**固化成**可执行判据** ⇒ **开工前置 = 三则 ADR 定稿**(前置**不含**在估时内)。
+
+**✅ 2026-11-03 状态**:三则已**定稿签发 v1.0**(正文 `ADR-CEP-01` **219** / `ADR-CEP-02` **248** / `ADR-CEP-03` **249** 行),
+其中 `ADR-CEP-03` 决策 1 的 3 条生效条件**逐条标注为已满足**,且其 §4 由「状态机雏形伪码」**降级**为
+「判据摘要 **S1~S4** + 实现指针」⇒ 本队列规约层是**唯一可执行真源**(无双真源)。
+⚠️ 本节的历史措辞「三则当前仍是「🟡 起草中(v0.6)」」**已失效**,以本段为准。
+台账:Entry #169(定稿授权 + 9 处「签发即债」)· #170(critic B1/B2 + oracle 复核修复)。
+
+**✅ VC 空间(同日新增并已裁)**:见 `ADR-CEP-01` 的 SU 2026-11-03(**Decision D**)与台账 Entry #171。
+⇒ 本拓扑 `unavailable` ⇒ **集合流量不得上 fabric**;须落 `vc_reservation_declaration` 四字段。
 
 ### ⑤ 公开来源受限 ⇒ 载体语义**不得自推**
 
@@ -143,7 +157,7 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 | ② | `sharer_tracker.impl` | ✅ **`BroadcastNull`**(用户裁决 2026-11-03)+ 本队列**补行为类** | 仅需 architect 确认 caps 逐字段取值 |
 | ③ | `perm` 值域 | **3 值**(`NONE` / `READ` / `WRITEBACK`)⇒ atomic **走 `flow_support` 而非 `perm`**(schema 的 `perm` 枚举仅 4 值且无 atomic) | architect 确认「atomic 不占 `perm` 位」 |
 | ④ | atomic 归 canonical 10 流**哪一条** | `request` + `completion`(RMW 语义)⇒ 清单**零 diff** | architect 确认(与 `ADR-CEP-02` 清单对齐) |
-| ⑤ | group epoch / reduce 函数族 / **VC 编号** 的载体位置与取值 | 规约层载体(表)+ 实现层状态;VC 键与 `ordering_assumption` 对齐 | 普查 + architect 裁决(VC 编号**不得**臆造) |
+| ⑤ | group epoch / reduce 函数族 / **VC 编号** 的载体位置与取值 | **VC 编号 ✅ 已裁**(2026-11-03,Entry #171 —— **Decision D**:本拓扑 `unavailable` + 四字段声明,**不臆造编号**;`ADR-CEP-01` SU 的 `V6-a` / `V6-c`);epoch / reduce 族**待裁**(规约层载体 + 实现层状态) | 普查 + architect 裁决(**epoch / reduce 族**;VC 已裁) |
 
 ### ⚠️ 判据纪律(4 铁律,自队列 #12 继承)
 
@@ -156,10 +170,10 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 
 ## Acceptance
 
-- [ ] **开工前置**:`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` **定稿**(状态由「🟡 起草中(v0.6)」⇒ 已签发)—— per 用户裁决 2026-11-03
+- [x] **开工前置**:`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` **定稿** —— ✅ **已完成**(2026-11-03 签发 **v1.0**,per Entry #169 / #170;本项即原「状态由未签发 ⇒ 已签发」的验收条款)
 - [ ] **Task 0 硬门**:公开来源普查 ⇒ 锚点摘要产物(`docs/research/<date>-cep-nvlink-sharp-anchor-summary.md`):**sha256 钉版** · **零 NDA / 规范正文暴露** · 记**条款级定位 + 断言摘要**;公开来源候选类 = NVSHMEM(开源实现)/ 公开白皮书 / in-network reduction 学术论文
-- [ ] **architect 裁决**:上述 **5 项载体形态决定项** 落盘(② 已裁 = `BroadcastNull`;①③④⑤ 待裁)⇒ 裁决结论**同步** `ADR-CEP-01/02/03` 与 07 号
-- [ ] **第 0 个 change(规约层)**:R1/R2 分类判据 + R3/R4 区域互斥与 epoch 生命周期 + R5 计数器/断言 + ordering A/B/C/D + reduce 函数族 + VC 预留表 + **逐格 `basis`**(每格 `pending` 须有 `ref` ⇒ 无 `ref` 的 `pending` 即红)
+- [ ] **architect 裁决**:上述 **5 项载体形态决定项** 落盘(② 已裁 = `BroadcastNull`;**⑤ 的 VC 编号已裁** = **Decision D**(2026-11-03,Entry #171);①③④ 与 ⑤ 的 epoch / reduce 族**待裁**)⇒ 裁决结论**同步** `ADR-CEP-01` / `02` / `03` 与 07 号
+- [ ] **第 0 个 change(规约层)**:R1/R2 分类判据 + R3/R4 区域互斥与 epoch 生命周期 + R5 计数器/断言 + ordering A/B/C/D + reduce 函数族 + **集合 VC 预留状态**(**Decision D**:`unavailable` + `vc_reservation_declaration` 四字段,或非空预留)+ **逐格 `basis`**(每格 `pending` 须有 `ref` ⇒ 无 `ref` 的 `pending` 即红)
 - [ ] **第 0 个 change 的反向 fixture**:毒化任一格 ⇒ 编译期锁**必红** + 归因命中(铁律 ②③)⇒ **正控**(干净载体必绿)
 - [ ] **第 1 个 change(实现层)**:`NvlinkAdapter` **零自有表副本**(静态扫描 + **鉴别力自测**)+ **无 `transition_*`** + `BroadcastNull` **行为实现**(caps 逐字段取 `kTrackerTraits[4]`)+ `nvlink_4` **13 键齐备**(schema `required` **实读**)+ `repo_owned_instance_ids` **+1** + `collective_planes.json` 三块 + 装配期校验
 - [ ] **第 1 个 change 的反向 fixture**:**5 组**毒化 ⇒ 必红 + 归因命中 + 基线正控 ⇒ **全过**
@@ -177,7 +191,7 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 | **区域互斥 + epoch 生命周期** | R3(注册触发 drain / non-cacheable 降级 · drain 失败不建 epoch)+ R4(销毁触发失效化 · 区域回归 coherence 域) | 第 0 + 第 1 个 change |
 | **可观测性面** | R5(divert 计数器 + fail-stop 断言) | 第 0 + 第 1 个 change |
 | **跨平面 ordering 行为面** | A / B / C / D 四类可见性次序的**可判定**实现 | 第 0 + 第 1 个 change |
-| **集合 VC 预留** | 集合流量走独立 VC(与 `ordering_assumption` 对齐) | 第 0 + 第 1 个 change |
+| **集合 VC 预留状态** | `ADR-CEP-01` **Decision D**:本拓扑 `unavailable`(coherence 占满 0-3)⇒ **集合流量不得上 fabric**(仅本地模型);须落 `vc_reservation_declaration` 四字段⇒ 判据 = `CP-03` 的 `V6-a` / `V6-c` | 第 0 + 第 1 个 change |
 | **reduce 函数族声明** | 归约算子集合(多数 `pending` ⇒ 逐格 basis) | 第 0 个 change |
 | **`BroadcastNull` 行为实现** | 退化基线 tracker(无目录边 ⇒ 满足 `ADR-CEP-01 §3.3` 抓取点 1) | 第 1 个 change |
 
