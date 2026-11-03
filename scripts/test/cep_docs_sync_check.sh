@@ -812,6 +812,11 @@ LIVE = [
     ".rddf/roadmap/objectives/obj-cep-platform.md",
     ".rddf/roadmap/phases/phase-10.md",
     ".rddf/improvements/cpptlm-cep-umbrella.md",
+    # 队列 #13 的 improvement 草稿**含「当前实测 N/3」的当前态表述**(2 处)
+    #   ⇒ 2026-11-03 纳入扫描集(C-2 处置)。此前**不在**扫描集 ⇒ 该数字**零门禁**,
+    #   实测已漂移(写 0/3,而建 change 后实际 1/3)。
+    #   ⚠️ 纳入前已实证:该文件 **ENTITY 零命中**(`umbrella|Stage 0|R10`)⇒ 断言 ② 不会误报。
+    ".rddf/improvements/cpptlm-cep-nvlink-sharp.md",
     ".rddf/roadmap.md",
     "AGENTS.md",
     # ADR 是**状态入口之一**(§4.7.3「① 起步」要求实施者读 ADR)→ 纳入扫描集

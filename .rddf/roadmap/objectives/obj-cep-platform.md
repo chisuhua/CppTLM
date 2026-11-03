@@ -750,7 +750,8 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | `cpptlm-cep-ualink-inc` improvement | 走 add-improve;Stage 3 启动 |
 | P2 | `ADR-CEP-11` 版本锁定(Stage 1 前签发)| 走 architect;触发 R2 缓解 —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「走 architect」**已失实** ⇒ `ADR-CEP-11` **已于 2026-10-30 签发 v1.0**(per Entry #112 / #135);⇒ **本行关闭**;⚠️ **残余**:版本锁定闸的 **G-3**(IC3 变更留痕**无自动闸**)**未闭合**(per §8.1 R2 缓解列)—— 仍为登记态残余风险 |
 | P2 | phase-11 注册后建 feature fragment | 走 rdd-planner 后续评估;≥2 change 跨 phase-10/11 分布时 |
-| P2 | **`cep-collective-plane-contract` 主 spec 缺第四键的 delta** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #174** ③ S1)—— 主 spec 的「声明最小集 SHALL **恰含三组**」(`openspec/specs/cep-collective-plane-contract/spec.md`)未含 `vc_reservation_declaration`;而 Decision D 已把「空预留 ⇒ 必须声明」落成**判据**(`2ea09607`)。⇒ 若「恰含三组」被读作**封闭集** ⇒ 契约漂移;按「最小集」读法可视为条件可选扩展 ⇒ **当前不阻断**。⇒ 处置 = **下一个 openspec change** 补 delta(第四键 + 「空预留缺声明 ⇒ FAIL」场景)或对该 main spec 走 SU;⚠️ `cep_freeze_check.sh` 只查哈希,**抓不到**这类语义漂移 |\n| P2 | **失指 change 名 `cpptlm-cep-nvlink-sharp-adapter` 的残余位置** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X1)—— 本次**只在 `ADR-CEP-03` 内**订正(⇒ Entry #169 ⑧ 的「② 已订正」应限定为「**ADR-CEP-03 内**已订正」);残余位置 = `include/tlm/cep/collective_plane.hh` · `openspec/specs/cep-collective-plane-base/spec.md` · **`docs/adr/ADR-CEP-00-platform-charter-and-governance.md`**(真源 3 治理 ADR)⇒ 跨 builder(代码 / spec)与 architect(治理 ADR)**两个域** ⇒ **单独立项** |
+| P2 | **`cep-collective-plane-contract` 主 spec 缺第四键的 delta** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #174** ③ S1)—— 主 spec 的「声明最小集 SHALL **恰含三组**」(`openspec/specs/cep-collective-plane-contract/spec.md`)未含 `vc_reservation_declaration`;而 Decision D 已把「空预留 ⇒ 必须声明」落成**判据**(`2ea09607`)。⇒ 若「恰含三组」被读作**封闭集** ⇒ 契约漂移;按「最小集」读法可视为条件可选扩展 ⇒ **当前不阻断**。⇒ 处置 = **下一个 openspec change** 补 delta(第四键 + 「空预留缺声明 ⇒ FAIL」场景)或对该 main spec 走 SU;⚠️ `cep_freeze_check.sh` 只查哈希,**抓不到**这类语义漂移 |
+| P2 | **失指 change 名 `cpptlm-cep-nvlink-sharp-adapter` 的残余位置** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X1)—— 本次**只在 `ADR-CEP-03` 内**订正(⇒ Entry #169 ⑧ 的「② 已订正」应限定为「**ADR-CEP-03 内**已订正」);残余位置 = `include/tlm/cep/collective_plane.hh` · `openspec/specs/cep-collective-plane-base/spec.md` · **`docs/adr/ADR-CEP-00-platform-charter-and-governance.md`**(真源 3 治理 ADR)⇒ 跨 builder(代码 / spec)与 architect(治理 ADR)**两个域** ⇒ **单独立项** |
 | P2 | **代码域的 BISnp 方向注释口径相反** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X2)—— `include/tlm/cep/cxl_dcoh_state_spec.hh` 的枚举注释「host → memory」与同文件「`S2M_BISnp` 是**设备**发起」**口径相反** ⇒ 它是 critic B1 的**实现侧佐证** ⇒ **builder 域**订正 |
 | P2 | **`ADR-CEP-04 §3.4` 的 BISnp 注释口径相反** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X3)—— 「远端设备**收到** BISnp」与「BISnp = **设备发起**」相反 ⇒ 队列 #12 的反证**残余**(Entry #154 只裁了 §3.5 聚合点,未裁 §3.4 注释)⇒ **architect 域**,**单独 SU** |
 | P2 | **队列 #13 的 VC 空间方案裁决** | ✅ **已裁决 2026-11-03**(per 台账 **Entry #171**,用户裁决 **Decision D**)⇒ **契约面已交割**(`ADR-CEP-01` 的 SU 取代 §7 `V6-a`/`V6-b` + 新增 `V6-c`);✅ **行为面已落地**(`2ea09607`:schema 的 `if/then` + JSON 四字段 + `evaluate_vc_reservation` 四道门 + 3 条单测反 fixture + **1 条文件级 E2E 反 fixture**);⚠️ **`V6-c` 仍待队列 #13**(规约层载体清单)⇒ 在 `V6-c` 落地前不得宣称「collective 前提约束已被机器验证」。(原登记依据:台账 **Entry #170** ⑤-补 ⑩)—— 两个网络的 `vc_id` 0-3 **全被 coherence 占满** ⇒ 集合流量**无空闲 VC**;`CP-03` 在空预留下**恒 PASS**(不构成「已满足抓取点 3」的证据);扩 VC 上限 / 新开 network 已被 `ADR-CEP-09` 判为**跨仓债** ⇒ 须由 **architect** 裁决方案(扩 VC / 新增 network / 走 ArchForge 侧 ADR)⇒ **#13 开工前必须先有裁决**,否则 `V6-b` 无解 |
@@ -11416,6 +11417,43 @@ Phase 2 给断言文案加归因 id 后,`NSS-07` 的 token 扫描(`src.find("vc_
 · #179 / #178(critic 两轮)· #141(队列 #11 的 B-7 同型陷阱)
 · `scripts/test/cep_nvlink_sharp_state_spec_{probe.cc,reverse_verify.sh}`(本条对象)
 · `test/cep_anchor_ids.hh`(新增 `collect_heading_ids`)· `test/CMakeLists.txt` / `scripts/README.md` / `docs/research/AGENTS.md`
+
+### Entry #185 — 2026-11-03 [plan](队列 #13 规约层 **登记债 C-2 / C-3 闭合**)
+
+**主题**:闭合 **Entry #182 ④** 登记的两项欠债(C-1 / C-4 已于 Entry #184 ⑤ 顺带闭合)。**角色**:builder。
+
+**① C-2 —— improvement 草稿的 KPI 数字漂移 + **不在门禁扫描集**(**根因**)
+
+| 面 | 处置 |
+|---|---|
+| 数字 | `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` **两处**(第 31 行 §队列定义 / 第 207 行 §Impact)**当前实测 `0/3` → `1/3`**,并加括注「建本 change 前为 0/3;规约层归档后回到 0/3」⇒ 归档后 4.5 回填 `0/3` 时**语义仍自洽**,不产生第二轮漂移 |
+| **根因** | 该文件**不在** `cep_docs_sync_check.sh` 的 `LIVE` 清单 ⇒ 断言 ①(KPI baseline == 实测)**根本不扫它** ⇒ 数字**零门禁**,建 change 后自然漂移 |
+| 处置 | 纳入 `LIVE`(**追加式**,不动既有条目)。⚠️ 纳入前先实证两点:① 该文件 **ENTITY 零命中**(`umbrella\|Stage 0\|R10`)⇒ 断言 ② 不会误报;② 纳入后 `--strict` **rc=0** |
+| **反向实证**(铁律②:判据须有可执行反向 fixture) | 把第 31 行毒化为 `2/3` ⇒ 断言 ① **报红**:`KPI baseline 与实测(1/3)不一致:{'.rddf/improvements/cpptlm-cep-nvlink-sharp.md': ['1/3', '2/3']}` ⇒ 证明该文件**真的**被扫到(不是「加进清单却静默跳过」) |
+
+⚠️ **这是「活文档写了当前态数字、却不在门禁里」的通用形态**:本次不是改一个数字就完事,而是**把文件接进门禁**
+—— 否则同一漂移在 4.5 回填后仍会复发。
+
+**② C-3 —— `obj-cep-platform.md:753` 一行塞两个表格行**
+
+| 项 | 处置 |
+|---|---|
+| 现象 | 第 753 行(885 字符)内**字面 `\n`**(offset 461)把「`cep-collective-plane-contract` 主 spec 缺第四键的 delta」与「失指 change 名 `cpptlm-cep-nvlink-sharp-adapter` 残余位置」两行压成一行 |
+| 处置 | 字面 `\n` → **真换行** ⇒ 拆为第 **753 / 754** 两行(461 + 422 字符),两行均以 `| P2 |` 开头、以 `|` 结尾(表格行完整) |
+| 余量核查 | 全文件仍有 **2 处**字面 `\n`,均**合法**:第 2700 行(断言 ① 的切句符 `[。；\n;!?！？]` 描述)/ 第 11286 行(Entry #182 ④ 对本条债自身的**历史登记**)。⇒ 未误伤 |
+
+**③ 验收(实测)**
+
+门禁 **7/7** rc=0(`cep_docs_sync_check.sh --strict` / `cep_doc_ref_check.sh --strict` /
+`cep_gate_selftest.sh` / `docs_sync_check.sh --strict` / `cep_freeze_check.sh` /
+`cep_decl_alignment_check.sh` / `cep_archforge_alignment_check.sh`)· `format.sh --check` rc=0 ·
+`openspec validate cpptlm-cep-nvlink-sharp-state-spec --strict` rc=0
+
+**④ 关联**: Entry #182 ④(本条两项的登记来源)· #184 ⑤(C-1 / C-4 闭合)· #185(本条)
+· `scripts/test/cep_docs_sync_check.sh`(`LIVE` 清单)· `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` ·
+`.rddf/roadmap/objectives/obj-cep-platform.md:753-754`
+
+---
 
 ---
 
