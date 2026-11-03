@@ -155,8 +155,8 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 |---|---|---|---|
 | ① | `NvlinkAdapter` 的**载体归属与零副本形态** | ✅ **已裁**(2026-11-03,Entry #176 + `ADR-CEP-03` SU):**独立头** `nvlink_adapter.hh`(与既有 6 个 adapter 的**一协议一头**惯例一致)+ **委托** `nvlink_sharp_state_spec.hh`(先例 `cxl_dcoh_adapter`);零自有表副本;**无 `transition_*`**。⚠️ **前提**:state spec 载体 SHALL **自足**(只 include 标准库)且 SHALL **NOT** 暴露 `collective_region_table` 类型 ⇒ 区域表的**运行时状态归实现层** ⇒ **委托 ≠ 源端获得区域表可见性** ⇒ 契约面**零改动**;仍缺的判据(coherence 侧扫描集合扩展 + 标识补项)归**实现层**并**复用既有 id**(不新造) | ~~普查确认「NVLink 状态空间是否真的薄到无需转移表」~~ **已裁** |
 | ② | `sharer_tracker.impl` | ✅ **`BroadcastNull`**(用户裁决 2026-11-03)+ 本队列**补行为类** | 仅需 architect 确认 caps 逐字段取值 |
-| ③ | `perm` 值域 | **3 值**(`NONE` / `READ` / `WRITEBACK`)⇒ atomic **走 `flow_support` 而非 `perm`**(schema 的 `perm` 枚举仅 4 值且无 atomic) | architect 确认「atomic 不占 `perm` 位」 |
-| ④ | atomic 归 canonical 10 流**哪一条** | `request` + `completion`(RMW 语义)⇒ 清单**零 diff** | architect 确认(与 `ADR-CEP-02` 清单对齐) |
+| ③ | `perm` 值域 | ✅ **已裁**(2026-11-03,Entry #177):**维持 4 值锁**(`NONE`/`READ`/`UNIQUE`/`WRITEBACK`)—— 既有裁决(`CEN-Ib11` + Entry #141 值域锁 + schema 的 `perm.enum`)⇒ **不新增 perm 值**;**NVLink 实例的具体子集 = pending**(锚点 `N-8`)⇒ 不得照抄 `tilelink_c` 的 3 值 | ~~architect 确认~~ **已裁** |
+| ④ | atomic 归 canonical 10 流**哪一条** | ✅ **已裁**(2026-11-03,Entry #177):**`request` 流的独立属性**(`atomic.supported` + `atomic.intent_field`)—— 既有裁决(`CEN-Ib11` + `ADR-CEP-17` 决策 6 + schema)⇒ **不新裁、不新增第 11 条流、不占 `perm` 位**;**协议侧的具体 completion 配对 = pending**(锚点 `N-9`)⇒ 原倾向「`request` + `completion`(RMW 语义)」**无公开来源支撑** ⇒ 不得作为载体断言 | ~~architect 确认~~ **已裁** |
 | ⑤ | group epoch / reduce 函数族 / **VC 编号** 的载体位置与取值 | **VC 编号 ✅ 已裁**(2026-11-03,Entry #171 —— **Decision D**:本拓扑 `unavailable` + 四字段声明,**不臆造编号**;`ADR-CEP-01` SU 的 `V6-a` / `V6-c`);**epoch / reduce 族 ✅ 已裁**(2026-11-03,Entry #176 + `ADR-CEP-03` SU E.2):**reduce 族 = 复用既有 `ReduceOp` 恰 6 值**(`Sum`/`Min`/`Max`/`BitAnd`/`BitOr`/`BitXor`)⇒ **不新增枚举**;**SHARP 逐算子支持 = pending**(锚点 `N-1`);**epoch 平台侧 = R3/R4**(已定稿)/ **协议侧 = pending**(锚点 `N-3`);**平台原语集维持恰 4**(ReduceScatter / AllGather **不在**本平台原语集内) | ~~普查 + architect 裁决~~ **已裁** |
 
 ### ⚠️ 判据纪律(4 铁律,自队列 #12 继承)
@@ -172,7 +172,7 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 
 - [x] **开工前置**:`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` **定稿** —— ✅ **已完成**(2026-11-03 签发 **v1.0**,per Entry #169 / #170;本项即原「状态由未签发 ⇒ 已签发」的验收条款)
 - [x] **Task 0 硬门**:✅ **已产出**(2026-11-03,Entry #173)⇒ 锚点摘要产物(`docs/research/<date>-cep-nvlink-sharp-anchor-summary.md`):**sha256 钉版** · **零 NDA / 规范正文暴露** · 记**条款级定位 + 断言摘要**;公开来源候选类 = NVSHMEM(开源实现)/ 公开白皮书 / in-network reduction 学术论文
-- [ ] **architect 裁决**:上述 **5 项载体形态决定项** 落盘(② 已裁 = `BroadcastNull`;**⑤ 的 VC 编号已裁** = **Decision D**(2026-11-03,Entry #171);①③④ 与 ⑤ 的 epoch / reduce 族**待裁**)⇒ 裁决结论**同步** `ADR-CEP-01` / `02` / `03` 与 07 号
+- [ ] **architect 裁决**:上述 **5 项载体形态决定项** 落盘(**5 项已全部裁**:② = `BroadcastNull`;③ / ④ = Entry #177;① / ⑤ = Entry #176;⑤ 的 VC 编号 = Entry #171)⇒ 裁决结论**同步** `ADR-CEP-01` / `02` / `03` 与 07 号
 - [ ] **第 0 个 change(规约层)**:R1/R2 分类判据 + R3/R4 区域互斥与 epoch 生命周期 + R5 计数器/断言 + ordering A/B/C/D + reduce 函数族 + **集合 VC 预留状态**(**Decision D**:`unavailable` + `vc_reservation_declaration` 四字段,或非空预留)+ **逐格 `basis`**(每格 `pending` 须有 `ref` ⇒ 无 `ref` 的 `pending` 即红)
 - [ ] **第 0 个 change 的反向 fixture**:毒化任一格 ⇒ 编译期锁**必红** + 归因命中(铁律 ②③)⇒ **正控**(干净载体必绿)
 - [ ] **第 1 个 change(实现层)**:`NvlinkAdapter` **零自有表副本**(静态扫描 + **鉴别力自测**)+ **无 `transition_*`** + `BroadcastNull` **行为实现**(caps 逐字段取 `kTrackerTraits[4]`)+ `nvlink_4` **13 键齐备**(schema `required` **实读**)+ `repo_owned_instance_ids` **+1** + `collective_planes.json` **三块 + `vc_reservation_declaration`** + 装配期校验

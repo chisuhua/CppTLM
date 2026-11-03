@@ -18,7 +18,7 @@
 >
 > **合规边界**:NVLink SHARP 正式文档受 NDA 约束(照 CXL 的 ECA §3 + AI AUP 同款处理)
 > ⇒ **禁止**把规范正文投喂任何 AI ⇒ 本能力的全部 basis 指向**公开非规范来源**的锚点摘要条目号
-> ⇒ **7 项**细粒度语义登记 `pending`,走「**人类成员条款摘要**」流程。
+> ⇒ **9 项**细粒度语义登记 `pending`(7 项来自 Task 0 普查 + 2 项来自裁决 ③ / ④),走「**人类成员条款摘要**」流程。
 
 ---
 
@@ -88,13 +88,13 @@ CEP SHALL 为 **NVLink SHARP**提供一份**可执行规约层契约**:
 - **AND** 载体 SHALL **SHALL NOT** 声明跨 fabric 的通用归约能力
 - **AND** **反向 fixture**:把能力域改为跨 fabric ⇒ SHALL 必红(归因 `NSS-08-SCOPE-OVERREACH`)
 
-#### Scenario: NSS-09 —— 逐格 `basis` SHALL 带两轴 + **7 项 `pending`** SHALL 逐条登记
+#### Scenario: NSS-09 —— 逐格 `basis` SHALL 带两轴 + **9 项 `pending`** SHALL 逐条登记
 
 - **WHEN** 读取载体的每个格的 `basis`
 - **THEN** 每格 SHALL 同时带 **证据强度轴**(`kind` ∈ `public-direct` / `public-analogical` / `self-derived`)与**钉版强度轴**(`pending` ∈ `true` / `false`)
 - **AND** 每格 SHALL 带 `ref` ⇒ 其值 SHALL 指向**锚点摘要的条目号**(`A-n` / `N-n`),SHALL **SHALL NOT** 指向规范原文
-- **AND** **7 项** `pending` SHALL **恰好**覆盖:reduce 算子穷举集 · 逐操作支持矩阵 · epoch 状态机细节 · VC 编号 · 聚合树构建算法 · 报文格式/opcode 布局 · 数值/精度语义
-- **AND** 这 7 项 SHALL **SHALL NOT** 被推理填空 ⇒ 载体中**不得**出现其**具体取值**的断言
+- **AND** **9 项** `pending` SHALL **恰好**覆盖:reduce 算子穷举集 · 逐操作支持矩阵 · epoch 状态机细节 · VC 编号 · 聚合树构建算法 · 报文格式/opcode 布局 · 数值/精度语义 · **NVLink 实例的 `perm` 具体子集** · **NVLink atomic 的协议侧 completion 配对**
+- **AND** 这 9 项 SHALL **SHALL NOT** 被推理填空 ⇒ 载体中**不得**出现其**具体取值**的断言
 - **AND** **反向 fixture**:去掉某格的 `pending` 标记 ⇒ SHALL 必红(归因 `NSS-09-BASIS-MISSING`)
 
 > **锚点**:`test/test_cep_nvlink_sharp_state_spec.cc` 的编译期断言 + 运行期兜底判据 + 逐格 basis 核对 + **9 组反向 fixture**(每组带**可归因 id**)

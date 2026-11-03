@@ -16,7 +16,7 @@
 | 0 治理前置 | 🟡 **进行中**(0.1~0.4 ✅ / 0.5~0.7 待本轮闭环) | Task 0 普查 ✅(Entry #173)· Decision D ✅(#171)· 三则 ADR 定稿 ✅(#169/#170)· improvement 订正 ✅(#172)· critic 第 2 轮收口 ✅(#174)· 4 件套已建 · **待**:转正登记 + 冻结面实测 + KPI 回填 |
 | 1 载体形态定稿 | ⬜ 待实施 | `nvlink_sharp_state_spec.hh`(新)—— 类型 + 纯函数 + 常量表 |
 | 2 逐格 basis + 编译期锁 | ⬜ 待实施 | 逐格 `basis`(两轴)+ 来源许可表 + 编译期锁 + **运行期兜底判据** |
-| 3 判据收口 | ⬜ 待实施 | 逐格核对表 + **9 组反向 fixture**(各带可归因 id)+ 7 项 `pending` 登记 |
+| 3 判据收口 | ⬜ 待实施 | 逐格核对表 + **9 组反向 fixture**(各带可归因 id)+ **9** 项 `pending` 登记 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + `openspec validate --strict` + KPI 1/3 → 0/3 + 归档 |
 
 ---
@@ -24,7 +24,7 @@
 ## Phase 0 — 治理前置
 
 - [x] 0.1 **Task 0 硬门**:公开来源普查 ⇒ `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`(Entry #173)
-      ⇒ **通过**(3 个公开来源 sha256 钉版 · 5 条锚点 `A-1`~`A-5` · **7 项** `pending` 白名单 `N-1`~`N-7`)
+      ⇒ **通过**(3 个公开来源 sha256 钉版 · 5 条锚点 `A-1`~`A-5` · **9 项** `pending` 白名单 `N-1`~`N-7`)
 - [x] 0.2 **architect 裁决**:三则 ADR 定稿(Entry #169 / #170)· **VC 空间 = Decision D**(Entry #171)
       ⇒ ⚠️ **剩余 2 项载体形态决定项待裁**:① `NvlinkAdapter` 是否新建头文件 · ⑤ epoch / reduce 族细节
 - [x] 0.3 **improvement 草稿**落 `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` ⇒ `pre_create_brainstorm_check.sh` **rc=0**
@@ -54,7 +54,7 @@
 - [ ] 2.2 **`ref` 纪律**:指向锚点摘要条目号(`A-n` / `N-n`)⇒ **SHALL NOT** 指向规范原文
 - [ ] 2.3 **来源许可表**:逐来源记录 `pin=strong|weak` 与引用 / 再分发许可的人工确认
 - [ ] 2.4 **编译期锁**:NSS-01 ~ NSS-09 的 `static_assert`(**每条**另配运行期判据 —— 铁律 ③)
-- [ ] 2.5 **7 项 `pending` 登记**:`N-1` ~ `N-7` 逐条可寻址,且载体**不得**出现其具体取值的断言
+- [ ] 2.5 **9 项 `pending` 登记**:`N-1` ~ `N-9` 逐条可寻址,且载体**不得**出现其具体取值的断言
 - [ ] 2.6 ⚠️ **非 pending 格数下限**:防止「规约层自身成为纸面契约」(design §5.3 风险 5)
       ⇒ 统计 `pending == false` 的格数,**下限**由 Phase 1 的实际产出确定并登记 ⇒ 低于下限即判红
 

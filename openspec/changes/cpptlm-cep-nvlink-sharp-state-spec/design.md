@@ -30,14 +30,16 @@
 | 4 | **VC = 无隔离 VC(显式声明)** | 两网络 0-3 全占 ⇒ Decision D:`unavailable` + 四字段声明 | `ADR-CEP-01` SU 2026-11-03(D.4) |
 | 5 | **reduce 族 = 复用既有 `ReduceOp` 恰 6 值** | 不新增枚举、不改 `collective_plane.hh`;SHARP 逐算子支持 = `N-1` **pending** | `ADR-CEP-03` SU 2026-11-03(E.2) |
 | 6 | **epoch 分层**:平台侧 = R3/R4(已定稿)· 协议侧 = `N-3` **pending** | 载体 SHALL NOT 断言协议侧状态机 | `ADR-CEP-03` SU 2026-11-03(E.2) |
+| 7 | **③ `perm` 值域 = 维持 4 值锁**;NVLink 实例的**具体子集** = `N-8` **pending** | 不新增 perm 值;不照抄 `tilelink_c` 的 3 值 | 台账 Entry #177 ① |
+| 8 | **④ atomic = `request` 流的独立属性**;协议侧 completion 配对 = `N-9` **pending** | 不新增第 11 条流、不占 `perm` 位 | 台账 Entry #177 ② |
 
-### 1.3 已被判为**不可锁**的 7 项(锚点摘要 §3)
+### 1.3 已被判为**不可锁**的 9 项(锚点摘要 §3;7 项来自 Task 0 普查 + 2 项来自裁决 ③ / ④)
 
 `N-1` reduce 算子穷举集 · `N-2` 逐操作 ✓/✗ 矩阵 · `N-3` epoch 状态机细节 ·
 `N-4` VC 编号 · `N-5` 聚合树构建算法 · `N-6` 报文格式 / opcode 布局 ·
-`N-7` 数值 / 精度语义
+`N-7` 数值 / 精度语义 · `N-8` NVLink 实例的 `perm` 具体子集 · `N-9` NVLink atomic 的协议侧 completion 配对
 
-⇒ 载体 SHALL 把这 7 项登记为 `pending`,**SHALL NOT** 出现其具体取值的断言。
+⇒ 载体 SHALL 把这 **9** 项登记为 `pending`,**SHALL NOT** 出现其具体取值的断言。
 
 > ⚠️ `N-3` 与本 ADR 的 `R4` **不矛盾**:`R4` 是**平台侧**的 epoch 纪律(未 commit ⇒ 放行),
 > 公开来源缺的是**协议侧**的 epoch 状态机细节 ⇒ 前者可锁,后者须 pending。
@@ -76,7 +78,7 @@
 | **NSS-06** | ordering 四类 | `OrderingRule` 枚举恰 4 值 | 四类各一例 | `NSS-06-ORDERING-MIS` |
 | **NSS-07** | VC = 状态 | `VcReservationStatus::status` 类型为**字符串字面量枚举**,仅 `Unavailable` | 四字段齐全一例 + 独立 VC 编号**不可表达** | `NSS-07-VC-TABLE` |
 | **NSS-08** | 能力域 = 节点内 | `CollectiveScope` 枚举恰 {`IntraNode`} | 跨 fabric 值**不可表达** | `NSS-08-SCOPE-OVERREACH` |
-| **NSS-09** | 逐格 basis | 每格 `Basis` 含 `kind` / `pending` / `ref` 三字段 | 逐格核对表 + **7 项** pending 逐条可寻址 | `NSS-09-BASIS-MISSING` |
+| **NSS-09** | 逐格 basis | 每格 `Basis` 含 `kind` / `pending` / `ref` 三字段 | 逐格核对表 + **9 项** pending 逐条可寻址 | `NSS-09-BASIS-MISSING` |
 
 > ⚠️ **NSS-07 / NSS-08 的反向 fixture 形态特殊**:它们靠**「不可表达」**成立 ⇒ 反向 fixture 是
 > 「**试图表达 ⇒ 编译红**」⇒ 按铁律 ③,SHALL 另配一条**运行期**判据(如「载体解析出的 scope 恒为 intra-node」)
@@ -106,7 +108,7 @@
 |---|---|
 | 1 | 分类点唯一性 / epoch 双向 / 三步原子 / 能力域边界**全部可机械判定** ⇒ 实现层无解释空间 |
 | 2 | `BroadcastNull` 的行为面在**本队列**首次兑现 ⇒ 闭合 `ADR-CEP-04` 的声明-实现缺口 |
-| 3 | 7 项 `pending` 显式留空 ⇒ 杜绝「看似完整实则杜撰」(队列 #9 式失败模式的正面防线) |
+| 3 | **9** 项 `pending` 显式留空 ⇒ 杜绝「看似完整实则杜撰」(队列 #9 式失败模式的正面防线) |
 | 4 | VC 以**状态**表达 ⇒ 与 Decision D 一致,**不**留「假装有隔离 VC」的债 |
 
 ### 5.2 负面 / 代价
@@ -124,7 +126,7 @@
 |---|---|---|
 | 1 | **能力域写成跨 fabric** | NSS-08(枚举**不可**表达跨 fabric) |
 | 2 | **epoch 语义写反** | NSS-02 双向锁(⚠️ 本仓已错过一次) |
-| 3 | **7 项 pending 被推理填空** | NSS-09 逐格核对 + 反向 fixture |
+| 3 | **9 项 pending 被推理填空** | NSS-09 逐格核对 + 反向 fixture |
 | 4 | **VC 被写成「预留独立 VC」** | NSS-07 + Decision D |
 | 5 | **规约层自身成为纸面契约** | Phase 2 的**非 pending 格数下限** + Phase 4 的实现层复核 |
 

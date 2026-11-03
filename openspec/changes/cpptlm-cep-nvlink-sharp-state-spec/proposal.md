@@ -31,7 +31,7 @@
 
 ### ④ 公开来源**不支持**的部分必须显式留空,不能推理填空
 
-Task 0 普查(Entry #173)把 **7 项**细粒度语义判为**无公开来源支撑**(reduce 算子穷举集 / 逐操作支持矩阵 /
+Task 0 普查(Entry #173)把 **7 项**细粒度语义判为**无公开来源支撑**;裁决 ③ / ④(Entry #177)又新增 **2 项**(NVLink 的 `perm` 具体子集 / atomic 的协议侧 completion 配对)⇒ 合计 **9 项**(reduce 算子穷举集 / 逐操作支持矩阵 /
 epoch 状态机 / VC 编号 / 聚合树构建算法 / 报文格式 / 数值精度)⇒ 载体若把它们填成具体值 ⇒ **杜撰**。
 
 ### ⑤ 而 VC 这一项**本仓当前无解** ⇒ 只能以「显式声明」表达,不能以「预留表」表达
@@ -49,7 +49,7 @@ epoch 状态机 / VC 编号 / 聚合树构建算法 / 报文格式 / 数值精�
 | **载体(新增)** | `include/tlm/cep/nvlink_sharp_state_spec.hh`(header-only):**R1/R2 分类判据**(opcode 永不作分类器 · 唯一分类点 = fabric ingress)+ **R3/R4 区域互斥与 epoch 纪律**(注册三步原子 · epoch 未 commit 前**放行** · 注销失效化)+ **R5 可观测性**(divert 计数器 + fail-stop 断言)+ **ordering A/B/C/D** 的可判定谓词 + **集合 VC 预留状态**(Decision D 的 `unavailable` 四字段声明)+ 逐格 `basis{kind, pending, ref→锚点摘要条目号}` |
 | **判据** | 编译期结构断言(分类点唯一性 · epoch 双向 · 三步原子 · 四类 ordering · 预留状态)+ 逐格 `basis` 核对表 + **反向 fixture**(毒化 ⇒ 必红 + **归因命中**) |
 | **零改动** | `ADR-CEP-*` 正文 · `protocol_instance.schema.json` · `collective_planes.json` / `collective_planes.schema.json`(**Decision D 已落**)· canonical 10 流清单 · **0 新增** ABI · **0 新增** invariant 编号数 |
-| **登记** | **7 项 `pending`**(N-1 ~ N-7)逐条入载体 `basis` ⇒ **禁止推理填空** |
+| **登记** | **9 项 `pending`**(N-1 ~ N-9)逐条入载体 `basis` ⇒ **禁止推理填空** |
 | **同步** | `ADR-CEP-01` / `02` / `03` **零改动**(契约面已于 Entry #169 / #170 / #171 交割) |
 
 > ⚠️ **反向 fixture 形态**:与既有 `*_reverse_verify.sh` **同型**(「毒化 ⇒ 判据**必红**」= 鉴别力)
@@ -71,7 +71,7 @@ epoch 状态机 / VC 编号 / 聚合树构建算法 / 报文格式 / 数值精�
 | **NSS-06** | **跨平面 ordering A/B/C/D** SHALL **可判定** | 四类可见性次序各一例 + **反向 fixture**:把某类判反 ⇒ 必红 |
 | **NSS-07** | **集合 VC 预留 SHALL 登记为「状态」而非「表」** | 载体 SHALL 断言 `status == "unavailable"` + 四字段齐全;**SHALL NOT** 断言任何独立 VC 编号 · **反向 fixture**:填入具体 VC 编号 ⇒ 必红 |
 | **NSS-08** | **能力域 SHALL 钉为节点内** | 载体 SHALL 断言 collective 能力域 = intra-node(依据 A-1 / A-5);**SHALL NOT** 声明跨 fabric 归约 · **反向 fixture**:把能力域改为跨 fabric ⇒ 必红 |
-| **NSS-09** | **逐格 `basis` SHALL 带两轴 + 7 项 `pending` 逐条登记** | 每格带 `kind` / `pending` / `ref→锚点摘要条目号`;**7 项** pending 逐条可寻址且 **SHALL NOT** 出现其具体取值的断言 · **反向 fixture**:去掉 `pending` 标记 ⇒ 必红 |
+| **NSS-09** | **逐格 `basis` SHALL 带两轴 + 9 项 `pending` 逐条登记** | 每格带 `kind` / `pending` / `ref→锚点摘要条目号`;**9 项** pending 逐条可寻址且 **SHALL NOT** 出现其具体取值的断言 · **反向 fixture**:去掉 `pending` 标记 ⇒ 必红 |
 
 ⇒ `ctest` 全绿 · 门禁全 rc=0 · `openspec validate --strict` rc=0 · `format.sh --check` rc=0。
 
@@ -88,7 +88,7 @@ epoch 状态机 / VC 编号 / 聚合树构建算法 / 报文格式 / 数值精�
 | **KPI** | 1 slot(串行 ⇒ **规约层归档后**才建实现层) |
 | **风险 ①** | ⚠️ **能力域写成跨 fabric** ⇒ NSS-08 锁节点内(A-1 / A-5) |
 | **风险 ②** | ⚠️ **epoch 语义写反** ⇒ NSS-02 双向锁(本仓已错过一次) |
-| **风险 ③** | ⚠️ **7 项 pending 被推理填空** ⇒ 逐格 `basis` 必带 `pending` + `ref→锚点摘要` |
+| **风险 ③** | ⚠️ **9 项 pending 被推理填空** ⇒ 逐格 `basis` 必带 `pending` + `ref→锚点摘要` |
 | **风险 ④** | ⚠️ **VC 被写成「预留独立 VC」** ⇒ NSS-07 锁「状态」+ Decision D |
 | **风险 ⑤** | ⚠️ **合规** —— **任何时候不得**把 NVLink SHARP 正式规范正文投喂 AI;pending 项走「人类成员条款摘要」流程 |
 | **风险 ⑥** | ⚠️ **纸面契约** —— 规约层若每格 `basis` 都是 `pending` ⇒ 本 change 自身即纸面契约 ⇒ Phase 2 SHALL 统计**非 pending 格数 ≥ 下限**(见 tasks 2.6) |

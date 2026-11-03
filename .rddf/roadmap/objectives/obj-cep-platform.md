@@ -10998,6 +10998,62 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 ---
 
+### Entry #177 — 2026-11-03 [decision](**architect** —— 载体形态决定项 **③ `perm` 值域** + **④ atomic 归哪条流** 的裁决 ⇒ **5 项决定项全部关闭**)
+
+**主题**:用户裁决 2026-11-03「一并裁掉」③ / ④。
+**裁决性质**:两项**均**属「**引用既有裁决**」而非新增决策面 ⇒ **0 处 ADR 正文改动**(ADR-CEP-02 的 `CEN-Ib11` + Entry #141 已覆盖)。
+
+**① 裁决 ③:`perm` 值域**
+
+| 项 | 裁决 |
+|---|---|
+| **值域** | **维持 4 值锁**(`NONE` / `READ` / `UNIQUE` / `WRITEBACK`)—— **既有裁决**:`ADR-CEP-02 §2` `CEN-Ib11` + **Entry #141**(R-T4:值域锁 = 锁定**允许出现的字面值集合**,**不要求**每实例列全) + `protocol_instance.schema.json` 的 `perm.enum` ⇒ **NVLink 不新增 perm 值** |
+| **NVLink 实例的具体子集** | **pending** ⇒ 新增锚点 **`N-8`**。理由:公开来源**未**描述 NVLink 的内存权限模型;且 **SHALL NOT** 照抄 `tilelink_c` 的 3 值(那是 TileLink 的语义,非 NVLink 的) |
+| **实例级先例** | `tilelink_c`(`perm` 3 值)已实证「实例可声明**子集**」⇒ ③ 的裁决与既有实例面**兼容**,**不**需改 schema |
+| **附带实证(正交性)** | `cxl_3_0_symmetric`(`perm` **4 值** + `atomic.supported = false`)⇒ 「**`perm` 4 值 ≠ atomic 支持**」在**实例级已有实证** ⇒ `CEN-Ib11` 的正交性可被载体直接引用 |
+
+**② 裁决 ④:atomic 归 canonical 10 流哪一条**
+
+| 项 | 裁决 |
+|---|---|
+| **承载面** | **`request` 流的独立属性**(`atomic.supported` + `atomic.intent_field`)—— **既有裁决**:`ADR-CEP-02 §2` `CEN-Ib11` + `ADR-CEP-17` 决策 6 + `protocol_instance.schema.json` 的 `atomic` 定义(其 description 即写「意图经 request 流独立属性传递」)⇒ **不新裁、不新增第 11 条流、不占 `perm` 位** |
+| **协议侧的具体配对** | **pending** ⇒ 新增锚点 **`N-9`**。理由:公开来源**未**描述 NVLink 的 atomic 语义;⚠️ improvement 原倾向「`request` + `completion`(RMW 语义)」**无公开来源支撑** ⇒ **SHALL NOT** 作为载体断言 |
+| **实例级先例** | `mesif` 是唯一 `atomic.supported = true` 的既有实例(`intent_field = "consistency_intent"`)⇒ ④ 的裁决与既有实例面**兼容** |
+
+**③ 净效果与连锁口径**
+
+| 项 | 结果 |
+|---|---|
+| **决定项清单** | ① ✅(#176)· ② ✅(用户裁决)· ③ ✅(本条)· ④ ✅(本条)· ⑤ ✅(#176 + #171)⇒ **5 项全部关闭** |
+| **pending 白名单** | **7 → 9**(`N-8` perm 子集 · `N-9` atomic 协议侧配对)⇒ 规约层 4 件套的「7 项」口径**全部**须同步为「9 项」 |
+| **ADR 正文** | **0 处改动** ⇒ `ADR-CEP-02` / `ADR-CEP-03` 均**不**追加 SU |
+
+**④ 落点清单(执行域)**
+
+| # | 落点 | 域 |
+|---|---|---|
+| 1 | improvement 决定项表 ③ / ④ 行 ⇒ 填入裁决结论 | builder(已切) |
+| 2 | 规约层 change **4 件套**的「7 项 pending」口径 ⇒ 「9 项」+ 列出 `N-8` / `N-9` | builder |
+| 3 | 锚点摘要 §3 白名单 ⇒ 补 `N-8` / `N-9` 两条 | builder(`docs/research/`) |
+| 4 | 台账本条「已落」回填 | builder |
+
+**④-补 ✅ 落点已执行(2026-11-03,builder)**
+
+| # | 落点 | 结果 |
+|---|---|---|
+| 1 | improvement 决定项表 ③ / ④ + Acceptance「architect 裁决」项 | ✅ ③ / ④ 已填结论;Acceptance 改为「**5 项已全部裁**」 |
+| 2 | 规约层 change **4 件套** | ✅ 「7 项」⇒「**9 项**」(`proposal` 3 处 · `design` 5 处 · `spec` 4 处 · `tasks` 3 处)· `design §1.2` 补 ③ / ④ 两条裁决 |
+| 3 | 锚点摘要 §3 | ✅ 补 `N-8` / `N-9` 两条 + 标题计数改「9 项」+ 导语补白名单来源 |
+| 4 | 本条 | ✅ 回填(本段) |
+
+**⑤ 关联**: Entry #176(裁决 ① / ⑤)· #175(规约层 change 建档)· #173(Task 0 普查)· #172 / #174(improvement 订正 + critic)· #171(Decision D)
+· `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(③ / ④ 行)· `openspec/changes/cpptlm-cep-nvlink-sharp-state-spec/`(4 件套口径同步)
+· `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`(§3 白名单)
+· `include/tlm/cep/protocol_instance.schema.json`(`perm.enum` 4 值 + `atomic` 定义)· `include/tlm/cep/protocol_instances.json`(实例级先例)
+· `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md`(`CEN-Ib11`)**零改动**
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 
