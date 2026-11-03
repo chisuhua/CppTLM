@@ -1,7 +1,6 @@
-# cep-nvlink-sharp Specification(delta)
+# cep-nvlink-sharp Specification
 
 ## Purpose
-
 定义 **NVLink SHARP** 在 CEP 平台上的**实现层可执行契约**:
 `NvlinkAdapter`(独立头 · 零自有表副本 · 无转移表)· `BroadcastNull` 行为实现(协议无关)·
 `nvlink_4` 实例声明(13 键)· 集体面绑定(首个消费者)· **V3** barrier 分类 litmus ·
@@ -27,7 +26,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-nvlink-sharp
 

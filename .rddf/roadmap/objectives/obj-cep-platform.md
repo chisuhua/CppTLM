@@ -11648,6 +11648,34 @@ SHARP 归约**行为实现** + `nvlink_4` 实例声明 + `collective_planes.json
 
 ---
 
+### Entry #189 — 2026-11-03 [archive](队列 #13 **实现层** 冻结面**授权记录** —— 3 份冻结产物 + manifest)
+
+**主题**:队列 #13 实现层 change `cpptlm-cep-nvlink-sharp` 的**冻结面两步授权**的**授权记录**
+(per `cep_freeze_check.sh` 的闸门契约:「台账 entry 即授权记录」⇒ **本条必须在 `--update` 之前存在**)。
+**角色**:builder。
+
+**① 授权改动的冻结产物(逐件列名 —— `--update` 会**重算全部 40 件**的 hash)**
+
+| # | 冻结产物 | 本层改动 | 依据 |
+|---|---|---|---|
+| 1 | `openspec/specs/cep-collective-plane-contract/spec.md` | **delta 合并**:声明最小集「恰含三组」→ **四组**(+ `vc_reservation_declaration`)+ 「空预留缺声明 ⇒ FAIL」+ **新增 Requirement** `cep-collective-plane-contract-vc-precondition`(承载 **V6-c** 与 **CP-05 扩展**两个 Scenario) | `ADR-CEP-01` SU 2026-11-03 Decision D + 台账 §10 **Entry #174 ③ S1**(「下一个 openspec change 补 delta」) |
+| 2 | `docs/architecture/07-coherence-exploration-platform.md` | §5.1.1 **NVLink 行状态格**(`:320`)+ §11 **`:679`**(SharerTracker `5/6` → `6/6`)+ **`:681`**(adapter「**6 个已落地**」与「**adapter 实例 5 个**」—— ⚠️ 该格**自身已有两个互相矛盾的数字**,须一并订正)+ **`:690`**(声明源「**6** 实例」⇒ **7**) | 本队列交付落地 ⇒ 07 号的「当前态」数字与状态列同步 |
+| 3 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 **40** 件的 hash | 机制 M1 本身(每次授权都要重算) |
+
+⇒ ⚠️ **不在授权范围**:`openspec/specs/cep-collective-plane-base/spec.md`(失指 change 名残余)
+—— 本层**不并入**(冻结面变更面最小化)⇒ 仍**单独立项**(见 §10 backlog)。
+
+**② 授权流程(顺序不可颠倒)**
+
+① 本条 Entry(授权记录)→ ② `openspec archive` → ③ 07 号同步 → ④
+`cep_freeze_check.sh --update --authorized-by "Entry #189"` ⇒ **commit** → ⑤ `--update` ⇒ **commit**
+→ ⑥ KPI 回填 + `VIRTUAL_PATHS` + 台账归档 Entry ⇒ **commit**。
+
+**③ 关联**: Entry #188(Phase 0 ~ 3)· #187(双审修订)· #186(规约层归档)· #170 ⑤ X1(失指残余)
+· #174 ③ S1(主 spec 缺第四键 delta)· `scripts/test/cep_freeze_check.sh`(授权闸)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
