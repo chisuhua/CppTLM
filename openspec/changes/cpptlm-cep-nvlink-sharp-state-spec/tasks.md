@@ -2,7 +2,7 @@
 
 > **状态**: 🟡 **Proposed**(2026-11-03)· **队列**: `obj-cep-platform §4.0` **#13** 第 0 个 change(规约层)
 > **配套**: [`proposal.md`](proposal.md) · [`design.md`](design.md) · [`specs/cep-nvlink-sharp-state-spec/spec.md`](specs/cep-nvlink-sharp-state-spec/spec.md)
-> **口径**: 台账 **Entry #174**(critic 第 2 轮收口)· **#173**(Task 0 普查)· **#172**(improvement 订正)· **#171**(Decision D)· **#169 / #170**(三则 ADR 定稿)
+> **口径**: 台账 **Entry #182**(Phase 2/3 细化 + 3 项口径裁决)· **#181 / #180**(Phase 1 + 最小测试)· **#174**(critic 第 2 轮收口)· **#173**(Task 0 普查)· **#172**(improvement 订正)· **#171**(Decision D)· **#169 / #170**(三则 ADR 定稿)
 > **审计面**: `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`
 > **估时**: 5 周 · **KPI**: Proposed 并发 **0/3 → 1/3**
 > **两段式**: 本 change = **规约层**;第 1 个 change = `cpptlm-cep-nvlink-sharp`(实现层)
@@ -15,8 +15,8 @@
 |---|---|---|
 | 0 治理前置 | 🟡 **进行中**(0.1~0.4 ✅ / 0.5~0.7 待本轮闭环) | Task 0 普查 ✅(Entry #173)· Decision D ✅(#171)· 三则 ADR 定稿 ✅(#169/#170)· improvement 订正 ✅(#172)· critic 第 2 轮收口 ✅(#174)· 4 件套已建 · **待**:转正登记 + 冻结面实测 + KPI 回填 |
 | 1 载体形态定稿 | ✅ **已完成**(2026-11-03) | `nvlink_sharp_state_spec.hh`(新 · 263 行 · header-only · **自足**:只 include `<cstddef>` / `<cstdint>`)—— 类型 + 纯函数 + 常量表 + **19 条编译期断言**;⛔ 无 opcode / 无区域表 / 无词表型枚举 |
-| 2 逐格 basis + 编译期锁 | ⬜ 待实施 | 逐格 `basis`(两轴)+ 来源许可表 + 编译期锁 + **运行期兜底判据** |
-| 3 判据收口 | ⬜ 待实施 | 逐格核对表 + **9 组反向 fixture**(各带可归因 id)+ **9** 项 `pending` 登记 |
+| 2 逐格 basis + 编译期锁 | 🟡 **进行中**(子步已细化,per Entry #182) | 12 格逐格 `basis`(两轴)+ 来源许可表(真源在锚点摘要)+ 归因 id 落进断言文案 + 9 项 pending 登记 + **非 pending 格数下限** + 3 处 design 口径订正 + 3 处计数/范围漂移订正 |
+| 3 判据收口 | 🟡 **进行中**(子步已细化,per Entry #182) | 逐格核对表(含 **heading-aware** 条目收集器,防空转)+ **9 组 / 10 条反向 fixture** + 基线正控 + probe/脚本 + ctest 注册 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + `openspec validate --strict` + KPI 1/3 → 0/3 + 归档 |
 
 ---
@@ -51,31 +51,145 @@
 
 ## Phase 2 — 逐格 basis + 编译期锁
 
+> **口径裁决(2026-11-03,用户同意 · Entry #182)** —— 三条不裁则 Phase 2 方向必错:
+>
+> | # | 裁决 | 内容 |
+> |---|---|---|
+> | **D-1** | **「格」= 12 个枚举值** | `IngressDecision`2 + `RegisterResult`2 + `EpochState`2 + `OrderingRule`4 + `VcReservationState`1 + `CollectiveScope`1(照队列 #12 的 28 格先例);形状型(`GroupId` / `AddressRange` / `DivertCounter`)**不占格** |
+> | **D-2** | **self-derived 过许可门** | 新增 `SourceId::AdrContract`(本仓 ADR 契约,许可**自持** = `true`)⇒ `basis_is_valid` 规则**不变**(`ref 非空 && (pending \|\| licenseConfirmed[source])`);⛔ **不**改规则给 self-derived 开豁免 |
+> | **D-3** | **`ref` 解析空间** | `A-n`(公开锚点)/ `N-n`(pending 白名单)/ **`C-n`(契约锚点,新增)**;`C-n` 登记在锚点摘要新增的 `§2bis`,逐条指向 `ADR-CEP-0x §y.z Rz` |
+>
+> ⚠️ **`CollectiveScope` 格判 `self-derived`**:能力域收窄是 ADR 决策(`ADR-CEP-01` SU(#2) G.1 + `ADR-CEP-03 §1`),
+> `A-1` / `A-5` 只作**佐证指针** ⇒ 否则该格 `pending=true`,与 `NSS-08` 的**硬锁**直接冲突(两轴规则: `pending=true` ⇒ 不得断言该值)。
+
+- [ ] 2.0 **锚点摘要补两张表**(本 Phase 的**硬前置**;`docs/research/` **不在** M1 冻结集 ⇒ 无需两步授权)
+      - [ ] 2.0a §1 钉版清单加 **`pin` 列** + **引用 / 再分发许可已人工确认** 列
+            ⇒ 三个来源均有 `sha256` ⇒ 全 `pin=strong`;许可**保守**取: S1(arXiv 预印本)待确认 · S2(NVIDIA blog ©) · S3(NVIDIA docs ©) ⇒ `false`
+      - [ ] 2.0b 新增 **`§2bis 契约锚点`**:`C-1` ~ `C-12` 逐条 = 一个 self-derived 格 ↔ 其 ADR 条款(`ADR-CEP-0x §y.z Rz`)
+      - [ ] 2.0c §6 复核段补一句:`C-n` / `N-n` 的**变更**同样使本摘要在对应格上失效
+      ⇒ **判据**:每来源 `pin` + 许可两列齐备;`C-n` 12 条无空洞且每条有 ADR 条款定位
+
 - [ ] 2.1 **逐格 `basis`**(两轴):`kind` ∈ `public-direct` / `public-analogical` / `self-derived` · `pending` ∈ `true` / `false`
-- [ ] 2.2 **`ref` 纪律**:指向锚点摘要条目号(`A-n` / `N-n`)⇒ **SHALL NOT** 指向规范原文
+      - [ ] 2.1a 载体加元数据: `#include <array>` + `SourceId{S1,S2,S3,AdrContract,Derived}` + `kSourceCount`
+            + `kSourceLicenseConfirmed` + `EvidenceKind{PublicDirect,PublicAnalogical,SelfDerived}`
+            + `struct Basis{kind, pending, source, ref}` + `basis_is_valid` + `all_basis_valid<N>`
+            ⇒ ⚠️ `<array>` 是**标准库** ⇒ **不破**自足红线(`ADR-CEP-03` SU(#2) F.1-a)
+      - [ ] 2.1b **12 格逐格表**(6 组):`kBasisIngressDecision[2]` · `kBasisRegisterResult[2]` · `kBasisEpochState[2]` ·
+            `kBasisOrderingRule[4]` · `kBasisVcReservationState[1]` · `kBasisCollectiveScope[1]`
+      - [ ] 2.1c **6 条编译期锁**:`all_basis_valid(kBasisXxx)` + `kBasisXxx.size() == kXxxCount`(逐组,不留空洞)
+      ⇒ **判据**:12 格三字段齐全;`pending == false` ⇒ 来源许可已确认(D-2 的 `AdrContract` = `true`)
+
+- [ ] 2.2 **`ref` 纪律**:指向锚点摘要条目号(`A-n` / `N-n` / `C-n`)⇒ **SHALL NOT** 指向规范原文
+      - [ ] 2.2a 逐格 `ref` **不得** `nullptr`、**不得**空串(`basis_is_valid` 覆盖)
+      - [ ] 2.2b 可解析性核对归 **Phase 3**(3.1),本条只锁**非空**
+      ⇒ **判据**:载体零处引用 NVLink 规范正文 / NDA 材料
+
 - [ ] 2.3 **来源许可表**:逐来源记录 `pin=strong|weak` 与引用 / 再分发许可的人工确认
+      ⇒ **真源在锚点摘要(2.0a)**,载体只**镜像布尔**(`kSourceLicenseConfirmed`)
+      - [ ] 2.3a `AdrContract` 的许可 = **`true`**(本仓自著 ADR ⇒ 无第三方许可问题)
+      - [ ] 2.3b `Derived`(派生 / 二手推论)的许可 = **`false`**(照队列 #12 先例)
+      ⇒ **判据**:载体布尔与锚点摘要两列**逐来源一致**
+
 - [ ] 2.4 **编译期锁**:NSS-01 ~ NSS-09 的 `static_assert`(**每条**另配运行期判据 —— 铁律 ③)
+      - [ ] 2.4a ⚠️ **归因 id 落进断言文案**(实测当前 24 条**零** id ⇒ Phase 3 的「归因命中」无法成立)
+            ⇒ 文案形态 `<唯一归因 id>: <语义>`(id 集**唯一登记处** = 本条 + `tasks 3.2` + `design §3`)
+      - [ ] 2.4b **新增 4 条缺的锁**:
+            ① `classify_at_fabric_ingress` 的**签名锁**
+               (`is_same_v<decltype(&classify_at_fabric_ingress), IngressDecision (*)(bool, bool) noexcept>` ⇒ 锁死「无 opcode 参数」)
+            ② `NSS-05` 计数器**形状锁** ③ `all_basis_valid` 系列 ④ `all_pending_items_wellformed`
+      - [ ] 2.4c 逐条对照 `design §3` 的「编译期锁」列 ⇒ 不得缺项(口径冲突见 2.7)
+      ⇒ **判据**:去注释后 `static_assert(` 计数 == 「带归因 id 的断言数」(零例外)
+
 - [ ] 2.5 **9 项 `pending` 登记**:`N-1` ~ `N-9` 逐条可寻址,且载体**不得**出现其具体取值的断言
+      - [ ] 2.5a `struct PendingSemanticItem{id, what, ref}` + `kPendingSemanticItemCount = 9` + `kPendingSemanticItems`
+      - [ ] 2.5b `all_pending_items_wellformed`:id / what / ref 非空 + id 唯一 + 形态 `N-<数字>`
+      - [ ] 2.5c 「不得出现具体取值」的可判定面:载体零处出现 reduce 算子名 / VC 编号 / 报文格式常量 / 聚合树算法名
+      ⇒ **判据**:9 项逐条可寻址 + 反向 fixture(`NSS-09-BASIS-MISSING`)必红
+
 - [ ] 2.6 ⚠️ **非 pending 格数下限**:防止「规约层自身成为纸面契约」(design §5.3 风险 5)
       ⇒ 统计 `pending == false` 的格数,**下限**由 Phase 1 的实际产出确定并登记 ⇒ 低于下限即判红
+      - [ ] 2.6a `kNonPendingCellCount`(constexpr 遍历 12 格)+ `kNonPendingFloor` + `static_assert(count >= floor)`
+      - [ ] 2.6b 登记实际值:按 D-1/D-2 + `CollectiveScope` 判 `self-derived` ⇒ **下限 = 12**(若 `CollectiveScope` 改判公开来源则 **11**)
+      ⇒ **判据**:手改任一格为 `pending=true` ⇒ 计数下降 ⇒ 低于下限即**编译红**
+
+- [ ] 2.7 **`design §3` 的口径漂移订正**(使 design ↔ 载体逐条一致;实测 **3 处**)
+      - [ ] 2.7a `NSS-04`:「`destroy` 后 `lookup_region` 返回空」⇒ 改为「`classify_after_destroy(region_still_registered)` 在**注销成功**时返 `Pass`」
+            (`ADR-CEP-03` SU(#3) K.2 的纯函数形态)+ 载体把**恒真**的 `decision_after_destroy()` **参数化**(铁律①)
+      - [ ] 2.7b `NSS-05`:「`DivertCounters` 字段集合**恰 2**」与载体 `DivertCounter{total}`(**1 字段**)冲突 ⇒ 二选一并登记:
+            **(i)** 载体扩为可寻址键形状(`GroupId` + `AddressRange` 键 + `total`)· **(ii)** design 改为「1 字段 + 可寻址性归实现层」
+            ⚠️ 须同时对齐 delta spec NSS-05「按 group / 区域可寻址」
+      - [ ] 2.7c `NSS-07`:「载体解析结果恒为 `Unavailable`」⇒ 改为「`VcReservationState` **枚举仅 1 取值** 且其类型**无** `vc_id` / 四字段」
+      ⇒ **判据**:`design §3` 九行逐行对照载体,**零**口径冲突
+
+- [ ] 2.8 **计数 / 范围漂移订正**(实测 **3 处**)
+      - [ ] 2.8a 「**19** 条编译期断言」⇒ **24**(`Entry #180` + `tasks 1.1` 两处;台账 append-only ⇒ 由新 Entry 订正)
+      - [ ] 2.8b 「9 项 pending 白名单 **`N-1`~`N-7`**」⇒ `N-1`~`N-9`(`tasks 0.1` + `design` 头注)
+      - [ ] 2.8c `design §1.2` 第 2 项「多 group 并存(`A-4`)」与 `A-2` 的 flow_support 粒度在载体**无表达**
+            ⇒ 显式登记归属(载体格 or 实现层),**不得静默缺失**
+      ⇒ **判据**:`grep "19 条编译期断言"` **0** 命中;`N-1` ~ `N-7` **0** 命中
+
+- [ ] 2.9 Phase 2 验收:门禁 **7** 脚本 rc=0 + `-Wall -Wextra` **零警告** + `format.sh --check` rc=0 + 台账 Entry
 
 ## Phase 3 — 判据收口
 
 - [ ] 3.1 **逐格核对表**:`basis` 三字段齐全 + `ref` 可解析
+      - [ ] 3.1a 运行期复核 **12 格**:三字段齐全 + `basis_is_valid` + `pending == false ⇒ license`
+      - [ ] 3.1b ⚠️ **新增 heading-aware 的锚点条目收集器**:`A-n` 在 `###` **标题**里、`N-n` / `C-n` 在**表格单元格**里
+            ⇒ 照抄 `test/cep_anchor_ids.hh` 的 `collect_ids`(**只扫表格**)会得到**空集** ⇒ 逐格核对**恒真空转**
+            (队列 #11 Entry #141 B-7 的**同型陷阱**)
+      - [ ] 3.1c 断言收集结果**非空**(`A-n` 恰 **5** 条、`C-n` 恰 **12** 条)⇒ **防空转**
+      ⇒ **判据**:12 格 `ref` 与锚点摘要条目**一一可解析**;任一侧手改 ⇒ **必红**
+
 - [ ] 3.2 **9 组反向 fixture**(每组**必红** + **归因 id** 命中)—— 归因 id 的**唯一登记处 = 本条 + `design §3`**:
       **既有 id(复用,5 条)**:`CP-OPCODE-CLASSIFIER` + `CP-05`(NSS-01)· `CP-EPOCH-SEMANTICS`(NSS-02)·
       `CP-DRAIN-FAIL`(NSS-03)· `CP-DIVERT-STOP`(NSS-05)· `CP-03`(NSS-07);
       **新建 id(本 change 单一登记,4 条)**:`NSS-04-DESTROY-LEAK` · `NSS-06-ORDERING-MIS` ·
       `NSS-08-SCOPE-OVERREACH` · `NSS-09-BASIS-MISSING`
+      ⇒ **9 组 / 10 条 fixture**(NSS-01 含 2 条,因其义务有 **2** 个归因 id):
+      - [ ] 3.2a NSS-01a `CP-OPCODE-CLASSIFIER`:毒化 = 给 `classify_at_fabric_ingress` 加 `std::uint32_t opcode` 参数 ⇒ **签名锁**编译红
+      - [ ] 3.2b NSS-01b `CP-05`:毒化 = 载体加 `#include "tlm/cep/collective_plane.hh"` 或加区域表成员 ⇒ **运行期源扫描**红
+      - [ ] 3.2c NSS-02 `CP-EPOCH-SEMANTICS`:毒化 = `epoch_routes_to_collective(Uncommitted)` 返 `true` ⇒ 编译红
+      - [ ] 3.2d NSS-03 `CP-DRAIN-FAIL`:毒化 = `register_region` 恒返 `Ok` ⇒ 编译红
+      - [ ] 3.2e NSS-04 `NSS-04-DESTROY-LEAK`:毒化 = `classify_after_destroy` 恒返 `Pass`(抹掉泄露可观测性)⇒ 编译红
+      - [ ] 3.2f NSS-05 `CP-DIVERT-STOP`:毒化 = `is_fail_stop` 恒返 `false` ⇒ 编译红
+      - [ ] 3.2g NSS-06 `NSS-06-ORDERING-MIS`:毒化 = `ordering_c_orders_reduce` 反转比较 ⇒ 编译红
+      - [ ] 3.2h NSS-07 `CP-03`:毒化 = `VcReservationState` 加第 **2** 取值 **且** 加 `vc_id` 成员 ⇒ 计数 + SFINAE 锁编译红
+      - [ ] 3.2i NSS-08 `NSS-08-SCOPE-OVERREACH`:毒化 = `CollectiveScope` 加 `CrossFabric` ⇒ 计数锁编译红
+      - [ ] 3.2j NSS-09 `NSS-09-BASIS-MISSING`:毒化 = 某格 `ref` 置 `nullptr` / `pending` 与许可错配 ⇒ `all_basis_valid` 编译红
+
 - [ ] 3.3 **正控**:每条反向 fixture SHALL 有**期望通过**的对照 ⇒ 纯负向断言无对照 = 判据可能没生效
+      - [ ] 3.3a 脚本**基线正控**:干净载体必须编译通过且探针全绿(否则探针本身有问题 ⇒ 直接 `exit 1`)
+      - [ ] 3.3b 毒化锚点**未恰好命中 1 次** ⇒ 判 **fixture 失效**(⛔ 不得当作「红」放行)
+
 - [ ] 3.4 **「不可表达」型判据**(NSS-07 / NSS-08)的**运行期兜底** ⇒ 不得只以「编译红」充当 ctest 判据
+      - [ ] 3.4a **SFINAE** 判据从 Phase 1 测试**镜像到** probe(`HasVcId` / `HasReason` / `HasOwner` / `HasRevisitTrigger`)
+      - [ ] 3.4b 跨 fabric 取值**不可表达**:枚举基数 + 载体源扫描(零 `CrossFabric` / `InterNode` / `GlobalScope` token)
+
 - [ ] 3.5 **归因纪律**:反向 fixture SHALL 报出**可归因 id** ⇒ **不得**只以「整体 FAIL」充当判据
+      - [ ] 3.5a **编译期红**:grep 编译日志的 `<id>:` 前缀命中期望 id
+      - [ ] 3.5b **运行期红**:probe 输出 `PROBE:FAIL <id>` 逐条匹配
+
 - [ ] 3.6 ⚠️ **禁止同一义务出现两个 id**(有范围的禁令,per critic B2 裁决 —— 修复于 Entry #179):
       ① **已给出 id** 的义务 SHALL **复用**该 id,SHALL **NOT** 另起别名;
       ② **新增**义务的 id SHALL 在**本 change 的 `design §3` + `tasks 3.2`** **单一登记**,SHALL **NOT** 在 ADR 与本 change **重复登记**;
       ③ 判据实现与反向 fixture 的**归因** SHALL 一律用上述 id(`NSS-xx` 仅作 Scenario 标题 / 离线标签);
       ④ ⚠️ **既有 id 的来源不限于机器闸的 `CP-01`~`CP-06`** —— ADR 已印出的 `CP-OPCODE-CLASSIFIER` / `CP-EPOCH-SEMANTICS` / `CP-DRAIN-FAIL` / `CP-DIVERT-STOP` / `CP-03-VC-PRECONDITION` 等**同样是既有 id**
       ⇒ **禁止**把「引用机器闸」写成唯一合法来源(否则这 5 条一并违规)
+      ⚠️ **实测补注(Entry #182)**:上述 5 条「既有 id」在**代码域零机器落点**(只在 ADR / 台账)
+      ⇒ 本 change 的 fixture 是它们的**首个机器落点**;**不得**误解为「扩展已有实现」
+
+- [ ] 3.7 **探针 + 驱动脚本**(照队列 #12 `cep_cxl_dcoh_state_spec_{probe.cc,reverse_verify.sh}` 同构)
+      - [ ] 3.7a `scripts/test/cep_nvlink_sharp_state_spec_probe.cc`(运行期判据 + 源扫描 + `PROBE:FAIL <id>`)
+      - [ ] 3.7b `scripts/test/cep_nvlink_sharp_state_spec_reverse_verify.sh`
+            (影子目录毒化 ⇒ `-I $SHADOW/include` **优先**;仓内文件**零改动**)
+      - [ ] 3.7c **两类失败形态都支持**:编译期红(`static_assert` 文案)+ 运行期红(`PROBE:FAIL`)
+
+- [ ] 3.8 **ctest 注册 + 文档同步**
+      - [ ] 3.8a `test/CMakeLists.txt` 加 `cep_nvlink_sharp_state_spec_reverse_verify`(照 `cep_cxl_dcoh_state_spec_reverse_verify` 先例)
+      - [ ] 3.8b `scripts/README.md` 补 3 行(本脚本 + **队列 #12 / #11 的遗漏项** —— 实测未登记)
+      - [ ] 3.8c `docs/research/AGENTS.md` 索引补 **2 条**(#12 CXL-DCOH / #13 NVLink 锚点摘要 —— 实测声明 13 份实际 14 份)
+
+- [ ] 3.9 Phase 3 验收:门禁 **7** 脚本 rc=0 + `ctest` 全绿(含新注册)+ `format.sh --check` rc=0 + 台账 Entry
 
 ## Phase 4 — 验收 + 归档
 

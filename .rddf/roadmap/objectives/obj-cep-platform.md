@@ -11234,6 +11234,64 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 ---
 
+### Entry #182 — 2026-11-03 [scope-change](队列 #13 规约层 **Phase 2/3 细化子步落盘** + **3 项口径裁决** + **12 项 A 类债务登记**)
+
+**主题**:用户裁决 2026-11-03「同意建议 ⇒ 先把 Phase 2/3 的细化子步写进 `tasks.md`,再进 Phase 2」。**角色**:builder。
+
+**① 3 项口径裁决(Phase 2 的方向性前置)**
+
+| # | 裁决 | 内容 | 不裁的后果 |
+|---|---|---|---|
+| **D-1** | **「格」= 12 个枚举值** | `IngressDecision`2 + `RegisterResult`2 + `EpochState`2 + `OrderingRule`4 + `VcReservationState`1 + `CollectiveScope`1;形状型(`GroupId`/`AddressRange`/`DivertCounter`)**不占格**(照队列 #12 的 28 格先例) | `2.6` 的「非 pending 格数下限」**无分母** |
+| **D-2** | **self-derived 过许可门 = 新增 `SourceId::AdrContract`** | 本仓自著 ADR ⇒ 许可**自持** = `true`;`basis_is_valid` 规则**不变**(⛔ 不给 self-derived 开规则豁免) | design §4 的**两条规则互斥**:「`pending==false` ⇒ 许可已确认」×「R1~R5/ordering 属 self-derived 且 `pending=false`」⇒ 照抄队列 #12 的 `basis_is_valid` 会把**全部 self-derived 格判非法** |
+| **D-3** | **`ref` 空间 = `A-n` / `N-n` / `C-n`** | `C-n` 登记在锚点摘要**新增的 `§2bis 契约锚点`**,逐条指向 `ADR-CEP-0x §y.z Rz` | self-derived 格在锚点摘要里**无条目** ⇒ `ref` 只能为空 ⇒ 违 `NSS-09`「每格带 ref」 |
+
+⚠️ **`CollectiveScope` 判 `self-derived`**(能力域收窄是 ADR 决策;`A-1`/`A-5` 作佐证指针)
+⇒ 若判 `public-direct` 则其 `pending` 取决于 S1/S3 的**许可确认**,而 `pending=true` ⇒ **不得断言该值** ⇒ 与 `NSS-08` 的**硬锁**直接冲突。
+
+**② `tasks.md` 的细化落盘(Phase 2 由 6 项 → **10 项**;Phase 3 由 6 项 → **9 项**)**
+
+| 新增主项 | 内容 |
+|---|---|
+| **2.0** | 锚点摘要补**两张表**(`pin` + 许可列 / `§2bis C-1`~`C-12`)—— `docs/research/` **不在** M1 冻结集 ⇒ 无需两步授权 |
+| **2.7** | `design §3` 的 **3 处**口径漂移订正(NSS-04 `lookup_region` / NSS-05「字段恰 2」/ NSS-07「解析结果」) |
+| **2.8** | **3 处**计数/范围漂移订正(「19 条断言」→ **24** / `N-1`~`N-7` → `N-1`~`N-9` / `A-4`+`A-2` 的载体无表达须显式归属) |
+| **2.9 / 3.9** | Phase 验收点显式化 |
+| **3.7 / 3.8** | probe + 驱动脚本 + ctest 注册 + 脚本文档同步(原仅一句「9 组 fixture」) |
+
+**③ 12 项 A 类债务登记(本轮实测发现,全部属**本 change 内**必须闭合)**
+
+| # | 缺陷 | 实测证据 |
+|---|---|---|
+| A-1 | 载体**无 `Basis` 结构** | `grep Basis include/tlm/cep/nvlink_sharp_state_spec.hh` = 0 |
+| **A-2** | **24 条断言中 0 条带归因 id** | 去注释后正则:带 `CP-*`/`NSS-*` 前缀 = **0** ⇒ Phase 3 的「归因命中」**无法成立** |
+| A-3 | design §3 NSS-05「`DivertCounters` 字段集合**恰 2**」vs 载体 `DivertCounter{total}` **1 字段** | design:77 vs 载体:141 |
+| A-4 | design §3 NSS-04「`lookup_region` 返回空」vs 载体 `decision_after_destroy()` | design:76 vs 载体:118 |
+| A-5 | design §3 NSS-07「载体**解析**结果」vs 载体无解析函数 | design:79 |
+| **A-6** | `decision_after_destroy()` **恒真**(无参返常量)⇒ 违铁律①,无鉴别力 | 载体:118 |
+| A-7 | 锚点摘要**无 `pin=` / 许可记录**(tasks 2.3 的硬输入缺失) | `grep` 仅 1 处散文提及 |
+| **A-8** | `A-n` 在**标题**里、`N-n` 在**表格单元格**里 ⇒ 照抄 `collect_ids`(只扫表格)得**空集** | 模拟: `collect_ids("A-")` = 空 ⇒ 逐格核对**恒真空转**(队列 #11 Entry #141 B-7 同型) |
+| A-9 | tasks 0.1「**9 项** pending 白名单 `N-1`~`N-7`」自相矛盾;design 头注 `N-1`~`N-7` vs §1.3 `N-1`~`N-9` | tasks:27 / design:5 vs design:38 |
+| A-10 | 「**19** 条编译期断言」失实 —— 实际 **24** | `grep -c 'static_assert('` = 24 |
+| A-11 | design §1.2 第 2 项「多 group 并存(`A-4`)」载体**未表达** | 载体仅 `using GroupId = uint32_t` 形状 |
+| A-12 | `A-2` 的 flow_support 粒度**未表达** | 载体无 flow 面 |
+
+**④ 本轮新发现、**尚未**登记 §10 的 4 项(建议后续登记)**
+
+| # | 项 | 证据 |
+|---|---|---|
+| C-1 | `docs/research/AGENTS.md` 索引漂移:声明 **13** 份 / 实际 **14**;§2.1 声称 CEP **4** 份 / 实际 **6**(#12、#13 锚点摘要**完全未登记**) | 实测 |
+| C-2 | `.rddf/improvements/cpptlm-cep-nvlink-sharp.md` 两处「当前实测 **0/3**」(实际 **1/3**);门禁 `LIVE` 清单**不含**该文件 ⇒ **漏检** | 实测 `LIVE` 定义 |
+| C-3 | `obj-cep-platform.md:753` 一行内**塞了两个表格行**(字面 `\n`,1300 字符,`| P2 |` × 2) | 实测 |
+| C-4 | `scripts/README.md` **未登记**队列 #11 / #12 的反向脚本 | 实测 |
+
+**⑤ 关联**: Entry #181(Phase 1 最小测试)· #180(Phase 1 载体)· #179 / #178(critic 两轮)· #177 / #176(裁决)
+· `openspec/changes/cpptlm-cep-nvlink-sharp-state-spec/tasks.md`(Phase 2.0 ~ 2.9 / 3.1 ~ 3.9)
+· `docs/research/2026-11-03-cep-nvlink-sharp-anchor-summary.md`(2.0 的对象)
+· `include/tlm/cep/nvlink_sharp_state_spec.hh`(2.1 ~ 2.6 的对象)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 
