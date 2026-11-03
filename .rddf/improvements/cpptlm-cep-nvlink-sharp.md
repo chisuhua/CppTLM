@@ -171,7 +171,7 @@ NVLink SHARP 不做目录 ⇒ tracker 只能是**退化基线** ⇒ `BroadcastNu
 ## Acceptance
 
 - [x] **开工前置**:`ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` **定稿** —— ✅ **已完成**(2026-11-03 签发 **v1.0**,per Entry #169 / #170;本项即原「状态由未签发 ⇒ 已签发」的验收条款)
-- [ ] **Task 0 硬门**:公开来源普查 ⇒ 锚点摘要产物(`docs/research/<date>-cep-nvlink-sharp-anchor-summary.md`):**sha256 钉版** · **零 NDA / 规范正文暴露** · 记**条款级定位 + 断言摘要**;公开来源候选类 = NVSHMEM(开源实现)/ 公开白皮书 / in-network reduction 学术论文
+- [x] **Task 0 硬门**:✅ **已产出**(2026-11-03,Entry #173)⇒ 锚点摘要产物(`docs/research/<date>-cep-nvlink-sharp-anchor-summary.md`):**sha256 钉版** · **零 NDA / 规范正文暴露** · 记**条款级定位 + 断言摘要**;公开来源候选类 = NVSHMEM(开源实现)/ 公开白皮书 / in-network reduction 学术论文
 - [ ] **architect 裁决**:上述 **5 项载体形态决定项** 落盘(② 已裁 = `BroadcastNull`;**⑤ 的 VC 编号已裁** = **Decision D**(2026-11-03,Entry #171);①③④ 与 ⑤ 的 epoch / reduce 族**待裁**)⇒ 裁决结论**同步** `ADR-CEP-01` / `02` / `03` 与 07 号
 - [ ] **第 0 个 change(规约层)**:R1/R2 分类判据 + R3/R4 区域互斥与 epoch 生命周期 + R5 计数器/断言 + ordering A/B/C/D + reduce 函数族 + **集合 VC 预留状态**(**Decision D**:`unavailable` + `vc_reservation_declaration` 四字段,或非空预留)+ **逐格 `basis`**(每格 `pending` 须有 `ref` ⇒ 无 `ref` 的 `pending` 即红)
 - [ ] **第 0 个 change 的反向 fixture**:毒化任一格 ⇒ 编译期锁**必红** + 归因命中(铁律 ②③)⇒ **正控**(干净载体必绿)
