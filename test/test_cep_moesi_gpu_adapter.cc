@@ -394,7 +394,9 @@ TEST_CASE("CEP moesi_gpu: status 翻转 ⇒ implemented 计数 0→1(条件达�
     // ⚠️ 2026-11-02(队列 #11 实现层):新增 `tilelink_c` ⇒ `implemented` 实例 **+1**(per 台账 Entry
     // #146)
     // ⚠️ 2026-11-02(队列 #12 实现层):新增 `cxl_3_0_symmetric` ⇒ `implemented` 实例 **+1**
-    REQUIRE(implemented == 6);
+    // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
+    // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
+    REQUIRE(implemented == 7);
     REQUIRE(instance("moesi_gpu").at("status") == "implemented");
     REQUIRE(instance("mesif").at("status") == "implemented"); // 队列 #9 归档批翻转
 

@@ -33,6 +33,7 @@
 #ifndef INCLUDE_TLM_CEP_COLLECTIVE_PLANE_HH_
 #define INCLUDE_TLM_CEP_COLLECTIVE_PLANE_HH_
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <map>
@@ -202,8 +203,13 @@ inline const char* status_name(Status s) {
 
 /// group 归属判定(per design D-ι 裁决 1 —— R2 谓词的**判读侧**)
 ///
-/// ⚠️ 本判定是**判读**,不是**接线** —— 真正把判定接到 fabric 路由上的
-/// `fabric_ingress_classify` 属 **P3**(`cpptlm-cep-nvlink-sharp-adapter`)。
+/// ⚠️ 本判定是**判读**,不是**接线** —— 真正把判定接到 fabric 路由上的接线属 **P3**。
+/// ⚠️ **2026-11-03 订正**(per 台账 Entry #187 · 队列 #13 实现层):原写
+/// 「`fabric_ingress_classify` 属 P3(`cpptlm-cep-nvlink-sharp-adapter`)」——
+/// ① **change 名失指**(`cpptlm-cep-nvlink-sharp-adapter` **不存在**;权威名 = `cpptlm-cep-nvlink-sharp`)
+/// ⇒ 指向**本 change**;② 该**函数名**已被 `INV-CEP-04-IC5`(region/epoch 分流,per `ADR-CEP-04:301`)占用
+/// ⇒ **不得**再用它指代 barrier 分类(V3 用 `barrier_key_class`,per `ADR-CEP-03` SU(#2) F.5)。
+/// ⇒ **接线侧**(把判定接到 fabric 路由)仍属 **P3,未排期** —— 本仓**只**交付**判读面**。
 enum class RegionState : std::uint8_t {
     /// 地址未命中任何 collective region ⇒ **不 divert**(走 coherence 路径)
     NoRegion = 0,
@@ -224,6 +230,86 @@ inline const char* region_state_name(RegionState s) {
             return "registered-active";
     }
     return "";
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// V3 barrier 分类 litmus(per `ADR-CEP-01` §3.1 的**两条** litmus + §7 V3)
+// ══════════════════════════════════════════════════════════════════════════
+// ⚠️ **为什么是两条**(而不是一条「key 是地址还是组」):
+//   `ADR-CEP-01 §3.1` 给的是**两条**判据 —— ① key 是地址还是参与者组?
+//   ② 完成条件数的是事务还是参与者? —— **两条必须一致** ⇒ 不一致 ⇒ **无效**。
+//
+// ⚠️ **为什么必须是结构体入参**(而不是「仅标签」的枚举):
+//   若入参只是 `enum{Address,Group}` 标签 ⇒ 返回值由标签直接决定 = **恒等映射 = 恒真**
+//   ⇒ 判据**没有鉴别力** ⇒ 本载体要求**载荷 + 两条 litmus 维度**齐备。
+//
+// ⚠️ **归因 id = `CP-BARRIER-CLASS`**(per `ADR-CEP-01` SU 2026-11-03(#2) G.4:
+//   「V3 的归因 id **待实现层建立**」)⇒ 本仓**唯一**登记处 = 队列 #13 实现层 change 的 `design §7`。
+//   ⚠️ `ADR-CEP-01` §7 附录里印出的 `BARRIER-CLASSIFY` 是**离线标签**,**不是**归因 id。
+
+/// litmus ①:barrier 的 **key** 是地址还是参与者组?
+enum class BarrierKeyKind : std::uint8_t { Address = 0, Group = 1 };
+
+/// litmus ②:完成条件**数的是事务还是参与者**?
+enum class BarrierCompletionKind : std::uint8_t { Transaction = 0, Participant = 1 };
+
+/// barrier 分类结论 —— **恰 2 个有效取值** + 1 个**无效**哨兵。
+///
+/// ⚠️ `Invalid` 的两种成因:① **空 key**(无有效载荷)② **双重 key**(地址与组**同时**有载荷)
+/// ③ **两条 litmus 结论冲突**(如「地址 key + 数参与者」)—— 三者都不是「二选一」的合法输入。
+enum class BarrierKeyClass : std::uint8_t {
+    Ordering = 0,   ///< 地址 key + 数事务 ⇒ per-address 串行化(requester-scoped)
+    Collective = 1, ///< 组 key + 数参与者 ⇒ group rendezvous(group-scoped)
+    Invalid = 2,    ///< 键非法 / 两条 litmus 冲突 ⇒ 调用方 SHALL **拒绝**
+};
+
+/// barrier 的键 —— **结构体**(两条 litmus 维度 + 两个载荷)。
+struct BarrierKey {
+    BarrierKeyKind key_kind = BarrierKeyKind::Address;
+    BarrierCompletionKind completion_kind = BarrierCompletionKind::Transaction;
+    std::uint64_t addr = 0;                ///< litmus ① 的地址载荷(约定:0 = **无地址**)
+    group_id_t group = kInvalidGroupId;    ///< litmus ① 的组载荷(`kInvalidGroupId` = **无组**)
+
+    /// 载荷是否齐备且**不冲突**
+    constexpr bool has_addr() const noexcept { return addr != 0; }
+    constexpr bool has_group() const noexcept { return group != kInvalidGroupId; }
+    /// **双重 key** ⇒ 地址与组同时有载荷 ⇒ 非法
+    constexpr bool ambiguous() const noexcept { return has_addr() && has_group(); }
+    /// 该键是否**可用**(非空、非双重)
+    constexpr bool valid() const noexcept {
+        if (ambiguous())
+            return false;
+        return key_kind == BarrierKeyKind::Address ? has_addr() : has_group();
+    }
+};
+
+/// **V3 分类** —— 两条 litmus 必须**一致**。
+///
+/// - (地址 key, 数事务) ⇒ `Ordering`
+/// - (组 key, 数参与者) ⇒ `Collective`
+/// - 其余(空 key / 双重 key / 两条 litmus 冲突)⇒ `Invalid`
+///
+/// ⚠️ **这是判读面**,**不是**接线面 —— 把它接到 fabric 路由属 **P3,未排期**。
+inline constexpr BarrierKeyClass classify_barrier_key(const BarrierKey& key) noexcept {
+    if (!key.valid())
+        return BarrierKeyClass::Invalid;
+    const bool litmus_1_ordering = (key.key_kind == BarrierKeyKind::Address);
+    const bool litmus_2_ordering = (key.completion_kind == BarrierCompletionKind::Transaction);
+    if (litmus_1_ordering != litmus_2_ordering)
+        return BarrierKeyClass::Invalid; // 两条 litmus 结论冲突
+    return litmus_1_ordering ? BarrierKeyClass::Ordering : BarrierKeyClass::Collective;
+}
+
+inline constexpr const char* barrier_key_class_name(BarrierKeyClass c) noexcept {
+    switch (c) {
+        case BarrierKeyClass::Ordering:
+            return "ordering";
+        case BarrierKeyClass::Collective:
+            return "collective";
+        case BarrierKeyClass::Invalid:
+            return "invalid";
+    }
+    return "invalid";
 }
 
 /// 请求载荷描述(per `ADR-CEP-03 §2`:addr+len | inline)
@@ -666,6 +752,50 @@ private:
     std::uint32_t current_member_ = kInvalidMember;
     Status last_status_ = Status::Ok;
 };
+
+// ══════════════════════════════════════════════════════════════════════════
+// plane 实现**注册表**(V6-c 前提约束的**单源**)
+// ══════════════════════════════════════════════════════════════════════════
+// ⚠️ **为什么需要它**(per 队列 #13 实现层 · 台账 Entry #187):
+//   `ADR-CEP-01` SU 2026-11-03(#1) D.4 的 **V6-c** 要求「声明 `status: unavailable` 时,
+//   拓扑中**不得**存在真实 fabric 集合流量载体(仅本地模型)」⇒ 判据需要一个
+//   「哪些 plane 是**本地模型**」的**权威清单**。
+//   ⇒ 若该清单放在**远端**(契约头里),则「新增 plane 实现时记得回来登记」= **靠记忆**
+//   ⇒ 故本注册表**紧邻实现定义**,是**单源**;契约头**从本表派生**白名单。
+//
+// ⚠️ **语义**:`is_local_model = true` ⇒ 该 plane **不承载真实 fabric 集合流量**
+//   (`NullCollectivePlane` = 不启用 collective;`LocalCollectivePlane` = 节点内本地模型)
+//   ⇒ `false` 保留给**未来的** fabric 承载实现(登记即 ⇒ 绑定到它 ⇒ V6-c 判红)。
+//
+// ⚠️ **未登记的 plane 名** ⇒ 判 **FAIL**(不是「不在表里就算本地」)⇒
+//   新增 plane 实现却漏登记 ⇒ 绑定到它时**必红** ⇒ 不可能「静默通过」。
+struct CollectivePlaneRegistryEntry {
+    const char* name;
+    bool is_local_model;
+};
+
+inline constexpr std::array<CollectivePlaneRegistryEntry, 2> kCollectivePlaneRegistry{{
+    {"NullCollectivePlane", true},
+    {"LocalCollectivePlane", true},
+}};
+
+/// 查注册表 —— 未登记 ⇒ `nullptr`
+inline constexpr const CollectivePlaneRegistryEntry* find_collective_plane(const char* name) noexcept {
+    if (name == nullptr)
+        return nullptr;
+    for (const auto& e : kCollectivePlaneRegistry) {
+        // 逐字符比较(⛔ 不用 strcmp:本头**只** include 标准库)
+        const char* a = e.name;
+        const char* b = name;
+        while (*a != '\0' && *a == *b) {
+            ++a;
+            ++b;
+        }
+        if (*a == '\0' && *b == '\0')
+            return &e;
+    }
+    return nullptr;
+}
 
 }  // namespace tlm::cep
 

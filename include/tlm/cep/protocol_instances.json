@@ -403,6 +403,68 @@
         "hierarchical": true,
         "heterogeneous": true
       }
+    },
+    {
+      "id": "nvlink_4",
+      "family": "industrial",
+      "adapter": "NvlinkAdapter",
+      "status": "implemented",
+      "protocol_version": "nvlink-4.0",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": true,
+        "snoop_resp": true,
+        "writeback": true,
+        "forward_data": false,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": true,
+        "snoop_completion_ack": false
+      },
+      "perm": [
+        "NONE",
+        "READ",
+        "UNIQUE",
+        "WRITEBACK"
+      ],
+      "atomic": {
+        "supported": true
+      },
+      "consistency_labels": {
+        "read": "SC",
+        "write": "SC"
+      },
+      "ordering_assumption": {
+        "compute_noc": {
+          "0": "unordered",
+          "1": "p2p_ordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "compute_noc": {
+          "request": 0,
+          "response": 1,
+          "snoop": 2,
+          "snoop_resp": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "BroadcastNull",
+        "caps": {
+          "scope": "NONE",
+          "completeness": "EXACT",
+          "authority": "NONE",
+          "aggregation_at": "NONE"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": true,
+        "heterogeneous": true
+      }
     }
   ],
   "channel_dependency_edges": {
@@ -451,7 +513,8 @@
     "chi_rnf",
     "cxl_2_0",
     "tilelink_c",
-    "cxl_3_0_symmetric"
+    "cxl_3_0_symmetric",
+    "nvlink_4"
   ],
   "authority_migrations": []
 }

@@ -102,10 +102,13 @@ TEST_CASE("CEP MESIF 声明:静默升级行落地且 current_state 不再否认�
     //    (per 台账 Entry #146;⇒ 派生量从「恒空」转为「有判别力」)
     // ⚠️ 2026-11-02(队列 #12 实现层):新增 `cxl_3_0_symmetric` ⇒ 计数 **+1**
     //    (本族 E→M **未确证** ⇒ **不声明**静默升级 ⇒ 派生集**恰含 2 个**)
-    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 2u);
+    // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
+    // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
+    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 3u);
     //    ⇒ 顺序 = `instances[]` 数组序(派生函数按数组序遍历)
     REQUIRE(loaded.inputs.no_upgrade_instances.at(0) == "cxl_3_0_symmetric");
     REQUIRE(loaded.inputs.no_upgrade_instances.at(1) == "tilelink_c");
+    REQUIRE(loaded.inputs.no_upgrade_instances.at(2) == "nvlink_4");
 
     // ④ 反向 fixture:`mesif` 行的 `to` 一旦被改成 `READ` ⇒ 上面的 `== WRITEBACK` 必红
     //    (此处用可变异副本证明判据有鉴别力,不改真实文件)

@@ -97,10 +97,14 @@ TEST_CASE("CEP CollectiveContract: 声明源形态与 schema 一致", "[cep][col
     // 解析器接受它(⇒ 声明源形态与解析实现一致)
     const auto decl = cep::parse_collective_plane_declaration(doc);
     CHECK_FALSE(decl.source_error);
-    CHECK(decl.plane_binding.size() == 2u);
+    // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
+    // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
+    CHECK(decl.plane_binding.size() == 3u);
     // 默认:全部不启用 collective(CHI / CXL 配置下绑 NullCollectivePlane,per 07 号 §6.4)
     CHECK(decl.plane_binding.at("moesi_gpu").empty());
     CHECK(decl.plane_binding.at("mesif").empty());
+    // ⚠️ 2026-11-03(队列 #13 实现层):`nvlink_4` 绑**本地模型** ⇒ 集体面首个消费者
+    CHECK(decl.plane_binding.at("nvlink_4") == "LocalCollectivePlane");
     // 默认:未预留任何 VC(本仓当前拓扑无 collective 可用隔离 VC)
     CHECK(decl.vc_reservation.empty());
 

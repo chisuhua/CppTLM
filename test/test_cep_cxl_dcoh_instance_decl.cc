@@ -203,10 +203,13 @@ TEST_CASE("CDX-07:cxl_3_0_symmetric 不声明静默升级(E→M 未确证 ⇒ �
     const auto loaded = tlm::cep::load_adapter_contract_inputs(cpptlm::cep::repo_root().string());
     REQUIRE(loaded.ok);
     const auto& no_up = loaded.inputs.no_upgrade_instances;
-    REQUIRE(no_up.size() == 2u);
+    // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
+    // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
+    REQUIRE(no_up.size() == 3u);
     //    ⇒ 顺序 = `instances[]` 数组序(派生函数按数组序遍历)
     CHECK(no_up.at(0) == "cxl_3_0_symmetric");
     CHECK(no_up.at(1) == "tilelink_c");
+    CHECK(no_up.at(2) == "nvlink_4");
 
     // ③ IC-2 判据**只**查 `combination_capabilities.hierarchical` ⇒ 本族填 `true` 即 PASS
     //    ⚠️ IC-2 的 detail 文案「UNIQUE(E 可静默升 M)」属**沿用**通用措辞

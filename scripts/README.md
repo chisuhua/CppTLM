@@ -39,9 +39,12 @@
 | `cep_cxl_dcoh_state_spec_reverse_verify.sh` | 队列 #12 规约载体（`CDS-01` ~ `CDS-07`）的反向验证（4 类毒化副本） | ✅ 生效（ctest 注册） |
 | `cep_tilelink_adapter_reverse_verify.sh` | 队列 #11 实现层 adapter（`TLA-01` ~ `TLA-13`）的反向验证 | ✅ 生效（ctest 注册） |
 | `cep_nvlink_sharp_state_spec_reverse_verify.sh` | 队列 #13 规约载体（`NSS-01` ~ `NSS-09`）的反向验证：**9 组 / 10 条**毒化 fixture（每条必红 **且** 归因 id 命中）+ 基线正控 | ✅ 生效（ctest 注册） |
+| `cep_nvlink_sharp_reverse_verify.sh` | 队列 #13 **实现层**载体（`NVA-01` ~ `NVA-09`）的反向验证：**9 组**毒化 fixture（每条必红 **且** 归因 id **精确相等**命中）+ 基线正控 | ✅ 生效（ctest 注册） |
 
 > 配套数据文件：`cep_doc_ref_aliases.tsv`（节号别名）/ `cep_doc_ref_registry.tsv`（语义 + 负向断言登记）。
-> **本表 15 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
+> **本表 16 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
+> ⚠️ **2026-11-03 订正**（队列 #13 实现层 / Entry #187）：原写「**15 个**」—— 该数是**表内登记行数**，而 `scripts/test/cep_*.sh` 的**磁盘实际**为 **19** 个（另 3 个未列入本表）
+> ⇒ **表内计数 ≠ 磁盘实际**；本表只登记**已纳入 ctest 的**脚本，差异项以 `ls scripts/test/cep_*.sh` 为准。
 > ⚠️ **2026-11-03 补登**（队列 #13 Phase 3，Entry #184）：此前 **队列 #11 / #12 的两个反向脚本**
 > 虽已注册进 ctest，却**未列入本表**（预存登记缺口）⇒ 本次一并补上。
 > ⚠️ 目录内另有 `cep_freeze_reverse_verify.sh` 与 `cep_gate_selftest.sh` 两个脚本**未列入本表**（预存登记缺口,非本次引入）。
@@ -67,6 +70,25 @@
 | **CC-05** ④ | 重复 `bridge_id_` ⇒ 判红 | 同上「反向 fixture ②」 |
 | **CC-05** ④ | `protocol_id_` 与 `family` 不符 ⇒ 判红 | 同上「反向 fixture ③」 |
 | **CC-06** | 映射产出超出 3 类值域 ⇒ 判红 | `[cep][protocol-bridge]`「CC-06」（**引用**队列 #6 的 `category_value_domain()`，不重立第二份判据） |
+
+### 反向 fixture 登记（队列 #13 `cpptlm-cep-nvlink-sharp` —— **实现层**）
+
+> **纪律**：每条新判据必须有**可执行**的反向 fixture，且**必须登记**在此表
+> ⚠️ **形态**：「毒化 ⇒ 判据**必红**」（**鉴别力**）⇒ 与队列 #11 修**误报**的那一组
+> （「毒化 ⇒ 判据**仍绿**」= 回归防护）**形态相反** ⇒ **两组都须登记**，避免混用。
+> ⚠️ **归因必须「精确相等」**（⛔ 不用前缀匹配）—— 否则 `CP-03` 会命中 `CP-03-VC-PRECONDITION`。
+
+| 判据 | 反向 fixture（形态） | 登记位置 |
+|---|---|---|
+| **NVA-01** ① 零自有表副本 | adapter 注入成员字面量 `IngressDecision::` ⇒ 源扫描红 | `cep_nvlink_sharp_reverse_verify.sh`（ctest `cep_nvlink_sharp_reverse_verify`） |
+| **NVA-01** ② 无 `transition_*` | adapter 加 `transition_x()` ⇒ 源扫描红 | 同上 |
+| **NVA-02** caps 取自 traits | **同时**毒化 traits 行（`Completeness` ⇒ `CONSERVATIVE`）+ tracker 硬编码 caps ⇒ 可见 caps 与 traits 不等 ⇒ 红 | 同上 |
+| **NVA-03** 实例声明 | `include/tlm/cep/protocol_instances.json` 删 1 键 ⇒ 13 键判据红 | 同上 |
+| **CP-BARRIER-CLASS** V3 双向 | `classify_barrier_key` 两向判成同一类 ⇒ 红 | 同上 |
+| **NVA-05** 算子族恰 6 值 | 在 `ReduceOp` 之后**追加** `Prod = 6` ⇒ 源文本枚举项计数 = 7 ⇒ 红 | 同上 |
+| **CP-PARTIAL-FAIL** partial failure | 移除 `group_destroy` 的 Fault 产出 ⇒ 无 Fault 事件 ⇒ 红 | 同上 |
+| **NVA-07** 集体面绑定 | region 的 `mode` 改成 `normal` ⇒ R3 降级判据红 | 同上 |
+| **CP-03-VC-PRECONDITION** V6-c | 绑定一个**未注册**的 plane 名 ⇒ 前提约束红 | 同上 |
 
 ### 反向 fixture 登记（队列 #11 `cpptlm-cep-tilelink-state-spec`）
 

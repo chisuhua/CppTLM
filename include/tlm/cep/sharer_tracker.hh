@@ -10,10 +10,13 @@
 //    **协议专有**的行为实现**不得**定义在这里(否则通用层反向依赖协议族)⇒ 落**独立头**:
 //    · `TreeManager` → `tilelink_tree_manager.hh`(队列 #11 实现层,✅ 已落地)
 //    · `DcohSymmetric` → `cxl_dcoh_tracker.hh`(队列 #12 实现层,✅ 已落地)
-//    ⇒ 二者在此**只留** `kTrackerTraits` 的**声明层**行(名字 + caps/behavior),
+//    · `BroadcastNull` → `broadcast_null_tracker.hh`(队列 #13 实现层,✅ 已落地 2026-11-03)
+//    ⇒ 三者在此**只留** `kTrackerTraits` 的**声明层**行(名字 + caps/behavior),
 //    ⚠️ **不代表**「行为未落地」。
-//    仍未落地的只剩 `BroadcastNull` = **当前队列序列无消费者 ⇒ 不排期、保留登记**
-//    (per Entry #112);其落位推导值见台账 Entry #107。
+//    ⚠️ **2026-11-03 订正**(per 台账 Entry #187):原文写「仍未落地的只剩 `BroadcastNull`
+//    = 当前队列序列无消费者 ⇒ 不排期、保留登记」—— 队列 #13 实现层已把 `nvlink_4`
+//    (本仓首个 collective 消费者)声明为 `BroadcastNull` ⇒ **其行为面已落地**。
+//    ⇒ 仍未落地的只剩 `FullMapDirectory`(反向缺口,per Entry #139 的裁决)。
 // ⚠️ `SparseSnoopFilter` 的行为实现**已被 `moesi_gpu`(队列 #6)声明占用**,
 //    落地于**队列 #10 实现层**(per 台账 Entry #112 去重 · Entry #124 复核维持)⇒ §8.1 **R11**
 //    的「meta 层」缺口闭合;其「语义层」缺口(补偿路径无判据)由**实现层 change** 承担。

@@ -692,6 +692,60 @@ inline ContractVerdict evaluate_vc_reservation(const CollectivePlaneDeclaration&
     return ContractVerdict::PASS;
 }
 
+/// **V6-c 前提约束**(per `ADR-CEP-01` SU 2026-11-03(#1) D.4)——
+/// 声明 `status: unavailable` 时,拓扑中**不得**存在**真实 fabric 集合流量载体**(仅本地模型)。
+///
+/// ⚠️ **归因 id = `CP-03-VC-PRECONDITION`**(per `ADR-CEP-01` SU 2026-11-03(#3) I.1 —— **唯一** id)
+/// ⇒ ⛔ **不新增** `ContractRule`(`kContractRuleCount == 6` 是被测试硬断言的契约面)
+/// ⇒ 本函数作为 **`CP-03` 行**的**子判据**:调用方把结论**折进** `CP-03` 的 verdict,
+///    并在 `detail` 头部加 **`[CP-03-VC-PRECONDITION]`** 前缀 ⇒ 反向 fixture 按
+///    **精确相等**匹配该前缀(⛔ 不用子串前缀匹配 —— 否则 `CP-03` 会命中它)。
+///
+/// ⚠️ **判据口径**(per 台账 Entry #187 · oracle R2 / metis):
+///   ① 只判**非空**绑定值(loader 把 `null` 物化成**空串**以保留键 ⇒ 空串**不**判 FAIL);
+///   ② `plane_binding` 为**零键** ⇒ **SKIP**(⛔ 禁 vacuous PASS);
+///   ③ 白名单**从 plane 注册表派生**(`collective_plane.hh` 的 `kCollectivePlaneRegistry`
+///      —— **单源在定义点**)⇒ **未登记**的 plane 名 ⇒ **FAIL**
+///      (⇒ 新增 plane 实现却漏登记 ⇒ 绑定到它时**必红** ⇒ 不可能「静默通过」)。
+inline ContractVerdict evaluate_vc_precondition(const CollectivePlaneDeclaration& decl,
+                                                std::string& detail) {
+    static const char* kPrefix = "[CP-03-VC-PRECONDITION] ";
+    const auto& vd = decl.vc_reservation_declaration;
+    if (!vd.present || vd.status.empty()) {
+        detail = std::string(kPrefix) +
+                 "未声明 vc_reservation_declaration ⇒ V6-c 不适用(交由 CP-03 空预留门判定)";
+        return ContractVerdict::SKIP;
+    }
+    if (vd.status != "unavailable") {
+        detail = std::string(kPrefix) + "声明 status = \"" + vd.status +
+                 "\"(非 unavailable)⇒ V6-c 前提约束不适用";
+        return ContractVerdict::SKIP;
+    }
+    if (decl.plane_binding.empty()) {
+        detail = std::string(kPrefix) +
+                 "plane_binding 为空(零键)⇒ 无可检查对象 ⇒ SKIP(禁 vacuous PASS)";
+        return ContractVerdict::SKIP;
+    }
+    for (const auto& [instance, plane] : decl.plane_binding) {
+        if (plane.empty())
+            continue; // `null` 绑定 ⇒ 该实例**不启用** collective ⇒ 不判
+        const CollectivePlaneRegistryEntry* e = find_collective_plane(plane.c_str());
+        if (e == nullptr) {
+            detail = std::string(kPrefix) + "实例 `" + instance + "` 绑定的 plane `" + plane +
+                     "` **未在** plane 注册表登记 ⇒ 声明不自洽(新 plane 实现必须登记局部性)";
+            return ContractVerdict::FAIL;
+        }
+        if (!e->is_local_model) {
+            detail = std::string(kPrefix) + "实例 `" + instance + "` 绑定的 plane `" + plane +
+                     "` **不是本地模型** ⇒ 违反 V6-c(声明 unavailable 时不得存在真实 fabric 集合流量载体)";
+            return ContractVerdict::FAIL;
+        }
+    }
+    detail = std::string(kPrefix) + "全部绑定均为**本地模型**(" +
+             std::to_string(decl.plane_binding.size()) + " 个绑定)⇒ V6-c 前提约束成立";
+    return ContractVerdict::PASS;
+}
+
 /// **CP-04 区域互斥** —— 与行为面**同源**:判据直接调 `LocalCollectivePlane` 的注册路径,
 /// 而不是**另写一份**重叠检测(禁双实现,per 队列 #4 纪律)。
 inline ContractVerdict evaluate_region_exclusion(const CollectivePlaneDeclaration& decl,
@@ -725,30 +779,48 @@ inline ContractVerdict evaluate_region_exclusion(const CollectivePlaneDeclaratio
 }
 
 /// **CP-05 完成域判别** —— group-scoped 字段**不得**出现在 coherence 侧接口/契约。
-inline ContractVerdict evaluate_completion_domain(const std::string& coherence_side_path,
+///
+/// ⚠️ **2026-11-03 扩展**(per 队列 #13 实现层 · 台账 Entry #187):
+///   ① 标识清单**补** `collective_region_table` —— coherence 侧**不得**出现区域表类型
+///      (per `ADR-CEP-03` SU(#2) F.4「标识清单补 `collective_region_table`」+ **复用** `CP-05`);
+///   ② 扫描面**可扩展**(多个 coherence / 源端侧文件)⇒ 由 `ContractPaths.coherence_side_extra` 注入。
+///
+/// ⚠️ **扩展面必须是「真正的 coherence / 源端侧」文件** —— ⛔ **不得**把 collective 侧的
+///   adapter 头塞进来(那只会「证明没扫错文件」= 恒真);adapter 的「不暴露区域表」
+///   由 `NVA-01` 独立承担(⇒ 不构成第二处归因)。
+inline ContractVerdict evaluate_completion_domain(const std::vector<std::string>& coherence_side_paths,
                                                    std::string& detail) {
-    std::ifstream in(coherence_side_path);
-    if (!in) {
-        detail = "coherence 侧契约不可读: " + coherence_side_path;
-        return ContractVerdict::FAIL;
-    }
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    // ⚠️ **去注释**后再查 —— 否则 coherence 侧注释里提及 `group_id` 即假阳性 FAIL
-    const std::string text = strip_cpp_comments(ss.str());
     static const char* kGroupScoped[] = {"group_id", "member_set", "CollectiveReq", "CollectiveEvt",
                                          "group_create", "group_register_region",
-                                         "collective_barrier"};
-    for (const char* g : kGroupScoped) {
-        if (text.find(g) != std::string::npos) {
-            detail = std::string("coherence 侧出现 group-scoped 标识 `") + g +
-                     "` ⇒ 违反完成域判别规则(requester-scoped → Coherence / group-scoped → Collective)";
+                                         "collective_barrier", "collective_region_table"};
+    for (const auto& path : coherence_side_paths) {
+        std::ifstream in(path);
+        if (!in) {
+            detail = "coherence 侧契约不可读: " + path;
             return ContractVerdict::FAIL;
         }
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        // ⚠️ **去注释**后再查 —— 否则 coherence 侧注释里提及 `group_id` 即假阳性 FAIL
+        const std::string text = strip_cpp_comments(ss.str());
+        for (const char* g : kGroupScoped) {
+            if (text.find(g) != std::string::npos) {
+                detail = std::string("coherence 侧(") + path + ")出现 group-scoped 标识 `" + g +
+                         "` ⇒ 违反完成域判别规则(requester-scoped → Coherence / group-scoped → Collective)";
+                return ContractVerdict::FAIL;
+            }
+        }
     }
-    detail = "coherence 侧未出现任何 group-scoped 标识";
+    detail = "coherence 侧(" + std::to_string(coherence_side_paths.size()) + " 个文件)未出现任何 group-scoped 标识";
     return ContractVerdict::PASS;
 }
+
+/// **CP-05 完成域判别** —— **单路径**入口(**保持既有行为**,既有测试依赖此签名)。
+inline ContractVerdict evaluate_completion_domain(const std::string& coherence_side_path,
+                                                   std::string& detail) {
+    return evaluate_completion_domain(std::vector<std::string>{coherence_side_path}, detail);
+}
+
 
 /// **CP-06 抓取点可测性登记** —— 解析 `ADR-CEP-01` 的 Status Update 表格,
 /// 逐条核对 7 个抓取点的覆盖状态。
@@ -1027,6 +1099,9 @@ struct ContractPaths {
     std::string canonical_flows_adr = kCanonicalFlowsAdrPath;
     std::string catchpoint_adr = kCatchpointAdrPath;
     std::string coherence_side = kCoherenceSidePath;
+    /// CP-05 的**扩展扫描面**(队列 #13 实现层新增):**真正的 coherence / 源端侧**文件
+    /// ⇒ ⛔ **不得**放 collective 侧的 adapter 头(那只会「证明没扫错文件」= 恒真)
+    std::vector<std::string> coherence_side_extra;
     std::string protocol_instances = kProtocolInstancesPath;
     std::string fabric = kFabricPath;
     std::string declaration = kDefaultCollectiveDeclarationPath;
@@ -1087,7 +1162,17 @@ inline ContractReport run_collective_plane_contract(const ContractPaths& paths) 
         if (snap.source_error) {
             add(ContractRule::VcReservation, ContractVerdict::FAIL, snap.source_error_detail);
         } else {
-            const ContractVerdict v = evaluate_vc_reservation(decl, snap, d);
+            ContractVerdict v = evaluate_vc_reservation(decl, snap, d);
+            // ⚠️ **V6-c 折进 CP-03 行**(⛔ 不新增第 7 条规则;`kContractRuleCount == 6` 是硬断言)
+            //    ⇒ 子判据的 detail 以 `[CP-03-VC-PRECONDITION]` 开头 ⇒ fixture 按**精确相等**归因
+            std::string pre;
+            const ContractVerdict pv = evaluate_vc_precondition(decl, pre);
+            if (pv == ContractVerdict::FAIL) {
+                v = ContractVerdict::FAIL;
+                d += " | " + pre;
+            } else if (pv == ContractVerdict::SKIP && v == ContractVerdict::PASS) {
+                d += " | " + pre;
+            }
             add(ContractRule::VcReservation, v, std::move(d));
         }
     }
@@ -1100,7 +1185,10 @@ inline ContractReport run_collective_plane_contract(const ContractPaths& paths) 
     // CP-05 完成域判别
     {
         std::string d;
-        const ContractVerdict v = evaluate_completion_domain(at(paths.coherence_side), d);
+        std::vector<std::string> cp05_paths{at(paths.coherence_side)};
+        for (const auto& extra : paths.coherence_side_extra)
+            cp05_paths.push_back(at(extra));
+        const ContractVerdict v = evaluate_completion_domain(cp05_paths, d);
         add(ContractRule::CompletionDomain, v, std::move(d));
     }
     // CP-06 抓取点可测性登记(须在其它判据跑完后核对 ⇒ 放最后)

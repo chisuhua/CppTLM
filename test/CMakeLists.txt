@@ -370,6 +370,25 @@ add_test(NAME cep_nvlink_sharp_state_spec
 add_test(NAME cep_nvlink_sharp_state_spec_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_nvlink_sharp_state_spec_reverse_verify.sh)
 
+# 队列 #13 `cpptlm-cep-nvlink-sharp`(第 1 个 change = **实现层**)的判据:
+#   ① `NvlinkAdapter` **零自有表副本** · 无 `transition_*` · 不暴露区域表类型;
+#   ② `BroadcastNull` **行为实现**(caps 取自 traits · 全部出参 · 零状态容器);
+#   ③ `nvlink_4` **13 键**齐备(schema `required` 实读)+ caps ↔ traits + `repo_owned`;
+#   ④ **V3** barrier 分类 litmus 双向(归因 `CP-BARRIER-CLASS`);
+#   ⑤ 「算子族**恰 6** 值」(源文本枚举项计数);
+#   ⑥ **partial failure** 显式建模(归因 `CP-PARTIAL-FAIL`);
+#   ⑦ 集体面绑定 + region(non-cacheable 降级)· ⑧ **V6-c** 前提约束 · ⑨ **CP-05** 清单扩展;
+#   ⑩ **归因 id 元测试**(fixture id ⊆ design §7 id,双向)。
+#   ⚠️ 本组 = 正控 + 运行期兜底;**反向 fixture** 见下一个 add_test。
+add_test(NAME cep_nvlink_sharp
+         COMMAND cpptlm_tests "[cep][nvlink-sharp]" -r compact)
+
+# 队列 #13 **实现层**判据的**反向验证**(异步鉴别力):
+#   **9 组**毒化 fixture(每条必红 **且** 归因 id **精确相等**命中)+ **基线正控**;
+#   两类失败形态都支持:编译期红(`static_assert` 文案)/ 运行期红(`PROBE:FAIL <id>`)。
+add_test(NAME cep_nvlink_sharp_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_nvlink_sharp_reverse_verify.sh)
+
 # 队列 #11 `cpptlm-cep-tilelink-tree-manager`(第 1 个 change = 实现层)的判据:
 #   ① 载体契约(adapter 零副本 + `TreeManager` 的 `ESCALATE_UP`/`CHAIN` 真实使用
 #      + `snoop_join_core` 的 4 步语义);

@@ -1141,11 +1141,14 @@ TEST_CASE("CR-07/08 权威分区:登记键合法 + 语义校验扩面覆盖 repo
     //    TileLink 协议族)⇒ 3 个(per 台账 Entry #146)
     // ⚠️ 2026-11-02(队列 #12 实现层):`cxl_3_0_symmetric` 亦为**本仓域**实例
     //    (ArchForge 32 号只声明了 `moesi_gpu` / `mesif`)⇒ **4 个**
-    CHECK(owned.size() == 4u);
+    // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
+    // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
+    CHECK(owned.size() == 5u);
     CHECK(owned.at(0) == "chi_rnf");
     CHECK(owned.at(1) == "cxl_2_0");
     CHECK(owned.at(2) == "tilelink_c");
     CHECK(owned.at(3) == "cxl_3_0_symmetric");
+    CHECK(owned.at(4) == "nvlink_4");
     for (const auto& id : owned) {
         INFO("owned id " << id);
         CHECK(find_instance(doc, id.get<std::string>()) != nullptr);

@@ -193,15 +193,18 @@ static_assert(traits_of() != nullptr, "BroadcastNull traits 行 SHALL 存在");
 ⇒ **`repo_owned_instance_ids` +1**(`nvlink_4`)—— 本仓自持(非 ArchForge 派生)⇒ 与 `chi_rnf` /
 `cxl_2_0` / `tilelink_c` / `cxl_3_0_symmetric` 同列。
 
-### §4.2 ⚠️ 校验落点 = **扩展既有 loader**(A-9 修订)
+### §4.2 ⚠️ 校验落点 = **判据在测试面 · 装配期靠既有 loader 自然覆盖**(A-9 修订)
 
 ⛔ **不得**新增「装配期校验」第二套实现(既有读者 ≥ 6:`load_adapter_contract_inputs` /
 `test_cep_adapter_schema_contracts` / `test_cep_moesi_gpu_adapter` / `test_cep_tilelink_instance_decl` /
 `test_cep_mesif_instance_decl` / `run_ordering_gate` + `run_channel_gate`)⇒ 「禁双实现」。
 
-⇒ **扩展** `include/tlm/cep/adapter_contracts_loader.hh` 的 `load_adapter_contract_inputs` 校验项:
-① schema `required` **实读** 13 键 ② `sharer_tracker.caps` 与 traits **逐字段相等**
-③ `repo_owned_instance_ids` 含本实例 ④ `plane_binding` 的键**必须**是已声明实例(声明自洽)。
+⇒ **本层不新增第二套装载器 / 校验器**;落点二分:
+① **判据面**(13 键齐备 · `caps` ↔ traits 逐字段相等 · `repo_owned_instance_ids` 含本实例 ·
+`plane_binding` 的键 ⊆ 已声明实例)⇒ 落在**本 change 的测试面**(`NVA-03` / `NVA-07` / `NVA-08`);
+② **装配期覆盖** ⇒ `nvlink_4` 进入 `protocol_instances.json` ⇒ 既有 loader **自然消费**它
+⇒ 既有 6 处**实例计数断言**转红(见 §9.3)⇒ **该实例确实进入了装配闸的输入** ⇒ 这就是覆盖证据
+(⚛️ 若不转红 ⇒ 说明实例**没**被装配闸消费 ⇒ 那才是真缺口)。
 
 ---
 

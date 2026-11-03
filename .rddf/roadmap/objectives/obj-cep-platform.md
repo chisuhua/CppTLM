@@ -751,7 +751,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P2 | `ADR-CEP-11` 版本锁定(Stage 1 前签发)| 走 architect;触发 R2 缓解 —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「走 architect」**已失实** ⇒ `ADR-CEP-11` **已于 2026-10-30 签发 v1.0**(per Entry #112 / #135);⇒ **本行关闭**;⚠️ **残余**:版本锁定闸的 **G-3**(IC3 变更留痕**无自动闸**)**未闭合**(per §8.1 R2 缓解列)—— 仍为登记态残余风险 |
 | P2 | phase-11 注册后建 feature fragment | 走 rdd-planner 后续评估;≥2 change 跨 phase-10/11 分布时 |
 | P2 | **`cep-collective-plane-contract` 主 spec 缺第四键的 delta** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #174** ③ S1)—— 主 spec 的「声明最小集 SHALL **恰含三组**」(`openspec/specs/cep-collective-plane-contract/spec.md`)未含 `vc_reservation_declaration`;而 Decision D 已把「空预留 ⇒ 必须声明」落成**判据**(`2ea09607`)。⇒ 若「恰含三组」被读作**封闭集** ⇒ 契约漂移;按「最小集」读法可视为条件可选扩展 ⇒ **当前不阻断**。⇒ 处置 = **下一个 openspec change** 补 delta(第四键 + 「空预留缺声明 ⇒ FAIL」场景)或对该 main spec 走 SU;⚠️ `cep_freeze_check.sh` 只查哈希,**抓不到**这类语义漂移 |
-| P2 | **失指 change 名 `cpptlm-cep-nvlink-sharp-adapter` 的残余位置** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X1)—— 本次**只在 `ADR-CEP-03` 内**订正(⇒ Entry #169 ⑧ 的「② 已订正」应限定为「**ADR-CEP-03 内**已订正」);残余位置 = `include/tlm/cep/collective_plane.hh` · `openspec/specs/cep-collective-plane-base/spec.md` · **`docs/adr/ADR-CEP-00-platform-charter-and-governance.md`**(真源 3 治理 ADR)⇒ 跨 builder(代码 / spec)与 architect(治理 ADR)**两个域** ⇒ **单独立项** |
+| P2 | **失指 change 名 `cpptlm-cep-nvlink-sharp-adapter` 的残余位置** | 🟡 **部分已闭合**(2026-11-03,per 台账 **Entry #188**):**代码面已修** —— `include/tlm/cep/collective_plane.hh` 的失指名 ⇒ `cpptlm-cep-nvlink-sharp`(并保留「接线侧属 P3」承诺);余 2 处仍在:`openspec/specs/cep-collective-plane-base/spec.md`(**M1 冻结面** ⇒ 需两步授权)+ `docs/adr/ADR-CEP-00-platform-charter-and-governance.md`(**真源 3 治理 ADR** ⇒ architect 域)⇒ **仍单独立项**(原登记:—— 本次**只在 `ADR-CEP-03` 内**订正(⇒ Entry #169 ⑧ 的「② 已订正」应限定为「**ADR-CEP-03 内**已订正」);残余位置 = `include/tlm/cep/collective_plane.hh` · `openspec/specs/cep-collective-plane-base/spec.md` · **`docs/adr/ADR-CEP-00-platform-charter-and-governance.md`**(真源 3 治理 ADR)⇒ 跨 builder(代码 / spec)与 architect(治理 ADR)**两个域** ⇒ **单独立项** |
 | P2 | **代码域的 BISnp 方向注释口径相反** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X2)—— `include/tlm/cep/cxl_dcoh_state_spec.hh` 的枚举注释「host → memory」与同文件「`S2M_BISnp` 是**设备**发起」**口径相反** ⇒ 它是 critic B1 的**实现侧佐证** ⇒ **builder 域**订正 |
 | P2 | **`ADR-CEP-04 §3.4` 的 BISnp 注释口径相反** | ⚠️ **登记态 · 未排期**(per 台账 **Entry #170** ⑤ X3)—— 「远端设备**收到** BISnp」与「BISnp = **设备发起**」相反 ⇒ 队列 #12 的反证**残余**(Entry #154 只裁了 §3.5 聚合点,未裁 §3.4 注释)⇒ **architect 域**,**单独 SU** |
 | P2 | **队列 #13 的 VC 空间方案裁决** | ✅ **已裁决 2026-11-03**(per 台账 **Entry #171**,用户裁决 **Decision D**)⇒ **契约面已交割**(`ADR-CEP-01` 的 SU 取代 §7 `V6-a`/`V6-b` + 新增 `V6-c`);✅ **行为面已落地**(`2ea09607`:schema 的 `if/then` + JSON 四字段 + `evaluate_vc_reservation` 四道门 + 3 条单测反 fixture + **1 条文件级 E2E 反 fixture**);⚠️ **`V6-c` 仍待队列 #13 的**实现层**(per `ADR-CEP-01 §7` 附录「**移交实现层**」+ 唯一 id `CP-03-VC-PRECONDITION`)⇒ 在 `V6-c` 落地前不得宣称「collective 前提约束已被机器验证」。—— ⚠️ **2026-11-03 订正**(Entry #186):本行原写「仍待队列 #13(**规约层**载体清单)」,与 `ADR-CEP-01` 的归属裁决不符。(原登记依据:台账 **Entry #170** ⑤-补 ⑩)—— 两个网络的 `vc_id` 0-3 **全被 coherence 占满** ⇒ 集合流量**无空闲 VC**;`CP-03` 在空预留下**恒 PASS**(不构成「已满足抓取点 3」的证据);扩 VC 上限 / 新开 network 已被 `ADR-CEP-09` 判为**跨仓债** ⇒ 须由 **architect** 裁决方案(扩 VC / 新增 network / 走 ArchForge 侧 ADR)⇒ **#13 开工前必须先有裁决**,否则 `V6-b` 无解 |
@@ -11584,6 +11584,67 @@ SHARP 归约**行为实现** + `nvlink_4` 实例声明 + `collective_planes.json
 **⑤ 关联**: Entry #186(规约层归档 + 移交)· #185(C-2 / C-3)· #184(Phase 3)· #182(口径裁决)· #175(规约层建档)
 · #179 / #178(归因 id 唯一化)· #171(Decision D)· #169 / #170(三则 ADR 定稿)
 · `openspec/changes/cpptlm-cep-nvlink-sharp/`(本条对象)· `openspec/specs/cep-nvlink-sharp-state-spec/spec.md`(规约层唯一真源)
+
+---
+
+### Entry #188 — 2026-11-03 [build](队列 #13 **实现层** Phase 0 ~ 3 完成 —— 载体 + 声明面 + **9 组**反向 fixture)
+
+**主题**:队列 #13 的**两段式**之**第 1 个 change**(实现层)完成 Phase 0 ~ 3(载体形态定稿 + 声明面 + 判据收口)。
+**角色**:builder。
+
+**① 交付面**
+
+| 载体 | 内容 |
+|---|---|
+| `include/tlm/cep/nvlink_adapter.hh`(新) | 独立头 · **零自有表副本**(禁词表 14 项)· **无 `transition_*`** · **不暴露**区域表类型 · **委托**已归档规约载体 |
+| `include/tlm/cep/broadcast_null_tracker.hh`(新) | `BroadcastNull` **行为实现**(**协议无关** · ⛔ 不叫 `nvlink_*`)· caps 逐字段取自 traits(查找函数)· 全部出参 · 零状态容器 |
+| `include/tlm/cep/collective_plane.hh` | **V3** barrier 分类 litmus(`barrier_key_class` · **两条** litmus 一致性 · `Invalid` 哨兵)+ **plane 注册表**(`kCollectivePlaneRegistry` = V6-c 白名单的**单源**) |
+| `include/tlm/cep/collective_plane_contract.hh` | **V6-c 前提约束**(`evaluate_vc_precondition` · 非空绑定才判 · 零键 ⇒ SKIP · 归因走 `CP-03` 的 **detail 前缀**)+ **CP-05** 标识清单补 `collective_region_table` + 扫描面**可注入**扩展 |
+| `include/tlm/cep/protocol_instances.json` | **`nvlink_4`** 实例(13 键 · `nvlink-4.0` · `BroadcastNull`)+ `repo_owned_instance_ids` **+1** |
+| `include/tlm/cep/collective_planes.json` | `plane_binding` 加 `nvlink_4` → **本地模型** + `registered_regions` 增 1 条(`nc_drop_cacheable`)+ 自述与冻结前置同批更新 |
+
+**② 判据面**
+
+| 项 | 结果 |
+|---|---|
+| 正向测试 | `test/test_cep_nvlink_sharp.cc` **10 cases / 323 assertions**(与规约层合计 21 cases) |
+| 反向 fixture | `scripts/test/cep_nvlink_sharp_probe.cc` + `..._reverse_verify.sh` ⇒ **9 组**毒化 ⇒ **10/10 通过**(1 基线正控 + 9 组「必红 + 归因**精确相等**命中」) |
+| 归因 id 元测试 | fixture id ⊆ `design §7` id(双向)+ 本层新建 `CP-*` **恰 2 个** + ⛔ `CP-NVLINK-*` **零命中** |
+| 计数同步 | **7 处**硬编码实例计数转红并同步(设计 §9.3)+ 保留来源注释 |
+| 全量 | `cpptlm_tests` **2121 cases / 877115 assertions** 全过 · `ctest` **143 → 145/145** |
+
+**③ ⚠️ 三处「恒真 / 不可实施」判据的修正(双审 A-5 / A-6 / A-7 的落地)**
+
+| 判据 | 原形态的问题 | 修正后 |
+|---|---|---|
+| **NVA-02** caps 取自 traits | `SharerTrackerCaps{}` 默认值与 traits 行**逐字段相同** ⇒ 从不赋值也 100% 通过 | fixture **同时**毒化 traits 行 + tracker 硬编码 ⇒ 可见 caps 不等 ⇒ 红 |
+| **NVA-05** 算子族恰 6 值 | 「最大值 + 1」式计数**抓不到**追加第 7 值(C++17 无反射) | **源文本枚举项计数** + 毒化形态 = 追加 `Prod = 6` |
+| **NVA-06** partial failure | 平台**无** member-leave API ⇒ 判据不可实施 | 改既有真实路径:`collective_barrier` 至 N-1 → `group_destroy` ⇒ 对已到达成员发 `Fault` |
+
+**④ ⚠️ 台账 `Entry #186 ⑥` 的口径订正(append-only,不改原文)**
+
+`Entry #186 ⑥` 写「SHARP 归约**行为实现**」⇒ 本层交付的是**载体 + 声明 + 判据**,
+**不含**归约**数据路径**(`LocalCollectivePlane::send` 在已注册 + epoch 生效时仍返回
+`DataPathNotImplemented`)⇒ 「行为实现」在本层 = **判据与声明面**的行为。
+⇒ 登记于 `proposal.md` 的「与台账移交口径的差异声明」+ 本条(不改 `Entry #186` 原文)。
+
+**⑤ 文档同步**
+
+`sharer_tracker.hh` 头注释订正(`BroadcastNull` 行为面**已落地`)· `scripts/README.md`(表内计数订正 +
+守门表新增行 + **反向 fixture 登记**新增节)· `collective_plane.hh:206` 失指 change 名订正
+(代码面已闭合)· `collective_planes.json` 自述 · 队列 #13 improvement(反向 fixture 组数 **5 → 9**)。
+⚠️ **07 号的同步属 M1 冻结面 ⇒ 移至 Phase 4.6**(与两步授权同批)。
+
+**⑥ 验收(实测)**
+
+门禁 **7/7** rc=0 · `ctest` **145/145** · `format.sh --check` rc=0 ·
+`openspec validate cpptlm-cep-nvlink-sharp --strict` rc=0 · 反向验证 **10/10** ·
+`cpptlm_tests` **2121 cases / 877115 assertions**
+
+**⑦ 关联**: Entry #187(双审修订 17 项)· #186(规约层归档 + 移交)· #185(C-2 / C-3)· #184(Phase 3)· #182(口径裁决)
+· #175(规约层建档)· #179 / #178(归因 id 唯一化)· #171(Decision D)· #169 / #170(三则 ADR 定稿)
+· `openspec/changes/cpptlm-cep-nvlink-sharp/`(本条对象)· `include/tlm/cep/nvlink_adapter.hh` ·
+`include/tlm/cep/broadcast_null_tracker.hh` · `scripts/test/cep_nvlink_sharp_{probe.cc,reverse_verify.sh}`
 
 ---
 
