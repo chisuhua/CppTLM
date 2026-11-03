@@ -5,7 +5,7 @@
 **R1/R2 分类判据**(opcode 永不作分类器 · 唯一分类点 = fabric ingress)·
 **R3/R4 区域互斥与 epoch 纪律**(注册三步原子 · epoch 未 commit 前**放行** · 注销失效化)·
 **R5 可观测性**(divert 计数器 + fail-stop 断言)· 跨平面 **ordering A/B/C/D** ·
-**集合 VC 预留状态**(Decision D 的 `unavailable` 四字段声明)· 逐格 `basis` 两轴标注。
+**集合 VC 预留单一状态**(载体仅 `Unavailable` 单一取值;**四字段权威**在 `collective_planes.json` + `CP-03`)· 逐格 `basis` 两轴标注。
 
 **口径已裁决**(台账 `obj-cep-platform.md` **Entry #174 / #173 / #172 / #171** + **#169 / #170**
 + `ADR-CEP-01` 的 SU 2026-11-03(**Decision D**)· `ADR-CEP-02` / `ADR-CEP-03` / `ADR-CEP-04` / `ADR-CEP-12`)
@@ -75,11 +75,11 @@ CEP SHALL 为 **NVLink SHARP**提供一份**可执行规约层契约**:
 #### Scenario: NSS-07 —— 集合 VC SHALL 登记为**「状态」**而非「表」
 
 - **WHEN** 读取载体的 VC 预留面
-- **THEN** 载体 SHALL **SHALL NOT** 表达任何**具体 `vc_id`**、SHALL **SHALL NOT** 表达「隔离 VC 可用」(⇒ 由**不可表达性**保证,而非由断言保证)
-- **AND** ⚠️ 载体 SHALL **NOT** 复制 Decision D 的**四字段内容**(那是**拓扑级**事实,权威在 `collective_planes.json` + `CP-03`;复制会把拓扑变化变成两处同改)
-- **AND** 该形态 SHALL 与 `ADR-CEP-01` SU 2026-11-03 的 **Decision D** 一致(判定**负向**而非复制)
+- **THEN** 载体 SHALL **仅**表达 `Unavailable` **单一取值**;其类型 SHALL **无** `vc_id` 字段、SHALL **无** `reason` / `owner` / `revisit_trigger` 字段
+- **AND** ⚠️ 载体 SHALL **NOT** 复制 Decision D 的**四字段内容**(那是**拓扑级**事实,权威在 `collective_planes.json` + `CP-03`;复制会把拓扑变化变成两处同改)⇒ **四字段不在载体面**
+- **AND** 该形态 SHALL 与 `ADR-CEP-01` SU 2026-11-03 的 **Decision D** 一致(载体只登记**单一状态**,不复制拓扑级声明)
 - **AND** **反向 fixture**:填入具体 VC 编号 ⇒ SHALL 必红(归因 `CP-03`)
-- **AND** ⚠️ 「不可表达」型判据 SHALL 另配一条**运行期**判据(载体解析出的 scope / status 恒为预期值)⇒ 不得只以「编译红」充当 ctest 判据
+- **AND** ⚠️ 「不可表达」型判据 SHALL 另配一条**运行期**判据(载体解析出的 VC 状态恒为 `Unavailable` **且**其类型**无** `vc_id` 字段)⇒ 不得只以「编译红」充当 ctest 判据
 
 #### Scenario: NSS-08 —— 能力域 SHALL 钉为**节点内**
 

@@ -383,3 +383,19 @@ barrier 流接口信号(per ADR-CEP-02 锁定语义):
 | 配对关系不重叠 | `openspec/specs/cep-core-contracts/spec.md` 场景 id(既有) |
 
 ⇒ 未列入上表者 ⇒ **不得**在别处另起别名 id。
+
+---
+
+## Status Update 2026-11-03(#3)—— §8 表内 fixture id 为**历史别名**(critic 第 2 轮 S6-b)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §8 正文与既有 SU 段一律不改**。
+> **台账**: `obj-cep-platform §11` **Entry #179**。
+
+### J.1 §8 表内的 fixture id 一律以 H.2 为准
+
+(#2) 段 H.2 已宣布各义务的**唯一** id,但本 ADR §8 表内仍印着历史 fixture id
+(`BARRIER-NO-GROUP-ID` / `PERM-4-LOCK` / `ATOMIC-NOT-PERM` / `PAIRING-OVERLAP`)⇒ **同一义务两个 id**。
+
+⇒ **裁决**:§8 表内的上述 id **均为历史别名**,判据实现与反向 fixture **一律以 H.2 的唯一 id 为准**
+(`CEN-Ib9` 场景 id · 值域锁 + 实例声明判据 · schema `atomic` + 实例声明判据 · `openspec/specs/cep-core-contracts/spec.md` 场景 id);
+⇒ **不得**在别处再另起别名。

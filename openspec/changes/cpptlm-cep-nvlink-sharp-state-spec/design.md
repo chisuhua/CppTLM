@@ -27,9 +27,9 @@
 | 1 | **能力域 = 节点内** | `NVLS` 用 NVLink SHARP 做 **intra-node** 归约;跨节点才转 CollNet ⇒ 载体 SHALL NOT 声明跨 fabric 归约 | `A-1` / `A-5` |
 | 2 | **多 group 并存** | 第 3 代 SHARP 允许**同一拓扑多棵聚合树**、多作业共享 ⇒ `group_id` **不得**是单例 | `A-4` |
 | 3 | **归约点在 fabric ingress** | 归约在网络侧完成 ⇒ 支撑 `ADR-CEP-03 §4` 的 **S1**(唯一分类点);⚠️ **S4 是设计约束,不由公开来源支撑** | `A-3` |
-| 4 | **VC = 无隔离 VC(显式声明)** | 两网络 0-3 全占 ⇒ Decision D:`unavailable` + 四字段声明 | `ADR-CEP-01` SU 2026-11-03(D.4) |
-| 5 | **reduce 族 = 复用既有 `ReduceOp` 恰 6 值** | 不新增枚举、不改 `collective_plane.hh`;SHARP 逐算子支持 = `N-1` **pending** | `ADR-CEP-03` SU 2026-11-03(E.2) |
-| 6 | **epoch 分层**:平台侧 = R3/R4(已定稿)· 协议侧 = `N-3` **pending** | 载体 SHALL NOT 断言协议侧状态机 | `ADR-CEP-03` SU 2026-11-03(E.2) |
+| 4 | **VC = 无隔离 VC(显式声明)** | 两网络 0-3 全占 ⇒ Decision D:`unavailable`;**载体只登记 `Unavailable` 单一状态**,四字段权威在 `collective_planes.json` + `CP-03` | `ADR-CEP-01` SU 2026-11-03(D.4 / #2 G.1) |
+| 5 | **reduce 族 = 平台侧唯一真源 `tlm::cep::ReduceOp` 恰 6 值** | ⚠️ **载体 SHALL NOT 引用 / 定义 `ReduceOp`**(自足 ⇒ 只能 include 标准库);「恰 6 值」的运行期断言**归实现层**;SHARP 逐算子支持 = `N-1` **pending** | `ADR-CEP-03` SU 2026-11-03(**#2**) F.1 / F.2 |
+| 6 | **epoch 分层**:平台侧 = R3/R4(已定稿)· 协议侧 = `N-3` **pending** | 载体 SHALL NOT 断言协议侧状态机 | `ADR-CEP-03` SU 2026-11-03(**#2**) F.2 |
 | 7 | **③ `perm` 值域 = 维持 4 值锁**;NVLink 实例的**具体子集** = `N-8` **pending** | 不新增 perm 值;不照抄 `tilelink_c` 的 3 值 | 台账 Entry #177 ① |
 | 8 | **④ atomic = `request` 流的独立属性**;协议侧 completion 配对 = `N-9` **pending** | 不新增第 11 条流、不占 `perm` 位 | 台账 Entry #177 ② |
 
@@ -43,7 +43,7 @@
 
 > ⚠️ `N-3` 与本 ADR 的 `R4` **不矛盾**:`R4` 是**平台侧**的 epoch 纪律(未 commit ⇒ 放行),
 > 公开来源缺的是**协议侧**的 epoch 状态机细节 ⇒ 前者可锁,后者须 pending。
-> ⇒ **已裁**(Entry #176):平台侧 R3/R4 **锁**(`self-derived` + 非 pending),协议侧 `N-3` **留 pending**;
+> ⇒ **已裁**(Entry #176 + `ADR-CEP-03` SU **#2** F.2):平台侧 R3/R4 **锁**(`self-derived` + 非 pending),协议侧 `N-3` **留 pending**;
 > **reduce 族**同理:**平台侧复用既有 `ReduceOp` 恰 6 值**(锁)· **SHARP 逐算子支持 = `N-1` pending**。
 
 ---
@@ -76,9 +76,11 @@
 | **NSS-04** | 注销回归 | `destroy` 后 `lookup_region` 返回空 | 注销一例 | **`NSS-04-DESTROY-LEAK`** —— ⚠️ **新建 id**,**唯一登记处 = 本表 + `tasks 3.2`**(ADR 侧**不**重复登记) |
 | **NSS-05** | 可观测性 | `DivertCounters` 的字段集合恰 2 | 计数器递增 + fail-stop 一例 | **`CP-DIVERT-STOP`**(既有) |
 | **NSS-06** | ordering 四类 | `OrderingRule` 枚举恰 4 值 | 四类各一例 | **`NSS-06-ORDERING-MIS`** —— ⚠️ **新建 id**,**唯一登记处 = 本表 + `tasks 3.2`** |
-| **NSS-07** | VC = **状态**(纯负向) | 载体 SHALL **NOT** 表达任何**具体 `vc_id`**、SHALL **NOT** 表达「隔离 VC 可用」⇒ **不可表达性**由类型保证;⚠️ **四字段内容断言不在载体**(属拓扑级,归 `CP-03`) | 载体解析结果恒无 `vc_id` 字段 | **`CP-03`**(既有)—— 载体的负向属性另配运行期判据 |
+| **NSS-07** | VC = **单一状态**(协议级负向) | 载体 SHALL **仅**表达 `Unavailable` **单一取值**;类型 SHALL **无** `vc_id`、**无** `reason` / `owner` / `revisit_trigger` ⇒ **不可表达性**由类型保证;⚠️ **四字段内容断言不在载体**(拓扑级,归 `CP-03`) | 载体解析结果恒为 `Unavailable` **且**其类型**无** `vc_id` 字段(⇒ 非恒真) | **`CP-03`**(既有)—— 载体的负向属性另配运行期判据 |
 | **NSS-08** | 能力域 = 节点内 | `CollectiveScope` 枚举恰 {`IntraNode`} | 跨 fabric 值**不可表达** | **`NSS-08-SCOPE-OVERREACH`** —— ⚠️ **新建 id**,**唯一登记处 = 本表 + `tasks 3.2`**;⚠️ 本条约束**能力域**(拓扑域),**不**约束**流量落点**(落点见 `ADR-CEP-01` SU 2026-11-03(#2) G.1) |
 | **NSS-09** | 逐格 basis | 每格 `Basis` 含 `kind` / `pending` / `ref` 三字段 | 逐格核对表 + **9 项** pending 逐条可寻址 | **`NSS-09-BASIS-MISSING`** —— ⚠️ **新建 id**,**唯一登记处 = 本表 + `tasks 3.2`** |
+
+> ⚠️ **载体与判据的衔接**(per `ADR-CEP-03` SU **#3** K.2):载体 SHALL **NOT** 暴露 `collective_region_table` ⇒ 区域表的**运行时状态**归实现层;⇒ `NSS-03` / `NSS-04` 的判据形式 = **纯函数 + 调用方持有状态**(调用方提供状态快照 ⇒ 载体给出判定)⇒ 载体**不拥有**表 / 状态 / 表类型。
 
 > ⚠️ **NSS-07 / NSS-08 的反向 fixture 形态特殊**:它们靠**「不可表达」**成立 ⇒ 反向 fixture 是
 > 「**试图表达 ⇒ 编译红**」⇒ 按铁律 ③,SHALL 另配一条**运行期**判据(如「载体解析出的 scope 恒为 intra-node」)

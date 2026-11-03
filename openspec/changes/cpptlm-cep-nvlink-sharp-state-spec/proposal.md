@@ -46,7 +46,7 @@ epoch 状态机 / VC 编号 / 聚合树构建算法 / 报文格式 / 数值精�
 
 | 面 | 改动 |
 |---|---|
-| **载体(新增)** | `include/tlm/cep/nvlink_sharp_state_spec.hh`(header-only):**R1/R2 分类判据**(opcode 永不作分类器 · 唯一分类点 = fabric ingress)+ **R3/R4 区域互斥与 epoch 纪律**(注册三步原子 · epoch 未 commit 前**放行** · 注销失效化)+ **R5 可观测性**(divert 计数器 + fail-stop 断言)+ **ordering A/B/C/D** 的可判定谓词 + **集合 VC 预留状态**(Decision D 的 `unavailable` 四字段声明)+ 逐格 `basis{kind, pending, ref→锚点摘要条目号}` |
+| **载体(新增)** | `include/tlm/cep/nvlink_sharp_state_spec.hh`(header-only):**R1/R2 分类判据**(opcode 永不作分类器 · 唯一分类点 = fabric ingress)+ **R3/R4 区域互斥与 epoch 纪律**(注册三步原子 · epoch 未 commit 前**放行** · 注销失效化)+ **R5 可观测性**(divert 计数器 + fail-stop 断言)+ **ordering A/B/C/D** 的可判定谓词 + **集合 VC 预留单一状态**(Decision D:载体仅 `Unavailable` 单一取值;四字段权威在 `collective_planes.json` + `CP-03`)+ 逐格 `basis{kind, pending, ref→锚点摘要条目号}` |
 | **判据** | 编译期结构断言(分类点唯一性 · epoch 双向 · 三步原子 · 四类 ordering · 预留状态)+ 逐格 `basis` 核对表 + **反向 fixture**(毒化 ⇒ 必红 + **归因命中**) |
 | **零改动** | `ADR-CEP-*` 正文 · `protocol_instance.schema.json` · `collective_planes.json` / `collective_planes.schema.json`(**Decision D 已落**)· canonical 10 流清单 · **0 新增** ABI · **0 新增** invariant 编号数 |
 | **登记** | **9 项 `pending`**(N-1 ~ N-9)逐条入载体 `basis` ⇒ **禁止推理填空** |
@@ -69,7 +69,7 @@ epoch 状态机 / VC 编号 / 聚合树构建算法 / 报文格式 / 数值精�
 | **NSS-04** | **R4 注销 SHALL 失效化并回归 coherence 域** | 区域退出表 ⇒ 后续 coherence 请求**正常服务** · **反向 fixture**:注销后仍 divert ⇒ 必红 |
 | **NSS-05** | **R5 可观测性 SHALL 落地** | divert 计数器 + **fail-stop 断言**(epoch commit 后仍有 coherence atomic 命中已注册区域 = error) · **反向 fixture**:该情形不报错 ⇒ 必红 |
 | **NSS-06** | **跨平面 ordering A/B/C/D** SHALL **可判定** | 四类可见性次序各一例 + **反向 fixture**:把某类判反 ⇒ 必红 |
-| **NSS-07** | **集合 VC 预留 SHALL 登记为「状态」而非「表」** | 载体 SHALL **SHALL NOT** 表达任何具体 VC 编号 / 「隔离 VC 可用」(纯负向 + 不可表达性)· ⚠️ **不复制** Decision D 的四字段(拓扑级事实归 `CP-03`)· **反向 fixture**:填入具体 VC 编号 ⇒ 必红 |
+| **NSS-07** | **集合 VC 预留 SHALL 登记为「单一状态」而非「表」** | 载体 SHALL **仅**表达 `Unavailable` **单一取值**(类型**无** `vc_id`、**无** 四字段)· ⚠️ **四字段权威恒在** `collective_planes.json` + `CP-03`· **反向 fixture**:填入具体 VC 编号 ⇒ 必红 |
 | **NSS-08** | **能力域 SHALL 钉为节点内** | 载体 SHALL 断言 collective 能力域 = intra-node(依据 A-1 / A-5);**SHALL NOT** 声明跨 fabric 归约 · ⚠️ 本条约束**能力域**,**不**约束流量落点(落点见 `ADR-CEP-01` SU G.1)· **反向 fixture**:把能力域改为跨 fabric ⇒ 必红 |
 | **NSS-09** | **逐格 `basis` SHALL 带两轴 + 9 项 `pending` 逐条登记** | 每格带 `kind` / `pending` / `ref→锚点摘要条目号`;**9 项** pending 逐条可寻址且 **SHALL NOT** 出现其具体取值的断言 · **反向 fixture**:去掉 `pending` 标记 ⇒ 必红 |
 

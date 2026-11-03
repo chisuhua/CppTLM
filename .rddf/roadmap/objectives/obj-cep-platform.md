@@ -11116,6 +11116,41 @@ brainstorm HARD-GATE **rc=0**)⇒ 同时登记 **3 项用户裁决**(形态 / �
 
 ---
 
+### Entry #179 — 2026-11-03 [scope-change](**critic 全面审第 2 轮** 的修复授权记录:**B2 未闭合**(执行疏漏)+ **1 条新 BLOCKER**(S3 处置越过目标)+ 4 条 SHOULD_FIX)
+
+**主题**:critic 全面审**第 2 轮**判词:**B1 ✅ 闭合 · B2 ❌ 未闭合 · 新 diff 引入 1 条 BLOCKER**。
+**评审预算**:本 scope **第 2 轮用满** ⇒ 修复后**不再自动复审**(第 3 轮须用户明确批准)。
+
+**① ⚠️ B2 未闭合的根因 = 执行疏漏(不是设计缺陷)**
+
+`tasks.md` **3.6** 的有范围禁令**已写入脚本但未落盘** —— 该轮脚本在改 `tasks 3.2` 时抛异常(锚点不匹配),
+而 3.6 的修改在异常点**之前**、但 `write_text` 在**之后** ⇒ 修改随进程退出丢失 ⇒
+⇒ **本条补写 3.6**。⇒ 教训登记:**多脚本分批改同一文件时,每批必须独立落盘**(否则后续批次的异常会吞掉前批次的编辑)。
+
+**② ⚠️ 新 BLOCKER:S3(NSS-07 改纯负向)的处置**越过目标**
+
+| 项 | 内容 |
+|---|---|
+| 现象 | 处置既删掉「四字段」、又删掉唯一可断言的 `status` ⇒ ① delta spec 内部互斥(`SHALL NOT` 拥有 `status` × 运行期判据要求「载体解析出的 scope / status 恒为预期值」)② 该运行期判据**无对象 ⇒ 恒真**(违反本 change 自家铁律 ③)③ `spec Purpose` / `proposal` 载体范围 / `tasks 1.5` / `design §1.2` 四处仍写「载体含四字段声明」⇒ 实施方无法判断载体要不要有 VC 面 |
+| **裁决(采 critic 建议 A)** | **保留协议级负向状态、只剥离拓扑级四字段**:① 载体**仅**表达 `Unavailable` **单一取值**(类型上**无** `vc_id`、**无** `reason` / `owner` / `revisit_trigger`);② **四字段权威恒在** `collective_planes.json` + `CP-03`;③ NSS-07 的运行期判据改为「载体解析出的 VC 状态恒为 `Unavailable` **且**其类型**无** `vc_id` 字段」⇒ **非恒真**;④ 四处「载体含四字段」表述统一改为「只登记 `Unavailable` 单一状态」 |
+
+**③ SHOULD_FIX 处置(4 条)**
+
+| # | 项 | 处置 |
+|---|---|---|
+| S6-a | `ADR-CEP-01` G.2 与 `ADR-CEP-03` F.3:「`V6-c` 的 id 待实现层建立」vs 附录 / §7 已点名 `CP-03-VC-PRECONDITION` ⇒ 同一义务两种状态 | ✅ 两处统一为「**唯一 id = `CP-03-VC-PRECONDITION`**;载体由队列 #13 **实现层**交付」 |
+| S6-b | `ADR-CEP-02` H.2 未与 §8 表内的 fixture id(`BARRIER-NO-GROUP-ID` / `PERM-4-LOCK` / `ATOMIC-NOT-PERM` / `PAIRING-OVERLAP`)归一 | ✅ 新 SU 补一句:「§8 表内 fixture id 为**历史别名**,一律以 **H.2** 为准」 |
+| S6-c | 规约层 `design §1.2` / `§1.3` 仍引**已被 F.2 取代**的 `SU(E.2)` ⇒ 实施方可能回去 include `collective_plane.hh` | ✅ 改引 `SU 2026-11-03(#2) F.1 / F.2` + 明写「载体**不引用** `ReduceOp`;「恰 6 值」断言**归实现层**」 |
+| S6-d | `ADR-CEP-03` F.1-e / F.4(载体不暴露区域表)与 `NSS-03` / `NSS-04`(判据形式为 `register_region` / `lookup_region`)**缺衔接** | ✅ 补衔接句:判据形式 = **纯函数 + 调用方持有状态**(表由实现层持有) |
+| S6-e | improvement 未回灌 `fabric` 收窄(:65 / :120 / :194)· :142 仍把「reduce 函数族」列为载体内容(与 F.1-b 相反)· 四字段表述四处 | ✅ 全部回灌 |
+
+**④ 冻结面授权**:`ADR-CEP-01` / `02` / `03`(**3 件**)+ 台账 ⇒ 两步授权。
+
+**⑤ 关联**: Entry #178(critic 第 1 轮修复)· #177(③④)· #176(①/⑤)· #175(change 建档)· #171(Decision D)
+· `openspec/changes/cpptlm-cep-nvlink-sharp-state-spec/`(tasks 3.6 / NSS-07 / design 指向)· `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(回灌)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

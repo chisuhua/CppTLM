@@ -40,7 +40,7 @@
 - [ ] 1.2 **区域/epoch 纪律(R3/R4)**:注册三步原子 · **epoch 未 commit ⇒ 放行** · 注销失效化
 - [ ] 1.3 **可观测性(R5)**:divert 计数器 + fail-stop 断言
 - [ ] 1.4 **ordering A/B/C/D**:四类**可判定**谓词(非散文)
-- [ ] 1.5 **VC 预留状态**:Decision D 的 `unavailable` 四字段(**不**含任何具体 VC 编号)
+- [ ] 1.5 **VC 预留单一状态**:载体**仅**表达 `Unavailable` **单一取值**(类型上**无** `vc_id`、**无** `reason` / `owner` / `revisit_trigger`)⇒ **四字段权威恒在** `collective_planes.json` + `CP-03`
 - [ ] 1.6 **能力域**:`IntraNode` 唯一取值(依据 `A-1` / `A-5`)
 - [x] 1.7 ✅ **2 项待裁决定项已裁**(2026-11-03,Entry #176 + `ADR-CEP-03` SU 2026-11-03):
       ① `NvlinkAdapter` = **独立头** `nvlink_adapter.hh` + **委托** state spec(先例 `cxl_dcoh_adapter`),
@@ -69,7 +69,12 @@
 - [ ] 3.3 **正控**:每条反向 fixture SHALL 有**期望通过**的对照 ⇒ 纯负向断言无对照 = 判据可能没生效
 - [ ] 3.4 **「不可表达」型判据**(NSS-07 / NSS-08)的**运行期兜底** ⇒ 不得只以「编译红」充当 ctest 判据
 - [ ] 3.5 **归因纪律**:反向 fixture SHALL 报出**可归因 id** ⇒ **不得**只以「整体 FAIL」充当判据
-- [ ] 3.6 ⚠️ **禁止自建期望集**:判据 SHALL 引用**既有机器闸**(`CP-0x`)或**锚点摘要条目**,SHALL **SHALL NOT** 自造平行 id 体系
+- [ ] 3.6 ⚠️ **禁止同一义务出现两个 id**(有范围的禁令,per critic B2 裁决 —— 修复于 Entry #179):
+      ① **已给出 id** 的义务 SHALL **复用**该 id,SHALL **NOT** 另起别名;
+      ② **新增**义务的 id SHALL 在**本 change 的 `design §3` + `tasks 3.2`** **单一登记**,SHALL **NOT** 在 ADR 与本 change **重复登记**;
+      ③ 判据实现与反向 fixture 的**归因** SHALL 一律用上述 id(`NSS-xx` 仅作 Scenario 标题 / 离线标签);
+      ④ ⚠️ **既有 id 的来源不限于机器闸的 `CP-01`~`CP-06`** —— ADR 已印出的 `CP-OPCODE-CLASSIFIER` / `CP-EPOCH-SEMANTICS` / `CP-DRAIN-FAIL` / `CP-DIVERT-STOP` / `CP-03-VC-PRECONDITION` 等**同样是既有 id**
+      ⇒ **禁止**把「引用机器闸」写成唯一合法来源(否则这 5 条一并违规)
 
 ## Phase 4 — 验收 + 归档
 

@@ -383,7 +383,7 @@ group-scoped completion     → Fabric Collective Plane
 | 调用边恒为零 | **`CP-01`** | 原附录的 `CE-PLANE-DIR-EDGE` 为同义别名 ⇒ **以 `CP-01` 为准** |
 | canonical 10 流零 diff | **`CP-02`** | 原 `CEN-10-DIFF` 为同义别名 ⇒ **以 `CP-02` 为准** |
 | collective VC 预留(空预留门 / 非空预留门) | **`CP-03`** | — |
-| `V6-c` 前提约束 | **移交实现层** | 载体 = 队列 #13 规约层 / 实现层的载体清单;id **待实现层建立** |
+| `V6-c` 前提约束 | **移交实现层** | **唯一 id = `CP-03-VC-PRECONDITION`**(本 ADR §7 与附录已印出该 id ⇒ **不再**另起别名);载体由队列 #13 **实现层**交付 |
 
 ⇒ **同一义务不得有两个 id**;别名只在本表登记一次,判据实现与 fixture **一律用 `CP-0x`**。
 
@@ -398,3 +398,18 @@ group-scoped completion     → Fabric Collective Plane
 `V3`(barrier 分类 litmus:地址 key ⇒ Ordering / 组 key ⇒ Collective)的载体 owner = 队列 #13 **实现层**
 (函数名由实现层定);它与 `ADR-CEP-03` 的 `classify_at_fabric_ingress`(reduce / coherence 分流)**不是同一判据**
 ⇒ 规约层的 `NSS-01` **不覆盖** V3 ⇒ V3 的归因 id **待实现层建立**。
+
+---
+
+## Status Update 2026-11-03(#3)—— `V6-c` 的归因 id 唯一化(critic 第 2 轮 S6-a)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文与 2026-11-03(#1)/(#2) 段一律不改**。
+> **台账**: `obj-cep-platform §11` **Entry #179**。
+
+### I.1 `V6-c` 的唯一归因 id = `CP-03-VC-PRECONDITION`
+
+(#2) 段 G.2 曾写「id **待实现层建立**」,而本 ADR §7 的 `V6-c` 行与附录**已印出** `CP-03-VC-PRECONDITION`
+⇒ 同一义务出现「已有 id 名 / id 待建立」两种状态 ⇒ fixture 该报哪个 id 无定论。
+
+⇒ **裁决**:**唯一 id = `CP-03-VC-PRECONDITION`**;其**载体**由队列 #13 **实现层**交付
+(规约层与实现层的载体清单)⇒ 在载体落地前该判据**不可执行**(per 悬空判据禁令)。
