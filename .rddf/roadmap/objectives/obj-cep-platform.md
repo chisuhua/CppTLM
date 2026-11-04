@@ -12458,6 +12458,30 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 
 ---
 
+### Entry #206 — 2026-11-04 [archive](队列 #14 **实现层** 冻结面**授权记录** —— 3 份冻结产物 + manifest)
+
+**主题**:队列 #14 实现层 change `cpptlm-cep-ualink-inc` 的**冻结面两步授权**的**授权记录**
+(per `cep_freeze_check.sh` 的闸门契约:「台账 entry 即授权记录」⇒ **本条必须在 `--update` 之前存在**)。
+**角色**:builder。
+
+**① 授权改动的冻结产物(逐件列名 —— `--update` 会**重算全部**的 hash)**
+
+| # | 冻结产物 | 本层改动 | 依据 |
+|---|---|---|---|
+| 1 | `openspec/specs/cep-collective-plane-contract/spec.md` | **ADDED** Requirement `cep-collective-plane-contract-shared-mode-certificate`(**6 个 Scenario**:`status` 2 值 · V6-d · C-1′ · C-2 · C-3 · C-4)⇒ 既有 Requirement **逐字不变** | `ADR-CEP-01` SU#4 **E.6**(取代 D.4 的 `V6-a` 行)· 台账 Entry #193 |
+| 2 | `openspec/specs/cep-collective-plane-base/spec.md` | **MODIFIED** 1 个 Scenario(「数据原语 SHALL 显式声明未实现」**收窄到 `LocalCollectivePlane`;标题逐字不变 ⇒ 场景集 1:1**)+ **ADDED** Requirement `cep-collective-plane-base-fabric-plane`(2 个 Scenario) | 队列 #14 实现层新增 `FabricCollectivePlane`(数据路径**真可达**)⇒ 原表述若不收窄即与实现**直接矛盾** |
+| 3 | `docs/architecture/07-coherence-exploration-platform.md` | §5.1.1 **UALink 行**状态 + §11 的 **Collective Plane 行**(+ adapter 计数行**数值不变**) | 队列 #14 实现层交付面 |
+| 4 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 hash | 机制 M1 本身(每次授权都要重算) |
+
+**② 授权流程(顺序不可颠倒)**:① 本条 Entry(授权记录)→ ② `openspec archive` → ③ 07 号同步 →
+④ `cep_freeze_check.sh --update --authorized-by "Entry #206"` ⇒ **commit** → ⑤ `--update` ⇒ **commit**
+→ ⑥ KPI 回填 + `VIRTUAL_PATHS` + 台账归档 Entry ⇒ **commit**。
+
+**③ 关联**: Entry #205(Phase 1~3)· #204(建档 + 范围收窄)· #193(三则 ADR SU + 冻结面授权)·
+#189(队列 #13 的同款冻结面授权先例)· `ADR-CEP-01` SU#4(E.3 / E.6)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
