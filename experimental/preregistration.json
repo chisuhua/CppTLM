@@ -1,0 +1,133 @@
+{
+  "_comment": [
+    "预登记 out-of-scope 集合的**机器投影** —— 真源 = .rddf/roadmap/objectives/obj-cep-platform.md §9.1 ② 表。",
+    "per ADR-CEP-06 SU#2 ①:真源(评审过的设计面)= objective §9.1 ② 表(不动);本文件 = tools 判据④ 的读本。",
+    "⛔ 本文件与真源必须**逐假设集合相等** —— 由 drift 校验强制(先例: cep_decl_alignment_check)。",
+    "⚠️ status 三值语义不可混:",
+    "   registered = 该假设已预登记 out-of-scope 集合 ⇒ 可产出 run;",
+    "   pending    = 该假设**尚未**预登记 ⇒ ⛔ 禁产出 run(缺行 = 未登记,pending = 已登记但禁产出);",
+    "   (无行)      = 该假设**未登记** ⇒ tools 判据④ 判红。",
+    "⚠️ out_of_scope 列的是「该假设的实验设计上**不覆盖**哪些 13 必纳 metric」;",
+    "   未列入者 ⇒ 该假设的实验**必须实测**它。",
+    "⚠️ 本文件入 M1 冻结集(派生刷新型成员,先例: include/tlm/cep/fabric.json)⇒ 改动须 --update --authorized-by <台账 entry>。",
+    "⚠️ H3 型组合是**合法**的(判据引用某 metric + 该 metric 被预登记为 out-of-scope)——",
+    "   其 verdict 永远 = 「未测量」(per ADR-CEP-06 SU#1 §④ + SU#2 §③ 的 gloss)。"
+  ],
+  "required_metrics": [
+    "total_cycles",
+    "total_transactions",
+    "transactions_per_cycle",
+    "avg_latency_cycles",
+    "p50_latency_cycles",
+    "p95_latency_cycles",
+    "p99_latency_cycles",
+    "max_latency_cycles",
+    "coherence_stalls",
+    "collective_stalls",
+    "directory_misses",
+    "deadlock_violations",
+    "memory_violations"
+  ],
+  "hypotheses": {
+    "H1": {
+      "status": "registered",
+      "out_of_scope": [
+        "total_cycles",
+        "total_transactions",
+        "transactions_per_cycle",
+        "avg_latency_cycles",
+        "p50_latency_cycles",
+        "p95_latency_cycles",
+        "p99_latency_cycles",
+        "max_latency_cycles",
+        "coherence_stalls",
+        "collective_stalls",
+        "directory_misses",
+        "deadlock_violations",
+        "memory_violations"
+      ],
+      "reason": "契约级断言(静态扫描),不产生 metrics.json run ⇒ 13 项全部 out-of-scope"
+    },
+    "H2": {
+      "status": "registered",
+      "out_of_scope": [
+        "coherence_stalls",
+        "collective_stalls",
+        "deadlock_violations",
+        "memory_violations",
+        "directory_misses"
+      ],
+      "reason": "该实验只对比目录策略的延迟;directory_misses 另有一条「未测量」登记 ⇒ 刻意不采,不因「本该有产出者」而补造采集链路"
+    },
+    "H3": {
+      "status": "registered",
+      "out_of_scope": [
+        "coherence_stalls",
+        "collective_stalls",
+        "directory_misses",
+        "deadlock_violations"
+      ],
+      "reason": "一致性完备性实验,只测违例类;deadlock_violations 未采 ⇒ 已在判据-指标需求表标「未测量」,不得继承 pass"
+    },
+    "H4": {
+      "status": "pending",
+      "out_of_scope": [],
+      "reason": "运行期装置未建 ⇒ out-of-scope 集合此刻不可预登记 ⇒ 禁产出 run;预登记必须先于产出"
+    },
+    "H5": {
+      "status": "registered",
+      "out_of_scope": [
+        "total_cycles",
+        "total_transactions",
+        "transactions_per_cycle",
+        "avg_latency_cycles",
+        "p50_latency_cycles",
+        "p95_latency_cycles",
+        "p99_latency_cycles",
+        "max_latency_cycles",
+        "coherence_stalls",
+        "collective_stalls",
+        "directory_misses",
+        "deadlock_violations",
+        "memory_violations"
+      ],
+      "reason": "契约级断言(is_fail_stop / divert_counter_field_count),不产生 metrics.json run"
+    },
+    "H6": {
+      "status": "registered",
+      "out_of_scope": [
+        "avg_latency_cycles",
+        "p50_latency_cycles",
+        "p95_latency_cycles",
+        "p99_latency_cycles",
+        "max_latency_cycles",
+        "directory_misses"
+      ],
+      "reason": "该实验测 VC 隔离,不采延迟(per ADR-CEP-06 SU#1 §③ branch 3:timing + 预声明不采 ⇒ 必须 not-collected,禁写 0);coherence_stalls / collective_stalls / deadlock_violations 在范围内"
+    },
+    "H7": {
+      "status": "registered",
+      "out_of_scope": [
+        "total_cycles",
+        "total_transactions",
+        "transactions_per_cycle",
+        "avg_latency_cycles",
+        "p50_latency_cycles",
+        "p95_latency_cycles",
+        "p99_latency_cycles",
+        "max_latency_cycles",
+        "coherence_stalls",
+        "collective_stalls",
+        "directory_misses",
+        "deadlock_violations",
+        "memory_violations"
+      ],
+      "reason": "外部对拍(gem5 Ruby / ArchForge 跨仓 trace),不产生本仓 metrics.json run"
+    },
+    "H8": {
+      "status": "pending",
+      "out_of_scope": [],
+      "reason": "A/B 数据未产 ⇒ out-of-scope 集合此刻不可预登记 ⇒ 禁产出 run;预登记必须先于产出"
+    }
+  }
+}
