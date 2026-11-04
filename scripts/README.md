@@ -125,10 +125,13 @@
 > + **影子副本**（影子目录 `-I $SHADOW/include` 优先）+ **跨载体探针**。
 > ⇒ fixture 落点 = `scripts/test/cep_ualink_inc_reverse_verify.sh`（ctest `cep_ualink_inc_reverse_verify`）
 > ⇒ 探针 = `scripts/test/cep_ualink_inc_probe.cc`（**8 项**运行期判据 + **归因 id 精确提取**）
-> ⇒ **11 组 / 11 条**毒化 fixture **1:1** 对应 design §4 登记的 **11** 个归因键
+> ⇒ **11 组 / 12 条**毒化 fixture(**组** = 归因键 · **条** = 毒化变体)对应 design §4 登记的 **11** 个归因键
+> ⇒ 「组」↔ 归因键 **1:1**;`C-1′` 组有 **2 条**(语义面 + 结构面)⇒ 条数 12、组数仍 11
 > —— 本层**新建 7** 个（`UIA-01` ~ `UIA-07`）+ **4** 个 `ADR-CEP-01` E.3.1 **既有** id 的**消费**
 > （`CP-03-VC-CERTIFICATE/C-1′` · `CP-09-IC1` · `CP-03-VC-CERTIFICATE/C-3` · `CP-03-VC-CERTIFICATE/C-4`）
 > ⇒ 归因匹配 = `PROBE:FAIL <id> `（**完整前缀精确相等**）—— ⛔ 裸子串会让 `CP-03` 命中 `CP-03-VC-PRECONDITION`
+> ⇒ ⚠️ **C-3 的两级**归因**分别**:声明级 ⇒ `[CP-03-VC-CERTIFICATE/C-3]`;运行级 ⇒ `UIA-04`
+>   (⛔ **不共用**一个 id —— 声明级是**证书判定**、运行级是**行为义务`;per `ADR-CEP-01` SU#5 ②)
 > ⇒ 驱动**双分支**:编译红 ⇒ 匹配编译日志;编译绿 ⇒ 跑探针 ⇒ 匹配 `PROBE:FAIL <id> `
 > ⇒ ⚠️ **F-11 毒化的是「登记提供方」**(`default_untested_registry`)而非规约载体的**数据** ——
 >   后者带自己的 `static_assert`(归因 `UIS-11`)⇒ 毒化它会变成**编译期红**且归因落到**规约层** id
@@ -144,9 +147,11 @@
 | **UIA-05** `status` 值域 = 2 值 | 影子声明源 `status` ⇒ `"shared"` ⇒ 运行期红 | 同上（`f-05-status-third-value`） |
 | **UIA-06** `certificate_scope` 登记 | 影子声明源清空 `certificate_scope` ⇒ 运行期红 | 同上（`f-06-certificate-scope-empty`） |
 | **UIA-07** `ualink_4` 不声明 | 影子实例声明源把一条实例改成 `ualink_4` ⇒ 运行期红 | 同上（`f-07-ualink-4-declared`） |
-| **C-1′** 槽位语义继承 | 影子实例声明源令 `mesif` 的 `ualink_fabric` 映射与 `moesi_gpu` 不一致 ⇒ 运行期红 | 同上（`f-08-c1-mapping-mismatch`） |
+| **C-1′** 槽位语义继承(语义面) | 影子实例声明源令 `mesif` 的 `ualink_fabric` 映射与 `moesi_gpu` 不一致 ⇒ 运行期红 | 同上（`f-08a-c1-mapping-mismatch`） |
+| **C-1′** 槽位语义继承(结构面) | 影子声明源注入 `collective_plane_vc_binding` 块(集合平面**自带**独立绑定)⇒ 运行期红(per `ADR-CEP-01` E.9 的反 fixture) | 同上（`f-08b-c1-self-declared-binding`） |
 | **C-2** VC 覆盖完整 | 影子 `include/tlm/cep/fabric.json` 把 `ualink_fabric.vc_count` 4 ⇒ 5 ⇒ 运行期红 | 同上（`f-09-c2-vc-count`） |
-| **C-3** 控制面互斥（声明级） | 影子 `include/tlm/cep/collective_plane.hh` 把 `enforces_control_plane_exclusion` ⇒ `false` ⇒ 运行期红 | 同上（`f-10-c3-declaration`） |
+| **C-3** 控制面互斥（**声明级**） | 影子 `include/tlm/cep/collective_plane.hh` 把 `enforces_control_plane_exclusion` ⇒ `false` ⇒ 运行期红 | 同上（`f-10-c3-declaration`） |
+| **C-3** 控制面互斥（**运行级**） | 影子 `include/tlm/cep/fabric_collective_plane.hh` 删掉 `group_register_region` 的 in-flight 检查 ⇒ 运行期红 | 同上（`f-04-c3-check-removed`） |
 | **C-4** 未检验项登记 | 影子契约头让登记项表述含「已验证」⇒ 运行期红 | 同上（`f-11-c4-untested-faked`） |
 
 ### 反向 fixture 登记（队列 #11 `cpptlm-cep-tilelink-state-spec`）

@@ -444,10 +444,15 @@ int main(int argc, char** argv) {
             // 当前声明在 **M-2** 下 ⇒ V6-c **不适用** ⇒ SHALL 为 SKIP(⛔ 禁把「不适用」当 PASS)
             std::string d2;
             const ContractVerdict v2 = evaluate_vc_precondition(decl, d2);
-            expect(v2 == ContractVerdict::SKIP ||
-                       decl.vc_reservation_declaration.status == "unavailable",
+            // ⚠️ **严格分支**(per critic 审计 2026-11-04 的 NIT):`status == unavailable` ⇒ V6-c **适用**
+            //   ⇒ SHALL 判 PASS;`status != unavailable`(M-2)⇒ V6-c **不适用** ⇒ SHALL 判 SKIP
+            //   (⛔ 不得写成「二者之一即可」的**弱断言** ⇒ 恒真 ⇒ 无鉴别力)
+            expect(decl.vc_reservation_declaration.status == "unavailable"
+                       ? v2 == ContractVerdict::PASS
+                       : v2 == ContractVerdict::SKIP,
                    "CP-03-VC-PRECONDITION",
-                   std::string("M-2 模式下 V6-c SHALL 为 SKIP(实测 ") + contract_verdict_name(v2) + ")");
+                   std::string("V6-c 的适用性 SHALL 与 status 一致(实测 ") +
+                       contract_verdict_name(v2) + ")");
         } else {
             expect(false, "CP-03-VC-PRECONDITION", "collective_planes.json 不可读 / 畸形");
         }

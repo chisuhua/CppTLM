@@ -54,6 +54,7 @@
 #include <cstdint>
 #include <map>
 #include <set>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -172,8 +173,8 @@ namespace tlm {
                     }
                 }
 
-                // 轮次键 = (op, tag) —— `tag` 即 `ADR-CEP-03 §2` 的「相位 / 轮次」
-                const RoundKey key{req.op, req.tag};
+                // 轮次键 = (group, op, tag) —— `tag` 即 `ADR-CEP-03 §2` 的「相位 / 轮次」
+                const RoundKey key{req.group, req.op, req.tag};
                 auto rit = rounds_.find(key);
                 if (rit == rounds_.end()) {
                     Round round;
@@ -184,7 +185,6 @@ namespace tlm {
                         return;
                     }
                     rit = rounds_.emplace(key, std::move(round)).first;
-                    round_gid_[key] = req.group;
                 }
                 Round& round = rit->second;
                 if (round.participants.empty()) {
@@ -220,7 +220,6 @@ namespace tlm {
                 }
                 events_.push_back(CollectiveEvt::make_completion(req.group, req.tag));
                 rounds_.erase(rit);   // 完成的轮次**移出** ⇒ in-flight 判定只看未完成轮次
-                round_gid_.erase(key);
                 last_status_ = Status::Ok;
             }
 
@@ -342,8 +341,7 @@ namespace tlm {
             bool group_has_inflight(group_id_t gid) const {
                 for (const auto& [key, round] : rounds_) {
                     (void)round;
-                    const auto git = round_gid_.find(key);
-                    if (git != round_gid_.end() && git->second == gid)
+                    if (std::get<0>(key) == gid)
                         return true;
                 }
                 return false;
@@ -355,7 +353,10 @@ namespace tlm {
             static constexpr cap_t kCapMulticast = 1u << 3;
 
         private:
-            using RoundKey = std::pair<CollectiveOp, tag_t>;
+            /// 轮次键 = **(group_id, op, tag)** —— ⚠️ **必须含 `group_id`**:
+            /// `ADR-CEP-03 §2` 明定 `group_id` 是 collective 的**一等公民**、完成语义是
+            /// **group-scoped** ⇒ 两个 group 用**同一** `(op, tag)` 时**不得**共享同一轮次。
+            using RoundKey = std::tuple<group_id_t, CollectiveOp, tag_t>;
 
             struct Group {
                 member_set_t members;
@@ -453,7 +454,6 @@ namespace tlm {
             std::map<group_id_t, Group> groups_;
             std::map<AddrRange, Region> regions_;
             std::map<RoundKey, Round> rounds_;
-            std::map<RoundKey, group_id_t> round_gid_;
             std::map<group_id_t, BarrierState> barrier_state_;
             std::vector<CollectiveEvt> events_;
             group_id_t next_gid_ = 1;

@@ -396,7 +396,7 @@ TEST_CASE("NVA-07: 集体面绑定 —— nvlink_4 绑本地模型 + 已注册 r
 // ══════════════════════════════════════════════════════════════════════════
 // NVA-08 —— V6-c 前提约束(归因 CP-03-VC-PRECONDITION)
 // ══════════════════════════════════════════════════════════════════════════
-TEST_CASE("NVA-08: V6-c 前提约束 —— unavailable ⇒ 仅本地模型(null 绑定不判 FAIL,零键 ⇒ SKIP)",
+TEST_CASE("NVA-08: V6-c 前提约束 —— M-1 变体(unavailable)⇒ 仅本地模型;M-2 下 ⇒ 不适用(SKIP)(null 绑定不判 FAIL,零键 ⇒ SKIP)",
           "[cep][nvlink-sharp][vc-precondition]") {
     const auto decl =
         load_collective_plane_declaration(std::string(CPPTLM_SOURCE_DIR) + "/" + kPlanesRelPath);

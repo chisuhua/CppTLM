@@ -683,3 +683,54 @@ D.5 否决路径 C 的理由原文:「需以 SU 改抓取点 3 的『独立 VC�
 · `ADR-CEP-04` 2026-11-03 段(tracker 选型改为候选集 + 理由登记)· `ADR-CEP-09` SU 2026-11-02 §⑤(同型先例)
 · `include/tlm/cep/channel_dependency_graph.hh`(E.4 的实测对象)· `include/tlm/cep/protocol_instance.schema.json`(E.3.2 的三条障碍)
 · ArchForge `22-nsa-fabric-address-spec.md` §0.5.4.1 表 `:147`(VC 槽位语义;**本仓无机器可读副本** ⇒ 见 E.3.4 的 U-2 与本段 C-1′ 的依赖登记)
+
+---
+
+## Status Update 2026-11-04(#5)—— 队列 #14 **实现层**的落地订正(3 项,per 台账 Entry #209)
+
+> **正文不改**(E.1 ~ E.12 与 §1 ~ §9 一律不改;本段**纯追加**)。
+> ⚠️ **冻结面两步授权**:授权记录 = 台账 **Entry #209**(`--update --authorized-by "Entry #209"`)。
+
+### ① E.9 的「**唯一**需两步授权同步的 M1 冻结产物」实为 **3 份**(订正)
+
+E.9 的清单按**实施前**的预估写「唯一 = `openspec/specs/cep-collective-plane-contract/spec.md`」⇒ **实测为 3 份**:
+
+| # | 冻结产物 | 落地原因 |
+|---|---|---|
+| 1 | `openspec/specs/cep-collective-plane-contract/spec.md` | **V6-d** + `status` 2 值(既有 Requirement 逐字不变 ⇒ 只 ADDED) |
+| 2 | `openspec/specs/cep-collective-plane-base/spec.md` | 既有 Scenario「数据原语 SHALL 显式声明未实现」是**能力级**表述 ⇒ 与新增的**真可达** plane **直接矛盾** ⇒ 须**收窄到 `LocalCollectivePlane`**(标题逐字不变 ⇒ 场景集 1:1) |
+| 3 | `docs/architecture/07-coherence-exploration-platform.md` | §5.1.1 UALink 行状态 + §11 Collective Plane 行 |
+
+⇒ **判据读取口径**:「**唯一**」应读作「**至少**」⇒ 实施方**不得**据此假定只动 1 份。
+
+### ② **C-3 的两级归因**澄清(声明级 ≠ 运行级)
+
+E.3.1 的 C-3 行把 **可判形式**写作「运行期断言(fail-fast)+ 调用序列 fixture」⇒ 实现上分**两级**:
+
+| 级 | 面 | 归因 id | 载体 |
+|---|---|---|---|
+| **声明级** | plane 是否**声明**承担 C-3(注册表 `enforces_control_plane_exclusion`) | `[CP-03-VC-CERTIFICATE/C-3]` | `evaluate_shared_mode_certificate` |
+| **运行级** | group 有 op **in-flight** 时是否**真拒绝**控制面操作 | `UIA-04`(实现层**新建**的行为义务 id) | `FabricCollectivePlane` 的调用序列 fixture |
+
+⇒ ⛔ 两级**不共用**一个 id(声明级是**证书判定**、运行级是**行为义务** ⇒ 归属不同面)
+⇒ 归因匹配按**完整前缀精确相等**(声明级 `[CP-03-VC-CERTIFICATE/C-3]`;运行级 `UIA-04`)。
+
+### ③ E.9 的 **C-1′ 反 fixture** 已落地(该条打勾)
+
+E.9 的「在 `collective_planes.json` 注入 `collective_plane_vc_binding` 块(集合平面**自带独立绑定**)
+⇒ 必红(归因 `CP-03-VC-CERTIFICATE/C-1′`,完整前缀精确相等)」⇒ **已落地**:
+声明面 loader **检测**该块 ⇒ `evaluate_shared_mode_certificate` 的 C-1′ **结构面**判 **FAIL**
+⇒ 影子 `collective_planes.json` 的反 fixture 必红且归因精确命中。
+⚠️ **实现侧注记**:C-1′ 的**结构面**不依赖「plane 不得作为协议实例出现」(实例 id 的 schema 形态
+`^[a-z0-9][a-z0-9_-]*$` 与 plane 名 CamelCase **不同形** ⇒ 该判定**恒假**)⇒ 结构面**只**认声明源块。
+
+### ④ 归约的**整数边界**登记位置(补记)
+
+`FabricCollectivePlane` 的归约算术**仅**在整数 datatype(`U8`/`U32`/`U64`)上进行;`F32`/`F64` 的 `REDUCE`
+⇒ `Status::Unsupported`(**显式「不支持」**,非静默近似)⇒ 该边界登记在
+`openspec/specs/cep-collective-plane-base/spec.md` 的 `cep-collective-plane-base-fabric-plane` Requirement
+(⛔ 本段**不**改 E.1 ~ E.12 正文)。
+
+**关联**: 台账 **Entry #209**(授权记录 + 落地订正)· #207(队列 #14 实现层归档)· #206(冻结面授权记录)
+· #193(SU#4 的授权记录)· `ADR-CEP-04` 2026-11-03 段(选型候选集 + 逐实例理由登记)
+· `include/tlm/cep/collective_plane_contract.hh`(V6-d + C-1′ 结构面)· `include/tlm/cep/fabric_collective_plane.hh`(C-3 运行级)

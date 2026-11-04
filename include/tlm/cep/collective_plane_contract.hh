@@ -179,6 +179,16 @@ struct VcReservationDeclaration {
 struct CollectivePlaneDeclaration {
     /// 协议实例 → 绑定的 plane(空串 / 未列 = 不启用)
     std::map<std::string, std::string> plane_binding;
+    /// ⚠️ **集合平面自带独立 VC 绑定**块(`collective_plane_vc_binding`)是否出现在声明源里
+    /// —— per `ADR-CEP-01` SU#4 **E.3.1 的 C-1′**(「集合平面 SHALL **不声明**自己的 VC 绑定」)
+    /// 与 **E.9** 的 C-1′ 反 fixture(「在 `collective_planes.json` 注入 `collective_plane_vc_binding`
+    /// 块 ⇒ 必红」)⇒ 该块**一旦出现** ⇒ **C-1′ 必红**(结构面有牙)。
+    /// ⚠️ **为何用「运行期检测」而非「schema 拒绝」**:schema 根级 `additionalProperties: false`
+    ///   本就会让该块**非法** ⇒ 但**判据必须自己抓**(⛔ 不能只靠 schema ⇒ 否则「注入 ⇒ 必红」
+    ///   这条前瞻判据将依赖**另一个**工具的行为)。
+    bool collective_plane_vc_binding_present = false;
+    /// 该块内的条目(逐条文本,供 detail 点名)—— 形如 `plane -> network:vc`
+    std::vector<std::string> collective_plane_vc_binding_entries;
     /// 已注册 region:range → (gid, mode)
     std::vector<std::pair<AddrRange, std::pair<group_id_t, AccessMode>>> registered_regions;
     /// collective VC 预留:network → vc_id
@@ -287,6 +297,21 @@ inline CollectivePlaneDeclaration parse_collective_plane_declaration(const nlohm
     //    否则 `run_collective_plane_contract` 会在 CP-03 之前早退,报告里**没有 CP-03 行**,
     //    与 `ADR-CEP-01` D.4 的反向 fixture「删 revisit_trigger ⇒ 必红(**CP-03**)」不符。
     //    ⇒ 置 `present=true` + 缺的字段留空,由 `evaluate_vc_reservation` 判 FAIL 并点名缺项。
+    // ⚠️ **C-1′ 结构面**(per `ADR-CEP-01` E.9 的反 fixture):声明源里若出现
+    //   `collective_plane_vc_binding` 块(集合平面**自带**独立 VC 绑定)⇒ 记录并由判据判红。
+    if (doc.contains("collective_plane_vc_binding")) {
+        d.collective_plane_vc_binding_present = true;
+        const auto& cpvb = doc["collective_plane_vc_binding"];
+        if (cpvb.is_object()) {
+            for (auto it = cpvb.begin(); it != cpvb.end(); ++it) {
+                d.collective_plane_vc_binding_entries.push_back(
+                    it.key() + " -> " + it.value().dump());
+            }
+        } else {
+            d.collective_plane_vc_binding_entries.emplace_back(
+                std::string("(非对象) ") + cpvb.dump());
+        }
+    }
     if (doc.contains("vc_reservation_declaration")) {
         const auto& vd = doc["vc_reservation_declaration"];
         if (!vd.is_object()) {
@@ -609,8 +634,6 @@ struct VcBindingSnapshot {
     /// ⚠️ **为什么需要**:`used` 只有**并集** ⇒ 无法判定 **C-1′** 的「该网全部有绑定的既有实例
     ///   的映射**逐类相等**」(两个实例可能用**同一对** vc ⇒ 并集相同但映射不同)⇒ 必须保留**逐实例**形态。
     std::map<std::string, std::vector<std::map<std::string, unsigned>>> per_network_mappings;
-    /// 全部**实例 id**(C-1′ 的「集合平面**不得**作为协议实例出现」判定)
-    std::set<std::string> instance_ids;
     bool source_error = false;
     std::string source_error_detail;
 };
@@ -650,8 +673,6 @@ inline VcBindingSnapshot load_vc_binding_snapshot(const std::string& protocol_in
             for (const auto& inst : pdoc["instances"]) {
                 if (!inst.is_object())
                     continue;
-                if (inst.contains("id") && inst["id"].is_string())
-                    snap.instance_ids.insert(inst["id"].get<std::string>());
                 if (!inst.contains("vc_binding"))
                     continue;
                 const auto& vb = inst["vc_binding"];
@@ -888,9 +909,15 @@ inline ContractVerdict evaluate_shared_mode_certificate(const CollectivePlaneDec
         }
         const auto mit = snap.per_network_mappings.find(entry.network);
         // ── **C-1′ 槽位语义继承** ────────────────────────────────────────
-        if (snap.instance_ids.count(entry.plane) != 0) {
-            detail = std::string(kC1) + "集合平面 `" + entry.plane +
-                     "` **作为协议实例出现** ⇒ 它声明了自己的 VC 绑定(⛔ 载体必须是**继承**)";
+        // ① **结构面**:集合平面**不得**自带独立 VC 绑定(声明源里**不得**出现
+        //    `collective_plane_vc_binding` 块)—— per `ADR-CEP-01` E.3.1 的 C-1′ 与 **E.9** 的反 fixture。
+        if (decl.collective_plane_vc_binding_present) {
+            detail = std::string(kC1) + "声明源含 `collective_plane_vc_binding` 块(" +
+                     std::to_string(decl.collective_plane_vc_binding_entries.size()) +
+                     " 条:" + (decl.collective_plane_vc_binding_entries.empty()
+                                   ? std::string("(空)")
+                                   : decl.collective_plane_vc_binding_entries.front()) +
+                     ")⇒ 集合平面**自带独立 VC 绑定** ⛔ 载体必须是**继承**";
             return ContractVerdict::FAIL;
         }
         if (mit == snap.per_network_mappings.end() || mit->second.empty()) {
@@ -1343,7 +1370,12 @@ struct ContractPaths {
     std::string declaration = kDefaultCollectiveDeclarationPath;
 };
 
-inline ContractReport run_collective_plane_contract(const ContractPaths& paths) {
+/// ⚠️ **入参注入点**(per critic 审计 2026-11-04 的 SHOULD_FIX ③):`UntestedRegistry` 由调用方
+///   注入 ⇒ 本仓当前**唯一** M-2 使用方(队列 #14)默认取 `default_untested_registry()`
+///   (规约载体 `ualink_inc_state_spec.hh`)⇒ 将来出现第二个 M-2 使用方时**不必**改契约头。
+inline ContractReport run_collective_plane_contract(
+    const ContractPaths& paths,
+    const UntestedRegistry& untested = default_untested_registry()) {
     ContractReport r;
     const std::string root = paths.root.empty() ? std::string(".") : paths.root;
     const auto at = [&](const std::string& rel) {
@@ -1412,8 +1444,7 @@ inline ContractReport run_collective_plane_contract(const ContractPaths& paths) 
             // ⚠️ **V6-d 共享模式证书**折进 **CP-03** 行(⛔ 不新增第 7 条规则)
             //   ⇒ 子判据的 detail 以**精确前缀**表达 ⇒ fixture 按**精确相等**归因
             std::string cert;
-            const ContractVerdict cv = evaluate_shared_mode_certificate(
-                decl, snap, default_untested_registry(), cert);
+            const ContractVerdict cv = evaluate_shared_mode_certificate(decl, snap, untested, cert);
             if (cv == ContractVerdict::FAIL) {
                 v = ContractVerdict::FAIL;
                 d += " | " + cert;

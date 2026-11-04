@@ -68,7 +68,8 @@ FIXTURES=(
   # F-8 —— 已注册 region 的 `mode` 改成 `normal` ⇒ R3 降级判据红
   "f-08-binding-mode:::NVA-07:::include/tlm/cep/collective_planes.json@@      \"mode\": \"nc_drop_cacheable\"@@      \"mode\": \"normal\""
 
-  # F-9 —— 绑定一个**未注册**的 plane 名 ⇒ V6-c 前提约束红
+  # F-9 —— 绑定一个**非本地模型**的 plane 名(`FabricCollectivePlane`,2026-11-04 起已登记)
+  #      ⇒ V6-c 前提约束红(⛔ 不是「未注册」⇒ 未注册名由本仓另一条 fixture 覆盖)
   "f-09-v6c-unregistered:::CP-03-VC-PRECONDITION:::include/tlm/cep/collective_planes.json@@    \"nvlink_4\": \"LocalCollectivePlane\"@@    \"nvlink_4\": \"FabricCollectivePlane\""
 )
 

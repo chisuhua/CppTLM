@@ -186,6 +186,9 @@ CEP SHALL 为 **承载真实 fabric 集合流量**的 collective plane(`FabricCo
 - **THEN** SHALL **真执行**该原语(⛔ **不得**返回「数据路径未实现」状态 —— 那是 `LocalCollectivePlane` 的行为)
 - **AND** `REDUCE` SHALL 在**参与集全部成员各贡献一次**后产出 **`CollectiveEvt::Result`**(归约值)
       + **`Completion`**;归约 SHALL 使用既有 `ReduceOp`(恰 6 值)与既有 `DataType` ⇒ ⛔ **不新增**算子族
+- **AND** 归约算术 SHALL 仅在**整数** datatype(`U8` / `U32` / `U64`)上进行;`F32` / `F64` 的 `REDUCE`
+      SHALL 返回**明确的「不支持」状态**(`Status::Unsupported`)且**不产出**事件
+      ⇒ ⛔ **不得**静默按整数近似(⚠️ 浮点归约语义属**未建模**面,登记于实现载体头注释)
 - **AND** `BROADCAST` SHALL 以**首个**贡献者的载荷为广播值,收齐后向**全体成员**产出同值 `Result` + `Completion`
 - **AND** `MULTICAST` SHALL 以 `multicast_mask` 选中的成员为参与集,收齐后产出 `Result` + `Completion`
 - **AND** **未收齐**时 SHALL **只累积、不产出事件**(不得提前释放 —— 与 BARRIER 的 N-1/N 纪律同族)

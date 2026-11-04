@@ -239,6 +239,53 @@ TEST_CASE("UIA-03: FabricCollectivePlane 数据路径真可达(REDUCE/BROADCAST/
     REQUIRE(plane2.last_status() == cep::Status::GroupRegisterError);
     REQUIRE(plane2.pending_event_count() == 0u);
 
+    // ── 浮点归约 ⇒ **显式不支持**(⛔ 不是静默近似)──
+    {
+        cep::FabricCollectivePlane plane;
+        cep::member_set_t members{1u, 2u};
+        const cep::group_id_t gid = plane.group_create(members, cep::GroupAttrs{});
+        REQUIRE(prepare_active_region(plane, gid, 0x5000u));
+        cep::CollectiveReq f = make_req(gid, cep::CollectiveOp::REDUCE, 1u, 1u, 0x5000u);
+        f.dtype = cep::DataType::F32;
+        plane.send(f);
+        REQUIRE(plane.last_status() == cep::Status::Unsupported);
+        REQUIRE(plane.pending_event_count() == 0u);
+    }
+
+    // ── 跨 group 轮次**隔离**(轮次键含 `group_id`)──
+    {
+        cep::FabricCollectivePlane plane;
+        cep::member_set_t m1{1u, 2u};
+        cep::member_set_t m2{3u, 4u};
+        const cep::group_id_t g1 = plane.group_create(m1, cep::GroupAttrs{});
+        const cep::group_id_t g2 = plane.group_create(m2, cep::GroupAttrs{});
+        REQUIRE(g1 != g2);
+        REQUIRE(prepare_active_region(plane, g1, 0x6000u));
+        REQUIRE(prepare_active_region(plane, g2, 0x7000u));
+        // 同一 `(op, tag)`、**不同 group** ⇒ 两个**独立**轮次
+        plane.send(make_req(g1, cep::CollectiveOp::REDUCE, 1u, 10u, 0x6000u));
+        plane.send(make_req(g2, cep::CollectiveOp::REDUCE, 3u, 100u, 0x7000u));
+        REQUIRE(plane.group_has_inflight(g1));
+        REQUIRE(plane.group_has_inflight(g2));
+        // 各自收齐 ⇒ 各自的结果**不串扰**
+        plane.send(make_req(g1, cep::CollectiveOp::REDUCE, 2u, 20u, 0x6000u));
+        REQUIRE_FALSE(plane.group_has_inflight(g1));
+        REQUIRE(plane.group_has_inflight(g2));
+        plane.send(make_req(g2, cep::CollectiveOp::REDUCE, 4u, 200u, 0x7000u));
+        REQUIRE_FALSE(plane.group_has_inflight(g2));
+        // 结果:g1 = 10+20 = 30;g2 = 100+200 = 300 ⇒ 逐组可辨
+        std::vector<std::uint64_t> payloads;
+        cep::CollectiveEvt e;
+        while (plane.pending_event_count() > 0) {
+            plane.recv(e);
+            if (e.kind() == cep::CollectiveEvt::Kind::Result)
+                payloads.push_back(e.payload());
+        }
+        REQUIRE(payloads.size() == 4u);
+        REQUIRE(payloads[0] == 30u);
+        REQUIRE(payloads[2] == 300u);
+    }
+
     // ── 能力位:真可达 ⇒ 非 0(⛔ 不谎报)──
     REQUIRE(plane.query_capability(cep::CollectiveOp::REDUCE, 8u) != 0u);
     REQUIRE(plane.query_capability(cep::CollectiveOp::BROADCAST, 8u) != 0u);
@@ -383,6 +430,18 @@ TEST_CASE("V6-d: M-2 共享模式证书全绿(C-1′/C-2/C-3/C-4)", "[cep][ualin
         REQUIRE(cep::evaluate_shared_mode_certificate(decl, poisoned,
                                                       cep::default_untested_registry(),
                                                       d) == cep::ContractVerdict::FAIL);
+        REQUIRE(d.rfind("[CP-03-VC-CERTIFICATE/C-1\u2032]", 0) == 0);
+    }
+    // ── C-1′ **结构面**:声明源含 `collective_plane_vc_binding` ⇒ 必红(per `ADR-CEP-01` E.9)──
+    {
+        auto poisoned = decl;
+        poisoned.collective_plane_vc_binding_present = true;
+        poisoned.collective_plane_vc_binding_entries.emplace_back(
+            "FabricCollectivePlane -> {\"ualink_fabric\":{\"request\":0}}");
+        std::string d;
+        REQUIRE(cep::evaluate_shared_mode_certificate(poisoned, snap,
+                                                      cep::default_untested_registry(), d) ==
+                cep::ContractVerdict::FAIL);
         REQUIRE(d.rfind("[CP-03-VC-CERTIFICATE/C-1\u2032]", 0) == 0);
     }
     // ── C-2:`vc_count` 调大 ⇒ 覆盖不全 ⇒ 必红 ──

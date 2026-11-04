@@ -187,15 +187,18 @@ CEP SHALL 为 **M-2(共享 VC + 证书)**提供**可执行判据面**:`status` �
 #### Scenario: **C-1′ 槽位语义继承** —— 继承 SHALL **良定义**
 
 - **WHEN** 判定某 `(plane, network)` 的 **C-1′**
-- **THEN** 集合平面 SHALL **不**作为协议实例出现在 `protocol_instances.json`
-      (⇒ 它**没有**自己的 VC 绑定 —— 载体 = **继承**)
+- **THEN** 声明源 SHALL **不**含 `collective_plane_vc_binding` 块
+      (集合平面**自带**独立 VC 绑定 ⇒ ⛔ 载体必须是**继承**;per `ADR-CEP-01` SU#4 **E.9** 的反 fixture)
 - **AND** 该 network 上**全部有 `vc_binding` 的**既有实例的映射 SHALL **逐类相等**
       (类集合相同 ∧ 每类映射到同一 `vc_id`)⇒ 不等 ⇒ 必红
 - **AND** 该 network SHALL **至少有一个**有绑定的既有实例 ⇒ 否则继承**无主体** ⇒ SHALL 判 **FAIL**(⛔ 禁 vacuous PASS)
-- **AND** **正控**:该网全部有绑定的实例映射逐类相等 ⇒ PASS;**反向 fixture**:令其中两个实例的映射不一致 ⇒ 必红
-      (归因 `[CP-03-VC-CERTIFICATE/C-1′]`,**精确相等**匹配)
+- **AND** **正控**:该网全部有绑定的实例映射逐类相等且声明源无自带绑定块 ⇒ PASS
+- **AND** **反向 fixture**(两条,**同归因** `[CP-03-VC-CERTIFICATE/C-1′]`,**精确相等**匹配):
+      ① **语义面**:令其中两个实例的映射不一致 ⇒ 必红(影子 `protocol_instances.json`)
+      ② **结构面**:在声明源注入 `collective_plane_vc_binding` 块 ⇒ 必红(影子 `collective_planes.json`)
 
-> **锚点**:`test_cep_ualink_inc.cc` 的 C-1′ 断言 + 反向 fixture(影子 `protocol_instances.json`)
+> **锚点**:`test_cep_ualink_inc.cc` 的 C-1′ 断言 + 反向 fixture
+> (影子 `protocol_instances.json` + 影子 `collective_planes.json`)
 
 #### Scenario: **C-2 VC 覆盖完整** —— 继承映射 SHALL **覆盖**该网 `vc_count` 全部取值
 
@@ -215,7 +218,10 @@ CEP SHALL 为 **M-2(共享 VC + 证书)**提供**可执行判据面**:`status` �
       (承载真实 fabric 集合流量)∧ SHALL 声明承担 **C-3** ⇒ 任一不满足 ⇒ 必红
 - **AND** **运行级**:该 plane 的**行为** SHALL 在 group 有 op **in-flight** 时**拒绝**
       `group_register_region` 与 `group_destroy` ⇒ 由调用序列 fixture 判定
-- **AND** 两级 SHALL **同归因**(`[CP-03-VC-CERTIFICATE/C-3]`)⇒ **反向 fixture**(声明级 / 运行级各一条)必红且精确命中
+- **AND** 两级 SHALL **分别**归因:声明级 ⇒ `[CP-03-VC-CERTIFICATE/C-3]`(本 Requirement 的证书 id);
+      运行级 ⇒ `UIA-04`(本仓**新建**的行为义务 id,per `cep-ualink-inc` 的 UIA-04 场景)
+      ⇒ **反向 fixture**(声明级 / 运行级各一条)必红且**各自**精确命中
+      (⛔ 两级**不**共用一个 id —— 声明级是**证书判定**、运行级是**行为义务**,归属不同面)
 
 > **锚点**:`test_cep_ualink_inc.cc` 的 C-3 声明级断言 + `FabricCollectivePlane` 的调用序列断言 + 反向 fixture
 
