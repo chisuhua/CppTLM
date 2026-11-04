@@ -12817,6 +12817,67 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 
 ---
 
+### Entry #213 — 2026-11-04 [build](债务清理第一批 —— **tools 3 个补齐** + 逐协议 **E2E 覆盖**梳理)
+
+**主题**:① 闭合 D2(`ADR-CEP-06` 明列但缺失的 3 个 tool);② 产出逐协议 E2E 覆盖矩阵,
+并暴露 **DoD §6.2 B3 口径与实现不符**(需 DRI 裁决)。**0 冻结面 / 0 契约面改动**。
+**角色**:builder。
+
+**① D2 闭合 —— 3 个 tool 补齐(纯标准库,零第三方依赖)**
+
+| 新增 | 职责 | 判据 |
+|---|---|---|
+| `tools/aggregate.py` | sweep 目录下多个 run 的 metrics.json → `sweep_summary.csv`(13 必纳列) | 2+ run 聚合 + 缺字段必报错 |
+| `tools/plot.py` | CSV → 每 metric 一张**手写 SVG** 排名图(无 matplotlib) | SVG 文件存在且含 `<svg` |
+| `tools/recommend.py` | A/B 决策辅助:硬性违例否决 + `avg_latency` 超 ±10% 才「显著」 | 推荐 A / 推荐 B / 不显著 三态退出码(0/0/3)+ 双违例 exit 4 |
+
+- `policy_threshold.json` 的默认值落为 `DEFAULT_POLICY`(`deadlock_violations_max=0` ·
+  `memory_violations_max=0` · `avg_latency_significant_pct=10.0`),per `ADR-CEP-06 §6 item 5`。
+- `recommend.py` **随结论输出** `verification_mode` / `verification_scope`
+  (per `ADR-CEP-06 §3`:bounded_random 的结论不得被消费方当成「已证明」)。
+- `test_cep_tools_contract.cc` 的 `tool_files()` 由 **3 → 6**;新增语义 TEST_CASE
+  (aggregate 行数 / plot SVG / recommend 三态)⇒ `[cep][tools]` **13 cases / 126 assertions**。
+
+**② 逐协议 E2E 覆盖梳理(结论见 `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`)**
+
+| 协议族 | L3 装配 | L4 事务级 E2E | 运行时引擎 |
+|---|:---:|:---:|---|
+| CHI RN-F | ✅ | ✅ `submit → tick → 抵达` | ✅ `chi_rnf_protocol_engine.hh` |
+| MESIF | ✅ | ✅ `instantiateAll → tick → 对端` | ✅ `mesif_protocol_engine.hh` |
+| CohIf 载体 | ✅ | ✅ | ⚠️ `CohIfNullProtocolEngine`(**Null 语义**) |
+| MOESI-GPU | ⚠️ 仅装配期校验 | ❌ | ✅ 有引擎**但无 E2E 驱动** |
+| CXL 2.0 非对称 | ❌ | ❌ | ❌ 无(连 tracker 行为都复用 MESIF) |
+| CXL 3.0 对称 DCOH | ❌ | ❌ | ❌(`DcohSymmetric` tracker 有行为面) |
+| TileLink-C | ❌ | ❌ | ❌(`TreeManager` 有行为面) |
+| NVLink SHARP | ❌ | ❌ | ❌(`BroadcastNull` tracker) |
+| UALink INC | ❌ | ❌(`plane.send/recv` 为 API 级) | ❌(`FabricCollectivePlane` 行为面) |
+
+- **正面**:契约层(L1/L2)与反向 fixture **6 族全覆盖**(每族均有 `cep_*_reverse_verify.sh` 注册 ctest)。
+- **缺口**:L4 事务 E2E **只有 3 条路径**;反 fixture 齐备而「真实路径可跑」不足。
+- ⚠️ **DoD §6.2 B3「6 个 ProtocolEngine 实施完成」与实现不符** —— 运行时实际 =
+  3 个 RN 侧引擎 + 1 个 Null 外壳;4 个协议族只有 adapter 契约。
+  **需 DRI 裁决**:① 把 B3 重定义为「6 族 **adapter 契约**已实施」(则达成);
+  或 ② 承认 B3 未达成并登记。**本 entry 不擅自改 DoD 口径**。
+
+**③ 债务分层(清理后剩余)**
+
+| 层 | 项 | 处置 |
+|---|---|---|
+| ✅ 已闭合 | D2(tools 三缺) · D3(experimental 零产物) · D4 的 H2/H3/H6 | 本 entry + Entry #212 |
+| ⏭ 可立即做(builder,非冻结面) | MOESI-GPU 的 L4 E2E 驱动(引擎已在) · 代码域 `cxl_dcoh_state_spec.hh` 的 BISnp 注释订正 | 下一批 |
+| 🔒 需 architect(冻结面) | `perm` 字段描述歧义(`protocol_instance.schema.json`) · BISnp 口径(`ADR-CEP-04 §3.4`) · 一决策一文档化拆分 · ADR 行号锚点改节号 | 需切 architect |
+| ❓ 需用户裁决 | DoD B3 口径 · 声明层 3 项建模假设(SC/SC · writeback · combination) · `FullMapDirectory` / `LocalView` 落位登记 | — |
+| ⛔ 外部阻塞 | `ualink_4` 声明 + 计数链 · `U-1`/`U-2`(UALink Evaluation Copy) | — |
+
+**④ 验收(实测)**:`[cep]` **378 cases / 8343 assertions** · `[cep][tools]` **13/126** ·
+6 门禁 + `format --check` 全 rc=0 · `cep_freeze_check` rc=0(**0 冻结件改动**) ·
+三工具对 Phase 1 真实产出实跑通过(3 run 聚合 / 10 张 SVG / A/B 三态)
+
+**⑤ 关联**:Entry #212(H2/H3/H6)· #211(Phase 0)· `ADR-CEP-06 §4.1/§4.2/§6` ·
+`docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

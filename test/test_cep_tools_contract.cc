@@ -24,7 +24,8 @@ namespace {
 
     const std::vector<std::string>& tool_files() {
         static const std::vector<std::string> t = {"tools/render_report.py", "tools/run_sweep.py",
-                                                   "tools/ab_compare.py"};
+                                                   "tools/ab_compare.py",    "tools/aggregate.py",
+                                                   "tools/plot.py",          "tools/recommend.py"};
         return t;
     }
 
@@ -305,4 +306,77 @@ TEST_CASE("[cep][tools] experimental/ 目录约定存在", "[cep][tools]") {
     REQUIRE(std::filesystem::exists(dir));
     REQUIRE(std::filesystem::exists(dir / "metrics.schema.json"));
     REQUIRE(std::filesystem::exists(dir / ".gitkeep"));
+}
+
+// ══════════════════════════════════════════════════════════════════
+// aggregate / plot / recommend 的**语义**行为
+// （per ADR-CEP-06 §4.1 / §4.2 / §6 item 5；此前三者**实现缺失**，仅有 ADR 描述）
+// ══════════════════════════════════════════════════════════════════
+
+TEST_CASE("[cep][tools] aggregate / plot / recommend 的语义行为", "[cep][tools]") {
+    const auto base = std::filesystem::temp_directory_path() / ("cep_agg_" + proc_token());
+    std::filesystem::remove_all(base);
+
+    const auto make_run = [&](const std::string& name, int latency, int deadlock, int mem_viol) {
+        const auto dir = base / name;
+        std::filesystem::create_directories(dir);
+        std::ofstream(dir / "metrics.json")
+            << R"({"total_cycles":100,"total_transactions":10,"transactions_per_cycle":0.1,)"
+               R"("avg_latency_cycles":)"
+            << latency << R"(,"p50_latency_cycles":)" << latency << R"(,"p95_latency_cycles":)"
+            << latency << R"(,"p99_latency_cycles":)" << latency << R"(,"max_latency_cycles":)"
+            << latency
+            << R"(,"coherence_stalls":0,"collective_stalls":0,"directory_misses":0,)"
+               R"("deadlock_violations":)"
+            << deadlock << R"(,"memory_violations":)" << mem_viol << "}";
+        return dir;
+    };
+
+    const auto run_a = make_run("runA", /*latency=*/10, 0, 0);
+    const auto run_b = make_run("runB", /*latency=*/20, 0, 0); // 退化 100%
+    const auto run_c = make_run("runC", /*latency=*/5, 0, 1);  // 硬性违例
+
+    SECTION("aggregate → sweep_summary.csv(2 run × 13 metric)") {
+        REQUIRE(run_cmd("python3 " + shquote((repo_root() / "tools/aggregate.py").string()) + " " +
+                        shquote(base.string())) == 0);
+        const auto csv = base / "sweep_summary.csv";
+        REQUIRE(std::filesystem::exists(csv));
+        const std::string text = read_file(csv.string());
+        REQUIRE(text.find("run_id") != std::string::npos);
+        REQUIRE(text.find("avg_latency_cycles") != std::string::npos);
+        // 表头 + 3 行
+        std::size_t lines = 0;
+        for (char ch : text) {
+            if (ch == '\n')
+                ++lines;
+        }
+        REQUIRE(lines == 4);
+    }
+
+    SECTION("plot → 每列一张 SVG") {
+        REQUIRE(run_cmd("python3 " + shquote((repo_root() / "tools/aggregate.py").string()) + " " +
+                        shquote(base.string())) == 0);
+        REQUIRE(run_cmd("python3 " + shquote((repo_root() / "tools/plot.py").string()) + " " +
+                        shquote((base / "sweep_summary.csv").string())) == 0);
+        const auto svg = base / "plots" / "avg_latency_cycles_rank.svg";
+        REQUIRE(std::filesystem::exists(svg));
+        REQUIRE(read_file(svg.string()).find("<svg") != std::string::npos);
+    }
+
+    SECTION("recommend:延迟退化 100% ⇒ 推荐 A(baseline),exit 0") {
+        REQUIRE(run_cmd("python3 " + shquote((repo_root() / "tools/recommend.py").string()) + " " +
+                        shquote(run_a.string()) + " " + shquote(run_b.string())) == 0);
+    }
+
+    SECTION("recommend:同一 run 自比 ⇒ 不显著,exit 3") {
+        REQUIRE(run_cmd("python3 " + shquote((repo_root() / "tools/recommend.py").string()) + " " +
+                        shquote(run_a.string()) + " " + shquote(run_a.string())) == 3);
+    }
+
+    SECTION("recommend:target 有硬性违例 ⇒ 推荐 A,exit 0") {
+        REQUIRE(run_cmd("python3 " + shquote((repo_root() / "tools/recommend.py").string()) + " " +
+                        shquote(run_a.string()) + " " + shquote(run_c.string())) == 0);
+    }
+
+    std::filesystem::remove_all(base);
 }
