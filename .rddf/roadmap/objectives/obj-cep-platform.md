@@ -12580,7 +12580,9 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 | # | 冻结产物 | 本层改动 | 依据 |
 |---|---|---|---|
 | 1 | `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | 追加 **Status Update 2026-11-04(#5)**(3 项落地订正:**E.9 冻结面实为 3 份** · **C-3 两级归因分别** · **C-1′ 结构面判据已落地** + 整数边界登记位置补记)⇒ 正文 E.1 ~ E.12 与 §1 ~ §9 **逐字不改** | `ADR-CEP-01` **E.3.1 / E.9** 的落地实测反证(critic 审计 B1/B2)· ADR 不可变纪律(只追加 SU) |
-| 2 | `openspec/specs/cep-collective-plane-contract/spec.md` | ① **C-1′** Scenario:**删除恒假判定**(「集合平面不得作为实例出现」⇒ 实例 id 的 schema 形态 `^[a-z0-9][a-z0-9_-]*$` 与 plane 名 CamelCase **不同形** ⇒ 恒假)· 改为**声明源块**判定 + 反向 fixture 拆**两条**(语义面 + 结构面,**同归因**) ② **C-3** Scenario:两级归因由「**同归因**」改为「**分别**归因」(声明级 ⇒ `[CP-03-VC-CERTIFICATE/C-3]`;运行级 ⇒ `UIA-04`) | critic 审计 **B1**(三份冻结 spec 对同一 fixture 的归因 id 互相矛盾)+ **B2**(C-1′ 结构面恒假 + 漏 `E.9` 的反 fixture) |
+| 2 | `openspec/specs/cep-collective-plane-contract/spec.md` | ① **C-1′** Scenario:**删除恒假判定**(「集合平面不得作为实例出现」⇒ 实例 id 的 schema 形态 `^[a-z0-9][a-z0-9_-]*$` 与 plane 名 CamelCase **不同形** ⇒ 恒假)· 改为**声明源块**判定 + 反向 fixture 拆**两条**(语义面 + 结构面,**同归因**) ② **C-3** Scenario:两级归因由「**同归因**」改为「**分别**归因」(声明级 ⇒ `[CP-03-VC-CERTIFICATE/C-3]`;运行级 ⇒ `UIA-04`)
+   —— ⚠️ **含 Scenario 标题**:原标题「声明级与运行级 SHALL **同归因**」与改后正文**自相矛盾**
+   (残留检出)⇒ 标题一并改「**分别归因**」+ 补 3 行「为何分别」注记(声明级 = 证书判定 / 运行级 = 行为义务) | critic 审计 **B1**(三份冻结 spec 对同一 fixture 的归因 id 互相矛盾)+ **B2**(C-1′ 结构面恒假 + 漏 `E.9` 的反 fixture) |
 | 3 | `openspec/specs/cep-collective-plane-base/spec.md` | `cep-collective-plane-base-fabric-plane` Requirement 增**整数 datatype 边界**(`F32` / `F64` 的 `REDUCE` ⇒ `Status::Unsupported` 且**不产出**事件;⛔ 不得静默按整数近似) | critic 审计 **SHOULD_FIX ①**:实现有该分支但**冻结契约未登记** ⇒ 契约与实现不同源 |
 | 4 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 **40** 件的 hash + provenance | 机制 M1 本身(每次授权都要重算) |
 

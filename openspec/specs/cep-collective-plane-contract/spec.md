@@ -211,7 +211,11 @@ CEP SHALL 为 **M-2(共享 VC + 证书)**提供**可执行判据面**:`status` �
 
 > **锚点**:`test_cep_ualink_inc.cc` 的 C-2 断言 + 反向 fixture(影子 `fabric.json`)
 
-#### Scenario: **C-3 控制面与数据面互斥** —— 声明级与运行级 SHALL **同归因**
+#### Scenario: **C-3 控制面与数据面互斥** —— 声明级与运行级 SHALL **分别归因**
+
+> **为何「分别」**:声明级是**证书判定**(该 plane 是否**声明**承担 C-3)⇒ 归 `CP-03-VC-CERTIFICATE/C-3`;
+> 运行级是**行为义务**(in-flight 时**真**拒绝)⇒ 归 `UIA-04` ⇒ 两级归属不同面 ⇒ ⛔ **不共用** id
+> (per `ADR-CEP-01` SU#5 ②)。
 
 - **WHEN** 判定某 `(plane, network)` 的 **C-3**
 - **THEN** 该 plane SHALL **已登记**在 plane 注册表(单源在**定义点**)∧ SHALL 声明为**非本地模型**
