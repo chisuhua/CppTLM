@@ -678,11 +678,11 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **H1** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run ⇒ 无 metric 需求 |
 | **H2** | `coherence_stalls` · `collective_stalls` · `deadlock_violations` · `memory_violations` · `directory_misses` | 该实验只对比**目录策略的延迟**;`directory_misses` **另有一条**「未测量」登记(见 ① 表)⇒ **刻意不采**,不因「本该有产出者」而补造采集链路 |
 | **H3** | `coherence_stalls` · `collective_stalls` · `directory_misses` · `deadlock_violations` | 一致性完备性实验,只测**违例类**;`deadlock_violations` 未采 ⇒ 已在 ① 表标「未测量」,**不得**继承 pass |
-| **H4** | ⏳ **待登记**(装置未建 ⇒ out-of-scope 集合此刻**不可预登记** ⇒ ⛔ **在装置设计定稿前,不得开工产出 run**) | 预登记**必须先于**产出 |
+| **H4** | ⏳ **待登记** —— `status = pending`(**不是**「全部 13 项」;「全部」是 H1/H5/H7 的语义)⇒ out-of-scope 集合此刻**不可预登记** ⇒ ⛔ **在装置设计定稿前,不得开工产出 run** | 预登记**必须先于**产出 |
 | **H5** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run |
 | **H6** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `directory_misses` | 该实验测**VC 隔离**,**不采延迟**(per SU#1 §③ branch 3:`timing` + 预声明不采 ⇒ 必须 `"not-collected"`,⛔ 禁写 0)· `coherence_stalls` / `collective_stalls` / `deadlock_violations` **在范围内** |
 | **H7** | *(全部 13 项)* | 外部对拍,**不产生**本仓 `metrics.json` run |
-| **H8** | ⏳ **待登记**(A/B 数据未产) | 同 H4 |
+| **H8** | ⏳ **待登记** —— `status = pending`(**不是**「全部 13 项」;「全部」是 H1/H5/H7 的语义)⇒ out-of-scope 集合此刻**不可预登记** ⇒ ⛔ **不得产出 A/B run** | 同 H4 |
 
 **②-2 机器投影与 drift 关系(per `ADR-CEP-06` **SU#2** ①~③ —— 载体裁决)**
 
@@ -693,6 +693,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **drift 校验** | 新 script + ctest(先例 `cep_decl_alignment_check`)⇒ **本表 ② ↔ JSON 逐假设集合相等**;任一侧单改即 red ⇒ **两闸互为锁**(改 JSON 绕过评审 ⇒ 冻结授权记录暴露;改本表想静默生效 ⇒ drift red) |
 | **禁产出闸** | `⏳ 待登记`(H4 / H8)在 JSON 里 `status = pending`(⛔ **不是缺行** —— 缺行 = 未登记,pending = 已登记但禁产出)⇒ tools 判据④ 对 `pending` / 无行**判红**;emit whitelist 实测只认 `h2`/`h3`/`h6` ⇒ H4/H8 在受监管路径上**物理不可产出** |
 | **⚠️ 能力边界** | 闸控制 **validity 不是 existence** —— 谁都能手搓 run 目录,但不会有 validity-green 的报告 ⇒ 产物在**消费侧**被 containment |
+| **`status` 三值语义** | `registered`(已登记 ⇒ 可产出 run)· `pending`(已登记但**禁产出** —— H4 / H8)· **无行**(未登记 ⇒ 判红)。⛔ **`pending` ≠ 「全部 13 项」** —— 「全部」是 H1/H5/H7 的语义(契约级断言 / 外部对拍,**不产生** run) |
 
 **③ verdict 三态口径(SU#1 §④ 的 hypothesis-verdict 级 —— 与 run-validity 级**不可互相继承**)**
 
@@ -13248,6 +13249,30 @@ objective 的 B3 拆分 + 2 份冻结面文档的追加式同步 + 台账登记�
 
 **⑤ 验收(实测)**:`objective §9.1` 改造落地(①/②/②-2/③ 四表)· `ADR-CEP-06` SU#2 追加(正文未改)·
 `cep_archforge_alignment_check.sh` rc=0 · `cep_doc_ref_check --strict` rc=0 · `docs_sync_check --strict` rc=0
+
+**⑤-2 同条内的 builder 域落地(SU#2 动作 #1 / #2 的前半 —— 载体与 drift 闸)**
+
+| 产物 | 内容 | 冻结面 |
+|---|---|:---:|
+| `experimental/preregistration.json` | **机器投影**:8 个假设 × `status`(registered/pending)+ `out_of_scope` 集 + `reason` + `required_metrics`(13 必纳) | ✅ **是**(已入 `FROZEN_GLOBS`) |
+| `scripts/test/cep_prereg_drift_check.sh` | **drift 闸**:真源 §9.1 ② 表 ↔ 投影 **逐假设集合相等**;校验 `status` + `out_of_scope` + 名字合法性 + 假设集合双向相等 | ❌ 否 |
+| `test/CMakeLists.txt` | ctest 注册 `cep_prereg_drift_check`(**无 SKIP 路径** —— 两侧都在本仓内 ⇒ 缺失 = 本仓缺陷) | ❌ 否 |
+| `scripts/test/cep_docs_sync_check.sh` | 门禁链挂入**新组 10/12**(原 11 组 ⇒ 12 组,组号顺延) | ❌ 否 |
+| `scripts/test/cep_freeze_check.sh` | `FROZEN_GLOBS` 增 `experimental/preregistration.json`(**派生刷新型**成员,注释载明「真源与投影必须逐假设集合相等」) | ❌ 否(但改它 ⇒ 门禁脚本变更) |
+
+**⚠️ 落地时暴露并修正的 1 项语义歧义**(若不改 ⇒ 投影会**静默失真**):
+解析 §9.1 ② 表时,H4 / H8 的「⏳ 待登记」被误读为「全部 13 项」(而「全部」是 H1/H5/H7 的语义)
+⇒ **已订正** §9.1 ② 表(H4 / H8 行显式写「`status = pending`(**不是**「全部 13 项」)」)+ ②-2 增 `status` 三值语义行
+⇒ 与 SU#2 §④ 的「`pending` ≠ 缺行 ≠ 全部」一致。
+
+**⚠️ 3 条反向 fixture(判据「因正确原因红」的实测)**:
+| # | 注入 | 实测 |
+|---|---|---|
+| 1 | 投影单改(H3 的 `out_of_scope` 追加 `avg_latency_cycles`) | ✗ 红 —— `H3: out_of_scope 集合漂移 —— 仅投影有: ['avg_latency_cycles']` |
+| 2 | 真源单改(H2 的 `out_of_scope` 追加 `avg_latency_cycles`) | ✗ 红 —— `H2: out_of_scope 集合漂移 —— 仅真源有: ['avg_latency_cycles']` |
+| 3 | 投影把 H4 从 `pending` 改成 `registered` | ✗ 红 —— **2 项**(`status 不一致` + `集合漂移`) |
+
+⇒ **两侧互为锁**成立:改投影绕过评审 ⇒ 冻结授权记录暴露;改真源想静默生效 ⇒ drift red。
 
 **⑥ 关联**: Entry **#217**(C1/C2 裁决 + 6 条 SHOULD_FIX 处置)· **#216** / **#215**(前序 architect 裁决)·
 **#169** ⑤(ADR 拆分登记 + 决策块计数口径)· **#188** / **#192**(NVLink 失指 change 名)·

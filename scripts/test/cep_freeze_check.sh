@@ -52,6 +52,13 @@ FROZEN_GLOBS=(
   "openspec/specs/cep-collective-plane-base/spec.md"
   "openspec/specs/cep-collective-plane-contract/spec.md"
   "experimental/metrics.schema.json"
+  # 2026-11-05(Entry #218;per ADR-CEP-06 SU#2 ② 门禁①):**预登记 out-of-scope 集合的机器投影**
+  #   —— 真源 = `objective §9.1` ② 表(评审过的设计面);本文件是 tools 判据④ 的读本。
+  #   ⚠️ 它是**派生刷新型**成员:真源(§9.1 ② 表)与本文件**必须逐假设集合相等**
+  #   ⇒ 由 drift 校验强制(先例: cep_decl_alignment_check)⇒ 单改一侧即红。
+  #   ⚠️ 冻结它 = 把「预登记不可事后自由扩张」的纪律**机器化**
+  #   —— 否则「not-collected 冒充预声明」这条自欺升级通道形同虚设(per SU#1 §④)。
+  "experimental/preregistration.json"
   "tools/render_report.py"
   "tools/run_sweep.py"
   "tools/ab_compare.py"

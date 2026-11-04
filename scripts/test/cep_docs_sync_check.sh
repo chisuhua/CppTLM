@@ -46,7 +46,7 @@ pass() { echo -e "  ${GREEN}✓${NC} $1"; }
 fail() { echo -e "  ${RED}✗${NC} $1"; FAILED=$((FAILED + 1)); }
 warn() { echo -e "  ${YELLOW}!${NC} $1"; }
 
-echo -e "${BLUE}[1/11] ADR 清单与关键节${NC}"
+echo -e "${BLUE}[1/12] ADR 清单与关键节${NC}"
 ADR_LIST=(
   "ADR-CEP-00-platform-charter-and-governance.md"
   "ADR-CEP-00A-real-source-anchor-map.md"
@@ -90,7 +90,7 @@ done
 [ "$NO_SECTION" -eq 0 ] && pass "每份 ADR 均有「不变量」或「决策」节"
 
 echo ""
-echo -e "${BLUE}[2/11] invariant 计数与 07 号总表一致性${NC}"
+echo -e "${BLUE}[2/12] invariant 计数与 07 号总表一致性${NC}"
 python3 - <<'PYEOF'
 import glob, re, os, sys
 
@@ -374,7 +374,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[3/11] 06 §15.4 P 编号口径(禁 P6)${NC}"
+echo -e "${BLUE}[3/12] 06 §15.4 P 编号口径(禁 P6)${NC}"
 python3 - <<'PYEOF'
 import glob, os, re, sys
 
@@ -394,7 +394,7 @@ for pat in ("docs/adr/ADR-CEP-*.md", "docs/architecture/07-*.md",
             # 脱离 P6 全禁规则的扫描范围(守门覆盖度静默下降 = 更危险)。
             # ⚠️ glob 写法:**归档目录名带日期前缀**(archive/<date>-<name>/)→ 必须用
             #    `*cpptlm-cep-umbrella` 而**不是** `*/cpptlm-cep-umbrella`(后者匹配 0)。
-            #    下方 [11/11] 组有断言「归档 4 件套必须在扫描集内」兜底此类错误。
+            #    下方 [12/12] 组有断言「归档 4 件套必须在扫描集内」兜底此类错误。
             # ⚠️ 只扫 **umbrella 自己的**归档目录(保持归档前的覆盖度):仓内另有大量
             #    历史归档 change,其文档合法地提及**项目优先级标记** `P0.5` 与旧
             #    `06 §15.4` 的 `P6` → 触发规则 A/B 大量假阳性;不写死条数(会漂移)。
@@ -511,7 +511,7 @@ PYEOF
 [ $? -ne 0 ] && FAILED=$((FAILED + 1))
 
 echo ""
-echo -e "${BLUE}[4/11] ADR 交叉引用可达性${NC}"
+echo -e "${BLUE}[4/12] ADR 交叉引用可达性${NC}"
 BROKEN=0
 for f in "${ADR_LIST[@]}"; do
   [ -f "docs/adr/$f" ] || continue
@@ -525,7 +525,7 @@ done
 [ "$BROKEN" -eq 0 ] && pass "ADR 之间的相对链接无断裂(全量 .md 链接)"
 
 echo ""
-echo -e "${BLUE}[5/11] Stage 0 umbrella change 4 件套${NC}"
+echo -e "${BLUE}[5/12] Stage 0 umbrella change 4 件套${NC}"
 # 2026-10-23(Entry #29):umbrella 归档后路径带日期前缀 → 动态解析两态
 CH="$(ls -d openspec/changes/cpptlm-cep-umbrella openspec/changes/archive/*cpptlm-cep-umbrella 2>/dev/null | head -1)"
 [ -n "$CH" ] || { echo "  ✗ 找不到 umbrella change(active 或 archive 均未命中)"; exit 1; }
@@ -536,23 +536,23 @@ done
 [ "$MISS" -eq 0 ] && pass "umbrella change 4 件套齐备"
 
 echo ""
-echo -e "${BLUE}[6/11] Stage 0 契约产物${NC}"
+echo -e "${BLUE}[6/12] Stage 0 契约产物${NC}"
 for f in "include/tlm/cep/protocol_instance.schema.json" "experimental/metrics.schema.json" "experimental/.gitkeep"; do
   [ -f "$f" ] && pass "$f 存在" || fail "$f 缺失"
 done
 
 echo ""
-echo -e "${BLUE}[7/11] M1 产物冻结校验(冻结后不可改)${NC}"
+echo -e "${BLUE}[7/12] M1 产物冻结校验(冻结后不可改)${NC}"
 # ⚠️ 不可裸调用:本脚本 `set -e`,裸调用的失败会**立即中止**整个脚本
 #    → 后续组与汇总永不打印,且下面的 `if [ $? -ne 0 ]` 是死代码(2026-10-22 代码复审 S3)
 if ! bash scripts/test/cep_freeze_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[8/11] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
+echo -e "${BLUE}[8/12] CEP ↔ ArchForge 接口对齐清单漂移检测${NC}"
 if ! bash scripts/test/cep_archforge_alignment_check.sh; then FAILED=$((FAILED + 1)); fi
 
 echo ""
-echo -e "${BLUE}[9/11] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
+echo -e "${BLUE}[9/12] ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查${NC}"
 # ⚠️ 「跳过」与「跑过」必须可区分:脚本首行标 [RUN] / [SKIP],退出码都是 0。
 #    跳过时**不算通过**(跨仓外部条件缺失不是「声明对齐已被验证」)。
 if DECL_OUT="$(bash scripts/test/cep_decl_alignment_check.sh 2>&1)"; then
@@ -570,7 +570,13 @@ else
     pass "ArchForge 协议实例声明 ↔ 本仓 schema/fabric 对齐检查通过"
 fi
 
-echo -e "${BLUE}[10/11] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)${NC}"
+echo -e "${BLUE}[10/12] 预登记 out-of-scope 集合:真源 ↔ 机器投影 drift 检测${NC}"
+# ⚠️ 不可裸调用:本脚本 `set -e`,裸调用的失败会**立即中止**整个脚本
+#    → 后续组与汇总永不打印(per 2026-10-22 代码复审 S3)
+if ! bash scripts/test/cep_prereg_drift_check.sh; then FAILED=$((FAILED + 1)); fi
+
+echo ""
+echo -e "${BLUE}[11/12] 传输层 CATEGORY_* 分层纪律(对应 A14-1 / A14-2)${NC}"
 # 契约:6 类一致性消息词表落在 **Coherence Interface 层**(per ADR-CEP-12 §8 IC2 ③),
 #       CATEGORY_* 保持**传输层 3 类** —— 不得为承载该词表而扩成 6 类(词表混层)。
 # 机器强制 3 项:
@@ -798,7 +804,7 @@ if [ $? -ne 0 ]; then FAILED=$((FAILED + 1)); fi
 # ── CEP-GATE-10-END ─────────────────────────────────────────────────
 
 echo ""
-echo -e "${BLUE}[11/11] 归档后状态一致性(7 类客观断言)${NC}"
+echo -e "${BLUE}[12/12] 归档后状态一致性(7 类客观断言)${NC}"
 # ⚠️ 2026-10-23(Entry #32)重新设计:前两版的「散文语义正则」被 critic 实测出
 #    10/13 同义改述绕过 + 行尾贴白名单词即可绕过 → 属 overclaim。
 #    本版只做**客观可判定**的断言(数字 / 同行关联 / glob 覆盖),不再声称「理解语义」。

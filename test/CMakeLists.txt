@@ -556,6 +556,15 @@ set_tests_properties(cep_decl_alignment_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
                                 SKIP_REGULAR_EXPRESSION "\\[SKIP\\]")
 
+# 预登记 out-of-scope 集合的**真源 ↔ 机器投影 drift 检测**
+# (per ADR-CEP-06 SU#2 ② 门禁②:objective §9.1 ② 表 ↔ experimental/preregistration.json
+#  逐假设集合相等 —— 两侧互为锁,单改一侧即红)
+# ⚠️ 本闸**无 SKIP 路径**:两侧都在本仓内 ⇒ 缺失 = 本仓缺陷(不是外部条件)⇒ 退出 2 而非跳过。
+add_test(NAME cep_prereg_drift_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_prereg_drift_check.sh)
+set_tests_properties(cep_prereg_drift_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check
