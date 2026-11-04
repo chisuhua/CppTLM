@@ -37,6 +37,13 @@
 //    不额外报错(该行为**不**代表任何 UALink 语义)。
 // ③ **每轮**的参与集由**该轮首个** `send` 决定;后续 `send` 若来自**不在参与集**的成员
 //    ⇒ `Status::NotMember`。
+// ④ ⚠️ **成员失联(member dropout)本 plane 未建模** ⇒ 本类**不产出** `CollectiveEvt::Fault`。
+//    (「partial failure ⇒ 显式 `Fault`」的**类型面**由既有 `CollectiveEvt` 三变体承担
+//    —— per 冻结 spec `cep-collective-plane-base` 的「类型集齐备且 `CollectiveEvt` 含 Fault 变体」;
+//     **行为面**的 Fault 产出在 `LocalCollectivePlane::group_destroy`(in-flight ⇒ Fault),
+//     而本 plane 在同一场景下按 **C-3** **拒绝**销毁 ⇒ 两条路径**互斥**、无冲突。
+//     ⚠️ 若将来要建模「成员失联 ⇒ 其余成员观察到什么」⇒ 需**新**的规约依据
+//     (锚点摘要 `N-2` = `WriteMulticast` 的部分失败语义 **pending**)⇒ **不得**推理填空。
 // =============================================================================
 
 #ifndef TLM_CEP_FABRIC_COLLECTIVE_PLANE_HH
@@ -171,7 +178,6 @@ namespace tlm {
                 if (rit == rounds_.end()) {
                     Round round;
                     round.op = req.op;
-                    round.tag = req.tag;
                     round.participants = participants_of(git->second.members, req);
                     if (round.participants.empty()) {
                         last_status_ = Status::EmptyMemberSet;
@@ -362,7 +368,6 @@ namespace tlm {
             };
             struct Round {
                 CollectiveOp op = CollectiveOp::REDUCE;
-                tag_t tag = 0;
                 std::vector<std::uint32_t> participants;
                 std::map<std::uint32_t, std::uint64_t> contributions;
                 std::uint64_t broadcast_value = 0;

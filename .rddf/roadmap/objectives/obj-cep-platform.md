@@ -12532,6 +12532,42 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 
 ---
 
+### Entry #208 — 2026-11-04 [build](队列 #14 **实现层** 遗留清扫 —— 2 处死代码移除 + 1 处建模简化登记)
+
+**主题**:队列 #14 实现层 change `cpptlm-cep-ualink-inc` 归档后的**遗留清扫**(自查项,非新增功能)。
+**角色**:builder。
+
+**① 清扫结果(本次范围内)**
+
+| 项 | 结果 |
+|---|---|
+| TODO / FIXME / XXX / HACK | **0**(仅 `mktemp` 的 `TMPDIR` 误命中) |
+| 被 skip 的测试 / 注释掉的代码 / `#if 0` | **0** |
+| 临时调试输出(`printf` / `cerr` / `diag`) | **0**(探针的 `printf` 是**失败报告通道**,by design) |
+| 死代码 | **2 处**(见 ②) |
+| 建模简化未登记 | **1 处**(见 ③) |
+
+**② 移除的 2 处死代码**
+
+| # | 位置 | 内容 |
+|---|---|---|
+| 1 | `fabric_collective_plane.hh` | `Round::tag` 字段(**只写不读** —— `tag` 已是轮次键 `RoundKey = (op, tag)` 的一部分 ⇒ 字段冗余) |
+| 2 | `collective_plane_contract.hh` | `UntestedRegistry::empty()`(⛔ **全仓零调用** ⇒ 契约面**不**留未使用的辅助口) |
+
+**③ 登记的第 4 条建模简化**(`fabric_collective_plane.hh` 头注释)
+「**成员失联(member dropout)本 plane 未建模** ⇒ 本类**不产出** `CollectiveEvt::Fault`」
+⇒ 并写清三条边界:① `Fault` 的**类型面**由既有 `CollectiveEvt` 三变体承担(冻结 spec 的类型集 Scenario)
+② **行为面**的 Fault 产出在 `LocalCollectivePlane::group_destroy`(in-flight ⇒ Fault),而本 plane 在同一场景下
+按 **C-3** **拒绝**销毁 ⇒ 两条路径**互斥**、无冲突 ③ 若将来要建模「成员失联 ⇒ 其余成员观察到什么」
+⇒ 需**新**的规约依据(锚点摘要 `N-2` **pending**)⇒ **不得**推理填空。
+
+**④ 验收(实测)**:`ctest` **148/148** · `[cep]` **351 cases / 6960 assertions** ·
+驱动脚本 **13/13** · 门禁 **6/6** rc=0 · `format.sh --check` rc=0。
+
+**⑤ 关联**: Entry #207(实现层归档)· #205(Phase 1~3)· #204(建档 + 范围收窄)· #203(规约层归档)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

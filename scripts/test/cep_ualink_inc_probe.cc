@@ -296,6 +296,9 @@ int main(int argc, char** argv) {
                 decl, snap, cep::default_untested_registry(), detail);
             if (v != cep::ContractVerdict::PASS) {
                 // 归因 = detail 的**首个** bracket token(精确相等)
+                // ⚠️ **兜底 id** = `CP-03-VC-CERTIFICATE`(ADR E.3.1 的**四条共用 id 家族**)
+                //   —— 仅在 detail **不带**子标记时出现(如「certificate_scope 为空」这种
+                //   **声明形态**缺陷)⇒ 属**家族 id**,非新造 id。
                 std::string id = "CP-03-VC-CERTIFICATE";
                 const std::size_t lb = detail.find('[');
                 const std::size_t rb = detail.find(']');

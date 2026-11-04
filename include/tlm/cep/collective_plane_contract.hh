@@ -835,8 +835,6 @@ inline ContractVerdict evaluate_vc_precondition(const CollectivePlaneDeclaration
 struct UntestedRegistry {
     /// 每项 = `(ref, statement)`
     std::vector<std::pair<std::string, std::string>> items;
-
-    bool empty() const { return items.empty(); }
 };
 
 /// **默认登记** —— 由规约载体 `ualink_inc_state_spec.hh` 提供(⛔ **不复制**)
