@@ -640,18 +640,77 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 > **目的**:防止"交付工具但不产出洞见"。每个 change 至少关联 1 个假设;Stage 3 完成时 8 个假设须全部有实验结论。
 
-### 9.1 假设清单
+### 9.1 假设清单 —— **判据-指标需求表**(per 台账 **Entry #217** ⑥ 动作 #1 / architect `ADR-CEP-06` **SU#1** §④)
 
-| # | 假设 | 验证手段 | 关联 Stage | 成功判据 |
-|---|------|---------|------------|---------|
-| **H1** | 协议抽象层(seam 在 L5↔L4)确实让缓存核心免于协议改动 | Stub Cache 0 协议知识 + 全部 adapter 共用同一 stub | Stage 1 | 全部 adapter 只改 adapter,stub 0 diff(**adapter 实例计数口径见 `07 号 §5.1.1`;本表不复述具体数**,per Entry #22)|
-| **H2** | 集中目录(CHI HN-F)vs 分布(DCOH)vs 广播的 latency 差异可量化 | `avg_latency_cycles` + `directory_misses` 对比 | Stage 2 | 3 策略延迟差异 > 20% |
-| **H3** | Sharer Tracker caps 的 `CONSERVATIVE` 完备性契约在 CXL 对称下无漏 snoop | `deadlock_violations == 0` + `memory_violations == 0` | Stage 2 | 0 违例(1000+ 事务) |
-| **H4** | 完成域判别规则(requester-scoped vs group-scoped)足以同时容纳 coherence + collective | 同一实验跑 coherence 流 + collective 原语 | Stage 1~2 | 两类流同实验内无死锁 |
-| **H5** | SHARP 5 条防误分类规则(R1-R5)能可靠区分 SHARP atomic vs cache-coherent atomic | `divert_count` 断言 + fail-stop 触发测试 | Stage 2 | 0 误分类 |
-| **H6** | VC 隔离(collective 独立 VC)确实避免协议级死锁 | `vc_stall_per_vc` + `deadlock_violations` | Stage 3 | 0 死锁 + collective stall 不占 coherence VC |
-| **H7** | stub cache 性能模型(固定命中率 + 固定延迟)足以支撑 early-stage 取舍判断 | 与 gem5 Ruby 或 ArchForge 参考模型对拍(per R7) | Stage 1 | 延迟偏差 < 15% |
-| **H8** | 实验 4 件套 + 13 metric 足以让跨协议取舍决策可复现 | A/B 对比报表 + `tools/recommend.py` 输出建议 | Stage 3 | 3 组 A/B 对比产出可读结论 |
+> **本表改造的缘由(architect 裁决,2026-11-04)**:原表只有「验证手段 + 成功判据」两列,
+> **无法判定某个 metric 到底测没测** ⇒ 实测出现 H3 的 `deadlock_violations` 分支**从未被测量**
+> 却被当作「0 违例」呈现、H2 的 `directory_misses` 半支**无产出者**。
+> 本表按 **SU#1 §④ 的两级 verdict** 改造:**每条判据逐条**列出它依赖哪些观测、
+> 观测是**必纳 metric** 还是**契约级断言**、以及该判据当前的 verdict。
+> ⇒ **本表是「预登记 out-of-scope 集合」的真源**(per SU#1 §④:预登记载体在 objective/plan 域,
+> **不在** `metrics.json` —— 后者是被试者自证的报表面)。
+
+**① 判据-指标需求表**
+
+| # | 假设 | 关联 Stage | 判据(逐条) | 依赖观测 | 观测形态 | 成功判据 | 当前 verdict |
+|---|------|------------|------------|----------|----------|---------|--------------|
+| **H1** | 协议抽象层(seam 在 L5↔L4)确实让缓存核心免于协议改动 | Stage 1 | 全部 adapter 只改 adapter,stub 0 diff(**adapter 实例计数口径见 `07 号 §5.1.1`;本表不复述具体数**,per Entry #22) | CacheTLM 源文本**零协议标识符** + 全部 adapter **共用同一 stub** | **契约级断言**(静态扫描,**非** metric) | 两侧判据均成立 | 🟡 **有契约级证据,未以假设结论形式登记**(`test_cep_module_factory_seam.cc` + `test_cep_adapter_schema_contracts.cc`) |
+| **H2** | 集中目录(CHI HN-F)vs 分布(DCOH)vs 广播的 latency 差异可量化 | Stage 2 | 3 策略延迟差异 > 20% | `avg_latency_cycles`(3 策略) | **必纳 metric** | 两两差异 > 20% | ✅ **成立**(4 / 14 / 18 cycles ⇒ 250% / 28.6% / 350%) |
+| **H2** | *(同上)* | Stage 2 | *directory_misses 对比* | `directory_misses` | **必纳 metric** | *3 策略 miss 差异* | ⏭ **未测量** —— ⛔ **全仓无产出者**(实测:仅 schema / tools / 测试断言命中,无 emit 赋值点)⇒ 该半支**不成立**,不得计入 H2 结论 |
+| **H3** | Sharer Tracker caps 的 `CONSERVATIVE` 完备性契约在 CXL 对称下无漏 snoop | Stage 2 | 0 违例(1000+ 事务)· **分支 1** | `memory_violations`(含 `memory_violation_kinds` 的 SWMR + data-value 双分桶) | **必纳 metric** | == 0 | ✅ **成立**(1200 事务 · swmr=0 · data_value=0) |
+| **H3** | *(同上)* | Stage 2 | *分支 2* | `deadlock_violations` | **必纳 metric** | == 0 | ⏭ **未测量** —— ⚠️ **h3 的 emit 从未设 `deadlock_detected`**(实测:仅 h6 设)⇒ 该分支**从未被测量**,⛔ **不继承 pass** |
+| **H3** | *(同上)* | Stage 2 | *漏探(superset)判定* | `superset_violations` | ⚠️ **非必纳 metric**(落在 `verification_scope` 文本内,**不在** `metrics.json` 的 13 字段) | == 0 | ✅ **成立**(0 漏探)—— ⚠️ **该观测不在 metrics.json 契约面** ⇒ 不受 SU#1 的 `not-collected` 机制覆盖 |
+| **H4** | 完成域判别规则(requester-scoped vs group-scoped)足以同时容纳 coherence + collective | Stage 1~2 | 两类流同实验内无死锁 | 同实验内 coherence 流 + collective 原语;判别由 `evaluate_completion_domain` 承担 | ⏳ **待定**(运行期装置未建) | 两类流同实验内无死锁 | ⏭ **未做实验** —— 现有 `CP-05` 是**静态源文本扫描**,**不**是「同实验内跑两类流」 |
+| **H5** | SHARP 5 条防误分类规则(R1-R5)能可靠区分 SHARP atomic vs cache-coherent atomic | Stage 2 | 0 误分类 | `divert_count`(divert 计数器形状)+ **fail-stop** 判据(R5) | **契约级断言**(`nvlink_sharp_state_spec.hh` 的 `is_fail_stop` / `divert_counter_field_count`) | 0 误分类 | 🟡 **有契约级证据,未以假设结论形式登记**(`test_cep_nvlink_sharp_state_spec.cc` NSS-02/05) |
+| **H6** | VC 隔离(collective 独立 VC)确实避免协议级死锁 | Stage 3 | 0 死锁 + collective stall 不占 coherence VC | `deadlock_violations` + `vc_stall_per_vc` + `collective_stalls` | **必纳 metric**(+ `vc_stall_per_vc` 为**可选** metric) | 0 死锁 + collective stall 不占 coherence VC | ✅ **成立**(独立 VC 死锁=0 · 共享 VC 负控 backlog=2000 死锁=1) |
+| **H7** | stub cache 性能模型(固定命中率 + 固定延迟)足以支撑 early-stage 取舍判断 | Stage 1 | 延迟偏差 < 15% | 与 gem5 Ruby / ArchForge 参考模型对拍(per R7) | **外部对拍**(跨仓 trace 比对,**非**本仓 metric) | 偏差 < 15% | ✅ **成立**(常数档 PASS 3/3 + 同源 trace 档 PASS 5/5) |
+| **H8** | 实验 4 件套 + 13 metric 足以让跨协议取舍决策可复现 | Stage 3 | 3 组 A/B 对比产出可读结论 | 4 件套 + 13 必纳 metric + `tools/recommend.py` 输出建议 | **必纳 metric**(经 A/B 两侧对比) | 3 组 A/B 对比产出可读结论 | ⏭ **未做** —— 工具链已齐(`ab_compare.py` / `recommend.py` / `aggregate.py` / `plot.py`,per Entry #213)⇒ 缺 **3 组 A/B 数据** |
+
+**② 预登记 out-of-scope 集合(SU#1 §④ 的机器可查基准 —— tools 的 `not-collected ⊆ 预登记` 校验读本集合)**
+
+> **⚠️ 口径**:本集合登记「**该假设的实验设计上不覆盖**哪些必纳 metric」。
+> ⇒ tools 校验某 run 的 `not-collected` 集合时,取该 run 所服务的假设在本表登记的 out-of-scope,
+> **超出** ⇒ 判红(防止「事后自由标 not-collected」)。
+> ⇒ **未在本表登记为 out-of-scope 的必纳 metric ⇒ 该假设的实验必须实测它**。
+
+| 假设 | 预登记 out-of-scope(必纳 metric) | 理由 |
+|------|-------------------------------|------|
+| **H1** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run ⇒ 无 metric 需求 |
+| **H2** | `coherence_stalls` · `collective_stalls` · `deadlock_violations` · `memory_violations` · `directory_misses` | 该实验只对比**目录策略的延迟**;`directory_misses` **另有一条**「未测量」登记(见 ① 表)⇒ **刻意不采**,不因「本该有产出者」而补造采集链路 |
+| **H3** | `coherence_stalls` · `collective_stalls` · `directory_misses` · `deadlock_violations` | 一致性完备性实验,只测**违例类**;`deadlock_violations` 未采 ⇒ 已在 ① 表标「未测量」,**不得**继承 pass |
+| **H4** | ⏳ **待登记**(装置未建 ⇒ out-of-scope 集合此刻**不可预登记** ⇒ ⛔ **在装置设计定稿前,不得开工产出 run**) | 预登记**必须先于**产出 |
+| **H5** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run |
+| **H6** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `directory_misses` | 该实验测**VC 隔离**,**不采延迟**(per SU#1 §③ branch 3:`timing` + 预声明不采 ⇒ 必须 `"not-collected"`,⛔ 禁写 0)· `coherence_stalls` / `collective_stalls` / `deadlock_violations` **在范围内** |
+| **H7** | *(全部 13 项)* | 外部对拍,**不产生**本仓 `metrics.json` run |
+| **H8** | ⏳ **待登记**(A/B 数据未产) | 同 H4 |
+
+**②-2 机器投影与 drift 关系(per `ADR-CEP-06` **SU#2** ①~③ —— 载体裁决)**
+
+| 项 | 落点 |
+|---|---|
+| **预登记真源** | **本表 ②**(不动)—— 评审过的设计面 |
+| **机器投影** | `experimental/preregistration.json`(逐假设 `hypothesis_id` → `out_of_scope` 集 + `status: registered \| pending`)—— **builder 域**、**入 M1 冻结集**(`FROZEN_GLOBS`)⇒ 改动须 `--update --authorized-by <台账 entry>` |
+| **drift 校验** | 新 script + ctest(先例 `cep_decl_alignment_check`)⇒ **本表 ② ↔ JSON 逐假设集合相等**;任一侧单改即 red ⇒ **两闸互为锁**(改 JSON 绕过评审 ⇒ 冻结授权记录暴露;改本表想静默生效 ⇒ drift red) |
+| **禁产出闸** | `⏳ 待登记`(H4 / H8)在 JSON 里 `status = pending`(⛔ **不是缺行** —— 缺行 = 未登记,pending = 已登记但禁产出)⇒ tools 判据④ 对 `pending` / 无行**判红**;emit whitelist 实测只认 `h2`/`h3`/`h6` ⇒ H4/H8 在受监管路径上**物理不可产出** |
+| **⚠️ 能力边界** | 闸控制 **validity 不是 existence** —— 谁都能手搓 run 目录,但不会有 validity-green 的报告 ⇒ 产物在**消费侧**被 containment |
+
+**③ verdict 三态口径(SU#1 §④ 的 hypothesis-verdict 级 —— 与 run-validity 级**不可互相继承**)**
+
+| verdict | 含义 | 判定依据 |
+|---------|------|---------|
+| ✅ **成立** | 判据所需观测**已实测**且满足成功判据 | 该判据的每个依赖观测在 run 中**实测有值**(非 `not-collected`)且达标 |
+| ⏭ **未测量** | 判据所需观测**未测** ⇒ ⛔ **不继承 pass**,⛔ **不得**计入任何「假设已验证」的计数 | 该判据的依赖观测在 run 中为 `not-collected`,或该观测**无产出者** |
+| ❌ **不成立** | 判据所需观测**已实测**但不满足成功判据 | 该判据的依赖观测**实测有值**且未达标 |
+
+**⚠️ 本表的读法约束**:
+- **「8 个假设全部有实验结论」(§6.2 B7)的计数口径** = ✅ **成立** 的**假设**数(非判据数)
+  ⇒ 一个假设只要有**任一**判据为 ⏭ 未测量 ⇒ 该假设**整体**不得计为「有结论」;
+- ⛔ **「有契约级证据」≠「已登记结论」**(H1 / H5)—— 前者是证据存在,后者需在本表登记 verdict;
+- ⛔ **实测 0 ≠ 未测量**,**未测量 ≠ 0** —— 二者的区分由 `not-collected` 机制承载(SU#1 §②),
+  本表的 verdict 列是它的**人工对照面**(机器闸在 tools 侧)。
+
+**④ 与其它章节的关系**:§6.2 **B4** 的「13 必纳 metric 全绿」口径见该条(两级 verdict + 读取约束);
+`07 号` Status Update 2026-11-04(#2) §① 是本表的真源 1 同步面;`ADR-CEP-06` **SU#1** §④ 是规范本体。
 
 ### 9.2 消费者与验收方(per metis G1 隐含责任主体)— **2026-10-21 已指定**
 
@@ -13120,6 +13179,79 @@ objective 的 B3 拆分 + 2 份冻结面文档的追加式同步 + 台账登记�
 **⑧ 关联**: Entry #216(builder 域落地批)· #215(前序 architect 裁决)· **#169** ⑤(拆分登记 + 计数口径)·
 **#139**(`FullMapDirectory` 落位 —— 「不排期无边界」先例与被补先例)· **#210**(队列 #14 critic 第 2 轮 R3/R6/R7)·
 `ADR-CEP-06` **SU#1**(C1 规范本体)· `docs/architecture/07-coherence-exploration-platform.md` **Status Update #2** ·
+`docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md` · `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`
+
+---
+
+### Entry #218 — 2026-11-04 [plan](§9.1 → **判据-指标需求表** + 预登记载体裁决 `ADR-CEP-06` **SU#2** + **冻结面授权记录**)
+
+**主题**:落地 architect 裁决 C1(Entry #217)的**第一块** —— `objective §9.1` 改造为「判据-指标需求表」,
+并裁决「预登记 out-of-scope 集合」的**机器可读载体**(原 SU#1 未指定 ⇒ builder 无法实现该闸)。
+**角色**:planner(§9.1 + 本条台账)· architect(`ADR-CEP-06` SU#2)· builder(后续落地)。
+**性质**:**已完成归档之后的订正**;⛔ 本条**不改**任何已归档 change 的产物。
+
+**① `objective §9.1` 改造(Entry #217 ⑥ 动作 #1 —— 预登记闸的真源修复)**
+
+| 表 | 内容 |
+|---|---|
+| **① 判据-指标需求表** | 每个假设**逐条判据**列出:依赖观测 · 观测形态(**必纳 metric** / **契约级断言** / **外部对拍**)· 成功判据 · 当前 verdict(三态)。⇒ 解决「某个 metric 到底测没测」不可判定 |
+| **② 预登记 out-of-scope 集** | 每个假设登记「**设计上不覆盖**哪些必纳 metric」+ 理由 ⇒ **tools 判据④ 的机器可查基准** |
+| **②-2 机器投影与 drift** | 指针行:机器投影位置 + drift 关系 + `pending` 语义 + 能力边界(per `ADR-CEP-06` SU#2) |
+| **③ verdict 三态口径** | ✅ **成立** / ⏭ **未测量** / ❌ **不成立** 的判定依据 + 本表的读法约束 |
+
+**⚠️ 本次改造暴露的 4 项实测事实(全部新发现,非推测)**:
+
+| # | 事实 | 处置 |
+|---|---|---|
+| 1 | **H3 的 `deadlock_violations` 分支从未被测量** —— 实测 h3 的 emit **从未设** `deadlock_detected`(仅 h6 设)⇒ 该分支 ⏭ **未测量**,⛔ **不继承 pass** | 已登记(① 表);`ADR-CEP-06` SU#2 §③ 给了 `:296` 的 **gloss** 解除字面互斥 |
+| 2 | **H2 的 `directory_misses` 半支无产出者** —— 实测全仓仅 schema / tools / 测试断言命中,**无 emit 赋值点** | 已登记 ⏭ **未测量**;⛔ **不**为它补造采集链路(判据收窄优先于补实现) |
+| 3 | **H3 的「漏探」观测 `superset_violations` 不在 13 必纳内** —— 落在 `verification_scope` 文本里 ⇒ **不受** `not-collected` 机制覆盖 | 已登记(观测形态列标注) |
+| 4 | **`ADR-CEP-06 §6 抓取点 1` 本身未落实** —— 该条要求 `simulation_config.json` 必含 `protocol`/`topology`/`directory`,实测 h2/h3/h6 **三项皆缺** | ⚠️ **范围外历史遗留,只记录不清理**(per「范围外遗留只记录」纪律)· 已登记于 `ADR-CEP-06` SU#2 §⑥ |
+
+**② 预登记载体裁决(`ADR-CEP-06` **SU#2** —— 规范本体)**
+
+| 层 | 载体 | 性质 |
+|---|---|---|
+| **真源**(评审过的设计面) | `objective §9.1` ② 表 | **不动** |
+| **机器投影** | `experimental/preregistration.json`(逐假设 `out_of_scope` + `status: registered/pending`) | builder 域,**入 M1 冻结集** |
+
+**三道配套门禁**:① 投影入 `FROZEN_GLOBS`(改须 `--update --authorized-by`,先例 `fabric.json` 派生型)
+② **drift 校验**(§9.1 ② ↔ JSON 逐假设集合相等,先例 `cep_decl_alignment_check`)③ **emit whitelist 闭合**
++ `pending` 判红(实测 `CEP_EXP_ID` 只认 `h2`/`h3`/`h6` ⇒ H4/H8 物理不可产出)。
+
+**⛔ 两个候选被排除(依据 = 实测)**:
+- **「run 自报 out-of-scope」** ⇒ `simulation_config.json` 与 `metrics.json` 由**同一 emit 进程**背靠背写出
+  ⇒ 同属「被试者自证的报表面」家族 ⇒ 自报即伪报面;
+- **「tools 直接读 objective markdown」** ⇒ 破既有分层 + ⚠️ 最坏后果 = **校验静默失效**
+  (planner 改散文 ⇒ tools 解析到错误表格 ⇒ 闸常绿而无人察觉)。
+
+**③ 授权改动的冻结产物(逐件列名 —— `--update` 会**重算全部**的 hash)**
+
+| # | 冻结产物 | 本层改动 | 依据 |
+|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-06-experiment-protocol.md` | **追加 SU#2**(104 行):① 载体裁决(真源/投影双层)· ② 三道门禁 · ③ **`:296` 的解释性 gloss** · ④ `pending` 口径 · ⑤ Verification(8 项)。⇒ **正文 §1 ~ §9 逐字未改** | C1 落地配套 |
+| 2 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 **40** 件的 hash + provenance | 机制 M1 本身 |
+| 3 | `experimental/preregistration.json` | ⏭ **本条未建** —— builder 域 + 冻结面授权(须与 `FROZEN_GLOBS` 增项同 PR) | SU#2 ① |
+
+⇒ **不在授权范围**:`.rddf/roadmap/objectives/obj-cep-platform.md`(本文件 = planner 域,非冻结件)。
+
+**④ 后续动作(⛔ 本条不代做)**
+
+| 序 | 内容 | 归属 | 依赖 |
+|---|---|---|---|
+| 1 | 建 `experimental/preregistration.json`(逐假设 `out_of_scope` + `status`)+ **加入 `FROZEN_GLOBS`** | builder | 本条授权 |
+| 2 | **drift 校验** script + ctest(§9.1 ② ↔ JSON 逐假设集合相等)+ **3 条反向 fixture**(未登记假设 ⇒ red · 越界 `not-collected` ⇒ red · H3 型 run ⇒ run-validity 绿 + IC3「不适用」+ verdict「未测量」的正形锁) | builder | #1 |
+| 3 | tools 判据④ 实现(读投影 + ⊆ 校验 + `pending`/无行判红)+ `simulation_config.json` 增 `hypothesis_id` 纯标签字段(emit 侧已有 `CEP_EXP_ID`) | builder | #1 |
+| 4 | schema(`oneOf` + per-metric `_not_collected`)+ 3 件冻结 tools + `test/test_cep_simulation_mode_lock.cc` + **4 条机器断言** | builder | **#3**(SU#1 §⑤ 的顺序强制) |
+| 5 | `openspec/specs/cep-core-contracts/spec.md` IC4/IC3 与新契约对齐 | builder | 冻结面授权 |
+| 6 | `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md` 追加「判据分支测量状态」小节 —— **只勘误不重跑** | architect | — |
+
+**⑤ 验收(实测)**:`objective §9.1` 改造落地(①/②/②-2/③ 四表)· `ADR-CEP-06` SU#2 追加(正文未改)·
+`cep_archforge_alignment_check.sh` rc=0 · `cep_doc_ref_check --strict` rc=0 · `docs_sync_check --strict` rc=0
+
+**⑥ 关联**: Entry **#217**(C1/C2 裁决 + 6 条 SHOULD_FIX 处置)· **#216** / **#215**(前序 architect 裁决)·
+**#169** ⑤(ADR 拆分登记 + 决策块计数口径)· **#188** / **#192**(NVLink 失指 change 名)·
+`ADR-CEP-06` **SU#1** + **SU#2** · `07 号` Status Update 2026-11-04(#2) ·
 `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md` · `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`
 
 ---

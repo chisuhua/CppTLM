@@ -342,3 +342,101 @@ not-collected ⇒ IC3 判定「不适用」+ 该 run 不得作一致性安全断
 **⑦ 关联**: 台账 **Entry #215** / **#216** · `07 号` Status Update 2026-11-04(同一裁决)·
 `experimental/metrics.schema.json` · `tools/{render_report,ab_compare,run_sweep}.py` ·
 `test/test_cep_simulation_mode_lock.cc` · `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`
+
+## Status Update 2026-11-04(#2)—— 预登记 out-of-scope 集合的**机器可读载体**裁决 + §④「结构性保证」的**解释性 gloss**
+
+**主题**:SU#1 §④ 的 run-validity 判据④要求「`not-collected` 集合 **⊆** 实验设计**预登记**的 out-of-scope 集合」,
+但**未指定该集合的载体** ⇒ builder 域无法实现该闸(tools 现有约定只读 `experimental/`,**从不**读 `.rddf/` 下的路线图层)。
+本则裁决**载体形态**,并给出 SU#1 `:296` 一句必要的**解释性 gloss**。
+⛔ **本则不改 SU#1 的任何既有裁决**,只**追加**载体与 gloss。
+
+**性质**:architect 域的架构级裁决(per 台账 **Entry #217** ⑥ 动作 #1 的落地配套)。
+**关联**: 本文件 **SU#1** · `07 号` Status Update 2026-11-04(#2) ·
+`objective §9.1`(判据-指标需求表 · **预登记真源**)· `scripts/test/cep_freeze_check.sh`(`FROZEN_GLOBS`)
+
+---
+
+### ① 载体裁决:**真源 / 机器投影**双层(复用仓内真源原则 + M1 冻结机制)
+
+| 层 | 载体 | 域 | 角色 |
+|---|---|---|---|
+| **真源**(人读 + 评审面) | `objective §9.1` 的**预登记 out-of-scope 表** | planner / architect(**评审过的设计面**) | **不动** —— 本则不迁走它 |
+| **机器投影** | **`experimental/preregistration.json`**(逐假设 `hypothesis_id` → `out_of_scope` 集 + `status: registered \| pending`) | builder 消费,**冻结面** | tools 判据④ 的**读本** |
+
+**为什么投影放 `experimental/` 顶层是安全的**:emit 只写 **run 子目录**
+(`test/test_cep_experiment_emit.cc` 的 `create_directories(out)`,`out` = `$CEP_EXP_DIR`)
+⇒ **结构上碰不到**顶层文件;而人类改动被下面的门禁 ①② 双catch。
+先例:`experimental/metrics.schema.json` 一直在该目录且**已在** M1 冻结集内。
+
+**⛔ 为什么不是「run 自报 out-of-scope」**(即把集合写进 `simulation_config.json`):
+`simulation_config.json` 与 `metrics.json` 由**同一个 emit 进程背靠背写出**
+(实测 `test/test_cep_experiment_emit.cc` 的两个 `ofstream` 相邻)⇒ 按 SU#1 §④ 的 rationale,
+二者**同属「被试者自证的报表面」家族** ⇒ run 自报 out-of-scope ⇒
+「`not-collected` 冒充预声明」这条自欺升级通道**形同虚设**。
+⇒ 且即便加了外部 ⊆ 约束,run 自报字段也**零信息量**(外部表已能推得该集合)⇒ 纯增一个可伪报面。
+
+**⛔ 为什么不是「tools 直接读 `objective §9.1` 的 markdown 表」**:
+① 破既有分层(tools 只读 `experimental/` + 自有 `policy_threshold.json`);
+② objective 是**台账散文**,非机器可读格式 ⇒ tools 要写 markdown 解析器;
+③ ⚠️ **最坏后果 = 校验静默失效** —— planner 域改散文(该文件自身有 append-only churn)
+⇒ tools 解析到错误表格 ⇒ 闸**常绿**而无人察觉。
+
+### ② 三道配套门禁(缺一 ⇒ 投影可被绕过)
+
+| # | 门禁 | 落点 | 防什么 |
+|---|---|---|---|
+| **①** | `experimental/preregistration.json` **加入 `FROZEN_GLOBS`**(`scripts/test/cep_freeze_check.sh`)⇒ 改动须 `--update --authorized-by <台账 entry>` | builder 域 | **防「人类事后改表」** —— 签发者 = architect/planner 的台账裁决,授权链与 M1 全体一致(先例:`include/tlm/cep/fabric.json` **派生刷新型**成员) |
+| **②** | **drift 校验**(新 script + ctest 注册,先例 `cep_decl_alignment_check`,`test/CMakeLists.txt:553`):解析 `objective §9.1` ② 表 ↔ JSON,**逐假设集合相等** ⇒ 任一侧单改即 red | builder 域 | **防「双份漂移」** —— 两闸互为锁:改 JSON 绕过评审 ⇒ ① 的授权记录暴露;改 §9.1 想静默生效 ⇒ ② red |
+| **③** | **emit whitelist 保持闭合**:实测 `CEP_EXP_ID` 只认识 `h2`/`h3`/`h6`(`test/test_cep_experiment_emit.cc`)⇒ **H4 / H8 在受监管路径上物理不可产出**;tools 判据④ 对「声称的假设无已登记行」或「行 `status = pending`」**判红** | builder 域 | **防「未预登记先产出」** —— 登记 H4 预登记行的同一 PR 才允许加 `run_h4`,顺序锁 |
+
+**⚠️ 门禁 ③ 的能力边界(坦承,不掩饰)**:闸控制的是 **validity 不是 existence** ——
+谁都能手搓一个 run 目录放数字,但不会有 **validity-green** 的报告 ⇒ 产物在**消费侧**被 containment。
+这正合本 ADR 的模型(validity 层才是门)。
+
+### ③ ⚠️ SU#1 `:296` 的**解释性 gloss**(字面按读会与已批准的 `objective §9.1` 互斥)
+
+**SU#1 `:296` 原文**:
+> ⇒ 结构性保证:同一实验**不能**既把某 metric 预登记为 out-of-scope、又在同一实验的假设判据里引用它。
+
+**⚠️ 问题(实测)**:该句按**字面**读,禁止的正是 `objective §9.1` 已批准的 **H3 型组合** ——
+① 表的 H3 判据**引用** `deadlock_violations`(判据的 deadlock 分支),② 表的 H3 **预登记**它为 out-of-scope。
+若 builder 按字面实现闸,会写出与已批准 §9.1 **直接互斥**的判据。
+
+**gloss(本则追加,不改原文)**:
+> **该「结构性保证」作用于 **verdict 层**,不是 registration 时或 run-validity 时的禁令** ——
+> 即:同一实验**可以**既预登记某 metric 为 out-of-scope、又在假设判据里引用它,
+> 但该判据的 verdict **永远** = **「未测量」**,⛔ **永不**产生「成立」,⛔ **永不**计入任何「假设已验证」的计数。
+> ⇒ **两级各司其职**:run-validity 层**放行**(该 run 本身合法:预登记过 ⇒ `not-collected` 合法);
+> hypothesis-verdict 层**拦截**(该判据未被测量 ⇒ 不继承 pass)。
+> ⇒ **两表不矛盾** —— 它们是 SU#1 §④ 两级 verdict 的**各层**,不是同一层的两条规则。
+
+**gloss 的必然性**:若不加此 gloss,「结构性保证」的字面读法会**禁止 H3 型组合**本身
+—— 而「判据引用一个未测量的 metric 并如实标『未测量』」**正是本裁决要鼓励的行为**
+(诚实标注优于沉默宣称);禁止它 ⇒ 逼出「把未测量写成 0」的旧失败 ⇒ **与 SU#1 的目标相反**。
+
+### ④ 「H4 / H8 ⏳ 待登记」的**禁产出**口径(承 oracle)
+
+- **H4 / H8 在 `objective §9.1` ② 表中登记为 `⏳ 待登记`** ⇒ 其 `preregistration.json` 行
+  `status` = **`pending`**(⛔ **不是缺行** —— 缺行 = 「未登记」,pending = 「已登记但禁产出」,两者语义不同)
+- ⇒ **预登记必须先于产出**:H4 的运行期装置未建、H8 的 A/B 数据未产 ⇒ 在各自预登记行落地前,
+  ⛔ **不得**产出对应 run
+- ⇒ 由门禁 ③ 保证(emit whitelist 无 `h4`/`h8` 入口 + tools 对 `pending` 判红)
+
+### ⑤ Verification(前瞻判据 · 可勾选)
+
+- [x] 载体形态已裁(**真源 = `objective §9.1` ② 表不动 / 机器投影 = `experimental/preregistration.json`**)
+- [x] **候选「run 自报 out-of-scope」已被判死**,依据 = `simulation_config.json` 与 `metrics.json` **同一 emit 进程**写出(实测)⇒ 同属被试者自证面家族
+- [x] **候选「tools 读 objective markdown」已被判死**,依据 = 破分层 + 最坏后果是**校验静默失效**
+- [x] 三道配套门禁已定(① 入冻结集 · ② drift 校验 · ③ emit whitelist 闭合 + pending 判红)
+- [x] SU#1 `:296` 的 **gloss 已给**,且明确了「两级各司其职」的分工
+- [x] `pending` vs 「缺行」的语义区分已定
+- [x] 门禁 ③ 的能力边界已**坦承**(validity 不是 existence)
+- [ ] `experimental/preregistration.json` 已建 + 已入 `FROZEN_GLOBS`(builder 域 + 冻结面授权)
+- [ ] drift 校验 script + ctest 已落地(逐假设集合相等 + 3 条反向 fixture)
+- [ ] tools 判据④ 已实现(读投影 + ⊆ 校验 + pending/无行判红)
+- [ ] `objective §9.1` ② 表已加「机器投影位置 + drift 关系」指针行(planner 域)
+
+**⑥ 关联**: 本文件 **SU#1**(§④ 的两级 verdict 与预登记闸)· `07 号` Status Update 2026-11-04(#2) ·
+台账 **Entry #217** ⑥ 动作 #1 / #2 · `objective §9.1`(判据-指标需求表 · **预登记真源**)·
+`scripts/test/cep_freeze_check.sh`(`FROZEN_GLOBS`)· `test/test_cep_experiment_emit.cc`(emit 侧实测)·
+`include/tlm/cep/fabric.json`(**派生刷新型**冻结成员先例)· `test/CMakeLists.txt`(drift 校验的 ctest 注册先例)
