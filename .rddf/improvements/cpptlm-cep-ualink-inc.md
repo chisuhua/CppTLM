@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-09
   - ADR-CEP-11
   - ADR-CEP-12
-状态: 🟡 **进行中**(2026-11-04)—— 队列 #14;**两段式**(形态丙,per 用户裁决 2026-11-04);**开工前置 = `ADR-CEP-01` / `04` / `09` 的三则 SU 已签发**(per 台账 Entry #193)⇒ ✅ **已满足**;**规约层 change 目录已建**(`cpptlm-cep-ualink-inc-state-spec`,per Entry #195)
+状态: ✅ **已完成**(2026-11-04)—— 队列 #14;**两段式**(形态丙,per 用户裁决 2026-11-04)均已归档(规约层 Entry #203 + 实现层 Entry #207);**开工前置 = `ADR-CEP-01` / `04` / `09` 的三则 SU 已签发**(per 台账 Entry #193);⚠️ **`ualink_4` 实例未声明**(取值不可判定)⇒ 实例级装配登记为 backlog⇒ ✅ **已满足**;**规约层 change 目录已建**(`cpptlm-cep-ualink-inc-state-spec`,per Entry #195)
 created: 2026-11-04
 ---
 
@@ -25,7 +25,7 @@ created: 2026-11-04
 >   (⚠️ 与队列 #13 的 NVLink SHARP **不同** —— 后者受 NDA 约束 ⇒ 禁投喂规范正文)
 > · **VC 路径**:**路径 D**(共享 VC + 可机器判定的证书)—— 用户裁决 2026-11-04;裁决载体 = `ADR-CEP-01` SU#4
 > · **估时**:**10 周 → 14 周**(两段式;依据 = 队列 #13 的先例 8→13 周)
-> · **KPI**:Proposed 并发 **当前实测 1/3**(实现层 change `cpptlm-cep-ualink-inc` **已建 change 目录**(4 件套 + 3 份 delta spec;`openspec validate --strict` rc=0;Entry #204)⇒ 占 1 slot;前序:规约层 change **已完成归档**(2026-11-04;delta 已合并进 main spec;Entry #203)⇒ slot 已释放;规约层归档后 → 0/3 ⇒ 启实现层 → 1/3 ⇒ 实现层归档 → 0/3)
+> · **KPI**:Proposed 并发 **当前实测 0/3**(实现层 change `cpptlm-cep-ualink-inc` **已完成归档**(2026-11-04;delta 已合并进 `openspec/specs/cep-ualink-inc/spec.md`;Entry #207)⇒ slot 已释放;前序:规约层 change **已完成归档**(2026-11-04;delta 已合并进 main spec;Entry #203)⇒ slot 已释放;规约层归档后 → 0/3 ⇒ 启实现层 → 1/3 ⇒ 实现层归档 → 0/3)
 
 ---
 
