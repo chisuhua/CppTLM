@@ -12568,6 +12568,54 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 
 ---
 
+### Entry #209 — 2026-11-04 [archive](队列 #14 **实现层** 归档后审计的**修复轮** —— 冻结面**授权记录**(3 份 + manifest)+ 3 项 ADR 落地订正)
+
+**主题**:队列 #14 实现层 change `cpptlm-cep-ualink-inc` 的 **critic 归档后审计第 1 轮**(REJECT:2 BLOCKER +
+5 SHOULD_FIX + 4 NIT)的**修复轮**的**冻结面授权记录**(per `cep_freeze_check.sh` 的闸门契约:
+「台账 entry 即授权记录」⇒ **本条必须在 `--update` 之前存在**)。
+**角色**:builder。**语义**:**已完成归档**之后的**订正**(归档件不回滚;订正落在 main spec + ADR SU)。
+
+**① 授权改动的冻结产物(逐件列名 —— `--update` 会**重算全部**的 hash)**
+
+| # | 冻结产物 | 本层改动 | 依据 |
+|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | 追加 **Status Update 2026-11-04(#5)**(3 项落地订正:**E.9 冻结面实为 3 份** · **C-3 两级归因分别** · **C-1′ 结构面判据已落地** + 整数边界登记位置补记)⇒ 正文 E.1 ~ E.12 与 §1 ~ §9 **逐字不改** | `ADR-CEP-01` **E.3.1 / E.9** 的落地实测反证(critic 审计 B1/B2)· ADR 不可变纪律(只追加 SU) |
+| 2 | `openspec/specs/cep-collective-plane-contract/spec.md` | ① **C-1′** Scenario:**删除恒假判定**(「集合平面不得作为实例出现」⇒ 实例 id 的 schema 形态 `^[a-z0-9][a-z0-9_-]*$` 与 plane 名 CamelCase **不同形** ⇒ 恒假)· 改为**声明源块**判定 + 反向 fixture 拆**两条**(语义面 + 结构面,**同归因**) ② **C-3** Scenario:两级归因由「**同归因**」改为「**分别**归因」(声明级 ⇒ `[CP-03-VC-CERTIFICATE/C-3]`;运行级 ⇒ `UIA-04`) | critic 审计 **B1**(三份冻结 spec 对同一 fixture 的归因 id 互相矛盾)+ **B2**(C-1′ 结构面恒假 + 漏 `E.9` 的反 fixture) |
+| 3 | `openspec/specs/cep-collective-plane-base/spec.md` | `cep-collective-plane-base-fabric-plane` Requirement 增**整数 datatype 边界**(`F32` / `F64` 的 `REDUCE` ⇒ `Status::Unsupported` 且**不产出**事件;⛔ 不得静默按整数近似) | critic 审计 **SHOULD_FIX ①**:实现有该分支但**冻结契约未登记** ⇒ 契约与实现不同源 |
+| 4 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 **40** 件的 hash + provenance | 机制 M1 本身(每次授权都要重算) |
+
+⇒ ⚠️ **不在授权范围**:`openspec/specs/cep-ualink-inc/spec.md`(**本 change 新建的能力 main spec**,
+**不在** M1 冻结集 —— `FROZEN_GLOBS` 未匹配)⇒ 其 UIA-01 口径订正(禁项含**类型名** ⇒ 与实现一致)
+**不消耗**授权额度,但一并登记于 ②(可复核)。
+
+**② 非冻结面的同期订正(登记以便复核,⛔ 不需授权)**
+
+| 面 | 订正 |
+|---|---|
+| `include/tlm/cep/collective_plane_contract.hh` | ① `CollectivePlaneDeclaration` 增 `collective_plane_vc_binding_present` / `_entries` + loader 检测(**C-1′ 结构面有牙**)② **移除**恒真字段 `instance_ids` ③ `run_collective_plane_contract(paths, untested = default_untested_registry())` 改**注入式** |
+| `include/tlm/cep/fabric_collective_plane.hh` | 轮次键 `(op, tag)` ⇒ **`(group_id, op, tag)`**(修**跨 group 轮次串扰** bug)+ 移除 `round_gid_` 副映射 |
+| `test/test_cep_ualink_inc.cc` | 新增:浮点归约边界 · **跨 group 轮次隔离** · C-1′ **结构面**负控 ⇒ **12 cases / 269 assertions** |
+| `scripts/test/cep_ualink_inc_reverse_verify.sh` | fixture **12 条 / 11 组**(`f-08a` 语义面 + `f-08b` 结构面,**同归因** C-1′)⇒ 驱动 **14/14** |
+| `scripts/README.md` | 守门表 + 登记节:11 组 / 12 条 · C-1′ 两条 · C-3 两级 · 归因纪律补「两级不共用 id」 |
+| 队列 #13 侧的 **NIT** ①②③ | 探针弱断言 ⇒ 按 `status` **严格分支**;`F-9` 注释改正(`FabricCollectivePlane` 已登记 ⇒ 是「非本地模型」而非「未注册」);`NVA-08` 标题同步 ⇒ 驱动 **10/10** |
+
+**③ 专家评审预算**
+
+| 轮 | 结论 | BLOCKER | 处置 |
+|---|---|---|---|
+| 1(归档后审计) | **REJECT** | **2**(B1 spec 互斥 · B2 C-1′ 恒假+漏 fixture) | 本轮修复(⚠️ **预算 2 轮** ⇒ 第 2 轮只做**闭环验证**,⛔ 不全量重审) |
+| 2(待跑) | — | — | 仅提交「上轮 2 BLOCKER 闭合证据 + 本轮新增 diff」 |
+
+**④ 授权流程(顺序不可颠倒)**:① 本条 Entry(授权记录)→ ② commit 修复轮内容 →
+③ `cep_freeze_check.sh --update --authorized-by "Entry #209"` ⇒ **commit** →
+④ **再** `--update --authorized-by "Entry #209"`(provenance 收口)⇒ **commit**。
+
+**⑤ 验收(实测)**:`[cep]` **351 cases / 6976 assertions** · `cep_ualink_inc_reverse_verify` **14/14** ·
+`cep_nvlink_sharp_reverse_verify` **10/10** · 冻结漂移实测 = **3 份**(与上表 1~3 **逐件一致**)。
+
+**⑥ 关联**: Entry #207(实现层归档)· #206(冻结面授权记录)· #205(Phase 1~3)· #204(建档 + 范围收窄)·
+#193(SU#4 授权记录)· `ADR-CEP-01` SU#4(E.3.1 / E.4 / E.6 / E.9)
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
