@@ -135,7 +135,7 @@ CEP SHALL 为 **UALink INC** 提供一份**可执行规约层契约**:四原语�
 ---
 
 > **锚点**:`include/tlm/cep/ualink_inc_state_spec.hh` 的编译期断言 + `test/test_cep_ualink_inc_state_spec.cc`
-> 的运行期兜底判据 + **11 组反向 fixture**(影子毒化 ⇒ 必红 + 归因 id **命中**)+ `scripts/test/` 的探针
+> 的运行期兜底判据 + **11 组 / 12 条反向 fixture**(影子毒化 ⇒ 必红 + 归因 id **命中**)+ `scripts/test/` 的探针
 > + `test/CMakeLists.txt` 的 `ctest` 注册。
 >
 > ⚠️ **归因 id 的唯一登记处 = 本 change 的 `design §5`**;本 spec 只引用,不重复登记。

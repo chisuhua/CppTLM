@@ -15,8 +15,8 @@
 |---|---|---|
 | 0 治理前置 | ✅ **已完成**(2026-11-04) | 转正登记 + KPI 回填 + Task 0 产物登记 |
 | 1 载体形态定稿 | ✅ **已完成**(2026-11-04,**经 critic 四轮**:第 1/2/3 轮 REJECT 全部修复 ⇒ 第 4 轮 **APPROVE_WITH_CONDITIONS**(`mergeable: yes`,**无 BLOCKER**)) | `ualink_inc_state_spec.hh` 自足载体 + 逐格 basis + 11 个义务格 + 9 项 pending + **37 条**编译期断言(11 个归因 id 全部有专属文案前缀) |
-| 2 判据面 | ✅ **已完成**(2026-11-04) | 正向测试 + **11 组**反向 fixture + 归因 id 元测试 + 探针/脚本 + ctest 注册 ⇒ 驱动脚本 **14/14** 全绿 |
-| 3 证书规约面 | ⬜ 待实施 | 四条证书的逐边依据 + 参照域 + `IC1` 鉴别力边界登记 |
+| 2 判据面 | ✅ **已完成**(2026-11-04) | 正向测试 + **11 组 / 12 条**反向 fixture + 归因 id 元测试 + 探针/脚本 + ctest 注册 ⇒ 驱动脚本 **15/15** 全绿 |
+| 3 证书规约面 | ✅ **已完成**(2026-11-04) | 四条证书的逐边依据 + 参照域(两域并集)+ `IC1` 鉴别力边界 + U-1/U-2 登记 ⇒ 落载体 ⑨ 段 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + `validate` + KPI **1/3 → 0/3** + 归档 + 台账 Entry |
 
 ---
@@ -56,7 +56,7 @@
 ## Phase 2 — 判据面
 
 - [x] 2.1 **正向测试**(`test/test_cep_ualink_inc_state_spec.cc`):每条**负向断言配正控**
-- [x] 2.2 **11 组反向 fixture**(每条**必红** + 归因 id **命中**):F-1 ~ F-11(per `design §4`)
+- [x] 2.2 **11 组 / 12 条反向 fixture**(每条**必红** + 归因 id **命中**):F-1 ~ F-11a/b(per `design §4`)
       ⇒ 锚点 SHALL 指向**载体中确实存在的翻转点** · 归因匹配 `grep -q "static assertion failed: <id>: "`
       (带尾冒号)· 判定为 **presence**(非「唯一」)· 驱动走**双分支**(编译红 or 探针红)
 - [x] 2.3 **基线正控**(干净载体必绿)+ **鉴别力自测**(毒化载体 ⇒ 必红)
@@ -73,15 +73,21 @@
       ⇒ ⚠️ 探针读**已入库**的 `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md`(审计面)⇒ **不依赖**不入库的 change 目录
 - [x] 2.6 **探针 + 驱动脚本** + **ctest 注册**
       ⇒ `scripts/test/cep_ualink_inc_state_spec_probe.cc`(8 项运行期判据)+ `scripts/test/cep_ualink_inc_state_spec_reverse_verify.sh`
-      ⇒ 驱动脚本 **14/14** 全绿(基线正控 + 归因 id 双向覆盖自检 + **11 组** fixture + **探针鉴别力自测**)
+      ⇒ 驱动脚本 **15/15** 全绿(基线正控 + 归因 id 双向覆盖自检 + **11 组 / 12 条** fixture + **探针鉴别力自测**)
       ⇒ ctest 注册 `cep_ualink_inc_state_spec_reverse_verify` ⇒ 全量 `ctest` **146 → 147**
 
 ## Phase 3 — 证书规约面
 
-- [ ] 3.1 四条证书的**逐边依据 + 参照域**(两域并集)落载体
-- [ ] 3.2 「该网映射不一致 ⇒ 不得用 M-2」的**可判定形式**
-- [ ] 3.3 **`IC1` 鉴别力边界**登记(⛔ **不得**把「重跑 DAG」当证书)
-- [ ] 3.4 **U-1 / U-2** 的登记形态(与 `N-n` 的关系写清)
+- [x] 3.1 四条证书的**逐边依据 + 参照域**(两域并集)落载体
+      ⇒ 载体 ⑨ 段:`CertificateId` / `CertificateSpec`(detail 子标记 + 义务 + `edge_basis` + `domains` 位掩码)
+      ⇒ C-1′ 的参照域 = `kDomainArchForgeDerived | kDomainRepoOwned`(**两域并集**,per `ADR-CEP-01` E.3.3)
+- [x] 3.2 「该网映射不一致 ⇒ 不得用 M-2」的**可判定形式**
+      ⇒ `m2_usable_on_network(bool)`(形状型:输入 = 全部有绑定实例是否逐类相等)⇒ 双向断言(正控 + 负控)
+- [x] 3.3 **`IC1` 鉴别力边界**登记(⛔ **不得**把「重跑 DAG」当证书)
+      ⇒ `kIc1Discrimination`(鉴别力 = **三项**:边端点良构 / `vc_id` 越界 / 边表无环)+ `vc_binding_semantics` **恒 false**
+- [x] 3.4 **U-1 / U-2** 的登记形态(与 `N-n` 的关系写清)
+      ⇒ `kUntestedItems`(恰 2 项)+ `untested_is_not_satisfied()`(⛔ 含「已验证 / 已满足」即判否)
+      ⇒ 与 `N-n` 的区别**写进载体注释**:`N-n` = 语义**待定**;**`U-n` = 已定但不可检验** ⇒ 二者不得混用
 
 ## Phase 4 — 验收 + 归档
 

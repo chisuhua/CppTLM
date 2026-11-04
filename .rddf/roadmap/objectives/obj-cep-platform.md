@@ -12273,6 +12273,49 @@ design §2.3)**一致**。
 
 ---
 
+### Entry #202 — 2026-11-04 [build](队列 #14 **规约层** Phase 3 完成 —— **证书规约面**(四条证书 + `IC1` 鉴别力边界 + U-1/U-2))
+
+**主题**:队列 #14 规约层 change `cpptlm-cep-ualink-inc-state-spec` 的 **Phase 3(证书规约面)** 完成。
+**角色**:builder。
+
+**① 交付面(载体新增第 ⑨ 段)**
+
+| 面 | 内容 |
+|---|---|
+| **四条证书** | `CertificateId`(C-1′ / C-2 / C-3 / C-4)· `CertificateSpec`(逐条 `detail` 子标记 + 义务 + **逐边依据** `edge_basis` + **参照域** `domains` 位掩码)· `kCertificateSpecs` |
+| **参照域两域并集** | `kDomainArchForgeDerived` / `kDomainRepoOwned` 位掩码 ⇒ **C-1′ = 两域并集**(per `ADR-CEP-01` E.3.3) |
+| **「不一致 ⇒ 不得用 M-2」可判定** | `m2_usable_on_network(bool)`(形状型)+ **双向断言**(正控 `true` / 负控 `false`) |
+| **`IC1` 鉴别力边界** | `kIc1Discrimination` —— 鉴别力 = **三项**(边端点良构 / `vc_id` 越界 / 边表无环)· `vc_binding_semantics` **恒 `false`**(⛔ 语义分配**零鉴别力**,实测恒真) |
+| **U-1 / U-2 登记** | `kUntestedItems`(恰 2 项)+ `untested_is_not_satisfied()`(⛔ 含「已验证 / 已满足」即判否)· 载体注释**写清与 `N-n` 的区别**(`N-n` = 语义**待定**;`U-n` = **已定但不可检验** ⇒ 不得混用) |
+| **断言** | **9 条**新 `static_assert`(全部归因 `UIS-11`)⇒ 载体断言 **37 → 46** |
+| **测试** | `test/test_cep_ualink_inc_state_spec.cc` 新增 `[certificate]` case ⇒ **4 → 5 cases / 96 → 124 assertions** |
+| **fixture** | `F-11` 拆 **`F-11a`**(翻转 `kDagRerunIsCertificate`)/ **`F-11b`**(删 `C-4` 行 ⇒ 齐备性 / 顺序断言红)⇒ 驱动脚本 **14 → 15 条**全绿 ⇒ 表述统一为「**11 组 / 12 条**」(组 = 归因键、条 = 毒化变体 ⇒ 组数仍 11 ⇒ 1:1 不变) |
+
+**② ⚠️ 一处**流程问题**(已修)**
+
+`F-11b` 的插入锚点(`F-11a` 行)在**同一批替换之后**才存在 ⇒ 但 dry-run 基于**原始快照**判其不存在
+⇒ 被 dry-run 拦下(**未写任何文件**)⇒ 处置:① 把 F-11a 的行标替换与 F-11b 的插入**拆成两步**
+② 批量替换统一为「**每个文件只写一次**」(先在内存里串行应用到同一份 text,最后落盘)⇒ 避免多次写入**相互覆盖**。
+
+**③ 一致性同步(11 处)**:「11 组」→「**11 组 / 12 条**」在 design(5 处 + F-11 行标)· proposal(2 处)·
+spec(1 处)· tasks(4 处)· `scripts/README.md`(4 处)⇒ 另**顺手**修正 proposal 的「归因 id **精确相等**」为
+「**命中**」(与 design §4 的 **presence** 判定一致)。⇒ 自检:剩余 4 处「11 组」均指**组数**/1:1 ⇒ 语义正确。
+
+**④ 验收(实测)**:驱动脚本 **15/15** · `ctest -R cep_ualink_inc` **2/2** ·
+`[cep][ualink-inc]` **5 cases / 124 assertions** · `ctest` **147/147** ·
+`cpptlm_tests` **2126 cases / 877248 assertions** · 门禁 **6/6** + `cep_gate_selftest` **34/34** ·
+`format.sh --check` rc=0 · `openspec validate --strict` rc=0。
+
+**⑤ 下一前置 = Phase 4(验收 + 归档)**:门禁全绿 · `ctest` 全绿 · `openspec validate --strict` rc=0 ·
+KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/specs/cep-ualink-inc-state-spec/spec.md`)·
+`VIRTUAL_PATHS` 登记 · 台账 Entry。
+
+**⑥ 关联**: Entry #201(Phase 2)· #200(critic 第 4 轮 + Phase 1 收口)· #199 / #198 / #197(critic 第 3/2/1 轮)·
+#196(Phase 1 首版)· #195(建档 + Task 0)· #193(三则 ADR SU + 冻结面授权)·
+`ADR-CEP-01` SU#4 的 **E.3.1 / E.3.3 / E.3.4 / E.4** · `ADR-CEP-09` SU 2026-11-03 ③
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

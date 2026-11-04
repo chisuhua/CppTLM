@@ -277,6 +277,56 @@ TEST_CASE("UIS-10: pending 白名单的**可逆性** —— id 唯一且在范�
     REQUIRE(pending_ids_unique_and_in_range(ok_id)); // 正控:越界样本本身 id 合法
 }
 
+
+// ══════════════════════════════════════════════════════════════════════════
+// UIS-11 —— 证书规约面(四条证书的逐边依据 + 参照域 + `IC1` 边界 + U-1/U-2 登记)
+// ══════════════════════════════════════════════════════════════════════════
+TEST_CASE("UIS-11: 证书规约面齐备,且 ⛔ 不得以「重跑 DAG」为判据",
+          "[cep][ualink-inc][certificate]") {
+    // ① 四条证书齐备 + 顺序稳定
+    REQUIRE(kCertificateCount == 4u);
+    REQUIRE(kCertificateSpecs.size() == 4u);
+    REQUIRE(kCertificateSpecs[0].id == CertificateId::C1Prime);
+    REQUIRE(kCertificateSpecs[1].id == CertificateId::C2);
+    REQUIRE(kCertificateSpecs[2].id == CertificateId::C3);
+    REQUIRE(kCertificateSpecs[3].id == CertificateId::C4);
+    REQUIRE(all_certificate_specs_wellformed());
+    // 每行的 detail 子标记与 ADR E.3.1 一致(⛔ 不新造)
+    REQUIRE(kCertificateSpecs[0].detail_tag == "/C-1\xe2\x80\xb2");
+    REQUIRE(kCertificateSpecs[1].detail_tag == "/C-2");
+    REQUIRE(kCertificateSpecs[2].detail_tag == "/C-3");
+    REQUIRE(kCertificateSpecs[3].detail_tag == "/C-4");
+
+    // ② C-1′ 的**参照域 = 两域并集**(per E.3.3)
+    REQUIRE(kCertificateSpecs[0].domains == (kDomainArchForgeDerived | kDomainRepoOwned));
+    REQUIRE(kDomainArchForgeDerived != kDomainRepoOwned);
+
+    // ③ **映射不一致 ⇒ 不得用 M-2**(双向 = 正控 + 负控)
+    REQUIRE(m2_usable_on_network(true));
+    REQUIRE_FALSE(m2_usable_on_network(false));
+
+    // ④ ⛔ 「重跑 DAG」**不是**证书判据(实测恒真)
+    REQUIRE(kDagRerunIsCertificate == false);
+
+    // ⑤ `IC1` 的鉴别力 = **三项**;对 `vc_binding` 的**语义分配**零鉴别力
+    REQUIRE(kIc1Discrimination.edge_endpoints_bound);
+    REQUIRE(kIc1Discrimination.vc_id_in_range);
+    REQUIRE(kIc1Discrimination.declared_edge_table_dag);
+    REQUIRE_FALSE(kIc1Discrimination.vc_binding_semantics);
+
+    // ⑥ U-1 / U-2 登记(⛔ 不得冒充成「已验证 / 已满足」)
+    REQUIRE(kUntestedCount == 2u);
+    REQUIRE(kUntestedItems.size() == 2u);
+    REQUIRE(kUntestedItems[0].ref == "U-1");
+    REQUIRE(kUntestedItems[1].ref == "U-2");
+    REQUIRE(all_untested_not_satisfied());
+    // **判否形态**(负向样本 ⇒ 判定函数有牙)
+    REQUIRE_FALSE(untested_is_not_satisfied("该假设已验证"));
+    REQUIRE_FALSE(untested_is_not_satisfied("本项已满足"));
+    // 正控
+    REQUIRE(untested_is_not_satisfied("永远无法被检验"));
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // 自足性 —— **禁项清单**的文本扫描(编译期锁的运行期 counterpart)
 // ══════════════════════════════════════════════════════════════════════════

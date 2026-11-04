@@ -71,8 +71,10 @@ FIXTURES=(
   "f-09-uis09-pending-to-selfderived:::${CARRIER}:::{Obligation::Uis09, \"N-9\", BasisKind::Pending},:::{Obligation::Uis09, \"N-9\", BasisKind::SelfDerived},:::UIS-09"
   # F-10 —— `UIS-10`:`SelfDerived` 的 `ref` 冒充成公开来源 ⇒ 遍历式断言红 ⇒ 归因 `UIS-10`
   "f-10-basis-ref-public-impersonate:::${CARRIER}:::{Obligation::Uis01, \"C-2 C-3\", BasisKind::SelfDerived},:::{Obligation::Uis01, \"C-2 A-3\", BasisKind::SelfDerived},:::UIS-10"
-  # F-11 —— `UIS-11`:把「重跑 DAG」当作证书(声明锁翻转)⇒ 编译红 ⇒ 归因 `UIS-11`
-  "f-11-dag-rerun-as-certificate:::${CARRIER}:::inline constexpr bool kDagRerunIsCertificate = false;:::inline constexpr bool kDagRerunIsCertificate = true;:::UIS-11"
+  # F-11a —— `UIS-11`:把「重跑 DAG」当作证书(声明锁翻转)⇒ 编译红 ⇒ 归因 `UIS-11`
+  "f-11a-dag-rerun-as-certificate:::${CARRIER}:::inline constexpr bool kDagRerunIsCertificate = false;:::inline constexpr bool kDagRerunIsCertificate = true;:::UIS-11"
+  # F-11b —— `UIS-11`:证书表**缺一条**(C-4 行删除 ⇒ 第 4 项值初始化 ⇒ 齐备性 / 顺序断言红)⇒ 归因 `UIS-11`
+  "f-11b-certificate-table-missing:::${CARRIER}:::{CertificateId::C4, \"/C-4\", \"未检验项登记:U-1 / U-2\", \"C-1\", kDomainRepoOwned},::::::UIS-11"
 )
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp/opencode}/uis_rv.XXXXXX")"

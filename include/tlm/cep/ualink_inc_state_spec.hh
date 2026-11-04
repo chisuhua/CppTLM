@@ -503,6 +503,111 @@ namespace tlm {
             }
 
             // ═══════════════════════════════════════════════════════════════
+            // ⑨ 证书规约面(per ADR-CEP-01 SU#4 的 **E.3** / **E.4** · UIS-11)
+            // ═══════════════════════════════════════════════════════════════
+            // ⚠️ 本段只给**规约面**(逐边依据 + 参照域 + `IC1` 鉴别力边界 + U-1/U-2 登记)
+            //    ⛔ **不**实现判据 —— 判据面属 `cep-collective-plane-contract`(由**实现层** delta 承载)。
+
+            /// 四条证书(per E.3.1) —— ⛔ 四条**共用**系统级归因 `CP-03-VC-CERTIFICATE`
+            /// (以 `detail` 子标记区分;per E.3.1 的归因 id 纪律)
+            enum class CertificateId : std::uint8_t {
+                C1Prime = 0, ///< C-1′ 槽位语义继承
+                C2 = 1,      ///< C-2 VC 覆盖完整(系统级归因 = `CP-09-IC1`,per E.3.1)
+                C3 = 2,      ///< C-3 控制面与数据面互斥
+                C4 = 3,      ///< C-4 未检验项登记(U-1 / U-2)
+            };
+
+            inline constexpr std::size_t kCertificateCount = 4;
+
+            /// 参照域的**位掩码**(per E.3.3:C-1′ 的参照集 = **两域并集**)
+            inline constexpr std::uint8_t kDomainArchForgeDerived = 1u;
+            inline constexpr std::uint8_t kDomainRepoOwned = 2u;
+
+            struct CertificateSpec {
+                CertificateId id;
+                std::string_view detail_tag; ///< `detail` 子标记(per E.3.1 的 `[CP-03-VC-CERTIFICATE/<tag>]`)
+                std::string_view obligation; ///< 义务(≤1 句)
+                std::string_view edge_basis; ///< **逐边依据**(引 `C-n`)
+                std::uint8_t domains;        ///< **参照域**位掩码
+            };
+
+            /// 四条证书的**逐边依据 + 参照域**(顺序**稳定** ⇒ 断言可逐条核对)
+            inline constexpr std::array<CertificateSpec, kCertificateCount> kCertificateSpecs{{
+                {CertificateId::C1Prime, "/C-1′", "槽位语义继承:集合平面不声明自己的 VC 绑定",
+                 "C-1 C-8 C-9", kDomainArchForgeDerived | kDomainRepoOwned},
+                {CertificateId::C2, "/C-2", "VC 覆盖完整:覆盖集 ⊇ 该网 vc_count 全部取值", "C-1",
+                 kDomainRepoOwned},
+                {CertificateId::C3, "/C-3", "控制面与数据面互斥:op in-flight 时拒绝 register / destroy",
+                 "C-1", kDomainRepoOwned},
+                {CertificateId::C4, "/C-4", "未检验项登记:U-1 / U-2", "C-1", kDomainRepoOwned},
+            }};
+
+            /// 每行证书是否**齐备**(detail 子标记 / 义务 / 逐边依据 均非空)
+            constexpr bool all_certificate_specs_wellformed() noexcept {
+                for (const auto& c : kCertificateSpecs) {
+                    if (c.detail_tag.empty() || c.obligation.empty() || c.edge_basis.empty())
+                        return false;
+                    if (c.domains == 0u)
+                        return false;
+                }
+                return true;
+            }
+
+            // ── C-1′ 的**可判定形式**:映射不一致 ⇒ 该网**不得**用 M-2(per E.3.3)───
+            /// 输入 = 「该 network 上**全部有绑定的**既有实例的映射是否**逐类相等**」
+            /// ⇒ `false` ⇒ 该网**不得**使用 M-2(须回 M-1 或先消除不一致)
+            /// ⚠️ 实例比对归**实现层**(载体**不**引用平台实例声明;per E.3.2 的「零新声明组」)
+            inline constexpr bool m2_usable_on_network(bool all_bound_instances_agree) noexcept {
+                return vc_inheritance_is_well_defined(all_bound_instances_agree);
+            }
+
+            // ── `IC1` 的**鉴别力边界**(per ADR-CEP-09 SU 2026-11-03 ③ + E.4)──────
+            struct Ic1Discrimination {
+                bool edge_endpoints_bound;    ///< ① 边端点良构(声明边表引用的每个 `vc_id` 都被绑定)
+                bool vc_id_in_range;          ///< ② `vc_id` 越界(per `kMaxVcId = 3`)
+                bool declared_edge_table_dag; ///< ③ 声明边表**自身**无环(前提 P1)
+                bool vc_binding_semantics;    ///< ⛔ `vc_binding` 的**语义分配** —— **零鉴别力**
+            };
+
+            /// ⛔ `vc_binding_semantics` 恒 `false`(实测:语义旋转仍 PASS)
+            inline constexpr Ic1Discrimination kIc1Discrimination{true, true, true, false};
+
+            // ── C-4 的两项**未检验项**(per E.3.4)────────────────────────────────
+            // ⚠️ 与 `N-n` 的**区别**:`N-n` = 语义**待定**(等依据到位);`U-n` = 语义已定但**不可检验**
+            //    ⇒ 二者**不得**混用:`U-n` **不得**写成 `N-n`,反之亦然。
+            enum class UntestedId : std::uint8_t {
+                U1 = 0, ///< 「VC 隔离确实避免协议级死锁」(H6) —— M-2 下**永远无法**检验
+                U2 = 1, ///< 同 VC 内 coherence ↔ collective 的**相互阻塞** —— VC 级依赖图**不表达**
+            };
+
+            inline constexpr std::size_t kUntestedCount = 2;
+
+            struct UntestedItem {
+                UntestedId id;
+                std::string_view ref;
+                std::string_view statement;
+            };
+
+            inline constexpr std::array<UntestedItem, kUntestedCount> kUntestedItems{{
+                {UntestedId::U1, "U-1", "「VC 隔离确实避免协议级死锁」(H6)"},
+                {UntestedId::U2, "U-2", "同 VC 内 coherence 与 collective 的相互阻塞不被 VC 级依赖图表达"},
+            }};
+
+            /// ⛔ 未检验项 SHALL **不**含「已验证 / 已满足」字样(per E.3.1 的 C-4 反向 fixture)
+            constexpr bool untested_is_not_satisfied(std::string_view text) noexcept {
+                return !sv_contains(text, "已验证") && !sv_contains(text, "已满足");
+            }
+
+            /// 全部未检验项是否都**未被**冒充成「已验证 / 已满足」
+            constexpr bool all_untested_not_satisfied() noexcept {
+                for (const auto& u : kUntestedItems) {
+                    if (!untested_is_not_satisfied(u.statement))
+                        return false;
+                }
+                return true;
+            }
+
+            // ═══════════════════════════════════════════════════════════════
             // ⑧ 编译期断言(**每条带归因 id** —— 归因 id 的唯一登记处 = 本 change 的 `design §5`)
             // ═══════════════════════════════════════════════════════════════
             static_assert(kIncOpCount == 4u, "UIS-01: INC 原语 SHALL 恰为 4 个");
@@ -608,6 +713,31 @@ namespace tlm {
 
             static_assert(kDagRerunIsCertificate == false,
                           "UIS-11: 「重跑通道依赖闸」SHALL NOT 作为证书判据(实测恒真)");
+            // ── UIS-11:证书规约面(per E.3 / E.4)──────────────────────────────
+            static_assert(kCertificateCount == 4u,
+                          "UIS-11: 证书 SHALL 恰 4 条(C-1′ / C-2 / C-3 / C-4)");
+            static_assert(kCertificateSpecs[0].id == CertificateId::C1Prime &&
+                              kCertificateSpecs[1].id == CertificateId::C2 &&
+                              kCertificateSpecs[2].id == CertificateId::C3 &&
+                              kCertificateSpecs[3].id == CertificateId::C4,
+                          "UIS-11: 证书表 SHALL 逐条齐备且顺序稳定");
+            static_assert(all_certificate_specs_wellformed(),
+                          "UIS-11: 每行证书 SHALL 有 detail 子标记 / 义务 / 逐边依据 / 非空参照域");
+            static_assert(kCertificateSpecs[0].domains == (kDomainArchForgeDerived | kDomainRepoOwned),
+                          "UIS-11: C-1′ 的参照域 SHALL 为**两域并集**(per E.3.3)");
+            static_assert(m2_usable_on_network(true) && !m2_usable_on_network(false),
+                          "UIS-11: 映射不一致 ⇒ 该网 SHALL 不得使用 M-2(per E.3.3)");
+            static_assert(kIc1Discrimination.edge_endpoints_bound &&
+                              kIc1Discrimination.vc_id_in_range &&
+                              kIc1Discrimination.declared_edge_table_dag,
+                          "UIS-11: IC1 的鉴别力 SHALL 恰为三项(边端点良构 / vc_id 越界 / 边表无环)");
+            static_assert(!kIc1Discrimination.vc_binding_semantics,
+                          "UIS-11: IC1 对 vc_binding 的语义分配 SHALL 零鉴别力(实测恒真)");
+            static_assert(kUntestedCount == 2u,
+                          "UIS-11: 未检验项 SHALL 恰 2 项(U-1 / U-2,per E.3.4)");
+            static_assert(all_untested_not_satisfied(),
+                          "UIS-11: 未检验项 SHALL NOT 含「已验证 / 已满足」字样");
+
             static_assert(kBasisObligations[static_cast<std::size_t>(Obligation::Uis11)].ref ==
                               "C-1",
                           "UIS-11: 证书规约面义务格 SHALL 有 basis(ref = C-1)");
