@@ -31,7 +31,7 @@
     "openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md": "da03d46603e6a54807cbf2d1ff3f043b59214e6512e264fd65af5e5f44e35c18",
     "openspec/specs/cep-channel-dependency-gate/spec.md": "c2bc8b77ae40addf06ba6de8e78cf797b12804022a674aac72b167c13090c2c8",
     "openspec/specs/cep-collective-plane-base/spec.md": "e5c1864fe98b98faafc7d9d3296c4d80fe187d3b8d4bb3680af8c026663578f7",
-    "openspec/specs/cep-collective-plane-contract/spec.md": "3506cee4ad472f87c2c250f151cf32a7fafac1d7f5e5a19cc89363c551be10f5",
+    "openspec/specs/cep-collective-plane-contract/spec.md": "80b286351fb0204bd7cea49d5f048522361de55ac1ecb48d6770a8909c09dc59",
     "openspec/specs/cep-core-contracts/spec.md": "198581fc3b27f2a4f25bd0e1d2ab01630d2422cc4a573c50f7339ceca5583d58",
     "openspec/specs/cep-ordering-point-checker/spec.md": "266574f920786e9b49701d56a7e55928bd3dc5bdce28adae34e4740bd3e4c091",
     "openspec/specs/cep-poc-spike-verification/spec.md": "b6b2e0cdbdcbda4f70a97fc27ff929dfbfa280a5413c9b9dca45e0f21d84d795",
@@ -44,7 +44,7 @@
   },
   "authorized_by": "Entry #209",
   "frozen_at": "2026-11-04",
-  "frozen_at_commit": "901f5b38bd9ff19e3694f6836e11e6d1689b19fd",
+  "frozen_at_commit": "7032b70d07289dead4b5f10c9aa465b445001586",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
