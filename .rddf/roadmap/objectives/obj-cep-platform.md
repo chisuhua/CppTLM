@@ -12990,6 +12990,54 @@ objective 的 B3 拆分 + 2 份冻结面文档的追加式同步 + 台账登记�
 
 ---
 
+### Entry #216 — 2026-11-04 [build](architect 裁决的 **builder 域落地**批:② schema `perm` 描述 · ⑤ `FullMapDirectory` 触发条件 · ⑥ 跨仓锚点节号化 + 治理不变量)
+
+**主题**:落地台账 Entry #215 ③ 表列的 builder 域 4 项中的 **3 项**;第 4 项(④ `consistency_labels`
+的 litmus 证伪判据)因**判据载体尚未立项**而**显式登记**,不硬凑检查器。
+**角色**:builder。**域**:builder 域(本条不改 objective / 不改 ADR 正文)。
+
+**① 落地清单**
+
+| # | 裁决 | 落点 | 改动 | 冻结面? |
+|---|---|---|---|:---:|
+| ② | schema `perm` 描述歧义 | `include/tlm/cep/protocol_instance.schema.json` | description 补「**4 值锁指取值域恰 4 值**;**每实例可声明其中子集**(由 `minItems=1` + `uniqueItems` 表达 —— 域锁 ≠ 每实例全列)」;**枚举值 / 类型 / 约束零改动** | ✅ **是** |
+| ⑤ | `FullMapDirectory` 触发条件 | `include/tlm/cep/sharer_tracker.hh`(文件头注释) | 补「**当某 `protocol_instance` 声明 `sharer_tracker.impl = FullMapDirectory` 时才排期**」+ 保留实现的论据 | ❌ 否 |
+| ⑥ | 跨仓锚点散文引用节号化 + 治理不变量 | `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md` | ① §2 / §3 表格的 **7 处** `ADR-CEP-XX:<行号>` ⇒ **节号引用**(并把裸 `IC1` 补成完整 `INV-CEP-12-IC1` 形式)② §9 说明处补**治理不变量** | ❌ 否(该清单**不在** M1 冻结集,per 其 §8 第 5 条) |
+
+**② ⑥ 的机器锚点块**:`§9` 的 `CEP_ALIGNMENT_ANCHORS_BEGIN/END` JSON 块**逐字未动** ——
+其 `cpptlm` 段的 **8 个 ADR 行号锚**(各配 `symbol`)是**故意的 fail-loud tripwire**;
+`cep_archforge_alignment_check.sh` 落地后 **rc=0**(锚点漂移即红)。
+
+**③ 新立治理不变量(写进 §9 说明,非脚本)**
+
+> **凡在 ADR 既有行之前插入内容的编辑 = 立即破坏本块的机器锚点 = 禁止**。
+> ⇒ ADR 的编辑只允许两种形态:**正文就地澄清(零行数变化)** 或 **末尾追加 Status Update**。
+
+**④ ④ `consistency_labels` 的 litmus 证伪判据 —— 载体设计 + 立项判定**
+
+- **为什么本轮不做**:SC 是**全局顺序**假设 ⇒ 证伪需要**顺序模型 + litmus 框架**;
+  现有 `H2/H3/H6` 三个实验**均不涉及全局顺序**(H2 只比目录策略延迟 · H3 只验 CONSERVATIVE 完备性
+  · H6 只验 VC 仲裁)⇒ 借它们做 SC 检查 = **判据与假设不对口**(比没有判据更危险)。
+- **载体设计(供立项)**:① **NP litmus 集**(store buffering / load buffering / message passing /
+  IRIW + write-to-read coherence),每条给出**允许的结果集合**;② **执行器**:复用本轮新增的
+  `test/cep_experiment_harness.hh` 的事务驱动 + `SwmrDataValueDetector`;③ **判定器**:枚举所有合法执行
+  ⇒ 与 litmus 的允许集合比对,**出现不允许的结果 ⇒ 该实例的 `consistency_labels` 假设标 `violated`**;
+  ④ **实例选择**:5 个声明 `SC/SC` 的实例(`chi_rnf` / `cxl_2_0` / `cxl_3_0_symmetric` / `tilelink_c` / `nvlink_4`),
+  `moesi_gpu`(RC)与 `mesif`(RC)不在其列(per 裁决 ④ 的实测口径更正)。
+- **立项判定**:该工作 = **新实验族 + 新判定器** ⇒ 应走**独立 change / 实验批次**,
+  ⛔ 不并入本批(否则把「登记的债」变成「一次性糊上去的检查」)。
+
+**⑤ 验收(实测)**:`cep_archforge_alignment_check.sh` rc=0(锚点块零改动)·
+`cep_freeze_check.sh --update --authorized-by "Entry #216"` 后 hash + provenance 双绿 ·
+`cep_docs_sync_check.sh --strict` / `cep_doc_ref_check.sh --strict` / `docs_sync_check.sh --strict` rc=0 ·
+`[cep]` 全绿 · `format.sh --check` rc=0
+
+**⑥ 关联**: Entry #215(architect 8 项裁决 + 授权记录)· #214(代码域注释订正)· #213(E2E 覆盖矩阵)·
+#212(H2/H3/H6)· #190 ⑦(3 项声明假设原始登记)· #170 ⑤(行号锚点 + BISnp 登记)· #139(`FullMapDirectory` 落位)·
+`ADR-CEP-04` SU#1 · `07 号` Status Update 2026-11-04
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

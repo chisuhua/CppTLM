@@ -51,12 +51,12 @@ Plugin 内、Stub 只暴露 4 值 `perm`、能力以**数据**声明)。本清�
 
 | # | 字段组 | 属性 | 契约位置 |
 |---|--------|------|----------|
-| C1 | 身份状态 | `id` / `family` / `adapter` / `status` / `protocol_version` | `ADR-CEP-12:163`(IC1)、`ADR-CEP-11 §3` 锁定表 |
-| C2 | 能力面 · 流 | `flow_support`(**canonical 10 流** boolean 矩阵) | `ADR-CEP-02:55`(`CEN-Ib1 ~ CEN-Ib11`) |
-| C3 | 能力面 · 权限 | `perm`(**4 值锁** `NONE`/`READ`/`UNIQUE`/`WRITEBACK`) | `ADR-CEP-02:66`(`CEN-Ib11`「维持 4 值锁」) |
-| C4 | 能力面 · atomic | `atomic.supported` + `atomic.intent_field` | `ADR-CEP-02:66`、`ADR-CEP-17` 决策 6 |
+| C1 | 身份状态 | `id` / `family` / `adapter` / `status` / `protocol_version` | `ADR-CEP-12 §3`(INV-CEP-12-IC1)、`ADR-CEP-11 §3` 锁定表 |
+| C2 | 能力面 · 流 | `flow_support`(**canonical 10 流** boolean 矩阵) | `ADR-CEP-02 §2`(`CEN-Ib1 ~ CEN-Ib11`) |
+| C3 | 能力面 · 权限 | `perm`(**4 值锁** `NONE`/`READ`/`UNIQUE`/`WRITEBACK`) | `ADR-CEP-02 §2`(`CEN-Ib11`「维持 4 值锁」) |
+| C4 | 能力面 · atomic | `atomic.supported` + `atomic.intent_field` | `ADR-CEP-02 §2`、`ADR-CEP-17` 决策 6 |
 | C5 | 前提假设 · 一致性 | `consistency_labels.read/write` + `request_level` | `ADR-CEP-13` 域归属 |
-| C6 | 前提假设 · 排序 | `ordering_assumption`(network → `p2p_ordered`/`unordered`) | `ADR-CEP-12:168`(IC2) |
+| C6 | 前提假设 · 排序 | `ordering_assumption`(network → `p2p_ordered`/`unordered`) | `ADR-CEP-12 §3`(INV-CEP-12-IC2) |
 | C7 | 前提假设 · VC | `vc_binding`(消息类 → `vc_id` 0..3) | `ADR-CEP-12` 决策 4 |
 | C8 | Sharer Tracker | `sharer_tracker.impl`(5 实现 +「不参与」)+ `caps` 4 维(`scope`/`completeness`/`authority`/`aggregation_at`) | `ADR-CEP-04 §2` |
 | C9 | 组合能力 | `combination_capabilities.concurrent/hierarchical/heterogeneous` | 调研 F16 |
@@ -76,17 +76,17 @@ Plugin 内、Stub 只暴露 4 值 `perm`、能力以**数据**声明)。本清�
 
 | # | CEP 侧 | ArchForge 侧 | 性质 | 级别 | 处置 |
 |---|--------|-------------|------|------|------|
-| **G1** | 协议状态**住 Plugin 内**;Stub 只暴露 4 值 `perm`(`ADR-CEP-05:170` IC1) | `CoherenceState { I,S,E,M,O,T }` 是**顶层枚举**(`coherence-protocol.md:112`);`CoherenceDomain::State`(`09:242`) | **冲突** | **P0** | 状态枚举**下沉到协议插件**;或 ArchForge 侧出 ADR 豁免 `INV-CEP-05-IC1`(需 DRI 裁决) |
+| **G1** | 协议状态**住 Plugin 内**;Stub 只暴露 4 值 `perm`(`ADR-CEP-05 §3` INV-CEP-05-IC1) | `CoherenceState { I,S,E,M,O,T }` 是**顶层枚举**(`coherence-protocol.md:112`);`CoherenceDomain::State`(`09:242`) | **冲突** | **P0** | 状态枚举**下沉到协议插件**;或 ArchForge 侧出 ADR 豁免 `INV-CEP-05-IC1`(需 DRI 裁决) |
 | **G2** | `enum class Protocol { MESI, MOESI }` 属**协议泄漏**,已 `[[deprecated]]`(`ADR-CEP-07A:98` IC1) | `coherence-domain.md:68` 的 API **仍以 `enum class Protocol` 为配置入口**(`set_protocol`) | **冲突**(直接违规) | **P0** | 配置入口改为**协议插件标识**(对齐 CEP `id`/`family`/`adapter`);`set_protocol` 废弃 |
-| **G3** | **canonical 10 流**(`ADR-CEP-02:55`) | 4 类 Bundle:`CacheReqBundle`/`CacheRespBundle`/`SnoopProbe`/`SnoopResp`(`coherence-bridge.md §2.2`) | **口径** | **P0** | 产出 **4 类 Bundle ↔ 10 流** 的**映射表**(哪类流覆盖哪几条 CEP 流);CEP 明确「**不新增端口**」(`07 号 §5.1`) |
-| **G4** | `ordering_assumption` + `vc_binding`(`ADR-CEP-12:168`) | **完全缺失** —— ArchForge 无 VC / ordering 概念 | **缺失** | **P1** | 决定:VC 归属哪一侧?若 ArchForge 侧承载 → 需声明形态;若 CppTLM 侧承载 → ArchForge 需提供 fabric 命名空间 |
+| **G3** | **canonical 10 流**(`ADR-CEP-02 §2`) | 4 类 Bundle:`CacheReqBundle`/`CacheRespBundle`/`SnoopProbe`/`SnoopResp`(`coherence-bridge.md §2.2`) | **口径** | **P0** | 产出 **4 类 Bundle ↔ 10 流** 的**映射表**(哪类流覆盖哪几条 CEP 流);CEP 明确「**不新增端口**」(`07 号 §5.1`) |
+| **G4** | `ordering_assumption` + `vc_binding`(`ADR-CEP-12 §3`(INV-CEP-12-IC2)) | **完全缺失** —— ArchForge 无 VC / ordering 概念 | **缺失** | **P1** | 决定:VC 归属哪一侧?若 ArchForge 侧承载 → 需声明形态;若 CppTLM 侧承载 → ArchForge 需提供 fabric 命名空间 |
 | **G5** | `sharer_tracker.impl` 5 实现 + `caps` 4 维(`ADR-CEP-04 §2`) | 固定 `SnoopFilter`(`09:311`),**无选型 / 无 caps** | **冲突 + 缺失** | **P1** | `SnoopFilter` → **可插拔选型抽象** + caps 语义;`BroadcastNull`(token 类协议)需 ArchForge 侧认可 |
 | **G6** | `consistency_labels`(SC/TSO/RC-*/PLO,请求级 `request_level`) | **完全缺失** | **缺失** | **P2** | Stage 2+ 再议(CEP 侧已可声明) |
 | **G7** | `atomic.supported` + `intent_field`(意图经 request 流**独立属性**) | 无 atomic 概念 | **缺失** | **P2** | 需确认 ArchForge 的 `CacheReqBundle` 能否承载 atomic 意图位 |
 | **G8** | `combination_capabilities` 三维正交 | 无跨协议组合概念 | **缺失** | **P2** | Stage 2+ |
 | **G9** | 协议逻辑住 **Plugin**,能力以**数据**声明 | 协议逻辑 = ArchForge 侧 C++ 抽象基类 `CoherenceProtocol`(`coherence-protocol.md:133`) | **冲突**(分层) | **P0** | 明确**分工**:声明在 CppTLM(schema)/ 逻辑在 ArchForge(插件实现)?—— 这决定 `CoherenceProtocol` 是否需**下沉为 CppTLM 侧 Plugin 接口** |
 | **G10** | `family` ∈ {`industrial`,`ruby-slicc`,`academic`};`07 号 §5.1` 口径 = 2 族 / 16 实例 | 只有 **MOESI/GPU 一族**(`09 §3` 6×6 状态机) | **口径** | **P1** | ArchForge 侧 `family` 落 `industrial`;Ruby 族由 CppTLM 侧插件提供 —— 需明确**族边界的权威方** |
-| **G11** | `CacheTLM` **不得**实现 canonical 10 流;只允许经 **adapter** 交互(`ADR-CEP-15:115` IC3) | `register_cache_callback(CacheTLM*)`(`09:250`)**直连** CacheTLM;`cache_tlm_integration = "snoop_callback"`(配置) | **冲突**(边界) | **P0** | 明确 `snoop_callback` 落在**哪一侧**:若 ArchForge 侧直连 CacheTLM → 违反 IC3;须改走 adapter |
+| **G11** | `CacheTLM` **不得**实现 canonical 10 流;只允许经 **adapter** 交互(`ADR-CEP-15 §3` INV-CEP-15-IC3) | `register_cache_callback(CacheTLM*)`(`09:250`)**直连** CacheTLM;`cache_tlm_integration = "snoop_callback"`(配置) | **冲突**(边界) | **P0** | 明确 `snoop_callback` 落在**哪一侧**:若 ArchForge 侧直连 CacheTLM → 违反 IC3;须改走 adapter |
 | **G12** | `status` 三值(`planned`/`implemented`/`excluded`)= 计数口径唯一依据(`ADR-CEP-12` 决策 9) | 无 status 概念 | **缺失**(小) | **P2** | 随 capability 声明一并引入 |
 | **G13** | `perm` **4 值**(`NONE`/`READ`/`UNIQUE`/`WRITEBACK`) | `CoherenceState` **6 值**(`I,S,E,M,O,T`) | **口径** | **P1** | 产出 **6 态 → 4 值 perm 的投影表**;`O`(Owned)/`T`(Transient) **无投影**(瞬态态住插件内) |
 
@@ -212,6 +212,11 @@ ArchForge 侧承载(G6/G7/G8/G12)。
 ---
 
 ## 9. 机器可读锚点
+
+> **⚠️ 治理不变量(architect 裁决 2026-11-04,per 台账 Entry #215 ⑥)**:**凡在 ADR 既有行之前插入内容的编辑 = 立即破坏本块的机器锚点 = 禁止**。
+> ⇒ ADR 的编辑只允许两种形态:**正文就地澄清(零行数变化)** 或 **末尾追加 Status Update**。
+> ⇒ 本块(`cpptlm` 段的 8 个 ADR 行号锚)因此**故意保留行号** —— 它是 fail-loud tripwire;
+>   而本文件 §2 / §3 的**散文引用**已改为**节号引用**(per 同一裁决)。
 
 <!-- CEP_ALIGNMENT_ANCHORS_BEGIN -->
 ```json
