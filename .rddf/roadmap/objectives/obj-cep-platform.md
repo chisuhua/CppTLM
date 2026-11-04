@@ -12878,6 +12878,60 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 
 ---
 
+### Entry #214 — 2026-11-04 [build](债务清理第二批 —— CXL.mem **通道方向注释订正** + `LocalView` 双重语义显式登记 + MOESI-GPU L4 形态结论)
+
+**主题**:清理「可立即做(builder,非冻结面)」的两项;并把上一批列为「可立即做」的 MOESI-GPU L4
+**修正为形态结论**(实测其引擎无 emit 路径)。**0 冻结面 / 0 契约语义改动**。
+**角色**:builder。
+
+**① `cxl_dcoh_state_spec.hh` —— 6 行 CXL.mem 通道方向注释整体写反(已订正)**
+
+| 通道 | 原注释 | 订正后 | 依据 |
+|---|---|---|---|
+| `M2S_Req` / `M2S_RwD` / `M2S_BIRsp` | 「memory → host」 | **host → device** | 同文件 `kCxlMemChannelDirection[..] = Remote`(Remote = host 发起) |
+| `S2M_NDR` / `S2M_DRS` / `S2M_BISnp` | 「host → memory」 | **device → host** | 同文件 `= Local`(Local = 设备发起)+ `CDS-03`(BISnp 是**设备发起**) |
+
+- **性质**:纯注释订正(**枚举值 / 方向表 / 断言零改动**)⇒ `[cep][cxl_dcoh]` 20 cases / 461 assertions 不变。
+- ⚠️ **未改** `ADR-CEP-04 §3.4` 的同款口径错误 —— 该 ADR 是**冻结面成员**,
+  需 architect 走 SU 流程(台账 Entry #170 ⑤ X3 已登记)。
+
+**② `LocalView::forward_to` 双重语义 —— 显式登记于定义点**
+
+- **语义**:`forward_to` 的含义**取决于 `lookup` 的 `result` 出参** ——
+  `FORWARD_TO` ⇒ 取数目标;**其它 verdict ⇒ 无意义**(可能残留上次的值)。
+- **为什么必须写明**:该字段曾被登记为「双重语义,消费方须先读 `result`」(Entry #144 ② 2)但
+  **未落在定义点** ⇒ 新读者极易写出「先判 `forward_to != kInvalidNode`」的错误用法,把无害残留当转发指示。
+- **改动**:仅 `sharer_tracker.hh` 的 `LocalView` 上方注释(结构体字段零改动)。
+
+**③ MOESI-GPU 的 L4 缺口**修正为**形态结论**(Entry #213 曾列为「可立即做」)
+
+- **实测**:`moesi_gpu_protocol_engine.hh` 只有 `on_request(...)` 一处 override,**无任何 emit / request_emitted**;
+  对照 `mesif_protocol_engine.hh` 有 7 处。且它**未在 `chstream_register.hh` 注册**、无对应 config。
+- **结论**:该引擎是**被动接收端**(RN 侧响应者),不存在「`submit_local_request` → 发出」路径
+  ⇒ L4 **只能做单向接收 E2E**(对端发起 → 它收到并分派),不能做双向「穿过」。
+- **处置**:不强行补注册/config/测试(那是**实现扩展**,非债务清理);登记为形态限制。
+  若要补单向接收 E2E,需先加 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` + `configs/cep_moesi_gpu_pe_minimal.json`。
+
+**④ 债务状态更新**
+
+| 项 | 状态 |
+|---|---|
+| D2(tools 三缺)· D3(experimental 零产物)· D4 的 H2/H3/H6 | ✅ 已闭合(Entry #212 / #213) |
+| 代码域 BISnp 通道方向 | ✅ **本条闭合** |
+| `LocalView` 双重语义落点 | ✅ **本条闭合** |
+| `ADR-CEP-04 §3.4` BISnp 口径 | 🔒 **冻结面** ⇒ 需 architect SU |
+| `perm` 字段描述歧义(`protocol_instance.schema.json`) | 🔒 冻结面 |
+| MOESI-GPU 单向接收 E2E | ⏭ 需先补注册 + config(实现扩展) |
+| DoD §6.2 B3 口径 · 声明层 3 项建模假设 · `FullMapDirectory` / `LocalView` 落位 | ❓ 需用户裁决 |
+| `ualink_4` 声明 / `U-1`/`U-2` | ⛔ 外部阻塞(Evaluation Copy) |
+
+**⑤ 验收(实测)**:`[cep]` **378 cases / 8343 assertions** · `[cep][cxl_dcoh]` 20/461 ·
+7 门禁 + `format --check` 全 rc=0 · `cep_freeze_check` rc=0(**0 冻结件改动**)
+
+**⑥ 关联**:Entry #213(债务第一批)· #212(H2/H3/H6)· #170 ⑤ X2/X3(BISnp 登记)· #144 ② 2(`LocalView` 登记)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

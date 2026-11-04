@@ -275,6 +275,13 @@ constexpr const char* lifecycle_event_name(LifecycleEvent e) {
 // ─────────────────────────────────────────────────────────────────────
 // 形态本 spec 首次定义:sharers / dirty 为 64-bit bitmask(与 responder_set_t 同型);
 // `valid == false` ⇔ hazard != NONE(此时 view 无意义,per ADR §3.1 注释)。
+//
+// ⚠️ **`forward_to` 是双重语义字段(2026-11-04 显式登记,per 台账 Entry #144 ② 2 / #214)**:
+//    它的含义**取决于 `lookup` 的 `result` 出参**,必须先读 `result` 再解释:
+//      · `result == FORWARD_TO` ⇒ `forward_to` = **取数目标节点**(调用方应向它取数);
+//      · 其它 verdict(`ANSWER_HERE` / `BROADCAST` / `ESCALATE_UP`)⇒ `forward_to` **无意义**
+//        (实现可能留 `kInvalidNode`,也可能残留上一次的值 —— 调用方**不得**读取)。
+//    ⇒ ⛔ 禁止「先看 `forward_to != kInvalidNode` 再猜意图」的写法:那会把无害残留当成转发指示。
 struct LocalView {
     responder_set_t sharers = 0;
     responder_set_t dirty = 0;

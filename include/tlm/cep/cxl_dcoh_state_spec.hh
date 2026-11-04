@@ -92,12 +92,17 @@ namespace tlm {
 
             /// **CXL.mem** 通道(CXL 3.0 = 4 基础 + 2 新增)
             enum class CxlMemChannel : std::uint8_t {
-                M2S_Req = 0,   // memory → host:request
-                M2S_RwD = 1,   // memory → host:read-with-ownership-data
-                S2M_NDR = 2,   // host → memory:non-data-request
-                S2M_DRS = 3,   // host → memory:data-response
-                S2M_BISnp = 4, // host → memory:back-invalidate snoop  ⭐ CXL 3.0 新增
-                M2S_BIRsp = 5  // memory → host:back-invalidate response(CXL 3.0 新增)
+                // ⚠️ 方向口径(2026-11-04 订正):`M` = **Master = host**,`S` = **Slave = device**
+                //    ⇒ M2S = host → device;S2M = device → host。
+                //    此前 6 行注释整体写反(M2S 标成「memory → host」、S2M 标成「host → memory」),
+                //    与同文件 `kCxlMemChannelDirection`(M2S=Remote / S2M=Local)及
+                //    `CDS-03`(BISnp 是**设备发起**)自相矛盾。
+                M2S_Req = 0,   // host → device:request
+                M2S_RwD = 1,   // host → device:read-with-ownership data
+                S2M_NDR = 2,   // device → host:non-data response
+                S2M_DRS = 3,   // device → host:data response
+                S2M_BISnp = 4, // device → host:back-invalidate snoop  ⭐ 设备发起 / CXL 3.0 新增
+                M2S_BIRsp = 5  // host → device:back-invalidate response(CXL 3.0 新增)
             };
 
             /// **CXL.cache** 通道(**每方向 3**;方向由 `CxlMemDirection` 之外的调用侧给出)
