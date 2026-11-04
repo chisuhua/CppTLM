@@ -185,8 +185,8 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 | **9** | `cpptlm-cep-mesif-adapter` | Stage 1 | **2028-Q4** | ✅ **已归档**(2026-10-30,Entry #105 / #106 —— 「**已完成归档**」语义:2 份 delta spec **已合并**进 `openspec/specs/`(`cep-mesif-adapter` + `cep-hierarchical-directory`);实现层 4 个新载体 + 2 个修改;`implemented` 实例 **2 → 3**;KPI 并发 **1/3 → 0/3**)· 历史:🟡 Proposed(2026-10-30 —— **实现层 change 已建**:cpptlm-cep-mesif-adapter(**4 件套 + 2 份 delta spec** —— `cep-mesif-adapter` / `cep-hierarchical-directory`;`openspec validate --strict` rc=0;KPI **0/3 → 1/3**,per Entry #104)· 规约层已归档:cpptlm-cep-mesif-state-spec(已归档)(MESIF 5 态 × 6 事件转换表 + 5→4 投影表 + 逐格依据;Entry #101)· **跨仓逐格追认已闭合**(Entry #102 / #103)⇒ **实现层可启动**)| **本行已归档 ⇒ 不再持有活义务**(per Entry #106)。准入前置 / 孤儿前置的 **owner 义务已再转指**队列 #10 `cpptlm-cep-cxl-nonsymmetric` 行(明细见该行);本行仅保留历史登记。 |
 | **10** | `cpptlm-cep-cxl-nonsymmetric` | Stage 1 | **2029-Q1** | ✅ **已归档**(2026-11-01,per **Entry #123** / **#127** / **#132**)—— **两段式均已完成归档**(「**已完成归档**」语义 —— delta capability `cep-cxl-nonsymmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 并发 1/3 → 0/3**;⚠️ 归档件**不入库**(per `.gitignore`)⇒ 活路径 = main spec)· **两段式**:第 0 个 = 规约层(✅ 已归档,Entry #127)+ **第 1 个 = 实现层(✅ 已归档 2026-11-01,per Entry #132)** —— change `cpptlm-cep-cxl-nonsymmetric`(4 件套 + **2 份** delta spec:`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;「**已完成归档**」语义 —— 2 份 delta spec 已合并进 `openspec/specs/`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 1/3 → 0/3**)⇒ 交付面 = `CxlCacheAdapter`(**委托**规约载体 · **三态**查询面)+ `SparseSnoopFilter` 行为实现(**服务 `moesi_gpu` 的 R11 补偿**,**不**服务 CXL 实例 —— 其 peer 集平凡为空)+ `cxl_2_0` 实例声明(`sharer_tracker` = 「不参与」)+ `perm_upgrades.json` 一行 + **3 件**冻结面两步授权 · ✅ **R11 已于 2026-11-01 降级为 🟢 低**(per **Entry #136** 交付 V-2 —— `MoesiGpuProtocolEngine` 运行期载体 + `O→WRITEBACK` 补偿路径判据;**Entry #137** 签发降级裁决)⇒ 本行原先登记的「V-2 🔴」义务**已闭合**;⚠️ **降级不蕴含**「完整协议实现」或「等价恢复已实现」(per Entry #137 ③ 语义边界 —— 真实 tracker 是 `CONSERVATIVE` ⇒ 只能给**保守近似**)· 历史:2026-11-01 转正时**第 0 个 change 已建目录**(4 件套 + 1 份 delta spec;`openspec validate --strict` rc=0;**KPI 并发 0/3 → 1/3**)· **Task 0 硬门已过(有条件)**:公开来源普查产物 `docs/research/2026-11-01-cep-cxl-nonsymmetric-anchor-summary.md` ⇒ 态数/事件词表/投影形状/非对称定义/编译期断言 **5 项已钉死**,8 项 `pending`(R-1~R-8)· ⚠️ **钉版缺口待补**(sha256 / Wayback 快照 / D14 SHA)⇒ **载体逐格编码须等它完成**· ⚠️ **口径已裁决**(2026-11-01,per **Entry #122**):「CXL 2.0 非对称」= **CXL.cache** 子协议(**host-centric / 单一一致性点**);设备侧 = **MESI 4 态** ⇒ `perm` 投影 = **4→4**(⚠️ 原草稿「5→4」系 MESIF 模板形状的未审视继承 ⇒ **作废**);basis 权威 = **本仓公开来源锚点摘要**(**非**规范正文、**非** ArchForge)⇒ 追认 = **仓内**二方复核闭环 ⇒ **无 #9 式跨仓债**;⛔ **合规**:CXL 规范受 ECA §3 + AI AUP 约束 ⇒ **禁止**把规范 PDF 投喂任何 AI ⇒ 8 项语义走「**人类成员条款摘要**」;⛔ **硬门**:**公开来源普查未完成 ⇒ change 目录不建**;⚠️ **R11 owner 交叉引用**:`SparseSnoopFilter` 行为实现归**本行第 1 个 change**(per Entry #112 归属去重 · §10 **P2** 行已关闭为「不另起小 change」)⇒ R11 详情见 **§8.1 R11** 行 + Entry #107 / #112 | **本行已归档 ⇒ 不再持有活义务**(2026-11-01,per Entry #132):Stage 1 准入前置(**7 项**,滚动登记;owner 自队列 #6 → #7 → #8 → #9 → 本行)与**3 项孤儿前置**均**已消费 / 已收口** ⇒ 逐项明细见台账 **Entry #71 / #80 / #90 / #95 / #106**(本行的逐项原文随本行归档保留在 `openspec/changes/archive/2026-11-01-cpptlm-cep-cxl-nonsymmetric/`)⇒ ⚠️ **不再在本行列 `⏭(移交)` 标记**:归档件**不得持有活义务**,且门禁断言 ⑦ 要求「提及移交标记的行其 change 不得为已归档 change」⇒ 故**移出**而非改写。 |
 | **11** | `cpptlm-cep-tilelink-tree-manager` | Stage 1 | **2029-Q2** | ✅ **已归档**(2026-11-02,per **Entry #143** / **#147**)—— **两段式均已完成归档**(「**已完成归档**」语义 —— delta capability `cep-tilelink-state-spec` 已合并进 `openspec/specs/cep-tilelink-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 并发 1/3 → 0/3**;⚠️ 归档件**不入库**(per `.gitignore`)⇒ 活路径 = main spec)· **两段式**:第 0 个 = 规约层(✅ 已归档,Entry #143)+ **第 1 个 = 实现层(✅ 已归档,Entry #147** —— delta capability `cep-tilelink-tree-manager` 已合并进 `openspec/specs/cep-tilelink-tree-manager/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;KPI **1/3 → 0/3**;⚠️ **R-T4 已裁决** = 值域锁 ⇒ 实例 `perm` 填 **3 值**;⚠️ `AC-05` 族对 TileLink **恒红** ⇒ 族无关化落该 change)· 历史:2026-11-01 转正时**第 0 个 change 已建目录**(4 件套 + 1 份 delta spec;`openspec validate --strict` rc=0;**KPI 并发 0/3 → 1/3**)· **Task 0 硬门已过**:公开来源普查产物 `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` ⇒ 态数/事件词表/投影/非对称形态/编译期断言 **5 项已钉死**,8 项残余风险 **全部闭合**(per Entry #134 / #135 / #138 / #141)) | **Stage 1 准入前置**:⚠️ **2026-11-02 本队列两段式均已归档**(per 台账 Entry #143 / **#147**)⇒ 归档件**不得持有活义务** ⇒ 前置块**整块移出**本行 ⇒ **标记转指 #12**(per Entry #80 / #90 / #95 / #106 / #132 / **#147** 的既定模式)。 |
-| **12** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2029-Q3** | 🟡 **Proposed**(2026-11-02 —— **第 0 个 change(规约层)已完成归档**(「**已完成归档**」语义 —— delta capability `cep-cxl-dcoh-symmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-dcoh-symmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 并发 1/3 → 0/3**;⚠️ 归档件**不入库**(per `.gitignore`)⇒ 活路径 = main spec;**Task 0 硬门已过(有条件)**(per Entry #153)· **architect 4 项裁决已落**(per Entry #154);**两段式** ⇒ **第 1 个 change**(实现层)`cpptlm-cep-cxl-dcoh-symmetric` **✅ 已完成归档**(2026-11-02;「**已完成归档**」语义 —— delta capability `cep-cxl-dcoh-symmetric` 已合并进 `openspec/specs/cep-cxl-dcoh-symmetric/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;⚠️ 落点裁决 = tracker 行为类落**独立头** `cxl_dcoh_tracker.hh`(per Entry #162)· **冻结面 1 件**(`cep-sharer-tracker-base` 追加段 · per Entry #165)· 反向验证 **6/6**) ⇒ **队列 #12 两段式全部完成** | —— **Stage 1 准入前置**:⚠️ **2026-11-02 本队列两段式均已归档**(per 台账 Entry #159 / **#166**)⇒ 前置块**整块移出**本行 ⇒ **标记转指 #13**(per Entry #166)。 |
-| **13** | cpptlm-cep-nvlink-sharp | Stage 2 | **2029-Q4** | 🟡 **Proposed**(**规约层已完成归档** 2026-11-03,per Entry #186 —— delta capability 已合并进 `openspec/specs/cep-nvlink-sharp-state-spec/spec.md`;**实现层 change 亦已完成归档** 2026-11-03 —— cpptlm-cep-nvlink-sharp,4 件套 + 2 份 delta spec;**队列 #13 两段式全部交付** ⇒ 下一个可启动 = 队列 #14 cpptlm-cep-ualink-inc) — ⚠️ 归档 change 名**不加反引号**:§4.0 本行含 `S1-N` 移交标记与 `⏭(孤儿)` 标记,而断言 ⑦ ③要求此类行**不得**以反引号形式提及已归档 change(per Entry #159 先例)。 ⚠️ **2026-11-03 订正**:本行 change 名**不加反引号**(含 `S1-N` / `⏭(孤儿)` 标记的行**不得**以反引号提及已归档 change)⇒ 已按**去反引号**处理;原第 7/8 列的错误结构已修复(表头 6 列)。 | ⚠️ **2026-11-03 本队列两段式均已归档**(per 台账 Entry #186 / **#190**)⇒ 前置块**整块移出**本行 ⇒ **标记转指 #14**(per Entry #191)。 |
+| **12** | `cpptlm-cep-cxl-dcoh-symmetric` | Stage 2 | **2029-Q3** | ✅ **archived**(2026-11-02 —— **第 0 个 change(规约层)已完成归档**(「**已完成归档**」语义 —— delta capability `cep-cxl-dcoh-symmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-dcoh-symmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;**KPI 并发 1/3 → 0/3**;⚠️ 归档件**不入库**(per `.gitignore`)⇒ 活路径 = main spec;**Task 0 硬门已过(有条件)**(per Entry #153)· **architect 4 项裁决已落**(per Entry #154);**两段式** ⇒ **第 1 个 change**(实现层)`cpptlm-cep-cxl-dcoh-symmetric` **✅ 已完成归档**(2026-11-02;「**已完成归档**」语义 —— delta capability `cep-cxl-dcoh-symmetric` 已合并进 `openspec/specs/cep-cxl-dcoh-symmetric/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;⚠️ 落点裁决 = tracker 行为类落**独立头** `cxl_dcoh_tracker.hh`(per Entry #162)· **冻结面 1 件**(`cep-sharer-tracker-base` 追加段 · per Entry #165)· 反向验证 **6/6**) ⇒ **队列 #12 两段式全部完成** | —— **Stage 1 准入前置**:⚠️ **2026-11-02 本队列两段式均已归档**(per 台账 Entry #159 / **#166**)⇒ 前置块**整块移出**本行 ⇒ **标记转指 #13**(per Entry #166)。 |
+| **13** | cpptlm-cep-nvlink-sharp | Stage 2 | **2029-Q4** | ✅ **archived**(**规约层已完成归档** 2026-11-03,per Entry #186 —— delta capability 已合并进 `openspec/specs/cep-nvlink-sharp-state-spec/spec.md`;**实现层 change 亦已完成归档** 2026-11-03 —— cpptlm-cep-nvlink-sharp,4 件套 + 2 份 delta spec;**队列 #13 两段式全部交付** ⇒ 下一个可启动 = 队列 #14 cpptlm-cep-ualink-inc) — ⚠️ 归档 change 名**不加反引号**:§4.0 本行含 `S1-N` 移交标记与 `⏭(孤儿)` 标记,而断言 ⑦ ③要求此类行**不得**以反引号形式提及已归档 change(per Entry #159 先例)。 ⚠️ **2026-11-03 订正**:本行 change 名**不加反引号**(含 `S1-N` / `⏭(孤儿)` 标记的行**不得**以反引号提及已归档 change)⇒ 已按**去反引号**处理;原第 7/8 列的错误结构已修复(表头 6 列)。 | ⚠️ **2026-11-03 本队列两段式均已归档**(per 台账 Entry #186 / **#190**)⇒ 前置块**整块移出**本行 ⇒ **标记转指 #14**(per Entry #191)。 |
 | **14** | cpptlm-cep-ualink-inc | Stage 3 | **2030-Q1** | ✅ **两段式均已完成归档**(2026-11-04 —— 规约层 delta 已合并进 `openspec/specs/cep-ualink-inc-state-spec/spec.md`(Entry #203);实现层 cpptlm-cep-ualink-inc 亦已完成归档(4 件套 + 3 份 delta spec;delta 已合并进 `openspec/specs/cep-ualink-inc/spec.md` + 2 份契约 main spec;Entry #207)⇒ **队列 #14 交付完毕**;⚠️ `ualink_4` 实例**未声明**(取值不可判定,per `ADR-CEP-04` SU §③ + 锚点摘要 `N-8`/`N-9`)⇒ **实例级装配登记为 backlog**) | **Stage 1 准入前置(滚动登记;owner 自队列 #6 → #7 → #8 → #9 → #10 → #11 → #12 → #13 → **现转指本行**,per Entry #80 / #90 / #95 / #106 / #132 / #147 / #166 / **#191**):`S1-1` ✅ 已消费(队列 #4 装配闸)· `S1-2` ✅ 已由队列 #6 交付 · **`S1-3` ✅ 已于队列 #9 触发**(`implemented` 实例数 2 → 3,`mesif` 为第 3 个;真实义务 = `ADR-CEP-12 §8.4` 的 SLICC 式备选重评,结论见 Entry #106)· `S1-4` ✅ 已消费(Entry #56)· `S1-5` ✅ 已由队列 #6 交付 · `S1-6` ✅ **已闭合**(2026-10-22 —— 判据 (b) 成立 + PoC `S2` 实跑,per `docs/implementation/2026-10-22-cep-stage0-external-review-summary.md` §2.2)· `S1-7` ①② ✅ 已由队列 #6 交付(③ 已由队列 #4 消费)· **孤儿前置(已收口)**:⏭(孤儿) M-4 行为侧 ✅ 落成于队列 #3 `cep-vc-mapping-contract` · ⏭(孤儿) `moesi_gpu` / `mesif` 未排期 ✅ 已于 Entry #71 消解 · ⏭(孤儿) verdict 逐 `(network, vc)` 标注义务 ✅ 落成于队列 #4 `cep-channel-dependency-gate`。 · ⚠️ **2026-11-03**:improvement cpptlm-cep-nvlink-sharp **已写**(planner;HARD-GATE rc=0)⇒ **队列仍为 📋 Planned**(未建 change 目录,per §4.7.2 判据)⇒ ✅ `ADR-CEP-01` / `02` / `03` **已于 2026-11-03 定稿签发**(per 台账 Entry #169 / **#170**)⇒ **Task 0 公开来源普查 ✅ 已消费**(2026-11-03,Entry #173:锚点摘要已落盘)**+ VC 空间裁决 ✅ 已消费**(Entry #171 · Decision D)⇒ ✅ **全部前置已消费**(三则 ADR 定稿 #169/#170 · VC 裁决 #171 · Task 0 普查 #173)⇒ **规约层 change 目录已建**(2026-11-03,per Entry #175)⇒ ✅ **规约层已完成归档**(2026-11-03,Entry #186)⇒ ✅ **实现层 change 目录已建**(2026-11-03,cpptlm-cep-nvlink-sharp)⇒ ✅ **实现层已完成归档**(2026-11-03,Entry #190)⇒ **下一队列 = #14 cpptlm-cep-ualink-inc** |
 
 > **终态**:Stage 0~3 实施完成 = **2030-Q1**(per §4.6);Stage 4+ 进入维护态(per §4.5)。
@@ -2268,6 +2268,26 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 
 - **2027-01-18**(review_by 默认 = created + 90 天):第一次 sprint-review
 - 后续按 90 天周期 + Stage 晋级节点追加
+
+#### Stage Go 节点登记(DoD #11 —— 「Go 节点地址」)
+
+> **为什么单列**:DoD #11 要求「§11 决策台账记录所有 KPI 让位决策 + **Go 节点地址** + Sprint 复盘」。
+> 台账里的 `go-decision` entry 是**决策本身**;本节是**地址索引** —— 回答「哪个 Stage 的晋级 Go 落在哪条 entry」。
+> ⚠️ 本节**只登记已发生的节点**;未发生的(终态 DoD Go)显式标 `⏳`,⛔ 不得以「Stage 完成」冒充「DoD 达成」。
+
+| Stage | 节点 | 日期 | 落地 Entry | 结论 | 证据锚点 |
+|-------|------|------|-----------|:---:|---------|
+| Stage 0 | 立项 Go | 2026-10-20 | #1 | ✅ | objective 立项 + 10 份 ADR 达可签发水准 |
+| Stage 0 | 准入 Go(M2 跨仓准入门放行) | 2026-10-22 | #10 | ✅ | umbrella 由 🟡 Proposed Draft 升 🟡 Proposed |
+| Stage 0 | 完成 Go(R10 处置 + 归档) | 2026-10-23 | #28 / #29 | ✅ | R10 闭合判据改写 + delta 合并进 main spec |
+| Stage 1 | 完成 Go(队列 #11 两段式归档) | 2026-11-02 | #143 / #147 | ✅ | Stage 1 = 队列 #2~#11 全部归档 |
+| Stage 2 | 完成 Go(队列 #12 两段式归档) | 2026-11-02 | #166 | ✅ | Stage 2 首个队列收口 |
+| Stage 2 | 完成 Go(队列 #13 两段式归档) | 2026-11-03 | #186 / #190 | ✅ | Stage 2 = 队列 #12~#13 全部归档 |
+| Stage 3 | 启动 Go(VC 路径裁决 = 路径 **D**) | 2026-11-04 | #193 | ✅ | 三则 ADR SU 签发 + 冻结面授权记录 |
+| Stage 3 | 完成 Go(队列 #14 两段式归档) | 2026-11-04 | #203 / #207 | ✅ | 14 个队列 change 全部归档 |
+| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ §6.2 **B4**(4 件套实跑 + 13 metric 全绿)与 **B7**(8 假设实验结论)**未收口** ⇒ 当前**不得**宣称终态 Go;§8.2 Kill 判据**未触发**(现状是「**尚未产出**」而非「**无法产出**」) |
+
+> **待办指针**:终态 DoD Go 的前置 = §10 的 Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记),逐条完成后在本表末行回填日期与 Entry。
 
 **review_by 触发仪式**(per `rdd-planner/SKILL.md:159`):
 - `bash skills/rdd-planner/scripts/planner_objective_revise.sh objective-cep-platform --kind sprint-review --content "..." --decision "..." --reason "..."`
@@ -12663,6 +12683,56 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 **④ 授权流程**:① 本条 Entry → ② commit 内容 → ③ `cep_freeze_check.sh --update --authorized-by "Entry #210"` ⇒ commit。
 
 **⑤ 关联**: Entry #209(第 1 轮修复 + 授权记录)· #207(实现层归档)· #206 / #193(前序授权记录)· critic 第 1 轮 = **REJECT** / 第 2 轮 = **APPROVE_WITH_CONDITIONS**(⚠️ 评审预算 **2 轮已用尽** ⇒ 后续不再委派,残留走 backlog)
+
+---
+
+### Entry #211 — 2026-11-04 [chore](CEP 全平台梳理 → **Phase 0 治理收口**(§4.0 状态列 + Stage Go 节点表)+ 5 处真源漂移登记)
+
+**主题**:队列 #14 归档后的**全平台梳理**结论。本轮**只读核查 + 治理收口**,不含代码/契约变更。
+**角色**:builder。**性质**:治理载体订正(§4.0 状态投影 + §12 地址索引),**0 冻结面 / 0 代码 / 0 ABI 改动**。
+
+**① D1 —— §4.0 排队表的 #12 / #13 状态列订正(`🟡 Proposed` → `✅ archived`)**
+
+- **根因**:两行正文早已写明「两段式全部完成/归档」(`#12`: Entry #166;`#13`: Entry #186 / #190),
+  但**状态列**仍留 `🟡 Proposed` ⇒ 违反 §4.7.2 状态机自身的判据
+  (「✅ archived ⇔ 目录移入 `archive/` **∧ §4.0 状态列已改**」)。
+- **影响**:§4.0 是「实施路径唯一真源」,读者会误判还有 2 个队列未完成(实际 `openspec list --json` = **0 active**)。
+- **修法**:只改状态标记,**正文逐字不动**(正文是事实记录,append-only 精神)。
+
+**② D5 —— DoD #11「Go 节点地址」落地(§12 新增 `Stage Go 节点登记`)**
+
+- **根因**:DoD #11 要求台账记录「Go 节点地址」,但全仓**无任何一处**汇总「哪个 Stage 的晋级 Go 落在哪条 entry」
+  (grep「Go 节点」只命中 DoD 行本身)。台账有 11 条 `go-decision`,但它们是**决策内容**,不是**地址索引**。
+- **修法**:§12 新增 9 行登记表,逐 Stage 给出「节点 / 日期 / 落地 Entry / 结论 / 证据锚点」;
+  ⚠️ **终态 DoD Go 显式标 `⏳ 未发生`** —— §6.2 B4 / B7 未收口 ⇒ 不得以「Stage 完成」冒充「DoD 达成」。
+
+**③ 本轮实测发现的 5 处真源漂移(D1~D5)—— D2/D3/D4 登记为待办,不在本条修**
+
+| # | 漂移 | 实测证据 | 状态 |
+|---|---|---|---|
+| D1 | §4.0 #12/#13 状态列滞后 | `obj:188` / `:189` 状态 `🟡` ∧ 正文「两段式全部完成」 | ✅ **本条已修** |
+| D2 | `tools/recommend.py` / `aggregate.py` / `plot.py` **不存在**,而 `ADR-CEP-06 §4.1/§4.2` 明列为组件 | `ls tools/` = 仅 `ab_compare` / `render_report` / `run_sweep` | ⏭ **Phase 1 步 1.1**(⚠️ 触及 `ADR-CEP-06` 契约面) |
+| D3 | `experimental/` **零实跑产物**(仅 `.gitkeep` + `metrics.schema.json`) | `ls experimental/` | ⏭ **Phase 1 步 1.2~1.4** |
+| D4 | **仅 H7 有实验结论**;H2/H3/H4/H6/H8 无结论,H1/H5 有契约级证据但未登记 | `docs/validation/` 6 份 H7;H2/H3/H4/H6/H8 grep 零命中 | ⏭ **Phase 1**(用户裁决:**先做 H2/H3/H6**) |
+| D5 | DoD #11「Go 节点地址」无记录 | grep「Go 节点」仅 `:67` | ✅ **本条已修** |
+
+> **判据链**:D3 + D4 是 §8.2 **Kill 判据**所指向的对象(「4 件套实验输出**无法产出**可比较数据 ⇒ 终止 CEP」)。
+> 现状定性 = 「**尚未产出**」而非「**无法产出**」⇒ Kill **未触发**;Phase 1 的实质 = **同时证明 Kill 判据不成立**。
+
+**④ 用户裁决(2026-11-04)与后续计划**
+
+| 序 | 内容 | 归属 |
+|---|---|---|
+| Phase 0 | D1 + D5 治理收口(本条) | ✅ **已完成** |
+| Phase 1 | **先做 H2**(3 策略延迟差异 > 20%)· **H3**(1000+ 事务 0 违例)· **H6**(VC 隔离 0 死锁)⇒ 再 H1/H4/H5/H8 结论登记 | ⏭ 待启动 |
+| Phase 2 | 债务清理(C 层 9 项:**修 / 立项 / 接受残余风险** 三分类) | ⏭ 待裁决 |
+| Phase 3 | 逐协议**端到端测试覆盖**梳理(6 协议族 × E2E 路径) | ⏭ 待启动 |
+| Phase 4 | UALink Evaluation Copy 外部解锁(`N-1`~`N-9`) | ⛔ **外部阻塞** |
+
+**⑤ 验收(本次)**:`cep_docs_sync_check --strict` / `cep_doc_ref_check --strict` / `docs_sync_check --strict` rc=0 ·
+`cep_freeze_check` rc=0(**0 冻结件改动**)· `format.sh --check` rc=0。
+
+**⑥ 关联**: Entry #207(队列 #14 实现层归档)· #210(critic 第 2 轮)· #193(Stage 3 启动 Go)· #190(Stage 2 完成 Go)
 
 ---
 
