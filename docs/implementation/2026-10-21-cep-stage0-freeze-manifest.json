@@ -1,5 +1,5 @@
 {
-  "artifact_count": 40,
+  "artifact_count": 41,
   "artifacts": {
     "docs/adr/ADR-CEP-00-platform-charter-and-governance.md": "b10df24a203fab8942eb8bd85b403020df903309113281c13926609f9cdd025f",
     "docs/adr/ADR-CEP-00A-real-source-anchor-map.md": "4f27a67ba7982f3d9466df36c85258f1822c89b825d8ab733fb4e5de74221f48",
@@ -25,6 +25,7 @@
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "14e9d516620834b0c1ae8318047236adbc0d2a7ce084fb3e6eefcd9102858c32",
     "docs/architecture/07-coherence-exploration-platform.md": "b7c1200f9e6c1f60eed18b737e3f2c573000d8bf029ebbefa3d27fc508b5547e",
     "experimental/metrics.schema.json": "be6aa118ca85010ac7d701fabcb74fffbbc3318a8c6a924a07a5f31f455a3d54",
+    "experimental/preregistration.json": "385a46e91f0e9d5b71d8d45b2d8c350740c7e8813e497ebff2ba2861867a2258",
     "include/tlm/cep/fabric.json": "296b8981c3a09e912ba6436f12dde9895935bec703ec046cd3e0e71040a7b364",
     "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
     "include/tlm/cep/protocol_instance.schema.json": "45f44277a4b2c03384bf91302d35df9ea51acdeaf9d139225e408a0c0191a9b9",
@@ -44,7 +45,7 @@
   },
   "authorized_by": "Entry #218",
   "frozen_at": "2026-11-05",
-  "frozen_at_commit": "9b4a3a0573f4b8cff358d70abdd6ea141c8bba83",
+  "frozen_at_commit": "70341406a2405dc93cc8b7d05e155ed2b8e847fd",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
@@ -57,6 +58,7 @@
     "openspec/specs/cep-collective-plane-base/spec.md",
     "openspec/specs/cep-collective-plane-contract/spec.md",
     "experimental/metrics.schema.json",
+    "experimental/preregistration.json",
     "tools/render_report.py",
     "tools/run_sweep.py",
     "tools/ab_compare.py",
