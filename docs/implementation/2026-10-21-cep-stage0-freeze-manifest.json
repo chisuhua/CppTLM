@@ -27,7 +27,7 @@
     "experimental/metrics.schema.json": "be6aa118ca85010ac7d701fabcb74fffbbc3318a8c6a924a07a5f31f455a3d54",
     "include/tlm/cep/fabric.json": "296b8981c3a09e912ba6436f12dde9895935bec703ec046cd3e0e71040a7b364",
     "include/tlm/cep/fabric.schema.json": "226c79f5bf8de3480607f973a2375b28875b2886ea4395e5ed641119779a6316",
-    "include/tlm/cep/protocol_instance.schema.json": "3d3bcf3c30cf1849f3c7bc993680f9d8edae452089cbfe6eb0bc305854ce5c4c",
+    "include/tlm/cep/protocol_instance.schema.json": "45f44277a4b2c03384bf91302d35df9ea51acdeaf9d139225e408a0c0191a9b9",
     "openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/specs/cep-core-contracts/spec.md": "da03d46603e6a54807cbf2d1ff3f043b59214e6512e264fd65af5e5f44e35c18",
     "openspec/specs/cep-channel-dependency-gate/spec.md": "c2bc8b77ae40addf06ba6de8e78cf797b12804022a674aac72b167c13090c2c8",
     "openspec/specs/cep-collective-plane-base/spec.md": "e5c1864fe98b98faafc7d9d3296c4d80fe187d3b8d4bb3680af8c026663578f7",
@@ -42,9 +42,9 @@
     "tools/render_report.py": "1368402696a3aa5753ebd073a9bcab444fcd092d1334b9a7b7e37a28e026967e",
     "tools/run_sweep.py": "f16e33d3834cd2e24422537de9be82aa3b64c2e660d8bd792f4d0f82d00e3297"
   },
-  "authorized_by": "Entry #215",
+  "authorized_by": "Entry #216",
   "frozen_at": "2026-11-04",
-  "frozen_at_commit": "115c4db88f0a1424645ac442123e09f1fb2128fa",
+  "frozen_at_commit": "353ebef0b9ed0e58b822930464ef077887608e9e",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
