@@ -12086,6 +12086,53 @@ Acceptance(10 条)/ Capabilities / Impact)+ YAML frontmatter(`phase: phase-10` �
 
 ---
 
+### Entry #198 — 2026-11-04 [build](队列 #14 **规约层** Phase 1 —— **critic 第 2 轮** 的 1 个新 BLOCKER + 4 SHOULD_FIX + 4 NITS 修复)
+
+**主题**:队列 #14 规约层 change `cpptlm-cep-ualink-inc-state-spec` 的 **critic 第 2 轮**处置。**角色**:builder。
+
+**① critic 第 2 轮结论**:`mergeable: no` · `scope_exceeded: false` · **上一轮的 B1 / B2 均判「已闭合」** ✅
+⇒ 但**本轮新引入 1 个 BLOCKER** + 4 SHOULD_FIX + 4 NITS ⇒ 全部已按精确改点修完(下表)。
+⚠️ **评审预算**:本 change 已用 **2/2** 轮 ⇒ 第 3 轮**须用户明确批准**(per 评审预算规则)。
+
+**② 新 BLOCKER(本轮引入)—— 归因 id 登记 11 个 ↔ 反向 fixture 只有 9 组**
+
+第 1 轮把 §5 登记处扩到 **11** 行(新增 `UIS-10` / `UIS-11`)⇒ 但 §4 的 fixture 清单仍是 **9** 组
+⇒ task 2.4「每个本层新建 id ≥ 1 条 fixture」与 proposal 的同款判据**不可达**
+⇒ Phase 2 门禁不可达 + delta spec 的 `UIS-10` / `UIS-11` 两条 Scenario 各自带「反向 fixture」
+条款却**无对应 F 组** ⇒ spec delta 与 design §4 **互斥**。
+
+⇒ **修法**:① §4 增 **F-10**(毒化某格 `ref` 冒充 ⇒ 归因 `UIS-10`)与 **F-11**(翻转
+`kDagRerunIsCertificate` ⇒ 归因 `UIS-11`)② 全部「9 组」→「**11 组**」(design ×3 · proposal ×2 ·
+spec ×1 · tasks ×2)③ §4 表**增「§5 登记行」列** ⇒ **机器可核对**(每组恰 1 行登记 ⇔ 每行恰 1 组 fixture)
+⇒ task 2.4 SHALL 断言该 **1:1** ⇒ **消除此类漂移的复发面**。
+
+**③ 四个 SHOULD_FIX**
+
+| # | finding | 处置 |
+|---|---|---|
+| S1 | §4 把「红形态 = 编译期红」**统一泛化**到 9 组,但 **F-7 的锚点**(给集合平面加独立映射)与 **F-2**(自带算子枚举)指向**平台面 / 载体中不存在的概念** ⇒ 影子副本**编译仍绿** ⇒ 该组会被判成「无鉴别力」 | **核实后发现 11 组都有载体翻转点** ⇒ 把锚点改写为**可定位到具体符号**:F-2 = 翻转 `kOperatorFamilyDefinedInCarrier` · F-3 = 翻转 `partial_failure_must_be_explicit` **函数体** · F-7 = 翻转 `vc_inheritance_is_well_defined` **函数体** ⇒ **11 组统一编译期红**;另补「每组锚点 SHALL 指向载体中确实存在的翻转点」+ 驱动**双分支**(编译红 or 探针红,照队列 #13 先例) |
+| S2 | `kind ↔ ref-class` 的**规则**与**结论**不一致:规则允许 `pending` 格附加 `C-` token(载体自己的 INC 原语格就是 `Pending` + `"C-6 N-1"`),而 design / 载体头注释断言「`pending` 却引 `C-` ⇒ 全部判否」⇒ **比实现强** ⇒ Phase 2 照该结论写 fixture 会**假绿**;且「未知类 ⇒ 一律判否」在 Pending 分支**未实现** | **收紧实现**使文案与实现一致:Pending 分支追加「其余 token **只允许** `C-` 类 ⇒ **未知类判否**」;文案改写为「`pending` 却**纯**引 `C-`(无 `N-`)⇒ 判否;`C-` token 允许作为**附加**依据」 |
+| S3 | 载体头注释仍写「**10 个义务格**」与 `kObligationCount = 11` 矛盾;「pending 白名单**不增不减**(逐项相等)」与「恰 9 移交 X-2、载体不硬编数量」并存 ⇒ 载体自身**两种说法** | 三处头注释 + `Uis10` 枚举注释**全部**对齐(义务格 10 → 11;pending 白名单改为「逐项相等归 X-2 元测试 + 人工审计面,载体只保证自洽型」) |
+| S4 | §5 **基数规则未写明**:`UIS-11` 给了**两个**系统 id,且 `CP-03-VC-CERTIFICATE` 同时挂 `UIS-07` 与 `UIS-11` ⇒ 与「同一义务不得有两个 id」**字面冲突** | §5 增**基数规则**:**层键 → 系统 id 允许 1:N**;「同一义务不得有两个 id」约束的是**同一义务**,不禁止**一个义务格**登记多条系统 id ⇒ 并注明 `UIS-11` 的两个 id 分别对应证书 **C-1′ / C-2**(`CP-03-VC-CERTIFICATE`,per `ADR-CEP-01` SU#4 E.3.1 的 `detail` 前缀)与 **IC1**(`CP-09-IC1`) |
+
+**④ 四个 NITS**:F-4~F-9 的编译日志**同时**含该格 id 与 `UIS-10:` ⇒ 归因判定为 **presence**(非「唯一」),
+已写入 design §4 · `Uis10` 枚举注释过期(已修)· 测试注释「5 格 pending + 5 格 self-derived」→ **5 + 6** ·
+`classify_ref_token` 收紧(前缀**后须有编号** ⇒ `C-` / `N-` 判为未知类,不再误认作已签锚点)。
+
+**⑤ 本地实测(不入库;入库件属 Phase 2)—— 影子副本 + 编译期归因,**16/16 全绿**(上轮 13/13)
+
+新增 3 例:混合 `C-`+`N-`(合法)⇒ **绿** · 未知类 token(`N-3 X-9`)⇒ **红** + 归因 `UIS-10:` ·
+无编号 token(`N-`)⇒ **红** + 归因 `UIS-10:`。
+
+**⑥ 验收(实测)**:载体独立编译通过 · **37 条** `static_assert`(11 个归因 id 全覆盖)·
+`[cep][ualink-inc]` **4 cases / 96 assertions** · `ctest` **146/146** · `cpptlm_tests` **2125 cases** ·
+门禁 **6/6** + `cep_gate_selftest` **34/34** · `format.sh --check` rc=0 · `openspec validate --strict` rc=0。
+
+**⑦ 关联**: Entry #197(critic 第 1 轮修复)· #196(Phase 1 首版)· #195(change 建档 + Task 0)·
+#193(三则 ADR SU + 冻结面授权)· `ADR-CEP-01` 附录「悬空判据禁令」· 队列 #13 同型先例(本轮多处对齐)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

@@ -230,8 +230,15 @@ TEST_CASE("UIS-10: 逐格 basis 的 kind 与 ref 类别自洽 —— 三种冒�
     REQUIRE_FALSE(basis_kind_matches_ref_class(BasisKind::SelfDerived, "N-3"));
     //    ② `Pending` 却引公开来源(拿公开来源冒充 pending 的理由)
     REQUIRE_FALSE(basis_kind_matches_ref_class(BasisKind::Pending, "A-1"));
-    //    ③ `Pending` 却引仓内锚点(拿已定稿冒充待定)
+    //    ③ `Pending` 却**纯**引仓内锚点(无 `N-` ⇒ 拿已定稿冒充待定)
     REQUIRE_FALSE(basis_kind_matches_ref_class(BasisKind::Pending, "C-9"));
+    //    ④ `Pending` 格含**未知类** token ⇒ 判否(收紧后的实现)
+    REQUIRE_FALSE(basis_kind_matches_ref_class(BasisKind::Pending, "N-3 X-9"));
+    //    ⑤ 正控:`Pending` 格**附加** `C-` token(名字来源)仍合法
+    REQUIRE(basis_kind_matches_ref_class(BasisKind::Pending, "C-6 N-1"));
+    //    ⑥ 无编号 token(`C-`)⇒ 未知类 ⇒ 判否(不误认作已签锚点)
+    REQUIRE(classify_ref_token("C-") == RefClass::Unknown);
+    REQUIRE(classify_ref_token("N-") == RefClass::Unknown);
     //    正控:合规组合必须判真
     REQUIRE(basis_kind_matches_ref_class(BasisKind::SelfDerived, "C-1"));
     REQUIRE(basis_kind_matches_ref_class(BasisKind::Pending, "N-3"));

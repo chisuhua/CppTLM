@@ -111,9 +111,11 @@ CEP SHALL 为 **UALink INC** 提供一份**可执行规约层契约**:四原语�
       ⇒ 载体**只**保证**自洽型**(表大小 == `kPendingCount` · id 唯一且落在 `N1`~`N9` · id ↔ ref 一一对应)
       ⇒ ⛔ **不**要求「id == 数组下标」⇒ **可逆性**:语义转正时审计键 id **保持稳定**
 - **AND** 每格 `basis` 的 `kind` SHALL 与其 `ref` 的**类别**自洽
-      (`self-derived` ⇒ **全部** token 为 `C-` 类;`pending` ⇒ **至少一个** `N-` 类 token 且**不得**含 `A-` 类)
-- **AND** **反向 fixture**:删任一格 `ref` / 多报一项 pending / 把 pending 改成 self-derived
-      / 把 `self-derived` 的 `ref` 冒充成 `N-n` 或 `A-n` ⇒ 判据 SHALL 必红
+      (`self-derived` ⇒ **全部** token 为 `C-` 类;`pending` ⇒ **至少一个** `N-` 类 token ·
+      **不得**含 `A-` 类 · 其余 token **只允许** `C-` 类 ⇒ **未知类 token 判否**)
+- **AND** **反向 fixture**(`F-10`):删任一格 `ref` / 多报一项 pending / 把 pending 改成 self-derived
+      / 把 `self-derived` 的 `ref` 冒充成 `N-n` 或 `A-n` / 把某格 `ref` **纯**冒充成 `C-n`
+      ⇒ 判据 SHALL 必红(归因 `UIS-10`)
 
 #### Scenario: UIS-11 —— 四条证书的**规约面** SHALL 齐备,且 ⛔ **不得**以「重跑 DAG」为判据
 
@@ -123,12 +125,13 @@ CEP SHALL 为 **UALink INC** 提供一份**可执行规约层契约**:四原语�
   **不被 VC 级依赖图表达**)SHALL 登记为**未检验**
 - **AND** ⛔ **不得**把「把集合平面喂进 `evaluate_channel_dependency_gate` 重跑」当作证书判据
   (实测**恒真**:边按 network 声明 ⇒ 任一实例的图 = 声明边表的**诱导子图** ⇒ DAG 的子图仍无环)
-- **AND** **反向 fixture**:把证书规约面改成「重跑 DAG 即可」⇒ 判据 SHALL 必红
+- **AND** **反向 fixture**(`F-11`):影子副本翻转 `kDagRerunIsCertificate`(把证书规约面改成
+      「重跑 DAG 即可」)⇒ 判据 SHALL 必红(归因 `UIS-11`,**编译期红**:文案以 `UIS-11: ` 开头)
 
 ---
 
 > **锚点**:`include/tlm/cep/ualink_inc_state_spec.hh` 的编译期断言 + `test/test_cep_ualink_inc_state_spec.cc`
-> 的运行期兜底判据 + **9 组反向 fixture**(影子毒化 ⇒ 必红 + 归因 id **精确相等**)+ `scripts/test/` 的探针
+> 的运行期兜底判据 + **11 组反向 fixture**(影子毒化 ⇒ 必红 + 归因 id **命中**)+ `scripts/test/` 的探针
 > + `test/CMakeLists.txt` 的 `ctest` 注册。
 >
 > ⚠️ **归因 id 的唯一登记处 = 本 change 的 `design §5`**;本 spec 只引用,不重复登记。

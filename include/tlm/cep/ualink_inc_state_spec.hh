@@ -46,9 +46,12 @@
 //    ⇒ `ref` 的 token 按**前缀**分类:`C-` = 仓内已签锚点 · `N-` = pending 白名单
 //      · `A-` = 公开来源(其余 = 未知类)。
 //    ⇒ `SelfDerived` ⇒ **全部** token 必须是 `C-` 类;
-//      `Pending` ⇒ **至少一个** `N-` 类 token 且**不得**含 `A-` 类 token。
-//    ⇒ 三种冒充**全部**被堵:`SelfDerived` 却引 `N-` / `Pending` 却引 `A-` /
-//      `Pending` 却引 `C-`(拿仓内锚点冒充 pending 的理由)。
+//      `Pending` ⇒ **至少一个** `N-` 类 token · **不得**含 `A-` 类 token ·
+//                   其余 token **只允许** `C-` 类(名字来源的**附加**依据)⇒ **未知类判否**。
+//    ⇒ 三种冒充**全部**被堵:`SelfDerived` 却引 `N-` / `Pending` 却**纯**引 `C-`
+//      (无 `N-` token ⇒ 拿已定稿冒充待定)/ `Pending` 却引 `A-`。
+//    ⇒ ⚠️ `C-` token 在 `Pending` 分支**允许**(INC 原语格 = 名字 `C-6` + 语义 `N-1`)
+//      ⇒ ⛔ **不得**把结论写成「`Pending` 却引 `C-` ⇒ 判否」(那**强于**实现 ⇒ Phase 2 会假绿)。
 //    ⇒ ⚠️ **相对队列 #13 两轴模型的简化**:本载体用「单 `kind` + token 级类别」表达
 //      INC 原语格的**混合**证据(名字自持 `C-6` + 语义 pending `N-1`)⇒
 //      **鉴别力不低于**两轴(三种冒充均红);若 Phase 2 需表达第三类证据来源 ⇒ 升级为两轴。
@@ -57,15 +60,16 @@
 //    ⇒ 语义由「槽位语义继承」与「控制面互斥」承担(per ADR-CEP-01 SU#4 的 E.4)。
 //
 // ── 逐格 `basis` 的口径(per 本 change design §2.3)──────────────────────────
-// · **格 = 10 个义务格**(`UIS-01` ~ `UIS-10`)+ **4 个 INC 原语格**。
+// · **格 = 11 个义务格**(`UIS-01` ~ `UIS-11`)+ **4 个 INC 原语格**。
 // · **`kind`** = 证据强度:`SelfDerived`(引**仓内已签**锚点 `C-n`)/ `Pending`(引 `N-n`)。
 //   ⛔ `kind == SelfDerived` 的格 SHALL **不**以公开来源(`A-n`)为依据 ——
 //   公开来源**撑不住**细粒度语义(锚点摘要 §2 的边界声明)⇒ 冒充即为纸面契约。
 // · **`ref`** = 锚点摘要的**条目 id**(空格分隔的多个 token)⇒ **每格必有 ref**。
 // · **`pending` 白名单** = 载体可逐项报出的 **9** 条(`N-1` ~ `N-9`)
-//   ⇒ **不增不减**(与锚点摘要 §3 **逐项相等**)
-//   ⇒ ⚠️ **「恰 9 项」由 X-2 元测试 + 人工审计面承担**(Phase 2 · 可执行),
-//     **载体不硬编数量** ⇒ 语义转正时**审计键 id 保持稳定**(可逆性)。
+//   ⇒ ⚠️ **「恰 9 项 + 与锚点摘要 §3 逐项相等」由 X-2 元测试 + 人工审计面承担**
+//     (Phase 2 · **可执行**:读锚点摘要解析 `N-n` 集合)
+//   ⇒ **载体只保证自洽型**(表大小 == `kPendingCount` · id 唯一且落在 `N1`~`N9` · id ↔ ref 一一对应)
+//   ⇒ **载体不硬编数量** ⇒ 语义转正时**审计键 id 保持稳定**(可逆性)。
 //
 // ── ⚠️ 载体自建的**教训**(per 队列 #14 Phase 1 自查,已固化)────────────────
 // 禁项清单里的**短 token** 会被**载体自身的标识符**命中 —— 本轮首跑即命中
@@ -164,7 +168,7 @@ namespace tlm {
                 Uis07 = 6, ///< 集合 VC 继承 + 不一致即禁用 M-2
                 Uis08 = 7, ///< `ualink_4` 的 `flow_support`(**pending**)
                 Uis09 = 8, ///< `ualink_4` 的 `perm` 子集(**pending**)
-                Uis10 = 9, ///< basis 完整 + pending 白名单逐项相等(元判据)
+                Uis10 = 9, ///< basis 完整 + pending 自洽(「逐项相等」归 X-2 元测试)
                 Uis11 = 10, ///< 四条证书的规约面(⛔ 不得以「重跑 DAG」为判据)
             };
 
@@ -182,7 +186,7 @@ namespace tlm {
                 BasisKind kind;
             };
 
-            /// 10 个义务格的 basis
+            /// 11 个义务格的 basis
             inline constexpr std::array<BasisCell, kObligationCount> kBasisObligations{{
                 {Obligation::Uis01, "C-2 C-3", BasisKind::SelfDerived},
                 {Obligation::Uis02, "C-1 C-3", BasisKind::SelfDerived},
@@ -327,11 +331,15 @@ namespace tlm {
             };
 
             constexpr RefClass classify_ref_token(std::string_view token) noexcept {
-                if (token.size() >= 2 && token[0] == 'C' && token[1] == '-')
+                // ⚠️ 前缀**后须有编号** —— 否则无编号 token(如 `C-`)会被误认作已签锚点
+                if (token.size() >= 3 && token[0] == 'C' && token[1] == '-' &&
+                    token[2] >= '0' && token[2] <= '9')
                     return RefClass::Contract;
-                if (token.size() >= 2 && token[0] == 'N' && token[1] == '-')
+                if (token.size() >= 3 && token[0] == 'N' && token[1] == '-' &&
+                    token[2] >= '0' && token[2] <= '9')
                     return RefClass::PendingRef;
-                if (token.size() >= 2 && token[0] == 'A' && token[1] == '-')
+                if (token.size() >= 3 && token[0] == 'A' && token[1] == '-' &&
+                    token[2] >= '0' && token[2] <= '9')
                     return RefClass::PublicSource;
                 return RefClass::Unknown;
             }
@@ -381,8 +389,11 @@ namespace tlm {
                                                         std::string_view ref) noexcept {
                 if (kind == BasisKind::SelfDerived)
                     return ref_only_class(ref, RefClass::Contract);
+                // `Pending`:至少一个 `N-`(语义待定的依据)· 不得含 `A-`(公开来源不得冒充)
+                //           · 其余 token **只允许** `C-`(名字来源的附加依据)⇒ 未知类判否
                 return ref_contains_class(ref, RefClass::PendingRef) &&
-                       !ref_contains_class(ref, RefClass::PublicSource);
+                       !ref_contains_class(ref, RefClass::PublicSource) &&
+                       !ref_contains_class(ref, RefClass::Unknown);
             }
 
             /// `SelfDerived` 的格**不得**以公开来源(`A-` 类 token)为依据
