@@ -131,7 +131,7 @@
 > （`CP-03-VC-CERTIFICATE/C-1′` · `CP-09-IC1` · `CP-03-VC-CERTIFICATE/C-3` · `CP-03-VC-CERTIFICATE/C-4`）
 > ⇒ 归因匹配 = `PROBE:FAIL <id> `（**完整前缀精确相等**）—— ⛔ 裸子串会让 `CP-03` 命中 `CP-03-VC-PRECONDITION`
 > ⇒ ⚠️ **C-3 的两级**归因**分别**:声明级 ⇒ `[CP-03-VC-CERTIFICATE/C-3]`;运行级 ⇒ `UIA-04`
->   (⛔ **不共用**一个 id —— 声明级是**证书判定**、运行级是**行为义务`;per `ADR-CEP-01` SU#5 ②)
+>   (⛔ **不共用**一个 id —— 声明级是**证书判定**、运行级是**行为义务**;per `ADR-CEP-01` SU#5 ②)
 > ⇒ 驱动**双分支**:编译红 ⇒ 匹配编译日志;编译绿 ⇒ 跑探针 ⇒ 匹配 `PROBE:FAIL <id> `
 > ⇒ ⚠️ **F-11 毒化的是「登记提供方」**(`default_untested_registry`)而非规约载体的**数据** ——
 >   后者带自己的 `static_assert`(归因 `UIS-11`)⇒ 毒化它会变成**编译期红**且归因落到**规约层** id

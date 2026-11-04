@@ -769,6 +769,8 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P1 | **`cpptlm-cep-canonical-flow-parser-scope`**(CP-02 解析器范围限定) | ✅ **已完成归档**(2026-11-02,per 台账 **Entry #149** / **#150** / **#152**)—— delta capability `cep-canonical-flow-parser-scope` 已合并进 `openspec/specs/cep-canonical-flow-parser-scope/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;KPI **1/3 → 0/3**—— **1 slot**;**目标** = 把 `parse_canonical_flow_names` 的解析范围限定到 `ADR-CEP-02` 的 `## 2.` 段 ⇒ 权威 ADR 的**合法追加**(SU / 附录 / 其它章节表格)**不再**让 CP-02 判据假红;**判据形态** = 「毒化 ⇒ **仍绿**」(回归防护,与既有 `*_reverse_verify.sh` 的鉴别力形态**相反**,已显式登记);⚠️ **不属** §4.0 的 14 个主线队列 ⇒ **不触及** `ADR-CEP-00 §2 Decision 3` 的治理口径 |
 | P2 | **vc3 内 `E` 不被 `D` 饿死**(`ADR-CEP-09` SU ④ 登记的第 4 条降维代价) | ⚠️ **登记态 · 未建模**(per **Entry #143** ⑥ item 6 —— 多 VC 仲裁本身属 **Stage 4+**(`ADR-CEP-09`,per §8.1 R4));⚠️ **2026-11-02 补登记**(per 台账 Entry #148):全仓检索「饿死 / starv」**0 命中** ⇒ **既无仲裁器补偿、也无「未建模」标注** ⇒ 本条把**「未建模」**这一事实**显式落盘**;**解除条件** = 多 VC 仲裁落地(`ADR-CEP-09`)时由仲裁器补偿,或届时补等价判据;⚠️ **不得**表述为「已解决」 |
 
+| P2 | **`V6-c` 的「绑定**未注册** plane 名 ⇒ 必红」分支现无反向 fixture 触达** | ⚠️ **登记态 · 未排期**(2026-11-04 登记,per 台账 **Entry #210** —— critic 第 2 轮 R3,`scope_exceeded`)—— 队列 #14 把 `FabricCollectivePlane` 登记进 plane 注册表后,队列 #13 的 `F-9` 从「绑定**未注册**名」**漂移**为「绑定**非本地模型**名」⇒ `evaluate_vc_precondition` 的 `find_collective_plane() == nullptr` 分支(`collective_plane_contract.hh`)失去 fixture 覆盖,而 `openspec/specs/cep-nvlink-sharp/spec.md` 仍写「绑定未注册 plane 名 ⇒ 必红」⇒ **该 Requirement 的反向义务无载体**。补法 = 在该 spec 的 delta 或本仓新增一条 fixture(绑定一个**未登记**的 plane 名) |
+| P2 | **队列 #13 的两处措辞/命名漂移 + C-1′ 结构面判据的**可达性**观察** | ⚠️ **登记态 · 不排期**(2026-11-04 登记,per 台账 **Entry #210** —— critic 第 2 轮 R6 / R7)——— ① `openspec/specs/cep-nvlink-sharp/spec.md` 的 NVA-08「正控:**当前绑定** ⇒ PASS」在 M-2 下实测为 **SKIP**,措辞应限定「M-1 变体下」② fixture id 命名已漂移(`f-04-c3-check-removed` 现覆盖**运行级**;`f-09-v6c-unregistered` 现已非「未注册」)③ `evaluate_shared_mode_certificate` 的 C-1′ **结构面**判据位于 `certificate_scope` 循环内 ⇒ `scope` 为空时不可达(当前 `E.9` 判据不依赖该组合) |
 ---
 
 ## §11 决策台账(append-only,per `rdd-planner/SKILL.md:158`)
@@ -12617,6 +12619,50 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 
 **⑥ 关联**: Entry #207(实现层归档)· #206(冻结面授权记录)· #205(Phase 1~3)· #204(建档 + 范围收窄)·
 #193(SU#4 授权记录)· `ADR-CEP-01` SU#4(E.3.1 / E.4 / E.6 / E.9)
+
+---
+
+### Entry #210 — 2026-11-04 [archive](队列 #14 **实现层** critic **第 2 轮 = 闭环验证**:2 BLOCKER 均闭合;残留 4 项本轮修 / 3 项登记 backlog)
+
+**主题**:队列 #14 实现层 change `cpptlm-cep-ualink-inc` 的 critic **第 2 轮(闭环验证)**的结论与残留处置,
+并**据此**给出冻结面**授权记录**(2 份)。
+**角色**:builder。**语义**:第 1 轮已判 **REJECT**(2 BLOCKER)⇒ 本轮**只**判「BLOCKER 是否闭合 + 新 diff 是否引入新 BLOCKER」(评审预算 **2 轮**,⛔ 不全量重审)。
+
+**① 第 2 轮结论**
+
+| 项 | 结论 |
+|---|---|
+| **B1**(三份冻结 spec 对同一 fixture 的归因 id 互相矛盾) | ✅ **已闭合** —— 三方 + ADR SU#5 + fixture 全部同口径「**分别**归因」;「同归因」在 C-3 语境**零残留** |
+| **B2**(C-1′ 结构面恒假 + 漏 `E.9` 的反 fixture) | ✅ **已闭合** —— 结构面改为**声明源块**判定(loader + 首判 FAIL);`f-08b` 落地;C-1′ 现有 2 条 fixture |
+| **本轮 diff 的新 BLOCKER** | **无**(逐面核对:轮次键含 `gid` / 注入式签名 / 整数边界 / `UIA-04` 为既有 id) |
+| **总判定** | **APPROVE_WITH_CONDITIONS** · `mergeable: yes` · `scope_exceeded: true` |
+
+**② 残留处置(8 项 —— 4 修 / 3 登记 backlog / 1 项属预存不清理)**
+
+| # | 残留 | 处置 |
+|---|---|---|
+| R1 | contract spec 的 V6-d Scenario 仍写「C-1′ / C-2 / C-3 / C-4 **各一条**」+「**4 条**反向 fixture」⇒ 与同文档 C-1′(2 条)/ C-3(两级各 1 条)**计数矛盾** | ✅ **本轮修**(改「每条至少一条」+ 列出 C-1′ 2 · C-2 1 · C-3 2 · C-4 1 = **6 条**)—— ⚠️ 属**本轮自己引入**的计数残留,不留给 backlog |
+| R2 | `scripts/README.md` 的反引号未闭合(`` `行为义务`;per … ``)⇒ markdown 破损 | ✅ **本轮修** |
+| R3 | 队列 #13 的 `F-9` 注释写「未注册名由本仓**另一条 fixture** 覆盖」= **不实** | ✅ **本轮修**(注释改为**实测事实**:V6-c 的 `find_collective_plane() == nullptr` 分支现**无** fixture 触达) |
+| R4 | `ADR-CEP-01` SU#5 ③ 写「该条**打勾**」,而 E.9 的 `- [ ]` **不可改**(ADR 不可变) | ✅ **本轮修**(改「**本条即该勾选项的落地记录**;E.9 的 `- [ ]` 不改,勾选状态以本 SU 为准) |
+| R5 | **V6-c「绑定未注册 plane 名 ⇒ 必红」的反向义务现无 fixture 载体**(队列 #14 登记 `FabricCollectivePlane` 后 `F-9` 语义漂移) | ⏭ **backlog**(`scope_exceeded` —— 属队列 #13 的**继承性**覆盖缺口)⇒ §10 已登记 |
+| R6 | 队列 #13 的 `NVA-08`「正控:当前绑定 ⇒ PASS」在 M-2 下实为 **SKIP** ⇒ 措辞需限定「M-1 变体下」 | ⏭ **backlog**(`scope_exceeded`)⇒ §10 已登记 |
+| R7 | fixture id 命名漂移(`f-04` 现覆盖运行级 / `f-09` 现已非「未注册」)+ C-1′ 结构面判据仅在 `certificate_scope` 非空时可达 | ⏭ **backlog** ⇒ §10 已登记 |
+| R8 | `openspec validate cep-collective-plane-contract --type spec --strict` 的 **requirement[0] 超长 WARNING** | ⛔ **不清理**(预存:改前 518 字符 / 改后 517 字符,非本 change 引入;**范围外历史遗留只记录**) |
+
+**③ 冻结面授权记录(本轮的 2 份 —— `--update` 会**重算全部** hash)**
+
+| # | 冻结产物 | 本层改动 | 依据 |
+|---|---|---|---|
+| 1 | `openspec/specs/cep-collective-plane-contract/spec.md` | **V6-d** Scenario 的反向 fixture **计数**订正(「各一条 / 4 条」⇒「每条至少一条」+ 逐证书条数 6)⇒ 与同文档 C-1′(2)/ C-3(2)一致 | critic 第 2 轮 **R1** |
+| 2 | `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | SU#5 ③ 措辞订正(「该条打勾」⇒「**本条即该勾选项的落地记录**」)⇒ 正文 E.1~E.12 与 §1~§9 **逐字不改** | critic 第 2 轮 **R4** + ADR 不可变纪律 |
+| 3 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 **40** 件的 hash + provenance | 机制 M1 本身 |
+
+⇒ 非冻结面同期订正(登记以便复核):`scripts/README.md`(反引号)· `scripts/test/cep_nvlink_sharp_reverse_verify.sh`(注释改为实测事实)· §10 backlog 2 行。
+
+**④ 授权流程**:① 本条 Entry → ② commit 内容 → ③ `cep_freeze_check.sh --update --authorized-by "Entry #210"` ⇒ commit。
+
+**⑤ 关联**: Entry #209(第 1 轮修复 + 授权记录)· #207(实现层归档)· #206 / #193(前序授权记录)· critic 第 1 轮 = **REJECT** / 第 2 轮 = **APPROVE_WITH_CONDITIONS**(⚠️ 评审预算 **2 轮已用尽** ⇒ 后续不再委派,残留走 backlog)
 
 ---
 

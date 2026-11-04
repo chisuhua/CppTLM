@@ -69,7 +69,10 @@ FIXTURES=(
   "f-08-binding-mode:::NVA-07:::include/tlm/cep/collective_planes.json@@      \"mode\": \"nc_drop_cacheable\"@@      \"mode\": \"normal\""
 
   # F-9 —— 绑定一个**非本地模型**的 plane 名(`FabricCollectivePlane`,2026-11-04 起已登记)
-  #      ⇒ V6-c 前提约束红(⛔ 不是「未注册」⇒ 未注册名由本仓另一条 fixture 覆盖)
+  #      ⇒ V6-c 前提约束红(⛔ 不是「未注册」)
+  #      ⚠️ **登记缺口(2026-11-04,critic 第 2 轮 R3)**:V6-c 的 `find_collective_plane() == nullptr`
+  #      分支(「绑定**未注册**的 plane 名」)现**无**反向 fixture 触达 —— 本 fixture 在队列 #14 登记
+  #      `FabricCollectivePlane` 后语义已漂移为「非本地模型」⇒ 该缺口记入台账 backlog(⛔ 不在本轮补)
   "f-09-v6c-unregistered:::CP-03-VC-PRECONDITION:::include/tlm/cep/collective_planes.json@@    \"nvlink_4\": \"LocalCollectivePlane\"@@    \"nvlink_4\": \"FabricCollectivePlane\""
 )
 
