@@ -440,8 +440,8 @@ TEST_CASE("V6-d: M-2 共享模式证书全绿(C-1′/C-2/C-3/C-4)", "[cep][ualin
             "FabricCollectivePlane -> {\"ualink_fabric\":{\"request\":0}}");
         std::string d;
         REQUIRE(cep::evaluate_shared_mode_certificate(poisoned, snap,
-                                                      cep::default_untested_registry(), d) ==
-                cep::ContractVerdict::FAIL);
+                                                      cep::default_untested_registry(),
+                                                      d) == cep::ContractVerdict::FAIL);
         REQUIRE(d.rfind("[CP-03-VC-CERTIFICATE/C-1\u2032]", 0) == 0);
     }
     // ── C-2:`vc_count` 调大 ⇒ 覆盖不全 ⇒ 必红 ──
