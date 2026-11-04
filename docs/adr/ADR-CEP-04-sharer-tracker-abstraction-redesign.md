@@ -701,3 +701,120 @@ R11 是「**声明超前于实现**」(声明了 `SparseSnoopFilter` 却无行�
 · `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(§3.4 / §6 #3 —— **本段的一手复核依据**)
 · `07 号` §5.1.1 / §11(第 19 则 SU)· `openspec/specs/cep-sharer-tracker-base/spec.md` · `sharer_tracker.hh`
 
+## Status Update(2026-11-03, per 台账 Entry #193)—— 队列 #14 的 tracker 选型:**候选集 + 逐实例理由登记**(非派生规则)
+
+> **授权**:台账 `obj-cep-platform §11` **Entry #193** [adr-amendment] —— **冻结面授权记录**。
+> **形态**:**纯追加**(本 ADR 正文与前十则是 SU 一律不改;**§2 caps 表 · §13 ~ §14 第 6 种实现 · §15 落位裁决 全部保留**)。
+> **触发**:本 ADR §15 裁定 ② 明写「队列 #13 `nvlink-sharp` / #14 `ualink-inc` 的 tracker 选型 ❌ **暂不裁决**
+> —— 二者均未起手 ⇒ 现在指定 = 猜测」;队列 #13 的 `BroadcastNull` 由**用户裁决 2026-11-03** 逐例给定;
+> 队列 #14 已进入开工前置阶段 ⇒ **必须**先把「选型方法」定为**可审计的规则**,否则实现层落地即**越权猜测**。
+> **形态**: 本段**第 1 稿(「由 `flow_support` 派生」)经 critic 第 1 轮 REJECT 后重写** ⇒ 修订对照见 **⑤**。
+
+### ① 裁决:选型是**逐实例的显式声明 + 理由登记**,**不存在**可机械派生的全局规则
+
+**第 1 稿试图立「由 `flow_support` 派生」的规则,已被仓内数据反证**(见 ②)⇒ 本段改为:
+
+> **裁决**:每个协议实例的 `sharer_tracker.impl` 是**该实例的显式声明**,SHALL 随该实例的声明源一并登记
+> **选择理由**(可审计:指向该协议的**公开来源**对该协议是否需要 sharer-set 知识的结论)。
+> ⇒ **候选集**与**判别依据**如下;**判别依据是语义层的**(协议是否需要 sharer-set 知识),
+> **不**落在本仓的 `flow_support` 上(理由见 ②)。
+
+**候选集与判别依据**(**7 行** —— 与 schema 枚举一致;每个候选的「结论 + 理由」,⛔ 不得只列被选中的一项):
+
+**候选集 = schema 枚举的**全部 7 值**(`protocol_instance.schema.json` 的 `sharer_tracker.impl` `enum` 实测)——
+⛔ 不得少于它(少列 ⇒ 现役实例落表外 ⇒ 元测试恒红),⛔ 也不得**照抄它作判据**(照抄 ⇒「∈ 候选集」**恒真**,
+撞「⛔ 不得写恒真判据」铁律)⇒ 候选表只作**决策面**的说明,**判据**另取有鉴别力者(见 ④):
+
+| 候选 | 结论 | 理由 | 现役实例 |
+|---|---|---|---|
+| **`不参与`**(字面值) | ✅ **可选** | 判别依据:该协议的**权限由副本 / token 携带** ⇒ 协议**不需要** sharer-set 知识 ⇒ tracker 不参与(per 本 ADR `INV-CEP-04-IC7`) | `chi_rnf` / `cxl_2_0` |
+| **`BroadcastNull`** | ✅ **可选** | 判别依据:该协议**有** snoop 类流量但**没有**集中目录 ⇒ 只能由**恒广播兜底**承担(§2 caps 表:唯一「无目录」形态) | `nvlink_4` |
+| `FullMapDirectory` | ⚠️ **仅当**该协议**确有**集中全图目录语义 | §2 caps 表标为「CHI HN-F」载体 ⇒ 用在别的协议上 = **假声明** | (暂无) |
+| `SparseSnoopFilter` | ⚠️ **仅当**该协议**没有**精确目录、只能**保守多探** | §2 caps 表的「Sparse-SF」行:`completeness=CONSERVATIVE` ⇒ 适用「无精确 sharer-set 视图」的协议 | `moesi_gpu` |
+| `DcohSymmetric` | ⚠️ **仅当**该协议是**设备内的一致性代理**(可做**对称** snoop) | §2 caps 表的「DCOH」行:设备侧发起反向 snoop ⇒ 只适用 CXL 3.0 对称模式 | `cxl_3_0_symmetric` |
+| `HierarchicalDirectory` | ⚠️ **仅当**该协议**确有**多级目录聚合语义 | §13 的 `scope=SYSTEM` + 多级 `aggregation_at` ⇒ 用在无此结构的协议上 = **假声明** | `mesif` |
+| `TreeManager` | ⚠️ **仅当**该协议**确有**树形拓扑 | §2 caps 表的 `SUBTREE` / `TREE_PARENT` 假设**树形** ⇒ 交换式 fabric 上不成立 | `tilelink_c` |
+
+⚠️ **`不参与` 与 `BroadcastNull` 在 token 类语境下语义等价**(per `INV-CEP-04-IC7`:「实现上等价 `BroadcastNull` 或 tracker 不参与」)
+⇒ 它们**不是**互斥的分支,登记时**任一**均可,理由须写明依据的是哪一条。
+
+### ② ⚠️ 前提订正:三条**错账**(留档防止复用)
+
+| 错账 | 实测事实 | 出处 |
+|---|---|---|
+| 「选型可由 `flow_support` 机械派生」 | **被反证**:`protocol_instances.json` 的 **7 个实例全部** `flow_support.snoop == true` 且 `snoop_resp == true`,而 `sharer_tracker.impl` 分别为 `SparseSnoopFilter` / `HierarchicalDirectory` / `不参与` / `不参与` / `DcohSymmetric` / `TreeManager` / `BroadcastNull` ⇒ **6/7** 不满足任何「由该位派生」的规则 | `include/tlm/cep/protocol_instances.json`(逐条可查) |
+| 「`flow_support` 不承载 sharer-set 需求」 | ✅ **成立**:`flow_support` 是**能力矩阵**(canonical 10 流覆盖矩阵,per `ADR-CEP-12 §2` 决策 1),`snoop` 表达「协议**支持** snoop 流」,与「是否需要 sharer-set 知识」**无对应** | 同上 |
+| 「`HierarchicalDirectory` 无实例声明 ⇒ 可用队列 #14 闭合 R11 反向缺口」 | **错**:`mesif.sharer_tracker.impl = HierarchicalDirectory` ⇒ **有消费者**;零消费者的**反向缺口**是 `FullMapDirectory`(§15,Entry #139) | 同上 / 本 ADR §15 |
+
+⇒ 另订正一处**先例引用**:第 1 稿把 `chi_rnf` / `cxl_2_0` 当作「`snoop` / `snoop_resp` 皆 false」的先例 ⇒ **事实错误**
+(二者两字段皆 `true`)⇒ 它们实为「**有 snoop 却声明 `不参与`**」的实例 ⇒ **恰好**证明「`flow_support` 与选型无机械对应」。
+⇒ 同理,`不参与` **不在** §2 caps 表内,且 `chi_rnf` / `cxl_2_0` 的 caps 与 `BroadcastNull` 行**逐字段相同**
+(`NONE` / `EXACT` / `NONE` / `NONE`)⇒ **caps 无法区分二者** ⇒ 「caps 可用于校验选型」不成立。
+
+### ③ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **§2 caps 表 / §13 / §14 / §15** | **零改动** |
+| **新增实现** | **0**(五种候选都已有载体或已是字面值) |
+| **新增判据** | 2 条元测试:① **caps ↔ traits 逐字段相等**(有鉴别力,per ④);② **理由登记存在性**(`protocol_instances.json` 顶层 `sharer_tracker_rationales{}`,含可判定的来源标识)。⛔ **不**校验「与 `flow_support` 的派生一致性」(该关系**不存在**);⛔ **不**把「`impl` ∈ 候选集」当独立判据(恒真) |
+| **新增声明面** | `protocol_instances.json` **顶层** `sharer_tracker_rationales{}` 块(理由**进不了**实例对象 —— 实例级 `additionalProperties: false`);顶层不受实例 schema 约束,且 ⑥ 镜像闸只逐实例比 12 键 ⇒ **不触发**跨仓闸 |
+| **代价** | 真正局限:**选型所需信息不在本仓的机器可读声明面内** ⇒ 依赖**逐实例的人工理由登记**(可审计,但**不可机械派生**)⇒ 登记表须随声明源演进,否则新实例会**无理由**(元测试必红) |
+| **残余** | `ualink_4` 的实际取值**尚未裁决** —— 取决于 Task 0 普查确认「UALink INC 是否需要 sharer-set 知识」;⛔ **不得**由 architect 或 builder 预先钉死 |
+
+### ④ Verification(前瞻判据 · 可勾选)
+
+- [ ] **caps ↔ traits 一致性**(有鉴别力的主判据):每个实例的 `sharer_tracker.caps` SHALL 与
+      `include/tlm/cep/sharer_tracker.hh:217` `kTrackerTraits` 中**对应行**的 caps **逐字段相等**
+      ⇒ 反 fixture:改实例 caps 的一格 ⇒ 必红(per §13 V5 同类反 fixture 可复用)
+      ⇒ ⚠️ **`不参与` 无 traits 行**(`kTrackerTraits` **恰 6 行**,覆盖 **6** 个真实实现 —— 实测
+      `FullMapDirectory` / `SparseSnoopFilter` / `DcohSymmetric` / `TreeManager` / `BroadcastNull` /
+      `HierarchicalDirectory`)⇒ 其参照 =
+      **退化集** `NONE` / `EXACT` / `NONE` / `NONE`(实测 `chi_rnf` / `cxl_2_0` 的 caps 即此)
+      ⇒ 该退化集与 `BroadcastNull` 行**逐字段相同** —— 二者**语义等价**(per `INV-CEP-04-IC7`)
+      ⇒ 该判据**不**需要区分二者(只锁「caps 不得偏离其实现对应的行」)
+- [ ] **理由登记存在性**:`protocol_instances.json` **顶层** `sharer_tracker_rationales{}` 块 SHALL 为
+      **每个**已声明实例提供一条理由 ⇒ 理由文本 SHALL 含**可判定的来源标识**
+      (公开规范名 + 章节号 / DOI / 公开规范名,或**本 ADR 的既有裁决条目号**)
+      ⇒ 反 fixture:删除某实例的理由 ⇒ 必红
+- [ ] ⛔ **不存在**「`flow_support` ⇒ `sharer_tracker.impl` 派生一致性」断言(该关系**已被反证**)
+- [ ] ⛔ **不存在**「`impl` ∈ 候选集」作为**独立判据**(候选集 = schema 枚举 ⇒ 该合取项**恒真**)
+- [ ] 任何「用队列 #14 闭合某个 R11 缺口」的理由**不**出现在登记里(见 ② 第三行)
+
+**理由登记的载体(why 不是实例对象)**:`protocol_instance.schema.json` 的实例级与 `sharer_tracker` 级
+`additionalProperties` 均为 `false` ⇒ 理由**进不了实例对象** ⇒ 落 `protocol_instances.json` **顶层**
+`sharer_tracker_rationales{}` 块(顶层**不受**实例 schema 约束;`cep_decl_alignment_check.sh` ⑥ 只
+**逐实例**比 12 键 ⇒ 顶层新键**不触发** ArchForge 镜像闸)。
+
+**元测试的作用域**:**全部**已声明实例(含存量 7 个)⇒ 存量实例的理由由**本段给出**
+(见下表)⇒ 实现层只需落盘即可全绿;⛔ 不设「存量豁免」(豁免 ⇒ 该断言对存量**恒真**)。
+
+| 实例 | `impl` | 理由(来源标识) |
+|---|---|---|
+| `moesi_gpu` | `SparseSnoopFilter` | 无精确 sharer-set 视图 ⇒ 保守多探(本 ADR §2 caps 表「Sparse-SF」行) |
+| `mesif` | `HierarchicalDirectory` | 多级目录聚合(本 ADR §13 第 6 种实现) |
+| `chi_rnf` | `不参与` | CHI RN-F subset 无 home 目录 ⇒ 权限由副本携带(本 ADR `INV-CEP-04-IC7`) |
+| `cxl_2_0` | `不参与` | CXL 2.0 host 侧 snoop filter ⇒ 权限由副本/token 携带(本 ADR `INV-CEP-04-IC7`) |
+| `cxl_3_0_symmetric` | `DcohSymmetric` | CXL 3.0 对称模式的设备内一致性代理(本 ADR §2 caps 表「DCOH」行) |
+| `tilelink_c` | `TreeManager` | TileLink 树形拓扑(本 ADR §2 caps 表 `SUBTREE` / `TREE_PARENT` 行) |
+| `nvlink_4` | `BroadcastNull` | 无目录 + 恒广播兜底(本 ADR §2 caps 表;行为类见 `broadcast_null_tracker.hh`,队列 #13 交付) |
+
+### ⑤ critic 第 1 轮(REJECT,BLOCKER)的修订对照
+
+| # | critic 的 finding | 处置 |
+|---|---|---|
+| **B1** | 「由 `flow_support` 派生」的规则**被 6/7 存量声明反证**;与 `INV-CEP-04-IC7`(二者语义等价)矛盾;先例引用**事实错误**;「caps 表里唯一无目录形态」的依据不成立 | ⇒ **撤回**派生规则,改为 **① 候选集 + 语义层判别依据 + 逐实例理由登记**;**②** 逐条订正三条错账 + 一处先例引用 + caps 论证;**③** 元测试改为「候选集 + 理由登记」,⛔ 删掉派生一致性断言 |
+| **N2** | 代价栏「派生表是二值的」表述不准确 | ⇒ **③** 改为「真正局限 = 选型所需信息不在本仓机器可读声明面内」 |
+
+### ⑥ critic 第 2 轮(REJECT,新 BLOCKER)的修订对照
+
+| # | critic 的 finding | 处置 |
+|---|---|---|
+| **B4** | 候选集只列 5 项 ⇒ **漏** `SparseSnoopFilter` / `DcohSymmetric`(二者是 schema 枚举内 + 现役取值)⇒ 元测试在字面读法下**今日必红**、在宽松读法下退化为**恒真**;且与本 ADR 自己声明「保留不改」的 §2 caps 表 / §13 矛盾 | ⇒ **① 候选集补全为 schema 枚举的 7 值**(逐个给判别依据 + 现役实例);**④ 判据换掉恒真项** ⇒ 主判据改为「**caps ↔ `kTrackerTraits` 对应行逐字段相等**」,「`impl` ∈ 候选集」**不再**作独立判据;并显式登记「不得照抄 enum 作判据」 |
+| **S-2** | 理由登记**无载体**(实例级与 `sharer_tracker` 级 `additionalProperties` 均为 `false`)+ 元测试作用域未钉 ⇒ 今日 7 实例**全红** | ⇒ **④** 指定载体 = `protocol_instances.json` **顶层** `sharer_tracker_rationales{}` 块(顶层不受实例 schema 约束 + ⑥ 只逐实例比 12 键 ⇒ 不触发镜像闸);作用域 = **全部**已声明实例,并由**本段给出存量 7 条理由**(实现层落盘即可全绿),⛔ 不设存量豁免(豁免 ⇒ 恒真);**③** 后果表同步 |
+| **N-2** | 「五种候选」与 §2 的 6 种实现 + schema 的 7 值枚举不一致 | ⇒ **①** 改为「**七种**(与 schema 枚举一致)」的表述 |
+| **第 3 轮** | B4 **已闭合**;残留计数/措辞:「5 行」vs 表体 7 行;「覆盖 5 个真实实现」vs 实测 **6** 个 | ⇒ 表头改「**7 行**」;「`不参与` 参照」段改「覆盖 **6** 个真实实现」+ 列名;本行补记 |
+
+**关联**: 台账 **Entry #193**(授权记录)· #139(`FullMapDirectory` 反向缺口)· #154(§3.5 聚合点二元)· #96(R-1 第 6 种实现)
+· #112(`BroadcastNull`「无消费者 ⇒ 保留登记」)· 用户裁决 2026-11-03(队列 #13 的 `BroadcastNull`)
+· `include/tlm/cep/broadcast_null_tracker.hh`(队列 #13 交付的行为类)· `include/tlm/cep/protocol_instances.json`

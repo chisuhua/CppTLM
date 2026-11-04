@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-03T08:56:09Z",
+  "updated_at": "2026-11-04T00:17:43Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-01T08:42:14Z",
-      "by": "user",
-      "reason": "用户裁决「按建议推进」⇒ D3 = `FullMapDirectory` 反向缺口的落位裁决(architect 域);台账 Entry #139 授权记录已落 ⇒ 跑冻结面两步授权(--update --authorized-by \"Entry #139\")"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-01T08:42:46Z",
-      "by": "user",
-      "reason": "D3 落位裁决已签发(ADR-CEP-04 SU + 07 号 §11 行 + base spec 落位句 + sharer_tracker.hh 注释)⇒ 切回 builder:跑冻结面两步授权(--update --authorized-by \"Entry #139\")+ commit"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-01T09:05:08Z",
-      "by": "user",
-      "reason": "用户裁决「按建议推进」⇒ D1 = 切 planner 起草 `.rddf/improvements/cpptlm-cep-tilelink-tree-manager.md`(5 段草稿 / 7 段模板);走 rdd-workflow-brainstorm HARD-GATE(需用户逐段确认设计)⇒ pre_create_brainstorm_check.sh 校验通过后写文件"
-    },
     {
       "role": "builder",
       "at": "2026-11-01T09:20:20Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-03T08:56:09Z",
       "by": "user",
       "reason": "用户裁决 2026-11-03「切 builder 进 Phase 1」⇒ 实现队列 #13 规约层载体 nvlink_sharp_state_spec.hh(tasks 1.1~1.7)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-03T15:50:48Z",
+      "by": "user",
+      "reason": "用户裁决 2026-11-03：队列 #14 `cpptlm-cep-ualink-inc` 命中 `ADR-CEP-01` Decision D 的重访触发 ②（首次需要真实 fabric collective 流量）⇒ 路径 = **D（共享 VC + 无环性证书）**+ 证书重设计为 C-1'/C-2/C-3/C-4（我实测 oracle 的 D-2「重跑 DAG」恒真：边按 network 声明 ⇒ 语义旋转映射仍 PASS）⇒ 切 architect 写三则裁决：① `ADR-CEP-01` SU（D 重开 + 证书四条规范定义）② `ADR-CEP-09` 窄化 SU（集合伪实例入图 + 跨平面边在范围内 + IC1 鉴别力边界）③ tracker 选型派生规则（`ADR-CEP-04` SU）"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-03T23:54:40Z",
+      "by": "user",
+      "reason": "用户裁决 2026-11-04:critic 三轮预算用满(第 3 轮 REJECT 的全部 finding 已按精确改点修完,B4 已闭合)⇒ **不再开第 4 轮** ⇒ 切 planner:① 落台账 Entry #193(三则 ADR 的**冻结面授权记录**,逐件列名)② 起草队列 #14 `cpptlm-cep-ualink-inc` 的 improvement 草稿(add-improve · brainstorm HARD-GATE 需用户批准设计后方可写文件)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-04T00:17:43Z",
+      "by": "user",
+      "reason": "用户裁决 2026-11-04「切 builder 继续」⇒ ① commit 三则 ADR 的 SU + 台账 Entry #193 / #194 + 队列 #14 improvement 草稿 ② 跑**冻结面两步授权**(`--update --authorized-by \"Entry #193\"` ⇒ commit ⇒ `--update` ⇒ commit)③ 起队列 #14 的**规约层** change `cpptlm-cep-ualink-inc-state-spec`"
     }
   ]
 }

@@ -748,7 +748,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P2 | `cpptlm-cep-tilelink-tree-manager` improvement | ✅ **已写**(2026-11-01 planner;brainstorm HARD-GATE 通过(`pre_create_brainstorm_check.sh` rc=0);**两段式** —— 第 0 个 change = `cpptlm-cep-tilelink-state-spec`(规约层;范围 = 3 稳定态 + 4 事件类别 + 12 格转移表 + `perm` 3→3 投影 + 非对称结构断言,**照 #10 同款只锁 5 项结构**) + 第 1 个 change = `cpptlm-cep-tilelink-tree-manager`(实现层:`TileLinkCAdapter` + `TreeManager` tracker 行为实现 + 实例声明);估时 规约层 4 周 + 实现层 8 周;⚠️ **2026-11-02 订正**(per 台账 Entry #148):① 原写「change 目录已建,🟡 Proposed」**已失实** ⇒ 队列 #11 **两段式均已于 2026-11-02 完成归档**(per Entry #143 / #147);② 原写「**R-T4 口径留到第 1 个 change 前裁决**」**已裁决** —— per **Entry #141** §③:R-T4 = **值域锁** ⇒ 实例 `perm` 填 **3 值**(per `ADR-CEP-02` 的 `## Status Update(2026-11-02)`);§4.0 顺序 #11;✅ **Task 0 硬门已通过**(2026-11-01,per Entry #134 / #135 / #138)—— **版本锁定**(`tilelink-c-1.7.1`,SiFive)· **R-T2**(通道 5→VC 4)· **R-T3**(6 类归属)· **R-T6**(非对称定义形态)**四项 architect 裁决全闭合** ⇒ **可起 change**(规约层先行,照 #10 两段式先例);basis 唯一人工审计面 = `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` |
 | P1 | `cpptlm-cep-cxl-dcoh-symmetric` improvement | ✅ **已写**(2026-11-02 planner;brainstorm HARD-GATE rc=0;**两段式** —— 第 0 个 change = 规约层 `cpptlm-cep-cxl-dcoh-symmetric-state-spec` **✅ 已完成归档**(2026-11-02,per Entry #159;KPI **1/3 → 0/3**)+ 第 1 个 change = 实现层 `cpptlm-cep-cxl-dcoh-symmetric`**✅ 已完成归档**(2026-11-02,per Entry #166;KPI **1/3 → 0/3**)) —— ✅ **Task 0 硬门已过(有条件)**(2026-11-02,per 台账 **Entry #153**):公开来源普查产物 `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md` ⇒ 5 项载体形态决定项中 **4 项可结构钉死**;**10 项**细粒度语义登记 `pending`(走「人类成员条款摘要」);⚠️ **阻塞项 = architect 复核**(3 项:`ADR-CEP-04 §3.5` 的 `P2P ⇒ REQUESTER` **被公开来源反证** + `DcohSymmetric` 的 `LOCAL_HINT` / `broadcast_fallback=true` 张力 + 07 号 **4 处口径错误** ⇒ 冻结面 Status Update)⇒ **architect 复核后方可起草 improvement** |
 | P1 | `cpptlm-cep-nvlink-sharp` improvement | ✅ **已写**(2026-11-03 planner;brainstorm HARD-GATE **rc=0**;**两段式**(形态丙,per 用户裁决 2026-11-03)—— 第 0 个 change = 规约层 `cpptlm-cep-nvlink-sharp-state-spec` + 第 1 个 change = 实现层 `cpptlm-cep-nvlink-sharp`;**开工前置 = `ADR-CEP-01` / `ADR-CEP-02` / `ADR-CEP-03` 定稿**(per 用户裁决 2026-11-03)⇒ ✅ **前置已解除**(三则 **2026-11-03 定稿签发**,per 台账 Entry #169 / **#170**)⇒ ✅ **Task 0 普查已消费**(Entry #173)· ✅ **VC 裁决已消费**(Entry #171)⇒ ✅ **规约层 change 目录已建**(2026-11-03,per Entry #175)⇒ ✅ **规约层已完成归档**(2026-11-03,Entry #186)⇒ ✅ **实现层 change 目录已建**(2026-11-03,`cpptlm-cep-nvlink-sharp`)⇒ ✅ **实现层已完成归档**(2026-11-03,Entry #190)⇒ ✅ **两段式全部交付**(队列 #13 完结);`sharer_tracker.impl` = **`BroadcastNull`** + 本队列**补行为类**(per 用户裁决 2026-11-03)⇒ 顺带闭合 07 号 §11 的「`BroadcastNull` 仅声明层 traits」缺口) |
-| P1 | `cpptlm-cep-ualink-inc` improvement | 走 add-improve;Stage 3 启动 |
+| P1 | `cpptlm-cep-ualink-inc` improvement | ✅ **已写**(2026-11-04 planner;brainstorm HARD-GATE **rc=0**;**两段式**(形态丙,per 用户裁决 2026-11-04)—— 第 0 个 change = 规约层 `cpptlm-cep-ualink-inc-state-spec` + 第 1 个 change = 实现层 `cpptlm-cep-ualink-inc`;**开工前置 = `ADR-CEP-01` / `04` / `09` 的三则 SU 已签发**(per 台账 **Entry #193**)⇒ ✅ **前置已解除**;**VC 路径 = D**(共享 VC + 四条可机器判定的证书,per `ADR-CEP-01` SU#4)⇒ **零冻结件改动 / 零跨仓依赖**;**合规** = UALink Common 2.0 **公开规范** ⇒ **可投喂 AI** ⇒ Task 0 可引**条款级定位**(⚠️ 与队列 #13 的 NVLink SHARP **不同** —— 后者受 NDA ⇒ 禁投喂);估时 **10 → 14 周**(两段式;依据 = 队列 #13 先例 8→13 周);KPI **0/3**(建 change 后 → 1/3);**残余风险 3 项**已登记(U-1 隔离假设不可检验 · U-2 同 VC 相互阻塞不被图模型表达 · Task 0 若不足以钉死 `WriteMulticast` 部分失败语义 ⇒ 登记 pending) |
 | P2 | `ADR-CEP-11` 版本锁定(Stage 1 前签发)| 走 architect;触发 R2 缓解 —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「走 architect」**已失实** ⇒ `ADR-CEP-11` **已于 2026-10-30 签发 v1.0**(per Entry #112 / #135);⇒ **本行关闭**;⚠️ **残余**:版本锁定闸的 **G-3**(IC3 变更留痕**无自动闸**)**未闭合**(per §8.1 R2 缓解列)—— 仍为登记态残余风险 |
 | P2 | phase-11 注册后建 feature fragment | 走 rdd-planner 后续评估;≥2 change 跨 phase-10/11 分布时 |
 | P2 | **`cep-collective-plane-contract` 主 spec 缺第四键的 delta** | ✅ **已闭合**(2026-11-03,per 台账 **Entry #190**):队列 #13 实现层已补该 delta 并归档 ⇒ 声明最小集「恰含三组」⇒ **「恰含四组」**(加 `vc_reservation_declaration`)+ 「空预留缺声明 ⇒ FAIL」场景 + 新增 Requirement `cep-collective-plane-contract-vc-precondition`(承载 **V6-c** 与 **CP-05 扩展**)⇒ Requirement **1 → 2** · Scenario **8 → 10** · `kContractRuleCount` 仍 == 6 (原登记:—— 主 spec 的「声明最小集 SHALL **恰含三组**」(`openspec/specs/cep-collective-plane-contract/spec.md`)未含 `vc_reservation_declaration`;而 Decision D 已把「空预留 ⇒ 必须声明」落成**判据**(`2ea09607`)。⇒ 若「恰含三组」被读作**封闭集** ⇒ 契约漂移;按「最小集」读法可视为条件可选扩展 ⇒ **当前不阻断**。⇒ 处置 = **下一个 openspec change** 补 delta(第四键 + 「空预留缺声明 ⇒ FAIL」场景)或对该 main spec 走 SU;⚠️ `cep_freeze_check.sh` 只查哈希,**抓不到**这类语义漂移 |
@@ -11826,6 +11826,132 @@ Scenario **8 → 10** · `kContractRuleCount` 仍 **6**)· `docs/architecture/07
 
 **⑤ 关联**: Entry #191(遗留清扫第 1 轮)· #190(实现层归档)· #186(规约层归档)· #166(上一次同型转移)
 · #80 / #90 / #95 / #106 / #132 / #147(历次转移先例)· `scripts/test/cep_docs_sync_check.sh`(断言 ⑦)
+
+---
+
+### Entry #193 — 2026-11-04 [plan](队列 #14 的 **VC 路径裁决**(路径 D)+ 三则 ADR **SU 签发** + **冻结面授权记录**)
+
+**主题**:队列 #14 `cpptlm-cep-ualink-inc` 命中 `ADR-CEP-01` **Decision D** 的重访触发 ② ⇒ 路径裁决 + 三则 ADR 的
+追加式 SU 段签发。**角色**:architect(裁决与 SU)+ planner(本条台账登记)。⚠️ 本条同时是**冻结面授权记录**
+(`cep_freeze_check.sh` 的闸门契约:「台账 entry 即授权记录」⇒ **本条必须在 `--update` 之前存在**)。
+
+**① 触发(实测)**
+
+| 面 | 事实 |
+|---|---|
+| 队列 #13(NVLink SHARP) | 走 `LocalCollectivePlane`(节点内本地模型)⇒ **未**产生真实 fabric 集合流量 ⇒ 未触发 |
+| 队列 #14(UALink INC,Stage 3) | 语义**即**网内归约(`ReadReduce`/`WriteMulticast`/`Broadcast`/`AllReduce`,07 号 §5.1.1 的 UALink 行)且跑在 `ualink_fabric` 上 ⇒ **必然**产生真实 fabric 集合流量 |
+| `ADR-CEP-01` D.6 ② | 「队列 #13 实现层或**后续队列**首次需要真实 fabric collective 流量」⇒ **命中** ⇒ 按 D.6「**必须**重开本裁决,**不自动升级**」重开 |
+
+**② 四条候选路径的比较与裁决(用户裁决 2026-11-04 ⇒ **路径 D**)**
+
+| 路径 | 结论 | 理由 |
+|---|---|---|
+| **A** 扩 `vc_count` → 5 | ❌ 否决 | 需改 **3 处 M1 冻结件**(`fabric.schema.json` / `protocol_instance.schema.json` / `fabric.json`)+ `channel_dependency_graph.hh:61` `kMaxVcId=3` + 3 处测试硬断言 + **ArchForge 跨仓上游**(`fabric.json` 是派生副本,`cep_decl_alignment_check.sh` 第 ⑤ 项**双向**比对)⇒ 且 `ualink_fabric` 的 VC0-3 是 ArchForge 25-nsa **锁定的硬件语义**(`22-nsa:147`:VC0=Fault Request / VC1=Atomic / VC2=Remote Query / VC3=Response)⇒ 加 VC4 = **声明硬件有 5 个 VC** = **保真度倒退** |
+| **B** 降级走本地模型 | ❌ 否决 | 与 07 号 §5.1.1 的 UALink 行定义、`ADR-CEP-01:94`(UALink = 全集合族)直接冲突;且 `ADR-CEP-03:26` 已用同一理由否决「SHARP/INC 不建模」 |
+| **C** 等 `ADR-CEP-09` 定稿 | ❌ 否决 | 它是 🟡 v0.1 且**自己显式排除**跨平面(决策 4 / 决策 8)⇒ 「等」不产出所需裁决;且定稿无排期 |
+| **D** 共享 VC + **可机器判定的证书** | ✅ **采纳** | 零 M1 冻结件改动 · 零跨仓依赖 · 不倒退硬件保真度;代价 = 死锁隔离从**结构性**换为**可判定的论证**(+2 项**未检验项**必须登记) |
+
+**③ 三则 ADR 的追加式 SU(纯追加,`git diff` 实测删除行 = 0)**
+
+| 文件 | 段落 | 实质 |
+|---|---|---|
+| `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | `## Status Update 2026-11-03(#4)` | **Decision D 重开**:抓取点 3 改为**两种满足模式**(M-1 隔离 / M-2 共享 + 证书);证书**四条**(C-1′ 槽位语义继承 / C-2 VC 覆盖完整 / C-3 控制面与数据面互斥 / C-4 未检验项登记);取代 D.2 的规范句 + **D.4 的 `V6-a` 与 `V6-c` 两行**;新增 `V6-d`;代价与重访触发(含「ArchForge 给出 ≥5 VC 硬件保真依据 ⇒ 回到 M-1」) |
+| `docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md` | `## Status Update(2026-11-03, per 台账 Entry #193)` | **需求归 01 / 机制归 09** 的归属澄清(决策 4 / 决策 8 / §4 抓取点 5 一律以本段为准)+ 集合平面**不进图**、**继承**既有实例的 VC 空间 + **`IC1` 的鉴别力边界**(三项仍有 / `vc_binding` 语义维度**零鉴别力**) |
+| `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | `## Status Update(2026-11-03, per 台账 Entry #193)` | 队列 #14 的 tracker 选型 = **候选集(7 值,与 schema 枚举一致)+ 语义层判别依据 + 逐实例理由登记**;⛔ **不存在**可机械派生的全局规则;元测试 = **caps ↔ `kTrackerTraits` 逐字段相等** + **理由登记存在性**;给出**存量 7 条理由** |
+
+**④ ⚠️ 一手实测(写进 ADR 的「可重推」证据)**
+
+`evaluate_channel_dependency_gate` 的边**按 network 声明、不按 instance** ⇒ 任一实例的图 = 声明边表的**诱导子图**
+⇒ **DAG 的任一子图仍是 DAG** ⇒ 该闸**在结构上不可能**报出由 `vc_binding` 引起的环
+(实测:把 `ualink_fabric` 上的 `request` 映到 `response` 的槽 ⇒ 仍 **PASS**,`cycles=0`)⇒
+oracle 最初建议的「重跑 DAG 当证书」**恒真** ⇒ 证书被重设计为上述四条。
+⇒ 结论**可重推**:前提 P1(声明边表自身无环)+ P2(边限同 network,`channel_dependency_graph.hh:552-568`)+ 两份边表。
+
+**⑤ ⚠️ critic 三轮轨迹(全部 finding 已逐条处置)**
+
+| 轮 | 结论 | 闭合 |
+|---|---|---|
+| 1 | REJECT | **B1** 派生规则被仓内 **6/7** 存量声明反证(7 实例**全部** `snoop=true`/`snoop_resp=true`);**B2** 伪实例载体违反 M1 冻结 schema(`id` pattern 无 `@` / 13 必填 / `family` 枚举无 collective)⇒ **两处均已重构** |
+| 2 | REJECT | B1 ✅;11 项 SHOULD/NITS ✅;**B3** 载体撞冻结 spec「恰含四组」;**B4** 候选集漏 2 个现役取值 ⇒ **B4 ✅ 闭合**(第 3 轮) |
+| 3 | REJECT | B4 ✅;**B3** 有 4 处旧载体残影;**BLOCKER-A** 同一 SU 内二义;**BLOCKER-B** ⚠️ `status` 第二取值 vs **已落地**的单值判定(`collective_plane_contract.hh:659-662`)⇒ **M-2 模式必红** ⇒ 队列 #14 目标场景无法闭合 ⇒ **全部已按精确改点修完**;**不再开第 4 轮**(用户裁决 2026-11-04) |
+
+**⑥ 授权改动的冻结产物(逐件列名 —— `--update` 会**重算全部 40 件**的 hash)**
+
+| # | 冻结产物 | 本次改动 |
+|---|---|---|
+| 1 | `docs/adr/ADR-CEP-01-fabric-collective-plane.md` | 追加 SU #4(Decision D 重开 + 证书四条 + `V6-d` + 取代 D.2 规范句与 D.4 的 `V6-a`/`V6-c`) |
+| 2 | `docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md` | 追加 SU(归属澄清 + `IC1` 鉴别力边界) |
+| 3 | `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | 追加 SU(tracker 选型 = 候选集 + 理由登记) |
+| 4 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 **40** 件的 hash(机制 M1 本身) |
+
+⇒ ⚠️ **不在**授权范围:`openspec/specs/cep-collective-plane-contract/spec.md`(队列 #14 归档时的下游同步,
+范围见 `ADR-CEP-01` E.7 负面 ④ —— **不含**其 `:35` 的「恰含四组」条款)· 其余 main spec · 07 号。
+
+**⑦ 授权流程(顺序不可颠倒)**
+
+① 本条 Entry(授权记录)→ ② **commit** 三则 ADR(architect 不做实施类 commit ⇒ 切 builder)
+→ ③ `cep_freeze_check.sh --update --authorized-by "Entry #193"` ⇒ **commit**
+→ ④ `cep_freeze_check.sh --update` ⇒ **commit**(provenance 落在 ③ 的 commit 上)
+→ ⑤ 台账追加归档/推进 Entry + KPI 回填。
+
+**⑧ 验收(实测)**
+
+门禁 **4/4** rc=0 · `cep_gate_selftest` **34/34** rc=0 · `format.sh --check` rc=0 ·
+`git diff` **删除行 = 0**(纯追加)· `cep_freeze_check.sh` 现**预期为红**(3 份 ADR hash 漂移 = 授权前中间态)。
+
+**⑨ ⚠️ 登记债(本次新增,诚实登记)**
+
+| 项 | 位置 | 处置 |
+|---|---|---|
+| 「恰含四组」条款**无机器断言**(实测 `test/` 与 `scripts/test/` 无「声明最小集组数 == 4」的断言) | `openspec/specs/cep-collective-plane-contract/spec.md:35` | **M1 冻结件** ⇒ 本段「不新增声明组」**不能**靠 CI 兜底 ⇒ 由 `ADR-CEP-01` E.9 的人工勾选项守门;⛔ 不得据此认为「加第 5 组无害」(per `ADR-CEP-01` E.7 **负面 ⑦**) |
+| critic 第 3 轮的文本级残留(计数 / 措辞) | 三则 SU | **已逐条处置**;若后续发现新的文本级不一致 ⇒ 记 backlog,**不重开** D.6 路径裁决(per 用户裁决 2026-11-04「不再开第 4 轮」) |
+
+**⑩ 关联**: Entry #192(遗留清扫第 2 轮)· #191(遗留清扫第 1 轮)· #190(队列 #13 实现层归档)· #186(规约层归档)
+· #179(`V6-c` id 唯一化)· #171(原 Decision D)· #154(ADR-CEP-04 §3.5 聚合点二元)· #139(`FullMapDirectory` 反向缺口)
+· #102(`authority_migrations` 清空)· `obj §4.0` 队列 **#14** 行 · `openspec/changes/`(队列 #13 已全归档 ⇒ **0 active**)
+
+---
+
+### Entry #194 — 2026-11-04 [plan](队列 #14 `cpptlm-cep-ualink-inc` 的 **improvement 草稿落盘** —— **两段式**)
+
+**主题**:队列 #14 的 improvement 草稿(7 段式 · `add-improve` · brainstorm HARD-GATE **rc=0**)**落盘**。
+**角色**:planner。**前置** = `ADR-CEP-01` / `04` / `09` 的三则 SU 已签发(Entry #193)⇒ ✅ **前置已解除**。
+
+**① 形态裁决**:**两段式**(形态丙,per **用户裁决 2026-11-04**)⇒ 第 0 个 change = 规约层
+`cpptlm-cep-ualink-inc-state-spec` + 第 1 个 change = 实现层 `cpptlm-cep-ualink-inc`。
+**理由**(非「#11/#12/#13 都这样」,而是三条具体理由):① `WriteMulticast` 的**部分失败**语义与
+`ReadReduce` 的**coherence 可见性**关系**未被任何已签 ADR 钉死** ⇒ 直接写进代码就是**纸面契约**;
+② 路径 D 的**证书本身是声明物**(边表 + 逐边依据)⇒ 按本仓先例独立成 change;③ 估时上修 **10 → 14 周**
+(依据 = 队列 #13 的先例 8→13 周)。
+
+**② 草稿产物**:`.rddf/improvements/cpptlm-cep-ualink-inc.md`(7 段:架构依据 / 范围 / Why / What Changes /
+Acceptance(10 条)/ Capabilities / Impact)+ YAML frontmatter(`phase: phase-10` · `主题` 与
+`.rddf/roadmap/phases/phase-10.md` 精确匹配)⇒ `pre_create_brainstorm_check.sh` **rc=0** ✅
+(⚠️ 本仓**无** `improvement-suggestions.md` 索引 —— CEP 惯例 = 登记进本台账 §10,per `:6528`)。
+
+**③ 关键口径(草稿内已固定)**
+
+| 面 | 口径 |
+|---|---|
+| **VC 路径** | **M-2**(共享 VC + 四条证书)—— per `ADR-CEP-01` SU#4;⇒ **零 M1 冻结件改动 / 零跨仓依赖** / **零 `vc_count` 改动** |
+| **载体** | 集合平面**继承**该 network 既有实例的 VC 空间(**不声明**自己的绑定)⇒ 载体 = `collective_planes.json` + `collective_plane_contract.hh`(均**非** M1 冻结件) |
+| **四证书** | C-1′ 槽位语义继承 · C-2 VC 覆盖完整(直接对 `fabric.json` 的 `vc_count`)· C-3 控制面与数据面互斥 · C-4 未检验项登记(U-1 / U-2) |
+| ⛔ **禁止** | 不得把「重跑 `IC1`」当证书(实测**恒真**:边按 network 声明 ⇒ 诱导子图恒无环) |
+| **tracker 选型** | `ADR-CEP-04` SU 的**候选集(7 值)+ 逐实例理由登记** ⇒ ⛔ **不得**由 `flow_support` 派生(已被 6/7 存量声明反证) |
+| **合规** | UALink Common 2.0 **公开规范** ⇒ **可投喂** ⇒ Task 0 可引**条款级定位**(与队列 #13 的 NVLink SHARP **不同**) |
+| **原语集** | `ReadReduce` / `WriteMulticast` / `Broadcast` / `AllReduce`;`AllReduce` = REDUCE + BROADCAST 的**复合**,⛔ **不是**第 5 原语(per `ADR-CEP-01:94` / `ADR-CEP-03:75`,有独立判据 `CP-PRIM-SET` 守着) |
+
+**④ 未动的东西(防范围蔓延)**:`obj §4.0` 队列 #14 行**保持 `📋 Planned`**(队列 #13 在 Entry #168 落 improvement
+时的**同款先例** —— 状态列只在 change 目录建成时改)· KPI **0/3**(建 change 后 → 1/3)· 冻结面**本条不改**
+(三则 ADR 的 SU 已在 Entry #193 授权,待 builder 跑两步授权)。
+
+**⑤ 验收(实测)**:brainstorm HARD-GATE **rc=0** · `format.sh --check` rc=0 · 门禁 rc=0
+(⚠️ `cep_freeze_check.sh` 现**预期为红** —— 3 份 ADR 的 SU 待 builder 的 Entry #193 两步授权)。
+
+**⑥ 关联**: Entry #193(三则 ADR SU + 冻结面授权记录)· #191 / #192(遗留清扫)· #190(队列 #13 实现层归档)
+· #186(队列 #13 规约层归档)· #168(队列 #13 improvement 落盘的**同款先例**)· #171(原 Decision D)
+· `obj §4.0` 队列 **#14** 行 · `obj §10` 本条登记行 · `.rddf/improvements/cpptlm-cep-ualink-inc.md`
 
 ---
 

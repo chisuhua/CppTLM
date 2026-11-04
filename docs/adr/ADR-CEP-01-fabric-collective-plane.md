@@ -413,3 +413,273 @@ group-scoped completion     → Fabric Collective Plane
 
 ⇒ **裁决**:**唯一 id = `CP-03-VC-PRECONDITION`**;其**载体**由队列 #13 **实现层**交付
 (规约层与实现层的载体清单)⇒ 在载体落地前该判据**不可执行**(per 悬空判据禁令)。
+
+## Status Update 2026-11-03(#4)—— **Decision D 重开**:抓取点 3 的**两种满足模式**(路径 D)
+
+> **性质**: 追加式修订(per AGENTS.md「ADR 不可变 + Status Update」先例)—— **§1 ~ §9 正文、附录、以及 2026-11-03(#1)/(#2)/(#3) 三段一律不改**。
+> **取代范围**: **D.2 的规范句**(「集合流量若上 fabric,**必须**走**独立** VC」)+ **D.4 的 `V6-a` 行**(单值 `status` ⇒ **双值**)+ **D.4 的 `V6-c` 行**(单值 `status`)⇒ 以 **E.6** 为准。
+> ⚠️ **`V6-a` 必须在取代范围内**:其**已落地**的实现(`include/tlm/cep/collective_plane_contract.hh:659-662`)
+> 对 `status != "unavailable"` **一律 FAIL** ⇒ 若不取代该行 ⇒ **M-2 模式下 CP-03 必红** ⇒ 队列 #14 的目标场景无法闭合(见 **E.7 负面 ⑥**)。
+> **不取代**: **D.1 的背景事实**(VC 空间实测**饱和** —— 该事实**未变**)、**D.3**、**D.5**(未采路径表原文保留)、**D.6**(前 3 条原文不改)。
+> **触发**: **D.6 ②** 命中(实测,见 E.1)。
+> **台账**: `obj-cep-platform §11` **Entry #193**(授权记录)· **用户裁决 2026-11-03**(路径 D + 证书形态)。
+> **形态**: 本段**第 1 稿经 critic 第 1 轮 REJECT(2 BLOCKER)后重写** ⇒ 逐条修订见 **E.10**。
+
+### E.1 触发:D.6 ② 命中,且是**第一次**命中
+
+| 面 | 实测 |
+|---|---|
+| 队列 #13(NVLink SHARP) | 走 `LocalCollectivePlane`(节点内本地模型,`collective_planes.json` 的 `plane_binding`)⇒ **未**产生真实 fabric 集合流量 ⇒ 未触发 |
+| 队列 #14(`cpptlm-cep-ualink-inc`,Stage 3) | 语义**即**网内归约(`ReadReduce` / `WriteMulticast` / `Broadcast` / `AllReduce`,per 07 号 §5.1.1 的 UALink 行)且跑在 `ualink_fabric` 上 ⇒ **必然**产生真实 fabric 集合流量 |
+
+⇒ D.6 ② 原文:「队列 #13 实现层或**后续队列**首次需要真实 fabric collective 流量」⇒ **命中**
+⇒ 按 D.6 的「**必须**重开本裁决,**不自动升级**」重开。
+
+### E.2 裁决:抓取点 3 由「单一要求」改为「**两种满足模式**」
+
+**抓取点 3 的义务不变**(集合流量不得与 coherence 事务**共享未论证的**通道依赖)⇒ 变的是**满足方式**:
+
+| 模式 | 形态 | 何时可用 |
+|---|---|---|
+| **M-1 隔离**(原 D.2 的唯一模式) | 集合流量走**独立** VC ⇒ `collective_vc_reservation` 非空 | 拓扑提供空闲 VC(**本拓扑当前不满足** —— D.1 的事实未变) |
+| **M-2 共享 + 证书**(新增) | 集合流量**复用** coherence 已占用的 VC ⇒ 必须同时满足 **E.3 的四条证书** | 声明 `vc_reservation_declaration.status = "shared_no_isolation"` 且证书四条全绿 |
+
+⚠️ **M-2 不是「降级为不需要论证」**:它把「**结构性**隔离」(D.5 所称的优势)换成「**可机器判定的论证**」。
+二者**是否等价** —— 见 **E.5**(对 D.5 否决路径 C 的正面回应)。
+
+### E.3 证书四条(**规范定义**)+ 载体与准入条件
+
+#### E.3.1 四条判据
+
+| # | 判据 | 可判形式 | 反向 fixture(毒化 ⇒ 必红) | 归因 |
+|---|---|---|---|---|
+| **C-1′** | **槽位语义继承**:集合平面 SHALL **不声明**自己的 VC 绑定;它**继承**该 network 上**全部「在该 network 上有 `vc_binding` 的」既有实例**的 `(message_class → vc_id)` 映射;该继承**良定义**的充要条件 = 该 network 上**全部有绑定的**既有实例的映射**逐类相等** | ① 集合平面**无**独立 VC 绑定声明(若声明 ⇒ 必红:意味着它想偏离继承);② 该 network 上全部既有实例的映射**逐类相等**(不等 ⇒ 必红) | 某网实例间映射不一致却用 M-2 ⇒ 必红;集合平面自带独立绑定 ⇒ 必红 | `CP-03-VC-CERTIFICATE` |
+| **C-2** | **VC 覆盖完整**:集合平面在该 network 上绑定的 `vc_id` SHALL 覆盖 **`fabric.json` 该 network 的 `vc_count` 全部取值** | 直接对 `fabric.json` 的 `vc_count` 判定(不依赖「边表是否引用某 VC」) | 只覆盖部分 `vc_id` ⇒ 必红 | `CP-09-IC1`(复用,**降为良构性见证 / 正控**) |
+| **C-3** | **控制面与数据面互斥**:某 group 有 op **in-flight** 时,SHALL **拒绝** `group_register_region`(R3 drain)与 `group_destroy`(R4 回归)—— 二者是控制面操作 | 运行期断言(fail-fast)+ 调用序列 fixture | in-flight 期间调 `group_register_region` ⇒ 必红 | `CP-03-VC-CERTIFICATE` |
+| **C-4** | **未检验项显式登记**:见 **E.3.4** 的两项 | 元测试:登记项存在、非空、且**不**含「已验证 / 已满足」字样 | 把任一未检验项标成「已验证」⇒ 必红 | `CP-03-VC-CERTIFICATE` |
+
+**归因 id 纪律**:四条**共用** `CP-03-VC-CERTIFICATE`(**同一义务一个 id**,per `ADR-CEP-03` F.3 归一表);
+⇒ ⛔ 四条共用一个 id ⇒ 反向 fixture **无法区分**哪一条失败 ⇒ `detail` 前缀 SHALL 带**子标记**
+(`[CP-03-VC-CERTIFICATE/C-1′]` / `/C-2` / `/C-3` / `/C-4`)⇒ 归因匹配按**完整前缀精确相等**
+(per 本仓「精确相等」纪律 —— 前缀匹配会让 `CP-03` 命中 `CP-03-VC-PRECONDITION`);
+C-2 复用 `ADR-CEP-09` 既有的 `CP-09-IC1`(**不**新造)。⛔ **不新增** `ContractRule`
+(`kContractRuleCount == 6` 是被测试硬断言的契约面)⇒ 四条折进 `CP-03` 行的 `detail` 前缀
+`[CP-03-VC-CERTIFICATE]`;⛔ **不得**复用 `[CP-03-VC-PRECONDITION]`(那是 `V6-c` 的精确匹配前缀)。
+
+#### E.3.2 ⭐ 载体:集合平面**不是协议实例**,且**不声明**自己的 VC 绑定 ⇒ **零新声明组**
+
+**第 1 稿的两个载体方案均被否决**:
+
+| 被否决的方案 | 障碍 | 结论 |
+|---|---|---|
+| **伪实例**:把集合平面塞进 `protocol_instances.json` | ① `id` 的 `pattern` = `^[a-z0-9][a-z0-9_-]*$`(`protocol_instance.schema.json`)⇒ 任何 `collective_plane@<net>` 形态**含 `@`** ⇒ **非法**;② `required` **13** 项 ⇒ 须填 `family`(枚举仅 `industrial` / `ruby-slicc` / `academic`,**无 collective`)+ `adapter`(per `ADR-CEP-12` 决策 1「1 协议实例 = 1 adapter」)⇒ **只能填假值** = 假声明;③ `additionalProperties: false` ⇒ 无处安放证书字段 | **不可实现** |
+| **新增声明组**:在 `collective_planes.json` 根级加第 5 组 `collective_plane_vc_binding` | `openspec/specs/cep-collective-plane-contract/spec.md:35`(**M1 冻结件**)写「声明最小集 SHALL **恰含四组**」⇒ 根级第 5 组与之**正面相撞**;而 `vc_reservation_declaration` / `registered_regions` / `collective_vc_reservation` 三组的项均为 `additionalProperties: false` + 固定键 ⇒ **塞不进** | **不可实现**(除非另立声明源文件,而那又与冻结 spec `:27`「声明源 = `collective_planes.json` + schema」相撞 ⇒ **不比现方案省**) |
+
+⇒ **裁决(第 2 稿)**:集合平面**既不进 `protocol_instances.json`,也不新增任何声明组** ——
+它**不声明**自己的 VC 绑定,而是**继承**该 network 上既有实例的映射(C-1′ 的判据即「继承**良定义**」)。
+⇒ **载体 = 只读的两份既有声明**:`protocol_instances.json`(该 network 上全部实例的 `vc_binding`)
++ `fabric.json`(该 network 的 `vc_count`)⇒ **零新字段 / 零新声明组 / 零 schema 改动**。
+⇒ ⛔ **本段不改** `protocol_instance.schema.json`、**不改** `protocol_instances.json`、**不改** `fabric.json`
+⇒ **零 M1 冻结件改动**
+⇒ ⚠️ **例外(必改)**:`collective_planes.json` / `collective_planes.schema.json` —— E.6 的 `status`
+**第二取值**(schema 的 `status` `enum` + 描述串 + JSON 的 `status` 值)⇒ 二者**不在** M1 冻结集
+(实测 `cep_freeze_check.sh` 的 `FROZEN_GLOBS` 无命中)⇒ **不需冻结授权**。
+⇒ 且「声明最小集**恰含四组**」条款**不受影响**(本段**不新增声明组** —— 见 E.6 / E.7 负面 ④)。
+
+#### E.3.3 C-1′ 的**参照域**(两域并集)与**不一致 ⇒ 该网不得用 M-2**
+
+| 域 | 成员 | 出处 |
+|---|---|---|
+| 跨仓(ArchForge 派生域) | `moesi_gpu` / `mesif` | ⚠️ **不是** `authority_migrations`(该数组现已**为空**,per Entry #102)⇒ 域 = `derived_from.source_doc` 所指声明 + `repo_owned_instance_ids[]` 的**补集**(现为 `moesi_gpu` / `mesif`) |
+| 本仓自持 | `repo_owned_instance_ids[]`(`chi_rnf` / `cxl_2_0` / `tilelink_c` / `cxl_3_0_symmetric` / `nvlink_4` 等) | 同文件 |
+
+⇒ **参照集 = 两域并集**;集合平面的映射 SHALL 与**并集内该 network 上的全部实例**逐类相等。
+⇒ **若该 network 上存在实例间映射不一致 ⇒ 该 network 不得使用 M-2**(须回 M-1 或先消除不一致)。
+⚠️ 现状:`ualink_fabric` 上 `moesi_gpu` / `mesif` 两实例**一致** ⇒ 该网**可用** M-2;
+`compute_noc` 上 `tilelink_c` 与其余 6 实例**不一致** ⇒ **该网不得用 M-2**(登记)。
+
+#### E.3.4 C-4 的两项未检验项
+
+| # | 未检验项 | 为什么**不可检验** |
+|---|---|---|
+| **U-1** | 「VC 隔离确实避免协议级死锁」(H6) | M-2 **主动放弃**隔离 ⇒ 该假设在共享配置下**永远无法被检验** ⇒ 只能登记,不得当作已满足的前提引用 |
+| **U-2** | 「**同一 VC 内** coherence 流量与 collective 流量的**相互阻塞**」 | VC 级依赖图**不表达**同 VC 内两类流量的相互依赖(边按 network 声明、端点同 network、每条边只表达 VC 间的依赖)⇒ 该风险**在模型之外** ⇒ 必须登记,不得沉默 |
+
+### E.4 ⚠️ 为什么**不**采「重跑 DAG」当证书(构造性论证)
+
+「把集合平面喂进 `evaluate_channel_dependency_gate` 重跑 `INV-CEP-09-IC1`」是**直觉上最自然**的证书,
+但它**在结构上恒真**,不可作判据。**两条前提**(缺一则结论不成立):
+
+| # | 前提 | 依据 | 今天成立? |
+|---|---|---|---|
+| **P1** | 声明边表**自身无环** | `protocol_instances.json` 的 `channel_dependency_edges.per_network` | ✅ `compute_noc` = `{0→1,0→2,0→3,1→3,3→2}`(拓扑序 `0<1<3<2`);`ualink_fabric` = `{0→3,1→3,2→3}`(星形) |
+| **P2** | 边**按 network 声明**、**不按 instance**,且**两端同 network** | **实现细节**:`include/tlm/cep/channel_dependency_graph.hh:552-568` | ✅ 但**非 ADR 不变量** ⇒ 见下方警告 |
+
+⇒ **结论(构造性,非实测巧合)**:任一实例的图 = 该 network 声明边表的**诱导子图** ⇒ **DAG 的任一子图仍是 DAG**
+⇒ 该闸**在结构上不可能**报出由 `vc_binding` 引起的环 ⇒ 它的 verdict **与类→VC 的语义分配无关**。
+
+**实测印证**(3 组,探针一次性、**不入库**;结论可由 **P1 + P2 + 上表两份边表 + `channel_dependency_graph.hh:552-568`** 重推):
+
+| 实验(`ualink_fabric`) | 集合平面的类→VC | 闸 verdict |
+|---|---|---|
+| 复用既有映射 | `request→0 / atomic→1 / query→2 / response→3 / snoop_resp→3` | PASS(`cycles=0`) |
+| **语义旋转**(明显违反 `ualink_fabric` 的锁定槽位语义) | `request→3 / response→0 / atomic→1 / query→2` | **PASS**(`cycles=0, errs=0`) |
+| 只声明一个类(其余 VC 未绑定) | `request→0` | FAIL(3 条「边端点未绑定」) |
+
+⇒ 故 **`IC1` 的鉴别力**须重新表述为**三项**,不是一项:
+
+| # | `IC1` 仍有的鉴别力 | 位置 |
+|---|---|---|
+| ① | **边端点良构**:声明边表引用到的每个 `vc_id` 都必须被绑定 | `channel_dependency_graph.hh:558-565` |
+| ② | **`vc_id` 越界** | 同文件 `:538-542`(`kMaxVcId = 3`) |
+| ③ | **声明边表自身无环**(P1) | 闸的图算法 |
+| ⛔ | **`vc_binding` 的语义分配** —— **零鉴别力** | 实测(语义旋转仍 PASS) |
+
+⇒ 因此**证书的语义部分由 C-1′(语义继承)+ C-3(控制面互斥)承担**,C-2 只承担**覆盖完整性**;
+**C-2 亦不依赖 `IC1`**(直接对 `fabric.json` 的 `vc_count` 判)⇒ `IC1` 降为**良构性见证 / 正控**。
+
+> ⚠️ **P2 是实现细节,不是 ADR 不变量**:`channel_dependency_graph.hh` 已有 `cross_net_edges` 计数器
+> (同文件 `:92` / `:147`) ⇒ **跨 network 边**的方向**已被预留** ⇒ 若将来引入跨网边 / 回边补全,
+> 「诱导子图 ⇒ 恒无环」的构造性论证**失效** ⇒ 已登记为**重访触发**(E.8 第 5 条)。
+> ⚠️ **方法论**:任何「把新实例喂给既有闸」的方案,**先做毒化实验证明闸会红**;变绿**不等于**判据有效
+> —— 它可能只是「闸看不见这个维度」。
+
+### E.5 ⚠️ 对 D.5 **否决路径 C** 的正面回应(可判性是否与结构性等价)
+
+D.5 否决路径 C 的理由原文:「需以 SU 改抓取点 3 的『独立 VC』表述,**且把死锁隔离从结构性退化为论证性**」。
+⇒ 本段**接受**该代价的**前半**(确实要改表述),但**拒绝**其后半的隐含前提(「论证性 = 不可机器判定」):
+
+| 面 | M-1 隔离(结构性) | M-2 共享 + 证书(本段) |
+|---|---|---|
+| 机制的**真实鉴别力** | 「该 VC 上没有其它流量」= **可机器判定**(预留表非空且不撞号) | 四条判据**全部可机器判定**(E.3.1 每行都有可执行的反向 fixture) |
+| 论证是否**可复查** | 不需要论证 | 需要,但**落在声明数据与运行期断言**,不落在散文 |
+| 失效形态 | 撞号 ⇒ V6-b 红 | 语义漂移(C-1′) / 覆盖不全(C-2) / 控制面污染(C-3) / 未检验项被冒充(C-4)⇒ 各自必红 |
+| **不可判定的残余** | 无 | **U-1 与 U-2**(E.3.4)⇒ **不判定,只登记**(C-4) |
+
+⇒ **判据**:本段**不主张** M-2 与 M-1 等价。M-2 **弱于** M-1(它少了一条结构性保证),但**强于**「散文论证」。
+**代价必须显式登记**(E.7),⛔ 不得写成「已等价」。
+
+### E.6 取代后文本(规范)
+
+**取代 D.2 的规范句**:
+
+> 抓取点 3 的义务:**集合流量不得与 coherence 事务共享未论证的通道依赖**。
+> ⇒ **两种满足模式**:M-1(独立 VC,`collective_vc_reservation` 非空)或 M-2(共享 VC + E.3 的四条证书)。
+> ⇒ `collective_planes.json` 的 `vc_reservation_declaration.status` 取值域:**`"unavailable"` | `"shared_no_isolation"`**。
+> ⇒ `status: unavailable` 时 `V6-c` 的**原语义不变**(不得存在真实 fabric 集合流量载体,仅本地模型);
+> `status: shared_no_isolation` 时 `V6-c` **不适用**,改由 E.3 四条判据守门。
+> ⇒ **载体**:集合平面**不声明**自己的 VC 绑定 ⇒ 它**继承**该 network 上全部既有实例的映射
+> (C-1′ 判「继承**良定义**」);载体 = **只读**的 `protocol_instances.json` + `fabric.json`
+> ⇒ ⛔ 集合平面**不**进 `protocol_instances.json`(它**不是协议实例** —— 见 E.3.2 的三条障碍);
+> ⛔ **不**在 `collective_planes.json` 新增任何声明组 ⇒ 声明最小集**仍为四组**。
+> ⇒ **作用域**:证书是**逐 `(plane, network)`** 的;`plane_binding` 为 `null` 的实例**不在**范围内;
+> **不产生 fabric 集合流量**的 plane(如 `LocalCollectivePlane`)**不在**范围内。
+> ⚠️ `vc_reservation_declaration` 是**拓扑级单值**(根级**属性**;其自身 `required` = 四字段
+> `status` / `reason` / `owner` / `revisit_trigger` —— ⚠️ **根级 `required` 列表并不含它**
+> ⇒ 它的存在性由 **schema 的 `allOf/if-then`**(`collective_vc_reservation` `maxItems: 0` ⇒ `then.required`
+> 含 `vc_reservation_declaration`,实测 `collective_planes.schema.json`)+ **运行时判据 V6-a** **双重要求**),
+> 而证书是**逐 (plane, network)** ⇒ **拓扑级开关承载逐 network 证书** ⇒ 声明源 SHALL 记录证书适用的
+> `(plane, network)` 清单,未列入清单者 SHALL 视为**不在** M-2 覆盖内。
+
+**取代 D.4 的 `V6-c` 行**:在上表三行(V6-a / V6-b / V6-c)之后追加一行:
+
+| # | 判据 | 载体 | 反向 fixture |
+|---|---|---|---|
+| **V6-d**(新增) | **共享模式证书**:`status: shared_no_isolation` ⇒ E.3 的 **C-1′ / C-2 / C-3 / C-4** 全绿 | `collective_planes.json`(声明面)+ `collective_plane_contract.hh`(判定面)+ 运行期断言(C-3) | 四条各一(见 E.3.1) |
+
+### E.7 后果 / 代价(独立章,⛔ 不并入决策段)
+
+| 面 | 后果 |
+|---|---|
+| **正面** | 队列 #14 可在**零 M1 冻结件改动 / 零跨仓依赖**下开工(3 处 schema + `kMaxVcId` + 3 处测试断言**全部不动**);`ualink_fabric` 的 4 VC 硬件语义**不被改写**(保真度不倒退) |
+| **正面 ②** | 集合平面**复用**既有实例的 VC 空间 ⇒ 图上**不引入新顶点、不引入新边** ⇒ 无环性结论**直接继承**既有实例的图结论(⇒ 无需重跑,重跑也无新信息) |
+| **负面 ① 结构性保证降级** | M-2 少一条「物理上不可能共享」的保证 ⇒ 死锁自由**改由声明数据 + 控制面断言**承担 |
+| **负面 ② 未检验项 +2** | **U-1**(H6 隔离假设)与 **U-2**(同 VC 内两类流量的相互阻塞)**不可检验** ⇒ 登记(C-4);假设 H6 从此**不能再被当作已满足的前提**引用 |
+| **负面 ③ 判据面 +1 行** | `V6-d` 新增 4 条 fixture;四条共用 id ⇒ 归因靠 `detail` 前缀**精确匹配**(⛔ 前缀匹配会让 `CP-03` 命中) |
+| **负面 ④ ⚠️ 下游 spec 层须同步** | `openspec/specs/cep-collective-plane-contract/spec.md`(**M1 冻结件**)须同步三项:`V6-c` Scenario 的**适用条件** + **新增 `V6-d` Scenario** + `status` 第二取值的判定语义 ⇒ 队列 #14 归档时走**两步授权**(本段**不**改它)。⚠️ **该 spec `:35` 的「声明最小集**恰含四组**」条款**不受影响** —— 本段**不新增声明组**(E.3.2)⇒ 组数仍为 4 |
+| **负面 ⑥ ⚠️ 已落地运行期判定的单值锁定** | `evaluate_vc_reservation`(`include/tlm/cep/collective_plane_contract.hh:659-662`)对 `status != "unavailable"` **一律 FAIL** ⇒ **M-2 模式下 CP-03 必红** ⇒ 本段**必须**同步放宽该判定(取值域 = 2 值)+ schema 的 `status` 描述串(现文「空预留只允许声明 unavailable」)⇒ **不改则队列 #14 的目标场景无法闭合** |
+| **负面 ⑤ ⚠️ 拓扑级开关 vs 逐 network 证书** | 一个 `status` 值承载**逐 (plane, network)** 的证书 ⇒ 声明源须自带适用清单(见 E.6)⇒ **语义负担**转移到声明面 |
+| **风险** | 若将来 ArchForge 提供 ≥5 VC **且有硬件保真依据** ⇒ 应**回到 M-1**(E.8 第 4 条)⇒ 本段是**过渡解**,不是终态 |
+| **负面 ⑦ ⚠️ 「恰含四组」当前是**纸面**条款** | 实测:仓内 `test/` 与 `scripts/test/` **无**任何「声明最小集组数 == 4」的机器断言(`test_cep_collective_plane_contract.cc` 只查 `additionalProperties == false` + `required.size() == 3`)⇒ 该条款**当前不由机器守门** ⇒ 本段「不新增声明组」的决定**不能**靠 CI 兜底 ⇒ 须由 **E.9 的「冲突已消解」勾选项**人工守门;⇒ ⛔ **不得**因此认为「加第 5 组无害」—— 危害是**写坏冻结 spec 条款**并使该条款降级为不可执行 |
+| **可逆性** | 高:删 `status` 的第二取值 + 撤 `V6-d` + 恢复 `evaluate_vc_reservation` 的单值判定 ⇒ 回到 D.4 原文本(M-1 语义未变) |
+
+### E.8 重访触发条件(追加第 4 / 5 条,前 3 条原文不改)
+
+1. 拓扑提供 **≥5 VC**(原,不变);
+2. 首次需要真实 fabric collective 流量(**已命中**,本段即其裁决);
+3. `ADR-CEP-09` 定稿且给出**跨平面** VC 共享的无环性论证(原,不变);
+4. **新增**:ArchForge 给出 **≥5 VC 的硬件保真依据**(真实 UALink 器件确有第 5 个 VC)⇒ 必须**回到 M-1** 并撤 `V6-d`;
+   ⛔ 仅因「建模便利」扩 VC **不**构成触发(会**降低**保真度);
+5. **新增**:通道依赖图的建图模型**引入跨 network 边 / 回边补全**(即 **P2** 被打破,`channel_dependency_graph.hh` 的
+   `cross_net_edges` 计数器转为非零)⇒ E.4 的构造性论证失效 ⇒ **必须**重开本段并重做证书。
+
+### E.9 Verification(前瞻判据 · 可勾选 —— **不是**已跑完的实测日志)
+
+- [ ] `collective_planes.schema.json` 的 `status` `enum` = **2 值**(`unavailable` / `shared_no_isolation`)+ 描述串已改;且 schema 根级**不新增**任何声明组(保持 **4 组**语义)
+- [ ] `acyclicity_certificate` **不存在**(证书是**四条判据**的结果,不是一个布尔自证字段)—— 若实现为布尔自证 ⇒ **判红**
+- [ ] `evaluate_vc_precondition` 的 `status: unavailable` 分支**行为零变化**(队列 #13 的 4 条 fixture + 文件级 E2E 仍绿)
+- [ ] ⭐ **`evaluate_vc_reservation` 的 `status` 值域判定已放宽为 `{unavailable, shared_no_isolation}`**
+      (现文 `collective_plane_contract.hh:659-662` 对 `status != "unavailable"` 一律 FAIL ⇒ **不改则 M-2 必红**)
+      ⇒ **正控**:`status=shared_no_isolation` 且 C-1′~C-4 全绿 ⇒ **CP-03 PASS**
+      ⇒ **反 fixture**:`status` 取**第三值** ⇒ 必红(归因 `CP-03`,精确相等)
+- [ ] **C-1′** 的反 fixture:在 `collective_planes.json` 注入 `collective_plane_vc_binding` 块(集合平面**自带独立绑定**)⇒ 必红(归因 `CP-03-VC-CERTIFICATE/C-1′`,完整前缀精确相等)
+- [ ] **C-1′** 的反 fixture:某网实例间映射不一致却用 M-2 ⇒ 必红
+- [ ] **C-2** 的反 fixture:只覆盖部分 `vc_id` ⇒ 必红;且判定**直接对 `fabric.json` 的 `vc_count`**(不依赖边表)
+- [ ] **C-3** 的 in-flight 拒绝路径有运行期断言 + 必红 fixture
+- [ ] **C-4** 的元测试能抓到「把 U-1 / U-2 标成已验证」
+- [ ] `kContractRuleCount` 仍 == **6**(四条折进 `CP-03` 的 `detail` 前缀,不新增 `ContractRule`)
+- [ ] **零 M1 冻结件改动**:本队列**可**改的声明面(`collective_planes.json` /
+      `collective_planes.schema.json` —— 实测**不在** M1 冻结集)+ `collective_plane_contract.hh` /
+      `collective_plane.hh` + 测试
+      ⇒ **必须零 diff** 的 M1 冻结件 = `protocol_instance.schema.json` + `fabric.json`
+      (⚠️ 本清单列的是「**本队列**可能触碰的 M1 冻结件子集」;**本 SU 自身的三份 ADR** 亦在 M1 集内
+      ⇒ 走台账 **Entry #193** 的两步授权)
+      ⇒ ⚠️ `protocol_instances.json` **非** M1 冻结件,但受 `cep_decl_alignment_check.sh` ⑥ 的
+      **ArchForge 逐字段镜像闸**约束 ⇒ 同样**零 diff**(集合平面**不进**它 —— E.3.2)
+      ⇒ ⚠️ **唯一**需两步授权同步的 M1 冻结产物 = `openspec/specs/cep-collective-plane-contract/spec.md`
+      (范围见 E.7 负面 ④;**不含**其 `:35` 的「恰含四组」)
+- [ ] **「恰含四组」冲突已消解**:`cep-collective-plane-contract/spec.md:35` 的「声明最小集 SHALL 恰含四组」
+      ⇒ 本段**不新增声明组**(E.3.2)⇒ 组数仍为 4 ⇒ 该条款**不需修改**;归档时的 spec delta **不含**该条款
+- [ ] `ADR-CEP-09` 已出窄化 SU(见该 ADR 的 2026-11-03 段)—— **否则「机制归 09」无授权依据**
+
+### E.10 critic 第 1 轮(REJECT,2 BLOCKER)的修订对照
+
+| # | critic 的 finding | 处置 |
+|---|---|---|
+| **B1** | `ADR-CEP-04` SU 的「由 `flow_support` 派生」规则被仓内 **6/7** 存量声明反证;且与 `INV-CEP-04-IC7` 矛盾;先例引用事实错误 | ⇒ **撤回**该派生规则,改为「候选集 + 判别依据 + 逐实例理由登记」(见 `ADR-CEP-04` 同日 SU) |
+| **B2** | C-1′/C-2 的载体在 M1 冻结 schema 下**不可按字面实现**;`acyclicity_certificate` **无规范定义** | ⇒ **重构载体**:集合平面**不进** `protocol_instances.json`,改在 `collective_planes.json` 新增 `collective_plane_vc_binding`(E.3.2)⇒ 伪实例方案作废;`acyclicity_certificate` **删除**(证书 = 四条判据的判定结果,⛔ 不得是布尔自证) |
+| **S1** | 构造性论证的**两条前提未写**;`IC1` 鉴别力被说窄 | ⇒ E.4 补 **P1 / P2** 前提表 + `IC1` 的**三项**鉴别力;**P2 被打破**登记为 E.8 第 5 条 |
+| **S2** | `ADR-CEP-09` 的取代范围**不完整**(决策 4 与 §4 抓取点 5 原文未动) | ⇒ 该 ADR 的 SU 加**兜底声明** |
+| **S3** | 「跨平面**边**」在当前模型里**不存在** | ⇒ 载体重构后,集合平面**不引入新顶点/新边** ⇒ 无跨平面边;改述见该 ADR 的 SU ① |
+| **S4** | C-1′ 的**参照实例未钉**(两网各有不一致实例) | ⇒ E.3.3 钉死:参照集 = **两域并集**;**该网映射不一致 ⇒ 不得用 M-2** |
+| **S5** | C-2 只**代理地**实现谓词(IC1 只在边表引用到某 VC 时才要求其被绑定) | ⇒ C-2 改为**直接对 `fabric.json` 的 `vc_count` 判定**;`IC1` 降为**良构性见证 / 正控** |
+| **S6** | `vc_reservation_declaration` 是**拓扑级单值** ⇒ 作用域未钉 | ⇒ E.6 补**作用域**(逐 `(plane, network)` + 适用清单 + 明确排除项);E.7 登记「下游 spec 须同步」 |
+| **S7** | C-3 标题与正文**不是同一命题** | ⇒ C-3 改为「**控制面与数据面互斥**」并写明拒绝对象 |
+| **S8** | 探针一次性、不入库 ⇒ 结论不可复跑 | ⇒ E.4 补「可由 P1 + P2 + 两份边表 + `channel_dependency_graph.hh:552-568` 重推」 |
+| **N1/N2/N3** | 实验表跨度 / 派生表「二值」措辞 / 边界三条缺「今天成立所依赖的事实」 | ⇒ E.4 表加**节选**说明;`ADR-CEP-04` 代价栏改「派生输入不承载选型所需信息」;`ADR-CEP-09` ③ 三条各补依赖事实 |
+
+### E.11 critic 第 2 轮(REJECT,2 新 BLOCKER)的修订对照
+
+| # | critic 的 finding | 处置 |
+|---|---|---|
+| **B3** | 新载体(根级第 5 组 `collective_plane_vc_binding`)与 **M1 冻结** `cep-collective-plane-contract/spec.md:35` 的「恰含四组」正面相撞;且 **E.9**(零冻结件改动)与 **E.7 负面 ④**(队列 #14 要改冻结 spec)**自相矛盾** | ⇒ **载体再次重构**(E.3.2):集合平面**不声明**自己的 VC 绑定 ⇒ **继承**既有实例的映射 ⇒ **零新声明组** ⇒ 「恰含四组」**不受影响**;**E.7 负面 ④** 的同步范围收敛为三项且**明写**「恰含四组不需修改」;**E.9** 补「冲突已消解」勾选项 + `protocol_instances.json` 的「非 M1 冻结件但受镜像闸约束」措辞 |
+| **S-1** | E.6 原写「存在性由运行时判据 V6-a 强制,而非 schema 级强制」—— **不成立**:schema 的 `allOf/if-then` **已在 schema 级强制** | ⇒ E.6 改为「**schema 的 `allOf/if-then` + 运行时判据 V6-a 双重要求**」 |
+| **N-1** | 跨仓域的出处引用失效(`authority_migrations[]` 现为**空数组**) | ⇒ E.3.3 改为「`derived_from.source_doc` + `repo_owned_instance_ids[]` 的**补集**」 |
+| **N-3** | 四条判据共用一个 id ⇒ 反向 fixture 无法区分哪条失败 | ⇒ E.3.1 归因脚注补**子标记**约定(`[CP-03-VC-CERTIFICATE/C-1′]` 等)+ 完整前缀精确相等 |
+
+### E.12 critic 第 3 轮(REJECT;B4 闭合,B3 有残影 + 2 个新 BLOCKER)的修订对照
+
+| # | critic 的 finding | 处置 |
+|---|---|---|
+| **B3 残影 ×4** | 被否决的载体 `collective_plane_vc_binding` 仍活在 4 处规范文本里 ⇒ 实施方按 checklist 执行会**重新造出第 5 组** | ⇒ **E.9**(2 处:删「块有 schema 定义」+ C-1′ 反 fixture 改为「注入该块 ⇒ 必红」)、**E.7 可逆性行**(删「删 `collective_plane_vc_binding`」)、**`ADR-CEP-09` ⑤**(改为「继承 + 该块**不出现**,出现即必红」)全部改为**继承式**表述 |
+| **BLOCKER-A** | E.3.2 收尾把 `collective_planes.json` / `collective_planes.schema.json` 写进「**不改**」清单,与同段 E.6 / E.9 相反 ⇒ **同一 SU 内二义** | ⇒ E.3.2 收尾:把这两个文件移出「不改」清单,并加 **⚠️ 例外(必改)** 段(`status` 第二取值)⇒ 零 M1 冻结件改动**仍然成立**(二者不在 M1 集内) |
+| **BLOCKER-B ①** | 取代范围只列 D.4 的 `V6-c` 行,**未取代 `V6-a` 行** ⇒ 与已签批 ADR 冲突且未走取代流程 | ⇒ **取代范围**补「+ **D.4 的 `V6-a` 行**(单值 `status` ⇒ **双值**)」+ 一句「不取代则 M-2 模式下 CP-03 必红」 |
+| **BLOCKER-B ②** | 已落地运行期判定 `evaluate_vc_reservation`(`collective_plane_contract.hh:659-662`)对 `status != "unavailable"` **一律 FAIL** ⇒ **M-2 模式必红** ⇒ 队列 #14 目标场景无法闭合 | ⇒ **E.7 新增「负面 ⑥」**登记该锁定 + 同步放宽要求;**E.9 新增勾选项**(2 值判定的正控 / 反 fixture) |
+| **SHOULD_FIX** | ① C-1′ 的「全部既有实例」字面读法含 5 个**无绑定**实例 ⇒ 目标网络会被判不一致 ⇒ 不可用;② M1 冻结件清单未标注「本队列可能触碰的子集」+ 未提本 SU 自身三份 ADR | ⇒ ① C-1′ 措辞改为「全部**在该 network 上有 `vc_binding` 的**既有实例」;② E.9 加两句标注 |
+| **NIT** | E.3.2 与 E.9 对 `protocol_instances.json` 是同一事实的两种说法 | ⇒ E.3.2 与 E.9 统一为「**非** M1 冻结件,但受 ⑥ 镜像闸约束 ⇒ 零 diff」 |
+
+**关联**: 台账 **Entry #193**(授权记录)· #171(原 Decision D)· #179(`V6-c` id 唯一化)· #190(队列 #13 实现层归档)
+· D.5(未采路径表 —— 本段选的是其路径 C)· `ADR-CEP-09` 2026-11-03 段(机制侧窄化 + `IC1` 鉴别力边界)
+· `ADR-CEP-04` 2026-11-03 段(tracker 选型改为候选集 + 理由登记)· `ADR-CEP-09` SU 2026-11-02 §⑤(同型先例)
+· `include/tlm/cep/channel_dependency_graph.hh`(E.4 的实测对象)· `include/tlm/cep/protocol_instance.schema.json`(E.3.2 的三条障碍)
+· ArchForge `22-nsa-fabric-address-spec.md` §0.5.4.1 表 `:147`(VC 槽位语义;**本仓无机器可读副本** ⇒ 见 E.3.4 的 U-2 与本段 C-1′ 的依赖登记)
