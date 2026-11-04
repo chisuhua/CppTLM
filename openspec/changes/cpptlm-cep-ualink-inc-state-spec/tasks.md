@@ -13,8 +13,8 @@
 
 | Phase | 状态 | 说明 |
 |---|---|---|
-| 0 治理前置 | ⬜ 待实施 | 转正登记 + KPI 回填 + Task 0 产物登记 |
-| 1 载体形态定稿 | ⬜ 待实施 | `ualink_inc_state_spec.hh` 自足载体 + 逐格 basis + 9 项 pending + 编译期断言 |
+| 0 治理前置 | ✅ **已完成**(2026-11-04) | 转正登记 + KPI 回填 + Task 0 产物登记 |
+| 1 载体形态定稿 | ✅ **已完成**(2026-11-04) | `ualink_inc_state_spec.hh` 自足载体 + 逐格 basis + 9 项 pending + 编译期断言 |
 | 2 判据面 | ⬜ 待实施 | 正向测试 + **9 组**反向 fixture + 归因 id 元测试 + 探针/脚本 + ctest 注册 |
 | 3 证书规约面 | ⬜ 待实施 | 四条证书的逐边依据 + 参照域 + `IC1` 鉴别力边界登记 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + `validate` + KPI **1/3 → 0/3** + 归档 + 台账 Entry |
@@ -23,21 +23,21 @@
 
 ## Phase 0 — 治理前置
 
-- [ ] 0.1 **转正裁决** ⇒ 台账 Entry 登记
-- [ ] 0.2 **Task 0 产物登记**:`docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md`(✅ 已产出,2026-11-04)
+- [x] 0.1 **转正裁决** ⇒ 台账 Entry 登记
+- [x] 0.2 **Task 0 产物登记**:`docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md`(✅ 已产出,2026-11-04)
       ⇒ **5 条公开来源**(`A-1` ~ `A-5`,sha256 钉版)· **9 项 pending**(`N-1` ~ `N-9`)· **9 个契约锚点**(`C-1` ~ `C-9`)
-- [ ] 0.3 **KPI baseline 回填**:**0/3 → 1/3**,**8 处**
-- [ ] 0.4 ⚠️ **合规偏差登记**:UALink Common 2.0 的规范正文受 **Evaluation Copy Agreement** 约束(实测)
+- [x] 0.3 **KPI baseline 回填**:**0/3 → 1/3**,**8 处**
+- [x] 0.4 ⚠️ **合规偏差登记**:UALink Common 2.0 的规范正文受 **Evaluation Copy Agreement** 约束(实测)
       ⇒ 与本仓 **CXL ECA §3** 同型 ⇒ **禁投喂技术正文** ⇒ 与用户 2026-11-03 的裁决有偏差 ⇒ **登记不改裁决**
       (⚠️ **对本 change 的实质影响 = 零** —— 公开来源本就撑不住 9 项语义)
 
 ## Phase 1 — 载体形态定稿
 
-- [ ] 1.1 **`include/tlm/cep/ualink_inc_state_spec.hh`**(新 · header-only · **自足**)
+- [x] 1.1 **`include/tlm/cep/ualink_inc_state_spec.hh`**(新 · header-only · **自足**)
       ⇒ ① **只 include 标准库** ② ⛔ 无平台标识 / 无项目内头 / 无区域表 / 无 `transition_*`(禁项清单,per `design §2.1`)
       ③ INC 四原语 id + 映射(per `design §2.2`)④ **逐格 basis**(每格有 `ref`)⑤ **9 项 pending**(逐项可报)
-- [ ] 1.2 **编译期结构断言**(带归因 id 文案):禁项清单的可判部分 + 原语映射 + pending 完备性
-- [ ] 1.3 **零改动核验**:不碰 `collective_plane.hh` / `sharer_tracker.hh` / `protocol_instance*.json` /
+- [x] 1.2 **编译期结构断言**(带归因 id 文案):禁项清单的可判部分 + 原语映射 + pending 完备性
+- [x] 1.3 **零改动核验**(实测:本阶段 `git diff --stat` 仅新增 1 头 + 1 测试,平台头 **零改动**):不碰 `collective_plane.hh` / `sharer_tracker.hh` / `protocol_instance*.json` /
       `fabric.json` / `collective_planes.*` / `ReduceOp` / canonical 10 流
 
 ## Phase 2 — 判据面

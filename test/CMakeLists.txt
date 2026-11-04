@@ -389,6 +389,16 @@ add_test(NAME cep_nvlink_sharp
 add_test(NAME cep_nvlink_sharp_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_nvlink_sharp_reverse_verify.sh)
 
+# 队列 #14 `cpptlm-cep-ualink-inc-state-spec`(第 0 个 change = **规约层**)的载体判据:
+#   ① INC 四原语恰 4 + `AllReduce` = REDUCE+BROADCAST **复合**(⛔ 不是第 5 原语)+ 映射不越出;
+#   ② **逐格 basis** 完整(每格有 `ref`)+ `self-derived` 不得指向公开来源;
+#   ③ **9 项 pending**(id 与 ref 一一对应)+ 形状型谓词极性;
+#   ④ **载体自足**:只 include 标准库 + **零**平台标识 + **零**区域表 + **零**转移判定
+#      (⚠️ 含**鉴别力自测**:同一扫描器对毒化文本必须命中 ⇒ 证明扫描器有牙)。
+#   ⚠️ 本组 = 编译期锁的**运行期见证**(铁律 ③);**反向 fixture** 见 Phase 2。
+add_test(NAME cep_ualink_inc_state_spec
+         COMMAND cpptlm_tests "[cep][ualink-inc]" -r compact)
+
 # 队列 #11 `cpptlm-cep-tilelink-tree-manager`(第 1 个 change = 实现层)的判据:
 #   ① 载体契约(adapter 零副本 + `TreeManager` 的 `ESCALATE_UP`/`CHAIN` 真实使用
 #      + `snoop_join_core` 的 4 步语义);

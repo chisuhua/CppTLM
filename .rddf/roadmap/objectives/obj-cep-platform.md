@@ -11999,6 +11999,42 @@ Acceptance(10 条)/ Capabilities / Impact)+ YAML frontmatter(`phase: phase-10` �
 
 ---
 
+### Entry #196 — 2026-11-04 [build](队列 #14 **规约层** Phase 1 完成 —— 载体 `ualink_inc_state_spec.hh` + 编译期锁的运行期见证)
+
+**主题**:队列 #14 规约层 change `cpptlm-cep-ualink-inc-state-spec` 的 **Phase 0 + Phase 1** 完成。
+**角色**:builder。
+
+**① 交付面**
+
+| 面 | 内容 |
+|---|---|
+| 载体 | 新头 `ualink_inc_state_spec.hh`(header-only · **自足**:只 include `<array>` / `<cstddef>` / `<cstdint>` / `<string_view>`)—— INC **四原语**的自持 id + **到既有原语的名字映射**(载体**只用** 3 个原语名 ⇒ **不是**平台词表副本)· **10 个义务格 + 4 个原语格**的逐格 `basis` · **9 项 pending** · 形状型谓词 · 3 个声明锁 |
+| 编译期断言 | **22 条** `static_assert`,**每条带归因 id 文案**(`UIS-01` / `UIS-02` / `UIS-03` / `UIS-04`·`05`·`06`·`08`·`09` / `UIS-07` / `UIS-10` / `UIS-11`) |
+| 运行期见证 | `test/test_cep_ualink_inc_state_spec.cc` —— **2 cases / 57 assertions**:① 编译期锁的运行期见证 ② **自足性**文本扫描(只 include 标准库 + **零**平台标识 + **零**区域表 + **零**转移判定) |
+| ⭐ **鉴别力自测** | 同一扫描器对**毒化文本**(注入 `CollectiveOp`)必须命中 ⇒ 证明「零命中」不是**扫描器瞎了** ⇒ 该判据有牙(铁律 ③ 的直接落实) |
+| ctest | `cep_ualink_inc_state_spec` 已注册 ⇒ 全量 `ctest` **145 → 146** |
+
+**② ⚠️ 一处**自查抓到**的载体缺陷(已修)**
+
+禁项扫描首跑**红** ⇒ 命中的是**载体自己的常量名** `kReduceOperatorFamilyDefinedInCarrier`
+—— 它**包含子串** `ReduceOp` ⇒ 禁项清单(`design §2.1`)的扫描命中 ⇒
+⇒ 处置:**改名** `kOperatorFamilyDefinedInCarrier`(保留扫描的**严格性**,不做词边界放宽)
+⇒ 教训:禁项清单里的**短 token** 会被载体自身的标识符命中 ⇒ 新增载体时须把**自己的**标识符也纳入复核。
+
+**③ 零改动核验(实测)**:本阶段 `git diff --stat` 仅新增 **1 头 + 1 测试**(+ 文档 / 台账 / ctest 注册)
+⇒ 平台头(`collective_plane.hh` / `sharer_tracker.hh` / `protocol_instance*.json` / `fabric.json` /
+`collective_planes.*`)**零改动** ⇒ 任务 1.3 通过。
+
+**④ 验收(实测)**:载体独立编译通过(含全部 `static_assert`)· `cpptlm_tests "[cep][ualink-inc]"`
+**2 cases / 57 assertions** 全绿 · `ctest -R cep_ualink_inc` **1/1** 通过 ·
+`openspec validate cpptlm-cep-ualink-inc-state-spec --strict` rc=0 · 门禁 rc=0 · `format.sh --check` rc=0。
+
+**⑤ 关联**: Entry #195(change 建档 + Task 0)· #194(improvement 草稿)· #193(三则 ADR SU + 冻结面授权)
+· #186(队列 #13 规约层归档)· `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md`(basis 唯一人工审计面)
+· `openspec/changes/cpptlm-cep-ualink-inc-state-spec/`(本条对象)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
