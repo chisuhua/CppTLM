@@ -818,3 +818,44 @@ R11 是「**声明超前于实现**」(声明了 `SparseSnoopFilter` 却无行�
 **关联**: 台账 **Entry #193**(授权记录)· #139(`FullMapDirectory` 反向缺口)· #154(§3.5 聚合点二元)· #96(R-1 第 6 种实现)
 · #112(`BroadcastNull`「无消费者 ⇒ 保留登记」)· 用户裁决 2026-11-03(队列 #13 的 `BroadcastNull`)
 · `include/tlm/cep/broadcast_null_tracker.hh`(队列 #13 交付的行为类)· `include/tlm/cep/protocol_instances.json`
+
+## Status Update 2026-11-04(#1)—— §3.4 的 BISnp **举例方向**订正(device 发起;`observe_snoop` 接口语义**零变化**)
+
+**主题**:§3.4「被动观察(BISnp 接收侧)」的 systemverilog 注释写「**远端设备收到 BISnp 后**更新自己 DCOH 中
+『peer 对该线的认知』」⇒ 隐含 BISnp = **host → device**。该**举例方向**与三方证据相反。
+
+**① 三方证据(全部一致)**
+
+| 证据 | 位置 | 结论 |
+|---|---|---|
+| **CXL 3.0 规范** | — | BISnp = **device → host**(device 发起的 back-invalidate snoop,要求 host 撤销其缓存副本);BIRsp = host → device |
+| **本仓真源 1** | `docs/architecture/07-coherence-exploration-platform.md` §5.4 的 Verification | 已勾选「`back_invalidate` 行的 BISnp 方向 == **device→host(S2M)**」 |
+| **实现(规约载体)** | `include/tlm/cep/cxl_dcoh_state_spec.hh` | `CDS-03` 的 `static_assert` 锁「S2M_BISnp SHALL 是**设备发起**(local)」;`M2S_BIRsp` = Remote(host 回应) |
+
+⇒ §3.4 是**孤例**(同 ADR `:28`「BISnp 往返涌现」的方向表述本身正确)。
+
+**② 订正范围(刻意收窄)**
+
+- **仅举例方向**:`§3.4` 注释中的「远端设备**收到** BISnp」⇒ 应为「**device 发起** BISnp、**host 接收**;
+  device 侧收到的是 BIRsp」。
+- ⛔ **`observe_snoop(addr, from_node, resulting_local_state)` 接口语义零变化** ——
+  `from_node` 仍是「**snoop 来源节点**」;在 BISnp 场景下 `from_node` = 发起 back-invalidate 的**设备**
+  ⇒ 订正后该接口**恰好**与其原语义自洽(此前是举例写反而非接口有问题)。
+- ⛔ 本 ADR **正文 §1 ~ §13 逐字不改**(ADR 不可变纪律;本则只追加)。
+- ⛔ `observe_snoop` 的**禁止项不变**:仍禁止 `subscribe_remote_snoop()`(传输通道概念不得泄进 tracker 平面)。
+
+**③ 连带订正(已落地,builder 域)**:`include/tlm/cep/cxl_dcoh_state_spec.hh` 的 **6 行** `CxlMemChannel`
+方向注释原整体写反(M2S 标成「memory → host」)⇒ 已订正为 M2S = host → device / S2M = device → host
+(纯注释,枚举值 / 方向表 / `CDS-03` 断言**零改动**),per 台账 **Entry #214**。
+
+**④ Verification(前瞻判据 · 可勾选)**
+
+- [x] `ADR-CEP-04` §3.4 的举例方向与 `07 号 §5.4` + `CDS-03` + CXL 3.0 三方一致
+- [x] `observe_snoop` 三参语义(`from_node` = snoop 来源节点)未被本则改动
+- [x] `cxl_dcoh_state_spec.hh` 的 6 行方向注释与本则一致(builder 域,Entry #214)
+- [x] `include/tlm/cep/protocol_instance.schema.json` **零改动**
+- [ ] `ADR-CEP-04` 正文 §1 ~ §13 逐字未改(本则仅追加)
+
+**关联**: 台账 **Entry #214**(代码域注释订正)· **#170** ⑤ X3(本项原始登记)·
+`docs/architecture/07-coherence-exploration-platform.md` §5.4(Verification 已勾选项)·
+`include/tlm/cep/cxl_dcoh_state_spec.hh`(`CDS-03`)· `ADR-CEP-12` 决策 2(协议族能力映射口径)

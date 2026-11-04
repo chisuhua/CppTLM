@@ -1235,3 +1235,91 @@ experimental/<run_id>/
 · `ADR-CEP-04` 的 **第 3 则 Status Update(2026-11-02)**(聚合点二元裁决)
 · `docs/research/2026-11-02-cep-cxl-dcoh-symmetric-anchor-summary.md`(§3.4 / §6 —— **本则依据**)
 · `include/tlm/cep/cxl_cache_adapter.hh`(`cxl_2_0` 专用载体的**零副本 + 单一委托**结构 —— ③ 的判据依据)
+
+## Status Update 2026-11-04 —— Stage 3 收口的 **5 项架构级裁决**(B3 口径拆分 · 3 项声明假设处置 · `FullMapDirectory` 触发条件 · 跨仓锚点治理不变量 · MOESI-GPU 形态登记)
+
+**主题**:14 个 change 全部归档后,一次全平台梳理暴露 8 项口径/登记缺口;本则裁决其中 5 项
+(另 3 项已由 `ADR-CEP-04` SU#1 与台账 Entry #214 处置)。
+**性质**:architect 域的**口径裁决 + 真源 1 同步**。objective 的原文措辞属 planner 域 ⇒ 由 planner 落地。
+
+### ① DoD §6.2 B3「6 个 ProtocolEngine 实施完成」—— **一词两义,拆两行裁决**
+
+**问题**:B3 的「ProtocolEngine」既可读作「**运行时状态机引擎**」,也可读作「**协议族适配器**」。
+两读法的达成度天差地别:
+
+| 读法 | 实测达成 |
+|---|---|
+| 运行时引擎 | **B3 的 6 族清单中只有 `CHI RN-F` 落地**(`chi_rnf_protocol_engine.hh`,648 行,且有 L4 事务级 E2E) |
+| 协议族适配器 | **6 族全部达成**(7 个 adapter 类实现,per 本文件 §5.1.1 与 §11 caps 表) |
+
+**裁决**:B3 **必须拆成两行**,且两行**各自独立可判**:
+
+- **B3a(已达成)**:6 个协议族的 **adapter 契约**全部实施完成(7 个 adapter 类;逐实例可按 JSON 选择)。
+- **B3b(部分达成)**:**运行时引擎**在 B3 的 6 族清单中达成 **1/6**(仅 CHI RN-F)。
+- **未达成部分的触发条件**:某协议族的**规约载体出现转移表真源**时,才补运行时引擎
+  (per oracle 2026-11-04 裁决:规约载体无转移表时补引擎 = 诱发推理填空 ⇒ **不补**)。
+
+**⛔ 防自欺条款(强制,不可省略)**:objective 的 B3 **不得**整行改写为「已达成」。
+必须保留「运行时引擎未达成」的**显式未勾项行**,并在同一行标注触发条件。
+⇒ 「DoD 降格后仍宣称达成」是本裁决明确禁止的失败模式。
+
+**⛔ 两条不得计入的口径**(避免冒充):
+① **MESIF / MOESI-GPU / CohIfNull 不在 B3 的 6 族清单内** ⇒ 既不计入 B3、也不冒充;
+② **UALink 无实例声明**(`ualink_4` 取值不可判定,per 本文件 §5.1.1 的登记)⇒ 不算「实例已声明」。
+
+### ② 声明层 3 项建模假设 —— 逐项处置(**含实测口径更正**)
+
+**实测更正(本次裁决的事实基础)**:`consistency_labels = SC/SC` 是 **5/7** 实例
+(`chi_rnf` / `cxl_2_0` / `cxl_3_0_symmetric` / `tilelink_c` / `nvlink_4`);
+`moesi_gpu` = `RC-data`/`RC-release`;`mesif` = `RC-acquire`/`RC-release`。
+且 `writeback` 是 **`message_classes` 的成员**(7/7 实例含 `"writeback"`),**不是**实例级布尔字段。
+
+| 假设 | 处置 | 依据 |
+|---|---|---|
+| `combination_capabilities` 三维全 true(7/7) | **维持** + 登记为「**声明入口 + 实验证伪**」 | 本文件既有的「组合能力不进 Stage 1~3 DoD,走人工声明 + 实验证伪」裁决同向;H2/H3/H6 即证伪通道 |
+| `consistency_labels = SC/SC`(5 工业实例) | **补 litmus 证伪判据**:排序 / litmus 实验结果与 SC 期望不符 ⇒ 该实例假设标 `violated` | SC 是**强假设**,必须可证伪;当前 H 系列实验已提供载体,属低成本 |
+| `writeback` 消息类存在(7/7) | **登记为建模简化** + 加限定语 | ⚠️ 最可疑项:`sharer_tracker.caps = NONE/NONE/NONE/NONE` 的实例仍声明 writeback 消息类 ⇒ 存在语义张力。限定语:**「表示协议语义支持写回,不表示该实例的 tracker 会利用」**;暂不删(删需改 7 个实例声明,违反最小改动) |
+
+### ③ `FullMapDirectory` —— 维持「不排期」+ **补显式触发条件**
+
+- **维持**台账 Entry #139 的裁决(当前队列序列无消费者 ⇒ 不排期、保留登记)。
+- **补触发条件**:当某个 `protocol_instance` 声明 `sharer_tracker.impl = FullMapDirectory` 时 ⇒
+  **才**排期该实例的装配与验证。现状「不排期」原本**无边界**,本则补上边界。
+- **保留实现的论据**:它是 tracker 侧**唯一的单级 EXACT 目录**实现(header-only,无实例则无运行时面,维护成本近零)⇒ 删除即丢失未来复用锚点。
+
+### ④ 跨仓对齐锚点 —— **散文引用节号化,机器锚点保留行号** + 立治理不变量
+
+- **散文引用**(如对齐清单里的 `ADR-CEP-02:55` / `:66`):改为**节号引用**(如 `ADR-CEP-02 §X(CEN-Ib11)`)——
+  它们**无机器校验**,纯给人看,行号漂移无感知。
+- **机器锚点块**(`cep_archforge_alignment_check.sh` 的 (file, line, symbol) **三元校验**):**保留行号不动** ——
+  其设计意图就是 fail-loud tripwire(故意让漂移立刻炸);且「ADR 正文不改 + SU 只追加末尾」不变量下
+  **追加永不移动既有行号**。
+- **⚠️ 治理不变量(新立,强制)**:**凡在 ADR 既有行之前插入内容的编辑 = 立即破坏跨仓对齐锚点 = 禁止**。
+  ⇒ ADR 的编辑**只允许**「正文就地澄清(零行数变化)」或「末尾追加 SU」两种形态。
+
+### ⑤ `MoesiGpuProtocolEngine` —— **形态限制登记**(设计内限制,非债务)
+
+- **实测**:11 个 override **全为空体计数器**(canonical 10 流 + `on_address_resolve`,per 决策 M-6「只记账」);
+  **无 emit / egress**;`include/chstream_register.hh` **零注册**;`configs/` 无该 engine 类的 JSON 声明。
+- **⇒ 形态**:它是 **10 流记账壳**,不是协议状态机。L4 事务级 E2E **只能单向**
+  (外部驱动事件 → 验证计数 + 补偿记录);反向(引擎发起 → 对端响应)**无载体**。
+- **处置**:登记为**设计内限制**(per R11 V-2 交付时的显式设计裁决),**不**列为债务、**不**补 emit
+  (补 emit = 重开决策 M-6 且无端到端消费者 ⇒ 过度工程)。
+
+### ⑥ Verification(前瞻判据 · 可勾选)
+
+- [x] B3 的两读法达成度已用**实测**分列(运行时 1/6 族 vs adapter 6 族)
+- [x] 防自欺条款已写入本则(「不得整行改写为已达成」+ 触发条件行)
+- [x] 两条「不得计入」口径已写明(MESIF/MOESI-GPU/CohIfNull 不在清单;UALink 无实例声明)
+- [x] 3 项声明假设的处置已逐项给出,且**修正**了 SC/SC 的覆盖口径(5/7 非全实例)与 `writeback` 的字段形态
+- [x] `FullMapDirectory` 的触发条件已补(某实例声明该 impl ⇒ 才排期)
+- [x] 跨仓锚点的两类处置已区分(散文节号化 / 机器锚点保留行号)+ 治理不变量已立
+- [x] MOESI-GPU 的形态已按**实测**(11 override 全空体)登记,非「仅 1 处 override」
+- [ ] objective 的 B3 拆分措辞与未勾项行已落地(planner 域)
+- [ ] `protocol_instance.schema.json` 的 `perm` 描述补「域锁 ≠ 每实例全列」(builder 域 + 冻结面授权)
+
+**关联**: 台账 **Entry #214**(代码域注释订正)· **#213**(债务第一批 + E2E 覆盖矩阵)· **#212**(H2/H3/H6 首轮实验)·
+**#190** ⑦(3 项声明假设的原始登记)· **#170** ⑤(行号锚点 + BISnp 登记)· **#139**(`FullMapDirectory` 落位裁决)·
+`docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` **SU#1**(BISnp 方向订正)·
+`docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`(H2/H3/H6 结论与口径限定)·
+`docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`(逐协议 E2E 覆盖矩阵)
