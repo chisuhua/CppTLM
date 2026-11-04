@@ -120,10 +120,14 @@ CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`Collecti
 
 #### Scenario: 已注册且 epoch 生效的区域上,数据原语 SHALL **显式声明未实现**(不静默)
 
+> **收窄理由(2026-11-04,per `ADR-CEP-01` SU#4 的 M-2 落地)**:本条原为**能力级**表述,在只有 `NullCollectivePlane` + `LocalCollectivePlane` 两个**本地模型**实现时成立;队列 #14 实现层新增**承载真实 fabric 集合流量**的 `FabricCollectivePlane`(数据路径**真可达**,per `ADR-CEP-03 §2` 的平台侧语义)⇒ 本条**收窄到 `LocalCollectivePlane`**;
+> `FabricCollectivePlane` 的数据路径行为由**新增**的 Requirement `cep-collective-plane-base-fabric-plane` 承载(⛔ **不**放宽「不静默」纪律 —— 真可达**同样**必须给出**可观测**的状态与事件)。
+
 > **补这条的理由**:只规定「未注册区域 ⇒ 报错」会留下另一半 —— **已注册区域上** `send(REDUCE)` 到底返回什么?
 > 若不规定,接口就「承诺了但行为缺失」,调用方无从判断是 bug 还是未实现。
 
-- **WHEN** 对一个**已注册**且 **epoch 已生效**的区域发起 `send(REDUCE)` / `send(BROADCAST)` / `send(MULTICAST)`
+- **WHEN** 对 `LocalCollectivePlane` 的一个**已注册**且 **epoch 已生效**的区域发起 `send(REDUCE)` / `send(BROADCAST)` / `send(MULTICAST)`
+  (⚠️ **本条收窄到 `LocalCollectivePlane`** —— 队列 #14 实现层新增 `FabricCollectivePlane`,其数据路径**真可达**(见新增 Requirement `cep-collective-plane-base-fabric-plane`);**「不静默」纪律不变** —— 真可达**同样**必须给出**可观测**的状态与事件)
 - **THEN** SHALL 返回**明确的「数据路径未实现」状态**(与「未注册区域 ⇒ `group_register_error`」**可区分**)
 - **AND** SHALL **不投递**任何 `CollectiveEvt`、**不**产生副作用
 - **AND** **反向 fixture**:静默返回(无状态、无事件、无副作用)⇒ 断言必红
@@ -162,3 +166,43 @@ CEP SHALL 将 **Fabric Collective Plane** 固化成**可执行契约**:`Collecti
 - **AND** **反向 fixture**:注入一条 directory include ⇒ 断言必红
 
 > **锚点**:`test_cep_collective_plane_contract.cc` 的 include-graph 闸断言 + 反向 fixture
+
+---
+
+### Requirement: cep-collective-plane-base-fabric-plane
+
+CEP SHALL 为 **承载真实 fabric 集合流量**的 collective plane(`FabricCollectivePlane`)提供
+**可执行契约**:数据路径**真可达** + **控制面与数据面互斥**。
+
+> **定位**:per `ADR-CEP-01` SU#4 的 **M-2**(共享 VC + 四条证书)· `ADR-CEP-03 §2`(7 方法面 + 类型集)。
+> **边界**:⛔ **不**改 `CollectivePlaneIf` 的 **7 方法**面 · ⛔ **不**新增原语(仍恰 4 值)·
+> ⛔ **不**新增 reduce 算子族(唯一真源 = 既有 `ReduceOp` 恰 6 值)· ⛔ **不**产出任何带宽 / 延迟结论。
+> ⚠️ 本 plane 的原语语义是**平台侧**语义(per `ADR-CEP-03 §2`),**不是** UALink 的 INC 语义
+> —— 后者的四原语规范定义仍是 **pending**(per Task 0 锚点摘要 `N-1`)⇒ 本 Requirement **不**依赖它。
+
+#### Scenario: `FabricCollectivePlane` 的 REDUCE / BROADCAST / MULTICAST 数据路径 SHALL **真可达**
+
+- **WHEN** 对一个**已注册**且 **epoch 已生效**的区域发起 `send(REDUCE)` / `send(BROADCAST)` / `send(MULTICAST)`
+- **THEN** SHALL **真执行**该原语(⛔ **不得**返回「数据路径未实现」状态 —— 那是 `LocalCollectivePlane` 的行为)
+- **AND** `REDUCE` SHALL 在**参与集全部成员各贡献一次**后产出 **`CollectiveEvt::Result`**(归约值)
+      + **`Completion`**;归约 SHALL 使用既有 `ReduceOp`(恰 6 值)与既有 `DataType` ⇒ ⛔ **不新增**算子族
+- **AND** `BROADCAST` SHALL 以**首个**贡献者的载荷为广播值,收齐后向**全体成员**产出同值 `Result` + `Completion`
+- **AND** `MULTICAST` SHALL 以 `multicast_mask` 选中的成员为参与集,收齐后产出 `Result` + `Completion`
+- **AND** **未收齐**时 SHALL **只累积、不产出事件**(不得提前释放 —— 与 BARRIER 的 N-1/N 纪律同族)
+- **AND** **正控**:同一区域在 `LocalCollectivePlane` 上 SHALL 仍返回「数据路径未实现」⇒ 证明两实现**可区分**
+- **AND** **反向 fixture**:把真可达分支改回「数据路径未实现」⇒ 断言必红(归因 `UIA-03`)
+
+> **锚点**:`test_cep_ualink_inc.cc` 的数据路径断言(真可达 + 两实现可区分)+ 反向 fixture
+
+#### Scenario: **控制面与数据面互斥** —— in-flight 期间 SHALL **拒绝**控制面操作
+
+- **WHEN** 某 group 有 op **in-flight**(自首个 `send` 起、至该 op 收齐前)
+- **THEN** `group_register_region`(R3 drain)与 `group_destroy`(R4 回归)SHALL **被拒绝**
+  —— 二者是**控制面**操作(per `ADR-CEP-01` SU#4 的 **C-3**)
+- **AND** 该拒绝 SHALL **可观测**:SHALL 有**专属**的状态取值(⛔ **不得**复用「不支持」等既有取值
+  —— 否则调用方无法区分「能力缺失」与「时序冲突」)
+- **AND** op **收齐**后 SHALL **恢复**接受控制面操作(不得永久锁死)
+- **AND** **正控**:无 in-flight 时 `group_register_region` SHALL 成功
+- **AND** **反向 fixture**:去掉 in-flight 检查 ⇒ 断言必红(归因 `UIA-04`)
+
+> **锚点**:`test_cep_ualink_inc.cc` 的 C-3 调用序列断言 + 反向 fixture

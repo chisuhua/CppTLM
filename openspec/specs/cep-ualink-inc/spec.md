@@ -1,7 +1,6 @@
-# cep-ualink-inc Specification(delta)
+# cep-ualink-inc Specification
 
 ## Purpose
-
 定义 **UALink INC** 在 CEP 平台上的**实现层可执行契约**:`UalinkAdapter`(零自有表副本 · 无转移面)·
 `FabricCollectivePlane`(数据路径**真可达** + 控制面互斥)· **M-2 共享模式**的声明面接线 ·
 **实例声明的收窄形态**(`ualink_4` **不**声明)。
@@ -19,7 +18,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-ualink-inc
 
