@@ -25,7 +25,7 @@ created: 2026-11-04
 >   (⚠️ 与队列 #13 的 NVLink SHARP **不同** —— 后者受 NDA 约束 ⇒ 禁投喂规范正文)
 > · **VC 路径**:**路径 D**(共享 VC + 可机器判定的证书)—— 用户裁决 2026-11-04;裁决载体 = `ADR-CEP-01` SU#4
 > · **估时**:**10 周 → 14 周**(两段式;依据 = 队列 #13 的先例 8→13 周)
-> · **KPI**:Proposed 并发 **当前实测 0/3**(规约层 change **已完成归档**(2026-11-04;delta 已合并进 main spec;Entry #203)⇒ slot 已释放;规约层归档后 → 0/3 ⇒ 启实现层 → 1/3 ⇒ 实现层归档 → 0/3)
+> · **KPI**:Proposed 并发 **当前实测 1/3**(实现层 change `cpptlm-cep-ualink-inc` **已建 change 目录**(4 件套 + 3 份 delta spec;`openspec validate --strict` rc=0;Entry #204)⇒ 占 1 slot;前序:规约层 change **已完成归档**(2026-11-04;delta 已合并进 main spec;Entry #203)⇒ slot 已释放;规约层归档后 → 0/3 ⇒ 启实现层 → 1/3 ⇒ 实现层归档 → 0/3)
 
 ---
 
@@ -121,7 +121,11 @@ created: 2026-11-04
 - [ ] ⛔ **不**把「重跑 `IC1`」当证书(实测**恒真**:边按 network 声明 ⇒ 诱导子图恒无环)⇒ 判据**必须**落在 C-1′(语义继承)· C-2(`fabric.json` 的 `vc_count`)· C-3(控制面互斥)· C-4(未检验项登记)
 - [ ] **未检验项 U-1 / U-2** 显式登记且**不**含「已验证」字样(U-1 = H6 隔离假设;U-2 = 同 VC 内两类流量的相互阻塞**不被图模型表达**)
 - [ ] `ualink_4` 的 `sharer_tracker.impl` 落在 `ADR-CEP-04` SU 的**候选集(7 值)**内 ∧ 有**理由登记**(载体 = `protocol_instances.json` 顶层 `sharer_tracker_rationales{}`)∧ 理由指向公开来源或既有裁决条目 ⇒ ⛔ **不**用 `flow_support` 派生(已被反证)
-- [ ] **计数链同步**:实例 7 → 8 · `no_upgrade_instances` 3 → 4 · `implemented` 7 → 8 · 07 号 §5.1.1 状态列 + §11 三处 ⇒ 逐条保留来源注释
+- [ ] ~~**计数链同步**~~ ⇒ ⛔ **已移出**(用户裁决 2026-11-04:`ualink_4` **不**声明 ⇒ 计数链不动)⇒ 移交 backlog
+      ⇒ **移出理由**:`ualink_4` 的 `flow_support` / `perm` / `sharer_tracker.impl` 取值**不可判定**
+        (`ADR-CEP-04` SU 2026-11-03 §③ 残余 + 锚点摘要 `N-8`/`N-9` **pending** + schema 无 pending 机制)
+      ⇒ **触发条件**:用户**自行**取得 Evaluation Copy 并**明确**授权 + 走**新**的 Task 0 轮次 ⇒ 新 change
+      ⇒ 详见实现层 change `cpptlm-cep-ualink-inc` 的 proposal「Why ④」与台账 Entry #204
 - [ ] **冻结面**闭环:① 台账 Entry(逐件列名)→ ② commit → ③ `--update --authorized-by` → commit → ④ `--update` → commit;本队列的**唯一**需两步授权的下游冻结产物 = `openspec/specs/cep-collective-plane-contract/spec.md`(范围 = `V6-c` 适用条件 + 新增 `V6-d` + `status` 第二取值语义;**不含**其 `:35` 的「恰含四组」)
 - [ ] **收口**:`ctest` 全绿 + 门禁 rc=0 + `openspec validate --strict` rc=0 + `format.sh --check` rc=0 + KPI 回填
 
