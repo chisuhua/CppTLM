@@ -31,7 +31,10 @@ CEP SHALL 为 **UALink INC** 提供一份**可执行规约层契约**:四原语�
 
 - **WHEN** 读取规约层载体的 INC 四原语声明
 - **THEN** SHALL **恰为 4** 个:`ReadReduce` / `WriteMulticast` / `Broadcast` / `AllReduce`
+      (⚠️ 此「恰 4」指 **INC 的四个操作**,与平台原语族 `CollectiveOp` 的「恰 4」
+      (`ADR-CEP-01 §7 V7` / `ADR-CEP-03 §9 V2`)**是两个不同的事实**)
 - **AND** 其**覆盖集** SHALL ⊆ 既有原语集(`REDUCE` / `BROADCAST` / `MULTICAST` / `BARRIER`)
+      ⇒ 「覆盖」判 ⊆(跨载体元测试 **X-1**)·「非副本」判 ⊊(**X-1b**)
 - **AND** `AllReduce` SHALL 被映射为 **`REDUCE` + `BROADCAST` 的复合**(⛔ **不是**第 5 原语)
 - **AND** **反向 fixture**:载体加第 5 个 INC 原语 ⇒ 判据 SHALL 必红(归因 `UIS-01`)
 
@@ -52,7 +55,8 @@ CEP SHALL 为 **UALink INC** 提供一份**可执行规约层契约**:四原语�
 
 - **WHEN** 涉及 `ReadReduce` 结果对缓存副本的可见性
 - **THEN** 该格 SHALL 标记为 **`pending`**(引锚点摘要 `N-3`)⇒ ⛔ **不得**被当作已定稿语义
-- **AND** **反向 fixture**:把该格改成 `self-derived` ⇒ 判据 SHALL 必红(归因 `UIS-04`)
+- **AND** **反向 fixture**:影子副本把该格的 `kind` 由 `Pending` 改为 `SelfDerived` ⇒ 判据 SHALL 必红
+      (归因 `UIS-04`,**编译期红**:影子副本的 `static_assert` 文案以 `UIS-04: ` 开头)
 
 #### Scenario: UIS-05 —— INC 与 coherence 流的**排序 / 原子性**要求 SHALL 显式 pending
 
@@ -82,13 +86,20 @@ CEP SHALL 为 **UALink INC** 提供一份**可执行规约层契约**:四原语�
 - **THEN** 在 Task 0 普查给出条款级依据前 SHALL 保持**待定**(引 `N-8`)
 - **AND** 它 SHALL **决定** tracker 选型(候选集内取值 + 逐实例理由登记,per `ADR-CEP-04` SU 2026-11-03)
 - **AND** ⛔ SHALL **不**由「公开来源未提 snoop」推断「无 snoop」(那是**推理填空**)
-- **AND** **反向 fixture**:把该格填成具体值 ⇒ 判据 SHALL 必红(归因 `UIS-08`)
+- **AND** ⚠️ **载体归属**(per `ADR-CEP-01` 附录「**悬空判据禁令**」:载体尚不存在者该判据在载体落地前不可执行):
+      `ualink_4` 的**实例声明**(含 `flow_support` / `perm` 的**具体取值**)由**实现层 change**
+      `cpptlm-cep-ualink-inc` 交付 ⇒ 本 change 只承载「该格**保持 pending**」这一条 ⇒ **无悬空判据**
+- **AND** **反向 fixture**:影子副本把该格的 `kind` 由 `Pending` 改为 `SelfDerived`(冒充已定稿)
+      ⇒ 判据 SHALL 必红(归因 `UIS-08`,**编译期红**:文案以 `UIS-08: ` 开头)
 
 #### Scenario: UIS-09 —— `ualink_4` 的 **`perm` 子集** SHALL 待定
 
 - **WHEN** 声明 `ualink_4` 的 `perm`
 - **THEN** SHALL 区分**值域**(4 值锁)与**支持子集**;在依据到位前**子集** SHALL 待定(引 `N-9`)
-- **AND** **反向 fixture**:把该格填成具体子集 ⇒ 判据 SHALL 必红(归因 `UIS-09`)
+- **AND** ⚠️ **载体归属**同 `UIS-08`:`ualink_4` 的**实例声明**由**实现层 change** 交付
+      ⇒ 本 change 只承载「该格**保持 pending**」这一条
+- **AND** **反向 fixture**:影子副本把该格的 `kind` 由 `Pending` 改为 `SelfDerived`(冒充已定稿)
+      ⇒ 判据 SHALL 必红(归因 `UIS-09`,**编译期红**:文案以 `UIS-09: ` 开头)
 
 #### Scenario: UIS-10 —— 逐格 `basis` SHALL 完整,且 `pending` 白名单 SHALL **逐项相等**
 
@@ -96,7 +107,13 @@ CEP SHALL 为 **UALink INC** 提供一份**可执行规约层契约**:四原语�
 - **THEN** **每格** SHALL 有 `ref`(指向锚点摘要的 `A-n` / `C-n` / `N-n`)⇒ **无 `ref` 的格即红**
 - **AND** `kind = self-derived` 的格 SHALL **不**以公开来源(`A-n`)为依据(公开来源撑不住细粒度语义)
 - **AND** 载体的 `pending` 条目集合 SHALL 与锚点摘要的 `N-1` ~ `N-9` **逐项相等**(不多不少)
-- **AND** **反向 fixture**:删任一格 `ref` / 多报一项 pending / 把 pending 改成 self-derived ⇒ 判据 SHALL 必红
+      ⇒ 由**跨载体元测试 X-2**承担(Phase 2 · **可执行**:读锚点摘要解析 `N-n` 集合)+ 人工审计面
+      ⇒ 载体**只**保证**自洽型**(表大小 == `kPendingCount` · id 唯一且落在 `N1`~`N9` · id ↔ ref 一一对应)
+      ⇒ ⛔ **不**要求「id == 数组下标」⇒ **可逆性**:语义转正时审计键 id **保持稳定**
+- **AND** 每格 `basis` 的 `kind` SHALL 与其 `ref` 的**类别**自洽
+      (`self-derived` ⇒ **全部** token 为 `C-` 类;`pending` ⇒ **至少一个** `N-` 类 token 且**不得**含 `A-` 类)
+- **AND** **反向 fixture**:删任一格 `ref` / 多报一项 pending / 把 pending 改成 self-derived
+      / 把 `self-derived` 的 `ref` 冒充成 `N-n` 或 `A-n` ⇒ 判据 SHALL 必红
 
 #### Scenario: UIS-11 —— 四条证书的**规约面** SHALL 齐备,且 ⛔ **不得**以「重跑 DAG」为判据
 

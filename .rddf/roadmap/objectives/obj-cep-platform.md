@@ -12035,6 +12035,57 @@ Acceptance(10 条)/ Capabilities / Impact)+ YAML frontmatter(`phase: phase-10` �
 
 ---
 
+### Entry #197 — 2026-11-04 [build](队列 #14 **规约层** Phase 1 —— **critic 第 1 轮 REJECT** 的全部 finding 修复)
+
+**主题**:队列 #14 规约层 change `cpptlm-cep-ualink-inc-state-spec` 的 **Phase 1** 经 **critic 第 1 轮**
+架构审稿(REJECT)⇒ 逐条修复 + 本地实测。**角色**:builder。
+
+**① critic 第 1 轮结论**:`mergeable: no` · `scope_exceeded: false` ·
+**2 BLOCKER + 5 SHOULD_FIX + 4 NITS** ⇒ 全部 finding 已按**精确改点**修完(下表)。
+⚠️ 本 change 的 critic **预算**:已用 **1/2** 轮。
+
+**② 逐条处置**
+
+| # | finding | 判定 | 处置 |
+|---|---|---|---|
+| **B1** | UIS-08 / UIS-09 的反向 fixture **无毒化目标**(`ualink_4` 实例在 `protocol_instances.json` 中**不存在**)⇒ task 2.2 的依赖顺序不可行 | ✅ 成立(实测 `grep -c ualink_4` = **0**) | ① F-8 / F-9 毒化锚点改为**载体可表达形态**(与 F-4~F-6 同形:毒化该格 `kind`)② spec 明写 **`ualink_4` 实例声明移交实现层 change**(per `ADR-CEP-01` 附录「**悬空判据禁令**」的先例形态)⇒ **无悬空判据** |
+| **B2** | 2 条**分组** `static_assert`(`UIS-04/05/06/08/09:` / `UIS-01/02/03/07/10:`)使 4 个义务的归因 id 在编译期**不可精确命中** | ✅ 成立(实测 `UIS-05` 在 `.hh`/`.cc` 中**零命中**) | 拆成**逐格**断言(每条 1 个 id · 文案以 `<id>: ` 开头,照队列 #13 载体形态)⇒ 断言 **22 → 37** 条 |
+| **S1** | `kind ↔ ref-class` 的两条「⇒」**无任何可执行断言** ⇒ 三种冒充都能编译通过 | ✅ 成立(实测) | 加 **token 级来源类别**(`RefClass`:`C-`/`N-`/`A-`/未知)+ **遍历式**判定与断言 ⇒ 三种冒充**全部判否** |
+| **S2** | `kUsedPrimitiveNames.size() == 3u` 把**目的**(非副本)写成**手段**(恰好 3);X-1 口径三处不一致 | ✅ 成立 | 断言留但**澄清语义**(只陈述事实);口径三处统一为 **⊆**(覆盖,UIS-01 只需 ⊆)+ **⊊**(机器化「非副本」,新增 **X-1b**) |
+| **S3** | pending 的可逆性被写死(`pending_ids_exact()` 强制 id == 下标 ⇒ 转正一项即须**重编号**) | ✅ 成立 | 改为 `pending_ids_unique_and_in_range()`(唯一 + 在 `N1`~`N9` 内);「恰 9」移交 **X-2 元测试**(可执行)+ 人工审计面 ⇒ **转正时审计键 id 保持稳定** |
+| **S4** | 缺「归因键 ↔ 系统级归因 id」双列(同义务两个 id 的风险) | ✅ 成立(`CP-PARTIAL-FAIL` 已 committed 于 `openspec/specs/cep-nvlink-sharp/spec.md`) | `design §5` 改为**双列表**:`UIS-03` ↔ `CP-PARTIAL-FAIL` · `UIS-07` / `UIS-11` ↔ `CP-03-VC-CERTIFICATE` / `CP-09-IC1`;⛔ **不新建** `CP-*`;⛔ **不引用不入库**的归档件作归因 |
+| **S5** | UIS-11 **无义务格**(无 basis ⇒ 无 ref) | ✅ 成立 | 加 `Obligation::Uis11` + basis 格(`C-1`)+ 断言 ⇒ 义务格 **10 → 11** |
+| N1~N4 | 措辞 / `A-` 子串代理 / `'0'+n` 单字符 / 教训未固化 | ✅ 成立 | 措辞分离两个「恰 4」;改 **token 级**判定;`N1`~`N9` 上限注释化;教训固化进 `design §2.1` |
+
+**③ ⚠️ 我自己引入并当场抓回的 2 个缺陷**
+
+| # | 缺陷 | 抓回方式 | 处置 |
+|---|---|---|---|
+| **1** | S1 的 `kind ↔ ref-class` 断言写成了**字面量**检查(`basis_kind_matches_ref_class(..., "A-1")` 硬编码)⇒ **毒化表格不触发** ⇒ 修法本身**无效** | 本地实测的「冒充 ①/②/③」三例中,「`Pending` 却引 `A-1`」**编译仍绿** | 改为**遍历式**(`all_obligations_kind_match_ref_class()` / `all_inc_op_basis_kind_match_ref_class()`)⇒ 三例**全部红** |
+| **2** | 归因匹配形态写成 `grep -q "static assertion failed: <id> "`(**漏尾冒号**)⇒ 实测「归因未命中」而日志明明命中 | 实测输出与预期不符 ⇒ 回看日志原文 | 修正为 `grep -q "static assertion failed: <id>: "` ⇒ 并实测确认 **`UIS-01` 不会被 `UIS-10` 的红误命中**(子串前缀陷阱) |
+
+**④ 本地实测(不入库;入库件属 Phase 2)** —— 影子副本 + 编译期归因,**13/13 全绿**:
+
+| 组 | 期望 | 结果 |
+|---|---|---|
+| 正控(干净影子) | 编译**绿** | ✅ |
+| B2:毒化 `Uis04/05/06/08/09` 各自 | 编译红 + 归因**精确命中该格** | ✅ ×5 |
+| B2 前缀陷阱:毒化 `Uis10` | 归因命中 `UIS-10` 且 `UIS-01` **不**误命中 | ✅ |
+| S1:冒充 ①`SelfDerived`→引 `N-` / ②`Pending`→引 `A-` / ③`Pending`→引 `C-` | **全部编译红** + 归因命中 | ✅ ×3 |
+| S3:转正一项(删 `N3` 条目 + `kPendingCount` 8) | 编译**绿** ⇒ 可逆性成立 | ✅ |
+| S3 反向:删条目但**不**降 `kPendingCount` | 编译红 + 归因命中 | ✅ |
+
+**⑤ 验收(实测)**:载体独立编译通过 · **37 条** `static_assert`(**11 个归因 id 全部**有专属文案前缀 ≥ 1)
+· `[cep][ualink-inc]` **4 cases / 92 assertions**(原 2/57)全绿 · `ctest` **146/146** ·
+`cpptlm_tests` **2125 cases / 877216 assertions** · 门禁 **6/6** + `cep_gate_selftest` **34/34** ·
+`format.sh --check` rc=0 · `openspec validate cpptlm-cep-ualink-inc-state-spec --strict` rc=0。
+
+**⑥ 关联**: Entry #196(Phase 1 首版)· #195(change 建档 + Task 0)· #194(improvement 草稿)
+· #193(三则 ADR SU + 冻结面授权)· #186(队列 #13 规约层归档,本轮多处引其**同型先例**)·
+`openspec/changes/cpptlm-cep-ualink-inc-state-spec/`(本条对象)· `ADR-CEP-01` 附录「悬空判据禁令」
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

@@ -19,6 +19,7 @@
 #include "catch_amalgamated.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <fstream>
 #include <sstream>
@@ -148,7 +149,10 @@ TEST_CASE("UIS-01/UIS-02/UIS-03/UIS-07/UIS-10: 载体的编译期锁在运行期
     // 越界 ⇒ 空串
     REQUIRE(inc_op_primitive_name(IncOp::ReadReduce, 1u).empty());
 
-    // ③ 映射不越出载体用到的原语名(3 个 ⇒ **不是**平台词表副本)
+    // ③ 映射不越出载体用到的原语名(3 个)
+    //    ⚠️ 本断言只陈述「本载体用到的名字恰 3 个」这一**事实**;
+    //    「不是平台词表的副本」需「载体集 ⊊ 平台集」⇒ 载体**不可自证**
+    //    ⇒ 由**跨载体**的 X-1 判(per design §2.4)。
     REQUIRE(kUsedPrimitiveNames.size() == 3u);
     REQUIRE(inc_op_mapping_within_used_names(IncOp::ReadReduce));
     REQUIRE(inc_op_mapping_within_used_names(IncOp::WriteMulticast));
@@ -169,8 +173,8 @@ TEST_CASE("UIS-01/UIS-02/UIS-03/UIS-07/UIS-10: 载体的编译期锁在运行期
     // ⑥ pending 白名单:恰 9 项 · id 与 ref 一一对应
     REQUIRE(kPendingCount == 9u);
     REQUIRE(kPendingSemanticItems.size() == 9u);
-    REQUIRE(pending_ids_exact());
-    REQUIRE(pending_refs_match_ids());
+    REQUIRE(pending_ids_unique_and_in_range(kPendingSemanticItems));
+    REQUIRE(pending_refs_match_ids(kPendingSemanticItems));
     for (const auto& it : kPendingSemanticItems) {
         INFO("pending ref: " << std::string(it.ref));
         REQUIRE_FALSE(it.statement.empty());
@@ -193,6 +197,77 @@ TEST_CASE("UIS-01/UIS-02/UIS-03/UIS-07/UIS-10: 载体的编译期锁在运行期
     REQUIRE(obligation_is_self_derived(Obligation::Uis03));
     REQUIRE(obligation_is_self_derived(Obligation::Uis07));
     REQUIRE(obligation_is_self_derived(Obligation::Uis10));
+    REQUIRE(obligation_is_self_derived(Obligation::Uis11));
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// UIS-04/05/06/08/09 + UIS-10 —— 逐格 `basis` 的 `kind` ↔ `ref` **类别自洽**
+//   (判据**有牙**:三种冒充必须被判定函数判否 ⇒ 否则「遍历表断言」无鉴别力)
+// ══════════════════════════════════════════════════════════════════════════
+TEST_CASE("UIS-10: 逐格 basis 的 kind 与 ref 类别自洽 —— 三种冒充必须被判否",
+          "[cep][ualink-inc][basis]") {
+    // ① **token 级类别分类**(⛔ 不用子串 —— 短 token 会误伤)
+    REQUIRE(classify_ref_token("C-2") == RefClass::Contract);
+    REQUIRE(classify_ref_token("N-3") == RefClass::PendingRef);
+    REQUIRE(classify_ref_token("A-1") == RefClass::PublicSource);
+    REQUIRE(classify_ref_token("X-1") == RefClass::Unknown);
+    REQUIRE(classify_ref_token("C") == RefClass::Unknown);
+
+    // ② `ref` 的多 token 归类
+    REQUIRE(ref_contains_class("C-1 C-8 C-9", RefClass::Contract));
+    REQUIRE_FALSE(ref_contains_class("C-1 C-8 C-9", RefClass::PendingRef));
+    REQUIRE(ref_only_class("C-1 C-8 C-9", RefClass::Contract));
+    REQUIRE_FALSE(ref_only_class("C-6 N-1", RefClass::Contract)); // 混合 ⇒ 非纯 Contract
+    REQUIRE(ref_contains_class("C-6 N-1", RefClass::PendingRef)); // 混合 ⇒ 含 pending
+    REQUIRE_FALSE(ref_contains_class("C-6 N-1", RefClass::PublicSource));
+
+    // ③ **遍历真实表格**(⛔ 不是字面量)—— 两张表都自洽
+    REQUIRE(all_obligations_kind_match_ref_class());
+    REQUIRE(all_inc_op_basis_kind_match_ref_class());
+
+    // ④ ⭐ **三种冒充必须被判否**(证明判定函数有牙 ⇒ 遍历表断言才有鉴别力)
+    //    ① `SelfDerived` 却引 pending 锚点
+    REQUIRE_FALSE(basis_kind_matches_ref_class(BasisKind::SelfDerived, "N-3"));
+    //    ② `Pending` 却引公开来源(拿公开来源冒充 pending 的理由)
+    REQUIRE_FALSE(basis_kind_matches_ref_class(BasisKind::Pending, "A-1"));
+    //    ③ `Pending` 却引仓内锚点(拿已定稿冒充待定)
+    REQUIRE_FALSE(basis_kind_matches_ref_class(BasisKind::Pending, "C-9"));
+    //    正控:合规组合必须判真
+    REQUIRE(basis_kind_matches_ref_class(BasisKind::SelfDerived, "C-1"));
+    REQUIRE(basis_kind_matches_ref_class(BasisKind::Pending, "N-3"));
+    REQUIRE(basis_kind_matches_ref_class(BasisKind::Pending, "C-6 N-1")); // INC 混合格
+
+    // ⑤ 逐格:5 格 pending / 6 格 self-derived(含 UIS-11)
+    REQUIRE(obligation_is_pending(Obligation::Uis04));
+    REQUIRE(obligation_is_pending(Obligation::Uis05));
+    REQUIRE(obligation_is_pending(Obligation::Uis06));
+    REQUIRE(obligation_is_pending(Obligation::Uis08));
+    REQUIRE(obligation_is_pending(Obligation::Uis09));
+    REQUIRE_FALSE(obligation_is_pending(Obligation::Uis11));
+    REQUIRE(obligation_is_self_derived(Obligation::Uis11));
+
+    // ⑥ UIS-11 的 basis 格有 ref
+    REQUIRE(basis_cell_has_ref(kBasisObligations[static_cast<std::size_t>(Obligation::Uis11)].ref));
+    REQUIRE(kBasisObligations.size() == kObligationCount);
+}
+
+TEST_CASE("UIS-10: pending 白名单的**可逆性** —— id 唯一且在范围内(不强制重编号)",
+          "[cep][ualink-inc][pending]") {
+    // ① 自洽型:表大小 == kPendingCount
+    REQUIRE(kPendingSemanticItems.size() == kPendingCount);
+    // ② id 唯一且落在 N1 ~ N9 内(**不**要求 id == 数组下标)
+    REQUIRE(pending_ids_unique_and_in_range(kPendingSemanticItems));
+    // ③ id ↔ ref 一一对应
+    REQUIRE(pending_refs_match_ids(kPendingSemanticItems));
+    // ④ 正控 + **判否形态**(负向样本 ⇒ 判定函数有牙;照队列 #13 的
+    //    `all_pending_items_wellformed(items)` **带参**形态)
+    const std::array<PendingItem, 1> bad_ref{{PendingItem{PendingId::N1, "N-2", "x"}}};
+    const std::array<PendingItem, 2> dup_id{
+        {PendingItem{PendingId::N1, "N-1", "x"}, PendingItem{PendingId::N1, "N-1", "y"}}};
+    const std::array<PendingItem, 1> ok_id{{PendingItem{PendingId::N9, "N-9", "x"}}};
+    REQUIRE_FALSE(pending_refs_match_ids(bad_ref));
+    REQUIRE_FALSE(pending_ids_unique_and_in_range(dup_id));
+    REQUIRE(pending_ids_unique_and_in_range(ok_id)); // 正控:越界样本本身 id 合法
 }
 
 // ══════════════════════════════════════════════════════════════════════════
