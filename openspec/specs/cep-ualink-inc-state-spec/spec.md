@@ -1,7 +1,6 @@
-# cep-ualink-inc-state-spec Specification(delta)
+# cep-ualink-inc-state-spec Specification
 
 ## Purpose
-
 定义 **UALink INC** 在 CEP 平台上的**规约层可执行契约**:INC 四原语的**可判定**语义 ·
 与既有原语集的**覆盖关系**(⛔ 不新增原语)· **逐格 `basis`** · **9 项 `pending`** ·
 四条证书(C-1′ ~ C-4)的**规约面**。
@@ -20,7 +19,7 @@
 
 ---
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-ualink-inc-state-spec
 
