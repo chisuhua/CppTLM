@@ -12180,6 +12180,47 @@ design §2.3)**一致**。
 
 ---
 
+### Entry #200 — 2026-11-04 [build](队列 #14 **规约层** Phase 1 —— **critic 第 4 轮 APPROVE_WITH_CONDITIONS** ⇒ 4 SHOULD_FIX + 2 NITS 处置 ⇒ **Phase 1 收口**)
+
+**主题**:队列 #14 规约层 change `cpptlm-cep-ualink-inc-state-spec` 的 **critic 第 4 轮**处置与 Phase 1 收口。
+**角色**:builder。
+
+**① critic 第 4 轮结论**:`APPROVE_WITH_CONDITIONS` · **`mergeable: yes`** · `scope_exceeded: false`
+· **无 BLOCKER** ⇒ ⛔ 第 3 轮的 B3 判**已闭合**(critic **逐字比对**三处权威表述 + 对照实现体
++ 残留扫描 + `git show` 反查,四项独立证据)· 本轮 diff **未引入**新 BLOCKER
+⇒ ⛔ **评审通过**(本 change 的 critic 预算 **4/4** 已用满 ⇒ **不再开第 5 轮**;余下 finding 记 backlog)。
+
+**② 四个 SHOULD_FIX(全部已处置)**
+
+| # | finding | 处置 |
+|---|---|---|
+| S1 | `design §4` 旧句「『§5 登记行』列 ⇒ **机器可核对**」**未撤**,与本轮新增的「⛔ 不得用作机器配对的键」**同段落内矛盾** | 旧句改为「『**归因 id**』列 ⇒ **机器可核对**(键 = `UIS-xx`)」⇒ 矛盾消除 |
+| S2 | §5 表增 `detail` 列后 **9/11 行列数错位**(5 格 vs 表头 6 列)⇒ `detail` 在 9 行上取到的是「本层新建」/`同上`,`代码登记点` 列为空;`UIS-03` 的 detail 会读成「本层新建」⇒ 语义荒谬 | 9 行补 `—` 占位 ⇒ 实测**错位行数 = 0**(表头/分隔/11 行**恒 6 格**)· `detail` 值域 = `—` / `/C-1′` / `/C-1′ ~/C-3 ~/C-4` |
+| S3 | 「`detail` 列是 Phase 2『两列对应关系』元测试的**权威期望**」**无判据可执行**(「两列」两个指代 · `tasks.md` 无承载 · detail **无对手列**) | ① 该表述**降级**为「仅作**人工**溯源交叉引用 —— ⛔ **无机器判据**」② `:221` 的「两列对应关系」明确指代为 **§4 的「归因 id」↔ §5 的「归因 id(本层键)」** 1:1(与 task 2.4 一致) |
+| S4 | 与 ADR E.3.1 **括号枚举**的偏离未标注 + 两个系统 id **尚未入库** main spec | §5 增两条注记:① **有意偏离**声明(C-2 按 E.3.1 的**归因列** +「C-2 复用 `CP-09-IC1`」取 `CP-09-IC1` ⇒ **不设** `/C-2` 子标记 ⇒ 跨层读者不会去找 `[CP-03-VC-CERTIFICATE/C-2]`)② 两个 id 在 `openspec/specs/` **零命中**(实测;对照 `CP-PARTIAL-FAIL` **已** committed)⇒ 本列暂为**溯源登记**,非机器判据;若 Phase 2 要机器校验,须先裁定**入库时点** |
+
+**③ 两个 NIT**:载体函数 doc 的**游离反引号**(Markdown 渲染错位)已修 ·
+⚠️ **对 Entry #199 更正行的点名更正**(append-only):Entry #199 把未闭合文本写成
+「**design / 载体头注释**」⇒ 实测**载体头注释在第 2 轮已闭合**;真正未闭合的是
+**载体函数 doc 注释** + **design §2.3** ⇒ 本条更正该点名(关键事实「design §2.3 从未执行」本身**属实**)。
+
+**④ 验收(实测)**:载体独立编译通过 · **37 条** `static_assert`(11 个归因 id 全覆盖)·
+`[cep][ualink-inc]` **4 cases / 96 assertions** · `ctest` **146/146** ·
+`cpptlm_tests` **2125 cases / 877220 assertions** · 门禁 **6/6** + `cep_gate_selftest` **34/34** ·
+`format.sh --check` rc=0 · `openspec validate cpptlm-cep-ualink-inc-state-spec --strict` rc=0 ·
+本地影子实测 **16/16** · 过强措辞残留 **0** · §5 表**错位行数 = 0**。
+
+**⑤ Phase 1 收口状态**:载体形态**定稿**(`include/tlm/cep/ualink_inc_state_spec.hh` ·
+自足 · 逐格 basis · 11 个义务格 · 9 项 pending · 37 条带归因 id 的编译期断言)⇒
+**下一前置 = Phase 2(判据面)**:11 组反向 fixture + 归因 id 元测试(按 `UIS-xx` 配对)·
+跨载体一致性元测试(X-1 / X-1b / X-2 / X-3)+ 探针与驱动脚本(双分支:编译红 or 探针红)。
+
+**⑥ 关联**: Entry #199(critic 第 3 轮 + 对 #198 的更正)· #198(critic 第 2 轮)· #197(第 1 轮)·
+#196(Phase 1 首版)· #195(建档 + Task 0)· #193(三则 ADR SU + 冻结面授权)·
+`ADR-CEP-01` SU#4 的 **E.3.1**(四条证书共用一个 id + `detail` 子标记 + C-2 ⇒ `CP-09-IC1`)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

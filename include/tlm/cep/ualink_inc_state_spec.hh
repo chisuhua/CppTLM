@@ -389,7 +389,7 @@ namespace tlm {
             ///   (公开来源不得冒充)· 其余 token **只允许** `C-` 类(名字来源的**附加**依据)
             ///   ⇒ **未知类 token 一律判否**
             /// ⇒ 冒充(`SelfDerived` 却引 `N-` / `Pending` 却**纯**引 `C-`(无 `N-` token)
-            ///   / `Pending` 却引 `A-``)**全部**判否。
+            ///   / `Pending` 却引 `A-`)**全部**判否。
             /// ⚠️ ⛔ **不得**把结论写成「`Pending` 却引 `C-` ⇒ 判否」—— 那**强于**实现
             ///   (INC 原语格 = `Pending` + `"C-6 N-1"`)⇒ Phase 2 的 fixture 会**假绿**。
             constexpr bool basis_kind_matches_ref_class(BasisKind kind,

@@ -193,16 +193,16 @@
 
 | 义务 | 归因 id(本层键) | **系统级归因 id** | **`detail` 子标记** | 状态 | 代码登记点 |
 |---|---|---|---|---|---|
-| 原语集恰 4 / 不新增原语 | `UIS-01` | —(判据本体 = `ADR-CEP-03 §9 V2`;`CP-PRIM-SET` 仅见于台账描述、**不入库** ⇒ ⛔ 不作归因) | 本层新建 | 载体 + 测试用例名 |
-| reduce 算子复用 | `UIS-02` | —(同源义务 = 队列 #13 的 `NVA-05`;该 change **已归档、不入库** ⇒ 本层以 `UIS-02` 为**可执行**归因键) | 本层新建 | 同上 |
-| partial failure ⇒ `Fault` | `UIS-03` | **`CP-PARTIAL-FAIL`**(队列 #13 已确立,committed 于 `openspec/specs/cep-nvlink-sharp/spec.md`) | 本层新建(键)+ **复用**(系统 id) | 同上 |
-| `ReadReduce` 可见性边界 | `UIS-04` | —(UALink 专属) | 本层新建 | 同上 |
-| 排序 / 原子性边界 | `UIS-05` | —(UALink 专属) | 本层新建 | 同上 |
-| 控制面归属边界 | `UIS-06` | —(UALink 专属) | 本层新建 | 同上 |
+| 原语集恰 4 / 不新增原语 | `UIS-01` | —(判据本体 = `ADR-CEP-03 §9 V2`;`CP-PRIM-SET` 仅见于台账描述、**不入库** ⇒ ⛔ 不作归因) | —| 本层新建 | 载体 + 测试用例名 |
+| reduce 算子复用 | `UIS-02` | —(同源义务 = 队列 #13 的 `NVA-05`;该 change **已归档、不入库** ⇒ 本层以 `UIS-02` 为**可执行**归因键) | —| 本层新建 | 同上 |
+| partial failure ⇒ `Fault` | `UIS-03` | **`CP-PARTIAL-FAIL`**(队列 #13 已确立,committed 于 `openspec/specs/cep-nvlink-sharp/spec.md`) | —| 本层新建(键)+ **复用**(系统 id) | 同上 |
+| `ReadReduce` 可见性边界 | `UIS-04` | —(UALink 专属) | —| 本层新建 | 同上 |
+| 排序 / 原子性边界 | `UIS-05` | —(UALink 专属) | —| 本层新建 | 同上 |
+| 控制面归属边界 | `UIS-06` | —(UALink 专属) | —| 本层新建 | 同上 |
 | 集合 VC 继承 + 不一致即禁用 | `UIS-07` | **`CP-03-VC-CERTIFICATE`**(`ADR-CEP-01` SU#4 的 E.3.1) | **`/C-1′`** | 本层新建(键)+ **复用**(系统 id) | 同上 |
-| `ualink_4` 的 `flow_support` 待定 | `UIS-08` | —(UALink 专属) | 本层新建 | 同上 |
-| `ualink_4` 的 `perm` 待定 | `UIS-09` | —(UALink 专属) | 本层新建 | 同上 |
-| 逐格 basis 完备 + pending 逐项相等 | `UIS-10` | —(本层元判据) | 本层新建 | 同上 |
+| `ualink_4` 的 `flow_support` 待定 | `UIS-08` | —(UALink 专属) | —| 本层新建 | 同上 |
+| `ualink_4` 的 `perm` 待定 | `UIS-09` | —(UALink 专属) | —| 本层新建 | 同上 |
+| 逐格 basis 完备 + pending 逐项相等 | `UIS-10` | —(本层元判据) | —| 本层新建 | 同上 |
 | 四条证书(C-1′~C-4)的规约面 | `UIS-11` | **`CP-03-VC-CERTIFICATE`**(C-1′ / C-3 / C-4)· **`CP-09-IC1`**(= **C-2**,per `ADR-CEP-01` E.3.1「C-2 复用 `ADR-CEP-09` 既有的 `CP-09-IC1`」) | **`/C-1′ ~/C-3 ~/C-4`** 与 **`CP-09-IC1`**(=C-2) | 本层新建(键)+ **复用**(系统 id) | 载体(`kDagRerunIsCertificate` + 义务格) |
 
 ⇒ **基数规则(双向)**:

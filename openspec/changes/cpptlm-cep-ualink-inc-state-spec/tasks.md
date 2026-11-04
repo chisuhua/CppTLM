@@ -14,7 +14,7 @@
 | Phase | 状态 | 说明 |
 |---|---|---|
 | 0 治理前置 | ✅ **已完成**(2026-11-04) | 转正登记 + KPI 回填 + Task 0 产物登记 |
-| 1 载体形态定稿 | ✅ **已完成**(2026-11-04,**经 critic 第 1 轮 REJECT 修复**) | `ualink_inc_state_spec.hh` 自足载体 + 逐格 basis + 9 项 pending + **37 条**编译期断言(11 个归因 id 全部有专属文案前缀) |
+| 1 载体形态定稿 | ✅ **已完成**(2026-11-04,**经 critic 四轮**:第 1/2/3 轮 REJECT 全部修复 ⇒ 第 4 轮 **APPROVE_WITH_CONDITIONS**(`mergeable: yes`,**无 BLOCKER**)) | `ualink_inc_state_spec.hh` 自足载体 + 逐格 basis + 11 个义务格 + 9 项 pending + **37 条**编译期断言(11 个归因 id 全部有专属文案前缀) |
 | 2 判据面 | ⬜ 待实施 | 正向测试 + **11 组**反向 fixture + 归因 id 元测试 + 探针/脚本 + ctest 注册 |
 | 3 证书规约面 | ⬜ 待实施 | 四条证书的逐边依据 + 参照域 + `IC1` 鉴别力边界登记 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + `validate` + KPI **1/3 → 0/3** + 归档 + 台账 Entry |
@@ -45,6 +45,13 @@
       `design §2.3` / `§2.4` / `§4` / `§5` + delta spec 同步 ⇒ 归因双列表 / **⊆+⊊** 口径 /
       **编译期红**形态 + 匹配形态(`static assertion failed: <id>: `)· F-8 / F-9 毒化锚点改为载体可表达形态
       ⇒ 本地实测 **13/13** 全绿 · `[cep][ualink-inc]` **4 cases / 92 assertions**
+- [x] 1.5 **critic 第 2/3/4 轮修复 + 收口**(per 台账 Entry #198 / #199 / #200)
+      ⇒ 第 2 轮:归因 id 登记 11 ↔ fixture 9 的矛盾(补 **F-10 / F-11**)+ `kind ↔ ref-class` **收紧实现**
+      ⇒ 第 3 轮:**B3**(载体函数 doc + `design §2.3` 与实现对齐)+ 基数规则双向化 + `detail` 子标记列
+      ⇒ 第 4 轮:**APPROVE_WITH_CONDITIONS**(`mergeable: yes`)⇒ 4 SHOULD_FIX(§4 旧句矛盾 / §5 表 9 行列错位
+      / `detail` 列的「权威期望」无判据 / ADR 枚举偏离未标注)+ 2 NIT 全部处置
+      ⇒ **本地实测 16/16** · §5 表**错位行数 = 0** · 过强措辞残留 **0** · `[cep][ualink-inc]` **4 cases / 96 assertions**
+      ⇒ ⚠️ **防复发**:批量替换一律**两段式**(dry-run 校验全部 old 串唯一性 ⇒ 有失配**不写任何文件** ⇒ 执行)
 
 ## Phase 2 — 判据面
 
