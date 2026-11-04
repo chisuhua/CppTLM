@@ -399,6 +399,15 @@ add_test(NAME cep_nvlink_sharp_reverse_verify
 add_test(NAME cep_ualink_inc_state_spec
          COMMAND cpptlm_tests "[cep][ualink-inc]" -r compact)
 
+# 队列 #14 `cpptlm-cep-ualink-inc-state-spec`(**规约层**)的**反向验证**:
+#   ① **基线正控**(干净载体必编译 + 探针全绿);
+#   ② **归因 id 双向覆盖自检**(fixture 期望集合 ⟺ 载体断言文案集合);
+#   ③ **11 组**毒化 fixture(每条必红 + 归因 id **命中** `static assertion failed: <id>: `);
+#   ④ **探针鉴别力自测**(运行期分支 ⇒ 探针必须红)。
+#   ⚠️ 归因匹配**带尾冒号** —— 裸子串会让 `UIS-01` 被 `UIS-10` 误命中。
+add_test(NAME cep_ualink_inc_state_spec_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_ualink_inc_state_spec_reverse_verify.sh)
+
 # 队列 #11 `cpptlm-cep-tilelink-tree-manager`(第 1 个 change = 实现层)的判据:
 #   ① 载体契约(adapter 零副本 + `TreeManager` 的 `ESCALATE_UP`/`CHAIN` 真实使用
 #      + `snoop_join_core` 的 4 步语义);

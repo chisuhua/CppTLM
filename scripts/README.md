@@ -40,9 +40,10 @@
 | `cep_tilelink_adapter_reverse_verify.sh` | 队列 #11 实现层 adapter（`TLA-01` ~ `TLA-13`）的反向验证 | ✅ 生效（ctest 注册） |
 | `cep_nvlink_sharp_state_spec_reverse_verify.sh` | 队列 #13 规约载体（`NSS-01` ~ `NSS-09`）的反向验证：**9 组 / 10 条**毒化 fixture（每条必红 **且** 归因 id 命中）+ 基线正控 | ✅ 生效（ctest 注册） |
 | `cep_nvlink_sharp_reverse_verify.sh` | 队列 #13 **实现层**载体（`NVA-01` ~ `NVA-09`）的反向验证：**9 组**毒化 fixture（每条必红 **且** 归因 id **精确相等**命中）+ 基线正控 | ✅ 生效（ctest 注册） |
+| `cep_ualink_inc_state_spec_reverse_verify.sh` | 队列 #14 **规约层**载体（`UIS-01` ~ `UIS-11`）的反向验证：**11 组**毒化 fixture（每条必红 **且** 归因 id **命中** `static assertion failed: <id>: `）+ **基线正控** + **归因 id 双向覆盖自检** + **探针鉴别力自测**（双分支：编译红 or 探针红） | ✅ 生效（ctest 注册） |
 
 > 配套数据文件：`cep_doc_ref_aliases.tsv`（节号别名）/ `cep_doc_ref_registry.tsv`（语义 + 负向断言登记）。
-> **本表 16 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
+> **本表 17 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
 > ⚠️ **2026-11-03 订正**（队列 #13 实现层 / Entry #187）：原写「**15 个**」—— 该数是**表内登记行数**，而 `scripts/test/cep_*.sh` 的**磁盘实际**为 **19** 个（另 3 个未列入本表）
 > ⇒ **表内计数 ≠ 磁盘实际**；本表只登记**已纳入 ctest 的**脚本，差异项以 `ls scripts/test/cep_*.sh` 为准。
 > ⚠️ **2026-11-03 补登**（队列 #13 Phase 3，Entry #184）：此前 **队列 #11 / #12 的两个反向脚本**
@@ -89,6 +90,31 @@
 | **CP-PARTIAL-FAIL** partial failure | 移除 `group_destroy` 的 Fault 产出 ⇒ 无 Fault 事件 ⇒ 红 | 同上 |
 | **NVA-07** 集体面绑定 | region 的 `mode` 改成 `normal` ⇒ R3 降级判据红 | 同上 |
 | **CP-03-VC-PRECONDITION** V6-c | 绑定一个**未注册**的 plane 名 ⇒ 前提约束红 | 同上 |
+
+### 反向 fixture 登记（队列 #14 `cpptlm-cep-ualink-inc-state-spec` —— **规约层**）
+
+> 同上纪律。本批的判据实现 = **C++ 载体(header-only · 自足)+ 影子副本编译期红 + 跨载体探针**。
+> ⇒ fixture 落点 = `scripts/test/cep_ualink_inc_state_spec_reverse_verify.sh`(ctest `cep_ualink_inc_state_spec_reverse_verify`)
+> ⇒ **11 组**毒化 fixture **1:1** 对应 design §5 登记的 **11** 个本层归因键(`UIS-01` ~ `UIS-11`)
+> ⇒ 归因匹配 = `static assertion failed: <id>: `(**带尾冒号**)—— ⛔ 裸子串会让 `UIS-01` 被 `UIS-10` 误命中
+> ⇒ 判定为 **presence**(毒化某格 `kind` 时日志**同时**含该格 id 与 `UIS-10:`)⇒ ⛔ 不得要求「只有一个归因 id」
+> ⇒ 驱动**双分支**:编译红 ⇒ 匹配 `static_assert` 文案;编译绿 ⇒ 跑探针 ⇒ 匹配 `PROBE:FAIL <id> `
+> ⇒ ⚠️ 探针的**鉴别力自测**另计(运行期;验证探针有牙)⇒ **不**计入下表的 11 组(避免破坏 1:1)。
+
+| 判据 | 反向 fixture（形态） | 登记位置 |
+|---|---|---|
+| **UIS-01** 原语集恰 4 / 不新增原语 | 影子副本 `kIncOpCount` 4 ⇒ 5 ⇒ 编译期红 | `cep_ualink_inc_state_spec_reverse_verify.sh`（`f-01-inc-op-count`） |
+| **UIS-02** reduce 算子只引用既有族 | 影子副本翻转 `kOperatorFamilyDefinedInCarrier` ⇒ 编译期红 | 同上（`f-02-operator-family-lock`） |
+| **UIS-03** partial failure ⇒ 显式 Fault | 影子副本翻转 `partial_failure_must_be_explicit` 函数体 ⇒ 编译期红 | 同上（`f-03-partial-failure-silent`） |
+| **UIS-04** `ReadReduce` 可见性边界 | 影子副本把该格 `kind` 由 `Pending` 改 `SelfDerived` ⇒ 编译期红 | 同上（`f-04-uis04-pending-to-selfderived`） |
+| **UIS-05** 排序 / 原子性边界 | 同上 | 同上（`f-05-uis05-pending-to-selfderived`） |
+| **UIS-06** 控制面归属边界 | 同上 | 同上（`f-06-uis06-pending-to-selfderived`） |
+| **UIS-07** 集合 VC 继承 + 不一致即禁用 | 影子副本翻转 `vc_inheritance_is_well_defined` 函数体 ⇒ 编译期红 | 同上（`f-07-vc-inheritance-always-true`） |
+| **UIS-08** `ualink_4` 的 `flow_support` 待定 | 影子副本把该格 `kind` 由 `Pending` 改 `SelfDerived` ⇒ 编译期红 | 同上（`f-08-uis08-pending-to-selfderived`） |
+| **UIS-09** `ualink_4` 的 `perm` 待定 | 同上 | 同上（`f-09-uis09-pending-to-selfderived`） |
+| **UIS-10** 逐格 basis 完备 + 类别自洽 | 影子副本把 `SelfDerived` 的 `ref` 冒充成 `A-n` ⇒ 遍历式断言红 | 同上（`f-10-basis-ref-public-impersonate`） |
+| **UIS-11** 证书规约面 + ⛔ 不得以重跑 DAG 为判据 | 影子副本翻转 `kDagRerunIsCertificate` ⇒ 编译期红 | 同上（`f-11-dag-rerun-as-certificate`） |
+| **跨载体** X-1 / X-1b / X-2 / X-3 | 探针的 8 项运行期判据（载体**自足** ⇒ 跨载体比对只能在探针侧） | `scripts/test/cep_ualink_inc_state_spec_probe.cc`（经驱动脚本进入 ctest） |
 
 ### 反向 fixture 登记（队列 #11 `cpptlm-cep-tilelink-state-spec`）
 

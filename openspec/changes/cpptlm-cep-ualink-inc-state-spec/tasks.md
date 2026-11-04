@@ -15,7 +15,7 @@
 |---|---|---|
 | 0 治理前置 | ✅ **已完成**(2026-11-04) | 转正登记 + KPI 回填 + Task 0 产物登记 |
 | 1 载体形态定稿 | ✅ **已完成**(2026-11-04,**经 critic 四轮**:第 1/2/3 轮 REJECT 全部修复 ⇒ 第 4 轮 **APPROVE_WITH_CONDITIONS**(`mergeable: yes`,**无 BLOCKER**)) | `ualink_inc_state_spec.hh` 自足载体 + 逐格 basis + 11 个义务格 + 9 项 pending + **37 条**编译期断言(11 个归因 id 全部有专属文案前缀) |
-| 2 判据面 | ⬜ 待实施 | 正向测试 + **11 组**反向 fixture + 归因 id 元测试 + 探针/脚本 + ctest 注册 |
+| 2 判据面 | ✅ **已完成**(2026-11-04) | 正向测试 + **11 组**反向 fixture + 归因 id 元测试 + 探针/脚本 + ctest 注册 ⇒ 驱动脚本 **14/14** 全绿 |
 | 3 证书规约面 | ⬜ 待实施 | 四条证书的逐边依据 + 参照域 + `IC1` 鉴别力边界登记 |
 | 4 验收 + 归档 | ⬜ 待实施 | 门禁 + `ctest` + `validate` + KPI **1/3 → 0/3** + 归档 + 台账 Entry |
 
@@ -55,20 +55,26 @@
 
 ## Phase 2 — 判据面
 
-- [ ] 2.1 **正向测试**(`test/test_cep_ualink_inc_state_spec.cc`):每条**负向断言配正控**
-- [ ] 2.2 **11 组反向 fixture**(每条**必红** + 归因 id **命中**):F-1 ~ F-11(per `design §4`)
+- [x] 2.1 **正向测试**(`test/test_cep_ualink_inc_state_spec.cc`):每条**负向断言配正控**
+- [x] 2.2 **11 组反向 fixture**(每条**必红** + 归因 id **命中**):F-1 ~ F-11(per `design §4`)
       ⇒ 锚点 SHALL 指向**载体中确实存在的翻转点** · 归因匹配 `grep -q "static assertion failed: <id>: "`
       (带尾冒号)· 判定为 **presence**(非「唯一」)· 驱动走**双分支**(编译红 or 探针红)
-- [ ] 2.3 **基线正控**(干净载体必绿)+ **鉴别力自测**(毒化载体 ⇒ 必红)
-- [ ] 2.4 **归因 id 元测试**:fixture id ⊆ 本层登记集合(**双向**)+ 每个本层新建 id ≥ 1 条 fixture
+- [x] 2.3 **基线正控**(干净载体必绿)+ **鉴别力自测**(毒化载体 ⇒ 必红)
+- [x] 2.4 **归因 id 元测试**:fixture id ⊆ 本层登记集合(**双向**)+ 每个本层新建 id ≥ 1 条 fixture
       ⇒ ⛔ **不得**出现「§5 登记增行、fixture 未增」的漂移(per critic 第 2 轮 BLOCKER)
       ⇒ SHALL 断言 **§4 的「归因 id」列 ↔ §5 的「归因 id(本层键)」列 1:1**(按 **id** 配对,
         ⛔ **不**用自由文本的「§5 登记行」列做机器核对 —— 该列只作**人工**可读交叉引用,
         措辞一改即**静默失配**;per critic 第 3 轮 S2)
-- [ ] 2.5 **跨载体一致性元测试**(per `design §2.4`):**X-1** 原语覆盖 **⊆** `CollectiveOp`
+- [x] 2.5 **跨载体一致性元测试**(per `design §2.4`):**X-1** 原语覆盖 **⊆** `CollectiveOp`
       · **X-1b** 覆盖集 **⊊** 平台取值集(⇒ 机器化「非副本」)· **X-2** pending 集合**逐项相等**
       · **X-3** `self-derived` 格的 `ref` **不得**指 `A-n`
-- [ ] 2.6 **探针 + 驱动脚本** + **ctest 注册**
+      ⇒ ⭐ **落点 = `scripts/test/cep_ualink_inc_state_spec_probe.cc`**(载体**自足** ⇒ 跨载体比对**只能**在探针侧)
+      ⇒ 探针 **8 项**运行期判据全绿(P-1 自足性 · P-1b 只 include 标准库 · P-2 归因 id 覆盖 · P-3 X-1 · P-4 X-1b · P-5 X-2 · P-6 X-3 ×2)
+      ⇒ ⚠️ 探针读**已入库**的 `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md`(审计面)⇒ **不依赖**不入库的 change 目录
+- [x] 2.6 **探针 + 驱动脚本** + **ctest 注册**
+      ⇒ `scripts/test/cep_ualink_inc_state_spec_probe.cc`(8 项运行期判据)+ `scripts/test/cep_ualink_inc_state_spec_reverse_verify.sh`
+      ⇒ 驱动脚本 **14/14** 全绿(基线正控 + 归因 id 双向覆盖自检 + **11 组** fixture + **探针鉴别力自测**)
+      ⇒ ctest 注册 `cep_ualink_inc_state_spec_reverse_verify` ⇒ 全量 `ctest` **146 → 147**
 
 ## Phase 3 — 证书规约面
 

@@ -12221,6 +12221,58 @@ design §2.3)**一致**。
 
 ---
 
+### Entry #201 — 2026-11-04 [build](队列 #14 **规约层** Phase 2 完成 —— **11 组反向 fixture** + 跨载体探针 + 归因 id 双向覆盖)
+
+**主题**:队列 #14 规约层 change `cpptlm-cep-ualink-inc-state-spec` 的 **Phase 2(判据面)** 完成。
+**角色**:builder。
+
+**① 交付面**
+
+| 面 | 内容 |
+|---|---|
+| **探针** | `scripts/test/cep_ualink_inc_state_spec_probe.cc` —— **8 项**运行期判据:P-1 载体自足性(禁项扫描)· P-1b **只 include 标准库**(引号形式 include ⇒ 红)· P-2 归因 id 覆盖(载体断言文案含 11 个 `UIS-xx`)· P-3 **X-1** 原语覆盖 ⊆ `CollectiveOp` · P-4 **X-1b** 覆盖 ⊊ 平台集(机器化「非副本」)· P-5 **X-2** pending 集合 == 审计面 §3 的 `N-n`(**逐项相等**)· P-6 **X-3** basis 完整 + `SelfDerived` 不引 `A-n` + 审计面 id 命名一致 |
+| **驱动脚本** | `scripts/test/cep_ualink_inc_state_spec_reverse_verify.sh` —— **14 条**全绿:① **基线正控**(干净载体编译 + 探针 8 项全绿)② **归因 id 双向覆盖自检**(fixture 期望集合 ⟺ 载体断言文案集合,**11 ↔ 11**)③ **11 组**毒化 fixture(每条**必红** + 归因**命中** `static assertion failed: <id>: `)④ **探针鉴别力自测** |
+| **ctest** | 注册 `cep_ualink_inc_state_spec_reverse_verify` ⇒ 全量 **146 → 147** |
+| **文档** | `scripts/README.md` 守门表(+1 行 ⇒ 17 个脚本)+ **反向 fixture 登记**新增「队列 #14」节(11 组逐条登记 + 跨载体 1 行)· `design §4` 补注(探针鉴别力自测**不**计入 11 组 ⇒ 保 1:1;跨载体元测试落点 = 探针) |
+
+**② ⚠️ 探针的鉴别力自测抓出的一处**探针覆盖缺口**(已修)**
+
+首版探针的 P-1 只扫 design §2.1 的**禁项清单** ⇒ 毒化「加 `#include "tlm/cep/collective_plane.hh"`」时
+**探针仍绿**(禁项清单里的 `tlm::cep::` 是**双冒号** ⇒ 匹配不到 `tlm/cep/collective_plane.hh`)
+⇒ ⛔ 探针**本可**无鉴别力而不自知。
+⇒ **补 P-1b**:引号形式的 `#include` ⇒ 红(这正是 design §2.1 的「项目内头 ⇒ 只允许 `<...>`」禁令)
+⇒ 鉴别力自测转绿 ⇒ **运行期分支有牙**已实证。
+⇒ 教训:禁项清单的**形状**(子串 / 前缀)须与被禁对象的**实际写法**对齐,否则扫描器会「静默漏网」。
+
+**③ ⚠️ 一处**流程事故**(已修)**
+
+同步 `scripts/README.md` 时,一个脚本的 **3 处编辑基于同一份原始快照** ⇒ 阶段②依次写回时
+**后写覆盖先写** ⇒ 守门表新行被冲掉 ⇒ 自检发现(守门表行数未变)⇒ **合并为一次行级操作**后修复。
+⇒ 另一次:同一脚本的插入被执行了**两遍** ⇒ 登记节重复 2 份 ⇒ 已删至 1 份(自检:`grep -c`)。
+⇒ 教训:多编辑点必须**在同一快照上串行**或**合并为一次写**;批量编辑后必**自检计数**。
+
+**④ ⭐ 判据**不依赖不入库件**(队列 #13 的教训已落实)**
+
+探针的输入 = 载体(`include/` · 已入库)+ **已入库**的审计面(`docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md`)
++ 驱动脚本自身(`scripts/test/` · 已入库)⇒ ⛔ **不**读 `openspec/changes/` 下的任何文件
+⇒ **change 归档后判据仍可执行**(归档件不入库 ⇒ 依赖它即失效)。
+
+**⑤ 验收(实测)**:驱动脚本 **14/14** 全绿 · `ctest -R cep_ualink_inc` **2/2** 通过 ·
+`[cep][ualink-inc]` **4 cases / 96 assertions** · `ctest` 全量 **147/147** ·
+`cpptlm_tests` **2125 cases / 877220 assertions** · 门禁 **6/6** + `cep_gate_selftest` **34/34** ·
+`format.sh --check` rc=0 · `openspec validate cpptlm-cep-ualink-inc-state-spec --strict` rc=0。
+
+**⑥ 下一前置 = Phase 3(证书规约面)**:四条证书(C-1′ / C-2 / C-3 / C-4)的**逐边依据 + 参照域**
+(两域并集)· 「该网映射不一致 ⇒ 不得用 M-2」的**可判定形式**· **`IC1` 鉴别力边界**登记
+(⛔ 不得以「重跑 DAG」为判据)· **U-1 / U-2** 的登记形态。
+
+**⑦ 关联**: Entry #200(critic 第 4 轮 APPROVE_WITH_CONDITIONS + Phase 1 收口)· #199 / #198 / #197
+(critic 第 3 / 2 / 1 轮)· #196(Phase 1 首版)· #195(建档 + Task 0)· #193(三则 ADR SU + 冻结面授权)·
+`ADR-CEP-01` SU#4 的 E.3.1 · 队列 #13 规约层的**同型先例**(`cep_nvlink_sharp_state_spec_probe.cc` +
+`cep_nvlink_sharp_state_spec_reverse_verify.sh`)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
