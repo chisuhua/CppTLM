@@ -12133,6 +12133,53 @@ spec ×1 · tasks ×2)③ §4 表**增「§5 登记行」列** ⇒ **机器可�
 
 ---
 
+### Entry #199 — 2026-11-04 [build](队列 #14 **规约层** Phase 1 —— **critic 第 3 轮** 的 1 个新 BLOCKER + 5 SHOULD_FIX + 3 NITS 修复 + **对 Entry #198 的更正**)
+
+**主题**:队列 #14 规约层 change `cpptlm-cep-ualink-inc-state-spec` 的 **critic 第 3 轮**处置。
+**角色**:builder。⚠️ **评审预算**:本 change 已用 **3/3** 轮(第 3 轮经用户批准)⇒ 第 4 轮**须用户再次批准**。
+
+**① critic 第 3 轮结论**:`mergeable: no` · **上一轮(第 2 轮)的 BLOCKER 判「已闭合」** ✅
+⇒ 但**本轮新引入 1 个 BLOCKER(B3)** + 5 SHOULD_FIX + 3 NITS ⇒ 全部已按精确改点修完。
+
+**② ⚠️ B3 —— 本轮新引入,且根因是**我自己的流程错误**(不是设计缺陷)**
+
+| 项 | 事实 |
+|---|---|
+| 现象 | `kind ↔ ref-class` 的**载体函数 doc 注释**与 **design §2.3** 仍写着**过强**版本(「`pending` 却引 `C-` ⇒ 全部判否」)⇒ 与**同文件函数体**的收紧后实现**直接矛盾** ⇒ Phase 2 的 fixture 会**假绿** |
+| 根因 | 第 2 轮的修复脚本 `fix_round2_a.py` 在**测试段**断言失败后**中断** ⇒ 其后的 **design §2.3 段从未执行** ⇒ 但我**误以为**已全部执行 ⇒ 台账 Entry #198 §③-S2 声称「design / 载体头注释」**均已闭合** = **不实** |
+| 修正 | ① 载体函数 doc 注释 → 与实现一致 ② `design §2.3` → 同步(补「未知类 token 一律判否」+「`pending` 却**纯**引 `C-`」)③ **本条**追加对 Entry #198 的**更正**(append-only,不改原 Entry) |
+| 防复发 | 本轮起所有批量替换改用**两段式**:① **dry-run 校验全部 old 串的唯一性**(有失配 ⇒ **不写任何文件**)② 执行。实测 **12/12** 命中后一次性写入 |
+
+**③ 五个 SHOULD_FIX**
+
+| # | finding | 处置 |
+|---|---|---|
+| S1 | §5 基数规则**方向**与论证案例不匹配(规则写「层键 → 系统 id 1:N」,论证的却是「一个 id → 多个层键」);id→义务**映射与 ADR 不符**(C-2 应归 `CP-09-IC1`);ADR 强制的 `detail` 消歧字段**未登记** | 规则改为**双向**:**层键 → 系统 id 允许 1:N** **且** **系统 id → 层键 允许 1:N**(per `ADR-CEP-01` E.3.1「四条证书**共用**一个 `CP-03-VC-CERTIFICATE`」)⇒ 消歧靠 **`detail` 子标记 + 层键** 两级;映射按 ADR 校正:**C-1′ / C-3 / C-4 ⇒ `CP-03-VC-CERTIFICATE`**、**C-2 ⇒ `CP-09-IC1`**(per E.3.1「C-2 复用 `ADR-CEP-09` 既有的 `CP-09-IC1`,**不**新造」);§5 表**增 `detail` 子标记列**(`UIS-07` ⇒ `/C-1′`;`UIS-11` ⇒ `/C-1′ ~/C-3 ~/C-4` + `CP-09-IC1`(=C-2))⇒ 该列成为 Phase 2「两列对应关系」元测试的**权威期望** |
+| S2 | §4↔§5 的 1:1 机器核对应以**归因 id**为键(「§5 登记行」列是**自由文本** ⇒ 任一侧改措辞即**静默失配**) | task 2.4 改为按 **`UIS-xx`** 配对(§4「归因 id」列 ↔ §5「归因 id(本层键)」列);「§5 登记行」列**降级**为**人工**可读交叉引用 ⛔ 不用作机器配对的键 |
+| S3 | 载体 `static_assert` 文案「pending 的格 SHALL 引 pending 白名单(N-)**而非仓内锚点(C-)**」措辞**过强**(新规则下 `C-` 可作**附加**依据)⇒ 该文案是 Phase 2 的**归因匹配串**,会被误读为禁 `C-` | 改为「pending 的格 SHALL **至少引一个** pending 白名单(N-)」⇒ 匹配前缀 `static assertion failed: <id>: ` **不变** |
+| S4 | delta spec 的 UIS-07 反向 fixture 仍是**平台面**动作(「给集合平面加独立映射」)⇒ 与 F-7 的**载体级**锚点不同形 ⇒ 易被读成悬空判据 | UIS-07 条款改为与 **F-7 同形**(翻转 `vc_inheritance_is_well_defined` **函数体**)· 并显式标注「平台面动作属**实现层** `cep-collective-plane-contract` 的判据面 ⇒ 本层只承载『继承良定义**判定**』⇒ **无悬空判据**」 |
+| S5 | 台账 Entry #198 §③-S2 的处置与实际改动不符 | **本条**追加更正行(append-only)⇒ 见 ② |
+
+**④ 三个 NITS**:载体 §⑥ 注释补「**形状型谓词的函数体**同样是翻转点」(F-3 / F-7 即是)
+· 台账「全仓 grep『9 组』= 0 命中」口径**不成立**(台账仍含队列 #13 的历史 Entry)⇒ 实质要求
+(**change 4 件套内** 0 命中)已达成 ⇒ 本条更正口径 · 匹配串 `grep -q "static assertion failed: <id>: "`
+是 **g++ 专有**字面量(clang 为 `static_assert failed due to requirement`)⇒ design §4 补注
+「若 Phase 2 想**跨编译器**,改为在 error 行上匹配 `<id>: `」。
+
+**⑤ 实测(本地影子实测,不入库;入库件属 Phase 2)——**16/16 全绿**(与上轮同)
+且**过强措辞残留扫描 = 0 命中**(载体 + change 4 件套)⇒ 三处权威表述(载体头注释 / 函数 doc /
+design §2.3)**一致**。
+
+**⑥ 验收(实测)**:载体独立编译通过 · **37 条** `static_assert`(11 个归因 id 全覆盖)·
+`[cep][ualink-inc]` **4 cases / 96 assertions** · `ctest` **146/146** ·
+`cpptlm_tests` **2125 cases / 877220 assertions** · 门禁 **6/6** + `cep_gate_selftest` **34/34** ·
+`format.sh --check` rc=0 · `openspec validate cpptlm-cep-ualink-inc-state-spec --strict` rc=0。
+
+**⑦ 关联**: Entry #198(critic 第 2 轮)· #197(critic 第 1 轮)· #196(Phase 1 首版)· #195(建档 + Task 0)
+· #193(三则 ADR SU + 冻结面授权)· `ADR-CEP-01` SU#4 的 **E.3.1**(四条证书共用一个 id + `detail` 子标记)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

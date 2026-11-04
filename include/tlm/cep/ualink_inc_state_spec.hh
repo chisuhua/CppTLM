@@ -268,7 +268,10 @@ namespace tlm {
             }
 
             // ═══════════════════════════════════════════════════════════════
-            // ⑥ 声明锁(可被毒化的「翻转点」—— 毒化 ⇒ 编译期红)
+            // ⑥ 声明锁与形状型谓词(**可被毒化的「翻转点」** —— 毒化 ⇒ 编译期红)
+            //    ⚠️ 翻转点**不止**这三个声明锁 —— **形状型谓词的函数体**同样是翻转点
+            //    (per 本 change design §4 的 F-3 / F-7:翻转 `partial_failure_must_be_explicit`
+            //    与 `vc_inheritance_is_well_defined` 的**函数体** ⇒ 编译期红)
             // ═══════════════════════════════════════════════════════════════
             /// ⛔ 载体**不**定义 reduce 算子族 ⇒ 恒 `false`
             inline constexpr bool kOperatorFamilyDefinedInCarrier = false;
@@ -382,9 +385,13 @@ namespace tlm {
 
             /// `kind` 与 `ref` 类别**是否自洽**(per design §2.3)
             /// · `SelfDerived` ⇒ **全部** token 必须是 `C-` 类(仓内已签锚点)
-            /// · `Pending` ⇒ **至少一个** `N-` 类 token 且**不得**含 `A-` 类 token
-            /// ⇒ 冒充(`SelfDerived` 却引 `N-` / `Pending` 却引 `A-` / `Pending` 却引 `C-`)
-            ///   **全部**判否。
+            /// · `Pending` ⇒ **至少一个** `N-` 类 token(语义待定的依据)· **不得**含 `A-` 类
+            ///   (公开来源不得冒充)· 其余 token **只允许** `C-` 类(名字来源的**附加**依据)
+            ///   ⇒ **未知类 token 一律判否**
+            /// ⇒ 冒充(`SelfDerived` 却引 `N-` / `Pending` 却**纯**引 `C-`(无 `N-` token)
+            ///   / `Pending` 却引 `A-``)**全部**判否。
+            /// ⚠️ ⛔ **不得**把结论写成「`Pending` 却引 `C-` ⇒ 判否」—— 那**强于**实现
+            ///   (INC 原语格 = `Pending` + `"C-6 N-1"`)⇒ Phase 2 的 fixture 会**假绿**。
             constexpr bool basis_kind_matches_ref_class(BasisKind kind,
                                                         std::string_view ref) noexcept {
                 if (kind == BasisKind::SelfDerived)
@@ -595,7 +602,7 @@ namespace tlm {
                           "UIS-10: pending 的格 SHALL NOT 以公开来源(A-)为依据");
             // ③ `Pending` 却引仓内锚点(冒充 pending 的理由)⇒ 判否
             static_assert(!basis_kind_matches_ref_class(BasisKind::Pending, "C-9"),
-                          "UIS-10: pending 的格 SHALL 引 pending 白名单(N-)而非仓内锚点(C-)");
+                          "UIS-10: pending 的格 SHALL 至少引一个 pending 白名单(N-)");
             static_assert(kBasisIncOps.size() == kIncOpBasisCount,
                           "UIS-10: INC 原语格数 SHALL 与原语数相等");
 

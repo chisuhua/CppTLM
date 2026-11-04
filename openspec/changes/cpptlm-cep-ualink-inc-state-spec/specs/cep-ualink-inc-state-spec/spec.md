@@ -78,7 +78,11 @@ CEP SHALL 为 **UALink INC** 提供一份**可执行规约层契约**:四原语�
 - **AND** 该继承**良定义**的充要条件 = 该 network 上全部有绑定的既有实例的映射**逐类相等**
 - **AND** **若该 network 存在实例间映射不一致 ⇒ 该 network SHALL 不得使用 M-2**
 - **AND** 参照域 SHALL 为**两域并集**(ArchForge 派生域 + 本仓 `repo_owned_instance_ids[]`)
-- **AND** **反向 fixture**:给集合平面加独立映射 ⇒ 判据 SHALL 必红(归因 `UIS-07`)
+- **AND** **反向 fixture**(`F-7`):影子副本翻转 `vc_inheritance_is_well_defined` 的**函数体**
+      (恒真 ⇒ 「不一致即禁用 M-2」的判定失效)⇒ 判据 SHALL 必红(归因 `UIS-07`,**编译期红**:
+      文案以 `UIS-07: ` 开头)⇒ ⚠️ 「集合平面**加独立映射**」这一**平台面**动作属**实现层**
+      `cep-collective-plane-contract` 的判据面(per `ADR-CEP-01` SU#4 的 E.3.1)
+      ⇒ 本层只承载「继承良定义**判定**」这一条 ⇒ **无悬空判据**
 
 #### Scenario: UIS-08 —— `ualink_4` 的 **`flow_support`** SHALL 待定(不得先填后证)
 
