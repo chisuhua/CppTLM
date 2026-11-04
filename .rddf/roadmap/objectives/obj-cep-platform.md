@@ -12736,6 +12736,87 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 
 ---
 
+### Entry #212 — 2026-11-04 [build](Phase 1 首轮 —— **H2 / H3 / H6** 实验装置落地 + 三假设结论 + 4 件套链路打通)
+
+**主题**:按用户裁决「Phase 1 先做 H2/H3/H6」,建成 CEP **第一处真实 metric 产出者**,
+并跑出三条假设的首轮结论。**0 冻结面 / 0 契约面 / 0 ABI 改动**(新增文件全在 `test/` + `scripts/` + `docs/validation/`)。
+**角色**:builder。**verification_mode** = `bounded_random`(三组均是抽样规模)。
+
+**① 前置发现(本轮实测,修正了此前「跑实验即可」的假设)**
+
+| 缺口 | 实测 | 处置 |
+|---|---|---|
+| 13 必纳 metric **零产出者** | `avg_latency_cycles` / `deadlock_violations` / `vc_stall_per_vc` / `directory_misses` 在 `include/`+`src/` grep **零命中**;`test_cep_simulation_mode_lock.cc` 只断言 schema 有字段名 | 新建观测层(见 ②) |
+| home 侧引擎缺口 | 3 个运行时引擎(`chi_rnf` / `mesif` / `moesi_gpu`)**全在 RN 侧**;CXL DCOH / TileLink-C / NVLink / UALink **只有 adapter 契约** | **不补引擎**(oracle 2026-11-04:规约载体无转移表真源,补引擎 = 推理填空)⇒ H2 重解释为**目录策略**对比,H3 主体是 tracker caps(协议无关) |
+| 违例检测器缺口 | `ordering_point_checker.hh` 只做装配期静态判定;**无运行时 SWMR/data-value 检测** | 新建 `SwmrDataValueDetector` |
+| H6 运行时 VC 面 | `CohIfBundle` 不含 `vc_id`;`include/tlm/cep/` 无运行时仲裁 | 最小 VC 模型(放 `test/`,⛔ 不进 `include/`) |
+| `trace.h5` 工具链 | 本机 `h5cc`/`h5dump`/`h5ls`/`h5py` **全缺** | 已装 `h5py 3.16.0`;**仓内无 CI 承诺** ⇒ 登记为可复现性风险 |
+
+**② 新增文件(全部非契约面)**
+
+| 文件 | 职责 |
+|---|---|
+| `test/cep_experiment_harness.hh` | `LatencyCollector`(nearest-rank 百分位)+ `SwmrDataValueDetector`(双不变量 + 红绿分离开关)+ `ProgressWatchdog` + `ExperimentMetrics`(13 必纳 JSON) |
+| `test/cep_directory_experiment.hh` | `HomeNodeModel`:lookup → 按 verdict 展开 snoop → 聚合延迟 |
+| `test/cep_vc_fabric_model.hh` | 最小 VC 模型(隔离/共享 + 每 VC stall + `collective_wait_on_coherence_vc`) |
+| `test/test_cep_experiment_harness.cc` | 观测层判据 **14 cases** |
+| `test/test_cep_h2_h3_experiments.cc` | H2 / H3 + 反向 fixture |
+| `test/test_cep_h6_vc_isolation.cc` | H6 + 负控 + 反向 fixture |
+| `test/test_cep_experiment_emit.cc` | 4 件套产出(仅 `CEP_EXP_DIR` 设置时) |
+| `scripts/test/cep_experiment_run.sh` | 三组实验 → h5py 补 `trace.h5` → `render_report.py` → `--check` |
+| `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md` | 结论 + 口径限定 + 反向 fixture 证据 |
+
+**③ 实测结论**
+
+| 假设 | 实测 | 判据 | 结论 |
+|---|---|---|:---:|
+| **H2** | 集中 `FullMap` avg=**4** / 分布 `Dcoh` avg=**14** / 广播 `BroadcastNull` avg=**18** cycles;相对差 **250% / 28.6% / 350%** | 两两差异 > 20% | ✅ 成立 |
+| **H3** | **1200** 事务;漏探=**0**;`swmr`=**0**;`data_value`=**0** | 0 违例(1000+) | ✅ 成立 |
+| **H6** | 独立 VC:死锁=**0**、collective 占 coherence VC 等待=**0**;共享 VC(负控):backlog=**2000**、死锁=**1** | 0 死锁 + stall 不占 coherence VC | ✅ 成立 |
+
+**④ 口径限定(⚠️ 引用结论时必须重复)**
+
+1. **H2 不是协议对比** —— 固定 RN 侧行为,只变 home 侧目录策略 ⇒ 结论 =「**目录策略**对延迟的影响」,
+   ⛔ **不是**「CHI 协议 vs CXL 协议的延迟差」。
+2. **H6 是最小 VC 模型** —— 单级仲裁 / 无 credit 环流 / 无跨 VC 依赖图;完整仲裁属 Stage 4+(`ADR-CEP-09`)。
+3. **既有登记义务** —— `ADR-CEP-09` SU 2026-11-02 §④ 的「D∪E 合并后 `GrantAck` 可能被 `Grant` 饿死**未建模**」
+   本实验**不覆盖**,引用时必须原样带上。
+4. **verification_mode = `bounded_random`** —— 按 `ADR-CEP-06 §3`,**不得**表述为「已证明无死锁/无违例」,
+   只能说「在该抽样规模内未观察到」。
+
+**⑤ 反向 fixture(判据「因正确原因红」的证据)**
+
+| 判据 | 反向 fixture | 实测 |
+|---|---|---|
+| H2「差异 >20%」 | 三策略全指向 `FullMap` | 相对差 **0%** ⇒ 判据不成立 ✅ |
+| H3「0 违例」 | 跳过 invalidate 连写 10 次 | `swmr == 10` ✅ |
+| H3「无漏探」 | 读到过期版本 | `data_value == 1` ✅ |
+| 检测器本身 | `checks_enabled=false` 跑同一违例 workload | 检出 **0** ⇒ 证明非零值非构造 ✅ |
+| H6「隔离有效」 | 「假隔离」(`isolate=true` 但 VC 撞车) | 同样饥饿 ⇒ 判据看**实际 VC 归属** ✅ |
+| H6「不误报」 | 无 collective 流量跑 2000 cycle | 死锁=0 ✅ |
+
+**⑥ 未覆盖 / 登记(不在本轮结论内)**
+
+| 项 | 状态 |
+|---|---|
+| **H1**(seam 隔离) | 有**契约级**证据(`test_cep_adapter_schema_contracts.cc`),未以「假设结论」形式登记 |
+| **H4**(完成域判别容纳两流) | 未做实验 |
+| **H5**(SHARP 0 误分类) | 有契约级证据(`fail-stop` + `divert_counter` 字段断言),未登记结论 |
+| **H8**(4 件套 + 13 metric 支撑取舍) | 未做;`tools/aggregate.py` / `plot.py` / `recommend.py` **仍缺** ⇒ 无「建议输出」载体 |
+| **DoD §6.2 B3「6 个 ProtocolEngine」** | 运行时实际只有 3 个 RN 侧 + `CohIfNull`;4 个协议族只有 adapter 契约 ⇒ ⚠️ **B3 口径与实现不符**,需 DRI 裁决(重新定义为「6 族 adapter 契约」还是登记为未达成) |
+| `trace.h5` 语义 | 现为 **run 级摘要**(attrs 标注 `grain="run-summary"`),⛔ 不冒充 cycle-level trace |
+
+**⑦ 验收(实测)**
+
+`[cep]` **377 cases / 8295 assertions**(+26 / +1319)· `[cep][exp]` **26 cases / 1319 assertions** ·
+`scripts/test/cep_experiment_run.sh` 三组 4 件套 + `render_report.py --check` 全通过 ·
+`cep_freeze_check` rc=0(**0 冻结件改动**)· `cep_docs_sync` / `cep_doc_ref` / `docs_sync` 全 rc=0 · `format --check` rc=0
+
+**⑧ 关联**:Entry #211(Phase 0 治理收口)· #210(critic 第 2 轮)· §9.1 H2/H3/H6 · §6.2 B4/B7 ·
+`ADR-CEP-06 §3`(verification_mode)· `ADR-CEP-09` SU §④(未建模限定)
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

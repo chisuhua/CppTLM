@@ -43,6 +43,14 @@
 | `cep_ualink_inc_state_spec_reverse_verify.sh` | 队列 #14 **规约层**载体（`UIS-01` ~ `UIS-11`）的反向验证：**11 组 / 12 条**毒化 fixture（每条必红 **且** 归因 id **命中** `static assertion failed: <id>: `）+ **基线正控** + **归因 id 双向覆盖自检** + **探针鉴别力自测**（双分支：编译红 or 探针红） | ✅ 生效（ctest 注册） |
 | `cep_ualink_inc_reverse_verify.sh` | 队列 #14 **实现层**载体（`UIA-01` ~ `UIA-07` + **V6-d** 四条证书）的反向验证：**11 组 / 11 条**毒化 fixture（每条必红 **且** 归因 id **精确相等**命中 `PROBE:FAIL <id> `）+ **基线正控** + **归因 id 双向覆盖自检** | ✅ 生效（ctest 注册） |
 
+### 实验运行器（非守门，**不**注册 ctest）
+
+| 脚本 | 作用 |
+|------|------|
+| `cep_experiment_run.sh` | H2 / H3 / H6 实验的 4 件套产出：C++ 侧经 `CEP_EXP_DIR` + `CEP_EXP_ID` 产 simulation_config.json + metrics.json → 本脚本用 `h5py` 补 trace.h5（run 级摘要，不冒充 cycle trace）→ `tools/render_report.py` 产 `report.html` → `--check` 校验。产物落 `experimental/`（已被 `.gitignore` 忽略） |
+
+> 结果解读见 `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`（含口径限定与反向 fixture 证据）。
+
 > 配套数据文件：`cep_doc_ref_aliases.tsv`（节号别名）/ `cep_doc_ref_registry.tsv`（语义 + 负向断言登记）。
 > **本表 18 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
 > ⚠️ **2026-11-03 订正**（队列 #13 实现层 / Entry #187）：原写「**15 个**」—— 该数是**表内登记行数**，而 `scripts/test/cep_*.sh` 的**磁盘实际**为 **19** 个（另 3 个未列入本表）
