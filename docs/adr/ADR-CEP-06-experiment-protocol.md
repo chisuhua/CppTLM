@@ -204,3 +204,141 @@ per oracle 评审建议,任何必纳 metric 不可获得时(`experimental/` 工�
 ## 9. v0.1 修订记录(本 ADR 初版)
 
 > **变更史**:见 `.rddf/roadmap/objectives/obj-cep-platform.md` §11 台账(授权记录单一真源)。
+
+## Status Update 2026-11-04(#1)—— 决策 4 / 决策 5 的**可执行化**裁决(载体 + 两级 verdict + 预登记闸)
+
+**主题**:Stage 0~3 全部归档后,一次全平台梳理暴露 `ADR-CEP-06` 与其实现层的**三方冲突**:
+决策 4 的兜底契约在本 ADR 的**字面示例**里**不可被本 ADR 自己规定的 schema 表达**,
+决策 5 的「timing ⇒ 延迟 > 0」在测试层**零断言** ⇒ 实测出现「明知不采却写 0」的 run。
+本则裁决**载体形态**与**判定口径**;⛔ **本则不改决策 4 / 决策 5 的任何既有条款**,
+只**追加**使其可执行所必需的分支与口径定义。
+
+**性质**:architect 域的架构级裁决(本则 §①~§④ = 裁决;§⑤ = 落地分工)。
+**关联**: 台账 **Entry #215** / **#216**(前序 architect 裁决)· `07 号` Status Update 2026-11-04(同一裁决的真源 1 同步)
+· `experimental/metrics.schema.json`(冻结面)· `tools/{render_report,ab_compare,run_sweep}.py`(冻结面)
+· `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`(受本则影响的历史产出)
+
+---
+
+### ① 冲突的三方证据(实测)
+
+| 层 | 位置 | 实测结论 |
+|---|---|---|
+| **ADR(本文件)** | 决策 4(`:90-101`) | 不可观测 metric **必须**标 `"not-collected"` + reason;**禁止**省略 / 写 0 / 写 -1 |
+| **ADR(本文件)** | 决策 5(`:103-108`) | `functional` ⇒ 延迟 **必须 = 0**;`timing` ⇒ 延迟 **> 0** |
+| **schema**(冻结面) | `experimental/metrics.schema.json` | 13 个 `required` 字段类型**全部** `number`/`integer`,**无 `oneOf`/`anyOf`** ⇒ `"not-collected"` **不可表达**。实测 `jsonschema` 校验 ADR 决策 4 的示例 ⇒ **FAIL**(`'not-collected' is not of type 'number'`)。`_not_collected_reason` 是**单字符串**且**不在 `required`** ⇒ 多 metric 未采集时无法区分是哪个 |
+| **tools**(冻结面) | `render_report.py` / `ab_compare.py` / `run_sweep.py` 各自的 `metric_type_problems()` | 3 件各自持有一份**复制粘贴**的 `REQUIRED_METRICS` + `metric_type_problems()` ⇒ 非数值即判红 ⇒ 决策 4 的兜底在工具层**同样不可执行** |
+| **测试层** | `test/test_cep_simulation_mode_lock.cc:98-106` | 该用例名为「不可观测 metric 的 not-collected 契约存在」,但**只断言 `_not_collected_reason` 是 string 型属性存在** ⇒ **不断言 13 字段可承载 `"not-collected"`** ⇒ 测试在给缺口**盖章** |
+| **实测产出** | `experimental/run-20261104-215837-h2h3h6/{h2,h3,h6}/metrics.json` | h2/h3 的 5 个 metric(`coherence_stalls`/`collective_stalls`/`directory_misses`/`deadlock_violations`/`memory_violations`)是**结构零**(字段在、产出者从未赋值);h6 的 5 个延迟 metric 同样结构零,而 h6 的 `verification_scope` **自陈**「本实验不采延迟(avg/p50/p95 恒 0)」⇒ **明知不采却写 0** |
+
+⇒ 决策 4 的兜底契约**从未有过可执行载体**;决策 5 的 timing 分支**纯靠 emit 自觉**。
+
+---
+
+### ② 载体裁决:**A(值即类型)+ per-metric `_not_collected` map** —— 三选一中的唯一自洽项
+
+**裁决**:13 个必纳字段的取值**类型**放宽为「数值 **或** `"not-collected"`」;**新增** `_not_collected`(object,per-metric reason map);
+**废弃**单字符串 `_not_collected_reason`(并存 = 两种形状双真源)。
+
+**为什么不是 B(伴随标注,13 字段恒为数值 + 清单登记)**:
+B 的机器闸只能查「登记一致性」,**查不出「本该采集却漏采集」** ——
+实测 0 与未采集的 0 在**数据层同形**,B 无法区分 ⇒ B 把「结构零冒充实测」从**数据层**挪到**清单层**,缺口未闭合。
+
+**为什么不是 C(必采类 / 条件类拆分 required 集)**:
+C 语义最准,但①必改 `required` 集 ⇒ 破 `test/test_cep_simulation_mode_lock.cc:68-95` 的**集合相等**断言;
+②「现在没人测」≠「不该测」(`directory_misses` 空转是**产出者缺位**,不是 metric 不该存在)——
+收窄必纳集 = 把「产出者缺位」误判为「契约错」,重蹈「实现超前/滞后于声明」的老路。
+
+**为什么 A 需要 per-metric map(而非单字符串)**:
+单字符串在「多个 metric 未采集」时**语义上不可判定**(无法区分是哪个没采)⇒ 不是可选优化,是正确性下限。
+
+**配套**:3 件冻结 tools 的 `metric_type_problems()` 改为**接受** `"not-collected"`,
+但**必须**同时要求 `_not_collected` 中有该 metric 的 reason ⇒ **reason 缺失 ⇒ 判红**。
+
+---
+
+### ③ 决策 5 裁决:**三分支**(h6 的 `simulation_mode` 标签**无误**,缺的是决策 5 的分支)
+
+**裁决**(决策 5 原文两条**保留**,追加第 3 条):
+
+| `simulation_mode` | 延迟族(`avg`/`p50`/`p95`/`p99`/`max`) | 判据 |
+|---|---|---|
+| `functional` | **必须 = 0** | 决策 5 原文(保留) |
+| `timing` **且**未预声明不采延迟 | **必须 > 0** | 决策 5 原文(保留) |
+| `timing` **且**实验设计**预先声明**不采延迟(`verification_scope` 明示) | **必须 `"not-collected"`**;⛔ **禁止写 0** | **本则追加** |
+
+**⚠️ branch 3 的判定锚 = `simulation_config.json`**(per critic 2026-11-04 SHOULD_FIX —— 实测 3 件 tools
+均只从 `simulation_config.json` 读 verification 声明,`render_report.py` 有显式「唯一真源」纪律注释):
+`metrics.json` 内的 `verification_scope` 副本**不参与判定**。
+⇒ 否则本则 §④ 自己立的「预登记载体不在 `metrics.json`(被试者自证的报表面)」原则,
+在延迟族上会被**构造性绕过** —— emit 端只要在自己的产物里写一句「本实验不采延迟」即可自证豁免。
+
+**⛔ 明确不采的替代路径**:把 h6 改标 `functional` ——
+`simulation_mode` 是**仿真的属性**不是**报表的属性**;h6 确实是 2000 cycle 的 timing 推进,
+改标 functional 会在数据里写入**第二个谎言**,并污染「functional ⇒ 必须 = 0」的反向检查(真 functional run 反而显得可疑)。
+
+---
+
+### ④ 「全绿」的两级 verdict 裁决(B4 可判定性的前提)
+
+**问题**:`objective §6.2` 的 B4 写「13 必纳 metric 全绿」而**「全绿」无定义** ⇒ B4 不可判定。
+
+**裁决**:拆成**两级**,两级不可互相继承:
+
+| 级别 | 判据 | 载体 |
+|---|---|---|
+| **run-validity** | ① 4 件套齐备 ② 13 必纳**键**齐备 ③ 每个值**要么**是真实采集的数值、**要么**是 `"not-collected"` 且 `_not_collected` 有该 metric 的 reason ④ `not-collected` 集合 **⊆** 实验设计**预登记**的 out-of-scope 集合 ⑤ 违例类(`deadlock_violations`/`memory_violations`)若为 `"not-collected"` ⇒ 该 run 的 IC3 判定为**「不适用」**,**不得**作为任何一致性安全断言的证据 | `metrics.json` + schema + tools 闸 |
+| **hypothesis-verdict** | objective §9 每个假设的判据**逐条**标注「测量了 / 未测量 / fail」;判据所需 metric 为 `not-collected` ⇒ 该判据 = **未测量**,⛔ **不继承 pass** | `objective §9`(判据-指标需求表) |
+
+**④ 的预登记闸是堵「反向自欺」的唯一手段**:
+若 emit 端可**事后自由**标 `not-collected`,则「结构零冒充实测」只是被替换成「`not-collected` 冒充预声明」—— 自欺升级而非消除。
+⇒ **预登记集合的载体在 objective / plan 域(评审过的设计面)**,**不在** `metrics.json`(被试者自证的报表面)。
+⇒ 结构性保证:同一实验**不能**既把某 metric 预登记为 out-of-scope、又在同一实验的假设判据里引用它。
+
+**④ 的违例类规则(订正裁决初稿中的禁令)**:
+违例类**允许** `"not-collected"` —— 若禁止,emit 的唯一合规出路就是**把未测量写成 0**
+(= h3 实际发生的失败:0 被读作「测了,没死锁」)。正确规则是**允许 + 连带证据降级**:
+not-collected ⇒ IC3 判定「不适用」+ 该 run 不得作一致性安全断言的证据 + 报告层须渲染对应 badge
+(扩展 `render_report.py` 已有 violation badge 机制,**不新建**)。
+
+**④ 的 B4 读取约束(收窄下游自由度 —— per critic 2026-11-04 SHOULD_FIX)**:
+本则确立 run-validity 的可判定性,但 B4 的**落地措辞**属 objective 域(planner)⇒ 追加**读取约束**,
+避免「run-validity 绿 ⇒ B4 绿」的降格读取:
+- ⛔ **B4 的达成 SHALL NOT 仅依赖 run-validity**;
+- ⛔ **违例类(`deadlock_violations`/`memory_violations`)为 `"not-collected"` 的 run,
+  SHALL NOT 计入 B4 的达成证据**(否则「不适用」会被读成「通过」);
+⇒ 即「13 项中 5 项 not-collected 的 run」**不足以**让 B4 变绿 —— 违例类必须**实测为 0**。
+
+---
+
+### ⑤ 落地分工(⛔ 本则只裁决,不代做)
+
+| 域 | 动作 | 需冻结面授权 |
+|---|---|:---:|
+| **planner / architect** | objective §9 改造为「**判据-指标需求表**」(每假设逐条列所需 metric)—— **预登记闸的真源修复,先于一切 emit 侧改动** | — |
+| **builder** | schema(`oneOf` + per-metric `_not_collected` map + 废单字符串字段)+ 3 件冻结 tools(`metric_type_problems` 接受 not-collected + 要求 reason + `not-collected ⊆` 预登记校验)+ `test/test_cep_simulation_mode_lock.cc` 更新(`:98-106` 改钉新形状;`:68-95` 的集合相等断言**不变**) | ✅ **是** |
+| **builder** | `aggregate.py` / `plot.py` / `recommend.py` 的哨兵值防护(三件**不在** `FROZEN_GLOBS` ⇒ 自由改) | — |
+| **builder** | ⚠️ **`openspec/specs/cep-core-contracts/spec.md` 与新契约对齐** —— 该 spec 在 `FROZEN_GLOBS` 内;`:116` 仍要求**已废弃**的 `_not_collected_reason`,`:121` 的 IC3 Scenario 仍写「`==0` 才判 pass」而**无「不适用」分支** ⇒ 与本则 §②/§④ 的新契约**直接互斥**。⛔ **不可留待日后** —— 两件冻结面互斥后再修需**两次**授权且漂移期无限 | ✅ **是** |
+| **builder** | **补机器断言**(本则落地前**零覆盖**):① `"not-collected"` 值可过 schema(正例)② 缺 reason ⇒ 判红(反向 fixture)③ 违例类 not-collected ⇒ IC3 判定「不适用」(正向)+ ④ 决策 5 三分支各有断言 | — |
+| **architect** | 已落盘 h2/h3/h6 的处置 = **只勘误不重跑**:`docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md` 追加「判据分支测量状态」小节(H3 的 `deadlock_violations` 分支 = **未测量**;h2 的 `directory_misses` 半支 = **未测量**);⛔ **不改历史 run 的 `metrics.json`**(作为历史产物不动);⛔ **不重写结论段** | — |
+| **architect** | `07 号` Status Update(真源 1 同步本则 §②~§④)+ 台账 §10 的 B4 相关行 + `§6.2` 的「全绿」口径落地 | — |
+
+### ⑥ 正文勘误指针表(裁决前文本 → **以本则为准**)
+
+⚠️ 本则**不改本 ADR 正文**(ADR 不可变纪律);以下位置是**裁决前的历史文本**,
+单读正文 / 写新 gate 的读者须以**本则**为准 ——
+(先例教训:`test/test_cep_simulation_mode_lock.cc` 那个名为「not-collected 契约存在」的用例
+**只断言 reason 字段形状、不断言值契约** ⇒ 给缺口盖章 ⇒ 本表的作用就是**消灭这类「按旧文本建 gate」的入口**)。
+
+| 位置 | 裁决前文本(历史) | 本则的裁决后口径 |
+|---|---|---|
+| 本 ADR 决策 4 的 JSON 示例(`:92-101`) | `"_not_collected_reason": "trace.h5 missing p99 bin"`(单字符串) | §②:改用 **per-metric `_not_collected` map**;单字符串字段**废弃** |
+| 本 ADR 决策 2.2 可选 metric 行(`:196`) | 「未达成 = `not-collected`」 | §②:**同样适用于 13 必纳 metric**(取值类型放宽为「数值 **或** `"not-collected"`」) |
+| 本 ADR `INV-CEP-06-IC4`(`:133`) | 「不可观测 metric 标 `not-collected` + reason 字段,禁止省略/0/-1」 | §②:**载体**由本则给出(值即类型 + per-metric map);**语义不变** |
+| 本 ADR 决策 5(`:103-108`) | 两条分支 | §③:**追加第 3 条**(timing + 预声明不采延迟 ⇒ 必须 `not-collected`,禁写 0) |
+| `07 号` `:285`(IC4 摘录) / `:521`(兜底契约段) | 同上旧形状 | 同上(07 号 Status Update #2 同步) |
+| `openspec/specs/cep-core-contracts/spec.md` `:116` / `:121` | 旧形状 + IC3 无「不适用」分支 | §②/§④:**须与新契约对齐**(§⑤ 已列入 builder 域 + 冻结面授权) |
+
+**⑦ 关联**: 台账 **Entry #215** / **#216** · `07 号` Status Update 2026-11-04(同一裁决)·
+`experimental/metrics.schema.json` · `tools/{render_report,ab_compare,run_sweep}.py` ·
+`test/test_cep_simulation_mode_lock.cc` · `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`
