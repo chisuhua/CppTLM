@@ -93,7 +93,7 @@
     },
     "vc_reservation_declaration": {
       "type": "object",
-      "description": "**collective_vc_reservation 为空时的显式声明**(per ADR-CEP-01 的 SU 2026-11-03 · Decision D):空预留**不再**默认合格,必须显式声明「本拓扑不提供隔离 VC」,否则 CP-03 判红。本仓当前 = coherence 侧已占满 vc_id 0-3。",
+      "description": "**collective_vc_reservation 为空时的显式声明**(per `ADR-CEP-01` 的 SU 2026-11-03 · Decision D):空预留**不再**默认合格,必须显式声明本拓扑**不提供隔离 VC**(`unavailable`)**或**走 **M-2 共享模式**(`shared_no_isolation`,per ADR-CEP-01 SU#4 E.6)⇒ 否则 CP-03 判红。",
       "additionalProperties": false,
       "required": [
         "status",
@@ -105,9 +105,10 @@
         "status": {
           "type": "string",
           "enum": [
-            "unavailable"
+            "unavailable",
+            "shared_no_isolation"
           ],
-          "description": "空预留只允许声明 unavailable"
+          "description": "取值域 = **2 值**(per ADR-CEP-01 SU#4 E.6 取代 D.4 的 V6-a):`unavailable` = 本拓扑不提供隔离 VC;`shared_no_isolation` = M-2 共享 VC ⇒ **必须**登记 `certificate_scope`"
         },
         "reason": {
           "type": "string",
@@ -123,6 +124,31 @@
           "type": "string",
           "minLength": 1,
           "description": "何时必须重访(≥5 VC / 首次需真实网内归约 / ADR-CEP-09 给出跨平面无环论证)"
+        },
+        "certificate_scope": {
+          "type": "array",
+          "description": "**证书作用域** —— M-2(`status = shared_no_isolation`)下,四条证书(C-1′ / C-2 / C-3 / C-4)所适用的 `(plane, network)` 清单(per ADR-CEP-01 SU#4 E.6:「声明源 SHALL 记录证书适用的 `(plane, network)` 清单,未列入清单者 SHALL 视为**不在** M-2 覆盖内」)⇒ ⛔ **不新增**声明组(声明最小集仍为四组)。",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "plane",
+              "network"
+            ],
+            "properties": {
+              "plane": {
+                "type": "string",
+                "minLength": 1,
+                "description": "plane 名(须在 `collective_plane.hh` 的 plane 注册表登记)"
+              },
+              "network": {
+                "type": "string",
+                "pattern": "^[a-z0-9_]+$",
+                "description": "网络名(须在 fabric.json 的 networks 内登记)"
+              }
+            }
+          }
         }
       }
     }
@@ -143,6 +169,34 @@
         "required": [
           "vc_reservation_declaration"
         ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "vc_reservation_declaration": {
+            "properties": {
+              "status": {
+                "const": "shared_no_isolation"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        },
+        "required": [
+          "vc_reservation_declaration"
+        ]
+      },
+      "then": {
+        "properties": {
+          "vc_reservation_declaration": {
+            "required": [
+              "certificate_scope"
+            ]
+          }
+        }
       }
     }
   ]

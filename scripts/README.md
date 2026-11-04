@@ -41,9 +41,10 @@
 | `cep_nvlink_sharp_state_spec_reverse_verify.sh` | 队列 #13 规约载体（`NSS-01` ~ `NSS-09`）的反向验证：**9 组 / 10 条**毒化 fixture（每条必红 **且** 归因 id 命中）+ 基线正控 | ✅ 生效（ctest 注册） |
 | `cep_nvlink_sharp_reverse_verify.sh` | 队列 #13 **实现层**载体（`NVA-01` ~ `NVA-09`）的反向验证：**9 组**毒化 fixture（每条必红 **且** 归因 id **精确相等**命中）+ 基线正控 | ✅ 生效（ctest 注册） |
 | `cep_ualink_inc_state_spec_reverse_verify.sh` | 队列 #14 **规约层**载体（`UIS-01` ~ `UIS-11`）的反向验证：**11 组 / 12 条**毒化 fixture（每条必红 **且** 归因 id **命中** `static assertion failed: <id>: `）+ **基线正控** + **归因 id 双向覆盖自检** + **探针鉴别力自测**（双分支：编译红 or 探针红） | ✅ 生效（ctest 注册） |
+| `cep_ualink_inc_reverse_verify.sh` | 队列 #14 **实现层**载体（`UIA-01` ~ `UIA-07` + **V6-d** 四条证书）的反向验证：**11 组 / 11 条**毒化 fixture（每条必红 **且** 归因 id **精确相等**命中 `PROBE:FAIL <id> `）+ **基线正控** + **归因 id 双向覆盖自检** | ✅ 生效（ctest 注册） |
 
 > 配套数据文件：`cep_doc_ref_aliases.tsv`（节号别名）/ `cep_doc_ref_registry.tsv`（语义 + 负向断言登记）。
-> **本表 17 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
+> **本表 18 个脚本**全部已注册进 `ctest`（`ctest -R cep`）。
 > ⚠️ **2026-11-03 订正**（队列 #13 实现层 / Entry #187）：原写「**15 个**」—— 该数是**表内登记行数**，而 `scripts/test/cep_*.sh` 的**磁盘实际**为 **19** 个（另 3 个未列入本表）
 > ⇒ **表内计数 ≠ 磁盘实际**；本表只登记**已纳入 ctest 的**脚本，差异项以 `ls scripts/test/cep_*.sh` 为准。
 > ⚠️ **2026-11-03 补登**（队列 #13 Phase 3，Entry #184）：此前 **队列 #11 / #12 的两个反向脚本**
@@ -117,6 +118,36 @@
 | **UIS-11** 证书规约面 + ⛔ 不得以重跑 DAG 为判据 | 影子副本翻转 `kDagRerunIsCertificate` ⇒ 编译期红 | 同上（`f-11a-dag-rerun-as-certificate`） |
 | **UIS-11** 证书表齐备 | 影子副本**删掉** `C-4` 那一行(第 4 项值初始化)⇒ 编译期红 | 同上（`f-11b-certificate-table-missing`） |
 | **跨载体** X-1 / X-1b / X-2 / X-3 | 探针的 8 项运行期判据（载体**自足** ⇒ 跨载体比对只能在探针侧） | `scripts/test/cep_ualink_inc_state_spec_probe.cc`（经驱动脚本进入 ctest） |
+
+### 反向 fixture 登记（队列 #14 `cpptlm-cep-ualink-inc` —— **实现层**）
+
+> 同上纪律。本批的判据实现 = **C++ 载体**（`include/tlm/cep/ualink_adapter.hh` / `include/tlm/cep/fabric_collective_plane.hh` / `include/tlm/cep/collective_plane_contract.hh`）
+> + **影子副本**（影子目录 `-I $SHADOW/include` 优先）+ **跨载体探针**。
+> ⇒ fixture 落点 = `scripts/test/cep_ualink_inc_reverse_verify.sh`（ctest `cep_ualink_inc_reverse_verify`）
+> ⇒ 探针 = `scripts/test/cep_ualink_inc_probe.cc`（**8 项**运行期判据 + **归因 id 精确提取**）
+> ⇒ **11 组 / 11 条**毒化 fixture **1:1** 对应 design §4 登记的 **11** 个归因键
+> —— 本层**新建 7** 个（`UIA-01` ~ `UIA-07`）+ **4** 个 `ADR-CEP-01` E.3.1 **既有** id 的**消费**
+> （`CP-03-VC-CERTIFICATE/C-1′` · `CP-09-IC1` · `CP-03-VC-CERTIFICATE/C-3` · `CP-03-VC-CERTIFICATE/C-4`）
+> ⇒ 归因匹配 = `PROBE:FAIL <id> `（**完整前缀精确相等**）—— ⛔ 裸子串会让 `CP-03` 命中 `CP-03-VC-PRECONDITION`
+> ⇒ 驱动**双分支**:编译红 ⇒ 匹配编译日志;编译绿 ⇒ 跑探针 ⇒ 匹配 `PROBE:FAIL <id> `
+> ⇒ ⚠️ **F-11 毒化的是「登记提供方」**(`default_untested_registry`)而非规约载体的**数据** ——
+>   后者带自己的 `static_assert`(归因 `UIS-11`)⇒ 毒化它会变成**编译期红**且归因落到**规约层** id
+>   ⇒ 破坏本层「归因 1:1」⇒ 该保护已由**规约层**的 `f-11b` 覆盖 ⇒ 本层改为毒化**提供方**以验证
+>   **C-4 判据本身**有牙。
+
+| 判据 | 反向 fixture（形态） | 登记位置 |
+|---|---|---|
+| **UIA-01** adapter 零自有表副本 | 影子副本注入载体成员字面量 `Obligation::` ⇒ 文本扫描红 | `cep_ualink_inc_reverse_verify.sh`（`f-01-member-literal`） |
+| **UIA-02** adapter 无 `transition_*` | 影子副本加 `transition_read_reduce()` ⇒ 文本扫描红 | 同上（`f-02-transition`） |
+| **UIA-03** plane 数据路径真可达 | 影子副本把收齐分支改成「不产出事件 + 数据路径未实现」⇒ 运行期红 | 同上（`f-03-data-path-not-implemented`） |
+| **UIA-04** C-3 控制面与数据面互斥 | 影子副本删掉 `group_register_region` 的 in-flight 检查 ⇒ 运行期红 | 同上（`f-04-c3-check-removed`） |
+| **UIA-05** `status` 值域 = 2 值 | 影子声明源 `status` ⇒ `"shared"` ⇒ 运行期红 | 同上（`f-05-status-third-value`） |
+| **UIA-06** `certificate_scope` 登记 | 影子声明源清空 `certificate_scope` ⇒ 运行期红 | 同上（`f-06-certificate-scope-empty`） |
+| **UIA-07** `ualink_4` 不声明 | 影子实例声明源把一条实例改成 `ualink_4` ⇒ 运行期红 | 同上（`f-07-ualink-4-declared`） |
+| **C-1′** 槽位语义继承 | 影子实例声明源令 `mesif` 的 `ualink_fabric` 映射与 `moesi_gpu` 不一致 ⇒ 运行期红 | 同上（`f-08-c1-mapping-mismatch`） |
+| **C-2** VC 覆盖完整 | 影子 `include/tlm/cep/fabric.json` 把 `ualink_fabric.vc_count` 4 ⇒ 5 ⇒ 运行期红 | 同上（`f-09-c2-vc-count`） |
+| **C-3** 控制面互斥（声明级） | 影子 `include/tlm/cep/collective_plane.hh` 把 `enforces_control_plane_exclusion` ⇒ `false` ⇒ 运行期红 | 同上（`f-10-c3-declaration`） |
+| **C-4** 未检验项登记 | 影子契约头让登记项表述含「已验证」⇒ 运行期红 | 同上（`f-11-c4-untested-faked`） |
 
 ### 反向 fixture 登记（队列 #11 `cpptlm-cep-tilelink-state-spec`）
 

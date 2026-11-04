@@ -169,6 +169,14 @@ enum class Status : std::uint8_t {
     NotMember = 10,
     /// `recv` 时**无事件可取**(与「取到事件」必须可区分)
     NoEvent = 11,
+    /// **控制面与数据面互斥**(per `ADR-CEP-01` SU#4 的 **C-3**)——
+    /// 某 group 有 op **in-flight** 时,`group_register_region` / `group_destroy`
+    /// 这两个**控制面**操作被拒绝。
+    ///
+    /// ⚠️ **为何要独立取值**:⛔ **不得**复用「不支持」等既有取值 ⇒ 否则调用方
+    ///   **无法区分**「能力缺失」(`Unsupported`)与「时序冲突」(本值)⇒ 运维处置完全不同。
+    /// ⚠️ **追加在末尾** ⇒ 既有取值数值**不变**(12 = 新增)。
+    ControlPlaneConflict = 12,
 };
 
 inline const char* status_name(Status s) {
@@ -197,6 +205,8 @@ inline const char* status_name(Status s) {
             return "not-member";
         case Status::NoEvent:
             return "no-event";
+        case Status::ControlPlaneConflict:
+            return "control-plane-conflict";
     }
     return "";
 }
@@ -772,11 +782,25 @@ private:
 struct CollectivePlaneRegistryEntry {
     const char* name;
     bool is_local_model;
+    /// **是否承担 C-3(控制面与数据面互斥)** —— per `ADR-CEP-01` SU#4 的 **C-3**:
+    /// 「某 group 有 op **in-flight** 时,SHALL **拒绝** `group_register_region` 与 `group_destroy`」。
+    ///
+    /// ⚠️ **为何登记在这里**(而非判据面):判据面需要知道「哪些 plane 承诺 C-3」⇒ 若该信息放在
+    ///   **远端**(契约头里),则「新增 plane 实现时记得回来登记」= **靠记忆** ⇒ 与 `is_local_model`
+    ///   同理,本注册表**紧邻实现定义**,是**单源**。
+    /// ⚠️ **语义**:`true` ⇒ 该 plane 在 group 有 op in-flight 时**拒绝**控制面操作 ⇒
+    ///   `V6-d` 的 **C-3 声明级**判定据此给出结论;**运行级**行为由该 plane 的调用序列 fixture 判定。
+    /// ⚠️ **本地模型恒 `false`**:`NullCollectivePlane` / `LocalCollectivePlane` 承载的是
+    ///   **本地**集合语义(不与 coherence 事务争用 fabric 通道)⇒ 无「in-flight op 与控制面操作相撞」之形。
+    bool enforces_control_plane_exclusion;
 };
 
-inline constexpr std::array<CollectivePlaneRegistryEntry, 2> kCollectivePlaneRegistry{{
-    {"NullCollectivePlane", true},
-    {"LocalCollectivePlane", true},
+inline constexpr std::array<CollectivePlaneRegistryEntry, 3> kCollectivePlaneRegistry{{
+    {"NullCollectivePlane", true, false},
+    {"LocalCollectivePlane", true, false},
+    // ⚠️ `is_local_model = false` ⇒ **承载真实 fabric 集合流量** ⇒ V6-c 在 `status=unavailable` 下会判红
+    //   (「声明 unavailable 时不得存在真实 fabric 集合流量载体」)⇒ 这正是 M-2 的**结构性**代价。
+    {"FabricCollectivePlane", false, true},
 }};
 
 /// 查注册表 —— 未登记 ⇒ `nullptr`

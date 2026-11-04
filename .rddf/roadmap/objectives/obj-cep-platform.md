@@ -12409,6 +12409,55 @@ KPI **1/3 → 0/3** 回填(**8 处**)· **归档**(delta 合并进 `openspec/spe
 
 ---
 
+### Entry #205 — 2026-11-04 [build](队列 #14 **实现层** Phase 1~3 —— **载体** + **V6-d 判据面** + **11 组反向 fixture**)
+
+**主题**:队列 #14 实现层 change `cpptlm-cep-ualink-inc` 的 Phase 1(载体)· Phase 2(契约判据面)· Phase 3(判据)完成。
+**角色**:builder。
+
+**① 载体(Phase 1)**
+
+| 面 | 内容 |
+|---|---|
+| **`ualink_adapter.hh`**(新) | `UalinkAdapter`:**零自有表副本**(⛔ 禁项 21 个成员字面量 / 表名)+ **无 `transition_*`**(INC 转移语义 pending)+ **无 `kInstanceId`**(`ualink_4` 不声明)· 全部判定**委托**规约载体 |
+| **`fabric_collective_plane.hh`**(新) | `FabricCollectivePlane`:**REDUCE / BROADCAST / MULTICAST 数据路径真可达**(参与集按 `tag` 分轮;MULTICAST 掩码的**位下标 = 成员 id**)+ **C-3 控制面与数据面互斥**(in-flight ⇒ 拒绝 register / destroy)+ 浮点归约 ⇒ `Unsupported`(⛔ 不是静默近似) |
+| **`collective_plane.hh`**(改) | `Status::ControlPlaneConflict = 12`(**追加** ⇒ 既有数值不变)+ `status_name()` + `kCollectivePlaneRegistry` 3 行 + `CollectivePlaneRegistryEntry` 第三字段 `enforces_control_plane_exclusion` |
+
+**② 契约判据面(Phase 2)**
+
+| 面 | 内容 |
+|---|---|
+| `VcBindingSnapshot` | 扩展 `per_network_mappings`(逐实例 `class → vc_id`)+ `instance_ids` ⇒ **C-1′** 的「逐类相等」可判定(并集**不足以**判定) |
+| `evaluate_vc_reservation` | `status` **值域放宽为 2 值**(`unavailable` \| `shared_no_isolation`)+ `certificate_scope` 校验(非空 + network 在 `fabric.json` 登记) |
+| **`evaluate_shared_mode_certificate`**(新) | **V6-d**:逐 `(plane, network)` 判 **C-1′ / C-2 / C-3 / C-4**;结论**折进 `CP-03` 行**(⛔ 不新增 `ContractRule`,`kContractRuleCount == 6` 不变)· 归因前缀**精确** |
+| `UntestedRegistry` + `default_untested_registry()` | C-4 的输入由**规约载体**提供(⛔ **不复制** U-1 / U-2) |
+| 声明面 | `collective_planes.json`:`status` ⇒ `shared_no_isolation` + `certificate_scope` = `[{FabricCollectivePlane, ualink_fabric}]`;`collective_planes.schema.json`:`status` enum 2 值 + `certificate_scope` + `allOf/if-then` |
+
+**③ 判据(Phase 3)**:`test/test_cep_ualink_inc.cc`(**7 个 case / 172 assertions**)·
+探针 `scripts/test/cep_ualink_inc_probe.cc`(**8 项**运行期判据 + 归因 id 精确提取)·
+驱动脚本 `scripts/test/cep_ualink_inc_reverse_verify.sh`(**13/13** 全绿:归因 id 双向覆盖 **11 ↔ 11** + 基线正控 + **11 组 / 11 条** fixture)· ctest **147 → 148**。
+
+**④ ⚠️ 一处**跨 change 的判据面 re-baselining**(队列 #13)**
+
+本仓拓扑由 **M-1** 改走 **M-2**(`status = shared_no_isolation`,per `ADR-CEP-01` SU#4 E.6)
+⇒ **V6-c 不适用**(SKIP)⇒ 两处**既有**断言「V6-c PASS」不再成立:
+① `test/test_cep_nvlink_sharp.cc`(NVA-08)② `scripts/test/cep_nvlink_sharp_probe.cc`(NVA-08)
+⇒ **处置**:两处改在 **M-1 变体**(`status = unavailable`)上求值 ⇒ **保住 V6-c 的既有覆盖**,
+且队列 #13 的 **F-9 fixture**(绑定非本地模型 ⇒ V6-c 红)**仍然可判红** ⇒ 队列 #13 驱动脚本 **10/10** 全绿。
+
+**⑤ 验收(实测)**:`ctest` **148/148** · `[cep][ualink-inc]` **12 cases / 253 assertions** ·
+驱动脚本 **13/13** · 队列 #13 驱动 **10/10** · 全部 18 个 CEP 反向脚本 **全绿** ·
+门禁 **6/6** rc=0 · `format.sh --check` rc=0 · `openspec validate --strict` rc=0。
+
+**⑥ 下一前置 = Phase 4(文档 + 冻结面两步授权 + 归档 + KPI 回填)**:冻结面 **3 份**
+(`openspec/specs/cep-collective-plane-contract/spec.md` · `openspec/specs/cep-collective-plane-base/spec.md` ·
+`docs/architecture/07-coherence-exploration-platform.md`)⇒ 台账 Entry(逐件列名)→ commit →
+`--update --authorized-by` → commit → `--update` → commit。
+
+**⑦ 关联**: Entry #204(建档 + 范围收窄)· #203(规约层归档)· #193(三则 ADR SU + 冻结面授权)·
+`ADR-CEP-01` SU#4(E.3.1 / E.6 / E.7)· `ADR-CEP-04` SU 2026-11-03 §③
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

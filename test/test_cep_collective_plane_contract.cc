@@ -107,6 +107,12 @@ TEST_CASE("CEP CollectiveContract: 声明源形态与 schema 一致", "[cep][col
     CHECK(decl.plane_binding.at("nvlink_4") == "LocalCollectivePlane");
     // 默认:未预留任何 VC(本仓当前拓扑无 collective 可用隔离 VC)
     CHECK(decl.vc_reservation.empty());
+    // ⚠️ 2026-11-04(队列 #14 实现层 · M-2):声明源走 **M-2** ⇒ `status = shared_no_isolation`
+    //   + `certificate_scope` 非空(per `ADR-CEP-01` SU#4 E.6)
+    CHECK(decl.vc_reservation_declaration.status == "shared_no_isolation");
+    CHECK(decl.vc_reservation_declaration.certificate_scope.size() == 1u);
+    CHECK(decl.vc_reservation_declaration.certificate_scope[0].plane == "FabricCollectivePlane");
+    CHECK(decl.vc_reservation_declaration.certificate_scope[0].network == "ualink_fabric");
 
     // schema 存在且必填项与声明源一致
     const std::string schema_text = read_repo_file("include/tlm/cep/collective_planes.schema.json");
@@ -133,10 +139,23 @@ TEST_CASE("CEP CollectiveContract: 声明源形态与 schema 一致", "[cep][col
     for (const char* k : {"status", "reason", "owner", "revisit_trigger"})
         CHECK(has_value(vd["required"], k));
     REQUIRE(schema.contains("allOf"));
-    REQUIRE(schema["allOf"].size() == 1u);
+    // ⚠️ 2026-11-04(队列 #14 实现层 · M-2):`allOf` 由 **1** 条增至 **2** 条 ——
+    //   ① 「空预留 ⇒ 必须有 `vc_reservation_declaration`」(既有)
+    //   ② 「`status = shared_no_isolation` ⇒ 必须有 `certificate_scope`」(M-2 新增)
+    REQUIRE(schema["allOf"].size() == 2u);
     const auto& then_req = schema["allOf"][0]["then"]["required"];
     CHECK(then_req.size() == 1u);
     CHECK(has_value(then_req, "vc_reservation_declaration"));
+    // ② M-2 的 if/then:status = shared_no_isolation ⇒ certificate_scope 必填
+    const auto& m2_then = schema["allOf"][1]["then"]["properties"]["vc_reservation_declaration"];
+    REQUIRE(m2_then.contains("required"));
+    CHECK(has_value(m2_then["required"], "certificate_scope"));
+    // schema 的 `status` 取值域 = **2 值**
+    const auto& status_enum = vd["properties"]["status"]["enum"];
+    REQUIRE(status_enum.is_array());
+    CHECK(status_enum.size() == 2u);
+    CHECK(has_value(status_enum, "unavailable"));
+    CHECK(has_value(status_enum, "shared_no_isolation"));
 
     // 对照:声明源**确实被消费** —— 判据清单里必须有与声明源相关的规则
     const auto report = cep::run_collective_plane_contract(repo_paths());
@@ -348,7 +367,7 @@ TEST_CASE("CEP CollectiveContract: collective VC 预留不冲突", "[cep][collec
     CHECK(cep::evaluate_vc_reservation(partial, snap, d1) == cep::ContractVerdict::FAIL);
     CHECK(d1.find("revisit_trigger") != std::string::npos);
 
-    // 反 fixture ③:声明齐全但 status 非 unavailable(空预留却声称「可用」= 自相矛盾)⇒ 必红
+    // 反 fixture ③:声明齐全但 status **非 2 值之一**(空预留却声称「可用」= 自相矛盾)⇒ 必红
     cep::CollectivePlaneDeclaration wrong_status = partial;
     wrong_status.vc_reservation_declaration.revisit_trigger = "拓扑提供 >=5 VC";
     wrong_status.vc_reservation_declaration.status = "available";

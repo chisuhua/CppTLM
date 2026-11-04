@@ -15,36 +15,41 @@
 
 ## Phase 1 —— 载体
 
-- [ ] 1.1 `include/tlm/cep/ualink_adapter.hh`(新)—— 零自有表副本 + 无 `transition_*` + 无 `kInstanceId`
-- [ ] 1.2 `include/tlm/cep/fabric_collective_plane.hh`(新)—— 数据路径真可达 + C-3 互斥
-- [ ] 1.3 `include/tlm/cep/collective_plane.hh` —— `Status::ControlPlaneConflict`(+`status_name`)+ `kCollectivePlaneRegistry` 登记 + `CollectivePlaneRegistryEntry` 第三字段
-- [ ] 1.4 编译通过(`-Wall -Wextra` 零告警)
+- [x] 1.1 `include/tlm/cep/ualink_adapter.hh`(新)—— 零自有表副本 + 无 `transition_*` + 无 `kInstanceId`
+- [x] 1.2 `include/tlm/cep/fabric_collective_plane.hh`(新)—— 数据路径真可达 + C-3 互斥
+- [x] 1.3   ⇒ `Status::ControlPlaneConflict = 12`(追加在末尾 ⇒ 既有数值不变)+ `status_name()` + `kCollectivePlaneRegistry` 3 行 + `CollectivePlaneRegistryEntry` 第三字段 `enforces_control_plane_exclusion`
+`include/tlm/cep/collective_plane.hh` —— `Status::ControlPlaneConflict`(+`status_name`)+ `kCollectivePlaneRegistry` 登记 + `CollectivePlaneRegistryEntry` 第三字段
+- [x] 1.4 编译通过(`-Wall -Wextra` 零告警)
 
 ---
 
 ## Phase 2 —— 判据面(契约)
 
-- [ ] 2.1 `VcBindingSnapshot` 扩展 `per_network_mappings`(逐实例 `class → vc_id`)
-- [ ] 2.2 `evaluate_vc_reservation`:`status` 值域 **2 值** + `certificate_scope` 校验
-- [ ] 2.3 `evaluate_shared_mode_certificate`(V6-d):C-1′ / C-2 / C-3 / C-4 + **精确前缀**
-- [ ] 2.4 `UntestedRegistry` + `default_untested_registry()`(消费规约载体,⛔ 不复制)
-- [ ] 2.5 `evaluate_vc_precondition`(V6-c)在 `shared_no_isolation` 下的**适用条件**改写
-- [ ] 2.6 声明面:`collective_planes.json`(`status` + `certificate_scope`)+ `collective_planes.schema.json`(enum + 属性 + if/then)
+- [x] 2.1 `VcBindingSnapshot` 扩展 `per_network_mappings`(逐实例 `class → vc_id`)
+- [x] 2.2 `evaluate_vc_reservation`:`status` 值域 **2 值** + `certificate_scope` 校验
+- [x] 2.3   ⇒ `evaluate_shared_mode_certificate(decl, snap, untested, detail)`(C-1′/C-2/C-3/C-4)+ 归因前缀**精确**(`[CP-03-VC-CERTIFICATE/C-1′]` / `[CP-09-IC1]` / `[CP-03-VC-CERTIFICATE/C-3]` / `[CP-03-VC-CERTIFICATE/C-4]`)
+`evaluate_shared_mode_certificate`(V6-d):C-1′ / C-2 / C-3 / C-4 + **精确前缀**
+- [x] 2.4   ⇒ `UntestedRegistry` + `default_untested_registry()`(**消费**规约载体,⛔ 不复制 U-1/U-2)
+`UntestedRegistry` + `default_untested_registry()`(消费规约载体,⛔ 不复制)
+- [x] 2.5 `evaluate_vc_precondition`(V6-c)在 `shared_no_isolation` 下的**适用条件**改写
+- [x] 2.6 声明面:`collective_planes.json`(`status` + `certificate_scope`)+ `collective_planes.schema.json`(enum + 属性 + if/then)
 
 ---
 
 ## Phase 3 —— 判据(测试)
 
-- [ ] 3.1 `test/test_cep_ualink_inc.cc`(新)—— P-1 ~ P-8 正向判据(每条负向断言配正控)
-- [ ] 3.2 **11 组 / 11 条**反向 fixture 驱动脚本(`scripts/test/cep_ualink_inc_reverse_verify.sh`)—— 双分支(影子目录优先)+ 归因**精确相等**
-- [ ] 3.3 **归因 id 元测试**(双向覆盖):fixture 期望集合 ⟺ 登记集合
-- [ ] 3.4 `ctest` 注册
+- [x] 3.1 `test/test_cep_ualink_inc.cc`(新)—— P-1 ~ P-8 正向判据(每条负向断言配正控)
+- [x] 3.2   ⇒ 驱动脚本 **13/13** 全绿(归因 id 双向覆盖自检 + 基线正控 + **11 组 / 11 条** fixture)
+**11 组 / 11 条**反向 fixture 驱动脚本(`scripts/test/cep_ualink_inc_reverse_verify.sh`)—— 双分支(影子目录优先)+ 归因**精确相等**
+- [x] 3.3 **归因 id 元测试**(双向覆盖):fixture 期望集合 ⟺ 登记集合
+- [x] 3.4   ⇒ ctest **147 → 148**
+`ctest` 注册
 
 ---
 
 ## Phase 4 —— 文档 + 冻结面 + 归档
 
-- [ ] 4.1 `scripts/README.md` 守门表 + **反向 fixture 登记**节
+- [x] 4.1 `scripts/README.md` 守门表 + **反向 fixture 登记**节
 - [ ] 4.2 07 号 §5.1.1 UALink 行 + §11 Collective Plane 行(**冻结面**)
 - [ ] 4.3 冻结面两步授权:台账 Entry(逐件列名)→ commit → `--update --authorized-by` → commit → `--update` → commit
 - [ ] 4.4 `openspec archive cpptlm-cep-ualink-inc -y`(delta 合并进 3 份 main spec / 07 号)

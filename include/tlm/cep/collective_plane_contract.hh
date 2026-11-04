@@ -38,6 +38,10 @@
 #include <nlohmann/json.hpp>
 
 #include "tlm/cep/collective_plane.hh"
+// ⚠️ **C-4 的未检验项登记**由**规约载体**提供(唯一真源)⇒ 判据面**不复制** U-1 / U-2
+//   (⛔ 禁双实现)。本仓当前**唯一** M-2 使用方 = 队列 #14 ⇒ 该 include 成立;
+//   若将来出现第二个 M-2 使用方 ⇒ 须把 `UntestedRegistry` 提升为**入参**形态。
+#include "tlm/cep/ualink_inc_state_spec.hh"
 
 namespace tlm::cep {
 
@@ -148,12 +152,24 @@ struct ContractReport {
 /// ⚠️ **为什么需要它**:预留表为空时旧实现**直接返回 PASS** ⇒ CP-03 **恒真**
 /// (违反铁律「纯负向断言须配正控」)。Decision D 把「空」从「默认合格」改成
 /// 「**必须显式声明不可用**」—— 声明本身成为**可判定对象**(四字段齐全 ⇒ PASS;缺任一 ⇒ FAIL)。
+/// **证书作用域**的一�� —— `(plane, network)`(per `ADR-CEP-01` SU#4 **E.6**:
+/// 「声明源 SHALL 记录证书适用的 `(plane, network)` 清单,未列入清单者 SHALL 视为**不在** M-2 覆盖内」)
+struct CertificateScopeEntry {
+    std::string plane;   ///< plane 名(须在 plane 注册表登记)
+    std::string network; ///< 网络名(须在 `fabric.json` 的 `networks` 登记)
+};
+
 struct VcReservationDeclaration {
-    std::string status;            ///< 契约值 `"unavailable"`(本拓扑不提供隔离 VC)
-    std::string reason;            ///< 不可用原因(须可归因)
+    /// 契约值域 = **2 值**(per `ADR-CEP-01` SU#4 **E.6** 取代 D.4 的 `V6-a`):
+    /// `"unavailable"`(本拓扑不提供隔离 VC)· `"shared_no_isolation"`(M-2:共享 VC + 四条证书)
+    std::string status;
+    std::string reason;            ///< 不可用 / 共享原因(须可归因)
     std::string owner;             ///< 重访责任人(裁决方 / 队列号)
     std::string revisit_trigger;   ///< 何时必须重访
     bool present = false;          ///< 声明键是否存在于 JSON
+
+    /// **证书作用域**(M-2 专用;`status == "shared_no_isolation"` 时**必填且非空**)
+    std::vector<CertificateScopeEntry> certificate_scope;
 
     bool complete() const {
         return !status.empty() && !reason.empty() && !owner.empty() && !revisit_trigger.empty();
@@ -286,6 +302,28 @@ inline CollectivePlaneDeclaration parse_collective_plane_declaration(const nlohm
             take("reason", d.vc_reservation_declaration.reason);
             take("owner", d.vc_reservation_declaration.owner);
             take("revisit_trigger", d.vc_reservation_declaration.revisit_trigger);
+            // ⚠️ **归因纪律**(同上):`certificate_scope` 的畸形**不**置 `source_error`
+            //   ⇒ 记为**缺字段的空项** ⇒ 由 `evaluate_vc_reservation` 判 FAIL 并点名。
+            if (vd.contains("certificate_scope")) {
+                const auto& cs = vd["certificate_scope"];
+                if (!cs.is_array()) {
+                    d.vc_reservation_declaration.certificate_scope.push_back(
+                        CertificateScopeEntry{});
+                } else {
+                    for (const auto& item : cs) {
+                        if (!item.is_object() || !item.contains("plane") ||
+                            !item.contains("network") || !item["plane"].is_string() ||
+                            !item["network"].is_string()) {
+                            d.vc_reservation_declaration.certificate_scope.push_back(
+                                CertificateScopeEntry{});
+                            continue;
+                        }
+                        d.vc_reservation_declaration.certificate_scope.push_back(
+                            CertificateScopeEntry{item["plane"].get<std::string>(),
+                                                 item["network"].get<std::string>()});
+                    }
+                }
+            }
         }
     }
     return d;
@@ -567,6 +605,12 @@ struct VcBindingSnapshot {
     std::map<std::string, std::set<unsigned>> used;
     /// network → vc_count
     std::map<std::string, unsigned> vc_count;
+    /// network → **逐实例**的映射(`class → vc_id`)——
+    /// ⚠️ **为什么需要**:`used` 只有**并集** ⇒ 无法判定 **C-1′** 的「该网全部有绑定的既有实例
+    ///   的映射**逐类相等**」(两个实例可能用**同一对** vc ⇒ 并集相同但映射不同)⇒ 必须保留**逐实例**形态。
+    std::map<std::string, std::vector<std::map<std::string, unsigned>>> per_network_mappings;
+    /// 全部**实例 id**(C-1′ 的「集合平面**不得**作为协议实例出现」判定)
+    std::set<std::string> instance_ids;
     bool source_error = false;
     std::string source_error_detail;
 };
@@ -604,7 +648,11 @@ inline VcBindingSnapshot load_vc_binding_snapshot(const std::string& protocol_in
         const auto pdoc = nlohmann::json::parse(proto);
         if (pdoc.contains("instances") && pdoc["instances"].is_array()) {
             for (const auto& inst : pdoc["instances"]) {
-                if (!inst.is_object() || !inst.contains("vc_binding"))
+                if (!inst.is_object())
+                    continue;
+                if (inst.contains("id") && inst["id"].is_string())
+                    snap.instance_ids.insert(inst["id"].get<std::string>());
+                if (!inst.contains("vc_binding"))
                     continue;
                 const auto& vb = inst["vc_binding"];
                 if (!vb.is_object())
@@ -612,10 +660,15 @@ inline VcBindingSnapshot load_vc_binding_snapshot(const std::string& protocol_in
                 for (auto net = vb.begin(); net != vb.end(); ++net) {
                     if (!net.value().is_object())
                         continue;
+                    std::map<std::string, unsigned> mapping;
                     for (auto cls = net.value().begin(); cls != net.value().end(); ++cls) {
-                        if (cls.value().is_number_integer())
+                        if (cls.value().is_number_integer()) {
                             snap.used[net.key()].insert(cls.value().get<unsigned>());
+                            mapping[cls.key()] = cls.value().get<unsigned>();
+                        }
                     }
+                    if (!mapping.empty())
+                        snap.per_network_mappings[net.key()].push_back(std::move(mapping));
                 }
             }
         }
@@ -656,10 +709,36 @@ inline ContractVerdict evaluate_vc_reservation(const CollectivePlaneDeclaration&
             detail = "vc_reservation_declaration 四字段不全(缺 " + missing + ')';
             return ContractVerdict::FAIL;
         }
-        if (vd.status != "unavailable") {
-            detail = "vc_reservation_declaration.status 非 \"unavailable\"(实为 \"" + vd.status +
-                     "\")—— 空预留只允许声明「不可用」";
+        // ⚠️ **`status` 值域 = 2 值**(per `ADR-CEP-01` SU#4 **E.6** 取代 D.4 的 `V6-a`):
+        //   `"unavailable"`(本拓扑不提供隔离 VC)· `"shared_no_isolation"`(M-2:共享 VC + 四条证书)
+        if (vd.status != "unavailable" && vd.status != "shared_no_isolation") {
+            detail = "vc_reservation_declaration.status 非 2 值之一(\"unavailable\" | "
+                     "\"shared_no_isolation\")(实为 \"" + vd.status + "\")";
             return ContractVerdict::FAIL;
+        }
+        if (vd.status == "shared_no_isolation") {
+            // **M-2**:预留表为空是**预期**形态(集合平面**继承**既有实例的 VC 空间)
+            // ⇒ 由 **V6-d** 的四条证书守门(⛔ **不**在此处判「预留为空 ⇒ 不合格」)
+            if (vd.certificate_scope.empty()) {
+                detail = "status = \"shared_no_isolation\" 但 certificate_scope 为空 ⇒ "
+                         "M-2 覆盖范围不可判定";
+                return ContractVerdict::FAIL;
+            }
+            for (const auto& e : vd.certificate_scope) {
+                if (e.plane.empty() || e.network.empty()) {
+                    detail = "certificate_scope 某项缺 plane / network";
+                    return ContractVerdict::FAIL;
+                }
+                if (snap.vc_count.find(e.network) == snap.vc_count.end()) {
+                    detail = "certificate_scope 的 network \"" + e.network +
+                             "\" 未在 fabric 声明源登记(NS-R1:单点权威在 fabric.json)";
+                    return ContractVerdict::FAIL;
+                }
+            }
+            detail = "M-2 共享模式(status = shared_no_isolation);证书作用域 " +
+                     std::to_string(vd.certificate_scope.size()) +
+                     " 项 ⇒ 由 V6-d 的四条证书守门(per ADR-CEP-01 SU#4 E.6)";
+            return ContractVerdict::PASS;
         }
         detail = "未预留任何 collective VC;已显式声明 unavailable(owner=" + vd.owner +
                  ";per ADR-CEP-01 Decision D)";
@@ -718,7 +797,8 @@ inline ContractVerdict evaluate_vc_precondition(const CollectivePlaneDeclaration
     }
     if (vd.status != "unavailable") {
         detail = std::string(kPrefix) + "声明 status = \"" + vd.status +
-                 "\"(非 unavailable)⇒ V6-c 前提约束不适用";
+                 "\"(非 unavailable)⇒ V6-c 前提约束不适用"
+                 "(M-2 共享模式下改由 **V6-d** 的四条证书守门,per ADR-CEP-01 SU#4 E.6)";
         return ContractVerdict::SKIP;
     }
     if (decl.plane_binding.empty()) {
@@ -743,6 +823,164 @@ inline ContractVerdict evaluate_vc_precondition(const CollectivePlaneDeclaration
     }
     detail = std::string(kPrefix) + "全部绑定均为**本地模型**(" +
              std::to_string(decl.plane_binding.size()) + " 个绑定)⇒ V6-c 前提约束成立";
+    return ContractVerdict::PASS;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// **未检验项登记**(C-4 的输入)—— **唯一真源** = 规约载体
+// ═══════════════════════════════════════════════════════════════════════
+// ⚠️ **为什么是「输入」而不是「判据面自己读」**:C-4 判的是「未检验项**存在、非空、
+//   且未被冒充成已满足**」⇒ 未检验项的**内容**归**规约载体**(U-1 / U-2)⇒ 判据面
+//   **只判形式** ⇒ ⛔ **不复制** U-1 / U-2 表(禁双实现)。
+struct UntestedRegistry {
+    /// 每项 = `(ref, statement)`
+    std::vector<std::pair<std::string, std::string>> items;
+
+    bool empty() const { return items.empty(); }
+};
+
+/// **默认登记** —— 由规约载体 `ualink_inc_state_spec.hh` 提供(⛔ **不复制**)
+inline UntestedRegistry default_untested_registry() {
+    UntestedRegistry reg;
+    for (const auto& u : ualink_inc::kUntestedItems)
+        reg.items.emplace_back(std::string(u.ref), std::string(u.statement));
+    return reg;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// **V6-d 共享模式证书** —— per `ADR-CEP-01` SU#4 的 **E.3.1**(四条判据 + 归因 id 纪律)
+//                              与 **E.6**(取代 D.4 的 `V6-a` 行)
+// ═══════════════════════════════════════════════════════════════════════
+// ⚠️ **归因 id 纪律**(per E.3.1):四条**共用** `CP-03-VC-CERTIFICATE`,靠 `detail`
+//   **子标记**区分;C-2 **复用** `ADR-CEP-09` 既有的 `CP-09-IC1`(⛔ **不新造**)。
+//   ⇒ 前缀按**完整精确相等**匹配(⛔ 不用子串前缀匹配 —— 否则 `CP-03` 会命中)。
+// ⚠️ **不新增** `ContractRule`(`kContractRuleCount == 6` 是被测试硬断言的契约面)
+//   ⇒ 本函数作为 **`CP-03` 行**的**子判据**:调用方把结论**折进** `CP-03` 的 verdict。
+// ⚠️ ⛔ **不得**以「重跑 `evaluate_channel_dependency_gate`」当证书(per **E.4**:
+//   边按 network 声明 ⇒ 诱导子图恒无环 ⇒ 该闸对 `vc_binding` 的语义分配**恒真**)。
+inline ContractVerdict evaluate_shared_mode_certificate(const CollectivePlaneDeclaration& decl,
+                                                         const VcBindingSnapshot& snap,
+                                                         const UntestedRegistry& untested,
+                                                         std::string& detail) {
+    static const char* kC1 = "[CP-03-VC-CERTIFICATE/C-1\u2032] ";
+    static const char* kC2 = "[CP-09-IC1] ";
+    static const char* kC3 = "[CP-03-VC-CERTIFICATE/C-3] ";
+    static const char* kC4 = "[CP-03-VC-CERTIFICATE/C-4] ";
+    static const char* kAll = "[CP-03-VC-CERTIFICATE] ";
+
+    const auto& vd = decl.vc_reservation_declaration;
+    if (!vd.present || vd.status.empty()) {
+        detail = std::string(kAll) +
+                 "未声明 vc_reservation_declaration ⇒ V6-d 不适用(交由 CP-03 空预留门判定)";
+        return ContractVerdict::SKIP;
+    }
+    if (vd.status != "shared_no_isolation") {
+        detail = std::string(kAll) + "声明 status = \"" + vd.status +
+                 "\"(非 shared_no_isolation)⇒ V6-d 不适用(由 V6-c 守门)";
+        return ContractVerdict::SKIP;
+    }
+    if (vd.certificate_scope.empty()) {
+        detail = std::string(kAll) + "certificate_scope 为空 ⇒ M-2 覆盖范围不可判定";
+        return ContractVerdict::FAIL;
+    }
+    for (const auto& entry : vd.certificate_scope) {
+        if (entry.plane.empty() || entry.network.empty()) {
+            detail = std::string(kAll) + "certificate_scope 某项缺 plane / network";
+            return ContractVerdict::FAIL;
+        }
+        const auto mit = snap.per_network_mappings.find(entry.network);
+        // ── **C-1′ 槽位语义继承** ────────────────────────────────────────
+        if (snap.instance_ids.count(entry.plane) != 0) {
+            detail = std::string(kC1) + "集合平面 `" + entry.plane +
+                     "` **作为协议实例出现** ⇒ 它声明了自己的 VC 绑定(⛔ 载体必须是**继承**)";
+            return ContractVerdict::FAIL;
+        }
+        if (mit == snap.per_network_mappings.end() || mit->second.empty()) {
+            detail = std::string(kC1) + "网络 `" + entry.network +
+                     "` **无任何有 vc_binding 的既有实例** ⇒ 继承**无主体**(⛔ 禁 vacuous PASS)";
+            return ContractVerdict::FAIL;
+        }
+        {
+            const auto& first = mit->second.front();
+            for (std::size_t i = 1; i < mit->second.size(); ++i) {
+                const auto& other = mit->second[i];
+                if (other.size() != first.size()) {
+                    detail = std::string(kC1) + "网络 `" + entry.network +
+                             "` 的实例映射**类集合不一致** ⇒ 继承不良定义";
+                    return ContractVerdict::FAIL;
+                }
+                for (const auto& [cls, vc] : first) {
+                    const auto oit = other.find(cls);
+                    if (oit == other.end() || oit->second != vc) {
+                        detail = std::string(kC1) + "网络 `" + entry.network +
+                                 "` 的实例映射在类 `" + cls + "` 上**不一致** ⇒ 继承不良定义";
+                        return ContractVerdict::FAIL;
+                    }
+                }
+            }
+        }
+        // ── **C-2 VC 覆盖完整** ─────────────────────────────────────────
+        {
+            const auto cit = snap.vc_count.find(entry.network);
+            if (cit == snap.vc_count.end()) {
+                detail = std::string(kC2) + "网络 `" + entry.network + "` 未在 fabric 声明源登记";
+                return ContractVerdict::FAIL;
+            }
+            std::set<unsigned> image;
+            for (const auto& mapping : mit->second)
+                for (const auto& [cls, vc] : mapping) {
+                    (void)cls;
+                    image.insert(vc);
+                }
+            for (unsigned vc = 0; vc < cit->second; ++vc) {
+                if (image.count(vc) == 0) {
+                    detail = std::string(kC2) + "网络 `" + entry.network +
+                             "` 的继承映射**未覆盖** vc" + std::to_string(vc) +
+                             "(该网 vc_count = " + std::to_string(cit->second) + ")";
+                    return ContractVerdict::FAIL;
+                }
+            }
+        }
+        // ── **C-3 控制面与数据面互斥**(声明级)──────────────────────────
+        {
+            const CollectivePlaneRegistryEntry* e = find_collective_plane(entry.plane.c_str());
+            if (e == nullptr) {
+                detail = std::string(kC3) + "plane `" + entry.plane +
+                         "` **未在** plane 注册表登记 ⇒ 声明不自洽";
+                return ContractVerdict::FAIL;
+            }
+            if (e->is_local_model) {
+                detail = std::string(kC3) + "plane `" + entry.plane +
+                         "` 是**本地模型** ⇒ 不承载真实 fabric 集合流量 ⇒ 不在 M-2 覆盖内";
+                return ContractVerdict::FAIL;
+            }
+            if (!e->enforces_control_plane_exclusion) {
+                detail = std::string(kC3) + "plane `" + entry.plane +
+                         "` **未声明**承担 C-3(控制面与数据面互斥)";
+                return ContractVerdict::FAIL;
+            }
+        }
+    }
+    // ── **C-4 未检验项显式登记** ───────────────────────────────────────
+    if (untested.items.empty()) {
+        detail = std::string(kC4) + "未检验项登记**为空** ⇒ 未检验项未被显式登记";
+        return ContractVerdict::FAIL;
+    }
+    for (const auto& item : untested.items) {
+        if (item.first.empty()) {
+            detail = std::string(kC4) + "未检验项登记某项**缺 ref**";
+            return ContractVerdict::FAIL;
+        }
+        if (item.second.find("已验证") != std::string::npos ||
+            item.second.find("已满足") != std::string::npos) {
+            detail = std::string(kC4) + "未检验项 `" + item.first +
+                     "` 的表述含「已验证 / 已满足」⇒ 未检验项被冒充成已满足";
+            return ContractVerdict::FAIL;
+        }
+    }
+    detail = std::string(kAll) + "M-2 共享模式证书全绿(C-1′ / C-2 / C-3 / C-4);作用域 " +
+             std::to_string(vd.certificate_scope.size()) + " 项;未检验项 " +
+             std::to_string(untested.items.size()) + " 项已登记";
     return ContractVerdict::PASS;
 }
 
@@ -1172,6 +1410,17 @@ inline ContractReport run_collective_plane_contract(const ContractPaths& paths) 
                 d += " | " + pre;
             } else if (pv == ContractVerdict::SKIP && v == ContractVerdict::PASS) {
                 d += " | " + pre;
+            }
+            // ⚠️ **V6-d 共享模式证书**折进 **CP-03** 行(⛔ 不新增第 7 条规则)
+            //   ⇒ 子判据的 detail 以**精确前缀**表达 ⇒ fixture 按**精确相等**归因
+            std::string cert;
+            const ContractVerdict cv = evaluate_shared_mode_certificate(
+                decl, snap, default_untested_registry(), cert);
+            if (cv == ContractVerdict::FAIL) {
+                v = ContractVerdict::FAIL;
+                d += " | " + cert;
+            } else if (cv != ContractVerdict::SKIP) {
+                d += " | " + cert;
             }
             add(ContractRule::VcReservation, v, std::move(d));
         }

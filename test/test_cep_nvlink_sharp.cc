@@ -402,19 +402,27 @@ TEST_CASE("NVA-08: V6-c 前提约束 —— unavailable ⇒ 仅本地模型(null
         load_collective_plane_declaration(std::string(CPPTLM_SOURCE_DIR) + "/" + kPlanesRelPath);
     REQUIRE(!decl.source_error);
     std::string detail;
-    const ContractVerdict v = evaluate_vc_precondition(decl, detail);
+    // ⚠️ 2026-11-04(队列 #14 实现层 · M-2):本仓拓扑改走 **M-2**(`status = shared_no_isolation`)
+    //   ⇒ **V6-c 不适用**(SKIP,per `ADR-CEP-01` SU#4 E.6)⇒ 本断言在 **M-1 变体**上求值。
+    CollectivePlaneDeclaration m1 = decl;
+    m1.vc_reservation_declaration.status = "unavailable";
+    const ContractVerdict v = evaluate_vc_precondition(m1, detail);
     CHECK(v == ContractVerdict::PASS);
     CHECK(detail.rfind("[CP-03-VC-PRECONDITION]", 0) == 0);
 
+    // **当前**声明(M-2)⇒ V6-c **不适用** ⇒ SKIP(⛔ 禁把「不适用」当 PASS)
+    std::string dm2;
+    CHECK(evaluate_vc_precondition(decl, dm2) == ContractVerdict::SKIP);
+
     // `null` 绑定 ⇒ 不判 FAIL(loader 把 null 物化成空串)
-    CollectivePlaneDeclaration only_null = decl;
+    CollectivePlaneDeclaration only_null = m1;
     only_null.plane_binding.clear();
     only_null.plane_binding["moesi_gpu"] = "";
     std::string d2;
     CHECK(evaluate_vc_precondition(only_null, d2) == ContractVerdict::PASS);
 
     // 零键 ⇒ SKIP(⛔ 禁 vacuous PASS)
-    CollectivePlaneDeclaration empty = decl;
+    CollectivePlaneDeclaration empty = m1;
     empty.plane_binding.clear();
     std::string d3;
     CHECK(evaluate_vc_precondition(empty, d3) == ContractVerdict::SKIP);

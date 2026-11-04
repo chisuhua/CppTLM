@@ -430,11 +430,24 @@ int main(int argc, char** argv) {
         if (json_load("include/tlm/cep/collective_planes.json", planes_doc) && !planes_doc.is_null()) {
             CollectivePlaneDeclaration decl = parse_collective_plane_declaration(planes_doc);
             std::string detail;
-            const ContractVerdict v = evaluate_vc_precondition(decl, detail);
+            // ⚠️ 2026-11-04(队列 #14 实现层 · M-2):本仓拓扑改走 **M-2**
+            //   (`status = shared_no_isolation`)⇒ **V6-c 不适用**(SKIP,per `ADR-CEP-01` SU#4 E.6)
+            //   ⇒ 本断言改在 **M-1 变体**(`status = unavailable`)上求值 ⇒ 保住 V6-c 的既有覆盖,
+            //   且 **F-9 fixture**(绑定非本地模型)仍然**可判红**。
+            CollectivePlaneDeclaration m1 = decl;
+            m1.vc_reservation_declaration.status = "unavailable";
+            const ContractVerdict v = evaluate_vc_precondition(m1, detail);
             expect(detail.rfind("[CP-03-VC-PRECONDITION]", 0) == 0, "CP-03-VC-PRECONDITION",
                    "V6-c 的 detail SHALL 以 `[CP-03-VC-PRECONDITION]` **开头**");
             expect(v == ContractVerdict::PASS, "CP-03-VC-PRECONDITION",
                    std::string("V6-c 前提约束 SHALL 成立(实测 ") + contract_verdict_name(v) + ": " + detail + ")");
+            // 当前声明在 **M-2** 下 ⇒ V6-c **不适用** ⇒ SHALL 为 SKIP(⛔ 禁把「不适用」当 PASS)
+            std::string d2;
+            const ContractVerdict v2 = evaluate_vc_precondition(decl, d2);
+            expect(v2 == ContractVerdict::SKIP ||
+                       decl.vc_reservation_declaration.status == "unavailable",
+                   "CP-03-VC-PRECONDITION",
+                   std::string("M-2 模式下 V6-c SHALL 为 SKIP(实测 ") + contract_verdict_name(v2) + ")");
         } else {
             expect(false, "CP-03-VC-PRECONDITION", "collective_planes.json 不可读 / 畸形");
         }

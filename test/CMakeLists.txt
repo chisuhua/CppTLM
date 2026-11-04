@@ -408,6 +408,13 @@ add_test(NAME cep_ualink_inc_state_spec
 add_test(NAME cep_ualink_inc_state_spec_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_ualink_inc_state_spec_reverse_verify.sh)
 
+# 队列 #14 `cpptlm-cep-ualink-inc`(第 1 个 change = 实现层)的判据:
+#   ① 归因 id 双向覆盖自检(fixture 期望集合 ⟺ 登记集合)
+#   ② 基线正控(干净副本编译通过 + 探针全绿)
+#   ③ **11 组 / 11 条**反向 fixture(毒化 ⇒ 探针红且归因**精确命中**)
+add_test(NAME cep_ualink_inc_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_ualink_inc_reverse_verify.sh)
+
 # 队列 #11 `cpptlm-cep-tilelink-tree-manager`(第 1 个 change = 实现层)的判据:
 #   ① 载体契约(adapter 零副本 + `TreeManager` 的 `ESCALATE_UP`/`CHAIN` 真实使用
 #      + `snoop_join_core` 的 4 步语义);
