@@ -13446,7 +13446,7 @@ objective 的 B3 拆分 + 2 份冻结面文档的追加式同步 + 台账登记�
 | 8 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 **41** 件的 hash + provenance | 机制 M1 本身 |
 
 ⇒ **不在授权范围**:`.rddf/roadmap/objectives/obj-cep-platform.md`(本文件 = planner 域,非冻结件)·
-`test/**`(非冻结)· `scripts/test/cep_prereg_drift_check.sh`(非冻结)· `docs/validation/**`(非冻结)。
+`test/` 下的文件(非冻结)· `scripts/test/cep_prereg_drift_check.sh`(非冻结)· `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`(非冻结)。
 
 **⑤ 非冻结面的同批改动**
 
