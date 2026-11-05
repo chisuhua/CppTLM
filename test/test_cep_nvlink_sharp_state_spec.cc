@@ -244,6 +244,22 @@ TEST_CASE("NSS-05:fail-stop —— 命中 + epoch 已 commit + coherence atomic 
     CHECK(nvs::is_fail_stop(true, false, false) == false);  // 未 commit + 无 coherence atomic
     CHECK(nvs::is_fail_stop(false, false, false) == false); // 全不满足
 
+    // ⚠️ 2026-11-05(Entry #221):**交叉锁的直接断言** —— 上面的 `static_assert` 已在**编译期**
+    //   钉住语义,但 `fail_stop_matches_ingress_split` 本身**未被运行时断言覆盖**
+    //   (code-review-graph 报 `Untested: fail_stop_matches_ingress_split`)=> 补齐。
+    //   ⇒ 8 种组合逐一断言「交叉锁成立」(即 R1/R2 分流与 R5 检出同语义)。
+    for (int r = 0; r < 2; ++r)
+        for (int e = 0; e < 2; ++e)
+            for (int c = 0; c < 2; ++c) {
+                const bool rh = r != 0, eh = e != 0, ch = c != 0;
+                INFO("交叉锁不成立: r=" << rh << " e=" << eh << " c=" << ch);
+                CHECK(nvs::fail_stop_matches_ingress_split(rh, eh, ch));
+                // 且交叉锁蕴含:fail-stop 命中 ⟺ (分流判 DiverT) ∧ coherence atomic 命中
+                CHECK(nvs::is_fail_stop(rh, eh, ch) ==
+                      (nvs::classify_at_fabric_ingress(rh, eh) == nvs::IngressDecision::DiverT &&
+                       ch));
+            }
+
     // 计数器**形状**(载体不持有状态):恰 2 字段 —— 可寻址键(group + 区域)+ 计数
     nvs::DivertCounter c;
     CHECK(c.total == 0u);
