@@ -267,6 +267,28 @@ cmake --build build --target validate_topology
 - 收尾会调用 `scripts/test/agents_md_lint.py`（见下节）—— `--strict` 模式下其失败同样阻断
 - 当前快照：[`docs/docs_audit_report.md`](../docs/docs_audit_report.md)
 
+## Markdown 链接检查 (`scripts/test/markdown_link_check.sh`)
+
+- 扫描 `docs/` 全树 + `AGENTS.md` / `docs/README.md` / `docs/ONBOARDING.md` 中所有 `[text](relative/path)` 链接，验证**相对路径**可达
+- 与 `docs_sync_check.sh` 互补：后者扫「反引号里的代码路径」，本脚本扫「markdown 链接」
+- `--strict` 模式发现任何断链返回非零退出码
+- **2026-11-05 修正 4 处脚本缺陷**（修正前报出的 108 处中只有 45 处是真断链，其余全是误报；另有 63 处真断链因下列缺陷而**完全不可见**）：
+  1. `VIRTUAL_PATH_PATTERNS` 数组**定义了但从未传给 Python** —— 已删除/已归档/跨仓路径被误报为断链
+  2. 解析相对路径前**未剥离 `#anchor`** —— 所有带锚点的链接被误报
+  3. bash 用 `IFS='||'` 拆分多行输出 —— 多字符 IFS 被逐字符拆，产生空条目，计数虚高
+  4. **链接文本整体被行内代码包裹**时（`[\`path\`](../target/)`），去代码后变成 `[]` 而逃过检查 —— 改为用单字符占位符替换行内代码，保留方括号结构
+- 豁免清单在 `VIRTUAL_PATH_PATTERNS` 数组内，逐条注明豁免理由（已删除 / 已归档 / 跨仓未克隆 / 旧计划目录）
+
+## AGENTS.md 结构 / 体量守门 (`scripts/test/agents_md_lint.py`)
+
+- 职责边界：`docs_sync_check.sh` 校验「**文档里引用的**路径是否存在」；本脚本校验「**AGENTS.md 自身**的目录树与体量是否失控」
+- 3 项检查：
+  1. **STRUCTURE 目录树逐条路径存在性** —— 解析 `## STRUCTURE` 的代码围栏，按缩进重建层级后逐条 `stat`（原检查器不扫代码围栏内的树，且目录类路径不在扩展名白名单内 → 长期漏检）
+  2. **文件体量上限 64 KiB** —— 阻断 append-only 日志把 AGENTS.md 撑成第二份台账（AGENTS.md 注入每个 agent 的上下文，体量直接等于每会话 token 成本）
+  3. **单行长度上限 1000 字符** —— 阻断把流水账压成超长单行的形态
+- 独立运行：`python3 scripts/test/agents_md_lint.py [--strict]`
+- 过程日志（finding 编号 / 评审轮次 / 归档流水）应落 ADR `## Status Update` 段或 `openspec/changes/archive/`，不进 AGENTS.md
+
 ## 测试入口与范围
 
 - 根目录 `test.sh` 是统一测试入口（默认只 test），支持 `--build`、`--mode auto|off|ptx-emu|both`、`--build-only`、`--test-only`、`--verify-fix`、`--quick`、`--python-only`、`--e2e` 和 `--ctest`。

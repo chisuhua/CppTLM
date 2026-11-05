@@ -278,10 +278,10 @@ per D-AXI tasks.md **v1.3 P0.2 B2 + v1.7 P0.33 H1 + v1.8 P0.41 N2**:
 - D-AXI spec.md Requirement "AxiMemBundle wire-format"
 - D-AXI design.md §3 AxiMemBundle 定义 + §6 SDMA 5 端口换型
 - D-AXI tasks.md v1.3 P0.2 B2 + v1.7 P0.33 H1 + v1.8 P0.41 N2
-- 实施笔记: [../../pcie/driver-visible-minimal-soc.md §3.6](../../pcie/driver-visible-minimal-soc.md)
+- 实施笔记: [../../pcie/driver-visible-minimal-soc.md §3.6](../pcie/driver-visible-minimal-soc.md)
 - 实施计划: [../superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md Phase 0.2 + Step 3](../superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md)
 - [include/tlm/bundles/axi_mem_bundle.hh](../../include/tlm/bundles/axi_mem_bundle.hh)（新建）
-- [include/tlm/gpu/pcie_bundles_tlm.hh](../../include/tlm/gpu/pcie_bundles_tlm.hh)（冻结面）
+- [include/tlm/gpu/pcie_bundles_tlm.hh](../../include/bundles/pcie_bundles_tlm.hh)（冻结面）
 
 ---
 

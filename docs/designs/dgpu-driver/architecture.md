@@ -69,7 +69,7 @@ ABI 集合定义于 [include/abi/cpptlm_emulator.h](../../../include/abi/cpptlm_
 
 - [include/tlm/gpu/pcie_endpoint_tlm.h](../../../include/tlm/gpu/pcie_endpoint_tlm.h)
 - [include/tlm/gpu/pcie_display_device.hh](../../../include/tlm/gpu/pcie_display_device.hh)
-- [include/tlm/gpu/pcie_bundles_tlm.hh](../../../include/tlm/gpu/pcie_bundles_tlm.hh)
+- [include/tlm/gpu/pcie_bundles_tlm.hh](../../../include/bundles/pcie_bundles_tlm.hh)
 - [include/abi/cpptlm_emulator.h](../../../include/abi/cpptlm_emulator.h)
 
 **新功能必须经现有 15 ABI 闭环**（无新签名）；新增 PCIe 能力通过扩展 ABI 行为或 PcieEndpointIP 子类实现。

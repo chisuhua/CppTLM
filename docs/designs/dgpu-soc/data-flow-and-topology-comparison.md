@@ -7,14 +7,14 @@
 > **业务架构视图分层定位**:
 > - 主架构: [`./architecture.md`](./architecture.md) §0.1 (业务定位) + §1.4 (仿真模式声明 v0.4) + §0.2 (Gap 修复路线)
 > - timing-mode: [`./timing-mode.md`](./timing-mode.md) (平行视图, cycle-approximate 全设计)
-> - 配套: [D-AXI v1.4](../pcie/driver-visible-minimal-soc.md) + [ADR-DGPU-11](../adr/ADR-DGPU-11-timing-mode-soc-scope.md)
+> - 配套: [D-AXI v1.4](../../pcie/driver-visible-minimal-soc.md) + [ADR-DGPU-11](../../adr/ADR-DGPU-11-timing-mode-soc-scope.md)
 
 ## ⚠️ v0.5 Lock Note (2026-10-13) — Chub change supersedes minimal_v1 拓扑图
 
 > 本节不是新内容，是对当前拓扑图与未来 OpenSpec 变化关系的指针声明。
 
 **本表 §1 / §2.1 minimal_v1 拓扑**(L14-48) 在 Chub change 实施后**将过时**——Chub change 提议:
-- 移除 `PcieMemoryDevice` 模块 (per [cpptlm-dgpu-soc-control-hub proposal.md §"提议 5"](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/proposal.md))
+- 移除 `PcieMemoryDevice` 模块 (per [cpptlm-dgpu-soc-control-hub proposal.md §"提议 5"](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/proposal.md))
 - 新建 `ControlHub (Chub)` 模块 (per 同上 design.md §2)
 - JSON `connections[]` 从 1 条扩展到 13 条 (per design.md §7.1)
 - driver BAR2 路径从 `sdma.2 → pcie_memory.0` 改为 `chub.noc_master_out → soc_noc.0` (per design.md §6.2)

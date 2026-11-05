@@ -195,7 +195,7 @@ public:
 
 ## 4. 实施步骤
 
-**实施渠道**: 本 ADR §4 8 步代码 rename 通过 OpenSpec change [**cpptlm-minimal-dgpu-soc-v1-architecture**](../../openspec/changes/cpptlm-minimal-dgpu-soc-v1-architecture/) 提案管理(2027-02-09, 1.5-2.5 工作日)。
+**实施渠道**: 本 ADR §4 8 步代码 rename 通过 OpenSpec change [**cpptlm-minimal-dgpu-soc-v1-architecture**](../../openspec/changes/archive/2026-09-24-cpptlm-minimal-dgpu-soc-v1/) 提案管理(2027-02-09, 1.5-2.5 工作日)。
 
 | 步骤 | 任务 | 位置 | 影响 | OpenSpec 任务 |
 |------|------|------|------|--------------|
@@ -316,7 +316,7 @@ TEST_CASE("vram_storage_ single owner + 4 injected views") {
 - ADR-DGPU-05: [VRAM backing 单一所有权归 DGpuBoard](ADR-DGPU-05-vram-storage-ownership.md)
 - ADR-DGPU-07: [Minimal SoC → 完整 GPU 演进 Seam](ADR-DGPU-07-minimal-soc-evolution-seam.md)
 - D-AXI OpenSpec: [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/) (v1.4)
-- 实施笔记: [../../pcie/driver-visible-minimal-soc.md](../../pcie/driver-visible-minimal-soc.md)
+- 实施笔记: [../../pcie/driver-visible-minimal-soc.md](../pcie/driver-visible-minimal-soc.md)
 - gem5 参考: `src/mem/abstract_mem.hh` (`backingStore`), `src/mem/physical.{hh,cc}` (`PhysicalMemory`), `src/mem/backdoor.hh` (`MemBackdoor`)
 - 关联架构文档: [../designs/dgpu-soc/architecture.md §1.4 仿真模式声明](../designs/dgpu-soc/architecture.md)
 - Oracle 评审: 5 步解锁链 Step 5 (2027-02-09)
@@ -327,7 +327,7 @@ TEST_CASE("vram_storage_ single owner + 4 injected views") {
 
 ### 2027-02-09 — ADR 签发 (Oracle 5 步解锁链 Step 5)
 
-本 ADR 随 Oracle 5 步解锁链 Step 5 签发。关联 OpenSpec change [cpptlm-minimal-dgpu-soc-v1-architecture](../../openspec/changes/cpptlm-minimal-dgpu-soc-v1-architecture/) 提案管理。
+本 ADR 随 Oracle 5 步解锁链 Step 5 签发。关联 OpenSpec change [cpptlm-minimal-dgpu-soc-v1-architecture](../../openspec/changes/archive/2026-09-24-cpptlm-minimal-dgpu-soc-v1/) 提案管理。
 
 ### 2027-09-29 — §4 Migration 8 步代码 rename 实施完成 (PASS)
 

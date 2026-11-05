@@ -23,7 +23,7 @@
 - §5 GMMU 一级页表翻译 — Chub change 推 GMMU 5 端口切型, 翻译语义保持
 
 **会被 Chub change 实施 supersedes 的内容**(本 Lock Note 显式标记, 等 Chub 实施后完整重写):
-- §0.1 原则 4 "数据路径": "Phase 0: `sdma.mem_out → pcie_memory.handle_slave_port → vram_controller`" → 改为 "**Chub 化后: `chub.noc_master_out → soc_noc → vram_controller.req_in`**" (per [cpptlm-dgpu-soc-control-hub](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/) design.md §1.1)
+- §0.1 原则 4 "数据路径": "Phase 0: `sdma.mem_out → pcie_memory.handle_slave_port → vram_controller`" → 改为 "**Chub 化后: `chub.noc_master_out → soc_noc → vram_controller.req_in`**" (per [cpptlm-dgpu-soc-control-hub](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/) design.md §1.1)
 - §0.2 Gap 矩阵: 当前 11 项 Gap, Chub change 推动后整体修复 (含 PcieMemoryDevice 移除 + SDMA 独立 translate + GMMU 5 端口切型)
 - §0.2 实施计划: 当前 6 changes (A/B/C/D/E/F), Chub change (P0 架构级) 推动 4 changes 合并 + 1 new change (control-hub) superset
 - §1.4.3 SDMA ChStream 接口描述: "AxiMemBundle" → 改为 "**NoCFlitBundle** (per physical-ip-port-boundary + control-hub 起草)"
@@ -34,15 +34,15 @@
 - §2.6 FLR + Resizable BAR 测试扩展: 不动, 与 Chub change 正交
 
 **关联 OpenSpec changes (本 Lock Note 新增) — Chub change superset 关系**:
-- **[cpptlm-dgpu-soc-physical-ip-port-boundary](../../../openspec/changes/cpptlm-dgpu-soc-physical-ip-port-boundary/) (Proposed Draft 2026-10-12)**: 5 模块端口切型 + 4 wire-format adapter + SocInternalNoc/GpuInternalFabric ChStream 化 (per commit `12cc50de`)
-- **[cpptlm-dgpu-soc-control-hub](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/) (Proposed Draft 2026-10-13)**: 新建 ControlHub (Chub) + 移除 PcieMemoryDevice + SDMA 独立 translate 接口 + 完全 JSON 拓扑化 (per commit `b3334d36`)
+- **[cpptlm-dgpu-soc-physical-ip-port-boundary](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-physical-ip-port-boundary/) (Proposed Draft 2026-10-12)**: 5 模块端口切型 + 4 wire-format adapter + SocInternalNoc/GpuInternalFabric ChStream 化 (per commit `12cc50de`)
+- **[cpptlm-dgpu-soc-control-hub](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/) (Proposed Draft 2026-10-13)**: 新建 ControlHub (Chub) + 移除 PcieMemoryDevice + SDMA 独立 translate 接口 + 完全 JSON 拓扑化 (per commit `b3334d36`)
 
 **预期完整重写时点**: 任意 active change archive 后, KPI 释放 1 slot, 激活 Chub change (估时 21-30d), 实施完成后**本 Lock Note 段**会被替换为完整 v0.6 重写(per cpptlm-dgpu-soc-arch-truth-cleanup v1.3 修订流程)。
 
 ## 关联 OpenSpec changes
 
 - [cpptlm-driver-visible-minimal-soc](../../../openspec/specs/driver-visible-minimal-soc/) (**v1.4** 当前,2026-09-26;6 模块拓扑 + 单一 VRAM 真源 + chip-internal AXI 边界 + 7 实施铁律)
-- [2026-09-20-cpptlm-pcie-memory-device-mvp](../../../openspec/changes/2026-09-20-cpptlm-pcie-memory-device-mvp/) (D2 v1.1, archived;本设计扩展自 D2 PcieMemoryDevice MVP)
+- [2026-09-20-cpptlm-pcie-memory-device-mvp](../../../openspec/changes/archive/2026-09-26-2026-09-20-cpptlm-pcie-memory-device-mvp/) (D2 v1.1, archived;本设计扩展自 D2 PcieMemoryDevice MVP)
 - **[cpptlm-dgpu-soc-internal-noc-e1](../../../openspec/changes/cpptlm-dgpu-soc-internal-noc-e1/) (v1.1, 2026-10-09, ✅ archived 2026-10-09; 设计意图源保留; 代码已落地 per `soc_internal_noc.hh:114-151`)**: SocInternalNoc **DataNoC only** 物理保真 (SDMA bulk DMA 路径) + 2 adapter (SDMA + VRAM) + VC 计数器 (REQ/VC0, RSP/VC1, DAT/VC2, SNP/VC3) + VramNocAdapter 内部 NoC→AXI4 字段映射。**修复 4 P0 + 3 CRITICAL + 3 MAJOR** (per Oracle/Metis/RTL 调研三轮 + 真实 dGPU IP 调研)。PT_BASE / doorbell / page walk 走独立通道 deferred to E.2 (ArchForge)。详见 §2.4.3。
 - **[cpptlm-pcie-host-test-flr-rebar](../../../openspec/changes/cpptlm-pcie-host-test-flr-rebar/) (v1.1, 2026-10-09, ✅ archived 2026-10-09; 设计意图源保留; 代码已落地 per Phase 8 桥接 + HostBypassTLM)**: HostPcieTestStub in-process C++ 仿真测试桩 + **复用既有** `flr_pf()/flr_vf()` + `enable_resizable_bar()/on_bar_resize()` (per `pcie_endpoint_ip.hh:201-202` + `pcie_endpoint_ip.cc:670-694`)。**修复 3 CRITICAL** (ADR-DGPU-08 §2.3 0 新增约束 + 3 处 PCIe spec 错误 + 2 spec 矛盾)。`ResizableBar::new_size_bytes_` 拓宽 uint32→**uint64** (4GB 溢出修复)。详见 §2.5 + §2.6。
 

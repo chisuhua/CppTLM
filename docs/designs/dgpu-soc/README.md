@@ -12,7 +12,7 @@
 
 > 本节不是新内容，是对当前文档与未来 OpenSpec 变化关系的指针声明。
 
-[cpptlm-dgpu-soc-control-hub (Proposed Draft 2026-10-13)](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/) 提议"新建 ControlHub (Chub) + 移除 PcieMemoryDevice + SDMA 独立 translate + 完全 JSON 拓扑化", 范围**超集**于 `cpptlm-dgpu-soc-physical-ip-port-boundary` (Proposed Draft 2026-10-12, [commits `12cc50de`](../../../) + [`b3334d36`](../../../))。
+[cpptlm-dgpu-soc-control-hub (Proposed Draft 2026-10-13)](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/) 提议"新建 ControlHub (Chub) + 移除 PcieMemoryDevice + SDMA 独立 translate + 完全 JSON 拓扑化", 范围**超集**于 `cpptlm-dgpu-soc-physical-ip-port-boundary` (Proposed Draft 2026-10-12, [commits `12cc50de`](../../../) + [`b3334d36`](../../../))。
 
 **本 README 后续状态预期** (Chub change 实施后):
 - 4 changes 命名 (A/B/C/D) 部分被 superset 关系合并: physical-ip-port-boundary + control-hub 一起 supersedes 当前 A/B/C/D 中的部分内容
@@ -31,7 +31,7 @@
 > | 层 | 文档 | 作用 |
 > |----|------|------|
 > | 1 (架构视图) | `[./architecture.md](./architecture.md) — mixed-mode SoC per §1.4` | 业务架构 + 仿真模式 + Gap 修复路线 |
-> | 2 (ADR) | [`../adr/ADR-DGPU-{05,06,07,08,09,10,11}-*.md`](../adr/) | 不可变决策 |
+> | 2 (ADR) | [`../../adr/ADR-DGPU-{05,06,07,08,09,10,11}-*.md`](../../adr/) | 不可变决策 |
 > | 3 (OpenSpec change) | [`../../../openspec/changes/`](../../../openspec/changes/) | 实施变更提案 (A-F 6 个 + Chub change 1 个) |
 > | 4 (实施跟踪) | [`../../../docs/superpowers/plans/`](../../../docs/superpowers/plans/) | 短周期实施跟踪 |
 

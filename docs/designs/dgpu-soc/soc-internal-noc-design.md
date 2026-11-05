@@ -10,10 +10,10 @@
 |----------|-------------------------------------|
 | §1 背景与动机 (§1.1 问题陈述, §1.2 现状 4-IP, §1.3 CppTLM vs ArchForge) | 仍有效 (legacy concept) — 见下方 §2 保留 |
 | §2.1 模块位置 + §2.2 5-IP 边界 | [`docs/designs/dgpu-soc/architecture.md` §2.4](../../designs/dgpu-soc/architecture.md) (实时维护) |
-| §2.3 SocInternalNoc 接口 + §5 NoCFlitBundle 端口契约 | [`openspec/changes/cpptlm-gmmu-pte-bus-correction/design.md`](../../../../openspec/changes/cpptlm-gmmu-pte-bus-correction/design.md) (含 NoC 4 NODE_ID + 16 字段) |
-| §3 路由语义 | [`openspec/changes/cpptlm-gmmu-pte-bus-correction/spec.md`](../../../../openspec/changes/cpptlm-gmmu-pte-bus-correction/spec.md) (e1 GMMU bypass + DataNoC) |
+| §2.3 SocInternalNoc 接口 + §5 NoCFlitBundle 端口契约 | [`openspec/changes/cpptlm-gmmu-pte-bus-correction/design.md`](../../../openspec/changes/archive/2026-10-12-cpptlm-gmmu-pte-bus-correction/design.md) (含 NoC 4 NODE_ID + 16 字段) |
+| §3 路由语义 | [`openspec/changes/cpptlm-gmmu-pte-bus-correction/spec.md`](../../../openspec/changes/archive/2026-10-12-cpptlm-gmmu-pte-bus-correction/specs/gmmu-pte-wf/spec.md) (e1 GMMU bypass + DataNoC) |
 | §4 装配流程 (§4.1 JSON, §4.2 双注册, §4.3 DGpuBoard 桥接) | 同上 |
-| §6 测试覆盖 | [`openspec/changes/cpptlm-gmmu-pte-bus-correction/tasks.md`](../../../../openspec/changes/cpptlm-gmmu-pte-bus-correction/tasks.md) (TDD 5-step + 16 commits) |
+| §6 测试覆盖 | [`openspec/changes/cpptlm-gmmu-pte-bus-correction/tasks.md`](../../../openspec/changes/archive/2026-10-12-cpptlm-gmmu-pte-bus-correction/tasks.md) (TDD 5-step + 16 commits) |
 | §7 设计权衡 | 保留精简 (见 §3) |
 | §8 演进路径 E.1/E.2/D3 | e1 v1.1 已 ✅ archived (PathSpec);D3/Phase 1 见 [`docs/designs/dgpu-soc/architecture.md` §0.2](../../designs/dgpu-soc/architecture.md) |
 | §9 Frozen surface + §10 关联资源 | 23 ABI 零 diff 见 [`docs/designs/dgpu-soc/architecture.md` §0.1 §X](../../designs/dgpu-soc/architecture.md) |
@@ -73,9 +73,9 @@
 ## 4. 权威源 (Authoritative Sources)
 
 - **架构视图**: [`docs/designs/dgpu-soc/architecture.md`](../../designs/dgpu-soc/architecture.md) (重点 §0.1 §0.1.1 §0.2)
-- **Phase 1 OpenSpec change**: [`openspec/changes/cpptlm-gmmu-pte-bus-correction/`](../../../../openspec/changes/cpptlm-gmmu-pte-bus-correction/) (Phase 1, Change C, P2, 修复 Gap I + G2 + G1)
-- **E0 路由骨架 (✅ archived)**: [`cpptlm-dgpu-soc-internal-noc-minimal`](../../../../openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-minimal/) (设计稿; 已落地为 `include/tlm/cluster/soc_internal_noc.hh`)
-- **E.1 v1.1 (✅ archived)**: [`cpptlm-dgpu-soc-internal-noc-e1`](../../../../openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-e1/) (DataNoC 物理保真; 4 NODE_ID + NoCFlitBundle 16 字段 + vc_counts_[4] + 2 adapter)
+- **Phase 1 OpenSpec change**: [`openspec/changes/cpptlm-gmmu-pte-bus-correction/`](../../../openspec/changes/archive/2026-10-12-cpptlm-gmmu-pte-bus-correction/) (Phase 1, Change C, P2, 修复 Gap I + G2 + G1)
+- **E0 路由骨架 (✅ archived)**: [`cpptlm-dgpu-soc-internal-noc-minimal`](../../../openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-minimal/) (设计稿; 已落地为 `include/tlm/cluster/soc_internal_noc.hh`)
+- **E.1 v1.1 (✅ archived)**: [`cpptlm-dgpu-soc-internal-noc-e1`](../../../openspec/changes/archive/2026-10-09-cpptlm-dgpu-soc-internal-noc-e1/) (DataNoC 物理保真; 4 NODE_ID + NoCFlitBundle 16 字段 + vc_counts_[4] + 2 adapter)
 - **Frozen surface 锁定**: `include/abi/cpptlm_emulator.h` + `include/tlm/gpu/pcie_endpoint_tlm.h` + `include/tlm/gpu/pcie_display_device.hh` + `include/tlm/pcie/pcie_bundles_tlm.hh` (per AGENTS.md H3)
 
 ## 5. 维护规则

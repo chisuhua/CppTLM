@@ -173,9 +173,9 @@ docs/adr/ADR-NV-01-...       # 本文档
 ## 6. 参考文献
 
 ### Spec 与 Plan
-- **SOC 架构文档**: [`docs/superpowers/specs/2026-06-24-gpu-soc-architecture.md`](../superpowers/specs/2026-06-24-gpu-soc-architecture.md)（677 行，commit `801f8ea`）
-- **实施路径文档**: [`docs/superpowers/plans/2026-06-24-gpu-soc-roadmap.md`](../superpowers/plans/2026-06-24-gpu-soc-roadmap.md)（1100 行，commit `3993129`）
-- **roadmap 父文档**: [`docs/superpowers/plans/2026-06-20-future-work-roadmap.md`](../superpowers/plans/2026-06-20-future-work-roadmap.md)
+- **SOC 架构文档**: [`docs-archived/superpowers/specs/2026-06-24-gpu-soc-architecture.md`](../../docs-archived/superpowers/specs/2026-06-24-gpu-soc-architecture.md)（677 行，commit `801f8ea`）
+- **实施路径文档**: [`docs-archived/superpowers/plans/2026-06-24-gpu-soc-roadmap.md`](../../docs-archived/superpowers/plans/2026-06-24-gpu-soc-roadmap.md)（1100 行，commit `3993129`）
+- **roadmap 父文档**: [`docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md`](../../docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md)
 
 ### 调研资料
 - **gpgpu-sim SM_120 paper**: https://zartbot.github.io/micro_arch/nvidia/sm_120/paper.html
@@ -184,7 +184,7 @@ docs/adr/ADR-NV-01-...       # 本文档
 - **本地 notes**: `/workspace/project/mynotes/04_Knowledge/D01-gpu-architecture/`（blackwell/hopper drafts + 19 概念 + 6 主题 + simt-research）
 
 ### CppTLM 关联
-- **兄弟 SoC**: apu_soc（[`docs/superpowers/specs/2026-06-12-phase7-apu-fused-soc-design.md`](../superpowers/specs/2026-06-12-phase7-apu-fused-soc-design.md)）
+- **兄弟 SoC**: apu_soc（[`docs-archived/superpowers/specs/2026-06-12-phase7-apu-fused-soc-design.md`](../../docs-archived/superpowers/specs/2026-06-12-phase7-apu-fused-soc-design.md)）
 - **兄弟 ADR**: `docs/soc_arch/adr/ADR-SOC-01..05.md`（5 份 SOC 决策：Coherence / CU 粒度 / Wavefront / HSAPP / 目录）
 - **复用 F12 三类**: GpuComputeUnitTLM / VectorRegFileTLM / WavefrontTLM（Phase 7.B 实施中）
 - **复用基础设施**: CacheTLM / MemoryTLM / RouterTLM / LinkTLM / CoherentXBarTLM
@@ -232,7 +232,7 @@ docs/adr/ADR-NV-01-...       # 本文档
   - Phase 8.B Task 10-14 (5 核心模块) 并行 — 4d
   - F4 (Phase 7.C 6×6 state table) brainstorming 启动 — 2d
   - F12b-LD (PTX-EMU 集成) 仍待外部团队对齐
-- **关联文档**: [`docs/roadmap/`](../../roadmap/) (实时看板), [`docs/superpowers/plans/2026-06-20-future-work-roadmap.md`](../../superpowers/plans/2026-06-20-future-work-roadmap.md) (single source of truth)
+- **关联文档**: [`docs/roadmap/`](../../roadmap/) (实时看板), [`docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md`](../../docs-archived/superpowers/plans/2026-06-20-future-work-roadmap.md) (single source of truth)
 
 **维护**: CppTLM 开发团队
 **下次 review**: Phase 8.B Task 9-14 完成后 (预计 2026-07-10)

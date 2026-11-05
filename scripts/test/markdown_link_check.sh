@@ -25,6 +25,11 @@ cd "$REPO_ROOT"
 
 # 已知虚拟路径 (per docs_sync_check.sh VIRTUAL_PATHS + critic B6 扩展)
 # 这些路径**预期**不存在 (已迁 ArchForge / 已归档 / 计划中 / 调研附属), 文档中保留作 reference
+#
+# 2026-11-05 修正 3 处脚本缺陷（原先这些条目**定义了但从未生效**）：
+#   1. 本数组从未传给 Python —— 已删除/已归档路径被误报为断链
+#   2. 解析相对路径前未剥离 `#anchor` —— 所有带锚点的链接被误报
+#   3. bash 用 `IFS='||'` 拆分 —— 多字符 IFS 被逐字符拆, 产生空条目, 计数虚高
 VIRTUAL_PATH_PATTERNS=(
     "src/noc/"
     "include/noc/"
@@ -47,6 +52,17 @@ VIRTUAL_PATH_PATTERNS=(
     "docs/designs/dgpu-soc/pnn-protocol-neutral-network.md"
     "docs/architecture/14-pcie-tlp-wire-format.md"
     "docs/architecture/多层次混合仿真.md"
+    # === 2026-11-05 断链普查后补登 ===
+    "docs/architecture/14-dgpu-board-ideal-arch.md"       # 已删除（2026-09-26 迁 docs/designs/dgpu-board/architecture.md）
+    "include/tlm/bundles/axi_mem_bundle.hh"                # AxiMemBundle 切型决策已撤回（ADR-DGPU-06 SU 2026-10-10），文件从未落地
+    # 归档文档（docs/archive/）内部的历史相对路径 —— 文件移动后未同步改，保留作历史记录
+    "docs/archive/"
+    # 跨仓路径：ArchForge 为独立仓，本机 /workspace/project/ArchForge 未克隆
+    "main/ArchForge/"
+    "ArchForge/docs/"
+    # 旧计划/规约目录：对应文件已迁 docs-archived/ 或删除
+    "docs/superpowers/plans/"
+    "docs/superpowers/specs/"
     "cpptlm_emulator_flr.h"
     "cpptlm_emulator_resizable_bar.h"
     "file:///"
@@ -59,8 +75,6 @@ VIRTUAL_PATH_PATTERNS=(
     "research/PCIe/"
     "14-sm-operand-supply-design-target.md"
     "docs/research/"
-    "docs/superpowers/plans/"
-    "docs/pcie/"
 )
 
 # 收集所有 markdown 文件
@@ -90,13 +104,15 @@ echo "📋 扫描 ${#MD_FILES[@]} 个 markdown 文件..."
 # 用 Python 做链接提取 (避免 bash state machine bug)
 BROKEN_LINKS=()
 TOTAL_LINKS=0
+SCANNED_LINKS=0
 
 for md_file in "${MD_FILES[@]}"; do
-    # 调用 Python 脚本, 输出 "TOTAL BROKEN" 行 (供 bash 解析)
-    output=$(python3 - "$md_file" << 'PYEOF'
+    # 调用 Python 脚本：每条断链输出一行 "BROKEN\t<link>\t<abs>"
+    output=$(python3 - "$md_file" "${VIRTUAL_PATH_PATTERNS[@]}" << 'PYEOF'
 import sys, re, os
 
 md_file = sys.argv[1]
+virtual = sys.argv[2:]        # VIRTUAL_PATH_PATTERNS（豁免清单）
 md_dir = os.path.dirname(md_file)
 
 with open(md_file, 'r', encoding='utf-8') as f:
@@ -114,8 +130,10 @@ for line in content.split('\n'):
     if in_codeblock:
         cleaned_lines.append('')
     else:
-        # 移除行内代码 `...`
-        cleaned = re.sub(r'`[^`\n]*`', '', line)
+        # 移除行内代码 `...` —— 用单字符占位符替换（而非整段删除）。
+        # 2026-11-05 修正: 整段删除会把 `[`code`](../adr/)` 变成 `[]`,
+        # 导致「文本整体被行内代码包裹」的链接逃过检查。占位符保留方括号结构。
+        cleaned = re.sub(r'`[^`\n]*`', 'X', line)
         cleaned_lines.append(cleaned)
 
 cleaned_content = '\n'.join(cleaned_lines)
@@ -123,9 +141,7 @@ cleaned_content = '\n'.join(cleaned_lines)
 # 提取 markdown 链接: [text](path) 或 [text](path "title")
 pattern = re.compile(r'\[([^\]]+)\]\(([^\)]+)\)')
 total = 0
-broken = []
 for match in pattern.finditer(cleaned_content):
-    text = match.group(1)
     link_raw = match.group(2).strip()
     # 去掉 title (格式: path "title")
     link_path = re.sub(r'\s+["\'].*$', '', link_raw).strip()
@@ -134,9 +150,20 @@ for match in pattern.finditer(cleaned_content):
     if not link_path or link_path.startswith(('http://', 'https://', 'mailto:', '#', 'file://')):
         continue
 
+    # 剥离 #anchor —— 锚点不参与文件存在性判定（2026-11-05 修正）
+    file_part = link_path.split('#', 1)[0]
+    if not file_part:
+        continue
+
     # 解析相对路径
-    resolved = os.path.normpath(os.path.join(md_dir, link_path))
+    resolved = os.path.normpath(os.path.join(md_dir, file_part))
     abs_resolved = os.path.abspath(resolved)
+
+    total += 1
+
+    # 虚拟路径豁免（已迁 ArchForge / 已归档 / 计划中）—— 2026-11-05 接上
+    if any(v in file_part or v in abs_resolved for v in virtual):
+        continue
 
     # 检查文件存在
     if os.path.exists(abs_resolved):
@@ -147,30 +174,27 @@ for match in pattern.finditer(cleaned_content):
     if os.path.exists(abs_resolved.rstrip('/') + '.md'):
         continue
 
-    total += 1
-    broken.append(f'{link_path} → {abs_resolved}')
-
-print(f'{total}|{"||".join(broken)}')
+    print(f"BROKEN\t{link_path}\t{abs_resolved}")
+print(f"TOTAL\t{total}")
 PYEOF
     )
 
-    # 解析输出
-    total_count=$(echo "$output" | head -1 | cut -d'|' -f1)
-    broken_section=$(echo "$output" | head -1 | cut -d'|' -f2-)
+    [ -z "$output" ] && continue
 
-    TOTAL_LINKS=$((TOTAL_LINKS + total_count))
+    n=$(printf '%s\n' "$output" | grep -c '^BROKEN' || true)
+    TOTAL_LINKS=$((TOTAL_LINKS + n))
+    t=$(printf '%s\n' "$output" | grep '^TOTAL' | cut -f2)
+    SCANNED_LINKS=$((SCANNED_LINKS + ${t:-0}))
 
-    if [ -n "$broken_section" ]; then
-        IFS='||' read -ra links <<< "$broken_section"
-        for link in "${links[@]}"; do
-            BROKEN_LINKS+=("$md_file: $link")
-        done
-    fi
+    while IFS=$'\t' read -r _tag link_path abs_resolved; do
+        [ "$_tag" == "BROKEN" ] || continue
+        BROKEN_LINKS+=("$md_file: $link_path → $abs_resolved")
+    done <<< "$output"
 done
 
 echo ""
 echo "📊 总失效链接数: ${#BROKEN_LINKS[@]}"
-echo "📊 总扫描链接数: $TOTAL_LINKS"
+echo "📊 总扫描链接数: $SCANNED_LINKS"
 echo ""
 
 if [ ${#BROKEN_LINKS[@]} -gt 0 ]; then

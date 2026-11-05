@@ -2,8 +2,8 @@
 
 > **状态**: ✅ **已签发** (2026-10-05, Oracle 评审 Revise 修订后通过 — 8 维度评审表全 PASS, 5 步解锁链 Step 1-5 全通过, P0/P1 修订闭环)
 > **日期**: 2026-09-30 起草 → 2026-10-05 签发
-> **关联架构文档**: [../designs/dgpu-soc/soc-internal-tlm-design-target.md](../designs/dgpu-soc/soc-internal-tlm-wiring-principle.md) (5 R-WIRE-* 形式化规则 + v2.0 roadmap), [../designs/dgpu-soc/d3-evolution-roadmap.md](../designs/dgpu-soc/d3-evolution-roadmap.md) (D3a-1 触发条件), [../designs/dgpu-soc/data-flow-and-topology-comparison.md](../designs/dgpu-soc/data-flow-and-topology-comparison.md) (3-way 代次对照)
-> **关联 OpenSpec**: [cpptlm-dgpu-d3a1-display-fb-homogenization (已 BLOCK, archive 2026-10-05)](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-fb-homogenization/) (D3a-1 浅层方案, 已被 Path A supersede, 1-2d, **首个**符合 R-WIRE-* 全部规则的新增注入点), [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/spec.md) (v1.8 当前, spec §6 行 1 遗留议题 D3a 收编计划 — 改指 openspec/specs/ 因 change 已合并至 main spec), [cpptlm-dgpu-soc-timing-mvp](../../openspec/specs/dgpu-soc-timing-mvp/spec.md) (timing-mode 沿用 R-WIRE-* — 同理改指 specs/)
+> **关联架构文档**: [../designs/dgpu-soc/soc-internal-tlm-design-target.md](../designs/dgpu-soc/soc-internal-tlm-design-target.md) (5 R-WIRE-* 形式化规则 + v2.0 roadmap), [../designs/dgpu-soc/d3-evolution-roadmap.md](../designs/dgpu-soc/d3-evolution-roadmap.md) (D3a-1 触发条件), [../designs/dgpu-soc/data-flow-and-topology-comparison.md](../designs/dgpu-soc/data-flow-and-topology-comparison.md) (3-way 代次对照)
+> **关联 OpenSpec**: [cpptlm-dgpu-d3a1-display-fb-homogenization (已 BLOCK, archive 2026-10-05)](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-fb-homogenization/) (D3a-1 浅层方案, 已被 Path A supersede, 1-2d, **首个**符合 R-WIRE-* 全部规则的新增注入点), [cpptlm-driver-visible-minimal-soc](../../openspec/specs/driver-visible-minimal-soc/spec.md) (v1.8 当前, spec §6 行 1 遗留议题 D3a 收编计划 — 改指 openspec/specs/ 因 change 已合并至 main spec), [cpptlm-dgpu-soc-timing-mvp](../../openspec/specs/dgpu-soc-timing/spec.md) (timing-mode 沿用 R-WIRE-* — 同理改指 specs/)
 > **配套 ADR**: [ADR-DGPU-05](ADR-DGPU-05-vram-storage-ownership.md) (单一 VRAM 真源 vram_storage_, **沿用**), [ADR-DGPU-06](ADR-DGPU-06-axi-mem-bundle-boundary.md) (AxiMemBundle vs PcieTlpBundle wire-format 边界, **沿用**), [ADR-DGPU-07](ADR-DGPU-07-minimal-soc-evolution-seam.md) (D3-D5 演进 seam `handle_slave_port ↔ backing_ptr_`, **沿用并扩展**), [ADR-DGPU-08](ADR-DGPU-08-abi-freeze-policy.md) (23 ABI 冻结, **不动摇**), [ADR-DGPU-10](ADR-DGPU-10-backing-naming-convention.md) (backing owner/injected 两级命名, **沿用**)
 
 ---
@@ -80,7 +80,7 @@ D-AXI v1.4 spec §B12 + Requirement "PcieEndpointIP 持有 PcieMemoryDevice raw 
 
 **保留期间**:
 - 3 个 config (`dgpu_soc_minimal_v1.json` / `dgpu_soc_timing_v1.json` / `dgpu_board_v1.json`) 的 description 段已显式声明 R-WIRE-* 状态 (实测 grep: 描述均在第 3 行)
-- `dgpu_soc_minimal_v1.json:3` / `dgpu_soc_timing_v1.json:3` 引用 [soc-internal-tlm-design-target.md](../../designs/dgpu-soc/soc-internal-tlm-design-target.md) §1.2 + [driver-visible-minimal-soc/spec.md:126](../../specs/driver-visible-minimal-soc/spec.md) (N8 baseline)
+- `dgpu_soc_minimal_v1.json:3` / `dgpu_soc_timing_v1.json:3` 引用 [soc-internal-tlm-design-target.md](../designs/dgpu-soc/soc-internal-tlm-design-target.md) §1.2 + [driver-visible-minimal-soc/spec.md:126](../../openspec/specs/driver-visible-minimal-soc/spec.md) (N8 baseline)
 - `dgpu_board_v1.json:3` 显式声明 out-of-scope (早期代次)
 
 ### 2.3 决策 3: D-AXI v2.0 启动条件
@@ -222,7 +222,7 @@ Phase 9 (当前)        Phase 9+ (Q4 2026)        Phase 10+ (2027 H1)        Pha
 |------|------|
 | [cpptlm-dgpu-d3a1-display-fb-homogenization (archive 2026-10-05)](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-fb-homogenization/) | **本 ADR 首个验证用例** (D3a-1 浅层, 已被 Path A supersede) |
 | [cpptlm-driver-visible-minimal-soc (已合并至 main spec)](../../openspec/specs/driver-visible-minimal-soc/spec.md) | v1.8 当前, spec §B12 N8 决策 |
-| [cpptlm-dgpu-soc-timing-mvp (已合并至 main spec)](../../openspec/specs/dgpu-soc-timing-mvp/spec.md) | timing-mode 沿用 R-WIRE-* |
+| [cpptlm-dgpu-soc-timing-mvp (已合并至 main spec)](../../openspec/specs/dgpu-soc-timing/spec.md) | timing-mode 沿用 R-WIRE-* |
 
 ### 6.4 实施跟踪 (Layer 4)
 
@@ -297,7 +297,7 @@ Phase 9 (当前)        Phase 9+ (Q4 2026)        Phase 10+ (2027 H1)        Pha
 | R-WIRE-4 | ❌ (D3a-1 不引入新方法注入) | ❌ (D3a-1 Path A 同不引入新方法注入, 仅扩展 R-WIRE-2 模式) | N8 baseline 维持 |
 | R-WIRE-5 | ✅ | ✅ | tick 无环 (display_device tick 由 EP::tick() 单调用, 不递归) |
 
-**冻结面例外增补**: [ADR-DGPU-08 §Status Update v1.1](../../../../docs/adr/ADR-DGPU-08-abi-freeze-policy.md) (新例外: pcie_display_device.hh 删私有字段 + 改 backdoor 行为; 公 API 零签名 diff + 23 ABI 零 diff; 先例: D-AXI v1.4 B7 同模式)
+**冻结面例外增补**: [ADR-DGPU-08 §Status Update v1.1](ADR-DGPU-08-abi-freeze-policy.md) (新例外: pcie_display_device.hh 删私有字段 + 改 backdoor 行为; 公 API 零签名 diff + 23 ABI 零 diff; 先例: D-AXI v1.4 B7 同模式)
 
 **归档时序**:
 - 2026-10-05: 实施完成 (working tree)

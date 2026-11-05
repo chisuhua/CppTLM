@@ -2,7 +2,7 @@
 
 > **状态**: ✅ v2.0 设计已通过 Oracle 二轮复审
 > **对应架构文档**: [architecture.md](./architecture.md)（原 `docs/architecture/14-dgpu-board-ideal-arch.md`，2026-09-26 迁移）
-> **配套 ADR**: [ADR-DGPU-01](../ADR-DGPU-01-callback-worker-replaces-detached-threads.md) / [02](../ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md) / [03](../ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md) / [04](../ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md)
+> **配套 ADR**: [ADR-DGPU-01](../../adr/ADR-DGPU-01-callback-worker-replaces-detached-threads.md) / [02](../../adr/ADR-DGPU-02-lifecycle-protocol-uniform-destruction.md) / [03](../../adr/ADR-DGPU-03-data-driven-pcie-path-dispatch-registry.md) / [04](../../adr/ADR-DGPU-04-namespace-unification-ep-cache-test-isolation.md)
 > **上层文档**: [../dgpu-soc/architecture.md](../dgpu-soc/architecture.md) | [../dgpu-driver/architecture.md](../dgpu-driver/architecture.md)
 
 ## 范围

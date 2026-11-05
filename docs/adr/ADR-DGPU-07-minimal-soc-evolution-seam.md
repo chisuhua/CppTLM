@@ -287,7 +287,7 @@ TEST_CASE("driver compiled against minimal_v1 works on full GPU", "[driver-compa
 - D-AXI design.md §X.5 D3-D5 Seams 表
 - D-AXI design.md §X.6 重构触发条件
 - D-AXI spec.md Requirement "SoC 架构 SHALL 支持 minimal → full GPU 无重大重构"
-- 实施笔记: [../../pcie/driver-visible-minimal-soc.md §7 D3 演进 seam](../../pcie/driver-visible-minimal-soc.md)
+- 实施笔记: [../../pcie/driver-visible-minimal-soc.md §7 D3 演进 seam](../pcie/driver-visible-minimal-soc.md)
 - 配套 ADR: ADR-DGPU-05 (vram_storage_ 所有权), ADR-DGPU-08 (ABI 冻结), ADR-DGPU-09 (Driver-Visible 范围)
 
 ---

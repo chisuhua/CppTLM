@@ -286,7 +286,7 @@ inline bool SimplePort::send(Packet* pkt) {
 | `dma_bundles_tlm.hh::*` | **业务** | DMA 引擎 | DMA descriptor |
 | `sm_bundles_tlm.hh::*` | **业务** | SM 内部 | SM 子模块 wire-format |
 | `cep_coherence_bundles_tlm.hh::CohIfBundle` | **跨模块共享的业务**(§3.3 第三类) | **项目级**(CEP 队列 #7) | 承载 canonical 10 流中**跨 Stub↔PE 边界的 5 条 RN-side 流**(`request` / `completion` / `snoop` / `snoop_resp` / `writeback`,由 `flow_id` 区分);**字段形态 = 业务语义**(无 `src_node` / `dst_node` / `flit_category` / `vc_id`)但**取网络侧演进纪律**(`BUNDLE_FIELD_WIDTH` 编译期锁 + `is_trivially_copyable` 断言);per `ADR-CEP-19` 决策 1~3 + `cpptlm-cep-cohif-carrier` Phase 1 |
-| `dgpu_fabric_bundles_tlm.hh::*` | **业务/网络混合**(待切型) | GPU 内部 + 板级接口 | 交给 [`cpptlm-dgpu-soc-physical-ip-port-boundary`](../../openspec/changes/cpptlm-dgpu-soc-physical-ip-port-boundary/) 处理 |
+| `dgpu_fabric_bundles_tlm.hh::*` | **业务/网络混合**(待切型) | GPU 内部 + 板级接口 | 交给 [`cpptlm-dgpu-soc-physical-ip-port-boundary`](../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-physical-ip-port-boundary/) 处理 |
 | `dgpu_bundles_tlm.hh::*` | **业务/网络** | dGPU 内部 | 同上, 待切型 |
 | `cache_bundles_rtl.hh::*` | **业务** | RTL cache 模块 | RT 桥接用 |
 | `cpphdl_types.hh` | (基础设施) | 项目框架层 | `bundle_base` + `ch_uint`/`ch_bool` POD, **不归业务/网络** |
@@ -1416,10 +1416,10 @@ soc.connect("group:gpu", "noc_cdc_bridge.dst", latency=2)
 
 ### 17.5 调研综述参考保留(06 v0.3 不重发明)
 
-- [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../../research/gem5-ruby-protocol-bridge-survey.md) — Gem5 Ruby/Garnet 协议中立通信网络调研
-- [`docs/research/gem5-messagebuffer-network-interface.md`](../../research/gem5-messagebuffer-network-interface.md) — MessageBuffer + NI + vnet 详解
-- [`docs/research/gem5-garnet-network-survey.md`](../../research/gem5-garnet-network-survey.md) — Garnet 3.0 router + Topology
-- [`docs/research/gem5-soc-survey.md`](../../research/gem5-soc-survey.md) — Gem5 标准库 topology 例子
+- [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../research/gem5-ruby-protocol-bridge-survey.md) — Gem5 Ruby/Garnet 协议中立通信网络调研
+- [`docs/research/gem5-messagebuffer-network-interface.md`](../research/gem5-messagebuffer-network-interface.md) — MessageBuffer + NI + vnet 详解
+- [`docs/research/gem5-garnet-network-survey.md`](../research/gem5-garnet-network-survey.md) — Garnet 3.0 router + Topology
+- [`docs/research/gem5-soc-survey.md`](../research/gem5-soc-survey.md) — Gem5 标准库 topology 例子
 - 【ArchForge 仓】`docs/research/PCIe/PCIe_上的保序write.md` — PCIe TLP 保序（2026-10-27 自本仓 `docs/research/PCIe/` 迁出）
 
 ### 17.6 相关 ADRs(0 改, 仅引用; 详情见 §10.1)

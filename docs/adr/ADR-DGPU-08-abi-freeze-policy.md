@@ -239,7 +239,7 @@ TEST_CASE("ABI signature freeze", "[abi][minimal_dgpu_soc]") {
 - ADR-088 §D5: ABI 冻结原始定义
 - DGpuBoard 14 §5.1: 签名级 + 二进制级 0 diff 仲裁详细规范
 - D-AXI spec.md Requirement "15 ABI Functions Unchanged" + "Freeze Surface Untouched"
-- D-AXI driver-visible §11 关联文档（[../../pcie/driver-visible-minimal-soc.md](../../pcie/driver-visible-minimal-soc.md)）
+- D-AXI driver-visible §11 关联文档（[../../pcie/driver-visible-minimal-soc.md](../pcie/driver-visible-minimal-soc.md)）
 - [cpptlm_emulator.h](../../include/abi/cpptlm_emulator.h)
 - 配套 ADR: ADR-DGPU-09 (Driver-Visible 范围定义)
 
@@ -266,7 +266,7 @@ TEST_CASE("ABI signature freeze", "[abi][minimal_dgpu_soc]") {
 
 ### v1.1 — 2026-10-05 冻结面例外增补 (per D3a-2 实施)
 
-**关联 change**: [cpptlm-dgpu-d3a1-display-injection-refactor](../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/) (D3a-2, 已实施)
+**关联 change**: [cpptlm-dgpu-d3a1-display-injection-refactor](../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-injection-refactor/) (D3a-2, 已实施)
 
 **例外条目**: `include/tlm/gpu/pcie_display_device.hh` (D1 Display IO 头) 突破 §2.4 表 "仅可追加 `[[deprecated]]`" 约束, 实施删除:
 

@@ -16,7 +16,7 @@
 
 > 本节不是新内容，是对当前设计目标声明与未来 OpenSpec 变化关系的指针声明。
 
-本设计目标 §1.1 原则分层 + §0 摘要主张"SoC 内部 SHALL 使用 TLM 连接；SoC↔Board 边界 MUST 使用方法注入"——**与 [cpptlm-dgpu-soc-control-hub](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/) (Proposed Draft 2026-10-13) 提议完全一致**:
+本设计目标 §1.1 原则分层 + §0 摘要主张"SoC 内部 SHALL 使用 TLM 连接；SoC↔Board 边界 MUST 使用方法注入"——**与 [cpptlm-dgpu-soc-control-hub](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/) (Proposed Draft 2026-10-13) 提议完全一致**:
 
 - Chub change §0.1 原则 3 "SoC 内部模块接口贴近真实物理 IP 边界" — 与本设计目标声明"TLM 化"方向完全对齐
 - Chub change 提议 6 "完全 JSON 声明拓扑" — 即本设计目标声明"TLM 连接"的具体落地 (JSON `connections[]` 13 条)

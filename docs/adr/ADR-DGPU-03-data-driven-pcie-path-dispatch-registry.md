@@ -625,5 +625,5 @@ TEST_CASE("DGpuBoard mmio_write routes via DispatchRegistry") {
 > 此节为附加说明，**不替代** 2027-02-10 既有 Status Update 内容
 
 - **关联架构文档已迁**：`docs/architecture/14-dgpu-board-ideal-arch.md` → `docs/designs/dgpu-board/architecture.md`（per 4 层文档模型重组，dGPU 应用架构独立子目录）。
-- **本 ADR 文本未修改**：§1-§8 保持原貌（per AGENTS.md "ADR 不可变" 规则）；头部 + §8 的旧路径引用仍指向原路径作为历史记录，新读者请直接访问新位置 [docs/designs/dgpu-board/architecture.md §3.3](../../designs/dgpu-board/architecture.md)。
+- **本 ADR 文本未修改**：§1-§8 保持原貌（per AGENTS.md "ADR 不可变" 规则）；头部 + §8 的旧路径引用仍指向原路径作为历史记录，新读者请直接访问新位置 [docs/designs/dgpu-board/architecture.md §3.3](../designs/dgpu-board/architecture.md)。
 - **不变性保留**：PciePath 4 态枚举、`attach_profile()` 接口、Scope 优先级双签名契约全部不变。

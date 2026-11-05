@@ -274,7 +274,7 @@ per D-AXI tasks.md **B7-B15 + B19** (v1.4 架构根因 + v1.5 隐藏缺陷):
 - D-AXI design.md §1: 系统拓扑（v1.4 单一 VRAM 所有权）
 - D-AXI design.md §X: 演进路线图（D3 VramController 替换 vram_storage_）
 - D-AXI tasks.md §v1.4 P0: B7-B13 任务清单
-- 实施笔记: [../../pcie/driver-visible-minimal-soc.md §2.2](../../pcie/driver-visible-minimal-soc.md)
+- 实施笔记: [../../pcie/driver-visible-minimal-soc.md §2.2](../pcie/driver-visible-minimal-soc.md)
 - 实施计划: [../superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md Phase 10](../superpowers/plans/2026-09-27-cpptlm-driver-visible-minimal-soc-t1.md)
 - 配套 ADR: ADR-DGPU-01 (CallbackWorker 单一所有权范式)
 

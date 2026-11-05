@@ -834,12 +834,12 @@ R7 v0.3 修订: "CoherenceBridge 8 端口 + Step 7a 装配不可行已落地" �
 
 ### §11.6 调研参考(06 v0.3 + 06-bis v0.3 不重发明)
 
-- [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../../research/gem5-ruby-protocol-bridge-survey.md) — Gem5 mainline CHI 落地
-- [`docs/research/gem5-slicc-chi-survey.md`](../../research/gem5-slicc-chi-survey.md) — SLICC → C++ switch 借鉴
-- [`docs/research/gem5-coherence-protocols-survey.md`](../../research/gem5-coherence-protocols-survey.md) — 11 类 coherence 协议族对比
-- [`docs/research/gem5-coherence-network-evolution.md`](../../research/gem5-coherence-network-evolution.md) — 20+ 年演进史
-- [`docs/research/gem5-messagebuffer-network-interface.md`](../../research/gem5-messagebuffer-network-interface.md)
-- [`docs/research/gem5-garnet-network-survey.md`](../../research/gem5-garnet-network-survey.md)
+- [`docs/research/gem5-ruby-protocol-bridge-survey.md`](../research/gem5-ruby-protocol-bridge-survey.md) — Gem5 mainline CHI 落地
+- [`docs/research/gem5-slicc-chi-survey.md`](../research/gem5-slicc-chi-survey.md) — SLICC → C++ switch 借鉴
+- [`docs/research/gem5-coherence-protocols-survey.md`](../research/gem5-coherence-protocols-survey.md) — 11 类 coherence 协议族对比
+- [`docs/research/gem5-coherence-network-evolution.md`](../research/gem5-coherence-network-evolution.md) — 20+ 年演进史
+- [`docs/research/gem5-messagebuffer-network-interface.md`](../research/gem5-messagebuffer-network-interface.md)
+- [`docs/research/gem5-garnet-network-survey.md`](../research/gem5-garnet-network-survey.md)
 
 ---
 

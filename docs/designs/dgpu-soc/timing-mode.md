@@ -21,7 +21,7 @@
   - **ADR-DGPU-11 (新增)**: timing-mode SoC 范围与 functional-mode 共存边界
 - **第 3 层 (OpenSpec changes)**:
   - [`cpptlm-driver-visible-minimal-soc`](../../../openspec/specs/driver-visible-minimal-soc/) (v1.4 active) — functional-mode 实施真相
-  - [`cpptlm-minimal-dgpu-soc-v1-architecture`](../../../openspec/changes/cpptlm-minimal-dgpu-soc-v1-architecture/) (✅ archived) — 命名约定落地
+  - [`cpptlm-minimal-dgpu-soc-v1-architecture`](../../../openspec/changes/archive/2026-09-24-cpptlm-minimal-dgpu-soc-v1/) (✅ archived) — 命名约定落地
   - **`cpptlm-dgpu-soc-timing-mvp`** (🆕 本 change) — timing-mode SoC 实施提案
 - **第 4 层 (实施跟踪)**: 待 `docs/superpowers/plans/cpptlm-dgpu-soc-timing-mvp.md` 创建
 

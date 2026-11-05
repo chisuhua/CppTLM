@@ -74,10 +74,10 @@
 
 ### 2 小时全链路理解
 1. 上述 1 小时路径
-2. 对应 [OpenSpec change](../../../openspec/specs/driver-visible-minimal-soc/) 的 design.md（functional-mode 实施指导）
-3. 对应 [OpenSpec change](../../../openspec/specs/dgpu-soc-timing/) 的 design.md（timing-mode 实施指导 🆕）
+2. 对应 [OpenSpec change](../../openspec/specs/driver-visible-minimal-soc/) 的 design.md（functional-mode 实施指导）
+3. 对应 [OpenSpec change](../../openspec/specs/dgpu-soc-timing/) 的 design.md（timing-mode 实施指导 🆕）
 4. 对应 4 篇基础架构 ADR（ADR-DGPU-01 ~ 04）
-5. [../pcie/driver-visible-minimal-soc.md](../../pcie/driver-visible-minimal-soc.md) — 实施笔记（图文并茂入口）
+5. [../pcie/driver-visible-minimal-soc.md](../pcie/driver-visible-minimal-soc.md) — 实施笔记（图文并茂入口）
 
 ---
 
@@ -108,4 +108,4 @@
 - [AGENTS.md §DOC HYGIENE](../../AGENTS.md) — 4 层文档模型详细说明
 - [../architecture/README.md](../architecture/README.md) — 通用基础架构目录入口
 - [../../openspec/specs/driver-visible-minimal-soc/](../../openspec/specs/driver-visible-minimal-soc/) — 当前 active 的 OpenSpec change
-- [../../pcie/driver-visible-minimal-soc.md](../../pcie/driver-visible-minimal-soc.md) — D-AXI 实施笔记（快速入口）
+- [../../pcie/driver-visible-minimal-soc.md](../pcie/driver-visible-minimal-soc.md) — D-AXI 实施笔记（快速入口）

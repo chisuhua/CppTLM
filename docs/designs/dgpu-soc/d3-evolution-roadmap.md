@@ -2,7 +2,7 @@
 
 > **版本**: v0.1 DRAFT — 2026-09-30
 > **状态**: 🟡 DRAFT — 待评审（季度复审产物）
-> **承接**: [D-AXI v1.4 §6-7 遗留议题](../pcie/driver-visible-minimal-soc.md) + [ADR-DGPU-07 演进 seam](../../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) + [ADR-DGPU-10 backing 字段命名](../../adr/ADR-DGPU-10-backing-naming-convention.md)
+> **承接**: [D-AXI v1.4 §6-7 遗留议题](../../pcie/driver-visible-minimal-soc.md) + [ADR-DGPU-07 演进 seam](../../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md) + [ADR-DGPU-10 backing 字段命名](../../adr/ADR-DGPU-10-backing-naming-convention.md)
 > **Owner**: CppTLM Team
 > **配套**: [D-AXI v1.4 §6 遗留议题表](#6-v14-遗留议题与-d3-收编)
 
@@ -10,7 +10,7 @@
 
 > 本节不是新内容，是对当前 D3 路线图与未来 OpenSpec 变化关系的指针声明。
 
-D3b-1 (VramControllerTLM 集成) 当前描述路径 `pcie_memory_device.cc::handle_slave_port() ↔ backing_ptr_` (L95) 在 Chub change 实施后将**过时**——Chub change 提议**完全移除 `PcieMemoryDevice`**,driver BAR2 路径改走 `Chub.noc_master_out → SocInternalNoc → VramControllerTLM.req_in_` (per [cpptlm-dgpu-soc-control-hub design.md §6.2](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))。
+D3b-1 (VramControllerTLM 集成) 当前描述路径 `pcie_memory_device.cc::handle_slave_port() ↔ backing_ptr_` (L95) 在 Chub change 实施后将**过时**——Chub change 提议**完全移除 `PcieMemoryDevice`**,driver BAR2 路径改走 `Chub.noc_master_out → SocInternalNoc → VramControllerTLM.req_in_` (per [cpptlm-dgpu-soc-control-hub design.md §6.2](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))。
 
 **预期 D3b 修订时点**: Chub change 实施完成后 (估时 21-30d), 本路线图 D3b 章节会从"插 VramControllerTLM 于 PcieMemoryDevice 与 backing_ptr_ 之间"修订为"插 VramControllerTLM 于 Chub 之后 + SocInternalNoc 之后",D3b-1 路径描述整体改写。
 
@@ -66,7 +66,7 @@ D3 = D-AXI 完成后的下一阶段演进。围绕 3 个核心目标：
 | **D3a-2** MemoryTLM capacity 同步 | §6 行 3: `capacity_gb=1` vs `vram_size_=8GB` | D3a-1 完成后 | ⏳ 待启动 (D3a-1 Path A 后) |
 
 **D3a-1 实施要点(Path A 彻底重构)**：
-- ✅ **2026-10-03 完成** — 详见 [`openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/`](../../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/) + [`docs/pcie/display-device-mvp.md §v1.2`](../../pcie/display-device-mvp.md)
+- ✅ **2026-10-03 完成** — 详见 [`openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/`](../../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-injection-refactor/) + [`docs/pcie/display-device-mvp.md §v1.2`](../../pcie/display-device-mvp.md)
 - **位置**: `dgpu_board_shell.cc::bind_display_backings()` 注入点（与 `bind_memory_backings` 并列）
 - **接口**: `set_backing_view(ptr, size)` (per ADR-DGPU-10 owner/injected 两级),与 PcieMemoryDevice 精确镜像 *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, 此镜像描述不再适用)*
 - **冻结面保护**: `pcie_display_device.hh` 仅删字段 + 新增方法,签名级兼容;`cpptlm_emulator.h` 零修改
@@ -96,7 +96,7 @@ D3 = D-AXI 完成后的下一阶段演进。围绕 3 个核心目标：
 
 | 子轨 | 模块 | 依赖 |
 |------|------|------|
-| **D3b-1** VramControllerTLM | 继承 `MemoryTLM`, 加行缓冲 + bandwidth 上限 | D-AXI v1.4 seam (`handle_slave_port ↔ backing_ptr_`) *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, 该 seam 不再适用, per [control-hub design.md §6.2](../../../openspec/changes/cpptlm-dgpu-soc-control-hub/design.md))* |
+| **D3b-1** VramControllerTLM | 继承 `MemoryTLM`, 加行缓冲 + bandwidth 上限 | D-AXI v1.4 seam (`handle_slave_port ↔ backing_ptr_`) *(v0.6 supersede: Chub change 实施后, PcieMemoryDevice 移除, 该 seam 不再适用, per [control-hub design.md §6.2](../../../openspec/changes/archive/2026-10-19-cpptlm-dgpu-soc-control-hub/design.md))* |
 | **D3b-2** MemoryClusterTLM | 多通道 HBM 控制器 | D3b-1 |
 | **D3b-3** GMMU PoC | 7 能力最小实现 (per ArchForge GMMU SSOT) | G3 gate 通过 |
 | **D3b-4** StreamingMultiprocessor | SM 完整实现 (supersede 当前 stub) | D3b-3 (GMMU 提供地址翻译) |
@@ -124,7 +124,7 @@ D3 = D-AXI 完成后的下一阶段演进。围绕 3 个核心目标：
 
 | §6 议题 | D3 收编计划 (本草案) | 实际子轨 | 状态 |
 |---------|---------------------|----------|------|
-| **D1 PcieDisplayDevice 32MB FB 同构** | ✅ D3a-1 实施 (Path A) | D3a-1 Path A | ✅ **2026-10-03 已收编** ([OpenSpec change](../../../openspec/changes/cpptlm-dgpu-d3a1-display-injection-refactor/) + [`docs/pcie/display-device-mvp.md §v1.2`](../../pcie/display-device-mvp.md)) |
+| **D1 PcieDisplayDevice 32MB FB 同构** | ✅ D3a-1 实施 (Path A) | D3a-1 Path A | ✅ **2026-10-03 已收编** ([OpenSpec change](../../../openspec/changes/archive/2026-10-05-cpptlm-dgpu-d3a1-display-injection-refactor/) + [`docs/pcie/display-device-mvp.md §v1.2`](../../pcie/display-device-mvp.md)) |
 | **BAR1 doorbell offset 0x10010000 > BAR1 16MB 实窗** | ❌ **维持现状，不修** | — | 已知限制(deferred) |
 | **MemoryTLM `capacity_gb=1` vs `vram_size_=8GB` 交互** | ✅ D3a-2 评估 | D3a-2 (选项 1/2) | ⏳ 待启动 |
 
@@ -187,7 +187,7 @@ D3a-1 完成        └─→ D3a-2 (MemoryTLM capacity) [1d]
 
 ## 8. 参考文档
 
-- D-AXI v1.4 §6-7 (遗留议题 + D3 演进 seam) — [docs/pcie/driver-visible-minimal-soc.md](../pcie/driver-visible-minimal-soc.md)
+- D-AXI v1.4 §6-7 (遗留议题 + D3 演进 seam) — [docs/pcie/driver-visible-minimal-soc.md](../../pcie/driver-visible-minimal-soc.md)
 - ADR-DGPU-07 (演进 seam) — [docs/adr/ADR-DGPU-07-minimal-soc-evolution-seam.md](../../adr/ADR-DGPU-07-minimal-soc-evolution-seam.md)
 - ADR-DGPU-10 (backing 字段命名 owner/injected) — [docs/adr/ADR-DGPU-10-backing-naming-convention.md](../../adr/ADR-DGPU-10-backing-naming-convention.md)
 - ArchForge GMMU SSOT — `ArchForge/docs/architecture/20-gmmu-evolution-roadmap.md` (跨仓镜像)

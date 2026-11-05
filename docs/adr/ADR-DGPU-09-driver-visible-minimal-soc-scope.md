@@ -277,7 +277,7 @@ grep -rn "coherence\|cache_coherent\|dma_coherent" include/tlm/ src/tlm/ 2>/dev/
 - D-AXI design.md §1 系统拓扑 + §13 不在范围
 - D-AXI spec.md Requirement "驱动视角完整最小设备" + "15 ABI Functions Unchanged" + "Coherence 域边界"
 - D-AXI tasks.md P0-2 v1.4 延期声明
-- 实施笔记: [../../pcie/driver-visible-minimal-soc.md §1 范围 + §6 遗留议题](../../pcie/driver-visible-minimal-soc.md)
+- 实施笔记: [../../pcie/driver-visible-minimal-soc.md §1 范围 + §6 遗留议题](../pcie/driver-visible-minimal-soc.md)
 - 配套 ADR: ADR-DGPU-05 (B7 单一 VRAM 所有权), ADR-DGPU-06 (B2 wire-format 边界), ADR-DGPU-07 (D3-D5 演进 seam), ADR-DGPU-08 (ABI 冻结)
 
 ---
