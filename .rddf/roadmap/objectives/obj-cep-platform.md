@@ -13993,6 +13993,83 @@ AC = `SU#4 §②` 六条硬约束 + `SU#4 §⑤` 全部判据;实现序 = ① �
 
 ---
 
+### Entry #227 — 2026-11-05 [build](H3 v2「一致性 × 完成域」复合装置落地 —— B4 达成证据载体产出)
+
+**主题**:落地 `ADR-CEP-06` **SU#4** 与 improvement `cep-b4-evidence-device` —— 把 h3 装置升级为
+「一致性 × 完成域」复合装置,使**单 run 同时实测两类违例类**(`deadlock_violations` + `memory_violations`)。
+**角色**:architect(SU#4 裁决 + 双审签发)· planner(Entry #226 授权 + 立项)· builder(装置 + 产出 + 闸)。
+**性质**:装置级实现;⛔ **不宣告 B4 达成**(AC-9 architect 实现评审是前置 gate)。
+
+**① 装置(新建 1 件 + 复用 3 件既有测试件)**
+
+| 件 | 复用/新建 | 作用 |
+|---|---|---|
+| `cep_cd::CompletionDomainModel` | **复用** h4 装置 | 完成域语义 + 循环等待死锁机理(错标 ⇒ 死锁) |
+| `SwmrDataValueDetector` / `DcohSymmetric` / `HomeNodeModel` | **复用** h3 同款 | SWMR + data-value 不变量 + 漏探(superset) |
+| `cep_exp::ProgressWatchdog` | **复用** harness | 活性判定(in-flight 非空 + 连续 N cycle 无 retire) |
+| `test/cep_consistency_completion_model.hh` | **新建** | 编排 + **实例级身份仪表化**(`(txn_id, addr, node)`)+ 观测键导出 + 装置合格性判定 |
+
+⇒ ⛔ **不是「两件实验穿一件风衣」**:承载内存不变量检查的事务**同时**受完成域阻塞支配 ⇒ 约束 5 以**实例级**观测键交集判定。
+
+**② 实测(正控 1200 coherence 事务)**
+
+| 指标 | 实测 |
+|---|---:|
+| `deadlock_violations` | **0**(**实测**,非 `not-collected`) |
+| `memory_violations` | **0**(`swmr=0` / `data_value=0`) |
+| 漏探(superset) | **0**(分支 1 同参数**重证**) |
+| 在途峰值 / 停滞上限 | **3** / 2(阈值 200) |
+| 同一事务流覆盖率 | **1.000000**(1200/1200 实例)+ 地址级重叠 = 是 |
+| 负控 ×3 | 错标 ⇒ **死锁=1** · SWMR 注入 ⇒ swmr=1197 · 过期读 ⇒ data_value=1199 |
+| 耦合探针(阻塞开/关) | `swmr` Δ=**+0** · `data_value` Δ=**+0**(与预测锚一致) |
+
+⇒ `report.html` 渲染 **「✓ 一致性闸门通过」** —— **该态的首个真实实例**(此前仅合成 fixture F1 覆盖)。
+
+**③ 产出层硬约束 + 观测键**
+
+- 装置合格性**四条件**(死锁检测力 / 内存检测力 / 同一事务流 / watchdog 非空洞)**缺一 ⇒ `EmitResult.fatal` ⇒ 拒绝产出**(⛔ 不登记结论);
+- 变体:`blocking_off`(探针的「阻塞关」侧)· `degenerate_expect_fatal`(AC-10 停手条款程序化:退化装置 ⇒ fatal 且**未写任何文件**);
+- `metrics.json` 顶层增 `observation_keys`(实例级/地址级)⇒ **13 必纳 metric 语义零变**;
+- 预测锚 `experimental/predictions/h3_coupling_v2.json`(时间戳 + 实现 commit `a3384a86`;探针校验其为 HEAD 祖先且锚 mtime ≤ run mtime ⇒ **事后补写预测不成立**)。
+
+**④ 既有证据未被扰动(实测比对)**
+
+`h2` / `h4` / `h6` 的 13 必纳 + 声明集**逐项不变** ✅(`cep_completion_domain_model.hh` 新增的阻塞开关**默认 true** ⇒ h4 证据链零影响);
+`h3` 的变化即设计意图(`deadlock_violations` 由 `not-collected` → 实测 0;延迟语义改为**在途窗口**,v1/v2 ⛔ 不可比)。
+
+**⑤ 两道新增 ctest 闸**
+
+| 闸 | 内容 |
+|---|---|
+| `cep_b4_observation_keys_check` | 观测键须落 metrics.json **且** trace.h5;实例级覆盖率 = 1.0(退化装置判红) |
+| `cep_b4_coupling_probe` | 阻塞开/关两份**独立** metrics.json 的 Δ 须与**预测锚**一致;锚前置校验(无锚不产出) |
+
+**⑥ AC 映射(improvement `cep-b4-evidence-device`)**
+
+AC-1a/1b ✅ · AC-2 ✅ · AC-3 ✅ · AC-4 ✅ · AC-5 ✅(内存层 + 文件层)· AC-6 ✅ · AC-7 ✅ · AC-8 ✅(v2 重证 + 2026-11-04 文档只勘误)
+· **AC-9 ⏳ 未完成** —— **architect 实现评审**(装置含真实阻塞机制,非「恒假 watchdog + 默认 0」);评审记录落 `.rddf/reviews/`;**B4 回填的前置 gate**
+· AC-10 ✅(退化形态 fixture: fatal + 无文件产出)
+
+**⑦ 验收(实测)**
+
+`[cep][b4]` **5 cases / 45 assertions** 全绿 · `[cep]` **394 cases / 8539 assertions** 全绿 ·
+`cep_b4_observation_keys_check` / `cep_b4_coupling_probe` ctest 双绿 ·
+官方 4 组重跑(h2/h3/h4/h6 全 4 件套 + `--check` 通过;h3 额外过文件层观测键断言)·
+`cep_prereg_drift_check` rc=0 · commits:`a3384a86`(实现)+ `98303c2d`(预测锚)
+
+**⑧ 后续(顺序硬)**
+
+1. **architect 实现评审(AC-9)** ⇒ 结论落 `.rddf/reviews/` ⇒ 通过后 **B4 方可回填**;
+2. **planner 落表**:§9.1 ① H3 **分支 2** 由「⏭ 未测量」更新为实测 0;§6.2 **B4** 回填 ✅(两项均在 AC-9 之后);
+3. ⛔ 上述两步未完成前,**B4 维持 ⏳ 未达成**、H3 分支 2 在表上维持「未测量」。
+
+**⑨ 关联**: **#226**(`scope-change`:预登记收缩 + 冻结授权 + 授权先行)· **#225 ⑧**(B4 结构性不可达的发现与路由)· **#223**(H4 装置先例)· **#222**(负控 = 装置合格前提)· **#217**(B4 两级口径)·
+`ADR-CEP-06` **SU#4**(+ 勘误)· **SU#1 §④** · **SU#3** · improvement `cep-b4-evidence-device` ·
+`docs/validation/2026-11-05-cep-b4-evidence-device.md`(新)· `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md` §10(勘误)·
+`test/cep_consistency_completion_model.hh`(新)· `test/test_cep_b4_evidence_device.cc`(新)· `scripts/test/cep_b4_coupling_probe.sh`(新)· `scripts/test/cep_b4_observation_keys_check.py` / `.sh`(新)
+
+---
+
 ---
 
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)

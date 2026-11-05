@@ -574,6 +574,21 @@ add_test(NAME cep_ic3_report_states_check
 set_tests_properties(cep_ic3_report_states_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# H3 v2「一致性 × 完成域」复合装置的两道文件层闸(per ADR-CEP-06 SU#4 §② 约束 5/6)
+#  · 观测键:实例级/地址级键集须落 metrics.json **且** trace.h5,覆盖率 = 1.0
+#    (退化装置「两段拼接」⇒ 交集为空 ⇒ 判红)
+#  · 耦合探针:阻塞开/关两份独立 metrics.json 的内存违例计数 Δ 须与**预测锚**一致
+#    (锚须先于 run 产出;⛔ 无锚不产出)
+add_test(NAME cep_b4_observation_keys_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_b4_observation_keys_check.sh)
+set_tests_properties(cep_b4_observation_keys_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+add_test(NAME cep_b4_coupling_probe
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_b4_coupling_probe.sh)
+set_tests_properties(cep_b4_coupling_probe
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check

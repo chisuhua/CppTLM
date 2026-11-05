@@ -173,8 +173,6 @@ bash scripts/test/cep_experiment_run.sh
 | `trace.h5` 工具链 | 本机原无 HDF5；`h5py` 已装（3.16.0）。**仓内无 CI 承诺** ⇒ 新环境需重装，属可复现性风险 |
 | HDF5 内容语义 | 现为 run 级摘要；若后续要做逐周期 trace，需在模型里加事件流 |
 
----
-
 ## 9. 复现
 
 ```bash
@@ -183,3 +181,22 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j4 --targ
 ./build/bin/cpptlm_tests "[cep][exp]"          # 26 cases / 1319 assertions
 bash scripts/test/cep_experiment_run.sh        # 4 件套 + 契约校验
 ```
+
+---
+
+## 10. 勘误(2026-11-05,per 台账 **Entry #226** + `ADR-CEP-06` **SU#4**)—— H3 装置升级为 v2
+
+> ⚠️ **本文只勘误不重跑** —— 下述事实由 **H3 v2 装置**同参数**重证**,
+> 逐字来源 + 口径限定 + 机器锚见 `docs/validation/2026-11-05-cep-b4-evidence-device.md`。
+
+| 项 | 本文档(v1,2026-11-04) | 现行(v2,2026-11-05) |
+|---|---|---|
+| H3 **分支 1**（`memory_violations == 0`） | ✅ 1200 事务 · swmr=0 · data_value=0 | ✅ **同参数重证**(1200 事务 · swmr=0 · data_value=0 · 漏探=0)—— 数值不变 |
+| H3 **分支 2**（`deadlock_violations == 0`） | ⏭ **未测量**(本装置无死锁检测器) | ✅ **首次实测 0**(v2 复合装置:一致性 × 完成域合流)⇒ 该分支不再「未测量」 |
+| 装置形态 | 纯一致性装置(**v1**) | **v2** 复合装置(周期化事务流 + 真实在途窗口 + 实例级观测键) |
+| 延迟语义 | home 侧 lookup 成本(avg 14) | **在途窗口**(完成周期 − 签发周期,avg 2)⇒ ⛔ **v1/v2 不可比** |
+| v1 形态可否再跑 | —— | ⛔ **不保留为可跑变体**(其 `deadlock=not-collected` 与收缩后的 H3 预登记互斥,per SU#4 §① 流程闸)⇒ 可追溯性由**重证**承担 |
+
+⚠️ **H2 / H6 结论不受影响**:两装置零触碰,13 必纳 metric + 声明集**逐项不变**(实测比对)。
+
+---
