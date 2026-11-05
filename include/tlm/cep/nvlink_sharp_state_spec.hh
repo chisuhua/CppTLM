@@ -258,6 +258,34 @@ namespace tlm {
                 return region_hit && epoch_committed && coherence_atomic_hit;
             }
 
+            // ⚠️ **R1/R2 分流 ↔ R5 fail-stop 的交叉锁**(2026-11-05,per architect 裁决 oracle 复核)
+            // —— 把「R1/R2 的命中判定」与「R5 的 fail-stop 检出」钉成**同一输入语义**:
+            //    fail-stop 命中 ⟺ (R1/R2 分流判 DiverT) ∧ (coherence atomic 命中)
+            // ⇒ **语义漂移防护**:若将来 `classify_at_fabric_ingress` 与 `is_fail_stop` 的
+            //    `region_hit` / `epoch_committed` 语义分叉(两者独立演化)⇒ 本锁**立即红**。
+            // ⇒ 关闭 H5 假设「5 条规则**可靠区分**」的系统级含义的演化漂移面
+            //   (per `objective §9.1` ① 表 H5 判据;证据边界 = **函数级**,非协议级/流量级)。
+            /// **交叉锁的可执行形态**(见上方注释)—— 用 constexpr 函数 + static_assert
+            /// (类作用域内 static_assert 不能引用函数参数名 ⇒ 须包一层)。
+            static constexpr bool fail_stop_matches_ingress_split(bool region_hit,
+                                                                 bool epoch_committed,
+                                                                 bool coherence_atomic_hit) noexcept {
+                return is_fail_stop(region_hit, epoch_committed, coherence_atomic_hit) ==
+                       (classify_at_fabric_ingress(region_hit, epoch_committed) ==
+                            IngressDecision::DiverT &&
+                        coherence_atomic_hit);
+            }
+            static_assert(fail_stop_matches_ingress_split(true, true, true),
+                          "R5 fail-stop 的输入语义必须与 R1/R2 分流一致(交叉锁)");
+            static_assert(fail_stop_matches_ingress_split(false, true, true),
+                          "R5 fail-stop 的输入语义必须与 R1/R2 分流一致(交叉锁)");
+            static_assert(fail_stop_matches_ingress_split(true, false, true),
+                          "R5 fail-stop 的输入语义必须与 R1/R2 分流一致(交叉锁)");
+            static_assert(fail_stop_matches_ingress_split(true, true, false),
+                          "R5 fail-stop 的输入语义必须与 R1/R2 分流一致(交叉锁)");
+            static_assert(fail_stop_matches_ingress_split(false, false, false),
+                          "R5 fail-stop 的输入语义必须与 R1/R2 分流一致(交叉锁)");
+
             // ═════════════════════════════════════════════
             //  ⑤ 跨平面 ordering A/B/C/D(**可判定**谓词)
             // ═════════════════════════════════════════════

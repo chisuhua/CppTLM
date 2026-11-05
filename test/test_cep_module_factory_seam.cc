@@ -143,6 +143,51 @@ TEST_CASE("[cep][module-factory-seam] CacheTLM 零协议知识(per ADR-CEP-15 IC
     }
 }
 
+TEST_CASE("[cep][module-factory-seam] H1:stub 自创建起**前向 0 diff**(per ADR-CEP-05 决策 1)",
+          "[cep][module-factory-seam]") {
+    // ⚠️ 2026-11-05(Entry #221;per architect 裁决 oracle 复核):
+    //   `stub_cache_core.hh` 在 CEP 基线 `4ae6bfc4` 处**不存在**(创建于 `7a2efe23` 队列 #3)
+    //   ⇒ 用 `kCepBaselineCommit` 查它**必然恒红** ⇒ 必须用 **per-file 基线**(自创建起前向冻结)。
+    //   ⇒ 「stub 0 diff」这句判据的可落地形态就在这里。
+    constexpr const char* kStubCreatedCommit = "7a2efe23";
+    const auto stub = "include/tlm/cep/stub_cache_core.hh";
+    INFO("stub 自创建 commit 不存在");
+    REQUIRE(run_git("cat-file -e " + std::string(kStubCreatedCommit) + "^{commit}").empty());
+    INFO("stub 自创建起被改动");
+    REQUIRE_FALSE(modified_since(stub, kStubCreatedCommit));
+}
+
+TEST_CASE("[cep][module-factory-seam] H1:全部 adapter 与缓存核心**零耦合**(不构造/不持有 stub)",
+          "[cep][module-factory-seam]") {
+    // ⚠️ 2026-11-05(Entry #221):H1 判据原文「全部 adapter 共用同一 stub」**字面为假**
+    //   (实测:8 个 adapter **无任何一个**构造/持有 StubCacheCore —— 各 adapter 持有
+    //   **协议自身**的状态语义,与 stub 的 5 态投影是「两个不同的东西」,per `ADR-CEP-05:38`
+    //   「stub = 客户端侧协议状态投影」的签发定位)。
+    //   ⇒ 订正后的可判定形态 = **adapter ↔ 缓存核心零耦合**。
+    //   ⇒ 判定方式:逐个 adapter 头文件断言**零构造 / 零持有**(注释级提及不计)。
+    const std::vector<std::string> adapters = {
+        "include/tlm/cep/chi_rnf_adapter.hh",    "include/tlm/cep/cxl_cache_adapter.hh",
+        "include/tlm/cep/cxl_dcoh_adapter.hh",   "include/tlm/cep/mesif_adapter.hh",
+        "include/tlm/cep/moesi_gpu_adapter.hh",  "include/tlm/cep/nvlink_adapter.hh",
+        "include/tlm/cep/tilelink_c_adapter.hh", "include/tlm/cep/ualink_adapter.hh"};
+    for (const auto& a : adapters) {
+        const auto text = read_file((repo_root() / a).string());
+        INFO("adapter 头文件缺失: " << a);
+        REQUIRE_FALSE(text.empty());
+        // 去掉注释后再查 —— 否则注释里的「同 StubCacheCore 的定位」会假阳性
+        const std::string code = cpptlm::cep::strip_comments(text);
+        INFO("adapter 构造/持有 StubCacheCore: " << a);
+        REQUIRE(code.find("StubCacheCore") == std::string::npos);
+        REQUIRE(code.find("stub_cache_core") == std::string::npos);
+    }
+    // ⚠️ 防「默认绿」自证:本用例本身若因扫描逻辑写错而恒绿 ⇒ 无价值。
+    //   ⇒ 用一个**已知含 stub 引用**的正控文件验证扫描逻辑有牙。
+    const auto positive =
+        read_file((repo_root() / "include/tlm/cep/protocol_engine_base.hh").string());
+    INFO("正控:protocol_engine_base.hh 应含 StubCacheCore 引用(证明扫描有牙)");
+    REQUIRE(positive.find("StubCacheCore") != std::string::npos);
+}
+
 TEST_CASE("[cep][module-factory-seam] 冻结面守门:基线 ref 必须存在且可达",
           "[cep][module-factory-seam]") {
     // 基线钉死在 CEP 起始 commit;若该 commit 被 rebase 掉,守门会**抛异常**(红),

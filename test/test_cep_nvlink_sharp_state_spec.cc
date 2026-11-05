@@ -236,6 +236,13 @@ TEST_CASE("NSS-05:fail-stop —— 命中 + epoch 已 commit + coherence atomic 
     CHECK(nvs::is_fail_stop(false, true, true) == false); // 未命中 ⇒ 非 fail-stop
     CHECK(nvs::is_fail_stop(true, false, true) == false); // epoch 未 commit ⇒ 非 fail-stop
     CHECK(nvs::is_fail_stop(true, true, false) == false); // 无 coherence atomic ⇒ 非 fail-stop
+    // ⚠️ 2026-11-05(Entry #221,per architect 裁决 oracle 复核):`is_fail_stop` 有 **3 个 bool 输入
+    //   = 8 种组合**;此前只断言 4 种 ⇒ 登记文档若写「穷尽证明」即**超出证据**。
+    //   ⇒ 补齐**剩余 4 种组合**(每种至少一个输入为 false ⇒ 期望 false)。
+    CHECK(nvs::is_fail_stop(false, false, true) == false);  // 未命中 + 未 commit
+    CHECK(nvs::is_fail_stop(false, true, false) == false);  // 未命中 + 无 coherence atomic
+    CHECK(nvs::is_fail_stop(true, false, false) == false);  // 未 commit + 无 coherence atomic
+    CHECK(nvs::is_fail_stop(false, false, false) == false); // 全不满足
 
     // 计数器**形状**(载体不持有状态):恰 2 字段 —— 可寻址键(group + 区域)+ 计数
     nvs::DivertCounter c;

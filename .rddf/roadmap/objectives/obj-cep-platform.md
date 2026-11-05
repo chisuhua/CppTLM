@@ -654,14 +654,14 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 | # | 假设 | 关联 Stage | 判据(逐条) | 依赖观测 | 观测形态 | 成功判据 | 当前 verdict |
 |---|------|------------|------------|----------|----------|---------|--------------|
-| **H1** | 协议抽象层(seam 在 L5↔L4)确实让缓存核心免于协议改动 | Stage 1 | 全部 adapter 只改 adapter,stub 0 diff(**adapter 实例计数口径见 `07 号 §5.1.1`;本表不复述具体数**,per Entry #22) | CacheTLM 源文本**零协议标识符** + 全部 adapter **共用同一 stub** | **契约级断言**(静态扫描,**非** metric) | 两侧判据均成立 | 🟡 **有契约级证据,未以假设结论形式登记**(`test_cep_module_factory_seam.cc` + `test_cep_adapter_schema_contracts.cc`) |
+| **H1** | 协议抽象层(seam 在 L5↔L4)确实让缓存核心免于协议改动 | Stage 1 | ~~全部 adapter 只改 adapter,stub 0 diff~~(**adapter 实例计数口径见 `07 号 §5.1.1`;本表不复述具体数**,per Entry #22)⇒ **经 architect 裁决订正(2026-11-05,per 台账 **Entry #221**)**:**缓存核心零协议改动**(`cache_tlm.hh/.cc` 相对 CEP 基线 `4ae6bfc4` **0 diff** + CacheTLM 源文本**零协议标识符`)**且** **adapter ↔ 缓存核心解耦**(全部 **8** 个 adapter 源文本**不含** `StubCacheCore`/`stub_cache_core` 的构造/持有/调用,注释级提及不计)**且** `stub_cache_core.hh` **自创建 commit `7a2efe23` 起前向 0 diff**。⚠️ **订正理由**:原文按**落选方案 (β)** 措辞写(签发的是 **(α)**,per `ADR-CEP-05` 决策 1 + `:38`「stub = 客户端侧协议状态投影」)⇒ 「共用同一 stub」**字面为假**(实测 8 个 adapter **无一**构造/持有 stub)且**无守门** ⇒ 属起草笔误,**纠错非弱化**(机械强度 1 条无守门 → **4 类断言 + 8 adapter 逐一**)。逐字来源链见 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` **§1**;订正授权与理由见同文件 **§2** | CacheTLM 源文本**零协议标识符** + `cache_tlm.*` 基线 **0 diff** + **8 adapter 逐一零 stub 耦合** + `stub_cache_core.hh` **前向 0 diff** | **契约级断言**(静态扫描,**非** metric) | 两侧判据均成立 | ✅ **成立**(2026-11-05,per 台账 **Entry #221**;证据 + 3 条反向 fixture 见 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md`) |
 | **H2** | 集中目录(CHI HN-F)vs 分布(DCOH)vs 广播的 latency 差异可量化 | Stage 2 | 3 策略延迟差异 > 20% | `avg_latency_cycles`(3 策略) | **必纳 metric** | 两两差异 > 20% | ✅ **成立**(4 / 14 / 18 cycles ⇒ 250% / 28.6% / 350%) |
 | **H2** | *(同上)* | Stage 2 | *directory_misses 对比* | `directory_misses` | **必纳 metric** | *3 策略 miss 差异* | ⏭ **未测量** —— ⛔ **全仓无产出者**(实测:仅 schema / tools / 测试断言命中,无 emit 赋值点)⇒ 该半支 ⏭ **未测量**,⛔ **不得**计入 H2 结论(⚠️ **不是**「不成立」—— 「不成立」是 ❌ 的专有语义 = 已实测未达标;本例是**从未被测量**) |
 | **H3** | Sharer Tracker caps 的 `CONSERVATIVE` 完备性契约在 CXL 对称下无漏 snoop | Stage 2 | 0 违例(1000+ 事务)· **分支 1** | `memory_violations`(含 `memory_violation_kinds` 的 SWMR + data-value 双分桶) | **必纳 metric** | == 0 | ✅ **成立**(1200 事务 · swmr=0 · data_value=0) |
 | **H3** | *(同上)* | Stage 2 | *分支 2* | `deadlock_violations` | **必纳 metric** | == 0 | ⏭ **未测量** —— ⚠️ **h3 的 emit 从未设 `deadlock_detected`**(实测:仅 h6 设)⇒ 该分支**从未被测量**,⛔ **不继承 pass** |
 | **H3** | *(同上)* | Stage 2 | *漏探(superset)判定* | `superset_violations` | ⚠️ **非必纳 metric**(落在 `verification_scope` 文本内,**不在** `metrics.json` 的 13 字段) | == 0 | ✅ **成立**(0 漏探)—— ⚠️ **该观测不在 metrics.json 契约面** ⇒ 不受 SU#1 的 `not-collected` 机制覆盖 |
 | **H4** | 完成域判别规则(requester-scoped vs group-scoped)足以同时容纳 coherence + collective | Stage 1~2 | 两类流同实验内无死锁 | 同实验内 coherence 流 + collective 原语;判别由 `evaluate_completion_domain` 承担 | ⏳ **待定**(运行期装置未建) | 两类流同实验内无死锁 | ⏭ **未做实验** —— 现有 `CP-05` 是**静态源文本扫描**,**不**是「同实验内跑两类流」 |
-| **H5** | SHARP 5 条防误分类规则(R1-R5)能可靠区分 SHARP atomic vs cache-coherent atomic | Stage 2 | 0 误分类 | `divert_count`(divert 计数器形状)+ **fail-stop** 判据(R5) | **契约级断言**(`nvlink_sharp_state_spec.hh` 的 `is_fail_stop` / `divert_counter_field_count`) | 0 误分类 | 🟡 **有契约级证据,未以假设结论形式登记**(`test_cep_nvlink_sharp_state_spec.cc` NSS-02/05) |
+| **H5** | SHARP 5 条防误分类规则(R1-R5)能可靠区分 SHARP atomic vs cache-coherent atomic | Stage 2 | 0 误分类 | `divert_count`(divert 计数器形状)+ **fail-stop** 判据(R5) | **契约级断言**(`nvlink_sharp_state_spec.hh` 的 `is_fail_stop` / `divert_counter_field_count`) | 0 误分类 | ✅ **成立**(2026-11-05,per 台账 **Entry #221**)—— ⚠️ **证据边界 = 函数级**:`is_fail_stop` **3 bool 输入 = 8/8 组合显式断言**(2026-11-05 补齐 4 条,此前 4/8 ⇒ 「穷尽」是 overstated)+ `classify_at_fabric_ingress` **2 输入 4/4 穷尽** + **R1/R2 ↔ R5 交叉锁**(`static_assert` × 5,语义分叉即编译红)。⛔ **非**协议级/仿真流量级证明(本仓**无** NP atomic 注入实验)⇒ 引用时**不得**表述为「已证明协议层无误分类」。逐字来源 + 口径限定见 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` **§1 / §4** |
 | **H6** | VC 隔离(collective 独立 VC)确实避免协议级死锁 | Stage 3 | 0 死锁 + collective stall 不占 coherence VC | `deadlock_violations` + `vc_stall_per_vc` + `collective_stalls` | **必纳 metric**(+ `vc_stall_per_vc` 为**可选** metric) | 0 死锁 + collective stall 不占 coherence VC | ✅ **成立**(独立 VC 死锁=0 · 共享 VC 负控 backlog=2000 死锁=1) |
 | **H7** | stub cache 性能模型(固定命中率 + 固定延迟)足以支撑 early-stage 取舍判断 | Stage 1 | 延迟偏差 < 15% | 与 gem5 Ruby / ArchForge 参考模型对拍(per R7) | **外部对拍**(跨仓 trace 比对,**非**本仓 metric) | 偏差 < 15% | ✅ **成立**(常数档 PASS 3/3 + 同源 trace 档 PASS 5/5) |
 | **H8** | 实验 4 件套 + 13 metric 足以让跨协议取舍决策可复现 | Stage 3 | 3 组 A/B 对比产出可读结论 | 4 件套 + 13 必纳 metric + `tools/recommend.py` 输出建议 | **必纳 metric**(经 A/B 两侧对比) | 3 组 A/B 对比产出可读结论 | ⏭ **未做** —— 工具链已齐(`ab_compare.py` / `recommend.py` / `aggregate.py` / `plot.py`,per Entry #213)⇒ 缺 **3 组 A/B 数据** |
@@ -13473,6 +13473,85 @@ objective 的 B3 拆分 + 2 份冻结面文档的追加式同步 + 台账登记�
 **#218**(§9.1 改造 + SU#2 + §⑤-2 builder 域落地)· **#217**(C1/C2 裁决 + 6 条 SHOULD_FIX 处置)·
 **#216** / **#215** / **#214** / **#213** · `ADR-CEP-06` **SU#1** + **SU#2** ·
 `07 号` Status Update 2026-11-04(#2) · `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`
+
+---
+
+### Entry #221 — 2026-11-04 [plan](H1 / H5 的**结论登记** —— 判据订正 + 证据补齐 + B7 计数 4/8 → **6/8**)
+
+**主题**:落地 Entry #219 ⑥ 剩余任务 #7 —— 把 `objective §9.1` ① 表里 H1 / H5 的 verdict 从
+🟡「有契约级证据,未以假设结论形式登记」转成 ✅「成立」。
+**角色**:architect(裁决)· builder(证据补齐)· planner(表落 + 本条)。
+**性质**:**已完成归档之后的订正**;⛔ **不改**任何已归档 change 的产物;⛔ **不重跑**已归档实验;
+⛔ **不改** `objective §9` 的判据**原文**(原文永远停在 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` §1)。
+
+**① H1 裁决:成立,但**判据措辞订正**(architect 裁决 + oracle 复核)**
+
+**订正的三条实测依据**:
+| # | 依据 | 实测 |
+|---|---|---|
+| ① | 原判据第②半「全部 adapter 共用同一 stub」**字面为假** | `grep "StubCacheCore\|stub_cache" include/tlm/cep/{chi_rnf,mesif,moesi_gpu}_adapter.hh \| grep -v "^.*://"` ⇒ **零命中**;其余 5 个 adapter 连注释都没提,文件头写「状态机 = **协议自身的** N 态语义(与 Stub Cache 的 5 态投影是**两个不同的东西**)」 |
+| ② | 这是 `ADR-CEP-05` 的**签发形态**,不是缺陷 | 决策 1 = 「**(α) RN 侧投影**」;`:38`「Stub Cache Core **不是缓存性能模型**,而是**客户端侧协议状态投影**」⇒ 各 adapter 持有协议自身状态语义、**不持有** stub = (α) 的实现形态 |
+| ③ | 原判据第③半「stub 0 diff」**无法用既有基线落地** | `stub_cache_core.hh` 在 CEP 基线 `4ae6bfc4` 处**不存在**(创建于 `7a2efe23`)⇒ 用 `kCepBaselineCommit` 查它**必然恒红** ⇒ 必须 **per-file 基线**(自创建起前向冻结) |
+
+⇒ **原判据把「seam 的架构语义」误写成「实现机制」** —— 它按**落选方案 (β)** 的措辞写,签发的是 (α) ⇒ **纠错,非弱化**
+(机械强度:1 条无守门 ⇒ **4 类断言 + 8 adapter 逐一 + 2 条反向 fixture**)。
+
+**② H5 裁决:成立,证据边界 = 函数级**
+
+⚠️ **oracle 复核纠正了我的一处 overstated**:我原以为 `is_fail_stop` 的 4 条断言已**穷尽** ——
+实测它是 **3 个 bool 输入 = 8 组合**,此前只断言 **4/8** ⇒ 「穷尽」不成立 ⇒ **已补齐 4 条**(现 8/8)。
+
+**③ 证据补齐(builder 域,本轮新增)**
+
+| 产物 | 内容 |
+|---|---|
+| `test/test_cep_nvlink_sharp_state_spec.cc` | NSS-05 补 **4 条**反例组合(`(F,F,T)` / `(F,T,F)` / `(T,F,F)` / `(F,F,F)`)⇒ `is_fail_stop` **8/8** 显式断言 |
+| `include/tlm/cep/nvlink_sharp_state_spec.hh` | 新增 **R1/R2 ↔ R5 交叉锁**(`static_assert` × 5):`is_fail_stop(r,e,c) == (classify_at_fabric_ingress(r,e)==DiverT && c)` ⇒ 两者输入语义**分叉即编译红**(关闭「5 条规则**可靠区分**」的系统级含义的演化漂移面) |
+| `test/test_cep_module_factory_seam.cc` | 新增 **2 个守门用例**:① **stub 前向冻结**(per-file 基线 `7a2efe23`)② **8 adapter 零 stub 耦合**(去注释后逐一断言,**含 1 条自证正控**防恒绿) |
+
+**④ 3 条反向 fixture(实测,判据「因正确原因红」)**
+
+| # | 注入 | 实测红因 |
+|---|---|---|
+| 1 | `classify_at_fabric_ingress` 去掉 `epoch_committed` 条件 | `error: static assertion failed: R5 fail-stop 的输入语义必须与 R1/R2 分流一致(交叉锁)`(**编译红**) |
+| 2 | `chi_rnf_adapter.hh` 注入 `StubCacheCore` 引用 | `FAILED: adapter 构造/持有 StubCacheCore: include/tlm/cep/chi_rnf_adapter.hh` |
+| 3 | `stub_cache_core.hh` 追加一行 | `FAILED: stub 自创建起被改动` |
+
+⇒ 恢复后 `test_cep_module_factory_seam` **238 assertions / 11 cases** 全绿。
+
+**⑤ 新建证据文档**:`docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md`
+—— 结构仿 `2026-11-04-cep-h2-h3-h6-experiments.md`:§1 判据来源(**逐字**,含被订正的 H1 第②半)
+→ §2 H1 判据订正(授权 + 三条依据 + 机械强度对比)→ §3 证据清单(全 file:line)+ 3 条反向 fixture
+→ §4 口径限定(**5 条**,含「H1 的 0 diff 是 per-file 基线语义」+「H5 是**函数级**」)
+→ §5 verdict。⇒ **逐字来源链不断**:原文永远停在 §1,① 表的订正格是 §2 的**派生面**。
+
+**⑥ B7 计数变化**
+
+| 假设 | verdict | 依据 |
+|---|---|---|
+| **H1** | 🟡 → ✅ **成立** | 判据经 §① 订正;证据 + 2 条反向 fixture 见证据文档 §3 |
+| **H5** | 🟡 → ✅ **成立** | 证据边界 = **函数级**(§4.3);R5 8/8 + R1/R2 4/4 + 交叉锁 |
+
+⇒ **§6.2 B7「8 个假设全部有实验结论」:4/8 → 6/8**(H2 / H3 / H6 / H7 + 本次 H1 / H5)。
+⇒ **H4 / H8 仍未测量**(H4 = 运行期装置未建;H8 = A/B 数据未产)⇒ **B7 仍未达成**。
+
+**⑦ 后续动作**
+
+| 序 | 内容 | 归属 |
+|---|---|---|
+| 1 | **H4** 运行期装置(同一实验跑 coherence 流 + collective 原语)—— **预登记必须先于产出**(SU#2 §④)⇒ 先在 `preregistration.json` 增 H4 行(`status: registered` + out_of_scope) | builder |
+| 2 | **H8** 的 3 组 A/B 数据(工具链已齐,per Entry #213)⇒ 同上先增 H8 预登记行 | builder |
+| 3 | H1 / H5 的 🟡 → ✅ 已完成(本条)⇒ §10 无对应残留行 | — |
+
+**⑧ 验收(实测)**:`test_cep_module_factory_seam` **238 assertions / 11 cases** 全绿 ·
+`[cep][nvlink-sharp]` 全绿 · 交叉锁**编译期**验证(分叉 ⇒ 编译红)· 3 条反向 fixture 因正确原因红 ·
+`docs_sync_check --strict` rc=0 · `cep_doc_ref_check --strict` rc=0
+
+**⑨ 关联**: Entry **#219**(architect 完成内容审查 + §10 陈旧同步 + 剩余任务清单)· **#220**(C1 builder 域落地)·
+**#218**(§9.1 改造 + SU#2)· **#217**(C1/C2 裁决)· **#216** / **#215** / **#213** ·
+`ADR-CEP-05`(决策 1 = (α) RN 侧投影 · `:38` 定位澄清)· `ADR-CEP-15`(CacheTLM 对齐边界)·
+`ADR-CEP-06` **SU#1** / **SU#2** · `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` ·
+`docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`(登记先例)
 
 ---
 

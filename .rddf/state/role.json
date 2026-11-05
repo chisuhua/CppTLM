@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T00:37:22Z",
+  "updated_at": "2026-11-05T01:35:45Z",
   "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-03T08:02:16Z",
-      "by": "auto",
-      "reason": "critic 全面审修复的 plan 域(change 4 件套)已闭合 ⇒ 回 builder 修 improvement 的 2 处失实(S5)"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-03T08:56:09Z",
-      "by": "user",
-      "reason": "用户裁决 2026-11-03「切 builder 进 Phase 1」⇒ 实现队列 #13 规约层载体 nvlink_sharp_state_spec.hh(tasks 1.1~1.7)"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-03T15:50:48Z",
-      "by": "user",
-      "reason": "用户裁决 2026-11-03：队列 #14 `cpptlm-cep-ualink-inc` 命中 `ADR-CEP-01` Decision D 的重访触发 ②（首次需要真实 fabric collective 流量）⇒ 路径 = **D（共享 VC + 无环性证书）**+ 证书重设计为 C-1'/C-2/C-3/C-4（我实测 oracle 的 D-2「重跑 DAG」恒真：边按 network 声明 ⇒ 语义旋转映射仍 PASS）⇒ 切 architect 写三则裁决：① `ADR-CEP-01` SU（D 重开 + 证书四条规范定义）② `ADR-CEP-09` 窄化 SU（集合伪实例入图 + 跨平面边在范围内 + IC1 鉴别力边界）③ tracker 选型派生规则（`ADR-CEP-04` SU）"
-    },
     {
       "role": "planner",
       "at": "2026-11-03T23:54:40Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-05T00:37:22Z",
       "by": "auto",
       "reason": "planner 域已落台账 Entry #220 授权记录 ⇒ 回 builder:commit 内容 → `cep_freeze_check.sh --update --authorized-by \"Entry #220\"` → commit manifest → 复验双绿"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T01:26:57Z",
+      "by": "user",
+      "reason": "用户口令「继续」⇒ 推进剩余任务 #7(H1 / H5 的 🟡 → 结论登记)。实据核查发现 **H1 判据措辞与实现有偏差**:8 个 adapter 中**无任何一个**真正使用 `StubCacheCore`(grep 零命中);各 adapter 持有**协议自身**的状态语义,与 stub 的 5 态投影是「两个不同的东西」(per ADR-CEP-05 决策 1 的 (α) RN 侧投影定位)⇒ 判据「全部 adapter 共用同一 stub」字面不成立 ⇒ 需 architect 裁 H1 的判据口径 + H5 的登记条件"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T01:35:20Z",
+      "by": "auto",
+      "reason": "architect 已裁 H1(判据订正:原文按落选方案 (β) 措辞,字面为假且无守门 ⇒ 订正为可机器判定形态)+ H5(成立,证据边界 = 函数级)⇒ builder 已补 H5 的 8/8 组合 + 交叉锁 + H1 的 2 条守门用例(3 条反向 fixture 全部因正确原因红)⇒ auto 回 planner 落 §9.1 ① 表的 H1 判据格(留痕)与 verdict 列 + 台账 Entry #221"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T01:35:45Z",
+      "by": "auto",
+      "reason": "planner 域已落 §9.1 ① 表的 H1 判据格(留痕订正)+ H1/H5 verdict → ✅ + 台账 Entry #221 ⇒ 回 builder:commit + 全量门禁 + ctest"
     }
   ]
 }
