@@ -224,3 +224,66 @@ test cases: 7 | 6 passed | 1 failed
 `docs_sync` / `doc_ref` / `freeze` / `prereg_drift` rc=0。
 
 **待 architect 终验**：只验本条（§7.2 的要求 ⇒ §8 的落地）。
+
+---
+
+## 9. 3c 终验裁决（architect，2026-11-06）
+
+**范围**：只验 §7.2 的要求 ⇒ §8 的落地（`INV-CEP-14-IC2` 那一条）。
+
+### 9.1 判定：**未通过**（发现自指漏洞，判据不咬合其主体）
+
+§8 的实现**形式上**满足 §7.2 的字面要求（取锚点 id → 找同含锚点与负向断言宏的 `test/test_*.cc`）。
+但独立复核发现：**扫描器自身即可满足该判据** ⇒ 判据**不咬合** IC2 的主体。
+
+**证据**（architect 自行实测，非引用 builder 的回执）：
+
+```
+同时含锚点 INV-CEP-05-IC1 + 负向断言宏的文件:
+  test_cep_canonical_flow_contract.cc   ← 真实载体
+  test_cep_canonical_invariants.cc      ← 真实载体
+  test_cep_dummy_signals.cc             ← ⚠️ **扫描器自身**
+  test_cep_moesi_gpu_adapter.cc         ← 真实载体
+  test_cep_moesi_gpu_compensation.cc    ← 真实载体
+```
+
+`test_cep_dummy_signals.cc` 内的锚点出现**全部**是**字符串字面量**（fixture 内容 / 传给判定函数的实参）：
+
+```
+249:  {"a.cc", "INV-CEP-05-IC1"}};                    ← fixture 字符串
+250:  REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", only_anchor).empty());
+254:  REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", only_negative).empty());
+257:  {"c.cc", "INV-CEP-05-IC1\nREQUIRE_FALSE(x);"}}; ← fixture 字符串
+258:  REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", both).size() == 1u);
+```
+
+⇒ **把 4 个真实载体里的负向断言全部删掉，该判据仍绿** ⇒ 它证明的是「**可以**写出这样一条断言」，
+⛔ 发现不了「合同测试集**不再含**该负向断言」⇒ 与 §7.2 要求的「删掉那条负向断言 ⇒ 红」**不符**。
+
+> ⚠️ 这与 §7 之前发现的 `INV-CEP-14-IC1` 借壳是**同一类错误**（载体被自己的 fixture 顶替）——
+> 说明「自证」这一失败模式在本仓**反复出现**，后续载体评审须把「载体文件自身是否满足该判据」列为**固定检查项**。
+
+### 9.2 闭合所需的精确修法
+
+1. **剔除字符串字面量后再匹配**：扫描时先把文件里的字符串/字符字面量内容置空（保留**注释与代码**），
+   再找锚点 id 与负向断言宏 ⇒ fixture 字符串**不得**自证。
+   - 效果：`test_cep_dummy_signals.cc` 的锚点只存在于字面量 ⇒ 不再命中；
+   - 真实载体不受影响：`canonical_flow_contract.cc`（锚点在**注释**）、`moesi_gpu_adapter.cc`、
+     `moesi_gpu_compensation.cc` 三处锚点均在**注释**中 ⇒ 仍命中 ⇒ 判据仍绿。
+   - ⚠️ 注意：`test_cep_canonical_invariants.cc` 的锚点在**字面量**里（`{"INV-SC1", …, "INV-CEP-05-IC1"}`），
+     按此规则它**不再**是载体 —— 这是**正确**的（它本就没有针对该 invariant 的负向断言）。
+2. **扫描器自排除（双保险）**：含扫描器哨兵串的文件一律跳过（防将来复制实现时再次自证）。
+3. **决定性变异测试（闭合证据，必须附）**：把 4 个真实载体里的 `REQUIRE_FALSE(` 全部去掉
+   ⇒ 判据必须**红**；还原后必须绿。（builder §8 给的「锚点 id 变异」只证明「锚点必须存在」这一半，**不够**。）
+
+### 9.3 其余项状态（不变）
+
+- **B-1 / B-3**：✅ 已闭合（§7.1）
+- **S-1 / S-3 / S-4 / S-5 / S-6**：✅ 已落地（§6）；**S-2** 为 architect 误判，已撤销
+- **5 条 ⏭-unmodelled**：✅ 触发条件经复核成立
+
+### 9.4 结论
+
+`INV-CEP-14-IC2` 的载体**仍不成立** ⇒ 真实载体数仍为 **60/61** ⇒ **B2 仍不得登记 ✅**。
+
+下一步：builder 按 §9.2 修（~30min，含决定性变异测试）→ architect 复验该 1 条 → planner 落 B2 登记。

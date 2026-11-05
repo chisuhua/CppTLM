@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-05T16:54:10Z",
+  "current_role": "architect",
+  "updated_at": "2026-11-05T17:02:14Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-05T09:21:21Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 执行冻结授权链与收口 commit」⇒ ① 内容 commit(ADR-CEP-06 SU#5 + 审稿报告 + objective 表修复 + Entry #229) ② cep_freeze_check.sh --update --authorized-by \"Entry #229\" ③ manifest commit ④ 复验 hash/provenance 双绿 + drift/doc_ref/docs_sync + ctest ⑤ ⛔ 不 push"
-    },
     {
       "role": "planner",
       "at": "2026-11-05T09:32:55Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-05T16:54:10Z",
       "by": "user",
       "reason": "用户口令「builder 补这最后一条」⇒ 按 architect 复验 §7.2:给 INV-CEP-14-IC2 补「合同测试集**含**该负向断言」的机器判据(C 表负向行的锚点 id 必须存在于某个同时含该锚点与负向断言宏的 test/test_*.cc)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T17:02:14Z",
+      "by": "user",
+      "reason": "用户口令「切 architect 做 3c 终验」⇒ 只验 INV-CEP-14-IC2 的新判据(§7.2 要求 ⇒ §8 落地),含独立变异验证"
     }
   ],
   "auto_switch_window": null
