@@ -113,8 +113,11 @@ TEST_CASE("[cep][module-factory-seam] 23 ABI 零 diff", "[cep][module-factory-se
 }
 
 // INV-CARRIER: INV-CEP-15-IC1
-// 变红理由(per ADR-CEP-06 SU#4 规则 B):CacheTLM 源文本出现协议标识符 ⇒ 红
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):`cache_tlm.hh` / `cache_tlm.cc` 在 CEP 生命周期内
+// 被改动(相对 CEP 基线非零 diff)⇒ 红
 // ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
+// 注(architect 验收 2026-11-05 S-4):本 case 内的 4 个 PCIe 冻结头断言**属
+//     `INV-CEP-07-IC5` 的判据面**,与 15-IC1 无关 —— 保留为同址合并校验,不重复挂标记。
 TEST_CASE("[cep][module-factory-seam] 4 个 frozen headers 零 diff", "[cep][module-factory-seam]") {
     const std::vector<std::string> frozen = {
         "include/tlm/pcie/pcie_endpoint_tlm.h",

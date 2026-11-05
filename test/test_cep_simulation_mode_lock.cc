@@ -7,6 +7,7 @@
 #include "catch_amalgamated.hpp"
 
 #include "cep_adr_parser.hh"
+#include "cep_experiment_harness.hh"
 
 #include <nlohmann/json.hpp>
 
@@ -92,6 +93,22 @@ TEST_CASE("[cep][simulation-mode] 13 必纳 metric 齐备", "[cep][simulation-mo
         }
         REQUIRE(found);
     }
+    // ⚠️ 2026-11-05(architect 验收 S-1):此前只断言 **schema** 有 13 项 ——
+    //    invariant 的主体是「**实验输出** 13 必纳 metric」⇒ 必须有**产物侧**断言。
+    //    用装置的真实产出者 `ExperimentMetrics::to_json()` 取产物,取其键集合比对。
+    {
+        cep_exp::ExperimentMetrics m;
+        m.verification_scope = "architect-acceptance";
+        const auto emitted = json::parse(m.to_json());
+        std::set<std::string> keys;
+        for (auto it = emitted.begin(); it != emitted.end(); ++it)
+            keys.insert(it.key());
+        for (const auto& name : required_metrics()) {
+            INFO("产出的 metrics 缺 13 必纳字段: " << name);
+            REQUIRE(keys.count(name) == 1u);
+        }
+    }
+
     for (const auto& m : optional_metrics()) {
         INFO("metrics.schema 缺可选 metric: " << m);
         REQUIRE(props.contains(m));
@@ -198,6 +215,27 @@ TEST_CASE("[cep][simulation-mode] memory_violations 须覆盖 SWMR + data-value 
     const auto text = adr_text("ADR-CEP-06-experiment-protocol.md");
     REQUIRE(text.find("SWMR") != std::string::npos);
     REQUIRE(text.find("data-value") != std::string::npos);
+
+    // ⚠️ 2026-11-05(architect 验收 S-3):schema 有双 kinds ≠ **统计**覆盖双分桶。
+    //    用装置的真实检测器断言「两类违例**分别**计数且可区分」。
+    {
+        cep_exp::SwmrDataValueDetector det;
+        det.write(0x100, /*version=*/1);          // 合法写
+        det.write_without_invalidate(0x100, 2);   // 未先失效既有 sharer ⇒ SWMR
+        det.read(0x100, /*observed_version=*/99); // 观察版本不符 ⇒ data-value
+        INFO("SWMR 违例未单独计数");
+        REQUIRE(det.counts().swmr == 1u);
+        INFO("data-value 违例未单独计数");
+        REQUIRE(det.counts().data_value == 1u);
+        REQUIRE(det.counts().total() == 2u);
+        // 反向:关掉检查 ⇒ 双桶均为 0(证明计数不是恒增)
+        cep_exp::SwmrDataValueDetector off(/*checks_enabled=*/false);
+        off.write(0x200, 1);
+        off.write_without_invalidate(0x200, 2);
+        off.read(0x200, 99);
+        INFO("关闭检查后仍计数 ⇒ 统计面恒增(判据失效)");
+        REQUIRE(off.counts().total() == 0u);
+    }
 }
 
 // INV-CARRIER: INV-CEP-07-IC1

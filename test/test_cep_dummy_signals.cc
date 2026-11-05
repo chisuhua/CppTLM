@@ -12,6 +12,7 @@
 
 #include "cep_adr_parser.hh"
 
+#include <regex>
 #include <string>
 #include <vector>
 
@@ -86,9 +87,8 @@ TEST_CASE("[cep][dummy-signals] Stub 净侧接口 5 条 + core-side 1 条", "[ce
     REQUIRE(text.find("6 接口") != std::string::npos);
 }
 
-// INV-CARRIER: INV-CEP-14-IC1
-// 变红理由(per ADR-CEP-06 SU#4 规则 B):C1~C10 清单缺项 ⇒ 红
-// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
+// 注:该 case 属 `ADR-CEP-14` **决策 5**(测试替身的产物处置),**不承载**任何 invariant
+//     (architect 验收 2026-11-05:此处曾误挂 `INV-CEP-14-IC1` ⇒ 借壳,已移除标记)
 TEST_CASE("[cep][dummy-signals] 测试替身不入产品目录(per ADR-CEP-14 决策 5)",
           "[cep][dummy-signals]") {
     // 替身只允许在 test/ 下;include/tlm/cep/ 不得含替身类
@@ -104,8 +104,8 @@ TEST_CASE("[cep][dummy-signals] 测试替身不入产品目录(per ADR-CEP-14 �
     }
 }
 
-// INV-CARRIER: INV-CEP-14-IC2
-// 变红理由(per ADR-CEP-06 SU#4 规则 B):C1~C10 清单缺项 ⇒ 红
+// INV-CARRIER: INV-CEP-14-IC1
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):某条合同测试的**锚点列**为空(无锚点的合同测试)⇒ 红
 // ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][dummy-signals] ADR-CEP-14 的 C1~C10 清单齐备", "[cep][dummy-signals]") {
     // ⚠️ 此前是**裸子串**查找:"C1" 会被 "INV-CEP-14-IC1" 里的 "IC1" 满足、
@@ -132,4 +132,46 @@ TEST_CASE("[cep][dummy-signals] ADR-CEP-14 的 C1~C10 清单齐备", "[cep][dumm
     }
     REQUIRE(text.find("负向") != std::string::npos);
     REQUIRE(text.find("INV-CEP-14-IC2") != std::string::npos);
+}
+
+// INV-CARRIER: INV-CEP-14-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):合同测试集**缺负向断言**(C9)/ 负向断言的判定
+// 机制无鉴别力(恒不命中 ⇒ 负向断言形同虚设)⇒ 红
+TEST_CASE("[cep][dummy-signals] 合同测试集含负向断言(C9)且该断言有鉴别力", "[cep][dummy-signals]") {
+    // ① 清单元数据:ADR-CEP-14 的 C 表**恰有一行**标注「负向」,且其锚点列非空
+    const auto text = adr14();
+    static const std::regex row(R"(^\|\s*\*\*C(\d+)\*\*\s*\|([^|]*)\|([^|]*)\|([^|]*)\|)",
+                                std::regex::multiline);
+    int total_rows = 0;
+    int negative_rows = 0;
+    std::string negative_anchor;
+    for (std::sregex_iterator it(text.begin(), text.end(), row), e; it != e; ++it) {
+        ++total_rows;
+        if (it->str(2).find("负向") != std::string::npos) {
+            ++negative_rows;
+            negative_anchor = it->str(3);
+        }
+    }
+    INFO("C 表行数: " << total_rows);
+    REQUIRE(total_rows == 10);
+    INFO("C 表必须有**恰一条**负向断言行(C9)");
+    REQUIRE(negative_rows == 1);
+    INFO("负向行的「断言的不变量」列不得为空");
+    REQUIRE(negative_anchor.find_first_not_of(" \t") != std::string::npos);
+
+    // ② 反向 fixture:负向断言的判定机制**有鉴别力**(不是恒不命中)
+    REQUIRE_FALSE(cpptlm::cep::protocol_identifier_hits("struct CHI_frame {};").empty());
+    REQUIRE(cpptlm::cep::protocol_identifier_hits("struct frame {};").empty());
+
+    // ③ 该负向断言**真的施加在产品层**(C9「Stub 不泄漏协议信息」的可执行形态):
+    //    去注释后扫 Stub 源码 ⇒ 协议名命中集为空
+    const auto stub =
+        read_file((repo_root() / "include" / "tlm" / "cep" / "stub_cache_core.hh").string());
+    REQUIRE_FALSE(stub.empty());
+    const auto hits = cpptlm::cep::protocol_identifier_hits(cpptlm::cep::strip_comments(stub));
+    std::string joined;
+    for (const auto& h : hits)
+        joined += h + " ";
+    INFO("Stub 源码泄漏协议标识符: " << joined);
+    REQUIRE(hits.empty());
 }

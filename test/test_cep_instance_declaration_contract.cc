@@ -134,6 +134,12 @@ namespace {
 } // namespace
 
 // 「token 形态却跟踪 sharer set」⇒ 红
+// ⚠️ 覆盖范围声明(architect 验收 2026-11-05 S-5):
+//   本 invariant 的**前置条件**是「token 类协议」,而本仓当前**无** token 类实例
+//   (`ADR-CEP-17` 的 `MOESI_CMP_token` 尚未落为 `protocol_instances.json` 的 instance)
+//   ⇒ 「token 类协议 ⇒ 不跟踪」这一分支**当前不可测**。
+//   本 case 覆盖的是 invariant 的**另一支**:「实现上等价 `BroadcastNull` 或 tracker 不参与」
+//   —— 即不跟踪形态的**实现形态与声明形态**。首个 token 类实例接入时必须扩展本 case。
 TEST_CASE("INV-CEP-04-IC7:token 类协议不跟踪 sharer set(BroadcastNull 退化基线)",
           "[cep][instance-decl]") {
     // ① 行为:`BroadcastNullTracker` **恒不持有** sharer 状态

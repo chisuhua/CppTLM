@@ -747,9 +747,9 @@ TEST_CASE("[cep][schema] status 只有 implemented 计入 adapter 计数(IC3)", 
     REQUIRE(adr12.find("MESI_Three_Level_HTM") != std::string::npos);
 }
 
-// INV-CARRIER: INV-CEP-07-IC3
-// 变红理由(per ADR-CEP-06 SU#4 规则 B):adapter 实例数与 07 号表格行数不一致 ⇒ 红
-// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
+// 注:该 case 断言「adapter 实例数 ↔ 07 号表格行数」的**跨源一致性**,**不承载**
+//     `INV-CEP-07-IC3`(其语义是 NullCollectivePlane 全原语不支持;正确载体在
+//     `test_cep_collective_plane_invariants.cc`)—— architect 验收 2026-11-05 移除借壳标记
 TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致(IC3 口径锚点)",
           "[cep][schema]") {
     // ⚠️ S13 的第二半:「统计结果与 07 号 §5.1 的口径表述**一致**」(spec:257)

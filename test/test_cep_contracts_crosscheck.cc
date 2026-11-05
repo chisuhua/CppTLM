@@ -334,17 +334,21 @@ TEST_CASE("[cep][contract] coherence_domains 保留但改语义(IC3)", "[cep][co
     const std::vector<std::string> cfgs = {
         "configs/apu_soc_full.json", "configs/apu_soc_phase7a.json", "configs/apu_soc_phase7b.json",
         "configs/hierarchy_tree_3level.json"};
-    int with_field = 0;
+    // ⚠️ 2026-11-05(architect 验收 S-6):原为 `with_field >= 3`(4 个里删 1 个不红)。
+    //    改为**逐个既有 config 都必须含**该字段(IC3 = 保留字段、只改语义)。
+    int existing = 0;
     for (const auto& c : cfgs) {
         const auto p = repo_root() / c;
         if (!std::filesystem::exists(p))
             continue;
+        ++existing;
         const auto txt = read_file(p.string());
-        if (txt.find("coherence_domains") != std::string::npos)
-            ++with_field;
+        INFO("既有 config 丢了 coherence_domains 字段(该字段只改语义、不得删除): " << c);
+        REQUIRE(txt.find("coherence_domains") != std::string::npos);
     }
-    INFO("含 coherence_domains 的既有 config 数: " << with_field);
-    REQUIRE(with_field >= 3);
+    // 仍要求「确有既有 config 被检查」—— 否则上面的循环空转
+    INFO("既有 config 数: " << existing);
+    REQUIRE(existing >= 3);
 
     // 告警文案须指向 ADR-CEP-13(消费阶段)而非 ADR-X.14
     const auto parser = read_file((repo_root() / "src" / "core" / "topology_parser.cc").string());

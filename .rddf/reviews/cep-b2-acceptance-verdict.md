@@ -108,3 +108,29 @@
 `.rddf/reviews/cep-b2-coverage-verdict.md`（C1 规则 A/B/C）· `.rddf/reviews/cep-b2-unmodelled-verdict.md`（4 条分叉 + ⏭ 登记形态）·
 `.rddf/reviews/cep-b2-pending-batching-verdict.md`（附裁② 批 0/1/2 + 判据 1.1）· 台账 Entry #232 / #233 / #234 / #235 ·
 `test/cep_invariant_assertion_map.json` · `test/cep_invariant_deferrals.json` · `scripts/test/cep_invariant_map_check.py`
+
+---
+
+## 6. 修正回执（builder，2026-11-06）
+
+按本裁决 §4 的第 1、2 步执行完毕（architect 复验待办）。
+
+| 编号 | 处置 | 落地位置 | 证据 |
+|---|---|---|---|
+| **B-1** | ✅ 移除 `dummy_signals`「测试替身不入产品目录」case 上的借壳标记（该 case 属 `ADR-CEP-14` 决策 5，不承载 invariant）；`INV-CEP-14-IC1` 改挂到「C1~C10 清单齐备」case 的**锚点列非空**断言 | `test/test_cep_dummy_signals.cc:107` | 映射表：`INV-CEP-14-IC1 → dummy_signals:107` |
+| **B-2** | ✅ `INV-CEP-14-IC2` 落到**新建**语义 case：C 表**恰一条**「负向」行 + 锚点列非空 + 负向判定机制**有鉴别力**（合成含协议名文本必命中 / 干净文本必不命中）+ 该负向断言**真的施加在产品层**（去注释扫 Stub 源码 ⇒ 命中集空） | `test/test_cep_dummy_signals.cc:137`（新 case） | 同上；`[cep][dummy-signals]` 7 cases 绿 |
+| **B-3** | ✅ 移除 `test_cep_schema.cc` 上 `INV-CEP-07-IC3` 的借壳标记（该 case 是「adapter 实例数 ↔ 07 号表格行数」跨源一致性）；`INV-CEP-07-IC3` 只保留正确载体 | `test/test_cep_collective_plane_invariants.cc:60` | 映射表：`INV-CEP-07-IC3` 只剩 1 个载体 |
+| **S-1** | ✅ `INV-CEP-06-IC2` 增补**产物侧**断言：`cep_exp::ExperimentMetrics::to_json()` 的键集合 ⊇ 13 必纳 metric（不再只断言 schema 声明） | `test/test_cep_simulation_mode_lock.cc` | `[cep][simulation-mode]` 10 cases 绿 |
+| **S-3** | ✅ `INV-CEP-06-IC5` 增补**统计面**断言：`SwmrDataValueDetector` 的 SWMR / data-value **分别**计数且 `total()` 求和；反向：关检查 ⇒ 双桶为 0 | 同上 | 同上 |
+| **S-4** | ✅ `INV-CEP-15-IC1` 的「变红理由」改正为「cache_tlm 相对基线非零 diff ⇒ 红」，并注明该 case 内 4 个 PCIe 冻结头属 `INV-CEP-07-IC5` 判据面（不重复挂标记） | `test/test_cep_module_factory_seam.cc:115` | — |
+| **S-5** | ✅ `INV-CEP-04-IC7` 增补**覆盖范围声明**：token 类协议前置条件当前无实例 ⇒ 本 case 覆盖「实现形态」支；首个 token 类实例接入时必须扩展 | `test/test_cep_instance_declaration_contract.cc` | — |
+| **S-6** | ✅ `INV-CEP-07A-IC3` 的 `with_field >= 3` 收紧为「**每个**既有 config 都必须含 `coherence_domains`」，另保留「确有既有 config 被检查」下界防空转 | `test/test_cep_contracts_crosscheck.cc` | — |
+| **S-2** | ⚠️ **本条为 architect 误判，不做改动** —— 复核发现该 case（`simulation_mode_lock.cc:206`）**已含**「代码/配置 `network.mode` 命中数 == 0」的语义断言（case 内自带注释「断言面必须覆盖**代码与配置**,不只是 ADR 文字」），载体本就咬合语义 | — | 见该 case `:247-290` |
+
+**未改动项说明**：S-2 修正后，architect §2 表中的 SHOULD_FIX 由 6 项降为 **5 项**（S-2 撤销）。
+
+**验证**：`[cep]` 428 cases / 10023 assertions 绿 · `ctest` 154/154 绿 · `format` rc=0 ·
+映射表闸 `--for-achievement` rc=0（66/66 = 61 载体 + 5 ⏭-unmodelled + 0 pending）·
+`docs_sync` / `doc_ref` / `freeze` / `prereg_drift` rc=0。
+
+**待 architect 复验**：只验「B-1/B-2/B-3 是否闭合」+「本轮新 diff 是否引入新借壳」，不复审已通过部分。
