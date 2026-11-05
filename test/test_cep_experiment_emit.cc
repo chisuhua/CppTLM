@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "cep_completion_domain_model.hh"
+#include "cep_consistency_completion_model.hh"
 #include "cep_directory_experiment.hh"
 #include "cep_experiment_harness.hh"
 #include "cep_vc_fabric_model.hh"
@@ -161,64 +162,108 @@ namespace {
         return r;
     }
 
-    /// H3:CONSERVATIVE 完备性 + 双不变量(1200 事务)
-    EmitResult run_h3(int n) {
-        DcohSymmetric dcoh(DcohSymmetric::LocalRegion{kRegionBase, kRegionSize});
-        HomeNodeModel home(dcoh);
-        SwmrDataValueDetector detector;
-        LatencyCollector lat;
+    /// H3(**v2 装置**):**一致性 × 完成域**复合装置 —— 单 run 同时实测两类违例类
+    /// (per `ADR-CEP-06` **SU#4** §①/§②;台账 **Entry #226**)。
+    ///
+    /// ⚠️ **为什么升级**:B4 要求「违例类必须实测为 0」,而 h3 原装置**只测内存侧**
+    ///   ⇒ `deadlock_violations` 从未测量(H3 ① 表分支 2 长期「未测量」)。
+    ///   v2 把 h4 的**完成域**面(错标 ⇒ 死锁)与 h3 的**一致性**面(SWMR/data-value/漏探)
+    ///   合流到**同一条周期化事务流** ⇒ 同一 run 内两类违例类**同时实测**。
+    ///
+    /// ⚠️ **产出层硬约束**(per SU#4 §② 约束 1/2/3/5):四条件(死锁检测力 / 内存检测力 /
+    ///   同一事务流 / watchdog 非空洞)**缺一即拒绝产出**(⛔ 不登记结论)。
+    EmitResult run_h3(std::uint64_t n = 1200, const std::string& variant = "") {
+        cep_cc::Config cfg;
+        cfg.txns_per_round = 3;
+        // ── 变体(per SU#4 §② 约束 6 的耦合探针 / AC-10 的停手程序化)──
+        //   `blocking_off`           = 关闭跨平面阻塞(⇒ 探针的「阻塞关」侧)
+        //   `degenerate_expect_fatal` = 退化成「两段拼接」⇒ 装置不合格 ⇒ 必须拒绝产出
+        if (variant == "blocking_off")
+            cfg.blocking_enabled = false;
+        if (variant == "degenerate_expect_fatal")
+            cfg.detach_memory_ops = true;
 
-        const std::vector<node_id_t> candidates{kNodeIdSdma, kNodeIdVram, kNodeIdGmmu};
-        std::uint64_t superset_violations = 0;
+        // ── 正控(正确完成域 + 无注入)────────────────────────────────
+        cep_cc::ConsistencyCompletionModel positive(cfg);
+        const bool reached = positive.run_until(n);
 
-        for (int i = 0; i < n; ++i) {
-            const std::size_t want = static_cast<std::size_t>(i % 3) + 1;
-            responder_set_t truth = 0;
-            for (std::size_t k = 0; k < want; ++k) {
-                const node_id_t node =
-                    candidates[(static_cast<std::size_t>(i) + k) % candidates.size()];
-                dcoh.set_sharer(kAddr, node, SnoopState::S);
-                truth |= responder_mask_of(node);
-            }
+        // ── 负控①:coherence 错标 group-scoped ⇒ 必须检出死锁 ─────────
+        cep_cc::Config mis_cfg = cfg;
+        mis_cfg.coherence_domain = cep_cc::CompletionDomain::GroupScoped;
+        cep_cc::ConsistencyCompletionModel mislabel(mis_cfg);
+        mislabel.run_until(n); // 死锁 ⇒ 提前返回 false(不挂死)
 
-            lat.note_issue();
-            lat.note_complete(0, home.service_read(kAddr).latency_cycles);
+        // ── 负控②:SWMR 注入 ⇒ 必须检出 swmr 违例 ─────────────────────
+        cep_cc::Config swmr_cfg = cfg;
+        swmr_cfg.inject_swmr_violation = true;
+        cep_cc::ConsistencyCompletionModel swmr(swmr_cfg);
+        swmr.run_until(n);
 
-            if ((dcoh.view_of(kAddr).sharers & truth) != truth)
-                ++superset_violations;
+        // ── 负控③:过期读注入 ⇒ 必须检出 data-value 违例 ─────────────
+        cep_cc::Config stale_cfg = cfg;
+        stale_cfg.inject_stale_read = true;
+        cep_cc::ConsistencyCompletionModel stale(stale_cfg);
+        stale.run_until(n);
 
-            home.service_write(kAddr);
-            detector.write(kAddr, static_cast<std::uint64_t>(i));
-            detector.read(kAddr, static_cast<std::uint64_t>(i));
-
-            for (const auto node : candidates)
-                dcoh.clear_sharer(kAddr, node);
+        const cep_cc::Qualification q = cep_cc::qualify(positive, mislabel, swmr, stale);
+        if (!reached || !q.qualified()) {
+            EmitResult bad;
+            bad.fatal = true;
+            bad.scope = std::string("⛔ 拒绝产出:H3 v2 装置不合格(") + q.reason() +
+                        (reached ? "" : ";正控未达成目标事务数") +
+                        ")(per ADR-CEP-06 SU#4 §② 约束 1/2/3/5)";
+            return bad;
         }
 
         EmitResult r;
+        // 延迟面 = **在途窗口**(完成周期 − 签发周期);⛔ 非 h3 v1 的 lookup 成本
+        LatencyCollector lat;
+        for (const auto& t : positive.completed()) {
+            lat.note_issue();
+            lat.note_complete(t.issue_cycle, t.issue_cycle + t.latency_cycles);
+        }
         r.metrics.latency = lat;
-        r.metrics.total_transactions = static_cast<std::uint64_t>(n);
-        r.metrics.total_cycles = static_cast<std::uint64_t>(n) * 20;
-        r.metrics.violations = detector.counts();
-        // ⚠️ 本 run 测:延迟族 + total_* + **memory_violations**(SWMR + data-value 双分桶)
-        // ⇒ `deadlock_violations` **未采集**(本 run 无死锁检测器)⇒ 必须标 not-collected
-        //    (此前它被写成 0 ⇒ 被读作「测了,没死锁」= C1 的核心失败模式,per SU#1 §①)
+        r.metrics.total_transactions = positive.coherence_retired();
+        r.metrics.total_cycles = positive.cycle();
+        // ⚠️ 两类违例类**均实测**(v2 的核心目的):死锁取**正控**实测(应 0);
+        //    负控的死锁是**设计预期的证据** ⇒ 只进 scope 文本(不进 metric 槽位)。
+        r.metrics.deadlock_detected = positive.deadlocked() ? 1 : 0;
+        r.metrics.violations = positive.detector().counts();
+        // ⚠️ 本 run 测:延迟族 + total_* + **memory_violations** + **deadlock_violations**
         mark_not_collected(r.metrics, "H3",
                            {"total_cycles", "total_transactions", "transactions_per_cycle",
                             "avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
-                            "p99_latency_cycles", "max_latency_cycles", "memory_violations"});
-        // ⚠️ 其余 4 项(coherence_stalls / collective_stalls / directory_misses /
-        //    deadlock_violations)本 run **未采集** ⇒ 须显式声明
-        //    (尤其 `deadlock_violations`:本 run 无死锁检测器 ⇒ 此前被写成 0
-        //     ⇒ 被读作「测了,没死锁」= C1 的核心失败模式,per SU#1 §①)
-        for (const char* k :
-             {"coherence_stalls", "collective_stalls", "directory_misses", "deadlock_violations"})
-            r.metrics.not_collected[k] = "本实验无该 metric 的产出者(per 预登记 out-of-scope)";
+                            "p99_latency_cycles", "max_latency_cycles", "memory_violations",
+                            "deadlock_violations"});
+        // ⚠️ 其余 3 项(coherence_stalls / collective_stalls / directory_misses)
+        //    本 run **未采集** ⇒ 须显式声明(per 预登记 out-of-scope)
+        for (const char* k : {"coherence_stalls", "collective_stalls", "directory_misses"})
+            r.metrics.not_collected[k] =
+                "本装置无该 metric 的产出者(VC / 目录面不建模;per 预登记 out-of-scope)";
         r.metrics.verification_mode = "bounded_random";
-        r.scope = "H3 CONSERVATIVE 完备性: " + std::to_string(n) + " 事务 / 3 节点 / 1 地址; " +
-                  "漏探=" + std::to_string(superset_violations) +
-                  "; 双不变量 swmr=" + std::to_string(detector.counts().swmr) +
-                  " data_value=" + std::to_string(detector.counts().data_value);
+        // ── 观测键(SU#4 §② 约束 5 的机器锚载体)─────────────────────
+        r.metrics.observation_keys["memory_checked_txn_ids"] = positive.memory_checked_txn_ids();
+        r.metrics.observation_keys["blocking_subject_txn_ids"] =
+            positive.blocking_subject_txn_ids();
+        r.metrics.observation_keys["memory_checked_addrs"] = positive.memory_checked_addrs();
+        r.metrics.observation_keys["pending_addrs"] = positive.pending_addrs();
+        r.scope = std::string("H3 一致性×完成域复合装置 [device=v2]: ") + std::to_string(n) +
+                  " coherence 事务 / " + std::to_string(positive.cycle()) +
+                  " cycle; 内存不变量 swmr=" + std::to_string(positive.detector().counts().swmr) +
+                  " data_value=" + std::to_string(positive.detector().counts().data_value) +
+                  " 漏探=" + std::to_string(positive.superset_violations()) +
+                  "; 死锁违例=" + std::to_string(positive.deadlocked() ? 1 : 0) +
+                  "(在途峰值=" + std::to_string(positive.max_in_flight()) +
+                  ",停滞上限=" + std::to_string(positive.max_idle_run()) + ")";
+        r.scope +=
+            "; 同一事务流:实例级观测键覆盖率=" + std::to_string(positive.same_stream_coverage()) +
+            " 地址级重叠=" + (positive.blocked_address_overlap() ? "是" : "否");
+        r.scope += "; 耦合探针预测锚=experimental/predictions/h3_coupling_v2.json(仅指针;"
+                   "预测正文与时间戳在该锚文件,⛔ 不写入本 metrics.json)";
+        r.scope += "; 负控:错标⇒死锁=" + std::to_string(mislabel.watch_dog_stalled() ? 1 : 0) +
+                   " / SWMR 注入⇒swmr=" + std::to_string(swmr.detector().counts().swmr) +
+                   " / 过期读⇒data_value=" + std::to_string(stale.detector().counts().data_value) +
+                   " ⇒ 装置合格(" + q.reason() + ")";
         r.metrics.verification_scope = r.scope;
         return r;
     }
@@ -404,6 +449,8 @@ TEST_CASE("实验产出 · 4 件套输入(仅 CEP_EXP_DIR 设置时)", "[cep][ex
     if (!variant.empty()) {
         const bool ok = (exp_id == "h2" &&
                          (variant == "dcoh" || variant == "fullmap" || variant == "broadcast")) ||
+                        (exp_id == "h3" &&
+                         (variant == "blocking_off" || variant == "degenerate_expect_fatal")) ||
                         (exp_id == "h4" && (variant == "correct" || variant == "mislabel")) ||
                         (exp_id == "h6" && (variant == "iso" || variant == "shared"));
         if (!ok) {
@@ -416,13 +463,24 @@ TEST_CASE("实验产出 · 4 件套输入(仅 CEP_EXP_DIR 设置时)", "[cep][ex
     const std::string var_h2 = variant.empty() ? "dcoh" : variant;
     const std::string var_h4 = variant.empty() ? "correct" : variant;
     const std::string var_h6 = variant.empty() ? "iso" : variant;
+    const std::string var_h3 = variant.empty() ? std::string() : variant;
 
     EmitResult r;
     if (exp_id == "h2")
         r = run_h2(200, var_h2);
-    else if (exp_id == "h3")
-        r = run_h3(1200);
-    else if (exp_id == "h6")
+    else if (exp_id == "h3") {
+        r = run_h3(1200, var_h3);
+        if (var_h3 == "degenerate_expect_fatal") {
+            // ⚠️ **AC-10 停手条款的程序化面**(per SU#4 §② 约束 4):
+            //   退化装置(内存操作挂独立实例流)⇒ 装置不合格 ⇒ **拒绝产出**
+            //   ⇒ 必须「fatal 且一个文件都没写」(⛔ 不得留下半套 4 件套)。
+            REQUIRE(r.fatal);
+            REQUIRE_FALSE(std::filesystem::exists(std::filesystem::path(dir) / "metrics.json"));
+            REQUIRE_FALSE(
+                std::filesystem::exists(std::filesystem::path(dir) / "simulation_config.json"));
+            return;
+        }
+    } else if (exp_id == "h6")
         r = run_h6(2000, var_h6);
     else if (exp_id == "h4")
         // ⚠️ `h4` 的放行**必须与预登记登记同 PR**(per ADR-CEP-06 SU#2 §③ 顺序锁:

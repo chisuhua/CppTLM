@@ -265,6 +265,12 @@ namespace cep_exp {
         /// per-VC stall(H6 用;可为空 ⇒ 输出 `{}`)
         std::map<int, std::uint64_t> vc_stall_per_vc;
 
+        /// **观测键**(per `ADR-CEP-06` SU#4 §② 约束 5)—— 事务级 / 地址级
+        /// (键名 ⇒ 实例 id 或地址列表)。落 `metrics.json` 顶层**附加键**
+        /// (⛔ 不改 13 必纳 metric 的语义)⇒ 「同一事务流」判据有**机器锚**,
+        /// 而非靠 `verification_scope` 散文自证。
+        std::map<std::string, std::vector<std::uint64_t>> observation_keys;
+
         /// ⚠️ 必填 —— 不得留空(per ADR-CEP-06 §3:规模上限须可读)
         std::string verification_mode = "sampled";
         std::string verification_scope = "";
@@ -328,6 +334,20 @@ namespace cep_exp {
         os << "  \"memory_violations\": " << metric_json("memory_violations", violations.total()) << ",\n";
         os << "  \"memory_violation_kinds\": {\"swmr\": " << violations.swmr
            << ", \"data_value\": " << violations.data_value << "},\n";
+        os << "  \"observation_keys\": {";
+        bool first_obs = true;
+        for (const auto& kv : observation_keys) {
+            if (!first_obs)
+                os << ", ";
+            first_obs = false;
+            os << "\"" << kv.first << "\": [";
+            for (std::size_t i = 0; i < kv.second.size(); ++i) {
+                if (i != 0) os << ", ";
+                os << kv.second[i];
+            }
+            os << "]";
+        }
+        os << "},\n";
         os << "  \"vc_stall_per_vc\": {";
         bool first = true;
         for (const auto& kv : vc_stall_per_vc) {

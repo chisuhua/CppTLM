@@ -60,11 +60,25 @@ with h5py.File(f"{exp_dir}/trace.h5", "w") as f:
         if isinstance(v, (int, float)) and not isinstance(v, bool):
             grp.create_dataset(k, data=v)
         elif isinstance(v, dict):
+            if k == "observation_keys":
+                continue  # ⚠️ 由下方专用分支处理(值是列表,通用分支只写数值叶子)
             sub = grp.create_group(k)
             for kk, vv in v.items():
                 if isinstance(vv, (int, float)) and not isinstance(vv, bool):
                     sub.create_dataset(kk, data=vv)
     grp.attrs["experiment_id"] = exp_id
+    # ── 观测键镜像(per ADR-CEP-06 SU#4 §② 约束 5)────────────────────────
+    #   观测键是「同一事务流」判据的**机器锚**载体 ⇒ 必须随 4 件套落 trace.h5,
+    #   否则文件层无法校验(⛔ 不得只留在 metrics.json 顶层而被 trace 丢掉)。
+    obs = metrics.get("observation_keys") or {}
+    if obs:
+        og = grp.create_group("observation_keys")
+        for k, v in obs.items():
+            if isinstance(v, list):
+                og.create_dataset(k, data=v)
+        og.attrs["note"] = (
+            "事务级/地址级观测键(SU#4 §② 约束 5):同一事务流判据的机器锚;grain=run-summary"
+        )
 PY
 }
 
@@ -84,6 +98,12 @@ for exp in h2 h3 h4 h6; do
     for f in simulation_config.json trace.h5 metrics.json report.html; do
         [[ -f "$dir/$f" ]] || { echo "  ✗ 缺 $dir/$f" >&2; status=1; }
     done
+    # ── 文件层断言(AC-5 的文件侧):h3 的观测键须落 metrics.json **且** trace.h5 ──
+    if [[ "$exp" == "h3" ]]; then
+        if ! python3 scripts/test/cep_b4_observation_keys_check.py "$dir"; then
+            status=1
+        fi
+    fi
 done
 
 if [[ $status -eq 0 ]]; then

@@ -62,6 +62,12 @@ struct CompletionDomainConfig {
     std::size_t group_size = 3;
     /// 连续 N 周期无任何请求退休 ⇒ 判死锁
     std::uint64_t deadlock_threshold = 200;
+    /// ⚠️ **跨平面依赖开关**(per `ADR-CEP-06` SU#4 §② 约束 6 的耦合探针用):
+    ///   true(默认) = collective 成员的**到达**依赖 coherence 请求全部退休
+    ///   (per `ADR-CEP-03 §3` 跨平面 ordering/visibility)⇒ 该依赖即「阻塞」来源;
+    ///   false = collective **不等待** coherence ⇒ 无跨平面阻塞。
+    /// ⛔ **默认值保持既有行为**(h4 装置的证据链不受影响);改默认值 = 改 h4 语义 ⇒ 禁止。
+    bool collective_requires_coherence_retirement = true;
 };
 
 /// **完成域感知的 VC 共存模型** —— 两类流在同一实验内推进,按各自的**完成纪律**决定何时完成。
@@ -106,7 +112,7 @@ public:
         // ── collective 侧的**到达**判定(先于服务)────────────────────
         //   成员的到达依赖 coherence 全部退休(跨平面 ordering/visibility)
         bool coherence_all_retired = (coherence_retired_ == coherence_injected_);
-        if (coherence_all_retired) {
+        if (coherence_all_retired || !cfg_.collective_requires_coherence_retirement) {
             for (auto& col : collective_pending_) {
                 if (col.arrived_members_ == 0) {
                     col.arrived_members_ = 1;  // 到达
