@@ -589,6 +589,15 @@ add_test(NAME cep_b4_coupling_probe
 set_tests_properties(cep_b4_coupling_probe
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# B2「66 条 invariant 逐条有牙载体」的映射表闸(per 台账 Entry #232 / #233)
+#  · 校验五项: ⏭ id ⊆ 66 / deferral 三字段非空 / 有牙载体 ∪ 授权⏭ == 66 且交为空 /
+#    ledger_entry 解析到真实台账 Entry 且正文含该 id / 每个载体标记邻域有断言宏(反「恒真占位」)
+#  · --for-achievement 模式:⏭-pending 必须为 0,否则拒绝 B2 达成宣称
+add_test(NAME cep_invariant_map_check
+         COMMAND python3 ${CMAKE_SOURCE_DIR}/scripts/test/cep_invariant_map_check.py --check)
+set_tests_properties(cep_invariant_map_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check

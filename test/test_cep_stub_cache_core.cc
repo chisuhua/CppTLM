@@ -224,6 +224,7 @@ TEST_CASE("CEP Stub: 接口面不暴露 CHI RN-F 细节态", "[cep][stub-cache-c
 // ═════════════════════════════════════════════════════════════════════
 // Scenario 4:`INV-SC1` ~ `INV-SC6` 各至少有 1 条**行为**断言
 // ═════════════════════════════════════════════════════════════════════
+// INV-CARRIER: INV-SC1
 TEST_CASE("CEP Stub: INV-SC1 同一 addr 最多 1 个 outstanding request",
           "[cep][stub-cache-core][inv-sc]") {
     StubCacheCore stub;
@@ -254,6 +255,7 @@ TEST_CASE("CEP Stub: INV-SC1 同一 addr 最多 1 个 outstanding request",
     CHECK(tiny.request(0x3, Perm::READ).accepted);
 }
 
+// INV-CARRIER: INV-SC2
 TEST_CASE("CEP Stub: INV-SC2 evict 不选取 outstanding line", "[cep][stub-cache-core][inv-sc]") {
     StubCacheCore stub;
     // 建一条脏行
@@ -282,6 +284,7 @@ TEST_CASE("CEP Stub: INV-SC2 evict 不选取 outstanding line", "[cep][stub-cach
     CHECK(stub.counters().evict_skipped == 1); // 未增
 }
 
+// INV-CARRIER: INV-SC3
 TEST_CASE("CEP Stub: INV-SC3 snoop 响应在参数化固定延迟后返回", "[cep][stub-cache-core][inv-sc]") {
     // 延迟**参数化**:三个不同延迟的实例必须各自遵守自己的值(输入→输出)
     for (unsigned lat : {0u, 1u, 3u}) {
@@ -305,6 +308,7 @@ TEST_CASE("CEP Stub: INV-SC3 snoop 响应在参数化固定延迟后返回", "[c
     }
 }
 
+// INV-CARRIER: INV-SC4
 TEST_CASE("CEP Stub: INV-SC4 completion 与 request 严格配对(无 unsolicited)",
           "[cep][stub-cache-core][inv-sc]") {
     StubCacheCore stub;
@@ -335,6 +339,7 @@ TEST_CASE("CEP Stub: INV-SC4 completion 与 request 严格配对(无 unsolicited
     CHECK(stub.counters().unsolicited_completions == bad0 + 3);
 }
 
+// INV-CARRIER: INV-SC5
 TEST_CASE("CEP Stub: INV-SC5 dirty writeback 带 data;clean 不带",
           "[cep][stub-cache-core][inv-sc]") {
     StubCacheCore stub;
@@ -368,6 +373,7 @@ TEST_CASE("CEP Stub: INV-SC5 dirty writeback 带 data;clean 不带",
     CHECK(ev_s.data == 0); // S 态驱逐:clean 写回,不带 data
 }
 
+// INV-CARRIER: INV-SC6
 TEST_CASE("CEP Stub: INV-SC6 hit 路径不产生网络流量", "[cep][stub-cache-core][inv-sc]") {
     StubCacheCore stub;
     MockProtocolEngine pe{&stub};

@@ -29,6 +29,7 @@
 #include <type_traits>
 
 #include "tlm/cep/protocol_engine_base.hh"
+#include "tlm/cep/stub_cache_core.hh"
 
 namespace {
 
@@ -84,6 +85,20 @@ namespace {
     struct BadBarrierWithGroupFields {  // `on_barrier` 带 group 字段 ⇒ 违反 CEN-Ib9
         virtual void on_barrier(std::uint64_t, std::uint64_t, std::uint64_t) = 0;
     };
+    // ── CEN-Ib6:`forward_data` 对 stub **透明** ⇒ stub 的 completion 接口
+    //    **不得**含任何「数据来源」判别字段(per ADR-CEP-05 §2 决策 3「契约测试 1 必须钉死」)
+    template <class S, class = void>
+    struct CompletionHasNoSourceDiscriminator : std::false_type {};
+    template <class S>
+    struct CompletionHasNoSourceDiscriminator<S, std::void_t<decltype(&S::completion)>>
+        : std::bool_constant<std::is_same_v<
+              decltype(&S::completion),
+              bool (S::*)(std::uint64_t, std::uint64_t, std::uint64_t, Perm, bool)>> {};
+
+    struct BadCompletionWithSourceField {  // completion 带「来自 peer」判别位 ⇒ 破坏不可分辨性
+        virtual bool completion(std::uint64_t, std::uint64_t, std::uint64_t, Perm, bool,
+                               bool from_peer) = 0;
+    };
     struct BadNoSnoopAck {  // 无 ack 入口 ⇒ 违反 CEN-Ib10
         virtual void on_snoop(std::uint64_t, SnoopType, std::uint64_t) = 0;
         virtual void on_snoop_resp(std::uint64_t, bool, LineState, bool, std::uint64_t,
@@ -127,6 +142,7 @@ TEST_CASE("CEN-Ib9:`barrier` 流不携带 group_id / participant_count / epoch_i
 }
 
 // INV-CARRIER: CEN-Ib10
+// INV-CARRIER: CEN-Ib1
 TEST_CASE("CEN-Ib10:`snoop_completion_ack` 配对 `snoop_resp` 不配对 `completion`",
           "[cep][canonical-flow]") {
     INFO("必须存在独立的 on_snoop_completion_ack 入口(addr, node_id, txn_id)");
@@ -136,4 +152,18 @@ TEST_CASE("CEN-Ib10:`snoop_completion_ack` 配对 `snoop_resp` 不配对 `comple
     INFO("反向 fixture:无 ack 入口的引擎必须被判否");
     constexpr bool kBadHasAck = HasIndependentSnoopAck<BadNoSnoopAck>::value;
     REQUIRE_FALSE(kBadHasAck);
+}
+
+// INV-CARRIER: CEN-Ib6
+TEST_CASE("CEN-Ib6:`forward_data` 对 stub 透明 —— completion 接口无来源判别字段",
+          "[cep][canonical-flow]") {
+    INFO("StubCacheCore::completion 的形状必须是 (addr, txn_id, data, perm, error) —— 无来源位");
+    constexpr bool kNoSource =
+        CompletionHasNoSourceDiscriminator<tlm::cep::StubCacheCore>::value;
+    REQUIRE(kNoSource);
+
+    INFO("反向 fixture:带来源判别位的 completion 必须被判否(否则 stub 可分辨来源)");
+    constexpr bool kBadHasSource =
+        CompletionHasNoSourceDiscriminator<BadCompletionWithSourceField>::value;
+    REQUIRE_FALSE(kBadHasSource);
 }

@@ -1,0 +1,125 @@
+{
+  "_generated_by": "scripts/test/cep_invariant_map_check.py --generate",
+  "_note": "生成物 —— 勿手改;载体由 // INV-CARRIER: <id> 刚性标记派生(per 规则 C)",
+  "carriers": {
+    "CEN-Ib1": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 145,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib10": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 144,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib3": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 110,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib4": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 121,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib6": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 157,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib9": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 132,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-04-IC3": [
+      {
+        "file": "test/test_cep_sharer_tracker_base.cc",
+        "line": 732,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-04-IC6": [
+      {
+        "file": "test/test_cep_sharer_tracker_base.cc",
+        "line": 699,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-08-IC3": [
+      {
+        "file": "test/test_cep_ordering_point_checker.cc",
+        "line": 353,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-09-IC3": [
+      {
+        "file": "test/test_cep_channel_dependency_gate.cc",
+        "line": 482,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-12-IC2": [
+      {
+        "file": "test/test_cep_mesif_instance_decl.cc",
+        "line": 183,
+        "kind": ".cc"
+      }
+    ],
+    "INV-SC1": [
+      {
+        "file": "test/test_cep_stub_cache_core.cc",
+        "line": 227,
+        "kind": ".cc"
+      }
+    ],
+    "INV-SC2": [
+      {
+        "file": "test/test_cep_stub_cache_core.cc",
+        "line": 258,
+        "kind": ".cc"
+      }
+    ],
+    "INV-SC3": [
+      {
+        "file": "test/test_cep_stub_cache_core.cc",
+        "line": 287,
+        "kind": ".cc"
+      }
+    ],
+    "INV-SC4": [
+      {
+        "file": "test/test_cep_stub_cache_core.cc",
+        "line": 311,
+        "kind": ".cc"
+      }
+    ],
+    "INV-SC5": [
+      {
+        "file": "test/test_cep_stub_cache_core.cc",
+        "line": 342,
+        "kind": ".cc"
+      }
+    ],
+    "INV-SC6": [
+      {
+        "file": "test/test_cep_stub_cache_core.cc",
+        "line": 376,
+        "kind": ".cc"
+      }
+    ]
+  }
+}

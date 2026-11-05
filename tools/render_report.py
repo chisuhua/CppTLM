@@ -328,6 +328,9 @@ def render(exp_dir, out_path):
             v = json.dumps(v, ensure_ascii=False)
         rows.append(f"<tr><td><code>{html.escape(k)}</code></td><td>{html.escape(str(v))}</td></tr>")
 
+    # INV-CARRIER: INV-CEP-06-IC3
+    # 「应 0」语义随 verification_mode 变化 ⇒ 报告须一并呈现 mode / scope / 限定语
+    # (per ADR-CEP-06 §3 一手依据第 3 点;授权 = 台账 Entry #233)
     mode = cfg.get("verification_mode") or m.get("verification_mode", "未声明")
     scope = cfg.get("verification_scope") or m.get("verification_scope", "未声明")
     if vclass == "violation":

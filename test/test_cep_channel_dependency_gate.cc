@@ -23,6 +23,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include "cep_adr_parser.hh"
 #include "chstream_register.hh"
 #include "core/module_factory.hh"
 #include "tlm/cep/channel_dependency_graph.hh"
@@ -476,4 +477,81 @@ TEST_CASE("CEP ChannelGate: 双挂共享同一判据实现", "[cep][channel-gate
     CHECK(cli.out.find("[per-instance] instance=moesi_gpu ") != std::string::npos);
     CHECK(cli.out.find("[verdict] net=compute_noc vc=0 PASS (") != std::string::npos);
     CHECK(cli.out.find("[PASS] cep ordering point checker:") != std::string::npos);
+}
+
+// INV-CARRIER: INV-CEP-09-IC3
+TEST_CASE("CEP ChannelGate: IC3 —— 变更 `ordering_assumption` ⇒ 闸层**重算**(确定性 + 变更敏感性)",
+          "[cep][channel-gate]") {
+    // 判据(per ADR-CEP-09 决策 7):`ordering_assumption` / `vc_binding` 变更
+    //       ⇒ 依赖图**重算** ⇒ 无环性检查**重跑**。
+    // ⚠️ **本断言是「闸层重算敏感性」,⛔ 不是「环判定重算敏感性」**
+    //    (环的边来自声明边表,不由这两字段推导 ⇒ 不存在「无环变有环」的 delta)。
+    using nlohmann::json;
+
+    const auto decl_path = cpptlm::cep::repo_root() / "include/tlm/cep/protocol_instances.json";
+    const auto decl_text = cpptlm::cep::read_file(decl_path.string());
+    const json decl = json::parse(decl_text);
+
+    // 找一个「响应向消息类绑定在 vc 上」且该 vc 已声明 `p2p_ordered` 的实例
+    // (⇒ J1 PASS);改动**仅**该 vc 的 ordering_assumption ⇒ J1 FAIL
+    std::string target_id;
+    std::string target_net;
+    int target_vc = -1;
+    for (const auto& inst : decl.at("instances")) {
+        for (const auto& [net, classes] : inst.at("vc_binding").items()) {
+            for (const char* cls : {"response", "snoop_resp"}) {
+                const auto it = classes.find(cls);
+                if (it == classes.end() || !it.value().is_number_integer()) continue;
+                const int vc = it.value().get<int>();
+                const auto oa = inst.at("ordering_assumption").at(net);
+                const auto oit = oa.find(std::to_string(vc));
+                if (oit == oa.end() || oit.value() != "p2p_ordered") continue;
+                target_id = inst.at("id");
+                target_net = net;
+                target_vc = vc;
+                break;
+            }
+            if (!target_id.empty()) break;
+        }
+        if (!target_id.empty()) break;
+    }
+    REQUIRE(!target_id.empty());
+
+    const auto tmp = std::filesystem::temp_directory_path() / "cep_ic3_sensitivity.json";
+    auto write_decl = [&](const std::string& value) {
+        json d = decl;
+        for (auto& inst : d["instances"]) {
+            if (inst.at("id") == target_id)
+                inst["ordering_assumption"][target_net][std::to_string(target_vc)] = value;
+        }
+        std::ofstream out(tmp);
+        out << d.dump(2);
+    };
+    auto cfg_for = [&](const std::string& path) {
+        json c;
+        c["cep"] = json{{"protocol_instances", path}};
+        return c;
+    };
+
+    // ① 确定性:同一 config 两次判定**一致**(证明不是「算一次就固化」)
+    write_decl("p2p_ordered");
+    const auto cfg_a = cfg_for(tmp.string());
+    const auto first = cep::run_ordering_gate(cfg_a);
+    const auto second = cep::run_ordering_gate(cfg_a);
+    INFO("同一 config 两次判定必须一致");
+    REQUIRE(first.verdict == second.verdict);
+    INFO("基线 config 的闸判定应为 PASS");
+    REQUIRE(first.verdict == cep::GateVerdict::PASS);
+
+    // ② 闸层重算敏感性:两个 config **仅差** `ordering_assumption` 的一个值 ⇒ 判定**相反**
+    //    (⚠️ 两 config 都必须过闸前的 schema/声明解析 ⇒ FAIL 必须出自**闸层**)
+    write_decl("unordered");
+    const auto cfg_b = cfg_for(tmp.string());
+    const auto mutated = cep::run_ordering_gate(cfg_b);
+    INFO("变更 ordering_assumption 后闸判定必须改变: " << mutated.to_log().substr(0, 120));
+    REQUIRE(mutated.verdict != first.verdict);
+    REQUIRE(mutated.verdict == cep::GateVerdict::FAIL);
+    // 旁证:FAIL 出自**闸层**(日志含判据名),而非 schema/解析错误
+    INFO("FAIL 必须出自闸层日志: " << mutated.to_log());
+    REQUIRE(mutated.to_log().find("J1") != std::string::npos);
 }

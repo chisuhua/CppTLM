@@ -180,6 +180,7 @@ TEST_CASE("CEP MESIF 声明:13 个 required 属性齐备(由 schema 机器驱动
 // ⚠️ 判定的**权威实现**是 `scripts/test/cep_decl_alignment_check.sh`(python,逐网络);
 //    本用例只证明「这份声明**不是**空跑」—— 若某天声明被删成空对象,
 //    那条脚本会因为「无可检查对象」而变得没有鉴别力,本用例会先红。
+// INV-CARRIER: INV-CEP-12-IC2
 TEST_CASE("CEP MESIF 声明:INV-CEP-12-IC2 的输入非空转(两网络 + VC 上界 + 6 类词表)",
           "[cep][mesif-decl][channel-gate]") {
     // 网络 → vc_count(来自 frozen `fabric.json`,不是手搓)

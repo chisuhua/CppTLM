@@ -1,0 +1,348 @@
+{
+  "_note": "CEP invariant 的 ⏭ 登记物(per objective §6.2 B2 · 台账 Entry #232/#233 + .rddf/reviews/cep-b2-unmodelled-verdict.md §5)。「⏭-unmodelled」= 能力未建模/未落地(永久性,须触发条件);「⏭-pending」= 载体尚未逐条补齐(待办,⛔ **达成宣称时必须为 0**)。",
+  "deferrals": [
+    {
+      "id": "CEN-Ib11",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "CEN-Ib2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "CEN-Ib5",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "CEN-Ib7",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "CEN-Ib8",
+      "disposition": "⏭-unmodelled",
+      "reason": "address_resolve「在 ProtocolEngine 内终结」需 engine 的 egress 可观测面;当前无该面 ⇒ 无可断言对象",
+      "trigger_condition": "engine 侧 egress 可观测面落地(per ADR-CEP-05 §6 折叠表)",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-04-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-04-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-04-IC5",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-04-IC7",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-05-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-06-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-06-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-06-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-06-IC4",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-06-IC5",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07-IC4",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07-IC5",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07-IC6",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07-IC7",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07A-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07A-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-07A-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-08-IC1",
+      "disposition": "⏭-unmodelled",
+      "reason": "「恰在一个 Ordering Point 序列化」= J3 的通用形式;checker 头明写「通用形式不可静态判定」⇒ 当前仅单点 vacuous 判据",
+      "trigger_condition": "J3 通用形式获得可判定载体(per ADR-CEP-08 决策 3)",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-08-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-09-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-09-IC2",
+      "disposition": "⏭-unmodelled",
+      "reason": "仲裁器未建模(ADR-CEP-09 自记「vc3 内 E 不被 D 饿死」未建模;多 VC 仲裁属 Stage 4+)⇒ 无可断言对象",
+      "trigger_condition": "多 VC 仲裁器落地(Stage 4+,per ADR-CEP-09)",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-11-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-11-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-11-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-12-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-12-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-13-IC1",
+      "disposition": "⏭-unmodelled",
+      "reason": "per ADR-CEP-13 决策 5 ①,承诺未兑现 —— 「采用该公理为判据」是选择事实,无机器可检声明项;输入侧 vocabulary 与 INV-CEP-12-IC1 共享,不计专属证据;运行期待 litmus",
+      "trigger_condition": "ADR-CEP-13 决策 5 ① 的剩余转写(组合判据成为结构化声明项)+ litmus change 立项",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-13-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-13-IC3",
+      "disposition": "⏭-unmodelled",
+      "reason": "per ADR-CEP-13 决策 5 ①,承诺未兑现 —— schema 13 顶层属性无「adapter 提前 ack 行为」声明项 ⇒ 判据未转写成结构化声明项",
+      "trigger_condition": "adapter 提前 ack 行为成为实例声明项(代价:schema 13->14 + INV-CEP-12-IC1 联动修订 + ADR-CEP-12 追加式修订)",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-14-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-14-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-14-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-15-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-15-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-15-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-16-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-16-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-16-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-NUM-IC1",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-NUM-IC2",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    },
+    {
+      "id": "INV-CEP-NUM-IC3",
+      "disposition": "⏭-pending",
+      "reason": "per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 —— 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** ⇒ 载体未落地(非「已达成」,⛔ 不得计入 B2 达成)",
+      "trigger_condition": "逐条补有牙载体(正控 + 反控),或经 architect 裁为 ⏭-unmodelled",
+      "ledger_entry": "Entry #234"
+    }
+  ]
+}
