@@ -833,3 +833,128 @@ TEST_CASE("CEP SharerTracker: IC3 —— 5 事件名唯一表 + 事件方法签�
     INFO("6 个实现的 observe_snoop 签名必须与接口逐字一致");
     REQUIRE(observe_matches());
 }
+
+// ── INV-CEP-04-IC1:caps struct 字段值必须 ∈ enum 字面值 ───────────────
+// 判据(per `ADR-CEP-04 §2 决策 3` 表下方的不变量):`SharerTrackerCaps` 的 4 个字段
+//   **必须**是 enum 类型(`Scope` / `Completeness` / `Authority` / `AggregationAt`),
+//   且每个实现的取值**必须**落在对应 enum 的**已声明枚举子集**内。
+// ⚠️ 本断言**不是**「ADR 里写着这句话」(文本存在性按 architect 判据 1.1 不咬合语义)
+//   —— 变红条件:① caps 字段类型退化为整数 ② 某实现取了枚举子集外的值。
+namespace {
+
+    // 值域判定:**逐枚举子集**白名单(⛔ 不用「≤ max」—— 枚举可稀疏,须按声明子集)
+    constexpr bool in_scope(cep::Scope v) {
+        switch (v) {
+        case cep::Scope::SYSTEM:
+        case cep::Scope::SUBTREE:
+        case cep::Scope::LOCAL_MEMORY_REGION:
+        case cep::Scope::NONE:
+            return true;
+        }
+        return false;
+    }
+    constexpr bool in_completeness(cep::Completeness v) {
+        switch (v) {
+        case cep::Completeness::EXACT:
+        case cep::Completeness::CONSERVATIVE:
+        case cep::Completeness::PARTIAL:
+            return true;
+        }
+        return false;
+    }
+    constexpr bool in_authority(cep::Authority v) {
+        switch (v) {
+        case cep::Authority::GLOBAL:
+        case cep::Authority::LOCAL_HINT:
+        case cep::Authority::LOCAL:
+        case cep::Authority::NONE:
+            return true;
+        }
+        return false;
+    }
+    constexpr bool in_aggregation_at(cep::AggregationAt v) {
+        switch (v) {
+        case cep::AggregationAt::HOME:
+        case cep::AggregationAt::REQUESTER:
+        case cep::AggregationAt::TREE_PARENT:
+        case cep::AggregationAt::NONE:
+        case cep::AggregationAt::HIERARCHICAL:
+            return true;
+        }
+        return false;
+    }
+    // ADR 注:`Hazard_*` 枚举**同标准**(oracle SHOULD-FIX #7)⇒ 一并纳入 IC1 覆盖
+    constexpr bool in_lookup_hazard(cep::LookupHazard v) {
+        switch (v) {
+        case cep::LookupHazard::NONE:
+        case cep::LookupHazard::STALL:
+        case cep::LookupHazard::CHAIN:
+            return true;
+        }
+        return false;
+    }
+
+    // 类型层 trait:caps 的 4 个字段**必须**恰好是 4 个 enum class 类型
+    template <class C>
+    struct CapsFieldsAreEnums
+        : std::bool_constant<std::is_same_v<decltype(C::scope), cep::Scope> &&
+                              std::is_same_v<decltype(C::completeness), cep::Completeness> &&
+                              std::is_same_v<decltype(C::authority), cep::Authority> &&
+                              std::is_same_v<decltype(C::aggregation_at), cep::AggregationAt>> {};
+
+    // 反向 fixture:同形但字段退化为整数 ⇒ 类型检查必须判否
+    struct BadCapsAsInts {
+        std::uint8_t scope = 0;
+        std::uint8_t completeness = 0;
+        std::uint8_t authority = 0;
+        std::uint8_t aggregation_at = 0;
+    };
+
+    // 反向 fixture 的判否 trait:4 个字段**都不是** enum 类型 ⇒ 必须为 false
+    template <class C>
+    struct CapsFieldsAreInts
+        : std::bool_constant<!std::is_same_v<decltype(C::scope), cep::Scope> &&
+                              !std::is_same_v<decltype(C::completeness), cep::Completeness> &&
+                              !std::is_same_v<decltype(C::authority), cep::Authority> &&
+                              !std::is_same_v<decltype(C::aggregation_at), cep::AggregationAt>> {};
+
+}  // namespace
+
+// INV-CARRIER: INV-CEP-04-IC1
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):caps 字段类型退化为整数 / 取值落在枚举子集外 ⇒ 红
+TEST_CASE("CEP SharerTracker: IC1 —— caps 4 字段是 enum 类型且取值 ∈ 枚举子集",
+          "[cep][sharer-tracker]") {
+    // ① 类型层:caps 的 4 个字段必须是 4 个 enum class 类型
+    static_assert(CapsFieldsAreEnums<cep::SharerTrackerCaps>::value,
+                  "caps 字段必须是 enum 类型(IC1)");
+    REQUIRE(CapsFieldsAreEnums<cep::SharerTrackerCaps>::value);
+
+    // ② 值域层:6 个实现的每个 caps 字段取值 ∈ 对应 enum 的**已声明枚举子集**
+    REQUIRE(cep::kTrackerTraits.size() == 6u);
+    for (const auto& t : cep::kTrackerTraits) {
+        INFO("实现的 scope 取值不在枚举子集内: " << t.name);
+        REQUIRE(in_scope(t.caps.scope));
+        INFO("实现的 completeness 取值不在枚举子集内: " << t.name);
+        REQUIRE(in_completeness(t.caps.completeness));
+        INFO("实现的 authority 取值不在枚举子集内: " << t.name);
+        REQUIRE(in_authority(t.caps.authority));
+        INFO("实现的 aggregation_at 取值不在枚举子集内: " << t.name);
+        REQUIRE(in_aggregation_at(t.caps.aggregation_at));
+        // `Hazard_*` 枚举同标准(per ADR §2 IC1 注)
+        INFO("实现的 hazard 取值不在枚举子集内: " << t.name);
+        REQUIRE(in_lookup_hazard(t.behavior.hazard_under_contention));
+    }
+
+    // ③ 反向 fixture(判别力证据):枚举子集外的取值**必须**被判否
+    //    (否则「值域检查恒真」⇒ 判据失效)
+    REQUIRE_FALSE(in_scope(static_cast<cep::Scope>(9)));
+    REQUIRE_FALSE(in_completeness(static_cast<cep::Completeness>(7)));
+    REQUIRE_FALSE(in_authority(static_cast<cep::Authority>(6)));
+    REQUIRE_FALSE(in_aggregation_at(static_cast<cep::AggregationAt>(8)));
+    REQUIRE_FALSE(in_lookup_hazard(static_cast<cep::LookupHazard>(5)));
+
+    // ④ 反向 fixture:caps 字段退化为整数 ⇒ 类型检查必须判否
+    //    (先证明 fixture **确实是** 反例 —— 4 字段都不是 enum 类型)
+    REQUIRE(CapsFieldsAreInts<BadCapsAsInts>::value);
+    REQUIRE_FALSE(CapsFieldsAreEnums<BadCapsAsInts>::value);
+}

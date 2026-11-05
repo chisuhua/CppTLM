@@ -589,6 +589,13 @@ add_test(NAME cep_b4_coupling_probe
 set_tests_properties(cep_b4_coupling_probe
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# `INV-CEP-06-IC1` 的 4 件套完整性闸自检(缺一件 = 实验 fail)
+#  · 只跑 fixture,不产实验 ⇒ 可在 CI 常驻;正向(齐备⇒通过)/ 反向(缺任一⇒失败)双向
+add_test(NAME cep_experiment_run_selftest
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_experiment_run.sh --selftest)
+set_tests_properties(cep_experiment_run_selftest
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # B2「66 条 invariant 逐条有牙载体」的映射表闸(per 台账 Entry #232 / #233)
 #  · 校验五项: ⏭ id ⊆ 66 / deferral 三字段非空 / 有牙载体 ∪ 授权⏭ == 66 且交为空 /
 #    ledger_entry 解析到真实台账 Entry 且正文含该 id / 每个载体标记邻域有断言宏(反「恒真占位」)

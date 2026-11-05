@@ -73,7 +73,10 @@ def neighbor_ok(path, line, suffix):
     if suffix == ".py":
         return bool(re.search(r"sys\.exit\(|raise\s+\w+Error", window))
     if suffix == ".sh":
-        return bool(SHELL_NONZERO.search(window)) or "exit " in window
+        # `.sh` 内可内嵌 python 段(`python3 - <<'PY'`)⇒ 其非零退出写作 `sys.exit(`;
+        # 语言无关的实质判据 = 「邻域存在非零退出式」。
+        return (bool(SHELL_NONZERO.search(window)) or "exit " in window or
+                bool(re.search(r"sys\.exit\(", window)))
     return any(m in window for m in ASSERT_MACROS)
 
 

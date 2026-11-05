@@ -445,6 +445,57 @@ def is_exclusion(line):
     return any(e in line for e in EXCL_P)
 
 
+def scan_line(rel, line):
+    """逐行扫描 ⇒ (violations, p6_hit, ref_hit)。
+
+    规则 B(P6 全禁)+ 规则 A(§15.4 白名单)合并在**同一行级判定**里,
+    以便下方自检可对**合成行**复用同一实现(而非复制一份判据)。
+    """
+    vs = []
+    p6_hit = 0
+    ref_hit = 0
+
+    # ── 规则 B:P6 全禁 ─────────────────────────────────────────
+    # 行级判定(与规则 A 同口径):P6 所在行必须含排除语境标记。
+    # ⚠️ 原实现是「±100 字符窗口」—— 邻近的无关句可充当否定证据。
+    if re.search(r"\bP6\b", line):
+        p6_hit = 1
+        # 反向语义(「不排除 P6」等)对**任何** P6 出现都成立 → 判违规
+        if any(r in line for r in REV):
+            vs.append((rel, f"[反向语义] {line.strip()[:110]}"))
+        else:
+            # ⚠️ 本仓 `P<数字>` 有**三种**互不相干的词汇:
+            #    ① 06 §15.4 阶段编号(P2.0/P2.1/P3/P3.5/P4/P5)—— 契约管制的对象
+            #    ② 优先级 / rdd-planner 阶段(P0/P1/P2)
+            #    ③ 调研文档的**发现编号**(P1..P28)
+            #    故「P6 是否违规」取决于它**是不是 06 编号引用** —— 以 06 引用标记
+            #    (该行提到 06 的 §11.4 / §15.4 / inter-module-network)为准。
+            is_06_ref = any(mk in line for mk in ("§11.4", "§15.4", "inter-module-network"))
+            if is_06_ref and not is_exclusion(line):
+                vs.append((rel, f"[P6 违规] {line.strip()[:110]}"))
+
+    # ── 规则 A:06 §15.4 P 编号白名单(行级) ───────────────────────
+    in_154 = "15.4" in line
+    for m in re.finditer(r"\bP(\d+(?:\.\d+)*)\b", line):
+        num = m.group(1)
+        tok = "P" + num
+        is_decimal = "." in num
+        if not (is_decimal or in_154):
+            continue          # 非 06 §15.4 引用(如优先级 P0 / P1 / P2)
+        # 区间简写(如 "P2-P5" / "P2.0-P5"):两端单独判,中间不判
+        after = line[m.end():m.end() + 2]
+        before = line[max(0, m.start() - 2):m.start()]
+        if after.startswith("-P") or before.endswith("P-"):
+            continue
+        ref_hit += 1
+        if tok in ALLOWED_P:
+            continue
+        if is_exclusion(line):
+            continue          # 明确声明不引用该编号(如「无 P6」)
+        vs.append((rel, f"[口径外 P 编号 {tok}] {line.strip()[:100]}"))
+    return vs, p6_hit, ref_hit
+
+
 violations = []
 occurrences = 0
 ref_count = 0
@@ -453,51 +504,37 @@ for f in FILES:
         continue
     text = open(f, encoding="utf-8").read()
     rel = os.path.relpath(f, ROOT)
-
-    # ── 规则 B:P6 全禁 ─────────────────────────────────────────
-    # 行级判定(与规则 A 同口径):P6 所在行必须含排除语境标记。
-    # ⚠️ 原实现是「±100 字符窗口」—— 邻近的无关句可充当否定证据。
     for line in text.splitlines():
-        if not re.search(r"\bP6\b", line):
-            continue
-        occurrences += 1
-        # 反向语义(「不排除 P6」等)对**任何** P6 出现都成立 → 全局判违规
-        if any(r in line for r in REV):
-            violations.append((rel, f"[反向语义] {line.strip()[:110]}"))
-            continue
-        # ⚠️ 本仓 `P<数字>` 有**三种**互不相干的词汇:
-        #    ① 06 §15.4 阶段编号(P2.0/P2.1/P3/P3.5/P4/P5)—— 契约管制的对象
-        #    ② 优先级 / rdd-planner 阶段(P0/P1/P2)
-        #    ③ 调研文档的**发现编号**(P1..P28)
-        #    故「P6 是否违规」取决于它**是不是 06 编号引用** —— 以 06 引用标记
-        #    (该行提到 06 的 §11.4 / §15.4 / inter-module-network)为准。
-        is_06_ref = any(mk in line for mk in ("§11.4", "§15.4", "inter-module-network"))
-        if not is_06_ref:
-            continue
-        if is_exclusion(line):
-            continue
-        violations.append((rel, f"[P6 违规] {line.strip()[:110]}"))
+        vs, p6, refs = scan_line(rel, line)
+        occurrences += p6
+        ref_count += refs
+        violations.extend(vs)
 
-    # ── 规则 A:06 §15.4 P 编号白名单(行级) ───────────────────────
-    for line in text.splitlines():
-        in_154 = "15.4" in line
-        for m in re.finditer(r"\bP(\d+(?:\.\d+)*)\b", line):
-            num = m.group(1)
-            tok = "P" + num
-            is_decimal = "." in num
-            if not (is_decimal or in_154):
-                continue          # 非 06 §15.4 引用(如优先级 P0 / P1 / P2)
-            # 区间简写(如 "P2-P5" / "P2.0-P5"):两端单独判,中间不判
-            after = line[m.end():m.end() + 2]
-            before = line[max(0, m.start() - 2):m.start()]
-            if after.startswith("-P") or before.endswith("P-"):
-                continue
-            ref_count += 1
-            if tok in ALLOWED_P:
-                continue
-            if is_exclusion(line):
-                continue          # 明确声明不引用该编号(如「无 P6」)
-            violations.append((rel, f"[口径外 P 编号 {tok}] {line.strip()[:100]}"))
+# 判据(per `ADR-CEP-16 §3` IC1 + §4 抓取点 1):CEP 文档引用的 06 P 编号
+#   **必须**落在 §15.4 口径内(P2.0/P2.1/P3/P3.5/P4/P5),**不得**出现 P6。
+# **反向 fixture(判据可执行证据)**:以下合成行必须**按预期**判红 / 判绿;
+#   任一条不符 ⇒ `sys.exit(1)`(证明"闸真有判别力",而非恒绿)。
+SELFTEST = [
+    # (合成行, 期望是否违规, 说明)
+    ("| 06 §15.4 P6 承接 |", True, "06 语境下引用 P6 且无排除语 ⇒ 必须违规"),
+    ("P6 不引入(06 §15.4 口径)", False, "明确排除 P6 ⇒ 合规"),
+    ("| P7 | 06 §15.4 承接 |", True, "§15.4 口径外的 P 编号 ⇒ 必须违规"),
+    ("| P3 | 06 §15.4 承接 |", False, "白名单内的 P3 ⇒ 合规"),
+    ("不排除 P6(06 §15.4 口径)", True, "反向语义「不排除 P6」⇒ 必须违规"),
+    ("调研发现编号 P6(P1..P28 编号体系)", False, "非 06 引用的 P6 ⇒ 不在本判据范围"),
+    ("优先级 P2.0(rdd-planner 阶段)", False, "P2.0 在白名单内 ⇒ 合规"),
+]
+st_bad = []
+for line, expect_bad, why in SELFTEST:
+    vs, _, _ = scan_line("<selftest>", line)
+    if bool(vs) != expect_bad:
+        st_bad.append((line, expect_bad, vs, why))
+# INV-CARRIER: INV-CEP-16-IC1
+if st_bad:
+    print(f"  \033[0;31m✗\033[0m P 编号闸**自检失败**({len(st_bad)} 条)⇒ 判据无判别力:")
+    for line, expect_bad, vs, why in st_bad:
+        print(f"      {why} | 期望违规={expect_bad} 实际={bool(vs)} | {line}")
+    sys.exit(1)
 
 if violations:
     print(f"  \033[0;31m✗\033[0m P 编号口径违规 {len(violations)} 处(扫 {len(FILES)} 个 CEP 文档):")

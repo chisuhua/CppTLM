@@ -26,8 +26,15 @@
 #include "catch_amalgamated.hpp"
 
 #include <cstdint>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <type_traits>
+#include <vector>
 
+#include <nlohmann/json.hpp>
+
+#include "tlm/cep/ordering_point_checker.hh"
 #include "tlm/cep/protocol_engine_base.hh"
 #include "tlm/cep/stub_cache_core.hh"
 
@@ -166,4 +173,156 @@ TEST_CASE("CEN-Ib6:`forward_data` 对 stub 透明 —— completion 接口无来
     constexpr bool kBadHasSource =
         CompletionHasNoSourceDiscriminator<BadCompletionWithSourceField>::value;
     REQUIRE_FALSE(kBadHasSource);
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// INV-CEP-07-IC7 —— 插件接口**必须**为组合维度预留接缝
+//   判据(per `ADR-CEP-07 §3` IC7 + §2 决策 9):插件**声明**排序假设与消息→VC 绑定,
+//   **不实现**组合逻辑;组合接缝点须被合同测试覆盖。
+//   ⇒ 三段机器化:
+//     ① 插件基类内**不得**持有组合逻辑的载体字段(编译期 trait)
+//     ② 接缝在**声明侧**持久化:每个协议实例都声明 per-network 的
+//        `ordering_assumption` + `vc_binding`(非空对象)
+//     ③ 接缝被**组合逻辑消费**:ordering gate 对每个实例产出 J1 判定
+//   ⚠️ 变红条件:引擎基类出现这两字段 / 某实例缺声明 / 闸不再消费接缝 ⇒ 红
+// ═════════════════════════════════════════════════════════════════════
+
+namespace {
+
+    namespace cep7 = tlm::cep;
+
+    // ① 编译期:trait 检测「某类型是否持有该数据成员」
+    template <class T, class = void>
+    struct HasOrderingAssumptionMember : std::false_type {};
+    template <class T>
+    struct HasOrderingAssumptionMember<T, std::void_t<decltype(&T::ordering_assumption)>>
+        : std::true_type {};
+
+    template <class T, class = void>
+    struct HasVcBindingMember : std::false_type {};
+    template <class T>
+    struct HasVcBindingMember<T, std::void_t<decltype(&T::vc_binding)>> : std::true_type {};
+
+    // 反向 fixture 用的「坏插件」:把组合声明塞进插件内 ⇒ 检测器必须命中
+    struct BadEngineWithCombinationState {
+        int ordering_assumption = 0;
+        int vc_binding = 0;
+    };
+
+    // ② 声明侧:每个实例的组合接缝是否齐备(返回缺失项,空 = 齐备)
+    std::vector<std::string> seam_problems(const nlohmann::json& inst) {
+        std::vector<std::string> out;
+        for (const char* field : {"ordering_assumption", "vc_binding"}) {
+            if (!inst.contains(field) || !inst.at(field).is_object() || inst.at(field).empty()) {
+                out.push_back(std::string("缺 ") + field + "(或为空对象)");
+                continue;
+            }
+            // per-network 嵌套:每个网络的值必须是**非空对象**
+            for (auto it = inst.at(field).begin(); it != inst.at(field).end(); ++it) {
+                if (!it.value().is_object() || it.value().empty())
+                    out.push_back(std::string(field) + " 的网络 `" + it.key() + "` 为空");
+            }
+        }
+        return out;
+    }
+
+    std::string read_repo_file_7(const std::string& rel) {
+        std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
+        if (!in)
+            return {};
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        return ss.str();
+    }
+
+    std::string join(const std::vector<std::string>& v) {
+        std::string s;
+        for (const auto& x : v) {
+            if (!s.empty())
+                s += "; ";
+            s += x;
+        }
+        return s;
+    }
+
+}  // namespace
+
+// INV-CARRIER: INV-CEP-07-IC7
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):插件基类持有组合逻辑字段 / 某实例缺
+// ordering_assumption 或 vc_binding 声明 / 闸不再消费接缝 ⇒ 红
+TEST_CASE("CEP 组合接缝: IC7 —— 插件只声明排序假设与 VC 绑定,组合逻辑不在插件内",
+          "[cep][canonical-flow]") {
+    // ── ① 插件基类内**不得**持有组合逻辑的载体字段(编译期 trait)────────────
+    constexpr bool kEngineHoldsOrdering = HasOrderingAssumptionMember<Engine2>::value;
+    constexpr bool kEngineHoldsVcBinding = HasVcBindingMember<Engine2>::value;
+    REQUIRE_FALSE(kEngineHoldsOrdering);
+    REQUIRE_FALSE(kEngineHoldsVcBinding);
+
+    // ── ② 接缝在声明侧持久化:每个协议实例都声明两者(per-network 非空)──────
+    const auto decl_text = read_repo_file_7("include/tlm/cep/protocol_instances.json");
+    REQUIRE(!decl_text.empty());
+    const auto decl = nlohmann::json::parse(decl_text);
+    REQUIRE(decl.contains("instances"));
+    std::size_t n_inst = 0;
+    for (const auto& inst : decl.at("instances")) {
+        const auto probs = seam_problems(inst);
+        INFO("实例 " << inst.value("id", std::string("?")) << " 的组合接缝缺失: "
+                     << join(probs));
+        REQUIRE(probs.empty());
+        ++n_inst;
+    }
+    REQUIRE(n_inst == 7u);  // 声明侧实例数(与 `07 号 §5.1.1` 的 8 实例口径不同层,见该节)
+
+    // ── ③ 接缝被组合逻辑**消费**(行为):ordering gate 对每个实例产出 J1 判定 ──
+    //    J1 = 「响应向路径必须声明 p2p_ordered」—— 其判定输入正是 `vc_binding`(定位
+    //    响应向消息类绑定的 VC)+ `ordering_assumption`(该 VC 的排序假设)。
+    //    ⇒ 逐实例 J1 判定存在 = 接缝被真的消费(而非只存在于 JSON 里)。
+    nlohmann::json cfg;
+    cfg["cep"] = nlohmann::json::object();  // 未指定 ⇒ 落本仓默认声明
+    const auto rep = cep7::run_ordering_gate(cfg);
+    INFO("闸未生效(SKIP)⇒ 接缝未被消费: " << rep.to_log());
+    REQUIRE(rep.verdict != cep7::GateVerdict::SKIP);
+    std::size_t j1 = 0;
+    for (const auto& r : rep.results) {
+        if (r.criterion == cep7::CriterionId::J1_SinglePoint)
+            ++j1;
+    }
+    INFO("J1 判定数(" << j1 << ")应与实例数(" << n_inst << ")一致");
+    REQUIRE(j1 == n_inst);
+
+    // ── ④ 反向 fixture(判别力证据)────────────────────────────────────────
+    // (a) 「坏插件」持有组合字段 ⇒ 检测器**必须**命中(否则 ① 恒假)
+    REQUIRE(HasOrderingAssumptionMember<BadEngineWithCombinationState>::value);
+    REQUIRE(HasVcBindingMember<BadEngineWithCombinationState>::value);
+
+    // (b) 缺 `vc_binding` 的实例 ⇒ 声明侧检查必须判否
+    {
+        nlohmann::json bad = nlohmann::json::parse(R"({
+            "id": "fake", "ordering_assumption": {"compute_noc": {"0": "unordered"}}
+        })");
+        const auto probs = seam_problems(bad);
+        INFO("反向 fixture 应判否,实际缺失项: " << join(probs));
+        REQUIRE_FALSE(probs.empty());
+    }
+    // (c) 某网络的 `vc_binding` 为空对象 ⇒ 必须判否
+    {
+        nlohmann::json bad = nlohmann::json::parse(R"({
+            "id": "fake",
+            "ordering_assumption": {"compute_noc": {"0": "unordered"}},
+            "vc_binding": {"compute_noc": {}}
+        })");
+        const auto probs = seam_problems(bad);
+        INFO("反向 fixture 应判否,实际缺失项: " << join(probs));
+        REQUIRE_FALSE(probs.empty());
+    }
+    // (d) 齐备的实例 ⇒ 必须判否为「通过」(证明正向路径非恒假)
+    {
+        nlohmann::json good = nlohmann::json::parse(R"({
+            "id": "fake",
+            "ordering_assumption": {"compute_noc": {"0": "unordered", "1": "p2p_ordered"}},
+            "vc_binding": {"compute_noc": {"request": 0, "response": 1}}
+        })");
+        const auto probs = seam_problems(good);
+        REQUIRE(probs.empty());
+    }
 }

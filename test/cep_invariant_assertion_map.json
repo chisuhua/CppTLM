@@ -5,42 +5,49 @@
     "CEN-Ib1": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 145,
+        "line": 152,
         "kind": ".cc"
       }
     ],
     "CEN-Ib10": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 144,
+        "line": 151,
         "kind": ".cc"
       }
     ],
     "CEN-Ib3": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 110,
+        "line": 117,
         "kind": ".cc"
       }
     ],
     "CEN-Ib4": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 121,
+        "line": 128,
         "kind": ".cc"
       }
     ],
     "CEN-Ib6": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 157,
+        "line": 164,
         "kind": ".cc"
       }
     ],
     "CEN-Ib9": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 132,
+        "line": 139,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-04-IC1": [
+      {
+        "file": "test/test_cep_sharer_tracker_base.cc",
+        "line": 923,
         "kind": ".cc"
       }
     ],
@@ -70,6 +77,13 @@
         "file": "test/test_cep_sharer_tracker_base.cc",
         "line": 702,
         "kind": ".cc"
+      }
+    ],
+    "INV-CEP-06-IC1": [
+      {
+        "file": "scripts/test/cep_experiment_run.sh",
+        "line": 80,
+        "kind": ".sh"
       }
     ],
     "INV-CEP-06-IC2": [
@@ -119,6 +133,20 @@
         "kind": ".cc"
       }
     ],
+    "INV-CEP-07-IC4": [
+      {
+        "file": "test/test_cep_registration_macro_contract.cc",
+        "line": 130,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-07-IC7": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 250,
+        "kind": ".cc"
+      }
+    ],
     "INV-CEP-07A-IC3": [
       {
         "file": "test/test_cep_contracts_crosscheck.cc",
@@ -158,6 +186,13 @@
       {
         "file": "test/test_cep_contracts_crosscheck.cc",
         "line": 108,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-11-IC3": [
+      {
+        "file": "test/test_cep_version_change_traceability.cc",
+        "line": 208,
         "kind": ".cc"
       }
     ],
@@ -223,6 +258,13 @@
         "file": "test/test_cep_module_factory_seam.cc",
         "line": 134,
         "kind": ".cc"
+      }
+    ],
+    "INV-CEP-16-IC1": [
+      {
+        "file": "scripts/test/cep_docs_sync_check.sh",
+        "line": 532,
+        "kind": ".sh"
       }
     ],
     "INV-CEP-NUM-IC1": [

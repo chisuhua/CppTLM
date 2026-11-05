@@ -6,6 +6,7 @@
 #
 # 用法:
 #   bash scripts/test/cep_experiment_run.sh [--out <dir>]
+#   bash scripts/test/cep_experiment_run.sh --selftest   # 只跑「4 件套完整性」自检(ctest 用,不产实验)
 #
 # 链路(runner 契约 per tools/run_sweep.py 文件头):
 #   C++ 产 simulation_config.json + metrics.json
@@ -20,22 +21,16 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-BIN="build/bin/cpptlm_tests"
-if [[ ! -x "$BIN" ]]; then
-    echo "✗ 未找到 $BIN,请先构建: ./build.sh" >&2
-    exit 2
-fi
-
 OUT="experimental/run-$(date +%Y%m%d-%H%M%S)-h2h3h4h6"
+SELFTEST=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --out) OUT="$2"; shift 2 ;;
-        -h|--help) sed -n '2,20p' "$0"; exit 0 ;;
+        --selftest) SELFTEST=1; shift ;;
+        -h|--help) sed -n '2,22p' "$0"; exit 0 ;;
         *) echo "✗ 未知参数: $1" >&2; exit 2 ;;
     esac
 done
-
-mkdir -p "$OUT"
 
 emit_trace() {
     # 用 h5py 写**真实** HDF5。内容为 run 级摘要(本模型不产逐周期信号),
@@ -82,6 +77,60 @@ with h5py.File(f"{exp_dir}/trace.h5", "w") as f:
 PY
 }
 
+# ── INV-CARRIER: INV-CEP-06-IC1 ──────────────────────────────────────────
+# `ADR-CEP-06 §4` IC1:每次 CEP 实验产出 4 件套,缺一件 = 实验 fail。
+# 变红理由(per ADR-CEP-06 SU#4 规则 B):齐备却被判缺件 / 缺任一却判通过 ⇒ 自检 exit 1。
+FOUR_ARTIFACTS=(simulation_config.json trace.h5 metrics.json report.html)
+
+check_four_artifacts() {
+    local dir="$1" missing=0 f
+    for f in "${FOUR_ARTIFACTS[@]}"; do
+        if [[ ! -f "$dir/$f" ]]; then
+            echo "  ✗ 缺 $dir/$f" >&2
+            missing=1
+        fi
+    done
+    return $missing
+}
+
+# 反向 fixture(判据的**可执行**证据):齐备 ⇒ 通过;缺任一 ⇒ 失败
+selftest_four_artifacts() {
+    local tmp rc=0 f
+    tmp="$(mktemp -d)"
+    for f in "${FOUR_ARTIFACTS[@]}"; do : > "$tmp/$f"; done
+    if ! check_four_artifacts "$tmp" >/dev/null 2>&1; then
+        echo "  ✗ 反向 fixture 失败:4 件套齐备却被判缺件" >&2
+        rc=1
+    fi
+    for f in "${FOUR_ARTIFACTS[@]}"; do
+        rm -f "$tmp/$f"
+        if check_four_artifacts "$tmp" >/dev/null 2>&1; then
+            echo "  ✗ 反向 fixture 失败:缺 $f 却判通过(『缺一件 = fail』失守)" >&2
+            rc=1
+        fi
+        : > "$tmp/$f"
+    done
+    rm -rf "$tmp"
+    return $rc
+}
+
+if [[ "$SELFTEST" -eq 1 ]]; then
+    if selftest_four_artifacts; then
+        echo "✓ 4 件套完整性闸自检通过(齐备 ⇒ 通过;缺任一 ⇒ 失败)"
+        exit 0
+    fi
+    echo "✗ 4 件套完整性闸自检失败" >&2
+    exit 1
+fi
+
+BIN="build/bin/cpptlm_tests"
+if [[ ! -x "$BIN" ]]; then
+    echo "✗ 未找到 $BIN,请先构建: ./build.sh" >&2
+    exit 2
+fi
+
+mkdir -p "$OUT"
+
 status=0
 for exp in h2 h3 h4 h6; do
     dir="$OUT/$exp"
@@ -95,9 +144,7 @@ for exp in h2 h3 h4 h6; do
         echo "  ✗ 契约校验失败: $dir" >&2
         status=1
     fi
-    for f in simulation_config.json trace.h5 metrics.json report.html; do
-        [[ -f "$dir/$f" ]] || { echo "  ✗ 缺 $dir/$f" >&2; status=1; }
-    done
+    check_four_artifacts "$dir" || status=1
     # ── 文件层断言(AC-5 的文件侧):h3 的观测键须落 metrics.json **且** trace.h5 ──
     if [[ "$exp" == "h3" ]]; then
         if ! python3 scripts/test/cep_b4_observation_keys_check.py "$dir"; then
