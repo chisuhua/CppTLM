@@ -544,8 +544,8 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - B5. ModuleFactory 集成 seam + 0 发明宏形式
 - B6. simulation_mode 单一维度
 - B7. §9 研究问题 8 个假设全部有实验结论
-  - ✅ **8/8 已登记**(2026-11-05,per 台账 Entry #225;H1/H2/H3/H4/H5/H6/H7/H8 均为 ✅ 成立),计数口径 = ✅ 成立的**假设**数(§9.1 ③ 读法约束)
-  - ⚠️ **一处口径冲突待 architect 裁决(不静默选边)**:§9.1 ③ 读法约束写「一个假设只要有**任一**判据为 ⏭ 未测量 ⇒ 该假设整体不得计为有结论」;而 **H2 的 `directory_misses` 判据**在 §9.1 ① 表仍为 ⏭ 未测量(该半支全仓无产出者)⇒ **严格读法 = 7/8**。两种读法各自的问题:① 严格读法 ⇒ 需把 B7 从 8/8 降为 7/8(推翻 Entry #225 的登记);② 认定 `directory_misses` 不构成 H2 的**独立判据**(仅附加观测)⇒ 维持 8/8,但**须改 §9.1 ① 该行的「判据」措辞**。⇒ 裁决落点 = `ADR-CEP-06` 或 `objective §9.1` 表注;⛔ 未裁决前 **B7 的对外表述须带此限定**
+  - ✅ **8/8,其中 H2 的 `directory_misses` 为登记的扩展观测(未测量),不构成 H2 结论判据**(2026-11-05;H1/H2/H3/H4/H5/H6/H7/H8 均为 ✅ 成立;计数口径 = ✅ 成立的**假设**数,per §9.1 ③ 的**判据**读法)。分批来源:**Entry #221**(H1/H5 → 6/8)· **#223**(H4 → 7/8)· **#225**(H8 → 8/8);归位裁决 = **Entry #229** + `ADR-CEP-06` **SU#5**
+  - 📌 **原「待裁冲突」已闭合**:`Entry #228 ⑤` 登记的冲突(H2 的 `directory_misses` 判据仍 ⏭ ⇒ 严格读法 7/8)已由 **SU#5** 裁决(归位为**扩展观测**,不使 H2 整体失格)⇒ 本条**不再带「待裁」限定**;若后续推翻 SU#5,**回滚路径**见 SU#5 §③ 的显式 4 步表
 
 ### 6.3 KPI 平衡验收
 
@@ -664,7 +664,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 |---|------|------------|------------|----------|----------|---------|--------------|
 | **H1** | 协议抽象层(seam 在 L5↔L4)确实让缓存核心免于协议改动 | Stage 1 | ~~全部 adapter 只改 adapter,stub 0 diff~~(**adapter 实例计数口径见 `07 号 §5.1.1`;本表不复述具体数**,per Entry #22)⇒ **经 architect 裁决订正(2026-11-05,per 台账 **Entry #221**)**:**缓存核心零协议改动**(`cache_tlm.hh/.cc` 相对 CEP 基线 `4ae6bfc4` **0 diff** + CacheTLM 源文本**零协议标识符`)**且** **adapter ↔ 缓存核心解耦**(全部 **8** 个 adapter 源文本**不含** `StubCacheCore`/`stub_cache_core` 的构造/持有/调用,注释级提及不计)**且** `stub_cache_core.hh` **自创建 commit `7a2efe23` 起前向 0 diff**。⚠️ **订正理由**:原文按**落选方案 (β)** 措辞写(签发的是 **(α)**,per `ADR-CEP-05` 决策 1 + `:38`「stub = 客户端侧协议状态投影」)⇒ 「共用同一 stub」**字面为假**(实测 8 个 adapter **无一**构造/持有 stub)且**无守门** ⇒ 属起草笔误,**纠错非弱化**(机械强度 1 条无守门 → **4 类断言 + 8 adapter 逐一**)。逐字来源链见 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` **§1**;订正授权与理由见同文件 **§2** | CacheTLM 源文本**零协议标识符** + `cache_tlm.*` 基线 **0 diff** + **8 adapter 逐一零 stub 耦合** + `stub_cache_core.hh` **前向 0 diff** | **契约级断言**(静态扫描,**非** metric) | 两侧判据均成立 | ✅ **成立**(2026-11-05,per 台账 **Entry #221**;证据 + 3 条反向 fixture 见 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md`) |
 | **H2** | 集中目录(CHI HN-F)vs 分布(DCOH)vs 广播的 latency 差异可量化 | Stage 2 | 3 策略延迟差异 > 20% | `avg_latency_cycles`(3 策略) | **必纳 metric** | 两两差异 > 20% | ✅ **成立**(4 / 14 / 18 cycles ⇒ 250% / 28.6% / 350%) |
-| **H2** | *(同上)* | Stage 2 | *directory_misses 对比* | `directory_misses` | **必纳 metric** | *3 策略 miss 差异* | ⏭ **未测量** —— ⛔ **全仓无产出者**(实测:仅 schema / tools / 测试断言命中,无 emit 赋值点)⇒ 该半支 ⏭ **未测量**,⛔ **不得**计入 H2 结论(⚠️ **不是**「不成立」—— 「不成立」是 ❌ 的专有语义 = 已实测未达标;本例是**从未被测量**) |
+| **H2** | *(同上)* | Stage 2 | *`directory_misses` 对比* —— ⚠️ **扩展观测(非判据)**,2026-11-05 归位(per 台账 **Entry #229** + `ADR-CEP-06` **SU#5**)。**原判据措辞** = 「3 策略 miss 差异」;归位理由 = **① 不在 H2 的命题陈述中**(命题 = 「3 策略 latency 差异可量化」,见上一行)且其缺失**不使命题真值不可判定** + **② 不被任何 `§6.x` 独立要求实测**(仅被 13 必纳键集包含,而 run-validity 允许 `not-collected`)。**命中的两条条件 = SU#5 §② 条件 1 + 条件 2**(均满足) | `directory_misses` | **必纳 metric**(本实验**刻意不采**,per Entry #218 事实 #2「判据收窄**优先于**补实现」) | ~~3 策略 miss 差异~~(**非判据,不计入 H2 结论**) | ⏭ **未测量** —— ⛔ **全仓无产出者**(实测:仅 schema / tools / 测试断言命中,无 emit 赋值点)⇒ **登记保留**(⛔ 不得删除 / ⛔ 不得写成 0);(⚠️ **不是**「不成立」—— 那是 ❌ 的专有语义 = 已实测未达标) |
 | **H3** | Sharer Tracker caps 的 `CONSERVATIVE` 完备性契约在 CXL 对称下无漏 snoop | Stage 2 | 0 违例(1000+ 事务)· **分支 1** | `memory_violations`(含 `memory_violation_kinds` 的 SWMR + data-value 双分桶) | **必纳 metric** | == 0 | ✅ **成立**(1200 事务 · swmr=0 · data_value=0);**2026-11-05 v2 同参数重证**(数值不变,per 台账 Entry #228)。⚠️ **延迟语义换版**:v2 的 `avg_latency_cycles` = **在途窗口**(avg 2),v1 = lookup 成本(avg 14)⇒ ⛔ **v1/v2 延迟不可比**;本判据不依赖延迟 |
 | **H3** | *(同上)* | Stage 2 | *分支 2* | `deadlock_violations` | **必纳 metric** | == 0 | ✅ **成立**(2026-11-05,per 台账 **Entry #228**)—— **v2 复合装置实测 0**(1200 coherence 事务;`deadlock_violations` 在 `_measured`;在途峰值=**3** / 停滞上限=**2** < 阈值 200)。⚠️ **口径**:模型级(非协议级);该 0 由**真实在途窗口 + 完成域阻塞**产生(**错标负控 ⇒ 死锁=1** 证明检测力活着)⇒ ⛔ 非「恒假 watchdog + 默认 0」(结构性反证:恒假 ⇒ 负控不红 ⇒ 装置不合格 ⇒ 拒绝产出;恒真 ⇒ 正控 stalled ⇒ 写 1 且提前终止 ⇒ 同拒)。证据 = `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`(AC-9 = **PASS**) |
 | **H3** | *(同上)* | Stage 2 | *漏探(superset)判定* | `superset_violations` | ⚠️ **非必纳 metric**(落在 `verification_scope` 文本内,**不在** `metrics.json` 的 13 字段) | == 0 | ✅ **成立**(0 漏探,数值保留)—— ⚠️ **两条限定**:① 该观测**不在** `metrics.json` 契约面 ⇒ 不受 SU#1 的 `not-collected` 机制覆盖;② **判定当前不可证伪**(`truth` 来源 = `set_sharer` 参数,`view` 紧随 set 后读取且 `service_read` 不收缩 sharer 集 ⇒ `truth ⊆ sharers` **同义反复**,且**无反向 fixture**)⇒ ⛔ **「0 漏探」不得作独立证据引用**,仅登记数值(per AC-9 评审 **S1**;修法 = 补反向 fixture 或将本格降级) |
@@ -673,6 +673,8 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **H6** | VC 隔离(collective 独立 VC)确实避免协议级死锁 | Stage 3 | 0 死锁 + collective stall 不占 coherence VC | `deadlock_violations` + `vc_stall_per_vc` + `collective_stalls` | **必纳 metric**(+ `vc_stall_per_vc` 为**可选** metric) | 0 死锁 + collective stall 不占 coherence VC | ✅ **成立**(独立 VC 死锁=0 · 共享 VC 负控 backlog=2000 死锁=1) |
 | **H7** | stub cache 性能模型(固定命中率 + 固定延迟)足以支撑 early-stage 取舍判断 | Stage 1 | 延迟偏差 < 15% | 与 gem5 Ruby / ArchForge 参考模型对拍(per R7) | **外部对拍**(跨仓 trace 比对,**非**本仓 metric) | 偏差 < 15% | ✅ **成立**(常数档 PASS 3/3 + 同源 trace 档 PASS 5/5) |
 | **H8** | 实验 4 件套 + 13 metric 足以让跨协议取舍决策可复现 | Stage 3 | 3 组 A/B 对比产出可读结论 | 4 件套 + 13 必纳 metric + `tools/recommend.py` 输出建议 | **必纳 metric**(经 A/B 两侧对比) | 3 组 A/B 对比产出可读结论 | ✅ **成立**(2026-11-05,per 台账 **Entry #224** A/B 降级裁决 + **Entry #225** 落地)—— 3 组 A/B(`h6` 隔离/共享 · `h4` 正确/错标 · `h2` FullMap/BroadcastNull)各产出**可读结论**:`ab_compare.py` 逐 metric delta + `recommend.py` 3 条建议(均落在**实测面**:组 1/2 由 B 侧实测死锁=1 淘汰、组 3 由延迟 4→18(350%)淘汰;未实测面按 SU#3 显式标注「闸不适用」)。⚠️ **工具链级/模型级**,A/B 两侧 = **同一装置的两个配置**(非两个真协议族,本仓无协议级实验装置)。逐组数据 + 口径限定 + 反向 fixture 见 `docs/validation/2026-11-05-cep-h8-ab-toolchain.md` |
+
+> **⚠️ 列头张力表注(per `ADR-CEP-06` SU#5 硬约束 2)**:H2 的 `directory_misses` 行**仍位于本表**(可追溯性要求,⛔ 不得删除),但其**语义已非判据**(扩展观测)⇒ ⛔ **按「判据(逐条)」列机械统计「判据数」的工具/脚本会把该行误纳** —— 统计时须按行内「⚠️ 扩展观测(非判据)」标注剔除。
 
 **② 预登记 out-of-scope 集合(SU#1 §④ 的机器可查基准 —— tools 的 `not-collected ⊆ 预登记` 校验读本集合)**
 
@@ -715,6 +717,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 **⚠️ 本表的读法约束**:
 - **「8 个假设全部有实验结论」(§6.2 B7)的计数口径** = ✅ **成立** 的**假设**数(非判据数)
   ⇒ 一个假设只要有**任一**判据为 ⏭ 未测量 ⇒ 该假设**整体**不得计为「有结论」;
+- ⚠️ **读法约束只对「判据」生效**(per `ADR-CEP-06` **SU#5**):被判为**扩展观测**的条目(现行唯一 = H2 的 `directory_misses`)其 ⏭ **不使该假设整体失格** —— 但 ⛔ 必须**保留登记**、⛔ 不得删除、⛔ 不得写成 0;且该假设在 B7 计数处的表述**必须内嵌**该限定(⛔ 不得写成裸「N/N」);
 - ⛔ **「有契约级证据」≠「已登记结论」**(H1 / H5)—— 前者是证据存在,后者需在本表登记 verdict;
 - ⛔ **实测 0 ≠ 未测量**,**未测量 ≠ 0** —— 二者的区分由 `not-collected` 机制承载(SU#1 §②),
   本表的 verdict 列是它的**人工对照面**(机器闸在 tools 侧)。
@@ -2369,9 +2372,9 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 | Stage 2 | 完成 Go(队列 #13 两段式归档) | 2026-11-03 | #186 / #190 | ✅ | Stage 2 = 队列 #12~#13 全部归档 |
 | Stage 3 | 启动 Go(VC 路径裁决 = 路径 **D**) | 2026-11-04 | #193 | ✅ | 三则 ADR SU 签发 + 冻结面授权记录 |
 | Stage 3 | 完成 Go(队列 #14 两段式归档) | 2026-11-04 | #203 / #207 | ✅ | 14 个队列 change 全部归档 |
-| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ **B4 / B7 已于 2026-11-05 收口**(per 台账 Entry #228)⇒ **Phase 1 的计划项全部完成**;仍阻塞终态 Go 的项 = `§6.2` **B3b**(运行时引擎 **1/6**,⛔ 触发条件未出现 ⇒ 不得补)· **B2**(66 条 invariant 覆盖 = **部分**,per Entry #225 现状)· **B3a**(6 族契约达成但 UALink **无实例声明**)· **B5 / B6 / B8**(表上**未登记** verdict,⛔ 不据此断言已达成)⇒ 当前**不得**宣称终态 Go;§8.2 Kill 判据**未触发**(现状是「**部分未产出**」而非「**无法产出**」) |
+| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ **B4 / B7 已于 2026-11-05 收口**(per 台账 Entry #228)⇒ **Phase 1 的计划项全部完成**;仍阻塞终态 Go 的项 = `§6.2` **B3b**(运行时引擎 **1/6**,⛔ 触发条件未出现 ⇒ 不得补)· **B2**(66 条 invariant 覆盖 = **部分**,per Entry #225 现状)· **B3a**(6 族契约达成但 UALink **无实例声明**)· **B5 / B6 / B8**(表上**未登记** verdict,⛔ 不据此断言已达成)⇒ 当前**不得**宣称终态 Go(B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合);§8.2 Kill 判据**未触发**(现状是「**部分未产出**」而非「**无法产出**」) |
 
-> **待办指针**:Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记)已于 **2026-11-05 全部完成**(B4 / B7 收口,per Entry #228)⇒ 终态 DoD Go 的剩余前置 = **B3b**(触发条件驱动)· **B2**(全覆盖)· **B3a**(UALink 实例声明)· **B5 / B6 / B8**(verdict 登记)· **B7 的口径冲突裁决**(见 §6.2 B7 注),逐条完成后在本表末行回填日期与 Entry。
+> **待办指针**:Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记)已于 **2026-11-05 全部完成**(B4 / B7 收口,per Entry #228)⇒ 终态 DoD Go 的剩余前置 = **B3b**(触发条件驱动)· **B2**(全覆盖)· **B3a**(UALink 实例声明)· **B5 / B6 / B8**(verdict 登记)(**B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合**,见 §6.2 B7 注),逐条完成后在本表末行回填日期与 Entry。
 
 **review_by 触发仪式**(per `rdd-planner/SKILL.md:159`):
 - `bash skills/rdd-planner/scripts/planner_objective_revise.sh objective-cep-platform --kind sprint-review --content "..." --decision "..." --reason "..."`
@@ -14164,6 +14167,64 @@ planner 据此落表(`§9.1 ①` H3 分支 2 / `§6.2` B4 / B7 状态),并登记
 
 **⑧ 关联**: **#227**(H3 v2 落地 · AC-9 的前置)· **#226**(SU#4 授权链)· **#225**(B7 8/8 登记 · 本 entry ⑤ 的冲突来源)· **#224**(SU#3)· **#217**(B4 两级口径)·
 `ADR-CEP-06` **SU#1 §④** / **SU#4** · `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`(新)· `docs/validation/2026-11-05-cep-b4-evidence-device.md` · improvement `cep-b4-evidence-device`(AC-9 ✅)
+
+---
+
+
+### Entry #229 — 2026-11-05 [adr-amendment](`ADR-CEP-06` **SU#5** 签发 + B7 口径表修复 —— 「判据 vs 扩展观测」归位)
+
+**主题**:architect 签发 `ADR-CEP-06` **SU#5**(Accepted)—— 裁决 `§9.1 ③` 读法约束的**传导范围**,把
+H2 的 `directory_misses` 归位为**扩展观测**(⛔ 不删行、⛔ 不改预登记集合)⇒ **B7 = 8/8**(限定**内嵌**计数行);
+本 entry 同时是 **表修复授权** 与 `cep_freeze_check.sh --update --authorized-by "Entry #229"` 的**授权依据**。
+**角色**:architect(SU#5 起草 + oracle 1 轮 + critic 1 轮)· planner(本 entry + 表修复)。
+**性质**:验收口径的**末环**裁决(⛔ 不碰 B4 口径、⛔ 不推翻 `SU#2 §③`)。
+
+**① 裁决摘要(逐字来源:`.rddf/reviews/ADR-CEP-06-SU5-judgement-vs-extension.md`)**
+
+| 项 | 内容 |
+|---|---|
+| 未决问题 | `§9.1 ③` 把 ⏭ **从判据层无差别传导到假设层**;而 `SU#2 §③` 的主语是「**该判据**」⇒ 粒度不一致 |
+| 表结构是否合法 | **合法**(`SU#2 §③` 已裁:同一实验**可以**既预登记 out-of-scope 又在判据里引用)⇒ ⛔ 本则**不**把该组合定性为缺陷 |
+| 裁决 | H2 的 `directory_misses` 归位为**扩展观测**(命中 SU#5 §② 条件 1 + 条件 2)⇒ 其 ⏭ **不使 H2 整体失格** ⇒ **B7 = 8/8** |
+| 为何不 7/8 | 该判据在 Entry #218 的**政策**下不可达 ⇒ 7/8 是**政策选择的永久化**;且需推翻 `Entry #225` 已过双审的 8/8 登记。⚠️ **7/8 + 显式待办**仍是可接受的保守路径(⛔ 非「不可行」) |
+| 为何不补产出者 | Entry #218 明文偏好「**判据收窄优先于补实现**」;本则正是**执行**该偏好。`directory_misses` **无下游消费者**(B4 只约束违例类)⇒ 在本则下补产出者成本不成比例 |
+| 防滑坡 | 四条硬约束(降级禁令 + 留痕 + **限定内嵌** + 禁止「先扩 out-of-scope 再归位」的两步绕道,举证责任倒置) |
+| 反例对照 | `SU#4`:H3 的 `deadlock_violations` 同为 ⏭,但**绑 B4** ⇒ 走**装置补全**,⛔ 不是降级 |
+
+**② 表修复清单(本 entry 授权的 planner 域改动)**
+
+| 落点 | 变更 |
+|---|---|
+| `§9.1 ①` H2 第二行 | 标「⚠️ **扩展观测(非判据)**」+ **原判据措辞**(「3 策略 miss 差异」)+ **归位理由** + **命中的两条条件**(SU#5 §② 条件 1 + 2);**行保留**、⏭ 登记保留 |
+| `§9.1 ①` 表后 | 新增**列头张力表注** —— 防「按『判据(逐条)』列机械统计判据数」的工具误纳该行 |
+| `§9.1 ③` 读法约束 | 补一条:读法约束**只对判据生效**;扩展观测的 ⏭ **不使假设失格**,但须保留登记 + B7 处**内嵌限定** |
+| `§6.2 B7` | 改**内嵌限定**版:「**8/8,其中 H2 的 `directory_misses` 为登记的扩展观测(未测量),不构成 H2 结论判据**」;并标「原待裁冲突已闭合」 |
+| `§6.2` 终态表 / 待办指针 | 去掉「B7 口径冲突待裁」项 |
+
+**③ 订正 `Entry #228 ④`(append-only 纪律下的处理)**
+
+`Entry #228 ④` 的 B7 行当时写「标 **8/8 已登记**」**未携限定** —— 这是 SU#5 **硬约束 3** 的首个实测违例。
+⚠️ **不改 `#228` 正文**(台账 append-only,历史条目不重写)⇒ **本 entry 即订正指针**:
+`#228 ④` 的 B7 行以**本条 §② 的 `§6.2 B7` 文本**为准;后续任何引用 B7 的动作**必须**用内嵌限定版。
+
+**④ 授权记录**
+
+- 本条即 `cep_freeze_check.sh --update --authorized-by "Entry #229"` 的**授权依据**。
+- **授权范围** = `docs/adr/ADR-CEP-06-experiment-protocol.md` 的 **SU#5 追加**(111 行;正文与 SU#1~SU#4 **逐字未改**)。
+- ⛔ **不授权**任何预登记集合变更:本轮 **零 `scope-change`** ⇒ `experimental/preregistration.json` **零改动**,`cep_prereg_drift_check` 应仍 rc=0。
+
+**⑤ 复核清单(交 builder)**
+
+| # | 校验 | 期望 |
+|---|---|---|
+| 1 | `cep_freeze_check.sh --update --authorized-by "Entry #229"` | provenance 校验通过(授权 entry 已存在) |
+| 2 | `cep_freeze_check.sh`(重算后) | hash 双绿 |
+| 3 | `cep_prereg_drift_check.sh` | rc=0(零 scope-change 的实证) |
+| 4 | `grep -n "8/8"` | `§6.2 B7` 处为**内嵌限定**版,**无裸「8/8 已登记」** |
+| 5 | `cep_doc_ref_check.sh --strict` / `docs_sync_check.sh --strict` | rc=0 |
+
+**⑥ 关联**:`ADR-CEP-06` **SU#5**(Accepted;审稿报告 `.rddf/reviews/ADR-CEP-06-SU5-judgement-vs-extension.md` = oracle 1 + critic 1,**0 BLOCKER**)·
+**#228 ⑤**(冲突登记)· **#225**(8/8 登记)· **#218**(事实 #2「判据收窄优先于补实现」)· **SU#4**(装置补全反例对照)· `§9.1 ①/②/③` · `§6.2 B4/B7`
 
 ---
 

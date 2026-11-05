@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T08:37:29Z",
+  "updated_at": "2026-11-05T09:21:21Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-05T00:02:00Z",
-      "by": "user",
-      "reason": "用户口令「切architect进行对完成内容审查,检查是否对齐架构,和架构文档内容修订」⇒ 审查 Entry #217 / #218 的 architect 域产物(ADR-CEP-06 SU#1/SU#2 + 07 号 SU#2 + objective §9.1 改造)是否对齐既有架构契约(ADR 不可变 · 跨仓锚点 · 真源分层 · 单源纪律 · 冻结机制),并修订架构文档内容"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-05T00:08:58Z",
-      "by": "auto",
-      "reason": "architect 审查完成(oracle 复核):4 份 architect 域产物**主体对齐**;oracle 推翻「07 号须同步 SU#2」(给 3 条判据:订正触发 / 真源落点触发 / 指针链完整)⇒ 07 号与 ADR **零改动**;真缺口全在 objective(planner 域,非冻结):缺口 A 台账「本条未建」vs「已建」需交叉引用行 · 缺口 B verdict 态集不封闭(🟡 未定义)· 缺口 C H2 行「不成立」措辞滑移 · 缺口 D 事实 #4 指针失实⇒ auto 回 planner 修 objective 四处"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-05T00:10:06Z",
-      "by": "auto",
-      "reason": "planner 域已完成(architect 审查结论落 Entry #219 + objective 4 缺口修 + §10 8 条陈旧状态同步 19→11 + E2E 完备性检查)⇒ 回 builder:先 commit 本轮审查改动,再执行剩余任务清单 #1/#2/#6(零依赖)→ #3/#4/#5(需冻结面授权,同 PR 批量)"
-    },
     {
       "role": "planner",
       "at": "2026-11-05T00:37:02Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-05T08:37:29Z",
       "by": "user",
       "reason": "用户口令「最后切builder继续推进」⇒ ① commit planner 表落(B4 达成回填 / H3 分支 2 实测 0 / B7 口径冲突登记)+ AC-9 评审报告 + Entry #228 ② 全量门禁 + ctest 收口 ③ ⛔ 不做 SU#4 Verification 勾选(architect 域,Entry #228 已留授权但未执行) ④ ⛔ 不 push(用户裁决)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T08:42:57Z",
+      "by": "user",
+      "reason": "用户口令「切 architect 裁决」⇒ 裁决 Entry #228 ⑤ 登记的 B7 口径冲突(§9.1 ③ 读法约束「任一判据 ⏭ ⇒ 假设整体不计」vs H2 的 directory_misses 判据仍 ⏭):7/8 还是 8/8;并判定该裁决是否需要 ADR-CEP-06 追加 SU 及审稿"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T09:18:09Z",
+      "by": "user",
+      "reason": "用户口令「切planner继续推进」⇒ 落 ADR-CEP-06 SU#5(Accepted) 的配套:① 台账 Entry #229(adr-amendment:SU#5 签发 + 表修复授权 + 订正 #228 ④ 的裸 8/8) ② 表修复:§9.1 ① H2 行标「扩展观测(未测量)」+ 命中两条条件 + 表注 / §9.1 ③ 补「只对判据生效」/ §6.2 B7 改内嵌限定版"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T09:21:21Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 执行冻结授权链与收口 commit」⇒ ① 内容 commit(ADR-CEP-06 SU#5 + 审稿报告 + objective 表修复 + Entry #229) ② cep_freeze_check.sh --update --authorized-by \"Entry #229\" ③ manifest commit ④ 复验 hash/provenance 双绿 + drift/doc_ref/docs_sync + ctest ⑤ ⛔ 不 push"
     }
   ],
   "auto_switch_window": null
