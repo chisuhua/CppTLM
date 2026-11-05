@@ -259,9 +259,12 @@ cmake --build build --target validate_topology
 ## 文档同步检查 (`scripts/test/docs_sync_check.sh`)
 
 - 扫描 `AGENTS.md` / `docs/ONBOARDING.md` / `roadmap.md` / `scripts/README.md` 中所有 `path/to/file.ext` 反引号引用
+- 扩展名覆盖代码文件（`.hh` `.cc` `.py` `.json` `.sh` …）**与 `.md`**（2026-11-05 新增；`.md` 仅检查**仓库根起算**的路径，章节内相对引用不在检查范围）
+- 通配 / 占位写法（`ADR-*.md` / `{a,b}/x.md` / `<name>.md` / `ADR-05~09-*.md`）自动跳过 —— 它们不对应单一物理文件
 - 通过 CMake `INCLUDE_PATH_PREFIXES` 智能补全（处理无 `core/` 前缀的简写形式如 `<file>.hh`）
 - 通过 `VIRTUAL_PATHS` 数组排除已删除/归档文件（仅在文档中说明删除原因时引用）
 - `--strict` 模式发现任何缺失返回非零退出码（用于 pre-commit hook）
+- 收尾会调用 `scripts/test/agents_md_lint.py`（见下节）—— `--strict` 模式下其失败同样阻断
 - 当前快照：[`docs/docs_audit_report.md`](../docs/docs_audit_report.md)
 
 ## 测试入口与范围

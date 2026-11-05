@@ -53,6 +53,14 @@ DOCS=(
 #     * 已知文档内提及的"虚拟"路径（src/noc/ 等已通过注释说明）
 PATH_REGEX='`(([a-zA-Z0-9_./-]+/)?[a-zA-Z0-9_.-]+\.(hh|cc|hpp|cpp|h|sh|py|json|yaml|yml|toml))`'
 
+# .md 引用用独立正则（2026-11-05 新增）：
+#   - 只匹配**仓库根起算**的 .md 路径（docs/ openspec/ examples/ include/ src/
+#     configs/ scripts/ test/ cpptlm/ cpptlm_config/ external/ build/）
+#   - 章节内相对引用（如 `dgpu-soc/architecture.md`）不在检查范围 —— 它们的基目录
+#     由章节上下文决定，无法机器判定
+#   - 字符类用否定式 `[^`\s]+`，以支持中文文件名（如 docs/architecture/多层次混合仿真.md）
+MD_PATH_REGEX='`((docs|openspec|examples|include|src|configs|scripts|test|cpptlm|cpptlm_config|external|build|build-on)/[^`[:space:]]+\.md)`'
+
 # 虚拟/设计示意路径（不应被检查）
 # 包括：设计示意 + 已删除/已归档文件（在文档中说明删除原因时引用）+ 规划中文件
 VIRTUAL_PATHS=(
@@ -118,6 +126,10 @@ VIRTUAL_PATHS=(
     # 子串匹配规则：`docs/soc_arch/<sub>/` 前缀条目覆盖全部子目录。
     # .md 引用不在 PATH_REGEX 扫描范围（line 54 已跳过），以下为文档化声明。
     "docs/soc_arch/architecture/"
+    # D-AXI 实施笔记的 ArchForge 跨仓镜像（AGENTS.md §WHAT THIS IS 引用）
+    "docs/architecture/19a-driver-visible-minimal-soc.md"
+    # === 已删除的 specs（ONBOARDING.md 引用，2026-07 归档） ===
+    "docs/superpowers/specs/2026-06-12-phase7-apu-fused-soc-design.md"
     # 2026-10-27 硬件微架构调研迁 ArchForge 仓（docs/research/{SM,TMU,CP,WDU,WDUtoSM,PCIe} + 顶层 5 份专利 + 14-sm-operand-supply-design-target.md）
     "docs/research/SM/"
     "docs/research/TMU/"
@@ -288,8 +300,9 @@ for doc in "${DOCS[@]}"; do
             continue
         fi
 
-        # 跳过 .md 文件（指向其他文档，已由 markdown 链接检查覆盖）
-        if [[ "$path" == *.md ]]; then
+        # 跳过通配/占位路径（ADR-*.md / {a,b}/x.md / <name>.md / ADR-05~09-*.md）
+        # —— 这些是**写法示意**，不对应单一物理文件，无法机器判定
+        if [[ "$path" == *"*"* || "$path" == *"{"* || "$path" == *"}"* || "$path" == *"<"* || "$path" == *">"* || "$path" == *"~"* ]]; then
             continue
         fi
 
@@ -300,7 +313,7 @@ for doc in "${DOCS[@]}"; do
             MISSING_COUNT=$((MISSING_COUNT + 1))
             MISSING_PATHS+=("$doc: \`$path\`")
         fi
-    done < <(grep -oP "$PATH_REGEX" "$doc" 2>/dev/null || true)
+    done < <({ grep -oP "$PATH_REGEX" "$doc" 2>/dev/null || true; grep -oP "$MD_PATH_REGEX" "$doc" 2>/dev/null || true; })
 done
 
 echo -e "${BLUE}扫描完成：${NC}"
@@ -342,6 +355,25 @@ if [ -f "$SCRIPTS_CMAKE" ]; then
     done
 else
     echo -e "  ${YELLOW}⚠️  scripts/CMakeLists.txt 不存在${NC}"
+fi
+
+# AGENTS.md 结构 / 体量 / 行长守门（2026-11-05 新增）
+# 职责边界: docs_sync_check.sh 校验「文档里引用的路径是否存在」;
+#           agents_md_lint.py 校验「AGENTS.md 自身的目录树与体量是否失控」。
+#           后者阻断 append-only 日志把 AGENTS.md 撑成第二份台账。
+echo ""
+echo -e "${BLUE}额外检查：AGENTS.md 结构 / 体量 / 行长${NC}"
+AGENTS_LINT="scripts/test/agents_md_lint.py"
+if [ -f "$AGENTS_LINT" ]; then
+    if ! python3 "$AGENTS_LINT"; then
+        if [ "$STRICT" == "true" ]; then
+            echo ""
+            echo -e "${RED}❌ AGENTS.md 守门检查未通过${NC}"
+            exit 1
+        fi
+    fi
+else
+    echo -e "  ${YELLOW}⚠️  $AGENTS_LINT 不存在${NC}"
 fi
 
 exit 0
