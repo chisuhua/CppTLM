@@ -40,12 +40,12 @@
     "openspec/specs/cep-stub-cache-core/spec.md": "6e2d01d2894b6dcfb80054e2ad97cc5a7af2526202e7def33a1f20a9070250a7",
     "openspec/specs/cep-vc-mapping-contract/spec.md": "35cef62b9b905112b6ca7d3906a43cd941b79bb496e353c3c97ef72d7cca417b",
     "tools/ab_compare.py": "92c50e7bd9d781759b14018d1b3f57dc5fa2e1848c2922a4828ce408da92544d",
-    "tools/render_report.py": "bf3c3d043662740c252787de4525d374df05b7414684e0a265c5c8b09973bc8d",
+    "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #229",
+  "authorized_by": "Entry #233",
   "frozen_at": "2026-11-05",
-  "frozen_at_commit": "6074c36fc0f142a4cafafb73ef9464ae80df9492",
+  "frozen_at_commit": "11413439471d701650d40e860008b127a28d7fc4",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
