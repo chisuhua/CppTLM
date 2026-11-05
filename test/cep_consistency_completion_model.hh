@@ -55,6 +55,10 @@ using tlm::cep::SnoopState;
 ///   ⛔ 不另造同义枚举(否则两处语义可能各自漂移)。
 using CompletionDomain = cep_cd::CompletionDomain;
 
+/// 三个候选节点(SDMA / VRAM / GMMU)—— 事务身份与漏探判定共用。
+inline constexpr node_id_t kNodeCandidates[3] = {tlm::cep::kNodeIdSdma, tlm::cep::kNodeIdVram,
+                                                 tlm::cep::kNodeIdGmmu};
+
 /// 一条 coherence 事务的**实例身份** —— 观测键的粒度(per SU#4 §② 约束 5:必须是**事务级**)。
 struct TxnInstance {
     std::uint64_t txn_id = 0;
@@ -79,6 +83,9 @@ struct Config {
     bool inject_swmr_violation = false;
     /// **负控②**:读观察到过期版本 ⇒ data-value 违例
     bool inject_stale_read = false;
+    /// **负控③(反向 fixture)**:目录丢失一个**真实 sharer**(事务仍期望它)⇒ 漏探判定必须红
+    ///   —— 用于证明 `superset_violations == 0` **不是恒过**(per AC-9 评审 **S1**)。
+    bool inject_missed_sharer = false;
     /// **跨平面阻塞开关**(per SU#4 §② 约束 6 的耦合探针):true = collective 的到达依赖
     /// coherence 全部退休(默认,真实阻塞);false = 不等待 ⇒ 无跨平面阻塞。
     bool blocking_enabled = true;
@@ -221,8 +228,7 @@ inline ConsistencyCompletionModel::ConsistencyCompletionModel(const Config& cfg)
 inline void ConsistencyCompletionModel::inject_round() {
     ++round_;
     const std::size_t k = cfg_.txns_per_round;
-    static const node_id_t kCandidates[3] = {tlm::cep::kNodeIdSdma, tlm::cep::kNodeIdVram,
-                                             tlm::cep::kNodeIdGmmu};
+    const node_id_t(&kCandidates)[3] = kNodeCandidates;
     for (std::size_t i = 0; i < k; ++i) {
         const std::uint64_t addr = cfg_.region_base + i;
         const std::size_t seq = static_cast<std::size_t>((round_ - 1) * k + i);
@@ -258,8 +264,18 @@ inline void ConsistencyCompletionModel::execute_memory_ops(const TxnInstance& t)
     // home 侧读服务(h3 同形)
     (void)home_.service_read(t.addr);
     // 漏探(superset)判定:home 视图须覆盖本事务期望的 sharer 集
+    // ── 漏探(superset)判定 ──────────────────────────────────────────────
+    // ⚠️ 默认路径下 `truth` 的来源就是 `set_sharer` 的参数 ⇒ `truth ⊆ sharers` 同义反复
+    // (per AC-9 评审 **S1**)。`inject_missed_sharer` 是**反向 fixture**:先让目录丢掉一个
+    // 真实 sharer,再把它并入期望集 ⇒ 判定**必须**红,否则该判定恒过(空检查)。
+    responder_set_t expected = t.truth;
+    if (cfg_.inject_missed_sharer) {
+        const node_id_t ghost = kNodeCandidates[static_cast<std::size_t>(t.txn_id % 3)];
+        dcoh_.clear_sharer(t.addr, ghost);
+        expected |= responder_mask_of(ghost);
+    }
     const auto view = dcoh_.view_of(t.addr);
-    if ((view.sharers & t.truth) != t.truth) ++superset_violations_;
+    if ((view.sharers & expected) != expected) ++superset_violations_;
     if (cfg_.detach_memory_ops) {
         // ⛔ **退化形态**:内存操作挂到**独立实例流**(模拟「两段拼接」)
         //   ⇒ 实例级观测键交集为空 ⇒ 装置合格性判定必须红。

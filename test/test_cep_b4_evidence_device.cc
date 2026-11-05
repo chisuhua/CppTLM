@@ -144,6 +144,24 @@ TEST_CASE("B4 证据载体 · 耦合探针:阻塞开/关下内存测量不漂移
     }
 }
 
+TEST_CASE("B4 证据载体 · 反向 fixture:目录丢失真实 sharer ⇒ 漏探判定必须红", "[cep][b4]") {
+    // per AC-9 评审 **S1**:`superset_violations` 默认路径下不可证伪
+    // (`truth` 源 = `set_sharer` 参数,`view` 紧随 set 后读取 ⇒ `truth ⊆ sharers` 同义反复)。
+    // 本条证明它**非恒过**:目录丢掉一个真实 sharer 而事务仍期望它 ⇒ 判定必须红。
+    auto inj_cfg = make_config();
+    inj_cfg.inject_missed_sharer = true;
+    const auto injured = run_scenario(inj_cfg, 600);
+
+    INFO("注入后 superset 违例必须 > 0(否则该判定是空检查): " << injured.superset_violations());
+    REQUIRE(injured.superset_violations() > 0);
+    // 注入只污染 sharer 视图,不得污染 SWMR / data-value(隔离性)
+    REQUIRE(injured.detector().counts().swmr == 0);
+    REQUIRE(injured.detector().counts().data_value == 0);
+
+    INFO("正控(默认关闭)仍须为 0: " << run_scenario(make_config(), 600).superset_violations());
+    REQUIRE(run_scenario(make_config(), 600).superset_violations() == 0);
+}
+
 TEST_CASE("B4 证据载体 · 装置合格性:四条件缺一即红", "[cep][b4]") {
     const auto pos = run_scenario(make_config(), 600);
     auto mis_cfg = make_config();

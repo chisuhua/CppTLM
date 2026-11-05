@@ -704,18 +704,23 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 
 ### ⑤ Verification(可勾选验收判据 —— 前瞻方法)
 
-- [ ] 升级后 run 的 `deadlock_violations` 与 `memory_violations` **均在 `_measured`** 且实测 `0`
-- [ ] 负控:错标完成域 ⇒ 死锁=1;SWMR 注入 ⇒ `memory_violations > 0`(**两检测器各自红过一次**);负控不红 ⇒ emit 拒绝产出
-- [ ] 正控 `in_flight` 峰值 > 1 且 `max_idle_run > 0`(watchdog 观测面非空,⛔ 非恒假)
-- [ ] `render_report --check` 绿 **且** `report.html` 含「✓ 一致性闸门通过」(首个真实实例)
-- [ ] 升级后 run 的 `not-collected ⊆ H3 预登记`(`cep_prereg_drift_check` rc=0)
-- [ ] **同一事务流**:两检测器的观测键集合**实际落 trace**(前置:不落盘则交集校验无从落地)+ 交集非空;交集为空/拆分两段 ⇒ emit **拒绝产出**(含负向 fixture)
-- [ ] **耦合探针前置**:「阻塞开/关」= 两份独立 `metrics.json`(⛔ 非同一 run 改标);预测句落盘时间戳 **早于** run 产出时间戳
-- [ ] **耦合探针**:阻塞开/关两配置下 `memory_violations` 无**未解释**漂移(§② 约束 6)
-- [ ] **预登记收缩先行**:H3 行(真源 ② + JSON 双源同改,含冻结授权)于升级 run 产出**之前**完成;drift 闸 rc=0
-- [ ] **装置版本标签**:v2 run 的 `verification_scope` 含形态/版本标签;`2026-11-04` 验证文档的 H3 分支 1 只勘误不重跑(注明由 v2 重证)
-- [ ] H3 ① 表分支 2 由 planner 更新为实测结论;`§6.2 B4` 由 planner 回填 ✅(**本则不预先宣告**)
-- [ ] 实现评审(architect):装置含真实阻塞机制,**非**「watchdog 恒假 + 默认 0」;否则触发 §② 约束 4 回退;
+> **回填(2026-11-05,per 台账 Entry #228 + AC-9 评审)**:12 条逐条证据 =
+> `docs/validation/2026-11-05-cep-b4-evidence-device.md`(§3 实测 / §6 AC 映射)·
+> `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`(第 12 条 = AC-9 PASS)·
+> `[cep][b4]` 6 cases / 49 assertions · ctest 的 `cep_b4_observation_keys_check` / `cep_b4_coupling_probe`。
+
+- [x] 升级后 run 的 `deadlock_violations` 与 `memory_violations` **均在 `_measured`** 且实测 `0`
+- [x] 负控:错标完成域 ⇒ 死锁=1;SWMR 注入 ⇒ `memory_violations > 0`(**两检测器各自红过一次**);负控不红 ⇒ emit 拒绝产出
+- [x] 正控 `in_flight` 峰值 > 1 且 `max_idle_run > 0`(watchdog 观测面非空,⛔ 非恒假)
+- [x] `render_report --check` 绿 **且** `report.html` 含「✓ 一致性闸门通过」(首个真实实例)
+- [x] 升级后 run 的 `not-collected ⊆ H3 预登记`(`cep_prereg_drift_check` rc=0)
+- [x] **同一事务流**:两检测器的观测键集合**实际落 trace**(前置:不落盘则交集校验无从落地)+ 交集非空;交集为空/拆分两段 ⇒ emit **拒绝产出**(含负向 fixture)
+- [x] **耦合探针前置**:「阻塞开/关」= 两份独立 `metrics.json`(⛔ 非同一 run 改标);预测句落盘时间戳 **早于** run 产出时间戳
+- [x] **耦合探针**:阻塞开/关两配置下 `memory_violations` 无**未解释**漂移(§② 约束 6)
+- [x] **预登记收缩先行**:H3 行(真源 ② + JSON 双源同改,含冻结授权)于升级 run 产出**之前**完成;drift 闸 rc=0
+- [x] **装置版本标签**:v2 run 的 `verification_scope` 含形态/版本标签;`2026-11-04` 验证文档的 H3 分支 1 只勘误不重跑(注明由 v2 重证)
+- [x] H3 ① 表分支 2 由 planner 更新为实测结论;`§6.2 B4` 由 planner 回填 ✅(**本则不预先宣告**)
+- [x] 实现评审(architect):装置含真实阻塞机制,**非**「watchdog 恒假 + 默认 0」;否则触发 §② 约束 4 回退;
       回退的**唯一授权链** = architect 经 `objective §11` 的 `adr-amendment` entry 签发(planner 联签),实现侧⛔ 无自行降格出口
 
 ### ⑥ 关联

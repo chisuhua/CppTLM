@@ -73,6 +73,11 @@ namespace {
 
 TEST_CASE("H4 正控:coherence=requester-scoped + collective=group-scoped 同实验内**无死锁**",
           "[cep][h4][completion-domain]") {
+    // ⚠️ 回归锁(per AC-9 评审 S2):`collective_requires_coherence_retirement` 默认 `true`
+    // 是本装置「正控无死锁」结论的**行为前提**;若被人改成 `false`,正控仍会绿但语义已变
+    // (collective 不再等待 coherence ⇒ 跨平面阻塞消失)⇒ 结论静默失效。故在此显式钉死默认值。
+    REQUIRE(CompletionDomainConfig{}.collective_requires_coherence_retirement == true);
+
     // ✅ 判据正面:两类流共存 ⇒ 全部完成 ⇒ 无死锁
     const auto r = run_scenario(CompletionDomain::RequesterScoped, 8, 400);
 
