@@ -109,3 +109,60 @@
 2. **grep 假阴性仍在**（`INV-CEP-15-IC1` 的教训）⇒ L3 的「无载体」结论须在补断言前**人工再核一次**；
 3. **未判定「是否已建模」** —— §4 末两类的分叉需 architect 裁；
 4. 本审计**不改任何代码/表**，仅产出清单。
+
+
+---
+
+## 7. 复核修正（补断言**前**的人工再核 —— 2026-11-05）
+
+> ⛔ **本节推翻本报告 §3 的 3 条结论**。教训同 `INV-CEP-15-IC1`:**标题用短式 id**
+> (`IC3` / `IC2` / `IC6`)时 grep 必漏 ⇒ §3 的「L3 确认无载体」**不可直接采信**。
+
+### 7.1 三条被推翻的结论
+
+| invariant | §3 的结论 | **复核实况** | 处置 |
+|---|---|---|---|
+| **`INV-CEP-04-IC3`** | 确认无载体 | **已有载体**:`test_cep_sharer_tracker_base.cc:417`「IC2 幂等 + **IC3** 生命周期事件」;且 `sharer_tracker.hh:266` 有 **5 事件名唯一表** `kLifecycleEventNames`(注释明写「IC3:条目生命周期 5 事件」)。⚠️ 但它**只测 `FullMapDirectory` 一个实现** ⇒ 缺的是「**跨 6 实现一致**」这一维 | ✅ **已补**:6 实现的 4 个事件方法签名逐字一致(函数类型比对)+ 5 事件名唯一表 |
+| **`INV-CEP-04-IC6`** | 确认无载体 | **已有部分载体**:`test_cep_sharer_tracker_base.cc:226` 的「6 实现 × caps/behavior 数据表自洽」已断言 4/6 行的 `hazard_under_contention`;且 `sharer_tracker.hh:139` 的 `LookupHazard` 是**单一枚举** ⇒ 字面值**结构上**不可能各自漂移。缺的是 **SparseSnoopFilter / DcohSymmetric 两行** + 值域收敛断言 | ✅ **已补**:全 6 行逐字 + 类型层统一 + 值域 ⊆ {NONE,STALL,CHAIN} |
+| **`INV-CEP-06-IC3`** | 确认无载体 | **已有载体**:`ADR-CEP-06:126` 第 3 点要求「『应 0』语义随 `verification_mode` 变化,须在报告中一并呈现」⇒ `tools/render_report.py:358-359` **已渲染**「验证深度: {mode} / 验证范围: {scope}」+ 限定语 `VERIFICATION_NOTE`;`render_report.py:276-279` 校验两字段必存;`cep_experiment_harness.hh:302-304` 校验 mode ∈ {exhaustive, bounded_random, sampled} | ⛔ **不补断言**(会重复造载体);剩余动作 = 加 `INV-CARRIER` 标记 —— ⚠️ **`tools/render_report.py` 属 M1 冻结件** ⇒ 需授权链(交 planner) |
+
+### 7.2 已补断言清单(本轮,选项 B)
+
+| invariant | 载体 | 形式 | 有牙机制 |
+|---|---|---|---|
+| `CEN-Ib3` | `test/test_cep_canonical_flow_contract.cc`(新文件) | 签名 trait:`on_snoop` 与 `on_snoop_resp` **同时**存在 | **反向 fixture**:缺 `on_snoop_resp` 的坏类型 ⇒ trait 必须 false |
+| `CEN-Ib4` | 同上 | `on_snoop_resp` 形状恰为 6 参且末位 `txn_id` | 反向 fixture:少 `txn_id` 的签名 ⇒ false |
+| `CEN-Ib9` | 同上 | `on_barrier` 形状恰为 2 参(domain + txn_id)⇒ 不含 group 字段 | 反向 fixture:带 group 字段的 `on_barrier` ⇒ false |
+| `CEN-Ib10` | 同上 | `on_snoop_completion_ack` 是**独立入口**且带 `txn_id` | 反向 fixture:无 ack 入口 ⇒ false |
+| `INV-CEP-04-IC3` | `test_cep_sharer_tracker_base.cc`(扩) | 5 事件名唯一表 + 6 实现 × 4 方法**函数类型**逐字一致 | 负控 = 坏签名(不同参数序列)⇒ 比对必 false |
+| `INV-CEP-04-IC6` | 同上 | 全 6 行 hazard 字面值 + 类型层统一 + 值域 ⊆ {NONE,STALL,CHAIN} | 值域断言排除任何新字面值 |
+
+**新增 `INV-CARRIER` 标记** = 6 处(规则 C 的刚性标记,与断言同址)。
+
+### 7.3 仍未闭合(⇒ 需 architect 裁「未建模 vs 漏断言」)
+
+| invariant | 疑点 |
+|---|---|
+| `INV-CEP-09-IC2` | 仲裁策略与依赖图一致 —— 多 VC 仲裁属 Stage 4+(`ADR-CEP-09`) |
+| `INV-CEP-09-IC3` | 依赖传播契约 —— 同上 |
+| `INV-CEP-13-IC1` | 复合一致性模型 `acyclic(ppo_com ∪ rfe ∪ fr ∪ ws)` —— 需运行时 litmus |
+| `INV-CEP-13-IC3` | 跨域桥接并发粒度由对端是否允许提前 ack 决定 —— 需跨协议交互建模 |
+
+⇒ 若判定为「未建模」⇒ 按 `§6.2 B3b` 先例登记 **⏭ 未建模 + 触发条件**,⛔ 不得硬造断言。
+
+### 7.4 剩余缺口(收敛后)
+
+```
+已补(6)                     : CEN-Ib3, CEN-Ib4, CEN-Ib9, CEN-Ib10, INV-CEP-04-IC3, INV-CEP-04-IC6
+已有载体,仅缺标记(1)       : INV-CEP-06-IC3 —— ⚠️ 载体在冻结件 tools/render_report.py ⇒ 需授权链
+L2 待人工确认(5)            : CEN-Ib6, CEN-Ib8, INV-CEP-08-IC1, INV-CEP-08-IC3, INV-CEP-14-IC3
+未建模,需 architect 裁(4)  : INV-CEP-09-IC2, INV-CEP-09-IC3, INV-CEP-13-IC1, INV-CEP-13-IC3
+```
+
+⇒ **真缺口从 11 条收敛到 0 条已确认缺口 + 5 条待确认 + 4 条待裁**;补断言工作量从「7-12 条」降到「已完成 6 条」。
+
+### 7.5 实现坑(踩过,记此避免重犯)
+
+1. **Catch2 `REQUIRE` 与模板实参**:宏展开为 `Decomposer() <= __VA_ARGS__` ⇒ `Trait<Engine>::value` 的 `<` 被解析成**比较运算符** ⇒ 报「expected a type, got 'Engine'」。⇒ 一律**先绑到 `constexpr` 变量**再断言。
+2. **`ProtocolEngineBase` 是类模板**(N = 端口数)⇒ 必须写 `ProtocolEngineBase<2>`;`using tlm::cep::ProtocolEngineBase;` 非法。
+3. **成员指针跨类比对**:`void (D::*)(...)` 与 `void (B::*)(...)` 恒为不同类型 ⇒ `is_same_v` 会**恒红**;`is_convertible_v` 对**虚**成员函数在 GCC 上实测 false ⇒ 必须比对**去类部分的函数类型**。

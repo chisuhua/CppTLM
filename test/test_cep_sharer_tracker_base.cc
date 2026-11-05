@@ -21,7 +21,10 @@
 #include <string>
 #include <type_traits>
 
+#include "tlm/cep/broadcast_null_tracker.hh"
+#include "tlm/cep/cxl_dcoh_tracker.hh"
 #include "tlm/cep/sharer_tracker.hh"
+#include "tlm/cep/tilelink_tree_manager.hh"
 
 namespace {
 
@@ -150,6 +153,17 @@ namespace {
 // ═════════════════════════════════════════════════════════════════════
 // Scenario 1:接口面恰好 4 个方法,命名与签名逐字对齐 ADR-CEP-04 §3
 // ═════════════════════════════════════════════════════════════════════
+namespace {
+    /// 成员指针 → **函数类型**(去类部分)—— 用于比对「签名逐字一致」而与类无关。
+    /// ⚠️ `void (D::*)(...)` 与 `void (B::*)(...)` 是**不同类型**(即使签名相同)
+    ///    ⇒ 必须去类部分再比。
+    template <class MPtr> struct MemberFnType;
+    template <class C, class R, class... A>
+    struct MemberFnType<R (C::*)(A...)> {
+        using type = R(A...);
+    };
+}  // namespace
+
 TEST_CASE("CEP SharerTracker: 接口恰好 4 个方法且签名逐字对齐", "[cep][sharer-tracker]") {
     using LookupSig = void (cep::SharerTrackerIf::*)(std::uint64_t, cep::Intent, cep::LookupResult&,
                                                      cep::LocalView&, cep::LookupHazard&);
@@ -676,4 +690,143 @@ TEST_CASE("CEP SharerTracker: 状态机边界(handle 满 / 未映射位 / 伪 re
         dir.clear_sharer(0xD000, cep::kInvalidNode);
         CHECK(dir.view_of(0xD000).sharers == mask(cep::kNodeIdGmmu));
     }
+}
+
+// ═════════════════════════════════════════════════════════════════════
+// B2 映射审计补断言(per 台账 Entry #232 · C1 裁决规则 B「载体有牙」)
+// ═════════════════════════════════════════════════════════════════════
+
+// INV-CARRIER: INV-CEP-04-IC6
+TEST_CASE("CEP SharerTracker: IC6 —— 6 实现的 hazard 行为契约全字面收敛(NONE/STALL/CHAIN)",
+          "[cep][sharer-tracker]") {
+    // ① 类型层:6 个实现的 hazard 字段**共用同一个枚举类型**
+    //    ⇒ 字面值**结构上**不可能各自漂移(各实现不可能自定义 hazard 枚举)
+    for (const auto& tr : cep::kTrackerTraits) {
+        INFO("实现的 hazard 字段类型必须统一为 cep::LookupHazard: " << tr.name);
+        REQUIRE(std::is_same_v<decltype(tr.behavior.hazard_under_contention), cep::LookupHazard>);
+    }
+
+    // ② 值域层:每个实现只允许三个字面值之一
+    for (const auto& tr : cep::kTrackerTraits) {
+        const auto h = tr.behavior.hazard_under_contention;
+        INFO("实现的 hazard 必须是 NONE/STALL/CHAIN 之一: " << tr.name);
+        REQUIRE((h == cep::LookupHazard::NONE || h == cep::LookupHazard::STALL ||
+                 h == cep::LookupHazard::CHAIN));
+    }
+
+    // ③ 逐实现字面值(**全 6 行**;此前 SparseSnoopFilter / DcohSymmetric 两行**未被断言**)
+    REQUIRE(behavior_of(cep::TrackerImpl::FullMapDirectory).hazard_under_contention ==
+            cep::LookupHazard::STALL);
+    REQUIRE(behavior_of(cep::TrackerImpl::SparseSnoopFilter).hazard_under_contention ==
+            cep::LookupHazard::STALL);
+    REQUIRE(behavior_of(cep::TrackerImpl::DcohSymmetric).hazard_under_contention ==
+            cep::LookupHazard::STALL);
+    REQUIRE(behavior_of(cep::TrackerImpl::TreeManager).hazard_under_contention ==
+            cep::LookupHazard::CHAIN);
+    REQUIRE(behavior_of(cep::TrackerImpl::BroadcastNull).hazard_under_contention ==
+            cep::LookupHazard::NONE);
+    REQUIRE(behavior_of(cep::TrackerImpl::HierarchicalDirectory).hazard_under_contention ==
+            cep::LookupHazard::STALL);
+}
+
+// INV-CARRIER: INV-CEP-04-IC3
+TEST_CASE("CEP SharerTracker: IC3 —— 5 事件名唯一表 + 事件方法签名跨 6 实现一致",
+          "[cep][sharer-tracker]") {
+    // ① 5 个生命周期事件名来自**唯一一张表**(`kLifecycleEventNames`)
+    //    ⇒ 任何实现都**不得**自带一份名字表(否则「事件名一致」会被各自漂移破坏)
+    REQUIRE(cep::kLifecycleEventNames.size() == 5);
+    for (std::size_t i = 0; i < cep::kLifecycleEventNames.size(); ++i) {
+        INFO("生命周期事件名必须与唯一表逐字一致,index=" << i);
+        REQUIRE(std::string(cep::lifecycle_event_name(static_cast<cep::LifecycleEvent>(i))) ==
+                std::string(cep::kLifecycleEventNames[i]));
+    }
+
+    // ② 事件方法的签名:6 个实现**逐字**与接口一致
+    //    (⇒ 「事件名 + 时序契约」的载体跨实现一致 —— 此前只断言了接口本身)
+    //
+    // ⚠️ **判据写法**:比对「成员指针的**函数类型**」(去类部分)而不是成员指针本身
+    //    —— `void (D::*)(...)` 与 `void (B::*)(...)` **恒不同类型**(即使签名逐字相同)
+    //    ⇒ 直接 `is_same_v` 成员指针会**恒红**(假红)。
+    //    ⚠️ 也不用 `is_convertible_v<成员指针, 基类成员指针>`:它对**虚**成员函数的
+    //    成员指针转换判定不可靠(GCC 上实测 false)。
+    using IfLookup = typename MemberFnType<decltype(&cep::SharerTrackerIf::lookup)>::type;
+    using IfBegin = typename MemberFnType<decltype(&cep::SharerTrackerIf::snoop_begin)>::type;
+    using IfFold = typename MemberFnType<decltype(&cep::SharerTrackerIf::snoop_fold)>::type;
+    using IfObserve =
+        typename MemberFnType<decltype(&cep::SharerTrackerIf::observe_snoop)>::type;
+
+    auto lookup_matches = []() {
+        return std::is_same_v<typename MemberFnType<decltype(&cep::FullMapDirectory::lookup)>::type,
+                              IfLookup> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::SparseSnoopFilter::lookup)>::type,
+                              IfLookup> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::HierarchicalDirectory::lookup)>::type,
+                   IfLookup> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::BroadcastNullTracker::lookup)>::type,
+                              IfLookup> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::DcohSymmetric::lookup)>::type,
+                              IfLookup> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::TreeManager::lookup)>::type,
+                              IfLookup>;
+    };
+    auto begin_matches = []() {
+        return std::is_same_v<typename MemberFnType<decltype(&cep::FullMapDirectory::snoop_begin)>::type,
+                              IfBegin> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::SparseSnoopFilter::snoop_begin)>::type,
+                              IfBegin> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::HierarchicalDirectory::snoop_begin)>::type,
+                   IfBegin> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::BroadcastNullTracker::snoop_begin)>::type,
+                              IfBegin> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::DcohSymmetric::snoop_begin)>::type,
+                              IfBegin> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::TreeManager::snoop_begin)>::type,
+                              IfBegin>;
+    };
+    auto fold_matches = []() {
+        return std::is_same_v<typename MemberFnType<decltype(&cep::FullMapDirectory::snoop_fold)>::type,
+                              IfFold> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::SparseSnoopFilter::snoop_fold)>::type,
+                              IfFold> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::HierarchicalDirectory::snoop_fold)>::type,
+                   IfFold> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::BroadcastNullTracker::snoop_fold)>::type,
+                              IfFold> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::DcohSymmetric::snoop_fold)>::type,
+                              IfFold> &&
+               std::is_same_v<typename MemberFnType<decltype(&cep::TreeManager::snoop_fold)>::type,
+                              IfFold>;
+    };
+    auto observe_matches = []() {
+        return std::is_same_v<
+                   typename MemberFnType<decltype(&cep::FullMapDirectory::observe_snoop)>::type,
+                   IfObserve> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::SparseSnoopFilter::observe_snoop)>::type,
+                   IfObserve> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::HierarchicalDirectory::observe_snoop)>::type,
+                   IfObserve> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::BroadcastNullTracker::observe_snoop)>::type,
+                   IfObserve> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::DcohSymmetric::observe_snoop)>::type,
+                   IfObserve> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::TreeManager::observe_snoop)>::type,
+                   IfObserve>;
+    };
+
+    INFO("6 个实现的 lookup 签名必须与接口逐字一致");
+    REQUIRE(lookup_matches());
+    INFO("6 个实现的 snoop_begin 签名必须与接口逐字一致");
+    REQUIRE(begin_matches());
+    INFO("6 个实现的 snoop_fold 签名必须与接口逐字一致");
+    REQUIRE(fold_matches());
+    INFO("6 个实现的 observe_snoop 签名必须与接口逐字一致");
+    REQUIRE(observe_matches());
 }
