@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T01:35:45Z",
+  "updated_at": "2026-11-05T02:54:18Z",
   "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-03T23:54:40Z",
-      "by": "user",
-      "reason": "用户裁决 2026-11-04:critic 三轮预算用满(第 3 轮 REJECT 的全部 finding 已按精确改点修完,B4 已闭合)⇒ **不再开第 4 轮** ⇒ 切 planner:① 落台账 Entry #193(三则 ADR 的**冻结面授权记录**,逐件列名)② 起草队列 #14 `cpptlm-cep-ualink-inc` 的 improvement 草稿(add-improve · brainstorm HARD-GATE 需用户批准设计后方可写文件)"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-04T00:17:43Z",
-      "by": "user",
-      "reason": "用户裁决 2026-11-04「切 builder 继续」⇒ ① commit 三则 ADR 的 SU + 台账 Entry #193 / #194 + 队列 #14 improvement 草稿 ② 跑**冻结面两步授权**(`--update --authorized-by \"Entry #193\"` ⇒ commit ⇒ `--update` ⇒ commit)③ 起队列 #14 的**规约层** change `cpptlm-cep-ualink-inc-state-spec`"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-04T13:01:36Z",
-      "by": "user",
-      "reason": "用户口令「切 architect裁决」⇒ 裁决上一轮登记的待决项:① DoD §6.2 B3「6 个 ProtocolEngine」口径与实现不符 ② ADR-CEP-04 §3.4 的 BISnp 方向口径(冻结面)③ protocol_instance.schema.json 的 perm 描述歧义 ④ ADR 一决策一文档化拆分 ⑤ ADR 行号锚点改节号 ⑥ 声明层 3 项建模假设 ⑦ FullMapDirectory 落位 ⑧ MOESI-GPU 单向 E2E 形态登记"
-    },
     {
       "role": "planner",
       "at": "2026-11-04T13:13:11Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-05T01:35:45Z",
       "by": "auto",
       "reason": "planner 域已落 §9.1 ① 表的 H1 判据格(留痕订正)+ H1/H5 verdict → ✅ + 台账 Entry #221 ⇒ 回 builder:commit + 全量门禁 + ctest"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T02:53:44Z",
+      "by": "user",
+      "reason": "用户口令「继续」⇒ 推进剩余任务 #8(H4 装置 + H8 的 3 组 A/B)。H4 需 architect 裁「判据的可执行形态」—— 实测发现 **Entry #218 拆表时把层次归属写错了**:H4 判据「两类流同实验内无死锁」是**运行期**命题,却把 `evaluate_completion_domain`(**静态源文本扫描**,零运行期含量)列为依赖观测 ⇒ 需 architect 裁形态"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T02:54:00Z",
+      "by": "auto",
+      "reason": "architect 已裁 H4 形态(Entry #222)⇒ 回 planner 落 §9.1 ① 表 H4 行的依赖列措辞订正+ 观测形态 + ② 表 H4 行的 out-of-scope 集,并同步 `experimental/preregistration.json` 的 H4 行(真源 ② 表 ↔ 投影的 drift 闸要求两侧同改)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T02:54:18Z",
+      "by": "auto",
+      "reason": "planner 域已落 §9.1 ①/② 表的 H4 依赖列订正 + out-of-scope 集,投影同步(pending→registered)⇒ 回 builder 实现 H4 装置:新建 test/cep_completion_domain_model.hh(正控 + **反事实负控** + 口径限定)+ emit whitelist 放行 h4(与预登记登记**同 PR**,per SU#2 §③ 顺序锁)"
     }
   ]
 }

@@ -279,8 +279,19 @@ namespace cep_exp {
 
         /// 13 必纳字段是否齐备 + 数值自洽(transactions_per_cycle 等派生量可算)
         bool well_formed() const {
-            return total_transactions == latency.issued() &&
-                   latency.audit_balanced() &&
+            // ⚠️ 2026-11-05(Entry #222):H4 的完成域共存实验**不测延迟**(延迟族全部未采集)
+            //   ⇒ 「事务数 == 延迟签发数」这条自洽约束**不适用** ⇒ 延迟族全未采集时豁免它。
+            //   ⛔ 但「延迟族**部分**采集」时仍须满足(那才是真的不自洽)。
+            const bool latency_fully_uncollected =
+                not_collected.count("avg_latency_cycles") > 0 &&
+                not_collected.count("p50_latency_cycles") > 0 &&
+                not_collected.count("p95_latency_cycles") > 0 &&
+                not_collected.count("p99_latency_cycles") > 0 &&
+                not_collected.count("max_latency_cycles") > 0;
+            const bool latency_consistent =
+                latency_fully_uncollected ||
+                (total_transactions == latency.issued() && latency.audit_balanced());
+            return latency_consistent &&
                    !verification_scope.empty() &&
                    (verification_mode == "exhaustive" ||
                     verification_mode == "bounded_random" ||

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # scripts/test/cep_experiment_run.sh
-# H2 / H3 / H6 实验的 4 件套产出与契约校验
+# H2 / H3 / H4 / H6 实验的 4 件套产出与契约校验
 #
-# 作者: CppTLM Team / 日期: 2026-11-04
+# 作者: CppTLM Team / 日期: 2026-11-04(2026-11-05 增 H4,per 台账 Entry #222)
 #
 # 用法:
 #   bash scripts/test/cep_experiment_run.sh [--out <dir>]
@@ -26,7 +26,7 @@ if [[ ! -x "$BIN" ]]; then
     exit 2
 fi
 
-OUT="experimental/run-$(date +%Y%m%d-%H%M%S)-h2h3h6"
+OUT="experimental/run-$(date +%Y%m%d-%H%M%S)-h2h3h4h6"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --out) OUT="$2"; shift 2 ;;
@@ -52,7 +52,7 @@ with h5py.File(f"{exp_dir}/trace.h5", "w") as f:
     f.attrs["experiment_id"] = exp_id
     f.attrs["grain"] = "run-summary"
     f.attrs["note"] = (
-        "H2/H3/H6 为模型级实验,不产逐周期信号;本数据集为 run 级摘要,"
+        "H2/H3/H4/H6 为模型级实验,不产逐周期信号;本数据集为 run 级摘要,"
         "不冒充 cycle-level trace(per ADR-CEP-06 §3)"
     )
     grp = f.create_group("run_summary")
@@ -69,7 +69,7 @@ PY
 }
 
 status=0
-for exp in h2 h3 h6; do
+for exp in h2 h3 h4 h6; do
     dir="$OUT/$exp"
     echo "── $exp ─────────────────────────────────────────────"
     CEP_EXP_DIR="$dir" CEP_EXP_ID="$exp" "$BIN" "[cep][exp][emit]" -r compact >/dev/null

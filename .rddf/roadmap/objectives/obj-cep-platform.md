@@ -660,7 +660,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **H3** | Sharer Tracker caps 的 `CONSERVATIVE` 完备性契约在 CXL 对称下无漏 snoop | Stage 2 | 0 违例(1000+ 事务)· **分支 1** | `memory_violations`(含 `memory_violation_kinds` 的 SWMR + data-value 双分桶) | **必纳 metric** | == 0 | ✅ **成立**(1200 事务 · swmr=0 · data_value=0) |
 | **H3** | *(同上)* | Stage 2 | *分支 2* | `deadlock_violations` | **必纳 metric** | == 0 | ⏭ **未测量** —— ⚠️ **h3 的 emit 从未设 `deadlock_detected`**(实测:仅 h6 设)⇒ 该分支**从未被测量**,⛔ **不继承 pass** |
 | **H3** | *(同上)* | Stage 2 | *漏探(superset)判定* | `superset_violations` | ⚠️ **非必纳 metric**(落在 `verification_scope` 文本内,**不在** `metrics.json` 的 13 字段) | == 0 | ✅ **成立**(0 漏探)—— ⚠️ **该观测不在 metrics.json 契约面** ⇒ 不受 SU#1 的 `not-collected` 机制覆盖 |
-| **H4** | 完成域判别规则(requester-scoped vs group-scoped)足以同时容纳 coherence + collective | Stage 1~2 | 两类流同实验内无死锁 | 同实验内 coherence 流 + collective 原语;判别由 `evaluate_completion_domain` 承担 | ⏳ **待定**(运行期装置未建) | 两类流同实验内无死锁 | ⏭ **未做实验** —— 现有 `CP-05` 是**静态源文本扫描**,**不**是「同实验内跑两类流」 |
+| **H4** | 完成域判别规则(requester-scoped vs group-scoped)足以同时容纳 coherence + collective | Stage 1~2 | 两类流同实验内无死锁 | **完成域语义由 H4 装置承担(运行层)**;⚠️ **依赖列已订正**(2026-11-05,per 台账 **Entry #222** ①)—— 原写「判别由 `evaluate_completion_domain` 承担」是 **Entry #218 拆表时的层次归属错误**:该函数是 **CP-05 契约面**判据(`std::ifstream` 读 coherence 侧**源文件**、查 8 个 group-scoped 标识 ⇒ **零运行期含量**),而本假设的判据是**运行期**命题 ⇒ 二者**互补守护面**(CP-05 守源文本扫描面 / H4 守运行期共存),**非替代**。⚠️ **H4 的内核 = 跨层蕴含**(per `ADR-CEP-01 §3.2`「两套完成纪律不能混用同一分析工具」+ `§6.2` 代价 3「**分类错误 = 静默死锁**」)⇒ 装置须含**反事实负控**(把 coherence 流错误标记为 group-scoped ⇒ 死锁)以证「判别规则**确实改变**共存结果」 | **必纳 metric**(完成域感知 VC 共存实验;per Entry #222 ③ 形态裁决) | 两类流同实验内无死锁 | ✅ **成立**(2026-11-05,per 台账 **Entry #222** 形态裁决 + **Entry #223** 落地)—— 正控:coherence 8/8 + collective 8/8 全部完成、**无死锁**;**反事实负控**(coherence 错标 group-scoped)⇒ **死锁**(两端均 0/8)⇒ **完成纪律混用 = 静默死锁**在模型上可判定(per `ADR-CEP-01 §6.2` 代价 3)。⚠️ **模型级**(非协议级)· 隔离 VC 前提下(VC 隔离由 H6 承担)· 与 CP-05 **互补非替代**。逐字来源 + 口径限定 + 反向 fixture 见 `docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` |
 | **H5** | SHARP 5 条防误分类规则(R1-R5)能可靠区分 SHARP atomic vs cache-coherent atomic | Stage 2 | 0 误分类 | `divert_count`(divert 计数器形状)+ **fail-stop** 判据(R5) | **契约级断言**(`nvlink_sharp_state_spec.hh` 的 `is_fail_stop` / `divert_counter_field_count`) | 0 误分类 | ✅ **成立**(2026-11-05,per 台账 **Entry #221**)—— ⚠️ **证据边界 = 函数级**:`is_fail_stop` **3 bool 输入 = 8/8 组合显式断言**(2026-11-05 补齐 4 条,此前 4/8 ⇒ 「穷尽」是 overstated)+ `classify_at_fabric_ingress` **2 输入 4/4 穷尽** + **R1/R2 ↔ R5 交叉锁**(`static_assert` × 5,语义分叉即编译红)。⛔ **非**协议级/仿真流量级证明(本仓**无** NP atomic 注入实验)⇒ 引用时**不得**表述为「已证明协议层无误分类」。逐字来源 + 口径限定见 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` **§1 / §4** |
 | **H6** | VC 隔离(collective 独立 VC)确实避免协议级死锁 | Stage 3 | 0 死锁 + collective stall 不占 coherence VC | `deadlock_violations` + `vc_stall_per_vc` + `collective_stalls` | **必纳 metric**(+ `vc_stall_per_vc` 为**可选** metric) | 0 死锁 + collective stall 不占 coherence VC | ✅ **成立**(独立 VC 死锁=0 · 共享 VC 负控 backlog=2000 死锁=1) |
 | **H7** | stub cache 性能模型(固定命中率 + 固定延迟)足以支撑 early-stage 取舍判断 | Stage 1 | 延迟偏差 < 15% | 与 gem5 Ruby / ArchForge 参考模型对拍(per R7) | **外部对拍**(跨仓 trace 比对,**非**本仓 metric) | 偏差 < 15% | ✅ **成立**(常数档 PASS 3/3 + 同源 trace 档 PASS 5/5) |
@@ -678,9 +678,9 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **H1** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run ⇒ 无 metric 需求 |
 | **H2** | `coherence_stalls` · `collective_stalls` · `deadlock_violations` · `memory_violations` · `directory_misses` | 该实验只对比**目录策略的延迟**;`directory_misses` **另有一条**「未测量」登记(见 ① 表)⇒ **刻意不采**,不因「本该有产出者」而补造采集链路 |
 | **H3** | `coherence_stalls` · `collective_stalls` · `directory_misses` · `deadlock_violations` | 一致性完备性实验,只测**违例类**;`deadlock_violations` 未采 ⇒ 已在 ① 表标「未测量」,**不得**继承 pass |
-| **H4** | ⏳ **待登记** —— `status = pending`(**不是**「全部 13 项」;「全部」是 H1/H5/H7 的语义)⇒ out-of-scope 集合此刻**不可预登记** ⇒ ⛔ **在装置设计定稿前,不得开工产出 run** | 预登记**必须先于**产出 |
+| **H4** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `directory_misses` · **`memory_violations`** | 完成域共存实验**不测延迟**(同 H6 理由 + `ADR-CEP-06` SU#1 §③ branch 3);`directory_misses` —— VC / 完成域模型**无目录概念**。⚠️ **`memory_violations` builder 依实二选一**:挂 `SwmrDataValueDetector` ⇒ 实测 0 并声明 `_measured`;不挂 ⇒ 加进 out-of-scope(理由「模型无内存一致性语义」)—— ⛔ **不得**写裸 0 而不声明(per Entry #222 ④)。**2026-11-05 实测选定 = 不挂** ⇒ 本装置**无内存一致性语义** ⇒ 已列入 out-of-scope。**其余 6 项在范围内必实测**(判据直接依赖) |
 | **H5** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run |
-| **H6** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `directory_misses` | 该实验测**VC 隔离**,**不采延迟**(per SU#1 §③ branch 3:`timing` + 预声明不采 ⇒ 必须 `"not-collected"`,⛔ 禁写 0)· `coherence_stalls` / `collective_stalls` / `deadlock_violations` **在范围内** |
+| **H6** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `directory_misses` · **`coherence_stalls`** · **`memory_violations`** | 该实验测**VC 隔离**,**不采延迟**(per SU#1 §③ branch 3:`timing` + 预声明不采 ⇒ 必须 `"not-collected"`,⛔ 禁写 0)· `coherence_stalls` / `collective_stalls` / `deadlock_violations` **在范围内**。⚠️ **2026-11-05 补正**:`coherence_stalls` 与 `memory_violations` 实为 h6 的**无产出者** ⇒ 已移入 out-of-scope(Entry #218 的清单**遗漏**这两项,由 h4 落地时的闸暴露) |
 | **H7** | *(全部 13 项)* | 外部对拍,**不产生**本仓 `metrics.json` run |
 | **H8** | ⏳ **待登记** —— `status = pending`(**不是**「全部 13 项」;「全部」是 H1/H5/H7 的语义)⇒ out-of-scope 集合此刻**不可预登记** ⇒ ⛔ **不得产出 A/B run** | 同 H4 |
 
@@ -13552,6 +13552,149 @@ objective 的 B3 拆分 + 2 份冻结面文档的追加式同步 + 台账登记�
 `ADR-CEP-05`(决策 1 = (α) RN 侧投影 · `:38` 定位澄清)· `ADR-CEP-15`(CacheTLM 对齐边界)·
 `ADR-CEP-06` **SU#1** / **SU#2** · `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` ·
 `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`(登记先例)
+
+---
+
+### Entry #222 — 2026-11-04 [plan](H4 的**判据可执行形态**裁决 —— 层次归属订正 + 装置形态 + 预登记 out-of-scope 框架)
+
+**主题**:落地 Entry #219 ⑥ 剩余任务 #8 的 H4 部分。实据核查发现 **Entry #218 拆表时把 H4 的层次归属写错了**
+⇒ 本条 architect 裁决「H4 的判据可执行形态」,planner 落表,builder 落预登记 + 装置。
+**角色**:architect(裁决)· planner(落表)· builder(装置 + 预登记)。
+**性质**:**已完成归档之后的订正**;⛔ 不改任何已归档 change 的产物;⛔ **不新建契约面**。
+
+**① 层次归属订正(本裁决的根因 —— Entry #218 拆表时的错)**
+
+`objective §9.1` ① 表的 H4 行把「判别由 `evaluate_completion_domain` 承担」列为依赖观测。
+实测:`evaluate_completion_domain`(`include/tlm/cep/collective_plane_contract.hh:1054-1079`)是
+**CP-05 契约面判据** —— 它 `std::ifstream` 读 coherence 侧**源文件**、查 8 个 group-scoped 标识
+(`:1056-1058`)⇒ **零运行期含量**。其头注释(`:1051-1053`)自带恒真警告
+(「⛔ 不得把 collective 侧的 adapter 头塞进来(那只会『证明没扫错文件』= 恒真)」)。
+
+而 H4 的成功判据「**两类流同实验内无死锁**」是**运行期**命题 ⇒ **层次错配**。
+
+**② H4 假设的真正内核 = 跨层蕴含(架构依据)**
+
+| 依据 | 原文 |
+|---|---|
+| `ADR-CEP-01 §3.2` | Coherence Interface 的隐含不变量 = **pairwise 完成纪律**(单点 ack);Fabric Collective Plane 的 = **group-scoped 完成纪律**(全组 ack / 全组到达);「**死锁分析、ordering 规则、形式化验证全部建立在完成纪律上,两套纪律不能混用同一分析工具**」 |
+| `ADR-CEP-01 §6.2` 代价 3 | 「barrier 语义双轨:requester-scoped 走 coherence `barrier` 流;group-scoped 走 `collective_barrier` ⇒ **分类错误 = 静默死锁**」 |
+
+⇒ H4 要测的**因果**是:**判别规则被破坏(group-scoped 语义泄漏进 coherence 侧)⇒ 两类流共存会死锁**。
+⇒ ⛔ 只测「规则对」+「共存没死锁」两个命题的**合取**(不含因果)⇒ 退化为同义反复。
+
+**③ 形态裁决:乙的精炼版 —— 「h6 模型 + 完成域维度」增量改造**
+
+| 要素 | 裁决 |
+|---|---|
+| **载体** | **新建** `test/cep_completion_domain_model.hh` —— ⛔ **不改** `cep_vc_fabric_model.hh`(h6 的 verdict 已登记 ✅,其口径限定注释是 H6 登记的一部分;新建 + 复用 pattern 保可审计性,per `cep_experiment_harness.hh` 先例「实验装置不得升格为契约面」) |
+| **正控**(充分性) | 隔离 VC 配置(VC 隔离由 H6 承担,H4 在其**前提下**测完成域维度 —— 若用共享 VC,h6 已证带宽竞争死锁会污染正控)+ coherence 流 = **requester-scoped**(被服务即 retire)+ collective 流 = **group-scoped**(完成需 group rendezvous,**且 member 到达须真实依赖 VC 服务**,否则 rendezvous 不产生等待 ⇒ 正控恒真)⇒ 无死锁 |
+| **反事实负控**(必要性 · 防恒真 · **缺此则装置不合格**) | 同配置,但把 coherence 流**错误标记为 group-scoped**(精确语义 = 「coherence 请求的完成条件被绑定到 group rendezvous」= `ADR-CEP-01 §6.2` 代价 3 的分类错误;⛔ **不是**「coherence 也 blocking」—— 后者测的是「更多 blocking 更易死锁」的废话)⇒ 死锁发生。⇒ 负控证明判别规则**确实改变**共存结果;若负控红不了 ⇒ 模型根本没建模「完成语义混淆 → 死锁」机制 |
+| **口径限定**(沿用 h6 模板) | ⛔ 非完整仲裁器(无 credit 环流 / 多级仲裁 / 跨 VC 依赖图)· ⛔ `ADR-CEP-09` SU 2026-11-02 §④「GrantAck 可能被 Grant 饿死未建模」登记义务**原样带上**· ⛔ 非协议级证明· 与 CP-05 的关系 = **互补守护面**(CP-05 守源文本扫描面,H4 守运行期共存),**非替代** |
+
+**④ 预登记 out-of-scope 框架(architect 定框架,builder 按装置实际填)**
+
+| 项 | 处置 | 理由 |
+|---|---|---|
+| 5 项延迟族 | **out-of-scope** | 完成域共存实验不测延迟(同 H6 理由 + SU#1 §③ branch 3) |
+| `directory_misses` | **out-of-scope** | VC / 完成域模型无目录概念 |
+| `memory_violations` | **builder 依实二选一** | 挂 `SwmrDataValueDetector` ⇒ 实测 0 并声明 `_measured`;不挂 ⇒ 加进 out-of-scope(理由「模型无内存一致性语义」)。⛔ **不得**写裸 0 而不声明 |
+| 其余 6 项(`total_cycles` / `total_transactions` / `transactions_per_cycle` / `coherence_stalls` / `collective_stalls` / `deadlock_violations`) | **在范围内必实测** | 判据直接依赖 |
+
+**⑤ 判据措辞**:⛔ **不需要收窄** —— 原文「两类流同实验内无死锁」是对的。
+要订正的只是 `§9.1` ① 表 H4 行的**「依赖观测」列**(Entry #218 拆表时的层次遗留)⇒
+改为「完成域语义由 H4 装置承担(**运行层**);`evaluate_completion_domain`(CP-05)守**源文本扫描面**,与 H4 **互补**」。
+⇒ ⚠️ **不照搬 H1 的重量级留痕**(H1 是「原文按落选方案措辞、字面为假」⇒ 需 §1 原文存档 + §2 派生面);
+H4 的**判据原文无错**,只是依赖列表述不准 ⇒ ① 表 H4 行直接更新 + 本条记录即可。
+
+**⑥ 后续动作**
+
+| 序 | 内容 | 归属 | 依赖 |
+|---|---|---|---|
+| 1 | `objective §9.1` ① 表 H4 行:观测形态「⏳ 待定」→ **必纳 metric(完成域感知 VC 共存实验)** + 依赖列措辞订正;② 表 H4 行:「⏳ 待登记」→ 具体 out-of-scope 集 + 理由 | planner | 本条 |
+| 2 | `experimental/preregistration.json` H4 行 `status: pending → registered` + out_of_scope 集 ⇒ **入 M1 冻结集** ⇒ 须 `--update --authorized-by`;**同 PR** 加 emit whitelist `h4` 入口(per SU#2 §③ 顺序锁:登记与 whitelist 放宽**同 PR**);改后跑 `cep_prereg_drift_check`(4 条反向 fixture 已就位) | builder | #1 |
+| 3 | H4 装置实现(`test/cep_completion_domain_model.hh` 新建 + 正控 / 负控 / 口径限定)+ metrics run 产出 + validation 文档(仿 `2026-11-04-cep-h2-h3-h6-experiments.md` 结构)+ §9.1 ① 表 verdict 登记 —— **同批交付**(含 B7 计数 6/8 → 7/8) | builder | #2 |
+| 4 | **H8** 的 3 组 A/B 数据(工具链已齐,per Entry #213)⇒ 同样先增 H8 预登记行 | builder | — |
+
+**⑦ ⛔ 预判无需冻结面授权**:装置住 `test/`(per `cep_experiment_harness.hh` 先例),不触碰 `include/tlm/cep/`;
+若实施中发现需碰契约面 ⇒ **停下回来补授权**。
+
+**⑧ 关联**: Entry **#221**(H1/H5 登记 + B7 计数 4/8→6/8)· **#220**(C1 builder 域落地)· **#219**(architect 审查 + 剩余任务清单 #8)·
+**#218**(§9.1 改造 —— **本条订正其拆表时的层次归属错误**)· `ADR-CEP-01` **§3.2**(两套完成纪律不能混用同一分析工具)· **§6.2 代价 3**(分类错误 = 静默死锁)·
+`ADR-CEP-06` **SU#2** §④(预登记先于产出)· `test/cep_vc_fabric_model.hh`(h6 载体,零完成域概念)·
+`include/tlm/cep/collective_plane_contract.hh`(CP-05 静态扫描)
+
+---
+
+### Entry #223 — 2026-11-04 [build](H4 装置落地 + H4 结论登记 —— B7 计数 6/8 → **7/8**)
+
+**主题**:落地 Entry #222 裁决的 H4 形态 —— 新建完成域感知的运行期装置 + 产出 + 结论登记。
+**角色**:builder(装置 + 产出 + 登记)· architect(Entry #222 裁决)· planner(§9.1 ① 表落 verdict)。
+**性质**:**已完成归档之后的订正**;⛔ **不改**任何已归档 change 的产物;⛔ **不新建契约面**(装置住 `test/`)。
+
+**① H4 装置(新建 2 文件,均在 `test/`)**
+
+| 文件 | 内容 |
+|---|---|
+| `test/cep_completion_domain_model.hh` | `CompletionDomain{RequesterScoped, GroupScoped}` + `CompletionDomainModel`。**死锁机制 = 循环等待**:collective 成员的**到达**依赖 coherence 请求**先退休**(跨平面 ordering,per `ADR-CEP-03 §3`);coherence 被错标 group-scoped 时其**完成**又依赖「全组到达」⇒ 循环等待 |
+| `test/test_cep_h4_completion_domain.cc` | 正控 + **反事实负控** + 区分性(隔离 VC 下仍死锁 ⇒ 排除带宽竞争)+ 口径限定的机器可查锚 |
+
+**⚠️ 负控是「装置合格的前提」**(per Entry #222 ③):只做正控 ⇒ 本实验退化为「两类流同实验没死锁」= **H6 换名**。
+⛔ 负控**不是**「coherence 也 blocking」(那是「更多 blocking 更易死锁」的废话,h6 领域)。
+
+**② H4 实测结果**
+
+| 场景 | coherence 完成 | collective 完成 | 死锁 | 语义混淆 |
+|---|---:|---:|:---:|:---:|
+| **正控**(requester-scoped coherence) | **8/8** | **8/8** | **否** ✅ | 否 |
+| **负控**(coherence 错标 group-scoped) | **0/8** | **0/8** | **是** ✅ | 是 |
+
+⇒ ⭐ **负控下两端均完成 0/8** = 循环等待的**直接证据**(不只是 coherence 卡住);
+⇒ ⭐ **隔离 VC(带宽充足)下仍死锁** ⇒ **排除「带宽竞争」解释**(那是 H6 领域)⇒ 死锁成因是**完成语义**。
+
+**③ 反向 fixture(因正确原因红)**:去掉模型的循环等待依赖(`coherence_all_retired` 恒 true)
+⇒ `FAILED: 负控必须死锁:否则装置没建模「完成语义混淆 → 死锁」机制` ⇒ **负控真能抓装置缺陷**。
+
+**④ 预登记闸在本轮抓出的 1 项实质遗漏**
+
+**H6 的 out-of-scope 清单漏了 `coherence_stalls` 与 `memory_violations`** —— 实测 h6 的这两个 metric
+**无产出者**(h6 只测 deadlock + collective_stalls)⇒ 本应标 `not-collected`,但 Entry #218 定的清单不含它们
+⇒ tools 判据④ 判红。⇒ **已补正**(真源 ② 表 + 机器投影**同改**,per SU#2 ② 门禁② 的 drift 约束)。
+⇒ ⚠️ **这正是预登记闸的用途**:把「清单与实测的脱节」变成**可判红**的,而非靠人工核对发现。
+
+**⑤ 顺带修掉的 3 处实现问题**
+
+| # | 问题 | 修法 |
+|---|---|---|
+| 1 | `render_report.py` 的 **render 路径**(非 check 路径)未接 IC3「不适用」分支 ⇒ h4 的 `memory_violations=not-collected` 被判「非法或缺失」 | `consistency_violations()` 里 `mv == "not-collected"` ⇒ **不适用**(非「非法」) |
+| 2 | h4 的 `deadlock_violations` 原取**负控**值(1)⇒ tools 的 IC3 闸把 h4 判成「实验 fail」 | 改为取**正控**值(0)—— `deadlock_violations` 的语义 = **本 run** 的死锁违例数;负控的死锁是**设计预期的证据**,写进 `verification_scope` 文本 |
+| 3 | `well_formed()` 强制「事务数 == 延迟签发数」⇒ 不测延迟的 h4 无法通过 | 加「**延迟族全未采集**时豁免」分支(⛔ 部分采集时仍须自洽) |
+
+**⑥ 验收(实测)**:`[cep][h4]` **4 cases / 15 assertions** 全绿 ·
+`bash scripts/test/cep_experiment_run.sh` **4/4 组**(h2 / h3 / **h4** / h6)4 件套 + 契约校验通过 ·
+`cep_prereg_drift_check` rc=0(7 registered / 1 pending)· 其余门禁 rc=0 · `ctest` 149/149
+
+**⑦ B7 计数**
+
+| 假设 | verdict |
+|---|---|
+| **H4** | ⏭ → ✅ **成立**(模型级,per validation 文档 §4 口径限定) |
+
+⇒ **§6.2 B7「8 个假设全部有实验结论」:6/8 → 7/8**;
+⇒ **H8 仍未测量**(A/B 数据未产)⇒ **B7 仍未达成**。
+
+**⑧ 后续动作**
+
+| 序 | 内容 | 归属 |
+|---|---|---|
+| 1 | **H8** 的 3 组 A/B 数据 —— 先增 H8 预登记行(`status: pending → registered` + out_of_scope 集),**再**产出 | builder |
+| 2 | `litmus` 证伪判据(`consistency_labels`) | ⏭ **需独立 change 立项**(per Entry #216 载体设计) |
+| 3 | ADR 一决策一文档化的 **D1 路径** | ⏭ 等触发条件 T1/T2/T3 命中 |
+
+**⑨ 关联**: Entry **#222**(H4 形态裁决)· **#221**(H1/H5 登记 · B7 4/8→6/8)· **#220**(C1 builder 域落地)·
+**#219**(architect 审查 + 剩余任务清单 #8)· **#218**(§9.1 改造 + 预登记载体)· `ADR-CEP-01` **§3.2** / **§6.2 代价 3** ·
+`ADR-CEP-06` **SU#1** / **SU#2** ·
+`docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` ·
+`docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md`
 
 ---
 

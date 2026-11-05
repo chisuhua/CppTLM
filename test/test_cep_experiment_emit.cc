@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "cep_completion_domain_model.hh"
 #include "cep_directory_experiment.hh"
 #include "cep_experiment_harness.hh"
 #include "cep_vc_fabric_model.hh"
@@ -210,6 +211,69 @@ namespace {
     }
 
     /// H6:独立 VC vs 共享 VC(各 2000 cycle)
+    /// **H4**:完成域感知的 VC 共存实验 —— 正控(requester-scoped coherence)+ **反事实负控**
+    /// (coherence 被错标为 group-scoped ⇒ 循环等待 ⇒ 死锁)。
+    /// ⚠️ 两个场景**必须同批产出** —— 只出正控 ⇒ 本实验退化为 H6 换名
+    /// (per 台账 Entry #222 ③:负控是**装置合格的前提**)。
+    EmitResult run_h4(std::uint64_t n, std::uint64_t cycles) {
+        // ── 正控:coherence = requester-scoped(单点 ack)⇒ 无循环 ⇒ 无死锁 ──
+        cep_cd::CompletionDomainConfig cfg;
+        cfg.group_size = 3;
+        cfg.deadlock_threshold = 200;
+        cep_cd::CompletionDomainModel positive(cfg);
+        for (std::uint64_t i = 0; i < n; ++i) {
+            positive.inject_coherence(cep_cd::CompletionDomain::RequesterScoped, 100 + i, 1);
+            positive.inject_collective(200 + i);
+        }
+        for (std::uint64_t c = 0; c < cycles; ++c)
+            positive.tick();
+
+        // ── 负控:coherence = group-scoped(完成条件绑定到 group rendezvous)⇒ 循环等待 ⇒ 死锁 ──
+        cep_cd::CompletionDomainModel negative(cfg);
+        for (std::uint64_t i = 0; i < n; ++i) {
+            negative.inject_coherence(cep_cd::CompletionDomain::GroupScoped, 100 + i, 1);
+            negative.inject_collective(200 + i);
+        }
+        for (std::uint64_t c = 0; c < cycles; ++c)
+            negative.tick();
+
+        EmitResult r;
+        // ⚠️ 本实验的 metric 语义:死锁类 metric 取**负控**的实测值(它才是「完成语义混淆」的
+        //    证据);正控的无死锁事实写进 verification_scope(文本)而非 metric
+        //    ⇒ 因为 13 必纳里**没有**「正控无死锁」这个槽位。
+        // ⚠️ `deadlock_violations` 的语义 = **本 run 的死锁违例数** = **正控**的实测(应为 0)
+        //   ⇒ 负控的死锁是**设计预期的证据**(证明完成纪律混用 ⇒ 死锁),**不是**本 run 的违例
+        //   ⇒ 写进 `verification_scope` 文本(见 r.scope),不进 metric 槽位。
+        //   ⇒ 否则 tools 的 IC3 闸会把 h4 判成「实验 fail」⇒ 掩盖正控的结论。
+        r.metrics.deadlock_detected = positive.deadlocked() ? 1 : 0;
+        r.metrics.coherence_stalls = positive.coherence_stalls();
+        r.metrics.collective_stalls = positive.collective_stalls();
+        r.metrics.total_transactions = n * 2;
+        r.metrics.total_cycles = positive.cycle();
+        r.metrics.verification_mode = "bounded_random";
+        r.scope = "H4 完成域共存: 正控(requester-scoped coherence + group-scoped collective)"
+                  "两类流同实验内无死锁(隔离 VC,coherence 完成 " +
+                  std::to_string(positive.coherence_retired()) + "/" + std::to_string(n) +
+                  ",collective " + std::to_string(positive.collective_retired()) + "/" +
+                  std::to_string(n) + "); 反事实负控(coherence 错标 group-scoped)⇒ 死锁=" +
+                  (negative.deadlocked() ? "1" : "0") + "(两端均完成 " +
+                  std::to_string(negative.coherence_retired()) + "/" +
+                  std::to_string(negative.collective_retired()) +
+                  ") ⇒ 完成纪律混用 = 静默死锁(per ADR-CEP-01 §6.2 代价 3)";
+        r.metrics.verification_scope = r.scope;
+        // ⚠️ `memory_violations`:本装置**无内存一致性语义** ⇒ 不挂检测器 ⇒ 登记为未采集
+        // (per Entry #222 ④:不得写裸 0 而不声明)
+        r.metrics.not_collected["memory_violations"] =
+            "本装置无内存一致性语义(不挂 SwmrDataValueDetector)";
+        r.metrics.not_collected["directory_misses"] = "本装置无目录概念";
+        for (const char* lat : {"avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
+                                "p99_latency_cycles", "max_latency_cycles"})
+            r.metrics.not_collected[lat] = "本实验不测延迟(完成域共存实验,per 预登记 out-of-scope)";
+        r.metrics.measured = {"total_cycles",     "total_transactions", "transactions_per_cycle",
+                              "coherence_stalls", "collective_stalls",  "deadlock_violations"};
+        return r;
+    }
+
     EmitResult run_h6(int cycles) {
         VcFabricConfig iso;
         iso.isolate_collective = true;
@@ -288,6 +352,10 @@ TEST_CASE("实验产出 · 4 件套输入(仅 CEP_EXP_DIR 设置时)", "[cep][ex
         r = run_h3(1200);
     else if (exp_id == "h6")
         r = run_h6(2000);
+    else if (exp_id == "h4")
+        // ⚠️ `h4` 的放行**必须与预登记登记同 PR**(per ADR-CEP-06 SU#2 §③ 顺序锁:
+        //    「登记 H4 预登记行的同一 PR 才允许加 run_h4」)⇒ Entry #222 已同批登记。
+        r = run_h4(8, 400);
     else {
         FAIL("未知 CEP_EXP_ID: " << exp_id);
     }

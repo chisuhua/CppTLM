@@ -11,7 +11,8 @@
     "   未列入者 ⇒ 该假设的实验**必须实测**它。",
     "⚠️ 本文件入 M1 冻结集(派生刷新型成员,先例: include/tlm/cep/fabric.json)⇒ 改动须 --update --authorized-by <台账 entry>。",
     "⚠️ H3 型组合是**合法**的(判据引用某 metric + 该 metric 被预登记为 out-of-scope)——",
-    "   其 verdict 永远 = 「未测量」(per ADR-CEP-06 SU#1 §④ + SU#2 §③ 的 gloss)。"
+    "   其 verdict 永远 = 「未测量」(per ADR-CEP-06 SU#1 §④ + SU#2 §③ 的 gloss)。",
+    "⚠️ 2026-11-05(Entry #222):H4 由 pending → registered —— 装置形态已由 architect 裁决(新建 test/cep_completion_domain_model.hh + 正控/负控/口径限定);⛔ 负控是**装置合格的前提**(把 coherence 流错误标记为 group-scoped ⇒ 死锁),缺此则装置退化为 h6 的带宽竞争测试 ⇒ 负控红不了 ⇒ H4 不成立。"
   ],
   "required_metrics": [
     "total_cycles",
@@ -70,9 +71,17 @@
       "reason": "一致性完备性实验,只测违例类;deadlock_violations 未采 ⇒ 已在判据-指标需求表标「未测量」,不得继承 pass"
     },
     "H4": {
-      "status": "pending",
-      "out_of_scope": [],
-      "reason": "运行期装置未建 ⇒ out-of-scope 集合此刻不可预登记 ⇒ 禁产出 run;预登记必须先于产出"
+      "status": "registered",
+      "out_of_scope": [
+        "avg_latency_cycles",
+        "directory_misses",
+        "max_latency_cycles",
+        "memory_violations",
+        "p50_latency_cycles",
+        "p95_latency_cycles",
+        "p99_latency_cycles"
+      ],
+      "reason": "完成域共存实验不测延迟(同 H6 理由 + ADR-CEP-06 SU#1 §③ branch 3);directory_misses —— VC / 完成域模型无目录概念。✅ memory_violations **实测选定 = 不挂检测器**(2026-11-05)⇒ 本装置无内存一致性语义 ⇒ 已列入 out-of-scope;⛔ 不得写裸 0 而不声明。其余 6 项(total_cycles / total_transactions / transactions_per_cycle / coherence_stalls / collective_stalls / deadlock_violations)在范围内必实测。"
     },
     "H5": {
       "status": "registered",
@@ -97,13 +106,15 @@
       "status": "registered",
       "out_of_scope": [
         "avg_latency_cycles",
+        "coherence_stalls",
+        "directory_misses",
+        "max_latency_cycles",
+        "memory_violations",
         "p50_latency_cycles",
         "p95_latency_cycles",
-        "p99_latency_cycles",
-        "max_latency_cycles",
-        "directory_misses"
+        "p99_latency_cycles"
       ],
-      "reason": "该实验测 VC 隔离,不采延迟(per ADR-CEP-06 SU#1 §③ branch 3:timing + 预声明不采 ⇒ 必须 not-collected,禁写 0);coherence_stalls / collective_stalls / deadlock_violations 在范围内"
+      "reason": "该实验测 VC 隔离,不采延迟(per ADR-CEP-06 SU#1 §③ branch 3:timing + 预声明不采 ⇒ 必须 not-collected,禁写 0);coherence_stalls / collective_stalls / deadlock_violations 在范围内。⚠️ 2026-11-05 补正:coherence_stalls 与 memory_violations 实为 h6 的**无产出者**(Entry #218 的清单遗漏这两项,由 h4 落地时的预登记闸暴露)。"
     },
     "H7": {
       "status": "registered",

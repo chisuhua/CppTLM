@@ -57,7 +57,10 @@ def consistency_violations(metrics):
     elif dv > 0:
         problems.append(f"死锁违例 {dv} 次(deadlock_violations > 0)")
 
-    if not isinstance(mv, int) or isinstance(mv, bool) or mv < 0:
+    if mv == "not-collected":
+        # 违例类未采集 ⇒ IC3「不适用」(per ADR-CEP-06 SU#1 §④ ⑤)—— 不是「非法或缺失」
+        pass
+    elif not isinstance(mv, int) or isinstance(mv, bool) or mv < 0:
         problems.append(f"memory_violations 非法或缺失: {mv!r}")
     elif mv > 0:
         problems.append(f"一致性违例 {mv} 次(memory_violations > 0)")
@@ -277,6 +280,10 @@ def render(exp_dir, out_path):
     if os.path.exists(cfg_path):
         with open(cfg_path, encoding="utf-8") as f:
             cfg = json.load(f)
+    # ⚠️ IC3「不适用」分支(per ADR-CEP-06 SU#1 §④ ⑤):违例类为 "not-collected" ⇒ 不判 fail。
+    #   ⚠️ **实测非 0** 的违例(如 H4 负控的 deadlock_violations=1)是**设计预期** ⇒
+    #   仍渲染为告警(报告须显示),只是不阻断 render。
+    _render_pre, _render_ic3_na = preregistration_problems(m, cfg.get("hypothesis_id"))
     violations = consistency_violations(m)
     rows = []
     for k in REQUIRED_METRICS:
