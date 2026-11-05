@@ -554,7 +554,7 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 - [x] `consistency_violations()` 的提前 `return` 已移除(各违例类独立判定)*(代码实测;F4 双路径同红)*
 - [x] emit 产出层硬约束已落地:**负控红不了 ⇒ ⛔ 不产出 run、不登记结论**(机器断言)*(`EmitResult.fatal` + `device_qualified()`;`[cep][h4]` 含 `REQUIRE_FALSE(r.fatal)` 前置)*
 - [x] `verification_scope` 的**自证面**性质已在 validation 文档与本则中**显式承认***(本则 §②B(i) + `docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` §7 注)*
-- [ ] `M1` 冻结面 `--update --authorized-by` 完成 + hash / provenance 双绿*(按本条 §⑥ 的双步流程执行:内容 commit → `--update --authorized-by "Entry #224"` → manifest commit;在完成前本项保持未勾)*
+- [x] `M1` 冻结面 `--update --authorized-by` 完成 + hash / provenance 双绿*(实测:内容 commit `ae11e0f1` → `--update --authorized-by "Entry #224"` → manifest commit `83f11700`;41 产物 hash + provenance 双绿)*
 
 ---
 
@@ -623,7 +623,7 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 - [x] h2 / h3 / h4 / h6 的 `report.html` **均**渲染 **⚪ 一致性闸门不适用**且**全文不含**「一致性闸门通过」*(官方 4 组重跑实测:四者全 ⚪、`grep '一致性闸门通过'` 零命中)*
 - [x] `consistency_violations()` 的提前 `return` 已移除;check 路径**不再**因 IC3 不适用而短路*(代码 + F4 双路径)*
 - [x] emit 产出层硬约束已落地(**负控未死锁 ⇒ ⛔ 不产出 run、不登记结论**)*(`EmitResult.fatal` + `[cep][h4]` 断言)*
-- [ ] `M1` 冻结面 `--update --authorized-by "Entry #224"` 完成 + hash / provenance 双绿*(双步流程的最后一步;完成前保持未勾)*
+- [x] `M1` 冻结面 `--update --authorized-by "Entry #224"` 完成 + hash / provenance 双绿*(实测:内容 commit `ae11e0f1` → `--update` → manifest commit `83f11700`;双绿)*
 
 ### ④ 关联
 
