@@ -5,63 +5,91 @@
     "CEN-Ib1": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 152,
+        "line": 151,
         "kind": ".cc"
       }
     ],
     "CEN-Ib10": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 151,
+        "line": 150,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib11": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 465,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib2": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 337,
         "kind": ".cc"
       }
     ],
     "CEN-Ib3": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 117,
+        "line": 115,
         "kind": ".cc"
       }
     ],
     "CEN-Ib4": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 128,
+        "line": 126,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib5": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 364,
         "kind": ".cc"
       }
     ],
     "CEN-Ib6": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 164,
+        "line": 163,
+        "kind": ".cc"
+      }
+    ],
+    "CEN-Ib7": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 421,
         "kind": ".cc"
       }
     ],
     "CEN-Ib9": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 139,
+        "line": 137,
         "kind": ".cc"
       }
     ],
     "INV-CEP-04-IC1": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 923,
+        "line": 931,
         "kind": ".cc"
       }
     ],
     "INV-CEP-04-IC2": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 431,
+        "line": 430,
         "kind": ".cc"
       }
     ],
     "INV-CEP-04-IC3": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 735,
+        "line": 734,
         "kind": ".cc"
       }
     ],
@@ -75,7 +103,21 @@
     "INV-CEP-04-IC6": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 702,
+        "line": 701,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-04-IC7": [
+      {
+        "file": "test/test_cep_instance_declaration_contract.cc",
+        "line": 143,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-05-IC1": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 525,
         "kind": ".cc"
       }
     ],
@@ -121,6 +163,13 @@
         "kind": ".cc"
       }
     ],
+    "INV-CEP-07-IC2": [
+      {
+        "file": "test/test_cep_engine_and_numbering_contract.cc",
+        "line": 130,
+        "kind": ".cc"
+      }
+    ],
     "INV-CEP-07-IC3": [
       {
         "file": "test/test_cep_collective_plane_invariants.cc",
@@ -140,10 +189,38 @@
         "kind": ".cc"
       }
     ],
+    "INV-CEP-07-IC5": [
+      {
+        "file": "test/test_cep_engine_and_numbering_contract.cc",
+        "line": 219,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-07-IC6": [
+      {
+        "file": "test/test_cep_engine_and_numbering_contract.cc",
+        "line": 293,
+        "kind": ".cc"
+      }
+    ],
     "INV-CEP-07-IC7": [
       {
         "file": "test/test_cep_canonical_flow_contract.cc",
-        "line": 250,
+        "line": 246,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-07A-IC1": [
+      {
+        "file": "test/test_cep_engine_and_numbering_contract.cc",
+        "line": 685,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-07A-IC2": [
+      {
+        "file": "test/test_cep_canonical_flow_contract.cc",
+        "line": 626,
         "kind": ".cc"
       }
     ],
@@ -165,6 +242,13 @@
       {
         "file": "test/test_cep_ordering_point_checker.cc",
         "line": 356,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-09-IC1": [
+      {
+        "file": "test/test_cep_instance_declaration_contract.cc",
+        "line": 198,
         "kind": ".cc"
       }
     ],
@@ -192,7 +276,14 @@
     "INV-CEP-11-IC3": [
       {
         "file": "test/test_cep_version_change_traceability.cc",
-        "line": 208,
+        "line": 206,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-12-IC1": [
+      {
+        "file": "test/test_cep_instance_declaration_contract.cc",
+        "line": 72,
         "kind": ".cc"
       }
     ],
@@ -225,6 +316,13 @@
         "kind": ".cc"
       }
     ],
+    "INV-CEP-13-IC2": [
+      {
+        "file": "test/test_cep_instance_declaration_contract.cc",
+        "line": 306,
+        "kind": ".cc"
+      }
+    ],
     "INV-CEP-14-IC1": [
       {
         "file": "test/test_cep_dummy_signals.cc",
@@ -236,6 +334,13 @@
       {
         "file": "test/test_cep_dummy_signals.cc",
         "line": 107,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-14-IC3": [
+      {
+        "file": "test/test_cep_instance_declaration_contract.cc",
+        "line": 238,
         "kind": ".cc"
       }
     ],
@@ -267,10 +372,38 @@
         "kind": ".sh"
       }
     ],
+    "INV-CEP-16-IC2": [
+      {
+        "file": "test/test_cep_engine_and_numbering_contract.cc",
+        "line": 385,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-16-IC3": [
+      {
+        "file": "test/test_cep_engine_and_numbering_contract.cc",
+        "line": 530,
+        "kind": ".cc"
+      }
+    ],
     "INV-CEP-NUM-IC1": [
       {
         "file": "test/test_cep_contracts_crosscheck.cc",
         "line": 54,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-NUM-IC2": [
+      {
+        "file": "test/test_cep_engine_and_numbering_contract.cc",
+        "line": 598,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-NUM-IC3": [
+      {
+        "file": "test/test_cep_engine_and_numbering_contract.cc",
+        "line": 429,
         "kind": ".cc"
       }
     ],

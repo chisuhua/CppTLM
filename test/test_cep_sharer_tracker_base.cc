@@ -158,11 +158,10 @@ namespace {
     /// ⚠️ `void (D::*)(...)` 与 `void (B::*)(...)` 是**不同类型**(即使签名相同)
     ///    ⇒ 必须去类部分再比。
     template <class MPtr> struct MemberFnType;
-    template <class C, class R, class... A>
-    struct MemberFnType<R (C::*)(A...)> {
+    template <class C, class R, class... A> struct MemberFnType<R (C::*)(A...)> {
         using type = R(A...);
     };
-}  // namespace
+} // namespace
 
 TEST_CASE("CEP SharerTracker: 接口恰好 4 个方法且签名逐字对齐", "[cep][sharer-tracker]") {
     using LookupSig = void (cep::SharerTrackerIf::*)(std::uint64_t, cep::Intent, cep::LookupResult&,
@@ -755,51 +754,60 @@ TEST_CASE("CEP SharerTracker: IC3 —— 5 事件名唯一表 + 事件方法签�
     using IfLookup = typename MemberFnType<decltype(&cep::SharerTrackerIf::lookup)>::type;
     using IfBegin = typename MemberFnType<decltype(&cep::SharerTrackerIf::snoop_begin)>::type;
     using IfFold = typename MemberFnType<decltype(&cep::SharerTrackerIf::snoop_fold)>::type;
-    using IfObserve =
-        typename MemberFnType<decltype(&cep::SharerTrackerIf::observe_snoop)>::type;
+    using IfObserve = typename MemberFnType<decltype(&cep::SharerTrackerIf::observe_snoop)>::type;
 
     auto lookup_matches = []() {
         return std::is_same_v<typename MemberFnType<decltype(&cep::FullMapDirectory::lookup)>::type,
                               IfLookup> &&
-               std::is_same_v<typename MemberFnType<decltype(&cep::SparseSnoopFilter::lookup)>::type,
-                              IfLookup> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::SparseSnoopFilter::lookup)>::type,
+                   IfLookup> &&
                std::is_same_v<
                    typename MemberFnType<decltype(&cep::HierarchicalDirectory::lookup)>::type,
                    IfLookup> &&
-               std::is_same_v<typename MemberFnType<decltype(&cep::BroadcastNullTracker::lookup)>::type,
-                              IfLookup> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::BroadcastNullTracker::lookup)>::type,
+                   IfLookup> &&
                std::is_same_v<typename MemberFnType<decltype(&cep::DcohSymmetric::lookup)>::type,
                               IfLookup> &&
                std::is_same_v<typename MemberFnType<decltype(&cep::TreeManager::lookup)>::type,
                               IfLookup>;
     };
     auto begin_matches = []() {
-        return std::is_same_v<typename MemberFnType<decltype(&cep::FullMapDirectory::snoop_begin)>::type,
-                              IfBegin> &&
-               std::is_same_v<typename MemberFnType<decltype(&cep::SparseSnoopFilter::snoop_begin)>::type,
-                              IfBegin> &&
+        return std::is_same_v<
+                   typename MemberFnType<decltype(&cep::FullMapDirectory::snoop_begin)>::type,
+                   IfBegin> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::SparseSnoopFilter::snoop_begin)>::type,
+                   IfBegin> &&
                std::is_same_v<
                    typename MemberFnType<decltype(&cep::HierarchicalDirectory::snoop_begin)>::type,
                    IfBegin> &&
-               std::is_same_v<typename MemberFnType<decltype(&cep::BroadcastNullTracker::snoop_begin)>::type,
-                              IfBegin> &&
-               std::is_same_v<typename MemberFnType<decltype(&cep::DcohSymmetric::snoop_begin)>::type,
-                              IfBegin> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::BroadcastNullTracker::snoop_begin)>::type,
+                   IfBegin> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::DcohSymmetric::snoop_begin)>::type,
+                   IfBegin> &&
                std::is_same_v<typename MemberFnType<decltype(&cep::TreeManager::snoop_begin)>::type,
                               IfBegin>;
     };
     auto fold_matches = []() {
-        return std::is_same_v<typename MemberFnType<decltype(&cep::FullMapDirectory::snoop_fold)>::type,
-                              IfFold> &&
-               std::is_same_v<typename MemberFnType<decltype(&cep::SparseSnoopFilter::snoop_fold)>::type,
-                              IfFold> &&
+        return std::is_same_v<
+                   typename MemberFnType<decltype(&cep::FullMapDirectory::snoop_fold)>::type,
+                   IfFold> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::SparseSnoopFilter::snoop_fold)>::type,
+                   IfFold> &&
                std::is_same_v<
                    typename MemberFnType<decltype(&cep::HierarchicalDirectory::snoop_fold)>::type,
                    IfFold> &&
-               std::is_same_v<typename MemberFnType<decltype(&cep::BroadcastNullTracker::snoop_fold)>::type,
-                              IfFold> &&
-               std::is_same_v<typename MemberFnType<decltype(&cep::DcohSymmetric::snoop_fold)>::type,
-                              IfFold> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::BroadcastNullTracker::snoop_fold)>::type,
+                   IfFold> &&
+               std::is_same_v<
+                   typename MemberFnType<decltype(&cep::DcohSymmetric::snoop_fold)>::type,
+                   IfFold> &&
                std::is_same_v<typename MemberFnType<decltype(&cep::TreeManager::snoop_fold)>::type,
                               IfFold>;
     };
@@ -810,9 +818,9 @@ TEST_CASE("CEP SharerTracker: IC3 —— 5 事件名唯一表 + 事件方法签�
                std::is_same_v<
                    typename MemberFnType<decltype(&cep::SparseSnoopFilter::observe_snoop)>::type,
                    IfObserve> &&
-               std::is_same_v<
-                   typename MemberFnType<decltype(&cep::HierarchicalDirectory::observe_snoop)>::type,
-                   IfObserve> &&
+               std::is_same_v<typename MemberFnType<
+                                  decltype(&cep::HierarchicalDirectory::observe_snoop)>::type,
+                              IfObserve> &&
                std::is_same_v<
                    typename MemberFnType<decltype(&cep::BroadcastNullTracker::observe_snoop)>::type,
                    IfObserve> &&
@@ -898,9 +906,9 @@ namespace {
     template <class C>
     struct CapsFieldsAreEnums
         : std::bool_constant<std::is_same_v<decltype(C::scope), cep::Scope> &&
-                              std::is_same_v<decltype(C::completeness), cep::Completeness> &&
-                              std::is_same_v<decltype(C::authority), cep::Authority> &&
-                              std::is_same_v<decltype(C::aggregation_at), cep::AggregationAt>> {};
+                             std::is_same_v<decltype(C::completeness), cep::Completeness> &&
+                             std::is_same_v<decltype(C::authority), cep::Authority> &&
+                             std::is_same_v<decltype(C::aggregation_at), cep::AggregationAt>> {};
 
     // 反向 fixture:同形但字段退化为整数 ⇒ 类型检查必须判否
     struct BadCapsAsInts {
@@ -914,11 +922,11 @@ namespace {
     template <class C>
     struct CapsFieldsAreInts
         : std::bool_constant<!std::is_same_v<decltype(C::scope), cep::Scope> &&
-                              !std::is_same_v<decltype(C::completeness), cep::Completeness> &&
-                              !std::is_same_v<decltype(C::authority), cep::Authority> &&
-                              !std::is_same_v<decltype(C::aggregation_at), cep::AggregationAt>> {};
+                             !std::is_same_v<decltype(C::completeness), cep::Completeness> &&
+                             !std::is_same_v<decltype(C::authority), cep::Authority> &&
+                             !std::is_same_v<decltype(C::aggregation_at), cep::AggregationAt>> {};
 
-}  // namespace
+} // namespace
 
 // INV-CARRIER: INV-CEP-04-IC1
 // 变红理由(per ADR-CEP-06 SU#4 规则 B):caps 字段类型退化为整数 / 取值落在枚举子集外 ⇒ 红

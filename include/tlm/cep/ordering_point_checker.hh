@@ -86,6 +86,24 @@ struct OrderingReport {
 };
 
 // ─────────────────────────────────────────────────────────────────────
+// 判定合成(**纯函数** —— 使 `INV-CEP-14-IC3` 可单测而不必删源码分支)
+// ─────────────────────────────────────────────────────────────────────
+// 判据(per `ADR-CEP-14 §3` IC3):**组合接缝检查项缺失时,组合检查结果必须判 fail**
+//   (不得静默跳过)。⇒ 该规则**在这里**被强制,而不是靠「每次都恰好有该项」。
+inline GateVerdict derive_ordering_verdict(const std::vector<CriterionResult>& results,
+                                          bool ic2_item_present) {
+    if (results.empty())
+        return GateVerdict::SKIP;  // 未评估(无声明)⇒ SKIP,与 fail 可区分
+    if (!ic2_item_present)
+        return GateVerdict::FAIL;  // 组合接缝检查项缺失 ⇒ fail(**不得**静默跳过)
+    for (const auto& c : results) {
+        if (c.verdict == GateVerdict::FAIL)
+            return GateVerdict::FAIL;
+    }
+    return GateVerdict::PASS;
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // 单实例四判据
 // ─────────────────────────────────────────────────────────────────────
 inline std::vector<CriterionResult> evaluate_ordering_point_instance(const DeclaredInstance& inst) {
@@ -234,9 +252,9 @@ inline OrderingReport evaluate_ordering_points(const ChannelDeclaration& decl) {
         r.results.insert(r.results.end(), res.begin(), res.end());
     }
     r.ic2_item_present = r.has(CriterionId::IC2_ESilentUpgrade);
+    r.verdict = derive_ordering_verdict(r.results, r.ic2_item_present);
 
     const std::size_t n_fail = r.count(GateVerdict::FAIL);
-    r.verdict = (n_fail == 0) ? GateVerdict::PASS : GateVerdict::FAIL;
 
     std::ostringstream os;
     os << '[' << gate_verdict_name(r.verdict) << "] cep ordering point checker: "

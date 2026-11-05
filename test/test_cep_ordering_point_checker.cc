@@ -359,11 +359,12 @@ TEST_CASE("CEP OrderingPoint: IC3 —— Ordering Point 不绑定任何物理实
     // 判据:`ADR-CEP-08` 的 Ordering Point 是**协议中立**的判据载体
     //       (目录 / 总线 / 树形 manager / in-network 排序点**皆可**承载)
     //       ⇒ 其实现**不得绑定**任何具体物理实体类型。
-    const auto text = cpptlm::cep::read_file((cpptlm::cep::repo_root() / "include/tlm/cep/ordering_point_checker.hh").string());
+    const auto text = cpptlm::cep::read_file(
+        (cpptlm::cep::repo_root() / "include/tlm/cep/ordering_point_checker.hh").string());
 
     // 实体词表 = 仓内**真实存在**的 OP 承载实体类型(大小写敏感,避免误伤 `switch (id)` 之类)
     static const char* kPhysicalEntities[] = {
-        "TreeManager", "RouterTLM", "CrossbarTLM", "CoherentXBarTLM",
+        "TreeManager",       "RouterTLM",        "CrossbarTLM",           "CoherentXBarTLM",
         "SparseSnoopFilter", "FullMapDirectory", "HierarchicalDirectory",
     };
     for (const char* e : kPhysicalEntities) {
@@ -375,7 +376,8 @@ TEST_CASE("CEP OrderingPoint: IC3 —— Ordering Point 不绑定任何物理实
     const std::string with_entity = "class Foo { TreeManager m; };";
     bool scanner_red = false;
     for (const char* e : kPhysicalEntities) {
-        if (with_entity.find(e) != std::string::npos) scanner_red = true;
+        if (with_entity.find(e) != std::string::npos)
+            scanner_red = true;
     }
     REQUIRE(scanner_red);
 }

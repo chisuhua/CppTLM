@@ -23,8 +23,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "cep_adr_parser.hh"
 #include "chstream_register.hh"
+#include "cep_adr_parser.hh"
 #include "core/module_factory.hh"
 #include "tlm/cep/channel_dependency_graph.hh"
 #include "tlm/cep/ordering_point_checker.hh"
@@ -501,19 +501,23 @@ TEST_CASE("CEP ChannelGate: IC3 —— 变更 `ordering_assumption` ⇒ 闸层**
         for (const auto& [net, classes] : inst.at("vc_binding").items()) {
             for (const char* cls : {"response", "snoop_resp"}) {
                 const auto it = classes.find(cls);
-                if (it == classes.end() || !it.value().is_number_integer()) continue;
+                if (it == classes.end() || !it.value().is_number_integer())
+                    continue;
                 const int vc = it.value().get<int>();
                 const auto oa = inst.at("ordering_assumption").at(net);
                 const auto oit = oa.find(std::to_string(vc));
-                if (oit == oa.end() || oit.value() != "p2p_ordered") continue;
+                if (oit == oa.end() || oit.value() != "p2p_ordered")
+                    continue;
                 target_id = inst.at("id");
                 target_net = net;
                 target_vc = vc;
                 break;
             }
-            if (!target_id.empty()) break;
+            if (!target_id.empty())
+                break;
         }
-        if (!target_id.empty()) break;
+        if (!target_id.empty())
+            break;
     }
     REQUIRE(!target_id.empty());
 

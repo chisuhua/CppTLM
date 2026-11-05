@@ -56,7 +56,7 @@ namespace {
             while (i < line.size() && std::isdigit(static_cast<unsigned char>(line[i])))
                 id += line[i++];
             if (id == "Entry #")
-                continue;  // 无编号
+                continue; // 无编号
             const auto lb = line.find('[', i);
             const auto rb = (lb == std::string::npos) ? std::string::npos : line.find(']', lb);
             if (lb == std::string::npos || rb == std::string::npos)
@@ -78,9 +78,9 @@ namespace {
     // ── 增补块解析:blockquote(`> `)连续块,含「增补块」关键词 ─────────────
     struct SupplementBlock {
         std::string text;
-        std::string entry_id;               // "Entry #135"(空 = 块内无授权锚)
-        std::vector<std::string> literals;  // 块内反引号包裹的版本字面量
-        std::string new_value;              // 块内声明的**新**取值(「更新为 X」之 X)
+        std::string entry_id;              // "Entry #135"(空 = 块内无授权锚)
+        std::vector<std::string> literals; // 块内反引号包裹的版本字面量
+        std::string new_value;             // 块内声明的**新**取值(「更新为 X」之 X)
     };
 
     std::vector<SupplementBlock> parse_supplement_blocks(const std::string& section) {
@@ -115,8 +115,7 @@ namespace {
             if (e != std::string::npos) {
                 std::string id = "Entry #";
                 std::size_t i = e + 7;
-                while (i < b.text.size() &&
-                       std::isdigit(static_cast<unsigned char>(b.text[i])))
+                while (i < b.text.size() && std::isdigit(static_cast<unsigned char>(b.text[i])))
                     id += b.text[i++];
                 if (id != "Entry #")
                     b.entry_id = id;
@@ -129,8 +128,7 @@ namespace {
                     break;
                 const std::string lit = b.text.substr(pos + 1, e2 - pos - 1);
                 // 版本字面量形态:`<族>-<版本>`(含数字且含 '-';如 `tilelink-c-1.7.1`)
-                const bool has_digit =
-                    lit.find_first_of("0123456789") != std::string::npos;
+                const bool has_digit = lit.find_first_of("0123456789") != std::string::npos;
                 if (has_digit && lit.find('-') != std::string::npos)
                     b.literals.push_back(lit);
                 pos = e2 + 1;
@@ -144,7 +142,7 @@ namespace {
                     flat.replace(p, std::string(pat).size(), " ");
             }
             static const char* kMarkers[] = {"原地更新**为", "原地更新为", "更新**为", "更新为",
-                                             "改为",        "替换为",      "修订为"};
+                                             "改为",         "替换为",     "修订为"};
             for (const char* m : kMarkers) {
                 const auto mp = flat.find(m);
                 if (mp == std::string::npos)
@@ -180,13 +178,13 @@ namespace {
         // ② 标签必须合规
         if (kTraceTags.count(it->second) == 0)
             return {false, "授权 entry " + b.entry_id + " 的台账标签为 [" + it->second +
-                              "] ⇒ 不在 {scope-change, adr-amendment}"};
+                               "] ⇒ 不在 {scope-change, adr-amendment}"};
         // ③ 增补块声明的**新版本取值必须落在当前锁表内**(表 ↔ 增补块不得漂移)
         if (!b.new_value.empty()) {
             if (std::find(lock_versions.begin(), lock_versions.end(), b.new_value) ==
                 lock_versions.end())
                 return {false, "增补块声明的新版本取值 " + b.new_value +
-                                  " 不在当前锁表内 ⇒ 表与增补块漂移"};
+                                   " 不在当前锁表内 ⇒ 表与增补块漂移"};
         } else {
             // 无「更新为」标记 ⇒ 退化为「块内至少一个取值在锁表内」
             bool any_in_table = false;
@@ -203,7 +201,7 @@ namespace {
         return {true, "授权 entry " + b.entry_id + " 标签 [" + it->second + "] 合规"};
     }
 
-}  // namespace
+} // namespace
 
 // INV-CARRIER: INV-CEP-11-IC3
 // 变红理由(per ADR-CEP-06 SU#4 规则 B):锁表变更的增补块,其授权 entry 缺失或标签非

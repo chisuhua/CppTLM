@@ -125,13 +125,12 @@ namespace {
         return {};
     }
 
-}  // namespace
+} // namespace
 
 // INV-CARRIER: INV-CEP-07-IC4
 // 变红理由(per ADR-CEP-06 SU#4 规则 B):CEP 注册点改用自造宏 / CEP 头自造注册路径 /
 // 注册未生效(工厂查不到)⇒ 红
-TEST_CASE("CEP Registration: IC4 —— CEP 模块注册走既有宏体系,不发明宏形式",
-          "[cep][registration]") {
+TEST_CASE("CEP Registration: IC4 —— CEP 模块注册走既有宏体系,不发明宏形式", "[cep][registration]") {
     // ── ① 静态:注册表里每个 tlm::cep:: 类型都经既有宏族 / 既有钩子注册 ──────
     const auto reg = read_file((repo_root() / "include" / "chstream_register.hh").string());
     REQUIRE(!reg.empty());
@@ -155,7 +154,7 @@ TEST_CASE("CEP Registration: IC4 —— CEP 模块注册走既有宏体系,不�
         INFO("CEP 头自造注册路径: " << e.path().filename().string() << " ⇒ " << b.where);
         REQUIRE(b.ok);
     }
-    REQUIRE(scanned > 10u);  // 扫到的 CEP 头数量下界(防止目录读空导致恒真)
+    REQUIRE(scanned > 10u); // 扫到的 CEP 头数量下界(防止目录读空导致恒真)
 
     // ── ③ 运行时:注册**实际生效**(adapter 工厂能查到短名且端口数正确)──────
     //     ⚠️ 需要先跑一次注册宏(与生产装配同一宏,不是测试专用路径)
@@ -164,8 +163,8 @@ TEST_CASE("CEP Registration: IC4 —— CEP 模块注册走既有宏体系,不�
         return true;
     }();
     REQUIRE(kRegistered);
-    for (const char* name : {"CohIfProtocolEngine", "ChiRnfProtocolEngine",
-                             "MesifProtocolEngine"}) {
+    for (const char* name :
+         {"CohIfProtocolEngine", "ChiRnfProtocolEngine", "MesifProtocolEngine"}) {
         INFO("注册未生效(adapter 工厂查不到): " << name);
         REQUIRE(ChStreamAdapterFactory::get().isMultiPort(name));
         INFO("端口数错误: " << name);
