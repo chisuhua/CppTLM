@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T07:15:22Z",
+  "updated_at": "2026-11-05T08:37:29Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-04T16:20:19Z",
-      "by": "auto",
-      "reason": "planner 域已落 §9.1 判据-指标需求表 + 预登记 out-of-scope 表(Entry #217 ⑥ 动作 #1)⇒ auto 回 architect 签发 `ADR-CEP-06` SU#2:① 预登记集合的**机器可读载体**裁决(真源 = objective §9.1 ② 不动;机器投影 = experimental/preregistration.json,入 FROZEN_GLOBS)② SU#1 `:296`「结构性保证」的**解释性 gloss**(其字面按 oracle 核实与已批准 §9.1 互斥)③ H4/H8「禁产出」双闸口径"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-04T16:20:44Z",
-      "by": "auto",
-      "reason": "architect 已签发 `ADR-CEP-06` SU#2(载体裁决:真源 = §9.1 ② 表不动 / 机器投影 = experimental/preregistration.json 入冻结集 + 3 道门禁 + :296 gloss)⇒ auto 回 planner 补 §9.1 ② 表的「机器投影 + drift」指针行 + 台账 Entry #218(授权记录,SU#2 的 --update 前置)"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-04T16:21:11Z",
-      "by": "auto",
-      "reason": "planner 域已完成(§9.1 判据-指标需求表 + ②-2 指针行 + 台账 Entry #218 授权记录)⇒ 回 builder 落地 commit + `cep_freeze_check.sh --update --authorized-by \"Entry #218\"` 重算冻结清单 + 复验 hash/provenance 双绿"
-    },
     {
       "role": "architect",
       "at": "2026-11-05T00:02:00Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-05T07:15:22Z",
       "by": "user",
       "reason": "用户裁决:切 builder 继续 —— 按 Entry #226 硬序落 commit ①(prereg JSON H3 收缩 + 冻结 --update --authorized-by \"Entry #226\" + manifest),再启 M1/M2 实现"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T08:27:45Z",
+      "by": "user",
+      "reason": "用户口令「切architect审查架构决策是否需要修订」⇒ ① AC-9 实现评审(B4 回填的前置 gate;核「装置含真实阻塞机制、非恒假 watchdog + 默认 0」)② 审查 SU#4 及 v2 装置引入的三处契约语义变更(延迟语义换版 / v1 不保留为可跑变体 / h4 装置加阻塞开关)是否需追加 SU 或勘误"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T08:32:34Z",
+      "by": "user",
+      "reason": "用户口令「切planner给出后续任务内容和实施路径」⇒ ① AC-9 已 PASS(builder 侧无 gate 剩余)⇒ 落表:§9.1 ① H3 分支 2 实测 0 / §6.2 B4 ✅ / B7 状态标记 / S1+S2 后续项登记 ② 台账 Entry #228(AC-9 PASS + SU#4 Verification 勾选的冻结授权记录)③ 后续任务清单与实施路径"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T08:37:29Z",
+      "by": "user",
+      "reason": "用户口令「最后切builder继续推进」⇒ ① commit planner 表落(B4 达成回填 / H3 分支 2 实测 0 / B7 口径冲突登记)+ AC-9 评审报告 + Entry #228 ② 全量门禁 + ctest 收口 ③ ⛔ 不做 SU#4 Verification 勾选(architect 域,Entry #228 已留授权但未执行) ④ ⛔ 不 push(用户裁决)"
     }
   ],
   "auto_switch_window": null
