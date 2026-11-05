@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T09:21:21Z",
+  "updated_at": "2026-11-05T09:36:58Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-05T00:37:02Z",
-      "by": "auto",
-      "reason": "builder 域已完成 C1 的 emit/tools/schema 落地(判据④ 三分支 + 4 条反向 fixture)⇒ auto 回 planner 落台账 Entry #220 授权记录 —— 该 entry 是 `cep_freeze_check.sh --update --authorized-by \"Entry #220\"` 的**前置**(4 份冻结面 + 3 件 tools 需重算)"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-05T00:37:22Z",
-      "by": "auto",
-      "reason": "planner 域已落台账 Entry #220 授权记录 ⇒ 回 builder:commit 内容 → `cep_freeze_check.sh --update --authorized-by \"Entry #220\"` → commit manifest → 复验双绿"
-    },
     {
       "role": "architect",
       "at": "2026-11-05T01:26:57Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-05T09:21:21Z",
       "by": "user",
       "reason": "用户口令「切 builder 执行冻结授权链与收口 commit」⇒ ① 内容 commit(ADR-CEP-06 SU#5 + 审稿报告 + objective 表修复 + Entry #229) ② cep_freeze_check.sh --update --authorized-by \"Entry #229\" ③ manifest commit ④ 复验 hash/provenance 双绿 + drift/doc_ref/docs_sync + ctest ⑤ ⛔ 不 push"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T09:32:55Z",
+      "by": "user",
+      "reason": "用户口令「切 planner 给出后续任务实施路径规划」⇒ 先实测核 L2 剩余项(B2/B3a/B3b/B5/B6/B8 + S1/S2 + 勾选回填)的真实缺口,再产出分批实施路径(判据来源/动作/验收/依赖/估时/风险)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T09:36:58Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 把这份规划提交,然后接着做 A 批」⇒ ① commit 规划(§10 + Entry #230) ② A 批:A3(H4 默认值断言) / A4(superset 反向 fixture) / A1+A2(SU#4+SU#5 Verification 勾选回填 + 冻结双步) ③ 全量验证"
     }
   ],
   "auto_switch_window": null

@@ -858,6 +858,42 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | P2 | **`V6-c` 的「绑定**未注册** plane 名 ⇒ 必红」分支现无反向 fixture 触达** | ⚠️ **登记态 · 未排期**(2026-11-04 登记,per 台账 **Entry #210** —— critic 第 2 轮 R3,`scope_exceeded`)—— 队列 #14 把 `FabricCollectivePlane` 登记进 plane 注册表后,队列 #13 的 `F-9` 从「绑定**未注册**名」**漂移**为「绑定**非本地模型**名」⇒ `evaluate_vc_precondition` 的 `find_collective_plane() == nullptr` 分支(`collective_plane_contract.hh`)失去 fixture 覆盖,而 `openspec/specs/cep-nvlink-sharp/spec.md` 仍写「绑定未注册 plane 名 ⇒ 必红」⇒ **该 Requirement 的反向义务无载体**。补法 = 在该 spec 的 delta 或本仓新增一条 fixture(绑定一个**未登记**的 plane 名) |
 | P2 | **队列 #13 的两处措辞/命名漂移 + C-1′ 结构面判据的**可达性**观察** | ⚠️ **登记态 · 不排期**(2026-11-04 登记,per 台账 **Entry #210** —— critic 第 2 轮 R6 / R7)——— ① `openspec/specs/cep-nvlink-sharp/spec.md` 的 NVA-08「正控:**当前绑定** ⇒ PASS」在 M-2 下实测为 **SKIP**,措辞应限定「M-1 变体下」② fixture id 命名已漂移(`f-04-c3-check-removed` 现覆盖**运行级**;`f-09-v6c-unregistered` 现已非「未注册」)③ `evaluate_shared_mode_certificate` 的 C-1′ **结构面**判据位于 `certificate_scope` 循环内 ⇒ `scope` 为空时不可达(当前 `E.9` 判据不依赖该组合) |
 | P2 | **`MoesiGpuProtocolEngine` 的 L4 事务级 E2E 缺口** | ✅ **已裁决 2026-11-04 · 形态限制 · 不排期**(per 台账 **Entry #215** ⑦ + `07 号` Status Update 2026-11-04 ⑤)—— 实测:11 个 override **全为空体计数器**(canonical 10 流 + `on_address_resolve`,per 决策 M-6「只记账」)、**无 emit / egress**、`include/chstream_register.hh` **零注册**、`configs/` 无该 engine 类 JSON 声明 ⇒ 它是 **10 流记账壳**而非协议状态机;L4 **只能单向**(外部驱动事件 → 验证计数 + 补偿记录),反向(引擎发起 → 对端响应)**无载体** ⇒ **设计内限制**(per R11 V-2 交付时的显式设计裁决),**不**列为债务、**不**补 emit(补 = 重开决策 M-6 且无端到端消费者) |
+
+### 2026-11-05 后续任务实施路径(B4 / B7 收口后 —— planner 规划,per 台账 **Entry #230**)
+
+> **规划前提(实测,非台账措辞推断)**:B4 ✅ / B7 ✅(8/8,内嵌限定);`§6.2` 剩余 = **B3b**(1/6)· **B2**(编号级 67/67 覆盖,判定级待裁)· **B3a**(UALink 无 `ualink_4` 实例)· **B5 / B6 / B8**(载体**均在位**但**表上无 verdict**)。
+> **实测依据**:`[cep][module-factory-seam]` / `[cep][simulation-mode]`(10 cases / 115 assertions) / `[cep][ordering-point]`(6 cases / 64 assertions) / `[cep][canonical-invariant]`(13 cases / 687 assertions);67 个编号中 **28 个仅在编号元数据文件出现 ≤1 处**(疑无判定级断言)。
+
+| 批 | 序 | 任务 | 判据来源 | 动作 | 验收 | 估时 | 依赖 | 风险 |
+|---|---|---:|---|---|---|---|---|---|
+| **A** | A1 | SU#4 Verification **11 条勾选回填** | `ADR-CEP-06` SU#4 §⑤ | architect 逐条核 → 勾选 → 冻结双步(`--authorized-by "Entry #228"`,**已授权**) | 11/11 勾选 + 冻结双绿 | 0.5d | — | 低:AC-9 已 PASS,勾选是仪式级 |
+| **A** | A2 | SU#5 Verification **6 条勾选回填** | `ADR-CEP-06` SU#5 §⑤ | 同上(`--authorized-by "Entry #229"`,**已授权**);可与 A1 **同批**一次冻结 | 6/6 + 双绿 | 0.3d | A1(共用冻结链) | 低 |
+| **A** | A3 | **S2**:H4 阻塞开关默认值断言 | AC-9 评审 S2 | `test/test_cep_h4_completion_domain.cc` 加 1 行 `REQUIRE(cfg.collective_requires_coherence_retirement == true)` | 该 case 绿 + h4 指标不变 | 0.1d | — | 低 |
+| **A** | A4 | **S1**:`superset` 判定的**反向 fixture** | AC-9 评审 S1 / SU#4 §② 约束 4 | 在 `[cep][b4]` 构造「`truth` 含未被 `set_sharer` 的节点」⇒ 必须 `superset_violations > 0`;若装置无法构造 ⇒ 升级为装置改动 + 表注降级本格 | fixture **因正确原因红** + 正控仍 0 | 0.5d | — | **中**:可能发现需改装置(不止加 fixture)⇒ 触发 `plan_drift`,停下问用户 |
+| **B** | B1 | **B5 / B6 / B8 的 verdict 登记** | `§6.2 B5/B6/B8` 措辞逐条 ↔ 测试载体 | planner 逐条核实(跑标签 + 读断言)→ 落表 verdict;**有缺口的子项登记 ⏭ + 缺口清单**(⛔ 不得无证据写 ✅) | 三项各有 verdict(✅ 或 ⏭ + 依据) | 1.0d | — | 中:`B8` 的「**装配期**无环检查」须区分「测试层有 gate」vs「装配路径真实调用」 |
+| **C** | C1 | **B2 的「100% 覆盖」口径裁决** | `§0 DoD 7` / `§6.2 B2` 字面 | architect 裁:① **编号级**(67 编号全被结构检查覆盖 ⇒ 现已 100%)vs ② **判定级**(每条须有行为断言 ⇒ 现存 ≥28 条缺口) | 裁决落 ADR SU 或 objective 表注 | 0.5d | — | 中:与 B7 的「判据 vs 扩展观测」同族的**口径先行**问题 |
+| **C** | C2 | **B2 补判定级断言**(仅当 C1 裁②) | C1 结论 | builder 按缺口清单分批(每批 5-7 条,每条**反向 fixture** 必备) | 缺口 = 0 或被显式登记为不适用 | 2-3d | C1 | **高**:19~28 条 × (正控 + 反控),可能需独立 change 立项 |
+| **D** | D1 | **B3b** 运行时 ProtocolEngine(1/6 → N/6) | `§6.2 B3b` 触发条件 | ⛔ **不做** —— 触发 = 某协议族出现「转移表真源」 | — | — | — | 补 = 推理填空(明令禁止) |
+| **D** | D2 | **B3a** 的 `ualink_4` 实例声明 | `§6.2 B3a` | ⛔ **不做** —— 待公开来源可钉死取值 | — | — | D3 | 无来源则不可判定 |
+| **D** | D3 | **N-1 ~ N-9**(UALink 正文细粒度语义) | `.rddf/improvements/` | ⛔ **不做** —— 受 Evaluation Copy Agreement 约束 ⇒ 禁投喂 | — | — | 用户取得授权 | — |
+| **D** | D4 | litmus 证伪判据(`consistency_labels`) | Entry #215 ② | ⛔ **不做** —— 须独立 change 立项(用户裁决) | — | — | — | — |
+| **D** | D5 | `ADR-CEP-01/02/03` 一决策一文档化拆分 | Entry #217 D1 | ⛔ **不做** —— 等 T1/T2/T3 命中 | — | — | — | — |
+
+**顺序理由**
+
+1. **A 先于 B**:A 的 4 项均已有裁决/评审结论(勾选是仪式级、S1/S2 是评审开出的 SHOULD_FIX),拖着只会腐化;且 A1+A2 **共用一次冻结链**,合并成本最低。
+2. **B 先于 C**:B 的三项**载体已实测在位**,登记即可把「表上无 verdict」变成可判定状态;而 C 必须先裁口径(否则「补哪些断言」无判据)—— 与 B4/B7 的「**口径先行**」纪律同族(先例:Entry #217 ⑦「builder 不得先落 schema 并把校验写成恒真占位」)。
+3. **D 全部不做**:五项都缺**外部输入或触发条件**(转移表真源 / 公开来源 / 授权 / 立项裁决 / T1-T3),做了就是填空 —— 与 B3b 的「防自欺条款」同义。
+
+**明确不做(本规划范围外)**
+
+- ⛔ `git push`(用户裁决;当前本地 ahead **12 commits**)
+- ⛔ 改 B4 / B7 的既有结论(已签发,改动须新 SU)
+- ⛔ 为 B3b 补引擎 / 为 `directory_misses` 补产出者(后者已被 SU#5 归位,反向操作需新 SU + 回滚 4 步)
+
+**总估时**:约 **5 个工作日**(A 1.4d + B 1.0d + C 2.5d);其中 C2 若裁②则可能膨胀(需独立 change)。
+
+---
 ---
 
 ## §11 决策台账(append-only,per `rdd-planner/SKILL.md:158`)
@@ -14225,6 +14261,58 @@ H2 的 `directory_misses` 归位为**扩展观测**(⛔ 不删行、⛔ 不改�
 
 **⑥ 关联**:`ADR-CEP-06` **SU#5**(Accepted;审稿报告 `.rddf/reviews/ADR-CEP-06-SU5-judgement-vs-extension.md` = oracle 1 + critic 1,**0 BLOCKER**)·
 **#228 ⑤**(冲突登记)· **#225**(8/8 登记)· **#218**(事实 #2「判据收窄优先于补实现」)· **SU#4**(装置补全反例对照)· `§9.1 ①/②/③` · `§6.2 B4/B7`
+
+---
+
+
+### Entry #230 — 2026-11-05 [plan](B4 / B7 收口后的**后续任务实施路径** —— 四批分组 + 顺序理由 + 明确不做项)
+
+**主题**:B4 / B7 收口后,把 `§6.2` 的剩余项与评审遗留**实测核实**后分成 A/B/C/D 四批,给出判据来源 / 动作 / 验收 / 估时 / 依赖 / 风险。
+**角色**:planner(本 entry + `§10` 的规划段)。
+**性质**:规划,⛔ **不产生实施代码**;每个实施动作仍须由对应角色在独立回合执行。
+**落点**:`§10` 的「2026-11-05 后续任务实施路径」段(本 entry 为其授权与依据)。
+
+**① 规划前的实测核实(⛔ 不是台账措辞推断)**
+
+| 项 | 实测 |
+|---|---|
+| `B2` | `[cep][canonical-invariant]` **13 cases / 687 assertions** —— 但全部是**编号/集合/形态**级检查;67 个编号中 **28 个仅在编号元数据文件出现 ≤1 处**(疑无判定级断言) |
+| `B5` | `[cep][module-factory-seam]` **在位**(真实注册机制 / 23 ABI 零 diff / 4 frozen headers 零 diff) |
+| `B6` | `[cep][simulation-mode]` **10 cases / 115 assertions** 在位(4 件套 / 13 必纳 / not-collected 契约) |
+| `B8` | 四子项**载体全在位**:`address_resolver.hh` + **5 个 tracker 实现**(FullMapDirectory / SparseSnoopFilter / HierarchicalDirectory / DcohSymmetric / BroadcastNull)+ `[cep][ordering-point]` 的 **J1/J2/J3**(6 cases / 64 assertions)+ `channel_dependency_graph.hh` / `test_cep_channel_dependency_gate.cc` |
+| `B3a` | 6 族契约达成;**UALink 无 `ualink_4` 实例声明**(取值不可判定) |
+| `B3b` | 运行时引擎 **1/6**(仅 CHI RN-F) |
+
+**② 四批分组(详见 `§10` 表)**
+
+| 批 | 内容 | 估时 | 关键判据 |
+|---|---|---|---|
+| **A** | SU#4 / SU#5 的 Verification 勾选回填(A1+A2 **共用一次冻结链**)+ **S2**(H4 默认值断言 1 行)+ **S1**(`superset` 反向 fixture) | 1.4d | A1/A2 的授权 entry **已存在**(#228 / #229)⇒ 冻结链可直接走;S1 的 fixture 须**因正确原因红** |
+| **B** | **B5 / B6 / B8** 的 verdict 登记(逐条核实 → 落表;有缺口登记 ⏭ + 清单) | 1.0d | ⛔ 不得无证据写 ✅;`B8` 须区分「测试层有 gate」vs「**装配路径**真实调用」 |
+| **C** | **C1** 裁 B2「100% 覆盖」口径(编号级 vs 判定级);**C2** 仅当裁②才补断言 | 0.5d + 2-3d | 口径先行(与 B4/B7 同族);C2 可能需独立 change 立项 |
+| **D** | B3b / B3a / N-1~N-9 / litmus / D1 拆分 —— ⛔ **全部不做** | — | 均缺外部输入或触发条件;做了 = 填空 |
+
+**③ 顺序理由(三条)**
+
+1. **A 先**:四项均已有裁决/评审结论(A1/A2 是仪式级、S1/S2 是 AC-9 评审开出的 SHOULD_FIX)⇒ 拖着腐化;且 A1+A2 共用冻结链,合并成本最低。
+2. **B 次**:三项**载体已实测在位** ⇒ 登记即可把「表上无 verdict」变成可判定;而 C 必须先裁口径,**否则「补哪些断言」无判据**(先例 = Entry #217 ⑦「不得先落 schema 并把校验写成恒真占位」)。
+3. **D 不做**:五项缺**外部输入/触发条件**(转移表真源 / 公开来源 / 授权 / 立项裁决 / T1-T3)⇒ 做了就是填空(与 B3b 的「防自欺条款」同义)。
+
+**④ 明确不做(⛔ 范围外)**
+
+- ⛔ `git push`(用户裁决;本地 ahead **12 commits**)
+- ⛔ 改 B4 / B7 的既有结论(已签发,改动须新 SU)
+- ⛔ 为 B3b 补引擎 / 为 `directory_misses` 补产出者(后者已由 **SU#5** 归位,反向操作需新 SU + 回滚 4 步)
+
+**⑤ 风险与升级条件**
+
+| 序 | 风险 | 升级条件 |
+|---|---|---|
+| A4 | `superset` 判定可能需**改装置**而非仅加 fixture | 若正控跑不出「可红」形态 ⇒ **`plan_drift`**,停下问用户(不得静默降级) |
+| B1 | `B8` 的「装配期无环检查」可能只在测试层 | 若装配路径未真实调用 ⇒ 登记 ⏭ + 缺口,⛔ 不得写 ✅ |
+| C2 | 补 19~28 条 × (正控 + 反控)规模超预期 | 超 **3d** ⇒ 独立 change 立项(用户裁决) |
+
+**⑥ 关联**:`§6.2` B2/B3a/B3b/B5/B6/B8 · `§10` 规划段 · **#228**(AC-9 + SU#4 授权)· **#229**(SU#5 + 表修复)· **#218**(B3b 触发条件口径)· **#225**(B7 8/8)· `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`(S1/S2 来源)
 
 ---
 
