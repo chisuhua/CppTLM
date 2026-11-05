@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-05T17:06:04Z",
+  "current_role": "architect",
+  "updated_at": "2026-11-05T17:26:41Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-05T09:36:58Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 把这份规划提交,然后接着做 A 批」⇒ ① commit 规划(§10 + Entry #230) ② A 批:A3(H4 默认值断言) / A4(superset 反向 fixture) / A1+A2(SU#4+SU#5 Verification 勾选回填 + 冻结双步) ③ 全量验证"
-    },
     {
       "role": "planner",
       "at": "2026-11-05T10:35:53Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-05T17:06:04Z",
       "by": "user",
       "reason": "用户口令「切 builder 按 §9.2 修这最后一条」⇒ ① 匹配前剔除字符串/字符字面量 ② 扫描器哨兵自排除 ③ 决定性变异测试(真实载体失去负向断言 ⇒ 必红)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T17:26:41Z",
+      "by": "user",
+      "reason": "用户口令「继续」⇒ 按既定流程推进: architect 终验 §9.2 ⇒ §10 的落地(含独立复跑决定性变异), 通过后转 planner 落 B2 登记"
     }
   ],
   "auto_switch_window": null

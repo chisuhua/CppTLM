@@ -326,3 +326,68 @@ test cases: 7 | 6 passed | 1 failed
 `docs_sync` / `doc_ref` / `freeze` / `prereg_drift` rc=0。
 
 **待 architect 终验**：只验本条（§9.2 三项 ⇒ §10 落地，含决定性变异证据）。
+
+---
+
+## 11. 3c 终验结论（architect，2026-11-06）：**通过**
+
+**范围**：只验 §9.2 三项要求 ⇒ §10 落地（`INV-CEP-14-IC2` 一条）。**不引用** builder 回执，全部自行实测。
+
+### 11.1 §9.2 三项逐条核实
+
+| §9.2 要求 | 落地 | 独立证据 |
+|---|---|---|
+| ① 匹配前**剔除字符串/字符字面量** | `strip_string_literals()` 存于 `test_cep_dummy_signals.cc`（字符串/字符字面量内容置空，保留注释与代码；含转义与跨行保守退出） | 见 11.2 载体集复核 |
+| ② 扫描器**哨兵自排除** | `kScannerSentinel = "CEP_IC2_NEGATIVE_ASSERTION_SCANNER"`；含哨兵的文件 `continue` 跳过 | 见 11.2 |
+| ③ **决定性变异测试** | 已附（§10） | 见 11.3，architect **自行复跑** |
+
+### 11.2 载体集独立复核（architect 自写脚本，非复用 builder 代码）
+
+用 Python 独立复现「去字面量 → 找锚点 `INV-CEP-05-IC1` 且含负向断言宏 → 排除哨兵文件」：
+
+```
+[skip: 含哨兵] test_cep_dummy_signals.cc
+✅ test_cep_canonical_flow_contract.cc
+✅ test_cep_moesi_gpu_adapter.cc
+✅ test_cep_moesi_gpu_compensation.cc
+载体数 = 3
+是否含扫描器自身: False          ← §9.1 的自指漏洞已消除
+是否含 canonical_invariants: False ← 其锚点只在字面量里 ⇒ 正确地不算载体
+```
+
+**恰为 3 个真实载体**，与 §9.2 预期一致。§9.1 的「扫描器自身靠 fixture 字符串自证」已不成立。
+
+### 11.3 决定性变异（architect 独立复跑）
+
+| 步骤 | 操作 | 结果 |
+|---|---|---|
+| 1 | 备份 3 个真实载体 | — |
+| 2 | `sed 's/REQUIRE_FALSE(/CHECK(/g; s/CHECK_FALSE(/CHECK(/g'`（负向断言数 20/7/2 → 0/0/0） | — |
+| 3 | 重编 + 跑 `[cep][dummy-signals]` | **FAILED**：`合同测试集里没有「含锚点 INV-CEP-05-IC1 …」的文件` · 6 passed / 1 failed |
+| 4 | 还原 + 重编 + 复跑 | **248 assertions 绿** |
+
+⇒ 判据 **真正咬合 IC2 的主体**：合同测试集**失去**该负向断言 ⇒ 必红；不是恒真占位。
+
+### 11.4 其余项（沿用前轮，未被本轮 diff 影响）
+
+- **B-1**（`INV-CEP-14-IC1`）：✅ 闭合（§7.1）
+- **B-3**（`INV-CEP-07-IC3`）：✅ 闭合（§7.1）
+- **S-1 / S-3 / S-4 / S-5 / S-6**：✅ 已落地（§6）；**S-2** architect 误判，已撤销
+- **5 条 ⏭-unmodelled**：✅ 触发条件经复核成立
+
+### 11.5 终审结论
+
+**B-2 全部闭合。**
+
+| 项 | 值 |
+|---|---|
+| 66 条 invariant | 61 条**有牙载体**（含 `INV-CEP-14-IC2`）+ 5 条授权 ⏭-unmodelled |
+| `⏭-pending` | **0** |
+| 映射表闸 `--for-achievement` | rc=0 |
+| 验证 | `[cep]` 428 cases / 10033 assertions 绿 · `ctest` **154/154** 绿 · `format` rc=0 · 4 个 CEP 契约闸 rc=0 |
+
+⇒ **B2 可登记 ✅**（口径：66/66 = 61 载体 + 5 授权⏭）。下一步交 **planner** 落 objective 登记 + 台账 Entry #236。
+
+> 流程教训（留档）：本轮 BLOCKER 三次回归同一失败模式 ——「载体被自己的 fixture 顶替」。
+> 后续载体评审须把「**载体文件自身是否满足该判据**」列为固定检查项；决定性变异（删掉被判据约束的那部分 ⇒ 必红）
+> 应作为闭合证据的**必附项**，只测「锚点存在」这一类变异不够。
