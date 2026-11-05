@@ -136,9 +136,20 @@
       "reason": "外部对拍(gem5 Ruby / ArchForge 跨仓 trace),不产生本仓 metrics.json run"
     },
     "H8": {
-      "status": "pending",
-      "out_of_scope": [],
-      "reason": "A/B 数据未产 ⇒ out-of-scope 集合此刻不可预登记 ⇒ 禁产出 run;预登记必须先于产出"
+      "status": "registered",
+      "out_of_scope": [
+        "avg_latency_cycles",
+        "coherence_stalls",
+        "collective_stalls",
+        "deadlock_violations",
+        "directory_misses",
+        "max_latency_cycles",
+        "memory_violations",
+        "p50_latency_cycles",
+        "p95_latency_cycles",
+        "p99_latency_cycles"
+      ],
+      "reason": "H8 = 实验 4 件套 + 13 必纳 metric 的工具链判定假设:本假设**不直接产 run**,证据载体 = 3 组 A/B 结论(工具输出 + validation 文档,per Entry #224 ⑤ H8-A/B-2)。out-of-scope 集 = 3 组装置(h6/h4/h2)各自 out-of-scope 的**并集**(10 项;实测量并集 = total_*×3)—— 若未来以 CEP_EXP_VARIANT 产标 H8 的变体 run,该并集保证「每侧实测集 ⊆ 本集」恒成立(per Entry #224 ⑤ H8-A/B-1:每组两侧 hypothesis_id 相同⇒共享该假设的预登记)。2026-11-05 由 pending→registered(Entry #224 Task C 预登记先于产出)。"
     }
   }
 }

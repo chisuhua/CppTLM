@@ -565,6 +565,15 @@ add_test(NAME cep_prereg_drift_check
 set_tests_properties(cep_prereg_drift_check
                      PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# IC3 报告层**三态**的机器 fixture(per ADR-CEP-06 SU#3 §②A / §⑤)
+# —— 合成 4 个 run 覆盖 ✓通过 / ⚪不适用 / ❌违例 / **连带洞**(dv 未采集 ∧ mv 有实测违例)
+# ⚠️ **为什么必须有**:当前 4 个真实 run(h2/h3/h4/h6)**无一**落在「✓通过」态
+#   ⇒ 若无合成 fixture,「通过」分支是**未被验证的死代码**。
+add_test(NAME cep_ic3_report_states_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_ic3_report_states_check.sh)
+set_tests_properties(cep_ic3_report_states_check
+                     PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
 # M1 产物冻结校验(per obj-cep-platform §9.2 M1「产物冻结先于解读」)
 # —— 独立于 lint,便于单独定位"冻结产物被改动"
 add_test(NAME cep_freeze_check

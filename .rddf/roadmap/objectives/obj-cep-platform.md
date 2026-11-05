@@ -664,7 +664,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **H5** | SHARP 5 条防误分类规则(R1-R5)能可靠区分 SHARP atomic vs cache-coherent atomic | Stage 2 | 0 误分类 | `divert_count`(divert 计数器形状)+ **fail-stop** 判据(R5) | **契约级断言**(`nvlink_sharp_state_spec.hh` 的 `is_fail_stop` / `divert_counter_field_count`) | 0 误分类 | ✅ **成立**(2026-11-05,per 台账 **Entry #221**)—— ⚠️ **证据边界 = 函数级**:`is_fail_stop` **3 bool 输入 = 8/8 组合显式断言**(2026-11-05 补齐 4 条,此前 4/8 ⇒ 「穷尽」是 overstated)+ `classify_at_fabric_ingress` **2 输入 4/4 穷尽** + **R1/R2 ↔ R5 交叉锁**(`static_assert` × 5,语义分叉即编译红)。⛔ **非**协议级/仿真流量级证明(本仓**无** NP atomic 注入实验)⇒ 引用时**不得**表述为「已证明协议层无误分类」。逐字来源 + 口径限定见 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` **§1 / §4** |
 | **H6** | VC 隔离(collective 独立 VC)确实避免协议级死锁 | Stage 3 | 0 死锁 + collective stall 不占 coherence VC | `deadlock_violations` + `vc_stall_per_vc` + `collective_stalls` | **必纳 metric**(+ `vc_stall_per_vc` 为**可选** metric) | 0 死锁 + collective stall 不占 coherence VC | ✅ **成立**(独立 VC 死锁=0 · 共享 VC 负控 backlog=2000 死锁=1) |
 | **H7** | stub cache 性能模型(固定命中率 + 固定延迟)足以支撑 early-stage 取舍判断 | Stage 1 | 延迟偏差 < 15% | 与 gem5 Ruby / ArchForge 参考模型对拍(per R7) | **外部对拍**(跨仓 trace 比对,**非**本仓 metric) | 偏差 < 15% | ✅ **成立**(常数档 PASS 3/3 + 同源 trace 档 PASS 5/5) |
-| **H8** | 实验 4 件套 + 13 metric 足以让跨协议取舍决策可复现 | Stage 3 | 3 组 A/B 对比产出可读结论 | 4 件套 + 13 必纳 metric + `tools/recommend.py` 输出建议 | **必纳 metric**(经 A/B 两侧对比) | 3 组 A/B 对比产出可读结论 | ⏭ **未做** —— 工具链已齐(`ab_compare.py` / `recommend.py` / `aggregate.py` / `plot.py`,per Entry #213)⇒ 缺 **3 组 A/B 数据** |
+| **H8** | 实验 4 件套 + 13 metric 足以让跨协议取舍决策可复现 | Stage 3 | 3 组 A/B 对比产出可读结论 | 4 件套 + 13 必纳 metric + `tools/recommend.py` 输出建议 | **必纳 metric**(经 A/B 两侧对比) | 3 组 A/B 对比产出可读结论 | ✅ **成立**(2026-11-05,per 台账 **Entry #224** A/B 降级裁决 + **Entry #225** 落地)—— 3 组 A/B(`h6` 隔离/共享 · `h4` 正确/错标 · `h2` FullMap/BroadcastNull)各产出**可读结论**:`ab_compare.py` 逐 metric delta + `recommend.py` 3 条建议(均落在**实测面**:组 1/2 由 B 侧实测死锁=1 淘汰、组 3 由延迟 4→18(350%)淘汰;未实测面按 SU#3 显式标注「闸不适用」)。⚠️ **工具链级/模型级**,A/B 两侧 = **同一装置的两个配置**(非两个真协议族,本仓无协议级实验装置)。逐组数据 + 口径限定 + 反向 fixture 见 `docs/validation/2026-11-05-cep-h8-ab-toolchain.md` |
 
 **② 预登记 out-of-scope 集合(SU#1 §④ 的机器可查基准 —— tools 的 `not-collected ⊆ 预登记` 校验读本集合)**
 
@@ -682,7 +682,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **H5** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run |
 | **H6** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `directory_misses` · **`coherence_stalls`** · **`memory_violations`** | 该实验测**VC 隔离**,**不采延迟**(per SU#1 §③ branch 3:`timing` + 预声明不采 ⇒ 必须 `"not-collected"`,⛔ 禁写 0)· `coherence_stalls` / `collective_stalls` / `deadlock_violations` **在范围内**。⚠️ **2026-11-05 补正**:`coherence_stalls` 与 `memory_violations` 实为 h6 的**无产出者** ⇒ 已移入 out-of-scope(Entry #218 的清单**遗漏**这两项,由 h4 落地时的闸暴露) |
 | **H7** | *(全部 13 项)* | 外部对拍,**不产生**本仓 `metrics.json` run |
-| **H8** | ⏳ **待登记** —— `status = pending`(**不是**「全部 13 项」;「全部」是 H1/H5/H7 的语义)⇒ out-of-scope 集合此刻**不可预登记** ⇒ ⛔ **不得产出 A/B run** | 同 H4 |
+| **H8** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `coherence_stalls` · `collective_stalls` · `directory_misses` · `deadlock_violations` · `memory_violations` | **(2026-11-05 pending → registered,Entry #224 Task C)** 本假设**不直接产 run** —— 证据载体 = 3 组 A/B 结论(per Entry #224 ⑤ H8-A/B-1/2:每组两侧 hypothesis_id 相同,绑**本组装置的行** h6/h4/h2 ⇒ 直接复用其预登记)⇒ 本集 = **3 组装置 out-of-scope 的并集(10 项)**,实测量并集 = `total_*`×3 —— 并集登记保证未来以 `CEP_EXP_VARIANT` 产的 H8 变体 run 的「实测集 ⊆ 本集」恒成立 |
 
 **②-2 机器投影与 drift 关系(per `ADR-CEP-06` **SU#2** ①~③ —— 载体裁决)**
 
@@ -691,9 +691,9 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **预登记真源** | **本表 ②**(不动)—— 评审过的设计面 |
 | **机器投影** | `experimental/preregistration.json`(逐假设 `hypothesis_id` → `out_of_scope` 集 + `status: registered \| pending`)—— **builder 域**、**入 M1 冻结集**(`FROZEN_GLOBS`)⇒ 改动须 `--update --authorized-by <台账 entry>` |
 | **drift 校验** | 新 script + ctest(先例 `cep_decl_alignment_check`)⇒ **本表 ② ↔ JSON 逐假设集合相等**;任一侧单改即 red ⇒ **两闸互为锁**(改 JSON 绕过评审 ⇒ 冻结授权记录暴露;改本表想静默生效 ⇒ drift red) |
-| **禁产出闸** | `⏳ 待登记`(H4 / H8)在 JSON 里 `status = pending`(⛔ **不是缺行** —— 缺行 = 未登记,pending = 已登记但禁产出)⇒ tools 判据④ 对 `pending` / 无行**判红**;emit whitelist 实测只认 `h2`/`h3`/`h6` ⇒ H4/H8 在受监管路径上**物理不可产出** |
+| **禁产出闸** | 已无 `pending` 行(2026-11-05 起:H4 于 Entry #222、H8 于 Entry #224 转为 `registered`,**均不产以自身为标签的 run** —— H4 的 run 早已由白名单放行,H8 的 A/B 变体绑**装置行**)⇒ 闸机制保留:JSON 里 `status = pending`(**不是**缺行 —— 缺行 = 未登记,pending = 已登记但禁产出)⇒ tools 判据④ 对 `pending` / 无行**判红**;emit whitelist 实测认 `h2`/`h3`/`h4`/`h6`(H8 变体经 `CEP_EXP_VARIANT` 走既有入口,⛔ 不新增 `run_hN`) |
 | **⚠️ 能力边界** | 闸控制 **validity 不是 existence** —— 谁都能手搓 run 目录,但不会有 validity-green 的报告 ⇒ 产物在**消费侧**被 containment |
-| **`status` 三值语义** | `registered`(已登记 ⇒ 可产出 run)· `pending`(已登记但**禁产出** —— H4 / H8)· **无行**(未登记 ⇒ 判红)。⛔ **`pending` ≠ 「全部 13 项」** —— 「全部」是 H1/H5/H7 的语义(契约级断言 / 外部对拍,**不产生** run) |
+| **`status` 三值语义** | `registered`(已登记 ⇒ 可产出 run)· `pending`(已登记但**禁产出** —— 当前无此类行)· **无行**(未登记 ⇒ 判红)。⛔ **`pending` ≠ 「全部 13 项」** —— 「全部」是 H1/H5/H7 的语义(契约级断言 / 外部对拍,**不产生** run) |
 
 **③ verdict 三态口径(SU#1 §④ 的 hypothesis-verdict 级 —— 与 run-validity 级**不可互相继承**)**
 
@@ -13695,6 +13695,251 @@ H4 的**判据原文无错**,只是依赖列表述不准 ⇒ ① 表 H4 行直�
 `ADR-CEP-06` **SU#1** / **SU#2** ·
 `docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` ·
 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md`
+
+---
+
+### Entry #224 — 2026-11-05 [arch+plan](架构决策审查 —— critic **REJECT**(1 BLOCKER)+ `ADR-CEP-06` **SU#3** 裁决 + 后续任务实施路径)
+
+**主题**:用户口令「对完成和后续任务进行梳理 … 再切 architect 审查架构决策是否需要修订,再切 planner 给出后续任务内容和实施路径」⇒ 本条落 architect 审查结论 + planner 的后续路径。
+**角色**:architect(审查 + SU#3 裁决)· planner(本条台账 + 后续路径)。
+**性质**:**已完成归档之后的订正**;⛔ **不改**任何已归档 change 的产物。
+
+**⚠️ 审查者可用性(必须如实声明 —— 不得把「审查者不可用」当成「审查通过」)**
+
+| 审查者 | 状态 | 说明 |
+|---|---|---|
+| **oracle** | ❌ **本轮不可用** | subagent 调用返回 `Variant unavailable for kimi-code/kimi-for-coding: high`(2026-11-05)⇒ 按降级规则执行 architect 域**内置自检清单**代替 |
+| **critic** | ✅ **可用** | 结论 = **REJECT**(`mergeable: no` · `scope_exceeded: false`)· 1 BLOCKER + 1 SHOULD_FIX + 5 NIT |
+
+---
+
+**① architect 审查结论(整体目标 / 为什么 / 怎么做 / 现状)**
+
+| 维度 | 结论 |
+|---|---|
+| **目标** | 跨 14 季度把 CEP 从「协议中立基线(60-70%)」推到「5 协议族可跑实验出数据」—— 把「用 CHI/CXL/UALink 的这个 SoC,coherence 开销 / 停顿 / 死锁风险如何」从**靠人脑推演**变成**可跑实验出数据**(per §2.1) |
+| **为什么** | phase-1~9 完成后协议中立基线**缺位**(06-bis 90% 是 markdown 草案 ⇒ 实质 0 复用)· 探索平台**无实验产物**(metric/sweep/A-B 对比 = metis G1 盲点)· 真实 IP 对应实证缺口(NVIDIA H100 GMMU / ARM CMN-700 / UALink Common 2.0) |
+| **怎么做** | 6 层架构 + Stage 0~3 **串行** 14 个 change + **66 条守门 invariant 机器检查** + **§9 的 8 个研究假设** |
+| **现状** | **14 个 OpenSpec change 全部已归档**(队列 #1~#14)· Stage 0 完成 · DoD 剩余:B2(部分)· B3a(部分)· **B3b 运行时引擎 1/6** · **B4(⏳)** · **B7 = 7/8** |
+| **当前任务** | **H8 的 3 组 A/B 数据** —— B7 的最后一块(工具链已齐,缺数据) |
+
+---
+
+**② 🔴 BLOCKER(critic 认定 · 已复现)—— 报告层对未测量 metric 作出**被禁止的肯定断言****
+
+**实测复现**(2026-11-05):
+```
+h4/report.html ⇒ 「一致性闸门通过」   (h4 的 memory_violations = "not-collected")
+h6/report.html ⇒ 「一致性闸门通过」   (h6 的 memory_violations = "not-collected")
+```
+⇒ `tools/render_report.py` 的 `consistency_violations()` 对违例类 `not-collected` 返回空 ⇒
+报告渲染 **「✓ 一致性闸门通过(deadlock_violations == 0 且 memory_violations == 0)」**
+⇒ 对**未测量**的 metric 作出**肯定的一致性安全断言**。
+
+**冲突对象**:`ADR-CEP-06` **SU#1 §④**(已签批)——
+「not-collected ⇒ IC3 判定『不适用』+ **该 run 不得作一致性安全断言的证据** + **报告层须渲染对应 badge**」;
+`07 号` Status Update 2026-11-04(#1) 同一规则的真源 1 同步。
+
+⚠️ **不是「badge 未实现」的实现欠账**(那单独是 SHOULD_FIX),而是**方向相反的断言**
+⇒ 属 critic 的 BLOCKER 第①类(与已签批 ADR 冲突且未走取代流程)。
+
+**③ architect 裁决(已落 `ADR-CEP-06` SU#3,只追加未改正文)**
+
+| 裁决 | 内容 |
+|---|---|
+| **A · 报告层三态** | **✓ 通过**(两违例类**均实测** = 0)· **❌ 违例 fail**(任一**实测** > 0)· **⚪ 不适用**(任一 = `"not-collected"` ⇒ 文本须含「不作一致性安全断言的证据」且**禁含「通过」字样**)⇒ **「不适用」优先于「通过」**;实现 = **扩展**既有 badge 机制(SU#1 明示**不新建**) |
+| **B · 「设计预期违例」载体** | 违例类槽位 = **本 run 实测违例数**;⛔ **设计预期违例不进槽位**(进槽位 ⇒ IC3 误判 fail 掩盖正控结论);锚定双件套 = **(i) 同 PR 机器测试**(负控断言 + 反向 fixture + **产出层硬约束「负控红不了 ⇒ ⛔ 不产出 run、不登记结论」**)· **(ii) `verification_scope` 散文指针**(⚠️ **显式承认散文属 SU#2 §① 的自证面家族** ⇒ 仅指针,⛔ 不得单独作证据) |
+| **C · 连带洞** | `consistency_violations()` 现于 `deadlock_violations == "not-collected"` 时**提前 `return`** ⇒ 跳过 `memory_violations` 检查 ⇒ `dv=not-collected ∧ mv=5` 会**漏报真实违例** ⇒ 三态改造须一并改为**各违例类独立判定** |
+| **④ `07 号` 是否同步** | ❌ **否**(per critic 三判据逐条:A 未触发 —— 本轮**未订正** 07 号任何既有文本,增量是**实现未达标**而非文本被订正;B 未触发 —— 载体链 = ADR-CEP-06 SU#3 → objective §9.1 ①/② 表 → `preregistration.json`,07 号不在链上;C 已完整)⇒ ⚠️ **边界**:若三态日后被采纳为**平台级报告契约** ⇒ 触发 B ⇒ 届时同步 |
+
+**④ critic 的 SHOULD_FIX 与 NIT 处置**
+
+| # | finding | 处置 |
+|---|---|---|
+| S1 | `ADR-CEP-06` 需追加 **SU#3**(「设计预期违例」是新契约语义决策,SU#1/#2 未覆盖) | ✅ **已落** SU#3(本条 ③)—— 与 BLOCKER 修复**同 PR** 一次 `--update` |
+| N1 | `render_report.py:52-54` 提前 `return` ⇒ 漏报真实违例 | ✅ **纳入 BLOCKER 修复**(SU#3 §③ 的连带洞) |
+| N2 | `:286` `_render_pre`/`_render_ic3_na` **死变量**(解包未消费)· `:169-175` 越界检查块重复两遍 | ✅ **纳入同 PR 清理**(零行为变化) |
+| N3 | `verification_scope` 属自证面家族 ⇒ 「核心证据机器不可校验」? | ⚠️ **不构成 BLOCKER/SHOULD_FIX** —— H4 核心证据(负控因果)有**独立机器锚**(`[cep][h4]` 4 cases 在 ctest 注册 + validation §5 反向 fixture)⇒ 散文只是报告层指针 ⇒ 但**可选纵深**:emit 层加「负控未死锁 ⇒ 拒绝产出」硬断言 ⇒ **已纳入** SU#3 ②B(i) 的「产出层硬约束」 |
+| N4 | 台账形态:Entry #223 改了冻结面但无逐件授权表(授权链实存,manifest `authorized_by: "Entry #223"`) | ✅ **本条起补授权表**(见 ⑥) |
+| N5 | 历史事实矛盾:Entry #220 ① 称 h6 的 `coherence_stalls`/`memory_violations` 为「实测 0」,Entry #223 ④ 更正为「无产出者 ⇒ not-collected」 | ⛔ **append-only 不回改**;**以 Entry #223 ④ 为准**,本条复述留痕 |
+
+**⑤ architect 域的**降级裁决**(oracle 不可用 ⇒ 内置自检清单代替)—— H8 的 A/B 维度**
+
+⚠️ `objective §9.1` ① 表 H8 行的判据「3 组 A/B 对比产出可读结论」**未写明 A/B 两侧是什么**
+⇒ 无 oracle ⇒ 按 architect 内置自检清单(冲突 / 取舍理由 / 后果 / 验证)降级裁决:
+
+**裁决 H8-A/B-1:A/B = **同一实验装置的两个配置**,不是「两个协议族」。**
+- ⛔ **不是**两个真协议族 —— 本仓**无协议级实验装置**(H4 口径已声明「模型级非协议级」)⇒ 假称协议对比 = 自欺;
+- ✅ 同一装置的两个配置 ⇒ 每组两侧 `hypothesis_id` **相同** ⇒ 共享该假设的预登记 out-of-scope ⇒ 无需新增登记。
+
+**裁决 H8-A/B-2:3 组 A/B = 3 个装置各一对配置,覆盖跨协议取舍的三个面。**
+
+| 组 | 装置 | A 侧 | B 侧 | 取舍维度 |
+|---|---|---|---|---|
+| **1** | h6(VC 模型) | VC **隔离** | VC **共享** | **死锁风险 vs 带宽效率** |
+| **2** | h4(完成域模型) | 完成域**正确**(requester-scoped) | 完成域**错标**(group-scoped) | **误分类的代价** |
+| **3** | h2(目录策略) | `FullMapDirectory` | `BroadcastNullTracker` | **目录开销 vs 一致性覆盖** |
+
+**裁决 H8-A/B-3:A/B 变体**不进 `exp_id`**,走 `CEP_EXP_VARIANT` 环境变量 + 目录后缀。**
+⚠️ **实测依据**:drift 闸断言 4 用正则 `=\s*run_(h\d+)\s*\(`(`scripts/test/cep_prereg_drift_check.sh:156`)提取 emit 白名单
+⇒ 若新增 `run_h8_a1` 之类**变体入口**,该正则**漏匹配** ⇒ SU#2 门禁③ 的顺序锁**静默失效**(漏检,非判红)。
+⇒ 故:同一 `run_hN` **内部**按 variant 参数化 ⇒ 白名单正则**不变** ⇒ 门禁③ 保持有效。
+⇒ A/B 两侧目录由**运行脚本**给不同 `CEP_EXP_DIR`(如 `h6-iso` / `h6-shared`)⇒ emit 侧零目录改动。
+
+**⑥ 冻结面授权链(per N4 补齐)**
+
+| 序 | 冻结面文件 | 变更 | 授权 entry |
+|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-06-experiment-protocol.md` | **追加 SU#3**(正文未改) | **Entry #224** |
+| 2 | `tools/render_report.py` | 报告层三态 + 提前 return 修复 + 死变量清理 | **Entry #224** |
+| 3 | `experimental/preregistration.json` | H8 行 `pending → registered` + out-of-scope 集 | **Entry #224** |
+| 4 | `tools/aggregate.py` / `tools/plot.py` / `tools/recommend.py` | A/B 侧适配(若需) | **Entry #224** |
+
+⇒ 走两步流程:`--update --authorized-by "Entry #224"`(**本条已存在** ⇒ 授权可校验)⇒ 在**内容 commit 之后**跑 ⇒ 再 commit manifest ⇒ hash + provenance 双绿。
+
+**⑦ planner 的后续任务清单与实施路径(本条的可执行输出)**
+
+| 序 | 任务 | 归属 | 依赖 | 产出 / 判据 |
+|---|---|---|---|---|
+| **A** | **修 BLOCKER**:报告层三态 + 连带洞(提前 return)+ 死变量清理 + emit 产出层硬约束 | builder | SU#3 | `tools/render_report.py` + `test/test_cep_experiment_emit.cc` + **反向 fixture**(⚠️ `dv=not-collected ∧ mv=5` 须**报告出**违例;`dv=not-collected ∧ mv=0` 须渲染 ⚪ 而非 ✓)· h3/h6 既有渲染**不回归** |
+| **B** | **SU#3 收口**:§⑤ Verification 勾选回填 + 冻结面 `--update --authorized-by "Entry #224"` | builder | A | manifest 收口 · hash/provenance 双绿 |
+| **C** | **H8 的 3 组 A/B 数据**:先增 H8 预登记行(`pending → registered` + out-of-scope 集,per SU#2 ④ **预登记先于产出**)⇒ 再按 ⑤ 的 3 组产 run ⇒ `ab_compare.py` + `recommend.py` 出**可读结论** | builder | A · B | 3 组 metrics + 结论 + validation 文档 + §9.1 ① 表 H8 verdict ⇒ **B7 7/8 → 8/8** |
+| **D** | **`ADR-CEP-06 §6 抓取点 1** 重新评估(`simulation_config.json` 缺 `protocol`/`topology`/`directory`) | architect | — | ⚠️ 登记的触发条件(Entry #218 ④ 动作 #4 的 builder PR)**已命中而未处置** ⇒ 须重新评估:影响报告**可复现性** ⇒ 是否影响 B4 的 run-validity? |
+| **E** | **`litmus` 证伪判据**(`consistency_labels`) | planner → **用户裁决** | — | 需**独立 change 立项**(per Entry #216 载体设计)⇒ 非本条可决 |
+| **F** | **ADR 一决策一文档化 D1 路径** | architect | T1/T2/T3 | ⏭ **等触发条件命中**,不主动推进 |
+| **G** | **UALink N-1 ~ N-9**(9 项 pending) | **用户** | Evaluation Copy Agreement | ⛔ **技术正文受协议约束 ⇒ 禁投喂** ⇒ 转正需用户**自行**取得 Evaluation Copy + 明确授权 + 走**新** Task 0 轮次 |
+| **H** | **`ADR-CEP-06 §6` 的其余抓取点** + §10 的 11 条登记态未排期项 | architect | — | ⏭ 维持登记态,不主动扩大范围 |
+
+**⑧ 关联**: Entry **#223**(H4 装置落地 + 报告面暴露本 BLOCKER)· **#222**(H4 形态裁决 + 负控是装置合格的前提)· **#221**(H1/H5 登记)· **#220**(C1 builder 域落地)· **#219**(architect 审查 + 剩余任务清单)· **#218**(§9.1 改造 + 预登记载体)· **#217**(C1/C2 裁决)·
+`ADR-CEP-06` **SU#3**(本条新增)· **SU#1** / **SU#2** · `ADR-CEP-01` **§3.2** / **§6.2** 代价 3 · `ADR-CEP-09` SU 2026-11-02 §④ ·
+`07 号` Status Update 2026-11-04(#1)(三态未触发同步)· `tools/render_report.py` · `scripts/test/cep_prereg_drift_check.sh:156` ·
+`test/cep_experiment_harness.hh` · `test/test_cep_experiment_emit.cc` · `experimental/preregistration.json` ·
+`docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md`
+
+### Entry #225 — 2026-11-05 [build](H8 A/B 落地 + `recommend.py` 哨兵修复 —— B7 计数 7/8 → **8/8**)
+
+**主题**:落地 Entry #224 ⑤/Task C 的 H8 形态 —— 预登记登记 + 3 组 A/B 数据 + 工具链适配 + 结论登记。
+**角色**:builder(装置参数化 + 产出 + 工具链修复 + 登记)· architect(Entry #224 的 A/B 降级裁决)· planner(§9.1 ①/② 表落)。
+**性质**:**已完成归档之后的订正**;⛔ **不改**任何已归档 change 的产物;⛔ **不新增 `run_hN` 入口**(变体走 `CEP_EXP_VARIANT`)。
+**与 Entry #224 ⑤ 的关系**:⚠️ **维持原案**(3 组 = h6/h4/h2 各一对),**不订正**;
+中途出现过的「3 组全用 h6」倾向的前提(A/B run 必须绑 H8 行才能过预登记闸)**经代码核实不成立** ——
+`mark_not_collected()` 按 `hypothesis_id` 投影、`hypothesis_id` 由 `CEP_EXP_ID` 承载 ⇒ 变体 run 直接绑本组装置行(h6/h4/h2),
+闸自动绿 ⇒ 无需为 A/B 造 H8 标签 run。
+
+**① H8 预登记(`pending → registered`)**
+
+| 落点 | 变更 |
+|---|---|
+| `experimental/preregistration.json` | H8 行 `status: pending → registered`;`out_of_scope` = 3 装置并集 **10 项**(latency×5 + `coherence_stalls` / `collective_stalls` / `directory_misses` / `deadlock_violations` / `memory_violations`);实测量并集 = `total_*`×3 |
+| `objective §9.1 ②` 表 H8 行 | 同步登记同集(**drift 闸两闸互为锁,两侧同改**) |
+| `objective §9.1 ②-2` 表 | 「禁产出闸 / status 三值语义」两行更新为 H4/H8 均已 `registered` 的当前态 |
+
+⇒ H8 行**不服务任何以 H8 为标签的 run**(A/B 变体绑装置行,per A/B-1)⇒ 该集的作用 = **预登记投影的完备性兜底**
+(若未来有人以 H8 标签产变体 run,「实测集 ⊆ 本集」恒成立)。
+⇒ `bash scripts/test/cep_prereg_drift_check.sh` **rc=0**(8 registered / 0 pending)。
+
+**② 装置参数化(`test/test_cep_experiment_emit.cc`,非冻结面)**
+
+| 项 | 实现 |
+|---|---|
+| 入口 | `run_h2/run_h4/run_h6` 增 `variant` 参数(**默认 = 既有行为**,不设变体 ⇒ 产出与改动前一致;单测钉住) |
+| dispatch | 读 `CEP_EXP_VARIANT` + **逐装置白名单**(h2: `dcoh`/`fullmap`/`broadcast`;h4: `correct`/`mislabel`;h6: `iso`/`shared`);越界 `FAIL`,⛔ 不静默忽略 |
+| drift 闸兼容 | dispatch 保持 `r = run_hN(...)` 字面形态 —— 正则 `=\s*run_(h\d+)\s*\(` 提取白名单**不变**(实测仍取 `['h2','h3','h4','h6']`) |
+| 代表值语义 | 变体只切换 **metrics 槽位归属**(「本 run 的被试配置」);双模型装置(含负控)不变 |
+| 标签 | `hypothesis_id` 仍由 `CEP_EXP_ID` 承载 ⇒ 变体 run 绑**本组装置**行 |
+
+**③ 3 组 A/B 结果(`bash scripts/test/cep_h8_ab_runs.sh`)**
+
+| 组 | A | B | 关键实测 | `recommend.py`(exit) |
+|---|---|---|---|---|
+| 1 | h6 `iso` | h6 `shared` | A 死锁 **0** / B 死锁 **1**、`collective_stalls` 2 001 000 vs 0 | **推荐 A**(target 实测死锁违例;memory 闸不适用注脚)(0) |
+| 2 | h4 `correct` | h4 `mislabel` | A 死锁 **0** / B 死锁 **1**;两侧 `collective_stalls`=0(隔离 VC 下仍死锁 ⇒ 排除带宽竞争) | **推荐 A**(同注脚)(0) |
+| 3 | h2 `fullmap` | h2 `broadcast` | 延迟 **4 vs 18**(退化 **350%** > 10% 阈值);违例类两侧均 `not-collected` | **推荐 A**(延迟面;两闸均不适用注脚)(0) |
+
+⇒ 报告层实测:g1a/g2a/g3a/g3b **⚪ 不适用**;g1b/g2b **❌ 一致性违例(实验 fail)**(实测死锁=1 = 被淘汰配置的证据,`--check` 红是**预期 verdict**,脚本断言「红因含死锁/一致性违例字样」)。
+⇒ 6 run 各 4 件套(`simulation_config.json` + `trace.h5`(`grain=run-summary` + `exp_variant` 标注)+ `metrics.json` + `report.html`)。
+⇒ 逐组 delta 表:`compare-g1a-vs-g1b/` · `compare-g2a-vs-g2b/` · `compare-g3a-vs-g3b/`(`delta_metrics.json` + `ab_compare.html`)。
+
+**④ `tools/recommend.py` 两处哨兵缺陷(per SU#1 §⑤)**
+
+| # | 缺陷 | 触发面 | 修法 |
+|---|---|---|---|
+| 1 | `hard_ok()` 直接 `v <= max` ⇒ `"not-collected"` 与 int 比较 **TypeError**(exit 1) | h6/h4/h2 **全部**装置(硬性闸至少一项未采集) | `_gate_state()` 3 态:违例(实测超阈)> 未实测(闸不适用)> 通过 |
+| 2 | 延迟面 `b_lat - a_lat` ⇒ `avg_latency_cycles == "not-collected"` **TypeError** | h6/h4 变体(不采延迟) | `_num()` 归一:非数值 ⇒ 未实测 ⇒ 不显著 + 注脚 |
+
+**语义**(SU#3 勘误:违例 > 不适用 > 通过):实测违例 ⇒ 该侧不合格、推荐另一侧(**其余未实测面在文本显式标注不背书**);
+双侧无实测违例 ⇒ 按实测延迟面比较,未实测面**不构成**肯定断言。⇒ exit 码语义不变(0 有明确推荐 / 3 不显著 / 4 双方违例)。
+
+**⑤ 反向 fixture(因正确原因红,`[cep][tools]` 3 SECTION)**
+
+| # | fixture | 期望 |
+|---|---|---|
+| 1 | 双侧硬闸 `not-collected` + 延迟未实测(h6/h4 形态) | 修复前 **TypeError exit 1** → 修复后 **exit 3** + 「闸不适用」注脚 |
+| 2 | 双侧硬闸 `not-collected` + 延迟 4 vs 18(h2 形态) | **exit 0** + 「推荐 A」+ 注脚(哨兵不得被当违例) |
+| 3 | B 侧实测死锁=1 + A 侧未实测 | **exit 0** + 「推荐 A」+「实测硬性违例(deadlock_violations=1)」+ 注脚 |
+
+**⑥ 验收(实测)**
+
+| 项 | 结果 |
+|---|---|
+| `[cep][exp][variant]`(新) | **1 case / 23 assertions** 全绿(3 组 × 双变体 + 默认路径零变化) |
+| `[cep][tools]` | **14 cases / 143 assertions** 全绿(含 3 条哨兵 fixture) |
+| `[cep][h4]` | **5 cases / 17 assertions** 全绿(emit 硬约束前置断言) |
+| `[cep][exp]` | **27 cases / 1342 assertions** 全绿 |
+| `cep_ic3_report_states_check` | **rc=0**(F1~F4 全绿) |
+| `cep_prereg_drift_check` | **rc=0**(8 registered / 0 pending) |
+| 官方 4 组重跑 | h2/h3/h4/h6 全 4 件套 + `--check` 通过;四者 `report.html` 均 **⚪ 不适用** 且 **grep「一致性闸门通过」零命中** |
+| H8 A/B | **6 run + 3 组 delta + 3 条建议**(§③) |
+| 全量 `ctest` | 150 项:**148 绿 / 2 红**(`cep_freeze_check` + `cep_docs_sync_check` —— **同一根因**:3 件冻结面已改、manifest 未刷新;**预期红**,双步收口见 ⑦) |
+| `format.sh --check` | 绿(格式化 `test_cep_experiment_emit.cc` / `test_cep_tools_contract.cc` 后) |
+
+**⑦ 冻结面授权与双步收口**
+
+| 序 | 冻结件 | 变更 | 授权 |
+|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-06-experiment-protocol.md` | SU#3 §⑤ + 勘误 §③ 的 Verification 勾选回填(8/9 · 6/7;M1 项待收口) | **Entry #224** ⑥ #1 |
+| 2 | `experimental/preregistration.json` | H8 行 `pending → registered` + out-of-scope 集 | **Entry #224** ⑥ #3 |
+| 3 | `tools/render_report.py` | 三态 + 连带洞(BLOCKER 修复,前序轮次) | **Entry #224** ⑥ #2 |
+| 4 | `tools/recommend.py` | 哨兵 3 态适配(**实测不在 `FROZEN_GLOBS`**,但按 ⑥ #4「A/B 侧适配」授权链登记) | **Entry #224** ⑥ #4 |
+
+非冻结面(登记备查):`test/test_cep_experiment_emit.cc` · `test/test_cep_tools_contract.cc` · `scripts/test/cep_h8_ab_runs.sh`(新) ·
+`docs/validation/2026-11-05-cep-h8-ab-toolchain.md`(新) · `docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md`(§7 自证面注) · 本条目自身。
+
+⇒ **双步收口**(per Entry #224 ⑥):内容 commit → `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #224"`(在内容 commit **之后**跑)→ manifest commit ⇒ hash + provenance 双绿。
+⇒ 收口前 `cep_freeze_check` 红 = **预期**(冻结件被改且 manifest 未刷新),⛔ 不是缺陷。
+
+**⑧ 计数与「B4 结构性不可达」发现**
+
+| 项 | 状态 |
+|---|---|
+| **B7**(8 假设全有实验结论) | **7/8 → 8/8 ✅ 达成**(H1/H2/H3/H4/H5/H6/H7 + 本次 H8) |
+| **B4**(4 件套 + 13 metric 两级 verdict) | ⏳ **仍未达成**,且本轮实证为**结构性不可达**(见下) |
+
+**B4 的结构性发现**(本轮实测,三层):
+
+| 装置族 | `deadlock_violations` | `memory_violations` | 双违例类均实测 |
+|---|---|---|---|
+| h2 | `not-collected` | `not-collected` | ❌ |
+| h3 | `not-collected` | **实测**(SWMR + data-value) | ❌ |
+| h4 | **实测** | `not-collected`(无内存一致性语义) | ❌ |
+| h6 | **实测** | `not-collected`(同上) | ❌ |
+
+⇒ B4 明文「违例类**必须实测为 0**」「违例类为 `not-collected` 的 run **不得**计入」⇒ **当前没有任何装置族满足**
+⇒ B4 **不是「未开始」而是「结构性不可达」**。
+
+⛔ **已排除的错误处置**:① 给 h6/h4 挂 `SwmrDataValueDetector` 凑 0(无内存语义模型上的「检出 0」= 未检验任何东西,同 H3 已排除的空检查家族);
+② 拼接 h3 的 `memory=0` + h6 的 `deadlock=0` 冒充「两者均实测 0」(违反 B4「不继承 pass」)。
+
+**路由(需 architect 裁决,构建方不自行拍板)**:① 新建**同时具备两种违例语义**的装置族(新装置 = 决策层,须预登记 + 白名单);或
+② 重裁 B4 口径(如按「每违例类各由一族实测为 0」计 —— 属 B4 语义修改,须 objective/ADR 评审)。
+⇒ 裁决前 **B4 维持 ⏳ 未达成**;validation 文档 §9 已同步该发现。
+
+**⑨ 关联**: Entry **#224**(A/B 降级裁决 + 冻结授权链)· **#223**(H4 装置 · B7 6/8→7/8)· **#222**(H4 形态 · 负控=装置合格前提)· **#218**(§9.1 改造 + 预登记载体)· **#217**(B4 两级口径)·
+`ADR-CEP-06` **SU#1**(§④ 违例类 / §⑤ 哨兵纪律)· **SU#2**(预登记载体 + 三道门禁)· **SU#3**(报告层三态 + 勘误优先级)· `ADR-CEP-01 §6.2` 代价 3 ·
+`docs/validation/2026-11-05-cep-h8-ab-toolchain.md`(新)· `docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` · `scripts/test/cep_h8_ab_runs.sh`(新) ·
+`tools/recommend.py` · `experimental/preregistration.json` · `objective §6.2 B4/B7` · `§9.1 ①/②/②-2`
+
+---
 
 ---
 

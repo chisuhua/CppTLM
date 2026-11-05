@@ -49,21 +49,22 @@ def consistency_violations(metrics):
     problems = []
     dv = metrics.get("deadlock_violations")
     mv = metrics.get("memory_violations")
-    if dv == "not-collected":
-        # 违例类未采集 ⇒ IC3「不适用」(per ADR-CEP-06 SU#1 §④ ⑤)—— 不是违例
-        return problems
-    if not isinstance(dv, int) or isinstance(dv, bool) or dv < 0:
-        problems.append(f"deadlock_violations 非法或缺失: {dv!r}")
-    elif dv > 0:
-        problems.append(f"死锁违例 {dv} 次(deadlock_violations > 0)")
+    # ⚠️ 2026-11-05(Entry #224 / ADR-CEP-06 SU#3 §③ 的连带洞):
+    #   此前 `dv == "not-collected"` 会**提前 return** ⇒ 跳过 `memory_violations` 检查
+    #   ⇒ 构造 `dv=not-collected ∧ mv=5` 的 run 会**漏报真实违例**。
+    #   ⇒ 改为:两个违例类**各自独立判定**,未采集的那一个**不判**(不阻断),
+    #     但**不阻断另一个**的检查。
+    if dv != "not-collected":
+        if not isinstance(dv, int) or isinstance(dv, bool) or dv < 0:
+            problems.append(f"deadlock_violations 非法或缺失: {dv!r}")
+        elif dv > 0:
+            problems.append(f"死锁违例 {dv} 次(deadlock_violations > 0)")
 
-    if mv == "not-collected":
-        # 违例类未采集 ⇒ IC3「不适用」(per ADR-CEP-06 SU#1 §④ ⑤)—— 不是「非法或缺失」
-        pass
-    elif not isinstance(mv, int) or isinstance(mv, bool) or mv < 0:
-        problems.append(f"memory_violations 非法或缺失: {mv!r}")
-    elif mv > 0:
-        problems.append(f"一致性违例 {mv} 次(memory_violations > 0)")
+    if mv != "not-collected":
+        if not isinstance(mv, int) or isinstance(mv, bool) or mv < 0:
+            problems.append(f"memory_violations 非法或缺失: {mv!r}")
+        elif mv > 0:
+            problems.append(f"一致性违例 {mv} 次(memory_violations > 0)")
 
     # 自洽性:memory_violations 必须 == kinds.swmr + kinds.data_value
     kinds = metrics.get("memory_violation_kinds")
@@ -77,6 +78,30 @@ def consistency_violations(metrics):
                 problems.append(
                     f"memory_violations({mv}) 与 memory_violation_kinds 合计({subtotal}) 不自洽")
     return problems
+
+
+# ── IC3 报告层三态(per ADR-CEP-06 SU#3 §②A)────────────────────────────
+# ⚠️ **「不适用」优先于「通过」** —— 任一违例类未采集 ⇒ ⛔ 禁止渲染「通过」字样
+#    (SU#1 §④:该 run 不得作一致性安全断言的证据)。
+# 三态:
+#   "pass"           —— 两个违例类**均实测**为 0 且无非法/缺失
+#   "violation"      —— 任一违例类**实测** > 0,或值非法/缺失
+#   "not-applicable" —— 任一违例类 == "not-collected"
+def violation_class(metrics):
+    """返回 IC3 三态判定: "pass" | "violation" | "not-applicable"。
+
+    ⚠️ **优先级:违例 > 不适用 > 通过**(per ADR-CEP-06 SU#3 §②A + §⑦ 勘误)——
+    「不适用」只压「通过」,**不压**「违例」:
+    若**另一个**违例类存在**实测违例**,必须报出来
+    (⛔ 否则「不适用」会掩盖真实违例 —— 实测 fixture F4 曾因此红)。
+    """
+    dv = metrics.get("deadlock_violations")
+    mv = metrics.get("memory_violations")
+    if consistency_violations(metrics):
+        return "violation"
+    if dv == "not-collected" or mv == "not-collected":
+        return "not-applicable"
+    return "pass"
 
 
 def metric_type_problems(metrics):
@@ -166,13 +191,6 @@ def preregistration_problems(metrics, hypothesis_id=None):
         problems.append(
             f"not-collected 集合越界(超出预登记 out-of-scope):{over} —— "
             f"{hid} 允许 {sorted(allowed) or '(空)'}")
-    allowed = set(entry.get("out_of_scope") or [])
-    actual = {k for k in REQUIRED_METRICS if metrics.get(k) == "not-collected"}
-    over = sorted(actual - allowed)
-    if over:
-        problems.append(
-            f"not-collected 集合越界(超出预登记 out-of-scope):{over} —— "
-            f"{hid} 允许 {sorted(allowed) or '(空)'}")
 
     # ③ **三分支判定**(per SU#1 §④ 判据③ 的可执行化):
     #    「实测 0」与「未测量」在**数据层同形**(都是 0)⇒ 机器闸无法从数值区分
@@ -246,10 +264,12 @@ def check(exp_dir):
         # (per ADR-CEP-06 SU#1 §④ ⑤)⇒ 不得用「==0 才 pass」的旧闸误判为 fail。
         _pre_problems, _ic3_na = preregistration_problems(m, cfg.get("hypothesis_id"))
         problems.extend(_pre_problems)
-        if not _ic3_na:
-            # ⚠️ 一致性闸门(ADR-CEP-06 IC3)—— 此前**只查键存在**,违例实验照样通过
-            problems.extend(consistency_violations(m))
-        else:
+        # ⚠️ 一致性闸门(ADR-CEP-06 IC3)—— 此前**只查键存在**,违例实验照样通过
+        # ⚠️ 2026-11-05(Entry #224):**不再因 IC3「不适用」而短路整个检查** ——
+        #   `consistency_violations()` 已能对 not-collected 的那一个**不判**、但**不阻断**另一个;
+        #   ⇒ 若此处仍短路,则 `dv=not-collected ∧ mv=5` 的 run 会**漏报真实违例**(连带洞)。
+        problems.extend(consistency_violations(m))
+        if _ic3_na:
             # ⚠️ 这是**信息**不是问题 ⇒ 不进 problems(否则闸会把合规 run 判红)
             print("  · ℹ️ 违例类为 not-collected ⇒ IC3 判定「不适用」(该 run 不作一致性安全断言的证据)")
     if cfg:
@@ -265,7 +285,13 @@ def check(exp_dir):
             print(f"  ✗ {p}")
         return 1
     state = "已渲染" if rendered else "未渲染(本工具的产物)"
-    print(f"  ✓ 输入 3 件套齐备 + 13 必纳 metric + verification 声明完整 + 一致性闸门通过")
+    # ⚠️ 三态文案(per ADR-CEP-06 SU#3 §②A):违例类未采集时**禁含「通过」字样**
+    _vclass = violation_class(m) if m else "pass"
+    if _vclass == "not-applicable":
+        print(f"  ✓ 输入 3 件套齐备 + 13 必纳 metric + verification 声明完整"
+              f" + 一致性闸门**不适用**(违例类未采集 ⇒ 本 run 不作一致性安全断言的证据)")
+    else:
+        print(f"  ✓ 输入 3 件套齐备 + 13 必纳 metric + verification 声明完整 + 一致性闸门通过")
     print(f"  · {OUTPUT_ARTIFACT}: {state}")
     return 0
 
@@ -280,11 +306,12 @@ def render(exp_dir, out_path):
     if os.path.exists(cfg_path):
         with open(cfg_path, encoding="utf-8") as f:
             cfg = json.load(f)
-    # ⚠️ IC3「不适用」分支(per ADR-CEP-06 SU#1 §④ ⑤):违例类为 "not-collected" ⇒ 不判 fail。
-    #   ⚠️ **实测非 0** 的违例(如 H4 负控的 deadlock_violations=1)是**设计预期** ⇒
-    #   仍渲染为告警(报告须显示),只是不阻断 render。
-    _render_pre, _render_ic3_na = preregistration_problems(m, cfg.get("hypothesis_id"))
     violations = consistency_violations(m)
+    # ⚠️ IC3 报告层三态(per ADR-CEP-06 SU#3 §②A):
+    #   「不适用」**优先于**「通过」⇒ 违例类未采集时 ⛔ 禁渲染「通过」字样
+    #   (实测:此前 h4/h6 的 memory_violations = "not-collected" 却渲染「✓ 一致性闸门通过」
+    #    ⇒ 对**未测量** metric 作出**肯定的一致性安全断言** ⇒ 与 SU#1 §④ 冲突)
+    vclass = violation_class(m)
     rows = []
     for k in REQUIRED_METRICS:
         v = m.get(k, "—")
@@ -303,9 +330,14 @@ def render(exp_dir, out_path):
 
     mode = cfg.get("verification_mode") or m.get("verification_mode", "未声明")
     scope = cfg.get("verification_scope") or m.get("verification_scope", "未声明")
-    if violations:
+    if vclass == "violation":
         violation_html = ("<div class=\"bad\"><strong>❌ 一致性违例(实验 fail)</strong><ul>" +
                           "".join(f"<li>{html.escape(v)}</li>" for v in violations) + "</ul></div>")
+    elif vclass == "not-applicable":
+        # ⚠️ 「不适用」态**禁含「通过」字样**(per ADR-CEP-06 SU#3 §②A)
+        violation_html = ("<div class=\"warn\"><strong>⚪ 一致性闸门不适用</strong>"
+                          "(违例类未采集 ⇒ 本 run 不作一致性安全断言的证据;"
+                          "per ADR-CEP-06 SU#1 §④ + SU#3)</div>")
     else:
         violation_html = "<div class=\"ok\"><strong>✓ 一致性闸门通过</strong>(deadlock_violations == 0 且 memory_violations == 0)</div>"
     doc = f"""<!doctype html>

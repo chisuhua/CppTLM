@@ -1,7 +1,7 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T02:54:18Z",
+  "updated_at": "2026-11-05T04:11:12Z",
   "updated_by": "auto",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
@@ -124,6 +124,24 @@
       "at": "2026-11-05T02:54:18Z",
       "by": "auto",
       "reason": "planner 域已落 §9.1 ①/② 表的 H4 依赖列订正 + out-of-scope 集,投影同步(pending→registered)⇒ 回 builder 实现 H4 装置:新建 test/cep_completion_domain_model.hh(正控 + **反事实负控** + 口径限定)+ emit whitelist 放行 h4(与预登记登记**同 PR**,per SU#2 §③ 顺序锁)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T03:58:58Z",
+      "by": "user",
+      "reason": "用户口令:「再切architect审查架构决策是否需要修订」⇒ 审查 Entry #218~#223 一系列的架构决策(层次归属订正 / 形态裁决 / 预登记闸 / 本轮 3 处契约语义变更)是否需追加 SU 或修订 ADR"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T04:09:59Z",
+      "by": "auto",
+      "reason": "architect 审查完成(oracle 本轮不可用⇒降级内置自检;critic REJECT 1 BLOCKER)⇒ 回 planner 落台账 Entry #224(BLOCKER 认领 + SU#3 指针 + 授权链)+ 后续任务实施路径"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T04:11:12Z",
+      "by": "auto",
+      "reason": "planner 已落台账 Entry #224(BLOCKER 认领 + SU#3 指针 + H8 的 A/B 降级裁决 + 后续路径 + 冻结面授权链)⇒ 回 builder:① 修 BLOCKER(报告层三态 + 连带洞 + 死变量清理 + emit 产出层硬约束)② SU#3 收口(Verification 勾选 + --update --authorized-by \"Entry #224\")③ H8 的 3 组 A/B(先预登记 pending→registered,再产出)"
     }
   ]
 }

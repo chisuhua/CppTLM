@@ -440,3 +440,193 @@ not-collected ⇒ IC3 判定「不适用」+ 该 run 不得作一致性安全断
 台账 **Entry #217** ⑥ 动作 #1 / #2 · `objective §9.1`(判据-指标需求表 · **预登记真源**)·
 `scripts/test/cep_freeze_check.sh`(`FROZEN_GLOBS`)· `test/test_cep_experiment_emit.cc`(emit 侧实测)·
 `include/tlm/cep/fabric.json`(**派生刷新型**冻结成员先例)· `test/CMakeLists.txt`(drift 校验的 ctest 注册先例)
+
+---
+
+## Status Update 2026-11-05(#3)—— 违例类 metric 的「**设计预期违例**」载体裁决 + IC3 报告层**三态**规范（SU#1 §④ 的落地配套）
+
+**主题**:SU#1 §④ 允许违例类为 `"not-collected"` 并要求「**报告层须渲染对应 badge**」,但落地时暴露 **2 个未裁决点** —— 本则裁之。
+
+**性质**:architect 域的架构级裁决(per 台账 **Entry #224**)。
+**关联**: 本文件 **SU#1**(§④ 的违例类规则 + B4 读取约束)· **SU#2**(预登记载体 + 三道门禁 + 自证面家族)·
+`07 号` Status Update 2026-11-04(#1)(同一规则的真源 1 同步)· 台账 **Entry #222** / **#223** ·
+`docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` · `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md`
+
+⛔ **本则不改本 ADR 正文**(ADR 不可变纪律),只**追加** SU。
+
+---
+
+### ① 问题(本则的根因 —— 两个未裁决点)
+
+**问题 1:报告层 badge 只有两态 ⇒ 对未测量 metric 作出**被禁止的肯定断言****
+
+SU#1 §④ 明文要求:
+> not-collected ⇒ IC3 判定「不适用」+ 该 run 不得作一致性安全断言的证据 + **报告层须渲染对应 badge**
+
+但 `tools/render_report.py` 现有 violation badge **只有两态**:
+- `:307` `<div class="bad">❌ 一致性违例(实验 fail)`
+- `:310` `<div class="ok">✓ 一致性闸门通过(deadlock_violations == 0 且 memory_violations == 0)`
+
+⇒ **实测(2026-11-05)**:违例类为 `"not-collected"` 的 run(h4 与 h6)经 `consistency_violations()` 得 `violations = []`
+⇒ 报告渲染 **「✓ 一致性闸门通过」** ⇒ 对**未测量**的 metric 作出**肯定的一致性安全断言**。
+
+⚠️ **这不是「badge 未实现」的实现欠账**,而是**方向相反的断言**:SU#1 §④ 禁止的正是这条断言
+⇒ 属「与已签批 ADR 冲突且未走取代流程」(per 台账 **Entry #224** 的 BLOCKER 认定)。
+
+**问题 2:「设计预期违例」的载体未裁决**
+
+H4 的**核心证据**是**反事实负控**(coherence 被错标 group-scoped ⇒ 死锁)——
+per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假设的**因果支**。
+但「违例类槽位」的语义尚未裁决 ⇒ 两个坏选项:
+- **进槽位** ⇒ `deadlock_violations = 1` ⇒ tools 的 IC3 闸把 h4 判成「实验 fail」⇒ **掩盖正控结论**;
+- **丢弃** ⇒ H4 只剩正控 ⇒ 退化为「两类流同实验没死锁」= **H6 换名** ⇒ **判据的必要性支消失**。
+
+---
+
+### ② 裁决
+
+**裁决 A —— 报告层三态(规范本体)**
+
+| 态 | 触发条件 | 渲染文本(⛔ 不得含「通过」字样,除非确为通过) |
+|---|---|---|
+| **✓ 通过** | 两个违例类(`deadlock_violations` / `memory_violations`)**均实测**为 `0` | `✓ 一致性闸门通过(deadlock_violations == 0 且 memory_violations == 0)` |
+| **❌ 违例 fail** | 任一违例类**实测** `> 0` | `❌ 一致性违例(实验 fail)` + 明细 |
+| **⚪ 不适用** | 任一违例类 = `"not-collected"` | `⚪ IC3 不适用:违例类未采集 ⇒ 本 run 不作一致性安全断言的证据` |
+
+⛔ **三态互斥且**「不适用」**优先于「通过」**:任一违例类未采集 ⇒ **禁止**渲染「通过」字样
+⇒ 落实 SU#1 §④ 的「不得作一致性安全断言的证据」在**报告层**的可判定形式。
+📌 实现方式 = **扩展**既有 violation badge 机制(SU#1 §④ 明示「**不新建**」)⇒ 三态复用同一渲染点。
+
+**裁决 B —— 违例类槽位语义 + 「设计预期违例」的载体**
+
+- **槽位语义**:违例类槽位 = **本 run 实测违例数**。⛔ **设计预期违例不进槽位**。
+- **锚定双件套**(设计预期违例的唯一合法证据形态):
+  1. **(i) 同 PR 机器测试** —— 负控断言 + **反向 fixture**;并加**产出层硬约束**:
+     「**负控红不了 ⇒ 装置不合格 ⇒ ⛔ 不产出 run、不登记结论**」;
+  2. **(ii) `verification_scope` 散文指针** —— ⚠️ **显式承认:散文属 SU#2 §① 的「被试者自证面」家族**
+     ⇒ **仅作指针,⛔ 不得单独作证据成立**。
+- ⇒ **散文不可校验不构成缺陷**(因 (i) 提供独立机器锚)⇒ 但**若 (i) 缺失 ⇒ 本裁决的载体不成立**。
+
+**裁决 C —— 本则与既有裁决的关系**
+
+⛔ 本则**不改** SU#1 / SU#2 的任何既有裁决;只**追加** ②A / ②B 的载体规范 + ③ 的代价 + ⑤ 的验证判据。
+
+---
+
+### ③ 选项对比表(≥ 3 行,每行含结论 + 理由)
+
+| # | 选项 | 结论 | 理由 |
+|---|---|---|---|
+| 1 | **报告层** 保持两态 + 依赖 `problems` 列表为空来渲染「通过」 | ❌ **否决** | 对未测量 metric 渲染肯定断言,**直接违反 SU#1 §④**;实测 h4/h6 命中 ⇒ 属方向性错误,非措辞问题 |
+| 2 | **报告层** 三态(✓ 通过 / ❌ 违例 / ⚪ 不适用),「不适用」优先 | ✅ **采纳** | 落实 SU#1 §④ 的两个分句(IC3 不适用 + 报告层 badge);**扩展**既有 badge 机制(SU#1 明示不新建);三态互斥可判定 |
+| 3 | **设计预期违例** 进 `deadlock_violations` 槽位 | ❌ **否决** | IC3 闸把 h4 判成「实验 fail」⇒ **掩盖正控结论**;且「预期违例」与「实测违例」同槽 ⇒ 槽位语义歧义 |
+| 4 | **设计预期违例** 不进槽位,锚定 = 同 PR 机器测试 + 散文指针 | ✅ **采纳** | 槽位语义单一(= 本 run 实测);机器锚独立于散文 ⇒ 证据不落在自证面;⛔ 散文仅指针 |
+| 5 | **设计预期违例** 丢弃(只做正控) | ❌ **否决** | H4 退化为 **H6 换名** ⇒ 必要性支消失 ⇒ 装置不合格(per Entry #222 ③ 的「负控是装置合格的前提」) |
+| 6 | 新增伴生字段(如 `_designed_violations` map)承载设计预期违例 | ⛔ **不采纳(留待触发)** | 需 schema + 3 件 tools + main spec 三处同步 ⇒ 新增契约面字段;当前 (i) 已提供独立机器锚 ⇒ **无必要性**;若将来出现「单 run 多预期违例」需求 ⇒ 再立 ADR 追加 |
+
+---
+
+### ④ 后果 / 代价
+
+**正面**:
+- SU#1 §④ 的两个分句(IC3「不适用」+「报告层 badge」)在**报告层**有了可判定形式 ⇒ 报告不再对未测量 metric 作肯定断言;
+- 违例类槽位语义单一(= 本 run 实测)⇒ 「实测违例」与「设计预期违例」不再混槽;
+- 「设计预期违例」有了**明确载体 + 产出层硬约束** ⇒ 未来 emitter / tools 读者不会误把负控死锁写进槽位。
+
+**负面 / 代价**:
+- `tools/render_report.py` 属 **M1 冻结面** ⇒ 改动须 `--update --authorized-by`(per 台账 Entry #224 的授权链);
+- 「三态」比「两态」多一个分支 ⇒ 报告文案与断言路径须同步改 ⇒ **实现面 2 处**(badge 渲染 + `consistency_violations()` 的提前返回结构);
+- ⚠️ **连带洞**:现 `consistency_violations()` 在 `deadlock_violations == "not-collected"` 时**提前 return** ⇒ 跳过 `memory_violations` 检查 ⇒ 构造 `dv=not-collected ∧ mv=5` 的 run 会**漏报真实违例** ⇒ 改三态时须一并把提前 return 改为**不提前 return**(各分支独立判定)。
+- ⛔ **本则不新增契约面字段**(选项 6 留待触发)⇒ 不扩大 M1 冻结面。
+
+**风险**:
+- 「不适用」态可能被下游误读为「通过」⇒ 缓解 = 渲染文本**必须**含「不作一致性安全断言的证据」这一分句,且**禁止**出现「通过」字样。
+
+---
+
+### ⑤ Verification(可勾选验收判据 —— 前瞻方法)
+
+- [x] 报告层三态已实现:违例类任一 = `"not-collected"` ⇒ `report.html` 渲染 **⚪ 不适用** 且**全文不含**「一致性闸门通过」*(实测:官方 4 组 h2/h3/h4/h6 的 `report.html` 全部 ⚪ 且 grep「一致性闸门通过」零命中)*
+- [x] 违例类均实测 `0` ⇒ 渲染 **✓ 通过** — ⚠️ **本项措辞已被本文件 SU#3 勘误 §③ 订正**:「既有 h3 / h6 行为不回归」**有误** —— 两违例类至少一个未采集 ⇒ h2/h3/h4/h6 此前渲染「通过」本身是错的,修复后全渲染「不适用」是**纠正非回归**;「✓ 通过」态当前**无真实 run 实例** ⇒ 由合成 fixture **F1** 覆盖(防死代码,实测通过)
+- [x] 违例类任一实测 `> 0` ⇒ 渲染 **❌ 违例 fail***(实测:F3 fixture + H8 的 g1b/g2b 真实 run 均渲染「❌ 一致性违例(实验 fail)」)*
+- [x] 「不适用」态**优先于**「通过」(`dv=not-collected ∧ mv=0` ⇒ ⚪ 而非 ✓)*(命中 fixture F2)*
+- [x] 连带洞已修:`dv="not-collected" ∧ mv=5` 的 fixture ⇒ **报告出** memory 违例(不得漏报)*(命中 fixture F4;check 路径不再短路)*
+- [x] `consistency_violations()` 的提前 `return` 已移除(各违例类独立判定)*(代码实测;F4 双路径同红)*
+- [x] emit 产出层硬约束已落地:**负控红不了 ⇒ ⛔ 不产出 run、不登记结论**(机器断言)*(`EmitResult.fatal` + `device_qualified()`;`[cep][h4]` 含 `REQUIRE_FALSE(r.fatal)` 前置)*
+- [x] `verification_scope` 的**自证面**性质已在 validation 文档与本则中**显式承认***(本则 §②B(i) + `docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` §7 注)*
+- [ ] `M1` 冻结面 `--update --authorized-by` 完成 + hash / provenance 双绿*(按本条 §⑥ 的双步流程执行:内容 commit → `--update --authorized-by "Entry #224"` → manifest commit;在完成前本项保持未勾)*
+
+---
+
+### ⑥ 关联
+
+本文件 **SU#1**(§④ 违例类规则 + B4 读取约束 + §⑥ 勘误指针表)· **SU#2**(§① 自证面家族 + ② 三道门禁)·
+`07 号` Status Update 2026-11-04(#1)(同一规则的真源 1 同步)· `ADR-CEP-01` **§3.2** / **§6.2** 代价 3 ·
+台账 **Entry #224**(本则的授权与落地台账)· **#223**(H4 装置落地 + 报告面暴露本问题)· **#222**(H4 形态裁决 + 负控是装置合格的前提)·
+`tools/render_report.py`(:52-54 提前 return · :286 死变量 · :307-310 两态 badge)· `test/cep_experiment_harness.hh`(`well_formed()`)·
+`test/test_cep_experiment_emit.cc`(`run_h4` · emit whitelist)· `experimental/preregistration.json`(预登记投影)·
+`docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` · `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md`
+
+---
+
+## Status Update 2026-11-05(#3 勘误)—— 三态**优先级**澄清 + §⑤ 判据措辞订正
+
+**主题**:本则(SU#3)落地时的**合成 fixture** 暴露了 §②A 表格的一处**歧义**,且 §⑤ 的一条判据**措辞有误** ⇒ 本勘误订正之。
+**性质**:architect 域的**勘误**(⛔ 不改 SU#3 的任何既有裁决文字,只**追加**澄清与订正)。
+**关联**:本文件 **SU#3** · 台账 **Entry #224** · `scripts/test/cep_ic3_report_states_check.sh`
+
+---
+
+### ① 三态**优先级**澄清(§②A 表格的歧义订正)
+
+§②A 的表格按「行」给出触发条件,但在 `dv = "not-collected"` ∧ `mv = 5` 这类**混合**取值下,
+「❌ 违例 fail」(任一违例类**实测** > 0)与「⚪ 不适用」(任一违例类 = `"not-collected"`)
+**两行同时命中** ⇒ 需明确优先级。
+
+**裁定:优先级 = 「违例」> 「不适用」> 「通过」** —— 即:
+
+| 序 | 判定 | 理由 |
+|---|---|---|
+| 1 | **违例 fail** | 若**任一**违例类存在**实测违例**,⛔ **必须报出来** —— 「不适用」**不得掩盖**真实违例 |
+| 2 | **不适用** | 无实测违例,但任一违例类未采集 ⇒ 该 run 不作一致性安全断言的证据 |
+| 3 | **通过** | 两违例类**均实测**为 0 且无非法/缺失 |
+
+⚠️ **「不适用」只压「通过」,不压「违例」**。
+⇒ **实测依据**(合成 fixture **F4**:`dv=not-collected ∧ mv=5`):修复前该 run 被渲染为「⚪ 不适用」
+⇒ **真实违例 `mv=5` 被掩盖** ⇒ 修正优先级后渲染为「❌ 一致性违例(实验 fail)」并给出明细。
+
+⚠️ **连带修复(同源)**:`tools/render_report.py` 的 **check 路径**此前以 `_ic3_na` **短路整个**一致性检查
+⇒ `dv=not-collected ∧ mv=5` 在 check 路径**不报**、在 render 路径**漏报** ⇒ 两处**同源**修复:
+① `consistency_violations()` 移除提前 `return`(两违例类**各自独立判定**)· ② check 路径**不再短路**。
+
+### ② §⑤ 判据措辞订正(「既有 h3 / h6 行为**不回归**」一条)
+
+**原文**(§⑤ 第 2 条):
+> - [ ] 违例类均实测 `0` ⇒ 渲染 **✓ 通过**(**既有 h3 / h6 行为不回归**)
+
+⚠️ **该措辞有误** —— 订正为:
+
+> - [ ] 违例类均实测 `0` ⇒ 渲染 **✓ 通过**
+> - [ ] ⚠️ **h2 / h3 / h4 / h6 的渲染** **不得**停留在「✓ 一致性闸门通过」
+>       (实测:h2 两违例类均未采集 · h3 `deadlock_violations` 未采集 · h4/h6 `memory_violations` 未采集
+>        ⇒ 四者**均应**渲染 **⚪ 不适用**;此前渲染「通过」= 对**未测量** metric 的**肯定断言**
+>        ⇒ 修复后的变化是**纠正**,⛔ **不是**回归)
+
+⚠️ **推论**:当前 4 个真实 run **无一**落在「✓ 通过」态 ⇒ 该分支若无合成 fixture 即为**死代码**
+⇒ 由 `scripts/test/cep_ic3_report_states_check.sh` 的 **F1**(dv=0 ∧ mv=0)覆盖。
+
+### ③ Verification(可勾选验收判据 —— 前瞻方法)
+
+- [x] 三态优先级 = **违例 > 不适用 > 通过**(F4 红转绿)*(F4 实测:修复前渲染「⚪ 不适用」掩盖 `mv=5`,修复后渲染「❌ 一致性违例(实验 fail)」)*
+- [x] 合成 fixture **4 条**全绿(F1 通过 / F2 不适用 / F3 违例 / F4 连带洞)*(`bash scripts/test/cep_ic3_report_states_check.sh` rc=0)*
+- [x] `cep_ic3_report_states_check` 已注册进 ctest*(`ctest -N` 实测 #134)*
+- [x] h2 / h3 / h4 / h6 的 `report.html` **均**渲染 **⚪ 一致性闸门不适用**且**全文不含**「一致性闸门通过」*(官方 4 组重跑实测:四者全 ⚪、`grep '一致性闸门通过'` 零命中)*
+- [x] `consistency_violations()` 的提前 `return` 已移除;check 路径**不再**因 IC3 不适用而短路*(代码 + F4 双路径)*
+- [x] emit 产出层硬约束已落地(**负控未死锁 ⇒ ⛔ 不产出 run、不登记结论**)*(`EmitResult.fatal` + `[cep][h4]` 断言)*
+- [ ] `M1` 冻结面 `--update --authorized-by "Entry #224"` 完成 + hash / provenance 双绿*(双步流程的最后一步;完成前保持未勾)*
+
+### ④ 关联
+
+本文件 **SU#3**(§②A 报告层三态 + §②B 设计预期违例载体 + §③ 选项对比 + §④ 后果/代价)· **SU#1**(§④ 违例类规则 + B4 读取约束)· **SU#2**(§① 自证面家族)·
+台账 **Entry #224** · `scripts/test/cep_ic3_report_states_check.sh`(合成 fixture 4 条)· `tools/render_report.py`(三态 + 连带洞 + 死变量清理)·
+`test/CMakeLists.txt`(ctest 注册)· `07 号` Status Update 2026-11-04(#1)(三态未触发同步)

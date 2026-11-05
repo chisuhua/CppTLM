@@ -208,6 +208,18 @@ private:
     std::uint64_t last_retired_ = 0;
 };
 
+/// **装置合格性判定**(per `ADR-CEP-06` **SU#3** §②B(i))——
+///
+/// 负控(反事实:coherence 被错标 group-scoped)必须**死锁**;否则**装置不合格**
+/// ⇒ ⛔ **不产出 run**、⛔ **不登记结论**。
+///
+/// ⚠️ **为什么独立成函数**:判定逻辑必须**可机器测**(⛔ 不可只活在 emit 的控制流里
+/// —— 那会变成「纯承诺 = 测试给缺口盖章」,per C1 根因教训)。
+/// ⇒ 本函数是判定逻辑的**唯一真源**;emit 与测试**共用**它 ⇒ 语义漂移不可���。
+inline bool device_qualified(bool negative_control_deadlocked) noexcept {
+    return negative_control_deadlocked;
+}
+
 }  // namespace cep_cd
 
 #endif  // CPPTLM_TEST_CEP_COMPLETION_DOMAIN_MODEL_HH

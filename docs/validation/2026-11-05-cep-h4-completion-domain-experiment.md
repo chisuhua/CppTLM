@@ -133,6 +133,10 @@ bash scripts/test/cep_experiment_run.sh
 负控的死锁是**设计预期的证据**,写进 `verification_scope` 文本,**不进** metric 槽位
 (否则 tools 的 IC3 闸会把 h4 判成「实验 fail」⇒ 掩盖正控的结论)。
 
+⚠️ **`verification_scope` 的载体性质**(per `ADR-CEP-06` SU#3 §②B(i)):散文指针属 **SU#2 §①「被试者自证面」**
+家族 —— 仅作**指针**,⛔ 不作证据。H4 负控因果的**机器锚** = 同 PR 的 `[cep][h4]` 测试
+(含「负控未死锁 ⇒ emit 拒绝产出」的产出层硬约束)+ §5 反向 fixture,二者独立于散文。
+
 ---
 
 ## 8. Verdict

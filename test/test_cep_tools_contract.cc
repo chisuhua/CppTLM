@@ -465,9 +465,105 @@ TEST_CASE("[cep][tools] aggregate / plot / recommend 的语义行为", "[cep][to
                         shquote(run_a.string()) + " " + shquote(run_a.string())) == 3);
     }
 
+    const auto run_cmd_out = [](const std::string& cmd, std::string& out) {
+        FILE* p = popen((cmd + " 2>&1").c_str(), "r");
+        if (!p)
+            return -1;
+        out.clear();
+        char buf[256];
+        while (std::fgets(buf, sizeof(buf), p) != nullptr)
+            out += buf;
+        int rc = pclose(p);
+        if (rc == -1)
+            return -1;
+        if (rc & 0x7f)
+            return 128 + (rc & 0x7f);
+        return (rc >> 8) & 0xff;
+    };
+
     SECTION("recommend:target 有硬性违例 ⇒ 推荐 A,exit 0") {
         REQUIRE(run_cmd("python3 " + shquote((repo_root() / "tools/recommend.py").string()) + " " +
                         shquote(run_a.string()) + " " + shquote(run_c.string())) == 0);
+    }
+
+    // ── 哨兵兼容(per SU#1 §⑤:三工具必须防护 `"not-collected"`;2026-11-05 H8 落地)──
+    // 装置语料:H6/H4 的 A/B(h8 组 1/2)两侧 hard 闸均为 not-collected;
+    //          h2(组 3)的 H8 变体也是 not-collected(deadlock / memory)但延迟实测。
+    const auto make_run_nc = [&](const std::string& name, int latency, int deadlock, int mem_viol) {
+        // latency < 0 ⇒ 该侧延迟亦为 not-collected(对应 h4/h6 装置:不采延迟)
+        const bool lat_nc = latency < 0;
+        const std::string dead =
+            deadlock < 0 ? "\"deadlock_violations\":\"not-collected\","
+                         : ("\"deadlock_violations\":" + std::to_string(deadlock) + ",");
+        const std::string memv = mem_viol < 0
+                                     ? "\"memory_violations\":\"not-collected\"}"
+                                     : ("\"memory_violations\":" + std::to_string(mem_viol) + "}");
+        std::string j =
+            R"({"total_cycles":100,"total_transactions":10,"transactions_per_cycle":0.1,)";
+        if (lat_nc) {
+            for (const char* k : {"avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
+                                  "p99_latency_cycles", "max_latency_cycles"})
+                j += std::string("\"") + k + "\":\"not-collected\",";
+        } else {
+            for (const char* k : {"avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
+                                  "p99_latency_cycles", "max_latency_cycles"})
+                j += std::string("\"") + k + "\":" + std::to_string(latency) + ",";
+        }
+        j += "\"coherence_stalls\":0,\"collective_stalls\":0,\"directory_misses\":0," + dead + memv;
+        const auto dir = base / name;
+        std::filesystem::create_directories(dir);
+        std::ofstream(dir / "metrics.json") << j;
+        return dir;
+    };
+
+    SECTION("recommend:双侧 hard 闸 not-collected + 延迟未实测 ⇒ 不显著 + 注脚,exit 3") {
+        // h6/h4 装置形态(H8 组 1/2 的 A/B 两侧);此前 hard_ok 直接数比 ⇒ TypeError(exit 1)
+        const auto a = make_run_nc("nc_a", -1, -1, -1);
+        const auto b = make_run_nc("nc_b", -1, -1, -1);
+        std::string out;
+        const int rc =
+            run_cmd_out("python3 " + shquote((repo_root() / "tools/recommend.py").string()) + " " +
+                            shquote(a.string()) + " " + shquote(b.string()),
+                        out);
+        INFO("实际输出: " << out);
+        REQUIRE(rc == 3); // 哨兵不崩:此前 TypeError ⇒ exit 1
+        REQUIRE(out.find("不显著") != std::string::npos);
+        // SU#3 勘误:未实测面不构成肯定断言 ⇒ 文本必须显式标注闸不适用
+        REQUIRE(out.find("闸不适用") != std::string::npos);
+        REQUIRE(out.find("deadlock_violations") != std::string::npos);
+        REQUIRE(out.find("memory_violations") != std::string::npos);
+    }
+
+    SECTION("recommend:双侧 hard 闸 not-collected + 延迟实测有差 ⇒ 延迟面推荐 + 注脚,exit 0") {
+        // h2 装置形态(H8 组 3):延迟实测 4 vs 18 ⇒ 差 > 10%
+        const auto a = make_run_nc("nc_lat_a", 4, -1, -1);
+        const auto b = make_run_nc("nc_lat_b", 18, -1, -1);
+        std::string out;
+        const int rc =
+            run_cmd_out("python3 " + shquote((repo_root() / "tools/recommend.py").string()) + " " +
+                            shquote(a.string()) + " " + shquote(b.string()),
+                        out);
+        INFO("实际输出: " << out);
+        REQUIRE(rc == 0);
+        REQUIRE(out.find("推荐 A") != std::string::npos);
+        REQUIRE(out.find("闸不适用") != std::string::npos);
+    }
+
+    SECTION("recommend:target 实测违例 + baseline 未实测面 ⇒ 违例面推荐 + 注脚,exit 0") {
+        // H8 组 1/2 实景:B 侧共享/错标实测死锁=1;A 侧 hard 闸 not-collected(装置不采)
+        const auto a = make_run_nc("nc_iso", -1, -1, -1);
+        const auto b = make_run_nc("nc_shared", -1, 1, -1);
+        std::string out;
+        const int rc =
+            run_cmd_out("python3 " + shquote((repo_root() / "tools/recommend.py").string()) + " " +
+                            shquote(a.string()) + " " + shquote(b.string()),
+                        out);
+        INFO("实际输出: " << out);
+        REQUIRE(rc == 0);
+        REQUIRE(out.find("推荐 A") != std::string::npos);
+        REQUIRE(out.find("实测硬性违例") != std::string::npos);
+        REQUIRE(out.find("deadlock_violations=1") != std::string::npos);
+        REQUIRE(out.find("闸不适用") != std::string::npos);
     }
 
     std::filesystem::remove_all(base);

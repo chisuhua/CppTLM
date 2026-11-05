@@ -120,6 +120,18 @@ TEST_CASE("H4 负控的死锁**不是带宽竞争**(与 H6 的共享 VC 饿死�
     REQUIRE(r.collective_stalls == 0);
 }
 
+TEST_CASE("H4 装置**合格性判定**:负控必须死锁(per ADR-CEP-06 SU#3 §②B(i))",
+          "[cep][h4][completion-domain]") {
+    // ⚠️ 这是**产出层硬约束**的判定逻辑(per ADR-CEP-06 SU#3 §②B(i)):
+    //   「负控红不了 ⇒ 装置不合格 ⇒ ⛔ 不产出 run、不登记结论」
+    // ⇒ 判定逻辑必须**可机器测** —— ⛔ 不可只活在 emit 的控制流里
+    //   (那会变成「纯承诺 = 测试给缺口盖章」,per C1 根因教训)。
+    INFO("负控死锁 ⇒ 装置合格");
+    REQUIRE(cep_cd::device_qualified(true));
+    INFO("负控未死锁 ⇒ 装置不合格 ⇒ emit 必须拒绝产出");
+    REQUIRE_FALSE(cep_cd::device_qualified(false));
+}
+
 TEST_CASE("H4 装置口径限定随结论重复(per Entry #222 ③)", "[cep][h4][completion-domain]") {
     // ⚠️ 口径限定必须**可机器查到**(不靠散文记忆)—— 校验 ADR 侧的三条登记义务仍在案。
     const auto adr09 =
