@@ -134,3 +134,62 @@
 `docs_sync` / `doc_ref` / `freeze` / `prereg_drift` rc=0。
 
 **待 architect 复验**：只验「B-1/B-2/B-3 是否闭合」+「本轮新 diff 是否引入新借壳」，不复审已通过部分。
+
+---
+
+## 7. 复验裁决（architect，2026-11-06）
+
+**范围**：per §4 第 3 步 —— 只验「B-1/B-2/B-3 是否闭合」+「本轮新 diff 是否引入新借壳」；**不复审**已通过的 55 条。
+**被验对象**：commit `e9175370`（8 文件，+145/−31）。
+
+### 7.1 BLOCKER 闭合判定
+
+| 编号 | 判定 | 证据 |
+|---|---|---|
+| **B-1** | ✅ **闭合** | 「测试替身不入产品目录」case 上已无 `INV-CARRIER`（仅留说明注释）；`INV-CEP-14-IC1` 现挂 `test_cep_dummy_signals.cc:107`，其断言体 = C1~C10 逐行**锚点列非空** ⇒ 与 IC1「每条合同测试必须可定位到至少一条锚点」**语义一致** |
+| **B-3** | ✅ **闭合** | `test_cep_schema.cc` 内 `INV-CEP-07-IC3` 标记数 = **0**；该 id 在映射表中**只余** `test_cep_collective_plane_invariants.cc:60`（NullCollectivePlane 全原语不支持 ⇒ 语义正确） |
+| **B-2** | ◐ **部分闭合（未完全闭合）** | 见 7.2 |
+
+### 7.2 B-2 残余缺口（精确要求）
+
+已闭合的部分：C 表恰一条「负向」行 + 锚点列非空；负向判定机制**有鉴别力**（合成含协议名文本必命中 / 干净文本不命中）；该机制**施加于产品层**且命中集为空。
+
+**仍缺**：invariant IC2 的主体是「合同测试**集**必须**含**至少一条负向断言」——
+现载体证明的是「**可以**写出这样一条负向断言且它有效」，
+⛔ **不能**发现「测试集里那条负向断言被删掉」（删除后用例仍绿）⇒ 载体未咬合 IC2 的主体。
+
+**闭合所需的机器判据（可执行、变红原因正确）**：
+
+> 对 C 表「负向」行，其「断言的不变量」列给出的**锚点 id**（C9 行 = `INV-CEP-05-IC1`），
+> **必须**存在某个 `test/test_*.cc` 文件**同时含**该锚点 id **与**至少一条负向断言宏
+> （`REQUIRE_FALSE` / `CHECK_FALSE`）。
+> - 变红条件：删掉该文件里的负向断言 ⇒ 红；删掉锚点 ⇒ 红。
+> - 可满足性已实测：当前有 **4** 个测试文件同时满足（`test_cep_canonical_flow_contract.cc` /
+>   `test_cep_canonical_invariants.cc` / `test_cep_moesi_gpu_adapter.cc` / `test_cep_moesi_gpu_compensation.cc`）。
+> - **附带收益**：该判据按**锚点 id** 定位，**不依赖** C 表已陈旧的「归属测试文件」列
+>   （C9 该列写的是 `test_cep_canonical_invariants.cc`，而 ADR-CEP-14 自记「实测不成立」——
+>   实际负向断言在 `test_cep_schema.cc` / `test_cep_contracts_crosscheck.cc`）⇒ 自动避开该陈旧列。
+
+工作量：~15 分钟（1 条断言 + 1 条反向 fixture）。
+
+### 7.3 本轮新 diff 是否引入新借壳
+
+**否。**逐项核对：
+
+| 改动 | 性质 | 判定 |
+|---|---|---|
+| `dummy_signals` 新增 IC2 case | **被审对象本身** | ◐ 见 7.2（非借壳，是覆盖不足） |
+| `simulation_mode_lock` S-1（产物侧 13 键） | 补进 `INV-CEP-06-IC2` 既有 case | ✅ 加固同一 invariant，未换语义 |
+| `simulation_mode_lock` S-3（双分桶统计） | 补进 `INV-CEP-06-IC5` 既有 case | ✅ 同上 |
+| `contracts_crosscheck` S-6（逐 config 必含字段） | 收紧 `INV-CEP-07A-IC3` 阈值 | ✅ 同上 |
+| `module_factory_seam` S-4 / `instance_declaration_contract` S-5 | **纯注释** | ✅ 无载体变更 |
+
+标记增删核对：`INV-CEP-14-IC1`（移位）、`INV-CEP-14-IC2`（移位）、`INV-CEP-07-IC3`（删除 1 处）；
+**无新增 id**；映射表闸 `--for-achievement` 仍 rc=0（66/66 = 61 载体 + 5 ⏭-unmodelled + 0 pending）。
+
+### 7.4 结论
+
+**B-1 / B-3 已闭合；B-2 差一条断言。**
+
+⇒ **B2 仍不得登记 ✅**（`INV-CEP-14-IC2` 无有牙载体 ⇒ 真实载体数 60/61）。
+⇒ 下一步：builder 补 §7.2 的那条判据（~15min）→ architect 复验该 1 条 → planner 落 B2 登记。
