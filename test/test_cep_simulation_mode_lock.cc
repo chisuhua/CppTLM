@@ -66,6 +66,9 @@ TEST_CASE("[cep][simulation-mode] 4 件套恰好 4 个", "[cep][simulation-mode]
     }
 }
 
+// INV-CARRIER: INV-CEP-06-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):13 必纳字段缺一 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][simulation-mode] 13 必纳 metric 齐备", "[cep][simulation-mode]") {
     const json s = load_metrics_schema();
     const auto& props = s.at("properties");
@@ -95,6 +98,9 @@ TEST_CASE("[cep][simulation-mode] 13 必纳 metric 齐备", "[cep][simulation-mo
     }
 }
 
+// INV-CARRIER: INV-CEP-06-IC4
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):不可观测 metric 被写成 0 而非 not-collected ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][simulation-mode] 不可观测 metric 的 not-collected 契约存在",
           "[cep][simulation-mode]") {
     const json s = load_metrics_schema();
@@ -177,6 +183,9 @@ TEST_CASE("[cep][simulation-mode] verification_mode 四档且契约文本齐备"
     REQUIRE(text.find("sampled") != std::string::npos);
 }
 
+// INV-CARRIER: INV-CEP-06-IC5
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):memory_violations 只覆盖单分桶 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][simulation-mode] memory_violations 须覆盖 SWMR + data-value 双不变量(IC5)",
           "[cep][simulation-mode]") {
     const json s = load_metrics_schema();
@@ -191,6 +200,9 @@ TEST_CASE("[cep][simulation-mode] memory_violations 须覆盖 SWMR + data-value 
     REQUIRE(text.find("data-value") != std::string::npos);
 }
 
+// INV-CARRIER: INV-CEP-07-IC1
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):出现 network.mode ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][simulation-mode] simulation_mode 是唯一模式维度,无 network.mode",
           "[cep][simulation-mode]") {
     const auto text = adr_text("ADR-CEP-07-simulation-and-integration-semantics.md");

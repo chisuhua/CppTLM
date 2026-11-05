@@ -245,6 +245,9 @@ TEST_CASE("CEP OrderingPoint: J2 与 caps 耦合", "[cep][ordering-point]") {
 // ═════════════════════════════════════════════════════════════════════
 // Scenario 4:INV-CEP-08-IC2(E 态静默升级)组合必查项
 // ═════════════════════════════════════════════════════════════════════
+// INV-CARRIER: INV-CEP-08-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):E 态静默升级检查项缺失 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("CEP OrderingPoint: IC2 E 态静默升级检查项", "[cep][ordering-point]") {
     const cep::ChannelDeclaration repo = repo_declaration();
     REQUIRE(!repo.empty());

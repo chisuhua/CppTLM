@@ -57,6 +57,9 @@ namespace {
 // ═════════════════════════════════════════════════════════════════════
 // INV-CEP-07-IC3 —— NullCollectivePlane 是默认实现,所有原语返回"不支持"
 // ═════════════════════════════════════════════════════════════════════
+// INV-CARRIER: INV-CEP-07-IC3
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):NullCollectivePlane 开始支持某原语 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("CEP CollectiveInvariant: IC3 NullCollectivePlane 全原语不支持",
           "[cep][collective-invariant]") {
     // ① 编号确实在既有的 15 组清单里(不在本文件新增 —— 只**引用**)
@@ -114,6 +117,9 @@ TEST_CASE("CEP CollectiveInvariant: IC3 NullCollectivePlane 全原语不支持",
 // ═════════════════════════════════════════════════════════════════════
 // INV-CEP-04-IC5 —— "table 命中 + epoch invalid" 窗口 = 正常服务放行(非 fail-stop)
 // ═════════════════════════════════════════════════════════════════════
+// INV-CARRIER: INV-CEP-04-IC5
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):epoch invalid 窗口变成 fail-stop ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("CEP CollectiveInvariant: IC5 epoch invalid 窗口 = 放行非 fail-stop",
           "[cep][collective-invariant]") {
     // ① 编号在既有清单里

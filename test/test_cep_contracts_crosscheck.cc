@@ -51,6 +51,9 @@ namespace {
 // ─────────────────────────────────────────────────────────────
 // cep-numbering-contract
 // ─────────────────────────────────────────────────────────────
+// INV-CARRIER: INV-CEP-NUM-IC1
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):编号表出现重号 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][contract] 编号表是唯一真源且无重号(IC1)", "[cep][contract]") {
     const auto num = adr("ADR-CEP-NUMBER-MAP.md");
     REQUIRE(num.find("唯一真源") != std::string::npos);
@@ -102,6 +105,9 @@ TEST_CASE("[cep][contract] 06 §15.4 口径冻结:不引 P6(IC3)", "[cep][contra
 // ─────────────────────────────────────────────────────────────
 // cep-protocol-version-locking-contract
 // ─────────────────────────────────────────────────────────────
+// INV-CARRIER: INV-CEP-11-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):锁表出现第二份真源 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][contract] 锁定表是规范版本唯一真源(IC2)", "[cep][contract]") {
     const auto lock = adr("ADR-CEP-11-protocol-version-locking.md");
     REQUIRE(lock.find("唯一真源") != std::string::npos);
@@ -316,6 +322,9 @@ TEST_CASE("[cep][contract] 协议泄漏通用禁令:与协议无关的层无协�
     }
 }
 
+// INV-CARRIER: INV-CEP-07A-IC3
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):coherence_domains 被删除 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][contract] coherence_domains 保留但改语义(IC3)", "[cep][contract]") {
     const auto dis = adr("ADR-CEP-07A-06bis-artifact-disposition.md");
     REQUIRE(dis.find("INV-CEP-07A-IC3") != std::string::npos);

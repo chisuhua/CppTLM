@@ -304,6 +304,9 @@ TEST_CASE("[cep][schema] consistency_labels 含 read/write 两级 + 请求级", 
     REQUIRE(writes == std::set<std::string>({"SC", "TSO", "RC-release", "RC-data", "PLO"}));
 }
 
+// INV-CARRIER: INV-CEP-12-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):ordering_assumption/vc_binding 非 per-network 嵌套 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][schema] ordering_assumption / vc_binding 为 per-network 嵌套形态(IC2 结构)",
           "[cep][schema]") {
     const json s = load_schema();
@@ -477,6 +480,9 @@ TEST_CASE("[cep][schema][negative] contains_word 词边界不得被下划线绕�
     REQUIRE_FALSE(contains_word(up("mismatched"), "CHI"));
 }
 
+// INV-CARRIER: INV-CEP-11-IC1
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):protocol_version 越出锁表 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][schema] protocol_version 值域必须容纳 ADR-CEP-11 锁定表全部取值",
           "[cep][schema]") {
     // 跨文档契约:schema 的值域 ⊇ ADR-CEP-11 §3 锁定表。
@@ -612,6 +618,9 @@ TEST_CASE("[cep][schema][negative] schema 不得出现协议标识符(C9 负向�
     }
 }
 
+// INV-CARRIER: INV-CEP-12-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):vc_id 越出该网络槽位上界 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][schema] per-network 形态下每个 vc_id 落在该网络槽位上界内(IC2 正向路径)",
           "[cep][schema]") {
     // ⚠️ 2026-10-22 契约演进:正向路径从「named_network 解析到唯一 vc_id」改为
@@ -634,6 +643,9 @@ TEST_CASE("[cep][schema] per-network 形态下每个 vc_id 落在该网络槽位
     REQUIRE(resolve_ordering_assumptions(multi, known, fabric).ok);
 }
 
+// INV-CARRIER: INV-CEP-12-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):per-network 形态下 5 类非法输入未被拒 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][schema] per-network 形态下的 5 类非法输入必须 fail(IC2 反向路径)",
           "[cep][schema]") {
     const std::set<int> known = {0, 1, 2, 3};
@@ -700,6 +712,9 @@ std::size_t count_implemented(const std::vector<std::string>& statuses) {
     return n;
 }
 
+// INV-CARRIER: INV-CEP-12-IC3
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):status 非 implemented 仍计入 adapter 计数 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][schema] status 只有 implemented 计入 adapter 计数(IC3)", "[cep][schema]") {
     const json s = load_schema();
     const std::set<std::string> st(s.at("properties").at("status").at("enum").begin(),
@@ -732,6 +747,9 @@ TEST_CASE("[cep][schema] status 只有 implemented 计入 adapter 计数(IC3)", 
     REQUIRE(adr12.find("MESI_Three_Level_HTM") != std::string::npos);
 }
 
+// INV-CARRIER: INV-CEP-07-IC3
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):adapter 实例数与 07 号表格行数不一致 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][schema] 07 号 §5.1 的 adapter 实例数与表格行数一致(IC3 口径锚点)",
           "[cep][schema]") {
     // ⚠️ S13 的第二半:「统计结果与 07 号 §5.1 的口径表述**一致**」(spec:257)

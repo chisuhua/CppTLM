@@ -529,6 +529,8 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
   - 📌 **口径(2026-11-05 裁决,`.rddf/reviews/cep-b2-coverage-verdict.md`)**:三条子规则 —— **A 逐条**(66 条逐条须有载体)· **B 有牙**(反向 fixture,或结构校验 + 负控;脚本类载体 **100% 负控**)· **C 机器可查**(`// INV-CARRIER: <id>` 刚性标记与断言同址;映射表 `test/cep_invariant_assertion_map.json` 为**生成物**)
   - 📌 **⏭ 登记形态(2026-11-05 附裁,`.rddf/reviews/cep-b2-unmodelled-verdict.md`,per Entry #233)**:未达成项**不是豁免** ⇒ 新登记物 `test/cep_invariant_deferrals.json`(逐条 `{id, disposition:"⏭", reason, trigger_condition, ledger_entry}`),闸**新增四项校验**:① ⏭ id ⊆ 66 集合 ② `reason`/`trigger_condition`/`ledger_entry` 非空(含反向 fixture)③ **有牙载体 id ∪ 授权⏭ id == 66 集合**且交集为空 ④ **`ledger_entry` 须解析到真实存在的台账 Entry 且该 Entry 正文含该 id**。⇒ **登记格式**:「B2 ✅ **66/66**(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)」,**N ≥ 1**,⛔ **66 的分母永不可缩**
   - 📌 **4 条分叉的判定(2026-11-05 附裁,per Entry #233)**:`INV-CEP-09-IC2` **⏭ 未建模**(仲裁器未建模;触发 = 多 VC 仲裁器落地)· `INV-CEP-09-IC3` **✅ 可在工具链层断言**(判定 = 当前 config 的确定性函数;断言形态 = 确定性 + **闸层**重算敏感性,⛔ 非环判定重算)· `INV-CEP-13-IC1` **⏭ 未落地**(「采用该公理为判据」**无机器可检声明项**;输入侧 vocabulary 与 `INV-CEP-12-IC1` **共享** ⇒ 不计专属证据;运行期待 litmus)· `INV-CEP-13-IC3` **⏭ 未落地**(触发 = adapter 提前 ack 行为成为声明项;代价 = schema 13→14 + `INV-CEP-12-IC1` 联动修订 + `ADR-CEP-12` 追加式修订)
+  - 📌 **44 条 ⏭-pending 的分批策略(2026-11-05 附裁②,`.rddf/reviews/cep-b2-pending-batching-verdict.md`,per Entry #235)**:**批 0**(标题/标记规范化,case 语义**已咬合**但标题用短式 id ⇒ 改完整 id + 标记 + 写明「变红理由」)~30 条 · **批 1**(文本断言 → 语义断言;`text.find("INV-…")` 型**不计入**有牙载体 —— 变红条件 = 「ADR 删掉这条 id」⇒ **不咬合语义**)~6 条 · **批 2**(无载体 ⇒ 新建)~8 条;合计 **13-23 人时 ≈ 2-3 工作日**(取代 Entry #234 的 3-5.5d 估计 —— 实测约 30 条**已有咬合载体**,只是无法自动定位)
+  - ⛔ **⏭-pending 存续规则(堵「长期挂账」)**:每条须有 `owner` + 批次 + 完成判据;三批执行完仍无语义断言者**逐条转 ⏭-unmodelled**(须含承诺锚 + 触发条件);pending 计数**只减不增**;**pending == 0 前 B2 未达成**
   - ⏳ **本条未达成** —— **实测口径(2026-11-05,per 台账 Entry #234)**:**17/66 有牙载体** + **5 项 ⏭-unmodelled**(能力未建模/未落地) + **44 项 ⏭-pending**(载体待逐条补齐)⇒ **分母未缩,但达成门未过**;⛔ **不得**登记 ✅(映射表闸 `--for-achievement` 模式:⏭-pending 必须为 0);⚠️ 剩余 **3-5.5 工作日**(逐条补有牙载体,每条 0.5-1h 含正反控)—— 远高于 Entry #230 的 C2 估计(审计把「编号登记」误当「已有载体」,per 短式 id 标题漏检)
   - **合法中间态**:「**N/66 载体已登记(含 M 项有牙证据)+ K 条待审计 + J 条授权⏭**」(形态先例 = 本表 B3b 的诚实 ⏳)
   - ⛔ **订正生效前不得按编号级登记 ✅** —— 那是「文本要求逐条断言、却按编号级宣称达成」= DoD 降格后仍宣称达成
@@ -14594,6 +14596,42 @@ H2 的 `directory_misses` 归位为**扩展观测**(⛔ 不删行、⛔ 不改�
 **⑤ 关联**:**#233**(C1 附裁 + 冻结授权)· **#232**(C1 落表 + 改判)· **#230**(规划 · C2 估计已被本条取代)· **#217 §④ S6**(禁恒真占位)·
 `.rddf/reviews/cep-b2-unmodelled-verdict.md`(4 条判定 + ⏭ 登记形态)· `.rddf/reviews/cep-b2-mapping-audit.md`(盘点 + §7 复核修正)·
 `scripts/test/cep_invariant_map_check.py`(闸)· `test/cep_invariant_assertion_map.json`(映射表生成物)· `test/cep_invariant_deferrals.json`(⏭ 登记物)· `§6.2 B2`
+
+---
+
+
+### Entry #235 — 2026-11-05 [sprint-review](44 条 ⏭-pending 的**分批策略** —— 批 0/1/2 + pending 存续规则)
+
+**主题**:architect 附裁② 落地 —— 把 44 条 `⏭-pending` 分成三批并给出**完成判据**与**存续规则**,
+使「B2 未达成」从一个模糊缺口变成**可排期、可验收、不可长期挂账**的清单。
+**角色**:architect(附裁② + 判据)· planner(本 entry + 表落)。
+**性质**:排期与治理规则,⛔ 无代码改动、⛔ 无冻结面改动。
+
+**① 三批(详见 `.rddf/reviews/cep-b2-pending-batching-verdict.md`)**
+
+| 批 | 内容 | 条数 | 成本 | 完成判据 |
+|---|---|---:|---|---|
+| **批 0** | 标题/标记规范化(case 语义**已咬合**、标题用短式 id)⇒ 改完整 id + `INV-CARRIER` + 写明「**破坏什么 ⇒ 变红**」 | ~30 | 0.2-0.3h/条 ⇒ **6-9 人时** | 每条能说清变红理由;**说不清 ⇒ 不许转正** |
+| **批 1** | 文本断言 → **语义断言**(`text.find("INV-…-ICn")` 型**不计入**有牙载体) | ~6 | 0.5-1h/条 ⇒ **3-6 人时** | 语义断言**因语义原因红** |
+| **批 2** | 无载体 ⇒ 新建语义断言 | ~8 | 0.5-1h/条 ⇒ **4-8 人时** | 同上 |
+
+⇒ **13-23 人时 ≈ 2-3 工作日**(取代 Entry #234 的「3-5.5 工作日」—— 后者假设 44 条全部从零补断言)
+
+**② 两条关键判据(architect 裁)**
+
+1. **「文本存在性断言」不计入有牙载体** —— 其变红条件是「ADR 里删掉了这条 id」⇒ ⛔ **不咬合 invariant 语义**
+   (判据同 oracle 对 `INV-CEP-13-IC1` 的判定);⚠️ 映射表闸的邻域校验**抓不到**这种不咬合 ⇒ **必须人工排除**,
+   ⛔ 不得标 `INV-CARRIER` 充数。
+2. **批 0 转正的必要条件 = 能说清「破坏什么 ⇒ 变红」** ⇒ 防「借壳」(把语义无关的 case 挂到该 id 上只为让闸变绿)。
+
+**③ ⏭-pending 存续规则**
+
+每条 pending 须有 `owner` + 批次 + 完成判据(⛔ 无主 pending = 登记无效);三批执行完仍无语义断言者
+**逐条转 ⏭-unmodelled**(须含承诺锚 + 触发条件);pending 计数**只减不增**(新缺口须同批消化);
+**pending == 0 前 B2 未达成**(映射表闸 `--for-achievement` 模式强制)。
+
+**④ 关联**:**#234**(49 条 ⏭ 登记 + 真实缺口 17/66)· **#233**(C1 附裁 + ⏭ 登记形态)· **#232**(C1 落表)· **#230**(规划 · C2 估计已被取代)·
+`.rddf/reviews/cep-b2-pending-batching-verdict.md`(附裁②)· `.rddf/reviews/cep-b2-unmodelled-verdict.md` · `.rddf/reviews/cep-b2-coverage-verdict.md` · `§6.2 B2`
 
 ---
 

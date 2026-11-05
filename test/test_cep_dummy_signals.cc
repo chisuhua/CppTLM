@@ -86,6 +86,9 @@ TEST_CASE("[cep][dummy-signals] Stub 净侧接口 5 条 + core-side 1 条", "[ce
     REQUIRE(text.find("6 接口") != std::string::npos);
 }
 
+// INV-CARRIER: INV-CEP-14-IC1
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):C1~C10 清单缺项 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][dummy-signals] 测试替身不入产品目录(per ADR-CEP-14 决策 5)",
           "[cep][dummy-signals]") {
     // 替身只允许在 test/ 下;include/tlm/cep/ 不得含替身类
@@ -101,6 +104,9 @@ TEST_CASE("[cep][dummy-signals] 测试替身不入产品目录(per ADR-CEP-14 �
     }
 }
 
+// INV-CARRIER: INV-CEP-14-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):C1~C10 清单缺项 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][dummy-signals] ADR-CEP-14 的 C1~C10 清单齐备", "[cep][dummy-signals]") {
     // ⚠️ 此前是**裸子串**查找:"C1" 会被 "INV-CEP-14-IC1" 里的 "IC1" 满足、
     //    "C10" 又包含 "C1" → 删掉 C1/C2/C3 三行**不会红**。

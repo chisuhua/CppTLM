@@ -112,6 +112,9 @@ TEST_CASE("[cep][module-factory-seam] 23 ABI 零 diff", "[cep][module-factory-se
     REQUIRE_FALSE(file_modified("include/abi/cpptlm_emulator.h"));
 }
 
+// INV-CARRIER: INV-CEP-15-IC1
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):CacheTLM 源文本出现协议标识符 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][module-factory-seam] 4 个 frozen headers 零 diff", "[cep][module-factory-seam]") {
     const std::vector<std::string> frozen = {
         "include/tlm/pcie/pcie_endpoint_tlm.h",
@@ -128,6 +131,9 @@ TEST_CASE("[cep][module-factory-seam] 4 个 frozen headers 零 diff", "[cep][mod
     REQUIRE_FALSE(file_modified("src/tlm/cache_tlm.cc"));
 }
 
+// INV-CARRIER: INV-CEP-15-IC3
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):CacheTLM 实现 canonical 10 流 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][module-factory-seam] CacheTLM 零协议知识(per ADR-CEP-15 IC1/IC3)",
           "[cep][module-factory-seam]") {
     const auto text = read_file((repo_root() / "include/tlm/cache_tlm.hh").string());
@@ -224,6 +230,9 @@ TEST_CASE("[cep][module-factory-seam] 冻结面守门机制自证:能检出真�
     REQUIRE_FALSE(modified_between("__cep_nonexistent_path_xyz__", "HEAD~2", "HEAD~1"));
 }
 
+// INV-CARRIER: INV-CEP-15-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):CEP 侧出现第二个缓存实现 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][module-factory-seam] CEP 侧只有一个缓存实现(per ADR-CEP-15 IC2)",
           "[cep][module-factory-seam]") {
     const auto prod = repo_root() / "include" / "tlm" / "cep";

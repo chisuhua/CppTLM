@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T13:25:08Z",
+  "updated_at": "2026-11-05T13:31:19Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-05T06:55:35Z",
-      "by": "user",
-      "reason": "用户裁决:切 planner 继续 —— 落 SU#4 的授权先行链(scope-change 台账 entry + §9.1 ② H3 行收缩)+ 立项 cep-b4-evidence-device"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-05T07:15:22Z",
-      "by": "user",
-      "reason": "用户裁决:切 builder 继续 —— 按 Entry #226 硬序落 commit ①(prereg JSON H3 收缩 + 冻结 --update --authorized-by \"Entry #226\" + manifest),再启 M1/M2 实现"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-05T08:27:45Z",
-      "by": "user",
-      "reason": "用户口令「切architect审查架构决策是否需要修订」⇒ ① AC-9 实现评审(B4 回填的前置 gate;核「装置含真实阻塞机制、非恒假 watchdog + 默认 0」)② 审查 SU#4 及 v2 装置引入的三处契约语义变更(延迟语义换版 / v1 不保留为可跑变体 / h4 装置加阻塞开关)是否需追加 SU 或勘误"
-    },
     {
       "role": "planner",
       "at": "2026-11-05T08:32:34Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-05T13:25:08Z",
       "by": "user",
       "reason": "用户口令「切 builder 执行这 6 项」收尾 ⇒ commit planner 的表落(Entry #234 + §6.2 B2 真实缺口数)+ 全量 ctest 验证 + 报告"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T13:29:35Z",
+      "by": "user",
+      "reason": "用户口令「按 C -> B 的顺序执行」⇒ C: architect 裁 44 条 ⏭-pending 的分批策略(哪些优先/哪些可长期 pending/分批判据与规模上限)⇒ B: builder 按裁定的批次补有牙载体"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T13:30:55Z",
+      "by": "user",
+      "reason": "用户口令「按 C -> B 的顺序执行」⇒ C 完成(architect 已裁分批策略)⇒ planner 落表:§6.2 B2 加分批策略 + pending 存续规则 + 台账 Entry #235"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T13:31:19Z",
+      "by": "user",
+      "reason": "用户口令「按 C -> B 的顺序执行」的 B 步 ⇒ 执行批 0(标题/标记规范化:case 语义已咬合但标题用短式 id ⇒ 改完整 id + INV-CARRIER + 写明变红理由)"
     }
   ],
   "auto_switch_window": null

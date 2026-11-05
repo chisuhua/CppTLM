@@ -44,24 +44,99 @@
         "kind": ".cc"
       }
     ],
+    "INV-CEP-04-IC2": [
+      {
+        "file": "test/test_cep_sharer_tracker_base.cc",
+        "line": 431,
+        "kind": ".cc"
+      }
+    ],
     "INV-CEP-04-IC3": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 732,
+        "line": 735,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-04-IC5": [
+      {
+        "file": "test/test_cep_collective_plane_invariants.cc",
+        "line": 120,
         "kind": ".cc"
       }
     ],
     "INV-CEP-04-IC6": [
       {
         "file": "test/test_cep_sharer_tracker_base.cc",
-        "line": 699,
+        "line": 702,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-06-IC2": [
+      {
+        "file": "test/test_cep_simulation_mode_lock.cc",
+        "line": 69,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-06-IC3": [
+      {
+        "file": "test/test_cep_tools_contract.cc",
+        "line": 137,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-06-IC4": [
+      {
+        "file": "test/test_cep_simulation_mode_lock.cc",
+        "line": 101,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-06-IC5": [
+      {
+        "file": "test/test_cep_simulation_mode_lock.cc",
+        "line": 186,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-07-IC1": [
+      {
+        "file": "test/test_cep_simulation_mode_lock.cc",
+        "line": 203,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-07-IC3": [
+      {
+        "file": "test/test_cep_collective_plane_invariants.cc",
+        "line": 60,
+        "kind": ".cc"
+      },
+      {
+        "file": "test/test_cep_schema.cc",
+        "line": 750,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-07A-IC3": [
+      {
+        "file": "test/test_cep_contracts_crosscheck.cc",
+        "line": 325,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-08-IC2": [
+      {
+        "file": "test/test_cep_ordering_point_checker.cc",
+        "line": 248,
         "kind": ".cc"
       }
     ],
     "INV-CEP-08-IC3": [
       {
         "file": "test/test_cep_ordering_point_checker.cc",
-        "line": 353,
+        "line": 356,
         "kind": ".cc"
       }
     ],
@@ -72,10 +147,88 @@
         "kind": ".cc"
       }
     ],
+    "INV-CEP-11-IC1": [
+      {
+        "file": "test/test_cep_schema.cc",
+        "line": 483,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-11-IC2": [
+      {
+        "file": "test/test_cep_contracts_crosscheck.cc",
+        "line": 108,
+        "kind": ".cc"
+      }
+    ],
     "INV-CEP-12-IC2": [
       {
         "file": "test/test_cep_mesif_instance_decl.cc",
         "line": 183,
+        "kind": ".cc"
+      },
+      {
+        "file": "test/test_cep_schema.cc",
+        "line": 307,
+        "kind": ".cc"
+      },
+      {
+        "file": "test/test_cep_schema.cc",
+        "line": 621,
+        "kind": ".cc"
+      },
+      {
+        "file": "test/test_cep_schema.cc",
+        "line": 646,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-12-IC3": [
+      {
+        "file": "test/test_cep_schema.cc",
+        "line": 715,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-14-IC1": [
+      {
+        "file": "test/test_cep_dummy_signals.cc",
+        "line": 89,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-14-IC2": [
+      {
+        "file": "test/test_cep_dummy_signals.cc",
+        "line": 107,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-15-IC1": [
+      {
+        "file": "test/test_cep_module_factory_seam.cc",
+        "line": 115,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-15-IC2": [
+      {
+        "file": "test/test_cep_module_factory_seam.cc",
+        "line": 233,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-15-IC3": [
+      {
+        "file": "test/test_cep_module_factory_seam.cc",
+        "line": 134,
+        "kind": ".cc"
+      }
+    ],
+    "INV-CEP-NUM-IC1": [
+      {
+        "file": "test/test_cep_contracts_crosscheck.cc",
+        "line": 54,
         "kind": ".cc"
       }
     ],

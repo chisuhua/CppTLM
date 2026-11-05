@@ -428,6 +428,9 @@ TEST_CASE("CEP SharerTracker: 同地址并发 lookup 返回 STALL", "[cep][share
 // ═════════════════════════════════════════════════════════════════════
 // Scenario 7:INV-CEP-04-IC2 幂等 + IC3 五事件名与顺序
 // ═════════════════════════════════════════════════════════════════════
+// INV-CARRIER: INV-CEP-04-IC2
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):同参 lookup 返回不同 ⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("CEP SharerTracker: IC2 幂等 + IC3 生命周期事件", "[cep][sharer-tracker]") {
     cep::FullMapDirectory dir;
     const std::uint64_t addr = 0x7000;

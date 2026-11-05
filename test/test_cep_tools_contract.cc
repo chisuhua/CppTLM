@@ -134,6 +134,9 @@ TEST_CASE("[cep][tools] 3 个 tools 存在、语法正确且可 --help", "[cep][
     }
 }
 
+// INV-CARRIER: INV-CEP-06-IC3
+// 变红理由(per ADR-CEP-06 SU#4 规则 B):闸不生效(违例类 not-collected 却渲染通过)⇒ 红
+// ⛔ 短式 id 已在本标题消除 ⇒ 目标唯一
 TEST_CASE("[cep][tools] 一致性闸门真的生效(ADR-CEP-06 IC3)", "[cep][tools]") {
     // ⚠️ 此前三个工具**只查 metric 键是否存在**、从不查值:
     //    deadlock_violations=42 的实验目录 → render_report --check 退出码 0、
