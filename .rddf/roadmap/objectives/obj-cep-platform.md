@@ -527,9 +527,10 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 - B1. **14** 个 OpenSpec change 全部 archived with sync
 - B2. **66 条守门 invariant 逐条有牙载体 100% 覆盖**(编号位 67;**15 组仅作汇报组织**,⛔ 非判定粒度)(per §0 DoD 7 + 2026-11-05 **改判**,见台账 **Entry #232**)
   - 📌 **口径(2026-11-05 裁决,`.rddf/reviews/cep-b2-coverage-verdict.md`)**:三条子规则 —— **A 逐条**(66 条逐条须有载体)· **B 有牙**(反向 fixture,或结构校验 + 负控;脚本类载体 **100% 负控**)· **C 机器可查**(`// INV-CARRIER: <id>` 刚性标记与断言同址;映射表 `test/cep_invariant_assertion_map.json` 为**生成物**)
-  - ⏳ **本条未达成** —— 缺口按盘点量级 **19-28 条**(29 none − ≥5 确认假阴性),待**映射审计**后收敛;成本 **2.5-4.5d**(审计 1d + 补缺口 1-3d + 映射闸 0.5d)
-  - **登记格式**:「B2 ✅ **66/66**(映射表 N 项全绿,Entry #XXX)」—— ⛔ 禁裸「B2 ✅」或「15/15 组 ✅」
-  - **合法中间态**:「**N/66 载体已登记(含 M 项有牙证据)+ K 条待审计**」(形态先例 = 本表 B3b 的诚实 ⏳)
+  - 📌 **⏭ 登记形态(2026-11-05 附裁,`.rddf/reviews/cep-b2-unmodelled-verdict.md`,per Entry #233)**:未达成项**不是豁免** ⇒ 新登记物 `test/cep_invariant_deferrals.json`(逐条 `{id, disposition:"⏭", reason, trigger_condition, ledger_entry}`),闸**新增四项校验**:① ⏭ id ⊆ 66 集合 ② `reason`/`trigger_condition`/`ledger_entry` 非空(含反向 fixture)③ **有牙载体 id ∪ 授权⏭ id == 66 集合**且交集为空 ④ **`ledger_entry` 须解析到真实存在的台账 Entry 且该 Entry 正文含该 id**。⇒ **登记格式**:「B2 ✅ **66/66**(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)」,**N ≥ 1**,⛔ **66 的分母永不可缩**
+  - 📌 **4 条分叉的判定(2026-11-05 附裁,per Entry #233)**:`INV-CEP-09-IC2` **⏭ 未建模**(仲裁器未建模;触发 = 多 VC 仲裁器落地)· `INV-CEP-09-IC3` **✅ 可在工具链层断言**(判定 = 当前 config 的确定性函数;断言形态 = 确定性 + **闸层**重算敏感性,⛔ 非环判定重算)· `INV-CEP-13-IC1` **⏭ 未落地**(「采用该公理为判据」**无机器可检声明项**;输入侧 vocabulary 与 `INV-CEP-12-IC1` **共享** ⇒ 不计专属证据;运行期待 litmus)· `INV-CEP-13-IC3` **⏭ 未落地**(触发 = adapter 提前 ack 行为成为声明项;代价 = schema 13→14 + `INV-CEP-12-IC1` 联动修订 + `ADR-CEP-12` 追加式修订)
+  - ⏳ **本条未达成** —— **实测口径(2026-11-05,per 台账 Entry #234)**:**17/66 有牙载体** + **5 项 ⏭-unmodelled**(能力未建模/未落地) + **44 项 ⏭-pending**(载体待逐条补齐)⇒ **分母未缩,但达成门未过**;⛔ **不得**登记 ✅(映射表闸 `--for-achievement` 模式:⏭-pending 必须为 0);⚠️ 剩余 **3-5.5 工作日**(逐条补有牙载体,每条 0.5-1h 含正反控)—— 远高于 Entry #230 的 C2 估计(审计把「编号登记」误当「已有载体」,per 短式 id 标题漏检)
+  - **合法中间态**:「**N/66 载体已登记(含 M 项有牙证据)+ K 条待审计 + J 条授权⏭**」(形态先例 = 本表 B3b 的诚实 ⏳)
   - ⛔ **订正生效前不得按编号级登记 ✅** —— 那是「文本要求逐条断言、却按编号级宣称达成」= DoD 降格后仍宣称达成
 - B3a. ✅ **6 个协议族的 adapter 契约**实施完成:CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」与 `ADR-CEP-11 §3` 锁表「按 `protocol_version` 行计 8 行」—— 两种粒度非矛盾,per Entry #19 §2**);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
 - B3b. ⏳ **运行时 ProtocolEngine**:在 B3 的 6 族清单中达成 **1/6**(仅 CHI RN-F —— `include/tlm/cep/chi_rnf_protocol_engine.hh` + L4 事务级 E2E,per `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`);CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink **未达成**
@@ -14434,6 +14435,165 @@ H2 的 `directory_misses` 归位为**扩展观测**(⛔ 不删行、⛔ 不改�
 ⛔ **订正生效前不得按编号级登记 ✅**。**合法中间态** =「N/66 载体已登记(含 M 项有牙证据)+ K 条待审计」。
 
 **⑤ 关联**:`.rddf/reviews/cep-b2-coverage-verdict.md`(裁决 + 双审)· `.rddf/reviews/cep-b2-invariant-coverage-inventory.md`(盘点输入)· **#230**(C1 规划)· **#217 §④ S6**(禁恒真占位)· **#231**(B 批)· `§0 DoD 7` / `§6.2 B2` / `§6.2 B3b`(合法中间态形态先例)
+
+---
+
+
+### Entry #233 — 2026-11-05 [scope-change](C1 附裁落表 —— 4 条分叉判定 + ⏭ 登记形态 + `INV-CEP-06-IC3` 冻结面授权)
+
+**主题**:落地 `.rddf/reviews/cep-b2-unmodelled-verdict.md`(oracle 1 轮修正 + critic 1 轮 APPROVE_WITH_CONDITIONS,0 BLOCKER)
+的 objective 侧改动:B2 的 **⏭ 登记形态** + **4 条分叉判定** + 缺口收敛数;
+并登记 `tools/render_report.py` 的 **INV-CARRIER 标记**冻结面授权。
+**角色**:architect(裁决 + 双审)· planner(本 entry + 表落)。
+**性质**:验收口径的**补充** + 冻结面授权记录;⛔ **零 scope-change**(预登记集合未动)。
+
+**① 4 条分叉的判定(逐条依据见裁决报告 §1)**
+
+| invariant | 判定 | 依据 |
+|---|---|---|
+| `INV-CEP-09-IC2` | ⏭ **未建模** | 仲裁器未建模(`ADR-CEP-09` 自记「vc3 内 E 不被 D 饿死」未建模;多 VC 仲裁属 Stage 4+)⇒ 无可断言对象;触发 = 仲裁器落地 |
+| `INV-CEP-09-IC3` | ✅ **可断言(工具链层)** | 判据是**配置期**性质;`module_factory.cc:175-188` 每次装配现算 `run_channel_gate` ⇒ 判定是当前 config 的确定性函数;断言形态 = 确定性 + **闸层**重算敏感性(⛔ 非环判定重算:边来自声明边表) |
+| `INV-CEP-13-IC1` | ⏭ **未落地**(承诺未兑现) | 「**采用**该公理为判据」是**选择事实** ⇒ 无机器可检声明项;`consistency_labels` 只是**输入侧 vocabulary**且与 `INV-CEP-12-IC1` **共享**(⛔ 不计专属证据,防 66 条内双计);运行期 litmus 待独立 change |
+| `INV-CEP-13-IC3` | ⏭ **未落地** | schema 13 顶层属性**无** ack 行为声明项;触发 = 声明项落地(代价 = schema 13→14 + `INV-CEP-12-IC1` 联动 + `ADR-CEP-12` 追加式修订) |
+
+**② ⏭ 登记形态(落 `§6.2 B2`)**
+
+| 项 | 内容 |
+|---|---|
+| 登记物 | `test/cep_invariant_deferrals.json` —— 逐条 `{id, disposition:"⏭", reason, trigger_condition, ledger_entry}` |
+| 闸四项校验 | ① ⏭ id ⊆ 66 集合 ② `reason`/`trigger_condition`/`ledger_entry` 非空(反向 fixture:置空 ⇒ 红)③ 有牙载体 id ∪ 授权⏭ id == 66 集合且交集为空 ④ **`ledger_entry` 须解析到真实台账 Entry 且正文含该 id** |
+| `reason` 内容要求 | 必须含**承诺锚**(区分「承诺未兑现」vs「未来范围 / 未建模」) |
+| 登记格式 | 「B2 ✅ **66/66**(N 项有牙载体 + M 项授权⏭,映射表全绿,Entry #XXX)」,**N ≥ 1**,⛔ **分母永不可缩** |
+| ⚠️ 残余风险 | **「挪窝」路径仍存在**(builder 删标记 + 补 deferral ⇒ 前三项校验全绿)⇒ 由**校验 ④ + planner 登记双闸**把守;缓解 = 台账 append-only + reason 含承诺锚 + B2 登记须附 verifier 复核记录 |
+
+**③ 缺口收敛数(取代 Entry #232 的「19-28 条」量级)**
+
+| 分类 | 数 | 条目 |
+|---|---:|---|
+| **已补(有牙载体 + INV-CARRIER 标记)** | **6** | `CEN-Ib3`/`CEN-Ib4`/`CEN-Ib9`/`CEN-Ib10` + `INV-CEP-04-IC3`(跨实现维度)+ `INV-CEP-04-IC6` |
+| 已有载体,仅缺标记 | 1 | `INV-CEP-06-IC3`(载体 = `tools/render_report.py:358-359` 渲染 mode+scope+限定语)—— **冻结件** ⇒ 见 ④ |
+| L2 待人工确认 | 5 | `CEN-Ib6`/`CEN-Ib8`/`INV-CEP-08-IC1`/`INV-CEP-08-IC3`/`INV-CEP-14-IC3` |
+| ⏭ 登记 | 3 | `INV-CEP-09-IC2`/`INV-CEP-13-IC1`/`INV-CEP-13-IC3` |
+| **硬前提(尚未开工)** | — | **映射表生成器 + ctest 闸**(规则 C)—— B2 达成的最后一道闸 |
+
+⚠️ **审计复核推翻过 3 条结论**(`INV-CEP-04-IC3`/`INV-CEP-04-IC6`/`INV-CEP-06-IC3` 原本判「无载体」,实为**标题用短式 id** 致 grep 漏)⇒ 盘点结论**不可直接采信**,补断言前须人工再核(per `.rddf/reviews/cep-b2-mapping-audit.md` §7)。
+
+**④ 冻结面授权记录**
+
+- 本条即 `scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #233"` 的授权依据。
+- **授权范围** = `tools/render_report.py` 增加一处 `// INV-CARRIER: INV-CEP-06-IC3` 注释标记(**仅注释,零行为变化**)。
+- ⛔ **不授权**其他 `tools/` 改动;⛔ **不授权**预登记集合变更。
+
+**⑤ 后续动作(按依赖)**
+
+| 序 | 动作 | 角色 | 成本 |
+|---|---|---|---|
+| 1 | **映射表生成器 + ctest 闸**(含 ④ 四项校验 + ⏭ 登记物输入) | builder | 0.5-1d |
+| 2 | 给 16 条 L1 加 `// INV-CARRIER:` 标记 | builder | 0.2d |
+| 3 | `tools/render_report.py` 加 `INV-CEP-06-IC3` 标记 + 冻结双步 | builder | 0.1d |
+| 4 | 补 `INV-CEP-09-IC3` 断言(确定性 + 闸层重算敏感性,须**实证 exhibit**) | builder | 0.3d |
+| 5 | 5 条 L2 逐条核实 → 补断言或登记 | builder | 0.5-1d |
+| 6 | B2 登记「66/66(N + M)」 | planner | — |
+
+**⑥ 关联**:`.rddf/reviews/cep-b2-unmodelled-verdict.md`(裁决 + 双审)· `.rddf/reviews/cep-b2-coverage-verdict.md`(C1 主裁决)· `.rddf/reviews/cep-b2-mapping-audit.md`(盘点 + §7 复核修正)· **#232**(C1 落表 + 改判)· **#230**(规划)· **#217 §④ S6**(禁恒真占位)· `ADR-CEP-09` 决策 6/7 · `ADR-CEP-13` 决策 5 · `ADR-CEP-12 §13.3`(`authority_migrations[]` V6 先例)· `§6.2 B2` / `§0 DoD 7`
+
+---
+
+
+### Entry #234 — 2026-11-05 [scope-change](B2 的 **49 条 ⏭ 登记** + 真实缺口修正 —— 有牙载体实测 **17/66**)
+
+**主题**:B2 的映射表闸落地后,66 条 invariant 的**真实**载体状况浮出 —— 实测只有 **17 条**有针对语义的有牙载体
+(⛔ 审计估计的「补 7-12 条」被**实测推翻**);其余 **49 条**按「未建模 / 未落地」或「载体待补齐」两类登记 ⏭。
+**角色**:builder(装置 + 闸 + 断言 + 登记物)· planner(本 entry + 表落)。
+**性质**:**⏭ 登记的台账锚** —— 映射表闸的校验 ④ 要求每条 ⏭ 的 `ledger_entry` 解析到**真实台账 Entry 且正文含该 id** ⇒ 本条即该锚。
+**⚠️ 非预登记集合变更**:`experimental/preregistration.json` 零改动;⛔ **B2 不得登记 ✅**(见 ③)。
+
+**① 实测出的真实差距(推翻审计估计)**
+
+| 层 | 数 | 说明 |
+|---|---:|---|
+| **有牙载体**(INV-CARRIER 标记 + 邻域断言校验通过) | **17** | 其中 9 条为本轮新补/新标记;8 条为既有 TEST_CASE 标题精确命中 |
+| **⏭-unmodelled**(能力未建模/未落地) | **5** | `CEN-Ib8` · `INV-CEP-08-IC1` · `INV-CEP-09-IC2` · `INV-CEP-13-IC1` · `INV-CEP-13-IC3` —— 均有 architect 裁决依据(per **Entry #233**) |
+| **⏭-pending**(载体待逐条补齐) | **44** | 该 id 目前**仅在编号元数据表 / 解析器编号表登记**,**无针对其语义的行为断言** |
+| 合计 | **66** | ✅ 分母**未缩** |
+
+⚠️ **闸的正确性证据**:自动插入的 50 条「窗口命中」标记**全部**落在编号元数据表 / 解析器编号表 ⇒ 被邻域有牙校验**全部抓红** ⇒ 已撤销。
+⇒ 这证明 C1 规则 B「活但 vacuous / 死形态」的排除**真的在起作用**,也证明「66 条里大部分只被登记、从未被断言」这一事实。
+
+**② 49 条 ⏭ 登记清单(逐条 —— 闸校验 ④ 的正文锚)**
+
+| id | disposition | 依据摘要 |
+|---|---|---|
+| `CEN-Ib11` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `CEN-Ib2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `CEN-Ib5` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `CEN-Ib7` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `CEN-Ib8` | ⏭-unmodelled | address_resolve「在 ProtocolEngine 内终结」需 engine 的 egress 可观测面;当前无该面 ⇒ 无可断言对象 |
+| `INV-CEP-04-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-04-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-04-IC5` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-04-IC7` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-05-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-06-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-06-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-06-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-06-IC4` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-06-IC5` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07-IC4` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07-IC5` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07-IC6` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07-IC7` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07A-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07A-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-07A-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-08-IC1` | ⏭-unmodelled | 「恰在一个 Ordering Point 序列化」= J3 的通用形式;checker 头明写「通用形式不可静态判定」⇒ 当前仅单点 vacuous 判据 |
+| `INV-CEP-08-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-09-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-09-IC2` | ⏭-unmodelled | 仲裁器未建模(ADR-CEP-09 自记「vc3 内 E 不被 D 饿死」未建模;多 VC 仲裁属 Stage 4+)⇒ 无可断言对象 |
+| `INV-CEP-11-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-11-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-11-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-12-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-12-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-13-IC1` | ⏭-unmodelled | per ADR-CEP-13 决策 5 ①,承诺未兑现 |
+| `INV-CEP-13-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-13-IC3` | ⏭-unmodelled | per ADR-CEP-13 决策 5 ①,承诺未兑现 |
+| `INV-CEP-14-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-14-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-14-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-15-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-15-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-15-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-16-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-16-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-16-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-NUM-IC1` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-NUM-IC2` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+| `INV-CEP-NUM-IC3` | ⏭-pending | per §0 DoD 7「66 条 invariant 的逐条断言」,承诺未兑现 |
+
+**③ 达成宣称门(⛔ 当前 B2 不得登记 ✅)**
+
+- 映射表闸提供 `--for-achievement` 模式:**⏭-pending 必须为 0**,否则**拒绝** B2 达成宣称。
+- ⇒ 当前状态:**17 有牙载体 + 5 ⏭-unmodelled + 44 ⏭-pending** ⇒ **B2 未达成**,
+  登记格式「66/66(N + M)」**不可用**;⛔ **不得**用「66/66(17 + 49)」冒充达成 —— `⏭-pending` 是**待办**,不是**已达成**。
+- 合法中间态 = 「**17/66 有牙载体 + 5 项 ⏭-unmodelled + 44 项 ⏭-pending(载体待补齐)**」。
+
+**④ 剩余工作量(实测口径,取代 Entry #230 的 C2 估计)**
+
+| 项 | 量级 |
+|---|---|
+| 逐条补有牙载体(44 条 pending) | **每条 0.5-1h**(正控 + 反控)⇒ **22-44 人时 ≈ 3-5.5 工作日** |
+| 5 条 ⏭-unmodelled | **不补**(等各自触发条件) |
+| 映射表 + 闸 + 标记 | ✅ 已完成 |
+
+⚠️ 该量级**显著高于** Entry #230 的 C2 估计(2-3d)—— 原因是审计把「编号登记」误当「已有载体」(短式 id 标题漏检)。本条为**实测口径**。
+
+**⑤ 关联**:**#233**(C1 附裁 + 冻结授权)· **#232**(C1 落表 + 改判)· **#230**(规划 · C2 估计已被本条取代)· **#217 §④ S6**(禁恒真占位)·
+`.rddf/reviews/cep-b2-unmodelled-verdict.md`(4 条判定 + ⏭ 登记形态)· `.rddf/reviews/cep-b2-mapping-audit.md`(盘点 + §7 复核修正)·
+`scripts/test/cep_invariant_map_check.py`(闸)· `test/cep_invariant_assertion_map.json`(映射表生成物)· `test/cep_invariant_deferrals.json`(⏭ 登记物)· `§6.2 B2`
 
 ---
 

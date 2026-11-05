@@ -1,40 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T11:23:46Z",
+  "updated_at": "2026-11-05T13:25:08Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-05T02:54:18Z",
-      "by": "auto",
-      "reason": "planner 域已落 §9.1 ①/② 表的 H4 依赖列订正 + out-of-scope 集,投影同步(pending→registered)⇒ 回 builder 实现 H4 装置:新建 test/cep_completion_domain_model.hh(正控 + **反事实负控** + 口径限定)+ emit whitelist 放行 h4(与预登记登记**同 PR**,per SU#2 §③ 顺序锁)"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-05T03:58:58Z",
-      "by": "user",
-      "reason": "用户口令:「再切architect审查架构决策是否需要修订」⇒ 审查 Entry #218~#223 一系列的架构决策(层次归属订正 / 形态裁决 / 预登记闸 / 本轮 3 处契约语义变更)是否需追加 SU 或修订 ADR"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-05T04:09:59Z",
-      "by": "auto",
-      "reason": "architect 审查完成(oracle 本轮不可用⇒降级内置自检;critic REJECT 1 BLOCKER)⇒ 回 planner 落台账 Entry #224(BLOCKER 认领 + SU#3 指针 + 授权链)+ 后续任务实施路径"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-05T04:11:12Z",
-      "by": "auto",
-      "reason": "planner 已落台账 Entry #224(BLOCKER 认领 + SU#3 指针 + H8 的 A/B 降级裁决 + 后续路径 + 冻结面授权链)⇒ 回 builder:① 修 BLOCKER(报告层三态 + 连带洞 + 死变量清理 + emit 产出层硬约束)② SU#3 收口(Verification 勾选 + --update --authorized-by \"Entry #224\")③ H8 的 3 组 A/B(先预登记 pending→registered,再产出)"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-05T06:38:41Z",
-      "by": "user",
-      "reason": "用户裁决:切 architect 决定 B4 的路径 —— ① 新建同时实测两类违例的装置族 vs ② 重裁 B4 口径(Entry #225 ⑧ 的路由)"
-    },
     {
       "role": "planner",
       "at": "2026-11-05T06:55:35Z",
@@ -124,6 +94,36 @@
       "at": "2026-11-05T11:23:46Z",
       "by": "user",
       "reason": "用户口令「继续切 builder 推进下一步」⇒ C1 已落地(Entry #232)⇒ 执行动作 1 映射审计(29 none + 8 weak 逐条确认载体,grep 只作线索),产出精确缺口清单"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T12:56:39Z",
+      "by": "user",
+      "reason": "用户口令「切 architect 推进,然后切 planner」⇒ 裁 B2 剩余分叉:① 4 条(INV-CEP-09-IC2/IC3, INV-CEP-13-IC1/IC3)是「未建模」还是「漏断言」② 5 条 L2(CEN-Ib6/Ib8, INV-CEP-08-IC1/IC3, INV-CEP-14-IC3)是否已有载体;落裁决 + 台账"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T13:12:10Z",
+      "by": "user",
+      "reason": "用户口令「然后切 planner」⇒ 落 C1 附裁(4 条判定 + ⏭ 登记物 + 闸四项校验 + 登记格式 66/66(N+M))到 objective §6.2 B2,并落台账 Entry #233(含 tools/render_report.py 的 INV-CARRIER 冻结面授权)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T13:16:55Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 执行这 6 项」⇒ B2 达成的 6 个动作: ① 映射表生成器+ctest 闸(四项校验+延登记物) ② 16 条 L1 加 INV-CARRIER 标记 ③ tools/render_report.py 加标记+冻结双步(授权=Entry #233) ④ 补 INV-CEP-09-IC3 断言(确定性+闸层重算敏感性) ⑤ 5 条 L2 逐条核实 ⑥ B2 登记(planner)"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T13:24:48Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 执行这 6 项」的第 6 项(B2 登记)需 planner 落台账 ⇒ 落 Entry #234(49 条 ⏭ 登记正文, 供映射表闸校验④「台账正文含该 id」)+ 更新 §6.2 B2 的真实缺口数(17/66)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T13:25:08Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 执行这 6 项」收尾 ⇒ commit planner 的表落(Entry #234 + §6.2 B2 真实缺口数)+ 全量 ctest 验证 + 报告"
     }
   ],
   "auto_switch_window": null
