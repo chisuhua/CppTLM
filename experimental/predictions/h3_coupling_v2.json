@@ -1,0 +1,13 @@
+{
+  "prediction_id": "h3-coupling-v2",
+  "written_at": "2026-11-05T07:38:05Z",
+  "implementation_commit": "a3384a86591ae207051640087d436689eea6d928",
+  "hypothesis": "跨平面阻塞开关(collective 到达是否依赖 coherence 全退)不改变内存一致性违例计数",
+  "expected_delta": {
+    "swmr": 0,
+    "data_value": 0
+  },
+  "allowed_direction": "zero_or_predicted",
+  "sensitivity_requirement": "SWMR 注入在阻塞开/关两配置下均须被检出 > 0(见 [cep][b4] 耦合探针单测)",
+  "note": "per ADR-CEP-06 SU#4 §② 约束 6:预测须在 run 产出**前**写入本文件;metrics.json 的 verification_scope 只存**指针**;事后补写不成立。探针脚本 scripts/test/cep_b4_coupling_probe.sh 校验:锚存在 + 实现 commit 是 HEAD 祖先 + 锚 mtime ≤ run mtime。"
+}
