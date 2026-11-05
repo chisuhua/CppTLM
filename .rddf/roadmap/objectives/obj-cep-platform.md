@@ -525,6 +525,14 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
   - ⚠️ **两条不得计入的口径**:① **MESIF / MOESI-GPU / CohIfNull 不在** B3 的 6 族清单内 ⇒ 既不计入也不冒充;② **UALink 无实例声明**(`ualink_4` 取值不可判定)⇒ 不算「实例已声明」
   - 📌 **「ProtocolEngine」一词两义的裁决源**:`07 号` Status Update 2026-11-04 ①(architect 裁决)
 - B8. **Directory & Ordering Plane 三子平面实施完成**:Address Resolver + Sharer Tracker 5 实现 + Ordering Point 三判据 + **装配期通道依赖图无环检查**(per `ADR-CEP-08` + `ADR-CEP-09 Decision A`)
+  - ✅ **达成**(2026-11-05,per 台账 **Entry #231**)—— 四子项逐条实测:
+    | 子项 | 载体 | 证据 |
+    |---|---|---|
+    | **Address Resolver** | `include/tlm/cep/address_resolver.hh`(`AddressResolverIf` 单方法 + `WindowAddressResolver`) | `[cep][ordering-point]` 的「AddressResolverIf 单方法」 |
+    | **Sharer Tracker 5 实现** | `FullMapDirectory` / `SparseSnoopFilter` / `HierarchicalDirectory` / `DcohSymmetric` / `BroadcastNullTracker`(均 `final : public SharerTrackerIf`) | 五类均有测试命中(`test_cep_sharer_tracker_base` / `test_cep_cxl_dcoh_tracker` 等) |
+    | **Ordering Point 三判据** | J1 静态路径覆盖 / J2 与 caps 耦合 / J3 vacuous 降级 | `[cep][ordering-point]` 6 cases / 64 assertions |
+    | **装配期通道依赖图无环** | `channel_dependency_graph.hh` 的 `find_cycle()` + `ordering_point_checker.hh` 的 `run_channel_gate()` | **`ModuleFactory::instantiateAll` 真实调用**且 FAIL ⇒ abort(`INV-CEP-09-IC1`);`[cep][channel-gate]` 8 cases 含「注入环 ⇒ 配置 fail」并用**真 `instantiateAll`** 驱动 |
+  - ⚠️ **证据强度**:本项为**行为级**(装配路径真实调用 + 真装配驱动),非文本级 —— 与 B5/B6 不同
 - B4. 4 件套实验输出契约落地 + 13 必纳 metric 全绿
   - 📌 **「全绿」口径已由 architect 裁决(2026-11-04,per 台账 **Entry #217** + `ADR-CEP-06` **SU#1** §④ + `07 号` SU#2 §①)—— 拆两级,不可互相继承**(本行是口径说明,非状态标记):
     ① **run-validity**:4 件套齐备 + 13 必纳**键**齐备 + 每个值**要么**是真实采集的数值、**要么**是 `"not-collected"` 且 per-metric `_not_collected` 有该 metric 的 reason + `not-collected ⊆` **预登记** out-of-scope 集 + 违例类(`deadlock_violations`/`memory_violations`)若为 `"not-collected"` ⇒ IC3 判**「不适用」**且该 run **不得**作任何一致性安全断言的证据
@@ -542,7 +550,13 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
   - **机器锚**:`[cep][b4]`(5 cases / 45 assertions)· `ctest` 的 `cep_b4_observation_keys_check` / `cep_b4_coupling_probe` · `[cep]` 394 cases / ctest 152/152 全绿
   - **证据**:`docs/validation/2026-11-05-cep-b4-evidence-device.md` · AC-9 实现评审 `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`(**PASS**)· 装置 `test/cep_consistency_completion_model.hh`
 - B5. ModuleFactory 集成 seam + 0 发明宏形式
+  - ✅ **达成**(2026-11-05,per 台账 **Entry #231**)—— 两条子判据均有**实测**证据:
+    - **集成 seam**:`src/core/module_factory.cc:176-190` 在 `instantiateAll` 中**真实调用** `tlm::cep::run_channel_gate` / `run_ordering_gate`;任一 `GateVerdict::FAIL` ⇒ `return false`(拒装配);且「两个挂点(此处 + `validate_topology` CLI)调用**同一组**判据函数 —— 禁双实现」
+    - **0 发明宏形式**:CEP 侧 `#define REGISTER*` **0 命中**(实测);沿用既有 `REGISTER_MODULE` / `REGISTER_CHSTREAM` 惯例
+  - ⚠️ **证据强度**:「0 发明宏」部分由 `[cep][module-factory-seam]` 的**契约文本级**断言支撑(ADR 关键词)⇒ 与「实测 0 命中」互补,⛔ 不得单独引用文本断言作行为证据
 - B6. simulation_mode 单一维度
+  - ✅ **达成**(2026-11-05,per 台账 **Entry #231**)—— **实测**:全仓 `network.mode` / `network_mode` **0 命中**(`configs/` + `include/` + `src/`);契约侧 `[cep][simulation-mode]` 的「`simulation_mode` 是唯一模式维度,无 `network.mode`」用例采用**行级否定判定**(2026-10-21 复审 S3 修:旧「±字符窗口」判定可被反向语义骗过),配 `INV-CEP-07-IC1`
+  - ⚠️ **证据强度**:契约侧是**ADR 文本级**断言;实测侧是「全仓 0 命中」⇒ 两者互补,⛔ 不得只引其一
 - B7. §9 研究问题 8 个假设全部有实验结论
   - ✅ **8/8,其中 H2 的 `directory_misses` 为登记的扩展观测(未测量),不构成 H2 结论判据**(2026-11-05;H1/H2/H3/H4/H5/H6/H7/H8 均为 ✅ 成立;计数口径 = ✅ 成立的**假设**数,per §9.1 ③ 的**判据**读法)。分批来源:**Entry #221**(H1/H5 → 6/8)· **#223**(H4 → 7/8)· **#225**(H8 → 8/8);归位裁决 = **Entry #229** + `ADR-CEP-06` **SU#5**
   - 📌 **原「待裁冲突」已闭合**:`Entry #228 ⑤` 登记的冲突(H2 的 `directory_misses` 判据仍 ⏭ ⇒ 严格读法 7/8)已由 **SU#5** 裁决(归位为**扩展观测**,不使 H2 整体失格)⇒ 本条**不再带「待裁」限定**;若后续推翻 SU#5,**回滚路径**见 SU#5 §③ 的显式 4 步表
@@ -667,7 +681,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **H2** | *(同上)* | Stage 2 | *`directory_misses` 对比* —— ⚠️ **扩展观测(非判据)**,2026-11-05 归位(per 台账 **Entry #229** + `ADR-CEP-06` **SU#5**)。**原判据措辞** = 「3 策略 miss 差异」;归位理由 = **① 不在 H2 的命题陈述中**(命题 = 「3 策略 latency 差异可量化」,见上一行)且其缺失**不使命题真值不可判定** + **② 不被任何 `§6.x` 独立要求实测**(仅被 13 必纳键集包含,而 run-validity 允许 `not-collected`)。**命中的两条条件 = SU#5 §② 条件 1 + 条件 2**(均满足) | `directory_misses` | **必纳 metric**(本实验**刻意不采**,per Entry #218 事实 #2「判据收窄**优先于**补实现」) | ~~3 策略 miss 差异~~(**非判据,不计入 H2 结论**) | ⏭ **未测量** —— ⛔ **全仓无产出者**(实测:仅 schema / tools / 测试断言命中,无 emit 赋值点)⇒ **登记保留**(⛔ 不得删除 / ⛔ 不得写成 0);(⚠️ **不是**「不成立」—— 那是 ❌ 的专有语义 = 已实测未达标) |
 | **H3** | Sharer Tracker caps 的 `CONSERVATIVE` 完备性契约在 CXL 对称下无漏 snoop | Stage 2 | 0 违例(1000+ 事务)· **分支 1** | `memory_violations`(含 `memory_violation_kinds` 的 SWMR + data-value 双分桶) | **必纳 metric** | == 0 | ✅ **成立**(1200 事务 · swmr=0 · data_value=0);**2026-11-05 v2 同参数重证**(数值不变,per 台账 Entry #228)。⚠️ **延迟语义换版**:v2 的 `avg_latency_cycles` = **在途窗口**(avg 2),v1 = lookup 成本(avg 14)⇒ ⛔ **v1/v2 延迟不可比**;本判据不依赖延迟 |
 | **H3** | *(同上)* | Stage 2 | *分支 2* | `deadlock_violations` | **必纳 metric** | == 0 | ✅ **成立**(2026-11-05,per 台账 **Entry #228**)—— **v2 复合装置实测 0**(1200 coherence 事务;`deadlock_violations` 在 `_measured`;在途峰值=**3** / 停滞上限=**2** < 阈值 200)。⚠️ **口径**:模型级(非协议级);该 0 由**真实在途窗口 + 完成域阻塞**产生(**错标负控 ⇒ 死锁=1** 证明检测力活着)⇒ ⛔ 非「恒假 watchdog + 默认 0」(结构性反证:恒假 ⇒ 负控不红 ⇒ 装置不合格 ⇒ 拒绝产出;恒真 ⇒ 正控 stalled ⇒ 写 1 且提前终止 ⇒ 同拒)。证据 = `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`(AC-9 = **PASS**) |
-| **H3** | *(同上)* | Stage 2 | *漏探(superset)判定* | `superset_violations` | ⚠️ **非必纳 metric**(落在 `verification_scope` 文本内,**不在** `metrics.json` 的 13 字段) | == 0 | ✅ **成立**(0 漏探,数值保留)—— ⚠️ **两条限定**:① 该观测**不在** `metrics.json` 契约面 ⇒ 不受 SU#1 的 `not-collected` 机制覆盖;② **判定当前不可证伪**(`truth` 来源 = `set_sharer` 参数,`view` 紧随 set 后读取且 `service_read` 不收缩 sharer 集 ⇒ `truth ⊆ sharers` **同义反复**,且**无反向 fixture**)⇒ ⛔ **「0 漏探」不得作独立证据引用**,仅登记数值(per AC-9 评审 **S1**;修法 = 补反向 fixture 或将本格降级) |
+| **H3** | *(同上)* | Stage 2 | *漏探(superset)判定* | `superset_violations` | ⚠️ **非必纳 metric**(落在 `verification_scope` 文本内,**不在** `metrics.json` 的 13 字段) | == 0 | ✅ **成立**(0 漏探,数值保留)—— ⚠️ **两条限定**:① 该观测**不在** `metrics.json` 契约面 ⇒ 不受 SU#1 的 `not-collected` 机制覆盖;② **判定已可证伪**(2026-11-05 修复,per 台账 **Entry #231**)—— 默认路径下 `truth` 来源 = `set_sharer` 参数、`view` 紧随 set 后读取 ⇒ `truth ⊆ sharers` **同义反复**(per AC-9 评审 **S1**);现由 **`Config::inject_missed_sharer` 反向 fixture** 证明其**非恒过**(目录丢掉一个真实 sharer 而事务仍期望它 ⇒ `superset_violations > 0`,且 SWMR/data-value 不受污染)⇒ 「0 漏探」的**判定能力**已成立;⚠️ 但该 0 仍是**模型级**(⛔ 非协议层无漏 snoop 的证明) |
 | **H4** | 完成域判别规则(requester-scoped vs group-scoped)足以同时容纳 coherence + collective | Stage 1~2 | 两类流同实验内无死锁 | **完成域语义由 H4 装置承担(运行层)**;⚠️ **依赖列已订正**(2026-11-05,per 台账 **Entry #222** ①)—— 原写「判别由 `evaluate_completion_domain` 承担」是 **Entry #218 拆表时的层次归属错误**:该函数是 **CP-05 契约面**判据(`std::ifstream` 读 coherence 侧**源文件**、查 8 个 group-scoped 标识 ⇒ **零运行期含量**),而本假设的判据是**运行期**命题 ⇒ 二者**互补守护面**(CP-05 守源文本扫描面 / H4 守运行期共存),**非替代**。⚠️ **H4 的内核 = 跨层蕴含**(per `ADR-CEP-01 §3.2`「两套完成纪律不能混用同一分析工具」+ `§6.2` 代价 3「**分类错误 = 静默死锁**」)⇒ 装置须含**反事实负控**(把 coherence 流错误标记为 group-scoped ⇒ 死锁)以证「判别规则**确实改变**共存结果」 | **必纳 metric**(完成域感知 VC 共存实验;per Entry #222 ③ 形态裁决) | 两类流同实验内无死锁 | ✅ **成立**(2026-11-05,per 台账 **Entry #222** 形态裁决 + **Entry #223** 落地)—— 正控:coherence 8/8 + collective 8/8 全部完成、**无死锁**;**反事实负控**(coherence 错标 group-scoped)⇒ **死锁**(两端均 0/8)⇒ **完成纪律混用 = 静默死锁**在模型上可判定(per `ADR-CEP-01 §6.2` 代价 3)。⚠️ **模型级**(非协议级)· 隔离 VC 前提下(VC 隔离由 H6 承担)· 与 CP-05 **互补非替代**。逐字来源 + 口径限定 + 反向 fixture 见 `docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` |
 | **H5** | SHARP 5 条防误分类规则(R1-R5)能可靠区分 SHARP atomic vs cache-coherent atomic | Stage 2 | 0 误分类 | `divert_count`(divert 计数器形状)+ **fail-stop** 判据(R5) | **契约级断言**(`nvlink_sharp_state_spec.hh` 的 `is_fail_stop` / `divert_counter_field_count`) | 0 误分类 | ✅ **成立**(2026-11-05,per 台账 **Entry #221**)—— ⚠️ **证据边界 = 函数级**:`is_fail_stop` **3 bool 输入 = 8/8 组合显式断言**(2026-11-05 补齐 4 条,此前 4/8 ⇒ 「穷尽」是 overstated)+ `classify_at_fabric_ingress` **2 输入 4/4 穷尽** + **R1/R2 ↔ R5 交叉锁**(`static_assert` × 5,语义分叉即编译红)。⛔ **非**协议级/仿真流量级证明(本仓**无** NP atomic 注入实验)⇒ 引用时**不得**表述为「已证明协议层无误分类」。逐字来源 + 口径限定见 `docs/validation/2026-11-05-cep-h1-h5-conclusion-registration.md` **§1 / §4** |
 | **H6** | VC 隔离(collective 独立 VC)确实避免协议级死锁 | Stage 3 | 0 死锁 + collective stall 不占 coherence VC | `deadlock_violations` + `vc_stall_per_vc` + `collective_stalls` | **必纳 metric**(+ `vc_stall_per_vc` 为**可选** metric) | 0 死锁 + collective stall 不占 coherence VC | ✅ **成立**(独立 VC 死锁=0 · 共享 VC 负控 backlog=2000 死锁=1) |
@@ -866,8 +880,8 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 | 批 | 序 | 任务 | 判据来源 | 动作 | 验收 | 估时 | 依赖 | 风险 |
 |---|---|---:|---|---|---|---|---|---|
-| **A** | A1 | SU#4 Verification **11 条勾选回填** | `ADR-CEP-06` SU#4 §⑤ | architect 逐条核 → 勾选 → 冻结双步(`--authorized-by "Entry #228"`,**已授权**) | 11/11 勾选 + 冻结双绿 | 0.5d | — | 低:AC-9 已 PASS,勾选是仪式级 |
-| **A** | A2 | SU#5 Verification **6 条勾选回填** | `ADR-CEP-06` SU#5 §⑤ | 同上(`--authorized-by "Entry #229"`,**已授权**);可与 A1 **同批**一次冻结 | 6/6 + 双绿 | 0.3d | A1(共用冻结链) | 低 |
+| **A** | A1 | SU#4 Verification **12 条勾选回填** ✅ 已完成 | `ADR-CEP-06` SU#4 §⑤ | 逐条核 → 勾选 → 冻结双步(`--authorized-by "Entry #228"`) | 12/12 勾选 + 冻结双绿 | 0.5d | — | 低:AC-9 已 PASS,勾选是仪式级 |
+| **A** | A2 | SU#5 Verification **7 条勾选回填** ✅ 已完成 | `ADR-CEP-06` SU#5 §⑤ | 同上(`--authorized-by "Entry #229"`);⚠️ **实测修正** = **独立**冻结链(脚本 `--authorized-by` 单 entry 精确匹配,而两处勾选在**同一 ADR 文件** ⇒ 无法一条授权覆盖) | 7/7 + 双绿 | 0.3d | A1(顺序) | 低 |
 | **A** | A3 | **S2**:H4 阻塞开关默认值断言 | AC-9 评审 S2 | `test/test_cep_h4_completion_domain.cc` 加 1 行 `REQUIRE(cfg.collective_requires_coherence_retirement == true)` | 该 case 绿 + h4 指标不变 | 0.1d | — | 低 |
 | **A** | A4 | **S1**:`superset` 判定的**反向 fixture** | AC-9 评审 S1 / SU#4 §② 约束 4 | 在 `[cep][b4]` 构造「`truth` 含未被 `set_sharer` 的节点」⇒ 必须 `superset_violations > 0`;若装置无法构造 ⇒ 升级为装置改动 + 表注降级本格 | fixture **因正确原因红** + 正控仍 0 | 0.5d | — | **中**:可能发现需改装置(不止加 fixture)⇒ 触发 `plan_drift`,停下问用户 |
 | **B** | B1 | **B5 / B6 / B8 的 verdict 登记** | `§6.2 B5/B6/B8` 措辞逐条 ↔ 测试载体 | planner 逐条核实(跑标签 + 读断言)→ 落表 verdict;**有缺口的子项登记 ⏭ + 缺口清单**(⛔ 不得无证据写 ✅) | 三项各有 verdict(✅ 或 ⏭ + 依据) | 1.0d | — | 中:`B8` 的「**装配期**无环检查」须区分「测试层有 gate」vs「装配路径真实调用」 |
@@ -881,7 +895,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 **顺序理由**
 
-1. **A 先于 B**:A 的 4 项均已有裁决/评审结论(勾选是仪式级、S1/S2 是评审开出的 SHOULD_FIX),拖着只会腐化;且 A1+A2 **共用一次冻结链**,合并成本最低。
+1. **A 先于 B**:A 的 4 项均已有裁决/评审结论(勾选是仪式级、S1/S2 是评审开出的 SHOULD_FIX),拖着只会腐化。⚠️ **实测修正**:原写「A1+A2 共用一次冻结链」**不成立** —— `--authorized-by` 单 entry 精确匹配,两处勾选在同一 ADR 文件 ⇒ 须**两次独立冻结链**(授权与改动一一对应,更严谨)。
 2. **B 先于 C**:B 的三项**载体已实测在位**,登记即可把「表上无 verdict」变成可判定状态;而 C 必须先裁口径(否则「补哪些断言」无判据)—— 与 B4/B7 的「**口径先行**」纪律同族(先例:Entry #217 ⑦「builder 不得先落 schema 并把校验写成恒真占位」)。
 3. **D 全部不做**:五项都缺**外部输入或触发条件**(转移表真源 / 公开来源 / 授权 / 立项裁决 / T1-T3),做了就是填空 —— 与 B3b 的「防自欺条款」同义。
 
@@ -2408,9 +2422,9 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 | Stage 2 | 完成 Go(队列 #13 两段式归档) | 2026-11-03 | #186 / #190 | ✅ | Stage 2 = 队列 #12~#13 全部归档 |
 | Stage 3 | 启动 Go(VC 路径裁决 = 路径 **D**) | 2026-11-04 | #193 | ✅ | 三则 ADR SU 签发 + 冻结面授权记录 |
 | Stage 3 | 完成 Go(队列 #14 两段式归档) | 2026-11-04 | #203 / #207 | ✅ | 14 个队列 change 全部归档 |
-| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ **B4 / B7 已于 2026-11-05 收口**(per 台账 Entry #228)⇒ **Phase 1 的计划项全部完成**;仍阻塞终态 Go 的项 = `§6.2` **B3b**(运行时引擎 **1/6**,⛔ 触发条件未出现 ⇒ 不得补)· **B2**(66 条 invariant 覆盖 = **部分**,per Entry #225 现状)· **B3a**(6 族契约达成但 UALink **无实例声明**)· **B5 / B6 / B8**(表上**未登记** verdict,⛔ 不据此断言已达成)⇒ 当前**不得**宣称终态 Go(B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合);§8.2 Kill 判据**未触发**(现状是「**部分未产出**」而非「**无法产出**」) |
+| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ **B4 / B7 已于 2026-11-05 收口**(per 台账 Entry #228)⇒ **Phase 1 的计划项全部完成**;仍阻塞终态 Go 的项 = `§6.2` **B3b**(运行时引擎 **1/6**,⛔ 触发条件未出现 ⇒ 不得补)· **B2**(66 条 invariant 覆盖 = **部分**,per Entry #225 现状)· **B3a**(6 族契约达成但 UALink **无实例声明**)⇒ 当前**不得**宣称终态 Go(**B5 / B6 / B8 已于 2026-11-05 登记 ✅**,per Entry #231)(B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合);§8.2 Kill 判据**未触发**(现状是「**部分未产出**」而非「**无法产出**」) |
 
-> **待办指针**:Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记)已于 **2026-11-05 全部完成**(B4 / B7 收口,per Entry #228)⇒ 终态 DoD Go 的剩余前置 = **B3b**(触发条件驱动)· **B2**(全覆盖)· **B3a**(UALink 实例声明)· **B5 / B6 / B8**(verdict 登记)(**B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合**,见 §6.2 B7 注),逐条完成后在本表末行回填日期与 Entry。
+> **待办指针**:Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记)已于 **2026-11-05 全部完成**(B4 / B7 收口,per Entry #228)⇒ 终态 DoD Go 的剩余前置 = **B3b**(触发条件驱动)· **B2**(全覆盖)· **B3a**(UALink 实例声明)(**B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合**; **B5 / B6 / B8 已于 2026-11-05 登记 ✅**),逐条完成后在本表末行回填日期与 Entry。
 
 **review_by 触发仪式**(per `rdd-planner/SKILL.md:159`):
 - `bash skills/rdd-planner/scripts/planner_objective_revise.sh objective-cep-platform --kind sprint-review --content "..." --decision "..." --reason "..."`
@@ -14287,7 +14301,7 @@ H2 的 `directory_misses` 归位为**扩展观测**(⛔ 不删行、⛔ 不改�
 
 | 批 | 内容 | 估时 | 关键判据 |
 |---|---|---|---|
-| **A** | SU#4 / SU#5 的 Verification 勾选回填(A1+A2 **共用一次冻结链**)+ **S2**(H4 默认值断言 1 行)+ **S1**(`superset` 反向 fixture) | 1.4d | A1/A2 的授权 entry **已存在**(#228 / #229)⇒ 冻结链可直接走;S1 的 fixture 须**因正确原因红** |
+| **A** | SU#4 / SU#5 的 Verification 勾选回填(A1+A2 **两次独立冻结链**)+ **S2**(H4 默认值断言 1 行)+ **S1**(`superset` 反向 fixture) ✅ **已完成** | 1.4d | A1/A2 的授权 entry 已存在(#228 / #229);S1 的 fixture **因正确原因红** |
 | **B** | **B5 / B6 / B8** 的 verdict 登记(逐条核实 → 落表;有缺口登记 ⏭ + 清单) | 1.0d | ⛔ 不得无证据写 ✅;`B8` 须区分「测试层有 gate」vs「**装配路径**真实调用」 |
 | **C** | **C1** 裁 B2「100% 覆盖」口径(编号级 vs 判定级);**C2** 仅当裁②才补断言 | 0.5d + 2-3d | 口径先行(与 B4/B7 同族);C2 可能需独立 change 立项 |
 | **D** | B3b / B3a / N-1~N-9 / litmus / D1 拆分 —— ⛔ **全部不做** | — | 均缺外部输入或触发条件;做了 = 填空 |
@@ -14313,6 +14327,52 @@ H2 的 `directory_misses` 归位为**扩展观测**(⛔ 不删行、⛔ 不改�
 | C2 | 补 19~28 条 × (正控 + 反控)规模超预期 | 超 **3d** ⇒ 独立 change 立项(用户裁决) |
 
 **⑥ 关联**:`§6.2` B2/B3a/B3b/B5/B6/B8 · `§10` 规划段 · **#228**(AC-9 + SU#4 授权)· **#229**(SU#5 + 表修复)· **#218**(B3b 触发条件口径)· **#225**(B7 8/8)· `docs/validation/2026-11-05-cep-b4-evidence-device.md` · `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`(S1/S2 来源)
+
+---
+
+
+### Entry #231 — 2026-11-05 [plan](B 批:**B5 / B6 / B8** verdict 登记 + 三条遗留订正)
+
+**主题**:把 `§6.2` 的 **B5 / B6 / B8** 从「表上无 verdict」变为**可判定状态**(逐条实测核实后登记);
+并订正 A 批完成后的三处**文档腐化**(其中一处是 A4 修复使原限定过时)。
+**角色**:planner(本 entry + 表落)。
+**性质**:verdict 登记 + 文档订正,⛔ 无代码改动。
+
+**① 核实过程(⛔ 不凭载体存在就写 ✅)**
+
+| 项 | 初判 | 实测复核 | 结论 |
+|---|---|---|---|
+| **B5 集成 seam** | 「CEP header-only 不注册 ⇒ 可能无集成」 | `src/core/module_factory.cc:176-190` 在 `instantiateAll` 中**真实调用** `run_channel_gate` / `run_ordering_gate`,FAIL ⇒ `return false` | ✅ **真集成** |
+| **B5 0 发明宏** | 「文本断言太弱」 | `#define REGISTER*` 在 `include/tlm/cep/` **0 命中**(实测) | ✅(文本 + 实测互补) |
+| **B6 单一维度** | 「只查 ADR 文本」 | 全仓 `network.mode` / `network_mode` **0 命中**(configs + include + src) | ✅ |
+| **B8 装配期无环** | ⚠️ **一度误判为「未落地」** | **grep 盲区**:用 `ChannelDependencyGraph\|dependency_graph\|cycle` 搜 `module_factory.cc` 只命中 `#include` ⇒ 差点判缺;实际调用点用**函数名** `run_channel_gate`(176 行) | ✅ **真落地**(FAIL ⇒ abort,`INV-CEP-09-IC1`) |
+| **B8 三子项** | 载体存在 | `address_resolver.hh` / 5 个 tracker 类(均有测试命中)/ `[cep][ordering-point]` J1-J3(6 cases)| ✅ |
+
+⚠️ **教训(记入台账供后人)**:判「装配路径是否调用某能力」时,**不能只用类名 grep** —— 该能力可能经**包装函数**(此处 `run_channel_gate`)调用 ⇒ 须同时搜「函数名 / 头文件 include / 门的 verdict 处理」三类锚点。
+
+**② 判定(逐条落 `§6.2`)**
+
+| 项 | verdict | 证据强度 |
+|---|---|---|
+| **B5** | ✅ 达成 | 装配路径**行为级** + 宏定义**实测 0 命中**;⚠️ 「0 发明宏」的契约侧仍是 ADR 文本级断言 |
+| **B6** | ✅ 达成 | 全仓 `network.mode` **实测 0 命中** + 契约侧**行级否定判定**(防反向语义骗过,2026-10-21 S3 修) |
+| **B8** | ✅ 达成 | 四子项**行为级**(装配期真实调用 + 真 `instantiateAll` 驱动 `[cep][channel-gate]` 8 cases) |
+
+**③ 三条遗留订正(A 批完成后的文档腐化)**
+
+| # | 位置 | 原状 | 订正 |
+|---|---|---|---|
+| 1 | `§9.1 ①` H3 分支 3 | 「判定**当前不可证伪**,无反向 fixture」 | **已可证伪**(`Config::inject_missed_sharer` 反向 fixture,per A4)⇒ 判定能力成立;⚠️ 默认流的 0 仍是**模型级** |
+| 2 | `§10` 规划表 A1/A2 | 「**11 条** / **6 条**」 | **12 条 / 7 条**(实测) |
+| 3 | `§10` 规划表 + 顺序理由 | 「A1+A2 **共用一次冻结链**」 | ⛔ **不成立** —— `--authorized-by` **单 entry 精确匹配**,两处勾选在**同一 ADR 文件** ⇒ **两次独立冻结链** |
+
+⇒ 第 1 条最要紧:表里说「不可证伪」而实现已能证伪 = 会误导后续引用者低估修复状态。
+
+**④ 顺带更新**
+
+- `§6.2` 终态表 / 待办指针:剩余项收窄为 **B3b**(1/6)· **B2**(口径待裁)· **B3a**(UALink 无实例) ⇒ ⛔ 终态 DoD Go 仍未发生。
+
+**⑤ 关联**:`§6.2` B5 / B6 / B8 · `§10` 规划表 · **#230**(规划)· **#228 / #229**(A 批)· `src/core/module_factory.cc` · `[cep][module-factory-seam]` / `[cep][simulation-mode]` / `[cep][ordering-point]` / `[cep][channel-gate]`
 
 ---
 

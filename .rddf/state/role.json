@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T09:36:58Z",
+  "updated_at": "2026-11-05T10:40:07Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-05T01:26:57Z",
-      "by": "user",
-      "reason": "用户口令「继续」⇒ 推进剩余任务 #7(H1 / H5 的 🟡 → 结论登记)。实据核查发现 **H1 判据措辞与实现有偏差**:8 个 adapter 中**无任何一个**真正使用 `StubCacheCore`(grep 零命中);各 adapter 持有**协议自身**的状态语义,与 stub 的 5 态投影是「两个不同的东西」(per ADR-CEP-05 决策 1 的 (α) RN 侧投影定位)⇒ 判据「全部 adapter 共用同一 stub」字面不成立 ⇒ 需 architect 裁 H1 的判据口径 + H5 的登记条件"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-05T01:35:20Z",
-      "by": "auto",
-      "reason": "architect 已裁 H1(判据订正:原文按落选方案 (β) 措辞,字面为假且无守门 ⇒ 订正为可机器判定形态)+ H5(成立,证据边界 = 函数级)⇒ builder 已补 H5 的 8/8 组合 + 交叉锁 + H1 的 2 条守门用例(3 条反向 fixture 全部因正确原因红)⇒ auto 回 planner 落 §9.1 ① 表的 H1 判据格(留痕)与 verdict 列 + 台账 Entry #221"
-    },
     {
       "role": "builder",
       "at": "2026-11-05T01:35:45Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-05T09:36:58Z",
       "by": "user",
       "reason": "用户口令「切 builder 把这份规划提交,然后接着做 A 批」⇒ ① commit 规划(§10 + Entry #230) ② A 批:A3(H4 默认值断言) / A4(superset 反向 fixture) / A1+A2(SU#4+SU#5 Verification 勾选回填 + 冻结双步) ③ 全量验证"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T10:35:53Z",
+      "by": "user",
+      "reason": "用户口令「切 planner 做 B 批 + 这 3 条订正」⇒ ① 订正 objective 三处(A4 使「superset 不可证伪」过时 / 规划估时 11→12、6→7 / 「共用一次冻结链」→ 两次) ② B 批:B5/B6/B8 逐条核实 §6.2 措辞 ↔ 测试断言后落 verdict(有缺口登记未测量)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T10:40:07Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 提交这批改动,并继续推进下一步任务」⇒ ① commit B 批(B5/B6/B8 verdict + 3 条订正 + Entry #231) ② 继续推进:B2 判定级盘点(纯只读统计,产出 C1 裁决所需的量化材料)"
     }
   ],
   "auto_switch_window": null
