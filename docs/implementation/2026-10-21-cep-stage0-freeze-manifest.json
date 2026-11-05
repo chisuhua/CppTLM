@@ -8,7 +8,7 @@
     "docs/adr/ADR-CEP-03-fabric-collective-plane-internals.md": "80f5c4dc1b8919655dd9f4e4de5271f09ff0d26ac1a8869cf5e8ba8f84f449a9",
     "docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md": "44d43cef8c91db552a48fe1e797b57eeaddc2fb91132e0f7e86af2db223b0a75",
     "docs/adr/ADR-CEP-05-stub-cache-core-interface.md": "0a9ee86b1f58315b0cb9ade29f717a09c4d47c8d32e94c9b2553009e2739fce4",
-    "docs/adr/ADR-CEP-06-experiment-protocol.md": "00eb16a88cc9925753928919bc747a56aaf4b6c866eaf95716de622ee94c27fd",
+    "docs/adr/ADR-CEP-06-experiment-protocol.md": "0cf2c56eb0d51377229c99cd5f3767643dc045588cff1a70926750beece6347b",
     "docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md": "c11248f7e62346948135a8424f1da53f794d5a211892e14dc45c74d6fe949064",
     "docs/adr/ADR-CEP-07A-06bis-artifact-disposition.md": "28b3a38f594f85614a996a5cb71474dc20c0bc55c849aff0aa985b943716d708",
     "docs/adr/ADR-CEP-08-ordering-point-portability.md": "8f3d66fac15a95e7b7c90dd6a54991300622e3a14390a4b1d37693a38fe57cb7",
@@ -45,7 +45,7 @@
   },
   "authorized_by": "Entry #224",
   "frozen_at": "2026-11-05",
-  "frozen_at_commit": "ae11e0f188c35fc75543b17c076ae09b4f8c6089",
+  "frozen_at_commit": "7d29514cdaae2dbbe58fb10d8d7bf16f727640c2",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
