@@ -677,7 +677,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 |------|-------------------------------|------|
 | **H1** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run ⇒ 无 metric 需求 |
 | **H2** | `coherence_stalls` · `collective_stalls` · `deadlock_violations` · `memory_violations` · `directory_misses` | 该实验只对比**目录策略的延迟**;`directory_misses` **另有一条**「未测量」登记(见 ① 表)⇒ **刻意不采**,不因「本该有产出者」而补造采集链路 |
-| **H3** | `coherence_stalls` · `collective_stalls` · `directory_misses` · `deadlock_violations` | 一致性完备性实验,只测**违例类**;`deadlock_violations` 未采 ⇒ 已在 ① 表标「未测量」,**不得**继承 pass |
+| **H3** | `coherence_stalls` · `collective_stalls` · `directory_misses` | **2026-11-05 收缩**(`deadlock_violations` **移出** out-of-scope,per Entry #226 + `ADR-CEP-06` SU#4):H3 的 `§9.1 ①` 表**本就登记了该分支**(`deadlock_violations == 0`)⇒ 原「设计上不覆盖」与判据自相矛盾;收缩方向 = **收紧**(该 metric 变为**必须实测**),⛔ 不是放宽。⚠️ **授权先行**:本行 + `experimental/preregistration.json` H3 行**双源同改**(drift 闸两闸互为锁),冻结 `--update --authorized-by "Entry #226"`;⛔ 授权链落地前不得产出升级后 run |
 | **H4** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `directory_misses` · **`memory_violations`** | 完成域共存实验**不测延迟**(同 H6 理由 + `ADR-CEP-06` SU#1 §③ branch 3);`directory_misses` —— VC / 完成域模型**无目录概念**。⚠️ **`memory_violations` builder 依实二选一**:挂 `SwmrDataValueDetector` ⇒ 实测 0 并声明 `_measured`;不挂 ⇒ 加进 out-of-scope(理由「模型无内存一致性语义」)—— ⛔ **不得**写裸 0 而不声明(per Entry #222 ④)。**2026-11-05 实测选定 = 不挂** ⇒ 本装置**无内存一致性语义** ⇒ 已列入 out-of-scope。**其余 6 项在范围内必实测**(判据直接依赖) |
 | **H5** | *(全部 13 项)* | 契约级断言,**不产生** `metrics.json` run |
 | **H6** | `avg_latency_cycles` · `p50_latency_cycles` · `p95_latency_cycles` · `p99_latency_cycles` · `max_latency_cycles` · `directory_misses` · **`coherence_stalls`** · **`memory_violations`** | 该实验测**VC 隔离**,**不采延迟**(per SU#1 §③ branch 3:`timing` + 预声明不采 ⇒ 必须 `"not-collected"`,⛔ 禁写 0)· `coherence_stalls` / `collective_stalls` / `deadlock_violations` **在范围内**。⚠️ **2026-11-05 补正**:`coherence_stalls` 与 `memory_violations` 实为 h6 的**无产出者** ⇒ 已移入 out-of-scope(Entry #218 的清单**遗漏**这两项,由 h4 落地时的闸暴露) |
@@ -13938,6 +13938,58 @@ h6/report.html ⇒ 「一致性闸门通过」   (h6 的 memory_violations = "no
 `ADR-CEP-06` **SU#1**(§④ 违例类 / §⑤ 哨兵纪律)· **SU#2**(预登记载体 + 三道门禁)· **SU#3**(报告层三态 + 勘误优先级)· `ADR-CEP-01 §6.2` 代价 3 ·
 `docs/validation/2026-11-05-cep-h8-ab-toolchain.md`(新)· `docs/validation/2026-11-05-cep-h4-completion-domain-experiment.md` · `scripts/test/cep_h8_ab_runs.sh`(新) ·
 `tools/recommend.py` · `experimental/preregistration.json` · `objective §6.2 B4/B7` · `§9.1 ①/②/②-2`
+
+---
+
+### Entry #226 — 2026-11-05 [scope-change](H3 预登记收缩 + SU#4 冻结授权 —— B4 证据载体的「授权先行」链)
+
+**主题**:为 `ADR-CEP-06` **SU#4**(B4 达成证据 = h3 装置升级为「一致性 × 完成域」复合装置,单 run 双违例类实测 0)
+落**授权先行**链:① H3 预登记行收缩(`deadlock_violations` 移出 out-of-scope)② 冻结面授权(SU#4 + 预测集合变更)。
+**角色**:architect(SU#4 裁决 + 双审签发)· planner(本条授权记录 + 立项)· builder(JSON 侧同改 + 实现)。
+**性质**:`scope-change`(预登记集合收缩)—— ⚠️ **收缩方向 = 收紧**(把「设计上不覆盖」改为「必须实测」),⛔ 不是放宽、不是 DoD 降格(引 `ADR-CEP-06` SU#4 §③ 的否决论证)。
+
+**① 授权先行(SU#4 §① 的强制配套,缺此项 ⇒ SU#4 决策不成立)**
+
+| 项 | 内容 |
+|---|---|
+| 为什么必须先授权 | SU#4 落地的第一动作是「H3 实测 `deadlock_violations`」⇒ 若预登记仍把该 metric 列为 out-of-scope,run 与**已评审的设计声明**互斥;且 `deadlock_violations` 一旦被**实测**,drift 闸的 `not-collected ⊆ out-of-scope` 方向**恒过** ⇒ **机器闸拦不住顺序错误**,只能靠**流程闸** |
+| 顺序(硬) | **本条 entry 存在**(✅ 本回合) → builder 改 `experimental/preregistration.json` H3 行 + 内容 commit → `--update --authorized-by "Entry #226"` → manifest commit → **之后**才允许装置实现/产出升级后 run |
+| ⛔ 禁止 | 先产 run 后补授权(会留下「产出与设计声明互斥」的历史 artifact,且无机器闸可回滚识别) |
+
+**② 预登记收缩内容(双源同改)**
+
+| 源 | 变更 | 落点 |
+|---|---|---|
+| **真源** | `§9.1 ②` H3 行 out-of-scope:`{coherence_stalls, collective_stalls, directory_misses, deadlock_violations}` → **`{coherence_stalls, collective_stalls, directory_misses}`** | 本文件 §9.1 ② 表(本回合已改) |
+| **机器投影** | `experimental/preregistration.json` H3 行 `out_of_scope` 同集收缩 + `reason` 同步 | builder 域(与本条**同变更**提交;drift 闸两闸互为锁) |
+
+⇒ 收缩后:升级装置 run 的实测集 = `{total_*×3, 延迟族×5, memory_violations, deadlock_violations}`(9+1 项),`not-collected` = 3 项(⊆ 新 out-of-scope)⇒ 预登记闸与 drift 闸均应绿。
+⇒ ⚠️ **H3 分支 1 的既有数值由 v2 run 同参数重证**(1200 事务 · swmr=0 · data_value=0;per SU#4 §④);`docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md` **只勘误不重跑**。
+
+**③ 冻结面授权链**
+
+| 序 | 冻结件 | 变更 | 授权 |
+|---|---|---|---|
+| 1 | `docs/adr/ADR-CEP-06-experiment-protocol.md` | **追加 SU#4**(正文未改)+ 状态 Accepted + 审稿报告指针 | **Entry #226**(architect 已于本回合写入;授权由本条追认) |
+| 2 | `experimental/preregistration.json` | H3 行 out-of-scope 收缩(机器投影侧) | **Entry #226** |
+
+⇒ `--update --authorized-by "Entry #226"` 在**内容 commit 之后**跑 → 再 commit manifest ⇒ hash + provenance 双绿(先例 Entry #224/#225 ⑦ 双步)。
+⇒ 审稿报告:`.rddf/reviews/ADR-CEP-06-SU4-b4-evidence-carrier.md`(oracle 2 轮 2 BLOCKER 全闭 · critic `mergeable: yes` 0 BLOCKER)。
+
+**④ 立项(本回合同批)**
+
+`improvement: cep-b4-evidence-device`(`.rddf/improvements/cep-b4-evidence-device.md` 5 段草稿)——
+AC = `SU#4 §②` 六条硬约束 + `SU#4 §⑤` 全部判据;实现序 = ① 预登记收缩(本条)→ ② 装置实现 → ③ v2 run。
+
+**⑤ 验收(本条自身)**
+
+- [x] 授权 entry 已存在(本条)—— SU#4 §① 的「授权先行」前提满足
+- [x] 真源 §9.1 ② H3 行已收缩(本回合)
+- [ ] 机器投影 H3 行同改 + drift 闸 rc=0(builder 落地,同一变更内)
+- [ ] 冻结 `--update --authorized-by "Entry #226"` + hash/provenance 双绿(builder)
+- [ ] v2 run 产出后:H3 ① 表分支 2 → 实测 0;`§6.2 B4` 回填 ✅(planner,**不预先宣告**)
+
+**⑥ 关联**:`ADR-CEP-06` **SU#4**(裁决 + 双审)· **SU#1 §④**(B4 读取约束)· **SU#3** + 勘误(三态)· 台账 **Entry #225 ⑧**(发现与路由)· **#223**(H4 装置先例:`device_qualified` + 负控)· **#222**(负控 = 装置合格前提)· **#217**(B4 两级口径)· `07 号` Status Update 2026-11-04 ①(禁止 DoD 降格)
 
 ---
 

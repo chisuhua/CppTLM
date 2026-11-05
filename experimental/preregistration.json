@@ -65,10 +65,9 @@
       "out_of_scope": [
         "coherence_stalls",
         "collective_stalls",
-        "directory_misses",
-        "deadlock_violations"
+        "directory_misses"
       ],
-      "reason": "一致性完备性实验,只测违例类;deadlock_violations 未采 ⇒ 已在判据-指标需求表标「未测量」,不得继承 pass"
+      "reason": "一致性完备性实验。2026-11-05 收缩(Entry #226 + ADR-CEP-06 SU#4):deadlock_violations 移出 out-of-scope —— H3 的判据表本就登记了 deadlock_violations == 0 分支,原「设计上不覆盖」与判据自相矛盾;收缩方向 = 收紧(该 metric 变为必须实测),非放宽。装置升级为「一致性 × 完成域」复合装置(v2,device=v2)后实测该 metric;coherence_stalls / collective_stalls / directory_misses 仍无产出者 ⇒ 保留在 out-of-scope。"
     },
     "H4": {
       "status": "registered",
