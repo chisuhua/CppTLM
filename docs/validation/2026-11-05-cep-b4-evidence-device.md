@@ -90,6 +90,21 @@
 
 ---
 
+### 3.5 S1 闭合（2026-11-05，AC-9 评审的后续修复）
+
+AC-9 评审指出 `superset_violations` 的判定在默认流下**不可证伪**：
+`truth` 的来源就是 `set_sharer` 的参数，而 `view` 紧随 set 之后读取且 `service_read` 不收缩 sharer 集
+⇒ `truth ⊆ sharers` 是同义反复。
+
+**已闭合**：模型新增 `Config::inject_missed_sharer`（默认 `false`）—— 先让目录丢掉一个**真实 sharer**，
+再把它并进期望集 ⇒ 判定**必须**红。`[cep][b4]` 的「反向 fixture」case 断言：
+注入后 `superset_violations > 0`、正控仍为 0、且 SWMR / data-value **不受污染**（隔离性）。
+
+⚠️ **口径不变**：默认流下的 `superset_violations == 0` 仍是「本模型无该形态」的 0；
+本项闭合的是**判定能力**（非恒过），⛔ 不是「协议层无漏 snoop」的证明。
+
+---
+
 ## 4. 与既有 H3 结论的关系（分支 1 的重证）
 
 - `§9.1 ①` H3 **分支 1**（`memory_violations == 0`,1200 事务,swmr=0 / data_value=0）与 **分支 2**（`deadlock_violations == 0`）
