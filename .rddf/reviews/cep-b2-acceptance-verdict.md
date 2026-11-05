@@ -287,3 +287,42 @@ test cases: 7 | 6 passed | 1 failed
 `INV-CEP-14-IC2` 的载体**仍不成立** ⇒ 真实载体数仍为 **60/61** ⇒ **B2 仍不得登记 ✅**。
 
 下一步：builder 按 §9.2 修（~30min，含决定性变异测试）→ architect 复验该 1 条 → planner 落 B2 登记。
+
+---
+
+## 10. B-2 二次闭合回执（builder，2026-11-06）
+
+按 §9.2 的三项要求修 `INV-CEP-14-IC2` 的载体。
+
+| §9.2 要求 | 落地 | 证据 |
+|---|---|---|
+| ① 匹配前**剔除字符串/字符字面量** | 新增 `strip_string_literals()`（字符串/字符字面量内容置空，**保留注释与代码**）；锚点 id 与负向断言宏均在该文本上判定 | 锚点只在**字面量**里 ⇒ 不再命中；真实载体（锚点在**注释**里）仍命中 |
+| ② 扫描器**哨兵自排除** | `kScannerSentinel = "CEP_IC2_NEGATIVE_ASSERTION_SCANNER"`；含哨兵的文件不计入载体 | 反向 fixture (f) 覆盖 |
+| ③ **决定性变异测试** | 见下 | ✅ |
+
+**决定性变异测试（闭合证据）**：把 3 个真实载体（`test_cep_canonical_flow_contract.cc` /
+`test_cep_moesi_gpu_adapter.cc` / `test_cep_moesi_gpu_compensation.cc`）里的
+`REQUIRE_FALSE(` / `CHECK_FALSE(` 全部替换为 `CHECK(`（即**移除全部负向断言**）后重跑：
+
+```
+FAILED: 合同测试集里没有「含锚点 INV-CEP-05-IC1 …」的文件
+test cases: 7 | 6 passed | 1 failed
+```
+
+⇒ **判据真正咬合其主体**（真实载体失去负向断言 ⇒ 必红）；还原后 248 assertions 绿。
+（§9.1 指出的「扫描器自身靠 fixture 字符串自证」已被此变异证伪。）
+
+**新增反向 fixture 3 条**（自指回归防护）：
+
+- (d) 锚点只在**字面量**里 + 代码里有负向断言 ⇒ **判否**
+- (e) 负向断言只在**字面量**里 + 锚点在注释 ⇒ **判否**
+- (f) 含哨兵的文件 ⇒ **不计入载体**
+
+**顺带修正**：`test_cep_canonical_invariants.cc` 的锚点原本在**字面量**里（`{"INV-SC1", …, "INV-CEP-05-IC1"}`）
+⇒ 按新规则它**不再**是载体（这是**正确**的：它本就没有针对该 invariant 的负向断言）。
+
+**验证**：`[cep][dummy-signals]` 248 assertions 绿 · `[cep]` 428 cases / 10033 assertions 绿 ·
+`ctest` 154/154 绿 · `format` rc=0 · 映射表闸 `--for-achievement` rc=0（66/66 = 61 载体 + 5 ⏭-unmodelled + 0 pending）·
+`docs_sync` / `doc_ref` / `freeze` / `prereg_drift` rc=0。
+
+**待 architect 终验**：只验本条（§9.2 三项 ⇒ §10 落地，含决定性变异证据）。

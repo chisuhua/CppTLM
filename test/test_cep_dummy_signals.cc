@@ -23,6 +23,10 @@ using cpptlm::cep::repo_root;
 
 namespace {
 
+    // CEP_IC2_NEGATIVE_ASSERTION_SCANNER
+    // ↑ 哨兵:本文件实现了 IC2 的判定器 ⇒ 自身**不得**充当该判据的载体
+    //   (per architect 终验 §9.2 的自指漏洞修法:扫描器自排除)
+
     const std::vector<std::string>& canonical_flows() {
         static const std::vector<std::string> flows = {
             "request",   "completion",          "snoop",           "snoop_resp",
@@ -44,10 +48,62 @@ namespace {
     }
 
     // ── 「合同测试集**含**该负向断言」的机器判据 ────────────────────────
-    // 负向断言宏(负控形式)
-    bool has_negative_assertion(const std::string& content) {
-        return content.find("REQUIRE_FALSE(") != std::string::npos ||
-               content.find("CHECK_FALSE(") != std::string::npos;
+    //
+    // ⚠️ **自指漏洞的修法**(per architect 终验 §9.2):
+    //   扫描器**自身**的锚点只出现在**字符串字面量**里(fixture 内容 / 实参)
+    //   ⇒ 若按原始文本匹配,「扫描器自身」就能满足判据 ⇒ 把真实载体里的
+    //   负向断言全删掉,判据仍绿(判据不咬合其主体)。
+    //   ⇒ 匹配前**剔除字符串/字符字面量**(保留注释与代码):
+    //      · 锚点 id 必须出现在**代码或注释**里(不得只活在 fixture 字符串中);
+    //      · 负向断言宏同理(必须是**代码**里的宏调用)。
+    //   ⇒ 另加**扫描器哨兵**自排除(防将来复制实现时再次自证)。
+
+    /// 扫描器哨兵:含此串的文件不参与本判据的载体计数
+    constexpr const char* kScannerSentinel = "CEP_IC2_NEGATIVE_ASSERTION_SCANNER";
+
+    /// 去掉**字符串/字符字面量**的内容(保留注释与代码)
+    std::string strip_string_literals(const std::string& src) {
+        std::string out;
+        out.reserve(src.size());
+        std::size_t i = 0;
+        while (i < src.size()) {
+            const char c = src[i];
+            if (c != '"' && c != '\'') {
+                out += c;
+                ++i;
+                continue;
+            }
+            const char quote = c;
+            out += c; // 保留引号本身(便于目视定位)
+            ++i;
+            while (i < src.size()) {
+                if (src[i] == '\\' && i + 1 < src.size()) { // 转义字符
+                    out += ' ';
+                    out += ' ';
+                    i += 2;
+                    continue;
+                }
+                if (src[i] == quote) {
+                    out += quote;
+                    ++i;
+                    break;
+                }
+                if (src[i] == '\n') { // 未闭合(跨行)⇒ 保守退出
+                    out += '\n';
+                    ++i;
+                    break;
+                }
+                out += ' ';
+                ++i;
+            }
+        }
+        return out;
+    }
+
+    // 负向断言宏(负控形式)—— 在**去字面量**后的文本上判定
+    bool has_negative_assertion(const std::string& code) {
+        return code.find("REQUIRE_FALSE(") != std::string::npos ||
+               code.find("CHECK_FALSE(") != std::string::npos;
     }
 
     /// 合同测试集内是否存在「**同时**含锚点 id 与负向断言」的文件。
@@ -59,7 +115,12 @@ namespace {
                                    const std::vector<std::pair<std::string, std::string>>& files) {
         std::vector<std::string> out;
         for (const auto& [path, content] : files) {
-            if (content.find(anchor) != std::string::npos && has_negative_assertion(content))
+            // ① 扫描器自身(哨兵)自排除
+            if (content.find(kScannerSentinel) != std::string::npos)
+                continue;
+            // ② 去字面量后再匹配(fixture 字符串不得自证)
+            const std::string code = strip_string_literals(content);
+            if (code.find(anchor) != std::string::npos && has_negative_assertion(code))
                 out.push_back(path);
         }
         return out;
@@ -252,9 +313,23 @@ TEST_CASE("[cep][dummy-signals] 合同测试集含负向断言(C9)且该断言�
         const std::vector<std::pair<std::string, std::string>> only_negative = {
             {"b.cc", "REQUIRE_FALSE(x);"}};
         REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", only_negative).empty());
-        // (c) 二者兼有 ⇒ 命中(证明判别力,不是恒否)
+        // (c) 锚点在**注释** + 负向断言在**代码** ⇒ 命中(证明判别力,不是恒否)
         const std::vector<std::pair<std::string, std::string>> both = {
-            {"c.cc", "INV-CEP-05-IC1\nREQUIRE_FALSE(x);"}};
+            {"c.cc", "// INV-CEP-05-IC1\nREQUIRE_FALSE(x);"}};
         REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", both).size() == 1u);
+        // (d) **自指回归防护**:锚点只活在**字符串字面量**里 + 代码里有负向断言
+        //     ⇒ 必须判否(否则 fixture 字符串可顶替真实载体 —— architect §9.1 的漏洞)
+        const std::vector<std::pair<std::string, std::string>> literal_only = {
+            {"d.cc", "const char* s = \"INV-CEP-05-IC1\";\nREQUIRE_FALSE(x);"}};
+        REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", literal_only).empty());
+        // (e) 负向断言只活在**字符串字面量**里 + 锚点在注释 ⇒ 判否
+        const std::vector<std::pair<std::string, std::string>> literal_negative = {
+            {"e.cc", "// INV-CEP-05-IC1\nconst char* s = \"REQUIRE_FALSE(x);\";"}};
+        REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", literal_negative).empty());
+        // (f) 含哨兵的文件(扫描器自身)⇒ 一律不算载体
+        const std::vector<std::pair<std::string, std::string>> scanner_self = {
+            {"scanner.cc",
+             std::string("// ") + kScannerSentinel + "\n// INV-CEP-05-IC1\nREQUIRE_FALSE(x);"}};
+        REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", scanner_self).empty());
     }
 }

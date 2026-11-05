@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-05T17:02:14Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-05T17:06:04Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-05T09:32:55Z",
-      "by": "user",
-      "reason": "用户口令「切 planner 给出后续任务实施路径规划」⇒ 先实测核 L2 剩余项(B2/B3a/B3b/B5/B6/B8 + S1/S2 + 勾选回填)的真实缺口,再产出分批实施路径(判据来源/动作/验收/依赖/估时/风险)"
-    },
     {
       "role": "builder",
       "at": "2026-11-05T09:36:58Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-05T17:02:14Z",
       "by": "user",
       "reason": "用户口令「切 architect 做 3c 终验」⇒ 只验 INV-CEP-14-IC2 的新判据(§7.2 要求 ⇒ §8 落地),含独立变异验证"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T17:06:04Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 按 §9.2 修这最后一条」⇒ ① 匹配前剔除字符串/字符字面量 ② 扫描器哨兵自排除 ③ 决定性变异测试(真实载体失去负向断言 ⇒ 必红)"
     }
   ],
   "auto_switch_window": null
