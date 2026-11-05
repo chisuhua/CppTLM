@@ -41,25 +41,33 @@ phase_refs:
 6. ✅ 实验输出 4 件套契约(`simulation_config.json` + `trace.h5` + `metrics.json` + `report.html`)per `ADR-CEP-06`
 7. ✅ **66 条守门 invariant 机器检查 100% 覆盖**(编号位 67,`INV-CEP-04-IC4` **唯一跳空**)—— **按 15 组分解验收**:
 
-| # | 组 | 条数 | 机器检查落点 |
+| # | 组 | 条数 | 机器检查落点(逐条载体 = 映射表;下列为补充/编号完备性) |
 |---|----|:----:|------------|
-| 1 | Coherence Interface | 11 | `test/test_cep_canonical_invariants.cc`(CEN-Ib1~11) |
-| 2 | Stub Cache | 7 | 同上(INV-SC1~6 + `INV-CEP-05-IC1`) |
-| 3 | Sharer Tracker | 6 | 同上(`INV-CEP-04-IC1/2/3/5/6/7`) |
-| 4 | Experiment Protocol | 5 | 同上 + `test/test_cep_simulation_mode_lock.cc`(4 件套契约) |
-| 5 | Simulation + Seam | 7 | `test/test_cep_module_factory_seam.cc` + `test/test_cep_simulation_mode_lock.cc` |
-| 6 | Numbering | 3 | `scripts/test/cep_docs_sync_check.sh` |
-| 7 | Ordering Point | 3 | `test/test_cep_canonical_invariants.cc`(契约层)+ Stage 1 实现 |
-| 8 | Multi-VC / Deadlock Freedom | 3 | 同上(契约层)+ Stage 1 装配期无环检查器 |
-| 9 | Capability Map | 3 | 同上 + `include/tlm/cep/protocol_instance.schema.json` |
-| 10 | Coherence Domain | 3 | 同上(契约层)+ Stage 2 实现 |
-| 11 | Protocol Version Locking | 3 | 同上(契约层)+ 装配期版本校验(Stage 1) |
-| 12 | Stub Contract Tests | 3 | 同上(契约层)+ C1~C10 落地(Stage 0~1) |
-| 13 | CacheTLM Alignment | 3 | 同上(契约层)+ 冻结面 0 diff 守门(Stage 0) |
-| 14 | 06 Evolution Mapping | 3 | `scripts/test/cep_docs_sync_check.sh`(P 编号口径) |
-| 15 | 06-bis Artifact Disposition | 3 | 同上(协议泄漏通用禁令扫描) |
+| 1 | Coherence Interface | 11 | **映射表**(逐条载体)+ `test/test_cep_canonical_invariants.cc`(CEN-Ib1~11) |
+| 2 | Stub Cache | 7 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性)(INV-SC1~6 + `INV-CEP-05-IC1`) |
+| 3 | Sharer Tracker | 6 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性)(`INV-CEP-04-IC1/2/3/5/6/7`) |
+| 4 | Experiment Protocol | 5 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性) + `test/test_cep_simulation_mode_lock.cc`(4 件套契约) |
+| 5 | Simulation + Seam | 7 | **映射表**(逐条载体)+ `test/test_cep_module_factory_seam.cc` + `test/test_cep_simulation_mode_lock.cc` |
+| 6 | Numbering | 3 | **映射表**(逐条载体)+ `scripts/test/cep_docs_sync_check.sh` |
+| 7 | Ordering Point | 3 | **映射表**(逐条载体)+ `test/test_cep_canonical_invariants.cc`(契约层)+ Stage 1 实现 |
+| 8 | Multi-VC / Deadlock Freedom | 3 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性)(契约层)+ Stage 1 装配期无环检查器 |
+| 9 | Capability Map | 3 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性) + `include/tlm/cep/protocol_instance.schema.json` |
+| 10 | Coherence Domain | 3 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性)(契约层)+ Stage 2 实现 |
+| 11 | Protocol Version Locking | 3 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性)(契约层)+ 装配期版本校验(Stage 1) |
+| 12 | Stub Contract Tests | 3 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性)(契约层)+ C1~C10 落地(Stage 0~1) |
+| 13 | CacheTLM Alignment | 3 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性)(契约层)+ 冻结面 0 diff 守门(Stage 0) |
+| 14 | 06 Evolution Mapping | 3 | **映射表**(逐条载体)+ `scripts/test/cep_docs_sync_check.sh`(P 编号口径) |
+| 15 | 06-bis Artifact Disposition | 3 | 映射表(逐条载体)+ `test/test_cep_canonical_invariants.cc`(编号完备性)(协议泄漏通用禁令扫描) |
 
-> **落点口径(per Entry #22)**:本表「机器检查落点」= **口径校验**所在位置;**66 条 invariant 的逐条断言统一落 `test/test_cep_canonical_invariants.cc`**(组 6/14/15 另有脚本层口径校验,**不替代**逐条断言)。15 组分解本身**不复述** —— 真源在 `07 号 §4`。
+> **落点口径(2026-11-05 **改判**,per 台账 **Entry #232** + `.rddf/reviews/cep-b2-coverage-verdict.md`;原口径 per Entry #22)**:
+> 本表「机器检查落点」= **口径校验**所在位置。**66 条 invariant 的逐条判定级载体见映射表**
+> `test/cep_invariant_assertion_map.json`(由 `// INV-CARRIER: <id>` 刚性标记**生成** ⇒ 派生视图,⛔ **不是**手写口径源);
+> `test/test_cep_canonical_invariants.cc` 保留为**编号完备性**载体(owner 映射 / 永久跳空 / 集合相等 / ID 形态 / 前缀唯一 / 实际定义数 = 66),
+> ⛔ **不再**承担逐条语义断言的职责(实测:该文件 13 cases / 687 assertions **无一条**验证 invariant 语义)。
+> ⚠️ **改判项(⛔ 不是澄清)**:原注写「组 6/14/15 另有脚本层口径校验,**不替代**逐条断言」⇒ 现**改判**为
+> 「**脚本层校验可作判定级载体**」,但须满足**载体有牙**(反向 fixture,或结构校验 + 负控;脚本类载体 **100% 负控**)。
+> ⚠️ 在表内标记为 ⛔ 的四类**死形态**(注释 / 解析器编号表 / 恒真表达式 / 无退出码语义的 echo)与三类**活但 vacuous**(平凡真断言 / 条件永真的 `exit 1` 分支 / 从不执行的 case)**均不算载体**。
+> 15 组分解本身**不复述** —— 真源在 `07 号 §4`。
 
 8. ✅ ModuleFactory 集成 0 发明宏形式(per oracle v0.4 B7)
 9. ✅ simulation_mode 单一维度(functional / timing),不引入 network.mode
@@ -517,7 +525,12 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 ### 6.2 Stage 1~3 验收(2030-Q1)
 
 - B1. **14** 个 OpenSpec change 全部 archived with sync
-- B2. **66 条守门 invariant 机器检查 100% 覆盖**(编号位 67,按 §0 DoD 7 的 **15 组**分解)(per §0 DoD 7)
+- B2. **66 条守门 invariant 逐条有牙载体 100% 覆盖**(编号位 67;**15 组仅作汇报组织**,⛔ 非判定粒度)(per §0 DoD 7 + 2026-11-05 **改判**,见台账 **Entry #232**)
+  - 📌 **口径(2026-11-05 裁决,`.rddf/reviews/cep-b2-coverage-verdict.md`)**:三条子规则 —— **A 逐条**(66 条逐条须有载体)· **B 有牙**(反向 fixture,或结构校验 + 负控;脚本类载体 **100% 负控**)· **C 机器可查**(`// INV-CARRIER: <id>` 刚性标记与断言同址;映射表 `test/cep_invariant_assertion_map.json` 为**生成物**)
+  - ⏳ **本条未达成** —— 缺口按盘点量级 **19-28 条**(29 none − ≥5 确认假阴性),待**映射审计**后收敛;成本 **2.5-4.5d**(审计 1d + 补缺口 1-3d + 映射闸 0.5d)
+  - **登记格式**:「B2 ✅ **66/66**(映射表 N 项全绿,Entry #XXX)」—— ⛔ 禁裸「B2 ✅」或「15/15 组 ✅」
+  - **合法中间态**:「**N/66 载体已登记(含 M 项有牙证据)+ K 条待审计**」(形态先例 = 本表 B3b 的诚实 ⏳)
+  - ⛔ **订正生效前不得按编号级登记 ✅** —— 那是「文本要求逐条断言、却按编号级宣称达成」= DoD 降格后仍宣称达成
 - B3a. ✅ **6 个协议族的 adapter 契约**实施完成:CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」与 `ADR-CEP-11 §3` 锁表「按 `protocol_version` 行计 8 行」—— 两种粒度非矛盾,per Entry #19 §2**);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
 - B3b. ⏳ **运行时 ProtocolEngine**:在 B3 的 6 族清单中达成 **1/6**(仅 CHI RN-F —— `include/tlm/cep/chi_rnf_protocol_engine.hh` + L4 事务级 E2E,per `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`);CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink **未达成**
   - ⛔ **本项不得改写为「已达成」** —— 「DoD 降格后仍宣称达成」是 architect 2026-11-04 裁决**明确禁止**的失败模式(per `07 号` Status Update 2026-11-04 ①)
@@ -896,7 +909,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 **顺序理由**
 
 1. **A 先于 B**:A 的 4 项均已有裁决/评审结论(勾选是仪式级、S1/S2 是评审开出的 SHOULD_FIX),拖着只会腐化。⚠️ **实测修正**:原写「A1+A2 共用一次冻结链」**不成立** —— `--authorized-by` 单 entry 精确匹配,两处勾选在同一 ADR 文件 ⇒ 须**两次独立冻结链**(授权与改动一一对应,更严谨)。
-2. **B 先于 C**:B 的三项**载体已实测在位**,登记即可把「表上无 verdict」变成可判定状态;而 C 必须先裁口径(否则「补哪些断言」无判据)—— 与 B4/B7 的「**口径先行**」纪律同族(先例:Entry #217 ⑦「builder 不得先落 schema 并把校验写成恒真占位」)。
+2. **B 先于 C**:B 的三项**载体已实测在位**,登记即可把「表上无 verdict」变成可判定状态;而 C 必须先裁口径(否则「补哪些断言」无判据)—— 与 B4/B7 的「**口径先行**」纪律同族(先例:Entry #217 **§④ S6**「builder 不得先落 schema 并把校验写成恒真占位」)。
 3. **D 全部不做**:五项都缺**外部输入或触发条件**(转移表真源 / 公开来源 / 授权 / 立项裁决 / T1-T3),做了就是填空 —— 与 B3b 的「防自欺条款」同义。
 
 **明确不做(本规划范围外)**
@@ -14309,7 +14322,7 @@ H2 的 `directory_misses` 归位为**扩展观测**(⛔ 不删行、⛔ 不改�
 **③ 顺序理由(三条)**
 
 1. **A 先**:四项均已有裁决/评审结论(A1/A2 是仪式级、S1/S2 是 AC-9 评审开出的 SHOULD_FIX)⇒ 拖着腐化;且 A1+A2 共用冻结链,合并成本最低。
-2. **B 次**:三项**载体已实测在位** ⇒ 登记即可把「表上无 verdict」变成可判定;而 C 必须先裁口径,**否则「补哪些断言」无判据**(先例 = Entry #217 ⑦「不得先落 schema 并把校验写成恒真占位」)。
+2. **B 次**:三项**载体已实测在位** ⇒ 登记即可把「表上无 verdict」变成可判定;而 C 必须先裁口径,**否则「补哪些断言」无判据**(先例 = Entry #217 **§④ S6**「不得先落 schema 并把校验写成恒真占位」)。
 3. **D 不做**:五项缺**外部输入/触发条件**(转移表真源 / 公开来源 / 授权 / 立项裁决 / T1-T3)⇒ 做了就是填空(与 B3b 的「防自欺条款」同义)。
 
 **④ 明确不做(⛔ 范围外)**
@@ -14373,6 +14386,54 @@ H2 的 `directory_misses` 归位为**扩展观测**(⛔ 不删行、⛔ 不改�
 - `§6.2` 终态表 / 待办指针:剩余项收窄为 **B3b**(1/6)· **B2**(口径待裁)· **B3a**(UALink 无实例) ⇒ ⛔ 终态 DoD Go 仍未发生。
 
 **⑤ 关联**:`§6.2` B5 / B6 / B8 · `§10` 规划表 · **#230**(规划)· **#228 / #229**(A 批)· `src/core/module_factory.cc` · `[cep][module-factory-seam]` / `[cep][simulation-mode]` / `[cep][ordering-point]` / `[cep][channel-gate]`
+
+---
+
+
+### Entry #232 — 2026-11-05 [scope-change](C1 裁决落地 —— B2「覆盖」口径改判为**逐条判定级 + 载体有牙 + 机器可查映射**)
+
+**主题**:落地 `.rddf/reviews/cep-b2-coverage-verdict.md`(oracle 1 + critic 1,0 BLOCKER)在 objective 侧的全部改动:
+`§0 DoD 7` 的表注**改判** + **落点列全列**改指映射表 + `§6.2 B2` 措辞改为「逐条有牙载体」。
+**角色**:architect(裁决 + 双审)· planner(本 entry + 表落)。
+**性质**:**改判**(⛔ 不是澄清)—— 原注明写脚本校验「**不替代**逐条断言」。
+**⚠️ 非预登记集合变更**:`experimental/preregistration.json` 零改动;objective **不在** `FROZEN_GLOBS` ⇒ **零冻结面授权**。
+
+**① 裁决摘要(三条子规则)**
+
+| 规则 | 内容 |
+|---|---|
+| **A 逐条** | 66 条实际编号(67 编号位 − `INV-CEP-04-IC4` 永久跳空)**逐条**须有载体;15 组**仅作汇报组织**,⛔ 非判定粒度 |
+| **B 有牙** | (a) **反向 fixture**(破坏该 invariant ⇒ 断言变红);(b) **结构校验 + 负控**(**脚本类载体 100% 负控**;不可枚举者抽样 ≥20% + 首末 + 每次新增后重抽) |
+| **C 机器可查** | `// INV-CARRIER: <id>` 刚性标记**与断言同址**;映射表 `test/cep_invariant_assertion_map.json` 由标记**生成**(派生视图,⛔ 非手写口径源);ctest 四项校验(含邻域 `±8` 行 + `exit\s+[1-9]` 正则) |
+
+**⛔ 不算载体**:注释 / 解析器编号表 / 恒真表达式 / 无退出码语义的 echo;**活但 vacuous** 三类(平凡真断言 / 条件永真的 `exit 1` 分支 / 从不执行的 case)。
+
+**② 表落清单(本 entry 授权的 planner 域改动)**
+
+| 落点 | 变更 |
+|---|---|
+| `§0 DoD 7` 表后注(`:62`) | **改判**:「脚本层校验**不替代**逐条断言」→「脚本层校验**可作判定级载体**(须满足规则 B)」;`test_cep_canonical_invariants.cc` 降为**编号完备性**载体;新增映射表指针 + 死/活 vacuous 六类排除 |
+| `§0 DoD 7` 落点列(`:46-60`) | **全 15 行**改指「**映射表**(逐条载体)+ `test_cep_canonical_invariants.cc`(编号完备性)」;表头列名同步 |
+| `§6.2 B2` | 改为「**逐条有牙载体 100% 覆盖**」+ 三条子规则 + **⏳ 未达成** + 缺口量级 + 成本 + 登记格式 + 合法中间态 + ⛔ 禁编号级宣称 |
+| 引用偏移 | `Entry #217 ⑦` → **`§④ S6`**(两处,planner 侧传播的同一笔误) |
+
+**③ 为什么必须改落点列(不可只改表注)**
+
+组 2~15 的落点原文多为「**同上**(…)」;若只改表注,「同上」行会**继承旧语义**(= `canonical_invariants.cc`)⇒ 同一文件两套口径
+(表注说映射表、表体说元数据文件)—— 这正是本仓 `:2182` 已判 BLOCKER 的「同文件两套终态」同族缺陷。
+
+**④ 现状与动作序列**
+
+| 序 | 动作 | 角色 | 成本 | 可并行 |
+|---|---|---|---|---|
+| 1 | **映射审计**(29 none + 8 weak 逐条人工确认载体;grep 只作线索) | builder | 1d | ✅ |
+| 2 | 按审计清单补缺口断言 + `INV-CARRIER` 标记 | builder | 1-3d | — |
+| 3 | 映射闸(ctest 四项校验) | builder | 0.5d | — |
+| 4 | B2 登记「**66/66**(映射表 N 项全绿)」 | planner | — | — |
+
+⛔ **订正生效前不得按编号级登记 ✅**。**合法中间态** =「N/66 载体已登记(含 M 项有牙证据)+ K 条待审计」。
+
+**⑤ 关联**:`.rddf/reviews/cep-b2-coverage-verdict.md`(裁决 + 双审)· `.rddf/reviews/cep-b2-invariant-coverage-inventory.md`(盘点输入)· **#230**(C1 规划)· **#217 §④ S6**(禁恒真占位)· **#231**(B 批)· `§0 DoD 7` / `§6.2 B2` / `§6.2 B3b`(合法中间态形态先例)
 
 ---
 

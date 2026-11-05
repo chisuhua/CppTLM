@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-05T10:40:07Z",
+  "updated_at": "2026-11-05T11:23:46Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-05T01:35:45Z",
-      "by": "auto",
-      "reason": "planner 域已落 §9.1 ① 表的 H1 判据格(留痕订正)+ H1/H5 verdict → ✅ + 台账 Entry #221 ⇒ 回 builder:commit + 全量门禁 + ctest"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-05T02:53:44Z",
-      "by": "user",
-      "reason": "用户口令「继续」⇒ 推进剩余任务 #8(H4 装置 + H8 的 3 组 A/B)。H4 需 architect 裁「判据的可执行形态」—— 实测发现 **Entry #218 拆表时把层次归属写错了**:H4 判据「两类流同实验内无死锁」是**运行期**命题,却把 `evaluate_completion_domain`(**静态源文本扫描**,零运行期含量)列为依赖观测 ⇒ 需 architect 裁形态"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-05T02:54:00Z",
-      "by": "auto",
-      "reason": "architect 已裁 H4 形态(Entry #222)⇒ 回 planner 落 §9.1 ① 表 H4 行的依赖列措辞订正+ 观测形态 + ② 表 H4 行的 out-of-scope 集,并同步 `experimental/preregistration.json` 的 H4 行(真源 ② 表 ↔ 投影的 drift 闸要求两侧同改)"
-    },
     {
       "role": "builder",
       "at": "2026-11-05T02:54:18Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-05T10:40:07Z",
       "by": "user",
       "reason": "用户口令「切 builder 提交这批改动,并继续推进下一步任务」⇒ ① commit B 批(B5/B6/B8 verdict + 3 条订正 + Entry #231) ② 继续推进:B2 判定级盘点(纯只读统计,产出 C1 裁决所需的量化材料)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-05T10:49:09Z",
+      "by": "user",
+      "reason": "用户口令「切 architect 做 C1」⇒ 裁 §6.2 B2「66 条 invariant 机器检查 100% 覆盖」的口径(编号级/组级/判定级),并判定 §0 DoD 7「逐条断言统一落 canonical_invariants.cc」与实测(编号体系完备性检查)不符该如何处置;输入 = .rddf/reviews/cep-b2-invariant-coverage-inventory.md"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T11:22:51Z",
+      "by": "user",
+      "reason": "用户口令「切 planner 落表注 + Entry」⇒ 落 C1 裁决(.rddf/reviews/cep-b2-coverage-verdict.md)的 objective 侧:§0 DoD 7:62 表注改判 + 落点列全列改指映射表 + §6.2 B2 措辞改逐条有牙 + 修 :899 的 Entry #217 引用偏移 + 台账 Entry #232"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-05T11:23:46Z",
+      "by": "user",
+      "reason": "用户口令「继续切 builder 推进下一步」⇒ C1 已落地(Entry #232)⇒ 执行动作 1 映射审计(29 none + 8 weak 逐条确认载体,grep 只作线索),产出精确缺口清单"
     }
   ],
   "auto_switch_window": null
