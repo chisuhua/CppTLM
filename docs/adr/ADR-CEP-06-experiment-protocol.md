@@ -431,10 +431,10 @@ not-collected ⇒ IC3 判定「不适用」+ 该 run 不得作一致性安全断
 - [x] SU#1 `:296` 的 **gloss 已给**,且明确了「两级各司其职」的分工
 - [x] `pending` vs 「缺行」的语义区分已定
 - [x] 门禁 ③ 的能力边界已**坦承**(validity 不是 existence)
-- [ ] `experimental/preregistration.json` 已建 + 已入 `FROZEN_GLOBS`(builder 域 + 冻结面授权)
-- [ ] drift 校验 script + ctest 已落地(逐假设集合相等 + 3 条反向 fixture)
-- [ ] tools 判据④ 已实现(读投影 + ⊆ 校验 + pending/无行判红)
-- [ ] `objective §9.1` ② 表已加「机器投影位置 + drift 关系」指针行(planner 域)
+- [x] `experimental/preregistration.json` 已建 + 已入 `FROZEN_GLOBS`(builder 域 + 冻结面授权)—— 2026-11-05,per 台账 **Entry #218** §⑤-2
+- [x] drift 校验 script + ctest 已落地(逐假设集合相等 + **4** 条反向 fixture:改投影 / 改真源 / `pending`→`registered` / emit 白名单越界)
+- [x] tools 判据④ 已实现(读投影 + ⊆ 校验 + pending/无行判红 + **反向断言**:预登记 out-of-scope 者写 0 ⇒ 判红)
+- [x] `objective §9.1` ② 表已加「机器投影位置 + drift 关系」指针行(planner 域)—— 2026-11-04,per 台账 **Entry #218**
 
 **⑥ 关联**: 本文件 **SU#1**(§④ 的两级 verdict 与预登记闸)· `07 号` Status Update 2026-11-04(#2) ·
 台账 **Entry #217** ⑥ 动作 #1 / #2 · `objective §9.1`(判据-指标需求表 · **预登记真源**)·

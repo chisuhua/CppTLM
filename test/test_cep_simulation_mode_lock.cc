@@ -98,10 +98,64 @@ TEST_CASE("[cep][simulation-mode] 13 必纳 metric 齐备", "[cep][simulation-mo
 TEST_CASE("[cep][simulation-mode] 不可观测 metric 的 not-collected 契约存在",
           "[cep][simulation-mode]") {
     const json s = load_metrics_schema();
-    REQUIRE(s.at("properties").contains("_not_collected_reason"));
-    const auto& r = s.at("properties").at("_not_collected_reason");
-    REQUIRE(r.at("type") == "string");
-    REQUIRE(r.at("minLength") == 1);
+    // ⚠️ 2026-11-05(Entry #218 §⑤-2;per ADR-CEP-06 SU#1 §② 载体 A):
+    //   此前本用例只断言**单字符串** `_not_collected_reason` 的形状,
+    //   **不断言 13 字段可承载 "not-collected"** ⇒ 测的是「reason 字段在」,
+    //   而**值契约零覆盖** ⇒ 给缺口盖章(SU#1 §① 的实测结论)。
+    //   ⇒ 本则改为断言**值契约**:13 必纳字段的 oneOf 含 "not-collected" 分支。
+    REQUIRE(s.at("properties").contains("_not_collected"));
+    const auto& nc = s.at("properties").at("_not_collected");
+    REQUIRE(nc.at("type") == "object");
+    REQUIRE(nc.at("additionalProperties").at("type") == "string");
+    REQUIRE(nc.at("additionalProperties").at("minLength") == 1);
+
+    // 逐个必纳 metric:必须能承载 "not-collected"(值契约的**正例**)
+    for (const auto& m : required_metrics()) {
+        INFO("metrics.schema 的 " + m + " 缺 oneOf");
+        const auto& prop = s.at("properties").at(m);
+        REQUIRE(prop.contains("oneOf"));
+        bool has_sentinel = false;
+        bool has_number = false;
+        for (const auto& alt : prop.at("oneOf")) {
+            if (alt.contains("const") && alt.at("const") == "not-collected")
+                has_sentinel = true;
+            if (alt.contains("type") && alt.at("type") == "number")
+                has_number = true;
+            if (alt.contains("type") && alt.at("type") == "integer")
+                has_number = true;
+        }
+        INFO("metrics.schema 的 " + m + " 缺 not-collected 分支");
+        REQUIRE(has_sentinel);
+        INFO("metrics.schema 的 " + m + " 缺数值分支");
+        REQUIRE(has_number);
+    }
+}
+
+TEST_CASE("[cep][simulation-mode] not-collected 值必须配 per-metric 原因(反向 fixture)",
+          "[cep][simulation-mode]") {
+    // ⚠️ schema 层**无法**表达「标了 not-collected 但缺 reason」⇒ 该闸由 tools 承担
+    //   (per SU#1 §② 配套)。本用例锁 tools 的判定函数行为(tools 是纯标准库 python,
+    //   仓内无 python 单测框架 ⇒ 本用例锁「契约形状」而非行为)。
+    const json s = load_metrics_schema();
+    const auto& nc = s.at("properties").at("_not_collected");
+    // ⛔ 不得退回单字符串形状(并存 = 两种形状双真源,per SU#1 §②)
+    REQUIRE_FALSE(s.at("properties").contains("_not_collected_reason"));
+    // per-metric 键必须落在 13 必纳 metric 内(由 tools 校验,schema 层用 additionalProperties 放开)
+    REQUIRE(nc.at("additionalProperties").at("minLength") == 1);
+}
+
+TEST_CASE("[cep][simulation-mode] ADR-CEP-06 决策 5 三分支在 ADR 正文可寻址",
+          "[cep][simulation-mode]") {
+    // 决策 5 的三分支(SU#1 §③):functional ⇒ 延迟 = 0;timing 且未预声明 ⇒ 延迟 > 0;
+    // timing 且预声明不采 ⇒ 延迟必须 "not-collected" ⇒ **禁写 0**。
+    // ⚠️ 此前该规则在测试层**零断言**(实测 grep 全文无此检查)⇒ 纯靠 emit 自觉
+    //   ⇒ 实测 h6 出现「timing + 自陈不采延迟 + 却写 0」。本用例锁 ADR 文本可寻址性。
+    const std::string adr = adr_text("ADR-CEP-06-experiment-protocol.md");
+    REQUIRE(adr.find("simulation_mode=functional") != std::string::npos);
+    REQUIRE(adr.find("avg_latency_cycles") != std::string::npos);
+    REQUIRE(adr.find("not-collected") != std::string::npos);
+    // SU#1 §③ 的三分支表述须可寻址(追加在 SU 里 ⇒ 正文 §9 之后)
+    REQUIRE(adr.find("决策 5 裁决") != std::string::npos);
 }
 
 TEST_CASE("[cep][simulation-mode] verification_mode 四档且契约文本齐备", "[cep][simulation-mode]") {

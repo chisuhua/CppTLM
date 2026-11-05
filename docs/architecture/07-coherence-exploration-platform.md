@@ -1443,10 +1443,10 @@ oracle 复核通过 —— 含 3 处事实修正)后落地。本则是**真源 1
 - [x] 决策块计数口径已落(3 / 4 / 3),与台账 Entry #169 ⑤ 一致
 - [x] C2 的残留登记 + **3 条可判定触发条件** + **D1 预定义路径**已落
 - [x] `07 号` 自身的机器可查锚(防沉默删除)已指派给 builder 域
-- [ ] schema + 3 件冻结 tools + 测试已按 C1 落地(builder 域 + 冻结面授权)
-- [ ] ⚠️ **`openspec/specs/cep-core-contracts/spec.md`** 的 IC4(`:116` 旧形状)与 IC3(`:121` 无「不适用」分支)
-      已与新契约对齐(builder 域 + 冻结面授权)—— ⛔ 不可留待日后:两件冻结面互斥后再修需**两次**授权且漂移期无限
-- [ ] objective §9 已改造为「判据-指标需求表」(planner 域)—— **预登记闸的真源**
+- [x] schema + 3 件冻结 tools + 测试已按 C1 落地(builder 域 + 冻结面授权)—— 2026-11-05,per 台账 **Entry #218** §⑤-2
+- [x] ⚠️ **`openspec/specs/cep-core-contracts/spec.md`** 的 IC4(`:116` 旧形状)与 IC3(`:121` 无「不适用」分支)
+      已与新契约对齐(builder 域 + 冻结面授权)—— 2026-11-05,per 台账 **Entry #218** §⑤-2;⛔ 未留待日后:两件冻结面互斥后再修需**两次**授权且漂移期无限
+- [x] objective §9 已改造为「判据-指标需求表」(planner 域)—— **预登记闸的真源**;2026-11-04,per 台账 **Entry #218**
       ⚠️ **此为 blocker-of**:schema 的「`not-collected ⊆` 预登记」校验在 objective §9 存在前**无法实现**
       (仓内 `grep 预登记` 零载体)⇒ ⛔ builder **不得**先落 schema 并把该校验写成**恒真**占位
       (那会形成**第二个假绿**)⇒ **落地顺序强制**:objective §9 → schema/tools

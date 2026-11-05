@@ -249,12 +249,33 @@ namespace cep_exp {
         ViolationCounts violations;
         std::uint64_t deadlock_detected = 0;
 
+        /// ⚠️ **实测过**的 13 必纳 metric 名单(per ADR-CEP-06 SU#1 §④ 判据③)
+        /// —— 「实测 0」与「未测量」在**数据层同形**(都是 0)⇒ 机器闸无法区分
+        /// ⇒ 由**产出侧**显式声明「我测了哪些」;声明为实测者**值可以是 0**。
+        /// ⇒ 闸的三分支:报 measured ⇒ 必须有数值(可 0)· 报 not-collected ⇒ 必须 ⊆ 预登记
+        ///   out-of-scope · 两者都没报 ⇒ **判红**(漏声明)。
+        std::set<std::string> measured;
+
+        /// ⚠️ **未采集**的 13 必纳 metric 名单(per ADR-CEP-06 SU#1 §② 载体 A)
+        /// —— 「实测 0」与「未测量」必须在**数据层**可区分 ⇒ 未采集者输出
+        /// `"not-collected"`(而非 0),并在此登记 per-metric 原因。
+        /// ⇒ 机器闸(tools 判据④)据此校验 `not-collected ⊆ 预登记 out-of-scope`。
+        std::map<std::string, std::string> not_collected;
+
         /// per-VC stall(H6 用;可为空 ⇒ 输出 `{}`)
         std::map<int, std::uint64_t> vc_stall_per_vc;
 
         /// ⚠️ 必填 —— 不得留空(per ADR-CEP-06 §3:规模上限须可读)
         std::string verification_mode = "sampled";
         std::string verification_scope = "";
+
+        /// 一个必纳 metric 的 JSON 值 —— 未采集者输出 `"not-collected"`(per SU#1 §②)
+        inline std::string metric_json(const std::string& name, std::uint64_t value) const {
+            auto it = not_collected.find(name);
+            if (it != not_collected.end())
+                return "\"not-collected\"";
+            return std::to_string(value);
+        }
 
         /// 13 必纳字段是否齐备 + 数值自洽(transactions_per_cycle 等派生量可算)
         bool well_formed() const {
@@ -276,20 +297,24 @@ namespace cep_exp {
                               : static_cast<double>(total_transactions) /
                                     static_cast<double>(total_cycles);
 
+        // 延迟族:未采集时 latency 收集器为空 ⇒ avg/p50/... 全 0
+        // ⇒ **逐项**看 not_collected(而不是一个 latency_collected 开关)——
+        //    否则「显式登记为未采集」会被收集器状态覆盖 ⇒ 写回 0 ⇒ 违反 SU#1 §③ branch 3。
+
         os << "{\n";
         os << "  \"total_cycles\": " << total_cycles << ",\n";
         os << "  \"total_transactions\": " << total_transactions << ",\n";
         os << "  \"transactions_per_cycle\": " << txn_per_cycle << ",\n";
-        os << "  \"avg_latency_cycles\": " << latency.avg() << ",\n";
-        os << "  \"p50_latency_cycles\": " << latency.p50() << ",\n";
-        os << "  \"p95_latency_cycles\": " << latency.p95() << ",\n";
-        os << "  \"p99_latency_cycles\": " << latency.p99() << ",\n";
-        os << "  \"max_latency_cycles\": " << latency.max() << ",\n";
-        os << "  \"coherence_stalls\": " << coherence_stalls << ",\n";
-        os << "  \"collective_stalls\": " << collective_stalls << ",\n";
-        os << "  \"directory_misses\": " << directory_misses << ",\n";
-        os << "  \"deadlock_violations\": " << deadlock_detected << ",\n";
-        os << "  \"memory_violations\": " << violations.total() << ",\n";
+        os << "  \"avg_latency_cycles\": " << metric_json("avg_latency_cycles", latency.avg()) << ",\n";
+        os << "  \"p50_latency_cycles\": " << metric_json("p50_latency_cycles", latency.p50()) << ",\n";
+        os << "  \"p95_latency_cycles\": " << metric_json("p95_latency_cycles", latency.p95()) << ",\n";
+        os << "  \"p99_latency_cycles\": " << metric_json("p99_latency_cycles", latency.p99()) << ",\n";
+        os << "  \"max_latency_cycles\": " << metric_json("max_latency_cycles", latency.max()) << ",\n";
+        os << "  \"coherence_stalls\": " << metric_json("coherence_stalls", coherence_stalls) << ",\n";
+        os << "  \"collective_stalls\": " << metric_json("collective_stalls", collective_stalls) << ",\n";
+        os << "  \"directory_misses\": " << metric_json("directory_misses", directory_misses) << ",\n";
+        os << "  \"deadlock_violations\": " << metric_json("deadlock_violations", deadlock_detected) << ",\n";
+        os << "  \"memory_violations\": " << metric_json("memory_violations", violations.total()) << ",\n";
         os << "  \"memory_violation_kinds\": {\"swmr\": " << violations.swmr
            << ", \"data_value\": " << violations.data_value << "},\n";
         os << "  \"vc_stall_per_vc\": {";
@@ -299,6 +324,25 @@ namespace cep_exp {
                 os << ", ";
             first = false;
             os << "\"vc" << kv.first << "\": " << kv.second;
+        }
+        os << "},\n";
+        // 实测声明集(per SU#1 §④ 判据③:实测 0 与未测量同形 ⇒ 产出侧显式声明)
+        os << "  \"_measured\": [";
+        first = true;
+        for (const auto& m : measured) {
+            if (!first) os << ", ";
+            first = false;
+            os << "\"" << m << "\"";
+        }
+        os << "],\n";
+        // per-metric 未采集原因表(per SU#1 §②:单字符串在多 metric 未采集时不可判定)
+        os << "  \"_not_collected\": {";
+        first = true;
+        for (const auto& kv : not_collected) {
+            if (!first)
+                os << ", ";
+            first = false;
+            os << "\"" << kv.first << "\": \"" << kv.second << "\"";
         }
         os << "},\n";
         os << "  \"verification_mode\": \"" << verification_mode << "\",\n";

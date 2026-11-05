@@ -14,9 +14,16 @@
 
 #include "catch_amalgamated.hpp"
 
+#include <algorithm>
+#include <cctype>
+#include <nlohmann/json.hpp>
+
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <map>
+#include <set>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -35,6 +42,52 @@ namespace {
     constexpr std::uint64_t kAddr = 0x1000;
     constexpr std::uint64_t kRegionBase = 0x1000;
     constexpr std::uint64_t kRegionSize = 0x1000;
+
+    /// 按**预登记投影**(`experimental/preregistration.json`)标注本 run 的未采集 metric。
+    ///
+    /// ⚠️ **不由代码自行决定「不采什么」** —— 那是**预登记**(真源 = `objective §9.1` ② 表)
+    /// 的职责;本函数只把投影**搬进**产出 ⇒ 产出与预登记**恒一致**(不可能漂移)。
+    ///
+    /// ⚠️ **实测优先**:`measured` 里列出的 metric 是本 run **真正有产出者**的
+    /// (即使实测值为 0,也是**实测 0**,不是未测量)⇒ 不标 not-collected。
+    /// ⇒ 二者的区分靠**产出者是否存在**,不靠值(实测 0 与未测量在数据层同形 —— 这正是
+    ///    SU#1 §② 要消灭的歧义)。
+    void mark_not_collected(ExperimentMetrics& m, const std::string& hypothesis_id,
+                            const std::vector<std::string>& measured) {
+        const char* env = std::getenv("CEP_EXP_PREREG");
+        std::string path = (env && *env) ? env : std::string("experimental/preregistration.json");
+        std::ifstream pf(path);
+        if (!pf.good())
+            return;
+        std::stringstream ss;
+        ss << pf.rdbuf();
+        nlohmann::json pre;
+        try {
+            pre = nlohmann::json::parse(ss.str());
+        } catch (...) {
+            return;
+        }
+        if (!pre.contains("hypotheses"))
+            return;
+        auto hyps = pre.at("hypotheses");
+        std::string hid = hypothesis_id;
+        std::transform(hid.begin(), hid.end(), hid.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::toupper(c)); });
+        if (!hyps.contains(hid))
+            return;
+        auto entry = hyps.at(hid);
+        if (entry.value("status", std::string()) != "registered")
+            return;
+        std::set<std::string> measured_set(measured.begin(), measured.end());
+        // ⚠️ 实测声明集 = 本 run **真正有产出者**的必纳 metric(含实测值为 0 者)
+        // (per SU#1 §④ 判据③:实测 0 与未测量在数据层同形 ⇒ 必须由产出侧显式区分)
+        m.measured = measured_set;
+        for (const auto& k : entry.value("out_of_scope", std::vector<std::string>())) {
+            if (measured_set.count(k))
+                continue; // 实测优先
+            m.not_collected[k] = "本实验未采集该 metric(per 预登记 out-of-scope)";
+        }
+    }
 
     struct EmitResult {
         ExperimentMetrics metrics;
@@ -74,6 +127,17 @@ namespace {
         r.metrics.latency = lat_dcoh;
         r.metrics.total_transactions = static_cast<std::uint64_t>(n);
         r.metrics.total_cycles = static_cast<std::uint64_t>(n) * 20; // 每次访问成本上界
+        // ⚠️ 本 run **只测延迟族** + total_* ⇒ 其余必纳 metric 一律未采集
+        // (per ADR-CEP-06 SU#1 §②:未采集 ⇒ "not-collected",⛔ 禁写 0)
+        mark_not_collected(r.metrics, "H2",
+                           {"total_cycles", "total_transactions", "transactions_per_cycle",
+                            "avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
+                            "p99_latency_cycles", "max_latency_cycles"});
+        // ⚠️ 其余 5 项(coherence_stalls / collective_stalls / directory_misses /
+        //    deadlock_violations / memory_violations)本 run **未采集** ⇒ 须显式声明
+        for (const char* k : {"coherence_stalls", "collective_stalls", "directory_misses",
+                              "deadlock_violations", "memory_violations"})
+            r.metrics.not_collected[k] = "本实验只对比目录策略的延迟(per 预登记 out-of-scope)";
         r.metrics.verification_mode = "bounded_random";
         r.scope = "H2 目录策略对比: 集中(FullMap) avg=" + std::to_string(lat_full.avg()) +
                   " / 分布(Dcoh) avg=" + std::to_string(lat_dcoh.avg()) +
@@ -122,6 +186,20 @@ namespace {
         r.metrics.total_transactions = static_cast<std::uint64_t>(n);
         r.metrics.total_cycles = static_cast<std::uint64_t>(n) * 20;
         r.metrics.violations = detector.counts();
+        // ⚠️ 本 run 测:延迟族 + total_* + **memory_violations**(SWMR + data-value 双分桶)
+        // ⇒ `deadlock_violations` **未采集**(本 run 无死锁检测器)⇒ 必须标 not-collected
+        //    (此前它被写成 0 ⇒ 被读作「测了,没死锁」= C1 的核心失败模式,per SU#1 §①)
+        mark_not_collected(r.metrics, "H3",
+                           {"total_cycles", "total_transactions", "transactions_per_cycle",
+                            "avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
+                            "p99_latency_cycles", "max_latency_cycles", "memory_violations"});
+        // ⚠️ 其余 4 项(coherence_stalls / collective_stalls / directory_misses /
+        //    deadlock_violations)本 run **未采集** ⇒ 须显式声明
+        //    (尤其 `deadlock_violations`:本 run 无死锁检测器 ⇒ 此前被写成 0
+        //     ⇒ 被读作「测了,没死锁」= C1 的核心失败模式,per SU#1 §①)
+        for (const char* k :
+             {"coherence_stalls", "collective_stalls", "directory_misses", "deadlock_violations"})
+            r.metrics.not_collected[k] = "本实验无该 metric 的产出者(per 预登记 out-of-scope)";
         r.metrics.verification_mode = "bounded_random";
         r.scope = "H3 CONSERVATIVE 完备性: " + std::to_string(n) + " 事务 / 3 节点 / 1 地址; " +
                   "漏探=" + std::to_string(superset_violations) +
@@ -163,6 +241,21 @@ namespace {
         r.metrics.total_cycles = static_cast<std::uint64_t>(cycles);
         r.metrics.deadlock_detected = m_iso.deadlock_violations();
         r.metrics.collective_stalls = m_iso.collective_wait_on_coherence_vc();
+        // ⚠️ 本 run 测:deadlock_violations + collective_stalls + vc_stall_per_vc + total_*
+        // ⇒ **延迟族未采集**(本实验不采延迟)⇒ per SU#1 §③ branch 3 必须标 not-collected,⛔ 禁写 0
+        //    ⇒ `memory_violations` 亦未采集(本 run 无违例检测器)
+        mark_not_collected(r.metrics, "H6",
+                           {"total_cycles", "total_transactions", "transactions_per_cycle",
+                            "deadlock_violations", "collective_stalls"});
+        // ⚠️ h6 的延迟收集器**为空**(本实验不采延迟)⇒ 延迟族必须标 not-collected
+        //    (per ADR-CEP-06 SU#1 §③ branch 3:timing + 预声明不采延迟 ⇒ 必须 not-collected,
+        //    ⛔ 禁写 0)⇒ 显式登记 5 项延迟族为未采集。
+        for (const char* lat : {"avg_latency_cycles", "p50_latency_cycles", "p95_latency_cycles",
+                                "p99_latency_cycles", "max_latency_cycles"})
+            r.metrics.not_collected[lat] = "本实验不采延迟(VC 隔离实验,per SU#1 §③ branch 3)";
+        // ⚠️ 其余未采集项:coherence_stalls / directory_misses / memory_violations
+        for (const char* k : {"coherence_stalls", "directory_misses", "memory_violations"})
+            r.metrics.not_collected[k] = "本实验无该 metric 的产出者(per 预登记 out-of-scope)";
         for (std::size_t vc = 0; vc < m_iso.stall_per_vc().size(); ++vc)
             r.metrics.vc_stall_per_vc[static_cast<int>(vc)] = m_iso.stall_per_vc()[vc];
         r.metrics.verification_mode = "bounded_random";
@@ -212,9 +305,15 @@ TEST_CASE("实验产出 · 4 件套输入(仅 CEP_EXP_DIR 设置时)", "[cep][ex
     {
         std::ofstream os(out / "simulation_config.json");
         REQUIRE(os.good());
+        // ⚠️ `hypothesis_id` 是**纯标签** —— 声明本 run 服务哪个假设。
+        // per ADR-CEP-06 SU#2 ② 门禁③:run↔hypothesis 绑定走此标签 + `preregistration.json` 的
+        //   `registered` 行(**不是** run 自报 out-of-scope —— 那是被试者自证面,SU#2 ① 已判死)。
+        // ⇒ tools 判据④ 据此把本 run 的 `not-collected` 集合与投影的 out_of_scope 做 ⊆ 校验。
+        // ⚠️ 标签**不承载**「本 run 不采哪些 metric」—— 那是投影的唯一职责(真源 = objective §9.1 ②
+        // 表)。
         os << "{\"simulation_mode\":\"timing\",\"verification_mode\":\""
            << r.metrics.verification_mode << "\",\"verification_scope\":\""
-           << r.metrics.verification_scope << "\"}\n";
+           << r.metrics.verification_scope << "\",\"hypothesis_id\":\"" << exp_id << "\"}\n";
     }
 
     REQUIRE(std::filesystem::exists(out / "metrics.json"));

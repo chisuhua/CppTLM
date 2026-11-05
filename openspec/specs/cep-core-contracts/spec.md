@@ -113,14 +113,25 @@ CEP SHALL 定义实验输出的 **4 件套** + **13 个必纳 metric** + **5 条
 - **WHEN** 契约测试检查 `ADR-CEP-06 §2` 的定义
 - **THEN** 4 件套**恰好 4 个**,缺一件 = fail
 - **AND** `metrics.json` 含 **13** 个必纳字段:`total_cycles` / `total_transactions` / `transactions_per_cycle` / `avg_latency_cycles` / `p50_latency_cycles` / `p95_latency_cycles` / `p99_latency_cycles` / `max_latency_cycles` / `coherence_stalls` / `collective_stalls` / `directory_misses` / `deadlock_violations` / `memory_violations`
-- **AND** 不可观测 metric 标 `not-collected` + `_not_collected_reason`,**禁止**省略 / 写 0 / 写 -1(IC4)
+- **AND** 不可观测 metric 标 `not-collected` + **per-metric** 原因表 `_not_collected`,**禁止**省略 / 写 0 / 写 -1(IC4)
+  - ⚠️ **2026-11-05 订正**(per 台账 **Entry #218** §⑤-2 · `ADR-CEP-06` **SU#1** §②):原写「单字符串 `_not_collected_reason`」
+    ⇒ 已改为 **per-metric map** —— 单字符串在**多个** metric 未采集时**语义不可判定**(无法区分是哪个没采)
+  - **AND** 每个标 `not-collected` 的 metric **必须**在 `_not_collected` 表中有该 metric 的原因 ⇒ **缺 reason = fail**
+  - **AND** `not-collected` 集合 **⊆** 该 run 所服务假设的**预登记** out-of-scope 集(真源 = `objective §9.1` ② 表;
+    机器投影 = `experimental/preregistration.json`,入 M1 冻结集)⇒ 越界 = fail
+    —— ⛔ **不由 run 自报 out-of-scope**(自报 = 被试者自证面,per SU#2 ① 判死)
 
 #### Scenario: 一致性闸门与违例类型(IC3 / IC5)
 
 - **WHEN** 契约测试检查一致性闸门定义
 - **THEN** `deadlock_violations == 0 && memory_violations == 0` 才判 pass,否则 = 一致性违例,fail
+  - ⚠️ **2026-11-05 补充分支**(per 台账 **Entry #218** §⑤-2 · `ADR-CEP-06` **SU#1** §④ ⑤):
+    **违例类为 `not-collected` 时 ⇒ IC3 判定「不适用」**(不是 fail,也不是 pass)——
+    该 run **不得**作为任何一致性安全断言的证据(per SU#1 §④ ⑤ 连带证据降级)
 - **AND** `memory_violations` 的判定**必须覆盖 SWMR + data-value 双不变量**
 - **AND** 报告**能区分违例类型**(SWMR 违例 / data-value 违例)
+- **AND** 预登记为 out-of-scope 的 metric **必须**写 `not-collected`;写成 0 ⇒ **fail**
+  (实测 0 与未测量在旧契约下同形 ⇒ 「结构零冒充实测」;per SU#1 §④ 判据③)
 
 #### Scenario: 验证深度必须声明且不得越界表述
 

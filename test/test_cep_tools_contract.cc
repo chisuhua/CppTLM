@@ -74,26 +74,48 @@ namespace {
         std::filesystem::remove_all(base);
         std::filesystem::create_directories(base);
         std::ofstream(base / "metrics.json") << metrics_json;
+        // ⚠️ 2026-11-05(Entry #218 §⑤-2;per ADR-CEP-06 SU#1 §④ + SU#2 ①):
+        //   `simulation_config.json` 须带 `hypothesis_id`(run↔hypothesis 绑定的**纯标签**)
+        //   ⇒ tools 判据④ 才能把本 run 绑到预登记投影的对应假设行。
         std::ofstream(base / "simulation_config.json")
-            << R"({"simulation_mode":"timing","verification_mode":"exhaustive","verification_scope":"unit"})";
+            << R"({"simulation_mode":"timing","verification_mode":"exhaustive",)"
+               R"("verification_scope":"unit","hypothesis_id":"H2"})";
         if (with_trace) {
             std::ofstream(base / "trace.h5") << "stub";
         }
         return base;
     }
 
+    // ⚠️ `_measured` = 实测声明集(per SU#1 §④ 判据③:实测 0 与未测量同形 ⇒ 产出侧显式声明)
+    //   本 fixture 用 H2 ⇒ 其预登记 out-of-scope 是 5 项
+    //   (coherence_stalls / collective_stalls / deadlock_violations / memory_violations /
+    //   directory_misses) ⇒ 这 5 项须写 "not-collected" 且有 per-metric 原因。
     const char* kGoodMetrics = R"({
  "total_cycles":100,"total_transactions":10,"transactions_per_cycle":0.1,
  "avg_latency_cycles":1.0,"p50_latency_cycles":1.0,"p95_latency_cycles":1.0,
- "p99_latency_cycles":1.0,"max_latency_cycles":1.0,"coherence_stalls":0,
- "collective_stalls":0,"directory_misses":0,"deadlock_violations":0,"memory_violations":0})";
+ "p99_latency_cycles":1.0,"max_latency_cycles":1.0,
+ "coherence_stalls":"not-collected","collective_stalls":"not-collected",
+ "directory_misses":"not-collected","deadlock_violations":"not-collected",
+ "memory_violations":"not-collected",
+ "_measured":["total_cycles","total_transactions","transactions_per_cycle",
+  "avg_latency_cycles","p50_latency_cycles","p95_latency_cycles","p99_latency_cycles","max_latency_cycles"],
+ "_not_collected":{"coherence_stalls":"fixture","collective_stalls":"fixture",
+  "directory_misses":"fixture","deadlock_violations":"fixture","memory_violations":"fixture"}})";
 
+    // ⚠️ 违例 fixture:违例类必须**实测**为非 0(42 / 17)⇒ 声明为 measured
+    //   (若写成 not-collected ⇒ IC3「不适用」⇒ 反而**不**判红 ⇒ fixture 失效)
     const char* kBadMetrics = R"({
  "total_cycles":100,"total_transactions":10,"transactions_per_cycle":0.1,
  "avg_latency_cycles":1.0,"p50_latency_cycles":1.0,"p95_latency_cycles":1.0,
- "p99_latency_cycles":1.0,"max_latency_cycles":1.0,"coherence_stalls":0,
- "collective_stalls":0,"directory_misses":0,
- "deadlock_violations":42,"memory_violations":17})";
+ "p99_latency_cycles":1.0,"max_latency_cycles":1.0,
+ "coherence_stalls":"not-collected","collective_stalls":"not-collected",
+ "directory_misses":"not-collected",
+ "deadlock_violations":42,"memory_violations":17,
+ "_measured":["total_cycles","total_transactions","transactions_per_cycle",
+  "avg_latency_cycles","p50_latency_cycles","p95_latency_cycles","p99_latency_cycles","max_latency_cycles",
+  "deadlock_violations","memory_violations"],
+ "_not_collected":{"coherence_stalls":"fixture","collective_stalls":"fixture",
+  "directory_misses":"fixture"}})";
 
 } // namespace
 
@@ -161,6 +183,76 @@ TEST_CASE("[cep][tools] metric 类型非法必须被拒(回归:schema 从未用�
     INFO("total_cycles 为字符串时 --check 必须非零退出");
     REQUIRE(run_cmd("python3 " + shquote(tool) + " " + shquote(dir.string()) + " --check") != 0);
     std::filesystem::remove_all(dir);
+}
+
+TEST_CASE("[cep][tools] 预登记闸真的生效(ADR-CEP-06 SU#1 §④ 判据④ + SU#2 ①)", "[cep][tools]") {
+    // ⚠️ 2026-11-05(Entry #218 §⑤-2):4 条反向 fixture —— 判据须**因正确原因红**。
+    //   背景:此前 tools 只查「metric 键是否存在」,预登记闸**零覆盖** ⇒
+    //   「结构零冒充实测」「not-collected 越界」「漏声明」「未登记假设」全部畅通。
+    const auto tool = (repo_root() / "tools/render_report.py").string();
+
+    // ① not-collected **越界**:标了 not-collected 但不在预登记 out-of-scope 内
+    //    (H2 允许 avg_latency_cycles 实测;此处把它标 not-collected ⇒ 越界)
+    const char* kOver = R"({
+ "total_cycles":100,"total_transactions":10,"transactions_per_cycle":0.1,
+ "avg_latency_cycles":"not-collected","p50_latency_cycles":1.0,"p95_latency_cycles":1.0,
+ "p99_latency_cycles":1.0,"max_latency_cycles":1.0,
+ "coherence_stalls":"not-collected","collective_stalls":"not-collected",
+ "directory_misses":"not-collected","deadlock_violations":"not-collected",
+ "memory_violations":"not-collected",
+ "_measured":["total_cycles","total_transactions","transactions_per_cycle",
+  "p50_latency_cycles","p95_latency_cycles","p99_latency_cycles","max_latency_cycles"],
+ "_not_collected":{"avg_latency_cycles":"x","coherence_stalls":"fixture",
+  "collective_stalls":"fixture","directory_misses":"fixture",
+  "deadlock_violations":"fixture","memory_violations":"fixture"}})";
+    const auto over = make_exp_dir("gate_over", kOver);
+    INFO("not-collected 越界必须被拒");
+    REQUIRE(run_cmd("python3 " + shquote(tool) + " " + shquote(over.string()) + " --check") != 0);
+
+    // ② **漏声明**:某个必纳 metric 既不在 _measured 也不在 _not_collected
+    const char* kUndeclared = R"({
+ "total_cycles":100,"total_transactions":10,"transactions_per_cycle":0.1,
+ "avg_latency_cycles":1.0,"p50_latency_cycles":1.0,"p95_latency_cycles":1.0,
+ "p99_latency_cycles":1.0,"max_latency_cycles":1.0,
+ "coherence_stalls":"not-collected","collective_stalls":"not-collected",
+ "directory_misses":"not-collected","deadlock_violations":"not-collected",
+ "memory_violations":"not-collected",
+ "_measured":["total_cycles","total_transactions","transactions_per_cycle",
+  "avg_latency_cycles","p50_latency_cycles","p95_latency_cycles","p99_latency_cycles","max_latency_cycles"],
+ "_not_collected":{"coherence_stalls":"fixture","collective_stalls":"fixture",
+  "directory_misses":"fixture","deadlock_violations":"fixture","memory_violations":"fixture"}})";
+    // ↑ 与 kGoodMetrics 同形但 **漏** _measured 的 total_transactions? —— 不,上面是完整的。
+    //    ⇒ 改用「删掉一个 _measured 项」构造漏声明:
+    std::string undeclared(kUndeclared);
+    {
+        const std::string tok = "\"total_transactions\",";
+        const auto pos = undeclared.find(tok);
+        if (pos != std::string::npos)
+            undeclared.erase(pos, tok.size());
+    }
+    const auto undec = make_exp_dir("gate_undeclared", undeclared.c_str());
+    INFO("漏声明必须被拒");
+    REQUIRE(run_cmd("python3 " + shquote(tool) + " " + shquote(undec.string()) + " --check") != 0);
+
+    // ③ **未登记假设**:hypothesis_id 不在投影里
+    const auto unreg = make_exp_dir("gate_unreg", kGoodMetrics);
+    {
+        std::ofstream(unreg / "simulation_config.json")
+            << R"({"simulation_mode":"timing","verification_mode":"exhaustive",)"
+               R"("verification_scope":"unit","hypothesis_id":"H99"})";
+    }
+    INFO("未登记假设必须被拒");
+    REQUIRE(run_cmd("python3 " + shquote(tool) + " " + shquote(unreg.string()) + " --check") != 0);
+
+    // ④ **pending 假设禁产出**:H4 的投影 status = pending
+    const auto pend = make_exp_dir("gate_pending", kGoodMetrics);
+    {
+        std::ofstream(pend / "simulation_config.json")
+            << R"({"simulation_mode":"timing","verification_mode":"exhaustive",)"
+               R"("verification_scope":"unit","hypothesis_id":"H4"})";
+    }
+    INFO("pending 假设产出必须被拒");
+    REQUIRE(run_cmd("python3 " + shquote(tool) + " " + shquote(pend.string()) + " --check") != 0);
 }
 
 TEST_CASE("[cep][tools] 缺件套时 --check 必须失败", "[cep][tools]") {

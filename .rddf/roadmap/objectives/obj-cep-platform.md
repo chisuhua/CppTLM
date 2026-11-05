@@ -13380,6 +13380,102 @@ objective 的 B3 拆分 + 2 份冻结面文档的追加式同步 + 台账登记�
 
 ---
 
+### Entry #220 — 2026-11-04 [plan](C1 的 **builder 域落地**批 —— 判据④ 三分支闸 + schema 放宽 + 3 件 tools + emit 实测声明 + **冻结面授权记录**)
+
+**主题**:落地 `ADR-CEP-06` **SU#1** §②~§④ 与 **SU#2** ①~② 的 builder 域部分 ——
+让「**实测 0**」与「**未测量**」在**数据层**可区分,并把「预登记闸」落成**真会红**的机器闸。
+**角色**:planner(本条授权记录)· builder(实现)。
+**语义**:**已完成归档之后的订正**(归档件不回滚;契约面原地订正 + 台账记账)。
+
+**① 本条落地的核心:实测 0 与未测量在数据层可区分(C1 的根因)**
+
+| 概念 | 旧契约(不可区分) | 新契约(SU#1 §② 载体 A) |
+|---|---|---|
+| 实测为 0 | `0` | `0` + **实测声明**(`_measured` 集含该项) |
+| 未测量 | `0` | `"not-collected"` + **per-metric 原因**(`_not_collected` 表) |
+
+⇒ **实测证据**(本次 `bash scripts/test/cep_experiment_run.sh` 实跑):
+| run | 实测 0 的 metric | 未采集(`not-collected`)的 metric |
+|---|---|---|
+| **h2** | *(无)* | `coherence_stalls` · `collective_stalls` · `directory_misses` · `deadlock_violations` · `memory_violations` |
+| **h3** | `memory_violations`(**实测 0**) | `coherence_stalls` · `collective_stalls` · `directory_misses` · **`deadlock_violations`** |
+| **h6** | `coherence_stalls` · `collective_stalls` · `deadlock_violations` · `memory_violations` | 5 项延迟族 · `directory_misses` |
+
+⇒ ⭐ **h3 的 `memory_violations=0`(实测)vs `deadlock_violations=not-collected`(未测)** ——
+同为「违例类」,数据层**已可区分** ⇒ **「0 冒充未测量」被消灭**(SU#1 §① 的实测失败模式)。
+⇒ ⭐ **h6 的延迟族 = `not-collected`** ⇒ 兑现 SU#1 §③ branch 3(「timing + 预声明不采延迟 ⇒ 必须
+`not-collected`,⛔ 禁写 0」);此前 h6 写 0 **违反**该条。
+
+**② 判据④ 的机器闸:三分支判定(实测)**
+
+| 分支 | 判据 | 实现 |
+|---|---|---|
+| 报 `measured` | 必须有数值(**可以是 0** —— 那是实测零) | `tools/{render_report,ab_compare,run_sweep}.py` 的 `preregistration_problems()` |
+| 报 `not-collected` | 必须 ⊆ 该假设的**预登记** out-of-scope | 同上(越界 ⇒ 判红) |
+| **两者都没报** | **判红**(漏声明) | 同上 |
+
+⇒ ⭐ **为什么必须有 `_measured`**:「实测 0」与「未测量」在**数据层同形**(都是 0)⇒ 机器闸**无法从数值区分**
+⇒ 必须由**产出侧**显式声明「我测了哪些」。
+⇒ ⚠️ 这**不违反** SU#2 ① 的「run 不自报 out-of-scope」—— 自报「我测了哪些」是**实测侧事实**
+(与 metrics 一致),而「我被授权不测什么」仍由**外部锁定**的预登记表授予。
+
+**③ 4 条反向 fixture(实测,判据「因正确原因红」)**
+
+| # | 注入 | 实测红因 |
+|---|---|---|
+| 1 | `avg_latency_cycles` 标 not-collected 但不在 H2 的 out-of-scope | `not-collected 集合越界(超出预登记 out-of-scope):['avg_latency_cycles']` |
+| 2 | `total_transactions` 既不 measured 也不 not-collected | `metric total_transactions **未声明**实测/未采集` |
+| 3 | `hypothesis_id = H99`(未登记) | `hypothesis_id 'H99' 在 preregistration.json **无登记行**` |
+| 4 | `hypothesis_id = H4`(投影 `status = pending`) | `hypothesis_id 'H4' 的预登记状态 = pending ⇒ 禁产出 run` |
+| — | 正控(合规 run) | **rc=0** |
+
+⇒ 另:drift 闸的**第 4 项**断言(emit 白名单 ⊆ registered)已落地,反向 fixture 实测红因
+=`emit 能产出 'h3' 但投影里**无 registered 行**`。
+
+**④ 授权改动的冻结产物(逐件列名 —— `--update` 会**重算全部**的 hash)**
+
+| # | 冻结产物 | 本层改动 | 依据 |
+|---|---|---|---|
+| 1 | `experimental/metrics.schema.json` | 13 必纳字段类型放宽为 `oneOf`(数值 \| `"not-collected"`)+ **新增** per-metric `_not_collected` map + **废弃**单字符串 `_not_collected_reason` | SU#1 §② |
+| 2 | `tools/render_report.py` | `metric_type_problems()` 接受 `"not-collected"`(须配 reason)+ 新增 `preregistration_problems()` 三分支闸 + `check()` 接入 + `consistency_violations()` 容忍 not-collected(IC3「不适用」分支) | SU#1 §②④⑤ |
+| 3 | `tools/ab_compare.py` | 同上 | 同上 |
+| 4 | `tools/run_sweep.py` | 同上 | 同上 |
+| 5 | `openspec/specs/cep-core-contracts/spec.md` | IC4 场景:`_not_collected_reason` ⇒ **per-metric** `_not_collected` + reason 必填 + `not-collected ⊆` 预登记 + 「不由 run 自报 out-of-scope」;IC3 场景:补「违例类为 `not-collected` ⇒ IC3 判**不适用**」+ 「预登记 out-of-scope 者必须写 not-collected,写 0 ⇒ fail」 | SU#1 §②④⑤ |
+| 6 | `docs/adr/ADR-CEP-06-experiment-protocol.md` | SU#2 §⑤ 的 **4 项**过期勾选回填(纯勾选,正文未改) | 勾选状态同步 |
+| 7 | `docs/architecture/07-coherence-exploration-platform.md` | SU#2 §⑤ 的 **3 项**过期勾选回填(纯勾选,正文未改) | 勾选状态同步 |
+| 8 | `docs/implementation/2026-10-21-cep-stage0-freeze-manifest.json` | `--update` 重算全部 **41** 件的 hash + provenance | 机制 M1 本身 |
+
+⇒ **不在授权范围**:`.rddf/roadmap/objectives/obj-cep-platform.md`(本文件 = planner 域,非冻结件)·
+`test/**`(非冻结)· `scripts/test/cep_prereg_drift_check.sh`(非冻结)· `docs/validation/**`(非冻结)。
+
+**⑤ 非冻结面的同批改动**
+
+| 产物 | 内容 |
+|---|---|
+| `test/cep_experiment_harness.hh` | `ExperimentMetrics` 新增 `measured` 集 + `not_collected` map;`to_json()` 输出 `_measured` / `_not_collected`,未采集者输出 `"not-collected"` |
+| `test/test_cep_experiment_emit.cc` | `mark_not_collected()` helper(读**外部锁定**的投影 ⇒ 产出与预登记**恒一致**,不可能漂移);`simulation_config.json` 增 `hypothesis_id` **纯标签**;h2/h3/h6 各自**显式声明全部 13 项** |
+| `test/test_cep_simulation_mode_lock.cc` | 原「not-collected 契约存在」用例**改钉值契约**(13 字段 oneOf 含 `not-collected` 分支)—— 此前它只断言 reason 字段形状 ⇒ **给缺口盖章**;新增「`_not_collected_reason` 不得复归」反向 fixture + 「决策 5 三分支在 ADR 正文可寻址」断言 |
+| `test/test_cep_tools_contract.cc` | fixture 跟上新契约(`hypothesis_id` + `_measured` + `not-collected`);新增 **4 条反向 fixture** + 正控 |
+| `scripts/test/cep_prereg_drift_check.sh` | 增**第 4 项**断言:emit 白名单 ⊆ 投影的 `registered` 集(SU#2 门禁③ 的「顺序锁」机器化 —— 此前是**纯流程承诺**) |
+| `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md` | 新增 §5bis「判据分支的**测量状态**登记」—— **只勘误不重跑**(H3 的 `deadlock_violations` 分支 = 未测量;h2 的 `directory_misses` 半支 = 未测量);⛔ 结论段未重写 |
+
+**⑥ 验收(实测)**:`bash scripts/test/cep_experiment_run.sh` **3/3 组 4 件套 + 契约校验通过** ·
+`[cep][tools]` **130 assertions / 14 cases** 全绿 · `[cep][simulation-mode]` **115 assertions / 10 cases** 全绿 ·
+`format --check` rc=0 · `cep_prereg_drift_check` rc=0(含第 4 项断言 + 4 条反向 fixture)·
+`cep_archforge_alignment_check` rc=0 · `cep_decl_alignment_check` rc=0 · `cep_doc_ref_check --strict` rc=0 ·
+`docs_sync_check --strict` rc=0 · `ctest -j4` **147/149**(2 个失败 = 冻结面待重算,见 ⑦)
+
+**⑦ 冻结面收口的两步流程**(⛔ 顺序不可颠倒)
+① 本条 Entry(授权记录,已存在)→ ② commit 内容 → ③ `cep_freeze_check.sh --update --authorized-by "Entry #220"`
+→ ④ commit manifest → ⑤ 复验 hash + provenance 双绿。
+
+**⑧ 关联**: Entry **#219**(architect 完成内容审查 + §10 陈旧同步 19→11 + 剩余任务清单)·
+**#218**(§9.1 改造 + SU#2 + §⑤-2 builder 域落地)· **#217**(C1/C2 裁决 + 6 条 SHOULD_FIX 处置)·
+**#216** / **#215** / **#214** / **#213** · `ADR-CEP-06` **SU#1** + **SU#2** ·
+`07 号` Status Update 2026-11-04(#2) · `docs/validation/2026-11-04-cep-h2-h3-h6-experiments.md`
+
+---
+
 **版本**: v2.1(2026-10-28,per 队列 #7 归档;Entry #84 ~ #90)
 
 

@@ -65,6 +65,9 @@ def consistency_violations(metrics):
     problems = []
     dv = metrics.get("deadlock_violations")
     mv = metrics.get("memory_violations")
+    if dv == "not-collected":
+        # 违例类未采集 ⇒ IC3「不适用」(per ADR-CEP-06 SU#1 §④ ⑤)—— 不是违例
+        return problems
     if not isinstance(dv, int) or isinstance(dv, bool) or dv < 0:
         problems.append(f"deadlock_violations 非法或缺失: {dv!r}")
     elif dv > 0:
@@ -93,14 +96,33 @@ def metric_type_problems(metrics):
     """13 必纳 metric 的**类型 + 非负**校验(per experimental/metrics.schema.json)。
 
     ⚠️ 此前 schema 从未用于校验任何真实文件 —— "total_cycles": "abc" 也能过所有闸门。
+
+    ⚠️ 2026-11-05(Entry #218 §⑤-2;per ADR-CEP-06 SU#1 §② 载体 A):13 必纳 metric 的取值
+    类型放宽为「数值 **或** `"not-collected"`」——「实测 0」与「未测量」必须在**数据层**可区分
+    (此前两者同形 ⇒ 结构零冒充实测)。配套:**标了 `"not-collected"` 的 metric 必须在
+    `_not_collected` 表中有该 metric 的 per-metric 原因** ⇒ reason 缺失即判红
+    (per SU#1 §②「reason 缺失 ⇒ 判红」)。
     """
     problems = []
+    reasons = metrics.get("_not_collected")
+    if reasons is not None and not isinstance(reasons, dict):
+        problems.append(f"_not_collected 必须是 object(per-metric 原因表): {reasons!r}")
+        reasons = {}
     for k in REQUIRED_METRICS:
         v = metrics.get(k)
+        if v == "not-collected":
+            # 必须在 _not_collected 表中有该 metric 的原因
+            if not reasons or k not in reasons:
+                problems.append(f"metric {k} 标 not-collected 但 _not_collected 缺其原因")
+            continue
         if not isinstance(v, (int, float)) or isinstance(v, bool):
             problems.append(f"metric {k} 非数值: {v!r}")
         elif v < 0:
             problems.append(f"metric {k} 为负: {v!r}")
+    # 反向:_not_collected 表里的 key 必须是真实的 13 必纳 metric
+    for k in (reasons or {}):
+        if k not in REQUIRED_METRICS:
+            problems.append(f"_not_collected 含非 13 必纳 metric 的 key: {k!r}")
     return problems
 
 
@@ -115,6 +137,95 @@ def _load_json(path, label):
         sys.exit(f"[ab_compare] {label} 畸形 JSON: {path} ({e})")
     except OSError as e:
         sys.exit(f"[ab_compare] 读 {label} 失败: {path} ({e})")
+
+
+# ── 预登记闸(per ADR-CEP-06 SU#1 §④ 判据④ / SU#2 ① 载体裁决)────────
+#   run 的 `not-collected` 集合必须 ⊆ 该 run 所服务假设的**预登记** out-of-scope 集。
+#   ⇒ 预登记真源 = `objective §9.1` ② 表;机器投影 = `experimental/preregistration.json`
+#   (入 M1 冻结集;drift 校验守「② 表 ↔ JSON」两份一致)。
+#   ⚠️ **不由 run 自报 out_of_scope** —— run 自报 = 被试者自证面(SU#2 ① 已判死);
+#      本闸只读**外部锁定的投影**。
+PREREG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
+                           "experimental", "preregistration.json")
+
+
+def _load_prereg():
+    if not os.path.isfile(PREREG_PATH):
+        return None
+    try:
+        with open(PREREG_PATH, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def preregistration_problems(metrics, hypothesis_id=None):
+    """判据④:`not-collected` ⊆ 预登记 out-of-scope;违例类 not-collected ⇒ IC3 不适用。
+
+    返回 (problems, ic3_not_applicable)。
+    """
+    problems = []
+    pre = _load_prereg()
+    if pre is None:
+        return ([], False)
+    hyps = pre.get("hypotheses") or {}
+
+    # ① run ↔ hypothesis 绑定:simulation_config.json 的 hypothesis_id(纯标签)
+    if hypothesis_id is None:
+        hypothesis_id = metrics.get("hypothesis_id")
+    if hypothesis_id is None:
+        problems.append("缺 hypothesis_id(无法绑定预登记 —— run 自报 out_of_scope 被禁止)")
+        return (problems, False)
+    hid = str(hypothesis_id).upper()
+    entry = hyps.get(hid)
+    if entry is None:
+        problems.append(f"hypothesis_id {hypothesis_id!r} 在 preregistration.json **无登记行**")
+        return (problems, False)
+    if entry.get("status") == "pending":
+        problems.append(f"hypothesis_id {hypothesis_id!r} 的预登记状态 = pending ⇒ 禁产出 run")
+        return (problems, False)
+
+    allowed = set(entry.get("out_of_scope") or [])
+    actual = {k for k in REQUIRED_METRICS if metrics.get(k) == "not-collected"}
+    over = sorted(actual - allowed)
+    if over:
+        problems.append(
+            f"not-collected 集合越界(超出预登记 out-of-scope):{over} —— "
+            f"{hid} 允许 {sorted(allowed) or '(空)'}")
+    allowed = set(entry.get("out_of_scope") or [])
+    actual = {k for k in REQUIRED_METRICS if metrics.get(k) == "not-collected"}
+    over = sorted(actual - allowed)
+    if over:
+        problems.append(
+            f"not-collected 集合越界(超出预登记 out-of-scope):{over} —— "
+            f"{hid} 允许 {sorted(allowed) or '(空)'}")
+
+    # ③ **三分支判定**(per SU#1 §④ 判据③ 的可执行化):
+    #    「实测 0」与「未测量」在**数据层同形**(都是 0)⇒ 机器闸无法从数值区分
+    #    ⇒ 由**产出侧**显式声明「我测了哪些」(`_measured` 集,实测侧事实)。
+    #    · 报 measured      ⇒ 必须有数值(**可以是 0** —— 那是实测零)
+    #    · 报 not-collected ⇒ 必须 ⊆ 预登记 out-of-scope(上面的越界检查覆盖)
+    #    · 两者都没报       ⇒ **判红**(漏声明)
+    #    ⚠️ run 自报「我测了哪些」**不违反** SU#2 ① 的「不自报 out-of-scope」——
+    #    前者是**实测侧事实**(与 metrics 一致),后者是「预登记授权」(仍由外部锁定表授予)。
+    measured = set(metrics.get("_measured") or [])
+    nc_map = metrics.get("_not_collected") or {}
+    for k in REQUIRED_METRICS:
+        v = metrics.get(k)
+        if k in measured:
+            if v == "not-collected":
+                problems.append(f"metric {k} 声明为实测却写成 not-collected(自相矛盾)")
+        elif k in nc_map:
+            if v != "not-collected":
+                problems.append(
+                    f"metric {k} 声明为未采集却写成 {v!r}(须写 \"not-collected\")")
+        else:
+            problems.append(
+                f"metric {k} **未声明**实测/未采集 —— 产出侧必须显式声明"
+                f"(per SU#1 §④ 判据③:实测 0 与未测量同形,机器闸无法从数值区分)")
+    # ② 违例类 not-collected ⇒ IC3 判定「不适用」(per SU#1 §④ ⑤)
+    ic3_na = bool({"deadlock_violations", "memory_violations"} & actual)
+    return (problems, ic3_na)
 
 
 def load_metrics(exp_dir):
@@ -155,7 +266,11 @@ def check(a, b):
                 m = None
             if m is not None:
                 problems.extend(metric_type_problems(m))
-                problems.extend(consistency_violations(m))
+                # ⚠️ 预登记闸 + IC3「不适用」分支(per ADR-CEP-06 SU#1 §④ ⑤)
+                _pre, _na = preregistration_problems(m, cfg.get("hypothesis_id"))
+                problems.extend(_pre)
+                if not _na:
+                    problems.extend(consistency_violations(m))
     if problems:
         for p in problems:
             print(f"  ✗ {p}")

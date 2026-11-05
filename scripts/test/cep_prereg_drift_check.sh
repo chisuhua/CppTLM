@@ -37,10 +37,10 @@ PROJ="$ROOT/experimental/preregistration.json"
 
 echo -e "${YELLOW}[cep-prereg-drift] 预登记 out-of-scope 集合:真源 ↔ 机器投影 drift 检测${NC}"
 
-python3 - "$TRUTH" "$PROJ" <<'PYEOF'
-import json, re, sys
+python3 - "$TRUTH" "$PROJ" "$ROOT" <<'PYEOF'
+import json, os, re, sys
 
-truth_path, proj_path = sys.argv[1], sys.argv[2]
+truth_path, proj_path, repo_root = sys.argv[1], sys.argv[2], sys.argv[3]
 RED, GREEN, YELLOW, NC = "\033[0;31m", "\033[0;32m", "\033[0;33m", "\033[0m"
 
 ALL13 = [
@@ -139,6 +139,31 @@ for h in sorted(tk & pk):
     bad = [x for x in p_set if x not in ALL13]
     if bad:
         problems.append(f"{h}: 投影 out_of_scope 含非 13 必纳 metric: {bad}")
+
+# ── ③ emit 白名单 ⊆ 已登记假设(SU#2 门禁③ 的「顺序锁」机器化)──────────
+# 背景:SU#2 门禁③ 承诺「登记 H4 预登记行的同一 PR 才允许加 run_h4」——
+#   但该承诺此前**只存在于散文**(纯流程承诺)⇒ C1 的根因教训恰恰是「纯承诺 = 测试给缺口盖章」。
+#   本断言把承诺变成机器闸:emit 能产出的假设 id,必须已在投影里 registered。
+#   ⛔ 反向不检查(「已 registered 但 emit 无入口」是**合法**的 —— 预登记先于产出,H4/H8 即此态)。
+EMIT_TS = "test/test_cep_experiment_emit.cc"
+# 仓根 = 脚本所在 scripts/test/ 的上两级(不依赖 truth_path 的位置 ⇒ 与台账文件无关)
+emit_path = os.path.join(repo_root, EMIT_TS)
+if not os.path.isfile(emit_path):
+    print(f"{YELLOW}  · [SKIP] emit 白名单断言:{EMIT_TS} 不存在(非本仓路径?){NC}")
+else:
+    src = open(emit_path, encoding="utf-8").read()
+    # 提取 emit 的实验 id 白名单:`r = run_hN(...)` 的 N
+    emit_ids = sorted(set(re.findall(r"=\s*run_(h\d+)\s*\(", src)))
+    # 投影里 status == registered 的假设
+    registered = {h for h, v in ph.items() if v.get("status") == "registered"}
+    # 假设 id 与 emit id 的映射:h2 ↔ H2(大小写归一)
+    reg_upper = {h.upper() for h in registered}
+    for eid in emit_ids:
+        if eid.upper() not in reg_upper:
+            problems.append(
+                f"emit 能产出 `{eid}` 但投影里**无 registered 行** ⇒ "
+                f"违反 SU#2 门禁③ 的顺序锁(预登记必须先于产出)")
+    print(f"{YELLOW}  · emit 白名单 = {emit_ids}(⊆ registered 才合规){NC}")
 
 if problems:
     print(f"{RED}✗ 预登记集合 drift(共 {len(problems)} 项){NC}")

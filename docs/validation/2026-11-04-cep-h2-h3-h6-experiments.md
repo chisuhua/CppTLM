@@ -105,6 +105,32 @@ harness 修订都要走冻结面授权（per `examples/cep_poc_spike_s3.cc` 的 
 
 ---
 
+## 5bis. 判据分支的**测量状态**登记(2026-11-04 追加,per 台账 **Entry #219** ③ 缺口 C / `objective §9.1` ① 表)
+
+> **性质**:**只勘误不重跑** —— 本节登记「每条判据分支**到底测没测**」,
+> ⛔ **不改**上文 §5 / §6 的任何实测值,⛔ **不重写**结论段。
+> ⇒ 历史 run 的 `metrics.json` **不动**(它们是历史产物);重跑留给下一个实验批次兑现新契约。
+
+| 假设 | 判据分支 | 依赖观测 | **测量状态** | 说明 |
+|---|---|---|---|---|
+| **H2** | 3 策略延迟差异 > 20% | `avg_latency_cycles`(3 策略) | ✅ **已测量** | 4 / 14 / 18 cycles ⇒ 250% / 28.6% / 350% |
+| **H2** | *directory_misses 对比* | `directory_misses` | ⏭ **未测量** | ⛔ **全仓无产出者**(实测:仅 schema / tools / 测试断言命中,**无 emit 赋值点**)⇒ 该半支 ⏭ 未测量,**不得**计入 H2 结论(⚠️ **不是**「不成立」—— 「不成立」是 ❌ 的专有语义 = 已实测未达标;本例是**从未被测量**) |
+| **H3** | 0 违例 · **分支 1** | `memory_violations`(含 `memory_violation_kinds` 的 SWMR + data-value 双分桶) | ✅ **已测量** | swmr=0 · data_value=0 |
+| **H3** | *分支 2* | `deadlock_violations` | ⏭ **未测量** | ⚠️ **h3 的 emit 从未设 `deadlock_detected`**(实测:仅 h6 设)⇒ 该分支**从未被测量**,⛔ **不继承 pass** |
+| **H3** | *漏探(superset)判定* | `superset_violations` | ✅ **已测量** | 0 漏探。⚠️ 该观测**不在** `metrics.json` 的 13 必纳内(落在 `verification_scope` 文本)⇒ **不受** `not-collected` 机制覆盖 |
+| **H6** | 0 死锁 + collective stall 不占 coherence VC | `deadlock_violations` + `vc_stall_per_vc` + `collective_stalls` | ✅ **已测量** | 独立 VC 死锁=0;共享 VC 负控 backlog=2000 死锁=1 |
+
+**⚠️ 为什么现在补这一节**:上文 §1「判据来源(逐字)」逐字抄了 `objective §9` 的判据原文
+(H3 = 「`deadlock_violations == 0` + `memory_violations == 0`」),
+而**实测证明其中一支从未被测量** ⇒ 单读上文会得到「两条分支都测了」的错觉。
+⇒ per `ADR-CEP-06` **SU#1** §④ 的两级 verdict(与 SU#2 §③ 的 gloss):
+**run-validity 层放行**(该 run 本身合法)· **hypothesis-verdict 层拦截**(该判据 = 未测量)。
+
+**关联**: 台账 **Entry #219** ③ 缺口 C · **#218**(§9.1 改造 + 载体裁决)· **#212**(本轮实验)·
+`ADR-CEP-06` **SU#1** §④ / **SU#2** §③ · `objective §9.1` ① / ③ 表
+
+---
+
 ## 6. H6 结果
 
 注入速率：coherence 2/cycle、collective 1/cycle；跑 **2000 cycle**；每 VC 服务 1/cycle。

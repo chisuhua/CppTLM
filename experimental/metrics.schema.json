@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://cpptlm.local/schemas/metrics.schema.json",
   "title": "CEP 实验输出 metrics.json",
-  "description": "per ADR-CEP-06 §2(4 件套 + 13 必纳 metric + 4 可选 metric)+ §3(verification_mode 契约 + INV-CEP-06-IC5 双不变量判定)",
+  "description": "per ADR-CEP-06 §2(4 件套 + 13 必纳 metric + 4 可选 metric)+ §3(verification_mode 契约 + INV-CEP-06-IC5 双不变量判定) —— ⚠️ 2026-11-05(Entry #218 §⑤-2 / ADR-CEP-06 SU#1 §②):13 必纳 metric 的取值类型放宽为「数值 **或** `\"not-collected\"`」;未采集项**必须**在 `_not_collected` 表中登记 per-metric 原因。",
   "type": "object",
   "additionalProperties": true,
   "required": [
@@ -21,28 +21,169 @@
     "memory_violations"
   ],
   "properties": {
-    "total_cycles": { "type": "integer", "minimum": 0 },
-    "total_transactions": { "type": "integer", "minimum": 0 },
-    "transactions_per_cycle": { "type": "number", "minimum": 0 },
-    "avg_latency_cycles": { "type": "number", "minimum": 0 },
-    "p50_latency_cycles": { "type": "number", "minimum": 0 },
-    "p95_latency_cycles": { "type": "number", "minimum": 0 },
-    "p99_latency_cycles": { "type": "number", "minimum": 0 },
-    "max_latency_cycles": { "type": "number", "minimum": 0 },
-    "coherence_stalls": { "type": "integer", "minimum": 0 },
-    "collective_stalls": { "type": "integer", "minimum": 0 },
-    "directory_misses": { "type": "integer", "minimum": 0 },
-    "deadlock_violations": { "type": "integer", "minimum": 0 },
-    "memory_violations": { "type": "integer", "minimum": 0 },
-
-    "_not_collected_reason": {
-      "description": "不可观测 metric 的原因标注(per ADR-CEP-06 §2 兜底契约)",
-      "type": "string",
-      "minLength": 1
+    "total_cycles": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "total_transactions": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "transactions_per_cycle": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "avg_latency_cycles": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "p50_latency_cycles": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "p95_latency_cycles": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "p99_latency_cycles": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "max_latency_cycles": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "coherence_stalls": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "collective_stalls": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "directory_misses": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "deadlock_violations": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
+    },
+    "memory_violations": {
+      "description": "。取值可为数值,或字符串 `\"not-collected\"`(per ADR-CEP-06 SU#1 §② 载体 A:「实测 0」与「未测量」必须在**数据层**可区分)",
+      "oneOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "const": "not-collected"
+        }
+      ]
     },
     "verification_mode": {
       "description": "验证深度(per ADR-CEP-06 §3):bounded_random / sampled 的结果**不得**表述为「已证明无死锁 / 无违例」",
-      "enum": ["exhaustive", "bounded_random", "sampled"]
+      "enum": [
+        "exhaustive",
+        "bounded_random",
+        "sampled"
+      ]
     },
     "verification_scope": {
       "description": "验证规模上限的可读描述(如「2 节点 × 3 协议实例 × 10000 事务;未穷尽 4 节点配置」)",
@@ -54,13 +195,35 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "swmr": { "type": "integer", "minimum": 0 },
-        "data_value": { "type": "integer", "minimum": 0 }
+        "swmr": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "data_value": {
+          "type": "integer",
+          "minimum": 0
+        }
       }
     },
-    "link_utilization_per_link": { "type": "object" },
-    "vc_stall_per_vc": { "type": "object" },
-    "snoop_fanout_per_request": { "type": "object" },
-    "directory_size_distribution": { "type": "object" }
+    "link_utilization_per_link": {
+      "type": "object"
+    },
+    "vc_stall_per_vc": {
+      "type": "object"
+    },
+    "snoop_fanout_per_request": {
+      "type": "object"
+    },
+    "directory_size_distribution": {
+      "type": "object"
+    },
+    "_not_collected": {
+      "description": "**逐 metric** 的未采集原因表 —— per ADR-CEP-06 SU#1 §②:单字符串在多个 metric 未采集时**语义不可判定**(无法区分是哪个没采)⇒ 必须 per-metric。键 = 13 必纳 metric 中取值為 `\"not-collected\"` 的那些;值为该 metric 未采集的原因。⛔ reason 缺失 ⇒ 判红(per SU#1 §② 配套)",
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
   }
 }
