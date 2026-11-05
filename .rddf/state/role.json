@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-05T17:26:41Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-05T17:29:57Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-05T10:35:53Z",
-      "by": "user",
-      "reason": "用户口令「切 planner 做 B 批 + 这 3 条订正」⇒ ① 订正 objective 三处(A4 使「superset 不可证伪」过时 / 规划估时 11→12、6→7 / 「共用一次冻结链」→ 两次) ② B 批:B5/B6/B8 逐条核实 §6.2 措辞 ↔ 测试断言后落 verdict(有缺口登记未测量)"
-    },
     {
       "role": "builder",
       "at": "2026-11-05T10:40:07Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-05T17:26:41Z",
       "by": "user",
       "reason": "用户口令「继续」⇒ 按既定流程推进: architect 终验 §9.2 ⇒ §10 的落地(含独立复跑决定性变异), 通过后转 planner 落 B2 登记"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-05T17:29:57Z",
+      "by": "user",
+      "reason": "用户口令「切 planner 落登记」⇒ 把 §6.2 B2 登记为 ✅(66/66 = 61 载体 + 5 授权⏭) + 追加台账 Entry #236(依据 .rddf/reviews/cep-b2-acceptance-verdict.md §11 终审结论)"
     }
   ],
   "auto_switch_window": null
