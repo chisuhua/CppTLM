@@ -321,14 +321,14 @@
     "INV-CEP-14-IC1": [
       {
         "file": "test/test_cep_dummy_signals.cc",
-        "line": 107,
+        "line": 140,
         "kind": ".cc"
       }
     ],
     "INV-CEP-14-IC2": [
       {
         "file": "test/test_cep_dummy_signals.cc",
-        "line": 137,
+        "line": 170,
         "kind": ".cc"
       }
     ],

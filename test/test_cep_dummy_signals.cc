@@ -12,8 +12,10 @@
 
 #include "cep_adr_parser.hh"
 
+#include <filesystem>
 #include <regex>
 #include <string>
+#include <utility>
 #include <vector>
 
 using cpptlm::cep::read_file;
@@ -39,6 +41,37 @@ namespace {
     }
     std::string adr14() {
         return read_file((repo_root() / "docs/adr/ADR-CEP-14-stub-contract-tests.md").string());
+    }
+
+    // ── 「合同测试集**含**该负向断言」的机器判据 ────────────────────────
+    // 负向断言宏(负控形式)
+    bool has_negative_assertion(const std::string& content) {
+        return content.find("REQUIRE_FALSE(") != std::string::npos ||
+               content.find("CHECK_FALSE(") != std::string::npos;
+    }
+
+    /// 合同测试集内是否存在「**同时**含锚点 id 与负向断言」的文件。
+    /// ⚠️ 按**锚点 id** 定位(⛔ 不依赖 C 表已陈旧的「归属测试文件」列 ——
+    ///    C9 该列写的是 `test_cep_canonical_invariants.cc`,而 ADR-CEP-14 自记
+    ///    「实测不成立」;实际负向断言在别处 ⇒ 按 id 定位可自动避开该陈旧列)。
+    std::vector<std::string>
+    files_with_anchor_and_negative(const std::string& anchor,
+                                   const std::vector<std::pair<std::string, std::string>>& files) {
+        std::vector<std::string> out;
+        for (const auto& [path, content] : files) {
+            if (content.find(anchor) != std::string::npos && has_negative_assertion(content))
+                out.push_back(path);
+        }
+        return out;
+    }
+
+    /// 抽取 C 表「断言的不变量」列里的 invariant id(可多个)
+    std::vector<std::string> extract_anchor_ids(const std::string& cell) {
+        static const std::regex id_re(R"((INV-CEP-\d+A?-IC\d+|INV-SC\d+|CEN-Ib\d+))");
+        std::vector<std::string> out;
+        for (std::sregex_iterator it(cell.begin(), cell.end(), id_re), e; it != e; ++it)
+            out.push_back(it->str());
+        return out;
     }
 
 } // namespace
@@ -174,4 +207,54 @@ TEST_CASE("[cep][dummy-signals] 合同测试集含负向断言(C9)且该断言�
         joined += h + " ";
     INFO("Stub 源码泄漏协议标识符: " << joined);
     REQUIRE(hits.empty());
+
+    // ④ 判据主体(architect 复验 §7.2 追加):「合同测试集**含**该负向断言」——
+    //    取 C 表负向行的**锚点 id**,要求仓内存在某个 `test/test_*.cc`
+    //    **同时**含该锚点 id 与至少一条负向断言宏。
+    //    ⇒ 删掉那条负向断言 ⇒ 红;删掉锚点 ⇒ 红。
+    const auto anchors = extract_anchor_ids(negative_anchor);
+    INFO("负向行的锚点列未解析出 invariant id: " << negative_anchor);
+    REQUIRE(!anchors.empty());
+
+    // 扫描仓内合同测试文件
+    std::vector<std::pair<std::string, std::string>> test_files;
+    {
+        const auto dir = repo_root() / "test";
+        REQUIRE(std::filesystem::exists(dir));
+        for (const auto& e : std::filesystem::directory_iterator(dir)) {
+            if (!e.is_regular_file() || e.path().extension() != ".cc")
+                continue;
+            const auto name = e.path().filename().string();
+            if (name.rfind("test_", 0) != 0)
+                continue;
+            test_files.emplace_back(name, read_file(e.path().string()));
+        }
+    }
+    INFO("扫描的合同测试文件数: " << test_files.size());
+    REQUIRE(test_files.size() > 10u); // 防目录读空导致恒真
+
+    for (const auto& anchor : anchors) {
+        const auto carriers = files_with_anchor_and_negative(anchor, test_files);
+        std::string joined2;
+        for (const auto& c : carriers)
+            joined2 += c + " ";
+        INFO("合同测试集里没有「含锚点 " << anchor << " 且含负向断言」的文件");
+        REQUIRE(!carriers.empty());
+    }
+
+    // ⑤ 反向 fixture(判别力):三条都必须判否 / 命中
+    {
+        // (a) 有锚点、无负向断言 ⇒ 判否
+        const std::vector<std::pair<std::string, std::string>> only_anchor = {
+            {"a.cc", "INV-CEP-05-IC1"}};
+        REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", only_anchor).empty());
+        // (b) 有负向断言、无锚点 ⇒ 判否
+        const std::vector<std::pair<std::string, std::string>> only_negative = {
+            {"b.cc", "REQUIRE_FALSE(x);"}};
+        REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", only_negative).empty());
+        // (c) 二者兼有 ⇒ 命中(证明判别力,不是恒否)
+        const std::vector<std::pair<std::string, std::string>> both = {
+            {"c.cc", "INV-CEP-05-IC1\nREQUIRE_FALSE(x);"}};
+        REQUIRE(files_with_anchor_and_negative("INV-CEP-05-IC1", both).size() == 1u);
+    }
 }

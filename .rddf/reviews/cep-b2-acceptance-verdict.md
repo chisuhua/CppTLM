@@ -193,3 +193,34 @@
 
 ⇒ **B2 仍不得登记 ✅**（`INV-CEP-14-IC2` 无有牙载体 ⇒ 真实载体数 60/61）。
 ⇒ 下一步：builder 补 §7.2 的那条判据（~15min）→ architect 复验该 1 条 → planner 落 B2 登记。
+
+---
+
+## 8. B-2 闭合回执（builder，2026-11-06）
+
+按 §7.2 的机器判据补齐 `INV-CEP-14-IC2` 的主体（合同测试集**含**该负向断言）。
+
+**落地**：`test/test_cep_dummy_signals.cc` 的 IC2 case 内新增第 ④ 段 + 3 条反向 fixture。
+
+| 项 | 内容 |
+|---|---|
+| 判据 | 取 C 表「负向」行的**锚点 id**（C9 行 = `INV-CEP-05-IC1`），要求仓内存在某个 `test/test_*.cc` **同时**含该锚点 id 与至少一条负向断言宏（`REQUIRE_FALSE(` / `CHECK_FALSE(`） |
+| 变红条件 | 删掉那条负向断言 ⇒ 红；删掉锚点 ⇒ 红 |
+| 按**锚点 id** 定位 | ⛔ 不依赖 C 表已陈旧的「归属测试文件」列（C9 该列写 `test_cep_canonical_invariants.cc`，而 ADR-CEP-14 自记「实测不成立」）⇒ 自动避开该陈旧列 |
+| 防恒真 | 扫描文件数下界 `> 10`（目录读空即红） |
+| 反向 fixture | (a) 有锚点无负向断言 ⇒ 判否；(b) 有负向断言无锚点 ⇒ 判否；(c) 二者兼有 ⇒ 命中（证明非恒否） |
+
+**变异验证**（判别力证据）：把解析出的锚点 id 数字 `0→9`（`INV-CEP-05-IC1` → `INV-CEP-95-IC1`）后重跑 ⇒
+
+```
+FAILED: 合同测试集里没有「含锚点 INV-CEP-95-IC1 …」的文件
+test cases: 7 | 6 passed | 1 failed
+```
+
+⇒ 该断言**因正确原因红**（不是恒真占位）。
+
+**验证**：`[cep][dummy-signals]` 245 assertions 绿 · `[cep]` 428 cases / 10030 assertions 绿 ·
+`ctest` 154/154 绿 · `format` rc=0 · 映射表闸 `--for-achievement` rc=0（66/66 = 61 载体 + 5 ⏭-unmodelled + 0 pending）·
+`docs_sync` / `doc_ref` / `freeze` / `prereg_drift` rc=0。
+
+**待 architect 终验**：只验本条（§7.2 的要求 ⇒ §8 的落地）。
