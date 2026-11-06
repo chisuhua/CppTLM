@@ -555,3 +555,118 @@ R-T3:本 ADR 决策 6 的 6 类消息类词表 `{request, response, snoop, snoop
 
 **关联**: 台账 `obj-cep-platform.md` **Entry #138**(授权记录)· #134 · `ADR-CEP-09` SU(同 Entry)
 · `ADR-CEP-02`(canonical 10 流)· `docs/research/2026-11-01-cep-tilelink-tree-manager-anchor-summary.md` §4 / §7
+
+
+---
+
+## Status Update(2026-11-06,per 台账 Entry #239)—— `ualink_4` 实例声明的 **9 键取值裁决** + **路径 A 采纳**(声明实例)
+
+> **性质**:追加式(正文 §1 ~ §13 **逐字不改**)—— 本段裁 `ualink_4` 实例声明中**上一轮未覆盖的 9 键**,
+> 并裁「声明 vs ⏭ 登记」的路径。**上一轮已裁的 4 键**(`flow_support.snoop`/`snoop_resp` · `perm` ·
+> `sharer_tracker.impl` · `consistency_labels`)**不在本段重复**,见 `ADR-CEP-04` **SU 2026-11-06**。
+> **触发**:台账 **Entry #237**(事实底稿 + 三个裁决请求)· **#238**(D-1/D-2/D-3 裁决 + 冻结面授权)。
+> **审查**:`.rddf/reviews/cep-b3a-b3b-ruling.md` 体系(**oracle → critic**,顺序不可颠倒);
+> critic 结论 = **APPROVE_WITH_CONDITIONS** · `mergeable: yes` · `scope_exceeded: false` ·
+> **三档均无 BLOCKER** ⇒ 无需复审;其 **5 条 SHOULD_FIX** 已全部落进本段。
+> **关联 change**:`backlog: cpptlm-cep-b3a-b3b-advancement`(占位,立项后回填)。
+
+### ① 建模前提(**显式**,⛔ 不是脚注)
+
+`ualink_4` 是「**无硬件一致性的 memory-semantic fabric**」——
+⚠️ **该前提本身是 `C-10` 建模声明**(一步推断),⛔ **不是**事实(per 锚点摘要 `C-10`:
+支撑 = 4 个互相独立的**公开非规范**来源;公开可钉版文本**无字面 "no snoop"**;
+⛔ 本仓**未**读取任何 UALink 规范 PDF 技术正文,Evaluation Copy 同型约束照旧)。
+
+### ② 9 键取值 + **认识论分级**(三档)
+
+| # | 键 | 取值 | **认识论分级** | 锚 / 依据 |
+|---|---|---|---|---|
+| 1 | `family` | `industrial` | **锚定建模声明**(来源族判定) | `07 号` §5.1 口径 + `channel_dependency_graph.hh` 用 `family` 推导 per-bridge `protocol_id_`(CC-05 ④)⇒ `industrial` 是让该链闭合的唯一取值 + UALink Consortium = 产业联盟(对照 `tilelink_c` = `academic`:UC Berkeley 研究起源 / Chips Alliance 开源标准) |
+| 2 | `flow_support.request` / `.completion` | `true` / `true` | **来源锚定(正向)** | `07 号` §5.1.1「TL Load / Store / Atomic」+ 4 个公开来源;⚠️ **≠ spec-pinned**(4 来源均为公开**非规范**) |
+| 3 | `flow_support.snoop` / `.snoop_resp` / `.snoop_completion_ack` | `false` | **锚定建模声明**(负向 · 一步推断) | `C-10`;且三者**成套**(CEN-Ib3 / Ib4 / Ib10)⇒ 同真同假 |
+| 4 | `flow_support.writeback` / `.forward_data` / `.back_invalidate` / `.address_resolve` | `false` | **锚定建模声明**(负向) | `C-10` + 无缓存写回 / 无目录转发 / 无反失效 / 无地址解析面(CEN-Ib5~Ib8) |
+| 5 | `flow_support.barrier` | `false` | **锚定建模声明**(负向) | **依据已换**(见 ③ ③) |
+| 6 | `atomic` | `{supported: true}`(省略 `intent_field`) | **来源锚定(正向)** | `07 号` §5.1.1 + `ADR-CEP-11 §3` 锁表;`intent_field` = 「request 流中承载 atomic 意图的**独立属性名**」⇒ UALink 由 **opcode** 区分(无独立属性)⇒ 省略(先例 `nvlink_4` 同样省略);⚠️ **≠ spec-pinned** |
+| 7 | `ordering_assumption` | `{ualink_fabric: {0:unordered, 1:unordered, 2:unordered, 3:p2p_ordered}}` | **规则执行**(逐字拷贝) | `ADR-CEP-12` 决策 5(排序是 (network, vc_id) 的**静态属性**) + `C-8` 的锁定 VC 语义 + `moesi_gpu` / `mesif` 的 `ualink_fabric` 既有登记(**逐字相同**) |
+| 8 | `vc_binding` | `{ualink_fabric: {request:0, atomic:1, query:2, response:3}}`(⛔ **去** `snoop_resp`) | **规则执行 + 负向删减** | 槽位与取值 = `C-8` + 既有登记(规则执行);**删减** `snoop_resp` 的依据 = `C-10` 的 `snoop=false`(⚠️ 该删减是**负向**成分,⛔ 不是既有登记本身) |
+| 9 | `combination_capabilities` | `{concurrent:true, hierarchical:false, heterogeneous:true}` | **锚定建模声明**(**维度借用**) | `C-10` + ⚠️ **维度借用**显式登记(`ADR-CEP-12` 决策 8 的三维来自调研 F16,面向 **coherence 协议** ⇒ 用于无一致性 fabric 属**类比延伸**) |
+
+**其余 3 键(机械可推导,非建模选择)**:`adapter` = `UalinkAdapter` · `status` = `implemented` · `protocol_version` = `ualink-2.0`。
+
+> **新增 invariant 数 = 0** —— 本段裁的是**实例取值**,不动 `INV-CEP-12-IC1`~`IC3` 的编号与数量(照 §11 / §12 / §13 先例句式)。
+
+### ③ 逐项依据要点(争议项的改写)
+
+**③-1 `family`** —— ⛔ **不是装饰**:装配期用它推导 per-bridge 的 `protocol_id_`
+⇒ 取值错误会**静默**影响 bridge 绑定链;`industrial` 是该链闭合的唯一取值。
+
+**③-2 `flow_support` 无漏项** —— atomic **不需要**独立流:`ADR-CEP-17` CEN-Ib11 规定 atomic 意图经
+`request` 流的**独立属性**承载,`vc_binding` 的 `atomic` 消息类负责 VC 分配
+(先例:`nvlink_4` = atomic supported 而**无** `intent_field`、**无**独立流 ⇒ 已闭环)。
+
+**③-3 `barrier = false` 的依据(⚠️ **本轮已换** —— 换之前的理由是错的)**
+
+| | 内容 |
+|---|---|
+| ⛔ **作废的理由** | 「INC 的同步是**集合级** ⇒ 归 `collective_barrier` 平面 ⇒ canonical `barrier` 流 false」—— **范畴错误**:两平面**正交**(per `ADR-CEP-02` §2 决策 B),且被**先例反证**:`nvlink_4` 声明 `barrier: true`,而 NVLink SHARP 的 rendezvous barrier **同样**被判进 `collective_barrier` 平面 ⇒ 「有集合级同步平面」与「canonical `barrier` = true」在既有登记中**共存** |
+| ✅ **现行理由** | canonical `barrier` 是 **requester-scoped ordering point**(drain / visibility,per `ADR-CEP-02` 决策 3);4 个公开来源对 UALink 有无 fence/drain 原语**完全沉默**;在 ① 的前提(software coherency)下协议层**无** barrier 消息 ⇒ **负向建模声明**挂 `C-10`,认识论等级 = 一步推断 |
+| **残余弱点(诚实登记)** | 「**沉默非证据**」—— 该论证的强度**不**高于同批的其它负向声明 ⇒ 已按同一分级登记,⛔ 不升格 |
+
+**③-4 `combination_capabilities` 的安全论证(⚠️ **依据已改正**)**
+
+- ⛔ **作废的引用**:`INV-CEP-13-IC2` 是**跨域写传播**判据(域可见写 (a)+(b)),与 `hierarchical` 维度**无直接关系**
+  ⇒ 不得用它论证本键的安全。
+- ✅ **现行依据**:`hierarchical` 维度**当前无已落地的机器判据**消费它(`07 号` §7 的跨域组合判据为**人工声明**,
+  尚未落地)⇒ 取 `false` **不产生任何闸效应**;且该维度的**实例级评估集为空** ⇒ 无回归面。
+- ⚠️ **鉴别力声明**:存量 7 实例该三维**恒为** `{true, true, true}` ⇒ 本取值是**首个** discriminating 值;
+  它与 `sharer_tracker.impl = 不参与` / `perm = ["NONE"]` 形成**三重一致**的「无一致性」声明
+  ⇒ 登记为「**声明入口 + 待实验证伪**」姿态(照 Entry #215 的同族 posture),⛔ 不宣称已由实验证实。
+
+### ④ 路径裁决 = **路径 A**(声明实例)
+
+| 方案 | 结论 | 理由 |
+|---|---|---|
+| **A** 声明 `ualink_4` + 计数链 7→8 | ✅ **采纳** | ① schema 的 **13 键全部 required** ⇒ 「留白」**无合法表达**,路径 B 只是把留白从 JSON 挪进台账;② 路径 B 的原前提「取值不可判定」已被 4 个公开来源 + `C-10` **部分证伪**;③ 残余弱键(`barrier` / `combination_capabilities`)两条路都躲不掉,路径 A 至少让它们以**带认识论标签的声明形态**入库,可被未来实验证伪 |
+| **B** 不声明 + 登记第 8 实例 ⏭ + 「8 实例」→「7 + 1 ⏭」 | ❌ 否决 | 使 B3a 以「⏭ 阻塞」成为**终态**(DoD 永不闭合);「6 族 / 8 实例」与 JSON 实例数**维持**既有不一致(⛔ 该不一致**已存在**,路径 A 是**修复**它);登记理由「语义无对应物」在 `C-10` 已签后**半过时** |
+| **C** 声明但 `status="planned"` | ❌ 排除 | schema 允许,但**不能**避免计数 churn(存量断言数的是**实例总数**而非 `implemented` 数)且**低报**事实(`UalinkAdapter` 已落地、装配可达已成立) |
+| **D** schema 加 `unknown` / `null` 值 | ❌ 排除 | 真正理由 = **为 2 个弱键把 boolean 改 nullable 的全局语义收益为负**(不是「不能动冻结面」—— 冻结面**可以**走 `--update --authorized-by` 授权修改);且违背「悬空判据禁令」先例 |
+
+**回滚路径**(显式):整体回退 = 删 `ualink_4` 实例条目 + `repo_owned_instance_ids` 除名 +
+`sharer_tracker_rationales` 除名 + **计数链全回退**(5 个测试文件的存量断言 + `07 号` 两处 + objective 台账) +
+`C-10` 的 `N-8` / `N-9` 转正**不随之回退**(它是**事实登记**,与实例声明解耦)⇒ 回滚**不产生新的不一致**。
+
+### ⑤ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR 正文 §1 ~ §13** | **零改动**;`protocol_instance.schema.json` **零改动**(13 键全 required + 枚举已含全部候选取值 ⇒ 不触发冻结面授权) |
+| **`protocol_instances.json`** | **非** M1 冻结件(但受 ⑥ 镜像闸约束)⇒ 实例 **7 → 8** · `implemented` **7 → 8** · `repo_owned_instance_ids` **增员**(⛔ **同 commit** 必须增员,否则 ⑥ 报「未登记的额外实例」)· `sharer_tracker_rationales` 增 `ualink_4` 条目 · `no_upgrade_instances` **3 → 4** |
+| **`no_upgrade_instances` 的派生序** | `derive_no_upgrade_instances` 按 **instances 数组顺序**过滤 ⇒ `ualink_4` **追加到数组末尾** ⇒ 派生序 = `[cxl_3_0_symmetric, tilelink_c, nvlink_4, ualink_4]` ⇒ **`ualink_4` 在 `at(3)`**(⚠️ 现有断言的 `at(0..2)` **非** JSON 顺序,勿凭直觉推) |
+| **ArchForge 侧** | **零义务** —— ⑥ 镜像比对只覆盖 `ArchForge ids ∩ repo ids`,`repo_owned` 实例**豁免**;跨仓 grep 实测 ArchForge **无** `ualink` 声明 ⇒ 无撞名 |
+| **装配面** | `snoop=false` **首实例**(现存 7 个全 `true`)⇒ 装配闸首次在 snoop-less 声明上运行;实测:装配闸 ①~⑤ **不消费** `flow_support.snoop` ⇒ **无新代码路径**;`perm=["NONE"]` ⇒ `exposes_unique_perm=false` ⇒ `INV-CEP-08-IC2` 走 **vacuous PASS**(detail 文字**已实测准确**) |
+| **台账 / 文档同步** | `obj-cep-platform.md` 的 B3a 提及位 **≥ 6 处**(§6.2 B3a 行 / §4.5 推进状态 / 规划前提 / §6.2 终态表 / 待办指针 / 规划段)—— ⚛️ **终态表「仍阻塞 = B3b + B3a」句必须同批改写**,否则 `Entry #238` 刚闭合的 **D-3 双记账立即复发**;`07 号` 的计数 / 状态字样行 **≥ 7 处**(§5.1.1 标题「6 族 / 8 实例」/ §5.1.1 UALink 行 / §5.1.1 计数脚注 / §5.1.1 状态脚注 / §5.1.1 adapter 实例行 / §11 adapter 实例行 / §11 schema 行)⇒ 追加 `ualink_4` 实例是**修复**既有不一致 |
+| **「声明 ≠ 装配」** | 实例**声明**落地 ≠ **实例级装配**闭环(装配仍需把 `ualink_4` 挂进拓扑 + collective plane 绑定)⇒ `07 号` §5.1.1 UALink 行**须保留**「实例级装配待 backlog」措辞,⛔ 不得被读成「已闭环」 |
+| **代价** | ① **5 个测试文件**的存量断言翻转;② 计数链 3 处计数 + 2 处文档;③ `ualink_4` 的**证据强度低于**其余 7 实例(3 键为一步推断 + 1 键为维度借用)⇒ 须**显式登记**;④ `no_upgrade_instances` 3→4 须回查与 `ADR-CEP-09` VC 依赖集的**隐性冲突**(排除理由必须可审计) |
+
+### ⑥ Verification(前瞻判据 · 可勾选)
+
+- [ ] `ADR-CEP-04` **SU 2026-11-06** 已加**双向**交叉引用(本段 → 该段 4 键;该段 → 本段 9 键)⇒ 读者不会误以为 13 键全裁于一处
+- [ ] `protocol_instance.schema.json` **零改动**(冻结面未触发 `--update --authorized-by`)
+- [ ] `ualink_4` 实例已声明(13 键)· `repo_owned_instance_ids` **同 commit** 增员 · `sharer_tracker_rationales["ualink_4"]` 已落
+- [ ] **决定性变异**:`cep_decl_alignment_check.sh` 在「含 `ualink_4` 且已登记 `repo_owned`」下 **⑥ 段不红**
+  (同时证明镜像豁免生效 + ArchForge 零义务 + 计数链一致)
+- [ ] **反向 fixture**:从 JSON 删掉 `ualink_4` ⇒ ⑥ 的「未登记的额外实例」检查**按正确原因红**
+- [ ] **UIA-07 翻转**(`test_cep_ualink_inc.cc` 的「`ualink_4` 不声明」负向 fixture ⇒ 正控)⇒ 同 commit 内**保留一条「负向 witness」注释**(登记「本断言 2026-11-06 由『不声明』翻转为『声明』,系**有意**变异点」)
+- [ ] 5 个测试文件的存量断言已翻转(`test_cep_tilelink_instance_decl.cc` · `test_cep_mesif_instance_decl.cc` · `test_cep_cxl_dcoh_instance_decl.cc` · `test_cep_moesi_gpu_adapter.cc` · `test_cep_ualink_inc.cc`)⇒ `no_upgrade_instances` **size 4** 且 `at(3) == "ualink_4"`
+- [ ] `obj-cep-platform.md` 的 **≥ 6 处** B3a 提及位已同批改写(⚛️ **含终态表「仍阻塞」句**)
+- [ ] `07 号` 的 **≥ 7 处**计数 / 状态行已同步,且 §5.1.1 UALink 行**保留**「实例级装配待 backlog」措辞
+- [ ] `ADR-CEP-09` 的 `no_upgrade_instances` 3→4 回查结论已登记(排除理由可审计)
+- [ ] `cep_decl_alignment_check.sh --strict` 绿 · `cep_freeze_check.sh --strict` 绿 · `cep_prereg_drift_check.sh --strict` 绿 · `cep_docs_sync_check.sh --strict` 绿 · `cep_invariant_map_check.py --check --for-achievement` 绿(66/66 = 61 + 5 + 0,⚠️ **确认 ADR-CEP-12 的不变量计数未漂移**)· `[cep]` 全绿
+
+**关联**:台账 **Entry #239**(本裁决 + 路径 A)· **#238**(D-1/D-2/D-3 裁决 + 冻结面授权)· **#237**(事实底稿)· **#233** · **#231** · **#215**(声明入口 + 实验证伪 posture)·
+`ADR-CEP-04` **SU 2026-11-03**(候选集 + 理由登记)+ **SU 2026-11-06**(`ualink_4` 4 键 + O1/O2)·
+`ADR-CEP-02` §2 决策 3 / 决策 B + **SU 2026-11-02 R-T4** + **SU 2026-11-06**(`perm` 语义)·
+`ADR-CEP-11 §3`(锁表)· `ADR-CEP-17` CEN-Ib11 · `ADR-CEP-09`(VC 依赖集)·
+`docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §0 / §2bis(`C-10`) / §3 ·
+`docs/architecture/07-coherence-exploration-platform.md` §5.1.1 / §7 / §11 ·
+`.rddf/reviews/cep-b3a-b3b-ruling.md`(审稿报告体系)

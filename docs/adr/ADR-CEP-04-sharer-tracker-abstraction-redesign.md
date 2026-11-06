@@ -866,6 +866,10 @@ R11 是「**声明超前于实现**」(声明了 `SparseSnoopFilter` 却无行�
 ## Status Update(2026-11-06,per 台账 Entry #238)—— `ualink_4` 实例取值**正式裁决**(§③残余收口)+ 两项**登记面**的落地义务
 
 > **性质**:追加式(正文 §1 ~ §13 **逐字不改**)—— 本段是 **§③残余**「`ualink_4` 的实际取值**尚未裁决**」的**正式收口**。
+> ⚠️ **本段只裁 13 键中的 4 键**(`flow_support.snoop`/`snoop_resp` · `perm` · `sharer_tracker.impl` · `consistency_labels`);
+> **其余 9 键**(`family` · `flow_support` 其余 8 位 · `atomic` · `ordering_assumption` · `vc_binding` ·
+> `combination_capabilities`)由 **`ADR-CEP-12` Status Update(2026-11-06,per 台账 **Entry #239**)** 裁
+> ⇒ **13 键分散在两份 ADR** ⇒ 本段与该段**双向交叉引用**,⛔ 读者不得误以为 13 键全裁于本段。
 > **前置已满足**:§③残余所依赖的「Task 0 普查」**已完成**(per 台账 **Entry #237** §1.4 +
 > `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §3)⇒
 > 本段**不是**「预先钉死」,而是该残余所预留的**裁决位**。
