@@ -1,6 +1,9 @@
-# cep-tilelink-runtime-engine Specification (delta)
+# cep-tilelink-runtime-engine Specification
 
-## ADDED Requirements
+## Purpose
+TBD - created by archiving change cpptlm-cep-tilelink-runtime-engine. Update Purpose after archive.
+
+## Requirements
 
 ### Requirement: cep-tilelink-runtime-engine
 

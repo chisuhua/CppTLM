@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-06T07:21:03Z",
+  "updated_at": "2026-11-06T09:44:48Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-05T15:55:35Z",
-      "by": "user",
-      "reason": "用户口令「切到 builder 执行第 1、2 步」⇒ 按 .rddf/reviews/cep-b2-acceptance-verdict.md: B-1/B-2/B-3 三处 BLOCKER + S-1..S-6 六项 SHOULD_FIX"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-05T16:35:20Z",
-      "by": "user",
-      "reason": "用户口令「architect 做第 3 步复验」⇒ 只验 B-1/B-2/B-3 闭合 + 本轮新 diff 是否引入新借壳(不复审已通过的 55 条)"
-    },
     {
       "role": "builder",
       "at": "2026-11-05T16:54:10Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-06T07:21:03Z",
       "by": "user",
       "reason": "用户口令「切 builder 实施引擎 change:入口是 tasks 的 P0-0(F2 漏勾回填:Entry #244 → 07 号 补勾 → cep_freeze_check --update --authorized-by → 清单单独 commit),再做 P0-1 注册名连锁 + 引擎本体」⇒ 先 P0-0(实际授权 Entry 顺延为 #245,因 #244 已用于 T3 归档回执),再 P0-1 + 引擎本体"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-06T09:27:23Z",
+      "by": "user",
+      "reason": "用户口令「继续完成剩余的任务」⇒ 引擎 change 剩余项:① verifier 按 AC-1~AC-7 逐条验收;② 验收通过后归档(合并 delta spec + KPI 回 0/3)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-06T09:44:48Z",
+      "by": "user",
+      "reason": "verifier 验收 PASS(AC-1~AC-6+TLE-08;AC-7 归档项待收尾)⇒ 切 builder 执行归档:openspec archive(合并 delta spec cep-tilelink-runtime-engine 进 main specs)+ KPI 1/3→0/3 + 台账 Entry #247"
     }
   ],
   "auto_switch_window": null
