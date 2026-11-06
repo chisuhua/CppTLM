@@ -414,7 +414,10 @@ public:
         std::size_t decided = 0;
         for (const auto& row : kTransitions) {
             for (const auto& cell : row) {
-                if (cell.kind == CellKind::Known || cell.kind == CellKind::Illegal) {
+                // ⚠️ 口径与 `kLegalTransitionCoverageNum` **一致**:`Free`(规范明确实现自由)
+                //    也是「已定立场」⇒ 计入;⛔ 否则分子含 Free 而分母不计 ⇒ 静默抬高覆盖率。
+                if (cell.kind == CellKind::Known || cell.kind == CellKind::Illegal ||
+                    cell.kind == CellKind::Free) {
                     ++decided;
                 }
                 if (cell.kind == CellKind::Known && !cell.pending) {
@@ -434,13 +437,30 @@ public:
         const std::array<std::array<Transition, NS>, NE>& m) noexcept {
         std::size_t n_known = 0;
         std::size_t n_illegal = 0;
+        std::size_t n_free = 0;
         std::size_t n_unknown = 0;
         for (const auto& row : m) {
             for (const auto& cell : row) {
                 switch (cell.kind) {
                     case CellKind::Known: ++n_known; break;
                     case CellKind::Illegal: ++n_illegal; break;
+                    case CellKind::Free: ++n_free; break;
                     case CellKind::Unknown: ++n_unknown; break;
+                }
+                // ⚠️ `Free`(公开来源**明确**「实现定义 / 自由选择」):目标态**无意义**
+                //    ⇒ 不参与目标校验;但**须有来源定位**(ref 非空)+ 非空 note;
+                //    且 basis 必须是**公开来源明确**档(PublicDirect)⇒ 不得是本仓推导。
+                if (cell.kind == CellKind::Free) {
+                    if (cell.ref == nullptr || cell.ref[0] == '\0') {
+                        return false;
+                    }
+                    if (cell.note == nullptr || cell.note[0] == '\0') {
+                        return false;
+                    }
+                    if (cell.basis != BasisKind::PublicDirect) {
+                        return false;
+                    }
+                    continue;
                 }
                 if (cell.kind == CellKind::Unknown) {
                     if (!contains(cell.note, "R-")) {
@@ -459,7 +479,7 @@ public:
                 }
             }
         }
-        return n_known + n_illegal + n_unknown == NE * NS;
+        return n_known + n_illegal + n_free + n_unknown == NE * NS;
     }
 
     /// 本矩阵自检(= 上式的绑定调用)。

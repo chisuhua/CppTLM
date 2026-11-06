@@ -538,12 +538,32 @@ public:
     static constexpr bool transitions_are_valid_for(
         const std::array<std::array<Transition, NS>, NE>& m) noexcept {
         std::size_t n_known = 0;
+        std::size_t n_free = 0;
         std::size_t n_unknown = 0;
         for (const auto& row : m) {
             for (const auto& cell : row) {
                 switch (cell.kind) {
                     case CellKind::Known: ++n_known; break;
+                    case CellKind::Free: ++n_free; break;
                     case CellKind::Unknown: ++n_unknown; break;
+                }
+                // ⚠️ `Free`(规范**明确**「实现定义 / 自由选择」):目标掩码**无意义** ⇒ MUST 为 0;
+                //    但**须有条款级定位**(规范明确 ⇒ 有 ref)+ 非空 note;
+                //    且 basis 必须是**规范明确**档(Direct)⇒ 不得是本仓推导。
+                if (cell.kind == CellKind::Free) {
+                    if (cell.target_mask != 0) {
+                        return false;
+                    }
+                    if (cell.ref == nullptr || cell.ref[0] == '\0') {
+                        return false;
+                    }
+                    if (cell.note == nullptr || cell.note[0] == '\0') {
+                        return false;
+                    }
+                    if (cell.basis != BasisKind::Direct) {
+                        return false;
+                    }
+                    continue;
                 }
                 if (cell.kind == CellKind::Unknown) {
                     if (cell.target_mask != 0) {
@@ -568,7 +588,7 @@ public:
                 }
             }
         }
-        return n_known + n_unknown == NE * NS;
+        return n_known + n_free + n_unknown == NE * NS;
     }
 
     /// 本矩阵自检(= 上式的绑定调用)。

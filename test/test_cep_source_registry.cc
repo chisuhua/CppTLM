@@ -188,11 +188,12 @@ TEST_CASE("SRK-04: CellKind::Free 四态互斥 + 当前 0 格 + adapter 分支",
             tl_unknown += (t.kind == TileLinkStateSpec::CellKind::Unknown) ? 1 : 0;
             REQUIRE(TileLinkCAdapter::transition_is_free(st, ev) ==
                     (t.kind == TileLinkStateSpec::CellKind::Free));
-            // Free 不得被 Known/Unknown 吞掉。
-            if (t.kind == TileLinkStateSpec::CellKind::Free) {
-                REQUIRE_FALSE(TileLinkCAdapter::transition_is_known(st, ev));
-                REQUIRE_FALSE(TileLinkCAdapter::transition_is_unknown(st, ev));
-            }
+            // ⛔ **无条件**断言(2026-11-06,per oracle 评审):`Free` 不得被 Known/Unknown 吞掉。
+            //    ⚠️ 原写法把断言放进 `if (kind == Free)` ⇒ 真实 Free 格 = 0 时**永不进入** = 空转。
+            REQUIRE(TileLinkCAdapter::transition_is_known(st, ev) ==
+                    (t.kind == TileLinkStateSpec::CellKind::Known));
+            REQUIRE(TileLinkCAdapter::transition_is_unknown(st, ev) ==
+                    (t.kind == TileLinkStateSpec::CellKind::Unknown));
         }
     }
     REQUIRE(tl_known + tl_free + tl_unknown == TileLinkStateSpec::kTransitionCellCount);
@@ -243,4 +244,80 @@ TEST_CASE("SRK-04b: 决定性变异输入 —— 弱来源配 Direct 必然不�
     // 同来源却标 `ArchforgeAnchor` ⇒ 必须不一致(否则说明映射无鉴别力)。
     weak.basis = CxlStateSpec::BasisKind::ArchforgeAnchor;
     REQUIRE_FALSE(CxlStateSpec::basis_ref_kind_consistent(weak));
+}
+
+TEST_CASE("SRK-05: Free 格校验器有牙 —— 合法 Free 通过 / 违规 Free 必红", "[cep][source-registry]") {
+    // ⚠️ 2026-11-06(per oracle 评审):`CellKind::Free` 落地时**校验器必须同步接入**
+    //    ⇒ 否则首个真实 Free 格落下即编译红(半落地)。此处用**合成 1×1 矩阵**证明:
+    //    ① 合法 Free 格被接受;② 每条违规形态必红。
+    using TL = TileLinkStateSpec;
+    {
+        std::array<std::array<TL::Transition, 1>, 1> ok{};
+        ok[0][0] = TL::Transition{TL::CellKind::Free, 0, TL::BasisKind::Direct, false,
+                                 "TLC-99", "合成:规范明确实现自由"};
+        REQUIRE(TL::transitions_are_valid_for(ok));
+
+        std::array<std::array<TL::Transition, 1>, 1> bad_mask{};
+        bad_mask[0][0] = TL::Transition{TL::CellKind::Free, 1, TL::BasisKind::Direct, false,
+                                        "TLC-99", "合成"};
+        REQUIRE_FALSE(TL::transitions_are_valid_for(bad_mask)); // 目标掩码 MUST 为 0
+
+        std::array<std::array<TL::Transition, 1>, 1> bad_ref{};
+        bad_ref[0][0] = TL::Transition{TL::CellKind::Free, 0, TL::BasisKind::Direct, false,
+                                       "", "合成"};
+        REQUIRE_FALSE(TL::transitions_are_valid_for(bad_ref)); // 须有条款级定位
+
+        std::array<std::array<TL::Transition, 1>, 1> bad_basis{};
+        bad_basis[0][0] = TL::Transition{TL::CellKind::Free, 0, TL::BasisKind::Inferred, true,
+                                         "TLC-99", "合成"};
+        REQUIRE_FALSE(TL::transitions_are_valid_for(bad_basis)); // 不得是本仓推导
+    }
+    using CX = CxlStateSpec;
+    {
+        std::array<std::array<CX::Transition, 1>, 1> ok{};
+        ok[0][0] = CX::Transition{CX::CellKind::Free, CX::State::S, CX::BasisKind::PublicDirect,
+                                 false, "D1 p.5", "合成:公开来源明确实现自由"};
+        REQUIRE(CX::transitions_are_valid_for(ok));
+
+        std::array<std::array<CX::Transition, 1>, 1> bad_ref{};
+        bad_ref[0][0] = CX::Transition{CX::CellKind::Free, CX::State::S, CX::BasisKind::PublicDirect,
+                                       false, "", "合成"};
+        REQUIRE_FALSE(CX::transitions_are_valid_for(bad_ref));
+
+        std::array<std::array<CX::Transition, 1>, 1> bad_basis{};
+        bad_basis[0][0] = CX::Transition{CX::CellKind::Free, CX::State::S, CX::BasisKind::SelfDerived,
+                                         true, "D1 p.5", "合成"};
+        REQUIRE_FALSE(CX::transitions_are_valid_for(bad_basis)); // 不得是本仓推导
+    }
+}
+
+TEST_CASE("SRK-06: cxl 三档计数硬断言(防映射表漂移)", "[cep][source-registry]") {
+    // ⚠️ 2026-11-06(per critic 验证建议):把「24 PublicDirect / 44 SelfDerived /
+    //    42 Unknown 且 ref 空」**硬断言** ⇒ `07 号` SU · 五 §② 的映射表若与代码漂移即红。
+    std::size_t n_public_direct = 0;
+    std::size_t n_self_derived = 0;
+    std::size_t n_unknown_empty_ref = 0;
+    for (std::uint8_t s = 0; s < CxlStateSpec::kStateCount; ++s) {
+        for (std::uint8_t e = 0; e < CxlStateSpec::kEventCount; ++e) {
+            const auto t = CxlStateSpec::transition(as_enum<CxlStateSpec::State>(s),
+                                                    as_enum<CxlStateSpec::Event>(e));
+            if (t.basis == CxlStateSpec::BasisKind::PublicDirect) {
+                ++n_public_direct;
+            }
+            if (t.basis == CxlStateSpec::BasisKind::SelfDerived) {
+                ++n_self_derived;
+            }
+            if (t.kind == CxlStateSpec::CellKind::Unknown && t.ref != nullptr &&
+                t.ref[0] == '\0') {
+                ++n_unknown_empty_ref;
+            }
+        }
+    }
+    REQUIRE(n_public_direct == 24);
+    REQUIRE(n_self_derived == 44);
+    REQUIRE(n_unknown_empty_ref == 42);
+    REQUIRE(n_public_direct + n_self_derived == CxlStateSpec::kTransitionCellCount);
+    // 与下界常量自洽(pending=false 22 格 + 覆盖率下界 26)。
+    REQUIRE(CxlStateSpec::kPendingFalseFloor == 22);
+    REQUIRE(CxlStateSpec::kCoverageFloor == 26);
 }
