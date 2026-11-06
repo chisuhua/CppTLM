@@ -37,6 +37,7 @@
 #include "tlm/gpu/gmmu_tlm.hh"
 #include "tlm/gpu/sdma_engine_tlm.hh"
 #include "tlm/lwc/lwc_bus_hub.hh" // Change B: LwcBusHub (REGISTER_CHSTREAM 注册, ChStreamModuleBase 派生)
+#include "tlm/cep/moesi_gpu_protocol_engine.hh" // P3: MoesiGpuProtocolEngine(L4 E2E 的实例化载体)
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh" // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
@@ -147,6 +148,14 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
        ⚠️ 事件语义**零自有副本** ⇒ 引擎内 0 处「意图 → 事件」字面映射(per design D-2)。 */          \
     REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("TileLinkProtocolEngine",                                \
                                            tlm::cep::TileLinkProtocolEngine,                        \
+                                           bundles::CohIfBundle, 2);                                \
+    /* P3(2026-11-06,per 台账 Entry #259):MOESI-GPU 引擎注册 —— L4 事务级 E2E 的**实例化载体**。 \
+       `moesi_gpu` 是本仓首个 `status=implemented` 实例(per ADR-CEP-12 §13);此前引擎存在但      \
+       **未注册** ⇒ 无法被 ModuleFactory 实例化 ⇒ 无「instantiate → submit → tick → 抵达」路径。 \
+       ⚠️ 引擎的 10 个 `on_*` 按决策 M-6 **只记账**(零发射)⇒ 本注册只闭合「实例化」,        \
+       ⛔ 不闭合「协议事件语义」。 */                                                                            \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MoesiGpuProtocolEngine",                                 \
+                                           tlm::cep::MoesiGpuProtocolEngine,                        \
                                            bundles::CohIfBundle, 2);                                \
     /* 队列 #7 Phase 3/5:协议桥注册(per CC-05 —— 死钩子 → 活钩子)。                                               \
        `register_protocol_bridge` 对同名 early-return(ODR-safe)⇒ 幂等。                                   \

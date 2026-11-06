@@ -26,7 +26,7 @@
 | **CHI RN-F** | ✅ `test_cep_chi_rnf_subset.cc`(1322 行) | ✅ | ✅ CR-10③ | ✅ `submit → tick → 分派` | — | `chi_rnf_protocol_engine.hh`(648) |
 | **MESIF** | ✅ `_adapter` / `_state_spec` / `_ratification` | ✅ | ✅ `instantiateAll` | ✅ `submit_local_request → tick → 对端` | — | `mesif_protocol_engine.hh`(667) |
 | **CohIf 载体** | ✅ `test_cep_cohif_carrier.cc` | ✅ | ✅ `_json_assembly`(11 处) | ✅ | — | `CohIfNullProtocolEngine`（**Null 语义**） |
-| **MOESI-GPU** | ✅ `_adapter`(442) / `_compensation`(324) | ✅ | ⚠️ 仅 per-network 装配期校验 | ❌ | — | `moesi_gpu_protocol_engine.hh`(306) |
+| **MOESI-GPU** | ✅ `_adapter`(442) / `_compensation`(324) + `_engine`(5 cases,2026-11-06) | ✅ **`moesi_gpu`** | ✅ `cep_moesi_gpu_pe_minimal.json`(per Entry #259) | ✅ `submit_local_request → 状态机` + 10 流记账(2026-11-06,per 台账 **Entry #259**) | — | `moesi_gpu_protocol_engine.hh`(306) |
 | **CXL 2.0 非对称** | ✅ `test_cep_cxl_cache_adapter.cc`(209) + `_state_spec`(451) | ✅ `cxl_2_0` | ❌ | ❌ | — | ❌ **无** |
 | **CXL 3.0 对称 DCOH** | ✅ `_adapter`(188) / `_tracker`(355) / `_state_spec`(329) | ✅ | ❌ | ❌ | — | ❌（`DcohSymmetric` tracker 有行为面） |
 | **TileLink-C** | ✅ `_adapter`(450) / `_state_spec`(488) + `_engine`(7 cases) | ✅ | ✅ `cep_tilelink_pe_minimal.json` | ✅ `dispatch_cohif` 5 流(2026-11-06,per 台账 **Entry #246**) | — | ✅ `tilelink_protocol_engine.hh`(**B3b 第 2 个实例**) |
@@ -41,9 +41,13 @@
 ## 3. 缺口分类（按性质，不按协议）
 
 ### A. 有运行时引擎、但无事务级 E2E
-- **MOESI-GPU**：`moesi_gpu_protocol_engine.hh` 存在（306 行），但测试只有 adapter 契约与
-  per-network 装配期校验，无 `instantiate → submit → tick → 抵达`。
-- 性质：**E2E 测试缺口**（实现已在，缺驱动）。
+- ~~**MOESI-GPU**~~：**✅ 已闭合**(2026-11-06,per 台账 **Entry #259** —— change `cpptlm-cep-moesi-gpu-l4-e2e`):
+  引擎**已注册**(短名 `MoesiGpuProtocolEngine`,此前**未注册** ⇒ 「instantiate」走不通)+ 装配拓扑
+  `configs/cep_moesi_gpu_pe_minimal.json` + L4 判据 `test/test_cep_moesi_gpu_engine.cc`(5 cases / 89 assertions:
+  MGE-01 实例化 · MGE-02 10 流逐条记账(5 条 CohIf + 5 条直调)· MGE-03 表驱动迁移 · MGE-04 补偿拒绝路径 · MGE-05 装配闸 + channel 闸)。
+- 性质:**E2E 测试缺口已闭合**。
+- ⚠️ **诚实边界**:引擎的 10 个 `on_*` 按决策 **M-6「只记账」**(零发射)⇒ 本次闭合的是「**实例化 + 记账 + 迁移 + 补偿**」,
+  ⛔ **不是**「跨节点协议事件语义」(那需要专用引擎)⇒ 该行「协议事件语义」列仍为 **—**。
 
 ### B. 有 tracker 行为、无协议引擎、无事务 E2E（**2026-11-06 逐族改判**，per 台账 Entry #238）
 - **CXL 3.0 DCOH**（`DcohSymmetric`）、**NVLink**（`BroadcastNull`）。
@@ -107,7 +111,7 @@
    - ✅ **2026-11-06 已裁**：走**选项 ①** ⇒ B3 **拆成两行** = **B3a**（6 族 adapter 契约 ✅）/ **B3b**（运行时引擎 **1/6** ⏳）
      （per `ADR-CEP-07` Status Update 2026-11-04 ① + `07 号` §5.1.1 + 台账 Entry #231；B3b 的口径细则见 Entry #238）。
 4. **不建议**为消灭缺口 B/C 而批量造引擎（oracle 已论证 ⇒ 推理填空风险）。
-   若要补 E2E，优先补 **A（MOESI-GPU）** —— 实现已存在，只缺驱动。
+   ✅ **A（MOESI-GPU）已于 2026-11-06 闭合**(per 台账 **Entry #259**)—— 实现已存在,只缺驱动 ⇒ 驱动已补(`test_cep_moesi_gpu_engine.cc`);下次的优先级为 **B 类**(载体形态缺口:CXL 3.0 DCOH / NVLink)。
 
 ---
 

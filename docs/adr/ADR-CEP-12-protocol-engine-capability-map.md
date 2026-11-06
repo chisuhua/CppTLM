@@ -733,3 +733,34 @@ R-T3:本 ADR 决策 6 的 6 类消息类词表 `{request, response, snoop, snoop
 > **性质**:纯**指针回填**(append-only)。⛔ 不 reopen 任何决策、⛔ 不改正文、⛔ 不新增 invariant 编号。
 > **原占位**:`backlog: cpptlm-cep-b3a-b3b-advancement`(占位,立项后回填)
 > **回填**:该 backlog 条目已交付 —— `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-t3-mapping-survey/`(T3 映射锚点普查,✅ 已完成归档)+ `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-runtime-engine/`(TileLink-C 运行时引擎,✅ 已完成归档);剩余 4 族处置见 `07 号` **SU 2026-11-06 · 四** + 台账 **Entry #249**。
+
+
+---
+
+## Status Update(2026-11-06,per 台账 Entry #258)—— `ualink_4` 的**实例级装配**闭合(「声明 ≠ 装配」缺口)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文与既有 SU;⛔ 不改 §5.1.1 之外的契约。
+> **触发**:台账 **Entry #240** 登记的 backlog(「声明 ≠ 装配」+ 本 ADR **SU 2026-11-06 ④** 后果表的「实例级装配待 backlog」措辞)+ 用户裁决「按建议顺序实施」。
+> ⚠️ **与本 ADR 既有 SU ④ 后果表的关系**:该表要求「`07 号` §5.1.1 UALink 行**须保留**『实例级装配待 backlog』措辞」—— 本 SU 记录**该措辞已被后续授权更新**(台账 **Entry #258**,2026-11-06)⇒ 两段**并存不矛盾**(append-only 语义:后段登记状态推进,⛔ 不回改前段)。
+> **关联 change**:`openspec/changes/cpptlm-cep-ualink-instance-assembly/`(归档后指向 archive 路径)。
+
+### ① 「声明 ≠ 装配」的三层证据(判据形状)
+
+| 层 | 证据 | 缺失 ⇒ 归因 |
+|---|---|---|
+| ① 声明层 | `protocol_instances.json` 的 `instances[]` 有该 id + `family` 可解析 | `[IAG-02]` / `[IAG-03]` |
+| ② 拓扑层 | 配置 `cep.bridges[].protocol_instance` 命中 + bridge 的 `modules` **确实在拓扑中** + `bridge_id` 唯一 | `[IAG-06]` / `[IAG-07]` |
+| ③ 平面层 | `collective_planes.json` 的 `plane_binding[instance]` **非空** 且 plane 名**已登记** | `[IAG-04]` / `[IAG-05]` |
+
+⇒ 装配闸 = `include/tlm/cep/instance_assembly_gate.hh`(新公共头,`GateReport` 同型)。
+
+### ② `ualink_4` 的装配事实
+
+- 拓扑:`configs/cep_ualink_pe_minimal.json`(2 个 `CohIfProtocolEngine` + `cep.bridges[].protocol_instance = "ualink_4"`,`bridge_id = 3`);
+- 平面:`plane_binding["ualink_4"] = "FabricCollectivePlane"`(承载真实 fabric 集合流量);
+- ⚠️ **流语义未闭环**:`request` / `completion` 的**专用承载引擎**仍缺(现由 Null 实现承载拓扑层)⇒ 本 SU 只闭合「装配」,⛔ 不宣称协议能力完整。
+
+### ③ 遗留
+
+- `nvlink_4` 有 plane 绑定但**无拓扑挂载** ⇒ 不在本闸职责内(闸只对「配置中挂载了的实例」提要求)⇒ 登记为**独立遗留**;
+- UALink 专用 coherence 引擎(承载 `request`/`completion`)⇒ **后续 change**。

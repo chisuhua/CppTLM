@@ -1,0 +1,15 @@
+schema: spec-driven
+created: 2026-11-06
+goal: 闭合 coverage §3-A 缺口 —— moesi_gpu 的 L4 事务级驱动(实例化 + 记账 + 迁移 + 补偿)
+affected_areas:
+  - include/chstream_register.hh
+  - configs/cep_moesi_gpu_pe_minimal.json
+  - test/test_cep_moesi_gpu_engine.cc
+  - docs/validation/2026-11-04-cep-protocol-e2e-coverage.md
+  - openspec/changes/cpptlm-cep-moesi-gpu-l4-e2e/specs/cep-moesi-gpu-l4-e2e/spec.md
+# 零冻结面改动;不改引擎语义(决策 M-6「只记账」保持)。
+skip_specs: false
+x-phase: P0
+x-priority: P2
+x-status: proposed
+x-ledger: obj-cep-platform Entry #259

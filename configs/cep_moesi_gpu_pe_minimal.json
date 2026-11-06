@@ -1,0 +1,23 @@
+{
+  "name": "cep_moesi_gpu_pe_minimal",
+  "description": "P3 —— `moesi_gpu` **L4 事务级 E2E** 的最小装配拓扑(2 个 MoesiGpuProtocolEngine + cohif_noc 桥绑定 moesi_gpu 实例)",
+  "modules": [
+    { "name": "mgpu0", "type": "MoesiGpuProtocolEngine" },
+    { "name": "mgpu1", "type": "MoesiGpuProtocolEngine" }
+  ],
+  "connections": [
+    { "src": "mgpu0.0", "dst": "mgpu1.0" },
+    { "src": "mgpu1.0", "dst": "mgpu0.0" }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json",
+    "bridges": [
+      {
+        "name": "cohif_noc",
+        "protocol_instance": "moesi_gpu",
+        "bridge_id": 4,
+        "modules": ["mgpu0", "mgpu1"]
+      }
+    ]
+  }
+}

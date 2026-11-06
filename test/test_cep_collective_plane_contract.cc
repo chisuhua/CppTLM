@@ -99,7 +99,10 @@ TEST_CASE("CEP CollectiveContract: 声明源形态与 schema 一致", "[cep][col
     CHECK_FALSE(decl.source_error);
     // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
     // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
-    CHECK(decl.plane_binding.size() == 3u);
+    // ⚠️ 2026-11-06(P2,per 台账 Entry #258):新增 `ualink_4`(绑 `FabricCollectivePlane`
+    //    —— 承载真实 fabric 集合流量)⇒ 计数 **3 → 4**(per `07 号` SU · 六 与 Entry #258)
+    CHECK(decl.plane_binding.size() == 4u);
+    CHECK(decl.plane_binding.at("ualink_4") == "FabricCollectivePlane");
     // 默认:全部不启用 collective(CHI / CXL 配置下绑 NullCollectivePlane,per 07 号 §6.4)
     CHECK(decl.plane_binding.at("moesi_gpu").empty());
     CHECK(decl.plane_binding.at("mesif").empty());

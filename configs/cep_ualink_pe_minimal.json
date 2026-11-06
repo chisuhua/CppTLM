@@ -1,0 +1,23 @@
+{
+  "name": "cep_ualink_pe_minimal",
+  "description": "P2 —— `ualink_4` **实例级装配**的最小拓扑(2 个 CohIfProtocolEngine 承载 + cohif_noc 桥绑定 ualink_4 实例 + collective 平面绑定 FabricCollectivePlane)",
+  "modules": [
+    { "name": "ualink0", "type": "CohIfProtocolEngine" },
+    { "name": "ualink1", "type": "CohIfProtocolEngine" }
+  ],
+  "connections": [
+    { "src": "ualink0.0", "dst": "ualink1.0" },
+    { "src": "ualink1.0", "dst": "ualink0.0" }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json",
+    "bridges": [
+      {
+        "name": "cohif_noc",
+        "protocol_instance": "ualink_4",
+        "bridge_id": 3,
+        "modules": ["ualink0", "ualink1"]
+      }
+    ]
+  }
+}

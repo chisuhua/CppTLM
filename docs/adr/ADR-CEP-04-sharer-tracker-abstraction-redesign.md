@@ -960,3 +960,25 @@ R11 是「**声明超前于实现**」(声明了 `SparseSnoopFilter` 却无行�
 > **性质**:纯**指针回填**(append-only)。⛔ 不 reopen 任何决策、⛔ 不改正文、⛔ 不新增 invariant 编号。
 > **原占位**:`backlog: cpptlm-cep-b3a-b3b-advancement`(占位,立项后回填)
 > **回填**:该 backlog 条目已交付 —— `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-t3-mapping-survey/`(T3 映射锚点普查,✅ 已完成归档)+ `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-runtime-engine/`(TileLink-C 运行时引擎,✅ 已完成归档);剩余 4 族处置见 `07 号` **SU 2026-11-06 · 四** + 台账 **Entry #249**。
+
+
+---
+
+## Status Update(2026-11-06,per 台账 Entry #258)—— `ualink_4` 的**实例级装配**落地(拓扑 + collective plane)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文与既有 SU(尤其 §③ 残余与 `ualink_4` 取值裁决)。
+> **触发**:台账 **Entry #240** 登记的 backlog + 用户裁决「按建议顺序实施」。
+> **关联 change**:`openspec/changes/cpptlm-cep-ualink-instance-assembly/`(归档后指向 archive 路径)。
+
+### ① 装配事实
+
+- **声明层**:`ualink_4` 的 13 键取值(4 键 per 本 ADR **SU 2026-11-06** + 9 键 per `ADR-CEP-12` **SU 2026-11-06**)已落地 ⇒ 声明层**齐备**;
+- **拓扑层**:挂进 `configs/cep_ualink_pe_minimal.json`(2 个 `CohIfProtocolEngine` + `cep.bridges[].protocol_instance = "ualink_4"`);
+- **平面层**:`collective_planes.json` 的 `plane_binding["ualink_4"] = "FabricCollectivePlane"`(承载真实 fabric 集合流量);
+- **判据**:装配闸 `include/tlm/cep/instance_assembly_gate.hh`(`[IAG-01]`~`[IAG-07]`,含 7 条负控)。
+
+### ② 诚实边界(⛔ 不越界宣称)
+
+- ⚠️ **流语义未闭环**:`ualink_4` 的 `request` / `completion` **专用承载引擎**仍缺(拓扑层现由 Null 实现承载)⇒ 本 SU 只闭合「装配」;
+- ⚠️ `perm` 仍只支持 `NONE`(UALink 走**软件一致性** ⇒ 无 snoop 类流量,per 本 ADR **SU 2026-11-06**);
+- ⚠️ **不得**据此改写「UALink 无实例声明」的旧句为「UALink 已完整」—— 声明已齐、装配已闭合、**流语义未闭合** 三件事必须分开读。

@@ -1,0 +1,21 @@
+schema: spec-driven
+created: 2026-11-06
+goal: 闭合 `ualink_4` 的「声明 ≠ 装配」缺口 —— 拓扑挂载 + collective plane 绑定 + 可判的装配闸(含反控)
+affected_areas:
+  - include/tlm/cep/instance_assembly_gate.hh
+  - include/tlm/cep/collective_planes.json
+  - configs/cep_ualink_pe_minimal.json
+  - test/test_cep_instance_assembly.cc
+  - test/test_cep_collective_plane_contract.cc
+  - test/test_cep_nvlink_sharp.cc
+  - docs/architecture/07-coherence-exploration-platform.md
+  - docs/adr/ADR-CEP-12-protocol-engine-capability-map.md
+  - docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md
+  - openspec/changes/cpptlm-cep-ualink-instance-assembly/specs/cep-instance-assembly/spec.md
+# 冻结面 3 处(07 号 §5.1.1 行内改写 + ADR-CEP-12/04 追加 SU)⇒ 两步授权。
+# ⛔ 不新增 UALink 专用 coherence 引擎(流语义留后续 change)。
+skip_specs: false
+x-phase: P0
+x-priority: P1
+x-status: proposed
+x-ledger: obj-cep-platform Entry #258

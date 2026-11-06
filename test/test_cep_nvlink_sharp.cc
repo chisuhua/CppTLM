@@ -399,7 +399,8 @@ TEST_CASE("NVA-07: 集体面绑定 —— nvlink_4 绑本地模型 + 已注册 r
     const auto decl =
         load_collective_plane_declaration(std::string(CPPTLM_SOURCE_DIR) + "/" + kPlanesRelPath);
     CHECK(!decl.source_error);
-    CHECK(decl.plane_binding.size() == 3u);
+    // ⚠️ 2026-11-06(P2,per 台账 Entry #258):`ualink_4` 加入 plane_binding ⇒ 计数 **3 → 4**
+    CHECK(decl.plane_binding.size() == 4u);
     CHECK(decl.registered_regions.size() == 1u);
 }
 
@@ -417,6 +418,10 @@ TEST_CASE("NVA-08: V6-c 前提约束 —— M-1 变体(unavailable)⇒ 仅本地
     //   ⇒ **V6-c 不适用**(SKIP,per `ADR-CEP-01` SU#4 E.6)⇒ 本断言在 **M-1 变体**上求值。
     CollectivePlaneDeclaration m1 = decl;
     m1.vc_reservation_declaration.status = "unavailable";
+    // ⚠️ 2026-11-06(P2,per 台账 Entry #258):M-1 变体是**人造夹具** ⇒ 必须先移除
+    //    **真实 fabric 集合流量载体**(`ualink_4` → `FabricCollectivePlane`,非本地模型)
+    //    ⇒ 否则 V6-c 规则**如实判红**(这正是规则有牙的证明,见下方新增断言)。
+    m1.plane_binding.erase("ualink_4");
     const ContractVerdict v = evaluate_vc_precondition(m1, detail);
     CHECK(v == ContractVerdict::PASS);
     CHECK(detail.rfind("[CP-03-VC-PRECONDITION]", 0) == 0);
@@ -437,6 +442,16 @@ TEST_CASE("NVA-08: V6-c 前提约束 —— M-1 变体(unavailable)⇒ 仅本地
     empty.plane_binding.clear();
     std::string d3;
     CHECK(evaluate_vc_precondition(empty, d3) == ContractVerdict::SKIP);
+
+    // ⚠️ 2026-11-06(P2):**规则有牙的反向断言** —— M-1(`unavailable`)+ 真实 fabric
+    //    集合流量载体(`ualink_4` → `FabricCollectivePlane`)⇒ **必红**。
+    //    (若此断言消失 ⇒ V6-c 规则对 `FabricCollectivePlane` 失效 ⇒ 判据失守)
+    CollectivePlaneDeclaration m1_with_fabric = decl;
+    m1_with_fabric.vc_reservation_declaration.status = "unavailable";
+    std::string d4;
+    CHECK(evaluate_vc_precondition(m1_with_fabric, d4) == ContractVerdict::FAIL);
+    CHECK(d4.find("[CP-03-VC-PRECONDITION]") == 0);
+    CHECK(d4.find("FabricCollectivePlane") != std::string::npos);
 }
 
 // ══════════════════════════════════════════════════════════════════════════
