@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-06T09:44:48Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-06T09:59:50Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-05T16:54:10Z",
-      "by": "user",
-      "reason": "用户口令「builder 补这最后一条」⇒ 按 architect 复验 §7.2:给 INV-CEP-14-IC2 补「合同测试集**含**该负向断言」的机器判据(C 表负向行的锚点 id 必须存在于某个同时含该锚点与负向断言宏的 test/test_*.cc)"
-    },
     {
       "role": "architect",
       "at": "2026-11-05T17:02:14Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-06T09:44:48Z",
       "by": "user",
       "reason": "verifier 验收 PASS(AC-1~AC-6+TLE-08;AC-7 归档项待收尾)⇒ 切 builder 执行归档:openspec archive(合并 delta spec cep-tilelink-runtime-engine 进 main specs)+ KPI 1/3→0/3 + 台账 Entry #247"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-06T09:59:50Z",
+      "by": "user",
+      "reason": "用户口令「切 planner 检查还有哪些剩余的任务」⇒ 盘点 objective DoD 剩余项 + 各族前置 + 遗留清单,产出剩余任务清单(不改代码)"
     }
   ],
   "auto_switch_window": null

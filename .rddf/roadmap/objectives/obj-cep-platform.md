@@ -15234,6 +15234,39 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 
 **⑥ 关联**:**#246**(实施回执)· **#245**(F2 回填)· **#244**(T3 归档)· **#243**(立项)· `.rddf/reviews/tilelink-runtime-engine-verify.md` ·
 `openspec/specs/cep-tilelink-runtime-engine/spec.md` · `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-runtime-engine/` · `§6.2 B3b`
+
+### Entry #248 — 2026-11-06 [plan](**剩余任务盘点** —— 终态 Go 的唯一阻塞 = B3b 4 族;阻塞点 = architect 对「公开来源矩阵能否构成 T1」的裁决)
+
+**主题**:用户「切 planner 检查还有哪些剩余的任务」⇒ 全量盘点 `§6.2` DoD + 既有遗留登记 + 账本债(⛔ 不改代码,仅盘点)。
+**角色**:planner。
+
+**① DoD 面(§6.2 九项)**:B1 ✅ / B2 ✅(66/66)/ B3a ✅ / **B3b ⏳ 2/6** / B4 ✅ / B5 ✅ / B6 ✅ / B7 ✅ / B8 ✅ ⇒ **唯一未达成 = B3b**。
+
+**② B3b 剩 4 族的缺口(全部落在规约层,不在引擎侧)**:
+| 族 | 缺口 | 规范可读性 | 处置 |
+|---|---|---|---|
+| CXL 2.0 非对称 | **T4 ❌**(68 格 42 `Unknown`,覆盖率 26/68) | 禁读(ECA) | ⛔ **显式冻结**(per Entry #238)⇒ 解冻需 architect 重裁 |
+| CXL 3.0 对称 DCOH | **T1 ❌**(载体无矩阵) | 禁读(ECA) | 需规约层普查 change;basis 上限 = `public-nonnormative-derived` |
+| NVLink | **T1 ❌**(载体无矩阵) | 无公开规范 | 同上;basis 上限 = `self-derived` |
+| UALink | **T1 ❌**(载体无矩阵) | Evaluation Copy 禁读 | 同上;合规风险最高 |
+⇒ **阻塞点(唯一)**:architect 须裁「**公开(非规范)来源构建的转移矩阵是否构成 T1『转移表真源』**」——与 B3a `ualink_4` 13 键同型的认识论三档问题。
+· 裁 **yes** ⇒ planner 逐个立项规约层普查 change(CXL 3.0 → NVLink → UALink;KPI 串行 1 slot),每族过 T1–T4 后才立引擎 change。
+· 裁 **no** ⇒ B3b **封顶 2/6**;终态 DoD Go 需另行裁决(降级 / 冻结 / 改口径),⛔ 不得静默悬置。
+
+**③ 实质遗留(非 DoD,已登记)**:
+1. **UALink 实例级装配 backlog**(声明 ≠ 装配 ⇒ 拓扑挂载 + collective plane 绑定;§5.1.1 措辞义务保留)。
+2. **MOESI-GPU L4 E2E 缺口**(coverage §A:引擎在,缺 `instantiate → submit → tick → 抵达` 驱动)—— 不在 6 族内,属覆盖债。
+3. **D-AXI 3 项遗留**(D1 Display FB / doorbell `0x10010000` / MemoryTLM `capacity_gb=1`)—— 已声明延期,归 D3 收编。
+
+**④ 账本债(文档面)**:
+1. **5 处 `backlog:` 占位符待回填**:`ADR-CEP-02` / `ADR-CEP-04` / `ADR-CEP-12` / `07 号` §SU(均为 `backlog: cpptlm-cep-b3a-b3b-advancement`——现已有 T3 普查 + 引擎 change 落地 ⇒ 应指实际 change)+ `ADR-CEP-06`(`cep-b4-evidence-device` —— B4 已达成)。
+2. **improvement 状态漂移**(抽查 2 例确认):`cep-b4-evidence-device` 仍写「🟡 提案(待 builder 实施)」但装置已实现并过 AC-9 评审(`test_cep_b4_evidence_device.cc`,`a3384a86`);`cpptlm-cep-tilelink-tree-manager` 仍写「进行中」但两段式均已归档(队列 #11)。
+3. **ADR-CEP-11 G-3** 残余风险(IC3 变更留痕无自动闸)—— 不会关闭,仅登记。
+
+**⑤ 交付面**:OpenSpec **0 active**(KPI 0/3)⇒ 有 2 个立项目余量;git 本地 **ahead 2**(等用户 push)。
+
+**⑥ 建议顺序**:**architect 裁决(②)** → 若 yes 则 planner 立规约层普查 → 并行收账本债(④.1/④.2,纯文档)→ push。
+**⑦ 关联**:**#247**(引擎归档)· **#246**(引擎实施)· **#244/#242**(T3)· **#238**(T1–T4 判定式)· **#240**(UALink 声明 ≠ 装配)· `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` · `§6.2 B3b` · `§10`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
