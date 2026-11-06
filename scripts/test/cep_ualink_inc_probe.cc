@@ -260,7 +260,11 @@ int main(int argc, char** argv) {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // UIA-07 —— `ualink_4` **不**声明
+    // UIA-07 —— `ualink_4` 的**声明形态**
+    // ⚠️ **2026-11-06 由负控翻转为正控**(per 台账 Entry #239 / #240 +
+    //    `ADR-CEP-12` SU 2026-11-06):路径 A 声明落地后,本探针从
+    //    「`ualink_4` **不**声明」翻转为「**已**声明且取值与裁决逐项一致」
+    //    ⇒ 这是**有意变异点**,⛔ 不是判据被削弱(取值逐项钉死 = 更强)。
     // ═══════════════════════════════════════════════════════════════
     {
         nlohmann::json inst_doc;
@@ -272,12 +276,45 @@ int main(int argc, char** argv) {
             for (const auto& inst : inst_doc["instances"]) {
                 ++count;
                 if (inst.contains("id") && inst["id"].is_string() &&
-                    inst["id"].get<std::string>() == "ualink_4")
+                    inst["id"].get<std::string>() == "ualink_4") {
                     has_ualink = true;
+                    // 取值逐项钉死(per `ADR-CEP-12` SU 2026-11-06 §② + **订正 #1**)
+                    expect(inst.value("family", std::string()) == "industrial", "UIA-07",
+                           "`ualink_4`.family 非 industrial");
+                    expect(inst.value("adapter", std::string()) == "UalinkAdapter", "UIA-07",
+                           "`ualink_4`.adapter 非 UalinkAdapter");
+                    expect(inst.value("protocol_version", std::string()) == "ualink-2.0", "UIA-07",
+                           "`ualink_4`.protocol_version 非 ualink-2.0");
+                    expect(inst["flow_support"].value("snoop", true) == false, "UIA-07",
+                           "`ualink_4`.flow_support.snoop 非 false");
+                    expect(inst["flow_support"].value("snoop_resp", true) == false, "UIA-07",
+                           "`ualink_4`.flow_support.snoop_resp 非 false");
+                    expect(inst["flow_support"].value("barrier", true) == false, "UIA-07",
+                           "`ualink_4`.flow_support.barrier 非 false");
+                    expect(inst["perm"].is_array() && inst["perm"].size() == 1u &&
+                               inst["perm"][0] == "NONE",
+                           "UIA-07", "`ualink_4`.perm 非 [\"NONE\"]");
+                    expect(inst["atomic"].value("supported", false) == true, "UIA-07",
+                           "`ualink_4`.atomic.supported 非 true");
+                    expect(inst["consistency_labels"].value("read", std::string()) == "PLO", "UIA-07",
+                           "`ualink_4`.consistency_labels.read 非 PLO");
+                    expect(inst["consistency_labels"].value("write", std::string()) == "PLO", "UIA-07",
+                           "`ualink_4`.consistency_labels.write 非 PLO");
+                    expect(inst["sharer_tracker"].value("impl", std::string()) == "不参与", "UIA-07",
+                           "`ualink_4`.sharer_tracker.impl 非「不参与」");
+                    expect(inst["combination_capabilities"].value("hierarchical", true) == false, "UIA-07",
+                           "`ualink_4`.combination_capabilities.hierarchical 非 false");
+                    // C-1′「槽位语义继承」⇒ 同网 `vc_binding` 类集合须与既有实例**完全一致**
+                    // (per `ADR-CEP-12` **订正 #1**)⇒ `ualink_4` 的 `ualink_fabric` 映射**含** `snoop_resp`
+                    expect(inst["vc_binding"]["ualink_fabric"].size() == 5u, "UIA-07",
+                           "`ualink_4`.vc_binding.ualink_fabric 类集合非 5(C-1′ 要求与同网实例一致)");
+                    expect(inst["vc_binding"]["ualink_fabric"].value("snoop_resp", -1) == 3, "UIA-07",
+                           "`ualink_4`.vc_binding.ualink_fabric.snoop_resp 非 3");
+                }
             }
-            expect(!has_ualink, "UIA-07",
-                   "`ualink_4` 被声明 ⇒ 取值不可判定却已落盘(推理填空)");
-            expect(count == 7u, "UIA-07", "协议实例数不是 7(声明面被静默改动)");
+            expect(has_ualink, "UIA-07",
+                   "`ualink_4` 未声明(路径 A 已落地 ⇒ 应声明)");
+            expect(count == 8u, "UIA-07", "协议实例数不是 8(声明面被静默改动)");
         }
     }
 

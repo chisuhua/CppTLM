@@ -203,7 +203,7 @@ examples/                # C++ example_*.cc + Python demo_*.py
 cpptlm/                  # Python 库 (pyproject.toml): cli/topo/config/simulation/analysis
 
 openspec/                # 变更提案工作流 (changes/<name>/{proposal.md,specs/,tasks.md})
-  changes/              # 实际 proposals (当前 0 active; 122 份已归档于 changes/archive/)
+  changes/              # 实际 proposals (当前 1 active: T3 映射锚点普查; 122 份已归档于 changes/archive/)
   specs/                # main specs (116 份: cep-* 30 + 其他 86)
 
 scripts/                 # 工具脚本 (详见 scripts/README.md)
@@ -475,7 +475,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
       4. **不得**在暂存状态下把该能力写进任何 Stage 的 DoD / 验收条款
     - **与旧约定的关系**: `docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md` §0.2bis 曾写"未实施 ⇒ 没有可以 archive 的对象"—— 该表述**仅对"✅ 已完成归档"语义成立**;⏸ 暂存归档是**第三种语义**,不与其冲突,但**必须**遵守上述 4 项硬约束
     - **先例**: 部分归档 change 未合并 spec(deprecated / doc-only / 被取代类) —— 见 `openspec/changes/archive/*/specs/` 与 `openspec/specs/` 的差集
-  - **实测基线** (2026-11-05, per `openspec list --json`): **0 个 active** → **0/3**；已归档 change 122 份
+  - **实测基线** (2026-11-06, per `openspec list --json`): **1 个 active** → **1/3**（T3 映射锚点普查 `cpptlm-cep-tilelink-t3-mapping-survey`,per 台账 Entry #241）；已归档 change 122 份
   - **历史快照**: 2026-10-20 前 3 个 active 全部 ⏸ 暂存归档 ⇒ 0/3; 更早的 e1 v1.1 / flr-rebar v1.1 已于 2026-10-09 归档（详见 `openspec/changes/archive/2026-10-09-*`）
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 
@@ -605,10 +605,10 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
 | **治理** | `ADR-CEP-00`（跨仓归口 + 准入门槛）+ `ADR-CEP-00A`（真源章节锚点表） |
 | **ADR** | 22 份 `ADR-CEP-*`（fabric / coherence / protocol / experiment / ownership 各域） |
 | **实现** | `include/tlm/cep/` 43 个 header-only 文件 + `test/test_cep_*.cc` |
-| **OpenSpec** | 30 份 `cep-*` main spec；**0 active** change；122 份已归档 change |
+| **OpenSpec** | 30 份 `cep-*` main spec；**1 active** change（T3 映射锚点普查）；122 份已归档 change |
 | **守门** | `scripts/test/cep_*.sh` 25 个契约闸 + 15 个 `.cc` 编译探针（冻结面 / 实验 4 件套 / 预登记 drift / ArchForge 对齐 / 声明对齐 / 反向 fixture） |
 | **测试** | `[cep]` —— 规模最大的测试集 |
-| **状态** | 队列 #3~#14 已全部归档（2026-10-26 ~ 2026-11-04）; 当前无 active change |
+| **状态** | 队列 #3~#14 已全部归档（2026-10-26 ~ 2026-11-04）; 当前 1 个 active change（T3 映射锚点普查,per Entry #241） |
 
 ### ★ PCIe EP 微架构 (2026-2027, 7 阶段全部交付)
 

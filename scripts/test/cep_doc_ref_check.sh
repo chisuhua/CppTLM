@@ -98,6 +98,9 @@ VIRTUAL_PATHS=(
   "include/ src/ test/"                             # 同上
   # —— 通配 / 省略号 / 目录列表:不是「可判存在的单一路径」——
   "docs/adr/ADR-CEP-*.md"                           # 通配(族名)
+  "docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md"  # **待产出**(设计示意):
+                                                    #   T3 映射锚点普查 change `cpptlm-cep-tilelink-t3-mapping-survey`
+                                                    #   (per 台账 Entry #241)的**产出物** ⇒ 本仓当前 0 命中(尚未创建)
   "docs/adr/ADR-DGPU-06/08/09/11/12"                # 多编号合写
   "docs/adr/ADR-CEP-05-...md"                       # 省略号(散文引用)
   "docs/adr/ADR-CEP-11-...md"                       # 同上
