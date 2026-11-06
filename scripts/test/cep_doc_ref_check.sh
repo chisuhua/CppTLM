@@ -98,6 +98,8 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-tilelink-runtime-engine"  # TileLink-C 运行时引擎 **已归档**(2026-11-06,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-tilelink-runtime-engine/spec.md)⇒ 07 号 SU/台账历史 Entry(#243/#246/#247)的路径引用
   "openspec/changes/cpptlm-cep-basis-source-kind-and-cell-free"  # 来源类型可机器判 **已归档**(2026-11-06,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-basis-source-kind/spec.md)⇒ 台账历史 Entry(#251/#252/#253/#254)的路径引用
   "openspec/changes/cpptlm-cep-source-kind-contract-alignment"  # 契约对齐 **已归档**(2026-11-06,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-ualink-inc-state-spec/spec.md)⇒ 台账历史 Entry(#255/#256)的路径引用
+  "openspec/changes/cpptlm-cep-ualink-instance-assembly"  # UALink 实例级装配 **已归档**(2026-11-06,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-instance-assembly/spec.md)⇒ 台账历史 Entry(#258/#260)的路径引用
+  "openspec/changes/cpptlm-cep-moesi-gpu-l4-e2e"  # MOESI-GPU L4 E2E **已归档**(2026-11-06,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-moesi-gpu-l4-e2e/spec.md)⇒ 台账历史 Entry(#259/#260)的路径引用
   "include/ src/"                                   # 多路径合写(非单一路径)
   "include/ src/ test/"                             # 同上
   # —— 通配 / 省略号 / 目录列表:不是「可判存在的单一路径」——
