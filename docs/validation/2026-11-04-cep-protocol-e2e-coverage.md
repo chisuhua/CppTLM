@@ -31,7 +31,7 @@
 | **CXL 3.0 对称 DCOH** | ✅ `_adapter`(188) / `_tracker`(355) / `_state_spec`(329) | ✅ | ❌ | ❌ | — | ❌（`DcohSymmetric` tracker 有行为面） |
 | **TileLink-C** | ✅ `_adapter`(450) / `_state_spec`(488) | ✅ | ❌ | ❌ | — | ❌（`TreeManager` 有行为面） |
 | **NVLink SHARP** | ✅ `test_cep_nvlink_sharp.cc`(479) / `_state_spec`(489) | ✅ `nvlink_4` | ❌ | ❌ | — | ❌（`BroadcastNull` tracker） |
-| **UALink INC** | ✅ `test_cep_ualink_inc.cc`(501) / `_state_spec`(361) | ⚠️ **`ualink_4` 未声明** | ❌ | ❌（`plane.send/recv` 为 API 级） | — | ❌（`FabricCollectivePlane` 行为面） |
+| **UALink INC** | ✅ `test_cep_ualink_inc.cc`(501) / `_state_spec`(361) | ✅ **`ualink_4` 已声明**(2026-11-06,per 台账 Entry #239) | ❌ | ❌（`plane.send/recv` 为 API 级） | — | ❌（`FabricCollectivePlane` 行为面） |
 
 **补充**：L5 实验只有本轮新增的 H2/H3/H6（`test_cep_h2_h3_experiments.cc` /
 `test_cep_h6_vc_isolation.cc`），且其协议范围是「home 侧目录策略 + VC 仲裁」，**不对应**任何单一协议族。
@@ -73,10 +73,15 @@
   （覆盖率 `kLegalTransitionCoverageNum/Den` = **26/68**）⇒ 按 **T4 完备性**不成立
   ⇒ **不是转移表真源** ⇒ 该族**显式冻结**，⛔ **不得**因「有 68 格矩阵」被误推进（per Entry #238 §⑤）。
 
-### D. 声明面缺口
-- **`ualink_4` 未声明**（用户裁决 2026-11-04，选项 A）：`flow_support` / `perm` /
-  `sharer_tracker.impl` 取值不可判定 ⇒ 不声明。
-- 后果：UALink 的实例级装配不可达（L3/L4 天然不可做）。
+### D. 声明面缺口 —— ✅ **已闭合**（2026-11-06，per 台账 **Entry #239** 路径 A）
+- **原缺口**：`ualink_4` **未声明**（用户裁决 2026-11-04，选项 A）—— 当时的理由是「`flow_support` / `perm` /
+  `sharer_tracker.impl` 取值不可判定 ⇒ 不声明」。
+- **为何已可闭合**：① `N-8`（有无 snoop）由 **4 个互相独立的公开非规范来源**闭合（⇒ `snoop=false` / `snoop_resp=false`，
+  basis = `public-nonnormative-derived`，⛔ **非** spec-pinned，⛔ 未读任何规范正文）；② `N-9`（`perm` 子集）
+  在 UALink 侧**无对应物** ⇒ 登记为 **CEP 建模声明**（`perm = ["NONE"]`）；③ 其余 9 键由 `ADR-CEP-12`
+  **SU 2026-11-06** 补裁（含**订正 #1**）⇒ **13 键全部有据**（逐键的认识论分级见该 SU §②）。
+- **闭合后的残余**：⚠️ **声明 ≠ 装配** —— UALink 的**实例级装配**（把 `ualink_4` 挂进拓扑 + collective plane 绑定）
+  **仍待 backlog**；⇒ 本节的「**声明面**缺口」已闭合，**装配面**缺口未闭合（后者不在 B3a 范围内）。
 
 ### E. 反向 fixture 覆盖（这层反而是最齐的）
 - 6 个协议族**全部**有 `cep_*_reverse_verify.sh` 并注册进 ctest。

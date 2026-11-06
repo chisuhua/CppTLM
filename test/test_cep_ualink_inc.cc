@@ -387,20 +387,64 @@ TEST_CASE("UIA-05/06: 声明面 status 取值域 = 2 值 + certificate_scope 登
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-// UIA-07 —— `ualink_4` **不**声明
+// UIA-07 —— `ualink_4` 的声明形态
+// ⚠️ **2026-11-06 由负控翻转为正控**(per 台账 Entry #239 + `ADR-CEP-12` SU 2026-11-06):
+//   本断言此前是「`ualink_4` **不**声明」(收窄的可执行形态)⇒ 路径 A 声明落地后**有意**翻转。
+//   ⇒ 这是**有意变异点**,⛔ 不是断言被削弱 —— 下方保留**负向 witness**(唯一性 + 全实例合法性)。
 // ══════════════════════════════════════════════════════════════════════════
-TEST_CASE("UIA-07: ualink_4 实例不声明(收窄的可执行形态)", "[cep][ualink-inc][declaration]") {
+TEST_CASE("UIA-07: ualink_4 实例已声明(路径 A 落地的有意变异点)",
+          "[cep][ualink-inc][declaration]") {
     const std::string text = read_repo_file("include/tlm/cep/protocol_instances.json");
     REQUIRE(!text.empty());
     const auto doc = nlohmann::json::parse(text);
     REQUIRE(doc.contains("instances"));
     REQUIRE(doc["instances"].is_array());
-    REQUIRE(doc["instances"].size() == 7u);
+    REQUIRE(doc["instances"].size() == 8u);
+    std::size_t n_ualink = 0;
     for (const auto& inst : doc["instances"]) {
         REQUIRE(inst.contains("id"));
         REQUIRE(inst["id"].is_string());
-        REQUIRE(inst["id"].get<std::string>() != "ualink_4");
+        if (inst["id"].get<std::string>() != "ualink_4")
+            continue;
+        ++n_ualink;
+        // 13 键齐备(per `protocol_instance.schema.json` 的 `required`)
+        static const char* kRequired[] = {"id",
+                                          "family",
+                                          "adapter",
+                                          "status",
+                                          "protocol_version",
+                                          "flow_support",
+                                          "perm",
+                                          "atomic",
+                                          "consistency_labels",
+                                          "ordering_assumption",
+                                          "vc_binding",
+                                          "sharer_tracker",
+                                          "combination_capabilities"};
+        for (const char* k : kRequired) {
+            INFO("ualink_4 缺键: " << k);
+            REQUIRE(inst.contains(k));
+        }
+        // 取值钉死(per `ADR-CEP-12` SU 2026-11-06 的 9 键补裁 + 订正 #1)
+        REQUIRE(inst["family"] == "industrial");
+        REQUIRE(inst["adapter"] == "UalinkAdapter");
+        REQUIRE(inst["protocol_version"] == "ualink-2.0");
+        REQUIRE(inst["flow_support"]["snoop"] == false);
+        REQUIRE(inst["flow_support"]["snoop_resp"] == false);
+        REQUIRE(inst["flow_support"]["barrier"] == false);
+        REQUIRE(inst["perm"] == nlohmann::json::array({"NONE"}));
+        REQUIRE(inst["atomic"]["supported"] == true);
+        REQUIRE(inst["consistency_labels"]["read"] == "PLO");
+        REQUIRE(inst["consistency_labels"]["write"] == "PLO");
+        REQUIRE(inst["sharer_tracker"]["impl"] == "不参与");
+        REQUIRE(inst["combination_capabilities"]["hierarchical"] == false);
+        // C-1′「槽位语义继承」⇒ 同网 `vc_binding` 类集合须与既有实例**完全一致**
+        // (per `ADR-CEP-12` 订正 #1)⇒ `ualink_4` 的 `ualink_fabric` 映射**含** `snoop_resp`
+        REQUIRE(inst["vc_binding"]["ualink_fabric"].size() == 5u);
+        REQUIRE(inst["vc_binding"]["ualink_fabric"]["snoop_resp"] == 3);
     }
+    // ⚠️ **负向 witness**:必须**恰好一条** `ualink_4`(重复登记 ⇒ 计数链与镜像闸会分叉)
+    REQUIRE(n_ualink == 1u);
 }
 
 // ══════════════════════════════════════════════════════════════════════════

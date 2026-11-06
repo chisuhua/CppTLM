@@ -104,9 +104,11 @@ TEST_CASE("CEP MESIF 声明:静默升级行落地且 current_state 不再否认�
     //    (本族 E→M **未确证** ⇒ **不声明**静默升级 ⇒ 派生集**恰含 2 个**)
     // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
     // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
-    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 3u);
+    // ⚠️ 2026-11-06(per 台账 Entry #239 §⑤-1):4 —— 新增 `ualink_4`(无静默升级 ⇒ 入派生集)
+    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 4u);
     //    ⇒ 顺序 = `instances[]` 数组序(派生函数按数组序遍历)
     REQUIRE(loaded.inputs.no_upgrade_instances.at(0) == "cxl_3_0_symmetric");
+    REQUIRE(loaded.inputs.no_upgrade_instances.at(3) == "ualink_4"); // ⚠️ 2026-11-06:追加在末尾
     REQUIRE(loaded.inputs.no_upgrade_instances.at(1) == "tilelink_c");
     REQUIRE(loaded.inputs.no_upgrade_instances.at(2) == "nvlink_4");
 

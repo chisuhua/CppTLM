@@ -198,15 +198,18 @@ TEST_CASE("CEP TileLink: 派生量首次非空 + IC-2 vacuous PASS(文字与实�
     //    ⇒ 派生集**恰含 2 个**(`tilelink_c` + `cxl_3_0_symmetric`)
     // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
     // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
-    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 3u);
+    // ⚠️ 2026-11-06(per 台账 Entry #239 §⑤-1):4 —— 新增 `ualink_4`(无静默升级 ⇒ 入派生集)
+    REQUIRE(loaded.inputs.no_upgrade_instances.size() == 4u);
     //    ⇒ 顺序 = `instances[]` 数组序(派生函数按数组序遍历)
     CHECK(loaded.inputs.no_upgrade_instances.at(0) == "cxl_3_0_symmetric");
+    CHECK(loaded.inputs.no_upgrade_instances.at(3) == "ualink_4"); // ⚠️ 2026-11-06:追加在末尾
     CHECK(loaded.inputs.no_upgrade_instances.at(1) == "tilelink_c");
     CHECK(loaded.inputs.no_upgrade_instances.at(2) == "nvlink_4");
 
-    // ── ③ 实例总数 6(新增实例 ⇒ 计数同步)────────────────────────────────
-    // ⚠️ 2026-11-03(队列 #13 实现层):新增 `nvlink_4` ⇒ 实例总数 **+1**(per 台账 Entry #187)
-    CHECK(loaded.inputs.instances.instances.size() == 7u);
+    // ── ③ 实例总数 8(新增实例 ⇒ 计数同步)────────────────────────────────
+    // ⚠️ 2026-11-03(队列 #13 实现层):新增 `nvlink_4` ⇒ +1(per 台账 Entry #187)
+    // ⚠️ 2026-11-06(per 台账 Entry #239):新增 `ualink_4` ⇒ +1 ⇒ **8**
+    CHECK(loaded.inputs.instances.instances.size() == 8u);
 
     // ── ④ 装配期 ordering 判据:本族 IC-2 SHALL 是 **vacuous PASS** ───────
     //    (perm 不含 UNIQUE ⇒ `exposes_unique_perm == false` ⇒ 无静默升级入口)

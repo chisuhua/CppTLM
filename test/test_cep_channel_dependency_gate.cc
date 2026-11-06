@@ -190,7 +190,19 @@ TEST_CASE("CEP ChannelGate: 边由声明导出", "[cep][channel-gate]") {
     const auto fewer_report = cep::evaluate_channel_dependency_gate(fewer);
     CHECK(fewer_report.per_instance.at("moesi_gpu").edges == 7u);
     // 边表是**逐网络共享**的 ⇒ 去掉一条边,每个绑定该网络的实例各少一条
-    CHECK(fewer_report.stats.edges == base.stats.edges - decl.instances.size());
+    // ⚠️ 2026-11-06(per 台账 Entry #239):断言前提**由「实例总数」改为「绑定 `compute_noc` 的实例数」**
+    //    —— 边表是**逐网络共享**的 ⇒ 少一条边只影响**绑定该网络**的实例;
+    //    `ualink_4` 只绑 `ualink_fabric` ⇒ **不受影响**。
+    //    ⛔ 旧写法用 `decl.instances.size()` 作代理 ⇒ 在「新增不绑该网的实例」时会**误判**。
+    std::size_t compute_noc_bound = 0;
+    {
+        const auto raw = nlohmann::json::parse(
+            read_repo_file("include/tlm/cep/protocol_instances.json"));
+        for (const auto& inst : raw.at("instances"))
+            if (inst.at("vc_binding").contains("compute_noc"))
+                ++compute_noc_bound;
+    }
+    CHECK(fewer_report.stats.edges == base.stats.edges - compute_noc_bound);
     CHECK(fewer_report.stats.vertices == base.stats.vertices);
     CHECK(fewer_report.stats.cross_net_edges == 0u);
 

@@ -465,6 +465,66 @@
         "hierarchical": true,
         "heterogeneous": true
       }
+    },
+    {
+      "id": "ualink_4",
+      "family": "industrial",
+      "adapter": "UalinkAdapter",
+      "status": "implemented",
+      "protocol_version": "ualink-2.0",
+      "flow_support": {
+        "request": true,
+        "completion": true,
+        "snoop": false,
+        "snoop_resp": false,
+        "writeback": false,
+        "forward_data": false,
+        "back_invalidate": false,
+        "address_resolve": false,
+        "barrier": false,
+        "snoop_completion_ack": false
+      },
+      "perm": [
+        "NONE"
+      ],
+      "atomic": {
+        "supported": true
+      },
+      "consistency_labels": {
+        "read": "PLO",
+        "write": "PLO"
+      },
+      "ordering_assumption": {
+        "ualink_fabric": {
+          "0": "unordered",
+          "1": "unordered",
+          "2": "unordered",
+          "3": "p2p_ordered"
+        }
+      },
+      "vc_binding": {
+        "ualink_fabric": {
+          "request": 0,
+          "atomic": 1,
+          "query": 2,
+          "response": 3,
+          "snoop_resp": 3
+        }
+      },
+      "sharer_tracker": {
+        "impl": "不参与",
+        "caps": {
+          "scope": "NONE",
+          "completeness": "EXACT",
+          "authority": "NONE",
+          "aggregation_at": "NONE"
+        }
+      },
+      "combination_capabilities": {
+        "concurrent": true,
+        "hierarchical": false,
+        "heterogeneous": true
+      }
     }
   ],
   "sharer_tracker_rationales": {
@@ -474,7 +534,8 @@
     "cxl_2_0": "CXL 2.0 host 侧 snoop filter ⇒ 权限由副本/token 携带(`ADR-CEP-04` `INV-CEP-04-IC7`)",
     "cxl_3_0_symmetric": "CXL 3.0 对称模式的设备内一致性代理(`ADR-CEP-04` §2 caps 表「DCOH」行)",
     "tilelink_c": "TileLink 树形拓扑(`ADR-CEP-04` §2 caps 表 `SUBTREE` / `TREE_PARENT` 行)",
-    "nvlink_4": "无目录 + 恒广播兜底(`ADR-CEP-04` §2 caps 表;行为类见 `broadcast_null_tracker.hh`,队列 #13 交付)"
+    "nvlink_4": "无目录 + 恒广播兜底(`ADR-CEP-04` §2 caps 表;行为类见 `broadcast_null_tracker.hh`,队列 #13 交付)",
+    "ualink_4": "UALink 走 **software coherency** ⇒ 无 snoop 类流量 ⇒ 无 sharer-set 知识需求(per `ADR-CEP-04` **SU 2026-11-06** + 锚点摘要 `C-10`)。⚠️ `vc_binding` 是**消息类 → VC 的分配映射**(per `ADR-CEP-12` 决策 6),⛔ **不是** `flow_support` 的重复声明⇒ 其中列出的 `snoop_resp` 是该流在 `ualink_fabric` 上的**VC 归属**,⛔ **不**表示本实例承载 snoop 流(承载与否由 `flow_support.snoop_resp = false` 独占)"
   },
   "channel_dependency_edges": {
     "derived_from": "ArchForge 32-cep-based-coherence-architecture.md §6.0.3(逐网络通道依赖边表 + VC-R1/VC-R2 两条支撑规则)",
@@ -523,7 +584,8 @@
     "cxl_2_0",
     "tilelink_c",
     "cxl_3_0_symmetric",
-    "nvlink_4"
+    "nvlink_4",
+    "ualink_4"
   ],
   "authority_migrations": []
 }

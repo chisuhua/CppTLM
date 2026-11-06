@@ -303,7 +303,17 @@ TEST_CASE("NVA-03: nvlink_4 实例声明 —— 13 键齐备 + caps 与 traits �
     CHECK(t->caps.scope == Scope::NONE);
     CHECK(t->caps.completeness == Completeness::EXACT);
     // `repo_owned_instance_ids` 含本实例
-    CHECK(instances.find("\"nvlink_4\"\n  ]") != std::string::npos);
+    // ⚠️ 2026-11-06(per 台账 Entry #239):原断言写的是「`nvlink_4` 是该数组的**末位**」
+    //    (文本形态 `"nvlink_4"\n  ]`)⇒ **脆断言** —— 追加 `ualink_4` 后即失效,⛔ 与本断言的
+    //    意图(「**含**本实例」)无关。⇒ 改为在 **`repo_owned_instance_ids` 块内**查成员资格。
+    {
+        const auto owned_key = instances.find("\"repo_owned_instance_ids\"");
+        REQUIRE(owned_key != std::string::npos);
+        const auto owned_end = instances.find("]", owned_key);
+        REQUIRE(owned_end != std::string::npos);
+        const std::string owned_block = instances.substr(owned_key, owned_end - owned_key);
+        CHECK(owned_block.find("\"nvlink_4\"") != std::string::npos);
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════

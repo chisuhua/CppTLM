@@ -205,9 +205,11 @@ TEST_CASE("CDX-07:cxl_3_0_symmetric 不声明静默升级(E→M 未确证 ⇒ �
     const auto& no_up = loaded.inputs.no_upgrade_instances;
     // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
     // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
-    REQUIRE(no_up.size() == 3u);
+    // ⚠️ 2026-11-06(per 台账 Entry #239 §⑤-1):4 —— 新增 `ualink_4`(无静默升级 ⇒ 入派生集)
+    REQUIRE(no_up.size() == 4u);
     //    ⇒ 顺序 = `instances[]` 数组序(派生函数按数组序遍历)
     CHECK(no_up.at(0) == "cxl_3_0_symmetric");
+    CHECK(no_up.at(3) == "ualink_4"); // ⚠️ 2026-11-06:追加在末尾 ⇒ `at(3)`
     CHECK(no_up.at(1) == "tilelink_c");
     CHECK(no_up.at(2) == "nvlink_4");
 

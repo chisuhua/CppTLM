@@ -106,7 +106,8 @@ TEST_CASE("INV-CEP-12-IC1:每实例含 7 字段组共 13 顶层属性", "[cep][i
         REQUIRE(miss.empty());
         ++n;
     }
-    REQUIRE(n == 7u);
+    // ⚠️ 2026-11-06(per 台账 Entry #239):8 —— 新增 `ualink_4`
+    REQUIRE(n == 8u);
 
     // ③ 反向 fixture:缺 `atomic` 的实例 ⇒ 检查器必须判否(证明非恒真)
     {

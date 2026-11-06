@@ -670,3 +670,57 @@ R-T3:本 ADR 决策 6 的 6 类消息类词表 `{request, response, snoop, snoop
 `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §0 / §2bis(`C-10`) / §3 ·
 `docs/architecture/07-coherence-exploration-platform.md` §5.1.1 / §7 / §11 ·
 `.rddf/reviews/cep-b3a-b3b-ruling.md`(审稿报告体系)
+
+
+---
+
+## Status Update(2026-11-06,per 台账 Entry #239 —— **订正 #1**)—— `ualink_4` 的 `vc_binding` **改为逐字全取**(含 `snoop_resp`)
+
+> **性质**:追加式**订正**(per ADR 不可变 —— 上一段 SU 2026-11-06 **逐字保留不改**)。
+> **触发**:builder 实施阶段的**决定性实测** —— 声明 `ualink_4` 后,`cep_collective_plane_contract` 的
+> **CP-03** 与 **V6-d 四条证书**判红:
+> `[CP-03-VC-CERTIFICATE/C-1′] 网络 `ualink_fabric` 的实例映射**类集合不一致** ⇒ 继承不良定义`。
+> **审查**:同段的 oracle → critic 链**未覆盖**该点 ⇒ 本订正经 **critic 复核**(判据同 §② 分档纪律)。
+
+### ① 订正内容
+
+| 项 | 上一段 SU 的值 | **订正后的值** |
+|---|---|---|
+| `ualink_4.vc_binding.ualink_fabric` | `{request:0, atomic:1, query:2, response:3}`(**去** `snoop_resp`) | **`{request:0, atomic:1, query:2, response:3, snoop_resp:3}`**（**逐字全取** `moesi_gpu` / `mesif` 的既有登记) |
+| 该键的**认识论分级** | 「规则执行 **+ 负向删减**」(删减依据 = `C-10`) | **纯「规则执行」** —— ⛔ **无**负向删减 ⇒ 分档**变简** |
+
+### ② 订正依据(实测 + 判据原文)
+
+- **判据原文**(`include/tlm/cep/collective_plane_contract.hh`,**C-1′「槽位语义继承」**):
+  同网络上**所有有 `vc_binding` 的实例**,其**类集合必须完全一致** ——
+  `other.size() != first.size()` ⇒ FAIL(「实例映射**类集合不一致** ⇒ 继承不良定义」);
+  且每个类的 `vc` 取值也必须相同。
+  ⇒ 上一段 SU 的「去 `snoop_resp`」使 `ualink_4` 的类集合 = 4 ≠ `moesi_gpu` / `mesif` 的 5 ⇒ **判红**。
+- **语义澄清(本次订正的认知收获)**:`vc_binding` = 「**消息类 → `vc_id` 的映射**」(per 本 ADR §2 决策 6)——
+  它描述的是「**若**该消息类出现,它走哪个 VC」,⛔ **不是**「该实例承载哪些流」
+  (那是 `flow_support` 的职责,per 本 ADR §2 决策 1)。
+  ⇒ **列出本实例不承载的流类是允许且必要的** —— 否则 C-1′ 的「继承良定义」被破坏。
+  ⇒ `ualink_4` 的 `flow_support.snoop_resp = false` 与 `vc_binding.snoop_resp = 3` **并存不矛盾**:
+  前者说「本实例**不承载**该流」,后者说「该流在本网的 **VC 归属**」。
+- ⛔ **本订正不改变** `flow_support` 的任何取值(`snoop_resp = false` **维持**)、**不改变** `perm` / `impl` /
+  `consistency_labels` / `family` / `atomic` / `ordering_assumption` / `combination_capabilities`。
+
+### ③ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **上一段 SU** | **逐字不改**(append-only);本段为**订正**,冲突处以本段为准 |
+| **`vc_binding` 的可执行性** | `ordering_assumption` 的 4 个 VC(0..3)**全覆盖** ⇒ 「ordering ⊆ vc_binding(逐网络)」(CP-03 的 ②)仍成立;类集合与同网实例**逐字相同** ⇒ C-1′ **绿** |
+| **代价** | `ualink_4` 的声明里出现一个「本实例不承载」的 VC 归属 ⇒ ⛔ **不得**把它读成「UALink 承载 snoop_resp 流」⇒ 该语义由 `flow_support` 独占;**此点须在实例旁的理由登记里写明**(per 载体 `sharer_tracker_rationales` 的同族纪律) |
+| **新增 invariant 数** | **0**(同上一段) |
+
+### ④ Verification(前瞻判据 · 可勾选)
+
+- [ ] `ualink_4.vc_binding.ualink_fabric` = `{request:0, atomic:1, query:2, response:3, snoop_resp:3}`(与 `moesi_gpu` / `mesif` **逐字相同**)
+- [ ] `cep_collective_plane_contract` 的 **CP-03** 与 **CP-06** **绿**;**V6-d 四条证书**(`C-1′` / `C-2` / `C-3` / `C-4`)**全绿**
+- [ ] `flow_support.snoop_resp = false` **维持不变**(与 `vc_binding.snoop_resp = 3` 并存不矛盾,见 §②)
+- [ ] `ordering_assumption` 的 VC 覆盖 ⊆ `vc_binding` 的 VC 覆盖(逐网络)
+- [ ] 实例旁的理由登记写明「`vc_binding` 是 **VC 分配映射**,⛔ 不是 `flow_support` 的重复声明」
+
+**关联**:本 ADR **SU 2026-11-06**(被订正的那一段)· 台账 **Entry #239** · `ADR-CEP-01` **SU#4 E.3.1 / E.6**(C-1′ 与 V6-d)·
+`include/tlm/cep/collective_plane_contract.hh`(`C-1′`「槽位语义继承」判据本体)· `ADR-CEP-04` **SU 2026-11-06**
