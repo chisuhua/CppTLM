@@ -1,0 +1,16 @@
+schema: spec-driven
+created: 2026-11-06
+goal: TileLink-C 运行时引擎落地 —— B3b 达成度 1/6 → 2/6(T1–T4 全满足后的合法出口)
+affected_areas:
+  - include/tlm/cep/tilelink_protocol_engine.hh
+  - test/test_cep_tilelink_engine.cc
+  - openspec/changes/cpptlm-cep-tilelink-runtime-engine/specs/cep-tilelink-runtime-engine/spec.md
+# 引擎 = 新 capability(运行面);规约面 = `cep-tilelink-tree-manager`(只读上游);
+# T3 表真源 = `cep-tilelink-state-spec`(只读消费,zero-copy)。
+# ⛔ 与 t3-mapping-survey 不同:本 change **有** delta spec(ADDED Requirement)。
+# 冻结面:0 改动(tilelink_state_spec.hh 亦零改动,只读消费)。
+skip_specs: false
+x-phase: P0
+x-priority: P1
+x-status: proposed
+x-ledger: obj-cep-platform Entry #243
