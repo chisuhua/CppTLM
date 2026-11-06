@@ -542,11 +542,13 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
     - ⛔ **该禁令仍然有效** —— 「文本要求逐条断言、却按编号级宣称达成」= DoD 降格后仍宣称达成;本轮达成是**逐条判定级** + 决定性变异证伪,⛔ 非编号级
   - 📌 **本轮流程教训(留档,per §11)**:BLOCKER **三次回归同一族失败模式** —— 「载体未真正咬合判据的**主体**」,三种表现:① B-1 **借壳**(语义无关的 case 挂该 id)② B-2 首次 **主体错位**(断言证明「**可以**写出负向断言」而非「测试集**含**它」)③ B-2 二次 **自证**(扫描器自身的锚点全是 fixture 字符串)⇒ 后续载体评审须把「**载体文件自身是否满足该判据**」列为固定检查项;**决定性变异**(删掉被判据约束的那部分 ⇒ 必红)应作为闭合证据的**必附项**,只测「锚点存在」不够
 - B3a. ✅ **6 个协议族的 adapter 契约**实施完成:CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」与 `ADR-CEP-11 §3` 锁表「按 `protocol_version` 行计 8 行」—— 两种粒度非矛盾,per Entry #19 §2**);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
+  - 📌 **2026-11-06 推进状态(per 台账 Entry #237)** —— 公开来源普查(librarian,新增来源类别)结论:**N-8**(有无 snoop)**部分可钉死** ⇒ 建议 `snoop=false` / `snoop_resp=false`,**basis = `public-nonnormative-derived`**(⛔ 非 spec-pinned;依据 = Linux 内核 `docs.kernel.org/gpu/amdgpu/ualink.html` 7.4-rc1 + AMD amd-gfx 95 补丁系列 2026-08-31 + 联盟博客 2025-05-15「Coherency is maintained through software」+ UnifabriX webinar 2025-12-10,**4 个互相独立的公开非规范来源一致**);**N-9**(`perm` 支持子集)**公开来源结构性撑不住 ⇒ 永久 pending**(所有公开材料无 permission / cache-state 词汇,且 UALink 被公开定义为 memory-semantic + software coherency ⇒ 该问法在 UALink 侧**无对应物** ⇒ 该值本质是 **CEP 建模决策**)⇒ **须架构裁决 D-2**;另 **B3a 存在双记账**(本行记 ✅ vs 终态表记「阻塞终态 Go」)⇒ **须口径裁决 D-3**。⛔ **合规**:本轮**未**读取 / 下载 / 引用任何 UALink 规范 PDF 技术正文(ECA 同型约束照旧)
 - B3b. ⏳ **运行时 ProtocolEngine**:在 B3 的 6 族清单中达成 **1/6**(仅 CHI RN-F —— `include/tlm/cep/chi_rnf_protocol_engine.hh` + L4 事务级 E2E,per `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`);CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink **未达成**
   - ⛔ **本项不得改写为「已达成」** —— 「DoD 降格后仍宣称达成」是 architect 2026-11-04 裁决**明确禁止**的失败模式(per `07 号` Status Update 2026-11-04 ①)
   - **触发条件**:某协议族的**规约载体出现转移表真源**时 ⇒ 才补运行时引擎(per oracle 2026-11-04:规约载体无转移表时补引擎 = 诱发推理填空 ⇒ **不补**)
   - ⚠️ **两条不得计入的口径**:① **MESIF / MOESI-GPU / CohIfNull 不在** B3 的 6 族清单内 ⇒ 既不计入也不冒充;② **UALink 无实例声明**(`ualink_4` 取值不可判定)⇒ 不算「实例已声明」
   - 📌 **「ProtocolEngine」一词两义的裁决源**:`07 号` Status Update 2026-11-04 ①(architect 裁决)
+  - 📌 **2026-11-06 推进状态(per 台账 Entry #237)** —— 逐族实测「规约载体是否出现转移表真源」:**TileLink-C** 有 **12/12 Known + 全 `Direct`** 的转移矩阵(自 2026-11-02 起即存在,规范可读·sha256 钉版)⇒ ⚠️ **2026-11-04「规约载体无转移表真源 ⇒ 不补」的理由对 TileLink-C 不成立**;**CXL 2.0** = 68 格中 **42 格 Unknown**(覆盖率 26/68)⇒ 未成立(**该族显式冻结**);**CXL 3.0 / NVLink / UALink** = 载体无矩阵 ⇒ 未成立。⇒ **待 architect 裁决 D-1**(「转移表真源」是否覆盖「按**操作**索引」的矩阵 + TileLink-C 的最终归类);在裁决前 **B3b 维持 1/6**,⛔ 不得宣称已触发
 - B8. **Directory & Ordering Plane 三子平面实施完成**:Address Resolver + Sharer Tracker 5 实现 + Ordering Point 三判据 + **装配期通道依赖图无环检查**(per `ADR-CEP-08` + `ADR-CEP-09 Decision A`)
   - ✅ **达成**(2026-11-05,per 台账 **Entry #231**)—— 四子项逐条实测:
     | 子项 | 载体 | 证据 |
@@ -14715,6 +14717,127 @@ test cases: 7 | 6 passed | 1 failed
 **⑦ 关联**:#235(分批策略)· #234(49 条 ⏭ 登记 + 真实缺口 17/66)· #233(C1 附裁 + ⏭ 登记形态)· #232(C1 落表)·
 #228/#231(B4/B7/B5/B6/B8 收口)· `.rddf/reviews/cep-b2-acceptance-verdict.md` §0–§11 · `§6.2 B2` · `§4.7`
 
+### Entry #237 — 2026-11-06 [sprint-review](B3a / B3b 推进 —— **事实底稿** + **三个 architect 裁决请求**)
+
+**主题**:为 `§6.2` 剩余两项(B3a `ualink_4` 实例未声明 / B3b 运行时引擎 1/6)做**推进前的实测底稿**,
+并提出**三个待签裁决**。本条**不改代码、不改 ADR 本体、不改冻结面**;
+⛔ 本条**不宣称** B3a / B3b 已达成,⛔ 也**不代 architect 裁决**。
+**角色**:planner(本 entry + 事实底稿 + 裁决请求书)· librarian(UALink 公开来源普查)· metis(设计前 gap 分析)·
+architect(**D-1 / D-2 / D-3 待签**)。
+**性质**:事实登记 + 决策请求;⛔ 无代码改动、⛔ 无冻结面改动、⛔ 无 ADR 本体改动。
+
+**① 本轮新增的实测事实**
+
+**1.1 B3b 触发条件的逐族实测(「规约载体是否出现转移表真源」)**
+
+| 协议族 | 规约载体 | 转移矩阵 | 格数 | `basis` | Unknown 格 | 判定 |
+|---|---|---|---:|---|---:|---|
+| CHI RN-F | 无独立 state spec(引擎自带 `kChiOpcodeTable`) | — | — | — | — | 已 1/6 |
+| CXL 2.0 非对称 | `cxl_state_spec.hh` | ✅ | 68 | `PublicDirect`/`PublicAnalogical`/`ArchforgeAnchor`/`SelfDerived` | **42/68** | **未成立** |
+| CXL 3.0 对称 | `cxl_dcoh_state_spec.hh` | ❌ 无 | — | — | — | 未成立 |
+| **TileLink-C** | `tilelink_state_spec.hh` | ✅ | **12** | **全部 `Direct`**(规范 `tilelink-c-1.7.1`,PDF sha256 钉版,SiFive 免费开放标准) | **0** | ⏳ **待 D-1 裁决** |
+| NVLink | `nvlink_sharp_state_spec.hh` | ❌ 无 | — | — | — | 未成立 |
+| UALink | `ualink_inc_state_spec.hh` | ❌ 无 | — | — | — | 未成立 |
+
+- **CXL 2.0 未成立的依据**:`kKnownCellCount = 26` / `kUnknownCellCount = 42`(`kLegalTransitionCoverageNum/Den` = 26/68)
+  ⇒ **68 格里有 42 格规范未覆盖** ⇒ 矩阵**不是**真源 ⇒ 触发条件未成立。
+  ⚠️ 该族**显式冻结**:不得因「有 68 格矩阵」被后续会话误推进(矩阵的存在感是最易误判的对象)。
+
+**1.2 与既有登记的一处出入(须登记;ADR 不可变 ⇒ 不改 ADR 本体)**
+
+`docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` §3 B 类把 **TileLink-C** 与 CXL 3.0 / NVLink 并列为
+「oracle 2026-11-04 的裁决是「不补协议引擎」—— 理由是**规约载体无转移表真源**」。
+⇒ 按 1.1 实测,**该理由对 TileLink-C 不成立**(其载体有 12/12 Known + 全 `Direct` 的转移矩阵)。
+⚠️ 裁决者的心智模型可能是「转移表 = 按**消息**索引的协议消息转移表」,而 TileLink-C 的矩阵按**权限操作**索引(见 1.3)⇒
+**这属口径问题还是事实问题,须由 D-1 裁定**。本条**只登记出入**,不代裁。
+
+**1.3 TileLink-C 的矩阵是「按操作索引」—— 补引擎还缺一层映射**
+
+- 稳定态 3 值 = `Nothing` / `Branch` / `Tip`(**树拓扑节点态**,非一致性协议态)· 事件 4 类 = `Cap` / `Grow` / `Prune` / `Report`(**权限操作**,非协议消息)
+- `ADR-CEP-11 §3` 锁表 TileLink-C 行的「关注的语义子集」= `A/B/C/D/E 通道; Tree Tip 权限; Probe / Acquire / Grant`
+- ⇒ **「CohIf 消息类 → `Cap`/`Grow`/`Prune`/`Report` 事件」的映射在仓内任何载体都不存在** ⇒ 补运行时引擎**先**需要该映射的锚点普查。
+- 已在位:`TileLinkCAdapter`(零自有表副本,委托 `TileLinkStateSpec::transition`)+ `tilelink_tree_manager.hh` 的 `TreeManager`(`SharerTrackerIf` + `SnoopMechanics` 行为面)。
+
+**1.4 B3a:`ualink_4` 的公开来源普查(librarian,新增来源类别)**
+
+| pending | 结论 | 依据 |
+|---|---|---|
+| **N-8**(`flow_support.snoop` / `snoop_resp`) | **部分可钉死** ⇒ 建议 `snoop=false` / `snoop_resp=false`,**basis = `public-nonnormative-derived`**(⛔ **不得**标 spec-pinned) | ≥4 个互相独立的公开非规范来源一致:① Linux 内核 `docs.kernel.org/gpu/amdgpu/ualink.html`(7.4-rc1)——「direct loads/stores over the fabric」· 无 snoop 事务类型(其 remote TLB shootdown 是 **TLB 失效**非 cache snoop)② AMD amd-gfx **95 个补丁**系列(2026-08-31)——「no copy involved; direct loads/stores」· 无 coherence 引擎 ③ UALink Consortium 官方博客(2025-05-15)——「**Coherency is maintained through software**」④ UnifabriX webinar(联盟官网托管,2025-12-10)——「software coherency」,并把 `Coherent (via CXL.mem/CXL.cache/CHI C2C)` 明确归给 **host 侧** |
+| **N-9**(`perm` 支持子集) | **公开来源结构性撑不住 ⇒ 永久 pending(仅限公开来源)** | 所有已检索公开材料(联盟博客 / FAQ / 厂商博客 / 研讨幻灯片 / 内核文档 / 补丁 / arXiv 论文)**无一处**出现 permission / cache-state / UNIQUE / WRITEBACK;且 UALink 被公开定义为 memory-semantic + **software coherency** ⇒ 「支持 4 值锁里的哪几个」在 UALink 侧**无对应物** ⇒ 该值本质是 **CEP 建模决策(`self-derived`)**,不是 UALink 事实 ⇒ **须架构裁决(D-2)** |
+
+- ⛔ **合规**:本轮**未**读取 / 下载 / 引用任何 UALink 规范 PDF 技术正文(ECA 同型约束照旧,per 锚点摘要 §0 #1);
+  搜索索引回显的规范片段被**主动丢弃**,未进入任何结论。
+  ⇒ 唯一合法的规范级升级路径 = **用户自行取得 Evaluation Copy 并明确授权投喂** ⇒ 走**新的 Task 0 轮次**(不在本轮就地扩写)。
+
+**1.5 B3a 的双记账(须一并裁,否则两条路径都在追一个口径不清的目标)**
+
+| 落点 | 现状 |
+|---|---|
+| `§6.2 B3a` | ✅「6 个协议族的 adapter 契约实施完成」,但 `ualink_4` 未声明 ⇒ **实例级装配不可达** |
+| `§6.2` 终态表 + 待办指针 | B3a **阻塞**终态 DoD Go(「6 族契约达成但 UALink 无实例声明」) |
+
+⇒ 同一文件对 B3a 同时记「✅」与「阻塞」⇒ **口径须裁(D-3)**。
+⚠️ 「✅ 但有不可达实例」正是「DoD 降格后仍宣称达成」的变体(per B2 轮次教训)。
+
+**② 三个待签裁决(本条的核心)**
+
+**D-1 · 「转移表真源」口径 + TileLink-C 归类**
+
+- **问题**:触发条件原文「某协议族的**规约载体出现**转移表真源时 ⇒ 才补运行时引擎」。
+  TileLink-C 载体自 **2026-11-02** 起即有 12/12 Known + 全 `Direct` 的矩阵 ⇒ 该事件**已客观发生**;
+  而 2026-11-04 的裁决把它归入「无转移表真源」组(见 1.2)。
+- **选项 ①**:口径**覆盖**「按操作索引」矩阵 ⇒ TileLink-C **触发成立** ⇒ 走 change:①「消息→操作」映射的锚点普查(规范可读 ⇒ 可得 `direct` basis)
+  → ② `TileLinkCProtocolEngine` + 装配 + 1 条 L4 事务级 E2E。
+- **选项 ②**:口径**不覆盖** ⇒ TileLink-C 与其余四族同样登记 ⏭(reason = 口径裁决编号;trigger = 消息级映射锚点落地)。
+  ⚠️ **附加义务**:B3b 的**理由**必须同步改写 —— 不得继续写「TileLink-C 规约载体无转移表真源」(按 1.1 = 事实错误),
+  须改为「口径未覆盖按操作索引矩阵,裁决 = Entry #XXX」。
+- **选项 ③**:口径**须细化**(如明确定为「消息级状态机」)⇒ 落 ADR 措辞修订 + 逐族重判。
+- 📌 **planner 建议**:① 或 ③ —— 选项 ② 需靠一条**事实错误**维持,属本仓反复出现的自欺形态(「改理由不改代码」的诚实形态是 D-1 裁「不覆盖」后的**收尾**,不是默认计划)。
+
+**D-2 · `perm` 4 值锁对「非一致 memory-semantic fabric」是否适用 + `ualink_4` 的取值**
+
+- **问题**:1.4 实测 N-9 **不是 UALink 事实** ⇒ 需 architect 裁 `perm` 在非一致 fabric 上的语义。
+- **选项 ①**:`perm` 对 `ualink_4` **不适用** ⇒ schema 允许「不参与 / 空集」⇒ `ualink_4` **可声明**
+  (basis 组合 = N-8 `public-nonnormative-derived` + `perm` 不参与 + `sharer_tracker.impl` ∈ `ADR-CEP-04` 候选集 7 值 + 理由登记)。
+- **选项 ②**:`perm` **必须取值** ⇒ 该值登记为 **`self-derived` 建模决定**(显式标注**非** UALink 事实)⇒ 同上可声明,basis 口径不同。
+- **选项 ③**:`ualink_4` **不声明** + 把第 8 个实例登记为**永久 ⏭**(reason = 合规受限 + 语义无对应物;trigger = 用户取得 Evaluation Copy 并授权 **或** D-2 裁 ①/②)。
+  ⚠️ **附加义务**:把「8 实例」改写为「**7 + 1 ⏭**」以消除 `ADR-CEP-11 §3` 锁表 8 行 vs `protocol_instances.json` 实测 7 实例的**已知 drift**。
+- ⚠️ **合规面**:选项 ② 的 `perm` 取值 = **CEP 建模决定**,须显式登记,⛔ 不得伪装成 UALink 事实;选项 ① 的「不参与」亦同。
+
+**D-3 · B3a 的终态口径(消双记账)**
+
+- **选项 ①**:B3a = **⏭ 阻塞**,收口形态 = `ualink_4` 声明 **∨** 登记第 8 实例 ⏭。
+- **选项 ②**:B3a = **✅ 不阻塞**(UALink 实例缺口算 backlog,同 `07 号 §5.1.1` 的「实例级装配待 backlog」登记)。
+
+**③ 裁决返回后的执行序列(串行)**
+
+1. **2a 簿记**(零代码;无论 D-1 结果如何**都要做**,因为它修的是**错误事实陈述**):修 `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`
+   §3 B 类的 TileLink-C 归类措辞 + 逐族登记「未成立」的 ⏭(形态 = `reason` + `trigger_condition` + `ledger_entry`,对齐 B2 的 5 授权⏭)。
+2. **路径 1 决策请求书**(发给用户):含 ECA 合规问题 + 两个变体(① 人读 Evaluation Copy → 写**契约锚点 `C-n`** → architect 签 SU;② 用户自行取得 Evaluation Copy 并**明确授权**投喂 → 走新 Task 0 轮次)。
+   ⇒ **本项是等待用户表态,不是 builder 任务**。
+3. **D-1 裁决**(architect)⇒ 触发 ⇒ 开 change(普查 → 引擎 → 装配 → L4 E2E);不触发 ⇒ TileLink-C 登记 ⏭,B3b 维持 **1/6**。
+4. **D-2 裁决**(architect)⇒ 触发 ⇒ builder 声明 `ualink_4` + 计数链 **7 → 8** 同步(`protocol_instances.json` 实例数 / `no_upgrade_instances` 3→4 / `implemented` 7→8 / `07 号` 三处)。
+
+> ⚠️ **诚实声明**:在 D-1 / D-2 / D-3 返回前,**本计划无 builder 可执行项**。
+
+**④ 本轮登记的 slop 防护点(metis 提纲,留档)**
+
+- ⛔ **不得**把 planner 自拟的「消息 → 操作」映射包装成 spec-anchored ⇒ 普查的每一格必须有条款级 `ref`;无规范支撑的格标 `pending = true`,**不得填**。
+- ⛔ **不得**把 CXL 2.0 的 68 格矩阵当作「有转移表 ⇒ 触发已 fired」⇒ 该族**冻结**,理由 = 42/68 Unknown + 覆盖率 26/68。
+- ⛔ **不得**复用 CHI RN-F 的引擎**实现**搭 TileLink-C 引擎 ⇒ 只复用 `ProtocolEngineBase` 骨架;`Cap` 事件的「**源不定**」语义必须有显式测试
+  (它与 snoop 范式的「从态 X 经事件 E 到态 Y」**冲突**,是最易藏 bug 的点)。
+- ⛔ **不得**先声明 `ualink_4`、后补签 SU(倒序即拒收)⇒ 顺序 = 人写结论 → architect 签 SU → 实例声明 → 计数链。
+- ⛔ **不得**「改理由但把 TileLink-C 继续藏在未达成清单里不单列」⇒ 逐族单列。
+- ⚠️ **本仓既有 ritual 脚本对本 objective 不适用(实测)**:`rdd-planner/scripts/planner_objective_revise.sh` ① 是 **stub**,只认 `## 11. 跟踪台账` 的表格格式,
+  而本仓 §11 是 `### Entry #NNN` 块格式 ⇒ 正则不匹配;② 按 `objective-<id>.md` 拼路径,而本仓文件名为 `obj-<id>.md` ⇒ 退出「objective not found」;
+  ③ 写的是表格行,与本仓 236 条 Entry 的形态不兼容。⇒ 本仓台账的既有形态 = **手工追加 `### Entry #NNN — DATE [kind](title)` 块**,本条沿用。
+
+**⑤ 关联**:#236(B2 达成 · 61/66)· #235(分批策略 · ⏭ 机制先例)· #234 · #233(⏭ 登记形态)· #231(B3b 触发条件口径)· #218 ·
+`docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` · `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §0 / §3 ·
+`docs/adr/ADR-CEP-11-protocol-version-locking.md` §3 · `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` SU §③ ·
+`docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md` · `include/tlm/cep/protocol_instances.json` · `§6.2 B3a / B3b`
+
+---
 ---
 
 ---
