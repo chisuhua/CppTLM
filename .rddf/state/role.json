@@ -1,34 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "planner",
-  "updated_at": "2026-11-06T03:16:33Z",
+  "updated_at": "2026-11-06T03:30:25Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-05T13:12:10Z",
-      "by": "user",
-      "reason": "用户口令「然后切 planner」⇒ 落 C1 附裁(4 条判定 + ⏭ 登记物 + 闸四项校验 + 登记格式 66/66(N+M))到 objective §6.2 B2,并落台账 Entry #233(含 tools/render_report.py 的 INV-CARRIER 冻结面授权)"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-05T13:16:55Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 执行这 6 项」⇒ B2 达成的 6 个动作: ① 映射表生成器+ctest 闸(四项校验+延登记物) ② 16 条 L1 加 INV-CARRIER 标记 ③ tools/render_report.py 加标记+冻结双步(授权=Entry #233) ④ 补 INV-CEP-09-IC3 断言(确定性+闸层重算敏感性) ⑤ 5 条 L2 逐条核实 ⑥ B2 登记(planner)"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-05T13:24:48Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 执行这 6 项」的第 6 项(B2 登记)需 planner 落台账 ⇒ 落 Entry #234(49 条 ⏭ 登记正文, 供映射表闸校验④「台账正文含该 id」)+ 更新 §6.2 B2 的真实缺口数(17/66)"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-05T13:25:08Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 执行这 6 项」收尾 ⇒ commit planner 的表落(Entry #234 + §6.2 B2 真实缺口数)+ 全量 ctest 验证 + 报告"
-    },
     {
       "role": "architect",
       "at": "2026-11-05T13:29:35Z",
@@ -124,6 +100,30 @@
       "at": "2026-11-06T03:16:33Z",
       "by": "user",
       "reason": "用户口令「切 planner 走路径收口」⇒ 落台账 Entry #239(9 键补裁 + 路径 A + M1 冻结面授权)+ obj/07 号 口径同步清单"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-06T03:18:55Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 继续推进」⇒ 按 Entry #239 §⑥ 执行:① 声明 ualink_4 + repo_owned 增员 + 理由登记 ② 翻转 5 个测试文件存量断言 + UIA-07 正控 ③ 计数链(07 号 ≥7 处 + obj)④ ADR-CEP-09 回查登记 ⑤ T3 普查 change 立项"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-06T03:22:12Z",
+      "by": "user",
+      "reason": "builder 实施中发现决策层缺陷(design_drift): C-1′「槽位语义继承」要求同网实例 vc_binding 类集合**完全一致** ⇒ 上一 SU 的「去 snoop_resp」裁错 ⇒ 追加订正段(ADR 不可变)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-06T03:22:20Z",
+      "by": "user",
+      "reason": "按 ADR-CEP-12 订正 #1 应用:vc_binding 逐字全取(含 snoop_resp)⇒ 解 C-1′ 红;并翻转 12 个测试文件的存量断言 + 07 号 7 处同步 + T3 普查立项"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-06T03:30:25Z",
+      "by": "user",
+      "reason": "落台账 Entry #240(订正 #1 登记 + 路径 A 实施回执 + ADR-CEP-09 回查 + M1 冻结面授权)+ B3a 由 ⏭ 转 ✅ + T3 普查 change 立项"
     }
   ],
   "auto_switch_window": null
