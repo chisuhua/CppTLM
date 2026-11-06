@@ -4,7 +4,7 @@ priority: P1
 phase: phase-10
 依赖:
   - ADR-CEP-06
-状态: 🟡 **提案**(2026-11-05,per 台账 Entry #226;metis 前置 gap 分析已处置,待 builder 实施)
+状态: ✅ **已实施**(2026-11-05 实施 / 2026-11-06 回填 per Entry #250;装置 `test/test_cep_b4_evidence_device.cc` 过 **AC-9** 实现评审 PASS,per Entry #228;**不占 OpenSpec slot**)
 created: 2026-11-05
 ---
 

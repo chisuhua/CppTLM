@@ -25,7 +25,7 @@ phase: phase-10
   - ADR-CEP-17
   - ADR-CEP-18
   - ADR-CEP-NUMBER-MAP
-状态: Proposed
+状态: ✅ **已归档**(2026-10-23,Stage 0 —— 状态回填 2026-11-06,per Entry #250;`openspec/changes/archive/2026-10-23-cpptlm-cep-umbrella/`)
 created: 2026-10-20
 ---
 

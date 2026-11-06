@@ -724,3 +724,12 @@ R-T3:本 ADR 决策 6 的 6 类消息类词表 `{request, response, snoop, snoop
 
 **关联**:本 ADR **SU 2026-11-06**(被订正的那一段)· 台账 **Entry #239** · `ADR-CEP-01` **SU#4 E.3.1 / E.6**(C-1′ 与 V6-d)·
 `include/tlm/cep/collective_plane_contract.hh`(`C-1′`「槽位语义继承」判据本体)· `ADR-CEP-04` **SU 2026-11-06**
+
+
+---
+
+## Status Update(2026-11-06 · 四,per 台账 Entry #250)—— `backlog:` 占位**回填**(⛔ 不改任何决策内容)
+
+> **性质**:纯**指针回填**(append-only)。⛔ 不 reopen 任何决策、⛔ 不改正文、⛔ 不新增 invariant 编号。
+> **原占位**:`backlog: cpptlm-cep-b3a-b3b-advancement`(占位,立项后回填)
+> **回填**:该 backlog 条目已交付 —— `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-t3-mapping-survey/`(T3 映射锚点普查,✅ 已完成归档)+ `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-runtime-engine/`(TileLink-C 运行时引擎,✅ 已完成归档);剩余 4 族处置见 `07 号` **SU 2026-11-06 · 四** + 台账 **Entry #249**。

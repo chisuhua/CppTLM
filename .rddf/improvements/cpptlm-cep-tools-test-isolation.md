@@ -6,13 +6,13 @@ phase: phase-10
 依赖:
   - ADR-CEP-06
   - ADR-CEP-14
-状态: Proposed
+状态: ✅ **已完成**(2026-10-23,`2032e358` —— 状态回填 2026-11-06,per Entry #250;进程级隔离 `proc_token()` 在位;**不占 OpenSpec slot**)
 created: 2026-10-23
 ---
 
 # cpptlm-cep-tools-test-isolation: CEP tools 契约测试临时目录隔离修复
 
-> **状态**: 🟡 **Proposed**(2026-10-23,planner 起草)—— builder 实施
+> **状态**: ✅ **已完成**(2026-10-23,`2032e358` —— 状态回填 2026-11-06,per Entry #250;进程级隔离 `proc_token()` 在位;**不占 OpenSpec slot**)
 > **关联路线图**: [`phase-10`](../roadmap/phases/phase-10.md)(in-progress)+ [`objective-cep-platform`](../roadmap/objectives/obj-cep-platform.md)(§11 **Entry #24**)
 > **根因**: 台账 Entry #22 ⑩ **L5** 的「ctest 偶发失败 1 次(未复现)」—— **2026-10-23 已定位根因**
 > **边界**: 仅改**测试代码**(`test/test_cep_tools_contract.cc`);**零** ADR / 冻结面 / schema / tools 改动;**零** ABI 改动

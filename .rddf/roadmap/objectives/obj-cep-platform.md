@@ -15296,6 +15296,32 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑥ 冻结面授权**:`07 号` 追加 SU · 四 + 2 处行内记账句(行数不变)⇒ 两步授权:`cep_freeze_check.sh --update --authorized-by "Entry #249"` → 清单单独 commit。
 
 **⑦ 关联**:**#248**(盘点)· **#247/#246**(引擎)· **#238**(T1–T4)· **#239**(认识论三档)`07 号` **SU 2026-11-06 · 四** · `.rddf/reviews/cep-t1-source-effect-ruling.md` · `§6.2 B3b`
+
+### Entry #250 — 2026-11-06 [build](**账本债清理** —— 5 处 `backlog:` 回填 + 6 个 improvement 状态回填 + 冻结面授权)
+
+**主题**:清理 Entry #248 §④ 登记的文档账本债(⛔ 零代码改动、⛔ 零决策变更、⛔ 零新增 change)。
+**角色**:builder(ADR/07 号 append-only 回填 + improvement 状态)+ planner(回填口径)。
+
+**① 5 处 `backlog:` 占位回填**(ADR 不可变 ⇒ **追加 SU**,⛔ 不改正文/旧 SU):
+| 文件 | 原占位 | 回填 |
+|---|---|---|
+| `ADR-CEP-02` / `ADR-CEP-04` / `ADR-CEP-12` | `backlog: cpptlm-cep-b3a-b3b-advancement` | 两个已归档 change(T3 普查 + 运行时引擎)+ Entry #249 的四族处置 |
+| `ADR-CEP-06` | `backlog: cep-b4-evidence-device` | **已实施**且不占 slot(`test_cep_b4_evidence_device.cc`,AC-9 PASS,Entry #228) |
+| `07 号` SU · 四 | 同 `b3a-b3b-advancement` | SU · 四 的关联行改指归档实路径(该 SU 为最新追加,非历史) |
+
+**② 6 个 improvement 状态回填**(in-place,均有归档/实现凭据,⛔ 无一条「宣称」):
+| improvement | 原 | 新 | 凭据 |
+|---|---|---|---|
+| `cpptlm-cep-moesi-gpu-adapter` | Proposed | ✅ 已归档 | `archive/2026-10-27-…`(Entry #80) |
+| `cpptlm-cep-collective-plane-base` | Proposed | ✅ 已归档 | `archive/2026-10-26-…`(Entry #70) |
+| `cpptlm-cep-umbrella` | Proposed | ✅ 已归档 | `archive/2026-10-23-…`(Entry #29) |
+| `cpptlm-cep-tools-test-isolation` | Proposed | ✅ 已完成 | 提交 `2032e358`(Entry #24);`proc_token()` 进程级隔离在位;不占 slot |
+| `cpptlm-cep-tilelink-tree-manager` | 🟡 进行中 | ✅ 已完成并归档 | 两段式均归档(规约层 + 实现层,2026-11-02) |
+| `cep-b4-evidence-device` | 🟡 提案待实施 | ✅ 已实施 | 装置 + AC-9 PASS(Entry #228);不占 slot |
+
+**③ 冻结面授权**:5 个 ADR/07 号文件追加 SU ⇒ **仅 append-only**(决策内容零改动)⇒ 两步授权:`cep_freeze_check.sh --update --authorized-by "Entry #250"` → 清单单独 commit。
+**④ 未做的(显式)**:`ADR-CEP-11` G-3(IC3 变更留痕无自动闸)= **残余风险,不关闭**(per 该 ADR §10.2);⛔ 不在本条假装闭合。
+**⑤ 关联**:**#249**(裁决)· **#248**(盘点)· `docs/adr/ADR-CEP-0{2,4,6}-*.md` · `ADR-CEP-12` · `07 号` SU · 四 · `.rddf/improvements/*.md`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

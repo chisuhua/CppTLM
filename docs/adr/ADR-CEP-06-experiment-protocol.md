@@ -844,3 +844,12 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 
 本文件 **SU#1 §④**(两级 verdict + 结构性保证)· **SU#2 §③**(结构性保证的 gloss —— 本则不推翻)· **SU#4**(装置补全 = 硬约束 1 的反例对照)·
 `objective §9.1 ①` H2 行 / `§9.1 ②` H2 行 / `§9.1 ③` / `§6.2 B4` / `§6.2 B7` · 台账 **Entry #218**(事实 #2「判据收窄优先于补实现」)· **#225**(8/8 登记)· **#228 ⑤**(冲突登记)· **#229**(本则授权 + 表修复)
+
+
+---
+
+## Status Update(2026-11-06 · 四,per 台账 Entry #250)—— `backlog:` 占位**回填**(⛔ 不改任何决策内容)
+
+> **性质**:纯**指针回填**(append-only)。
+> **原占位**:`backlog: cep-b4-evidence-device`(待 planner 立项)
+> **回填**:该条目**已实施**且**不占 OpenSpec slot**:装置 = `test/test_cep_b4_evidence_device.cc`(「一致性 × 完成域」复合装置),过 **AC-9** 实现评审 **PASS**(报告 `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`,per 台账 **Entry #228**)⇒ improvement `.rddf/improvements/cep-b4-evidence-device.md` 状态已回填为「已实施」。

@@ -13,7 +13,7 @@ phase: phase-10
   - ADR-CEP-09
   - ADR-CEP-13
   - ADR-CEP-14
-状态: Proposed
+状态: ✅ **已归档**(2026-10-26,队列 #5 —— 状态回填 2026-11-06,per Entry #250;`openspec/changes/archive/2026-10-26-cpptlm-cep-collective-plane-base/`)
 created: 2026-10-26
 ---
 

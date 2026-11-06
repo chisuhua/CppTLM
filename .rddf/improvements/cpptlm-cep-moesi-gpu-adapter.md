@@ -11,7 +11,7 @@ phase: phase-10
   - ADR-CEP-11
   - ADR-CEP-04
   - ADR-CEP-14
-状态: Proposed
+状态: ✅ **已归档**(2026-10-27,队列 #6 —— 状态回填 2026-11-06,per Entry #250;change 目录 `openspec/changes/archive/2026-10-27-cpptlm-cep-moesi-gpu-adapter/`)
 created: 2026-10-26
 ---
 

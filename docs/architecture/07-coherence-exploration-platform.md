@@ -1606,7 +1606,8 @@ oracle 复核通过 —— 含 3 处事实修正)后落地。本则是**真源 1
 > **性质**:末尾追加 SU(append-only)。⛔ 不改 §5.1.1 行数;⛔ 不新增 invariant 编号;⛔ 不改 schema / ABI。
 > **触发**:台账 **Entry #248**(剩余任务盘点:4 族缺口全在规约层)· 用户裁决请求(「先起 architect 裁决」)。
 > **审查**:`.rddf/reviews/cep-t1-source-effect-ruling.md`(**oracle 1 轮 + critic 2 轮**;critic 第 2 轮 **APPROVE · mergeable: yes**)。
-> **关联 change**:`openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/`(已归档,T3 先例)· `openspec/changes/cpptlm-cep-tilelink-runtime-engine/`(已归档,引擎先例)· **本条不新建 change**。
+> **关联 change**(⚠️ **原 `backlog: cpptlm-cep-b3a-b3b-advancement` 占位已回填** —— per 台账 Entry #250):
+> `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-t3-mapping-survey/`(T3 映射锚点普查,✅ 已完成归档)· `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-runtime-engine/`(TileLink-C 运行时引擎,✅ 已完成归档)· **本条不新建 change**。
 
 ### ⓿ 范围(⛔ 必读:本条**不**做什么)
 
