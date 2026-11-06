@@ -15159,10 +15159,12 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 
 **② KPI 回 1/3**:实测 `openspec list --json` = **1 active**(`cpptlm-cep-tilelink-runtime-engine`)⇒ 7 处活文档当前态 **2/3 → 1/3**(roadmap.md / phase-10.md / obj×2 / AGENTS.md / improvements×2),历史链条**保留**(追加「t3 普查已完成归档 ⇒ slot 已释放」句,⛔ 不删旧叙述);AGENTS.md 已归档 change 计数 **122 → 123**。
 
-**③ 归档路径引用同步**:`scripts/test/cep_doc_ref_check.sh` VIRTUAL_PATHS 登记旧路径(台账历史 Entry #241/#242/#243 的路径引用豁免,per ualink 先例)· verifier 报告 `.rddf/reviews/b3b-t3-verify.md` 的引用改指**归档实路径**。
-**④ 闸**:docs_sync / doc_ref / freeze(41 产物)/ agents_md_lint 全绿。
+**③ 归档件不入库 ⇒ 语义活路径登记**(per `.gitignore:64` `openspec/changes/archive/`):归档目录**不入库** ⇒ 该 change 的**零 delta** 语义活路径 = **载体** `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`)+ **审计面** `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` + **台账** Entry #241/#242/#244;proposal 原文仅存 git 历史(`ba643581`)⇒ ⛔ **不得**因「归档目录不在活树」而判定该 change 语义丢失。
 
-**⑤ 关联**:**#243**(引擎 change 立项 + F1 收口)· **#242**(T3 实施回执)· **#241**(T3 立项)· `.rddf/reviews/b3b-t3-verify.md` ·
+**④ 归档路径引用同步**:`scripts/test/cep_doc_ref_check.sh` VIRTUAL_PATHS 登记旧路径(台账历史 Entry #241/#242/#243 的路径引用豁免,per ualink 先例)· verifier 报告 `.rddf/reviews/b3b-t3-verify.md` 的引用改指**归档实路径**。
+**⑤ 闸**:docs_sync / doc_ref / freeze(41 产物)/ agents_md_lint 全绿。
+
+**⑥ 关联**:**#243**(引擎 change 立项 + F1 收口)· **#242**(T3 实施回执)· **#241**(T3 立项)· `.rddf/reviews/b3b-t3-verify.md` ·
 `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-t3-mapping-survey/` · `openspec/changes/cpptlm-cep-tilelink-runtime-engine/` · `§6.2 B3b`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
