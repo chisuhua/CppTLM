@@ -436,11 +436,26 @@ int main(int argc, char** argv) {
             //   且 **F-9 fixture**(绑定非本地模型)仍然**可判红**。
             CollectivePlaneDeclaration m1 = decl;
             m1.vc_reservation_declaration.status = "unavailable";
+            // ⚠️ 2026-11-06(P2,per 台账 Entry #258):M-1 变体是**人造夹具** ⇒ 必须先移除
+            //    **真实 fabric 集合流量载体**(`ualink_4` → `FabricCollectivePlane`,非本地模型)
+            //    ⇒ 否则 V6-c 规则**如实判红**(这正是规则有牙的证明,见下方反向断言)。
+            m1.plane_binding.erase("ualink_4");
             const ContractVerdict v = evaluate_vc_precondition(m1, detail);
             expect(detail.rfind("[CP-03-VC-PRECONDITION]", 0) == 0, "CP-03-VC-PRECONDITION",
                    "V6-c 的 detail SHALL 以 `[CP-03-VC-PRECONDITION]` **开头**");
             expect(v == ContractVerdict::PASS, "CP-03-VC-PRECONDITION",
                    std::string("V6-c 前提约束 SHALL 成立(实测 ") + contract_verdict_name(v) + ": " + detail + ")");
+            // ⚠️ 2026-11-06(P2):**规则有牙的反向断言** —— M-1(`unavailable`)+ 真实 fabric
+            //   集合流量载体(`ualink_4` → `FabricCollectivePlane`)⇒ **必红**。
+            //   (若此断言消失 ⇒ V6-c 对 `FabricCollectivePlane` 失效 ⇒ 判据失守)
+            {
+                CollectivePlaneDeclaration m1_fabric = decl;
+                m1_fabric.vc_reservation_declaration.status = "unavailable";
+                std::string d_fabric;
+                const ContractVerdict vf = evaluate_vc_precondition(m1_fabric, d_fabric);
+                expect(vf == ContractVerdict::FAIL, "CP-03-VC-PRECONDITION",
+                       "M-1(unavailable)+ 真实 fabric 集合流量载体 SHALL 判红(V6-c 规则有牙)");
+            }
             // 当前声明在 **M-2** 下 ⇒ V6-c **不适用** ⇒ SHALL 为 SKIP(⛔ 禁把「不适用」当 PASS)
             std::string d2;
             const ContractVerdict v2 = evaluate_vc_precondition(decl, d2);
