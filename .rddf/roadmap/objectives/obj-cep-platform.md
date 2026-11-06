@@ -15166,6 +15166,26 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 
 **⑥ 关联**:**#243**(引擎 change 立项 + F1 收口)· **#242**(T3 实施回执)· **#241**(T3 立项)· `.rddf/reviews/b3b-t3-verify.md` ·
 `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-t3-mapping-survey/` · `openspec/changes/cpptlm-cep-tilelink-runtime-engine/` · `§6.2 B3b`
+
+### Entry #245 — 2026-11-06 [build](**F2 漏勾回填** —— `07 号` SU ⑦ 4 框补勾 + 冻结面两步授权(per verifier 报告 F2))
+
+**主题**:verifier 报告 `.rddf/reviews/b3b-t3-verify.md` **F2** —— `07 号` SU 2026-11-06 §⑦ 的 4 个 Verification 框(L1/L2/L3/L9)内容**已实证完成**但框未勾。本 Entry = **冻结面修改的授权记录**(M1 冻结件 `07 号` 的两步授权模式)。
+**角色**:builder。⛔ 本 Entry **不**含新语义,仅为**已完成的既有义务**补勾 + 授权。
+
+**① 4 框内容复核证据(补勾依据)**:
+| 框 | 义务 | 实证位置 |
+|---|---|---|
+| L1 | §5.1.1 触发条件句**零行数变化**就地澄清(指向 T1–T4) | `07 号` §5.1.1「未达成部分的触发条件」句已带「判定式 = 本文件末尾 Status Update(2026-11-06) 的 T1–T4」 |
+| L2 | `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` §3 B 类改写 + **逐族单列** | 该文 §B「2026-11-06 逐族改判」+ §B-2「TileLink-C —— 阻塞已解除,剩余是 T3 映射锚点普查」单列段 |
+| L3 | 四族(CXL 2.0 / CXL 3.0 / NVLink / UALink)⏭ 登记(`reason` + `trigger_condition` + `ledger_entry`) | 台账「逐族 ⏭ 登记」表 4 行齐(per Entry #238/#233) |
+| L9 | `ualink_4` 声明落地后 §5.1.1 UALink 行 + §11 计数同步(「声明 ≠ 装配」措辞**须保留**) | `07 号` §5.1.1 UALink 行(✅ `ualink_4` 已声明 + ⚠️ 声明 ≠ 装配 + 实例级装配仍 backlog)+「6 族 / 8 实例」计数 |
+
+**② 补勾动作**:`07 号` §⑦ L1/L2/L3/L9 由 `[ ]` → `[x]`,各附 **2026-11-06 · 三 回填** 句(注明本 Entry + 内容完成时点)⇒ ⛔ **不改正文语义**(仅勾选框状态 + 回填注记)。
+
+**③ 冻结面两步授权序列**:① 本 Entry 先落(授权记录)→ ② `07 号` 补勾 → ③ `cep_freeze_check.sh --update --authorized-by "Entry #245"` → ④ **清单单独 commit**(per 仓内既有模式,per Entry #239/#242 同款)。
+
+**④ 关联**:**#244**(T3 归档回执)· **#243**(引擎 change 立项 + F1 收口)· **#242**(T3 实施)· `.rddf/reviews/b3b-t3-verify.md`(F2)·
+`docs/architecture/07-coherence-exploration-platform.md` §⑦ · `openspec/changes/cpptlm-cep-tilelink-runtime-engine/`(tasks **P0-0**)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

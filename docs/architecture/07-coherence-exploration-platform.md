@@ -1537,13 +1537,13 @@ oracle 复核通过 —— 含 3 处事实修正)后落地。本则是**真源 1
 
 ### ⑦ Verification(前瞻判据 · 可勾选)
 
-- [ ] §5.1.1 触发条件句已完成**零行数变化**的就地澄清(指向本 SU 的 T1–T4)
-- [ ] `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` §3 B 类已改写(TileLink-C 归类)+ **逐族单列**
-- [ ] 四族(CXL 2.0 / CXL 3.0 / NVLink / UALink)的 ⏭ 登记已落 `obj-cep-platform` 台账(`reason` + `trigger_condition` + `ledger_entry`)
+- [x] §5.1.1 触发条件句已完成**零行数变化**的就地澄清(指向本 SU 的 T1–T4) —— **2026-11-06 · 三 回填**(per 台账 **Entry #245**;证据:§5.1.1「未达成部分的触发条件」句已带 T1–T4 指针,内容完成于 Entry #238)
+- [x] `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` §3 B 类已改写(TileLink-C 归类)+ **逐族单列** —— **2026-11-06 · 三 回填**(per 台账 **Entry #245**;证据:该文 §B「2026-11-06 逐族改判」+ §B-2 TileLink-C 单列)
+- [x] 四族(CXL 2.0 / CXL 3.0 / NVLink / UALink)的 ⏭ 登记已落 `obj-cep-platform` 台账(`reason` + `trigger_condition` + `ledger_entry`) —— **2026-11-06 · 三 回填**(per 台账 **Entry #245**;证据:台账「逐族 ⏭ 登记」表四行齐,per Entry #238/#233)
 - [x] T3 普查已立项(change 目录 + 规约层载体落点 + 逐行 `basis`/`ref` 载体),且**行宇宙完整**(非抽样)(2026-11-06 · 二:Entry #241 立项 + #242 实施)
 - [x] T3 普查的每一行**要么**有条款级 `ref`,**要么**显式 `pending` + fail-closed(引擎 SHALL NOT 消费)(2026-11-06 · 二:11 行全 Direct,0 pending,`t3_consumable_event_mask` fail-closed)
 - [x] **决定性变异**:删 T3 映射表任一行 ⇒ 对应判据**按正确原因红**(per 判据铁律 1.1)(2026-11-06 · 二:编译期 `static_assert` 行数锁 + 4 反向 fixture 运行时红,见 Entry #242)
-- [ ] `ualink_4` 声明落地后,§5.1.1 UALink 行与 §11 计数已同步(⚠️ 声明 ≠ 装配 ⇒ 「实例级装配仍 backlog」的措辞**须保留**)
+- [x] `ualink_4` 声明落地后,§5.1.1 UALink 行与 §11 计数已同步(⚠️ 声明 ≠ 装配 ⇒ 「实例级装配仍 backlog」的措辞**须保留**) —— **2026-11-06 · 三 回填**(per 台账 **Entry #245**;证据:§5.1.1 UALink 行含「✅ `ualink_4` 实例已声明」+「声明 ≠ 装配」措辞保留 + 「6 族 / 8 实例」计数,per Entry #239/#240)
 
 **关联**:台账 **Entry #237**(事实底稿 + 裁决请求)· **#238**(本裁决)· **#231** · **#233**(⏭ 登记形态)· **#236**(B2 达成)·
 `ADR-CEP-02` **SU 2026-11-02 R-T4**(`perm` 值域锁)+ **SU 2026-11-06**(`perm` 实例级语义)·
