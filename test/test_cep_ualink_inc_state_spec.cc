@@ -343,10 +343,16 @@ TEST_CASE("UIS-10: 载体自足 —— 只 include 标准库 + 零平台标识 +
     REQUIRE_FALSE(raw.empty());
 
     // ① 只 include **标准库**(尖括号形式)⇒ 出现引号形式的项目内头即红
+    // ⚠️ 唯一白名单(2026-11-06,per 台账 Entry #252):`source_registry.hh` 是
+    //    纯 constexpr、只依赖标准库的来源注册表(来源类型单一真源);载体引用它
+    //    **不**引入平台标识 / 区域表 / 转移判定 ⇒ 不破坏「自足」的实质。
     const auto includes = extract_include_lines(raw);
     REQUIRE_FALSE(includes.empty());
     for (const auto& inc : includes) {
         INFO("include: " << inc);
+        if (inc == "\"tlm/cep/source_registry.hh\"") {
+            continue;
+        }
         REQUIRE(inc.front() == '<'); // 项目内头是引号形式 ⇒ 出现即红
     }
 

@@ -44,6 +44,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "tlm/cep/source_registry.hh"
+
 namespace tlm::cep {
 
     /// `mesif` 协议实例的**规约层**载体 —— MESIF 5 态 × 6 事件 + 5→4 `perm` 投影 + 逐格依据
@@ -93,6 +95,29 @@ namespace tlm::cep {
             const char* ref;  ///< 依据锚点(`Primary` 必含 ArchForge 定位,如 `32 号:529`)
             const char* note; ///< 该格的推导说明
         };
+
+        // ── 来源类型解析(change cpptlm-cep-basis-source-kind-and-cell-free)──────
+        /// 本载体的 `ref` 全部指向 **ArchForge 原文**(跨仓已签真源)⇒ `repo_derived`;
+        /// 空 `ref`(若出现)⇒ 本仓推导。⚠️ `Primary` **不**等于「规范条款级」——
+        /// ArchForge 是真源文档,不是 CXL/CHI 规范正文。
+        static constexpr SourceResolution resolve_ref(const Basis& b) noexcept {
+            if (b.ref == nullptr || b.ref[0] == '\0') {
+                return resolve("repo");
+            }
+            return resolve(starts_with(b.ref, "ArchForge") ? "archforge" : "repo");
+        }
+
+        static constexpr bool basis_ref_kind_consistent(const Basis& b) noexcept {
+            const SourceResolution r = resolve_ref(b);
+            if (!r.registered || r.kind != RefKind::RepoDerived) {
+                return false;
+            }
+            // `Primary` 的契约 = **必含 ArchForge 定位**(见上 ref 注释)⇒ ref 必须非空。
+            if (b.kind == BasisKind::Primary) {
+                return b.ref != nullptr && b.ref[0] != '\0';
+            }
+            return true;
+        }
 
         /// 一条偏离登记
         struct Deviation {

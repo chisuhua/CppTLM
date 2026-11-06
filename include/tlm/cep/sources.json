@@ -1,0 +1,78 @@
+{
+  "schema": "cep-source-registry/v1",
+  "note": "与 include/tlm/cep/source_registry.hh 的 kSources[] 逐条一致（id / kind / title）；由 test/test_cep_source_registry.cc 比对。",
+  "sources": [
+    {
+      "id": "tilelink-c",
+      "kind": "spec_clause",
+      "title": "SiFive TileLink Specification (free and open standard)",
+      "locator": "https://static.dev.sifive.com/docs/tilelink/tilelink-spec-1.7.1.pdf",
+      "sha256": "30c09b5f…a2dd",
+      "retrieved": "2026-11-02",
+      "license": "© SiFive（只记条款定位，不复制原文）"
+    },
+    {
+      "id": "tilelink-t3-anchor",
+      "kind": "spec_clause",
+      "title": "TileLink-C T3 映射锚点摘要（规范条款结论的仓内转述，不复制原文）",
+      "locator": "docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md §2/§4",
+      "sha256": "n/a（仓内摘要，条款定位见文档）",
+      "retrieved": "2026-11-06",
+      "license": "仓内（转述 SiFive 条款定位）"
+    },
+    {
+      "id": "cxl-d1",
+      "kind": "public_nonnormative",
+      "title": "Tan / Donaldson / Wickerson, Formalising CXL Cache Coherence (ASPLOS'25)",
+      "locator": "arXiv:2410.15908v2",
+      "sha256": "n/a（pin=strong，2026-11-01 已取字节）",
+      "retrieved": "2026-11-01",
+      "license": "CC-BY-4.0"
+    },
+    {
+      "id": "cxl-d2",
+      "kind": "public_nonnormative",
+      "title": "Sharma / Blankenship / Berger, An Introduction to the CXL Interconnect (ACM CSUR 2024)",
+      "locator": "arXiv:2306.11227v3",
+      "sha256": "n/a（pin=strong，许可 absent）",
+      "retrieved": "2026-11-01",
+      "license": "许可 absent（元数据/页脚均无声明）"
+    },
+    {
+      "id": "archforge",
+      "kind": "repo_derived",
+      "title": "ArchForge 真源文档（32 号 / 42 号）",
+      "locator": "ArchForge:docs/soc_arch/…（跨仓已签锚点）",
+      "sha256": "n/a（仓内文档）",
+      "retrieved": "2026-10-25",
+      "license": "仓内"
+    },
+    {
+      "id": "ualink-c10",
+      "kind": "repo_derived",
+      "title": "ADR-CEP-04 SU 2026-11-06 的 ualink_4 锚点 C-10（非规范公开来源支撑的建模声明）",
+      "locator": "ADR-CEP-04 §Status Update 2026-11-06",
+      "sha256": "n/a（仓内已签锚点）",
+      "retrieved": "2026-11-06",
+      "license": "仓内"
+    },
+    {
+      "id": "ualink-pending",
+      "kind": "public_nonnormative",
+      "title": "UALink INC 待核白名单 N-1 ~ N-9（Evaluation Copy 约束，未读正文）",
+      "locator": "ADR-CEP-04 / ualink_inc_state_spec pending 白名单",
+      "sha256": "n/a（禁读正文）",
+      "retrieved": "2026-11-04",
+      "license": "受限（Evaluation Copy）"
+    },
+    {
+      "id": "repo",
+      "kind": "repo_derived",
+      "title": "本仓推导（无外部锚点 / 缺失项编号 R-n）",
+      "locator": "n/a",
+      "sha256": "n/a",
+      "retrieved": "2026-11-06",
+      "license": "仓内"
+    }
+  ]
+}

@@ -224,7 +224,14 @@ int main(int argc, char** argv) {
             }
             pos = at + 8;
         }
-        if (only_angle) {
+        // ⚠️ 唯一白名单(2026-11-06,per 台账 Entry #252):纯 constexpr 来源注册表头。
+        bool only_allowed_quoted = true;
+        for (const auto& q : quoted) {
+            if (q != "\"tlm/cep/source_registry.hh\"") {
+                only_allowed_quoted = false;
+            }
+        }
+        if (only_angle || only_allowed_quoted) {
             ok("P-1b-standard-library-only");
         } else {
             std::cout << "        quoted includes: " << join(quoted) << '\n';

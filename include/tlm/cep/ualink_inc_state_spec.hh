@@ -91,6 +91,8 @@
 #include <cstdint>
 #include <string_view>
 
+#include "tlm/cep/source_registry.hh"
+
 namespace tlm {
     namespace cep {
         namespace ualink_inc {
@@ -185,6 +187,69 @@ namespace tlm {
                 std::string_view ref; ///< 锚点摘要的条目 id(空格分隔)
                 BasisKind kind;
             };
+
+            // ── 来源类型解析(change cpptlm-cep-basis-source-kind-and-cell-free)──────
+            /// 与载体§⑤既有契约同源:`C-` = 仓内已签锚点 ⇒ `repo_derived`;
+            /// `N-` = pending 白名单 ⇒ `public_nonnormative`;`A-`/未知前缀 ⇒ 未登记(判否)。
+            static constexpr SourceResolution resolve_ref(std::string_view ref) noexcept {
+                if (ref.empty()) {
+                    return resolve("repo");
+                }
+                if (contains(ref, "N-")) {
+                    return resolve("ualink-pending");
+                }
+                if (contains(ref, "C-")) {
+                    return resolve("ualink-c10");
+                }
+                return resolve("unregistered");
+            }
+
+            /// `SelfDerived` ⇒ 全部 token 为 `C-`;`Pending` ⇒ 至少一个 `N-` 且无 `A-`/未知。
+            static constexpr bool ref_tokens_ok(std::string_view ref, BasisKind k) noexcept {
+                std::size_t i = 0;
+                bool has_n = false;
+                bool all_c = true;
+                bool saw = false;
+                while (i < ref.size()) {
+                    while (i < ref.size() && ref[i] == ' ') {
+                        ++i;
+                    }
+                    const std::size_t j = [&] {
+                        std::size_t k2 = i;
+                        while (k2 < ref.size() && ref[k2] != ' ') {
+                            ++k2;
+                        }
+                        return k2;
+                    }();
+                    if (j > i) {
+                        const std::string_view tok = ref.substr(i, j - i);
+                        const bool is_c = tok.size() >= 2 && tok[0] == 'C' && tok[1] == '-';
+                        const bool is_n = tok.size() >= 2 && tok[0] == 'N' && tok[1] == '-';
+                        if (is_c) {
+                            saw = true;
+                        } else if (is_n) {
+                            has_n = true;
+                            all_c = false;
+                            saw = true;
+                        } else {
+                            return false;  // `A-` 与未知前缀均判否
+                        }
+                    }
+                    i = j;
+                }
+                if (k == BasisKind::SelfDerived) {
+                    return all_c && (saw || ref.empty());
+                }
+                if (k == BasisKind::Pending) {
+                    return has_n;
+                }
+                return false;
+            }
+
+            static constexpr bool basis_ref_kind_consistent(std::string_view ref,
+                                                            BasisKind k) noexcept {
+                return resolve_ref(ref).registered && ref_tokens_ok(ref, k);
+            }
 
             /// 11 个义务格的 basis
             inline constexpr std::array<BasisCell, kObligationCount> kBasisObligations{{

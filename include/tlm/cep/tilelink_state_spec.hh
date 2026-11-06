@@ -52,6 +52,8 @@
 #include <cstdint>
 #include <string_view>
 
+#include "tlm/cep/source_registry.hh"
+
 namespace tlm::cep {
 
 /// TileLink-C(TileLink Tree Manager)规约载体。
@@ -90,7 +92,8 @@ public:
     /// ⇒ 「规范**明确**的空集」与「规范**未覆盖**」由 **`kind`** 区分,由**掩码内容**细分。
     enum class CellKind : std::uint8_t {
         Known = 0,    ///< 规范**明确**该转移(掩码可为空集 / 单值 / 多值)
-        Unknown = 1  ///< **规范未覆盖** ⇒ 消费者 SHALL 走降级路径,SHALL NOT 当作「非法」
+        Free = 1,     ///< 规范**明确**「实现定义 / 自由选择」⇒ 消费者 SHALL 走**合法**降级
+        Unknown = 2  ///< **规范未覆盖** ⇒ 消费者 SHALL 走降级路径,SHALL NOT 当作「非法」
     };
 
     // ── 目标掩码位(3 态 ⇒ 3 位)─────────────────────────────────────────────
@@ -128,12 +131,38 @@ public:
     /// ⚠️ **目标用 3 位掩码**,不是单值 —— `Cap` 的**源不定**语义使目标成为**集合**。
     struct Transition {
         CellKind kind;
-        std::uint8_t target_mask;  ///< 仅 `kind == Known` 时有意义;`kind == Unknown` ⇒ MUST 为 0
+        std::uint8_t target_mask;  ///< 仅 `kind == Known` 时有意义;`kind == Unknown` / `Free` ⇒ MUST 为 0
         BasisKind basis;
         bool pending;
         const char* ref;   ///< 锚点摘要 §2.3bis 的**逐格条目号**(`TLC-01` ~ `TLC-12`)
         const char* note;  ///< 条款级定位 + 断言摘要(**不整段复制**规范原文)
     };
+
+    // ── 来源类型解析(change cpptlm-cep-basis-source-kind-and-cell-free)──────
+    /// 主矩阵 `ref` 形态 = `TLC-01` ~ `TLC-12`(锚点摘要条目号)⇒ 规范条款级;
+    /// 空 `ref`(当前 0 格)⇒ 本仓推导。
+    static constexpr SourceResolution resolve_ref(const Transition& t) noexcept {
+        if (t.ref == nullptr || t.ref[0] == '\0') {
+            return resolve("repo");
+        }
+        return resolve(starts_with(t.ref, "TLC-") ? "tilelink-c" : "repo");
+    }
+
+    /// `basis` ↔ 来源类型一致性(⛔ 按**本载体**规则,不跨载体套用 token 名)。
+    static constexpr bool basis_ref_kind_consistent(const Transition& t) noexcept {
+        const SourceResolution r = resolve_ref(t);
+        if (!r.registered) {
+            return false;
+        }
+        switch (t.basis) {
+            case BasisKind::Direct:
+                return r.kind == RefKind::SpecClause;
+            case BasisKind::Analogical:
+            case BasisKind::Inferred:
+                return r.kind != RefKind::SpecClause;
+        }
+        return false;
+    }
 
     /// **行序 SHALL 与 `Event` 枚举值一致**(index = 枚举值)—— 下方 `static_assert` 锁。
     ///
@@ -662,6 +691,37 @@ public:
         T3BasisKind basis;
         const char* ref;  ///< **条款级** ref(锚点摘要 §2 的 ref 列)
     };
+
+    /// T3 来源解析:`D1 §…`(TileLink 规范条款)⇒ `tilelink-c`;空 ⇒ 本仓推导。
+    static constexpr SourceResolution resolve_t3_ref(const T3MappingCell& c) noexcept {
+        if (c.ref == nullptr || c.ref[0] == '\0') {
+            return resolve("repo");
+        }
+        if (starts_with(c.ref, "D1")) {
+            return resolve("tilelink-c");
+        }
+        // 无独立流 / 路由 / barrier 等行:ref 指向**本仓锚点摘要**(规范条款结论的转述)
+        if (starts_with(c.ref, "锚点摘要")) {
+            return resolve("tilelink-t3-anchor");
+        }
+        return resolve("repo");
+    }
+
+    static constexpr bool t3_basis_ref_kind_consistent(const T3MappingCell& c) noexcept {
+        const SourceResolution r = resolve_t3_ref(c);
+        if (!r.registered) {
+            return false;
+        }
+        switch (c.basis) {
+            case T3BasisKind::Direct:
+                return r.kind == RefKind::SpecClause;
+            case T3BasisKind::SelfDerived:
+                return r.kind == RefKind::RepoDerived;
+            case T3BasisKind::Pending:
+                return r.kind != RefKind::SpecClause;
+        }
+        return false;
+    }
 
     /// 11 行映射表(**行序 = `PlatformIntent` 枚举值**)—— 逐行依据见锚点摘要 §2。
     static constexpr std::array<T3MappingCell, kPlatformIntentCount> kT3MappingCells{{

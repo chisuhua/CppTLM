@@ -672,3 +672,13 @@ set_tests_properties(try_compile_legacy_flags_removed PROPERTIES WILL_FAIL TRUE)
 # 内部 routing_enabled_*_ 成员保留 (anti-hijack barrier, per C.3.1 修订), 不在此 gate 范围.
 add_test(NAME grep_no_legacy_public_api_in_board_header
          COMMAND sh -c "! grep -E 'set_display_routing_enabled|set_memory_routing_enabled|set_storage_routing_enabled|set_gmmu_routing_enabled|display_routing_enabled\\\\(\\\\)|memory_routing_enabled\\\\(\\\\)|storage_routing_enabled\\\\(\\\\)|gmmu_routing_enabled\\\\(\\\\)|attach_profile|pcie_path\\\\(\\\\)|PciePath' ${CMAKE_SOURCE_DIR}/include/tlm/gpu/dgpu_board_shell.hh")
+
+# change `cpptlm-cep-basis-source-kind-and-cell-free`(2026-11-06,台账 Entry #252)的判据:
+#   ① 4 载体逐格 `ref` 可解析 + `basis ↔ ref_kind` **按载体**映射一致;
+#   ② `sources.json` ↔ `kSources[]` 逐条一致;
+#   ③ `CellKind::Free` 四态互斥 + 当前 0 格 + adapter 显式分支;
+#   ④ 决定性变异三态(clean / dropped / downgraded)签名钉死 + 真源 sha256 未变。
+add_test(NAME cep_source_registry
+         COMMAND cpptlm_tests "[cep][source-registry]" -r compact)
+add_test(NAME cep_source_effect_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_source_effect_check.sh)

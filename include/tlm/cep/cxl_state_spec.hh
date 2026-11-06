@@ -53,6 +53,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "tlm/cep/source_registry.hh"
+
 namespace tlm::cep {
 
 /// CXL 2.0 非对称(CXL.cache)规约载体 —— **Phase 2a 结构层**。
@@ -208,11 +210,12 @@ public:
     //    **未完成**时不可作常量求值(GCC:`called in a constant expression before its
     //    definition is complete`)⇒ 这不是风格选择,是语言限制。
 
-    /// 格的**三态语义**(⚠️ 不是二态)。
+    /// 格的**四态语义**(⚠️ 不是二态;`Free` 为 change cpptlm-cep-basis-source-kind-and-cell-free 新增)。
     enum class CellKind : std::uint8_t {
         Known = 0,    ///< 已知**目标态**(强度由 `basis` 承载,弱证据可 `pending = true`)
         Illegal = 1,  ///< 已知**不合法**(须有证据 —— 当前恒 0 格)
         Unknown = 2,  ///< **不知道**(不是非法)⇒ 消费者 SHALL 走降级路径,SHALL NOT 当作 `Illegal`
+        Free = 3,     ///< 规范**明确**「实现定义 / 自由选择」⇒ 消费者 SHALL 走**合法**降级
     };
 
     /// 单格。
@@ -224,6 +227,43 @@ public:
         const char* ref;     ///< 锚点摘要条目号(如 `D1 p.5 Fig.4`)—— SHALL 不指向规范原文
         const char* note;    ///< 缺失项(`R-1`~`R-8` 编号)或口径说明
     };
+
+    // ── 来源类型解析(change cpptlm-cep-basis-source-kind-and-cell-free)──────
+    /// `D1 …` / `D2 …`(公开非规范论文)⇒ 对应登记 id;空 / `R-n`(缺失项编号)⇒ 本仓推导。
+    /// ⚠️ `PublicDirect` 在本载体语义 = **公开来源明确这样写** ⇒ 映射 `public_nonnormative`,
+    ///    ⛔ **不是** `spec_clause`(CXL 规范正文禁读,per `07 号` SU · 四 D-1)。
+    static constexpr SourceResolution resolve_ref(const Transition& t) noexcept {
+        if (t.ref == nullptr || t.ref[0] == '\0') {
+            return resolve("repo");
+        }
+        if (starts_with(t.ref, "D1")) {
+            return resolve("cxl-d1");
+        }
+        if (starts_with(t.ref, "D2")) {
+            return resolve("cxl-d2");
+        }
+        return resolve("repo");
+    }
+
+    static constexpr bool basis_ref_kind_consistent(const Transition& t) noexcept {
+        const SourceResolution r = resolve_ref(t);
+        if (!r.registered) {
+            return false;
+        }
+        switch (t.basis) {
+            case BasisKind::PublicDirect:
+                return r.kind == RefKind::PublicNonnormative;
+            case BasisKind::PublicAnalogical:
+                return r.kind != RefKind::SpecClause;
+            case BasisKind::ArchforgeAnchor:
+                return r.kind == RefKind::RepoDerived;
+            case BasisKind::SelfDerived:
+                // `SelfDerived` = 本仓推导;`ref` 指向**推导依据**的来源(可为公开非规范
+                // 论文,如 CXL 的 D1 结构性推断)⇒ 只禁止冒充规范条款级。
+                return r.kind != RefKind::SpecClause;
+        }
+        return false;
+    }
 
     /// **行序 SHALL 与 `Event` 枚举值一致**(index = 枚举值)—— 下方 `static_assert` 锁。
     ///
@@ -346,14 +386,18 @@ public:
     static constexpr std::size_t kKnownCellCount = 26;
     static constexpr std::size_t kIllegalCellCount = 0;
     static constexpr std::size_t kUnknownCellCount = 42;
+    static constexpr std::size_t kFreeCellCount = 0;
 
-    /// 统计自洽(三者相加 == 68)—— 防算术笔误;真值由测试用 `count_cells()` 交叉核对。
-    static_assert(kKnownCellCount + kIllegalCellCount + kUnknownCellCount == kTransitionCellCount,
-                  "三态格数之和 SHALL == 总格数");
+    /// 统计自洽(四者相加 == 68)—— 防算术笔误;真值由测试用 `count_cells()` 交叉核对。
+    static_assert(kKnownCellCount + kIllegalCellCount + kUnknownCellCount + kFreeCellCount ==
+                      kTransitionCellCount,
+                  "四态格数之和 SHALL == 总格数");
 
     /// **反秃头覆盖率**(判据 AC-9):已定立场的格数 / 总格数。
-    /// ⚠️ 「已定立场」= `Known` **或** `Illegal`;`Unknown` **不计入**(「不知道」不是立场)。
-    static constexpr std::size_t kLegalTransitionCoverageNum = kKnownCellCount + kIllegalCellCount;
+    /// ⚠️ 「已定立场」= `Known` / `Illegal` / `Free`(规范明确实现自由也是立场);
+    ///   `Unknown` **不计入**(「不知道」不是立场)。
+    static constexpr std::size_t kLegalTransitionCoverageNum =
+        kKnownCellCount + kIllegalCellCount + kFreeCellCount;
     static constexpr std::size_t kLegalTransitionCoverageDen = kTransitionCellCount;
 
     // ── **单调下界**(AC-9 的「单调不减」条款)───────────────────────────────

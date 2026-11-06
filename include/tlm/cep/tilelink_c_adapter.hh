@@ -105,6 +105,12 @@ namespace tlm::cep {
             return TileLinkStateSpec::transition(s, e).kind == CellKind::Unknown;
         }
 
+        /// 是否为**规范明确实现自由**的转换(⇒ 消费方 SHALL 走**合法**降级路径;
+        /// ⛔ 不得归入 `Known` 或 `Unknown`)。
+        static constexpr bool transition_is_free(State s, Event e) noexcept {
+            return TileLinkStateSpec::transition(s, e).kind == CellKind::Free;
+        }
+
         // ══════════════════════════════════════════════════════════════════
         //  (2) 3→3 `perm` 投影 —— **委托**规约载体
         // ══════════════════════════════════════════════════════════════════
