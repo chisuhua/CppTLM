@@ -1,6 +1,6 @@
 # cpptlm-cep-instance-assembly-contract-alignment: 装配闸契约对齐(闭合 critic BLOCKER)+ 判据完备性加固
 
-> **状态**: 🟡 **Proposed**(2026-11-06 立项 —— critic 复核 REJECT(1 BLOCKER)后的闭合 change;KPI 并发 **0/3 → 1/3**)
+> **状态**: 🟡 **Proposed**(2026-11-07 立项 —— critic 复核 REJECT(1 BLOCKER)后的闭合 change;KPI 并发 **0/3 → 1/3**)
 > **立项依据**:`.rddf/reviews/cep-instance-assembly-and-l4-e2e-verify.md` §三.3 的「reviewer 不可用」遗留 → 本轮 critic 复核 **REJECT:1 BLOCKER + 2 SHOULD_FIX + 3 NIT**
 > **关联**:`cpptlm-cep-ualink-instance-assembly`(**已归档**)· `cpptlm-cep-moesi-gpu-l4-e2e`(**已归档**)
 > **估时**: ~0.5d
