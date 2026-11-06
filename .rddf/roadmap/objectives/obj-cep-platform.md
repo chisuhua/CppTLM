@@ -15653,6 +15653,30 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑦ 复审节奏**:每季度复审时复查 —— 任一 D-4 路径触发 ⇒ 启动该族 **T1–T4** 重判 ⇒ 改判 B3b-2 计数后再评终态 Go。
 
 **⑧ 关联**:**#263**(盘点 + 第 3 项立项)· **#262**(契约对齐归档)· **#261**(critic 复核 + 授权)· **#257**(SU · 五)· **#251**(选项戊裁决)· `07 号` **SU 2026-11-07 · 六** · `.rddf/improvements/cpptlm-cep-dcoh-nvlink-refkind-migration.md`
+
+### Entry #265 — 2026-11-07 [plan](**第 2 项来源检索完成 + ⚠️ 合规事件登记(Evaluation Copy 片段被动接触)** —— 锚点摘要落盘,证据档位锁定 `public_nonnormative`)
+
+**主题**:用户指令「先开 ② 的来源检索」⇒ 为 `ualink_4` 的 `request` / `completion` 两条 canonical 流寻找**公开非规范**语义依据(per 用户已定口径 = 公开非规范来源 + 一步推断)。
+**角色**:builder(检索 + 锚点摘要 + 登记)。
+
+**① ⚠️ 合规事件(本条最重要,须长期可审计)**:2026-11-07 的 web 检索中,检索工具在结果摘要里**自动返回**了 `ualinkconsortium.org` 托管的 `UALink200_Specification_v1.0_Evaluation_Copy.pdf`(标注 **Evaluation Copy**)的**正文片段**(§1.5 / §2.7.3 等)。
+- **事实**:本仓**未主动下载、未主动请求**该 ECA 文件 ⇒ 片段系**检索工具自动附带**;
+- **处置**:锚点摘要 `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` §⓿ **显式登记**该事件,并声明 **⛔ 不使用该片段作为任何依据**(不引条款号 / 不据其作语义判断 / 不据其提升证据档位);
+- **档位锁定**:全部结论**只**取自 4 个公开非规范来源 ⇒ 证据档位 = **`public_nonnormative`** ⇒ ⛔ 不可计 `Direct`、⛔ **不计入 B3b**;
+- **后续规则**:若任何条目被发现源自该片段 ⇒ 该条目 **SHALL 作废并重做**。
+- ⚠️ **这是本仓首次实际触发 Evaluation Copy 约束** ⇒ 该事件**不因「未主动阅读」而降级为「无事件」**,而是登记为**已发生并已隔离**。
+
+**② 4 个互相独立的公开非规范来源(C-10 锚点同型)**:S-1 UALink 1.0 **白皮书**(2025-04)· S-2 UALink Consortium 博客「200G 1.0 Overview」(2025-05-15)· S-3 **Cadence** 博客「Breaking Down UPLI」(2026-02-12)· S-4 **UALink Deep Dive Webinar Slides**(2026-08-17)⇒ 联盟白皮书 / 联盟博客 / 第三方厂商 / 联盟 webinar ⇒ 互相独立。
+
+**③ 6 条一步推断(逐条留档)**:I-1 `request`↔UPLI Request · I-2 `completion`↔UPLI Response · I-3 **snoop=false**(3 源一致)· I-4 `query`↔ReadReduce · I-5 `atomic`↔AtomicR/AtomicNR · I-6 `response`↔归约结果回传(**最弱**)。
+
+**④ 一致性核对结论**:`snoop=false` / `perm=[NONE]` / 其余 5 条 `flow_support=false` 与公开来源**一致**;⚠️ **两处须显式化**:
+- **`ordering_assumption`**:仓内排序点判据 **J1** 要求「响应向 vc 全部 `p2p_ordered`」,而公开来源称 **completion 不保证有序** ⇒ **J1 的 `p2p_ordered` 是建模假设、非协议保证** ⇒ ⛔ **引擎的 completion 记账不得依赖有序性假设**;
+- **`snoop_resp`**:与 `response` 同 VC(3)但按声明自身口径 `vc_binding` 只是「消息类→VC 分配」,**不代表承载** ⇒ ⛔ 本摘要**不为 `snoop_resp` 提供任何语义依据**(该类语义**仍待定**)。
+
+**⑤ 边界**:⛔ 本摘要**不**构成 T1/T2 ⇒ `ualink_4` 仍是 B3b-2 受限族;⛔ 引用本摘要的格 SHALL 保持**弱档** + `pending = true` + **fail-closed 不被引擎消费**。
+
+**⑥ 关联**:**#264**(终态裁决)· **#263**(盘点 · 第 2 项依据口径)· `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` · `ADR-CEP-04` SU 2026-11-06(`C-10` 同型先例)· `07 号` SU 2026-11-06 · 四(D-1)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
