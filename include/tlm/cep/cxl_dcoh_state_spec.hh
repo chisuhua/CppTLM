@@ -58,6 +58,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "tlm/cep/source_registry.hh"
+
 namespace tlm {
     namespace cep {
         namespace cxl_dcoh {
@@ -248,6 +250,35 @@ namespace tlm {
                 SourceId source = SourceId::Derived;
                 const char* ref = nullptr; // 例:"§1 / S5"
             };
+
+            // ── 来源**类型**标签(裁决:甲「类型标签统一 / 清单自治」,per 台账 Entry #266)──
+            /// ⚠️ **清单自治**:本载体的来源清单 = **本地 `SourceId`**(自带逐来源许可表);
+            ///    全局 `kSources[]` 只作**跨载体统一的类型标签**(`RefKind`)⇒ 两者**不是**同一真源。
+            ///    映射:`S2/S4/S5/S6/S7` = **公开非规范来源**(论文 / tutorial)⇒ `public_nonnormative`;
+            ///    `Derived` = 本仓推导 ⇒ `repo_derived`。
+            ///    ⛔ 本族**恒不出现** `spec_clause`(CXL 规范正文禁读,per `07 号` SU · 四 D-1)
+            ///    ⇒ **不计入 B3b**。
+            static constexpr RefKind ref_kind_of(const Basis& b) noexcept {
+                switch (b.source) {
+                    case SourceId::Derived:
+                        return RefKind::RepoDerived;
+                    default:
+                        return RefKind::PublicNonnormative;
+                }
+            }
+
+            /// `basis` ↔ 来源类型一致性(有牙:`PublicDirect` 指向 `Derived` ⇒ 必红)。
+            static constexpr bool basis_ref_kind_consistent(const Basis& b) noexcept {
+                const RefKind k = ref_kind_of(b);
+                switch (b.kind) {
+                    case EvidenceKind::PublicDirect:
+                        return k == RefKind::PublicNonnormative && b.source != SourceId::Derived;
+                    case EvidenceKind::PublicAnalogical:
+                    case EvidenceKind::SelfDerived:
+                        return k != RefKind::SpecClause;
+                }
+                return false;
+            }
 
             /// **basis 有效性**:① `ref` 非空 ② `pending == false` ⇒ 来源许可已人工确认
             constexpr bool basis_is_valid(const Basis& b) noexcept {

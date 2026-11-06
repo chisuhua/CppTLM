@@ -1,0 +1,16 @@
+schema: spec-driven
+created: 2026-11-07
+goal: cxl_dcoh / nvlink_sharp 接入 RefKind(类型标签统一/清单自治)+ B3b-2 deferral 机器可查登记
+affected_areas:
+  - include/tlm/cep/cxl_dcoh_state_spec.hh
+  - include/tlm/cep/nvlink_sharp_state_spec.hh
+  - test/test_cep_refkind_coverage.cc
+  - test/cep_b3b2_deferrals.json
+  - scripts/test/cep_b3b2_deferral_check.sh
+  - openspec/changes/cpptlm-cep-dcoh-nvlink-refkind-migration/specs/cep-refkind-coverage/spec.md
+# 零冻结面改动;零追溯降级;不改 B3b-2 计数。
+skip_specs: false
+x-phase: P0
+x-priority: P1
+x-status: proposed
+x-ledger: obj-cep-platform Entry #266

@@ -682,3 +682,13 @@ add_test(NAME cep_source_registry
          COMMAND cpptlm_tests "[cep][source-registry]" -r compact)
 add_test(NAME cep_source_effect_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_source_effect_check.sh)
+
+# change `cpptlm-cep-dcoh-nvlink-refkind-migration`(2026-11-07,台账 Entry #266)的判据:
+#   ① `cxl_dcoh` / `nvlink_sharp` 接入 `RefKind` 后的逐格一致性(含「PublicDirect 指向 Derived/AdrContract ⇒ 红」负控);
+#   ② **零追溯降级**(许可表 / 来源枚举 / basis 取值未被改动);
+#   ③ B3b-2 的 **deferral 机器可查登记**校验(4 族齐全 + 字段齐备 + 台账凭据可解析)
+#      ⚠️ 该闸**不**改 B3b-2 计数(仍 0/4)—— 登记 ≠ 达成(per `07 号` SU · 六 / Entry #264)。
+add_test(NAME cep_refkind_coverage
+         COMMAND cpptlm_tests "[cep][refkind][coverage]" -r compact)
+add_test(NAME cep_b3b2_deferral_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_b3b2_deferral_check.sh)

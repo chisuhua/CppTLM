@@ -120,7 +120,11 @@ namespace {
         return out;
     }
 
-    /// 取出所有 `#include` 行,返回「是否出现**引号形式**(项目内头)」
+    /// 取出所有 `#include` 行,返回「是否出现**引号形式**(项目内头)」。
+    /// ⚠️ **唯一白名单**(2026-11-07,per 台账 Entry #266):`tlm/cep/source_registry.hh` ——
+    ///    纯 `constexpr`、只依赖标准库的**来源类型注册表**(RefKind 标签)⇒ 允许引用;
+    ///    ⛔ 它**不**引入平台标识 / 区域表 / 转移判定 ⇒ 不破坏「自足」的实质。
+    ///    (先例:`ualink_inc` 的 UIS-10 同款白名单,per Entry #261)
     bool has_quoted_include(const std::string& src) {
         std::istringstream in(strip_comments(src));
         std::string line;
@@ -130,8 +134,16 @@ namespace {
                 continue;
             const auto q = line.find('"', pos);
             const auto a = line.find('<', pos);
-            if (q != std::string::npos && (a == std::string::npos || q < a))
+            if (q != std::string::npos && (a == std::string::npos || q < a)) {
+                // 白名单判定:该 include 行是否**恰好**指向注册表头
+                const auto end = line.find('"', q + 1);
+                const std::string path =
+                    line.substr(q, (end == std::string::npos ? q + 40 : end) - q + 1);
+                if (path == "\"tlm/cep/source_registry.hh\"") {
+                    continue;  // 唯一白名单
+                }
                 return true;
+            }
         }
         return false;
     }

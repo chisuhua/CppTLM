@@ -80,6 +80,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+
+#include "tlm/cep/source_registry.hh"
 #include <type_traits>
 
 namespace tlm {
@@ -127,6 +129,39 @@ namespace tlm {
                 /// ⚠️ 可含**多个 token**(空格分隔):`C-n` / `A-n` / `N-n`
                 const char* ref = nullptr;
             };
+
+            // ── 来源**类型**标签(裁决:甲「类型标签统一 / 清单自治」,per 台账 Entry #266)──
+            /// ⚠️ **清单自治**:本载体的来源清单 = **本地 `SourceId`**(自带逐来源许可表);
+            ///    全局 `kSources[]` 只作**跨载体统一的类型标签**(`RefKind`)⇒ 两者**不是**同一真源。
+            ///    映射:`S1/S2/S3` = **公开非规范来源**(预印本 / 厂商文档)⇒ `public_nonnormative`;
+            ///    `AdrContract` = **本仓已签 ADR**(契约锚点)⇒ `repo_derived`;`Derived` ⇒ `repo_derived`。
+            ///    ⛔ 本族**恒不出现** `spec_clause`(NVLink 无条款级公开规范,per `07 号` SU · 四 D-1)
+            ///    ⇒ **不计入 B3b**。
+            static constexpr RefKind ref_kind_of(const Basis& b) noexcept {
+                switch (b.source) {
+                    case SourceId::S1:
+                    case SourceId::S2:
+                    case SourceId::S3:
+                        return RefKind::PublicNonnormative;
+                    default:
+                        return RefKind::RepoDerived;
+                }
+            }
+
+            /// `basis` ↔ 来源类型一致性(有牙:`PublicDirect` 指向 `AdrContract`/`Derived` ⇒ 必红)。
+            static constexpr bool basis_ref_kind_consistent(const Basis& b) noexcept {
+                const RefKind k = ref_kind_of(b);
+                switch (b.kind) {
+                    case EvidenceKind::PublicDirect:
+                        return k == RefKind::PublicNonnormative &&
+                               (b.source == SourceId::S1 || b.source == SourceId::S2 ||
+                                b.source == SourceId::S3);
+                    case EvidenceKind::PublicAnalogical:
+                    case EvidenceKind::SelfDerived:
+                        return k != RefKind::SpecClause;
+                }
+                return false;
+            }
 
             /// **`basis` 有效性**:① `ref` 非空 ② `source` 下标合法
             /// ③ `pending == false` ⇒ 该来源的**许可已人工确认**

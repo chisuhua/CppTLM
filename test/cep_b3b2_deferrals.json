@@ -1,0 +1,42 @@
+{
+  "schema": "cep-b3b2-deferrals/v1",
+  "note": "B3b-2(受限族,0/4)的**机器可查**登记 —— 每族一条:处置 + 理由 + 触发条件 + 台账凭据 + 阻塞类型。闸脚本 scripts/test/cep_b3b2_deferral_check.sh 逐条校验(字段齐备 / 台账 Entry 存在 / 与 07 号 SU·六 的族名单一致)。⚠️ 本登记**不**改 B3b-2 的计数(仍 0/4)—— 登记的是「已按授权路径登记完毕」这一事实,⛔ 不是「已达成」。",
+  "deferrals": [
+    {
+      "family": "cxl_2_0",
+      "disposition": "frozen",
+      "blocking_type": "external",
+      "reason": "T4 ❌(68 格 42 Unknown,覆盖率 26/68);CXL 规范正文禁读(ECA)⇒ 纯 AI 作业下覆盖率不可补 ⇒ 显式冻结",
+      "trigger_condition": "ECA 解除或联盟发布可读规范;或人类成员条款摘要(可计 Direct)",
+      "ledger_entry": "Entry #249",
+      "internal_predecessor": null
+    },
+    {
+      "family": "cxl_3_0_symmetric",
+      "disposition": "deferred",
+      "blocking_type": "external",
+      "reason": "T1 ❌(载体无转移矩阵);由公开非规范来源构建的矩阵不构成 T1/T2(per 07 号 SU·四 D-1)⇒ 不计入 B3b",
+      "trigger_condition": "ECA 解除 / 联盟发布可读规范;或人类成员条款摘要;或来源类型机制提供条款级档",
+      "ledger_entry": "Entry #249",
+      "internal_predecessor": "RefKind 迁移(cpptlm-cep-dcoh-nvlink-refkind-migration, Entry #263)—— 已接入 ⇒ 该前置不再是阻塞"
+    },
+    {
+      "family": "nvlink",
+      "disposition": "deferred",
+      "blocking_type": "external",
+      "reason": "T1 ❌(载体无转移矩阵);NVLink 无条款级公开规范(白皮书/编程指南不算)⇒ 非规范来源不构成 T1/T2",
+      "trigger_condition": "NVIDIA 发布条款级规范文档;或人类成员条款摘要",
+      "ledger_entry": "Entry #249",
+      "internal_predecessor": "RefKind 迁移(cpptlm-cep-dcoh-nvlink-refkind-migration, Entry #263)—— 已接入 ⇒ 该前置不再是阻塞"
+    },
+    {
+      "family": "ualink",
+      "disposition": "deferred",
+      "blocking_type": "external",
+      "reason": "T1 ❌(载体无转移矩阵);Evaluation Copy 约束禁读正文 ⇒ 非规范来源不构成 T1/T2;且实例级装配已闭合(Entry #258)但载体无矩阵",
+      "trigger_condition": "Evaluation Copy 约束解除 / 联盟发布公开规范;或人类成员条款摘要(可计 Direct)",
+      "ledger_entry": "Entry #249",
+      "internal_predecessor": "实例级装配(cpptlm-cep-ualink-instance-assembly, Entry #258)—— 已闭合 ⇒ 该前置不再是阻塞"
+    }
+  ]
+}
