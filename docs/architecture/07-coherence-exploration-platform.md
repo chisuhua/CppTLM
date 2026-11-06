@@ -316,7 +316,7 @@ group-scoped completion     → Fabric Collective Plane
 | **CHI** | CHI RN-F | `ChiRnfAdapter` | **✅ 已落地**(队列 #8,2026-10-28 归档;Stage 1 subset → Stage 2 full) | RN-F 6 通道(TXREQ/RXRSP/RXDAT/RXSNP/TXRSP/TXDAT)| RN-F 只发 REQ 只收 SNP;Credit 流控;TxnID 管理;CompAck;**UC→UD 静默升级**(轴 2)与 `moesi_gpu` 的 `E→M` **同型** —— 4 值 `perm` 无法表达 ⇒ 静默升级声明归 `perm_upgrades.json`(per `ADR-CEP-12 §11`) |
 | **CXL 2.0 非对称** | CXL 2.0 | `CxlCacheAdapter` | **✅ 已落地**(队列 #10,2026-11-01 归档;**两段式** —— 规约层 + 实现层) | D2H/H2D 各 3 通道(Req/Rsp/Data)| Host 侧 Snoop Filter;设备不感知其他设备 |
 | **CXL 3.0 对称** | CXL 3.0 对称 | `CxlDcohAdapter`(独立载体;**非** `CxlCacheAdapter` 的模式)| **✅ 已落地**(队列 #12,2026-11-02 归档;**两段式** —— 规约层 + 实现层) | + CXL.mem 增 **BISnp(S2M)/ BIRsp(M2S)** 两通道 | **DCOH = Device Coherence(agent / engine)**(设备内的一致性代理,**非** "Ownership History");设备可对 **host** 发起反向 snoop(BI;**不**对 peer device);归属基于 **HPA**(设备内部翻译到 media address,**非** DPA 归属) |
-| **TileLink-C** | TileLink-C | `TileLinkCAdapter` | **✅ 已落地**(队列 #11,2026-11-02 归档;**两段式** —— 规约层 + 实现层) | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
+| **TileLink-C** | TileLink-C | `TileLinkCAdapter` + `TileLinkProtocolEngine` | **✅ 已落地**(队列 #11,2026-11-02 归档;**两段式** —— 规约层 + 实现层)· **✅ 运行时引擎已落地**(2026-11-06,per 台账 **Entry #246** —— `TileLinkProtocolEngine` = **B3b 第 2 个实例**,事件语义**零自有副本**地委托 T3 表 `kT3MappingCells`) | A/B/C/D/E 通道 | Tree Tip 权限模型;Probe/Acquire/Grant 家族,无传统 snoop 广播;lookup 可能 ESCALATE_UP |
 | **NVLink** | NVLink | `NvlinkAdapter` | **✅ 已落地**(队列 #13,2026-11-03 归档;**两段式** —— 规约层 `cpptlm-cep-nvlink-sharp-state-spec` + 实现层 `cpptlm-cep-nvlink-sharp`;实例 `nvlink_4` · `nvlink-4.0` · `BroadcastNull` tracker) | NVLink TL Read/Write/Atomic/Probe | NVSwitch 内嵌 SHARP/atomic/barrier;排序点可落在 Switch/SPU |
 | **UALink** | UALink | `UalinkAdapter` | 🟡 **部分落地**(2026-11-04 —— **两段式**:规约层 `cpptlm-cep-ualink-inc-state-spec` 已归档 + 实现层 `cpptlm-cep-ualink-inc` 已归档 —— `UalinkAdapter`(零自有表副本)+ `FabricCollectivePlane`(数据路径真可达);✅ **`ualink_4` 实例已声明**(2026-11-06 —— 13 键取值**全部裁决**:4 键 per `ADR-CEP-04` SU 2026-11-06 + 9 键 per `ADR-CEP-12` SU 2026-11-06(含订正 #1);取值锚 = 锚点摘要 `C-10`——**4 个互相独立的公开非规范来源** + **一步推断**留档,⛔ 未读任何规范正文)⇒ ⚠️ **声明 ≠ 装配**:**实例级装配仍待 backlog**(装配需把 `ualink_4` 挂进拓扑 + collective plane 绑定)⇒ **不得**读成「已闭环」 | Station/Port/Lane;TL Load/Store/Atomic | In-Network Compute(ReadReduce/WriteMulticast/Broadcast/AllReduce) |
 | **MOESI/GPU** | `moesi_gpu` | `MoesiGpuAdapter` | **✅ 已落地**(队列 #6,2026-10-27 归档;首个 `status=implemented` 实例) | 6 态 × 6 事件;snoop 型(SoC 内) | ArchForge 贡献(per `32 号` §6.1);**E→M 静默升级**是 `ADR-CEP-13` 域可见写判据 (a)(b) 的**争点所在**(**该争点已裁定 → 状态见 `ADR-CEP-05 §13.1`**) |
@@ -1493,7 +1493,7 @@ oracle 复核通过 —— 含 3 处事实修正)后落地。本则是**真源 1
 | 协议族 | B3b 达成度 | T1 | T2 | T3 | T4 | 判定 |
 |---|---|:--:|:--:|:--:|:--:|---|
 | CHI RN-F | **1/6 达成**(自带 `kChiOpcodeTable`,无独立 state spec 载体) | ✅ | ✅ | ✅ | ✅ | 已达成 |
-| **TileLink-C** | 未达成 | ✅ | ✅ | **✅** | ✅ | ⏳ **T3 已闭合(2026-11-06 · 二),剩余 = 运行时引擎 change** |
+| **TileLink-C** | **✅ 已达成**(B3b **2/6**,2026-11-06 · 三:运行时引擎落地,per 台账 **Entry #246**) | ✅ | ✅ | **✅** | ✅ | ✅ **已达成**(引擎 + L4 事务级 E2E + 判据 4 件套) |
 | CXL 2.0 非对称 | 未达成 | ✅ | ✅ | — | **❌** | ⛔ **显式冻结**(42/68 `Unknown`,覆盖率 26/68) |
 | CXL 3.0 对称 | 未达成 | ❌ | — | — | — | 未触发(载体无矩阵) |
 | NVLink | 未达成 | ❌ | — | — | — | 未触发(载体无矩阵) |
@@ -1551,3 +1551,50 @@ oracle 复核通过 —— 含 3 处事实修正)后落地。本则是**真源 1
 `ADR-CEP-11 §3`(`protocol_version` 锁表)· `ADR-CEP-12 §2` 决策 1(canonical 10 流)·
 `ADR-CEP-07` Status Update 2026-11-04 ① · `include/tlm/cep/tilelink_state_spec.hh` · `include/tlm/cep/cxl_state_spec.hh` ·
 `.rddf/reviews/cep-b3a-b3b-ruling.md`(审稿报告)
+
+
+---
+
+## Status Update(2026-11-06 · 三,per 台账 Entry #246)—— TileLink-C **运行时引擎落地**(B3b 达成度 **1/6 → 2/6**)
+
+**主题**:change `cpptlm-cep-tilelink-runtime-engine`(台账 Entry #243 立项 / **Entry #246** 实施回执)落地 —— TileLink-C 成为 **B3b 第 2 个运行时引擎实例**(第 1 个 = CHI RN-F)。
+**性质**:⛔ 本 SU **不改** §5.1.1 的**行数**(仅**行内**追加引擎落地标注)⇒ 跨仓对齐锚点行号**不变**;⛔ 不新增 invariant 编号;⛔ 冻结面 `protocol_instance.schema.json` / `protocol_instances.json` / `perm_upgrades.json` **零改动**。
+
+### ① 交付面
+
+| 面 | 内容 |
+|---|---|
+| **引擎载体** | `include/tlm/cep/tilelink_protocol_engine.hh`(header-only,`ProtocolEngineBase<2>` 派生)—— **CohIf 意图面 → 权限转移事件面**的**事件计数/上报器** |
+| **事件真源** | **零自有副本** —— 事件语义一律经唯一消费载具 `consumable_mask_of(PlatformIntent)` 委托 T3 表 `kT3MappingCells`(per `tilelink_state_spec.hh`) |
+| **注册面** | `chstream_register.hh` 注册第 4 个引擎名 `TileLinkProtocolEngine`(N=2 ⇒ JSON 侧可逐实例选择;⛔ 引擎**不解析 JSON**) |
+| **装配面** | `configs/cep_tilelink_pe_minimal.json`(2 × `TileLinkProtocolEngine` + `cohif_noc` 桥绑定 `tilelink_c` 实例) |
+| **契约面** | `test/test_cep_tilelink_engine.cc`(7 cases · 101 assertions,标签 `[cep][tilelink][engine]`)+ delta spec `TLE-01`~`TLE-08` |
+| **构建期取证** | `scripts/test/cep_tilelink_engine_failclosed.sh`(影子树三态:clean / pending / deleted)+ `cep_tilelink_engine_probe.cc` |
+
+### ② 判据 4 件套(证据)
+
+| 判据 | 证据 |
+|---|---|
+| **正控** | `[cep][tilelink][engine]` 7 cases / 101 assertions 绿;`[cep]` 全量 441 cases / 10337 assertions 绿;`ctest` 全量绿 |
+| **反控** | 4 条反向 fixture(`Pending` 声明事件 / `Pending` 可消费掩码归零 / `row_ref` 重复 / 掩码越界)+ Null 引擎对照(同一 5 流:真插件 **4 事件** vs Null **零事件面**)+ JSON 装配反控(换 Null ⇒ 类型判据判否) |
+| **决定性变异** | 影子树删 `TLC-M-02` 行 ⇒ 编译红且**签名命中** T3 编译期锁(`static_assert` 文案含 `T3:`);真源 sha256 **未变** ⇒ 取证后无需复原 |
+| **fail-closed(消费面)** | 影子树把该行改 `Pending` ⇒ **引擎事件发射出口计数 = 0**(⛔ 非掩码函数返回值 —— 那是 state_spec 层重复) |
+
+### ③ 认识论边界(⛔ 不得被误读)
+
+- **引擎 ≠ 协议实现**:引擎只做「意图 → 事件类别」的**计数/上报**;⛔ **不**建 PE 本地树状态机(Nothing/Branch/Tip)—— 12 格矩阵是**规约层**真源,运行面**只读**。
+- **不携带源态**:TileLink `Cap`「源不定」(D1 §8.1.4)⇒ 引擎只声明**事件类别**,⛔ 不预设 from-state(per `TLE-05` 的 grep 级判据)。
+- **不连带推进**:CXL 2.0(冻结)/ CXL 3.0 / NVLink / UALink 四族状态**不变**(⏭ / 未触发,per Entry #238 的逐族登记)。
+- **B3b 达成度**:1/6 → **2/6**;⛔ **不得**改写为「B3b 已达成」—— 终态 DoD Go 的剩余前置 = 其余 4 族。
+
+### ④ Verification(前瞻判据 · 可勾选)
+
+- [x] 引擎 10 个 `on_*` 全覆盖 + 11 意图参数化断言(7 零事件意图 **basis == Direct** 双断言)
+- [x] **零自有事件表副本**:禁止性 lint(0 处 `kT3MappingCells` / `event_mask` 字段 / 掩码成员数组)+ 唯一载具计数判据
+- [x] L4 事务级贯通:5 流 `dispatch_cohif` ⇒ Grow × 1 + Prune × 3;⛔ `request` 自身**零事件**(反直觉点单独钉死)
+- [x] JSON 装配成功 + 类型判别(正控/反控)+ 注册端口数 = 2
+- [x] fail-closed 消费面零发射 + 决定性变异签名命中(构建期影子树取证,真源零改动)
+
+**关联**:台账 **Entry #246**(实施回执 + 冻结面授权)· **#245**(F2 漏勾回填)· **#244**(T3 归档)· **#243**(立项 + metis 4 BLOCKER 全修)· **#242**(T3 实施)·
+`openspec/changes/cpptlm-cep-tilelink-runtime-engine/` · `include/tlm/cep/tilelink_protocol_engine.hh` · `include/tlm/cep/tilelink_state_spec.hh` ·
+`configs/cep_tilelink_pe_minimal.json` · `scripts/test/cep_tilelink_engine_failclosed.sh` · `test/test_cep_tilelink_engine.cc`

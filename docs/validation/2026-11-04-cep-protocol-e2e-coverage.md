@@ -29,7 +29,7 @@
 | **MOESI-GPU** | ✅ `_adapter`(442) / `_compensation`(324) | ✅ | ⚠️ 仅 per-network 装配期校验 | ❌ | — | `moesi_gpu_protocol_engine.hh`(306) |
 | **CXL 2.0 非对称** | ✅ `test_cep_cxl_cache_adapter.cc`(209) + `_state_spec`(451) | ✅ `cxl_2_0` | ❌ | ❌ | — | ❌ **无** |
 | **CXL 3.0 对称 DCOH** | ✅ `_adapter`(188) / `_tracker`(355) / `_state_spec`(329) | ✅ | ❌ | ❌ | — | ❌（`DcohSymmetric` tracker 有行为面） |
-| **TileLink-C** | ✅ `_adapter`(450) / `_state_spec`(488) | ✅ | ❌ | ❌ | — | ❌（`TreeManager` 有行为面） |
+| **TileLink-C** | ✅ `_adapter`(450) / `_state_spec`(488) + `_engine`(7 cases) | ✅ | ✅ `cep_tilelink_pe_minimal.json` | ✅ `dispatch_cohif` 5 流(2026-11-06,per 台账 **Entry #246**) | — | ✅ `tilelink_protocol_engine.hh`(**B3b 第 2 个实例**) |
 | **NVLink SHARP** | ✅ `test_cep_nvlink_sharp.cc`(479) / `_state_spec`(489) | ✅ `nvlink_4` | ❌ | ❌ | — | ❌（`BroadcastNull` tracker） |
 | **UALink INC** | ✅ `test_cep_ualink_inc.cc`(501) / `_state_spec`(361) | ✅ **`ualink_4` 已声明**(2026-11-06,per 台账 Entry #239) | ❌ | ❌（`plane.send/recv` 为 API 级） | — | ❌（`FabricCollectivePlane` 行为面） |
 
@@ -55,7 +55,7 @@
   ⇒ 逐族的「为什么现在不做」已登记为**可审计的 ⏭**（reason / trigger_condition / ledger_entry），
   per 台账 **Entry #238** §⑤。
 
-### B-2. **TileLink-C** —— 阻塞**已解除**，剩余是 **T3 映射锚点普查**（2026-11-06 改判）
+### B-2. **TileLink-C** —— ✅ **已闭合**（2026-11-06 改判 + 同日收口）：T3 普查完成 + **运行时引擎落地**
 - **实测**（`include/tlm/cep/tilelink_state_spec.hh`，per 台账 Entry #237 §1.1）：
   转移矩阵 **12 格全 `Known`**、逐格 `basis` **全 `Direct`**（规范 `tilelink-c-1.7.1`，SiFive 免费开放标准，
   PDF sha256 钉版）、**0 格 `Unknown`** ⇒ **该载体确实有转移表真源** ⇒ 2026-11-04 的阻塞理由**不成立**。
@@ -64,7 +64,10 @@
   （⛔ 该映射**在仓内任何载体都不存在**）。
 - **为什么不是「立即造引擎」**：T3 未锚定前造引擎 = 换一种推理填空（2026-11-04 裁决禁止的正是这个）。
 - **为什么不是「继续不做」**：规范正文**可读** ⇒ T3 属**低成本**普查，**不属**填空。
-- ⇒ **B3b 维持 1/6**；⛔ 本节**不**把 TileLink-C 记为已达成。
+- ⇒ **2026-11-06 收口**:T3 普查**已实施完成**(11 行全条款级 `Direct`,per 台账 **Entry #242**)+ **运行时引擎已落地**
+  (`tilelink_protocol_engine.hh` + JSON 装配 + L4 事务级 E2E,per 台账 **Entry #246**)⇒ **B3b = 2/6**
+  (CHI RN-F + TileLink-C)⇒ **TileLink-C 记为已达成**;⛔ 其余三族(CXL DCOH / NVLink / UALink)**仍无引擎**,
+  且 CXL 2.0 **显式冻结** ⇒ **不得**据此宣称 B3b / 终态 DoD Go 已达成。
 
 ### C. 只有 adapter 契约，无运行时载体
 - **CXL 2.0 非对称**（`CxlCacheAdapter`）：连 tracker 都无独立行为实现（复用 MESIF 机制）。
@@ -92,10 +95,13 @@
 ## 4. 结论
 
 1. **契约层（L1/L2）与反向 fixture 是全面覆盖的** —— 14 个 change 的交付在这一层是扎实的。
-2. **事务级 E2E（L4）只有 3 条路径**：CHI RN-F、MESIF、CohIf（Null 语义）。
+2. **事务级 E2E（L4）只有 3 条路径**：CHI RN-F、MESIF、CohIf（Null 语义）—— **2026-11-06 更新**：TileLink-C 新增第 4 条(`dispatch_cohif` 5 流,per 台账 **Entry #246**)。
 3. **DoD §6.2 B3「6 个 ProtocolEngine」与实现不符**：运行时实际 = 3 个 RN 侧引擎
    （`chi_rnf` / `mesif` / `moesi_gpu`）+ 1 个 Null 外壳；CXL DCOH / TileLink-C / NVLink / UALink
    **只有 adapter 契约**。该口径差异需 DRI 裁决：
+   - ⚠️ **2026-11-06 更新**（per 台账 **Entry #246**）：新增 **TileLink-C 运行时引擎**
+     （`tilelink_protocol_engine.hh`）⇒ B3b 达成度 **1/6 → 2/6**；上文的「TileLink-C 只有 adapter 契约」
+     **已被本条取代**(其余三族不变:CXL DCOH / NVLink / UALink 仍**无引擎**)。
    - 选项 ① 把 B3 重新定义为「6 协议族的 **adapter 契约**实施完成」（则已达成）；
    - 选项 ② 承认 B3 未达成，登记为待补项。
    - ✅ **2026-11-06 已裁**：走**选项 ①** ⇒ B3 **拆成两行** = **B3a**（6 族 adapter 契约 ✅）/ **B3b**（运行时引擎 **1/6** ⏳）

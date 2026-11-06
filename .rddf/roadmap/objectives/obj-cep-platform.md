@@ -546,7 +546,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
   - 📌 **2026-11-06 补裁完成(per 台账 Entry #239 + `ADR-CEP-12` SU 2026-11-06)** —— 上一轮 D-2 只裁了 13 键中的 **4 键** ⇒ 余 9 键无规则可依 ⇒ 实例**无法声明**。本轮补裁 **9 键**(含**认识论三档分级**:规则执行 / 来源锚定 / 锚定建模声明)+ **路径 A 采纳**(声明实例)⇒ **声明无阻**。⚠️ **本轮同时修正了两处依据**:`barrier=false` 的原理由被 `nvlink_4` 反证(范畴错误)⇒ 改按 requester-scoped 语义重写;`combination_capabilities` 的安全论证误引 `INV-CEP-13-IC2`(跨域写传播判据,与 `hierarchical` 无关)⇒ 改按「该维度无已落地机器判据」重写。
   - 📌 **2026-11-06 终态口径裁决(per 台账 Entry #238,D-3 = ①「记为 ⏭ 阻塞」)**:本条**不再是 ✅** ⇒ **⏭ 阻塞**;**收口形态 = `ualink_4` 实例声明 ∨ 登记第 8 实例 ⏭**(二选一,先到者为准)⇒ **不再以「✅ 但有不可达实例」的形态留在 DoD 里**(那是「DoD 降格后宣称达成」的变体,per Entry #237 §1.5)。⚠️ **6 族 adapter 契约本身已实施完成** —— 本条 ⏭ 只针对**实例级缺口**,⛔ 不否定 adapter 契约的达成。
   - 📌 **2026-11-06 推进状态(per 台账 Entry #237)** —— 公开来源普查(librarian,新增来源类别)结论:**N-8**(有无 snoop)**部分可钉死** ⇒ 建议 `snoop=false` / `snoop_resp=false`,**basis = `public-nonnormative-derived`**(⛔ 非 spec-pinned;依据 = Linux 内核 `docs.kernel.org/gpu/amdgpu/ualink.html` 7.4-rc1 + AMD amd-gfx 95 补丁系列 2026-08-31 + 联盟博客 2025-05-15「Coherency is maintained through software」+ UnifabriX webinar 2025-12-10,**4 个互相独立的公开非规范来源一致**);**N-9**(`perm` 支持子集)**公开来源结构性撑不住 ⇒ 永久 pending**(所有公开材料无 permission / cache-state 词汇,且 UALink 被公开定义为 memory-semantic + software coherency ⇒ 该问法在 UALink 侧**无对应物** ⇒ 该值本质是 **CEP 建模决策**)⇒ **须架构裁决 D-2**;另 **B3a 存在双记账**(本行记 ✅ vs 终态表记「阻塞终态 Go」)⇒ **须口径裁决 D-3**。⛔ **合规**:本轮**未**读取 / 下载 / 引用任何 UALink 规范 PDF 技术正文(ECA 同型约束照旧)
-- B3b. ⏳ **运行时 ProtocolEngine**:在 B3 的 6 族清单中达成 **1/6**(仅 CHI RN-F —— `include/tlm/cep/chi_rnf_protocol_engine.hh` + L4 事务级 E2E,per `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`);CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink **未达成**
+- B3b. ⏳ **运行时 ProtocolEngine**:在 B3 的 6 族清单中达成 **2/6**(**2026-11-06 更新**,per 台账 **Entry #246** —— 新增 **TileLink-C**:`include/tlm/cep/tilelink_protocol_engine.hh` + L4 事务级 E2E;第 1 个 = CHI RN-F —— `include/tlm/cep/chi_rnf_protocol_engine.hh` + L4 事务级 E2E,per `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`);CXL 2.0 非对称(**显式冻结**)/ CXL 3.0 对称 DCOH / NVLink / UALink **未达成**(⏭ / 未触发,per Entry #238 逐族登记)
   - ⛔ **本项不得改写为「已达成」** —— 「DoD 降格后仍宣称达成」是 architect 2026-11-04 裁决**明确禁止**的失败模式(per `07 号` Status Update 2026-11-04 ①)
   - **触发条件**:某协议族的**规约载体出现转移表真源**时 ⇒ 才补运行时引擎(per oracle 2026-11-04:规约载体无转移表时补引擎 = 诱发推理填空 ⇒ **不补**)
   - ⚠️ **两条不得计入的口径**:① **MESIF / MOESI-GPU / CohIfNull 不在** B3 的 6 族清单内 ⇒ 既不计入也不冒充;② **UALink 无实例声明**(`ualink_4` 取值不可判定)⇒ 不算「实例已声明」
@@ -2452,9 +2452,9 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 | Stage 2 | 完成 Go(队列 #13 两段式归档) | 2026-11-03 | #186 / #190 | ✅ | Stage 2 = 队列 #12~#13 全部归档 |
 | Stage 3 | 启动 Go(VC 路径裁决 = 路径 **D**) | 2026-11-04 | #193 | ✅ | 三则 ADR SU 签发 + 冻结面授权记录 |
 | Stage 3 | 完成 Go(队列 #14 两段式归档) | 2026-11-04 | #203 / #207 | ✅ | 14 个队列 change 全部归档 |
-| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ **B4 / B7 已于 2026-11-05 收口**(per 台账 Entry #228)⇒ **Phase 1 的计划项全部完成**;仍阻塞终态 Go 的项 = `§6.2` **B3b**(运行时引擎 **1/6**)⇒ **TileLink-C** 剩余前置 = **运行时引擎 change**(`cpptlm-cep-tilelink-runtime-engine`,**2026-11-06 已立项**,per **Entry #243** —— T3 普查已于 Entry #242 实施完成,前置全清)⇒ 当前**不得**宣称终态 Go(**B5 / B6 / B8 已于 2026-11-05 登记 ✅**,per Entry #231;**B2 已于 2026-11-06 收口 = 66/66 = 61 载体 + 5 授权⏭**,per Entry #236;**B3a 已于 2026-11-06 收口**(路径 A:`ualink_4` 已声明),per **Entry #240**(B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合);§8.2 Kill 判据**未触发**(现状是「**部分未产出**」而非「**无法产出**」) |
+| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ **B4 / B7 已于 2026-11-05 收口**(per 台账 Entry #228)⇒ **Phase 1 的计划项全部完成**;仍阻塞终态 Go 的项 = `§6.2` **B3b**(运行时引擎 **2/6**,per **Entry #246** —— TileLink-C 引擎已落地)⇒ **剩余前置 = 其余 4 族**(CXL 2.0 **显式冻结** / CXL 3.0 对称 / NVLink / UALink —— 载体**无转移矩阵**(T1 未触发)⇒ 需**规约层**先落地,⛔ 不得绕过)⇒ 当前**不得**宣称终态 Go(**B5 / B6 / B8 已于 2026-11-05 登记 ✅**,per Entry #231;**B2 已于 2026-11-06 收口 = 66/66 = 61 载体 + 5 授权⏭**,per Entry #236;**B3a 已于 2026-11-06 收口**(路径 A:`ualink_4` 已声明),per **Entry #240**(B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合);§8.2 Kill 判据**未触发**(现状是「**部分未产出**」而非「**无法产出**」) |
 
-> **待办指针**:Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记)已于 **2026-11-05 全部完成**(B4 / B7 收口,per Entry #228)⇒ 终态 DoD Go 的剩余前置 = **B3b**(「**当前必做** = TileLink-C 运行时引擎 change,per **Entry #243 立项** —— T3 普查已实施完成,per **Entry #242**;其余 4 族 ⏭ / 未触发维持) (**2026-11-06 就地订正,verifier F1 闭合**)。(**B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合**; **B5 / B6 / B8 已于 2026-11-05 登记 ✅**;**B2 已于 2026-11-06 收口 = 66/66 = 61 载体 + 5 授权⏭**,per Entry #236),逐条完成后在本表末行回填日期与 Entry。
+> **待办指针**:Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记)已于 **2026-11-05 全部完成**(B4 / B7 收口,per Entry #228)⇒ 终态 DoD Go 的剩余前置 = **B3b**(**2/6**,per **Entry #246** —— TileLink-C 引擎落地;**当前必做** = 其余 4 族的**规约层**转移矩阵落地(CXL 2.0 除外 —— 显式冻结),⛔ 引擎侧**不得**绕过 T1–T4 前置自造) (**2026-11-06 就地订正**)。(**B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合**; **B5 / B6 / B8 已于 2026-11-05 登记 ✅**;**B2 已于 2026-11-06 收口 = 66/66 = 61 载体 + 5 授权⏭**,per Entry #236),逐条完成后在本表末行回填日期与 Entry。
 
 **review_by 触发仪式**(per `rdd-planner/SKILL.md:159`):
 - `bash skills/rdd-planner/scripts/planner_objective_revise.sh objective-cep-platform --kind sprint-review --content "..." --decision "..." --reason "..."`
@@ -15186,6 +15186,36 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 
 **④ 关联**:**#244**(T3 归档回执)· **#243**(引擎 change 立项 + F1 收口)· **#242**(T3 实施)· `.rddf/reviews/b3b-t3-verify.md`(F2)·
 `docs/architecture/07-coherence-exploration-platform.md` §⑦ · `openspec/changes/cpptlm-cep-tilelink-runtime-engine/`(tasks **P0-0**)
+
+### Entry #246 — 2026-11-06 [build](**TileLink-C 运行时引擎落地** —— B3b **1/6 → 2/6** + 判据 4 件套 + 冻结面授权)
+
+**主题**:change `cpptlm-cep-tilelink-runtime-engine`(Entry #243 立项)实施完成 —— TileLink-C 成为 **B3b 第 2 个运行时引擎实例**(第 1 个 = CHI RN-F)。
+**角色**:builder。⛔ `protocol_instance.schema.json` / `protocol_instances.json` / `perm_upgrades.json` **零改动** · ⛔ 无 `INV-CEP-*` 新编号 · ⛔ **不连带推进**其余 4 族。
+
+**① 交付面**:
+- **引擎** `include/tlm/cep/tilelink_protocol_engine.hh`(header-only,`ProtocolEngineBase<2>` 派生)= **CohIf 意图面 → 权限转移事件面**的**事件计数/上报器**;
+- **零自有事件表副本**:唯一消费载具 `consumable_mask_of(PlatformIntent)` ⇒ 事件语义**全部**委托 T3 表 `kT3MappingCells`(⛔ 0 处 `kT3MappingCells` / `event_mask` 字段 / 掩码成员数组 —— 禁止性 lint 判据);
+- **注册**:`chstream_register.hh` 第 4 个引擎名 `TileLinkProtocolEngine`(N=2,JSON 可选;⛔ 引擎不解析 JSON)+ `test_cep_registration_macro_contract.cc` 三元组 → **四元组**(P0-1 连锁);
+- **装配**:`configs/cep_tilelink_pe_minimal.json`(2 × 引擎 + `cohif_noc` 桥绑定 `tilelink_c` 实例);
+- **测试** `test/test_cep_tilelink_engine.cc`(**7 cases / 101 assertions**,标签 `[cep][tilelink][engine]`)+ delta spec `TLE-01`~`TLE-08`;
+- **构建期取证** `scripts/test/cep_tilelink_engine_failclosed.sh` + `cep_tilelink_engine_probe.cc`(影子树三态,真源零改动)。
+
+**② 判据 4 件套**:
+· 正控 = `[cep][tilelink][engine]` 7/101 绿 · `[cep]` 全量 **441 cases / 10337 assertions** 绿 · `ctest` 全量绿 · 6 闸 rc=0;
+· 反控 = 4 条反向 fixture + Null 引擎对照(同一 5 流:真插件 **4 事件** vs Null **零事件面**)+ JSON 装配反控(换 Null ⇒ 类型判据判否)+ 域外 `flow_id` 防御(零事件);
+· **决定性变异** = 影子树删 `TLC-M-02` 行 ⇒ **编译红且签名命中** T3 编译期锁(`static_assert` 文案含 `T3:`);真源 sha256 **未变**;
+· **fail-closed(消费面)** = 影子树把该行改 `Pending` ⇒ **引擎事件发射出口计数 = 0**(⛔ 非掩码函数返回值 —— 那是 state_spec 层重复)。
+
+**③ 认识论边界**:引擎**只做事件计数/上报**;⛔ **不建** PE 本地树状态机(Nothing/Branch/Tip —— 规约层真源,运行面只读);⛔ **不携带源态**(TileLink `Cap`「源不定」⇒ 只声明事件类别,per `TLE-05` grep 级判据);⛔ **不连带** CXL 2.0(冻结)/ CXL 3.0 / NVLink / UALink。
+
+**④ 冻结面授权**:`07 号` 追加 **SU 2026-11-06 · 三** + §5.1.1 TileLink-C 行**行内**追加引擎标注 + 逐族重判表 TileLink-C 行 ⇒ **行数不变**(跨仓对齐锚点行号不动)⇒ 走两步授权:`cep_freeze_check.sh --update --authorized-by "Entry #246"` → 清单单独 commit。
+
+**⑤ B3b 达成度回填**:**1/6 → 2/6**(§6.2 B3b 定义行 + 终态行 + 待办指针,均就地更新)⇒ 终态 DoD Go 的剩余前置 = **其余 4 族的规约层转移矩阵**(CXL 2.0 除外 —— 显式冻结)。
+
+**⑥ 关联**:**#245**(F2 漏勾回填)· **#244**(T3 归档)· **#243**(立项 + metis 4 BLOCKER 全修)· **#242**(T3 实施)· **#241**(二分支预登记)·
+`docs/architecture/07-coherence-exploration-platform.md` **SU 2026-11-06 · 三** · `openspec/changes/cpptlm-cep-tilelink-runtime-engine/` ·
+`include/tlm/cep/tilelink_protocol_engine.hh` · `include/tlm/cep/tilelink_state_spec.hh` · `configs/cep_tilelink_pe_minimal.json` ·
+`scripts/test/cep_tilelink_engine_failclosed.sh` · `test/test_cep_tilelink_engine.cc` · `§6.2 B3b`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

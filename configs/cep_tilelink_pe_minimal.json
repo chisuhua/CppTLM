@@ -1,0 +1,23 @@
+{
+  "name": "cep_tilelink_pe_minimal",
+  "description": "B3b 推进项 `cpptlm-cep-tilelink-runtime-engine` —— TileLink-C 的最小装配拓扑(2 个 TileLinkProtocolEngine,N=2 端口双向互连 + cohif_noc 桥绑定 tilelink_c 实例)。⚠️ 与 chi_rnf 拓扑的差异:**无发射面** —— 引擎是事件面计数/上报器(per design D-3),故本拓扑只承载**装配 + 意图注入**判据,事务级事件判据在 `test/test_cep_tilelink_engine.cc` 的 TLE-03(direct dispatch)。",
+  "modules": [
+    { "name": "tl0", "type": "TileLinkProtocolEngine" },
+    { "name": "tl1", "type": "TileLinkProtocolEngine" }
+  ],
+  "connections": [
+    { "src": "tl0.0", "dst": "tl1.0" },
+    { "src": "tl1.0", "dst": "tl0.0" }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json",
+    "bridges": [
+      {
+        "name": "cohif_noc",
+        "protocol_instance": "tilelink_c",
+        "bridge_id": 2,
+        "modules": ["tl0", "tl1"]
+      }
+    ]
+  }
+}

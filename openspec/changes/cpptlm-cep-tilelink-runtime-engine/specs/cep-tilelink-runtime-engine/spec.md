@@ -50,6 +50,14 @@
 > **引擎事件发射出口**计数 = 0(判定出口 = 引擎行为级;⛔ 只断言 `consumable_mask_of` 返回值**不算**消费面反控,那是 state_spec 层重复;
 > 引擎 SHALL NOT 自带 fail-closed 副本);取证 + 复原(真源 hash 一致)。
 
+#### Scenario: TLE-08 —— JSON 装配面 SHALL 可选引擎类型 + 类型判别
+
+> `chstream_register.hh` 注册第 4 个引擎名 `TileLinkProtocolEngine`(N=2,与 `CohIfProtocolEngine` 同款)
+> ⇒ JSON 侧可逐实例选择;⛔ 引擎**不解析 JSON**(`vc_binding` 由装配方 `set_route(...)` 注入);
+> 最小装配拓扑 = `configs/cep_tilelink_pe_minimal.json`(2 × 引擎 + `cohif_noc` 桥绑定 `tilelink_c` 实例);
+> 判据 = 装配**成功** + `dynamic_cast` 类型判别为真 + **反控**(同拓扑换 Null ⇒ 类型判据**判否**)
+> —— ⛔ 不得以「装配失败」蒙对判据。
+
 #### Scenario: TLE-07 —— 冻结面 SHALL 零改动(Schema/instances/ABI)
 
 > `protocol_instance.schema.json` · `protocol_instances.json` · `perm_upgrades.json` ·

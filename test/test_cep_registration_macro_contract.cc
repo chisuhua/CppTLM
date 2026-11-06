@@ -163,8 +163,12 @@ TEST_CASE("CEP Registration: IC4 —— CEP 模块注册走既有宏体系,不�
         return true;
     }();
     REQUIRE(kRegistered);
+    // ⚠️ 引擎名清单 = **四元组**(2026-11-06 新增 `TileLinkProtocolEngine`,per 台账 Entry #243
+    //    / change `cpptlm-cep-tilelink-runtime-engine` 的 P0-1 注册名连锁)——
+    //    ⛔ 新增引擎名时**必须**同步本清单,否则既有断言会「因正确原因红」(注册未生效)。
     for (const char* name :
-         {"CohIfProtocolEngine", "ChiRnfProtocolEngine", "MesifProtocolEngine"}) {
+         {"CohIfProtocolEngine", "ChiRnfProtocolEngine", "MesifProtocolEngine",
+          "TileLinkProtocolEngine"}) {
         INFO("注册未生效(adapter 工厂查不到): " << name);
         REQUIRE(ChStreamAdapterFactory::get().isMultiPort(name));
         INFO("端口数错误: " << name);
