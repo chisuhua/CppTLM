@@ -15716,6 +15716,28 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑤ KPI**:**1/3 → 0/3**(5 处活文档已同步);`cep_doc_ref_check` 的 VIRTUAL_PATHS 登记归档前路径。
 
 **⑥ 关联**:**#266**(第 3 项实施)· **#265**(第 2 项来源检索 + ⚠️ 合规登记)· **#264**(终态裁决 · 强度缺口)· **#263**(盘点)· `.rddf/reviews/cep-refkind-coverage-verify.md` · `openspec/specs/cep-refkind-coverage/spec.md` · `test/cep_b3b2_deferrals.json`
+
+### Entry #268 — 2026-11-07 [plan](**第 2 项(UALink 专用 coherence 引擎)立项** —— 规格就绪,待 architect 裁「引擎强度」)
+
+**主题**:第 2 项的**来源检索已完成**(Entry #265)⇒ 本 Entry 把**实施规格**落成可立即开工的 improvement,并登记**实施前必须先裁**的设计点。
+**角色**:planner(立项 + 规格)· architect(待裁)。
+
+**① 规格落盘**:`.rddf/improvements/cpptlm-cep-ualink-coherence-engine.md`(7 段 + AC-1~AC-6 + 范围边界)。
+
+**② 范围(摘要)**:新引擎 `ualink_protocol_engine.hh`(`ProtocolEngineBase<2>` 派生)—— `on_request` / `on_completion` = **canonical 流记账**;其余 8 流 = **显式 Unsupported 计数**;`snoop_resp` 与 I-6 **显式 pending / 不消费**;⛔ **不实现** UPLI 协议语义(ReqCmd / 4 通道 / tag 配对)⇒ 零语义发明。
+
+**③ 两条硬边界(源自 Entry #265 §④)**:
+- **AC-2**:**completion 记账不得依赖有序性假设**(J1 的 `p2p_ordered` 是建模假设、非协议保证)⇒ 须有**反向 fixture**(乱序投递 ⇒ 断言不变);
+- **AC-6**:**B3b-2 仍 0/4** 的断言须显式存在 ⇒ 本条**不改**计数。
+
+**④ 待 architect 裁决(实施前必须先裁)——「引擎强度」三选项**:
+- **甲(建议)**:**纯记账 + 弱档建模声明**(canonical 流 ↔ UPLI 概念的一次推断,显式标注)—— 现有锚点摘要即足;⚠️ 契约与 `07 号` 双处须写明「**非协议实现**」;
+- **乙**:实现 UPLI 通道级语义 ⇒ 需**条款级**依据(人类成员条款摘要,per D-4 ②)⇒ **当前无** ⇒ 现在做 = **推理填空** ⇒ **禁止**;
+- **丙**:不做 ⇒ 「流语义」缺口保留。
+
+**⑤ 交付面**:⛔ 未建 change 目录(避免半成品占 KPI slot)⇒ 立项 = improvement + 本 Entry;待裁决后建 change。
+
+**⑥ 关联**:**#267**(第 3 项 + 第 5 项归档)· **#266**(第 3 项实施)· **#265**(来源检索 + ⚠️ 合规登记 + 两条硬边界)· **#264**(终态裁决)· **#263**(盘点)· `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` · `.rddf/improvements/cpptlm-cep-ualink-coherence-engine.md`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
