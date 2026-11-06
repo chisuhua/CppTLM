@@ -136,18 +136,24 @@ inline InstanceAssemblyReport run_instance_assembly_gate(
             continue;
         }
 
-        // ② family 可解析
-        if (decl->contains("family") && decl->at("family").is_string()) {
+        // ② family **必须存在且可解析**(缺键 / 非 string / 不可解析 ⇒ 一律红)
+        if (!decl->contains("family") || !decl->at("family").is_string()) {
+            rep.errors.emplace_back("[IAG-03] family missing: " + id);
+        } else {
             ProtocolFamily fam{};
             if (!protocol_family_from_name(decl->at("family").get<std::string>(), fam)) {
                 rep.errors.emplace_back("[IAG-03] family unresolvable: " + id);
             }
         }
 
-        // ③ 拓扑层:bridge 引用的模块必须真的在拓扑里
-        if (bridge.contains("modules") && bridge.at("modules").is_array()) {
+        // ③ 拓扑层:bridge 的 `modules` **必须存在且非空**,且引用的模块必须真的在拓扑里
+        if (!bridge.contains("modules") || !bridge.at("modules").is_array() ||
+            bridge.at("modules").empty()) {
+            rep.errors.emplace_back("[IAG-06] bridge has no modules: " + id);
+        } else {
             for (const auto& m : bridge.at("modules")) {
                 if (!m.is_string()) {
+                    rep.errors.emplace_back("[IAG-06] module entry not a string (bridge " + id + ")");
                     continue;
                 }
                 const std::string mod = m.get<std::string>();
@@ -158,8 +164,10 @@ inline InstanceAssemblyReport run_instance_assembly_gate(
             }
         }
 
-        // ④ bridge_id 唯一
-        if (bridge.contains("bridge_id") && bridge.at("bridge_id").is_number_integer()) {
+        // ④ bridge_id **必须存在**且唯一
+        if (!bridge.contains("bridge_id") || !bridge.at("bridge_id").is_number_integer()) {
+            rep.errors.emplace_back("[IAG-07] bridge_id missing: " + id);
+        } else {
             const auto bid = bridge.at("bridge_id").get<long long>();
             if (std::find(seen_bridge_ids.begin(), seen_bridge_ids.end(), bid) !=
                 seen_bridge_ids.end()) {

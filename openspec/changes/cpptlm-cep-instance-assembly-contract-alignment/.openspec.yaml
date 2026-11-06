@@ -1,0 +1,17 @@
+schema: spec-driven
+created: 2026-11-06
+goal: 闭合 critic 复核的 BLOCKER —— 装配闸的平面层语义(required 机制)与冻结契约对齐,并加固判据完备性
+affected_areas:
+  - openspec/changes/cpptlm-cep-instance-assembly-contract-alignment/specs/cep-instance-assembly/spec.md
+  - docs/adr/ADR-CEP-12-protocol-engine-capability-map.md
+  - docs/validation/2026-11-04-cep-protocol-e2e-coverage.md
+  - include/tlm/cep/instance_assembly_gate.hh
+  - test/test_cep_instance_assembly.cc
+  - test/test_cep_moesi_gpu_engine.cc
+# 主体 doc-only(契约对齐);附带 3 条 NIT 的小代码修正。
+# 冻结面 1 处(ADR-CEP-12 追加 SU)⇒ 两步授权。
+skip_specs: false
+x-phase: P0
+x-priority: P1
+x-status: proposed
+x-ledger: obj-cep-platform Entry #261

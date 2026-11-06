@@ -12,10 +12,16 @@
 | **L1 契约** | constexpr 判定、表逐格比对、文本扫描、schema 校验 | 无实例、无事务 |
 | **L2 声明** | `protocol_instances.json` 的实例声明字段齐备且与 traits 一致 | 读 JSON |
 | **L3 装配** | `ModuleFactory::instantiateAll(cfg)` + JSON 配置实例化 | 有 factory / config |
-| **L4 事务级 E2E** | `submit → tick → 对端收到`（ChStream wire 真实穿过） | 有 `tick()` + 抵达断言 |
+| **L4-direct 事务级** | `submit → 派发 → 引擎内记账/状态机`（**进程内派发**,无 wire、无 `tick()`、无对端） | 有 `dispatch_cohif` / 直调 `on_*` + 计数器/状态断言 |
+| **L4-wire 事务级 E2E** | `submit → tick → 对端收到`（ChStream wire 真实穿过） | 有 `tick()` + 抵达断言 |
 | **L5 实验级** | metric 采集 + 假设结论 | `metrics.json` + 结论文档 |
 
 ⚠️ **L1 ≠ L4**。`test_*=0 装配 / 0 抵达` 的协议即使有 500 行测试，也只覆盖 L1。
+
+⚠️ **L4 两档的区分(2026-11-06,per critic 复核 · Entry #261)**:**L4-direct** 是**进程内派发**(引擎自己记账/迁移),
+⛔ **不**经过 ChStream wire、**不**含 `tick()`、**不**有对端 ⇒ 「抵达」= 引擎内部计数器/状态机;
+**L4-wire** 才是本文档原口径的「wire 真穿过 + tick + 对端收到」。
+⇒ 矩阵中**逐族**给出两档,⛔ 不得把 L4-direct 读成 L4-wire。
 
 ---
 
@@ -26,7 +32,7 @@
 | **CHI RN-F** | ✅ `test_cep_chi_rnf_subset.cc`(1322 行) | ✅ | ✅ CR-10③ | ✅ `submit → tick → 分派` | — | `chi_rnf_protocol_engine.hh`(648) |
 | **MESIF** | ✅ `_adapter` / `_state_spec` / `_ratification` | ✅ | ✅ `instantiateAll` | ✅ `submit_local_request → tick → 对端` | — | `mesif_protocol_engine.hh`(667) |
 | **CohIf 载体** | ✅ `test_cep_cohif_carrier.cc` | ✅ | ✅ `_json_assembly`(11 处) | ✅ | — | `CohIfNullProtocolEngine`（**Null 语义**） |
-| **MOESI-GPU** | ✅ `_adapter`(442) / `_compensation`(324) + `_engine`(5 cases,2026-11-06) | ✅ **`moesi_gpu`** | ✅ `cep_moesi_gpu_pe_minimal.json`(per Entry #259) | ✅ `submit_local_request → 状态机` + 10 流记账(2026-11-06,per 台账 **Entry #259**) | — | `moesi_gpu_protocol_engine.hh`(306) |
+| **MOESI-GPU** | ✅ `_adapter`(442) / `_compensation`(324) + `_engine`(6 cases,2026-11-06) | ✅ **`moesi_gpu`** | ✅ `cep_moesi_gpu_pe_minimal.json` + **真跑 `instantiateAll`**(per Entry #259/#261) | ◐ **L4-direct** ✅(`submit_local_request → 状态机` + 10 流记账)/ **L4-wire** ❌(引擎按决策 M-6「只记账」,**零发射** ⇒ 无 wire/无 tick/无对端;per Entry #259/#261) | — | `moesi_gpu_protocol_engine.hh`(306) |
 | **CXL 2.0 非对称** | ✅ `test_cep_cxl_cache_adapter.cc`(209) + `_state_spec`(451) | ✅ `cxl_2_0` | ❌ | ❌ | — | ❌ **无** |
 | **CXL 3.0 对称 DCOH** | ✅ `_adapter`(188) / `_tracker`(355) / `_state_spec`(329) | ✅ | ❌ | ❌ | — | ❌（`DcohSymmetric` tracker 有行为面） |
 | **TileLink-C** | ✅ `_adapter`(450) / `_state_spec`(488) + `_engine`(7 cases) | ✅ | ✅ `cep_tilelink_pe_minimal.json` | ✅ `dispatch_cohif` 5 流(2026-11-06,per 台账 **Entry #246**) | — | ✅ `tilelink_protocol_engine.hh`(**B3b 第 2 个实例**) |

@@ -19,7 +19,9 @@
 #include <nlohmann/json.hpp>
 
 #include "cep_adr_parser.hh"  // `cpptlm::cep::repo_root()`(测试侧仓根定位)
+#include "chstream_register.hh" // `REGISTER_ALL`(注册面)
 #include "core/event_queue.hh"
+#include "core/module_factory.hh"
 #include "tlm/cep/adapter_contracts_loader.hh"
 #include "tlm/cep/channel_dependency_graph.hh"
 #include "tlm/cep/instance_assembly_gate.hh"
@@ -100,6 +102,18 @@ TEST_CASE("MGE-01: MOESI-GPU 引擎已注册 —— 可实例化(此前未注册
     Engine e("mge", &eq);
     REQUIRE(e.counters().flow_events[0] == 0u);
     REQUIRE(e.line_count() == 0u);
+}
+
+TEST_CASE("MGE-01b: ModuleFactory::instantiateAll 真跑 —— 注册面 ⇒ 真可实例化",
+          "[cep][moesi][engine][mge-01]") {
+    // ⚠️ 2026-11-06(per critic NIT-1):MGE-01 原先只验「配置里的 type 名匹配 + 直接构造」
+    //   ⇒ 「可被实例化」被**弱验证**。此处真跑 `ModuleFactory::instantiateAll`
+    //   (含 CEP 装配期闸)⇒ 注册面缺失会**立即**变红。
+    REGISTER_ALL;
+    EventQueue eq;
+    ModuleFactory f(&eq);
+    const auto cfg = load_topology("cep_moesi_gpu_pe_minimal.json");
+    REQUIRE(f.instantiateAll(cfg));
 }
 
 TEST_CASE("MGE-02: 10 canonical 流 ⇒ 逐流「抵达」记账(5 条 CohIf + 5 条直调)", "[cep][moesi][engine][mge-02]") {

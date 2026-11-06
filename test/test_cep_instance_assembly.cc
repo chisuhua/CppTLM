@@ -143,6 +143,35 @@ TEST_CASE("IAG-02~07: 装配闸的反向 fixture(逐条按归因 tag 变红)", "
         REQUIRE(rep.verdict == InstanceAssemblyVerdict::FAIL);
         REQUIRE(rep.has_error("[IAG-07]"));
     }
+    // ⑧ 缺 `family` ⇒ 红(声明层不完整)
+    {
+        auto cfg = load_json(kConfigRel);
+        auto inst = instances;
+        for (auto& i : inst["instances"]) {
+            if (i.value("id", "") == "ualink_4") {
+                i.erase("family");
+            }
+        }
+        const auto rep = run_instance_assembly_gate(cfg, inst, planes);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::FAIL);
+        REQUIRE(rep.has_error("[IAG-03]"));
+    }
+    // ⑨ bridge 的 `modules` 为空 ⇒ 红(拓扑层不完整)
+    {
+        auto cfg = load_json(kConfigRel);
+        cfg["cep"]["bridges"][0]["modules"] = nlohmann::json::array();
+        const auto rep = run_instance_assembly_gate(cfg, instances, planes);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::FAIL);
+        REQUIRE(rep.has_error("[IAG-06]"));
+    }
+    // ⑩ 缺 `bridge_id` ⇒ 红
+    {
+        auto cfg = load_json(kConfigRel);
+        cfg["cep"]["bridges"][0].erase("bridge_id");
+        const auto rep = run_instance_assembly_gate(cfg, instances, planes);
+        REQUIRE(rep.verdict == InstanceAssemblyVerdict::FAIL);
+        REQUIRE(rep.has_error("[IAG-07]"));
+    }
     // ① 无 bridge ⇒ 未挂进拓扑
     {
         auto cfg = load_json(kConfigRel);

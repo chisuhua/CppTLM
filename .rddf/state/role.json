@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "builder",
-  "updated_at": "2026-11-06T14:41:56Z",
+  "updated_at": "2026-11-06T17:53:38Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-06T03:43:37Z",
-      "by": "user",
-      "reason": "收尾三项(新 change 立项引发的连带):① AGENTS.md KPI 当前态 0/3→1/3 ② doc_ref VIRTUAL_PATHS 登记待产出的锚点摘要 ③ UALink 探针 UIA-07 负控⇒正控 + 反向验证 f-07 重指"
-    },
-    {
-      "role": "verifier",
-      "at": "2026-11-06T07:10:21Z",
-      "by": "user",
-      "reason": "用户口令「切 verifier 检查 B3b 是否真的完成,是否有遗漏或债务」⇒ 复核 B3b 状态(1/6 维持,登记诚实)+ T3 闭合证据复核 + 遗漏扫描 ⇒ 出 2 项 SHOULD_FIX(台账当前态 F1 / 07 号 ⑦ 漏勾 F2),报告 .rddf/reviews/b3b-t3-verify.md"
-    },
     {
       "role": "planner",
       "at": "2026-11-06T07:10:21Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-06T14:41:56Z",
       "by": "user",
       "reason": "切回 builder:归档 P2/P3 两个 change + KPI 回填 0/3 + push"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-06T17:45:54Z",
+      "by": "user",
+      "reason": "补 critic 复核(P2 装配闸三层证据形状 + P3 MOESI-GPU 只记账边界);随后协调 P2b/迁移/DoD 终局"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-06T17:53:38Z",
+      "by": "user",
+      "reason": "闭合 critic BLOCKER:装配闸平面层语义(REQUIRED 机制)未同步冻结契约 ⇒ doc-only change + NIT 修正"
     }
   ],
   "auto_switch_window": null

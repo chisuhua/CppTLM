@@ -764,3 +764,34 @@ R-T3:本 ADR 决策 6 的 6 类消息类词表 `{request, response, snoop, snoop
 
 - `nvlink_4` 有 plane 绑定但**无拓扑挂载** ⇒ 不在本闸职责内(闸只对「配置中挂载了的实例」提要求)⇒ 登记为**独立遗留**;
 - UALink 专用 coherence 引擎(承载 `request`/`completion`)⇒ **后续 change**。
+
+
+---
+
+## Status Update(2026-11-07,per 台账 Entry #261)—— 装配闸 ③ 平面层判据的**语义修正**(契约对齐)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文与既有 SU(尤其 **SU 2026-11-06**(Entry #258)的 ① 三层证据表 —— **不回改**)。
+> **触发**:critic 对 P2/P3 的补复核 **REJECT**(1 BLOCKER)—— P3 在 P2 归档后改判了 ③ 的语义,但冻结契约未同步 ⇒ 契约与实现/测试**自相矛盾**。
+> **审查**:`.rddf/reviews/cep-instance-assembly-and-l4-e2e-verify.md`(验收)· 本轮 critic 复核(REJECT → 本 change 闭合)。
+
+### ① 修正内容(③ 平面层)
+
+本 ADR **SU 2026-11-06**(Entry #258)① 的 ③ 写「`plane_binding` 中的绑定**非空**且**已在 plane 注册表登记**」——
+该表述是**无条件**的。实际实现(per 台账 **Entry #259 §⑤** 的「顺带修正」)为:
+
+- `plane_binding` 含该实例键且值**非空** ⇒ 必须**已登记**(否则 `[IAG-05]`);
+- 值为 **null / 空** ⇒ 该实例**不启用 collective**(**合法状态**,如 `moesi_gpu` / `mesif`)⇒ **不判红**;
+- **仅当**该实例被调用方经 `required_plane_instances` **显式要求绑定**时,空 / 缺失绑定 ⇒ `[IAG-04]`。
+
+### ② 修正理由(假阴性)
+
+CXL / MOESI-GPU / MESIF 走**软件一致性 / 无 collective 能力** ⇒ 强制非空绑定会把**合法**的「不启用 collective」误判为装配失败(假阴性)⇒ 修正方向成立。
+
+### ③ 「required 清单」的权威归属
+
+该清单 SHALL 由**调用方**显式传入,闸**不自行推断**(那是协议语义判断,归 ADR / 设计文档)⇒ 避免「判据可被调用方静默稀释」。
+当前唯一权威调用点:`test/test_cep_instance_assembly.cc` 的 IAG-01 正控(`ualink_4` **required**)与 `test/test_cep_moesi_gpu_engine.cc` 的 MGE-05(`moesi_gpu` **不** required)。
+
+### ④ 契约面
+
+`openspec/specs/cep-instance-assembly/spec.md` 的 Requirement ③ 与 IAG-01/02 已按本 SU **改写**(MODIFIED,per change `cpptlm-cep-instance-assembly-contract-alignment`)⇒ 与实现/测试逐条一致。
