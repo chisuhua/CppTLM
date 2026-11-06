@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-06T10:53:57Z",
+  "current_role": "verifier",
+  "updated_at": "2026-11-06T12:40:53Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-05T17:06:04Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 按 §9.2 修这最后一条」⇒ ① 匹配前剔除字符串/字符字面量 ② 扫描器哨兵自排除 ③ 决定性变异测试(真实载体失去负向断言 ⇒ 必红)"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-05T17:26:41Z",
-      "by": "user",
-      "reason": "用户口令「继续」⇒ 按既定流程推进: architect 终验 §9.2 ⇒ §10 的落地(含独立复跑决定性变异), 通过后转 planner 落 B2 登记"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-05T17:29:57Z",
-      "by": "user",
-      "reason": "用户口令「切 planner 落登记」⇒ 把 §6.2 B2 登记为 ✅(66/66 = 61 载体 + 5 授权⏭) + 追加台账 Entry #236(依据 .rddf/reviews/cep-b2-acceptance-verdict.md §11 终审结论)"
-    },
     {
       "role": "architect",
       "at": "2026-11-06T00:58:34Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-06T10:53:57Z",
       "by": "user",
       "reason": "用户口令「先起 architect 裁决」⇒ 对「公开(非规范)来源矩阵能否构成 T1 转移表真源」作出架构裁决(4 族 T1/T4 可行性),产出落 07 号 SU + 台账 Entry"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-06T11:20:26Z",
+      "by": "user",
+      "reason": "用户口令「切planner对后续任务内容给出规划,然后切builder实施」⇒ 对 P0 DoD 口径 + P1 载体 schema 演进 + P2 UALink 装配 + P3 MOESI-GPU L4 E2E 出规划并落 improvement/proposal"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-06T11:29:31Z",
+      "by": "user",
+      "reason": "用户口令「切builder进行实施」⇒ 实施 P1 全量(M1+M2): RefKind + 来源注册表 + CellKind::Free + 4 载体适配 + 决定性变异"
+    },
+    {
+      "role": "verifier",
+      "at": "2026-11-06T12:40:53Z",
+      "by": "user",
+      "reason": "用户口令「继续切 verifier」⇒ 对 change cpptlm-cep-basis-source-kind-and-cell-free 做 AC-1~AC-6 逐条验收"
     }
   ],
   "auto_switch_window": null

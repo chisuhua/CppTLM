@@ -1,0 +1,22 @@
+schema: spec-driven
+created: 2026-11-06
+goal: 让 CEP 载体的证据来源类型可机器判(RefKind + 注册表)+ CellKind::Free —— 把 07 号 SU·四 D-1 的「不可机器判」补上载体
+affected_areas:
+  - include/tlm/cep/source_registry.hh
+  - include/tlm/cep/sources.json
+  - include/tlm/cep/tilelink_state_spec.hh
+  - include/tlm/cep/cxl_state_spec.hh
+  - include/tlm/cep/mesif_state_spec.hh
+  - include/tlm/cep/ualink_inc_state_spec.hh
+  - include/tlm/cep/tilelink_c_adapter.hh
+  - include/tlm/cep/cxl_cache_adapter.hh
+  - test/test_cep_source_registry.cc
+  - scripts/test/cep_source_effect_check.sh
+  - openspec/changes/cpptlm-cep-basis-source-kind-and-cell-free/specs/cep-basis-source-kind/spec.md
+# 零冻结面改动:sources.json 为新增文件,fabric.json / protocol_instance.schema.json 零 diff。
+# 零引擎逻辑:Free 只在 adapter 查询面新增分支。
+skip_specs: false
+x-phase: P0
+x-priority: P1
+x-status: proposed
+x-ledger: obj-cep-platform Entry #251
