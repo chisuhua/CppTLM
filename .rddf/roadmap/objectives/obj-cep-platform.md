@@ -541,13 +541,15 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
     - **当时的合法中间态**:「**N/66 载体已登记(含 M 项有牙证据)+ K 条待审计 + J 条授权⏭**」(形态先例 = 本表 B3b 的诚实 ⏳)
     - ⛔ **该禁令仍然有效** —— 「文本要求逐条断言、却按编号级宣称达成」= DoD 降格后仍宣称达成;本轮达成是**逐条判定级** + 决定性变异证伪,⛔ 非编号级
   - 📌 **本轮流程教训(留档,per §11)**:BLOCKER **三次回归同一族失败模式** —— 「载体未真正咬合判据的**主体**」,三种表现:① B-1 **借壳**(语义无关的 case 挂该 id)② B-2 首次 **主体错位**(断言证明「**可以**写出负向断言」而非「测试集**含**它」)③ B-2 二次 **自证**(扫描器自身的锚点全是 fixture 字符串)⇒ 后续载体评审须把「**载体文件自身是否满足该判据**」列为固定检查项;**决定性变异**(删掉被判据约束的那部分 ⇒ 必红)应作为闭合证据的**必附项**,只测「锚点存在」不够
-- B3a. ✅ **6 个协议族的 adapter 契约**实施完成:CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」与 `ADR-CEP-11 §3` 锁表「按 `protocol_version` 行计 8 行」—— 两种粒度非矛盾,per Entry #19 §2**);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
+- B3a. ⏭ **6 个协议族的 adapter 契约**实施完成:CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」与 `ADR-CEP-11 §3` 锁表「按 `protocol_version` 行计 8 行」—— 两种粒度非矛盾,per Entry #19 §2**);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
+  - 📌 **2026-11-06 终态口径裁决(per 台账 Entry #238,D-3 = ①「记为 ⏭ 阻塞」)**:本条**不再是 ✅** ⇒ **⏭ 阻塞**;**收口形态 = `ualink_4` 实例声明 ∨ 登记第 8 实例 ⏭**(二选一,先到者为准)⇒ **不再以「✅ 但有不可达实例」的形态留在 DoD 里**(那是「DoD 降格后宣称达成」的变体,per Entry #237 §1.5)。⚠️ **6 族 adapter 契约本身已实施完成** —— 本条 ⏭ 只针对**实例级缺口**,⛔ 不否定 adapter 契约的达成。
   - 📌 **2026-11-06 推进状态(per 台账 Entry #237)** —— 公开来源普查(librarian,新增来源类别)结论:**N-8**(有无 snoop)**部分可钉死** ⇒ 建议 `snoop=false` / `snoop_resp=false`,**basis = `public-nonnormative-derived`**(⛔ 非 spec-pinned;依据 = Linux 内核 `docs.kernel.org/gpu/amdgpu/ualink.html` 7.4-rc1 + AMD amd-gfx 95 补丁系列 2026-08-31 + 联盟博客 2025-05-15「Coherency is maintained through software」+ UnifabriX webinar 2025-12-10,**4 个互相独立的公开非规范来源一致**);**N-9**(`perm` 支持子集)**公开来源结构性撑不住 ⇒ 永久 pending**(所有公开材料无 permission / cache-state 词汇,且 UALink 被公开定义为 memory-semantic + software coherency ⇒ 该问法在 UALink 侧**无对应物** ⇒ 该值本质是 **CEP 建模决策**)⇒ **须架构裁决 D-2**;另 **B3a 存在双记账**(本行记 ✅ vs 终态表记「阻塞终态 Go」)⇒ **须口径裁决 D-3**。⛔ **合规**:本轮**未**读取 / 下载 / 引用任何 UALink 规范 PDF 技术正文(ECA 同型约束照旧)
 - B3b. ⏳ **运行时 ProtocolEngine**:在 B3 的 6 族清单中达成 **1/6**(仅 CHI RN-F —— `include/tlm/cep/chi_rnf_protocol_engine.hh` + L4 事务级 E2E,per `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`);CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink **未达成**
   - ⛔ **本项不得改写为「已达成」** —— 「DoD 降格后仍宣称达成」是 architect 2026-11-04 裁决**明确禁止**的失败模式(per `07 号` Status Update 2026-11-04 ①)
   - **触发条件**:某协议族的**规约载体出现转移表真源**时 ⇒ 才补运行时引擎(per oracle 2026-11-04:规约载体无转移表时补引擎 = 诱发推理填空 ⇒ **不补**)
   - ⚠️ **两条不得计入的口径**:① **MESIF / MOESI-GPU / CohIfNull 不在** B3 的 6 族清单内 ⇒ 既不计入也不冒充;② **UALink 无实例声明**(`ualink_4` 取值不可判定)⇒ 不算「实例已声明」
   - 📌 **「ProtocolEngine」一词两义的裁决源**:`07 号` Status Update 2026-11-04 ①(architect 裁决)
+  - 📌 **2026-11-06 口径裁决(per 台账 Entry #238,D-1)**:「转移表真源」= **T1 存在 / T2 可判定 / T3 可消费 / T4 完备**四要件**全满足**(判定式落 `07 号` Status Update 2026-11-06)⇒ **TileLink-C = T1✅ T2✅ T4✅ T3❌** ⇒ **阻塞已解除**(2026-11-04「规约载体无转移表真源」对 TileLink-C 是**事实错误**),剩余 = **T3 映射锚点普查**(工程项,非条件闸)⇒ **B3b 维持 1/6**,⛔ 不得改写为「已达成」。
   - 📌 **2026-11-06 推进状态(per 台账 Entry #237)** —— 逐族实测「规约载体是否出现转移表真源」:**TileLink-C** 有 **12/12 Known + 全 `Direct`** 的转移矩阵(自 2026-11-02 起即存在,规范可读·sha256 钉版)⇒ ⚠️ **2026-11-04「规约载体无转移表真源 ⇒ 不补」的理由对 TileLink-C 不成立**;**CXL 2.0** = 68 格中 **42 格 Unknown**(覆盖率 26/68)⇒ 未成立(**该族显式冻结**);**CXL 3.0 / NVLink / UALink** = 载体无矩阵 ⇒ 未成立。⇒ **待 architect 裁决 D-1**(「转移表真源」是否覆盖「按**操作**索引」的矩阵 + TileLink-C 的最终归类);在裁决前 **B3b 维持 1/6**,⛔ 不得宣称已触发
 - B8. **Directory & Ordering Plane 三子平面实施完成**:Address Resolver + Sharer Tracker 5 实现 + Ordering Point 三判据 + **装配期通道依赖图无环检查**(per `ADR-CEP-08` + `ADR-CEP-09 Decision A`)
   - ✅ **达成**(2026-11-05,per 台账 **Entry #231**)—— 四子项逐条实测:
@@ -14836,6 +14838,84 @@ architect(**D-1 / D-2 / D-3 待签**)。
 `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` · `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §0 / §3 ·
 `docs/adr/ADR-CEP-11-protocol-version-locking.md` §3 · `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` SU §③ ·
 `docs/adr/ADR-CEP-07-simulation-and-integration-semantics.md` · `include/tlm/cep/protocol_instances.json` · `§6.2 B3a / B3b`
+
+---
+
+### Entry #238 — 2026-11-06 [scope-change](D-1 / D-2 / D-3 裁决落表 —— 「转移表真源」判定式 + `ualink_4` 取值裁决 + **M1 冻结面授权**)
+
+**主题**:architect 对 Entry #237 提出的三个裁决(D-1 口径 / D-2 取值 / D-3 终态口径)的**落表**,
+并登记 **M1 冻结面重算的授权**(三份冻结产物被追加 SU)。
+**角色**:architect(裁决 + 三份 SU + 审稿报告)· **oracle → critic**(审查对,顺序不可颠倒)· planner(本 entry + 表落)· builder(后续执行)。
+**性质**:架构裁决落表 + 冻结面授权;⛔ **无代码改动**、⛔ **无 invariant 编号变更**、⛔ **无 schema 改动**。
+
+**① 裁决摘要**
+
+| # | 裁决 | 落点 |
+|---|---|---|
+| **D-1** | 「转移表真源」= **T1 存在 / T2 可判定 / T3 可消费 / T4 完备**四要件**全满足**;**TileLink-C = T1✅ T2✅ T4✅ T3❌** ⇒ **阻塞已解除**(2026-11-04 的「规约载体无转移表真源」对 TileLink-C 是**事实错误**),剩余前置 = **T3 映射锚点普查**(工程项,非条件闸)⇒ **B3b 维持 1/6** | `docs/architecture/07-coherence-exploration-platform.md` **Status Update(2026-11-06)** |
+| **D-2** | `perm` = **`["NONE"]`**(basis = `self-derived`;语义 = 「CohIf 腿不承载 cache 权限升级语义」,**信息下限**而非事实断言)· `flow_support.snoop` / `snoop_resp` = `false` / `false`(basis = `public-nonnormative-derived`,**一步推断**已留档)· `sharer_tracker.impl` = `不参与` · `consistency_labels` = `PLO` / `PLO`(假设登记)⇒ **schema 零改动**;**先补两项登记面(O1 / O2),后声明实例** | `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` **SU 2026-11-06** · `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` **SU 2026-11-06** |
+| **D-3**(用户裁决) | B3a 终态口径 = **⏭ 阻塞**;收口形态 = `ualink_4` 声明 ∨ 登记第 8 实例 ⏭ ⇒ **消双记账**(§6.2 原记 ✅ vs 终态表记阻塞) | 本文件 §6.2 B3a + 终态表 + 待办指针 |
+
+**② 审查过程(architect 域)**
+
+- **oracle → critic**,顺序不可颠倒。critic 结论 = **APPROVE_WITH_CONDITIONS** · `mergeable: yes` · `scope_exceeded: false` ·
+  **三档(arch / build / plan)均无 BLOCKER** ⇒ 无需复审。
+- critic 的 **11 条 SHOULD_FIX**(arch 5 + plan 3 + build 1 + 归档重复 1)+ **6 条 NITS** **全部已落进裁决文本**,
+  逐条处置见 **`.rddf/reviews/cep-b3a-b3b-ruling.md` §3**。
+- ⚠️ **本轮登记的流程教训**(承 B2 轮次):审查的价值不在「通过」,而在**抓到具体缺口** ——
+  本轮 critic 抓出「§③残余未显式收口」「R-T4 §③ 缺调和句」「载体 `BasisKind` 只有 2 值 ⇒ 禁发明第三值」
+  「存量计数断言未列入 ⇒ verify 必红」「锚点摘要漏改 ⇒ 制造同款『登记了但没落地』债」**5 类**,
+  全部是**只做裁决不核对载体**就会漏的东西。
+
+**③ 三份载体的落点**
+
+| 文件 | 形态 | 要点 |
+|---|---|---|
+| `docs/architecture/07-coherence-exploration-platform.md` | **末尾追加 SU** + 一处**零行数变化的就地澄清** | 判定式 T1–T4 + 逐族重判(达成度与闸评估**分列**)+ T3 普查三要素(行宇宙 / 锚标准 / 交付物与登记位置)+ 与 `ADR-CEP-12` R-T3 映射表的关系(两轴不同 artifact) |
+| `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` | **末尾追加 SU** | `perm` 的实例级语义 + **最小可锚定子集规则** + **与 R-T4 §③ 的调和句**(新增第三种情形 `["NONE"]`,⛔ 不推翻前两行)+ `["NONE"]` 的语义边界(信息下限,非事实断言) |
+| `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | **末尾追加 SU** | **§③残余的正式收口** + 四项取值裁决 + **O1 / O2 两项登记面义务** + `Uis08`/`Uis09` 翻转的 `BasisKind` 映射(载体只有 2 值 ⇒ 翻转为 `SelfDerived` + 锚点摘要 `C-10`,⛔ 不发明第三值)+ 顺序铁律 |
+
+**④ ⚠️ M1 冻结面授权**(本条即 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #238"` 的授权依据)
+
+| 冻结产物 | 变更性质 | 授权理由 |
+|---|---|---|
+| `docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` | **末尾追加 SU** | 正文 `CEN-Ib11` + SU 2026-11-02 R-T4 **逐字未改**;本轮只**追加**一段解释 ⇒ 既有判据载体不变 |
+| `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | **末尾追加 SU** | §1 ~ §13 正文**逐字未改**;追加的是 §③残余的收口 + 登记面义务 |
+| `docs/architecture/07-coherence-exploration-platform.md` | **末尾追加 SU** + **一处零行数变化的就地澄清** | 触发条件句只加「判定式 = 末尾 SU 的 T1–T4」指针,**行数不变** ⇒ 跨仓对齐锚点的行号不动(机器锚点三元校验不破) |
+
+> **授权范围**:仅上述 **3** 份;⛔ **未新增**冻结成员、⛔ **未删除**成员、⛔ **未改** `protocol_instance.schema.json` / `fabric*.json` / 任何 main spec。
+
+**⑤ B3b 四族的 ⏭ 登记**(字段形态对齐 B2 的 5 授权⏭;**不进** `test/cep_invariant_deferrals.json` —— 那是 invariant 专用集,闸校验 ⏭ id ⊆ 66 集合)
+
+| 协议族 | reason | trigger_condition | ledger_entry |
+|---|---|---|---|
+| **CXL 2.0 非对称** | 规约载体有 68 格矩阵,但 **42 格 `Unknown`**(覆盖率 `kLegalTransitionCoverageNum/Den` = **26/68**)⇒ **T4 不成立** ⇒ 不是转移表真源;补锚需 CXL 规范正文(受 Evaluation Copy 约束) | CXL 规范正文可钉版(获授权)且 42 格**逐格**补锚 ⇒ 覆盖率达标 | **Entry #238** |
+| **CXL 3.0 对称** | 规约载体 `cxl_dcoh_state_spec.hh` **无转移矩阵**(T1 不成立);对称模式的转移语义在公开来源**没有** ⇒ 补矩阵 = 推理填空 | 规约载体出现转移矩阵且逐格有条款级锚(T1+T2+T4 同时成立) | **Entry #238** |
+| **NVLink** | 规约载体 `nvlink_sharp_state_spec.hh` **无转移矩阵**(T1 不成立);`NvlinkAdapter` 契约明写「零自有表副本 · 无转移表」 | 同上 | **Entry #238** |
+| **UALink** | 规约载体 `ualink_inc_state_spec.hh` **无转移矩阵**(T1 不成立);INC 四原语的规范定义仍 `pending`(per 锚点摘要 `N-1`) | 同上 **+** INC 四原语规范定义落定(`N-1` 转正) | **Entry #238** |
+
+> ⚠️ **TileLink-C 不在此表内** —— 它的阻塞**已解除**,剩余是 **T3 普查**(工程项,不是 ⏭)。
+> ⚠️ 本表**不解除**这四族的 B3b 义务,只是把「为什么现在不做」写成**可审计**的登记(⛔ `⏭-pending` 计数不受本表影响 —— 那是 B2 的 invariant 专用口径)。
+
+**⑥ 后续执行序列**
+
+| 序 | 角色 | 动作 | 前置 |
+|---:|---|---|---|
+| 1 | **builder** | 落地 **O1**(`protocol_instances.json` 顶层 `sharer_tracker_rationales{}` = 7 条存量 + `ualink_4`)+ 理由存在性元测试 · **O2**(`caps ↔ kTrackerTraits` 逐字段一致性元测试) | 本条 + 两份 SU 已签 |
+| 2 | **builder** | 锚点摘要 `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` 新增 **`C-10`** + `N-8` 状态变更 + **「9 项 pending」计数同步**;载体 `ualink_inc_state_spec.hh` 的 `Uis08` / `Uis09` 翻转为 `SelfDerived` + `C-10` 锚 + `:650` 消息文本同步 | 1 |
+| 3 | **builder** | 声明 `ualink_4` 实例(13 键)+ `repo_owned_instance_ids` 更新 | 2 |
+| 4 | **builder** | 计数链同步(实例 **7→8** · `implemented` **7→8** · `no_upgrade_instances` **3→4** · `07 号` 三处)+ **三处存量计数断言**翻转(`test_cep_instance_declaration_contract.cc:108` · `test_cep_tilelink_instance_decl.cc:209` · `test_cep_ualink_inc.cc:398`)+ 「声明 ≠ 装配」措辞**保留** | 3 |
+| 5 | **builder** | 改写 `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` §3 B 类(TileLink-C 归类)+ **逐族单列**(⚠️ 该文件属 `docs/validation/` = 附属 2 类,**不在 architect 的 `arch_paths` 内** ⇒ 归 builder) | 1 |
+| 6 | **builder** | T3 普查 change 立项(**行宇宙完整** + 逐行 `basis`/`ref` + **决定性变异**)⇒ 产出若全行有锚 ⇒ 转引擎 change;若存在无锚行 ⇒ 该行 `pending` + TileLink-C 登记 ⏭(实证结论) | 1 |
+| 7 | **planner** | 立项 `cpptlm-cep-b3a-b3b-advancement` improvement ⇒ 回填三份 SU 的 `backlog:` 占位指针 | 4 |
+
+**⑦ 关联**:**#237**(事实底稿 + 裁决请求)· **#236**(B2 达成 · 61/66)· **#235**(分批策略 · ⏭ 机制先例)· **#233**(⏭ 登记形态)· **#231**(B3b 触发条件口径)· **#214** ·
+`.rddf/reviews/cep-b3a-b3b-ruling.md`(审稿报告 · oracle/critic 结论 + 11 条 SHOULD_FIX 逐条处置)·
+`docs/architecture/07-coherence-exploration-platform.md` **SU 2026-11-06** ·
+`docs/adr/ADR-CEP-02-coherence-barrier-semantics-clarification.md` **SU 2026-11-06** · `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` **SU 2026-11-06** ·
+`docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §0 / §2bis / §3 ·
+`docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` · `§6.2 B3a / B3b` · `§4.7`
+
 
 ---
 ---

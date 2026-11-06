@@ -1,22 +1,10 @@
 {
   "schema_version": "role-v1",
   "current_role": "planner",
-  "updated_at": "2026-11-05T17:29:57Z",
+  "updated_at": "2026-11-06T01:36:47Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-05T10:40:07Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 提交这批改动,并继续推进下一步任务」⇒ ① commit B 批(B5/B6/B8 verdict + 3 条订正 + Entry #231) ② 继续推进:B2 判定级盘点(纯只读统计,产出 C1 裁决所需的量化材料)"
-    },
-    {
-      "role": "architect",
-      "at": "2026-11-05T10:49:09Z",
-      "by": "user",
-      "reason": "用户口令「切 architect 做 C1」⇒ 裁 §6.2 B2「66 条 invariant 机器检查 100% 覆盖」的口径(编号级/组级/判定级),并判定 §0 DoD 7「逐条断言统一落 canonical_invariants.cc」与实测(编号体系完备性检查)不符该如何处置;输入 = .rddf/reviews/cep-b2-invariant-coverage-inventory.md"
-    },
     {
       "role": "planner",
       "at": "2026-11-05T11:22:51Z",
@@ -124,6 +112,18 @@
       "at": "2026-11-05T17:29:57Z",
       "by": "user",
       "reason": "用户口令「切 planner 落登记」⇒ 把 §6.2 B2 登记为 ✅(66/66 = 61 载体 + 5 授权⏭) + 追加台账 Entry #236(依据 .rddf/reviews/cep-b2-acceptance-verdict.md §11 终审结论)"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-06T00:58:34Z",
+      "by": "user",
+      "reason": "用户裁决:D-1 / D-2 由 oracle + critic 给方案/建议(D-3 已定: ① 记为 ⏭ 阻塞)⇒ 走 architect 的固定审查对(oracle 先、critic 后,顺序不可颠倒)"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-06T01:36:47Z",
+      "by": "user",
+      "reason": "裁决已定(architect: oracle→critic,无 BLOCKER)⇒ 落台账 Entry #238(兼作 M1 冻结面授权记录)+ §6.2 B3a/B3b 口径同步(D-3 记 ⏭ 阻塞,消双记账)"
     }
   ],
   "auto_switch_window": null

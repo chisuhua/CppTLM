@@ -859,3 +859,91 @@ R11 是「**声明超前于实现**」(声明了 `SparseSnoopFilter` 却无行�
 **关联**: 台账 **Entry #214**(代码域注释订正)· **#170** ⑤ X3(本项原始登记)·
 `docs/architecture/07-coherence-exploration-platform.md` §5.4(Verification 已勾选项)·
 `include/tlm/cep/cxl_dcoh_state_spec.hh`(`CDS-03`)· `ADR-CEP-12` 决策 2(协议族能力映射口径)
+
+
+---
+
+## Status Update(2026-11-06,per 台账 Entry #238)—— `ualink_4` 实例取值**正式裁决**(§③残余收口)+ 两项**登记面**的落地义务
+
+> **性质**:追加式(正文 §1 ~ §13 **逐字不改**)—— 本段是 **§③残余**「`ualink_4` 的实际取值**尚未裁决**」的**正式收口**。
+> **前置已满足**:§③残余所依赖的「Task 0 普查」**已完成**(per 台账 **Entry #237** §1.4 +
+> `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §3)⇒
+> 本段**不是**「预先钉死」,而是该残余所预留的**裁决位**。
+> **审查**:`.rddf/reviews/cep-b3a-b3b-ruling.md`(**oracle → critic**;**APPROVE_WITH_CONDITIONS**,三档均无 BLOCKER)。
+> **关联 change**:`backlog: cpptlm-cep-b3a-b3b-advancement`(占位,立项后回填)。
+> ⚠️ **本段不改本 ADR 的整体 Status**(仍为「起草中 v0.6」)—— 本段只裁 `ualink_4` 的取值。
+
+### ① 四项取值裁决
+
+| 键 | 取值 | basis | 依据 |
+|---|---|---|---|
+| `flow_support.snoop` / `snoop_resp` | `false` / `false` | **`public-nonnormative-derived`** | **4 个互相独立的公开非规范来源**一致:① Linux 内核 `docs.kernel.org/gpu/amdgpu/ualink.html`(7.4-rc1)——「direct loads/stores over the fabric」,**无 snoop 事务类型**(其 remote TLB shootdown 是 **TLB 失效**非 cache snoop)② AMD amd-gfx **95 个补丁**系列(2026-08-31)——「no copy involved; direct loads/stores over the fabric」,无 coherence 引擎 ③ UALink Consortium 官方博客(2025-05-15)——「**Coherency is maintained through software**」④ UnifabriX webinar(联盟官网托管,2025-12-10)——「software coherency」,并把 `Coherent (via CXL.mem/CXL.cache/CHI C2C)` 明确归给 **host 侧** |
+| `perm` | `["NONE"]` | **`self-derived`** | N-9 实测:公开材料**零** permission / cache-state 词汇,且 UALink 被公开定义为 memory-semantic + software coherency ⇒ 该问法在 UALink 侧**无对应物** ⇒ 该值是**CEP 建模声明**;选取规则 per `ADR-CEP-02` **SU 2026-11-06**(最小可锚定子集规则 + `["NONE"]` 的语义边界) |
+| `sharer_tracker.impl` | `不参与` | `self-derived` + 语义层判别依据 | §① 的判别依据 = 「协议**不需要 sharer-set 知识**」;`BroadcastNull` 的判别依据(「**有** snoop 类流量但无集中目录」)因 N-8 落地而**事实不适用** ⇒ `不参与` 是唯一判别依据成立的候选。caps 取**退化集** `NONE`/`EXACT`/`NONE`/`NONE`(per `chi_rnf` / `cxl_2_0` 两实例) |
+| `consistency_labels.read` / `.write` | `PLO` / `PLO` | **假设登记** | 现有 5 值枚举**无** `software-coherence`;加值 = 契约扩张 + **零消费者** ⇒ 不做。`PLO` 是 5 值中**最弱**且唯一可由「memory-semantic」公开定义支撑的标签 ⇒ 以**假设**登记进既有证伪通道(per H 系列 litmus 可标 `violated`);登记载体 = 台账 Entry + 本段 |
+
+> ⚠️ **N-8 的推断边界**(必须随声明一起留档):公开可钉版文本中**没有字面 "no snoop"**
+> (该字面句只在**禁读**的规范正文与**不可钉版**的 YouTube 转录里)⇒
+> 「software coherency ⇒ `snoop=false`」是**一步推断**,⛔ 不得标 `spec-pinned`;⛔ 本轮**未**读取任何规范 PDF 技术正文(ECA 同型约束照旧)。
+
+### ② `perm` 与 `impl` 的**两个不可混淆点**
+
+- `perm = ["NONE"]` 是**信息下限**(零可锚定值的唯一合法表达),⛔ **不是**「UALink 无缓存」的事实断言 —— per `ADR-CEP-02` **SU 2026-11-06** §④。
+- `impl = 不参与` 与 `impl = BroadcastNull` 的 caps **逐字段相同**(§② 已登记的 caps 词表退化集局限)⇒
+  **二者语义等价**(per `INV-CEP-04-IC7`)⇒ 该判据**不**区分二者 ⇒ **区分职责由理由登记承担**
+  ⇒ ⛔ 理由登记**不得**写成「因为 caps 不同」。
+
+### ③ 两项**登记面**的落地义务(**先补,后声明**)
+
+| # | 义务 | 现状(实测) | 判据 |
+|---|---|---|---|
+| **O1** | `protocol_instances.json` **顶层** `sharer_tracker_rationales{}` 块(**7 条存量 + `ualink_4`**)+ 理由**存在性**元测试 | ⛔ **从未落地**(JSON 顶层**无**该键;全仓 `test/` **零命中**;git 历史**从未**添加)⇒ 本 ADR §④ 的「理由登记存在性」Verification 条目**至今未勾选** | 删任一条理由 ⇒ 元测试**按正确原因红** |
+| **O2** | `caps ↔ kTrackerTraits` **逐字段**一致性元测试(`不参与` 参照**退化集**) | ⛔ **未落地**(`kTrackerTraits` 只在实现类头文件里被自引用,**无测试**比对实例声明 vs traits 行) | 改实例 caps 任一格 ⇒ 元测试**按正确原因红** |
+
+### ④ `ualink_inc_state_spec.hh` 的 `Uis08` / `Uis09` 翻转(**载体侧**)
+
+| 项 | 内容 |
+|---|---|
+| **翻转依据** | `Uis08`(`flow_support`)—— N-8 已由 4 个独立公开来源闭合;`Uis09`(`perm` 子集)—— **仍不可由公开来源闭合**,只能作为**建模声明** |
+| **载体 `BasisKind` 的诚实映射** | 该载体的 `BasisKind` 只有 **`SelfDerived` / `Pending`** 两值 ⇒ ⛔ **不发明第三值** ⇒ `Uis08` / `Uis09` 翻转后 basis = **`SelfDerived`** + **锚点摘要新增 `C-10`** 条目(承载 4 来源 + 「一步推断」的裁决本体)⇒ 「非规范来源支撑的建模声明」在载体上的诚实表达 = **锚到仓内已签锚点**,⛔ 不是「宣称有规范依据」 |
+| **同步范围** | 载体 `BasisCell` / `static_assert` / `:650` 的消息文本(`SHALL 保持 pending`)**同步改写**;锚点摘要新增 `C-10` + `N-8` 状态变更 + **「9 项 pending」计数同步** |
+| **归属** | ⛔ **不由 builder 顺手改** —— 属 architect 在本 SU 的登记项,由 builder 在**声明实例之前**落地(顺序铁律) |
+
+### ⑤ 顺序铁律(⛔ 倒序即拒收)
+
+> ① architect 签本 SU ⇒ ② builder 落地 O1 / O2 + 锚点摘要 `C-10` + 载体翻转 ⇒ ③ builder 声明 `ualink_4` 实例 ⇒ ④ 计数链同步
+
+| 步骤 | 内容 | 载体 |
+|---|---|---|
+| ④ 计数链 | `protocol_instances.json` 实例 **7 → 8** · `implemented` **7 → 8** · `no_upgrade_instances` **3 → 4** · `07 号` **三处**(§5.1.1 UALink 行 / §11 计数 / §6.2 SU 注记)· `ADR-CEP-11 §3` 锁表 8 行 vs 实例数的 **drift 自然消除** | builder 域 |
+
+> ⚠️ **声明 ≠ 装配**:实例声明落地后,`07 号` §5.1.1 UALink 行**仍须保留**「实例级装配待 backlog」的措辞
+> (声明的是**取值**,不是**装配闭环**)⇒ ⛔ 不得被读成「已闭环」。
+
+### ⑥ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **§1 ~ §13 正文** | **零改动**(逐字未改) |
+| **§③残余** | **正式收口** —— 「`ualink_4` 取值尚未裁决」**不再成立**;⛔ 若未来 UALink 规范公开且 INC 含 coherence 模式 ⇒ 本裁决**须重判**(trigger 已登记 ⇒ 成本可控) |
+| **schema** | **零改动**(`perm` 保持 `minItems: 1`;`impl` 保持 7 值;`consistency_labels` 保持 5 值)⇒ **不触发**冻结面 `--update --authorized-by` |
+| **新增声明面** | `protocol_instances.json` 顶层 `sharer_tracker_rationales{}`(**O1**)—— 顶层不受实例 schema 约束;镜像闸只逐实例比键 ⇒ **不触发**跨仓闸 |
+| **代价** | ① `perm` / `consistency_labels` 两项是**建模声明 / 假设**,⛔ 不是 UALink 事实 ⇒ 该实例的**证据强度低于**其他 7 个;② N-8 的 basis 是**一步推断**;③ O1 / O2 两面**此前**未落地 ⇒ 本轮**先欠账再声明**;④ `no_upgrade_instances` 3→4 须回查与 `ADR-CEP-09` VC 依赖集的**隐性冲突**(排除理由必须可审计) |
+
+### ⑦ Verification(前瞻判据 · 可勾选)
+
+- [ ] O1:`protocol_instances.json` 顶层 `sharer_tracker_rationales{}` 已落地(7 条存量 + `ualink_4`)+ 理由存在性元测试
+- [ ] O2:`caps ↔ kTrackerTraits` 逐字段一致性元测试(`不参与` 参照退化集)
+- [ ] 锚点摘要已新增 `C-10`(4 来源 + 「一步推断」裁决本体)+ `N-8` 状态变更 + **「9 项 pending」计数同步**
+- [ ] `ualink_inc_state_spec.hh` 的 `Uis08` / `Uis09` 已翻转为 `SelfDerived` + `C-10` 锚 + `:650` 消息文本同步改写
+- [ ] `ualink_4` 实例已声明(13 键)+ `repo_owned_instance_ids` 已更新
+- [ ] **决定性变异**:删理由登记任一条 ⇒ 元测试必红;改 `ualink_4` 的 caps 任一格 ⇒ 一致性元测试必红
+- [ ] **存量计数断言已同步**:`test_cep_instance_declaration_contract.cc:108` · `test_cep_tilelink_instance_decl.cc:209` · `test_cep_ualink_inc.cc:398`(**7 → 8**)
+- [ ] `07 号` §5.1.1 UALink 行 / §11 计数 / §6.2 SU 注记已同步,且**保留**「实例级装配待 backlog」措辞
+- [ ] `cep_decl_alignment_check.sh --strict` 绿 · `cep_freeze_check.sh --strict` 绿 · `cep_prereg_drift_check.sh --strict` 绿 · `[cep]` 全绿
+
+**关联**:台账 **Entry #237** · **#238** · **#193**(SU 2026-11-03 的授权)· **#170**(归因 id 纪律)·
+`ADR-CEP-02` **SU 2026-11-02 R-T4** + **SU 2026-11-06**(`perm` 实例级语义)· `ADR-CEP-11 §3` · `ADR-CEP-12` ·
+`ADR-CEP-09`(VC 依赖集)· `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §0 / §2bis / §3 ·
+`include/tlm/cep/ualink_inc_state_spec.hh` · `include/tlm/cep/sharer_tracker.hh` ·
+`.rddf/reviews/cep-b3a-b3b-ruling.md`(审稿报告)
