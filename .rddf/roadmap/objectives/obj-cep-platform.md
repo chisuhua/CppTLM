@@ -15079,6 +15079,45 @@ architect(**D-1 / D-2 / D-3 待签**)。
 `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md`(`C-10`)· `§6.2 B3a / B3b` · `§4.5` · `§4.7` ·
 `.rddf/reviews/cep-b3a-b3b-ruling.md`(审稿报告体系)
 
+### Entry #241 — 2026-11-06 [plan](T3 映射锚点普查 **change 立项** —— B3b 的最后一个前置已开工)
+
+**主题**:B3b 的剩余前置(**T3 映射锚点普查**)立项。`ualink_4` 路径 A 收口后,B3b 的 ⏭ 阻塞**已解除**,
+剩余的唯一前置 = 「CohIf 消息/意图面 → TileLink-C 载体事件轴」的**逐行锚点普查**。
+**角色**:planner(立项 + 本 entry)· builder(待实施)· architect(判据已裁,per `07 号` SU 2026-11-06 §⑤)。
+**性质**:立项登记;⛔ **无代码改动**、⛔ **无 spec delta**、⛔ **无冻结面改动**。
+
+**① 立项物**
+
+| 项 | 值 |
+|---|---|
+| **change** | `cpptlm-cep-tilelink-t3-mapping-survey`(`openspec/changes/`;`openspec validate --strict` **valid**) |
+| **形态** | **规约层普查** ⇒ 产出 = 锚点摘要(`docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md`)+ 规约载体 `include/tlm/cep/tilelink_state_spec.hh` 的**映射表**扩展 |
+| **`skip_specs`** | `true` ⇒ **无 capability 语义变更** ⇒ 无 delta;⛔ 语义 delta 归**后续**的引擎 change(落 `cep-tilelink-tree-manager` = M1 冻结件 ⇒ 合并须走冻结面授权) |
+| **KPI** | Proposed 并发 **0/3 → 1/3** |
+| **冻结面** | **零改动** ⇒ **不触发** `--update --authorized-by` |
+
+**② 为什么是「普查」而不是「引擎」**
+
+`07 号` **SU 2026-11-06** 的 **T1–T4** 判定式下,TileLink-C = **T1✅ T2✅ T4✅ T3❌**
+⇒ 触发事件**已客观发生**,但**「消息→操作」映射未锚定** ⇒ 先造引擎 = 换一种推理填空
+(2026-11-04 裁决禁止的正是这个)⇒ 先普查。
+⚠️ ⛔ **不得**把 `ADR-CEP-12` 的「10 行逐消息表」(`tilelink_c_adapter.hh`)当 T3 已满足 ——
+它的目标轴是 **6 类消息类**,与本普查的 **Event 轴**是**不同 artifact**。
+
+**③ 二分支验收(产出即结论,两分支都已预登记)**
+
+| 普查产出 | 后续 |
+|---|---|
+| **全行有条款级锚** | 另起**引擎 change**(新头 + 装配 + 1 条 L4 事务级 E2E + `Cap`「源不定」语义的显式测试 + 决定性变异)⇒ B3b 2/6 |
+| **存在无锚行** | 该行标 `Pending` + **TileLink-C 登记 ⏭**(reason / trigger_condition / ledger_entry)⇒ **B3b 维持 1/6** —— 这是**实证结论**,⛔ 不是口径逃避 |
+
+**④ 判定口径的三要素(per `07 号` SU 2026-11-06 §⑤,缺一即为「下一个未定义术语」)**:行宇宙(**逐行列出,非抽样**)· 锚标准(规范条款级;仓内构造须标 `self-derived` 并显式登记)· 交付物与登记位置(进规约载体 + 逐行 `basis`/`ref`;⛔ 悬空判据禁令)。
+
+**⑤ 关联**:**#240**(路径 A 落地 + B3a 收口 + 订正 #1)· **#239**(9 键补裁 + 路径 A 裁决)· **#238**(D-1「转移表真源」T1–T4)· **#237**(事实底稿)· **#231**(B3b 触发条件口径) ·
+`docs/architecture/07-coherence-exploration-platform.md` **SU 2026-11-06** §⑤ · `ADR-CEP-12` **SU 2026-11-01**(Entry #138 的 10 行逐消息表 —— ⚠️ **不同 artifact**) ·
+`ADR-CEP-07` Status Update 2026-11-04 ① · `include/tlm/cep/tilelink_state_spec.hh` · `include/tlm/cep/protocol_engine_base.hh` ·
+`§6.2 B3b` · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/`
+
 ---
 ---
 

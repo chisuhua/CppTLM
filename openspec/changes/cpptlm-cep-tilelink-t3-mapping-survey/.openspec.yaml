@@ -1,0 +1,16 @@
+schema: spec-driven
+created: 2026-11-06
+goal: TileLink-C 的「CohIf 消息/意图面 → 载体事件轴」映射锚点普查(T3)—— 闭合 B3b 的最后一个前置
+affected_areas:
+  - include/tlm/cep/tilelink_state_spec.hh
+  - docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md
+  - test/test_cep_tilelink_state_spec.cc
+# ⚠️ 本 change 是**规约层普查**:产出 = 锚点摘要 + 规约载体的映射表扩展
+#    ⇒ **无 capability 语义变更** ⇒ 无 delta 可写。
+#    ⛔ 语义 delta 归**后续**的引擎 change(普查全行有锚时)——
+#       该 delta 会落 `cep-tilelink-tree-manager`(M1 冻结件)⇒ 合并时须走冻结面授权。
+skip_specs: true
+x-phase: P0
+x-priority: P1
+x-status: proposed
+x-ledger: obj-cep-platform Entry #239 §⑥ 步骤 1
