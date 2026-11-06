@@ -1691,3 +1691,105 @@ oracle 复核通过 —— 含 3 处事实修正)后落地。本则是**真源 1
 - [ ] D-4 的 4 条升级路径已落台账(可审计:reason / trigger_condition / ledger_entry)
 - [ ] §④ 五选项交用户裁决;⛔ 用户裁决前不得宣告终态 DoD Go、不得单方修改 DoD 文本
 - [ ] 冻结面授权:`07 号` 追加 SU 走两步授权(`cep_freeze_check.sh --update --authorized-by "Entry #249"` → 清单单独 commit)
+
+---
+
+## Status Update(2026-11-06 · 五,per 台账 Entry #257)—— D-1「来源效力」的**机器可判落地回填**(命题范围收窄 + 载体覆盖账 + D-4 ③/④ 回填)
+
+> **性质**:末尾追加 SU(append-only)。⛔ 不改 §5.1.1 行数;⛔ 不新增 invariant 编号;⛔ 不改 schema / ABI;⛔ **不改** SU · 四 D-1 的核心裁定。
+> **触发**:台账 **Entry #252**(P1 实施)/ **#253**(P1 验收 PASS)/ **#255**~**#256**(契约对齐 + 归档)+ 用户裁决「按建议顺序实施」。
+> **审查**:`.rddf/reviews/cep-su5-d1-machine-checkable.md`(**oracle 1 轮**(18 条建议全吸收)+ **critic 1 轮**(**APPROVE_WITH_CONDITIONS · mergeable: yes**;2 SHOULD_FIX + 3 NIT 全吸收))。
+> **关联 change**:`openspec/changes/archive/2026-11-06-cpptlm-cep-basis-source-kind-and-cell-free/`(✅ 已完成归档 · delta 已合并进 `openspec/specs/cep-basis-source-kind/spec.md`)· `openspec/changes/archive/2026-11-06-cpptlm-cep-source-kind-contract-alignment/`(✅ 已完成归档 · delta 已合并进 `openspec/specs/cep-ualink-inc-state-spec/spec.md`)。
+> **冻结面**:本段追加 ⇒ 两步授权(`cep_freeze_check.sh --update --authorized-by "Entry #257"` → 清单**单独** commit)。
+
+### ⓿ 范围(⛔ 本条**不**做什么)
+
+| 做 | ⛔ 不做 |
+|---|---|
+| 回填 SU · 四 D-1 的「诚实声明」(收窄到**可机器判的那部分**) | ⛔ **不**改 D-1 的**核心裁定**(公开非规范来源仍**不构成** `Direct`、仍**不计入** B3b) |
+| 登记「载体**来源类型**的落地映射」+ 其**例外与缺口** | ⛔ **不**改 §5.1.1 行数;⛔ 不新增 invariant 编号;⛔ 不改 schema / ABI |
+| 回填 D-4 ③/④ 与 B3b 两域记账 | ⛔ **不**宣称「条款级来源的**充分性**已被机器证明」;⛔ 不顺手修 §11 的既存 `7` vs `8` 漂移 |
+
+---
+
+### ① D-1 诚实声明的**收窄**(判定结论不变,命题范围换)
+
+SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本条的『效力』判定**不可机器自动判**,只能由**人工抽样审计** + 来源注册表(backlog ①)承担;⛔ **不得**宣称本条有 grep 级自动闸。」
+
+**落地后的命题切分(2026-11-06)—— 2 条可机器判 + 4 条人工(⛔ 不是「四命题」)**:
+
+| # | 命题 | 可否机器判 | 载体 |
+|---|---|---|---|
+| ① | `ref` → **已登记来源 id** 的**路由** | ✅ **可** | `source_registry.hh::resolve` + 4 载体 `resolve_ref()` |
+| ② | `basis` ↔ 注册表**所声明** `kind` 的**一致性** | ✅ **可** | 4 载体 `basis_ref_kind_consistent()` + 闸 4 态决定性变异 |
+| ③ | 注册表对来源 `kind` 的判定**本身** | ❌ **人工签署**常量 | `kSources[]` 是人工签署的常量 |
+| ④ | `ref` **是否确实指向**该条款(指向性) | ❌ **人工/抽样** | — |
+| ⑤ | 该条款**是否足以**支撑该格语义(充分性) | ❌ **人工/抽样** | — |
+| ⑥ | `CellKind::Free` 的「规范明确」判定 | ❌ **人工/抽样** | — |
+
+⇒ **机器保证「不自相矛盾」,不保证「为真」**;D-1 的**效力裁定仍不可全自动**。
+
+⚠️ **与既有纪律的切分**:`07 号` SU · 四 §① 的「⛔ 不得宣称本条有 grep 级自动闸」**约束对象 = ③④⑤⑥**;本闸只覆盖 ①② ⇒ **两条不矛盾**(不是对旧纪律的反转)。
+
+⚠️ **术语切分**:`ADR-CEP-12` 的「认识论三档」(规则执行 / 来源锚定 / 锚定建模声明)与本条的 `RefKind` 三档(`spec_clause` / `public_nonnormative` / `repo_derived`)是**两套正交分级**,⛔ 不得互换引用。
+
+⚠️ **可审计性边界**:8 条来源中**仅 1 条**有截断 sha256、其余为 `n/a` ⇒ ⛔ 不得据此宣称「来源字节可复现」。
+
+**工件归属**(避免双记账式误指):① 与 ② 的**路由/一致性**由闸与载体函数承担;**注册表双载体逐条一致**(`id`/`kind`/`title`)由**单测** `test/test_cep_source_registry.cc` SRK-03 承担,闸只比对 **id 集合 + 顺序**。
+
+### ② 载体**来源类型**的落地映射(⛔ 按**载体**,不按 token 名)
+
+> ⚠️ **术语**:SU · 四 D-2 的「载体形态」= 状态矩阵型 / opcode 表型;本节**不**复用该词。
+
+| 载体 | 格数 | `basis` 档 | ⇒ `ref_kind` | 备注 |
+|---|---|---|---|---|
+| tilelink 主矩阵 | 12 | `BasisKind::Direct` | `spec_clause` | TileLink = free & open standard,规范正文可读 |
+| tilelink T3 映射 | 11 | `T3BasisKind::Direct` | `spec_clause` | ⚠️ 其中 **5 行**(`TLC-M-06~10`)的 `ref` 指向**仓内锚点摘要** ⇒ 见下方**例外** |
+| cxl | 68 | `BasisKind::PublicDirect` | `public_nonnormative` | **24 格** |
+| cxl | 68 | `BasisKind::SelfDerived` | `repo_derived`(规则实为「≠ `spec_clause`」) | **44 格**;其中 **42 格** `Unknown` 且 `ref` 为空 ⇒ **无外部来源**,非「已锚定」 |
+| mesif | 35 + 5 | **全 4 档** | `repo_derived` | `Primary` 额外要求 `ref` **非空** |
+| ualink | 11 + 4 | `SelfDerived` / `Pending` | `repo_derived` / `public_nonnormative` | 经 **token 文法**(`C-` / `N-`)判定,⛔ 非直接比较 `RefKind`;⚠️ `ualink-c10` 条目标题已披露「**非规范公开来源**支撑的建模声明」⇒ `SelfDerived ⇒ repo_derived` 掩盖了「仓内锚点 → 公开非规范来源」这一跳 |
+
+**例外登记(⛔ 人工签署,不得静默改判)**:注册表把 `tilelink-t3-anchor`(仓内锚点摘要)登记为 `spec_clause` —— 这是 **D-4 ②「人类条款摘要」形态的首次实例**;若改判 `repo_derived`,该 5 行的 `Direct` 将不一致并牵动 T3 / B3b ⇒ **只能按例外登记**。
+> **签署授权出处(可审计)**:注册表条目的落地授权 = 台账 **Entry #252**(P1 实施回执)/ **#256**(契约对齐归档);该 5 行 `Direct` 的原始依据 = 台账 **Entry #241**(T3 映射锚点普查,11 行全 `Direct`)。
+> ⚠️ **该例外是**两级转述链**(T3 摘要 → 上游锚点摘要 §4),**行内无 `D1 §x.x` 级定位** ⇒ 它**不是** D-4 ② 的合规实例(后者要求「摘录含条款定位 + 人类成员签署」),而是**已披露的例外**;⛔ 不得据此宣称 D-4 ② 已落地。
+
+**⛔ carve-out 保护(不构成追溯降级)**:CXL 22 格 `PublicDirect` + `pending=false` 的 `basis` / `pending` / 计数**三轴均不变**;`public_nonnormative` 是**新增的跨载体维度**,不是对原枚举的降级。SU · 四 D-1 的 carve-out 原文不变。
+
+**载体覆盖账与后果**:
+- ✅ **已接入(4)**:`tilelink` · `cxl` · `mesif` · `ualink_inc`;
+- ⛔ **N/A(1)**:`CHI RN-F`(opcode 表型,无逐格 `basis` ⇒ 无 `ref` 可判);
+- ⚠️ **未接入(2)**:`cxl_dcoh`(`EvidenceKind` 第三套 token)· `nvlink_sharp`(同)⇒ 二者恰为 **B3b-2 的 CXL 3.0 / NVLink** ⇒ **本闸不保护这两族的升级路径**;二者升格前**须先迁移**到 `RefKind`(登记为**升级前置**,⛔ 不是「已覆盖」)。
+
+**⚠️ 已登记的实现漂移**:归档件 `design.md` D-2 表与代码存在差异(cxl 弱档 / ualink `Pending` 写成「⇒ `repo_derived`」,代码实为「≠ `spec_clause`」)⇒ **代码为准**;归档件不可改,在此登记。
+
+### ③ `CellKind::Free` 的落地与边界
+
+- 语义 = 规范**明确**「实现定义 / 自由选择」,与 `Known` / `Unknown` / `Illegal` 互斥;**仅存在于 2 个有 `CellKind` 的载体**(tilelink **三态** · cxl **四态**);
+- 消费端显式分支 `transition_is_free()`(⛔ 不得归入 `Known`/`Unknown`);
+- **校验器已同步接入**(2026-11-06 补齐):tilelink / cxl 的 `transitions_are_valid_for` 均计入 `Free`,并校验「目标掩码/目标态无意义 ⇒ MUST 为 0 · `ref` 非空 · `note` 非空 · basis 必须是**规范明确**档」⇒ 首个真实 Free 格落下**不会**编译红;
+- **覆盖率口径统一**:cxl 的 `kLegalTransitionCoverageNum` 与 `coverage_is_not_regressed()` **同口径**(含 `Free`)⇒ ⛔ 不得以 `Free` 填充抬高 AC-9 覆盖率;
+- ⚠️ **真实 `Free` 格 = 0**(规范可读化后填充)⇒ 本条只登记**机制**,⛔ 不宣称已有 Free 语义数据。
+
+### ④ 契约面登记
+
+`openspec/specs/cep-ualink-inc-state-spec/spec.md` 已含 requirement `cep-ualink-inc-state-spec-self-containment`(**载体自足 + 唯一白名单 `"tlm/cep/source_registry.hh"` + 扫描器鉴别力 + 反向 fixture**)—— **登记既有 requirement**(Entry #256 归档时合并),非本条新增。
+
+### ⑤ D-4 回填与 B3b 两域记账
+
+**D-4 ③(来源类型机制)**:✅ **已落地**(`source_registry.hh` + `sources.json` + 4 载体 + 闸 4 态变异;Entry #252/#256)—— ⚠️ 可机器判范围**收窄**为「类型路由 + 一致性」(①②),充分性仍人工(④⑤⑥);⛔ backlog ① 中的「**basis 枚举统一**」维度**仍未做**(4 套枚举并存,靠**按载体映射**绕开)。
+
+**D-4 ④(`CellKind::Free`)**:枚举 / 计数 / 消费分支 / 校验器 / 覆盖率口径**已落地**;**`Free` 类语义无真实格**(= 0)⇒ T4 的「空集语义被规范明确」对 **`Free` 这一类**仍**无真实载体**(⚠️ 与 tilelink 既有的 2 个「规范明确**空集**」格(`Known ∧ mask = 0`,TLC-06/07)**不是**同一件事,勿混读)。
+
+**B3b 两域记账**(SU · 四 §④ 的**选项戊**已经用户裁决,Entry #251,并落 `obj §6.2`:`B3b-1 = 2/2 ✅` + `B3b-2 = 0/4 ⏭`):本文件为 append-only ⇒ **不回写** SU · 四 §④ 表格;后续**DoD 语境**用 `B3b-1` / `B3b-2`,**族级审计语境**用 SU · 四 D-3 三元组(`2 达成 / 分母 6 / {1 冻结, 3 受限}`);两套记账**不得互相覆盖**;⛔ 不得把 `B3b-1` 的 ✅ 扩写为「B3b 整体达成」。
+
+⇒ **对 B3b 计数零影响**:仍 = **2 达成 / 分母 6 / {1 显式冻结, 3 受限-⏭}**。
+
+### ⑥ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] `07 号` 已追加本 SU,且 D-1 的**核心裁定**(公开非规范来源不构成 `Direct`、不计入 B3b)字面未变
+- [ ] 载体覆盖账(4 已接入 / 1 N/A / 2 未接入)与代码**逐条一致**;未接入的 2 族已登记为**升级前置**
+- [ ] `CellKind::Free` 的校验器接入 + 覆盖率口径统一,**有测试载体**(SRK-05 合成矩阵:合法通过 / 违规必红)
+- [ ] 判据的「可机器判 / 不可机器判」四命题切分已写入,且与 SU · 四 的「不得宣称 grep 级自动闸」**不矛盾**
+- [ ] D-4 ③/④ 与 B3b 两域记账已回填;`obj §6.2` 的 `B3b-1` / `B3b-2` 未被本 SU 重复记账
+- [ ] 冻结面两步授权已执行:台账 **Entry #257** 授权 → **commit 本 SU** → `cep_freeze_check.sh --update --authorized-by "Entry #257"` → **清单单独 commit** → 无参复验 provenance 通过

@@ -15466,6 +15466,33 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **④ KPI**:**1/3 → 0/3**(5 处活文档已同步;实测 `openspec list --json` = **0 active**)。
 
 **⑤ 关联**:**#255**(实施回执)· **#254**(P1 归档)· **#253**(P1 验收)· `.rddf/reviews/cep-source-contract-alignment-verify.md` · `openspec/specs/cep-ualink-inc-state-spec/spec.md`
+
+### Entry #257 — 2026-11-06 [go-decision](**`07 号` SU · 五 签发** —— D-1「来源效力」的机器可判落地回填 + 冻结面授权)
+
+**主题**:architect 签发 `07 号` **SU 2026-11-06 · 五**,把 D-1 的「效力不可机器判」**收窄**为「**类型路由 + basis↔kind 一致性**可机器判」,并登记载体覆盖缺口 / 例外 / D-4 ③/④ 回填 / B3b 两域记账。
+**角色**:architect(SU + 双审 + 冻结面授权)· builder(实现缺口补齐 + 判据)。
+
+**① 授权范围(本 Entry 的冻结面授权)**:**仅**「`07 号` 末尾追加 SU · 五(append-only)」+ `cep_freeze_check.sh --update --authorized-by "Entry #257"` + 清单**单独** commit。
+⚠️ **不得复用** Entry #249 的授权(其范围 = 「SU · 四 + 2 行内记账句」)⇒ 本条为**独立授权**。
+
+**② SU · 五 的核心内容**:
+- **§① 命题切分**(2 可机器判 + 4 人工):① `ref` → 已登记来源 id 的**路由** ✅ · ② `basis` ↔ 注册表**所声明** `kind` 的**一致性** ✅ · ③ 注册表对 `kind` 的判定**本身**(人工签署常量)· ④ 指向性 · ⑤ 充分性 · ⑥ `Free` 的「规范明确」判定 ⇒ **机器保证「不自相矛盾」,不保证「为真」**;与 SU · 四「不得宣称 grep 级自动闸」**不矛盾**(后者约束 ③④⑤⑥)。
+- **§② 载体来源类型的落地映射**(按载体,不按 token 名)+ **carve-out**(CXL 22 格三轴不变)+ **例外**(`tilelink-t3-anchor` 人工签署,补签署授权出处 **#241 / #252 / #256**,并披露其为**两级转述链** ⇒ ⛔ 不等于 D-4 ② 已落地)+ **覆盖账**(4 已接入 / 1 N/A(CHI) / **2 未接入**(`cxl_dcoh` · `nvlink_sharp` ⇒ 恰为 B3b-2 两族 ⇒ **不保护其升级路径**,升格前须先迁移)。
+- **§③ `CellKind::Free`**:枚举 / 消费分支 / **校验器已接入**(tilelink 三态 · cxl 四态)/ **覆盖率口径统一**;真实格 = **0**。
+- **§④ 契约面**:登记**既有** requirement `cep-ualink-inc-state-spec-self-containment`(Entry #256 合并)。
+- **§⑤ D-4 ③/④ 回填 + B3b 两域记账**(选项戊已由 Entry #251 裁决并落 `obj §6.2`;⛔ 不回写 SU · 四 §④ 表格;⛔ 不得把 `B3b-1` 的 ✅ 扩写为「B3b 整体达成」)⇒ **对 B3b 计数零影响**。
+
+**③ 审查**:oracle 1 轮(**18 条建议全吸收**;否决级发现 = 命题层级混淆 / 映射表与代码不符 / 遗漏 2 载体 / `Free` 半落地 / 跨域记账漏项 / 术语冲突 / 冻结顺序错误)→ critic 1 轮(**APPROVE_WITH_CONDITIONS · mergeable: yes · scope_exceeded: false**;0 BLOCKER;2 SHOULD_FIX = 例外登记的签署链不可审计 + 「四命题」标题与表 6 行矛盾 ⇒ **全修**;3 NIT 亦全修)。报告 `.rddf/reviews/cep-su5-d1-machine-checkable.md`。
+
+**④ builder 域实现缺口补齐(oracle 指出、verifier 首轮未捕获)**:
+1. `transitions_are_valid_for` **未接 `Free`**(tilelink / cxl)⇒ 首个真实 Free 格落下即编译红 ⇒ 已接入 + 违规形态必红;
+2. cxl `kLegalTransitionCoverageNum` **含** `Free` 而 `coverage_is_not_regressed()` **不计** ⇒ 口径矛盾 ⇒ 已统一(含);
+3. `SRK-04` 的 `if (kind == Free)` 断言在真实 Free = 0 时**永不进入** = 空转 ⇒ 改为**无条件**逐格断言;
+4. 新增 **SRK-05**(合成 1×1 矩阵:合法 Free 通过 / 掩码·ref·basis 三种违规必红)与 **SRK-06**(cxl **24 / 44 / 42** 计数硬断言,防 SU §② 映射表漂移)。
+
+**⑤ 遗留(显式登记)**:`cxl_dcoh` / `nvlink_sharp` 未接入 `RefKind`(= B3b-2 两族的升级前置)· D-4 ②「人类条款摘要」**未落地**(`tilelink-t3-anchor` 是**已披露的例外**,非合规实例)· backlog ① 的「**basis 枚举统一**」维度未做(靠按载体映射绕开)· `07 号` §11 的 `7` vs `8` 既存漂移 = **out-of-scope**(⛔ 不在本条顺手修)。
+
+**⑥ 关联**:**#249**(D-1 裁决)· **#251**(选项戊 + 立项)· **#252**(P1 实施)· **#253**(P1 验收)· **#254**(P1 归档)· **#255/#256**(契约对齐 + 归档)· `07 号` **SU 2026-11-06 · 五** · `.rddf/reviews/cep-su5-d1-machine-checkable.md`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

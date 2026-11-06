@@ -1,28 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-06T13:14:10Z",
+  "current_role": "architect",
+  "updated_at": "2026-11-06T13:50:17Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-06T02:46:53Z",
-      "by": "user",
-      "reason": "用户口令:先 architect 做架构裁决 ⇒ 补裁 D-2 未覆盖的 6 类声明键(family / flow_support 剩余 8 位 / atomic / ordering_assumption / vc_binding / combination_capabilities),并裁 A(声明实例) vs B(⏭ 收口)路径"
-    },
-    {
-      "role": "planner",
-      "at": "2026-11-06T03:16:33Z",
-      "by": "user",
-      "reason": "用户口令「切 planner 走路径收口」⇒ 落台账 Entry #239(9 键补裁 + 路径 A + M1 冻结面授权)+ obj/07 号 口径同步清单"
-    },
-    {
-      "role": "builder",
-      "at": "2026-11-06T03:18:55Z",
-      "by": "user",
-      "reason": "用户口令「切 builder 继续推进」⇒ 按 Entry #239 §⑥ 执行:① 声明 ualink_4 + repo_owned 增员 + 理由登记 ② 翻转 5 个测试文件存量断言 + UIA-07 正控 ③ 计数链(07 号 ≥7 处 + obj)④ ADR-CEP-09 回查登记 ⑤ T3 普查 change 立项"
-    },
     {
       "role": "architect",
       "at": "2026-11-06T03:22:12Z",
@@ -124,6 +106,24 @@
       "at": "2026-11-06T13:14:10Z",
       "by": "user",
       "reason": "切回 builder:归档 A+B change + KPI 回填 0/3 + 补验 AC-5"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-06T13:15:10Z",
+      "by": "user",
+      "reason": "切 architect:追 07 号 SU·五 —— D-1「来源效力」的机器可判落地回填(冻结面两步授权)"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-06T13:29:58Z",
+      "by": "user",
+      "reason": "回 builder 补 P1 实现缺口(oracle 发现):transitions_are_valid_for 未接 Free + cxl 覆盖率分子/分母口径矛盾 + SRK-04 空转断言"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-06T13:50:17Z",
+      "by": "user",
+      "reason": "落 07 号 SU·五(D-1 机器可判回填)+ 台账 Entry #257 冻结面授权;oracle 1 轮 + critic APPROVE_WITH_CONDITIONS"
     }
   ],
   "auto_switch_window": null
