@@ -15605,6 +15605,26 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑤ 验证**:`ctest` **156/156**;3 闸全绿;冻结面 41 产物零 diff + provenance 通过(两步授权 per Entry #261)。
 
 **⑥ 关联**:**#261**(复核 + 授权)· **#260**(P2/P3 归档)· **#259**(P3 实施)· **#258**(P2 实施)· `.rddf/reviews/cep-instance-assembly-contract-alignment-verify.md` · `.rddf/reviews/cep-instance-assembly-and-l4-e2e-verify.md` · `openspec/specs/cep-instance-assembly/spec.md`
+
+### Entry #263 — 2026-11-07 [plan](**后续三项的盘点与立项** —— DoD 终局口径待用户裁决 + `cxl_dcoh`/`nvlink_sharp` 迁移 RefKind 立项)
+
+**主题**:用户列出「补 critic 复核 / UALink 专用引擎 / RefKind 迁移 / DoD 终局」四项 ⇒ 本 Entry 登记第 1 项的完成、第 3 项的立项与待裁决点、第 4 项的待裁决点,并说明第 2 项的排期建议。
+**角色**:architect(第 1 项复核 + 裁决)· planner(第 3 项立项 + 第 4 项选项)。
+
+**① 第 1 项(critic 复核)—— ✅ 完成**:critic 补复核 **REJECT**(1 BLOCKER + 2 SHOULD_FIX + 3 NIT)⇒ 契约对齐 change ⇒ critic **复审 APPROVE** ⇒ 已归档(Entry #262)。
+
+**② 第 3 项(`cxl_dcoh` / `nvlink_sharp` 迁移到 `RefKind`)—— 立项,实施待下一轮**:
+- 实测:两族各有**本地 `SourceId`** + 逐来源许可表(`cxl_dcoh` 6 项 · `nvlink` 5 项)⇒ 缺的是**跨载体统一的类型标签**;
+- 映射:`S2/S4/S5/S6/S7`(cxl)与 `S1/S2/S3`(nvlink)⇒ `public_nonnormative`;`Derived` / `AdrContract` ⇒ `repo_derived`;**两族恒不出现 `spec_clause`** ⇒ ⛔ **不**改 B3b-2 的 0/4(本条只为升级路径铺路);
+- **待 architect 裁决(实施前必须先裁)**:「**来源清单双真源**」—— 全局 `kSources[]` 与载体本地 `SourceId` 并存 ⇒ 三选项:**甲**(建议 · 类型标签统一 / 清单自治)· 乙(全量并入全局注册表,8→~19 条)· 丙(维持现状);
+- 落盘:`.rddf/improvements/cpptlm-cep-dcoh-nvlink-refkind-migration.md`(7 段 + AC-1~AC-5 + 三选项)。
+- ⚠️ **未建 change 目录**(⛔ 避免半成品 change 占 KPI slot 并污染台账)⇒ 立项 = improvement + 本 Entry。
+
+**③ 第 4 项(DoD 终局)—— 口径待用户裁决**:`B3b-1 = 2/2 ✅` · `B3b-2 = 0/4 ⏭`(4 族受外部条件 + 人力,per SU · 四 D-4 四条升级路径)⇒ **终态 DoD Go 只差「B3b-2 的最终裁决口径」**,代码侧已无内部可推进项。三个候选口径见用户交互选项(① 接受 ⏭ 登记并判定终态 Go · ② 维持「终态 Go 未达成」并显式声明外部条件依赖 · ③ 调整 DoD 结构)。
+
+**④ 第 2 项(UALink 专用 coherence 引擎,兑现 `request`/`completion` 真语义)—— 排期建议**:工作面 = 新引擎头(10 流的 `request`/`completion` 语义 + 其余 8 流显式 Unsupported)+ 注册 + 装配拓扑 + L4 判据 ⇒ 建议**下一轮**作为独立 change 实施(预估 ~2-3d);⚠️ 前置依赖:「`ualink_4` 的 `request`/`completion` 各自的协议语义」需先有**规范/公开来源**依据(与 §2 的 D-4 ② 同型)⇒ ⛔ **不得**在无依据时自造语义(否则就是 SU · 四 D-1 禁止的「推理填空」)。
+
+**⑤ 关联**:**#262**(契约对齐归档)· **#261**(critic 复核 + 授权)· **#260**(P2/P3 归档)· **#257**(SU · 五 · 载体覆盖账)· `.rddf/improvements/cpptlm-cep-dcoh-nvlink-refkind-migration.md`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
