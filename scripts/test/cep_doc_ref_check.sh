@@ -96,6 +96,7 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-ualink-inc"            # 队列 #14 **实现层** **已归档**(2026-11-04;delta 已合并进 openspec/specs/cep-ualink-inc/spec.md + 2 份契约 main spec)⇒ 台账历史 Entry 的路径引用
   "openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey"  # T3 映射锚点普查 **已归档**(2026-11-06,✅ 已完成归档语义 · 无 delta 合并)⇒ 台账历史 Entry(#241/#242/#243)的路径引用
   "openspec/changes/cpptlm-cep-tilelink-runtime-engine"  # TileLink-C 运行时引擎 **已归档**(2026-11-06,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-tilelink-runtime-engine/spec.md)⇒ 07 号 SU/台账历史 Entry(#243/#246/#247)的路径引用
+  "openspec/changes/cpptlm-cep-basis-source-kind-and-cell-free"  # 来源类型可机器判 **已归档**(2026-11-06,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-basis-source-kind/spec.md)⇒ 台账历史 Entry(#251/#252/#253/#254)的路径引用
   "include/ src/"                                   # 多路径合写(非单一路径)
   "include/ src/ test/"                             # 同上
   # —— 通配 / 省略号 / 目录列表:不是「可判存在的单一路径」——
