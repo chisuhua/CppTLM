@@ -1,7 +1,22 @@
 # cep-tilelink-runtime-engine Specification
 
 ## Purpose
-TBD - created by archiving change cpptlm-cep-tilelink-runtime-engine. Update Purpose after archive.
+定义 **TileLink-C 运行时引擎**(`TileLinkProtocolEngine`)在 CEP 平台上的**运行面可执行契约**:
+CohIf 意图面 → 权限转移事件面(`Cap` / `Grow` / `Prune` / `Report`)的**事件计数/上报**语义 ——
+事件真源**零自有副本**(全部委托 T3 表 `kT3MappingCells`,唯一消费载具 `consumable_mask_of`)、
+**fail-closed** 消费(未锚行零发射)、**11 意图覆盖**(canonical 10 流 + atomic 意图)、
+L4 事务级 5 流贯通与 JSON 装配面。
+
+**上游真源(只读)**:`cep-tilelink-state-spec`(规约层载体 —— 稳定态 / 事件词表 / 转移矩阵 / 逐格 basis)·
+`cep-tilelink-tree-manager`(适配器 + 行为面契约)。
+
+> **边界**:不改 `perm` 4 值锁 · 不改 canonical 10 流词表 · 不改 `protocol_instance.schema.json` ·
+> **不建** PE 本地树状态机(Nothing/Branch/Tip —— 规约层真源,运行面只读)·
+> **不携带源态**(TileLink `Cap`「源不定」⇒ 只声明事件类别)· **不连带推进**其余协议族
+> (CXL 2.0 显式冻结 / CXL 3.0 / NVLink / UALink 的 T1 载体未触发)。
+>
+> **来源**:change `cpptlm-cep-tilelink-runtime-engine`(2026-11-06 已完成归档,per 台账 **Entry #243 / #246 / #247**;
+> 验收 `.rddf/reviews/tilelink-runtime-engine-verify.md` AC-1~AC-7 全 PASS)。
 
 ## Requirements
 
