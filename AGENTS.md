@@ -475,7 +475,7 @@ strings build/bin/cpptlm_tests | grep -c "<marker>"        # 3. 修复在 binary
       4. **不得**在暂存状态下把该能力写进任何 Stage 的 DoD / 验收条款
     - **与旧约定的关系**: `docs/archive/architecture/05-packet-semantic-network-archived-2026-10.md` §0.2bis 曾写"未实施 ⇒ 没有可以 archive 的对象"—— 该表述**仅对"✅ 已完成归档"语义成立**;⏸ 暂存归档是**第三种语义**,不与其冲突,但**必须**遵守上述 4 项硬约束
     - **先例**: 部分归档 change 未合并 spec(deprecated / doc-only / 被取代类) —— 见 `openspec/changes/archive/*/specs/` 与 `openspec/specs/` 的差集
-  - **实测基线** (2026-11-06, per `openspec list --json`): **2 个 active** → **2/3**（TileLink-C 运行时引擎 `cpptlm-cep-tilelink-runtime-engine`,per 台账 Entry #243 + T3 映射锚点普查 `cpptlm-cep-tilelink-t3-mapping-survey`,per 台账 Entry #241）；已归档 change 122 份
+  - **实测基线** (2026-11-06, per `openspec list --json`): **1 个 active** → **1/3**（TileLink-C 运行时引擎 `cpptlm-cep-tilelink-runtime-engine`,per 台账 Entry #243）；已归档 change **123** 份（含 T3 映射锚点普查 `cpptlm-cep-tilelink-t3-mapping-survey`,per 台账 Entry #241 —— 2026-11-06 归档,✅ 已完成归档语义 · 无 delta 合并）
   - **历史快照**: 2026-10-20 前 3 个 active 全部 ⏸ 暂存归档 ⇒ 0/3; 更早的 e1 v1.1 / flr-rebar v1.1 已于 2026-10-09 归档（详见 `openspec/changes/archive/2026-10-09-*`）
   - **检测命令**: `ls openspec/changes/ | grep -v archive | wc -l` (排除 archive 目录)
 

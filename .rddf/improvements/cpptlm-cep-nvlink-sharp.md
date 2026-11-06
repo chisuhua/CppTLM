@@ -28,7 +28,7 @@ created: 2026-11-03
 >   ⚠️ **行为面待 builder**(判据 `CP-03` 的 `V6-a` / `V6-c`;见 `obj-cep-platform §10` 的登记)
 > · **载体归属**:形态丙 = **甲(第 7 个 coherence 实例 `nvlink_4`)+ 乙(collective plane 的 SHARP 扩展)合流**
 > · **`sharer_tracker.impl` = `BroadcastNull`**(用户裁决 2026-11-03)⇒ 本队列**补其行为实现**(traits 行已登记 · 行为类**从未落地**)⇒ 顺带闭合 07 号 §11 的「`BroadcastNull` 仅声明层 traits」缺口
-> · **KPI**: Stage 2 = **2 slot 串行**(规约层 → 实现层);当前实测 **2/3**(⚠️ 全局 baseline = **2/3** —— **2026-11-06 新建 `cpptlm-cep-tilelink-runtime-engine`(TileLink-C **运行时引擎**,B3b 推进项,per 台账 **Entry #243**)⇒ 占 1 slot**;前序:**同日**新建 `cpptlm-cep-tilelink-t3-mapping-survey`(T3 映射锚点普查,per 台账 **Entry #241**)⇒ 占 1 slot**;前序:**队列 #14 的第 1 个 change**(实现层)`cpptlm-cep-ualink-inc` **已完成归档**(2026-11-04;Entry #207)⇒ slot 已释放;前序:**队列 #14 的第 0 个 change**(规约层)`cpptlm-cep-ualink-inc-state-spec` **已完成归档**(2026-11-04;delta 已合并进 main spec;Entry #203);**本队列两段式均已归档 ⇒ 不占 slot**,Entry #186 / #190)
+> · **KPI**: Stage 2 = **2 slot 串行**(规约层 → 实现层);当前实测 **1/3**(⚠️ 全局 baseline = **1/3** —— **2026-11-06 新建 `cpptlm-cep-tilelink-runtime-engine`(TileLink-C **运行时引擎**,B3b 推进项,per 台账 **Entry #243**)⇒ 占 1 slot**;前序:**同日** `cpptlm-cep-tilelink-t3-mapping-survey`(T3 映射锚点普查,per 台账 **Entry #241**)**已完成归档**(✅ 已完成归档语义 · 无 delta 合并)⇒ slot 已释放**;前序:**队列 #14 的第 1 个 change**(实现层)`cpptlm-cep-ualink-inc` **已完成归档**(2026-11-04;Entry #207)⇒ slot 已释放;前序:**队列 #14 的第 0 个 change**(规约层)`cpptlm-cep-ualink-inc-state-spec` **已完成归档**(2026-11-04;delta 已合并进 main spec;Entry #203);**本队列两段式均已归档 ⇒ 不占 slot**,Entry #186 / #190)
 > · **估时**: 规约层 **5 周** + 实现层 **8 周** = **13 周**(标称 10 周 ⇒ 两段式 + 2 个载体面 + 行为类补齐 + VC 表 ⇒ 上修;per 用户裁决「估时以质量优先」)
 > · **⚠️ 合规**:NVIDIA NVLink SHARP 正式文档**不可投喂 AI**(照 CXL 的 Evaluation Copy Agreement + AI AUP 同款处理)⇒ 普查只能走**公开非规范来源**(NVSHMEM 开源实现 / 公开白皮书 / 学术论文)
 
@@ -208,7 +208,7 @@ KPI **2 slot 串行**已按「规约层归档 ⇒ 释放 slot ⇒ 启实现层 �
 | **本仓实现** | 新增 2 个头 + 1 个行为类 + 1 个实例声明 + `collective_planes.json` **三块 + `vc_reservation_declaration`**;**冻结面零 diff**(除已授权追加段) |
 | **平台能力** | 首次覆盖「coherence × collective × 网内归约」组合;**`BroadcastNull` 从「无消费者」变为「有消费者」** ⇒ 07 号 §11 该行状态须同步 |
 | **文档** | 07 号 §5.1.1 的 NVLink 行状态列(Stage 2 ⇒ 已落地)+ §11 两行计数(SharerTracker `5/6` ⇒ `6/6`;adapter `6 个` ⇒ `7 个`)+ §5.1.1「6 族 / 8 实例」计数口径核对;`ADR-CEP-01/02/03` 定稿后追平 |
-| **KPI** | **2 slot 串行**(规约层 → 实现层;当前实测 **2/3**(⚠️ 全局 baseline = **2/3** —— **2026-11-06 新建 `cpptlm-cep-tilelink-runtime-engine`(TileLink-C **运行时引擎**,B3b 推进项,per 台账 **Entry #243**)⇒ 占 1 slot**;前序:**同日**新建 `cpptlm-cep-tilelink-t3-mapping-survey`(T3 映射锚点普查,per 台账 **Entry #241**)⇒ 占 1 slot**;前序:队列 #14 的实现层 change **已完成归档**(2026-11-04;Entry #207)⇒ slot 已释放;前序:队列 #14 的规约层**已完成归档**(2026-11-04;Entry #203)⇒ slot 已释放;本队列两段式均已归档 ⇒ 不占 slot,Entry #186 / #190))⇒ 规约层归档释放 slot 后方可启实现层 |
+| **KPI** | **2 slot 串行**(规约层 → 实现层;当前实测 **1/3**(⚠️ 全局 baseline = **1/3** —— **2026-11-06 新建 `cpptlm-cep-tilelink-runtime-engine`(TileLink-C **运行时引擎**,B3b 推进项,per 台账 **Entry #243**)⇒ 占 1 slot**;前序:**同日** `cpptlm-cep-tilelink-t3-mapping-survey`(T3 映射锚点普查,per 台账 **Entry #241**)**已完成归档**(✅ 已完成归档语义 · 无 delta 合并)⇒ slot 已释放**;前序:队列 #14 的实现层 change **已完成归档**(2026-11-04;Entry #207)⇒ slot 已释放;前序:队列 #14 的规约层**已完成归档**(2026-11-04;Entry #203)⇒ slot 已释放;本队列两段式均已归档 ⇒ 不占 slot,Entry #186 / #190))⇒ 规约层归档释放 slot 后方可启实现层 |
 | **估时** | 规约层 **5 周** + 实现层 **8 周** = **13 周**(标称 10 周 ⇒ 上修;per 用户裁决「估时以质量优先」);**ADR 定稿前置不含在内** |
 | **残余风险** | 公开来源受限 ⇒ `pending` 语义较多 ⇒ 与 R11(🟡 中)**同型** ⇒ 靠**逐格 basis** 兜住,不靠自推 |
 | **与后续队列** | 队列 #14(UALink INC)以本队列的 **collective 规约层**为前置先例(同一 collective plane) |

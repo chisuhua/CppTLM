@@ -1,7 +1,7 @@
 # B3b / T3 收口 · verifier 验收报告
 
 - **Change / Task**: `§6.2 B3b`（运行时 ProtocolEngine）—— T3 普查闭合后的状态复核
-- **判据来源**: ① 用户本次明确要求「检查 B3b 是否真的完成 / 有无遗漏或债务」;② objective `§6.2 B3b` 定义（6 族清单·CHI RN-F 1/6）;③ `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/proposal.md` AC;④ `07 号` SU 2026-11-06 §⑤ T1–T4 判定式
+- **判据来源**: ① 用户本次明确要求「检查 B3b 是否真的完成 / 有无遗漏或债务」;② objective `§6.2 B3b` 定义（6 族清单·CHI RN-F 1/6）;③ `openspec/changes/archive/2026-11-06-cpptlm-cep-tilelink-t3-mapping-survey/proposal.md` AC;④ `07 号` SU 2026-11-06 §⑤ T1–T4 判定式
 - **角色**: verifier · **已用轮次**: 1/3 · **日期**: 2026-11-06
 
 ## 一、逐条判定

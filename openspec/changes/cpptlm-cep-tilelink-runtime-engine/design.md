@@ -63,9 +63,9 @@ TileLink `Cap` 三条转移源态不定(D1 §8.1.4);T3 表里**没有** Cap 行(
 本 change **新增**文件全都不在 M1 冻结集 ⇒ 引擎落地这个动作本身不触发 `--update`。
 **例外**:verifier `.rddf/reviews/b3b-t3-verify.md` F2 —— `07 号` SU ⑦ 的 4 处漏勾(L1/L2/L3/L9),
 内容已实证完成但框未勾。**回填处理**:随**实施阶段头部 builder 动作**(先于引擎改动)一次性:
-1. 台账 Entry #244 先落(漏勾授权);
+1. 台账 Entry #245 先落(漏勾授权;编号顺延:#244 = T3 普查归档回执);
 2. `07 号` ⑦ 补勾 + (Entry #242 时点后) 4 框日期;
-3. `cep_freeze_check.sh --update --authorized-by "Entry #244"`;
+3. `cep_freeze_check.sh --update --authorized-by "Entry #245"`;
 4. 清单单独 commit。
 后果:一次 freeze churn 一次授权;后续引擎 diff 就干净了(到时 0 产物换 hash)。
 
@@ -80,7 +80,7 @@ verifier 报告 F1(2 处当前态:「剩余 = T3 映射锚点普查」)随**本�
 ## D-7 KPI 与台账
 
 - KPI:立项时 **1/3 → 2/3**(同步 7 文件 + AGENTS.md,per b3e08440 模式;⚠️ 条件句:若 t3 change 先归档,KPI 实际 = **0/3 → 1/3**)。t3 change 归档时机由用户裁决,本 change 不依赖它。
-- 台账 Entry:#243(本立项 + verifier 报告指针 + F1 收口)· 实施头部 #244(F2 漏勾授权)· 归档时 #245(B3b 达成度 2/6 回填)。
+- 台账 Entry:#243(本立项 + verifier 报告指针 + F1 收口)· **#244**(T3 普查归档回执)· 实施头部 **#245**(F2 漏勾授权)· 实施回执/归档 **#246**(B3b 达成度 2/6 回填)。
 
 ## 风险与遗留
 

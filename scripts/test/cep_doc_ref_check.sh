@@ -94,6 +94,7 @@ VIRTUAL_PATHS=(
   "include/core/coherence_protocol.hh"              # 设计示意:Stage 1 才新建(本仓 0 命中,per 回执 §5)
   "openspec/changes/cpptlm-cep-ualink-inc-state-spec"  # 队列 #14 规约层 **已归档**(2026-11-04;delta 已合并进 openspec/specs/cep-ualink-inc-state-spec/spec.md)⇒ 台账历史 Entry 的路径引用
   "openspec/changes/cpptlm-cep-ualink-inc"            # 队列 #14 **实现层** **已归档**(2026-11-04;delta 已合并进 openspec/specs/cep-ualink-inc/spec.md + 2 份契约 main spec)⇒ 台账历史 Entry 的路径引用
+  "openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey"  # T3 映射锚点普查 **已归档**(2026-11-06,✅ 已完成归档语义 · 无 delta 合并)⇒ 台账历史 Entry(#241/#242/#243)的路径引用
   "include/ src/"                                   # 多路径合写(非单一路径)
   "include/ src/ test/"                             # 同上
   # —— 通配 / 省略号 / 目录列表:不是「可判存在的单一路径」——
