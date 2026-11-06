@@ -541,7 +541,8 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
     - **当时的合法中间态**:「**N/66 载体已登记(含 M 项有牙证据)+ K 条待审计 + J 条授权⏭**」(形态先例 = 本表 B3b 的诚实 ⏳)
     - ⛔ **该禁令仍然有效** —— 「文本要求逐条断言、却按编号级宣称达成」= DoD 降格后仍宣称达成;本轮达成是**逐条判定级** + 决定性变异证伪,⛔ 非编号级
   - 📌 **本轮流程教训(留档,per §11)**:BLOCKER **三次回归同一族失败模式** —— 「载体未真正咬合判据的**主体**」,三种表现:① B-1 **借壳**(语义无关的 case 挂该 id)② B-2 首次 **主体错位**(断言证明「**可以**写出负向断言」而非「测试集**含**它」)③ B-2 二次 **自证**(扫描器自身的锚点全是 fixture 字符串)⇒ 后续载体评审须把「**载体文件自身是否满足该判据**」列为固定检查项;**决定性变异**(删掉被判据约束的那部分 ⇒ 必红)应作为闭合证据的**必附项**,只测「锚点存在」不够
-- B3a. ⏭ **6 个协议族的 adapter 契约**实施完成:CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」与 `ADR-CEP-11 §3` 锁表「按 `protocol_version` 行计 8 行」—— 两种粒度非矛盾,per Entry #19 §2**);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
+- B3a. ⏭ **6 个协议族的 adapter 契约**实施完成(⏳ **收口路径 = 路径 A:声明 `ualink_4` 实例**,per 台账 **Entry #239** + `ADR-CEP-12` **SU 2026-11-06** 的 9 键补裁 ⇒ **取值已全部裁决,待 builder 落地后转 ✅**):CHI RN-F / CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink(per metis G2-F 修订:5 协议族 → 6 个 adapter;**族 / 实例计数口径见 `07 号 §5.1.1`「6 族 / 8 实例」与 `ADR-CEP-11 §3` 锁表「按 `protocol_version` 行计 8 行」—— 两种粒度非矛盾,per Entry #19 §2**);每个实例须按 `ADR-CEP-12` schema 声明能力与前提假设
+  - 📌 **2026-11-06 补裁完成(per 台账 Entry #239 + `ADR-CEP-12` SU 2026-11-06)** —— 上一轮 D-2 只裁了 13 键中的 **4 键** ⇒ 余 9 键无规则可依 ⇒ 实例**无法声明**。本轮补裁 **9 键**(含**认识论三档分级**:规则执行 / 来源锚定 / 锚定建模声明)+ **路径 A 采纳**(声明实例)⇒ **声明无阻**。⚠️ **本轮同时修正了两处依据**:`barrier=false` 的原理由被 `nvlink_4` 反证(范畴错误)⇒ 改按 requester-scoped 语义重写;`combination_capabilities` 的安全论证误引 `INV-CEP-13-IC2`(跨域写传播判据,与 `hierarchical` 无关)⇒ 改按「该维度无已落地机器判据」重写。
   - 📌 **2026-11-06 终态口径裁决(per 台账 Entry #238,D-3 = ①「记为 ⏭ 阻塞」)**:本条**不再是 ✅** ⇒ **⏭ 阻塞**;**收口形态 = `ualink_4` 实例声明 ∨ 登记第 8 实例 ⏭**(二选一,先到者为准)⇒ **不再以「✅ 但有不可达实例」的形态留在 DoD 里**(那是「DoD 降格后宣称达成」的变体,per Entry #237 §1.5)。⚠️ **6 族 adapter 契约本身已实施完成** —— 本条 ⏭ 只针对**实例级缺口**,⛔ 不否定 adapter 契约的达成。
   - 📌 **2026-11-06 推进状态(per 台账 Entry #237)** —— 公开来源普查(librarian,新增来源类别)结论:**N-8**(有无 snoop)**部分可钉死** ⇒ 建议 `snoop=false` / `snoop_resp=false`,**basis = `public-nonnormative-derived`**(⛔ 非 spec-pinned;依据 = Linux 内核 `docs.kernel.org/gpu/amdgpu/ualink.html` 7.4-rc1 + AMD amd-gfx 95 补丁系列 2026-08-31 + 联盟博客 2025-05-15「Coherency is maintained through software」+ UnifabriX webinar 2025-12-10,**4 个互相独立的公开非规范来源一致**);**N-9**(`perm` 支持子集)**公开来源结构性撑不住 ⇒ 永久 pending**(所有公开材料无 permission / cache-state 词汇,且 UALink 被公开定义为 memory-semantic + software coherency ⇒ 该问法在 UALink 侧**无对应物** ⇒ 该值本质是 **CEP 建模决策**)⇒ **须架构裁决 D-2**;另 **B3a 存在双记账**(本行记 ✅ vs 终态表记「阻塞终态 Go」)⇒ **须口径裁决 D-3**。⛔ **合规**:本轮**未**读取 / 下载 / 引用任何 UALink 规范 PDF 技术正文(ECA 同型约束照旧)
 - B3b. ⏳ **运行时 ProtocolEngine**:在 B3 的 6 族清单中达成 **1/6**(仅 CHI RN-F —— `include/tlm/cep/chi_rnf_protocol_engine.hh` + L4 事务级 E2E,per `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md`);CXL 2.0 非对称 / CXL 3.0 对称 DCOH / TileLink-C / NVLink / UALink **未达成**
@@ -902,7 +903,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 ### 2026-11-05 后续任务实施路径(B4 / B7 收口后 —— planner 规划,per 台账 **Entry #230**)
 
-> **规划前提(实测,非台账措辞推断)**:B4 ✅ / B7 ✅(8/8,内嵌限定);`§6.2` 剩余 = **B3b**(1/6)· **B2**(编号级 67/67 覆盖,判定级待裁)· **B3a**(UALink 无 `ualink_4` 实例)· **B5 / B6 / B8**(载体**均在位**但**表上无 verdict**)。
+> **规划前提(实测,非台账措辞推断)**:B4 ✅ / B7 ✅(8/8,内嵌限定);`§6.2` 剩余 = **B3b**(1/6)· **B2**(编号级 67/67 覆盖,判定级待裁)· **B3a**(`ualink_4` 取值**已全部裁决**,待声明落地,per **Entry #239**)· **B5 / B6 / B8**(载体**均在位**但**表上无 verdict**)。
 > ⚠️ **时效标注(2026-11-06 回填)**:本节是 **2026-11-05** 的规划快照 —— 其中 **B2**（判定级待裁）已于 **2026-11-06 收口**(66/66 = 61 载体 + 5 授权⏭,per **Entry #236**)；**B5 / B6 / B8** 已于 2026-11-05 登记 ✅(per Entry #231)。其余前提不变。
 > **实测依据**:`[cep][module-factory-seam]` / `[cep][simulation-mode]`(10 cases / 115 assertions) / `[cep][ordering-point]`(6 cases / 64 assertions) / `[cep][canonical-invariant]`(13 cases / 687 assertions);67 个编号中 **28 个仅在编号元数据文件出现 ≤1 处**(疑无判定级断言)。
 
@@ -916,7 +917,7 @@ Stage 4+ 进入维护态后,objective 归档条件:
 | **C** | C1 | **B2 的「100% 覆盖」口径裁决** | `§0 DoD 7` / `§6.2 B2` 字面 | architect 裁:① **编号级**(67 编号全被结构检查覆盖 ⇒ 现已 100%)vs ② **判定级**(每条须有行为断言 ⇒ 现存 ≥28 条缺口) | 裁决落 ADR SU 或 objective 表注 | 0.5d | — | 中:与 B7 的「判据 vs 扩展观测」同族的**口径先行**问题 |
 | **C** | C2 | **B2 补判定级断言**(仅当 C1 裁②) | C1 结论 | builder 按缺口清单分批(每批 5-7 条,每条**反向 fixture** 必备) | 缺口 = 0 或被显式登记为不适用 | 2-3d | C1 | **高**:19~28 条 × (正控 + 反控),可能需独立 change 立项 |
 | **D** | D1 | **B3b** 运行时 ProtocolEngine(1/6 → N/6) | `§6.2 B3b` 触发条件 | ⛔ **不做** —— 触发 = 某协议族出现「转移表真源」 | — | — | — | 补 = 推理填空(明令禁止) |
-| **D** | D2 | **B3a** 的 `ualink_4` 实例声明 | `§6.2 B3a` | ⛔ **不做** —— 待公开来源可钉死取值 | — | — | D3 | 无来源则不可判定 |
+| **D** | D2 | **B3a** 的 `ualink_4` 实例声明 | `§6.2 B3a` | ✅ **触发条件已满足**(per **Entry #239**)—— 4 个互相独立的公开非规范来源 + `C-10` 已把 `snoop`/`perm` 闭合;余 9 键由 `ADR-CEP-12` **SU 2026-11-06** 补裁 ⇒ 取值**全部有据** ⇒ 走**路径 A**(声明实例 + 计数链 7→8) | builder | 路径 A 的执行顺序见 **Entry #239** §⑥ | — | ✅ 已裁 |
 | **D** | D3 | **N-1 ~ N-9**(UALink 正文细粒度语义) | `.rddf/improvements/` | ⛔ **不做** —— 受 Evaluation Copy Agreement 约束 ⇒ 禁投喂 | — | — | 用户取得授权 | — |
 | **D** | D4 | litmus 证伪判据(`consistency_labels`) | Entry #215 ② | ⛔ **不做** —— 须独立 change 立项(用户裁决) | — | — | — | — |
 | **D** | D5 | `ADR-CEP-01/02/03` 一决策一文档化拆分 | Entry #217 D1 | ⛔ **不做** —— 等 T1/T2/T3 命中 | — | — | — | — |
@@ -2450,9 +2451,9 @@ ctest 96/96 · [cep] 76 case / 1284 assertion
 | Stage 2 | 完成 Go(队列 #13 两段式归档) | 2026-11-03 | #186 / #190 | ✅ | Stage 2 = 队列 #12~#13 全部归档 |
 | Stage 3 | 启动 Go(VC 路径裁决 = 路径 **D**) | 2026-11-04 | #193 | ✅ | 三则 ADR SU 签发 + 冻结面授权记录 |
 | Stage 3 | 完成 Go(队列 #14 两段式归档) | 2026-11-04 | #203 / #207 | ✅ | 14 个队列 change 全部归档 |
-| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ **B4 / B7 已于 2026-11-05 收口**(per 台账 Entry #228)⇒ **Phase 1 的计划项全部完成**;仍阻塞终态 Go 的项 = `§6.2` **B3b**(运行时引擎 **1/6**,⛔ 触发条件未出现 ⇒ 不得补)· **B3a**(6 族契约达成但 UALink **无实例声明**)⇒ 当前**不得**宣称终态 Go(**B5 / B6 / B8 已于 2026-11-05 登记 ✅**,per Entry #231;**B2 已于 2026-11-06 收口 = 66/66 = 61 载体 + 5 授权⏭**,per Entry #236)(B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合);§8.2 Kill 判据**未触发**(现状是「**部分未产出**」而非「**无法产出**」) |
+| **终态** | **DoD Go(12 条 DoD 全达成)** | — | **⏳ 未发生** | ⏳ | ⚠️ **B4 / B7 已于 2026-11-05 收口**(per 台账 Entry #228)⇒ **Phase 1 的计划项全部完成**;仍阻塞终态 Go 的项 = `§6.2` **B3b**(运行时引擎 **1/6**,⛔ 触发条件未出现 ⇒ 不得补)· **B3a**(6 族契约达成;`ualink_4` 取值**已全部裁决**(per **Entry #239**)⇒ **仅剩声明落地 + 计数链**,⛔ 不是取值缺口)⇒ 当前**不得**宣称终态 Go(**B5 / B6 / B8 已于 2026-11-05 登记 ✅**,per Entry #231;**B2 已于 2026-11-06 收口 = 66/66 = 61 载体 + 5 授权⏭**,per Entry #236)(B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合);§8.2 Kill 判据**未触发**(现状是「**部分未产出**」而非「**无法产出**」) |
 
-> **待办指针**:Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记)已于 **2026-11-05 全部完成**(B4 / B7 收口,per Entry #228)⇒ 终态 DoD Go 的剩余前置 = **B3b**(触发条件驱动)· **B3a**(UALink 实例声明)(**B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合**; **B5 / B6 / B8 已于 2026-11-05 登记 ✅**;**B2 已于 2026-11-06 收口 = 66/66 = 61 载体 + 5 授权⏭**,per Entry #236),逐条完成后在本表末行回填日期与 Entry。
+> **待办指针**:Phase 1 计划(H2/H3/H6 实验 → H1/H4/H5/H8 结论登记)已于 **2026-11-05 全部完成**(B4 / B7 收口,per Entry #228)⇒ 终态 DoD Go 的剩余前置 = **B3b**(触发条件驱动)· **B3a**(`ualink_4` **声明落地**,取值已裁,per **Entry #239**)(**B7 的口径冲突已于 2026-11-05 由 `ADR-CEP-06` SU#5 裁决闭合**; **B5 / B6 / B8 已于 2026-11-05 登记 ✅**;**B2 已于 2026-11-06 收口 = 66/66 = 61 载体 + 5 授权⏭**,per Entry #236),逐条完成后在本表末行回填日期与 Entry。
 
 **review_by 触发仪式**(per `rdd-planner/SKILL.md:159`):
 - `bash skills/rdd-planner/scripts/planner_objective_revise.sh objective-cep-platform --kind sprint-review --content "..." --decision "..." --reason "..."`
@@ -14916,10 +14917,95 @@ architect(**D-1 / D-2 / D-3 待签**)。
 `docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §0 / §2bis / §3 ·
 `docs/validation/2026-11-04-cep-protocol-e2e-coverage.md` · `§6.2 B3a / B3b` · `§4.7`
 
-
----
 ---
 
+### Entry #239 — 2026-11-06 [scope-change](`ualink_4` **9 键补裁** + **路径 A 采纳**(声明实例)—— B3a 的收口前置已清)
+
+**主题**:architect 对 `ualink_4` 实例声明中**上一轮未覆盖的 9 键**的取值裁决,以及「**声明实例** vs
+**登记 ⏭**」的路径裁决。⇒ B3a 的**取值缺口已清零**,剩余**纯执行**(声明 + 计数链)。
+**角色**:architect(裁决 + `ADR-CEP-12` SU)· **oracle → critic**(审查对,顺序不可颠倒)· planner(本 entry + 表落)· builder(执行)。
+**性质**:架构裁决落表 + 冻结面授权;⛔ **无代码改动**、⛔ **无 schema 改动**、⛔ **新增 invariant 数 = 0**。
+
+**① 裁决摘要**
+
+| # | 裁决 | 落点 |
+|---|---|---|
+| **路径** | **路径 A**(声明 `ualink_4` 实例 + 计数链 7→8)**采纳**;**B**(登记第 8 实例 ⏭)/ **C**(`status="planned"`)/ **D**(schema 加 `unknown`)**否决** | `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` **SU 2026-11-06** §④(含选项对比表 + 回滚路径) |
+| **9 键取值** | `family`=`industrial` · `flow_support`=`{request,completion}=true`+其余 8 位 false · `atomic`=`{supported:true}` · `ordering_assumption` / `vc_binding` 逐字取 `ualink_fabric` 既有登记 · `combination_capabilities`=`{true,false,true}` | 同上 §② |
+| **认识论三档** | **规则执行**(逐字拷贝)/ **来源锚定(正向,≠ spec-pinned)** / **锚定建模声明**(负向或判断,一步推断)⇒ **每键标明依据类别**,⛔ 不得把推断冒充事实 | 同上 §② |
+| **其余 3 键** | `adapter` / `status` / `protocol_version` = 机械可推导 | 同上 §② 末 |
+
+**② 审查过程(architect 域)**
+
+- **oracle → critic**,顺序不可颠倒。critic 结论 = **APPROVE_WITH_CONDITIONS** · `mergeable: yes` · `scope_exceeded: false` ·
+  **三档(arch / build / plan)均无 BLOCKER** ⇒ 无需复审。
+- **oracle 点名了提案的一处自造语义**:`barrier = false` 的原理由(「INC 集合级同步 ⇒ `collective_barrier` 平面 ⇒ canonical false」)
+  是**范畴错误**且被 `nvlink_4`(`barrier: true`,而其 rendezvous 同样判进 `collective_barrier` 平面)**反证**
+  ⇒ 改按 canonical `barrier` = **requester-scoped ordering point** 重写,并把「沉默非证据」的残余弱点**诚实登记**、⛔ 不升格。
+- **critic 的 5 条 SHOULD_FIX 全部已落进裁决文本**:
+
+| # | SHOULD_FIX | 处置 |
+|---|---|---|
+| arch | `vc_binding` 分档不诚实(标「规则执行」但含负向删减) | ✅ 改为「**规则执行 + 负向删减**」,删减依据显式挂 `C-10` |
+| arch | `combination_capabilities` 安全论证**引用错位**(误引 `INV-CEP-13-IC2` = 跨域写传播判据,与 `hierarchical` 无关) | ✅ 改用「该维度**当前无已落地的机器判据**消费它」+ 实例级评估集为空;并登记「**维度借用**」 |
+| arch | SU 须显式声明「**新增 invariant 数 = 0**」 | ✅ 已写(照 §11/§12/§13 先例句式) |
+| plan | obj 台账 **B3a 全文回查**缺位(终态表「仍阻塞 = B3b + B3a」句不改 ⇒ **D-3 双记账立即复发**) | ✅ 本条已同批改写 **6 处**(见 §⑤) |
+| plan | `07 号` 同步行清单应**穷举**(≥7 处,含 `:74` / `:312` 已写「6 族 / 8 实例」与 JSON 现状 7 不一致 ⇒ 声明是**修复**既有不一致) | ✅ 清单已列(见 §⑤);**修复**而非维持不一致 |
+
+**③ 载体落点**
+
+| 文件 | 形态 | 要点 |
+|---|---|---|
+| `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | **末尾追加 SU** | 9 键取值 + 认识论三档 + 路径 A/B/C/D 选项对比 + 回滚路径 + Verification |
+| `docs/adr/ADR-CEP-04-sharer-tracker-abstraction-redesign.md` | **追加双向交叉引用** | 13 键分散在两份 ADR ⇒ 双向引用,⛔ 读者不得误以为 13 键全裁于一处 |
+| `docs/architecture/07-coherence-exploration-platform.md` | 计数 / 状态行同步(builder 域) | **≥7 处**;§5.1.1 UALink 行**保留**「实例级装配待 backlog」(声明 ≠ 装配) |
+| `include/tlm/cep/protocol_instances.json` | 实例声明 + 计数链(builder 域) | 13 键声明 + `repo_owned_instance_ids` **同 commit** 增员 + `sharer_tracker_rationales["ualink_4"]` + `no_upgrade_instances` **3 → 4** |
+
+> **载体选择的偏离已复核**:oracle 原文建议「与上轮同载体」(`ADR-CEP-04`,只管 sharer_tracker),
+> 本轮落 **`ADR-CEP-12`**(13 键 schema 与字段语义的 owner)⇒ **归位**;critic 特别核验为可接受。
+
+**④ ⚠️ M1 冻结面授权**(本条即 `bash scripts/test/cep_freeze_check.sh --update --authorized-by "Entry #239"` 的授权依据)
+
+| 冻结产物 | 变更性质 | 授权理由 |
+|---|---|---|
+| `docs/adr/ADR-CEP-12-protocol-engine-capability-map.md` | **末尾追加 SU** | 正文 §1 ~ §13 **逐字未改**;只追加实例取值裁决 |
+
+> **授权范围**:仅上表 **1** 份(**本条**);⛔ **未新增**冻结成员、⛔ **未删除**成员、
+> ⛔ **未改** `protocol_instance.schema.json` / `fabric*.json` / 任何 main spec。
+
+**⑤ 同步清单(已同批改写 / 待 builder 同步)**
+
+**obj(本条已改,6 处)**:§6.2 B3a 行 · §6.2 B3a 推进状态指针 · §4.5 规划前提 · §4.7 D2 行 · §6.2 终态表 · §6.2 待办指针。
+
+**`07 号`(builder 域,≥7 处)**:`:74` §5.1.1 标题「6 族 / 8 实例」· `:312` §5.1.1 工业硬件协议族标题 ·
+`:321` §5.1.1 UALink 行 · `:325` §5.1.1 计数脚注 · `:330` §5.1.1 状态脚注 · `:681` §11 adapter 实例行 ·
+`:690` §11 schema 行。
+
+**⑤-1 ⚠️ 计数链的派生序(勿凭直觉)**
+`derive_no_upgrade_instances` 按 **instances 数组顺序**过滤 ⇒ `ualink_4` **追加到数组末尾** ⇒
+派生序 = `[cxl_3_0_symmetric, tilelink_c, nvlink_4, ualink_4]` ⇒ **`ualink_4` 在 `at(3)`**
+(现有断言的 `at(0..2)` **非** JSON 顺序)。
+
+**⑥ 执行序列**(⛔ 不得先声明后补签 SU —— per Entry #238 §⑤ 顺序铁律;本条 SU **已签** ⇒ 可执行)
+
+| 序 | 角色 | 动作 | 判据 |
+|---:|---|---|---|
+| 1 | **builder** | 声明 `ualink_4` 实例(13 键)+ `repo_owned_instance_ids` **同 commit** 增员 + `sharer_tracker_rationales["ualink_4"]` | `cep_decl_alignment_check.sh --strict` ⑥ 段**不红** |
+| 2 | **builder** | 翻转 5 个测试文件的存量断言 + **UIA-07 负向 fixture ⇒ 正控**(同 commit 保留「负向 witness」注释,登记「有意变异点」) | `no_upgrade_instances` size 4 且 `at(3) == "ualink_4"` |
+| 3 | **builder** | 计数链同步(`07 号` **≥7 处** + obj §6.2 B3a 行 ⏭ → ✅)+ **保留**「实例级装配待 backlog」措辞 | 逐处 grep 复核 |
+| 4 | **builder** | `ADR-CEP-09` 的 `no_upgrade_instances` 3→4 **回查结论**登记(排除理由可审计) | 台账登记 |
+| 5 | **builder** | T3 映射锚点普查 **change 立项**(行宇宙完整 + 逐行 `basis`/`ref` + 决定性变异) | change 4 件套 + 判据 |
+| 6 | **planner** | B3a 由 ⏭ 转 ✅(待步骤 1~3 落地后)· 立项 `cpptlm-cep-b3a-b3b-advancement` 回填三份 SU 的 `backlog:` 占位 | 台账 Entry |
+
+**⑦ 关联**:**#238**(D-1/D-2/D-3 裁决 + 冻结面授权)· **#237**(事实底稿 + 裁决请求)· **#236**(B2 达成 · 61/66)· **#233** · **#231** · **#215**(声明入口 + 实验证伪 posture) ·
+`ADR-CEP-12` **SU 2026-11-06**(本裁决)· `ADR-CEP-04` **SU 2026-11-03** + **SU 2026-11-06**(4 键 + O1/O2)· `ADR-CEP-02` **SU 2026-11-06**(`perm` 语义) ·
+`ADR-CEP-11 §3` · `ADR-CEP-17` CEN-Ib11 · `ADR-CEP-09`(VC 依赖集) ·
+`docs/research/2026-11-04-cep-ualink-inc-anchor-summary.md` §0 / §2bis(`C-10`) / §3 ·
+`docs/architecture/07-coherence-exploration-platform.md` §5.1.1 / §7 / §11 · `§6.2 B3a / B3b` · `§4.5` · `§4.7` ·
+`.rddf/reviews/cep-b3a-b3b-ruling.md`(审稿报告体系)
+
+
+---
 ---
 
 ---
