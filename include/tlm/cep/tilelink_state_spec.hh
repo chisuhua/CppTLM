@@ -50,6 +50,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string_view>
 
 namespace tlm::cep {
 
@@ -600,6 +601,214 @@ public:
         return "?";
     }
 
+
+    // ═══════════════════════════════════════════════════════════════════
+    // T3 映射(CohIf 平台消息/意图面 → 事件轴)
+    //   per 台账 Entry #241(change `cpptlm-cep-tilelink-t3-mapping-survey`)
+    //   判据源:docs/architecture/07-coherence-exploration-platform.md
+    //          Status Update(2026-11-06) §⑤ 的 T1~T4 判定式(T3 = 可消费)
+    //   审计面:docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md
+    // ═══════════════════════════════════════════════════════════════════
+    //
+    // ── 为什么需要它(与既有 12 格矩阵的分工)──────────────────────────────
+    // · 既有 12 格矩阵 = **状态 × 事件**(态 = 某 agent 副本的权限/树位置)
+    // · 本表 = **平台消息/意图 → 事件**(即「哪个平台面消息触发哪类权限转移」)
+    // ⇒ 二者是**不同 artifact**:`ADR-CEP-12` Status Update(2026-11-01)的
+    //   「10 行逐消息表」映射的是 **canonical 10 流 → 6 类消息类**(vc_binding 轴),
+    //   ⛔ **不满足 T3**(目标轴不同)—— 本表才是 T3 那一层。
+    //
+    // ── PE 角色(推导,非选择)────────────────────────────────────────────
+    // 本表的事件轴 = **PE 自己副本**的权限转移。PE = **master**:
+    //   锚点摘要 §4 的 canonical 10 流 ↔ TL-C 消息方向映射 **5/5 一致**
+    //   (`request`→A master→slave · `completion`→D slave→master · `snoop`→B slave→master
+    //    · `snoop_resp`→C master→slave · `writeback`→C master→slave)
+    //   ⇒ PE 发 `request`/`snoop_resp`/`writeback`,收 `completion`/`snoop` ⇒ PE = master。
+    //   ⚠️ 12 格矩阵描述的是「**任一 agent 的副本**」(D1 §8.1:「a particular agent's copy」)
+    //      ⇒ **不限定** slave ⇒ master 侧同样适用。
+    enum class PlatformIntent : std::uint8_t {
+        Request = 0,
+        Completion = 1,
+        Snoop = 2,
+        SnoopResp = 3,
+        Writeback = 4,
+        ForwardData = 5,
+        BackInvalidate = 6,
+        AddressResolve = 7,
+        Barrier = 8,
+        SnoopCompletionAck = 9,
+        AtomicIntent = 10
+    };
+    static constexpr std::size_t kPlatformIntentCount = 11;
+
+    /// T3 行的 basis —— ⚠️ **与既有 `BasisKind` 是两套独立枚举**
+    /// (既有 `BasisKind` 描述「转移格」的证据强度;本枚举描述「映射行」的证据强度)
+    enum class T3BasisKind : std::uint8_t {
+        Direct = 0,       ///< **规范条款级**锚(D1 §8.1.x / Table 8.3)
+        SelfDerived = 1,  ///< 仓内构造(须**显式登记**;⛔ 不得当规范锚)
+        Pending = 2       ///< 未锚 ⇒ **fail-closed**(消费者 SHALL NOT 消费)
+    };
+
+    /// 事件掩码位(4 事件 ⇒ 4 位)
+    static constexpr std::uint8_t kT3EventCap = 0b0001;
+    static constexpr std::uint8_t kT3EventGrow = 0b0010;
+    static constexpr std::uint8_t kT3EventPrune = 0b0100;
+    static constexpr std::uint8_t kT3EventReport = 0b1000;
+    static constexpr std::uint8_t kT3EventAll = 0b1111;
+
+    struct T3MappingCell {
+        PlatformIntent intent;
+        const char* row_ref;  ///< 锚点摘要的**行 id**(`TLC-M-01` ~ `TLC-M-11`)
+        std::uint8_t event_mask;  ///< 0 = 该意图**不产生**事件
+        T3BasisKind basis;
+        const char* ref;  ///< **条款级** ref(锚点摘要 §2 的 ref 列)
+    };
+
+    /// 11 行映射表(**行序 = `PlatformIntent` 枚举值**)—— 逐行依据见锚点摘要 §2。
+    static constexpr std::array<T3MappingCell, kPlatformIntentCount> kT3MappingCells{{
+        // ① request = A:Acquire(master→slave)—— PE 侧此刻**未变**(权限随 D 通道回来)⇒ 无事件
+        {PlatformIntent::Request, "TLC-M-01", 0, T3BasisKind::Direct,
+         "D1 §8.1.1 Acquire + §8.1.2 通道D(权限随 Grant 回来)"},
+        // ② completion = D:Grant/GrantData(slave→master)—— PE 获得副本 ⇒ Grow
+        {PlatformIntent::Completion, "TLC-M-02", kT3EventGrow, T3BasisKind::Direct,
+         "D1 §8.1.4 Table 8.3(Grow) + §8.1.2 通道D"},
+        // ③ snoop = B:Probe(slave→master)—— 强制移除副本/权限 ⇒ Prune
+        {PlatformIntent::Snoop, "TLC-M-03", kT3EventPrune, T3BasisKind::Direct,
+         "D1 §8.1.1 Probe + §8.1.4 Table 8.3(Prune)"},
+        // ④ snoop_resp = C:ProbeAck/ProbeAckData(master→slave)—— "potentially releasing permissions" ⇒ Prune(可能)
+        {PlatformIntent::SnoopResp, "TLC-M-04", kT3EventPrune, T3BasisKind::Direct,
+         "D1 §8.1.2 通道C(potentially releasing permissions) + §8.1.4 Table 8.3"},
+        // ⑤ writeback = C:Release/ReleaseData(master→slave)—— 自愿放弃副本/权限 ⇒ Prune
+        {PlatformIntent::Writeback, "TLC-M-05", kT3EventPrune, T3BasisKind::Direct,
+         "D1 §8.1.1 Release + §8.1.4 Table 8.3(Prune)"},
+        // ⑥~⑩ 其余 5 条 canonical 流:TileLink-C **无独立流** ⇒ 无事件
+        {PlatformIntent::ForwardData, "TLC-M-06", 0, T3BasisKind::Direct,
+         "锚点摘要 §4(无独立流:数据恒附着于 GrantData/ProbeAckData/ReleaseData)"},
+        {PlatformIntent::BackInvalidate, "TLC-M-07", 0, T3BasisKind::Direct,
+         "锚点摘要 §4(无独立流:强制撤销由 B:Probe 承载)"},
+        {PlatformIntent::AddressResolve, "TLC-M-08", 0, T3BasisKind::Direct,
+         "锚点摘要 §4(路由静态)"},
+        {PlatformIntent::Barrier, "TLC-M-09", 0, T3BasisKind::Direct,
+         "锚点摘要 §4(规范无 barrier 消息)"},
+        {PlatformIntent::SnoopCompletionAck, "TLC-M-10", 0, T3BasisKind::Direct,
+         "锚点摘要 §4(ProbeAck 本身即 ack;GrantAck 配对 completion)"},
+        // ⑪ atomic 意图:TileLink-C 的 10 条消息表**无** atomic 类消息 ⇒ 无事件
+        {PlatformIntent::AtomicIntent, "TLC-M-11", 0, T3BasisKind::Direct,
+         "D1 §8.1.3(10 条消息表无 atomic 类) + TileLinkCAdapter::kMessageClassMap(只用 4 类)"},
+    }};
+
+    /// 消费者可用的**事件掩码** —— ⚠️ **fail-closed**:`Pending` 行 ⇒ 返回 **0**
+    /// (⛔ 消费者 SHALL NOT 把未锚的行当作「无事件」以外的任何解释;
+    ///  ⛔ 更**不得**据此推断「该意图无副作用」—— 那是 `Direct` + 空掩码才有的含义)。
+    static constexpr std::uint8_t t3_consumable_event_mask(PlatformIntent i) noexcept {
+        const auto& c = kT3MappingCells[static_cast<std::size_t>(i)];
+        if (c.basis == T3BasisKind::Pending)
+            return 0;
+        return c.event_mask;
+    }
+
+    /// 该意图行的 `basis`
+    static constexpr T3BasisKind t3_basis_of(PlatformIntent i) noexcept {
+        return kT3MappingCells[static_cast<std::size_t>(i)].basis;
+    }
+
+    /// 该意图行的 `row_ref`(锚点摘要行 id)
+    static constexpr const char* t3_row_id_of(PlatformIntent i) noexcept {
+        return kT3MappingCells[static_cast<std::size_t>(i)].row_ref;
+    }
+
+    /// 该意图行的条款级 `ref`
+    static constexpr const char* t3_ref_of(PlatformIntent i) noexcept {
+        return kT3MappingCells[static_cast<std::size_t>(i)].ref;
+    }
+
+
+    // ── T3 表的**带参**判定入口(判据铁律 ③:编译期锁 SHALL 同时有运行时可判入口)──
+    /// 给定一张 T3 行表,判其是否自洽(行数固定 ⇒ 只查唯一性 / 覆盖性 / basis↔事件 / ref 非空 / 掩码范围)。
+    static constexpr bool t3_rows_are_valid_for(
+        const std::array<T3MappingCell, kPlatformIntentCount>& t) noexcept {
+        for (std::size_t i = 0; i < t.size(); ++i) {
+            if (static_cast<std::size_t>(t[i].intent) != i)
+                return false;
+            for (std::size_t j = i + 1; j < t.size(); ++j)
+                if (t[i].intent == t[j].intent)
+                    return false;
+            if (t[i].row_ref == nullptr || t[i].row_ref[0] == '\0')
+                return false;
+            for (std::size_t j = i + 1; j < t.size(); ++j)
+                if (std::string_view(t[i].row_ref) == std::string_view(t[j].row_ref))
+                    return false;
+            if (t[i].basis == T3BasisKind::Pending && t[i].event_mask != 0)
+                return false;
+            if (t[i].basis != T3BasisKind::Pending &&
+                (t[i].ref == nullptr || t[i].ref[0] == '\0'))
+                return false;
+            if ((t[i].event_mask & ~kT3EventAll) != 0)
+                return false;
+        }
+        return true;
+    }
+
+    /// 带参版的 **fail-closed** 访问器:`Pending` 行 ⇒ 掩码归零(⛔ 消费者 SHALL NOT 消费未锚行)。
+    static constexpr std::uint8_t t3_consumable_event_mask_for(
+        const std::array<T3MappingCell, kPlatformIntentCount>& t,
+        PlatformIntent i) noexcept {
+        const auto& c = t[static_cast<std::size_t>(i)];
+        if (c.basis == T3BasisKind::Pending)
+            return 0;
+        return c.event_mask;
+    }
+
+    // ── T3 表的自洽判据(**运行时可判**;编译期锁见文件外)──────────────────
+    /// 行数 == `kPlatformIntentCount`
+    static constexpr bool t3_row_count_is_exact() noexcept {
+        return kT3MappingCells.size() == kPlatformIntentCount;
+    }
+    /// `intent` 唯一且**覆盖** 0 ~ `kPlatformIntentCount-1`
+    static constexpr bool t3_intents_are_unique_and_complete() noexcept {
+        for (std::size_t i = 0; i < kT3MappingCells.size(); ++i) {
+            if (static_cast<std::size_t>(kT3MappingCells[i].intent) != i)
+                return false;
+            for (std::size_t j = i + 1; j < kT3MappingCells.size(); ++j)
+                if (kT3MappingCells[i].intent == kT3MappingCells[j].intent)
+                    return false;
+        }
+        return true;
+    }
+    /// `row_ref` 唯一(每行一个锚点摘要行 id)
+    static constexpr bool t3_row_refs_are_unique() noexcept {
+        for (std::size_t i = 0; i < kT3MappingCells.size(); ++i) {
+            if (kT3MappingCells[i].row_ref == nullptr || kT3MappingCells[i].row_ref[0] == '\0')
+                return false;
+            for (std::size_t j = i + 1; j < kT3MappingCells.size(); ++j)
+                if (std::string_view(kT3MappingCells[i].row_ref) ==
+                    std::string_view(kT3MappingCells[j].row_ref))
+                    return false;
+        }
+        return true;
+    }
+    /// `Pending` 行 ⇒ **不得**声明事件(fail-closed 的前提)
+    static constexpr bool t3_pending_rows_declare_no_event() noexcept {
+        for (const auto& c : kT3MappingCells)
+            if (c.basis == T3BasisKind::Pending && c.event_mask != 0)
+                return false;
+        return true;
+    }
+    /// 非 `Pending` 行 ⇒ `ref` 非空
+    static constexpr bool t3_non_pending_rows_have_ref() noexcept {
+        for (const auto& c : kT3MappingCells)
+            if (c.basis != T3BasisKind::Pending &&
+                (c.ref == nullptr || c.ref[0] == '\0'))
+                return false;
+        return true;
+    }
+    /// 事件掩码**不得**含 4 事件之外的位
+    static constexpr bool t3_event_masks_are_in_range() noexcept {
+        for (const auto& c : kT3MappingCells)
+            if ((c.event_mask & ~kT3EventAll) != 0)
+                return false;
+        return true;
+    }
+
     static constexpr const char* perm_name(Perm p) noexcept {
         switch (p) {
             case Perm::NONE: return "NONE";
@@ -636,5 +845,21 @@ static_assert(tlm::cep::TileLinkStateSpec::count_popcount(0) == 2, "空集格数
 static_assert(tlm::cep::TileLinkStateSpec::count_popcount(1) == 5, "单值格数 SHALL == 5");
 static_assert(tlm::cep::TileLinkStateSpec::count_popcount(2) == 2, "2 位目标格数 SHALL == 2");
 static_assert(tlm::cep::TileLinkStateSpec::count_popcount(3) == 3, "3 位目标格数 SHALL == 3");
+
+// ── T3 映射表的编译期锁(per 台账 Entry #241)────────────────────────────
+// ⚠️ 判据铁律 ③:编译期锁 SHALL **同时**有运行时断言
+//    (见 `test/test_cep_tilelink_state_spec.cc` 的 T3 段)。
+static_assert(tlm::cep::TileLinkStateSpec::t3_row_count_is_exact(),
+              "T3: 映射行数 SHALL == kPlatformIntentCount(11)");
+static_assert(tlm::cep::TileLinkStateSpec::t3_intents_are_unique_and_complete(),
+              "T3: intent SHALL 唯一且覆盖 0 ~ kPlatformIntentCount-1");
+static_assert(tlm::cep::TileLinkStateSpec::t3_row_refs_are_unique(),
+              "T3: row_ref SHALL 唯一且非空");
+static_assert(tlm::cep::TileLinkStateSpec::t3_pending_rows_declare_no_event(),
+              "T3: Pending 行 SHALL NOT 声明事件(fail-closed)");
+static_assert(tlm::cep::TileLinkStateSpec::t3_non_pending_rows_have_ref(),
+              "T3: 非 Pending 行 SHALL 有非空 ref");
+static_assert(tlm::cep::TileLinkStateSpec::t3_event_masks_are_in_range(),
+              "T3: 事件掩码 SHALL 只含 4 个事件位");
 
 #endif  // CPPTLM_CEP_TILELINK_STATE_SPEC_HH

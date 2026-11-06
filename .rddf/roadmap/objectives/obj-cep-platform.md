@@ -15118,6 +15118,41 @@ architect(**D-1 / D-2 / D-3 待签**)。
 `ADR-CEP-07` Status Update 2026-11-04 ① · `include/tlm/cep/tilelink_state_spec.hh` · `include/tlm/cep/protocol_engine_base.hh` ·
 `§6.2 B3b` · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/`
 
+### Entry #242 — 2026-11-06 [build](T3 普查**实施完成** —— 11 行全锚 + fail-closed 载体 + 判据 4 件套绿)
+
+**主题**:change `cpptlm-cep-tilelink-t3-mapping-survey`(Entry #241)**实施回执**。「CohIf 平台消息/意图面 →
+`Cap`/`Grow`/`Prune`/`Report` 事件轴」的映射已普查落地,**11 行全部条款级 `Direct`、`Pending` = 0**
+(⇒ 二分支验收取**分支 1**:全行有锚,TileLink-C **不**进 ⏭ 名单;剩余前移为**引擎 change**)。
+**角色**:builder。⛔ 无 spec delta、⛔ 无冻结面改动(实测 `cep_freeze_check` 41 产物 rc=0)、⛔ 无 `INV-CEP-*` 新编号。
+
+**① 载体落地**:`include/tlm/cep/tilelink_state_spec.hh` 新增 `PlatformIntent`(11 意图:canonical 10 流 + atomic 意图)
++ `kT3MappingCells`(11 行,行 id `TLC-M-01`~`TLC-M-11`,与 proposal 承诺的「形如 `TLC-M-*`」对齐)。
+事件取值:`completion`→`Grow` · `snoop`/`snoop_resp`/`writeback`→`Prune` · 其余 7 行无事件(**空掩码** ≠ 未锚)。
+PE = **master**(由锚点摘要 §4 的 5/5 方向一致性**推导**,非建模选择);12 格矩阵描述「任一 agent 副本」,对 master 同样适用。
+fail-closed:`t3_consumable_event_mask`(Pending 行 ⇒ 掩码归零,⛔ 消费者不得消费未锚行)+ 带参判定入口 `t3_rows_are_valid_for`(判据铁律 ③)。
+编译期锁 6 条(行数 / intent 唯一且覆盖 / row_ref 唯一 / Pending 不声明事件 / 非 Pending 有 ref / 掩码范围)。
+
+**② 审计面**:`docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md`(唯一人工审计面)
+—— 行宇宙 11 行闭集、逐行 basis + 条款级 ref、空掩码 6 行逐条依据、与 `ADR-CEP-12`「10 行逐消息表」的
+**不同 artifact** 界定(§5)、失效条件(§7:D2 1.9.3 消息表变化 / PE 角色反转 / ADR-CEP-12 词表变更)。
+合规:TileLink-C 免费**可读**非禁读(per 上游 §0);全程未读取 UALink / CXL / NVLink 规范正文。
+
+**③ 判据 4 件套(证据)**:
+· 正控 = `[cep][tilelink-state-spec]` 5 cases / 96 assertions 绿(T3 段:行宇宙 / 自洽 / 锚点摘要↔载体逐行相等 X-2 / 事件钉死 / fail-closed 反向 fixture);
+· 反控 = 4 条反向 fixture(Pending 声明事件 / Pending 可消费掩码归零 / row_ref 重复 / 掩码越界)全部**因正确原因红**;
+· **决定性变异** = 删 `TLC-M-11` 行 + count→10 ⇒ 编译红 `test_cep_tilelink_state_spec.cc:623 too many initializers`(行宇宙 11 行闭集判据);取证后复原,全绿;
+· 全量 = `[cep]` 435 cases / 10229 assertions 绿(T3 净增 5 cases)。
+
+**④ 文档收口(同步点)**:`07 号` ③ 逐族表 TileLink-C 行(T3 ❌→✅ + 判定句更新)+ ④ 追加 dated 句 + ⑦ Verification L4/L5/L6 勾选;
+`scripts/test/cep_doc_ref_check.sh` VIRTUAL_PATHS 的「待产出」占位消除(锚点摘要已实产);
+行 id **成组改名**(摘要 / 载体 / 测试 3 文件,`T3-NN`→`TLC-M-NN`,消除 proposal↔实施漂移)。
+KPI:Proposed 维持 **1/3**(本 change 未归档)。
+
+**⑤ 关联**:**#241**(立项)· **#240**(B3a 收口 + 路径 A)· **#238**(D-1 T1–T4 判定式)· **#236**(B2 66/66)·
+`07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
+`docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
+`test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
+
 ---
 ---
 
