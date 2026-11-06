@@ -1,0 +1,13 @@
+schema: spec-driven
+created: 2026-11-06
+goal: 把 P1 留下的两条尾巴闭环 —— 「Free 误当 Unknown」变异进 CI(第四态)+ 载体自足白名单进契约(ADDED requirement)
+affected_areas:
+  - scripts/test/cep_source_effect_check.sh
+  - scripts/test/cep_source_effect_check_probe.cc
+  - openspec/changes/cpptlm-cep-source-kind-contract-alignment/specs/cep-ualink-inc-state-spec/spec.md
+# 零冻结面改动;零载体实现改动;零主测试/反向验证探针逻辑改动。
+skip_specs: false
+x-phase: P0
+x-priority: P1
+x-status: proposed
+x-ledger: obj-cep-platform Entry #255
