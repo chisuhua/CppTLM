@@ -65,10 +65,14 @@ FIXTURES=(
   "f-06-uis06-pending-to-selfderived:::${CARRIER}:::{Obligation::Uis06, \"N-5\", BasisKind::Pending},:::{Obligation::Uis06, \"N-5\", BasisKind::SelfDerived},:::UIS-06"
   # F-7 —— 「不一致即禁用 M-2」的判定失效(谓词函数体翻转)⇒ 编译红 ⇒ 归因 `UIS-07`
   "f-07-vc-inheritance-always-true:::${CARRIER}:::return all_instances_agree;:::return true;:::UIS-07"
-  # F-8 —— `UIS-08` 的格由 pending 冒充已定稿 ⇒ 编译红 ⇒ 归因 `UIS-08`
-  "f-08-uis08-pending-to-selfderived:::${CARRIER}:::{Obligation::Uis08, \"N-8\", BasisKind::Pending},:::{Obligation::Uis08, \"N-8\", BasisKind::SelfDerived},:::UIS-08"
+  # F-8 —— `UIS-08` 的格**由已定稿冒充 pending** ⇒ 编译红 ⇒ 归因 `UIS-08`
+  #   ⚠️ **2026-11-06 方向翻转**(per 台账 Entry #238 + `ADR-CEP-04` SU 2026-11-06):
+  #   `Uis08` / `Uis09` 已由 `Pending` 转 `SelfDerived`(ref = `C-10`)⇒ 原「pending→selfderived」
+  #   的毒化**不再能命中锚点**(载体里已无 `N-8` / `N-9` 格)⇒ fixture 必须**跟随载体状态反向**,
+  #   否则反向验证会因「锚点 0 命中」而**误报 fixture 失效**(本轮实测 ANCHOR-HIT:0)。
+  "f-08-uis08-selfderived-to-pending:::${CARRIER}:::{Obligation::Uis08, \"C-10\", BasisKind::SelfDerived},:::{Obligation::Uis08, \"C-10\", BasisKind::Pending},:::UIS-08"
   # F-9 —— `UIS-09` 同上 ⇒ 归因 `UIS-09`
-  "f-09-uis09-pending-to-selfderived:::${CARRIER}:::{Obligation::Uis09, \"N-9\", BasisKind::Pending},:::{Obligation::Uis09, \"N-9\", BasisKind::SelfDerived},:::UIS-09"
+  "f-09-uis09-selfderived-to-pending:::${CARRIER}:::{Obligation::Uis09, \"C-10\", BasisKind::SelfDerived},:::{Obligation::Uis09, \"C-10\", BasisKind::Pending},:::UIS-09"
   # F-10 —— `UIS-10`:`SelfDerived` 的 `ref` 冒充成公开来源 ⇒ 遍历式断言红 ⇒ 归因 `UIS-10`
   "f-10-basis-ref-public-impersonate:::${CARRIER}:::{Obligation::Uis01, \"C-2 C-3\", BasisKind::SelfDerived},:::{Obligation::Uis01, \"C-2 A-3\", BasisKind::SelfDerived},:::UIS-10"
   # F-11a —— `UIS-11`:把「重跑 DAG」当作证书(声明锁翻转)⇒ 编译红 ⇒ 归因 `UIS-11`

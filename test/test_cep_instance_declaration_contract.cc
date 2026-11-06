@@ -15,6 +15,7 @@
 
 #include "cep_adr_parser.hh"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <set>
@@ -330,5 +331,196 @@ TEST_CASE("INV-CEP-13-IC2:跨域写传播由判据 (a)+(b) 触发(非全传播 /
          {MA::Event::Rd, MA::Event::Inv, MA::Event::InvAck, MA::Event::Fl, MA::Event::FlAck}) {
         INFO("非写事件不得触发跨域写传播,event=" << static_cast<int>(e));
         REQUIRE_FALSE(MA::is_silent_upgrade(MA::State::E, e));
+    }
+}
+
+
+// ═════════════════════════════════════════════════════════════════════
+// ADR-CEP-04 SU 2026-11-03 §④ 的两条元测试(2026-11-06 落地,per 台账 Entry #238)
+//   · O1「理由登记存在性」—— 每个已声明实例都有**可判定的**选型理由
+//   · O2「caps ↔ kTrackerTraits 逐字段一致」—— 实例声明不得偏离其实现对应的 traits 行
+// ⚠️ 两条各带**反向 fixture**(删理由 ⇒ 红 / 改一格 caps ⇒ 红)⇒ 非恒真占位。
+// ⚠️ 落地前该 ADR 的 §④ 两条 Verification **一直未勾选**(载体与元测试均**零存在**)
+//    ⇒ 本块是**补欠账**,不是新增能力。
+// ═════════════════════════════════════════════════════════════════════
+namespace {
+
+    // ── caps 枚举 → schema 字符串(4 字段)────────────────────────────────
+    std::string scope_name(tlm::cep::Scope v) {
+        switch (v) {
+            case tlm::cep::Scope::SYSTEM: return "SYSTEM";
+            case tlm::cep::Scope::LOCAL_MEMORY_REGION: return "LOCAL_MEMORY_REGION";
+            case tlm::cep::Scope::SUBTREE: return "SUBTREE";
+            case tlm::cep::Scope::NONE: return "NONE";
+        }
+        return "?";
+    }
+    std::string completeness_name(tlm::cep::Completeness v) {
+        switch (v) {
+            case tlm::cep::Completeness::EXACT: return "EXACT";
+            case tlm::cep::Completeness::CONSERVATIVE: return "CONSERVATIVE";
+            case tlm::cep::Completeness::PARTIAL: return "PARTIAL";
+        }
+        return "?";
+    }
+    std::string authority_name(tlm::cep::Authority v) {
+        switch (v) {
+            case tlm::cep::Authority::GLOBAL: return "GLOBAL";
+            case tlm::cep::Authority::LOCAL_HINT: return "LOCAL_HINT";
+            case tlm::cep::Authority::LOCAL: return "LOCAL";
+            case tlm::cep::Authority::NONE: return "NONE";
+        }
+        return "?";
+    }
+    std::string aggregation_at_name(tlm::cep::AggregationAt v) {
+        switch (v) {
+            case tlm::cep::AggregationAt::HOME: return "HOME";
+            case tlm::cep::AggregationAt::REQUESTER: return "REQUESTER";
+            case tlm::cep::AggregationAt::TREE_PARENT: return "TREE_PARENT";
+            case tlm::cep::AggregationAt::NONE: return "NONE";
+            case tlm::cep::AggregationAt::HIERARCHICAL: return "HIERARCHICAL";
+        }
+        return "?";
+    }
+
+    /// 该 impl 的**期望 caps**。
+    /// ⚠️ `不参与` **无** traits 行 ⇒ 其参照 = **退化集** `NONE`/`EXACT`/`NONE`/`NONE`
+    ///    (per `ADR-CEP-04` SU 2026-11-03 §④)—— 该退化集与 `BroadcastNull` 行**逐字段相同**
+    ///    ⇒ 二者**语义等价**(per `INV-CEP-04-IC7`)⇒ 判据**不**区分二者。
+    ///    ⛔ 未知 impl ⇒ 返回 `false`(⇒ 判否),**不得**静默退化成退化集(那会让未知 impl 假绿)。
+    bool expected_caps(const std::string& impl, tlm::cep::SharerTrackerCaps& out) {
+        using namespace tlm::cep;
+        if (impl == "不参与") {
+            out = SharerTrackerCaps{Scope::NONE, Completeness::EXACT, Authority::NONE,
+                                    AggregationAt::NONE};
+            return true;
+        }
+        for (const auto& tr : kTrackerTraits)
+            if (impl == tr.name) {
+                out = tr.caps;
+                return true;
+            }
+        return false;
+    }
+
+    /// 实例声明的 caps 是否与期望**逐字段**相等
+    bool caps_match(const json& inst, const tlm::cep::SharerTrackerCaps& exp) {
+        const auto& c = inst.at("sharer_tracker").at("caps");
+        return c.value("scope", std::string()) == scope_name(exp.scope) &&
+               c.value("completeness", std::string()) == completeness_name(exp.completeness) &&
+               c.value("authority", std::string()) == authority_name(exp.authority) &&
+               c.value("aggregation_at", std::string()) == aggregation_at_name(exp.aggregation_at);
+    }
+
+    /// 理由是否含**可判定的来源标识**(仓内已签来源:ADR / invariant / 台账 entry)
+    bool rationale_has_source(const std::string& why) {
+        return why.find("ADR-CEP-") != std::string::npos ||
+               why.find("INV-CEP-") != std::string::npos ||
+               why.find("Entry #") != std::string::npos;
+    }
+
+    /// 该实例是否**通过**理由登记检查(存在 · 非空 · 含可判定的来源标识)
+    bool rationale_ok(const json& decl, const std::string& id) {
+        if (!decl.contains("sharer_tracker_rationales"))
+            return false;
+        const auto& rats = decl.at("sharer_tracker_rationales");
+        if (!rats.is_object() || !rats.contains(id))
+            return false;
+        const auto why = rats.at(id).get<std::string>();
+        return !why.empty() && rationale_has_source(why);
+    }
+
+} // namespace
+
+TEST_CASE("ADR-CEP-04-SU4-O1:每个已声明实例都有**可判定的** sharer-tracker 选型理由",
+          "[cep][instance-decl][sharer-tracker]") {
+    const auto decl = load_json("include/tlm/cep/protocol_instances.json");
+    REQUIRE(decl.contains("instances"));
+    REQUIRE_FALSE(decl.at("instances").empty());
+
+    // ① 顶层理由登记块必须存在(ADR-CEP-04 SU 2026-11-03 §③ 的「新增声明面」)
+    REQUIRE(decl.contains("sharer_tracker_rationales"));
+    REQUIRE(decl.at("sharer_tracker_rationales").is_object());
+
+    // ② 逐实例:理由存在 · 非空 · 含可判定的来源标识
+    //    ⚠️ **不设「存量豁免」** ⇒ 豁免会让该断言对存量**恒真**(per 该 SU §④ 的原话)
+    for (const auto& inst : decl.at("instances")) {
+        const auto id = inst.value("id", std::string("?"));
+        INFO("实例缺理由登记 / 理由不可判定: " << id);
+        REQUIRE(rationale_ok(decl, id));
+    }
+
+    // ③ 反向 fixture:删一条理由 ⇒ 必须判否(证明非恒真)
+    {
+        json bad = decl;
+        bad["sharer_tracker_rationales"].erase("chi_rnf");
+        REQUIRE_FALSE(rationale_ok(bad, "chi_rnf"));
+    }
+    // ④ 反向 fixture:空理由 ⇒ 判否
+    {
+        json bad = decl;
+        bad["sharer_tracker_rationales"]["chi_rnf"] = "";
+        REQUIRE_FALSE(rationale_ok(bad, "chi_rnf"));
+    }
+    // ⑤ 反向 fixture:理由**无来源标识** ⇒ 判否(防止「某人说过」式的不可审计断言)
+    {
+        json bad = decl;
+        bad["sharer_tracker_rationales"]["chi_rnf"] = "随便选一个";
+        REQUIRE_FALSE(rationale_ok(bad, "chi_rnf"));
+    }
+}
+
+TEST_CASE("ADR-CEP-04-SU4-O2:实例的 sharer-tracker caps 与 `kTrackerTraits` **逐字段**一致",
+          "[cep][instance-decl][sharer-tracker]") {
+    const auto decl = load_json("include/tlm/cep/protocol_instances.json");
+    REQUIRE_FALSE(decl.at("instances").empty());
+
+    // ① 逐实例:caps 必须**逐字段**等于其 impl 对应的 traits 行(`不参与` ⇒ 退化集)
+    for (const auto& inst : decl.at("instances")) {
+        const auto id = inst.value("id", std::string("?"));
+        const auto impl = inst.at("sharer_tracker").value("impl", std::string("?"));
+        tlm::cep::SharerTrackerCaps exp{};
+        INFO("未知 impl(不在 traits 表内且非「不参与」): " << id << " ⇒ " << impl);
+        REQUIRE(expected_caps(impl, exp));
+        INFO("实例 caps 偏离其 traits 行: " << id << " ⇒ impl=" << impl);
+        REQUIRE(caps_match(inst, exp));
+    }
+
+    // ② 交叉核对:traits 行的 4 个 caps 字符串必须都落在 **schema 的值域**内
+    //    (⇒ traits 词表与 schema 词表**不可能**静默分叉)
+    const auto schema = load_json("include/tlm/cep/protocol_instance.schema.json");
+    const auto& caps_schema =
+        schema.at("properties").at("sharer_tracker").at("properties").at("caps");
+    const auto enum_of = [&](const char* field) {
+        std::vector<std::string> out;
+        for (const auto& v : caps_schema.at("properties").at(field).at("enum"))
+            out.push_back(v.get<std::string>());
+        return out;
+    };
+    const auto scope_enum = enum_of("scope");
+    const auto compl_enum = enum_of("completeness");
+    const auto auth_enum = enum_of("authority");
+    const auto aggr_enum = enum_of("aggregation_at");
+    const auto in = [](const std::vector<std::string>& v, const std::string& s) {
+        return std::find(v.begin(), v.end(), s) != v.end();
+    };
+    for (const auto& tr : tlm::cep::kTrackerTraits) {
+        INFO("traits 行的 caps 值不在 schema 值域内: " << scope_name(tr.caps.scope));
+        REQUIRE(in(scope_enum, scope_name(tr.caps.scope)));
+        REQUIRE(in(compl_enum, completeness_name(tr.caps.completeness)));
+        REQUIRE(in(auth_enum, authority_name(tr.caps.authority)));
+        REQUIRE(in(aggr_enum, aggregation_at_name(tr.caps.aggregation_at)));
+    }
+
+    // ③ 反向 fixture:改**一格** caps ⇒ 必须判否(证明该判据有牙)
+    {
+        json bad = decl;
+        json& inst = bad["instances"][0];
+        tlm::cep::SharerTrackerCaps exp{};
+        const auto impl = inst.at("sharer_tracker").value("impl", std::string("?"));
+        REQUIRE(expected_caps(impl, exp));
+        const auto orig = inst.at("sharer_tracker").at("caps").value("scope", std::string());
+        inst["sharer_tracker"]["caps"]["scope"] = (orig == "SYSTEM") ? "NONE" : "SYSTEM";
+        REQUIRE_FALSE(caps_match(inst, exp));
     }
 }

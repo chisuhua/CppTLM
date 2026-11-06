@@ -14,7 +14,7 @@
 // ── 定位 ─────────────────────────────────────────────────────────────────────
 // **不是缓存、不是网络组件**:它不接 `connections[]`、不进 `ModuleFactory`、不注册 ABI。
 // 它是 **UALink INC 语义的规约真源**:INC 四原语的自持 id 与**到既有原语的名字映射**
-// · **逐格 `basis`** · **9 项 pending 登记** · 形状型判定谓词
+// · **逐格 `basis`** · **7 项 pending 登记**(2026-11-06: `N-8` / `N-9` 转正 ⇒ 9 → 7)· 形状型判定谓词
 // ⇒ 供第 1 个 change 的 `UalinkAdapter` / `FabricCollectivePlane` **零自有表副本**地委托消费。
 //
 // ── ⛔ 自足红线(per ADR-CEP-03 SU 2026-11-03(#2) F.1 · 本 change design §2.1)──
@@ -68,7 +68,7 @@
 // · **`pending` 白名单** = 载体可逐项报出的 **9** 条(`N-1` ~ `N-9`)
 //   ⇒ ⚠️ **「恰 9 项 + 与锚点摘要 §3 逐项相等」由 X-2 元测试 + 人工审计面承担**
 //     (Phase 2 · **可执行**:读锚点摘要解析 `N-n` 集合)
-//   ⇒ **载体只保证自洽型**(表大小 == `kPendingCount` · id 唯一且落在 `N1`~`N9` · id ↔ ref 一一对应)
+//   ⇒ **载体只保证自洽型**(表大小 == `kPendingCount` · id 唯一且落在 `N1`~`N7` · id ↔ ref 一一对应)
 //   ⇒ **载体不硬编数量** ⇒ 语义转正时**审计键 id 保持稳定**(可逆性)。
 //
 // ── ⚠️ 载体自建的**教训**(per 队列 #14 Phase 1 自查,已固化)────────────────
@@ -195,8 +195,13 @@ namespace tlm {
                 {Obligation::Uis05, "N-4", BasisKind::Pending},
                 {Obligation::Uis06, "N-5", BasisKind::Pending},
                 {Obligation::Uis07, "C-1 C-8 C-9", BasisKind::SelfDerived},
-                {Obligation::Uis08, "N-8", BasisKind::Pending},
-                {Obligation::Uis09, "N-9", BasisKind::Pending},
+                // ⚠️ **2026-11-06 翻转**(per 台账 Entry #238 + `ADR-CEP-04` SU 2026-11-06):
+                //   `Uis08` / `Uis09` 由 `Pending` 转 **`SelfDerived`** —— 但 ⛔ **不是**「有规范依据」,
+                //   而是「**非规范公开来源**支撑的**建模声明**」⇒ 其 ref **必须**指向**仓内已签锚点** `C-10`
+                //   (= `ADR-CEP-04` SU 2026-11-06 的 `ualink_4` 取值裁决,该 SU 内记录 4 个公开来源
+                //     + 「一步推断」的限定)⇒ 载体侧**不发明第三种 basis 值**(`BasisKind` 仍只 2 档)。
+                {Obligation::Uis08, "C-10", BasisKind::SelfDerived},
+                {Obligation::Uis09, "C-10", BasisKind::SelfDerived},
                 {Obligation::Uis10, "C-1", BasisKind::SelfDerived},
                 {Obligation::Uis11, "C-1", BasisKind::SelfDerived},
             }};
@@ -218,7 +223,7 @@ namespace tlm {
             }};
 
             // ═══════════════════════════════════════════════════════════════
-            // ④ pending 白名单(9 项 —— 与锚点摘要 §3 **逐项相等**)
+            // ④ pending 白名单(7 项 —— 与锚点摘要 §3 **逐项相等**;⚠️ 2026-11-06: `N-8` / `N-9` 已转正 ⇒ 9 → 7)
             // ═══════════════════════════════════════════════════════════════
             enum class PendingId : std::uint8_t {
                 N1 = 0, ///< INC 四原语的规范定义与语义
@@ -228,11 +233,12 @@ namespace tlm {
                 N5 = 4, ///< INC 的控制面(group / epoch / 成员集合)归属
                 N6 = 5, ///< 既有算子族与 UALink 归约算子的对应关系
                 N7 = 6, ///< 集合流量在既有 VC 上的占用语义
-                N8 = 7, ///< `ualink_4` 的 `flow_support`(snoop 类流量有无)
-                N9 = 8, ///< `ualink_4` 的 `perm` 支持子集
+                // ⚠️ **2026-11-06**:`N8` / `N9`(`ualink_4` 的 `flow_support` / `perm` 子集)**已转正**
+                //   ⇒ 由 pending 白名单**移除**(取值见 `ADR-CEP-04` SU 2026-11-06 + 锚点摘要 `C-10`)
+                //   ⇒ 白名单 **9 项 → 7 项**(`N-1` ~ `N-7`)。
             };
 
-            inline constexpr std::size_t kPendingCount = 9;
+            inline constexpr std::size_t kPendingCount = 7;
 
             struct PendingItem {
                 PendingId id;
@@ -248,8 +254,6 @@ namespace tlm {
                 {PendingId::N5, "N-5", "INC 的控制面(group / epoch / 成员集合)归属"},
                 {PendingId::N6, "N-6", "既有算子族与 UALink 归约算子的对应关系"},
                 {PendingId::N7, "N-7", "集合流量在既有 VC 上的占用语义"},
-                {PendingId::N8, "N-8", "`ualink_4` 的 `flow_support`(snoop 类流量有无)"},
-                {PendingId::N9, "N-9", "`ualink_4` 的 `perm` 支持子集"},
             }};
 
             // ═══════════════════════════════════════════════════════════════
@@ -418,16 +422,16 @@ namespace tlm {
                 return kBasisObligations[static_cast<std::size_t>(ob)].kind == BasisKind::SelfDerived;
             }
 
-            /// pending 条目的 id 是否**唯一**且**落在** `N1` ~ `N9` 内
+            /// pending 条目的 id 是否**唯一**且**落在** `N1` ~ `N7` 内(2026-11-06:`N-8`/`N-9` 转正 ⇒ 上界 `N7`)
             /// ⚠️ ⛔ **不要求**「id == 数组下标」—— 那会把「一次语义转正」强制变成
             ///    「一次审计键重写」(转正一项 ⇒ 其余全部重编号 ⇒ 破坏与锚点摘要 §3
             ///    / delta spec 的对应)⇒ **可逆性**(per 本 change design §2.3 的修订)。
-            /// ⇒ 「恰 9 项 + 与锚点摘要逐项相等」= **X-2 元测试**的义务(Phase 2 · 可执行)
+            /// ⇒ 「恰 7 项 + 与锚点摘要逐项相等」= **X-2 元测试**的义务(Phase 2 · 可执行)
             ///    + 人工审计面 ⇒ **载体不硬编数量**。
             template <std::size_t N>
             constexpr bool pending_ids_unique_and_in_range(const std::array<PendingItem, N>& items) noexcept {
                 constexpr std::size_t kPendingIdSpace =
-                    static_cast<std::size_t>(PendingId::N9) + 1u;
+                    static_cast<std::size_t>(PendingId::N7) + 1u;
                 for (std::size_t i = 0; i < N; ++i) {
                     const std::size_t id = static_cast<std::size_t>(items[i].id);
                     if (id >= kPendingIdSpace)
@@ -646,10 +650,14 @@ namespace tlm {
                           "UIS-05: INC 与 coherence 流的排序 / 原子性 SHALL 保持 pending(公开来源撑不住)");
             static_assert(obligation_is_pending(Obligation::Uis06),
                           "UIS-06: INC 的控制面归属 SHALL 保持 pending(公开来源撑不住)");
-            static_assert(obligation_is_pending(Obligation::Uis08),
-                          "UIS-08: ualink_4 的 flow_support SHALL 保持 pending(公开来源撑不住)");
-            static_assert(obligation_is_pending(Obligation::Uis09),
-                          "UIS-09: ualink_4 的 perm 支持子集 SHALL 保持 pending(公开来源撑不住)");
+            // ⚠️ **2026-11-06 翻转**(per `ADR-CEP-04` SU 2026-11-06):`Uis08` / `Uis09` **不再** pending
+            //   —— 取值由「非规范公开来源(4 个独立来源)+ 显式一步推断」支撑 ⇒ 作为**建模声明**
+            //   锚到仓内已签锚点 `C-10` ⇒ `SelfDerived`。
+            //   ⛔ **不得**据此推断「有规范依据」⇒ `C-10` 的正文必须自带该限定(per 锚点摘要 `C-10`)。
+            static_assert(obligation_is_self_derived(Obligation::Uis08),
+                          "UIS-08: ualink_4 的 flow_support SHALL 引仓内已签锚点 C-10(非规范来源支撑的建模声明)");
+            static_assert(obligation_is_self_derived(Obligation::Uis09),
+                          "UIS-09: ualink_4 的 perm 支持子集 SHALL 引仓内已签锚点 C-10(建模声明)");
             static_assert(obligation_is_self_derived(Obligation::Uis01),
                           "UIS-01: 原语集义务 SHALL 引仓内已签锚点");
             static_assert(obligation_is_self_derived(Obligation::Uis02),
@@ -673,7 +681,7 @@ namespace tlm {
             static_assert(kPendingSemanticItems.size() == kPendingCount,
                           "UIS-10: pending 表的大小 SHALL == kPendingCount");
             static_assert(pending_ids_unique_and_in_range(kPendingSemanticItems),
-                          "UIS-10: pending 的 id SHALL 唯一且落在 N1 ~ N9 内");
+                          "UIS-10: pending 的 id SHALL 唯一且落在 N1 ~ N7 内");
             static_assert(pending_refs_match_ids(kPendingSemanticItems),
                           "UIS-10: pending 的 ref SHALL 与其 id 一一对应");
             static_assert(all_basis_cells_have_ref(), "UIS-10: 每个 basis 格 SHALL 有非空 ref");
@@ -693,9 +701,7 @@ namespace tlm {
                               basis_kind_matches_ref_class(BasisKind::SelfDerived, "C-1 C-8 C-9") &&
                               basis_kind_matches_ref_class(BasisKind::Pending, "N-3") &&
                               basis_kind_matches_ref_class(BasisKind::Pending, "N-4") &&
-                              basis_kind_matches_ref_class(BasisKind::Pending, "N-5") &&
-                              basis_kind_matches_ref_class(BasisKind::Pending, "N-8") &&
-                              basis_kind_matches_ref_class(BasisKind::Pending, "N-9"),
+                              basis_kind_matches_ref_class(BasisKind::Pending, "N-5"),
                           "UIS-10: 义务格的 kind SHALL 与其 ref 类别自洽");
             static_assert(basis_kind_matches_ref_class(BasisKind::Pending, "C-6 N-1"),
                           "UIS-10: INC 原语格 SHALL 同时引名字锚点(C-)与语义 pending(N-)");

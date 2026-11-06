@@ -170,9 +170,9 @@ TEST_CASE("UIS-01/UIS-02/UIS-03/UIS-07/UIS-10: 载体的编译期锁在运行期
     REQUIRE(vc_inheritance_is_well_defined(true));
     REQUIRE_FALSE(vc_inheritance_is_well_defined(false));
 
-    // ⑥ pending 白名单:恰 9 项 · id 与 ref 一一对应
-    REQUIRE(kPendingCount == 9u);
-    REQUIRE(kPendingSemanticItems.size() == 9u);
+    // ⑥ pending 白名单:恰 **7** 项(2026-11-06:`N-8` / `N-9` 转正 ⇒ 9 → 7)· id 与 ref 一一对应
+    REQUIRE(kPendingCount == 7u);
+    REQUIRE(kPendingSemanticItems.size() == 7u);
     REQUIRE(pending_ids_unique_and_in_range(kPendingSemanticItems));
     REQUIRE(pending_refs_match_ids(kPendingSemanticItems));
     for (const auto& it : kPendingSemanticItems) {
@@ -186,12 +186,16 @@ TEST_CASE("UIS-01/UIS-02/UIS-03/UIS-07/UIS-10: 载体的编译期锁在运行期
     REQUIRE(kBasisObligations.size() == kObligationCount);
     REQUIRE(kBasisIncOps.size() == kIncOpBasisCount);
 
-    // ⑧ 5 格 pending + 5 格 self-derived(与编译期断言同形)
+    // ⑧ **3** 格 pending + **7** 格 self-derived(与编译期断言同形)
+    //    ⚠️ 2026-11-06(per `ADR-CEP-04` SU 2026-11-06):`Uis08` / `Uis09` 由 pending 转 self-derived
+    //    (basis = `C-10` = 「非规范公开来源支撑的建模声明」,⛔ 非「有规范依据」)
     REQUIRE(obligation_is_pending(Obligation::Uis04));
     REQUIRE(obligation_is_pending(Obligation::Uis05));
     REQUIRE(obligation_is_pending(Obligation::Uis06));
-    REQUIRE(obligation_is_pending(Obligation::Uis08));
-    REQUIRE(obligation_is_pending(Obligation::Uis09));
+    REQUIRE_FALSE(obligation_is_pending(Obligation::Uis08));
+    REQUIRE_FALSE(obligation_is_pending(Obligation::Uis09));
+    REQUIRE(obligation_is_self_derived(Obligation::Uis08));
+    REQUIRE(obligation_is_self_derived(Obligation::Uis09));
     REQUIRE(obligation_is_self_derived(Obligation::Uis01));
     REQUIRE(obligation_is_self_derived(Obligation::Uis02));
     REQUIRE(obligation_is_self_derived(Obligation::Uis03));
@@ -244,12 +248,15 @@ TEST_CASE("UIS-10: 逐格 basis 的 kind 与 ref 类别自洽 —— 三种冒�
     REQUIRE(basis_kind_matches_ref_class(BasisKind::Pending, "N-3"));
     REQUIRE(basis_kind_matches_ref_class(BasisKind::Pending, "C-6 N-1")); // INC 混合格
 
-    // ⑤ 逐格:5 格 pending / 6 格 self-derived(含 UIS-11)
+    // ⑤ 逐格:**3** 格 pending / **8** 格 self-derived(含 UIS-11)
+    //    ⚠️ 2026-11-06:`Uis08` / `Uis09` 转 self-derived(per `ADR-CEP-04` SU 2026-11-06)
     REQUIRE(obligation_is_pending(Obligation::Uis04));
     REQUIRE(obligation_is_pending(Obligation::Uis05));
     REQUIRE(obligation_is_pending(Obligation::Uis06));
-    REQUIRE(obligation_is_pending(Obligation::Uis08));
-    REQUIRE(obligation_is_pending(Obligation::Uis09));
+    REQUIRE_FALSE(obligation_is_pending(Obligation::Uis08));
+    REQUIRE_FALSE(obligation_is_pending(Obligation::Uis09));
+    REQUIRE(obligation_is_self_derived(Obligation::Uis08));
+    REQUIRE(obligation_is_self_derived(Obligation::Uis09));
     REQUIRE_FALSE(obligation_is_pending(Obligation::Uis11));
     REQUIRE(obligation_is_self_derived(Obligation::Uis11));
 
@@ -262,7 +269,7 @@ TEST_CASE("UIS-10: pending 白名单的**可逆性** —— id 唯一且在范�
           "[cep][ualink-inc][pending]") {
     // ① 自洽型:表大小 == kPendingCount
     REQUIRE(kPendingSemanticItems.size() == kPendingCount);
-    // ② id 唯一且落在 N1 ~ N9 内(**不**要求 id == 数组下标)
+    // ② id 唯一且落在 N1 ~ N7 内(**不**要求 id == 数组下标)—— 2026-11-06:`N-8`/`N-9` 转正 ⇒ 上界 `N7`
     REQUIRE(pending_ids_unique_and_in_range(kPendingSemanticItems));
     // ③ id ↔ ref 一一对应
     REQUIRE(pending_refs_match_ids(kPendingSemanticItems));
@@ -271,7 +278,7 @@ TEST_CASE("UIS-10: pending 白名单的**可逆性** —— id 唯一且在范�
     const std::array<PendingItem, 1> bad_ref{{PendingItem{PendingId::N1, "N-2", "x"}}};
     const std::array<PendingItem, 2> dup_id{
         {PendingItem{PendingId::N1, "N-1", "x"}, PendingItem{PendingId::N1, "N-1", "y"}}};
-    const std::array<PendingItem, 1> ok_id{{PendingItem{PendingId::N9, "N-9", "x"}}};
+    const std::array<PendingItem, 1> ok_id{{PendingItem{PendingId::N7, "N-7", "x"}}};
     REQUIRE_FALSE(pending_refs_match_ids(bad_ref));
     REQUIRE_FALSE(pending_ids_unique_and_in_range(dup_id));
     REQUIRE(pending_ids_unique_and_in_range(ok_id)); // 正控:越界样本本身 id 合法

@@ -24,6 +24,8 @@
 | UALink Common 2.0 的合规边界 | 「是**公开规范**,**可投喂**」 | 落地页载明 **EVALUATION COPY AGREEMENT**(2025-04-07)+「ALL RIGHTS NOT SPECIFICALLY GRANTED HEREIN ARE RESERVED BY UALink」+ 下载需签署 EULA(姓名/公司/邮箱)⇒ **与 CXL ECA 同型** |
 
 ⇒ **对本 change 的实质影响 = 零**:§2 的公开来源**本就不含** INC 的技术语义(见 §2bis)⇒ 无论合规边界如何,**9 项细粒度语义都是 `pending`**。
+⚠️ **2026-11-06 附注**:`N-8` / `N-9` 已由**非规范公开来源**闭合(per §2bis **`C-10`**)⇒ **不依赖**规范正文 ⇒ **不违反**本节禁令;
+但 ⛔ 该闭合是「**一步推断**」⇒ 载体以 `SelfDerived` + ref `C-10` 表达(**不**发明第三种 basis 值)⇒ 后续读本文件者**不得**把它读成「有规范依据」。
 ⇒ 差别只在**未来**能否升级:若用户后续**自行**取得 Evaluation Copy 并**明确**授权投喂,`N-n` 才有转正可能。
 ⇒ **本轮不代用户改裁决**;偏差登记于此 + 台账。
 
@@ -73,6 +75,7 @@
 | **C-7** | tracker 选型 = **候选集(7 值)+ 逐实例理由登记**;⛔ **不存在** `flow_support` 派生规则 | `ADR-CEP-04` SU 2026-11-03 |
 | **C-8** | `ualink_fabric` 的 4 个 VC 语义 = VC0=Fault Request / VC1=Atomic / VC2=Remote Query / VC3=Response(**已锁定**) | ArchForge `22-nsa` §0.5.4.1 表 `:147`(经 `fabric.json` 的 `derived_from` 指针) |
 | **C-9** | `moesi_gpu` / `mesif` 在 `ualink_fabric` 上的 `vc_binding` **逐类相等** ⇒ C-1′ 的「继承良定义」成立 | `protocol_instances.json`(实测) |
+| **C-10** | `ualink_4` 的 **`flow_support.snoop` / `snoop_resp` = `false`**(链路上**不承载** snoop 类流量)与 **`perm` = `["NONE"]`**(零可锚定非 `NONE` 值)两项取值的**裁决本体** —— ⚠️ 支撑来源 = **4 个互相独立的公开非规范来源**:① Linux 内核 `docs.kernel.org/gpu/amdgpu/ualink.html`(7.4-rc1)——「direct loads/stores over the fabric」,**无 snoop 事务类型**(其 remote TLB shootdown 是 **TLB 失效**非 cache snoop)② AMD amd-gfx **95 个补丁**系列(2026-08-31)——「no copy involved; direct loads/stores over the fabric」,无 coherence 引擎 ③ UALink Consortium 官方博客(2025-05-15)——「**Coherency is maintained through software**」④ UnifabriX webinar(联盟官网托管,2025-12-10)——「software coherency」,并把 `Coherent (via CXL.mem/CXL.cache/CHI C2C)` 明确归给 **host 侧**。⇒ ⛔ **本项是「非规范来源支撑的建模声明」,不是「有规范依据」**;公开可钉版文本中**没有字面 "no snoop"**(该字面句只在**禁读**的规范正文与**不可钉版**的 YouTube 转录里)⇒ 「software coherency ⇒ `snoop=false`」是**一步推断**;⛔ 本仓**未**读取任何 UALink 规范 PDF 技术正文 | `ADR-CEP-04` **SU 2026-11-06**(per 台账 **Entry #238**)——**已签**的仓内决策 ⇒ 载体 `ualink_inc_state_spec.hh` 的 `Uis08` / `Uis09` 以 `SelfDerived` + ref `C-10` 表达(⛔ **不发明第三种 `BasisKind` 值**) |
 
 ---
 
@@ -87,10 +90,11 @@
 | **N-5** | INC 的**控制面**(group / epoch / 成员集合)是否由 UALink 定义,还是完全由**本仓**抽象 | 公开来源未涉及控制面 | 同上;若规范**不**定义 ⇒ 由 `ADR-CEP-03` 的既有抽象承担(则本仓**自推导**,须另行登记) |
 | **N-6** | 本仓 `ReduceOp`(恰 6 值)与 UALink 归约算子的**对应关系** | 公开来源未给算子表 | 同上 |
 | **N-7** | 集合流量在 `ualink_fabric` 上占用的 **VC 语义**(4 个 VC 均为硬件语义锁定的既有用途) | C-8 已锁定 VC 语义;INC 是否需要**新** VC 语义未知 ⇒ M-2 下**继承**既有映射(C-1′),但「继承是否足够」依赖 N-1~N-4 | 同上 |
-| **N-8** | `ualink_4` 的 `flow_support.snoop` / `snoop_resp` 取值(有无 snoop 类流量) | 公开来源只说「TL Load / Store / Atomic」(C-6)⇒ **未提 snoop** ⇒ **不得**据此推断「无 snoop」 | 同上;**它决定** tracker 选型(`BroadcastNull` vs `不参与`,per C-7)⇒ **不得**先填后证 |
-| **N-9** | `ualink_4` 的 `perm` 支持子集(4 值锁的值域 vs 子集) | 同 N-8 | 同上 |
 
-⇒ **9 项 pending**(`N-1` ~ `N-9`)。⇒ **本 change 的任何语义格都不得以公开来源为断言依据**
+⇒ **7 项 pending**(`N-1` ~ `N-7`)—— ⚠️ **2026-11-06**:`N-8` / `N-9` **已转正**(取值见 §2bis 的 **`C-10`**;
+转正依据 = **4 个互相独立的公开非规范来源** + 显式「一步推断」限定,⛔ **不是**规范依据 ⇒ **不依赖**规范正文 ⇒ 不违反 §0 禁令)⇒
+**白名单 9 项 → 7 项**(载体 `ualink_inc_state_spec.hh` 的 `kPendingCount` 同步 **9 → 7**)。
+⇒ **本 change 的任何语义格都不得以公开来源为断言依据**
 ⇒ 逐格 `basis` 只能是 `kind = self-derived`(引 `C-n` 的仓内锚点)或 `kind = pending`(引 `N-n`)。
 
 ---
