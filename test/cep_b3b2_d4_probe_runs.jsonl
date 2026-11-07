@@ -1,0 +1,1 @@
+{"schema":"cep-b3b2-d4-probe-run/v1","run_id":"baseline-2026-11-07","run_at":"2026-11-07T00:00:00Z","executor":"planner","outcome":"not_yet_run","note":"基线记录:探测协议已建立(Entry #277),但**尚未执行过任何一次探测**。⛔ 本行是「从未执行过」的显式标记 ⇒ 与「按时执行但全部 miss」可区分(metis:零 run-record 与全部 miss 须可区分)。⚠️ outcome 三态 = hit | miss | unknown;本基线行用 not_yet_run(第四态,仅基线行允许)。","evidence":{},"incident":null,"probes":[]}

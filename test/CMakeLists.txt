@@ -714,3 +714,14 @@ add_test(NAME cep_refkind_whitelist_contract
 #   ⛔ **不改**任何 DoD 计数(B3b-2 仍 0/4)
 add_test(NAME cep_b3b2_d4_probe_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_b3b2_d4_probe_check.sh)
+
+# ── 2026-11-07(Entry #278):**注册债**清理 ──────────────────────────────
+# ⚠️ 此前 3 个反向验证脚本**既未注册 ctest 也未登记进 `scripts/README.md`**
+#    ⇒ 它们**从不被 CI 执行**(判据可能早已失效而无人知道)。
+#    实测三者均跑绿(rc=0 / 12s·1s·4s)⇒ 是**注册债**而非判据漂移 ⇒ 本次注册。
+add_test(NAME cep_cxl_dcoh_adapter_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_cxl_dcoh_adapter_reverse_verify.sh)
+add_test(NAME cep_freeze_reverse_verify
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_freeze_reverse_verify.sh)
+add_test(NAME cep_tilelink_engine_failclosed
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_tilelink_engine_failclosed.sh)

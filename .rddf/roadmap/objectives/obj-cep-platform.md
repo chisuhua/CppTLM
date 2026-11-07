@@ -16017,6 +16017,27 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑥ 遗留登记(不做)**:① `scripts/README.md` 的 CEP 闸表**另有 2 个既有闸未登记**(`cep_source_effect_check.sh` / `cep_b3b2_deferral_check.sh` —— README 自注的**预存登记缺口**)⇒ ⛔ 本轮**不**扩范围处理,登记为独立 backlog;② **cadence 断言**(「≤100 天未执行即红」)**不进 ctest** ⇒ 放季度复审脚本(否则 100 天后所有无关 PR 都红);③ **metis 轮次已用尽** ⇒ 本 improvement 改写后**无独立复核** ⇒ 残余风险已在 improvement §「残余风险」登记。
 
 **⑦ 关联**:**#276**(批 1 补完 · coverage L4 档位逐族实测)· **#275**(批 1 · L1/L2)· **#274**(盘点 + 路径 · E1 登记)· **#264**(终态 DoD Go 挂起)· **#265**(⚠️ 合规事件 · Evaluation Copy 片段被动接触)· **#252 / #256**(D-4 ③④ 已落地)· `.rddf/improvements/cpptlm-cep-b3b2-d4-trigger-probe.md` · `test/cep_b3b2_d4_probe.json`
+
+### Entry #278 — 2026-11-07 [build](**清 backlog** —— ① README 闸表全量对齐(含 **3 个闸此前从不被 CI 执行**)· ② cadence 季度复审脚本 + run-record 载体 · ③ coverage L4 载体**判定不做**)
+
+**主题**:用户口令「继续清 backlog」⇒ 落实 Entry #277 §⑥①② + Entry #276 §④。
+**角色**:builder(实施 + 验证)。
+
+**① B1 —— README 闸表全量对齐(⚠️ 实测比登记的更严重)**:Entry #277 §⑥① 登记「另有 **2 个**既有闸未登记」⇒ **实测为 11 个**:磁盘 `scripts/test/cep_*.sh` = **31** 个,原表内 **20** 个 / **11** 个未登记 ⇒ 本次**补齐 11 行** ⇒ 现**守门表 29** + **实验运行器 2** = **31** = 磁盘实际 ⇒ **「表内计数 ≠ 磁盘实际」的预存缺口闭合**;并订正 README 的两处陈述(「本表 18 个」→「**29**」+ 差异说明;「另有 2 个未列入本表」的预存缺口标注消解)。
+
+**② B1-2 —— ⚠️ 3 个闸**此前既未注册 ctest 也未登记** ⇒ **从不被 CI 执行**(判据可能早已失效而无人知道)**:**`cep_cxl_dcoh_adapter_reverse_verify.sh` · `cep_freeze_reverse_verify.sh` · `cep_tilelink_engine_failclosed.sh` ⇒ **实测三者均跑绿**(12s / 1s / 4s)⇒ 属**注册债**而非判据漂移 ⇒ 本次**注册进 ctest**(ctest 161 → **164**)。
+
+**③ B2 —— cadence 季度复审脚本 + run-record 载体**(Entry #277 §⑥② 的落地):新增 `scripts/test/cep_b3b2_d4_quarterly_review.sh`(4 组判据 + **3 个决定性变异**:`BODY-FIELD-FORBIDDEN` / `OUTCOME-INVALID` / `CADENCE-OVERDUE`)+ `test/cep_b3b2_d4_probe_runs.jsonl`(**基线行** `outcome=not_yet_run` ⇒ 「**从未执行过**」与「**全部 miss**」可区分,per metis 边界项)。
+⚠️ **刻意 NOT 注册 ctest** —— 若把「≤100 天未执行即红」放进 ctest ⇒ 100 天后**所有无关 PR 都红** ⇒ 只放本脚本;README 新增「季度复审脚本」小节登记。
+✅ 当前脚本实测输出 = `4 PASS / 0 FAIL / 1 WARN`,WARN = `CADENCE-NEVER-RUN`(**真实状态**:E1 协议已建但尚未执行过任何一次探测)。
+
+**④ B3 —— coverage 矩阵 L4 档位的机器可判载体:判定「不做」**(Entry #276 §④):可做的最强形态只能是「**文本定位抵达断言** + 「该族测试**已被 ctest 注册**」」⇒ 按本仓「**文本存在性不算有牙载体**」纪律(Entry #235 批 1 教训)⇒ 该载体**弱一档** ⇒ ⛔ **不做**,理由 = **一份诚实的「弱载体 / 非有牙」登记**优于一份**假绿**(metis P2-9 同款判断)⇒ 现状保留 Entry #276 的逐族实测结论 + rubric 的「单档标注读法」作**人工**防线。⚠️ **不做**登记为**终态判定**(非待办)⇒ 本仓**不再**为该载体排期。
+
+**⑤ 验证**:`ctest` **164/164**;[cep] **477 cases / 11114 assertions**;4 闸全绿;M1 冻结面 **41 产物零 diff**;**KPI 仍 0/3**(未建 change)。
+
+**⑥ 遗留登记(不可清 · 非待办)**:① **metis 轮次已用尽**(1 轮)⇒ improvement 改写后**无独立复核** ⇒ 残余风险已在 improvement §「残余风险」登记;② **E1/E2 周期项**待季度触发;③ **cadence WARN** = E1 尚未执行(真实状态,非缺陷)。
+
+**⑦ 关联**:**#277**(E1 协议落地 · §⑥ backlog 来源)· **#276**(批 1 补完 · §④ B3 来源)· **#275**(批 1 · L1/L2)· **#274**(盘点 + 路径)· **#264**(终态 DoD Go 挂起)· **#265**(⚠️ 合规事件)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
