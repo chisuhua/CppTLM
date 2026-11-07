@@ -15738,6 +15738,39 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑤ 交付面**:⛔ 未建 change 目录(避免半成品占 KPI slot)⇒ 立项 = improvement + 本 Entry;待裁决后建 change。
 
 **⑥ 关联**:**#267**(第 3 项 + 第 5 项归档)· **#266**(第 3 项实施)· **#265**(来源检索 + ⚠️ 合规登记 + 两条硬边界)· **#264**(终态裁决)· **#263**(盘点)· `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` · `.rddf/improvements/cpptlm-cep-ualink-coherence-engine.md`
+
+### Entry #269 — 2026-11-07 [go-decision](**「引擎强度」裁决 = 甲(纯记账 + 弱档建模声明)** + oracle 咨询落点 + 冻结面授权)
+
+**主题**:用户裁「引擎强度」三选项 ⇒ 选 **甲**;architect 送 **oracle** 咨询(4 问)⇒ 落点登记 + **冻结面授权**(ADR-CEP-12 追加 SU + `07 号` §5.1.1 UALink 行精确化)。
+**角色**:architect(裁决 + oracle + 授权)· builder(待实施)。
+
+**① 裁决(用户)**:**甲 = 纯记账 + 弱档建模声明** —— 引擎只做 canonical 流**记账**,⛔ 不实现 UPLI 通道级语义(ReqCmd / 4 通道 / tag 配对)⇒ **零语义发明**。**乙** 排除(需条款级依据,当前无 ⇒ 推理填空);**丙** 排除(缺口保留)。
+
+**② oracle 咨询的 4 个落点**(architect 采纳):
+
+- **Q1 命名裁决**:`UalinkProtocolEngine`(类名 / 注册短名 / 配置名)**不构成越界宣称** —— `ProtocolEngineBase` 是「ChStream **端口面**基类」,先例 `CohIfProtocolEngine`(= `NullProtocolEngine<2>` 外壳)· `MoesiGpuProtocolEngine`(= M-6 记账壳)已用同款词汇。⛔ 但名字里**不得**出现语义载荷词(`Upli` / `Transaction` / `ReqRsp`);✅ 注册块注释**必须**带强度标签(镜像 MoesiGpu 注册块的「⛔ 只闭合实例化,不闭合协议事件语义」写法)。
+- **Q2 三分法更诚实(非过度)**:照搬 M-6「10 流一律记账」会让引擎观测面与 `flow_support` 声明**矛盾**(8 条声明 `false` 的流被正常记账)⇒ 复犯 `07 号` SU · 四 D-1 点名的「静默…且看起来权威」。**既有范式**:`MesifProtocolEngine::gate()`(mesif_protocol_engine.hh:586-591)已做「声明 false ⇒ 拒绝计数,不静默降级」⇒ **三分法 = 与声明对齐,引入的语义维度为零**。**计数器形状**:`flow_events[10]`(逐流抵达)· `unsupported_rejected[10]`(**per-flow**,不共享标量 ⇒ per-flow 归因)· `snoop_resp_pending_not_consumed`(标量,名字**自带否定语义**)。
+- **Q3 ⚠️ AC-2 的原形态会退化为「无牙判据」**:improvement 的 AC-2「乱序投递 ⇒ 断言不变」在**纯计数器**实现下**恒真**(整数自增可交换)⇒ verifier 按字面执行即测了个寂寞。**修正形态**:引擎维护**最小 order-free per-txn 结构** —— `on_request` 按 `txn_id` **插入**在途集合,`on_completion` 按 `txn_id` **恒等擦除**;依据 = **平台自有相关性字段**(`dispatch_cohif` 把同一 `b.transaction_id` 传给两条流,protocol_engine_base.hh:263/266)⇒ **协议中立**,零 UALink 宣称。新增 `completion_unmatched_`(未请求的 txn_id 到达 ⇒ 计数,不插入、不崩)。**鉴别力构造**:request t1,t2,t3 → completion **反序** t3,t1,t2 ⇒ 断言在途集合空 / unmatched==0 / 计数与正序运行逐字段相等 ⇒ **任何 FIFO-pop 配对 mutant 在反序下必红**。
+- **Q4 实施面已逼近最小**:配置文件(持久可 grep 的装配证据)/ 注册(无注册 = 无实例化路径,MGE-01/NIT-1 教训)/ delta spec(AC 的机器可判家)/ ADR SU(边界裁决记录)/ `07 号` 行更新(外部读者面)—— **5 项均不可省**。⛔ 已归档 change 的交付物(`configs/cep_ualink_pe_minimal.json`,Entry #258)**不得**改(会让活实现与已归档判据漂移)⇒ 新配置更便宜。
+
+**③ ⚠️ oracle 咨询的内部张力,architect 显式消解**:Q1 禁令写「⛔ 零 TxnID 配对」,Q3 又推荐「按 `txn_id` 恒等维护在途集合」⇒ 二者字面冲突。**裁决**:「零 **TxnID 配对**」= **零 UPLI 协议层配对语义**(零 tag 配对规则 / 零 request↔response 配对协议 / 零超时 / 零重试 / 零排序 / 零资源门控);**平台自有 `transaction_id` 字段的恒等记账**属**平台层**,不是协议层 ⇒ **允许**,且是 AC-2 具备鉴别力的**必要条件**。⇒ 头文件注释必须写明该区分,⛔ 文档禁用「TxnID 管理」(那是 CHI 真插件的词汇,CR-12)。
+
+**④ `snoop_resp` 不对称的契约表述(四句齐)**(oracle):① **为何第三态**:声明给了它 `vc_binding`(VC3)却给 `flow_support=false`,而其余 7 流**无任何正向陈述** ⇒ per `ADR-CEP-12` 决策 6,mapping ≠ support ⇒ 它处在「有邻近误导性陈述」的不同认识论位置;② **`pending` 是终态处置,不是暂态** —— 字面「pending(语义待定,**恒不消费**);⛔ 不得读作『已支持、待完成/待处理』」;③ **机器绑定**:每次 `snoop_resp` 抵达 ⇒ 恰好一次计数 + 零发射 + 零状态变更 + 对 request/completion 记账零影响;④ **计数器名自带否定语义**:`snoop_resp_pending_not_consumed`。
+⚠️ **collective 结果回传路径**:canonical 10 流里**没有** collective-result 流(`response` 是 `vc_binding` 的**消息类**,非 canonical 流)⇒ 引擎对它**无事可做**,承载者仍是 `FabricCollectivePlane`;契约须显式写「⛔ 引擎**不得新增** I-6 handler」以防后人填空。
+
+**⑤ 授权范围(冻结面 · 两步授权)**:**仅** ① `ADR-CEP-12` **追加 SU**(裁决与边界 + 前瞻 Verification;⛔ 不改正文与既有 SU)② `07 号` §5.1.1 UALink 行**精确化**(⚠️ 实施**后**才改 ⇒ 与 ADR SU 同 commit)⇒ 两步授权(`cep_freeze_check.sh --update --authorized-by "Entry #269"` → 清单**单独** commit)。
+
+**⑥ critic 审稿(architect 阶段 · 1 轮)**:结论 = **APPROVE_WITH_CONDITIONS** · `mergeable: yes` · `scope_exceeded: false` · **0 BLOCKER**;3 个锁定目标逐项判定 = ① 越界宣称防线**充分**(层数足够)② 判据**有牙但有鉴别力上限**(见 ⑦)③ B3b 计数**零变化**且与 SU · 四 D-1 域边界**不冲突**(引擎消费的是 `flow_support` 声明域)。⚠️ 合规核对:SU 全文**无** §/Table 级条款引用、无规范级细节 ⇒ **未发现**疑似 Evaluation Copy 片段。
+
+**⑦ critic 的 5 条 SHOULD_FIX(全部落进 ADR SU,无回滚)**:
+- **SF-1 全称断言过强**:「**任何** FIFO-pop mutant 必红」存在两类 **order-oblivious** 逃逸(插入序回退**且带**恒等比对 / 以地址作键)⇒ 已改为「**order-coupling 类**配对 mutant 必红」+ **新增中途探针子判据**(request t1,t2 → 仅 completion t1 ⇒ 在途集合 **== `{t2}`}** 逐格相等)+ **诚实登记鉴别力边界**(⛔ 不得声称覆盖键型变异;键型 = `txn_id` 由代码评审 + 头文件注释保证);
+- **SF-2 引用号错**:`ADR-CEP-07` 无 CR 体系;**TxnID 管理 = CR-13**(`CR-12 = Credit`)⇒ 已改引 `openspec/specs/cep-chi-rnf-subset` **CR-13**;
+- **SF-3 `flow_events` 归属歧义**:表格「记账」行只列 2 流,但不变量 2/3 要求它对 10 流计抵达 ⇒ 已在表格加显式括注;
+- **SF-4 `I-6` 编号绑定研究文档** ⇒ 已改为自解释表述(「⛔ 不得为 `response` 消息类 / collective 结果回传路径新增任何 handler(= 锚点摘要 **I-6** 路径)」);
+- **SF-5 Verification 漏「张力消解」注释落点** ⇒ 已新增勾选项(头文件注释写明「协议层 vs 平台层」边界 = 第一道文本防线)。
+⚠️ 2 条 NIT:L868「认识论位置」措辞偏抽象(⛔ 非阻断,实施阶段措辞自然消化)· L820「弱档不得单独出现」= **登记确认无违规实例**。
+
+**⑧ 关联**:**#268**(立项 + 三选项)· **#265**(来源检索 + ⚠️ 合规登记 + 两条硬边界)· **#264**(终态裁决)· **#258**(装配面 · `ADR-CEP-12` SU ① 追加先例)· **#261**(契约对齐 · SU 追加先例)· `.rddf/improvements/cpptlm-cep-ualink-coherence-engine.md` · `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` · `include/tlm/cep/mesif_protocol_engine.hh`(`gate()` 范式先例)· `include/tlm/cep/moesi_gpu_protocol_engine.hh`(M-6 对照)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

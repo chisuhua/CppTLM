@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "builder",
-  "updated_at": "2026-11-06T17:53:38Z",
+  "current_role": "architect",
+  "updated_at": "2026-11-07T00:50:52Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "planner",
-      "at": "2026-11-06T07:10:21Z",
-      "by": "user",
-      "reason": "用户口令「再切 planner 立项引擎 change(cpptlm-cep-tilelink-runtime-engine)」⇒ 4 件套 + metis gap 分析(1 轮,4 BLOCKER 全修)+ KPI churn 1/3→2/3 + 台账 Entry #243 + verifier F1 就地收口"
-    },
     {
       "role": "builder",
       "at": "2026-11-06T07:21:03Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-06T17:53:38Z",
       "by": "user",
       "reason": "闭合 critic BLOCKER:装配闸平面层语义(REQUIRED 机制)未同步冻结契约 ⇒ doc-only change + NIT 修正"
+    },
+    {
+      "role": "architect",
+      "at": "2026-11-07T00:50:52Z",
+      "by": "user",
+      "reason": "用户口令「继续执行后续任务」+ 已裁「引擎强度 = 甲(纯记账 + 弱档建模声明)」⇒ architect 阶段:裁引擎强度 + §5.1.1 精确化 + ADR-CEP-12 SU(冻结面两步授权) + oracle→critic 双审"
     }
   ],
   "auto_switch_window": null

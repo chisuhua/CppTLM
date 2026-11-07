@@ -795,3 +795,112 @@ CXL / MOESI-GPU / MESIF 走**软件一致性 / 无 collective 能力** ⇒ 强�
 ### ④ 契约面
 
 `openspec/specs/cep-instance-assembly/spec.md` 的 Requirement ③ 与 IAG-01/02 已按本 SU **改写**(MODIFIED,per change `cpptlm-cep-instance-assembly-contract-alignment`)⇒ 与实现/测试逐条一致。
+
+---
+
+## Status Update(2026-11-07,per 台账 Entry #269)—— UALink 专用 coherence 引擎的**强度裁决** = **记账级专用承载**(bookkeeping-only)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文 §1 ~ §13 与**任何**既有 SU(尤其 **SU 2026-11-06**(Entry #239)的 9 键取值 + 订正 #1 · **SU 2026-11-06**(Entry #258)的装配三层证据 · **SU 2026-11-07**(Entry #261)的 ③ 平面层修正 —— **逐字保留不回改**)。
+> **触发**:台账 **Entry #268**(第 2 项立项 + 三选项待裁)· 用户裁「引擎强度 = **甲**」· **oracle** 架构咨询(4 问,本轮)。
+> **审查**:`oracle`(强度边界 + 判据有牙性咨询)⇒ 采纳其 4 个落点;`critic`(本段 + `07 号` §5.1.1 UALink 行精确化 的架构审稿)。
+> **关联 change**:`openspec/changes/cpptlm-cep-ualink-coherence-engine/`(实施面;本段只裁**边界**,不裁实现细节)。
+
+### ① 建模前提(回指,**不重复论证**)
+
+`ualink_4` 是「**无硬件一致性的 memory-semantic fabric**」—— ⚠️ 该前提本身是 `C-10` **建模声明**(一步推断),⛔ **不是**事实(per **SU 2026-11-06**(Entry #239)①)。
+
+⚠️ **本段的依据档位 = `public_nonnormative`**(4 个互相独立的公开非规范来源 + 6 条一步推断,per 锚点摘要 `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md`)⇒ ⛔ **不构成 `Direct`**、⛔ **不计入 B3b**(per `07 号` **SU · 四 D-1**)⇒ **B3b-2 维持 0/4,本段不改任何计数**。
+
+### ② 引擎强度裁决
+
+`UalinkProtocolEngine` = **记账级专用承载**(bookkeeping-only dedicated carrier)。其对 canonical 10 流的全部行为 = **计数器自增**;⛔ **零发射**(zero egress)、⛔ **零协议状态机**、⛔ **零 UPLI 通道级语义**(`ReqCmd` 编码 / 4 通道时序 / `transaction tag` 配对 **均不实现**)。
+
+⚠️ **本引擎不构成「UALink 协议语义已实现」的任何证据**;**B3b 的 UALink 行维持 ⏭ 受限,计数不变(仍 0/4)**。
+
+> **术语纪律**:「**弱档**」**不得单独出现** —— 必须全称「**公开非规范来源 + pending + fail-closed**」。「纯记账」不得写作「简化实现」「基础实现」「部分实现」。
+
+### ③ 字面禁令清单(必须写进凡本引擎出现的文档面)
+
+| ⛔ **不得使用** | ✅ **只许使用** |
+|---|---|
+| 「实现 / 承载 UALink 语义」 | 「记账」 |
+| 「`request` / `completion` 语义已落地」 | 「登记」 |
+| 「已支持 UALink」 | 「可观测」 |
+| 「UALink 协议引擎(实现 …)」 | 「专用承载(记账级)」 |
+| 「引擎处理 UALink 事务」 | 「装配闭合」 |
+
+**两条触发式禁令**(出现即越界):
+
+- **J1 相关**:任何「completion 有序」表述必须全称「J1 的 `p2p_ordered` 是**建模假设**(假设 completion 有序以便定位排序点),**非协议保证**」(per 锚点摘要 §三 `ordering_assumption` 行口径);
+- **`vc_binding` 相关**:`snoop_resp` 走 VC3 的任何表述必须连带「`vc_binding` 是**消息类 → VC 的分配映射**,⛔ **不是** `flow_support` 的重复声明」(per 本 ADR **决策 6**)。
+
+### ④ 观测面形状(**三分法**,非 M-6「一律记账」)
+
+⚠️ **本段不复用 `MoesiGpuProtocolEngine` 的 M-6「10 流一律只记账」形态** —— 理由:那会让引擎观测面与 `flow_support` 声明**矛盾**(8 条声明 `false` 的流被正常记账)⇒ 复犯 `07 号` **SU · 四 D-1** 点名的「静默 … 且看起来权威」失败模式。
+✅ **既有范式**:`MesifProtocolEngine::gate()`(「声明 `false` ⇒ 拒绝计数,不静默降级」)⇒ **三分法 = 与声明对齐,引入的语义维度为零**。
+
+| 状态 | 适用流 | 计数器 |
+|---|---|---|
+| **记账**(声明 `true`) | `request` · `completion` | `flow_events[10]`(逐流抵达;⚠️ **`flow_events` 对**全部 10 流**计抵达**,不限于本行的 2 条 —— 否则不变量 2 / 3 在抵达时不可满足) |
+| **拒绝**(声明 `false`) | `snoop` · `writeback` · `forward_data` · `back_invalidate` · `address_resolve` · `barrier` · `snoop_completion_ack`(7 条) | `unsupported_rejected[10]`(**per-flow**,⛔ 非共享标量 ⇒ per-flow 归因) |
+| **pending 不消费**(语义待定) | `snoop_resp`(1 条) | `snoop_resp_pending_not_consumed`(标量;**名字自带否定语义**) |
+
+**机器可判不变量**(4 条,随契约面落):
+
+1. `unsupported_rejected[Request] == 0 ∧ unsupported_rejected[Completion] == 0` —— 被声明支持的流**永不被拒**;
+2. `∀f ∉ {request, completion, snoop_resp}: flow_events[f] == unsupported_rejected[f]` —— 声明不支持的流**每次抵达都被拒绝**,且**零其他可观测效果**(外加**零发射**断言);
+3. `flow_events[SnoopResp] == snoop_resp_pending_not_consumed` —— 每次抵达**恰好一次** pending 登记,零其他效果;
+4. `completion_unmatched_ == 0`(正常运行路径)—— completion 的 `txn_id` 恒等匹配(见 ⑤)。
+
+### ⑤ completion 记账**不依赖有序性**(判据须**有牙**)
+
+⚠️ **判据退化警告**:若引擎是**纯计数器**,则「乱序投递 ⇒ 断言不变」**恒真**(整数自增可交换)⇒ **判据无牙** ⇒ verifier 按字面执行即「测了个寂寞」。
+✅ **本段要求**:引擎维护**最小 order-free per-txn 结构** —— `on_request` 按 `txn_id` **插入**在途集合,`on_completion` 按 `txn_id` **恒等擦除**。
+
+**依据 = 平台自有相关性字段**:`dispatch_cohif` 把同一个 `b.transaction_id.read()` 传给两条流 ⇒ 按恒等匹配是**协议中立**的**记账决定**,**零 UALink 宣称**。
+⚠️ **「零 TxnID 配对」的边界(消解 oracle 咨询的内部张力)**:「零 TxnID 配对」= **零 UPLI 协议层配对语义**(零 tag 配对规则 / 零 request↔response 配对协议 / 零超时 / 零重试 / 零排序 / 零资源门控);**平台自有 `transaction_id` 字段的恒等记账**属**平台层**,⛔ **不是**协议层 ⇒ **允许**,且是判据具备鉴别力的**必要条件**。
+
+**鉴别力构造(两段 · 端态 + 中途)**:① **中途探针**:request `t1,t2` → 仅 completion `t1` ⇒ 断言在途集合 **== `{t2}`}**(⛔ 非「仅剩 1 个」—— 集合**逐格相等**)⇒ **插入序回退**类 mutant(pop 最旧且**不比对** `txn_id`)在此**必红**(其集合为空);② **端态**:request `t1,t2,t3` → completion **反序** `t3,t1,t2` ⇒ 断言在途集合**空** / `completion_unmatched_ == 0` / 计数与正序运行**逐字段相等** ⇒ **任何 order-coupling 类配对 mutant**(completion 处理**依赖请求到达序**)在反序下必红。
+
+⚠️ **鉴别力边界(诚实登记)**:上述 fixture **抓不到**两类 **order-oblivious** 逃逸 mutant —— (a) **插入序回退且带 `txn_id` 恒等比对**(端态与中途均正确,但**匹配逻辑**非恒等);(b) **以地址而非 `txn_id` 作键**(若 fixture 中地址与 `txn_id` 同步变化,端态断言全通过)⇒ ⇒ **4 条不变量只 pin 端态与计数,不 pin 在途集合的键型** ⇒ 键型 SHALL 由**代码评审 + 头文件注释**(见 ⑤ 的键型约束)保证,⛔ **不得**声称本 fixture 已覆盖键型变异。
+⚠️ **键型约束**:在途集合 SHALL 以 **`txn_id` 为唯一键**(⛔ 不得以地址 / 到达序 / 任何派生量作键)⇒ 「零 TxnID 配对」的边界见上条。
+
+⛔ **文档禁用「TxnID 管理」** —— 那是 CHI 真插件的词汇(per `openspec/specs/cep-chi-rnf-subset` **CR-13**;⚠️ **CR-12 = Credit**,勿错引)⇒ 会构成越界宣称。
+
+### ⑥ `snoop_resp` 的**不对称**(四句齐,防误读)
+
+1. **为何是第三态**:声明给了它 `vc_binding`(VC3)却给 `flow_support = false`(per `protocol_instances.json`),而其余 7 条流**无任何正向陈述** ⇒ per 本 ADR **决策 6**,`mapping ≠ support` ⇒ 它处在「有邻近误导性陈述」的**不同认识论位置**;
+2. **`pending` 是终态处置,不是暂态** —— 字面:「`pending`(语义待定,**恒不消费**);⛔ **不得**读作『已支持、待完成 / 待处理』」;
+3. **机器绑定**:每次 `snoop_resp` 抵达 ⇒ **恰好一次**计数 + **零发射** + **零状态变更** + 对 `request`/`completion` 记账**零影响**;
+4. **计数器名自带否定语义**:`snoop_resp_pending_not_consumed`。
+
+⚠️ **collective 结果回传路径**:canonical 10 流里**没有** collective-result 流(`response` 是 `vc_binding` 的**消息类**,⛔ **非** canonical 流)⇒ 引擎对它**无事可做**,承载者仍是 `FabricCollectivePlane`(per `07 号` §11)⇒ 契约 SHALL 显式写「⛔ 引擎**不得**为 `response` 消息类 / collective 结果回传路径**新增任何 handler**(= 锚点摘要 **I-6** 路径)」以防后人填空(⚠️ 契约面**不**以研究文档的推断编号 **I-6** 为锚 ⇒ 该表述自解释)。
+
+### ⑦ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **本 ADR 正文 §1 ~ §13** | **零改动**;**新增 invariant 数 = 0** |
+| **`protocol_instances.json`** | **零改动**(`ualink_4` 的 13 键取值**逐字不动**) |
+| **计数** | **B3b-2 维持 0/4**;B3b-1 **维持 2/2** ⇒ **零变化** |
+| **代价 ①** | 引擎**不提供**任何 UALink 协议语义 ⇒ 依赖 UALink **协议**语义的实验**仍不可做**;本条只把「承载者缺位」补到**记账级** |
+| **代价 ②** | 观测面为**三分法** ⇒ 与既有 `MoesiGpuProtocolEngine`(M-6 一律记账)**形态不同** ⇒ 仓内出现**两种引擎观测约定** ⇒ 须靠本文档显式区分(⛔ 不得合并为「统一形态」) |
+| **代价 ③** | 在途集合 = 引擎持有的**唯一**状态 ⇒ 引擎**不是**纯无状态载体 ⇒ 与 M-6「零状态机」的对照**仅在协议语义层**成立(平台层记账状态仍存在) |
+| **代价 ④** | `snoop_resp` 的第三态使引擎观测面**比声明更细** ⇒ 未来若 `ualink_4` 的 `flow_support.snoop_resp` 转 `true`,该分支 SHALL 被**替换**而非**并存**(避免同一流两个状态) |
+
+### ⑧ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] `ADR-CEP-12` 已追加本段 SU,且 §1 ~ §13 与**全部**既有 SU **逐字未变**
+- [ ] `07 号` §5.1.1 UALink 行已**精确化**(实施**后**才改):措辞含「**记账级**」+ 「⛔ 不得读成『UALink 协议语义已实现』」+ 「**B3b-2 维持 0/4**」
+- [ ] 凡本引擎出现的文档面**逐处**核过 ③ 的禁令清单(⛔ 无「弱档」单独出现)
+- [ ] 命名核过:类名 / 注册短名 / 配置名**无** `Upli` / `Transaction` / `ReqRsp` 等语义载荷词;注册块注释**带**强度标签
+- [ ] 引擎观测面实现 ④ 的**三分法** + **4 条机器可判不变量**
+- [ ] ⑤ 的**反向 fixture 存在**(两段):① **中途探针** —— request `t1,t2` → 仅 completion `t1` ⇒ 在途集合 **== `{t2}`}**(逐格相等,⛔ 非「仅剩 1 个」);② **端态** —— 反序 `t3,t1,t2` ⇒ 在途集合空 / `completion_unmatched_ == 0` / 计数与正序逐字段相等;**且**该 fixture 对**order-coupling 类**配对 mutant **必红**(判据有牙,非恒真)
+- [ ] ⑤ 的**鉴别力边界已诚实登记**:fixture **不覆盖** order-oblivious 逃逸 mutant(插入序回退**且带**恒等比对 / 以地址作键)⇒ 契约面 **⛔ 不得**声称覆盖键型变异;⇒ 在途集合**键型 = `txn_id`** 由**代码评审 + 头文件注释**保证
+- [ ] **头文件注释写明「零 TxnID 配对」的边界**:「零 TxnID 配对 = 零 **UPLI 协议层**配对语义(零 tag 配对规则 / 零 request↔response 配对协议 / 零超时 / 零重试 / 零排序 / 零资源门控);平台自有 `transaction_id` 字段的**恒等记账**属**平台层** ⇒ **允许**」(per 台账 Entry #269 ③ 的**第一道文本防线**)
+- [ ] `snoop_resp` 的 ⑥ 四句**齐备**且**机器绑定**断言存在;契约含「⛔ 不得为 `response` 消息类 / collective 结果回传路径新增任何 handler」
+- [ ] 契约面(main spec)含头部 note:「依据档位 `public_nonnormative`;⛔ 不得作为 UALink 协议语义实现的证据;⛔ 不得计入 B3b」
+- [ ] **B3b-2 仍 0/4** 的断言**显式存在**于判据中;`test/cep_b3b2_deferrals.json` **未被改动**
+- [ ] 冻结面两步授权已执行:台账 **Entry #269** 授权 → **commit 本 SU 与 `07 号` 精确化** → `cep_freeze_check.sh --update --authorized-by "Entry #269"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #269**(授权 + oracle 咨询落点)· **#268**(立项 + 三选项)· **#265**(来源检索 + ⚠️ 合规登记 + 两条硬边界)· **#258**(`ADR-CEP-12` SU 追加先例 · 装配面)· **#261**(SU 追加先例 · 契约对齐)· `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` · `include/tlm/cep/mesif_protocol_engine.hh`(`gate()` 范式先例)· `include/tlm/cep/moesi_gpu_protocol_engine.hh`(M-6 对照)· `openspec/changes/cpptlm-cep-ualink-coherence-engine/`
