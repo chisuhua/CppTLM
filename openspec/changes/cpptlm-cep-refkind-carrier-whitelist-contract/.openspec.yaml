@@ -1,0 +1,13 @@
+schema: spec-driven
+created: 2026-11-07
+goal: 载体自足性的唯一白名单登记进契约面(cep-refkind-coverage MODIFIED)
+affected_areas:
+  - openspec/specs/cep-refkind-coverage/spec.md
+  - test/test_cep_refkind_whitelist_contract.cc
+# doc-only:0 源码改动 / 0 探针实现改动 / 0 声明改动 / 0 计数改动。
+# ⚠️ cep-refkind-coverage 不在 M1 冻结集 ⇒ 本 change 不触发 --update --authorized-by。
+skip_specs: false
+x-phase: P0
+x-priority: P2
+x-status: proposed
+x-ledger: obj-cep-platform Entry #272

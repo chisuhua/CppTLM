@@ -700,3 +700,9 @@ add_test(NAME cep_b3b2_deferral_check
 #   ④ **B3b-2 仍 0/4** 的断言显式存在(本 change **不改**计数,per `07 号` SU · 四 D-1)。
 add_test(NAME cep_ualink_engine
          COMMAND cpptlm_tests "[cep][ualink][engine]" -r compact)
+
+# change `cpptlm-cep-refkind-carrier-whitelist-contract`(2026-11-07,台账 Entry #272)的判据:
+#   载体自足性的**唯一白名单**已登记进契约面,且**唯一 + 三处一致**(契约面 + UIS-10 探针 + CP-05 探针)。
+#   ⚠️ doc-only:0 源码 / 0 探针实现 / 0 声明 / 0 计数改动。
+add_test(NAME cep_refkind_whitelist_contract
+         COMMAND cpptlm_tests "[cep][refkind][whitelist]" -r compact)
