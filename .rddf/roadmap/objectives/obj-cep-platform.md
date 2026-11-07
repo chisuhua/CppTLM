@@ -15985,6 +15985,38 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **④ 登记为 backlog(不做)**:coverage 矩阵的 L4 档位**无机器可判载体**(判据形态写在散文里)⇒ 未来**可能**再次漂移(TileLink-C 即为实例)⇒ 若要根治,需一条「矩阵 L4 档位 ↔ 各族测试的实际 `tick()`/对端断言/反向 fixture」的**扫描判据** ⇒ ⚠️ 需跨文件语义分析(判据形态 ⇒ 引擎发射行为)⇒ **本轮不做**,登记为**独立 backlog**。
 
 **⑤ 关联**:**#275**(批 1 · L1/L2)· **#274**(盘点 + 路径)· **#261**(rubric 两档裁决 · SHOULD_FIX-1/2)· **#273**(白名单契约对齐归档)· **#271** / **#270**(第 2 项归档 / 实施)· **#264**(终态 DoD Go 挂起)
+
+### Entry #277 — 2026-11-07 [build](**E1 触发探测协议落地** —— D-4 探测清单 + 5 变异闸;**不占 KPI slot**)
+
+**主题**:「继续推进」⇒ 落实 Entry #274 §④ **E1**(D-4 ①/② 的触发探测)⇒ 探测协议从「一句话」升级为**机器可查清单 + 有牙闸**。
+**角色**:planner(新建 improvement + metis gap 分析 + 改写)· builder(清单 + 闸 + 注册 + 验证)。
+
+**① metis gap 分析(1 轮 · planner 固定审查者)⇒ 4 处 P0 缺陷 + 1 处建模错误已修**:
+
+| metis 结论 | 处置 |
+|---|---|
+| **P0-1** 动作链「命中 ⇒ 改判计数」**违反 `07 号` D-2 双轴**(触发轴 T1–T4 ∧ 交付轴 引擎+L4 E2E) | ✅ 改为**双轴链**;⚠️ **触发轴过但交付轴未过 ⇒ 计数仍 0/4,只改 `reason`** |
+| **P0-2** ②「人类成员条款摘要」**不是外部检索**(其可观测事实是**仓内出现带签署的摘录文件**)⇒ 原「检索源」框架**错位** | ✅ 区分 `check_type: external_metadata` / `internal_artifact`;② = **仓内产物检查**(闸直接扫 glob) |
+| **P0-3** AC-2「正文投喂 = false」是**自证声明字段**(与本仓「文本存在性不算有牙载体」同型) | ✅ 换为「**key 白名单无合法落点** + URL pattern + `page_type` 枚举 + **5 个决定性变异**」 |
+| **P0-4** 「What Changes」漏 `test/CMakeLists.txt` + `scripts/README.md` ⇒ **闸写了但不跑** | ✅ 两处**显式**注册 + ctest 实测跑到(`cep_b3b2_d4_probe_check` PASS) |
+| **G1** 枚举单位错(应 **source event**) + 合取须拆 | ✅ 以 **source event** 为单位(CXL 2.0 / 3.0 **共享** `cxl-3.x-spec-license` ⇒ 挂 `family_effect[]`,⛔ 不重复检索)+ `must_all[] ≥2` |
+| **G2** 命中判据的 6 类反例 | ✅ 判据**语法化**({field, op, value} + op 白名单)+ **banned token** + 6 类反例逐条排除(白皮书 / Evaluation Copy / 二手报道 / 自动附带正文 / 两级转述 / 「有 § 编号就算条款级」) |
+| **G3** 「只取元数据」需可判 | ✅ 三层结构(key 白名单 / URL pattern / `page_type` 枚举)+ **诚实声明**:闸保证**协议不被用作正文通道**,⛔ **不保证**执行者未在其他渠道接触正文 |
+| **G4** 与既有 `cep_b3b2_deferral_check.sh` 的关系 | ✅ **保持分离** + **单向引用**(probe → deferrals,带 `deferral_trigger_sha256`)+ 闸的族名单**从 deferrals JSON 读**,⛔ **不硬编码** |
+| **G5** AI slop(AC-2/AC-3/AC-5 装饰性) | ✅ 三项改为可机器判;**AC-1** 由「8 条齐全」改为「**覆盖谓词**」 |
+| **P2-9** 降低 spec 重量 | ✅ **不建 OpenSpec change / 不新增 main spec** ⇒ **不占 KPI slot** |
+
+**② 产物(4 项)**:探测清单 `test/cep_b3b2_d4_probe.json`(**8 probes / 8 slots**,3 个 source event)· 校验器 `scripts/test/cep_b3b2_d4_probe_validate.py` · 闸 `scripts/test/cep_b3b2_d4_probe_check.sh`(**9 PASS / 0 FAIL**)· 注册(`test/CMakeLists.txt` + `scripts/README.md`)。
+
+**③ 5 个决定性变异(全部按固定签名变红 ⇒ 判据有牙)**:① 注入 `body_excerpt` ⇒ `BODY-FIELD-FORBIDDEN` ② 元数据位换 `.pdf` 直链 ⇒ `DOC-URL-IN-METADATA-SLOT` ③ 删一格覆盖 ⇒ `COVERAGE-GAP: cxl_3_0_symmetric/internal_excerpt` ④ 判据改主观措辞 ⇒ `SUBJECTIVE-CRITERION` ⑤ deferral trigger 哈希漂移 ⇒ `DEFERRRAL-TRIGGER-DRIFT`;**真源 sha256 复原校验**双绿(探测清单 + deferrals 均未变)⇒ ⛔ **不改计数**。
+
+**④ 合规**:清单**只含元数据位置**(官方域名 + `page_type` 白名单)⇒ ⛔ **无正文 URL**;② 类指向**仓内摘录文件 glob** ⇒ ⛔ **无外部正文检索**;⚠️ 「检索工具自动返回正文」是**协议无法阻止的物理事实**(Entry #265 已实发)⇒ 只能靠 run-record 的 `incident` 登记 + 季度人工审计 ⇒ **不写成「闸守住了只取元数据」**。
+
+**⑤ 验证**:`ctest` **161/161**(新闸 1 项);`[cep]` **477 cases / 11114 assertions**;4 闸全绿;M1 冻结面 **41 产物零 diff**(新增文件不在冻结集 ⇒ 清单 sha256 未变);**KPI 仍 0/3**(未建 change)。
+
+**⑥ 遗留登记(不做)**:① `scripts/README.md` 的 CEP 闸表**另有 2 个既有闸未登记**(`cep_source_effect_check.sh` / `cep_b3b2_deferral_check.sh` —— README 自注的**预存登记缺口**)⇒ ⛔ 本轮**不**扩范围处理,登记为独立 backlog;② **cadence 断言**(「≤100 天未执行即红」)**不进 ctest** ⇒ 放季度复审脚本(否则 100 天后所有无关 PR 都红);③ **metis 轮次已用尽** ⇒ 本 improvement 改写后**无独立复核** ⇒ 残余风险已在 improvement §「残余风险」登记。
+
+**⑦ 关联**:**#276**(批 1 补完 · coverage L4 档位逐族实测)· **#275**(批 1 · L1/L2)· **#274**(盘点 + 路径 · E1 登记)· **#264**(终态 DoD Go 挂起)· **#265**(⚠️ 合规事件 · Evaluation Copy 片段被动接触)· **#252 / #256**(D-4 ③④ 已落地)· `.rddf/improvements/cpptlm-cep-b3b2-d4-trigger-probe.md` · `test/cep_b3b2_d4_probe.json`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

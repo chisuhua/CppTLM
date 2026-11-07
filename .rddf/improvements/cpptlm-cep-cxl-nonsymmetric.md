@@ -10,7 +10,7 @@ phase: phase-10
   - ADR-CEP-05
   - ADR-CEP-03
   - ADR-CEP-17
-状态: 🟡 **部分完成**(2026-11-01,per **Entry #127** / **#128**)—— 队列 #10;**两段式**:第 0 个 change(规约层)= ✅ **已完成归档**(`cpptlm-cep-cxl-nonsymmetric-state-spec` ⇒ main spec `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`)+ 第 1 个 change(实现层)= ✅ **已完成归档**(`cpptlm-cep-cxl-nonsymmetric` ⇒ main specs `cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;KPI 0/3 → 1/3 → 0/3)
+状态: ✅ **已完成并归档**(2026-11-01,per **Entry #127**(规约层)/ **#128** / **#132**(实现层)—— 队列 #10;**两段式**:第 0 个 change(规约层)= ✅ **已完成归档**(`cpptlm-cep-cxl-nonsymmetric-state-spec` ⇒ main spec `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`)+ 第 1 个 change(实现层)= ✅ **已完成归档**(`cpptlm-cep-cxl-nonsymmetric` ⇒ main specs `cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;KPI 0/3 → 1/3 → 0/3) —— ⚠️ **change 完成 ≠ 族级达成**:本族在 `B3b-2` 的**族级**状态为 **⛔ 显式冻结**(68 格中 42 格 Unknown,覆盖率 26/68,per `07 号` SU · 四 D-3)⇒ ⛔ **不得**读成「CXL 2.0 族已达成」)
 created: 2026-10-30
 ---
 

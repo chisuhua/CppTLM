@@ -706,3 +706,11 @@ add_test(NAME cep_ualink_engine
 #   ⚠️ doc-only:0 源码 / 0 探针实现 / 0 声明 / 0 计数改动。
 add_test(NAME cep_refkind_whitelist_contract
          COMMAND cpptlm_tests "[cep][refkind][whitelist]" -r compact)
+
+# `B3b-2` 受限族的 **D-4 触发探测清单**闸(2026-11-07,per 台账 Entry #274 §④ E1 + Entry #277):
+#   ① 探测清单的结构 / 覆盖谓词(4 族 × 2 路径 = 8 槽位)/ 合规边界 / 防漂移
+#   ② **5 个决定性变异**按固定签名变红(证明判据有牙,非恒真)
+#   ⚠️ 本闸只校验**协议清单**;⛔ 不保证执行者未在其他渠道接触规范正文(incident 登记 + 季度人工审计)
+#   ⛔ **不改**任何 DoD 计数(B3b-2 仍 0/4)
+add_test(NAME cep_b3b2_d4_probe_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_b3b2_d4_probe_check.sh)

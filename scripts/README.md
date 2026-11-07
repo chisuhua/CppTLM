@@ -42,6 +42,7 @@
 | `cep_nvlink_sharp_reverse_verify.sh` | 队列 #13 **实现层**载体（`NVA-01` ~ `NVA-09`）的反向验证：**9 组**毒化 fixture（每条必红 **且** 归因 id **精确相等**命中）+ 基线正控 | ✅ 生效（ctest 注册） |
 | `cep_ualink_inc_state_spec_reverse_verify.sh` | 队列 #14 **规约层**载体（`UIS-01` ~ `UIS-11`）的反向验证：**11 组 / 12 条**毒化 fixture（每条必红 **且** 归因 id **命中** `static assertion failed: <id>: `）+ **基线正控** + **归因 id 双向覆盖自检** + **探针鉴别力自测**（双分支：编译红 or 探针红） | ✅ 生效（ctest 注册） |
 | `cep_ualink_inc_reverse_verify.sh` | 队列 #14 **实现层**载体（`UIA-01` ~ `UIA-07` + **V6-d** 四条证书）的反向验证：**11 组 / 11 条**毒化 fixture（每条必红 **且** 归因 id **精确相等**命中 `PROBE:FAIL <id> `）+ **基线正控** + **归因 id 双向覆盖自检** | ✅ 生效（ctest 注册） |
+| `cep_b3b2_d4_probe_check.sh` | `B3b-2` 受限族的 **D-4 触发探测清单**闸(2026-11-07,per 台账 Entry #274 §④ E1 + Entry #277):① 探测清单结构 / **覆盖谓词**(4 族 × 2 路径 = 8 槽位逐格 ≥1) / 合规边界(key 白名单 + URL pattern + `page_type` 枚举 + banned token)/ 防漂移(`deferral_trigger_sha256`) ② **5 个决定性变异**按固定签名变红(`BODY-FIELD-FORBIDDEN` / `DOC-URL-IN-METADATA-SLOT` / `COVERAGE-GAP` / `SUBJECTIVE-CRITERION` / `DEFERRAL-TRIGGER-DRIFT`)。⚠️ 只校验**协议清单**;⛔ 不保证执行者未在其他渠道接触规范正文(⇒ `incident` 登记 + 季度人工审计);⛔ **不改**任何 DoD 计数 | ✅ 生效（ctest 注册） |
 
 ### 实验运行器（非守门，**不**注册 ctest）
 

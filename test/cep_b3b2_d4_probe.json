@@ -1,0 +1,347 @@
+{
+  "schema": "cep-b3b2-d4-probe/v1",
+  "note": "`B3b-2` 受限族的 **D-4 触发探测清单**(4 族 × 2 路径 = 8 槽位)。⚠️ **枚举单位 = source event**(CXL 2.0 / 3.0 共享同一联盟许可事件 ⇒ 挂 family_effect[],⛔ 不重复检索)。⚠️ **②「人类成员条款摘要」不是外部检索** ⇒ check_type=internal_artifact(闸直接扫仓内文件)。⛔ 本清单**不改动**任何 DoD 计数(B3b-2 仍 0/4)⇒ 命中只触发**重判**,⛔ 不直接改计数(per 07 号 D-2 双轴:触发轴 T1-T4 ∧ 交付轴 引擎+L4 E2E)。",
+  "key_whitelist": {
+    "probe": ["id", "family", "path", "check_type", "source_event_id", "family_effect", "search_goal", "search_sources", "artifact_glob", "signer_fields", "must_all", "on_hit", "deferral_trigger_sha256"],
+    "source": ["host", "url", "page_type", "title_hint"],
+    "criterion": ["field", "op", "value"]
+  },
+  "allowed_page_types": [
+    "official_announcement",
+    "download_index",
+    "version_list",
+    "license_page",
+    "member_portal"
+  ],
+  "forbidden_url_patterns": [
+    "\\.pdf(\\?|$)",
+    "/sites/default/files/",
+    "/wp-content/uploads/"
+  ],
+  "banned_tokens": [
+    "视情况",
+    "酌情",
+    "确认可读",
+    "适当",
+    "必要时",
+    "已确认",
+    "相关"
+  ],
+  "result_states": ["hit", "miss", "unknown"],
+  "unknown_reasons": [
+    "site_unreachable",
+    "login_wall",
+    "redirect_to_pdf",
+    "archive_snapshot_only",
+    "auto_body_contact"
+  ],
+  "source_events": [
+    {
+      "source_event_id": "cxl-3.x-spec-license",
+      "note": "CXL 2.0 与 3.0 **共享**该事件(同一联盟 / 同一许可页)⇒ 一次变更同时影响两族"
+    },
+    {
+      "source_event_id": "nvlink-clause-level-doc",
+      "note": "NVIDIA 发布**条款级**规范文档(⛔ 白皮书 / 编程指南 / 博客 / webinar **不算**)"
+    },
+    {
+      "source_event_id": "ualink-public-spec",
+      "note": "UALink Evaluation Copy → 正式公开发布(许可状态变化,**非**可达性变化)"
+    }
+  ],
+  "probes": [
+    {
+      "id": "P-CXL20-EXT-READABLE",
+      "family": "cxl_2_0",
+      "path": "ext_readable",
+      "check_type": "external_metadata",
+      "source_event_id": "cxl-3.x-spec-license",
+      "family_effect": ["cxl_2_0", "cxl_3_0_symmetric"],
+      "search_goal": "CXL 联盟规范文档的**许可状态**与**文档类型**的**元数据**(标题 / 版本 / 发布日期 / 许可页 / 下载索引页)",
+      "search_sources": [
+        {
+          "host": "computeexpresslink.org",
+          "url": "https://www.computeexpresslink.org/",
+          "page_type": "official_announcement",
+          "title_hint": "CXL Consortium official specification announcement"
+        },
+        {
+          "host": "computeexpresslink.org",
+          "url": "https://www.computeexpresslink.org/download-the-specification/",
+          "page_type": "download_index",
+          "title_hint": "CXL specification download index"
+        }
+      ],
+      "must_all": [
+        {
+          "field": "page_type",
+          "op": "in",
+          "value": ["official_announcement", "download_index"]
+        },
+        {
+          "field": "evaluation_copy",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "document_type",
+          "op": "in",
+          "value": ["specification"]
+        }
+      ],
+      "on_hit": "重判该族 T1-T4(触发轴)⇒ 若全过则立项引擎 + L4 E2E(交付轴)⇒ 两轴齐备后方可改判计数",
+      "deferral_trigger_sha256": "188c5e38eb99766561597292e0f6831f8e72dcdf1923b6bae98e188fb4a4bfcc"
+    },
+    {
+      "id": "P-CXL30-EXT-READABLE",
+      "family": "cxl_3_0_symmetric",
+      "path": "ext_readable",
+      "check_type": "external_metadata",
+      "source_event_id": "cxl-3.x-spec-license",
+      "family_effect": ["cxl_2_0", "cxl_3_0_symmetric"],
+      "search_goal": "CXL 联盟规范文档的**许可状态**与**文档类型**的**元数据**(与 CXL 2.0 **共享**同一 source event ⇒ ⛔ 不重复检索)",
+      "search_sources": [
+        {
+          "host": "computeexpresslink.org",
+          "url": "https://www.computeexpresslink.org/",
+          "page_type": "official_announcement",
+          "title_hint": "CXL Consortium official specification announcement"
+        },
+        {
+          "host": "computeexpresslink.org",
+          "url": "https://www.computeexpresslink.org/download-the-specification/",
+          "page_type": "download_index",
+          "title_hint": "CXL specification download index"
+        }
+      ],
+      "must_all": [
+        {
+          "field": "page_type",
+          "op": "in",
+          "value": ["official_announcement", "download_index"]
+        },
+        {
+          "field": "evaluation_copy",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "document_type",
+          "op": "in",
+          "value": ["specification"]
+        }
+      ],
+      "on_hit": "重判该族 T1-T4(触发轴)⇒ 若全过则立项引擎 + L4 E2E(交付轴)⇒ 两轴齐备后方可改判计数",
+      "deferral_trigger_sha256": "51617e47efa24c80c72fd0a135855e64287121e145c1c83c14274a1641a6424b"
+    },
+    {
+      "id": "P-NVLINK-EXT-CLAUSE-DOC",
+      "family": "nvlink",
+      "path": "ext_readable",
+      "check_type": "external_metadata",
+      "source_event_id": "nvlink-clause-level-doc",
+      "family_effect": ["nvlink"],
+      "search_goal": "NVIDIA 官方站点上**条款级**规范文档的**元数据**(标题 / 类型 / 版本 / 日期)",
+      "search_sources": [
+        {
+          "host": "developer.nvidia.com",
+          "url": "https://developer.nvidia.com/",
+          "page_type": "official_announcement",
+          "title_hint": "NVIDIA developer official NVLink documentation announcement"
+        },
+        {
+          "host": "docs.nvidia.com",
+          "url": "https://docs.nvidia.com/",
+          "page_type": "download_index",
+          "title_hint": "NVIDIA official documentation index"
+        }
+      ],
+      "must_all": [
+        {
+          "field": "document_type",
+          "op": "in",
+          "value": ["specification", "architecture_manual"]
+        },
+        {
+          "field": "document_type",
+          "op": "ne",
+          "value": "whitepaper"
+        },
+        {
+          "field": "document_type",
+          "op": "ne",
+          "value": "programming_guide"
+        },
+        {
+          "field": "page_type",
+          "op": "in",
+          "value": ["official_announcement", "download_index"]
+        }
+      ],
+      "on_hit": "重判该族 T1-T4(触发轴)⇒ 若全过则立项引擎 + L4 E2E(交付轴)⇒ 两轴齐备后方可改判计数",
+      "deferral_trigger_sha256": "fffcee839b64470edd2ef83a7e3449b42b1a2283625071edd8c0b03e059cf0d7"
+    },
+    {
+      "id": "P-UALINK-EXT-PUBLIC-SPEC",
+      "family": "ualink",
+      "path": "ext_readable",
+      "check_type": "external_metadata",
+      "source_event_id": "ualink-public-spec",
+      "family_effect": ["ualink"],
+      "search_goal": "UALink Consortium 官方站点上规范文档的**许可状态**与**文档类型**的**元数据**(Evaluation Copy → 正式版)",
+      "search_sources": [
+        {
+          "host": "ualinkconsortium.org",
+          "url": "https://ualinkconsortium.org/specification/",
+          "page_type": "official_announcement",
+          "title_hint": "UALink Consortium specification page"
+        },
+        {
+          "host": "ualinkconsortium.org",
+          "url": "https://ualinkconsortium.org/",
+          "page_type": "version_list",
+          "title_hint": "UALink Consortium specification version listing"
+        }
+      ],
+      "must_all": [
+        {
+          "field": "evaluation_copy",
+          "op": "eq",
+          "value": false
+        },
+        {
+          "field": "page_type",
+          "op": "in",
+          "value": ["official_announcement", "version_list"]
+        },
+        {
+          "field": "document_type",
+          "op": "in",
+          "value": ["specification"]
+        }
+      ],
+      "on_hit": "重判该族 T1-T4(触发轴)⇒ 若全过则立项引擎 + L4 E2E(交付轴)⇒ 两轴齐备后方可改判计数",
+      "deferral_trigger_sha256": "bcdc38c3c42246f066ad29668f77f37890cda1fcf67d73b1ba6e218629357b5e"
+    },
+    {
+      "id": "P-CXL20-INT-SIGNED-EXCERPT",
+      "family": "cxl_2_0",
+      "path": "internal_excerpt",
+      "check_type": "internal_artifact",
+      "source_event_id": "human-member-excerpt-cxl",
+      "family_effect": ["cxl_2_0"],
+      "search_goal": "仓内是否存在**带签署**且**逐格 §/Table 直接定位**的 CXL 2.0 条款摘录文件",
+      "artifact_glob": "docs/research/*cep-cxl_2_0-clause-excerpt*.md",
+      "signer_fields": ["signed_by", "affiliation", "signed_at", "locator_chain_depth"],
+      "must_all": [
+        {
+          "field": "locator_chain_depth",
+          "op": "eq",
+          "value": 1
+        },
+        {
+          "field": "signed_by",
+          "op": "ne",
+          "value": ""
+        },
+        {
+          "field": "affiliation",
+          "op": "ne",
+          "value": ""
+        }
+      ],
+      "on_hit": "重判该族 T1-T4(触发轴)⇒ 若全过则立项引擎 + L4 E2E(交付轴)⇒ 两轴齐备后方可改判计数",
+      "deferral_trigger_sha256": "188c5e38eb99766561597292e0f6831f8e72dcdf1923b6bae98e188fb4a4bfcc"
+    },
+    {
+      "id": "P-CXL30-INT-SIGNED-EXCERPT",
+      "family": "cxl_3_0_symmetric",
+      "path": "internal_excerpt",
+      "check_type": "internal_artifact",
+      "source_event_id": "human-member-excerpt-cxl",
+      "family_effect": ["cxl_3_0_symmetric"],
+      "search_goal": "仓内是否存在**带签署**且**逐格 §/Table 直接定位**的 CXL 3.0 对称 DCOH 条款摘录文件",
+      "artifact_glob": "docs/research/*cep-cxl_3_0_symmetric-clause-excerpt*.md",
+      "signer_fields": ["signed_by", "affiliation", "signed_at", "locator_chain_depth"],
+      "must_all": [
+        {
+          "field": "locator_chain_depth",
+          "op": "eq",
+          "value": 1
+        },
+        {
+          "field": "signed_by",
+          "op": "ne",
+          "value": ""
+        },
+        {
+          "field": "affiliation",
+          "op": "ne",
+          "value": ""
+        }
+      ],
+      "on_hit": "重判该族 T1-T4(触发轴)⇒ 若全过则立项引擎 + L4 E2E(交付轴)⇒ 两轴齐备后方可改判计数",
+      "deferral_trigger_sha256": "51617e47efa24c80c72fd0a135855e64287121e145c1c83c14274a1641a6424b"
+    },
+    {
+      "id": "P-NVLINK-INT-SIGNED-EXCERPT",
+      "family": "nvlink",
+      "path": "internal_excerpt",
+      "check_type": "internal_artifact",
+      "source_event_id": "human-member-excerpt-nvlink",
+      "family_effect": ["nvlink"],
+      "search_goal": "仓内是否存在**带签署**且**逐格 §/Table 直接定位**的 NVLink 条款摘录文件",
+      "artifact_glob": "docs/research/*cep-nvlink-clause-excerpt*.md",
+      "signer_fields": ["signed_by", "affiliation", "signed_at", "locator_chain_depth"],
+      "must_all": [
+        {
+          "field": "locator_chain_depth",
+          "op": "eq",
+          "value": 1
+        },
+        {
+          "field": "signed_by",
+          "op": "ne",
+          "value": ""
+        },
+        {
+          "field": "affiliation",
+          "op": "ne",
+          "value": ""
+        }
+      ],
+      "on_hit": "重判该族 T1-T4(触发轴)⇒ 若全过则立项引擎 + L4 E2E(交付轴)⇒ 两轴齐备后方可改判计数",
+      "deferral_trigger_sha256": "fffcee839b64470edd2ef83a7e3449b42b1a2283625071edd8c0b03e059cf0d7"
+    },
+    {
+      "id": "P-UALINK-INT-SIGNED-EXCERPT",
+      "family": "ualink",
+      "path": "internal_excerpt",
+      "check_type": "internal_artifact",
+      "source_event_id": "human-member-excerpt-ualink",
+      "family_effect": ["ualink"],
+      "search_goal": "仓内是否存在**带签署**且**逐格 §/Table 直接定位**的 UALink 条款摘录文件(⛔ Evaluation Copy 正文**不**算)",
+      "artifact_glob": "docs/research/*cep-ualink-clause-excerpt*.md",
+      "signer_fields": ["signed_by", "affiliation", "signed_at", "locator_chain_depth"],
+      "must_all": [
+        {
+          "field": "locator_chain_depth",
+          "op": "eq",
+          "value": 1
+        },
+        {
+          "field": "signed_by",
+          "op": "ne",
+          "value": ""
+        },
+        {
+          "field": "affiliation",
+          "op": "ne",
+          "value": ""
+        }
+      ],
+      "on_hit": "重判该族 T1-T4(触发轴)⇒ 若全过则立项引擎 + L4 E2E(交付轴)⇒ 两轴齐备后方可改判计数",
+      "deferral_trigger_sha256": "bcdc38c3c42246f066ad29668f77f37890cda1fcf67d73b1ba6e218629357b5e"
+    }
+  ]
+}
