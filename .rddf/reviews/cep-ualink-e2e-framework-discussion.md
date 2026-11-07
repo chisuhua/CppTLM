@@ -16,10 +16,10 @@
 | **1** | **D-3** | 引擎可观测面的扩展边界 | 🔄 **讨论中**(第 2 轮) |
 | **1** | D-2 | 双向映射的对侧语义(TrafficGen 的 `resp_in_` 有回) | ✅ **已裁**(见 §五) |
 | **2** | D-4 | 「接收器」的角色(对端引擎 vs 新建 Sink) | ⏳ 待议 |
-| **2** | D-5 | 拓扑形态(直连 vs 经 `cohif_noc` 桥 + 网络) | ⏳ 待议 |
-| **2** | D-6 | 冻结 spec `cep-stub-cache-core` `:56` 的 MODIFIES 精确措辞 | ⏳ 待议 |
-| **2** | D-7 | TrafficGen 模式与可复现性(TRACE/SEQUENTIAL/RANDOM 种子/hotspot/stride) | ⏳ 待议 |
-| **3** | D-8 | 「测 CEP 的功能」的具体判据清单 | ⏳ 待议 |
+| **2** | D-5 | 拓扑形态(直连 vs 经 `cohif_noc` 桥 + 网络) | ✅ **已裁**(见 §六) |
+| **2** | D-6 | 冻结 spec `cep-stub-cache-core` `:56` 的 MODIFIES 精确措辞 | ✅ **已裁**(见 §六) |
+| **2** | D-7 | TrafficGen 模式与可复现性(TRACE/SEQUENTIAL/RANDOM 种子/hotspot/stride) | ✅ **已裁**(见 §六) |
+| **3** | D-8 | 「测 CEP 的功能」的具体判据清单 | 🔄 **讨论中**(第 5 轮 · 验收层打包) |
 | **3** | D-9 | 实验产物规范(命名/编号/入 `experimental/` 与台账) | ⏳ 待议 |
 | **3** | D-10 | 计数纪律再确认(⛔ 框架做完后 `B3b-2` 仍 0/4) | ⏳ 待议 |
 
@@ -98,7 +98,26 @@
 
 **① 的直接收益**:`CacheRespBundle` 无 status/hit-miss 标志 ⇒ TrafficGen 只认「一请求一响应」配对 ⇒ 命中也回 ⇒ 配对恒成立 ⇒ latency 分布**不系统性偏慢**。
 
-## 六、本讨论的产出清单(⛔ 尚未落任何架构文档)
+## 六、D-4 ~ D-7 结论(用户已裁 · 第 4 轮 · 形态层打包)
+
+| # | 裁定 | 关键边界 |
+|---|---|---|
+| **D-4** | **不新建 Sink**(后置为 `tools/ab_compare.py` 的 baseline 侧)+ wrapper **单一模块双角色**(CohIf 接缝 + CPU 侧 NoD 响应) | 接收语义已由「对端 CHI 引擎 + wrapper」闭合 ⇒ 新增 Sink 无判据增量;wrapper 两角色共享在途 txn 表 ⇒ 拆分必逼出状态共享 |
+| **D-5** | **两个拓扑并存**:**A(直连)** = 全绿载体;**B(经网络)** = 互联可达 + 桥投影 + flit 路径验证,**⛔ 不承载全绿** | 「网络」在本仓 = ChStream `connections`(带 latency)+ `cohif_noc` 桥(既有先例 `cep_chi_rnf_pe_minimal.json`)= 2 引擎 + 双向 connections + 1 桥;⛔ 非 Router+flit 层 ⇒ 范围增量小 |
+| **D-6** | 冻结 spec `cep-stub-cache-core` 改 **2 条**:`:56`(mock → 真实引擎 + 端口面 wrapper)与 `:71`(不产生 flit → 经桥可产生);⛔ `:63` 不动 | `:63` 禁的 `forward_data`/`back_invalidate`/`barrier` 三词**仍**不在 stub 对外接口出现 ⇒ 不触发;⚠️ 连带 `ADR-CEP-19` 决策 9 的**延期依据② 正是引用这两条** ⇒ ⇒ 需 `ADR-CEP-19` 追加 SU |
+| **D-7** | 流量模式:`SEQUENTIAL`(基线)+ `hotspot`(局部性压力);⛔ `RANDOM`(除非固定种子并入 config 快照)/ `TRACE`(需人工 trace) | ⚠️ 纪律:`RANDOM` 的**种子必须进实验产物的 config 快照** ⇒ 否则实验不可复现 ⇒ 违反 `ADR-CEP-06` 的可审计性 |
+
+### ⚠️ 连锁发现:降格**在本轮不触发** ⇒ 冻结面从 5 处回落至 3 处
+
+D-3 裁定 2(不适用 ⇒ `not-collected` + 显式登记降格)**在本轮不触发**,理由:
+
+- `collective_stalls`:CHI 场景**无 collective plane** ⇒ 「collective 停顿 **0** 次」是**真实采集的数值**(⛔ **不是** `not-collected`,更不是谎报)⇒ ⇒ **13 键可全部有值** ⇒ ⇒ 「全绿」**无需降格** ⇒ ⇒ ⛔ **不必**新增假设(新增假设会触及 `ADR-CEP-06` + `obj §9.1` + 冻结的 `preregistration.json` ⇒ 冻结面 5 处)⇒ ⇒ 回落;
+- `deadlock_violations` / `memory_violations`:CHI **有** completion 路径 ⇒ 请求会 retire ⇒ `ProgressWatchdog` 的「N cycle 无 retire 且 in-flight 非空」**不成立** ⇒ 真实 0 ✅;
+- ⇒ ⚠️ **但 `memory_violations = 0` 有前提**:harness 的 `SwmrDataValueDetector` 需 `checks_enabled = true` **且存在并发写** ⇒ 「空检查检出 0」是**假的 0**(harness 自述的反向 fixture 纪律)⇒ ⇒ ⚠️ **本轮负载必须产生真实并发写** ⇒ ⇒ **D-7 的模式选择需连带确认**(见 §七 D-8 ④)。
+
+⇒ **本轮冻结面清单(3 处)**:① `openspec/specs/cep-stub-cache-core/spec.md`(`:56` + `:71` MODIFIES,两步授权)② `ADR-CEP-19`(追加 SU:决策 9 的延期依据变更 + 延期项解除条件)③ `07 号`(若需登记本次架构决策;⛔ 具体段落待 D-8/D-9 定稿后确定)。
+
+## 七、本讨论的产出清单(⛔ 尚未落任何架构文档)
 
 | 产出 | 状态 |
 |---|---|
