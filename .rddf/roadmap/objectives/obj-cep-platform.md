@@ -16203,6 +16203,30 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑤ 冻结面两步授权(已执行)**:台账 **Entry #286** 授权 → **commit `07 号` SU · 十 + 评分报告更正 + 本 Entry** → `cep_freeze_check.sh --update --authorized-by "Entry #286"` → **清单单独 commit** → 无参复验 provenance 通过(41 产物)。
 
 **⑥ 关联**:**#285**(审查 + 评分 · F-4/F-5 的来源)· **#284**(SU · 九)· **#282**(4 条裁决)· **#280**(SU · 七 ③ 的局部口径)· `ADR-CEP-12` SU 2026-11-07 ③(术语纪律)
+
+### Entry #287 — 2026-11-08 [plan](**下一步任务推荐**(planner)—— 4 批 · 2 内部可推进 + 2 条件触发)
+
+**主题**:用户口令「继续修订,然后切 planner 给出下一步任务推荐」⇒ architect 修订已完(Entry #285/#286)⇒ planner 出推荐。
+**角色**:planner(推荐 + 排序 + 依赖 + 估时 + 风险)。
+
+**① 推荐总表(按「可执行性 × 价值 × 风险」排序)**:
+
+| 序 | 任务 | 域 | 估时 | 前置 | 价值 | 风险 | 推荐 |
+|---|---|---|---:|---|---|---|---|
+| **N-1** | **F-2 闸**:14/22 ADR 缺 `Verification` ⇒ 建 `cep_adr_structural_check.sh` + `test/cep_adr_structural_deferrals.json`(14 条 `{id, reason, trigger_condition, ledger_entry}`)⇒ **带 deferral 的渐进收敛闸**(照 `cep_invariant_deferrals.json` 范式) | builder | ~0.5d | 无 | 把「ADR 结构缺口」变成**持续可见**(⛔ 不逐份补文档 ⇒ 零 diff、零冻结面) | 低(新文件 + 闸脚本;⛔ 不改任何 ADR) | ✅ **立即做** |
+| **N-2** | **批 2 实施**(接 architect 裁决 Entry #282):新建 `cpptlm-cep-stub-cache-chstream-surface` change 目录 + `StubCacheEndpointTLM` wrapper + 显式双注册 + G2 最小直连拓扑 + G3 对端抵达断言 | builder | ~2-3d | ⚠️ **冻结 main spec 的 MODIFIES 须新台账 Entry**(Entry #282 **不预授权**) | 闭合「Core·TrafficGen 主干」的**显式延期项**(履行 `ADR-CEP-19` 决策 9 的已签发承诺) | 中(⚠️ 须新 Entry + 两步授权;⛔ `B3b-2` 计数不变) | ✅ **立即做**(先做 N-1 再做 N-2) |
+| **N-3** | **F-3 第一批**:逐份核对 ADR 的「决策已定稿 / 不变量闭合 / 有回滚路径」⇒ 达标者转 `✅ 已签发` | architect | ~1d/批 | 无 | 消除「17 份起草中 ⇒ 已决/未决不可判」 | ⚠️ **中-高**:⛔ **不可批量签发**(误签发 = 治理事故)⇒ 须**逐份**且每份留核对证据 | ⏸ **条件触发**(建议在 N-2 完成后做,因其会读 ADR 状态) |
+| **N-4** | **E1 / E2 周期项**:D-4 ①/② 的季度外部检索探测 + 终态 DoD Go 季度复审 | librarian + planner | 季度 | E1 探测协议已就位(Entry #277/#278) | **不漏检**外部事件 | 低(cadence 脚本已报 `CADENCE-NEVER-RUN` = 真实状态) | ⏳ **季度触发** |
+
+**② 排序理由**:① **N-1 最先** —— 零 diff / 零冻结面 / 零风险,且把 F-2 从「一次性发现」变成「持续可见」(⛔ 否则 14 份 ADR 的缺口会随时间**腐化**);② **N-2 次之** —— 它是**唯一**能推进「显式延期项」的任务,且 architect 裁决已就绪(Entry #282)+ 冻结面授权流程已有先例;③ **N-3 需等 N-2** —— 逐份签发要读 ADR 状态,而 N-2 会追加 `ADR-CEP-05` / `ADR-CEP-19` 相关的 SU ⇒ 先做 N-2 避免**签发后又需追认**;④ **N-4 是周期项** ⇒ 不占并发,但**必须**在季度窗口执行(cadence 脚本已就位)。
+
+**③ ⛔ 明确不做(本规划范围外)**:⛔ **不**批量签发 ADR(见 N-3 风险)· ⛔ **不**为 4 受限族补 T1–T4 载体(无依据 ⇒ 推理填空)· ⛔ **不**用「补上 TrafficGen 主干」改判 `B3b-2`(仍 **0/4**,计数依据 = 规范条款级 T1–T4)· ⛔ **不**在 N-2 里顺手扩 `optional 场景 2`(网络桥接)⇒ 它决定冻结 spec `:71` 是否 MODIFIES ⇒ **单独一批**更省授权成本 · ⛔ **不**改已签发结论(改判须新 SU + 回滚路径)。
+
+**④ KPI 与并发**:当前 Proposed **0/3** ⇒ N-1(闸脚本,**不建 change 目录** ⇒ **不占 slot**)⇒ N-2(建 change 目录 ⇒ **占 1 slot**,归档后回 0/3)⇒ ⛔ 两者**串行**即可(§5.4 并发 ≤ 1 的 CEP 口径),⛔ 无需让位。
+
+**⑤ 与既有路径的关系**:本推荐**替换** Entry #274 §④ 的「批 1/批 2/批 3」表述中的批 1(L1/L2 已于 Entry #275 完成)⇒ 现状:**批 1 ✅ 完成 · 批 2 = N-2(裁决已就绪,待实施)· 批 3 = N-3/N-4(条件/周期触发)**。
+
+**⑥ 关联**:**#286**(F-4′/F-5′ 精确化)· **#285**(审查 + 评分 · F-2/F-3 的来源)· **#282**(4 条裁决 · N-2 的前置)· **#278**(E1 cadence 脚本 · N-4 的就绪面)· **#274**(盘点 + 路径 · 本推荐接续)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
