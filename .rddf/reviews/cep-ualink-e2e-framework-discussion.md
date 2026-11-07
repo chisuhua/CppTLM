@@ -14,7 +14,7 @@
 | 已裁决 | K-4 | change 归属 = 收编 `cpptlm-cep-stub-cache-chstream-surface` | ✅ Entry #282 |
 | **1** | **D-1** | **可观测面与 13 必纳 metric 的来源** | ✅ **已裁**(见 §二) |
 | **1** | **D-3** | 引擎可观测面的扩展边界 | 🔄 **讨论中**(第 2 轮) |
-| **1** | D-2 | 双向映射的对侧语义(TrafficGen 的 `resp_in_` 有回) | 🔄 **讨论中**(第 3 轮) |
+| **1** | D-2 | 双向映射的对侧语义(TrafficGen 的 `resp_in_` 有回) | ✅ **已裁**(见 §五) |
 | **2** | D-4 | 「接收器」的角色(对端引擎 vs 新建 Sink) | ⏳ 待议 |
 | **2** | D-5 | 拓扑形态(直连 vs 经 `cohif_noc` 桥 + 网络) | ⏳ 待议 |
 | **2** | D-6 | 冻结 spec `cep-stub-cache-core` `:56` 的 MODIFIES 精确措辞 | ⏳ 待议 |
@@ -87,7 +87,18 @@
 ④ stub hit 路径   :cpu_read 返回 AccessResult{hit,data,txn_id,pending} ⇒ **hit 时无 net-side request**(INV-SC6 零网络流量)
 ```
 
-## 五、本讨论的产出清单(⛔ 尚未落任何架构文档)
+## 五、D-2 结论(用户已裁 · 第 3 轮 · 四点全同意)
+
+| # | 裁定 | 关键边界 |
+|---|---|---|
+| ① | **命中路径也回一个「CPU 侧响应」** | wrapper 在 `cpu_read` 返回 `hit=true` 时**就地生成** `CacheRespBundle` ⇒ 「一请求一响应」成立 ⇒ latency 样本完整;✅ **零网络流量保持**(零**网络** ≠ 零 **CPU 侧**响应)⇒ 不违反 `INV-SC6` |
+| ② | **响应侧映射归 wrapper**(与 K-2 一致) | `CohIfBundle(completion) → CacheRespBundle{transaction_id ← 同 txn_id, data ← completion.data}`;wrapper 的 CohIf 侧**有 egress**(回 NoD 响应)⇒ ⚠ **必须显式写明边界**:「**承载层回 NoD 响应 ≠ 协议引擎发射**」⇒ 否则会被读成「引擎开始发射」而违反 M-6 |
+| ③ | **`evict_line` 由装配夹具显式调用** | 与 G-0e ② 同向(「保留 core-side 功能方法 + 测试/装配夹具显式调用」)⇒ ✅ **不改通用域 `CacheReqBundle`**;⚠ 本轮 `INV-SC*` 的 eviction 约束**靠夹具驱动**测,不由 TrafficGen 驱动 |
+| ④ | **分片只透传、不聚合** | TrafficGen 默认 `fragment_total=1` ⇒ wrapper 透传;CHI 多拍响应(`CompData`/`DataSepResp`)的**聚合语义本轮不做** ⇒ 须在契约面**登记该限制** |
+
+**① 的直接收益**:`CacheRespBundle` 无 status/hit-miss 标志 ⇒ TrafficGen 只认「一请求一响应」配对 ⇒ 命中也回 ⇒ 配对恒成立 ⇒ latency 分布**不系统性偏慢**。
+
+## 六、本讨论的产出清单(⛔ 尚未落任何架构文档)
 
 | 产出 | 状态 |
 |---|---|
