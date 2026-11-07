@@ -15935,6 +15935,28 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑦ 明确不做**:不为 4 族补 T1–T4 载体(无依据)· 不把 UALink 记账级引擎读成协议实现(per `ADR-CEP-12` SU 2026-11-07 ③)· 不改 `B3b-2` 计数(⛔ 0/4)· 不改已签发 DoD 结论(改判须新 SU + 回滚路径)· 不回改 §11 台账任何既有 Entry(append-only)。
 
 **⑧ 关联**:**#273**(白名单契约对齐归档)· **#271**(第 2 项归档)· **#270**(第 2 项实施)· **#269**(裁决 + oracle + critic)· **#268**(第 2 项立项)· **#264**(终态 DoD Go 挂起)· **#251**(DoD 拆分戊)· **#230**(2026-11-05 旧路径段 —— **已整体过期**)· **#261**(L2 的 SHOULD_FIX-2 来源)· **#252 / #256**(D-4 ③④ 已落地)
+
+### Entry #275 — 2026-11-07 [build](**批 1 执行完毕** —— L1 CI 红线解除 + L2 coverage L4 档误标修正)
+
+**主题**:用户口令「切 builder 执行批 1」⇒ 执行 Entry #274 §⑥ 的**批 1**(L1 + L2)。
+**角色**:builder(实施 + 验证)。
+
+**① L1(CI 红线)—— 13 个历史遗留格式化债已清**:`test/` 下 **13** 个文件经 `clang-format -style=file` 格式化 ⇒ `format.sh --check` **0 剩余**(实测「✅ 格式化完成!」)⇒ CI `code-format` job 的红线解除。
+- **风险排查先行**:先实测这 13 个文件是否被**其它判据以文本方式断言** ⇒ 命中 3 处引用,但**全部是注释里的引用**(如 `test_cep_chi_rnf_subset.cc:1062` 提到「`test_cep_adapter_schema_contracts.cc` 的**合成输入双向规则**」是**说明文字**非断言)⇒ 格式化**不破坏**任何文本判据;
+- **语义零变更自查**:`git diff -w` 仍有 136 行差异 ⇒ 逐行核为**纯排版变化**(表达式折行位置 / 注释折行 / `case` 展开成多行 / `TEST_CASE` 宏参数折行);⚠️ **字符串字面量零拆分**(实测无 `"...\n"` 续行、零 `\` 续行符)⇒ **内容未变**。
+
+**② L2(coverage 文档 `TileLink-C` 行 L4 档误标)—— 已修正**(Entry #261 的 **SHOULD_FIX-2**,当时判 scope 外 backlog ⇒ **至今未修**):
+- **实测依据**:`include/tlm/cep/tilelink_protocol_engine.hh` 的 10 个 `on_*` **全部**只调 `consume(Intent)`;`consume()` 只累加 `intent_observed` / `cap_events` / `grow_events` / `prune_events` / `report_events` ⇒ **零发射**(全文件 **0** 处 `write_to_egress` / `emitted`)⇒ **进程内派发 + 引擎内计数记账** ⇒ 属 **L4-direct** 档;
+- **修正**:L4 列由「✅ `dispatch_cohif` 5 流」(会被读成 **wire** 档)⇒ 改为 `◐ **L4-direct** ✅(...) · **L4-wire** ❌(该引擎**不写 egress** ⇒ 不满足「`tick()` + 对端收到」)`,证据含 `consume()` 的累加项清单 + `ADR-CEP-12` **SU 2026-11-07** ②「⛔ 零发射」;
+- **表格结构**:该行仍为 **7 列**(与相邻行一致);⚠️ 该文档**无**任何文本断言消费者(实测 0 命中)且 **不在 M1 冻结集**(`docs/validation/` 未入冻结 globs)⇒ **不触发** `--update --authorized-by` ⇒ 冻结清单**未**改动。
+
+**③ 范围纪律**:本轮**只**修 Entry #261 点名的 **TileLink-C 行**;**未**顺手改其它行的 L4 标注 ⇒ 新登记 1 条 backlog(见 ④)。
+
+**④ ⚠️ 新登记 backlog(本轮发现 · 未处理)**:`coverage` 矩阵的 **CHI RN-F 行**(L4 列 = 「✅ `submit → tick → 分派`」)与 **CohIf 载体 行**(L4 列 = 「✅」(Null 语义))**只标单档**,⛔ 未按 rubric 的 L4-direct / L4-wire 两档区分 ⇒ **是否会被读成 wire 档需逐族复核**(两者的引擎**有** `write_to_egress`,与 TileLink-C 的零发射**不同型** ⇒ 不可类推结论)⇒ ⛔ **本轮不处理**(scope 外)⇒ 登记为**独立 backlog**,须在有据(逐族实测发射行为)时再改。
+
+**⑤ 验证**:`ctest` **160/160**;`[cep]` **477 cases / 11116 assertions**;4 闸全绿(`docs_sync` / `doc_ref` / `decl_alignment` / `freeze`);M1 冻结面 **41 产物零 diff**(未触发授权)。
+
+**⑥ 关联**:**#274**(盘点 + 路径 · 批 1 定义)· **#261**(L2 的 SHOULD_FIX-2 来源 · rubric 两档裁决)· **#273**(白名单契约对齐归档)· **#271** / **#270**(第 2 项归档 / 实施)· **#269**(裁决)· **#264**(终态 DoD Go 挂起)· **#252 / #256**(D-4 ③④ 已落地)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

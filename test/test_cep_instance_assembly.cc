@@ -26,19 +26,19 @@ using namespace tlm::cep;
 
 namespace {
 
-nlohmann::json load_json(const std::string& rel) {
-    std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
-    REQUIRE(in.good());
-    nlohmann::json j;
-    in >> j;
-    return j;
-}
+    nlohmann::json load_json(const std::string& rel) {
+        std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
+        REQUIRE(in.good());
+        nlohmann::json j;
+        in >> j;
+        return j;
+    }
 
-constexpr const char* kConfigRel = "configs/cep_ualink_pe_minimal.json";
-constexpr const char* kInstancesRel = "include/tlm/cep/protocol_instances.json";
-constexpr const char* kPlanesRel = "include/tlm/cep/collective_planes.json";
+    constexpr const char* kConfigRel = "configs/cep_ualink_pe_minimal.json";
+    constexpr const char* kInstancesRel = "include/tlm/cep/protocol_instances.json";
+    constexpr const char* kPlanesRel = "include/tlm/cep/collective_planes.json";
 
-}  // namespace
+} // namespace
 
 TEST_CASE("IAG-01: ualink_4 实例级装配正控 —— 声明 + 拓扑 + 平面三层齐备", "[cep][assembly]") {
     const auto cfg = load_json(kConfigRel);
@@ -182,7 +182,8 @@ TEST_CASE("IAG-02~07: 装配闸的反向 fixture(逐条按归因 tag 变红)", "
     }
 }
 
-TEST_CASE("IAG-08: 装配闭环与既有闸一致 —— channel 闸对 ualink_4 也有逐 VC verdict", "[cep][assembly]") {
+TEST_CASE("IAG-08: 装配闭环与既有闸一致 —— channel 闸对 ualink_4 也有逐 VC verdict",
+          "[cep][assembly]") {
     const auto cfg = load_json(kConfigRel);
     const auto rep = run_channel_gate(cfg);
     REQUIRE(rep.verdict != GateVerdict::FAIL);

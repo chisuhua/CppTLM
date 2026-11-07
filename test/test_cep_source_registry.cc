@@ -29,19 +29,18 @@ using namespace tlm::cep;
 
 namespace {
 
-template <typename Enum>
-constexpr Enum as_enum(std::uint8_t v) noexcept {
-    return static_cast<Enum>(v);
-}
+    template <typename Enum> constexpr Enum as_enum(std::uint8_t v) noexcept {
+        return static_cast<Enum>(v);
+    }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("SRK-01a: tilelink 主矩阵 12 格 ref 全部可解析", "[cep][source-registry]") {
     std::size_t checked = 0;
     for (std::uint8_t s = 0; s < TileLinkStateSpec::kStateCount; ++s) {
         for (std::uint8_t e = 0; e < TileLinkStateSpec::kEventCount; ++e) {
             const auto t = TileLinkStateSpec::transition(as_enum<TileLinkStateSpec::State>(s),
-                                                        as_enum<TileLinkStateSpec::Event>(e));
+                                                         as_enum<TileLinkStateSpec::Event>(e));
             const auto r = TileLinkStateSpec::resolve_ref(t);
             INFO("cell state=" << int(s) << " event=" << int(e) << " ref=" << (t.ref ? t.ref : ""));
             REQUIRE(r.registered);
@@ -66,7 +65,7 @@ TEST_CASE("SRK-01c: cxl 68 格 ref 全部可解析", "[cep][source-registry]") {
     for (std::uint8_t s = 0; s < CxlStateSpec::kStateCount; ++s) {
         for (std::uint8_t e = 0; e < CxlStateSpec::kEventCount; ++e) {
             const auto t = CxlStateSpec::transition(as_enum<CxlStateSpec::State>(s),
-                                                   as_enum<CxlStateSpec::Event>(e));
+                                                    as_enum<CxlStateSpec::Event>(e));
             const auto r = CxlStateSpec::resolve_ref(t);
             INFO("cell state=" << int(s) << " event=" << int(e) << " ref=" << (t.ref ? t.ref : ""));
             REQUIRE(r.registered);
@@ -108,7 +107,7 @@ TEST_CASE("SRK-02: 4 载体 basis ↔ ref_kind 映射 0 违规", "[cep][source-r
     for (std::uint8_t s = 0; s < TileLinkStateSpec::kStateCount; ++s) {
         for (std::uint8_t e = 0; e < TileLinkStateSpec::kEventCount; ++e) {
             const auto t = TileLinkStateSpec::transition(as_enum<TileLinkStateSpec::State>(s),
-                                                        as_enum<TileLinkStateSpec::Event>(e));
+                                                         as_enum<TileLinkStateSpec::Event>(e));
             INFO("tilelink state=" << int(s) << " event=" << int(e));
             REQUIRE(TileLinkStateSpec::basis_ref_kind_consistent(t));
         }
@@ -120,9 +119,9 @@ TEST_CASE("SRK-02: 4 载体 basis ↔ ref_kind 映射 0 违规", "[cep][source-r
     for (std::uint8_t s = 0; s < CxlStateSpec::kStateCount; ++s) {
         for (std::uint8_t e = 0; e < CxlStateSpec::kEventCount; ++e) {
             const auto t = CxlStateSpec::transition(as_enum<CxlStateSpec::State>(s),
-                                                   as_enum<CxlStateSpec::Event>(e));
-            INFO("cxl state=" << int(s) << " event=" << int(e) << " basis="
-                              << int(static_cast<std::uint8_t>(t.basis)));
+                                                    as_enum<CxlStateSpec::Event>(e));
+            INFO("cxl state=" << int(s) << " event=" << int(e)
+                              << " basis=" << int(static_cast<std::uint8_t>(t.basis)));
             REQUIRE(CxlStateSpec::basis_ref_kind_consistent(t));
         }
     }
@@ -132,12 +131,12 @@ TEST_CASE("SRK-02: 4 载体 basis ↔ ref_kind 映射 0 违规", "[cep][source-r
             REQUIRE(MesifStateSpec::basis_ref_kind_consistent(
                 MesifStateSpec::kTable.transition_basis[s][e]));
         }
-        REQUIRE(MesifStateSpec::basis_ref_kind_consistent(
-            MesifStateSpec::kTable.projection_basis[s]));
+        REQUIRE(
+            MesifStateSpec::basis_ref_kind_consistent(MesifStateSpec::kTable.projection_basis[s]));
     }
     for (const auto& c : ualink_inc::kBasisObligations) {
-        INFO("ualink ob "
-             << int(static_cast<std::uint8_t>(c.obligation)) << " ref=" << std::string(c.ref));
+        INFO("ualink ob " << int(static_cast<std::uint8_t>(c.obligation))
+                          << " ref=" << std::string(c.ref));
         REQUIRE(ualink_inc::basis_ref_kind_consistent(c.ref, c.kind));
     }
     for (const auto& c : ualink_inc::kBasisIncOps) {
@@ -157,12 +156,12 @@ TEST_CASE("SRK-03: sources.json ↔ kSources[] 逐条一致", "[cep][source-regi
 
     auto kind_name = [](RefKind k) -> std::string {
         switch (k) {
-            case RefKind::SpecClause:
-                return "spec_clause";
-            case RefKind::PublicNonnormative:
-                return "public_nonnormative";
-            case RefKind::RepoDerived:
-                return "repo_derived";
+        case RefKind::SpecClause:
+            return "spec_clause";
+        case RefKind::PublicNonnormative:
+            return "public_nonnormative";
+        case RefKind::RepoDerived:
+            return "repo_derived";
         }
         return "";
     };
@@ -246,47 +245,49 @@ TEST_CASE("SRK-04b: 决定性变异输入 —— 弱来源配 Direct 必然不�
     REQUIRE_FALSE(CxlStateSpec::basis_ref_kind_consistent(weak));
 }
 
-TEST_CASE("SRK-05: Free 格校验器有牙 —— 合法 Free 通过 / 违规 Free 必红", "[cep][source-registry]") {
+TEST_CASE("SRK-05: Free 格校验器有牙 —— 合法 Free 通过 / 违规 Free 必红",
+          "[cep][source-registry]") {
     // ⚠️ 2026-11-06(per oracle 评审):`CellKind::Free` 落地时**校验器必须同步接入**
     //    ⇒ 否则首个真实 Free 格落下即编译红(半落地)。此处用**合成 1×1 矩阵**证明:
     //    ① 合法 Free 格被接受;② 每条违规形态必红。
     using TL = TileLinkStateSpec;
     {
         std::array<std::array<TL::Transition, 1>, 1> ok{};
-        ok[0][0] = TL::Transition{TL::CellKind::Free, 0, TL::BasisKind::Direct, false,
-                                 "TLC-99", "合成:规范明确实现自由"};
+        ok[0][0] = TL::Transition{TL::CellKind::Free,     0, TL::BasisKind::Direct, false, "TLC-99",
+                                  "合成:规范明确实现自由"};
         REQUIRE(TL::transitions_are_valid_for(ok));
 
         std::array<std::array<TL::Transition, 1>, 1> bad_mask{};
-        bad_mask[0][0] = TL::Transition{TL::CellKind::Free, 1, TL::BasisKind::Direct, false,
-                                        "TLC-99", "合成"};
+        bad_mask[0][0] =
+            TL::Transition{TL::CellKind::Free, 1, TL::BasisKind::Direct, false, "TLC-99", "合成"};
         REQUIRE_FALSE(TL::transitions_are_valid_for(bad_mask)); // 目标掩码 MUST 为 0
 
         std::array<std::array<TL::Transition, 1>, 1> bad_ref{};
-        bad_ref[0][0] = TL::Transition{TL::CellKind::Free, 0, TL::BasisKind::Direct, false,
-                                       "", "合成"};
+        bad_ref[0][0] =
+            TL::Transition{TL::CellKind::Free, 0, TL::BasisKind::Direct, false, "", "合成"};
         REQUIRE_FALSE(TL::transitions_are_valid_for(bad_ref)); // 须有条款级定位
 
         std::array<std::array<TL::Transition, 1>, 1> bad_basis{};
-        bad_basis[0][0] = TL::Transition{TL::CellKind::Free, 0, TL::BasisKind::Inferred, true,
-                                         "TLC-99", "合成"};
+        bad_basis[0][0] =
+            TL::Transition{TL::CellKind::Free, 0, TL::BasisKind::Inferred, true, "TLC-99", "合成"};
         REQUIRE_FALSE(TL::transitions_are_valid_for(bad_basis)); // 不得是本仓推导
     }
     using CX = CxlStateSpec;
     {
         std::array<std::array<CX::Transition, 1>, 1> ok{};
-        ok[0][0] = CX::Transition{CX::CellKind::Free, CX::State::S, CX::BasisKind::PublicDirect,
-                                 false, "D1 p.5", "合成:公开来源明确实现自由"};
+        ok[0][0] = CX::Transition{
+            CX::CellKind::Free,         CX::State::S, CX::BasisKind::PublicDirect, false, "D1 p.5",
+            "合成:公开来源明确实现自由"};
         REQUIRE(CX::transitions_are_valid_for(ok));
 
         std::array<std::array<CX::Transition, 1>, 1> bad_ref{};
-        bad_ref[0][0] = CX::Transition{CX::CellKind::Free, CX::State::S, CX::BasisKind::PublicDirect,
-                                       false, "", "合成"};
+        bad_ref[0][0] = CX::Transition{
+            CX::CellKind::Free, CX::State::S, CX::BasisKind::PublicDirect, false, "", "合成"};
         REQUIRE_FALSE(CX::transitions_are_valid_for(bad_ref));
 
         std::array<std::array<CX::Transition, 1>, 1> bad_basis{};
-        bad_basis[0][0] = CX::Transition{CX::CellKind::Free, CX::State::S, CX::BasisKind::SelfDerived,
-                                         true, "D1 p.5", "合成"};
+        bad_basis[0][0] = CX::Transition{
+            CX::CellKind::Free, CX::State::S, CX::BasisKind::SelfDerived, true, "D1 p.5", "合成"};
         REQUIRE_FALSE(CX::transitions_are_valid_for(bad_basis)); // 不得是本仓推导
     }
 }
@@ -307,8 +308,7 @@ TEST_CASE("SRK-06: cxl 三档计数硬断言(防映射表漂移)", "[cep][source
             if (t.basis == CxlStateSpec::BasisKind::SelfDerived) {
                 ++n_self_derived;
             }
-            if (t.kind == CxlStateSpec::CellKind::Unknown && t.ref != nullptr &&
-                t.ref[0] == '\0') {
+            if (t.kind == CxlStateSpec::CellKind::Unknown && t.ref != nullptr && t.ref[0] == '\0') {
                 ++n_unknown_empty_ref;
             }
         }

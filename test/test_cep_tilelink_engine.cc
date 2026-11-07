@@ -29,16 +29,16 @@
 //
 // =============================================================================
 
-#include "tlm/cep/tilelink_protocol_engine.hh"
-#include "tlm/cep/protocol_engine_base.hh"
-#include "tlm/cep/cohif_protocol_engine.hh"
 #include "bundles/cep_coherence_bundles_tlm.hh"
+#include "tlm/cep/cohif_protocol_engine.hh"
+#include "tlm/cep/protocol_engine_base.hh"
+#include "tlm/cep/tilelink_protocol_engine.hh"
 
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "framework/chstream_adapter_factory.hh"
 
-#include "cep_adr_parser.hh"   // `cpptlm::cep::repo_root()`(测试侧仓根定位)
+#include "cep_adr_parser.hh" // `cpptlm::cep::repo_root()`(测试侧仓根定位)
 
 #include <nlohmann/json.hpp>
 
@@ -55,105 +55,107 @@
 
 namespace {
 
-using Engine = tlm::cep::TileLinkProtocolEngine;
-using Spec = tlm::cep::TileLinkStateSpec;
-using Intent = Spec::PlatformIntent;
-using TlEvent = Spec::Event;
-using Bundle = bundles::CohIfBundle;
-using FlowId = bundles::CohIfFlowId;
+    using Engine = tlm::cep::TileLinkProtocolEngine;
+    using Spec = tlm::cep::TileLinkStateSpec;
+    using Intent = Spec::PlatformIntent;
+    using TlEvent = Spec::Event;
+    using Bundle = bundles::CohIfBundle;
+    using FlowId = bundles::CohIfFlowId;
 
-/// 仓库根(CPPTLM_SOURCE_DIR 由 test/CMakeLists.txt 注入)
-std::string repo_root_dir() {
+    /// 仓库根(CPPTLM_SOURCE_DIR 由 test/CMakeLists.txt 注入)
+    std::string repo_root_dir() {
 #ifdef CPPTLM_SOURCE_DIR
-    return std::string(CPPTLM_SOURCE_DIR);
+        return std::string(CPPTLM_SOURCE_DIR);
 #else
-    return std::string(".");
+        return std::string(".");
 #endif
-}
-
-std::string read_file_or_empty(const std::string& path) {
-    std::ifstream in(path, std::ios::binary);
-    if (!in) return {};
-    std::ostringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
-}
-
-/// 引擎源文件原文(禁止性 lint 的对象)
-std::string engine_source_text() {
-    return read_file_or_empty(repo_root_dir() + "/include/tlm/cep/tilelink_protocol_engine.hh");
-}
-
-/// **去注释**后的引擎源码(避免注释里的 token 触发 lint 误报)
-std::string strip_comments(const std::string& src) {
-    std::string out;
-    out.reserve(src.size());
-    bool in_block = false;
-    for (std::size_t i = 0; i < src.size();) {
-        if (!in_block && src[i] == '/' && i + 1 < src.size() && src[i + 1] == '/') {
-            while (i < src.size() && src[i] != '\n') ++i;
-            continue;
-        }
-        if (!in_block && src[i] == '/' && i + 1 < src.size() && src[i + 1] == '*') {
-            in_block = true;
-            i += 2;
-            continue;
-        }
-        if (in_block && src[i] == '*' && i + 1 < src.size() && src[i + 1] == '/') {
-            in_block = false;
-            i += 2;
-            continue;
-        }
-        if (!in_block) out.push_back(src[i]);
-        ++i;
     }
-    return out;
-}
 
-/// 构造一个 CohIf bundle(5 条 CohIf 腿的字段齐全)
-Bundle make_bundle(FlowId flow, std::uint64_t addr, std::uint64_t data,
-                    std::uint64_t txn, std::uint8_t perm) {
-    Bundle b;
-    b.flow_id = flow;
-    b.address.write(addr);
-    b.data.write(data);
-    b.transaction_id.write(txn);
-    b.perm.write(perm);
-    b.hit.write(0);
-    b.dirty.write(0);
-    b.error.write(0);
-    b.atomic.write(0);
-    b.snoop_type.write(Bundle::SNOOP_INVALIDATE);
-    b.line_state.write(Bundle::STATE_NONE);
-    return b;
-}
+    std::string read_file_or_empty(const std::string& path) {
+        std::ifstream in(path, std::ios::binary);
+        if (!in)
+            return {};
+        std::ostringstream ss;
+        ss << in.rdbuf();
+        return ss.str();
+    }
 
-/// 7 个「零事件」意图(TLC-M-01 / 06~11)
-const std::array<Intent, 7> kZeroEventIntents{
-    Intent::Request,      Intent::ForwardData,    Intent::BackInvalidate,
-    Intent::AddressResolve, Intent::Barrier,       Intent::SnoopCompletionAck,
-    Intent::AtomicIntent};
+    /// 引擎源文件原文(禁止性 lint 的对象)
+    std::string engine_source_text() {
+        return read_file_or_empty(repo_root_dir() + "/include/tlm/cep/tilelink_protocol_engine.hh");
+    }
 
-/// 4 个「有事件」意图(TLC-M-02~05)
-const std::array<Intent, 4> kEventIntents{Intent::Completion, Intent::Snoop,
-                                         Intent::SnoopResp, Intent::Writeback};
+    /// **去注释**后的引擎源码(避免注释里的 token 触发 lint 误报)
+    std::string strip_comments(const std::string& src) {
+        std::string out;
+        out.reserve(src.size());
+        bool in_block = false;
+        for (std::size_t i = 0; i < src.size();) {
+            if (!in_block && src[i] == '/' && i + 1 < src.size() && src[i + 1] == '/') {
+                while (i < src.size() && src[i] != '\n')
+                    ++i;
+                continue;
+            }
+            if (!in_block && src[i] == '/' && i + 1 < src.size() && src[i + 1] == '*') {
+                in_block = true;
+                i += 2;
+                continue;
+            }
+            if (in_block && src[i] == '*' && i + 1 < src.size() && src[i + 1] == '/') {
+                in_block = false;
+                i += 2;
+                continue;
+            }
+            if (!in_block)
+                out.push_back(src[i]);
+            ++i;
+        }
+        return out;
+    }
 
-/// 加载 TileLink 的最小装配拓扑(`protocol_instances` 相对路径 → 绝对路径)
-nlohmann::json load_tilelink_topology() {
-    const auto path = cpptlm::cep::repo_root() / "configs" / "cep_tilelink_pe_minimal.json";
-    std::ifstream in(path);
-    if (!in.good())
-        throw std::runtime_error("无法打开 TileLink 装配配置: " + path.string());
-    nlohmann::json cfg = nlohmann::json::parse(in);
-    cfg["cep"]["protocol_instances"] =
-        (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json")
-            .string();
-    return cfg;
-}
+    /// 构造一个 CohIf bundle(5 条 CohIf 腿的字段齐全)
+    Bundle make_bundle(FlowId flow, std::uint64_t addr, std::uint64_t data, std::uint64_t txn,
+                       std::uint8_t perm) {
+        Bundle b;
+        b.flow_id = flow;
+        b.address.write(addr);
+        b.data.write(data);
+        b.transaction_id.write(txn);
+        b.perm.write(perm);
+        b.hit.write(0);
+        b.dirty.write(0);
+        b.error.write(0);
+        b.atomic.write(0);
+        b.snoop_type.write(Bundle::SNOOP_INVALIDATE);
+        b.line_state.write(Bundle::STATE_NONE);
+        return b;
+    }
 
-/// 直调 `on_*` 的意图分派器(5 条非 CohIf 腿的流 + atomic 无钩子 ⇒ 显式落点)
-void drive_intent(Engine& e, Intent i) {
-    switch (i) {
+    /// 7 个「零事件」意图(TLC-M-01 / 06~11)
+    const std::array<Intent, 7> kZeroEventIntents{
+        Intent::Request, Intent::ForwardData,        Intent::BackInvalidate, Intent::AddressResolve,
+        Intent::Barrier, Intent::SnoopCompletionAck, Intent::AtomicIntent};
+
+    /// 4 个「有事件」意图(TLC-M-02~05)
+    const std::array<Intent, 4> kEventIntents{Intent::Completion, Intent::Snoop, Intent::SnoopResp,
+                                              Intent::Writeback};
+
+    /// 加载 TileLink 的最小装配拓扑(`protocol_instances` 相对路径 → 绝对路径)
+    nlohmann::json load_tilelink_topology() {
+        const auto path = cpptlm::cep::repo_root() / "configs" / "cep_tilelink_pe_minimal.json";
+        std::ifstream in(path);
+        if (!in.good())
+            throw std::runtime_error("无法打开 TileLink 装配配置: " + path.string());
+        nlohmann::json cfg = nlohmann::json::parse(in);
+        cfg["cep"]["protocol_instances"] =
+            (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json")
+                .string();
+        return cfg;
+    }
+
+    /// 直调 `on_*` 的意图分派器(5 条非 CohIf 腿的流 + atomic 无钩子 ⇒ 显式落点)
+    void drive_intent(Engine& e, Intent i) {
+        switch (i) {
         case Intent::Request:
             e.on_request(0x1000, tlm::cep::Perm::READ, 1);
             break;
@@ -189,15 +191,16 @@ void drive_intent(Engine& e, Intent i) {
         case Intent::AtomicIntent:
             e.note_atomic_intent();
             break;
+        }
     }
-}
 
 } // namespace
 
 // ══════════════════════════════════════════════════════════════════════════
 //  ① TLE-01 —— 零自有事件表副本(禁止性 lint)
 // ══════════════════════════════════════════════════════════════════════════
-TEST_CASE("TLE-01 TileLink 引擎:零自有事件表副本(唯一消费载具)", "[cep][tilelink][engine][tle-01]") {
+TEST_CASE("TLE-01 TileLink 引擎:零自有事件表副本(唯一消费载具)",
+          "[cep][tilelink][engine][tle-01]") {
     const std::string src = strip_comments(engine_source_text());
     REQUIRE_FALSE(src.empty());
 
@@ -225,7 +228,7 @@ TEST_CASE("TLE-01 TileLink 引擎:零自有事件表副本(唯一消费载具)",
     // 该处必须在 choke point 内
     const std::size_t cp = src.find("consumable_mask_of");
     REQUIRE(cp != std::string::npos);
-    REQUIRE(cp < pos);  // 定义在前,调用在后 ⇒ 只可能经 choke point
+    REQUIRE(cp < pos); // 定义在前,调用在后 ⇒ 只可能经 choke point
 
     // ④ 不得持有掩码/映射的成员数组(⛔ 允许「到达计数」数组 —— 计数非映射)
     INFO("引擎不得持有事件掩码/映射的成员数组");
@@ -267,13 +270,14 @@ TEST_CASE("TLE-02 TileLink 引擎:11 意图全覆盖 + 7 零事件意图(basis �
 
     // ③ 4 个有事件意图:事件计数与真源掩码**逐位一致**
     std::uint64_t expect_total = 0;
-    std::array<std::uint64_t, 4> expect_by_event{};  // 4 类事件的**累计**期望
+    std::array<std::uint64_t, 4> expect_by_event{}; // 4 类事件的**累计**期望
     for (Intent i : kEventIntents) {
         const std::uint8_t mask = Spec::t3_consumable_event_mask(i);
         REQUIRE(mask != 0u);
         expect_total += 1;
         for (std::size_t b = 0; b < 4; ++b)
-            if (mask & (1u << b)) expect_by_event[b] += 1;
+            if (mask & (1u << b))
+                expect_by_event[b] += 1;
     }
     for (std::size_t b = 0; b < 4; ++b) {
         INFO("事件类别 " << b << " 计数与真源掩码不一致");
@@ -294,7 +298,8 @@ TEST_CASE("TLE-02 TileLink 引擎:11 意图全覆盖 + 7 零事件意图(basis �
 // ══════════════════════════════════════════════════════════════════════════
 //  ③ TLE-03 —— 5 个有事件流 L4 事务级贯通(dispatch_cohif)
 // ══════════════════════════════════════════════════════════════════════════
-TEST_CASE("TLE-03 TileLink 引擎:5 流事务级贯通(dispatch_cohif)", "[cep][tilelink][engine][tle-03]") {
+TEST_CASE("TLE-03 TileLink 引擎:5 流事务级贯通(dispatch_cohif)",
+          "[cep][tilelink][engine][tle-03]") {
     EventQueue eq;
     Engine e("tl", &eq);
 
@@ -315,7 +320,7 @@ TEST_CASE("TLE-03 TileLink 引擎:5 流事务级贯通(dispatch_cohif)", "[cep][
     REQUIRE(e.counters().report_events == 0u);
     REQUIRE(e.total_events() == 4u);
     REQUIRE(e.intent_observed(Intent::Request) == 1u);
-    REQUIRE(e.zero_event_intents() == 1u);  // 仅 request
+    REQUIRE(e.zero_event_intents() == 1u); // 仅 request
 
     // ⑥ 反向 fixture:域外 flow_id ⇒ 防御性返回 false 且**零事件**
     //    (⛔ 不静默计入任何意图)
@@ -333,10 +338,10 @@ TEST_CASE("TLE-03 TileLink 引擎:5 流事务级贯通(dispatch_cohif)", "[cep][
     null_engine.dispatch_cohif(make_bundle(FlowId::SnoopResp, 0x1000, 0, 2, Bundle::PERM_NONE));
     null_engine.dispatch_cohif(make_bundle(FlowId::Writeback, 0x1000, 0xbb, 3, Bundle::PERM_NONE));
     // Null 侧**没有事件面**(结构上不可能)⇒ 正控:它确实收到了这 5 个流
-    REQUIRE(null_engine.counters().per_flow[static_cast<std::size_t>(
-                tlm::cep::CanonicalFlow::Request)] == 1u);
-    REQUIRE(null_engine.counters().per_flow[static_cast<std::size_t>(
-                tlm::cep::CanonicalFlow::Completion)] == 1u);
+    REQUIRE(null_engine.counters()
+                .per_flow[static_cast<std::size_t>(tlm::cep::CanonicalFlow::Request)] == 1u);
+    REQUIRE(null_engine.counters()
+                .per_flow[static_cast<std::size_t>(tlm::cep::CanonicalFlow::Completion)] == 1u);
     // ⇒ 同一组流:真插件 **4 个事件** vs Null **零事件面** ⇒ 判别力成立
     REQUIRE(e.total_events() == 4u);
 }
@@ -349,13 +354,13 @@ TEST_CASE("TLE-04 TileLink 引擎:决定性变异判据在位(构建期取证脚
     // 变异载体 = T3 表(非引擎内部);期望失败签名 = state_spec 编译期 static_assert。
     // 本 case 只断言「判据的**载体与签名**在位」;真值取证见
     // scripts/test/cep_tilelink_engine_failclosed.sh(clean / pending / deleted 三态)。
-    const std::string script = read_file_or_empty(
-        repo_root_dir() + "/scripts/test/cep_tilelink_engine_failclosed.sh");
+    const std::string script =
+        read_file_or_empty(repo_root_dir() + "/scripts/test/cep_tilelink_engine_failclosed.sh");
     REQUIRE_FALSE(script.empty());
 
     // 期望签名:state_spec 的行宇宙锁 static_assert 文案
-    const std::string spec_src = read_file_or_empty(
-        repo_root_dir() + "/include/tlm/cep/tilelink_state_spec.hh");
+    const std::string spec_src =
+        read_file_or_empty(repo_root_dir() + "/include/tlm/cep/tilelink_state_spec.hh");
     REQUIRE_FALSE(spec_src.empty());
     REQUIRE(spec_src.find("t3_intents_are_unique_and_complete") != std::string::npos);
     REQUIRE(spec_src.find("t3_row_count_is_exact") != std::string::npos);
@@ -413,7 +418,7 @@ TEST_CASE("TLE-06 TileLink 引擎:fail-closed 消费面与真源一致", "[cep][
     std::array<Spec::T3MappingCell, Spec::kPlatformIntentCount> bad{};
     for (std::size_t i = 0; i < Spec::kT3MappingCells.size(); ++i)
         bad[i] = Spec::kT3MappingCells[i];
-    bad[1].basis = Spec::T3BasisKind::Pending;  // Completion 行
+    bad[1].basis = Spec::T3BasisKind::Pending; // Completion 行
     bad[1].event_mask = Spec::kT3EventGrow;
     REQUIRE_FALSE(Spec::t3_rows_are_valid_for(bad));
     REQUIRE(Spec::t3_consumable_event_mask_for(bad, Intent::Completion) == 0u);
@@ -428,7 +433,7 @@ TEST_CASE("TLE-08 TileLink 引擎:JSON 装配成功 + 类型判别(正控/反控
 
     EventQueue eq;
     ModuleFactory factory(&eq);
-    REQUIRE(factory.instantiateAll(cfg));  // 装配**成功**(不是靠「装配失败」蒙对判据)
+    REQUIRE(factory.instantiateAll(cfg)); // 装配**成功**(不是靠「装配失败」蒙对判据)
 
     // ① 正控:两个实例都是**真插件**(类型判据)
     auto* tl0 = dynamic_cast<Engine*>(factory.getInstanceForTesting("tl0"));

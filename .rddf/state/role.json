@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "planner",
-  "updated_at": "2026-11-07T02:20:52Z",
+  "current_role": "builder",
+  "updated_at": "2026-11-07T02:33:25Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "architect",
-      "at": "2026-11-06T10:53:57Z",
-      "by": "user",
-      "reason": "用户口令「先起 architect 裁决」⇒ 对「公开(非规范)来源矩阵能否构成 T1 转移表真源」作出架构裁决(4 族 T1/T4 可行性),产出落 07 号 SU + 台账 Entry"
-    },
     {
       "role": "planner",
       "at": "2026-11-06T11:20:26Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-07T02:20:52Z",
       "by": "user",
       "reason": "用户口令「切 planner 检查剩余的任务,并给出后续任务执行路径」⇒ 盘点 CEP objective 剩余 DoD + 台账遗留 + improvement 活跃态 + backlog,产出后续执行路径"
+    },
+    {
+      "role": "builder",
+      "at": "2026-11-07T02:33:25Z",
+      "by": "user",
+      "reason": "用户口令「切 builder 执行批 1」⇒ L1(CI 红线:13 个历史遗留格式化债)+ L2(coverage 文档 TileLink-C 行 L4 档误标修正),per 台账 Entry #274 §⑥"
     }
   ],
   "auto_switch_window": null

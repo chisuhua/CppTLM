@@ -35,7 +35,7 @@
 | **MOESI-GPU** | ✅ `_adapter`(442) / `_compensation`(324) + `_engine`(6 cases,2026-11-06) | ✅ **`moesi_gpu`** | ✅ `cep_moesi_gpu_pe_minimal.json` + **真跑 `instantiateAll`**(per Entry #259/#261) | ◐ **L4-direct** ✅(`submit_local_request → 状态机` + 10 流记账)/ **L4-wire** ❌(引擎按决策 M-6「只记账」,**零发射** ⇒ 无 wire/无 tick/无对端;per Entry #259/#261) | — | `moesi_gpu_protocol_engine.hh`(306) |
 | **CXL 2.0 非对称** | ✅ `test_cep_cxl_cache_adapter.cc`(209) + `_state_spec`(451) | ✅ `cxl_2_0` | ❌ | ❌ | — | ❌ **无** |
 | **CXL 3.0 对称 DCOH** | ✅ `_adapter`(188) / `_tracker`(355) / `_state_spec`(329) | ✅ | ❌ | ❌ | — | ❌（`DcohSymmetric` tracker 有行为面） |
-| **TileLink-C** | ✅ `_adapter`(450) / `_state_spec`(488) + `_engine`(7 cases) | ✅ | ✅ `cep_tilelink_pe_minimal.json` | ✅ `dispatch_cohif` 5 流(2026-11-06,per 台账 **Entry #246**) | — | ✅ `tilelink_protocol_engine.hh`(**B3b 第 2 个实例**) |
+| **TileLink-C** | ✅ `_adapter`(450) / `_state_spec`(488) + `_engine`(7 cases) | ✅ | ✅ `cep_tilelink_pe_minimal.json` | ◐ **L4-direct** ✅(`dispatch_cohif` 5 流 → 引擎内**计数记账**(`consume()` 只累加 `intent_observed` / `cap_events` / `grow_events` / `prune_events` / `report_events`;**零发射** ⇒ 无 wire / 无 `tick()` / 无对端;per Entry #246 + `ADR-CEP-12` **SU 2026-11-07** ②「⛔ 零发射」) · **L4-wire** ❌(该引擎**不写 egress** ⇒ 不满足「`tick()` + 对端收到」)| — | ✅ `tilelink_protocol_engine.hh`(**B3b 第 2 个实例**) |
 | **NVLink SHARP** | ✅ `test_cep_nvlink_sharp.cc`(479) / `_state_spec`(489) | ✅ `nvlink_4` | ❌ | ❌ | — | ❌（`BroadcastNull` tracker） |
 | **UALink INC** | ✅ `test_cep_ualink_inc.cc`(501) / `_state_spec`(361) | ✅ **`ualink_4` 已声明**(2026-11-06,per 台账 Entry #239) | ❌ | ❌（`plane.send/recv` 为 API 级） | — | ❌（`FabricCollectivePlane` 行为面） |
 

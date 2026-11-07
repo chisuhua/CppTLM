@@ -349,37 +349,53 @@ namespace {
     // ── caps 枚举 → schema 字符串(4 字段)────────────────────────────────
     std::string scope_name(tlm::cep::Scope v) {
         switch (v) {
-            case tlm::cep::Scope::SYSTEM: return "SYSTEM";
-            case tlm::cep::Scope::LOCAL_MEMORY_REGION: return "LOCAL_MEMORY_REGION";
-            case tlm::cep::Scope::SUBTREE: return "SUBTREE";
-            case tlm::cep::Scope::NONE: return "NONE";
+        case tlm::cep::Scope::SYSTEM:
+            return "SYSTEM";
+        case tlm::cep::Scope::LOCAL_MEMORY_REGION:
+            return "LOCAL_MEMORY_REGION";
+        case tlm::cep::Scope::SUBTREE:
+            return "SUBTREE";
+        case tlm::cep::Scope::NONE:
+            return "NONE";
         }
         return "?";
     }
     std::string completeness_name(tlm::cep::Completeness v) {
         switch (v) {
-            case tlm::cep::Completeness::EXACT: return "EXACT";
-            case tlm::cep::Completeness::CONSERVATIVE: return "CONSERVATIVE";
-            case tlm::cep::Completeness::PARTIAL: return "PARTIAL";
+        case tlm::cep::Completeness::EXACT:
+            return "EXACT";
+        case tlm::cep::Completeness::CONSERVATIVE:
+            return "CONSERVATIVE";
+        case tlm::cep::Completeness::PARTIAL:
+            return "PARTIAL";
         }
         return "?";
     }
     std::string authority_name(tlm::cep::Authority v) {
         switch (v) {
-            case tlm::cep::Authority::GLOBAL: return "GLOBAL";
-            case tlm::cep::Authority::LOCAL_HINT: return "LOCAL_HINT";
-            case tlm::cep::Authority::LOCAL: return "LOCAL";
-            case tlm::cep::Authority::NONE: return "NONE";
+        case tlm::cep::Authority::GLOBAL:
+            return "GLOBAL";
+        case tlm::cep::Authority::LOCAL_HINT:
+            return "LOCAL_HINT";
+        case tlm::cep::Authority::LOCAL:
+            return "LOCAL";
+        case tlm::cep::Authority::NONE:
+            return "NONE";
         }
         return "?";
     }
     std::string aggregation_at_name(tlm::cep::AggregationAt v) {
         switch (v) {
-            case tlm::cep::AggregationAt::HOME: return "HOME";
-            case tlm::cep::AggregationAt::REQUESTER: return "REQUESTER";
-            case tlm::cep::AggregationAt::TREE_PARENT: return "TREE_PARENT";
-            case tlm::cep::AggregationAt::NONE: return "NONE";
-            case tlm::cep::AggregationAt::HIERARCHICAL: return "HIERARCHICAL";
+        case tlm::cep::AggregationAt::HOME:
+            return "HOME";
+        case tlm::cep::AggregationAt::REQUESTER:
+            return "REQUESTER";
+        case tlm::cep::AggregationAt::TREE_PARENT:
+            return "TREE_PARENT";
+        case tlm::cep::AggregationAt::NONE:
+            return "NONE";
+        case tlm::cep::AggregationAt::HIERARCHICAL:
+            return "HIERARCHICAL";
         }
         return "?";
     }

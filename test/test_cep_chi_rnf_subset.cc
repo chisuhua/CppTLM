@@ -1143,7 +1143,8 @@ TEST_CASE("CR-07/08 权威分区:登记键合法 + 语义校验扩面覆盖 repo
     //    (ArchForge 32 号只声明了 `moesi_gpu` / `mesif`)⇒ **4 个**
     // ⚠️ 2026-11-03(队列 #13 **实现层**):新增 `nvlink_4`(本仓自持 · BroadcastNull · 无静默升级行)⇒
     // 计数 **+1**(per 台账 Entry #187;设计 §9.3 计数同步清单)
-    // ⚠️ 2026-11-06(per 台账 Entry #239):6 —— 新增 `ualink_4`(`repo_owned` **同 commit** 增员,追加在末尾)
+    // ⚠️ 2026-11-06(per 台账 Entry #239):6 —— 新增 `ualink_4`(`repo_owned` **同 commit**
+    // 增员,追加在末尾)
     CHECK(owned.size() == 6u);
     CHECK(owned.at(0) == "chi_rnf");
     CHECK(owned.at(1) == "cxl_2_0");

@@ -269,7 +269,8 @@ TEST_CASE("UIS-10: pending 白名单的**可逆性** —— id 唯一且在范�
           "[cep][ualink-inc][pending]") {
     // ① 自洽型:表大小 == kPendingCount
     REQUIRE(kPendingSemanticItems.size() == kPendingCount);
-    // ② id 唯一且落在 N1 ~ N7 内(**不**要求 id == 数组下标)—— 2026-11-06:`N-8`/`N-9` 转正 ⇒ 上界 `N7`
+    // ② id 唯一且落在 N1 ~ N7 内(**不**要求 id == 数组下标)—— 2026-11-06:`N-8`/`N-9` 转正 ⇒ 上界
+    // `N7`
     REQUIRE(pending_ids_unique_and_in_range(kPendingSemanticItems));
     // ③ id ↔ ref 一一对应
     REQUIRE(pending_refs_match_ids(kPendingSemanticItems));

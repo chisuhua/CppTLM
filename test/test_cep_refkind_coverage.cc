@@ -23,28 +23,27 @@ using namespace tlm::cep;
 
 namespace {
 
-/// cxl_dcoh 的全部 basis 表(逐表遍历 ⇒ 覆盖全族)。
-template <std::size_t N>
-bool all_cxl_dcoh_consistent(const std::array<cxl_dcoh::Basis, N>& t) {
-    for (const auto& b : t) {
-        if (!cxl_dcoh::basis_ref_kind_consistent(b)) {
-            return false;
+    /// cxl_dcoh 的全部 basis 表(逐表遍历 ⇒ 覆盖全族)。
+    template <std::size_t N> bool all_cxl_dcoh_consistent(const std::array<cxl_dcoh::Basis, N>& t) {
+        for (const auto& b : t) {
+            if (!cxl_dcoh::basis_ref_kind_consistent(b)) {
+                return false;
+            }
         }
+        return true;
     }
-    return true;
-}
 
-template <std::size_t N>
-bool all_nvlink_consistent(const std::array<nvlink_sharp::Basis, N>& t) {
-    for (const auto& b : t) {
-        if (!nvlink_sharp::basis_ref_kind_consistent(b)) {
-            return false;
+    template <std::size_t N>
+    bool all_nvlink_consistent(const std::array<nvlink_sharp::Basis, N>& t) {
+        for (const auto& b : t) {
+            if (!nvlink_sharp::basis_ref_kind_consistent(b)) {
+                return false;
+            }
         }
+        return true;
     }
-    return true;
-}
 
-}  // namespace
+} // namespace
 
 TEST_CASE("RKC-01: cxl_dcoh 逐格 basis ↔ ref_kind 一致", "[cep][refkind][coverage]") {
     REQUIRE(all_cxl_dcoh_consistent(cxl_dcoh::kBasisDevCacheState));
@@ -87,7 +86,8 @@ TEST_CASE("RKC-03: 两族恒不出现 spec_clause ⇒ 仍不计入 B3b", "[cep][
     REQUIRE(nvlink_sharp::ref_kind_of(nadr) != RefKind::SpecClause);
 }
 
-TEST_CASE("RKC-04: 负控 —— PublicDirect 指向 Derived / AdrContract 必红", "[cep][refkind][coverage]") {
+TEST_CASE("RKC-04: 负控 —— PublicDirect 指向 Derived / AdrContract 必红",
+          "[cep][refkind][coverage]") {
     // cxl_dcoh:PublicDirect 却引 `Derived` ⇒ 必红
     cxl_dcoh::Basis bad{};
     bad.kind = cxl_dcoh::EvidenceKind::PublicDirect;
@@ -114,10 +114,14 @@ TEST_CASE("RKC-05: 零追溯降级 —— 许可表与来源枚举未被改动",
     // cxl_dcoh:6 个来源,S5(CC-BY 4.0)许可已确认;S4(许可 absent)未确认
     REQUIRE(cxl_dcoh::kSourceCount == 6u);
     REQUIRE(cxl_dcoh::kSourceLicenseConfirmed[static_cast<std::size_t>(cxl_dcoh::SourceId::S5)]);
-    REQUIRE_FALSE(cxl_dcoh::kSourceLicenseConfirmed[static_cast<std::size_t>(cxl_dcoh::SourceId::S4)]);
+    REQUIRE_FALSE(
+        cxl_dcoh::kSourceLicenseConfirmed[static_cast<std::size_t>(cxl_dcoh::SourceId::S4)]);
     // nvlink:5 个来源;S1/S2/S3 再分发许可**未**确认 ⇒ 以其为依据的格必须 pending
     REQUIRE(nvlink_sharp::kSourceCount == 5u);
-    REQUIRE_FALSE(nvlink_sharp::kSourceLicenseConfirmed[static_cast<std::size_t>(nvlink_sharp::SourceId::S1)]);
-    REQUIRE_FALSE(nvlink_sharp::kSourceLicenseConfirmed[static_cast<std::size_t>(nvlink_sharp::SourceId::S2)]);
-    REQUIRE_FALSE(nvlink_sharp::kSourceLicenseConfirmed[static_cast<std::size_t>(nvlink_sharp::SourceId::S3)]);
+    REQUIRE_FALSE(nvlink_sharp::kSourceLicenseConfirmed[static_cast<std::size_t>(
+        nvlink_sharp::SourceId::S1)]);
+    REQUIRE_FALSE(nvlink_sharp::kSourceLicenseConfirmed[static_cast<std::size_t>(
+        nvlink_sharp::SourceId::S2)]);
+    REQUIRE_FALSE(nvlink_sharp::kSourceLicenseConfirmed[static_cast<std::size_t>(
+        nvlink_sharp::SourceId::S3)]);
 }

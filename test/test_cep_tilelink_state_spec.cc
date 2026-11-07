@@ -487,183 +487,184 @@ namespace {
     }
 
 } // namespace
-    // ══════════════════════════════════════════════════════════════════════════
-    // T3 —— 「CohIf 平台消息/意图面 → 载体事件轴」映射(per 台账 Entry #241)
-    //   审计面:docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md
-    //   载体  :include/tlm/cep/tilelink_state_spec.hh 的 kT3MappingCells
-    //   判据源:07 号 Status Update(2026-11-06) §⑤ 的 T1~T4 判定式(T3 = 可消费)
-    // ⚠️ 判据纪律:每条负向断言 SHALL 有正控;每条判据 SHALL 有**可执行反向 fixture**
-    //   且**因正确原因红**;编译期锁 SHALL **同时**有运行时可判入口。
-    // ══════════════════════════════════════════════════════════════════════════
-    namespace {
-        using PlatformIntent = Spec::PlatformIntent;
-        using T3BasisKind = Spec::T3BasisKind;
-        using T3MappingCell = Spec::T3MappingCell;
+// ══════════════════════════════════════════════════════════════════════════
+// T3 —— 「CohIf 平台消息/意图面 → 载体事件轴」映射(per 台账 Entry #241)
+//   审计面:docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md
+//   载体  :include/tlm/cep/tilelink_state_spec.hh 的 kT3MappingCells
+//   判据源:07 号 Status Update(2026-11-06) §⑤ 的 T1~T4 判定式(T3 = 可消费)
+// ⚠️ 判据纪律:每条负向断言 SHALL 有正控;每条判据 SHALL 有**可执行反向 fixture**
+//   且**因正确原因红**;编译期锁 SHALL **同时**有运行时可判入口。
+// ══════════════════════════════════════════════════════════════════════════
+namespace {
+    using PlatformIntent = Spec::PlatformIntent;
+    using T3BasisKind = Spec::T3BasisKind;
+    using T3MappingCell = Spec::T3MappingCell;
 
-        std::string t3_anchor_summary_text() {
-            return read_file_or_empty(
-                repo_root_dir() +
-                "/docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md");
-        }
+    std::string t3_anchor_summary_text() {
+        return read_file_or_empty(
+            repo_root_dir() +
+            "/docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md");
+    }
 
-        /// 锚点摘要里的 `**TLC-M-NN**` 行 id 集合(X-2 元测试形态)
-        std::vector<std::string> t3_anchor_row_ids(const std::string& text) {
-            std::vector<std::string> out;
-            const std::string key = "**TLC-M-";
-            std::size_t pos = 0;
-            while (true) {
-                const auto at = text.find(key, pos);
-                if (at == std::string::npos)
-                    break;
-                std::size_t j = at + key.size();
-                std::string num;
-                while (j < text.size() && text[j] >= '0' && text[j] <= '9')
-                    num.push_back(text[j++]);
-                if (!num.empty()) {
-                    const std::string id = "TLC-M-" + num;
-                    if (std::find(out.begin(), out.end(), id) == out.end())
-                        out.push_back(id);
-                }
-                pos = j;
+    /// 锚点摘要里的 `**TLC-M-NN**` 行 id 集合(X-2 元测试形态)
+    std::vector<std::string> t3_anchor_row_ids(const std::string& text) {
+        std::vector<std::string> out;
+        const std::string key = "**TLC-M-";
+        std::size_t pos = 0;
+        while (true) {
+            const auto at = text.find(key, pos);
+            if (at == std::string::npos)
+                break;
+            std::size_t j = at + key.size();
+            std::string num;
+            while (j < text.size() && text[j] >= '0' && text[j] <= '9')
+                num.push_back(text[j++]);
+            if (!num.empty()) {
+                const std::string id = "TLC-M-" + num;
+                if (std::find(out.begin(), out.end(), id) == out.end())
+                    out.push_back(id);
             }
-            std::sort(out.begin(), out.end());
-            return out;
+            pos = j;
         }
-
-        /// 载体里的 `row_ref` 集合
-        std::vector<std::string> t3_carrier_row_ids() {
-            std::vector<std::string> out;
-            for (const auto& c : Spec::kT3MappingCells)
-                out.emplace_back(c.row_ref);
-            std::sort(out.begin(), out.end());
-            return out;
-        }
-
-        /// 构造一份**毒化**的 T3 行表(供反向 fixture;⚠️ 必须深拷贝后再改)
-        std::array<T3MappingCell, Spec::kPlatformIntentCount> t3_poisoned_rows() {
-            std::array<T3MappingCell, Spec::kPlatformIntentCount> rows{};
-            for (std::size_t i = 0; i < Spec::kT3MappingCells.size(); ++i)
-                rows[i] = Spec::kT3MappingCells[i];
-            return rows;
-        }
-    } // namespace
-
-    TEST_CASE("CEP TileLinkStateSpec: T3 行宇宙完整(11 行 · intent 唯一且全覆盖 · row_ref 唯一)",
-              "[cep][tilelink-state-spec][t3]") {
-        // ① 行数 = canonical 10 流 + atomic 意图
-        REQUIRE(Spec::kPlatformIntentCount == 11u);
-        REQUIRE(Spec::t3_row_count_is_exact());
-        REQUIRE(Spec::kT3MappingCells.size() == 11u);
-
-        // ② intent 唯一且覆盖 0 ~ 10(⛔ 不抽样)
-        REQUIRE(Spec::t3_intents_are_unique_and_complete());
-        for (std::size_t i = 0; i < Spec::kT3MappingCells.size(); ++i) {
-            INFO("T3 行 " << i << " 的 intent 越界");
-            REQUIRE(static_cast<std::size_t>(Spec::kT3MappingCells[i].intent) == i);
-        }
-
-        // ③ row_ref 唯一且非空(每行一个锚点摘要行 id)
-        REQUIRE(Spec::t3_row_refs_are_unique());
-        for (const auto& c : Spec::kT3MappingCells) {
-            INFO("T3 行的 row_ref 为空: " << c.row_ref);
-            REQUIRE(c.row_ref != nullptr);
-            REQUIRE(std::string(c.row_ref).rfind("TLC-M-", 0) == 0u);
-        }
+        std::sort(out.begin(), out.end());
+        return out;
     }
 
-    TEST_CASE("CEP TileLinkStateSpec: T3 逐行 basis↔事件 / ref 非空 / 掩码范围自洽",
-              "[cep][tilelink-state-spec][t3]") {
-        REQUIRE(Spec::t3_rows_are_valid_for(Spec::kT3MappingCells));
-        REQUIRE(Spec::t3_pending_rows_declare_no_event());
-        REQUIRE(Spec::t3_non_pending_rows_have_ref());
-        REQUIRE(Spec::t3_event_masks_are_in_range());
-
-        // 本轮普查结论:**全行有条款级锚** ⇒ `Pending` 行数 = 0
-        // (per 锚点摘要 §6;若后续普查出现无锚行 ⇒ 本断言须随裁决改写,⛔ 不得静默放宽)
-        std::size_t n_pending = 0;
+    /// 载体里的 `row_ref` 集合
+    std::vector<std::string> t3_carrier_row_ids() {
+        std::vector<std::string> out;
         for (const auto& c : Spec::kT3MappingCells)
-            if (c.basis == T3BasisKind::Pending)
-                ++n_pending;
-        INFO("T3 的 Pending 行数 = " << n_pending << "(本轮普查结论:全行有锚 ⇒ 0)");
-        REQUIRE(n_pending == 0u);
-        for (const auto& c : Spec::kT3MappingCells) {
-            INFO("T3 行 " << c.row_ref << " 的 basis 非 Direct");
-            REQUIRE(c.basis == T3BasisKind::Direct);
-        }
+            out.emplace_back(c.row_ref);
+        std::sort(out.begin(), out.end());
+        return out;
     }
 
-    TEST_CASE("CEP TileLinkStateSpec: T3 锚点摘要 ↔ 载体 逐行相等(X-2 形态)",
-              "[cep][tilelink-state-spec][t3]") {
-        const std::string anchor = t3_anchor_summary_text();
-        REQUIRE_FALSE(anchor.empty());
+    /// 构造一份**毒化**的 T3 行表(供反向 fixture;⚠️ 必须深拷贝后再改)
+    std::array<T3MappingCell, Spec::kPlatformIntentCount> t3_poisoned_rows() {
+        std::array<T3MappingCell, Spec::kPlatformIntentCount> rows{};
+        for (std::size_t i = 0; i < Spec::kT3MappingCells.size(); ++i)
+            rows[i] = Spec::kT3MappingCells[i];
+        return rows;
+    }
+} // namespace
 
-        const auto anchor_ids = t3_anchor_row_ids(anchor);
-        const auto carrier_ids = t3_carrier_row_ids();
-        REQUIRE_FALSE(anchor_ids.empty());
-        REQUIRE(anchor_ids.size() == carrier_ids.size());
-        for (std::size_t i = 0; i < carrier_ids.size(); ++i) {
-            INFO("锚点摘要行 id 集合 ≠ 载体 row_ref 集合(下标 " << i << ")");
-            REQUIRE(anchor_ids[i] == carrier_ids[i]);
-        }
+TEST_CASE("CEP TileLinkStateSpec: T3 行宇宙完整(11 行 · intent 唯一且全覆盖 · row_ref 唯一)",
+          "[cep][tilelink-state-spec][t3]") {
+    // ① 行数 = canonical 10 流 + atomic 意图
+    REQUIRE(Spec::kPlatformIntentCount == 11u);
+    REQUIRE(Spec::t3_row_count_is_exact());
+    REQUIRE(Spec::kT3MappingCells.size() == 11u);
+
+    // ② intent 唯一且覆盖 0 ~ 10(⛔ 不抽样)
+    REQUIRE(Spec::t3_intents_are_unique_and_complete());
+    for (std::size_t i = 0; i < Spec::kT3MappingCells.size(); ++i) {
+        INFO("T3 行 " << i << " 的 intent 越界");
+        REQUIRE(static_cast<std::size_t>(Spec::kT3MappingCells[i].intent) == i);
     }
 
-    TEST_CASE("CEP TileLinkStateSpec: T3 事件取值逐行钉死(映射不得被悄悄改)",
-              "[cep][tilelink-state-spec][t3]") {
-        // 逐行期望(依据见锚点摘要 §2):
-        //   Request ∅(权限随 Grant 回来)· Completion Grow · Snoop Prune
-        //   SnoopResp Prune(potentially)· Writeback Prune · 其余 5 流 ∅ · atomic 意图 ∅
-        const std::array<std::uint8_t, Spec::kPlatformIntentCount> kExpected{{
-            0,                              // Request
-            Spec::kT3EventGrow,             // Completion
-            Spec::kT3EventPrune,            // Snoop
-            Spec::kT3EventPrune,            // SnoopResp
-            Spec::kT3EventPrune,            // Writeback
-            0, 0, 0, 0, 0,                  // ForwardData..SnoopCompletionAck
-            0,                              // AtomicIntent
-        }};
-        REQUIRE(kExpected.size() == Spec::kT3MappingCells.size());
-        for (std::size_t i = 0; i < kExpected.size(); ++i) {
-            INFO("T3 行 " << Spec::kT3MappingCells[i].row_ref << " 的事件掩码漂移");
-            REQUIRE(Spec::kT3MappingCells[i].event_mask == kExpected[i]);
-            REQUIRE(Spec::t3_consumable_event_mask(
-                        static_cast<PlatformIntent>(i)) == kExpected[i]);
-        }
+    // ③ row_ref 唯一且非空(每行一个锚点摘要行 id)
+    REQUIRE(Spec::t3_row_refs_are_unique());
+    for (const auto& c : Spec::kT3MappingCells) {
+        INFO("T3 行的 row_ref 为空: " << c.row_ref);
+        REQUIRE(c.row_ref != nullptr);
+        REQUIRE(std::string(c.row_ref).rfind("TLC-M-", 0) == 0u);
     }
+}
 
-    TEST_CASE("CEP TileLinkStateSpec: T3 fail-closed —— Pending 行不得被消费者消费(反向 fixture)",
-              "[cep][tilelink-state-spec][t3]") {
-        // 正控:干净表 ⇒ 全部行可消费(且全为 Direct ⇒ 掩码即声明)
-        REQUIRE(Spec::t3_rows_are_valid_for(Spec::kT3MappingCells));
+TEST_CASE("CEP TileLinkStateSpec: T3 逐行 basis↔事件 / ref 非空 / 掩码范围自洽",
+          "[cep][tilelink-state-spec][t3]") {
+    REQUIRE(Spec::t3_rows_are_valid_for(Spec::kT3MappingCells));
+    REQUIRE(Spec::t3_pending_rows_declare_no_event());
+    REQUIRE(Spec::t3_non_pending_rows_have_ref());
+    REQUIRE(Spec::t3_event_masks_are_in_range());
 
-        // 反向 fixture ①:把某行改成 `Pending` **却**声明事件 ⇒ 表不自洽
-        {
-            auto bad = t3_poisoned_rows();
-            bad[1].basis = T3BasisKind::Pending;  // Completion 行
-            INFO("Pending 行却声明了事件 ⇒ 判据必须判否");
-            REQUIRE_FALSE(Spec::t3_rows_are_valid_for(bad));
-        }
-        // 反向 fixture ②:`Pending` 行 ⇒ **可消费掩码必须归零**(fail-closed)
-        {
-            auto bad = t3_poisoned_rows();
-            bad[1].basis = T3BasisKind::Pending;
-            bad[1].event_mask = Spec::kT3EventGrow;  // 违规:pending 却带事件
-            INFO("Pending 行的可消费掩码必须归零(fail-closed)");
-            REQUIRE(Spec::t3_consumable_event_mask_for(bad, PlatformIntent::Completion) == 0u);
-        }
-        // 反向 fixture ③:`row_ref` 重复 ⇒ 表不自洽
-        {
-            auto bad = t3_poisoned_rows();
-            bad[2].row_ref = bad[1].row_ref;
-            INFO("row_ref 重复 ⇒ 判据必须判否");
-            REQUIRE_FALSE(Spec::t3_rows_are_valid_for(bad));
-        }
-        // 反向 fixture ④:掩码含 4 事件之外的位 ⇒ 表不自洽
-        {
-            auto bad = t3_poisoned_rows();
-            bad[0].event_mask = 0b1'0000;  // 第 5 位
-            INFO("掩码越界 ⇒ 判据必须判否");
-            REQUIRE_FALSE(Spec::t3_rows_are_valid_for(bad));
-        }
+    // 本轮普查结论:**全行有条款级锚** ⇒ `Pending` 行数 = 0
+    // (per 锚点摘要 §6;若后续普查出现无锚行 ⇒ 本断言须随裁决改写,⛔ 不得静默放宽)
+    std::size_t n_pending = 0;
+    for (const auto& c : Spec::kT3MappingCells)
+        if (c.basis == T3BasisKind::Pending)
+            ++n_pending;
+    INFO("T3 的 Pending 行数 = " << n_pending << "(本轮普查结论:全行有锚 ⇒ 0)");
+    REQUIRE(n_pending == 0u);
+    for (const auto& c : Spec::kT3MappingCells) {
+        INFO("T3 行 " << c.row_ref << " 的 basis 非 Direct");
+        REQUIRE(c.basis == T3BasisKind::Direct);
     }
+}
 
+TEST_CASE("CEP TileLinkStateSpec: T3 锚点摘要 ↔ 载体 逐行相等(X-2 形态)",
+          "[cep][tilelink-state-spec][t3]") {
+    const std::string anchor = t3_anchor_summary_text();
+    REQUIRE_FALSE(anchor.empty());
 
+    const auto anchor_ids = t3_anchor_row_ids(anchor);
+    const auto carrier_ids = t3_carrier_row_ids();
+    REQUIRE_FALSE(anchor_ids.empty());
+    REQUIRE(anchor_ids.size() == carrier_ids.size());
+    for (std::size_t i = 0; i < carrier_ids.size(); ++i) {
+        INFO("锚点摘要行 id 集合 ≠ 载体 row_ref 集合(下标 " << i << ")");
+        REQUIRE(anchor_ids[i] == carrier_ids[i]);
+    }
+}
+
+TEST_CASE("CEP TileLinkStateSpec: T3 事件取值逐行钉死(映射不得被悄悄改)",
+          "[cep][tilelink-state-spec][t3]") {
+    // 逐行期望(依据见锚点摘要 §2):
+    //   Request ∅(权限随 Grant 回来)· Completion Grow · Snoop Prune
+    //   SnoopResp Prune(potentially)· Writeback Prune · 其余 5 流 ∅ · atomic 意图 ∅
+    const std::array<std::uint8_t, Spec::kPlatformIntentCount> kExpected{{
+        0,                   // Request
+        Spec::kT3EventGrow,  // Completion
+        Spec::kT3EventPrune, // Snoop
+        Spec::kT3EventPrune, // SnoopResp
+        Spec::kT3EventPrune, // Writeback
+        0,
+        0,
+        0,
+        0,
+        0, // ForwardData..SnoopCompletionAck
+        0, // AtomicIntent
+    }};
+    REQUIRE(kExpected.size() == Spec::kT3MappingCells.size());
+    for (std::size_t i = 0; i < kExpected.size(); ++i) {
+        INFO("T3 行 " << Spec::kT3MappingCells[i].row_ref << " 的事件掩码漂移");
+        REQUIRE(Spec::kT3MappingCells[i].event_mask == kExpected[i]);
+        REQUIRE(Spec::t3_consumable_event_mask(static_cast<PlatformIntent>(i)) == kExpected[i]);
+    }
+}
+
+TEST_CASE("CEP TileLinkStateSpec: T3 fail-closed —— Pending 行不得被消费者消费(反向 fixture)",
+          "[cep][tilelink-state-spec][t3]") {
+    // 正控:干净表 ⇒ 全部行可消费(且全为 Direct ⇒ 掩码即声明)
+    REQUIRE(Spec::t3_rows_are_valid_for(Spec::kT3MappingCells));
+
+    // 反向 fixture ①:把某行改成 `Pending` **却**声明事件 ⇒ 表不自洽
+    {
+        auto bad = t3_poisoned_rows();
+        bad[1].basis = T3BasisKind::Pending; // Completion 行
+        INFO("Pending 行却声明了事件 ⇒ 判据必须判否");
+        REQUIRE_FALSE(Spec::t3_rows_are_valid_for(bad));
+    }
+    // 反向 fixture ②:`Pending` 行 ⇒ **可消费掩码必须归零**(fail-closed)
+    {
+        auto bad = t3_poisoned_rows();
+        bad[1].basis = T3BasisKind::Pending;
+        bad[1].event_mask = Spec::kT3EventGrow; // 违规:pending 却带事件
+        INFO("Pending 行的可消费掩码必须归零(fail-closed)");
+        REQUIRE(Spec::t3_consumable_event_mask_for(bad, PlatformIntent::Completion) == 0u);
+    }
+    // 反向 fixture ③:`row_ref` 重复 ⇒ 表不自洽
+    {
+        auto bad = t3_poisoned_rows();
+        bad[2].row_ref = bad[1].row_ref;
+        INFO("row_ref 重复 ⇒ 判据必须判否");
+        REQUIRE_FALSE(Spec::t3_rows_are_valid_for(bad));
+    }
+    // 反向 fixture ④:掩码含 4 事件之外的位 ⇒ 表不自洽
+    {
+        auto bad = t3_poisoned_rows();
+        bad[0].event_mask = 0b1'0000; // 第 5 位
+        INFO("掩码越界 ⇒ 判据必须判否");
+        REQUIRE_FALSE(Spec::t3_rows_are_valid_for(bad));
+    }
+}
