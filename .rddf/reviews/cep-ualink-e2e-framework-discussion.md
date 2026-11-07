@@ -14,7 +14,7 @@
 | 已裁决 | K-4 | change 归属 = 收编 `cpptlm-cep-stub-cache-chstream-surface` | ✅ Entry #282 |
 | **1** | **D-1** | **可观测面与 13 必纳 metric 的来源** | ✅ **已裁**(见 §二) |
 | **1** | **D-3** | 引擎可观测面的扩展边界 | 🔄 **讨论中**(第 2 轮) |
-| **1** | D-2 | 双向映射的对侧语义(TrafficGen 的 `resp_in_` 有回) | ⏳ 待议 |
+| **1** | D-2 | 双向映射的对侧语义(TrafficGen 的 `resp_in_` 有回) | 🔄 **讨论中**(第 3 轮) |
 | **2** | D-4 | 「接收器」的角色(对端引擎 vs 新建 Sink) | ⏳ 待议 |
 | **2** | D-5 | 拓扑形态(直连 vs 经 `cohif_noc` 桥 + 网络) | ⏳ 待议 |
 | **2** | D-6 | 冻结 spec `cep-stub-cache-core` `:56` 的 MODIFIES 精确措辞 | ⏳ 待议 |
@@ -61,7 +61,33 @@
 
 ⇒ ⇒ **「全绿」= IC3 一致性闸门绿 + run-validity 绿**,⛔ **不是**「13 键全部有值」(后者对 UALink 不可达,且会诱发 `not-collected` 滥用)。
 
-## 三、本讨论的产出清单(⛔ 尚未落任何架构文档)
+## 三、D-3 结论(用户已裁 · 第 2 轮)
+
+| # | 裁定 | 状态 |
+|---|---|---|
+| 1 | **wrapper 暴露公开观测 API**(原始事实,**不做统计**) | ✅ 已裁 ⇒ **零基类改动、零既有引擎波及** |
+| 2 | 违例类在**不适用**场景 ⇒ `not-collected` + **显式登记降格**(⛔ 不得默许) | ✅ 已裁 |
+| 3 | 第一批「全绿」实验目标族 = **CHI RN-F**(有回响应 + 有并发写);**UALink 留后续** | ✅ 已裁 |
+
+**裁定 1 的边界(由 D-1 §② P-1 推导)**:wrapper 的公开面只多**原始事实**(per-txn issue/complete 周期戳 · in-flight 计数 · SWMR 可见的写序/写值)⇒ **不做** latency 聚合、不做 metric 组装 ⇒ ⇒ **不违反**「实验装置不得升格为契约面」红线(`cep_experiment_harness.hh` 自述依据)⇒ ⇒ 聚合仍由 harness(`test/`)消费。
+
+**裁定 2 的强制项**:降格须**显式登记**(预登记 out-of-scope 集 `experimental/preregistration.json` + `cep_prereg_drift_check.sh` 校验)⇒ ⛔ **不得**用 `not-collected` 掩盖「本可测但没测」。
+
+**裁定 3 的连带结论**:⚠ `deadlock_violations` 的 `ProgressWatchdog` 判据在**零发射**引擎上会**假阳性触发**(请求永不完成 ⇒ 「N cycle 无 retire 且 in-flight 非空」成立)⇒ ⇒ **零发射引擎的链路 ⇒ 该键 `not-collected`** ⇒ ⇒ **第一批选 CHI RN-F 正是为了避开该陷阱**(CHI 有 completion 路径 ⇒ 请求会 retire)。
+
+## 四、D-2 的取证底料(第 3 轮讨论用)
+
+```
+① CacheReqBundle  :transaction_id · parent_id · fragment_id/total · address · size · is_write · data
+   CacheRespBundle :transaction_id · parent_id · fragment_id/total · data
+   ⚠ **无 status / 无 hit-miss 标志 / 无 error 标志**
+② TrafficGen 循环 :「resp_in_ 有则收;completed_<N 且 issued_<N ⇒ 继续发」⇒ **不等响应**也能发满 N 个
+   ⇒ ⛔ hit 路径无响应**不会卡住**它;但 completed_ 少计 ⇒ **latency 样本会缺命中项**
+③ CHI 响应面      :ChiOpcode::Comp / CompData / DataSepResp ⇒ CanonicalFlow::Completion ⇒ **有回响应路径** ✅
+④ stub hit 路径   :cpu_read 返回 AccessResult{hit,data,txn_id,pending} ⇒ **hit 时无 net-side request**(INV-SC6 零网络流量)
+```
+
+## 五、本讨论的产出清单(⛔ 尚未落任何架构文档)
 
 | 产出 | 状态 |
 |---|---|
