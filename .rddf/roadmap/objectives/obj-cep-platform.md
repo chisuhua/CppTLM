@@ -15771,6 +15771,36 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 ⚠️ 2 条 NIT:L868「认识论位置」措辞偏抽象(⛔ 非阻断,实施阶段措辞自然消化)· L820「弱档不得单独出现」= **登记确认无违规实例**。
 
 **⑧ 关联**:**#268**(立项 + 三选项)· **#265**(来源检索 + ⚠️ 合规登记 + 两条硬边界)· **#264**(终态裁决)· **#258**(装配面 · `ADR-CEP-12` SU ① 追加先例)· **#261**(契约对齐 · SU 追加先例)· `.rddf/improvements/cpptlm-cep-ualink-coherence-engine.md` · `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` · `include/tlm/cep/mesif_protocol_engine.hh`(`gate()` 范式先例)· `include/tlm/cep/moesi_gpu_protocol_engine.hh`(M-6 对照)
+
+### Entry #270 — 2026-11-07 [build](**第 2 项实施** —— `ualink_4` 的**记账级专用承载**引擎落地;AC 全 PASS)
+
+**主题**:实施 `cpptlm-cep-ualink-coherence-engine`(per Entry #269 的裁决与边界)。
+**角色**:builder(实施 + 判据 + 契约 + 文档同步)· verifier(待验收)。
+
+**① 实施内容(5 项)**:
+| # | 变更 | 落点 |
+|---|---|---|
+| 1 | **新引擎**(三分法 + order-free 在途集合) | `include/tlm/cep/ualink_protocol_engine.hh`(185 行) |
+| 2 | **注册**(短名 + 强度标签注释) | `include/chstream_register.hh` |
+| 3 | **装配拓扑**(⛔ 不改已归档 change 的交付物) | `configs/cep_ualink_engine_pe_minimal.json` |
+| 4 | **判据**(UGE-01~06) | `test/test_cep_ualink_engine.cc`(6 cases / 112 assertions) |
+| 5 | **契约** | delta spec → `openspec/specs/cep-ualink-coherence-engine/spec.md` |
+
+**② 观测面 = 三分法(不复用 M-6)**:记账(`request`/`completion`)· 拒绝(7 条声明 `false`)· pending 不消费(`snoop_resp`);计数器 = `flow_events[10]`(全部 10 流计抵达)· `unsupported_rejected[10]`(per-flow)· `snoop_resp_pending_not_consumed` · `completion_unmatched` · `egress_emitted`;**4 条机器可判不变量**全绿。
+
+**③ ⚠️ AC-2 的判据有牙(实施期强化)**:oracle 指出「纯计数器 ⇒ 乱序 fixture **恒真**」⇒ 实施采用 **order-free 在途集合**(`txn_id` 恒等匹配,依据 = `dispatch_cohif` 把同一 `transaction_id` 传给两流 = **平台自有相关性字段**,**零 UALink 宣称**)。**中途探针用「中间 id」**(`t1,t2,t3` → 仅 completion `t2`)⇒ 恒等 `{1,3}` / FIFO-pop `{2,3}` / LIFO-pop `{1,2}` **三者互不相同** ⇒ **逐格相等**断言有鉴别力(⚠️ 若用最小 id `t1` 则三者都剩 1 个 ⇒ **无牙**);另附**决定性变异**(测试内构造「插入序回退且不比对 `txn_id`」的 mutant ⇒ 中途探针必红)⇒ **判据非恒真**。
+
+**④ `snoop_resp` 的 pending 终态**:恰好一次登记 / 零「拒绝」计数 / **恒不消费**(在途集合逐格不变)/ 对 request-completion 零影响 / 零发射 —— 四句机器绑定全绿。
+
+**⑤ 装配闭环**:闸 PASS(`ualink_4` **required**)+ **负控 2 条按正确归因红**(`[IAG-04]` 空绑定 · `[IAG-05]` plane 未登记)⇒ ⛔ 修正了实施初稿的错误负控(`required` 指向**未挂载**实例不在闸职责内,per `ADR-CEP-12` SU 2026-11-06 ③ 遗留)。
+
+**⑥ B3b-2 仍 0/4**(AC-6):4 族 deferral 登记**完整**且 `ualink` disposition 仍 `deferred` · `ualink_4` 13 键声明**逐字未变**(8 false + 2 true + `perm=[NONE]`)· `ualink-pending` 档位仍 `public_nonnormative`(⛔ 不升格)⇒ **零计数变化**。
+
+**⑦ 冻结面两步授权(已执行)**:台账 **Entry #269** 授权 → **commit 产物**(`ADR-CEP-12` SU + `07 号` §5.1.1 UALink 行精确化)→ `cep_freeze_check.sh --update --authorized-by "Entry #269"` → **清单单独 commit** → 无参复验 provenance 通过(41 产物零 diff)。
+
+**⑧ 验证**:`ctest` **159/159**;`[cep]` 473 cases / 11089 assertions;4 闸全绿;冻结面 41 产物零 diff。
+
+**⑨ 关联**:**#269**(裁决 + oracle + critic + 授权)· **#268**(立项)· **#265**(来源检索 + ⚠️ 合规登记 + 两条硬边界)· **#258**(装配面)· `openspec/changes/cpptlm-cep-ualink-coherence-engine/` · `include/tlm/cep/ualink_protocol_engine.hh` · `test/test_cep_ualink_engine.cc`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
