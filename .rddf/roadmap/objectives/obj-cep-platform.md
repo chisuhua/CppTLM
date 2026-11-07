@@ -16082,6 +16082,24 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑨ 计数纪律**:`B3b-2` **维持 0/4**;⛔ 即便未来补上该主干,**不得**用它改判 B3b(计数依据是**规范条款级** T1–T4,非「链路跑通」)。
 
 **⑩ 关联**:**#279**(闸修复)· **#277**(E1 协议)· **#276**(批 1 补完)· **#275**(批 1)· **#274**(盘点 + 路径)· `ADR-CEP-19` 决策 9 + 后果表 · `ADR-CEP-05` 决策 2 · `ADR-CEP-07` 决策 3/4
+
+### Entry #281 — 2026-11-07 [build](**修正 Entry #279 的虚构路径引用**(append-only 处置)—— 登记 `VIRTUAL_PATHS` 豁免)
+
+**主题**:Entry #280 的冻结面两步授权后跑全量 `ctest` ⇒ `cep_doc_ref_check` 判红 ⇒ 定位为 **Entry #279 正文里的一个虚构路径**被闸按字面路径抓取。
+**角色**:builder(定位 + 处置 + 验证)。
+
+**① 根因**:Entry #279 §④ 的「决定性变异」描述里引用了 `docs/definitely-not-exists-xyz.md` —— 该路径是**变异验证用的虚构样本**(要证明的正是「具体坏路径必红」)⇒ **本就不存在** ⇒ 但 `cep_doc_ref_check` 的路径提取规则按**字面路径**抓取 ⇒ 判红。
+⚠️ **不是** Entry #280 的 SU 引入的 ⇒ 是 Entry #279 的**表述副作用**。
+
+**② append-only 处置**:Entry #279 **已 commit + push**(已签发)⇒ ⛔ **不回改**其正文(台账 Entry 为 append-only 块)⇒ 改用 **`cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS`** 登记该路径 + 在**本 Entry** 说明其性质:
+- 登记项 = `docs/definitely-not-exists-xyz.md` ⇒ 注释明写「**虚构路径**(变异样本)⇒ 非真实引用;⛔ **不可**被读作待建文件」;
+- ⇒ **闸的判据未被削弱**(VIRTUAL_PATHS 是**逐条显式**的已知豁免,⛔ 非 glob 式放宽)⇒ 且 Entry #279 的**决定性变异结论**(具体坏路径仍按「引用不存在的文件」判红)不受影响。
+
+**③ ⚠️ 附带的一条通用纪律(本轮由实测得出)**:文档/台账里**引用一个不存在的路径来描述变异或反例**时 ⇒ 闸按字面路径抓取 ⇒ ⛔ 须(a) 登记 `VIRTUAL_PATHS` 豁免,或 (b) 描述时**不写成反引号包裹的仓内路径**(如 `definitely-not-exists-xyz.md` 不带目录前缀)⇒ 本轮选 (a) 以保留 Entry #279 的**逐字原文**。
+
+**④ 验证**:`ctest` **164/164**;`cep_doc_ref_check` rc=0;其余 3 闸 rc=0;M1 冻结面 **41 产物零 diff**(本 Entry **未**触碰冻结面 ⇒ 冻结清单未改);`main` 与 `origin/main` 同步。
+
+**⑤ 关联**:**#280**(延期项登记 · 冻结面两步授权)· **#279**(闸修复 · 虚构路径的来源)· **#274**(盘点 + 路径)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

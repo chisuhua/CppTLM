@@ -92,6 +92,7 @@ VIRTUAL_PATHS=(
   "docs/architecture/32-cep-based-coherence"        # 跨仓:ArchForge 侧文档
   "docs/adr/ADR-SOC-25"                             # 跨仓:ArchForge 侧 ADR
   "include/core/coherence_protocol.hh"              # 设计示意:Stage 1 才新建(本仓 0 命中,per 回执 §5)
+  "docs/definitely-not-exists-xyz.md"                # **虚构路径**(2026-11-07,per 台账 Entry #281):Entry #279 §④ 的**决定性变异**描述里引用的「具体坏路径」样本 ⇒ 它**本就不存在**(变异要证明的正是「具体坏路径必红」)⇒ 非真实引用;⛔ **不可**被读作待建文件
   "openspec/changes/cpptlm-cep-ualink-inc-state-spec"  # 队列 #14 规约层 **已归档**(2026-11-04;delta 已合并进 openspec/specs/cep-ualink-inc-state-spec/spec.md)⇒ 台账历史 Entry 的路径引用
   "openspec/changes/cpptlm-cep-ualink-inc"            # 队列 #14 **实现层** **已归档**(2026-11-04;delta 已合并进 openspec/specs/cep-ualink-inc/spec.md + 2 份契约 main spec)⇒ 台账历史 Entry 的路径引用
   "openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey"  # T3 映射锚点普查 **已归档**(2026-11-06,✅ 已完成归档语义 · 无 delta 合并)⇒ 台账历史 Entry(#241/#242/#243)的路径引用
