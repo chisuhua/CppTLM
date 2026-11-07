@@ -28,8 +28,8 @@
 
 #include <nlohmann/json.hpp>
 
-#include "cep_adr_parser.hh"  // `cpptlm::cep::repo_root()`(测试侧仓根定位)
 #include "chstream_register.hh" // `REGISTER_ALL`(注册面)
+#include "cep_adr_parser.hh"    // `cpptlm::cep::repo_root()`(测试侧仓根定位)
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "tlm/cep/instance_assembly_gate.hh"
@@ -43,69 +43,71 @@ using Flow = tlm::cep::CanonicalFlow;
 
 namespace {
 
-constexpr std::uint64_t kAddr = 0x1000;
+    constexpr std::uint64_t kAddr = 0x1000;
 
-Bundle make_bundle(FlowId flow, std::uint64_t addr, std::uint64_t data, std::uint64_t txn,
-                    std::uint8_t perm) {
-    Bundle b;
-    b.flow_id = flow;
-    b.address.write(addr);
-    b.data.write(data);
-    b.transaction_id.write(txn);
-    b.perm.write(perm);
-    b.hit.write(0);
-    b.dirty.write(0);
-    b.error.write(0);
-    b.atomic.write(0);
-    b.snoop_type.write(Bundle::SNOOP_INVALIDATE);
-    b.line_state.write(Bundle::STATE_NONE);
-    return b;
-}
+    Bundle make_bundle(FlowId flow, std::uint64_t addr, std::uint64_t data, std::uint64_t txn,
+                       std::uint8_t perm) {
+        Bundle b;
+        b.flow_id = flow;
+        b.address.write(addr);
+        b.data.write(data);
+        b.transaction_id.write(txn);
+        b.perm.write(perm);
+        b.hit.write(0);
+        b.dirty.write(0);
+        b.error.write(0);
+        b.atomic.write(0);
+        b.snoop_type.write(Bundle::SNOOP_INVALIDATE);
+        b.line_state.write(Bundle::STATE_NONE);
+        return b;
+    }
 
-nlohmann::json load_topology(const char* file) {
-    const auto path = cpptlm::cep::repo_root() / "configs" / file;
-    std::ifstream in(path);
-    if (!in.good())
-        throw std::runtime_error(std::string("无法打开装配配置: ") + file);
-    nlohmann::json cfg = nlohmann::json::parse(in);
-    cfg["cep"]["protocol_instances"] =
-        (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json")
-            .string();
-    return cfg;
-}
+    nlohmann::json load_topology(const char* file) {
+        const auto path = cpptlm::cep::repo_root() / "configs" / file;
+        std::ifstream in(path);
+        if (!in.good())
+            throw std::runtime_error(std::string("无法打开装配配置: ") + file);
+        nlohmann::json cfg = nlohmann::json::parse(in);
+        cfg["cep"]["protocol_instances"] =
+            (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json")
+                .string();
+        return cfg;
+    }
 
-nlohmann::json load_cep_json(const char* rel) {
-    std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
-    REQUIRE(in.good());
-    nlohmann::json j;
-    in >> j;
-    return j;
-}
+    nlohmann::json load_cep_json(const char* rel) {
+        std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
+        REQUIRE(in.good());
+        nlohmann::json j;
+        in >> j;
+        return j;
+    }
 
-/// **经 CohIf 边界**的 5 条(canonical 10 流中跨 Stub↔PE 的条数)⇒ 只这 5 条可由
-/// `dispatch_cohif` 派发;其余 5 条只能**直调** `on_*`(显式落点)。
-const std::array<FlowId, 5> kCohIfFlows{
-    FlowId::Request, FlowId::Completion, FlowId::Snoop, FlowId::SnoopResp, FlowId::Writeback};
+    /// **经 CohIf 边界**的 5 条(canonical 10 流中跨 Stub↔PE 的条数)⇒ 只这 5 条可由
+    /// `dispatch_cohif` 派发;其余 5 条只能**直调** `on_*`(显式落点)。
+    const std::array<FlowId, 5> kCohIfFlows{FlowId::Request, FlowId::Completion, FlowId::Snoop,
+                                            FlowId::SnoopResp, FlowId::Writeback};
 
-/// **不经 CohIf** 的 5 条(其余 canonical 流)—— 直调落点。
-void drive_non_cohif_flows(Engine& e) {
-    e.on_forward_data(kAddr, 0x2000, 0x1, tlm::cep::Perm::READ, 3);
-    e.on_back_invalidate(kAddr, tlm::cep::SnoopType::INVALIDATE, 4);
-    tlm::cep::AddressResolveResult r;
-    e.on_address_resolve(kAddr, 0, r);
-    e.on_barrier(0, 5);
-    e.on_snoop_completion_ack(kAddr, 0, 6);
-}
+    /// **不经 CohIf** 的 5 条(其余 canonical 流)—— 直调落点。
+    void drive_non_cohif_flows(Engine& e) {
+        e.on_forward_data(kAddr, 0x2000, 0x1, tlm::cep::Perm::READ, 3);
+        e.on_back_invalidate(kAddr, tlm::cep::SnoopType::INVALIDATE, 4);
+        tlm::cep::AddressResolveResult r;
+        e.on_address_resolve(kAddr, 0, r);
+        e.on_barrier(0, 5);
+        e.on_snoop_completion_ack(kAddr, 0, 6);
+    }
 
-/// canonical 10 流的**逐流索引**(便于断言逐流计数)。
-constexpr std::size_t flow_idx(Flow f) { return static_cast<std::size_t>(f); }
+    /// canonical 10 流的**逐流索引**(便于断言逐流计数)。
+    constexpr std::size_t flow_idx(Flow f) {
+        return static_cast<std::size_t>(f);
+    }
 
-/// 7 条**拒绝**流(声明 `false` 且**不是** `snoop_resp`)。
-const std::array<Flow, 7> kRejectedFlows{
-    Flow::Snoop,           Flow::Writeback,      Flow::ForwardData, Flow::BackInvalidate,
-    Flow::AddressResolve,  Flow::Barrier,        Flow::SnoopCompletionAck};
+    /// 7 条**拒绝**流(声明 `false` 且**不是** `snoop_resp`)。
+    const std::array<Flow, 7> kRejectedFlows{
+        Flow::Snoop,          Flow::Writeback, Flow::ForwardData,       Flow::BackInvalidate,
+        Flow::AddressResolve, Flow::Barrier,   Flow::SnoopCompletionAck};
 
-}  // namespace
+} // namespace
 
 TEST_CASE("UGE-01: UALink 引擎已注册 —— instantiateAll 真跑 ⇒ 可实例化",
           "[cep][ualink][engine][uge-01]") {
@@ -182,13 +184,13 @@ TEST_CASE("UGE-03: completion 记账不依赖有序性 —— 中途探针 + 端
         e.on_request(kAddr, tlm::cep::Perm::NONE, 3);
         REQUIRE(e.outstanding_request_ids().size() == 3u);
 
-        e.on_completion(2, 0, tlm::cep::Perm::NONE, false);  // 只完成**中间**那个
+        e.on_completion(2, 0, tlm::cep::Perm::NONE, false); // 只完成**中间**那个
 
         // 恒等匹配 ⇒ 擦除的**是** txn=2 ⇒ 剩 {1, 3}
         const auto& outstanding = e.outstanding_request_ids();
         REQUIRE(outstanding.size() == 2u);
         REQUIRE(outstanding.count(1) == 1u);
-        REQUIRE(outstanding.count(2) == 0u);  // ← LIFO mutant 会红(它剩 {1,2})
+        REQUIRE(outstanding.count(2) == 0u); // ← LIFO mutant 会红(它剩 {1,2})
         REQUIRE(outstanding.count(3) == 1u);
         REQUIRE(e.counters().completion_unmatched == 0u);
     }
@@ -203,7 +205,7 @@ TEST_CASE("UGE-03: completion 记账不依赖有序性 —— 中途探针 + 端
     for (std::uint64_t t : {1u, 2u, 3u}) {
         in_order.on_completion(t, 0, tlm::cep::Perm::NONE, false);
     }
-    for (std::uint64_t t : {3u, 1u, 2u}) {  // ← **反序**
+    for (std::uint64_t t : {3u, 1u, 2u}) { // ← **反序**
         rev_order.on_completion(t, 0, tlm::cep::Perm::NONE, false);
     }
     REQUIRE(in_order.outstanding_request_ids().empty());
@@ -225,7 +227,7 @@ TEST_CASE("UGE-03: completion 记账不依赖有序性 —— 中途探针 + 端
     //    ⇒ 端态与「恒等」实现**不可区分**(集合都空)⇒ **单独端态断言无鉴别力**;
     //    ⇒ 但**中途探针**下它剩 {t2,t3} ≢ {t1,t3} ⇒ **必红**。
     {
-        std::vector<std::uint64_t> fifo;  // 插入序
+        std::vector<std::uint64_t> fifo; // 插入序
         std::unordered_set<std::uint64_t> live;
         for (std::uint64_t t : {1u, 2u, 3u}) {
             fifo.push_back(t);
@@ -239,7 +241,7 @@ TEST_CASE("UGE-03: completion 记账不依赖有序性 —— 中途探针 + 端
         // ⇒ mutant 的中途集合是 {2,3},而恒等实现是 {1,3} ⇒ **不等**
         REQUIRE(live.count(2) == 1u);
         REQUIRE(live.count(3) == 1u);
-        REQUIRE(live.count(1) == 0u);  // ← mutant 擦错了 txn(=1 而非 =2)
+        REQUIRE(live.count(1) == 0u); // ← mutant 擦错了 txn(=1 而非 =2)
         // ⇒ 断言:若引擎用了「插入序回退」,中途探针的 `count(1)==1` 必红
         //    (本测试的引擎实测 count(1)==1 ⇒ 恒等匹配 ⇒ 非 mutant)
     }
@@ -292,13 +294,15 @@ TEST_CASE("UGE-05: 装配闭环 —— 拓扑挂载 + 装配闸 PASS + `ualink_4
         auto planes_mut = planes;
         planes_mut["plane_binding"]["ualink_4"] = nullptr;
         const std::vector<std::string> required2{"ualink_4"};
-        const auto neg = tlm::cep::run_instance_assembly_gate(cfg, instances, planes_mut, required2);
+        const auto neg =
+            tlm::cep::run_instance_assembly_gate(cfg, instances, planes_mut, required2);
         INFO(neg.log);
         REQUIRE(neg.verdict == tlm::cep::InstanceAssemblyVerdict::FAIL);
         // 归因命中:必须是 `[IAG-04]`(空绑定),而非别的归因
         bool hit = false;
         for (const auto& e : neg.errors) {
-            if (e.find("[IAG-04]") != std::string::npos) hit = true;
+            if (e.find("[IAG-04]") != std::string::npos)
+                hit = true;
         }
         REQUIRE(hit);
     }
@@ -308,12 +312,14 @@ TEST_CASE("UGE-05: 装配闭环 —— 拓扑挂载 + 装配闸 PASS + `ualink_4
         auto planes_mut = planes;
         planes_mut["plane_binding"]["ualink_4"] = "NoSuchPlane";
         const std::vector<std::string> required3{"ualink_4"};
-        const auto neg = tlm::cep::run_instance_assembly_gate(cfg, instances, planes_mut, required3);
+        const auto neg =
+            tlm::cep::run_instance_assembly_gate(cfg, instances, planes_mut, required3);
         INFO(neg.log);
         REQUIRE(neg.verdict == tlm::cep::InstanceAssemblyVerdict::FAIL);
         bool hit = false;
         for (const auto& e : neg.errors) {
-            if (e.find("[IAG-05]") != std::string::npos) hit = true;
+            if (e.find("[IAG-05]") != std::string::npos)
+                hit = true;
         }
         REQUIRE(hit);
     }

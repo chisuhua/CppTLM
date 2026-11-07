@@ -1,9 +1,9 @@
-# cep-ualink-coherence-engine Specification (delta)
+# cep-ualink-coherence-engine Specification
 
-> ⚠️ **本 spec 的引擎判据 = 记账级弱档建模声明**(依据档位 `public_nonnormative`,per 锚点摘要 `docs/research/2026-11-07-cep-ualink-flow-semantics-anchor-summary.md` §⓿)。
-> ⛔ **不得**作为「UALink 协议语义已实现」的证据;⛔ **不得**计入 B3b(per `07 号` SU · 四 D-1)⇒ **B3b-2 维持 0/4**。
+## Purpose
+TBD - created by archiving change cpptlm-cep-ualink-coherence-engine. Update Purpose after archive.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: cep-ualink-coherence-engine
 
