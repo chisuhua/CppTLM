@@ -1831,3 +1831,79 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 - [ ] `obj` 的终态行标注「⏳ 未发生(挂起)」且指向本 Entry
 - [ ] 4 族 ⏭ 的**机器可查登记**已立项(与 `RefKind` 迁移同轮)⇒ 本条登记该缺口而**不**宣称已闭合
 - [ ] 冻结面两步授权已执行(`cep_freeze_check.sh --update --authorized-by "Entry #264"` → 清单单独 commit)
+
+---
+
+## Status Update(2026-11-07 · 七,per 台账 Entry #280)—— 「Core·TrafficGen 主干」**显式延期项的事实复核**(⏸ 已登记,未排期)+ Stub Cache「✅」的读法澄清
+
+> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 架构分层表(定位)**逐字未动**;⛔ 不改 §3.1 canonical 10 流;⛔ 不改 §5.1.1 各族行;⛔ 不回改 SU · 一 ~ 六 的任何一段;⛔ **不动** `ADR-CEP-05`(其 cpu_side 接口形态已被**冻结 main spec** + **已签发 `ADR-CEP-19` 决策 9** 双重钉住 ⇒ 任何改动**须显式裁决**,⛔ **非**「reopen 已签批 ADR」流程,亦**非**「起草中顺手改」)⇒ 属**裁决面**非登记面。
+> **触发**:用户复核 CEP 架构定位时提出的质疑 ——「CEP 应是在**现有拓扑链接**上对互连模块做带一致性协议的建模,且**原业务 Bundle 可接入到 CEP 互联网络**」。
+> **审查**:`oracle`(定性 + 措辞风险咨询)→ `critic`(本段的架构审稿),顺序不可颠倒。
+> **关联**:`ADR-CEP-19` 决策 9(显式延期)· `ADR-CEP-05` 决策 2(三明治挂载,已拍板)· `ADR-CEP-07` 决策 3/4 · `ADR-CEP-02` · `ADR-CEP-04` / `ADR-CEP-12`(三层纪律的 case-bound 归属)。
+
+### ① 定位**未偏移**(结论先行 —— 本段**不**改架构)
+
+| # | 证据 | 原文 |
+|---|---|---|
+| 1 | **§2 架构分层表**(本文件 line 50) | `Core·TrafficGen / Stub Cache / Coherence Interface / Protocol Engine / Directory & Ordering Plane / Fabric Collective Plane / Fabric & Transport Plane` ⇒ **「一致性互联语义模型」** ⇒ **「Core·TrafficGen」是本架构的顶层组成** |
+| 2 | **三明治挂载**(`ADR-CEP-05` 决策 2 · `stub_cache_core.hh` line 14) | `Traffic Generator ──(cpu_side)──> Stub Cache ──(net_side)──> ProtocolEngine ──> CohIf` ⇒ **业务侧 → 一致性侧**的接缝**已定义** |
+| 3 | **CohIfBundle 的字段集**(`include/bundles/cep_coherence_bundles_tlm.hh` line 6) | 「字段集为**业务语义**,**不含任何网络层字段**」⇒ CohIf **不是**协议专用包 |
+
+⇒ ⇒ **「CEP = 在现有拓扑链接上对互连模块做带一致性协议的建模」+「原业务 Bundle 接入 CEP 互联网络」= 本平台的原定架构**,**定位层零偏移** ⇒ ⛔ 本段**不回改** §2 分层表。
+
+### ② 「未装配」= **既有显式延期**的复核确认(⛔ **不是**「偏离」/「欠账」)
+
+⚠️ **本节 5 条实测 = 对既有登记的复核确认**:该主干未装配**并非新发现的偏离**,而是 `ADR-CEP-19` **决策 9「不动 `StubCacheCore`(显式延期)」**的延期态 —— 本队列**不**给 `StubCacheCore` 加 ChStream 端口面;该腿归**具名** change **`cpptlm-cep-stub-cache-chstream-surface`**(排本队列之后)⇒ **有 owner + 有前置**,⛔ **不是「以后再说」**。同 ADR 的后果表亦明文:「载体队列只闭合 PE↔网络 ⇒『ChStream 承载业务 bundle』的**业务侧**证明仍不完整」+「**在延期 change 交付前,该面不作承诺**」。
+⚠️ 旁证:本文件 **§8.1 的 Stage 0~3 DoD**(14 个 change)从**未**含该装配 ⇒ ⇒ **本段登记的是「既有延期态的事实复核」**,⛔ **不是**新增欠承诺。
+
+| # | 未装配事实 | 实测证据 |
+|---|---|---|
+| **G-0a** | 7 个 CEP JSON 拓扑**全部只含 ProtocolEngine** | `configs/cep_*_pe_minimal.json` 的 `modules[].type` 集合**零个**含 `StubCacheCore` / `TrafficGenTLM` |
+| **G-0b** | Stub Cache 的 `net_side` 只与 **mock** 引擎对接过 | `stub_cache_core.hh` line 42 明示「`net_side` 由 **mock ProtocolEngine** 驱动(本 change 不引入真实协议引擎)」 |
+| **G-0c** | H2 / H3 / H6 实验**既不用** TrafficGen,也不用 StubCache / ProtocolEngine | `test_cep_h2_h3_experiments.cc` / `test_cep_h6_vc_isolation.cc` 对这四个符号的引用 **0 命中** ⇒ 那批实验流量**自造** |
+| **G-0d** | **根因**:`StubCacheCore` 不是可注册的 ChStream 模块 | `stub_cache_core.hh` line 154 = `class StubCacheCore {` ⇒ **无 `ChStreamModuleBase` 派生 / 无端口** ⇒ 而 TrafficGen 走 ChStream 端口(`OutputStreamAdapter<CacheReqBundle>`)⇒ 无法同图直连 |
+| **G-0e** | **`bundle → 功能操作` 的语义映射面未定义** | TrafficGen 发 `CacheReqBundle`(`include/bundles/cache_bundles_tlm.hh` line 38-46:is_write / fragment / size / data)⇒ `cpu_side` 是**功能操作** `cpu_read` / `cpu_write` / `evict_line`(`stub_cache_core.hh` line 118-208):① **op 编码映射未定**;② `evict_line` 在 `CacheReqBundle` 里**无对应原语**;③ **同步** `AccessResult{hit,pending,txn_id}` ⇒ **异步** `CacheRespBundle` 的在途关联与发射时机**未定**;④ **net_side 侧同样缺映射**:`net_side` 的 5 流(`request` / `completion` / `snoop` / `snoop_resp` / `writeback``stub_cache_core.hh` line 229 / 247 / 260 等)**是功能方法**,其 `flow_id` 命名**逐字对齐** `CohIfBundle` 的 `flow_id` 域(line 16)但**类型上无任何 Bundle 端口** ⇒ `CohIfBundle` ↔ net_side 功能 5 流的映射**亦未定义**(且为**双向**:egress `request`/`writeback`/`snoop_resp` + ingress `completion`/`snoop`)⇒ ⇒ **G1 只解决「端口存在」,不解决「语义对接」;cpu_side 与 net_side 两侧适配面同 scope** |
+
+### ③ Stub Cache「✅」的**读法**澄清(⚠️ 收窄读法,**不改行义**)
+
+- 本文件 **§11 落地状态表**(`Stub Cache Core` 行,line 678)的「✅ 已落地 —— 6 接口 / 5 态 / `INV-SC1`~`SC6` + `INV-CEP-05-IC1` 行为化(14 测试)」与 **§2.2 各层职责表**(line 143)的「✅」= 计在**能力 / 行为化维度**(change DoD)⇒ ⛔ **不可外推**为「**可装配**」「**装配**」「**语义**」三维度;
+- 同理,§11 的 **canonical 10 流契约行**为「🟡 **部分落地** —— Stub Cache RN 侧 5 流已行为化;`MoesiGpuAdapter` 6 事件已行为化;`protocol_instances.json` 的 `flow_support` 10 布尔已填;**载体已落地**」⇒ 其「**载体已落地**」子句 ⛔ **≠**「**业务侧流量可达**」;
+- ⇒ **本条仅作局部口径声明,⛔ 不升格为通用层**:「声明 ≠ 装配 ≠ 语义」是**实例声明域**的 case-bound 纪律(per `ADR-CEP-04` / `ADR-CEP-12`)⇒ 此处只注明**「§11 该行的 ✅ 计在哪个维度」**,⛔ **不**引入「能力 / 可装配 / 装配 / 语义」四层通用纪律(避免概念层膨胀 ⇒ 此后每个状态格都背上「逐层标注」义务)。⚠️ 若再发生第三次「✅ 维度混淆」,统一词汇**单独立项**(backlog),不在本条顺手完成。
+
+### ④ 后果(可实验性被限死 —— 但这是**已知代价**,非新发现)
+
+- CEP 现有全部事务级判据均为「**引擎 ↔ 引擎**」的**同构对等**形态 ⇒ 可回答「该协议在**引擎间**事务流下会怎样」;
+- ⛔ **不可**回答「该协议在**真实业务流量**下会怎样」⇒ 该面**在延期 change 交付前不作承诺**(per `ADR-CEP-19` 决策 9 的后果表);
+- ⚠️ **不改变任何计数**:`B3b-2` **维持 0/4**(计数依据是**规范条款级** T1–T4,非「链路跑通」)⇒ 即便未来补上该主干,**⛔ 不得**用它改判 B3b。
+
+### ⑤ 闭合项与**待裁决点**(登记,⛔ 本段不实施)
+
+| # | 闭合项 | 形态 |
+|---|---|---|
+| **G1** | `StubCacheCore` **升格为可注册的 `ChStreamModuleBase` 派生类** | 带 `cpu_side` 的 `InputStreamAdapter<CacheReqBundle>`;⚠️ `net_side` 的 5 流**命名已对齐** `CohIfBundle` 的 `flow_id` 域(`stub_cache_core.hh` line 16)但**同为功能接口、⛔ 非 Bundle 端口** ⇒ **net_side 适配面与 cpu_side 同 scope**(⛔ 不可读作「net_side 已是 CohIfBundle」)。⚠️ 最小改法:升格 + **保留原纯类接口**(以适配器包裹)⇒ ⛔ 不破坏 `INV-SC1`~`INV-SC6` 与既有 14 个单测。⚠️ **裁决范围必须同时含 G-0e 映射面**(wrapper 内部翻译 vs 独立 mapper 模块)—— **二者不可分割** |
+| **G2** | 新 JSON 拓扑 | `TrafficGenTLM → StubCacheCore → <真实引擎> → <对端引擎>`(或经 `cohif_noc` 桥) |
+| **G3** | 装配级 E2E 判据 | 从 TrafficGen 发请求 → 经 Stub Cache `cpu_side` → 真实引擎 `net_side` → **对端抵达断言**。⚠️ **诚实边界**:若对端是同构引擎,则仍只是 **L4-direct** ⇒ 它证明的仅是「**结构可达**」(端口发出的事务经 `cpu_side` 抵达对端引擎端口),⛔ **非**「协议语义 E2E」,⛔ **非**「规范条款级」,⛔ **亦非「映射语义保真」**(后者由 G-0e 的裁决与判据另行保证) |
+| **G4** | **本段**(登记动作本身) | ✅ **登记型闭合**(区别于 G1~G3 的**实施型**闭合项)—— **登记即闭合**,不宣称任何实施面进展 |
+
+⚠️ **待 architect 裁决(实施 G1 前必须先裁)**:
+
+1. `StubCacheCore` 的 `cpu_side` 维持**功能操作接口**(由外部适配器承接)vs **升格为 ChStream 端口**(可装配)?⇒ ⚠️ 后者 = **变更 `ADR-CEP-05` 决策 2「三明治挂载:cpu_side / net_side 双端口」的 cpu_side 接口形态** —— 该 ADR 虽为**起草中(v0.6)**(⛔ 故**不**走「reopen 已签批 ADR」流程),但其决策已被 ① **冻结 main spec** `openspec/specs/cep-stub-cache-core/spec.md`(M1 冻结集成员 ⇒ MODIFIES 须**两步授权** + 台账 Entry)与 ② **已签发 `ADR-CEP-19` 决策 9** 的延期理由(建立在「stub 维持**纯类功能接口**」现状上)双重钉住 ⇒ ⛔ **非「起草中顺手改」**,**须显式裁决**;
+2. **G-0e 映射面归属**(wrapper 内部翻译 vs 独立 mapper 模块;⚠️ 范围含 **cpu_side 与 net_side 两侧**)+ `INV-SC*` 判据载体的**增量纪律**(维持纯类 14 测;升格只增不改,新装配判据为增量);
+3. 新 wrapper 的**注册面**(`REGISTER_CHSTREAM` 新名入词汇表)与命名;
+4. **G2 / G3 是否收编**进既有具名延期 change **`cpptlm-cep-stub-cache-chstream-surface`**(扩围)vs 另立新 change(影响 Proposed KPI 计数)⇒ ⛔ **本段不新立 change**。
+
+### ⑥ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且 §2 / §3.1 / §5.1.1 与 SU · 一 ~ 六 **逐字未变**
+- [ ] ② 的定性为「**既有显式延期的事实复核**」且**引证**齐全:`ADR-CEP-19` 决策 9 + 其后果表「不作承诺」+ `ADR-CEP-19` roadmap 行「⏸ 已登记,未排期」+ 具名 change `cpptlm-cep-stub-cache-chstream-surface` + §8.1 Stage DoD 未含该装配
+- [ ] ③ 的**引证已修正**:「✅」行在 **§11 落地状态表 / §2.2 各层职责表**(⛔ **非** §3.2);「canonical 10 流契约」行是「🟡 **部分落地**」内的「**载体已落地**」**子句**(⛔ 非整行「已落地」)
+- [ ] ③ 已显式声明「**收窄的是读法,不改行义**」且**未**升格为通用四层纪律
+- [ ] 5 条未装配事实(G-0a ~ G-0e)在仓内**可复现**
+- [ ] G1 的**裁决点**已登记且**未**在裁决前实施 ⇒ 实施面不得先于裁决;裁决点含 **`ADR-CEP-05` 决策 2 的 cpu_side 接口形态变更须显式裁决(⛔ 非「reopen 已签批 ADR」流程)**与 **G-0e 归属(含两侧)**
+- [ ] G1 若实施:`StubCacheCore` 的升格**不破坏** `INV-SC1`~`INV-SC6` 与既有 14 个单测
+- [ ] G2 / G3 若实施:新拓扑含 `TrafficGenTLM` + `StubCacheCore` + **真实**协议引擎(⛔ 非 mock)⇒ 且判据含**对端抵达断言**
+- [ ] **G4 为登记型闭合**,不得被读作 G1~G3 中任一已推进
+- [ ] ⚠️ 任何实现**未**改 `B3b-2` 的 **0/4**;新增文件与文档**无**「B3b-2 已达成」形态的计数
+- [ ] 冻结面两步授权已执行:台账 **Entry #280** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #280"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #280**(授权 + 登记)· `ADR-CEP-19` 决策 9 + 后果表(显式延期 · 不作承诺)· `ADR-CEP-05` 决策 2(三明治挂载 · 待显式裁决的 cpu_side 接口形态)· `ADR-CEP-07` 决策 3/4(注册 seam)· `ADR-CEP-02` · `ADR-CEP-04` / `ADR-CEP-12`(三层纪律的 case-bound 归属)· `include/tlm/cep/stub_cache_core.hh`(三明治挂载 · cpu_side / net_side)· `include/tlm/traffic_gen_tlm.hh`(ChStream 端口形态)· `include/bundles/cache_bundles_tlm.hh`(G-0e 的 bundle 字段集)

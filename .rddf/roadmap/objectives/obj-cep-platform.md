@@ -16056,6 +16056,32 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑤ 验证**:`ctest` **164/164**;[cep] **477 cases / 11114 assertions**;**6 个闸逐个跑**(docs_sync / doc_ref / decl_alignment / freeze / b3b2_deferral / b3b2_d4_probe)全绿;M1 冻结面 **41 产物零 diff**。
 
 **⑥ 关联**:**#278**(清 backlog · glob 引用的来源)· **#277**(E1 协议落地)· **#276**(批 1 补完)· **#275**(批 1)· **#274**(盘点 + 路径)
+
+### Entry #280 — 2026-11-07 [go-decision](**「Core·TrafficGen 主干」显式延期项的事实复核 + 登记** —— `07 号` SU · 七;**定位未偏移**,缺口定性由「偏离」更正为「**既有显式延期**」)
+
+**主题**:用户复核 CEP 架构定位,提出质疑 ——「CEP 应是在**现有拓扑链接**上对互连模块做带一致性协议的建模,且**原业务 Bundle 可接入到 CEP 互联网络**」⇒ architect 实证核对 + 登记 + 澄清读法 + 提出待裁决点。
+**角色**:architect(核对 + 登记 + oracle→critic 双审)· planner(后续 improvement 收编)· builder(实施,待裁决后)。
+
+**① 定位**:**未偏移**(三处原文实证)—— ① `07 号` §2 架构分层表把 `Core·TrafficGen` 与 `Fabric & Transport Plane` **并列**(⇒ 它是 CEP 架构的顶层组成);② `ADR-CEP-05` 决策 2 的三明治挂载 `Traffic Generator ──(cpu_side)──> Stub Cache ──(net_side)──> ProtocolEngine ──> CohIf`;③ `CohIfBundle` 字段集 = **业务语义**、不含网络层字段 ⇒ ⇒ **用户构想 = 本平台的原定架构** ⇒ ⛔ 本次**不回改** §2。
+
+**② ⚠️ 定性的关键更正(初稿写「缺口」⇒ 被推翻)**:初稿把该主干未装配写成「**缺口 / 偏离**」⇒ **oracle 复核推翻** ⇒ 实测:该未装配是 `ADR-CEP-19` **决策 9「不动 `StubCacheCore`(显式延期)」**的**既有延期态** —— **有 owner**(具名 change `cpptlm-cep-stub-cache-chstream-surface`)+ **有前置** + 该 ADR 明文「**在延期 change 交付前,该面不作承诺**」+ `07 号` §8.1 的 Stage 0~3 DoD **从未含**该装配 ⇒ ⇒ **登记为「显式延期项的事实复核」**,⛔ **不是**「欠账」⇒ 措辞由「缺口」全部改为「未装配事实」(本段全文 0 处「缺口」措辞)。
+
+**③ 5 条未装配事实**:G-0a 7 个 CEP 拓扑**零个**含 `StubCacheCore`/`TrafficGenTLM` · G-0b `net_side` 只与 **mock** 引擎对接过(`stub_cache_core.hh:42`)· G-0c H2/H3/H6 实验对四符号 **0 命中**(流量自造)· G-0d **根因** = `class StubCacheCore {` **无 ChStream 端口** ⇒ G-0e **映射面未定义**(cpu_side: `CacheReqBundle`(is_write/fragment/size/data) ↔ 功能操作 `cpu_read`/`cpu_write`/`evict_line`;⛔ op 编码 / `evict_line` 原语 / 同步 `AccessResult` ↔ 异步 `CacheRespBundle` 在途关联 **三项未定**;**net_side 侧同样缺映射**且为**双向**)。
+
+**④ 读法澄清(局部口径,⛔ 不升格通用层)**:§11 落地状态表 + §2.2 各层职责表的「✅」计在**能力 / 行为化维度** ⇒ ⛔ 不可外推为「可装配 / 装配 / 语义」;「canonical 10 流契约」行的「**载体已落地**」子句 ⛔ ≠「业务侧流量可达」。⚠️ **收窄的是读法,不改行义**;⛔ **不**引入四层通用纪律(避免概念层膨胀)。
+
+**⑤ 审查闭环(2 轮 · architect 配对 oracle→critic)**:oracle 推翻定性 + 给 9 条处置(全部落)⇒ critic 第 1 轮 **REJECT**(1 BLOCKER:「`net_side` 已是 CohIfBundle」与 G-0d「无端口」**自相矛盾**且与源码不符 + G-0e 漏 net_side 侧 ⇒ 裁决输入不完整)⇒ 文本级闭合(3 处)⇒ critic 复审 **APPROVE_WITH_CONDITIONS**(0 BLOCKER)⇒ 2 SHOULD_FIX(「reopen」措辞两义 + 冻结 spec 路径手抄漏 `-cache-`)+ 1 NIT(行号 229/247/260)⇒ **全部落**。
+⚠️ **一处自我纠错**:SU 初稿的冻结 spec 路径从 `cep_freeze_check.sh` 的 grep 输出**手抄时漏了 `-cache-`** ⇒ critic 抓出 ⇒ 已修(冻结 glob 本身正确,无漏洞)。
+
+**⑥ 待 architect 裁决(实施 G1 前必裁 · 4 条)**:① `StubCacheCore` 的 `cpu_side` 维持功能操作 vs **升格为 ChStream 端口**(⚠️ 后者**须显式裁决** —— 决策 2 已被**冻结 main spec** `openspec/specs/cep-stub-cache-core/spec.md` + **已签发 `ADR-CEP-19` 决策 9** 双重钉住,⛔ 非「reopen 已签批 ADR」流程,亦⛔ 非「起草中顺手改」)② **G-0e 映射面归属**(wrapper 内部翻译 vs 独立 mapper;⚠️ 范围含 **cpu_side 与 net_side 两侧**)+ `INV-SC*` **增量纪律**(维持纯类 14 测)③ 新 wrapper 的**注册面**与命名 ④ **G2 / G3 是否收编**进既有延期 change `cpptlm-cep-stub-cache-chstream-surface` 扩围 vs 另立新 change(影响 KPI 计数)⇒ ⛔ **本段不新立 change**。
+
+**⑦ 闭合项**:G1 升格(`StubCacheCore` → 可注册 ChStream 模块)· G2 新 JSON 拓扑 · G3 装配级 E2E 判据 · **G4 = 本段(登记型闭合)**(⛔ 区别于 G1~G3 的实施型闭合项)。⚠️ G3 的诚实边界:仅证明「**结构可达**」,⛔ 非「协议语义 E2E」,⛔ 非「规范条款级」,⛔ **亦非「映射语义保真」**。
+
+**⑧ 冻结面两步授权(已执行)**:台账 **Entry #280** 授权 → **commit 本段 SU + 本 Entry** → `cep_freeze_check.sh --update --authorized-by "Entry #280"` → **清单单独 commit** → 无参复验 provenance 通过(41 产物零 diff)。
+
+**⑨ 计数纪律**:`B3b-2` **维持 0/4**;⛔ 即便未来补上该主干,**不得**用它改判 B3b(计数依据是**规范条款级** T1–T4,非「链路跑通」)。
+
+**⑩ 关联**:**#279**(闸修复)· **#277**(E1 协议)· **#276**(批 1 补完)· **#275**(批 1)· **#274**(盘点 + 路径)· `ADR-CEP-19` 决策 9 + 后果表 · `ADR-CEP-05` 决策 2 · `ADR-CEP-07` 决策 3/4
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
