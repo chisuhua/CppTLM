@@ -1,0 +1,23 @@
+{
+  "name": "cep_ualink_engine_pe_minimal",
+  "description": "2026-11-07 —— `ualink_4` 的**记账级专用承载引擎**的最小装配拓扑(2 个 UalinkProtocolEngine + cohif_noc 桥绑定 ualink_4 实例)。⚠️ 强度标签:本拓扑只闭合「实例化 + 承载」,⛔ 不闭合「UALink 协议事件语义」(per ADR-CEP-12 SU 2026-11-07 Entry #269)。⛔ 不修改已归档 change 的交付物 configs/cep_ualink_pe_minimal.json(Entry #258)。",
+  "modules": [
+    { "name": "ualink0", "type": "UalinkProtocolEngine" },
+    { "name": "ualink1", "type": "UalinkProtocolEngine" }
+  ],
+  "connections": [
+    { "src": "ualink0.0", "dst": "ualink1.0" },
+    { "src": "ualink1.0", "dst": "ualink0.0" }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json",
+    "bridges": [
+      {
+        "name": "cohif_noc",
+        "protocol_instance": "ualink_4",
+        "bridge_id": 5,
+        "modules": ["ualink0", "ualink1"]
+      }
+    ]
+  }
+}

@@ -692,3 +692,11 @@ add_test(NAME cep_refkind_coverage
          COMMAND cpptlm_tests "[cep][refkind][coverage]" -r compact)
 add_test(NAME cep_b3b2_deferral_check
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_b3b2_deferral_check.sh)
+
+# change `cpptlm-cep-ualink-coherence-engine`(2026-11-07,台账 Entry #269)的判据:
+#   ① UALink **记账级专用承载**引擎的三分法观测面(记账 2 / 拒绝 7 / pending 1)+ 4 条机器可判不变量;
+#   ② completion 记账**不依赖有序性**(中途探针 + 端态 + **决定性变异** ⇒ 判据有牙);
+#   ③ 装配闭环(`ualink_4` **required** plane 绑定 + 负控)+ **零发射**;
+#   ④ **B3b-2 仍 0/4** 的断言显式存在(本 change **不改**计数,per `07 号` SU · 四 D-1)。
+add_test(NAME cep_ualink_engine
+         COMMAND cpptlm_tests "[cep][ualink][engine]" -r compact)

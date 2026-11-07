@@ -38,6 +38,7 @@
 #include "tlm/gpu/sdma_engine_tlm.hh"
 #include "tlm/lwc/lwc_bus_hub.hh" // Change B: LwcBusHub (REGISTER_CHSTREAM 注册, ChStreamModuleBase 派生)
 #include "tlm/cep/moesi_gpu_protocol_engine.hh" // P3: MoesiGpuProtocolEngine(L4 E2E 的实例化载体)
+#include "tlm/cep/ualink_protocol_engine.hh"  // 2026-11-07: UalinkProtocolEngine(ualink_4 的记账级专用承载)
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh" // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
@@ -156,6 +157,18 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
        ⛔ 不闭合「协议事件语义」。 */                                                                            \
     REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("MoesiGpuProtocolEngine",                                 \
                                            tlm::cep::MoesiGpuProtocolEngine,                        \
+                                           bundles::CohIfBundle, 2);                                \
+    /* 2026-11-07(per 台账 Entry #269):UALink 引擎注册 —— `ualink_4` 的**记账级专用承载**。 \
+       ⚠️ **强度标签(必读)**:本引擎 = **记账级**(bookkeeping-only)—— 对 canonical 10 流        \
+       全部行为 = 计数器自增;⛔ **零发射** / ⛔ **零协议状态机** / ⛔ **零 UPLI 通道级语义**    \
+       (ReqCmd 编码 / 4 通道时序 / transaction tag 配对**均不实现**)。                        \
+       ⇒ 本注册只闭合「**实例化 + 承载**」,⛔ **不闭合**「UALink 协议事件语义」;              \
+       ⇒ **不得**读成「UALink 协议语义已实现」;⇒ **B3b-2 维持 0/4**(本条**不改**计数)。       \
+       观测面 = **三分法**:记账(request/completion)· 拒绝(7 条声明 false)·                    \
+       pending 不消费(snoop_resp)—— per `ADR-CEP-12` SU 2026-11-07 ④。                        \
+       依据档位 = `public_nonnormative`(4 个公开非规范来源 + 一步推断)⇒ ⛔ 不计入 B3b。        */                                                                          \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("UalinkProtocolEngine",                                  \
+                                           tlm::cep::UalinkProtocolEngine,                         \
                                            bundles::CohIfBundle, 2);                                \
     /* 队列 #7 Phase 3/5:协议桥注册(per CC-05 —— 死钩子 → 活钩子)。                                               \
        `register_protocol_bridge` 对同名 early-return(ODR-safe)⇒ 幂等。                                   \
