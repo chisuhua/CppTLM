@@ -16038,6 +16038,24 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑥ 遗留登记(不可清 · 非待办)**:① **metis 轮次已用尽**(1 轮)⇒ improvement 改写后**无独立复核** ⇒ 残余风险已在 improvement §「残余风险」登记;② **E1/E2 周期项**待季度触发;③ **cadence WARN** = E1 尚未执行(真实状态,非缺陷)。
 
 **⑦ 关联**:**#277**(E1 协议落地 · §⑥ backlog 来源)· **#276**(批 1 补完 · §④ B3 来源)· **#275**(批 1 · L1/L2)· **#274**(盘点 + 路径)· **#264**(终态 DoD Go 挂起)· **#265**(⚠️ 合规事件)
+
+### Entry #279 — 2026-11-07 [build](**push 后自检发现并修复** —— 闸的 glob 豁免 + 行号守卫;登记一次**验证遗漏**)
+
+**主题**:Entry #278 push 后跑 ctest 自检 ⇒ **`cep_doc_ref_check` 判红** ⇒ 定位 + 修复 + 复验。
+**角色**:builder(修复 + 变异验证 + 复验)。
+
+**① ⚠️ 我的验证遗漏(须诚实登记)**:Entry #278 的 commit 前**只跑了 `cep_docs_sync_check`**,⛔ **漏跑 `cep_doc_ref_check`** ⇒ 而 Entry #278 §① 的正文里写了 glob 形式的 `scripts/test/cep_*.sh` ⇒ 该闸把 glob 当**字面路径** ⇒ 判红 ⇒ **缺陷随 push 流出**。⇒ **教训**:`docs_sync` 与 `doc_ref` 是**两个独立闸**,⛔ **不得**以「前一个绿」推定「后一个绿」⇒ 本仓任何含**活文档路径引用**的改动,commit 前必须**逐闸**跑。
+
+**② 根因 ①(闸的既有缺陷)—— glob 引用被当字面路径**:`cep_doc_ref_check.sh` 的 `extract_path_refs` 会把反引号内含 `*` 的引用(如 `scripts/test/cep_*.sh`)抽成路径 ⇒ 判「引用不存在的文件」⇒ **修复**:含 `*` 的引用**不是「某个具体文件」的引用** ⇒ 豁免字面存在性检查(⛔ 豁免**只**针对 glob 形态;具体路径仍 100% 逐条检查)。
+⚠️ **台账未被回改**:Entry #278 的正文**逐字保留**(append-only)⇒ 修在**闸侧**而非回改历史 ⇒ 两段并存不矛盾。
+
+**③ 根因 ②(闸的既有健壮性缺陷)—— 非数字行号引发 shell 错误**:`path::anchor` 形态的引用 ⇒ `ln` 取到 `:anchor` ⇒ `[ "$ln" -gt "$total" ]` 报「integer expression expected」⇒ **修复**:行号比较加**数字守卫**(`[ "$ln" -eq "$ln" ] 2>/dev/null`)⇒ 非数字行号不做整数比较。
+
+**④ 决定性变异(证明豁免**未**削弱判据)**:构造一个含**具体**坏路径(`docs/definitely-not-exists-xyz.md`)的临时被检查文档 + 影子脚本副本 ⇒ 闸仍按**「引用不存在的文件」**判红 ⇒ ⇒ glob 豁免**只**放过 glob 形态,具体路径的可达性检查**完整保留**;变异后真源 sha256 复原 + 临时文件清理(实测工作区 clean)。
+
+**⑤ 验证**:`ctest` **164/164**;[cep] **477 cases / 11114 assertions**;**6 个闸逐个跑**(docs_sync / doc_ref / decl_alignment / freeze / b3b2_deferral / b3b2_d4_probe)全绿;M1 冻结面 **41 产物零 diff**。
+
+**⑥ 关联**:**#278**(清 backlog · glob 引用的来源)· **#277**(E1 协议落地)· **#276**(批 1 补完)· **#275**(批 1)· **#274**(盘点 + 路径)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

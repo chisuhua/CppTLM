@@ -234,7 +234,12 @@ extract_path_refs() {
     | grep -vE '[[:space:]]' \
     | grep -vE ':\*' \
     | grep -vE ':[0-9]+-' \
+    | grep -vE '\*' \
     | sort -u
+    # ⚠️ **glob 模式豁免**(2026-11-07,per 台账 Entry #279):含 `*` 的反引号引用
+    #    (例 `scripts/test/cep_*.sh`)**不是**「某个具体文件」的引用
+    #    ⇒ 不做字面存在性检查;否则文档里的 glob 会被误判成「引用不存在的文件」。
+    #    ⛔ 豁免只针对 **glob 形态**;具体路径仍 100% 逐条检查。
 }
 
 # 在目标文件里找 §<sec> 的标题行；找不到则输出空
@@ -262,7 +267,7 @@ for d in "${DOCS[@]}"; do
     if [ ! -e "$f" ]; then
       fail "$(basename "$d"): 引用不存在的文件 $f"; BAD_PATH=$((BAD_PATH + 1)); continue
     fi
-    if [ -n "$ln" ]; then
+    if [ -n "$ln" ] && [ "$ln" -eq "$ln" ] 2>/dev/null; then
       total=$(wc -l < "$f")
       if [ "$ln" -gt "$total" ]; then
         fail "$(basename "$d"): $f:$ln 越界（共 $total 行）"; BAD_PATH=$((BAD_PATH + 1))
