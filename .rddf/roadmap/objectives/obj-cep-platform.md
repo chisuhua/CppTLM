@@ -16126,6 +16126,42 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑨ 计数纪律**:`B3b-2` **维持 0/4**;G3 = **结构可达**(≡ L4-direct)⇒ ⛔ 非协议语义 E2E · ⛔ 非规范条款级 · ⛔ **不得**用于改判 B3b。
 
 **⑩ 关联**:**#281**(虚构路径豁免)· **#280**(SU · 七 · 待裁决点来源)· **#274**(盘点 + 路径)· `ADR-CEP-19` 决策 9(四条理由)· `ADR-CEP-05` 决策 2 · `ADR-CEP-07` 决策 3
+
+### Entry #283 — 2026-11-08 [build](**登记待新建 change 路径的豁免** —— Entry #282 §⑧ 的路径引用)
+
+**主题**:Entry #282 冻结面两步授权后跑全量 `ctest` ⇒ `cep_doc_ref_check` 判红 ⇒ 定位为 Entry #282 §⑧ 引用的**尚未创建**的 change 目录。
+**角色**:builder(定位 + 处置 + 验证)。
+
+**① 根因**:Entry #282 §⑧ 引用了 `openspec/changes/cpptlm-cep-stub-cache-chstream-surface/` —— 该 change 目录**按裁决尚未创建**(由 builder 在实施时新建)⇒ `cep_doc_ref_check` 的路径可达性检查 ⇒ 判红。
+
+**② 处置**:`cep_doc_ref_check.sh` 的 `VIRTUAL_PATHS` 登记该路径,注释明写「**待新建**(per Entry #282 §⑧ 裁决收编)⇒ 目录建成后可移除本豁免」。⚠️ 沿用**既有先例**(同表的「设计示意:Stage 1 才新建(本仓 0 命中)」)⇒ **不**改闸的判据口径、**不**放宽检查。
+⚠️ **台账未被回改**(Entry #282 已 commit + push ⇒ append-only)⇒ 改在**闸侧**。
+
+**③ 验证**:`ctest` **164/164**;4 闸 rc=0;M1 冻结面 **41 产物零 diff**(本 Entry **未**触碰冻结面);`main` 与 `origin/main` 同步。
+
+**④ 遗留**:builder 建成该 change 目录后 ⇒ **移除**本条 `VIRTUAL_PATHS` 豁免(一次清理)⇒ 登记在 builder 的实施 Entry 里。
+
+**⑤ 关联**:**#282**(4 条裁决 · §⑧ 的路径引用)· **#281**(虚构路径豁免 · 同款处置先例)· **#280**(SU · 七)
+
+### Entry #284 — 2026-11-08 [go-decision](**SU · 八 的桥路径更正 + 红线落点澄清** —— 笔误级;4 条裁决实质未变)
+
+**主题**:Entry #282 冻结面两步授权后跑全量 `ctest` ⇒ `cep_doc_ref_check` 判红 ⇒ 定位为 SU · 八 **关联段**把桥的路径**目录写错**。
+**角色**:architect(更正登记)· builder(闸侧豁免 + 验证)。
+
+**① 根因(笔误级,⛔ 非决策错误)**:`oracle` 的裁决原文只给**文件名** `cohif_noc_bridge.hh`(未给目录)⇒ architect 转写进 SU · 八 时**补全目录补错**(写成框架层)⇒ 实测桥在 **`include/tlm/cep/cohif_noc_bridge.hh`**(`include/chstream_register.hh:8` 即 include 该路径)⇒ ⇒ **桥在 CEP 域,不在框架层**。
+⚠️ **4 条裁决的实质未变**(形态 / 映射归属 / 注册与命名 / change 归属)⇒ 本条**仅**更正路径 + 补全红线落点。
+
+**② 红线落点澄清(两条并存)**:① **泛化** —— 新增映射代码禁入 `include/framework/`(框架层);② **具体** —— 不得改 `include/tlm/cep/cohif_noc_bridge.hh`(桥的既有 `pack`/`unpack` 实现)⇒ ⇒ 「wrapper 只做端点编码 / 桥只做承载投影」**方向不变**。
+
+**③ 处置(append-only)**:`07 号` 追加 **SU · 九**(⛔ 不回改 SU · 八);SU · 九 的更正表内**刻意拆写**该笔误路径(两个反引号片段拼接)⇒ 避免被路径可达性闸当成真实引用;⛔ SU · 八 已签发的那一处 ⇒ **闸侧 `VIRTUAL_PATHS` 豁免** + 注释说明(同 #283 的处置模式)⇒ ⇒ **闸的判据口径未放宽**。
+
+**④ ⚠️ 审稿盲点登记(诚实)**:`critic` 两轮(REJECT + APPROVE)**均未抓出**该路径错 ⇒ 盲点 = 「oracle 原稿的**文件名** ⇒ architect 转写时**补目录**」这一环**无机器核验**⇒ ⇒ **教训**:凡引用仓内文件,提交前须逐条核对路径存在性(既有闸 `cep_doc_ref_check` 正是该核验载体 ⇒ ✅ 本次是它**首次**拦下此类错误 ⇒ 闸有效)。
+
+**⑤ 冻结面两步授权(已执行)**:台账 **Entry #284** 授权 → **commit `07 号` SU · 九 + 本 Entry** → `cep_freeze_check.sh --update --authorized-by "Entry #284"` → **清单单独 commit** → 无参复验 provenance 通过(41 产物)。
+
+**⑥ 验证**:`ctest` **164/164**;4 闸 rc=0;M1 冻结面 **41 产物零 diff**(除 `07 号` 自身 hash 由本次授权覆盖);`main` 与 `origin/main` 同步。
+
+**⑦ 关联**:**#283**(待新建 change 路径豁免)· **#282**(4 条裁决)· **#281**(虚构路径豁免)· **#280**(SU · 七)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

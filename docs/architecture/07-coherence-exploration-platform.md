@@ -1969,3 +1969,35 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 - [ ] 冻结面两步授权已执行:台账 **Entry #282** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #282"` → **清单单独 commit** → 无参复验 provenance 通过
 
 **关联**:台账 **Entry #282**(裁决授权)· **#280**(SU · 七 · 4 条待裁决点的来源)· `ADR-CEP-19` 决策 9(具名延期 + 四条理由)· `ADR-CEP-05` 决策 2(三明治挂载)· `ADR-CEP-07` 决策 3(真实注册机制)· `include/tlm/cep/stub_cache_core.hh`(纯类 + 六接口 + 折叠映射表)· `include/tlm/nic_tlm.hh`(dual-port 先例)· `include/framework/chstream_adapter_factory.hh`(`registerDualPortAdapter`)· `include/framework/cohif_noc_bridge.hh`(冻结不动的承载投影)· `openspec/specs/cep-stub-cache-core/spec.md`(`:56` 必改 · `:71` 视场景)
+
+---
+
+## Status Update(2026-11-08 · 九,per 台账 Entry #284)—— SU · 八 的**桥路径引用更正** + 语义分层红线的**落点澄清**
+
+> **性质**:末尾追加 SU(append-only)。⛔ 不改 SU · 八 的任何一段(⛔ 其关联段的错误路径由本段**更正登记**,不改其原文);⛔ 不改 §2 / §3.1 / §5.1.1;⛔ 不回改 SU · 一 ~ 八;⛔ **零**代码 / 契约 / 冻结 main spec 改动。
+> **触发**:Entry #282 冻结面两步授权后跑全量 `ctest` ⇒ `cep_doc_ref_check` 判红 ⇒ 定位为 SU · 八 **关联段**的一处**路径目录写错**。
+> **审查**:`oracle` → `critic` 顺序纪律**不适用**(本段为**事实性更正**,⛔ 不含架构决策 ⇒ 无需再次双审;其内容为前两轮裁决的**路径补全**)。
+
+### ① 更正内容
+
+| # | 项 | SU · 八 原文(⛔ 不回改) | **更正后** |
+|---|---|---|---|
+| 1 | 桥的实现路径(关联段) | `include/framework/` + `cohif_noc_bridge.hh`(即**两个反引号片段拼成**的目录写错;⛔ 刻意拆写,避免被路径可达性闸当成真实引用) | **`include/tlm/cep/cohif_noc_bridge.hh`**(实测:`include/chstream_register.hh:8` include 的即 `tlm/cep/cohif_noc_bridge.hh` ⇒ **桥在 CEP 域,不在框架层**) |
+| 2 | 语义分层红线的**负向禁令落点** | 「禁入 `include/framework/` 与 `cohif_noc_bridge.hh`」 | **两条并存**:① **泛化** —— 新增映射代码禁入 `include/framework/`(框架层);② **具体** —— 不得改 `include/tlm/cep/cohif_noc_bridge.hh`(桥的既有 `pack`/`unpack` 实现) |
+
+⚠️ **红线方向未变**:「wrapper 只做端点编码 / 桥只做承载投影」**不变** ⇒ 本更正**仅补全落点**,⛔ **不**改变 4 条裁决的实质(形态 / 映射归属 / 注册与命名 / change 归属)。
+
+### ② 根因与审稿遗漏(诚实登记)
+
+- **根因**:oracle 的裁决原文只给**文件名** `cohif_noc_bridge.hh`(未给目录)⇒ architect 在**转写**进 SU · 八 时**补全目录补错**(写成框架层)⇒ ⇒ **笔误级**,⛔ 非决策错误;
+- ⚠️ **审稿遗漏**:`critic` 两轮(REJECT 轮 + APPROVE 轮)**均未抓出**该路径错 ⇒ 登记为**审稿流程的已知盲点**(「oracle 原稿的文件名 ⇒ 转写补目录」这一环**无机器核验**)⇒ ⇒ 后续凡引用仓内文件,提交前须**逐条核对路径存在性**(本仓既有闸 `cep_doc_ref_check` 正是该核验的载体 ⇒ 这次是它**首次**拦下此类错误 ⇒ ✅ 闸有效)。
+
+### ③ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且 SU · 一 ~ 八 与 §2 / §3.1 / §5.1.1 **逐字未变**
+- [ ] SU · 八 关联段的桥路径已由本段**更正登记**(⛔ 未回改其原文);`include/tlm/cep/cohif_noc_bridge.hh` 在仓内**存在**
+- [ ] 语义分层红线的负向禁令已补全为**两条并存**(泛化:框架层 / 具体:桥实现)
+- [ ] **4 条裁决的实质未变**(形态 / 映射归属 / 注册与命名 / change 归属)⇒ 与 SU · 八 逐条一致
+- [ ] 冻结面两步授权已执行:台账 **Entry #284** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #284"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #284**(更正授权)· **#283**(待新建 change 路径豁免)· **#282**(4 条裁决 · 本段更正其关联段路径)· **#280**(SU · 七)· `include/tlm/cep/cohif_noc_bridge.hh`(桥的真实位置)· `include/framework/chstream_adapter_factory.hh`(`registerDualPortAdapter`)
