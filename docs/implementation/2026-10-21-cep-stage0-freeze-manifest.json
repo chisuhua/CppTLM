@@ -23,7 +23,7 @@
     "docs/adr/ADR-CEP-18-protocol-generation-scope.md": "fd0c6808ab944ae7d0d059d9486ba5d731bd5389869066f63cb9ee20c1409372",
     "docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md": "bb855a45dea28ac1158cd3dc1ce3f79889c62443edc3c7dee8a0d0e00f307174",
     "docs/adr/ADR-CEP-NUMBER-MAP.md": "14e9d516620834b0c1ae8318047236adbc0d2a7ce084fb3e6eefcd9102858c32",
-    "docs/architecture/07-coherence-exploration-platform.md": "1f2032894497a3bdeca79b931c7b3bb5c012b947688ec998f7cad86c6dedda5c",
+    "docs/architecture/07-coherence-exploration-platform.md": "04462b9cf88bbdbd53467765bb9b11f68656004a258ba2d22a26fa90687c03c5",
     "experimental/metrics.schema.json": "738329a9688c796920954ed9ee7657309626b2613f4a1dc25e9307123a144b6a",
     "experimental/preregistration.json": "2fe018d8ff989c4d84edad2b21b4bce53247b88e4ca7b87fa8dc5cdcea7d467c",
     "include/tlm/cep/fabric.json": "296b8981c3a09e912ba6436f12dde9895935bec703ec046cd3e0e71040a7b364",
@@ -43,9 +43,9 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #285",
+  "authorized_by": "Entry #286",
   "frozen_at": "2026-11-08",
-  "frozen_at_commit": "b20fe8ad334f4516dd345e1e3600223b6ec5e82d",
+  "frozen_at_commit": "e75f07f52e1e68772eb379488c198a7d556e769a",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
