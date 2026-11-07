@@ -103,8 +103,10 @@ VIRTUAL_PATHS=(
   "openspec/changes/cpptlm-cep-instance-assembly-contract-alignment"  # 契约对齐 **已归档**(2026-11-07,✅ 已完成归档语义 · MODIFIED 合并进 openspec/specs/cep-instance-assembly/spec.md)⇒ 台账历史 Entry(#261/#262)的路径引用
   "openspec/specs/cep-refkind-coverage/spec.md"  # RefKind 覆盖登记面 —— **归档后生成**(change cpptlm-cep-dcoh-nvlink-refkind-migration 的 delta 目标路径;归档前该 main spec 尚不存在 ⇒ 台账先行引用)
   "openspec/specs/cep-ualink-coherence-engine/spec.md"  # UALink 记账级专用承载引擎 —— **归档后生成**(change cpptlm-cep-ualink-coherence-engine 的 delta 目标路径;归档前该 main spec 尚不存在 ⇒ 台账先行引用)
+  "openspec/changes/cpptlm-cep-refkind-carrier-whitelist-contract"  # 白名单契约对齐 **已归档**(2026-11-07,✅ 已完成归档语义 · MODIFIED 合并进 openspec/specs/cep-refkind-coverage/spec.md)⇒ 台账历史 Entry(#272/#273)的路径引用
   "openspec/changes/cpptlm-cep-dcoh-nvlink-refkind-migration"  # RefKind 迁移 **已归档**(2026-11-07,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-refkind-coverage/spec.md)⇒ 台账历史 Entry(#266/#267)的路径引用
   "openspec/changes/cpptlm-cep-ualink-coherence-engine"  # UALink 引擎 **已归档**(2026-11-07,✅ 已完成归档语义 · delta 合并进 openspec/specs/cep-ualink-coherence-engine/spec.md)⇒ 台账历史 Entry(#270/#271)的路径引用
+  "openspec/changes/archive/2026-11-07-cpptlm-cep-refkind-carrier-whitelist-contract"  # 白名单契约对齐归档件 —— **归档后路径**(台账 Entry #272/#273 引用)
   "include/ src/"                                   # 多路径合写(非单一路径)
   "include/ src/ test/"                             # 同上
   # —— 通配 / 省略号 / 目录列表:不是「可判存在的单一路径」——
