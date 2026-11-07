@@ -14,7 +14,7 @@
     "docs/adr/ADR-CEP-08-ordering-point-portability.md": "8f3d66fac15a95e7b7c90dd6a54991300622e3a14390a4b1d37693a38fe57cb7",
     "docs/adr/ADR-CEP-09-multi-vc-arbitration-and-deadlock-freedom.md": "5a02f289d1767f8bdc30fcc9c5263f31b6940c5d411a4267ff42372fde875bfa",
     "docs/adr/ADR-CEP-11-protocol-version-locking.md": "82e1253cea94a77604c9e32a0d38a30cd2dc2efe8efcf3063a26f2508590c124",
-    "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md": "6d27ad9b0d5661c3be94aa5bc38fe2215441aac6f92148e7f142ea7dc3cb6c27",
+    "docs/adr/ADR-CEP-12-protocol-engine-capability-map.md": "a5ca5bbf1aa876eadfd953cc248eb5b5afea8d81d8f1894cb3093e65bf4f8c2b",
     "docs/adr/ADR-CEP-13-coherence-domain-ownership.md": "7b69a467cd0d8276bd14c7c909139dd8447fe6393f9d765a24bf0544a1f8a5d6",
     "docs/adr/ADR-CEP-14-stub-contract-tests.md": "0b76fcf8c5bbd30709e5b3cce6e6e257a6c5577b38fdcfe4886fc6dee8090d15",
     "docs/adr/ADR-CEP-15-cachetlm-alignment.md": "d5fa283212e956daf803b9540d2dff59fe4dbab986e91105c2d5b0a2fb937f05",
@@ -43,9 +43,9 @@
     "tools/render_report.py": "10399fed7a991e0b40f7ba84bb49cd27447af00baf9ccf45f372fdb455515850",
     "tools/run_sweep.py": "e085081f0313de7a747b0062257f2b4a23cc7cbdc76fccd8e61f4993e12c3114"
   },
-  "authorized_by": "Entry #264",
+  "authorized_by": "Entry #269",
   "frozen_at": "2026-11-07",
-  "frozen_at_commit": "ee4544406acf4a05a850c65a14bba9263af8054e",
+  "frozen_at_commit": "4dbe6c9c372462e15e55a84f246be8e212e57042",
   "globs": [
     "docs/adr/ADR-CEP-*.md",
     "docs/architecture/07-coherence-exploration-platform.md",
