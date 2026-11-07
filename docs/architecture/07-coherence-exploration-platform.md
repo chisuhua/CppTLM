@@ -1907,3 +1907,65 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 - [ ] 冻结面两步授权已执行:台账 **Entry #280** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #280"` → **清单单独 commit** → 无参复验 provenance 通过
 
 **关联**:台账 **Entry #280**(授权 + 登记)· `ADR-CEP-19` 决策 9 + 后果表(显式延期 · 不作承诺)· `ADR-CEP-05` 决策 2(三明治挂载 · 待显式裁决的 cpu_side 接口形态)· `ADR-CEP-07` 决策 3/4(注册 seam)· `ADR-CEP-02` · `ADR-CEP-04` / `ADR-CEP-12`(三层纪律的 case-bound 归属)· `include/tlm/cep/stub_cache_core.hh`(三明治挂载 · cpu_side / net_side)· `include/tlm/traffic_gen_tlm.hh`(ChStream 端口形态)· `include/bundles/cache_bundles_tlm.hh`(G-0e 的 bundle 字段集)
+
+---
+
+## Status Update(2026-11-07 · 八,per 台账 Entry #282)—— **G1~G3 的 4 条待裁决点裁定**(architect)+ G1 形态修正为「组合式 wrapper」
+
+> **性质**:末尾追加 SU(append-only)。⛔ 不改 SU · 七 的任何一段(⛔ 其「G1 升格」措辞由本段**修正登记**,不改其原文);⛔ 不改 §2 / §3.1 / §5.1.1;⛔ 不回改 SU · 一 ~ 六;⛔ **不动** `ADR-CEP-05`(起草中 v0.6)· `ADR-CEP-19`(已签发)· 冻结 main spec `cep-stub-cache-core`(本段**不**实施 ⇒ **零** spec 改动)。
+> **触发**:台账 **Entry #280** SU · 七 登记的 **4 条待裁决点**(实施 G1 前必裁)⇒ 本段为**裁决登记**。
+> **审查**:`oracle`(4 裁决的架构咨询)→ `critic`(本段架构审稿),顺序不可颠倒。
+
+### ① C-1 形态裁决:**组合式 wrapper**(原「升格」措辞修正)
+
+> **裁决**:`StubCacheEndpointTLM`(`ChStreamModuleBase` 派生)内部**持有** `StubCacheCore` 实例;注册形态 = **双端口非对称**适配(`registerDualPortAdapter<StubCacheEndpointTLM, CacheReqBundle, CacheRespBundle, CohIfBundle, CohIfBundle>`,先例 `NICTLM`:`nic_tlm.hh:81` + `:114` `pe_req_in(): InputStreamAdapter<CacheReqBundle>`)⇒ **两侧 Bundle 类型可不同**,⛔ **不**需额外跨类型转换点模块;`StubCacheCore` **纯类零改动**(`:154` 现状维持)⇒ 14 个既有单测与 `INV-SC1`~`INV-SC6` 判据载体**零变化**。
+
+⚠️ **修正 SU · 七 的「升格」措辞**(⛔ 不改其原文):目标态(可注册 + `cpu_side` 端口面)**不变**,实施路径由「**升格**」修正为「**组合**」⇒ **冻结面最小**(`stub_cache_core.hh` 零 diff)。
+⚠️ **网络参与非必要**:G2 最小拓扑 = `TrafficGenTLM → StubCacheEndpointTLM → CohIfProtocolEngine` 全 ChStream 直连 ⇒ **不**经网络;「wrapper net_side → `CohIfNoCProtocolBridge` → RouterTLM」列为 **optional 场景 2**(复用既有桥,零新桥代码)。
+⚠️ **冻结 main spec 改动面**:`:56`(「`net_side` SHALL 由 mock ProtocolEngine 驱动」)⇒ **直连场景亦撞**(真实引擎驱动)⇒ **必 MODIFIES**;`:71`(「`net_side` SHALL 不产生任何 flit」)⇒ **仅网络场景 2 撞** ⇒ 若不实现场景 2 ⇒ **不动** ⇒ **最小冻结面改动 = `:56` 单条**。
+
+### ② C-2 映射面归属:**wrapper 内部**(G-0e 两侧)
+
+- ① `CacheReqBundle`(is_write / address / data / size)↔ `cpu_read` / `cpu_write` 的 **op 编码**;
+- ② `evict_line` 原语缺口 ⇒ 以「保留 core-side 功能方法 + 测试/装配夹具显式调用」承载,⛔ **不**伪造 `CacheReqBundle` 字段(缺口**如实登记**,不扩 Bundle);
+- ③ **同步** `AccessResult` ⇒ **异步** `CacheRespBundle` 的**在途关联与发射时机**:由 wrapper 直读 stub 的既有观测面(`mshr_` / `pending_resps_` / `outstanding_txn()` / `cycle()`)实现 ⇒ ⛔ 零影子 MSHR、⛔ stub **不**暴露新的内部状态;
+- ④ net_side egress/ingress 的 `CohIfBundle` ↔ 功能 5 流编码 由 wrapper 完成;
+- ⛔ **`CohIfNoCProtocolBridge` 的 `pack`/`unpack` 冻结不动**;
+- ⚠️ **语义分层红线**:wrapper 只做「**功能方法 ↔ Bundle**」的**端点编码**;桥只做「**Bundle ↔ flit**」的**承载投影**;`flow_id` → canonical 流的解释权在**类型层**(`CohIfBundle` 强类型枚举)⇒ wrapper 只**产生**合法 `flow_id`,⛔ **不解释**其含义;⇒ **新增映射代码禁入** `include/framework/` 与 `cohif_noc_bridge.hh`;⇒ ✅ **正向圈定**:**映射实现仅许存在于 `StubCacheEndpointTLM` 自身的 `.hh` / `.cc`**,⛔ **不得**另立独立 mapper / 翻译 / 桥接模块(⇒ 使红线 = 正向圈定 + 负向禁令,design.md 的红线条款方可引用本段原文)。
+
+### ③ C-3 注册面与命名
+
+- 注册走**真实注册机制**(per `ADR-CEP-07` 决策 3「不发明宏形式」):`ModuleFactory::registerObject<StubCacheEndpointTLM>("StubCacheEndpointTLM")` + `ChStreamAdapterFactory::registerDualPortAdapter<...>(...)` ⇒ 与 `CohIfProtocolEngine` 同款**双注册**;
+- ⛔ **不**用 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED`(`chstream_register.hh:95`,**对称**单 BundleT ⇒ 不满足异构两侧);⛔ **不**用 `REGISTER_CHSTREAM_DUAL` 宏(`:288` —— **半截实现**:只注册 adapter、**不含** `registerObject` + **全仓零调用点** ⇒ 不能作为形态基准,per `chstream_register.hh:76-77`);
+- 命名 = **`StubCacheEndpointTLM`**(类名 = 注册名,仓内短名惯例):`StubCache` 前缀声明与 `StubCacheCore` 的组合归属;`Endpoint` 声明 ChStream 端点身份;`TLM` 后缀符合 `CacheTLM` / `NICTLM` 族惯例;
+- ⛔ 不用 `Adapter` 后缀(撞未注册的 testbench 协议 adapter 家族 `ChiRnfAdapter` / `UalinkAdapter`);⛔ 不用 `ProtocolEngine` 后缀(非引擎);⛔ 不用 `Bridge` 词干(撞 `ProtocolBridge` 家族);⛔ 不用 `Wrapper`(泄漏实现手法进注册名词汇表)。
+
+### ④ C-4 change 归属:**收编**进既有具名延期 change
+
+- G1~G3 收编进 **`cpptlm-cep-stub-cache-chstream-surface`**(新建其 change 目录;Proposed **0 → 1/3**);**不改名**(改名 = 再登记);⚠️ 该名字字面只承诺「端口面」,而收编后实际承载 **G1~G3 三面**(端口面 / 拓扑 / 判据)⇒ **change 的 proposal 须显式声明收编 scope = G1~G3**(防「名字与范围不符」的口径争议);
+- 理由:① `ADR-CEP-19` 决策 9(`:132`)已把该腿具名绑定到这个名字 ⇒ 收编 = **履行已签发承诺**,零额外登记;② G1/G2/G3 是同一件事的「端口面 / 拓扑 / 判据」三面,拆分将制造「有端口面而无装配判据」的中间态 ⇒ 违背零债务原则;③ KPI 影响与另立**完全相同**(0→1),收编避免延期项空壳化。
+
+### ⑤ R-1 判定:协议语义**不入**承载层 ⇒ **不拆** change
+
+按 ② 的归属裁决执行 ⇒ 协议语义不会进入承载层 ⇒ ⛔ **不**拆分为「承载接线 / 语义映射」两个 change(拆后承载层 change 无独立判据,纯治理开销)。
+⚠️ **残余风险**:实施者若把 G-0e 映射做成「通用协议桥」复用件 ⇒ 红线即破 ⇒ 防线 = **change design.md 的语义分层红线条款** + review 闸。
+
+### ⑥ 计数与判据边界(重申)
+
+- `B3b-2` **维持 0/4**(per SU · 七)⇒ ⛔ 即便 G1~G3 交付,**不得**用它改判 B3b(计数依据 = 规范条款级 T1–T4);
+- G3 的对端抵达断言 = **结构可达**证明(≡ **L4-direct**)⇒ ⛔ 非「协议语义 E2E」· ⛔ 非「规范条款级」· ⛔ **亦非「映射语义保真」**(后者由 G-0e 的判据另行保证)。
+
+### ⑦ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且 SU · 一 ~ 七 与 §2 / §3.1 / §5.1.1 **逐字未变**;SU · 七 的「升格」措辞由本段**修正登记**且**未回改**其原文
+- [ ] 4 条裁决(形态 / 映射归属 / 注册与命名 / change 归属)各有**可执行文本**且**互相不矛盾**
+- [ ] **冻结面零改动**:本段**未**触碰 `stub_cache_core.hh` / `ADR-CEP-05` / `ADR-CEP-19` / 冻结 main spec ⇒ **这四者的 hash 不变**;⚠️ `07 号` 自身的 hash 变更由**末条两步授权**(Entry #282)覆盖
+- [ ] 实施前的**新台账 Entry**已登记(⚠️ Entry #280 的授权范围**仅覆盖 SU · 七**,**不预授权**冻结 main spec 的 MODIFIES)⇒ 两步授权流程就绪
+- [ ] G1 若实施:`StubCacheCore` **纯类零改动** ⇒ `INV-SC1`~`INV-SC6` 与 14 个既有单测**全绿**
+- [ ] G2 若实施:最小拓扑 = `TrafficGenTLM → StubCacheEndpointTLM → CohIfProtocolEngine`(**直连**,⛔ 未经网络)⇒ 且 wrapper 的两侧 Bundle 类型**确为异构**
+- [ ] G3 若实施:判据含**对端抵达断言**;⚠️ 若实现 optional 场景 2 ⇒ 冻结 main spec 的 `:71` 同步 MODIFIES
+- [ ] change design.md 含**语义分层红线条款**;⛔ 新增映射代码**未**进入 `include/framework/` 与 `cohif_noc_bridge.hh`
+- [ ] ⚠️ 任何实现**未**改 `B3b-2` 的 **0/4**;新增文件与文档**无**「B3b-2 已达成」形态的计数
+- [ ] 冻结面两步授权已执行:台账 **Entry #282** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #282"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #282**(裁决授权)· **#280**(SU · 七 · 4 条待裁决点的来源)· `ADR-CEP-19` 决策 9(具名延期 + 四条理由)· `ADR-CEP-05` 决策 2(三明治挂载)· `ADR-CEP-07` 决策 3(真实注册机制)· `include/tlm/cep/stub_cache_core.hh`(纯类 + 六接口 + 折叠映射表)· `include/tlm/nic_tlm.hh`(dual-port 先例)· `include/framework/chstream_adapter_factory.hh`(`registerDualPortAdapter`)· `include/framework/cohif_noc_bridge.hh`(冻结不动的承载投影)· `openspec/specs/cep-stub-cache-core/spec.md`(`:56` 必改 · `:71` 视场景)

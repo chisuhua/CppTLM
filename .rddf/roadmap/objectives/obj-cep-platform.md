@@ -16100,6 +16100,32 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **④ 验证**:`ctest` **164/164**;`cep_doc_ref_check` rc=0;其余 3 闸 rc=0;M1 冻结面 **41 产物零 diff**(本 Entry **未**触碰冻结面 ⇒ 冻结清单未改);`main` 与 `origin/main` 同步。
 
 **⑤ 关联**:**#280**(延期项登记 · 冻结面两步授权)· **#279**(闸修复 · 虚构路径的来源)· **#274**(盘点 + 路径)
+
+### Entry #282 — 2026-11-07 [go-decision](**G1~G3 的 4 条待裁决点裁定** —— 形态 = 组合式 wrapper;映射归 wrapper;命名 `StubCacheEndpointTLM`;收编进既有延期 change)
+
+**主题**:落实 Entry #280(SU · 七)登记的 **4 条待 architect 裁决点**(实施 G1 前必裁)⇒ 本 Entry 为**裁决登记**(`07 号` **SU · 八**)。
+**角色**:architect(裁决 + oracle→critic 双审)· builder(待实施)。
+
+**① C-1 形态**:**组合式 wrapper**(⛔ 非「升格」)—— 新增 `StubCacheEndpointTLM`(`ChStreamModuleBase` 派生)内部**持有** `StubCacheCore` 实例 + `registerDualPortAdapter<..., CacheReqBundle, CacheRespBundle, CohIfBundle, CohIfBundle>`(异构双端口,先例 `NICTLM`)⇒ **`StubCacheCore` 纯类零改动** ⇒ 14 单测与 `INV-SC1`~`SC6` 零变化 ⇒ **冻结面最小**;⚠️ **网络参与非必要**(最小拓扑 = `TrafficGenTLM → StubCacheEndpointTLM → CohIfProtocolEngine` 全 ChStream 直连;网络桥接 = optional 场景 2,复用既有 `CohIfNoCProtocolBridge`);⚠️ **SU · 七 的「升格」措辞由 SU · 八 修正登记为「组合」**(⛔ 不回改其原文)。
+⚠️ **冻结 main spec 改动面**:`:56`(「`net_side` SHALL 由 mock ProtocolEngine 驱动」)**必 MODIFIES**(直连亦撞);`:71`(「不产生任何 flit」)**仅场景 2 撞** ⇒ 若不做场景 2 ⇒ **不动** ⇒ **最小冻结面改动 = `:56` 单条**。
+
+**② C-2 映射面归属**:**wrapper 内部**(G-0e **两侧**):op 编码 / `evict_line` 缺口(如实登记,⛔ 不伪造 Bundle 字段)/ 同步 `AccessResult` ⇒ 异步 `CacheRespBundle` 的在途关联(直读 stub 既有观测面 `mshr_`/`pending_resps_`/`outstanding_txn()`/`cycle()` ⇒ 零影子 MSHR)/ net_side `CohIfBundle` ↔ 功能 5 流编码。⛔ **`cohif_noc_bridge.hh` 的 pack/unpack 冻结不动**;**语义分层红线** = 正向圈定(映射实现**仅许**存在于 wrapper 自身 `.hh`/`.cc`,⛔ 不得另立 mapper/翻译/桥接模块)+ 负向禁令(禁入 `include/framework/` 与 `cohif_noc_bridge.hh`)。
+
+**③ C-3 注册与命名**:走**真实注册机制**(per `ADR-CEP-07` 决策 3)= `registerObject` + `registerDualPortAdapter` 双注册;⛔ 不用 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED`(对称单 BundleT)· 不用 `REGISTER_CHSTREAM_DUAL` 宏(**半截实现**:不含 `registerObject` + 全仓零调用点 ⇒ 不能作形态基准);命名 = **`StubCacheEndpointTLM`**(类名 = 注册名;⛔ 不用 `Adapter`/`ProtocolEngine`/`Bridge`/`Wrapper` 词干)。
+
+**④ C-4 change 归属**:**收编**进既有具名延期 change **`cpptlm-cep-stub-cache-chstream-surface`**(新建其 change 目录;Proposed **0 → 1/3**);**不改名**;⚠️ 该名字字面只承诺「端口面」而收编后承载 **G1~G3 三面** ⇒ ⇒ **proposal 须显式声明收编 scope = G1~G3**。
+
+**⑤ R-1**:**协议语义不入承载层** ⇒ **不拆** change;残余风险(实施者做成「通用协议桥」复用件)由 design.md 的**语义分层红线** + review 闸防。
+
+**⑥ 审查闭环(2 段 · architect 配对 oracle→critic)**:oracle 咨询 4 裁决 ⇒ **修正我方一个输入事实错误**(曾误判「一个模块只能一种 Bundle 类型」⇒ 实测 `registerDualPortAdapter` 支持**异构双端口** + NICTLM 先例)⇒ critic **APPROVE_WITH_CONDITIONS**(**0 BLOCKER**)⇒ 3 SHOULD_FIX(`REGISTER_CHSTREAM_DUAL` 禁用理由引用失准 / 红线**缺正向圈定** / Verification「冻结清单 hash 不变」措辞过宽)+ 2 NIT(收编 scope 声明 / 排版)⇒ **全部落**。
+
+**⑦ 冻结面两步授权(已执行)**:台账 **Entry #282** 授权 → **commit `07 号` SU · 八 + 本 Entry** → `cep_freeze_check.sh --update --authorized-by "Entry #282"` → **清单单独 commit** → 无参复验 provenance 通过(41 产物)。
+
+**⑧ 后续路径(移交 builder)**:新建 change 目录 `openspec/changes/cpptlm-cep-stub-cache-chstream-surface/`(proposal 含 MODIFIES 段 + G1/G2/G3 三面 + 红线条款;design 含语义分层红线原文)⇒ 实施(wrapper 头 + 显式双注册 → 14 测回归 → G2 最小直连拓扑 → G3 对端抵达断言 → optional 场景 2)。⚠️ **冻结 main spec 的 MODIFIES 须新台账 Entry** —— 本 Entry **不预授权**(per `ADR-CEP-19` 决策 9 理由 ① 的两步授权流程)。
+
+**⑨ 计数纪律**:`B3b-2` **维持 0/4**;G3 = **结构可达**(≡ L4-direct)⇒ ⛔ 非协议语义 E2E · ⛔ 非规范条款级 · ⛔ **不得**用于改判 B3b。
+
+**⑩ 关联**:**#281**(虚构路径豁免)· **#280**(SU · 七 · 待裁决点来源)· **#274**(盘点 + 路径)· `ADR-CEP-19` 决策 9(四条理由)· `ADR-CEP-05` 决策 2 · `ADR-CEP-07` 决策 3
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
