@@ -6,7 +6,7 @@ phase: phase-10
   - ADR-CEP-12
   - ADR-CEP-04
   - ADR-CEP-11
-状态: 🟡 **已批准实施**(2026-11-06,per 台账 Entry #251 —— 用户裁决「P1-M1 + P1-M2 全量」)
+状态: ✅ **已完成并归档**(2026-11-06,per 台账 Entry #251 批准 → **#252 ~ #254** 实施与归档;delta 合并进 main specs)
 created: 2026-11-06
 ---
 

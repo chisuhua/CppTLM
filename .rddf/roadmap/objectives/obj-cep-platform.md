@@ -467,19 +467,18 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 **实施路径唯一真源**: **本文件 §4.0 排队总表** —— 顺序 / 季度 / 状态 / 准入前置归属**只在这里写**(per Entry #23)。`phase-10.md` 的依赖图是**示意**,不承载排期承诺。
 
-### 5.2 当前真实 baseline(2026-11-02 实测,per oracle B1) —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原标题「2026-10-20 实证」**已落后两代**;现行值以 `openspec list --json` **实测**为准
+### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **0 个 active**(2026-11-02 实测, per `openspec list --json`): —— ⚠️ **2026-11-02 订正**(per 台账 Entry #148):原写「1 个 active」(2026-10-28 实证)**已失实**,且与本节下方的**并发计数**表述**互斥** ⇒ 现取实测值 **0** —— ⚠️ **2026-11-02 再订正**(per 台账 Entry #149:建档 `cpptlm-cep-canonical-flow-parser-scope` ⇒ 并发回到 **1 个 active**) —— ⚠️ **2026-11-02 三订正**(per 台账 Entry #160:队列 #12 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-dcoh-symmetric` **已建档** ⇒ 仍为 **1 个 active** —— 组 1 的 `cpptlm-cep-canonical-flow-parser-scope` 已于同日归档 ⇒ slot 已释放)
-- 原 3 个 active(`cpptlm-msix-generator-ip` 0/44 / `cpptlm-pcie-tlp-entry-layer` 0/56 / `cpptlm-p2-integration-unblock` 0/45)**均 0% 未实施**
-- 2026-10-20 三者全部 **⏸ 暂存归档**(`openspec archive --skip-specs`),delta spec **未合并**进 main specs,proposal 已加 ⏸ 标记
-- 归档路径:`openspec/changes/archive/2026-10-20-{cpptlm-msix-generator-ip,cpptlm-pcie-tlp-entry-layer,cpptlm-p2-integration-unblock}/`
+`openspec/changes/` 当前 **0 个 active**(2026-11-07 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
 
-→ **当前 Proposed 并发 = 0/3**（**2026-11-07 更新**:`cpptlm-cep-refkind-carrier-whitelist-contract` **已完成归档** ⇒ **0/3**,per 台账 **Entry #273**）（**2026-11-07 更新**:`cpptlm-cep-refkind-carrier-whitelist-contract` 立项 ⇒ **1/3**,per 台账 **Entry #272**）（**2026-11-07 更新**:`cpptlm-cep-ualink-coherence-engine` **已完成归档** ⇒ **0/3**,per 台账 **Entry #271**）（**2026-11-07 更新**:`cpptlm-cep-ualink-coherence-engine` 立项 ⇒ **1/3**,per 台账 **Entry #269**）（**2026-11-07 更新**:`cpptlm-cep-dcoh-nvlink-refkind-migration` **已完成归档** ⇒ **0/3**,per 台账 **Entry #267**）（**2026-11-07 更新**:`cpptlm-cep-dcoh-nvlink-refkind-migration` 立项 ⇒ **1/3**,per 台账 **Entry #266**）（**2026-11-07 更新**:`cpptlm-cep-instance-assembly-contract-alignment` **已完成归档** ⇒ **0/3**,per 台账 **Entry #262**）（**2026-11-07 更新**:`cpptlm-cep-instance-assembly-contract-alignment` 立项 ⇒ **1/3**,per 台账 **Entry #261**）（**2026-11-06 更新**:`cpptlm-cep-ualink-instance-assembly` + `cpptlm-cep-moesi-gpu-l4-e2e` **均已完成归档** ⇒ **0/3**,per 台账 **Entry #260**）（**2026-11-06 更新**:`cpptlm-cep-ualink-instance-assembly` + `cpptlm-cep-moesi-gpu-l4-e2e` 立项 ⇒ **2/3**,per 台账 **Entry #259**）（**2026-11-06 更新**:`cpptlm-cep-ualink-instance-assembly` 立项 ⇒ **1/3**,per 台账 **Entry #258**）（**2026-11-06 更新**:`cpptlm-cep-source-kind-contract-alignment` **已完成归档** ⇒ **0/3**,per 台账 **Entry #256**）（**2026-11-06 更新**:`cpptlm-cep-source-kind-contract-alignment` 立项 ⇒ **1/3**,per 台账 **Entry #255**）（**2026-11-06 更新**:`cpptlm-cep-basis-source-kind-and-cell-free` **已完成归档** ⇒ **0/3**,per 台账 **Entry #254**）（**2026-11-06,per 台账 Entry #247** —— `cpptlm-cep-tilelink-runtime-engine`(TileLink-C **运行时引擎**,B3b 推进项)**已完成归档**(delta 合并进 `openspec/specs/cep-tilelink-runtime-engine/spec.md`)⇒ slot 已释放;前序:**同日** `cpptlm-cep-tilelink-t3-mapping-survey`(T3 映射锚点普查,per 台账 **Entry #241**)**已完成归档**(✅ 已完成归档语义 · 无 delta 合并)⇒ slot 已释放;前序:2026-11-04 —— 队列 #14 的**第 1 个 change**(实现层)`cpptlm-cep-ualink-inc` **已完成归档**(2026-11-04;delta 已合并进 `openspec/specs/cep-ualink-inc/spec.md` + 2 份契约 main spec;Entry #207)⇒ slot 已释放;前序:队列 #14 的**第 0 个 change**(规约层)`cpptlm-cep-ualink-inc-state-spec` **已完成归档**(2026-11-04;4 件套 + 1 份 delta spec;delta 已合并进 `openspec/specs/cep-ualink-inc-state-spec/spec.md`;Entry #203)⇒ slot 已释放;前序:队列 #13 的**第 1 个 change**(实现层)`cpptlm-cep-nvlink-sharp` **已完成归档**(delta capability 已合并进 `openspec/specs/cep-nvlink-sharp/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;Entry #190)⇒ slot 已释放;前序:**同日** —— 队列 #13 的**第 0 个 change**(规约层)`cpptlm-cep-nvlink-sharp-state-spec` **已完成归档**（delta capability 已合并进 `openspec/specs/cep-nvlink-sharp-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;Entry #186)⇒ slot 已释放;前序:**同日** —— 该 change **已建 change 目录**(4 件套 + 1 份 delta spec)⇒ 占 1 slot;历史:2026-11-02 —— 队列 #12 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-dcoh-symmetric` **已完成归档** ⇒ slot 已释放;前序:队列 #12 的**第 0 个 change**(规约层)**已完成归档** ⇒ slot 已释放;前序:组 1 的 `cpptlm-cep-canonical-flow-parser-scope` **已完成归档** ⇒ slot 已释放;前序:队列 #11 的**第 1 个 change**(实现层)**已完成归档** ⇒ slot 已释放;前序:2026-11-02 归档:队列 #11 的**第 0 个 change**(规约层)**已完成归档** ⇒ slot 已释放;前序:2026-11-01 归档:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` **已完成归档**(「**已完成归档**」语义 —— 2 份 delta spec(`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`)已合并进 `openspec/specs/`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;⚠️ `SSF-03` 措辞收紧为「已实现的登记 + 显式后续义务」⇒ **R11 维持 🟡 中**(V-2 未达成);Entry #132)⇒ slot 已释放;2026-11-01 转正:队列 #10 的**第 1 个 change**(实现层)`cpptlm-cep-cxl-nonsymmetric` 已建 change 目录(4 件套 + **2 份** delta spec:`cep-cxl-nonsymmetric` / `cep-sparse-snoop-filter`;`openspec validate --strict` rc=0)⇒ 占 1 slot;2026-11-01 归档:队列 #10 的**第 0 个 change**(规约层)`cpptlm-cep-cxl-nonsymmetric-state-spec` **已完成归档**(「**已完成归档**」语义 —— delta spec `cep-cxl-nonsymmetric-state-spec` 已合并进 `openspec/specs/cep-cxl-nonsymmetric-state-spec/spec.md`;Phase 0 ~ 4 全完成;**新增 invariant 数 = 0**;Entry #127)⇒ slot 已释放;2026-10-31 归档:`cpptlm-test-sh-arg-parsing-timeout` **已完成归档**(delta spec `ci-test-entrypoint` 已合并进 `openspec/specs/`)⇒ slot 已释放;历史:2026-11-01 转正:队列 #10 的**第 0 个 change**(规约层)`cpptlm-cep-cxl-nonsymmetric-state-spec` 已建 change 目录(4 件套 + 1 份 delta spec `cep-cxl-nonsymmetric-state-spec`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-31 转正:非 CEP 能力的**测试基础设施**修复 change `cpptlm-test-sh-arg-parsing-timeout` 已建 change 目录(4 件套 + 1 份 delta spec `ci-test-entrypoint`;`openspec validate --strict` rc=0)⇒ 占 1 slot;历史:2026-10-30 归档:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已完成归档**(2 份 delta spec 已合并进 main specs:`cep-mesif-adapter` + `cep-hierarchical-directory`;Entry #105 / #106)⇒ slot 已释放;历史:2026-10-30 转正:队列 #9 的**实现层** change `cpptlm-cep-mesif-adapter` **已建 change 目录**(4 件套 + 2 份 delta spec;`openspec validate --strict` rc=0)⇒ 占 1 slot,per Entry #104;历史:2026-10-29 归档:队列 #9 的**第 0 个 change** `cpptlm-cep-mesif-state-spec`(MESIF 状态机规约 + 5→4 投影表)**已完成归档** ⇒ slot 已释放,per Entry #101;历史:2026-10-29 转正:该 change **已建 change 目录** → 曾占 1 slot,per Entry #97;历史:2026-10-28 **已完成归档**:队列 #8 `cpptlm-cep-chi-rnf-subset` —— 2 份 delta spec 已合并进 main specs;slot 已释放,per Entry #95）**;队列 #8 `cpptlm-cep-chi-rnf-subset` **已转正**(2026-10-28,per Entry #91 —— change 目录已建,`openspec validate --strict` rc=0)⇒ 占 1 slot;下一个可启动 change = **无**(per §5.4 并发 ≤ 1);历史:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(2026-10-28,per Entry #90)(2026-10-28 归档:队列 #7 `cpptlm-cep-cohif-carrier` **已完成归档**(完成归档语义 —— 2 份 delta spec 已合并进 main specs:`cep-cohif-carrier` / `cep-protocol-bridge-contracts`;tasks **41/41** 全勾)→ slot 已释放,per Entry #90;历史:2026-10-27 转正:`cpptlm-cep-cohif-carrier`(队列 #7)**已建 change 目录**(proposal + design + tasks + 2 份 delta spec;`openspec validate --strict` rc=0)→ 占 1 slot,per Entry #81;历史:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已完成归档**(完成归档语义 —— 14 Scenario 并入 2 份 main spec(`cep-moesi-gpu-adapter` 7 / `cep-adapter-schema-contracts` 7))→ slot 已释放,per Entry #80;历史:2026-10-26 启动:`cpptlm-cep-moesi-gpu-adapter`(队列 #6)**已建 change 目录** → 占 1 slot,per Entry #71;历史:**当时**(2026-10-23)下一个可启动 change = 队列 #5 `cpptlm-cep-collective-plane-base` —— 队列 #5 现已归档;历史:2026-10-26 归档:`cpptlm-cep-collective-plane-base`(队列 #5)**已完成归档** → slot 已释放,per Entry #70;历史:该 change 建目录时曾占用 1 个 slot(per Entry #66/#67);队列 #4 `cpptlm-cep-directory-ordering-plane` 已于 2026-10-25 **完成归档** → slot 已释放,per Entry #64;该 change 建目录时曾占用 1 个 slot(per Entry #62/#63))。历史:2026-10-25 队列 #3 `cpptlm-cep-stub-cache-core` **已完成归档**(完成归档语义 —— delta capability `cep-vc-mapping-contract` / `cep-stub-cache-core` 已合并进 `openspec/specs/`,归档路径 `openspec/changes/archive/2026-10-25-cpptlm-cep-stub-cache-core/`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #60**。历史:2026-10-25 队列 #3 **建目录**占用 1 个 slot → baseline 0/3 → 1/3(per §11 **Entry #58**);历史:2026-10-24 `cpptlm-cep-poc-spike`(队列 #2)**已完成归档**(完成归档语义,delta spec 已合并进 `openspec/specs/cep-poc-spike-verification/spec.md`)→ 释放其 1 个 KPI slot,baseline 1/3 → **0/3**;归档依据见 §11 **Entry #55**。历史:2026-10-24 曾 0/3 → 1/3(该 change 建目录占用 1 个 slot);历史:2026-10-23 `cpptlm-cep-umbrella` **已完成归档**(完成归档语义,delta spec 已合并进 main specs)→ 释放其 1 个 KPI slot,baseline 1/3 → 0/3;归档依据见 §11 **Entry #28**(R10 闭合判据 + 残余风险登记)与 **#29**(归档动作 + 路径迁移 + 冻结面迁移)。**下一个可启动的 change = 队列 #5 `cpptlm-cep-collective-plane-base`**(per §4.0)。
+> **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
+> **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
+> **校验口径**:`cep_docs_sync_check` 的 KPI 断言**只抓「当前 / 现行 / 真实 / 现在 / 目前 / 截至」限定的当前态数值** ⇒ 历史叙述(「0/3 → 1/3」等)**不参与校验** ⇒ 去堆积**不削弱**判据。
 
 > **✅ M2 准入门放行(2026-10-22)**:ArchForge 侧 coherence 接口**规约文档**已合入
 > (commits `6020f42` + `8290b4c` + `ac956b8`,8+3+2 文件),且本仓侧已完成
 > **判据 C-4 的机器化**(检查器 + schema delta + fabric 载体,反向验证 12/12 全绿,见 Entry #9)。
-> ✅ **Stage 0 已完成归档(2026-10-23)** —— M2 已放行 · R10 已按 **§9.3** 闭合判据处置(per 台账 Entry #28)· tasks **99/99** 全勾;delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`(per Entry #29)。
+> ✅ **Stage 0 已完成归档(2026-10-23)** —— M2 已放行 · R10 已按 **§9.3** 闭合判据处置(per 台账 **Entry #28**)· tasks **99/99** 全勾;delta spec 已合并进 `openspec/specs/cep-core-contracts/spec.md`(per Entry #29)。
 
 ### 5.3 CEP 启动的前置条件(per AGENTS.md §DOC HYGIENE line 422 新提案门槛)
 
@@ -941,6 +940,58 @@ Stage 4+ 进入维护态后,objective 归档条件:
 **总估时**:约 **5 个工作日**(A 1.4d + B 1.0d + C 2.5d);其中 C2 若裁②则可能膨胀(需独立 change)。
 
 ---
+
+### 2026-11-07 后续任务实施路径(B3b-2 终态裁决后 —— planner 盘点,per 台账 **Entry #274**)
+
+> **规划前提(实测,非台账措辞推断)**:`§6.2` 的 **12 条 DoD** 中 —— B1 ✅ / B2 ✅ **66/66**(61 载体 + 5 授权⏭)· B3a ✅ / **B3b-1 ✅ 2/2** · B4 ✅ / B5 ✅ / B6 ✅ / B7 ✅ 8/8 / B8 ✅ ⇒ **唯一未达成项 = `B3b-2` = 0/4 ⏭**(per `07 号` SU · 六 · Entry #264)⇒ **终态 DoD Go 挂起**。
+> ⚠️ **2026-11-05 旧段(Entry #230)的 A / B / C 三批已全部落地或改判**(A1/A2 勾选回填 · A3 S2 · A4 S1 · B1 B5/B6/B8 verdict · C1 B2 口径裁决 · C2 B2 补判定级断言),**D 批 5 项全部「不做」**(受外部条件约束)⇒ 旧段**整体已过期**,仅作历史留存(⛔ 不回改)。
+> ⚠️ **2026-11-05 旧段的两处前提已失效**:① 「B3b(1/6)」⇒ 已拆为 **B3b-1 2/2 ✅ + B3b-2 0/4 ⏭**(per Entry #251/#264);② 「B2 判定级待裁」⇒ 已收口(Entry #236)。
+
+#### ① `B3b-2` 的**内部可推进量 = 0**(逐族实测)
+
+| 族 | 状态 | D-4 升级路径的当前状态 | 内部可推进? |
+|---|---|---|---|
+| **CXL 2.0 非对称** | ⛔ **显式冻结**(68 格中 42 格 Unknown,覆盖率 26/68) | ① 规范可读化(ECA 解除)· ② 人类成员条款摘要 | ⛔ **否** —— 两条路径均属**外部** |
+| **CXL 3.0 对称 DCOH** | ⏭ 受限(载体**无转移矩阵** ⇒ T1 未触发) | ① 规范可读化 · ② 人类成员条款摘要 · ③ 来源类型机制 · ④ `CellKind::Free` | ⛔ **否** —— ③④ **已耗尽**(已落地,per Entry #252/#256);①② 属外部 |
+| **NVLink** | ⏭ 受限(载体**无转移矩阵**;无条款级公开规范) | ① NVIDIA 发布**条款级**规范 · ② 人类成员条款摘要 · ③ ④ 已耗尽 | ⛔ **否** |
+| **UALink** | ⏭ 受限(载体**无转移矩阵**;Evaluation Copy 约束) | ① ECA 解除 / 联盟发布可读规范 · ② 人类成员条款摘要 · ③ ④ 已耗尽 | ⛔ **否** —— 另 ⚠️ **2026-11-07 已交付记账级专用承载引擎**(Entry #270)⇒ **流语义(弱档)已闭合**,但 ⛔ **不改计数**(仍 0/4) |
+
+⇒ **D-4 四条路径的耗尽状态**:③(来源类型机制)与 ④(`CellKind::Free`)**已落地**(Entry #252 / #256)⇒ **不再构成待办**;① 规范可读化与 ② 人类成员条款摘要 = **外部条件 + 人力资源** ⇒ ⛔ **纯 AI 作业下不可推进**。
+⇒ **结论**:`B3b-2` 的解除**只可能由外部事件触发** ⇒ 本仓**内部可推进 = 0** ⇒ 任何「内部再干一轮把它变成 N/4」的做法 = **推理填空**,⛔ 禁止(per `07 号` SU · 四 D-1)。
+
+#### ② 内部可推进的**遗留清单**(5 项,本仓可做)
+
+| # | 项 | 域 | 估时 | 依据 | 优先级 |
+|---|---|---|---:|---|---|
+| **L1** | **CI 红线**:13 个历史遗留文件需 `clang-format` | builder | ~0.5d | CI `code-format` job 会红;Entry #271 §6 登记 | **高**(卡 CI) |
+| **L2** | **coverage 文档 `TileLink-C` 行的 L4 档标注矛盾**:现标「✅ `dispatch_cohif` 5 流」⇒ 会被读成 **L4-wire** 档,而该引擎**零发射** ⇒ 实为 **L4-direct** 档(per `ADR-CEP-12` SU 2026-11-07 ②「零发射」)⇒ 与文档自身 rubric 矛盾 | builder | ~0.5d | Entry #261 的 **SHOULD_FIX-2**(当时判为 scope 外 backlog)⇒ **至今未修** | **中高**(对外误报) |
+| **L3** | **KPI baseline 行历史堆积**:`phase-10.md` / `roadmap.md` / `umbrella.md` / `nvlink-sharp.md` 的 KPI 行单行 **6.3~6.8K 字符**(堆 10+ 次归档流水)+ `obj §5.2` 的订正链 **8.5K** | planner | ~1h | 「活口径」纪律(§5.1 KPI 单一真源);`docs_sync_check` 的 KPI 断言只抓**当前态**限定词 ⇒ 去堆积**不削弱判据** | **中** |
+| **L4** | **3 处 improvement 状态漂移**:`cpptlm-cep-dcoh-nvlink-refkind-migration` / `cpptlm-cep-ualink-coherence-engine` / `cpptlm-cep-basis-source-kind-and-cell-free` 仍写「提案 / 已批准实施」但**已归档** | planner | ~0.5h | Entry #267 / #271 / #254 | **中**(防误读为未做) |
+| **L5** | **`§10` 后续任务实施路径段过期**(本段即为其替代) | planner | ~1h | Entry #230 的 A/B/C 三批已全部落地 | **中**(防按过期计划执行) |
+
+#### ③ 外部 / 周期项(⛔ 内部不可推进)
+
+| # | 项 | 触发条件 | 建议节奏 |
+|---|---|---|---|
+| **E1** | **D-4 ① / ② 的触发探测**(规范可读化 / 人类成员条款摘要) | CXL / UALink 的 ECA 解除或联盟发布可读规范;NVLink 发布**条款级**规范文档(⛔ 白皮书 / 编程指南**不算**);人类成员按条款摘录并签署 | **季度**外部检索(per §12 复审节奏) |
+| **E2** | 终态 DoD Go 的**季度复审** | 2030-Q1 窗口未到期;**或** E1 命中时 | 季度 |
+
+#### ④ 执行顺序与理由
+
+1. **L1 优先**(卡 CI ⇒ 阻塞一切合并);L1/L2 同属 builder 域 ⇒ 合并为**一轮 builder 作业**(~1d)。
+2. **L3/L4/L5 属 planner 域** ⇒ **不占 KPI slot、不需 builder** ⇒ 可与 L1/L2 **并行**推进(本轮已落 L3/L4/L5)。
+3. **E1 不可内部加速** ⇒ 唯一价值是**不漏检**(季度检索)⇒ **登记为周期项**,⛔ 不为其编造「内部替代品」(那会把外部阻塞伪装成内部待办)。
+4. ⛔ **本仓不做的事**:不为 4 族补 T1–T4 载体(无依据 ⇒ 推理填空)· 不把 UALink 的**记账级引擎**读成协议实现(per `ADR-CEP-12` SU 2026-11-07 ③)· 不改 `B3b-2` 计数(⛔ 0/4)· 不改已签发 DoD 结论(改判须新 SU + 回滚路径)。
+
+#### ⑤ 明确不做(本规划范围外)
+
+- ⛔ `git push`(用户裁决);
+- ⛔ 改 B1 / B2 / B3a / B3b-1 / B4 / B5 / B6 / B7 / B8 的**既有结论**(已签发,改判须新 SU);
+- ⛔ 为 `B3b-2` 补引擎 / 为 `directory_misses` 补产出者(后者已被 `ADR-CEP-06` SU#5 归位,反向操作需新 SU + 回滚 4 步);
+- ⛔ 回改 §11 台账的**任何**既有 Entry(append-only)。
+
+**总估时**:内部可推进项 = **L1 + L2 ≈ 1d(builder)** + **L3 + L4 + L5 ≈ 2.5h(planner,本轮已落)**;E1/E2 为**周期项**,按季度触发。
+
 ---
 
 ## §11 决策台账(append-only,per `rdd-planner/SKILL.md:158`)
@@ -15861,6 +15912,29 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑤ KPI**:**1/3 → 0/3**(5 处活文档已同步);`cep_doc_ref_check` 的 VIRTUAL_PATHS 登记归档前路径 + 归档后 main spec。
 
 **⑥ 关联**:**#272**(实施回执 + 2 处判据实现修正)· **#271**(第 2 项归档)· **#266**(RefKind 迁移 · **NIT 来源**)· **#262**(契约对齐先例)· **#261**(`required_plane_instances` 机制入契约面先例) · `.rddf/reviews/cep-refkind-whitelist-contract-verify.md` · `openspec/specs/cep-refkind-coverage/spec.md`
+
+### Entry #274 — 2026-11-07 [plan](**剩余任务盘点 + 后续执行路径** —— `B3b-2` 内部可推进量 = 0;遗留 5 项;周期项 2 项)
+
+**主题**:用户口令「切 planner 检查剩余的任务,并给出后续任务执行路径」。
+**角色**:planner(盘点 + 路径落盘 + 状态同步)。
+
+**① §6.2 剩余实测**:**12 条 DoD** 中 B1 ✅ / B2 ✅ 66/66 / B3a ✅ / **B3b-1 ✅ 2/2** / B4 ✅ / B5 ✅ / B6 ✅ / B7 ✅ 8/8 / B8 ✅ ⇒ **唯一未达成项 = `B3b-2` = 0/4 ⏭**(per `07 号` SU · 六 · Entry #264)⇒ **终态 DoD Go 维持挂起**。
+
+**② `B3b-2` 的内部可推进量 = 0(逐族 + 逐路径实测)**:D-4 四条路径中 **③(来源类型机制)与 ④(`CellKind::Free`)已落地**(Entry #252 / #256)⇒ **已耗尽**;**① 规范可读化**与 **② 人类成员条款摘要** = **外部条件 + 人力资源** ⇒ ⛔ 纯 AI 作业下不可推进 ⇒ 4 族(CXL 2.0 冻结 · CXL 3.0 / NVLink / UALink 受限)**均无内部出路** ⇒ ⛔ 任何「内部再干一轮把它变成 N/4」= **推理填空**。
+⚠️ UALink 于 2026-11-07 已交付**记账级专用承载引擎**(Entry #270)⇒ **流语义(弱档)已闭合**,但 ⛔ **不改计数**(仍 0/4)。
+
+**③ 内部可推进遗留 5 项**:**L1** CI 红线(13 个历史遗留格式化债,builder,~0.5d,🔴 **高**)· **L2** coverage 文档 `TileLink-C` 行 L4 档标注矛盾(标成 wire 档,实为 direct 档 ⇒ 对外误报,builder,~0.5d)· **L3** KPI baseline 行历史堆积(planner,~1h)· **L4** 3 处 improvement 状态漂移(planner,~0.5h)· **L5** `§10` 路径段过期(planner,~1h)。
+
+**④ 周期项 2 项**:**E1** D-4 ①/② 的**季度**外部检索触发探测 · **E2** 终态 DoD Go 的**季度**复审(2030-Q1 窗口未到期)。
+⛔ **不为 E1 编造「内部替代品」** —— 那会把外部阻塞伪装成内部待办。
+
+**⑤ 本轮(planner 域)已落 3 项**:**L3** `phase-10.md` / `roadmap.md` / `umbrella.md` / `nvlink-sharp.md` 的 KPI 行 **6.3~6.8K → 254~343 字符** + `obj §5.2` **8.5K → 941 字符**(历史流水**不丢**:§11 台账 append-only 完整承载)⇒ ⚠️ `docs_sync_check` 的 KPI 断言**只抓「当前/现行/真实」限定词** ⇒ 去堆积**不削弱判据**;**L4** 3 处 improvement 状态行 → 已归档;**L5** `§10` 追加「2026-11-07 后续任务实施路径」段(⛔ 不回改 2026-11-05 旧段 —— 旧段 A/B/C 三批已全部落地或改判,仅作历史留存)。
+
+**⑥ 后续执行路径**:**批 1 = L1 + L2**(builder,~1d,解除 CI 红线 + 对外误报)⇒ **批 2 = E1/E2 周期监控**(季度触发)⇒ **批 3 = 命中 E1 时重判该族 T1–T4** ⇒ 再决定是否补引擎 + L4 E2E。⚠️ L1/L2 属 builder 域 ⇒ **需切 builder**;planner 域已无可执行项(除 E1/E2 周期触发)。
+
+**⑦ 明确不做**:不为 4 族补 T1–T4 载体(无依据)· 不把 UALink 记账级引擎读成协议实现(per `ADR-CEP-12` SU 2026-11-07 ③)· 不改 `B3b-2` 计数(⛔ 0/4)· 不改已签发 DoD 结论(改判须新 SU + 回滚路径)· 不回改 §11 台账任何既有 Entry(append-only)。
+
+**⑧ 关联**:**#273**(白名单契约对齐归档)· **#271**(第 2 项归档)· **#270**(第 2 项实施)· **#269**(裁决 + oracle + critic)· **#268**(第 2 项立项)· **#264**(终态 DoD Go 挂起)· **#251**(DoD 拆分戊)· **#230**(2026-11-05 旧路径段 —— **已整体过期**)· **#261**(L2 的 SHOULD_FIX-2 来源)· **#252 / #256**(D-4 ③④ 已落地)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

@@ -5,7 +5,7 @@ phase: phase-10
 依赖:
   - ADR-CEP-12
   - ADR-CEP-11
-状态: 🟡 **提案**(2026-11-07,per 台账 Entry #263 —— 待 architect 裁决「来源清单双真源」+ oracle→critic 双审后实施)
+状态: ✅ **已完成并归档**(2026-11-07,per 台账 Entry #263 立项 → **#266** 实施(用户裁决「双真源 = 甲:类型标签统一 / 清单自治」)→ **#267** 归档;delta 合并进 `openspec/specs/cep-refkind-coverage/spec.md`)
 created: 2026-11-07
 ---
 
