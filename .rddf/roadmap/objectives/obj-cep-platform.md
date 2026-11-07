@@ -15957,6 +15957,34 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑤ 验证**:`ctest` **160/160**;`[cep]` **477 cases / 11116 assertions**;4 闸全绿(`docs_sync` / `doc_ref` / `decl_alignment` / `freeze`);M1 冻结面 **41 产物零 diff**(未触发授权)。
 
 **⑥ 关联**:**#274**(盘点 + 路径 · 批 1 定义)· **#261**(L2 的 SHOULD_FIX-2 来源 · rubric 两档裁决)· **#273**(白名单契约对齐归档)· **#271** / **#270**(第 2 项归档 / 实施)· **#269**(裁决)· **#264**(终态 DoD Go 挂起)· **#252 / #256**(D-4 ③④ 已落地)
+
+### Entry #276 — 2026-11-07 [build](**批 1 补完** —— coverage L4 档位**逐族实测** + 单档标注读法补记;Entry #275 §④ 的 backlog 经实测**消解**)
+
+**主题**:「继续推进」⇒ 落实 Entry #275 §④ 登记的 backlog(CHI RN-F 行 / CohIf 载体 行 的 L4 档单档标注)⇒ **逐族实测**后定案。
+**角色**:builder(实测 + 文档修正 + 验证)。
+
+**① 逐族实测(L4 档位的 4 族)** —— **实测,非文档措辞推断**:
+
+| 族 | `tick()` | 对端抵达断言 | 反向 fixture | 实测档位 | 结论 |
+|---|---|---|---|---|---|
+| **CHI RN-F** | ✅ `chi0->tick()` / `chi1->tick()` | ✅ `chi1->counters().foreign_events == 1u` | ✅ CR-10 ③(同拓扑换 Null 引擎 ⇒ **类型判据与抵达判据双红**) | **L4-wire** | ✅ 原标注**成立** |
+| **MESIF** | ✅ `m0->tick()` / `m1->tick()` | ✅ `m1->counters().flow_events[Request] == 1u` + `m0->request_emitted == 1u` | ✅ 同拓扑换 Null ⇒ 类型判据红 | **L4-wire** | ✅ 原标注**成立** |
+| **CohIf 载体** | ✅ `pe0->tick()` / `pe1->tick()` | ✅ 对端 `per_flow[Request] == 1u` | ✅ `broken` 配置 ⇒ `NotArrived` | **L4-wire** | ✅ 成立,但**标注信息量不足** ⇒ 已补 |
+| **TileLink-C** | ❌ 无 `tick()` | ❌ 无对端 | — | **L4-direct** | ❌ 原标注**误标** ⇒ 已在 Entry #275 修正 |
+
+⇒ ⚠️ **Entry #275 §④ 的 backlog 经实测**不成立** ⇒ **消解** —— CHI / CohIf 两行**不是**误标(其引擎**有** `write_to_egress` + 真实 adapter 搬运,与 TileLink-C 的零发射**不同型** ⇒ 不可类推结论)。
+⚠️ **本轮一处自我纠错**:实施初期据 `test_cep_chi_rnf_subset.cc` 的辅助注释「单测里没有 adapter 搬运」曾**疑** CHI 非 wire 档 ⇒ 读完整 case 后**证伪**(该注释只描述 `drain_egress` 辅助函数的适用场景;CR-10 端到端 case **确有**真实 adapter 搬运 + 对端断言)⇒ **未据局部证据改动**。
+
+**② 本轮改动(2 处)**:
+- **CohIf 载体行** L4 列由「✅」(信息量不足)⇒ 补判据形态:`submit → tick → 对端抵达`(`cohif_transaction_reaches_peer`:真 `ModuleFactory` 装配 + `pe0->tick()` 驱动 adapter 发出 + `pe1->tick()` 派发 + 对端 `per_flow[Request] == 1` 断言;**反向 fixture**:`broken` ⇒ `NotArrived`);
+- **rubric 段**补「**单档标注的读法**」:L4 列 **`✅`** = **L4-wire** 档;**`◐`** = **L4-direct** 档(逐族给出两档)⇒ 消除「`✅` 到底指哪档」的歧义 ⇒ 与「矩阵中逐族给出两档」并存而**不矛盾**(两档齐时用 `◐`,单档时用 `✅` 并由本读法定档)。
+⚠️ 表格结构**仍为 7 列**(逐行核对);该文档**无**文本断言消费者 + **不在 M1 冻结集** ⇒ **不触发** `--update --authorized-by` ⇒ 冻结清单**未**改动。
+
+**③ 验证**:`ctest` **160/160**;`[cep]` **477 cases / 11114 assertions**;4 闸全绿;M1 冻结面 **41 产物零 diff**。
+
+**④ 登记为 backlog(不做)**:coverage 矩阵的 L4 档位**无机器可判载体**(判据形态写在散文里)⇒ 未来**可能**再次漂移(TileLink-C 即为实例)⇒ 若要根治,需一条「矩阵 L4 档位 ↔ 各族测试的实际 `tick()`/对端断言/反向 fixture」的**扫描判据** ⇒ ⚠️ 需跨文件语义分析(判据形态 ⇒ 引擎发射行为)⇒ **本轮不做**,登记为**独立 backlog**。
+
+**⑤ 关联**:**#275**(批 1 · L1/L2)· **#274**(盘点 + 路径)· **#261**(rubric 两档裁决 · SHOULD_FIX-1/2)· **#273**(白名单契约对齐归档)· **#271** / **#270**(第 2 项归档 / 实施)· **#264**(终态 DoD Go 挂起)
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)

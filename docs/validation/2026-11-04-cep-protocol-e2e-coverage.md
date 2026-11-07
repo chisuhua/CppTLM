@@ -22,6 +22,7 @@
 ⛔ **不**经过 ChStream wire、**不**含 `tick()`、**不**有对端 ⇒ 「抵达」= 引擎内部计数器/状态机;
 **L4-wire** 才是本文档原口径的「wire 真穿过 + tick + 对端收到」。
 ⇒ 矩阵中**逐族**给出两档,⛔ 不得把 L4-direct 读成 L4-wire。
+📌 **单档标注的读法(2026-11-07 补记)**:L4 列的 **`✅`** = 该族已达 **L4-wire** 档(「`tick()` + 对端抵达断言」+ 反向 fixture);**`◐`** = 该族达 **L4-direct** 档而**未**达 wire 档(逐族给出两档)。⚠️ 该读法**逐族实测核过**(per 台账 Entry #276):CHI RN-F / MESIF / CohIf 载体 **三族均有**「tick + 对端抵达断言 + 反向 fixture」⇒ **wire 档成立**;TileLink-C 与 MOESI-GPU **零发射** ⇒ **direct 档**。
 
 ---
 
@@ -31,7 +32,7 @@
 |---|:---:|:---:|:---:|:---:|:---:|---|
 | **CHI RN-F** | ✅ `test_cep_chi_rnf_subset.cc`(1322 行) | ✅ | ✅ CR-10③ | ✅ `submit → tick → 分派` | — | `chi_rnf_protocol_engine.hh`(648) |
 | **MESIF** | ✅ `_adapter` / `_state_spec` / `_ratification` | ✅ | ✅ `instantiateAll` | ✅ `submit_local_request → tick → 对端` | — | `mesif_protocol_engine.hh`(667) |
-| **CohIf 载体** | ✅ `test_cep_cohif_carrier.cc` | ✅ | ✅ `_json_assembly`(11 处) | ✅ | — | `CohIfNullProtocolEngine`（**Null 语义**） |
+| **CohIf 载体** | ✅ `test_cep_cohif_carrier.cc` | ✅ | ✅ `_json_assembly`(11 处) | ✅ `submit → tick → 对端抵达`(`cohif_transaction_reaches_peer`:真 `ModuleFactory` 装配 + `pe0->tick()` 驱动 adapter 发出 + `pe1->tick()` 派发 + 对端 `per_flow[Request] == 1` 断言;**反向 fixture**:`broken` 配置 ⇒ `NotArrived`)| — | `CohIfNullProtocolEngine`（**Null 语义**） |
 | **MOESI-GPU** | ✅ `_adapter`(442) / `_compensation`(324) + `_engine`(6 cases,2026-11-06) | ✅ **`moesi_gpu`** | ✅ `cep_moesi_gpu_pe_minimal.json` + **真跑 `instantiateAll`**(per Entry #259/#261) | ◐ **L4-direct** ✅(`submit_local_request → 状态机` + 10 流记账)/ **L4-wire** ❌(引擎按决策 M-6「只记账」,**零发射** ⇒ 无 wire/无 tick/无对端;per Entry #259/#261) | — | `moesi_gpu_protocol_engine.hh`(306) |
 | **CXL 2.0 非对称** | ✅ `test_cep_cxl_cache_adapter.cc`(209) + `_state_spec`(451) | ✅ `cxl_2_0` | ❌ | ❌ | — | ❌ **无** |
 | **CXL 3.0 对称 DCOH** | ✅ `_adapter`(188) / `_tracker`(355) / `_state_spec`(329) | ✅ | ❌ | ❌ | — | ❌（`DcohSymmetric` tracker 有行为面） |
