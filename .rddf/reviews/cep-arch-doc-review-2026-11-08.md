@@ -1,0 +1,84 @@
+# CEP 架构文档内容审查 · 评分报告
+
+- **审查对象**:`docs/adr/ADR-CEP-*.md`(22 份)+ `docs/architecture/07-coherence-exploration-platform.md`(真源 1)+ `docs/designs/**`
+- **角色**:architect(2026-11-08)
+- **方法**:每维度先定**机器可取信号**,再据信号打分 ⇒ **不打感觉分**;扣分项须给出**可执行的修订路径**
+- **结论**:**48 / 60 = 80%** —— 契约面**可信且可机器判**,**结构与状态治理**是主要短板
+
+## 〇 · 取证快照(全部实测)
+
+| 信号 | 值 |
+|---|---|
+| ADR 份数 / 总行数 / SU 段 | 22 / 9,085 行 / **76** 个 Status Update |
+| ADR 状态分布 | **✅ 已签发 5** · **🟡 起草中 17** |
+| ADR 结构完整性 | 背景 22/22 · 决策 22/22 · 不变量 22/22 · 关联 22/22 · **Verification 缺 14/22** |
+| invariant 覆盖 | **66/66** = 61 有牙载体 + 5 授权⏭(`cep_invariant_map` 闸绿) |
+| CEP 守门脚本 / 注册 ctest | **32** / **30**(2 个刻意不注册:实验运行器 · cadence 季度脚本) |
+| `07 号` 体量 | **2,004 → 2,094 行** · 41 一级节 · 103 二级 · 13 SU 段 · 最长行 **1,505 字符** |
+| 概念口径重复度 | 「声明≠装配≠语义」**1 次/1 份** · 「弱档」5 次/2 份 · 「fail-closed」9 次/2 份 ⇒ **无概念层膨胀** ✅ |
+| 闸绿态 | `docs_sync` / `doc_ref` / `decl_alignment` / `freeze` 全 rc=0;`ctest` **164/164** |
+
+## 一 · 维度评分
+
+### D1 契约一致性(ADR↔ADR↔07 号↔实现)—— **9 / 10**
+
+- **加分**:4 闸全绿 ⇒ 声明映射双向对齐、对外引用零漂移、冻结面 provenance 完整;`ADR-CEP-19` 决策 9 与 `07 号` SU·七/八/九 的**交叉引用逐条可解析**。
+- **扣 1 分**:**17 份 ADR 停在「🟡 起草中」**却承载 76 个 SU 段与 200+ 处 invariant 引用 ⇒ 「已决 / 未决」在文档面上**不可判** ⇒ 读���无法区分「这是已生效的契约」还是「这是草稿」。
+
+### D2 可机器判性 —— **9 / 10**
+
+- **加分**:invariant **66/66** 逐条有牙载体(5 条授权⏭ 带触发条件);**32** 个守门脚本;**5 类决定性变异**已实测按固定签名变红(`BODY-FIELD-FORBIDDEN` / `DOC-URL-IN-METADATA-SLOT` / `COVERAGE-GAP` / `SUBJECTIVE-CRITERION` / `DEFERRAL-TRIGGER-DRIFT`);闸自身带**影子副本 + 真源 sha256 复原**校验。
+- **扣 1 分**:**14/22 份 ADR 无 `Verification` 段** ⇒ 其判据**没有前瞻验收清单** ⇒ 与本仓 architect 契约「必备四要素(含 Verification)」不符 ⇒ **可机器化的结构缺口**。
+
+### D3 诚实性与证据强度 —— **8 / 10**
+
+- **加分**:状态词带**维度限定**(§11「✅ 行为化」/ §11「🟡 部分落地」);`⏸ 已登记,未排期` + 「不作承诺」明文;deferral 登记与 DoD 计数分离(`登记 ≠ 达成`);探测结果三态 `hit|miss|unknown`;「弱档」**禁单独出现**的纪律已落。
+- **扣 2 分**:① 「**弱档**」在 `ADR-CEP-12` 仍**单独出现 2 次**(与「必须全称」的纪律有张力);② 「**已落地**」的历史表述未逐处回核维度(仅 SU·七/八 澄清了 §11 两行)⇒ 读者仍可能把历史行的「已落地」外推到「可装配」。
+
+### D4 可追溯性 —— **9 / 10**
+
+- **加分**:M1 冻结面 **41 产物** hash + **provenance 链**(授权 Entry → 产物 commit → 清单单独 commit → 无参复验);台账 **284 Entry** append-only;ADR 全部含「关联真源」;指针可达性由 `cep_doc_ref_check` 覆盖。
+- **扣 1 分**:本轮暴露**路径引用转写盲点** —— oracle 原稿只给文件名 ⇒ architect 补目录补错(`cohif_noc_bridge` ⇒ 目录错),**critic 两轮未抓出**,最终由 `cep_doc_ref_check` 拦下 ⇒ ⇒ 「人工转写的路径」**无独立机器核验环节**(闸在 commit 后才拦 ⇒ 缺陷曾流到 `origin/main`)。
+
+### D5 结构与可导航性 —— **5 / 10** ⬅ **最大短板**
+
+- **扣分**:① `07 号` **2,094 行 / 41 一级节 / 13 SU 段** ⇒ 追加层与主体同量级,而**原头部无章节索引** ⇒ 导航成本高;② 「**版本史**」单行 **1,505 字符**(堆 13 个 SU 标题)⇒ 与 KPI 行同类;③ 表格行天然长(1,310~1,355 字符)⇒ 可接受;④ 22 份 ADR **共 9,085 行**、⛔ **无跨 ADR 索引**(只在本仓 AGENTS.md 里有 ADR 名录)。
+- **本轮修订**:新增 **`07 号` §0 文档索引**(脚本生成:41 一级节 + 13 SU 的日期/主题/Entry/行号 + 5 个关键表指针)⇒ 并声明「原版本史行是历史堆积,**以本索引为准**」(⛔ 不回改该行,append-only)。
+
+### D6 变更治理 —— **8 / 10**
+
+- **加分**:ADR/架构文档 **append-only + Status Update** 纪律执行彻底(76 段 SU,⛔ 零回改);冻结面**两步授权**(授权 Entry → 产物 commit → `--update --authorized-by` → 清单**单独** commit → 无参复验);台账 append-only 块;KPI 单一真源与实测对齐。
+- **扣 2 分**:① **17 份 ADR 长期「起草中」**(与内容承载量不匹配)⇒ **状态治理缺口**(逐份收敛需 architect 工作量);② **14 份 ADR 缺 Verification** ⇒ 判据无前瞻验收清单 ⇒ 需**带 deferral 登记的闸**(本仓成熟范式:`cep_invariant_deferrals.json`)逐步收敛。
+
+## 二 · 扣分项 → 修订路径(可执行)
+
+| # | 扣分项 | 维度 | 修订动作 | 归属 | 估时 |
+|---|---|---|---|---|---|
+| **F-1** | `07 号` 无章节索引 + 版本史行 1,505 字符 | D5 | ✅ **本轮已落**:`07 号` **§0 文档索引**(脚本生成,41 节 + 13 SU + 5 表指针);⛔ 不回改版本史行 | architect | ✅ done |
+| **F-2** | 14/22 ADR 缺 `Verification` 段 | D2 | 建**带 deferral 登记**的闸(`cep_adr_structural_check.sh` + `test/cep_adr_structural_deferrals.json`:14 条逐条 `{id, reason, trigger_condition, ledger_entry}`)⇒ 逐步收敛;⚠️ **闸的脚本属 builder 域** | builder | ~0.5d |
+| **F-3** | 17 份 ADR「起草中」与内容承载量不匹配 | D1/D6 | 逐份核对「决策已定稿 / 不变量闭合 / 有回滚路径」⇒ 达标者转 `✅ 已签发`;未达标者明确标注「实施中契约」⇒ ⚠️ **不可批量签发**(误签发 = 治理事故)⇒ 需**分批**裁决 | architect(分批) | ~1d/批 |
+| **F-4** | 「已落地」历史表述的维度外推风险 | D3 | 逐处核「✅」的**维度词**(能力 / 行为化 / 载体 / 装配 / 语义)⇒ 缺的补维度限定(⛔ 不回改历史行 ⇒ 走追加澄清) | architect | ~0.5d |
+| **F-5** | 「弱档」单独出现 2 次 | D3 | 追加澄清:该 2 处须全称「公开非规范来源 + pending + fail-closed」(⛔ 不回改 ⇒ 与 F-4 同批追加) | architect | 合入 F-4 |
+| **F-6** | 人工转写路径无独立机器核验 | D4 | 提交前**逐条核对仓内路径存在性**(`cep_doc_ref_check` 已是该载体,但**须在 commit 前**跑,而非 commit 后)⇒ 写入 builder 的提交纪律 | 流程 | 0 |
+
+## 三 · 与「DoD 达成度」的区分(⛔ 不可混读)
+
+- **本报告的 80% 是「架构文档质量分」**,⛔ **不是** `obj §6.2` 的 DoD 达成度(后者 = **11/12 条达成**(`B3b-2` 0/4 ⏭ 未达成)⇒ 终态 Go 挂起);
+- ⇒ 二者**不得互相覆盖**:文档质量高 **不**推出协议语义达成;`B3b-2` **维持 0/4**。
+
+## 四 · 复核命令(可复现)
+
+```bash
+# D1/D6 闸绿态
+bash scripts/test/cep_docs_sync_check.sh; bash scripts/test/cep_doc_ref_check.sh
+bash scripts/test/cep_decl_alignment_check.sh; bash scripts/test/cep_freeze_check.sh
+# D2 载体覆盖 / 闸数 / 状态分布
+grep -c '^## Status Update' docs/adr/ADR-CEP-*.md | wc -l   # SU 段总数
+grep -l '起草中' docs/adr/ADR-CEP-*.md | wc -l               # 起草中份数
+ls scripts/test/cep_*.sh | wc -l                              # 守门脚本数
+# D5 体量
+awk 'END{print NR}' docs/architecture/07-coherence-exploration-platform.md
+awk '{ if (length($0)>m) m=length($0) } END{print m}' docs/architecture/07-coherence-exploration-platform.md
+```
+
+**关联**:台账 **Entry #285**(审查 + 修订回执)· **#282 / #284**(4 条裁决 · 路径更正)· **#280**(SU · 七)· `.rddf/reviews/cep-refkind-whitelist-contract-verify.md`(验收报告同族)
