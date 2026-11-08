@@ -403,7 +403,7 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 | 拓扑 | 形态 | 承载的判据 | 边界 |
 |---|---|---|---|
 | **A(直连)** | `TrafficGenTLM → StubCacheEndpointTLM → ChiRnfProtocolEngine ⇄ ChiRnfProtocolEngine` | **全绿载体**:13 键全有值 + IC3 闸门绿 + 端到端响应完整 | — |
-| **B(经网络)** | 同上,但经 `cohif_noc` 桥 ⇢ `NoCFlit` ⇢ ChStream `connections`(带 latency)⇠ 桥 | 互联可达 + **桥投影正确**(`pack_cycles`/`unpack_cycles` 对称)+ flit 路径 | ⛔ **有损投影**(flow_id 5→3)⇒ ⛔ **不承载** canonical 10 流的完整语义 ⇒ ⛔ **不承载全绿**;⚠️ 桥的**挂载点**与 **J-7 的测量腿**(层 1 有损投影 / 层 2 payload 无损)**待裁** |
+| **B(带延迟 + 投影登记)** | Stub↔引擎 与 引擎↔完成者 均走**带 `latency` 的 ChStream `connections`**;三个 CohIf 端点**共挂一个** `cohif_noc` bridge entry(同一**投影语境**) | **互联可达**(经带延迟的连接,⛔ **不经**桥)+ **桥投影**(测试级 `pack`/`unpack` 断言) | ⛔ **有损投影**(flow_id 5→3)⇒ ⛔ **不承载** canonical 10 流的完整语义 ⇒ ⛔ **不承载全绿**;⚠️ **如实命名**:「网络」= ChStream 连接延迟,**非** Router/flit 路径(仓内不存在)⇒ ⛔ **不得**宣称 flit 级路径 |
 
 ### ④-a 「完成者」角色的裁决(用户裁定,2026-11-08)与**拓扑准入判据**
 

@@ -2155,6 +2155,12 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 
 ⚠️ **三条实施期约束(自 oracle / metis 复核)**:① **拓扑 A 必须省略 `cep.bridges` 键**(⛔ **空数组 `[]` 是 FAIL `[IAG-01]`**,⛔ 非 SKIP)⇒ ⇒ **J-1 按拓扑分档**(A: 闸 `SKIP` **属正确语义、非缺陷**;B: 闸 `PASS`);② 拓扑 A 的判据 **⛔ 不得**含 `unconsumed_bridges().empty()`(`cohif_noc` 是**全局注册**的,拓扑 A 不消费它 ⇒ 该断言必假);③ **跨 bridge entry 的模块必须互斥** —— `ProtocolEngineBase::bridge_` 是**单槽**且 `attach_protocol_bridge` 直接 `set_bridge()` **赋值** ⇒ 重叠 ⇒ **桥被静默覆盖**而 `instantiateAll` **仍返回 true** ⇒ ⇒ ⛔ **不得**让同一模块出现在两个 entry;⇒ 建议在 Step 7.5 增「同一模块被多个 entry 挂载 ⇒ 失败」的重挂检测(**独立 backlog**,⛔ 不在本轮)。
 
+### ①-c 桥挂载结构裁定(2026-11-08,用户)+ 拓扑 B 的**如实命名**
+
+**裁定 = B-1 + 显式语义降级**:**一个** bridge entry,`modules:[StubCacheEndpointTLM, ChiRnfProtocolEngine, CohIfResponderTLM]` ⇒ ⇒ **零代码、零新机制**;语义降级 = 「**一个 entry 多模块 = 同一 CohIf 投影语境**;端点间链路关系由 `connections[]` 独立表达;⛔ 桥不建模星型 / 两两互联,⛔ 桥不产连通性**」⇒ ⇒ **J-7** 改为「测试级 `pack`/`unpack` 断言 + 逐模块 `bridge()->bridge_id()` 指向**同一投影语境**」(⛔ **不**声称 per-endpoint 归因)。
+
+**拓扑 B 的如实命名**:**「网络」= ChStream `connections` 的延迟属性;桥 = 装配期投影登记器** ⇒ ⇒ ⛔ **不**宣称 flit 级路径(仓内**不存在** Router+flit 路径)⇒ ⇒ 拓扑 B 的名称/描述 SHALL 如实反映这一点。
+
 ### ② ⚠️ 实施前的文档纪律(**不得**预先宣称)
 
 - 本段登记的是**架构决策**,⛔ **不是**落地事实 ⇒ ⇒ 凡本段涉及的文档面 **不得**出现「已具备端到端可测能力」「TrafficGen 已接入 CEP」「13 键已全绿」类表述;
