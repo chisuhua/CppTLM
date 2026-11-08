@@ -978,3 +978,47 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 
 **关联**:台账 **Entry #295**(授权)· **#293**(裁定 2:台账元数据 7 字段 —— 本段为其提供对账载体)· **#292**(D-9 元数据字段的原始裁决)· `07 号` **SU · 十三** ③(「不裁决 retention」的指针)/ **SU · 十四** ② · `.gitignore` · `experimental/metrics.schema.json`(含 `memory_violation_kinds`)· `test/cep_experiment_harness.hh`(写出该字段)· `tools/run_sweep.py` · `tools/render_report.py`(summary/badges 可再生;CDF 需 trace)
 
+
+## Status Update(2026-11-09,per 台账 Entry #304)—— **三键测量归属**的落地口径 + 「**框架验证 run**」的**证据边界**(⛔ 非实验证据 run)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文与既有 SU(尤其决策 1 ~ 5 与 SU 2026-11-08 · 二 的 retention 裁定 —— **逐字保留不回改**);⛔ **零** schema 改动(`experimental/metrics.schema.json` 与 `experimental/preregistration.json` **零 diff**);⛔ 新增 invariant 数 = **0**。
+> **触发**:change **`cpptlm-cep-stub-cache-chstream-surface`** 的实施闭环(台账 Entry #297 ~ #303)+ 用户 2026-11-09 口令「切 architect 做 A9.2」。
+> **审查**:`oracle`(三键归属口径与证据边界)—— 单审 oracle(「只同步实施态」档),⛔ 不启 critic 双审。
+
+### ① 三键的**测量归属**(per `07 号` SU · 十一 ① 的 D-8 ②「待定」项落地)
+
+| 键 | 本装置的**产出者** | 口径 | 落法 |
+|---|---|---|---|
+| `coherence_stalls` | ✅ **有** —— `StubCacheEndpointTLM` 的 in-flight 观测 | 「**in-flight 非零的周期数**」(因一致性请求未完成而停顿) | **实测值** |
+| `collective_stalls` | ❌ **无** —— 本拓扑**不绑定** collective plane | — | `not-collected` + reason「本装置无 collective plane 绑定 ⇒ 无产出者」 |
+| `directory_misses` | ❌ **无** —— 本拓扑**不挂** directory / sharer tracker | — | `not-collected` + reason「本装置无 directory / sharer tracker ⇒ 无产出者」 |
+
+⚠️ **「真实 0」口径的落法**(逐字):「**实测 0**」与「**未测量**」**不得同形** ⇒ 每键必须落成二者之一 —— ① **实测值**(可为 0,但**必须**登记进 `measured`)+ 产出者口径;② `not-collected` + **非空 reason**;⛔ 不得为凑「13 键全有值」给未测键填 0。
+⇒ **机器可判点**:`cep_exp::metrics_13_covered()`(逐键:实测 **或** `not-collected` + 非空 reason,否则判红并返回首个缺结论的键名)。
+
+### ② 「**框架验证 run**」的证据边界(⛔ **非**实验证据 run)
+
+- **run class** = `framework-verification`(`simulation_config.json` 的 `run_class` + `not_an_experiment_run: true`);`hypothesis_id` = **`framework-e2e`** ⇒ ⛔ **不在** `experimental/preregistration.json` 的 `registered` 行内 ⇒ ⛔ **不绑定**任何预登记假设;
+- ⇒ ⛔ **不得**作 **B4** 达成证据 · ⛔ **不得**改任何 hypothesis 结论 · ⛔ **不得**作任何一致性安全断言(IC3 = **⚪ 不适用**)⇒ 用途**仅** = **可对账**;
+- ⚠️ **为何不绑 `H3`**:H3 的预登记 out-of-scope = {`coherence_stalls`, `collective_stalls`, `directory_misses`} ⇒ **延迟族 5 键必须实测**;而本装置**无已完成往返**(框架层 dual-port 入向路由恒落 PE 侧 ⇒ 回程不可达)⇒ 延迟族**无样本** ⇒ 绑 H3 会违反「未列入 out-of-scope 者**必须实测**」;⛔ 且**不得**事后扩 `preregistration.json`(明令禁止)⇒ ⇒ 只能落为**框架验证 run**(详见 `07 号` SU · 十五 ② ②);
+- ⚠️ **IC3 三态**的产出者 = `cep_exp::ic3_verdict()`(词表**逐字** = `✓ 通过` / `❌ 违例 fail` / `⚪ 不适用`;⛔ 违例类任一 `not-collected` ⇒ **⚪ 不适用**,**优先于**「通过」)⇒ 本 run 落 **⚪ 不适用**;
+- ⚠️ **第 5 句边界(补)**:本 run **不在受监管的实验 emit 路径上** —— 专用标签 `[cep][e2e][framework-emit]`(⛔ 不共用 `[cep][exp][emit]`,那个过滤器属于 h2/h3/h4/h6 的预登记 run)+ `CEP_EXP_ID` 守卫(非 `framework-e2e` ⇒ 不产出)⇒ ⇒ **不会覆盖**预登记 run 的产物(该防护由台账 Entry #303 ⑤ 的实测缺陷促成);
+- **retention 丙 的两件入库**(per SU 2026-11-08 · 二)维持:仅 `metrics.json` + `simulation_config.json` 入库;`trace.h5` / `report.html` **不入库**;⛔ 「**登记 ≠ 可复算**」——入库件只提供 ① **对账**(`metrics_sha256` ↔ 仓内文件)② **13 键逐键复核** ③ **可复跑**(同 config 快照 + 同种子 + 同 git rev + 同工具链)⇒ ⛔ **不**提供 bit-identical 复现(跨 stdlib 非位精确)· ⛔ **不**提供 trace 级可复核性;
+- ⚠️ **首批入库 run 的字面追认**:SU 2026-11-08 · 二 ③ 的「首批 = **h3 升级 run** 及以后」**字面**与本轮实际(首批 = **框架验证 run** `cep-e2e-2026-11-09-a`)不符 ⇒ 本段**追认**该字面为「首批 = **有台账条目的 run**(首批 = 框架验证 run)」⇒ ⛔ 不回改 SU 2026-11-08 · 二 原文。
+
+### ③ 台账 7 字段与**双向闸**的落地形态
+
+- **7 字段**:`run_id` · `config_sha256` · `metrics_sha256` · `metrics_13` · `verification_mode` + `verification_scope` · `ic3_verdict` + `hypothesis_id` · `topology_tag`;载体 = **两处并存**(台账散文段 + `test/cep_e2e_runs.jsonl`);
+- ⚠️ **`config_sha256` 的口径 = 拓扑 config 文件的指纹**(⛔ **不含** provenance ⇒ 否则「配置指纹」退化为「环境指纹」,对账语义被稀释);⚠️ **追认 F-12 的字面**:F-12 SU 的 `config_sha256` 原文 = 「`simulation_config.json` 的 sha256」⇒ 本段以**取代**方式追认该口径(run 侧另列 `simulation_config_sha256` 字段锚定该文件)⇒ ⛔ **不回改** F-12 原文;⚠️ **闸的覆盖限制**:双向闸只校验 `metrics_sha256` 与文件存在性,**不**校验 `config_sha256` 指向哪个文件 ⇒ 该口径由**本段文本**承担(⛔ 不得读成机器已判);
+- **双向闸** = `scripts/test/cep_e2e_reconcile_check.sh`:① 零 orphan(仓内**已提交** `experimental/run-*/metrics.json` ⇒ 必有台账条目)② 反向零 orphan(台账条目 ⇒ 文件存在且被 git 跟踪)③ `metrics_sha256` 相等 ④ 7 字段齐备 ⑤ verdict 三态词表;**grandfather**:历史 **127** run **不回填** ⇒ 只覆盖**首批入库**的 run。
+
+### ④ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**;**新增 invariant 数 = 0**
+- [ ] ① 的三键**产出者 / 口径 / 落法**逐条登记;「真实 0 ≠ 未测量」的落法**逐字**登记
+- [ ] ② 的证据边界**五句**齐备(⛔ 非 B4 证据 · ⛔ 非一致性安全断言 · ⛔ 不改 hypothesis 结论 · 用途仅 = 可对账 · **不在受监管 emit 路径上**)+ 不绑 `H3` 的理由齐备;⛔ `preregistration.json` **零 diff**
+- [ ] ③ 的 7 字段 + `config_sha256` 口径(**含 F-12 字面的取代追认句**)+ 双向闸 5 项 + grandfather 边界齐备;⛔ 未把「闸不校验 `config_sha256` 指向」写成机器已判
+- [ ] ⛔ `experimental/metrics.schema.json` / `experimental/preregistration.json` **零 diff**;⛔ `FROZEN_GLOBS` 未变;**`B3b-2` 维持 0/4**
+- [ ] 冻结面两步授权已执行:台账 **Entry #304** 授权 → **commit 本段 + `07 号` SU · 十五 + `ADR-CEP-19` SU** → `cep_freeze_check.sh --update --authorized-by "Entry #304"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #304**(授权)· **#303**(首批 run 入库 + 双向闸 + 7 字段台账)· **#302**(A7 三键归属 + IC3 三态产出者)· **#295**(retention 丙)· **#293**(台账 7 字段裁定)· `07 号` **SU · 十五** · `ADR-CEP-19` SU 2026-11-09 · 一 · `test/cep_e2e_runs.jsonl` · `scripts/test/cep_e2e_reconcile_check.sh` · `test/cep_experiment_harness.hh`

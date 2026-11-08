@@ -575,3 +575,42 @@ stub 是 RN ⇒ miss 时发起 `request` 并**挂起等 `completion`**;而**全�
 
 **关联**:台账 **Entry #293**(授权)· **#292**(本 ADR SU · 二 · 待裁登记 + 双审闭环)· **#291**(落地义务清单 A-4)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(F-05)· `07 号` **SU · 十三** · `ADR-CEP-06` SU 2026-11-08 · `ADR-CEP-12` SU 2026-11-08 · `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/protocol_instance.schema.json` · `scripts/test/cep_decl_alignment_check.sh` · `scripts/test/cep_decl_reverse_verify.sh` · `test/test_cep_source_registry.cc`
 
+
+## Status Update(2026-11-09,per 台账 Entry #304)—— **决策 9 的实施后状态**(端口面 wrapper + home 简化模型 **已落地**)+ 与 SU ④ 的**形态差异**登记
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文与既有 SU(尤其**决策 9** 及其**四条理由** —— **逐字保留不回改**);⛔ 不改决策 1 ~ 8 与决策 10+ 的任何一条;⛔ 零契约面 / 声明面改动。
+> **触发**:change **`cpptlm-cep-stub-cache-chstream-surface`** 的实施闭环(台账 Entry #297 ~ #303)+ 用户 2026-11-09 口令「切 architect 做 A9.2」。
+> **审查**:`oracle`(本段的实施态判定与形态差异口径)—— 按 architect 的审查档位,本段属「**只同步实施态 / 改措辞**」⇒ **单审 oracle**,⛔ 不启 critic 双审。
+
+### ① 决策 9 的**延期项已实施**(延期态 → 实施态 → **已交付**)
+
+| 决策 9 的四条理由(SU 2026-11-08 ① 的核对表) | **实施后状态** | 证据 |
+|---|---|---|
+| ① spec 在 `FROZEN_GLOBS` 内 ⇒ 解它必 MODIFIES 份冻结 main spec(两步授权 + 台账 Entry) | ⚠️ **delta 已按授权执行** —— 台账 **Entry #297** 授权 `:56` **单条** MODIFIES;delta 与 main spec 的 diff = **锚点仅 `:56` 一处**(1 行替 2 行);⛔ **main spec 合并尚未执行**(随归档 T9.3,走 Entry #297 授权链) | `openspec/changes/cpptlm-cep-stub-cache-chstream-surface/specs/cep-stub-cache-core/spec.md` |
+| ② spec 的 mock 约束 / 三词禁令 | ✅ **mock 约束已按授权解除**;⛔ **三词禁令继续成立**(`forward_data` / `back_invalidate` / `barrier` 仍**不在** stub 对外接口出现) | 同上(delta 只改 `:56` 一行) |
+| ③ stub 是 testbench 定位的**纯类** | ✅ **纯类零 diff 被保全** —— `StubCacheEndpointTLM` 以**组合式 wrapper** 持有 stub 实例;⛔ 不给 stub 加端口面 | `include/tlm/cep/stub_cache_endpoint.hh` + `stub_cache_core.hh` **零 diff** |
+| ④ 它**应该** `registerObject` + `ChStreamAdapterFactory::create` | ✅ **缺口闭合** —— wrapper 与 home 模型**均** `registerObject` 过(wrapper 走 `registerDualPortAdapter` 异构双端口;home 走 `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` 对称) | `include/chstream_register.hh` + 判据 SCE-05 / SCE-09 |
+
+⇒ ⇒ **决策 9 的延期项 = 已交付**(change `cpptlm-cep-stub-cache-chstream-surface`,⛔ **不改名**)。
+
+### ② 与本 ADR SU ④(两拓扑)**的形态差异**(实施态如实登记;⛔ 不回改原文)
+
+- **拓扑 A**:SU ④ 写 `TrafficGenTLM → StubCacheEndpointTLM → ChiRnfProtocolEngine ⇄ ChiRnfProtocolEngine ⇄ CohIfResponderTLM`;**实施态** = `TrafficGenTLM → StubCacheEndpointTLM → CohIfResponderTLM`(3 模块)⇒ **引擎对未采纳**;理由:RN-F **不服务** `request`(只记 `foreign_event`、**不回 Completion**)⇒ 业务事务必须**直连 home**。
+- **拓扑 B**:SU ④ 的「三端点共挂一个 `cohif_noc` bridge entry」**已落地**(`modules = [StubCacheEndpointTLM, ChiRnfProtocolEngine, CohIfResponderTLM]` · 显式 `bridge_id = 7`);**业务路径** = `w.1 → home.0`(带 `latency = 3`),`chi` 走**装配面**(`chi.0 → home.1`)⇒ ⇒ 「**互联可达**」(经带延迟的 `connections`,⛔ 不经桥)与「**桥投影**」(测试级 `pack`/`unpack` + 逐模块同 `bridge_id`)仍是**两条独立判据**(per SU 2026-11-08 ①-b)。
+- **SU ④-a 的两项实施义务**:① 「wrapper 与完成者均需新增 `attach_protocol_bridge` override」⇒ ✅ **已落地**(两者均实现 + **只读桥指针**访问器);② 「拓扑 B 的「全绿」不可达 ⇒ 待裁 D-0」⇒ ✅ D-0 已裁并**落地**为 `CohIfResponderTLM`。
+- ⚠️ **「全绿」未达成(残余)**:IC3 = **⚪ 不适用** + 延迟族 `not-collected` ⇒ ⛔ 拓扑级未闭合「全绿 run」;**根因 = 双重成因**:① 框架层 `include/framework/dual_port_stream_adapter.hh` 的 `DualPortStreamAdapter` 只 override **单参** `process_request_input`(填 `pe_req_in()`,不看 `pkt->type`)⇒ 基类回退 ⇒ net 侧入向(含 home 回程)**恒落 PE 侧**(`include/framework/` 红线 ⇒ 本轮零改动);② 拓扑 A/B 的 home 配 `emit_completions: false` ⇒ 回程**在模块内被抑制** ⇒ ⇒ **双条件**修完才有延迟样本(详见 `07 号` SU · 十五 ② ①)。
+
+### ③ 计数与声明面纪律(逐字)
+
+- `B3b-2` **维持 0/4**;`include/tlm/cep/protocol_instances.json` 与 `protocol_instance.schema.json` **零 diff** ⇒ **home 简化模型不进声明面**(裁定 **甲**),且由契约面 delta 的**豁免登记 4 项**兜底。
+- ⛔ 本段**不**宣称任何协议族的**条款级语义**已实现(⛔ 本 change 只提升**可实验性**)。
+
+### ④ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**(**决策 9** 与其四条理由**逐字保留**)
+- [ ] ① 的四条理由**逐条**给出实施后状态与证据;⇒ **决策 9 已交付**的结论可复现(⛔ 其中「main spec 合并」**未**执行,已如实标注)
+- [ ] ② 的形态差异(A 的引擎对未采纳 / B 的 `chi` 走装配面 / 「全绿」残余)已登记;⛔ SU ④ 原文未回改
+- [ ] ③ 的零 diff 四项与 `B3b-2` 0/4 复验通过
+- [ ] 冻结面两步授权已执行:台账 **Entry #304** 授权 → **commit 本段 + `07 号` SU · 十五 + `ADR-CEP-06` SU** → `cep_freeze_check.sh --update --authorized-by "Entry #304"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #304**(授权)· **#297**(A0 授权 `:56` 单条 MODIFIES)· **#288**(决策 9 解除条件)· **#293**(声明面裁定 甲)· `07 号` **SU · 十五** · `ADR-CEP-06` SU 2026-11-09 · 一 · `openspec/changes/cpptlm-cep-stub-cache-chstream-surface/`

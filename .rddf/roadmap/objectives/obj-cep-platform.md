@@ -17051,6 +17051,39 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 
 
+
+### Entry #304 — 2026-11-09 [architect](**A9.2 授权**:3 份冻结面文档的「实施后状态」SU 追加)+ oracle 复核的 4 处修正)
+
+**主题**:change `cpptlm-cep-stub-cache-chstream-surface` 的 **A9.2**(architect 域)—— 给 3 份冻结面文档追加「实施后状态」SU;本 Entry 是**冻结面两步授权链的授权条目**。
+**角色**:architect(A9.2 + 审查)· builder(A0~A9 已实施 · A9.2 交办)· verifier(待验收)。
+**KPI**:Proposed **1/3**(不变)。
+
+**① 授权范围(冻结面 · 追加 SU,⛔ 不改任何既有正文/决策/既有 SU)**:
+| 文件 | 追加内容 |
+|---|---|
+| `docs/architecture/07-coherence-exploration-platform.md` | **SU · 十五**(SU · 十一 ① 的 **10 条决策**实施后状态 + **残余缺口/偏离**登记)⇒ **插在文末索引之前**(per Entry #295 新纪律) |
+| `docs/adr/ADR-CEP-19-cohif-carrier-and-protocol-bridge.md` | **SU(2026-11-09)** —— **决策 9 的实施后状态**(四条理由逐条)+ 与 SU ④ 的**形态差异** |
+| `docs/adr/ADR-CEP-06-experiment-protocol.md` | **SU(2026-11-09)** —— **三键测量归属**落地口径 + 「**框架验证 run**」的**证据边界** |
+
+**② ⚠️ 与既有授权链的分离(三条独立事件,⛔ 不混写)**:
+- **Entry #297** = `:56` 单条 MODIFIES 的**授权**(合并进 main spec 发生在**归档 T9.3**,届时第三次 `--update`);
+- **Entry #304** = 本次**架构文档 SU 追加**的授权(本次 `--update`);
+- ⇒ 两者**相互独立** ⇒ 冻结清单的 `authorized_by` 各自对应**单一**授权范围。
+
+**③ oracle 复核的 4 处修正(全部采纳,⛔ 不带病落盘)**:
+| # | oracle 发现 | 处置 |
+|---|---|---|
+| **R1** | ① 根因**文件名张冠李戴**:实为 `include/framework/dual_port_stream_adapter.hh`(`DualPortStreamAdapter` 只 override **单参** `process_request_input` → 填 `pe_req_in()`;`ChStreamTargetPort::recvReq` 调**双参**版 ⇒ 基类回退单参)⇒ **不是** `bidirectional_port_adapter.hh`(其双参路由本是对的);② 「无延迟样本」是**双重成因**(框架路由缺陷 **+** 本 change 的 `emit_completions=false` 主动选择) | 根因改写为**双参/单参回退**的准确表述 + **双重成因** + **双条件触发**(修适配器 **且** 改 `emit_completions=true` 重跑);⚠️ 附带登记 `cohif_responder.hh` 注释同源文件名错误 ⇒ 归 builder 同批勘误(⛔ 非冻结面) |
+| **R2** | Entry #304 **尚不存在** ⇒ `--authorized-by` 精确匹配会拒绝写盘 | 本 Entry **先落台账**,再执行 `--update` |
+| **R3** | `config_sha256` 口径与 **F-12 字面**(「`simulation_config.json` 的 sha256」)**静默漂移** | 在 `ADR-CEP-06` SU 内以**取代式追认句**登记(拓扑 config 指纹 + `simulation_config_sha256` 另列)⇒ ⛔ 不回改 F-12 原文;⚠️ 并登记「双向闸**不**校验该字段指向」 |
+| **R4** | 4 处「字面 ≠ 实施」须追认式登记 | ① **D-6**:main spec 合并**未执行**(随归档)⇒ 措辞改为「delta 锚点仅 `:56` 一处(1 行替 2 行)」;② **D-9**:**目录命名偏离**(规范 `run-<ts>-cep-e2e-{A\|B}/` ⇒ 实测无拓扑后缀)+ **首批 run** 字面追认(`h3 升级 run` ⇒ 框架验证 run);③ **D-8**:判据**分层**(装置层全绿 / ⛔ 实验闸层未覆盖);④ **SU · 十一 ①-b ③** 的重挂检测 = 测试级闸 `[BSS-01]`(**只测不拦**),Step 7.5 检测仍 backlog |
+
+**④ 审查档位**:architect 对「**只同步实施态 / 改措辞**」档 ⇒ **单审 `oracle`**(1 轮,已 PASS 且其 4 条修正全部采纳);⛔ 不启 critic 双审。
+
+**⑤ 计数 / 边界**:`B3b-2` **维持 0/4**;`experimental/preregistration.json` / `metrics.schema.json` **零 diff**;`protocol_instances.json` / `protocol_instance.schema.json` **零 diff**;`include/framework/` **零 diff**;⛔ 三份文档**只追加**,⛔ 不改任何既有正文/决策/既有 SU。
+
+**⑥ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#303**(A8 + 双向闸 + 首批 run)· **#297**(A0 授权 `:56` 单条 MODIFIES)· **#295**(索引纪律 + retention 丙)· **#293**(台账 7 字段 / 声明面裁定 甲)· **#288**(10 条决策原始登记)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-19` SU 2026-11-08 · `ADR-CEP-06` SU 2026-11-08 · 二
+
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
 **主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。
