@@ -16607,6 +16607,59 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑥ 关联**:**#293**(两项裁定 + 双审闭环 + 冻结面授权链)· **#292**(3 份 SU:状态追认 / `:71` 理由 / D-0 定位 / J-9)· **#291**(路径图修订 ① + 落地义务清单)· **#289**(任务路径图)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(第二轮审查)· `ADR-CEP-19` SU 2026-11-08 · 三 · `ADR-CEP-06` SU 2026-11-08 · `07 号` SU · 十三
 
+### Entry #295 — 2026-11-08 [go-decision](**F-08 残余 + retention 两项裁定落盘** —— 索引移到文末 + 产物留存 = 丙)+ 冻结面授权 + 双审闭环
+
+**主题**:architect 域最后两项(Entry #293 ⑥ 登记的 **F-08 残余** / **retention**)⇒ 用户 2026-11-08 口令「收 F-08 残余 + retention 决策」⇒ 本 Entry 裁两项并落 **2 份追加 SU**。
+**角色**:architect(裁定 + 起草 + 双审 + 冻结面授权)· builder(具名闸 / `.gitignore` / 双向闸)· planner(后续任务梳理)。
+**KPI**:不变(0/3)。
+
+**① 裁定 1 —— F-08 残余:索引**移到文末** + 新纪律 + 具名闸**
+
+- **问题**:`07 号` 索引段(实测 **L2008~2105 = 98 行**)位于 SU · 十 ~ 十三 **之前** ⇒ ① 不在文末;② 每次追加都「又在中间」⇒ 结构性复发。
+- **锚点代价(实测)**:ArchForge 清单**只锚 L310**(索引之前)⇒ 不受影响;`ADR-CEP-00A` §3.9 **只锚章节号无行号** ⇒ 不受影响;`docs_sync` / `doc_ref` 按**标题 / `file|sec` 键**解析 ⇒ 不受影响;全仓行号引用 **18 处**,其中 **15 处在位移区**(14 处审查报告 + 1 处本台账 Entry #291)、**3 处**(`:316` ×2 / `:318`)在索引前 ⇒ 不受影响 ⇒ ⇒ **一次性代价 = 位移 + 15 处同步,无跨仓影响**。
+- **裁定的正当性**:索引是**派生导航件**(自述「由脚本生成,零手抄」),其位置**不承载任何决策** ⇒ 移动**不触及**已签发决策;append-only 的对象是**决策与 SU 段**,不是派生索引。
+- **新纪律(逐字,已写入索引头部)**:**索引永久置于文末**;此后新增段落 SHALL 插在索引**之前** ⇒ **新增内容永不使既有 `path:line` 锚点位移**;索引每次追加后重生成(自身在文末 ⇒ 长度变化不位移正文);**最新 SU 在索引之前**。
+- **具名闸(归 builder)**:`scripts/test/cep_index_position_check.sh` —— 断言「索引段之后**零个**其它 `## ` 级标题」(⛔ 不只取末位比较)+ ctest 注册。
+- **执行结果**:索引已移置文末(**L2289**,新增 **46 节 / 18 SU**);SU · 十~十三 位移见 ⑤ 的 old→new 表。
+
+**② 裁定 2 —— retention = **丙**(只入库 `metrics.json` + `simulation_config.json`;范围 = **有台账条目的 run**)**
+
+- **选项对比**(完整表见 `ADR-CEP-06` SU 2026-11-08 · 二 ②):**甲**(全不入库 ⇒ 无可对账对象,**否**)· **乙**(全量 4 件套 **11 MB** + 含大部分可再生件,**否**)· **丙**(**2.6 MB** 上限 / ~13 KB per run,✅ **取**)· **丁**(外部归档:无现成机制 + 只覆盖 CI run + 会过期,**否**)。
+- **范围收窄**:只入库**有对应台账条目**的 run(首批 = **h3 升级 run 及以后**);历史 **127** run **grandfather**(⛔ 不回填 / ⛔ 不得作对账依据)。
+- **D-9 的 retention 面被**取代(supersession)****:D-9 行是全称「⛔ 产物不入库」⇒ 2 件入库**与其字面矛盾** ⇒ 故称**取代**而非「精确化」;正当性 = ① SU · 十三 ③ 已显式挂起 retention;② F-12 的 `metrics_sha256` 逻辑上要求仓内对账对象。**取代面** = 仅 retention;D-9 的**台账元数据字段面**(7 字段)与「产物 ≠ 契约面」原则**不变**。
+- **IC 分层(实测)**:IC1 / IC2 / IC3 / IC4 判据面 = `metrics.json`;**IC5 的违例类型明细 = `metrics.json` 的 `memory_violation_kinds`**(`experimental/metrics.schema.json` 定义 · `test/cep_experiment_harness.hh` 写出)⇒ ⇒ **IC1~IC5 全部不依赖 `trace.h5`** ⇒ 丙口径下判定面完整保留。
+- **能力边界**:可**对账** / 13 键**可复核** / **可复跑**(同 config + 同种子 + **同 git rev** + 同工具链)≠ **bit-identical**;`trace.h5` 不入库 ⇒ ⛔ trace 级分析不可复核;schema 漂移不影响 sha256 对账。**回滚** = 撤销 2 条例外 + `git rm`(⚠️ 台账条目保留、⛔ 不回删)。
+
+**③ 审查闭环(oracle → critic,顺序不可颠倒)**:
+- **`oracle`(1 轮)**:8 条建议**全部吸收**;其中 3 条改变了稿子:① 我原稿的「位移 **56 行**」与几何不符(实测 **98 行**)⇒ 已改;② 「精确化」不能用于 D-9 的全称句 ⇒ 改为「**取代**」并给两条正当性;③ retention 入库范围须收窄为「有台账条目的 run」(否则大量 orphan 证据)⇒ 已加 grandfather + **双向闸**。另 2 个未决点由**我补跑实测**关闭:`ADR-CEP-00A` §3.9 无行号锚;`memory_violation_kinds` 在 `metrics.json`。
+- **`critic`(1 轮)**:**APPROVE_WITH_CONDITIONS / 0 BLOCKER / `mergeable: yes` / `scope_exceeded: false`**;2 SHOULD_FIX(① 两份 SU 的裁定句**并非逐字一致**但两处 Verification 都写「逐字一致」⇒ 已让 `07 号` **补全**「首批 = h3 升级 run 及以后 / ⛔ 不产生 `INV-*` / ⛔ 不改 schema」并逐字对齐;② retention **缺回滚路径** ⇒ 已补)+ 2 NIT(锚点表「两份下游文档」实为**三个**文件 ⇒ 已改;闸断言建议「索引后零个 `## `」而非末位比较 ⇒ 已采)⇒ **全部提交前吸收**。
+- ⚠️ **预算**:oracle 1 轮 + critic 1 轮,**未用复审额度**;0 BLOCKER ⇒ 不触发复审。
+
+**④ 冻结面改动面(2 份)+ 授权链**:
+
+| 冻结面成员 | 本轮改动 | 授权链 |
+|---|---|---|
+| `docs/architecture/07-coherence-exploration-platform.md` | **索引移置文末** + 追加 **SU · 十四** + 索引重生成(46 节 / 18 SU) | **本轮**:本 Entry 授权 → 2 份文档**同 commit** → `cep_freeze_check.sh --update --authorized-by "Entry #295"` → 清单**单独** commit → 无参复验 |
+| `docs/adr/ADR-CEP-06-*.md` | 追加 **SU 2026-11-08 · 二**(retention 主体) | **同上**(同 commit) |
+
+⚠️ **零契约增量**:`experimental/preregistration.json` / `experimental/metrics.schema.json` / `include/tlm/cep/protocol_instances.json` / `protocol_instance.schema.json` **四份零 diff**;⛔ 冻结 main spec `:56` MODIFIES **仍不在本轮**。
+
+**⑤ 行号更正登记(append-only 处置)**:
+- **Entry #291** 的 `07 号:2148`(D-0 行)⇒ **现 `07 号:2056`**(old→new 双记);
+- `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md` 的 **14 处**引用已**就地**按移动后实测行号更新,并顺带修正原引用指向「表头 / 相邻行」的偏差(D-0 → 2056 · D-3 → 2048 · D-6 → 2051 · D-8 → 2053 · D-9 → 2054 · ①-c → 2066 / 2068 · ①-b → 2070 · 准入判据 → 2093 · 索引 → 2291 / 2297);
+- ⚠️ **3 处不受影响**(`:316` ×2 / `:318`,均在索引之前)⇒ 未改。
+
+**⑥ 计数纪律**:`B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` **零 diff**;⛔ 两份 SU 均**无**落地宣称;⛔ 未新增 `INV-*`。
+
+**⑦ 剩余待办(按面归属)**:
+| 面 | 事项 | 归属 |
+|---|---|---|
+| **实施** | `cep_index_position_check.sh`(具名闸)· `.gitignore` 增 2 条例外 + 注释 provenance 改写 · **双向闸**(仓内 metrics ↔ 台账条目)· 首批 h3 升级 run 入库 | **builder** |
+| **计划** | 后续任务全量梳理 + 实施路径(用户本轮第三段要求) | **planner** |
+| **决策** | 索引生成器**不在仓内**(已登记 backlog:落 `scripts/`)· 声明面**升级条件**复查(闸集合增长时) | **architect** |
+
+**⑧ 关联**:**#293**(⑥ 的两项剩余待办:本 Entry 即其履行)· **#294**(路径图修订 ②)· **#292**(D-9 元数据字段)· **#291**(含 1 处被更正的行号)· **#289**(任务路径图)· `ADR-CEP-06` SU 2026-11-08 · 二 · `docs/adr/ADR-CEP-00A-real-source-anchor-map.md`(`§3.9`)· `docs/implementation/2026-10-21-cep-archforge-interface-alignment.md`(L310 锚点)· `.gitignore` · `experimental/metrics.schema.json`(`memory_violation_kinds`)· `test/cep_experiment_harness.hh`
+
 ---
 ---
 

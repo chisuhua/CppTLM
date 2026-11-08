@@ -909,3 +909,72 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 
 **关联**:台账 **Entry #293**(授权)· **#292**(双审闭环)· **#291**(落地义务清单)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(F-12)· `07 号` **SU · 十一** ① 的 D-9 行 · `07 号` **SU · 十三** ② · `ADR-CEP-19` SU 2026-11-08 · 三 · `docs/architecture/07-coherence-exploration-platform.md` §3 的 canonical 10 流 · `experimental/metrics.schema.json` · `experimental/preregistration.json` · `tools/run_sweep.py`(4 件套的实际产出:输入 3 件 + `report.html`)
 
+
+---
+
+## Status Update(2026-11-08,per 台账 Entry #295)—— **实验产物留存裁定 = 丙**(只入库 `metrics.json` + `simulation_config.json`;**范围 = 有台账条目的 run**)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文 §1 ~ §5 与**任何**既有 SU(尤其 **SU 2026-11-04(#1)** 的两级 verdict · **(#2)** 的预登记载体 · **(#3)** 的三态词表 · **Entry #293 SU** 的台账元数据 7 字段 —— **逐字保留不回改**);⛔ **不新增**任何 `INV-CEP-06-*`;⛔ 不改**决策 1** 的 4 件套构成(仍在 `experimental/<run_id>/` 下产出 4 件)。
+> **触发**:`07 号` **SU · 十三** ③ 明写「⛔ 本段**不**裁决 retention(属另一条独立决策)」⇒ 本条即该项;· 台账 **Entry #293** 裁定 2(F-12)的**对账能力**无载体可依(实测 `experimental/` 仅 4 个 tracked 文件 ⇒ `metrics_sha256` 绑定的是「已不存在的东西」)。
+> **审查**:`oracle`(留存量级 / 「可对账 ≠ 可复算」边界 / IC5 的明细载体)→ `critic`(本段 + `07 号` SU · 十四 的架构审稿),顺序不可颠倒。
+> **关联**:`07 号` **SU · 十三** / **SU · 十四** · 台账 **Entry #293 / #295** · `.gitignore` · `experimental/metrics.schema.json` · `tools/run_sweep.py` · `tools/render_report.py`
+
+### ① 问题(为什么需要独立裁定)
+
+- **实测现状**:`.gitignore` 有**明文政策**(`experimental/*` 忽略 + 仅 3 条例外:`.gitkeep` / `*.schema.json` / `preregistration.json`)⇒ ⇒ **全部 run 产物不入库**;且 **无任何外部归档**(`.github/workflows/ci.yml` 唯一 `upload-artifact` 上传 `build/Testing/`,**retention-days: 7**)。
+- ⇒ ⇒ 由 **Entry #293 裁定 2**:台账条目记 `metrics_sha256` 以提供**对账** ⇒ ⇒ **但被绑定的产物不在仓内、也无归档** ⇒ ⇒「对账能力」**当下落空**;`07 号` SU · 十三 ③ 已明写该前提(「以那一份产物仍可取得为前提」)⇒ ⇒ 本条负责**把该前提变成可满足的**。
+- **规模实测**(2026-11-08):`experimental/` **11 MB** / **127** 个 run 目录 / **206** 份 `metrics.json`;单件均值 = `metrics.json` **12.5 KB** · `simulation_config.json` **0.6 KB** · `trace.h5` **18.6 KB** · `report.html` ~12.6 KB。
+
+### ② 选项对比表(≥ 3 行)
+
+| 选项 | 内容 | 结论 | 理由 |
+|---|---|---|---|
+| **甲** | 维持现状(**全不入库** + 无归档) | ⛔ **不取** | 台账的 `metrics_sha256` **无可对账对象** ⇒ 与 Entry #293 裁定 2 的立意**直接矛盾**;条目不(可)核,且**静默衰减** |
+| **乙** | **全量入库 4 件套** | ⛔ **不取** | 体积 **11 MB**(`trace.h5` 随仿真长度**线性增长**);且 `report.html` 的 **summary / violation badges 面可由 `metrics.json` 再生**(⚠️ 但 **latency CDF 需 `trace.h5`** ⇒ 非全部可再生,见 决策 3)⇒ 入库 = 存大部分可再生产物 |
+| **丙** | **只入库 `metrics.json` + `simulation_config.json`**;范围 = **有台账条目的 run** | ✅ **取** | 体积 **2.6 MB**(存量上限)/ ~**13 KB** per run;直接支撑台账 7 字段的**对账** + 13 键**逐键复核** + 「同 config 同种子**可复跑**」;`trace.h5` 不入库**不影响**任何 IC 的**判定面**(见 ③ 的 IC 分层) |
+| **丁** | 不入库 + **外部归档**(扩展 CI 上传 `experimental/`) | ⛔ **不取** | ① **无现成归档**(CI 只传 `build/Testing/`,7 天);② 只覆盖 **CI 产出的** run ⇒ **本地 run 无归档**;③ 归档**会过期** ⇒ 对账仍衰减 |
+
+### ③ 裁定 + 边界(**逐字**)
+
+> **裁定 = 丙**:`metrics.json` + `simulation_config.json` **作为证据载体入库**;**范围 SHALL 限于「有对应台账条目的 run」**(⚠️ 首批 = **h3 升级 run 及以后**;⚠️ 历史 **127** 个 run **grandfather**:⛔ 不回填、⛔ 不得以其为对账依据);`trace.h5` / `report.html` **不入库**;⛔ 二者入库**不等于**升格为**契约面**(⛔ 不进 `FROZEN_GLOBS`、⛔ 不产生任何 `INV-*` / 判据、⛔ 不改 `experimental/` 的任何 schema)。
+
+> **能力边界(逐字)**:入库的两件只提供 ① **对账**(台账 `metrics_sha256` ↔ 仓内 `metrics.json`) ② **13 键逐键复核** ③ **可复跑**(同 `simulation_config.json` + 同种子 + **同代码版本(git rev)** + 同工具链)⇒ ⛔ **不**提供 **bit-identical 复现**(`RANDOM` 模式的 `uniform_int_distribution` **跨 stdlib 非位精确**,per `07 号` SU · 十一 ① 的 D-7 漂移登记);⛔ **不**提供 **trace 级分析的可复核性**(`trace.h5` 不入库);⚠️ **schema 漂移不影响对账**(`metrics_sha256` 锚的是**字节**,不是 schema 合法性)⇒ 老 `metrics.json` 可能不满足未来的 `metrics.schema.json`,但对账仍成立。
+
+- **IC 分层(逐条 · ⛔ 不得压成一句 blanket)**:
+  - **IC1 / IC2 / IC4** ⇒ 判据面 = `metrics.json`(4 件套的存在性与字段齐备 / 13 必纳字段 / `not-collected` + reason)⇒ ⇒ **不依赖** `trace.h5`;
+  - **IC3** ⇒ 判据面 = `metrics.json` 的 `deadlock_violations` / `memory_violations` ⇒ **不依赖** `trace.h5`;
+  - **IC5** ⇒ 「区分 SWMR 违例 / data-value 违例」的明细载体 = **`metrics.json` 的 `memory_violation_kinds`**(实测:`experimental/metrics.schema.json` 定义该字段 · `test/cep_experiment_harness.hh` 写出该字段)⇒ ⇒ **不依赖** `trace.h5` ⇒ ⇒ 丙口径下 **IC1~IC5 的判定与复核面全部保留**。
+  - ⚠️ `trace.h5` 的独有价值仅在**过程分析**(latency CDF / 逐周期事件)⇒ 该面**不入库** ⇒ ⛔ 不得声称「trace 级分析可复核」。
+
+### ④ 后果 / 代价
+
+| 面 | 后果 |
+|---|---|
+| **正面** | 台账 7 字段的 `metrics_sha256` / `metrics_13` **首次有仓内对账对象** ⇒ 「登记 ≠ 可复算」升级为「**登记可对账**」;IC1~IC5 **判定面完整保留** |
+| **负面 ①** | 仓库 **+2.6 MB 上限**(受「仅有台账条目的 run」约束 ⇒ 实际增量取决于 run 数) |
+| **负面 ②** | `.gitignore` 需增例外(`run-*/metrics.json` / `run-*/simulation_config.json`)⇒ **政策载体变更**,须与注释同步(⛔ 不得只改规则不改注释;⚠️ 注释的 provenance 须改写为 Entry #295 的取代链) |
+| **风险 ①** | `metrics.json` 可能含**机器名 / 路径**等非契约字段 ⇒ 入库前 SHALL 过白名单校验(见 ⑤) |
+| **风险 ②** | 「入库」会被读成「升格为契约」⇒ ⛔ 三处声明不可省(③ 裁定句 / `.gitignore` 注释 / 台账条目) |
+
+- **回滚路径**:撤销 `.gitignore` 的两条例外 + `git rm` 已入库的 run 目录 ⇒ 恢复现状;⚠️ **台账已记条目保留为历史记录、⛔ 不回删**。
+
+### ⑤ 机器可判点(实施期落地,归 builder)
+
+1. **每个被提交的 run 目录 SHALL 只含** `metrics.json` + `simulation_config.json`(⛔ `trace.h5` / `report.html` / 其他);
+2. **双向闸**:仓内**每份**已提交的 `metrics.json` SHALL 对应**一个台账条目**(⛔ orphan 证据);反向:台账条目 SHALL 能定位到仓内 `metrics.json`(sha256 相等);
+3. `.gitignore` 的**例外规则与注释逐条对应**;
+4. ⛔ 两件文件**不得**进入 `FROZEN_GLOBS`。
+
+### ⑥ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**;**新增 invariant 数 = 0**;决策 1 的 4 件套构成**未改**
+- [ ] ② 的选项对比表 ≥ 3 行且每行含**结论 + 理由**(甲/乙/丙/丁);乙行已含「CDF 需 trace」的限定
+- [ ] ③ 的裁定句(**含「范围 = 有台账条目的 run」+ grandfather**)、能力边界(四句)、**IC 分层 5 条**均已逐字登记
+- [ ] ④ 的正面 / 负面 / 风险已登记(含 `.gitignore` 注释须同步)
+- [ ] ⑤ 的 4 条机器可判点已登记(**含双向闸**)
+- [ ] `07 号` SU · 十四 ② 与本段**逐条一致**(裁定句 + 边界句逐字)
+- [ ] ⛔ `experimental/preregistration.json` / `metrics.schema.json` **零 diff**;⛔ 本段**不改** `FROZEN_GLOBS`;**`B3b-2` 维持 0/4**
+- [ ] 冻结面两步授权已执行:台账 **Entry #295** 授权 → **commit 本段 + `07 号` SU · 十四** → `cep_freeze_check.sh --update --authorized-by "Entry #295"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #295**(授权)· **#293**(裁定 2:台账元数据 7 字段 —— 本段为其提供对账载体)· **#292**(D-9 元数据字段的原始裁决)· `07 号` **SU · 十三** ③(「不裁决 retention」的指针)/ **SU · 十四** ② · `.gitignore` · `experimental/metrics.schema.json`(含 `memory_violation_kinds`)· `test/cep_experiment_harness.hh`(写出该字段)· `tools/run_sweep.py` · `tools/render_report.py`(summary/badges 可再生;CDF 需 trace)
+
