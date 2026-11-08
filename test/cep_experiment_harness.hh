@@ -316,6 +316,7 @@ namespace cep_exp {
         }
     };
 
+
     // ══════════════════════════════════════════════════════════════════
     // ④ metrics.json 组装(13 必纳 + verification_mode / scope)
     // ══════════════════════════════════════════════════════════════════
@@ -462,6 +463,86 @@ namespace cep_exp {
         os << "  \"verification_scope\": \"" << verification_scope << "\"\n";
         os << "}\n";
         return os.str();
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ⑥ 13 键覆盖判定 + IC3 三态(A7 三键归属 / A8 `ic3_verdict` 产出者)
+    // ══════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ **13 键的机器闸此前只存在于 shell 侧** ⇒ 本层补 C++ 侧判定,
+    //    供 `test/` 的 harness 接入与 A8 的台账元数据共用(单一真源)。
+    //
+    /// 13 必纳 metric(per `openspec/specs/cep-core-contracts/spec.md` 的 required 集)
+    inline const std::vector<std::string>& required_13_metrics() {
+        static const std::vector<std::string> kMetrics = {
+            "total_cycles",
+            "total_transactions",
+            "transactions_per_cycle",
+            "avg_latency_cycles",
+            "p50_latency_cycles",
+            "p95_latency_cycles",
+            "p99_latency_cycles",
+            "max_latency_cycles",
+            "coherence_stalls",
+            "collective_stalls",
+            "directory_misses",
+            "deadlock_violations",
+            "memory_violations"};
+        return kMetrics;
+    }
+
+    /// 违例类 metric(IC3 的判定对象;若为 `not-collected` ⇒ IC3 = ⚪ 不适用)
+    inline const std::vector<std::string>& violation_metrics() {
+        static const std::vector<std::string> kViolation = {"deadlock_violations",
+                                                             "memory_violations"};
+        return kViolation;
+    }
+
+    /// 「13 键**各有结论**」判定(per F-02:实测值 **或** `not-collected` + reason)
+    /// ⇒ `missing` 返回**首个**缺结论的键名(便于断言定位)。
+    inline bool metrics_13_covered(const ExperimentMetrics& m, std::string* missing = nullptr) {
+        for (const auto& key : required_13_metrics()) {
+            const bool measured = m.measured.count(key) > 0;
+            const auto it = m.not_collected.find(key);
+            if (!measured && it == m.not_collected.end()) {
+                if (missing)
+                    *missing = key;
+                return false;
+            }
+            if (it != m.not_collected.end() && it->second.empty()) {
+                if (missing)
+                    *missing = key;  // 未采集但**无 reason** ⇒ 不算结论
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// IC3 三态(per `ADR-CEP-06` SU#3 词表:✓ 通过 / ❌ 违例 fail / ⚪ 不适用)
+    enum class Ic3Verdict : std::uint8_t { Pass = 0, Fail = 1, NotApplicable = 2 };
+
+    inline const char* ic3_verdict_text(Ic3Verdict v) {
+        switch (v) {
+            case Ic3Verdict::Pass:
+                return "✓ 通过";
+            case Ic3Verdict::Fail:
+                return "❌ 违例 fail";
+            case Ic3Verdict::NotApplicable:
+                return "⚪ 不适用";
+        }
+        return "⚪ 不适用";
+    }
+
+    /// IC3 判定:违例类任一 `not-collected` ⇒ ⚪ **不适用**(⛔ 不记「绿」);
+    ///           否则有违例 ⇒ ❌;否则 ✓ 通过。
+    inline Ic3Verdict ic3_verdict(const ExperimentMetrics& m) {
+        for (const auto& key : violation_metrics()) {
+            if (m.not_collected.count(key) > 0)
+                return Ic3Verdict::NotApplicable;
+        }
+        if (m.deadlock_detected > 0 || m.violations.total() > 0)
+            return Ic3Verdict::Fail;
+        return Ic3Verdict::Pass;
     }
 
 }  // namespace cep_exp

@@ -65,12 +65,12 @@
 - [x] A6.5 **J-7**(SCE-17):测试级 `pack`/`unpack` 4 个共有字段无损 + `flow_id` **降维不可逆** + 丢弃清单 + 三模块同 `bridge_id`
 - [x] A6.6 **J-8**(SCE-18):B 的「全绿」**不来自协议语义面** ⇒ 声明面**不含** home 简化模型 / wrapper
 - [x] A6.7 **J-9 分档**(SCE-11):A ⇒ 闸 SKIP ∧ 无 `cep.bridges` ∧ 无 latency>0;B ⇒ 闸 PASS ∧ 1 entry / 3 modules / ≥1 latency>0 ∧ 无 error
-- [ ] A6.8 **J-4 的 IC3 三态**(✓ 通过 / ❌ 违例 fail / ⚪ 不适用)—— ⏳ **依赖 A8 的 `ic3_verdict` 产出者**(本批只落 **run-validity** 半条)
+- [x] A6.8 **J-4 的 IC3 三态**(✓ 通过 / ❌ 违例 fail / ⚪ 不适用)—— 产出者 = `cep_exp::ic3_verdict()`(`test/cep_experiment_harness.hh`)+ 反向 fixture(SCE-21 ⑥⑦)
 
 ## A7 · harness 接入 + 三键归属
 
-- [ ] A7.1 `LatencyCollector` / `SwmrDataValueDetector` / `ProgressWatchdog` 接入
-- [ ] A7.2 **三键测量归属**(`coherence_stalls` / `collective_stalls` / `directory_misses` 的来源与「真实 0」口径)显式落字
+- [x] A7.1 `LatencyCollector`(SCE-19:一发一收自洽 + 延迟**有分布** + 反向 fixture)/ `SwmrDataValueDetector`(SCE-20:正控 + SWMR 违例 + data-value 违例 + **空检查装置不判**)/ `ProgressWatchdog`(SCE-20:停滞判 true / **空闲判 false** 防恒真)接入
+- [x] A7.2 **三键测量归属**显式落字(`design.md` §三键测量归属):`coherence_stalls` **实测**(口径 = in-flight 非零周期数)· `collective_stalls` / `directory_misses` = **`not-collected` + reason**(⛔ 非 0);判据 = SCE-21
 
 ## A8 · 元数据与入库(G4 对账门)
 

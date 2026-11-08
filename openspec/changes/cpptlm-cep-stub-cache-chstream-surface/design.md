@@ -60,6 +60,26 @@ per-txn issue/complete 周期戳 + in-flight 计数(原始事实)。⛔ 不做 l
 | 同一模块挂两个 bridge entry ⇒ 桥被静默覆盖 | D-6 互斥纪律;建议加 `[IAG-08]`(W4) |
 | 判据「因错误原因红」 | AC-6 要求 J-5 变异**按正确原因**红 |
 
+
+## 三键测量归属(A7 · 显式落字)
+
+> **规则**(per `ADR-CEP-06` SU#1 ②③):「**实测 0**」与「**未测量**」**不得同形** ⇒
+> 每键必须落成二者之一:① **实测值**(可为 0,但**必须**登记进 `measured`)+ 产出者口径;
+> ② `not-collected` + **非空 reason**。⛔ 不得为凑「13 键全有值」给未测键填 0。
+
+| 键 | 本装置的产出者 | 口径 | 落法 |
+|---|---|---|---|
+| `coherence_stalls` | ✅ **有** —— `StubCacheEndpointTLM` 的 in-flight 观测 | 「**in-flight 非零的周期数**」(因一致性请求未完成而停顿) | **实测值** |
+| `collective_stalls` | ❌ **无** —— 本拓扑**不绑定** collective plane | — | `not-collected` + reason「本装置无 collective plane 绑定 ⇒ 无产出者」 |
+| `directory_misses` | ❌ **无** —— 本拓扑**不挂** directory / sharer tracker | — | `not-collected` + reason「本装置无 directory / sharer tracker ⇒ 无产出者」 |
+
+**违例类**(`deadlock_violations` / `memory_violations`):本装置由
+`ProgressWatchdog`(`stalled()`)与 `SwmrDataValueDetector`(`counts()`)**实测** ⇒ 登记为实测值;
+若某次 run **未采集**违例类 ⇒ `ic3_verdict` **必须**落 **⚪ 不适用**(⛔ 不得记「绿」)。
+
+**IC3 三态产出者**:`cep_exp::ic3_verdict()`(载体 = `test/cep_experiment_harness.hh`)——
+违例类任一 `not-collected` ⇒ ⚪ 不适用;有违例 ⇒ ❌ 违例 fail;否则 ✓ 通过。
+
 ## 铁律
 
 1. ⛔ 不改 `stub_cache_core.hh` / `cohif_noc_bridge.hh` / `include/framework/` / `protocol_instances.json` / `protocol_instance.schema.json`;

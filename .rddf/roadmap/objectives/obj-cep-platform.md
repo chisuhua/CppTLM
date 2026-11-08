@@ -16987,6 +16987,29 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑤ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#299**(双审结论 + 开工基线)· **#298 / #297**(A0+A1/A2 + 前版路径)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-19` SU · 三
 
+### Entry #302 — 2026-11-08 [build](**A7 harness 接入 + 三键测量归属** + **J-4 的 IC3 三态产出者**)
+
+**主题**:按修订 ④ 推进 **A7**(harness 三件套接入 + 三键测量归属落字),并顺带闭合 **A6.8**(J-4 的 IC3 三态)。
+**角色**:builder(实施)· architect(双审结论已落 #299)· verifier(待验收)。
+**KPI**:Proposed **1/3**(不变)。
+
+**① harness 扩展(`test/cep_experiment_harness.hh`,⛔ 非冻结件)**:
+- `required_13_metrics()`(13 必纳 metric 的机器可读清单,真源 = `openspec/specs/cep-core-contracts/spec.md` 的 required 集)· `violation_metrics()`(违例类 2 键)。
+- `metrics_13_covered(m, missing*)` —— 「13 键**各有结论**」判定(实测 **或** `not-collected` + **非空 reason**;⛔ 两者皆无 ⇒ 判红并返回首个缺结论的键名)。
+- `Ic3Verdict` + `ic3_verdict_text()`(词表**逐字** = `✓ 通过` / `❌ 违例 fail` / `⚪ 不适用`)· `ic3_verdict(m)` —— 违例类任一 `not-collected` ⇒ ⚪ **不适用**(⛔ 不记「绿」);有违例 ⇒ ❌;否则 ✓。⇒ **A8 的 `ic3_verdict` 产出者就此落定**(不再依赖 shell 侧脚本)。
+
+**② A7 判据(`test/test_cep_stub_cache_e2e.cc` SCE-19 ~ SCE-21 · 全套 **21 cases / 212 assertions**)**:
+- **SCE-19** `LatencyCollector` 吃到**真实往返**:wrapper 的 per-txn 原始观测(issue/complete 周期戳)喂进 collector ⇒ 一发一收自洽 + `audit_balanced()` + `underflow()==0` + **延迟分布非空**(⛔ 非 0 值空真)+ 反向 fixture(漏 complete ⇒ 不自洽)。
+- **SCE-20** `SwmrDataValueDetector` 正控(先写后读同版本 ⇒ 0 违例)+ **两个反向 fixture**(未先失效 ⇒ SWMR 违例;读旧版本 ⇒ data-value 违例)+ **空检查装置不判**(防空检查的 0 被读成「无违例 ⇒ 安全」);`ProgressWatchdog` 停滞判 true / **空闲判 false**(防恒真)。
+- **SCE-21** **三键测量归属**:`coherence_stalls` **实测**;`collective_stalls` / `directory_misses` = **`not-collected` + reason**(⛔ 非 0);13 键各有结论判定 + **IC3 三态**正控(✓ 通过)+ 两个反向 fixture(违例类未采集 ⇒ ⚪ 不适用 / 有违例 ⇒ ❌)+ 渲染断言(`"not-collected"` 字符串 vs 数值)。
+
+**③ 三键归属落字(`design.md` §三键测量归属)**:逐键写明**产出者 / 口径 / 落法**;违例类的采集义务与「未采集 ⇒ IC3 ⚪ 不适用」写明 ⇒ 台账与代码**同一真源**。
+
+**④ 计数 / 边界**:`B3b-2` **维持 0/4**;红线六项**零 diff**;`experimental/metrics.schema.json` **零 diff**(⛔ 未新增 metric 字段 —— 13 键判定与 IC3 三态都在**判定侧**,不改 schema)。
+
+**⑤ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#301**(A6 + W4)· **#300**(A4 + A5)· **#299**(双审开工基线)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-06` SU 2026-11-08 · 二
+
+
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 
 **主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。

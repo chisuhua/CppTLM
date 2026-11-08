@@ -630,3 +630,156 @@ TEST_CASE("SCE-18: J-8 B **不承载**「全绿 run」—— 声明面**不含**
     const auto rep = tlm::cep::run_instance_assembly_gate(cfg, instances, planes);
     REQUIRE(rep.verdict == tlm::cep::InstanceAssemblyVerdict::PASS);
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+// A7 · harness 接入(LatencyCollector / SwmrDataValueDetector / ProgressWatchdog)
+//      + 三键测量归属
+// ════════════════════════════════════════════════════════════════════════════
+
+TEST_CASE("SCE-19: A7 harness 接入 —— `LatencyCollector` 吃到真实往返(非空真)",
+          "[cep][e2e][sce-19]") {
+    EventQueue eq;
+    Wrapper w("sce_lat", &eq);
+
+    // 发一条 miss ⇒ 拿回 Completion ⇒ 把 wrapper 的**原始观测**喂给 collector
+    inject(w.pe_req_in(), Req(1101, 0xA000, 8, false, 0));
+    w.tick();
+    const std::uint64_t txn = w.net_req_out().data().transaction_id.read();
+    REQUIRE(txn != 0u);
+    inject(w.net_resp_in(), make_completion(txn, 0xA000, 0x1234));
+    w.tick();
+
+    cep_exp::LatencyCollector lat;
+    REQUIRE(w.txn_stamps().size() == 1u);
+    const auto& s = w.txn_stamps().back();
+    REQUIRE(s.completed == true);
+    lat.note_issue();
+    REQUIRE(lat.note_complete(s.issue_cycle, s.complete_cycle));
+
+    // ① 一发一收 ⇒ 自洽
+    REQUIRE(lat.issued() == 1u);
+    REQUIRE(lat.completed() == 1u);
+    REQUIRE(lat.audit_balanced());
+    REQUIRE(lat.underflow() == 0u);
+    // ② 延迟**有分布**(⛔ 非 0 值空真)
+    REQUIRE(lat.sample_count() == 1u);
+    REQUIRE(lat.p50() > 0u);
+    REQUIRE(lat.avg() > 0.0);
+
+    // ③ 反向 fixture:漏一次 complete ⇒ 不再自洽(判据有牙)
+    cep_exp::LatencyCollector lat2;
+    lat2.note_issue();
+    REQUIRE_FALSE(lat2.audit_balanced());
+}
+
+TEST_CASE("SCE-20: A7 harness 接入 —— `SwmrDataValueDetector` + `ProgressWatchdog`"
+          "(含反向 fixture)",
+          "[cep][e2e][sce-20]") {
+    // ① SWMR:先写后读同版本 ⇒ 无违例
+    {
+        cep_exp::SwmrDataValueDetector det(true);
+        det.write(0xB000, 7);
+        det.read(0xB000, 7);
+        REQUIRE(det.counts().total() == 0u);
+        REQUIRE(det.counts().swmr == 0u);
+        REQUIRE(det.counts().data_value == 0u);
+    }
+    // ② 反向 fixture:未先失效既有 sharer 就写 ⇒ SWMR 违例
+    {
+        cep_exp::SwmrDataValueDetector det(true);
+        det.write(0xB000, 1);
+        det.write_without_invalidate(0xB000, 2);
+        REQUIRE(det.counts().swmr > 0u);
+    }
+    // ③ 反向 fixture:读到旧版本 ⇒ data-value 违例
+    {
+        cep_exp::SwmrDataValueDetector det(true);
+        det.write(0xB000, 5);
+        det.read(0xB000, 4);
+        REQUIRE(det.counts().data_value > 0u);
+    }
+    // ④ ⛔ 空检查装置 ⇒ 不判(防空检查的 0 被读成「无违例 ⇒ 安全」)
+    {
+        cep_exp::SwmrDataValueDetector det(false);
+        det.write_without_invalidate(0xB000, 1);
+        REQUIRE(det.counts().total() == 0u);
+        REQUIRE(det.checks_enabled() == false);
+    }
+    // ⑤ `ProgressWatchdog`:有 in-flight 且长期无 retire ⇒ 判停滞;空闲 ⇒ **不**判
+    {
+        cep_exp::ProgressWatchdog wd(10);
+        for (int i = 0; i < 20; ++i)
+            wd.tick(/*in_flight=*/1, /*retired=*/0);
+        REQUIRE(wd.stalled());
+        REQUIRE(wd.max_idle_run() >= 10u);
+    }
+    {
+        cep_exp::ProgressWatchdog wd(10);
+        for (int i = 0; i < 20; ++i)
+            wd.tick(/*in_flight=*/0, /*retired=*/0);
+        REQUIRE_FALSE(wd.stalled()); // 空闲 **不是** 死锁 ⇒ 防恒真
+    }
+}
+
+TEST_CASE("SCE-21: A7 三键测量归属 —— `coherence_stalls` **实测**;"
+          "`collective_stalls` / `directory_misses` = `not-collected` + reason(⛔ 非 0)",
+          "[cep][e2e][sce-21]") {
+    cep_exp::ExperimentMetrics m;
+    m.total_cycles = 50;
+    m.total_transactions = 1;
+    m.latency.note_issue();
+    REQUIRE(m.latency.note_complete(1, 2));
+    m.verification_scope = "SCE-21";
+    m.verification_mode = "sampled";
+
+    // ① `coherence_stalls` = **本装置有产出者** ⇒ 实测(口径:「in-flight 非零的周期数」)
+    //    —— 本 run 中确有未完成事务 ⇒ 实测值 > 0
+    m.coherence_stalls = 3;
+    m.measured.insert("coherence_stalls");
+
+    // ② `collective_stalls` / `directory_misses` = **本装置无产出者** ⇒ `not-collected` + reason
+    //    (⛔ 不得填 0 —— 「实测 0」与「未测量」必须**不同形**)
+    m.not_collected["collective_stalls"] = "本装置无 collective plane 绑定 ⇒ 无产出者";
+    m.not_collected["directory_misses"] = "本装置无 directory / sharer tracker ⇒ 无产出者";
+
+    // ③ 其余 10 键登记为实测(值取自本 run 的观测)
+    for (const auto& k : cep_exp::required_13_metrics()) {
+        if (k == "collective_stalls" || k == "directory_misses" || k == "deadlock_violations" ||
+            k == "memory_violations")
+            continue;
+        m.measured.insert(k);
+    }
+    // ④ 违例类**实测为 0**(本 run 无违例)⇒ 必须显式登记,⛔ 不得留空
+    m.measured.insert("deadlock_violations");
+    m.measured.insert("memory_violations");
+
+    // 判定:13 键**各有结论**
+    std::string missing;
+    REQUIRE(cep_exp::metrics_13_covered(m, &missing));
+    REQUIRE(missing.empty());
+
+    // ⑤ IC3 三态:违例类**已实测**且为 0 ⇒ ✓ 通过(⛔ 非「非红即绿」)
+    REQUIRE(cep_exp::ic3_verdict(m) == cep_exp::Ic3Verdict::Pass);
+    REQUIRE(std::string(cep_exp::ic3_verdict_text(cep_exp::Ic3Verdict::Pass)) == "✓ 通过");
+
+    // ⑥ 反向 fixture:违例类 `not-collected` ⇒ IC3 = ⚪ 不适用(⛔ **不得**记「绿」)
+    {
+        cep_exp::ExperimentMetrics m2 = m;
+        m2.not_collected["memory_violations"] = "本装置未采集违例";
+        m2.measured.erase("memory_violations");
+        REQUIRE(cep_exp::ic3_verdict(m2) == cep_exp::Ic3Verdict::NotApplicable);
+    }
+    // ⑦ 反向 fixture:有违例 ⇒ ❌ 违例 fail
+    {
+        cep_exp::ExperimentMetrics m3 = m;
+        m3.deadlock_detected = 1;
+        REQUIRE(cep_exp::ic3_verdict(m3) == cep_exp::Ic3Verdict::Fail);
+    }
+    // ⑧ 渲染断言:未采集者输出字符串,⛔ 不是 0
+    {
+        const std::string js = m.to_json();
+        REQUIRE(js.find("\"collective_stalls\": \"not-collected\"") != std::string::npos);
+        REQUIRE(js.find("\"_not_collected\"") != std::string::npos);
+        REQUIRE(js.find("\"coherence_stalls\": 3") != std::string::npos);
+    }
+}
