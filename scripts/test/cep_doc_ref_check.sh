@@ -93,6 +93,7 @@ VIRTUAL_PATHS=(
   "docs/adr/ADR-SOC-25"                             # 跨仓:ArchForge 侧 ADR
   "include/core/coherence_protocol.hh"              # 设计示意:Stage 1 才新建(本仓 0 命中,per 回执 §5)
   "include/framework/cohif_noc_bridge.hh"  # **笔误路径**(2026-11-08,per 台账 Entry #284):SU·八 关联段把桥的路径目录写错(实为 include/tlm/cep/cohif_noc_bridge.hh)⇒ 已由 SU·九 更正登记;⛔ SU·八 已签发不可回改 ⇒ 闸侧豁免
+  "scripts/test/cep_index_position_check.sh"  # **待建**(2026-11-08,per 台账 Entry #295):`07 号` SU · 十四 ① 与台账 Entry #295 ⑦ 把「索引永久置于文末」的**具名闸**指派给 builder(**待建**)⇒ 属**设计示意**类豁免;⚠️ 闸建成后可移除本豁免
   "openspec/changes/cpptlm-cep-stub-cache-chstream-surface"  # **待新建**(2026-11-08,per 台账 Entry #282 §⑧ 裁决:收编进该具名延期 change;change 目录由 builder 在实施时创建)⇒ Entry #282 的路径引用;⚠️ 目录建成后可移除本豁免
   "docs/definitely-not-exists-xyz.md"                # **虚构路径**(2026-11-07,per 台账 Entry #281):Entry #279 §④ 的**决定性变异**描述里引用的「具体坏路径」样本 ⇒ 它**本就不存在**(变异要证明的正是「具体坏路径必红」)⇒ 非真实引用;⛔ **不可**被读作待建文件
   "openspec/changes/cpptlm-cep-ualink-inc-state-spec"  # 队列 #14 规约层 **已归档**(2026-11-04;delta 已合并进 openspec/specs/cep-ualink-inc-state-spec/spec.md)⇒ 台账历史 Entry 的路径引用
