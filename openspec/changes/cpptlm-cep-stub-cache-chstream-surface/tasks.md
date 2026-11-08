@@ -74,17 +74,17 @@
 
 ## A8 · 元数据与入库(G4 对账门)
 
-- [ ] W2 `.gitignore`:**`!experimental/run-*/` + `experimental/run-*/*` + 两条白名单**;验收 = `git check-ignore -v experimental/run-x/metrics.json` 无输出;嵌套 run 明示不入库
-- [ ] A8.1 台账元数据 **7 字段**(散文段)+ `test/cep_e2e_runs.jsonl`(机器可读)
-- [ ] A8.2 **M2 run 定义**:必须由 `configs/cep_chi_rnf_e2e_a.json` 驱动且 `modules` 含 `StubCacheEndpointTLM`(⛔ 不用既有 h3 合成模型 run 顶替)
-- [ ] A8.3 `ic3_verdict` **产出者钉死**(脚本 + 两个键 + 三态优先级 `⚪` > `✓`)并**实测**该 run 的落点
-- [ ] W3 **双向闸**:零 orphan + `metrics_sha256` 相等(定义覆盖 grandfather 127 run 的豁免边界)
-- [ ] A8.4 首批 h3 升级 run 入库(仅 `metrics.json` + `simulation_config.json`)
+- [x] W2 `.gitignore`:先放开 run 目录再接具体文件(`!experimental/run-*/` + `experimental/run-*/*` + 两条白名单);验收 = `git check-ignore -q experimental/run-x/metrics.json` **rc=1**(未被忽略)· `metrics.json`/`simulation_config.json` 可 `git add` · `trace.h5`/`report.html` 仍被忽略(rc=0)
+- [x] A8.1 台账元数据 **7 字段**:`test/cep_e2e_runs.jsonl`(机器可读)+ `obj §11` 台账散文段(Entry #303)
+- [x] A8.2 **本 run 定义**:由 `configs/cep_chi_rnf_e2e_a.json` 驱动且 `modules` 含 `StubCacheEndpointTLM`(载体 = `test/test_cep_stub_cache_emit.cc`);⚠️ **本 run 不是实验证据 run**(`hypothesis_id = framework-e2e`,⛔ 非预登记假设 ⇒ ⛔ B4 证据)
+- [x] A8.3 `ic3_verdict` 产出者 = `cep_exp::ic3_verdict()`(三态 `⚪` 优先于 `✓`);本 run 实测落点 = **⚪ 不适用**(违例类 `memory_violations` 无样本)
+- [x] W3 **双向闸** `scripts/test/cep_e2e_reconcile_check.sh`(零 orphan + sha256 相等 + 7 字段 + 三态词表 + grandfather 豁免口径)+ ctest 注册;实测 `[reconcile] 台账条目 1 · 仓内已提交 run 1 · 问题 0`
+- [x] A8.4 首批 run 入库:仅 `metrics.json` + `simulation_config.json`(`experimental/run-2026-11-09-cep-e2e/`)
 
 ## A9 · 契约面(合并随 T9.3)
 
-- [ ] A9.1 delta 终稿(含 F-A4 限定句 + 豁免登记 4 项 + 「登记 ≠ 可复算」边界句 + 7 字段 + 「⛔ 不作为 T1–T4 条款级证据」声明句)
-- [ ] A9.2 `07 号` / ADR 的**实施后**状态更新(architect 域 · 追加 SU)
+- [x] A9.1 delta 终稿:含 F-A4 限定句 + **豁免登记 4 项**(逐条可 grep)+ 「**登记 ≠ 可复算**」边界句 + 7 字段 + 「⛔ **不作为任何家族的 T1–T4 条款级证据**」声明句(`openspec validate --strict` rc=0)
+- [ ] A9.2 `07 号` / ADR 的**实施后**状态更新 —— ⚠️ **architect 域**(冻结面 ⇒ 两步授权)⇒ **待 architect 执行**,builder ⛔ 不代改
 - [ ] A9.3 ⚠️ **不在此执行合并**:`:56` 合并 + 冻结链随 **T9.3 归档**一次完成
 
 ## W1 · 索引位置闸(独立,不阻塞 T9)

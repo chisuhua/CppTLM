@@ -105,6 +105,19 @@ experimental/*
 #   ⚠️ 其余 experimental/ 下的产物(run 目录 / trace.h5 / metrics.json 等)仍不入库 —— 它们是**实验产物**,不是契约面。
 !experimental/preregistration.json
 
+# 2026-11-09(per 台账 Entry #295 裁定 2 = retention **丙**;Entry #303):**首批 run 的两件入库**
+#   —— retention 丙 = 只入库 `metrics.json` + `simulation_config.json`(scope 限「有台账条目的 run」)
+#      ⇒ 台账结论首次**可对账**(`metrics_sha256` ↔ 仓内文件)。
+# ⚠️ **形态要点**:git 规定「**父目录被排除时,不能 re-include 其中的文件**」⇒ 必须**先放开 run 目录**
+#    (`!experimental/run-*/`),再放开目录内的**具体文件**;否则 `!experimental/run-*/metrics.json`
+#    这类写法**静默无效**(实测:`git check-ignore -v` 仍命中 `experimental/*`)。
+#    ⚠️ **嵌套** run 子目录(如 `run-x/blocking_on/metrics.json`)在 `experimental/run-*/*` 之下 ⇒ **不入库**
+#    (首批入库的 run 只含**根级**两件)。
+!experimental/run-*/
+experimental/run-*/*
+!experimental/run-*/metrics.json
+!experimental/run-*/simulation_config.json
+
 # ==== 第三方对拍基准(不入库)====
 # gem5 v24.1.0.0 —— H7 对拍基准(per 台账 Entry #113 / docs/architecture/14-coherence-parity-baseline.md)
 # 版本钉死见 scripts/cep/parity/parity_config.json;构建入口 = scripts/cep/parity/build_gem5.sh

@@ -72,6 +72,21 @@
 
 > **锚点**:`test/test_cep_stub_cache_e2e.cc` + 双向闸脚本的负例
 
+
+#### Scenario: home 简化模型 SHALL 以 **豁免登记** 表达声明面缺失(⛔ 不静默)
+
+- **WHEN** `CohIfResponderTLM`(home 简化模型)**未**进入 `protocol_instances.json`
+- **THEN** 契约面 SHALL 登记**恰好 4 项**豁免,逐项写明:
+  - ① 它**不是**协议实例(⛔ 不产生协议语义声明);
+  - ② 其**应答面的声明级语义空间**由 `chi_rnf` 的 `flow_support` 覆盖;
+  - ③ ⛔ **不得**据「未进声明面」推断它**未声明**;
+  - ④ ⛔ **不得**据此推断它**不承载**最小应答语义。
+- **AND** 该 4 项 SHALL 逐字可 `grep` 命中(机器可判点)
+- **AND** 边界句「**登记 ≠ 可复算**」SHALL 同时出现于**本 delta** 与**台账条目**
+- **AND** 声明句「⛔ **不作为任何家族的 T1–T4 条款级证据**」SHALL 逐字出现
+
+> **锚点**:`openspec/changes/cpptlm-cep-stub-cache-chstream-surface/specs/cep-stub-cache-chstream-surface/spec.md`(本段)+ `test/cep_e2e_runs.jsonl`(台账侧 `evidence_scope`)
+
 #### Scenario: 计数纪律 SHALL 逐字生效
 
 - **WHEN** 本 change 归档

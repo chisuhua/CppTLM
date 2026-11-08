@@ -725,3 +725,9 @@ add_test(NAME cep_freeze_reverse_verify
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_freeze_reverse_verify.sh)
 add_test(NAME cep_tilelink_engine_failclosed
          COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_tilelink_engine_failclosed.sh)
+
+# ── 2026-11-09(per 台账 Entry #303):**CEP E2E 双向闸**(台账 ↔ 仓内 run 产物)──
+# retention **丙**(Entry #295):首批 run 只入库 `metrics.json` + `simulation_config.json`
+# ⇒ 台账结论首次**可对账**(`metrics_sha256` ↔ 仓内文件);零 orphan + sha256 相等。
+add_test(NAME cep_e2e_reconcile_check
+         COMMAND bash ${CMAKE_SOURCE_DIR}/scripts/test/cep_e2e_reconcile_check.sh)

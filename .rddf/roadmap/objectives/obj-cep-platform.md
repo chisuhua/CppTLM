@@ -17009,6 +17009,45 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑤ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#301**(A6 + W4)· **#300**(A4 + A5)· **#299**(双审开工基线)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-06` SU 2026-11-08 · 二
 
+### Entry #303 — 2026-11-09 [build](**W2 `.gitignore` 例外** + **A8 首批 run 入库 / 7 字段台账 / 双向闸** + **A9.1 delta 终稿**)
+
+**主题**:按修订 ④ 推进 **W2 → A8(G4 对账门)→ A9.1(契约面 delta 终稿)**;首批 **CEP E2E run** 入库并落在台账。
+**角色**:builder(实施)· architect(A9.2 的 `07 号`/ADR 实施后 SU 仍待其执行)· verifier(待验收)。
+**KPI**:Proposed **1/3**(不变)。
+
+**① W2 `.gitignore` 例外(形态修正)**:git 规定「**父目录被排除时不能 re-include 其中的文件**」⇒
+必须先放开 run 目录(`!experimental/run-*/`)+ 目录内先全排除(`experimental/run-*/*`)+ 再接两条白名单。
+**验收实测**:`git check-ignore -q experimental/run-x/metrics.json` ⇒ **rc=1(未被忽略)**;
+`trace.h5` / `report.html` ⇒ **rc=0(仍被忽略)**;`git add --dry-run` 只列出 2 件。嵌套 run 明示不入库。
+
+**② A8 首批 run 入库 + 台账 7 字段(两处并存)**:
+- 产物(`experimental/run-2026-11-09-cep-e2e/`,**仅 2 件**):`metrics.json`(`sha256 = f2479cc2…d457`)· `simulation_config.json`(`sha256 = 22c4ce8f…d4d9`)。
+- 机器可读台账:`test/cep_e2e_runs.jsonl`(1 条)。
+- 散文段 **7 字段**(per 裁定 2):
+  1. `run_id` = **cep-e2e-2026-11-09-a**
+  2. `config_sha256` = **b118c3ce…0a32**(⚠️ = **拓扑 config** 的指纹;⛔ **不含** provenance —— 否则「配置指纹」退化为「环境指纹」)
+  3. `metrics_sha256` = **f2479cc2…d457**
+  4. `metrics_13`(逐键结论)= `total_cycles 300` · `total_transactions 20` · `transactions_per_cycle 0.0666667` · **延迟族 5 键 + `collective_stalls` + `directory_misses` + `memory_violations` = `not-collected`(逐键带 reason)** · `coherence_stalls 260` · `deadlock_violations 0`
+  5. `verification_mode` + `verification_scope` = **sampled** + 「CEP E2E 装置 · 拓扑 A · 300 cycles」(载体 = `simulation_config.json`)
+  6. `ic3_verdict` = **⚪ 不适用**(违例类 `memory_violations` 无样本 ⇒ 三态词表;⛔ 不记「绿」)+ `hypothesis_id` = **framework-e2e**
+  7. `topology_tag` = **A**
+- **run class 与证据边界(逐字)**:本 run = **框架验证 run**(`run_class = framework-verification` · `not_an_experiment_run = true`),
+  ⛔ **不绑定**任何预登记假设(`framework-e2e` 不在 `preregistration.json` 的 registered 行内)⇒
+  ⛔ **不作 B4 证据** · ⛔ **不作任何一致性安全断言**(IC3 = ⚪ 不适用)⇒ 用途**仅** = **可对账**;
+  **「登记 ≠ 可复算」**(延迟族无样本 + 回程腿在框架层不可达 + `trace.h5` 不入库)·
+  **「⛔ 不作为任何家族的 T1–T4 条款级证据」**(`B3b-2` 仍 **0/4**)。
+
+**③ W3 双向闸**:新脚本 `scripts/test/cep_e2e_reconcile_check.sh`(零 orphan · `metrics_sha256` 相等 · 7 字段齐备 · 三态词表 · `not-collected` 必带 reason · **grandfather 127 run 豁免口径**)+ **ctest 注册**;实测 `[reconcile] 台账条目 1 · 仓内已提交 run 1 · 问题 0`。
+
+**④ A9.1 delta 终稿**:新增 scenario「home 简化模型 SHALL 以**豁免登记**表达声明面缺失」——**4 项豁免**逐条可 grep + 「**登记 ≠ 可复算**」边界句 + 「⛔ **不作为任何家族的 T1–T4 条款级证据**」声明句;`openspec validate --strict` rc=0。
+
+**⑤ 实施期发现(如实登记)**:新增 emit 用例最初与 h3 脚本**共用 `[cep][exp][emit]` 标签** ⇒ 它会在该脚本的 `CEP_EXP_DIR` 下**覆盖 h3 的产物**(实测 `cep_b4_observation_keys_check` 因此变红)⇒ 修正 = ① 标签改专用 `[cep][e2e][framework-emit]`;② 加 `CEP_EXP_ID` 守卫(非 `framework-e2e` ⇒ 不产出)。⇒ ctest 恢复 **165/165**。
+
+**⑥ 未完成(⛔ 不静默)**:`A9.2`(`07 号` / ADR 的**实施后** SU)= **architect 域 + 冻结面两步授权** ⇒ builder ⛔ 不代改;`A9.3/T9`(合并 delta + 归档 + KPI 1/3 → 0/3)待 A9.2 后再执行。
+
+**⑦ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#302**(A7)· **#301**(A6+W4)· **#300**(A4+A5)· **#299 / #295**(retention 丙 + 7 字段)· `ADR-CEP-06` SU 2026-11-08 · 二
+
+
 
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 

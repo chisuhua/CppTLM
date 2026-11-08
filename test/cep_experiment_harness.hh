@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <map>
 #include <set>
@@ -259,16 +260,25 @@ namespace cep_exp {
         /// 读取当前仓的 commit id(`.git/HEAD` → ref 文件 / `packed-refs`)。
         /// ⚠️ 解析不到时返回 **"unknown"**(**非空**)⇒ 快照仍可判定「有没有 provenance」。
         static std::string current_git_rev(const std::string& repo_root = ".") {
+            namespace fs = std::filesystem;
             std::string git_dir = repo_root + "/.git";
-            std::ifstream probe(git_dir);
-            if (!probe) {
+            // ⚠️ 两种形态都要支持:普通仓(`.git` 是**目录**)/ worktree(`.git` 是**文件**,
+            //    内容 `gitdir: <path>`)。⛔ 不要用 `ifstream` 探测目录 —— 打开目录会成功
+            //    但读取失败(实测 ⇒ 误判为 "unknown")。
+            if (!fs::exists(git_dir)) {
                 return "unknown";
             }
-            std::string first;
-            probe >> first;
-            probe.close();
-            if (first != "HEAD") {
-                return "unknown";
+            if (fs::is_regular_file(git_dir)) {
+                std::ifstream f(git_dir);
+                std::string line;
+                if (!std::getline(f, line))
+                    return "unknown";
+                const std::string prefix = "gitdir: ";
+                if (line.rfind(prefix, 0) == 0) {
+                    git_dir = line.substr(prefix.size());
+                } else {
+                    return "unknown";
+                }
             }
             std::ifstream head(git_dir + "/HEAD");
             std::string line;
@@ -278,7 +288,10 @@ namespace cep_exp {
             if (line.rfind("ref:", 0) != 0) {
                 return line;  // detached HEAD
             }
-            const std::string ref = line.substr(4);
+            // ⚠️ "ref:" 后可能**有一个空格** ⇒ 必须裁剪,否则拼出的路径带前导空格
+            //    (实测:`.git/ refs/heads/main` ⇒ 打不开 ⇒ 误判 "unknown")。
+            std::string ref = line.substr(4);
+            ref.erase(0, ref.find_first_not_of(" \t"));
             std::ifstream ref_file(git_dir + "/" + ref);
             if (ref_file) {
                 std::string id;
