@@ -2122,3 +2122,71 @@ SU · 四 D-1 原文自陈:「当前载体**没有**来源类型字段 ⇒ 本�
 - [ ] 冻结面两步授权已执行:台账 **Entry #286** 授权 → **commit 本段** → `cep_freeze_check.sh --update --authorized-by "Entry #286"` → **清单单独 commit** → 无参复验 provenance 通过
 
 **关联**:台账 **Entry #286**(精确化授权)· **#285**(审查 + 评分 · F-4/F-5 的来源)· **#284**(SU · 九)· **#282**(4 条裁决)· **#280**(SU · 七 ③ 的局部口径)· `ADR-CEP-12` SU 2026-11-07 ③(术语纪律)· `ADR-CEP-19` 决策 9(显式延期)
+
+---
+
+## Status Update(2026-11-08 · 十一,per 台账 Entry #288)—— **「Core·TrafficGen 主干」的架构决策登记**(10 条统一)+ 实施前**不得宣称已落地**
+
+> **性质**:末尾追加 SU(append-only)。⛔ 不改 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十 的任何一段;⛔ **零**代码 / 契约 / 冻结 main spec 改动;⛔ **不**改任何 DoD 结论。
+> **触发**:用户对 CEP 架构定位的复核(「CEP 应是在现有拓扑链接上对互连模块做带一致性协议的建模,且原业务 Bundle 可接入到 CEP 互联网络」)⇒ 逐条讨论 10 条决策(讨论纪要 `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`)⇒ 全部统一 ⇒ 落决策登记。
+> **审查**:`oracle`(10 条决策的独立架构复核)→ `critic`(本段 + `ADR-CEP-19` 对应段的架构审稿),顺序不可颠倒。
+
+### ① 决策登记(摘要;逐条依据见讨论纪要 + `ADR-CEP-19` SU 2026-11-08)
+
+| # | 决策 | 结论 |
+|---|---|---|
+| D-1 | 可观测面与 13 必纳 metric 的来源 | **latency 测发起端(wrapper)**;wrapper **只暴露原始观测事实**,聚合由 harness(`test/`)消费 ⇒ **零基类改动、零既有引擎波及** |
+| D-2 | 双向映射的对侧语义 | **命中路径也回 CPU 侧响应**(wrapper 就地生成 `CacheRespBundle`)⇒ 「一请求一响应」恒成立;响应侧映射**归 wrapper**;⚠️ 须写明「**承载层回 NoD 响应 ≠ 协议引擎发射**」。⚠️ **勘误**:`CacheRespBundle` **实有** `is_hit` / `error_code`(`cache_bundles_tlm.hh:91-92`)⇒ 纪要 §四 ① 的「无 status / hit-miss 标志」**有误** ⇒ 正面后果:拒绝路径**可**回 `error_code` 错误响应 |
+| D-3 | 引擎可观测面的扩展边界 | wrapper 暴露**公开观测 API**;违例类在不适用场景 ⇒ `not-collected` + **显式登记降格**;第一批目标族 = **CHI RN-F**(有回响应 + 有并发写) |
+| D-4 | 「接收器」的角色 | **不新建 Sink**(后置为 `ab_compare` 的 baseline 侧)+ wrapper **单一模块双角色** |
+| D-5 | 拓扑形态 | **两个拓扑并存**:**A(直连)** = 全绿载体;**B(经网络)** = 互联可达 + 桥投影验证,⛔ **不承载全绿**(桥的 flow_id 5→3 是**有损**投影) |
+| D-6 | 冻结 spec MODIFIES | `openspec/specs/cep-stub-cache-core/spec.md` 改 **2 条**(`:56` / `:71`);⛔ `:63` **不动** ⇒ 连带 `ADR-CEP-19` 决策 9 的**延期依据变更** |
+| D-7 | 流量模式与可复现性 | `SEQUENTIAL`(基线)+ `RANDOM`(**固定种子并入 config 快照**;因需真实并发写以使 `memory_violations = 0` 有意义);⛔ `TRACE` 本轮不做。⚠️ **漂移登记**:纪要原为「`SEQUENTIAL` + `hotspot`」,最终采用 `RANDOM` ⇒ `hotspot` **移除**;⚠️ **机制缺口**:`TrafficGenTLM` **无** seed / 地址段 setter(`rng_(42)` 硬编码)⇒ 「种子入 config 快照」**今无落点** ⇒ 须新增 setter;⚠️ `uniform_int_distribution` 跨 stdlib 非位精确 ⇒ config 快照须记工具链 |
+| D-8 | 判据清单 | 8 条(J-1 装配 · J-2 事务抵达 · J-3 端到端响应完整 · J-4 **IC3 绿 + run-validity 绿**(⛔ **不是**「13 键全部有值」——保留 `not-collected` 合法出口)· J-5 **决定性变异** · J-6 指标自洽 · J-7 桥投影对称 · J-8 B 不承载全绿)。⚠️ **待补**:① run 的 `hypothesis_id` **绑定 `H3`**(唯一双违例类均须实测的已登记行)⇒ 否则 J-4 在机器闸下不可计算;② 三键(`coherence_stalls` / `collective_stalls` / `directory_misses`)的**测量归属与「真实 0」口径**待定 |
+| D-9 | 实验产物规范 | `experimental/run-<ts>-cep-e2e-{A\|B}/` + 4 件套;⛔ 产物不入库 ⇒ **入台账的是元数据**(run id · config 快照 sha256 · 13 键结论 · IC3 verdict · 拓扑标记);`preregistration.json` **不动** |
+| D-10 | 计数纪律 | 见 ③ |
+| **D-0** | **「完成者」角色**(拓扑 A/B 的「全绿」前置) | ✅ **已裁**(2026-11-08,用户)—— 角色 = **home 应答端的协议中立替身**(消费 CohIf `Request`/`Writeback`、经参数化延迟回 `Completion`、可配发 `Snoop`);⛔ **不**产生协议语义声明、⛔ **不**计入 B3b。**拓扑准入判据(治理纪律,逐字)**:「**JSON 拓扑代表真实物理存在的**;…**只为测试而创建**的元素 ⇒ **不进 JSON 拓扑**;否则 ⇒ **要进**」⇒ ⇒ home **物理存在** ⇒ ⇒ **进 JSON 拓扑** ⇒ ⇒ 落 **契约面**(`include/tlm/cep/`,可注册的协议中立 ChStream 模块)⇒ ⇒ **⛔ 不进** `protocol_instances.json` ⇒ ⇒ **装配闸不判红**(闸只要求模块**存在于拓扑**)⇒ ⇒ ⚠️ **命名 + 拓扑 B 的桥挂载结构(B-1/B-2)待裁** |
+
+### ①-b ⚠️ 「经网络」的**定义钉死**(metis P0 —— 否则验收会**假绿**)
+
+> **「网络」= ChStream `connections`(可带 `latency`);**桥不在数据路径上** —— 桥是**装配期投影登记器**(无状态投影器:`pack`/`unpack` 只搬共有字段 + `flow_id→flit_category` 有损投影;`src/` 中**零**调用点)⇒ ⇒ **「事务穿过桥抵达对端」是**假绿表述** ⇒ 顶栏的「互联可达 + 桥投影」必须**拆成两条独立判据**:
+> ① **互联可达** = 「一次事务经**带 latency 的 ChStream 连接**抵达对端」(**不**经桥);
+> ② **桥投影** = **测试级**断言(构造 `CohIfBundle` → `pack` → 断言 `NoCFlitBundle.flit_category` 正确 → `unpack` → 断言共有字段恒等)⇒ ⛔ **不得**写成「事务穿过桥」。
+
+⚠️ **三条实施期约束(自 oracle / metis 复核)**:① **拓扑 A 必须省略 `cep.bridges` 键**(⛔ **空数组 `[]` 是 FAIL `[IAG-01]`**,⛔ 非 SKIP)⇒ ⇒ **J-1 按拓扑分档**(A: 闸 `SKIP` **属正确语义、非缺陷**;B: 闸 `PASS`);② 拓扑 A 的判据 **⛔ 不得**含 `unconsumed_bridges().empty()`(`cohif_noc` 是**全局注册**的,拓扑 A 不消费它 ⇒ 该断言必假);③ **跨 bridge entry 的模块必须互斥** —— `ProtocolEngineBase::bridge_` 是**单槽**且 `attach_protocol_bridge` 直接 `set_bridge()` **赋值** ⇒ 重叠 ⇒ **桥被静默覆盖**而 `instantiateAll` **仍返回 true** ⇒ ⇒ ⛔ **不得**让同一模块出现在两个 entry;⇒ 建议在 Step 7.5 增「同一模块被多个 entry 挂载 ⇒ 失败」的重挂检测(**独立 backlog**,⛔ 不在本轮)。
+
+### ② ⚠️ 实施前的文档纪律(**不得**预先宣称)
+
+- 本段登记的是**架构决策**,⛔ **不是**落地事实 ⇒ ⇒ 凡本段涉及的文档面 **不得**出现「已具备端到端可测能力」「TrafficGen 已接入 CEP」「13 键已全绿」类表述;
+- ⇒ 落地状态的更新(§5.1.1 各族行 / §11 状态表)**待实施完成 + verifier 验收后**再另行追加(⛔ 不在本段)。
+
+### ③ 计数纪律(禁令句,逐字)
+
+> 本框架(CEP 端到端可测)**只**提升**可实验性**(真实业务流量下的行为面可测);⛔ **不**构成 `B3b-2` 的解除证据 —— `B3b-2` 的计数依据是**规范条款级** T1–T4(per **SU · 四 D-1**),而本框架的**链路跑通**⛔ **不是**条款级依据 ⇒ ⇒ **`B3b-2` 维持 0/4**;且本框架**不改变** 4 受限族(CXL 2.0 / CXL 3.0 / NVLink / UALink)的任何状态或 deferral 登记(⛔ `test/cep_b3b2_deferrals.json` **零 diff**)。
+
+### ④ 冻结面清单与**两条授权链的分离**
+
+| 冻结面成员 | 本轮改动 | 授权链 |
+|---|---|---|
+| `docs/adr/ADR-CEP-19-*.md` | 追加 SU(决策 9 延期项状态 + 实施形态 + MODIFIES 预告) | **本轮**:Entry #288 ⇒ 产物 commit → `--update --authorized-by "Entry #288"` → 清单**单独** commit → 无参复验 |
+| `docs/architecture/07-*.md`(本文件) | 追加本段 SU(决策登记) | **同上**(同 commit) |
+| `openspec/specs/cep-stub-cache-core/spec.md` | **`:56` 单条 MODIFIES**(⛔ `:71` 经实测**撤销** —— 其 WHEN 限定在**命中**路径,与拓扑 B 的 miss/request flit 路径**不冲突**) | ⛔ **不在本轮** ⇒ 属**实施期**动作 ⇒ 须 **builder 在其 change 内**执行 + **另立台账 Entry** 走两步授权(per `ADR-CEP-19` 决策 9 理由 ①)⇒ ⇒ **本段不预授权** |
+
+⚠️ **新增契约面元素(实施期)**:「完成者」模块(落 `include/tlm/cep/`)+ 其注册(`include/chstream_register.hh`)⇒ ⇒ **两者均不在 M1 冻结集** ⇒ ⇒ **零冻结面增量** ⇒ ⇒ 但其**契约面**(delta spec)须随 change 落盘。
+
+⚠️ **拓扑准入判据(治理纪律,逐字,2026-11-08 用户裁定)**:
+
+> 「**JSON 拓扑代表真实物理存在的**;如果响应者元素是**物理上不存在**、只是为了测试而创建 ⇒ 那就**不进 JSON 拓扑**;否则 ⇒ **就要进 JSON 拓扑**。」
+
+⇒ ⇒ 适用范围:凡拟新增的拓扑元素(模块 / 桥 / 端点)⇒ **「仅为测试而创建」者** ⇒ **不进 JSON 拓扑**(⛔ 不得以「夹具直调」冒充端到端)⇒ ⇒ **「代表真实存在者」** ⇒ **必须进**。
+
+### ⑤ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且 §2 / §3.1 / §5.1.1 / §11 与 SU · 一 ~ 十 **逐字未变**
+- [ ] 10 条决策各有**可执行文本**且**互相不矛盾**;逐条依据可追至讨论纪要
+- [ ] ② 的**实施前不得宣称**纪律已登记;本段**无**任何落地宣称
+- [ ] ③ 的计数纪律禁令句已逐字登记;`test/cep_b3b2_deferrals.json` **零 diff**
+- [ ] ④ 的**两条授权链分离**已登记(spec MODIFIES **不在**本轮)
+- [ ] 冻结面两步授权已执行:台账 **Entry #288** 授权 → **commit 本段 + `ADR-CEP-19` 对应段** → `cep_freeze_check.sh --update --authorized-by "Entry #288"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #288**(10 条决策 + 授权)· **#287**(下一步任务推荐)· **#285**(架构文档审查)· **#282**(4 条 architect 裁决)· **#280**/**#269**(`07 号` SU · 七 / `ADR-CEP-19` 决策 9)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`(讨论纪要 · 10 条逐条依据)· `openspec/specs/cep-stub-cache-core/spec.md`(`:56` / `:63` / `:71`)

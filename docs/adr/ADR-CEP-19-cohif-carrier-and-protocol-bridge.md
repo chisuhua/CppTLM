@@ -354,3 +354,87 @@ find include/tlm/cep -name "*.hh" | wc -l                               # → 7
 > **台账**: `.rddf/roadmap/objectives/obj-cep-platform.md §11` **Entry #78**
 >
 > **冻结面**: 本文件属 M1 冻结面 **40 成员**;本次改动已走授权闸 `cep_freeze_check.sh --update --authorized-by "Entry #78"`。
+
+---
+
+## Status Update(2026-11-08,per 台账 Entry #288)—— 决策 9 的**延期项解除条件已满足** + 收编进具名 change
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文与既有 SU(尤其**决策 9** 及其**四条理由**—— **逐字保留不回改**);⛔ 不改决策 1 ~ 8 与决策 10+ 的任何一条。
+> **触发**:台账 **Entry #269**(SU · 七:显式延期项的事实复核)· **#280**(SU · 七)· **#282**(4 条 architect 裁决)· **#284**(SU · 九 路径更正)· **#285**(架构文档审查)· **#287**(下一步任务推荐)· **#288**(本轮 10 条决策统一)。
+> **审查**:`oracle`(10 条决策的独立架构复核)→ `critic`(本段 + `07 号` 对应段的架构审稿),顺序不可颠倒。
+
+### ① 决策 9 的延期项:**解除条件已满足**(延期态 → 实施态)
+
+**决策 9**(`:130-140`)把「`StubCacheCore` 的 ChStream 端口面」判为**显式延期**,并给出**四条互斥理由**:① spec 在 `FROZEN_GLOBS` 内;② spec 的「`net_side` SHALL 由 **mock** ProtocolEngine 驱动」+「三个流名 SHALL 不出现作为 stub 的对外接口」;③ `stub_cache_core.hh:39-40`「**不**经 `ModuleFactory` 注册(本类是 **testbench 定位** 的组件)」;④ `ADR-CEP-07:67` / `07 号 §6.3` 它**应该** `registerObject` + `ChStreamAdapterFactory::create`;⇒ 并指明「该腿归 `cpptlm-cep-stub-cache-chstream-surface`(新,排本队列之后)」+「**前置** = 本队列交付 `CohIfBundle`」。
+
+**解除条件已满足的逐条核对**:
+
+| 理由 | 现状 | 判定 |
+|---|---|---|
+| ① spec 在 `FROZEN_GLOBS` 内 | **仍成立** ⇒ ⇒ 解它**必** MODIFIES 一份冻结 main spec(**两步授权** + 台账 Entry) | ⇒ **未被绕过**;改为**显式 MODIFIES**(见 ③) |
+| ② spec 的 mock / 三词禁约束 | 前者**将**由本轮 MODIFIES 解除(见 ③,⛔ **仅 `:56` 一条**);后者**仍成立**(`forward_data` / `back_invalidate` / `barrier` 三词**继续**不在 stub 对外接口出现) | ⇒ **部分解除**,不整体作废 |
+| ③ stub 是 testbench 定位的**纯类** | **仍成立且被刻意保全** —— 本轮**不**给 `StubCacheCore` 加端口面;改为**组合式 wrapper**(`StubCacheEndpointTLM` 持有 stub 实例)⇒ ⇒ **stub 纯类零 diff** | ⇒ **未被推翻** |
+| ④ 它**应该** `registerObject` | 由 wrapper 侧的**真实注册机制**(`registerObject` + `registerDualPortAdapter`)达成 ⇒ ⇒ 缺口**闭合** | ⇒ ✅ **已满足** |
+
+**前置条件**:本队列交付 `CohIfBundle` —— ✅ **已交付**(2026-10-28,Entry #90)⇒ ⇒ **决策 9 的延期项进入实施态**,且**不新建** change 名字 ⇒ **收编**进既有具名 change **`cpptlm-cep-stub-cache-chstream-surface`**。
+
+### ② 实施形态的裁决登记(per 台账 Entry #282 的 4 条裁决)
+
+| 项 | 裁决 |
+|---|---|
+| **形态** | **组合式 wrapper** `StubCacheEndpointTLM`(`ChStreamModuleBase` 派生)内部**持有** `StubCacheCore` 实例;注册 = `registerObject` + `registerDualPortAdapter<..., CacheReqBundle, CacheRespBundle, CohIfBundle, CohIfBundle>`(异构双端口;先例 `NICTLM`)⇒ ⇒ **`StubCacheCore` 纯类零改动**(`INV-SC1`~`INV-SC6` 与 14 个既有单测**零变化**) |
+| **映射面归属** | **wrapper 内部**(G-0e 两侧):op 编码 / `evict_line` 缺口(**保留 core-side 方法 + 装配夹具显式调用**,⛔ 不伪造 Bundle 字段)/ 同步 `AccessResult` ⇒ 异步 `CacheRespBundle` 的在途关联(直读 stub 既有观测面)/ net_side `CohIfBundle` ↔ 功能 5 流编码;⛔ **`cohif_noc` 桥的 `pack`/`unpack` 冻结不动** |
+| **语义分层红线** | **正向圈定**:映射实现**仅许**存在于 wrapper 自身 `.hh`/`.cc`,⛔ **不得**另立 mapper / 翻译 / 桥接模块;**负向禁令**:禁入 `include/framework/` 与 `include/tlm/cep/cohif_noc_bridge.hh`;`flow_id` → canonical 流的解释权在**类型层** ⇒ wrapper 只**产生**合法 `flow_id`,⛔ **不解释**其含义 |
+| **change 归属** | 收编进 `cpptlm-cep-stub-cache-chstream-surface`(**不改名**);⚠️ 其名只承诺「端口面」而收编后承载 **G1 端口面 + G2 拓扑 + G3 断言 + G4' metric 产出**四面 ⇒ ⇒ **proposal 须显式声明收编 scope** |
+
+### ③ 冻结 main spec `openspec/specs/cep-stub-cache-core/spec.md` 的 MODIFIES 预告(**2 条**)
+
+| 条 | 现状 | 将改为 |
+|---|---|---|
+| `:56` | 「`net_side` SHALL 由 **mock ProtocolEngine** 驱动(本 change **不**引入真实协议引擎)」 | 「`net_side` SHALL 由**经 `CohIfBundle` 端口面**的**对端协议引擎**驱动(本 change **不**引入 mock ProtocolEngine)」+ 主语写「**端口面 wrapper 持有的** stub 的 `net_side`」 |
+| `:71` | 「**WHEN** cpu_side **命中** ⇒ **THEN** `net_side` SHALL **不**产生任何 flit」 | ⛔ **不 MODIFIES**(2026-11-08 勘误)—— 该条的 WHEN **限定在命中路径**;拓扑 B 的 flit 只产生于 **miss / request**(及 snoop / writeback)路径 ⇒ **不冲突** ⇒ ⇒ 若要让「桥 flit 路径」入规范,正确载具是 change delta 的 **ADDED Scenario**(自带授权),⛔ **不改**冻结的命中路径 Scenario(否则削弱 `INV-SC6` 的可执行锚) |
+
+⛔ `:63` **不动**(`forward_data` / `back_invalidate` / `barrier` 三词**继续**不在 stub 对外接口出现)。
+⚠️ **勘误溯源**:本轮初稿曾把 `:71` 列入 MODIFIES(沿 Entry #282 的记录);实测其 WHEN 范围后**撤销** ⇒ ⇒ **冻结授权面由 2 条收缩为 1 条**(`:56`)。
+⚠️ **两条授权链分离**:本 SU 只授权**架构文档**(`ADR-CEP-19` + `07 号`);spec 的 MODIFIES 属**实施期**动作 ⇒ ⇒ 须由 **builder 在其 change 内**执行,并**另立台账 Entry** 走两步授权(per 决策 9 理由 ①)⇒ ⇒ ⛔ 本段**不**预先授权 spec 改动。
+
+### ④ 两个拓扑(CHI RN-F 族;**实施前**不宣称已落地)
+
+| 拓扑 | 形态 | 承载的判据 | 边界 |
+|---|---|---|---|
+| **A(直连)** | `TrafficGenTLM → StubCacheEndpointTLM → ChiRnfProtocolEngine ⇄ ChiRnfProtocolEngine` | **全绿载体**:13 键全有值 + IC3 闸门绿 + 端到端响应完整 | — |
+| **B(经网络)** | 同上,但经 `cohif_noc` 桥 ⇢ `NoCFlit` ⇢ ChStream `connections`(带 latency)⇠ 桥 | 互联可达 + **桥投影正确**(`pack_cycles`/`unpack_cycles` 对称)+ flit 路径 | ⛔ **有损投影**(flow_id 5→3)⇒ ⛔ **不承载** canonical 10 流的完整语义 ⇒ ⛔ **不承载全绿**;⚠️ 桥的**挂载点**与 **J-7 的测量腿**(层 1 有损投影 / 层 2 payload 无损)**待裁** |
+
+### ④-a 「完成者」角色的裁决(用户裁定,2026-11-08)与**拓扑准入判据**
+
+**用户裁定的拓扑准入判据(治理纪律,逐字)**:
+
+> 「**JSON 拓扑代表真实物理存在的**;如果响应者元素是**物理上不存在**、只是为了测试而创建 ⇒ 那就**不进 JSON 拓扑**;否则 ⇒ **就要进 JSON 拓扑**。」
+
+⇒ **据此**:「完成者」元素扮演的是 **home(应答端)** —— home 在真实系统里**物理存在** ⇒ ⇒ **它进 JSON 拓扑** ⇒ ⇒ 落点 = **契约面**(`include/tlm/cep/`,**可注册**的、**协议中立**的 ChStream 模块)⇒ ⇒ **⛔ 不进 `protocol_instances.json`**(它**不是**协议实例 ⇒ 由此**自然**不产生任何协议语义声明 / **不计入 B3b**)⇒ ⇒ **装配闸不判红**(闸只要求 `bridges[].modules` 的成员**存在于拓扑**,⛔ **不**要求其为协议实例)。
+
+⚠️ **连带(实施期须处理)**:桥的装配期挂载点 `attach_protocol_bridge` 当前**仅**由 `ProtocolEngineBase` override ⇒ ⇒ **wrapper 与完成者均需新增该 override** 才能进入 `cep.bridges[]` ⇒ ⇒ **拓扑 B 的「桥挂载结构」待裁**(B-1 三端点共挂一桥 / B-2 桥仅连 Stub↔引擎、完成者走 `connections`)。
+
+⚠️ **⚠️ 未闭合的前置(2026-11-08 oracle 复核发现)——拓扑 A/B 的「全绿」缺「完成者」角色**:
+stub 是 RN ⇒ miss 时发起 `request` 并**挂起等 `completion`**;而**全仓无任何模块**给 `flow_id` 赋 `Completion` / `Snoop`(各引擎的 `on_request` **只记账**)⇒ ⇒ stub 的 miss 请求**无任何回流** ⇒ ⇒ `ProgressWatchdog` 必触发 ⇒ `deadlock_violations > 0` ⇒ **IC3 红** ⇒ ⇒ **J-3 / J-4 结构性不可达** ⇒ ⇒ **该角色落定前,本段的「全绿」目标不可开工** ⇒ ⇒ **待裁(新增决策点 D-0)**。
+
+### ④-b ⚠️ 「经网络」的定义钉死(与 `07 号` SU · 十一 ①-b 同款)
+
+「网络」= ChStream `connections`(可带 `latency`);**桥是装配期投影登记器,不在数据路径上** ⇒ ⇒ **「事务穿过桥抵达对端」是假绿表述** ⇒ ⇒ 拓扑 B 的两个验证目标必须**拆开**:**互联可达**(经带 latency 的连接,⛔ 不经桥)+ **桥投影**(测试级 `pack`/`unpack` 断言,⛔ 非「事务穿过桥」)。
+
+### ⑤ ⚠️ 计数纪律(**不得**用框架跑通改判 B3b)
+
+> 本框架**只**提升**可实验性**(真实业务流量下的行为面可测);⛔ **不**构成 `B3b-2` 的解除证据 —— `B3b-2` 的计数依据是**规范条款级** T1–T4(per `07 号` SU · 四 D-1),而本框架的**链路跑通**⛔ **不是**条款级依据 ⇒ ⇒ **`B3b-2` 维持 0/4**;且本框架**不改变** 4 受限族(CXL 2.0 / CXL 3.0 / NVLink / UALink)的任何状态或 deferral 登记(⛔ `test/cep_b3b2_deferrals.json` **零 diff**)。
+
+### ⑥ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**
+- [ ] 决策 9 的**四条理由**逐条核对已登记(① 仍成立⇒改显式 MODIFIES;② 部分解除;③ **刻意保全**;④ **已闭合**)
+- [ ] 决策 9 的**延期项状态**已由「显式延期」更新为「**进入实施态**」;具名 change **收编**(不改名)
+- [ ] 冻结 main spec 的 **2 条** MODIFIES 预告已登记(:56 / :71)且 `:63` **不动**;⚠️ spec 改动**另立 Entry + 两步授权**(本段**不**预授权)
+- [ ] 两个拓扑(A 直连 / B 经网络)的形态与**承载边界**已登记;⛔ B **不承载全绿**
+- [ ] ⑤ 的计数纪律禁令句已逐字登记;`test/cep_b3b2_deferrals.json` **零 diff**
+- [ ] ⚠️ **实施前**的文档面**无**任何「已具备端到端可测能力」类宣称(⛔ 决策登记 ≠ 落地)
+- [ ] 冻结面两步授权已执行:台账 **Entry #288** 授权 → **commit 本段 + `07 号` 对应段** → `cep_freeze_check.sh --update --authorized-by "Entry #288"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #288**(本轮 10 条决策 + 授权)· **#287**(下一步任务推荐)· **#285**(架构文档审查)· **#284**(`07 号` SU · 九 路径更正)· **#282**(4 条 architect 裁决)· **#280**(`07 号` SU · 七)· **#269**(`ADR-CEP-19` 决策 9 + 显式延期)· `ADR-CEP-05` 决策 2(三明治挂载)· `ADR-CEP-07` 决策 3(真实注册机制)· `openspec/specs/cep-stub-cache-core/spec.md`(`:56` / `:63` / `:71`)· `include/tlm/cep/stub_cache_core.hh` · `include/tlm/cep/cohif_noc_bridge.hh`
