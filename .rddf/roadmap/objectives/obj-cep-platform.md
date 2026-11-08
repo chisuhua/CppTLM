@@ -992,6 +992,56 @@ Stage 4+ 进入维护态后,objective 归档条件:
 
 **总估时**:内部可推进项 = **L1 + L2 ≈ 1d(builder)** + **L3 + L4 + L5 ≈ 2.5h(planner,本轮已落)**;E1/E2 为**周期项**,按季度触发。
 
+### 2026-11-08 任务路径图(architect 阶段闭合后 —— planner 产出,per 台账 **Entry #289**)
+
+> **上游输入(唯一)**:`07 号` **SU · 十一**(12 条决策登记)· `ADR-CEP-19` **SU 2026-11-08**(决策 9 延期项状态 + 实施形态 + MODIFIES 预告)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`(12 条逐条依据)· 台账 **Entry #288**(授权 + 审查闭环)。
+> **前提**:architect 阶段**已闭合**(critic **APPROVE_WITH_CONDITIONS / 0 BLOCKER**;冻结面两步授权已执行 + provenance 归位)⇒ ⇒ 本图 = **实施侧**路径,⛔ **不重开**任何已裁决策。
+> ⚠️ **双轨 + 门控**:两轨**域不同、KPI 互斥**(CEP 并发 ≤ 1)⇒ 必须**分轨**推进,⛔ 不可串成单线。
+
+#### 轨 A · CEP 实施轨(builder 域 · 占 1 KPI slot)
+
+| # | 任务 | 出口判据(可机器判) | 依赖 |
+|---|---|---|---|
+| **A0** | ⛔ **授权门**:另立台账 Entry 授权 `cep-stub-cache-core` 的 **`:56` 单条 MODIFIES** | 新 Entry 存在 + 两步授权链完成(provenance 复验绿) | — |
+| **A1** | `StubCacheEndpointTLM`(wrapper):**异构 dual 端口**(CacheReq/CacheResp ↔ CohIf/CohIf)+ **公开观测 API**(per-txn issue/complete 周期戳 · in-flight 计数)+ `attach_protocol_bridge` override + 映射(命中也回 CPU 侧响应) | 类可构造 + 端口类型异构 + 观测 API 签名落地 | A0 |
+| **A2** | `CohIfResponderTLM`(完成者):对称 CohIf 端口 + **参数化延迟**回 `Completion` + 可配发 `Snoop` + `attach_protocol_bridge` override | 「stub miss ⇒ completion 回流」断言绿 | A0 |
+| **A3** | 注册:`registerObject` × 2 + `registerDualPortAdapter` × 1 + `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` × 1 | `ModuleFactory::instantiateAll` 成功 | A1,A2 |
+| **A4** | ⛔ **复现门**:`TrafficGenTLM` 新增 **seed / 地址段 / mode setter**;config 快照记**种子 + 工具链** | setter 存在 + 快照含种子 + 同种子两次 run 计数逐字段相等 | — |
+| **A5** | 拓扑 **A**(**省略** `cep.bridges` 键)+ 拓扑 **B**(三端点共挂一桥 + 显式 `bridge_id` + 带 `latency` 的 connections) | 两拓扑 `instantiateAll` 成功;A 闸 `SKIP` 属正确语义;B 闸 `PASS` | A3 |
+| **A6** | 判据 **J-1 ~ J-8**(含 J-3 端到端响应完整 · J-4 IC3 绿 + run-validity 绿 · **J-5 决定性变异** · J-7 **测试级** `pack`/`unpack` + 逐模块 `bridge()->bridge_id()` 同一投影语境) | 8 条逐条绿;J-5 的变异体**按正确原因红** | A5 |
+| **A7** | harness 接入(`LatencyCollector` / `SwmrDataValueDetector` / `ProgressWatchdog`)+ **三键测量归属**(`coherence_stalls` / `collective_stalls` / `directory_misses` 的来源与「真实 0」口径) | 13 键全有值 + `audit_balanced()` 真 + 双违例类真实 0 | A6 |
+| **A8** | 4 件套产出 + **台账元数据**(run id · config 快照 sha256 · 13 键结论 · IC3 verdict · 拓扑标记) | `render_report --check` 绿 + `report.html` 含「✓ 一致性闸门通过」+ 元数据入台账 | A7 |
+| **A9** | 契约面收敛:`:56` MODIFIES 合并 + 新 capability(delta)+ `07 号` / `ADR-CEP-19` 的**实施后**状态更新 | main spec 含新内容 + 两文档追加实施后 SU(⛔ 状态列 ✅ 维度按 SU · 十 纪律) | A8 |
+
+**轨 A 的 3 个门**:**G1 = A0**(授权门)· **G2 = A6**(可达门:J-3/J-4 依赖 A2 完成者 ⇒ ⛔ 未通则**不得宣布全绿**)· **G3 = A4**(复现门:种子未入快照 ⇒ ⛔ 不得作 B4 证据)。
+
+**轨 A 里程碑**:**M1** = 接线(A1~A3)+ 拓扑 A ⇒ **一请求一响应** 断言绿(J-1/J-2/J-3)→ **M2** = **第一件全绿 run**(13 键全有值 + IC3 绿 + run-validity 绿 + 4 件套 + 台账元数据)→ **M3** = 拓扑 B(互联可达 + 桥投影)→ **M4** = 契约面收敛 + change 归档 ⇒ **KPI 回 0/3**。
+
+**轨 A 关键路径**:**A0 → (A1 ∥ A2) → A3 → A5 → A6** ⇒ M1;**A4 ∥ A6** ⇒ M2;**A7 → A8 → A9** ⇒ M4。
+
+#### 轨 B · 架构治理轨(architect 域 · **不占** KPI slot)
+
+| # | 任务 | 出口判据 | 依赖 |
+|---|---|---|---|
+| **B1** | **F-3 第一批**:逐份核对 ADR 的「决策已定稿 / 不变量闭合 / 有回滚路径」⇒ 达标者转 `✅ 已签发` | 每份留核对证据;⛔ **不可批量签发** | 轨 A **不**依赖(可并行) |
+| **B2** | **F-2 闸**:14/22 ADR 缺 `Verification` ⇒ 带 deferral 登记的结构闸 | 闸 + 14 条 deferrals;零 ADR diff | — |
+
+#### ⏳ 周期项(不占并发)
+
+| # | 任务 | 节奏 |
+|---|---|---|
+| **E1** | D-4 ①/② 的**季度外部检索探测** | 季度(cadence 脚本已报 `CADENCE-NEVER-RUN` = 真实状态) |
+| **E2** | 终态 DoD Go **季度复审** | 季度 |
+
+#### ⛔ 明确不做(本路径图范围外)
+
+⛔ **重挂检测**(Step 7.5「同一模块属多个 entry ⇒ 失败」)—— 独立 backlog(B-1 形态下**天然规避**)· ⛔ **flit 级网络路径**(Router/flit 在仓内**不存在**)· ⛔ **新增假设行**(⛔ 事后扩 `preregistration.json` 被明令禁止;本轮绑 **H3**)· ⛔ **改 `B3b-2` 计数**(仍 **0/4**)· ⛔ **改已签发结论**(改判须新 SU + 回滚路径)· ⛔ **扩流量模式**(⛔ `TRACE` 本轮不做)。
+
+#### 跨轨的纪律提醒
+
+⚠️ **A9 的状态更新**须**实施 + verifier 验收后**才做(⛔ 实施前**不得**宣称「已具备端到端可测能力」,per `07 号` SU · 十一 ②)⇒ ⇒ **不要**在 M1/M2 之后提前改 §5.1.1 状态列。
+⚠️ 轨 B 与轨 A **不共享 KPI slot**(B1/B2 不建 change 目录 ⇒ 不占)⇒ ⇒ 可与轨 A **并行**。
+
 ---
 
 ## §11 决策台账(append-only,per `rdd-planner/SKILL.md:158`)
@@ -16265,6 +16315,26 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑧ 后续路径**:① **builder** 新建 change `cpptlm-cep-stub-cache-chstream-surface` 的范围**扩展**(收编 scope = G1 端口面 + G2 两拓扑 + G3 判据 + G4' metric 产出)+ 两新增契约面元素 + 注册 + 拓扑 A/B + 判据 + harness 接入 ⇒ ⇒ **实施期另立 Entry** 授权 `:56` MODIFIES;② ⏳ E1/E2 季度项不变;③ **N-1**(F-2 闸)与 **N-3**(F-3 分批签发)仍待排。
 
 **⑨ 关联**:**#287**(下一步任务推荐)· **#285**(架构文档审查)· **#282**(4 条 architect 裁决)· **#280**/**#269**(`07 号` SU · 七 / `ADR-CEP-19` 决策 9)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`(讨论纪要 · 12 条逐条依据)· `openspec/specs/cep-stub-cache-core/spec.md`
+
+### Entry #289 — 2026-11-08 [plan](**任务路径图**(planner)—— 双轨 + 3 门 + 4 里程碑)
+
+**主题**:用户建议三段式流程(architect 文档 → planner 路径图 → builder 实施);architect 段已闭合 ⇒ 本阶段产出**任务路径图**。
+**角色**:planner(路径图)· architect(上游已闭合)· builder(待路径图定稿后实施)。
+
+**① 轨 A(CEP 实施 · builder 域 · 占 1 KPI slot)**:**A0** 授权门(另立 Entry 授权 `:56` 单条 MODIFIES)→ **A1** `StubCacheEndpointTLM`(异构 dual 端口 + 公开观测 API + 映射)∥ **A2** `CohIfResponderTLM`(完成者:参数化延迟回 completion + 可配发 snoop)→ **A3** 注册 → **A5** 拓扑 A(省略 `cep.bridges` 键)+ 拓扑 B(三端点共挂一桥)→ **A6** 判据 J-1~J-8 → **A7** harness 接入 + **三键测量归属** → **A8** 4 件套 + 台账元数据 → **A9** 契约面收敛 + 实施后状态更新。**3 门**:**G1=A0**(授权)· **G2=A6**(完成者未通 ⇒ 不得宣布全绿)· **G3=A4**(种子未入快照 ⇒ 不得作 B4 证据)。**4 里程碑**:**M1** 接线 + 拓扑 A 一请求一响应绿 → **M2** 第一件全绿 run → **M3** 拓扑 B → **M4** 契约面收敛 + 归档(KPI 回 0/3)。**关键路径**:`A0 → (A1∥A2) → A3 → A5 → A6` ⇒ M1;`A4∥A6` ⇒ M2;`A7→A8→A9` ⇒ M4。
+
+**② 轨 B(架构治理 · architect 域 · 不占 slot)**:**B1** F-3 第一批(逐份核对后**分批**转签发;⛔ 不可批量)· **B2** F-2 结构闸(14/22 ADR 缺 `Verification` ⇒ 带 deferral 登记)。
+⚠️ **两轨可并行**(B1/B2 **不建 change 目录** ⇒ 不占 KPI slot);⛔ 但**不可串成单线**(域不同 + KPI 互斥)。
+
+**③ ⏳ 周期项**:**E1** D-4 ①/② 季度外部检索探测 · **E2** 终态 Go 季度复审(不占并发)。
+
+**④ ⛔ 明确不做**:重挂检测(独立 backlog;B-1 形态天然规避)· flit 级网络路径(仓内不存在)· 新增假设行(⛔ 事后扩投影被禁;本轮绑 **H3**)· 改 `B3b-2` 计数(仍 0/4)· 改已签发结论 · 扩流量模式(⛔ `TRACE` 不做)。
+
+**⑤ 跨轨纪律**:**A9 的状态更新须实施 + verifier 验收后**才做(⛔ 实施前不得宣称「已具备端到端可测能力」,per `07 号` SU · 十一 ②)⇒ ⇒ **不要**在 M1/M2 之后提前改 §5.1.1 状态列。
+
+**⑥ 上游(唯一)**:台账 **Entry #288** + `07 号` SU · 十一 + `ADR-CEP-19` SU 2026-11-08 + 讨论纪要 ⇒ ⇒ 本图**不重开**任何已裁决策;⛔ 若实施期发现与本图冲突 ⇒ 停下回报(⛔ 不自行改架构决策)。
+
+**⑦ 关联**:**#288**(12 条决策 + 授权)· **#287**(下一步任务推荐 · N-1/N-2/N-3)· **#285**(架构文档审查 · F-2/F-3 来源)· **#282**(4 条 architect 裁决)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
