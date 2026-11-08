@@ -469,7 +469,7 @@ phase-1~9 完成(2026-04 ~ 2027-02)后,**协议中立基线缺位**:
 
 ### 5.2 当前真实 baseline(2026-11-07 实测,per oracle B1)
 
-`openspec/changes/` 当前 **1 个 active**(2026-11-08 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 1/3**。
+`openspec/changes/` 当前 **0 个 active**(2026-11-09 实测,per `openspec list --json`)⇒ **当前 Proposed 并发 = 0/3**。
 
 > **⚠️ 本节只承载「活口径」(当前实测值)** —— 逐次 KPI 变更的**归档流水**(每次立项 / 归档 / slot 释放 / 暂存归档)**不堆在本节** ⇒ 全部见 **§11 台账**(Entry #28 ~ #273 的 KPI 相关条目)。
 > **历史快照去向**:本节原先承载的 2026-10-20 三者暂存归档、2026-10-22 ~ 2026-11-07 的逐次 baseline 变更链,已由 §11 台账**完整承载**(append-only)⇒ **删除不丢信息**。
@@ -17083,6 +17083,38 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 **⑤ 计数 / 边界**:`B3b-2` **维持 0/4**;`experimental/preregistration.json` / `metrics.schema.json` **零 diff**;`protocol_instances.json` / `protocol_instance.schema.json` **零 diff**;`include/framework/` **零 diff**;⛔ 三份文档**只追加**,⛔ 不改任何既有正文/决策/既有 SU。
 
 **⑥ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#303**(A8 + 双向闸 + 首批 run)· **#297**(A0 授权 `:56` 单条 MODIFIES)· **#295**(索引纪律 + retention 丙)· **#293**(台账 7 字段 / 声明面裁定 甲)· **#288**(10 条决策原始登记)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-19` SU 2026-11-08 · `ADR-CEP-06` SU 2026-11-08 · 二
+
+
+### Entry #305 — 2026-11-09 [build](**归档** `cpptlm-cep-stub-cache-chstream-surface`(✅ 已完成归档语义)+ **KPI 1/3 → 0/3** + 活口径同步 + 残余登记)
+
+**主题**:change `cpptlm-cep-stub-cache-chstream-surface` 的**收尾**:归档(delta 合并进 main specs)+ 冻结链(第三次授权事件)+ KPI 活口径同步 + **残余/backlog 如实登记**。
+**角色**:builder(归档 + 同步)· architect(A9.2 已闭合,Entry #304)· verifier(待验收)。
+**KPI**:Proposed 并发 **1/3 → 0/3**(本 change 释放其 slot)。
+
+**① 归档链(✅ 已完成归档语义 · delta 合并)**:
+| 步 | 内容 | 证据 |
+|---|---|---|
+| 1 | 产物 commit | `c05b17e2`(change 目录移入 `openspec/changes/archive/2026-11-09-cpptlm-cep-stub-cache-chstream-surface/`;delta 合并:`cep-stub-cache-chstream-surface` **新建** main spec + `cep-stub-cache-core` **更新** `:56` 单条 MODIFIES **+ F-A4 限定句**) |
+| 2 | 冻结清单授权更新 | `cep_freeze_check.sh --update --authorized-by "Entry #297"` ⇒ 「✓ 授权校验通过:台账 entry 'Entry #297'」 |
+| 3 | 清单**单独** commit | `ab441d8f` |
+| 4 | **无参复验** | ✓ provenance 自检通过(41 产物,冻结于 `c05b17e2`)+ ✓ M1 产物冻结校验通过 |
+| 5 | tasks | **52/52 全勾**(T9.3 含归档回执) |
+
+⚠️ **三条授权链相互独立(⛔ 不混写)**:**#297**(归档合并 `:56`)/ **#304**(A9.2 三处架构文档 SU 追加)/ ——— 三次 `--update` 各自对应**单一**授权范围。
+
+**② KPI 活口径同步(6 份活文档 + AGENTS.md)**:`obj §5.2` · `.rddf/roadmap.md` · `.rddf/roadmap/phases/phase-10.md` · `.rddf/improvements/cpptlm-cep-umbrella.md` · `.rddf/improvements/cpptlm-cep-nvlink-sharp.md`(2 处)· `AGENTS.md`(3 处计数:**37 份 `cep-*` main spec** / **132 份已归档 change** / **0 active**)⇒ **Proposed 并发 0/3**。
+
+**③ 残余与 backlog(如实登记,⛔ 不静默)**:
+| # | 项 | 归属 / 触发条件 |
+|---|---|---|
+| **R-1** | **新建的 main spec `openspec/specs/cep-stub-cache-chstream-surface/spec.md` 未纳入 M1 冻结集** ⇒ 其契约面可被**无授权**改动(与既有 5 份 `cep-*` main spec 的治理不对等) | **architect 裁决**是否纳入 `FROZEN_GLOBS`(纳入 ⇒ 须另立 Entry + 两步授权);⛔ 本轮**不擅自**扩冻结集 |
+| **R-2** | **回程腿在拓扑级不可达** ⇒ 「全绿 run」目标**未达成**(IC3 = ⚪ 不适用 + 延迟族 `not-collected`) | **双条件**:① 修 `include/framework/dual_port_stream_adapter.hh` 的入向按端口路由(另立 change + 冻结面授权)② 拓扑 config 改 `emit_completions: true` 重跑(见 `07 号` SU · 十五 ② ①) |
+| **R-3** | **`ModuleFactory` Step 7.5 的重挂检测**未做(本轮只落地测试级 `[BSS-01]` 闸,**只测不拦**) | 动 `src/core/module_factory.cc` ⇒ 红线 ⇒ 另立 change |
+| **R-4** | `cohif_responder.hh` 注释把根因文件名写成 `bidirectional_port_adapter.hh`(张冠李戴) | ✅ **builder 同批已勘误**(⛔ 非冻结面,⛔ 不影响实现行为)—— oracle R1 附带项 |
+
+**④ 验证(实测)**:构建 rc=0;`SCE-* / RPR-* / E2E-*` **27 cases / 336 assertions** 绿;`ctest` **165/165**(含新增 `cep_index_position_check` 闸);`./test.sh --mode off` **21/21**;7 个文档/契约闸 + `cep_index_position_check` 全绿;`openspec validate --strict` 绿;⛔ 红线六项**零 diff**;⛔ `experimental/preregistration.json` / `metrics.schema.json` **零 diff**;**`B3b-2` 维持 0/4**。
+
+**⑤ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`**(归档件 `openspec/changes/archive/2026-11-09-cpptlm-cep-stub-cache-chstream-surface/`)· **#304**(A9.2 三处 SU)· **#303**(A8 + 双向闸)· **#302**(A7)· **#301**(A6 + W4)· **#300**(A4 + A5)· **#297**(A0 授权 `:56` 单条 MODIFIES)· `07 号` SU · 十五 · `ADR-CEP-19` SU 2026-11-09 · `ADR-CEP-06` SU 2026-11-09
 
 ### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
 

@@ -2,7 +2,7 @@
 
 > **最后更新**: 2026-10-27 (v1.5-planner 增量, **队列 #6 归档 + 队列 #7 转正后的口径回填**;per `obj-cep-platform` **Entry #80 / #81** —— 队列 #6 `cpptlm-cep-moesi-gpu-adapter` 完成归档释放 KPI slot + 队列 #7 `cpptlm-cep-cohif-carrier` 转正占 1 slot;**不改排期**,排期真源 = `obj §4.0`;载体分工与状态更新协议见 `obj §4.7`,入口见 §4.7.4)
 > **真源原则**: 本文件代表项目长期路线图 (rdd-workflow 主文档), **真源 1 (docs/architecture/)** 与 **真源 2 (docs/designs/)** 是技术真源, 本文件是协调真源
-> **OpenSpec KPI 政策**: per AGENTS.md §DOC HYGIENE line 420, **当前真实 baseline = 1/3**（**活口径**:逐次 KPI 变更的**归档流水**见 objective `obj-cep-platform.md` §11 台账(Entry #28 ~ #273 的 KPI 条目)⇒ **本行不堆历史快照**;⚠️ `docs_sync_check` 的KPI 断言只抓「当前/现行/真实」限定的当前态 ⇒ 历史叙述不影响校验）**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`(per oracle v0.4 路线图评审 B1 修订)
+> **OpenSpec KPI 政策**: per AGENTS.md §DOC HYGIENE line 420, **当前真实 baseline = 0/3**（**活口径**:逐次 KPI 变更的**归档流水**见 objective `obj-cep-platform.md` §11 台账(Entry #28 ~ #273 的 KPI 条目)⇒ **本行不堆历史快照**;⚠️ `docs_sync_check` 的KPI 断言只抓「当前/现行/真实」限定的当前态 ⇒ 历史叙述不影响校验）**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`(per oracle v0.4 路线图评审 B1 修订)
 > **rdd-planner owns**: `.rddf/roadmap/{objectives,features,phases}/*.md` + `.rddf/improvements/*.md`(唯一写入方, per ADR-0028 + ADR-0054 D5)
 > **阶段状态真源**: 本文件的 **Phase Skeleton** 是阶段级状态的唯一真源。`.rddf/state/roadmap-state.json`(rdd-workflow 遗留,2026-08-25 初始化)已于 2026-10-27 **删除** —— 实测全仓**无任何脚本 / 代码读取**它,且其内容(`current_phase=phase-1` / `phase-1=in_progress`)与本文件直接矛盾(phase-1 已 completed、phase-9 active、phase-10 in-progress);保留即制造**第二份阶段状态真源**,违 `obj §4.7.1` 载体分工(一个状态只写一处)。
 > **CEP 载体分工 / 状态更新协议**: 见 `obj-cep-platform §4.7`(objective / phase / improvement / OpenSpec change / 实施笔记 五类载体 + 状态机 + 六步同步清单);**实施路径排队真源** = 同文件 §4.0

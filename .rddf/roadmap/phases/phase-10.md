@@ -206,7 +206,7 @@ Stage 0 完成 ──→ Stage 1 (10 change 串行 10 季度,**KPI 总数 = 14**
 ### 治理与文档约束(per AGENTS.md §DOC HYGIENE)
 
 - **AGENTS.md:423 边界**: 第 3 条"SoC 架构组件/拓扑/演进类提案 → ArchForge"。CEP **核心框架层**(5 层骨架 + Stub Cache + Coherence Interface + 插件机制)**归 CppTLM**;**协议语义建模**(5 个具体协议设计文档)**归 ArchForge**(per `ADR-CEP-00 §2 Decision 4` 豁免论证,边界条款对照表)
-- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 1/3**（**活口径**:逐次 KPI 变更的**归档流水**见 objective `obj-cep-platform.md` §11 台账(Entry #28 ~ #273 的 KPI 条目)⇒ **本行不堆历史快照**;⚠️ `docs_sync_check` 的KPI 断言只抓「当前/现行/真实」限定的当前态 ⇒ 历史叙述不影响校验）**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
+- **AGENTS.md KPI 政策**: Proposed 并发 ≤ 3(per AGENTS.md §DOC HYGIENE line 420)。**当前真实 baseline = 0/3**（**活口径**:逐次 KPI 变更的**归档流水**见 objective `obj-cep-platform.md` §11 台账(Entry #28 ~ #273 的 KPI 条目)⇒ **本行不堆历史快照**;⚠️ `docs_sync_check` 的KPI 断言只抓「当前/现行/真实」限定的当前态 ⇒ 历史叙述不影响校验）**单一时钟真源**: `ADR-CEP-00 §2 Decision 3`,本文件不重算(per oracle v0.4 路线图评审 B1 修订)。
 - **ADR 不可变 doc-only 类豁免**: `cpptlm-dgpu-soc-arch-truth-cleanup §6` 显式声明,仅 doc-only cleanup 类不计。**umbrella change 含测试契约骨架,不符豁免**(per oracle v0.4 B2-1)
 - **真源 1 命名空间**: `docs/architecture/` 一律真源 1,`docs/adr/` 一律真源 3,跨仓 ArchForge 文档另立
 
