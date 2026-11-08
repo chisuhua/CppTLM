@@ -16498,6 +16498,60 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑦ 关联**:**#291**(两条用户裁决 + 落地义务清单)· **#290**(审查材料包)· **#289**(任务路径图 + §10 修订 ①)· **#288**(12 条决策)· **#285**(架构文档审查 · U-5 的来源)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(第二轮审查)· `ADR-CEP-19` SU 2026-11-08 · 二 · `ADR-CEP-12` SU 2026-11-08 · `07 号` SU · 十一 / SU · 十二 · `openspec/specs/cep-stub-cache-core/spec.md`(`:56` / `:63` / `:71`)· `test/test_cep_stub_cache_core.cc`(`INV-SC6`)· `include/tlm/cep/instance_assembly_gate.hh`(`[IAG-01]`~`[IAG-07]`)· `include/tlm/cep/protocol_instance.schema.json`
 
+### Entry #293 — 2026-11-08 [go-decision](**两项裁定落盘** —— 声明面落点 = **甲** + **F-12** 台账元数据字段集)+ 冻结面授权 + oracle→critic 双审闭环)
+
+**主题**:用户 2026-11-08 口令「接着裁甲/乙并把 F-12 一并落成 SU(同授权链)」⇒ architect 裁两项并落 **3 份追加 SU**(⛔ 不回改任何已签发段)。
+**角色**:architect(裁定 + 起草 + 双审 + 冻结面授权)· planner(§10 路径图修订 ②,见 ⑥)· builder(待实施)。
+**KPI**:不变(0/3;本 Entry 不建 change 目录)。
+
+**① 裁定 1 —— 声明面落点 = **甲**(home 简化模型**不进** `protocol_instances.json`)**
+
+- **状态追认**:Entry #292 SU · 二 ③ 与 `07 号` SU · 十二 ④ 登记的「甲 / 乙**待裁**」⇒ **已裁 = 甲**;⛔ 上引原文保留未回改。
+- **5 条理由**(完整 + 实测证据见 `ADR-CEP-19` SU · 三 ②):① **类别不同**(协议实例 vs home 模型);② **无机器义务**(4 处实测:decl_alignment 只校验**声明侧** / reverse_verify 只改声明文件 / source_registry 按**显式 include** 枚举、**不目录扫描** / CDX-06 类探针按 `id` **定点查**字段);③ **乙不带来新信息**(home 应答面的**声明级语义空间**已被 `chi_rnf` 的 `flow_support` 覆盖);④ **代价不对称**(乙 = 改 M1 冻结件 schema + **跨仓同步** ArchForge 32 号声明);⑤ **甲是唯一与已签发文档不自相矛盾的选项**(`ADR-CEP-12` SU 2026-11-08 ② 已把「home 模型 ⛔ 不在声明面」当作**既定前提**使用 ⇒ 选乙须先勘误该已冻结 SU)。
+- **实施契约**:契约面 delta SHALL 登记 4 项(不是协议实例 / 应答面的声明级语义空间由 `chi_rnf` 的 `flow_support` 覆盖 / ⛔ 不得据「未进声明面」推断**未声明** / ⛔ 不得据此推断**不承载**最小应答语义)+ **机器可判点**(该句逐字可 grep 命中)+ 与 `ADR-CEP-12` 边界句**合流**。
+- **升级条件**(全满足才走乙):出现「必须机器判哪个 home 配哪个实例」的需求**或**任何新闸引入「实现面元素须在声明面登记」的**反向完整性校验** ⇒ 且不能由豁免登记表达 ⇒ 且经另立 Entry + 两步授权。**回滚** = 追加勘误段(**不涉及**冻结件)。
+
+**② 裁定 2 —— F-12:台账元数据的最小字段集(7 项)**
+
+| # | 字段 | 关键约束 |
+|---|---|---|
+| 1 | `run_id` | — |
+| 2 | `config_sha256` | — |
+| 3 | **`metrics_sha256`** | **F-12 核心新增**;只保证「台账记的是哪一份产物」 |
+| 4 | **`metrics_13`** | 13 键的**值**或 `not-collected`,**逐键**;`not-collected` 须**带 reason**(per `INV-CEP-06-IC4`) |
+| 5 | **`verification_mode` + `verification_scope`** | 载体 = **`simulation_config.json`**(per `tools/run_sweep.py` 的机器校验点);与 `metrics.json` 同名字段漂移 ⇒ **以 config 为准** |
+| 6 | `ic3_verdict` + `hypothesis_id` | 判定 SHALL 用 **SU 2026-11-05(#3) 三态词表**(✓ 通过 / ❌ 违例 fail / ⚪ 不适用)⇒ ⛔ **不得**记二值「绿 / 红」 |
+| 7 | `topology_tag` | A / B |
+
+- **边界(逐字,两处一致)**:**登记 ≠ 可复算** —— 因产物**不入库**,台账条目只提供**对账**能力(该条目 ↔ 那一次 run 的 `metrics.json`,由 `metrics_sha256` 对齐)⇒ ⛔ **不得**表述为「实验可复算 / 可重放」;⚠️ `metrics_sha256` **不**保证结论正确,它只保证「台账记的是哪一份产物」;⛔ **不得**据台账条目声称「已证明无死锁 / 无违例」—— 该表述受 `verification_mode` / `verification_scope` 约束(per `ADR-CEP-06` §3 规模上限契约第 2 条);⚠️ **对账能力的前提是「那一份产物仍可取得」** —— run 目录不入库 ⇒ 可核性随 **retention** 衰减 ⇒ ⛔ 本段**不**裁决 retention(属另一条独立决策)。
+- **与既有契约的关系**:`ADR-CEP-06` 的决策 1 / 决策 4 / `INV-CEP-06-IC1`~`IC5` / §3 规模上限契约**零改动** ⇒ **新增 invariant 数 = 0**;⛔ **未**裁决「产物入库」(属另一条独立决策)。
+
+**③ 审查闭环(oracle → critic,顺序不可颠倒)**:
+- **`oracle`(1 轮)**:8 条建议**全部吸收**;其中最重的一条是它指出**我原漏掉的决定性证据** —— `ADR-CEP-12` SU 2026-11-08 ② 已把「home 模型 ⛔ 不在声明面」当作既定前提 ⇒ **选乙 = 推翻一条已落盘冻结 SU 的事实前提** ⇒ 甲是**唯一**不自相矛盾的选项(已补为理由 ⑤)。另 4 条字段级补强(判定须用**三态词表** / `not-collected` 须带 **reason** / 规模上限声明的载体是 **`simulation_config.json`** / 对账能力以「**产物仍可取得**」为前提)亦已吸收。⚠️ oracle 同时订正了**我给它的口头转述**(`chi_rnf.flow_support.back_invalidate = false`)—— 草稿本身无误,事实底稿已更正。
+- **`critic`(1 轮)**:**APPROVE_WITH_CONDITIONS / 0 BLOCKER / `mergeable: yes` / `scope_exceeded: false`**;3 SHOULD_FIX(① 草稿内**计数矛盾**:理由「4 条」vs 实列 5 条、证据「3 处」vs 实列 4 处 ⇒ 已统一为 **5 条 / 4 处**;② `ADR-CEP-06` 草稿的**悬空锚点** `D-θ`(该文 grep 零命中)⇒ 已改为实际依据;③ `Entry #291 ② A-6` **引错锚点**(A-6 = 角色对偶,与本项无关)⇒ 已改指 **Entry #291 ⑤ 决策行的 F-12**)+ 2 NIT(三态词表字面已统一为 SU#3 原文;Entry #293 前向引用符合 #288 / #292 先例)⇒ **全部在提交前吸收**。
+- ⚠️ **预算**:本轮 oracle 1 轮 + critic 1 轮,**未用复审额度**;0 BLOCKER ⇒ **不触发复审**。
+
+**④ 冻结面改动面(3 份)+ 授权链**:
+
+| 冻结面成员 | 本轮改动 | 授权链 |
+|---|---|---|
+| `docs/adr/ADR-CEP-19-*.md` | 追加 **SU 2026-11-08 · 三**(裁定 1) | **本轮**:本 Entry 授权 → 3 份文档**同 commit** → `cep_freeze_check.sh --update --authorized-by "Entry #293"` → 清单**单独** commit → 无参复验 |
+| `docs/adr/ADR-CEP-06-*.md` | 追加 **SU 2026-11-08**(裁定 2 = F-12 主体) | **同上**(同 commit) |
+| `docs/architecture/07-coherence-exploration-platform.md` | 追加 **SU · 十三**(裁定回填 + F-12 字段表)+ **§末索引 v3 重生成**(45 节 / 17 SU) | **同上**(同 commit) |
+
+⚠️ **零冻结件增量**:本轮**不触碰** `protocol_instances.json` / `protocol_instance.schema.json` / `experimental/preregistration.json` / `experimental/metrics.schema.json` ⇒ 4 份均**零 diff**;⛔ 冻结 main spec `cep-stub-cache-core` 的 `:56` MODIFIES **仍不在本轮**(实施期,另立 Entry)。
+
+**⑤ 计数纪律**:本轮**零**计数变化 —— `B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` **零 diff**;⛔ 三份 SU 均**无**落地宣称;⛔ **新增 invariant 数 = 0**(`ADR-CEP-06` 的 `INV-CEP-06-*` 零新增)。
+
+**⑥ 剩余待办(按面归属)**:
+| 面 | 事项 | 归属 |
+|---|---|---|
+| **计划** | **§10 路径图修订 ②** —— **A0b 关闭**(声明面 = 甲 ⇒ 不再需要「二选一」前置)· **A9 的 delta 内容增补**(须含:豁免登记 4 项 + 最小应答语义边界 + 「不作为 T1–T4 条款级证据」声明句 + 7 字段台账元数据)· **A8 的台账元数据**按 7 字段执行 | **planner**(§10 是 planner 域 ⇒ architect **不**代改) |
+| **实施** | 裁定 1 的**豁免登记**(契约面 delta)· 裁定 2 的 7 字段(台账条目)· `not-collected` 的 reason 随记 · verdict 用三态词表 | **builder**(其 change 内) |
+| **决策** | **F-08 残余**(索引**位置**:仍非文末 ⇒ 移动 = 删改既有段,须单独裁决)· retention(产物留存)—— ⛔ 本轮**未**裁决 | **architect** |
+
+**⑦ 关联**:**#292**(上一批:3 份 SU + 双审闭环 + 冻结面授权链)· **#291**(A-4 / F-12 义务清单 + §10 修订 ①)· **#290**(审查材料包)· **#289**(任务路径图)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(第二轮审查 F-05 / F-12)· `ADR-CEP-19` SU 2026-11-08 · 二 / · 三 · `ADR-CEP-06` SU 2026-11-08 · `ADR-CEP-12` SU 2026-11-08 · `07 号` SU · 十二 / SU · 十三 · `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/protocol_instance.schema.json` · `tools/run_sweep.py` · `scripts/test/cep_decl_alignment_check.sh`
+
 ---
 ---
 

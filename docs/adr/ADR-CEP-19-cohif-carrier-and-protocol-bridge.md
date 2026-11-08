@@ -526,3 +526,52 @@ stub 是 RN ⇒ miss 时发起 `request` 并**挂起等 `completion`**;而**全�
 
 **关联**:台账 **Entry #292**(授权)· **#291**(两条用户裁决 + 落地义务清单)· **#288**(12 条决策 + 授权)· **#287**(下一步任务推荐)· **#285**(架构文档审查)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(F-01 / F-04 / F-05 / F-11)· `07 号` **SU · 十一** / **SU · 十二** · `ADR-CEP-12` SU 2026-11-08 · `ADR-CEP-05` 决策 2 · `ADR-CEP-07` 决策 3 · `openspec/specs/cep-stub-cache-core/spec.md`(`:56` / `:63` / `:71`)· `test/test_cep_stub_cache_core.cc`(`INV-SC6` 计数断言)· `include/tlm/cep/protocol_instance.schema.json`
 
+
+---
+
+## Status Update(2026-11-08 · 三,per 台账 Entry #293)—— **声明面落点裁定 = 甲**(home 模型**不进** `protocol_instances.json`)+ 契约面**豁免登记** + 升级条件(乙)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文 §1 ~ §7 与**任何**既有 SU(尤其 **Entry #288 SU** 与 **Entry #292 SU · 二** —— **逐字保留不回改**;⛔ 后者 ③ 登记的「甲 / 乙**待裁**」**由本段追认取代**,原文保留);⛔ 不改决策 1 ~ 8 与决策 10+ 的任何一条。
+> **触发**:台账 **Entry #291** ② A-4(声明面落点二选一)· **Entry #292**(本 ADR SU · 二 ③ 的待裁登记)· 用户 2026-11-08 口令「裁甲/乙」· 第二轮审查 **F-05**。
+> **审查**:`oracle`(裁定的**理由**是否站得住 + 甲是否留下不可恢复的漏洞)→ `critic`(本段 + `07 号` SU · 十三 + `ADR-CEP-06` SU 2026-11-08 的架构审稿),顺序不可颠倒。
+> **关联**:`07 号` SU · 十三 · `ADR-CEP-06` SU 2026-11-08 · `ADR-CEP-12` SU 2026-11-08 · 台账 **Entry #291 / #292 / #293** · `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/protocol_instance.schema.json`
+
+### ① 待裁项的**状态追认**(待裁 → 已裁)
+
+- **原文(⛔ 保留不回改)**:Entry #292 SU · 二 ③ 末段登记:「⚠️ **待裁(本段不预裁)· 声明面落点二选一**」,并列 **甲** / **乙** 两路线及各自冻结面代价。
+- **裁定**:**甲** —— home 简化模型 **不进** `include/tlm/cep/protocol_instances.json`;⇒ **零冻结面增量**;⇒ 由**契约面 delta 登记明示豁免**承载(见 ③)。
+- ⇒ 本段为**现行状态真源**;⛔ 上引原文保留不回改。
+
+### ② 裁定的理由(5 条 · 含实测证据)
+
+| # | 理由 | 证据 |
+|---|---|---|
+| **1** | **类别不同**:`protocol_instances.json` 声明的是**协议实例**(family × version × adapter × 13 键);home 简化模型**不是**协议实例(本 ADR Entry #292 SU · 二 ③ 已定)⇒ ⇒ 把它塞进协议实例声明 = **类别错置** | `protocol_instance.schema.json` 的 13 个 `required` 键全部描述「该协议实例如何行为」(`flow_support` / `perm` / `vc_binding` / `ordering_assumption` / `sharer_tracker` / …) |
+| **2** | **无机器义务**:实测**没有任何闸/测试**要求契约面模块出现在声明面 —— ① `cep_decl_alignment_check.sh` 只校验**声明侧**(协议实例声明 ↔ ArchForge 声明 ↔ schema / `fabric.json`);② `cep_decl_reverse_verify.sh` 只临时改写 `fabric.json` + `protocol_instances.json`;③ `test/test_cep_source_registry.cc` 按**显式 `#include`** 枚举 state-spec / adapter,**不做目录扫描**;④ CDX-06 类探针按 `id` **定点查**实例字段,**不从声明反推模块集合** ⇒ ⇒ 新模块**不会自动触发**声明义务 | 四处均实读源码确认 |
+| **3** | **乙不带来新信息**:home 模型的应答面(消费 `Request` · 回 `Completion` · 可配发 `Snoop` · 收 `Writeback`)的**声明级语义空间**已被 `chi_rnf` 实例的 `flow_support`(`request` / `completion` / `snoop` / `snoop_resp` / `writeback` = `true`)覆盖 ⇒ ⇒ 加第 14 键**不增加任何声明级信息量**,只增加「chi_rnf 有一个 home 模型」这一**实现级事实**的重复登记 | `protocol_instances.json` 的 `chi_rnf` 实例逐键实读 |
+| **4** | **代价不对称**:乙 = 改 **M1 冻结件** `include/tlm/cep/protocol_instance.schema.json`(实测 `additionalProperties: false` ⇒ 加键即违 schema)⇒ 须**另立台账 Entry + 两步授权** + 41 产物清单变更 + provenance 链重算;**且** `protocol_instances.json` 是 ArchForge 声明的**逐字段派生副本**(per `cep_decl_alignment_check.sh` ⑥)⇒ 乙还须**跨仓同步** ArchForge 32 号声明;甲 = **零冻结面增量**。⇒ 且甲**可逆**(见 ④),乙的 schema 变更则要再走一次反向流程 | 冻结清单 `globs` + schema 实测 + decl_alignment ⑥ + 两步授权链流程 |
+| **5** | **甲是唯一与已签发文档不自相矛盾的选项**:`ADR-CEP-12` **SU 2026-11-08** ② 已把「home 简化模型 ⛔ **不在** `protocol_instances.json`(它**不是**协议实例)」当作**既定前提**使用(支撑其「无 basis 声明」的结论)⇒ ⇒ 选乙 = **推翻一条已落盘、已进冻结 glob 的 SU 的事实前提** ⇒ 须**另立 Entry 勘误 `ADR-CEP-12`** ⇒ ⇒ **甲是唯一无需自我推翻的选项** | `ADR-CEP-12` SU 2026-11-08 ② 实读(Entry #292 批次,已 commit) |
+
+### ③ 甲路线的**实施契约**(缺一 ⇒ 甲的代价即复发)
+
+1. **豁免登记(契约面 delta)**:delta SHALL 登记 —— ① 该模块**不是协议实例**、**不进** `protocol_instances.json`;② 其**应答面的声明级语义空间**由 `chi_rnf` 实例的 `flow_support`(`request` / `completion` / `snoop` / `snoop_resp` / `writeback` = `true`)覆盖(⚠️ 该键描述的是 **chi_rnf 实例**的流能力,⛔ 不是在描述 home 模型);③ ⛔ **不得**据「未进 `protocol_instances.json`」推断其行为**未声明**;④ ⛔ 不得据此推断它**不承载**最小应答语义(⛔ 承载面见 Entry #292 SU · 二 ③)。
+2. **机器可判点**(实施期,随 change 的判据落):契约面 delta 与台账条目中,「该模块 = home 模型 / 不进协议实例声明」这句**逐字**出现且**可 grep 命中** ⇒ ⇒ 避免「实现面有、声明面无」的**读法漂移**。
+3. ⚠️ **与 `ADR-CEP-12` 边界句的合流**:本 ADR Entry #292 SU · 二 ③ 的「⛔ 不进 `protocol_instances.json`」与 `ADR-CEP-12` SU 2026-11-08 的边界句(应答行为 ⛔ 不作 basis 分档输入)**方向一致** ⇒ ⇒ 两句**不冲突**,且共同构成 home 模型的**声明面边界**。
+
+### ④ 升级条件(何时才需要走乙)+ 回滚路径
+
+- **升级条件(全部满足才走乙)**:① 出现**必须机器判**「某协议实例配了哪个 home 模型」的需求(当前**无**)**或**任何新闸引入「实现面元素须在声明面登记」的**反向完整性校验**(⚠️ 理由 2 的「无机器义务」是**当前态**陈述 —— 闸集合会长大,本条须随闸集合复查);② 且该需求**不能**由 ③ 的豁免登记 + `chi_rnf` 的 `flow_support` 表达;③ 且经**另立台账 Entry + 两步授权**(冻结 schema)⇒ ⇒ **届时**改走乙(加**非 `required`** 的可选键 ⇒ 「13 键齐备」判据实读 `required` ⇒ **不红**)。
+- **回滚路径**:甲 = 契约面 delta 的**一段登记文字** ⇒ 回滚 = 追加勘误段;⛔ **不涉及**任何冻结件 ⇒ 回滚成本 = **一次追加**。
+
+### ⑤ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**
+- [ ] ① 的状态追认已登记(甲 / 乙「待裁」→ **已裁 甲**),原文保留未回改
+- [ ] ② 的 5 条理由已逐条登记,且**实测证据**(4 处闸 / 测试的校验对象)可复现
+- [ ] ③ 的 3 条实施契约(豁免登记 4 项 + 机器可判点 + 与 `ADR-CEP-12` 边界句合流)已登记
+- [ ] ④ 的升级条件(3 条)与回滚路径(一次追加)已登记
+- [ ] ⛔ 本段**无**任何落地宣称;`protocol_instances.json` **零 diff**;`protocol_instance.schema.json` **零 diff**;**`B3b-2` 维持 0/4**
+- [ ] 冻结面两步授权已执行:台账 **Entry #293** 授权 → **commit 本段 + `07 号` SU · 十三 + `ADR-CEP-06` SU** → `cep_freeze_check.sh --update --authorized-by "Entry #293"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #293**(授权)· **#292**(本 ADR SU · 二 · 待裁登记 + 双审闭环)· **#291**(落地义务清单 A-4)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(F-05)· `07 号` **SU · 十三** · `ADR-CEP-06` SU 2026-11-08 · `ADR-CEP-12` SU 2026-11-08 · `include/tlm/cep/protocol_instances.json` · `include/tlm/cep/protocol_instance.schema.json` · `scripts/test/cep_decl_alignment_check.sh` · `scripts/test/cep_decl_reverse_verify.sh` · `test/test_cep_source_registry.cc`
+

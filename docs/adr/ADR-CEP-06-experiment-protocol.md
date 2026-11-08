@@ -853,3 +853,59 @@ per `ADR-CEP-01 §6.2` 代价 3「分类错误 = 静默死锁」,这是 H4 假�
 > **性质**:纯**指针回填**(append-only)。
 > **原占位**:`backlog: cep-b4-evidence-device`(待 planner 立项)
 > **回填**:该条目**已实施**且**不占 OpenSpec slot**:装置 = `test/test_cep_b4_evidence_device.cc`(「一致性 × 完成域」复合装置),过 **AC-9** 实现评审 **PASS**(报告 `.rddf/reviews/ADR-CEP-06-SU4-ac9-implementation-review.md`,per 台账 **Entry #228**)⇒ improvement `.rddf/improvements/cep-b4-evidence-device.md` 状态已回填为「已实施」。
+
+---
+
+## Status Update(2026-11-08,per 台账 Entry #293)—— **台账元数据**的最小字段集(F-12:含 `metrics.json` 的 sha256 + 13 键明细 + 规模上限声明)
+
+> **性质**:纯**追加 SU**(append-only)。⛔ 不改本 ADR 正文 §1 ~ §5 与**任何**既有 SU(尤其 **SU 2026-11-04(#1)** 的两级 verdict 裁决 · **SU 2026-11-04(#2)** 的预登记载体裁决 · **SU 2026-11-05(#3)** 的三态裁决 —— **逐字保留不回改**);⛔ **不新增**任何 `INV-CEP-06-*`(per 本 ADR 追加段的既有惯例:追加段只登记台账侧投影,**不动** run 侧契约);⛔ 不改 4 件套的构成与 `experimental/` 的目录约定。
+> **触发**:台账 **Entry #291** ⑤ 决策行的 **F-12**(D-9 只登记元数据 ⇒ 台账的「13 键结论」无据可核)· 用户 2026-11-08 口令「把 F-12 一并落成 SU」· `07 号` **SU · 十三** ② 的字段表。
+> **审查**:`oracle`(字段集是否与本 ADR 既有契约冲突 / 是否越权改判据集合)→ `critic`(本段 + `07 号` SU · 十三 + `ADR-CEP-19` SU · 三 的架构审稿),顺序不可颠倒。
+> **关联**:`07 号` **SU · 十三** · `ADR-CEP-19` SU 2026-11-08 · 三 · 台账 **Entry #291 / #292 / #293**
+
+### ① 问题(为什么需要这一段)
+
+- `07 号` SU · 十一 ① 的 **D-9** 规定:产物**不入库** ⇒ 入台账的是**元数据**。⚠️ 但 D-9 原文列的字段只有「run id · config 快照 sha256 · **13 键结论** · IC3 verdict · 拓扑标记」⇒ ⇒ 落库后会出现两个洞:
+  1. **无据可核** —— 「13 键**结论**」只记判定,**不记取值** ⇒ 复核者无法据台账条目核对任何一项数值;
+  2. **无法对账** —— 未记 `metrics.json` 本身 ⇒ 台账条目与「产出该结论的那一次 run」之间**没有可验证的绑定**;
+- 且有一处**越界宣称风险**:本 ADR §3 规模上限契约第 1 条**已要求**实验元数据声明 `verification_mode` ∈ {`exhaustive`, `bounded_random`, `sampled`} 与 `verification_scope`,第 2 条**禁止**把 `bounded_random` / `sampled` 的结果表述为「已证明无死锁 / 无违例」⇒ ⇒ 而台账条目只记「IC3 verdict」⇒ ⇒ **台账会把「在声明的 scope 内未观测到」压扁成「绿」**⇒ ⇒ 台账须携带规模上限声明。
+
+### ② 裁定的**最小字段集**(台账条目的内容)
+
+| # | 字段 | 内容 | 载体 / 来源 |
+|---|---|---|---|
+| 1 | `run_id` | run 标识 | run 目录名(per 决策 1 的 `run_id` 格式) |
+| 2 | `config_sha256` | `simulation_config.json` 的 sha256 | 4 件套(决策 1) |
+| 3 | **`metrics_sha256`** | **`metrics.json` 的 sha256** | 4 件套(决策 1)⇒ **F-12 新增** |
+| 4 | **`metrics_13`** | **13 个必纳字段的**值 **或** `not-collected` 标记**,逐键**;⚠️ `not-collected` 的键 SHALL **同时带 reason**(per `INV-CEP-06-IC4` / `_not_collected` 表)—— 只带标记不带 reason ⇒ 产物一旦丢失,降格理由不可考 | `metrics.json`(per `INV-CEP-06-IC2` / 决策 4 的 `not-collected` + reason 口径)⇒ **F-12 精确化**(原「13 键结论」为判定摘要) |
+| 5 | **`verification_mode` + `verification_scope`** | 规模上限声明;**载体 = `simulation_config.json`**(per `tools/run_sweep.py` 的机器校验点)⇒ ⚠️ `metrics.json` 若有同名字段且两处漂移 ⇒ **以 config 为准** | §3 规模上限契约第 1 条(既有要求)⇒ **F-12 带入台账** |
+| 6 | `ic3_verdict` + `hypothesis_id` | IC3 判定 + 预登记假设行标识;⚠️ 判定 SHALL 用 **SU 2026-11-05(#3) 三态词表**(✓ 通过 / ❌ 违例 fail / ⚪ 不适用)⇒ ⛔ **不得**记二值「绿 / 红」——「⚪不适用」被压成「绿」= 本段警告的**压扁风险在台账侧复发** | `INV-CEP-06-IC3` + `metrics.json` 的 `hypothesis_id`(per §3 规模上限契约第 3 条「须在报告中一并呈现」的同族要求) |
+| 7 | `topology_tag` | 拓扑标记(A / B) | 本框架的拓扑标记(per `07 号` SU · 十三 ②) |
+
+⇒ ⚠️ **字段 4 与字段 6 的分工**:字段 4 记**取值**(事实),字段 6 记**判定**(结论)⇒ ⇒ 二者**不得互相替代**(⛔ 只记判定 = 本段的原始洞;⛔ 只记取值 = 丢失 IC3 门禁的判定位)。
+
+### ③ 后果 / 代价 + 边界
+
+| 面 | 后果 |
+|---|---|
+| **可审计性** | 台账条目从「结论摘要」升级为「**实验元数据的完整投影**」⇒ ⇒ 复核者可据字段 4 逐键核对、可据字段 3 与产出 run 对账 |
+| **代价 ①** | 台账条目**变长**(13 键逐键 + 2 个 hash + scope 描述)⇒ ⇒ 台账体积增长 ⇒ ⛔ 但**不引入**新文件形态(仍是**一段散文登记**) |
+| **代价 ②** | 产物**仍不入库** ⇒ ⇒ **可复算性未获得**(见边界) |
+| **代价 ③** | 字段 5 把「规模上限声明」带进台账 ⇒ ⇒ 台账读者**必须**读 scope 才能读懂 verdict ⇒ ⇒ ⛔ 这是**有意的摩擦**(per §3 规模上限契约第 2 条) |
+
+> **边界(逐字)**:**登记 ≠ 可复算** —— 因产物**不入库**,台账条目只提供**对账**能力(该条目 ↔ 那一次 run 的 `metrics.json`,由 `metrics_sha256` 对齐)⇒ ⛔ **不得**表述为「实验可复算 / 可重放」;⚠️ `metrics_sha256` **不**保证结论正确,它只保证「台账记的是哪一份产物」;⛔ **不得**据台账条目声称「已证明无死锁 / 无违例」—— 该表述受 `verification_mode` / `verification_scope` 约束(per `ADR-CEP-06` §3 规模上限契约第 2 条);⚠️ **对账能力的前提是「那一份产物仍可取得」** —— run 目录不入库 ⇒ 可核性随 **retention** 衰减 ⇒ ⛔ 本段**不**裁决 retention(属另一条独立决策)。
+
+⇒ ⇒ **与既有不变量的关系**:`INV-CEP-06-IC1`(4 件套)· `IC2`(13 必纳字段)· `IC3`(违例类判定)· `IC4`(`not-collected` + reason)· `IC5`(SWMR + data-value)**零改动** ⇒ 本段**只**规定**台账侧**投影的内容,**不动** run 侧契约 ⇒ ⇒ **新增 invariant 数 = 0**。
+
+### ④ Verification(可勾选验收判据 · 前瞻)
+
+- [ ] 本段 SU 已追加,且本 ADR 正文与**全部**既有 SU **逐字未变**;**新增 invariant 数 = 0**
+- [ ] ① 的两个洞(无据可核 / 无法对账)+ 规模上限契约的压扁风险已登记
+- [ ] ② 的 7 字段集已逐项登记,且字段 4 / 字段 6 的**分工**(取值 vs 判定)已登记
+- [ ] ③ 的「登记 ≠ 可复算」边界句已**逐字**登记;3 条代价已登记;与 `INV-CEP-06-IC1`~`IC5` 零改动的说明已登记
+- [ ] `07 号` SU · 十三 ② 的字段表与本段 ② **逐条一致**(⛔ 两处不得漂移)
+- [ ] ⛔ `experimental/preregistration.json` **零 diff**;`experimental/metrics.schema.json` **零 diff**;⛔ 本段**未**裁决把产物入库;**`B3b-2` 维持 0/4**
+- [ ] 冻结面两步授权已执行:台账 **Entry #293** 授权 → **commit 本段 + `07 号` SU · 十三 + `ADR-CEP-19` SU · 三** → `cep_freeze_check.sh --update --authorized-by "Entry #293"` → **清单单独 commit** → 无参复验 provenance 通过
+
+**关联**:台账 **Entry #293**(授权)· **#292**(双审闭环)· **#291**(落地义务清单)· `.rddf/reviews/cep-arch-planner-review-findings-2026-11-08.md`(F-12)· `07 号` **SU · 十一** ① 的 D-9 行 · `07 号` **SU · 十三** ② · `ADR-CEP-19` SU 2026-11-08 · 三 · `docs/architecture/07-coherence-exploration-platform.md` §3 的 canonical 10 流 · `experimental/metrics.schema.json` · `experimental/preregistration.json` · `tools/run_sweep.py`(4 件套的实际产出:输入 3 件 + `report.html`)
+
