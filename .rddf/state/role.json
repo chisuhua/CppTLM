@@ -1,16 +1,10 @@
 {
   "schema_version": "role-v1",
-  "current_role": "architect",
-  "updated_at": "2026-11-08T09:05:00Z",
+  "current_role": "planner",
+  "updated_at": "2026-11-08T09:40:00Z",
   "updated_by": "user",
   "session_id": "ses_ea5d9d373ffenO0pVXgP2NGKZM",
   "history": [
-    {
-      "role": "builder",
-      "at": "2026-11-06T13:29:58Z",
-      "by": "user",
-      "reason": "回 builder 补 P1 实现缺口(oracle 发现):transitions_are_valid_for 未接 Free + cxl 覆盖率分子/分母口径矛盾 + SRK-04 空转断言"
-    },
     {
       "role": "architect",
       "at": "2026-11-06T13:50:17Z",
@@ -124,6 +118,12 @@
       "at": "2026-11-08T09:05:00Z",
       "by": "user",
       "reason": "用户口令「切 architect 收 F-08 残余(索引移到文末)+ retention 决策」=> architect 域:2 项决策 + 目标梳理"
+    },
+    {
+      "role": "planner",
+      "at": "2026-11-08T09:40:00Z",
+      "by": "user",
+      "reason": "用户口令「切 planner 梳理后续任务与实施路径」=> planner 域:全量盘点 + 路径"
     }
   ],
   "auto_switch_window": null
