@@ -15,7 +15,11 @@
 //
 // ── 端口 ────────────────────────────────────────────────────────────────
 //   N = 2(对称):`req_in[i]` = ingress(收 CohIfBundle)· `resp_out[i]` = egress(发)
-//   ⇒ 与 `ProtocolEngineBase<N>` **同款端口面**,便于 `BidirectionalPortAdapter` 装配。
+//   ⇒ `Completion` **回到请求所在的 ingress 端口**(端口按 ingress 分桶,互不阻塞)。
+//
+// ── 本 change **不**建模的配对(显式登记,⛔ 不留半截含义)──────────────────
+//   `Snoop` 的 `transaction_id` 使用**独立命名空间**(高位定位),⛔ 不与触发它的 `Request`
+//   的 txn 关联 ⇒ 「snoop / snoop_resp 按 txn 配对」不在本模型语义内(得由协议引擎承载)。
 // ============================================================================
 #ifndef TLM_CEP_COHIF_RESPONDER_HH
 #define TLM_CEP_COHIF_RESPONDER_HH
@@ -35,14 +39,14 @@
 namespace tlm::cep {
 
 class CohIfResponderTLM : public ChStreamModuleBase {
-    static_assert(true, "");
-
 public:
     using Bundle = bundles::CohIfBundle;
     using ReqAdapter = cpptlm::InputStreamAdapter<Bundle>;
     using RespAdapter = cpptlm::OutputStreamAdapter<Bundle>;
 
     static constexpr std::size_t kPortCount = 2;
+    /// `Snoop` 的 txn 命名空间(高位定位;与 input `Request` 的 txn 空间不重叠)
+    static constexpr std::uint64_t kSnoopTxnBase = 1ULL << 63;
 
     struct Config {
         /// `Completion` 的**参数化延迟**(周期)
@@ -92,49 +96,57 @@ public:
     void configure(const Config& cfg) { cfg_ = cfg; }
     const Config& config() const { return cfg_; }
     const Counters& counters() const { return ctr_; }
-    std::size_t in_flight() const { return pending_.size(); }
+    std::size_t in_flight() const {
+        std::size_t n = 0;
+        for (const auto& q : pending_)
+            n += q.size();
+        return n;
+    }
     std::uint64_t cycle() const { return cycle_; }
 
     // ── 周期推进 ────────────────────────────────────────────────────
     void tick() override {
         ++cycle_;
 
-        // ① 消费 ingress(按 flow_id 分派)
+        // ① 消费 ingress(按 flow_id 分派;记录来源端口)
         for (std::size_t i = 0; i < kPortCount; ++i) {
             auto& in = req_in_[i];
             if (!in.valid())
                 continue;
-            consume(in.data());
+            consume(in.data(), i);
             in.consume();
         }
 
-        // ② 到期 `Completion` 发出(按 txn 选端口,输出空闲才发)
-        while (!pending_.empty() && pending_.front().ready_cycle <= cycle_) {
-            const Pending p = pending_.front();
-            const std::size_t port = static_cast<std::size_t>(p.txn_id % kPortCount);
-            if (resp_out_[port].valid())
-                break;  // 背压:下周期再发(⛔ 不丢)
-            Bundle b;
-            b.flow_id = bundles::CohIfFlowId::Completion;
-            b.transaction_id.write(p.txn_id);
-            b.address.write(p.addr);
-            b.data.write(p.data);
-            b.perm.write(p.perm);
-            b.error.write(p.error ? 1 : 0);
-            resp_out_[port].write(b);
-            ++ctr_.completions_sent;
-            pending_.pop_front();
+        // ② 到期 `Completion` 发出(**按 ingress 分桶** ⇒ 一个慢端口不阻塞其它端口)
+        for (std::size_t port = 0; port < kPortCount; ++port) {
+            auto& q = pending_[port];
+            while (!q.empty() && q.front().ready_cycle <= cycle_) {
+                if (resp_out_[port].valid())
+                    break;  // 背压:本端口下周期再发(⛔ 不丢,也⛔ 不串端口)
+                const Pending p = q.front();
+                Bundle b;
+                b.flow_id = bundles::CohIfFlowId::Completion;
+                b.transaction_id.write(p.txn_id);
+                b.address.write(p.addr);
+                b.data.write(p.data);
+                b.perm.write(p.perm);
+                b.error.write(p.error ? 1 : 0);
+                resp_out_[port].write(b);
+                ++ctr_.completions_sent;
+                q.pop_front();
+            }
         }
 
-        // ③ 可配发 `Snoop`(默认关)
+        // ③ 可配发 `Snoop`(默认关;发回**最近请求的来源端口**)
         if (cfg_.emit_snoops && snoop_interval_cycles_hit() && last_addr_ != 0) {
-            Bundle b;
-            b.flow_id = bundles::CohIfFlowId::Snoop;
-            b.transaction_id.write(next_snoop_txn_++);
-            b.address.write(last_addr_);
-            b.snoop_type.write(static_cast<std::uint8_t>(SnoopType::INVALIDATE));
-            if (!resp_out_[0].valid()) {
-                resp_out_[0].write(b);
+            const std::size_t port = last_ingress_port_;
+            if (!resp_out_[port].valid()) {
+                Bundle b;
+                b.flow_id = bundles::CohIfFlowId::Snoop;
+                b.transaction_id.write(kSnoopTxnBase + next_snoop_txn_++);
+                b.address.write(last_addr_);
+                b.snoop_type.write(static_cast<std::uint8_t>(SnoopType::INVALIDATE));
+                resp_out_[port].write(b);
                 ++ctr_.snoops_sent;
             }
         }
@@ -158,7 +170,7 @@ private:
         return cfg_.snoop_interval_cycles != 0 && (cycle_ % cfg_.snoop_interval_cycles == 0);
     }
 
-    void consume(const Bundle& b) {
+    void consume(const Bundle& b, std::size_t ingress_port) {
         const auto flow = b.flow_id;
         switch (flow) {
             case bundles::CohIfFlowId::Request: {
@@ -170,7 +182,8 @@ private:
                 p.perm = static_cast<std::uint8_t>(b.perm.read());
                 p.ready_cycle = cycle_ + cfg_.completion_latency_cycles;
                 last_addr_ = p.addr;
-                pending_.push_back(p);
+                last_ingress_port_ = ingress_port;
+                pending_[ingress_port].push_back(p);
                 break;
             }
             case bundles::CohIfFlowId::Writeback:
@@ -193,9 +206,10 @@ private:
     cpptlm::StreamAdapterBase* adapter_ = nullptr;
     std::array<ReqAdapter, kPortCount> req_in_{};
     std::array<RespAdapter, kPortCount> resp_out_{};
-    std::deque<Pending> pending_{};
+    std::array<std::deque<Pending>, kPortCount> pending_{};
     std::uint64_t cycle_ = 0;
     std::uint64_t last_addr_ = 0;
+    std::size_t last_ingress_port_ = 0;
     std::uint64_t next_snoop_txn_ = 1;
 };
 

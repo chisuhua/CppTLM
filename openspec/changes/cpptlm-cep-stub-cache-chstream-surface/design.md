@@ -9,7 +9,7 @@
 
 ## D-2 映射面归属:wrapper 内部
 
-映射(op 编码 / `evict_line` 缺口 / 同步 `AccessResult` ⇒ 异步 `CacheRespBundle` / net_side 5 流编码)**仅许**存在于 `StubCacheEndpointTLM` 自身 `.hh`/`.cc`。
+映射(op 编码 / `evict_line` 缺口 / 同步 `AccessResult` ⇒ 异步 `CacheRespBundle` / net_side 5 流编码)**仅许**存在于 `StubCacheEndpointTLM` 自身(`.hh`,header-only —— 与 CEP 43 个 header-only 文件同惯例;⛔ 不建空 `.cc`)。
 **红线**:⛔ 新增映射代码禁入 `include/framework/`;⛔ 不得改 `include/tlm/cep/cohif_noc_bridge.hh` 的 `pack`/`unpack`;⛔ 不得另立独立 mapper / 翻译 / 桥接模块。
 `evict_line` 缺口 ⇒ **保留 core-side 功能方法 + 装配夹具显式调用**,⛔ 不伪造 `CacheReqBundle` 字段。
 

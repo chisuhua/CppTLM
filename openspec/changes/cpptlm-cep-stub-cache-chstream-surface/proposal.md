@@ -14,8 +14,8 @@
 
 | # | 变更 | 落点 |
 |---|---|---|
-| 1 | `StubCacheEndpointTLM`(组合式 wrapper:异构双端口 + 观测 API + 映射 + `attach_protocol_bridge` override + 只读桥指针) | `include/tlm/cep/stub_cache_endpoint.{hh,cc}`(新) |
-| 2 | `CohIfResponderTLM`(**真实 home 的简化模型**:最小应答语义) | `include/tlm/cep/cohif_responder.{hh,cc}`(新) |
+| 1 | `StubCacheEndpointTLM`(组合式 wrapper:异构双端口 + 观测 API + 映射 + `attach_protocol_bridge` override + 只读桥指针) | `include/tlm/cep/stub_cache_endpoint.hh`(新,header-only) |
+| 2 | `CohIfResponderTLM`(**真实 home 的简化模型**:最小应答语义) | `include/tlm/cep/cohif_responder.hh`(新,header-only) |
 | 3 | 注册(`registerObject` × 2 + `registerDualPortAdapter` × 1 + `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` × 1) | `include/chstream_register.hh` |
 | 4 | `TrafficGenTLM` 的 **seed / 地址段 / mode setter** | `include/tlm/traffic_gen_tlm.hh` |
 | 5 | 拓扑 **A** / **B**(两份独立 config) | `configs/cep_chi_rnf_e2e_a.json` / `_b.json`(新) |

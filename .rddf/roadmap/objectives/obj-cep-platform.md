@@ -1189,6 +1189,127 @@ W2(随 A8 前)   W3(随 A8)   W4(随 A5)   W1(独立)   B2(并行)   B1(A9 后,�
 
 **关联**:台账 **Entry #296**(本段)· **#292 ~ #295**(决策面闭合批次)· **#289 / #291 / #294**(路径图及其修订 ① / ②)· `.rddf/reviews/cep-goal-alignment-review-2026-11-08.md`(目标一致性审查)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-06` SU 2026-11-08 · 二
 
+
+### 2026-11-08 路径图修订 ③(A0+A1/A2 落地后的实施侧重排 —— planner,per 台账 **Entry #298**)
+
+> **性质**:§10 **追加段**(append-only)。⛔ 不回改上方任何段落 ⇒ **凡与本段冲突,以本段为准**。
+> **触发**:builder 交付 **A0 + A1/A2**(commit `05308d4a`);architect 复盘复核代码后开出 **6 条实现侧发现(F-A1 ~ F-A6)**,其中 2 条会直接卡住 G2 门 ⇒ 排期须重排。
+> **口径**:只排**顺序 / 归属 / 估时**;⛔ 不改 A1~A9 的技术内容,⛔ 不改任何已签发结论。
+
+#### ① 已完成(实测,⛔ 非台账措辞推断)
+
+| 项 | 证据 | 状态 |
+|---|---|---|
+| A0 授权门 | delta ↔ main spec 逐行 diff,**仅 `:56` 一行变化**;冻结链留待归档时执行 | ✅ |
+| A1 `StubCacheEndpointTLM` | `include/tlm/cep/stub_cache_endpoint.hh`(header-only)+ 注册行 | ✅(待 F-A2/F-A3 收尾) |
+| A2 `CohIfResponderTLM` | `include/tlm/cep/cohif_responder.hh`(header-only)+ `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED` | ✅(待 F-A1 收尾) |
+| A3(注册部分) | `registerObject` × 2 + `registerDualPortAdapter` × 1 + 双向宏 × 1 | ✅ |
+| 判据 SCE-01~05 | `test/test_cep_stub_cache_e2e.cc` ⇒ 5 cases / 43 assertions;`ctest` **164/164** | ✅ |
+| 红线六项 | `stub_cache_core.hh` / `include/framework/` / `cohif_noc_bridge.hh` / `protocol_instances.json` / `schema` / `b3b2_deferrals.json` **零 diff** | ✅ |
+| 计数 | `B3b-2` 仍 **0/4**;KPI Proposed **1/3** | ✅ |
+
+#### ② 新增任务:F-A1 ~ F-A6(architect 发现 · **归 builder** · 并入 A1/A2 收尾)
+
+| # | 内容 | 严重度 | 出口判据 |
+|---|---|---|---|
+| **F-A1** | Completion **回到 ingress 端口**(现按 `txn_id % N` ⇒ 多端点拓扑下响应走错端口) | **阻断 J-3/J-9** | `Pending` 记 `ingress_port`;新增「多端点各收各的响应」断言 |
+| **F-A2** | CPU 侧响应**不得丢**(现 `emit_cpu_resp` 在输出忙时静默丢弃)⇒ 加 egress 队列 + 背压重试 | **违反 delta 自述的「一请求一响应」** | 连续请求 + 下游慢消费 ⇒ 响应数 == 请求数 |
+| **F-A3** | `evict()` 的 Writeback `txn_id` 与 core 的 txn 命名空间重叠 ⇒ 复用 core 分配或显式分段 | 中 | 全网 txn_id 无重复断言 |
+| **F-A4** | delta 措辞「对端协议引擎」与实际(home 简化模型)不符 ⇒ A9 合并前订正 | 中(契约准确性) | delta 文本不再出现「对端协议引擎」 |
+| **F-A5** | 交付形态与 change 文档不一致:proposal/tasks 写 `.cc`,实际 header-only;`tasks.md` 37 条零勾选 | 记账 | 文档改为 header-only(**不建空 `.cc`**)+ 勾选 A0/A1/A2 并附证据 |
+| **F-A6** | 删 `static_assert(true, "")` 死代码;`Snoop` txn 配对**显式登记为不建模** | 低 | 死代码为零;snoop 口径落字 |
+
+> **不升级为 `plan_drift`**:以上均属「计划对、实现漏/措辞漏」,不触及 AC 语义与已签批决策 ⇒ **留在 builder 内补**。
+
+#### ③ 剩余任务全量盘(估时 / 依赖 / 出口)
+
+| # | 任务 | 估时 | 依赖 | 出口判据 |
+|---|---|---:|---|---|
+| **A1/A2 收尾** | F-A1 ~ F-A3 + F-A6 + F-A5 | 0.5d | — | 新增断言绿 + 文档与实现一致 + tasks 勾选 |
+| **A4** | `TrafficGenTLM` 的 **seed / 地址段** setter(`set_mode` 已有)+ 快照记种子 + **git rev** + 工具链 | 0.5d | — | 同种子两次 run 计数**逐字段相等** |
+| **A5** | 拓扑 A(缺省 `cep.bridges` ∧ latency=0)/ 拓扑 B(1 entry / 3 modules / ≥1 latency>0);**A3 剩余的 `instantiateAll` 在此一并验** | 1.0d | A1/A2 收尾 | 两 config `instantiateAll` 成功;A 闸 SKIP、B 闸 PASS |
+| **W4** | `[IAG-08]`:同一模块属多个 bridge entry ⇒ FAIL | 0.2d | A5 | 反向 fixture 按正确原因红 |
+| **A6** | J-1 ~ J-9(含 J-5 决定性变异、J-7 桥投影、**J-9 分档**) | 1.5d | A5、W4 | 9 条逐条绿;变异体按正确原因红 |
+| **A7** | harness 接入 + **三键测量归属**(`coherence_stalls` / `collective_stalls` / `directory_misses`) | 1.5d | A6 | 13 键**各有结论** + IC3 **✓ 通过** + 双违例类真实 0 |
+| **W2** | `.gitignore` 2 条例外 + provenance 注释 | 0.1d | — | 例外生效 |
+| **A8** | 4 件套 + 台账 **7 字段**(`metrics_sha256` / `metrics_13` 逐键 + reason / `verification_mode`+`scope` / 三态 verdict / `hypothesis_id` / `topology_tag`)+ **W3 双向闸** + 首批 h3 入库(2 件) | 0.8d | A7、W2 | 双向闸零 orphan + sha256 相等;入库仅 2 件 |
+| **A9** | 契约面收敛:`:56` 合并 + delta 含豁免登记 4 项 / 边界句 / 7 字段 / 声明句 + **F-A4 措辞订正** + `07 号`/ADR 实施后 SU | 0.5d | A8 | `openspec validate --strict` 绿;冻结链复验绿 |
+| **T9** | `validate` + `./test.sh --mode off` + 归档(KPI → 0/3) | 0.3d | A9 | 全绿 + 归档 |
+| **W1** | `cep_index_position_check.sh` + ctest 注册 + 移除 `VIRTUAL_PATHS` 豁免 | 0.2d | 独立 | 闸红→绿可复现 |
+| **B2** | ADR 结构闸 + **13/22** deferrals(实测非 14,排除 NUMBER-MAP) | 0.5d | 并行 | 闸 + deferrals 齐;零 ADR diff |
+| **B1** | 17 份「🟡 起草中」ADR **逐批**核对签发 | 1d/批 | **A9 之后** | 每批留证据;⛔ 不可批量签发 |
+| **E1/E2** | 季度外部检索 / 终态 DoD 复审 | — | 周期 | 只保不漏检 |
+
+**合计**:A 轨剩余 **≈ 7.1d**(含收尾 0.5d)+ W1 0.2d + B2 0.5d ≈ **7.8d**;B1 **1d/批**(A9 后)。
+
+#### ④ 路径 / 4 门 / 4 里程碑
+
+```
+F-A1~A3,A5文档 ─► A4 ∥ A5 ─► W4 ─► A6 ─► A7 ─► W2 ─► A8(W3) ─► A9 ─► T9 ─► 归档
+W1(独立)     B2(并行)     B1(A9 后,分批)
+```
+
+- **G1 = A0** ✅ 已完成(归档时执行冻结链)· **G2 = A6** · **G3 = A4** · **G4 = A8**。
+- **关键路径变化**:**F-A1/F-A2 成为 A5 的前置** —— 不修则拓扑 B 的 J-3 必红、J-9 无法成立 ⇒ 已并入 A1/A2 收尾。
+- **里程碑**:**M1** = 接线 + 拓扑 A 一请求一响应绿 → **M2** = 第一件全绿 run(13 键各有结论 + IC3 ✓ + 7 字段 + 双向闸)→ **M3** = 拓扑 B 分档绿 → **M4** = 契约收敛 + 归档。
+- **纪律**:下一 commit 起**只走实施轨**;⛔ 不再单开纯文档批次(除非阻塞实施);B1/B2 只按**批次**推进。
+
+#### ⑤ 明确不做
+
+⛔ 用「框架跑通」改判 `B3b-2`(仍 0/4)· ⛔ 为 4 受限族造内部替代品 · ⛔ 把 `CohIfResponderTLM` 写进 `protocol_instances.json`(甲已裁)· ⛔ 回填历史 127 run · ⛔ 批量签发 ADR · ⛔ 新建空 `.cc` 仅为对齐文档字面。
+
+**关联**:台账 **Entry #298**(本段)· **#297**(A0+A1/A2 实施)· **#296**(原全量盘点)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-19` SU 2026-11-08
+
+
+### 2026-11-08 路径图修订 ④(metis + critic 双审后的**开工基线** —— planner,per 台账 **Entry #299**)
+
+> **性质**:§10 **追加段**(append-only)。⛔ 不回改修订 ①/②/③ ⇒ **凡与本段冲突,以本段为准**。
+> **触发**:用户要求「路径经 metis + critic 通过后实施」。结论 —— **critic:APPROVE_WITH_CONDITIONS / 0 BLOCKER / mergeable yes**;**metis:6 类缺口,其中 6 条 P0 会直接让判据失真**。本节把全部 P0 与 critic 的 4 条 SHOULD_FIX 折成**开工基线**。
+
+#### ① 新增任务(相对修订 ③)
+
+| # | 内容 | 类型 | 出口(可机器判) |
+|---|---|---|---|
+| **F-A7** | **wrapper 拒绝路径**(metis B8):`StubCacheCore::cpu_read/cpu_write` 被拒时返回 `pending=false ∧ txn_id=0`,而 wrapper 仍 push 一条 `transaction_id=0` 的 CohIf `Request` ⇒ 「一请求一响应」在最常见背压路径破裂 | **阻断** | `max_mshr=1` 连发两个不同 addr ⇒ 第 2 条**不产生** `net_req_out` ∧ CPU 侧收到显式 reject 响应(`is_hit=false` ∧ `error_code≠0`) |
+| **B9** | `TxnStamp` 混两个 txn 命名空间(命中记 CPU 侧 `transaction_id`,miss 记 core 的 `next_txn_id_`)⇒ J-3 跨空间配对会假绿/假红 | 质量 | `TxnStamp` 增 `id_space ∈ {cpu, core}`;J-3 断言**不得**跨空间配对 |
+
+#### ② 改写(相对修订 ③ 的同一任务)
+
+| 行 | 修订后 | 依据 |
+|---|---|---|
+| **F-A1** | `pending_` **按 ingress 分桶 + 每桶 FIFO + 扫描可发项**(⛔ 单 FIFO 队头阻塞);新增「一个慢端口不阻塞其它端口」断言;⚠️ 现有 `SCE-04` 的 `resp_out()[7 % 2]` 必须同步改 | metis 边界 1 |
+| **F-A3** | ⛔ **删除「全网 txn 无重复」**(`StubCacheCore` 每实例从 1 起,多 wrapper 必然重号,做不到);改为「**同一 wrapper 实例**的 core txn 与 evict txn **不重叠**」⇒ `evict` 用**高位置位**分段编码;`WritebackOut` **无 `txn_id`** ⇒ 由 wrapper 分配;Snoop 用独立段 | metis 边界 / 实测 |
+| **F-A4** | 采用**方案 (b)**:保留 ADR 逐字句不动,delta **另加限定句**「本句的驱动者 = home 简化模型(`CohIfResponderTLM`),它⛔ 不是协议引擎」⇒ **零冻结面增量**;:56 的**最终合并文本 = ADR 原文 + 该限定句** | critic SHOULD_FIX-3 |
+| **A4** | 复现口径**写死**:同一 binary + 同一 stdlib + **新建实例** + 固定 tick 预算;比较集合 = **13 键** + `{cpu_requests, cpu_responses, net_requests_out, net_completions_in, in_flight}`;`set_seed` 必须 `rng_.seed()`;`set_addr_range` 必须**重建** `addr_dist_`(构造期绑定);`do_reset` 不重播种 ⇒ A4.3 用新建实例,并登记「reset 后重跑不相等」为**反例** | metis 歧义 / B12 |
+| **M2** | ⛔ **不得用既有 h3 合成模型 run 顶替**:入库 run **必须**由 `configs/cep_chi_rnf_e2e_a.json` 驱动,且其 `modules` 含 `StubCacheEndpointTLM`(否则 run 不经本 change 任何代码) | **metis B1(阻断)** |
+| **A8** | `ic3_verdict` 的**产出者钉死**(脚本 + 读哪两个键 + 三态优先级 `⚪ 不适用` **优先于** `✓ 通过`),并**实测** A run 的落点;落不了就如实登记 | metis B13 |
+| **W2** | `.gitignore` 形态改为 `!experimental/run-*/` + `experimental/run-*/*` + 两条白名单;验收 = `git check-ignore -v experimental/run-x/metrics.json` **无输出**;嵌套 run 明示不入库 | **metis B2(阻断)** |
+| **W4** | tag **不占用** `IAG-08`(已被 `test/test_cep_instance_assembly.cc:185` 使用)⇒ 改 `[bridge-single-slot]`;文档写明「**只测不拦**」—— `instantiateAll` 仍可能静默覆盖,进 Step 7.5 需另裁(动 core,触红线) | metis B11 |
+| **A3.2 / J-1** | `instantiateAll == true` **不得**作为装配判据;须断言「首发后 `wrapper.counters().cpu_requests > 0` ∧ `tg` 发射 > 0」或每条 connection 有 PortPair | **metis B6** |
+| **A5(B 拓扑)** | config **必须显式**写 `bridge_id`(1..65535) | metis B7 |
+| **A9 / T9** | A9 **只交付 delta 终稿**(含 F-A4 限定句);「合并 + `--update --authorized-by` + 清单 commit + 无参复验」**随 T9.3 归档一次执行** | critic SHOULD_FIX-2 |
+| **里程碑** | **M1** 接线 → **M2 拓扑 B 分档** → **M3 第一件全绿 run** → **M4 归档**(原 M2/M3 倒挂已纠正) | critic SHOULD_FIX-1 |
+| **tasks.md** | 按本段重排(A4 ∥ A5、A3.2 并入 A5、W4 为 A6 前置、加 F-A1~F-A7),并入 F-A5 的「文档与实现一致」出口 | critic SHOULD_FIX-4 |
+
+#### ③ 范围纠正
+
+- **B1 / B2 移出本 change 的 DoD**:二者属 architect/planner 治理域,不在 proposal 的 What Changes 内 ⇒ 登记为 roadmap 独立项,**不占本 change AC,不作归档阻塞**。
+- **W1**(索引位置闸)与本 change 目标无关 ⇒ 明确「独立项,T9 不因其未完成而阻塞」(metis B10)。
+
+#### ④ 估时变化
+
+批次 1 **0.5d → 0.8d**(+F-A7 / B9)· A4 **0.5d → 0.7d**(口径写死 + 反例)· A8 **0.8d → 1.0d**(IC3 产出者实测)⇒ A 轨剩余 ≈ **8.6d**(原 7.1d),+ W1 0.2d + B2 0.5d。
+
+#### ⑤ 风险登记(不阻断,开工后验证)
+
+| 风险 | 事实 | 处置 |
+|---|---|---|
+| dual-port 适配器 `static_cast` | `src/core/module_factory.cc:733` 把适配器 `static_cast` 到**硬编码** `DualPortStreamAdapter<ChStreamModuleBase, …, NoCFlitBundle, NoCFlitBundle>`;wrapper 是首个以 `CohIfBundle` 注册者 ⇒ **标准意义 UB**,依赖成员布局相同 | SCE-05 已走过该路径未崩 ⇒ **A5 加一条「首发事务冒烟」兜底**;⛔ 本 change 不改 `module_factory.cc`(红线) |
+| `num_ports()` 与 `port_count_[type]` | wrapper 返回 **4**(访问器数,同 `NICTLM` 先例),注册表记 **2**(端口组数) | 语义不同但**有先例**;登记不改 |
+| 嵌套 run 目录 | `experimental/run-*/blocking_on/metrics.json` 实测存在 | W2 **只放开 run 根级两件**,嵌套明示不入库 |
+
+**关联**:台账 **Entry #299**(本段)· **#298 / #297**(A0+A1/A2 + 前版路径)· `.rddf/reviews/` 无新增文件(双审结论由本 Entry 承载)· `ADR-CEP-19` SU · 三 · `ADR-CEP-06` SU 2026-11-08 · 二
+
 ## §11 决策台账(append-only,per `rdd-planner/SKILL.md:158`)
 
 > **append-only**:每次新增 entry 追加到段尾;**不可删除 / 不可改写**早期 entry。
@@ -16794,6 +16915,57 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 **⑤ 后续(A 轨剩余)**:A3 完整(拓扑 A/B)· A4 复现门(seed/git rev)· A5 两拓扑 + **W4 `[IAG-08]`** · A6 J-1~J-9 · A7 harness + 三键归属 · A8 **W2 `.gitignore` + 7 字段 + W3 双向闸 + 首批入库** · A9 契约面收敛 + 实施后状态更新 · W1 索引位置闸。
 
 **⑥ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#296**(全量盘点 + 路径)· **#295**(retention 丙)· **#293**(甲 + F-12)· **#292**(D-0 定位 / J-9)· `ADR-CEP-19` SU 2026-11-08 · 二 / 三 · `.rddf/improvements/cpptlm-cep-stub-cache-chstream-surface.md`
+
+### Entry #298 — 2026-11-08 [plan](**A0+A1/A2 落地后的实施侧重排** —— architect 复核开出 F-A1~F-A6,6 条并入 A1/A2 收尾)
+
+**主题**:builder 交付 A0(授权)+ A1/A2(两模块 + SCE 判据,`05308d4a`)后,由 architect 复盘目标与代码、planner 重排剩余任务。
+**角色**:architect(目标复盘 + 代码复核)· planner(盘点 + 排序 + 估时)· builder(待修复与续做)。
+**KPI**:Proposed **1/3**(不变)。
+
+**① 目标复盘结论(architect)**:目标**未偏移** —— 三层(愿景 / 交付 / 验收)与 `obj §2.1` / §0 / §6.2 逐字一致;A 轨 = 愿景层的**一阶补齐**(补「真实业务流量可跑」,此前全部判据为「引擎↔引擎同构对等」)。
+
+**② 完成度实测(非措辞推断)**:A0 delta ↔ main spec **仅 `:56` 一行 diff**;A1/A2 header-only 且已注册;`SCE-*` 5 cases / 43 assertions;`ctest` **164/164**;红线六项**零 diff**;`B3b-2` 仍 **0/4**。
+
+**③ architect 新发现 6 条(均归 builder,不构成 `plan_drift`)**:
+| # | 问题 | 严重度 |
+|---|---|---|
+| F-A1 | Completion 按 `txn_id % N` 选端口,未记录 ingress ⇒ 多端点拓扑响应走错端口 | **阻断 G2** |
+| F-A2 | `emit_cpu_resp` 输出忙时静默丢弃 ⇒ 违反 delta 自述「一请求一响应」 | **阻断 G2** |
+| F-A3 | `evict()` 的 txn_id 与 core 命名空间重叠 | 中 |
+| F-A4 | delta 措辞「对端协议引擎」与实际(home 简化模型)不符 | 中(契约准确性) |
+| F-A5 | 交付形态与 change 文档不一致(写 `.cc` 实为 header-only);`tasks.md` 37 条零勾选 | 记账 |
+| F-A6 | `static_assert(true,"")` 死代码;Snoop txn 配对未登记 | 低 |
+
+**④ 排期变化**:**F-A1/F-A2 成为 A5 的前置**(并入 A1/A2 收尾,0.5d);A3 剩余的 `instantiateAll` 并入 A5;其余顺序不变:`A4 ∥ A5 → W4 → A6 → A7 → W2 → A8(W3) → A9 → T9`;W1 独立、B2 并行、B1 在 A9 后。
+**⑤ 估时**:A 轨剩余 **≈ 7.1d** + W1 0.2d + B2 0.5d ≈ **7.8d**;B1 1d/批。
+
+**⑥ 边界**:⛔ 不改 A1~A9 技术内容与已签发结论 · ⛔ 不为 `B3b-2` 造内部替代品 · ⛔ 不建空 `.cc` 去对齐文档字面(改文档)· 下一 commit 起只走实施轨。
+
+**⑦ 关联**:**#297**(A0+A1/A2 实施)· **#296**(原全量盘点)· **#295 / #294 / #293 / #291**(决策面闭合链)· `07 号` SU · 十一 ~ 十四 · `.rddf/reviews/cep-goal-alignment-review-2026-11-08.md`
+
+
+
+
+### Entry #299 — 2026-11-08 [plan](**双审结论落盘** —— critic APPROVE_WITH_CONDITIONS / 0 BLOCKER;metis 6 类缺口折成开工基线)
+
+**主题**:实施路径经 **metis + critic** 双审;按审查结论重写开工基线(新增 F-A7 / B9,改写 F-A1~F-A4 / A4 / M2 / A8 / W2 / W4 / A3.2 / A5 / A9 / 里程碑 / tasks)。
+**角色**:planner(整合)· architect(复核)· builder(待实施)· verifier(待验收)。
+**KPI**:Proposed **1/3**(不变)。
+
+**① 审查结论**:
+- **critic**:`APPROVE_WITH_CONDITIONS`,**0 BLOCKER**,`mergeable: yes`,全部 finding `scope_exceeded: false`;4 条 SHOULD_FIX(里程碑 M2/M3 倒挂 · A9 与 T9.3 的合并/冻结时点二义 · F-A4 会使授权引用文本 ≠ 合并文本 · tasks.md 未重排)+ 1 条验证建议(F-A1 需同步改 SCE-04 的 `resp_out()[7%2]`)。
+- **metis**:6 类缺口;**P0 6 条** = ① M2 的 run 不经本 change 代码(既有 `run_h3` 是 `ConsistencyCompletionModel` 合成模型)② W2 的 `.gitignore` 例外在父目录被排除时**无效** ③ `instantiateAll==true` 不构成装配判据(工厂对空端口**静默 continue**)④ wrapper **拒绝路径伪造 Request**(`txn_id=0`)⑤ F-A3 的「全网唯一」在每实例从 1 起分配下**不可实现** ⑥ 拓扑 B 缺显式 `bridge_id` ⇒ `[IAG-07]` 恒 FAIL。
+
+**② 落盘处置**:见 §10「路径图修订 ④」—— 新增 **F-A7**(拒绝路径)· **B9**(TxnStamp 双命名空间);改写 **F-A1**(按 ingress 分桶)· **F-A3**(分段编码,删「全网唯一」)· **F-A4**(方案 b:ADR 原文 + delta 限定句,零冻结面)· **A4**(复现口径写死 + 反例)· **M2**(必须由拓扑 A config 驱动)· **A8**(IC3 产出者钉死并实测)· **W2**(gitignore 三段式 + `git check-ignore` 验收)· **W4**(改 tag `[bridge-single-slot]` + 只测不拦)· **A3.2/J-1**(行为判据替代 `instantiateAll`)· **A5**(显式 `bridge_id`)· **A9/T9**(合并随归档一次执行)· **里程碑**(M2 = 拓扑 B 分档,M3 = 首件全绿 run)· **tasks.md**(重排)。
+**③ 范围纠正**:B1 / B2 移出本 change DoD(治理域,不占 AC、不阻塞归档);W1 明确为独立项。
+**④ 估时**:A 轨剩余 **≈ 8.6d**(批次 1 0.8d / A4 0.7d / A8 1.0d),+ W1 0.2d + B2 0.5d;B1 1d/批(A9 后)。
+**⑤ 风险登记(不阻断)**:dual-port 适配器 `static_cast` 硬编码 `NoCFlitBundle` ⇒ 标准 UB、依赖布局(SCE-05 已走过;A5 加冒烟)· `num_ports()=4` vs `port_count=2` 有 `NICTLM` 先例 · 嵌套 run 目录不入库。
+**⑥ 边界**:⛔ 不改任何已签发结论 · ⛔ 不改 `module_factory.cc`(红线)· ⛔ 不为 `B3b-2` 造内部替代品(仍 0/4)。
+**⑦ 关联**:**#298**(前版路径)· **#297**(A0+A1/A2)· **#296**(全量盘点)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-19` SU · 三 · `ADR-CEP-06` SU 2026-11-08 · 二
+
+**⑧ 追加落字(同批次)**:F-A4 采用**方案 (b)** ⇒ `:56` 的**最终合并文本 = ADR 原文(含「对端协议引擎」逐字)+ delta 限定句**(驱动者 = home 简化模型,⛔ 不是协议引擎)⇒ Entry #297 的授权引用**不需要改写**,但合并文本以本句为准。
+
+
 
 ---
 ---

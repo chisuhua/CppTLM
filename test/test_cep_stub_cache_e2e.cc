@@ -173,7 +173,10 @@ TEST_CASE("SCE-04: home 简化模型 ⇒ 参数化延迟回 Completion;Writeback
     r.tick(); // 第 4 拍:应发出
     REQUIRE(r.resp_out().size() > 0);
     REQUIRE(r.counters().completions_sent == 1u);
-    const Bundle comp = r.resp_out()[7 % 2].data();
+    // `Completion` **回到请求的 ingress 端口**(⛔ 不按 txn 哈希选端口)
+    REQUIRE(r.resp_out()[0].valid());
+    REQUIRE_FALSE(r.resp_out()[1].valid());
+    const Bundle comp = r.resp_out()[0].data();
     REQUIRE(comp.flow_id == bundles::CohIfFlowId::Completion);
     REQUIRE(comp.transaction_id.read() == 7u);
 
@@ -200,4 +203,81 @@ TEST_CASE("SCE-05: 两类型均 `registerObject` 过(ModuleFactory 可实例化)
     EventQueue eq;
     ModuleFactory f(&eq);
     REQUIRE(f.instantiateAll(cfg)); // 注册面缺失 ⇒ 立即变红
+}
+
+TEST_CASE("SCE-06: 多端点 ⇒ Completion 各回各的 ingress 端口(⛔ 串端口)", "[cep][e2e][sce-06]") {
+    EventQueue eq;
+    Responder r("sce_multi", &eq);
+    Responder::Config cfg;
+    cfg.completion_latency_cycles = 1;
+    r.configure(cfg);
+
+    inject(r.req_in()[0], make_request(1, 0x6000, 0));
+    inject(r.req_in()[1], make_request(2, 0x7000, 0));
+    r.tick(); // 消费两条;ready = 1 + 1 = 2
+    REQUIRE(r.counters().requests_consumed == 2u);
+    REQUIRE(r.in_flight() == 2u);
+    r.tick(); // 第 2 拍 ⇒ 两个端口各发一条
+
+    REQUIRE(r.resp_out()[0].valid());
+    REQUIRE(r.resp_out()[1].valid());
+    REQUIRE(r.resp_out()[0].data().transaction_id.read() == 1u);
+    REQUIRE(r.resp_out()[1].data().transaction_id.read() == 2u);
+    REQUIRE(r.counters().completions_sent == 2u);
+}
+
+TEST_CASE("SCE-07: CPU 侧背压 ⇒ 响应**排队不丢**,enqueued 与 delivered 分账",
+          "[cep][e2e][sce-07]") {
+    EventQueue eq;
+    Wrapper w("sce_bp", &eq);
+
+    // 预置命中行
+    w.core().cpu_read(0x2100);
+    const std::uint64_t t = w.core().outstanding_txn(0x2100);
+    REQUIRE(t != 0u);
+    REQUIRE(w.core().completion(0x2100, t, 0xAA, tlm::cep::Perm::READ, false));
+
+    inject(w.pe_req_in(), Req(201, 0x2100, 8, false, 0));
+    w.tick();
+    REQUIRE(w.counters().cpu_responses_enqueued == 1u);
+    REQUIRE(w.counters().cpu_responses == 1u);
+    REQUIRE(w.cpu_resp_backlog() == 0u);
+
+    // 第二条:下游未消费 ⇒ 只能入队(⛔ 静默丢弃)
+    inject(w.pe_req_in(), Req(202, 0x2100, 8, false, 0));
+    w.tick();
+    REQUIRE(w.counters().cpu_responses_enqueued == 2u);
+    REQUIRE(w.counters().cpu_responses == 1u); // 仍是第 1 条在出口
+    REQUIRE(w.cpu_resp_backlog() == 1u);
+    REQUIRE(w.pe_resp_out().data().transaction_id.read() == 201u);
+
+    // 下游消费 ⇒ 下一拍交付第 2 条
+    w.pe_resp_out().clear_valid(); // 模拟下游消费
+    w.tick();
+    REQUIRE(w.counters().cpu_responses == 2u);
+    REQUIRE(w.cpu_resp_backlog() == 0u);
+    REQUIRE(w.pe_resp_out().valid());
+    REQUIRE(w.pe_resp_out().data().transaction_id.read() == 202u);
+}
+
+TEST_CASE("SCE-08: core 拒绝 ⇒ ⛔ 不伪造 net Request,回显式 reject 响应", "[cep][e2e][sce-08]") {
+    EventQueue eq;
+    Wrapper w("sce_reject", &eq);
+
+    inject(w.pe_req_in(), Req(301, 0x8000, 8, false, 0));
+    w.tick();
+    REQUIRE(w.counters().net_requests_out == 1u);
+    REQUIRE(w.in_flight() == 1u);
+
+    // 同 addr 再发 ⇒ core 拒绝(`INV-SC1`);⛔ 不得发 `transaction_id=0` 的 Request
+    inject(w.pe_req_in(), Req(302, 0x8000, 8, false, 0));
+    w.tick();
+    REQUIRE(w.counters().cpu_rejected == 1u);
+    REQUIRE(w.counters().net_requests_out == 1u); // 未新增
+    REQUIRE(w.pe_resp_out().valid());
+    const Resp resp = w.pe_resp_out().data();
+    REQUIRE(resp.transaction_id.read() == 302u);
+    REQUIRE(resp.is_hit.read() == false);
+    REQUIRE(resp.error_code.read() == 1u);
+    REQUIRE(w.txn_stamps().back().rejected == true);
 }

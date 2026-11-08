@@ -9,11 +9,11 @@
 // ── 形态(per ADR-CEP-19 SU · 八 ①「组合式 wrapper」)────────────────────────
 //   `StubCacheEndpointTLM` **持有** `StubCacheCore` 实例 ⇒ `stub_cache_core.hh`
 //   **纯类零 diff**(`INV-SC1`~`INV-SC6` 与既有单测零变化)。
-//   ⛔ **不**继承 `StubCacheCore`;⛔ **不**给纯类加端口。
+//   ⛔ **不**继承 `StubCacheCore`;⛔ **不给纯类加端口**。
 //
 // ── 端口(异构 dual-port,per design D-1)──────────────────────────────────────
 //   `pe_req_in()`   in  : `CacheReqBundle`      (业务侧请求;cpu_side 功能口径)
-//   `pe_resp_out()` out : `CacheRespBundle`     (业务侧响应 —— **命中亦回**,一请求一响应)
+//   `pe_resp_out()` out : `CacheRespBundle`     (业务侧响应 —— **命中/拒绝亦回**,一请求一响应)
 //   `net_req_out()` out : `CohIfBundle`         (Request / SnoopResp / Writeback)
 //   `net_resp_in()` in  : `CohIfBundle`         (Completion / Snoop)
 //
@@ -47,12 +47,20 @@ public:
     using CacheResp = bundles::CacheRespBundle;
     using Bundle = bundles::CohIfBundle;
 
+    /// `evict()` 的 Writeback txn 命名空间(高位定位,与 core 的 txn 空间不重叠)
+    static constexpr std::uint64_t kEvictTxnBase = 1ULL << 62;
+
+    /// txn 命名空间标记(命中路径用 CPU 侧 id;miss 路径用 core 的 id)
+    enum class TxnIdSpace : std::uint8_t { CPU = 0, CORE = 1 };
+
     struct Counters {
-        std::uint64_t cpu_requests = 0;       ///< 消费的业务侧请求
-        std::uint64_t cpu_responses = 0;      ///< 回业务侧的响应(**含命中**)
-        std::uint64_t net_requests_out = 0;   ///< 经 net_side 发出的 Request
-        std::uint64_t net_completions_in = 0; ///< 收到的 Completion
-        std::uint64_t net_snoops_in = 0;      ///< 收到的 Snoop
+        std::uint64_t cpu_requests = 0;           ///< 消费的业务侧请求
+        std::uint64_t cpu_responses = 0;          ///< **已交付**业务侧的响应(含命中 / 拒绝)
+        std::uint64_t cpu_responses_enqueued = 0; ///< **已入队**的响应(交付前;⛔ 与上一项同形)
+        std::uint64_t cpu_rejected = 0;           ///< core 拒绝(MSHR 满 / 同 addr outstanding)
+        std::uint64_t net_requests_out = 0;       ///< 经 net_side 发出的 Request
+        std::uint64_t net_completions_in = 0;     ///< 收到的 Completion
+        std::uint64_t net_snoops_in = 0;          ///< 收到的 Snoop
         std::uint64_t net_snoop_resps_out = 0;
         std::uint64_t net_writebacks_out = 0;
     };
@@ -65,6 +73,8 @@ public:
         std::uint64_t complete_cycle = 0;
         bool completed = false;
         bool hit = false;
+        bool rejected = false;
+        TxnIdSpace id_space = TxnIdSpace::CPU;  ///< ⛔ 跨空间不得按 txn 配对
     };
 
     StubCacheEndpointTLM(const std::string& name, EventQueue* eq)
@@ -93,6 +103,7 @@ public:
     const Counters& counters() const { return ctr_; }
     const std::vector<TxnStamp>& txn_stamps() const { return stamps_; }
     std::size_t in_flight() const { return core_.outstanding_count(); }
+    std::size_t cpu_resp_backlog() const { return cpu_resp_queue_.size(); }
     std::uint64_t cycle() const { return cycle_; }
 
     // ── 纯类访问(测试 / 装配夹具用;⛔ 不改变「纯类零 diff」)────────
@@ -101,13 +112,14 @@ public:
 
     /// `evict_line` 的**功能原语**承载(缺口如实:⛔ 不伪造 `CacheReqBundle` 字段)
     /// ⇒ 由装配夹具显式调用,并把写回**作为 net_side 的 `Writeback` 流**发出。
+    /// ⚠️ txn 用**独立段**(`kEvictTxnBase`)⇒ 与 core 分配的 txn 不重叠。
     void evict(std::uint64_t addr) {
         const WritebackOut wb = core_.evict_line(addr);
         if (!wb.valid)
             return;
         Bundle b;
         b.flow_id = bundles::CohIfFlowId::Writeback;
-        b.transaction_id.write(next_txn_++);
+        b.transaction_id.write(kEvictTxnBase + next_evict_txn_++);
         b.address.write(wb.addr);
         b.data.write(wb.data);
         b.dirty.write(wb.dirty ? 1 : 0);
@@ -120,6 +132,7 @@ public:
         handle_cpu_ingress();
         handle_net_ingress();
         drain_net_egress();
+        drain_cpu_egress();
         core_.tick();
         if (adapter_)
             adapter_->tick();
@@ -133,6 +146,7 @@ private:
         pe_req_in_.consume();
         ++ctr_.cpu_requests;
 
+        const std::uint64_t cpu_txn = req.transaction_id.read();
         const std::uint64_t addr = req.address.read();
         const bool is_write = req.is_write.read();
         const std::uint64_t data = req.data.read();
@@ -141,21 +155,29 @@ private:
 
         if (r.hit) {
             // **命中亦回**(一请求一响应 ⇒ latency 样本完整;`INV-SC6` 零网络流量保持)
-            CacheResp resp(req.transaction_id.read(), r.data, /*hit=*/true);
-            emit_cpu_resp(resp);
-            record_stamp(req.transaction_id.read(), addr, /*hit=*/true);
-        } else {
-            Bundle b;
-            b.flow_id = bundles::CohIfFlowId::Request;
-            b.transaction_id.write(r.txn_id);
-            b.address.write(addr);
-            b.data.write(data);
-            b.size.write(req.size.read());
-            b.perm.write(static_cast<std::uint8_t>(is_write ? Perm::WRITEBACK : Perm::READ));
-            pending_net_.push_back(b);
-            ++ctr_.net_requests_out;
-            record_stamp(r.txn_id, addr, /*hit=*/false);
+            enqueue_cpu_resp(CacheResp(cpu_txn, r.data, /*hit=*/true));
+            record_stamp(cpu_txn, addr, /*hit=*/true, TxnIdSpace::CPU);
+            return;
         }
+        if (!r.pending) {
+            // **core 拒绝**(MSHR 满 / 同 addr 已有 outstanding)⇒ ⛔ 不得伪造 net Request;
+            // 回显式 reject 响应(一请求一响应在该路径同样成立)
+            ++ctr_.cpu_rejected;
+            enqueue_cpu_resp(CacheResp(cpu_txn, 0, /*hit=*/false, /*err=*/1));
+            record_stamp(cpu_txn, addr, /*hit=*/false, TxnIdSpace::CPU, /*rejected=*/true);
+            return;
+        }
+
+        Bundle b;
+        b.flow_id = bundles::CohIfFlowId::Request;
+        b.transaction_id.write(r.txn_id);
+        b.address.write(addr);
+        b.data.write(data);
+        b.size.write(req.size.read());
+        b.perm.write(static_cast<std::uint8_t>(is_write ? Perm::WRITEBACK : Perm::READ));
+        pending_net_.push_back(b);
+        ++ctr_.net_requests_out;
+        record_stamp(r.txn_id, addr, /*hit=*/false, TxnIdSpace::CORE);
     }
 
     void handle_net_ingress() {
@@ -173,8 +195,7 @@ private:
                 const auto perm = static_cast<Perm>(b.perm.read());
                 const bool error = b.error.read() != 0;
                 core_.completion(addr, txn, data, perm, error);
-                CacheResp resp(txn, data, /*hit=*/false, error ? 1 : 0);
-                emit_cpu_resp(resp);
+                enqueue_cpu_resp(CacheResp(txn, data, /*hit=*/false, error ? 1 : 0));
                 complete_stamp(txn);
                 break;
             }
@@ -213,28 +234,38 @@ private:
         }
     }
 
-    void emit_cpu_resp(const CacheResp& resp) {
-        if (!pe_resp_out_.valid()) {
-            pe_resp_out_.write(resp);
+    /// CPU 侧 egress(**背压 ⇒ 排队,⛔ 不丢**;`enqueued` 与 `delivered` 分账)
+    void drain_cpu_egress() {
+        while (!cpu_resp_queue_.empty() && !pe_resp_out_.valid()) {
+            pe_resp_out_.write(cpu_resp_queue_.front());
+            cpu_resp_queue_.pop_front();
             ++ctr_.cpu_responses;
         }
     }
 
-    void record_stamp(std::uint64_t txn, std::uint64_t addr, bool hit) {
+    void enqueue_cpu_resp(const CacheResp& resp) {
+        cpu_resp_queue_.push_back(resp);
+        ++ctr_.cpu_responses_enqueued;
+    }
+
+    void record_stamp(std::uint64_t txn, std::uint64_t addr, bool hit, TxnIdSpace space,
+                      bool rejected = false) {
         TxnStamp s;
         s.txn_id = txn;
         s.addr = addr;
         s.issue_cycle = cycle_;
         s.hit = hit;
-        s.completed = hit;  // 命中在 issue 当期完成
-        if (hit)
+        s.rejected = rejected;
+        s.id_space = space;
+        s.completed = hit || rejected;  // 命中 / 拒绝在 issue 当期完成
+        if (s.completed)
             s.complete_cycle = cycle_;
         stamps_.push_back(s);
     }
 
     void complete_stamp(std::uint64_t txn) {
         for (auto it = stamps_.rbegin(); it != stamps_.rend(); ++it) {
-            if (it->txn_id == txn && !it->completed) {
+            if (it->txn_id == txn && it->id_space == TxnIdSpace::CORE && !it->completed) {
                 it->completed = true;
                 it->complete_cycle = cycle_;
                 return;
@@ -251,9 +282,10 @@ private:
     cpptlm::InputStreamAdapter<Bundle> net_resp_in_{};
     StubCacheCore core_{};
     std::deque<Bundle> pending_net_{};
+    std::deque<CacheResp> cpu_resp_queue_{};
     std::vector<TxnStamp> stamps_{};
     std::uint64_t cycle_ = 0;
-    std::uint64_t next_txn_ = 1;
+    std::uint64_t next_evict_txn_ = 1;
 };
 
 }  // namespace tlm::cep

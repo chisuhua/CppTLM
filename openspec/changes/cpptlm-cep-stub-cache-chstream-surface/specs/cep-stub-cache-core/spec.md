@@ -51,6 +51,7 @@ CEP SHALL 将 **`ADR-CEP-05` 的 Stub Cache Core 定义**(6 接口 / 5 态状态
 
 - **AND** 每条断言 SHALL 针对**行为**(状态迁移 / 计数 / 载荷 / 时延),SHALL **不**得只断言「某常量存在」或「某枚举值存在」
 - **AND** **端口面 wrapper 持有的** stub 的 `net_side` SHALL 由**经 `CohIfBundle` 端口面**的**对端协议引擎**驱动(本 change **不**引入 mock ProtocolEngine)
+- **AND** 上句的「对端协议引擎」**指驱动者角色**;本 change 的实际驱动者是 **home 简化模型**(`CohIfResponderTLM`)——⛔ 它**不是**协议引擎(per `ADR-CEP-19` SU 2026-11-08 · 三)
 
 > **锚点**:`test_cep_stub_cache_core.cc` 的 6 组行为断言(覆盖统计断言 ≥ 6)
 
