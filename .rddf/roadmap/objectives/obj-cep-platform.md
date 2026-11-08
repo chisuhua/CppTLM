@@ -16762,6 +16762,39 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑤ 关联**:**#295**(F-08 残余 + retention:本路径的 A8 / W2 / W3 即其落地)· **#294**(路径图修订 ②)· **#291**(修订 ①)· **#289**(原路径图)· `.rddf/reviews/cep-goal-alignment-review-2026-11-08.md`(目标一致性审查)· `07 号` SU · 十一 ~ 十四
 
+### Entry #297 — 2026-11-08 [build](**A0 授权** `:56` 单条 MODIFIES + **A1/A2 实现**(端口面 wrapper + home 简化模型)+ 判据 SCE-01~05)
+
+**主题**:change `cpptlm-cep-stub-cache-chstream-surface` 建档后的第一批实施 —— **A0 授权门** + **A1/A2** 两模块落地。
+**角色**:builder(实施)· architect(上游裁定已闭合)· verifier(待验收)。
+**KPI**:Proposed 并发 **1/3**(本 change 占 1 slot;归档后回 0/3)。
+
+**① A0 授权范围(冻结面)`**:
+- 授权对象 = `openspec/specs/cep-stub-cache-core/spec.md` 的 **`:56` 单条** MODIFIES:
+  「`net_side` SHALL 由 **mock ProtocolEngine** 驱动」⇒「**端口面 wrapper 持有的** stub 的 `net_side` SHALL 由**经 `CohIfBundle` 端口面**的**对端协议引擎**驱动(本 change **不**引入 mock ProtocolEngine)」。
+- ⛔ `:71`(hit 路径零 flit)与 `:63`(三词禁令)**不动**;⛔ 不新增 Requirement。
+- ⚠️ **落地时点**:MODIFIES 已写入本 change 的 **delta**(`specs/cep-stub-cache-core/spec.md`,`openspec validate --strict` rc=0)⇒ 合并进 main spec 发生在 **归档**时 ⇒ ⇒ **两步授权链** = 本 Entry 授权 → 归档产物 commit → `cep_freeze_check.sh --update --authorized-by "Entry #297"` → 清单**单独** commit → 无参复验。
+- 依据:`ADR-CEP-19` **决策 9**(具名延期项)+ Entry #288(转实施态)+ `ADR-CEP-19` SU · 二 ③(`:71` 撤销 / `:56` 唯一 MODIFIES)。
+
+**② A1/A2 实现(本 Entry)**:
+
+| # | 产物 | 要点 |
+|---|---|---|
+| A1 | `include/tlm/cep/stub_cache_endpoint.hh` | **组合式 wrapper**(持有 `StubCacheCore`):异构 dual 端口(CacheReq/CacheResp ↔ CohIf/CohIf)· 命中**亦回** CPU 响应(`INV-SC6` 零网络流量保持)· miss ⇒ 发 CohIf `Request` · Completion ⇒ 回响应 + 周期戳闭合 · `evict()` 把写回作为 `Writeback` 流发出 · **公开观测 API**(per-txn issue/complete 周期戳 + in-flight)⛔ 不做聚合 · `attach_protocol_bridge` + **只读桥指针** |
+| A2 | `include/tlm/cep/cohif_responder.hh` | **真实 home 的简化模型**:`Request` ⇒ **参数化延迟**(默认 4 周期)回 `Completion` · `Writeback` **接收即消费零响应** · `Snoop` **可配发**(默认关) · `attach_protocol_bridge` + 只读桥指针 · `receive_credit` 空实现(adapter 鸭子类型要求) |
+| A3(部分) | `include/chstream_register.hh` | `registerObject<StubCacheEndpointTLM>` + `registerDualPortAdapter<…, CacheReq, CacheResp, CohIf, CohIf>`(**异构**)+ `REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("CohIfResponderTLM", …, CohIfBundle, 2)`(**对称**)⇒ 两类型均带**强度标签注释**(⛔ 不读成协议语义达成) |
+| 判据 | `test/test_cep_stub_cache_e2e.cc` | **SCE-01** 构造 + 两侧 Bundle **异构**(编译期 `static_assert`)+ 纯类用法不变 · **SCE-02** 命中 ⇒ 回响应 ∧ net 零请求(`INV-SC6` 等价) · **SCE-03** miss ⇒ 发 Request ∧ 喂 Completion ⇒ 回响应 + 周期戳闭合 · **SCE-04** home 参数化延迟 + Writeback 零响应 + ⛔ 默认不发 Snoop · **SCE-05** 两类型 `instantiateAll` 成功 |
+
+**③ 验证(实测)**:
+- `cmake -S . -B build && cmake --build build -j4` ⇒ **rc=0**(⚠️ 新增 test 文件须先**重跑 configure** —— `test/CMakeLists.txt` 用 GLOB,configure 期求值)
+- `./build/bin/cpptlm_tests "SCE-*"` ⇒ **5 cases / 43 assertions 全 PASS**
+- ⚠️ **未做**:A3 的完整注册判据(拓扑 A/B 的 `instantiateAll`)、A4~A9 ⇒ 后续 Entry。
+
+**④ 计数 / 边界**:`B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` **零 diff**;`protocol_instances.json` 与 `protocol_instance.schema.json` **零 diff**;⛔ `stub_cache_core.hh` **零 diff**(组合式 wrapper,纯类未动);⛔ `include/framework/` 与 `cohif_noc_bridge.hh` 零改动(语义分层红线)。
+
+**⑤ 后续(A 轨剩余)**:A3 完整(拓扑 A/B)· A4 复现门(seed/git rev)· A5 两拓扑 + **W4 `[IAG-08]`** · A6 J-1~J-9 · A7 harness + 三键归属 · A8 **W2 `.gitignore` + 7 字段 + W3 双向闸 + 首批入库** · A9 契约面收敛 + 实施后状态更新 · W1 索引位置闸。
+
+**⑥ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#296**(全量盘点 + 路径)· **#295**(retention 丙)· **#293**(甲 + F-12)· **#292**(D-0 定位 / J-9)· `ADR-CEP-19` SU 2026-11-08 · 二 / 三 · `.rddf/improvements/cpptlm-cep-stub-cache-chstream-surface.md`
+
 ---
 ---
 

@@ -39,6 +39,8 @@
 #include "tlm/lwc/lwc_bus_hub.hh" // Change B: LwcBusHub (REGISTER_CHSTREAM 注册, ChStreamModuleBase 派生)
 #include "tlm/cep/moesi_gpu_protocol_engine.hh" // P3: MoesiGpuProtocolEngine(L4 E2E 的实例化载体)
 #include "tlm/cep/ualink_protocol_engine.hh"  // 2026-11-07: UalinkProtocolEngine(ualink_4 的记账级专用承载)
+#include "tlm/cep/cohif_responder.hh"     // 2026-11-08(Entry #297): home 简化模型(最小应答语义)
+#include "tlm/cep/stub_cache_endpoint.hh" // 2026-11-08(Entry #297): 端口面 wrapper(异构 dual-port)
 #include "tlm/gpu/streaming_multiprocessor_tlm.hh" // SM 重构 Task 4: SM 顶层 + 12 子模块
 #include "tlm/gpu/submit_queue_mvp.hh"
 #include "tlm/pcie/pcie_endpoint_ip.hh"
@@ -170,6 +172,14 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
     REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("UalinkProtocolEngine",                                  \
                                            tlm::cep::UalinkProtocolEngine,                         \
                                            bundles::CohIfBundle, 2);                                \
+    /* 2026-11-08(per 台账 Entry #297):「完成者」= **真实 home 的简化模型**。                    \
+       ⚠️ **承载面 = 第一族(CHI RN-F)的最小应答语义**(Request→Completion · 可配发 Snoop ·    \
+       Writeback 接收即消费);⛔ **不**承载条款级语义 ⇒ ⛔ **不**构成 T1–T4 条款级证据          \
+       ⇒ **B3b-2 维持 0/4**;⛔ **不进** `protocol_instances.json`(声明面已裁**甲**)。           \
+       ⛔ **不是** ProtocolEngineBase —— 独立 `ChStreamModuleBase` 派生(对称 CohIf 端口)。     */ \
+    REGISTER_CHSTREAM_BIDIRECTIONAL_NAMED("CohIfResponderTLM",                                     \
+                                           tlm::cep::CohIfResponderTLM,                            \
+                                           bundles::CohIfBundle, 2);                                \
     /* 队列 #7 Phase 3/5:协议桥注册(per CC-05 —— 死钩子 → 活钩子)。                                               \
        `register_protocol_bridge` 对同名 early-return(ODR-safe)⇒ 幂等。                                   \
        桥的**消费**由 `config["cep"]["bridges"]` 驱动(ModuleFactory Step 7.5)。 */                          \
@@ -233,6 +243,14 @@ inline void register_chstream_bidirectional(const std::string& type_name) {
     ChStreamAdapterFactory::get()                                                                   \
         .registerDualPortAdapter<tlm::NICTLM, bundles::CacheReqBundle, bundles::CacheRespBundle,    \
                                  bundles::NoCFlitBundle, bundles::NoCFlitBundle>("NICTLM");         \
+    /* 2026-11-08(per 台账 Entry #297):端口面 wrapper —— **异构** dual-port                     \
+       (CacheReq/CacheResp ↔ CohIf/CohIf)。⛔ 不得用对称 `REGISTER_CHSTREAM_BIDIRECTIONAL`      \
+       (那要求两侧同 BundleT)。                                                               */ \
+    ModuleFactory::registerObject<tlm::cep::StubCacheEndpointTLM>("StubCacheEndpointTLM");         \
+    ChStreamAdapterFactory::get()                                                                  \
+        .registerDualPortAdapter<tlm::cep::StubCacheEndpointTLM, bundles::CacheReqBundle,          \
+                                 bundles::CacheRespBundle, bundles::CohIfBundle,                  \
+                                 bundles::CohIfBundle>("StubCacheEndpointTLM");                    \
     ChStreamAdapterFactory::get()                                                                   \
         .registerAdapter<tlm::LinkTLM, bundles::NoCFlitBundle, bundles::NoCFlitBundle>("LinkTLM");  \
     ChStreamAdapterFactory::get()                                                                   \
