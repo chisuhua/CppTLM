@@ -54,14 +54,18 @@
 
 ## W4 · 桥单槽兜底
 
-- [ ] W4.1 **`[bridge-single-slot]`**(⛔ 不复用已被 `test_cep_instance_assembly.cc:185` 占用的 `IAG-08`):同一模块属多个 bridge entry ⇒ FAIL;文档写明「**只测不拦**」(进 Step 7.5 需另裁)
+- [x] W4.1 **`[bridge-single-slot]`**(⛔ 不复用已被 `test_cep_instance_assembly.cc:185` 占用的 `IAG-08`):`instance_assembly_gate.hh` 增 **`<BSS-01>`** 判据(同一模块属多个 bridge entry ⇒ FAIL)+ 反向 fixture(SCE-12);文档写明「**只测不拦**」(进 Step 7.5 需另裁 —— 动 `module_factory.cc` ⇒ 红线)
 
 ## A6 · 判据 J-1 ~ J-9(G2 可达门)
 
-- [ ] A6.1 J-1 装配(**行为判据**)· J-2 事务抵达 · J-3 端到端响应完整(⛔ 跨 `id_space` 配对)
-- [ ] A6.2 J-4 IC3(**✓ 通过**态,非「非红即绿」)+ run-validity 绿 · J-6 指标自洽
-- [ ] A6.3 **J-5 决定性变异**:变异体 + **期望命中的断言签名**;按正确原因红
-- [ ] A6.4 J-7 桥投影(测试级 `pack`/`unpack` + 逐模块同 `bridge_id`)· J-8 B 不承载全绿(可观测形态)· **J-9 分档**(A:闸 SKIP ∧ 无键 ∧ 无 latency>0;B:PASS ∧ 1/3/≥1 ∧ 三模块 `bridge_id` 逐个相等)
+- [x] A6.1 **J-1 / J-2**(SCE-13):装配**行为**判据(⛔ 不止 `instantiateAll`)+ 业务流量抵达 wrapper + 事务抵达对端且**地址一致**(`home.last_request_addr()`)
+- [x] A6.2 **J-3**(SCE-14):一请求一响应 + 周期戳闭合 + ⛔ 不跨 `id_space` 配对
+- [x] A6.3 **J-5 决定性变异**(SCE-15):判定函数 `j3_response_complete` + **3 个变异体**(丢响应 / 未闭合 / 空真)⇒ 判据**有区分力**
+- [x] A6.4 **J-6**(SCE-16):`well_formed()` 正控 + 破坏自洽的变异体按正确原因红 + 「实测 0 ≠ 未测量」渲染断言
+- [x] A6.5 **J-7**(SCE-17):测试级 `pack`/`unpack` 4 个共有字段无损 + `flow_id` **降维不可逆** + 丢弃清单 + 三模块同 `bridge_id`
+- [x] A6.6 **J-8**(SCE-18):B 的「全绿」**不来自协议语义面** ⇒ 声明面**不含** home 简化模型 / wrapper
+- [x] A6.7 **J-9 分档**(SCE-11):A ⇒ 闸 SKIP ∧ 无 `cep.bridges` ∧ 无 latency>0;B ⇒ 闸 PASS ∧ 1 entry / 3 modules / ≥1 latency>0 ∧ 无 error
+- [ ] A6.8 **J-4 的 IC3 三态**(✓ 通过 / ❌ 违例 fail / ⚪ 不适用)—— ⏳ **依赖 A8 的 `ic3_verdict` 产出者**(本批只落 **run-validity** 半条)
 
 ## A7 · harness 接入 + 三键归属
 

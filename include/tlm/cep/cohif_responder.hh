@@ -126,6 +126,8 @@ public:
         return n;
     }
     std::uint64_t cycle() const { return cycle_; }
+    /// 最近一次消费的 `Request` 的地址(只读观测面;供「事务抵达且地址一致」判定)
+    std::uint64_t last_request_addr() const { return last_addr_; }
 
     // ── 周期推进 ────────────────────────────────────────────────────
     void tick() override {

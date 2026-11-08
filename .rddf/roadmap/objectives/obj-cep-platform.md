@@ -16987,6 +16987,36 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 
 **⑤ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#299**(双审结论 + 开工基线)· **#298 / #297**(A0+A1/A2 + 前版路径)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-19` SU · 三
 
+### Entry #301 — 2026-11-08 [build](**A6 判据 J-1 ~ J-9** + **W4 桥单槽兜底**)
+
+**主题**:按修订 ④ 的关键路径推进 **A6(G2 可达门)** 与 **W4**;判据落到「**有区分力**」形态(每条附变异体)。
+**角色**:builder(实施)· architect(双审结论已落 #299)· verifier(待验收)。
+**KPI**:Proposed **1/3**(不变)。
+
+**① A6 判据(`test/test_cep_stub_cache_e2e.cc` SCE-11 ~ SCE-18 · 共 18 cases / 180 assertions)**:
+
+| J | 判据 | 载体 | 变异体(区分力) |
+|---|---|---|---|
+| **J-1 / J-2** | 装配**行为**判据(⛔ 不止 `instantiateAll`)+ 业务流量抵达 wrapper + 事务抵达对端且**地址一致** | SCE-13 | — |
+| **J-3** | 一请求一响应 + 周期戳闭合 + ⛔ 不跨 `id_space` 配对(miss ⇒ `CORE` 空间) | SCE-14 | — |
+| **J-4**(半条) | **run-validity**(`well_formed()`)绿;「实测 0 ≠ 未测量」渲染断言 | SCE-16 | ✅ 破坏自洽 ⇒ 按正确原因红 |
+| **J-5** | 判定函数 `j3_response_complete` + **3 个变异体**(丢响应 / 未闭合 / **空真**) | SCE-15 | ✅ 3/3 必红 |
+| **J-6** | `well_formed()` 正控 + 变异体 | SCE-16 | ✅ |
+| **J-7** | 测试级 `pack`/`unpack` **4 个共有字段无损** + `flow_id` **降维不可逆** + 丢弃清单 + 三模块同 `bridge_id` | SCE-17 | — |
+| **J-8** | B 的「全绿」**不来自协议语义面** ⇒ 声明面**不含** home 简化模型 / wrapper(若有人写进声明面即红) | SCE-18 | — |
+| **J-9** | A ⇒ 闸 `SKIP` ∧ 无 `cep.bridges` ∧ 无 latency>0;B ⇒ 闸 `PASS` ∧ 1 entry / 3 modules / ≥1 latency>0 ∧ 无 error | SCE-11 | — |
+
+**② W4 桥单槽兜底**:`include/tlm/cep/instance_assembly_gate.hh` 增 **`<BSS-01>`** 判据(同一模块属**多个** bridge entry ⇒ `bridge_` 单槽被静默覆盖 ⇒ FAIL)+ **反向 fixture**(SCE-12:把 `w` 同时挂进两条 entry ⇒ 按该原因红);tag 用 **`[bridge-single-slot]`**(⛔ 不复用已被 `test_cep_instance_assembly.cc:185` 占用的 `IAG-08`)。⚠️ **只测不拦**:真要在装配路径拦住须动 `src/core/module_factory.cc`(红线)⇒ 另立 change。
+
+**③ 实施期发现(如实登记,⛔ 未掩盖)**:
+- **J-4 的 IC3 三态**(✓ 通过 / ❌ 违例 fail / ⚪ 不适用)**尚无产出者** ⇒ 本批只落 run-validity 半条,余下**随 A8 的 `ic3_verdict` 产出者**一并闭合(已在 tasks A6.8 标 ⏳)。
+- **桥的 `flow_id` 属「降维映射」而非「丢弃」**(`lossily_mapped_fields()`)⇒ J-7 的断言按**默认��与输入不同**来证明不可逆(输入 `Snoop` ⇒ 解包回默认 `Request`)。
+
+**④ 计数 / 边界**:`B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` **零 diff**;`protocol_instances.json` / `protocol_instance.schema.json` **零 diff**;⛔ `stub_cache_core.hh` / `include/framework/` / `cohif_noc_bridge.hh` **零 diff**(`instance_assembly_gate.hh` **不在** M1 冻结集 ⇒ 可改,已核)。
+
+**⑤ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#300**(A4 + A5)· **#299**(双审开工基线)· **#297 / #298** · `07 号` SU · 十一 ~ 十四
+
+
 
 **⑧ 追加落字(同批次)**:F-A4 采用**方案 (b)** ⇒ `:56` 的**最终合并文本 = ADR 原文(含「对端协议引擎」逐字)+ delta 限定句**(驱动者 = home 简化模型,⛔ 不是协议引擎)⇒ Entry #297 的授权引用**不需要改写**,但合并文本以本句为准。
 

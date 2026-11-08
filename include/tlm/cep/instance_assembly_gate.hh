@@ -15,6 +15,7 @@
 #define CPPT_LM_CEP_INSTANCE_ASSEMBLY_GATE_HH
 
 #include <algorithm>
+#include <map>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -202,6 +203,29 @@ inline InstanceAssemblyReport run_instance_assembly_gate(
         }
 
         rep.mounted.push_back(id);
+    }
+
+    // ⑥ 桥单槽兜底(per W4):同一模块属**多个** bridge entry ⇒ 模块的 `bridge_` 单槽
+    //    会被**后挂的桥静默覆盖** ⇒ 判红。
+    //    ⚠️ 本闸是**装配期拓扑体检**(由测试侧调用)⇒ 「**只测不拦**」——
+    //    真要在 `ModuleFactory` 装配路径上拦住 ⇒ 须动 `src/core/module_factory.cc`
+    //    (红线面)⇒ **另立 change**(per §10 修订 ④ ② 的风险登记)。
+    {
+        std::map<std::string, int> membership;
+        for (const auto& bridge : bridges) {
+            if (!bridge.contains("modules") || !bridge.at("modules").is_array())
+                continue;
+            for (const auto& m : bridge.at("modules")) {
+                if (m.is_string())
+                    ++membership[m.get<std::string>()];
+            }
+        }
+        for (const auto& [mod_name, n] : membership) {
+            if (n > 1) {
+                rep.errors.emplace_back("[BSS-01] module in multiple bridge entries: " + mod_name +
+                                        " (" + std::to_string(n) + ")");
+            }
+        }
     }
 
     rep.verdict = rep.errors.empty() ? InstanceAssemblyVerdict::PASS

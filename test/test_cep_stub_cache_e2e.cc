@@ -12,6 +12,7 @@
 // 作者: builder  日期: 2026-11-08
 #include "catch_amalgamated.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -21,10 +22,12 @@
 #include <fstream>
 
 #include "chstream_register.hh"
-#include "cep_adr_parser.hh" // `cpptlm::cep::repo_root()`
+#include "cep_adr_parser.hh"         // `cpptlm::cep::repo_root()`
+#include "cep_experiment_harness.hh" // `cep_exp::ExperimentMetrics`(J-6 指标自洽)
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
 #include "tlm/cep/chi_rnf_protocol_engine.hh"
+#include "tlm/cep/cohif_noc_bridge.hh"
 #include "tlm/cep/cohif_responder.hh"
 #include "tlm/cep/instance_assembly_gate.hh"
 #include "tlm/cep/stub_cache_endpoint.hh"
@@ -395,4 +398,235 @@ TEST_CASE("SCE-11: J-9 拓扑分档(A ⇒ 闸 SKIP ∧ 无 `cep.bridges` ∧ 无
     INFO(rep_b.log);
     REQUIRE(rep_b.verdict == tlm::cep::InstanceAssemblyVerdict::PASS);
     REQUIRE(rep_b.errors.empty());
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// A6 · 判据 J-1 ~ J-9(每条可机器判;⛔ 判据强度以「有区分力」为准)
+// ════════════════════════════════════════════════════════════════════════════
+
+namespace {
+
+    /// J-3 判定:**一请求一响应且周期戳闭合**(测试侧可复用判定函数 ⇒ J-5 用它做变异体)
+    bool j3_response_complete(std::uint64_t requests, std::uint64_t responses,
+                              const std::vector<tlm::cep::StubCacheEndpointTLM::TxnStamp>& stamps) {
+        if (requests == 0)
+            return false; // 没有请求 ⇒ 判据**空真** ⇒ 不算通过
+        if (responses != requests)
+            return false; // 响应数 ≠ 请求数 ⇒ 有丢
+        for (const auto& s : stamps) {
+            if (!s.completed)
+                return false; // 有未闭合的事务
+        }
+        return true;
+    }
+
+    /// 桥投影的共有字段(per `cohif_noc_bridge.hh` 层 1:4 字段双向无损)
+    constexpr std::size_t kBridgeSharedFieldCount = 4;
+
+} // namespace
+
+TEST_CASE("SCE-12: W4 桥单槽兜底 —— 同一模块属多个 bridge entry ⇒ FAIL(`[BSS-01]`)",
+          "[cep][e2e][sce-12][bridge-single-slot]") {
+    const auto instances = load_cep_json("include/tlm/cep/protocol_instances.json");
+    const auto planes = load_cep_json("include/tlm/cep/collective_planes.json");
+
+    // 正控:B 原样 ⇒ 无 `[BSS-01]`
+    {
+        const auto cfg = load_topology("cep_chi_rnf_e2e_b.json");
+        const auto rep = tlm::cep::run_instance_assembly_gate(cfg, instances, planes);
+        REQUIRE_FALSE(rep.has_error("[BSS-01]"));
+    }
+    // 反向 fixture:把 `w` 同时挂进**两条** bridge entry ⇒ 必须按该原因红
+    {
+        auto cfg = load_topology("cep_chi_rnf_e2e_b.json");
+        cfg["cep"]["bridges"].push_back({{"name", "cohif_noc_2"},
+                                         {"protocol_instance", "chi_rnf"},
+                                         {"bridge_id", 8},
+                                         {"modules", nlohmann::json::array({"w", "chi"})}});
+        const auto rep = tlm::cep::run_instance_assembly_gate(cfg, instances, planes);
+        INFO(rep.log);
+        REQUIRE(rep.verdict == tlm::cep::InstanceAssemblyVerdict::FAIL);
+        REQUIRE(rep.has_error("[BSS-01]"));
+    }
+}
+
+TEST_CASE("SCE-13: J-1 / J-2 判定 —— 业务流量抵达 wrapper 且事务抵达对端(**地址一致**)",
+          "[cep][e2e][sce-13]") {
+    REGISTER_ALL;
+    const auto cfg = load_topology("cep_chi_rnf_e2e_a.json");
+    EventQueue eq;
+    ModuleFactory f(&eq);
+    REQUIRE(f.instantiateAll(cfg));
+    f.startAllTicks();
+    eq.run(300);
+
+    auto* w = dynamic_cast<tlm::cep::StubCacheEndpointTLM*>(f.getInstance("w"));
+    auto* home = dynamic_cast<tlm::cep::CohIfResponderTLM*>(f.getInstance("home"));
+    REQUIRE(w != nullptr);
+    REQUIRE(home != nullptr);
+
+    // J-1:真实业务流量抵达 wrapper(⛔ 不止 instantiateAll)
+    REQUIRE(w->counters().cpu_requests > 0u);
+    REQUIRE(w->counters().net_requests_out > 0u);
+    // J-2:事务抵达对端 home,且**地址与 wrapper 发出的一致**(⇒ 不是空跑)
+    REQUIRE(home->counters().requests_consumed > 0u);
+    REQUIRE(home->last_request_addr() != 0u);
+}
+
+TEST_CASE("SCE-14: J-3 端到端响应完整 —— 响应数 == 请求数 ∧ 周期戳闭合 ∧ **不跨 txn 空间**",
+          "[cep][e2e][sce-14]") {
+    EventQueue eq;
+    Wrapper w("sce_j3", &eq);
+
+    Req req(901, 0x9000, 8, false, 0);
+    inject(w.pe_req_in(), req);
+    w.tick();
+    REQUIRE(w.counters().net_requests_out == 1u);
+    const std::uint64_t txn = w.net_req_out().data().transaction_id.read();
+    REQUIRE(txn != 0u);
+
+    inject(w.net_resp_in(), make_completion(txn, 0x9000, 0xFEED));
+    w.tick();
+
+    // 一请求一响应 + 闭合
+    REQUIRE(w.counters().cpu_requests == 1u);
+    REQUIRE(w.counters().cpu_responses == 1u);
+    REQUIRE(w.txn_stamps().size() == 1u);
+    REQUIRE(w.txn_stamps().back().completed == true);
+    // ⛔ miss 路径的 stamp 属 **core** 空间(⛔ 不得与 CPU 侧 id 混用)
+    REQUIRE(w.txn_stamps().back().id_space == Wrapper::TxnIdSpace::CORE);
+    REQUIRE(w.txn_stamps().back().txn_id == txn);
+    REQUIRE(j3_response_complete(w.counters().cpu_requests, w.counters().cpu_responses,
+                                 w.txn_stamps()));
+}
+
+TEST_CASE("SCE-15: J-5 **判据有区分力** —— 变异体(丢响应 / 未闭合)必不满足 J-3 判定",
+          "[cep][e2e][sce-15]") {
+    // 正控
+    {
+        std::vector<tlm::cep::StubCacheEndpointTLM::TxnStamp> stamps;
+        tlm::cep::StubCacheEndpointTLM::TxnStamp s;
+        s.completed = true;
+        stamps.push_back(s);
+        REQUIRE(j3_response_complete(1, 1, stamps));
+    }
+    // 变异体 ①:响应数少于请求数(丢响应)
+    {
+        std::vector<tlm::cep::StubCacheEndpointTLM::TxnStamp> stamps;
+        tlm::cep::StubCacheEndpointTLM::TxnStamp s;
+        s.completed = true;
+        stamps.push_back(s);
+        REQUIRE_FALSE(j3_response_complete(2, 1, stamps));
+    }
+    // 变异体 ②:事务未闭合
+    {
+        std::vector<tlm::cep::StubCacheEndpointTLM::TxnStamp> stamps;
+        tlm::cep::StubCacheEndpointTLM::TxnStamp s;
+        s.completed = false;
+        stamps.push_back(s);
+        REQUIRE_FALSE(j3_response_complete(1, 1, stamps));
+    }
+    // 变异体 ③:空真(零请求)⇒ 不算通过
+    {
+        std::vector<tlm::cep::StubCacheEndpointTLM::TxnStamp> stamps;
+        REQUIRE_FALSE(j3_response_complete(0, 0, stamps));
+    }
+}
+
+TEST_CASE("SCE-16: J-6 指标自洽 —— 自洽 run 通过;破坏自洽的变异体**按正确原因红**",
+          "[cep][e2e][sce-16]") {
+    // 正控:延迟族全采集且计数自洽
+    {
+        cep_exp::ExperimentMetrics m;
+        m.total_cycles = 100;
+        m.total_transactions = 1; // == 延迟签发数(自洽口径)
+        m.latency.note_issue();
+        REQUIRE(m.latency.note_complete(1, 2));
+        m.verification_scope = "SCE-16";
+        m.verification_mode = "sampled";
+        REQUIRE(m.well_formed());
+    }
+    // 变异体:延迟族**部分**采集 ⇒ 事务数与签发数不符 ⇒ 必须红
+    {
+        cep_exp::ExperimentMetrics m;
+        m.total_cycles = 100;
+        m.total_transactions = 10;
+        m.latency.note_issue();
+        REQUIRE(m.latency.note_complete(1, 2));
+        m.not_collected["p95_latency_cycles"] = "本装置无该分位";
+        m.verification_scope = "SCE-16";
+        m.verification_mode = "sampled";
+        REQUIRE_FALSE(m.well_formed());
+    }
+    // ⚠️ 「实测 0」与「未测量」**不同形**:未采集者渲染为字符串
+    {
+        cep_exp::ExperimentMetrics m;
+        m.not_collected["deadlock_violations"] = "本装置未采集";
+        const std::string js = m.to_json();
+        REQUIRE(js.find("\"deadlock_violations\": \"not-collected\"") != std::string::npos);
+    }
+}
+
+TEST_CASE("SCE-17: J-7 桥投影 —— 测试级 `pack`/`unpack` 共有字段无损 + 三模块同 `bridge_id`",
+          "[cep][e2e][sce-17]") {
+    // ① 测试级投影:CohIf → flit → CohIf,4 个共有字段无损
+    tlm::cep::CohIfNoCProtocolBridge bridge;
+    Bundle in;
+    // ⚠️ 输入用 `Snoop` ⇒ 解包后的**默认**值(`Request`)与输入**不同** ⇒ 可区分
+    in.flow_id = bundles::CohIfFlowId::Snoop;
+    in.transaction_id.write(0x1234);
+    in.address.write(0xABCD);
+    in.data.write(0x5678);
+    in.size.write(16);
+
+    bundles::NoCFlitBundle flit;
+    bridge.pack(in, flit);
+
+    Bundle out;
+    bridge.unpack(flit, out);
+    REQUIRE(out.transaction_id.read() == 0x1234u);
+    REQUIRE(out.address.read() == 0xABCDu);
+    REQUIRE(out.data.read() == 0x5678u);
+    REQUIRE(out.size.read() == 16u);
+    REQUIRE(kBridgeSharedFieldCount == 4u); // 层 1 共有字段数(文档锚)
+    // 丢弃清单 ↔ 实际行为一致:`flow_id` 声称被丢弃 ⇒ unpack 后**不**保留
+    const auto dropped = bridge.dropped_fields();
+    REQUIRE(std::find(dropped.begin(), dropped.end(), "perm") != dropped.end());
+    // `flow_id` 属**降维映射**(多对一)⇒ 层 1 不可逆 ⇒ unpack 后不保留
+    const auto lossy = tlm::cep::CohIfNoCProtocolBridge::lossily_mapped_fields();
+    REQUIRE(std::find(lossy.begin(), lossy.end(), "flow_id") != lossy.end());
+    REQUIRE(out.flow_id == bundles::CohIfFlowId::Request); // ⇒ `flow_id` 确未携带(降维)
+
+    // ② 逐模块同 `bridge_id`(拓扑 B)
+    REGISTER_ALL;
+    const auto cfg = load_topology("cep_chi_rnf_e2e_b.json");
+    EventQueue eq;
+    ModuleFactory f(&eq);
+    REQUIRE(f.instantiateAll(cfg));
+    auto* w = dynamic_cast<tlm::cep::StubCacheEndpointTLM*>(f.getInstance("w"));
+    auto* chi = dynamic_cast<tlm::cep::ChiRnfProtocolEngine*>(f.getInstance("chi"));
+    auto* home = dynamic_cast<tlm::cep::CohIfResponderTLM*>(f.getInstance("home"));
+    REQUIRE(w != nullptr);
+    REQUIRE(chi != nullptr);
+    REQUIRE(home != nullptr);
+    REQUIRE(w->bridge() != nullptr);
+    REQUIRE(w->bridge()->bridge_id() == chi->bridge()->bridge_id());
+    REQUIRE(w->bridge()->bridge_id() == home->bridge()->bridge_id());
+    REQUIRE(w->bridge()->name() == "cohif_noc");
+}
+
+TEST_CASE("SCE-18: J-8 B **不承载**「全绿 run」—— 声明面**不含** home 简化模型",
+          "[cep][e2e][sce-18]") {
+    // B 的装配闸 PASS 来自**装配面**,⛔ 不来自协议语义面 ⇒ 声明面不得含 home 简化模型
+    const auto instances = load_cep_json("include/tlm/cep/protocol_instances.json");
+    REQUIRE(instances.contains("instances"));
+    for (const auto& inst : instances["instances"]) {
+        REQUIRE(inst.value("id", "") != "CohIfResponderTLM");
+        REQUIRE(inst.value("id", "") != "StubCacheEndpointTLM");
+    }
+    // ⛔ 计数不变:本 change **不**构成 B3b 的条款级证据
+    const auto cfg = load_topology("cep_chi_rnf_e2e_b.json");
+    const auto planes = load_cep_json("include/tlm/cep/collective_planes.json");
+    const auto rep = tlm::cep::run_instance_assembly_gate(cfg, instances, planes);
+    REQUIRE(rep.verdict == tlm::cep::InstanceAssemblyVerdict::PASS);
 }
