@@ -55,6 +55,13 @@ public:
         bool emit_snoops = false;
         /// 发 `Snoop` 的周期间隔(仅 `emit_snoops = true` 时生效)
         unsigned snoop_interval_cycles = 8;
+        /// 是否**回发** `Completion`(默认开 = 模块级默认行为)
+        /// ⚠️ 拓扑 A/B 把它**关掉**:dual-port 适配器的**入向路由恒落 PE 侧**
+        ///    (`include/framework/bidirectional_port_adapter.hh` 的 `process_request_input`
+        ///    只填 `pe_req_in()`)⇒ 回程 `Completion` 会被当成业务请求读进 PE 侧
+        ///    ⇒ **产生垃圾请求**。⛔ 框架红线(`include/framework/` 零改动)⇒ 用本开关
+        ///    把回程腿**留在模块级判据**(SCE-03 / SCE-04)闭合,拓扑级只闭合**出向腿**。
+        bool emit_completions = true;
     };
 
     struct Counters {
@@ -64,6 +71,7 @@ public:
         std::uint64_t writebacks_consumed = 0;  ///< 消费的 `Writeback`(零响应)
         std::uint64_t snoop_resps_consumed = 0; ///< 消费的 `SnoopResp`(零响应)
         std::uint64_t foreign_consumed = 0;     ///< 其余流(零响应;如实记账)
+        std::uint64_t completions_suppressed = 0; ///< 因 `emit_completions=false` 被抑制的回程
     };
 
     CohIfResponderTLM(const std::string& name, EventQueue* eq) : ChStreamModuleBase(name, eq) {}
@@ -94,6 +102,21 @@ public:
 
     // ── 配置 / 观测 ─────────────────────────────────────────────────
     void configure(const Config& cfg) { cfg_ = cfg; }
+
+    /// 装配期配置(**只**认下列 4 键;⛔ 其余键忽略)
+    ///   `emit_completions` · `completion_latency_cycles` · `emit_snoops` · `snoop_interval_cycles`
+    void on_config_loaded() override {
+        if (config_.contains("emit_completions") && config_["emit_completions"].is_boolean())
+            cfg_.emit_completions = config_["emit_completions"].get<bool>();
+        if (config_.contains("completion_latency_cycles") &&
+            config_["completion_latency_cycles"].is_number_unsigned())
+            cfg_.completion_latency_cycles = config_["completion_latency_cycles"].get<unsigned>();
+        if (config_.contains("emit_snoops") && config_["emit_snoops"].is_boolean())
+            cfg_.emit_snoops = config_["emit_snoops"].get<bool>();
+        if (config_.contains("snoop_interval_cycles") &&
+            config_["snoop_interval_cycles"].is_number_unsigned())
+            cfg_.snoop_interval_cycles = config_["snoop_interval_cycles"].get<unsigned>();
+    }
     const Config& config() const { return cfg_; }
     const Counters& counters() const { return ctr_; }
     std::size_t in_flight() const {
@@ -124,6 +147,12 @@ public:
                 if (resp_out_[port].valid())
                     break;  // 背压:本端口下周期再发(⛔ 不丢,也⛔ 不串端口)
                 const Pending p = q.front();
+                if (!cfg_.emit_completions) {
+                    // 拓扑级:回程**不出网**(框架限制,见 `Config::emit_completions` 注释)
+                    ++ctr_.completions_suppressed;
+                    q.pop_front();
+                    continue;
+                }
                 Bundle b;
                 b.flow_id = bundles::CohIfFlowId::Completion;
                 b.transaction_id.write(p.txn_id);

@@ -46,6 +46,7 @@ private:
     int completed_ = 0;
     int issued_ = 0;
     std::mt19937 rng_;
+    std::uint64_t seed_ = 42;  ///< 随机种子(可复现门 per A4;默认 42 = 既有行为)
     std::uniform_int_distribution<uint64_t> addr_dist_;
     std::vector<TraceRecord_TLM> trace_;
     size_t trace_pos_ = 0;
@@ -98,8 +99,46 @@ public:
     tlm_stats::StatGroup* get_stats_group() override { return &stats_; }
     std::string get_stats_path() const override { return "system.traffic_gen"; }
 
+    /// 配置侧**只**接受 `seed`(per A4.2:种子必须能进快照)。
+    /// ⚠️ 其余 `params`(`pattern` / `num_requests` / `start_addr` / `end_addr`)在
+    ///    **本 change 之前**即**未被解析**(既有行为)⇒ 本 change **不**改变它
+    ///    ⇒ 避免影响既有 configs 的仿真行为(per「改动最小化」)。
+    void on_config_loaded() override {
+        if (config_.contains("seed") && config_["seed"].is_number_unsigned()) {
+            set_seed(config_["seed"].get<std::uint64_t>());
+        }
+    }
+
     void set_mode(GenMode_TLM m) { mode_ = m; }
     void set_num_requests(int n) { num_requests_ = n; }
+
+    // ── 复现门(per A4:种子 / 地址段 / 模式 三个 setter)─────────────────
+    //
+    // ⚠️ **随机性只在 `RANDOM` 模式生效**;`SEQUENTIAL` / `TRACE` 是确定性序列,
+    //    与种子无关 ⇒ 复现实验必须显式 `set_mode(GenMode_TLM::RANDOM)`。
+    //
+    // ⚠️ `set_addr_range` **必须重建** `addr_dist_` —— 分布对象在**构造期**绑定边界,
+    //    只改 `start_addr_` / `end_addr_` 不会改变实际取值区间(per A4.1 实测)。
+    void set_seed(std::uint64_t seed) {
+        seed_ = seed;
+        rng_.seed(seed);
+    }
+    std::uint64_t seed() const { return seed_; }
+
+    void set_addr_range(std::uint64_t lo, std::uint64_t hi) {
+        if (hi <= lo)
+            return;  // ⛔ 非法区间不改(避免 `uniform_int_distribution` UB)
+        start_addr_ = lo;
+        end_addr_ = hi;
+        cur_addr_ = lo;
+        addr_dist_ = std::uniform_int_distribution<std::uint64_t>(lo, hi);
+    }
+    std::uint64_t start_addr() const { return start_addr_; }
+    std::uint64_t end_addr() const { return end_addr_; }
+
+    /// 已发射 / 已完成计数(A4.3 的比较集合之一)
+    std::uint64_t issued() const { return static_cast<std::uint64_t>(issued_); }
+    std::uint64_t completed() const { return static_cast<std::uint64_t>(completed_); }
 
     /// 注入**外部**的访问序列(供 H7 对拍用,per
     /// `docs/architecture/14-coherence-parity-baseline.md` §4.1「两侧消费同一条离线 trace」)。

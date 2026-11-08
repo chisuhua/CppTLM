@@ -16963,6 +16963,31 @@ ls openspec/changes/ | grep -v '^archive$' | wc -l                 # 期望 0(KP
 **⑥ 边界**:⛔ 不改任何已签发结论 · ⛔ 不改 `module_factory.cc`(红线)· ⛔ 不为 `B3b-2` 造内部替代品(仍 0/4)。
 **⑦ 关联**:**#298**(前版路径)· **#297**(A0+A1/A2)· **#296**(全量盘点)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-19` SU · 三 · `ADR-CEP-06` SU 2026-11-08 · 二
 
+### Entry #300 — 2026-11-08 [build](**A4 复现门** + **A5 两拓扑** + A3.2 行为判据 + J-9 分档)
+
+**主题**:按 §10 路径图修订 ④ 的关键路径推进:**A4(复现门)** 与 **A5(两拓扑 + A3.2 行为判据 + J-9 分档)** 落地;并对双审发现的**框架限制**做显式处置。
+**角色**:builder(实施)· architect(双审结论已落 #299)· verifier(待验收)。
+**KPI**:Proposed **1/3**(不变)。
+
+**① A4 复现门(G3)**:
+- `include/tlm/traffic_gen_tlm.hh`:新增 `set_seed` / `seed()` / `set_addr_range`(⚠️ **必须重建** `addr_dist_` —— 分布对象构造期绑定边界)/ `start_addr()` / `end_addr()` / `issued()` / `completed()`;`on_config_loaded()` **只**解析 `seed`(⛔ 其余 `params` 沿用既有「未解析」行为 ⇒ 不影响既有 configs)。
+- `test/cep_experiment_harness.hh`:新增 `ExperimentProvenance`(`seed` + `git_rev` + `toolchain` + `to_json()`;`current_git_rev()` 读 `.git/HEAD` → ref 文件 → `packed-refs`;`current_toolchain()` = 编译器版本 + `__cplusplus` + `_GLIBCXX_RELEASE`,⛔ **不含**路径 / 时间戳 ⇒ 同环境逐字节相等)。⚠️ provenance 与配置指纹**分离**(⛔ 不污染 `config_sha256`)。
+- 判据 `test/test_cep_reproducibility.cc`(**RPR-01 ~ RPR-05**):同种子**新建实例**两次 run 的比较集合(13 键之外的运行侧计数 `{cpu_requests, cpu_responses, net_requests_out, net_completions_in, in_flight}` + TG 发射/完成计数 + 地址序列)**逐字段相等** · 不同种子**不相等** · `set_addr_range` 后地址全落新区间 · provenance 三项齐备 · **反例**:`reset()` 后不重播种 ⇒ **不相等**;显式重播种 ⇒ 相等。
+
+**② A5 两拓扑 + A3.2 + J-9**:
+- `configs/cep_chi_rnf_e2e_a.json`:**缺省 `cep.bridges`** ∧ 全部 `latency = 0` ∧ 3 模块(`tg` / `w` / `home`)。
+- `configs/cep_chi_rnf_e2e_b.json`:**恰 1 条** bridge entry ∧ **恰 3** 模块(`w` / `chi` / `home`)∧ **显式 `bridge_id: 7`** ∧ 引用已声明实例 `chi_rnf` ∧ ≥1 条 `latency > 0`(= 3,事务路径 `w.1 → home.0`)。
+- 判据(`test/test_cep_stub_cache_e2e.cc` **SCE-09 ~ SCE-11**):**SCE-09** 拓扑 A 装配 + **出向事务腿**(业务流量抵达 wrapper ⇒ wrapper 发 `Request` ⇒ **home 消费到**)+ 回程被抑制;**SCE-10** 拓扑 B 装配 + **三模块共享同一 `bridge_id`**(= 7)+ 带延迟连接下事务**仍抵达对端**;**SCE-11** **J-9 分档**(A ⇒ 闸 `SKIP` ∧ 无 `cep.bridges` ∧ 无 `latency>0`;B ⇒ 闸 `PASS` ∧ 1 entry / 3 modules / ≥1 `latency>0` ∧ 无 error)。
+
+**③ 实施期新发现(architect 复检 ⇒ 显式处置,⛔ 不静默)**:**dual-port 适配器的入向路由恒落 PE 侧** —— `include/framework/bidirectional_port_adapter.hh` 的 `process_request_input` 只填 `module_->pe_req_in()`,⛔ **不看 `port_idx`、也不看 `pkt->type`** ⇒ dual-port 模块的 **net 侧入向回程不可达**(NICTLM 同样受限)⇒ 若让 home 回发 `Completion`,该包会被当成**业务请求**读进 PE 侧 ⇒ **产生垃圾请求**。
+- 处置:**⛔ 不改 `include/framework/`(红线)** ⇒ 给 `CohIfResponderTLM` 增配置键 **`emit_completions`**(默认 `true` = 模块级默认行为不变)· 拓扑 A/B 置 `false` ⇒ 拓扑级只闭合**出向腿**,**回程腿留在模块级判据**(SCE-03 / SCE-04)闭合 ⇒ 拓扑语义**无垃圾**。
+- ⚠️ 该框架限制**登记为能力缺口**(需另立 change 修 `include/framework/`),本 change **不**掩盖:拓扑 config 的 `description` 已逐字写明。
+
+**④ 计数 / 边界**:`B3b-2` **维持 0/4**;`test/cep_b3b2_deferrals.json` **零 diff**;`protocol_instances.json` / `protocol_instance.schema.json` **零 diff**;⛔ `stub_cache_core.hh` / `include/framework/` / `cohif_noc_bridge.hh` **零 diff**。
+
+**⑤ 关联**:change **`cpptlm-cep-stub-cache-chstream-surface`** · **#299**(双审结论 + 开工基线)· **#298 / #297**(A0+A1/A2 + 前版路径)· `07 号` SU · 十一 ~ 十四 · `ADR-CEP-19` SU · 三
+
+
 **⑧ 追加落字(同批次)**:F-A4 采用**方案 (b)** ⇒ `:56` 的**最终合并文本 = ADR 原文(含「对端协议引擎」逐字)+ delta 限定句**(驱动者 = home 简化模型,⛔ 不是协议引擎)⇒ Entry #297 的授权引用**不需要改写**,但合并文本以本句为准。
 
 

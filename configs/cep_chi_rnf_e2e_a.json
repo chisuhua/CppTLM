@@ -1,0 +1,41 @@
+{
+  "name": "cep_chi_rnf_e2e_a",
+  "description": "拓扑 A(直连 / 全零延迟)—— G2 两拓扑之一。① `cep.bridges` 键**缺省** ⇒ 装配闸 `SKIP`;② 全部 connection `latency = 0`;③ 业务流量(TrafficGen)→ 端口面 wrapper(`StubCacheEndpointTLM`)→ home 简化模型(`CohIfResponderTLM`)。⚠️ 本拓扑只承载**装配面 + 出向事务腿**(真实回程在**模块级**判据 SCE-03 闭合 —— dual-port 适配器的入向路由恒落 PE 侧,属框架限制,per `include/framework/` 零改动红线)。",
+  "modules": [
+    {
+      "name": "tg",
+      "type": "TrafficGenTLM",
+      "params": {
+        "seed": 20261108
+      }
+    },
+    {
+      "name": "w",
+      "type": "StubCacheEndpointTLM"
+    },
+    {
+      "name": "home",
+      "type": "CohIfResponderTLM",
+      "params": {
+        "emit_completions": false
+      }
+    }
+  ],
+  "connections": [
+    {
+      "src": "tg",
+      "dst": "w.0",
+      "latency": 0,
+      "bandwidth": 100
+    },
+    {
+      "src": "w.1",
+      "dst": "home.0",
+      "latency": 0,
+      "bandwidth": 100
+    }
+  ],
+  "cep": {
+    "protocol_instances": "include/tlm/cep/protocol_instances.json"
+  }
+}

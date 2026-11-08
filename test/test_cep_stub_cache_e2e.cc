@@ -18,10 +18,15 @@
 
 #include <nlohmann/json.hpp>
 
+#include <fstream>
+
 #include "chstream_register.hh"
+#include "cep_adr_parser.hh" // `cpptlm::cep::repo_root()`
 #include "core/event_queue.hh"
 #include "core/module_factory.hh"
+#include "tlm/cep/chi_rnf_protocol_engine.hh"
 #include "tlm/cep/cohif_responder.hh"
+#include "tlm/cep/instance_assembly_gate.hh"
 #include "tlm/cep/stub_cache_endpoint.hh"
 
 using Wrapper = tlm::cep::StubCacheEndpointTLM;
@@ -66,6 +71,26 @@ namespace {
         b.address.write(addr);
         b.dirty.write(1);
         return b;
+    }
+
+    /// 装配配置加载(路径按**仓根**解析 ⇒ 与 CWD 无关)
+    nlohmann::json load_topology(const char* file) {
+        const auto path = cpptlm::cep::repo_root() / "configs" / file;
+        std::ifstream in(path);
+        REQUIRE(in.good());
+        nlohmann::json cfg = nlohmann::json::parse(in);
+        // ⚠️ `cep.protocol_instances` 是**相对路径** ⇒ 装配期按 CWD 解析 ⇒ 改为绝对路径
+        //    (与 `test_cep_ualink_engine.cc` 的既有做法一致)。
+        cfg["cep"]["protocol_instances"] =
+            (cpptlm::cep::repo_root() / "include" / "tlm" / "cep" / "protocol_instances.json")
+                .string();
+        return cfg;
+    }
+
+    nlohmann::json load_cep_json(const char* rel) {
+        std::ifstream in(std::string(CPPTLM_SOURCE_DIR) + "/" + rel);
+        REQUIRE(in.good());
+        return nlohmann::json::parse(in);
     }
 
 } // namespace
@@ -280,4 +305,94 @@ TEST_CASE("SCE-08: core 拒绝 ⇒ ⛔ 不伪造 net Request,回显式 reject �
     REQUIRE(resp.is_hit.read() == false);
     REQUIRE(resp.error_code.read() == 1u);
     REQUIRE(w.txn_stamps().back().rejected == true);
+}
+
+TEST_CASE("SCE-09: 拓扑 A 装配 + **出向事务腿**(⛔ 判据不止 instantiateAll)",
+          "[cep][e2e][sce-09]") {
+    REGISTER_ALL;
+    const auto cfg = load_topology("cep_chi_rnf_e2e_a.json");
+    EventQueue eq;
+    ModuleFactory f(&eq);
+    REQUIRE(f.instantiateAll(cfg)); // 装配面
+    f.startAllTicks();
+    eq.run(300);
+
+    auto* w = dynamic_cast<tlm::cep::StubCacheEndpointTLM*>(f.getInstance("w"));
+    auto* home = dynamic_cast<tlm::cep::CohIfResponderTLM*>(f.getInstance("home"));
+    REQUIRE(w != nullptr);
+    REQUIRE(home != nullptr);
+
+    // ── 行为判据(per A3.2:`instantiateAll==true` **不**算装配判据)──
+    REQUIRE(w->counters().cpu_requests > 0u);         // 真实业务流量抵达 wrapper
+    REQUIRE(w->counters().net_requests_out > 0u);     // wrapper 发出 net Request
+    REQUIRE(home->counters().requests_consumed > 0u); // 事务抵达对端 home
+
+    // ⚠️ 拓扑内**回程被抑制**(dual-port 适配器入向路由恒落 PE 侧 ⇒ 框架限制;
+    //    `include/framework/` 红线 ⇒ 零改动;回程腿在**模块级** SCE-03 / SCE-04 闭合)。
+    REQUIRE(home->counters().completions_sent == 0u);
+    REQUIRE(home->counters().completions_suppressed > 0u);
+}
+
+TEST_CASE("SCE-10: 拓扑 B 装配 + 桥挂载(三模块同 `bridge_id`)+ 带延迟事务仍抵达对端",
+          "[cep][e2e][sce-10]") {
+    REGISTER_ALL;
+    const auto cfg = load_topology("cep_chi_rnf_e2e_b.json");
+    EventQueue eq;
+    ModuleFactory f(&eq);
+    REQUIRE(f.instantiateAll(cfg));
+    f.startAllTicks();
+
+    auto* w = dynamic_cast<tlm::cep::StubCacheEndpointTLM*>(f.getInstance("w"));
+    auto* chi = dynamic_cast<tlm::cep::ChiRnfProtocolEngine*>(f.getInstance("chi"));
+    auto* home = dynamic_cast<tlm::cep::CohIfResponderTLM*>(f.getInstance("home"));
+    REQUIRE(w != nullptr);
+    REQUIRE(chi != nullptr);
+    REQUIRE(home != nullptr);
+
+    // ── 桥挂载面:三个端点**共享同一** bridge(同一 `bridge_id`)──
+    REQUIRE(w->bridge() != nullptr);
+    REQUIRE(chi->bridge() != nullptr);
+    REQUIRE(home->bridge() != nullptr);
+    REQUIRE(w->bridge()->bridge_id() == chi->bridge()->bridge_id());
+    REQUIRE(w->bridge()->bridge_id() == home->bridge()->bridge_id());
+    REQUIRE(w->bridge()->bridge_id() == 7u);
+
+    // ── 带连接延迟时,事务**仍抵达对端** ──
+    bundles::CacheReqBundle req(1, 0x3000, 8, false, 0);
+    w->pe_req_in().data() = req;
+    w->pe_req_in().set_valid(true);
+    eq.run(200);
+    REQUIRE(w->counters().net_requests_out >= 1u);
+    REQUIRE(home->counters().requests_consumed >= 1u);
+}
+
+TEST_CASE("SCE-11: J-9 拓扑分档(A ⇒ 闸 SKIP ∧ 无 `cep.bridges` ∧ 无 latency>0;"
+          "B ⇒ 闸 PASS ∧ 1 entry / 3 modules / ≥1 latency>0)",
+          "[cep][e2e][sce-11]") {
+    const auto cfg_a = load_topology("cep_chi_rnf_e2e_a.json");
+    const auto cfg_b = load_topology("cep_chi_rnf_e2e_b.json");
+    const auto instances = load_cep_json("include/tlm/cep/protocol_instances.json");
+    const auto planes = load_cep_json("include/tlm/cep/collective_planes.json");
+
+    // ── A 档 ──
+    REQUIRE_FALSE(cfg_a["cep"].contains("bridges"));
+    const auto rep_a = tlm::cep::run_instance_assembly_gate(cfg_a, instances, planes);
+    REQUIRE(rep_a.verdict == tlm::cep::InstanceAssemblyVerdict::SKIP);
+    for (const auto& c : cfg_a["connections"]) {
+        REQUIRE(c.value("latency", 0) == 0);
+    }
+
+    // ── B 档 ──
+    REQUIRE(cfg_b["cep"]["bridges"].size() == 1u);
+    REQUIRE(cfg_b["modules"].size() == 3u);
+    int positive_latency = 0;
+    for (const auto& c : cfg_b["connections"]) {
+        if (c.value("latency", 0) > 0)
+            ++positive_latency;
+    }
+    REQUIRE(positive_latency >= 1);
+    const auto rep_b = tlm::cep::run_instance_assembly_gate(cfg_b, instances, planes);
+    INFO(rep_b.log);
+    REQUIRE(rep_b.verdict == tlm::cep::InstanceAssemblyVerdict::PASS);
+    REQUIRE(rep_b.errors.empty());
 }

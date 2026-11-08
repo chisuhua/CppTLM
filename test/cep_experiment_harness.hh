@@ -29,6 +29,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <fstream>
 #include <map>
 #include <set>
 #include <sstream>
@@ -232,6 +233,87 @@ namespace cep_exp {
         std::uint64_t threshold_;
         std::uint64_t idle_cycle_ = 0;
         std::uint64_t max_idle_ = 0;
+    };
+
+
+    // ══════════════════════════════════════════════════════════════════
+    // ⑤ 复现 provenance(A4.2:config 快照记 **种子 + git rev + 工具链**)
+    // ══════════════════════════════════════════════════════════════════
+    //
+    // ⚠️ **provenance 与配置指纹分离**(per 修订 ④ ②):`seed` / `git_rev` / `toolchain`
+    //    属**环境元数据**,⛔ 不得混进 `config_sha256` 的口径(否则「配置指纹」退化为
+    //    「环境指纹」,W3 双向闸的 sha256 对账语义被稀释)。
+    // ⇒ 本块只进 `simulation_config.json` 的 `provenance` 子对象。
+    struct ExperimentProvenance {
+        std::uint64_t seed = 0;
+        std::string git_rev = "unknown";
+        std::string toolchain = "unknown";
+
+        std::string to_json() const {
+            std::ostringstream os;
+            os << "{\"seed\": " << seed << ", \"git_rev\": \"" << git_rev
+               << "\", \"toolchain\": \"" << toolchain << "\"}";
+            return os.str();
+        }
+
+        /// 读取当前仓的 commit id(`.git/HEAD` → ref 文件 / `packed-refs`)。
+        /// ⚠️ 解析不到时返回 **"unknown"**(**非空**)⇒ 快照仍可判定「有没有 provenance」。
+        static std::string current_git_rev(const std::string& repo_root = ".") {
+            std::string git_dir = repo_root + "/.git";
+            std::ifstream probe(git_dir);
+            if (!probe) {
+                return "unknown";
+            }
+            std::string first;
+            probe >> first;
+            probe.close();
+            if (first != "HEAD") {
+                return "unknown";
+            }
+            std::ifstream head(git_dir + "/HEAD");
+            std::string line;
+            if (!head || !std::getline(head, line)) {
+                return "unknown";
+            }
+            if (line.rfind("ref:", 0) != 0) {
+                return line;  // detached HEAD
+            }
+            const std::string ref = line.substr(4);
+            std::ifstream ref_file(git_dir + "/" + ref);
+            if (ref_file) {
+                std::string id;
+                if (std::getline(ref_file, id) && !id.empty())
+                    return id;
+            }
+            std::ifstream packed(git_dir + "/packed-refs");
+            std::string p;
+            while (packed && std::getline(packed, p)) {
+                if (p.empty() || p[0] == '#' || p[0] == '^')
+                    continue;
+                const std::size_t sp = p.find(' ');
+                if (sp != std::string::npos && p.substr(sp + 1) == ref)
+                    return p.substr(0, sp);
+            }
+            return "unknown";
+        }
+
+        /// 工具链标识(编译器版本 + C++ 标准 + libstdc++ 版本;⚠️ **不含** 路径 / 时间戳
+        /// ⇒ 同环境两次 run 的该字段**逐字节相等**)。
+        static std::string current_toolchain() {
+            std::ostringstream os;
+#if defined(__clang__)
+            os << "clang " << __clang_major__ << "." << __clang_minor__;
+#elif defined(__GNUC__)
+            os << "gcc " << __GNUC__ << "." << __GNUC_MINOR__;
+#else
+            os << "unknown-compiler";
+#endif
+            os << "/c++" << __cplusplus;
+#if defined(_GLIBCXX_RELEASE)
+            os << "/libstdc++" << _GLIBCXX_RELEASE;
+#endif
+            return os.str();
+        }
     };
 
     // ══════════════════════════════════════════════════════════════════
