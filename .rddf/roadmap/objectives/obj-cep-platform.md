@@ -16335,6 +16335,19 @@ KPI:Proposed 维持 **1/3**(本 change 未归档)。
 **⑥ 上游(唯一)**:台账 **Entry #288** + `07 号` SU · 十一 + `ADR-CEP-19` SU 2026-11-08 + 讨论纪要 ⇒ ⇒ 本图**不重开**任何已裁决策;⛔ 若实施期发现与本图冲突 ⇒ 停下回报(⛔ 不自行改架构决策)。
 
 **⑦ 关联**:**#288**(12 条决策 + 授权)· **#287**(下一步任务推荐 · N-1/N-2/N-3)· **#285**(架构文档审查 · F-2/F-3 来源)· **#282**(4 条 architect 裁决)· `.rddf/reviews/cep-ualink-e2e-framework-discussion.md`
+
+### Entry #290 — 2026-11-08 [plan](**人工审查材料包** —— architect/planner 段产出的文件清单 + 逐份审查要点 + 决策索引 + 未闭合项 + 可复现命令)
+
+**主题**:用户要求「列出 architect/planner 段产出的文件,并给出完整的人工审查材料」。
+**角色**:planner(材料包)。
+
+**① 材料包落点**:`.rddf/reviews/cep-arch-planner-review-package.md`(新建)⇒ 含 6 节:① 一页速览 ② **文件清单(按审查优先级 P0/P1/P2)** ③ **逐份审查要点**(每份「看哪里 / 判什么 / 已知待裁项」)④ **决策索引**(D-0~D-11 + 拓扑准入判据 + 桥挂载结构 ⇒ 落点行号)⑤ **已知未闭合项 8 条**(U-1~U-8,含「是否阻塞实施」判定)⑥ **可复现的核验命令 6 组**。
+
+**② 关键定位信息(便于人工抽查)**:本会话范围 `5f744d16..ec31a0db`(36 提交)⇒ 主文档新增段落行号:`07 号` SU·七 L1837 · SU·八 L1913 · SU·九 L2029 · SU·十 L2073 · SU·十一 L2122 · 文末索引 L2160;`ADR-CEP-19` SU L360;`ADR-CEP-12` SU L801;`obj` §10 路径图 L995 + 台账 L15843。
+
+**③ 随材料包落的两项核对**:① `test/cep_b3b2_deferrals.json` 本会话 **零 diff**(计数纪律核验);② 两份主文档在 M1 冻结面内 ⇒ 审查若需修改**只能追加新段或走授权链**(⛔ 不可回改已签发段)⇒ 材料包已显式提示。
+
+**④ 关联**:**#289**(任务路径图)· **#288**(12 条决策 + 授权)· **#287**(下一步任务推荐)· **#285**(架构文档审查)· `.rddf/reviews/cep-arch-planner-review-package.md`
 `07 号` **SU 2026-11-06** §⑤ + 本回执同步 · `openspec/changes/cpptlm-cep-tilelink-t3-mapping-survey/` ·
 `docs/research/2026-11-06-cep-tilelink-t3-mapping-anchor-summary.md` · `include/tlm/cep/tilelink_state_spec.hh`(`kT3MappingCells`) ·
 `test/test_cep_tilelink_state_spec.cc` · `§6.2 B3b`(维持 1/6,剩余 = 引擎 change)
